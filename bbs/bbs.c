@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.83 1994/11/30 17:04:48 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.84 1994/12/02 21:36:16 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -1304,6 +1304,7 @@ static void f_command(int argc, char **argv)
   char xfile[1024];
   int do_not_exit;
   int lifetime;
+  long bulletin_time;
   long expiretime;
   struct dirent *dp;
   struct filelist *filelist = 0;
@@ -1314,6 +1315,7 @@ static void f_command(int argc, char **argv)
 
   do_not_exit = doforward;
 
+forward_personal_mail:
   sprintf(dirname, "%s/%s", UUCP_DIR, user.name);
   if ((dirp = opendir(dirname))) {
     for (dp = readdir(dirp); dp; dp = readdir(dirp)) {
@@ -1406,6 +1408,7 @@ static void f_command(int argc, char **argv)
     }
   }
 
+  bulletin_time = time((long *) 0);
   if (!get_index(user.seq, &index))
     if (lseek(fdindex, 0L, SEEK_SET)) halt();
   while (read(fdindex, &index, sizeof(struct index)) == sizeof(struct index)) {
@@ -1420,6 +1423,7 @@ static void f_command(int argc, char **argv)
       user.seq = index.mesg;
       put_seq();
     }
+    if (bulletin_time + 600 <= time((long *) 0)) goto forward_personal_mail;
   }
 
   if (!do_not_exit) exit(0);

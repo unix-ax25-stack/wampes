@@ -1,5 +1,9 @@
 -------------------------------------------------------------------------------
 
+- make netrom table with fast disconnect
+
+- flexnet: Zeiten zu dl1sbl-1 waren 60 Sek und 140 Sek
+
 - flexnet: delete peer only after 2nd poll timeout
 
 - TCP with closed windows: spinning

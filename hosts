@@ -1805,51 +1805,57 @@
 44.130.35.14    DD4KO   # Olaf Jung, 5270 Gummersbach
 44.130.35.15    DG2KHE  # Hagen Erdmann, 5270 Gummersbach
 #
-#44.130.36.x    Berlin
-# lokale Adresskoordination: DL7UAZ
-44.130.36.1     DL6DBH  # Meinolf, 1000 Berlin; AT
-44.130.36.2     DC7ER   # Andreas, 1000 Berlin 47
-44.130.36.3     DH7ABQ  # Ralf, 1000 Berlin 21
-44.130.36.5     DL5HCK-1        # Klaus Simon, 1000 Berlin 41
-44.130.36.7     DL7APN  # Christian, 1000 Berlin-Schoeneberg
-44.130.36.10    DL7SV   # Joachim, 1000 Berlin; Mac
-44.130.36.18    DL7UFO-2        # Sven, 10409 Berlin
-44.130.36.20    DC7FO   # Uli, 1000 Berlin
-44.130.36.21    DC7FO-1 #
-44.130.36.22    DC7FO-2 #
-44.130.36.23    DC7FO-3 #
-44.130.36.24    DC7FO-4 #
-44.130.36.25    DC7FO-5 #
-44.130.36.30    DL7UWO  # Manfred (ex Y23WO)
-44.130.36.32    DF1GX   # Claus-Peter Schulz, Berlin
-44.130.36.33    ST.DF1GX        #
-44.130.36.34    PC.DF1GX        #
-44.130.36.40    DL7VKH  # Karl-Heinz, Berlin-Pankow (ex Y26WO)
-44.130.36.41    DK7IN-1 # Rolf, 1000 Berlin 65; AT486
-44.130.36.42    DK7IN-2 # Rolf, 1000 Berlin 65; XT
-44.130.36.43    DK7IN   # Rolf, 1000 Berlin 65; AT386
-44.130.36.50    DL7UAZ  # Andre Zwadlo, Berlin-Koepenick
-44.130.36.51    DL7UAZ-1        # ; Domain-Server
-44.130.36.52    DL7AMN  # Edgar Vennmanns, 10779 Berlin
-44.130.36.65    DB5QO   # Dieter, Berlin 46
-44.130.36.66    DD5MP   # Antonio, Berlin
-44.130.36.70    DD6OA   # Bodo, Berlin-Buckow
-44.130.36.75    DL7VFX  # Tom Kroeger, O-1170 Berlin (ex Y37TO)
-44.130.36.80    DL7UEA  # Bernd, Berlin
-44.130.36.81    DL9SAU-1        # Thomas Osterried, 1000 Berlin
-44.130.36.82    DL9SAU-A        #
-44.130.36.83    DL7ARX  # Gerhard Petzold, 12279 Berlin
-44.130.36.84    DD6RG   # Joachim Henschke, 12249 Berlin
-44.130.36.95    DD5AA   # Alain, Berlin-Wedding; NNTP, SMTP, POP-Server
-44.130.36.97    DL7NW   # Siegbert Langer, Berlin
-44.130.36.111   DL7UAW  # Andy (ex Y24LO)
-44.130.36.200   DL7AUC  # Pat, Berlin
-44.130.36.201   DL7AUC-1        #
-44.130.36.202   DL7AUC-2        #
-44.130.36.203   DL7AUC-3        #
-44.130.36.204   DL7AUC-4        #
-44.130.36.205   DL7AUC-5        #
-44.130.36.210   DL7UAE  # Thomas, Berlin
+# 44.130.36.xxx   Berlin
+#
+44.130.36.1       DL6DBH        # Meinolf, 1000 Berlin; AT
+44.130.36.2       DC7ER         # Andreas, 1000 Berlin 47
+44.130.36.3       DH7ABQ        # Ralf, 1000 Berlin 44
+44.130.36.5       DL5HCK-1      # Klaus Simon, 1000 Berlin 41
+44.130.36.7       DL7APN        # Christian, 1000 Berlin-Schoeneberg
+44.130.36.10      DL7SV         # Joachim, 1000 Berlin; Mac
+44.130.36.11      dc7fb         # Ralf, Berlin-Rudow
+44.130.36.12      dc7fb-1       #
+44.130.36.13      dd6vd         # Michael
+44.130.36.18      DL7UFO-2      # Sven , 10409 Berlin
+44.130.36.20      DC7FO         # Uli, 1000 Berlin
+44.130.36.21      DC7FO-1       #
+44.130.36.22      DC7FO-2       #
+44.130.36.23      DC7FO-3       #
+44.130.36.24      DC7FO-4       #
+44.130.36.25      DC7FO-5       #
+44.130.36.30      DL7UWO        # Manfred ( ex Y23WO )
+44.130.36.32      DF1GX         # Claus-Peter
+44.130.36.33      st.DF1GX      #
+44.130.36.34      pc.DF1GX      #
+#44.130.36.35     df1gx         #
+#44.130.36.36     df1gx         #
+44.130.36.40      DL7VKH        # Karl-Heinz, Berlin-Pankow ( ex y26wo )
+44.130.36.41      DK7IN-1       # Rolf, 1000 Berlin 65; AT486
+44.130.36.42      DK7IN-2       # Rolf, 1000 Berlin 65; XT
+44.130.36.43      DK7IN         # Rolf, 1000 Berlin 65; AT386
+44.130.36.50      DL7UAZ        # Andre' Zwadlo, Berlin-Koepenick
+44.130.36.51      DL7UAZ-1      #
+44.130.36.52      DL7AMN        # Edgar
+44.130.36.60      dl7aro        # Marco (WAMPES)
+44.130.36.65      DB5QO         # Dieter, Berlin 46
+44.130.36.66      DD5MP         # Antonio, Berlin
+44.130.36.70      DD6OA-7       # Bodo, Berlin-Buckow (-7 = TCP/IP;-0 = AX25)
+44.130.36.75      DL7VFX        # Thomas Kroeger, Berlin ( ex y37to )
+44.130.36.80      DL7UEA        # Bernd, Berlin
+44.130.36.81      DL9SAU-1      # Thommas Osterried, Berlin
+44.130.36.82      DL9SAU-A      # Thommas Osterried, Berlin
+44.130.36.83      DL7ARX        # Gerhard Petzold , 12279 Berlin
+44.130.36.84      DD6RG         # Joachim Henschke, 12249 Berlin
+44.130.36.95      DD5AA         # Alain, Berlin-Wedding ;NNTP, SMTP, POP-Server
+44.130.36.97      DL7NW         # Siegbert, Berlin
+44.130.36.111     DL7UAW        # Andy ( ex y24lo )
+44.130.36.200     DL7AUC        # Pat, 1000 Berlin
+44.130.36.201     DL7AUC-1      #
+44.130.36.202     DL7AUC-2      #
+44.130.36.203     DL7AUC-3      #
+44.130.36.204     DL7AUC-4      #
+44.130.36.205     DL7AUC-5      #
+44.130.36.210     DL7UAE        # Thomas, Berlin
 #
 #44.130.40.x    Mainz
 44.130.40.1     DG4KS   # Andreas Kempf, 6501 Dexheim
