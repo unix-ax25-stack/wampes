@@ -1,13 +1,22 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect2.c,v 1.7 1993/10/13 22:31:30 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect2.c,v 1.8 1994/06/16 13:14:39 deyke Exp $";
 #endif
 
-#define _POSIX_SOURCE
+#ifndef linux
+#define FD_SETSIZE      64
+#endif
+
+#include <sys/types.h>
 
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include <unistd.h>
+
+#ifdef _AIX
+#include <sys/select.h>
+#endif
 
 int main(void)
 {
@@ -16,7 +25,7 @@ int main(void)
   int fd1, fd2, n;
 
   if (fork()) exit(0);
-  for (n = sysconf(_SC_OPEN_MAX) - 1; n >= 0; n--) close(n);
+  for (n = FD_SETSIZE - 1; n >= 0; n--) close(n);
   chdir("/");
   setsid();
   if ((fd1 = open("/dev/ptyr1", O_RDWR, 0644)) < 0) exit(1);

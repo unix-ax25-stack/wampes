@@ -1,8 +1,10 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.11 1993/10/13 22:31:30 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.12 1994/06/16 13:14:39 deyke Exp $";
 #endif
 
-#define FD_SETSIZE      32
+#ifndef linux
+#define FD_SETSIZE      64
+#endif
 
 #include <sys/types.h>
 
@@ -13,6 +15,16 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <string.h>
 #include <sys/time.h>
 #include <unistd.h>
+
+#ifdef _AIX
+#include <sys/select.h>
+#endif
+
+#ifdef __hpux
+#define SEL_ARG(x) ((int *) (x))
+#else
+#define SEL_ARG(x) (x)
+#endif
 
 extern char *optarg;
 extern int optind;
@@ -38,11 +50,11 @@ extern int optind;
 #define REPEATED        0x80    /* Has-been-repeated bit in repeater field */
 #define SSID            0x1e    /* Sub station ID */
 
-static struct tab {
+struct connection {
   char call[AXALEN];
   char buf[4096];
   int cnt;
-} tab[MAXCHANNELS];
+};
 
 /* AX.25 broadcast address: "QST-0" in shifted ascii */
 static const char ax25_bdcst[] = {
@@ -56,6 +68,8 @@ static const char nr_bdcst[] = {
 
 static int all;
 static int channels = 2;
+static struct connection connections[MAXCHANNELS];
+static struct fd_set chkread;
 
 /*---------------------------------------------------------------------------*/
 
@@ -80,7 +94,7 @@ static int addreq(const char *a, const char *b)
 
 /*---------------------------------------------------------------------------*/
 
-static void route_packet(struct tab *tp)
+static void route_packet(struct connection *p)
 {
 
   char *ap;
@@ -88,10 +102,10 @@ static void route_packet(struct tab *tp)
   char *src;
   int i;
   int multicast;
-  struct tab *tp1;
+  struct connection *p1;
 
-  if ((*tp->buf & 0xf) != KISS_DATA) return;
-  dest = tp->buf + 1;
+  if ((*p->buf & 0xf) != KISS_DATA) return;
+  dest = p->buf + 1;
   ap = src = dest + AXALEN;
   while (!(ap[6] & E)) {
     ap += AXALEN;
@@ -102,12 +116,12 @@ static void route_packet(struct tab *tp)
       break;
     }
   }
-  memcpy(tp->call, src, AXALEN);
+  memcpy(p->call, src, AXALEN);
   multicast = all || addreq(dest, ax25_bdcst) || addreq(dest, nr_bdcst);
   for (i = 0; i < channels; i++) {
-    tp1 = tab + i;
-    if (multicast || !*tp1->call || addreq(dest, tp1->call))
-      write(i, tp->buf, tp->cnt);
+    p1 = connections + i;
+    if (multicast || !*p1->call || addreq(dest, p1->call))
+      write(i, p->buf, p->cnt);
   }
 }
 
@@ -117,16 +131,15 @@ int main(int argc, char **argv)
 {
 
   FILE * fp;
-  char *p;
+  char *cp;
   char tmp[1024];
   int ch;
   int errflag = 0;
   int fail = 0;
   int i;
   int n;
-  struct fd_set fmask;
-  struct fd_set readmask;
-  struct tab *tp;
+  struct connection *p;
+  struct fd_set actread;
   struct timeval timeout;
 
   if (fp = fopen(PIDFILE, "r")) {
@@ -156,12 +169,13 @@ int main(int argc, char **argv)
       break;
     }
   if (errflag || optind < argc) {
-    fprintf(stderr, "usage: %s [-c channels] [-f failures] [-s]\n", *argv);
+    fprintf(stderr, "Usage: %s [-a] [-c channels] [-f failures]\n", *argv);
+    fprintf(stderr, "       %s -k\n", *argv);
     exit(1);
   }
 
   if (fork()) exit(0);
-  for (i = sysconf(_SC_OPEN_MAX) - 1; i >= 0; i--) close(i);
+  for (i = FD_SETSIZE - 1; i >= 0; i--) close(i);
   chdir("/");
   setsid();
 
@@ -170,28 +184,27 @@ int main(int argc, char **argv)
     fclose(fp);
   }
 
-  FD_ZERO(&fmask);
   for (i = 0; i < channels; i++) {
     sprintf(tmp, "/dev/ptyr%d", i + 1);
     if (open(tmp, O_RDWR, 0666) != i) terminate();
-    FD_SET(i, &fmask);
+    FD_SET(i, &chkread);
   }
 
   for (; ; ) {
-    readmask = fmask;
+    actread = chkread;
     timeout.tv_sec = 3600;
     timeout.tv_usec = 0;
-    if (!select(channels, (int *) &readmask, (int *) 0, (int *) 0, &timeout))
+    if (!select(channels, SEL_ARG(&actread), SEL_ARG(0), SEL_ARG(0), &timeout))
       terminate();
     for (i = 0; i < channels; i++)
-      if (FD_ISSET(i, &readmask)) {
-	tp = tab + i;
-	n = read(i, p = tmp, sizeof(tmp));
+      if (FD_ISSET(i, &actread)) {
+	p = connections + i;
+	n = read(i, cp = tmp, sizeof(tmp));
 	while (--n >= 0) {
-	  if (((tp->buf[tp->cnt++] = *p++) & 0xff) == FR_END) {
-	    if (tp->cnt > 1 && (fail == 0 || rand() % 100 >= fail))
-	      route_packet(tp);
-	    tp->cnt = 0;
+	  if (((p->buf[p->cnt++] = *cp++) & 0xff) == FR_END) {
+	    if (p->cnt > 1 && (fail == 0 || rand() % 100 >= fail))
+	      route_packet(p);
+	    p->cnt = 0;
 	  }
 	}
       }

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.8 1993/11/09 15:38:41 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.9 1994/06/16 13:14:39 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -102,7 +102,7 @@ static void add_to_cache(const char *name, long addr)
 {
   struct cache *cp;
 
-  cp = malloc(sizeof(*cp) + strlen(name));
+  cp = (struct cache *) malloc(sizeof(*cp) + strlen(name));
   strcpy(cp->name, name);
   cp->addr = addr;
   cp->next = Cache;
@@ -234,7 +234,7 @@ static const struct iface *get_iface(const char *name)
 
   for (ip = Ifaces; ip && strcmp(ip->name, name); ip = ip->next) ;
   if (!ip) {
-    ip = malloc(sizeof(*ip) + strlen(name));
+    ip = (struct iface *) malloc(sizeof(*ip) + strlen(name));
     strcpy(ip->name, name);
     ip->next = Ifaces;
     Ifaces = ip;
@@ -262,7 +262,7 @@ static void add_route(struct node *np, long dest, int bits, const struct iface *
 
   for (rp = np->routes; rp && (dest != rp->dest || bits != rp->bits); rp = rp->next) ;
   if (!rp) {
-    rp = calloc(1, sizeof(*rp));
+    rp = (struct route *) calloc(1, sizeof(*rp));
     rp->next = np->routes;
     np->routes = rp;
     rp->metric = metric + 1;
@@ -291,7 +291,7 @@ static struct node *get_node(long addr)
 
   for (np = Nodes; np && np->addr != addr; np = np->next) ;
   if (!np) {
-    np = calloc(1, sizeof(*np));
+    np = (struct node *) calloc(1, sizeof(*np));
     np->name = resolve_a(addr);
     np->addr = addr;
     np->next = Nodes;
@@ -361,7 +361,7 @@ static void create_links(void)
       if (rp->bits == 32 && rp->dest != np->addr) {
 	for (nnp = Nodes; nnp && nnp->addr != rp->dest; nnp = nnp->next) ;
 	if (nnp) {
-	  lp = malloc(sizeof(*lp));
+	  lp = (struct link *) malloc(sizeof(*lp));
 	  lp->node = nnp;
 	  lp->iface = rp->iface;
 	  lp->gateway = rp->gateway;
