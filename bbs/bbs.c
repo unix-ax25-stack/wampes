@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.26 1991/09/17 22:13:21 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.27 1991/10/18 18:30:51 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -88,18 +88,19 @@ struct dir_entry {
 
 struct utsname utsname;
 
-static char  *MYHOSTNAME;
-static char  *myhostname;
-static char  mydesc[80];
-static char  prompt[1024] = "bbs> ";
-static int  debug;
-static int  doforward;
-static int  errors;
-static int  fdindex;
-static int  fdlock = -1;
-static int  fdseq;
-static int  level;
-static int  mode = BBS;
+static char *MYHOSTNAME;
+static char *myhostname;
+static char mydesc[80];
+static char prompt[1024] = "bbs> ";
+static int debug;
+static int doforward;
+static int errors;
+static int fdindex;
+static int fdlock = -1;
+static int fdseq;
+static int level;
+static int mode = BBS;
+static int packetcluster;
 static struct user user;
 static volatile int stopped;
 
@@ -1535,7 +1536,7 @@ static void send_command(int argc, char **argv)
     free_mail(mail);
     return;
   }
-  if (level != MBOX) puts("Enter message: (terminate with ^Z or ***END)");
+  if (packetcluster || level != MBOX) puts("Enter message: (terminate with ^Z or ***END)");
   for (; ; ) {
     if (!getstring(line)) exit(1);
     if (stopped) {
@@ -2175,7 +2176,7 @@ int main(int argc, char **argv)
 		revision.state);
   sprintf(mydesc, MYDESC, revision.number);
 
-  while ((c = getopt(argc, argv, "df:mnw:")) != EOF)
+  while ((c = getopt(argc, argv, "df:mnpw:")) != EOF)
     switch (c) {
     case 'd':
       debug = 1;
@@ -2195,6 +2196,9 @@ int main(int argc, char **argv)
       break;
     case 'n':
       mode = RNEWS;
+      break;
+    case 'p':
+      packetcluster = 1;
       break;
     case 'w':
       sleep(atoi(optarg));
