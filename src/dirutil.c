@@ -1,10 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.5 1991/04/25 18:26:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.6 1991/05/17 17:06:36 deyke Exp $ */
 
 #include <sys/types.h>
 
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/rtprio.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include "global.h"
@@ -13,49 +14,42 @@
 
 extern char *sys_errlist[];
 
-static char *strquote_for_shell __ARGS((char *s1, char *s2));
-
 /* Create a directory listing in a temp file and return the resulting file
  * descriptor. If full == 1, give a full listing; else return just a list
  * of names.
  */
-
 FILE *
 dir(path,full)
 char *path;
 int full;
 {
+	int fd[2];
 
-	FILE *fp;
-	char buf[1024];
-	char cmd[1024];
-	char fname[L_tmpnam];
-
-	tmpnam(fname);
-	sprintf(cmd, "/bin/ls -A %s %s >%s 2>&1",
-		full ? "-l" : "",
-		strquote_for_shell(buf, path),
-		fname);
-	if (system(cmd))
-		fp = 0;
-	else
-		fp = fopen(fname, "r");
-	unlink(fname);
-	return fp;
-}
-static char *
-strquote_for_shell(s1,s2)
-char *s1, *s2;
-{
-	char *p = s1;
-
-	while (*s2) {
-		*p++ = '\\';
-		*p++ = *s2++;
+	if(pipe(fd))
+		return NULLFILE;
+	switch(fork()) {
+	case -1:
+		close(fd[0]);
+		close(fd[1]);
+		return NULLFILE;
+	case 0:
+		rtprio(0,RTPRIO_RTOFF);
+		close(fd[0]);
+		dup2(fd[1],1);
+		dup2(fd[1],2);
+		close(fd[1]);
+		execl("/bin/ls",
+		      "ls",
+		      full ? "-Al" : "-A",
+		      path,
+		      (char *) 0);
+		exit(1);
+	default:
+		close(fd[1]);
+		return fdopen(fd[0],"r");
 	}
-	*p = '\0';
-	return s1;
 }
+
 /* Create directory */
 int
 domkd(argc,argv,p)
@@ -78,4 +72,3 @@ void *p;
 		tprintf("Can't remove %s: %s\n",argv[1],sys_errlist[errno]);
 	return 0;
 }
-

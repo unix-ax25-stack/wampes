@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.10 1991/05/09 07:38:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.11 1991/05/17 17:06:43 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -151,8 +151,8 @@ int wildmat __ARGS((char *s,char *p,char **argv));
 #include <stdlib.h>
 #include <string.h>
 
-int stricmp __ARGS((const char *s1, const char *s2));
-int strnicmp __ARGS((const char *s1, const char *s2, size_t maxlen));
+int stricmp __ARGS((char *s1, char *s2));
+int strnicmp __ARGS((char *s1, char *s2, size_t maxlen));
 
 #ifdef  AZTEC
 #define rewind(fp)      fseek(fp,0L,0);

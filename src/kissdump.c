@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kissdump.c,v 1.3 1991/04/12 18:35:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kissdump.c,v 1.4 1991/05/17 17:06:55 deyke Exp $ */
 
 /* Tracing routines for KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -9,6 +9,7 @@
 #include "devparam.h"
 #include "ax25.h"
 #include "trace.h"
+#include "crc.h"
 
 void
 ki_dump(fp,bpp,check)
@@ -20,7 +21,14 @@ int check;
 	int val;
 
 	fprintf(fp,"KISS: ");
-	type = PULLCHAR(bpp);
+	if(*bpp && (*(*bpp)->data & 0x80))
+		if(check_crc(*bpp)){
+			fprintf(fp," bad CRC!\n");
+			return;
+		}else{
+			fprintf(fp,"CRC ");
+		}
+	type = PULLCHAR(bpp) & 0x7f;
 	if(type == PARAM_DATA){
 		fprintf(fp,"Data\n");
 		ax25_dump(fp,bpp,check);

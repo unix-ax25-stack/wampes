@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.6 1991/05/09 07:38:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.7 1991/05/17 17:07:04 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -83,8 +83,8 @@ char *s;
 
 /* Case-insensitive string comparison */
 
-int  stricmp(s1, s2)
-const char  *s1, *s2;
+int stricmp(s1, s2)
+char *s1, *s2;
 {
   while (tolower(uchar(*s1)) == tolower(uchar(*s2++)))
     if (!*s1++) return 0;
@@ -92,7 +92,7 @@ const char  *s1, *s2;
 }
 
 strnicmp(a,b,n)
-const char *a,*b;
+char *a,*b;
 size_t n;
 {
 	char a1,b1;

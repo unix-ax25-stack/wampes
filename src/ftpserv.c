@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.8 1991/04/25 18:26:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.9 1991/05/17 17:06:42 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -394,11 +394,10 @@ register struct ftp *ftp;
 			arg = "ftp";
 		if(ftp->username)
 			free(ftp->username);
-		if((ftp->username = malloc((unsigned)strlen(arg)+1)) == NULLCHAR){
+		if((ftp->username = strdup(arg)) == NULLCHAR){
 			close_tcp(ftp->control);
 			break;
 		}
-		strcpy(ftp->username,arg);
 		Xprintf(ftp->control,givepass,"","","");
 		break;
 	case TYPE_CMD:
@@ -662,6 +661,10 @@ char *arg;
 
 #include <pwd.h>
 
+#ifdef SPASSWD
+#include <shadow.h>
+#endif
+
 /* Attempt to log in the user whose name is in ftp->username and password
  * in pass
  */
@@ -670,23 +673,34 @@ static void ftplogin(ftp, pass)
 struct ftp *ftp;
 char  *pass;
 {
+
+  char  *username = ftp->username;
   struct passwd *pw;
 
-  if ((pw = getpasswdentry(ftp->username, 0)) &&
-      (pw->pw_passwd[0] == '\0' || !strcmp(pw->pw_name, "ftp"))) {
+#ifdef SPASSWD
+  struct spwd *sw;
+
+#ifdef RESTRICTED       /* because of no setresuid/gid */
+  username = "ftp";
+#endif
+
+ if ((pw = getpasswdentry(username, 0)) &&
+     (sw = getspwdentry(username)) &&
+     (!*sw->sp_pwdp || !strcmp(pw->pw_name, "ftp"))) {
+#else
+  if ((pw = getpasswdentry(username, 0)) &&
+      (!*pw->pw_passwd || !strcmp(pw->pw_name, "ftp"))) {
+#endif
     ftp->uid = pw->pw_uid;
     ftp->gid = pw->pw_gid;
     if (ftp->cd) free(ftp->cd);
-    ftp->cd = strcpy(malloc((unsigned) (strlen(pw->pw_dir) + 1)), pw->pw_dir);
+    ftp->cd = strdup(pw->pw_dir);
     if (ftp->path) free(ftp->path);
-    if (!strcmp(pw->pw_name, "ftp"))
-      ftp->path = strcpy(malloc((unsigned) (strlen(pw->pw_dir) + 1)), pw->pw_dir);
-    else
-      ftp->path = strcpy(malloc((unsigned) (strlen("/") + 1)), "/");
+    ftp->path = strdup(strcmp(pw->pw_name, "ftp") ? "/" : pw->pw_dir);
     Xprintf(ftp->control, logged, pw->pw_name, "", "");
     log(ftp->control, "%s logged in", pw->pw_name);
   } else
-    Xprintf(ftp->control, noperm, ftp->username, "", "");
+    Xprintf(ftp->control, noperm, username, "", "");
 }
 
 /*---------------------------------------------------------------------------*/

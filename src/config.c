@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.8 1991/05/09 07:38:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.9 1991/05/17 17:06:32 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -515,7 +515,7 @@ char *dest;
 struct mbuf *bp;
 int mcast;
 {
-	if (bp->cnt >= 20)
+	if (bp && bp->cnt >= 20)
 		arp_add(get32(bp->data + 12), ARP_AX25, src, 0);
 	(void)ip_route(iface,bp,mcast);
 }

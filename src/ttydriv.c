@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.7 1991/04/25 18:27:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.8 1991/05/17 17:07:32 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -72,8 +72,9 @@ static void backchr(chr)
 int  chr;
 {
   putchar('\b');
-  chr &= 0xff;
-  if (chr < 32 || chr >= 127 && chr <= 159 || chr == 255) putchar('\b');
+  chr &= 0x7f;
+  if (chr < 32 || chr == 127)
+    putchar('\b');
 }
 
 /*---------------------------------------------------------------------------*/
@@ -83,8 +84,8 @@ int  chr;
 {
   putchar('\033');
   putchar('P');
-  chr &= 0xff;
-  if (chr < 32 || chr >= 127 && chr <= 159 || chr == 255) {
+  chr &= 0x7f;
+  if (chr < 32 || chr == 127) {
     putchar('\033');
     putchar('P');
   }
@@ -176,6 +177,16 @@ char  chr, **buf;
       while (p > pos) backchr(*--p);
       break;
 
+    case 21: /* control U, delete line */
+    case 24: /* control X, delete line */
+      if (end > linebuf) {
+	while (pos > linebuf) backchr(*--pos);
+	end = linebuf;
+	putchar('\033');
+	putchar('K');
+      }
+      break;
+
     case 22: /* control V, quote next character */
       if (end - linebuf >= LINEMAX)
 	putchar(7);
@@ -201,15 +212,6 @@ char  chr, **buf;
       for (f = pos, t = p; f < end; ) *t++ = *f++;
       pos = p;
       end = t;
-      break;
-
-    case 24: /* control X, delete line */
-      if (end > linebuf) {
-	while (pos > linebuf) backchr(*--pos);
-	end = linebuf;
-	putchar('\033');
-	putchar('K');
-      }
       break;
 
     case 27: /* escape */
