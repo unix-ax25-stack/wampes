@@ -494,6 +494,7 @@
 44.130.12.54    DC1BE   # Dirk Wahrheit, Papenburg; JNOS
 44.130.12.55    DL1BAH  # Karl Heinz Schirmer, Norden; JNOS
 44.130.12.56    DL8BCJ  # Horst, 26757 Borkum
+44.130.12.62    nntp.db0fho
 #
 #44.130.13.x    Hildesheim
 # lokale Adresskoordination: DC5ON
@@ -1144,91 +1145,95 @@
 44.130.19.254   TEST.DD9EY      # DD9EY Testrechner
 #
 #44.130.20.x    Aachen
-44.130.20.1     DG2KK   # Walter Doerr, 5160 Dueren
-44.130.20.2     ST.DG2KK        # Walter Doerr (Atari)
-44.130.20.10    DG2KCA  # Wolfram Sauerteig, 5100 Aachen
-44.130.20.12    DK0AF   # AMDAT e.V., 5100 Aachen; SUN-Gateway
-44.130.20.13    DK0AF-1 #
-44.130.20.14    DK0AF-2 #
-44.130.20.15    DK0AF-3 #
-44.130.20.16    DL3NO   # Rupert Mohr, 5100 Aachen
-44.130.20.20    DL9KAR  # Bernd Lettow, 5180 Eschweiler
-44.130.20.21    DB3KW   # Georg Schmitz, 5100 Aachen
-44.130.20.22    DB3KW-1 #
-44.130.20.23    DB3KW-2 #
-44.130.20.24    DB3KW-3 #
-44.130.20.25    DB3KW-4 #
-44.130.20.26    DL2KDF  # Peter Verhuelsdonk, 5100 Aachen
-44.130.20.30    DK3KO   # Wilhelm Golz, 5100 Aachen
-44.130.20.32    DG5KX   # Martin Freiss, 5100 Aachen
-44.130.20.35    AT.DF2JH        # Jochen, Aachen
-44.130.20.36    LAP.DF2JH       #
-44.130.20.39    DH9KAE-1        # Detlef Brunkel, 5132 Uebach-Palenberg
-44.130.20.40    DH9KAE  #
-44.130.20.41    DJ0AAL  # Jeronimo Diaz, 5120 Herzogenrath 3
-44.130.20.42    DG6KBB  # Karl de Jong, 5132 Uebach-Palenberg
-44.130.20.45    DL1KBL  # Armin Hoelker, 5133 Gangelt
-44.130.20.47    DD3KF   # Norbert, Aachen
-44.130.20.48    DG1KBN  # Juergen Jaeger, 5100 Aachen
-44.130.20.49    DG2KSA  # Stephan, Aachen
-44.130.20.50    DB0PRA  # Digi Aachen-Eschweiler
-44.130.20.51    DB0PRA-9        # Test-Server
-44.130.20.55    DJ9ZL   # Juergen Meissburger; AT
-44.130.20.56    DJ9ZL-2 # Juergen Meissburger; DS5000
-44.130.20.57    DL1KLR  # Leonhard Radermacher, 5170 Juelich
-44.130.20.58    DG1KBN-1        # Juergen Jaeger, 5100 Aachen
-44.130.20.60    DG9KAT  # Johann Tandara, 5144 Wegberg
-44.130.20.61    DG9KAT-2        # , QRL
-44.130.20.64    DL9KAW  # Peter Strang, 5100 Aachen
-44.130.20.65    DL9KAW-1        #
-44.130.20.66    DH6KQ   # Andreas From, 5190 Stolberg
-44.130.20.67    DK0OE   # Club-Stn OV Eschweiler (G05)
-44.130.20.68    DL5KCI  # Ingo Geidel, Stolberg
-44.130.20.69    DL9KAS  # Klaus Wings, 5163 Langerwehe
-44.130.20.70    DH4KAH  # Arno Hausmann, 5190 Stolberg
-44.130.20.71    DL3KBE  # Heinz Brendt
-44.130.20.72    DL2KBJ  # Wolfgang Welter, 5190 Stolberg; Atari ST
-44.130.20.73    DG4KBH  # Norbert Schiffer, 5170 Juelich
-44.130.20.74    DL2GM   # Klaus D. v. Stein, 5170 Juelich
-44.130.20.75    DL1KLR-1        # Leonhard Radermacher, 5170 Juelich
-44.130.20.76    DJ2IM   # Erich Vogelsang, 5170 Juelich
-44.130.20.77    DJ2IM-8 # Erich Vogelsang, 5170 Juelich Fachhochschule
-44.130.20.78    DB0BM   # Netzknoten Juelich; ***, AX25: DB0BM-8 via DB0BM
-44.130.20.79    DK0HJ   # Fachhochschule, 5170 Juelich
-44.130.20.80    DL4YBG  # Mark Wahl, 5100 Aachen
-44.130.20.81    DJ0JU   # Henrik Olsen, 5138 Heinsberg Karken
-44.130.20.83    DB1PD   # Manfred Jost, 5100 Aachen
-44.130.20.84    DL5KCE  # Axel Pfaff, Eschweiler
-44.130.20.85    DJ4UF   # Eckart
-44.130.20.86    DG9KAF  # Heinz Klippel, 5177 Titz
-44.130.20.88    DB0MON  # Digi Monschau (DL8YQ); AX25 DB0MON-10
-44.130.20.89    DB0MON-GATE     # Digi Monschau, IP Gateway
-44.130.20.90    DL8YQ   # Heinz Janssen, 5108 Monschau
-44.130.20.91    DL8YQ-1 #
-44.130.20.92    DG3KAD  # Lothar Kolbe, 5143 Wassenberg
-44.130.20.93    DG3KAD-2        #
-44.130.20.94    DG3KAD-4        #
-44.130.20.95    DK3PB   # Walter Josephs, 5138 HS-Oberbruch
-44.130.20.96    DK3PB-2 #
-44.130.20.97    DG3KCI  # Horst Plnecken, 5166 Kreuzau; AT
-44.130.20.99    DK0HW   # Club-Stn G38, Wegberg (DK3PB)
-44.130.20.100   DD2KZ   # Ralf Crumbach, 5100 Aachen
-44.130.20.101   DG3KCE  # Frank, Dueren
-44.130.20.105   DL6KCW  # Manfred, Wegberg
-44.130.20.106   DL1BKE-A        # Joerg Reuter, 52072 Aachen
-44.130.20.107   DL1BKE-U        # ; LINUX
-44.130.20.108   DH3KR   # Ralf Borowski, Juelich
-44.130.20.109   DG2KCV  # Helma Borowski, Juelich
-44.130.20.110   DG2KCU  # Udo Borowski, Juelich
-44.130.20.111   DJ0NJ   # Eric, 5161 Merzenich
-44.130.20.112   DG3KBQ  # Thorsten
-44.130.20.113   LX1NW-DL        # Michel, Aachen
-44.130.20.114   LX1NW-T #
-44.130.20.120   DL1KMW  # Martin, Aachen
-44.130.20.121   DL2KFF  # Fritz Friedhoff, 52074 Aachen
-44.130.20.122   DG1KDD  # Dirk Henning, 52353 Dueren
-44.130.20.123   DG1KDD-SVR      #
-44.130.20.200   DL1EDB  # Chris Schlaeger, 5100 Aachen; Atari ST
+# lokale Adresskoordination: dh9kae
+44.130.20.1     dg2kk   # Walter Doerr, 5160 Dueren
+44.130.20.2     st.dg2kk        # Walter Doerr (Atari)
+44.130.20.3     oh2mkq-dh
+44.130.20.4     dl4ydp
+44.130.20.10    dg2kca  # Wolfram Sauerteig, 5100 Aachen
+44.130.20.12    dk0af   # AMDAT e.V., 5100 Aachen; SUN-Gateway
+44.130.20.13    dk0af-1 #
+44.130.20.14    dk0af-2 #
+44.130.20.15    dk0af-3 #
+44.130.20.16    dl3no   # Rupert Mohr, 5100 Aachen
+44.130.20.20    dl9kar  # Bernd Lettow, 5180 Eschweiler
+44.130.20.21    db3kw   # Georg Schmitz, 5100 Aachen
+44.130.20.22    db3kw-1 #
+44.130.20.23    db3kw-2 #
+44.130.20.24    db3kw-3 #
+44.130.20.25    db3kw-4 #
+44.130.20.26    dl2kdf  # Peter Verhuelsdonk, 5100 Aachen
+44.130.20.30    dk3ko   # Wilhelm Golz, 5100 Aachen
+44.130.20.32    dg5kx   # Martin Freiss, 5100 Aachen
+44.130.20.35    at.df2jh        # Jochen, Aachen
+44.130.20.36    lap.df2jh       #
+44.130.20.39    dh9kae-1 # Linux Router         ; Detlef Brunkel
+44.130.20.40    dh9kae   # Linux Rechner mit NS ; 52531- Palenberg
+44.130.20.41    dj0aal  # Jeronimo Diaz, 5120 Herzogenrath 3
+44.130.20.42    dg6kbb  # Karl de Jong, 5132 Uebach-Palenberg
+44.130.20.43    dg1kfa  # Andreas Franck, 50171 Kerpen, JO30IU
+44.130.20.45    dl1kbl  # Armin Hoelker, 5133 Gangelt
+44.130.20.47    dd3kf   # Norbert, Aachen
+44.130.20.48    dg1kbn  # Juergen Jaeger, 5100 Aachen
+44.130.20.49    dg2ksa  # Stephan, Aachen
+44.130.20.50    db0pra   # TCP/IP Server Aachen  ***
+44.130.20.51    db0pra-R # Router + IP-GATEWAY
+44.130.20.55    dj9zl   # Juergen Meissburger; AT
+44.130.20.56    dj9zl-2 # Juergen Meissburger; DS5000
+44.130.20.57    dl1klr  # Leonhard Radermacher, 5170 Juelich
+44.130.20.58    dg1kbn-1        # Juergen Jaeger, 5100 Aachen
+44.130.20.60    dg9kat  # Johann Tandara, 5144 Wegberg
+44.130.20.61    dg9kat-2        # , QRL
+44.130.20.64    dl9kaw  # Peter Strang, 5100 Aachen
+44.130.20.65    dl9kaw-1        #
+44.130.20.66    dh6kq   # Andreas From, 5190 Stolberg
+44.130.20.67    dk0oe   # Club-Stn OV Eschweiler (G05)
+44.130.20.68    dl5kci  # Ingo Geidel, Stolberg
+44.130.20.69    dl9kas  # Klaus Wings, 5163 Langerwehe
+44.130.20.70    dh4kah  # Arno Hausmann, 5190 Stolberg
+44.130.20.71    dl3kbe  # Heinz Brendt
+44.130.20.72    dl2kbj  # Wolfgang Welter, 5190 Stolberg; Atari ST
+44.130.20.73    dg4kbh  # Norbert Schiffer, 5170 Juelich
+44.130.20.74    dl2gm   # Klaus D. v. Stein, 5170 Juelich
+44.130.20.75    dl1klr-1        # Leonhard Radermacher, 5170 Juelich
+44.130.20.76    dj2im   # Erich Vogelsang, 5170 Juelich
+44.130.20.77    dj2im-8 # Erich Vogelsang, 5170 Juelich Fachhochschule
+44.130.20.78    db0bm   # Netzknoten Juelich; ***, AX25: DB0BM-8 via DB0BM
+44.130.20.79    dk0hj   # Fachhochschule, 5170 Juelich
+44.130.20.80    dl4ybg  # Mark Wahl, 5100 Aachen
+44.130.20.81    dj0ju   # Henrik Olsen, 5138 Heinsberg Karken
+44.130.20.83    db1pd   # Manfred Jost, 5100 Aachen
+44.130.20.84    dl5kce  # Axel Pfaff, Eschweiler
+44.130.20.85    dj4uf   # Eckart
+44.130.20.86    dg9kaf  # Heinz Klippel, 5177 Titz
+44.130.20.88    db0mon  # Digi Monschau (DL8YQ); AX25 DB0MON-10
+44.130.20.89    db0mon-gate     # Digi Monschau, IP Gateway
+44.130.20.90    dl8yq   # Heinz Janssen, 5108 Monschau
+44.130.20.91    dl8yq-1 #
+44.130.20.92    dg3kad  # Lothar Kolbe, 5143 Wassenberg
+44.130.20.93    dg3kad-2        #
+44.130.20.94    dg3kad-4        #
+44.130.20.95    dk3pb   # Walter Josephs, 5138 HS-Oberbruch
+44.130.20.96    dk3pb-2 #
+44.130.20.97    dg3kci  # Horst Plnecken, 5166 Kreuzau; AT
+44.130.20.99    dk0hw   # Club-Stn G38, Wegberg (DK3PB)
+44.130.20.100   dd2kz   # Ralf Crumbach, 5100 Aachen
+44.130.20.101   dg3kce  # Frank, Dueren
+44.130.20.105   dl6kcw  # Manfred, Wegberg
+44.130.20.106   dl1bke-a        # Joerg Reuter, 52072 Aachen
+44.130.20.107   dl1bke-u        # ; LINUX
+44.130.20.108   dh3kr   # Ralf Borowski, Juelich
+44.130.20.109   dg2kcv  # Helma Borowski, Juelich
+44.130.20.110   dg2kcu  # Udo Borowski, Juelich
+44.130.20.111   dj0nj   # Eric, 5161 Merzenich
+44.130.20.112   dg3kbq  # Thorsten
+44.130.20.113   lx1nw-dl        # Michel, Aachen
+44.130.20.114   lx1nw-t #
+44.130.20.120   dl1kmw  # Martin, Aachen
+44.130.20.121   dl2kff  # Fritz Friedhoff, 52074 Aachen
+44.130.20.122   dg1kdd  # Dirk Henning, 52353 Dueren
+44.130.20.123   dg1kdd-svr      #
+44.130.20.200   dl1edb  # Chris Schlaeger, 5100 Aachen; Atari ST
 #
 #44.130.21.x    Bonn/Euskirchen
 44.130.21.1     DL4KW   # Rolf Willerscheid, 5350 Euskirchen
