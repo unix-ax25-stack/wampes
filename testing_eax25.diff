@@ -1,0 +1,1751 @@
+Index: ax25.h
+===================================================================
+RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25.h,v
+retrieving revision 1.26
+diff -c -r1.26 ax25.h
+*** ax25.h	19 Sep 2002 19:11:44 -0000	1.26
+--- ax25.h	21 Sep 2003 11:25:45 -0000
+***************
+*** 29,34 ****
+--- 29,36 ----
+  #define REPEATED        0x80    /* Has-been-repeated bit in repeater field */
+  #define E               0x01    /* Address extension bit */
+  #define C               0x80    /* Command/response designation */
++ #define SSID_DAMA       0x20    /* DAMA flag */
++ #define SSID_EAX25      0x40    /* EAX25 session marker */
+  
+  /* Our AX.25 address */
+  extern uint8 Mycall[];
+***************
+*** 55,60 ****
+--- 57,63 ----
+  	int nextdigi;                   /* Index to next digi in chain */
+  	enum lapb_cmdrsp cmdrsp;        /* Command/response */
+  	int qso_num;                    /* QSO number or -1 */
++ 	uint8 ext;			/* ax25 extensions like DAMA, modulo-128 (EAX25) */
+  };
+  
+  /* AX.25 routing table entry */
+***************
+*** 66,72 ****
+  	int perm;
+  	int jumpstart;
+  	long time;
+! 	int vjcomp;                     /* MW: can do TCP compression */
+  };
+  
+  #define AXROUTESIZE     499
+--- 69,77 ----
+  	int perm;
+  	int jumpstart;
+  	long time;
+! 	int flags;                     
+! #define AXR_VJ		1		/* MW: can do TCP compression */
+! #define AXR_EAX25	2		/* dl9sau: eax25 capable host */
+  };
+  
+  #define AXROUTESIZE     499
+Index: ax25cmd.c
+===================================================================
+RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25cmd.c,v
+retrieving revision 1.19
+diff -c -r1.19 ax25cmd.c
+*** ax25cmd.c	18 Sep 2002 18:56:07 -0000	1.19
+--- ax25cmd.c	21 Sep 2003 11:25:46 -0000
+***************
+*** 30,35 ****
+--- 30,36 ----
+  static int doblimit(int argc,char *argv[],void *p);
+  static int dodigipeat(int argc,char *argv[],void *p);
+  static int domaxframe(int argc,char *argv[],void *p);
++ static int doemaxframe(int argc,char *argv[],void *p);
+  static int domycall(int argc,char *argv[],void *p);
+  static int don2(int argc,char *argv[],void *p);
+  static int dopaclen(int argc,char *argv[],void *p);
+***************
+*** 76,81 ****
+--- 77,83 ----
+  	{ "jumpstart",    dojumpstart,    0, 2, "ax25 jumpstart <call> [ON|OFF]" },
+  	{ "kick",         doaxkick,       0, 2, "ax25 kick <axcb>" },
+  	{ "maxframe",     domaxframe,     0, 0, NULL },
++ 	{ "emaxframe",    doemaxframe,    0, 0, NULL },
+  	{ "mycall",       domycall,       0, 0, NULL },
+  	{ "paclen",       dopaclen,       0, 0, NULL },
+  	{ "pthresh",      dopthresh,      0, 0, NULL },
+***************
+*** 272,283 ****
+  	if(argc < 2){
+  		printf("   &AXCB Rcv-Q Unack  Rt  Srtt  State          Remote\n");
+  		for(axp = Ax25_cb;axp != NULL; axp = axp->next){
+! 			printf("%08lx %5u%c%3u/%u%c %2d%6lu  %-13s  %s\n",
+  			 (long) axp,
+  			 len_p(axp->rxq),
+  			 axp->flags.rnrsent ? '*' : ' ',
+! 			 axp->unack,
+! 			 axp->maxframe,
+  			 axp->flags.remotebusy ? '*' : ' ',
+  			 axp->retries,
+  			 axp->srt,
+--- 274,285 ----
+  	if(argc < 2){
+  		printf("   &AXCB Rcv-Q Unack  Rt  Srtt  State          Remote\n");
+  		for(axp = Ax25_cb;axp != NULL; axp = axp->next){
+! 			printf("%08lx %5u%c%02u/%02u%c %2d%6lu  %-13s  %s\n",
+  			 (long) axp,
+  			 len_p(axp->rxq),
+  			 axp->flags.rnrsent ? '*' : ' ',
+! 			 axp->unack & axp->mmask,
+! 			 axp->maxframe & axp->mmask,
+  			 axp->flags.remotebusy ? '*' : ' ',
+  			 axp->retries,
+  			 axp->srt,
+***************
+*** 311,317 ****
+  	 axp->flags.rejsent ? 'R' : ' ',
+  	 axp->flags.remotebusy ? 'B' : ' ');
+  	printf(" %4d %4d",axp->vs,axp->vr);
+! 	printf(" %02u/%02u %u",axp->unack,axp->maxframe,axp->proto);
+  	printf(" %02u/%02u",axp->retries,axp->n2);
+  	printf(" %s\n",Ax25states[axp->state]);
+  
+--- 313,319 ----
+  	 axp->flags.rejsent ? 'R' : ' ',
+  	 axp->flags.remotebusy ? 'B' : ' ');
+  	printf(" %4d %4d",axp->vs,axp->vr);
+! 	printf(" %02u/%02u %u",axp->unack & axp->mmask,axp->maxframe & axp->mmask,axp->proto);
+  	printf(" %02u/%02u",axp->retries,axp->n2);
+  	printf(" %s\n",Ax25states[axp->state]);
+  
+***************
+*** 488,493 ****
+--- 490,504 ----
+  {
+  	return setintrc(&Maxframe,"Window size (frames)",argc,argv,1,7);
+  }
++ /* Set maximum number of frames that will be allowed in flight for modulo-128 sessions */
++ static int
++ doemaxframe(
++ int argc,
++ char *argv[],
++ void *p)
++ {
++ 	return setintrc(&EMaxframe,"Window size (frames)",argc,argv,1,7);
++ }
+  
+  /* Set maximum length of I-frame data field */
+  static int
+***************
+*** 530,538 ****
+    static struct cmds routecmds[] = {
+  
+  #ifdef	AX25_VJCOMP
+!     { "add",  dorouteadd,  0, 3, "ax25 route add [permanent] [vj] <interface> default|<path>" },
+  #else
+!     { "add",  dorouteadd,  0, 3, "ax25 route add [permanent] <interface> default|<path>" },
+  #endif
+      { "list", doroutelist, 0, 0, NULL },
+      { "stat", doroutestat, 0, 0, NULL },
+--- 541,549 ----
+    static struct cmds routecmds[] = {
+  
+  #ifdef	AX25_VJCOMP
+!     { "add",  dorouteadd,  0, 3, "ax25 route add [permanent] [vj] [eax25] <interface> default|<path>" },
+  #else
+!     { "add",  dorouteadd,  0, 3, "ax25 route add [permanent] [eax25] <interface> default|<path>" },
+  #endif
+      { "list", doroutelist, 0, 0, NULL },
+      { "stat", doroutestat, 0, 0, NULL },
+***************
+*** 560,565 ****
+--- 571,577 ----
+  #endif
+    struct ax25 hdr, hdr1;
+    struct iface *iface;
++   int flags = 0;
+  
+    argc--;
+    argv++;
+***************
+*** 570,580 ****
+    }
+  
+  #ifdef	AX25_VJCOMP
+!   if ((vj = !strcmp(*argv, "vj"))) {
+      argc--;
+      argv++;
+    }
+  #endif
+  
+    if (!(iface = if_lookup(*argv))) {
+      printf("Interface \"%s\" unknown\n", *argv);
+--- 582,598 ----
+    }
+  
+  #ifdef	AX25_VJCOMP
+!   if (!strcmp(*argv, "vj")) {
+!     flags |= AXR_VJ;
+      argc--;
+      argv++;
+    }
+  #endif
++   if (!strcmp(*argv, "eax25")) {
++     flags |= AXR_EAX25;
++     argc--;
++     argv++;
++   }
+  
+    if (!(iface = if_lookup(*argv))) {
+      printf("Interface \"%s\" unknown\n", *argv);
+***************
+*** 589,603 ****
+  
+    if (argc <= 0) {
+  #ifdef	AX25_VJCOMP
+!     printf("Usage: ax25 route add [permanent] <interface> [vj] default|<path>\n");
+  #else
+!     printf("Usage: ax25 route add [permanent] <interface> default|<path>\n");
+  #endif
+      return 1;
+    }
+  
+    if (!strcmp(*argv, "default")) {
+      Axroute_default_ifp = iface;
+      return 0;
+    }
+  
+--- 607,625 ----
+  
+    if (argc <= 0) {
+  #ifdef	AX25_VJCOMP
+!     printf("Usage: ax25 route add [permanent] <interface> [vj] [eax25] default|<path>\n");
+  #else
+!     printf("Usage: ax25 route add [permanent] <interface> [eax25] default|<path>\n");
+  #endif
+      return 1;
+    }
+  
+    if (!strcmp(*argv, "default")) {
+      Axroute_default_ifp = iface;
++     if (flags & AXR_EAX25)
++ 	    iface->flags |= CAP_EAX25;
++     else
++ 	    iface->flags &= ~CAP_EAX25;
+      return 0;
+    }
+  
+***************
+*** 610,621 ****
+    for (i = 0, j = hdr.ndigis - 1; j >= 0; i++, j--)
+      addrcp(hdr1.digis[i], hdr.digis[j]);
+  
+    axroute_add(iface, &hdr1, perm);
+- #ifdef	AX25_VJCOMP
+-   axrp = ax_routeptr(hdr.dest, 1);
+- 			    // ^ dl9sau bugfix: 1, not 0
+-   axrp->vjcomp = vj;
+- #endif
+    return 0;
+  }
+  
+--- 632,642 ----
+    for (i = 0, j = hdr.ndigis - 1; j >= 0; i++, j--)
+      addrcp(hdr1.digis[i], hdr.digis[j]);
+  
++   if ((axrp = ax_routeptr(hdr.dest, 1))) {
++ 			         // ^ dl9sau bugfix: 1, not 0
++   	axrp->flags = flags;
++   }
+    axroute_add(iface, &hdr1, perm);
+    return 0;
+  }
+  
+***************
+*** 630,638 ****
+  	int jumpstart;
+  	int n;
+  	int perm;
+! #ifdef	AX25_VJCOMP
+! 	int vjcomp;
+! #endif
+  	struct ax_route *rp_stack[20];
+  	struct iface *ifp = 0;
+  	struct tm *tm;
+--- 651,657 ----
+  	int jumpstart;
+  	int n;
+  	int perm;
+! 	int flags;
+  	struct ax_route *rp_stack[20];
+  	struct iface *ifp = 0;
+  	struct tm *tm;
+***************
+*** 641,649 ****
+  	pax25(cp = buf, rp->target);
+  	perm = rp->perm;
+  	jumpstart = rp->jumpstart;
+! #ifdef	AX25_VJCOMP
+! 	vjcomp = rp->vjcomp;
+! #endif
+  	for (n = 0; rp; rp = rp->digi) {
+  		rp_stack[++n] = rp;
+  		ifp = rp->ifp;
+--- 660,666 ----
+  	pax25(cp = buf, rp->target);
+  	perm = rp->perm;
+  	jumpstart = rp->jumpstart;
+! 	flags = rp->flags;
+  	for (n = 0; rp; rp = rp->digi) {
+  		rp_stack[++n] = rp;
+  		ifp = rp->ifp;
+***************
+*** 655,663 ****
+  		pax25(cp, rp_stack[i]->target);
+  	}
+  #ifdef	AX25_VJCOMP
+! 	printf("%2d-%.3s  %02d:%02d  %-9s  %c%c%c %s\n",
+  #else
+! 	printf("%2d-%.3s  %02d:%02d  %-9s  %c%c %s\n",
+  #endif
+  	       tm->tm_mday,
+  	       "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
+--- 672,680 ----
+  		pax25(cp, rp_stack[i]->target);
+  	}
+  #ifdef	AX25_VJCOMP
+! 	printf("%2d-%.3s  %02d:%02d  %-9s  %c%c%c%c %s\n",
+  #else
+! 	printf("%2d-%.3s  %02d:%02d  %-9s  %c%c%c %s\n",
+  #endif
+  	       tm->tm_mday,
+  	       "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
+***************
+*** 667,674 ****
+  	       perm ? 'P' : ' ',
+  	       jumpstart ? 'J' : ' ',
+  #ifdef	AX25_VJCOMP
+!                vjcomp ? 'C' : ' ',
+  #endif
+  	       buf);
+  }
+  
+--- 684,692 ----
+  	       perm ? 'P' : ' ',
+  	       jumpstart ? 'J' : ' ',
+  #ifdef	AX25_VJCOMP
+!                (flags & AXR_VJ) ? 'C' : ' ',
+  #endif
++ 	       (flags & AXR_EAX25) ? 'E' : ' ',
+  	       buf);
+  }
+  
+***************
+*** 684,692 ****
+    struct ax_route *rp;
+  
+  #ifdef	AX25_VJCOMP
+!   puts("Date    Time   Interface  PJC Path");
+  #else
+!   puts("Date    Time   Interface  PJ Path");
+  #endif
+    if(argc < 2) {
+      for (i = 0; i < AXROUTESIZE; i++)
+--- 702,710 ----
+    struct ax_route *rp;
+  
+  #ifdef	AX25_VJCOMP
+!   puts("Date    Time   Interface  PJCE Path");
+  #else
+!   puts("Date    Time   Interface  PJE Path");
+  #endif
+    if(argc < 2) {
+      for (i = 0; i < AXROUTESIZE; i++)
+Index: ax25dump.c
+===================================================================
+RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25dump.c,v
+retrieving revision 1.16
+diff -c -r1.16 ax25dump.c
+*** ax25dump.c	18 Sep 2002 18:56:06 -0000	1.16
+--- ax25dump.c	21 Sep 2003 11:25:47 -0000
+***************
+*** 21,41 ****
+  int check       /* Not used */
+  ){
+  	char tmp[AXBUF];
+! 	char frmr[3];
+! 	int control,pid,seg;
+  	uint type;
+  	int unsegmented;
+  	struct ax25 hdr;
+  	uint8 *hp;
+! 	char *is_dama;
+  
+- 	fprintf(fp,"AX25: ");
+  	/* Extract the address header */
+  	if(ntohax25(&hdr,bpp) < 0){
+  		/* Something wrong with the header */
+! 		fprintf(fp," bad header!\n");
+  		return;
+  	}
+  	fprintf(fp,"%s",pax25(tmp,hdr.source));
+  	fprintf(fp,"->%s",pax25(tmp,hdr.dest));
+  	if(hdr.ndigis > 0){
+--- 21,45 ----
+  int check       /* Not used */
+  ){
+  	char tmp[AXBUF];
+! 	//char frmr[3];
+! 	char frmr[5];
+! 	int control,controlx,pid,seg;
+  	uint type;
+  	int unsegmented;
+  	struct ax25 hdr;
+  	uint8 *hp;
+! 	char *s_ext;
+! 	int eax25 = 0;
+  
+  	/* Extract the address header */
+  	if(ntohax25(&hdr,bpp) < 0){
+  		/* Something wrong with the header */
+! 		fprintf(fp,"AX25: bad header!\n");
+  		return;
+  	}
++         eax25 = (hdr.ext & SSID_EAX25);
++ 	s_ext = (hdr.ext & SSID_DAMA) ? " [DAMA]\n" : "\n";
++ 	fprintf(fp, "%sAX25: ", eax25 ? "E" : "");
+  	fprintf(fp,"%s",pax25(tmp,hdr.source));
+  	fprintf(fp,"->%s",pax25(tmp,hdr.dest));
+  	if(hdr.ndigis > 0){
+***************
+*** 49,62 ****
+  	}
+  	if(hdr.qso_num != -1)
+  		fprintf(fp," QSO %d",hdr.qso_num);
+! 	if((control = PULLCHAR(bpp)) == -1)
+  		return;
+! 
+! 	putc(' ',fp);
+  	type = ftype(control);
+  	fprintf(fp,"%s",decode_type(type));
+  	/* Dump poll/final bit */
+! 	if(control & PF){
+  		switch(hdr.cmdrsp){
+  		case LAPB_COMMAND:
+  			fprintf(fp,"(P)");
+--- 53,73 ----
+  	}
+  	if(hdr.qso_num != -1)
+  		fprintf(fp," QSO %d",hdr.qso_num);
+! 	if((control = PULLCHAR(bpp)) == -1) {
+! 		putc('\n',fp);
+  		return;
+! 	}
+  	type = ftype(control);
++ 	if ((type & 0x3) == U)  /* modulo-128 only in I or S frames */
++ 		eax25 = 0;
++ 	if  (eax25 && (controlx = PULLCHAR(bpp)) == -1) {
++ 		putc('\n',fp);
++ 		return;
++ 	}
++ 	putc(' ',fp);
+  	fprintf(fp,"%s",decode_type(type));
+  	/* Dump poll/final bit */
+! 	if(eax25 ? (controlx & 1) : (control & PF)){
+  		switch(hdr.cmdrsp){
+  		case LAPB_COMMAND:
+  			fprintf(fp,"(P)");
+***************
+*** 71,81 ****
+  	}
+  	/* Dump sequence numbers */
+  	if((type & 0x3) != U)   /* I or S frame? */
+! 		fprintf(fp," NR=%d",(control>>5)&7);
+! 	is_dama = (!(hdr.source[ALEN] & 0x20) ? " [DAMA]\n" : "\n");
+  	if(type == I || type == UI){
+  		if(type == I)
+! 			fprintf(fp," NS=%d",(control>>1)&7);
+  		/* Decode I field */
+  		if((pid = PULLCHAR(bpp)) != -1){        /* Get pid */
+  			if(pid == PID_SEGMENT){
+--- 82,91 ----
+  	}
+  	/* Dump sequence numbers */
+  	if((type & 0x3) != U)   /* I or S frame? */
+! 		fprintf(fp," NR=%d",(eax25 ? ((controlx>>1)&0x7f) : (control>>5)&7));
+  	if(type == I || type == UI){
+  		if(type == I)
+! 			fprintf(fp," NS=%d",(eax25 ? ((control>>1) &0x7f) : (control>>1)&7));
+  		/* Decode I field */
+  		if((pid = PULLCHAR(bpp)) != -1){        /* Get pid */
+  			if(pid == PID_SEGMENT){
+***************
+*** 90,152 ****
+  
+  			switch(pid){
+  			case PID_SEGMENT:
+! 				fputs(is_dama, fp);
+  				break;  /* Already displayed */
+  			case PID_ARP:
+! 				fprintf(fp," pid=ARP%s", is_dama);
+  				arp_dump(fp,bpp);
+  				break;
+  			case PID_NETROM:
+! 				fprintf(fp," pid=NET/ROM%s", is_dama);
+  				/* Don't verify checksums unless unsegmented */
+  				netrom_dump(fp,bpp,unsegmented);
+  				break;
+  			case PID_IP:
+! 				fprintf(fp," pid=IP%s", is_dama);
+  				/* Don't verify checksums unless unsegmented */
+  				ip_dump(fp,bpp,unsegmented);
+  				break;
+  #ifdef  AX25_VJCOMP
+                          case PID_VJUNCOMP:
+! 				fprintf(fp," pid=VJ%s", is_dama);
+  				/* Don't verify checksums */
+  				ip_dump(fp,bpp,0);
+  				break;
+                          case PID_VJCOMP:
+!                                 fprintf(fp," pid=VJC%s", is_dama);
+                                  /*sl_dump(fp,bpp,0);*/
+                                  break;
+  #endif
+  			case PID_X25:
+! 				fprintf(fp," pid=X.25%s", is_dama);
+  				break;
+  			case PID_TEXNET:
+! 				fprintf(fp," pid=TEXNET%s", is_dama);
+  				break;
+  			case PID_FLEXNET:
+! 				fprintf(fp," pid=FLEXNET%s", is_dama);
+  				flexnet_dump(fp,bpp);
+  				break;
+  			case PID_NO_L3:
+! 				fprintf(fp," pid=Text%s", is_dama);
+  				break;
+  			default:
+! 				fprintf(fp," pid=0x%x%s",pid, is_dama);
+  			}
+  		}
+! 	} else if(type == FRMR && pullup(bpp,frmr,3) == 3){
+  		fprintf(fp,": %s",decode_type(ftype(frmr[0])));
+! 		fprintf(fp," Vr = %d Vs = %d",(frmr[1] >> 5) & MMASK,
+! 			(frmr[1] >> 1) & MMASK);
+! 		if(frmr[2] & W)
+  			fprintf(fp," Invalid control field");
+! 		if(frmr[2] & X)
+  			fprintf(fp," Illegal I-field");
+! 		if(frmr[2] & Y)
+  			fprintf(fp," Too-long I-field");
+! 		if(frmr[2] & Z)
+  			fprintf(fp," Invalid seq number");
+! 		fputs(is_dama, fp);
+  	} else
+  		putc('\n',fp);
+  
+--- 100,163 ----
+  
+  			switch(pid){
+  			case PID_SEGMENT:
+! 				fputs(s_ext, fp);
+  				break;  /* Already displayed */
+  			case PID_ARP:
+! 				fprintf(fp," pid=ARP%s", s_ext);
+  				arp_dump(fp,bpp);
+  				break;
+  			case PID_NETROM:
+! 				fprintf(fp," pid=NET/ROM%s", s_ext);
+  				/* Don't verify checksums unless unsegmented */
+  				netrom_dump(fp,bpp,unsegmented);
+  				break;
+  			case PID_IP:
+! 				fprintf(fp," pid=IP%s", s_ext);
+  				/* Don't verify checksums unless unsegmented */
+  				ip_dump(fp,bpp,unsegmented);
+  				break;
+  #ifdef  AX25_VJCOMP
+                          case PID_VJUNCOMP:
+! 				fprintf(fp," pid=VJ%s", s_ext);
+  				/* Don't verify checksums */
+  				ip_dump(fp,bpp,0);
+  				break;
+                          case PID_VJCOMP:
+!                                 fprintf(fp," pid=VJC%s", s_ext);
+                                  /*sl_dump(fp,bpp,0);*/
+                                  break;
+  #endif
+  			case PID_X25:
+! 				fprintf(fp," pid=X.25%s", s_ext);
+  				break;
+  			case PID_TEXNET:
+! 				fprintf(fp," pid=TEXNET%s", s_ext);
+  				break;
+  			case PID_FLEXNET:
+! 				fprintf(fp," pid=FLEXNET%s", s_ext);
+  				flexnet_dump(fp,bpp);
+  				break;
+  			case PID_NO_L3:
+! 				fprintf(fp," pid=Text%s", s_ext);
+  				break;
+  			default:
+! 				fprintf(fp," pid=0x%x%s",pid, s_ext);
+  			}
+  		}
+! 	} else if(type == FRMR && pullup(bpp,frmr,(eax25 ? 5 : 3)) == (eax25 ? 5 : 3)){
+  		fprintf(fp,": %s",decode_type(ftype(frmr[0])));
+! 		fprintf(fp," Vr = %d Vs = %d",
+! 			(eax25 ? (frmr[3] >> 1) & EMMASK : (frmr[1] >> 5) & MMASK),
+! 			(eax25 ? (frmr[2] >> 1) & EMMASK : (frmr[1] >> 1) & MMASK));
+! 		if(frmr[eax25 ? 4 : 2] & W)
+  			fprintf(fp," Invalid control field");
+! 		if(frmr[eax25 ? 4 : 2] & X)
+  			fprintf(fp," Illegal I-field");
+! 		if(frmr[eax25 ? 4 : 2] & Y)
+  			fprintf(fp," Too-long I-field");
+! 		if(frmr[eax25 ? 4 : 2] & Z)
+  			fprintf(fp," Invalid seq number");
+! 		fputs(s_ext, fp);
+  	} else
+  		putc('\n',fp);
+  
+***************
+*** 159,164 ****
+--- 170,177 ----
+  		return "I";
+  	case SABM:
+  		return "SABM";
++ 	case SABME:
++ 		return "SABME";
+  	case DISC:
+  		return "DISC";
+  	case DM:
+Index: ax25file.c
+===================================================================
+RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25file.c,v
+retrieving revision 1.20
+diff -c -r1.20 ax25file.c
+*** ax25file.c	12 Jan 2002 15:55:53 -0000	1.20
+--- ax25file.c	21 Sep 2003 11:25:47 -0000
+***************
+*** 8,18 ****
+--- 8,22 ----
+  #include "ax25.h"
+  #include "main.h"
+  
++ #ifdef	notdef
+  #ifdef	AX25_VJCOMP
+  #define AXROUTE_FILE_VERSION    2
+  #else
+  #define AXROUTE_FILE_VERSION    1
+  #endif
++ #else
++ #define	AXROUTE_FILE_VERSION	3
++ #endif
+  #define AXROUTE_HOLDTIME        (0x7fffffff / 1000)
+  #define AXROUTE_SAVETIME        (10L*60L*1000L)
+  
+***************
+*** 41,46 ****
+--- 45,57 ----
+  };
+  #endif
+  
++ struct axroute_saverecord_3 {
++   uint8 call[AXALEN];
++   uint8 digi[AXALEN];
++   long time;
++   int flags;
++ };
++ 
+  static const char axroute_filename[] = "/tcp/axroute_data";
+  static const char axroute_tmpfilename[] = "/tcp/axroute_tmp";
+  
+***************
+*** 52,62 ****
+--- 63,77 ----
+    FILE *fp;
+    int i;
+    static struct timer timer;
++ #if	AXROUTE_FILE_VERSION < 3
+  #ifdef	AX25_VJCOMP
+    struct axroute_saverecord_2 buf;
+  #else
+    struct axroute_saverecord_1 buf;
+  #endif
++ #else
++   struct axroute_saverecord_3 buf;
++ #endif
+    struct ax_route *rp, *lp;
+  
+    if (Debug) return;
+***************
+*** 88,95 ****
+  	if (rp->digi)
+  	  addrcp(buf.digi, rp->digi->target);
+  	buf.time = rp->time;
+  #ifdef	AX25_VJCOMP
+! 	buf.vjcomp = rp->vjcomp;
+  #endif
+  	fwrite((char *) &buf, sizeof(buf), 1, fp);
+  	if (rp->ifp)
+--- 103,114 ----
+  	if (rp->digi)
+  	  addrcp(buf.digi, rp->digi->target);
+  	buf.time = rp->time;
++ #if	AXROUTE_FILE_VERSION < 3
+  #ifdef	AX25_VJCOMP
+! 	buf.flags = rp->flags;
+! #endif
+! #else
+! 	buf.flags = rp->flags;
+  #endif
+  	fwrite((char *) &buf, sizeof(buf), 1, fp);
+  	if (rp->ifp)
+***************
+*** 180,194 ****
+  	rp->time = buf.time;
+        }
+      }
+- #ifdef	AX25_VJCOMP
+    case 2:
+      {
+  
+        char *cp;
+        char ifname[1024];
+        int c;
+        struct ax_route *rp;
+!       struct axroute_saverecord_2 buf;
+        struct iface *ifp;
+  
+        while (fread((char *) &buf, sizeof(buf), 1, fp)) {
+--- 199,213 ----
+  	rp->time = buf.time;
+        }
+      }
+    case 2:
++   case 3:
+      {
+  
+        char *cp;
+        char ifname[1024];
+        int c;
+        struct ax_route *rp;
+!       struct axroute_saverecord_3 buf;
+        struct iface *ifp;
+  
+        while (fread((char *) &buf, sizeof(buf), 1, fp)) {
+***************
+*** 210,219 ****
+          if (valid_remote_call(buf.digi)) rp->digi = ax_routeptr(buf.digi, 1);
+          rp->ifp = ifp;
+          rp->time = buf.time;
+!         rp->vjcomp = buf.vjcomp;
+        }
+      }
+- #endif
+  
+    }
+  
+--- 229,237 ----
+          if (valid_remote_call(buf.digi)) rp->digi = ax_routeptr(buf.digi, 1);
+          rp->ifp = ifp;
+          rp->time = buf.time;
+!         rp->flags = (version > 2 ? buf.flags : ((buf.flags == 1) ? 1 : 0));
+        }
+      }
+  
+    }
+  
+Index: ax25hdr.c
+===================================================================
+RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25hdr.c,v
+retrieving revision 1.11
+diff -c -r1.11 ax25hdr.c
+*** ax25hdr.c	19 Aug 1996 16:30:14 -0000	1.11
+--- ax25hdr.c	21 Sep 2003 11:25:47 -0000
+***************
+*** 65,70 ****
+--- 65,78 ----
+  		cp[ALEN] |= C;
+  	else
+  		cp[ALEN] &= ~C;
++ 	if (hdr->ext & SSID_EAX25)
++ 		cp[ALEN] &= ~SSID_EAX25;
++ 	else
++ 		cp[ALEN] |= SSID_EAX25;
++ 	if (hdr->ext & SSID_DAMA)
++ 		cp[ALEN] &= ~SSID_DAMA;
++ 	else
++ 		cp[ALEN] |= SSID_DAMA;
+  	/* Set E bit on source address if no digis */
+  	if(hdr->ndigis == 0){
+  		cp[ALEN] |= E;
+***************
+*** 137,142 ****
+--- 145,155 ----
+  
+  	hdr->ndigis = 0;
+  	hdr->nextdigi = 0;
++ 	hdr->ext = 0;
++ 	if (!(hdr->source[ALEN] & SSID_EAX25))
++ 		hdr->ext |= SSID_EAX25;
++ 	if (!(hdr->source[ALEN] & SSID_DAMA))
++ 		hdr->ext |= SSID_DAMA;
+  	if(hdr->source[ALEN] & E)
+  		return 2;       /* No digis */
+  
+Index: ax25subr.c
+===================================================================
+RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25subr.c,v
+retrieving revision 1.27
+diff -c -r1.27 ax25subr.c
+*** ax25subr.c	12 Jan 2002 15:55:53 -0000	1.27
+--- ax25subr.c	21 Sep 2003 11:25:47 -0000
+***************
+*** 18,23 ****
+--- 18,24 ----
+  
+  /* Default AX.25 parameters */
+  int   Maxframe = 7;             /* Transmit flow control level */
++ int   EMaxframe = 63;           /* Transmit flow control level in modulo-128 (63 is MAX by spec) */
+  int   N2 = 10;                  /* 10 retries */
+  int   Axwindow = 2048;          /* 2K incoming text before RNR'ing */
+  int   Paclen = 256;             /* 256-byte I fields */
+***************
+*** 86,92 ****
+  	stop_timer(&axp->t5);
+  
+  	/* Free allocated resources */
+! 	for (i = 0; i < 8; i++)
+  		free_p(&axp->reseq[i].bp);
+  	free_q(&axp->txq);
+  	free_q(&axp->rxasm);
+--- 87,93 ----
+  	stop_timer(&axp->t5);
+  
+  	/* Free allocated resources */
+! 	for (i = 0; i < 128; i++)
+  		free_p(&axp->reseq[i].bp);
+  	free_q(&axp->txq);
+  	free_q(&axp->rxasm);
+***************
+*** 122,135 ****
+  		axp = (struct ax25_cb *)callocw(1,sizeof(struct ax25_cb));
+  		axp->next = Ax25_cb;
+  		Ax25_cb = axp;
+- #ifdef	AX25_VJCOMP
+  		/* MW: init structures for VJ */
+                  if ((rp = ax_routeptr(addr, 0)) != NULL) {
+!                     if (rp->vjcomp)
+                          axp->slcomp_enable = 1;
+- 
+-                 }
+  #endif
+  	}
+  	axp->user = 0;
+  	axp->state = LAPB_DISCONNECTED;
+--- 123,136 ----
+  		axp = (struct ax25_cb *)callocw(1,sizeof(struct ax25_cb));
+  		axp->next = Ax25_cb;
+  		Ax25_cb = axp;
+  		/* MW: init structures for VJ */
+                  if ((rp = ax_routeptr(addr, 0)) != NULL) {
+! #ifdef	AX25_VJCOMP
+!                     if (rp->flags & AXR_VJ)
+                          axp->slcomp_enable = 1;
+  #endif
++                 }
++ 		axp->mmask = (rp && (rp->flags & AXR_EAX25)) ? EMMASK : MMASK;
+  	}
+  	axp->user = 0;
+  	axp->state = LAPB_DISCONNECTED;
+***************
+*** 295,301 ****
+  char *argv[],
+  struct ax25 *hdr)
+  {
+!   hdr->ndigis = hdr->nextdigi = 0;
+    if (argc < 1) {
+      printf("Missing call\n");
+      return 1;
+--- 296,302 ----
+  char *argv[],
+  struct ax25 *hdr)
+  {
+!   hdr->ndigis = hdr->nextdigi = hdr->ext = 0;
+    if (argc < 1) {
+      printf("Missing call\n");
+      return 1;
+Index: ax25user.c
+===================================================================
+RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25user.c,v
+retrieving revision 1.13
+diff -c -r1.13 ax25user.c
+*** ax25user.c	1 Feb 1999 22:24:25 -0000	1.13
+--- ax25user.c	21 Sep 2003 11:25:47 -0000
+***************
+*** 32,37 ****
+--- 32,44 ----
+  		if((axp = cr_ax25(hdr->dest)) == NULL)
+  			return NULL;
+  		build_path(axp,NULL,hdr,0);
++ 		if (axp->iface && (axp->iface->flags & CAP_EAX25)) {
++ 			axp->mmask = EMMASK;
++ 		}
++ 		if (axp->mmask == EMMASK)
++ 			axp->hdr.ext |= SSID_EAX25;
++ 		else
++ 			axp->hdr.ext &= ~SSID_EAX25;
+  	}
+  	if(s_upcall != NULL){
+  		axp->r_upcall = r_upcall;
+Index: iface.c
+===================================================================
+RCS file: /var/cvs/ampr/wampes-import/tcp/src/iface.c,v
+retrieving revision 1.35
+diff -c -r1.35 iface.c
+*** iface.c	20 Sep 2002 15:18:50 -0000	1.35
+--- iface.c	21 Sep 2003 11:25:49 -0000
+***************
+*** 30,35 ****
+--- 30,36 ----
+  static int iftxqlen(int argc,char *argv[],void *p);
+  static int ifautoroute(int argc,char *argv[],void *p);
+  static int ifdigiarp(int argc,char *argv[],void *p);
++ static int ifeax25(int argc,char *argv[],void *p);
+  
+  /* Interface list header */
+  struct iface *Ifaces = &Loopback;
+***************
+*** 129,136 ****
+  
+  struct cmds Ifcmds[] = {
+  	{ "autoroute",            ifautoroute,    0,      2,      NULL },
+- 	{ "digiarp",              ifdigiarp,      0,      2,      NULL },
+  	{ "broadcast",            ifbroad,        0,      2,      NULL },
+  	{ "crc",                  ifcrc,          0,      2,      NULL },
+  	{ "encapsulation",        ifencap,        0,      2,      NULL },
+  	{ "forward",              ifforw,         0,      2,      NULL },
+--- 130,138 ----
+  
+  struct cmds Ifcmds[] = {
+  	{ "autoroute",            ifautoroute,    0,      2,      NULL },
+  	{ "broadcast",            ifbroad,        0,      2,      NULL },
++ 	{ "digiarp",              ifdigiarp,      0,      2,      NULL },
++ 	{ "eax25",                ifeax25,        0,      2,      NULL },
+  	{ "crc",                  ifcrc,          0,      2,      NULL },
+  	{ "encapsulation",        ifencap,        0,      2,      NULL },
+  	{ "forward",              ifforw,         0,      2,      NULL },
+***************
+*** 369,374 ****
+--- 371,392 ----
+  	return 0;
+  }
+  
++ static int
++ ifeax25(int argc,char *argv[],void *p)
++ {
++ 	struct iface *ifp = (struct iface *) p;
++ 	int cap_eax25;
++ 
++ 	cap_eax25 = !(ifp->flags & CAP_EAX25);
++ 	setbool(&cap_eax25, "Use EAX25 (modulo-128)", argc, argv);
++ 	if (cap_eax25) {
++ 		ifp->flags |= CAP_EAX25;
++ 	} else {
++ 		ifp->flags &= ~CAP_EAX25;
++ 	}
++ 	return 0;
++ }
++ 
+  /* Set the network mask. This is actually done by installing
+   * a routing entry.
+   */
+***************
+*** 475,480 ****
+--- 493,506 ----
+  	printf("\n");
+  	printf("           recv: ip %lu tot %lu idle %s\n",
+  	 ifp->iprecvcnt,ifp->rawrecvcnt,tformat(secclock() - ifp->lastrecv));
++ 	if (ifp->flags) {
++ 		printf("           flags:");
++ 		if (ifp->flags & NO_RT_ADD)
++ 			printf(" NO_RT_ADD");
++ 		if (ifp->flags & CAP_EAX25)
++ 			printf(" CAP_EAX25");
++ 		printf("\n");
++ 	}
+  	switch (ifp->crccontrol){
+  	default:            printf("           crc off");           break;
+  	case CRC_TEST_16:   printf("           crc-16 test");       break;
+Index: iface.h
+===================================================================
+RCS file: /var/cvs/ampr/wampes-import/tcp/src/iface.h,v
+retrieving revision 1.28
+diff -c -r1.28 iface.h
+*** iface.h	19 Sep 2002 19:11:44 -0000	1.28
+--- iface.h	21 Sep 2003 11:25:50 -0000
+***************
+*** 134,139 ****
+--- 134,140 ----
+  	int32 ax25errors;       /* Packets received with bad ax25 header */
+  	uint flags;             /* Configuration flags */
+  #define NO_RT_ADD       1       /* Don't call rt_add in ip_route */
++ #define	CAP_EAX25	2	/* Interface is modulo-128 capable */
+  };
+  extern struct iface *Ifaces;    /* Head of interface list */
+  extern struct iface  Loopback;  /* Optional loopback interface */
+Index: lapb.c
+===================================================================
+RCS file: /var/cvs/ampr/wampes-import/tcp/src/lapb.c,v
+retrieving revision 1.42
+diff -c -r1.42 lapb.c
+*** lapb.c	12 Jan 2002 15:55:53 -0000	1.42
+--- lapb.c	21 Sep 2003 11:25:50 -0000
+***************
+*** 30,36 ****
+  
+  	struct ax25_cb *axp;    /* Link control structure */
+  	enum lapb_cmdrsp cmdrsp = hdr->cmdrsp;  /* Command/response flag */
+! 	int control;
+  	int class;              /* General class (I/S/U) of frame */
+  	uint type;              /* Specific type (I/RR/RNR/etc) of frame */
+  	char pf;                /* extracted poll/final bit */
+--- 30,36 ----
+  
+  	struct ax25_cb *axp;    /* Link control structure */
+  	enum lapb_cmdrsp cmdrsp = hdr->cmdrsp;  /* Command/response flag */
+! 	int control, controlx;
+  	int class;              /* General class (I/S/U) of frame */
+  	uint type;              /* Specific type (I/RR/RNR/etc) of frame */
+  	char pf;                /* extracted poll/final bit */
+***************
+*** 54,84 ****
+  	}
+  	type = ftype(control);
+  	class = type & 0x3;
+- 	pf = control & PF;
+- 	/* Check for polls and finals */
+- 	if(pf){
+- 		switch(cmdrsp){
+- 		case LAPB_COMMAND:
+- 			poll = YES;
+- 			break;
+- 		case LAPB_RESPONSE:
+- 			final = YES;
+- 			break;
+- 		default:
+- 			break;
+- 		}
+- 	}
+- 	digipeat = (ismyax25addr(hdr->dest) == NULL);
+- 	/* Extract sequence numbers, if present */
+- 	switch(class){
+- 	case I:
+- 	case I+2:
+- 		ns = (control >> 1) & MMASK;
+- 	case S: /* Note fall-thru */
+- 		nr = (control >> 5) & MMASK;
+- 		break;
+- 	}
+  
+  	if(digipeat){
+  		struct ax25_cb *axlast = NULL;
+  		for(axp = Ax25_cb; axp; axlast = axp,axp = axp->next)
+--- 54,61 ----
+  	}
+  	type = ftype(control);
+  	class = type & 0x3;
+  
++ 	digipeat = (ismyax25addr(hdr->dest) == NULL);
+  	if(digipeat){
+  		struct ax25_cb *axlast = NULL;
+  		for(axp = Ax25_cb; axp; axlast = axp,axp = axp->next)
+***************
+*** 103,108 ****
+--- 80,115 ----
+  		}
+  	}
+  
++ 	if (class == U || axp->mmask != EMMASK)
++ 		pf = control & PF;
++ 	else {
++ 		if ((controlx = PULLCHAR(bpp)) == -1)
++ 			return -1;
++ 		pf = (controlx & 1);
++ 	}
++ 	/* Check for polls and finals */
++ 	if(pf){
++ 		switch(cmdrsp){
++ 		case LAPB_COMMAND:
++ 			poll = YES;
++ 			break;
++ 		case LAPB_RESPONSE:
++ 			final = YES;
++ 			break;
++ 		default:
++ 			break;
++ 		}
++ 	}
++ 	/* Extract sequence numbers, if present */
++ 	switch(class){
++ 	case I:
++ 	case I+2:
++ 		ns = (control >> 1) & axp->mmask;
++ 	case S: /* Note fall-thru */
++ 		nr = (axp->mmask == EMMASK ? (controlx >> 1 & EMMASK) : (control >> 5) & MMASK);
++ 		break;
++ 	}
++ 
+  	if(cmdrsp == LAPB_UNKNOWN)
+  		axp->proto = V1;        /* Old protocol in use */
+  
+***************
+*** 110,115 ****
+--- 117,126 ----
+  	switch(axp->state){
+  	case LAPB_DISCONNECTED:
+  		switch(type){
++ 		case SABME:      /* Initialize or reset link modulo-128 */
++ 			axp->mmask = EMMASK;
++ 			axp->hdr.ext |= SSID_EAX25;
++ 			/* fall through */
+  		case SABM:      /* Initialize or reset link */
+  			if(!digipeat){
+  			sendctl(axp,LAPB_RESPONSE,UA|pf);       /* Always accept */
+***************
+*** 130,140 ****
+                                axp->slcomp = NULL;
+                                printf("VJ reset on ax_bc %p\n", axp);
+                              }
+!                             if (axr && axr->vjcomp) {
+                                  axp->slcomp_enable = 1;
+                                  printf("VJ init on ax_cb %p\n", axp);
+                              }
+  #endif
+  			}
+  			} else {
+  				switch(axp->peer->state){
+--- 141,153 ----
+                                axp->slcomp = NULL;
+                                printf("VJ reset on ax_bc %p\n", axp);
+                              }
+!                             if (axr && (axr->flags & AXR_VJ)) {
+                                  axp->slcomp_enable = 1;
+                                  printf("VJ init on ax_cb %p\n", axp);
+                              }
+  #endif
++ 			    if (axp->mmask == EMMASK)
++ 				    axr->flags |= AXR_EAX25;
+  			}
+  			} else {
+  				switch(axp->peer->state){
+***************
+*** 177,182 ****
+--- 190,203 ----
+  		break;
+  	case LAPB_SETUP:
+  		switch(type){
++ 		case SABME:
++ 			if (axp->mmask != EMMASK) {
++ 				struct ax_route *axr;
++ 				if ((axr = ax_routeptr(axp->hdr.dest,0)))
++ 					axr->flags |= AXR_EAX25;
++ 				axp->hdr.ext |= SSID_EAX25;
++ 			}
++ 			/* fall through */
+  		case SABM:      /* Simultaneous open */
+  			sendctl(axp,LAPB_RESPONSE,UA|pf);
+  			break;
+***************
+*** 185,190 ****
+--- 206,219 ----
+  			break;
+  		case UA:        /* Connection accepted */
+  			/* Note: xmit queue not cleared */
++ 			{ struct ax_route *axr;
++ 			  if ((axr = ax_routeptr(axp->hdr.dest,0))) {
++ 				if (axp->mmask == EMMASK)
++ 					axr->flags |= AXR_EAX25;
++ 			  	else
++ 					axr->flags &= ~AXR_EAX25;
++ 			  }
++ 			}
+  			stop_timer(&axp->t1);
+  			start_timer(&axp->t3);
+  			start_timer(&axp->t5);
+***************
+*** 198,203 ****
+--- 227,234 ----
+  			}
+  			break;
+  		case DM:        /* Connection refused */
++ 			if (axp->mmask == EMMASK)
++ 					goto lapb_setup_eax25_fail;
+  			if(axp->peer)
+  				sendctl(axp->peer,LAPB_RESPONSE,DM|PF);
+  			free_q(&axp->txq);
+***************
+*** 206,217 ****
+--- 237,272 ----
+  			lapbstate(axp,LAPB_DISCONNECTED);
+  			free_p(bpp);
+  			return 0;
++ 		case FRMR: 
++ 			if (axp->mmask == EMMASK) {
++ 				struct ax_route *axr;
++ lapb_setup_eax25_fail:
++ 				free_p(bpp);
++ 				/* will try normal SABM. if we get also DM, then
++ 				 * the DM meant that there's no open service.
++ 				 * if UA, then this DM / FRMR occured
++ 				 * because the remote site is not eax25 capable
++ 				 */
++ 				axp->mmask = MMASK;
++ 				axp->hdr.ext &= ~SSID_EAX25;
++ 				sendctl(axp,LAPB_COMMAND,SABM|PF);
++ 				free_p(bpp);
++ 			}
++ 			break;
+  		default:        /* All other frames ignored */
+  			break;
+  		}
+  		break;
+  	case LAPB_DISCPENDING:
+  		switch(type){
++ 		case SABME:
++ 			if (axp->mmask != EMMASK) {
++ 				struct ax_route *axr;
++ 				if ((axr = ax_routeptr(axp->hdr.dest,0)))
++ 					axr->flags |= AXR_EAX25;
++ 				axp->hdr.ext |= SSID_EAX25;
++ 			}
++ 			/* fall through */
+  		case SABM:
+  			sendctl(axp,LAPB_RESPONSE,DM|pf);
+  			break;
+***************
+*** 232,245 ****
+  		break;
+  	case LAPB_CONNECTED:
+  		switch(type){
+  		case SABM:
+  			sendctl(axp,LAPB_RESPONSE,UA|pf);
+  			clr_ex(axp);
+  			/* free_q(&axp->txq); */
+  			stop_timer(&axp->t1);
+  			start_timer(&axp->t3);
+  			start_timer(&axp->t5);
+! 			for(tmp = 0; tmp < 8; tmp++){
+  				free_p(&axp->reseq[tmp].bp);
+  			}
+  			axp->unack = axp->vr = axp->vs = 0;
+--- 287,326 ----
+  		break;
+  	case LAPB_CONNECTED:
+  		switch(type){
++ 		case SABME:
++ 			if (axp->mmask != EMMASK) {
++ 				axp->mmask = EMMASK;
++ 				axp->hdr.ext |= SSID_EAX25;
++ 				if(axp->peer)
++ 					sendctl(axp->peer,LAPB_RESPONSE,DM|PF);
++ 				free_q(&axp->txq);
++ 				stop_timer(&axp->t1);
++ 				axp->reason = LB_NORMAL;
++ 				lapbstate(axp,LAPB_DISCONNECTED);
++ 				free_p(bpp);
++ 				return 0;
++ 			}
++ 			break;
+  		case SABM:
++ 			if (axp->mmask == EMMASK) {
++ 				axp->hdr.ext &= ~SSID_EAX25;
++ 				axp->mmask = MMASK;
++ 				if(axp->peer)
++ 					sendctl(axp->peer,LAPB_RESPONSE,DM|PF);
++ 				free_q(&axp->txq);
++ 				stop_timer(&axp->t1);
++ 				axp->reason = LB_NORMAL;
++ 				lapbstate(axp,LAPB_DISCONNECTED);
++ 				free_p(bpp);
++ 				return 0;
++ 			}
+  			sendctl(axp,LAPB_RESPONSE,UA|pf);
+  			clr_ex(axp);
+  			/* free_q(&axp->txq); */
+  			stop_timer(&axp->t1);
+  			start_timer(&axp->t3);
+  			start_timer(&axp->t5);
+! 			for(tmp = 0; tmp < 128; tmp++){
+  				free_p(&axp->reseq[tmp].bp);
+  			}
+  			axp->unack = axp->vr = axp->vs = 0;
+***************
+*** 327,339 ****
+  		break;
+  	case LAPB_RECOVERY:
+  		switch(type){
+  		case SABM:
+  			sendctl(axp,LAPB_RESPONSE,UA|pf);
+  			clr_ex(axp);
+  			stop_timer(&axp->t1);
+  			start_timer(&axp->t3);
+  			start_timer(&axp->t5);
+! 			for(tmp = 0; tmp < 8; tmp++){
+  				free_p(&axp->reseq[tmp].bp);
+  			}
+  			axp->unack = axp->vr = axp->vs = 0;
+--- 408,445 ----
+  		break;
+  	case LAPB_RECOVERY:
+  		switch(type){
++ 		case SABME:
++ 			if (axp->mmask != EMMASK) {
++ 				axp->mmask = EMMASK;
++ 				axp->hdr.ext |= SSID_EAX25;
++ 				if(axp->peer)
++ 					sendctl(axp->peer,LAPB_RESPONSE,DM|PF);
++ 				free_q(&axp->txq);
++ 				stop_timer(&axp->t1);
++ 				axp->reason = LB_NORMAL;
++ 				lapbstate(axp,LAPB_DISCONNECTED);
++ 				free_p(bpp);
++ 				return 0;
++ 			}
+  		case SABM:
++ 			if (axp->mmask == EMMASK) {
++ 				axp->mmask = MMASK;
++ 				axp->hdr.ext &= ~SSID_EAX25;
++ 				if(axp->peer)
++ 					sendctl(axp->peer,LAPB_RESPONSE,DM|PF);
++ 				free_q(&axp->txq);
++ 				stop_timer(&axp->t1);
++ 				axp->reason = LB_NORMAL;
++ 				lapbstate(axp,LAPB_DISCONNECTED);
++ 				free_p(bpp);
++ 				return 0;
++ 			}
+  			sendctl(axp,LAPB_RESPONSE,UA|pf);
+  			clr_ex(axp);
+  			stop_timer(&axp->t1);
+  			start_timer(&axp->t3);
+  			start_timer(&axp->t5);
+! 			for(tmp = 0; tmp < 128; tmp++){
+  				free_p(&axp->reseq[tmp].bp);
+  			}
+  			axp->unack = axp->vr = axp->vs = 0;
+***************
+*** 498,504 ****
+  	 * If we try to free a null pointer,
+  	 * then we have a frame reject condition.
+  	 */
+! 	oldest = (axp->vs - axp->unack) & MMASK;
+  	while(axp->unack != 0 && oldest != n){
+  		if((bp = dequeue(&axp->txq)) == NULL){
+  			/* Acking unsent frame */
+--- 604,610 ----
+  	 * If we try to free a null pointer,
+  	 * then we have a frame reject condition.
+  	 */
+! 	oldest = (axp->vs - axp->unack) & axp->mmask;
+  	while(axp->unack != 0 && oldest != n){
+  		if((bp = dequeue(&axp->txq)) == NULL){
+  			/* Acking unsent frame */
+***************
+*** 521,534 ****
+  				axp->mdev = ((axp->mdev*3) + abserr + 2) >> 2;
+  				/* Update timeout */
+  				tmp = 4*axp->mdev+axp->srt;
+! 				set_timer(&axp->t1,max(tmp,500));
+! 				if(axp->maxframe < Maxframe)
+  					axp->maxframe++;
+  			}
+  			axp->flags.retrans = 0;
+  		}
+  		axp->retries = 0;
+! 		oldest = (oldest + 1) & MMASK;
+  	}
+  	if(axp->unack == 0){
+  		/* All frames acked, stop timeout */
+--- 627,640 ----
+  				axp->mdev = ((axp->mdev*3) + abserr + 2) >> 2;
+  				/* Update timeout */
+  				tmp = 4*axp->mdev+axp->srt;
+! 				set_timer(&axp->t1,(max(tmp,500)));
+! 				if(axp->maxframe < (axp->mmask == EMMASK ? EMaxframe : Maxframe));
+  					axp->maxframe++;
+  			}
+  			axp->flags.retrans = 0;
+  		}
+  		axp->retries = 0;
+! 		oldest = (oldest + 1) & axp->mmask;
+  	}
+  	if(axp->unack == 0){
+  		/* All frames acked, stop timeout */
+***************
+*** 541,547 ****
+  	if(rex_all){
+  		axp->flags.retrans = 1;
+  		axp->vs -= axp->unack;
+! 		axp->vs &= MMASK;
+  		axp->unack = 0;
+  	}
+  	if(acked != 0){
+--- 647,653 ----
+  	if(rex_all){
+  		axp->flags.retrans = 1;
+  		axp->vs -= axp->unack;
+! 		axp->vs &= axp->mmask;
+  		axp->unack = 0;
+  	}
+  	if(acked != 0){
+***************
+*** 593,599 ****
+  inv_rex(struct ax25_cb *axp)
+  {
+  	axp->vs -= axp->unack;
+! 	axp->vs &= MMASK;
+  	axp->unack = 0;
+  }
+  /* Send S or U frame to currently connected station */
+--- 699,705 ----
+  inv_rex(struct ax25_cb *axp)
+  {
+  	axp->vs -= axp->unack;
+! 	axp->vs &= axp->mmask;
+  	axp->unack = 0;
+  }
+  /* Send S or U frame to currently connected station */
+***************
+*** 603,608 ****
+--- 709,715 ----
+  enum lapb_cmdrsp cmdrsp,
+  int cmd
+  ){
++ 	int cmdx = -1;
+  	switch(cmd & ~PF){
+  	case RR:
+  	case REJ:
+***************
+*** 612,621 ****
+  	case RNR:
+  		axp->flags.rnrsent = 1;
+  		break;
+  	}
+! 	if((ftype((char)cmd) & 0x3) == S)       /* Insert V(R) if S frame */
+! 		cmd |= (axp->vr << 5);
+! 	return sendframe(axp,cmdrsp,cmd,NULL);
+  }
+  /* Start data transmission on link, if possible
+   * Return number of frames sent
+--- 719,737 ----
+  	case RNR:
+  		axp->flags.rnrsent = 1;
+  		break;
++ 	case SABM:
++ 		if (axp->mmask == EMMASK)
++ 			cmd = SABME | (cmd & PF);
++ 		break;
+  	}
+! 	if((ftype((char)cmd) & 0x3) == S) {       /* Insert V(R) if S frame */
+! 		if (axp->mmask == EMMASK) {
+! 			cmdx = ((cmd & PF) ? 1 : 0) | (axp->vr << 1);
+! 			cmd &= 0x7;		  /* clears upper four bits incl. PF */
+! 		}
+! 		else cmd |= (axp->vr << 5);
+! 	}
+! 	return sendframe(axp,cmdrsp,cmd,cmdx,NULL);
+  }
+  /* Start data transmission on link, if possible
+   * Return number of frames sent
+***************
+*** 626,631 ****
+--- 742,748 ----
+  	struct mbuf *bp;
+  	struct mbuf *tbp;
+  	char control;
++ 	char controlx = 0;
+  	int sent = 0;
+  	int i;
+  
+***************
+*** 646,657 ****
+  	 * or when there are no more frames to send
+  	 */
+  	while(bp != NULL && axp->unack < axp->maxframe){
+! 		control = I | (axp->vs++ << 1) | (axp->vr << 5);
+! 		axp->vs &= MMASK;
+  		dup_p(&tbp,bp,0,len_p(bp));
+  		if(tbp == NULL)
+  			return sent;    /* Probably out of memory */
+! 		sendframe(axp,LAPB_COMMAND,control,&tbp);
+  		axp->unack++;
+  		/* We're implicitly acking any data he's sent, so stop any
+  		 * delayed ack
+--- 763,778 ----
+  	 * or when there are no more frames to send
+  	 */
+  	while(bp != NULL && axp->unack < axp->maxframe){
+! 		if (axp->mmask == EMMASK) {
+! 			control = I | (axp->vs++ << 1);
+! 			controlx = 0 | (axp->vr << 1);
+! 		} else
+! 			control = I | (axp->vs++ << 1) | (axp->vr << 5);
+! 		axp->vs &= axp->mmask;
+  		dup_p(&tbp,bp,0,len_p(bp));
+  		if(tbp == NULL)
+  			return sent;    /* Probably out of memory */
+! 		sendframe(axp,LAPB_COMMAND,control,(axp->mmask == EMMASK ? controlx : -1), &tbp);
+  		axp->unack++;
+  		/* We're implicitly acking any data he's sent, so stop any
+  		 * delayed ack
+***************
+*** 666,672 ****
+  		bp = bp->anext;
+  		if(!axp->flags.rtt_run){
+  			/* Start round trip timer */
+! 			axp->rtt_seq = (control >> 1) & MMASK;
+  			axp->rtt_time = msclock();
+  			axp->flags.rtt_run = 1;
+  		}
+--- 787,793 ----
+  		bp = bp->anext;
+  		if(!axp->flags.rtt_run){
+  			/* Start round trip timer */
+! 			axp->rtt_seq = ((control >> 1) & axp->mmask);
+  			axp->rtt_time = msclock();
+  			axp->flags.rtt_run = 1;
+  		}
+***************
+*** 679,684 ****
+--- 800,806 ----
+  struct ax25_cb *axp,
+  enum lapb_cmdrsp cmdrsp,
+  int ctl,
++ int ctlx,
+  struct mbuf **bpp
+  ){
+  	struct iface *ifp;
+***************
+*** 688,693 ****
+--- 810,820 ----
+  		bp = NULL;
+  		bpp = &bp;
+  	}
++ 	// fill from left
++ 	if (ctlx != -1) {
++ 		pushdown(bpp,NULL,1);
++ 		(*bpp)->data[0] = ctlx;
++ 	}
+  	pushdown(bpp,NULL,1);
+  	(*bpp)->data[0] = ctl;
+  	if ((ctl & 3) != U)
+***************
+*** 759,765 ****
+  		return;
+  
+  	rp = &axp->reseq[ns];
+! 	if(ns != ((axp->vr - 1) & MMASK) && rp->bp == NULL){
+  		for(sum = 0,tp = *bpp;tp;tp = tp->next)
+  			for(p = tp->data,cnt = tp->cnt;cnt > 0;cnt--)
+  				sum += *p++;
+--- 886,892 ----
+  		return;
+  
+  	rp = &axp->reseq[ns];
+! 	if(ns != ((axp->vr - 1) & axp->mmask) && rp->bp == NULL){
+  		for(sum = 0,tp = *bpp;tp;tp = tp->next)
+  			for(p = tp->data,cnt = tp->cnt;cnt > 0;cnt--)
+  				sum += *p++;
+***************
+*** 774,784 ****
+  
+  	old_vr = axp->vr;
+  	while(axp->reseq[axp->vr].bp != NULL){
+! 		axp->vr = (axp->vr + 1) & MMASK;
+  		axp->flags.rejsent = NO;
+  	}
+  	rejcond = 0;
+! 	for(tmp = (axp->vr + 1) & MMASK;tmp != old_vr;tmp = (tmp + 1) & MMASK)
+  		if(axp->reseq[tmp].bp != NULL){
+  			rejcond = 1;
+  			break;
+--- 901,911 ----
+  
+  	old_vr = axp->vr;
+  	while(axp->reseq[axp->vr].bp != NULL){
+! 		axp->vr = (axp->vr + 1) & axp->mmask;
+  		axp->flags.rejsent = NO;
+  	}
+  	rejcond = 0;
+! 	for(tmp = (axp->vr + 1) & axp->mmask;tmp != old_vr;tmp = (tmp + 1) & axp->mmask)
+  		if(axp->reseq[tmp].bp != NULL){
+  			rejcond = 1;
+  			break;
+***************
+*** 797,803 ****
+  
+  	while((bp = axp->reseq[old_vr].bp) != NULL){
+  		axp->reseq[old_vr].bp = NULL;
+! 		old_vr = (old_vr + 1) & MMASK;
+  		if(axp->peer)
+  			send_ax25(axp->peer,&bp,-1);
+  		else
+--- 924,930 ----
+  
+  	while((bp = axp->reseq[old_vr].bp) != NULL){
+  		axp->reseq[old_vr].bp = NULL;
+! 		old_vr = (old_vr + 1) & axp->mmask;
+  		if(axp->peer)
+  			send_ax25(axp->peer,&bp,-1);
+  		else
+***************
+*** 937,943 ****
+  
+  	axp = (struct ax25_cb *)p;
+  	if (!axp->flags.rejsent) {
+! 		for (i = 0; i < 8; i++) {
+  			if (axp->reseq[i].bp) {
+  				axp->flags.rejsent = YES;
+  				sendctl(axp, LAPB_RESPONSE, REJ);
+--- 1064,1070 ----
+  
+  	axp = (struct ax25_cb *)p;
+  	if (!axp->flags.rejsent) {
+! 		for (i = 0; i < 128; i++) {
+  			if (axp->reseq[i].bp) {
+  				axp->flags.rejsent = YES;
+  				sendctl(axp, LAPB_RESPONSE, REJ);
+Index: lapb.h
+===================================================================
+RCS file: /var/cvs/ampr/wampes-import/tcp/src/lapb.h,v
+retrieving revision 1.26
+diff -c -r1.26 lapb.h
+*** lapb.h	12 Jan 2002 15:55:53 -0000	1.26
+--- lapb.h	21 Sep 2003 11:25:50 -0000
+***************
+*** 32,38 ****
+  #define RNR     0x05    /* Receiver not ready */
+  #define REJ     0x09    /* Reject */
+  #define U       0x03    /* Unnumbered frames */
+! #define SABM    0x2f    /* Set Asynchronous Balanced Mode */
+  #define DISC    0x43    /* Disconnect */
+  #define DM      0x0f    /* Disconnected mode */
+  #define UA      0x63    /* Unnumbered acknowledge */
+--- 32,39 ----
+  #define RNR     0x05    /* Receiver not ready */
+  #define REJ     0x09    /* Reject */
+  #define U       0x03    /* Unnumbered frames */
+! #define SABM    0x2f    /* Set Asynchronous Balanced Mode modulo-8 */
+! #define SABME   0x6f    /* Set Asynchronous Balanced Mode moduluo-128 */
+  #define DISC    0x43    /* Disconnect */
+  #define DM      0x0f    /* Disconnected mode */
+  #define UA      0x63    /* Unnumbered acknowledge */
+***************
+*** 41,46 ****
+--- 42,48 ----
+  #define PF      0x10    /* Poll/final bit */
+  
+  #define MMASK   7       /* Mask for modulo-8 sequence numbers */
++ #define EMMASK  0x7f    /* Mask for modulo-128 sequence numbers */
+  
+  /* FRMR reason bits */
+  #define W       1       /* Invalid control field */
+***************
+*** 82,88 ****
+  	struct iface *iface;            /* Interface */
+  
+  	struct mbuf *txq;               /* Transmit queue */
+! 	struct axreseq reseq[8];        /* Receive resequence buffer */
+  	struct mbuf *rxasm;             /* Receive reassembly buffer */
+  	struct mbuf *rxq;               /* Receive queue */
+  
+--- 84,91 ----
+  	struct iface *iface;            /* Interface */
+  
+  	struct mbuf *txq;               /* Transmit queue */
+! 	//struct axreseq reseq[8];        /* Receive resequence buffer */
+! 	struct axreseq reseq[128];        /* Receive resequence buffer: 8 for modulo-8, up to 128 possible, even if EMaxframe 64 is recommended */
+  	struct mbuf *rxasm;             /* Receive reassembly buffer */
+  	struct mbuf *rxq;               /* Receive queue */
+  
+***************
+*** 140,145 ****
+--- 143,149 ----
+  	struct slcompress *slcomp;      /* MW: TCP header compression table */
+  	int slcomp_enable;              /* MW: compression enable flag */
+  #endif
++ 	uint8	mmask;			/* modulo-8 or modulo-128 session */
+  };
+  /* Linkage to network protocols atop ax25 */
+  struct axlink {
+***************
+*** 157,163 ****
+  extern struct ax25_cb Ax25default,*Ax25_cb;
+  extern char *Ax25states[],*Axreasons[];
+  extern int32 Axirtt,Blimit;
+! extern int N2,Maxframe,Paclen,Pthresh,Axwindow;
+  extern enum lapb_version Axversion;
+  
+  extern int T1init;                      /* Retransmission timeout */
+--- 161,167 ----
+  extern struct ax25_cb Ax25default,*Ax25_cb;
+  extern char *Ax25states[],*Axreasons[];
+  extern int32 Axirtt,Blimit;
+! extern int N2,Maxframe,EMaxframe,Paclen,Pthresh,Axwindow;
+  extern enum lapb_version Axversion;
+  
+  extern int T1init;                      /* Retransmission timeout */
+***************
+*** 197,203 ****
+  int lapb_output(struct ax25_cb *axp);
+  struct mbuf *segmenter(struct mbuf **bp,uint ssize);
+  int sendctl(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int cmd);
+! int sendframe(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int ctl,struct mbuf **data);
+  void axnl3(struct iface *iface,struct ax25_cb *axp,uint8 *src,
+  	uint8 *dest,struct mbuf **bp,int mcast);
+  int busy(struct ax25_cb *cp);
+--- 201,207 ----
+  int lapb_output(struct ax25_cb *axp);
+  struct mbuf *segmenter(struct mbuf **bp,uint ssize);
+  int sendctl(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int cmd);
+! int sendframe(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int ctl, int ctl2,struct mbuf **data);
+  void axnl3(struct iface *iface,struct ax25_cb *axp,uint8 *src,
+  	uint8 *dest,struct mbuf **bp,int mcast);
+  int busy(struct ax25_cb *cp);
+Index: lapbtime.c
+===================================================================
+RCS file: /var/cvs/ampr/wampes-import/tcp/src/lapbtime.c,v
+retrieving revision 1.10
+diff -c -r1.10 lapbtime.c
+*** lapbtime.c	19 Aug 1996 16:30:14 -0000	1.10
+--- lapbtime.c	21 Sep 2003 11:25:51 -0000
+***************
+*** 108,118 ****
+  	 */
+  	if(axp->txq != NULL
+  	 && (len_p(axp->txq) < axp->pthresh || axp->proto == V1)){
+  		/* Retransmit oldest unacked I-frame */
+  		dup_p(&bp,axp->txq,0,len_p(axp->txq));
+! 		ctl = PF | I | (((axp->vs - axp->unack) & MMASK) << 1)
+! 		 | (axp->vr << 5);
+! 		sendframe(axp,LAPB_COMMAND,ctl,&bp);
+  	} else {
+  		ctl = busy(axp)                      ? RNR|PF : RR|PF;
+  		sendctl(axp,LAPB_COMMAND,ctl);
+--- 108,122 ----
+  	 */
+  	if(axp->txq != NULL
+  	 && (len_p(axp->txq) < axp->pthresh || axp->proto == V1)){
++ 		int ctlx = -1;
+  		/* Retransmit oldest unacked I-frame */
+  		dup_p(&bp,axp->txq,0,len_p(axp->txq));
+! 		ctl = I | (((axp->vs - axp->unack) & axp->mmask) << 1);
+! 		if (axp->mmask == EMMASK) {
+!                 	ctlx = PF | ((axp->vr & EMMASK) << 1);
+! 		} else
+! 			ctl |= (PF | (axp->vr << 5));
+! 		sendframe(axp,LAPB_COMMAND,ctl,ctlx,&bp);
+  	} else {
+  		ctl = busy(axp)                      ? RNR|PF : RR|PF;
+  		sendctl(axp,LAPB_COMMAND,ctl);
