@@ -1,6 +1,6 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/rip,v 1.1 1994/07/12 16:32:26 deyke Exp $
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/rip,v 1.2 1994/07/13 15:49:00 deyke Exp $
 .H 2 "rip" " \fIsubcommand\fP"
-These commands control the RIP service.
+These commands control the Routing Information Protocol (RIP) service.
 .H 3 "rip accept" " \fIgateway\fP"
 Remove the specified gateway from the RIP filter table, allowing future
 broadcasts from that gateway to be accepted.

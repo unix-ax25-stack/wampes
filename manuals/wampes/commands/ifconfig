@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ifconfig,v 1.1 1994/07/12 16:32:25 deyke Exp $
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ifconfig,v 1.2 1994/07/13 15:48:59 deyke Exp $
 .H 2 "ifconfig" " [\fIinterface\fP [[\fIsubcommand\fP \fIparameter\fP] ...]"
 Without arguments display the status of all interfaces.
 When only \fIinterface\fP is given, the status of this interface is displayed.
@@ -40,7 +40,13 @@ Set the sub-net mask for this interface.
 The \fIaddress\fP takes the form of an IP address
 with 1's in the network and subnet parts of the address,
 and 0's in the host part of the address.
-Sample: ifconfig ec0 netmask 0xffffff00 for a class C network (24 bits).
+Sample:
+.DS I
+.ft CW
+ifconfig ec0 netmask 0xffffff00
+.ft P
+.DE
+for a class C network (24 bits).
 This is related to the \fBbroadcast\fP sub-command.
 See also the \fBroute\fP command.
 .H 3 "ifconfig \fIinterface\fP rxbuf" " \fIsize\fP"

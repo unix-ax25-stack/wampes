@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/tcp,v 1.1 1994/07/12 16:32:27 deyke Exp $
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/tcp,v 1.2 1994/07/13 15:49:02 deyke Exp $
 .H 2 "tcp" " \fIsubcommand\fP"
 These commands control the Transmission Control Protocol service.
 .H 3 "tcp irtt" " [\fImilliseconds\fP]"
@@ -43,11 +43,11 @@ sizes, local and remote sockets, and connection state. If \fItcb_addr\fP is
 specified, a more detailed dump of the specified TCB is generated, including
 send and receive sequence numbers and timer information.
 .H 3 "tcp syndata" " [on|off]"
-Display or set the tcp syn+data pigybacking flag. Some tcp systems cannot
-handle syn+data together.
+Display or set the TCP SYN+data piggybacking flag.
+Some TCP implementations cannot handle SYN+data together.
 The default is \fBoff\fP.
 .H 3 "tcp trace" " [on|off]"
-Display or set the tcp trace flag.
+Display or set the TCP trace flag.
 The default is \fBoff\fP.
 .H 3 "tcp window" " [\fIsize\fP]"
 Display or set the default receive window size in bytes to be used by TCP

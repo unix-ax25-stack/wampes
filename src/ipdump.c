@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.7 1993/05/17 13:44:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.8 1994/07/13 15:48:37 deyke Exp $ */
 
 /* IP header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -68,6 +68,7 @@ int check;
 		return;
 	}
 	switch(uchar(ip.protocol)){
+	case IP4_PTCL:
 	case IP_PTCL:
 		fprintf(fp," prot IP\n");
 		ip_dump(fp,bpp,check);

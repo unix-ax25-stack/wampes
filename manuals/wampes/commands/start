@@ -1,27 +1,44 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/start,v 1.1 1994/07/12 16:32:27 deyke Exp $
-.H 2 "start" " \fIserver\fP"
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/start,v 1.2 1994/07/13 15:49:01 deyke Exp $
+.H 2 "start" " \fIserver\fP [\fIarguments\fP]"
 Start the specified server, allowing remote connection requests.
 .H 3 "start ax25"
-TO BE WRITTEN.
-.H 3 "start discard"
-TO BE WRITTEN.
-.H 3 "start domain"
-TO BE WRITTEN.
-.H 3 "start echo"
-TO BE WRITTEN.
-.H 3 "start ftp"
-TO BE WRITTEN.
-.H 3 "start tcpgate"
+Start the AX.25 Login server.
+MORE TO BE WRITTEN.
+.H 3 "start discard" " [\fIport\fP]"
+Start the TCP DISCARD server.
+The default \fIport\fP is 9.
+MORE TO BE WRITTEN.
+.H 3 "start domain" " [\fIport\fP]"
+Start the TCP/UDP DOMAIN server.
+The default \fIport\fP is 53.
+MORE TO BE WRITTEN.
+.H 3 "start echo" " [\fIport\fP]"
+Start the TCP ECHO server.
+The default \fIport\fP is 7.
+MORE TO BE WRITTEN.
+.H 3 "start ftp" " [\fIport\fP]"
+Start the TCP FTP server.
+The default \fIport\fP is 21.
+MORE TO BE WRITTEN.
+.H 3 "start tcpgate" " \fIport\fP [\fIhost\fP[:\fIservice\fP]]"
 TO BE WRITTEN.
 .H 3 "start netrom"
-TO BE WRITTEN.
+Start the NET/ROM Login server.
+MORE TO BE WRITTEN.
 .H 3 "start rip"
-TO BE WRITTEN.
+Start the UDP RIP server on port 520.
+MORE TO BE WRITTEN.
 .H 3 "start sntp"
-TO BE WRITTEN.
-.H 3 "start telnet"
-TO BE WRITTEN.
+Start the UDP SNTP server on port 123.
+MORE TO BE WRITTEN.
+.H 3 "start telnet" " [\fIport\fP]"
+Start the TCP TELNET server.
+The default \fIport\fP is 23.
+MORE TO BE WRITTEN.
 .H 3 "start time"
-TO BE WRITTEN.
-.H 3 "start remote"
-TO BE WRITTEN.
+Start the UDP TIME server on port 37.
+MORE TO BE WRITTEN.
+.H 3 "start remote" " [\fIport\fP]"
+Start the UDP REMOTE server.
+The default \fIport\fP is 1234.
+MORE TO BE WRITTEN.

@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/frontpage,v 1.1 1994/07/12 16:31:57 deyke Exp $
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/frontpage,v 1.2 1994/07/13 15:48:52 deyke Exp $
 .SA 1 \" right justified
 .ds Ci 0 0 0 0 0 0 0 \" table of contents indent list
 .ds HF 3 3 3 3 3 3 3 \" all headers bold
@@ -15,13 +15,13 @@
 . \" .MT 4
 . \" .MT 4
 .PH ""
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940712"
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940713"
 . \" .PF "^^-\\\\nP-^^"
 .SP 20
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 940712
+Version 940713
 .SP 2
 .ce
 Dieter Deyke, DK5SG/N0PRA

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.26 1994/03/30 11:20:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.27 1994/07/13 15:48:37 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -490,7 +490,7 @@ int tos;
 	 * of the physical interface used to reach the encap gateway
 	 * will be used.
 	 */
-	return ip_send(Encap.addr,gateway,IP_PTCL,0,0,bp,0,0,0);
+	return ip_send(Encap.addr,gateway,IP4_PTCL,0,0,bp,0,0,0);
 }
 /* Add an entry to the IP routing table. Returns 0 on success, -1 on failure */
 struct route *
