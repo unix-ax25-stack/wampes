@@ -1,12 +1,10 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/filter.c,v 1.4 1994/10/25 10:22:15 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/filter.c,v 1.5 1994/10/30 21:27:06 deyke Exp $";
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define DEBUG 0
 
 enum e_type {
   AND,
@@ -141,52 +139,44 @@ static struct node *getexpr(void)
 
 /*---------------------------------------------------------------------------*/
 
-#if DEBUG
-
 static void print_tokens(void)
 {
   struct node *np;
 
   for (np = Tokens; np; np = np->left)
     if (np->type != STRING)
-      printf("%s ", Symbol_table[np->type].string);
+      fprintf(stderr, "%s ", Symbol_table[np->type].string);
     else
-      printf("\"%s\" ", np->value);
-  putchar('\n');
+      fprintf(stderr, "\"%s\" ", np->value);
+  putc('\n', stderr);
 }
 
-#endif
-
 /*---------------------------------------------------------------------------*/
-
-#if DEBUG
 
 static void print_expr(struct node *np)
 {
   switch (np->type) {
   case AND:
   case OR:
-    printf("(");
+    fprintf(stderr, "(");
     print_expr(np->left);
-    printf(" %s ", Symbol_table[np->type].string);
+    fprintf(stderr, " %s ", Symbol_table[np->type].string);
     print_expr(np->right);
-    printf(")");
+    fprintf(stderr, ")");
     break;
   case NOT:
-    printf("(NOT ");
+    fprintf(stderr, "(not ");
     print_expr(np->left);
-    printf(")");
+    fprintf(stderr, ")");
     break;
   case STRING:
-    printf("\"%s\"", np->value);
+    fprintf(stderr, "\"%s\"", np->value);
     break;
   default:
     halt("Unexpected node in tree");
     break;
   }
 }
-
-#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -219,9 +209,15 @@ int main(int argc, char **argv)
 
   const struct symbol *sp;
   int i;
+  int verbose = 0;
   struct node *np;
   struct node *tail = 0;
 
+  while (argc >= 2 && !strcmp(argv[1], "-v")) {
+    verbose++;
+    argc--;
+    argv++;
+  }
   for (i = 1; i < argc; i++) {
     np = (struct node *) calloc(1, sizeof(struct node));
     np->type = STRING;
@@ -238,19 +234,17 @@ int main(int argc, char **argv)
     tail = np;
   }
 
-#if DEBUG
-  print_tokens();
-#endif
+  if (verbose >= 2)
+    print_tokens();
 
   Nodes = getexpr();
   if (Tokens)
     halt("Unexpected tokens after expression");
 
-#if DEBUG
-  print_expr(Nodes);
-  putchar('\n');
-#endif
-
+  if (verbose >= 1) {
+    print_expr(Nodes);
+    putc('\n', stderr);
+  }
   for (;;) {
     for (numlines = 0;;) {
       if (!gets(buf[numlines]))

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.3 1994/10/26 12:07:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.4 1994/10/30 21:26:57 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -39,8 +39,8 @@ enum e_token {
 struct peer {
 	struct peer *next;      /* Linked-list pointer */
 	char call[FLEXLEN];     /* Flexnet call */
-	int remdelay;           /* RTT measured remotely (100ms steps) */
-	int locdelay;           /* RTT measured locally (100ms steps) */
+	int remdelay;           /* Delay measured remotely (100ms steps) */
+	int locdelay;           /* Delay measured locally (100ms steps) */
 	double delay;           /* Smoothed delay (100ms units) */
 	int32 lastpolltime;     /* Time of last poll (ms) */
 	struct ax25_cb *axp;    /* AX.25 control block pointer */
@@ -152,6 +152,7 @@ static void update_axroute(const struct dest *pd)
 
 	char call[AXALEN];
 	int dest_is_peer;
+	struct ax_route *rp;
 	struct ax_route *rpd;
 	struct ax_route *rpp;
 	struct neighbor *pn;
@@ -164,7 +165,8 @@ static void update_axroute(const struct dest *pd)
 	for (addrcp(call, pd->call);; call[ALEN] += 2) {
 		if (!(rpd = ax_routeptr(call, 1)))
 			return;
-		if (!rpd->perm) {
+		for (rp = rpp; rp && rp != rpd; rp = rp->digi) ;
+		if (!rp && !rpd->perm) {
 			if (dest_is_peer) {
 				rpd->digi = rpp->digi;
 				rpd->ifp = rpp->ifp;
@@ -708,9 +710,7 @@ static int decode_query_packet(struct mbuf *bp, struct querypkt *qp)
 	cp = qp->bufs[qp->numcalls];
 	for (;;) {
 		chr = PULLCHAR(&bp);
-		if (chr == -1)
-			goto discard;
-		if ((chr == ' ' || chr == '\r') && cp != qp->bufs[qp->numcalls]) {
+		if ((chr == -1 || chr == ' ' || chr == '\r') && cp != qp->bufs[qp->numcalls]) {
 			*cp = 0;
 			if (setcall(qp->destcall, qp->bufs[qp->numcalls]))
 				goto discard;
@@ -721,21 +721,22 @@ static int decode_query_packet(struct mbuf *bp, struct querypkt *qp)
 			}
 			cp = qp->bufs[qp->numcalls];
 		}
-		if (chr == ' ')
+		if (chr == ' ') {
 			continue;
-		else if (chr == '\r')
+		} else if (chr == -1 || chr == '\r') {
 			break;
-		else if ((chr >= '0' && chr <= '9') ||
-			 (chr >= 'A' && chr <= 'Z') ||
-			 (chr >= 'a' && chr <= 'z') ||
-			 (chr == '-')) {
+		} else if ((chr >= '0' && chr <= '9') ||
+			   (chr >= 'A' && chr <= 'Z') ||
+			   (chr >= 'a' && chr <= 'z') ||
+			   (chr == '-')) {
 			if (qp->numcalls >= MAXQCALLS)
 				goto discard;
 			*cp++ = chr;
 			if (cp - qp->bufs[qp->numcalls] >= AXBUF)
 				goto discard;
-		} else
+		} else {
 			goto discard;
+		}
 	}
 	free_p(bp);
 	return 0;
@@ -782,7 +783,7 @@ static int send_query_packet(int type, const struct querypkt *qp, const char *ca
 	cp = bp->data;
 	*cp++ = type;
 	*cp++ = ' ' + qp->hopcnt;
-	sprintf(cp, "%05d", qp->qsonum);
+	sprintf(cp, "%5d", qp->qsonum);
 	cp += 5;
 	for (i = 0; i < qp->numcalls; i++) {
 		if (cp - bp->data > LENROUT - 11)
@@ -959,7 +960,7 @@ static void recv_rprt(struct peer *pp, struct mbuf *bp)
 			pp->delay = pp->remdelay;
 	}
 	if (pp->lastpolltime) {
-		pp->locdelay = (int) ((msclock() - pp->lastpolltime + 50) / 100);
+		pp->locdelay = iround((msclock() - pp->lastpolltime) / 200.0);
 		if (pp->locdelay < 1)
 			pp->locdelay = 1;
 		pp->lastpolltime = 0;
@@ -1188,7 +1189,7 @@ void flexnet_dump(FILE *fp, struct mbuf **bpp)
 		fprintf(fp, " Poll response");
 		if (pullnumber(bpp, &i) == -1)
 			goto too_short;
-		fprintf(fp, " - RTT: %d", i);
+		fprintf(fp, " - Delay: %d", i);
 		break;
 
 	case FLEX_POLL:

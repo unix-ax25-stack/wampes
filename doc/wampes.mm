@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.21 1994/10/26 12:08:06 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.22 1994/10/30 21:27:07 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
@@ -11,7 +11,6 @@
 .\" gtbl < manual.mm | groff -mgm
 .\"
 .PH "" \" Page header
-.SA 1 \" Right justified
 .ds HF 3 3 3 3 3 3 3 \" All headers bold
 .ds HP +2 +2 +2 +2 +2 +2 +2 \" All headers 2 points bigger
 .nr Cl 7 \" Max level of header for table of contents
@@ -20,13 +19,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 941026" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 941030" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 941026
+Version 941030
 .S
 .SP 2
 .S 15
@@ -695,15 +694,67 @@ contains white space.
 .H 2 "flexnet" " \fIsubcommand\fP"
 These commands control the FLEXNET service.
 .H 3 "flexnet dest" " [\fIax25_addr\fP]"
-TO BE WRITTEN.
+Display all known, or the specified, FLEXNET destination,
+together with the list of neighbors
+through which the destination can be reached.
+The number in parentheses after each neighbor is the propagation delay
+to the destination through this neighbor.
+The neighbor list is sorted by this delay,
+the best neighbor
+(the one which actually will be used)
+is listed first.
+The delay is measured in 100 millisecond units,
+a value of zero is to be taken as infinity.
+.H 3 "flexnet destdebug"
+Display all known FLEXNET destinations,
+together with the list of all neighbors.
+Two numbers are printed in parentheses after each neighbor.
+The \fBD\fPelay value is the propagation delay to the destination
+through this neighbor.
+The \fBL\fPast value is the delay our node sent to this neighbor,
+telling it the propagation delay to the destination through our node.
+The delays are measured in 100 millisecond units,
+a value of zero is to be taken as infinity.
 .H 3 "flexnet link"
-TO BE WRITTEN.
+Without an argument, display the FLEXNET link table,
+which contains all known FLEXNET neighbors.
+The fields are as follows:
+.VL 20 2
+.LI \fBCall\fP
+The call sign and SSID range of this neighbor.
+.LI \fBRemote\fP
+The propagation delay to this neighbor as measured by the neighbor.
+.LI \fBLocal\fP
+The propagation delay to this neighbor as measured by the our node.
+.LI \fBSmooth\fP
+The smoothed, average propagation delay to this neighbor.
+.LI \fBP\fP
+If this column contains a \fBP\fP,
+then the link was created manually,
+and is \fBpermanent\fP.
+A permanent link can only be removed
+with the \fBflexnet link delete\fP command.
+.LI \fBT\fP
+The state of the routing token encoded as follows:
+.VL 10 2 1
+.LI \fBN\fP
+Our node does not have the token, and did not requested it.
+.LI \fBW\fP
+Our node does not have the token, but did requested it.
+.LI \fBY\fP
+Our node has the token.
+.LE
+.LI \fBState\fP
+The state of the AX.25 link to this neighbor.
+.LE
 .H 4 "flexnet link add" " \fIax25_addr\fP"
-TO BE WRITTEN.
+Add a permanent entry to the FLEXNET link table.
 .H 4 "flexnet link delete" " \fIax25_addr\fP"
-TO BE WRITTEN.
+Remove the specified entry from the FLEXNET link table.
 .H 3 "flexnet query" " \fIax25_addr\fP"
-TO BE WRITTEN.
+Display the path to the specified FLEXNET destination. Call signs shown
+in capital letters along the path support the FLEXNET protocol,
+those in lower-case letters do not.
 .H 2 "ftp" " \fIhostid\fP [\fIport\fP]"
 Open a FTP control channel to the specified remote host
 and enter converse mode on the new session.
@@ -1076,7 +1127,7 @@ If \fInode\fP, \fInode2\fP, and \fIquality\fP are given,
 a link between \fInode\fP and \fInode2\fP with quality \fIquality\fP
 is put into the table, and also marked \fBpermanent\fP if so specified.
 .H 3 "netrom nodes" " [\fInode\fP]"
-Display information about the specified or all known NET/ROM nodes.
+Display information about all known, or the specified, NET/ROM node.
 The fields are as follows:
 .VL 20 2
 .LI \fBNode\fP

@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/common/setup,v 1.4 1994/08/05 10:36:16 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/common/setup,v 1.5 1994/10/30 21:27:13 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
@@ -11,7 +11,6 @@
 .\" gtbl < manual.mm | groff -mgm
 .\"
 .PH "" \" Page header
-.SA 1 \" Right justified
 .ds HF 3 3 3 3 3 3 3 \" All headers bold
 .ds HP +2 +2 +2 +2 +2 +2 +2 \" All headers 2 points bigger
 .nr Cl 7 \" Max level of header for table of contents

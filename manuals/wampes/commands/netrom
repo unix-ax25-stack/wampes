@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/netrom,v 1.4 1994/08/21 10:17:31 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/netrom,v 1.5 1994/10/30 21:27:12 deyke Exp $
 .H 2 "netrom" " \fIsubcommand\fP"
 These commands control the NET/ROM service.
 .H 3 "netrom broadcast" " [\fIinterface\fP \fIax25_addr\fP [\fIdigipeater\fP ...]]"
@@ -70,7 +70,7 @@ If \fInode\fP, \fInode2\fP, and \fIquality\fP are given,
 a link between \fInode\fP and \fInode2\fP with quality \fIquality\fP
 is put into the table, and also marked \fBpermanent\fP if so specified.
 .H 3 "netrom nodes" " [\fInode\fP]"
-Display information about the specified or all known NET/ROM nodes.
+Display information about all known, or the specified, NET/ROM node.
 The fields are as follows:
 .VL 20 2
 .LI \fBNode\fP

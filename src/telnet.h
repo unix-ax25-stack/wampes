@@ -1,10 +1,14 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.h,v 1.7 1994/10/09 08:23:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.h,v 1.8 1994/10/30 21:27:04 deyke Exp $ */
 
 #ifndef _TELNET_H
 #define _TELNET_H
 
-#ifndef _SESSION_H
-#include "session.h"
+#ifndef _GLOBAL_H
+#include "global.h"
+#endif
+
+#ifndef _TCP_H
+#include "tcp.h"
 #endif
 
 #define LINESIZE        256     /* Length of local editing buffer */

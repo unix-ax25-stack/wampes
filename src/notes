@@ -4,8 +4,6 @@
 
 -------------------------------------------------------------------------------
 
-- netupd soll die dirs /tcp/mirrors/<call> nehmen
-
 - netupd should resync automatically
 
 - TCP with closed windows: spinning

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.52 1994/07/22 13:18:10 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.53 1994/10/30 21:27:08 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -107,10 +107,9 @@ mkhostdb: mkhostdb.o $(LIBS)
 	@sleep 1
 	$(LD) $(LDFLAGS) mkhostdb.o $(LIBS) $(SLIBS) -o $@
 
-netupdc: netupdc.o $(LIBS)
+netupdc: netupds
 	$(RMTARGET)
-	@sleep 1
-	$(LD) $(LDFLAGS) netupdc.o $(LIBS) $(SLIBS) -o $@
+	ln netupds $@
 
 netupds: netupds.o $(LIBS)
 	$(RMTARGET)
@@ -190,8 +189,7 @@ depend:; @mkmf -f $(MAKEFILE)
 ###
 cnet.o: ../lib/buildsaddr.h
 md5drivr.o: ../lib/md5.h
-netupdc.o: ../lib/buildsaddr.h ../lib/configure.h netupd.h ../lib/strdup.h
-netupds.o: ../lib/configure.h netupd.h
+netupds.o: ../lib/buildsaddr.h ../lib/configure.h ../lib/strdup.h
 path.o: ../lib/strdup.h
 pop2d.o: ../lib/configure.h ../lib/lockfile.h
 pop3d.o: ../lib/configure.h ../lib/lockfile.h
