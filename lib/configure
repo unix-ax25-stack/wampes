@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.12 1994/05/11 10:46:47 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.13 1994/05/15 16:54:36 deyke Exp $
 
 case "`uname -sr`" in
 HP-UX*)
@@ -85,13 +85,12 @@ finddir()
 
 checksymbol()
 {
-	echo "$2" > $tmp.c
+	echo "$2" >$tmp.c
 	if $cc $tmp.c -o $tmp >/dev/null 2>&1; then
 		echo "#define $1 1"
 	else
 		echo "#define $1 0"
 	fi
-	rm -f $tmp*
 }
 
 echo "#ifndef _CONFIGURE_H"
@@ -125,3 +124,5 @@ checksymbol HAS_ADJTIME "main(){adjtime(0,0);}"
 
 echo
 echo "#endif"
+
+rm -f $tmp*

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.19 1994/05/05 11:17:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.20 1994/05/15 16:54:04 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -18,7 +18,11 @@
 #include "daemon.h"
 #include "hardware.h"
 
-#if defined __hpux || defined ULTRIX_RISC || defined macII || defined __sgi
+#ifdef __sgi
+#include <alloca.h>
+#endif
+
+#if defined __hpux || defined ULTRIX_RISC || defined macII
 #define setjmp          _setjmp
 #define longjmp         _longjmp
 #elif defined _AIX
@@ -131,6 +135,9 @@ int freeargs;           /* If set, free arg list on parg1 at termination */
 	static void (*func)();
 	jmp_buf jmpenv;
 	int i;
+#ifdef __sgi
+	char *cp;
+#endif
 
 	if(Stkchk)
 		chkstk();
@@ -193,10 +200,16 @@ int freeargs;           /* If set, free arg list on parg1 at termination */
 	  longjmp(jmpenv, 1);
 	}
 #elif defined __sgi
+#if 0
 	if (!setjmp(jmpenv)) {
 	  jmpenv[JB_SP] = (int) newstackptr;
 	  longjmp(jmpenv, 1);
 	}
+#else
+	cp = alloca(0);
+	i = cp - (char *) newstackptr;
+	alloca(i);
+#endif
 #elif defined sun
 #if _JBLEN == 9
 	if (!setjmp(jmpenv)) {

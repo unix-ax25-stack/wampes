@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.13 1994/02/28 11:55:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.14 1994/05/15 16:54:09 deyke Exp $ */
 
 /* General purpose software timer facilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -34,13 +34,12 @@ void *v1,*v2;
 	register struct timer *t;
 	int32 bugfix;
 	struct timeval tv;
-	struct timezone tz;
 
 	for(;;){
 
 		fflush(stdout); /* And flush out stdout too */
 
-		gettimeofday(&tv, &tz);
+		gettimeofday(&tv, (struct timezone *) 0);
 		Secclock = tv.tv_sec;
 		Msclock = 1000 * Secclock + tv.tv_usec / 1000;
 

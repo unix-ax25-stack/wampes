@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.13 1993/10/23 20:44:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.14 1994/05/15 16:54:03 deyke Exp $ */
 
 /* Internet Control Message Protocol (ICMP)
  * Copyright 1991 Phil Karn, KA9Q
@@ -174,12 +174,11 @@ int rxbroadcast;
 		int32 tmp;
 		char buf[12];
 		struct timeval tv;
-		struct timezone tz;
 		if(pullup(&bp,buf,sizeof(buf)) != sizeof(buf)){
 			free_p(bp);
 			return;
 		}
-		gettimeofday(&tv,&tz);
+		gettimeofday(&tv,(struct timezone *) 0);
 		tmp = (tv.tv_sec % 86400) * 1000 + tv.tv_usec / 1000;
 		put32(&buf[4],tmp);     /* Receive Timestamp */
 		put32(&buf[8],tmp);     /* Transmit Timestamp */

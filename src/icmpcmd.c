@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.14 1993/05/17 13:44:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.15 1994/05/15 16:54:03 deyke Exp $ */
 
 /* ICMP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -191,7 +191,6 @@ struct mbuf *bp;
 	uint16 hval;
 	int32 rtt,abserr;
 	struct timeval tv,timestamp;
-	struct timezone tz;
 
 	/* Get stamp */
 	if(pullup(&bp,(char *)&timestamp,sizeof(timestamp))
@@ -199,7 +198,7 @@ struct mbuf *bp;
 		/* The timestamp is missing! */
 		rtt = -1;
 	} else {
-		gettimeofday(&tv, &tz);
+		gettimeofday(&tv, (struct timezone *) 0);
 		rtt = (tv.tv_sec  - timestamp.tv_sec ) * 1000 +
 		      (tv.tv_usec - timestamp.tv_usec) / 1000;
 	}
@@ -247,7 +246,6 @@ uint16 len;     /* Length of data field */
 	struct icmp icmp;
 	int i;
 	struct timeval tv;
-	struct timezone tz;
 
 	if ((data = alloc_mbuf(len)) == NULLBUF)
 		return -1;
@@ -257,7 +255,7 @@ uint16 len;     /* Length of data field */
 	data->cnt = len - ICMPLEN;
 	/* Insert timestamp and build ICMP header */
 	if (len >= ICMPLEN + sizeof(struct timeval)) {
-		gettimeofday(&tv, &tz);
+		gettimeofday(&tv, (struct timezone *) 0);
 		memcpy(data->data, (char *) &tv, sizeof(struct timeval));
 	}
 	icmpOutEchos++;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.49 1994/04/13 09:51:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.50 1994/05/15 16:54:02 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -192,8 +192,7 @@ void ioinit(void)
   {
     /* Init times */
     struct timeval tv;
-    struct timezone tz;
-    gettimeofday(&tv, &tz);
+    gettimeofday(&tv, (struct timezone *) 0);
     Secclock = tv.tv_sec;
     Msclock = 1000 * Secclock + tv.tv_usec / 1000;
   }
