@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.16 1995/12/20 09:46:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.17 1995/12/20 15:49:42 deyke Exp $ */
 
 /* Low level TCP routines:
  *  control block management
@@ -211,7 +211,7 @@ enum tcp_state newstate)
 	oldstate = tcb->state;
 	tcb->state = newstate;
 	if(Tcp_trace)
-		printf("TCB %p %s -> %s\n",tcb,
+		printf("TCB %08lx %s -> %s\n",(long)tcb,
 		 Tcpstates[oldstate],Tcpstates[newstate]);
 
 	/* Update MIB variables */

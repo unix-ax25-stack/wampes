@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.25 1995/12/20 09:46:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.26 1995/12/20 15:49:38 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -281,7 +281,7 @@ killproc(struct proc *pp)
 	delproc(pp);
 
 #ifdef  PROCLOG
-	fprintf(proclog,"id %p name %s stack %u/%u\n",pp,
+	fprintf(proclog,"id %08lx name %s stack %u/%u\n",(long)pp,
 		pp->name,stkutil(pp),pp->stksize);
 	fclose(proclog);
 	proclog = fopen("proclog",APPEND_TEXT);
@@ -370,7 +370,7 @@ alert(struct proc *pp,int val)
 		return;
 #endif
 #ifdef  PROCTRACE
-	logmsg(-1,"alert(%p,%u) [%s]",pp,val,pp->name);
+	logmsg(-1,"alert(%08lx,%u) [%s]",(long)pp,val,pp->name);
 #endif
 	if(pp != Curproc)
 		delproc(pp);
@@ -625,8 +625,8 @@ int n           /* Max number of processes to wake up */
 		pnext = pp->next;
 		if(pp->event == event){
 #ifdef  PROCTRACE
-				logmsg(-1,"ksignal(%p,%u) wake %p [%s]",event,n,
-				 pp,pp->name);
+				logmsg(-1,"ksignal(%08lx,%u) wake %08lx [%s]",(long)event,n,
+				 (long)pp,pp->name);
 #endif
 			delproc(pp);
 			pp->flags.waiting = 0;
@@ -641,8 +641,8 @@ int n           /* Max number of processes to wake up */
 		pnext = pp->next;
 		if(pp->event == event){
 #ifdef  PROCTRACE
-				logmsg(-1,"ksignal(%p,%u) wake %p [%s]",event,n,
-				 pp,pp->name);
+				logmsg(-1,"ksignal(%08lx,%u) wake %08lx [%s]",(long)event,n,
+				 (long)pp,pp->name);
 #endif /* PROCTRACE */
 			delproc(pp);
 			pp->flags.waiting = 0;

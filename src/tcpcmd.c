@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.15 1995/12/20 09:46:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.16 1995/12/20 15:49:42 deyke Exp $ */
 
 /* TCP control and status routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -260,7 +260,7 @@ tstat(void)
 
 	printf("    &TCB Rcv-Q Snd-Q  Local socket           Remote socket          State\n");
 	for(tcb=Tcbs;tcb != NULL;tcb = tcb->next){
-		printf("%p%6lu%6lu  ",tcb,tcb->rcvcnt,tcb->sndcnt);
+		printf("%08lx%6lu%6lu  ",(long)tcb,tcb->rcvcnt,tcb->sndcnt);
 		printf("%-22.22s ",pinet_tcp(&tcb->conn.local));
 		printf("%-22.22s ",pinet_tcp(&tcb->conn.remote));
 		printf("%-s",Tcpstates[tcb->state]);

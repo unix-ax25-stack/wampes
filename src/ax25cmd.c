@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.9 1995/12/20 09:46:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.10 1995/12/20 15:49:35 deyke Exp $ */
 
 /* AX25 control commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -268,8 +268,8 @@ void *p)
 	if(argc < 2){
 		printf("   &AXCB Rcv-Q Unack  Rt  Srtt  State          Remote\n");
 		for(axp = Ax25_cb;axp != NULL; axp = axp->next){
-			printf("%p %5u%c%3u/%u%c %2d%6lu  %-13s  %s\n",
-			 axp,
+			printf("%08lx %5u%c%3u/%u%c %2d%6lu  %-13s  %s\n",
+			 (long) axp,
 			 len_p(axp->rxq),
 			 axp->flags.rnrsent ? '*' : ' ',
 			 axp->unack,
@@ -303,7 +303,7 @@ register struct ax25_cb *axp)
 		return;
 	printf("    &AXB Remote   RB V(S) V(R) Unack P Retry State\n");
 
-	printf("%p %-9s%c%c",axp,pax25(tmp,axp->hdr.dest),
+	printf("%08lx %-9s%c%c",(long)axp,pax25(tmp,axp->hdr.dest),
 	 axp->flags.rejsent ? 'R' : ' ',
 	 axp->flags.remotebusy ? 'B' : ' ');
 	printf(" %4d %4d",axp->vs,axp->vr);

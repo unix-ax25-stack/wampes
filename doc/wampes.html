@@ -1890,14 +1890,14 @@ TCP control block with the rtt in milliseconds.
 This command is useful to speed up recovery from a series of lost packets
 since it provides a manual bypass around the
 normal backoff retransmission timing mechanisms.
-<H4><A NAME="H4.54.7">4.54.7 tcp status [<I>tcb_addr</I> [<I>fImilliseconds</I>]]</A></H4>
+<H4><A NAME="H4.54.7">4.54.7 tcp status [<I>tcb_addr</I> [<I>milliseconds</I>]]</A></H4>
 Without arguments, display several TCP-level statistics, plus a summary of
 all existing TCP connections, including TCP control block address,
 send and receive queue sizes, local and remote sockets, and connection state.
 If <I>tcb_addr</I> is specified, a more detailed dump of the specified
 TCP control block is generated, including send and receive sequence numbers
 and timer information.
-If <I>fImilliseconds</I> is specified,
+If <I>milliseconds</I> is specified,
 the dump is repeated every <I>milliseconds</I>,
 until any keyboard input is made.
 <H4><A NAME="H4.54.8">4.54.8 tcp syndata [on|off]</A></H4>

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.10 1995/12/20 09:46:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.11 1995/12/20 15:49:43 deyke Exp $ */
 
 /* UDP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -34,7 +34,7 @@ int n)
 	if(n == 0)
 		printf("    &UCB Rcv-Q  Local socket\n");
 
-	return printf("%p%6u  %s\n",udp,udp->rcvcnt,pinet_udp(&udp->socket));
+	return printf("%08lx%6u  %s\n",(long)udp,udp->rcvcnt,pinet_udp(&udp->socket));
 }
 
 /* Dump UDP statistics and control blocks */

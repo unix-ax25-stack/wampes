@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.29 1995/12/20 09:46:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.30 1995/12/20 15:49:39 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -400,9 +400,9 @@ struct proc *pp)
 	register struct env *ep;
 
 	ep = (struct env *)&pp->env;
-	printf("%p  %08lx  %7u   %6u    %p  %c%c%c %3d %3d  %s\n",
-	 pp,getstackptr(ep),pp->stksize,stkutil(pp),
-	 pp->event,
+	printf("%08lx  %08lx  %7u   %6u    %08lx  %c%c%c %3d %3d  %s\n",
+	 (long)pp,getstackptr(ep),pp->stksize,stkutil(pp),
+	 (long)pp->event,
 	 pp->flags.istate ? 'I' : ' ',
 	 pp->flags.waiting ? 'W' : ' ',
 	 pp->flags.suspend ? 'S' : ' ',
@@ -453,8 +453,8 @@ chkstk(void)
 	stop = sbase + Curproc->stksize;
 	if(sp < sbase || sp >= stop){
 		printf("Stack violation, process %s\n",Curproc->name);
-		printf("SP = %p, legal stack range [%p,%p)\n",
-		sp,sbase,stop);
+		printf("SP = %08lx, legal stack range [%08lx,%08lx)\n",
+		(long)sp,(long)sbase,(long)stop);
 		fflush(stdout);
 		killself();
 	}

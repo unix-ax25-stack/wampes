@@ -1862,14 +1862,14 @@ TCP control block with the rtt in milliseconds.
 This command is useful to speed up recovery from a series of lost packets
 since it provides a manual bypass around the
 normal backoff retransmission timing mechanisms.
-.H 3 "tcp status" " [\fItcb_addr\fP [\fIfImilliseconds\fP]]"
+.H 3 "tcp status" " [\fItcb_addr\fP [\fImilliseconds\fP]]"
 Without arguments, display several TCP-level statistics, plus a summary of
 all existing TCP connections, including TCP control block address,
 send and receive queue sizes, local and remote sockets, and connection state.
 If \fItcb_addr\fP is specified, a more detailed dump of the specified
 TCP control block is generated, including send and receive sequence numbers
 and timer information.
-If \fIfImilliseconds\fP is specified,
+If \fImilliseconds\fP is specified,
 the dump is repeated every \fImilliseconds\fP,
 until any keyboard input is made.
 .H 3 "tcp syndata" " [on|off]"
