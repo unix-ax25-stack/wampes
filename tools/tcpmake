@@ -1,10 +1,10 @@
 #! /bin/csh -f
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.8 1993/11/06 17:00:16 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.9 1993/11/22 14:45:49 deyke Exp $
 
 tcpremove
-chmod 755 ~/tcp/configure
-~/tcp/configure > ~/tcp/lib/configure.h
+chmod 755 ~/tcp/lib/configure
+~/tcp/lib/configure > ~/tcp/lib/configure.h
 foreach dir ( \
 	~/tcp \
 	~/tcp/bbs \
@@ -19,6 +19,7 @@ foreach dir ( \
 		cp -p Makefile Makefile.old
 		make depend
 		if ( { cmp -s Makefile Makefile.old } ) then
+			rm Makefile 
 			mv Makefile.old Makefile
 		else
 			rm Makefile.old

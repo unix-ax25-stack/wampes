@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.11 1993/09/24 09:10:27 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.12 1993/11/22 14:45:56 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -11,7 +11,15 @@ OS            = "`uname -s`"
 
 RANLIB        = ranlib
 
-all:;   @if [ $(OS) = HP-UX ] ; then \
+all:;   chmod 755 configure
+	./configure > configure.tmp
+	if cmp -s configure.tmp configure.h ; then \
+		rm -f configure.tmp; \
+	else \
+		rm -f configure.h; \
+		mv configure.tmp configure.h; \
+	fi
+	@if [ $(OS) = HP-UX ] ; then \
 		make -i \
 		'CC=c89' \
 		'CFLAGS=-O -D_HPUX_SOURCE' \
