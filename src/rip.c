@@ -1,4 +1,4 @@
-/* @(#) $Id: rip.c,v 1.16 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: rip.c,v 1.17 2002/05/27 03:11:19 dl9sau Exp $ */
 
 /* This file contains code to implement the Routing Information Protocol (RIP)
  * and is derived from 4.2BSD code. Mike Karels of Berkeley has stated on
@@ -576,14 +576,19 @@ int32 ttl)
 	}
 	if(add){
 		/* Add a new entry */
+		// dl9sau: bugfix. rt_add() may return NULL in some conditions.
+		// log this event, but do set trigger = 0 (because rp is NULL).
+		if (!(rp = rt_add(ep->target,(unsigned) bits,gateway,iface,
+		      (int) ep->metric,ttl,0)))
+			trigger = 0;
 		if(Rip_trace > 0){
-			printf("route add [%s]/%u %s",inet_ntoa(ep->target),
+			printf("%s [%s]/%u %s",
+			 (rp ? "route add" : "ignored (refused):"),
+			 inet_ntoa(ep->target),
 			 bits,iface->name);
 			printf(" [%s] %u\n",inet_ntoa(gateway),
 			 (int)ep->metric);
 		}
-		rp = rt_add(ep->target,(unsigned) bits,gateway,iface,
-		 (int) ep->metric,ttl,0);
 	}
 	/* If the route changed, mark it for a triggered update */
 	if(trigger){
