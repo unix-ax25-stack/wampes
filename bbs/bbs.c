@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.21 1991/01/23 18:16:16 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.22 1991/02/04 18:10:20 deyke Exp $";
 
 #define _HPUX_SOURCE 1
 
@@ -362,16 +362,16 @@ char  *s;
     switch (chr) {
     case EOF:
       alarm(0);
-      return (p == s) ? 0 : strtrim(s);
+      return (p == s) ? 0 : s;
     case '\0':
       break;
     case '\r':
       alarm(0);
-      return strtrim(s);
+      return s;
     case '\n':
       if (lastchr != '\r') {
 	alarm(0);
-	return strtrim(s);
+	return s;
       }
       break;
     default:
