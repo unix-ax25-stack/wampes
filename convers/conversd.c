@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.4 1988/10/04 20:52:46 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.5 1988/10/19 22:51:53 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -31,6 +31,8 @@ struct mbuf {
   char  *data;
 };
 
+#define NULLMBUF  ((struct mbuf *) 0)
+
 struct connection {
   int  type;                    /* Connection type */
 #define CT_UNKNOWN      0
@@ -53,9 +55,16 @@ struct connection {
   struct connection *next;      /* Linked list pointer */
 };
 
+#define CM_UNKNOWN   (1 << CT_UNKNOWN)
+#define CM_USER      (1 << CT_USER)
+#define CM_HOST      (1 << CT_HOST)
+#define CM_CLOSED    (1 << CT_CLOSED)
+
+#define NULLCONNECTION  ((struct connection *) 0)
+
 struct permlink {
   char  name[80];               /* Name of host */
-  int  connected;               /* Set if currently connected */
+  struct connection *connection;/* Pointer to associated connection */
   long  statetime;              /* Time of last (dis)connect */
   int  tries;                   /* Number of connect tries */
   long  waittime;               /* Time between connect tries */
@@ -63,10 +72,7 @@ struct permlink {
   struct permlink *next;        /* Linked list pointer */
 };
 
-#define CM_UNKNOWN   (1 << CT_UNKNOWN)
-#define CM_USER      (1 << CT_USER)
-#define CM_HOST      (1 << CT_HOST)
-#define CM_CLOSED    (1 << CT_CLOSED)
+#define NULLPERMLINK  ((struct permlink *) 0)
 
 static char  *myhostname;
 static long  currtime;
@@ -76,9 +82,12 @@ static struct utsname utsname;
 
 /*---------------------------------------------------------------------------*/
 
+#define uchar(c)  ((unsigned char) (c))
+
+/*---------------------------------------------------------------------------*/
+
 static int  sigpipe_handler(sig, code, scp)
-int  sig;
-int  code;
+int  sig, code;
 struct sigcontext *scp;
 {
   scp->sc_syscall_action = SIG_RETURN;
@@ -95,7 +104,7 @@ char  *string;
   if (!*string) return;
 
   bp = (struct mbuf *) malloc(sizeof(struct mbuf ) + strlen(string) + 1);
-  bp->next = 0;
+  bp->next = NULLMBUF;
   bp->data = strcpy((char *) (bp + 1), string);
 
   if (*bpp) {
@@ -125,12 +134,25 @@ struct mbuf **bpp;
   register struct mbuf *bp, *p;
 
   bp = *bpp;
-  while (bp) {
-    p = bp;
+  while (p = bp) {
     bp = bp->next;
     free(p);
   }
-  *bpp = 0;
+  *bpp = NULLMBUF;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void free_connection(cp)
+register struct connection *cp;
+{
+  register struct permlink *p;
+
+  for (p = permlinks; p; p = p->next)
+    if (p->connection == cp) p->connection = NULLCONNECTION;
+  if (cp->fmask) close(cp->fd);
+  freequeue(&cp->obuf);
+  free((char *) cp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -139,20 +161,16 @@ static void free_closed_connections()
 {
   register struct connection *cp, *p;
 
-  for (p = 0, cp = connections; cp; )
+  for (p = NULLCONNECTION, cp = connections; cp; )
     if (cp->type == CT_CLOSED ||
 	cp->type == CT_UNKNOWN && cp->time + 300 < currtime) {
       if (p) {
 	p->next = cp->next;
-	if (cp->fmask) close(cp->fd);
-	freequeue(&cp->obuf);
-	free((char *) cp);
+	free_connection(cp);
 	cp = p->next;
       } else {
 	connections = cp->next;
-	if (cp->fmask) close(cp->fd);
-	freequeue(&cp->obuf);
-	free((char *) cp);
+	free_connection(cp);
 	cp = connections;
       }
     } else {
@@ -173,7 +191,7 @@ int  all;
   static char  *p;
 
   if (line) p = line;
-  while (isspace(*p & 0xff)) p++;
+  while (isspace(uchar(*p))) p++;
   if (all) return p;
   quote = '\0';
   if (*p == '"' || *p == '\'') quote = *p++;
@@ -181,8 +199,8 @@ int  all;
   if (quote) {
     if (!(p = strchr(p, quote))) p = "";
   } else
-    while (*p && !isspace(*p & 0xff)) {
-      c = tolower(*p & 0xff);
+    while (*p && !isspace(uchar(*p))) {
+      c = tolower(uchar(*p));
       *p++ = c;
     }
   if (*p) *p++ = '\0';
@@ -208,13 +226,13 @@ char  *prefix, *text;
   f = text;
 
   for (; ; ) {
-    while (isspace(*f & 0xff)) f++;
+    while (isspace(uchar(*f))) f++;
     if (!*f) {
       *t++ = '\n';
       *t = '\0';
       return buf;
     }
-    for (x = f; *x && !isspace(*x & 0xff); x++) ;
+    for (x = f; *x && !isspace(uchar(*x)); x++) ;
     lw = x - f;
     if (l > PREFIXLEN && l + 1 + lw > LINELEN) {
       *t++ = '\n';
@@ -251,32 +269,41 @@ long  gmt;
 
 /*---------------------------------------------------------------------------*/
 
-static void doconnect(flisten)
-int  flisten;
+static struct connection *alloc_connection(fd)
+int  fd;
 {
 
-  int  addrlen;
-  int  fd;
   int  flags;
   struct connection *cp;
-  struct sockaddr_in addr;
 
-  addrlen = sizeof(addr);
-  if ((fd = accept(flisten, &addr, &addrlen)) < 0) return;
   if ((flags = fcntl(fd, F_GETFL, 0)) == -1) {
     close(fd);
-    return;
+    return 0;
   }
   if (fcntl(fd, F_SETFL, flags | O_NDELAY) == -1) {
     close(fd);
-    return;
+    return 0;
   }
   cp = (struct connection *) calloc(1, sizeof(struct connection ));
   cp->fd = fd;
   cp->fmask = (1 << fd);
   cp->time = currtime;
   cp->next = connections;
-  connections = cp;
+  return connections = cp;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void accept_connect_request(flisten)
+int  flisten;
+{
+
+  int  addrlen;
+  int  fd;
+  struct sockaddr_in addr;
+
+  addrlen = sizeof(addr);
+  if ((fd = accept(flisten, &addr, &addrlen)) >= 0) alloc_connection(fd);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -422,15 +449,15 @@ int  channel;
 
 /*---------------------------------------------------------------------------*/
 
-static void update_permlinks(name, connected)
+static void update_permlinks(name, cp)
 char  *name;
-int  connected;
+struct connection *cp;
 {
   register struct permlink *p;
 
   for (p = permlinks; p; p = p->next)
     if (!strcmp(p->name, name)) {
-      p->connected = connected;
+      p->connection = cp;
       p->statetime = currtime;
       p->tries = 0;
       p->waittime = 60;
@@ -447,43 +474,29 @@ static void connect_permlinks()
 
   char  buffer[2048];
   int  fd;
-  int  flags;
   register struct connection *cp;
   register struct permlink *p;
   struct sockaddr_in addr;
 
   for (p = permlinks; p; p = p->next)
-    if (!p->connected && p->retrytime <= currtime) {
+    if (!p->connection && p->retrytime <= currtime) {
       p->tries++;
-      p->waittime *= 2;
+      p->waittime <<= 1;
       if (p->waittime > MAX_WAITTIME) p->waittime = MAX_WAITTIME;
       p->retrytime = currtime + p->waittime;
       if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) continue;
       addr.sin_family = AF_INET;
       addr.sin_addr.s_addr = 0x7f000001;
       addr.sin_port = 3700;
-      if (connect(fd, &addr, sizeof(addr))) {
+      if (connect(fd, &addr, sizeof(addr)) || !(cp = alloc_connection(fd)))
 	close(fd);
-	continue;
+      else {
+	p->connection = cp;
+	sprintf(buffer, "connect tcp %s convers\n", p->name);
+	appendstring(&cp->obuf, buffer);
+	sprintf(buffer, "/\377\200HOST %s\n", myhostname);
+	appendstring(&cp->obuf, buffer);
       }
-      if ((flags = fcntl(fd, F_GETFL, 0)) == -1) {
-	close(fd);
-	continue;
-      }
-      if (fcntl(fd, F_SETFL, flags | O_NDELAY) == -1) {
-	close(fd);
-	continue;
-      }
-      cp = (struct connection *) calloc(1, sizeof(struct connection ));
-      cp->time = currtime;
-      cp->fd = fd;
-      cp->fmask = (1 << fd);
-      cp->next = connections;
-      connections = cp;
-      sprintf(buffer, "connect tcp %s convers\n", p->name);
-      appendstring(&cp->obuf, buffer);
-      sprintf(buffer, "/\377\200HOST %s\n", myhostname);
-      appendstring(&cp->obuf, buffer);
     }
 }
 
@@ -505,7 +518,7 @@ struct connection *cp;
     break;
   case CT_HOST:
     cp->type = CT_CLOSED;
-    update_permlinks(cp->name, 0);
+    update_permlinks(cp->name, NULLCONNECTION);
     for (p = connections; p; p = p->next)
       if (p->via == cp) {
 	p->type = CT_CLOSED;
@@ -608,14 +621,14 @@ struct connection *cp;
       appendstring(&cp->obuf, buffer);
     }
   for (pp = permlinks; pp; pp = pp->next)
-    if (!pp->connected) {
+    if (!pp->connection || pp->connection->type != CT_HOST) {
       strcpy(tmp, timestring(pp->retrytime)),
       sprintf(buffer,
 	      full ?
-		"%-8.8s %12s %s  %s %5d\n" :
-		"%-8.8s %12s %s\n",
+		"%-8.8s %-12s %s  %s %5d\n" :
+		"%-8.8s %-12s %s\n",
 	      pp->name,
-	      "Disconnected",
+	      pp->connection ? "Connecting" : "Disconnected",
 	      timestring(pp->statetime),
 	      tmp,
 	      pp->tries);
@@ -649,7 +662,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.4 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.5 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
@@ -749,13 +762,22 @@ static void h_host_command(cp)
 struct connection *cp;
 {
 
+  char  *name;
   char  buffer[2048];
   register struct connection *p;
+  register struct permlink *pp;
 
-  strcpy(cp->name, getarg(0, 0));
-  if (!*cp->name) return;
+  name = getarg(0, 0);
+  if (!*name) return;
+  for (p = connections; p; p = p->next)
+    if (!strcmp(p->name, name)) bye_command(p);
+  for (pp = permlinks; pp; pp = pp->next)
+    if (!strcmp(pp->name, name) && pp->connection && pp->connection != cp)
+      bye_command((strcmp(myhostname, name) < 0) ? pp->connection : cp);
+  if (cp->type != CT_UNKNOWN) return;
   cp->type = CT_HOST;
-  update_permlinks(cp->name, 1);
+  strcpy(cp->name, name);
+  update_permlinks(name, cp);
   sprintf(buffer, "/\377\200HOST %s\n", myhostname);
   appendstring(&cp->obuf, buffer);
   for (p = connections; p; p = p->next)
@@ -915,7 +937,7 @@ static void read_configuration()
       strcpy(p->name, name);
       p->next = permlinks;
       permlinks = p;
-      update_permlinks(name, 0);
+      update_permlinks(name, NULLCONNECTION);
     }
   fclose(fp);
 }
@@ -984,7 +1006,7 @@ char  **argv;
 
     time(&currtime);
 
-    if (rmask & flistenmask) doconnect(flisten);
+    if (rmask & flistenmask) accept_connect_request(flisten);
 
     for (cp = connections; cp; cp = cp->next) {
 
