@@ -1,6 +1,6 @@
 /* User Data Base Manager */
 
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.4 1989/08/08 16:11:11 root Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.5 1989/09/17 11:10:56 dk5sg Exp $";
 
 #include <ctype.h>
 #include <fcntl.h>
@@ -502,6 +502,10 @@ static void fixusers()
       }
     close(fd);
   }
+
+  up = getup("df1tl",  1); sprintf(up->mail, "@%s", up->call);
+  up = getup("dg9scn", 1); sprintf(up->mail, "@%s", up->call);
+  up = getup("dl1sbl", 1); sprintf(up->mail, "@%s", up->call);
 
   for (i = 0; i < NUM_USERS; i++)
     for (up = users[i]; up; up = up->next) output_line(up, fpo);
