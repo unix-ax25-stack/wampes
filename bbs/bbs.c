@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.0 1989/08/21 23:55:26 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.1 1989/08/22 21:37:29 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -1020,7 +1020,6 @@ char  **argv;
   FILE * fp;
   char  line[1024];
   int  i;
-  int  len;
   int  state;
   struct cmdtable *cmdp;
 
@@ -1041,15 +1040,15 @@ char  **argv;
       if (*line != '^') fputs(line, stdout);
   } else {
     state = 0;
-    len = strlen(argv[1]);
     while (!stopped && fgets(line, sizeof(line), fp)) {
-      if (state == 0 && *line == '^' && !strcasencmp(line + 1, argv[1], len))
+      strtrim(line);
+      if (state == 0 && *line == '^' && !strcasecmp(line + 1, argv[1]))
 	state = 1;
       if (state == 1 && *line != '^')
 	state = 2;
       if (state == 2) {
 	if (*line == '^') break;
-	fputs(line, stdout);
+	puts(line);
       }
     }
     if (!stopped && state < 2)
@@ -1123,7 +1122,7 @@ char  **argv;
       count = atoi(argv[i]);
     } else if (!strncmp("new", argv[i], len)) {
       min = seq.list + 1;
-      update_seq = 1;
+      update_seq = (argc == 2);
     } else if (!strncmp("max", argv[i], len)) {
       nextarg("max");
       max = atoi(argv[i]);
@@ -1206,6 +1205,7 @@ char  **argv;
   append_line(mail, "");
   append_line(mail, "");
   append_line(mail, "");
+  printf("Setting MYBBS to %s.\n", argv[1]);
   route_mail(mail);
 }
 
