@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: udbm.c,v 1.49 1999/02/01 22:26:12 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: udbm.c,v 1.50 1999/06/20 17:47:48 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -613,13 +613,17 @@ static void fixaliases(void)
   }
   fclose(fpi);
   fputs("# Generated aliases\n", fpo);
-  for (i = 0; i < NUM_USERS; i++)
-    for (up = Users[i]; up; up = up->next)
-      if (!up->alias && *up->mail)
-	if (*up->mail == '@')
+  for (i = 0; i < NUM_USERS; i++) {
+    for (up = Users[i]; up; up = up->next) {
+      if (!up->alias && *up->mail) {
+	if (*up->mail == '@') {
 	  fprintf(fpo, "%s\t\t: %s%s\n", up->call, up->call, up->mail);
-	else
+	} else {
 	  fprintf(fpo, "%s\t\t: %s\n", up->call, up->mail);
+	}
+      }
+    }
+  }
   fclose(fpo);
   if (rename(aliastemp, aliasfile)) terminate(aliasfile);
   Lockfile = 0;

@@ -1,4 +1,4 @@
-/* @(#) $Id: config.c,v 1.55 1999/02/11 19:26:49 deyke Exp $ */
+/* @(#) $Id: config.c,v 1.56 1999/06/20 17:47:46 deyke Exp $ */
 
 /* Copyright 1991 Phil Karn, KA9Q
  */
@@ -145,10 +145,8 @@ struct cmds Attab[] = {
 	"attach tun <label> <mtu>" },
 #endif
 
-#ifdef linux
 	{ "kernel", krnlif_attach, 0, 2,
 	"attach kernel <iface> [nopromisc]" },
-#endif
 
 	{ NULL }
 };
@@ -353,7 +351,7 @@ int mcast
 			arp_add(ipaddr, ARP_AX25, hwaddr, 0);
 		}
 	}
-	(void)ip_route(iface,bpp,mcast);
+	ip_route(iface,bpp,mcast);
 }
 
 static void
@@ -365,7 +363,7 @@ uint8 *dest,
 struct mbuf **bpp,
 int mcast
 ){
-	(void)arp_input(iface,bpp);
+	arp_input(iface,bpp);
 }
 
 static void

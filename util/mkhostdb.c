@@ -1,14 +1,25 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: mkhostdb.c,v 1.15 1996/08/12 18:53:33 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: mkhostdb.c,v 1.16 1999/06/20 17:47:48 deyke Exp $";
 #endif
 
 #include <ctype.h>
 #include <fcntl.h>
-#include <ndbm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#include "configure.h"
+
+#if HAS_NDBM
+#include <ndbm.h>
+#else
+#if HAS_DB1_NDBM
+#include <db1/ndbm.h>
+#else
+#error Cannot find ndbm.h header file
+#endif
+#endif
 
 #define DBHOSTADDR      "/tcp/hostaddr"
 #define DBHOSTNAME      "/tcp/hostname"

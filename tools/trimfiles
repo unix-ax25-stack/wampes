@@ -1,50 +1,151 @@
-#! /bin/ksh
+#! /usr/bin/perl -w
 
-# @(#) $Id: trimfiles,v 1.19 1996/08/12 18:52:58 deyke Exp $
+# Dieter Deyke
+# November 14, 1997
+# Copyright (c) 1997-1999 CoCreate Software GmbH. All Rights Reserved.
+# Company Confidential
 
-save_file()
-{
-	cp -p $1 $1.old
+require 5.003;
+
+use FileHandle;
+
+use strict;
+
+#------------------------------------------------------------------------------
+
+# Compare two files, returning:
+#
+# 0 --> Files are identical.
+# 1 --> Files are not identical.
+# 2 --> One or both files inaccessible.
+
+sub cmpfiles {
+
+	my ($file1, $file2) = @_;
+
+	my ($buffer1, $n1);
+	my ($buffer2, $n2);
+	my ($retval);
+
+	-e $file1 or return 2;
+	$n1 = -s _;
+	-e $file2 or return 2;
+	$n2 = -s _;
+	$n1 == $n2 or return 1;
+	open(FILE1, $file1) or return 2;
+	binmode(FILE1);
+	open(FILE2, $file2) or close(FILE1), return 2;
+	binmode(FILE2);
+	$retval = 0;
+	$buffer1 = $buffer2 = '';
+	while ($n1 = sysread(FILE1, $buffer1, 8192)) {
+		$n2 = sysread(FILE2, $buffer2, $n1);
+		($n1 != $n2 or $buffer1 ne $buffer2) and $retval = 1, last;
+	}
+	close(FILE1);
+	close(FILE2);
+	return $retval;
 }
 
-check_file()
-{
-	if cmp -s $1.old $1; then
-		mv $1.old $1
-	else
-		rm $1.old
-	fi
+#------------------------------------------------------------------------------
+
+# Trim one file
+
+sub trimfile {
+
+	my ($filename) = @_;
+
+	my ($blank_lines_skipped) = -1;
+	my ($current_year) = (localtime(time()))[5] + 1900;
+	my ($line);
+	my ($tmpfilename) = "$filename.tmp";
+
+	open(SRC, $filename) or die("$filename: $!\n");
+	open(DST,">$tmpfilename") or die("$tmpfilename: $!\n");
+	while (defined($line = <SRC>)) {
+		# Fix copyright dates
+		$line =~ s!(copyright.*19[89]\d)\s*-\s*\d\d\d\d!"$1-$current_year"!ei;
+		# Remove trailing whitespace
+		$line =~ s!\s+$!!;
+		# Expand tabs
+		while ($line =~ s!^([^\t]*)(\t+)!$1 . (' ' x (length($2) * 8 - (length($1) % 8)))!e) {
+		}
+		# Unexpand leading spaces
+		$line =~ s!^( +)!("\t" x ((length($1) / 8))) . (' ' x ((length($1) % 8)))!e;
+		# Remove casts of function return values to void
+		$line =~ s!^(\s*)\(\s*void\s*\)\s*!$1! unless $line =~ m!\(void\),!;
+		# Output line
+		if ($line ne '') {
+			print(DST "\n") if $blank_lines_skipped == 1;
+			print(DST "$line\n");
+			$blank_lines_skipped = 0;
+		} else {
+			$blank_lines_skipped = 1 if $blank_lines_skipped == 0;
+		}
+	}
+	close(SRC);
+	close(DST);
+	if (cmpfiles($tmpfilename, $filename)) {
+		unlink($filename) or die("$filename: $!\n");
+		rename($tmpfilename, $filename) or die("rename(\"$tmpfilename\", \"$filename\"): $!\n");
+		chmod(0750, $filename) or die("chmod(0750, \"$filename\"): $!\n");
+	} else {
+		unlink($tmpfilename) or die("$tmpfilename: $!\n");
+	}
 }
 
-PATH=/usr/5bin:$PATH
+#------------------------------------------------------------------------------
 
-if [[ ! -f .trimtime ]]; then
-	touch 0101000070 .trimtime
-fi
+# Trim modified text files
 
-for file in $(find * -prune -type f \( \
-	-name 'ChangeLog' -o \
-	-name 'configure' -o \
-	-name 'doc' -o \
-	-name 'fixnetrc' -o \
-	-name 'hosts' -o \
-	-name 'hosts.[0-9]*' -o \
-	-name 'intro.txt' -o \
-	-name 'ip_routes' -o \
-	-name 'Makefile' -o \
-	-name 'netrom_links' -o \
-	-name 'net.rc*' -o \
-	-name 'notes' -o \
-	-name 'README' -o \
-	-name '*.conf' -o \
-	-name '*.c' -o \
-	-name '*.html' -o \
-	-name '*.h' -o \
-	-name '*.mm' -o \
-	-name '*.ms' \
-	\) -newer .trimtime -print); do
-	save_file $file
-	trim -s < $file.old > $file
-	check_file $file
-done
-echo x > .trimtime
+# SYNTAX: trimfiles
+
+sub trimfiles {
+
+	my ($fh);
+	my ($file);
+	my ($line);
+	my ($timestamp);
+	my ($timestampfile);
+	my (@files);
+
+	if (@ARGV) {
+		foreach $file (@ARGV) {
+			if (-T $file) {
+				trimfile($file);
+			}
+		}
+		return;
+	}
+
+	$timestampfile = '.trimtime';
+	if (-f $timestampfile) {
+		$timestamp = -M $timestampfile;
+	} else {
+		$timestamp = 1e99;
+	}
+
+	@files = ();
+	$fh = FileHandle->new();
+	$fh->open('cvs -q -n update |') or die();
+	while (defined($line = <$fh>)) {
+		push(@files, $2) if $line =~ m!^(A|M) (.*)\n!;
+	}
+	$fh->close();
+	foreach $file (@files) {
+		if (-M $file < $timestamp and -T $file) {
+			### print("Trimming $file ...\n");
+			trimfile($file);
+		}
+	}
+
+	unlink($timestampfile);
+	$fh = FileHandle->new();
+	$fh->open(">$timestampfile") or die("$timestampfile: $!\n");
+	print($fh "\n");
+	$fh->close();
+}
+
+#------------------------------------------------------------------------------
+
+trimfiles();

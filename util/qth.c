@@ -1,8 +1,11 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: qth.c,v 1.18 1996/08/12 18:53:33 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: qth.c,v 1.19 1999/06/20 17:47:48 deyke Exp $";
 #endif
 
 /* qth: qth, locator, distance, and course computations */
+
+/* This is a work around for the -pedantic problem with math.h on RedHat Linux 6.0 */
+#define __OPTIMIZE_SIZE__ 1
 
 #include <ctype.h>
 #include <math.h>

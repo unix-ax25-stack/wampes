@@ -1,18 +1,29 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: makeiprt.c,v 1.18 1999/04/25 16:56:42 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: makeiprt.c,v 1.19 1999/06/20 17:47:47 deyke Exp $";
 #endif
 
 #include <sys/types.h>
 
 #include <ctype.h>
 #include <fcntl.h>
-#include <ndbm.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+
+#include "configure.h"
+
+#if HAS_NDBM
+#include <ndbm.h>
+#else
+#if HAS_DB1_NDBM
+#include <db1/ndbm.h>
+#else
+#error Cannot find ndbm.h header file
+#endif
+#endif
 
 #define MERGE_HOST_ROUTES       0
 
@@ -589,4 +600,3 @@ int main(int argc, char **argv)
 
   return 0;
 }
-

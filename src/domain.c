@@ -1,14 +1,25 @@
-/* @(#) $Id: domain.c,v 1.27 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: domain.c,v 1.28 1999/06/20 17:47:46 deyke Exp $ */
 
 #include <sys/types.h>
 
 #include <ctype.h>
 #include <fcntl.h>
-#include <ndbm.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <sys/socket.h>
+
+#include "configure.h"
+
+#if HAS_NDBM
+#include <ndbm.h>
+#else
+#if HAS_DB1_NDBM
+#include <db1/ndbm.h>
+#else
+#error Cannot find ndbm.h header file
+#endif
+#endif
 
 #include "global.h"
 #include "mbuf.h"
@@ -840,4 +851,3 @@ void *p)
 
   return 0;
 }
-

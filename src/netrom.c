@@ -1,4 +1,4 @@
-/* @(#) $Id: netrom.c,v 1.56 1999/02/11 19:26:49 deyke Exp $ */
+/* @(#) $Id: netrom.c,v 1.57 1999/06/20 17:47:47 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -536,8 +536,8 @@ static void send_broadcast(void)
   bp = alloc_broadcast_packet();
   for (hopcnt = 1; hopcnt <= INFINITY; hopcnt = nexthopcnt) {
     nexthopcnt = INFINITY + 1;
-    for (pn = nodes; pn; pn = pn->next)
-      if (pn->hopcnt >= hopcnt && (((int) pn->quality) || pn->force_broadcast))
+    for (pn = nodes; pn; pn = pn->next) {
+      if (pn->hopcnt >= hopcnt && (((int) pn->quality) || pn->force_broadcast)) {
 	if (pn->hopcnt == hopcnt) {
 	  pn->force_broadcast = 0;
 	  if (!bp) bp = alloc_broadcast_packet();
@@ -554,8 +554,11 @@ static void send_broadcast(void)
 	    routes_stat.sent++;
 	    bp = NULL;
 	  }
-	} else if (pn->hopcnt < nexthopcnt)
+	} else if (pn->hopcnt < nexthopcnt) {
 	  nexthopcnt = pn->hopcnt;
+	}
+      }
+    }
   }
   if (bp) {
     send_broadcast_packet(&bp);

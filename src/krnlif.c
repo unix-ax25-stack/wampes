@@ -1,6 +1,6 @@
-/* @(#) $Id: krnlif.c,v 1.6 1999/02/11 19:26:49 deyke Exp $ */
+/* @(#) $Id: krnlif.c,v 1.7 1999/06/20 17:47:46 deyke Exp $ */
 
-#ifdef linux
+#if defined linux
 
 /*****************************************************************************/
 
@@ -60,6 +60,9 @@
  */
 
 #include <sys/types.h>
+
+#include <sys/socket.h>
+
 #include <linux/socket.h>
 #include <sys/ioctl.h>
 #include <errno.h>
@@ -424,8 +427,10 @@ int krnlif_attach(int argc, char *argv[], void *p)
 
 #else
 
-void krnlif_prevent_empty_file_message(void)
+int krnlif_attach(int argc, char *argv[], void *p)
 {
+	printf("kernel interface not implemented.\n");
+	return -1;
 }
 
 #endif
