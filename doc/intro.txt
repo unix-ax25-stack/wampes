@@ -1,0 +1,310 @@
+This file gives some info about  setting up WAMPES  for the first  time.
+Don't expect something  perfect, it was just a quick hack to help people
+to solve the first  problems...  I don't  claim it's a manual,  and I do
+not mention the DK5SG-BBS.
+
+I'm now using  WAMPES on my Linux system for a long time.  In the past I
+run it  under  ISC, but with  Linux  coming I gave up  support  for this
+commercial  system.  These config files reflect parts of mine and others
+setup, use it to build your own..  Change the hostnames, ax25 calls etc.
+*please*.
+
+All files should go to /tcp (mail.conf, net.rc, convers.conf).
+
+For user-logins you've to create a /users/funk directory, because WAMPES
+creates user-accounts  automatically under this dir, and adds entries to
+/etc/passwd.
+
+At the end I appended some info about WAMPES under Linux.
+
+Any   questions,    comments   etc.   about   this   paper   please   to
+erb@insu1.etec.uni-karlsruhe.de
+
+73
+Olaf
+-------------------------------------------------------------------------------
+
+What program does what? -  a quick overview.
+--------------------------------------------
+
+/tcp/net            (copied from /tcp/src/net)
+/usr/local/bin/cnet (copied from /tcp/util/cnet)
+
+The main  program.  It's  the  interface  to the  KISS/Slip  ports,  the
+program that controls logins, connections etc.  It can be started in the
+background,  on my Linux system with /tcp/net < /dev/null & , if I start
+it from a shell.  If I omit the /dev/null, it does not disconnect itself
+cleanly from the shell.
+
+If net is running in such a way, you need a program to control  it.  Use
+cnet for this.  It's the console  interface to the  net-program.  If net
+is running in foreground, you don't need cnet!
+
+You can leave  cnet  with  'bye',  not with  'exit'!  'exit'  exits  the
+net-program too, 'bye' leaves only cnet.
+
+/usr/local/bin/path (copied from /tcp/util/path)
+
+Shows an ax25 path to a host.
+
+/tcp/util/pop2d
+
+The pop2  daemon.  You have to set up an link  from  /usr/spool/mail  to
+/usr/mail for this, if you're running Linux!
+
+/tcp/util/netupd[c,s]
+
+Netupdate-Client+Server.  Allows WAMPES  clients to get new revisions of
+the WAMPES  software from a WAMPES source server.  Used in the Stuttgart
+area to update all local WAMPES systems automatically from cron.
+
+/tcp/util/[vitals,genupd]
+
+Needed by netupd[c,s].
+
+/usr/local/etc/udbm (copied from /tcp/util/udbm)
+
+User Data Base Manager
+
+It searches  /usr/local/lib/users (a copy from /tcp/users) and builds an
+alias database, also it puts users'  fullnames in /etc/passwd.  Only use
+it if you know what you're doing...
+
+/usr/local/etc/mkhostdb (copied from /tcp/util/mkhostdb)
+
+Generates the domain databases  /tcp/hostaddr.???  and /tcp/hostname.???
+from /tcp/domain.txt, /tcp/domain.local, and /tcp/hosts.
+
+/tcp/conversd (copied from /tcp/convers/conversd)
+
+The  convers-server.  Started  in  background,  it listens  and  accepts
+convers connections on an unix domain socket.
+
+/usr/local/bin/convers (copied from /tcp/convers/convers)
+
+The convers user program.  It connects to the unix domain  socket of the
+server, and enables the user to confer with others.
+
+On some  systems  /tcp/net  and  /tcp/conversd  are  started by init via
+inittab, on Linux with 'simpleinit'  this isn't  recommended; if you use
+sys5init it's no problem.  This is an sample entry:
+
+#
+is:3:initdefault::
+# [...]
+# WAMPES
+w1:3456:respawn:env TZ=MST7MDT /tcp/net
+cs:3456:respawn:env TZ=MST7MDT /tcp/conversd
+#
+
+------------------------------------------------------------------------------
+Here is a sample net.rc, where you have to change the hostname, IP address
+and ax25 calls:
+
+#############################################################################
+# Sample config for WAMPES, by Olaf Erb, erb@insu1.etec.uni-karlsruhe.de
+#############################################################################
+# Here our ip address:
+ip a 44.130.41.10
+#############################################################################
+# Hostname:
+hostname dc1ik
+#############################################################################
+# ax25 mycall:
+ax my dc1ik
+#############################################################################
+# Attach one serial, /dev/ttys3 with 9600 Baud and KISS:
+# NOTE: Interfacename and the device must be the same!!
+# Usage: attach asy 0 0 slip|ax25|nrs <label> <buffers> <mtu> <speed> [ip_addr]
+att asy 0 0 ax25 ttys3 2048 256 9600 44.130.41.10
+#############################################################################
+# Pseudo-NET/ROM interface
+att netrom
+# Enable login via NET/ROM:
+start netrom
+#############################################################################
+# Important ip parm:
+# time-to-live:
+ip ttl 20
+# Ip reasm timeout:
+ip rt 2000
+#############################################################################
+# tcp parms:
+# Initial round trip time
+tcp ir 30000
+# Maximum segment size (196 for IP via NET/ROM)
+tcp mss 196
+# TCP Window
+tcp win 2048
+#############################################################################
+# We want to see icmp messages:
+icmp trace on
+#############################################################################
+# ax25 t1 timer ("frack"):
+ax25 t1 12000
+# ax25 t2 timer ("Ack delay timeout"):
+ax25 t2 2000
+# ax25 retry limit:
+ax ret 20
+# Enable ax25 login:
+start ax25
+#############################################################################
+# Some ax25 routes:
+# (default to ttys3)
+ax25 route add ttys3 default
+ax25 route add ttys3 dc1ik-1
+ax25 route add ttys3 db0id db0ie-1 db0eq
+# Routes that cannot be changed by the autorouter:
+ax25 route add permanent ttys3 dc1ik-7
+#############################################################################
+# NET/ROM link from dc1ik to db0id, Quality 32 (permanent)
+netrom link dc1ik db0id 32 permanent
+#############################################################################
+# IP routes:
+# db0ie direct
+route add db0ie ttys3 db0ie
+# db4ut via db0ie
+route add db4ut ttys3 db0ie
+# default direct ttys3
+route add default ttys3
+# Special case: db0id via slow NET/ROM:
+route add db0id netrom db0id
+# db0sao via db0id's NET/ROM route
+route add db0sao netrom db0id
+#############################################################################
+# Arp's:
+arp add db0id ax25 db0ie
+arp add db0id netrom db0id
+#############################################################################
+# Now some tcp/ip services:
+start ftp
+# Login via telnet:
+start telnet
+#
+start discard
+start echo
+# We have a builtin domain server:
+start domain
+# This for remote exit/kick
+start remote
+# Special services, gated to unix-sockets:
+#
+# Conversd:
+start tcpgate 3600 unix:/tcp/sockets/convers
+# SMTP:
+start tcpgate smtp
+# Fingerd:
+start tcpgate finger
+# pop2-daemon:
+start tcpgate pop2
+# NNTP daemon:
+start tcpgate nntp
+#
+# Remote-exit for hosts that knows this key:
+remote -s exit_key
+#############################################################################
+# Kick the smtp timer every 120 seconds:
+smtp timer 120
+#############################################################################
+# Use the unix resolver if a host isn't in /tcp/hosts:
+dom use on
+#############################################################################
+# the esc character:
+esc 
+#############################################################################
+# trace all of ttys3 to tty8 (virtual console)
+#tr ttys3 111 /dev/tty8
+#############################################################################
+# Logging:
+log /tcp/net.log
+#############################################################################
+# Maybe we have some additional routes? Editing /tcp/net.rc causes an exit
+# of the net-program! (this was introduced because of automatic updates)
+#
+source /tcp/net.rc.local
+#
+# End of net.rc
+#
+
+Delivering mail with WAMPES
+---------------------------
+
+Incoming  SMTP  mail  is no  problem,  it's  gated  via  tcpgate  to the
+SMTP-Daemon,  usually  sendmail or smail (I prefer Smail 3.1.28, running
+as 'smtpd' via inetd).
+
+Outgoing  mail is done by  using  Unix  UUCP.  You've  to set up an UUCP
+entry for a SMTP neighbor in this way:  Add entries like this:
+
+/usr/lib/uucp/Systems:
+
+dk5sg Never
+db0id Never
+dc6iq Never
+
+Then edit /tcp/mail.conf and create entries like this:
+
+dk5sg:smtp:tcp:db4ut smtp
+db0id:smtp:tcp:db0id smtp
+dc6iq:smtp:tcp:dc6iq smtp
+
+WAMPES (the 'net'  program) now looks at mail.conf,  takes the hostnames
+and searches the uucp-spool dirs of these hosts for waiting uucp jobs.
+
+Note: Configure your sendmail/smail in such a way, that it only delivers
+      one  message at a time,  multiple  recipients  are not  supported!
+      Smail needs this change in it's transports file:
+
+# uux - deliver to the rmail program on a remote UUCP site
+#
+# HDB UUCP users should comment out the first cmd= line below, and
+# uncomment the second.
+uux:    driver=pipe,
+	uucp,                           # use UUCP-style addressing forms
+	from,                           # supply a From_ envelope line
+#       max_addrs=5,                    # at most 5 addresses per invocation
+	max_addrs=1,                    # use this if some of your neighbors
+#                                       # can't handle multiple addresses
+# [...]
+
+WAMPES  expects  /usr/lib/sendmail  somewhere,  so a link from  smail to
+sendmail should exist.
+
+I don't know the changes if you use plain sendmail, any comments are welcome.
+-----------------------------------------------------------------------------
+
+Running a converse bridge with WAMPES
+-------------------------------------
+
+A convers  connection to another  WAMPES (or NOS) host running  conversd
+can be configured with convers.conf.  It is read at the time conversd is
+started.  If this file is changed after startup, conversd will exit.
+
+Please,  make sure you are  not(!)  building  loops  with your  conversd
+setup.
+
+A sample /tcp/convers.conf:
+
+The first line is our convers  hostname, it can be changed to your Town,
+etc.  (as  common  in  other  countries).  The  second  and  more  lines
+specifies  the active  convers  links,  one to db0id via  tcp/ip on port
+3600:
+
+dc1ik
+db0id unix:/tcp/.sockets/netcmd connect tcp db0id 3600
+--------------------------------------------------------------------------
+
+Some notes for using WAMPES on Linux:
+
+You should  have gcc 2.2.2d with the  inet-library  in libc.a and tcp/ip
+compiled  into  the  kernel.  This  version  of  WAMPES  requires  Linux
+>0.98pl4, because Linus changed the definition of fd_set.
+
+I don't  know any  problems  with Linux and  WAMPES,  only  sometimes  a
+file-table  overflow of the system, caused by static limits in the Linux
+kernel.  With  heavy  load it's a good idea to  increase  the  values of
+NR_INODE and NR_FILE in limits.h, and build a new kernel.
+
+Please send any questions about running WAMPES under Linux to me.
+
+73, Olaf (erb@insu1.etec.uni-karlsruhe.de)
