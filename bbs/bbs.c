@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.6 1989/08/27 23:16:43 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.7 1989/08/30 22:52:42 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -35,9 +35,14 @@ extern void _exit();
 extern void exit();
 extern void free();
 
+#define BIDFILE     "seqbid"
 #define DEBUGDIR    "/tmp/bbs"
+#define HELPFILE    "help"
+#define INDEXFILE   "index"
 #define INFOFILE    "/usr/local/lib/station.data"
 #define MYDESC      "[Gaertringen JN48KP DK5SG-BBS %s OP:DK5SG]"
+#define RCFILE      ".bbsrc"
+#define SEQFILE     ".bbsseq"
 #define WRKDIR      "/users/bbs"
 
 #define SECONDES    (1L)
@@ -118,7 +123,6 @@ static int  doforward;
 static int  errors;
 static int  fdlock = -1;
 static int  findex;
-static int  locked;
 static struct user user;
 static struct utsname utsname;
 volatile static int stopped;
@@ -144,9 +148,9 @@ int  line;
 /*---------------------------------------------------------------------------*/
 
 static char  *strupc(s)
-register char  *s;
+char  *s;
 {
-  register char *p;
+  char *p;
 
   for (p = s; *p = toupper(uchar(*p)); p++) ;
   return s;
@@ -155,9 +159,9 @@ register char  *s;
 /*---------------------------------------------------------------------------*/
 
 static char  *strlwc(s)
-register char  *s;
+char  *s;
 {
-  register char *p;
+  char *p;
 
   for (p = s; *p = tolower(uchar(*p)); p++) ;
   return s;
@@ -187,9 +191,9 @@ int  n;
 /*---------------------------------------------------------------------------*/
 
 static char  *strtrim(s)
-register char  *s;
+char  *s;
 {
-  register char *p;
+  char *p;
 
   for (p = s; *p; p++) ;
   while (--p >= s && isspace(uchar(*p))) ;
@@ -202,7 +206,7 @@ register char  *s;
 static char  *strcasepos(str, pat)
 char  *str, *pat;
 {
-  register char  *s, *p;
+  char  *s, *p;
 
   for (; ; str++)
     for (s = str, p = pat; ; ) {
@@ -243,12 +247,12 @@ char  *s;
     }
     if (ferror(stdin) || feof(stdin)) {
       alarm(0);
-      return NULL;
+      return 0;
     }
     switch (chr) {
     case EOF:
       alarm(0);
-      return (p == s) ? NULL : strtrim(s);
+      return (p == s) ? 0 : strtrim(s);
     case '\0':
       break;
     case '\r':
@@ -287,9 +291,9 @@ long  gmt;
 /*---------------------------------------------------------------------------*/
 
 static int  callvalid(call)
-register char  *call;
+char  *call;
 {
-  register int  d, l;
+  int  d, l;
 
   l = strlen(call);
   if (l < 3 || l > 6) return 0;
@@ -340,7 +344,7 @@ static void put_seq()
   char  fname[80];
 
   if (debug) return;
-  sprintf(fname, "%s/.bbsseq", user.dir);
+  sprintf(fname, "%s/%s", user.dir, SEQFILE);
   if (!(fp = fopen(fname, "w")) || fprintf(fp, "%d\n", user.seq) < 0) halt();
   fclose(fp);
 }
@@ -363,21 +367,17 @@ static void wait_for_prompt()
 
 static void lock()
 {
-  if (locked <= 0) {
-    if (fdlock < 0) {
-      if ((fdlock = open("lock", O_RDWR | O_CREAT, 0644)) < 0) halt();
-    }
-    if (lockf(fdlock, F_LOCK, 0)) halt();
+  if (fdlock < 0) {
+    if ((fdlock = open("lock", O_RDWR | O_CREAT, 0644)) < 0) halt();
   }
-  locked++;
+  if (lockf(fdlock, F_LOCK, 0)) halt();
 }
 
 /*---------------------------------------------------------------------------*/
 
 static void unlock()
 {
-  if (--locked <= 0)
-    if (lockf(fdlock, F_ULOCK, 0)) halt();
+  if (lockf(fdlock, F_ULOCK, 0)) halt();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -429,7 +429,7 @@ struct index *index;
 static char  *get_user_from_path(path)
 char  *path;
 {
-  register char  *cp;
+  char  *cp;
 
   return (cp = strrchr(path, '!')) ? cp + 1 : path;
 }
@@ -440,11 +440,11 @@ static char  *get_host_from_path(path)
 char  *path;
 {
 
-  register char  *cp;
+  char  *cp;
   static char  tmp[1024];
 
   strcpy(tmp, path);
-  if (!(cp = strrchr(tmp, '!'))) return "";
+  if (!(cp = strrchr(tmp, '!'))) return myhostname;
   *cp = '\0';
   return (cp = strrchr(tmp, '!')) ? cp + 1 : tmp;
 }
@@ -455,14 +455,18 @@ static int  msg_uniq(bid, mid)
 char  *bid, *mid;
 {
 
+  int  n;
   long  validdate;
-  struct index index;
+  struct index *pi, index[1000];
 
   validdate = time((long *) 0) - 90 * DAYS;
   if (lseek(findex, 0l, 0)) halt();
-  while (read(findex, (char *) & index, sizeof(struct index )) == sizeof(struct index ))
-    if (index.date >= validdate && !strcmp(bid, index.bid)) return 0;
-  return 1;
+  for (; ; ) {
+    n = read(findex, (char *) (pi = index), 1000 * sizeof(struct index )) / sizeof(struct index );
+    if (n < 1) return 1;
+    for (; n; n--, pi++)
+      if (pi->date >= validdate && !strcmp(pi->bid, bid)) return 0;
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -639,7 +643,7 @@ char  *addr;
 {
 
   char  tmp[1024];
-  register char  *p1, *p2;
+  char  *p1, *p2;
 
   for (p1 = addr; *p1; p1++)
     switch (*p1) {
@@ -702,13 +706,12 @@ static void route_mail(mail)
 struct mail *mail;
 {
 
-#define BidSeqFile "seqbid"
 #define MidSuffix  "@bbs.net"
 
   FILE * fp;
   int  n;
-  register char  *cp;
-  register char  *s;
+  char  *cp;
+  char  *s;
   struct strlist *p;
 
   /* Set date */
@@ -729,12 +732,12 @@ struct mail *mail;
   if (!*mail->bid) {
     n = 0;
     lock();
-    if (fp = fopen(BidSeqFile, "r")) {
+    if (fp = fopen(BIDFILE, "r")) {
       fscanf(fp, "%d", &n);
       fclose(fp);
     }
     n++;
-    if (!(fp = fopen(BidSeqFile, "w")) || fprintf(fp, "%d\n", n) < 0) halt();
+    if (!(fp = fopen(BIDFILE, "w")) || fprintf(fp, "%d\n", n) < 0) halt();
     fclose(fp);
     unlock();
     sprintf(mail->bid, "%012d", n);
@@ -786,10 +789,10 @@ static void append_line(mail, line)
 struct mail *mail;
 char  *line;
 {
-  register struct strlist *p;
+  struct strlist *p;
 
   p = (struct strlist *) malloc(sizeof(struct strlist ) + strlen(line));
-  p->next = NULL;
+  p->next = 0;
   strcpy(p->str, line);
   if (!mail->head)
     mail->head = p;
@@ -821,7 +824,7 @@ static char  *get_host_from_header(line)
 char  *line;
 {
 
-  register char  *p, *q;
+  char  *p, *q;
   static char  buf[1024];
 
   if (*line == 'R' && line[1] == ':' && (p = strchr(strcpy(buf, line), '@'))) {
@@ -831,7 +834,7 @@ char  *line;
     *q = '\0';
     return p;
   }
-  return NULL;
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -843,7 +846,7 @@ char  *host;
 
   FILE  * fp;
   char  buf[1024];
-  register char  *p;
+  char  *p;
 
   if (!(fp = fopen(fname, "r"))) halt();
   while (fgets(buf, sizeof(buf), fp))
@@ -908,29 +911,39 @@ char  **argv;
   struct tm *tm;
 
   do_not_exit = doforward;
-  if (lseek(findex, 0l, 0)) halt();
+  if (!get_index(user.seq, &index))
+    if (lseek(findex, 0l, 0)) halt();
   while (read(findex, (char *) &index, sizeof(struct index )) == sizeof(struct index )) {
     if (!index.deleted        &&
 	index.mesg > user.seq &&
 	!host_in_header(filename(index.mesg), user.name)) {
       do_not_exit = 1;
-      printf("S %s%s%s < %s%s%s\n", index.to, *index.at ? " @ " : "", index.at, index.from, *index.bid ? " $" : "", index.bid);
+      printf("S %s%s%s < %s%s%s\n",
+	     index.to,
+	     *index.at ? " @ " : "",
+	     index.at,
+	     index.from,
+	     *index.bid ? " $" : "",
+	     index.bid);
       if (!getstring(buf)) exit(1);
-      switch (*buf) {
-      case 'O':
+      switch (tolower(uchar(*buf))) {
       case 'o':
 	puts(index.subject);
 	tm = gmtime(&index.date);
 	printf("R:%02d%02d%02d/%02d%02dz @%-6s %s\n",
-	       tm->tm_year % 100, tm->tm_mon + 1, tm->tm_mday,
-	       tm->tm_hour, tm->tm_min, myhostname, mydesc);
+	       tm->tm_year % 100,
+	       tm->tm_mon + 1,
+	       tm->tm_mday,
+	       tm->tm_hour,
+	       tm->tm_min,
+	       myhostname,
+	       mydesc);
 	if (!(fp = fopen(filename(index.mesg), "r"))) halt();
 	while ((c = getc(fp)) != EOF) putchar(c);
 	fclose(fp);
 	puts("\032");
 	wait_for_prompt();
 	break;
-      case 'N':
       case 'n':
 	wait_for_prompt();
 	break;
@@ -970,7 +983,7 @@ char  **argv;
     if (i % 6) putchar('\n');
     return;
   }
-  if (!(fp = fopen("help", "r"))) {
+  if (!(fp = fopen(HELPFILE, "r"))) {
     puts("Sorry, cannot open help file.");
     return;
   }
@@ -1124,8 +1137,6 @@ static void mybbs_command(argc, argv)
 int  argc;
 char  **argv;
 {
-
-  char  line[1024];
   struct mail *mail;
 
   if (!callvalid(strupc(argv[1]))) {
@@ -1135,14 +1146,7 @@ char  **argv;
   mail = (struct mail *) calloc(1, sizeof(struct mail ));
   strcpy(mail->from, user.name);
   strcpy(mail->to, "m@thebox");
-  sprintf(line, "%s %ld", argv[1], time((long *) 0));
-  strcpy(mail->subject, line);
-  sprintf(line, "de %s @ %s", user.name, myhostname);
-  append_line(mail, line);
-  append_line(mail, "");
-  append_line(mail, "");
-  append_line(mail, "");
-  append_line(mail, "");
+  sprintf(mail->subject, "%s %ld", argv[1], time((long *) 0));
   append_line(mail, "");
   printf("Setting MYBBS to %s.\n", argv[1]);
   route_mail(mail);
@@ -1250,20 +1254,16 @@ char  **argv;
     if (!strcmp("#", argv[i])) {
       nextarg("#");
       lifetime = atoi(argv[i]);
-    }
-    else if (!strcmp("$", argv[i])) {
+    } else if (!strcmp("$", argv[i])) {
       nextarg("$");
       strcpy(mail->bid, argv[i]);
-    }
-    else if (!strcmp("<", argv[i])) {
+    } else if (!strcmp("<", argv[i])) {
       nextarg("<");
       strcpy(mail->from, argv[i]);
-    }
-    else if (!strcmp(">", argv[i])) {
+    } else if (!strcmp(">", argv[i])) {
       nextarg(">");
       strcpy(mail->to, argv[i]);
-    }
-    else if (!strcmp("@", argv[i])) {
+    } else if (!strcmp("@", argv[i])) {
       nextarg("@");
       strcpy(at, argv[i]);
     } else {
@@ -1309,10 +1309,8 @@ char  **argv;
       return;
     }
     if (*line == '\032') break;
-    if (!strncmp(line, "/EX", 3)) break;
-    if (!strncmp(line, "/ex", 3)) break;
-    if (!strncmp(line, "***END", 6)) break;
-    if (!strncmp(line, "***end", 6)) break;
+    if (!strncasecmp(line, "***end", 6)) break;
+    if (!strncasecmp(line, "/ex", 3)) break;
     append_line(mail, line);
     if (check_header) {
       if (p = get_host_from_header(line)) {
@@ -1351,7 +1349,6 @@ char  **argv;
 
   int  active = 0;
   int  highest = 0;
-  int  listed = user.seq;
   int  n;
   int  new = 0;
   int  readable = 0;
@@ -1368,7 +1365,7 @@ char  **argv;
 	active++;
 	if (read_allowed(pi)) {
 	  readable++;
-	  if (pi->mesg > listed) new++;
+	  if (pi->mesg > user.seq) new++;
 	}
       }
     }
@@ -1376,7 +1373,7 @@ char  **argv;
   printf("%5d highest message number\n", highest);
   printf("%5d active messages\n", active);
   printf("%5d readable messages\n", readable);
-  printf("%5d last message listed\n", listed);
+  printf("%5d last message listed\n", user.seq);
   printf("%5d new messages\n", new);
 }
 
@@ -1398,37 +1395,27 @@ char  **argv;
 {
 
   char  *tempfile = "index.tmp";
-  int  delete;
   int  f;
-  long  keepdate;
+  int  wflag;
+  long  validdate;
   struct index index;
-  struct stat statbuf;
 
-  /***************************************************************************/
-
-  puts("Der letzte Eintrag darf nie gecrunched werden!");
-  exit(0);
-
-  /***************************************************************************/
-
-  keepdate = time((long *) 0) - 90 * DAYS;
+  validdate = time((long *) 0) - 90 * DAYS;
   if ((f = open(tempfile, O_WRONLY | O_CREAT | O_EXCL, 0644)) < 0) halt();
   if (lseek(findex, 0l, 0)) halt();
-  while (read(findex, (char *) &index, sizeof(struct index )) == sizeof(struct index )) {
-    delete = (index.deleted && (!*index.bid || index.date < keepdate));
-    if (!index.deleted) {
-      index.size = (delete || stat(filename(index.mesg), &statbuf)) ? 0 : statbuf.st_size;
-      if (!index.size) {
-	delete = 1;
-	unlink(filename(index.mesg));
-      }
+  wflag = 0;
+  while (read(findex, (char *) & index, sizeof(struct index )) == sizeof(struct index )) {
+    wflag = 1;
+    if (!index.deleted || *index.bid && index.date >= validdate) {
+      if (write(f, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+      wflag = 0;
     }
-    if (!delete)
-      if (write(f, (char *) &index, sizeof(struct index )) != sizeof(struct index )) halt();
   }
+  if (wflag)
+    if (write(f, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
   if (close(f)) halt();
   if (close(findex)) halt();
-  if (rename(tempfile, "index")) halt();
+  if (rename(tempfile, INDEXFILE)) halt();
   exit(0);
 }
 
@@ -1455,7 +1442,7 @@ char  **argv;
   if (fstat(findex, &statbuf)) halt();
   indexarraysize = statbuf.st_size;
   indexarrayentries = indexarraysize / sizeof(struct index );
-  if (!indexarrayentries) halt();
+  if (!indexarrayentries) return;
   if (!(indexarray = (struct index *) malloc(indexarraysize))) halt();
   if (lseek(findex, 0l, 0)) halt();
   if (read(findex, (char *) indexarray, indexarraysize) != indexarraysize) halt();
@@ -1473,13 +1460,14 @@ char  **argv;
   cmd = '\b';
   for (; ; ) {
     lines = 0;
+    fflush(stdout);
     while (!cmd) cmd = getchar();
     switch (cmd) {
     case '\b':
       if (pi > indexarray) pi--;
       while (pi->deleted && pi > indexarray) pi--;
       while (pi->deleted && pi < indexarray + (indexarrayentries - 1)) pi++;
-      cmd = 'r';
+      cmd = pi->deleted ? 'q' : 'r';
       break;
     case 'k':
       if (unlink(filename(pi->mesg))) halt();
@@ -1490,6 +1478,8 @@ char  **argv;
       if (pi < indexarray + (indexarrayentries - 1)) pi++;
       while (pi->deleted && pi < indexarray + (indexarrayentries - 1)) pi++;
       while (pi->deleted && pi > indexarray) pi--;
+      cmd = pi->deleted ? 'q' : 'r';
+      break;
     case 'r':
       if (fp) {
 	fclose(fp);
@@ -1537,7 +1527,7 @@ char  **argv;
       pi = indexarray;
       while (mesg > pi->mesg && pi < indexarray + (indexarrayentries - 1)) pi++;
       while (pi->deleted && pi > indexarray) pi--;
-      cmd = 'r';
+      cmd = pi->deleted ? 'q' : 'r';
       break;
     case 'v':
       sprintf(buf, "vi %s", filename(pi->mesg));
@@ -1567,7 +1557,6 @@ char  **argv;
       break;
     default:
       putchar('\007');
-      fflush(stdout);
       cmd = 0;
       break;
     }
@@ -1616,11 +1605,13 @@ static void connect_bbs()
   if (!(addr = build_sockaddr("unix:/tcp/sockets/netcmd", &addrlen))) exit(1);
   if ((fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) exit(1);
   if (connect(fd, addr, addrlen)) exit(1);
-  dup2(fd, 0);
-  dup2(fd, 1);
-  close(fd);
+  if (fd != 0) dup2(fd, 0);
+  if (fd != 1) dup2(fd, 1);
+  if (fd != 2) dup2(fd, 2);
+  if (fd > 2) close(fd);
   fdopen(0, "r+");
   fdopen(1, "r+");
+  fdopen(2, "r+");
   printf("connect %s\n", address);
 }
 
@@ -1717,7 +1708,7 @@ static void bbs()
 
   if (level != MBOX)
     printf("DK5SG-BBS  Revision: %s   Type ? for help.\n", revision.number);
-  sprintf(line, "%s/.bbsrc", user.dir);
+  sprintf(line, "%s/%s", user.dir, RCFILE);
   if (fp = fopen(line, "r")) {
     while (fgets(line, sizeof(line), fp)) parse_command_line(line);
     fclose(fp);
@@ -1929,7 +1920,7 @@ char  **argv;
   user.dir = strsave(pw->pw_dir);
   user.shell = strsave(pw->pw_shell);
   endpwent();
-  sprintf(fname, "%s/.bbsseq", user.dir);
+  sprintf(fname, "%s/%s", user.dir, SEQFILE);
   if (fp = fopen(fname, "r")) {
     fscanf(fp, "%d", &user.seq);
     fclose(fp);
@@ -1947,7 +1938,7 @@ char  **argv;
   if (!user.uid) level = ROOT;
   if (connect_addr(user.name)) level = MBOX;
 
-  if ((findex = open("index", O_RDWR | O_CREAT, 0644)) < 0) halt();
+  if ((findex = open(INDEXFILE, O_RDWR | O_CREAT, 0644)) < 0) halt();
 
   switch (mode) {
   case BBS:
