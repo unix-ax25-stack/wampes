@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.3 1990/02/22 12:42:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.4 1990/03/01 18:27:24 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <termio.h>
 #include <time.h>
 
@@ -414,6 +415,24 @@ int  full;
 
 /*---------------------------------------------------------------------------*/
 
+static void check_program_changed()
+{
+
+  static long  lastmtime;
+  static long  nextchecktime;
+  struct stat statbuf;
+
+  if (nextchecktime > currtime) return;
+  nextchecktime = currtime + 600;
+  if (stat("/tcp/net", &statbuf)) return;
+  if (lastmtime                     &&
+      lastmtime != statbuf.st_mtime &&
+      statbuf.st_mtime < currtime - 3600) exit(1);
+  lastmtime = statbuf.st_mtime;
+}
+
+/*---------------------------------------------------------------------------*/
+
 eihalt()
 {
 
@@ -425,6 +444,7 @@ eihalt()
   struct timeval timeout;
   struct timezone tz;
 
+  check_program_changed();
   wait3(&status, -1, (int *) 0);
   if (!debug) alarm(60l);
   timeout.tv_sec = timeout.tv_usec = 0;
