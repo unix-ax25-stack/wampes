@@ -1,4 +1,4 @@
-wampes-941025.tar.gz is a gzipped tar archive of WAMPES, a NET/NOS port
+wampes-941026.tar.gz is a gzipped tar archive of WAMPES, a NET/NOS port
 to various flavors of Unix.
 
 WAMPES currently supports the following configurations:
@@ -43,13 +43,13 @@ To unpack this archive you have to:
 	su
 	mkdir /tcp
 	cd /tcp
-	gzip -d < wampes-941025.tar.gz | tar xvf -
+	gzip -d < wampes-941026.tar.gz | tar xvf -
 
 After unpacking please read the file /tcp/doc/intro.txt.  For RISC iX
 you have to copy *.R to /usr/lib.  Now type "make -i" to compile and
 install everything.
 
-wampes-941025.tar.gz can be found in
+wampes-941026.tar.gz can be found in
 	ftp://ftp.ucsd.edu/hamradio/packet/tcpip/incoming/
 or
 	ftp://ftp.ucsd.edu/hamradio/packet/tcpip/wampes/

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.2 1994/10/25 10:22:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.3 1994/10/26 12:07:56 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -19,6 +19,7 @@
 #define LENPOLL         201     /* Total length of poll packet */
 #define LENROUT         256     /* Maximum length of rout packet */
 #define MAXDELAY        3000    /* Maximum delay (5 minutes) */
+#define MAXHOPCNT       30      /* Maximum allowed hop count */
 #define MAXQCALLS       50      /* Maximum # of calls in qury packet */
 #define POLLINTERVAL    (5*60*1000L)    /* Time between polls (5 minutes) */
 
@@ -280,12 +281,23 @@ static void send_poll(struct peer *pp)
 
 /*---------------------------------------------------------------------------*/
 
-static struct ax25_cb *setaxp(struct peer *pp)
+static void clear_all_via_peer(struct peer *pp, int including_peer)
 {
 
-	struct ax25 hdr;
 	struct dest *pd;
 	struct neighbor *pn;
+
+	for (pd = Dests; pd; pd = pd->next)
+		if ((including_peer || !addreq(pd->call, pp->call)) &&
+		    (pn = find_neighbor(pd, pp)))
+			pn->delay = pn->lastdelay = 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static struct ax25_cb *setaxp(struct peer *pp)
+{
+	struct ax25 hdr;
 
 	if (!(pp->axp = find_ax25(pp->call))) {
 		memset((char *) &hdr, 0, sizeof(struct ax25));
@@ -296,10 +308,7 @@ static struct ax25_cb *setaxp(struct peer *pp)
 	if (pp->id != pp->axp->id) {
 		pp->id = pp->axp->id;
 		pp->token = NOTOKEN;
-		for (pd = Dests; pd; pd = pd->next)
-			if (!addreq(pd->call, pp->call) &&
-			    (pn = find_neighbor(pd, pp)))
-				pn->delay = pn->lastdelay = 0;
+		clear_all_via_peer(pp, 0);
 		send_init(pp);
 		send_poll(pp);
 	}
@@ -386,7 +395,7 @@ static void send_rout(struct peer *pp)
 
 /*---------------------------------------------------------------------------*/
 
-static char *sprintflexcall(char *buf, const char *addr)
+static char *sprintflexcall(char *buf, const char *call)
 {
 
 	char *cp;
@@ -397,13 +406,13 @@ static char *sprintflexcall(char *buf, const char *addr)
 
 	cp = buf;
 	for (i = 0; i < ALEN; i++) {
-		chr = (*addr++ >> 1) & 0x7f;
+		chr = (*call++ >> 1) & 0x7f;
 		if (chr == ' ')
 			break;
 		*cp++ = chr;
 	}
-	min_ssid = (*addr++ & SSID) >> 1;
-	max_ssid = (*addr & SSID) >> 1;
+	min_ssid = (*call++ & SSID) >> 1;
+	max_ssid = (*call & SSID) >> 1;
 	if (min_ssid || min_ssid != max_ssid) {
 		if (min_ssid == max_ssid)
 			sprintf(cp, "-%d", min_ssid);
@@ -477,15 +486,17 @@ static void polltimer_expired(void *unused)
 	start_timer(&Polltimer);
 	for (pp = Peers; pp; pp = ppnext) {
 		ppnext = pp->next;
-		if (pp->lastpolltime)
+		if (pp->lastpolltime) {
 			if (pp->permanent)
-				pp->id--;
+				clear_all_via_peer(pp, 1);
 			else
 				delete_peer(pp);
+		}
 	}
-	for (pp = Peers; pp; pp = pp->next)
+	for (pp = Peers; pp; pp = pp->next) {
 		if (setaxp(pp) && !pp->lastpolltime)
 			send_poll(pp);
+	}
 	process_changes();
 }
 
@@ -681,7 +692,7 @@ static int decode_query_packet(struct mbuf *bp, struct querypkt *qp)
 	if ((chr = PULLCHAR(&bp)) == -1)
 		goto discard;
 	qp->hopcnt = chr - ' ';
-	if (qp->hopcnt < 0 || qp->hopcnt > 30)
+	if (qp->hopcnt < 0 || qp->hopcnt > MAXHOPCNT)
 		goto discard;
 	qp->qsonum = 0;
 	for (i = 0; i < 5; i++) {
@@ -718,7 +729,7 @@ static int decode_query_packet(struct mbuf *bp, struct querypkt *qp)
 			 (chr >= 'A' && chr <= 'Z') ||
 			 (chr >= 'a' && chr <= 'z') ||
 			 (chr == '-')) {
-			if (qp->numcalls > MAXQCALLS)
+			if (qp->numcalls >= MAXQCALLS)
 				goto discard;
 			*cp++ = chr;
 			if (cp - qp->bufs[qp->numcalls] >= AXBUF)
@@ -850,10 +861,11 @@ static int doflexnetquery(int argc, char *argv[], void *p)
 		return 1;
 	}
 	pax25(querypkt.bufs[querypkt.numcalls++], querypkt.destcall);
-	if (send_query_packet(FLEX_QURY, &querypkt, pn->peer->call))
+	if (send_query_packet(FLEX_QURY, &querypkt, pn->peer->call)) {
 		printf("Could not send query to %s\n", pax25(buf, pn->peer->call));
-	else
-		printf("Query sent to %s\n", pax25(buf, pn->peer->call));
+		return 1;
+	}
+	printf("Query sent to %s\n", pax25(buf, pn->peer->call));
 	return 0;
 }
 
@@ -916,19 +928,13 @@ static int pullflexcall(struct mbuf **bpp, int chr, char *call)
 
 static void recv_init(struct peer *pp, struct mbuf *bp)
 {
-
 	int chr;
-	struct dest *pd;
-	struct neighbor *pn;
 
 	if ((chr = PULLCHAR(&bp)) != -1)
 		pp->call[ALEN + 1] = ((chr << 1) & SSID) | 0x60;
 	free_p(bp);
 	pp->token = NOTOKEN;
-	for (pd = Dests; pd; pd = pd->next)
-		if (!addreq(pd->call, pp->call) &&
-		    (pn = find_neighbor(pd, pp)))
-			pn->delay = pn->lastdelay = 0;
+	clear_all_via_peer(pp, 0);
 }
 
 /*---------------------------------------------------------------------------*/

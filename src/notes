@@ -1,10 +1,14 @@
 -------------------------------------------------------------------------------
 
+- delete peer only after 2nd poll timeout
+
+-------------------------------------------------------------------------------
+
 - netupd soll die dirs /tcp/mirrors/<call> nehmen
 
-- TCP with closed windows: spinning
-
 - netupd should resync automatically
+
+- TCP with closed windows: spinning
 
 - muss die pty beim login erst geflushed werden?
 
