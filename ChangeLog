@@ -1,0 +1,22 @@
+@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ChangeLog,v 1.1 1996/02/04 11:17:24 deyke Exp $
+
+960204 Dieter Deyke (deyke@fc.hp.com)
+
+	Added support for Linux on 68000 machines
+
+	Ported to HP-UX 10.10
+
+	Added new target 'distrib' to top-level Makefile to generate
+	distribution files
+
+	Changed /..DEST send algorithm in conversd to avoid DEST storms
+	in loops
+
+	Changed /ROUTE command in conversd to allow specification of
+	TTL, and changed default TTL to 16
+
+	Added /..CSTAT command to conversd
+
+	Removed old code which was excluded by #if 0
+
+	Added ChangeLog
