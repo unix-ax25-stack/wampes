@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.39 1994/09/11 18:34:30 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.40 1994/09/19 17:07:10 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -2732,13 +2732,13 @@
 #
 #44.130.90.x    Dresden
 # lokale Adresskoordination: DG1RTF
-44.130.90.1     DG0DU   # Thomas Rudolph, O-8023 Dresden (ex Y37JL)
+44.130.90.1     DG0DU   # Thomas Rudolph, O-8023 Dresden
 44.130.90.2     DG1RTF  # Thomas Fichte, 01157 Dresden
 44.130.90.3     DD0VS   # Harald Fritsche, 01809 Heidenau
-44.130.90.4     DG0DI   # Dirk Guenther, O-8040 Dresden
-44.130.90.5     DL0TUD  # Club-Stn S07 TU, Dresden
-44.130.90.6     DL1DSD  # Joerg Fruehauf, O-8029 Dresden
-44.130.90.7     DG0NF   # Helge Tefs
+44.130.90.4     DG0DI   # Dirk, Guenther, O-8040 Dresden
+44.130.90.5     DL0TUD  # Club-Stn TU Dresden S07
+44.130.90.6     DL1DSD  # Joerg Frueauf, O-8029 Dresden
+44.130.90.7     DG0NF   # Helge Tefs, Heimat-QTH: 17438 Wolgast
 44.130.90.8     DG0DC   # Torsten Wolf, 01640 Coswig
 44.130.90.9     DL1DTM  # Ulf Riechen, O-8045 Dresden
 44.130.90.10    DG2DWL  # Hartmut Siegel, 01169 Dresden
@@ -2748,28 +2748,38 @@
 44.130.90.14    DG2DRA  # Heiko, O-2601 Obergurig
 44.130.90.15    DG1VS   # Karsten Schmidt, O-8010 Dresden
 44.130.90.16    DG0VP   # Joerg Genscher, 01277 Dresden
-44.130.90.17    DL1DQI  # Olf Zimmerhackl, O-8020 Dresden
+44.130.90.17    DL1DQI  # Olaf Zimmerhackl, O-8020 Dresden
 44.130.90.18    DL1DSX  # Andreas Westfeld, 01277 Dresden
 44.130.90.19    DL6DUG  # Roland Gentsch, 01069 Dresden
 44.130.90.20    DH1AKY  # Jens Wagner, 01307 Dresden
 44.130.90.21    DG0MD   # Falk Winter, O-8019 Dresden
-44.130.90.22    DG1RTF-U        # Thomas Fichte; UNIX
+44.130.90.22    DG1RTF-U        # Thomas Fichte UNIX
 44.130.90.23    DL1DWW  # Ronald Konschak, 01069 Dresden
-44.130.90.24    DG2VG   # Gunar Scholz, 01309 Dresden
-44.130.90.25    DL3BZN-U        # Guido Vattrotd; UNIX
+44.130.90.24    DG2VG   # Gunar Scholz 01309 Dresden
+44.130.90.25    DL3BZN-U        # Guido Vattrotd UNIX
 44.130.90.26    DG0LGK  # Harald Junghans, 04107 Leipzig
-44.130.90.27    DG2VQ-U # Steffen Koehler; UNIX
+44.130.90.27    DG2VQ-U # Steffen Koehler UNIX
 44.130.90.28    DD0VU   # Jens Knoepfchen, 01738 Klingenberg
-44.130.90.29    DL1DSD-U        # Joerg Fruehauf; UNIX
-44.130.90.30    DG1VX   # Andreas Minner, Dresden
-44.130.90.31    DD0VX   # Eckhard Stephan, 01704 Freital
-44.130.90.32    DG0NF-H # Helge Tefs; Palmtop
+44.130.90.29    DL1DSD-U        # Joerg Fruehauf UNIX
+44.130.90.30    DG1VX   # Adreas Minner, Dresden
+44.130.90.31    DD0VX   # Eckhard Stephan, 01705 Freital
+44.130.90.32    DG0NF-H # Helge Tefs PALMTOP
 44.130.90.33    DG0VF   # Ralf Stieber, 01445 Radebeul
-44.130.90.34    DD0VU-U # Jens Knoepfchen; UNIX
+44.130.90.34    DD0VU-U # Jens Knoepfchen UNIX
 44.130.90.35    DL2DRI  # Roland Pelz, 01809 Heidenau
-44.130.90.36    DG1VD   #
-44.130.90.100   DB0TUD  # WAMPES-Mailbox S07, Dresden
-44.130.90.101   DB0TUD-U        # ; UNIX
+44.130.90.36    DG1VD   # Volkmar Hofmann, 01454 Radeburg
+44.130.90.37    DH0DZ   # Dieter Wachsmuth, 01237 Dresden
+44.130.90.38    DG1OA   # Falko Ziller, 01738 Colmnitz
+44.130.90.39    DG0EL   # Mirko Taschenber, 09634 Siebenlehn
+44.130.90.40    DG0KB   # Udo Lies, 01099 Dresden
+44.130.90.41    DG0DC-U # Joerg Wolf UNIX
+44.130.90.42    DG0VP-U # Joerg Genscher UNIX
+44.130.90.43    DG2VM   # Andre Weinhold, 01097 Dresden
+44.130.90.44    DL2DVT  # Wolfgang Kobitzki, ????? XXXXXXXXX
+44.130.90.45    DL2VIC  # Andreas Peschel, 01609 Groeditz
+44.130.90.46    DL2DQF  # Fritz Krulis, 01099 Dresden
+44.130.90.100   db0tud  # WAMPES-Mailbox S07, Dresden
+44.130.90.101   db0tud-U  # WAMPES-Mailbox S07 UNIX
 #
 #44.130.96.x    Suhl
 44.130.96.1     Y31JK   # Ralf Schueler, O-6300 Ilmenau; AT286

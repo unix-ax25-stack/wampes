@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.27 1994/09/05 12:47:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.28 1994/09/19 17:07:57 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -663,7 +663,7 @@ ftpcommand(struct ftp *ftp)
 		} else {
 			char sizestr[80];
 			fseek(ftp->fp,0,SEEK_END);
-			sprintf(sizestr,"%d",ftell(ftp->fp));
+			sprintf(sizestr,"%ld",ftell(ftp->fp));
 			fclose(ftp->fp);
 			ftp->fp = 0;
 			Xprintf(ftp->control,"213 %s\r\n",sizestr,"","");

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.19 1994/09/05 12:47:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.20 1994/09/19 17:08:01 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -39,10 +39,10 @@ static void mail_tick(char *sysname);
 
 /*---------------------------------------------------------------------------*/
 
-static struct mailers Mailers[] = {
-	"bbs",          mail_bbs,
-	"smtp",         mail_smtp,
-	NULLCHAR
+static const struct mailers Mailers[] = {
+	{ "bbs",        mail_bbs },
+	{ "smtp",       mail_smtp },
+	{ 0,            0 }
 };
 
 /*---------------------------------------------------------------------------*/
@@ -104,6 +104,9 @@ static int domail_list(int argc, char *argv[], void *p)
     case MS_TALKING:
       state = "Talking";
       break;
+    default:
+      state = "?";
+      break;
     }
     printf("%-10s %-7s %-10s %-8s %9s\n", sp->sysname, sp->mailer->name, sp->protocol, state, waittime);
   }
@@ -117,7 +120,7 @@ static int domail_list(int argc, char *argv[], void *p)
 static int domail_timer(int argc, char *argv[], void *p)
 {
   if (argc < 2) {
-    printf("%lu/%lu\n",
+    printf("%d/%d\n",
 	    read_timer(&Mail_timer) / 1000,
 	    dur_timer(&Mail_timer) / 1000);
     return 0;
@@ -157,8 +160,8 @@ static void read_configuration(void)
   char *cp;
   char *sysname, *mailername, *protocol, *address;
   char line[1024];
-  static long lastmtime;
-  struct mailers *mailer;
+  const struct mailers *mailer;
+  static int lastmtime;
   struct mailsys *sp;
   struct stat statbuf;
 
@@ -300,7 +303,7 @@ static void mail_tick(char *sysname)
       if (!*mj.from) continue;
       if (stat(mj.cfile, &statbuf)) continue;
       if (statbuf.st_mtime + RETURNTIME < secclock()) {
-	sprintf(mj.return_reason, "520 %s... Cannot connect for %d days\n", sp->sysname, RETURNTIME / (60L*60*24));
+	sprintf(mj.return_reason, "520 %s... Cannot connect for %ld days\n", sp->sysname, RETURNTIME / (60L*60*24));
 	mail_return(&mj);
       } else {
 	jp = (struct mailjob *) malloc(sizeof(*jp));

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.11 1994/09/05 12:47:33 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.12 1994/09/19 17:08:14 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -217,7 +217,7 @@ static const char *resolve_a(long addr)
     }
   }
 
-  sprintf(buf, "%u.%u.%u.%u",
+  sprintf(buf, "%ld.%ld.%ld.%ld",
 	  (addr >> 24) & 0xff,
 	  (addr >> 16) & 0xff,
 	  (addr >>  8) & 0xff,

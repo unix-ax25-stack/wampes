@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.14 1994/09/05 12:47:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.15 1994/09/19 17:08:02 deyke Exp $ */
 
 /* SMTP Mail Delivery Agent */
 
@@ -154,6 +154,7 @@ static void mail_smtp_send_upcall(struct transport_cb *tp, int cnt)
   if (mp->state != SMTP_SEND_STATE || cnt <= 0) return;
   if (!(bp = alloc_mbuf(cnt))) return;
   p = bp->data;
+  c = 0;
   while (p - bp->data < cnt && (c = getc(mp->fp)) != EOF)
     if (c && c != '\004' && c != '\032') *p++ = c;
   if ((bp->cnt = p - bp->data))

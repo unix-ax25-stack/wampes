@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.61 1994/09/05 12:47:26 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.62 1994/09/19 17:07:32 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -985,7 +985,7 @@ static void links_command(struct link *lp)
       name = "";
     }
     sprintf(buffer,
-	    "%-8.8s %-9s %s %5d %5d %7d %7d\n",
+	    "%-8.8s %-9s %s %5ld %5d %7d %7d\n",
 	    name,
 	    state,
 	    localtimestring(p->l_stime),
@@ -1106,7 +1106,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.61 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.62 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1351,42 +1351,42 @@ static void process_input(struct link *lp)
 
   static const struct command login_commands[] = {
 
-    "\377\200host",     h_host_command,
-    "name",             name_command,
+    { "\377\200host",   h_host_command },
+    { "name",           name_command },
 
-    0,                  0
+    { 0,                0 }
   };
 
   static const struct command user_commands[] = {
 
-    "?",                help_command,
-    "bye",              close_link,
-    "channel",          channel_command,
-    "exit",             close_link,
-    "help",             help_command,
-    "hosts",            hosts_command,
-    "invite",           invite_command,
-    "links",            links_command,
-    "msg",              msg_command,
-    "note",             note_command,
-    "peers",            peers_command,
-    "personal",         note_command,
-    "quit",             close_link,
-    "users",            users_command,
-    "who",              who_command,
-    "write",            msg_command,
+    { "?",              help_command },
+    { "bye",            close_link },
+    { "channel",        channel_command },
+    { "exit",           close_link },
+    { "help",           help_command },
+    { "hosts",          hosts_command },
+    { "invite",         invite_command },
+    { "links",          links_command },
+    { "msg",            msg_command },
+    { "note",           note_command },
+    { "peers",          peers_command },
+    { "personal",       note_command },
+    { "quit",           close_link },
+    { "users",          users_command },
+    { "who",            who_command },
+    { "write",          msg_command },
 
-    0,                  0
+    { 0,                0 }
   };
 
   static const struct command host_commands[] = {
 
-    "\377\200cmsg",     h_cmsg_command,
-    "\377\200invi",     h_invi_command,
-    "\377\200umsg",     h_umsg_command,
-    "\377\200user",     h_user_command,
+    { "\377\200cmsg",   h_cmsg_command },
+    { "\377\200invi",   h_invi_command },
+    { "\377\200umsg",   h_umsg_command },
+    { "\377\200user",   h_user_command },
 
-    0,                  0
+    { 0,                0 }
   };
 
   char *arg;
@@ -1575,9 +1575,9 @@ int main(int argc, char **argv)
     const char *s_name;
     int s_fd;
   } listeners[] = {
-    "unix:/tcp/sockets/convers",        -1,
-    "*:3600",                           -1,
-    0,                                  -1
+    { "unix:/tcp/sockets/convers",      -1 },
+    { "*:3600",                         -1 },
+    { 0,                                -1 }
   };
 
   char *cp;

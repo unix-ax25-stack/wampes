@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.10 1994/09/05 12:47:28 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.11 1994/09/19 17:08:20 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -61,7 +61,7 @@ static char *ntoa(long addr)
 {
   static char buf[16];
 
-  sprintf(buf, "%d.%d.%d.%d",
+  sprintf(buf, "%ld.%ld.%ld.%ld",
 	  (addr >> 24) & 0xff,
 	  (addr >> 16) & 0xff,
 	  (addr >>  8) & 0xff,

@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.78 1994/09/05 12:47:30 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.79 1994/09/19 17:07:25 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -198,38 +198,38 @@ static const struct cmdtable {
   int level;
 } cmdtable[] = {
 
-  "!",          shell_command,          0,      USER,
-  "?",          help_command,           0,      USER,
-  "BYE",        quit_command,           0,      USER,
-  "DELETE",     delete_command,         2,      USER,
-  "DIR",        dir_command,            0,      USER,
-  "DISCONNECT", disconnect_command,     0,      USER,
-  "ERASE",      delete_command,         2,      USER,
-  "EXIT",       quit_command,           0,      USER,
-  "F",          f_command,              2,      MBOX,
-  "HELP",       help_command,           0,      USER,
-  "INFO",       info_command,           0,      USER,
-  "KILL",       delete_command,         2,      USER,
-  "LIST",       list_command,           2,      USER,
-  "MYBBS",      mybbs_command,          2,      USER,
-  "PRINT",      read_command,           2,      USER,
-  "PROMPT",     prompt_command,         2,      USER,
-  "QUIT",       quit_command,           0,      USER,
-  "READ",       read_command,           2,      USER,
-  "REPLY",      reply_command,          2,      USER,
-  "RESPOND",    reply_command,          2,      USER,
-  "SB",         send_command,           2,      MBOX,
-  "SEND",       send_command,           2,      USER,
-  "SHELL",      shell_command,          0,      USER,
-  "SP",         send_command,           2,      MBOX,
-  "STATUS",     status_command,         0,      USER,
-  "TYPE",       read_command,           2,      USER,
-  "VERSION",    status_command,         0,      USER,
-  "XCRUNCH",    xcrunch_command,        0,      ROOT,
-  "XSCREEN",    xscreen_command,        0,      ROOT,
-  "[",          sid_command,            0,      MBOX,
+  { "!",                shell_command,          0,      USER },
+  { "?",                help_command,           0,      USER },
+  { "BYE",              quit_command,           0,      USER },
+  { "DELETE",           delete_command,         2,      USER },
+  { "DIR",              dir_command,            0,      USER },
+  { "DISCONNECT",       disconnect_command,     0,      USER },
+  { "ERASE",            delete_command,         2,      USER },
+  { "EXIT",             quit_command,           0,      USER },
+  { "F",                f_command,              2,      MBOX },
+  { "HELP",             help_command,           0,      USER },
+  { "INFO",             info_command,           0,      USER },
+  { "KILL",             delete_command,         2,      USER },
+  { "LIST",             list_command,           2,      USER },
+  { "MYBBS",            mybbs_command,          2,      USER },
+  { "PRINT",            read_command,           2,      USER },
+  { "PROMPT",           prompt_command,         2,      USER },
+  { "QUIT",             quit_command,           0,      USER },
+  { "READ",             read_command,           2,      USER },
+  { "REPLY",            reply_command,          2,      USER },
+  { "RESPOND",          reply_command,          2,      USER },
+  { "SB",               send_command,           2,      MBOX },
+  { "SEND",             send_command,           2,      USER },
+  { "SHELL",            shell_command,          0,      USER },
+  { "SP",               send_command,           2,      MBOX },
+  { "STATUS",           status_command,         0,      USER },
+  { "TYPE",             read_command,           2,      USER },
+  { "VERSION",          status_command,         0,      USER },
+  { "XCRUNCH",          xcrunch_command,        0,      ROOT },
+  { "XSCREEN",          xscreen_command,        0,      ROOT },
+  { "[",                sid_command,            0,      MBOX },
 
-  0,            unknown_command,        0,      USER
+  { 0,                  unknown_command,        0,      USER }
 };
 
 /*---------------------------------------------------------------------------*/
