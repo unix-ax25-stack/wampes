@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.90 1995/05/13 18:46:55 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.91 1995/05/14 14:48:43 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -2456,6 +2456,7 @@ int main(int argc, char **argv)
   user.uid = (int) pw->pw_uid;
   user.gid = (int) pw->pw_gid;
   if (!(user.dir = strdup(pw->pw_dir))) halt();
+  if (!pw->pw_shell || !*pw->pw_shell) pw->pw_shell = "/bin/sh";
   if (!(user.shell = strdup(pw->pw_shell))) halt();
   endpwent();
   if (!user.uid) level = ROOT;

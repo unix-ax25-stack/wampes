@@ -1,27 +1,17 @@
 -------------------------------------------------------------------------------
 
-- bbs:  new option for outbound only?
-
-- bbs:  new bbs batch loader?
-
 - handle M msgs (feed to udbm?)
 
 - create bbs routing tables
 
 - sync mail_smtp.c with bbs.c
 
-- mm2html:  headers are BOLD / BOLD are headers
+- Mail:  Der from teil kann nur !  enthalten, dann steht der s&f.  ==>
+  wenn from == !  ist irgendein substitute einsetzen !!!
 
-	<table border>
-	<tr><th>Header</th><th>Header</th><th>Header</th></tr>
-	<tr><th>Header</th><th>Header</th><th>Header</th></tr>
-	<tr><td>Data</td><td>Data</td><td>Data</td></tr>
-	<tr><td>Data</td><td>Data</td><td>Data</td></tr>
-	<tr><th>Header</th><th>Header</th><th>Header</th></tr>
-	<tr><th>Header</th><td>Data</td><th>Header</th></tr>
-	</table>
+- check overflow in mail buffers
 
-- mm2html:  allow for multiple align lines
+- Mailer:  Alle Message Delimiter entfernen
 
 - mm2html:  handle pictures
 
@@ -31,11 +21,9 @@
 
 - Net/Rom T2 timer (200ms)
 
-- AX.25 extended seq numbers
-
 - make netrom table with fast disconnect
 
-- flexnet:  Zeiten zu dl1sbl-1 waren 60 Sek und 140 Sek
+- AX.25 extended seq numbers
 
 - flexnet:  delete peer only after 2nd poll timeout
 
@@ -43,25 +31,12 @@
 
 - muss die pty beim login erst geflushed werden?
 
-- Mail:  Der from teil kann nur !  enthalten, dann steht der s&f.  ==>
-  wenn from == !  ist irgendein substitute einsetzen !!!
-
-- manchmal wird eine ganze Serie I Frames wiederholt
-
-- wir senden zuerst RR, dann REJ
-
-- 'rs' does not work on hp-terminals
-
 - even in raw mode it should be possible to send ^] without leaving the
   session --> check telnet
-
-- check overflow in mail buffers
 
 - "will echo" implementieren und testen (all telnet options)
 
 - tty.h; ttydriv an session koppeln (Schwierigkeit:  keine CmdSession)
-
-- Mailer:  Alle Message Delimiter entfernen
 
 -------------------------------------------------------------------------------
 

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.5 1995/05/09 21:13:05 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.6 1995/05/14 14:48:44 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -443,76 +443,84 @@ static void dot_TS(int argc, char **argv)
 
 #if DO_TABLES
 
+#define MAXROW  16
+#define MAXCOL  64
+
+  struct col {
+    char exists;
+    char adjust;
+    char font;
+  };
+
   char buf[1024];
-  char data_align_flgs[1024];
-  char header_align_flgs[1024];
   char line[1024];
-  char *align_flgs;
-  char *align_str;
   char *cp;
   char *l1;
   char *l;
-  char *tag;
-  int borderflg;
-  int columns;
-  int i;
-  int tab;
+  int borderflg = 0;
+  int column;
+  int row;
+  int tab = '\t';
+  struct col columns[MAXROW][MAXCOL];
 
-  /* global options; */
+  memset((char *) columns, 0, sizeof(columns));
 
-  borderflg = 0;
-  tab = '\t';
+  row = 0;
   while (fgets(line, sizeof(line), fileptr)) {
-    if (strstr(line, "box"))
-      borderflg = 1;
-    if ((cp = strstr(line, "tab(")))
-      tab = cp[4];
-    if (strstr(line, ";\n"))
-      break;
-  }
-
-  /* column descriptors. */
-
-  columns = 0;
-  align_flgs = header_align_flgs;
-  while (fgets(line, sizeof(line), fileptr)) {
-    strcpy(buf, line);
-    columns = 0;
-    for (cp = strtok(buf, " .|\n"); cp; cp = strtok(0, " .|\n")) {
-      align_flgs[columns] = 0;
-      if (strchr(cp, 'l'))
-	align_flgs[columns] = 'l';
-      if (strchr(cp, 'r'))
-	align_flgs[columns] = 'r';
-      if (strchr(cp, 'c'))
-	align_flgs[columns] = 'c';
-      if (strchr(cp, 'n'))
-	align_flgs[columns] = 'r';
-      columns++;
+    if (row >= MAXROW) {
+      error("too many table format rows");
+      row = MAXROW - 1;
+    }
+    if (strstr(line, ";\n")) {
+      if (strstr(line, "box"))
+	borderflg = 1;
+      if ((cp = strstr(line, "tab(")))
+	tab = cp[4];
+      continue;
+    }
+    for (column = 0, cp = strtok(strcpy(buf, line), " \t.|\n");
+	 cp;
+	 column++, cp = strtok(0, " \t.|\n")) {
+      if (column >= MAXCOL) {
+	error("too many table columns");
+	column = MAXCOL - 1;
+      }
+      columns[row][column].exists = 1;
+      if (strchr(cp, 'l') || strchr(cp, 'L'))
+	columns[row][column].adjust = 'l';
+      if (strchr(cp, 'r') || strchr(cp, 'R'))
+	columns[row][column].adjust = 'r';
+      if (strchr(cp, 'c') || strchr(cp, 'C'))
+	columns[row][column].adjust = 'c';
+      if (strchr(cp, 'n') || strchr(cp, 'N'))
+	columns[row][column].adjust = 'r';
+      if (strchr(cp, 'a') || strchr(cp, 'A'))
+	columns[row][column].adjust = 'l';
+      if (strchr(cp, 'b') || strchr(cp, 'B'))
+	columns[row][column].font = 'b';
+      if (strchr(cp, 'i') || strchr(cp, 'I'))
+	columns[row][column].font = 'i';
     }
     if (strstr(line, ".\n"))
       break;
-    align_flgs = data_align_flgs;
+    row++;
   }
-
-  /* title lines, data within the table */
 
   if (borderflg)
     puts("<TABLE BORDER>");
   else
     puts("<TABLE>");
 
-  tag = "TH";
-  align_flgs = header_align_flgs;
+  row = 0;
   while (fgets(line, sizeof(line), fileptr)) {
     rip(line);
     if (!strncmp(line, ".TE", 3))
       break;
-    if (!strcmp(line, "_"))
+    if (!strcmp(line, "_") || !strcmp(line, "="))
       continue;
     printf("<TR>");
     l = line;
-    for (i = 0; i < columns; i++) {
+    for (column = 0; columns[row][column].exists; column++) {
       cp = strchr(l, tab);
       if (cp)
 	*cp = 0;
@@ -523,33 +531,51 @@ static void dot_TS(int argc, char **argv)
 	while (--l1 >= l && isspace(*l1 & 0xff)) ;
 	l1[1] = 0;
       }
-      switch (align_flgs[i]) {
+      printf("<TD");
+      switch (columns[row][column].adjust) {
       case 'l':
-	align_str = " ALIGN=\"left\"";
+	printf(" ALIGN=\"left\"");
 	break;
       case 'c':
-	align_str = " ALIGN=\"center\"";
+	printf(" ALIGN=\"center\"");
 	break;
       case 'r':
-	align_str = " ALIGN=\"right\"";
+	printf(" ALIGN=\"right\"");
 	break;
       default:
-	align_str = "";
 	break;
       }
-      printf("<%s%s>%s</%s>",
-	     tag,
-	     align_str,
-	     *l ? escape_special_characters(buf, l) : "&nbsp;",
-	     tag);
+      printf(">");
+      switch (columns[row][column].font) {
+      case 'b':
+	printf("<B>");
+	break;
+      case 'i':
+	printf("<I>");
+	break;
+      default:
+	break;
+      }
+      printf("%s", *l ? escape_special_characters(buf, l) : "&nbsp;");
+      switch (columns[row][column].font) {
+      case 'b':
+	printf("</B>");
+	break;
+      case 'i':
+	printf("</I>");
+	break;
+      default:
+	break;
+      }
+      printf("</TD>");
       if (cp)
 	l = cp + 1;
       else
 	l = "";
     }
     puts("</TR>");
-    tag = "TD";
-    align_flgs = data_align_flgs;
+    if (row + 1 < MAXROW && columns[row + 1][0].exists)
+      row++;
   }
   puts("</TABLE>");
 
