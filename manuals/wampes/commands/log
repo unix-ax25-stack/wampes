@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/log,v 1.1 1994/07/12 16:32:25 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/log,v 1.2 1994/07/27 09:47:56 deyke Exp $
 .H 2 "log" " [stop|\fIfilename\fP]"
 Display the current log filename or set the filename for logging
 server sessions. If \fBstop\fP is given as the argument,

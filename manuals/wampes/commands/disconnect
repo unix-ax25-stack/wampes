@@ -1,3 +1,3 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/disconnect,v 1.1 1994/07/12 16:32:24 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/disconnect,v 1.2 1994/07/27 09:47:54 deyke Exp $
 .H 2 "disconnect" " [\fIsession#\fP]"
 An alias for the \fBclose\fP command (for the benefit of AX.25 users).

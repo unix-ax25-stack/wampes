@@ -1,10 +1,57 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/param,v 1.1 1994/07/12 16:32:26 deyke Exp $
-.H 2 "param" " \fIinterface\fP [\fIparam\fP ...]"
-Invoke a device-specific control routine. On a KISS TNC
-interface, this sends control packets to the TNC. Data bytes are
-treated as decimal. For example, \fBparam ax0 1 255\fP will set the keyup
-timer (type field = 1) on the KISS TNC configured as ax0 to 2.55 seconds
-(255 x .01 sec). On a SLIP interface, the \fBparam\fP command allows the baud
-rate to be read (without arguments) or set. The implementation of this
-command for the various interface drivers is incomplete and subject to
-change. MORE TO BE WRITTEN.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/param,v 1.2 1994/07/27 09:47:57 deyke Exp $
+.H 2 "param" " \fIinterface\fP [\fIparameter-name\fP [\fIparameter-value\fP]]"
+Invoke a device-specific control routine.
+The following parameter names are recognized by the \fBparam\fP command,
+but not all are supported by each device type.
+Most commands deal only with half-duplex packet radio interfaces.
+.DS I
+.TS
+center box tab(;) ;
+cB | cB
+l | l.
+Name;Meaning
+_
+Data;
+TxDelay;transmit keyup delay
+Persist;P-persistence setting
+SlotTime;persistence slot time setting
+TxTail;transmit done holdup delay
+FullDup;enable/disable full duplex
+Hardware;hardware specific command
+TxMute;experimental transmit mute command
+DTR;control Data Terminal Ready (DTR) signal to modem
+RTS;control Request to Send (RTS) signal to modem
+Speed;set line speed
+EndDelay;
+Group;
+Idle;
+Min;
+MaxKey;
+Wait;
+Down;drop modem control lines
+Up;raise modem control lines
+Blind;
+Return;return a KISS TNC to command mode
+.TE
+.DE
+Depending on the interface type, some parameters can be read back by
+omitting a new value. This is not possible with KISS TNCs as
+there are no KISS commands for reading back previously sent
+parameters.
+.P
+On a KISS TNC interface, the \fBparam\fP command generates and sends
+control packets to the TNC. Data bytes are treated as decimal.
+For example,
+.DS I
+.ft CW
+param ax0 txdelay 255
+.ft P
+.DE
+will set the keyup timer
+(type field = 1) on the KISS TNC configured as ax0 to 2.55
+seconds (255 x .01 sec). On all asy interfaces (slip, kiss/ax25,
+nrs) the \fBparam\fP \fIinterface\fP \fBspeed\fP command allows the baud rate to
+be read or set.
+.P
+The implementation of this command for the various interface
+drivers is incomplete and subject to change.

@@ -1,10 +1,10 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/common/setup,v 1.2 1994/07/25 11:01:46 deyke Exp $
-. \"
-. \" Format this manual with:
-. \" tbl -TX < manual.mm | nroff -mm | col
-. \" or:
-. \" tbl < manual.mm | troff -mm
-. \"
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/common/setup,v 1.3 1994/07/27 09:47:47 deyke Exp $
+.\"
+.\" Format this manual with:
+.\" tbl -TX < manual.mm | nroff -mm | col
+.\" or:
+.\" tbl < manual.mm | troff -mm
+.\"
 .PH "" \" Page header
 .SA 1 \" Right justified
 .ds Ci 0 0 0 0 0 0 0 \" Table of contents indent list

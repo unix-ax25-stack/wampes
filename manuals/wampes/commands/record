@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/record,v 1.1 1994/07/12 16:32:26 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/record,v 1.2 1994/07/27 09:47:58 deyke Exp $
 .H 2 "record" " [off|\fIfilename\fP]"
 Append to \fIfilename\fP all data received on the current
 session. Data sent on the current session is also written into the file

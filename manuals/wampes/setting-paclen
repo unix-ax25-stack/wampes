@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/setting-paclen,v 1.1 1994/07/12 16:31:57 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/setting-paclen,v 1.2 1994/07/27 09:47:47 deyke Exp $
 .H 1 "Setting Paclen, Maxframe, MTU, MSS and Window"
 Many \fBWAMPES\fP users are confused by these parameters and do not know how to
 set them properly. This chapter will first review these parameters and

@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 
-- change ipip to listen on 4 too, but to send on 94
+- use param up/down for TCP asy interface ?
 
 - loosing the ASY TCP connection causes spinning
 

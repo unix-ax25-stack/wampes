@@ -1,10 +1,10 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.2 1994/07/25 11:01:31 deyke Exp $
-. \"
-. \" Format this manual with:
-. \" tbl -TX < manual.mm | nroff -mm | col
-. \" or:
-. \" tbl < manual.mm | troff -mm
-. \"
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.3 1994/07/27 09:49:36 deyke Exp $
+.\"
+.\" Format this manual with:
+.\" tbl -TX < manual.mm | nroff -mm | col
+.\" or:
+.\" tbl < manual.mm | troff -mm
+.\"
 .PH "" \" Page header
 .SA 1 \" Right justified
 .ds Ci 0 0 0 0 0 0 0 \" Table of contents indent list
@@ -15,14 +15,14 @@
 .nr Hb 7 \" Break after all headers
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
-. \"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940725" \" Page footer
-. \"
+.\"
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940727" \" Page footer
+.\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 940725
+Version 940727
 .S
 .SP 2
 .S 15
@@ -155,10 +155,10 @@ See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
 for more information.
 \fIspeed\fP is the transmission speed in bits per second (eg. 9600).
 .H 3 "attach asy \fIip-addr\fP" " \fIport\fP \fIencapsulation\fP \fIname\fP 0 \fImtu\fP \fIspeed\fP"
-Configure and attach a UNIX host TCP connection based interface to the system.
+Configure and attach a UNIX TCP connection based interface to the system.
 This is very similar to the asynchronous communications interface described above,
 but instead of talking directly to a hardware device file, this interface type
-will open a UNIX host TCP connection to \fIip-addr\fP and \fIport\fP.
+will open a UNIX TCP connection to \fIip-addr\fP and \fIport\fP.
 The primary use of this interface type is to talk to some TNC which is
 connected to the system via the LAN.
 \fIip-addr\fP is the destination IP address.
@@ -181,7 +181,7 @@ for more information.
 \fIspeed\fP must be specified, but is ignored.
 .H 3 "attach axip" " [\fIname\fP [ip|udp [\fIport\fP]]]"
 This creates an AX.25 frame encapsulator for transmission
-of AX.25 frames over the UNIX host's networking system.
+of AX.25 frames over the UNIX's networking system.
 The interface will be named \fIname\fP,
 or \fBaxip\fP if \fIname\fP is not specified.
 The default encapsulation will use IP protocol 93,
@@ -191,7 +191,7 @@ will be used instead of 93.
 See also RFC1226 and the \fBaxip\fP command.
 .H 3 "attach ipip" " [\fIname\fP [ip|udp [\fIport\fP]]]"
 This creates an IP frame encapsulator for transmission
-of IP frames over the UNIX host's networking system.
+of IP frames over the UNIX's networking system.
 The interface will be named \fIname\fP,
 or \fBipip\fP if \fIname\fP is not specified.
 The default encapsulation will use IP protocol 4,
@@ -553,11 +553,31 @@ in a routing loop, so make the value slightly larger than the number of
 hops across the network you expect to transit packets.
 The default is 255 hops.
 .H 2 "ipfilter" " [\fIsubcommand\fP]"
-TO BE WRITTEN.
-.H 3 "ipfilter add" " \fIaddr\fP[/\fIbits\fP]"
-TO BE WRITTEN.
-.H 3 "ipfilter drop" " \fIaddr\fP[/\fIbits\fP]"
-TO BE WRITTEN.
+Without an argument, display the IP filter table.
+If the IP filter table is empty, \fBWAMPES\fP will allow IP packets
+to be sent to any destination.
+If the IP filter table contains at least one entry,
+\fBWAMPES\fP will allow IP packets to be sent only to destinations listed
+in the IP filter table, IP packets to other destinations will be
+discarded.
+.H 3 "ipfilter add" " \fIhostid\fP[/\fIbits\fP]"
+This command adds an entry to the IP filter table.
+The optional /\fIbits\fP suffix to \fIhostid\fP specifies how
+many leading bits in \fIhostid\fP are to be considered significant.
+If not specified, 32 bits (i.e., full significance) is
+assumed. With this option, a single IP filter table entry may refer to
+many hosts all sharing a common bit string prefix in their IP addresses.
+For example, ARPA Class A, B and C networks would use suffixes of /8,
+/16 and /24 respectively. The command
+.DS I
+.ft CW
+ipfilter add 44/8
+.ft P
+.DE
+causes any IP addresses beginning with "44" in the first 8 bits to be
+allowed, the remaining 24 bits are "don't-cares".
+.H 3 "ipfilter drop" " \fIhostid\fP[/\fIbits\fP]"
+Remove the specified entry from the IP filter table.
 .H 2 "kick" " [\fIsession#\fP]"
 Kick all sockets associated with a session.
 If no argument is given, kick the current session.
@@ -710,15 +730,62 @@ If the address of a particular control block is specified, the contents of
 that control block are dumped in more detail.
 .H 2 "nrstat"
 Displays the netrom interface statistics.
-.H 2 "param" " \fIinterface\fP [\fIparam\fP ...]"
-Invoke a device-specific control routine. On a KISS TNC
-interface, this sends control packets to the TNC. Data bytes are
-treated as decimal. For example, \fBparam ax0 1 255\fP will set the keyup
-timer (type field = 1) on the KISS TNC configured as ax0 to 2.55 seconds
-(255 x .01 sec). On a SLIP interface, the \fBparam\fP command allows the baud
-rate to be read (without arguments) or set. The implementation of this
-command for the various interface drivers is incomplete and subject to
-change. MORE TO BE WRITTEN.
+.H 2 "param" " \fIinterface\fP [\fIparameter-name\fP [\fIparameter-value\fP]]"
+Invoke a device-specific control routine.
+The following parameter names are recognized by the \fBparam\fP command,
+but not all are supported by each device type.
+Most commands deal only with half-duplex packet radio interfaces.
+.DS I
+.TS
+center box tab(;) ;
+cB | cB
+l | l.
+Name;Meaning
+_
+Data;
+TxDelay;transmit keyup delay
+Persist;P-persistence setting
+SlotTime;persistence slot time setting
+TxTail;transmit done holdup delay
+FullDup;enable/disable full duplex
+Hardware;hardware specific command
+TxMute;experimental transmit mute command
+DTR;control Data Terminal Ready (DTR) signal to modem
+RTS;control Request to Send (RTS) signal to modem
+Speed;set line speed
+EndDelay;
+Group;
+Idle;
+Min;
+MaxKey;
+Wait;
+Down;drop modem control lines
+Up;raise modem control lines
+Blind;
+Return;return a KISS TNC to command mode
+.TE
+.DE
+Depending on the interface type, some parameters can be read back by
+omitting a new value. This is not possible with KISS TNCs as
+there are no KISS commands for reading back previously sent
+parameters.
+.P
+On a KISS TNC interface, the \fBparam\fP command generates and sends
+control packets to the TNC. Data bytes are treated as decimal.
+For example,
+.DS I
+.ft CW
+param ax0 txdelay 255
+.ft P
+.DE
+will set the keyup timer
+(type field = 1) on the KISS TNC configured as ax0 to 2.55
+seconds (255 x .01 sec). On all asy interfaces (slip, kiss/ax25,
+nrs) the \fBparam\fP \fIinterface\fP \fBspeed\fP command allows the baud rate to
+be read or set.
+.P
+The implementation of this command for the various interface
+drivers is incomplete and subject to change.
 .H 2 "ping" " [\fIsubcommand\fP]"
 TO BE WRITTEN.
 .H 3 "ping clear"
@@ -908,8 +975,11 @@ Remove the specified directory.
 .H 2 "route" " [\fIsubcommand\fP]"
 Without an argument, display the IP routing table.
 .H 3 "route add" " \fIhostid\fP[/\fIbits\fP]|default \fIinterface\fP [\fIgateway_hostid\fP [\fImetric\fP]]"
-This command adds an entry to the IP routing table. It requires at least two
-more arguments, the \fIhostid\fP of the destination and the name of
+Add a permanent entry to the IP routing table.
+It will not time out as will an automatically created entry,
+but must be removed with the \fBroute drop\fP command.
+\fBroute add\fP requires at least two more arguments,
+the \fIhostid\fP of the destination and the name of
 the \fIinterface\fP to which its packets should be sent. If the destination is
 not local, the gateway's hostid should also be specified. (If the interface
 is a point-to-point link, then \fIgateway_hostid\fP may be omitted even if the
@@ -960,15 +1030,24 @@ Here are some examples of the \fBroute\fP command:
 # Route datagrams to IP address 44.0.0.3 to SLIP line #0.
 # No gateway is needed because SLIP is point-to point.
 route add 44.0.0.3 sl0
-
+.ft P
+.DE
+.DS I
+.ft CW
 # Route all default traffic to the gateway on the local Ethernet
 # with IP address 44.0.0.1
 route add default ec0 44.0.0.1
-
+.ft P
+.DE
+.DS I
+.ft CW
 # The local Ethernet has an ARPA Class-C address assignment.
 # Route all IP addresses beginning with 192.4.8 to it
 route add 192.4.8/24 ec0
-
+.ft P
+.DE
+.DS I
+.ft CW
 # The station with IP address 44.0.0.10 is on the local AX.25 channel
 route add 44.0.0.10 ax0
 .ft P
@@ -976,9 +1055,10 @@ route add 44.0.0.10 ax0
 .H 3 "route addprivate" " \fIhostid\fP[/\fIbits\fP]|default \fIinterface\fP [\fIgateway_hostid\fP [\fImetric\fP]]"
 This command is identical to \fBroute add\fP except that it also marks the new
 entry as private, it will never be included in outgoing RIP updates.
-.H 3 "route drop" " \fIhostid\fP"
-\fBroute drop\fP deletes an entry from the IP routing table. If a packet arrives for the
-deleted address and a \fBdefault\fP route is in effect, it will be used.
+.H 3 "route drop" " \fIhostid\fP[/\fIbits\fP]|default"
+Remove the specified entry from the IP routing table.
+If a packet arrives for the deleted address
+and a \fBdefault\fP route is in effect, it will be used.
 .H 3 "route flush"
 Drop all automatically created entries from the IP routing table, permanent
 entries are not affected.
@@ -1231,7 +1311,7 @@ Update the SRTT/MDEV cache entry for \fIhostid\fP by simulating a RTT
 measurement of \fImilliseconds\fP. If there was no previous cache entry
 for \fIhostid\fP, this will result in a new entry having a SRTT of
 \fImilliseconds\fP and a MDEV of 0. This command is most useful when
-executed from \fBnet.rc\fP.
+executed from a startup file such as \fBnet.rc\fP.
 .H 3 "tcp kick" " \fItcb_addr\fP"
 If there is unacknowledged data on the send queue of the specified TCP
 control block, this command forces an immediate retransmission.
@@ -1273,7 +1353,7 @@ If \fIport\fP is given that port is used. Default port is 23.
 .H 2 "trace" " [\fIinterface\fP [\fIflags\fP|subcommand [\fItracefile\fP]]]"
 Control packet tracing by the interface drivers.
 Specific bits in \fIflags\fP enable tracing of the various interfaces
-and the amount of information produced.
+and control the amount of information produced.
 Tracing is controlled on a per-interface basis.
 Without arguments, \fBtrace\fP displays a list of all defined interfaces
 and their tracing status.

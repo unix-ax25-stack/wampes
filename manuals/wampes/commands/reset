@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/reset,v 1.1 1994/07/12 16:32:26 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/reset,v 1.2 1994/07/27 09:47:58 deyke Exp $
 .H 2 "reset" " [\fIsession#\fP]"
 Reset the specified session, if no argument is given, reset the current
 session. This command should be used with caution since it does not

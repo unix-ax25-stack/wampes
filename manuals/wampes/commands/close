@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/close,v 1.1 1994/07/12 16:32:24 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/close,v 1.2 1994/07/27 09:47:53 deyke Exp $
 .H 2 "close" " [\fIsession#\fP]"
 Close the specified session, without an argument, close the
 current session. On an AX.25 session, this command initiates a

@@ -1,7 +1,27 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ipfilter,v 1.1 1994/07/12 16:32:25 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ipfilter,v 1.2 1994/07/27 09:47:56 deyke Exp $
 .H 2 "ipfilter" " [\fIsubcommand\fP]"
-TO BE WRITTEN.
-.H 3 "ipfilter add" " \fIaddr\fP[/\fIbits\fP]"
-TO BE WRITTEN.
-.H 3 "ipfilter drop" " \fIaddr\fP[/\fIbits\fP]"
-TO BE WRITTEN.
+Without an argument, display the IP filter table.
+If the IP filter table is empty, \fBWAMPES\fP will allow IP packets
+to be sent to any destination.
+If the IP filter table contains at least one entry,
+\fBWAMPES\fP will allow IP packets to be sent only to destinations listed
+in the IP filter table, IP packets to other destinations will be
+discarded.
+.H 3 "ipfilter add" " \fIhostid\fP[/\fIbits\fP]"
+This command adds an entry to the IP filter table.
+The optional /\fIbits\fP suffix to \fIhostid\fP specifies how
+many leading bits in \fIhostid\fP are to be considered significant.
+If not specified, 32 bits (i.e., full significance) is
+assumed. With this option, a single IP filter table entry may refer to
+many hosts all sharing a common bit string prefix in their IP addresses.
+For example, ARPA Class A, B and C networks would use suffixes of /8,
+/16 and /24 respectively. The command
+.DS I
+.ft CW
+ipfilter add 44/8
+.ft P
+.DE
+causes any IP addresses beginning with "44" in the first 8 bits to be
+allowed, the remaining 24 bits are "don't-cares".
+.H 3 "ipfilter drop" " \fIhostid\fP[/\fIbits\fP]"
+Remove the specified entry from the IP filter table.

@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/ftp-commands/type,v 1.1 1994/07/12 16:32:34 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/ftp-commands/type,v 1.2 1994/07/27 09:49:31 deyke Exp $
 .H 2 "type" " [a|b|i|l \fIbytesize\fP]"
 Set the FTP file transfer type to either ASCII (type \fBa\fP), or
 BINARY/IMAGE (type \fBb\fP or \fBi\fP).

@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ps,v 1.1 1994/07/12 16:32:26 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ps,v 1.2 1994/07/27 09:47:58 deyke Exp $
 .H 2 "ps"
 Display all current processes in the system. The fields are as follows:
 .P

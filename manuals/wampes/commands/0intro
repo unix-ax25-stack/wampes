@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/0intro,v 1.1 1994/07/12 16:32:24 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/0intro,v 1.2 1994/07/27 09:47:51 deyke Exp $
 .H 1 "Commands"
 This section describes the commands recognized in command mode, or
 within a startup file such as \fBnet.rc\fP. These are given in the following

@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/icmp,v 1.1 1994/07/12 16:32:25 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/icmp,v 1.2 1994/07/27 09:47:55 deyke Exp $
 .H 2 "icmp" " \fIsubcommand\fP"
 These commands control the Internet Control Message Protocol service.
 .H 3 "icmp echo" " [on|off]"

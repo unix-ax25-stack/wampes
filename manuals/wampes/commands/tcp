@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/tcp,v 1.3 1994/07/18 09:15:54 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/tcp,v 1.4 1994/07/27 09:48:00 deyke Exp $
 .H 2 "tcp" " \fIsubcommand\fP"
 These commands control the Transmission Control Protocol service.
 .H 3 "tcp irtt" " [\fImilliseconds\fP]"
@@ -24,7 +24,7 @@ Update the SRTT/MDEV cache entry for \fIhostid\fP by simulating a RTT
 measurement of \fImilliseconds\fP. If there was no previous cache entry
 for \fIhostid\fP, this will result in a new entry having a SRTT of
 \fImilliseconds\fP and a MDEV of 0. This command is most useful when
-executed from \fBnet.rc\fP.
+executed from a startup file such as \fBnet.rc\fP.
 .H 3 "tcp kick" " \fItcb_addr\fP"
 If there is unacknowledged data on the send queue of the specified TCP
 control block, this command forces an immediate retransmission.

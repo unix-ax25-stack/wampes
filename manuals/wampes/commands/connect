@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/connect,v 1.1 1994/07/12 16:32:24 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/connect,v 1.2 1994/07/27 09:47:53 deyke Exp $
 .H 2 "connect" " \fIax25_addr\fP [\fIdigipeater\fP ...]"
 Initiate a "vanilla" AX.25 session to the specified \fIax25_addr\fP.
 Up to 8 optional digipeaters may be given, note that the word

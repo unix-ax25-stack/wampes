@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/session,v 1.1 1994/07/12 16:32:27 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/session,v 1.2 1994/07/27 09:47:59 deyke Exp $
 .H 2 "session" " [\fIsession#\fP]"
 Without arguments, display the list of current sessions, including
 session number, remote TCP or AX.25 address and the address of the TCP or

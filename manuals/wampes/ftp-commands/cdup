@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/ftp-commands/cdup,v 1.1 1994/07/12 16:32:33 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/ftp-commands/cdup,v 1.2 1994/07/27 09:49:29 deyke Exp $
 .H 2 "cdup"
 Set the working directory on the server host to the parent of the
 current remote working directory.

@@ -1,9 +1,12 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/route,v 1.3 1994/07/18 09:15:53 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/route,v 1.4 1994/07/27 09:47:59 deyke Exp $
 .H 2 "route" " [\fIsubcommand\fP]"
 Without an argument, display the IP routing table.
 .H 3 "route add" " \fIhostid\fP[/\fIbits\fP]|default \fIinterface\fP [\fIgateway_hostid\fP [\fImetric\fP]]"
-This command adds an entry to the IP routing table. It requires at least two
-more arguments, the \fIhostid\fP of the destination and the name of
+Add a permanent entry to the IP routing table.
+It will not time out as will an automatically created entry,
+but must be removed with the \fBroute drop\fP command.
+\fBroute add\fP requires at least two more arguments,
+the \fIhostid\fP of the destination and the name of
 the \fIinterface\fP to which its packets should be sent. If the destination is
 not local, the gateway's hostid should also be specified. (If the interface
 is a point-to-point link, then \fIgateway_hostid\fP may be omitted even if the
@@ -54,15 +57,24 @@ Here are some examples of the \fBroute\fP command:
 # Route datagrams to IP address 44.0.0.3 to SLIP line #0.
 # No gateway is needed because SLIP is point-to point.
 route add 44.0.0.3 sl0
-
+.ft P
+.DE
+.DS I
+.ft CW
 # Route all default traffic to the gateway on the local Ethernet
 # with IP address 44.0.0.1
 route add default ec0 44.0.0.1
-
+.ft P
+.DE
+.DS I
+.ft CW
 # The local Ethernet has an ARPA Class-C address assignment.
 # Route all IP addresses beginning with 192.4.8 to it
 route add 192.4.8/24 ec0
-
+.ft P
+.DE
+.DS I
+.ft CW
 # The station with IP address 44.0.0.10 is on the local AX.25 channel
 route add 44.0.0.10 ax0
 .ft P
@@ -70,9 +82,10 @@ route add 44.0.0.10 ax0
 .H 3 "route addprivate" " \fIhostid\fP[/\fIbits\fP]|default \fIinterface\fP [\fIgateway_hostid\fP [\fImetric\fP]]"
 This command is identical to \fBroute add\fP except that it also marks the new
 entry as private, it will never be included in outgoing RIP updates.
-.H 3 "route drop" " \fIhostid\fP"
-\fBroute drop\fP deletes an entry from the IP routing table. If a packet arrives for the
-deleted address and a \fBdefault\fP route is in effect, it will be used.
+.H 3 "route drop" " \fIhostid\fP[/\fIbits\fP]|default"
+Remove the specified entry from the IP routing table.
+If a packet arrives for the deleted address
+and a \fBdefault\fP route is in effect, it will be used.
 .H 3 "route flush"
 Drop all automatically created entries from the IP routing table, permanent
 entries are not affected.

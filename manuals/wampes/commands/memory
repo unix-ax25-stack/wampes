@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/memory,v 1.2 1994/07/18 09:15:51 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/memory,v 1.3 1994/07/27 09:47:57 deyke Exp $
 .H 2 "memory" " \fIsubcommand\fP"
 These commands control memory allocation.
 .H 3 "memory debug" " [on|off]"

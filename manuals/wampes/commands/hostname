@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/hostname,v 1.1 1994/07/12 16:32:25 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/hostname,v 1.2 1994/07/27 09:47:55 deyke Exp $
 .H 2 "hostname" " [\fIhostname\fP]"
 Display or set the local host's name. By convention this should
 be the same as the host's primary domain name. This string is
