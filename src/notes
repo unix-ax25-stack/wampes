@@ -1,5 +1,7 @@
 -------------------------------------------------------------------------------
 
+- loosing the ASY TCP connection causes spinning
+
 - netupd should resync automatically
 
 - upload of a big file to telnet:loopback:echo causes spinning

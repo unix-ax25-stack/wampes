@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.8 1993/05/17 13:45:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.9 1994/07/12 16:30:04 deyke Exp $ */
 
 /* Miscellaneous Internet servers: discard, echo and remote
  * Copyright 1991 Phil Karn, KA9Q
@@ -14,7 +14,7 @@
 #include "commands.h"
 #include "hardware.h"
 
-char *Rempass = " ";    /* Remote access password */
+char *Rempass;          /* Remote access password */
 
 static struct tcb *disc_tcb,*echo_tcb;
 static struct udp_cb *remote_up;
@@ -22,11 +22,12 @@ static struct udp_cb *remote_up;
 static void disc_recv(struct tcb *tcb, int cnt);
 static void echo_recv(struct tcb *tcb, int cnt);
 static void echo_trans(struct tcb *tcb, int cnt);
-static void misc_state(struct tcb *tcb, int old, int new);
 static void uremote(struct iface *iface, struct udp_cb *up, int cnt);
 static int chkrpass(struct mbuf *bp);
+static void misc_state(struct tcb *tcb, int old, int new);
 
 /* Start up TCP discard server */
+int
 dis1(argc,argv,p)
 int argc;
 char *argv[];
@@ -42,7 +43,30 @@ void *p;
 	disc_tcb = open_tcp(&lsocket,NULLSOCK,TCP_SERVER,0,disc_recv,NULLVFP,misc_state,0,0);
 	return 0;
 }
+/* Discard server receiver upcall */
+static void
+disc_recv(tcb,cnt)
+struct tcb *tcb;
+uint16 cnt;
+{
+	struct mbuf *bp;
+
+	if(recv_tcp(tcb,&bp,cnt) > 0)
+		free_p(bp);                     /* Discard */
+}
+/* Stop discard server */
+int
+dis0(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	if(disc_tcb != NULLTCB)
+		close_tcp(disc_tcb);
+	return 0;
+}
 /* Start up TCP echo server */
+int
 echo1(argc,argv,p)
 int argc;
 char *argv[];
@@ -58,72 +82,10 @@ void *p;
 	echo_tcb = open_tcp(&lsocket,NULLSOCK,TCP_SERVER,0,echo_recv,echo_trans,misc_state,0,0);
 	return 0;
 }
-
-/* Start remote exit/reboot server */
-rem1(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
-{
-	struct socket sock;
-
-	sock.address = INADDR_ANY;
-	if(argc < 2)
-		sock.port = IPPORT_REMOTE;
-	else
-		sock.port = atoi(argv[1]);
-	remote_up = open_udp(&sock,uremote);
-	return 0;
-}
-
-/* Shut down miscellaneous servers */
-dis0(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
-{
-	if(disc_tcb != NULLTCB)
-		close_tcp(disc_tcb);
-	return 0;
-}
-echo0(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
-{
-	if(echo_tcb != NULLTCB)
-		close_tcp(echo_tcb);
-	return 0;
-}
-rem0(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
-{
-	if(remote_up){
-		del_udp(remote_up);
-		remote_up = 0;
-	}
-	return 0;
-}
-/* Discard server receiver upcall */
-static
-void
-disc_recv(tcb,cnt)
-struct tcb *tcb;
-uint16 cnt;
-{
-	struct mbuf *bp;
-
-	if(recv_tcp(tcb,&bp,cnt) > 0)
-		free_p(bp);                     /* Discard */
-}
-
 /* Echo server receive
  * Copies only as much will fit on the transmit queue
  */
-static
-void
+static void
 echo_recv(tcb,cnt)
 struct tcb *tcb;
 int cnt;
@@ -145,8 +107,7 @@ int cnt;
 /* Echo server transmit
  * Copies anything that might have been left in the receiver queue
  */
-static
-void
+static void
 echo_trans(tcb,cnt)
 struct tcb *tcb;
 uint16 cnt;
@@ -159,31 +120,33 @@ uint16 cnt;
 		send_tcp(tcb,bp);
 	}
 }
-
-/* Log connection state changes; also respond to remote closes */
-static
-void
-misc_state(tcb,old,new)
-register struct tcb *tcb;
-char old,new;
+/* stop echo server */
+int
+echo0(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
 {
-	switch(new){
-	case TCP_ESTABLISHED:
-		log(tcb,"open %s",tcp_port_name(tcb->conn.local.port));
-		break;
-	case TCP_CLOSE_WAIT:
-		close_tcp(tcb);
-		break;
-	case TCP_CLOSED:
-		log(tcb,"close %s",tcp_port_name(tcb->conn.local.port));
-		del_tcp(tcb);
-		/* Clean up if server is being shut down */
-		if(tcb == disc_tcb)
-			disc_tcb = NULLTCB;
-		else if(tcb == echo_tcb)
-			echo_tcb = NULLTCB;
-		break;
-	}
+	if(echo_tcb != NULLTCB)
+		close_tcp(echo_tcb);
+	return 0;
+}
+/* Start remote exit/reboot server */
+int
+rem1(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	struct socket sock;
+
+	sock.address = INADDR_ANY;
+	if(argc < 2)
+		sock.port = IPPORT_REMOTE;
+	else
+		sock.port = atoi(argv[1]);
+	remote_up = open_udp(&sock,uremote);
+	return 0;
 }
 /* Process remote exit/reset command */
 static void
@@ -245,7 +208,7 @@ struct mbuf *bp;
 	int rval = 0;
 
 	len = len_p(bp);
-	if(strlen(Rempass) != len)
+	if(Rempass == 0 || *Rempass == 0 || strlen(Rempass) != len)
 		return rval;
 	lbuf = mallocw(len);
 	pullup(&bp,lbuf,len);
@@ -254,4 +217,40 @@ struct mbuf *bp;
 	free(lbuf);
 	return rval;
 }
+int
+rem0(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	if(remote_up){
+		del_udp(remote_up);
+		remote_up = 0;
+	}
+	return 0;
+}
 
+/* Log connection state changes; also respond to remote closes */
+static void
+misc_state(tcb,old,new)
+register struct tcb *tcb;
+char old,new;
+{
+	switch(new){
+	case TCP_ESTABLISHED:
+		log(tcb,"open %s",tcp_port_name(tcb->conn.local.port));
+		break;
+	case TCP_CLOSE_WAIT:
+		close_tcp(tcb);
+		break;
+	case TCP_CLOSED:
+		log(tcb,"close %s",tcp_port_name(tcb->conn.local.port));
+		del_tcp(tcb);
+		/* Clean up if server is being shut down */
+		if(tcb == disc_tcb)
+			disc_tcb = NULLTCB;
+		else if(tcb == echo_tcb)
+			echo_tcb = NULLTCB;
+		break;
+	}
+}

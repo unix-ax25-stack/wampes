@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.44 1994/05/02 16:52:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.45 1994/07/12 16:30:01 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -536,6 +536,8 @@ void *p;
 			klen = strlen(key);
 			break;
 		case 's':
+			if(Rempass)
+				free(Rempass);
 			Rempass = strdup(optarg);
 			return 0;       /* Only set local password */
 		}

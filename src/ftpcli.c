@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.15 1994/01/03 14:33:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.16 1994/07/12 16:29:58 deyke Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q
@@ -187,6 +187,7 @@ static int doascii(int argc, char *argv[], void *p)
 
 static int dotype(int argc, char *argv[], void *p)
 {
+	char *bytesize;
 	struct ftp *ftp;
 
 	ftp = Current->cb.ftp;
@@ -220,8 +221,9 @@ static int dotype(int argc, char *argv[], void *p)
 	case 'L':
 	case 'l':
 		ftp->type = LOGICAL_TYPE;
-		ftp->logbsize = atoi(argv[2]);
-		sndftpmsg(ftp, "TYPE L %s\r\n", argv[2]);
+		bytesize = (argc >= 3) ? argv[2] : "8";
+		ftp->logbsize = atoi(bytesize);
+		sndftpmsg(ftp, "TYPE L %s\r\n", bytesize);
 		break;
 	default:
 		printf("Invalid type %s\n", argv[1]);
