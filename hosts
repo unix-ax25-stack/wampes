@@ -1340,36 +1340,38 @@
 44.130.23.40    DG1DCN  # Marc Noeker, Lennestadt: Amiga 2000
 44.130.23.102   DK3AK-14        # Siegmar Krause, 5982 Neuenrade
 #
-#44.130.144.x   Bielefeld
-# lokale Addresskoordination: DL3YEN
-#44.130.144...  fuer Digipeater und Mailbox BI/Oerlinghausen
-44.130.144.1    DB0NOS  # TCP/IP Server, Oerlinghausen; ***
-44.130.144.10   ROUTER.DB0NOS   # IP Router, Oerlinghausen; ***
-44.130.144.16   DL3YEN  # Wolfgang Beckmann, 4800 Bielefeld 13; AT
-44.130.144.17   SYS2.DL3YEN     #
-44.130.144.18   DL8KD   # Roland Werner, 4811 Oerlinghausen; Amiga
+#44.130.144.xxx Bielefeld/Oerlinghausen Stand 28.12.94
+44.130.144.1    DB0NOS  # TCP/IP-Svr Oerlinghausen ***
+#44.130.144.2-44.130.144.15 fuer DB0NOS-Peripherie und Subrechner
+44.130.144.16   DL3YEN  # Wolf, Bielefeld
+44.130.144.17   KR4PH   #
+44.130.144.18   DL8KD   # Roland, Oerlinghausen
 44.130.144.19   SYS2.DL8KD      #
-44.130.144.20   DG6YGD  # Dirk Wacker, 4930 Detmold
-44.130.144.21   DL2YEN  # Tom Woller, 4930 Detmold
-44.130.144.22   DG7YBQ  # Uwe Herrmann, 4800 Bielefeld 14; Amiga
-44.130.144.23   DL9YEM  # Stefan Rupprecht, 4815 Schloss-Holte-Stukenbrock
-44.130.144.24   DG6YDZ  # Dieter Hergast, 4811 Oerlinghausen
-44.130.144.25   DH4YAJ  # Carl-Christian Mueller, 4800 Bielefeld 11; Amiga
-44.130.144.26   DG8YFL  # Karl-Heinz Reisner, Bielefeld; Amiga
-44.130.144.27   DG6YL   # Herbert Wienciers, Augustdorf
+44.130.144.20   DG6YGD  # Dirk, Detmold
+44.130.144.21   DL2YEN  # Tom, Detmold
+44.130.144.22   DG7YBQ  # Uwe, Bielefeld
+44.130.144.23   DL9YEM  # Stefan, Schloss Holte
+44.130.144.24   DG6YDZ  # Dieter, Oerlinghausen
+44.130.144.25   DH4YAJ  # Christian, Bielefeld
+44.130.144.26   DG8YFL  # Karl-Heinz, Bielefeld
+44.130.144.27   DG6YL   # Herbert, Augustdorf
 44.130.144.28   DL8YEA  # Peter, Bielefeld
-44.130.144.29   DG3YFS  # Raymond Beard, Stromberg
-44.130.144.30   DL9YET  # Malte Rudolf, 4986 Roedinghausen; AT
-44.130.144.31   DL9YET-7        # ; Mac
-44.130.144.32   DG9YGJ  # Stefan Liebner, 4986 Roedinghausen; IBM386
-44.130.144.33   SYS1.DG8YAY     # Joerg Frommenjohann, 4800 Bielefeld 1
+44.130.144.29   DG3YFS  # Raymond, Stromberg
+44.130.144.30   DL9YET  # Malte, Roedinghausen
+44.130.144.31   AA2RL   #
+44.130.144.32   DG9YGJ  # Stefan, Roedinghausen
+44.130.144.33   SYS1.DG8YAY     # Joerg, Bielefeld
 44.130.144.34   SYS2.DG8YAY     #
-44.130.144.35   DL5YDE-7        # Ernst Luehr, 4815 Schloss-Holte-Stukenbrock
+44.130.144.35   DL5YDE  # Ernst, Stukenbrock
 44.130.144.36   DG4YDB  # Michael, Bielefeld
-44.130.144.38   DG6YGF  # Erhard Golling, Bielefeld; Amiga
-44.130.144.56   DK3RC   # Horst Brueggemann, 4930 Detmold
-44.130.144.57   DK3RC-1 # Horst Brueggemann, Bielstein
-44.130.144.58   DL0JW   # Clubstn N58, 4811 Oerlinghausen
+44.130.144.37   DG7YHV  # Juergen
+44.130.144.38   DG6YGF  # Erhard, Bielefeld
+44.130.144.39   DG4YHU  # Stephan, Detmold
+44.130.144.40   DL3YEO  # Herko, Bielefeld
+44.130.144.41   DG8YHT  # Jens, Detmold
+44.130.144.56   DK3RC   # Horst, Detmold
+44.130.144.57   DK3RC-1 # Horst, Bielstein
+44.130.144.58   DL0JW   # Clubstation N58, Oerlinghausen
 44.130.144.60   SYS2.DG6YGD     # Dirk, Detmold
 #
 #44.130.24.x    Rhein-Main
@@ -1828,6 +1830,7 @@
 44.130.36.11      dc7fb         # Ralf, Berlin-Rudow
 44.130.36.12      dc7fb-1       #
 44.130.36.13      dd6vd         # Michael
+44.130.36.14      dc7ch         # Juergen , Berlin
 44.130.36.18      DL7UFO-2      # Sven , 10409 Berlin
 44.130.36.20      DC7FO         # Uli, 1000 Berlin
 44.130.36.21      DC7FO-1       #
@@ -1848,6 +1851,7 @@
 44.130.36.50      DL7UAZ        # Andre' Zwadlo, Berlin-Koepenick
 44.130.36.51      DL7UAZ-1      #
 44.130.36.52      DL7AMN        # Edgar
+44.130.36.55      dd6ri         # Christian
 44.130.36.60      dl7aro        # Marco (WAMPES)
 44.130.36.65      DB5QO         # Dieter, Berlin 46
 44.130.36.66      DD5MP         # Antonio, Berlin
@@ -4603,6 +4607,8 @@
 44.142.71.1    hb9cjx         # Marco, St.Gallen (?), sysop HB9KNB
 # NOT USED, TO BE CLEARED IN UCSD :
 # 44.142.71.2    hb9brj         # Markus, St.Gallen, now 53.2
+44.142.71.8     hb9kop        # Jan, St. Gallen JN47QK
+44.142.71.9     2nd.hb9kop    # Jan, St. Gallen JN47QK
 #---------------------------------------------------------------------------
 # 44.142.73.xxx  Tel.Area 073 : Wil
 #
