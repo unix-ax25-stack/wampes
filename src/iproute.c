@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.18 1992/08/20 19:36:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.19 1992/10/05 17:29:22 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -402,7 +402,7 @@ int ckgood;
 		(*iface->send)(bp,iface,qhdr.gateway,qhdr.tos);
 #else
 		iface->outq = bp;
-		psignal(&iface->outq,1);
+		Xpsignal(&iface->outq,1);
 #endif
 		return 0;
 	}
@@ -440,7 +440,7 @@ int ckgood;
 	} else {
 		tlast->anext = bp;
 	}
-	psignal(&iface->outq,1);
+	Xpsignal(&iface->outq,1);
 	return 0;
 }
 int

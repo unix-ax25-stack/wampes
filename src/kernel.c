@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.7 1992/09/25 20:07:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.8 1992/10/05 17:29:23 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -198,7 +198,7 @@ register struct proc *pp;
 	stop_timer(&pp->alarm);
 
 	/* Alert everyone waiting for this proc to die */
-	psignal(pp,0);
+	Xpsignal(pp,0);
 
 	/* Remove from appropriate table */
 	delproc(pp);
@@ -446,7 +446,7 @@ void *event;
 #pragma OPTIMIZE ON
 
 void
-psignal(event,n)
+Xpsignal(event,n)
 void *event;
 int n;
 {

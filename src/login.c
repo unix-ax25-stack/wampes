@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.25 1992/09/25 20:07:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.26 1992/10/05 17:29:24 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -36,6 +36,8 @@
 #define GID                 400
 #define HOMEDIRPARENTPARENT "/users/funk"
 
+#define LOGFILEDIR          "/tcp/logs"
+
 /* login server control block */
 
 struct login_cb {
@@ -57,6 +59,8 @@ struct login_cb {
   void (*closefnc) __ARGS((void *fncarg));
 				/* func to call if pty gets closed */
   void *fncarg;                 /* argument for readfnc and closefnc */
+  FILE *logfp;                  /* log file pointer */
+  int loglastchr;               /* last char written to logfile */
   int telnet;                   /* telnet mode */
   int state;                    /* telnet state */
   char option[NOPTIONS+1];      /* telnet options */
@@ -66,7 +70,8 @@ static int32 pty_locktime[NUMPTY];
 
 static int find_pty __ARGS((int *numptr, char *slave));
 static void restore_pty __ARGS((const char *id));
-static void write_log_header __ARGS((int fd, const char *user, const char *protocol));
+static void write_log __ARGS((struct login_cb *tp, const char *buf, int cnt));
+static FILE *fopen_logfile __ARGS((const char *user, const char *protocol));
 static int do_telnet __ARGS((struct login_cb *tp, int chr));
 static void write_pty __ARGS((struct login_cb *tp));
 static void death_handler __ARGS((struct login_cb *tp));
@@ -218,27 +223,56 @@ int create;
 
 /*---------------------------------------------------------------------------*/
 
-static void write_log_header(fd, user, protocol)
-int fd;
+static void write_log(tp, buf, cnt)
+struct login_cb *tp;
+const char *buf;
+int cnt;
+{
+  int chr;
+
+  if (tp->logfp) {
+    while (--cnt >= 0) {
+      chr = *buf++;
+      if (!chr) {
+	/* ignore nulls */
+      } else if (chr == '\r')
+	putc('\n', tp->logfp);
+      else if (chr != '\n' || tp->loglastchr != '\r')
+	putc(chr, tp->logfp);
+      tp->loglastchr = chr;
+    }
+    fflush(tp->logfp);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static FILE *fopen_logfile(user, protocol)
 const char *user;
 const char *protocol;
 {
 
-  char buf[1024];
+  FILE *fp;
+  char filename[80];
+  static int cnt;
   struct tm *tm;
 
-  tm = localtime((long *) &Secclock);
-  sprintf(buf,
-	  "%s at %2d-%.3s-%02d %2d:%02d:%02d by %s\n",
-	  protocol,
-	  tm->tm_mday,
-	  "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
-	  tm->tm_year % 100,
-	  tm->tm_hour,
-	  tm->tm_min,
-	  tm->tm_sec,
-	  user);
-  write_log(fd, buf, (int) strlen(buf));
+  sprintf(filename, "%s/log.%05d.%04d", LOGFILEDIR, getpid(), cnt++);
+  if (fp = fopen(filename, "a")) {
+    tm = localtime((long *) &Secclock);
+    fprintf(fp,
+	    "%s at %2d-%.3s-%02d %2d:%02d:%02d by %s\n",
+	    protocol,
+	    tm->tm_mday,
+	    "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
+	    tm->tm_year % 100,
+	    tm->tm_hour,
+	    tm->tm_min,
+	    tm->tm_sec,
+	    user);
+    fflush(fp);
+  }
+  return fp;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -344,7 +378,7 @@ struct login_cb *tp;
   if (tp->outcnt) {
     n = write(tp->pty, tp->outptr, tp->outcnt);
     if (n < 0) n = 0;
-    if (n) write_log(tp->pty, tp->outptr, n);
+    if (n) write_log(tp, tp->outptr, n);
     tp->outptr += n;
     tp->outcnt -= n;
   }
@@ -391,7 +425,7 @@ void *upcall_arg;
   tp->closefnc = close_upcall;
   tp->fncarg = upcall_arg;
   on_read(tp->pty, tp->readfnc, tp->fncarg);
-  write_log_header(tp->pty, user, protocol);
+  tp->logfp = fopen_logfile(user, protocol);
   if (!(tp->pid = dofork())) {
     pw = getpasswdentry(user, 1);
     if (!pw || pw->pw_passwd[0]) pw = getpasswdentry("", 0);
@@ -464,8 +498,8 @@ struct login_cb *tp;
     close(tp->pty);
     restore_pty(tp->id);
     pty_locktime[tp->num] = secclock() + 20;
-    write_log(tp->pty, (char *) 0, -1);
   }
+  if (tp->logfp) fclose(tp->logfp);
   if (tp->pid > 0) {
     kill(-tp->pid, SIGHUP);
     pty_name(slave, SLAVEPREFIX, tp->num);
@@ -528,7 +562,7 @@ int cnt;
     if (tp->inpcnt <= 0) {
       if ((tp->inpcnt = read(tp->pty, tp->inpptr = tp->inpbuf, sizeof(tp->inpbuf))) <= 0)
 	return head;
-      write_log(tp->pty, tp->inpbuf, tp->inpcnt);
+      write_log(tp, tp->inpbuf, tp->inpcnt);
     }
     tp->inpcnt--;
     chr = uchar(*tp->inpptr++);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.27 1992/09/25 20:07:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.28 1992/10/05 17:29:19 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -12,6 +12,8 @@
 #include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
+
+#include <sys/resource.h>
 
 #ifdef __hpux
 #include <sys/rtprio.h>
@@ -87,10 +89,17 @@ pid_t dofork()
 
 void ioinit()
 {
+
   int i;
+  struct rlimit rlp;
 
 #define fixdir(name, mode) \
 	{ mkdir((name), (mode)); chmod((name), (mode)); }
+
+  getrlimit(RLIMIT_NOFILE, &rlp);
+  rlp.rlim_cur = FD_SETSIZE;
+  if (rlp.rlim_max < rlp.rlim_cur) rlp.rlim_max = rlp.rlim_cur;
+  setrlimit(RLIMIT_NOFILE, &rlp);
 
   fixdir("/tcp", 0755);
   fixdir("/tcp/sockets", 0755);

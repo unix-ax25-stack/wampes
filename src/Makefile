@@ -1,6 +1,6 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.24 1992/09/30 15:54:31 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.25 1992/10/05 17:29:13 deyke Exp $
 
-DEFINES       = -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=64
+DEFINES       = -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024
 
 CFLAGS        = $(OPTIMIZE) $(DEFINES)
 
@@ -126,7 +126,6 @@ OBJS          = alloc.o \
 		mbuf.o \
 		misc.o \
 		n8250.o \
-		netlog.o \
 		netrom.o \
 		netuser.o \
 		ni.o \
@@ -229,7 +228,6 @@ SRCS          = alloc.c \
 		mbuf.c \
 		misc.c \
 		n8250.c \
-		netlog.c \
 		netrom.c \
 		netuser.c \
 		ni.c \
@@ -425,7 +423,6 @@ mbuf.o: global.h mbuf.h proc.h timer.h
 misc.o: global.h socket.h mbuf.h proc.h timer.h
 n8250.o: global.h mbuf.h proc.h timer.h iface.h n8250.h asy.h devparam.h \
 	hpux.h
-netlog.o: global.h hpux.h
 netrom.o: global.h config.h netuser.h mbuf.h timer.h iface.h proc.h arp.h \
 	ip.h internet.h ax25.h lapb.h netrom.h session.h hardware.h telnet.h \
 	cmdparse.h trace.h login.h
