@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.2 1990/01/29 09:37:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.3 1990/03/09 15:41:52 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -52,6 +52,7 @@ struct login_cb {
   char  buffer[512];            /* pty read buffer */
   char  *bufptr;                /* pty read buffer index */
   int  bufcnt;                  /* pty read buffer count */
+  struct mbuf *sndq;            /* pty send queue */
   int  lastchr;                 /* last chr written to pty */
   int  linelen;                 /* counter for automatic line break */
   void (*closefnc)();           /* func to call if pty gets closed */
@@ -225,6 +226,43 @@ char  *user, *protocol;
 
 /*---------------------------------------------------------------------------*/
 
+static void write_pty(tp)
+struct login_cb *tp;
+{
+
+  char  *p;
+  char  buf[260];
+  char  chr;
+  int  cnt;
+
+  if (!tp->sndq) {
+    clrmask(chkwrite, tp->pty);
+    return;
+  }
+  for (p = buf; pullup(&tp->sndq, &chr, 1); tp->lastchr = chr) {
+    if (!tp->telnet || do_telnet(tp, uchar(chr))) {
+      if (tp->lastchr != '\r' || chr != '\0' && chr != '\n') {
+	*p++ = chr;
+	if (chr == '\r' || chr == '\n')
+	  tp->linelen = 0;
+	else if (++tp->linelen >= 255) {
+	  *p++ = '\n';
+	  tp->linelen = 0;
+	}
+	if (!tp->linelen) {
+	  cnt = p - buf;
+	  write(tp->pty, buf, (unsigned) cnt);
+	  write_log(tp->pty, buf, cnt);
+	  tp->lastchr = chr;
+	  return;
+	}
+      }
+    }
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void excp_handler(tp)
 struct login_cb *tp;
 {
@@ -268,6 +306,9 @@ char  *upcall_arg;
   readfnc[tp->pty] = read_upcall;
   readarg[tp->pty] = upcall_arg;
   setmask(chkread, tp->pty);
+  writefnc[tp->pty] = write_pty;
+  writearg[tp->pty] = (char *) tp;
+  setmask(chkwrite, tp->pty);
   excpfnc[tp->pty] = excp_handler;
   excparg[tp->pty] = (char *) tp;
   setmask(chkexcp, tp->pty);
@@ -285,19 +326,19 @@ char  *upcall_arg;
     dup(0);
     chmod(slave, 0622);
     memset((char *) &termio, 0, sizeof(termio));
-    termio.c_iflag = ICRNL;
+    termio.c_iflag = ICRNL | IXOFF;
     termio.c_oflag = OPOST | ONLCR | TAB3;
     termio.c_cflag = B1200 | CS8 | CREAD | CLOCAL;
     termio.c_lflag = ISIG | ICANON;
-    termio.c_cc[VINTR] = 127;
-    termio.c_cc[VQUIT] = 28;
-    termio.c_cc[VERASE] = 8;
-    termio.c_cc[VKILL] = 24;
-    termio.c_cc[VEOF] = 4;
+    termio.c_cc[VINTR]  = 127;
+    termio.c_cc[VQUIT]  =  28;
+    termio.c_cc[VERASE] =   8;
+    termio.c_cc[VKILL]  =  24;
+    termio.c_cc[VEOF]   =   4;
     ioctl(0, TCSETA, &termio);
     ioctl(0, TCFLSH, 2);
     if (!pw || pw->pw_passwd[0]) exit(1);
-    memset((char *) &utmp, 0, sizeof(struct utmp ));
+    memset((char *) &utmp, 0, sizeof(utmp));
     strcpy(utmp.ut_user, "LOGIN");
     strcpy(utmp.ut_id, tp->id);
     strcpy(utmp.ut_line, slave + 5);
@@ -324,11 +365,14 @@ struct login_cb *tp;
   if (!tp) return;
   if (tp->pty > 0) {
     clrmask(chkread, tp->pty);
-    readfnc[tp->pty] = (void (*)()) 0;
-    readarg[tp->pty] = (char *) 0;
+    readfnc[tp->pty] = 0;
+    readarg[tp->pty] = 0;
+    clrmask(chkwrite, tp->pty);
+    writefnc[tp->pty] = 0;
+    writearg[tp->pty] = 0;
     clrmask(chkexcp, tp->pty);
-    excpfnc[tp->pty] = (void (*)()) 0;
-    excparg[tp->pty] = (char *) 0;
+    excpfnc[tp->pty] = 0;
+    excparg[tp->pty] = 0;
     close(tp->pty);
     restore_pty(tp->id);
     pty_inuse[tp->num] = 0;
@@ -336,7 +380,7 @@ struct login_cb *tp;
   }
   if (tp->pid > 0) {
     kill(-tp->pid, SIGHUP);
-    memset((char *) &utmp, 0, sizeof(struct utmp ));
+    memset((char *) &utmp, 0, sizeof(utmp));
     strcpy(utmp.ut_id, tp->id);
     utmp.ut_type = DEAD_PROCESS;
     if (up = getutid(&utmp)) {
@@ -345,14 +389,15 @@ struct login_cb *tp;
       up->ut_exit.e_termination = 0;
       up->ut_exit.e_exit = 0;
       up->ut_time = currtime;
-      memcpy((char *) &utmp, (char *) up, sizeof(struct utmp ));
+      memcpy((char *) &utmp, (char *) up, sizeof(utmp));
       pututline(up);
       fwtmp = open("/etc/wtmp", O_WRONLY | O_CREAT | O_APPEND, 0644);
-      write(fwtmp, (char *) & utmp, sizeof(struct utmp ));
+      write(fwtmp, (char *) &utmp, sizeof(utmp));
       close(fwtmp);
     }
     endutent();
   }
+  free_q(&tp->sndq);
   free((char *) tp);
 }
 
@@ -392,7 +437,9 @@ int  cnt;
     }
     tp->bufcnt--;
     chr = uchar(*tp->bufptr++);
-    if (tp->telnet) {
+    if (chr == 0x11 || chr == 0x13) {
+      /* ignore XON / XOFF */
+    } else if (tp->telnet) {
       add_to_mbuf(chr);
       if (chr == IAC) add_to_mbuf(IAC);
     } else {
@@ -474,35 +521,7 @@ void login_write(tp, bp)
 struct login_cb *tp;
 struct mbuf *bp;
 {
-
-  char  *rp, *wp;
-  char  wbuf[8*1024];
-  int  chr, cnt;
-  struct mbuf *hbp;
-
-  wp = wbuf;
-  while (bp) {
-    rp = bp->data;
-    for (cnt = bp->cnt; cnt; tp->lastchr = chr, cnt--) {
-      chr = uchar(*rp++);
-      if (tp->telnet && !do_telnet(tp, chr)) continue;
-      if (tp->lastchr != '\r' || chr != '\0' && chr != '\n') {
-	*wp++ = chr;
-	if (chr == '\r' || chr == '\n')
-	  tp->linelen = 0;
-	else if (++tp->linelen >= 255) {
-	  *wp++ = '\r';
-	  tp->linelen = 0;
-	}
-      }
-    }
-    hbp = bp;
-    bp = bp->next;
-    free((char *) hbp);
-  }
-  if (cnt = wp - wbuf) {
-    write(tp->pty, wbuf, (unsigned) cnt);
-    write_log(tp->pty, wbuf, cnt);
-  }
+  append(&tp->sndq, bp);
+  setmask(chkwrite, tp->pty);
 }
 

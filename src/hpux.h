@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.h,v 1.2 1990/01/29 09:36:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.h,v 1.3 1990/03/09 15:41:50 deyke Exp $ */
 
 extern long  currtime;
 
@@ -6,6 +6,11 @@ extern int  chkread[];
 extern int  actread[];
 extern void (*readfnc[])();
 extern char  *readarg[];
+
+extern int  chkwrite[];
+extern int  actwrite[];
+extern void (*writefnc[])();
+extern char  *writearg[];
 
 extern int  chkexcp[];
 extern int  actexcp[];

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.5 1990/03/05 09:47:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.6 1990/03/09 15:41:46 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -32,6 +32,11 @@ int  chkread[2];
 int  actread[2];
 void (*readfnc[_NFILE])();
 char *readarg[_NFILE];
+
+int  chkwrite[2];
+int  actwrite[2];
+void (*writefnc[_NFILE])();
+char *writearg[_NFILE];
 
 int  chkexcp[2];
 int  actexcp[2];
@@ -452,11 +457,11 @@ eihalt()
     currtime = t.tv_sec;
     if (currtime == lasttime) timeout.tv_usec = 999999 - t.tv_usec;
   }
-  if (chkread[1] | chkexcp[1]) {
-    i = chkread[1] | chkexcp[1];
+  if (chkread[1] | chkwrite[1] | chkexcp[1]) {
+    i = chkread[1] | chkwrite[1] | chkexcp[1];
     nfds = 32;
   } else {
-    i = chkread[0] | chkexcp[0];
+    i = chkread[0] | chkwrite[0] | chkexcp[0];
     nfds = 0;
   }
   for (n = 16; n; n >>= 1)
@@ -465,16 +470,21 @@ eihalt()
       i >>= n;
     }
   if (i) nfds++;
-  actread[0] = chkread[0];
-  actread[1] = chkread[1];
-  actexcp[0] = chkexcp[0];
-  actexcp[1] = chkexcp[1];
-  if (select(nfds, actread, (int *) 0, actexcp, &timeout) < 1)
-    actread[0] = actread[1] = actexcp[0] = actexcp[1] = 0;
-  else
+  actread [0] = chkread [0];
+  actread [1] = chkread [1];
+  actwrite[0] = chkwrite[0];
+  actwrite[1] = chkwrite[1];
+  actexcp [0] = chkexcp [0];
+  actexcp [1] = chkexcp [1];
+  if (select(nfds, actread, actwrite, actexcp, &timeout) < 1) {
+    actread [0] = actread [1] = 0;
+    actwrite[0] = actwrite[1] = 0;
+    actexcp [0] = actexcp [1] = 0;
+  } else
     for (i = 0; i < nfds; i++) {
-      if (readfnc[i] && maskset(actread, i)) (*readfnc[i])(readarg[i]);
-      if (excpfnc[i] && maskset(actexcp, i)) (*excpfnc[i])(excparg[i]);
+      if (readfnc [i] && maskset(actread , i)) (*readfnc [i])(readarg [i]);
+      if (writefnc[i] && maskset(actwrite, i)) (*writefnc[i])(writearg[i]);
+      if (excpfnc [i] && maskset(actexcp , i)) (*excpfnc [i])(excparg [i]);
     }
 }
 
