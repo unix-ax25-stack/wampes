@@ -1170,6 +1170,9 @@
 44.130.20.4     dl4ydp
 44.130.20.5     dl4kbs  # Tobias Dingwerth, 52070 Aachen
 44.130.20.6     dg9kbu  # Uli Berens, 52074 Aachen-Laurensberg
+44.130.20.7     df2wf   # Franz Josef Plum, 52064 Aachen
+44.130.20.8     dd7wh   # Maria-Theresia Plum, 52064 Aachen
+44.130.20.9     dh8pac  # Monika Plum, 52064 Aachen
 44.130.20.10    dh3kac  # Wolfram Sauerteig, 52062 Aachen
 44.130.20.12    dk0af   # AMDAT e.V., 5100 Aachen; SUN-Gateway
 44.130.20.13    dk0af-1 #
@@ -1432,7 +1435,7 @@
 44.130.23.40    DG1DCN  # Marc Noeker, Lennestadt: Amiga 2000
 44.130.23.102   DK3AK-14        # Siegmar Krause, 5982 Neuenrade
 #
-#44.130.144.xxx Bielefeld/Oerlinghausen Stand 01.08.95
+#44.130.144.xxx Bielefeld/Oerlinghausen Stand 08.02.95
 44.130.144.1    DB0NOS  # TCP/IP-Svr Oerlinghausen ***
 44.130.144.2    FTP.DB0NOS              # FTP-Svr Oerlinghausen ***
 #44.130.144.3-44.130.144.15 fuer DB0NOS-Peripherie und Subrechner
@@ -1467,16 +1470,18 @@
 44.130.144.44   DL5YEQ  # Jens, Bielefeld
 44.130.144.45   DH2YAU  # Andreas,Bielefeld
 44.130.144.46   DB0CGS  # Clubstation,Bielefeld
-44.130.144.48   DG1YHN  # Sven, Paderborn
-44.130.144.49   DL1YCG  # Andreas, Bielefeld-Senne I
+44.130.144.48   DG1YHN  # Sven
+44.130.144.49   DL1YCG  # Andreas Bielefeld-Senne I
 44.130.144.50   DB9WT   # Hans, Bad Iburg
 44.130.144.51   DB9WT-2 # Hans, Bad Iburg
+44.130.144.52   DG5DBV  # Oliver, Soest
+44.130.144.53   DG5DBV-7        # Oliver,Soest
 44.130.144.56   DK3RC   # Horst, Detmold
 44.130.144.57   DK3RC-1 # Horst, Bielstein
 44.130.144.58   DL0JW   # Clubstation N58, Oerlinghausen
-44.130.144.60   LINUX.DG6YGD            # Dirk, Detmold
+44.130.144.60   Linux.DG6YGD            # Dirk, Detmold
 44.130.144.66   DG1YAY  # Christof, Buende
-44.130.144.67   DG1YAY-7        # TCPIP/ROUTER, Christof, Buende
+44.130.144.67   DG1YAY-7        # TCP/IP-Router # Christof Buende
 #
 #44.130.24.x    Rhein-Main
 # lokale Adress-Koordination: DG1ZX
@@ -2101,28 +2106,34 @@
 44.130.41.245   DD0WF   # Thomas Schleicher, Muenschweiler nr Pirmasens
 #
 #44.130.42.x    Koblenz
-44.130.42.1     DL5DI   # Hans-Juergen Barthen, 5473 Kruft
+44.130.42.1     DL5DI   # Hans-Juergen Barthen, 56642 Kruft
 44.130.42.2     DL5DI-amiga     # Hans-Juergen Barthen
 44.130.42.3     DB0LJ-1 # PBBS Mittelrhein (DL5DI); *** Linux Server
 44.130.42.4     DL5DI-p # Hans-Juergen Barthen
-44.130.42.5     DG2PU   # Thomas, 5477 Nickenich
-44.130.42.6     DB7JI   # Kajo, Lonnig
-44.130.42.7     DF4PM   # Heinz, Koblenz
-44.130.42.8     DK9PE   #
-44.130.42.9     DG6PG   # Armin H. Ecker, Hanroth/Ww
-44.130.42.10    DG6PG-2 #
-44.130.42.12    DF6PR   # Gerd Roth, 5410 Hoehr-Grenzhausen
-44.130.42.13    DB2PY   #
-44.130.42.14    DB7PB   #
+44.130.42.5     DG2PU   # Thomas, 56645 Nickenich
+44.130.42.6     DB7JI   # Kajo, Mendig
+44.130.42.7     DF4PM   # Heinz, 56073 Koblenz
+44.130.42.8     DK9PE   # Harry, 56068 Koblenz
+44.130.42.9     DG6PG   # Armin H. Ecker, 56316 Hanroth/Ww
+44.130.42.10    DG6PG-2 # Armin H. Ecker, 56316 Hanroth/Ww
+44.130.42.12    DF6PR   # Gerd Roth, 56203 Hoehr-Grenzhausen
+44.130.42.13    DB2PY   # Herbert, Kehrig
+44.130.42.14    DG7PB   # Guido
 44.130.42.15    DF2PA   # Ulrich Weingart, 56759 Kaisersesch
-44.130.42.16    DG2PR   #
-44.130.42.17    DG3PO   #
-44.130.42.18    DD3PO   # Heinz Hilger, 5405 Ochtendung
+44.130.42.16    DG2PR   # Hans-Gerd, 56727 Mayen
+44.130.42.17    DG3PO   # Walter
+44.130.42.18    DD3PO   # Heinz Hilger, 56299 Ochtendung
 44.130.42.19    DJ0IM   # Pierre Lentignac, 56269 Dierdorf
 44.130.42.20    DF3PM   # Juergen, 56626 Andernach; PC LINUX
 44.130.42.21    DF9PV   # Franz Kohlmann, 56564 Neuwied; Amiga
+44.130.42.22    DK4DA   # Dietmar
+44.130.42.23    DG3EKE  # Hartmut, Spessart nr. Mayen
+44.130.42.30    DC1PIA  # Thomas Lehnet, Koblenz
+44.130.42.50    DB7JI-1 # Kajo, Mendig, WAMPES-Router
+44.130.42.51    DF4PM-2 # Heinz, 56073 Koblenz; WAMPES-Router
 44.130.42.100   DB0LJ-R # ; Wampes Router
 44.130.42.101   DB0LJ-B # ; DieBox/PC-NFS-Client
+44.130.42.102   DB0LJ-O # ; OS2-Server/PC-NFS-Client
 #
 #44.130.44.x    Trier, Eifel
 # lokale Adresskoordination: DG6VJ
