@@ -1,4 +1,4 @@
-/* @(#) $Id: iface.h,v 1.27 2000/03/04 18:31:13 deyke Exp $ */
+/* @(#) $Id: iface.h,v 1.28 2002/09/19 19:11:44 dl9sau Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -44,6 +44,11 @@ struct iftype {
 				/* Function to initialize demand dialing */
 	int (*dstat)(struct iface *);
 				/* Function to display dialer status */
+        // dl9sau: patch for ARP requests (to QST) via multible digipeaters
+        // for an extended "collision domain"
+#define	AX_MCAST_DIGIS_MAX	8
+	uint8 *ax_mcast_digis[AX_MCAST_DIGIS_MAX];
+				/* possible multicast digis for ax25 ARP to QST-0 */
 };
 extern struct iftype Iftypes[];
 

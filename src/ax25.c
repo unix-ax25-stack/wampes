@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25.c,v 1.36 2002/01/23 22:43:27 dl9sau Exp $ */
+/* @(#) $Id: ax25.c,v 1.37 2002/09/19 19:11:44 dl9sau Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -300,7 +300,26 @@ struct mbuf **bpp       /* Data field (follows PID) */
 	/* Prepend pid to data */
 	pushdown(bpp,NULL,1);
 	(*bpp)->data[0] = (uint8)pid;
-	return axsend(iface,dest,source,LAPB_COMMAND,UI,bpp);
+	// dl9sau: patch for ARP requests (to QST) via multible digipeaters
+	// for an extended "collision domain"
+	if (iface && iface->iftype && addreq(dest,Ax25multi[0])) {
+		uint8 **ax_via;
+		struct mbuf *tbp;
+		int i;
+		int ret = 0;
+		int no_direct_arp = 0;
+		for (i = 0, ax_via = iface->iftype->ax_mcast_digis; i < AX_MCAST_DIGIS_MAX && *ax_via; ax_via++, i++) {
+			if (!ax_via[0][0]) {
+			  no_direct_arp = 1;
+			  continue;
+			}
+			dup_p(&tbp,*bpp,0,len_p(*bpp));
+			ret = axsend(iface,dest,source,LAPB_COMMAND,UI,&tbp, *ax_via);
+		}
+		if (no_direct_arp)
+		  return ret;
+	}
+	return axsend(iface,dest,source,LAPB_COMMAND,UI,bpp, 0);
 }
 /* Common subroutine for sendframe() and ax_output() */
 int
@@ -310,7 +329,8 @@ uint8 *dest,            /* Destination AX.25 address (7 bytes, shifted) */
 uint8 *source,          /* Source AX.25 address (7 bytes, shifted) */
 enum lapb_cmdrsp cmdrsp,/* Command/response indication */
 int ctl,                /* Control field */
-struct mbuf **bpp       /* Data field (includes PID) */
+struct mbuf **bpp,      /* Data field (includes PID) */
+uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater */ 
 ){
 	struct ax25 addr;
 	struct iface *ifp;
@@ -323,8 +343,12 @@ struct mbuf **bpp       /* Data field (includes PID) */
 
 	/* Do AX.25 routing */
 	memset(&addr,0,sizeof(struct ax25));
-	memcpy(addr.dest,dest,AXALEN);
 	memcpy(addr.source,source,AXALEN);
+	memcpy(addr.dest,dest,AXALEN);
+	if (ax_via) {
+	  memcpy(addr.digis[0], ax_via, AXALEN);
+	  addr.ndigis = 1;
+	}
 	axroute(&addr, &ifp);
 	addr.cmdrsp = cmdrsp;
 

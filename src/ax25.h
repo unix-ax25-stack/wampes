@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25.h,v 1.25 2002/01/23 22:43:28 dl9sau Exp $ */
+/* @(#) $Id: ax25.h,v 1.26 2002/09/19 19:11:44 dl9sau Exp $ */
 
 #ifndef _AX25_H
 #define _AX25_H
@@ -126,7 +126,7 @@ int axi_send(struct mbuf **bp,struct iface *iface,int32 gateway,uint8 tos);
 int ax_output(struct iface *iface,uint8 *dest,uint8 *source,uint pid,
 	struct mbuf **data);
 int axsend(struct iface *iface,uint8 *dest,uint8 *source,
-	enum lapb_cmdrsp cmdrsp,int ctl,struct mbuf **data);
+	enum lapb_cmdrsp cmdrsp,int ctl,struct mbuf **data, uint8 *ax_via);
 int valid_remote_call(const uint8 *call);
 struct ax_route *ax_routeptr(const uint8 *call, int create);
 void axroute_add(struct iface *iface, struct ax25 *hdr, int perm);

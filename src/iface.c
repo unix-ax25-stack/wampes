@@ -1,4 +1,4 @@
-/* @(#) $Id: iface.c,v 1.32 1999/10/08 03:33:34 deyke Exp $ */
+/* @(#) $Id: iface.c,v 1.33 2002/09/19 19:11:44 dl9sau Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -29,6 +29,7 @@ static int ifforw(int argc,char *argv[],void *p);
 static int ifencap(int argc,char *argv[],void *p);
 static int iftxqlen(int argc,char *argv[],void *p);
 static int ifautoroute(int argc,char *argv[],void *p);
+static int ifaxmcast_digis(int argc,char *argv[],void *p);
 
 /* Interface list header */
 struct iface *Ifaces = &Loopback;
@@ -128,6 +129,7 @@ char Noipaddr[] = "IP address field missing, and ip address not set\n";
 
 struct cmds Ifcmds[] = {
 	{ "autoroute",            ifautoroute,    0,      2,      NULL },
+	{ "axmcast_digis",        ifaxmcast_digis,0,      2,      NULL },
 	{ "broadcast",            ifbroad,        0,      2,      NULL },
 	{ "crc",                  ifcrc,          0,      2,      NULL },
 	{ "encapsulation",        ifencap,        0,      2,      NULL },
@@ -521,6 +523,97 @@ iftxqlen(int argc,char *argv[],void *p)
 	struct iface *ifp = (struct iface *) p;
 
 	setint(&ifp->outlim,"TX queue limit",argc,argv);
+	return 0;
+}
+
+// dl9sau: patch for ARP requests (to QST) via multible digipeaters
+// for an extended "collision domain"
+static int
+ifaxmcast_digis(int argc, char *argv[], void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+	char tmp[AXBUF];
+	uint8 **ax_via;
+	int len;
+	char *cmd;
+
+	if (!ifp || !ifp->iftype || !(ax_via = ifp->iftype->ax_mcast_digis)) {
+	  printf("Not supported by this interface\n");
+	  return -1;
+	}
+
+	cmd = *(++argv);
+	len = strlen(cmd);
+	++argv;
+	if (!strncmp("add", cmd, len)) {
+	  uint8 call[AXALEN];
+	  // "-" means no direct ARPs
+	  if (!*argv) {
+	    printf("need an argument\n");
+	    return -1;
+	  }
+	  if (!strcmp(*argv, "-"))
+	    memset(call, 0, AXALEN);
+          else if (setcall(call, *argv)) {
+	    printf("Not a valid call: %s\n", *argv);
+	    return -1;
+	  }
+	  for (len = 0; len < AX_MCAST_DIGIS_MAX; len++) {
+	    if (ax_via[len]) {
+	      if (addreq(ax_via[len], call)) {
+		printf("Already stored: %s\n", *argv);
+		return 0;
+	      }
+	      continue;
+	    }
+	    if (!(ax_via[len] = (uint8 *) mallocw(AXALEN))) {
+	      printf("Out of memory\n");
+	      return -1;
+	    }
+	    memcpy(ax_via[len], call, AXALEN);
+	    return 0;
+	  }
+	  printf("Too many entries to store %s (max %d)\n", *argv, AX_MCAST_DIGIS_MAX);
+	  return -1;
+	} else if (!strncmp("delete", cmd, len)) {
+	  uint8 call[AXALEN];
+	  if (!*argv) {
+	    printf("need an argument\n");
+	    return -1;
+	  }
+	  // "-" means no direct ARPs
+	  if (!strcmp(*argv, "-"))
+	    memset(call, 0, AXALEN);
+          else if (setcall(call, *argv)) {
+	    printf("Not a valid call: %s\n", *argv);
+	    return -1;
+	  }
+	  for (len = 0; len < AX_MCAST_DIGIS_MAX && ax_via[len]; len++) {
+	    if (!addreq(ax_via[len], call))
+	      continue;
+	    free(ax_via[len]);
+	    while (len < AX_MCAST_DIGIS_MAX-1) {
+	      ax_via[len] = ax_via[len+1];
+	      len++;
+	    }
+	    ax_via[AX_MCAST_DIGIS_MAX-1] = 0;
+	    return 0;
+	  }
+	  printf("No such entry %s\n", *argv);
+	  return -1;
+	} else if (!strncmp("list", cmd, len)) {
+	  if (ax_via[0]) {
+	    for (len = 0; len < AX_MCAST_DIGIS_MAX && ax_via[len]; len++) {
+	      printf("%s ", (ax_via[len][0] ? pax25(tmp, ax_via[len]) : "[no direct ARPs]"));
+	    }
+	    putchar('\n');
+	  }
+	  else
+	    printf("No entries\n");
+	} else {
+  	  printf("Subcommands: list | add [digi] | del [digi]. digi = \"-\": no direct ARPs\n");
+	  return -1;
+	}
 	return 0;
 }
 

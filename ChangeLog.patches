@@ -1,4 +1,4 @@
-Version @(#) $Id: ChangeLog.patches,v 1.10 2002/09/18 19:16:33 dl9sau Exp $
+Version @(#) $Id: ChangeLog.patches,v 1.11 2002/09/19 19:11:44 dl9sau Exp $
 
 020619 Thomas Osterried <dl9sau>
 
@@ -76,4 +76,3 @@ Version @(#) $Id: ChangeLog.patches,v 1.10 2002/09/18 19:16:33 dl9sau Exp $
 
         II. krnlif.c modification for linux-kernel 2.2 compatibility
             force the old behaviour with -DUSE_OBSOLETE_SOCK_PACKET
-
