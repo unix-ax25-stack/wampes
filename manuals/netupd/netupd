@@ -1,4 +1,4 @@
-.\" @(#) $Id: netupd,v 1.4 1996/08/19 16:33:30 deyke Exp $
+.\" @(#) $Id: netupd,v 1.5 1997/03/17 19:39:38 deyke Exp $
 .nr Ej 0 \" No new page for all headers
 .H 1 "Prerequisites"
 .AL
@@ -88,9 +88,22 @@ Execute the following UNIX command:
 /tcp/util/netupdc \fIserver\fP \fIclient\fP
 .ft P
 .DE
-where \fIserver\fP is the hostname of the server, and \fIclient\fP
-is the hostname of the client. Please note that \fIclient\fP
-may only consist of letters, digits, and the '-' character.
+or
+.DS I
+.ft CW
+/tcp/util/netupdc -m \fIserver\fP \fIclient\fP
+.ft P
+.DE
+where \fIserver\fP is the hostname of the server,
+and \fIclient\fP is the hostname of the client.
+Please note that \fIclient\fP may only consist of
+letters, digits, and the '-' character.
+.SP
+Without using option \fB-m\fP this will
+update all sources in your /tcp directory,
+and then call \fBmake\fP to build new \fBWAMPES\fP executables.
+If option \fB-m\fP is used only the update portion will be done,
+the \fBmake\fP portion will be skipped.
 .SP
 If \fIclient\fP is not specified, it defaults to the first part
 (up to the first '.' character) of the client hostname (as

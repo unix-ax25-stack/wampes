@@ -1,4 +1,10 @@
-@(#) $Id: ChangeLog,v 1.29 1997/03/07 19:57:04 deyke Exp $
+@(#) $Id: ChangeLog,v 1.30 1997/03/17 19:36:36 deyke Exp $
+
+970317 Dieter Deyke <deyke@fc.hp.com>
+
+	Added option -m (do not call make after update) to netupdc
+
+	Updated domain.txt and hosts
 
 970307 Dieter Deyke <deyke@fc.hp.com>
 

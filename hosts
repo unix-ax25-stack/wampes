@@ -680,6 +680,7 @@
 44.130.14.3     DL8OCK  # Oliver Grellert, 37133 Friedland-Gross Schneen
 44.130.14.4     DL8AAU  # Alexander Kurpiers, 37081 Goettingen
 44.130.14.5     SERVER.DL8OCK   # Oliver Grellert, 37133 Friedland-Gr. Schneen
+44.130.14.6     DL3DA   # Karl-Heinz Goersmann, 37077 Goettingen
 44.130.14.7     DG3AAF  # Andreas Kiehl, 37083 Goettingen
 44.130.14.8     DL1AAU  # Wolfgang Kuehn, 37120 Bovenden-Eddigehausen
 44.130.14.9     DL1WT   # Guenther Fraebel, 37083 Goettingen
@@ -700,6 +701,7 @@
 44.130.14.27    DF0US   # Clubstn Solling, H34, 37170 Uslar
 44.130.14.28    LAPTOP.DL1AAZ   # Andre Fischer, 37170 Uslar
 44.130.14.29    PC.DL1AAZ       # Andre Fischer, 37170 Uslar
+44.130.14.31    DL8AAX  # Dirk Unverzagt, 37139 Adelebsen
 44.130.14.40    DL0RSW  # Clubstn Personn-Realschule Weende, 37075 Goettingen
 44.130.14.50    DK0EME  # Clubstn Emil-Mehle, 37075 Goettingen
 44.130.14.51    DL1AAA  # Thomas Mehle, 37085 Goettingen
@@ -1640,7 +1642,8 @@
 44.130.23.20    DG1DBH  # Harald Husemann, Plettenberg
 44.130.23.40    DG1DCN  # Marc Noeker, Lennestadt: Amiga 2000
 44.130.23.102   DK3AK-14        # Siegmar Krause, 5982 Neuenrade
-#44.130.144.xxx Bielefeld/Oerlinghausen Stand 27.09.96
+#
+#44.130.144.xxx Bielefeld/Oerlinghausen Stand 15.03.97
 44.130.144.1    DB0NOS  # TCP/IP-Svr Oerlinghausen ***
 44.130.144.2    FTP.DB0NOS      # FTP-Svr Oerlinghausen ***
 #44.130.144.3-44.130.144.15 fuer DB0NOS-Peripherie und Subrechner
@@ -1704,7 +1707,13 @@
 44.130.144.73   DG1YGH-3        # Henning, Bielefeld
 44.130.144.74   DG5YAH  # Ansgar, 59302 Oelde-Lette
 44.130.144.75   DL6YDY  # Norman, 33330 Guetersloh
+44.130.144.76   DG4YFA  # Michael, 33604 Bielefeld
+44.130.144.77   DL5YCX  # Klaus, Muenster
+44.130.144.78   DG6VJ-F # Jochen, Muenster
+44.130.144.79   DG4YGG  # Thomas
+44.130.144.80   DG4YGG-U        # Thomas
 44.130.144.100  DB0EA-9 # LinuX, Muenster (testweise)
+44.130.144.101  DB0EA-U # Digi Muenster
 #
 #44.130.147.x   Siegen
 44.130.147.1    DJ5ZD   # Alexander, Bad Laasphe
@@ -2465,7 +2474,7 @@
 44.130.44.1     DF2OO   # Thomas, Konz
 44.130.44.3     DG4EK   # Peter, Dreis-Brueck
 44.130.44.4     DG6PX   # Guenter, Pelm
-44.130.44.4     DD9PZ   # Markus Lambers, 54456 Tawern-Fellerich
+44.130.44.5     DB9PZ   # Markus Lambers, 54456 Tawern-Fellerich
 44.130.44.6     DG6PY   # Hans-Peter, Pelm
 44.130.44.7     DB2VM   # Andreas, Trier
 44.130.44.8     DH0VZ   # Paul, Wittlich
@@ -2482,6 +2491,7 @@
 44.130.44.19    DK5WR   # Wilfried Hamm, 54292 Trier
 44.130.44.20    DF7PO   # Winfried Schubert, 54295 Trier
 44.130.44.21    DG3HDA  # Dietrich, 66538 Neunkirchen
+44.130.44.22    DF4WN   # Hartmut Diedrichs, 54439 Saarburg
 44.130.44.88    DB2VM-1 # Andreas, Trier
 44.130.44.99    DD8PZ   # Jochen van Geldern, 54329 Konz,
 44.130.44.100   DB2VM-2 # Andreas, Trier
@@ -3506,7 +3516,7 @@
 44.130.82.29    dg0cdb
 44.130.82.30    dg6mmt-2
 44.130.82.31    dl6cpf-u
-44.130.82.32    dg0cdb-net dg0cdb-net
+44.130.82.32    dg0cdb-net
 44.130.82.33    dg0cdb-0
 44.130.82.35    dg0cdb-1
 44.130.82.36    dg0cdb-2
@@ -3520,6 +3530,9 @@
 44.130.82.44    dg0cdc
 44.130.82.45    dg0cdc-u
 44.130.82.46    dg1kwa-u
+44.130.82.47    dg0cco
+44.130.82.48    dg0cco-u
+#
 44.130.82.100   db0oca
 44.130.82.101   db0oca-u
 44.130.82.102   db0oca-t
@@ -3541,6 +3554,8 @@
 44.130.83.10    dg1hsi-10
 44.130.83.11    db0emu-tnn  # TNN-Teil db0emu
 44.130.83.12    dl4htr # Harald , Dessau
+44.130.83.13    dl4htr-svr      # Harald, Dessau, Server
+44.130.83.14    dl4htr-10       # 2.Rechner
 #
 #44.130.87.x    Weissenfels
 44.130.87.9     DG1HQO  # Sven Werner, Weissenfels

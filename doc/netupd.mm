@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^Net Update Reference Manual^-\\\\nP-^Version 970307" \" Page footer
+.PF "^Net Update Reference Manual^-\\\\nP-^Version 970317" \" Page footer
 .\"
 .S 30
 .ce
 \fBNet Update Reference Manual\fP
 .ce
-Version 970307
+Version 970317
 .S
 .SP 2
 .S 15
@@ -116,9 +116,22 @@ Execute the following UNIX command:
 /tcp/util/netupdc \fIserver\fP \fIclient\fP
 .ft P
 .DE
-where \fIserver\fP is the hostname of the server, and \fIclient\fP
-is the hostname of the client. Please note that \fIclient\fP
-may only consist of letters, digits, and the '-' character.
+or
+.DS I
+.ft CW
+/tcp/util/netupdc -m \fIserver\fP \fIclient\fP
+.ft P
+.DE
+where \fIserver\fP is the hostname of the server,
+and \fIclient\fP is the hostname of the client.
+Please note that \fIclient\fP may only consist of
+letters, digits, and the '-' character.
+.SP
+Without using option \fB-m\fP this will
+update all sources in your /tcp directory,
+and then call \fBmake\fP to build new \fBWAMPES\fP executables.
+If option \fB-m\fP is used only the update portion will be done,
+the \fBmake\fP portion will be skipped.
 .SP
 If \fIclient\fP is not specified, it defaults to the first part
 (up to the first '.' character) of the client hostname (as

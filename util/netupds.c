@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: netupds.c,v 1.40 1996/08/12 18:53:33 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: netupds.c,v 1.41 1997/03/17 19:38:37 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -1185,20 +1185,43 @@ static void doclient(int argc, char **argv)
   char *cp;
   char *server;
   int addrlen;
+  int do_make;
   int flags;
   struct sockaddr *addr;
   struct stat statbuf;
 
-  server = (argc < 2) ? DEFAULTSERVER : argv[1];
+  argc--;
+  argv++;
 
-  if (argc < 3) {
-    if (gethostname(buf, sizeof(buf)))
+  if (argc > 0 && !strcmp(*argv, "-m")) {
+    do_make = 0;
+    argc--;
+    argv++;
+  } else {
+    do_make = 1;
+  }
+
+  if (argc > 0) {
+    server = *argv;
+    argc--;
+    argv++;
+  } else {
+    server = DEFAULTSERVER;
+  }
+
+  if (argc > 0) {
+    client = *argv;
+    argc--;
+    argv++;
+  } else {
+    if (gethostname(buf, sizeof(buf))) {
       syscallerr("gethostname");
-    if ((cp = strchr(buf, '.')))
+    }
+    if ((cp = strchr(buf, '.'))) {
       *cp = 0;
+    }
     client = strdup(buf);
-  } else
-    client = argv[2];
+  }
 
   if (chdir(MASTERDIR))
     syscallerr(MASTERDIR);
@@ -1243,7 +1266,10 @@ static void doclient(int argc, char **argv)
 
   printf("Received %d bytes, sent %d bytes\n", received, xmitted);
 
-  system("make");
+  if (do_make) {
+    system("make");
+  }
+
 }
 
 /*---------------------------------------------------------------------------*/
