@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.2 1990/03/05 11:48:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.3 1990/03/23 12:11:01 deyke Exp $ */
 
 /* Miscellaneous format conversion subroutines */
 
@@ -106,6 +106,7 @@ register char  *name;
   int32 n;
   register struct hosttable *p, *q;
 
+  if (n = aton(name)) return n;
   strlwc(lname, name);
   read_hosttable();
   for (q = 0, p = hosttable; p; q = p, p = p->next)
@@ -117,8 +118,7 @@ register char  *name;
       }
       return p->addr;
     }
-  add_to_hosttable(lname, n = aton(lname));
-  return n;
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -127,8 +127,8 @@ char  *inet_ntoa(addr)
 register int32 addr;
 {
 
+  char  buf[16];
   register struct hosttable *p, *q;
-  static char  buf[16];
 
   if (!addr) return "*";
   read_hosttable();
@@ -148,7 +148,7 @@ register int32 addr;
 	  uchar(addr >>  8),
 	  uchar(addr      ));
   add_to_hosttable(buf, addr);
-  return buf;
+  return hosttable->name;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -167,10 +167,11 @@ struct socket *s;
 long  htol(s)
 register char  *s;
 {
-  register int  c;
-  register long  l;
 
-  for (l = 0; isxdigit(c = (*s++ & 0x7f)); ) {
+  register int  c;
+  register long  l = 0;
+
+  while (isxdigit(c = (*s++ & 0x7f))) {
     if (c > '9') c -= 7;
     l = (l << 4) | (c & 0xf);
   }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.6 1990/03/07 09:25:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.7 1990/03/23 12:10:57 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
@@ -79,13 +79,13 @@ register char  *call;
 {
   register long  hashval;
 
-  hashval =                  (*call++ & 0xf);
-  hashval = (hashval << 4) | (*call++ & 0xf);
-  hashval = (hashval << 4) | (*call++ & 0xf);
-  hashval = (hashval << 4) | (*call++ & 0xf);
-  hashval = (hashval << 4) | (*call++ & 0xf);
-  hashval = (hashval << 4) | (*call++ & 0xf);
-  hashval = (hashval << 4) | ((*call >> 1) & 0xf);
+  hashval  = ((*call++ << 23) & 0x0f000000);
+  hashval |= ((*call++ << 19) & 0x00f00000);
+  hashval |= ((*call++ << 15) & 0x000f0000);
+  hashval |= ((*call++ << 11) & 0x0000f000);
+  hashval |= ((*call++ <<  7) & 0x00000f00);
+  hashval |= ((*call++ <<  3) & 0x000000f0);
+  hashval |= ((*call   >>  1) & 0x0000000f);
   return hashval % AXROUTESIZE;
 }
 

@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.14 1990/01/15 12:59:12 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.15 1990/03/23 12:07:31 deyke Exp $";
 
 #include <sys/types.h>
 
@@ -514,6 +514,7 @@ static void connect_permlinks()
     }
     p->connection = cp;
     if (*p->command) appendstring(&cp->obuf, p->command);
+    appendstring(&cp->obuf, "convers\n");
     sprintf(buffer, "/\377\200HOST %s\n", myhostname);
     appendstring(&cp->obuf, buffer);
   }
@@ -556,10 +557,17 @@ static void channel_command(cp)
 struct connection *cp;
 {
 
+  char  *s;
   char  buffer[2048];
   int  newchannel;
 
-  newchannel = atoi(getarg(0, 0));
+  s = getarg(0, 0);
+  if (!*s) {
+    sprintf(buffer, "*** You are on channel %d.\n", cp->channel);
+    appendstring(&cp->obuf, buffer);
+    return;
+  }
+  newchannel = atoi(s);
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
     sprintf(buffer, "*** Channel numbers must be in the range 0..%d.\n", MAXCHANNEL);
     appendstring(&cp->obuf, buffer);
@@ -691,7 +699,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.14 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.15 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
