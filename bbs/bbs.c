@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.17 1990/10/22 18:11:20 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.18 1990/10/24 10:39:30 deyke Exp $";
 
 #define _HPUX_SOURCE 1
 
@@ -452,6 +452,7 @@ static void get_seq()
 
   char  buf[16];
   char  fname[1024];
+  int  must_put = 0;
   struct stat statbuf;
 
   sprintf(fname, "%s/%s", user.dir, SEQFILE);
@@ -463,6 +464,7 @@ static void get_seq()
     if (read(fdseq, buf, sizeof(buf)) >= 2) user.seq = atoi(buf);
     close(fdseq);
     unlink(fname);
+    must_put = 1;
   }
 
   setresgid(user.gid, user.gid, 1);
@@ -476,6 +478,7 @@ static void get_seq()
     exit(1);
   }
   if (read(fdseq, buf, sizeof(buf)) >= 2) user.seq = atoi(buf);
+  if (must_put) put_seq();
 }
 
 /*---------------------------------------------------------------------------*/
