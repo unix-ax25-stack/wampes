@@ -1,4 +1,4 @@
-setup
+../common/setup
 frontpage
 credits
 the-net-program
@@ -6,4 +6,4 @@ console-modes
 commands/[[:digit:][:lower:]]*
 ftp-commands/[[:digit:][:lower:]]*
 setting-paclen
-contents
+../common/contents

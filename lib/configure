@@ -1,4 +1,4 @@
-# @(#) $Id: configure,v 1.32 1999/02/01 22:26:20 deyke Exp $
+# @(#) $Id: configure,v 1.33 1999/04/24 16:08:54 deyke Exp $
 
 CC='cc'
 CFLAGS='-O -I../lib'
@@ -16,7 +16,11 @@ case "`uname -sr`" in
 
 HP-UX*)
 	CC='c89'
-	CFLAGS="$CFLAGS -D_HPUX_SOURCE -DFD_SETSIZE=1024"
+	if hp9000s800; then
+		CFLAGS="$CFLAGS -z +ESlit -D_HPUX_SOURCE -DFD_SETSIZE=1024"
+	else
+		CFLAGS="$CFLAGS -D_HPUX_SOURCE -DFD_SETSIZE=1024"
+	fi
 	SLIBS='-lndbm'
 	;;
 

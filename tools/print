@@ -1,28 +1,31 @@
 #! /bin/ksh
 
-# @(#) $Id: print,v 1.7 1996/08/12 18:52:58 deyke Exp $
+# @(#) $Id: print,v 1.8 1999/04/24 16:08:37 deyke Exp $
+
+option=$1
+shift
 
 if [[ -n "$1" ]]; then
-	files="setup $*"
+	files="../common/setup $*"
 else
 	files="$(< filelist)"
 fi
 
-case ${0##*/} in
-nprint)
+case $option in
+n)
 	cat $files | tbl -TX | nroff -mm | col
 	;;
-tprint)
+t)
 	cat $files | tbl | troff -mm
 	;;
-aprint)
+a)
 	cat $files | groff -p -t -mgm -Tascii
 	;;
-pprint)
+p)
 	cat $files | groff -p -t -mgm -Tps
 	;;
 *)
-	echo $0 not recognized
+	echo Option $0 not recognized
 	exit 1
 	;;
 esac

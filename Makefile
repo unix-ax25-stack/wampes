@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.40 1999/02/11 19:26:34 deyke Exp $
+# @(#) $Id: Makefile,v 1.41 1999/04/24 16:07:26 deyke Exp $
 
 OBSOLETE   = /usr/local/bin/sfstat \
 	     /usr/local/etc/mkhostdb \
@@ -39,7 +39,8 @@ all:;   @-rm -f $(OBSOLETE)
 	if [ -f /tcp/hostaddr.db ]; then ln /tcp/hostaddr.db $@; fi
 
 distrib:
-	@version=`awk -F- '/.#.WAMPES-/ {print substr($$2,1,6)}' < src/version.c`; \
+	@-rm -f wampes-??????.t*; \
+	version=`awk -F- '/.#.WAMPES-/ {print substr($$2,1,6)}' < src/version.c`; \
 	sources=`find \
 		*.R \
 		ChangeLog \
@@ -71,8 +72,11 @@ distrib:
 		util/*.[ch] \
 		util/Makefile \
 		! -name configure.h -print`; \
-	tar cvf - $$sources | gzip -9 -v > wampes-$$version.tar.gz; \
+	tar cf - $$sources | gzip -9 -v > wampes-$$version.tar.gz; \
 	cp README wampes-$$version.txt
 
 clean:; @-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i clean ); done
 	@-if [ -d tools ]; then  ( cd tools; $(MAKE) -i clean ); fi
+	@-rm -f wampes-??????.t*
+	@-find . -name .pure -exec rm {} \;
+	@-find . -name .trimtime -exec rm {} \;

@@ -1,5 +1,5 @@
-setup
+../common/setup
 frontpage
 commands
 sf_pic
-contents
+../common/contents

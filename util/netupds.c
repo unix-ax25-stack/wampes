@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: netupds.c,v 1.49 1999/01/22 21:22:04 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: netupds.c,v 1.50 1999/04/24 16:08:50 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -1196,7 +1196,7 @@ static void server_version_1(int flags)
 
   generate_dynamic_include_table();
 
-  if (chdir(master = "/users/funk/dk5sg/tcp") && chdir(master = sourcedir)) {
+  if (chdir(master = sourcedir)) {
     syscallerr(master);
   }
   scandirectory(".", SCAN_MASTER);

@@ -1,12 +1,12 @@
-.\" @(#) $Id: frontpage,v 1.129 1999/04/21 19:59:57 deyke Exp $ -*- Mode: Nroff -*-
+.\" @(#) $Id: frontpage,v 1.130 1999/04/24 16:09:31 deyke Exp $ -*- Mode: Nroff -*-
 .\"
-.PF "^Net Update Reference Manual^-\\\\nP-^Version 990421" \" Page footer
+.PF "^Net Update Reference Manual^-\\\\nP-^Version 990424" \" Page footer
 .\"
 .S 30
 .ce
 \fBNet Update Reference Manual\fP
 .ce
-Version 990421
+Version 990424
 .S
 .SP 2
 .S 15
