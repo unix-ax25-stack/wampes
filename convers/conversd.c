@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.39 1993/06/30 11:50:59 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.40 1993/07/02 06:04:37 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -97,7 +97,7 @@ struct user {
   struct link *u_link;          /* Link to this user */
   int u_channel;                /* Channel number */
   int u_oldchannel;             /* Prev channel number */
-  char *u_note;                 /* Note */
+  char *u_note;                 /* Personal note */
   long u_stime;                 /* Connect time */
   struct user *u_next;          /* Linked list pointer */
 };
@@ -792,9 +792,11 @@ static void help_command(struct link *lp)
 
     "/WHO                 Show active channels and users\n"
 
-    "/CHANNEL n           Switch to channel n\n"
-    "/NOTE text...        Set note to text\n"
-    "/NOTE @              Clear note\n"
+    "/CHANNEL [n]         Switch to channel n\n"
+    "/NOTE [text...]      Set personal note to text\n"
+    "/PERSONAL [text...]  Set personal note to text\n"
+    "/NOTE @              Clear personal note\n"
+    "/PERSONAL @          Clear personal note\n"
 
     "/MSG user text...    Send a private message to user\n"
     "/WRITE user text...  Send a private message to user\n"
@@ -916,7 +918,7 @@ static void note_command(struct link *lp)
     up->u_oldchannel = up->u_channel;
     send_user_change_msg(up);
   }
-  sprintf(buffer, "*** Your note is set to \"%s\".\n", strcmp(up->u_note, NO_NOTE) ? up->u_note : "");
+  sprintf(buffer, "*** Your personal note is set to \"%s\".\n", strcmp(up->u_note, NO_NOTE) ? up->u_note : "");
   send_string(lp, buffer);
 }
 
@@ -985,7 +987,7 @@ static void name_command(struct link *lp)
   if (lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.39 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.40 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1013,7 +1015,7 @@ static void users_command(struct link *lp)
   char buffer[2048];
   struct user *up;
 
-  send_string(lp, "User     Host     Channel   Time Note\n");
+  send_string(lp, "User     Host     Channel   Time Personal note\n");
   for (up = users; up; up = up->u_next) {
     sprintf(buffer,
 	    "%-8.8s %-8.8s %7d %s %s\n",
@@ -1268,6 +1270,7 @@ static void process_input(struct link *lp)
     "msg",              msg_command,
     "note",             note_command,
     "peers",            peers_command,
+    "personal",         note_command,
     "quit",             close_link,
     "users",            users_command,
     "who",              who_command,
