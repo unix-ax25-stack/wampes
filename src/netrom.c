@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.51 1996/01/04 19:11:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.52 1996/05/28 15:57:25 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -1604,8 +1604,8 @@ int nr_attach(int argc, char *argv[], void *p)
   }
   Nr_iface = (struct iface *) callocw(1, sizeof(struct iface));
   Nr_iface->addr = Ip_addr;
-  Nr_iface->broadcast = 0xffffffffL;
-  Nr_iface->netmask = 0xffffffffL;
+  Nr_iface->broadcast = 0xffffffffUL;
+  Nr_iface->netmask = 0xffffffffUL;
   Nr_iface->name = strdup(ifname);
   Nr_iface->hwaddr = (uint8 *) mallocw(AXALEN);
   memcpy(Nr_iface->hwaddr, Mycall, AXALEN);

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.87 1996/02/13 15:30:49 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.88 1996/05/28 15:57:23 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -345,7 +345,7 @@ all:;   chmod 755 cc
 	SunOS\ 5.*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
-		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
+		'CFLAGS=-v -DUNIX -DFD_SETSIZE=1024 -I../lib' \
 		'SLIBS=-lsocket -lnsl' \
 		_all;; \
 	ULTRIX*) \

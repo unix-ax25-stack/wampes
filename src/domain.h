@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.h,v 1.5 1995/12/20 09:46:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.h,v 1.6 1996/05/28 15:56:56 deyke Exp $ */
 
 #ifndef _DOMAIN_H
 #define _DOMAIN_H
@@ -124,7 +124,7 @@ struct rr {
 	char *comment;          /* optional comment */
 	char *name;             /* Domain name, ascii form */
 	int32 ttl;              /* Time-to-live */
-#define TTL_MISSING     0x80000000L
+#define TTL_MISSING     0x80000000UL
 	uint16 class;           /* IN, etc */
 #define CLASS_MISSING   0
 	uint16 type;            /* A, MX, etc */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.24 1996/02/13 15:30:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.25 1996/05/28 15:56:48 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -230,8 +230,8 @@ int axip_attach(int argc, char *argv[], void *p)
   ifp = (struct iface *) callocw(1, sizeof(struct iface));
   ifp->name = strdup(ifname);
   ifp->addr = Ip_addr;
-  ifp->broadcast = 0xffffffffL;
-  ifp->netmask = 0xffffffffL;
+  ifp->broadcast = 0xffffffffUL;
+  ifp->netmask = 0xffffffffUL;
   ifp->hwaddr = (uint8 *) mallocw(AXALEN);
   addrcp(ifp->hwaddr, Mycall);
   ifp->mtu = 256;

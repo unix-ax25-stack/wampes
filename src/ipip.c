@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.18 1996/02/13 15:30:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.19 1996/05/28 15:57:13 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -177,8 +177,8 @@ int ipip_attach(int argc, char *argv[], void *p)
   ifp = (struct iface *) callocw(1, sizeof(struct iface));
   ifp->name = strdup(ifname);
   ifp->addr = Ip_addr;
-  ifp->broadcast = 0xffffffffL;
-  ifp->netmask = 0xffffffffL;
+  ifp->broadcast = 0xffffffffUL;
+  ifp->netmask = 0xffffffffUL;
   ifp->mtu = MAX_FRAME;
   ifp->flags = NO_RT_ADD;
   setencap(ifp, "None");
