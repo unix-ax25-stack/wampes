@@ -1,4 +1,4 @@
-# @(#) $Id: configure,v 1.38 2000/03/04 18:31:11 deyke Exp $
+# @(#) $Id: configure,v 1.39 2001/01/27 15:10:04 deyke Exp $
 
 CC='cc'
 CFLAGS='-O -I../lib'
@@ -39,7 +39,7 @@ IRIX*)
 Linux*)
 	CC='gcc'
 	case `hostname` in
-	deyke7*)
+	server.deyke.net)
 		CFLAGS="$CFLAGS -fsigned-char -ansi -pedantic -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wnested-externs -Dlinux -D_GNU_SOURCE -I../src/linux_include";;
 	*)
 		CFLAGS="$CFLAGS -I../src/linux_include";;
