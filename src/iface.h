@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.17 1992/11/29 17:37:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.18 1993/01/29 06:48:24 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -34,8 +34,15 @@ struct iftype {
 	int type;               /* Type field for network process */
 	int hwalen;             /* Length of hardware address, if any */
 	void (*rcvf) __ARGS((struct iface *,struct mbuf *));
+				/* Function that handles incoming packets */
 	int (*addrtest) __ARGS((struct iface *,struct mbuf *));
+				/* Function that tests incoming addresses */
 	void (*trace) __ARGS((FILE *,struct mbuf **,int));
+				/* Function that decodes protocol headers */
+	int (*dinit) __ARGS((struct iface *,int32,int,char **));
+				/* Function to initialize demand dialing */
+	int (*dstat) __ARGS((struct iface *));
+				/* Function to display dialer status */
 };
 #define NULLIFT (struct iftype *)0
 extern struct iftype Iftypes[];
@@ -50,11 +57,6 @@ struct iface {
 	int32 netmask;          /* Network mask */
 
 	int16 mtu;              /* Maximum transmission unit size */
-
-	int16 flags;            /* Configuration flags */
-#define DATAGRAM_MODE   0       /* Send datagrams in raw link frames */
-#define CONNECT_MODE    1       /* Send datagrams in connected mode */
-#define NO_RT_ADD       2       /* Don't call rt_add in ip_route */
 
 	int16 trace;            /* Trace flags */
 #define IF_TRACE_OUT    0x01    /* Output packets */
@@ -72,6 +74,12 @@ struct iface {
 	struct proc *supv;      /* Supervisory process, if any */
 
 	struct mbuf *outq;      /* IP datagram transmission queue */
+	int outlim;             /* Limit on outq length */
+	int txbusy;             /* Transmitter is busy */
+
+	void *dstate;           /* Demand dialer link state, if any */
+	int (*dtickle)();       /* Function to tickle dialer, if any */
+	void (*dstatus)();      /* Function to display dialer state, if any */
 
 	/* Device dependent */
 	int dev;                /* Subdevice number to pass to send */
@@ -114,9 +122,11 @@ struct iface {
 #define CRC_TEST_RMNC   2       /* Send a single CRC_RMNC packet, then switch to CRC_OFF */
 #define CRC_16          3       /* Send CRC_16 packets */
 #define CRC_RMNC        4       /* Send CRC_RMNC packets */
-#define CRC_FCS         5       /* Send CRC_FCS packets */
+#define CRC_CCITT       5       /* Send CRC_CCITT packets */
 	int32 crcerrors;        /* Packets received with CRC errors */
 	int32 ax25errors;       /* Packets received with bad ax25 header */
+	int16 flags;            /* Configuration flags */
+#define NO_RT_ADD       1       /* Don't call rt_add in ip_route */
 };
 #define NULLIF  (struct iface *)0
 extern struct iface *Ifaces;    /* Head of interface list */
@@ -139,14 +149,16 @@ extern char Noipaddr[];
 extern struct mbuf *Hopper;
 
 /* In iface.c: */
-struct iface *if_lookup __ARGS((char *name));
-struct iface *ismyaddr __ARGS((int32 addr));
-int if_detach __ARGS((struct iface *ifp));
-int setencap __ARGS((struct iface *ifp,char *mode));
-char *if_name __ARGS((struct iface *ifp,char *comment));
 int bitbucket __ARGS((struct iface *ifp,struct mbuf *bp));
+int if_detach __ARGS((struct iface *ifp));
+struct iface *if_lookup __ARGS((char *name));
+char *if_name __ARGS((struct iface *ifp,char *comment));
 void if_tx __ARGS((int dev,void *arg1,void *unused));
+struct iface *ismyaddr __ARGS((int32 addr));
 void network __ARGS((int i,void *v1,void *v2));
+int nu_send __ARGS((struct mbuf *bp,struct iface *ifp,int32 gateway,int tos));
+int nu_output __ARGS((struct iface *,char *,char *,int,struct mbuf *));
+int setencap __ARGS((struct iface *ifp,char *mode));
 
 /* In config.c: */
 int net_route __ARGS((struct iface *ifp,struct mbuf *bp));

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.h,v 1.6 1992/05/28 13:50:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.h,v 1.7 1993/01/29 06:48:32 deyke Exp $ */
 
 #ifndef _MBUF_H
 #define _MBUF_H
@@ -36,6 +36,7 @@ struct mbuf *free_mbuf __ARGS((struct mbuf *bp));
 struct mbuf *ambufw __ARGS((int size));
 struct mbuf *copy_p __ARGS((struct mbuf *bp,int cnt));
 int16 dup_p __ARGS((struct mbuf **hp,struct mbuf *bp,int offset,int cnt));
+int16 extract __ARGS((struct mbuf *bp,int offset,char *buf,int len));
 struct mbuf *free_p __ARGS((struct mbuf *bp));
 int16 len_p __ARGS((struct mbuf *bp));
 void trim_mbuf __ARGS((struct mbuf **bpp,int length));

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.11 1992/08/19 13:20:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.12 1993/01/29 06:48:30 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -282,7 +282,8 @@ char  *sysname;
       if (!*mj.to) continue;
       if (!(fp = fopen(mj.dfile, "r"))) continue;
       if (fscanf(fp, "%*s %s", tmp1) == 1) {
-	if (!strcmp(tmp1, "MAILER-DAEMON")) strcpy(tmp1, Hostname);
+	if (!strcmp(tmp1, "MAILER-DAEMON") || !strcmp(tmp1, "!"))
+	  strcpy(tmp1, Hostname);
 	sprintf(mj.from, "%s!%s", Hostname, tmp1);
 	strtrim(mj.from);
 	while (fgets(line, sizeof(line), fp))

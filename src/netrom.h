@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.14 1992/06/01 10:34:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.15 1993/01/29 06:48:34 deyke Exp $ */
 
 #ifndef _NETROM_H
 #define _NETROM_H
@@ -60,32 +60,34 @@
 #define NR4CHOKE        0x80    /* CHOKE bit */
 
 struct circuit {
-  int  localindex;              /* Local circuit index */
-  int  localid;                 /* Local circuit ID */
-  int  remoteindex;             /* Remote circuit index */
-  int  remoteid;                /* Remote circuit ID */
-  int  outbound;                /* Circuit was created by local request */
-  char  node[AXALEN];           /* Call of peer node */
-  char  cuser[AXALEN];          /* Call of user */
-  int  state;                   /* Connection state */
-#define DISCONNECTED  0
-#define CONNECTING    1
-#define CONNECTED     2
-#define DISCONNECTING 3
-  int  reason;                  /* Reason for disconnecting */
-#define NORMAL        0         /* Normal disconnect */
-#define RESET         1         /* Disconnected by other end */
-#define TIMEOUT       2         /* Excessive retransmissions */
-#define NETWORK       3         /* Network problem */
-  int  window;                  /* Negotiated window size */
-  int  naksent;                 /* NAK has been sent */
-  int  chokesent;               /* CHOKE has been sent */
-  int  closed;                  /* Disconnect when send queue empty */
-  int  recv_state;              /* Incoming sequence number expected next */
-  int  send_state;              /* Next sequence number to be sent */
-  int  cwind;                   /* Congestion window */
+  int localindex;               /* Local circuit index */
+  int localid;                  /* Local circuit ID */
+  int remoteindex;              /* Remote circuit index */
+  int remoteid;                 /* Remote circuit ID */
+  int outbound;                 /* Circuit was created by local request */
+  char node[AXALEN];            /* Call of peer node */
+  char cuser[AXALEN];           /* Call of user */
+  int state;                    /* Connection state */
+#define NR4STDISC       0                       /* disconnected */
+#define NR4STCPEND      1                       /* connection pending */
+#define NR4STCON        2                       /* connected */
+#define NR4STDPEND      3                       /* disconnect requested locally */
+#define NR4STLISTEN     4                       /* listening for incoming connections */
+  int reason;                   /* Reason for disconnecting */
+#define NR4RNORMAL      0                       /* Normal, requested disconnect */
+#define NR4RREMOTE      1                       /* Remote requested */
+#define NR4RTIMEOUT     2                       /* Connection timed out */
+#define NR4RRESET       3                       /* Connection reset locally */
+#define NR4RREFUSED     4                       /* Connect request refused */
+  int window;                   /* Negotiated window size */
+  int naksent;                  /* NAK has been sent */
+  int chokesent;                /* CHOKE has been sent */
+  int closed;                   /* Disconnect when send queue empty */
+  int recv_state;               /* Incoming sequence number expected next */
+  int send_state;               /* Next sequence number to be sent */
+  int cwind;                    /* Congestion window */
   int32 remote_busy;            /* Other end's window is closed */
-  int  retry;                   /* Retransmission retry count */
+  int retry;                    /* Retransmission retry count */
   int32 srtt;                   /* Smoothed round trip time, milliseconds */
   int32 mdev;                   /* Mean deviation, milliseconds */
   struct timer timer_t1;        /* Retransmission timer */
@@ -99,7 +101,7 @@ struct circuit {
   struct mbuf *sndq;            /* Send queue */
   int32 sndqtime;               /* Last send queue write time */
   struct mbuf *resndq;          /* Resend queue */
-  int  unack;                   /* Number of unacked frames */
+  int unack;                    /* Number of unacked frames */
   int32 sndtime[256];           /* Time of 1st transmission */
   void (*r_upcall) __ARGS((struct circuit *p, int cnt));
 				/* Call when data arrives */
@@ -107,11 +109,13 @@ struct circuit {
 				/* Call when ok to send more data */
   void (*s_upcall) __ARGS((struct circuit *p, int oldstate, int newstate));
 				/* Call when connection state changes */
-  char  *user;                  /* User parameter (e.g., for mapping to an
+  char *user;                   /* User parameter (e.g., for mapping to an
 				 * application control block)
 				 */
   struct circuit *next;         /* Linked-list pointer */
 };
+
+extern char *Nr4states[];
 
 /* In netrom.c: */
 int isnetrom __ARGS((char *call));

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/crc.c,v 1.3 1992/10/16 17:57:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/crc.c,v 1.4 1993/01/29 06:48:19 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -6,7 +6,7 @@
 
 /*---------------------------------------------------------------------------*/
 
-static const int crc_16_table[] = {
+static const int Crc_16_table[] = {
   0x0000, 0xc0c1, 0xc181, 0x0140, 0xc301, 0x03c0, 0x0280, 0xc241,
   0xc601, 0x06c0, 0x0780, 0xc741, 0x0500, 0xc5c1, 0xc481, 0x0440,
   0xcc01, 0x0cc0, 0x0d80, 0xcd41, 0x0f00, 0xcfc1, 0xce81, 0x0e40,
@@ -56,7 +56,7 @@ struct mbuf *bp;
   for (; bp; bp = bp->next) {
     last_bp = bp;
     for (p = bp->data, n = bp->cnt; n; n--)
-      crc = (crc >> 8) ^ crc_16_table[(crc ^ *p++) & 0xff];
+      crc = (crc >> 8) ^ Crc_16_table[(crc ^ *p++) & 0xff];
   }
   if (!(bp = alloc_mbuf(2))) return;
   bp->data[0] = crc;
@@ -80,7 +80,7 @@ struct mbuf *head;
   for (bp = head; bp; bp = bp->next) {
     cnt += bp->cnt;
     for (p = bp->data, n = bp->cnt; n; n--)
-      crc = (crc >> 8) ^ crc_16_table[(crc ^ *p++) & 0xff];
+      crc = (crc >> 8) ^ Crc_16_table[(crc ^ *p++) & 0xff];
   }
   if (crc || cnt < 3) return (-1);
   cnt -= 2;
@@ -93,7 +93,7 @@ struct mbuf *head;
 
 /*---------------------------------------------------------------------------*/
 
-static const int crc_rmnc_table[] = {
+static const int Crc_rmnc_table[] = {
   0x0f87, 0x1e0e, 0x2c95, 0x3d1c, 0x49a3, 0x582a, 0x6ab1, 0x7b38,
   0x83cf, 0x9246, 0xa0dd, 0xb154, 0xc5eb, 0xd462, 0xe6f9, 0xf770,
   0x1f06, 0x0e8f, 0x3c14, 0x2d9d, 0x5922, 0x48ab, 0x7a30, 0x6bb9,
@@ -143,7 +143,7 @@ struct mbuf *bp;
   for (; bp; bp = bp->next) {
     last_bp = bp;
     for (p = bp->data, n = bp->cnt; n; n--)
-      crc = (crc << 8) ^ crc_rmnc_table[((crc >> 8) ^ *p++) & 0xff];
+      crc = (crc << 8) ^ Crc_rmnc_table[((crc >> 8) ^ *p++) & 0xff];
   }
   if (!(bp = alloc_mbuf(2))) return;
   bp->data[0] = crc >> 8;
@@ -167,7 +167,7 @@ struct mbuf *head;
   for (bp = head; bp; bp = bp->next) {
     cnt += bp->cnt;
     for (p = bp->data, n = bp->cnt; n; n--)
-      crc = (crc << 8) ^ crc_rmnc_table[((crc >> 8) ^ *p++) & 0xff];
+      crc = (crc << 8) ^ Crc_rmnc_table[((crc >> 8) ^ *p++) & 0xff];
   }
   if ((crc & 0xffff) != 0x7070 || cnt < 3) return (-1);
   cnt -= 2;
@@ -180,7 +180,7 @@ struct mbuf *head;
 
 /*---------------------------------------------------------------------------*/
 
-static const int fcstab[] = {
+static const int Crc_ccitt_table[] = {
   0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf,
   0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c, 0xdbe5, 0xe97e, 0xf8f7,
   0x1081, 0x0108, 0x3393, 0x221a, 0x56a5, 0x472c, 0x75b7, 0x643e,
@@ -217,12 +217,12 @@ static const int fcstab[] = {
 
 /*---------------------------------------------------------------------------*/
 
-void append_fcs(bp)
+void append_crc_ccitt(bp)
 struct mbuf *bp;
 {
 
   char *p;
-  int fcs = 0xffff;
+  int crc = 0xffff;
   int n;
   struct mbuf *last_bp;
 
@@ -230,26 +230,26 @@ struct mbuf *bp;
   for (; bp; bp = bp->next) {
     last_bp = bp;
     for (p = bp->data, n = bp->cnt; n; n--)
-      fcs = (fcs >> 8) ^ fcstab[(fcs ^ *p++) & 0xff];
+      crc = (crc >> 8) ^ Crc_ccitt_table[(crc ^ *p++) & 0xff];
   }
-  fcs ^= 0xffff;
+  crc ^= 0xffff;
   if (!(bp = alloc_mbuf(2))) return;
-  bp->data[0] = fcs;
-  bp->data[1] = fcs >> 8;
+  bp->data[0] = crc;
+  bp->data[1] = crc >> 8;
   bp->cnt = 2;
   last_bp->next = bp;
 }
 
 /*---------------------------------------------------------------------------*/
 
-int check_fcs(buf, cnt)
+int check_crc_ccitt(buf, cnt)
 const char *buf;
 int cnt;
 {
-  int fcs = 0xffff;
+  int crc = 0xffff;
 
   for (; cnt > 0; cnt--)
-    fcs = (fcs >> 8) ^ fcstab[(fcs ^ *buf++) & 0xff];
-  return (fcs & 0xffff) == 0xf0b8;
+    crc = (crc >> 8) ^ Crc_ccitt_table[(crc ^ *buf++) & 0xff];
+  return (crc & 0xffff) == 0xf0b8;
 }
 

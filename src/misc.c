@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.12 1992/09/01 16:52:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.13 1993/01/29 06:48:32 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -8,6 +8,8 @@
 #include "global.h"
 #include "socket.h"
 #include "mbuf.h"
+
+char Whitespace[] = " \t\r\n";
 
 /* Select from an array of strings, or return ascii number if out of range */
 char *
@@ -44,6 +46,46 @@ char *s;
 			break;
 	}
 	return i;
+}
+/* Convert single hex-ascii character to binary */
+int
+htob(c)
+char c;
+{
+	if('0' <= c && c <= '9')
+		return c - '0';
+	else if('a' <= c && c <= 'f')
+		return c - 'a' + 10;
+	else if('A' <= c && c <= 'F')
+		return c - 'A' + 10;
+	else
+		return -1;
+}
+/* Read an ascii-encoded hex string, convert to binary and store in
+ * output buffer. Return number of bytes converted
+ */
+int
+readhex(out,in,size)
+char *out,*in;
+int size;
+{
+	int c,count;
+
+	if(in == NULLCHAR)
+		return 0;
+	for(count=0;count < size;count++){
+		while(*in == ' ' || *in == '\t')
+			in++;   /* Skip white space */
+		if((c = htob(*in++)) == -1)
+			break;  /* Hit non-hex character */
+		out[count] = c << 4;    /* First nybble */
+		while(*in == ' ' || *in == '\t')
+			in++;   /* Skip white space */
+		if((c = htob(*in++)) == -1)
+			break;  /* Hit non-hex character */
+		out[count] |= c;        /* Second nybble */
+	}
+	return count;
 }
 /* replace terminating end of line marker(s) with null */
 void

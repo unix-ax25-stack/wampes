@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.14 1992/06/01 10:34:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.15 1993/01/29 06:48:15 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -17,11 +17,13 @@
 #include "lapb.h"
 #include "netrom.h"
 #include "ip.h"
+#include "devparam.h"
 #include <ctype.h>
+#include "lapb.h"
 
 static int axsend __ARGS((struct iface *iface,char *dest,char *source,
 	int cmdrsp,int ctl,struct mbuf *data));
-static int axroute_hash __ARGS((char *call));
+static int axroute_hash __ARGS((const char *call));
 
 /* List of AX.25 multicast addresses in network format (shifted ascii).
  * Only the first entry is used for transmission, but an incoming
@@ -30,24 +32,38 @@ static int axroute_hash __ARGS((char *call));
  */
 char Ax25multi[][AXALEN] = {
 	'Q'<<1, 'S'<<1, 'T'<<1, ' '<<1, ' '<<1, ' '<<1, '0'<<1, /* QST */
-/*      'M'<<1, 'A'<<1, 'I'<<1, 'L'<<1, ' '<<1, ' '<<1, '0'<<1, /* MAIL */
+#if 0
+	'M'<<1, 'A'<<1, 'I'<<1, 'L'<<1, ' '<<1, ' '<<1, '0'<<1, /* MAIL */
+#endif
 	'N'<<1, 'O'<<1, 'D'<<1, 'E'<<1, 'S'<<1, ' '<<1, '0'<<1, /* NODES */
-/*      'I'<<1, 'D'<<1, ' '<<1, ' '<<1, ' '<<1, ' '<<1, '0'<<1, /* ID */
-/*      'O'<<1, 'P'<<1, 'E'<<1, 'N'<<1, ' '<<1, ' '<<1, '0'<<1, /* OPEN */
-/*      'C'<<1, 'Q'<<1, ' '<<1, ' '<<1, ' '<<1, ' '<<1, '0'<<1, /* CQ */
-/*      'B'<<1, 'E'<<1, 'A'<<1, 'C'<<1, 'O'<<1, 'N'<<1, '0'<<1, /* BEACON */
-/*      'R'<<1, 'M'<<1, 'N'<<1, 'C'<<1, ' '<<1, ' '<<1, '0'<<1, /* RMNC */
-/*      'A'<<1, 'L'<<1, 'L'<<1, ' '<<1, ' '<<1, ' '<<1, '0'<<1, /* ALL */
+#if 0
+	'I'<<1, 'D'<<1, ' '<<1, ' '<<1, ' '<<1, ' '<<1, '0'<<1, /* ID */
+	'O'<<1, 'P'<<1, 'E'<<1, 'N'<<1, ' '<<1, ' '<<1, '0'<<1, /* OPEN */
+	'C'<<1, 'Q'<<1, ' '<<1, ' '<<1, ' '<<1, ' '<<1, '0'<<1, /* CQ */
+	'B'<<1, 'E'<<1, 'A'<<1, 'C'<<1, 'O'<<1, 'N'<<1, '0'<<1, /* BEACON */
+	'R'<<1, 'M'<<1, 'N'<<1, 'C'<<1, ' '<<1, ' '<<1, '0'<<1, /* RMNC */
+	'A'<<1, 'L'<<1, 'L'<<1, ' '<<1, ' '<<1, ' '<<1, '0'<<1, /* ALL */
+#endif
 	'\0',
 };
 char Mycall[AXALEN];
 struct ax_route *Ax_routes[AXROUTESIZE];
-struct iface *axroute_default_ifp;
+struct iface *Axroute_default_ifp;
 int Digipeat = 2;       /* Controls digipeating */
+
+int
+axi_send(bp,iface,gateway,tos)
+struct mbuf *bp;
+struct iface *iface;
+int32 gateway;
+int tos;
+{
+	return axui_send(bp,iface,gateway,tos);
+}
 
 /* Send IP datagrams across an AX.25 link */
 int
-ax_send(bp,iface,gateway,tos)
+axui_send(bp,iface,gateway,tos)
 struct mbuf *bp;
 struct iface *iface;
 int32 gateway;
@@ -90,33 +106,21 @@ int ctl;                /* Control field */
 struct mbuf *bp;        /* Data field (includes PID) */
 {
 	struct ax25 addr;
-	struct ax_route *dp,*rp;
 	int rval;
 	struct mbuf *data;
-	int i;
+	struct iface *ifp;
 
 	/* If the source addr is unspecified, use the interface address */
 	if(source[0] == '\0')
 		source = iface->hwaddr;
 
+	/* Do AX.25 routing */
 	memcpy(addr.dest,dest,AXALEN);
 	memcpy(addr.source,source,AXALEN);
-	addr.cmdrsp = cmdrsp;
-
 	addr.ndigis = 0;
-	/* If there's a digipeater route, get it */
-	if (rp = ax_routeptr(dest, 0)) {
-		for (dp = rp->digi; dp; dp = dp->digi)
-			addr.ndigis++;
-		i = addr.ndigis;
-		for (dp = rp->digi; dp; dp = dp->digi) {
-			i--;
-			if (i < MAXDIGIS)
-				addrcp(addr.digis[i], dp->call);
-		}
-	}
+	axroute(&addr, &ifp);
 
-	addr.nextdigi = 0;
+	addr.cmdrsp = cmdrsp;
 
 	/* Allocate mbuf for control field, and fill in */
 	bp = pushdown(bp,1);
@@ -152,6 +156,7 @@ struct mbuf *bp;
 	struct ax25 hdr;
 	char (*mpp)[AXALEN];
 	int mcast;
+	char *isrc,*idest;      /* "immediate" source and destination */
 
 	/* Pull header off packet and convert to host structure */
 	if(ntohax25(&hdr,&bp) < 0){
@@ -160,61 +165,98 @@ struct mbuf *bp;
 		free_p(bp);
 		return;
 	}
-	/* If there were digis in this packet, then the last digi was the
-	 * actual transmitter. Otherwise the source is the transmitter.
+#if 0
+	/* If there were digis in this packet and at least one has
+	 * been passed, then the last passed digi is the immediate source.
+	 * Otherwise it is the original source.
 	 */
+	if(hdr.ndigis != 0 && hdr.nextdigi != 0)
+		isrc = hdr.digis[hdr.nextdigi-1];
+	else
+		isrc = hdr.source;
+#endif
 
-	if(hdr.nextdigi < hdr.ndigis){
-		/* Packet hasn't passed all digipeaters yet. See if
-		 * we have to repeat it.
+	/* If there are digis in this packet and not all have been passed,
+	 * then the immediate destination is the next digi. Otherwise it
+	 * is the final destination.
+	 */
+	if(hdr.ndigis != 0 && hdr.nextdigi != hdr.ndigis)
+		idest = hdr.digis[hdr.nextdigi];
+	else
+		idest = hdr.dest;
+
+#if 0
+	/* Don't log our own packets if we overhear them, as they're
+	 * already logged by axsend() and by the digipeater code.
+	 */
+	if(!addreq(isrc,iface->hwaddr)){
+		logsrc(iface,isrc);
+		logdest(iface,idest);
+	}
+#endif
+	/* Examine immediate destination for a multicast address */
+	mcast = 0;
+	for(mpp = Ax25multi;(*mpp)[0] != '\0';mpp++){
+		if(addreq(idest,*mpp)){
+			mcast = 1;
+			break;
+		}
+	}
+	if(!mcast && !addreq(idest,iface->hwaddr)){
+		/* Not a broadcast, and not addressed to us. Inhibit
+		 * transmitter to avoid colliding with addressed station's
+		 * response, and discard packet.
 		 */
-		if(Digipeat && addreq(hdr.digis[hdr.nextdigi],iface->hwaddr)){
+#if 0
+		if(iface->ioctl != NULL)
+			(*iface->ioctl)(iface,PARAM_MUTE,1,-1);
+#endif
+		free_p(bp);
+		return;
+	}
+#if 0
+	if(!mcast && iface->ioctl != NULL){
+		/* Packet was sent to us; abort transmit inhibit */
+		(*iface->ioctl)(iface,PARAM_MUTE,1,0);
+	}
+#endif
+	/* At this point, packet is either addressed to us, or is
+	 * a multicast.
+	 */
+	axroute_add(iface, &hdr, 0);
+	if(hdr.nextdigi < hdr.ndigis){
+		/* Packet requests digipeating. See if we can repeat it. */
+		if(Digipeat && !mcast){
 			/* Yes, kick it back out. htonax25 will set the
 			 * repeated bit.
 			 */
-			axroute_add(iface, &hdr, 0);
 			hdr.nextdigi++;
-			switch(Digipeat){
-			case 1:
+			if(Digipeat == 1 ||
+			   (bp && (*bp->data & ~PF) == UI) ||
+			   addreq(hdr.source, hdr.dest) ||
+			   is_flexnet(hdr.source, 0) && is_flexnet(hdr.dest, 0)) {
+				struct iface *ifp;
+				axroute(&hdr, &ifp);
 				if((hbp = htonax25(&hdr,bp)) != NULLBUF){
-					axroute(NULL,hbp);
-					bp = NULLBUF;
+					bp = hbp;
+					if (ifp) {
+						(*ifp->raw)(ifp, bp);
+						bp = NULLBUF;
+					}
 				}
-				break;
-			case 2:
+			} else {
 				lapb_input(iface,&hdr,bp);
 				bp = NULLBUF;
-				break;
 			}
 		}
 		free_p(bp);     /* Dispose if not forwarded */
 		return;
 	}
 	/* If we reach this point, then the packet has passed all digis,
-	 * but it is not necessarily for us.
+	 * and is either addressed to us or is a multicast.
 	 */
-	if(bp == NULLBUF){
-		/* Nothing left */
-		return;
-	}
-	/* Examine destination to see if it's either addressed to us or
-	 * a multicast.
-	 */
-	mcast = 0;
-	for(mpp = Ax25multi;(*mpp)[0];mpp++){
-		if(addreq(hdr.dest,*mpp)){
-			mcast = 1;
-			break;
-		}
-	}
-	if(!mcast && !addreq(hdr.dest,iface->hwaddr)){
-		/* Not a broadcast, and not addressed to us; ignore */
-		free_p(bp);
-		return;
-	}
-
-	if(!mcast)
-		axroute_add(iface, &hdr, 0);
+	if(bp == NULLBUF)
+		return;         /* Nothing left */
 
 	/* Sneak a peek at the control field. This kludge is necessary because
 	 * AX.25 lacks a proper protocol ID field between the address and LAPB
@@ -236,7 +278,7 @@ struct mbuf *bp;
 				break;
 		}
 		if(ipp->funct        )
-			(*ipp->funct)(iface,(void *) 0,hdr.source,hdr.dest,bp,mcast);
+			(*ipp->funct)(iface,NULLAX25,hdr.source,hdr.dest,bp,mcast);
 		else
 			free_p(bp);
 		return;
@@ -252,12 +294,23 @@ struct mbuf *bp;
 	lapb_input(iface,&hdr,bp);
 }
 
-/*---------------------------------------------------------------------------*/
-
-static int  axroute_hash(call)
-char  *call;
+int
+valid_remote_call(call)
+const char *call;
 {
-  long  hashval;
+  char (*mpp)[AXALEN];
+
+  if (!*call || ismyax25addr(call)) return 0;
+  for (mpp = Ax25multi; (*mpp)[0]; mpp++)
+    if (addreq(*mpp, call)) return 0;
+  return 1;
+}
+
+static int
+axroute_hash(call)
+const char *call;
+{
+  int hashval;
 
   hashval  = ((*call++ << 23) & 0x0f000000);
   hashval |= ((*call++ << 19) & 0x00f00000);
@@ -266,57 +319,78 @@ char  *call;
   hashval |= ((*call++ <<  7) & 0x00000f00);
   hashval |= ((*call++ <<  3) & 0x000000f0);
   hashval |= ((*call   >>  1) & 0x0000000f);
-  return hashval % AXROUTESIZE;
+  return hashval;
 }
 
-/*---------------------------------------------------------------------------*/
-
-struct ax_route *ax_routeptr(call, create)
-char  *call;
-int  create;
+int
+is_flexnet(call, store)
+const char *call;
+int store;
 {
 
-  int  hashval;
+#define FTABLESIZE 23
+
+  struct ftable_t {
+    struct ftable_t *next;
+    char call[AXALEN];
+  };
+
+  static struct ftable_t *ftable[FTABLESIZE];
+  struct ftable_t **tp;
+  struct ftable_t *p;
+
+  tp = ftable + (axroute_hash(call) % FTABLESIZE);
+  for (p = *tp; p && !addreq(p->call, call); p = p->next) ;
+  if (!p && store) {
+    p = malloc(sizeof(*p));
+    addrcp(p->call, call);
+    p->next = *tp;
+    *tp = p;
+  }
+  return (int) (p != 0);
+}
+
+struct ax_route *
+ax_routeptr(call, create)
+const char *call;
+int create;
+{
+
+  struct ax_route **tp;
   struct ax_route *rp;
 
-  hashval = axroute_hash(call);
-  for (rp = Ax_routes[hashval]; rp && !addreq(rp->call, call); rp = rp->next) ;
+  tp = Ax_routes + (axroute_hash(call) % AXROUTESIZE);
+  for (rp = *tp; rp && !addreq(rp->target, call); rp = rp->next) ;
   if (!rp && create) {
-    rp = (struct ax_route *) calloc(1, sizeof(struct ax_route ));
-    addrcp(rp->call, call);
-    rp->next = Ax_routes[hashval];
-    Ax_routes[hashval] = rp;
+    rp = calloc(1, sizeof(*rp));
+    addrcp(rp->target, call);
+    rp->next = *tp;
+    *tp = rp;
   }
   return rp;
 }
 
-/*---------------------------------------------------------------------------*/
-
-void axroute_add(iface, hdr, perm)
+void
+axroute_add(iface, hdr, perm)
 struct iface *iface;
 struct ax25 *hdr;
-int  perm;
+int perm;
 {
 
-  char (*mpp)[AXALEN];
-  char  *call;
-  char  *calls[MAXDIGIS+1];
-  int  i;
-  int  j;
-  int  ncalls = 0;
+  char *call;
+  char *calls[MAXDIGIS+1];
+  int i;
+  int j;
+  int ncalls = 0;
   struct ax_route *lastnode = 0;
   struct ax_route *rp;
 
   call = hdr->source;
-  if (!*call || addreq(call, iface->hwaddr)) return;
-  for (mpp = Ax25multi; (*mpp)[0]; mpp++)
-    if (addreq(call, *mpp)) return;
+  if (!valid_remote_call(call)) return;
   calls[ncalls++] = call;
   for (i = 0; i < hdr->nextdigi; i++) {
     call = hdr->digis[i];
-    if (!*call || addreq(call, iface->hwaddr)) return;
-    for (mpp = Ax25multi; (*mpp)[0]; mpp++)
-      if (addreq(call, *mpp)) return;
+    if (!valid_remote_call(call)) return;
     for (j = 0; j < ncalls; j++)
       if (addreq(call, calls[j])) return;
     calls[ncalls++] = call;
@@ -340,41 +414,58 @@ int  perm;
   axroute_savefile();
 }
 
-/*---------------------------------------------------------------------------*/
-
-void axroute(cp, bp)
-struct ax25_cb *cp;
-struct mbuf *bp;
+void
+axroute(hdr, ifpp)
+struct ax25 *hdr;
+struct iface **ifpp;
 {
 
-  char  *dest;
+  char *idest;
+  int d;
+  int i;
   struct ax_route *rp;
   struct iface *ifp;
 
-  if (cp && cp->ifp)
-    ifp = cp->ifp;
-  else {
-    if (bp->data[AXALEN + 6] & E)
-      dest = bp->data;
-    else
-      for (dest = bp->data + 2 * AXALEN; ; dest += AXALEN) {
-	if (!(dest[6] & REPEATED)) break;
-	if (dest[6] & E) {
-	  dest = bp->data;
-	  break;
-	}
-      }
-    rp = ax_routeptr(dest, 0);
-    ifp = (rp && rp->ifp) ? rp->ifp : axroute_default_ifp;
-  }
-  if (ifp) {
-    if (ifp->forw) ifp = ifp->forw;
-    (*ifp->raw)(ifp, bp);
-  } else
-    free_p(bp);
-}
+  /*** Find my last address ***/
 
-/*---------------------------------------------------------------------------*/
+  hdr->nextdigi = 0;
+  for (i = hdr->ndigis - 1; i >= 0; i--)
+    if (ismyax25addr(hdr->digis[i])) {
+      hdr->nextdigi = i + 1;
+      break;
+    }
+
+  /*** Remove all digipeaters before me ***/
+
+  d = hdr->nextdigi - 1;
+  if (d > 0) {
+    for (i = d; i < hdr->ndigis; i++) addrcp(hdr->digis[i-d], hdr->digis[i]);
+    hdr->ndigis -= d;
+    hdr->nextdigi = 1;
+  }
+
+  /*** Add necessary digipeaters and find interface ***/
+
+  ifp = 0;
+  idest = hdr->nextdigi < hdr->ndigis ? hdr->digis[hdr->nextdigi] : hdr->dest;
+  for (rp = ax_routeptr(idest, 0); rp; rp = rp->digi) {
+    if (rp->digi && hdr->ndigis < MAXDIGIS) {
+      for (i = hdr->ndigis - 1; i >= hdr->nextdigi; i--)
+	addrcp(hdr->digis[i+1], hdr->digis[i]);
+      hdr->ndigis++;
+      addrcp(hdr->digis[hdr->nextdigi], rp->digi->target);
+    }
+    ifp = rp->ifp;
+  }
+  if (!ifp) ifp = Axroute_default_ifp;
+  if (ifp && ifp->forw) ifp = ifp->forw;
+  *ifpp = ifp;
+
+  /*** Replace my address with hwaddr of interface ***/
+
+  if (ifp)
+    addrcp(hdr->nextdigi ? hdr->digis[0] : hdr->source, ifp->hwaddr);
+}
 
 /* Handle ordinary incoming data (no network protocol) */
 void
@@ -387,34 +478,4 @@ struct mbuf *bp;
 int mcast;
 {
 	free_p(bp);
-}
-
-/*---------------------------------------------------------------------------*/
-
-char  *ax25hdr_to_string(hdr)
-struct ax25 *hdr;
-{
-
-  char  *p;
-  int  i;
-  static char  buf[128];
-
-  if (!*hdr->dest) return "*";
-  p = buf;
-  if (*hdr->source) {
-    pax25(p, hdr->source);
-    while (*p) p++;
-    *p++ = '-';
-    *p++ = '>';
-  }
-  pax25(p, hdr->dest);
-  while (*p) p++;
-  for (i = 0; i < hdr->ndigis; i++) {
-    *p++ = ',';
-    pax25(p, hdr->digis[i]);
-    while (*p) p++;
-    if (i < hdr->nextdigi) *p++ = '*';
-  }
-  *p = '\0';
-  return buf;
 }

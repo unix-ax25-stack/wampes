@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.8 1992/05/28 13:50:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.9 1993/01/29 06:48:40 deyke Exp $ */
 
 /* Process incoming TCP segments. Page number references are to ARPA RFC-793,
  * the TCP specification.
@@ -31,8 +31,8 @@ static int in_window __ARGS((struct tcb *tcb,int32 seq));
 void
 tcp_input(iface,ip,bp,rxbroadcast)
 struct iface *iface;    /* Incoming interface (ignored) */
-struct mbuf *bp;        /* Data field, if any */
 struct ip *ip;          /* IP header */
+struct mbuf *bp;        /* Data field, if any */
 int rxbroadcast;        /* Incoming broadcast - discard if true */
 {
 	struct tcb *ntcb;
@@ -42,6 +42,7 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 	struct pseudo_header ph;        /* Pseudo-header for checksumming */
 	int hdrlen;                     /* Length of TCP header */
 	int16 length;
+	int32 t;
 
 	if(bp == NULLBUF)
 		return;
@@ -326,6 +327,11 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 			case TCP_FINWAIT1:
 			case TCP_FINWAIT2:
 				/* Place on receive queue */
+				t = msclock();
+				if(t > tcb->lastrx){
+					tcb->rxbw = 1000L*length / (t - tcb->lastrx);
+					tcb->lastrx = t;
+				}
 				append(&tcb->rcvq,bp);
 				tcb->rcvcnt += length;
 				tcb->rcv.nxt += length;
@@ -435,13 +441,17 @@ struct mbuf **bpp;              /* First 8 bytes of TCP header */
 	case ICMP_TIME_EXCEED:
 		tcb->type = type;
 		tcb->code = code;
+		tcb->unreach++;
 		break;
 	case ICMP_QUENCH:
-		/* Source quench; cut the congestion window in half,
-		 * but don't let it go below one packet
+		/* Source quench; reduce slowstart threshold to half
+		 * current window and restart slowstart
 		 */
-		tcb->cwind /= 2;
-		tcb->cwind = max(tcb->mss,tcb->cwind);
+		tcb->ssthresh = tcb->cwind / 2;
+		tcb->ssthresh = max(tcb->ssthresh,tcb->mss);
+		/* Shrink congestion window to 1 packet */
+		tcb->cwind = tcb->mss;
+		tcb->quench++;
 		break;
 	}
 }
@@ -515,8 +525,8 @@ register struct tcb *tcb;
 register struct tcp *seg;
 int16 length;
 {
-	int16 acked;
-	int16 expand;
+	int32 acked;
+	int winupd = 0;
 
 	acked = 0;
 	if(seq_gt(seg->ack,tcb->snd.nxt)){
@@ -530,24 +540,35 @@ int16 length;
 	 */
 	if(seq_gt(seg->seq,tcb->snd.wl1) || ((seg->seq == tcb->snd.wl1)
 	 && seq_ge(seg->ack,tcb->snd.wl2))){
-		/* If the window had been closed, crank back the
-		 * send pointer so we'll immediately resume transmission.
-		 * Otherwise we'd have to wait until the next probe.
-		 */
-		if(tcb->snd.wnd == 0 && seg->wnd != 0)
-			tcb->snd.ptr = tcb->snd.una;
+		if(seg->wnd > tcb->snd.wnd){
+			winupd = 1;     /* Don't count as duplicate ack */
+
+			/* If the window had been closed, crank back the send
+			 * pointer so we'll immediately resume transmission.
+			 * Otherwise we'd have to wait until the next probe.
+			 */
+			if(tcb->snd.wnd == 0)
+				tcb->snd.ptr = tcb->snd.una;
+		}
+		/* Remember for next time */
 		tcb->snd.wnd = seg->wnd;
 		tcb->snd.wl1 = seg->seq;
 		tcb->snd.wl2 = seg->ack;
 	}
 	/* See if anything new is being acknowledged */
-	if(!seq_gt(seg->ack,tcb->snd.una)){
-		if(seg->ack != tcb->snd.una)
-			return; /* Old ack, ignore */
+	if(seq_lt(seg->ack,tcb->snd.una))
+		return; /* Old ack, ignore */
 
-		if(length != 0 || seg->flags.syn || seg->flags.fin)
-			return; /* Nothing acked, but there is data */
-
+	if(seg->ack == tcb->snd.una){
+		/* Ack current, but doesn't ack anything */
+		if(tcb->sndcnt == 0 || winupd || length != 0 || seg->flags.syn || seg->flags.fin){
+			/* Either we have nothing in the pipe, this segment
+			 * was sent to update the window, or it carries
+			 * data/syn/fin. In any of these cases we
+			 * wouldn't necessarily expect an ACK.
+			 */
+			return;
+		}
 		/* Van Jacobson "fast recovery" code */
 		if(++tcb->dupacks == TCPDUPACKS){
 			/* We've had a burst of do-nothing acks, so
@@ -584,8 +605,17 @@ int16 length;
 			 */
 			tcb->cwind += tcb->mss;
 		}
+		/* Clamp the congestion window at the amount currently
+		 * on the send queue, with a minimum of one packet.
+		 * This keeps us from increasing the cwind beyond what
+		 * we're actually putting in the pipe; otherwise a big
+		 * burst of data could overwhelm the net.
+		 */
+		tcb->cwind = min(tcb->cwind,tcb->sndcnt);
+		tcb->cwind = max(tcb->cwind,tcb->mss);
 		return;
 	}
+	/* We're here, so the ACK must have actually acked something */
 	if(tcb->dupacks >= TCPDUPACKS && tcb->cwind > tcb->ssthresh){
 		/* The acks have finally gotten "unstuck". So now we
 		 * can "deflate" the congestion window, i.e. take it
@@ -595,8 +625,6 @@ int16 length;
 		tcb->cwind = tcb->ssthresh;
 	}
 	tcb->dupacks = 0;
-
-	/* We're here, so the ACK must have actually acked something */
 	acked = seg->ack - tcb->snd.una;
 
 	/* Expand congestion window if not already at limit and if
@@ -605,30 +633,18 @@ int16 length;
 	if(tcb->cwind < tcb->snd.wnd && !tcb->flags.retran){
 		if(tcb->cwind < tcb->ssthresh){
 			/* Still doing slow start/CUTE, expand by amount acked */
-			expand = min(acked,tcb->mss);
+			tcb->cwind += min(acked,tcb->mss);
 		} else {
 			/* Steady-state test of extra path capacity */
-			expand = ((long)tcb->mss * tcb->mss) / tcb->cwind;
+			tcb->cwind += ((long)tcb->mss * tcb->mss) / tcb->cwind;
 		}
-		/* Guard against arithmetic overflow */
-		if(tcb->cwind + expand < tcb->cwind)
-			expand = MAXINT16 - tcb->cwind;
-
 		/* Don't expand beyond the offered window */
-		if(tcb->cwind + expand > tcb->snd.wnd)
-			expand = tcb->snd.wnd - tcb->cwind;
-
-		if(expand != 0){
-#ifdef  notdef
-			/* Kick up the mean deviation estimate to prevent
-			 * unnecessary retransmission should we already be
-			 * bandwidth limited
-			 */
-			tcb->mdev += ((long)tcb->srtt * expand) / tcb->cwind;
-#endif
-			tcb->cwind += expand;
-		}
+		if(tcb->cwind > tcb->snd.wnd)
+			tcb->cwind = tcb->snd.wnd;
 	}
+	tcb->cwind = min(tcb->cwind,tcb->sndcnt);       /* Clamp */
+	tcb->cwind = max(tcb->cwind,tcb->mss);
+
 	/* Round trip time estimation */
 	if(tcb->flags.rtt_run && seq_ge(seg->ack,tcb->rttseq)){
 		/* A timed sequence number has been acked */
@@ -641,6 +657,7 @@ int16 length;
 			 * it's been acked, so process the round trip time
 			 */
 			rtt = msclock() - tcb->rtt_time;
+			tcb->rtt = rtt; /* Save for display */
 
 			abserr = (rtt > tcb->srtt) ? rtt - tcb->srtt : tcb->srtt - rtt;
 			/* Run SRTT and MDEV integrators, with rounding */
@@ -650,6 +667,10 @@ int16 length;
 			rtt_add(tcb->conn.remote.address,rtt);
 			/* Reset the backoff level */
 			tcb->backoff = 0;
+
+			/* Update our tx throughput estimate */
+			if(rtt != 0)    /* Avoid division by zero */
+				tcb->txbw = 1000*(seg->ack - tcb->rttack)/rtt;
 		}
 	}
 	tcb->sndcnt -= acked;   /* Update virtual byte count on snd queue */
@@ -665,18 +686,14 @@ int16 length;
 	 * pullup won't be able to remove it from the queue, but that
 	 * causes no harm.
 	 */
-	pullup(&tcb->sndq,NULLCHAR,acked);
+	pullup(&tcb->sndq,NULLCHAR,(int16)acked);
 
 	/* Stop retransmission timer, but restart it if there is still
-	 * unacknowledged data. If there is no more unacked data,
-	 * the transmitter has gone at least momentarily idle, so
-	 * record the time for the VJ restart-slowstart rule.
+	 * unacknowledged data.
 	 */
 	stop_timer(&tcb->timer);
 	if(tcb->snd.una != tcb->snd.nxt)
 		start_timer(&tcb->timer);
-	else
-		tcb->lastactive = msclock();
 
 	/* If retransmissions have been occurring, make sure the
 	 * send pointer doesn't repeat ancient history

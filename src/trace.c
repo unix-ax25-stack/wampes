@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.12 1992/09/01 16:53:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.13 1993/01/29 06:48:43 deyke Exp $ */
 
 /* Packet tracing - top level and generic routines, including hex/ascii
  * Copyright 1991 Phil Karn, KA9Q
@@ -16,12 +16,13 @@
 #include "pktdrvr.h"
 #include "commands.h"
 #include "trace.h"
+#include "session.h"
 #include "timer.h"
 
 static void ascii_dump __ARGS((FILE *fp,struct mbuf **bpp));
 static void ctohex __ARGS((char *buf,int c));
 static void fmtline __ARGS((FILE *fp,int addr,char *buf,int len));
-static void hex_dump __ARGS((FILE *fp,struct mbuf **bpp));
+void hex_dump __ARGS((FILE *fp,struct mbuf **bpp));
 static void showtrace __ARGS((struct iface *ifp));
 
 /* Redefined here so that programs calling dump in the library won't pull
@@ -133,7 +134,7 @@ struct mbuf *bp;
 }
 
 /* Dump an mbuf in hex */
-static void
+void
 hex_dump(fp,bpp)
 FILE *fp;
 register struct mbuf **bpp;
@@ -321,12 +322,10 @@ trace_log(struct iface *ifp,char *fmt, ...)
 
 	if((fp = ifp->trfp) == NULLFILE)
 		return;
-
 	t = secclock();
 	cp = ctime(&t);
 	rip(cp);
 	fprintf(fp,"%s - ",cp);
-
 	va_start(ap,fmt);
 	vfprintf(fp,fmt,ap);
 	va_end(ap);

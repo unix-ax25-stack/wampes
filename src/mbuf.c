@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.10 1992/10/05 17:29:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.11 1993/01/29 06:48:31 deyke Exp $ */
 
 /* mbuf (message buffer) primitives
  * Copyright 1991 Phil Karn, KA9Q
@@ -21,15 +21,14 @@ register int16 size;
 {
 	register struct mbuf *bp;
 
-		/* Interrupts are enabled, use the heap normally */
-		bp = (struct mbuf *)malloc((unsigned)(size + sizeof(struct mbuf)));
-		if(bp == NULLBUF)
-			return NULLBUF;
-		/* Clear just the header portion */
-		memset((char *)bp,0,sizeof(struct mbuf));
-		if((bp->size = size) != 0)
-			bp->data = (char *)(bp + 1);
-		bp->refcnt++;
+	bp = (struct mbuf *)malloc((unsigned)(size + sizeof(struct mbuf)));
+	if(bp == NULLBUF)
+		return NULLBUF;
+	/* Clear just the header portion */
+	memset((char *)bp,0,sizeof(struct mbuf));
+	if((bp->size = size) != 0)
+		bp->data = (char *)(bp + 1);
+	bp->refcnt++;
 	return bp;
 }
 /* Allocate mbuf, waiting if memory is unavailable */
@@ -58,19 +57,21 @@ free_mbuf(bp)
 register struct mbuf *bp;
 {
 	struct mbuf *bpnext;
+	struct mbuf *bptmp;
 
 	if(bp == NULLBUF)
 		return NULLBUF;
 
 	bpnext = bp->next;
 	if(bp->dup != NULLBUF){
-		free_mbuf(bp->dup);     /* Follow indirection */
-		bp->dup = NULLBUF;
+		bptmp = bp->dup;
+		bp->dup = NULLBUF;      /* Nail it before we recurse */
+		free_mbuf(bptmp);       /* Follow indirection */
 	}
 	/* Decrement reference count. If it has gone to zero, free it. */
-	if(--bp->refcnt <= 0){
-			free((char *)bp);
-	}
+	if(--bp->refcnt <= 0)
+		free((char *)bp);
+
 	return bpnext;
 }
 
@@ -285,6 +286,37 @@ int16 cnt;
 		}
 	}
 	return tot;
+}
+/* Copy data from within mbuf to user-provided buffer, starting at
+ * 'offset' bytes from start of mbuf and copying no more than 'len'
+ * bytes. Return actual number of bytes copied
+ */
+int16
+extract(bp,offset,buf,len)
+struct mbuf *bp;
+int16 offset;
+char *buf;
+int16 len;
+{
+	int16 copied = 0;
+	int16 n;
+
+	/* Skip over offset if greater than first mbuf(s) */
+	while(bp != NULLBUF && offset >= bp->cnt){
+		offset -= bp->cnt;
+		bp = bp->next;
+	}
+	while(bp != NULLBUF && len != 0){
+		n = min(len,bp->cnt - offset);  /* offset must be < bp->cnt */
+		memcpy(buf,bp->data+offset,n);
+		copied += n;
+		buf += n;
+		len -= n;
+		if(n + offset == bp->cnt)
+			bp = bp->next;  /* Buffer exhausted, get next */
+		offset = 0;             /* No more offset after first */
+	}
+	return copied;
 }
 /* Append mbuf to end of mbuf chain */
 void

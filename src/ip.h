@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.10 1992/06/01 10:34:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.11 1993/01/29 06:48:25 deyke Exp $ */
 
 #ifndef _IP_H
 #define _IP_H
@@ -126,6 +126,8 @@ struct rt_cache {
 	int32 target;
 	struct route *route;
 };
+extern int32 Rtlookups; /* Count of calls to rt_lookup() */
+extern int32 Rtchits;           /* Count of cache hits in rt_lookup() */
 
 /* Reassembly descriptor */
 struct reasm {
@@ -183,6 +185,7 @@ int ip_send __ARGS((int32 source,int32 dest,int protocol,int tos,int ttl,
 	struct mbuf *bp,int length,int id,int df));
 struct raw_ip *raw_ip __ARGS((int protocol,void (*r_upcall) __ARGS((struct raw_ip *)) ));
 void del_ip __ARGS((struct raw_ip *rrp));
+void rquench __ARGS((struct iface *ifp,int drop));
 
 /* In iproute.c: */
 void ipinit __ARGS((void));

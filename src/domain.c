@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.8 1992/11/27 17:08:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.9 1993/01/29 06:48:20 deyke Exp $ */
 
 #include "global.h"
 
@@ -79,9 +79,128 @@ static void domain_server_tcp_state __ARGS((struct tcb *tcb, int old, int new));
 static int docacheflush __ARGS((int argc, char *argv [], void *p));
 static int docachelist __ARGS((int argc, char *argv [], void *p));
 static int docache __ARGS((int argc, char *argv [], void *p));
-static int doquery __ARGS((int argc, char *argv [], void *p));
+static int dodnsquery __ARGS((int argc, char *argv [], void *p));
 static int dodnstrace __ARGS((int argc, char *argv [], void *p));
 static int dousegethostby __ARGS((int argc, char *argv [], void *p));
+
+/**
+ **     Domain Resolver Commands
+ **/
+
+static struct cmds Dcmds[] = {
+	"query",        dodnsquery,   512, 2, "domain query <name|addr>",
+	"trace",        dodnstrace,     0, 0, NULLCHAR,
+	"cache",        docache,        0, 0, NULLCHAR,
+	"usegethostby", dousegethostby, 0, 0, NULLCHAR,
+	NULLCHAR,
+};
+
+static struct cmds Dcachecmds[] = {
+	"list",         docachelist,  512, 0, NULLCHAR,
+	"flush",        docacheflush,   0, 0, NULLCHAR,
+	NULLCHAR,
+};
+
+int
+dodomain(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	return subcmd(Dcmds,argc,argv,p);
+}
+
+static int
+docache(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	return subcmd(Dcachecmds,argc,argv,p);
+}
+
+static int
+docachelist(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+  struct cache *cp;
+
+  for (cp = Cache; cp; cp = cp->next)
+    printf("%-25.25s %u.%u.%u.%u\n",
+	   cp->name,
+	   uchar(cp->addr >> 24),
+	   uchar(cp->addr >> 16),
+	   uchar(cp->addr >>  8),
+	   uchar(cp->addr      ));
+  return 0;
+}
+
+static int
+docacheflush(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+  struct cache *cp;
+
+  while (cp = Cache) {
+    Cache = cp->next;
+    free(cp);
+  }
+  if (Dbhostaddr) {
+    dbm_close(Dbhostaddr);
+    Dbhostaddr = 0;
+  }
+  if (Dbhostname) {
+    dbm_close(Dbhostname);
+    Dbhostname = 0;
+  }
+  Nextcacheflushtime = secclock() + 86400;
+  return 0;
+}
+
+static int
+dodnsquery(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+  int32 addr;
+
+  if (isaddr(argv[1])) {
+    printf("%s\n", resolve_a(aton(argv[1]), 0));
+  } else {
+    if (!(addr = resolve(argv[1])))
+      printf(Badhost, argv[1]);
+    else
+      printf("%u.%u.%u.%u\n",
+	     uchar(addr >> 24),
+	     uchar(addr >> 16),
+	     uchar(addr >>  8),
+	     uchar(addr      ));
+  }
+  return 0;
+}
+
+static int
+dodnstrace(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	return setbool(&Dtrace,"server trace",argc,argv);
+}
+
+static int
+dousegethostby(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+  return setbool(&Usegethostby, "Using gethostby", argc, argv);
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -744,132 +863,5 @@ void *p;
   Domain_tcb = open_tcp(&lsocket, NULLSOCK, TCP_SERVER, 0, domain_server_tcp_recv, NULLVFP, domain_server_tcp_state, 0, 0);
 
   return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int docacheflush(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
-{
-  struct cache *cp;
-
-  while (cp = Cache) {
-    Cache = cp->next;
-    free(cp);
-  }
-  if (Dbhostaddr) {
-    dbm_close(Dbhostaddr);
-    Dbhostaddr = 0;
-  }
-  if (Dbhostname) {
-    dbm_close(Dbhostname);
-    Dbhostname = 0;
-  }
-  Nextcacheflushtime = secclock() + 86400;
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int docachelist(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
-{
-  struct cache *cp;
-
-  for (cp = Cache; cp; cp = cp->next)
-    printf("%-25.25s %u.%u.%u.%u\n",
-	   cp->name,
-	   uchar(cp->addr >> 24),
-	   uchar(cp->addr >> 16),
-	   uchar(cp->addr >>  8),
-	   uchar(cp->addr      ));
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static struct cmds Dcachecmds[] = {
-
-  "flush", docacheflush, 0, 0, NULLCHAR,
-  "list",  docachelist,  0, 0, NULLCHAR,
-
-  NULLCHAR, NULLFP,      0, 0, NULLCHAR
-};
-
-static int docache(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
-{
-  return subcmd(Dcachecmds, argc, argv, p);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int doquery(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
-{
-  int32 addr;
-
-  if (isaddr(argv[1])) {
-    printf("%s\n", resolve_a(aton(argv[1]), 0));
-  } else {
-    if (!(addr = resolve(argv[1])))
-      printf(Badhost, argv[1]);
-    else
-      printf("%u.%u.%u.%u\n",
-	     uchar(addr >> 24),
-	     uchar(addr >> 16),
-	     uchar(addr >>  8),
-	     uchar(addr      ));
-  }
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int
-dodnstrace(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
-{
-	return setbool(&Dtrace,"server trace",argc,argv);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int dousegethostby(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
-{
-  return setbool(&Usegethostby, "Using gethostby", argc, argv);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static struct cmds Dcmds[] = {
-
-  "cache",        docache,        0, 0, NULLCHAR,
-  "query",        doquery,        0, 2, "domain query <name|addr>",
-  "trace",        dodnstrace,     0, 0, NULLCHAR,
-  "usegethostby", dousegethostby, 0, 0, NULLCHAR,
-
-  NULLCHAR,    NULLFP,       0, 0, NULLCHAR
-};
-
-int dodomain(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
-{
-  return subcmd(Dcmds, argc, argv, p);
 }
 

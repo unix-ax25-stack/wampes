@@ -1,10 +1,10 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.5 1992/09/07 19:19:59 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.6 1993/01/29 06:48:53 deyke Exp $
 
 CC         = c89
 CFLAGS     = -O -s
 SHELL      = /bin/sh
 
-TARGETS    = connect connect2
+TARGETS    = connect connect2 filter
 
 .IGNORE:
 
@@ -15,6 +15,9 @@ connect: connect.c
 
 connect2: connect2.c
 	$(CC) $(CFLAGS) connect2.c -o $@
+
+filter: filter.c
+	$(CC) $(CFLAGS) filter.c -o $@
 
 clean:
 	rm -f *.o $(TARGETS)

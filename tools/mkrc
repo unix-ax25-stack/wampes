@@ -1,6 +1,6 @@
 #! /bin/csh -f
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mkrc,v 1.2 1992/11/29 17:37:25 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mkrc,v 1.3 1993/01/29 06:48:54 deyke Exp $
 
 foreach i (1 2 3 4)
 set tty=ttyr$i
@@ -11,7 +11,7 @@ ax25 mycall  test$i
 ip address   $i.$i.$i.$i
 netrom ident test$i
 
-attach asy 0 0 ax25 $tty 0 256 9600
+attach asy 0 0 kissui $tty 0 256 9600
 
 attach netrom
 
@@ -36,11 +36,11 @@ start rip
 start tcpgate finger
 start telnet
 
-netrom links test1 test2 200 permanent
-arp add 1.1.1.1 netrom test1
-arp add 2.2.2.2 netrom test2
+#netrom links test1 test2 200 permanent
+#arp add 1.1.1.1 netrom test1
+#arp add 2.2.2.2 netrom test2
 
-trace $tty 111
+trace $tty 1111
 
 EOF
 end

@@ -1,11 +1,18 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.20 1992/08/11 21:32:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.21 1993/01/29 06:48:22 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
 
 /* Global definitions used by every source file.
  * Some may be compiler dependent.
+ *
+ * This file depends only on internal macros or those defined on the
+ * command line, so it may be safely included first.
  */
+
+#if     defined(MSDOS) || defined(vax)
+#define LITTLE_ENDIAN   1
+#endif
 
 #if     defined(__TURBOC__) || defined(__STDC__) || defined(LATTICE)
 #define ANSIPROTO       1
@@ -58,6 +65,7 @@ typedef unsigned char byte_t;   /*  8-bit unsigned integer */
 #define uchar(x) ((x) & 0xff)
 #define MAXINT16 65535          /* Largest 16-bit integer */
 #define MAXINT32 4294967295L    /* Largest 32-bit integer */
+#define NBBY    8               /* 8 bits/byte */
 
 #define HASHMOD 7               /* Modulus used by hash_ip() function */
 
@@ -166,7 +174,9 @@ int availmem __ARGS((void));
 void *callocw __ARGS((unsigned nelem,unsigned size));
 int dirps __ARGS((void));
 int getopt();
+int htob __ARGS((int c));
 int htoi __ARGS((char *));
+int readhex __ARGS((char *,char *,int));
 long htol __ARGS((char *));
 char *inbuf __ARGS((int16 port,char *buf,int16 cnt));
 int16 hash_ip __ARGS((int32 addr));
@@ -238,15 +248,19 @@ extern int32 Memthresh;
 /* System clock - count of ticks since startup */
 extern int32 Clock;
 
-/* Various useful standard error messages */
+/* Various useful strings */
 extern char Badhost[];
 extern char Nospace[];
 extern char Notval[];
 extern char *Hostname;
 extern char Version[];
+extern char Whitespace[];
 
 /* Your system's end-of-line convention */
 extern char Eol[];
+
+/* Your system OS - set in files.c */
+extern char System[];
 
 /* Your system's temp directory */
 extern char *Tmpdir;

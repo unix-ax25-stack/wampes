@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.7 1992/11/29 17:37:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.8 1993/01/29 06:48:36 deyke Exp $ */
 
 /* This file contains code to implement the Routing Information Protocol (RIP)
  * and is derived from 4.2BSD code. Mike Karels of Berkeley has stated on
@@ -93,7 +93,7 @@ int us;                 /* Include our address in update */
 
 	/* Emit route to ourselves, if requested */
 	if(us){
-		cp = putentry(cp,RIP_IPFAM,iface->addr,0);
+		cp = putentry(cp,RIP_IPFAM,iface->addr,1);
 		numroutes++;
 	}
 	/* Emit default route, if appropriate */
@@ -125,7 +125,7 @@ int us;                 /* Include our address in update */
 					cp = putheader(bp->data,RIPCMD_RESPONSE,RIPVERSION);
 				}
 				if(!split || iface != rp->iface){
-					cp = putentry(cp,RIP_IPFAM,rp->target,rp->metric);
+					cp = putentry(cp,RIP_IPFAM,rp->target,rp->metric+1);
 					numroutes++;
 				} else if(trig){
 					cp = putentry(cp,RIP_IPFAM,rp->target,RIP_INFINITY);
@@ -497,10 +497,6 @@ int32 ttl;
 		}
 		return;
 	}
-	/* Update metric to reflect link cost */
-	ep->metric++;
-	ep->metric = min(ep->metric,RIP_INFINITY);
-
 	/* Find existing entry, if any */
 	rp = rt_blookup(ep->target,bits);
 

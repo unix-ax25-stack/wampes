@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pktdrvr.h,v 1.5 1992/06/01 10:34:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pktdrvr.h,v 1.6 1993/01/29 06:48:35 deyke Exp $ */
 
 #ifndef _PKTDRVR_H
 #define _PKTDRVR_H
@@ -104,11 +104,7 @@ struct pktdrvr {
 extern struct pktdrvr Pktdrvr[];
 
 /* In pktdrvr.c: */
-INTERRUPT pkint __ARGS((unsigned short bp, unsigned short di,
-     unsigned short si, unsigned short ds, unsigned short es,
-     unsigned short dx, unsigned short cx, unsigned short bx,
-     unsigned short ax, unsigned short ip, unsigned short cs,
-     unsigned short flags, int dev));
+char *pkint __ARGS((int dev,unsigned short cx, unsigned short ax));
 void pk_tx __ARGS((int dev,void *arg1,void *unused));
 int pk_send __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,int tos));
 

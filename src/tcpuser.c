@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.14 1992/01/08 13:45:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.15 1993/01/29 06:48:41 deyke Exp $ */
 
 /* User calls to TCP
  * Copyright 1991 Phil Karn, KA9Q
@@ -83,12 +83,12 @@ int user;               /* User linkage area */
 	return tcb;
 }
 /* User send routine */
-int
+long
 send_tcp(tcb,bp)
 register struct tcb *tcb;
 struct mbuf *bp;
 {
-	int16 cnt;
+	int32 cnt;
 
 	if(tcb == NULLTCB || bp == NULLBUF){
 		free_p(bp);
@@ -129,15 +129,15 @@ struct mbuf *bp;
 		Net_error = CON_CLOS;
 		return -1;
 	}
-	return (int)cnt;
+	return (long)cnt;
 }
 
 /*---------------------------------------------------------------------------*/
 
-int  space_tcp(tcb)
+int space_tcp(tcb)
 struct tcb *tcb;
 {
-  int  cnt;
+  int cnt;
 
   if (!tcb) {
     Net_error = INVALID;
@@ -168,11 +168,11 @@ struct tcb *tcb;
 /*---------------------------------------------------------------------------*/
 
 /* User receive routine */
-int
+int32
 recv_tcp(tcb,bpp,cnt)
 register struct tcb *tcb;
 struct mbuf **bpp;
-int16 cnt;
+int32 cnt;
 {
 	if(tcb == NULLTCB || bpp == (struct mbuf **)NULL){
 		Net_error = INVALID;
@@ -349,11 +349,12 @@ int32 addr;
 void
 reset_all()
 {
-	register struct tcb *tcb;
+	register struct tcb *tcb,*tcbnext;
 
-	for(tcb=Tcbs;tcb != NULLTCB;tcb = tcb->next)
+	for(tcb=Tcbs;tcb != NULLTCB;tcb = tcbnext){
+		tcbnext = tcb->next;
 		reset_tcp(tcb);
-
+	}
 	pwait(NULL);    /* Let the RSTs go forth */
 }
 void

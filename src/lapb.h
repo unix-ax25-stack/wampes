@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.11 1992/07/24 20:00:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.12 1993/01/29 06:48:29 deyke Exp $ */
 
 #ifndef _LAPB_H
 #define _LAPB_H
@@ -57,95 +57,109 @@
 #define RESP    (SRC_C)         /* Response frame */
 #define FINAL   (SRC_C|PF)      /* Final frame */
 
-/* Round trip timing parameters */
-#define AGAIN   8               /* Average RTT gain = 1/8 */
-#define DGAIN   4               /* Mean deviation gain = 1/4 */
-
-/* AX25 connection control block */
+/* Per-connection link control block
+ * These are created and destroyed dynamically,
+ * and are indexed through a hash table.
+ * One exists for each logical AX.25 Level 2 connection
+ */
 struct ax25_cb {
-  struct ax25 hdr;              /* AX25 header */
-  struct iface *ifp;            /* Pointer to interface structure */
-  int state;                    /* Connection state */
-#define DISCONNECTED  0
-#define CONNECTING    1
-#define CONNECTED     2
-#define DISCONNECTING 3
-  int reason;                   /* Reason for disconnecting */
-#define NORMAL        0         /* Normal disconnect */
-#define RESET         1         /* Disconnected by other end */
-#define TIMEOUT       2         /* Excessive retransmissions */
-#define NETWORK       3         /* Network problem */
-  int routing_changes;          /* Number of routing changes */
-  int mode;                     /* Connection mode */
+	struct ax25_cb *next;           /* Linked list pointer */
+
+	struct iface *iface;            /* Interface */
+
+	struct mbuf *sndq;              /* Transmit queue */
+	int32 sndqtime;                 /* Last send queue write time */
+	struct mbuf *txq;               /* Transmit queue */
+	struct axreseq {                /* Resequencing queue */
+		struct mbuf *bp;
+		int sum;
+	} reseq[8];
+	struct mbuf *rxq;               /* Receive queue */
+	int16 rcvcnt;                   /* Receive queue length */
+
+	struct ax25 hdr;                /* AX25 header */
+
+	struct {
+		char rejsent;           /* REJ frame has been sent */
+		int32 remotebusy;       /* Remote sent RNR */
+		char rtt_run;           /* Round trip "timer" is running */
+		char retrans;           /* A retransmission has occurred */
+/*              char clone;             /* Server-type cb, will be cloned */
+		char closed;            /* Disconnect when send queue empty */
+		char polling;           /* Poll frame has been sent */
+		char rnrsent;           /* RNR frame has been sent */
+	} flags;
+
+	char reason;                    /* Reason for connection closing */
+#define LB_NORMAL       0               /* Normal close */
+#define LB_DM           1               /* Received DM from other end */
+#define LB_TIMEOUT      2               /* Excessive retries */
+
+	char vs;                        /* Our send state variable */
+	char vr;                        /* Our receive state variable */
+	char unack;                     /* Number of unacked frames */
+	unsigned retries;               /* Retry counter */
+	int state;                      /* Link state */
+#define LAPB_DISCONNECTED       1
+#define LAPB_LISTEN             2
+#define LAPB_SETUP              3
+#define LAPB_DISCPENDING        4
+#define LAPB_CONNECTED          5
+/* #define LAPB_RECOVERY        6          not used */
+	struct timer t1;                /* Retry timer */
+	struct timer t2;                /* Acknowledgement delay timer */
+	struct timer t3;                /* Keep-alive poll timer */
+	struct timer t4;                /* Busy timer */
+	struct timer t5;                /* Packet assembly timer */
+	int32 rtt_time;                 /* Stored clock values for RTT, ms */
+	int rtt_seq;                    /* Sequence number being timed */
+	int32 srt;                      /* Smoothed round-trip time, ms */
+	int32 mdev;                     /* Mean rtt deviation, ms */
+
+	void (*r_upcall) __ARGS((struct ax25_cb *,int));        /* Receiver upcall */
+	void (*t_upcall) __ARGS((struct ax25_cb *,int));        /* Transmit upcall */
+	void (*s_upcall) __ARGS((struct ax25_cb *,int,int));    /* State change upcall */
+
+	char *user;                     /* User pointer */
+
+	int routing_changes;            /* Number of routing changes */
+	int mode;                       /* Connection mode */
 #define STREAM        0
 #define DGRAM         1
-  int closed;                   /* Disconnect when send queue empty */
-  int polling;                  /* Poll frame has been sent */
-  int rnrsent;                  /* RNR frame has been sent */
-  int rejsent;                  /* REJ frame has been sent */
-  int32 remote_busy;            /* Other end's window is closed */
-  int vr;                       /* Incoming sequence number expected next */
-  int vs;                       /* Next sequence number to be sent */
-  int cwind;                    /* Congestion window */
-  int retry;                    /* Retransmission retry count */
-  int32 srtt;                   /* Smoothed round trip time, milliseconds */
-  int32 mdev;                   /* Mean deviation, milliseconds */
-  struct timer timer_t1;        /* Retransmission timer */
-  struct timer timer_t2;        /* Acknowledgement delay timer */
-  struct timer timer_t3;        /* No-activity timer */
-  struct timer timer_t4;        /* Busy timer */
-  struct timer timer_t5;        /* Packet assembly timer */
-  struct axreseq {              /* Resequencing queue */
-    struct mbuf *bp;
-    int sum;
-  } reseq[8];
-  struct mbuf *rcvq;            /* Receive queue */
-  int16 rcvcnt;                 /* Receive queue length */
-  struct mbuf *sndq;            /* Send queue */
-  int32 sndqtime;               /* Last send queue write time */
-  struct mbuf *resndq;          /* Resend queue */
-  int unack;                    /* Number of unacked frames */
-  int32 sndtime[8];             /* Time of 1st transmission */
-  void (*r_upcall) __ARGS((struct ax25_cb *p, int cnt));
-				/* Call when data arrives */
-  void (*t_upcall) __ARGS((struct ax25_cb *p, int cnt));
-				/* Call when ok to send more data */
-  void (*s_upcall) __ARGS((struct ax25_cb *p, int oldstate, int newstate));
-				/* Call when connection state changes */
-  char *user;                   /* User parameter (e.g., for mapping to an
-				 * application control block)
-				 */
-  struct ax25_cb *peer;         /* Pointer to peer's control block */
-  struct ax25_cb *next;         /* Linked-list pointer */
+	int cwind;                      /* Congestion window */
+	struct ax25_cb *peer;           /* Pointer to peer's control block */
 };
+#define NULLAX25        ((struct ax25_cb *)0)
+extern struct ax25_cb Ax25default,*Ax25_cb;
+extern char *Ax25states[],*Axreasons[];
+extern int Axirtt,T3init,Blimit;
+extern int N2,Maxframe,Paclen,Pthresh,Axwindow,Axversion;
 
-#define NULLAXCB ((struct ax25_cb *) 0)
-
-extern char *ax25reasons[];             /* Reason names */
-extern char *ax25states[];              /* State names */
-extern int ax_maxframe;                 /* Transmit flow control level */
-extern int ax_paclen;                   /* Maximum outbound packet size */
-extern int ax_pthresh;                  /* Send polls for packets larger than this */
-extern int ax_retry;                    /* Retry limit */
-extern int32 ax_t1init;                 /* Retransmission timeout */
-extern int32 ax_t2init;                 /* Acknowledgement delay timeout */
-extern int32 ax_t3init;                 /* No-activity timeout */
-extern int32 ax_t4init;                 /* Busy timeout */
-extern int32 ax_t5init;                 /* Packet assembly timeout */
-extern int ax_window;                   /* Local flow control limit */
-extern struct ax25_cb *axcb_server;     /* Server control block */
+extern int T1init;                      /* Retransmission timeout */
+extern int T2init;                      /* Acknowledgement delay timeout */
+extern int T4init;                      /* Busy timeout */
+extern int T5init;                      /* Packet assembly timeout */
+extern struct ax25_cb *Axcb_server;     /* Server control block */
 
 /* In lapb.c: */
 int lapb_input __ARGS((struct iface *iface, struct ax25 *hdr, struct mbuf *bp));
-int doax25 __ARGS((int argc, char *argv [], void *p));
-struct ax25_cb *open_ax __ARGS((char *path, int mode, void (*r_upcall )__ARGS ((struct ax25_cb *p, int cnt )), void (*t_upcall )__ARGS ((struct ax25_cb *p, int cnt )), void (*s_upcall )__ARGS ((struct ax25_cb *p, int oldstate, int newstate )), char *user));
-int send_ax __ARGS((struct ax25_cb *cp, struct mbuf *bp));
-int space_ax __ARGS((struct ax25_cb *cp));
-int recv_ax __ARGS((struct ax25_cb *cp, struct mbuf **bpp, int cnt));
-int close_ax __ARGS((struct ax25_cb *cp));
-int reset_ax __ARGS((struct ax25_cb *cp));
-int del_ax __ARGS((struct ax25_cb *cp));
-int valid_ax __ARGS((struct ax25_cb *cp));
-int kick_ax __ARGS((struct ax25_cb *cp));
+void send_packet __ARGS((struct ax25_cb *cp, int type, int cmdrsp, struct mbuf *data));
+int busy __ARGS((struct ax25_cb *cp));
+void send_ack __ARGS((struct ax25_cb *cp, int cmdrsp));
+int lapb_output __ARGS((struct ax25_cb *cp, int fill_sndq));
+void lapbstate __ARGS((struct ax25_cb *axp, int s));
+void t2_timeout __ARGS((struct ax25_cb *cp));
+void pollthem __ARGS((void *p));
+void t4_timeout __ARGS((struct ax25_cb *cp));
+void t5_timeout __ARGS((struct ax25_cb *cp));
+void build_path __ARGS((struct ax25_cb *cp, struct iface *ifp, struct ax25 *hdr, int reverse));
+
+/* In lapbtime.c: */
+void pollthem __ARGS((void *p));
+void recover __ARGS((void *p));
+
+/* In ax25subr.c: */
+int16 ftype __ARGS((int control));
+void lapb_garbage __ARGS((int drastic));
 
 #endif  /* _LAPB_H */

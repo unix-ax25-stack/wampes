@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.10 1992/11/19 13:16:27 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.11 1993/01/29 06:48:05 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -7,7 +7,7 @@ netrom ident "#boeb"
 
 # tnc0: 2 m
 
-attach asy 0 0 ax25 tnc0 0 256 9600
+attach asy 0 0 kissui tnc0 0 256 9600
 param tnc0  1  30   # txdelay
 param tnc0  2 127   # persistence
 param tnc0  3  30   # slottime
@@ -50,7 +50,6 @@ route add  dj0ze-1          ipip     15.137.23.135
 route add  dg9yev-1         ipip     15.137.23.159
 route add  dg9sbl-1         ipip     15.137.34.8
 route add  44.130/16        ipip     192.1.1.1
-route add  44/8             ipip     15.15.80.34
 
 arp add dl1sbl ax25 dl1sbl
 arp add dl4sel ax25 dl4sel

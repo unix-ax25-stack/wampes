@@ -1,3 +1,7 @@
+- AX.25: VC Mode fuer IP einbauen
+
+- richtige Verwendung von Mycall pruefen
+
 - 'rs' does not work on hp-terminals
 
 - even in raw mode it should be possible to send ^] without leaving the session
@@ -10,13 +14,7 @@
 
 - telnet record puts \r into file
 
-- CHECK:        overflow in mail buffers
-
-- IMPLEMENT:    ax25 blimit
-
-- IMPLEMENT:    netrom blimit
-
-- richtige Verwendung von Mycall pruefen
+- check overflow in mail buffers
 
 - "will echo" implementieren und testen (all telnet options)
 
@@ -24,47 +22,25 @@
 
 - netrom rtt cache?
 
-- rip request testen
-
 - remote_kbd: stop tracing to stdout
 
 - tty.h; ttydriv an session koppeln (Schwierigkeit: keine CmdSession)
 
-- don't switch STREAM -> DGRAM after connection
-
 - wo soll retry = 0 gesetzt werden ?
 
-- AX.25:  VC Mode fuer IP einbauen
+- Netrom: Knoten sollen durch Ident ansprechbar sein
 
-- AX.25:  axserver auch in die Liste haengen?
+- Netrom: print_destname ueberall verwenden
 
-- AX.25:  gibt es mehrere strtopath ?
+- Netrom: den Ident wie eine AX25 Adresse behandeln
 
-- Netrom:  Knoten sollen durch Ident ansprechbar sein
+- Netrom: struct circuit doppelt verpointern
 
-- Netrom:  print_destname ueberall verwenden
+- Netrom: TTL default auf 25 erhoehen ?
 
-- Netrom:  den Ident wie eine AX25 Adresse behandeln
-
-- Netrom:  struct circuit doppelt verpointern
-
-- Netrom:  TTL default auf 25 erhoehen ?
-
-- Mailer:  Alle Message Delimiter entfernen
-
-- Mailer:  Use hierarchical addressing
-
-- Mailer:  Use 'host-mode'
+- Mailer: Alle Message Delimiter entfernen
 
 - BBS Mailer:
-
-  - wenn ich eine SID bekomme antworte ich mit meiner SID
-
-  - nach dem S Kommando wird auf OK/NO gewartet
-
-  - bei OK wird die Msg gesendet
-
-  - bei NO wird die Msg dem return_mailer uebergeben
 
   - ich sende wenn moeglich hierachical adresses
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.11 1992/11/18 18:29:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.12 1993/01/29 06:48:41 deyke Exp $ */
 
 /* Low level TCP routines:
  *  control block management
@@ -24,14 +24,14 @@ char *Tcpstates[] = {
 	"Closed",
 	"Listen",
 	"SYN sent",
-	"SYN received",
-	"Established",
-	"FIN wait 1",
-	"FIN wait 2",
-	"Close wait",
+	"SYN recv",
+	"Estab",
+	"FINwait1",
+	"FINwait2",
+	"Closewait",
 	"Last ACK",
 	"Closing",
-	"Time wait"
+	"Timewait"
 };
 
 /* TCP closing reasons */

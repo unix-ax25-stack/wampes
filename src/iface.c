@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.14 1992/10/16 17:57:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.15 1993/01/29 06:48:24 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -9,6 +9,7 @@
 #include "proc.h"
 #include "iface.h"
 #include "ip.h"
+#include "icmp.h"
 #include "netuser.h"
 #include "ax25.h"
 #include "enet.h"
@@ -27,6 +28,7 @@ static int ifrxbuf __ARGS((int argc,char *argv[],void *p));
 static int ifmtu __ARGS((int argc,char *argv[],void *p));
 static int ifforw __ARGS((int argc,char *argv[],void *p));
 static int ifencap __ARGS((int argc,char *argv[],void *p));
+static int iftxqlen __ARGS((int argc,char *argv[],void *p));
 
 /* Interface list header */
 struct iface *Ifaces = &Loopback;
@@ -39,7 +41,6 @@ struct iface Loopback = {
 	0xffffffffL,    /* broadcast    255.255.255.255 */
 	0xffffffffL,    /* netmask      255.255.255.255 */
 	MAXINT16,       /* mtu          No limit */
-	0,              /* flags        */
 	0,              /* trace        */
 	NULLFILE,       /* trfp         */
 	NULLIF,         /* forw         */
@@ -47,6 +48,11 @@ struct iface Loopback = {
 	NULLPROC,       /* txproc       */
 	NULLPROC,       /* supv         */
 	NULLBUF,        /* outq         */
+	0,              /* outlim       */
+	0,              /* txbusy       */
+	NULL,           /* dstate       */
+	NULL,           /* dtickle      */
+	NULL,           /* dstatus      */
 	0,              /* dev          */
 	NULL,           /* (*ioctl)     */
 	NULLFP,         /* (*iostatus)  */
@@ -70,6 +76,7 @@ struct iface Loopback = {
 	0,              /* crccontrol   */
 	0,              /* crcerrors    */
 	0,              /* ax25errors   */
+	0,              /* flags        */
 };
 /* Encapsulation pseudo-interface */
 struct iface Encap = {
@@ -79,7 +86,6 @@ struct iface Encap = {
 	0xffffffffL,    /* broadcast    255.255.255.255 */
 	0xffffffffL,    /* netmask      255.255.255.255 */
 	MAXINT16,       /* mtu          No limit */
-	0,              /* flags        */
 	0,              /* trace        */
 	NULLFILE,       /* trfp         */
 	NULLIF,         /* forw         */
@@ -87,6 +93,11 @@ struct iface Encap = {
 	NULLPROC,       /* txproc       */
 	NULLPROC,       /* supv         */
 	NULLBUF,        /* outq         */
+	0,              /* outlim       */
+	0,              /* txbusy       */
+	NULL,           /* dstate       */
+	NULL,           /* dtickle      */
+	NULL,           /* dstatus      */
 	0,              /* dev          */
 	NULL,           /* (*ioctl)     */
 	NULLFP,         /* (*iostatus)  */
@@ -110,6 +121,7 @@ struct iface Encap = {
 	0,              /* crccontrol   */
 	0,              /* crcerrors    */
 	0,              /* ax25errors   */
+	0,              /* flags        */
 };
 
 char Noipaddr[] = "IP address field missing, and ip address not set\n";
@@ -122,10 +134,10 @@ struct cmds Ifcmds[] = {
 	"linkaddress",          iflinkadr,      0,      2,      NULLCHAR,
 	"mtu",                  ifmtu,          0,      2,      NULLCHAR,
 	"netmask",              ifnetmsk,       0,      2,      NULLCHAR,
+	"txqlen",               iftxqlen,       0,      2,      NULLCHAR,
 	"rxbuf",                ifrxbuf,        0,      2,      NULLCHAR,
 	NULLCHAR,
 };
-
 /*
  * General purpose interface transmit task, one for each device that can
  * send IP datagrams. It waits on the interface's IP output queue (outq),
@@ -147,9 +159,23 @@ void *unused;
 		while(iface->outq == NULLBUF)
 			pwait(&iface->outq);
 
+		iface->txbusy = 1;
 		bp = dequeue(&iface->outq);
 		pullup(&bp,(char *)&qhdr,sizeof(qhdr));
-		(*iface->send)(bp,iface,qhdr.gateway,qhdr.tos);
+		if(iface->dtickle != NULL && (*iface->dtickle)(iface) == -1){
+#ifdef  notdef  /* Confuses some non-compliant hosts */
+			struct ip ip;
+
+			/* Link redial failed; bounce with unreachable */
+			ntohip(&ip,&bp);
+			icmp_output(&ip,bp,ICMP_DEST_UNREACH,ICMP_HOST_UNREACH,
+			 NULLICMP);
+#endif
+			free_p(bp);
+		} else {
+			(*iface->send)(bp,iface,qhdr.gateway,qhdr.tos);
+		}
+		iface->txbusy = 0;
 
 		/* Let other tasks run, just in case send didn't block */
 		pwait(NULL);
@@ -167,7 +193,6 @@ void *v2;
 	struct iface *ifp;
 
 loop:
-
 	for(;;){
 		bp = Hopper;
 		if(bp != NULLBUF){
@@ -210,6 +235,27 @@ struct mbuf *bp;
 	memcpy(&bp->data[0],(char *)&ifp,sizeof(ifp));
 	enqueue(&Hopper,bp);
 	return 0;
+}
+
+/* Null send and output routines for interfaces without link level protocols */
+int
+nu_send(bp,ifp,gateway,tos)
+struct mbuf *bp;
+struct iface *ifp;
+int32 gateway;
+int tos;
+{
+	return (*ifp->raw)(ifp,bp);
+}
+int
+nu_output(ifp,dest,src,type,bp)
+struct iface *ifp;
+char *dest;
+char *src;
+int16 type;
+struct mbuf *bp;
+{
+	return (*ifp->raw)(ifp,bp);
 }
 
 /* Set interface parameters */
@@ -349,12 +395,14 @@ char *mode;
 	for(ift = &Iftypes[0];ift->name != NULLCHAR;ift++)
 		if(strnicmp(ift->name,mode,strlen(mode)) == 0)
 			break;
-	if(ift->name == NULLCHAR){
+	if(ift->name == NULLCHAR)
 		return -1;
+
+	if(ifp != NULLIF){
+		ifp->iftype = ift;
+		ifp->send = ift->send;
+		ifp->output = ift->output;
 	}
-	ifp->iftype = ift;
-	ifp->send = ift->send;
-	ifp->output = ift->output;
 	return 0;
 }
 /* Set interface receive buffer size */
@@ -402,32 +450,34 @@ register struct iface *ifp;
 {
 	char tmp[25];
 
-	printf("%-10s IP addr %s MTU %u Link encap ",ifp->name,
-	 inet_ntoa(ifp->addr),(int)ifp->mtu);
-	if(ifp->iftype == NULLIFT){
-		printf("not set\n");
-	} else {
-		printf("%s\n",ifp->iftype->name);
-		if(ifp->iftype->format != NULL && ifp->hwaddr != NULLCHAR)
-			printf("           Link addr %s\n",
-			 (*ifp->iftype->format)(tmp,ifp->hwaddr));
+	printf("%-10s IP addr %s MTU %u Link encap %s\n",ifp->name,
+	 inet_ntoa(ifp->addr),(int)ifp->mtu,
+	 ifp->iftype != NULL ? ifp->iftype->name : "not set");
+	if(ifp->iftype != NULL && ifp->iftype->format != NULL && ifp->hwaddr != NULLCHAR){
+		printf("           Link addr %s\n",
+		 (*ifp->iftype->format)(tmp,ifp->hwaddr));
 	}
-	printf("           flags %u trace 0x%x netmask 0x%08lx broadcast %s\n",
-		ifp->flags,ifp->trace,ifp->netmask,inet_ntoa(ifp->broadcast));
+	printf("           trace 0x%x netmask 0x%08lx broadcast %s\n",
+		ifp->trace,ifp->netmask,inet_ntoa(ifp->broadcast));
 	if(ifp->forw != NULLIF)
 		printf("           output forward to %s\n",ifp->forw->name);
-	printf("           sent: ip %lu tot %lu idle %s qlen %d\n",
+	printf("           sent: ip %lu tot %lu idle %s qlen %u",
 	 ifp->ipsndcnt,ifp->rawsndcnt,tformat(secclock() - ifp->lastsent),
 		len_q(ifp->outq));
+	if(ifp->outlim != 0)
+		printf("/%u",ifp->outlim);
+	if(ifp->txbusy)
+		printf(" BUSY");
+	printf("\n");
 	printf("           recv: ip %lu tot %lu idle %s\n",
 	 ifp->iprecvcnt,ifp->rawrecvcnt,tformat(secclock() - ifp->lastrecv));
 	switch (ifp->crccontrol){
-	default:            printf("           crc disabled");     break;
-	case CRC_TEST_16:   printf("           crc-16 test");      break;
-	case CRC_TEST_RMNC: printf("           crc-rmnc test");    break;
-	case CRC_16:        printf("           crc-16 enabled");   break;
-	case CRC_RMNC:      printf("           crc-rmnc enabled"); break;
-	case CRC_FCS:       printf("           crc-fcs enabled");  break;
+	default:            printf("           crc disabled");      break;
+	case CRC_TEST_16:   printf("           crc-16 test");       break;
+	case CRC_TEST_RMNC: printf("           crc-rmnc test");     break;
+	case CRC_16:        printf("           crc-16 enabled");    break;
+	case CRC_RMNC:      printf("           crc-rmnc enabled");  break;
+	case CRC_CCITT:     printf("           crc-ccitt enabled"); break;
 	}
 	printf(" crc errors %lu bad ax25 headers %lu\n",
 	 ifp->crcerrors,ifp->ax25errors);
@@ -494,6 +544,17 @@ register struct iface *ifp;
 	}
 	/* Finally free the structure itself */
 	free((char *)ifp);
+	return 0;
+}
+static int
+iftxqlen(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	struct iface *ifp = p;
+
+	setint(&ifp->outlim,"TX queue limit",argc,argv);
 	return 0;
 }
 

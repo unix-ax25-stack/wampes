@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.12 1992/08/19 13:20:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.13 1993/01/29 06:48:37 deyke Exp $ */
 
 /* NOS User Session control
  * Copyright 1991 Phil Karn, KA9Q
@@ -103,7 +103,7 @@ void *p;
 			 (int) (sp - Sessions),
 			 (long) sp->cb.ax25,
 			 sp->cb.ax25->rcvcnt,
-			 ax25states[sp->cb.ax25->state],
+			 Ax25states[sp->cb.ax25->state],
 			 ax25hdr_to_string(&sp->cb.ax25->hdr));
 			break;
 #endif
@@ -123,7 +123,7 @@ void *p;
 			 (int) (sp - Sessions),
 			 (long) sp->cb.netrom,
 			 sp->cb.netrom->rcvcnt,
-			 ax25states[sp->cb.netrom->state],
+			 Nr4states[sp->cb.netrom->state],
 			 nr_addr2str(sp->cb.netrom));
 			break;
 #endif
@@ -194,7 +194,7 @@ void *p;
 		break;
 #ifdef  AX25
 	case AX25TNC:
-		close_ax(sp->cb.ax25);
+		disc_ax25(sp->cb.ax25);
 		break;
 #endif
 	case FINGER:
@@ -233,7 +233,7 @@ void *p;
 		break;
 #ifdef  AX25
 	case AX25TNC:
-		reset_ax(sp->cb.ax25);
+		reset_ax25(sp->cb.ax25);
 		break;
 #endif
 	case FINGER:
@@ -277,7 +277,7 @@ void *p;
 		break;
 #ifdef  AX25
 	case AX25TNC:
-		if(kick_ax(sp->cb.ax25) == -1){
+		if(kick_ax25(sp->cb.ax25) == -1){
 			printf(Notval);
 			return 1;
 		}
@@ -420,7 +420,7 @@ void *p;
 #ifdef  AX25
 			case AX25TNC:
 				axp = Current->cb.ax25;
-				axclient_send_upcall(axp, space_ax(axp));
+				axclient_send_upcall(axp, space_ax25(axp));
 				break;
 #endif
 #ifdef NETROM

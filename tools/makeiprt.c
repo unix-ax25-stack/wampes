@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.3 1992/11/20 10:06:53 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.4 1993/01/29 06:48:03 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -34,6 +34,7 @@ struct link {
   struct node *node;
   const struct iface *iface;
   long gateway;
+  int private;
   struct link *next;
 };
 
@@ -301,6 +302,7 @@ static void create_links(void)
 	  lp->node = nnp;
 	  lp->iface = rp->iface;
 	  lp->gateway = rp->gateway;
+	  lp->private = rp->private;
 	  lp->next = np->links;
 	  np->links = lp;
 	}
@@ -335,7 +337,7 @@ static void propagate_routes(void)
       for (lp = np->links; lp; lp = lp->next)
 	for (rp = lp->node->routes; rp; rp = rp->next)
 	  if (!rp->private)
-	    add_route(np, rp->dest, rp->bits, lp->iface, lp->gateway, rp->metric + 1, 0);
+	    add_route(np, rp->dest, rp->bits, lp->iface, lp->gateway, rp->metric + 1, lp->private);
       if (np->changed) changed = 1;
     }
   } while (changed);

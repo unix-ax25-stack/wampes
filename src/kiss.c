@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.12 1992/11/29 17:37:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.13 1993/01/29 06:48:26 deyke Exp $ */
 
 /* Routines for AX.25 encapsulation in KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -16,9 +16,8 @@
 
 /* Set up a SLIP link to use AX.25 */
 int
-kiss_init(ifp,vj)
+kiss_init(ifp)
 struct iface *ifp;
-int vj; /* Unused */
 {
 	int xdev;
 	struct slip *sp;
@@ -33,7 +32,6 @@ int vj; /* Unused */
 		printf("Too many slip devices\n");
 		return -1;
 	}
-	setencap(ifp,"KISS");
 	ifp->ioctl = kiss_ioctl;
 	ifp->raw = kiss_raw;
 	ifp->show = slip_status;

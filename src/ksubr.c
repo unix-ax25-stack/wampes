@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.10 1992/09/01 16:52:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.11 1993/01/29 06:48:27 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -70,6 +70,88 @@ struct env {
 };
 #define getstackptr(ep) ((ep)->sp)
 #else
+#ifdef ULTRIX_RISC
+struct env {
+	long    on;
+	long    sig;
+	long    pc;
+	long    regs;
+	long    zero;
+	long    magic;
+	long    at;
+	long    v0;
+	long    v1;
+	long    a0;
+	long    a1;
+	long    a2;
+	long    a3;
+	long    t0;
+	long    t1;
+	long    t2;
+	long    t3;
+	long    t4;
+	long    t5;
+	long    t6;
+	long    t7;
+	long    s0;
+	long    s1;
+	long    s2;
+	long    s3;
+	long    s4;
+	long    s5;
+	long    s6;
+	long    s7;
+	long    t8;
+	long    t9;
+	long    k0;
+	long    k1;
+	long    gp;
+	long    sp;
+	long    s8;
+	long    ra;
+	long    fregs;
+	long    f0;
+	long    f1;
+	long    f2;
+	long    f3;
+	long    f4;
+	long    f5;
+	long    f6;
+	long    f7;
+	long    f8;
+	long    f9;
+	long    f10;
+	long    f11;
+	long    f12;
+	long    f13;
+	long    f14;
+	long    f15;
+	long    f16;
+	long    f17;
+	long    f18;
+	long    f19;
+	long    f20;
+	long    f21;
+	long    f22;
+	long    f23;
+	long    f24;
+	long    f25;
+	long    f26;
+	long    f27;
+	long    f28;
+	long    f29;
+	long    f30;
+	long    f31;
+	long    fpc;
+	long    mdlo;
+	long    mdhi;
+	long    flags;
+	long    fmagic;
+	long    pad;
+	long    nbjregs;
+};
+#define getstackptr(ep) ((ep)->sp)
+#else
 #if defined(ISC) || defined (LINUX)
 struct env {
 	long    esp;
@@ -94,6 +176,7 @@ struct env {
 #endif
 #endif
 #endif
+#endif
 
 static int stkutil __ARGS((struct proc *pp));
 static void pproc __ARGS((struct proc *pp));
@@ -105,7 +188,7 @@ kinit()
 	int i;
 
 	/* Initialize interrupt stack for high-water-mark checking */
-	for(i=0;i<512;i++)
+	for(i=0;i<Stktop-Intstk;i++)
 		Intstk[i] = STACKPAT;
 
 	/* Remember location 0 pattern to detect null pointer derefs */

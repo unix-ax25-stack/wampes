@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.4 1992/09/25 20:07:04 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.5 1993/01/29 06:48:53 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -35,10 +35,6 @@ int main(int argc, char **argv)
     int cnt;
   } tab[MAXCHANNELS];
 
-  static struct timeval timeout = {
-    3600, 0
-  };
-
   char tmp[1024];
   int ch;
   int channels = 2;
@@ -48,6 +44,7 @@ int main(int argc, char **argv)
   int self = 0;
   struct fd_set fmask;
   struct tab *tp;
+  struct timeval timeout;
 
   while ((ch = getopt(argc, argv, "c:f:s")) != EOF)
     switch (ch) {
@@ -89,6 +86,8 @@ int main(int argc, char **argv)
     int j;
     struct fd_set readmask = fmask;
 
+    timeout.tv_sec = 3600;
+    timeout.tv_usec = 0;
     if (!select(channels, (int *) &readmask, (int *) 0, (int *) 0, &timeout))
       exit(0);
     for (i = 0; i < channels; i++)

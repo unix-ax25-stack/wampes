@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.h,v 1.10 1992/06/08 12:59:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.h,v 1.11 1993/01/29 06:48:15 deyke Exp $ */
 
 #ifndef _ASY_H
 #define _ASY_H
@@ -20,7 +20,7 @@
 struct asymode {
 	char *name;
 	char trigchar;
-	int (*init) __ARGS((struct iface *,int));
+	int (*init) __ARGS((struct iface *));
 	int (*free) __ARGS((struct iface *));
 };
 extern struct asymode Asymode[];
@@ -34,9 +34,6 @@ int asy_send __ARGS((int dev,struct mbuf *bp));
 int asy_stop __ARGS((struct iface *ifp));
 int get_rlsd_asy __ARGS((int dev, int new_rlsd));
 int get_asy __ARGS((int dev,char *buf,int cnt));
-
-/* In dialer.c: */
-void dialer_kick __ARGS((struct asy *asyp));
 
 /* In asyvec.asm: */
 INTERRUPT asy0vec __ARGS((void));

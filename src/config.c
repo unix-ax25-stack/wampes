@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.28 1992/11/12 15:20:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.29 1993/01/29 06:48:18 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -20,6 +20,7 @@
 #include "ip.h"
 #include "tcp.h"
 #include "udp.h"
+/* #include "smtp.h" */
 #ifdef  ARCNET
 #include "arcnet.h"
 #endif
@@ -50,7 +51,13 @@
 #ifdef  QTSO
 #include "qtso.h"
 #endif
+#ifdef  CDMA_DM
+#include "dm.h"
+/* #include "rlp.h" */
+#endif
+/* #include "dialer.h" */
 
+int dotest __ARGS((int argc,char *argv[],void *p));     /**/
 static int dostart __ARGS((int argc,char *argv[],void *p));
 static int dostop __ARGS((int argc,char *argv[],void *p));
 static int dostatus __ARGS((int argc,char *argv[],void *p));
@@ -80,7 +87,6 @@ struct cmds Cmds[] = {
 #ifndef AMIGA
 	"!",            doshell,        0, 0, NULLCHAR,
 #endif
-/*      "abort",        doabort,        0, 0, NULLCHAR, */
 #ifdef  AMIGA
 	"amiga",        doamiga,        0, 0, NULLCHAR,
 #endif
@@ -119,10 +125,13 @@ struct cmds Cmds[] = {
 /*      "detach",       dodetach,       0, 2, "detach <interface>", */
 #ifdef  DIALER
 	"dialer",       dodialer,       0, 2,
-	"dialer <iface> <timeout> [<raise script> <lower script>]",
+		 "dialer <iface> <timeout> [device-dependent args]",
 #endif
 #ifndef AMIGA
 /*      "dir",          dodir,          512, 0, NULLCHAR, /* note sequence */
+#endif
+#ifdef  CDMA_DM
+	"dm",           dodm,           0, 0, NULLCHAR,
 #endif
 	"domain",       dodomain,       0, 0, NULLCHAR,
 #ifdef  DRSI
@@ -167,9 +176,6 @@ struct cmds Cmds[] = {
 	"memory",       domem,          0, 0, NULLCHAR,
 #endif
 	"mkdir",        domkd,          0, 2, "mkdir <directory>",
-#ifdef  AX25
-	"mode",         domode,         0, 2, "mode <interface>",
-#endif
 /*      "more",         doview,         0, 2, "more <filename>", */
 #ifdef  NETROM
 	"netrom",       donetrom,       0, 0, NULLCHAR,
@@ -180,6 +186,7 @@ struct cmds Cmds[] = {
 #ifdef  NRS
 	"nrstat",       donrstat,       0, 0, NULLCHAR,
 #endif  /* NRS */
+/*      "page",         dopage,         0, 2, "page <command> [args...]", */
 	"param",        doparam,        0, 2, "param <interface>",
 	"ping",         doping,         512, 0,
 	NULLCHAR,
@@ -199,6 +206,7 @@ struct cmds Cmds[] = {
 	"record",       dorecord,       0, 0, NULLCHAR,
 	"remote",       doremote,       0, 3, "remote [-p port] [-k key] [-a kickaddr] <address> exit|reset|kick",
 	"rename",       dorename,       0, 3, "rename <oldfile> <newfile>",
+/*      "repeat",       dorepeat,       256, 3, "repeat <interval> <command> [args...]",*/
 	"reset",        doreset,        0, 0, NULLCHAR,
 #ifdef  RIP
 	"rip",          dorip,          0, 0, NULLCHAR,
@@ -207,13 +215,16 @@ struct cmds Cmds[] = {
 	"route",        doroute,        0, 0, NULLCHAR,
 	"status",       dostatus,       0, 0, NULLCHAR,
 	"session",      dosession,      0, 0, NULLCHAR,
+/*      "scrollback",   dosfsize,       0, 0, NULLCHAR, */
 #ifdef  SCC
 	"sccstat",      dosccstat,      0, 0, NULLCHAR,
 #endif
 #if     !defined(AMIGA)
 	"shell",        doshell,        0, 0, NULLCHAR,
 #endif
+#if     defined(SMTP)
 	"smtp",         dosmtp,         0, 0, NULLCHAR,
+#endif
 /*      "socket",       dosock,         0, 0, NULLCHAR, */
 	"source",       dosource,       0, 2, "source <filename>",
 #ifdef  SERVERS
@@ -222,7 +233,9 @@ struct cmds Cmds[] = {
 #endif
 	"tcp",          dotcp,          0, 0, NULLCHAR,
 	"telnet",       dotelnet,       1024, 2, "telnet <address>",
-/*      "test",         dotest,         1024, 0, NULLCHAR, */
+#ifdef  notdef
+	"test",         dotest,         1024, 0, NULLCHAR,
+#endif
 /*      "tip",          dotip,          256, 2, "tip <iface", */
 #ifdef  TRACE
 	"trace",        dotrace,        512, 0, NULLCHAR,
@@ -244,39 +257,43 @@ struct cmds Attab[] = {
 	/* Ordinary PC asynchronous adaptor */
 	"asy", asy_attach, 0, 8,
 #ifndef AMIGA
-	"attach asy <address> <vector> slip|ax25|nrs <label> <buffers> <mtu> <speed> [ip_addr]",
+	"attach asy <address> <vector> slip|vjslip|ax25ui|ax25i|nrs <label> <buffers> <mtu> <speed> [ip_addr]",
 #else
-	"attach asy <driver> <unit> slip|ax25|nrs <label> <buffers> <mtu> <speed> [ip_addr]",
+	"attach asy <driver> <unit> slip|vjslip|ax25ui|ax25i|nrs <label> <buffers> <mtu> <speed> [ip_addr]",
 #endif  /* AMIGA */
 #endif  /* ASY */
 #ifdef  PC100
 	/* PACCOMM PC-100 8530 HDLC adaptor */
 	"pc100", pc_attach, 0, 8,
-	"attach pc100 <address> <vector> ax25 <label> <buffers>\
+	"attach pc100 <address> <vector> ax25ui|ax25i <label> <buffers>\
  <mtu> <speed> [ip_addra] [ip_addrb]",
+#endif
+#ifdef  CDMA_DM
+	"dm", dm_attach, 0, 8,
+	"attach dm <address> <vector> <rxdrq> <txdrq> <label> <rxbuf> <mtu> <speed>",
 #endif
 #ifdef  DRSI
 	/* DRSI PCPA card in low speed mode */
 	"drsi", dr_attach, 0, 8,
-	"attach drsi <address> <vector> ax25 <label> <bufsize> <mtu>\
+	"attach drsi <address> <vector> ax25ui|ax25i <label> <bufsize> <mtu>\
 <chan a speed> <chan b speed> [ip addr a] [ip addr b]",
 #endif
 #ifdef  EAGLE
 	/* EAGLE RS-232C 8530 HDLC adaptor */
 	"eagle", eg_attach, 0, 8,
-	"attach eagle <address> <vector> ax25 <label> <buffers>\
+	"attach eagle <address> <vector> ax25ui|ax25i <label> <buffers>\
  <mtu> <speed> [ip_addra] [ip_addrb]",
 #endif
 #ifdef  PI
 	/* PI 8530 HDLC adaptor */
 	"pi", pi_attach, 0, 8,
-	"attach pi <address> <vector> <dmachannel> ax25 <label> <buffers>\
+	"attach pi <address> <vector> <dmachannel> ax25ui|ax25i <label> <buffers>\
  <mtu> <speed> [ip_addra] [ip_addrb]",
 #endif
 #ifdef  HAPN
 	/* Hamilton Area Packet Radio (HAPN) 8273 HDLC adaptor */
 	"hapn", hapn_attach, 0, 8,
-	"attach hapn <address> <vector> ax25 <label> <rx bufsize>\
+	"attach hapn <address> <vector> ax25ui|ax25i <label> <rx bufsize>\
  <mtu> csma|full [ip_addr]",
 #endif
 #ifdef  APPLETALK
@@ -294,17 +311,23 @@ struct cmds Attab[] = {
 	"packet", pk_attach, 0, 4,
 	"attach packet <int#> <label> <buffers> <mtu> [ip_addr]",
 #endif
+#ifdef  QTSO
+	/* CDMA QTSO data interface */
+	"qtso", qtso_attach, 0, 2,
+	"attach qtso <label> <com_port_label> [<com_port_label> ...]",
+#endif
+
 #ifdef  HS
 	/* Special high speed driver for DRSI PCPA or Eagle cards */
 	"hs", hs_attach, 0, 7,
-	"attach hs <address> <vector> ax25 <label> <buffers> <mtu>\
+	"attach hs <address> <vector> ax25ui|ax25i <label> <buffers> <mtu>\
  <txdelay> <persistence> [ip_addra] [ip_addrb]",
 #endif
 #ifdef SCC
 	"scc", scc_attach, 0, 7,
 	"attach scc <devices> init <addr> <spacing> <Aoff> <Boff> <Dataoff>\n"
 	"   <intack> <vec> [p]<clock> [hdwe] [param]\n"
-	"attach scc <chan> slip|kiss|nrs|ax25 <label> <mtu> <speed> <bufsize> [call] ",
+	"attach scc <chan> slip|kiss|nrs|ax25ui|ax25i <label> <mtu> <speed> <bufsize> [call] ",
 #endif
 #ifdef  AX25
 	"axip", axip_attach, 0, 1,
@@ -325,6 +348,7 @@ static struct cmds Startcmds[] = {
 #if     defined(AX25) && defined(MAILBOX)
 	"ax25",         ax25start,      256, 0, NULLCHAR,
 #endif
+/*      "bsr",          bsr1,           256, 2, "start bsr <interface> [<port>]", */
 	"discard",      dis1,           256, 0, NULLCHAR,
 	"domain",       domain1,        256, 0, NULLCHAR,
 	"echo",         echo1,          256, 0, NULLCHAR,
@@ -340,11 +364,14 @@ static struct cmds Startcmds[] = {
 #ifdef  RIP
 	"rip",          doripinit,      0,   0, NULLCHAR,
 #endif
+#ifdef  SMTP
 /*      "smtp",         smtp1,          256, 0, NULLCHAR, */
+#endif
 #if     defined(MAILBOX)
 	"telnet",       telnet1,        256, 0, NULLCHAR,
 /*      "tip",          tipstart,       256, 2, "start tip <interface>", */
 #endif
+/*      "term",         term1,          256, 0, NULLCHAR, */
 /*      "ttylink",      ttylstart,      256, 0, NULLCHAR, */
 	"remote",       rem1,           768, 0, NULLCHAR,
 	NULLCHAR,
@@ -354,6 +381,7 @@ static struct cmds Stopcmds[] = {
 #if     defined(AX25) && defined(MAILBOX)
 	"ax25",         ax250,          0, 0, NULLCHAR,
 #endif
+/*      "bsr",          bsr0,           0, 0, NULLCHAR, */
 	"discard",      dis0,           0, 0, NULLCHAR,
 	"domain",       domain0,        0, 0, NULLCHAR,
 	"echo",         echo0,          0, 0, NULLCHAR,
@@ -368,11 +396,14 @@ static struct cmds Stopcmds[] = {
 #ifdef  RIP
 	"rip",          doripstop,      0, 0, NULLCHAR,
 #endif
+#ifdef  SMTP
 /*      "smtp",         smtp0,          0, 0, NULLCHAR, */
+#endif
 #ifdef  MAILBOX
 	"telnet",       telnet0,        0, 0, NULLCHAR,
 /*      "tip",          tip0,           0, 2, "stop tip <interface>", */
 #endif
+/*      "term",         term0,          0, 0, NULLCHAR, */
 /*      "ttylink",      ttyl0,          0, 0, NULLCHAR, */
 	"remote",       rem0,           0, 0, NULLCHAR,
 	NULLCHAR,
@@ -471,32 +502,50 @@ struct arp_type Arp_type[NHWTYPES] = {
  */
 struct iftype Iftypes[] = {
 	/* This entry must be first, since Loopback refers to it */
-	"None",         NULL,           NULL,           NULL,
+	"None",         nu_send,        nu_output,      NULL,
 	NULL,           CL_NONE,        0,              ip_proc,
-	NULLFP,         ip_dump,
+	NULLFP,         ip_dump,        NULLFP,         NULLFP,
 
 #ifdef  AX25
-	"AX25",         ax_send,        ax_output,      pax25,
+	"AX25UI",       axui_send,      ax_output,      pax25,
 	setcall,        CL_AX25,        AXALEN,         ax_recv,
-	ax_forus,       ax25_dump,
+	ax_forus,       ax25_dump,      NULLFP,         NULLFP,
+
+	"AX25I",        axi_send,       ax_output,      pax25,
+	setcall,        CL_AX25,        AXALEN,         ax_recv,
+	ax_forus,       ax25_dump,      NULLFP,         NULLFP,
 #endif  /* AX25 */
 
 #ifdef  KISS
-	"KISS",         ax_send,        ax_output,      pax25,
+	"KISSUI",       axui_send,      ax_output,      pax25,
 	setcall,        CL_AX25,        AXALEN,         kiss_recv,
-	ki_forus,       ki_dump,
+	ki_forus,       ki_dump,        NULLFP,         NULLFP,
+
+	"KISSI",        axi_send,       ax_output,      pax25,
+	setcall,        CL_AX25,        AXALEN,         kiss_recv,
+	ki_forus,       ki_dump,        NULLFP,         NULLFP,
 #endif  /* KISS */
 
 #ifdef  SLIP
 	"SLIP",         slip_send,      NULL,           NULL,
 	NULL,           CL_NONE,        0,              ip_proc,
 	NULLFP,         ip_dump,
+#ifdef  DIALER
+					sd_init,        sd_stat,
+#else
+					NULLFP,         NULLFP,
+#endif
 #endif  /* SLIP */
 
 #ifdef  VJCOMPRESS
-	"VJSLIP",       slip_send,      NULL,           NULL,
+	"VJSLIP",       vjslip_send,    NULL,           NULL,
 	NULL,           CL_NONE,        0,              ip_proc,
 	NULLFP,         sl_dump,
+#ifdef  DIALER
+					sd_init,        sd_stat,
+#else
+					NULLFP,         NULLFP,
+#endif
 #endif  /* VJCOMPRESS */
 
 #ifdef  ETHER
@@ -506,62 +555,71 @@ struct iftype Iftypes[] = {
 	 */
 	"Ethernet",     enet_send,      enet_output,    pether,
 	NULL,           CL_ETHERNET,    EADDR_LEN,      eproc,
-	ether_forus,    ether_dump,
+	ether_forus,    ether_dump,     NULLFP,         NULLFP,
 #endif  /* ETHER */
 
 #ifdef  NETROM
 	"NETROM",       nr_send,        NULL,           pax25,
 	setcall,        CL_NETROM,      AXALEN,         NULLVFP,
-	NULLFP,         ip_dump,
+	NULLFP,         ip_dump,        NULLFP,         NULLFP,
 #endif  /* NETROM */
 
 #ifdef  SLFP
 	"SLFP",         pk_send,        NULL,           NULL,
 	NULL,           CL_NONE,        0,              ip_proc,
-	NULLFP,         ip_dump,
+	NULLFP,         ip_dump,        NULLFP,         NULLFP,
 #endif  /* SLFP */
 
 #ifdef  PPP
 	"PPP",          ppp_send,       ppp_output,     NULL,
 	NULL,           CL_PPP,         0,              ppp_proc,
-	NULLFP,         ppp_dump,
+	NULLFP,         ppp_dump,       NULLFP,         NULLFP,
 #endif  /* PPP */
 
 #ifdef  ARCNET
 	"Arcnet",       anet_send,      anet_output,    parc,
 	garc,           CL_ARCNET,      1,              aproc,
-	arc_forus,      arc_dump,
+	arc_forus,      arc_dump,       NULLFP,         NULLFP,
 #endif  /* ARCNET */
 
 #ifdef  QTSO
 	"QTSO",         qtso_send,      qtso_output,    NULL,
 	NULL,           CL_NONE,        0,              qtso_proc,
-	NULLFP,         NULLVFP,
+	NULLFP,         NULLVFP,        NULLFP,         NULLFP,
 #endif  /* QTSO */
+
+#ifdef  CDMA_DM
+	"CDMA",         rlp_send,       NULL,           NULL,
+	NULL,           CL_NONE,        0,              ip_proc,
+	NULLFP,         ip_dump,        dd_init,        dd_stat,
+#endif
 
 	NULLCHAR,       NULLFP,         NULLFP,         NULL,
 	NULL,           -1,             0,              NULLVFP,
-	NULLFP,         NULLVFP,
+	NULLFP,         NULLVFP,        NULLFP,         NULLFP,
 };
 
 /* Asynchronous interface mode table */
 #ifdef  ASY
 struct asymode Asymode[] = {
 #ifdef  SLIP
-	"SLIP", FR_END,         slip_init,      slip_free,
+	"SLIP",         FR_END,         slip_init,      slip_free,
+	"VJSLIP",       FR_END,         slip_init,      slip_free,
 #endif
 #ifdef  KISS
-	"AX25", FR_END,         kiss_init,      kiss_free,
-	"KISS", FR_END,         kiss_init,      kiss_free,
+	"AX25UI",       FR_END,         kiss_init,      kiss_free,
+	"AX25I",        FR_END,         kiss_init,      kiss_free,
+	"KISSUI",       FR_END,         kiss_init,      kiss_free,
+	"KISSI",        FR_END,         kiss_init,      kiss_free,
 #endif
 #ifdef  NRS
-	"NRS",  ETX,            nrs_init,       nrs_free,
+	"NRS",          ETX,            nrs_init,       nrs_free,
 #endif
 #ifdef  PPP
-	"PPP",  HDLC_FLAG,      ppp_init,       ppp_free,
+	"PPP",          HDLC_FLAG,      ppp_init,       ppp_free,
 #endif
 #ifdef  QTSO
-	"QTSO", HDLC_FLAG,      qtso_init,      qtso_free,
+	"QTSO",         HDLC_FLAG,      qtso_init,      qtso_free,
 #endif
 	NULLCHAR
 };

@@ -1,64 +1,38 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/filter.c,v 1.1 1992/08/13 19:00:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/filter.c,v 1.2 1993/01/29 06:48:54 deyke Exp $ */
 
-#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
 /*---------------------------------------------------------------------------*/
 
-static char  *strtrim(s)
-register char  *s;
+int main(int argc, char **argv)
 {
-  register char  *p;
 
-  for (p = s; *p; p++) ;
-  while (--p >= s && isspace(*p & 0xff)) ;
-  p[1] = '\0';
-  return s;
-}
+  char buf[64][256];
+  int i;
+  int line;
+  int lines;
 
-/*---------------------------------------------------------------------------*/
+  for (; ; ) {
 
-static char  *strpos(str, pat)
-char  *str, *pat;
-{
-  register char  *sp, *pp;
-
-  for (; ; str++)
-    for (sp = str, pp = pat; ; ) {
-      if (!*pp) return str;
-      if (!*sp) return (char *) 0;
-      if (*sp++ != *pp++) break;
+    for (line = 0; ; ) {
+      if (!gets(buf[line])) break;
+      line++;
+      if (!buf[line-1][0]) break;
     }
-}
+    lines = line;
 
-/*---------------------------------------------------------------------------*/
+    if (!lines) return 0;
 
-main(argc, argv)
-int  argc;
-char  **argv;
-{
+    for (line = 0; line < lines; line++)
+      for (i = 1; i < argc; i++)
+	if (strstr(buf[line], argv[i])) {
+	  for (line = 0; line < lines; line++) puts(buf[line]);
+	  goto done;
+	}
+done:
+    ;
 
-  char  buf[1024];
-  char  line[1024];
-  int  i;
-  int  pass = 0;
-
-  while (gets(line)) {
-    strtrim(line);
-    if (!strncmp(line, "tnc", 3)) {
-      strcpy(buf, line);
-      gets(line);
-      strtrim(line);
-      for (pass = i = 1; i < argc; i++)
-	if (!strpos(line, argv[i])) pass = 0;
-      if (pass) {
-	putchar('\n');
-	puts(buf);
-	puts(line);
-      }
-    } else if (pass)
-      puts(line);
   }
 }
 

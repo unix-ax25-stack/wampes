@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.c,v 1.1 1992/08/24 10:12:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.c,v 1.2 1993/01/29 06:48:37 deyke Exp $ */
 
 /*
  * Routines to compress and uncompress tcp packets (for transmission
@@ -40,6 +40,7 @@
  *                      status display
  */
 
+/* #include <mem.h> */
 #include <stdlib.h>
 #include <string.h>
 #include "global.h"
@@ -56,7 +57,7 @@ static long decode __ARGS((struct mbuf **bpp));
  *      slots must be in range 0 to 255 (zero meaning no compression)
  */
 struct slcompress *
-slhc_init( rslots, tslots )
+slhc_init(rslots,tslots)
 int rslots;
 int tslots;
 {
@@ -500,29 +501,56 @@ struct mbuf **bpp;
 	register struct cstate *cs;
 	struct ip iph;
 	struct tcp th;
+	int16 len;
+	int16 hdrlen;
+	int slot;
 
-	/* Extract IP and TCP headers and verify conn ID */
-	ntohip(&iph,bpp);
-	ntohtcp(&th,bpp);
-	if(uchar(iph.protocol) > comp->rslot_limit) {
+	/* Sneak a peek at the IP header's IHL field to find its length */
+	hdrlen = ((*bpp)->data[0] & 0xf) << 2;
+	if(hdrlen < IPLEN){
+		/* The IP header length field is too small to be valid */
 		comp->sls_i_error++;
 		return slhc_toss(comp);
 	}
+	len = len_p(*bpp);      /* Actual length of whole packet */
+	ntohip(&iph,bpp);       /* Extract IP header */
+	/* Verify indicated length <= actual length */
+	if(iph.length > len){
+		/* Packet has been truncated, or header is garbage */
+		comp->sls_i_error++;
+		return slhc_toss(comp);
+	}
+	/* Verify conn ID */
+	slot = uchar(iph.protocol);
+	if(slot > comp->rslot_limit){
+		/* Out of range */
+		comp->sls_i_error++;
+		return slhc_toss(comp);
+	}
+	iph.protocol = TCP_PTCL;        /* Replace conn ID with TCP_PTCL */
 
-	/* Update local state */
-	cs = &comp->rstate[comp->recv_current = uchar(iph.protocol)];
-	comp->flags &=~ SLF_TOSS;
-	iph.protocol = TCP_PTCL;
-	ASSIGN(cs->cs_ip,iph);
-	ASSIGN(cs->cs_tcp,th);
-
-	/* Put headers back on packet
+	/* Extract TCP header and replace both headers
 	 * Neither header checksum is recalculated
 	 */
+	ntohtcp(&th,bpp);
 	*bpp = htontcp(&th,*bpp,NULLHEADER);
 	*bpp = htonip(&iph,*bpp,IP_CS_OLD);
+
+	/* Checksum IP header (now that protocol field is TCP again) */
+	if(cksum(NULLHEADER,*bpp,hdrlen) != 0){
+		/* Bad IP header checksum; discard */
+		comp->sls_i_error++;
+		return slhc_toss(comp);
+	}
+	/* Update local state */
+	comp->recv_current = slot;
+	cs = &comp->rstate[slot];
+	comp->flags &=~ SLF_TOSS;
+
+	ASSIGN(cs->cs_ip,iph);
+	ASSIGN(cs->cs_tcp,th);
 	comp->sls_i_uncompressed++;
-	return len_p(*bpp);
+	return len;
 }
 
 int

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.9 1992/09/01 16:52:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.10 1993/01/29 06:48:35 deyke Exp $ */
 
 /* This module implements the serial line framing method used by
  * net/rom nodes.  This allows the net/rom software to talk to
@@ -25,9 +25,8 @@ static struct mbuf *nrs_decode __ARGS((int dev,int c));
 struct nrs Nrs[ASY_MAX];
 
 int
-nrs_init(ifp,vj)
+nrs_init(ifp)
 struct iface *ifp;
-int vj; /* Unused */
 {
 	int xdev;
 	struct nrs *np;
@@ -44,7 +43,6 @@ int vj; /* Unused */
 		return -1;
 	}
 	/* no call supplied? */
-	setencap(ifp,"AX25");
 	ifp->ioctl = asy_ioctl;
 	ifp->raw = nrs_raw;
 

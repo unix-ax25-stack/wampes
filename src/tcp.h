@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.10 1992/11/25 12:29:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.11 1993/01/29 06:48:39 deyke Exp $ */
 
 #ifndef _TCP_H
 #define _TCP_H
@@ -133,31 +133,31 @@ struct tcb {
 		int32 ptr;      /* Working transmission pointer */
 		int32 wl1;      /* Sequence number used for last window update */
 		int32 wl2;      /* Ack number used for last window update */
-		int16 wnd;      /* Other end's offered receive window */
+		int32 wnd;      /* Other end's offered receive window */
 		int16 up;       /* Send urgent pointer */
 	} snd;
 	int32 iss;              /* Initial send sequence number */
 	int32 resent;           /* Count of bytes retransmitted */
-	int16 cwind;            /* Congestion window */
-	int16 ssthresh;         /* Slow-start threshold */
+	int32 cwind;            /* Congestion window */
+	int32 ssthresh;         /* Slow-start threshold */
 	int dupacks;            /* Count of duplicate (do-nothing) ACKs */
 
 	/* Receive sequence variables */
 	struct {
 		int32 nxt;      /* Incoming sequence number expected next */
-		int16 wnd;      /* Our offered receive window */
+		int32 wnd;      /* Our offered receive window */
 		int16 up;       /* Receive urgent pointer */
 	} rcv;
 	int32 irs;              /* Initial receive sequence number */
 	int32 rerecv;           /* Count of duplicate bytes received */
-	int16 mss;              /* Maximum segment size */
+	int32 mss;              /* Maximum segment size */
 
-	int16 window;           /* Receiver window and send queue limit */
-	int16 limit;            /* Send queue limit */
+	int32 window;           /* Receiver window and send queue limit */
+	int32 limit;            /* Send queue limit */
 
-	void (*r_upcall) __ARGS((struct tcb *tcb,int cnt));
+	void (*r_upcall) __ARGS((struct tcb *tcb,int32 cnt));
 		/* Call when "significant" amount of data arrives */
-	void (*t_upcall) __ARGS((struct tcb *tcb,int cnt));
+	void (*t_upcall) __ARGS((struct tcb *tcb,int32 cnt));
 		/* Call when ok to send more data */
 	void (*s_upcall) __ARGS((struct tcb *tcb,int old,int new));
 		/* Call when connection state changes */
@@ -175,8 +175,8 @@ struct tcb {
 
 	struct mbuf *rcvq;      /* Receive queue */
 	struct mbuf *sndq;      /* Send queue */
-	int16 rcvcnt;           /* Count of items on rcvq */
-	int16 sndcnt;           /* Number of unacknowledged sequence numbers on
+	int32 rcvcnt;           /* Count of items on rcvq */
+	int32 sndcnt;           /* Number of unacknowledged sequence numbers on
 				 * sndq. NB: includes SYN and FIN, which don't
 				 * actually appear on sndq!
 				 */
@@ -185,13 +185,21 @@ struct tcb {
 	struct timer timer;     /* Retransmission timer */
 	int32 rtt_time;         /* Stored clock values for RTT */
 	int32 rttseq;           /* Sequence number being timed */
+	int32 rttack;           /* Ack at start of timing (for txbw calc) */
 	int32 srtt;             /* Smoothed round trip time, milliseconds */
 	int32 mdev;             /* Mean deviation, milliseconds */
-	int32 lastactive;       /* Clock time when xmtr last active */
+	int32 rtt;              /* Last received RTT (for debugging) */
 
 	int user;               /* User parameter (e.g., for mapping to an
 				 * application control block
 				 */
+	int32 quench;           /* Count of incoming ICMP source quenches */
+	int32 unreach;          /* Count of incoming ICMP unreachables */
+	int32 timeouts;         /* Count of retransmission timeouts */
+	int32 lastack;          /* Time of last received ack */
+	int32 txbw;             /* Estimate of transmit bandwidth */
+	int32 lastrx;           /* Time of last received data */
+	int32 rxbw;             /* Estimate of receive bandwidth */
 };
 #define NULLTCB (struct tcb *)0
 /* TCP round-trip time cache */
@@ -203,6 +211,7 @@ struct tcp_rtt {
 };
 #define NULLRTT (struct tcp_rtt *)0
 extern struct tcp_rtt *Tcp_rtt;
+extern int (*Kicklist[])();
 
 /* TCP statistics counters */
 struct tcp_stat {
@@ -286,14 +295,14 @@ int kick __ARGS((int32 addr));
 int kick_tcp __ARGS((struct tcb *tcb));
 struct tcb *open_tcp __ARGS((struct socket *lsocket,struct socket *fsocket,
 	int mode,int window,
-	void (*r_upcall) __ARGS((struct tcb *tcb,int cnt)),
-	void (*t_upcall) __ARGS((struct tcb *tcb,int cnt)),
+	void (*r_upcall) __ARGS((struct tcb *tcb,int32 cnt)),
+	void (*t_upcall) __ARGS((struct tcb *tcb,int32 cnt)),
 	void (*s_upcall) __ARGS((struct tcb *tcb,int old,int new)),
 	int tos,int user));
-int recv_tcp __ARGS((struct tcb *tcb,struct mbuf **bpp,int cnt));
+int32 recv_tcp __ARGS((struct tcb *tcb,struct mbuf **bpp,int32 cnt));
 void reset_all __ARGS((void));
 void reset_tcp __ARGS((struct tcb *tcb));
-int send_tcp __ARGS((struct tcb *tcb,struct mbuf *bp));
+long send_tcp __ARGS((struct tcb *tcb,struct mbuf *bp));
 int space_tcp __ARGS((struct tcb *tcb));
 char *tcp_port __ARGS((int n));
 int tcpval __ARGS((struct tcb *tcb));

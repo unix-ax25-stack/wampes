@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.7 1992/08/21 16:42:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.8 1993/01/29 06:48:14 deyke Exp $ */
 
 #ifndef _ARP_H
 #define _ARP_H
@@ -30,7 +30,7 @@
 
 /* Address size definitions */
 #define IPALEN  4               /* Length in bytes of an IP address */
-#define MAXHWALEN       255     /* Maximum length of a hardware address */
+#define MAXHWALEN       20      /* Maximum length of a hardware address */
 
 /* ARP opcodes */
 #define ARP_REQUEST     1

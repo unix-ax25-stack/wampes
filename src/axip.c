@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.12 1992/10/16 17:57:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.13 1993/01/29 06:48:17 deyke Exp $ */
 
 #include "global.h"
 
@@ -75,7 +75,7 @@ struct mbuf *data;
   ifp->rawsndcnt++;
   ifp->lastsent = secclock();
 
-  append_fcs(data);
+  append_crc_ccitt(data);
 
   if (ifp->trace & IF_TRACE_RAW)
     raw_dump(ifp, -1, data);
@@ -148,7 +148,7 @@ void *argp;
   }
   if (l <= 2) goto Fail;
 
-  if (!check_fcs(bufptr, l)) goto Fail;
+  if (!check_crc_ccitt(bufptr, l)) goto Fail;
   l -= 2;
 
   p = src = bufptr + AXALEN;
@@ -235,8 +235,8 @@ void *p;
   ifp->hwaddr = mallocw(AXALEN);
   addrcp(ifp->hwaddr, Mycall);
   ifp->mtu = 256;
-  ifp->crccontrol = CRC_FCS;
-  setencap(ifp, "AX25");
+  ifp->crccontrol = CRC_CCITT;
+  setencap(ifp, "AX25UI");
 
   edv = malloc(sizeof(*edv));
   edv->type = type;

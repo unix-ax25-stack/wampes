@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.8 1992/11/19 13:16:26 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.9 1993/01/29 06:48:04 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -7,7 +7,7 @@ netrom ident gaert
 
 # tnc1: user access (70cm)
 
-attach asy 0 0 ax25 tnc1 0 256 9600
+attach asy 0 0 kissui tnc1 0 256 9600
 param tnc1  1  40   # txdelay
 param tnc1  2 127   # persistence
 param tnc1  3  30   # slottime
@@ -18,8 +18,8 @@ param tnc1 13   1   # rxdelay
 
 # tnc2: db0id (23cm)
 
-attach asy 0 0 ax25 tnc2 0 256 9600
-param tnc2  1  50   # txdelay
+attach asy 0 0 kissui tnc2 0 256 9600
+param tnc2  1  20   # txdelay
 param tnc2  2 255   # persistence
 param tnc2  3   1   # slottime
 param tnc2  4   3   # txtail
@@ -60,7 +60,6 @@ route add  dk0hu            ipip     192.1.1.2
 route add  df1tl            tnc1
 route add  db0sao-u         ni
 route add  44.130/16        tnc2     db0id
-route add  44/8             ipip     192.1.1.2
 
 arp add db0id ax25 db0id
 arp add df1tl ax25 df1tl

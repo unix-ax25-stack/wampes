@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcptimer.c,v 1.4 1991/02/24 20:17:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcptimer.c,v 1.5 1993/01/29 06:48:41 deyke Exp $ */
 
 /* TCP timeout routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -30,6 +30,7 @@ void *p;
 		close_self(tcb,NORMAL);
 		break;
 	default:                /* Retransmission timer has expired */
+		tcb->timeouts++;
 		tcb->flags.retran = 1;  /* Indicate > 1  transmission */
 		tcb->backoff++;
 		if (tcb->backoff > 10) {

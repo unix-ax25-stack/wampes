@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.8 1992/10/05 17:29:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.9 1993/01/29 06:48:26 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -16,7 +16,7 @@
 #include "daemon.h"
 #include "hardware.h"
 
-#if defined(__hpux) || defined(sun)
+#if defined(__hpux) || defined(ULTRIX_RISC) || defined(sun)
 #define setjmp          _setjmp
 #define longjmp         _longjmp
 #endif
@@ -27,7 +27,6 @@ extern void setstack __ARGS((void));
 #define RESTORE()
 #define giveup()        exit(0)
 #define istate()        (1)
-#define kbint()
 #define restore(x)
 
 int16 *newstackptr;
@@ -82,7 +81,6 @@ char *name;
 #endif
 	return pp;
 }
-
 /* Create a new, ready process and return pointer to descriptor.
  * The general registers are not initialized, but optional args are pushed
  * on the stack so they can be seen by a C function.
@@ -164,7 +162,14 @@ int freeargs;           /* If set, free arg list on parg1 at termination */
 	  longjmp(jmpenv, 1);
 	}
 #else
+#ifdef ULTRIX_RISC
+	if (!setjmp(jmpenv)) {
+	  jmpenv[32] = (int) newstackptr;
+	  longjmp(jmpenv, 1);
+	}
+#else
 	setstack();
+#endif
 #endif
 	(*func)(pp->iarg, pp->parg1, pp->parg2);
 	killself();
@@ -232,6 +237,7 @@ killself()
 	bp = pushdown(NULLBUF,sizeof(Curproc));
 	memcpy(bp->data,(char *)&Curproc,sizeof(Curproc));
 	enqueue(&Killq,bp);
+
 	/* "Wait for me; I will be merciful and quick." */
 	for(;;)
 		pwait(NULL);
@@ -388,7 +394,6 @@ void *event;
 		 * to prevent deadlock, but it restores our state
 		 * before returning.
 		 */
-		kbint();        /***/
 		giveup();
 		/* Process signals that occurred during the giveup() */
 		procsigs();

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.29 1992/11/25 12:29:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.30 1993/01/29 06:48:29 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -100,6 +100,9 @@ char *slave;
       pty_name(master, MASTERPREFIX, num);
       if ((fd = open(master, O_RDWR | O_NONBLOCK, 0600)) >= 0) {
 	*numptr = num;
+#ifdef ULTRIX_RISC
+	fcntl(master, F_SETFL, FIONBIO); /* O_NONBLOCK does not work?! */
+#endif
 	pty_name(slave, SLAVEPREFIX, num);
 	return fd;
       }
@@ -591,6 +594,9 @@ int cnt;
     off_read(tp->pty);
     return 0;
   }
+#ifdef ULTRIX_RISC
+  fcntl(tp->pty, F_SETFL, FIONBIO); /* Without this the read blocks! */
+#endif
   on_read(tp->pty, tp->readfnc, tp->fncarg);
   head = 0;
   while (cnt) {

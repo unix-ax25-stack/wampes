@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.40 1992/11/25 12:30:00 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.41 1993/01/29 06:50:27 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -137,11 +137,11 @@ static void append_line(struct mail *mail, char *line);
 static int get_header_value(const char *name, char *line, char *value);
 static char *get_host_from_header(const char *line);
 static int host_in_header(char *fname, char *host);
-static int mail_pending(void);
 static void delete_command(int argc, char **argv);
 static void dir_print(struct dir_entry *p);
 static void dir_command(int argc, char **argv);
 static void disconnect_command(int argc, char **argv);
+static void forward_message(const struct index *index, const char *filename, int skip_header);
 static void f_command(int argc, char **argv);
 static void help_command(int argc, char **argv);
 static void info_command(int argc, char **argv);
@@ -960,9 +960,11 @@ static void route_mail(struct mail *mail)
 #define MidSuffix "@bbs.net"
 
   FILE *fp;
-  int n;
   char *cp;
   char *s;
+  char *tohost;
+  char *touser;
+  int n;
   struct strlist *p;
 
   /* Set date */
@@ -1030,15 +1032,18 @@ static void route_mail(struct mail *mail)
 
   /* Call delivery agents */
 
-  if (callvalid(get_user_from_path(mail->to))) {
-    send_to_mail(mail);
-  } else if (calleq(get_host_from_path(mail->to), myhostname)) {
-    send_to_bbs(mail);
-  } else if (callvalid(get_host_from_path(mail->to))) {
+  touser = get_user_from_path(mail->to);
+  tohost = get_host_from_path(mail->to);
+  if (callvalid(touser)) {
     send_to_mail(mail);
   } else {
-    send_to_bbs(mail);
-    if (strlen(get_user_from_path(mail->to)) > 1) send_to_news(mail);
+    if (calleq(tohost, myhostname))
+      send_to_bbs(mail);
+    else if (callvalid(tohost))
+      send_to_mail(mail);
+    else
+      send_to_bbs(mail);
+    if (strcmp(touser, "e") && strcmp(touser, "m")) send_to_news(mail);
   }
 
   /* Free mail */
@@ -1116,34 +1121,6 @@ static int host_in_header(char *fname, char *host)
     }
   fclose(fp);
   return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int mail_pending(void)
-{
-
-  DIR *dirp;
-  char dirname[1024];
-  long curr_time;
-  static int have_mail;
-  static long next_time;
-  struct dirent *dp;
-
-  curr_time = time((long *) 0);
-  if (next_time > curr_time) return have_mail;
-  next_time = curr_time + 5 * MINUTES;
-  have_mail = 0;
-  sprintf(dirname, "/usr/spool/uucp/%s", user.name);
-  if (dirp = opendir(dirname)) {
-    for (dp = readdir(dirp); dp; dp = readdir(dirp))
-      if (*dp->d_name == 'C') {
-	have_mail = 1;
-	break;
-      }
-    closedir(dirp);
-  }
-  return have_mail;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1241,18 +1218,178 @@ static void disconnect_command(int argc, char **argv)
 
 /*---------------------------------------------------------------------------*/
 
+static void forward_message(const struct index *index, const char *filename, int skip_header)
+{
+
+  FILE * fp;
+  char buf[1024];
+  int c;
+  int lifetime;
+  struct tm *tm;
+
+  lifetime = ((index->lifetime_h << 8) & 0xff00) + (index->lifetime_l & 0xff) - 1;
+  if (lifetime != -1)
+    printf("S %s%s%s < %s%s%s # %d\n",
+	   index->to,
+	   *index->at ? " @ " : "",
+	   index->at,
+	   index->from,
+	   *index->bid ? " $" : "",
+	   index->bid,
+	   lifetime);
+  else
+    printf("S %s%s%s < %s%s%s\n",
+	   index->to,
+	   *index->at ? " @ " : "",
+	   index->at,
+	   index->from,
+	   *index->bid ? " $" : "",
+	   index->bid);
+  if (!getstring(buf)) exit(1);
+  switch (tolower(uchar(*buf))) {
+  case 'o':
+    puts(*index->subject ? index->subject : "no subject");
+    sleep(60); /* Bugfix for TheBox 1.9 */
+    if (!strcmp(index->to, "E") || !strcmp(index->to, "M"))
+      putchar('\n');
+    else {
+      tm = gmtime(&index->date);
+      printf("R:%02d%02d%02d/%02d%02dz @:%s.%s\n",
+	     tm->tm_year % 100,
+	     tm->tm_mon + 1,
+	     tm->tm_mday,
+	     tm->tm_hour,
+	     tm->tm_min,
+	     MYHOSTNAME,
+	     MYDOMAIN);
+      if (!(fp = fopen(filename, "r"))) halt();
+      if (skip_header)
+	while (fgets(buf, sizeof(buf), fp) && *buf != '\n') ;
+      while ((c = getc(fp)) != EOF) putchar(c);
+      fclose(fp);
+    }
+    sleep(60); /* Bugfix for TheBox 1.9 */
+    puts("\032");
+    wait_for_prompt();
+    break;
+  case 'n':
+    wait_for_prompt();
+    break;
+  default:
+    exit(1);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void f_command(int argc, char **argv)
 {
 
-  FILE *fp;
-  char buf[1024];
-  int c;
+  struct filelist {
+    struct filelist *next;
+    char name[16];
+  };
+
+  DIR *dirp;
+  FILE * fp;
+  char cfile[1024];
+  char dfile[1024];
+  char dirname[1024];
+  char from[1024];
+  char line[1024];
+  char subject[1024];
+  char tmp1[1024];
+  char tmp2[1024];
+  char to[1024];
+  char xfile[1024];
   int do_not_exit;
-  int lifetime;
+  struct dirent *dp;
+  struct filelist *filelist = 0;
+  struct filelist *p;
+  struct filelist *q;
   struct index index;
-  struct tm *tm;
+  struct stat statbuf;
 
   do_not_exit = doforward;
+
+  sprintf(dirname, "/usr/spool/uucp/%s", user.name);
+  if (dirp = opendir(dirname)) {
+    for (dp = readdir(dirp); dp; dp = readdir(dirp)) {
+      if (*dp->d_name != 'C') continue;
+      p = malloc(sizeof(*p));
+      strcpy(p->name, dp->d_name);
+      if (!filelist || strcmp(p->name, filelist->name) < 0) {
+	p->next = filelist;
+	filelist = p;
+      } else {
+	for (q = filelist; q->next && strcmp(p->name, q->next->name) > 0; q = q->next) ;
+	p->next = q->next;
+	q->next = p;
+      }
+    }
+    closedir(dirp);
+    for (; p = filelist; filelist = p->next, free(p)) {
+      sprintf(cfile, "/usr/spool/uucp/%s/%s", user.name, p->name);
+      if (!(fp = fopen(cfile, "r"))) continue;
+      *dfile = *xfile = 0;
+      while (fgets(line, sizeof(line), fp)) {
+	if (*line == 'S' && sscanf(line, "%*s %*s %s %*s %*s %s", tmp1, tmp2) == 2 && *tmp1 == 'D')
+	  sprintf(dfile, "/usr/spool/uucp/%s/%s", user.name, tmp2);
+	if (*line == 'S' && sscanf(line, "%*s %*s %s %*s %*s %s", tmp1, tmp2) == 2 && *tmp1 == 'X')
+	  sprintf(xfile, "/usr/spool/uucp/%s/%s", user.name, tmp2);
+      }
+      fclose(fp);
+      if (!*dfile || !*xfile) continue;
+      if (!(fp = fopen(xfile, "r"))) continue;
+      *to = 0;
+      while (fgets(line, sizeof(line), fp))
+	if (!strncmp(line, "C rmail ", 8)) {
+	  sprintf(to, "%s!%s", user.name, line + 8);
+	  strtrim(to);
+	  break;
+	}
+      fclose(fp);
+      if (!*to) continue;
+      if (!(fp = fopen(dfile, "r"))) continue;
+      *from = *subject = 0;
+      if (fscanf(fp, "%*s %s", tmp1) == 1) {
+	if (!strcmp(tmp1, "MAILER-DAEMON") || !strcmp(tmp1, "!"))
+	  strcpy(tmp1, myhostname);
+	sprintf(from, "%s!%s", myhostname, tmp1);
+	strtrim(from);
+	while (fgets(line, sizeof(line), fp)) {
+	  if (*line == '\n') break;
+	  if (!strncmp(line, "Subject: ", 9)) {
+	    strcpy(subject, line + 9);
+	    strtrim(subject);
+	    break;
+	  }
+	}
+      }
+      fclose(fp);
+      if (!*from) continue;
+      if (stat(cfile, &statbuf)) continue;
+      memset(&index, 0, sizeof(index));
+      index.date = statbuf.st_mtime;
+      strncpy(index.subject, subject, LEN_SUBJECT);
+      index.subject[LEN_SUBJECT] = 0;
+      strncpy(index.to, get_user_from_path(to), LEN_TO);
+      index.to[LEN_TO] = 0;
+      strupc(index.to);
+      strncpy(index.at, get_host_from_path(to), LEN_AT);
+      index.at[LEN_AT] = 0;
+      strupc(index.at);
+      strncpy(index.from, get_user_from_path(from), LEN_FROM);
+      index.from[LEN_FROM] = 0;
+      strupc(index.from);
+      forward_message(&index, dfile, 1);
+      if (unlink(cfile)) halt();
+      if (unlink(dfile)) halt();
+      if (unlink(xfile)) halt();
+      do_not_exit = 1;
+    }
+  }
+
   if (!get_index(user.seq, &index))
     if (lseek(fdindex, 0L, SEEK_SET)) halt();
   while (read(fdindex, &index, sizeof(struct index)) == sizeof(struct index)) {
@@ -1260,65 +1397,17 @@ static void f_command(int argc, char **argv)
 	index.mesg > user.seq         &&
 	!calleq(index.at, myhostname) &&
 	!host_in_header(getfilename(index.mesg), user.name)) {
-      if (mail_pending()) exit(0);
+      forward_message(&index, getfilename(index.mesg), 0);
       do_not_exit = 1;
-      lifetime = ((index.lifetime_h << 8) & 0xff00) + (index.lifetime_l & 0xff) - 1;
-      if (lifetime != -1)
-	printf("S %s%s%s < %s%s%s # %d\n",
-	       index.to,
-	       *index.at ? " @ " : "",
-	       index.at,
-	       index.from,
-	       *index.bid ? " $" : "",
-	       index.bid,
-	       lifetime);
-      else
-	printf("S %s%s%s < %s%s%s\n",
-	       index.to,
-	       *index.at ? " @ " : "",
-	       index.at,
-	       index.from,
-	       *index.bid ? " $" : "",
-	       index.bid);
-      if (!getstring(buf)) exit(1);
-      switch (tolower(uchar(*buf))) {
-      case 'o':
-	puts(*index.subject ? index.subject : "no subject");
-	if (!strcmp(index.to, "E") || !strcmp(index.to, "M"))
-	  putchar('\n');
-	else {
-	  tm = gmtime(&index.date);
-	  printf("R:%02d%02d%02d/%02d%02dz @:%s.%s\n",
-		 tm->tm_year % 100,
-		 tm->tm_mon + 1,
-		 tm->tm_mday,
-		 tm->tm_hour,
-		 tm->tm_min,
-		 MYHOSTNAME,
-		 MYDOMAIN);
-	  if (!(fp = fopen(getfilename(index.mesg), "r"))) halt();
-	  while ((c = getc(fp)) != EOF) putchar(c);
-	  fclose(fp);
-	}
-	puts("\032");
-	wait_for_prompt();
-	break;
-      case 'n':
-	wait_for_prompt();
-	break;
-      default:
-	exit(1);
-      }
     }
     if (user.seq < index.mesg) {
       user.seq = index.mesg;
       put_seq();
     }
   }
-  if (do_not_exit)
-    putchar('F');
-  else
-    exit(0);
+
+  if (!do_not_exit) exit(0);
+  putchar('F');
 }
 
 /*---------------------------------------------------------------------------*/
@@ -2222,11 +2311,10 @@ static void bbs(void)
     fclose(fp);
   }
   if (doforward) {
-    if (mail_pending()) exit(0);
     connect_bbs();
     wait_for_prompt();
   }
-  if (level == MBOX) printf("[THEBOX-1.6-$]\n");
+  if (level == MBOX) printf("[THEBOX-1.9-H$]\n");
   if (doforward) wait_for_prompt();
   for (; ; ) {
     if (doforward)

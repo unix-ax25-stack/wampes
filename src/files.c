@@ -1,12 +1,15 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.9 1992/06/01 10:34:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.10 1993/01/29 06:48:21 deyke Exp $ */
 
 /* System-dependent definitions of various files, spool directories, etc */
 #include <stdio.h>
+#include <ctype.h>
 #include "global.h"
 #include "netuser.h"
 #include "files.h"
+/* #include "md5.h" */
 
 #ifdef  MSDOS
+char System[] = "MSDOS";
 char *Startup = "/autoexec.net";        /* Initialization file */
 char *Userfile = "/ftpusers";   /* Authorized FTP users and passwords */
 char *Maillog = "/spool/mail.log";      /* mail log */
@@ -31,6 +34,7 @@ char Eol[] = "\r\n";
 #endif
 
 #ifdef  UNIX
+char System[] = "UNIX";
 char *Startup = "/tcp/net.rc";          /* Initialization file */
 char *Config = "./config.net";  /* Device configuration list */
 char *Userfile = "./ftpusers";
@@ -56,6 +60,7 @@ char Eol[] = "\n";
 #endif
 
 #ifdef  AMIGA
+char System[] = "AMIGA";
 char *Startup = "TCPIP:net-startup";
 char *Config = "TCPIP:config.net";      /* Device configuration list */
 char *Userfile = "TCPIP:ftpusers";
@@ -81,6 +86,7 @@ char Eol[] = "\r\n";
 #endif
 
 #ifdef  MAC
+char System[] = "MACOS";
 char *Startup ="Mikes Hard Disk:net.start";
 char *Config = "Mikes Hard Disk:config.net";    /* Device configuration list */
 char *Userfile = "Mikes Hard Disk:ftpusers";

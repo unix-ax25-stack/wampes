@@ -1,7 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.24 1992/08/19 13:20:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.25 1993/01/29 06:48:27 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
+ *
+ * Copyright 1991 Phil Karn, KA9Q
  */
 #include <time.h>
 #include "global.h"
@@ -9,577 +11,46 @@
 #include "timer.h"
 #include "ax25.h"
 #include "lapb.h"
+#include "ip.h"
 #include "netrom.h"
-#include "asy.h"
-#include "cmdparse.h"
-#include "netuser.h"
 
-extern struct ax25_cb *netrom_server_axcb;
+extern struct ax25_cb *Netrom_server_axcb;
 
-char  *ax25states[] = {
-  "Disconnected",
-  "Conn pending",
-  "Connected",
-  "Disc pending"
-};
+struct ax25_cb *Axcb_server;    /* Server control block */
 
-char  *ax25reasons[] = {
-  "Normal",
-  "Reset",
-  "Timeout",
-  "Network"
-};
+static int ackours __ARGS((struct ax25_cb *axp, int n));
+static void reset_t1 __ARGS((struct ax25_cb *axp));
+static int put_reseq __ARGS((struct ax25_cb *axp, struct mbuf *bp, int ns));
 
-int  ax_maxframe =      7;      /* Transmit flow control level */
-int  ax_paclen   =    236;      /* Maximum outbound packet size */
-int  ax_pthresh  =     64;      /* Send polls for packets larger than this */
-int  ax_retry    =     10;      /* Retry limit */
-int32 ax_t1init  =   5000;      /* Retransmission timeout */
-int32 ax_t2init  =   2000;      /* Acknowledgement delay timeout */
-int32 ax_t3init  = 900000;      /* No-activity timeout */
-int32 ax_t4init  =  60000;      /* Busy timeout */
-int32 ax_t5init  =   1000;      /* Packet assembly timeout */
-int  ax_window   =   2048;      /* Local flow control limit */
-struct ax25_cb *axcb_server;    /* Server control block */
+#define next_seq(n)  (((n) + 1) & MMASK)
 
-static struct ax25_cb *axcb_head;
-
-static int is_flexnet __ARGS((char *call, int store));
-static void reset_t1 __ARGS((struct ax25_cb *cp));
-static void inc_t1 __ARGS((struct ax25_cb *cp));
-static void send_packet __ARGS((struct ax25_cb *cp, int type, int cmdrsp, struct mbuf *data));
-static int busy __ARGS((struct ax25_cb *cp));
-static void send_ack __ARGS((struct ax25_cb *cp, int cmdrsp));
-static void try_send __ARGS((struct ax25_cb *cp, int fill_sndq));
-static void setaxstate __ARGS((struct ax25_cb *cp, int newstate));
-static void t1_timeout __ARGS((struct ax25_cb *cp));
-static void t2_timeout __ARGS((struct ax25_cb *cp));
-static void t3_timeout __ARGS((struct ax25_cb *cp));
-static void t4_timeout __ARGS((struct ax25_cb *cp));
-static void t5_timeout __ARGS((struct ax25_cb *cp));
-static struct ax25_cb *create_axcb __ARGS((struct ax25_cb *prototype));
-static void build_path __ARGS((struct ax25_cb *cp, struct iface *ifp, struct ax25 *hdr, int reverse));
-static int put_reseq __ARGS((struct ax25_cb *cp, struct mbuf *bp, int ns));
-static int dodigipeat __ARGS((int argc, char *argv [], void *p));
-static int domaxframe __ARGS((int argc, char *argv [], void *p));
-static int domycall __ARGS((int argc, char *argv [], void *p));
-static int dopaclen __ARGS((int argc, char *argv [], void *p));
-static int dopthresh __ARGS((int argc, char *argv [], void *p));
-static int doaxreset __ARGS((int argc, char *argv [], void *p));
-static int doretry __ARGS((int argc, char *argv [], void *p));
-static int dorouteadd __ARGS((int argc, char *argv [], void *p));
-static void doroutelistentry __ARGS((struct ax_route *rp));
-static int doroutelist __ARGS((int argc, char *argv [], void *p));
-static int doroutestat __ARGS((int argc, char *argv [], void *p));
-static int doaxroute __ARGS((int argc, char *argv [], void *p));
-static int doaxstatus __ARGS((int argc, char *argv [], void *p));
-static int dot1 __ARGS((int argc, char *argv [], void *p));
-static int dot2 __ARGS((int argc, char *argv [], void *p));
-static int dot3 __ARGS((int argc, char *argv [], void *p));
-static int dot4 __ARGS((int argc, char *argv [], void *p));
-static int dot5 __ARGS((int argc, char *argv [], void *p));
-static int doaxwindow __ARGS((int argc, char *argv [], void *p));
-
-/*---------------------------------------------------------------------------*/
-
-static int is_flexnet(call, store)
-char *call;
-int store;
-{
-
-#define FTABLESIZE 23
-
-  struct ftable_t {
-    struct ftable_t *next;
-    char call[AXALEN];
-  };
-
-  char *cp;
-  long hashval;
-  static struct ftable_t *ftable[FTABLESIZE];
-  struct ftable_t **tp;
-  struct ftable_t *p;
-
-  cp = call;
-  hashval  = ((*cp++ << 23) & 0x0f000000);
-  hashval |= ((*cp++ << 19) & 0x00f00000);
-  hashval |= ((*cp++ << 15) & 0x000f0000);
-  hashval |= ((*cp++ << 11) & 0x0000f000);
-  hashval |= ((*cp++ <<  7) & 0x00000f00);
-  hashval |= ((*cp++ <<  3) & 0x000000f0);
-  hashval |= ((*cp   >>  1) & 0x0000000f);
-  tp = ftable + (hashval % FTABLESIZE);
-  for (p = *tp; p && !addreq(p->call, call); p = p->next) ;
-  if (!p && store) {
-    p = malloc(sizeof(*p));
-    addrcp(p->call, call);
-    p->next = *tp;
-    *tp = p;
-  }
-  return (int) (p != 0);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void reset_t1(cp)
-struct ax25_cb *cp;
-{
-  int32 tmp;
-
-  tmp = cp->srtt + 4 * cp->mdev;
-  if (tmp < 500) tmp = 500;
-  set_timer(&cp->timer_t1, tmp);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void inc_t1(cp)
-struct ax25_cb *cp;
-{
-  int32 tmp;
-
-  tmp = (dur_timer(&cp->timer_t1) * 5 + 2) / 4;
-  if (tmp > 10 * cp->srtt) tmp = 10 * cp->srtt;
-  if (tmp < 500) tmp = 500;
-  set_timer(&cp->timer_t1, tmp);
-}
-
-/*---------------------------------------------------------------------------*/
-
-#define next_seq(n)  (((n) + 1) & 7)
-
-/*---------------------------------------------------------------------------*/
-
-static void send_packet(cp, type, cmdrsp, data)
-struct ax25_cb *cp;
-int  type;
-int  cmdrsp;
-struct mbuf *data;
-{
-
-  int  control;
-  struct mbuf *bp;
-
-  if (cp->mode == STREAM && (type == I || type == UI)) {
-    if (!(bp = pushdown(data, 1))) {
-      free_p(data);
-      return;
-    }
-    *bp->data = PID_NO_L3;
-    data = bp;
-  }
-
-  control = type;
-  if (type == I) {
-    control |= (cp->vs << 1);
-    cp->vs = next_seq(cp->vs);
-  }
-  if ((type & 3) != U) {
-    control |= (cp->vr << 5);
-    stop_timer(&cp->timer_t2);
-  }
-  if (cmdrsp & PF) control |= PF;
-  if (!(bp = pushdown(data, 1))) {
-    free_p(data);
-    return;
-  }
-  *bp->data = control;
-  data = bp;
-
-  if (cmdrsp & DST_C)
-    cp->hdr.cmdrsp = LAPB_COMMAND;
-  else if (cmdrsp & SRC_C)
-    cp->hdr.cmdrsp = LAPB_RESPONSE;
-  else
-    cp->hdr.cmdrsp = VERS1;
-  if (!(bp = htonax25(&cp->hdr, data))) {
-    free_p(data);
-    return;
-  }
-  data = bp;
-
-  if (type == RR || type == REJ || type == UA) cp->rnrsent = 0;
-  if (type == RNR) cp->rnrsent = 1;
-  if (type == REJ) cp->rejsent = 1;
-  if (cmdrsp == POLL) cp->polling = 1;
-  if (type == I || cmdrsp == POLL) start_timer(&cp->timer_t1);
-
-  axroute(cp, data);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int  busy(cp)
-struct ax25_cb *cp;
-{
-  return cp->peer ? space_ax(cp->peer) <= 0 : cp->rcvcnt >= ax_window;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void send_ack(cp, cmdrsp)
-struct ax25_cb *cp;
-int  cmdrsp;
-{
-  if (busy(cp))
-    send_packet(cp, RNR, cmdrsp, NULLBUF);
-  else if (!cp->rejsent && (cp->reseq[0].bp || cp->reseq[1].bp ||
-			    cp->reseq[2].bp || cp->reseq[3].bp ||
-			    cp->reseq[4].bp || cp->reseq[5].bp ||
-			    cp->reseq[6].bp || cp->reseq[7].bp))
-    send_packet(cp, REJ, cmdrsp, NULLBUF);
-  else
-    send_packet(cp, RR, cmdrsp, NULLBUF);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void try_send(cp, fill_sndq)
-struct ax25_cb *cp;
-int  fill_sndq;
-{
-
-  int  cnt;
-  struct mbuf *bp;
-
-  stop_timer(&cp->timer_t5);
-  while (cp->unack < cp->cwind) {
-    if (cp->state != CONNECTED || cp->remote_busy) return;
-    if (fill_sndq && cp->t_upcall) {
-      cnt = space_ax(cp);
-      if (cnt > 0) {
-	(*cp->t_upcall)(cp, cnt);
-	if (cp->unack >= cp->cwind) return;
-      }
-    }
-    if (!cp->sndq) return;
-    if (cp->mode == STREAM) {
-      cnt = len_p(cp->sndq);
-      if (cnt < ax_paclen) {
-	if (cp->unack) return;
-	if (!cp->peer && cp->sndqtime + ax_t5init - msclock() > 0) {
-	  set_timer(&cp->timer_t5, cp->sndqtime + ax_t5init - msclock());
-	  start_timer(&cp->timer_t5);
-	  return;
-	}
-      }
-      if (cnt > ax_paclen) cnt = ax_paclen;
-      if (!(bp = alloc_mbuf(cnt))) return;
-      pullup(&cp->sndq, bp->data, bp->cnt = cnt);
-    } else {
-      bp = dequeue(&cp->sndq);
-    }
-    enqueue(&cp->resndq, bp);
-    cp->unack++;
-    cp->sndtime[cp->vs] = msclock();
-    dup_p(&bp, bp, 0, MAXINT16);
-    send_packet(cp, I, CMD, bp);
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void setaxstate(cp, newstate)
-struct ax25_cb *cp;
-int  newstate;
-{
-  int  oldstate;
-
-  oldstate = cp->state;
-  cp->state = newstate;
-  cp->polling = 0;
-  cp->retry = 0;
-  stop_timer(&cp->timer_t1);
-  stop_timer(&cp->timer_t2);
-  stop_timer(&cp->timer_t4);
-  stop_timer(&cp->timer_t5);
-  reset_t1(cp);
-  switch (newstate) {
-  case DISCONNECTED:
-    if (cp->peer) close_ax(cp->peer);
-    if (cp->s_upcall) (*cp->s_upcall)(cp, oldstate, newstate);
-    if (cp->peer && cp->peer->state == DISCONNECTED) {
-      del_ax(cp->peer);
-      del_ax(cp);
-    }
-    break;
-  case CONNECTING:
-    if (cp->s_upcall) (*cp->s_upcall)(cp, oldstate, newstate);
-    send_packet(cp, SABM, POLL, NULLBUF);
-    break;
-  case CONNECTED:
-    if (cp->peer && cp->peer->state == DISCONNECTED) {
-      send_packet(cp->peer, UA, FINAL, NULLBUF);
-      setaxstate(cp->peer, CONNECTED);
-    }
-    if (cp->s_upcall) (*cp->s_upcall)(cp, oldstate, newstate);
-    try_send(cp, 1);
-    break;
-  case DISCONNECTING:
-    if (cp->peer) close_ax(cp->peer);
-    if (cp->s_upcall) (*cp->s_upcall)(cp, oldstate, newstate);
-    send_packet(cp, DISC, POLL, NULLBUF);
-    break;
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void t1_timeout(cp)
-struct ax25_cb *cp;
-{
-  inc_t1(cp);
-  cp->cwind = 1;
-  if (++cp->retry > ax_retry) cp->reason = TIMEOUT;
-  switch (cp->state) {
-  case DISCONNECTED:
-    break;
-  case CONNECTING:
-    if (cp->peer && cp->peer->state == DISCONNECTED)
-      if (cp->retry > 2)
-	setaxstate(cp, DISCONNECTED);
-      else
-	start_timer(&cp->timer_t1);
-    else if (cp->retry > ax_retry)
-      setaxstate(cp, DISCONNECTED);
-    else
-      send_packet(cp, SABM, POLL, NULLBUF);
-    break;
-  case CONNECTED:
-    if (cp->retry > ax_retry) {
-      setaxstate(cp, DISCONNECTING);
-    } else if (!cp->polling && !cp->remote_busy && cp->unack &&
-	       len_p(cp->resndq) <= ax_pthresh) {
-      int  old_vs;
-      struct mbuf *bp;
-      old_vs = cp->vs;
-      cp->vs = (cp->vs - cp->unack) & 7;
-      cp->sndtime[cp->vs] = 0;
-      dup_p(&bp, cp->resndq, 0, MAXINT16);
-      send_packet(cp, I, POLL, bp);
-      cp->vs = old_vs;
-    } else {
-      send_ack(cp, POLL);
-    }
-    break;
-  case DISCONNECTING:
-    if (cp->retry > ax_retry)
-      setaxstate(cp, DISCONNECTED);
-    else
-      send_packet(cp, DISC, POLL, NULLBUF);
-    break;
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void t2_timeout(cp)
-struct ax25_cb *cp;
-{
-  send_ack(cp, RESP);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void t3_timeout(cp)
-struct ax25_cb *cp;
-{
-  if (!run_timer(&cp->timer_t1)) send_ack(cp, POLL);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void t4_timeout(cp)
-struct ax25_cb *cp;
-{
-  if (!cp->polling) send_ack(cp, POLL);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void t5_timeout(cp)
-struct ax25_cb *cp;
-{
-  try_send(cp, 1);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static struct ax25_cb *create_axcb(prototype)
-struct ax25_cb *prototype;
-{
-  struct ax25_cb *cp;
-
-  if (prototype) {
-    cp = (struct ax25_cb *) malloc(sizeof(struct ax25_cb ));
-    *cp = *prototype;
-  } else
-    cp = (struct ax25_cb *) calloc(1, sizeof(struct ax25_cb ));
-  cp->cwind = 1;
-  cp->timer_t1.func = (void (*)()) t1_timeout;
-  cp->timer_t1.arg = cp;
-  cp->timer_t2.func = (void (*)()) t2_timeout;
-  cp->timer_t2.arg = cp;
-  cp->timer_t3.func = (void (*)()) t3_timeout;
-  cp->timer_t3.arg = cp;
-  cp->timer_t4.func = (void (*)()) t4_timeout;
-  cp->timer_t4.arg = cp;
-  cp->timer_t5.func = (void (*)()) t5_timeout;
-  cp->timer_t5.arg = cp;
-  cp->next = axcb_head;
-  return axcb_head = cp;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void build_path(cp, ifp, hdr, reverse)
-struct ax25_cb *cp;
-struct iface *ifp;
-struct ax25 *hdr;
-int reverse;
-{
-
-  char *dest;
-  int d;
-  int i;
-  struct ax_route *rp;
-
-  cp->routing_changes++;
-
-  if (reverse) {
-
-    /*** copy hdr into control block ***/
-
-    addrcp(cp->hdr.dest, hdr->source);
-    addrcp(cp->hdr.source, hdr->dest);
-    for (i = 0; i < hdr->ndigis; i++)
-      addrcp(cp->hdr.digis[i], hdr->digis[hdr->ndigis-1-i]);
-    cp->hdr.ndigis = hdr->ndigis;
-
-    /*** find my last address ***/
-
-    cp->hdr.nextdigi = 0;
-    for (i = 0; i < cp->hdr.ndigis; i++)
-      if (ismyax25addr(cp->hdr.digis[i])) cp->hdr.nextdigi = i + 1;
-
-    cp->ifp = ifp;
-
-  } else {
-
-    /*** copy hdr into control block ***/
-
-    cp->hdr = *hdr;
-
-    /*** find my last address ***/
-
-    cp->hdr.nextdigi = 0;
-    for (i = 0; i < cp->hdr.ndigis; i++)
-      if (ismyax25addr(cp->hdr.digis[i])) cp->hdr.nextdigi = i + 1;
-
-    /*** remove all digipeaters before me ***/
-
-    d = cp->hdr.nextdigi - 1;
-    if (d > 0) {
-      for (i = d; i < cp->hdr.ndigis; i++)
-	addrcp(cp->hdr.digis[i-d], cp->hdr.digis[i]);
-      cp->hdr.ndigis -= d;
-      cp->hdr.nextdigi = 1;
-    }
-
-    /*** add necessary digipeaters and find interface ***/
-
-    dest = cp->hdr.nextdigi < cp->hdr.ndigis ? cp->hdr.digis[cp->hdr.nextdigi] : cp->hdr.dest;
-    for (rp = ax_routeptr(dest, 0); rp; rp = rp->digi) {
-      if (rp->digi && cp->hdr.ndigis < MAXDIGIS) {
-	for (i = cp->hdr.ndigis - 1; i >= cp->hdr.nextdigi; i--)
-	  addrcp(cp->hdr.digis[i+1], cp->hdr.digis[i]);
-	cp->hdr.ndigis++;
-	addrcp(cp->hdr.digis[cp->hdr.nextdigi], rp->digi->call);
-      }
-      cp->ifp = rp->ifp;
-    }
-    if (!cp->ifp) cp->ifp = axroute_default_ifp;
-
-    /*** replace my address with hwaddr of interface ***/
-
-    addrcp(cp->hdr.nextdigi ? cp->hdr.digis[0] : cp->hdr.source,
-	   cp->ifp ? cp->ifp->hwaddr : Mycall);
-
-  }
-
-  cp->srtt = (ax_t1init * (1 + 2 * (cp->hdr.ndigis - cp->hdr.nextdigi))) / 2;
-  cp->mdev = cp->srtt / 4;
-  reset_t1(cp);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int  put_reseq(cp, bp, ns)
-struct ax25_cb *cp;
-struct mbuf *bp;
-int  ns;
-{
-
-  char  *p;
-  int  cnt, sum;
-  struct axreseq *rp;
-  struct mbuf *tp;
-
-  if (next_seq(ns) == cp->vr) return 0;
-  rp = &cp->reseq[ns];
-  if (rp->bp) return 0;
-  for (sum = 0, tp = bp; tp; tp = tp->next) {
-    cnt = tp->cnt;
-    p = tp->data;
-    while (cnt--) sum += uchar(*p++);
-  }
-  if (ns != cp->vr && sum == rp->sum) return 0;
-  rp->bp = bp;
-  rp->sum = sum;
-  return 1;
-}
-
-/*---------------------------------------------------------------------------*/
-
-int  lapb_input(iface, hdr, bp)
+/* Process incoming frames */
+int
+lapb_input(iface,hdr,bp)
 struct iface *iface;
 struct ax25 *hdr;
-struct mbuf *bp;
+struct mbuf *bp;                /* Rest of frame, starting with ctl */
 {
 
-  int  cmdrsp;
-  int  control;
-  int  for_me;
-  int  nr;
-  int  ns;
-  int  pid;
-  int  type;
-  struct ax25_cb *cp;
-  struct ax25_cb *cpp;
+  int cmdrsp;
+  int control;
+  int digipeat;
+  int nr;
+  int ns;
+  int pid;
+  int type;
+  struct ax25_cb *axp;
+  struct ax25_cb *axpp;
 
-  if (!bp) return (-1);
-  control = uchar(*bp->data);
+  if ((control = PULLCHAR(&bp)) == -1) return (-1);
   type = ftype(control);
-  for_me = (ismyax25addr(hdr->dest) != NULLIF);
+  digipeat = (ismyax25addr(hdr->dest) == NULLIF);
 
-  if (!for_me &&
-      (type == UI ||
-       addreq(hdr->source, hdr->dest) ||
-       is_flexnet(hdr->source, 0) && is_flexnet(hdr->dest, 0))) {
-    struct mbuf *hbp;
-    if (!(hbp = htonax25(hdr, bp))) {
-      free_p(bp);
-      return (-1);
-    }
-    axroute(NULLAXCB, hbp);
-    return 0;
-  }
-
-  (void) PULLCHAR(&bp);
   if (bp) {
     pid = uchar(*bp->data);
     if (pid == PID_FLEXNET) is_flexnet(hdr->source, 1);
-  }
+  } else
+    pid = -1;
 
   switch (hdr->cmdrsp) {
   case LAPB_COMMAND:
@@ -593,87 +64,100 @@ struct mbuf *bp;
     break;
   }
 
-  for (cp = axcb_head; cp; cp = cp->next)
-    if (addreq(hdr->source, cp->hdr.dest) && addreq(hdr->dest, cp->hdr.source)) break;
-  if (!cp) {
-    if (for_me && netrom_server_axcb && isnetrom(hdr->source))
-      cp = create_axcb(netrom_server_axcb);
-    else if (for_me && axcb_server)
-      cp = create_axcb(axcb_server);
+  if (digipeat) {
+    struct ax25_cb *axlast = NULLAX25;
+    for (axp = Ax25_cb; axp; axlast = axp, axp = axp->next)
+      if (addreq(hdr->source, axp->hdr.dest) && addreq(hdr->dest, axp->hdr.source)) {
+	if (axlast != NULLAX25) {
+	  axlast->next = axp->next;
+	  axp->next = Ax25_cb;
+	  Ax25_cb = axp;
+	}
+	break;
+      }
+  } else {
+    axp = find_ax25(hdr->source);
+  }
+
+  if (!axp) {
+    if (!digipeat && Netrom_server_axcb && isnetrom(hdr->source))
+      axp = cr_ax25(Netrom_server_axcb);
+    else if (!digipeat && Axcb_server)
+      axp = cr_ax25(Axcb_server);
     else
-      cp = create_axcb(NULLAXCB);
-    build_path(cp, iface, hdr, 1);
-    if (!for_me) {
-      cp->peer = cpp = create_axcb(NULLAXCB);
-      cpp->peer = cp;
-      build_path(cpp, NULLIF, hdr, 0);
+      axp = cr_ax25(NULLAX25);
+    build_path(axp, iface, hdr, 1);
+    if (digipeat) {
+      axp->peer = axpp = cr_ax25(NULLAX25);
+      axpp->peer = axp;
+      build_path(axpp, NULLIF, hdr, 0);
     } else
-      cpp = NULLAXCB;
+      axpp = NULLAX25;
   } else
-    cpp = cp->peer;
+    axpp = axp->peer;
 
   if (type == SABM) {
-    int  i;
-    if (cp->unack)
-      start_timer(&cp->timer_t1);
+    int i;
+    if (axp->unack)
+      start_timer(&axp->t1);
     else
-      stop_timer(&cp->timer_t1);
-    stop_timer(&cp->timer_t2);
-    stop_timer(&cp->timer_t4);
-    cp->polling = 0;
-    cp->rnrsent = 0;
-    cp->rejsent = 0;
-    cp->remote_busy = 0;
-    cp->vr = 0;
-    cp->vs = cp->unack;
-    cp->retry = 0;
+      stop_timer(&axp->t1);
+    stop_timer(&axp->t2);
+    stop_timer(&axp->t4);
+    axp->flags.polling = 0;
+    axp->flags.rnrsent = 0;
+    axp->flags.rejsent = 0;
+    axp->flags.remotebusy = 0;
+    axp->vr = 0;
+    axp->vs = axp->unack;
+    axp->retries = 0;
     for (i = 0; i < 8; i++)
-      if (cp->reseq[i].bp) {
-	free_p(cp->reseq[i].bp);
-	cp->reseq[i].bp = 0;
+      if (axp->reseq[i].bp) {
+	free_p(axp->reseq[i].bp);
+	axp->reseq[i].bp = 0;
       }
   }
 
-  if (cp->mode == STREAM && type == I && pid != PID_NO_L3) {
-    cp->mode = DGRAM;
-    if (cpp) cpp->mode = DGRAM;
+  if (axp->mode == STREAM && type == I && pid != PID_NO_L3) {
+    axp->mode = DGRAM;
+    if (axpp) axpp->mode = DGRAM;
   }
 
-  set_timer(&cp->timer_t3, ax_t3init);
-  start_timer(&cp->timer_t3);
+  set_timer(&axp->t3, T3init);
+  start_timer(&axp->t3);
 
-  switch (cp->state) {
+  switch (axp->state) {
 
-  case DISCONNECTED:
-    if (for_me) {
-      if (type == SABM && cmdrsp != VERS1 && cp->r_upcall) {
-	send_packet(cp, UA, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
-	setaxstate(cp, CONNECTED);
+  case LAPB_DISCONNECTED:
+    if (!digipeat) {
+      if (type == SABM && cmdrsp != VERS1 && axp->r_upcall) {
+	send_packet(axp, UA, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
+	lapbstate(axp, LAPB_CONNECTED);
       } else {
 	if (cmdrsp != RESP && cmdrsp != FINAL)
-	  send_packet(cp, DM, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
-	del_ax(cp);
+	  send_packet(axp, DM, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
+	del_ax25(axp);
       }
     } else {
-      if (type == SABM && cmdrsp != VERS1 && cpp->state == DISCONNECTED) {
-	setaxstate(cpp, CONNECTING);
-      } else if (type == SABM && cmdrsp != VERS1 && cpp->state == CONNECTING) {
-	if (cpp->routing_changes < 3) {
-	  build_path(cpp, NULLIF, hdr, 0);
-	  send_packet(cpp, SABM, POLL, NULLBUF);
+      if (type == SABM && cmdrsp != VERS1 && axpp->state == LAPB_DISCONNECTED) {
+	lapbstate(axpp, LAPB_SETUP);
+      } else if (type == SABM && cmdrsp != VERS1 && axpp->state == LAPB_SETUP) {
+	if (axpp->routing_changes < 3) {
+	  build_path(axpp, NULLIF, hdr, 0);
+	  send_packet(axpp, SABM, POLL, NULLBUF);
 	}
       } else {
 	if (cmdrsp != RESP && cmdrsp != FINAL)
-	  send_packet(cp, DM, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
-	if (cpp->state == DISCONNECTED) {
-	  del_ax(cpp);
-	  del_ax(cp);
+	  send_packet(axp, DM, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
+	if (axpp->state == LAPB_DISCONNECTED) {
+	  del_ax25(axpp);
+	  del_ax25(axp);
 	}
       }
     }
     break;
 
-  case CONNECTING:
+  case LAPB_SETUP:
     switch (type) {
     case I:
     case RR:
@@ -682,155 +166,135 @@ struct mbuf *bp;
       break;
     case SABM:
       if (cmdrsp != VERS1) {
-	send_packet(cp, UA, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
-	setaxstate(cp, CONNECTED);
+	send_packet(axp, UA, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
+	lapbstate(axp, LAPB_CONNECTED);
       }
       break;
     case UA:
       if (cmdrsp != VERS1) {
-	setaxstate(cp, CONNECTED);
+	lapbstate(axp, LAPB_CONNECTED);
       } else {
-	if (cpp && cpp->state == DISCONNECTED)
-	  send_packet(cpp, DM, FINAL, NULLBUF);
-	cp->reason = RESET;
-	setaxstate(cp, DISCONNECTING);
+	if (axpp && axpp->state == LAPB_DISCONNECTED)
+	  send_packet(axpp, DM, FINAL, NULLBUF);
+	axp->reason = LB_DM;
+	lapbstate(axp, LAPB_DISCPENDING);
       }
       break;
     case DISC:
-      send_packet(cp, DM, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
+      send_packet(axp, DM, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
     case DM:
     case FRMR:
-      if (cpp && cpp->state == DISCONNECTED)
-	send_packet(cpp, DM, FINAL, NULLBUF);
-      cp->reason = RESET;
-      setaxstate(cp, DISCONNECTED);
+      if (axpp && axpp->state == LAPB_DISCONNECTED)
+	send_packet(axpp, DM, FINAL, NULLBUF);
+      axp->reason = LB_DM;
+      lapbstate(axp, LAPB_DISCONNECTED);
       break;
     }
     break;
 
-  case CONNECTED:
+  case LAPB_CONNECTED:
     switch (type) {
     case I:
     case RR:
     case RNR:
     case REJ:
-      stop_timer(&cp->timer_t1);
       nr = control >> 5;
-      if (((cp->vs - nr) & 7) < cp->unack) {
-	if (!cp->polling) {
-	  cp->retry = 0;
-	  if (cp->sndtime[(nr-1)&7]) {
-	    int32 rtt = msclock() - cp->sndtime[(nr-1)&7];
-	    int32 abserr = (rtt > cp->srtt) ? rtt - cp->srtt : cp->srtt - rtt;
-	    cp->srtt = ((AGAIN - 1) * cp->srtt + rtt + (AGAIN / 2)) / AGAIN;
-	    cp->mdev = ((DGAIN - 1) * cp->mdev + abserr + (DGAIN / 2)) / DGAIN;
-	    reset_t1(cp);
-	    if (cp->cwind < ax_maxframe) {
-	      cp->mdev += ((cp->srtt / cp->cwind + 2) / 4);
-	      cp->cwind++;
-	    }
-	  }
-	}
-	while (((cp->vs - nr) & 7) < cp->unack) {
-	  cp->resndq = free_p(cp->resndq);
-	  cp->unack--;
-	}
-	if (cpp && cpp->rnrsent && !busy(cpp)) send_ack(cpp, RESP);
-      }
+      ackours(axp, nr);
+      if (axpp && axpp->flags.rnrsent && !busy(axpp)) send_ack(axpp, RESP);
       if (type == I) {
-	if (for_me &&
+	if (!digipeat &&
 	    pid == PID_NETROM &&
-	    cp->r_upcall != netrom_server_axcb->r_upcall) {
+	    axp->r_upcall != Netrom_server_axcb->r_upcall) {
 	  new_neighbor(hdr->source);
-	  setaxstate(cp, DISCONNECTING);
+	  lapbstate(axp, LAPB_DISCPENDING);
 	  free_p(bp);
 	  return 0;
 	}
-	ns = (control >> 1) & 7;
+	ns = (control >> 1) & MMASK;
 	if (!bp) bp = alloc_mbuf(0);
-	if (put_reseq(cp, bp, ns))
-	  while (bp = cp->reseq[cp->vr].bp) {
-	    cp->reseq[cp->vr].bp = 0;
-	    cp->vr = next_seq(cp->vr);
-	    cp->rejsent = 0;
-	    if (cp->mode == STREAM) (void) PULLCHAR(&bp);
-	    if (for_me) {
-	      cp->rcvcnt += len_p(bp);
-	      if (cp->mode == STREAM)
-		append(&cp->rcvq, bp);
+	if (put_reseq(axp, bp, ns))
+	  while (bp = axp->reseq[axp->vr].bp) {
+	    axp->reseq[axp->vr].bp = 0;
+	    axp->vr = next_seq(axp->vr);
+	    axp->flags.rejsent = 0;
+	    if (axp->mode == STREAM) (void) PULLCHAR(&bp);
+	    if (!digipeat) {
+	      axp->rcvcnt += len_p(bp);
+	      if (axp->mode == STREAM)
+		append(&axp->rxq, bp);
 	      else
-		enqueue(&cp->rcvq, bp);
+		enqueue(&axp->rxq, bp);
 	    } else
-	      send_ax(cpp, bp);
+	      send_ax25(axpp, bp);
 	  }
 	if (cmdrsp == POLL)
-	  send_ack(cp, FINAL);
+	  send_ack(axp, FINAL);
 	else {
-	  set_timer(&cp->timer_t2, ax_t2init);
-	  start_timer(&cp->timer_t2);
+	  set_timer(&axp->t2, T2init);
+	  start_timer(&axp->t2);
 	}
-	if (cp->r_upcall && cp->rcvcnt) (*cp->r_upcall)(cp, cp->rcvcnt);
+	if (axp->r_upcall && axp->rcvcnt) (*axp->r_upcall)(axp, axp->rcvcnt);
       } else {
-	if (cmdrsp == POLL) send_ack(cp, FINAL);
-	if (cp->polling && cmdrsp == FINAL) cp->retry = cp->polling = 0;
+	if (cmdrsp == POLL) send_ack(axp, FINAL);
+	if (axp->flags.polling && cmdrsp == FINAL) axp->retries = axp->flags.polling = 0;
 	if (type == RNR) {
-	  if (!cp->remote_busy) cp->remote_busy = msclock();
-	  set_timer(&cp->timer_t4, ax_t4init);
-	  start_timer(&cp->timer_t4);
-	  cp->cwind = 1;
+	  if (!axp->flags.remotebusy) axp->flags.remotebusy = msclock();
+	  set_timer(&axp->t4, T4init);
+	  start_timer(&axp->t4);
+	  axp->cwind = 1;
 	} else {
-	  cp->remote_busy = 0;
-	  stop_timer(&cp->timer_t4);
-	  if (cp->unack && type == REJ) {
-	    int  old_vs;
+	  axp->flags.remotebusy = 0;
+	  stop_timer(&axp->t4);
+	  if (axp->unack && type == REJ) {
+	    int old_vs;
 	    struct mbuf *bp1;
-	    old_vs = cp->vs;
-	    cp->vs = (cp->vs - cp->unack) & 7;
-	    cp->sndtime[cp->vs] = 0;
-	    dup_p(&bp1, cp->resndq, 0, MAXINT16);
-	    send_packet(cp, I, CMD, bp1);
-	    cp->vs = old_vs;
-	    cp->cwind = 1;
-	  } else if (cp->unack && cmdrsp == FINAL) {
+	    old_vs = axp->vs;
+	    axp->vs = (axp->vs - axp->unack) & MMASK;
+	    axp->flags.rtt_run = 0;
+	    dup_p(&bp1, axp->txq, 0, MAXINT16);
+	    send_packet(axp, I, CMD, bp1);
+	    axp->vs = old_vs;
+	    axp->cwind = 1;
+	  } else if (axp->unack && cmdrsp == FINAL) {
 	    struct mbuf *bp1, *qp;
-	    cp->vs = (cp->vs - cp->unack) & 7;
-	    for (qp = cp->resndq; qp; qp = qp->anext) {
-	      cp->sndtime[cp->vs] = 0;
+	    axp->vs = (axp->vs - axp->unack) & MMASK;
+	    for (qp = axp->txq; qp; qp = qp->anext) {
+	      axp->flags.rtt_run = 0;
 	      dup_p(&bp1, qp, 0, MAXINT16);
-	      send_packet(cp, I, CMD, bp1);
+	      send_packet(axp, I, CMD, bp1);
 	    }
 	  }
 	}
       }
-      try_send(cp, 1);
-      if (cp->polling || cp->unack && !cp->remote_busy)
-	start_timer(&cp->timer_t1);
-      if (cp->closed && !cp->sndq && !cp->unack ||
-	  cp->remote_busy && msclock() - cp->remote_busy > 900000L)
-	setaxstate(cp, DISCONNECTING);
+      lapb_output(axp, 1);
+      if (axp->flags.polling || axp->unack && !axp->flags.remotebusy)
+	start_timer(&axp->t1);
+      if (axp->flags.closed && !axp->sndq && !axp->unack ||
+	  axp->flags.remotebusy && msclock() - axp->flags.remotebusy > 900000L)
+	lapbstate(axp, LAPB_DISCPENDING);
       break;
     case SABM:
-      send_packet(cp, UA, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
-      try_send(cp, 1);
+      send_packet(axp, UA, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
+      lapb_output(axp, 1);
       break;
     case DISC:
-      send_packet(cp, DM, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
+      send_packet(axp, DM, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
     case DM:
-      setaxstate(cp, DISCONNECTED);
+      lapbstate(axp, LAPB_DISCONNECTED);
       break;
     case UA:
-      cp->remote_busy = 0;
-      stop_timer(&cp->timer_t4);
-      if (cp->unack) start_timer(&cp->timer_t1);
-      try_send(cp, 1);
+      axp->flags.remotebusy = 0;
+      stop_timer(&axp->t4);
+      if (axp->unack) start_timer(&axp->t1);
+      lapb_output(axp, 1);
       break;
     case FRMR:
-      setaxstate(cp, DISCONNECTING);
+      lapbstate(axp, LAPB_DISCPENDING);
       break;
     }
     break;
 
-  case DISCONNECTING:
+  case LAPB_DISCPENDING:
     switch (type) {
     case I:
     case RR:
@@ -838,14 +302,14 @@ struct mbuf *bp;
     case REJ:
     case SABM:
       if (cmdrsp != RESP && cmdrsp != FINAL)
-	send_packet(cp, DM, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
+	send_packet(axp, DM, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
       break;
     case DISC:
-      send_packet(cp, DM, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
+      send_packet(axp, DM, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);
     case DM:
     case UA:
     case FRMR:
-      setaxstate(cp, DISCONNECTED);
+      lapbstate(axp, LAPB_DISCONNECTED);
       break;
     }
     break;
@@ -854,823 +318,387 @@ struct mbuf *bp;
   free_p(bp);
   return 0;
 }
-
-/*---------------------------------------------------------------------------*/
-/******************************* AX25 Commands *******************************/
-/*---------------------------------------------------------------------------*/
-
-/* Control AX.25 digipeating */
-
-static int  dodigipeat(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
+/* Handle incoming acknowledgements for frames we've sent.
+ * Free frames being acknowledged.
+ * Return -1 to cause a frame reject if number is bad, 0 otherwise
+ */
+static int
+ackours(axp,n)
+struct ax25_cb *axp;
+int16 n;
 {
-  return setintrc(&Digipeat, "Digipeat", argc, argv, 0, 2);
+	struct mbuf *bp;
+	int acked = 0;  /* Count of frames acked by this ACK */
+	int16 oldest;   /* Seq number of oldest unacked I-frame */
+	int32 rtt,abserr;
+
+	/* Free up acknowledged frames by purging frames from the I-frame
+	 * transmit queue. Start at the remote end's last reported V(r)
+	 * and keep going until we reach the new sequence number.
+	 * If we try to free a null pointer,
+	 * then we have a frame reject condition.
+	 */
+	oldest = (axp->vs - axp->unack) & MMASK;
+	while(axp->unack != 0 && oldest != n){
+		if((bp = dequeue(&axp->txq)) == NULLBUF){
+			/* Acking unsent frame */
+			return -1;
+		}
+		free_p(bp);
+		axp->unack--;
+		acked++;
+		if(axp->flags.rtt_run && axp->rtt_seq == oldest){
+			/* A frame being timed has been acked */
+			axp->flags.rtt_run = 0;
+			/* Update only if frame wasn't retransmitted */
+			if(!axp->flags.retrans){
+				rtt = msclock() - axp->rtt_time;
+				abserr = (rtt > axp->srt) ? rtt - axp->srt :
+				 axp->srt - rtt;
+
+				/* Run SRT and mdev integrators */
+				axp->srt = ((axp->srt * 7) + rtt + 4) >> 3;
+				axp->mdev = ((axp->mdev*3) + abserr + 2) >> 2;
+				/* Update timeout */
+				reset_t1(axp);
+				if (axp->cwind < Maxframe) {
+					axp->mdev += ((axp->srt / axp->cwind + 2) >> 2);
+					axp->cwind++;
+				}
+			}
+		}
+		axp->flags.retrans = 0;
+		axp->retries = 0;
+		oldest = (oldest + 1) & MMASK;
+	}
+	if(axp->unack == 0){
+		/* All frames acked, stop timeout */
+		stop_timer(&axp->t1);
+		start_timer(&axp->t3);
+	} else if(acked != 0) {
+		/* Partial ACK; restart timer */
+		start_timer(&axp->t1);
+	}
+#if 0
+	if(acked != 0){
+		/* If user has set a transmit upcall, indicate how many frames
+		 * may be queued
+		 */
+		if(axp->t_upcall != NULLVFP && Maxframe > axp->unack)
+			(*axp->t_upcall)(axp,Paclen * (Maxframe - axp->unack));
+	}
+#endif
+	return 0;
 }
-
-/*---------------------------------------------------------------------------*/
-
-/* Force a retransmission */
-
-static int  doaxkick(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
+/* Start data transmission on link, if possible
+ * Return number of frames sent
+ */
+int
+lapb_output(axp, fill_sndq)
+struct ax25_cb *axp;
+int fill_sndq;
 {
-  struct ax25_cb *axp;
 
-  axp = (struct ax25_cb *) ltop(htol(argv[1]));
-  if (!valid_ax(axp)) {
-    printf(Notval);
-    return 1;
-  }
-  kick_ax(axp);
-  return 0;
+	int cnt;
+	struct mbuf *bp;
+
+	stop_timer(&axp->t5);
+	while (axp->unack < axp->cwind) {
+		if (axp->state != LAPB_CONNECTED || axp->flags.remotebusy)
+			return;
+		if (fill_sndq && axp->t_upcall) {
+			cnt = space_ax25(axp);
+			if (cnt > 0) {
+				(*axp->t_upcall)(axp, cnt);
+				if (axp->unack >= axp->cwind)
+					return;
+			}
+		}
+		if (!axp->sndq)
+			return;
+		if (axp->mode == STREAM) {
+			cnt = len_p(axp->sndq);
+			if (cnt < Paclen) {
+				if (axp->unack)
+					return;
+				if (!axp->peer && axp->sndqtime + T5init - msclock() > 0) {
+					set_timer(&axp->t5, axp->sndqtime + T5init - msclock());
+					start_timer(&axp->t5);
+					return;
+				}
+			}
+			if (cnt > Paclen)
+				cnt = Paclen;
+			if (!(bp = alloc_mbuf(cnt)))
+				return;
+			pullup(&axp->sndq, bp->data, bp->cnt = cnt);
+		} else {
+			bp = dequeue(&axp->sndq);
+		}
+		enqueue(&axp->txq, bp);
+		axp->unack++;
+		if (!axp->flags.rtt_run) {
+			/* Start round trip timer */
+			axp->rtt_seq = axp->vs;
+			axp->rtt_time = msclock();
+			axp->flags.rtt_run = 1;
+		}
+		dup_p(&bp, bp, 0, MAXINT16);
+		send_packet(axp, I, CMD, bp);
+	}
 }
-
-/*---------------------------------------------------------------------------*/
-
-/* Set maximum number of frames that will be allowed in flight */
-
-static int  domaxframe(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
+/* Set new link state */
+void
+lapbstate(axp,s)
+struct ax25_cb *axp;
+int s;
 {
-  return setintrc(&ax_maxframe, "Maxframe", argc, argv, 1, 7);
-}
+  int oldstate;
 
-/*---------------------------------------------------------------------------*/
-
-/* Display or change our AX.25 address */
-
-static int  domycall(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-  char  buf[15];
-
-  if (argc < 2) {
-    pax25(buf, Mycall);
-    printf("Mycall %s\n", buf);
-  } else {
-    if (setcall(Mycall, argv[1]) == -1) return 1;
-    Mycall[ALEN] |= E;
-  }
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* Set maximum length of I-frame data field */
-
-static int  dopaclen(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-  return setintrc(&ax_paclen, "Paclen", argc, argv, 1, MAXINT16);
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* Set size of I-frame above which polls will be sent after a timeout */
-
-static int  dopthresh(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-  return setintrc(&ax_pthresh, "Pthresh", argc, argv, 0, MAXINT16);
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* Eliminate a AX25 connection */
-
-static int  doaxreset(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-  struct ax25_cb *cp;
-
-  cp = (struct ax25_cb *) htol(argv[1]);
-  if (!valid_ax(cp)) {
-    printf(Notval);
-    return 1;
-  }
-  reset_ax(cp);
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* Set retry limit count */
-
-static int  doretry(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-  return setintrc(&ax_retry, "Retry", argc, argv, 0, MAXINT16);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int  dorouteadd(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-
-  char  tmp[AXALEN];
-  int  i, j, perm;
-  struct ax25 hdr;
-  struct iface *iface;
-
-  argc--;
-  argv++;
-
-  if (perm = !strcmp(*argv, "permanent")) {
-    argc--;
-    argv++;
-  }
-
-  if (!(iface = if_lookup(*argv))) {
-    printf("Interface \"%s\" unknown\n", *argv);
-    return 1;
-  }
-  if (iface->output != ax_output) {
-    printf("Interface \"%s\" not kiss\n", *argv);
-    return 1;
-  }
-  argc--;
-  argv++;
-
-  if (argc <= 0) {
-    printf("Usage: ax25 route add [permanent] <interface> default|<path>\n");
-    return 1;
-  }
-
-  if (!strcmp(*argv, "default")) {
-    axroute_default_ifp = iface;
-    return 0;
-  }
-
-  if (setcall(hdr.source, *argv)) {
-    printf("Invalid call \"%s\"\n", *argv);
-    return 1;
-  }
-  argc--;
-  argv++;
-
-  for (hdr.nextdigi = 0; argc > 0; argc--, argv++)
-    if (strncmp("via", *argv, strlen(*argv))) {
-      if (hdr.nextdigi >= MAXDIGIS) {
-	printf("Too many digipeaters (max %d)\n", MAXDIGIS);
-	return 1;
-      }
-      if (setcall(hdr.digis[hdr.nextdigi++], *argv)) {
-	printf("Invalid call \"%s\"\n", *argv);
-	return 1;
-      }
+  oldstate = axp->state;
+  axp->state = s;
+  axp->flags.polling = 0;
+  axp->retries = 0;
+  stop_timer(&axp->t1);
+  stop_timer(&axp->t2);
+  stop_timer(&axp->t4);
+  stop_timer(&axp->t5);
+  reset_t1(axp);
+  switch (s) {
+  case LAPB_DISCONNECTED:
+    if (axp->peer) disc_ax25(axp->peer);
+    if (axp->s_upcall)
+      (*axp->s_upcall)(axp, oldstate, s);
+    else if (axp->peer && axp->peer->state == LAPB_DISCONNECTED) {
+      del_ax25(axp->peer);
+      del_ax25(axp);
     }
-  for (i = 0, j = hdr.nextdigi - 1; i < j; i++, j--) {
-    addrcp(tmp, hdr.digis[i]);
-    addrcp(hdr.digis[i], hdr.digis[j]);
-    addrcp(hdr.digis[j], tmp);
-  }
-
-  axroute_add(iface, &hdr, perm);
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void doroutelistentry(rp)
-struct ax_route *rp;
-{
-
-  char  *cp, buf[1024];
-  int  i, n;
-  int  perm;
-  struct ax_route *rp_stack[20];
-  struct iface *ifp;
-  struct tm *tm;
-
-  tm = gmtime(&rp->time);
-  pax25(cp = buf, rp->call);
-  perm = rp->perm;
-  for (n = 0; rp; rp = rp->digi) {
-    rp_stack[++n] = rp;
-    ifp = rp->ifp;
-  }
-  for (i = n; i > 1; i--) {
-    strcat(cp, i == n ? " via " : ",");
-    while (*cp) cp++;
-    pax25(cp, rp_stack[i]->call);
-  }
-  printf("%2d-%.3s  %-9s  %c %s\n",
-	 tm->tm_mday,
-	 "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
-	 ifp ? ifp->name : "???",
-	 perm ? '*' : ' ',
-	 buf);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int  doroutelist(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-
-  char  call[AXALEN];
-  int  i;
-  struct ax_route *rp;
-
-  puts("Date    Interface  P Path");
-  if (argc < 2) {
-    for (i = 0; i < AXROUTESIZE; i++)
-      for (rp = Ax_routes[i]; rp; rp = rp->next) doroutelistentry(rp);
-    return 0;
-  }
-  argc--;
-  argv++;
-  for (; argc > 0; argc--, argv++)
-    if (setcall(call, *argv) || !(rp = ax_routeptr(call, 0)))
-      printf("*** Not in table *** %s\n", *argv);
-    else
-      doroutelistentry(rp);
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int doroutestat(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
-{
-
-#define NIFACES 128
-
-  struct ifptable_t {
-    struct iface *ifp;
-    int count;
-  };
-
-  int dev;
-  int i;
-  int total;
-  struct ax_route *dp;
-  struct ax_route *rp;
-  struct iface *ifp;
-  struct ifptable_t ifptable[NIFACES];
-
-  memset((char *) ifptable, 0, sizeof(ifptable));
-  for (dev = 0, ifp = Ifaces; ifp; dev++, ifp = ifp->next)
-    ifptable[dev].ifp = ifp;
-  for (i = 0; i < AXROUTESIZE; i++)
-    for (rp = Ax_routes[i]; rp; rp = rp->next) {
-      for (dp = rp; dp->digi; dp = dp->digi) ;
-      if (dp->ifp)
-	for (dev = 0; dev < NIFACES; dev++)
-	  if (ifptable[dev].ifp == dp->ifp) {
-	    ifptable[dev].count++;
-	    break;
-	  }
+    break;
+  case LAPB_SETUP:
+    if (axp->s_upcall) (*axp->s_upcall)(axp, oldstate, s);
+    send_packet(axp, SABM, POLL, NULLBUF);
+    break;
+  case LAPB_CONNECTED:
+    if (axp->peer && axp->peer->state == LAPB_DISCONNECTED) {
+      send_packet(axp->peer, UA, FINAL, NULLBUF);
+      lapbstate(axp->peer, LAPB_CONNECTED);
     }
-  puts("Interface  Count");
-  total = 0;
-  for (dev = 0; dev < NIFACES; dev++) {
-    if (ifptable[dev].count ||
-	axroute_default_ifp && axroute_default_ifp == ifptable[dev].ifp)
-      printf("%c %-7s  %5d\n",
-	     ifptable[dev].ifp == axroute_default_ifp ? '*' : ' ',
-	     ifptable[dev].ifp->name,
-	     ifptable[dev].count);
-    total += ifptable[dev].count;
-  }
-  puts("---------  -----");
-  printf("  total    %5d\n", total);
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int  doaxroute(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-
-  static struct cmds routecmds[] = {
-
-    "add",  dorouteadd,  0, 3, "ax25 route add [permanent] <interface> default|<path>",
-    "list", doroutelist, 0, 0, NULLCHAR,
-    "stat", doroutestat, 0, 0, NULLCHAR,
-
-    NULLCHAR, NULLFP,    0, 0, NULLCHAR
-  };
-
-  axroute_loadfile();
-  if (argc >= 2) return subcmd(routecmds, argc, argv, p);
-  doroutestat(argc, argv, p);
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* Display AX.25 link level control blocks */
-
-static int  doaxstatus(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-
-  int  i;
-  struct ax25_cb *cp;
-  struct mbuf *bp;
-
-  if (argc < 2) {
-    printf("   &AXCB Rcv-Q Unack  Rt  Srtt  State          Remote socket\n");
-    for (cp = axcb_head; cp; cp = cp->next)
-      printf("%8lx %5u%c%3u/%u%c %2d%6lu  %-13s  %s\n",
-	     (long) cp,
-	     cp->rcvcnt,
-	     cp->rnrsent ? '*' : ' ',
-	     cp->unack,
-	     cp->cwind,
-	     cp->remote_busy ? '*' : ' ',
-	     cp->retry,
-	     cp->srtt,
-	     ax25states[cp->state],
-	     ax25hdr_to_string(&cp->hdr));
-    if (axcb_server)
-      printf("%8lx                        Listen (S)     *\n",
-	     (long) axcb_server);
-  } else {
-    cp = (struct ax25_cb *) htol(argv[1]);
-    if (!valid_ax(cp)) {
-      printf("Not a valid control block address\n");
-      return 1;
-    }
-    printf("Path:         %s\n", ax25hdr_to_string(&cp->hdr));
-    printf("Interface:    %s\n", cp->ifp ? cp->ifp->name : "---");
-    printf("State:        %s\n", (cp == axcb_server) ? "Listen (S)" : ax25states[cp->state]);
-    if (cp->reason)
-      printf("Reason:       %s\n", ax25reasons[cp->reason]);
-    printf("Mode:         %s\n", (cp->mode == STREAM) ? "Stream" : "Dgram");
-    printf("Closed:       %s\n", cp->closed ? "Yes" : "No");
-    printf("Polling:      %s\n", cp->polling ? "Yes" : "No");
-    printf("RNRsent:      %s\n", cp->rnrsent ? "Yes" : "No");
-    printf("REJsent:      %s\n", cp->rejsent ? "Yes" : "No");
-    if (cp->remote_busy)
-      printf("Remote_busy:  %lu ms\n", msclock() - cp->remote_busy);
-    else
-      printf("Remote_busy:  No\n");
-    printf("CWind:        %d\n", cp->cwind);
-    printf("Retry:        %d\n", cp->retry);
-    printf("Srtt:         %ld ms\n", cp->srtt);
-    printf("Mean dev:     %ld ms\n", cp->mdev);
-    printf("Timer T1:     ");
-    if (run_timer(&cp->timer_t1))
-      printf("%lu", read_timer(&cp->timer_t1));
-    else
-      printf("stop");
-    printf("/%lu ms\n", dur_timer(&cp->timer_t1));
-    printf("Timer T2:     ");
-    if (run_timer(&cp->timer_t2))
-      printf("%lu", read_timer(&cp->timer_t2));
-    else
-      printf("stop");
-    printf("/%lu ms\n", dur_timer(&cp->timer_t2));
-    printf("Timer T3:     ");
-    if (run_timer(&cp->timer_t3))
-      printf("%lu", read_timer(&cp->timer_t3));
-    else
-      printf("stop");
-    printf("/%lu ms\n", dur_timer(&cp->timer_t3));
-    printf("Timer T4:     ");
-    if (run_timer(&cp->timer_t4))
-      printf("%lu", read_timer(&cp->timer_t4));
-    else
-      printf("stop");
-    printf("/%lu ms\n", dur_timer(&cp->timer_t4));
-    printf("Timer T5:     ");
-    if (run_timer(&cp->timer_t5))
-      printf("%lu", read_timer(&cp->timer_t5));
-    else
-      printf("stop");
-    printf("/%lu ms\n", dur_timer(&cp->timer_t5));
-    printf("Rcv queue:    %d\n", cp->rcvcnt);
-    if (cp->reseq[0].bp || cp->reseq[1].bp ||
-	cp->reseq[2].bp || cp->reseq[3].bp ||
-	cp->reseq[4].bp || cp->reseq[5].bp ||
-	cp->reseq[6].bp || cp->reseq[7].bp) {
-      printf("Reassembly queue:\n");
-      for (i = next_seq(cp->vr); i != cp->vr; i = next_seq(i))
-	if (cp->reseq[i].bp)
-	  printf("              Seq %3d: %3d bytes\n",
-		 i, len_p(cp->reseq[i].bp));
-    }
-    printf("Snd queue:    %d\n", len_p(cp->sndq));
-    if (cp->resndq) {
-      printf("Resend queue:\n");
-      for (i = 0, bp = cp->resndq; bp; i++, bp = bp->anext)
-	printf("              Seq %3d: %3d bytes\n",
-	       (cp->vs - cp->unack + i) & 7, len_p(bp));
-    }
-  }
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* Set retransmission timer */
-
-static int  dot1(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-  return setintrc(&ax_t1init, "T1 (ms)", argc, argv, 1, 0x7fffffff);
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* Set acknowledgement delay timer */
-
-static int  dot2(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-  return setintrc(&ax_t2init, "T2 (ms)", argc, argv, 1, 0x7fffffff);
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* Set no-activity timer */
-
-static int  dot3(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-  return setintrc(&ax_t3init, "T3 (ms)", argc, argv, 0, 0x7fffffff);
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* Set busy timer */
-
-static int  dot4(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-  return setintrc(&ax_t4init, "T4 (ms)", argc, argv, 1, 0x7fffffff);
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* Set packet assembly timer */
-
-static int  dot5(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-  return setintrc(&ax_t5init, "T5 (ms)", argc, argv, 1, 0x7fffffff);
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* Set high water mark on receive queue that triggers RNR */
-
-static int  doaxwindow(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-  return setintrc(&ax_window, "Window", argc, argv, 1, MAXINT16);
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* Multiplexer for top-level ax25 command */
-
-int  doax25(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-
-  static struct cmds axcmds[] = {
-
-    "digipeat", dodigipeat, 0, 0, NULLCHAR,
-    "kick",     doaxkick,   0, 2, "ax25 kick <axcb>",
-    "maxframe", domaxframe, 0, 0, NULLCHAR,
-    "mycall",   domycall,   0, 0, NULLCHAR,
-    "paclen",   dopaclen,   0, 0, NULLCHAR,
-    "pthresh",  dopthresh,  0, 0, NULLCHAR,
-    "reset",    doaxreset,  0, 2, "ax25 reset <axcb>",
-    "retry",    doretry,    0, 0, NULLCHAR,
-    "route",    doaxroute,  0, 0, NULLCHAR,
-    "status",   doaxstatus, 0, 0, NULLCHAR,
-    "t1",       dot1,       0, 0, NULLCHAR,
-    "t2",       dot2,       0, 0, NULLCHAR,
-    "t3",       dot3,       0, 0, NULLCHAR,
-    "t4",       dot4,       0, 0, NULLCHAR,
-    "t5",       dot5,       0, 0, NULLCHAR,
-    "window",   doaxwindow, 0, 0, NULLCHAR,
-
-    NULLCHAR,   NULLFP,     0, 0, NULLCHAR
-  };
-
-  return subcmd(axcmds, argc, argv, p);
-}
-
-/*---------------------------------------------------------------------------*/
-/***************************** User Calls to AX25 ****************************/
-/*---------------------------------------------------------------------------*/
-
-struct ax25_cb *open_ax(path, mode, r_upcall, t_upcall, s_upcall, user)
-char  *path;
-int  mode;
-void (*r_upcall) __ARGS((struct ax25_cb *p, int cnt));
-void (*t_upcall) __ARGS((struct ax25_cb *p, int cnt));
-void (*s_upcall) __ARGS((struct ax25_cb *p, int oldstate, int newstate));
-char  *user;
-{
-
-  char  *ap;
-  struct ax25 hdr;
-  struct ax25_cb *cp;
-
-  switch (mode) {
-  case AX_ACTIVE:
-    hdr.ndigis = hdr.nextdigi = 0;
-    ap = path;
-    addrcp(hdr.dest, ap);
-    ap += AXALEN;
-    addrcp(hdr.source, ap);
-    ap += AXALEN;
-    while (!(ap[-1] & E)) {
-      addrcp(hdr.digis[hdr.ndigis++], ap);
-      ap += AXALEN;
-    }
-    for (cp = axcb_head; cp; cp = cp->next)
-      if (!cp->peer && addreq(hdr.dest, cp->hdr.dest)) {
-	Net_error = CON_EXISTS;
-	return NULLAXCB;
-      }
-    if (!(cp = create_axcb(NULLAXCB))) {
-      Net_error = NO_MEM;
-      return NULLAXCB;
-    }
-    build_path(cp, NULLIF, &hdr, 0);
-    cp->r_upcall = r_upcall;
-    cp->t_upcall = t_upcall;
-    cp->s_upcall = s_upcall;
-    cp->user = user;
-    setaxstate(cp, CONNECTING);
-    return cp;
-  case AX_SERVER:
-    if (!(cp = (struct ax25_cb *) calloc(1, sizeof(struct ax25_cb )))) {
-      Net_error = NO_MEM;
-      return NULLAXCB;
-    }
-    cp->r_upcall = r_upcall;
-    cp->t_upcall = t_upcall;
-    cp->s_upcall = s_upcall;
-    cp->user = user;
-    return cp;
-  default:
-    Net_error = INVALID;
-    return NULLAXCB;
+    if (axp->s_upcall) (*axp->s_upcall)(axp, oldstate, s);
+    lapb_output(axp, 1);
+    break;
+  case LAPB_DISCPENDING:
+    if (axp->peer) disc_ax25(axp->peer);
+    if (axp->s_upcall) (*axp->s_upcall)(axp, oldstate, s);
+    send_packet(axp, DISC, POLL, NULLBUF);
+    break;
   }
 }
 
 /*---------------------------------------------------------------------------*/
 
-int  send_ax(cp, bp)
-struct ax25_cb *cp;
-struct mbuf *bp;
-{
-  int cnt;
-
-  if (!(cp && bp)) {
-    free_p(bp);
-    Net_error = INVALID;
-    return (-1);
-  }
-  switch (cp->state) {
-  case DISCONNECTED:
-    free_p(bp);
-    Net_error = NO_CONN;
-    return (-1);
-  case CONNECTING:
-  case CONNECTED:
-    if (!cp->closed) {
-      if (cnt = len_p(bp)) {
-	if (cp->mode == STREAM)
-	  append(&cp->sndq, bp);
-	else
-	  enqueue(&cp->sndq, bp);
-	cp->sndqtime = msclock();
-	try_send(cp, 0);
-      }
-      return cnt;
-    }
-  case DISCONNECTING:
-    free_p(bp);
-    Net_error = CON_CLOS;
-    return (-1);
-  }
-  return (-1);
-}
-
-/*---------------------------------------------------------------------------*/
-
-int  space_ax(cp)
-struct ax25_cb *cp;
-{
-  int  cnt;
-
-  if (!cp) {
-    Net_error = INVALID;
-    return (-1);
-  }
-  switch (cp->state) {
-  case DISCONNECTED:
-    Net_error = NO_CONN;
-    return (-1);
-  case CONNECTING:
-  case CONNECTED:
-    if (!cp->closed) {
-      cnt = (cp->cwind - cp->unack) * ax_paclen - len_p(cp->sndq);
-      return (cnt > 0) ? cnt : 0;
-    }
-  case DISCONNECTING:
-    Net_error = CON_CLOS;
-    return (-1);
-  }
-  return (-1);
-}
-
-/*---------------------------------------------------------------------------*/
-
-int  recv_ax(cp, bpp, cnt)
-struct ax25_cb *cp;
-struct mbuf **bpp;
-int cnt;
-{
-  if (!(cp && bpp)) {
-    Net_error = INVALID;
-    return (-1);
-  }
-  if (cp->rcvcnt) {
-    if (cp->mode == DGRAM || !cnt || cp->rcvcnt <= cnt) {
-      *bpp = dequeue(&cp->rcvq);
-      cnt = len_p(*bpp);
-    } else {
-      if (!(*bpp = alloc_mbuf(cnt))) {
-	Net_error = NO_MEM;
-	return (-1);
-      }
-      pullup(&cp->rcvq, (*bpp)->data, cnt);
-      (*bpp)->cnt = cnt;
-    }
-    cp->rcvcnt -= cnt;
-    if (cp->rnrsent && !busy(cp)) send_ack(cp, RESP);
-    return cnt;
-  }
-  switch (cp->state) {
-  case CONNECTING:
-  case CONNECTED:
-    *bpp = NULLBUF;
-    Net_error = WOULDBLK;
-    return (-1);
-  case DISCONNECTED:
-  case DISCONNECTING:
-    *bpp = NULLBUF;
-    return 0;
-  }
-  return (-1);
-}
-
-/*---------------------------------------------------------------------------*/
-
-int  close_ax(cp)
-struct ax25_cb *cp;
-{
-  if (!cp) {
-    Net_error = INVALID;
-    return (-1);
-  }
-  if (cp->closed) {
-    Net_error = CON_CLOS;
-    return (-1);
-  }
-  cp->closed = 1;
-  switch (cp->state) {
-  case DISCONNECTED:
-    Net_error = NO_CONN;
-    return (-1);
-  case CONNECTING:
-    setaxstate(cp, DISCONNECTED);
-    return 0;
-  case CONNECTED:
-    if (!cp->sndq && !cp->unack) setaxstate(cp, DISCONNECTING);
-    return 0;
-  case DISCONNECTING:
-    Net_error = CON_CLOS;
-    return (-1);
-  }
-  return (-1);
-}
-
-/*---------------------------------------------------------------------------*/
-
-int  reset_ax(cp)
-struct ax25_cb *cp;
-{
-  if (!cp) {
-    Net_error = INVALID;
-    return (-1);
-  }
-  if (cp == axcb_server) {
-    free(axcb_server);
-    axcb_server = NULLAXCB;
-    return 0;
-  }
-  cp->reason = RESET;
-  setaxstate(cp, DISCONNECTED);
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-int  del_ax(cp)
-struct ax25_cb *cp;
-{
-
-  int  i;
-  struct ax25_cb *p, *q;
-
-  for (q = 0, p = axcb_head; p != cp; q = p, p = p->next)
-    if (!p) {
-      Net_error = INVALID;
-      return (-1);
-    }
-  if (q)
-    q->next = p->next;
-  else
-    axcb_head = p->next;
-  stop_timer(&cp->timer_t1);
-  stop_timer(&cp->timer_t2);
-  stop_timer(&cp->timer_t3);
-  stop_timer(&cp->timer_t4);
-  stop_timer(&cp->timer_t5);
-  for (i = 0; i < 8; i++) free_p(cp->reseq[i].bp);
-  free_q(&cp->rcvq);
-  free_q(&cp->sndq);
-  free_q(&cp->resndq);
-  free(cp);
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-int  valid_ax(cp)
-struct ax25_cb *cp;
-{
-  struct ax25_cb *p;
-
-  if (!cp) return 0;
-  if (cp == axcb_server) return 1;
-  for (p = axcb_head; p; p = p->next)
-    if (p == cp) return 1;
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* Force a retransmission */
-
-int  kick_ax(axp)
+static void
+reset_t1(axp)
 struct ax25_cb *axp;
 {
-  if (!valid_ax(axp)) return -1;
-  t1_timeout(axp);
-  return 0;
+  int32 tmp;
+
+  tmp = axp->srt + 4 * axp->mdev;
+  if (tmp < 500) tmp = 500;
+  set_timer(&axp->t1, tmp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void
+send_packet(axp, type, cmdrsp, data)
+struct ax25_cb *axp;
+int type;
+int cmdrsp;
+struct mbuf *data;
+{
+
+  int control;
+  struct iface *ifp;
+  struct mbuf *bp;
+
+  if (axp->mode == STREAM && (type == I || type == UI)) {
+    if (!(bp = pushdown(data, 1))) {
+      free_p(data);
+      return;
+    }
+    *bp->data = PID_NO_L3;
+    data = bp;
+  }
+
+  control = type;
+  if (type == I) {
+    control |= (axp->vs << 1);
+    axp->vs = next_seq(axp->vs);
+  }
+  if ((type & 3) != U) {
+    control |= (axp->vr << 5);
+    stop_timer(&axp->t2);
+  }
+  if (cmdrsp & PF) control |= PF;
+  if (!(bp = pushdown(data, 1))) {
+    free_p(data);
+    return;
+  }
+  *bp->data = control;
+  data = bp;
+
+  if (cmdrsp & DST_C)
+    axp->hdr.cmdrsp = LAPB_COMMAND;
+  else if (cmdrsp & SRC_C)
+    axp->hdr.cmdrsp = LAPB_RESPONSE;
+  else
+    axp->hdr.cmdrsp = VERS1;
+  if (!(bp = htonax25(&axp->hdr, data))) {
+    free_p(data);
+    return;
+  }
+  data = bp;
+
+  if (type == RR || type == REJ || type == UA) axp->flags.rnrsent = 0;
+  if (type == RNR) axp->flags.rnrsent = 1;
+  if (type == REJ) axp->flags.rejsent = 1;
+  if (cmdrsp == POLL) axp->flags.polling = 1;
+  if (type == I || cmdrsp == POLL) start_timer(&axp->t1);
+
+  if (ifp = axp->iface) {
+    if (ifp->forw) ifp = ifp->forw;
+    (*ifp->raw)(ifp, data);
+  } else
+    free_p(bp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+int
+busy(axp)
+struct ax25_cb *axp;
+{
+  return axp->peer ? space_ax25(axp->peer) <= 0 : axp->rcvcnt >= Axwindow;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void
+send_ack(axp, cmdrsp)
+struct ax25_cb *axp;
+int cmdrsp;
+{
+  if (busy(axp))
+    send_packet(axp, RNR, cmdrsp, NULLBUF);
+  else if (!axp->flags.rejsent &&
+	   (axp->reseq[0].bp || axp->reseq[1].bp ||
+	    axp->reseq[2].bp || axp->reseq[3].bp ||
+	    axp->reseq[4].bp || axp->reseq[5].bp ||
+	    axp->reseq[6].bp || axp->reseq[7].bp))
+    send_packet(axp, REJ, cmdrsp, NULLBUF);
+  else
+    send_packet(axp, RR, cmdrsp, NULLBUF);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void
+t2_timeout(axp)
+struct ax25_cb *axp;
+{
+  send_ack(axp, RESP);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Send a poll (S-frame command with the poll bit set) */
+void
+pollthem(p)
+void *p;
+{
+	register struct ax25_cb *axp;
+
+	axp = (struct ax25_cb *)p;
+	if (!run_timer(&axp->t1)) send_ack(axp, POLL);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void
+t4_timeout(axp)
+struct ax25_cb *axp;
+{
+  if (!axp->flags.polling) send_ack(axp, POLL);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void
+t5_timeout(axp)
+struct ax25_cb *axp;
+{
+  lapb_output(axp, 1);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void
+build_path(axp, ifp, hdr, reverse)
+struct ax25_cb *axp;
+struct iface *ifp;
+struct ax25 *hdr;
+int reverse;
+{
+  int i;
+
+  axp->routing_changes++;
+  if (reverse) {
+    addrcp(axp->hdr.dest, hdr->source);
+    addrcp(axp->hdr.source, hdr->dest);
+    for (i = 0; i < hdr->ndigis; i++)
+      addrcp(axp->hdr.digis[i], hdr->digis[hdr->ndigis-1-i]);
+    axp->hdr.ndigis = hdr->ndigis;
+    axp->hdr.nextdigi = 0;
+    for (i = axp->hdr.ndigis - 1; i >= 0; i--)
+      if (ismyax25addr(axp->hdr.digis[i])) {
+	axp->hdr.nextdigi = i + 1;
+	break;
+      }
+    axp->iface = ifp;
+  } else {
+    axroute(hdr, &axp->iface);
+    axp->hdr = *hdr;
+  }
+  axp->srt = (T1init * (1 + 2 * (axp->hdr.ndigis - axp->hdr.nextdigi))) / 2;
+  axp->mdev = axp->srt / 4;
+  reset_t1(axp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static
+int put_reseq(axp, bp, ns)
+struct ax25_cb *axp;
+struct mbuf *bp;
+int ns;
+{
+
+  char *p;
+  int cnt, sum;
+  struct axreseq *rp;
+  struct mbuf *tp;
+
+  if (next_seq(ns) == axp->vr) return 0;
+  rp = &axp->reseq[ns];
+  if (rp->bp) return 0;
+  for (sum = 0, tp = bp; tp; tp = tp->next) {
+    cnt = tp->cnt;
+    p = tp->data;
+    while (cnt--) sum += uchar(*p++);
+  }
+  if (ns != axp->vr && sum == rp->sum) return 0;
+  rp->bp = bp;
+  rp->sum = sum;
+  return 1;
 }
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.11 1992/09/01 16:53:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.12 1993/01/29 06:48:39 deyke Exp $ */
 
 #ifndef _SOCKET_H
 #define _SOCKET_H
@@ -40,6 +40,7 @@
 #define IPPORT_POP      109     /* pop2 port */
 #define IPPORT_NNTP     119     /* Netnews port */
 #define IPPORT_LOGIN    513     /* BSD rlogin port */
+#define IPPORT_TERM     5000    /* Serial interface server port */
 
 /* UDP port numbers */
 #define IPPORT_DOMAIN   53
@@ -47,9 +48,9 @@
 #define IPPORT_BOOTPC   68
 #define IPPORT_RIP      520
 #define IPPORT_REMOTE   1234    /* Pulled out of the air */
+#define IPPORT_BSR      5000    /* BSR X10 interface server port (UDP) */
 
 #if 0
-
 #define AF_INET         0
 #define AF_AX25         1
 #define AF_NETROM       2
@@ -115,7 +116,6 @@ int sendto __ARGS((int s,char *buf,int len,int flags,char *to,int tolen));
 char *psocket __ARGS((void *p));
 char *sockerr __ARGS((int s));
 char *sockstate __ARGS((int s));
-
 #endif
 
 #endif  /* _SOCKET_H */

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.30 1992/11/27 17:08:23 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.31 1993/01/29 06:48:13 deyke Exp $
 
 DEFINES       = -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024
 
@@ -78,10 +78,12 @@ OBJS          = alloc.o \
 		arphdr.o \
 		asy.o \
 		ax25.o \
+		ax25cmd.o \
 		ax25dump.o \
 		ax25file.o \
 		ax25hdr.o \
 		ax25subr.o \
+		ax25user.o \
 		axclient.o \
 		axip.o \
 		axserver.o \
@@ -117,6 +119,7 @@ OBJS          = alloc.o \
 		kissdump.o \
 		ksubr.o \
 		lapb.o \
+		lapbtime.o \
 		lcsum.o \
 		login.o \
 		mail_bbs.o \
@@ -181,10 +184,12 @@ SRCS          = alloc.c \
 		arphdr.c \
 		asy.c \
 		ax25.c \
+		ax25cmd.c \
 		ax25dump.c \
 		ax25file.c \
 		ax25hdr.c \
 		ax25subr.c \
+		ax25user.c \
 		axclient.c \
 		axip.c \
 		axserver.c \
@@ -220,6 +225,7 @@ SRCS          = alloc.c \
 		kissdump.c \
 		ksubr.c \
 		lapb.c \
+		lapbtime.c \
 		lcsum.c \
 		login.c \
 		mail_bbs.c \
@@ -279,6 +285,8 @@ all_test:
 		  make 'CC=c89' 'OPTIMIZE=-g' all; \
 		elif [ `uname -s` = Linux ] ; then \
 		  make 'CC=gcc' 'CFLAGS=-O6 -I./linux_include -DUNIX -DLITTLE_ENDIAN -DLINUX' all; \
+		elif [ `uname -s` = ULTRIX ] ; then \
+		  make 'CC=gcc' 'CFLAGS=-O6 -DUNIX -DULTRIX_RISC -DFD_SETSIZE=64' all; \
 		else \
 		  make 'OPTIMIZE=-O -s' all; \
 		fi
@@ -290,6 +298,8 @@ setsp.o:        setsp.c
 		  $(CC) -E -DLINUX $< > setsp.s; \
 		  cc -c setsp.s; \
 		  rm -f setsp.s; \
+		elif [ `uname -s` = ULTRIX ] ; then \
+		  cc -c setsp.c; \
 		else \
 		  $(CC) $(CFLAGS) -P $<; \
 		  as setsp.i -o $@; \
@@ -301,6 +311,8 @@ $(PROGRAM):     $(OBJS) $(LIBS)
 		@if [ `uname -s` = SunOS ] ; then \
 		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM) ; \
 		elif [ `uname -s` = Linux ] ; then \
+		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -ldbm -o $(PROGRAM) ; \
+		elif [ `uname -s` = ULTRIX ] ; then \
 		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -ldbm -o $(PROGRAM) ; \
 		else \
 		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -lndbm -o $(PROGRAM) ; \
@@ -348,14 +360,17 @@ asy.o: global.h proc.h mbuf.h timer.h iface.h netuser.h slhc.h ip.h \
 	commands.h
 ax25.o: global.h mbuf.h iface.h proc.h timer.h arp.h slip.h slhc.h ip.h \
 	internet.h tcp.h netuser.h ax25.h lapb.h netrom.h session.h \
-	hardware.h telnet.h
+	hardware.h telnet.h devparam.h
+ax25cmd.o: global.h mbuf.h timer.h proc.h iface.h ax25.h lapb.h cmdparse.h \
+	socket.h session.h hardware.h telnet.h tty.h commands.h
 ax25dump.o: global.h mbuf.h ax25.h iface.h proc.h timer.h lapb.h trace.h \
 	socket.h
 ax25file.o: global.h timer.h iface.h mbuf.h proc.h ax25.h
 ax25hdr.o: global.h mbuf.h ax25.h iface.h proc.h timer.h
 ax25subr.o: global.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h
-axclient.o: global.h config.h netuser.h mbuf.h timer.h ax25.h iface.h proc.h \
-	lapb.h session.h hardware.h telnet.h
+ax25user.o: global.h mbuf.h timer.h iface.h proc.h lapb.h ax25.h
+axclient.o: global.h config.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h \
+	session.h hardware.h telnet.h
 axip.o: global.h mbuf.h iface.h proc.h timer.h internet.h netuser.h ax25.h \
 	socket.h trace.h pktdrvr.h cmdparse.h hpux.h crc.h
 axserver.o: global.h timer.h ax25.h mbuf.h iface.h proc.h lapb.h login.h
@@ -395,8 +410,9 @@ icmpdump.o: global.h mbuf.h internet.h netuser.h icmp.h iface.h proc.h \
 icmphdr.o: global.h mbuf.h internet.h ip.h iface.h proc.h timer.h icmp.h \
 	session.h hardware.h telnet.h ax25.h
 icmpmsg.o: global.h
-iface.o: global.h mbuf.h proc.h timer.h iface.h ip.h internet.h netuser.h \
-	ax25.h enet.h pktdrvr.h cmdparse.h commands.h trace.h
+iface.o: global.h mbuf.h proc.h timer.h iface.h ip.h internet.h icmp.h \
+	session.h hardware.h telnet.h ax25.h netuser.h enet.h pktdrvr.h \
+	cmdparse.h commands.h trace.h
 ip.o: global.h mbuf.h timer.h internet.h netuser.h iface.h proc.h pktdrvr.h \
 	ip.h icmp.h session.h hardware.h telnet.h ax25.h
 ipcmd.o: global.h mbuf.h internet.h timer.h netuser.h iface.h proc.h ip.h \
@@ -416,12 +432,13 @@ kiss.o: global.h mbuf.h iface.h proc.h timer.h kiss.h devparam.h slip.h \
 kissdump.o: global.h mbuf.h kiss.h iface.h proc.h timer.h devparam.h ax25.h \
 	trace.h crc.h
 ksubr.o: global.h proc.h mbuf.h timer.h commands.h
-lapb.o: global.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h netrom.h \
-	session.h hardware.h telnet.h asy.h cmdparse.h netuser.h
+lapb.o: global.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h ip.h internet.h \
+	netrom.h session.h hardware.h telnet.h
+lapbtime.o: global.h mbuf.h ax25.h iface.h proc.h timer.h lapb.h
 lcsum.o: global.h ip.h mbuf.h iface.h proc.h timer.h internet.h
 login.o: global.h mbuf.h timer.h hpux.h telnet.h session.h proc.h hardware.h \
 	ax25.h iface.h login.h
-mail_bbs.o: global.h mbuf.h transport.h timer.h mail.h
+mail_bbs.o: global.h mbuf.h timer.h transport.h mail.h
 mail_daemn.o: global.h timer.h mail.h cmdparse.h commands.h
 mail_retrn.o: hpux.h global.h mail.h
 mail_smtp.o: global.h mbuf.h transport.h timer.h mail.h
@@ -466,7 +483,8 @@ slip.o: global.h mbuf.h iface.h proc.h timer.h ip.h internet.h slhc.h tcp.h \
 smisc.o: global.h mbuf.h socket.h proc.h timer.h remote.h tcp.h iface.h \
 	internet.h ip.h netuser.h udp.h commands.h hardware.h
 tcpcmd.o: global.h timer.h mbuf.h netuser.h internet.h tcp.h iface.h proc.h \
-	ip.h cmdparse.h commands.h
+	ip.h cmdparse.h commands.h socket.h session.h hardware.h telnet.h \
+	ax25.h
 tcpdump.o: global.h mbuf.h netuser.h internet.h tcp.h iface.h proc.h timer.h \
 	ip.h trace.h
 tcpgate.o: global.h mbuf.h netuser.h tcp.h iface.h proc.h timer.h internet.h \
@@ -490,7 +508,8 @@ timer.o: global.h timer.h proc.h mbuf.h commands.h daemon.h hardware.h \
 	socket.h
 tnserv.o: global.h mbuf.h socket.h proc.h timer.h netuser.h tcp.h iface.h \
 	internet.h ip.h login.h tipmail.h
-trace.o: global.h mbuf.h iface.h proc.h timer.h pktdrvr.h commands.h trace.h
+trace.o: global.h mbuf.h iface.h proc.h timer.h pktdrvr.h commands.h trace.h \
+	session.h hardware.h telnet.h ax25.h
 transport.o: global.h netuser.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h \
 	netrom.h session.h hardware.h telnet.h tcp.h internet.h ip.h \
 	transport.h

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.4 1992/11/19 13:16:27 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.5 1993/01/29 06:48:05 deyke Exp $
 
 hostname     dl1sbl-1
 ax25 mycall  dl1sbl-1
@@ -13,7 +13,7 @@ ax25 route add axip default
 
 axip route add dk0hu 15.136.56.6
 
-route add  44/8             ipip     15.136.56.6
+route add  44.130/16        ipip     15.136.56.6
 
 source /tcp/netrom_links
 

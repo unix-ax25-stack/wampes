@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.32 1992/08/21 16:42:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.33 1993/01/29 06:48:32 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -29,7 +29,7 @@ static int  nr_bdcstint    =  1800;
 static int  nr_ttlinit     =    16;
 static int  nr_ttimeout    =    60;
 static int  nr_tretry      =     5;
-static int  nr_tackdelay   =  1900;
+static int  nr_tackdelay   =     1;
 static int  nr_tbsydelay   =   180;
 static int  nr_twindow     =     8;
 static int  nr_tnoackbuf   =     8;
@@ -41,10 +41,10 @@ static int  nr_beacon      =     0;     /* not used */
 static int  nr_cq          =     0;     /* not used */
 
 static struct parms {
-  char  *text;
-  int  *valptr;
-  int  minval;
-  int  maxval;
+  char *text;
+  int *valptr;
+  int minval;
+  int maxval;
 } parms[] = {
   "",                                               (int *) 0,       0,          0,
   " 1 Maximum destination list entries           ", &nr_maxdest,     1,        400,
@@ -64,11 +64,11 @@ static struct parms {
   "15 No-activity timeout (sec, 0=off)           ", &nr_timeout,     0,      65535,
   "16 Persistance                                ", &nr_persistance, 0,        255,
   "17 Slot time (10msec increments)              ", &nr_slottime,    0,        127,
-  "18 Link T1 timeout 'FRACK' (ms)               ", &ax_t1init,      1, 0x7fffffff,
-  "19 Link TX window size 'MAXFRAME' (frames)    ", &ax_maxframe,    1,          7,
-  "20 Link maximum tries (0=forever)             ", &ax_retry,       0,        127,
-  "21 Link T2 timeout (ms)                       ", &ax_t2init,      1, 0x7fffffff,
-  "22 Link T3 timeout (ms)                       ", &ax_t3init,      0, 0x7fffffff,
+  "18 Link T1 timeout 'FRACK' (ms)               ", &T1init,         1, 0x7fffffff,
+  "19 Link TX window size 'MAXFRAME' (frames)    ", &Maxframe,       1,          7,
+  "20 Link maximum tries (0=forever)             ", &N2,             0,        127,
+  "21 Link T2 timeout (ms)                       ", &T2init,         1, 0x7fffffff,
+  "22 Link T3 timeout (ms)                       ", &T3init,         0, 0x7fffffff,
   "23 AX.25 digipeating  (0=off 1=dumb 2=s&f)    ", &Digipeat,       0,          2,
   "24 Validate callsigns (0=off 1=on)            ", &nr_callcheck,   0,          1,
   "25 Station ID beacons (0=off 1=after 2=every) ", &nr_beacon,      0,          2,
@@ -99,7 +99,7 @@ static void send_l3_packet __ARGS((char *source, char *dest, int ttl, struct mbu
 static void routing_manager_initialize __ARGS((void));
 static void reset_t1 __ARGS((struct circuit *pc));
 static void inc_t1 __ARGS((struct circuit *pc));
-static int busy __ARGS((struct circuit *pc));
+static int nrbusy __ARGS((struct circuit *pc));
 static void send_l4_packet __ARGS((struct circuit *pc, int opcode, struct mbuf *data));
 static void try_send __ARGS((struct circuit *pc, int fill_sndq));
 static void set_circuit_state __ARGS((struct circuit *pc, int newstate));
@@ -150,7 +150,7 @@ struct node {
   struct node *prev, *next;
 };
 
-struct ax25_cb *netrom_server_axcb;
+struct ax25_cb *Netrom_server_axcb;
 
 static struct broadcast *broadcasts;
 static struct node *nodes, *mynode;
@@ -158,8 +158,8 @@ static struct node *nodes, *mynode;
 /*---------------------------------------------------------------------------*/
 
 static struct node *nodeptr(call, create)
-char  *call;
-int  create;
+char *call;
+int create;
 {
   struct node *pn;
 
@@ -183,7 +183,7 @@ int  create;
 
 static void ax25_state_upcall(cp, oldstate, newstate)
 struct ax25_cb *cp;
-int  oldstate, newstate;
+int oldstate, newstate;
 {
   struct node *pn;
 
@@ -192,21 +192,21 @@ int  oldstate, newstate;
   else
     cp->user = (char *) (pn = nodeptr(cp->hdr.dest, 1));
   switch (newstate) {
-  case CONNECTING:
+  case LAPB_SETUP:
     break;
-  case CONNECTED:
+  case LAPB_CONNECTED:
     pn->crosslink = cp;
     if (update_link(mynode, pn, 1, nr_hfqual)) calculate_all();
     break;
-  case DISCONNECTING:
-    if (cp->reason != NORMAL)
+  case LAPB_DISCPENDING:
+    if (cp->reason != LB_NORMAL)
       if (update_link(mynode, pn, 1, 0)) calculate_all();
     break;
-  case DISCONNECTED:
-    pn->crosslink = NULLAXCB;
-    if (cp->reason != NORMAL)
+  case LAPB_DISCONNECTED:
+    pn->crosslink = NULLAX25;
+    if (cp->reason != LB_NORMAL)
       if (update_link(mynode, pn, 1, 0)) calculate_all();
-    del_ax(cp);
+    del_ax25(cp);
     break;
   }
 }
@@ -215,14 +215,14 @@ int  oldstate, newstate;
 
 static void ax25_recv_upcall(cp, cnt)
 struct ax25_cb *cp;
-int  cnt;
+int cnt;
 {
 
-  int  pid;
+  int pid;
   struct mbuf *bp;
 
-  while (cp->rcvq) {
-    recv_ax(cp, &bp, 0);
+  while (cp->rxq) {
+    bp = recv_ax25(cp, 0);
     if ((pid = PULLCHAR(&bp)) == -1) continue;
     if (pid == PID_NETROM)
       nr3_input(bp, cp->hdr.dest);
@@ -238,14 +238,13 @@ struct mbuf *data;
 struct node *pn;
 {
 
-  char  path[10*AXALEN];
+  struct ax25 hdr;
   struct mbuf *bp;
 
   if (!pn->crosslink) {
-    addrcp(path, pn->call);
-    addrcp(path + AXALEN, Mycall);
-    path[AXALEN+6] |= E;
-    pn->crosslink = open_ax(path, AX_ACTIVE, ax25_recv_upcall, NULLVFP, ax25_state_upcall, (char *) pn);
+    hdr.ndigis = hdr.nextdigi = 0;
+    addrcp(hdr.dest, pn->call);
+    pn->crosslink = open_ax25(&hdr, AX_ACTIVE, ax25_recv_upcall, NULLVFP, ax25_state_upcall, (char *) pn);
     if (!pn->crosslink) {
       if (update_link(mynode, pn, 1, 0)) calculate_all();
       free_p(data);
@@ -258,7 +257,7 @@ struct node *pn;
     return;
   }
   bp->data[0] = PID_NETROM;
-  send_ax(pn->crosslink, bp);
+  send_ax25(pn->crosslink, bp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -293,9 +292,9 @@ static void link_manager_initialize()
   mynode->call = Mycall;
   calculate_all();
 
-  netrom_server_axcb = open_ax(NULLCHAR, AX_SERVER, ax25_recv_upcall, NULLVFP, ax25_state_upcall, NULLCHAR);
-  netrom_server_axcb->mode = DGRAM;
-
+  Netrom_server_axcb = open_ax25(0, AX_SERVER, ax25_recv_upcall, NULLVFP, ax25_state_upcall, NULLCHAR);
+  Ax25_cb = Netrom_server_axcb->next;
+  Netrom_server_axcb->mode = DGRAM;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -313,14 +312,14 @@ struct link {
 };
 
 struct linkinfo {
-  int  source;
-  int  quality;
-  long  time;
+  int source;
+  int quality;
+  long time;
 };
 
 struct routes_stat {
-  int  rcvd;
-  int  sent;
+  int rcvd;
+  int sent;
 };
 
 static struct iface *Nr_iface;
@@ -329,8 +328,8 @@ static struct timer broadcast_timer;
 
 /*---------------------------------------------------------------------------*/
 
-int  isnetrom(call)
-char  *call;
+int isnetrom(call)
+char *call;
 {
   return (nodeptr(call, 0) != 0);
 }
@@ -369,12 +368,12 @@ struct node *node1, *node2;
 
 /*---------------------------------------------------------------------------*/
 
-static int  update_link(node1, node2, source, quality)
+static int update_link(node1, node2, source, quality)
 struct node *node1, *node2;
-int  source, quality;
+int source, quality;
 {
 
-  int  ret;
+  int ret;
   struct linkinfo *pi;
 
   if (node1 == node2) return 0;
@@ -550,7 +549,7 @@ static void calculate_all()
 /*---------------------------------------------------------------------------*/
 
 void new_neighbor(call)
-char  *call;
+char *call;
 {
   if (update_link(mynode, nodeptr(call, 1), 1, nr_hfqual))
     calculate_all();
@@ -563,9 +562,9 @@ struct mbuf *bp;
 struct node *pn;
 {
 
-  char  buf[NRRTDESTLEN];
-  char  ident[IDENTLEN];
-  int  quality;
+  char buf[NRRTDESTLEN];
+  char ident[IDENTLEN];
+  int quality;
   struct linkinfo *pi;
   struct node *pb, *pd;
 
@@ -577,7 +576,7 @@ struct node *pn;
   if (*ident > ' ') memcpy(pn->ident, ident, IDENTLEN);
   update_link(mynode, pn, 1, nr_hfqual);
   while (pullup(&bp, buf, NRRTDESTLEN) == NRRTDESTLEN) {
-    if (ismycall(buf)) continue;
+    if (addreq(buf, Mycall)) continue;
     pd = nodeptr(buf, 1);
     if (buf[AXALEN] > ' ') memcpy(pd->ident, buf + AXALEN, IDENTLEN);
     pb = nodeptr(buf + AXALEN + IDENTLEN, 1);
@@ -592,7 +591,7 @@ struct node *pn;
       pi = linkinfoptr(pn, pb);
       if (pi->time != PERMANENT) pi->time = secclock();
       if (pi->quality) {
-	int  q = quality * 256 / pi->quality;
+	int q = quality * 256 / pi->quality;
 	while (q * pi->quality / 256 < quality) q++;
 	quality = q;
       }
@@ -626,8 +625,8 @@ static struct mbuf *alloc_broadcast_packet()
 static void send_broadcast()
 {
 
-  char  *p;
-  int  hopcnt, nexthopcnt;
+  char *p;
+  int hopcnt, nexthopcnt;
   struct mbuf *bp;
   struct node *pn;
 
@@ -686,14 +685,14 @@ struct node *fromneighbor;
     if (!pn->neighbor) {
       struct linkinfo *pi = linkinfoptr(mynode, fromneighbor);
       if (pi->quality) {
-	int  q = 1;
+	int q = 1;
 	while (q * pi->quality / 256 < 1) q++;
 	if (update_link(fromneighbor, pn, 2, q)) calculate_all();
       }
     }
   }
 
-  if (ismycall(bp->data + AXALEN)) {
+  if (addreq(bp->data + AXALEN, Mycall)) {
     char hwaddr[AXALEN];
     if (bp->cnt >= 40                     &&
 	uchar(bp->data[19]) == 0          &&
@@ -755,8 +754,8 @@ discard:
 /*---------------------------------------------------------------------------*/
 
 static void send_l3_packet(source, dest, ttl, data)
-char  *source, *dest;
-int  ttl;
+char *source, *dest;
+int ttl;
 struct mbuf *data;
 {
   struct mbuf *bp;
@@ -811,7 +810,7 @@ int tos;
 
 void nr3_input(bp, fromcall)
 struct mbuf *bp;
-char  *fromcall;
+char *fromcall;
 {
   if (bp && bp->cnt && uchar(*bp->data) == 0xff)
     broadcast_recv(bp, nodeptr(fromcall, 1));
@@ -834,24 +833,33 @@ static void routing_manager_initialize()
 
 #include "netrom.h"
 
-static char  *nrreasons[] = {
-  "Normal",
-  "Reset",
-  "Timeout",
-  "Network"
-};
+char *Nr4states[] = {
+	"Disconnected",
+	"Conn Pending",
+	"Connected",
+	"Disc Pending",
+	"Listening"
+} ;
 
-static int  server_enabled;
+char *Nr4reasons[] = {
+	"Normal",
+	"By Peer",
+	"Timeout",
+	"Reset",
+	"Refused"
+} ;
+
+static int server_enabled;
 static struct circuit *circuits;
 
 /*---------------------------------------------------------------------------*/
 
-char  *nr_addr2str(pc)
+char *nr_addr2str(pc)
 struct circuit *pc;
 {
 
-  char  *p;
-  static char  buf[128];
+  char *p;
+  static char buf[128];
 
   pax25(p = buf, pc->cuser);
   while (*p) p++;
@@ -886,14 +894,13 @@ struct circuit *pc;
   int32 tmp;
 
   tmp = (dur_timer(&pc->timer_t1) * 5 + 2) / 4;
-  if (tmp > 10 * pc->srtt) tmp = 10 * pc->srtt;
   if (tmp < 500) tmp = 500;
   set_timer(&pc->timer_t1, tmp);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int  busy(pc)
+static int nrbusy(pc)
 struct circuit *pc;
 {
   return pc->rcvcnt >= nr_tnoackbuf * NR4MAXINFO;
@@ -903,11 +910,11 @@ struct circuit *pc;
 
 static void send_l4_packet(pc, opcode, data)
 struct circuit *pc;
-int  opcode;
+int opcode;
 struct mbuf *data;
 {
 
-  int  start_t1_timer = 0;
+  int start_t1_timer = 0;
   struct mbuf *bp;
 
   switch (opcode & NR4OPCODE) {
@@ -962,7 +969,7 @@ struct mbuf *data;
       opcode |= NR4NAK;
       pc->naksent = 1;
     }
-    if (pc->chokesent = busy(pc)) opcode |= NR4CHOKE;
+    if (pc->chokesent = nrbusy(pc)) opcode |= NR4CHOKE;
     stop_timer(&pc->timer_t2);
     bp->data[0] = pc->remoteindex;
     bp->data[1] = pc->remoteid;
@@ -981,15 +988,15 @@ struct mbuf *data;
 
 static void try_send(pc, fill_sndq)
 struct circuit *pc;
-int  fill_sndq;
+int fill_sndq;
 {
 
-  int  cnt;
+  int cnt;
   struct mbuf *bp;
 
   stop_timer(&pc->timer_t5);
   while (pc->unack < pc->cwind) {
-    if (pc->state != CONNECTED || pc->remote_busy) return;
+    if (pc->state != NR4STCON || pc->remote_busy) return;
     if (fill_sndq && pc->t_upcall) {
       cnt = space_nr(pc);
       if (cnt > 0) {
@@ -1001,8 +1008,8 @@ int  fill_sndq;
     cnt = len_p(pc->sndq);
     if (cnt < NR4MAXINFO) {
       if (pc->unack) return;
-      if (pc->sndqtime + 1000 - msclock() > 0) {
-	set_timer(&pc->timer_t5, pc->sndqtime + 1000 - msclock());
+      if (pc->sndqtime + 100 - msclock() > 0) {
+	set_timer(&pc->timer_t5, pc->sndqtime + 100 - msclock());
 	start_timer(&pc->timer_t5);
 	return;
       }
@@ -1022,9 +1029,9 @@ int  fill_sndq;
 
 static void set_circuit_state(pc, newstate)
 struct circuit *pc;
-int  newstate;
+int newstate;
 {
-  int  oldstate;
+  int oldstate;
 
   oldstate = pc->state;
   pc->state = newstate;
@@ -1035,18 +1042,18 @@ int  newstate;
   stop_timer(&pc->timer_t5);
   reset_t1(pc);
   switch (newstate) {
-  case DISCONNECTED:
+  case NR4STDISC:
     if (pc->s_upcall) (*pc->s_upcall)(pc, oldstate, newstate);
     break;
-  case CONNECTING:
+  case NR4STCPEND:
     if (pc->s_upcall) (*pc->s_upcall)(pc, oldstate, newstate);
     send_l4_packet(pc, NR4OPCONRQ, NULLBUF);
     break;
-  case CONNECTED:
+  case NR4STCON:
     if (pc->s_upcall) (*pc->s_upcall)(pc, oldstate, newstate);
     try_send(pc, 1);
     break;
-  case DISCONNECTING:
+  case NR4STDPEND:
     if (pc->s_upcall) (*pc->s_upcall)(pc, oldstate, newstate);
     send_l4_packet(pc, NR4OPDISRQ, NULLBUF);
     break;
@@ -1062,19 +1069,19 @@ struct circuit *pc;
 
   inc_t1(pc);
   pc->cwind = 1;
-  if (++pc->retry > nr_tretry) pc->reason = TIMEOUT;
+  if (++pc->retry > nr_tretry) pc->reason = NR4RTIMEOUT;
   switch (pc->state) {
-  case DISCONNECTED:
+  case NR4STDISC:
     break;
-  case CONNECTING:
+  case NR4STCPEND:
     if (pc->retry > nr_tretry)
-      set_circuit_state(pc, DISCONNECTED);
+      set_circuit_state(pc, NR4STDISC);
     else
       send_l4_packet(pc, NR4OPCONRQ, NULLBUF);
     break;
-  case CONNECTED:
+  case NR4STCON:
     if (pc->retry > nr_tretry)
-      set_circuit_state(pc, DISCONNECTING);
+      set_circuit_state(pc, NR4STDPEND);
     else if (pc->unack) {
       pc->send_state = uchar(pc->send_state - pc->unack);
       for (qp = pc->resndq; qp; qp = qp->anext) {
@@ -1084,9 +1091,9 @@ struct circuit *pc;
       }
     }
     break;
-  case DISCONNECTING:
+  case NR4STDPEND:
     if (pc->retry > nr_tretry)
-      set_circuit_state(pc, DISCONNECTED);
+      set_circuit_state(pc, NR4STDISC);
     else
       send_l4_packet(pc, NR4OPDISRQ, NULLBUF);
     break;
@@ -1132,7 +1139,7 @@ struct circuit *pc;
 static struct circuit *create_circuit()
 {
 
-  static int  nextid;
+  static int nextid;
   struct circuit *pc;
 
   pc = calloc(1, sizeof(*pc));
@@ -1141,6 +1148,7 @@ static struct circuit *create_circuit()
   pc->localid = uchar(nextid);
   pc->remoteindex = -1;
   pc->remoteid = -1;
+  pc->state = NR4STDISC;
   pc->cwind = 1;
   pc->srtt = 500L * nr_ttimeout;
   pc->mdev = pc->srtt / 4;
@@ -1165,7 +1173,7 @@ static void circuit_manager(bp)
 struct mbuf *bp;
 {
 
-  int  nakrcvd;
+  int nakrcvd;
   struct circuit *pc;
   struct mbuf *p;
 
@@ -1202,19 +1210,19 @@ struct mbuf *bp;
 
   case NR4OPCONRQ:
     switch (pc->state) {
-    case DISCONNECTED:
+    case NR4STDISC:
       pc->window = uchar(bp->data[5]);
       if (pc->window > nr_twindow) pc->window = nr_twindow;
       if (pc->window < 1) pc->window = 1;
       if (server_enabled) {
 	send_l4_packet(pc, NR4OPCONAK, NULLBUF);
-	set_circuit_state(pc, CONNECTED);
+	set_circuit_state(pc, NR4STCON);
       } else {
 	send_l4_packet(pc, NR4OPCONAK | NR4CHOKE, NULLBUF);
 	del_nr(pc);
       }
       break;
-    case CONNECTED:
+    case NR4STCON:
       send_l4_packet(pc, NR4OPCONAK, NULLBUF);
       break;
     default:
@@ -1223,31 +1231,32 @@ struct mbuf *bp;
     break;
 
   case NR4OPCONAK:
-    if (pc->state != CONNECTING) goto discard;
+    if (pc->state != NR4STCPEND) goto discard;
     pc->remoteindex = uchar(bp->data[2]);
     pc->remoteid = uchar(bp->data[3]);
     if (pc->window > uchar(bp->data[5])) pc->window = uchar(bp->data[5]);
     if (pc->window < 1) pc->window = 1;
     if (bp->data[4] & NR4CHOKE) {
-      pc->reason = RESET;
-      set_circuit_state(pc, DISCONNECTED);
+      pc->reason = NR4RREFUSED;
+      set_circuit_state(pc, NR4STDISC);
     } else
-      set_circuit_state(pc, CONNECTED);
+      set_circuit_state(pc, NR4STCON);
     break;
 
   case NR4OPDISRQ:
     send_l4_packet(pc, NR4OPDISAK, NULLBUF);
-    set_circuit_state(pc, DISCONNECTED);
+    pc->reason = NR4RREMOTE;
+    set_circuit_state(pc, NR4STDISC);
     break;
 
   case NR4OPDISAK:
-    if (pc->state != DISCONNECTING) goto discard;
-    set_circuit_state(pc, DISCONNECTED);
+    if (pc->state != NR4STDPEND) goto discard;
+    set_circuit_state(pc, NR4STDISC);
     break;
 
   case NR4OPINFO:
   case NR4OPACK:
-    if (pc->state != CONNECTED) goto discard;
+    if (pc->state != NR4STCON) goto discard;
     stop_timer(&pc->timer_t1);
     if (bp->data[4] & NR4CHOKE) {
       if (!pc->remote_busy) pc->remote_busy = msclock();
@@ -1311,7 +1320,7 @@ struct mbuf *bp;
       }
     }
     if (nakrcvd && pc->unack) {
-      int  old_send_state;
+      int old_send_state;
       struct mbuf *bp1;
       old_send_state = pc->send_state;
       pc->send_state = uchar(pc->send_state - pc->unack);
@@ -1324,7 +1333,7 @@ struct mbuf *bp;
     try_send(pc, 1);
     if (pc->unack && !pc->remote_busy) start_timer(&pc->timer_t1);
     if (pc->closed && !pc->sndq && !pc->unack)
-      set_circuit_state(pc, DISCONNECTING);
+      set_circuit_state(pc, NR4STDPEND);
     break;
   }
 
@@ -1337,12 +1346,12 @@ discard:
 /*---------------------------------------------------------------------------*/
 
 struct circuit *open_nr(node, cuser, window, r_upcall, t_upcall, s_upcall, user)
-char  *node, *cuser;
-int  window;
+char *node, *cuser;
+int window;
 void (*r_upcall) __ARGS((struct circuit *p, int cnt));
 void (*t_upcall) __ARGS((struct circuit *p, int cnt));
 void (*s_upcall) __ARGS((struct circuit *p, int oldstate, int newstate));
-char  *user;
+char *user;
 {
   struct circuit *pc;
 
@@ -1364,13 +1373,13 @@ char  *user;
   pc->t_upcall = t_upcall;
   pc->s_upcall = s_upcall;
   pc->user = user;
-  set_circuit_state(pc, CONNECTING);
+  set_circuit_state(pc, NR4STCPEND);
   return pc;
 }
 
 /*---------------------------------------------------------------------------*/
 
-int  send_nr(pc, bp)
+int send_nr(pc, bp)
 struct circuit *pc;
 struct mbuf *bp;
 {
@@ -1382,12 +1391,12 @@ struct mbuf *bp;
     return (-1);
   }
   switch (pc->state) {
-  case DISCONNECTED:
+  case NR4STDISC:
     free_p(bp);
     Net_error = NO_CONN;
     return (-1);
-  case CONNECTING:
-  case CONNECTED:
+  case NR4STCPEND:
+  case NR4STCON:
     if (!pc->closed) {
       if (cnt = len_p(bp)) {
 	append(&pc->sndq, bp);
@@ -1396,7 +1405,7 @@ struct mbuf *bp;
       }
       return cnt;
     }
-  case DISCONNECTING:
+  case NR4STDPEND:
     free_p(bp);
     Net_error = CON_CLOS;
     return (-1);
@@ -1406,26 +1415,26 @@ struct mbuf *bp;
 
 /*---------------------------------------------------------------------------*/
 
-int  space_nr(pc)
+int space_nr(pc)
 struct circuit *pc;
 {
-  int  cnt;
+  int cnt;
 
   if (!pc) {
     Net_error = INVALID;
     return (-1);
   }
   switch (pc->state) {
-  case DISCONNECTED:
+  case NR4STDISC:
     Net_error = NO_CONN;
     return (-1);
-  case CONNECTING:
-  case CONNECTED:
+  case NR4STCPEND:
+  case NR4STCON:
     if (!pc->closed) {
       cnt = (pc->cwind - pc->unack) * NR4MAXINFO - len_p(pc->sndq);
       return (cnt > 0) ? cnt : 0;
     }
-  case DISCONNECTING:
+  case NR4STDPEND:
     Net_error = CON_CLOS;
     return (-1);
   }
@@ -1434,7 +1443,7 @@ struct circuit *pc;
 
 /*---------------------------------------------------------------------------*/
 
-int  recv_nr(pc, bpp, cnt)
+int recv_nr(pc, bpp, cnt)
 struct circuit *pc;
 struct mbuf **bpp;
 int cnt;
@@ -1456,20 +1465,20 @@ int cnt;
       (*bpp)->cnt = cnt;
     }
     pc->rcvcnt -= cnt;
-    if (pc->chokesent && !busy(pc)) {
+    if (pc->chokesent && !nrbusy(pc)) {
       set_timer(&pc->timer_t2, nr_tackdelay);
       start_timer(&pc->timer_t2);
     }
     return cnt;
   }
   switch (pc->state) {
-  case CONNECTING:
-  case CONNECTED:
+  case NR4STCPEND:
+  case NR4STCON:
     *bpp = NULLBUF;
     Net_error = WOULDBLK;
     return (-1);
-  case DISCONNECTED:
-  case DISCONNECTING:
+  case NR4STDISC:
+  case NR4STDPEND:
     *bpp = NULLBUF;
     return 0;
   }
@@ -1478,7 +1487,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-int  close_nr(pc)
+int close_nr(pc)
 struct circuit *pc;
 {
   if (!pc) {
@@ -1491,16 +1500,16 @@ struct circuit *pc;
   }
   pc->closed = 1;
   switch (pc->state) {
-  case DISCONNECTED:
+  case NR4STDISC:
     Net_error = NO_CONN;
     return (-1);
-  case CONNECTING:
-    set_circuit_state(pc, DISCONNECTED);
+  case NR4STCPEND:
+    set_circuit_state(pc, NR4STDISC);
     return 0;
-  case CONNECTED:
-    if (!pc->sndq && !pc->unack) set_circuit_state(pc, DISCONNECTING);
+  case NR4STCON:
+    if (!pc->sndq && !pc->unack) set_circuit_state(pc, NR4STDPEND);
     return 0;
-  case DISCONNECTING:
+  case NR4STDPEND:
     Net_error = CON_CLOS;
     return (-1);
   }
@@ -1509,21 +1518,21 @@ struct circuit *pc;
 
 /*---------------------------------------------------------------------------*/
 
-int  reset_nr(pc)
+int reset_nr(pc)
 struct circuit *pc;
 {
   if (!pc) {
     Net_error = INVALID;
     return (-1);
   }
-  pc->reason = RESET;
-  set_circuit_state(pc, DISCONNECTED);
+  pc->reason = NR4RRESET;
+  set_circuit_state(pc, NR4STDISC);
   return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-int  del_nr(pc)
+int del_nr(pc)
 struct circuit *pc;
 {
   struct circuit *p, *q;
@@ -1552,7 +1561,7 @@ struct circuit *pc;
 
 /*---------------------------------------------------------------------------*/
 
-int  valid_nr(pc)
+int valid_nr(pc)
 struct circuit *pc;
 {
   struct circuit *p;
@@ -1567,7 +1576,7 @@ struct circuit *pc;
 
 /* Force a retransmission */
 
-int  kick_nr(pc)
+int kick_nr(pc)
 struct circuit *pc;
 {
   if (!valid_nr(pc)) return -1;
@@ -1585,7 +1594,7 @@ struct circuit *pc;
 
 static void nrserv_recv_upcall(pc, cnt)
 struct circuit *pc;
-int  cnt;
+int cnt;
 {
   struct mbuf *bp;
 
@@ -1597,7 +1606,7 @@ int  cnt;
 
 static void nrserv_send_upcall(pc, cnt)
 struct circuit *pc;
-int  cnt;
+int cnt;
 {
   struct mbuf *bp;
 
@@ -1609,14 +1618,14 @@ int  cnt;
 
 static void nrserv_state_upcall(pc, oldstate, newstate)
 struct circuit *pc;
-int  oldstate, newstate;
+int oldstate, newstate;
 {
   switch (newstate) {
-  case CONNECTED:
+  case NR4STCON:
     pc->user = (char *) login_open(nr_addr2str(pc), "NETROM", (void (*)()) nrserv_send_upcall, (void (*)()) close_nr, pc);
     if (!pc->user) close_nr(pc);
     break;
-  case DISCONNECTED:
+  case NR4STDISC:
     login_close((struct login_cb *) pc->user);
     del_nr(pc);
     break;
@@ -1649,11 +1658,11 @@ int n;
 
 void nrclient_send_upcall(pc, cnt)
 struct circuit *pc;
-int  cnt;
+int cnt;
 {
 
-  char  *p;
-  int  chr;
+  char *p;
+  int chr;
   struct mbuf *bp;
   struct session *s;
 
@@ -1682,10 +1691,10 @@ int  cnt;
 
 void nrclient_recv_upcall(pc, cnt)
 struct circuit *pc;
-int  cnt;
+int cnt;
 {
 
-  int  c;
+  int c;
   struct mbuf *bp;
 
   if (!(Mode == CONV_MODE && Current && Current->type == NRSESSION && Current->cb.netrom == pc)) return;
@@ -1701,15 +1710,15 @@ int  cnt;
 
 static void nrclient_state_upcall(pc, oldstate, newstate)
 struct circuit *pc;
-int  oldstate, newstate;
+int oldstate, newstate;
 {
-  int  notify;
+  int notify;
 
   notify = (Current && Current->type == NRSESSION && Current == (struct session *) pc->user);
-  if (newstate != DISCONNECTED) {
-    if (notify) printf("%s\n", ax25states[newstate]);
+  if (newstate != NR4STDISC) {
+    if (notify) printf("%s\n", Nr4states[newstate]);
   } else {
-    if (notify) printf("%s (%s)\n", ax25states[newstate], nrreasons[pc->reason]);
+    if (notify) printf("%s (%s)\n", Nr4states[newstate], Nr4reasons[pc->reason]);
     if (pc->user) freesession((struct session *) pc->user);
     del_nr(pc);
     if (notify) cmdmode();
@@ -1718,13 +1727,13 @@ int  oldstate, newstate;
 
 /*---------------------------------------------------------------------------*/
 
-static int  donconnect(argc, argv, p)
-int  argc;
-char  *argv[];
+static int donconnect(argc, argv, p)
+int argc;
+char *argv[];
 void *p;
 {
 
-  char  node[AXALEN], cuser[AXALEN];
+  char node[AXALEN], cuser[AXALEN];
   struct session *s;
 
   if (setcall(node, argv[1])) {
@@ -1813,30 +1822,17 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-static int  dobroadcast(argc, argv, p)
-int  argc;
-char  *argv[];
+static int dobroadcast(argc, argv, p)
+int argc;
+char *argv[];
 void *p;
 {
-
-  char  *hp;
-  char  tmp[AXBUF];
-  int  i;
   struct broadcast *bp;
 
   if (argc < 3) {
     puts("Interface  Path");
-    for (bp = broadcasts; bp; bp = bp->next) {
-      printf("%-9s", bp->iface->name);
-      printf("  %s", pax25(tmp, bp->iface->hwaddr));
-      printf("->%s", pax25(tmp, bp->hdr.dest));
-      if (bp->hdr.ndigis) {
-	printf(" v");
-	for (hp = bp->hdr.digis[0]; hp < bp->hdr.digis[bp->hdr.ndigis]; hp += AXALEN)
-	  printf(" %s", pax25(tmp, hp));
-      }
-      putchar('\n');
-    }
+    for (bp = broadcasts; bp; bp = bp->next)
+      printf("%-9s  %s\n", bp->iface->name, ax25hdr_to_string(&bp->hdr));
     return 0;
   }
 
@@ -1851,24 +1847,11 @@ void *p;
     free(bp);
     return 1;
   }
-  if (setcall(bp->hdr.dest, argv[2])) {
-    printf("Invalid call \"%s\"\n", argv[2]);
+  addrcp(bp->hdr.source, bp->iface->hwaddr);
+  if (ax25args_to_hdr(argc - 2, argv + 2, &bp->hdr)) {
     free(bp);
     return 1;
   }
-  for (i = 3; i < argc; i++)
-    if (strncmp("via", argv[i], strlen(argv[i]))) {
-      if (bp->hdr.ndigis >= MAXDIGIS) {
-	printf("Too many digipeaters (max %d)\n", MAXDIGIS);
-	free(bp);
-	return 1;
-      }
-      if (setcall(bp->hdr.digis[bp->hdr.ndigis++], argv[i])) {
-	printf("Invalid call \"%s\"\n", argv[i]);
-	free(bp);
-	return 1;
-      }
-    }
   bp->hdr.cmdrsp = LAPB_COMMAND;
   bp->next = broadcasts;
   broadcasts = bp;
@@ -1877,14 +1860,14 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-static int  doident(argc, argv, p)
-int  argc;
-char  *argv[];
+static int doident(argc, argv, p)
+int argc;
+char *argv[];
 void *p;
 {
 
-  char  *cp;
-  int  i;
+  char *cp;
+  int i;
 
   if (argc < 2)
     printf("Ident %-6.6s\n", mynode->ident);
@@ -1899,9 +1882,9 @@ void *p;
 
 /* Force a retransmission */
 
-static int  donkick(argc, argv, p)
-int  argc;
-char  *argv[];
+static int donkick(argc, argv, p)
+int argc;
+char *argv[];
 void *p;
 {
   struct circuit *pc;
@@ -1917,16 +1900,16 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-static int  dolinks(argc, argv, p)
-int  argc;
-char  *argv[];
+static int dolinks(argc, argv, p)
+int argc;
+char *argv[];
 void *p;
 {
 
-  char  buf1[20], buf2[20];
-  char  call[AXALEN];
-  int  quality;
-  long  timestamp;
+  char buf1[20], buf2[20];
+  char call[AXALEN];
+  int quality;
+  long timestamp;
   struct link *pl;
   struct linkinfo *pi;
   struct node *pn1, *pn2;
@@ -2001,14 +1984,14 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-static int  donodes(argc, argv, p)
-int  argc;
-char  *argv[];
+static int donodes(argc, argv, p)
+int argc;
+char *argv[];
 void *p;
 {
 
-  char  buf1[20], buf2[20];
-  char  call[AXALEN];
+  char buf1[20], buf2[20];
+  char call[AXALEN];
   struct node *pn, *pn1;
 
   if (argc >= 2) {
@@ -2036,12 +2019,12 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-static int  doparms(argc, argv, p)
-int  argc;
-char  *argv[];
+static int doparms(argc, argv, p)
+int argc;
+char *argv[];
 void *p;
 {
-  int  i, j;
+  int i, j;
 
   switch (argc) {
   case 0:
@@ -2079,9 +2062,9 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-static int  donreset(argc, argv, p)
-int  argc;
-char  *argv[];
+static int donreset(argc, argv, p)
+int argc;
+char *argv[];
 void *p;
 {
   struct circuit *pc;
@@ -2097,13 +2080,13 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-static int  donstatus(argc, argv, p)
-int  argc;
-char  *argv[];
+static int donstatus(argc, argv, p)
+int argc;
+char *argv[];
 void *p;
 {
 
-  int  i;
+  int i;
   struct circuit *pc;
   struct mbuf *bp;
 
@@ -2121,7 +2104,7 @@ void *p;
 	     pc->remote_busy ? '*' : ' ',
 	     pc->retry,
 	     pc->srtt / 1000.0,
-	     ax25states[pc->state],
+	     Nr4states[pc->state],
 	     nr_addr2str(pc));
     if (server_enabled)
       printf("                                Listen (S)     *\n");
@@ -2134,9 +2117,9 @@ void *p;
     printf("Address:      %s\n", nr_addr2str(pc));
     printf("Remote id:    %d/%d\n", pc->remoteindex, pc->remoteid);
     printf("Local id:     %d/%d\n", pc->localindex, pc->localid);
-    printf("State:        %s\n", ax25states[pc->state]);
+    printf("State:        %s\n", Nr4states[pc->state]);
     if (pc->reason)
-      printf("Reason:       %s\n", nrreasons[pc->reason]);
+      printf("Reason:       %s\n", Nr4reasons[pc->reason]);
     printf("Window:       %d\n", pc->window);
     printf("NAKsent:      %s\n", pc->naksent ? "Yes" : "No");
     printf("CHOKEsent:    %s\n", pc->chokesent ? "Yes" : "No");
@@ -2198,9 +2181,9 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-int  donetrom(argc, argv, p)
-int  argc;
-char  *argv[];
+int donetrom(argc, argv, p)
+int argc;
+char *argv[];
 void *p;
 {
 
@@ -2222,9 +2205,9 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-int  nr4start(argc, argv, p)
-int  argc;
-char  *argv[];
+int nr4start(argc, argv, p)
+int argc;
+char *argv[];
 void *p;
 {
   server_enabled = 1;
@@ -2233,9 +2216,9 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-int  nr40(argc, argv, p)
-int  argc;
-char  *argv[];
+int nr40(argc, argv, p)
+int argc;
+char *argv[];
 void *p;
 {
   server_enabled = 0;

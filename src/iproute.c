@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.21 1992/11/29 17:37:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.22 1993/01/29 06:48:26 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -26,7 +26,9 @@ struct route R_default = {              /* Default route entry */
 	RIP_INFINITY            /* Init metric to infinity */
 };
 
-static struct rt_cache Rt_cache;
+static struct rt_cache Rt_cache[HASHMOD];
+int32 Rtlookups;
+int32 Rtchits;
 
 static int q_pkt __ARGS((struct iface *iface,int32 gateway,struct ip *ip,
 	struct mbuf *bp,int ckgood));
@@ -35,10 +37,12 @@ static int q_pkt __ARGS((struct iface *iface,int32 gateway,struct ip *ip,
 void
 ipinit()
 {
+#if 0
 	int i;
 
 	for(i=0;i<256;i++)
 		Hashtab[i] = i % HASHMOD;
+#endif
 }
 
 /* Route an IP datagram. This is the "hopper" through which all IP datagrams,
@@ -383,6 +387,10 @@ int ckgood;
 		free_p(bp);
 		return -1;
 	}
+#if 1
+	iface->ipsndcnt++;
+	(*iface->send)(tbp,iface,gateway,ip->tos & 0xfc);
+#else
 	bp = pushdown(tbp,sizeof(struct qhdr));
 	iface->ipsndcnt++;
 	/* create priority field consisting of tos with 2 unused
@@ -397,50 +405,51 @@ int ckgood;
 		 * so we can avoid some time-consuming stuff
 		 */
 		memcpy(bp->data,(char *)&qhdr,sizeof(qhdr));
-#if 1
-		pullup(&bp,(char *)&qhdr,sizeof(qhdr));
-		(*iface->send)(bp,iface,qhdr.gateway,qhdr.tos);
-#else
-		iface->outq = bp;
-		Xpsignal(&iface->outq,1);
-#endif
-		return 0;
-	}
-	/* See if this packet references a "priority" TCP port number */
-	if(ip->protocol == TCP_PTCL && ip->offset == 0){
-		/* Extract a copy of the TCP header */
-		if(dup_p(&tbp,bp,sizeof(struct qhdr)+IPLEN+
-		 ip->optlen,TCPLEN+TCP_MAXOPT) >= TCPLEN){
-			ntohtcp(&tcp,&tbp);
-			for(i=0;Tcp_interact[i] != -1;i++){
-				if(tcp.source == Tcp_interact[i]
-				 || tcp.dest == Tcp_interact[i]){
-					qhdr.tos |= 1;
-					break;
-				}
-			}
-		}
-		free_p(tbp);
-	}
-	memcpy(bp->data,(char *)&qhdr,sizeof(qhdr));
-	/* Search the queue looking for the first packet with precedence
-	 * lower than our packet
-	 */
-	tlast = NULLBUF;
-	for(tbp = iface->outq;tbp != NULLBUF;tlast=tbp,tbp = tbp->anext){
-		memcpy((char *)&qtmp,tbp->data,sizeof(qtmp));
-		if(qhdr.tos > qtmp.tos){
-			break;  /* Add it just before tbp */
-		}
-	}
-	bp->anext = tbp;
-	if(tlast == NULLBUF){
-		/* First on queue */
 		iface->outq = bp;
 	} else {
-		tlast->anext = bp;
+		/* See if this packet references a "priority" TCP port number */
+		if(ip->protocol == TCP_PTCL && ip->offset == 0){
+			/* Extract a copy of the TCP header */
+			if(dup_p(&tbp,bp,sizeof(struct qhdr)+IPLEN+
+			 ip->optlen,TCPLEN+TCP_MAXOPT) >= TCPLEN){
+				ntohtcp(&tcp,&tbp);
+				for(i=0;Tcp_interact[i] != -1;i++){
+					if(tcp.source == Tcp_interact[i]
+					 || tcp.dest == Tcp_interact[i]){
+						qhdr.tos |= 1;
+						break;
+					}
+				}
+			}
+			free_p(tbp);
+		}
+		memcpy(bp->data,(char *)&qhdr,sizeof(qhdr));
+		/* Search the queue looking for the first packet with precedence
+		 * lower than our packet
+		 */
+		tlast = NULLBUF;
+		for(tbp = iface->outq;tbp != NULLBUF;tlast=tbp,tbp = tbp->anext){
+			memcpy((char *)&qtmp,tbp->data,sizeof(qtmp));
+			if(qhdr.tos > qtmp.tos){
+				break;  /* Add it just before tbp */
+			}
+		}
+		bp->anext = tbp;
+		if(tlast == NULLBUF){
+			/* First on queue */
+			iface->outq = bp;
+		} else {
+			tlast->anext = bp;
+		}
 	}
-	Xpsignal(&iface->outq,1);
+	psignal(&iface->outq,1);
+	if(iface->outlim != 0 && len_q(iface->outq) >= iface->outlim){
+		/* Output queue is at limit; return source quench to
+		 * the sender of a randomly selected packet on the queue
+		 */
+		rquench(iface,0);
+	}
+#endif
 	return 0;
 }
 int
@@ -473,7 +482,6 @@ int tos;
 	 */
 	return ip_send(Encap.addr,gateway,IP_PTCL,0,0,bp,0,0,0);
 }
-
 /* Add an entry to the IP routing table. Returns 0 on success, -1 on failure */
 struct route *
 rt_add(target,bits,gateway,iface,metric,ttl,private)
@@ -488,6 +496,7 @@ char private;           /* Inhibit advertising this entry ? */
 	struct route *rp,**hp;
 	struct route *rptmp;
 	int32 gwtmp;
+	int i;
 
 	if(iface == NULLIF)
 		return NULLROUTE;
@@ -510,7 +519,10 @@ char private;           /* Inhibit advertising this entry ? */
 	if(iface == &Encap && (gateway == 0 || ismyaddr(gateway)))
 		return NULLROUTE;
 
-	Rt_cache.route = NULLROUTE;     /* Flush cache */
+#if 0
+	for(i=0;i<HASHMOD;i++)
+		Rt_cache[i].route = NULLROUTE;  /* Flush cache */
+#endif
 
 	/* Zero bits refers to the default route */
 	if(bits == 0){
@@ -536,6 +548,9 @@ char private;           /* Inhibit advertising this entry ? */
 		if(ttl>0 && rp->iface != NULLIF && !run_timer(&rp->timer))
 			return NULLROUTE;
 	}
+	if(rp->target != target || rp->gateway != gateway || rp->iface != iface)
+		for(i=0;i<HASHMOD;i++)
+			Rt_cache[i].route = NULLROUTE;  /* Flush cache */
 	rp->target = target;
 	rp->bits = bits;
 	rp->gateway = gateway;
@@ -576,8 +591,10 @@ int32 target;
 unsigned int bits;
 {
 	register struct route *rp;
+	int i;
 
-	Rt_cache.route = NULLROUTE;     /* Flush the cache */
+	for(i=0;i<HASHMOD;i++)
+		Rt_cache[i].route = NULLROUTE;  /* Flush the cache */
 
 	if(bits == 0){
 		/* Nail the default entry */
@@ -614,7 +631,6 @@ unsigned int bits;
 	return 0;
 }
 #if 1
-char Hashtab[256];      /* Modulus lookup table */
 
 /* Compute hash function on IP address */
 int16
@@ -704,11 +720,17 @@ int32 target;
 	int bits;
 	int32 tsave;
 	int32 mask;
+	int hval;
+	struct rt_cache *rcp;
 
+	Rtlookups++;
 	/* Examine cache first */
-	if(target == Rt_cache.target && Rt_cache.route != NULLROUTE)
-		return Rt_cache.route;
-
+	hval = hash_ip(target);
+	rcp = &Rt_cache[hval];
+	if(target == rcp->target && rcp->route != NULLROUTE){
+		Rtchits++;
+		return rcp->route;
+	}
 	tsave = target;
 
 	mask = ~0;      /* All ones */
@@ -717,16 +739,16 @@ int32 target;
 		for(rp = Routes[bits][hash_ip(target)];rp != NULLROUTE;rp = rp->next){
 			if(rp->target == target){
 				/* Stash in cache and return */
-				Rt_cache.target = tsave;
-				Rt_cache.route = rp;
+				rcp->target = tsave;
+				rcp->route = rp;
 				return rp;
 			}
 		}
 		mask <<= 1;
 	}
 	if(R_default.iface != NULLIF){
-		Rt_cache.target = tsave;
-		Rt_cache.route = &R_default;
+		rcp->target = tsave;
+		rcp->route = &R_default;
 		return &R_default;
 	} else
 		return NULLROUTE;

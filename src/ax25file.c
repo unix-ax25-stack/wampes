@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.8 1992/08/19 13:20:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.9 1993/01/29 06:48:16 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -31,8 +31,6 @@ struct axroute_saverecord_1 {
 static char axroute_filename[] = "/tcp/axroute_data";
 static char axroute_tmpfilename[] = "/tcp/axroute_tmp";
 
-static int valid_call __ARGS((char *call));
-
 /*---------------------------------------------------------------------------*/
 
 void axroute_savefile()
@@ -52,9 +50,9 @@ void axroute_savefile()
   for (i = 0; i < AXROUTESIZE; i++)
     for (lp = 0, rp = Ax_routes[i]; rp; )
       if (rp->perm || rp->time + AXROUTE_HOLDTIME >= secclock()) {
-	addrcp(buf.call, rp->call);
+	addrcp(buf.call, rp->target);
 	if (rp->digi)
-	  addrcp(buf.digi, rp->digi->call);
+	  addrcp(buf.digi, rp->digi->target);
 	else
 	  *buf.digi = '\0';
 	buf.time = rp->time;
@@ -80,19 +78,6 @@ void axroute_savefile()
 
 /*---------------------------------------------------------------------------*/
 
-static int valid_call(call)
-char *call;
-{
-  char (*mpp)[AXALEN];
-
-  if (!*call || ismyax25addr(call)) return 0;
-  for (mpp = Ax25multi; (*mpp)[0]; mpp++)
-    if (addreq(call, *mpp)) return 0;
-  return 1;
-}
-
-/*---------------------------------------------------------------------------*/
-
 void axroute_loadfile()
 {
 
@@ -105,6 +90,9 @@ void axroute_loadfile()
   if (Debug || !(fp = fopen(axroute_filename, "r"))) return;
 
   switch (version = getc(fp)) {
+
+  case EOF:
+    break;
 
   default:
     {
@@ -119,9 +107,9 @@ void axroute_loadfile()
 	if (ifp->output == ax_output) ifptable[ifp->dev] = ifp;
       while (fread((char *) & buf, sizeof(buf), 1, fp)) {
 	if (buf.time + AXROUTE_HOLDTIME < secclock()) continue;
-	if (!valid_call(buf.call)) continue;
+	if (!valid_remote_call(buf.call)) continue;
 	rp = ax_routeptr(buf.call, 1);
-	if (valid_call(buf.digi)) rp->digi = ax_routeptr(buf.digi, 1);
+	if (valid_remote_call(buf.digi)) rp->digi = ax_routeptr(buf.digi, 1);
 	if (buf.dev >= 0 && buf.dev < 128) rp->ifp = ifptable[buf.dev];
 	rp->time = buf.time;
       }
@@ -150,9 +138,9 @@ void axroute_loadfile()
 	else
 	  ifp = 0;
 	if (buf.time + AXROUTE_HOLDTIME < secclock()) continue;
-	if (!valid_call(buf.call)) continue;
+	if (!valid_remote_call(buf.call)) continue;
 	rp = ax_routeptr(buf.call, 1);
-	if (valid_call(buf.digi)) rp->digi = ax_routeptr(buf.digi, 1);
+	if (valid_remote_call(buf.digi)) rp->digi = ax_routeptr(buf.digi, 1);
 	rp->ifp = ifp;
 	rp->time = buf.time;
       }

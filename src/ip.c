@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.7 1992/06/01 10:34:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.8 1993/01/29 06:48:24 deyke Exp $ */
 
 /* Upper half of IP, consisting of send/receive primitives, including
  * fragment reassembly, for higher level protocols.
@@ -22,6 +22,7 @@ static void freefrag __ARGS((struct frag *fp));
 static struct reasm *lookup_reasm __ARGS((struct ip *ip));
 static struct reasm *creat_reasm __ARGS((struct ip *ip));
 static struct frag *newfrag __ARGS((int offset,int last,struct mbuf *bp));
+void ttldec __ARGS((struct iface *ifp));
 
 struct mib_entry Ip_mib[20] = {
 	"",                     0,
@@ -491,29 +492,3 @@ struct frag *fp;
 	free((char *)fp);
 }
 
-/* In red alert mode, blow away the whole reassembly queue. Otherwise crunch
- * each fragment on each reassembly descriptor
- */
-void
-ip_garbage(red)
-int red;
-{
-	struct reasm *rp,*rp1;
-	struct frag *fp;
-	struct raw_ip *rwp;
-
-	/* Run through the reassembly queue */
-	for(rp = Reasmq;rp != NULLREASM;rp = rp1){
-		rp1 = rp->next;
-		if(red){
-			free_reasm(rp);
-		} else {
-			for(fp = rp->fraglist;fp != NULLFRAG;fp = fp->next){
-				mbuf_crunch(&fp->buf);
-			}
-		}
-	}
-	/* Run through the raw IP queue */
-	for(rwp = Raw_ip;rwp != NULLRIP;rwp = rwp->next)
-		mbuf_crunch(&rwp->rcvq);
-}

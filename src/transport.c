@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.10 1991/12/04 18:26:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.11 1993/01/29 06:48:43 deyke Exp $ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -24,6 +24,7 @@ static void transport_send_upcall_tcp __ARGS((struct tcb *cp, int cnt));
 static void transport_state_upcall_ax25 __ARGS((struct ax25_cb *cp, int oldstate, int newstate));
 static void transport_state_upcall_netrom __ARGS((struct circuit *cp, int oldstate, int newstate));
 static void transport_state_upcall_tcp __ARGS((struct tcb *cp, int oldstate, int newstate));
+static int recv_ax __ARGS((void *cp, struct mbuf **bpp, int cnt));
 static struct ax25_cb *transport_open_ax25 __ARGS((char *address, struct transport_cb *tp));
 static struct circuit *transport_open_netrom __ARGS((char *address, struct transport_cb *tp));
 static struct tcb *transport_open_tcp __ARGS((char *address, struct transport_cb *tp));
@@ -143,7 +144,7 @@ struct ax25_cb *cp;
 int  oldstate, newstate;
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
-  if (tp->s_upcall && newstate == DISCONNECTED) (*tp->s_upcall)(tp);
+  if (tp->s_upcall && newstate == LAPB_DISCONNECTED) (*tp->s_upcall)(tp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -153,7 +154,7 @@ struct circuit *cp;
 int  oldstate, newstate;
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
-  if (tp->s_upcall && newstate == DISCONNECTED) (*tp->s_upcall)(tp);
+  if (tp->s_upcall && newstate == NR4STDISC) (*tp->s_upcall)(tp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -175,38 +176,39 @@ int oldstate, newstate;
 
 /*---------------------------------------------------------------------------*/
 
+static int recv_ax(cp, bpp, cnt)
+void *cp;
+struct mbuf **bpp;
+int cnt;
+{
+  *bpp = recv_ax25(cp, cnt);
+  return len_p(*bpp);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static struct ax25_cb *transport_open_ax25(address, tp)
-char  *address;
+char *address;
 struct transport_cb *tp;
 {
 
-  char  *pathptr;
-  char  *strptr;
-  char  path[10*AXALEN];
-  char  tmp[1024];
+  char *argv[128];
+  char *delim = " \t\r\n";
+  char *s;
+  char tmp[1024];
+  int argc;
+  struct ax25 hdr;
 
-  pathptr = path;
-  strptr = strtok(strcpy(tmp, address), " \t\r\n");
-  while (strptr) {
-    if (strncmp("via", strptr, strlen(strptr))) {
-      if (pathptr > path + 10 * AXALEN - 1) return 0;
-      if (setcall(pathptr, strptr)) return 0;
-      if (pathptr == path) {
-	pathptr += AXALEN;
-	addrcp(pathptr, Mycall);
-      }
-      pathptr += AXALEN;
-    }
-    strptr = strtok(NULLCHAR, " \t\r\n");
-  }
-  if (pathptr < path + 2 * AXALEN) return 0;
-  pathptr[-1] |= E;
-  tp->recv = (int (*)()) recv_ax;
-  tp->send = (int (*)()) send_ax;
-  tp->send_space = (int (*)()) space_ax;
-  tp->close = (int (*)()) close_ax;
-  tp->del = (int (*)()) del_ax;
-  return open_ax(path, AX_ACTIVE, transport_recv_upcall_ax25, transport_send_upcall_ax25, transport_state_upcall_ax25, (char *) tp);
+  argc = 0;
+  for (s = strtok(strcpy(tmp, address), delim); s; s = strtok(NULLCHAR, delim))
+    argv[argc++] = s;
+  if (ax25args_to_hdr(argc, argv, &hdr)) return 0;
+  tp->recv = recv_ax;
+  tp->send = (int (*)()) send_ax25;
+  tp->send_space = (int (*)()) space_ax25;
+  tp->close = (int (*)()) disc_ax25;
+  tp->del = (int (*)()) del_ax25;
+  return open_ax25(&hdr, AX_ACTIVE, transport_recv_upcall_ax25, transport_send_upcall_ax25, transport_state_upcall_ax25, (char *) tp);
 }
 
 /*---------------------------------------------------------------------------*/

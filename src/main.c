@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.33 1992/09/30 15:54:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.34 1993/01/29 06:48:31 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -47,6 +47,7 @@
 #include "main.h"
 #include "remote.h"
 #include "trace.h"
+/* #include "display.h" */
 #include "hpux.h"
 #include "netuser.h"
 #include "remote_net.h"
@@ -57,16 +58,19 @@ extern struct cmds Cmds[],Startcmds[],Stopcmds[],Attab[];
 char Escape = 0x1d;             /* default escape character is ^] */
 #endif
 
-int Debug;
-int Mode;
 char Badhost[] = "Unknown host %s\n";
 char *Hostname;
-char Prompt[] = "%s> ";
 char Nospace[] = "No space!!\n";        /* Generic malloc fail message */
 struct proc *Cmdpp;
+char *Cmdline;                          /* Copy of most recent command line */
+
+int Debug;
+int Mode;
+int16 Lport = 1024;
+
+char Prompt[] = "%s> ";
 static FILE *Logfp;
 time_t StartTime;                       /* time that NOS was started */
-int16 Lport = 1024;
 static int Verbose;
 
 static void process_char __ARGS((int c));
@@ -76,7 +80,6 @@ main(argc,argv)
 int argc;
 char *argv[];
 {
-	char *intmp;
 	FILE *fp;
 	struct daemon *tp;
 	int c;
@@ -103,17 +106,15 @@ char *argv[];
 
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
 	printf("\n================ %s ================\n", Version);
-	printf("(c) Copyright 1990-1992 by Dieter Deyke, DK5SG / N0PRA\n");
+	printf("(c) Copyright 1990-1993 by Dieter Deyke, DK5SG / N0PRA\n");
 	printf("(c) Copyright 1992 by Phil Karn, KA9Q\n");
 	printf("\n");
-
 	/* Start background Daemons */
 	for(tp=Daemons;;tp++){
 		if(tp->name == NULLCHAR)
 			break;
 		newproc(tp->name,tp->stksize,tp->fp,0,NULLCHAR,NULL,0);
 	}
-
 	if(optind < argc){
 		/* Read startup file named on command line */
 		if((fp = fopen(argv[optind],READ_TEXT)) == NULLFILE){
@@ -126,13 +127,15 @@ char *argv[];
 	}
 	if(fp != NULLFILE){
 		while(fgets(cmdbuf,sizeof(cmdbuf),fp) != NULLCHAR){
-			intmp = strdup(cmdbuf);
+			rip(cmdbuf);
+			if(Cmdline != NULLCHAR)
+				free(Cmdline);
+			Cmdline = strdup(cmdbuf);
 			if(Verbose)
-				printf("%s",intmp);
+				printf("%s\n",Cmdline);
 			if(cmdparse(Cmds,cmdbuf,NULL) != 0){
-				printf("input line: %s",intmp);
+				printf("input line: %s\n",Cmdline);
 			}
-			free(intmp);
 		}
 		fclose(fp);
 	}
@@ -433,42 +436,6 @@ int32 arg1,arg2,arg3,arg4;
 	if((fd = dup(fd)) != -1)
 		close(fd);
 #endif
-}
-
-/* Display or set IP interface control flags */
-int
-domode(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
-{
-	register struct iface *ifp;
-
-	if((ifp = if_lookup(argv[1])) == NULLIF){
-		printf("Interface \"%s\" unknown\n",argv[1]);
-		return 1;
-	}
-	if(argc < 3){
-		printf("%s: %s\n",ifp->name,
-		 (ifp->flags & CONNECT_MODE) ? "VC mode" : "Datagram mode");
-		return 0;
-	}
-	switch(argv[2][0]){
-	case 'v':
-	case 'c':
-	case 'V':
-	case 'C':
-		ifp->flags |= CONNECT_MODE;
-		break;
-	case 'd':
-	case 'D':
-		ifp->flags &= ~CONNECT_MODE;
-		break;
-	default:
-		printf("Usage: %s [vc | datagram]\n",argv[0]);
-		return 1;
-	}
-	return 0;
 }
 
 #ifndef MSDOS

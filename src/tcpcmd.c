@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.9 1992/11/18 18:28:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.10 1993/01/29 06:48:39 deyke Exp $ */
 
 /* TCP control and status routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -12,6 +12,8 @@
 #include "tcp.h"
 #include "cmdparse.h"
 #include "commands.h"
+#include "socket.h"
+#include "session.h"
 
 static int doirtt __ARGS((int argc,char *argv[],void *p));
 static int domss __ARGS((int argc,char *argv[],void *p));
@@ -23,6 +25,8 @@ static int dotcptr __ARGS((int argc,char *argv[],void *p));
 static int dowindow __ARGS((int argc,char *argv[],void *p));
 static int dosyndata __ARGS((int argc,char *argv[],void *p));
 static int tstat __ARGS((void));
+static int keychar __ARGS((int c));
+static void tcprepstat __ARGS((int interval,void *p1,void *p2));
 
 /* TCP subcommand table */
 static struct cmds Tcpcmds[] = {
@@ -179,13 +183,15 @@ void *p;
 
 	if(argc < 2){
 		tstat();
-	} else {
-		tcb = (struct tcb *)ltop(htol(argv[1]));
-		if(tcpval(tcb))
-			st_tcp(tcb);
-		else
-			printf(Notval);
+		return 0;
 	}
+
+	tcb = (struct tcb *)ltop(htol(argv[1]));
+	if(!tcpval(tcb)){
+		printf(Notval);
+		return 1;
+	}
+	st_tcp(tcb);
 	return 0;
 }
 
@@ -269,33 +275,42 @@ struct tcb *tcb;
 		recvd -= 2;
 		break;
 	}
-	printf("Local: %s",pinet_tcp(&tcb->conn.local));
-	printf(" Remote: %s",pinet_tcp(&tcb->conn.remote));
+	printf("Local: %s",pinet(&tcb->conn.local));
+	printf(" Remote: %s",pinet(&tcb->conn.remote));
 	printf(" State: %s\n",Tcpstates[tcb->state]);
-	printf("      Init seq    Unack     Next Resent CWind Thrsh  Wind  MSS Queue      Total\n");
-	printf("Send:");
-	printf("%9lx",tcb->iss);
-	printf("%9lx",tcb->snd.una);
-	printf("%9lx",tcb->snd.nxt);
-	printf("%7lu",tcb->resent);
-	printf("%6u",tcb->cwind);
-	printf("%6u",tcb->ssthresh);
-	printf("%6u",tcb->snd.wnd);
-	printf("%5u",tcb->mss);
-	printf("%6u",tcb->sndcnt);
-	printf("%11lu\n",sent);
+	printf("         Unack     Next Resent CWind Thrsh  Wind  MSS Queue  Thruput      Total\n");
+	printf("Send: %08lx %08lx%7lu%6lu%6lu%6lu%5lu%6lu%9lu%11lu\n",
+	 tcb->snd.una,tcb->snd.nxt,tcb->resent,tcb->cwind,tcb->ssthresh,
+	 tcb->snd.wnd,tcb->mss,tcb->sndcnt,tcb->txbw,sent);
 
-	printf("Recv:");
-	printf("%9lx",tcb->irs);
-	printf("         ");
-	printf("%9lx",tcb->rcv.nxt);
-	printf("%7lu",tcb->rerecv);
-	printf("      ");
-	printf("      ");
-	printf("%6u",tcb->rcv.wnd);
-	printf("     ");
-	printf("%6u",tcb->rcvcnt);
-	printf("%11lu\n",recvd);
+	printf("Recv:          %08lx%7lu            %6lu     %6lu%9lu%11lu\n",
+	 tcb->rcv.nxt,tcb->rerecv,tcb->rcv.wnd,tcb->rcvcnt,tcb->rxbw,recvd);
+
+	printf("Dup acks   Backoff   Timeouts   Source Quench   Unreachables   Power\n");
+	printf("%8u%10u%11lu%16lu%15lu",tcb->dupacks,tcb->backoff,tcb->timeouts,
+	 tcb->quench,tcb->unreach);
+	if(tcb->srtt != 0)
+		printf("%8lu",1000*tcb->txbw/tcb->srtt);
+	else
+		printf("     INF");
+	if(tcb->flags.retran)
+		printf(" Retry");
+	printf("\n");
+
+	printf("Timer        Count  Duration  Last RTT      SRTT      mdev\n");
+	switch(tcb->timer.state){
+	case TIMER_STOP:
+		printf("stopped");
+		break;
+	case TIMER_RUN:
+		printf("running");
+		break;
+	case TIMER_EXPIRE:
+		printf("expired");
+		break;
+	}
+	printf(" %10lu%10lu%10lu%10lu%10lu\n",(long)read_timer(&tcb->timer),
+	 (long)dur_timer(&tcb->timer),tcb->rtt,tcb->srtt,tcb->mdev);
 
 	if(tcb->reseq != (struct reseq *)NULL){
 		register struct reseq *rp;
@@ -307,21 +322,5 @@ struct tcb *tcb;
 				return;
 		}
 	}
-	if(tcb->backoff > 0)
-		printf("Backoff %u ",tcb->backoff);
-	if(tcb->flags.retran)
-		printf("Retrying ");
-	switch(tcb->timer.state){
-	case TIMER_STOP:
-		printf("Timer stopped ");
-		break;
-	case TIMER_RUN:
-		printf("Timer running (%ld/%ld ms) ",
-		 (long)read_timer(&tcb->timer),
-		 (long)dur_timer(&tcb->timer));
-		break;
-	case TIMER_EXPIRE:
-		printf("Timer expired ");
-	}
-	printf("SRTT %ld ms Mean dev %ld ms\n",tcb->srtt,tcb->mdev);
 }
+

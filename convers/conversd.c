@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.25 1992/09/25 20:06:49 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.26 1993/01/29 06:50:16 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -758,7 +758,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.25 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.26 $  Type /HELP for help.\n", myhostname);
   appendstring(cp, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
@@ -1088,10 +1088,6 @@ char **argv;
     0, -1
   };
 
-  static const struct timeval select_timeout = {
-    60, 0
-  };
-
   FD_SET_TYPE actread;
   FD_SET_TYPE actwrite;
   char *sp;
@@ -1104,6 +1100,7 @@ char **argv;
   struct connection *cp;
   struct mbuf *bp;
   struct sockaddr *addr;
+  struct timeval timeout;
 
   umask(022);
   for (i = 0; i < FD_SETSIZE; i++) close(i);
@@ -1158,7 +1155,9 @@ char **argv;
 
     actread = chkread;
     actwrite = chkwrite;
-    if (select(maxfd + 1, (int *) &actread, (int *) &actwrite, (int *) 0, &select_timeout) <= 0) {
+    timeout.tv_sec = 60;
+    timeout.tv_usec = 0;
+    if (select(maxfd + 1, (int *) &actread, (int *) &actwrite, (int *) 0, &timeout) <= 0) {
       FD_ZERO(&actread);
       FD_ZERO(&actwrite);
     }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.7 1992/05/28 13:50:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.8 1993/01/29 06:48:40 deyke Exp $ */
 
 /* TCP output segment processing
  * Copyright 1991 Phil Karn, KA9Q
@@ -36,8 +36,8 @@ register struct tcb *tcb;
 	int16 ssize;            /* Size of current segment being sent,
 				 * including SYN and FIN flags */
 	int16 dsize;            /* Size of segment less SYN and FIN */
-	int16 usable;           /* Usable window */
-	int16 sent;             /* Sequence count (incl SYN/FIN) already
+	int32 usable;           /* Usable window */
+	int32 sent;             /* Sequence count (incl SYN/FIN) already
 				 * in the pipe but not yet acked */
 	int32 rto;              /* Retransmit timeout setting */
 
@@ -52,13 +52,6 @@ register struct tcb *tcb;
 	for(;;){
 		/* Compute data already in flight */
 		sent = tcb->snd.ptr - tcb->snd.una;
-
-		/* If transmitter has been idle for more than a RTT,
-		 * take the congestion window back down to one packet.
-		 */
-		if(!run_timer(&tcb->timer)
-		 && (msclock() - tcb->lastactive) > tcb->srtt)
-			tcb->cwind = tcb->mss;
 
 		/* Compute usable send window as minimum of offered
 		 * and congestion windows, minus data already in flight.
@@ -145,11 +138,13 @@ register struct tcb *tcb;
 
 		/* Now try to extract some data from the send queue. Since
 		 * SYN and FIN occupy sequence space and are reflected in
-		 * sndcnt but don't actually sit in the send queue, dup_p
+		 * sndcnt but don't actually sit in the send queue, extract
 		 * will return one less than dsize if a FIN needs to be sent.
 		 */
+		dbp = ambufw(TCP_HDR_PAD+dsize);
+		dbp->data += TCP_HDR_PAD;       /* Allow room for other hdrs */
 		if(dsize != 0){
-			int16 offset;
+			int32 offset;
 
 			/* SYN doesn't actually take up space on the sndq,
 			 * so take it out of the sent count
@@ -158,24 +153,15 @@ register struct tcb *tcb;
 			if(!tcb->flags.synack && sent != 0)
 				offset--;
 
-			if(dup_p(&dbp,tcb->sndq,offset,dsize) != dsize){
+			dbp->cnt = extract(tcb->sndq,(int16)offset,dbp->data,dsize);
+			if(dbp->cnt != dsize){
 				/* We ran past the end of the send queue;
 				 * send a FIN
 				 */
 				seg.flags.fin = 1;
 				dsize--;
 			}
-		} else {
-			dbp = NULLBUF;
 		}
-		/* Allocate enough space for headers to avoid lots of
-		 * little calls to malloc by pushdown()
-		 */
-		hbp = ambufw(TCP_HDR_PAD);
-		hbp->data += TCP_HDR_PAD;
-		hbp->next = dbp;
-		dbp = hbp;
-
 		/* If the entire send queue will now be in the pipe, set the
 		 * push flag
 		 */
@@ -223,6 +209,7 @@ register struct tcb *tcb;
 				tcb->flags.rtt_run = 1;
 				tcb->rtt_time = msclock();
 				tcb->rttseq = tcb->snd.ptr;
+				tcb->rttack = tcb->snd.una;
 			}
 		}
 		if(tcb->flags.retran)

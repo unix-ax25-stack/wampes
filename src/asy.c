@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.8 1992/06/01 10:34:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.9 1993/01/29 06:48:15 deyke Exp $ */
 
 /* Generic serial line interface routines
  * Copyright 1992 Phil Karn, KA9Q
@@ -27,7 +27,10 @@ static int asy_detach __ARGS((struct iface *ifp));
  * argv[2]: vector, e.g., "4"
  * argv[3]: mode, may be:
  *              "slip" (point-to-point SLIP)
- *              "ax25" (AX.25 frame format in SLIP for raw TNC)
+ *              "kissui" (AX.25 UI frame format in SLIP for raw TNC)
+ *              "ax25ui" (same as kissui)
+ *              "kissi" (AX.25 I frame format in SLIP for raw TNC)
+ *              "ax25i" (same as kissi)
  *              "nrs" (NET/ROM format serial protocol)
  *              "ppp" (Point-to-Point Protocol, RFC1171, RFC1172)
  * argv[4]: interface label, e.g., "sl0"
@@ -51,11 +54,14 @@ void *p;
 	int trigchar = -1;
 	int cts,rlsd;
 	struct asymode *ap;
-	int vj;
 	char *cp;
 
 	if(if_lookup(argv[4]) != NULLIF){
 		printf("Interface %s already exists\n",argv[4]);
+		return -1;
+	}
+	if(setencap(NULLIF,argv[3]) == -1){
+		printf("Unknown encapsulation %s\n",argv[3]);
 		return -1;
 	}
 	/* Find unused asy control block */
@@ -75,16 +81,13 @@ void *p;
 	ifp->mtu = atoi(argv[6]);
 	ifp->dev = dev;
 	ifp->stop = asy_detach;
-	if(argc > 8 && strchr(argv[8],'v') != NULLCHAR)
-		vj = 1;
-	else
-		vj = 0;
+	setencap(ifp,argv[3]);
 
 	/* Look for the interface mode in the table */
 	for(ap = Asymode;ap->name != NULLCHAR;ap++){
 		if(stricmp(argv[3],ap->name) == 0){
 			trigchar = uchar(ap->trigchar);
-			if((*ap->init)(ifp,vj) != 0){
+			if((*ap->init)(ifp) != 0){
 				printf("%s: mode %s Init failed\n",
 				 ifp->name,argv[3]);
 				if_detach(ifp);
@@ -111,7 +114,7 @@ void *p;
 			rlsd = 1;
 	}
 	asy_init(dev,ifp,argv[1],argv[2],(int16)atol(argv[5]),
-		trigchar,(int16)atol(argv[7]),cts,rlsd);
+		trigchar,atol(argv[7]),cts,rlsd);
 #if 0
 	cp = if_name(ifp," tx");
 	ifp->txproc = newproc(cp,768,if_tx,0,ifp,NULL,0);

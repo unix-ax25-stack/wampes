@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.9 1992/05/14 13:20:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.10 1993/01/29 06:48:25 deyke Exp $ */
 
 /* IP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -319,6 +319,9 @@ void *p;
 	}
 	if((i % 2) == 0)
 		printf("\n");
+	printf("Routing lookups: %lu, cache hits %lu (%lu%%)\n",
+	 Rtlookups,Rtchits,
+	 Rtlookups != 0 ? (Rtchits*100 + Rtlookups/2)/Rtlookups: 0);
 
 	if(Reasmq != NULLREASM)
 		printf("Reassembly fragments:\n");

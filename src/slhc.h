@@ -1,11 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.h,v 1.5 1992/07/24 20:00:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.h,v 1.6 1993/01/29 06:48:38 deyke Exp $ */
 
 #ifndef _SLHC_H
 #define _SLHC_H
 /*
  * Definitions for tcp compression routines.
  *
- * sHeader: c:/internet/src/rcs/slhc.h%v 1.2 1991/08/06 17:22:38 karn Exp $
+ * sHeader: slhc.h,v 1.2 91/08/06 17:22:38 karn Exp $
  *
  * Copyright (c) 1989 Regents of the University of California.
  * All rights reserved.

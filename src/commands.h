@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.17 1992/11/12 15:20:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.18 1993/01/29 06:48:18 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -112,6 +112,7 @@ int donrstat __ARGS((int argc,char *argv[],void *p));
 int doescape __ARGS((int argc,char *argv[],void *p));
 int doremote __ARGS((int argc,char *argv[],void *p));
 int doboot __ARGS((int argc,char *argv[],void *p));
+int dorepeat __ARGS((int argc,char *argv[],void *p));
 
 /* In mailbox.c: */
 int dombox __ARGS((int argc,char *argv[],void *p));
@@ -174,6 +175,7 @@ int doclose __ARGS((int argc,char *argv[],void *p));
 int doreset __ARGS((int argc,char *argv[],void *p));
 int dokick __ARGS((int argc,char *argv[],void *p));
 int dorecord __ARGS((int argc,char *argv[],void *p));
+int dosfsize __ARGS((int argc,char *argv[],void *p));
 int doupload __ARGS((int argc,char *argv[],void *p));
 
 /* In smisc.c: */
@@ -183,6 +185,10 @@ int echo1 __ARGS((int argc,char *argv[],void *p));
 int echo0 __ARGS((int argc,char *argv[],void *p));
 int rem1 __ARGS((int argc,char *argv[],void *p));
 int rem0 __ARGS((int argc,char *argv[],void *p));
+int term1 __ARGS((int argc,char *argv[],void *p));
+int term0 __ARGS((int argc,char *argv[],void *p));
+int bsr1 __ARGS((int argc,char *argv[],void *p));
+int bsr0 __ARGS((int argc,char *argv[],void *p));
 
 /* In smtpcli.c: */
 int dosmtp __ARGS((int argc,char *argv[],void *p));

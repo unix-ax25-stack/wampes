@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.14 1992/09/25 20:07:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.15 1993/01/29 06:48:36 deyke Exp $ */
 
 #include "global.h"
 
@@ -262,7 +262,7 @@ void remote_net_initialize()
 {
 
   static char *socketnames[] = {
-#if defined(__hpux) || defined(sun) || defined(LINUX)
+#if defined(__hpux) || defined(sun) || defined(LINUX) || defined(ULTRIX_RISC)
     "unix:/tcp/.sockets/netcmd",
 #else
     "*:4718",

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.h,v 1.4 1991/06/18 17:26:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.h,v 1.5 1993/01/29 06:48:21 deyke Exp $ */
 
 #ifndef _FILES_H
 #define _FILES_H
@@ -42,5 +42,6 @@ char *rootdircat __ARGS((char *filename));
 int userlogin __ARGS((char *name,char *pass,char **path,int len,int *pwdignore));
 char *userlookup __ARGS((char *username, char **password, char **directory,
 			int *permission, int32 *ip_address));
+void usercvt __ARGS((void));
 
 #endif  /* _FILES_H */

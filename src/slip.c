@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.11 1992/08/24 10:09:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.12 1993/01/29 06:48:38 deyke Exp $ */
 
 /* SLIP (Serial Line IP) encapsulation and control routines.
  * Copyright 1991 Phil Karn
@@ -27,9 +27,8 @@ static struct mbuf *slip_encode __ARGS((struct mbuf *bp));
 struct slip Slip[SLIP_MAX];
 
 int
-slip_init(ifp,vj)
+slip_init(ifp)
 struct iface *ifp;
-int vj;
 {
 	int xdev;
 	struct slip *sp;
@@ -47,20 +46,15 @@ int vj;
 	ifp->ioctl = asy_ioctl;
 	ifp->raw = slip_raw;
 	ifp->show = slip_status;
-	ifp->flags = 0;
 	ifp->xdev = xdev;
 
 	sp->iface = ifp;
 	sp->send = asy_send;
 	sp->get = get_asy;
 	sp->type = CL_SERIAL_LINE;
-	if(vj){
-		sp->escaped |= SLIP_VJCOMPR;
+	if(ifp->send == vjslip_send){
 		sp->slcomp = slhc_init(16,16);
-		setencap(ifp,"VJSLIP");
-	} else
-		setencap(ifp,"SLIP");
-
+	}
 #if 0
 	ifp->rxproc = newproc( ifn = if_name( ifp, " rx" ),
 		256,slip_rx,xdev,NULL,NULL,0);
@@ -84,9 +78,23 @@ struct iface *ifp;
 	sp->iface = NULLIF;
 	return 0;
 }
-/* Send routine for point-to-point slip */
+/* Send routine for point-to-point slip, no VJ header compression */
 int
 slip_send(bp,iface,gateway,tos)
+struct mbuf *bp;        /* Buffer to send */
+struct iface *iface;    /* Pointer to interface control block */
+int32 gateway;          /* Ignored (SLIP is point-to-point) */
+int tos;
+{
+	if(iface == NULLIF){
+		free_p(bp);
+		return -1;
+	}
+	return (*iface->raw)(iface,bp);
+}
+/* Send routine for point-to-point slip, with VJ header compression */
+int
+vjslip_send(bp,iface,gateway,tos)
 struct mbuf *bp;        /* Buffer to send */
 struct iface *iface;    /* Pointer to interface control block */
 int32 gateway;          /* Ignored (SLIP is point-to-point) */
@@ -100,11 +108,9 @@ int tos;
 		return -1;
 	}
 	sp = &Slip[iface->xdev];
-	if (sp->escaped & SLIP_VJCOMPR) {
-		/* Attempt IP/ICP header compression */
-		type = slhc_compress(sp->slcomp,&bp,TRUE);
-		bp->data[0] |= type;
-	}
+	/* Attempt IP/ICP header compression */
+	type = slhc_compress(sp->slcomp,&bp,TRUE);
+	bp->data[0] |= type;
 	return (*iface->raw)(iface,bp);
 }
 /* Send a raw slip frame */
@@ -183,6 +189,12 @@ char c;         /* Incoming character */
 	case FR_END:
 		bp = sp->rbp_head;
 		sp->rbp_head = NULLBUF;
+		if(sp->escaped){
+			/* Treat this as an abort - discard frame */
+			free_p(bp);
+			bp = NULLBUF;
+		}
+		sp->escaped &= ~SLIP_FLAG;
 		return bp;      /* Will be NULLBUF if empty frame */
 	case FR_ESC:
 		sp->escaped |= SLIP_FLAG;
@@ -254,22 +266,22 @@ struct iface *iface;
 		if (sp->iface->trace & IF_TRACE_RAW)
 			raw_dump(sp->iface,IF_TRACE_IN,bp);
 
-		if (sp->escaped & SLIP_VJCOMPR) {
-			if ((c = bp->data[0]) & SL_TYPE_COMPRESSED_TCP) {
-				if ( slhc_uncompress(sp->slcomp, &bp) <= 0 ) {
-					free_p(bp);
-					sp->errors++;
-					continue;
-				}
-			} else if (c >= SL_TYPE_UNCOMPRESSED_TCP) {
-				bp->data[0] &= 0x4f;
-				if ( slhc_remember(sp->slcomp, &bp) <= 0 ) {
-					free_p(bp);
-					sp->errors++;
-					continue;
-				}
+	if(sp->slcomp){
+		if ((c = bp->data[0]) & SL_TYPE_COMPRESSED_TCP) {
+			if ( slhc_uncompress(sp->slcomp, &bp) <= 0 ) {
+				free_p(bp);
+				sp->errors++;
+				continue;
+			}
+		} else if (c >= SL_TYPE_UNCOMPRESSED_TCP) {
+			bp->data[0] &= 0x4f;
+			if ( slhc_remember(sp->slcomp, &bp) <= 0 ) {
+				free_p(bp);
+				sp->errors++;
+				continue;
 			}
 		}
+	}
 		net_route( sp->iface, bp);
 		/* Especially on slow machines, serial I/O can be quite
 		 * compute intensive, so release the machine before we

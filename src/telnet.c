@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.13 1992/08/02 07:34:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.14 1993/01/29 06:48:41 deyke Exp $ */
 
 /* Internet Telnet client
  * Copyright 1991 Phil Karn, KA9Q
@@ -380,7 +380,6 @@ struct telnet *tn;
 int opt;
 {
 	int ack;
-	void answer();
 
 #ifdef  DEBUG
 	printf("recv: will ");
@@ -417,8 +416,6 @@ wontopt(tn,opt)
 struct telnet *tn;
 int opt;
 {
-	void answer();
-
 #ifdef  DEBUG
 	printf("recv: wont ");
 	if(uchar(opt) <= NOPTIONS)
@@ -440,7 +437,6 @@ doopt(tn,opt)
 struct telnet *tn;
 int opt;
 {
-	void answer();
 	int ack;
 
 #ifdef  DEBUG
@@ -468,8 +464,6 @@ dontopt(tn,opt)
 struct telnet *tn;
 int opt;
 {
-	void answer();
-
 #ifdef  DEBUG
 	printf("recv: dont ");
 	if(uchar(opt) <= NOPTIONS)
