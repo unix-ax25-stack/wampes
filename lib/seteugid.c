@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/seteugid.c,v 1.3 1994/04/11 11:09:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/seteugid.c,v 1.4 1994/04/12 09:09:18 deyke Exp $ */
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -11,8 +11,8 @@
 
 void seteugid(int uid, int gid)
 {
+  setuid(0);
   if (uid) {
-    setuid(0);
     setgid(gid);
 #if defined __hpux
     setresuid(uid, uid, 0);
@@ -24,7 +24,6 @@ void seteugid(int uid, int gid)
     setreuid(0, uid);
 #endif
   } else {
-    setuid(0);
     setuid(0);
     setgid(gid);
   }
