@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.66 1993/11/06 17:00:08 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.67 1993/11/28 07:42:57 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -2492,8 +2492,13 @@ static void recv_from_mail_or_news(void)
       n -= strlen(line);
       strtrim(line);
     }
+    while (*mail->to && strncmp(mail->to, "ampr.bbs.", 9))
+      if (cp = strchr(mail->to, ','))
+	strcpy(mail->to, cp + 1);
+      else
+	*mail->to = 0;
+    if (*mail->to) strcpy(mail->to, mail->to + 9);
     if (*mail->to && from_priority && state == 2) {
-      if (!strncmp(mail->to, "ampr.bbs.", 9)) strcpy(mail->to, mail->to + 9);
       if (cp = strchr(mail->to, ',')) *cp = 0;
       if (cp = strrchr(mail->to, '.')) strcpy(mail->to, cp + 1);
       if (cp = strchr(distr, ',')) *cp = 0;
@@ -2510,7 +2515,8 @@ static void recv_from_mail_or_news(void)
 	}
       }
       route_mail(mail);
-    }
+    } else
+      free_mail(mail);
   }
 }
 

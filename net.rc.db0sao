@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.29 1993/11/22 14:45:23 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.30 1993/11/28 07:42:50 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -73,6 +73,7 @@ source /tcp/netrom_links
 # netrom broadcast tnc1 nodes
 # netrom broadcast tnc2 nodes
 
+domain usegethostby on
 echo refuse
 icmp trace on
 ip rtimer 300
