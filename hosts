@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.22 1994/03/30 11:19:35 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.23 1994/04/04 08:29:47 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -2483,25 +2483,18 @@
 #
 #44.130.100.x   Eisenach
 44.130.100.1    DL4AKB  # Marcus Lorenz, 99817 Eisenach (ex Y44RI); AT286 WNOS
-# 44.137        Gerard van der Grinten  PA0GRI  Holland
+# 44.137    Gerard van der Grinten  PA0GRI  Holland
 #
 #       Gerard J van der Grinten
 #       Elzenlaan 8
 #       3465 TJ  DRIEBRUGGEN
-#       phone 03487-1606
-#         data: 03487-2359 (fridley v32-9600b)
-#         gvdg@fridley!gvdg (UUCP)
-#       pa0gri@net.pa0gri.ampr.org.
+#       phone 03487-1606 (weekdays 20.30 - 22.00)
+#       data: 03487-2359 (fridley v32-9600b - anonymous uucp)
+#       fridley!gvdg  / gvdg@fridley.cdh.cdc.com (UUCP/SMTP)
+#       pa0gri@net.pa0gri.ampr.org.    (via amprnet)
 #
 #
-#       HOT NEWS * HOT NEWS * HOT NEWS * HOT NEWS * HOT NEWS *
-#
-#       ********* Het support BBS is vervallen ******
-#
-#       HOT NEWS * HOT NEWS * HOT NEWS * HOT NEWS * HOT NEWS *
-#
-#
-# revision 16 jan 1994
+# revision 28 mar 1994
 #
 44.137.0.0      PA_ZH1net
 44.137.0.1      bbs.pa0gri      bbs     #  bbs  144.675 + 432.675
@@ -2705,21 +2698,35 @@
 44.137.0.203    pe1pgq          # eelco
 44.137.0.204    pe1pfw          # bart
 44.137.0.205    pa0wkm          # wim
-44.137.0.206  sys2.pe1osg     # kees
-44.137.0.207  pe1pda          # gerard
-44.137.0.208  pa3fan          # rob
-44.137.0.209  sys3.pa3bwe     # antoon
-44.137.0.210    sys2.pb0ajk # hans
-44.137.0.211    sys3.pb0ajk # hans
+44.137.0.206    sys2.pe1osg     # kees
+44.137.0.207    pe1pda          # gerard
+44.137.0.208    pa3fan          # rob
+44.137.0.209    sys3.pa3bwe     # antoon
+44.137.0.210    sys2.pb0ajk     # hans
+44.137.0.211    sys3.pb0ajk     # hans
 44.137.0.212    pa3euo          # petra
 44.137.0.213    pa3eup          # detlef
+44.137.0.214    sys2.pe1otx     # henk
+44.137.0.215  pe1ppf          # jan
+44.137.0.216  sys2.pe1ppf     # jan
+44.137.0.217  pa3gnp          # kees
+44.137.0.218  pa3glb          # manfred
+44.137.0.219  pe1mpq          # henk
+44.137.0.220  pa3aoj          # bob
+44.137.0.221    pa3ffr          # leen
+44.137.0.222    pe1dzi          # dirk
+#
 44.137.1.1      net.pa0gri      net     # TCP/IP net server and IP switch
 44.137.1.2      devel.pa0gri    # gerard
 44.137.1.3      fridley.pa0gri  # gvdg
+44.137.1.3    fridley         # gvdg
 44.137.1.4      bimbo.pa0gri    # gerard
+44.137.1.4    bimbo           # gvdg
 44.137.1.5      tester.pa0gri   # gerard
 44.137.1.6      perry.pa0gri    # gerard
+44.137.1.7    gvdgpc.pa0gri   # gvdg
 44.137.1.8      gr08pc          # gvdg
+44.137.1.9    gr09pc          # gvdg
 44.137.1.16     sys2.pa0okc     # chris
 44.137.1.17     sys3.pa0okc     # chris
 44.137.1.18     sys4.pa0okc     # chris
@@ -2765,6 +2772,7 @@
 44.137.4.39     pb0ajw          # carlo
 44.137.4.40     sys2.pa3ann     # joop
 44.137.4.41     pa3dsz          # koos
+44.137.4.42   pe1aeu          # frans
 #
 44.137.8.0      PA_NBWnet
 44.137.8.1      pa0hwb          # hans
@@ -2841,13 +2849,14 @@
 44.137.8.73     pe1imk          # ton
 44.137.8.74     pa3gjk          # piet
 44.137.8.75     pe1nzc          # thuur
-#
 44.137.8.76     sys3.pa3dpl     # ad
 44.137.8.77     sys4.pa3dpl     # ad
 44.137.8.78     sys2.pa3gbv     # stefan
 44.137.8.79     pi5kma          # rien
 44.137.8.80     pa3gag          # rien
-44.137.8.81   pa0car          # anton
+44.137.8.81     pa0car          # anton
+44.137.8.82     pe1pfs          # petro
+#
 44.137.12.0     PA_GRnet
 44.137.12.1     pa3esk          # frans
 44.137.12.2     pe1ljf          # harm
@@ -2959,6 +2968,16 @@
 44.137.16.73    sys3.pa3fmn     # peter
 44.137.16.74    pi5yct          # peter
 44.137.16.75    pa0mir          # nico
+44.137.16.76    pa3fgj          # sjaak
+44.137.16.77    pe1pcy          # hans
+44.137.16.78    pe1pcx          # lenie
+44.137.16.79    pe1pbn          # frans
+44.137.16.80    pe1pbm          # corrie
+44.137.16.81    pe1oyv          # ries
+44.137.16.82    sys2.pe1oyv     # ries
+44.137.16.83    pe1nnq          # arjan
+44.137.16.84    pe1oaf          # norbert
+44.137.16.85  pa3fuw          # hans
 #
 44.137.17.1     pa0hzp-1        # henk
 44.137.17.2     pa0hzp-2        # henk
@@ -2967,8 +2986,6 @@
 #
 44.137.20.0     PA_FLnet
 44.137.20.2     pa3ffs          # marijn
-44.137.16.83    pe1nnq          # arjan
-44.137.16.84  pe1oaf          # norbert
 44.137.20.3     pe1mrn          # jan
 44.137.20.4     sys2.pa3ffs     # marijn
 44.137.20.5     pa3aao          # wim
@@ -3101,7 +3118,7 @@
 44.137.24.114   vax.pb0aia      # kees
 44.137.24.115   sys3.pe1ndo     # wilfred
 44.137.24.116   pe1mql          # jan
-44.137.24.117   pe1ohg          # maarten
+44.137.24.117   pa3gmb          # maarten
 44.137.24.118   pa3ghy          # ben
 44.137.24.119   pe1ocj          # michel
 44.137.24.120   pa0nzh          # gert
@@ -3109,7 +3126,7 @@
 44.137.24.122   pe1iok          # frits
 44.137.24.123   pa3gcj          # frank
 44.137.24.124   pe1nqw          # jos
-44.137.24.117 pa3gmb          # maarten
+44.137.24.125   pa0jvg          # jan
 44.137.24.126   pe1ovs          # ton
 44.137.24.127   pa0ruy          # hans
 44.137.24.128   pe1nfk          # martin
@@ -3141,7 +3158,15 @@
 44.137.24.154   pa0paz          # peter
 44.137.24.155   sys2.pe1ogt     # hans
 44.137.24.156   pa3fgk          # maarten
-44.137.24.138   pa0fbt          # fred
+44.137.24.157   pe1pgn          # maarten
+44.137.24.158   pa3cvj          # koos
+44.137.24.159   pe1pcs          # erik
+44.137.24.160   pa0ktv          # ernst
+44.137.24.161 sys2.pa3ewc     # andre
+44.137.24.162 sys2.pe1icq     # arno
+44.137.24.163 pa3gic          # leo
+44.137.24.164 pe1ncy          # andre
+44.137.24.165 pe1phe          # wout
 #
 44.137.28.0     PA_ZLnet
 44.137.28.1     pb0acz          # bram
@@ -3149,7 +3174,6 @@
 44.137.28.3     pa3cwi          # kees
 44.137.28.4     pi5vls          # mts
 44.137.28.5     pa3egv          # liesbeth
-44.137.24.157 pe1pgn          # maarten
 44.137.28.6     pe1koo          # annard
 44.137.28.7     pi8mid          # rob
 44.137.28.8     pe1mpi          # evert
@@ -3194,13 +3218,22 @@
 44.137.28.47    sys4.pa0bak     # ron
 44.137.28.48    pa3gcu          # richard
 44.137.28.49    pe1nqh          # dennis
+44.137.28.50    pa0ekv          # elzo
 44.137.28.51    on1cj           # joran
 44.137.28.52    sys3.pa3erp     # john
 44.137.28.53    sys3.pa3akz     # kees
 44.137.28.54    pe1atc          # john
 44.137.28.55    pe1onb          # gerard
 44.137.28.56    sys2.pe1khx     # rob
-44.137.28.50    pa0ekv          # elzo
+44.137.28.57    sys2.pa3gcu     # richard
+44.137.28.58    pe1nqh          # dennis
+44.137.28.59    pa3ccl          # arie
+44.137.28.60    pe1bsx          # cor
+44.137.28.61    pe1fhk          # fred
+44.137.28.62    pe1owi          # mark
+44.137.28.63    pe1abr          # walter
+44.137.28.64    pa0uyl          # herman
+44.137.28.65    sys3.pe0gwm     # willem
 #
 44.137.32.0     PA_ZH2net
 44.137.32.1     pa3dlt          # koos
@@ -3215,8 +3248,6 @@
 44.137.32.10    pa2aga-10       # adam
 44.137.32.11    pa3bjk          # rick
 44.137.32.12    pa3csi          # bram
-44.137.28.64    pa0uyl          # herman
-44.137.28.65    sys3.pe0gwm     # willem
 44.137.32.13    pe0aph          # arie
 44.137.32.14    pa3eae          # vera
 44.137.32.15    pa3egb          # joop
@@ -3266,7 +3297,7 @@
 44.137.32.59    pe1ghg          # john
 44.137.32.60    sys2.pe1nmb     # erwin
 44.137.32.61    pa2aga-1        # adam
-44.137.32.62    sys3.pa2aga     # adam
+44.137.32.62    MacTCP.pa2aga   # adam
 44.137.32.63    pa3dfn          # philip
 44.137.32.64    pe1agp          # aad
 44.137.32.65    pa3cuh          # wim
@@ -3280,7 +3311,7 @@
 44.137.32.73    pa3czc          # hans
 44.137.32.74    pe1bti          # ben
 44.137.32.75    pa3dhr          # dirk
-44.137.32.62  MacTCP.pa2aga   # adam
+44.137.32.76    sys2.pa3eki     # jaap
 44.137.32.77    pa0stw          # eef
 44.137.32.78    pa3dqp          # jeroen
 44.137.32.79    pa3aql          # paul
@@ -3356,14 +3387,18 @@
 44.137.32.150   unix.pa2aga     # adam
 44.137.32.151   pe1osb          # govert
 44.137.32.152   pe1oup          # richard
+44.137.32.153   pb0afk          # henk
 44.137.32.154   pe1oyh          # nico
-44.137.32.155   pb0amt          # ad
+44.137.32.155   pa3glg          # ad
 44.137.32.156   pe1jcg          # hans
 44.137.32.157   pa3dmm          # henk
 44.137.32.158   pa3gix          # wim
 44.137.32.159   pa3bwa          # pieter
 44.137.32.160   sys3.pe1nmb     # erwin
-44.137.32.153   pb0afk          # henk
+44.137.32.161   pe1iqu          # rob
+44.137.32.162 pe1ofz          # ewout
+44.137.32.163 pe1pfb          # sjaak
+44.137.32.164 pa3cge          # bob
 #
 44.137.36.0     PA_NH2net
 44.137.36.1     pa0lky          # lupko
@@ -3372,13 +3407,12 @@
 44.137.36.4     pa3fmc          # henk
 44.137.36.5     pa3eke          # rob
 44.137.36.6     pa0wvo          # wim
-44.137.32.155 pa3glg          # ad
+44.137.36.7     pa0wal          # henk
 44.137.36.8     pa0sgl          # daan
 44.137.36.9     pa3gas          # maarten
 44.137.36.10    pa0rkb          # ronald
 44.137.36.11    pe1gcb          # viktor
 44.137.36.13    pa0trx          # wim
-44.137.32.161   pe1iqu          # rob
 44.137.36.14    pi8nvp          # philip
 44.137.36.15    pe1aue          # philip
 44.137.36.16    pi8nos          # node
@@ -3425,10 +3459,12 @@
 44.137.36.60    pe1ool          # mario
 44.137.36.61    pa0wdg          # wim
 44.137.36.62    pe1dmt          # jos
+44.137.36.63    pa3gnk          # almar
 44.137.36.64    pe1kjl          # pim
 44.137.36.65    sys2.pe1hmd     # jan
 44.137.36.66    pa3fym          # remco
-44.137.36.63    pe1oto          # almar
+44.137.36.67  pa3bft          # cees
+44.137.36.68  pa6zmy          # almar
 #
 44.137.40.0     PA_UTnet
 44.137.40.1     pe1chl          # rob
@@ -3513,10 +3549,17 @@
 44.137.40.81    pe1ntu          # patrick
 44.137.40.82    utrnet.pa0gri   # gerard
 44.137.40.83    utrdev.pa0gri   # gerard
+44.137.40.84    pi8nwg          # erwin
 44.137.40.85    pa3cvb          # gys
 44.137.40.86    pe1njb          # klaas
-44.137.40.87    pe1krs          # nico
-44.137.40.84    pi8nwg          # erwin
+44.137.40.87    pe1krs          # frank
+44.137.40.88    pi8wno          #
+44.137.40.89    sys2.pe1nwv     # auke-jan
+44.137.40.90    sys3.pe1nwv     # auke-jan
+44.137.40.91    pb0aja          # jaap
+44.137.40.92    sys2.pe1krs     # frank
+44.137.40.93    sys3.pe1krs     # frank
+44.137.40.94    pe1lxx          # paul
 #
 44.137.44.0     PA_GLnet
 # subnet land van maas en waal en rijn
@@ -3530,14 +3573,7 @@
 44.137.44.8     pa3bkl          # robbert
 44.137.44.9     pe1brj          # peter
 44.137.44.10    pa2wcb          # willem
-44.137.40.87  pe1krs          # frank
-44.137.40.88    pi8wno          #
-44.137.40.89    sys2.pe1nwv     # auke-jan
-44.137.40.90    sys3.pe1nwv     # auke-jan
-44.137.40.91    pb0aja          # jaap
-44.137.40.92  sys2.pe1krs     # frank
-44.137.40.93  sys3.pe1krs     # frank
-44.137.40.94  pe1lxx          # paul
+44.137.44.11    sys2.pe1brj     # peter
 44.137.44.12    pa0wja          # wout
 44.137.44.13    pa2fox          # bart
 44.137.44.14    pa3cqa          # bas
@@ -3556,7 +3592,7 @@
 44.137.44.27    pa3cgh          # pieter_jan
 44.137.44.28    pa3eko          # jan
 44.137.44.29    pa3ead          # piet
-44.137.44.30    pb0als          ## tjeerd
+44.137.44.30    pb0als          # tjeerd
 44.137.44.31    pe1lps          # berto
 44.137.44.32    pe1cgy          # roel
 44.137.44.33    pe1afj          # peter
@@ -3573,8 +3609,12 @@
 44.137.44.44    pe1cwu          # robert
 44.137.44.45    pb0aez          # jan
 44.137.44.46    pe1lns          # hans
-44.137.44.48    pa3ggi          # marcel
 44.137.44.47    pa3ekf          # marcel
+44.137.44.48    pa3ggi          # marcel
+44.137.44.49    pe1omp          # john
+44.137.44.50    pa3exh          # nico
+44.137.44.51  pa3bca          # minto
+44.137.44.52  pa3giq          # bas
 # subnet achterhoek
 44.137.45.1     pe1dkc          # ed
 44.137.45.2     pe1ivp          # sander
@@ -3590,10 +3630,9 @@
 44.137.46.1     pe1gox          # rob
 44.137.46.2     pa0dal          # bert
 44.137.46.3     pa3ayb          # bert
-44.137.44.50    pa3exh          # nico
 44.137.46.4     pa3cuv          # bert
 44.137.46.5     pa3amo          # robert
-44.137.46.6     pa3ayh  all alle eu ww nldnet amsat sat ans kepler dl           # chris
+44.137.46.6     pa3ayh          # chris
 44.137.46.7     pa3dqo          # klaas
 44.137.46.8     pe1mew          # remko
 44.137.46.9     pe1fiq          # bert
@@ -3612,7 +3651,7 @@
 44.137.46.22    pa0hwe          # hans
 44.137.46.23    pa3fgy          # henk
 44.137.46.24    pa0mra          # louis
-44.137.46.25    pe1omn          # jan
+44.137.46.25  pe1omn          # ton
 44.137.46.26    pa0eht          # eddy
 44.137.46.27    sys2.pa0eht     # eddy
 44.137.46.28    pa0pur          # george
@@ -3624,9 +3663,14 @@
 44.137.46.34    pe1njz          # hans
 44.137.46.35    pa3cwl          # janjaap
 44.137.46.36    pi4vrz          # ron
+44.137.46.37    pe1lif          # marinus
 44.137.46.38    sys2.pi8vrz     # ron
 44.137.46.39    pe1jdx          # jan
-44.137.46.37    pe1lif          # marinus
+44.137.46.40    sys2.pe1lif     # marinus
+44.137.46.41    pe1mtt          # herre
+44.137.46.42  sys2.pe1omn     # ton
+44.137.46.43  sys3.pe1omn     # ton
+44.137.46.44  pi8dxw          # remco
 #
 44.137.48.0     PA_OVnet1
 44.137.48.1     pa0apa          # andre
@@ -3681,7 +3725,7 @@
 44.137.48.53    pe1nez          # marco
 44.137.48.54    sys3.pe1ljf     # harm
 44.137.48.55    pa3fwm          # pieter tjerk
-44.137.48.56    pe1omh          # gerard
+44.137.48.56    pa3glt          # gerard
 44.137.48.57    pe1oqh          # erjan
 44.137.48.58    pe1nkk          # fons
 44.137.48.59    pa3dzf          # leo
@@ -3697,14 +3741,15 @@
 44.137.48.70    pe1oqx          # piet
 44.137.48.71    pe0rki          # fred
 44.137.48.72    pe1mho          # pete
-44.137.48.55  pa3fwn      # pieter-tjerk
-44.137.48.56  pa3glt          # gerard
+44.137.48.73    pe1mjj          # martin
+44.137.48.74    pe1osz          # rob
+#
 44.137.49.0     PA_OVnet2
 44.137.49.1     pi4vrn          # henk
 44.137.49.2     pe0rtm          # henk
 44.137.49.3     pa3dhs          # klaas
 44.137.49.4     sys2.pa3dhs     # klaas
-44.137.49.6     pa3fyj-a        # ken
+44.137.49.5     bbs.pi4vrn      # henk
 44.137.49.7     pa3dhq          # jan
 44.137.49.8     pi4ysm          # jan
 44.137.49.9     pa3ebv          # peter
@@ -3714,12 +3759,11 @@
 44.137.49.13    pa3aqi          # herman
 44.137.49.14    pe1jnw          # marcel
 44.137.49.15    pa0ghk          # gerrit
-44.137.48.74    pe1osz          # rob
 44.137.49.16    pa0vlz          # pieter
 44.137.49.17    pa3fqa          # dick
+44.137.49.18    pe1juq          # hans
 44.137.49.19    sys2.pe1mth     # theo
 44.137.49.20    pe1ohk          # nico
-44.137.49.18    pe1juq          # hans
 #
 44.137.52.0     PA_DRnet
 44.137.52.1     pa0adc          # henk
@@ -3740,6 +3784,8 @@
 44.137.52.16    pa0bro          # peter
 44.137.52.17    pe1ldp          # karel
 44.137.52.18    pe1gcj          # hans
+44.137.52.19    pe1kvj          # erik
+44.137.52.20    pe1oza          # michel
 #
 44.137.56.0     PA_FRnet
 44.137.56.1     pa3ffy          # ton
