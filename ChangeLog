@@ -1,4 +1,10 @@
-@(#) $Id: ChangeLog,v 1.19 1996/08/23 15:48:40 deyke Exp $
+@(#) $Id: ChangeLog,v 1.20 1996/09/09 22:13:36 deyke Exp $
+
+960909 Dieter Deyke <deyke@fc.hp.com>
+
+	Fixed some warnings for HP-UX 10.20
+
+	Updated domain.txt and hosts
 
 960823 Dieter Deyke <deyke@fc.hp.com>
 

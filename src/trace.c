@@ -1,4 +1,4 @@
-/* @(#) $Id: trace.c,v 1.21 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: trace.c,v 1.22 1996/09/09 22:14:49 deyke Exp $ */
 
 /* Packet tracing - top level and generic routines, including hex/ascii
  * Copyright 1991 Phil Karn, KA9Q
@@ -321,7 +321,7 @@ trace_log(struct iface *ifp,char *fmt, ...)
 	if((fp = ifp->trfp) == NULL)
 		return;
 	t = secclock();
-	cp = ctime(&t);
+	cp = ctime((time_t *) &t);
 	rip(cp);
 	fprintf(fp,"%s - ",cp);
 	va_start(ap,fmt);

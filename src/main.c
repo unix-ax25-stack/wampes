@@ -1,4 +1,4 @@
-/* @(#) $Id: main.c,v 1.60 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: main.c,v 1.61 1996/09/09 22:14:49 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -90,7 +90,7 @@ main(int argc,char *argv[])
 #else
 	setvbuf(stdout,NULL,_IOFBF,8192);
 #endif
-	time(&StartTime);
+	time((time_t *) &StartTime);
 	Hostname = strdup("net");
 
 	while((c = getopt(argc,argv,"gv")) != EOF){
@@ -395,7 +395,7 @@ void *p
 	if(strcmp(argv[1],"stop") != 0){
 		log_name = strdup(argv[1]);
 		Logfp = fopen(log_name,APPEND_TEXT);
-		strcpy(tbuf,ctime(&StartTime));
+		strcpy(tbuf,ctime((time_t *) &StartTime));
 		rip(tbuf);
 		logmsg(NULL,"NOS was started at %s", tbuf);
 	}
@@ -469,7 +469,7 @@ logmsg(void *tcb, const char *fmt, const char *arg)
 
 	if (Logfp == NULL)
 		return;
-	cp = ctime((long *) &Secclock);
+	cp = ctime((time_t *) &Secclock);
 	rip(cp);
 	if (tcb)
 		fprintf(Logfp, "%s %s - ", cp, pinet_tcp(&((struct tcb *)tcb)->conn.remote));

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: conversd.c,v 2.77 1996/08/12 18:51:12 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: conversd.c,v 2.78 1996/09/09 22:14:38 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -357,7 +357,7 @@ static void trace(enum e_dir dir, const struct link *lp, const char *string)
     sprintf(buf, "%08lx", (long) lp);
     name = buf;
   }
-  cp = ctime(&currtime);
+  cp = ctime((time_t *) &currtime);
   cp[24] = 0;
   if (dir == OUTBOUND)
     printf("\n%s SEND %s->%s:\n%s", cp, my.h_name, name, string);
@@ -553,7 +553,7 @@ static char *localtimestring(long utc)
   static const char monthnames[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
   struct tm *tm;
 
-  tm = localtime(&utc);
+  tm = localtime((time_t *) &utc);
   if (utc + 24 * 60 * 60 > currtime)
     sprintf(buffer, " %2d:%02d", tm->tm_hour, tm->tm_min);
   else
@@ -1433,7 +1433,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.77 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.78 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(0, ONE_TOKEN, KEEP_CASE));
@@ -2076,14 +2076,14 @@ int main(int argc, char **argv)
 
   umask(022);
 
-  time(&currtime);
+  time((time_t *) &currtime);
 
   gethostname(buffer, sizeof(buffer));
   if ((cp = strchr(buffer, '.')))
     *cp = 0;
   strchg(&my.h_name, buffer);
   strcpy(buffer, "W-");
-  if ((cp = strchr("$Revision: 2.77 $", ' ')))
+  if ((cp = strchr("$Revision: 2.78 $", ' ')))
     strcat(buffer, cp + 1);
   if ((cp = strchr(buffer, ' ')))
     *cp = 0;
@@ -2185,7 +2185,7 @@ int main(int argc, char **argv)
     timeout.tv_sec = 10;
     timeout.tv_usec = 0;
     i = select(maxfd + 1, SEL_ARG(&actread), SEL_ARG(&actwrite), 0, &timeout);
-    time(&currtime);
+    time((time_t *) &currtime);
     if (i > 0)
       for (i = maxfd; i >= 0; i--) {
 	if (readfnc [i] && FD_ISSET(i, &actread )) (*readfnc [i])(readarg [i]);

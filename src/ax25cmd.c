@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25cmd.c,v 1.15 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: ax25cmd.c,v 1.16 1996/09/09 22:14:49 deyke Exp $ */
 
 /* AX25 control commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -602,7 +602,7 @@ struct ax_route *rp)
 	struct iface *ifp = 0;
 	struct tm *tm;
 
-	tm = localtime(&rp->time);
+	tm = localtime((time_t *) &rp->time);
 	pax25(cp = buf, rp->target);
 	perm = rp->perm;
 	jumpstart = rp->jumpstart;

@@ -1,4 +1,4 @@
-/* @(#) $Id: login.c,v 1.64 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: login.c,v 1.65 1996/09/09 22:14:49 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -364,7 +364,7 @@ static FILE *fopen_logfile(const char *user, const char *protocol)
   if (!*Logfiledir) return 0;
   sprintf(filename, "%s/log.%05d.%04d", Logfiledir, (int) getpid(), cnt++);
   if ((fp = fopen(filename, "a"))) {
-    tm = localtime((long *) &Secclock);
+    tm = localtime((time_t *) &Secclock);
     fprintf(fp,
 	    "%s at %2d-%.3s-%02d %2d:%02d:%02d by %s\n",
 	    protocol,

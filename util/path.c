@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: path.c,v 1.26 1996/08/12 18:53:33 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: path.c,v 1.27 1996/09/09 22:17:36 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -244,7 +244,7 @@ static void doroutelistentry(const struct ax_route *rp)
   const struct iface *ifp = 0;
   struct tm *tm;
 
-  tm = localtime(&rp->time);
+  tm = localtime((time_t *) &rp->time);
   cp = pax25(buf, rp->target);
   for (n = 0; rp; rp = rp->digi) {
     rp_stack[++n] = rp;

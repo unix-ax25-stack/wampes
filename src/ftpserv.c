@@ -1,4 +1,4 @@
-/* @(#) $Id: ftpserv.c,v 1.37 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: ftpserv.c,v 1.38 1996/09/09 22:14:49 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -176,7 +176,7 @@ ftpscs(struct tcb *tcb,enum tcp_state old,enum tcp_state new)
 
 		/* Note current directory */
 		logmsg(tcb,"open FTP","");
-		cp = ctime((long *) &Secclock);
+		cp = ctime((time_t *) &Secclock);
 		if((cp1 = strchr(cp,'\n')) != NULL)
 			*cp1 = '\0';
 		Xprintf(ftp->control,banner,Hostname,Version,cp);

@@ -390,7 +390,7 @@
 44.130.8.32     DG9BFO-2 # Wnos/LinuX
 44.130.8.40     DG9BHW-SVR # Sebastian Lemke, Quakenbrueck
 44.130.8.41     DG9BHW   # Sebastian Lemke, Quakenbrueck
-44.139.8.50     DK7BW    # Herman 49835 witmarschen lohne
+44.130.8.50     DK7BW    # Herman 49835 witmarschen lohne
 44.130.8.55     DL5DBM   # Anwar, Kettenkamp
 44.130.8.56     DL5DBM-2 # Anwar, Kettenkamp
 44.130.8.69     DB0NON-SVR # ;arp db0non-10 /jo32nk / Wampes
@@ -573,7 +573,7 @@
 44.130.12.41    DG1BAZ  # Stefan Frank, Emden; JNOS
 44.130.12.42    DF8BD   # Wilfried Frank, Emden; JNOS
 44.130.12.43    DD7BS   # Heiko Besemann, Nessmersiel; AmiTCP
-44.130.12.44    DG9BHW  # Sebastian Lemke, 49610 Quakenbrueck
+44.130.12.44    SYS2.DL1BAH     # KarlHeinz Schirmer, Norden; JNOS
 44.130.12.45    DH1BAI  # Dieter Dettmers, Emden; JNOS
 44.130.12.46    DL5BAG  # Ute Frank, Emden; JNOS
 44.130.12.47    DH1BBF  # Heinrich Wahrheit, Papenburg
@@ -584,13 +584,13 @@
 44.130.12.52    DL8BCX  # Gottfried Brueggemann, Emden
 44.130.12.53    DG8BAH  # Kai Siebels, Westoverledingen; JNOS
 44.130.12.54    DC1BE   # Dirk Wahrheit, Papenburg; JNOS
-44.130.12.55    DL1BAH  # Karl Heinz Schirmer, Norden; JNOS
+44.130.12.55    DL1BAH  # KarlHeinz Schirmer, Norden; JNOS
 44.130.12.56    DL8BCJ  # Horst Will, 26757 Borkum
 44.130.12.57    DL1BJL-U        # Matthias, Emden; Linux
 44.130.12.58    DL1BJL-W        # Matthias, Emden; Wampes
 44.130.12.59    DL1BJL-T        # Matthias, Emden; TNOS
-44.130.12.60    DB0FHO-W        # ; Wampes
-44.130.12.61    DB0FHO-L        # ; Linux
+44.130.12.60    DB0FHO-W        # ; Wampes ***
+44.130.12.61    DB0FHO-L        # ; Linux ***
 44.130.12.62    NNTP.DB0FHO     # ; NNTP-Server, Linux ***
 44.130.12.63    DG2BDB  # Stefan Fischer, Norden; WNOS
 44.130.12.64    DD8BA   # Steven Sporkmann, Holdorf; NOS
@@ -604,11 +604,15 @@
 44.130.12.72    DF0WT   # Schulstation der Humboldt-Schule, Wittmund; WNOS
 44.130.12.73    DL4BCL  # Tim Weyland, 26409 Wittmund-Willen; WNOS
 44.130.12.74    DL4BCK  # Heiko Cassens, 26409 Wittmund; WNOS
-44.130.12.75    DG3BFL  # Thomas Brants, Woquard; WNOS
+44.130.12.75    DG3BFL  # Thomas Brants, Woquard; TNOS
 44.130.12.76    DD8BA-2 # Steven Sporkmann, Holdorf; WNOS
 44.130.12.77    DL1BIZ  # Dieter Koeppen, Emden; JNOS
 44.130.12.78    DC6BV   # Reinhardt Schucht, Norden;
 44.130.12.79    DK0FHW-S        # Clubstation Wilhelmshaven; TNOS
+44.130.12.80    DG5BDL  # Uwe Luetzen, Emden; JNOS
+44.130.12.81    DG3BFL-U        # Thomas Brants, Woquard; Linux
+44.130.12.82    DL1BDF  # Mustapha Landoulsi, 26506 Norden; JNOS
+44.130.12.83    DK0FI   # ClubStation OV I09, 26506 Norden; JNOS
 #
 #44.130.13.x    Hildesheim
 # --- lokale Adresskoordination: DC5ON
@@ -1982,7 +1986,7 @@
 44.130.28.30    DL8ZAD  # Juergen, 35789 Weilmuenster nr Wetzlar
 44.130.28.58    DF0WS   # ClubStn F58, 35396 Giessen-Wieseck
 #---------------------------------------------------------------------------
-# KA_HOSTS BEGIN [960513]
+# KA_HOSTS BEGIN [960824]
 # Hier die Karlsruher IP-Adressen:
 #
 44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc1ik@db0sao.ampr.org,
@@ -2132,6 +2136,12 @@
 44.130.29.148 dc1ik-p   # JN49ea Olaf Erb             76131 Karlsruhe
 44.130.29.149 dc1ik-u   # JN49ea Olaf Erb             76131 Karlsruhe
 44.130.29.150 dc1ik     # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.151 dl5bct-u  # JN48fx Peter Cornelius      76227 Karlsruhe
+44.130.29.152 dg3acw    # JN48ea Martin Dinkloh       76131 Karlsruhe
+44.130.29.153 dg3acw-u  # JN48ea Martin Dinkloh       76131 Karlsruhe
+#
+# KA_HOSTS END
+#---------------------------------------------------------------------------
 #
 #44.130.30.x    Nordhessen
 # --- lokale Adresskoordination: DG1ZX-A
@@ -2891,6 +2901,7 @@
 44.130.176.144  SYS2.DG3SDK     # Andre Baumann; JNOS; Stuttgart Ruit
 44.130.176.145  DG4SEU          # Thomas Schreiber, 71093 Weil im Schoenbuch
 44.130.176.146  DG4SEU-U        # Thomas Schreiber, 71093 Weil im Schoenbuch
+44.130.176.147  DL3SEI          # Andrzej Oleksiak, 71638 Ludwigsburg
 44.130.176.157  DG1UAZ-2ND      #
 44.130.176.158  DG1UAZ-3RD      #
 44.130.176.254  DK4TU-U         # Dieter Deiss, 71397 Leutenbach

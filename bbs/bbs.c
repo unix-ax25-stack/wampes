@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Id: bbs.c,v 3.7 1996/08/23 15:50:22 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: bbs.c,v 3.8 1996/09/09 22:16:59 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -439,7 +439,7 @@ static char *rfc822_date_string(long gmt)
   static char buf[32];
   struct tm *tm;
 
-  tm = gmtime(&gmt);
+  tm = gmtime((time_t *) &gmt);
   sprintf(buf, "%.3s, %d %.3s %02d %02d:%02d:%02d GMT",
 	  daynames + 3 * tm->tm_wday,
 	  tm->tm_mday,
@@ -949,7 +949,7 @@ static void prepend_Rline(struct mail *mail, long gmt)
   char line[1024];
   struct tm *tm;
 
-  tm = gmtime(&gmt);
+  tm = gmtime((time_t *) &gmt);
   sprintf(line, "R:%02d%02d%02d/%02d%02dz @:%s.%s",
 	  tm->tm_year % 100,
 	  tm->tm_mon + 1,
@@ -3125,7 +3125,7 @@ static void print_prompt(void)
 	f++;
 	if (!tm) {
 	  gmt = time(0);
-	  tm = localtime(&gmt);
+	  tm = localtime((time_t *) &gmt);
 	}
 	sprintf(t, "%02d-%.3s-%02d",
 		tm->tm_mday,
@@ -3148,7 +3148,7 @@ static void print_prompt(void)
 	f++;
 	if (!tm) {
 	  gmt = time(0);
-	  tm = localtime(&gmt);
+	  tm = localtime((time_t *) &gmt);
 	}
 	sprintf(t, "%02d:%02d", tm->tm_hour, tm->tm_min);
 	while (*t)
