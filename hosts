@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.18 1994/02/15 17:39:21 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.19 1994/03/04 17:10:11 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -1935,6 +1935,7 @@
 44.130.48.222   DD0SQ   # Raimund Roetzer, 7038 Holzgerlingen
 44.130.48.223   DG7KBV  # Johannes
 44.130.48.224   DF5OO   # Frank Blaesing, 71229 Leonberg; WAMPES
+44.130.48.225   DH1FAT  # Thomas, Taunusstein
 44.130.48.226   DL4KU   # Peter Piepkorn, 7000 Stuttgart 31; Atari ST1040 STF
 44.130.48.227   DL9SDN  # Werner Haas, 7014 Kornwestheim
 44.130.48.228   DC7TU   # Markus Zuegel, 7140 Ludwigsburg
@@ -2088,6 +2089,11 @@
 44.130.176.125  DG2SBV  # Horst Venzke, Althuette; WNOS
 44.130.176.129  DG8SER  # Andreas Mnzenmaier
 44.130.176.130  DG8SER-U        # Andreas Mnzenmaier Unix
+44.130.176.131  DG8SER-A        # Andreas Mnzenmaier
+44.130.176.132  DG8SER-B        # Andreas Mnzenmaier
+44.130.176.133  DG8SER-C        # Andreas Mnzenmaier
+44.130.176.134  DG8SER-D        # Andreas Mnzenmaier
+44.130.176.135  DG8SER-E        # Andreas Mnzenmaier
 44.130.176.137  DL1SEZ-7        # Klaus Micheler, Sachsenheim
 #
 #44.130.56.x    Muenchen
