@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.33 1994/10/09 08:22:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.34 1994/10/21 11:54:18 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -28,6 +28,9 @@
  * Definitions for byte order, according to byte significance from low
  * address to high.
  */
+
+#ifndef BYTE_ORDER
+
 #define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
 #define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
 #define PDP_ENDIAN      3412    /* LSB first in word, MSW first in long */
@@ -36,6 +39,8 @@
 #define BYTE_ORDER      LITTLE_ENDIAN
 #else
 #define BYTE_ORDER      BIG_ENDIAN
+#endif
+
 #endif
 
 #if     !defined(AMIGA) && (defined(LATTICE) || defined(MAC) || defined(__TURBOC__))
@@ -74,7 +79,7 @@ typedef unsigned short uint16;  /* 16-bit unsigned integer */
 typedef unsigned char byte_t;   /*  8-bit unsigned integer */
 #define uchar(x) ((unsigned char)(x))
 #define MAXINT16 65535          /* Largest 16-bit integer */
-#define MAXINT32 4294967295L    /* Largest 32-bit integer */
+#define MAXINT32 4294967295UL   /* Largest 32-bit integer */
 #define NBBY    8               /* 8 bits/byte */
 
 #define HASHMOD 7               /* Modulus used by hash_ip() function */

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.26 1994/09/05 12:49:43 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.27 1994/10/21 11:54:12 deyke Exp $
 
 hostname     dl1sbl-1
 ax25 mycall  dl1sbl-1
@@ -44,6 +44,9 @@ route add  dl4sel.ampr.org      ipip     15.138.33.250
 source /tcp/netrom_links
 
 # netrom broadcast axip nodes
+
+flexnet link add dk0hu
+flexnet link add dk5sg
 
 domain usegethostby on
 echo accept

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.16 1994/10/09 08:22:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.17 1994/10/21 11:54:20 deyke Exp $ */
 
 #ifndef _LAPB_H
 #define _LAPB_H
@@ -123,6 +123,7 @@ struct ax25_cb {
 	int segremain;                  /* Segmenter state */
 	int routing_changes;            /* Number of routing changes */
 	struct ax25_cb *peer;           /* Pointer to peer's control block */
+	int id;                         /* Control block ID */
 };
 #define NULLAX25        ((struct ax25_cb *)0)
 extern struct ax25_cb Ax25default,*Ax25_cb;

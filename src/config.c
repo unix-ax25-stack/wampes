@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.39 1994/10/06 16:15:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.40 1994/10/21 11:54:16 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -60,6 +60,7 @@
 #include "rlp.h"
 #endif
 /* #include "dialer.h" */
+#include "flexnet.h"
 
 int dotest(int argc,char *argv[],void *p);      /**/
 static int dostart(int argc,char *argv[],void *p);
@@ -159,6 +160,7 @@ struct cmds Cmds[] = {
 /*      "files",        dofiles,        0, 0, NULLCHAR, */
 	"finger",       dofinger,       0, 2, "finger name@host",
 	"fkey",         dofkey,         0, 3, "fkey <key#> <text>",
+	"flexnet",      doflexnet,      0, 0, NULLCHAR,
 	"ftp",          doftp,          0, 2, "ftp <address>",
 #ifdef HAPN
 	"hapnstat",     dohapnstat,     0, 0, NULLCHAR,
@@ -475,6 +477,7 @@ struct icmplink Icmplink[] = {
 struct axlink Axlink[] = {
 	PID_IP,         axip,
 	PID_ARP,        axarp,
+	PID_FLEXNET,    flexnet_input,
 #ifdef  NETROM
 	PID_NETROM,     axnr,
 #endif

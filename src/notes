@@ -1,5 +1,14 @@
 -------------------------------------------------------------------------------
 
+flexnet:
+
+- implement query and query-result frames
+
+- ein '2' (POLL) Frame kann anstatt der Spaces Information enthalten
+  (Knotennamen).
+
+-------------------------------------------------------------------------------
+
 - TCP with closed windows: spinning
 
 - netupd should resync automatically

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.73 1994/10/10 13:16:28 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.74 1994/10/21 11:54:13 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -28,6 +28,7 @@ HDRS          = arp.h \
 		enet.h \
 		files.h \
 		finger.h \
+		flexnet.h \
 		ftp.h \
 		ftpserv.h \
 		global.h \
@@ -102,6 +103,7 @@ OBJS          = adjtime.o \
 		domhdr.o \
 		files.o \
 		finger.o \
+		flexnet.o \
 		ftp.o \
 		ftpcli.o \
 		ftpserv.o \
@@ -211,6 +213,7 @@ SRCS          = adjtime.c \
 		domhdr.c \
 		files.c \
 		finger.c \
+		flexnet.c \
 		ftp.c \
 		ftpcli.c \
 		ftpserv.c \
@@ -464,7 +467,7 @@ config.o: global.h config.h mbuf.h timer.h proc.h iface.h ip.h internet.h \
 	tcp.h netuser.h udp.h lapb.h ax25.h enet.h kiss.h nrs.h netrom.h \
 	session.h hardware.h telnet.h pktdrvr.h slip.h slhc.h arp.h icmp.h \
 	cmdparse.h commands.h ax25mail.h tipmail.h daemon.h bootp.h socket.h \
-	asy.h trace.h
+	asy.h trace.h flexnet.h
 crc.o: global.h mbuf.h crc.h ../lib/calc_crc.h
 devparam.o: global.h devparam.h
 dirutil.o: global.h hpux.h dirutil.h commands.h ../lib/configure.h
@@ -475,6 +478,8 @@ files.o: global.h netuser.h files.h
 finger.o: config.h global.h mbuf.h timer.h internet.h icmp.h iface.h proc.h \
 	ip.h session.h hardware.h telnet.h ax25.h netuser.h tcp.h ftp.h \
 	finger.h
+flexnet.o: global.h mbuf.h timer.h iface.h proc.h ax25.h lapb.h trace.h \
+	flexnet.h cmdparse.h commands.h
 ftp.o: global.h mbuf.h netuser.h timer.h tcp.h iface.h proc.h internet.h ip.h \
 	ftp.h session.h hardware.h telnet.h ax25.h
 ftpcli.o: global.h mbuf.h session.h proc.h timer.h hardware.h telnet.h ax25.h \

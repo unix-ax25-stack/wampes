@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.45 1994/09/06 17:03:42 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.46 1994/10/21 11:54:12 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -53,6 +53,9 @@ source /tcp/netrom_links
 
 # netrom broadcast tnc0  nodes
 # netrom broadcast axip  nodes
+
+flexnet link add db0sao
+flexnet link add dl1sbl-1
 
 domain usegethostby on
 echo refuse

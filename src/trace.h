@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.h,v 1.10 1993/05/17 13:45:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.h,v 1.11 1994/10/21 11:54:25 deyke Exp $ */
 
 #ifndef _TRACE_H
 #define _TRACE_H
@@ -84,5 +84,8 @@ void tcp_dump(FILE *fp,struct mbuf **bpp,int32 source,int32 dest,int check);
 
 /* In udpdump.c: */
 void udp_dump(FILE *fp,struct mbuf **bpp,int32 source,int32 dest,int check);
+
+/* In flexnet.c: */
+void flexnet_dump(FILE *fp,struct mbuf **bpp);
 
 #endif  /* _TRACE_H */

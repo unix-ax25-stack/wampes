@@ -1,21 +1,21 @@
-This file gives some info about  setting up WAMPES  for the first  time.
-Don't expect something  perfect, it was just a quick hack to help people
-to solve the first  problems...  I don't  claim it's a manual,  and I do
+This file gives some info about setting up WAMPES for the first time.
+Don't expect something perfect, it was just a quick hack to help people
+to solve the first problems...  I don't claim it's a manual, and I do
 not mention the DK5SG-BBS.
 
-I'm now using  WAMPES on my Linux  system for a long time.  These config
+I'm now using WAMPES on my Linux system for a long time.  These config
 files reflect parts of mine and others setup, use it to build your own..
 Change the hostnames, ax25 calls etc.  *please*.
 
 All files should go to /tcp (mail.conf, net.rc, convers.conf).
 
 For user-logins you've to create a /users/funk directory, because WAMPES
-creates user-accounts  automatically under this dir, and adds entries to
+creates user-accounts automatically under this dir, and adds entries to
 /etc/passwd.
 
 At the end I appended some info about WAMPES under Linux.
 
-Any   questions,    comments   etc.   about   this   paper   please   to
+Any questions, comments etc.  about this paper please to
 erb@insu1.etec.uni-karlsruhe.de
 
 73
@@ -28,17 +28,17 @@ What program does what? -  a quick overview.
 /tcp/net            (copied from /tcp/src/net)
 /usr/local/bin/cnet (copied from /tcp/util/cnet)
 
-The main  program.  It's  the  interface  to the  KISS/SLIP  ports,  the
+The main program.  It's the interface to the KISS/SLIP ports, the
 program that controls logins, connections etc.  It can be started in the
-background,  on my Linux system with /tcp/net < /dev/null & , if I start
+background, on my Linux system with /tcp/net < /dev/null & , if I start
 it from a shell.  If I omit the /dev/null, it does not disconnect itself
 cleanly from the shell.
 
-If net is running in such a way, you need a program to control  it.  Use
-cnet for this.  It's the console  interface to the  net-program.  If net
+If net is running in such a way, you need a program to control it.  Use
+cnet for this.  It's the console interface to the net-program.  If net
 is running in foreground, you don't need cnet!
 
-You can leave  cnet  with  'bye',  not with  'exit'!  'exit'  exits  the
+You can leave cnet with 'bye', not with 'exit'!  'exit' exits the
 net-program too, 'bye' leaves only cnet.
 
 /usr/local/bin/path (copied from /tcp/util/path)
@@ -55,8 +55,8 @@ The pop3 daemon.
 
 /tcp/util/netupd[c,s]
 
-Netupdate-Client+Server.  Allows WAMPES  clients to get new revisions of
-the WAMPES  software from a WAMPES source server.  Used in the Stuttgart
+Netupdate-Client+Server.  Allows WAMPES clients to get new revisions of
+the WAMPES software from a WAMPES source server.  Used in the Stuttgart
 area to update all local WAMPES systems automatically from cron.
 
 /usr/local/bin/md5 (copied from /tcp/util/md5)
@@ -68,27 +68,27 @@ Needed by netupd[c,s].
 
 User Data Base Manager
 
-It searches  /usr/local/lib/users (a copy from /tcp/users) and builds an
-alias database, also it puts users'  fullnames in /etc/passwd.  Only use
+It searches /usr/local/lib/users (a copy from /tcp/users) and builds an
+alias database, also it puts users' fullnames in /etc/passwd.  Only use
 it if you know what you're doing...
 
 /usr/local/etc/mkhostdb (copied from /tcp/util/mkhostdb)
 
-Generates the domain databases  /tcp/hostaddr.???  and /tcp/hostname.???
+Generates the domain databases /tcp/hostaddr.???  and /tcp/hostname.???
 from /tcp/domain.txt, /tcp/domain.local, and /tcp/hosts.
 
 /tcp/conversd (copied from /tcp/convers/conversd)
 
-The  convers-server.  Started  in  background,  it listens  and  accepts
+The convers-server.  Started in background, it listens and accepts
 convers connections on an unix domain socket.
 
 /usr/local/bin/convers (copied from /tcp/convers/convers)
 
-The convers user program.  It connects to the unix domain  socket of the
+The convers user program.  It connects to the unix domain socket of the
 server, and enables the user to confer with others.
 
-On some  systems  /tcp/net  and  /tcp/conversd  are  started by init via
-inittab, on Linux with 'simpleinit'  this isn't  recommended; if you use
+On some systems /tcp/net and /tcp/conversd are started by init via
+inittab, on Linux with 'simpleinit' this isn't recommended; if you use
 sys5init it's no problem.  This is an sample entry:
 
 #
@@ -100,8 +100,8 @@ cs:3456:respawn:env TZ=MST7MDT /tcp/conversd
 #
 
 ------------------------------------------------------------------------------
-Here is a sample net.rc, where you have to change the hostname, IP address
-and ax25 calls:
+Here is a sample net.rc, where you have to change the hostname, IP
+address and ax25 calls:
 
 #############################################################################
 # Sample config for WAMPES, by Olaf Erb, erb@insu1.etec.uni-karlsruhe.de
@@ -229,11 +229,11 @@ source /tcp/net.rc.local
 Delivering mail with WAMPES
 ---------------------------
 
-Incoming  SMTP  mail  is no  problem,  it's  gated  via  tcpgate  to the
-SMTP-Daemon,  usually  sendmail or smail (I prefer Smail 3.1.28, running
+Incoming SMTP mail is no problem, it's gated via tcpgate to the
+SMTP-Daemon, usually sendmail or smail (I prefer Smail 3.1.28, running
 as 'smtpd' via inetd).
 
-Outgoing  mail is done by  using  Unix  UUCP.  You've  to set up an UUCP
+Outgoing mail is done by using Unix UUCP.  You've to set up an UUCP
 entry for a SMTP neighbor in this way:  Add entries like this:
 
 /usr/lib/uucp/Systems:
@@ -248,11 +248,11 @@ dk5sg:smtp:tcp:dk5sg smtp
 db0id:smtp:tcp:db0id smtp
 dc6iq:smtp:tcp:dc6iq smtp
 
-WAMPES (the 'net'  program) now looks at mail.conf,  takes the hostnames
+WAMPES (the 'net' program) now looks at mail.conf, takes the hostnames
 and searches the uucp-spool dirs of these hosts for waiting uucp jobs.
 
 Note: Configure your sendmail/smail in such a way, that it only delivers
-      one  message at a time,  multiple  recipients  are not  supported!
+      one message at a time, multiple recipients are not supported!
       Smail needs this change in it's transports file:
 
 # uux - deliver to the rmail program on a remote UUCP site
@@ -267,7 +267,7 @@ uux:    driver=pipe,
 #                                       # can't handle multiple addresses
 # [...]
 
-WAMPES  expects  /usr/lib/sendmail  somewhere,  so a link from  smail to
+WAMPES expects /usr/lib/sendmail somewhere, so a link from smail to
 sendmail should exist.
 
 I don't know the changes if you use plain sendmail, any comments are welcome.
@@ -276,15 +276,15 @@ I don't know the changes if you use plain sendmail, any comments are welcome.
 Running a converse bridge with WAMPES
 -------------------------------------
 
-A convers  connection to another  WAMPES (or NOS) host running  conversd
+A convers connection to another WAMPES (or NOS) host running conversd
 can be configured with convers.conf.  It is read at the time conversd is
 started.  If this file is changed after startup, conversd will exit.
 
 A sample /tcp/convers.conf:
 
-The first line is our convers  hostname, it can be changed to your Town,
-etc.  (as  common  in  other  countries).  The  second  and  more  lines
-specifies  the active  convers  links,  one to db0id via  tcp/ip on port
+The first line is our convers hostname, it can be changed to your Town,
+etc.  (as common in other countries).  The second and more lines
+specifies the active convers links, one to db0id via tcp/ip on port
 3600:
 
 dc1ik
@@ -293,12 +293,12 @@ db0id unix:/tcp/.sockets/netcmd connect tcp db0id 3600
 
 Some notes for using WAMPES on Linux:
 
-I'm using Linux  0.99pl5 with gcc 2.3.3 and libc4.2, but newer  versions
-should work without problems.
+I'm using Linux 0.99pl5 with gcc 2.5.8 and libc 4.5.26, but newer
+versions should work without problems.
 
-I don't  know any  problems  with Linux and  WAMPES,  only  sometimes  a
-file-table  overflow of the system, caused by static limits in the Linux
-kernel.  With  heavy  load it's a good idea to  increase  the  values of
+I don't know any problems with Linux and WAMPES, only sometimes a
+file-table overflow of the system, caused by static limits in the Linux
+kernel.  With heavy load it's a good idea to increase the values of
 NR_INODE and NR_FILE in limits.h, and build a new kernel.
 
 Please send any questions about running WAMPES under Linux to me.

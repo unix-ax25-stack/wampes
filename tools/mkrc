@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mkrc,v 1.7 1994/08/31 11:40:08 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mkrc,v 1.8 1994/10/21 11:54:27 deyke Exp $
 
 for i in 1 2 3 4 ; do
 cat >i$i << EOF
@@ -40,7 +40,11 @@ netrom links test1 test2 200 permanent
 arp add 1.1.1.1 netrom test1
 arp add 2.2.2.2 netrom test2
 
-trace i 1111
+trace i 11
+
+fkey 1 "flexnet link"
+fkey 2 "flexnet dest"
+fkey 3 "ax25 route list"
 
 EOF
 done

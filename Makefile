@@ -1,10 +1,10 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.19 1994/02/28 11:54:53 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.20 1994/10/21 11:54:07 deyke Exp $
 
 MAKEFILE   = Makefile
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
 PATH       = /opt/SUNWspro/bin:/usr/lang:/bin:/usr/bin:/usr/ccs/bin:/usr/ucb:/usr/contrib/bin:/usr/local/bin:/usr/local/etc
 
-all:;   @-rm -f bbs/bbs.h
+all:;   @-rm -f bbs/bbs.h src/linux_include/stdlib.h
 	-chmod 755 cc
 	-cd lib;     make -i -f $(MAKEFILE) all install
 	-cd aos;     make -i -f $(MAKEFILE) all install

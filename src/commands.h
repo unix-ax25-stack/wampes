@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.24 1994/05/06 17:15:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.25 1994/10/21 11:54:16 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -249,6 +249,7 @@ int axip_attach(int argc,char *argv[],void *p);
 int doaxip(int argc,char *argv[],void *p);
 int dobye(int argc,char *argv[],void *p);
 int dofkey(int argc,char *argv[],void *p);
+int doflexnet(int argc,char *argv[],void *p);
 int doipfilter(int argc,char *argv[],void *p);
 int dologin(int argc,char *argv[],void *p);
 int domain0(int argc,char *argv[],void *p);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.14 1994/10/06 16:15:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.15 1994/10/21 11:54:24 deyke Exp $ */
 
 #ifndef _TCP_H
 #define _TCP_H
@@ -277,7 +277,8 @@ int seq_gt(int32 x,int32 y);
 int seq_le(int32 x,int32 y);
 int seq_lt(int32 x,int32 y);
 int seq_within(int32 x,int32 low,int32 high);
-#define setstate set_state /* setstate is used in BSD */
+#undef setstate
+#define setstate set_state /* setstate is used in Linux and BSD */
 void setstate(struct tcb *tcb,int newstate);
 void tcp_garbage(int red);
 

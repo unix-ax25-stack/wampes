@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.42 1994/10/02 17:55:24 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.43 1994/10/21 11:54:09 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -1716,6 +1716,8 @@
 44.130.29.105   DG1IE-2 # Gunnar Bernstein, 76199 Karlsruhe
 44.130.29.106   DH4IAD  # Ralf Burkart, 76744 Woerth
 44.130.29.107   DH4IAD-W        #
+44.130.29.112   DG4SCV-L
+44.130.29.113   DL6SEF-L
 #
 #44.130.30.x    Nordhessen
 # lokale Adresskoordination: DG1ZX-A
@@ -2711,15 +2713,20 @@
 44.130.88.10    DL8WKR  # Knut Rothe, O-7220 Pegau
 44.130.88.11    DL2LQB  # Michael Wollschlaeger, O-7222 Groitzsch
 44.130.88.15    DG3LSW  # Joachim Hilprecht, Leipzig
-44.130.88.16    DL6YTM  # Peter Wilkert, Nerchau
+44.130.88.16    DL6YTM  # Peter Wilkert, 04685 Nerchau
+44.130.88.17    DL6KWM  # Karsten Wilkert, 04685 Nerchau
 44.130.88.18    DG0LAT  # Uwe Rost, 05516 Markkleeberg
 44.130.88.19    DL5YYM  # Guenter Dornblut, 04179 Leipzig
 44.130.88.20    DG0LDK  # Wolfgang Winter, 04357 Leipzig
 44.130.88.21    DG0LGJ  # Torsten, Rosswein
-44.130.88.22    DG0LGF  # Axel, Leipzig
-44.130.88.23    DL0LGA  # Raoul Brosch, Markkleeberg
+44.130.88.22    DG0LGF  # Axel Maercker, Leipzig
+44.130.88.23    DG0LGA  # Raoul Brosch, Markkleeberg
+44.130.88.24    DG0LHW  # Mike Wittenbecher, 04315 Leipzig
+44.130.88.25    DL8LWH  # Hendrik Wendschuch, Leipzig
+44.130.88.26    DL5YRM  # Tom Bolle, Leipzig
+44.130.88.27    DG2LWH  # Holger Baumgaertner, 04157 Leipzig
 44.130.88.35    DL1LRK  # Uwe Kasubek, Delitzsch
-44.130.88.100   DB0LPZ#
+#44.130.88.100  DB0LPZ  # reserviert
 #
 #44.130.89.x    Chemnitz
 44.130.89.1     Y28PN   # Uwe Huebner, O-9052 Chemnitz; UNIX/NOS

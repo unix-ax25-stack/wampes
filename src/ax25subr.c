@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.15 1994/10/09 08:22:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.16 1994/10/21 11:54:15 deyke Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -27,6 +27,8 @@ int   T1init = 5000;            /* Retransmission timeout, ms */
 int   T4init = 60000;           /* Busy timeout, ms */
 int   Axversion = V2;           /* Protocol version */
 int32 Blimit = 16;              /* Retransmission backoff limit */
+
+static int Nextid = 1;          /* Next control block ID */
 
 /* Look up entry in connection table */
 struct ax25_cb *
@@ -138,6 +140,8 @@ char *addr)
 #if 0
 	axp->s_upcall = s_ascall;
 #endif
+
+	axp->id = Nextid++;
 
 	return axp;
 }
