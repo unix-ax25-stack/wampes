@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.13 1993/05/17 13:44:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.14 1993/10/07 15:09:55 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -84,7 +84,9 @@ static void axclient_state_upcall(struct ax25_cb *cp, int oldstate, int newstate
 
   notify = (Current && Current->type == AX25TNC && Current == (struct session *) cp->user);
   if (newstate != LAPB_DISCONNECTED) {
-    if (notify) printf("%s\n", Ax25states[newstate]);
+    if (notify && !(oldstate == LAPB_CONNECTED && newstate == LAPB_RECOVERY ||
+		    oldstate == LAPB_RECOVERY && newstate == LAPB_CONNECTED))
+      printf("%s\n", Ax25states[newstate]);
   } else {
     if (notify) printf("%s (%s)\n", Ax25states[newstate], Axreasons[cp->reason]);
     if (cp->user) freesession((struct session *) cp->user);
