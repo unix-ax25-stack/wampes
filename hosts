@@ -335,6 +335,7 @@
 44.130.8.22     DL6BAT   # Ralf Schlueter, 49716 Meppen; AT286
 44.130.8.23     DL6BBH   # Ansgar, Lathen/Emsland
 44.130.8.24     DG9BJA   # Ludger, Holdorf
+44.130.8.26     DG3BES   # Heiko, Wetschen; WNOS
 44.130.8.30     DG9BFO   # Dieter Oder, 49593 Bersenbrueck; linuX
 44.130.8.31     DG9BFO-1 # linuX
 44.130.8.32     DG9BFO-2 # Wnos/LinuX
@@ -1243,8 +1244,6 @@
 44.130.19.158   DD1JD   # Dirk Symons, 40233 Duesseldorf
 44.130.19.200   DD4EB   # Kirsten Wieck, 4018 Langenfeld
 44.130.19.201   DL6EBD  # Wolfgang Gilges, 41517 Grevenbroich
-44.130.19.208   DH3KR-SVR       # Ralf Borowski, 52428 Juelich
-44.130.19.209   DL1KAA  # Dietrich Borowski, 52428 Juelich
 44.130.19.252   DG9EKC-U        # ; Linux
 44.130.19.253   DG9EKC  # Stephan Eickel, 40724 Hilden; AT386
 44.130.19.254   TEST.DD9EY      # DD9EY Testrechner
@@ -1253,7 +1252,6 @@
 # --- lokale Adresskoordination: DH9KAE
 44.130.20.1     DG2KK   # Walter Doerr, 5160 Dueren
 44.130.20.2     ST.DG2KK        # Walter Doerr; Atari
-44.130.20.3     OH2MKQ-DH       # Janne, Aachen (DH/OH2MKQ)
 44.130.20.4     DL4YDP  # Joe, Aachen
 44.130.20.5     DL4KBS  # Tobias Dingwerth, 52070 Aachen
 44.130.20.6     DG9KBU  # Uli Berens, 52074 Aachen
@@ -1284,13 +1282,16 @@
 44.130.20.31    DG3KJK  # Jan Kunkis, 52076 Aachen
 44.130.20.32    DH2KC   # Christoph Dautzenberg, 52066 Aachen
 44.130.20.33    DC1JAL  # Lars Oesten, 52074 Aachen
+44.130.20.34    DG4DBP  # Karsten Schwinne,
 44.130.20.35    DF2JH   # Jochen, Aachen
+44.130.20.36    DL3KSB  # Bernd Schulz, 52070 Aachen
 44.130.20.39    DH9KAE-1 # Detlef Brunkel, 52531 Uebach-Palenberg
 44.130.20.40    DH9KAE  # ; Linux, NS + Gateway
 44.130.20.41    DJ0AAL  # Jeronimo Diaz, 5120 Herzogenrath 3
 44.130.20.42    DG6KBB  # Karl de Jong, 5132 Uebach-Palenberg
 44.130.20.43    DG1KFA  # Andreas Franck, 50171 Kerpen
-44.130.20.45    DL1KBL  # Achim Hoelker, 5133 Gangelt
+44.130.20.44    DG3KQ   # Andreas Koensgen, 52072 Aachen
+44.130.20.45    DL1KBL  # Achim Hoelker, 52525 Waldfeucht
 44.130.20.47    DD3KF   # Norbert, Aachen
 44.130.20.48    DG1KBN  # Juergen Jaeger, 5100 Aachen
 44.130.20.49    DG2KSA  # Stephan, Aachen
@@ -1334,8 +1335,9 @@
 44.130.20.95    DK3PB   # Walter Josephs, 5138 HS-Oberbruch
 44.130.20.96    DK3PB-2 #
 44.130.20.97    DG3KCI  # Horst Plnecken, 5166 Kreuzau; AT
+44.130.20.98    DH3KR-SVR # Ralf Borowski,52428 Juelich
 44.130.20.99    DK0HW   # Club-Stn G38, Wegberg (DK3PB)
-44.130.20.100   DD2KZ   # Ralf Crumbach, 5100 Aachen
+#44.130.20.100  Reserviert
 44.130.20.101   DG3KCE  # Frank, Dueren
 44.130.20.102   DG1KAO  # Willi Ahn, 51156 Monsschau
 44.130.20.103   DG1KAO-1        #
@@ -1349,6 +1351,7 @@
 44.130.20.112   DG3KBQ  # Thorsten
 44.130.20.113   LX1NW-DL        # Michel, Aachen
 44.130.20.114   LX1NW-T #
+44.130.20.119   DL1KAA # Dieter Borowski, 52428 Juelich
 44.130.20.120   DL1KMW  # Martin, Aachen
 44.130.20.121   DL2KFF  # Fritz Friedhoff, 52074 Aachen
 44.130.20.122   DG1KDD  # Dirk Henning, 52353 Dueren
@@ -1535,7 +1538,7 @@
 44.130.23.20    DG1DBH  # Harald Husemann, Plettenberg
 44.130.23.40    DG1DCN  # Marc Noeker, Lennestadt: Amiga 2000
 44.130.23.102   DK3AK-14        # Siegmar Krause, 5982 Neuenrade
-#44.130.144.xxx Bielefeld/Oerlinghausen Stand 10.04.96
+#44.130.144.xxx Bielefeld/Oerlinghausen Stand 10.06.96
 44.130.144.1    DB0NOS  # TCP/IP-Svr Oerlinghausen ***
 44.130.144.2    FTP.DB0NOS      # FTP-Svr Oerlinghausen ***
 #44.130.144.3-44.130.144.15 fuer DB0NOS-Peripherie und Subrechner
@@ -1553,7 +1556,7 @@
 44.130.144.27   DG6YL   # Herbert, Augustdorf
 44.130.144.28   DL8YEA  # Peter, Bielefeld
 44.130.144.29   DG3YFS  # Raymond, Stromberg
-44.130.144.30   DH6YAY  # Stefan, GÅtersloh
+44.130.144.30   DH6YAY  # Stefan, Guetersloh
 44.130.144.31   AA2RL   #
 44.130.144.32   DG9YGJ  # Stefan, Roedinghausen
 44.130.144.33   SYS1.DG8YAY     # Joerg, Bielefeld
@@ -1578,17 +1581,23 @@
 44.130.144.52   DG5DBV-2        # Oli, Lippetal (Gestinghausen),Rechner 1 DOS/WIN
 44.130.144.53   LINUX.DG5DBV    # Oli,Lippetal (Gestinghausen), Rechner 2 Linux/Netware
 44.130.144.54   DG7YHQ  # Friedhelm, Schloss Holte
-44.130.144.55   DG6DBM  # Hans, Mîhnesee
+44.130.144.55   DG6DBM  # Hans, Moehnesee
 44.130.144.56   DK3RC   # Horst, Detmold
 44.130.144.57   DK3RC-1 # Horst, Bielstein
 44.130.144.58   DL0JW   # Clubstation N58, Oerlinghausen
 44.130.144.59   DG6VJ-W # Jochen, Muenster, WAMPES
 44.130.144.60   LINUX.DG6YGD    # Dirk, Augustdorf
-44.130.144.61   DD3QQ   # Kurt, Muenster
+44.130.144.61   DD3QQ   # Kurt, 48153 Muenster
 44.130.144.62   DG6VJ   # Jochen, Muenster
-44.130.144.66   DG1YAY  # Christof, Buende
-44.130.144.67   DG1YAY-7        # TCP/IP-Router Buende
+44.130.144.63   SERVER.DG6YGD   # Dirk, Augustdorf
+44.130.144.64   DK2PH   # Hans, 33415 Verl
+44.130.144.65   DH9YBE  # Jan
+44.130.144.66   DG1YAY  # Christof, 32257 Buende
+44.130.144.67   DG1YAY-7        # TCP/IP-Router, 32257 Buende
 44.130.144.70   DG1YGH  # Henning, Bielefeld
+44.130.144.71   DG1YGH-1        # Henning, Bielefeld
+44.130.144.72   DG1YGH-2        # Henning, Bielefeld
+44.130.144.73   DG1YGH-3        # Henning, Bielefeld
 #
 #44.130.147.x   Siegen
 44.130.147.1    DJ5ZD   # Alexander, Bad Laasphe
@@ -2139,7 +2148,7 @@
 44.130.35.14    DD4KO   # Olaf Jung, 5270 Gummersbach
 44.130.35.15    DG2KHE  # Hagen Erdmann, 5270 Gummersbach
 #
-# Benutzte IP Adressen in Berlin  ( 03.04.1996 )
+# Benutzte IP Adressen in Berlin  ( 16.06.1996 )
 # -------------------------------------------------------------------
 #   Host          Call
 # -------------------------------------------------------------------
@@ -2164,6 +2173,7 @@
 44.130.36.16      DL7VTL        # Joe , Berlin
 44.130.36.17      DL7AWA        # Matthias , Berlin
 44.130.36.18      DL7UFO-2      # Sven , 10409 Berlin
+44.130.36.19      dd6vnr        # Ralf , Berlin
 44.130.36.20      DC7FO         # Uli, 1000 Berlin
 44.130.36.21      DC7FO-1       #
 44.130.36.22      DC7FO-2       #
@@ -2204,7 +2214,7 @@
 44.130.36.84      DD6RG         # Joachim Henschke, 12249 Berlin
 44.130.36.85      DL7ARX-1      # Gerhard Petzold, Berlin-Marienfelde; Amiga
 44.130.36.95      DD5AA         # Alain, Berlin-Wedding ;NNTP, SMTP, POP-Server
-44.130.36.96      dd5aa-pc      #
+44.130.36.96      DD5AA-PC      #
 44.130.36.97      DL7NW         # Siegbert Langer, Berlin
 # 44.130.36.100                 # reserviert fuer TCP/IP Digi Berlin
 # 44.130.36.101                 # reserviert fuer TCP/IP Digi Berlin
@@ -5462,7 +5472,7 @@
 44.143.16.26   oe1wwl        # Walter, Wien
 44.143.16.27   sec.oe1wwl    #
 44.143.16.28   ter.oe1wwl    #
-44.143.16.30   oe1gww        # Guenter
+44.143.16.30   oe1gww        # GÅnter
 44.143.16.31   oe3gmw        # Gottfried, Wr. Neudorf
 44.143.16.32   oe3dna        # Andy, Amstetten
 44.143.16.33   oe3pha        # Peter, Wien
@@ -5471,6 +5481,7 @@
 44.143.16.36   oe1jeb        # Jan
 44.143.16.37   oe1hhc        # Harald, Wien
 44.143.16.38   oe1fwu        # Friedrich, Wien
+44.143.16.39   oe1azs        #
 44.143.16.9    oe1xtu        # Clubstation der TU-Wien
 #
 # 44.143.xxx.xxx * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen

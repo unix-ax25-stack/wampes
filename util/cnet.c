@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.37 1996/04/08 13:19:59 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.38 1996/06/20 11:49:19 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -193,12 +193,15 @@ int main(int argc, char **argv)
 
   char area[1024];
   char bp[1024];
+  char cmdbuf[1024];
   char *areaptr;
+  char *cmdptr = 0;
   char *server;
   char *termstr;
   char *upstr;
   int addrlen;
   int flags;
+  int n;
   struct fd_set rmask;
   struct fd_set wmask;
   struct sockaddr *addr;
@@ -214,6 +217,41 @@ int main(int argc, char **argv)
 #ifdef macII
   setposix();
 #endif
+
+  if (argc >= 2 && !strcmp(argv[1], "-c")) {
+    if (argc < 3) {
+      fprintf(stderr, "Option requires an argument -- c\n");
+      exit(1);
+    }
+    cmdptr = argv[2];
+    argc -= 2;
+    argv += 2;
+  }
+
+  server = (argc < 2) ? "unix:/tcp/.sockets/netcmd" : argv[1];
+  if (!(addr = build_sockaddr(server, &addrlen))) {
+    fprintf(stderr, "%s: Cannot build address from \"%s\"\n", *argv, server);
+    exit(1);
+  }
+  if ((fdsock = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) {
+    perror("socket");
+    exit(1);
+  }
+  if (connect(fdsock, addr, addrlen)) {
+    perror("connect");
+    exit(1);
+  }
+
+  if (cmdptr) {
+    sprintf(cmdbuf, "command %s\n", cmdptr);
+    write(fdsock, cmdbuf, strlen(cmdbuf));
+    while ((n = read(fdsock, cmdbuf, sizeof(cmdbuf))) > 0) {
+      write(1, cmdbuf, n);
+    }
+    exit(0);
+  }
+
+  write(fdsock, "console\n", 8);
 
   signal(SIGPIPE, SIG_IGN);
   signal(SIGINT,  (void (*)(int)) terminate);
@@ -238,20 +276,6 @@ int main(int argc, char **argv)
     }
   }
 
-  server = (argc < 2) ? "unix:/tcp/.sockets/netcmd" : argv[1];
-  if (!(addr = build_sockaddr(server, &addrlen))) {
-    fprintf(stderr, "%s: Cannot build address from \"%s\"\n", *argv, server);
-    terminate();
-  }
-  if ((fdsock = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) {
-    perror("socket");
-    terminate();
-  }
-  if (connect(fdsock, addr, addrlen)) {
-    perror("connect");
-    terminate();
-  }
-  write(fdsock, "console\n", 8);
 #ifndef ibm6153
   if (Ansiterminal)
     write(fdsock, "\033[D", 3);

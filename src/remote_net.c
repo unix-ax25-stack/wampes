@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.30 1996/02/04 11:17:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.31 1996/06/20 11:48:54 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -19,8 +19,10 @@
 #include "hpux.h"
 #include "buildsaddr.h"
 #include "main.h"
+#include "cmdparse.h"
 
 extern char Prompt[];
+extern struct cmds Cmds[];
 
 struct controlblock {
   int fd;                               /* Socket descriptor */
@@ -37,20 +39,6 @@ struct cmdtable {
 
 static int fkbd = -1;
 static int flisten_net = -1;
-
-static char *getarg(char *line, int all);
-static int command_switcher(struct controlblock *cp, const char *name, const struct cmdtable *tableptr);
-static void delete_controlblock(struct controlblock *cp);
-static void transport_try_send(struct controlblock *cp);
-static void transport_recv_upcall(struct transport_cb *tp, int cnt);
-static void transport_send_upcall(struct transport_cb *tp, int cnt);
-static void transport_state_upcall(struct transport_cb *tp);
-static int ascii_command(struct controlblock *cp);
-static int binary_command(struct controlblock *cp);
-static int connect_command(struct controlblock *cp);
-static int console_command(struct controlblock *cp);
-static void command_receive(struct controlblock *cp);
-static void accept_connection_net(void *p);
 
 /*---------------------------------------------------------------------------*/
 
@@ -177,6 +165,32 @@ static int binary_command(struct controlblock *cp)
 
 /*---------------------------------------------------------------------------*/
 
+static int command_command(struct controlblock *cp)
+{
+
+  char *cmdbuf;
+  int fderr_save;
+  int fdout_save;
+
+  cmdbuf = getarg(0, 1);
+  fflush(stdout);
+  fflush(stderr);
+  fdout_save = dup(1);
+  fderr_save = dup(2);
+  dup2(cp->fd, 1);
+  dup2(cp->fd, 2);
+  cmdparse(Cmds, cmdbuf, 0);
+  fflush(stdout);
+  fflush(stderr);
+  dup2(fdout_save, 1);
+  dup2(fderr_save, 2);
+  close(fdout_save);
+  close(fderr_save);
+  return -1;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static int connect_command(struct controlblock *cp)
 {
   char *protocol, *address;
@@ -224,6 +238,7 @@ static void command_receive(struct controlblock *cp)
   static const struct cmdtable command_table[] = {
     { "ascii",   ascii_command },
     { "binary",  binary_command },
+    { "command", command_command },
     { "connect", connect_command },
     { "console", console_command },
     { 0,         0 }
