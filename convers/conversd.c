@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.70 1996/01/28 10:44:30 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.71 1996/01/30 14:44:48 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -597,6 +597,40 @@ static void clear_locks(void)
 
 /*---------------------------------------------------------------------------*/
 
+static struct quality *find_quality(struct host *hp, struct link *lp)
+{
+  struct quality *qp;
+
+  for (qp = hp->h_qualities; qp && qp->q_link != lp; qp = qp->q_next) ;
+  if (!qp) {
+    qp = (struct quality *) calloc(1, sizeof(struct quality));
+    if (!qp)
+      exit(1);
+    qp->q_link = lp;
+    qp->q_next = hp->h_qualities;
+    hp->h_qualities = qp;
+  }
+  return qp;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static struct quality *find_best_quality(const struct host *hp)
+{
+
+  struct quality *qpbest = 0;
+  struct quality *qp;
+
+  for (qp = hp->h_qualities; qp; qp = qp->q_next) {
+    if (qp->q_rtt && (!qpbest || qpbest->q_rtt >= qp->q_rtt)) {
+      qpbest = qp;
+    }
+  }
+  return qpbest;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void send_user_change_msg(const struct user *up)
 {
 
@@ -780,6 +814,57 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
 
 /*---------------------------------------------------------------------------*/
 
+static void handle_rout_msg(const char *fromname, const char *toname, int ttl)
+{
+
+  char buffer[2048];
+  struct host *hp;
+  struct quality *qp;
+
+  if (!*fromname || !*toname)
+    return;
+
+  clear_locks();
+
+  for (hp = hosts;; hp = hp->h_next) {
+    if (!hp) {
+      sprintf(buffer,
+	      "*** Route: %s does not know '%s'",
+	      my.h_name,
+	      toname);
+      send_msg_to_user(conversd, fromname, buffer, 1);
+      return;
+    }
+    if (!strcmp(hp->h_name, toname))
+      break;
+  }
+
+  qp = find_best_quality(hp);
+  if (!qp) {
+    sprintf(buffer,
+	    "*** Route: %s has no route to '%s'",
+	    my.h_name,
+	    toname);
+    send_msg_to_user(conversd, fromname, buffer, 1);
+    return;
+  }
+
+  sprintf(buffer,
+	  "*** Route: %s (%ld) %s -> %s",
+	  my.h_name,
+	  qp->q_rtt,
+	  qp->q_link->l_host->h_name,
+	  toname);
+  send_msg_to_user(conversd, fromname, buffer, 1);
+
+  if (ttl > 0 && strcmp(qp->q_link->l_host->h_name, toname)) {
+    sprintf(buffer, "/\377\200ROUT %s %s %d\n", toname, fromname, ttl - 1);
+    send_string(qp->q_link, buffer);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void connect_peers(void)
 {
 
@@ -879,40 +964,6 @@ static void send_pings(void)
 
 /*---------------------------------------------------------------------------*/
 
-static struct quality *find_quality(struct host *hp, struct link *lp)
-{
-  struct quality *qp;
-
-  for (qp = hp->h_qualities; qp && qp->q_link != lp; qp = qp->q_next) ;
-  if (!qp) {
-    qp = (struct quality *) calloc(1, sizeof(struct quality));
-    if (!qp)
-      exit(1);
-    qp->q_link = lp;
-    qp->q_next = hp->h_qualities;
-    hp->h_qualities = qp;
-  }
-  return qp;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static struct quality *find_best_quality(const struct host *hp)
-{
-
-  struct quality *qpbest = 0;
-  struct quality *qp;
-
-  for (qp = hp->h_qualities; qp; qp = qp->q_next) {
-    if (qp->q_rtt && (!qpbest || qpbest->q_rtt >= qp->q_rtt)) {
-      qpbest = qp;
-    }
-  }
-  return qpbest;
-}
-
-/*---------------------------------------------------------------------------*/
-
 static void send_dests(void)
 {
 
@@ -997,20 +1048,27 @@ static void close_link(struct link *lp)
   }
   send_dests();
 
-  for (up = users; up; up = up->u_next)
+  for (up = users; up; up = up->u_next) {
     if (up->u_channel >= 0 && up->u_link == lp) {
-      if (up->u_seq) {
-	up->u_seq++;
-	if (up->u_host == &my && up->u_seq < currtime)
-	  up->u_seq = currtime;
+      qp = find_best_quality(up->u_host);
+      if (qp) {
+	up->u_link = qp->q_link;
+      } else {
+	up->u_link = 0;
+	if (up->u_seq) {
+	  up->u_seq++;
+	  if (up->u_host == &my && up->u_seq < currtime) {
+	    up->u_seq = currtime;
+	  }
+	}
+	up->u_oldchannel = up->u_channel;
+	up->u_channel = -1;
+	up->u_stime = currtime;
+	clear_locks();
+	send_user_change_msg(up);
       }
-      up->u_link = 0;
-      up->u_oldchannel = up->u_channel;
-      up->u_channel = -1;
-      up->u_stime = currtime;
-      clear_locks();
-      send_user_change_msg(up);
     }
+  }
 
 }
 
@@ -1091,6 +1149,8 @@ static void help_command(struct link *lp)
     "/PEERS               Show all peers\n"
     "/USERS               Show all users\n"
     "/ONLINE              Show all users\n"
+
+    "/ROUTE host          Show route to host\n"
 
     "***\n");
 }
@@ -1213,13 +1273,15 @@ static void links_command(struct link *lp)
 static void msg_command(struct link *lp)
 {
 
+  char buffer[2048];
   char *text;
   char *toname;
-  char buffer[2048];
   struct user *up;
 
   toname = getarg(0, ONE_TOKEN, LOWER_CASE);
   text = getarg(0, REST_OF_LINE, KEEP_CASE);
+  if (!*text)
+    return;
   for (up = users; up; up = up->u_next)
     if (up->u_channel >= 0 && !strcmp(up->u_name, toname)) {
       send_msg_to_user(lp->l_user->u_name, toname, text, 1);
@@ -1248,6 +1310,16 @@ static void note_command(struct link *lp)
   }
   sprintf(buffer, "*** Your personal note is set to \"%s\".\n", strcmp(up->u_note, NO_NOTE) ? up->u_note : "");
   send_string(lp, buffer);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void route_command(struct link *lp)
+{
+  char *toname;
+
+  toname = getarg(0, ONE_TOKEN, LOWER_CASE);
+  handle_rout_msg(lp->l_user->u_name, toname, 99);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1315,7 +1387,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.70 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.71 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(0, ONE_TOKEN, KEEP_CASE));
@@ -1593,6 +1665,19 @@ static void h_pong_command(struct link *lp)
 
 /*---------------------------------------------------------------------------*/
 
+static void h_rout_command(struct link *lp)
+{
+
+  char *fromname;
+  char *toname;
+
+  toname = getarg(0, ONE_TOKEN, LOWER_CASE);
+  fromname = getarg(0, ONE_TOKEN, LOWER_CASE);
+  handle_rout_msg(fromname, toname, atoi(getarg(0, ONE_TOKEN, KEEP_CASE)));
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void h_umsg_command(struct link *lp)
 {
 
@@ -1693,7 +1778,6 @@ static void process_input(struct link *lp)
 
   static const struct command user_commands[] = {
 
-    { "?",              help_command },
     { "bye",            bye_command },
     { "channel",        channel_command },
     { "exit",           bye_command },
@@ -1708,9 +1792,11 @@ static void process_input(struct link *lp)
     { "peers",          peers_command },
     { "personal",       note_command },
     { "quit",           bye_command },
+    { "route",          route_command },
     { "users",          users_command },
     { "who",            who_command },
     { "write",          msg_command },
+    { "?",              help_command },
 
     { 0,                0 }
   };
@@ -1722,6 +1808,7 @@ static void process_input(struct link *lp)
     { "\377\200invi",   h_invi_command },
     { "\377\200ping",   h_ping_command },
     { "\377\200pong",   h_pong_command },
+    { "\377\200rout",   h_rout_command },
     { "\377\200umsg",   h_umsg_command },
     { "\377\200user",   h_user_command },
 
@@ -1945,7 +2032,7 @@ int main(int argc, char **argv)
     *cp = 0;
   strchg(&my.h_name, buffer);
   strcpy(buffer, "W-");
-  if ((cp = strchr("$Revision: 2.70 $", ' ')))
+  if ((cp = strchr("$Revision: 2.71 $", ' ')))
     strcat(buffer, cp + 1);
   if ((cp = strchr(buffer, ' ')))
     *cp = 0;
