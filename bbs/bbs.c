@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.20 1991/01/14 11:44:31 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.21 1991/01/23 18:16:16 deyke Exp $";
 
 #define _HPUX_SOURCE 1
 
@@ -907,15 +907,14 @@ struct mail *mail;
     strcat(mail->mid, MidSuffix);
   }
 
-  /* Remove all message delimiters */
+  /* Remove message delimiters */
 
   for (p = mail->head; p; p = p->next) {
     s = p->str;
-    if (!strcmp(s, ".")) *s = '\0';
-    while (cp = strchr(s, '\004'))       while (cp[0] = cp[1]) cp++;
-    while (cp = strchr(s, '\032'))       while (cp[0] = cp[1]) cp++;
-    while (cp = strcasepos(s, "/ex"))    while (cp[0] = cp[3]) cp++;
-    while (cp = strcasepos(s, "***end")) while (cp[0] = cp[6]) cp++;
+    if (*s == '.' && !s[1]) *s = '\0';
+    while (cp = strchr(s, '\004')) while (cp[0] = cp[1]) cp++;
+    while (cp = strchr(s, '\032')) while (cp[0] = cp[1]) cp++;
+    if (!strncasecmp(s, "***end", 6)) *s = ' ';
   }
 
   /* Call delivery agents */
@@ -1517,7 +1516,7 @@ char  **argv;
   sprintf(mail->subject, "Re:  %s", p);
   printf("To: %s\n", mail->to);
   printf("Subject: %s\n", mail->subject);
-  puts("Enter message: (terminate with ^Z or /EX or ***END)");
+  puts("Enter message: (terminate with ^Z or ***END)");
   for (; ; ) {
     if (!getstring(line)) exit(1);
     if (stopped) {
@@ -1526,7 +1525,6 @@ char  **argv;
     }
     if (*line == '\032') break;
     if (!strncasecmp(line, "***end", 6)) break;
-    if (!strncasecmp(line, "/ex", 3)) break;
     append_line(mail, line);
     if (strchr(line, '\032')) break;
   }
@@ -1612,7 +1610,7 @@ char  **argv;
     free_mail(mail);
     return;
   }
-  if (level != MBOX) puts("Enter message: (terminate with ^Z or /EX or ***END)");
+  if (level != MBOX) puts("Enter message: (terminate with ^Z or ***END)");
   for (; ; ) {
     if (!getstring(line)) exit(1);
     if (stopped) {
@@ -1621,7 +1619,6 @@ char  **argv;
     }
     if (*line == '\032') break;
     if (!strncasecmp(line, "***end", 6)) break;
-    if (!strncasecmp(line, "/ex", 3)) break;
     append_line(mail, line);
     if (check_header) {
       if (p = get_host_from_header(line)) {
