@@ -1,6 +1,6 @@
 /* User Data Base Manager */
 
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.12 1991/11/22 16:21:04 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.13 1992/01/20 17:22:28 deyke Exp $";
 
 #define DEBUG           0
 
@@ -161,7 +161,7 @@ size_t size;
   static size_t freesize;
   void * p;
 
-  if (size & 1) size++;
+  size = (size + 3) & ~3;
   if (size > freesize) {
     for (; ; ) {
 #ifdef __TURBOC__

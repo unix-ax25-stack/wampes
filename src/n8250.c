@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.12 1992/01/08 13:44:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.13 1992/01/20 17:17:27 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -235,6 +235,8 @@ struct iface *ifp;
 		close(ap->fd);
 		ap->fd = -1;
 	}
+	ap->iface = NULLIF;
+
 	return 0;
 }
 
@@ -328,7 +330,7 @@ void *p;
 			continue;
 
 		tprintf("%s:",asyp->iface->name);
-		tprintf(" %d bps\n",asyp->speed);
+		tprintf(" %ld bps\n",asyp->speed);
 
 		tprintf(" RX: %lu int, %lu chr, %lu hw hi\n",
 			asyp->rxints,

@@ -1,10 +1,10 @@
-ANSI          =
 ANSI          = -Aa -D_HPUX_SOURCE
+ANSI          =
 
 DEFINES       = -DUNIX
 
-CFLAGS        = $(ANSI) $(DEFINES) -O
 CFLAGS        = $(ANSI) $(DEFINES) -g
+CFLAGS        = $(ANSI) $(DEFINES) -O
 
 DEST          = /tcp
 
@@ -266,12 +266,14 @@ SRCS          = 8250.c \
 
 # SYSHDRS       =
 
+.IGNORE:
+
 all:            $(PROGRAM)
 
 setsp.o:        setsp.c
-		-$(CC) -E $(CFLAGS) $< > setsp.s
-		-as setsp.s
-		-rm -f setsp.s
+		$(CC) -E $(CFLAGS) $< > setsp.s
+		as setsp.s
+		rm -f setsp.s
 
 $(PROGRAM):     $(OBJS) $(LIBS)
 		@echo "Linking $(PROGRAM) ..."
@@ -299,11 +301,11 @@ update:         $(DEST)/$(PROGRAM)
 
 $(DEST)/$(PROGRAM): $(PROGRAM)
 		@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
-		cp $(PROGRAM) $@
+		cp $(PROGRAM) $@ ; exit 0
 
 .c.o:
 		@rm -f $@
-		-$(CC) $(CFLAGS) -c $<
+		$(CC) $(CFLAGS) -c $<
 
 ###
 8250.o: global.h mbuf.h proc.h timer.h iface.h 8250.h asy.h devparam.h \
