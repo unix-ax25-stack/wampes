@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.19 1994/02/28 11:58:20 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.20 1994/05/05 11:18:29 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -37,6 +37,12 @@ all:;   if [ -x /bin/ksh ] ; then \
 		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -qchars=signed -D_ALL_SOURCE' \
+		'RANLIB=:' \
+		_all;; \
+	IRIX*) \
+		make -i -f $(MAKEFILE) \
+		'CC=cc' \
+		'CFLAGS=-O -signed' \
 		'RANLIB=:' \
 		_all;; \
 	Linux*) \

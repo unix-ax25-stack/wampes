@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.37 1994/05/02 16:51:50 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.38 1994/05/05 11:16:59 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -18,7 +18,7 @@ param tnc1 13   1   # rxdelay
 
 # tnc2: db0id (23cm)
 
-attach asy 0 0 kissi tnc2 0 256 9600
+attach asy 0 0 kissui tnc2 0 256 9600
 param tnc2  1  20   # txdelay
 param tnc2  2 255   # persistence
 param tnc2  3   1   # slottime

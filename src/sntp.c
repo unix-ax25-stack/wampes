@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.2 1994/05/03 14:30:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.3 1994/05/05 11:17:57 deyke Exp $ */
 
 /* Simple Network Time Protocol (SNTP) (see RFC1361) */
 
@@ -392,6 +392,8 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 		if (!adjtime(&tv, (struct timeval *) 0)) {
 			peer->adjts++;
 			if (Ntrace) printf("Clock adjusted\n");
+		} else {
+			if (Ntrace) perror("adjtime()");
 		}
 		return;
 	}
@@ -402,6 +404,8 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 	if (!settimeofday(&tv, &tz)) {
 		peer->steps++;
 		if (Ntrace) printf("Clock stepped\n");
+	} else {
+		if (Ntrace) perror("settimeofday()");
 	}
 }
 

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.39 1994/04/11 11:08:09 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.40 1994/05/05 11:18:25 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -22,6 +22,11 @@ all:;   @case "`uname -sr`" in \
 		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -qchars=signed -D_ALL_SOURCE -I../lib' \
+		_all;; \
+	IRIX*) \
+		make -i -f $(MAKEFILE) \
+		'CC=cc' \
+		'CFLAGS=-O -signed -I../lib' \
 		_all;; \
 	Linux*) \
 		make -i -f $(MAKEFILE) \

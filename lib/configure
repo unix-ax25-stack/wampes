@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.10 1994/04/20 08:22:51 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.11 1994/05/05 11:18:30 deyke Exp $
 
 findfile()
 {
@@ -56,6 +56,8 @@ HP-UX*)
 	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
 AIX*)
 	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L;;
+IRIX*)
+	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L;;
 Linux*)
 	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L;;
 386BSD*)
@@ -75,7 +77,7 @@ RISC\ iX*)
 AOS*)
 	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L;;
 *)
-	echo System `uname -sr` is not supported
+	echo System `uname -sr` is not supported >&2
 	exit 1;;
 esac
 
@@ -83,7 +85,7 @@ echo "#ifndef _CONFIGURE_H"
 echo "#define _CONFIGURE_H"
 echo
 
-finddir HOME_DIR /home /users /u
+finddir HOME_DIR /home /users /u /usr/people
 finddir MAIL_DIR /var/mail /var/spool/mail /usr/mail /usr/spool/mail
 finddir SPOOL_DIR /var/spool /usr/spool
 finddir UUCP_DIR /var/spool/uucp /usr/spool/uucp
@@ -99,7 +101,7 @@ echo
 findprog GZIP_PROG /usr/bin/gzip /usr/local/bin/gzip
 findprog LS_PROG /usr/bin/ls /bin/ls
 findprog MAIL_PROG /usr/openwin/bin/xview/mail /usr/bin/mailx /bin/mailx /usr/bin/mail /bin/mail
-findprog NEWALIASES_PROG /usr/bin/newaliases /usr/ucb/newaliases
+findprog NEWALIASES_PROG /usr/bin/newaliases /usr/ucb/newaliases /usr/bsd/newaliases
 findprog PATCH_PROG /usr/bin/patch /usr/local/bin/patch
 findprog RNEWS_PROG /usr/bin/rnews /usr/local/bin/rnews
 findprog SENDMAIL_PROG /usr/sbin/sendmail /usr/lib/sendmail

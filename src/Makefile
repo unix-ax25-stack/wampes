@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.67 1994/05/02 16:51:59 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.68 1994/05/05 11:17:08 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -300,6 +300,11 @@ all:;   chmod 755 cc
 		'CC=cc' \
 		'CFLAGS=-O -qchars=signed -DUNIX -D_ALL_SOURCE -DFD_SETSIZE=1024 -I../lib' \
 		_all;; \
+	IRIX*) \
+		make -i -f $(MAKEFILE) \
+		'CC=cc' \
+		'CFLAGS=-O -signed -DUNIX -DFD_SETSIZE=1024 -I../lib' \
+		_all;; \
 	Linux*) \
 		make -i -f $(MAKEFILE) \
 		'CC=gcc' \
@@ -363,6 +368,8 @@ setsp.o: setsp.c
 	HP-UX*) \
 		$(CC) -E $< > setsp.s; as setsp.s -o $@;; \
 	AIX*) \
+		$(CC) $(CFLAGS) -c setsp.c;; \
+	IRIX*) \
 		$(CC) $(CFLAGS) -c setsp.c;; \
 	Linux*) \
 		$(CC) -E $< > setsp.s; cc -c setsp.s;; \

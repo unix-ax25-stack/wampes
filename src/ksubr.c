@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.22 1994/02/07 12:38:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.23 1994/05/05 11:17:41 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -100,6 +100,38 @@ struct env {
 	long    sp;
 };
 #define getstackptr(ep) ((ep)->sp)
+#elif defined __sgi
+struct env {
+	int     jb_onsigstk;    /* onsigstack flag */
+	int     jb_sigmask;     /* signal mask */
+	int     jb_sp;          /* stack pointer */
+	int     jb_pc;          /* program counter */
+	int     jb_v0;          /* longjmp retval */
+	int     jb_s0;          /* callee saved regs.... */
+	int     jb_s1;
+	int     jb_s2;
+	int     jb_s3;
+	int     jb_s4;
+	int     jb_s5;
+	int     jb_s6;
+	int     jb_s7;
+	int     jb_s8;          /* frame pointer */
+	int     jb_f20;         /* callee save regs */
+	int     jb_f21;
+	int     jb_f22;
+	int     jb_f23;
+	int     jb_f24;
+	int     jb_f25;
+	int     jb_f26;
+	int     jb_f27;
+	int     jb_f28;
+	int     jb_f29;
+	int     jb_f30;
+	int     jb_f31;
+	int     jb_fpc_csr;     /* fp control and status register */
+	int     jb_magic;
+};
+#define getstackptr(ep) ((ep)->jb_sp)
 #elif defined sun
 #if _JBLEN == 9
 struct env {
