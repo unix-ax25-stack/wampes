@@ -1,10 +1,10 @@
-ANSI          = -Aa -D_HPUX_SOURCE
 ANSI          =
+ANSI          = -Aa -D_HPUX_SOURCE
 
 DEFINES       = -DUNIX
 
-CFLAGS        = $(ANSI) $(DEFINES) -g
 CFLAGS        = $(ANSI) $(DEFINES) -O
+CFLAGS        = $(ANSI) $(DEFINES) -g
 
 DEST          = /tcp
 

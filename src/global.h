@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.13 1991/06/18 17:26:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.14 1992/03/31 14:33:19 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -55,7 +55,7 @@
 typedef int int32;              /* 32-bit signed integer */
 typedef unsigned short int16;   /* 16-bit unsigned integer */
 typedef unsigned char byte_t;   /*  8-bit unsigned integer */
-#define uchar(x) ((unsigned char)(x))
+#define uchar(x) ((x) & 0xff)
 #define MAXINT16 65535          /* Largest 16-bit integer */
 #define MAXINT32 4294967295L    /* Largest 32-bit integer */
 
