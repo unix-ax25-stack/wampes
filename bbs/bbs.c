@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.74 1994/02/22 13:22:35 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.75 1994/04/05 08:08:52 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -1285,6 +1285,7 @@ static void f_command(int argc, char **argv)
   char cfile[1024];
   char dfile[1024];
   char dirname[1024];
+  char expire[1024];
   char from[1024];
   char line[1024];
   char subject[1024];
@@ -1294,6 +1295,7 @@ static void f_command(int argc, char **argv)
   char to[1024];
   char xfile[1024];
   int do_not_exit;
+  int lifetime;
   struct dirent *dp;
   struct filelist *filelist = 0;
   struct filelist *p;
@@ -1348,7 +1350,7 @@ static void f_command(int argc, char **argv)
       }
       if (!*to) continue;
       if (!(fp = fopen(dfile, "r"))) continue;
-      *from = *subject = *bid = 0;
+      *from = *subject = *bid = *expire = 0;
       if (fscanf(fp, "From %s", tmp1) == 1) {
 	if (!strcmp(tmp1, "MAILER-DAEMON") || tmp1[strlen(tmp1) - 1] == '!')
 	  strcpy(tmp1, myhostname);
@@ -1357,14 +1359,25 @@ static void f_command(int argc, char **argv)
 	while (fgets(line, sizeof(line), fp)) {
 	  if (*line == '\n') break;
 	  get_header_value("Subject:", 0, line, subject);
+	  get_header_value("Expires:", 1, line, expire);
 	  get_header_value("Bulletin-ID:", 1, line, bid);
 	}
       }
       fclose(fp);
       if (!*from) continue;
+      lifetime = -1;
+      if (*expire) {
+	lifetime = parse_date(expire);
+	if (lifetime != -1) {
+	  lifetime = (lifetime - time((long *) 0)) / DAYS;
+	  if (lifetime < 1) lifetime = 1;
+	}
+      }
       if (stat(cfile, &statbuf)) continue;
       memset((char *) &index, 0, sizeof(index));
       index.date = statbuf.st_mtime;
+      index.lifetime_h = (lifetime + 1) >> 8;
+      index.lifetime_l = (lifetime + 1);
       strncpy(index.bid, bid, LEN_BID);
       index.bid[LEN_BID] = 0;
       strupc(index.bid);
