@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/crc.c,v 1.1 1991/04/25 18:28:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/crc.c,v 1.2 1991/05/29 12:01:45 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -50,8 +50,9 @@ struct mbuf *bp;
   char  *p;
   int  crc = 0;
   int  n;
-  struct mbuf *last_bp = 0;
+  struct mbuf *last_bp;
 
+  if (!bp) return;
   for (; bp; bp = bp->next) {
     last_bp = bp;
     for (p = bp->data, n = bp->cnt; n; n--)

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.8 1991/05/17 17:07:32 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.9 1991/05/29 12:02:40 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -16,11 +16,13 @@
 #define NEXT(i)      (((i) + 1) & RECALLSIZE)
 #define PREV(i)      (((i) - 1) & RECALLSIZE)
 
+static int  ansimode;
 static int  rawmode;
 
 static void printchr __ARGS((int chr));
 static void backchr __ARGS((int chr));
 static void delchr __ARGS((int chr));
+static void inschr __ARGS((int chr));
 
 /*---------------------------------------------------------------------------*/
 
@@ -83,11 +85,33 @@ static void delchr(chr)
 int  chr;
 {
   putchar('\033');
+  if (ansimode) putchar('[');
   putchar('P');
   chr &= 0x7f;
   if (chr < 32 || chr == 127) {
     putchar('\033');
+    if (ansimode) putchar('[');
     putchar('P');
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void inschr(chr)
+int  chr;
+{
+  int  c;
+
+  if (ansimode) {
+    c = chr & 0x7f;
+    printf("\033[%d@", (c < 32 || c == 127) ? 2 : 1);
+    printchr(chr);
+  } else {
+    putchar('\033');
+    putchar('Q');
+    printchr(chr);
+    putchar('\033');
+    putchar('R');
   }
 }
 
@@ -100,7 +124,8 @@ int  chr;
  */
 
 int  ttydriv(chr, buf)
-char  chr, **buf;
+int  chr;
+char  **buf;
 {
 
   static char  linebuf[LINESIZE];
@@ -131,11 +156,7 @@ char  chr, **buf;
       for (p = end - 1; p >= pos; p--) p[1] = *p;
       *pos++ = chr;
       end++;
-      putchar('\033');
-      putchar('Q');
-      printchr(chr);
-      putchar('\033');
-      putchar('R');
+      inschr(chr);
     }
   } else if (!esc) {
     switch (chr) {
@@ -183,6 +204,7 @@ char  chr, **buf;
 	while (pos > linebuf) backchr(*--pos);
 	end = linebuf;
 	putchar('\033');
+	if (ansimode) putchar('[');
 	putchar('K');
       }
       break;
@@ -194,13 +216,8 @@ char  chr, **buf;
 	quote = '^';
 	if (pos == end)
 	  printchr(quote);
-	else {
-	  putchar('\033');
-	  putchar('Q');
-	  printchr(quote);
-	  putchar('\033');
-	  putchar('R');
-	}
+	else
+	  inschr(quote);
 	backchr(quote);
       }
       break;
@@ -216,6 +233,15 @@ char  chr, **buf;
 
     case 27: /* escape */
       esc = 1;
+      ansimode = 0;
+      break;
+
+    case 127: /* DEL, delete char */
+      if (pos < end) {
+	delchr(*pos);
+	for (p = pos + 1; p < end; p++) p[-1] = *p;
+	end--;
+      }
       break;
 
     default:
@@ -228,17 +254,48 @@ char  chr, **buf;
 	for (p = end - 1; p >= pos; p--) p[1] = *p;
 	*pos++ = chr;
 	end++;
-	putchar('\033');
-	putchar('Q');
-	printchr(chr);
-	putchar('\033');
-	putchar('R');
+	inschr(chr);
       }
       break;
 
     }
   } else {
+    esc = 0;
     switch (chr) {
+
+    case 'A': /* up arrow */
+    case 'V': /* prev page */
+      if (recall_buffer[PREV(rptr)]) {
+	if (end > linebuf) {
+	  while (pos > linebuf) backchr(*--pos);
+	  putchar('\033');
+	  if (ansimode) putchar('[');
+	  putchar('K');
+	}
+	rptr = PREV(rptr);
+	strcpy(linebuf, recall_buffer[rptr]);
+	for (pos = linebuf; *pos; pos++) printchr(*pos);
+	end = pos;
+      } else
+	putchar(7);
+      break;
+
+    case 'B': /* down arrow */
+    case 'U': /* next page */
+      if (recall_buffer[rptr] && recall_buffer[NEXT(rptr)]) {
+	if (end > linebuf) {
+	  while (pos > linebuf) backchr(*--pos);
+	  putchar('\033');
+	  if (ansimode) putchar('[');
+	  putchar('K');
+	}
+	rptr = NEXT(rptr);
+	strcpy(linebuf, recall_buffer[rptr]);
+	for (pos = linebuf; *pos; pos++) printchr(*pos);
+	end = pos;
+      } else
+	putchar(7);
+      break;
 
     case 'C': /* cursor right */
       if (pos - linebuf >= LINEMAX)
@@ -254,6 +311,7 @@ char  chr, **buf;
       break;
 
     case 'F': /* cursor home down */
+    case 'Y': /* end */
       while (pos < end) printchr(*pos++);
       break;
 
@@ -269,6 +327,7 @@ char  chr, **buf;
       if (end > pos) {
 	end = pos;
 	putchar('\033');
+	if (ansimode) putchar('[');
 	putchar('K');
       }
       break;
@@ -281,43 +340,18 @@ char  chr, **buf;
       }
       break;
 
-    case 'U': /* next page (shift recall) */
-      if (recall_buffer[rptr] && recall_buffer[NEXT(rptr)]) {
-	if (end > linebuf) {
-	  while (pos > linebuf) backchr(*--pos);
-	  putchar('\033');
-	  putchar('K');
-	}
-	rptr = NEXT(rptr);
-	strcpy(linebuf, recall_buffer[rptr]);
-	for (pos = linebuf; *pos; pos++) printchr(*pos);
-	end = pos;
-      } else
-	putchar(7);
-      break;
-
-    case 'V': /* prev page (recall) */
-      if (recall_buffer[PREV(rptr)]) {
-	if (end > linebuf) {
-	  while (pos > linebuf) backchr(*--pos);
-	  putchar('\033');
-	  putchar('K');
-	}
-	rptr = PREV(rptr);
-	strcpy(linebuf, recall_buffer[rptr]);
-	for (pos = linebuf; *pos; pos++) printchr(*pos);
-	end = pos;
-      } else
-	putchar(7);
+    case '[': /* ansi escape sequence */
+      esc = 1;
+      ansimode = 1;
       break;
 
     default:
       putchar('\033');
+      if (ansimode) putchar('[');
       putchar(chr);
       break;
 
     }
-    esc = 0;
   }
   fflush(stdout);
   if (cnt) *buf = linebuf;

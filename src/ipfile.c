@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.7 1991/05/24 12:09:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.8 1991/05/29 12:02:03 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -38,7 +38,6 @@ void route_savefile()
   FILE * fp;
   int  bits;
   int  i;
-  int32 ttl;
   static long  nextsavetime;
   struct route *p;
   struct route_saverecord_2 buf;
@@ -51,20 +50,17 @@ void route_savefile()
   rt_merge(0);
   for (bits = 1; bits <= 32; bits++)
     for (i = 0; i < HASHMOD; i++)
-      for (p = Routes[bits-1][i]; p; p = p->next) {
-	buf.target = p->target;
-	buf.bits = p->bits;
-	buf.gateway = p->gateway;
-	buf.metric = p->metric;
-	buf.flags = p->flags;
-	ttl = read_timer(&p->timer);
-	if (ttl)
-	  buf.expires = secclock() + ttl / 1000;
-	else
-	  buf.expires = 0;
-	fwrite((char *) &buf, sizeof(buf), 1, fp);
-	fwrite(p->iface->name, strlen(p->iface->name) + 1, 1, fp);
-      }
+      for (p = Routes[bits-1][i]; p; p = p->next)
+	if (run_timer(&p->timer)) {
+	  buf.target = p->target;
+	  buf.bits = p->bits;
+	  buf.gateway = p->gateway;
+	  buf.metric = p->metric;
+	  buf.flags = p->flags;
+	  buf.expires = secclock() + read_timer(&p->timer) / 1000;
+	  fwrite((char *) &buf, sizeof(buf), 1, fp);
+	  fwrite(p->iface->name, strlen(p->iface->name) + 1, 1, fp);
+	}
   fclose(fp);
   rename(route_tmpfilename, route_filename);
 }
@@ -99,7 +95,8 @@ void route_loadfile()
 	} while (*cp++ = c);
 	for (ifp = Ifaces; ifp && strcmp(ifp->name, ifname); ifp = ifp->next) ;
 	if (ifp)
-	  rt_add(buf.target, buf.bits, buf.gateway, ifp, buf.metric, 0x7fffffff / 1000, buf.flags & RTPRIVATE);
+	  rt_add(buf.target, buf.bits, buf.gateway, ifp, buf.metric,
+		 0x7fffffff / 1000, buf.flags & RTPRIVATE);
       }
     }
     break;
@@ -115,12 +112,9 @@ void route_loadfile()
 	  }
 	} while (*cp++ = c);
 	for (ifp = Ifaces; ifp && strcmp(ifp->name, ifname); ifp = ifp->next) ;
-	if (!buf.expires)
-	  ttl = 0;
-	else if ((ttl = buf.expires - secclock()) <= 0)
-	  ttl = -1;
-	if (ifp && ttl >= 0)
-	  rt_add(buf.target, buf.bits, buf.gateway, ifp, buf.metric, ttl, buf.flags & RTPRIVATE);
+	if (ifp && (ttl = buf.expires - secclock()) > 0)
+	  rt_add(buf.target, buf.bits, buf.gateway, ifp, buf.metric,
+		 ttl, buf.flags & RTPRIVATE);
       }
     }
     break;

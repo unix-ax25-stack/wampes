@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.6 1991/04/25 18:26:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.7 1991/05/29 12:01:34 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -39,7 +39,6 @@ void arp_savefile()
 
   FILE * fp;
   int  i;
-  int32 ttl;
   static long  nextsavetime;
   struct arp_saverecord_2 buf;
   struct arp_tab *p;
@@ -51,15 +50,11 @@ void arp_savefile()
   putc(ARP_FILE_VERSION, fp);
   for (i = 0; i < HASHMOD; i++)
     for (p = Arp_tab[i]; p; p = p->next)
-      if (p->hw_addr && p->state == ARP_VALID) {
+      if (p->hw_addr && p->state == ARP_VALID && run_timer(&p->timer)) {
 	buf.ip_addr = p->ip_addr;
 	buf.hardware = p->hardware;
 	buf.pub = p->pub;
-	ttl = read_timer(&p->timer);
-	if (ttl)
-	  buf.expires = secclock() + ttl / 1000;
-	else
-	  buf.expires = 0;
+	buf.expires = secclock() + read_timer(&p->timer) / 1000;
 	fwrite((char *) &buf, sizeof(buf), 1, fp);
 	fwrite(p->hw_addr, Arp_type[p->hardware].hwalen, 1, fp);
       }
@@ -106,10 +101,8 @@ void arp_loadfile()
       while (fread((char *) &buf, sizeof(buf), 1, fp) &&
 	     buf.hardware < NHWTYPES &&
 	     fread(hw_addr, Arp_type[buf.hardware].hwalen, 1, fp))
-	if (!buf.expires)
-	  ttl = 0;
-	else if ((ttl = buf.expires - secclock()) > 0 &&
-		 (p = arp_add(buf.ip_addr, buf.hardware, hw_addr, buf.pub))) {
+	if ((ttl = buf.expires - secclock()) > 0 &&
+	    (p = arp_add(buf.ip_addr, buf.hardware, hw_addr, buf.pub))) {
 	  set_timer(&p->timer, ttl * 1000);
 	  start_timer(&p->timer);
 	}
