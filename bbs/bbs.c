@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.29 1991/12/07 19:42:15 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.30 1991/12/18 05:54:11 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -9,6 +9,7 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <stdio.h>
 
 #include <ctype.h>
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <pwd.h>
@@ -140,6 +141,7 @@ static void append_line(struct mail *mail, char *line);
 static void get_header_value(const char *name, char *line, char *value);
 static char *get_host_from_header(char *line);
 static int host_in_header(char *fname, char *host);
+static int mail_pending(void);
 static void delete_command(int argc, char **argv);
 static void dir_print(struct dir_entry *p);
 static void dir_command(int argc, char **argv);
@@ -1047,6 +1049,34 @@ static int host_in_header(char *fname, char *host)
 
 /*---------------------------------------------------------------------------*/
 
+static int mail_pending(void)
+{
+
+  DIR *dirp;
+  char dirname[1024];
+  long curr_time;
+  static int have_mail;
+  static long next_time;
+  struct dirent *dp;
+
+  curr_time = time((long *) 0);
+  if (next_time > curr_time) return have_mail;
+  next_time = curr_time + 5 * MINUTES;
+  have_mail = 0;
+  sprintf(dirname, "/usr/spool/uucp/%s", user.name);
+  if (dirp = opendir(dirname)) {
+    for (dp = readdir(dirp); dp; dp = readdir(dirp))
+      if (*dp->d_name == 'C') {
+	have_mail = 1;
+	break;
+      }
+    closedir(dirp);
+  }
+  return have_mail;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void delete_command(int argc, char **argv)
 {
 
@@ -1159,6 +1189,7 @@ static void f_command(int argc, char **argv)
 	index.mesg > user.seq         &&
 	!calleq(index.at, myhostname) &&
 	!host_in_header(getfilename(index.mesg), user.name)) {
+      if (mail_pending()) exit(0);
       do_not_exit = 1;
       lifetime = ((index.lifetime_h << 8) & 0xff00) + (index.lifetime_l & 0xff) - 1;
       if (lifetime != -1)
@@ -2110,6 +2141,7 @@ static void bbs(void)
     fclose(fp);
   }
   if (doforward) {
+    if (mail_pending()) exit(0);
     connect_bbs();
     wait_for_prompt();
   }
