@@ -1,4 +1,4 @@
-/* @(#) $Id: ripcmd.c,v 1.9 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: ripcmd.c,v 1.10 1999/01/22 21:20:07 deyke Exp $ */
 
 /* RIP-related user commands
  *   Al Broscious, N3FCT
@@ -17,19 +17,19 @@
 #include "commands.h"
 
 struct cmds Ripcmds[] = {
-	"accept",       dodroprefuse,   0,      2,
-		"rip accept <gateway> ",
-	"add",          doripadd,       0,      3,
-		"rip add <dest> <interval> [<flags>]",
-	"drop",         doripdrop,      0,      2,
-		"rip drop <dest>",
-	"merge",        doripmerge,     0,      0,      NULL,
-	"refuse",       doaddrefuse,    0,      2,
-		"rip refuse <gateway>",
-	"request",      doripreq,       0,      2,      NULL,
-	"status",       doripstat,      0,      0,      NULL,
-	"trace",        doriptrace,     0,      0,      NULL,
-	NULL,
+	{ "accept",       dodroprefuse,   0,      2,
+		"rip accept <gateway> " },
+	{ "add",          doripadd,       0,      3,
+		"rip add <dest> <interval> [<flags>]" },
+	{ "drop",         doripdrop,      0,      2,
+		"rip drop <dest>" },
+	{ "merge",        doripmerge,     0,      0,      NULL },
+	{ "refuse",       doaddrefuse,    0,      2,
+		"rip refuse <gateway>" },
+	{ "request",      doripreq,       0,      2,      NULL },
+	{ "status",       doripstat,      0,      0,      NULL },
+	{ "trace",        doriptrace,     0,      0,      NULL },
+	{ NULL }
 };
 
 int

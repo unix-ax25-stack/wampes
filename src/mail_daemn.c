@@ -1,4 +1,4 @@
-/* @(#) $Id: mail_daemn.c,v 1.26 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: mail_daemn.c,v 1.27 1999/01/22 21:20:07 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -45,17 +45,17 @@ static const struct mailers Mailers[] = {
 /*---------------------------------------------------------------------------*/
 
 static struct cmds Mail_cmds[] = {
-/*      "gateway",      dogateway,      0,      0,      NULL,           */
-/*      "mode",         setsmtpmode,    0,      0,      NULL,           */
-	"kick",         domail_kick,    0,      0,      NULL,
-/*      "kill",         dosmtpkill,     0,      2,      "kill <jobnumber>", */
-	"list",         domail_list,    0,      0,      NULL,
-	"maxclients",   domail_maxcli,  0,      0,      NULL,
-	"timer",        domail_timer,   0,      0,      NULL,
+/*      { "gateway",      dogateway,      0,      0,      NULL },           */
+/*      { "mode",         setsmtpmode,    0,      0,      NULL },           */
+	{ "kick",         domail_kick,    0,      0,      NULL },
+/*      { "kill",         dosmtpkill,     0,      2,      "kill <jobnumber>" }, */
+	{ "list",         domail_list,    0,      0,      NULL },
+	{ "maxclients",   domail_maxcli,  0,      0,      NULL },
+	{ "timer",        domail_timer,   0,      0,      NULL },
 #ifdef SMTPTRACE
-/*      "trace",        dosmtptrace,    0,      0,      NULL,           */
+/*      { "trace",        dosmtptrace,    0,      0,      NULL },           */
 #endif
-	NULL,
+	{ NULL }
 };
 
 int dosmtp(int argc, char *argv[], void *p)

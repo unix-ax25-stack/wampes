@@ -1,4 +1,4 @@
-/* @(#) $Id: domain.c,v 1.25 1998/04/28 01:34:07 deyke Exp $ */
+/* @(#) $Id: domain.c,v 1.26 1999/01/22 21:20:07 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -85,17 +85,17 @@ static int dousegethostby(int argc, char *argv[], void *p);
  **/
 
 static struct cmds Dcmds[] = {
-	"query",        dodnsquery,     0, 2, "domain query <name|addr>",
-	"trace",        dodnstrace,     0, 0, NULL,
-	"cache",        docache,        0, 0, NULL,
-	"usegethostby", dousegethostby, 0, 0, NULL,
-	NULL,
+	{ "query",        dodnsquery,     0, 2, "domain query <name|addr>" },
+	{ "trace",        dodnstrace,     0, 0, NULL },
+	{ "cache",        docache,        0, 0, NULL },
+	{ "usegethostby", dousegethostby, 0, 0, NULL },
+	{ NULL }
 };
 
 static struct cmds Dcachecmds[] = {
-	"list",         docachelist,    0, 0, NULL,
-	"flush",        docacheflush,   0, 0, NULL,
-	NULL,
+	{ "list",         docachelist,    0, 0, NULL },
+	{ "flush",        docacheflush,   0, 0, NULL },
+	{ NULL }
 };
 
 int

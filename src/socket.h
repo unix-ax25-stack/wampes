@@ -1,4 +1,4 @@
-/* @(#) $Id: socket.h,v 1.22 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: socket.h,v 1.23 1999/01/22 21:20:07 deyke Exp $ */
 
 #ifndef _SOCKET_H
 #define _SOCKET_H
@@ -119,9 +119,5 @@ char *psocket(void *p);
 char *sockerr(int s);
 char *sockstate(int s);
 #endif
-
-/* In file tcpsock.c: */
-int start_tcp(uint port,char *name,void (*task)(),int stack);
-int stop_tcp(uint port);
 
 #endif  /* _SOCKET_H */

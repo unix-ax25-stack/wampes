@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25cmd.c,v 1.16 1996/09/09 22:14:49 deyke Exp $ */
+/* @(#) $Id: ax25cmd.c,v 1.17 1999/01/22 21:20:07 deyke Exp $ */
 
 /* AX25 control commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -67,30 +67,30 @@ char *Axreasons[] = {
 };
 
 static struct cmds Axcmds[] = {
-	"blimit",       doblimit,       0, 0, NULL,
-	"destlist",     doaxdest,       0, 0, NULL,
-	"digipeat",     dodigipeat,     0, 0, NULL,
-	"flush",        doaxflush,      0, 0, NULL,
-	"heard",        doaxheard,      0, 0, NULL,
-	"ignoretos",    doaxigntos,     0, 0, NULL,
-	"jumpstart",    dojumpstart,    0, 2, "ax25 jumpstart <call> [ON|OFF]",
-	"kick",         doaxkick,       0, 2, "ax25 kick <axcb>",
-	"maxframe",     domaxframe,     0, 0, NULL,
-	"mycall",       domycall,       0, 0, NULL,
-	"paclen",       dopaclen,       0, 0, NULL,
-	"pthresh",      dopthresh,      0, 0, NULL,
-	"reset",        doaxreset,      0, 2, "ax25 reset <axcb>",
-	"retry",        don2,           0, 0, NULL,
-	"route",        doaxroute,      0, 0, NULL,
-	"status",       doaxstat,       0, 0, NULL,
-	"t1",           dot1,           0, 0, NULL,
-	"t2",           dot2,           0, 0, NULL,
-	"t3",           dot3,           0, 0, NULL,
-	"t4",           dot4,           0, 0, NULL,
-	"t5",           dot5,           0, 0, NULL,
-	"version",      doversion,      0, 0, NULL,
-	"window",       doaxwindow,     0, 0, NULL,
-	NULL,
+	{ "blimit",       doblimit,       0, 0, NULL },
+	{ "destlist",     doaxdest,       0, 0, NULL },
+	{ "digipeat",     dodigipeat,     0, 0, NULL },
+	{ "flush",        doaxflush,      0, 0, NULL },
+	{ "heard",        doaxheard,      0, 0, NULL },
+	{ "ignoretos",    doaxigntos,     0, 0, NULL },
+	{ "jumpstart",    dojumpstart,    0, 2, "ax25 jumpstart <call> [ON|OFF]" },
+	{ "kick",         doaxkick,       0, 2, "ax25 kick <axcb>" },
+	{ "maxframe",     domaxframe,     0, 0, NULL },
+	{ "mycall",       domycall,       0, 0, NULL },
+	{ "paclen",       dopaclen,       0, 0, NULL },
+	{ "pthresh",      dopthresh,      0, 0, NULL },
+	{ "reset",        doaxreset,      0, 2, "ax25 reset <axcb>" },
+	{ "retry",        don2,           0, 0, NULL },
+	{ "route",        doaxroute,      0, 0, NULL },
+	{ "status",       doaxstat,       0, 0, NULL },
+	{ "t1",           dot1,           0, 0, NULL },
+	{ "t2",           dot2,           0, 0, NULL },
+	{ "t3",           dot3,           0, 0, NULL },
+	{ "t4",           dot4,           0, 0, NULL },
+	{ "t5",           dot5,           0, 0, NULL },
+	{ "version",      doversion,      0, 0, NULL },
+	{ "window",       doaxwindow,     0, 0, NULL },
+	{ NULL }
 };
 /* Multiplexer for top-level ax25 command */
 int
@@ -521,11 +521,11 @@ void *p)
 
   static struct cmds routecmds[] = {
 
-    "add",  dorouteadd,  0, 3, "ax25 route add [permanent] <interface> default|<path>",
-    "list", doroutelist, 0, 0, NULL,
-    "stat", doroutestat, 0, 0, NULL,
+    { "add",  dorouteadd,  0, 3, "ax25 route add [permanent] <interface> default|<path>" },
+    { "list", doroutelist, 0, 0, NULL },
+    { "stat", doroutestat, 0, 0, NULL },
 
-    NULL,   NULL,        0, 0, NULL
+    { NULL,   NULL,        0, 0, NULL }
   };
 
   axroute_loadfile();

@@ -1,4 +1,4 @@
-/* @(#) $Id: files.c,v 1.14 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: files.c,v 1.15 1999/01/22 21:20:07 deyke Exp $ */
 
 /* System-dependent definitions of various files, spool directories, etc */
 #include <stdio.h>
@@ -32,7 +32,7 @@ char Eol[] = "\r\n";
 #define SEPARATOR       "/"
 #endif
 
-#ifdef  UNIX
+#if     1
 char System[] = "UNIX";
 char *Startup = "/tcp/net.rc";          /* Initialization file */
 char *Config = "./config.net";  /* Device configuration list */

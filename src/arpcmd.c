@@ -1,4 +1,4 @@
-/* @(#) $Id: arpcmd.c,v 1.17 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: arpcmd.c,v 1.18 1999/01/22 21:20:07 deyke Exp $ */
 
 /* ARP commands
  * Copyright 1991, Phil Karn, KA9Q
@@ -21,19 +21,19 @@ static int doarpflush(int argc,char *argv[],void *p);
 static void dumparp(void);
 
 static struct cmds Arpcmds[] = {
-	"add", doarpadd, 0, 4,
-	"arp add <hostid> ether|ax25|netrom|arcnet <ether addr|callsign>",
+	{ "add", doarpadd, 0, 4,
+	  "arp add <hostid> ether|ax25|netrom|arcnet <ether addr|callsign>" },
 
-	"drop", doarpdrop, 0, 3,
-	"arp drop <hostid> ether|ax25|netrom|arcnet",
+	{ "drop", doarpdrop, 0, 3,
+	  "arp drop <hostid> ether|ax25|netrom|arcnet" },
 
-	"flush", doarpflush, 0, 0,
-	NULL,
+	{ "flush", doarpflush, 0, 0,
+	  NULL },
 
-	"publish", doarpadd, 0, 4,
-	"arp publish <hostid> ether|ax25|netrom|arcnet <ether addr|callsign>",
+	{ "publish", doarpadd, 0, 4,
+	  "arp publish <hostid> ether|ax25|netrom|arcnet <ether addr|callsign>" },
 
-	NULL,
+	{ NULL }
 };
 char *Arptypes[] = {
 	"NET/ROM",

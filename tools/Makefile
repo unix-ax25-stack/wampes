@@ -1,13 +1,4 @@
-# @(#) $Id: Makefile,v 1.38 1999/01/05 22:49:40 deyke Exp $
-
-CFLAGS     = -I../lib
-LD         = $(CC)
-LDFLAGS    = $(CFLAGS) -s
-LIBS       = ../lib/libutil.a
-MAKEFILE   = Makefile
-MKDIR      = @if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi
-RMTARGET   = @if [ -f $@ ]; then rm -f $@ || mv -f $@ $@~; fi
-SLIBS      =
+# @(#) $Id: Makefile,v 1.39 1999/01/22 21:21:39 deyke Exp $
 
 TARGETS    = \
 	     check_seteugid \
@@ -20,89 +11,9 @@ TARGETS    = \
 	     ms2mm \
 	     udpbridge
 
-all:;   @case "`uname -sr`" in \
-	HP-UX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=c89' \
-		'CFLAGS=-O -D_HPUX_SOURCE -I../lib' \
-		'SLIBS=-lndbm' \
-		_all;; \
-	AIX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O -qchars=signed -D_ALL_SOURCE -I../lib' \
-		'SLIBS=' \
-		_all;; \
-	IRIX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O -signed -I../lib' \
-		'SLIBS=' \
-		_all;; \
-	Linux*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc' \
-		'CFLAGS=-O -I../lib' \
-		'SLIBS=-lndbm' \
-		_all;; \
-	386BSD*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O -I../lib' \
-		'SLIBS=' \
-		_all;; \
-	FreeBSD*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O -I../lib' \
-		'SLIBS=' \
-		_all;; \
-	BSD/386*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O -I../lib' \
-		'SLIBS=' \
-		_all;; \
-	SunOS\ 4.*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=acc' \
-		'CFLAGS=-O -I../lib' \
-		'SLIBS=' \
-		_all;; \
-	SunOS\ 5.*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O -v -I../lib' \
-		'SLIBS=-lsocket -lnsl' \
-		_all;; \
-	ULTRIX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc' \
-		'CFLAGS=-O6 -DULTRIX_RISC -I../lib' \
-		'SLIBS=-ldbm' \
-		_all;; \
-	A/UX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc -fpcc-struct-return' \
-		'CFLAGS=-O -D_POSIX_SOURCE -I../lib' \
-		'SLIBS=-ldbm -lposix' \
-		_all;; \
-	RISC\ iX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=/tcp/cc' \
-		'CFLAGS=-DRISCiX -I../lib' \
-		'SLIBS=' \
-		_all;; \
-	AOS*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc' \
-		'CFLAGS=-O2 -Dibm6153 -I../lib' \
-		'LIBS=../aos/libaos.a ../lib/libutil.a' \
-		'SLIBS=' \
-		_all;; \
-	*) \
-		echo System `uname -sr` is not supported;; \
-	esac
+all:;        . ../lib/configure.mak; $(MAKE) -i _all
+install:;    . ../lib/configure.mak; $(MAKE) -i _install
+depend:;     . ../lib/configure.mak; $(MAKE) -i _depend
 
 _all:   $(TARGETS)
 
@@ -153,7 +64,7 @@ udpbridge: udpbridge.o $(LIBS)
 	@sleep 1
 	$(LD) $(LDFLAGS) udpbridge.o $(LIBS) $(SLIBS) -o $@
 
-install: \
+_install: \
 	/usr/local/bin/import
 
 /usr/local/bin/import: import
@@ -163,7 +74,7 @@ install: \
 
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 
-depend:; @mkmf -f $(MAKEFILE)
+_depend:; @mkmf
 ###
 check_seteugid.o: ../lib/seteugid.h
 connect.o: ../lib/configure.h

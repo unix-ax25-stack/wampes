@@ -1,4 +1,4 @@
-/* @(#) $Id: global.h,v 1.44 1998/07/27 16:08:14 deyke Exp $ */
+/* @(#) $Id: global.h,v 1.45 1999/01/22 21:20:07 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -320,8 +320,6 @@ extern char *Tmpdir;
 
 extern unsigned Nfiles; /* Maximum number of open files */
 extern unsigned Nsock;  /* Maximum number of open sockets */
-
-extern void (*Gcollect[])();
 
 struct asy;
 struct ax25_cb;

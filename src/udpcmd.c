@@ -1,4 +1,4 @@
-/* @(#) $Id: udpcmd.c,v 1.13 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: udpcmd.c,v 1.14 1999/01/22 21:20:07 deyke Exp $ */
 
 /* UDP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -15,8 +15,8 @@
 static int doudpstat(int argc,char *argv[],void *p);
 
 static struct cmds Udpcmds[] = {
-	"status",       doudpstat,      0, 0,   NULL,
-	NULL,
+	{ "status",       doudpstat,      0, 0,   NULL },
+	{ NULL }
 };
 int
 doudp(

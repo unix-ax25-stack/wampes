@@ -1,37 +1,137 @@
-# @(#) $Id: configure,v 1.29 1998/03/23 17:12:58 deyke Exp $
+# @(#) $Id: configure,v 1.30 1999/01/22 21:22:12 deyke Exp $
+
+CC='cc'
+CFLAGS='-O -I../lib'
+
+LD='$(CC)'
+LDFLAGS='$(CFLAGS) -s'
+
+LIBS='../lib/libutil.a'
+SLIBS=''
+
+MKDIR='@if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi'
+RMTARGET='@if [ -f $@ ]; then rm -f $@ || mv -f $@ $@~; fi'
 
 case "`uname -sr`" in
+
 HP-UX*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc='c89 -D_HPUX_SOURCE';;
+	CC='c89'
+	CFLAGS="$CFLAGS -D_HPUX_SOURCE -DFD_SETSIZE=1024"
+	SLIBS='-lndbm'
+	;;
+
 AIX*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-L; cc='cc -D_ALL_SOURCE';;
+	CFLAGS="$CFLAGS -qchars=signed -D_ALL_SOURCE -DFD_SETSIZE=1024"
+	;;
+
+IRIX64*)
+	CFLAGS="$CFLAGS -signed -TENV:large_stack -DFD_SETSIZE=1024"
+	;;
+
 IRIX*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-L; cc=cc;;
+	CFLAGS="$CFLAGS -signed -framepointer -DFD_SETSIZE=1024"
+	;;
+
 Linux*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-L; cc=gcc;;
+	CC='gcc'
+	# CFLAGS="$CFLAGS -I../src/linux_include"
+	CFLAGS="$CFLAGS -fsigned-char -ansi -pedantic -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wnested-externs -Dlinux -D_GNU_SOURCE -I../src/linux_include"
+	if [ -f /usr/lib/libndbm.so -o -f /usr/lib/libndbm.a ]; then
+		LIBDBM='ndbm'
+	elif [ -f /usr/lib/libgdbm.so -o -f /usr/lib/libgdbm.a ]; then
+		LIBDBM='gdbm'
+	elif [ -f /usr/lib/libdbm.so -o -f /usr/lib/libdbm.a ]; then
+		LIBDBM='dbm'
+	else
+		echo Cannot find a dbm library
+		exit 1
+	fi
+	SLIBS="-l$LIBDBM"
+	;;
+
 386BSD*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=cc;;
+	CFLAGS="$CFLAGS -DFD_SETSIZE=1024"
+	;;
+
 FreeBSD*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=cc;;
+	CFLAGS="$CFLAGS -DFD_SETSIZE=1024"
+	SLIBS='-lcrypt'
+	;;
+
 BSD/386*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=cc;;
+	CFLAGS="$CFLAGS -DFD_SETSIZE=1024"
+	;;
+
 SunOS\ 4.*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=acc;;
+	CC='acc'
+	CFLAGS="$CFLAGS -DFD_SETSIZE=1024"
+	;;
+
 SunOS\ 5.*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=cc;;
+	CFLAGS="$CFLAGS -v -DFD_SETSIZE=1024"
+	SLIBS='-lsocket -lnsl'
+	;;
+
 ULTRIX*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc='gcc -DULTRIX_RISC';;
+	CC='gcc'
+	CFLAGS="$CFLAGS -DULTRIX_RISC -DFD_SETSIZE=64"
+	SLIBS='-ldbm'
+	;;
+
 A/UX*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc='gcc -D_POSIX_SOURCE';;
+	CC='gcc'
+	CFLAGS="$CFLAGS -fpcc-struct-return -D_POSIX_SOURCE"
+	SLIBS='-ldbm -lposix'
+	;;
+
 RISC\ iX*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=/tcp/cc;;
+	CC='../cc'
+	CFLAGS='-DRISCiX -I../lib'
+	;;
+
 AOS*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-L; cc=/usr/local/bin/gcc;;
+	CC='gcc'
+	CFLAGS="$CFLAGS -Dibm6153"
+	LIBS="../aos/libaos.a $LIBS"
+	LDFLAGS='-g'
+	;;
+
 NeXT*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=cc;;
-*)
-	echo System `uname -sr` is not supported >&2
-	exit 1;;
+	CC='gcc'
+	CFLAGS="$CFLAGS -posix -D_POSIX_SOURCE -DPURIFY -DFD_SETSIZE=256"
+	LIBS="../NeXT/libnext.a $LIBS"
+	SLIBS='-ldbm'
+	;;
+
+esac
+
+rm -f configure.mak
+
+echo 'CC='"'$CC'" >> configure.mak
+echo 'CFLAGS='"'$CFLAGS'" >> configure.mak
+
+echo 'LD='"'$LD'" >> configure.mak
+echo 'LDFLAGS='"'$LDFLAGS'" >> configure.mak
+
+echo 'LIBS='"'$LIBS'" >> configure.mak
+echo 'SLIBS='"'$SLIBS'" >> configure.mak
+
+echo 'MKDIR='"'$MKDIR'" >> configure.mak
+echo 'RMTARGET='"'$RMTARGET'" >> configure.mak
+
+echo 'export CC CFLAGS LD LDFLAGS LIBS SLIBS MKDIR RMTARGET' >> configure.mak
+
+islink='-h'
+
+case "`uname -sr`" in
+AIX*)
+	islink='-L';;
+IRIX*)
+	islink='-L';;
+Linux*)
+	islink='-L';;
+AOS*)
+	islink='-L';;
 esac
 
 tmp=tmp$$
@@ -41,7 +141,7 @@ findfile()
 	name=$1
 	shift
 	for i in $*; do
-		if [ $isfile $i -a ! $islink $i ]; then
+		if [ -f $i -a ! $islink $i ]; then
 			echo "#define ${name} \"$i\""
 			return
 		fi
@@ -54,25 +154,25 @@ findprog()
 	name=$1
 	shift
 	for i in $*; do
-		if [ $isfile $i -a $isexec $i -a ! $islink $i ]; then
+		if [ -f $i -a -x $i -a ! $islink $i ]; then
 			echo "#define ${name} \"$i\""
 			return
 		fi
 	done
 	for i in $*; do
-		if [ $isfile $i -a $isexec $i ]; then
+		if [ -f $i -a -x $i ]; then
 			echo "#define ${name} \"$i\""
 			return
 		fi
 	done
 	for i in $*; do
-		if [ $isfile $i -a ! $islink $i ]; then
+		if [ -f $i -a ! $islink $i ]; then
 			echo "#define ${name} \"$i\""
 			return
 		fi
 	done
 	for i in $*; do
-		if [ $isfile $i ]; then
+		if [ -f $i ]; then
 			echo "#define ${name} \"$i\""
 			return
 		fi
@@ -85,13 +185,13 @@ finddir()
 	name=$1
 	shift
 	for i in $*; do
-		if [ $isdir $i -a ! $islink $i ]; then
+		if [ -d $i -a ! $islink $i ]; then
 			echo "#define ${name} \"$i\""
 			return
 		fi
 	done
 	for i in $*; do
-		if [ $isdir $i ]; then
+		if [ -d $i ]; then
 			echo "#define ${name} \"$i\""
 			return
 		fi
@@ -102,142 +202,153 @@ finddir()
 checksymbol()
 {
 	echo "$2" >$tmp.c
-	if $cc $tmp.c -o $tmp >/dev/null 2>&1; then
+	if $CC $CFLAGS $tmp.c -o $tmp >/dev/null 2>&1; then
 		echo "#define $1 1"
 	else
 		echo "#define $1 0"
 	fi
 }
 
-echo "#ifndef _CONFIGURE_H"
-echo "#define _CONFIGURE_H"
-echo
+(
 
-finddir HOME_DIR \
-	/home \
-	/users \
-	/usr/people \
-	/u
+	echo "#ifndef _CONFIGURE_H"
+	echo "#define _CONFIGURE_H"
+	echo
 
-finddir MAIL_DIR \
-	/var/mail \
-	/var/spool/mail \
-	/usr/mail \
-	/usr/spool/mail
+	finddir HOME_DIR \
+		/home \
+		/users \
+		/usr/people \
+		/u
 
-finddir NEWS_DIR \
-	/var/spool/news \
-	/usr/spool/news
+	finddir MAIL_DIR \
+		/var/mail \
+		/var/spool/mail \
+		/usr/mail \
+		/usr/spool/mail
 
-finddir SPOOL_DIR \
-	/var/spool \
-	/usr/spool
+	finddir NEWS_DIR \
+		/var/spool/news \
+		/usr/spool/news
 
-finddir UUCP_DIR \
-	/var/spool/uucp \
-	/usr/spool/uucp
+	finddir SPOOL_DIR \
+		/var/spool \
+		/usr/spool
 
-echo
+	finddir UUCP_DIR \
+		/var/spool/uucp \
+		/usr/spool/uucp
 
-findfile ALIASES_FILE \
-	/etc/aliases \
-	/etc/mail/aliases \
-	/usr/lib/aliases
+	echo
 
-findfile UTMP__FILE \
-	/var/adm/utmp \
-	/var/run/utmp \
-	/etc/utmp
+	findfile ALIASES_FILE \
+		/etc/aliases \
+		/etc/mail/aliases \
+		/usr/lib/aliases
 
-findfile WTMP__FILE \
-	/var/adm/wtmp \
-	/var/log/wtmp \
-	/etc/wtmp \
-	/usr/adm/wtmp
+	findfile UTMP__FILE \
+		/var/adm/utmp \
+		/var/run/utmp \
+		/etc/utmp
 
-echo
+	findfile WTMP__FILE \
+		/var/adm/wtmp \
+		/var/log/wtmp \
+		/etc/wtmp \
+		/usr/adm/wtmp
 
-findprog CTLINND_PROG \
-	/usr/local/news/bin/ctlinnd \
-	/usr/lib/news/bin/ctlinnd
+	echo
 
-findprog GZIP_PROG \
-	/usr/bin/gzip \
-	/bin/gzip \
-	/usr/local/bin/gzip \
-	/usr/contrib/bin/gzip
+	findprog CTLINND_PROG \
+		/usr/local/news/bin/ctlinnd \
+		/usr/lib/news/bin/ctlinnd
 
-findprog LS_PROG \
-	/usr/bin/ls \
-	/bin/ls
+	findprog GZIP_PROG \
+		/usr/bin/gzip \
+		/bin/gzip \
+		/usr/local/bin/gzip \
+		/usr/contrib/bin/gzip
 
-findprog MAIL_PROG \
-	/usr/openwin/bin/xview/mail \
-	/usr/bin/mailx \
-	/bin/mailx \
-	/usr/sbin/Mail \
-	/usr/bin/mail \
-	/bin/mail
+	findprog LS_PROG \
+		/usr/bin/ls \
+		/bin/ls
 
-findprog NEWALIASES_PROG \
-	/usr/bin/newaliases \
-	/usr/sbin/newaliases \
-	/usr/ucb/newaliases \
-	/usr/bsd/newaliases
+	findprog MAIL_PROG \
+		/usr/openwin/bin/xview/mail \
+		/usr/bin/mailx \
+		/bin/mailx \
+		/usr/sbin/Mail \
+		/usr/bin/mail \
+		/bin/mail
 
-findprog RNEWS_PROG \
-	/usr/bin/rnews \
-	/usr/local/bin/rnews \
-	/usr/lib/news/rnews \
-	/usr/lib/rnews
+	findprog NEWALIASES_PROG \
+		/usr/bin/newaliases \
+		/usr/sbin/newaliases \
+		/usr/ucb/newaliases \
+		/usr/bsd/newaliases
 
-findprog SENDMAIL_PROG \
-	/usr/sbin/sendmail \
-	/usr/lib/sendmail
+	findprog RNEWS_PROG \
+		/usr/bin/rnews \
+		/usr/local/bin/rnews \
+		/usr/lib/news/rnews \
+		/usr/lib/rnews
 
-echo
+	findprog SENDMAIL_PROG \
+		/usr/sbin/sendmail \
+		/usr/lib/sendmail
 
-checksymbol HAS_ADJTIME \
-	"main(){adjtime(0,0);}"
+	echo
 
-checksymbol HAS_INT32 \
-	"#include <sys/types.h>
-	 main(){int32 f;return f;}"
+	checksymbol HAS_ADJTIME \
+		"main(){adjtime(0,0);}"
 
-checksymbol HAS_NI \
-	"#include <net/if_ni.h>
-	 struct ni_desc x;
-	 main(){return 0;}"
+	checksymbol HAS_INT32 \
+		"#include <sys/types.h>
+		 main(){int32 f;return f;}"
 
-checksymbol HAS_STRDUP \
-	"main(){strdup(0);}"
+	checksymbol HAS_NI \
+		"#include <net/if_ni.h>
+		 struct ni_desc x;
+		 main(){return 0;}"
 
-checksymbol HAS_STRERROR \
-	"main(){strerror(0);}"
+	checksymbol HAS_STRDUP \
+		"main(){strdup(0);}"
 
-checksymbol HAS_STRTOUL \
-	"main(){strtoul(0,0,0);}"
+	checksymbol HAS_STRERROR \
+		"main(){strerror(0);}"
 
-checksymbol HAS_UINT \
-	"#include <sys/types.h>
-	 main(){uint f;return f;}"
+	checksymbol HAS_STRTOUL \
+		"main(){strtoul(0,0,0);}"
 
-echo
+	checksymbol HAS_UINT \
+		"#include <sys/types.h>
+		 main(){uint f;return f;}"
 
-echo "
-#include <sys/types.h>
-#ifdef _AIX
-#include <sys/select.h>
-#endif
-main(){fd_set f;}
-" >$tmp.c
-if $cc $tmp.c -o $tmp >/dev/null 2>&1; then
-	echo "#define TYPE_FD_SET fd_set"
+	echo
+
+	echo "
+	#include <sys/types.h>
+	#ifdef _AIX
+	#include <sys/select.h>
+	#endif
+	main(){fd_set f;}
+	" >$tmp.c
+	if $CC $CFLAGS $tmp.c -o $tmp >/dev/null 2>&1; then
+		echo "#define TYPE_FD_SET fd_set"
+	else
+		echo "#define TYPE_FD_SET struct fd_set"
+	fi
+
+	echo
+	echo "#endif"
+
+) > configure.tmp
+
+if cmp -s configure.tmp configure.h; then
+	rm -f configure.tmp
 else
-	echo "#define TYPE_FD_SET struct fd_set"
+	rm -f configure.h
+	mv configure.tmp configure.h
 fi
-
-echo
-echo "#endif"
 
 rm -f $tmp*

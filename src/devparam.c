@@ -1,4 +1,4 @@
-/* @(#) $Id: devparam.c,v 1.7 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: devparam.c,v 1.8 1999/01/22 21:20:07 deyke Exp $ */
 
 #include <ctype.h>
 #include "global.h"
@@ -9,28 +9,28 @@ struct param {
 	char *name;
 };
 static struct param Parms[] = {
-	PARAM_DATA,     "Data",
-	PARAM_TXDELAY,  "TxDelay",
-	PARAM_PERSIST,  "Persist",
-	PARAM_SLOTTIME, "SlotTime",
-	PARAM_TXTAIL,   "TxTail",
-	PARAM_FULLDUP,  "FullDup",
-	PARAM_HW,       "Hardware",
-	PARAM_MUTE,     "TxMute",
-	PARAM_DTR,      "DTR",
-	PARAM_RTS,      "RTS",
-	PARAM_SPEED,    "Speed",
-	PARAM_ENDDELAY, "EndDelay",
-	PARAM_GROUP,    "Group",
-	PARAM_IDLE,     "Idle",
-	PARAM_MIN,      "Min",
-	PARAM_MAXKEY,   "MaxKey",
-	PARAM_WAIT,     "Wait",
-	PARAM_DOWN,     "Down",
-	PARAM_UP,       "Up",
-	PARAM_BLIND,    "Blind",
-	PARAM_RETURN,   "Return",
-	-1,             NULL,
+	{ PARAM_DATA,     "Data" },
+	{ PARAM_TXDELAY,  "TxDelay" },
+	{ PARAM_PERSIST,  "Persist" },
+	{ PARAM_SLOTTIME, "SlotTime" },
+	{ PARAM_TXTAIL,   "TxTail" },
+	{ PARAM_FULLDUP,  "FullDup" },
+	{ PARAM_HW,       "Hardware" },
+	{ PARAM_MUTE,     "TxMute" },
+	{ PARAM_DTR,      "DTR" },
+	{ PARAM_RTS,      "RTS" },
+	{ PARAM_SPEED,    "Speed" },
+	{ PARAM_ENDDELAY, "EndDelay" },
+	{ PARAM_GROUP,    "Group" },
+	{ PARAM_IDLE,     "Idle" },
+	{ PARAM_MIN,      "Min" },
+	{ PARAM_MAXKEY,   "MaxKey" },
+	{ PARAM_WAIT,     "Wait" },
+	{ PARAM_DOWN,     "Down" },
+	{ PARAM_UP,       "Up" },
+	{ PARAM_BLIND,    "Blind" },
+	{ PARAM_RETURN,   "Return" },
+	{ -1,             NULL }
 };
 
 /* Convert a packet radio interface control token into a number

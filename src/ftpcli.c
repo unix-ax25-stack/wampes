@@ -1,4 +1,4 @@
-/* @(#) $Id: ftpcli.c,v 1.24 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: ftpcli.c,v 1.25 1999/01/22 21:20:07 deyke Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q
@@ -54,45 +54,45 @@ static char cantwrite[] = "Can't write %s\n";
 static char cantread[] = "Can't read %s\n";
 
 static struct cmds Ftpabort[] = {
-	"",             donothing,      0, 0, NULL,
-	"abort",        doabort,        0, 0, NULL,
-	NULL,       NULL,         0, 0, "Only valid command is \"abort\""
+	{ "",             donothing,      0, 0, NULL },
+	{ "abort",        doabort,        0, 0, NULL },
+	{ NULL,       NULL,         0, 0, "Only valid command is \"abort\"" }
 };
 
 static struct cmds Ftpcmds[] = {
-	"",             donothing,      0, 0, NULL,
+	{ "",             donothing,      0, 0, NULL },
 
-	"append",       doappend,       0, 2, "append <localfile> [<remotefile>]",
-	"ascii",        doascii,        0, 0, NULL,
-	"binary",       dobinary,       0, 0, NULL,
-	"bye",          doftpquit,      0, 0, NULL,
-	"cd",           doftpcd,        0, 2, "cd <directory>",
-	"cdup",         doftpcdup,      0, 0, NULL,
-	"delete",       doftpdelete,    0, 2, "delete <remotefile>",
-	"dir",          dolist,         0, 0, NULL,
-	"get",          doget,          0, 2, "get <remotefile> [<localfile>]",
-	"image",        dobinary,       0, 0, NULL,
-	"ls",           dolist,         0, 0, NULL,
-	"mkdir",        domkdir,        0, 2, "mkdir <directory>",
-	"modtime",      doftpmodtime,   0, 2, "modtime <remotefile>",
-	"nlist",        donlst,         0, 0, NULL,
-	"password",     doftppassword,  0, 2, "password <password>",
-	"put",          doput,          0, 2, "put <localfile> [<remotefile>]",
-	"pwd",          doftppwd,       0, 0, NULL,
-	"quit",         doftpquit,      0, 0, NULL,
-	"quote",        doftpquote,     0, 2, "quote <ftp command>",
-	"recv",         doget,          0, 2, "recv <remotefile> [<localfile>]",
-	"reget",        doreget,        0, 2, "reget <remotefile> [<localfile>]",
-	"restart",      doftprestart,   0, 2, "restart <offset>",
-	"rhelp",        doftprhelp,     0, 0, NULL,
-	"rmdir",        dormdir,        0, 2, "rmdir <directory>",
-	"send",         doput,          0, 2, "send <localfile> [<remotefile>]",
-	"size",         doftpsize,      0, 2, "size <remotefile>",
-	"system",       doftpsystem,    0, 0, NULL,
-	"type",         dotype,         0, 0, NULL,
-	"user",         doftpuser,      0, 2, "user <user-name> [<password>]",
+	{ "append",       doappend,       0, 2, "append <localfile> [<remotefile>]" },
+	{ "ascii",        doascii,        0, 0, NULL },
+	{ "binary",       dobinary,       0, 0, NULL },
+	{ "bye",          doftpquit,      0, 0, NULL },
+	{ "cd",           doftpcd,        0, 2, "cd <directory>" },
+	{ "cdup",         doftpcdup,      0, 0, NULL },
+	{ "delete",       doftpdelete,    0, 2, "delete <remotefile>" },
+	{ "dir",          dolist,         0, 0, NULL },
+	{ "get",          doget,          0, 2, "get <remotefile> [<localfile>]" },
+	{ "image",        dobinary,       0, 0, NULL },
+	{ "ls",           dolist,         0, 0, NULL },
+	{ "mkdir",        domkdir,        0, 2, "mkdir <directory>" },
+	{ "modtime",      doftpmodtime,   0, 2, "modtime <remotefile>" },
+	{ "nlist",        donlst,         0, 0, NULL },
+	{ "password",     doftppassword,  0, 2, "password <password>" },
+	{ "put",          doput,          0, 2, "put <localfile> [<remotefile>]" },
+	{ "pwd",          doftppwd,       0, 0, NULL },
+	{ "quit",         doftpquit,      0, 0, NULL },
+	{ "quote",        doftpquote,     0, 2, "quote <ftp command>" },
+	{ "recv",         doget,          0, 2, "recv <remotefile> [<localfile>]" },
+	{ "reget",        doreget,        0, 2, "reget <remotefile> [<localfile>]" },
+	{ "restart",      doftprestart,   0, 2, "restart <offset>" },
+	{ "rhelp",        doftprhelp,     0, 0, NULL },
+	{ "rmdir",        dormdir,        0, 2, "rmdir <directory>" },
+	{ "send",         doput,          0, 2, "send <localfile> [<remotefile>]" },
+	{ "size",         doftpsize,      0, 2, "size <remotefile>" },
+	{ "system",       doftpsystem,    0, 0, NULL },
+	{ "type",         dotype,         0, 0, NULL },
+	{ "user",         doftpuser,      0, 2, "user <user-name> [<password>]" },
 
-	NULL,       NULL,         0, 0, "Unknown command; type \"?\" for list"
+	{ NULL,       NULL,         0, 0, "Unknown command; type \"?\" for list" }
 };
 
 /* Handle top-level FTP command */

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: netupds.c,v 1.48 1998/04/28 01:35:44 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: netupds.c,v 1.49 1999/01/22 21:22:04 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -138,7 +138,6 @@ static char *include_table[] =
   "src",
   "src/*.[ch]",
   "src/Makefile",
-  "src/cc",
   "src/linux_include",
   "src/linux_include/netinet",
   "src/linux_include/netinet/*.h",
@@ -1518,6 +1517,8 @@ int main(int argc, char **argv)
     is_client = 0;
     options = "n:s:";
   } else {
+    is_client = 0;
+    options = "";
     usererr("Unknown program name");
   }
 

@@ -1,4 +1,4 @@
-/* @(#) $Id: udp.c,v 1.12 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: udp.c,v 1.13 1999/01/22 21:20:07 deyke Exp $ */
 
 /* Internet User Data Protocol (UDP)
  * Copyright 1991 Phil Karn, KA9Q
@@ -15,11 +15,11 @@
 static struct udp_cb *lookup_udp(struct socket *socket);
 
 struct mib_entry Udp_mib[] = {
-	"",                     0,
-	"udpInDatagrams",       0,
-	"udpNoPorts",           0,
-	"udpInErrors",          0,
-	"udpOutDatagrams",      0,
+	{ "",                     { 0 } },
+	{ "udpInDatagrams",       { 0 } },
+	{ "udpNoPorts",           { 0 } },
+	{ "udpInErrors",          { 0 } },
+	{ "udpOutDatagrams",      { 0 } }
 };
 
 /* UDP control structures list */

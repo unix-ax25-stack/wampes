@@ -1,6 +1,4 @@
-# @(#) $Id: Makefile,v 1.97 1999/01/05 22:48:12 deyke Exp $
-
-CFLAGS        = -I../lib
+# @(#) $Id: Makefile,v 1.98 1999/01/22 21:20:07 deyke Exp $
 
 DEST          = /tcp
 
@@ -70,14 +68,6 @@ HDRS          = arp.h \
 		transport.h \
 		tty.h \
 		udp.h
-
-LD            = $(CC)
-
-LDFLAGS       = $(CFLAGS) -s
-
-LIBS          = ../lib/libutil.a
-
-MAKEFILE      = Makefile
 
 OBJS          = adjtime.o \
 		alloc.o \
@@ -185,11 +175,7 @@ OBJS          = adjtime.o \
 		udphdr.o \
 		version.o
 
-PRINT         = pr
-
 PROGRAM       = net
-
-SLIBS         =
 
 SRCS          = adjtime.c \
 		alloc.c \
@@ -297,95 +283,9 @@ SRCS          = adjtime.c \
 		udphdr.c \
 		version.c
 
-# SYSHDRS       =
-
-RMTARGET      = @if [ -f $@ ]; then rm -f $@ || mv -f $@ $@~; fi
-
-all:;   chmod 755 cc
-	@case "`uname -sr`" in \
-	HP-UX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=c89' \
-		'CFLAGS=-O -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024 -I../lib' \
-		'SLIBS=-lndbm' \
-		_all;; \
-	AIX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O -qchars=signed -DUNIX -D_ALL_SOURCE -DFD_SETSIZE=1024 -I../lib' \
-		_all;; \
-	IRIX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O -framepointer -signed -DUNIX -DFD_SETSIZE=1024 -I../lib' \
-		_all;; \
-	Linux*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc' \
-		'CFLAGS=-O -DUNIX -I./linux_include -I../lib' \
-		'SLIBS=-lndbm' \
-		_all;; \
-	386BSD*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
-		_all;; \
-	FreeBSD*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
-		'SLIBS=-lcrypt' \
-		_all;; \
-	BSD/386*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
-		_all;; \
-	SunOS\ 4.*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=acc' \
-		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
-		_all;; \
-	SunOS\ 5.*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-v -DUNIX -DFD_SETSIZE=1024 -I../lib' \
-		'SLIBS=-lsocket -lnsl' \
-		_all;; \
-	ULTRIX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc' \
-		'CFLAGS=-O6 -DUNIX -DULTRIX_RISC -DFD_SETSIZE=64 -I../lib' \
-		'SLIBS=-ldbm' \
-		_all;; \
-	A/UX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc -fpcc-struct-return' \
-		'CFLAGS=-O -DUNIX -D_POSIX_SOURCE -I../lib' \
-		'SLIBS=-ldbm -lposix' \
-		_all;; \
-	RISC\ iX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=/tcp/src/cc' \
-		'CFLAGS=-DUNIX -DRISCiX -I../lib' \
-		_all;; \
-	AOS*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc' \
-		'CFLAGS=-O2 -DUNIX -Dibm6153 -I../lib' \
-		'LIBS=../aos/libaos.a ../lib/libutil.a' \
-		'LDFLAGS=-g' \
-		_all;; \
-	NeXT*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc -posix' \
-		'CFLAGS=-O -DUNIX -D_POSIX_SOURCE -DPURIFY -DFD_SETSIZE=256 -I../lib' \
-		'LIBS=../NeXT/libnext.a ../lib/libutil.a' \
-		'SLIBS=-ldbm' \
-		_all;; \
-	*) \
-		echo System `uname -sr` is not supported;; \
-	esac
+all:;        . ../lib/configure.mak; $(MAKE) -i _all
+install:;    . ../lib/configure.mak; $(MAKE) -i _install
+depend:;     . ../lib/configure.mak; $(MAKE) -i _depend
 
 _all:           $(PROGRAM)
 
@@ -429,29 +329,19 @@ $(PROGRAM):     $(OBJS) $(LIBS)
 		$(RMTARGET)
 		@$(LD) $(LDFLAGS) $(OBJS) $(LIBS) $(SLIBS) -o $(PROGRAM)
 
-clean:;         @rm -f *.o *~ \#*\#
+clean:;         @rm -f *.o $(PROGRAM) lint tags TAGS *~ \#*\#
 
-clobber:        clean; @rm -f $(PROGRAM) lint tags TAGS
+_depend:;       @mkmf
 
-depend:;        @mkmf -f $(MAKEFILE)
-
-echo:;          @echo $(HDRS) $(SRCS)
-
-index:;         @ctags -wx $(HDRS) $(SRCS)
-
-install:        $(DEST)/$(PROGRAM)
+_install:       $(DEST)/$(PROGRAM)
 
 lint:           $(HDRS) $(SRCS); @lih $(SRCS) > lint
-
-print:;         @$(PRINT) $(HDRS) $(SRCS)
 
 tags:           $(HDRS) $(SRCS)
 		@ctags -w $(HDRS) $(SRCS)
 
 TAGS:           $(HDRS) $(SRCS)
 		@etags $(HDRS) $(SRCS)
-
-update:         $(DEST)/$(PROGRAM)
 
 $(DEST)/$(PROGRAM): $(PROGRAM)
 		$(RMTARGET)

@@ -1,4 +1,4 @@
-/* @(#) $Id: trace.c,v 1.23 1998/04/28 01:34:07 deyke Exp $ */
+/* @(#) $Id: trace.c,v 1.24 1999/01/22 21:20:07 deyke Exp $ */
 
 /* Packet tracing - top level and generic routines, including hex/ascii
  * Copyright 1991 Phil Karn, KA9Q
@@ -31,20 +31,20 @@ static void showtrace(struct iface *ifp);
 static char nospace[] = "No space!!\n";
 
 struct tracecmd Tracecmd[] = {
-	"input",        IF_TRACE_IN,    IF_TRACE_IN,
-	"-input",       0,              IF_TRACE_IN,
-	"output",       IF_TRACE_OUT,   IF_TRACE_OUT,
-	"-output",      0,              IF_TRACE_OUT,
-	"broadcast",    0,              IF_TRACE_NOBC,
-	"-broadcast",   IF_TRACE_NOBC,  IF_TRACE_NOBC,
-	"raw",          IF_TRACE_RAW,   IF_TRACE_RAW,
-	"-raw",         0,              IF_TRACE_RAW,
-	"ascii",        IF_TRACE_ASCII, IF_TRACE_ASCII|IF_TRACE_HEX,
-	"-ascii",       0,              IF_TRACE_ASCII|IF_TRACE_HEX,
-	"hex",          IF_TRACE_HEX,   IF_TRACE_ASCII|IF_TRACE_HEX,
-	"-hex",         IF_TRACE_ASCII, IF_TRACE_ASCII|IF_TRACE_HEX,
-	"off",          0,              0xffff,
-	NULL,   0,              0
+	{ "input",        IF_TRACE_IN,    IF_TRACE_IN },
+	{ "-input",       0,              IF_TRACE_IN },
+	{ "output",       IF_TRACE_OUT,   IF_TRACE_OUT },
+	{ "-output",      0,              IF_TRACE_OUT },
+	{ "broadcast",    0,              IF_TRACE_NOBC },
+	{ "-broadcast",   IF_TRACE_NOBC,  IF_TRACE_NOBC },
+	{ "raw",          IF_TRACE_RAW,   IF_TRACE_RAW },
+	{ "-raw",         0,              IF_TRACE_RAW },
+	{ "ascii",        IF_TRACE_ASCII, IF_TRACE_ASCII|IF_TRACE_HEX },
+	{ "-ascii",       0,              IF_TRACE_ASCII|IF_TRACE_HEX },
+	{ "hex",          IF_TRACE_HEX,   IF_TRACE_ASCII|IF_TRACE_HEX },
+	{ "-hex",         IF_TRACE_ASCII, IF_TRACE_ASCII|IF_TRACE_HEX },
+	{ "off",          0,              0xffff },
+	{ NULL,   0,              0 }
 };
 
 void

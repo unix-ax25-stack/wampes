@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: udbm.c,v 1.47 1996/08/19 16:32:09 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: udbm.c,v 1.48 1999/01/22 21:22:04 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -550,12 +550,15 @@ static void fixpasswd(void)
   FILE *fp2;
   int secured = 0;
   struct passwd *pp;
-  struct stat statbuf;
   struct user *up = 0;
 
 #ifdef __hpux
-  if (!stat(spassfile, &statbuf))
-    secured = 1;
+  {
+    struct stat statbuf;
+    if (!stat(spassfile, &statbuf)) {
+      secured = 1;
+    }
+  }
 #endif
   fp1 = fopenexcl(passtemp1);
   fp2 = fopenexcl(passtemp2);

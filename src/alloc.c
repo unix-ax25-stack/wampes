@@ -1,9 +1,15 @@
-/* @(#) $Id: alloc.c,v 1.34 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: alloc.c,v 1.35 1999/01/22 21:20:07 deyke Exp $ */
 
 /* memory allocation routines
  */
 
-#ifndef PURIFY
+#if defined PURIFY || defined __sgi
+#define USE_WAMPES_MALLOC 0
+#else
+#define USE_WAMPES_MALLOC 1
+#endif
+
+#if USE_WAMPES_MALLOC
 
 #define malloc  Xmalloc
 #define free    Xfree
@@ -19,7 +25,7 @@
 
 #include "global.h"
 
-#ifndef PURIFY
+#if USE_WAMPES_MALLOC
 
 #undef malloc
 #undef free
@@ -323,7 +329,7 @@ availmem(void)
 
 /*---------------------------------------------------------------------------*/
 
-#ifndef PURIFY
+#if USE_WAMPES_MALLOC
 
 /* Print heap stats */
 static int
@@ -414,7 +420,7 @@ int argc,
 char *argv[],
 void *p
 ){
-#ifndef PURIFY
+#if USE_WAMPES_MALLOC
 	return subcmd(Memcmds,argc,argv,p);
 #else
 	return 0;
@@ -423,7 +429,7 @@ void *p
 
 /*---------------------------------------------------------------------------*/
 
-#ifndef PURIFY
+#if USE_WAMPES_MALLOC
 
 static int
 domdebug(

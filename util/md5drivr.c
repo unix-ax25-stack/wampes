@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: md5drivr.c,v 1.5 1996/08/12 18:53:33 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: md5drivr.c,v 1.6 1999/01/22 21:22:04 deyke Exp $";
 #endif
 
 /*
@@ -60,7 +60,7 @@ static long TEST_BYTES = (long)TEST_BLOCK_SIZE * (long)TEST_BLOCKS;
    Measures wall time required to digest TEST_BLOCKS * TEST_BLOCK_SIZE
    characters.
  */
-static void MDTimeTrial ()
+static void MDTimeTrial (void)
 {
   MD5_CTX mdContext;
   time_t endTime, startTime;

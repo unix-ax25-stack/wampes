@@ -1,9 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: connect2.c,v 1.10 1996/08/12 18:52:58 deyke Exp $";
-#endif
-
-#ifndef linux
-#define FD_SETSIZE      64
+static const char rcsid[] = "@(#) $Id: connect2.c,v 1.11 1999/01/22 21:21:39 deyke Exp $";
 #endif
 
 #include <sys/types.h>

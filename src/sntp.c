@@ -1,4 +1,4 @@
-/* @(#) $Id: sntp.c,v 1.16 1998/04/28 01:34:07 deyke Exp $ */
+/* @(#) $Id: sntp.c,v 1.17 1999/01/22 21:20:07 deyke Exp $ */
 
 /* Simple Network Time Protocol (SNTP) (see RFC1361) */
 
@@ -784,15 +784,15 @@ static int dosntpsys(int argc, char **argv, void *p)
 
 	static struct cmds sntpsyscmds[] = {
 
-		"leap", dosntpsysleap, 0, 0, NULL,
-		"precision", dosntpsysprecision, 0, 0, NULL,
-		"refid", dosntpsysrefid, 0, 0, NULL,
-		"reftime", dosntpsysreftime, 0, 0, NULL,
-		"rootdelay", dosntpsysrootdelay, 0, 0, NULL,
-		"rootdispersion", dosntpsysrootdispersion, 0, 0, NULL,
-		"stratum", dosntpsysstratum, 0, 0, NULL,
+		{ "leap", dosntpsysleap, 0, 0, NULL },
+		{ "precision", dosntpsysprecision, 0, 0, NULL },
+		{ "refid", dosntpsysrefid, 0, 0, NULL },
+		{ "reftime", dosntpsysreftime, 0, 0, NULL },
+		{ "rootdelay", dosntpsysrootdelay, 0, 0, NULL },
+		{ "rootdispersion", dosntpsysrootdispersion, 0, 0, NULL },
+		{ "stratum", dosntpsysstratum, 0, 0, NULL },
 
-		NULL, NULL, 0, 0, NULL
+		{ NULL, NULL, 0, 0, NULL }
 	};
 
 	int i;
@@ -819,14 +819,14 @@ int dosntp(int argc, char **argv, void *p)
 {
 	static struct cmds sntpcmds[] = {
 
-		"add", dosntpadd, 0, 2, "sntp add <server> [<interval>]",
-		"drop", dosntpdrop, 0, 2, "sntp drop <server>",
-		"status", dosntpstat, 0, 0, NULL,
-		"step_threshold", dosntpstep_threshold, 0, 0, NULL,
-		"sys", dosntpsys, 0, 0, NULL,
-		"trace", dosntptrace, 0, 0, NULL,
+		{ "add", dosntpadd, 0, 2, "sntp add <server> [<interval>]" },
+		{ "drop", dosntpdrop, 0, 2, "sntp drop <server>" },
+		{ "status", dosntpstat, 0, 0, NULL },
+		{ "step_threshold", dosntpstep_threshold, 0, 0, NULL },
+		{ "sys", dosntpsys, 0, 0, NULL },
+		{ "trace", dosntptrace, 0, 0, NULL },
 
-		NULL, NULL, 0, 0, NULL
+		{ NULL, NULL, 0, 0, NULL }
 	};
 
 	return subcmd(sntpcmds, argc, argv, p);

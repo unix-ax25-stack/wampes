@@ -1,4 +1,4 @@
-/* @(#) $Id: tcp.h,v 1.21 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: tcp.h,v 1.22 1999/01/22 21:20:07 deyke Exp $ */
 
 #ifndef _TCP_H
 #define _TCP_H
@@ -226,7 +226,6 @@ struct tcp_rtt {
 	struct tcp_rtt *next;   /* Linked-list pointer */
 };
 extern struct tcp_rtt *Tcp_rtt;
-extern int (*Kicklist[])();
 
 /* TCP statistics counters */
 struct tcp_stat {

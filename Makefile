@@ -1,33 +1,32 @@
-# @(#) $Id: Makefile,v 1.35 1998/03/23 17:10:41 deyke Exp $
+# @(#) $Id: Makefile,v 1.36 1999/01/22 21:19:44 deyke Exp $
 
-MAKEFILE   = Makefile
-
-OBSOLETE   = bbs/bbs.h \
+OBSOLETE   = /usr/local/bin/sfstat \
+	     bbs/bbs.h \
 	     bbs/findpath* \
 	     bbs/help* \
 	     bbs/killdup* \
 	     bbs/sfstat* \
 	     doc/bbs.2.gif \
 	     lib/bbs.h \
+	     src/cc \
 	     src/linux_include/stdlib.h \
 	     src/mail_bbs.* \
 	     users \
-	     util/genupd \
-	     /usr/local/bin/sfstat
+	     util/genupd
+
+DIRS       = lib \
+	     aos \
+	     NeXT \
+	     src \
+	     convers \
+	     util \
+	     bbs
 
 all:;   @-rm -f $(OBSOLETE)
 	-chmod 755 cc
-	-cd lib;     $(MAKE) -i -f $(MAKEFILE) all install
-	-cd aos;     $(MAKE) -i -f $(MAKEFILE) all install
-	-cd NeXT;    $(MAKE) -i -f $(MAKEFILE) all install
-	-cd src;     $(MAKE) -i -f $(MAKEFILE) all install
-	-cd convers; $(MAKE) -i -f $(MAKEFILE) all install
-	-cd util;    $(MAKE) -i -f $(MAKEFILE) all install
-	-cd bbs;     $(MAKE) -i -f $(MAKEFILE) all install
-	-            $(MAKE) -i -f $(MAKEFILE) /tcp/hostaddr.pag
-	-if [ -d tools ]; then \
-	 cd tools;   $(MAKE) -i -f $(MAKEFILE) all install; \
-	 fi
+	-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i all install ); done
+	-$(MAKE) -i /tcp/hostaddr.pag
+	-if [ -d tools ]; then ( cd tools; $(MAKE) -i all install ); fi
 
 /tcp/hostaddr.pag: /tcp/hosts /tcp/domain.txt /usr/local/etc/mkhostdb
 	rm -f /tcp/hostaddr.* /tcp/hostname.*
@@ -63,7 +62,6 @@ distrib:
 		lib/configure \
 		src/*.[ch] \
 		src/Makefile \
-		src/cc \
 		src/linux_include/*/*.h \
 		util/*.[ch] \
 		util/Makefile \
@@ -71,6 +69,6 @@ distrib:
 	tar cvf - $$sources | gzip -9 -v > wampes-$$version.tar.gz; \
 	cp README wampes-$$version.txt
 
-clean:;
+clean:; -for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i clean ); done
 
-depend:;
+depend:; -for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i depend ); done

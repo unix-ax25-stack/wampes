@@ -1,4 +1,4 @@
-/* @(#) $Id: tcpcmd.c,v 1.21 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: tcpcmd.c,v 1.22 1999/01/22 21:20:07 deyke Exp $ */
 
 /* TCP control and status routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -33,17 +33,17 @@ static void tcprepstat(int interval,void *p1,void *p2);
 
 /* TCP subcommand table */
 static struct cmds Tcpcmds[] = {
-	"irtt",         doirtt,         0, 0,   NULL,
-	"kick",         dotcpkick,      0, 2,   "tcp kick <tcb>",
-	"mss",          domss,          0, 0,   NULL,
-	"reset",        dotcpreset,     0, 2,   "tcp reset <tcb>",
-	"rtt",          dortt,          0, 3,   "tcp rtt <tcb> <val>",
-	"status",       dotcpstat,      0, 0,   "tcp stat <tcb> [<interval>]",
-	"syndata",      dosyndata,      0, 0,   NULL,
-	"timestamps",   dotimestamps,   0, 0,   NULL,
-	"trace",        dotcptr,        0, 0,   NULL,
-	"window",       dowindow,       0, 0,   NULL,
-	NULL,           NULL,           0, 0,   NULL
+	{ "irtt",         doirtt,         0, 0,   NULL },
+	{ "kick",         dotcpkick,      0, 2,   "tcp kick <tcb>" },
+	{ "mss",          domss,          0, 0,   NULL },
+	{ "reset",        dotcpreset,     0, 2,   "tcp reset <tcb>" },
+	{ "rtt",          dortt,          0, 3,   "tcp rtt <tcb> <val>" },
+	{ "status",       dotcpstat,      0, 0,   "tcp stat <tcb> [<interval>]" },
+	{ "syndata",      dosyndata,      0, 0,   NULL },
+	{ "timestamps",   dotimestamps,   0, 0,   NULL },
+	{ "trace",        dotcptr,        0, 0,   NULL },
+	{ "window",       dowindow,       0, 0,   NULL },
+	{ NULL,           NULL,           0, 0,   NULL }
 };
 int
 dotcp(

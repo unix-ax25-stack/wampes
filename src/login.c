@@ -1,4 +1,4 @@
-/* @(#) $Id: login.c,v 1.69 1998/07/27 16:08:14 deyke Exp $ */
+/* @(#) $Id: login.c,v 1.70 1999/01/22 21:20:07 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -851,16 +851,16 @@ int dologin(int argc, char *argv[], void *p)
 {
 
   static struct cmds Logincmds[] = {
-    "auto",         dologinauto,        0, 0, NULL,
-    "create",       dologincreate,      0, 0, NULL,
-    "defaultuser",  dologindefaultuser, 0, 0, NULL,
-    "gid",          dologingid,         0, 0, NULL,
-    "homedir",      dologinhomedir,     0, 0, NULL,
-    "logfiledir",   dologinlogfiledir,  0, 0, NULL,
-    "maxuid",       dologinmaxuid,      0, 0, NULL,
-    "minuid",       dologinminuid,      0, 0, NULL,
-    "shell",        dologinshell,       0, 0, NULL,
-    NULL
+    { "auto",         dologinauto,        0, 0, NULL },
+    { "create",       dologincreate,      0, 0, NULL },
+    { "defaultuser",  dologindefaultuser, 0, 0, NULL },
+    { "gid",          dologingid,         0, 0, NULL },
+    { "homedir",      dologinhomedir,     0, 0, NULL },
+    { "logfiledir",   dologinlogfiledir,  0, 0, NULL },
+    { "maxuid",       dologinmaxuid,      0, 0, NULL },
+    { "minuid",       dologinminuid,      0, 0, NULL },
+    { "shell",        dologinshell,       0, 0, NULL },
+    { NULL }
   };
 
   return subcmd(Logincmds, argc, argv, p);

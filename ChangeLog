@@ -1,4 +1,10 @@
-@(#) $Id: ChangeLog,v 1.49 1999/01/05 22:47:46 deyke Exp $
+@(#) $Id: ChangeLog,v 1.50 1999/01/22 21:19:44 deyke Exp $
+
+990122 Dieter Deyke <deyke@fc.hp.com>
+
+	Simplified Makefiles
+
+	Updated domain.txt
 
 990105 Dieter Deyke <deyke@fc.hp.com>
 

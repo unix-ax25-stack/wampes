@@ -1,4 +1,4 @@
-/* @(#) $Id: icmpcmd.c,v 1.20 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: icmpcmd.c,v 1.21 1999/01/22 21:20:07 deyke Exp $ */
 
 /* ICMP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -21,10 +21,10 @@ static int doicmpstat(int argc, char *argv[],void *p);
 static int doicmptr(int argc, char *argv[],void *p);
 
 static struct cmds Icmpcmds[] = {
-	"echo",         doicmpec,       0, 0, NULL,
-	"status",       doicmpstat,     0, 0, NULL,
-	"trace",        doicmptr,       0, 0, NULL,
-	NULL
+	{ "echo",         doicmpec,       0, 0, NULL },
+	{ "status",       doicmpstat,     0, 0, NULL },
+	{ "trace",        doicmptr,       0, 0, NULL },
+	{ NULL }
 };
 
 int Icmp_trace;

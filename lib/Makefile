@@ -1,8 +1,6 @@
-# @(#) $Id: Makefile,v 1.33 1999/01/05 22:50:18 deyke Exp $
+# @(#) $Id: Makefile,v 1.34 1999/01/22 21:22:12 deyke Exp $
 
 LIBRARY       = libutil.a
-
-MAKEFILE      = Makefile
 
 OBJS          = buildsaddr.o \
 		calc_crc.o \
@@ -15,100 +13,13 @@ OBJS          = buildsaddr.o \
 		strmatch.o \
 		strtoul.o
 
-RANLIB        = ranlib
+all:;   if   [ -x /bin/bash ]; then /bin/bash configure; \
+	elif [ -x /bin/ksh  ]; then /bin/ksh  configure; \
+	else                        /bin/sh   configure; \
+	fi
+	. ../lib/configure.mak; $(MAKE) -i _all
 
-all:;   if [ -x /bin/bash ]; then \
-		/bin/bash < configure > configure.tmp; \
-	elif [ -x /bin/ksh ]; then \
-		/bin/ksh < configure > configure.tmp; \
-	else \
-		/bin/sh < configure > configure.tmp; \
-	fi
-	if cmp -s configure.tmp configure.h; then \
-		rm -f configure.tmp; \
-	else \
-		rm -f configure.h; \
-		mv configure.tmp configure.h; \
-	fi
-	@case "`uname -sr`" in \
-	HP-UX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=c89' \
-		'CFLAGS=-O -D_HPUX_SOURCE' \
-		'RANLIB=:' \
-		_all;; \
-	AIX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O -qchars=signed -D_ALL_SOURCE' \
-		'RANLIB=:' \
-		_all;; \
-	IRIX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O -signed' \
-		'RANLIB=:' \
-		_all;; \
-	Linux*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc' \
-		'CFLAGS=-O' \
-		_all;; \
-	386BSD*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O' \
-		_all;; \
-	FreeBSD*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O' \
-		_all;; \
-	BSD/386*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O' \
-		_all;; \
-	SunOS\ 4.*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=acc' \
-		'CFLAGS=-O' \
-		_all;; \
-	SunOS\ 5.*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=cc' \
-		'CFLAGS=-O -v' \
-		'RANLIB=:' \
-		_all;; \
-	ULTRIX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc' \
-		'CFLAGS=-O6 -DULTRIX_RISC' \
-		_all;; \
-	A/UX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc -fpcc-struct-return' \
-		'CFLAGS=-O -D_POSIX_SOURCE' \
-		'RANLIB=:' \
-		_all;; \
-	RISC\ iX*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=/tcp/cc' \
-		'CFLAGS=-DRISCiX' \
-		_all;; \
-	AOS*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc' \
-		'CFLAGS=-O2' \
-		_all;; \
-	NeXT*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc' \
-		'CFLAGS=-O -D_POSIX_SOURCE' \
-		_all;; \
-	*) \
-		echo System `uname -sr` is not supported;; \
-	esac
+depend:; . ../lib/configure.mak; $(MAKE) -i _depend
 
 _all:   $(LIBRARY)
 
@@ -116,13 +27,13 @@ $(LIBRARY): $(OBJS)
 	@echo "Loading $@ ..."
 	@sleep 1
 	@ar cru $@ $(OBJS)
-	@$(RANLIB) $@
+	@ranlib $@ >/dev/null 2>&1
 
 install:;
 
 clean:; @rm -f *.o *.a *~ \#*\#
 
-depend:; @mkmf -f $(MAKEFILE)
+_depend:; @mkmf
 ###
 buildsaddr.o: buildsaddr.h
 calc_crc.o: calc_crc.h

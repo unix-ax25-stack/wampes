@@ -1,4 +1,4 @@
-/* @(#) $Id: netrom.c,v 1.54 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: netrom.c,v 1.55 1999/01/22 21:20:07 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -1946,16 +1946,16 @@ int donetrom(int argc, char *argv[], void *p)
 {
 
   static struct cmds netromcmds[] = {
-    "broadcast",dobroadcast,0, 0, NULL,
-    "connect",  donconnect, 0, 2, "netrom connect <node> [<user>]",
-    "ident",    doident,    0, 0, NULL,
-    "kick",     donkick,    0, 2, "netrom kick <nrcb>",
-    "links",    dolinks,    0, 0, NULL,
-    "nodes",    donodes,    0, 0, NULL,
-    "parms",    doparms,    0, 0, NULL,
-    "reset",    donreset,   0, 2, "netrom reset <nrcb>",
-    "status",   donstatus,  0, 0, NULL,
-    NULL,       NULL,       0, 0, NULL
+    { "broadcast",dobroadcast,0, 0, NULL },
+    { "connect",  donconnect, 0, 2, "netrom connect <node> [<user>]" },
+    { "ident",    doident,    0, 0, NULL },
+    { "kick",     donkick,    0, 2, "netrom kick <nrcb>" },
+    { "links",    dolinks,    0, 0, NULL },
+    { "nodes",    donodes,    0, 0, NULL },
+    { "parms",    doparms,    0, 0, NULL },
+    { "reset",    donreset,   0, 2, "netrom reset <nrcb>" },
+    { "status",   donstatus,  0, 0, NULL },
+    { NULL,       NULL,       0, 0, NULL }
   };
 
   return subcmd(netromcmds, argc, argv, p);

@@ -1,4 +1,4 @@
-/* @(#) $Id: axip.c,v 1.28 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: axip.c,v 1.29 1999/01/22 21:20:07 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -271,8 +271,8 @@ static void axip_route_add(uint8 *call, int32 dest)
 /*---------------------------------------------------------------------------*/
 
 static struct cmds Axipcmds[] = {
-  "route",  doaxiproute, 0, 0, NULL,
-  NULL,     NULL,        0, 0, NULL
+  { "route",  doaxiproute, 0, 0, NULL },
+  { NULL,     NULL,        0, 0, NULL }
 };
 
 int doaxip(int argc, char *argv[], void *p)
@@ -283,9 +283,9 @@ int doaxip(int argc, char *argv[], void *p)
 /*---------------------------------------------------------------------------*/
 
 static struct cmds Axiproutecmds[] = {
-  "add",    doaxiprouteadd,  0, 3, "axip route add <call> <host>",
-  "drop",   doaxiproutedrop, 0, 2, "axip route drop <call>",
-  NULL,     NULL,            0, 0, NULL
+  { "add",    doaxiprouteadd,  0, 3, "axip route add <call> <host>" },
+  { "drop",   doaxiproutedrop, 0, 2, "axip route drop <call>" },
+  { NULL,     NULL,            0, 0, NULL }
 };
 
 static int doaxiproute(int argc, char *argv[], void *p)

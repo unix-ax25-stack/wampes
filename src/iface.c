@@ -1,4 +1,4 @@
-/* @(#) $Id: iface.c,v 1.28 1998/03/09 17:42:56 deyke Exp $ */
+/* @(#) $Id: iface.c,v 1.29 1999/01/22 21:20:07 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -127,17 +127,17 @@ struct iface Encap = {
 char Noipaddr[] = "IP address field missing, and ip address not set\n";
 
 struct cmds Ifcmds[] = {
-	"autoroute",            ifautoroute,    0,      2,      NULL,
-	"broadcast",            ifbroad,        0,      2,      NULL,
-	"encapsulation",        ifencap,        0,      2,      NULL,
-	"forward",              ifforw,         0,      2,      NULL,
-	"ipaddress",            ifipaddr,       0,      2,      NULL,
-	"linkaddress",          iflinkadr,      0,      2,      NULL,
-	"mtu",                  ifmtu,          0,      2,      NULL,
-	"netmask",              ifnetmsk,       0,      2,      NULL,
-	"txqlen",               iftxqlen,       0,      2,      NULL,
-	"rxbuf",                ifrxbuf,        0,      2,      NULL,
-	NULL,
+	{ "autoroute",            ifautoroute,    0,      2,      NULL },
+	{ "broadcast",            ifbroad,        0,      2,      NULL },
+	{ "encapsulation",        ifencap,        0,      2,      NULL },
+	{ "forward",              ifforw,         0,      2,      NULL },
+	{ "ipaddress",            ifipaddr,       0,      2,      NULL },
+	{ "linkaddress",          iflinkadr,      0,      2,      NULL },
+	{ "mtu",                  ifmtu,          0,      2,      NULL },
+	{ "netmask",              ifnetmsk,       0,      2,      NULL },
+	{ "txqlen",               iftxqlen,       0,      2,      NULL },
+	{ "rxbuf",                ifrxbuf,        0,      2,      NULL },
+	{ NULL }
 };
 /*
  * General purpose interface transmit task, one for each device that can

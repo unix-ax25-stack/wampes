@@ -1,4 +1,4 @@
-/* @(#) $Id: cmdparse.c,v 1.19 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: cmdparse.c,v 1.20 1999/01/22 21:20:07 deyke Exp $ */
 
 /* Parse command line, set up command arguments Unix-style, and call function.
  * Note: argument is modified (delimiters are overwritten with nulls)
@@ -26,22 +26,22 @@ struct boolcmd {
 };
 
 static struct boolcmd Boolcmds[] = {
-	"y",            1,      /* Synonyms for "true" */
-	"yes",          1,
-	"true",         1,
-	"on",           1,
-	"1",            1,
-	"set",          1,
-	"enable",       1,
+	{ "y",            1 },      /* Synonyms for "true" */
+	{ "yes",          1 },
+	{ "true",         1 },
+	{ "on",           1 },
+	{ "1",            1 },
+	{ "set",          1 },
+	{ "enable",       1 },
 
-	"n",            0,      /* Synonyms for "false" */
-	"no",           0,
-	"false",        0,
-	"off",          0,
-	"0",            0,
-	"clear",        0,
-	"disable",      0,
-	NULL
+	{ "n",            0 },      /* Synonyms for "false" */
+	{ "no",           0 },
+	{ "false",        0 },
+	{ "off",          0 },
+	{ "0",            0 },
+	{ "clear",        0 },
+	{ "disable",      0 },
+	{ NULL }
 };
 
 static int print_help(struct cmds *cmdp);
