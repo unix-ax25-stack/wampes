@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.20 1992/09/01 16:52:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.21 1992/09/01 20:09:56 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -22,6 +22,10 @@
 #include "hpux.h"
 #include "telnet.h"
 #include "login.h"
+
+#ifdef sun
+#include <sys/filio.h>
+#endif
 
 #define MASTERPREFIX        "/dev/pty"
 #define SLAVEPREFIX         "/dev/tty"
@@ -84,13 +88,19 @@ char *slave;
 {
 
   char master[80];
-  int fd, num;
+  int arg;
+  int fd;
+  int num;
 
   for (num = 0; num < NUMPTY; num++)
     if (pty_locktime[num] < secclock()) {
       pty_locktime[num] = secclock() + 60;
       pty_name(master, MASTERPREFIX, num);
       if ((fd = open(master, O_RDWR | O_NDELAY, 0600)) >= 0) {
+#ifdef sun
+	arg = 1;
+	ioctl(fd, FIONBIO, &arg);
+#endif
 	*numptr = num;
 	pty_name(slave, SLAVEPREFIX, num);
 	return fd;
@@ -198,7 +208,7 @@ int create;
     unlink(PWLOCKFILE);
     return 0;
   }
-  fprintf(fp, "%s:,./:%d:%d::%s:/bin/sh\n", username, uid, GID, homedir);
+  fprintf(fp, "%s:,./:%d:%d::%s:\n", username, uid, GID, homedir);
   fclose(fp);
   pw = getpwuid(uid);
   endpwent();

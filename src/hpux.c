@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.24 1992/09/01 16:52:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.25 1992/09/01 20:09:54 deyke Exp $ */
 
 #define FD_SETSIZE 64
 
@@ -298,7 +298,7 @@ int pid;
 
 /*---------------------------------------------------------------------------*/
 
-static void dowait(void)
+static void dowait()
 {
 
   int pid;
