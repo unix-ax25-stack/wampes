@@ -1,6 +1,6 @@
 /* User Data Base Manager */
 
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.10 1991/04/16 13:17:07 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.11 1991/10/25 14:21:28 deyke Exp $";
 
 #define DEBUG           0
 
@@ -43,6 +43,7 @@ struct passwd {
 #define __ARGS(x)       x
 #else
 #define __ARGS(x)       ()
+#define const
 #endif
 
 struct user {
