@@ -1,8 +1,8 @@
-#! /bin/csh -f
+#! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mkrc,v 1.6 1994/06/16 13:14:40 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mkrc,v 1.7 1994/08/31 11:40:08 deyke Exp $
 
-foreach i (1 2 3 4)
+for i in 1 2 3 4 ; do
 cat >i$i << EOF
 
 hostname     test$i
@@ -43,4 +43,4 @@ arp add 2.2.2.2 netrom test2
 trace i 1111
 
 EOF
-end
+done

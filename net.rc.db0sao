@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.45 1994/08/21 10:16:50 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.46 1994/08/31 11:39:37 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -40,6 +40,8 @@ ax25 route add permanent tnc1 df1tl
 
 axip route add dk0hu 192.1.1.2
 
+route add  44.130.0.0/16        tnc1
+route add  44.143.0.0/16        tnc1
 route add  db0sao-u.ampr.org    ni
 route add  df1tl-1.ampr.org     tnc1
 route add  df1tl-u.ampr.org     tnc1     df1tl-1.ampr.org

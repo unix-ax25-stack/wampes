@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel-1,v 1.24 1994/08/21 10:16:52 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel-1,v 1.25 1994/08/31 11:39:39 deyke Exp $
 
 hostname     dl4sel-1
 ax25 mycall  dl4sel-1
@@ -13,6 +13,8 @@ ax25 route add axip default
 
 axip route add dk0hu 15.138.33.250
 
+route add  44.130.0.0/16        ipip     15.138.33.250
+route add  44.143.0.0/16        ipip     15.138.33.250
 route add  db0sao-u.ampr.org    ipip     15.138.33.250
 route add  db0sao.ampr.org      ipip     15.138.33.250
 route add  df1tl-1.ampr.org     ipip     15.138.33.250
