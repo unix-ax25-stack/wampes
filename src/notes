@@ -60,6 +60,17 @@ dk5sg>
 
 -------------------------------------------------------------------------------
 
+- Split screen fuer Rx/Tx.
+
+- Getrennte Ein/Ausgabe bei mehreren gleichzeitigen Verbindungen in
+  verschiedene Terminals.
+
+- Getrenntes Terminal fuer den Control screen mit der Moeglichkeit
+  permanent zu monitoren auf welcher connection neue Daten angekommen
+  sind.
+
+-------------------------------------------------------------------------------
+
 - A block of size  MAX_N has no buddy, it can not be  combined  with any
   other block.
 

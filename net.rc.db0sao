@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.48 1994/11/08 14:26:21 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.49 1994/11/18 11:36:39 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -68,7 +68,7 @@ source /tcp/netrom_links
 # netrom broadcast tnc1 nodes
 # netrom broadcast tnc2 nodes
 
-flexnet link add db0rbs
+# flexnet link add db0rbs
 flexnet link add dk0hu
 
 domain usegethostby on

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.32 1994/10/21 11:54:12 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.33 1994/11/18 11:36:39 deyke Exp $
 
 hostname     dk5sg
 ax25 mycall  dk5sg
@@ -42,7 +42,7 @@ source /tcp/netrom_links
 
 # netrom broadcast axip nodes
 
-flexnet link add dc1ik
+# flexnet link add dc1ik
 flexnet link add dl1sbl-1
 
 domain usegethostby on

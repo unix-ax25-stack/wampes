@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.46 1994/11/08 14:26:20 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.47 1994/11/18 11:36:37 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -5706,3 +5706,75 @@
 44.151.95.10    f1ciy f1ciy.ampr.org
 44.151.95.73    f6bzo-1 f6bzo-1.ampr.org
 
+# TCP/IP Hosts for Luxembourg 44.161.x.x
+#
+# Date: December 3, 1994
+###
+44.161.1.1   lx1jb       lx1jb.ampr.org       # Jean, 1232 Howald
+44.161.1.2   lx1jb-1     lx1jb-1.ampr.org     # Jean, 1232 Howald
+44.161.1.3   lx1sk       lx1sk.ampr.org       # John, 1461 Luxembourg
+44.161.1.4   lx1sk-1     lx1sk-1.ampr.org     # John, 1461 Luxembourg
+44.161.1.5   lx1bz       lx1bz.ampr.org       # Claude, 1232 Howald
+44.161.1.6   lx1bz-1     lx1bz-1.ampr.org     # Claude, 1232 Howald
+44.161.1.7   lx1dz       lx1dz.ampr.org       # Michel, 1135 Luxembourg
+44.161.1.8   lx1hm       lx1hm.ampr.org       # Marcel, 1718 Hamm
+44.161.1.9   lx9ai       lx9ai.ampr.org       # IST, 1359 Luxembourg
+44.161.1.10  lx9ai-1     lx9ai-1.ampr.org     # IST, 1359 Luxembourg
+44.161.1.100 lx0ist      lx0ist.ampr.org      # Tcp/Ip-Digi, Luxembourg
+44.161.1.101 lx0ist-1    lx0ist-1.ampr.org    # Internet-Gateway, Luxembourg
+#
+44.161.2.1   lx1ar       lx1ar.ampr.org       # Alfred, 2172 Luxembourg
+44.161.2.2   lx1gh       lx1gh.ampr.org       # Georges, 2410 Luxembourg
+44.161.2.3   lx2jd       lx2jd.ampr.org       # Joseph, 2143 Luxembourg
+44.161.2.4   lx1kx       lx1kx.ampr.org       # Serge, 2444 Bonnevoie
+#
+44.161.3.1   lx1dk       lx1dk.ampr.org       # Josy, 3530 Dudelange
+44.161.3.2   lx1pf       lx1pf.ampr.org       # Pierre, 3322 Bivange
+44.161.3.3   lx1ew       lx1ew.ampr.org       # Ernest, 3473 Dudelange
+44.161.3.4   lx1pq       lx1pq.ampr.org       # Paul, 3390 Peppange
+44.161.3.5   lx1tr       lx1tr.ampr.org       # Edmond, 3856 Schifflange
+44.161.3.6   lx1ma       lx1ma.ampr.org       # Armand, 3321 Berchem
+44.161.3.7   lx2cp       lx2cp.ampr.org       # Carmelo, 3927 Mondercange
+44.161.3.8   lx1bp       lx1bp.ampr.org       # Pierre, 3560 Dudelange
+44.161.3.9   lx1kj       lx1kj.ampr.org       # Josy, 3551 Dudelange
+44.161.3.10  lx1zf       lx1zf.ampr.org       # Francis, 3940 Mondercange
+#
+44.161.4.1   lx1jr       lx1jr.ampr.org       # Roland, 4813 Rodange
+44.161.4.2   lx1jr-1     lx1jr-1.ampr.org     # Roland, 4813 Rodange
+44.161.4.3   lx9aa       lx9aa.ampr.org       # TELECO, 4122 Esch-Alzette
+44.161.4.4   lx1nw       lx1nw.ampr.org       # Michel, 4482 Soleuvre
+44.161.4.5   lx1nw-6     lx1nw-6.ampr.org     # Michel, 4482 Soleuvre
+44.161.4.6   lx1tb       lx1tb.ampr.org       # Arsene, 4720 Petange
+44.161.4.7   lx1tb-1     lx1tb-1.ampr.org     # Arsene, 4720 Petange
+44.161.4.8   lx1om       lx1om.ampr.org       # Marc, 4750 Petange
+44.161.4.9   lx1om-1     lx1om.ampr.org       # Marc, 4750 Petange
+44.161.4.10  lx1sx       lx1sx.ampr.org       # Jean-Marie, 4837 Rodange
+44.161.4.11  lx1sx-1     lx1sx-1.ampr.org     # Jean-Marie, 4837 Rodange
+44.161.4.12  lx1em       lx1em.ampr.org       # Marc, 4393 Pontpierre
+44.161.4.13  lx1em-1     lx1em-1.ampr.org     # Marc, 4393 Pontpierre
+#
+44.161.5.1   lx1db       lx1db.ampr.org       # Willy, 5254 Sandweiler
+44.161.5.2   lx1gv       lx1gv.ampr.org       # Guy, 5402 Assel
+44.161.5.3   lx1gv-1     lx1gv-1.ampr.org     # Guy, 5402 Assel
+44.161.5.4   lx1wb       lx1wb.ampr.org       # Kathy, 5254 Sandweiler
+#
+44.161.6.1   lx1si       lx1si.ampr.org       # Marcel, 6979 Rameldange
+44.161.6.2   lx1se       lx1se.ampr.org       # Francois, 6160 Bourglinster
+44.161.6.3   lx1kq       lx1kq.ampr.org       # Mich, 6170 Godbrange
+44.161.6.4   lx2df       lx2df.ampr.org       # Freddy, 6160 Bourglinster
+#
+44.161.7.1   lx1jc       lx1jc.ampr.org       # Jean, 7206 Steinsel
+44.161.7.2   lx1pl       lx1pl.ampr.org       # Paul, 7381 Bofferdange
+44.161.7.3   lx1qa       lx1qa.ampr.org       # Louis, 7244 Bereldange
+44.161.7.4   lx1bb       lx1bb.ampr.org       # Georges, 7348 Heisdorf
+#
+44.161.8.1   lx2hh       lx2hh.ampr.org       # Hermann, 8293 Keispelt
+44.161.8.2   lx9eg       lx9eg.ampr.org       # Exped. Group, 8036 Strassen
+44.161.8.3   lx1dt       lx1dt.ampr.org       # Henry, 8010 Strassen
+44.161.8.4   lx2ea       lx2ea.ampr.org       # Andrej, 8322 Olm
+44.161.8.5   lx1nj       lx1nj.ampr.org       # Norbert, 8833 Wolvelange
+44.161.8.6   lx2kw       lx2kw.ampr.org       # Hans, 8707 Useldange
+44.161.8.7   lx1la       lx1la.ampr.org       # Laurent, 8472 Eischen
+44.161.8.8   lx1la-1     lx1la-1.ampr.org     # Laurent, 8472 Eischen
+44.161.8.9   lx1wz       lx1wz.ampr.org       # Laurent, 8366 Hagen
+#
