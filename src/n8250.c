@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.3 1991/04/12 18:34:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.4 1991/04/17 19:47:05 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -63,7 +63,7 @@ int  dev;
       ap->fd = -1;
       return (-1);
     }
-    ap->speed = 0;
+    ap->speed = -1;
   } else {
     strcpy(buf, "/dev/");
     strcat(buf, ifp->name);

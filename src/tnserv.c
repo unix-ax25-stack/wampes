@@ -1,9 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.6 1991/02/24 20:17:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.7 1991/04/17 19:48:06 deyke Exp $ */
 
 #include "global.h"
+#include "mbuf.h"
 #include "socket.h"
 #include "netuser.h"
-#include "timer.h"
 #include "tcp.h"
 #include "login.h"
 
@@ -40,7 +40,7 @@ int  cnt;
 
 static void tnserv_state_upcall(tcb, old, new)
 struct tcb *tcb;
-char  old, new;
+int  old, new;
 {
   switch (new) {
 #ifdef  QUICKSTART
@@ -58,7 +58,7 @@ char  old, new;
     close_tcp(tcb);
     break;
   case TCP_CLOSED:
-    if (old != TCP_LISTEN) {
+    if (tcb->user) {
       login_close((struct login_cb *) tcb->user);
       log(tcb, "close TELNET");
     }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.5 1990/10/12 19:26:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.6 1991/04/17 19:48:00 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -11,11 +11,18 @@
 #include "global.h"
 #include "mbuf.h"
 #include "netuser.h"
-#include "timer.h"
 #include "tcp.h"
 #include "hpux.h"
 
-extern struct sockaddr *build_sockaddr();
+struct sockaddr *build_sockaddr __ARGS((char *name, int *addrlen));
+
+struct dest {
+  int  port;
+  char  *name;
+  struct dest *next;
+};
+
+static struct dest *dests;
 
 /*---------------------------------------------------------------------------*/
 
@@ -47,39 +54,42 @@ struct tcb *tcb;
 
 static void tcp_receive(tcb, cnt)
 struct tcb *tcb;
-int16 cnt;
+int  cnt;
 {
 
   char  buffer[1024];
   int  fd;
   struct mbuf *bp;
 
-  fd = tcb->user;
-  recv_tcp(tcb, &bp, 0);
-  while ((cnt = pullup(&bp, buffer, sizeof(buffer))) > 0)
-    if (dowrite(fd, buffer, (unsigned) cnt) < 0) close_tcp(tcb);
+  if ((fd = tcb->user) > 0) {
+    recv_tcp(tcb, &bp, 0);
+    while ((cnt = pullup(&bp, buffer, sizeof(buffer))) > 0)
+      if (dowrite(fd, buffer, (unsigned) cnt) < 0) {
+	free_p(bp);
+	close_tcp(tcb);
+	return;
+      }
+  }
 }
 
 /*---------------------------------------------------------------------------*/
 
 static void tcp_ready(tcb, cnt)
 struct tcb *tcb;
-int16 cnt;
+int  cnt;
 {
-  int  fd;
-
-  fd = tcb->user;
-  setmask(chkread, fd);
+  if (tcb->user > 0) setmask(chkread, tcb->user);
 }
 
 /*---------------------------------------------------------------------------*/
 
 static void tcp_state(tcb, old, new)
 struct tcb *tcb;
-char  old, new;
+int  old, new;
 {
 
   int  addrlen, fd;
+  struct dest *dp;
   struct sockaddr *addr;
 
   switch (new) {
@@ -89,39 +99,31 @@ char  old, new;
   case TCP_ESTABLISHED:
 #endif
     log(tcb, "open %s", tcp_port_name(tcb->conn.local.port));
-    if (!(addr = build_sockaddr((char *) tcb->user, &addrlen)) ||
-	(fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) {
+    for (dp = dests; dp && dp->port != tcb->conn.local.port; dp = dp->next) ;
+    if (!dp ||
+	!(addr = build_sockaddr(dp->name, &addrlen)) ||
+	(fd = tcb->user = socket(addr->sa_family, SOCK_STREAM, 0)) <= 0 ||
+	connect(fd, addr, addrlen)) {
       close_tcp(tcb);
       return;
     }
-    tcb->user = fd;
-    if (connect(fd, addr, addrlen)) {
-      close_tcp(tcb);
-      return;
-    }
-    setmask(chkread, fd);
     readfnc[fd] = tcp_send;
     readarg[fd] = (char *) tcb;
+    setmask(chkread, fd);
     return;
   case TCP_CLOSE_WAIT:
     close_tcp(tcb);
     return;
   case TCP_CLOSED:
-    if (old == TCP_LISTEN) {
-      free((void *) tcb->user);
-      del_tcp(tcb);
-      return;
-    }
-    log(tcb, "close %s", tcp_port_name(tcb->conn.local.port));
-    fd = tcb->user;
-    if (fd > 0 && fd < _NFILE) {
+    if ((fd = tcb->user) > 0) {
+      log(tcb, "close %s", tcp_port_name(tcb->conn.local.port));
       clrmask(chkread, fd);
-      readfnc[fd] = (void (*)()) 0;
-      readarg[fd] = (char *) 0;
+      readfnc[fd] = 0;
+      readarg[fd] = 0;
       close(fd);
     }
     del_tcp(tcb);
-    return;
+    break;
   }
 }
 
@@ -133,18 +135,28 @@ char  *argv[];
 void *p;
 {
 
-  char  *socketname;
+  char  *name;
   char  buf[80];
+  struct dest *dp;
   struct socket lsocket;
 
   lsocket.address = INADDR_ANY;
   lsocket.port = tcp_port_number(argv[1]);
   if (argc < 3)
-    sprintf(socketname = buf, "loopback:%d", lsocket.port);
+    sprintf(name = buf, "loopback:%d", lsocket.port);
   else
-    socketname = argv[2];
-  socketname = strcpy(malloc((unsigned) (strlen(socketname) + 1)), socketname);
-  open_tcp(&lsocket, NULLSOCK, TCP_SERVER, 0, tcp_receive, tcp_ready, tcp_state, 0, (int) socketname);
+    name = argv[2];
+  for (dp = dests; dp && dp->port != lsocket.port; dp = dp->next) ;
+  if (!dp) {
+    dp = malloc(sizeof(*dp));
+    dp->port = lsocket.port;
+    dp->name = 0;
+    dp->next = dests;
+    dests = dp;
+  }
+  if (dp->name) free(dp->name);
+  dp->name = strdup(name);
+  open_tcp(&lsocket, NULLSOCK, TCP_SERVER, 0, tcp_receive, tcp_ready, tcp_state, 0, 0);
   return 0;
 }
 
