@@ -1,10 +1,11 @@
-# @(#) $Id: Makefile,v 1.42 1999/06/20 19:03:52 deyke Exp $
+# @(#) $Id: Makefile,v 1.43 1999/06/23 04:09:59 deyke Exp $
 
 TARGETS    = \
 	     check_seteugid \
 	     connect \
 	     connect2 \
 	     filter \
+	     htmldiff \
 	     import \
 	     makeiprt \
 	     mm2html \
@@ -33,6 +34,10 @@ connect2: connect2.o $(LIBS)
 filter: filter.o $(LIBS)
 	$(RMTARGET)
 	$(LD) $(LDFLAGS) filter.o $(LIBS) $(SLIBS) -o $@
+
+htmldiff: htmldiff.o $(LIBS)
+	$(RMTARGET)
+	$(LD) $(LDFLAGS) htmldiff.o $(LIBS) $(SLIBS) -o $@
 
 import: import.o $(LIBS)
 	$(RMTARGET)
