@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.55 1995/12/20 09:46:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.56 1996/01/08 12:24:38 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -389,26 +389,29 @@ void off_death(int pid)
 static void check_files_changed(void)
 {
 
-  static long nexttime, net_time, rc_time;
+  int i;
+  static char *filetable[3];
+  static long nexttime;
   struct stat statbuf;
 
-  if (Debug || nexttime > secclock()) return;
+  if (Debug || nexttime > secclock())
+    return;
   nexttime = secclock() + 600;
 
-  if (stat("/tcp/net", &statbuf)) return;
-  if (!net_time) net_time = statbuf.st_mtime;
-  if (net_time != statbuf.st_mtime && statbuf.st_mtime < secclock() - 3600) {
-    logmsg(0, "%s has changed", "/tcp/net");
-    main_exit = 1;
-  }
+  if (!filetable[0]) {
+    filetable[0] = "/tcp/net";
+    filetable[1] = Startup;
+  };
 
-  if (stat(Startup, &statbuf)) return;
-  if (!rc_time) rc_time = statbuf.st_mtime;
-  if (rc_time != statbuf.st_mtime && statbuf.st_mtime < secclock() - 3600) {
-    logmsg(0, "%s has changed", Startup);
-    main_exit = 1;
+  for (i = 0; filetable[i]; i++) {
+    if (!stat(filetable[i], &statbuf)) {
+      if (statbuf.st_mtime > StartTime &&
+	  statbuf.st_mtime < secclock() - 21600) {
+	logmsg(0, "%s has changed", filetable[i]);
+	main_exit = 1;
+      }
+    }
   }
-
 }
 
 /*---------------------------------------------------------------------------*/

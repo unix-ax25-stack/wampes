@@ -63,3 +63,766 @@ wampes manual:
 
 -------------------------------------------------------------------------------
 
+From mdddhd.fc.hp.com!hpfcmdd.fc.hp.com!hpbbrd.bbn.hp.com!db0sao!dc6iq!dc6iq Sat Jul  3 14:18 MDT 1993
+Received: from mdddhd by deyke2 with SMTP
+	(1.37.109.4/15.5+IOS 3.22) id AA25978; Sat, 3 Jul 93 14:18:21 -0600
+Return-Path: <mdddhd.fc.hp.com!hpfcmdd.fc.hp.com!hpbbrd.bbn.hp.com!db0sao!dc6iq!dc6iq>
+Received: by mdddhd.fc.hp.com
+	(1.37.109.4/15.5+IOS 3.22) id AA01105; Sat, 3 Jul 93 14:18:18 -0600
+Received: from mdddhd.fc.hp.com with uucp; Sat, 3 Jul 93 08:11 MDT
+Received: from hpfcmdd.fc.hp.com by mdddhd.fc.hp.com with SMTP
+	(1.37.109.4/15.5+IOS 3.22) id AA29307; Sat, 3 Jul 93 08:11:54 -0600
+Received: from hpbbrd.bbn.hp.com by hpfcmdd.fc.hp.com with SMTP
+	(16.6/15.5+IOS 3.22) id AA18956; Sat, 3 Jul 93 08:11:48 -0600
+Received: by hpbbrd.bbn.hp.com
+	(16.6/15.5+IOS 3.22) id AA22620; Sat, 3 Jul 93 16:11:42 +0200
+Received: from db0sao with uucp; Sat, 3 Jul 93 16:01:28
+Received: from localhost by db0sao; Sat, 3 Jul 93 16:01:28 +0200
+Message-Id: <m0oC83N-0005j3C@dc6iq.bawue.dl.ampr.org>
+From: mdddhd.fc.hp.com!hpfcmdd.fc.hp.com!hpbbrd.bbn.hp.com!db0sao!dc6iq.bawue.dl.ampr.org!dc6iq (Fred Baumgarten)
+Subject: Re: wampes "config has changed"
+To: deyke@hpfcmdd
+Date: Sat, 3 Jul 1993 15:54:56 +0100 (MET DST)
+In-Reply-To: <9307031332.AA29033@mdddhd.fc.hp.com> from "Dieter Deyke" at Jul 3, 93 07:32:39 am
+Reply-To: mdddhd.fc.hp.com!hpfcmdd.fc.hp.com!hpbbrd.bbn.hp.com!db0sao!dc6iq
+X-Mailer: ELM [version 2.4 PL17]
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Content-Length: 1143
+Status: RO
+
+Rehi Dieter !
+
+> Hallo Fred,
+>
+> > koenntest Du den Timestamp-Check der Files (net.rc und net)
+> > konfigurierbar zum exit fuerhen lassen?
+> >
+> > Gestern musste ich was im net.rc aendern, und anschliessend
+> > alle halbe stunde nen touch aufs net.rc machen, hihi
+> >
+> > Normalerweise bin ich halt online und kann nen exit machen,
+> > wennn es sein muss...
+>
+> Was genau hast Du hier im Sinn (Kommando Syntax)?
+
+"wampes config_change_exit yes"
+
+(meinentwegen auch als default :-)) oder
+
+"wampes config_change_exit no"
+
+Unter wampes kann man eventeull noch zukuenftige Kommandos einsortieren.
+So faende ich z.B. die optionale Angabe der Socket-Directories im
+startup-file interessant, falls ich z.B. zwei wampen auf einem Host
+starten will. Zum Aendern dann evtl.:
+
+"wampes public_socket_directory /tcp/sockets"
+"wampes privileged_socket_directoy /tcp/.sockets"
+"wampes mail_config /tcp/mail.conf"
+
+oder auch einfach nur:
+
+"wampes rootdir /tcp"
+
+so, dass ab sofort alles relativ hierzu ablaeuft.
+
+> [...]
+> Ja, schick mal.
+
+kommt in separater Mail - gzipped und uuencoded...
+
+> 73,
+> Dieter
+
+ciao, Fred
+--
+Fred Baumgarten    [44.130.29.10]
+
+-------------------------------------------------------------------------------
+
+From mdddhd.fc.hp.com!dc1ik@dc1ik.ampr.org Sun Aug 29 11:06 MDT 1993
+Received: from mdddhd by deyke2 with SMTP
+	(1.37.109.4/15.5+IOS 3.22) id AA07163; Sun, 29 Aug 93 11:06:35 -0600
+Return-Path: <mdddhd.fc.hp.com!dc1ik@dc1ik.ampr.org>
+Received: by mdddhd.fc.hp.com
+	(1.37.109.4/15.5+IOS 3.22) id AA08043; Sun, 29 Aug 93 11:06:33 -0600
+Received: from mdddhd.fc.hp.com with uucp; Sun, 8 Aug 93 09:27 MDT
+Received: from localhost by mdddhd.fc.hp.com with SMTP
+	(1.37.109.4/15.5+IOS 3.22) id AA17010; Sun, 8 Aug 93 09:22:01 -0600
+Message-Id: <m0oPCUB-0000WGC@dc1ik.ka.sub.org>
+From: dc1ik@dc1ik.ampr.org (Olaf Erb)
+Subject: dynamic mode-vc/datagram
+To: deyke@mdddhd
+Date: Sun, 8 Aug 1993 17:16:37 +0100 (MET DST)
+X-Mailer: ELM [version 2.4 PL0]
+Content-Type: text
+Content-Length: 17684
+Status: RO
+
+Hallo Dieter,
+
+Harm, dg7dah hat mir modifizierte WAMPES-Sourcen gegeben... Ich haenge
+die Diff's mal an.
+Damit ist es moeglich, vc und datagram auf einem Interface zu machen.
+Schaust Du es Dir mal an? Ich finde es ganz nett, hier laeufts problemlos.
+Harm hat den attach auch noch geaendert, es gibt beim attach nun nur noch
+kiss, den Default-Mode fuer das Interface setzt man mit
+ifconfig iface mode vc|dg
+
+Gruss
+Olaf
+
+*** /tcp/src/asy.c      Mon May 17 22:15:40 1993
+--- asy.c       Sun Aug  8 15:58:21 1993
+***************
+*** 63,72 ****
+--- 63,74 ----
+		printf("Interface %s already exists\n",argv[4]);
+		return -1;
+	}
++ #ifndef VC_DYNAMIC
+	if(setencap(NULLIF,argv[3]) == -1){
+		printf("Unknown encapsulation %s\n",argv[3]);
+		return -1;
+	}
++ #endif
+	/* Find unused asy control block */
+	for(dev=0;dev < ASY_MAX;dev++){
+		if(Asy[dev].iface == NULLIF)
+***************
+*** 88,99 ****
+--- 90,107 ----
+	ifp->mtu = atoi(argv[6]);
+	ifp->dev = dev;
+	ifp->stop = asy_detach;
++ #ifndef VC_DYNAMIC
+	setencap(ifp,argv[3]);
++ #endif
+
+	/* Look for the interface mode in the table */
+	for(ap = Asymode;ap->name != NULLCHAR;ap++){
+		if(stricmp(argv[3],ap->name) == 0){
+			trigchar = uchar(ap->trigchar);
++ #ifdef VC_DYNAMIC
++                       setencap(ifp,ap->encap_mode);
++                       ifp->flags=DATAGRAM_MODE;
++ #endif
+			if((*ap->init)(ifp) != 0){
+				printf("%s: mode %s Init failed\n",
+				 ifp->name,argv[3]);
+*** /tcp/src/asy.h      Mon May 17 22:15:42 1993
+--- asy.h       Sun Aug  8 15:58:21 1993
+***************
+*** 22,27 ****
+--- 22,30 ----
+	char trigchar;
+	int (*init)(struct iface *);
+	int (*free)(struct iface *);
++ #ifdef VC_DYNAMIC
++       char *encap_mode;
++ #endif
+  };
+  extern struct asymode Asymode[];
+
+*** /tcp/src/ax25.c     Mon Jun 21 06:33:50 1993
+--- ax25.c      Sun Aug  8 15:58:21 1993
+***************
+*** 71,79 ****
+--- 71,89 ----
+	struct mbuf *tbp;
+	char *hw_addr;
+	struct ax25_cb *axp;
++ #ifdef VC_DYNAMIC
++       int mode;
++       struct ax_route *rp;
++ #endif
+
+	if((hw_addr = res_arp(iface,ARP_AX25,gateway,bp)) == NULLCHAR)
+		return 0;       /* Wait for address resolution */
++ #ifdef VC_DYNAMIC
++       mode=iface->mflags;
++       if((rp=ax_routeptr(hw_addr,0)) != (struct ax_route *)0){
++               if(rp->mflags != MODE_IF) mode=rp->mflags;
++       }
++ #endif
+
+	/* UI frames are used for any one of the following three conditions:
+	 * 1. The "low delay" bit is set in the type-of-service field.
+***************
+*** 83,89 ****
+--- 93,103 ----
+	 *    when broadcasting on an interface that's in connected mode).
+	 */
+	if((tos & IP_COS) == DELAY
++ #ifdef VC_DYNAMIC
++        || ((tos & IP_COS) != RELIABILITY && ( mode == DATAGRAM_MODE))
++ #else
+	 || ((tos & IP_COS) != RELIABILITY && (iface->send == axui_send))
++ #endif
+	 || addreq(hw_addr,Ax25multi[0])){
+		/* Use UI frame */
+		return (*iface->output)(iface,hw_addr,iface->hwaddr,PID_IP,bp);
+***************
+*** 411,416 ****
+--- 425,433 ----
+		addrcp(rp->target, call);
+		rp->next = *tp;
+		*tp = rp;
++ #ifdef VC_DYNAMIC
++         rp->mflags=MODE_IF;
++ #endif
+	}
+	return rp;
+  }
+*** /tcp/src/ax25.h     Mon Jun 21 06:33:53 1993
+--- ax25.h      Sun Aug  8 15:58:21 1993
+***************
+*** 64,69 ****
+--- 64,75 ----
+	int perm;
+	int jumpstart;
+	long time;
++ #ifdef VC_DYNAMIC
++       uint16 mflags;
++ #define MODE_DG 0
++ #define MODE_VC 1
++ #define MODE_IF 2
++ #endif
+  };
+  #define NULLAXR ((struct ax_route *)0)
+
+*** /tcp/src/ax25cmd.c  Mon Jun 21 06:33:57 1993
+--- ax25cmd.c   Sun Aug  8 17:03:53 1993
+***************
+*** 46,51 ****
+--- 46,55 ----
+  static int doroutestat(int argc,char *argv[],void *p);
+  static int dojumpstart(int argc,char *argv[],void *p);
+
++ #ifdef VC_DYNAMIC
++ static int doaxrmod(int argc,char *argv[],void *p);
++ #endif
++
+  char *Ax25states[] = {
+	"",
+	"Disconn",
+***************
+*** 483,488 ****
+--- 487,495 ----
+
+      "add",  dorouteadd,  0, 3, "ax25 route add [permanent] <interface> default|<path>",
+      "list", doroutelist, 0, 0, NULLCHAR,
++ #ifdef VC_DYNAMIC
++     "mode", doaxrmod, 0, 0, NULLCHAR,
++ #endif
+      "stat", doroutestat, 0, 0, NULLCHAR,
+
+      NULLCHAR, NULLFP,    0, 0, NULLCHAR
+***************
+*** 561,570 ****
+	struct iface *ifp;
+	struct tm *tm;
+
+!       tm = localtime(&rp->time);
+	pax25(cp = buf, rp->target);
+	perm = rp->perm;
+	jumpstart = rp->jumpstart;
+	for (n = 0; rp; rp = rp->digi) {
+		rp_stack[++n] = rp;
+		ifp = rp->ifp;
+--- 568,590 ----
+	struct iface *ifp;
+	struct tm *tm;
+
+! #ifdef VC_DYNAMIC
+!       char *modestr;
+! #endif
+!
+!       tm = gmtime(&rp->time);
+	pax25(cp = buf, rp->target);
+	perm = rp->perm;
+	jumpstart = rp->jumpstart;
++
++ #ifdef VC_DYNAMIC
++       if(rp->mflags == MODE_IF) modestr="IF";
++       else
++       if(rp->mflags == MODE_VC) modestr="VC";
++       else
++       if(rp->mflags == MODE_DG) modestr="DG";
++       else modestr="??";
++ #endif
+	for (n = 0; rp; rp = rp->digi) {
+		rp_stack[++n] = rp;
+		ifp = rp->ifp;
+***************
+*** 575,589 ****
+			cp++;
+		pax25(cp, rp_stack[i]->target);
+	}
+!       printf("%2d-%.3s  %02d:%02d  %-9s  %c%c %s\n",
+	       tm->tm_mday,
+	       "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
+	       tm->tm_hour,
+	       tm->tm_min,
+	       ifp ? ifp->name : "???",
+	       perm ? 'P' : ' ',
+	       jumpstart ? 'J' : ' ',
+	       buf);
+  }
+
+  static int
+--- 595,622 ----
+			cp++;
+		pax25(cp, rp_stack[i]->target);
+	}
+! #ifdef VC_DYNAMIC
+!       printf("%2d-%.3s  %02d:%02d  %s  %-9s  %c%c %s\n",
+	       tm->tm_mday,
+	       "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
+	       tm->tm_hour,
+	       tm->tm_min,
++              modestr,
+	       ifp ? ifp->name : "???",
+	       perm ? 'P' : ' ',
+	       jumpstart ? 'J' : ' ',
+	       buf);
++ #else
++         printf("%2d-%.3s  %02d:%02d  %-9s  %c%c %s\n",
++                tm->tm_mday,
++                "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
++                tm->tm_hour,
++                tm->tm_min,
++                ifp ? ifp->name : "???",
++                perm ? 'P' : ' ',
++                jumpstart ? 'J' : ' ',
++                buf);
++ #endif
+  }
+
+  static int
+***************
+*** 597,603 ****
+--- 630,640 ----
+    int i;
+    struct ax_route *rp;
+
++ #ifdef VC_DYNAMIC
++   puts("Date    Time   Mod Interface  PJ Path");
++ #else
+    puts("Date    Time   Interface  PJ Path");
++ #endif
+    if(argc < 2) {
+      for (i = 0; i < AXROUTESIZE; i++)
+	for (rp = Ax_routes[i]; rp; rp = rp->next) doroutelistentry(rp);
+***************
+*** 684,686 ****
+--- 721,754 ----
+	pax25(cp,tmp);
+	return setbool(&axr->jumpstart,buf,argc - 1,argv + 1);
+  }
++ #ifdef VC_DYNAMIC
++ static int
++ doaxrmod(argc,argv,p)
++ int argc;
++ char *argv[];
++ void *p;
++ {
++   char call[AXALEN];
++   int i;
++   struct ax_route *rp;
++
++   argv++;
++     if(setcall(call, *argv) || !(rp = ax_routeptr(call, 0))){
++       printf("*** Not in table *** %s\n", *argv);
++       return 0;
++     }
++   argv++;
++   switch(tolower(**argv)){
++       case 'd':
++               rp->mflags=MODE_DG;
++               break;
++       case 'v':
++               rp->mflags=MODE_VC;
++               break;
++       default:
++               rp->mflags=MODE_IF;
++               break;
++       }
++   return 0;
++ }
++ #endif
+*** /tcp/src/axip.c     Mon May 17 22:15:54 1993
+--- axip.c      Sun Aug  8 15:58:22 1993
+***************
+*** 230,238 ****
+    addrcp(ifp->hwaddr, Mycall);
+    ifp->mtu = 256;
+    ifp->crccontrol = CRC_CCITT;
+    setencap(ifp, "AX25UI");
+
+!   edv = malloc(sizeof(*edv));
+    edv->type = type;
+    edv->port = port;
+    edv->fd = fd;
+--- 230,242 ----
+    addrcp(ifp->hwaddr, Mycall);
+    ifp->mtu = 256;
+    ifp->crccontrol = CRC_CCITT;
++ #ifdef VC_DYNAMIC
++   setencap(ifp, "AX25");
++ #else
+    setencap(ifp, "AX25UI");
++ #endif
+
+!   edv = (struct edv_t *)malloc(sizeof(*edv));
+    edv->type = type;
+    edv->port = port;
+    edv->fd = fd;
+***************
+*** 255,261 ****
+
+    for (rp = Axip_routes; rp && !addreq(rp->call, call); rp = rp->next) ;
+    if (!rp) {
+!     rp = malloc(sizeof(*rp));
+      addrcp(rp->call, call);
+      rp->next = Axip_routes;
+      Axip_routes = rp;
+--- 259,265 ----
+
+    for (rp = Axip_routes; rp && !addreq(rp->call, call); rp = rp->next) ;
+    if (!rp) {
+!     rp = (struct axip_route *)malloc(sizeof(*rp));
+      addrcp(rp->call, call);
+      rp->next = Axip_routes;
+      Axip_routes = rp;
+*** /tcp/src/config.c   Mon Jun 14 06:22:51 1993
+--- config.c    Sun Aug  8 16:04:14 1993
+***************
+*** 535,555 ****
+--- 535,563 ----
+	NULLFP,         ip_dump,        NULLFP,         NULLFP,
+
+  #ifdef  AX25
++ #ifndef VC_DYNAMIC
+	"AX25UI",       axui_send,      ax_output,      pax25,
+	setcall,        CL_AX25,        AXALEN,         ax_recv,
+	ax_forus,       ax25_dump,      NULLFP,         NULLFP,
+
+	"AX25I",        axi_send,       ax_output,      pax25,
++ #else
++       "AX25",        axui_send,       ax_output,      pax25,
++ #endif
+	setcall,        CL_AX25,        AXALEN,         ax_recv,
+	ax_forus,       ax25_dump,      NULLFP,         NULLFP,
+  #endif  /* AX25 */
+
+  #ifdef  KISS
++ #ifndef VC_DYNAMIC
+	"KISSUI",       axui_send,      ax_output,      pax25,
+	setcall,        CL_AX25,        AXALEN,         kiss_recv,
+	ki_forus,       ki_dump,        NULLFP,         NULLFP,
+
+	"KISSI",        axi_send,       ax_output,      pax25,
++ #else
++       "KISS",        axui_send,       ax_output,      pax25,
++ #endif
+	setcall,        CL_AX25,        AXALEN,         kiss_recv,
+	ki_forus,       ki_dump,        NULLFP,         NULLFP,
+  #endif  /* KISS */
+***************
+*** 642,647 ****
+--- 650,674 ----
+  /* Asynchronous interface mode table */
+  #ifdef  ASY
+  struct asymode Asymode[] = {
++ #ifdef VC_DYNAMIC
++ #ifdef  SLIP
++       "SLIP",         FR_END,         slip_init,      slip_free,"SLIP",
++       "VJSLIP",       FR_END,         slip_init,      slip_free,"SLIP",
++ #endif
++ #ifdef  KISS
++       "AX25",        FR_END,         slip_init,      slip_free,"AX25",
++       "KISS",        FR_END,         kiss_init,      kiss_free,"KISS",
++ #endif
++ #ifdef  NRS
++       "NRS",          ETX,            nrs_init,       nrs_free,"AX25",
++ #endif
++ #ifdef  PPP
++       "PPP",          HDLC_FLAG,      ppp_init,       ppp_free,"None",
++ #endif
++ #ifdef  QTSO
++       "QTSO",         HDLC_FLAG,      qtso_init,      qtso_free,"QTSO",
++ #endif
++ #else
+  #ifdef  SLIP
+	"SLIP",         FR_END,         slip_init,      slip_free,
+	"VJSLIP",       FR_END,         slip_init,      slip_free,
+***************
+*** 664,669 ****
+--- 691,697 ----
+  #ifdef  DMLITE
+	"DMLITE",       HDLC_FLAG,      dml_init,       dml_stop,
+  #endif
++ #endif
+	NULLCHAR
+  };
+  #endif  /* ASY */
+***************
+*** 764,769 ****
+--- 792,804 ----
+			arp_add(ipaddr, ARP_AX25, hwaddr, 0);
+		}
+	}
++ #ifdef VC_DYNAMIC
++       {
++       struct ax_route *rp;
++       if((rp=ax_routeptr(ap->hw_addr,0)) != (struct ax_route *)0){
++               rp->mflags= (axp==NULLAX25)?MODE_DG:MODE_VC;
++       }}
++ #endif
+	(void)ip_route(iface,bp,mcast);
+  }
+
+*** /tcp/src/domain.c   Mon May 17 22:16:12 1993
+--- domain.c    Sun Aug  8 15:58:22 1993
+***************
+*** 234,240 ****
+
+    for (cp = Cache; cp; cp = cp->next)
+      if (cp->addr == addr && !strcmp(cp->name, name)) return;
+!   cp = malloc(sizeof(*cp) + strlen(name));
+    strcpy(cp->name, name);
+    cp->addr = addr;
+    cp->next = Cache;
+--- 234,240 ----
+
+    for (cp = Cache; cp; cp = cp->next)
+      if (cp->addr == addr && !strcmp(cp->name, name)) return;
+!   cp = (struct cache *)malloc(sizeof(*cp) + strlen(name));
+    strcpy(cp->name, name);
+    cp->addr = addr;
+    cp->next = Cache;
+***************
+*** 643,649 ****
+    struct rr *qp;
+    struct rr *rrp;
+
+!   dhp = malloc(sizeof(*dhp));
+    if (ntohdomain(dhp, &bp)) goto Done;
+    if (Dtrace) {
+      printf("recv: ");
+--- 643,649 ----
+    struct rr *qp;
+    struct rr *rrp;
+
+!   dhp = (struct dhdr *)malloc(sizeof(*dhp));
+    if (ntohdomain(dhp, &bp)) goto Done;
+    if (Dtrace) {
+      printf("recv: ");
+*** /tcp/src/ftp.c      Wed Jun  5 00:34:22 1991
+--- ftp.c       Sun Aug  8 15:58:22 1993
+***************
+*** 124,130 ****
+
+	if((ftp = (struct ftp *)calloc(1,sizeof (struct ftp))) == NULLFTP)
+		return NULLFTP;
+!       if(bufsize != 0 && (ftp->buf = malloc(bufsize)) == NULLCHAR){
+		printf("called by ftp_create\n");
+		ftp_delete(ftp);
+		printf("called by ftp_create\n");
+--- 124,130 ----
+
+	if((ftp = (struct ftp *)calloc(1,sizeof (struct ftp))) == NULLFTP)
+		return NULLFTP;
+!       if(bufsize != 0 && (ftp->buf = (char *)malloc(bufsize)) == NULLCHAR){
+		printf("called by ftp_create\n");
+		ftp_delete(ftp);
+		printf("called by ftp_create\n");
+*** /tcp/src/ftpcli.c   Mon May 17 22:16:21 1993
+--- ftpcli.c    Sun Aug  8 15:58:23 1993
+***************
+*** 90,96 ****
+		return 1;
+	}
+	Current = s;
+!       if((s->name = malloc((unsigned)strlen(argv[1])+1)) != NULLCHAR)
+		strcpy(s->name,argv[1]);
+	s->type = FTP;
+	s->parse = ftpparse;
+--- 90,96 ----
+		return 1;
+	}
+	Current = s;
+!       if((s->name = (char *)malloc((unsigned)strlen(argv[1])+1)) != NULLCHAR)
+		strcpy(s->name,argv[1]);
+	s->type = FTP;
+	s->parse = ftpparse;
+*** /tcp/src/iface.c    Mon May 17 22:16:34 1993
+--- iface.c     Sun Aug  8 16:40:19 1993
+***************
+*** 29,34 ****
+--- 29,37 ----
+  static int ifforw(int argc,char *argv[],void *p);
+  static int ifencap(int argc,char *argv[],void *p);
+  static int iftxqlen(int argc,char *argv[],void *p);
++ #ifdef VC_DYNAMIC
++ static int ifmode(int argc,char *argv[],void *p);
++ #endif
+
+  /* Interface list header */
+  struct iface *Ifaces = &Loopback;
+***************
+*** 41,46 ****
+--- 44,52 ----
+	0xffffffffL,    /* broadcast    255.255.255.255 */
+	0xffffffffL,    /* netmask      255.255.255.255 */
+	MAXINT16,       /* mtu          No limit */
++ #ifdef VC_DYNAMIC
++       0,              /* MODE_DG      */
++ #endif
+	0,              /* trace        */
+	NULLFILE,       /* trfp         */
+	NULLIF,         /* forw         */
+***************
+*** 86,91 ****
+--- 92,100 ----
+	0xffffffffL,    /* broadcast    255.255.255.255 */
+	0xffffffffL,    /* netmask      255.255.255.255 */
+	MAXINT16,       /* mtu          No limit */
++ #ifdef VC_DYNAMIC
++       0,              /* MODE_DG      */
++ #endif
+	0,              /* trace        */
+	NULLFILE,       /* trfp         */
+	NULLIF,         /* forw         */
+***************
+*** 132,137 ****
+--- 141,149 ----
+	"forward",              ifforw,         0,      2,      NULLCHAR,
+	"ipaddress",            ifipaddr,       0,      2,      NULLCHAR,
+	"linkaddress",          iflinkadr,      0,      2,      NULLCHAR,
++ #ifdef VC_DYNAMIC
++       "mode",                 ifmode,         0,      2,      NULLCHAR,
++ #endif
+	"mtu",                  ifmtu,          0,      2,      NULLCHAR,
+	"netmask",              ifnetmsk,       0,      2,      NULLCHAR,
+	"txqlen",               iftxqlen,       0,      2,      NULLCHAR,
+***************
+*** 456,464 ****
+--- 468,483 ----
+  {
+	char tmp[25];
+
++ #ifdef VC_DYNAMIC
++       printf("%-10s IP addr %s MTU %u Link encap %s Mode %s\n",ifp->name,
++        inet_ntoa(ifp->addr),(int)ifp->mtu,
++        ifp->iftype != NULL ? ifp->iftype->name : "not set",
++        ifp->mflags?"VC":"DG");
++ #else
+	printf("%-10s IP addr %s MTU %u Link encap %s\n",ifp->name,
+	 inet_ntoa(ifp->addr),(int)ifp->mtu,
+	 ifp->iftype != NULL ? ifp->iftype->name : "not set");
++ #endif
+	if(ifp->iftype != NULL && ifp->iftype->format != NULL && ifp->hwaddr != NULLCHAR){
+		printf("           Link addr %s\n",
+		 (*ifp->iftype->format)(tmp,ifp->hwaddr));
+***************
+*** 637,639 ****
+--- 656,686 ----
+	return 0;
+  }
+
++ #ifdef VC_DYNAMIC
++ static int
++ ifmode(argc,argv,p)
++ int argc;
++ char *argv[];
++ void *p;
++ {
++       struct iface *ifp = p;
++       int flag;
++       if( argc != 2  ) {
++               printf("ifconfig <iface> mode <vc|dg>\n");
++               return 1;
++       }
++       switch(argv[1][0]){
++       case 'v':
++       case 'V':
++                ifp->mflags=CONNECT_MODE;
++                return 0;
++       case 'd':
++       case 'D':
++                ifp->mflags=DATAGRAM_MODE;
++                return 0;
++       default:
++               printf("ifconfig <iface> mode <vc|dg>\n");
++               return 1;
++       }
++ }
++ #endif
+*** /tcp/src/iface.h    Mon May 17 22:16:36 1993
+--- iface.h     Sun Aug  8 15:58:23 1993
+***************
+*** 57,63 ****
+	int32 netmask;          /* Network mask */
+
+	uint16 mtu;             /* Maximum transmission unit size */
+!
+	uint16 trace;           /* Trace flags */
+  #define IF_TRACE_OUT    0x01    /* Output packets */
+  #define IF_TRACE_IN     0x10    /* Packets to me except broadcast */
+--- 57,67 ----
+	int32 netmask;          /* Network mask */
+
+	uint16 mtu;             /* Maximum transmission unit size */
+! #ifdef VC_DYNAMIC
+!       uint16 mflags;          /* Interface Configuration Flag */
+! #define DATAGRAM_MODE 0               /* send datagrams in raw link frame */
+! #define CONNECT_MODE  1               /* send datagrams in connected mode */
+! #endif
+	uint16 trace;           /* Trace flags */
+  #define IF_TRACE_OUT    0x01    /* Output packets */
+  #define IF_TRACE_IN     0x10    /* Packets to me except broadcast */
+*** /tcp/src/ipfilter.c Mon May 17 22:16:44 1993
+--- ipfilter.c  Sun Aug  8 15:58:23 1993
+***************
+*** 69,75 ****
+		if (ptr->addr == addr && ptr->bits == bits)
+			return 0;
+
+!       ptr = malloc(sizeof(*ptr));
+	ptr->addr = addr;
+	ptr->mask = mask;
+	ptr->bits = bits;
+--- 69,75 ----
+		if (ptr->addr == addr && ptr->bits == bits)
+			return 0;
+
+!       ptr = (struct ipfilter_t *)malloc(sizeof(*ptr));
+	ptr->addr = addr;
+	ptr->mask = mask;
+	ptr->bits = bits;
+*** /tcp/src/ipip.c     Mon May 17 22:16:46 1993
+--- ipip.c      Sun Aug  8 15:58:23 1993
+***************
+*** 178,184 ****
+    ifp->flags = NO_RT_ADD;
+    setencap(ifp, "None");
+
+!   edv = malloc(sizeof(*edv));
+    edv->type = type;
+    edv->port = port;
+    edv->fd = fd;
+--- 178,184 ----
+    ifp->flags = NO_RT_ADD;
+    setencap(ifp, "None");
+
+!   edv = (struct edv_t *)malloc(sizeof(*edv));
+    edv->type = type;
+    edv->port = port;
+    edv->fd = fd;
+
+-------------------------------------------------------------------------------
+

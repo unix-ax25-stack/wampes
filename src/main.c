@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.54 1996/01/04 19:11:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.55 1996/01/08 12:24:41 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -68,7 +68,7 @@ int stop_repeat;
 
 char Prompt[] = "%s> ";
 static FILE *Logfp;
-time_t StartTime;                       /* time that NOS was started */
+long StartTime;                         /* time that NOS was started */
 static int Verbose;
 
 static void process_char(int c);
@@ -130,15 +130,13 @@ char *argv[])
 #endif
 	if(optind < argc){
 		/* Read startup file named on command line */
-		if((fp = fopen(argv[optind],READ_TEXT)) == NULL){
-			printf("Can't read config file %s: ",argv[optind]);
-			fflush(stdout);
-			perror("");
-		}
-	} else {
-		fp = fopen(Startup,READ_TEXT);
+		Startup = argv[optind];
 	}
-	if(fp != NULL){
+	if((fp = fopen(Startup,READ_TEXT)) == NULL){
+		printf("Can't read config file %s: ",Startup);
+		fflush(stdout);
+		perror("");
+	}else{
 		while(fgets(cmdbuf,sizeof(cmdbuf),fp) != NULL){
 			rip(cmdbuf);
 			if(Cmdline != NULL)

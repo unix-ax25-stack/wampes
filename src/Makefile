@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.84 1996/01/04 19:11:44 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.85 1996/01/08 12:24:41 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -529,7 +529,7 @@ kiss.o: global.h mbuf.h iface.h proc.h timer.h kiss.h devparam.h slip.h \
 	slhc.h ip.h internet.h tcp.h netuser.h asy.h ax25.h pktdrvr.h crc.h
 kissdump.o: global.h mbuf.h kiss.h iface.h proc.h timer.h devparam.h ax25.h \
 	trace.h crc.h
-ksubr.o: global.h proc.h mbuf.h timer.h commands.h
+ksubr.o: global.h proc.h mbuf.h timer.h commands.h main.h
 lapb.o: global.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h ip.h internet.h
 lapbtime.o: global.h mbuf.h ax25.h iface.h proc.h timer.h lapb.h
 lcsum.o: global.h ip.h mbuf.h iface.h proc.h timer.h internet.h
