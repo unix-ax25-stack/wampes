@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.26 1995/01/04 10:34:47 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.27 1995/02/15 11:47:08 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -45,7 +45,6 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 /* Flag bits */
 
 #define USE_GZIP        0x00000002      /* Otherwise use compress */
-#define USE_INTERNAL    0x00000004      /* Always set */
 #define VERSIONMASK     0x0000ff00      /* Reserved for version information */
 
 enum e_scanmode {
@@ -1212,7 +1211,7 @@ static void doclient(int argc, char **argv)
     syscallerr("/tmp/testdir");
 #endif
 
-  flags = (VERSION << 8) | USE_INTERNAL;
+  flags = VERSION << 8;
   if (*GZIP_PROG)
     flags |= USE_GZIP;
 

@@ -1398,38 +1398,44 @@
 44.130.23.40    DG1DCN  # Marc Noeker, Lennestadt: Amiga 2000
 44.130.23.102   DK3AK-14        # Siegmar Krause, 5982 Neuenrade
 #
-#44.130.144.x   Bielefeld
-# lokale Addresskoordination: DL3YEN
-#44.130.144...  fuer Digipeater und Mailbox BI/Oerlinghausen
-44.130.144.1    DB0NOS  # TCP/IP Server, Oerlinghausen; ***
-44.130.144.10   ROUTER.DB0NOS   # IP Router, Oerlinghausen; ***
-44.130.144.16   DL3YEN  # Wolfgang Beckmann, 4800 Bielefeld 13; AT
+#44.130.144.xxx Bielefeld/Oerlinghausen Stand 08.02.95
+44.130.144.1    DB0NOS  # TCP/IP-Svr Oerlinghausen ***
+44.130.144.2    FTP.DB0NOS.AMPR.ORG     # FTP-Svr Oerlinghausen ***
+#44.130.144.3-44.130.144.15 fuer DB0NOS-Peripherie und Subrechner
+44.130.144.16   DL3YEN  # Wolf, Bielefeld
 44.130.144.17   KR4PH   #
-44.130.144.18   DL8KD   # Roland Werner, 4811 Oerlinghausen; Amiga
+44.130.144.18   DL8KD   # Roland, Oerlinghausen
 44.130.144.19   SYS2.DL8KD      #
-44.130.144.20   DG6YGD  # Dirk Wacker, 4930 Detmold
-44.130.144.21   DL2YEN  # Tom Woller, 4930 Detmold
-44.130.144.22   DG7YBQ  # Uwe Herrmann, 4800 Bielefeld 14; Amiga
-44.130.144.23   DL9YEM  # Stefan Rupprecht, 4815 Schloss-Holte-Stukenbrock
-44.130.144.24   DG6YDZ  # Dieter Hergast, 4811 Oerlinghausen
-44.130.144.25   DH4YAJ  # Carl-Christian Mueller, 4800 Bielefeld 11; Amiga
-44.130.144.26   DG8YFL  # Karl-Heinz Reisner, Bielefeld; Amiga
-44.130.144.27   DG6YL   # Herbert Wienciers, Augustdorf
+44.130.144.20   DG6YGD  # Dirk, Detmold
+44.130.144.21   DL2YEN  # Tom, Detmold
+44.130.144.22   DG7YBQ  # Uwe, Bielefeld
+44.130.144.23   DL9YEM  # Stefan, Schloss Holte
+44.130.144.24   DG6YDZ  # Dieter, Oerlinghausen
+44.130.144.25   DH4YAJ  # Christian, Bielefeld
+44.130.144.26   DG8YFL  # Karl-Heinz, Bielefeld
+44.130.144.27   DG6YL   # Herbert, Augustdorf
 44.130.144.28   DL8YEA  # Peter, Bielefeld
-44.130.144.29   DG3YFS  # Raymond Beard, Stromberg
-44.130.144.30   DL9YET  # Malte Rudolf, 4986 Roedinghausen; AT
-44.130.144.31   DL9YET-7        # ; Mac
-44.130.144.32   DG9YGJ  # Stefan Liebner, 4986 Roedinghausen; IBM386
-44.130.144.33   SYS1.DG8YAY     # Joerg Frommenjohann, 4800 Bielefeld 1
-44.130.144.34   SYS2.DG8YAY     #
-44.130.144.35   DL5YDE  # Ernst Luehr, 4815 Schloss-Holte-Stukenbrock
+44.130.144.29   DG3YFS  # Raymond, Stromberg
+# 44.130.144.30 DL9YET nach 44.130.15.56
+44.130.144.31   AA2RL   #
+44.130.144.32   DG9YGJ  # Stefan, Roedinghausen
+44.130.144.33   SYS1.DG8YAY.AMPR.ORG    # Joerg, Bielefeld
+44.130.144.34   SYS2.DG8YAY.AMPR.ORG    #
+44.130.144.35   DL5YDE  # Ernst, Stukenbrock
 44.130.144.36   DG4YDB  # Michael, Bielefeld
-44.130.144.38   DG6YGF  # Erhard Golling, Bielefeld; Amiga
-44.130.144.40   DL3YEO  # Heiko, Bielefeld
-44.130.144.56   DK3RC   # Horst Brueggemann, 4930 Detmold
-44.130.144.57   DK3RC-1 # Horst Brueggemann, Bielstein
-44.130.144.58   DL0JW   # Clubstn N58, 4811 Oerlinghausen
-44.130.144.60   SYS2.DG6YGD     # Dirk, Detmold
+44.130.144.37   DG7YHV  # Juergen
+44.130.144.38   DG6YGF  # Erhard, Bielefeld
+44.130.144.39   DG4YHU  # Stephan, Detmold
+44.130.144.40   DL3YEO  # Herko, Bielefeld
+44.130.144.41   DG8YHT  # Jens, Detmold
+44.130.144.42   DH9YAX  # Udo, Verl
+44.130.144.43   DL1YDI  # Dirk, Steinhagen
+44.130.144.44   DL5YEQ  # Jens, Bielefeld
+44.130.144.56   DK3RC   # Horst, Detmold
+44.130.144.57   DK3RC-1 # Horst, Bielstein
+44.130.144.58   DL0JW   # Clubstation N58, Oerlinghausen
+44.130.144.60   SYS2.DG6YGD.AMPR.ORG    # Dirk, Detmold
+44.130.144.66   DG1YAY  # Christof, Buende
 #
 #44.130.24.x    Rhein-Main
 # lokale Adress-Koordination: DG1ZX
@@ -2482,6 +2488,7 @@
 44.130.176.73   DL6SFB  # Juergen, Tuebingen
 44.130.176.74   DL6SFB-U        #
 44.130.176.75   DL2SBL   Wolfram Koppisch, Winnenden
+44.130.176.76   DL2SEO  # Markus
 44.130.176.100  DB0RBS-10       # TCP/IP Server Schwieberdingen (DL1SEM)
 44.130.176.120  DL4IS   # Karl-Heinz Kreutel, 75245 Neulingen
 44.130.176.123  DG2SBV-SATGATE  #
@@ -4820,8 +4827,9 @@
 44.143.1.18     OE1WHU   # Wolfgang, Wien, JN88fh
 44.143.1.19     OE1MSB   # Michael Steiner, 1140 Wien, Hlavacekweg 14
 44.143.1.20     OE1HZA   # Helmut Zemann, 1160 Wien, Ottakringerstr. 242/5/11
-44.143.1.21     OE1WWL   # Wolfgang, 1180 Wien, Abt-Karl-Gasse 22/2/6
-			   emzr.911@ofis.unisys.com
+44.143.1.21     OE1WWL   # Wolfgang Wagner, 1180 Wien, Abt-Karl-Gasse 22/2/6
+			 # emzr.911@ofis.unisys.com
+44.143.1.22     OE1EJA   # Ernst Fojt, 1200 Wien, Stromstr. 18-20/2/2
 # 1200 bit/s Knoten
 44.143.1.100    OE1XRR   # Irmela Gagern
 44.143.1.101    OE1XXB   # Amateurfunkklub Alterlaa, 1230 Wien, Helmut
@@ -4863,9 +4871,8 @@
 44.143.2.5      OE2WMI   # Manfred Wieser
 44.143.2.6      OE2IWM   # Josef Wimmer, 5400 Hallein, Rieferhauptstr. 41
 44.143.2.7      OE2HEM   # Hermann Eckel, 5431 Kuchl, Markt 169
-44.143.2.8
+44.143.2.8      OE2MAL   # Markus, 5020 Salzburg, Eugen MÅllerstr. 53
 44.143.2.9      OE2HHN   # Herbert Heitzmann, 5580 Tamsweg, Taurachweg 150
-44.143.2.10
 # 1200 bit/s Knoten
 44.143.2.100
 # 9600 bit/s Knoten
@@ -4878,7 +4885,7 @@
 #
 44.143.3.1      OE3FEA   # Franz Ebert, 2560 Berndorf, Hernsteinerstr. 183
 44.143.3.2      OE3KLU   # Karl Lichtenecker, 2320 Schwechat,
-			 # Dr. Fritz Hess-Gasse 3/2/13, JN88FD
+			 # Dr. Fritz Hess-Gasse 3/2/13, JN88fd
 44.143.3.3      OE3ACC   # Alexander Czernin-Morzin, 2802 Hochwolkersdorf
 44.143.3.4      OE3PZU   # Piotr Metzger, Zistersdorf
 44.143.3.5      OE3DZW   # Dietmar Zlabinger, 3861 Eggern,
@@ -4894,6 +4901,9 @@
 44.143.3.13     OE3ALS   # Arne Herler, 3106 St. Pîlten-Spratzern,
 			 # Schwadorferstr. 14
 44.143.3.14     OE3XDU   # Klubstation der Forschungszentrum Seibersdorf
+44.143.3.15     OE3PHA   # Peter Hofmann, 1090 Wien, Hîrlgasse 18/14
+44.143.3.16     OE3BLA   # Brunold Loidl, 3400 Klosterneuburg,
+			 # Alleestr.9a
 44.143.3.31     OE3GMW   # Gottfried Motowidlo, 2351 Wiener Neudorf,
 			 # Reisenbauerring 7/2/18
 # 1200 bit/s Knoten
@@ -4914,8 +4924,7 @@
 44.143.4.1      SEC.OE3KLU # St.Andrae/Zicksee
 44.143.4.2      OE4TEA   # Walter Enz, 7121 Weiden am See, Neubaugasse 43
 44.143.4.3      OE4HZA   # Helmut Zemann, OE1HZA
-44.143.4.4
-44.143.4.5
+44.143.4.4      OE4JHW   # JÅrgen, Neufeld/Leitha, JN87eu
 # 1200 bit/s Knoten
 44.143.4.100
 # 9600 bit/s Knoten
@@ -4927,7 +4936,7 @@
 #44.143.5.xxx  OBEROESTERREICH
 #
 44.143.5.1     OE5GDL   # Gerald Dickinger, 4652 Steinerkirchen
-44.143.5.2     OE5CG    # Josef Schweiger, 4910 Ried
+44.143.5.2     OE5CG    # Josef Schwaiger, 4910 Ried, SÅdtirolerstr. 16
 44.143.5.3     OE5KVN   # Karl Kiniger, 4650 Lambach, Hafferlstr. 53,
 			# SÅdtirolerstr. 16
 44.143.5.4     OE5ROL   # Fritz Rockenbauer, 4810 Gmunden, Bahnhofstr. 29A/11
@@ -4953,11 +4962,12 @@
 44.143.5.19    OE5PSM   # Peter Scheer, 4040 Linz, Verl. Kirchengasse 15
 44.143.5.20    OE5PSO   # Peter Stockenreiter, Billrothstrasse 36,
 			# 4600 Wels
-44.143.5.21    OE5WWL   # Wolfgang, 4910 Ried im Innkreis, Sennstrasse 13
+44.143.5.21    OE5WWL   # Wolfgang Wagner, 4910 Ried im Innkreis, Sennstrasse 13
 44.143.5.22    OE5FJL   # Josef Falzeder, 9161 Maria Rain, Angersbichl 29
 44.143.5.23    OE5RHO   # Roland Haider, 4060 Leonding, Weesestrasse 10
 44.143.5.24    OE5BBM   # Siegfried Brunnbauer, 4490 St. Florian,
 			# Bachgasse 18
+44.143.5.25    OE5EOI   # Edwin Olinowetz, 5310 Mondsee, Keuschen 181
 # 1200 bit/s Knoten
 44.143.5.100   OE5XUR   # JKULINZ, Linz, Oper. OE5LEN, packet-internet
 			# gateway: 140.78.4.35 hamgate.edvz.uni-linz.ac.at
@@ -5007,16 +5017,8 @@
 44.143.7.3     OE7HNT   # Georg Sassermann, 6471 Arzl, Hauptsr. 88
 44.143.7.4     OE7KKT   # Karsten, Innsbruck
 44.143.7.5     OE7DGJ   # Gerald, Innsbruck
-44.143.7.6
-44.143.7.7
-44.143.7.8
-44.143.7.9
 44.143.7.10    OE7TKT   # Thomas Kuschel, Winkelweg 13, 6064 Rum
 44.143.7.11    SEC.OE6RHT # Reinhard
-44.143.7.12
-44.143.7.13
-44.143.7.14
-44.143.7.15
 # 1200 bit/s Knoten
 44.143.7.100   OE7XIR   # Helmut Kupsa                     ***
 44.143.7.200
@@ -5035,6 +5037,8 @@
 44.143.8.4     OE8DJK   # Bernd Stroj, 9220 Velden, Aicherstr. 6
 44.143.8.5     OE8AGK   # Alexander, Klagenfurt
 44.143.8.15    OE8DHK   # Hannes Defner, 9802 Spittal/Drau, Pf. 88
+44.143.8.19    OE8TGK   # Alexander Kînig, 9201 Krumpendorf, Blumenweg 15,
+			# JN76cb
 # 1200 bit/s Knoten
 44.143.8.100
 # 9600 bit/s Knoten
@@ -5049,12 +5053,11 @@
 44.143.9.2     OE9WLJ   # Wilfried Haeusle, 6800 Tosters, Egelseestrasse 13
 44.143.9.3     OE9DGV   # Guntram Summer, 6845 Hohenems, Hochquellenstr. 20 A
 44.143.9.4     OE9LAJ   # Alexander List, 6824 Schlins, Dafens. 4
-44.143.9.5
 44.143.9.27    OE9HHV   # Hubert HÑmerle, 6850 Dornbirn, Im Horn 27
-44.143.9.72    OE9MKV   # Mario Kienspergher, Juxweg 6, 6800 Feldkirch-
-			# Altenstadt, BBS OE9XPI, Digi OE9XFR-2
 44.143.9.55    OE9GWV   # Guntram Wagner, 6710 Nenzing,
 			# Anderas Gassnerstr. 11, JN47ue
+44.143.9.72    OE9MKV   # Mario Kienspergher, Juxweg 6, 6800 Feldkirch-
+			# Altenstadt, BBS OE9XPI, Digi OE9XFR-2
 44.143.9.73    OE9FKI   # Franz Kienspergher, Juxweg 6, 6800 Feldkirch-
 			# Altenstadt
 # 1200 bit/s Knoten
@@ -5063,7 +5066,6 @@
 44.143.25.xx
 # Schnelle Knoten (Zukunft)
 44.143.41.xx
-# -----------------------------------------------------------------------
 #HOSTS.NET FOR BELGIUM
 #
 # 44.144 Eric Langhendries ON7LE Belgium
