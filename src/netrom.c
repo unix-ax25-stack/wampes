@@ -1,7 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.3 1990/02/05 09:42:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.4 1990/02/12 11:55:06 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "global.h"
 #include "config.h"
@@ -18,7 +19,7 @@ extern int  digipeat;
 extern long  currtime;
 extern void free();
 
-static int  nr_maxdest     =    50;     /* not used */
+static int  nr_maxdest     =   400;     /* not used */
 static int  nr_minqual     =     0;     /* not used */
 static int  nr_hfqual      =   192;
 static int  nr_rsqual      =   255;     /* not used */
@@ -26,7 +27,7 @@ static int  nr_obsinit     =     3;
 static int  nr_minobs      =     0;     /* not used */
 static int  nr_bdcstint    =  1800;
 static int  nr_ttlinit     =    16;
-static int  nr_ttimeout    =   120;
+static int  nr_ttimeout    =    60;
 static int  nr_tretry      =     5;
 static int  nr_tackdelay   =     4;
 static int  nr_tbsydelay   =   180;
@@ -37,7 +38,7 @@ static int  nr_persistance =    64;     /* not used */
 static int  nr_slottime    =    10;     /* not used */
 static int  nr_callcheck   =     0;     /* not used */
 static int  nr_beacon      =     0;     /* not used */
-static int  nr_cq          =     1;     /* not used */
+static int  nr_cq          =     0;     /* not used */
 
 static struct parms {
   char  *text;
@@ -51,7 +52,7 @@ static struct parms {
   " 3 Channel 0 (HDLC) quality                   ", &nr_hfqual,      0,   255,
   " 4 Channel 1 (RS232) quality                  ", &nr_rsqual,      0,   255,
   " 5 Obsolescence count initializer (0=off)     ", &nr_obsinit,     0,   255,
-  " 6 Obsolescence count min to be broadcast     ", &nr_minobs,      1,   255,
+  " 6 Obsolescence count min to be broadcast     ", &nr_minobs,      0,   255,
   " 7 Auto-update broadcast interval (sec, 0=off)", &nr_bdcstint,    0, 65535,
   " 8 Network 'time-to-live' initializer         ", &nr_ttlinit,     1,   255,
   " 9 Transport timeout (sec)                    ", &nr_ttimeout,    5,   600,
@@ -80,7 +81,8 @@ static struct parms {
 /******************************** Link Manager *******************************/
 /*---------------------------------------------------------------------------*/
 
-#define FAILED  0       /* Set to 1 if broadcasts are used */
+#define IDENTLEN     6
+#define MAXLEVEL   256
 
 struct broadcast {
   struct interface *ifp;
@@ -88,63 +90,46 @@ struct broadcast {
   struct broadcast *next;
 };
 
-struct neighbor {
-  struct ax25_addr call;
-  int  quality;
-  int  failed;
-  int  permanent;
-  int  usecount;
+struct node {
+  struct ax25_addr *call;
+  char  ident[IDENTLEN];
+  int  level;
+  struct link *links;
+  struct node *neighbor, *old_neighbor;
+  double  quality, old_quality, tmp_quality;
+  int  force_broadcast;
   struct axcb *crosslink;
-  struct neighbor *prev, *next;
+  struct node *prev, *next;
 };
 
 struct axcb *netrom_server_axcb;
 
 static struct broadcast *broadcasts;
-static struct neighbor *neighbors;
-static void calculate_routes();
+static struct node *nodes, *mynode;
+static void calculate_all();
 
 /*---------------------------------------------------------------------------*/
 
-static void addrcp(to, from)
-register struct ax25_addr *to, *from;
-{
-  *((long *)to)++ = *((long *)from)++;
-  *((short *)to)++ = *((short *)from)++;
-  *((char *)to) = (*((char *)from) & SSID) | 0x60;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static struct neighbor *neighborptr(call, create)
+static struct node *nodeptr(call, create)
 struct ax25_addr *call;
 int  create;
 {
-  register struct neighbor *pn;
+  register struct node *pn;
 
-  for (pn = neighbors; pn && !addreq(call, &pn->call); pn = pn->next) ;
+  for (pn = nodes; pn && !addreq(call, pn->call); pn = pn->next) ;
   if (!pn && create) {
-    pn = (struct neighbor *) calloc(1, sizeof(struct neighbor ));
-    addrcp(&pn->call, call);
-    pn->quality = nr_hfqual;
-    if (neighbors) {
-      pn->next = neighbors;
-      neighbors->prev = pn;
+    pn = (struct node *) calloc(1, sizeof(struct node ));
+    pn->call = (struct ax25_addr *) malloc(sizeof(struct ax25_addr ));
+    addrcp(pn->call, call);
+    memset(pn->ident, ' ', IDENTLEN);
+    pn->level = MAXLEVEL;
+    if (nodes) {
+      pn->next = nodes;
+      nodes->prev = pn;
     }
-    neighbors = pn;
+    nodes = pn;
   }
   return pn;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void delete_neighbor(pn)
-register struct neighbor *pn;
-{
-  if (pn->prev) pn->prev->next = pn->next;
-  if (pn->next) pn->next->prev = pn->prev;
-  if (pn == neighbors) neighbors = pn->next;
-  free((char *) pn);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -153,36 +138,28 @@ static void ax25_state_upcall(cp, oldstate, newstate)
 struct axcb *cp;
 int  oldstate, newstate;
 {
-  register struct neighbor *pn;
+  register struct node *pn;
 
   if (cp->user)
-    pn = (struct neighbor *) cp->user;
+    pn = (struct node *) cp->user;
   else
-    cp->user = (char *) (pn = neighborptr(axptr(cp->path), 1));
+    cp->user = (char *) (pn = nodeptr(axptr(cp->path), 1));
   switch (newstate) {
   case CONNECTING:
     break;
   case CONNECTED:
-    if (pn->failed) {
-      pn->failed = 0;
-      calculate_routes();
-    }
     pn->crosslink = cp;
+    if (update_link(mynode, pn, 1, nr_hfqual)) calculate_all();
     break;
   case DISCONNECTING:
-    if (cp->reason != NORMAL && !pn->failed) {
-      pn->failed = FAILED;
-      calculate_routes();
-    }
+    if (cp->reason != NORMAL)
+      if (update_link(mynode, pn, 1, 0)) calculate_all();
     break;
   case DISCONNECTED:
-    if (cp->reason != NORMAL && !pn->failed) {
-      pn->failed = FAILED;
-      calculate_routes();
-    }
-    del_ax(cp);
     pn->crosslink = NULLAXCB;
-    if (!pn->permanent && !pn->usecount) delete_neighbor(pn);
+    if (cp->reason != NORMAL)
+      if (update_link(mynode, pn, 1, 0)) calculate_all();
+    del_ax(cp);
     break;
   }
 }
@@ -195,13 +172,12 @@ struct axcb *cp;
 
   char  pid;
   struct mbuf *bp;
-  void route_packet();
 
   while (cp->rcvq) {
     recv_ax(cp, &bp, 0);
-    if (pullup(&bp, &pid, 1) != 1) return;
+    if (pullup(&bp, &pid, 1) != 1) continue;
     if (uchar(pid) == (PID_NETROM | PID_FIRST | PID_LAST))
-      route_packet(bp, (struct neighbor *) cp->user);
+      nr3_input(bp, axptr(cp->path));
     else
       free_p(bp);
   }
@@ -209,38 +185,32 @@ struct axcb *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void send_packet_to_neighbor(data, neighbor)
+static void send_packet_to_neighbor(data, pn)
 struct mbuf *data;
-struct neighbor *neighbor;
+struct node *pn;
 {
 
   char  path[10*AXALEN];
   struct mbuf *bp;
 
-  if (!neighbor->crosslink) {
-    addrcp(axptr(path), &neighbor->call);
+  if (!pn->crosslink) {
+    addrcp(axptr(path), pn->call);
     addrcp(axptr(path + AXALEN), &mycall);
     path[AXALEN+6] |= E;
-    neighbor->crosslink = open_ax(path, AX25_ACTIVE, ax25_recv_upcall, NULLVFP, ax25_state_upcall, (char *) neighbor);
-    if (!neighbor->crosslink) {
-      if (!neighbor->failed) {
-	neighbor->failed = FAILED;
-	calculate_routes();
-      }
+    pn->crosslink = open_ax(path, AX25_ACTIVE, ax25_recv_upcall, NULLVFP, ax25_state_upcall, (char *) pn);
+    if (!pn->crosslink) {
+      if (update_link(mynode, pn, 1, 0)) calculate_all();
       free_p(data);
       return;
     }
-    neighbor->crosslink->mode = DGRAM;
+    pn->crosslink->mode = DGRAM;
   }
   if (!(bp = pushdown(data, 1))) {
     free_p(data);
     return;
   }
   bp->data[0] = (PID_NETROM | PID_FIRST | PID_LAST);
-  if (send_ax(neighbor->crosslink, bp) == -1 && !neighbor->failed) {
-    neighbor->failed = FAILED;
-    calculate_routes();
-  }
+  send_ax(pn->crosslink, bp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -252,43 +222,48 @@ struct mbuf *data;
   struct broadcast *p;
   struct mbuf *bp;
 
-  for (p = broadcasts; p; p = p->next) {
-    dup_p(&bp, data, 0, MAXINT16);
-    ax_output(p->ifp, p->path, (char *) &mycall,
-	      PID_NETROM | PID_FIRST | PID_LAST, bp);
-  }
-  free_p(data);
+  if (!broadcasts)
+    free_p(data);
+  else
+    for (p = broadcasts; p; p = p->next)
+      if (p->next) {
+	dup_p(&bp, data, 0, MAXINT16);
+	ax_output(p->ifp, p->path, (char *) &mycall,
+		  PID_NETROM | PID_FIRST | PID_LAST, bp);
+      } else
+	ax_output(p->ifp, p->path, (char *) &mycall,
+		  PID_NETROM | PID_FIRST | PID_LAST, data);
 }
 
 /*---------------------------------------------------------------------------*/
 
 static void link_manager_initialize()
 {
+
+  mynode = nodeptr(&mycall, 1);
+  free((char *) mynode->call);
+  mynode->call = &mycall;
+  calculate_all();
+
   netrom_server_axcb = open_ax(NULLCHAR, AX25_SERVER, ax25_recv_upcall, NULLVFP, ax25_state_upcall, NULLCHAR);
   netrom_server_axcb->mode = DGRAM;
+
 }
 
 /*---------------------------------------------------------------------------*/
 /****************************** Routing Manager ******************************/
 /*---------------------------------------------------------------------------*/
 
-#define IDENTLEN   6
-
-struct route {
-  int  quality;
-  int  obsolescence;
-  struct neighbor *neighbor;
-  struct route *prev, *next;
+struct link {
+  struct node *node;
+  struct linkinfo *info;
+  struct link *prev, *next;
 };
 
-struct destination {
-  struct ax25_addr call;
-  char  ident[IDENTLEN];
-  struct neighbor *neighbor;
+struct linkinfo {
+  int  level;
   int  quality;
-  int  force_broadcast;
-  struct route *routes;
-  struct destination *prev, *next;
+  long  time;
 };
 
 struct routes_stat {
@@ -296,144 +271,203 @@ struct routes_stat {
   int  sent;
 };
 
-static char  myident[IDENTLEN] = { ' ', ' ', ' ', ' ', ' ', ' ' };
-static struct destination *destinations;
 static struct interface nr_interface;
 static struct routes_stat routes_stat;
 static struct timer broadcast_timer;
-static struct timer obsolescence_timer;
 
 /*---------------------------------------------------------------------------*/
 
 int  isnetrom(call)
-register struct ax25_addr *call;
-{
-  register struct destination *pd;
-
-  if (ismycall(call)) return 1;
-  for (pd = destinations; pd; pd = pd->next)
-    if (addreq(call, &pd->call)) return 1;
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static struct destination *destinationptr(call, create)
 struct ax25_addr *call;
-int  create;
 {
-
-  register int  i;
-  register struct destination *pd;
-
-  for (pd = destinations; pd && !addreq(call, &pd->call); pd = pd->next) ;
-  if (!pd && create) {
-    pd = (struct destination *) calloc(1, sizeof(struct destination ));
-    addrcp(&pd->call, call);
-    for (i = 0; i < IDENTLEN; i++) pd->ident[i] = ' ';
-    if (destinations) {
-      pd->next = destinations;
-      destinations->prev = pd;
-    }
-    destinations = pd;
-  }
-  return pd;
+  return (nodeptr(call, 0) != 0);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void calculate_routes()
+static struct linkinfo *linkinfoptr(node1, node2)
+struct node *node1, *node2;
+{
+
+  register struct link *pl;
+  struct linkinfo *pi;
+
+  for (pl = node1->links; pl; pl = pl->next)
+    if (pl->node == node2) return pl->info;
+  pi = (struct linkinfo *) calloc(1, sizeof(struct linkinfo ));
+  pi->level = MAXLEVEL;
+  pl = (struct link *) calloc(1, sizeof(struct link ));
+  pl->node = node2;
+  pl->info = pi;
+  if (node1->links) {
+    pl->next = node1->links;
+    node1->links->prev = pl;
+  }
+  node1->links = pl;
+  pl = (struct link *) calloc(1, sizeof(struct link ));
+  pl->node = node1;
+  pl->info = pi;
+  if (node2->links) {
+    pl->next = node2->links;
+    node2->links->prev = pl;
+  }
+  node2->links = pl;
+  return pi;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int  update_link(node1, node2, level, quality)
+struct node *node1, *node2;
+int  level, quality;
+{
+
+  int  ret;
+  struct linkinfo *pi;
+
+  if (node1 == node2) return 0;
+  if (level > node1->level + 1 || level > node2->level + 1) return 0;
+  pi = linkinfoptr(node1, node2);
+  if (pi->level < level || pi->time == MAX_TIME) return 0;
+  ret = 0;
+  if (pi->level != level) {
+    pi->level = level;
+    ret = 1;
+  }
+  if (quality > 255) quality = 255;
+  if (pi->quality != quality) {
+    pi->quality = quality;
+    ret = 1;
+  }
+  pi->time = currtime;
+  if (node1->level > level) {
+    node1->level = level;
+    ret = 1;
+  }
+  if (node2->level > level) {
+    node2->level = level;
+    ret = 1;
+  }
+  return ret;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void calculate_node(pn)
+struct node *pn;
+{
+
+  double  quality;
+  register struct link *pl;
+
+  for (pl = pn->links; pl; pl = pl->next) {
+    quality = pn->tmp_quality * pl->info->quality / 256.0;
+    if (pl->node->tmp_quality < quality) {
+      pl->node->tmp_quality = quality;
+      calculate_node(pl->node);
+    }
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void calculate_all()
 {
 
   int  start_broadcast_timer;
-  register int  best_quality;
-  register struct destination *pd;
-  register struct route *pr;
-  struct neighbor *pn;
+  long  timelimit;
+  register struct link *pl;
+  register struct node *pn;
+  struct link *pl1, *plnext;
+  struct node *neighbor;
+  struct node *pn1, *pnnext;
+
+  /*** remove obsolete links ***/
+
+  if (nr_obsinit && nr_bdcstint)
+    timelimit = currtime - nr_obsinit * nr_bdcstint;
+  else
+    timelimit = 0;
+  for (pn = nodes; pn; pn = pn->next)
+    for (pl = pn->links; pl; pl = plnext) {
+      plnext = pl->next;
+      if (pl->info->time < timelimit                       ||
+	  pl->info->time != MAX_TIME && !pl->info->quality ||
+	  pl->info->time != MAX_TIME && pl->info->level > pn->level + 1) {
+	if (pl->prev) pl->prev->next = pl->next;
+	if (pl->next) pl->next->prev = pl->prev;
+	if (pl == pn->links) pn->links = pl->next;
+	pn1 = pl->node;
+	for (pl1 = pn1->links; pl1->node != pn; pl1 = pl1->next) ;
+	if (pl1->prev) pl1->prev->next = pl1->next;
+	if (pl1->next) pl1->next->prev = pl1->prev;
+	if (pl1 == pn1->links) pn1->links = pl1->next;
+	free((char *) pl->info);
+	free((char *) pl1);
+	free((char *) pl);
+      }
+    }
+
+  /*** fix node levels ***/
+
+  for (pn = nodes; pn; pn = pn->next) {
+    pn->level = MAXLEVEL;
+    for (pl = pn->links; pl; pl = pl->next)
+      if (pn->level > pl->info->level) pn->level = pl->info->level;
+  }
+  mynode->level = 0;
+
+  /*** preset neighbor and quality ***/
+
+  for (pn = nodes; pn; pn = pn->next) {
+    pn->old_neighbor = pn->neighbor;
+    pn->neighbor = 0;
+    pn->old_quality = pn->quality;
+    pn->quality = 0.0;
+  }
+
+  /*** calculate new neighbor and quality values ***/
+
+  for (pl = mynode->links; pl; pl = pl->next) {
+    for (pn = nodes; pn; pn = pn->next) pn->tmp_quality = 0.0;
+    mynode->tmp_quality = 256.0;
+    neighbor = pl->node;
+    neighbor->tmp_quality = pl->info->quality;
+    calculate_node(neighbor);
+    for (pn = nodes; pn; pn = pn->next)
+      if (pn->quality < pn->tmp_quality) {
+	pn->quality = pn->tmp_quality;
+	pn->neighbor = neighbor;
+      }
+  }
+  mynode->neighbor = 0;
+  mynode->quality = 256.0;
+
+  /*** check changes ***/
 
   start_broadcast_timer = 0;
-  for (pd = destinations; pd; pd = pd->next) {
-    pn = 0;
-    best_quality = 0;
-    for (pr = pd->routes; pr; pr = pr->next)
-      if (pr->quality > best_quality && !pr->neighbor->failed) {
-	pn = pr->neighbor;
-	best_quality = pr->quality;
-      }
-    if (pn != pd->neighbor || best_quality != pd->quality) {
-      pd->neighbor = pn;
-      pd->quality = best_quality;
-      pd->force_broadcast = 1;
-    }
-    if (pd->force_broadcast) start_broadcast_timer = 1;
+  for (pn = nodes; pn; pn = pn->next) {
+    if (pn->neighbor != pn->old_neighbor ||
+	((int) pn->quality) != ((int) pn->old_quality)) pn->force_broadcast = 1;
+    if (pn->force_broadcast) start_broadcast_timer = 1;
   }
   if (start_broadcast_timer) {
     set_timer(&broadcast_timer, 10 * 1000l);
     start_timer(&broadcast_timer);
   }
-}
 
-/*---------------------------------------------------------------------------*/
+  /*** remove obsolete nodes ***/
 
-static void delete_route(pd, pr)
-register struct destination *pd;
-register struct route *pr;
-{
-  register struct neighbor *pn;
-
-  pn = pr->neighbor;
-  pn->usecount--;
-  if (!pn->permanent && !pn->usecount && !pn->crosslink) delete_neighbor(pn);
-  if (pr->prev) pr->prev->next = pr->next;
-  if (pr->next) pr->next->prev = pr->prev;
-  if (pr == pd->routes) pd->routes = pr->next;
-  free((char *) pr);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void update_route(call, ident, neighbor, quality, obsolescence, force)
-struct ax25_addr *call;
-char  *ident;
-struct neighbor *neighbor;
-int  quality, obsolescence, force;
-{
-
-  register struct destination *pd;
-  register struct route *pr;
-
-  if (ismycall(call)) return;
-  pd = destinationptr(call, 1);
-  if (ident && *ident && *ident != ' ') memcpy(pd->ident, ident, IDENTLEN);
-  for (pr = pd->routes; pr; pr = pr->next)
-    if (pr->neighbor == neighbor) {
-      if (pr->obsolescence || force) {
-	pr->quality = quality;
-	pr->obsolescence = obsolescence;
-      }
-      return;
+  for (pn = nodes; pn; pn = pnnext) {
+    pnnext = pn->next;
+    if (pn != mynode && !pn->links && !pn->crosslink && !pn->force_broadcast) {
+      if (pn->prev) pn->prev->next = pn->next;
+      if (pn->next) pn->next->prev = pn->prev;
+      if (pn == nodes) nodes = pn->next;
+      free((char *) pn->call);
+      free((char *) pn);
     }
-  pr = (struct route *) calloc(1, sizeof(struct route ));
-  pr->quality = quality;
-  pr->obsolescence = obsolescence;
-  pr->neighbor = neighbor;
-  pr->neighbor->usecount++;
-  if (pd->routes) {
-    pr->next = pd->routes;
-    pd->routes->prev = pr;
   }
-  pd->routes = pr;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void delete_destination(pd)
-register struct destination *pd;
-{
-  if (pd->prev) pd->prev->next = pd->next;
-  if (pd->next) pd->next->prev = pd->prev;
-  if (pd == destinations) destinations = pd->next;
-  free((char *) pd);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -441,49 +475,53 @@ register struct destination *pd;
 int  new_neighbor(call)
 struct ax25_addr *call;
 {
-  register struct neighbor *pn;
-
-  if (!ismycall(call)) {
-    pn = neighborptr(call, 1);
-    pn->failed = 0;
-    update_route(call, NULLCHAR, pn, pn->quality, nr_obsinit, 0);
-    calculate_routes();
-  }
+  if (update_link(mynode, nodeptr(call, 1), 1, nr_hfqual)) calculate_all();
 }
 
 /*---------------------------------------------------------------------------*/
 
-int  nr_nodercv(fromcall, bp)
-struct ax25_addr *fromcall;
+static void broadcast_recv(bp, pn)
 struct mbuf *bp;
+struct node *pn;
 {
 
   char  buf[AXALEN+IDENTLEN+AXALEN+1];
   char  id;
   char  ident[IDENTLEN];
   int  quality;
-  register struct neighbor *pn;
-  struct destination *pd;
+  struct linkinfo *pi;
+  struct node *pb, *pd;
 
   routes_stat.rcvd++;
-  if (ismycall(fromcall)) goto discard;
+  if (pn == mynode) goto discard;
   if (pullup(&bp, &id, 1) != 1 || uchar(id) != 0xff) goto discard;
   if (pullup(&bp, ident, IDENTLEN) != IDENTLEN) goto discard;
-  pn = neighborptr(fromcall, 1);
-  pn->failed = 0;
-  update_route(fromcall, ident, pn, pn->quality, nr_obsinit, 0);
-  while (pullup(&bp, buf, sizeof(buf)) == sizeof(buf))
-    if (!ismycall(axptr(buf))) {
-      pd = destinationptr(axptr(buf), 1);
-      quality = uchar(buf[AXALEN+IDENTLEN+AXALEN]);
-      if (ismycall(axptr(buf + AXALEN + IDENTLEN))) {
-	if (quality > pd->quality) pd->force_broadcast = 1;
-	quality = 0;
-      } else
-	quality = (quality * pn->quality) / 256;
-      update_route(axptr(buf), buf + AXALEN, pn, quality, nr_obsinit, 0);
+  if (*ident > ' ') memcpy(pn->ident, ident, IDENTLEN);
+  update_link(mynode, pn, 1, nr_hfqual);
+  while (pullup(&bp, buf, sizeof(buf)) == sizeof(buf)) {
+    if (ismycall(axptr(buf))) continue;
+    pd = nodeptr(axptr(buf), 1);
+    if (*(buf + AXALEN) > ' ') memcpy(pd->ident, buf + AXALEN, IDENTLEN);
+    pb = nodeptr(axptr(buf + AXALEN + IDENTLEN), 1);
+    quality = uchar(buf[AXALEN+IDENTLEN+AXALEN]);
+    if (pb == mynode) {
+      if (quality >= pd->quality) pd->force_broadcast = 1;
+      continue;
     }
-  calculate_routes();
+    if (pn == pb || pb == pd)
+      update_link(pn, pd, 2, quality);
+    else {
+      pi = linkinfoptr(pn, pb);
+      if (pi->time != MAX_TIME) pi->time = currtime;
+      if (pi->quality) {
+	int  q = quality * 256 / pi->quality;
+	while (q * pi->quality / 256 < quality) q++;
+	quality = q;
+      }
+      update_link(pb, pd, 3, quality);
+    }
+  }
+  calculate_all();
 
 discard:
   free_p(bp);
@@ -497,7 +535,7 @@ static struct mbuf *alloc_broadcast_packet()
 
   if (bp = alloc_mbuf(256)) {
     *bp->data = 0xff;
-    memcpy(bp->data + 1, myident, IDENTLEN);
+    memcpy(bp->data + 1, mynode->ident, IDENTLEN);
     bp->cnt = 1 + IDENTLEN;
   }
   return bp;
@@ -508,31 +546,37 @@ static struct mbuf *alloc_broadcast_packet()
 static void send_broadcast()
 {
 
+  int  level, nextlevel;
   register char  *p;
-  struct destination *pd;
   struct mbuf *bp;
+  struct node *pn;
 
   set_timer(&broadcast_timer, nr_bdcstint * 1000l);
   start_timer(&broadcast_timer);
   bp = alloc_broadcast_packet();
-  for (pd = destinations; pd; pd = pd->next)
-    if (pd->quality || pd->force_broadcast) {
-      pd->force_broadcast = 0;
-      if (!bp) bp = alloc_broadcast_packet();
-      p = bp->data + bp->cnt;
-      addrcp(axptr(p), &pd->call);
-      p += AXALEN;
-      memcpy(p, pd->ident, IDENTLEN);
-      p += IDENTLEN;
-      addrcp(axptr(p), pd->neighbor ? &pd->neighbor->call : &mycall);
-      p += AXALEN;
-      *p++ = pd->quality;
-      if ((bp->cnt = p - bp->data) > 256 - 21) {
-	send_broadcast_packet(bp);
-	routes_stat.sent++;
-	bp = NULLBUF;
-      }
-    }
+  for (level = 1; level <= MAXLEVEL; level = nextlevel) {
+    nextlevel = MAXLEVEL + 1;
+    for (pn = nodes; pn; pn = pn->next)
+      if (pn->level >= level && (((int) pn->quality) || pn->force_broadcast))
+	if (pn->level == level) {
+	  pn->force_broadcast = 0;
+	  if (!bp) bp = alloc_broadcast_packet();
+	  p = bp->data + bp->cnt;
+	  addrcp(axptr(p), pn->call);
+	  p += AXALEN;
+	  memcpy(p, pn->ident, IDENTLEN);
+	  p += IDENTLEN;
+	  addrcp(axptr(p), pn->neighbor ? pn->neighbor->call : pn->call);
+	  p += AXALEN;
+	  *p++ = pn->quality;
+	  if ((bp->cnt = p - bp->data) > 256 - 21) {
+	    send_broadcast_packet(bp);
+	    routes_stat.sent++;
+	    bp = NULLBUF;
+	  }
+	} else if (pn->level < nextlevel)
+	  nextlevel = pn->level;
+  }
   if (bp) {
     send_broadcast_packet(bp);
     routes_stat.sent++;
@@ -541,62 +585,30 @@ static void send_broadcast()
 
 /*---------------------------------------------------------------------------*/
 
-static void decrement_obsolescence_counters()
-{
-
-  struct destination *pd, *pdnext;
-  struct route *pr, *prnext;
-
-  set_timer(&obsolescence_timer, nr_bdcstint * 1000l);
-  start_timer(&obsolescence_timer);
-
-  for (pd = destinations; pd; pd = pd->next)
-    for (pr = pd->routes; pr; pr = prnext) {
-      prnext = pr->next;
-      if (pr->obsolescence && --pr->obsolescence == 0) delete_route(pd, pr);
-    }
-  calculate_routes();
-  for (pd = destinations; pd; pd = pdnext) {
-    pdnext = pd->next;
-    if (!pd->routes && !pd->force_broadcast) delete_destination(pd);
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-
 static void route_packet(bp, fromneighbor)
 struct mbuf *bp;
-struct neighbor *fromneighbor;
+struct node *fromneighbor;
 {
 
   int  ttl;
-  register struct destination *pd;
-  register struct route *pr;
+  register struct node *pn;
   void circuit_manager();
 
   if (!bp || bp->cnt < 15) goto discard;
 
-  if (fromneighbor) {
-    if (ismycall(axptr(bp->data))) goto discard;  /* ROUTING ERROR */
-    pd = destinationptr(axptr(bp->data), 1);
-    for (pr = pd->routes; pr && pr->neighbor != fromneighbor; pr = pr->next) ;
-    if (!pr) {
-      pr = (struct route *) calloc(1, sizeof(struct route ));
-      if (neighborptr(&pd->call, 0) == fromneighbor)
-	pr->quality = fromneighbor->quality;
-      else
-	pr->quality = 1;
-      pr->obsolescence = nr_obsinit;
-      pr->neighbor = fromneighbor;
-      pr->neighbor->usecount++;
-      if (pd->routes) {
-	pr->next = pd->routes;
-	pd->routes->prev = pr;
+  if (fromneighbor != mynode) {
+    int  calc = update_link(mynode, fromneighbor, 1, nr_hfqual);
+    pn = nodeptr(axptr(bp->data), 1);
+    if (pn == mynode) goto discard;  /* ROUTING ERROR */
+    if (!pn->neighbor) {
+      struct linkinfo *pi = linkinfoptr(mynode, fromneighbor);
+      if (pi->quality) {
+	int  q = 1;
+	while (q * pi->quality / 256 < 1) q++;
+	calc |= update_link(fromneighbor, pn, 2, q);
       }
-      pd->routes = pr;
-      calculate_routes();
-    } else if (pr->obsolescence)
-      pr->obsolescence = nr_obsinit;
+    }
+    if (calc) calculate_all();
   }
 
   if (ismycall(axptr(bp->data + AXALEN))) {
@@ -626,7 +638,7 @@ struct neighbor *fromneighbor;
     }
     pullup(&bp, NULLCHAR, 15);
     if (!bp) return;
-    if (!fromneighbor) {
+    if (fromneighbor == mynode) {
       struct mbuf *hbp = copy_p(bp, len_mbuf(bp));
       free_p(bp);
       bp = hbp;
@@ -639,17 +651,17 @@ struct neighbor *fromneighbor;
   if (--ttl <= 0) goto discard;
   bp->data[2*AXALEN] = ttl;
 
-  pd = destinationptr(axptr(bp->data + AXALEN), 1);
-  if (!pd->neighbor) {
-    pd->force_broadcast = 1;
+  pn = nodeptr(axptr(bp->data + AXALEN), 1);
+  if (!pn->neighbor) {
+    pn->force_broadcast = 1;
     send_broadcast();
     goto discard;
   }
 
-  if (pd->neighbor == fromneighbor ||
-      addreq(&pd->neighbor->call, axptr(bp->data))) send_broadcast();
+  if (pn->neighbor == fromneighbor ||
+      addreq(pn->neighbor->call, axptr(bp->data))) send_broadcast();
 
-  send_packet_to_neighbor(bp, pd->neighbor);
+  send_packet_to_neighbor(bp, pn->neighbor);
   return;
 
 discard:
@@ -671,21 +683,17 @@ struct mbuf *data;
   }
   addrcp(axptr(bp->data), source);
   addrcp(axptr(bp->data + AXALEN), dest);
-  if (ttl < 255) ttl++;
+  if (++ttl > 255) ttl = 255;
   bp->data[2*AXALEN] = ttl;
-  route_packet(bp, (struct neighbor *) 0);
+  route_packet(bp, mynode);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int  nr_send(bp, interface, gateway, precedence, delay, throughput, reliability)
+static int  nr_send(bp, interface, gateway)
 struct mbuf *bp;
 struct interface *interface;
 int32 gateway;
-char  precedence;
-char  delay;
-char  throughput;
-char  reliability;
 {
 
   struct arp_tab *arp;
@@ -710,6 +718,18 @@ char  reliability;
 
 /*---------------------------------------------------------------------------*/
 
+nr3_input(bp, fromcall)
+struct mbuf *bp;
+struct ax25_addr *fromcall;
+{
+  if (bp && bp->cnt && uchar(*bp->data) == 0xff)
+    broadcast_recv(bp, nodeptr(fromcall, 1));
+  else
+    route_packet(bp, nodeptr(fromcall, 1));
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void routing_manager_initialize()
 {
   int  psax25(), setpath();
@@ -717,20 +737,14 @@ static void routing_manager_initialize()
   nr_interface.name = "netrom";
   nr_interface.mtu = 236;
   nr_interface.send = nr_send;
-  nr_interface.next = ifaces;
-  ifaces = &nr_interface;
+/***  nr_interface.next = ifaces;  ***/
+/***  ifaces = &nr_interface;      ***/
 
   arp_init(ARP_NETROM, AXALEN, 0, 0, NULLCHAR, psax25, setpath);
 
   broadcast_timer.func = send_broadcast;
-  broadcast_timer.arg = NULLCHAR;
-  set_timer(&broadcast_timer, nr_bdcstint * 1000l);
+  set_timer(&broadcast_timer, 10 * 1000l);
   start_timer(&broadcast_timer);
-
-  obsolescence_timer.func = decrement_obsolescence_counters;
-  obsolescence_timer.arg = NULLCHAR;
-  set_timer(&obsolescence_timer, nr_bdcstint * 1000l);
-  start_timer(&obsolescence_timer);
 
 }
 
@@ -773,6 +787,31 @@ register struct circuit *pc;
     pax25(p, &pc->orgnode);
   }
   return buf;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void reset_t1(pc)
+struct circuit *pc;
+{
+  pc->timer_t1.start = (pc->srtt + 2 * pc->mdev + MSPTICK) / MSPTICK;
+  if (pc->timer_t1.start < 4) pc->timer_t1.start = 4;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void inc_t1(pc)
+struct circuit *pc;
+{
+  int32 tmp;
+
+  if (tmp = pc->timer_t1.start / 4)
+    pc->timer_t1.start += tmp;
+  else
+    pc->timer_t1.start++;
+  tmp = (10 * pc->srtt + MSPTICK) / MSPTICK;
+  if (pc->timer_t1.start > tmp) pc->timer_t1.start = tmp;
+  if (pc->timer_t1.start < 4) pc->timer_t1.start = 4;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -904,6 +943,7 @@ int  newstate;
   stop_timer(&pc->timer_t1);
   stop_timer(&pc->timer_t2);
   stop_timer(&pc->timer_t4);
+  reset_t1(pc);
   switch (newstate) {
   case DISCONNECTED:
     if (pc->s_upcall) (*pc->s_upcall)(pc, oldstate, newstate);
@@ -930,6 +970,7 @@ struct circuit *pc;
 {
   struct mbuf *bp, *qp;
 
+  inc_t1(pc);
   if (++pc->retry > nr_tretry) pc->reason = TIMEOUT;
   switch (pc->state) {
   case DISCONNECTED:
@@ -1017,7 +1058,9 @@ struct mbuf *bp;
       addrcp(&pc->node, axptr(bp->data + 13));
       addrcp(&pc->orguser, axptr(bp->data + 6));
       addrcp(&pc->orgnode, axptr(bp->data + 13));
-      set_timer(&pc->timer_t1, nr_ttimeout * 1000l);
+      pc->srtt = nr_ttimeout * 1000l / 2;
+      pc->mdev = nr_ttimeout * 1000l / 4;
+      reset_t1(pc);
       pc->timer_t1.func = l4_t1_timeout;
       pc->timer_t1.arg = (char *) pc;
       pc->timer_t2.func = l4_t2_timeout;
@@ -1105,16 +1148,11 @@ struct mbuf *bp;
       pc->retry = 0;
       stop_timer(&pc->timer_t1);
       if (pc->sndtime[uchar(bp->data[3]-1)]) {
-	int32 rtt, abserr;
-	rtt = (currtime - pc->sndtime[uchar(bp->data[3]-1)]) * 1000l;
-	if (pc->srtt || pc->mdev) {
-	  pc->srtt = ((AGAIN - 1) * pc->srtt + rtt) / AGAIN;
-	  abserr = (rtt > pc->srtt) ? rtt - pc->srtt : pc->srtt - rtt;
-	  pc->mdev = ((DGAIN - 1) * pc->mdev + abserr) / DGAIN;
-	} else
-	  pc->srtt = pc->mdev = rtt;
-	pc->timer_t1.start = (pc->srtt + 2 * pc->mdev + MSPTICK) / MSPTICK;
-	if (pc->timer_t1.start < 60) pc->timer_t1.start = 60;
+	int32 rtt = (currtime - pc->sndtime[uchar(bp->data[3]-1)]) * 1000l;
+	int32 abserr = (rtt > pc->srtt) ? rtt - pc->srtt : pc->srtt - rtt;
+	pc->srtt = ((AGAIN - 1) * pc->srtt + rtt) / AGAIN;
+	pc->mdev = ((DGAIN - 1) * pc->mdev + abserr) / DGAIN;
+	reset_t1(pc);
       }
       while (uchar(pc->send_state - bp->data[3]) < pc->unack) {
 	pc->resndq = free_p(pc->resndq);
@@ -1210,7 +1248,9 @@ char  *user;
   addrcp(&pc->orguser, orguser);
   addrcp(&pc->orgnode, &mycall);
   pc->window = window;
-  set_timer(&pc->timer_t1, nr_ttimeout * 1000l);
+  pc->srtt = nr_ttimeout * 1000l / 2;
+  pc->mdev = nr_ttimeout * 1000l / 4;
+  reset_t1(pc);
   pc->timer_t1.func = l4_t1_timeout;
   pc->timer_t1.arg = (char *) pc;
   pc->timer_t2.func = l4_t2_timeout;
@@ -1646,31 +1686,93 @@ char  *argv[];
   int  i;
 
   if (argc < 2)
-    printf("Ident %-6.6s\n", myident);
+    printf("Ident %-6.6s\n", mynode->ident);
   else {
     for (cp = argv[1], i = 0; i < IDENTLEN; i++)
-      myident[i] = *cp ? toupper(*cp++) : ' ';
+      mynode->ident[i] = *cp ? toupper(*cp++) : ' ';
   }
   return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static char  *print_destname(pd)
-struct destination *pd;
+static int  dolinks(argc, argv)
+int  argc;
+char  *argv[];
 {
 
-  char  *p;
-  int  i;
-  static char  buf[20];
+  char  buf1[20], buf2[20];
+  int  quality;
+  long  timestamp;
+  struct ax25_addr call;
+  struct link *pl;
+  struct linkinfo *pi;
+  struct node *pn1, *pn2;
 
-  p = buf;
-  if (*pd->ident != ' ') {
-    for (i = 0; i < IDENTLEN && pd->ident[i] != ' '; i++) *p++ = pd->ident[i];
-    *p++ = ':';
+  if (argc >= 2) {
+    if (setcall(&call, argv[1])) {
+      printf("Invalid call \"%s\"\n", argv[1]);
+      return 1;
+    }
+    if (argc > 2)
+      pn1 = nodeptr(&call, 1);
+    else if (!(pn1 = nodeptr(&call, 0))) {
+      printf("Unknown node \"%s\"\n", argv[1]);
+      return 1;
+    }
   }
-  pax25(p, &pd->call);
-  return buf;
+
+  if (argc <= 2) {
+    printf("From       To         Level  Quality   Age\n");
+    for (pn2 = nodes; pn2; pn2 = pn2->next)
+      if (argc < 2 || pn1 == pn2) {
+	pax25(buf1, pn2->call);
+	for (pl = pn2->links; pl; pl = pl->next) {
+	  pax25(buf2, pl->node->call);
+	  if (pl->info->time != MAX_TIME)
+	    printf("%-9s  %-9s  %5i  %7i  %4i\n", buf1, buf2, pl->info->level, pl->info->quality, currtime - pl->info->time);
+	  else
+	    printf("%-9s  %-9s  %5i  %7i\n", buf1, buf2, pl->info->level, pl->info->quality);
+	}
+      }
+    return 0;
+  }
+
+  if (argc < 4 || argc > 5) return (-1);
+
+  if (setcall(&call, argv[2])) {
+    printf("Invalid call \"%s\"\n", argv[2]);
+    return 1;
+  }
+  pn2 = nodeptr(&call, 1);
+  if (pn1 == pn2) {
+    printf("Both calls are identical\n");
+    return 1;
+  }
+  if (pn1->level == MAXLEVEL && pn2->level == MAXLEVEL) {
+    printf("Both nodes are unreachable\n");
+    return 1;
+  }
+
+  quality = atoi(argv[3]);
+  if (quality < 0 || quality > 255) {
+    printf("Quality must be 0..255\n");
+    return 1;
+  }
+
+  if (argc < 5)
+    timestamp = currtime;
+  else {
+    if (strncmp(argv[4], "permanent", strlen(argv[4]))) return (-1);
+    timestamp = MAX_TIME;
+  }
+
+  pi = linkinfoptr(pn1, pn2);
+  pi->quality = quality;
+  pi->level = 3;
+  pi->time = timestamp;
+  calculate_all();
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1680,109 +1782,30 @@ int  argc;
 char  *argv[];
 {
 
-  char  *cp;
-  char  buf[10];
-  char  ident[IDENTLEN];
-  int  i, quality, obsolescence;
-  struct ax25_addr destination, neighbor;
-  struct destination *pd;
-  struct neighbor *pn;
-  struct route *pr;
+  char  buf1[20], buf2[20];
+  struct ax25_addr call;
+  struct node *pn, *pn1;
 
-  if (argc < 2) {
-    printf("Nodes:\n");
-    for (i = 0, pd = destinations; pd; pd = pd->next)
-      if (pd->quality) {
-	printf((i % 4) < 3 ? "%-19s" : "%s\n", print_destname(pd));
-	i++;
-      }
-    if (i % 4) putchar('\n');
-    return 0;
-  }
-
-  memset(ident, ' ', IDENTLEN);
-  cp = argv[1];
-  if (strchr(cp, ':')) {
-    for (i = 0; *cp != ':'; cp++)
-      if (i < IDENTLEN) ident[i++] = toupper(*cp);
-    cp++;
-  }
-  if (setcall(&destination, cp)) {
-    printf("Invalid call \"%s\"\n", argv[1]);
-    return 1;
-  }
-
-  if (argc == 2) {
-    if (!(pd = destinationptr(&destination, 0))) {
+  if (argc >= 2) {
+    if (setcall(&call, argv[1])) {
+      printf("Invalid call \"%s\"\n", argv[1]);
+      return 1;
+    }
+    if (!(pn1 = nodeptr(&call, 0))) {
       printf("Unknown node \"%s\"\n", argv[1]);
       return 1;
     }
-    printf("Routes to: %s\n", print_destname(pd));
-    for (pr = pd->routes; pr; pr = pr->next) {
-      pax25(buf, &pr->neighbor->call);
-      printf("%c %3d  %3d  %-9s  ",
-	     (pr->neighbor == pd->neighbor) ? '>' : ' ',
-	     pr->quality,
-	     pr->obsolescence,
-	     buf);
-      if (pr->neighbor->failed) printf("Failed ");
-      if (pr->neighbor->crosslink)
-	printf("%s", ax25states[pr->neighbor->crosslink->state]);
-      putchar('\n');
+  }
+  printf("Node       Ident   Neighbor   Level  Quality\n");
+  for (pn = nodes; pn; pn = pn->next)
+    if (argc < 2 || pn == pn1) {
+      pax25(buf1, pn->call);
+      if (pn->neighbor)
+	pax25(buf2, pn->neighbor->call);
+      else
+	*buf2 = '\0';
+      printf("%-9s  %-6.6s  %-9s  %5i  %7.3f\n", buf1, pn->ident, buf2, pn->level, pn->quality);
     }
-    return 0;
-  }
-
-  if (!strcmp(argv[2], "-")) {
-    if (!(pd = destinationptr(&destination, 0))) {
-      printf("Unknown node \"%s\"\n", argv[1]);
-      return 1;
-    }
-    if (argc == 3) {
-      while (pd->routes) delete_route(pd, pd->routes);
-      calculate_routes();
-      if (!pd->force_broadcast) delete_destination(pd);
-      return 0;
-    }
-    if (setcall(&neighbor, argv[3])) {
-      printf("Invalid call \"%s\"\n", argv[3]);
-      return 1;
-    }
-    pn = neighborptr(&neighbor, 0);
-    for (pr = pd->routes; pr; pr = pr->next)
-      if (pr->neighbor == pn) {
-	delete_route(pd, pr);
-	calculate_routes();
-	if (!pd->routes && !pd->force_broadcast) delete_destination(pd);
-	return 0;
-      }
-    printf("No such route\n");
-    return 1;
-  }
-
-  if (strcmp(argv[2], "+") || argc < 4) return (-1);
-  if (setcall(&neighbor, argv[3])) {
-    printf("Invalid call \"%s\"\n", argv[3]);
-    return 1;
-  }
-  pn = neighborptr(&neighbor, 1);
-
-  if (argc >= 5)
-    quality = atoi(argv[4]);
-  else
-    quality = addreq(&destination, &pn->call) ? pn->quality : nr_hfqual;
-  if (quality < 0 || quality > 255) {
-    printf("Quality must be 0..255\n");
-    return 1;
-  }
-
-  obsolescence = (argc >= 6) ? atoi(argv[5]) : nr_obsinit;
-  if (obsolescence < 0 || obsolescence > 255) {
-    printf("Obsolescence must be 0..255\n");
-    return 1;
-  }
-  update_route(&destination, ident, pn, quality, obsolescence, 1);
-  calculate_routes();
   return 0;
 }
 
@@ -1821,68 +1844,11 @@ char  *argv[];
       set_timer(&broadcast_timer, nr_bdcstint * 1000l);
       start_timer(&broadcast_timer);
     }
-    if (obsolescence_timer.start != nr_bdcstint * 1000l / MSPTICK) {
-      set_timer(&obsolescence_timer, nr_bdcstint * 1000l);
-      start_timer(&obsolescence_timer);
-    }
     return 0;
   default:
     printf("Usage: netrom parms [<parm#> [<parm value>]]\n");
     return 1;
   }
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int  doroutes(argc, argv)
-int  argc;
-char  *argv[];
-{
-
-  char  buf[10];
-  int  permanent, quality;
-  struct ax25_addr call;
-  struct neighbor *pn;
-
-  if (argc < 2) {
-    printf("Routes:\n");
-    for (pn = neighbors; pn; pn = pn->next) {
-      pax25(buf, &pn->call);
-      printf("%c %-9s %3d %3d %c ",
-	     pn->crosslink ? '>' : ' ',
-	     buf,
-	     pn->quality,
-	     pn->usecount,
-	     pn->permanent ? '!' : ' ');
-      if (pn->failed) printf("Failed ");
-      if (pn->crosslink) printf("%s", ax25states[pn->crosslink->state]);
-      putchar('\n');
-    }
-    return 0;
-  }
-  if (setcall(&call, argv[1])) {
-    printf("Invalid call \"%s\"\n", argv[1]);
-    return 1;
-  }
-  if (argc < 3) return (-1);
-  if (!strcmp(argv[2], "+"))
-    permanent = 1;
-  else if (!strcmp(argv[2], "-"))
-    permanent = 0;
-  else
-    return (-1);
-  pn = neighborptr(&call, 1);
-  pn->permanent = permanent;
-  if (argc >= 4) {
-    quality = atoi(argv[3]);
-    if (quality < 0 || quality > 255) {
-      printf("Quality must be 0..255\n");
-      return 1;
-    }
-    pn->quality = quality;
-  }
-  if (!pn->permanent && !pn->usecount && !pn->crosslink) delete_neighbor(pn);
-  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -2018,11 +1984,10 @@ char  *argv[];
     "broadcast",dobroadcast,0, NULLCHAR, NULLCHAR,
     "connect",  doconnect,  2, "netrom connect <node> [<user>]", NULLCHAR,
     "ident",    doident,    0, NULLCHAR, NULLCHAR,
-    "nodes",    donodes,    0, NULLCHAR,
-	"Usage: netrom nodes [call [+|- neighbor [quality [obsolescence]]]]",
+    "links",    dolinks,    0, NULLCHAR,
+	"Usage: netrom links [<node> [<node2> <quality> [permanent]]]",
+    "nodes",    donodes,    0, NULLCHAR, NULLCHAR,
     "parms",    doparms,    0, NULLCHAR, NULLCHAR,
-    "routes",   doroutes,   0, NULLCHAR,
-	"Usage: netrom routes [call [+|- [quality]]]",
     "reset",    doreset,    2, "netrom reset <nrcb>", NULLCHAR,
     "status",   dostatus,   0, NULLCHAR, NULLCHAR,
     "start",    dostart,    0, NULLCHAR, NULLCHAR,

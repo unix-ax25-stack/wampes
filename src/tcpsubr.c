@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.2 1990/01/29 09:37:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.3 1990/02/12 11:55:14 deyke Exp $ */
 
 #include "global.h"
 #include "timer.h"
@@ -196,7 +196,7 @@ register char newstate;
 		(*tcb->s_upcall)(tcb,oldstate,newstate);
 	}
 	/* Notify the user that he can begin sending data */
-	if(tcb->t_upcall && newstate == ESTABLISHED){
+	if(tcb->t_upcall && newstate == ESTABLISHED && tcb->window > tcb->sndcnt){
 		(*tcb->t_upcall)(tcb,tcb->window - tcb->sndcnt);
 	}
 }

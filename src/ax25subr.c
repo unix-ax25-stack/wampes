@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.2 1990/02/12 11:55:05 deyke Exp $ */
+
 #include "global.h"
 #include "mbuf.h"
 #include "timer.h"
@@ -77,22 +79,41 @@ int cnt;        /* Number of callsigns in array */
 	}
 	out[-1] |= E;
 }
-addreq(a,b)
-#ifdef  UNIX
-register long  *a, *b;
+
+addreq(a, b)
+register struct ax25_addr *a, *b;
 {
-  return (*a == *b && (a[1] & 0xffff1e00) == (b[1] & 0xffff1e00));
-}
+#ifdef hp9000s300
+  return (*((long *) a) == *((long *) b) &&
+	  (((long *) a)[1] & 0xffff1e00) == (((long *) b)[1] & 0xffff1e00));
 #else
-register struct ax25_addr *a,*b;
-{
-	if(memcmp(a->call,b->call,ALEN) != 0)
-		return 0;
-	if((a->ssid & SSID) != (b->ssid & SSID))
-		return 0;
-	return 1;
-}
+  if (*((char *) a)++ != *((char *) b)++) return 0;
+  if (*((char *) a)++ != *((char *) b)++) return 0;
+  if (*((char *) a)++ != *((char *) b)++) return 0;
+  if (*((char *) a)++ != *((char *) b)++) return 0;
+  if (*((char *) a)++ != *((char *) b)++) return 0;
+  if (*((char *) a)++ != *((char *) b)++) return 0;
+  return (*((char *) a) & SSID) == (*((char *) b) & SSID);
 #endif
+}
+
+addrcp(to, from)
+register struct ax25_addr *to, *from;
+{
+#ifdef hp9000s300
+  *((long *) to)++ = *((long *) from)++;
+  *((short *) to)++ = *((short *) from)++;
+#else
+  *((char *) to)++ = *((char *) from)++;
+  *((char *) to)++ = *((char *) from)++;
+  *((char *) to)++ = *((char *) from)++;
+  *((char *) to)++ = *((char *) from)++;
+  *((char *) to)++ = *((char *) from)++;
+  *((char *) to)++ = *((char *) from)++;
+#endif
+  *((char *) to) = (*((char *) from) & SSID) | 0x60;
+}
+
 /* Convert encoded AX.25 address to printable string */
 pax25(e,addr)
 char *e;

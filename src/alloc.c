@@ -1,9 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.2 1990/01/29 09:36:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.3 1990/02/12 11:55:01 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
 
 extern char  *sbrk();
+
+#define DEBUG           1
 
 #define ALLOCSIZE       0x4000
 #define FREETABLESIZE   1024
@@ -22,6 +24,15 @@ static unsigned int  inuse;
 
 /*---------------------------------------------------------------------------*/
 
+static void giveup(mesg)
+char  *mesg;
+{
+  fprintf(stderr, mesg);
+  abort();
+}
+
+/*---------------------------------------------------------------------------*/
+
 char  *malloc(size)
 register unsigned int  size;
 {
@@ -29,29 +40,31 @@ register unsigned int  size;
   static struct block *freespace;
   static unsigned int  freesize;
 
+  int  align_error;
   register struct block *p, *tp;
-  struct block *tpf;
 
   size = (size + sizeof(struct block *) + MINSIZE - 1) & ~(MINSIZE - 1);
-  if ((tp = freetable + size / MINSIZE) >= freetable + FREETABLESIZE) {
-    fprintf(stderr, "malloc: requested block too large\n");
-    abort();
-  }
+  if ((tp = freetable + size / MINSIZE) >= freetable + FREETABLESIZE)
+    giveup("malloc: requested block too large\n");
   if (p = tp->next)
     tp->next = p->next;
   else {
     if (size > freesize) {
       if (freesize) {
-	tpf = freetable + freesize / MINSIZE;
+	struct block *tpf = freetable + freesize / MINSIZE;
 	freespace->next = tpf->next;
 	tpf->next = freespace;
 	freesize = 0;
       }
       if ((freespace = SBRK(ALLOCSIZE)) == MEMFULL) {
 	failures++;
-	return (char *) 0;
+	return 0;
       }
       allocated += (freesize = ALLOCSIZE);
+      if (align_error = (MINSIZE - 1) & -(((int) freespace) + sizeof(struct block *))) {
+	freespace = (struct block *) (align_error + (int) freespace);
+	freesize -= MINSIZE;
+      }
     }
     p = freespace;
     freespace += (size / sizeof(struct block *));
@@ -78,8 +91,19 @@ char  *pp;
   register struct block *p, *tp;
 
   if (p = (struct block *) pp) {
+#if DEBUG
+    if ((MINSIZE - 1) & (int) p) giveup("free: bad alignment\n");
+#else
+    if ((MINSIZE - 1) & (int) p) return;
+#endif
     p--;
     tp = p->next;
+#if DEBUG
+    if (tp < freetable || tp >= freetable + FREETABLESIZE)
+      giveup("free: bad free table pointer\n");
+#else
+    if (tp < freetable || tp >= freetable + FREETABLESIZE) return;
+#endif
     inuse -= (tp - freetable) * MINSIZE;
     p->next = tp->next;
     tp->next = p;

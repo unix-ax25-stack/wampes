@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.2 1990/02/12 11:55:04 deyke Exp $ */
+
 /* Low level AX.25 frame processing - address header */
 
 #include <memory.h>
@@ -174,7 +176,7 @@ struct mbuf *bp;
     arp_input(interface, bp);
     return;
   case (PID_NETROM | PID_FIRST | PID_LAST):
-    nr_nodercv(axptr(axheader + AXALEN), bp);
+    nr3_input(bp, axptr(axheader + AXALEN));
     return;
   default:
     goto discard;

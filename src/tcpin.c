@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.2 1990/02/12 11:55:12 deyke Exp $ */
+
 /* Process incoming TCP segments. Page number references are to ARPA RFC-793,
  * the TCP specification.
  */
@@ -635,7 +637,7 @@ register struct tcp *seg;
 	/* If outgoing data was acked, notify the user so he can send more
 	 * unless we've already sent a FIN.
 	 */
-	if(acked != 0 && tcb->t_upcall){
+	if(acked != 0 && tcb->t_upcall && tcb->window > tcb->sndcnt){
 		switch(tcb->state){
 		case ESTABLISHED:
 		case CLOSE_WAIT:
