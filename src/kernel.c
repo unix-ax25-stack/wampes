@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.11 1993/05/17 13:45:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.12 1993/05/30 07:56:46 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -165,19 +165,15 @@ int freeargs;           /* If set, free arg list on parg1 at termination */
 	  jmpenv[2] = (int) newstackptr;
 	  longjmp(jmpenv, 1);
 	}
-#else
-#ifdef ULTRIX_RISC
+#elif ULTRIX_RISC
 	if (!setjmp(jmpenv)) {
 	  jmpenv[32] = (int) newstackptr;
 	  longjmp(jmpenv, 1);
 	}
-#else
-#ifdef RISCiX
+#elif RISCiX
 	setstack(newstackptr);
 #else
 	setstack();
-#endif
-#endif
 #endif
 	(*func)(pp->iarg, pp->parg1, pp->parg2);
 	killself();

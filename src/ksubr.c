@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.13 1993/05/17 13:45:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.14 1993/05/30 07:56:46 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -32,8 +32,7 @@ struct env {
 	unsigned        ds;
 };
 #define getstackptr(ep) (ptol(MK_FP((ep)->ss, (ep)->sp)))
-#else
-#ifdef __hp9000s300
+#elif __hp9000s300
 struct env {
 	long    pc;
 	long    d2;
@@ -50,15 +49,13 @@ struct env {
 	long    a7;
 };
 #define getstackptr(ep) ((ep)->a7)
-#else
-#ifdef __hp9000s800
+#elif __hp9000s800
 struct env {
 	long    i_dont_know;
 	long    sp;
 };
 #define getstackptr(ep) ((ep)->sp)
-#else
-#ifdef sun
+#elif sun
 struct env {
 	long    onsstack;
 	long    sigmask;
@@ -71,8 +68,7 @@ struct env {
 	long    wbcnt;
 };
 #define getstackptr(ep) ((ep)->sp)
-#else
-#ifdef ULTRIX_RISC
+#elif ULTRIX_RISC
 struct env {
 	long    on;
 	long    sig;
@@ -153,23 +149,17 @@ struct env {
 	long    nbjregs;
 };
 #define getstackptr(ep) ((ep)->sp)
-#else
-#ifdef LINUX
+#elif LINUX
 struct env {
-	long    esp;
-	long    ebp;
-	long    eax;
 	long    ebx;
-	long    ecx;
-	long    edx;
-	long    edi;
 	long    esi;
-	long    eip;
-	long    flag;
+	long    edi;
+	long    ebp;
+	long    esp;
+	long    epc;
 };
 #define getstackptr(ep) ((ep)->esp)
-#else
-#ifdef __386BSD__
+#elif __386BSD__
 struct env {
 	long    unknown0;
 	long    unknown1;
@@ -188,12 +178,6 @@ struct env {
 	long    dummy;
 };
 #define getstackptr(ep) (0L)
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
 #endif
 
 static int stkutil(struct proc *pp);

@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.32 1993/05/28 06:47:25 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.33 1993/05/30 07:56:35 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -138,6 +138,7 @@ static struct peer *peers;
 static struct user *users;
 
 static struct host *hostptr(const char *name);
+static struct user *userptr(const char *name, struct host *hp);
 static void trace(struct link *lp, const char *string);
 static void send_string(struct link *lp, const char *string);
 static int queuelength(const struct mbuf *mp);
@@ -192,16 +193,51 @@ static char *strdup(const char *string)
 
 static struct host *hostptr(const char *name)
 {
+
+  int r;
+  struct host **hpp;
   struct host *hp;
 
-  for (hp = hosts; hp && strcmp(hp->h_name, name); hp = hp->h_next) ;
-  if (!hp) {
-    hp = (struct host *) calloc(1, sizeof(*hp));
-    hp->h_name = strdup(name);
-    hp->h_next = hosts;
-    hosts = hp;
+  for (hpp = &hosts; ; hpp = &hp->h_next) {
+    hp = *hpp;
+    if (!hp || (r = strcmp(hp->h_name, name)) >= 0) {
+      if (!hp || r) {
+	hp = (struct host *) calloc(1, sizeof(*hp));
+	hp->h_name = strdup(name);
+	hp->h_next = *hpp;
+	*hpp = hp;
+      }
+      return hp;
+    }
   }
-  return hp;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static struct user *userptr(const char *name, struct host *hp)
+{
+
+  int r;
+  struct user **upp;
+  struct user *up;
+
+  for (upp = &users; ; upp = &up->u_next) {
+    up = *upp;
+    if (!up ||
+	(r = strcmp(up->u_name, name)) > 0 ||
+	!r && (r = strcmp(up->u_host->h_name, hp->h_name)) >= 0) {
+      if (!up || r) {
+	up = (struct user *) calloc(1, sizeof(*up));
+	up->u_name = strdup(name);
+	up->u_host = hp;
+	up->u_channel = -1;
+	up->u_stime = currtime;
+	up->u_next = *upp;
+	*upp = up;
+      }
+      return up;
+    }
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -908,39 +944,27 @@ static void name_command(struct link *lp)
 
   char *name;
   char buffer[2048];
-  int newchannel;
   int oldchannel;
-  struct link *p;
+  struct link *lpold;
   struct user *up;
 
   name = getarg(NULLCHAR, 0);
   if (!*name) return;
-  for (up = users; up && (!up->u_link->l_user || strcmp(up->u_name, name)); up = up->u_next) ;
-  if (!up) {
-    up = (struct user *) calloc(1, sizeof(*up));
-    up->u_name = strdup(name);
-    up->u_host = &my;
-    up->u_link = lp;
-    up->u_stime = currtime;
-    up->u_next = users;
-    users = up;
-    oldchannel = -1;
-  } else {
-    p = up->u_link;
-    up->u_link = lp;
-    close_link(p);
-    oldchannel = up->u_channel;
-  }
+  up = userptr(name, &my);
+  oldchannel = up->u_channel;
+  lpold = up->u_link;
+  up->u_link = lp;
+  if (lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.32 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.33 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
-  newchannel = atoi(getarg(NULLCHAR, 0));
-  if (newchannel < 0 || newchannel > MAX_CHANNEL) {
+  up->u_channel = atoi(getarg(NULLCHAR, 0));
+  if (up->u_channel < 0 || up->u_channel > MAX_CHANNEL) {
     sprintf(buffer, "*** Channel numbers must be in the range 0..%d.\n", MAX_CHANNEL);
     send_string(lp, buffer);
-  } else
-    up->u_channel = newchannel;
+    up->u_channel = 0;
+  }
   if (oldchannel != up->u_channel)
     send_user_change_msg(name, my.h_name, oldchannel, up->u_channel);
 }
@@ -1103,50 +1127,37 @@ static void h_user_command(struct link *lp)
   char *name;
   char buffer[2048];
   int newchannel;
-  int oldchannel;
   struct host *hp;
   struct user **upp;
   struct user *up;
 
   name = getarg(NULLCHAR, 0);
   host = getarg(NULLCHAR, 0);
-  getarg(NULLCHAR, 0);  /*** ignore this argument, protocol has changed ***/
-  oldchannel = atoi(getarg(NULLCHAR, 0));
+  getarg(NULLCHAR, 0); /*** ignored, protocol has changed ***/
+  getarg(NULLCHAR, 0); /*** oldchannel is ignored, protocol has changed ***/
   channel = getarg(NULLCHAR, 0);
   if (!*channel) return;
   newchannel = atoi(channel);
   hp = hostptr(host);
+  up = userptr(name, hp);
 
-  for (upp = &users; up = *upp; ) {
-    if (up->u_host == hp && !strcmp(up->u_name, name)) break;
-    upp = &up->u_next;
-  }
+  if (up->u_channel != newchannel)
+    if (hp == &my) {
+      sprintf(buffer, "/\377\200USER %s %s %d %d %d\n", name, host, 0, newchannel, up->u_channel);
+      send_string(lp, buffer);
+    } else {
+      send_user_change_msg(name, host, up->u_channel, newchannel);
+      up->u_channel = newchannel;
+      up->u_link = hp->h_link = lp;
+    }
 
-  if (up && up->u_channel == newchannel || !up && newchannel < 0) return;
-
-  if (hp == &my) {
-    sprintf(buffer, "/\377\200USER %s %s %d %d %d\n", name, host, 0, newchannel, up->u_channel);
-    send_string(lp, buffer);
-    return;
-  }
-
-  send_user_change_msg(name, host, oldchannel, newchannel);
-
-  if (!up) {
-    up = (struct user *) calloc(1, sizeof(*up));
-    up->u_name = strdup(name);
-    up->u_host = hp;
-    up->u_stime = currtime;
-    up->u_next = users;
-    users = up;
-  }
-  up->u_link = hp->h_link = lp;
-  up->u_channel = newchannel;
-  if (newchannel < 0) {
-    *upp = up->u_next;
-    free(up->u_name);
-    free(up);
-  }
+  for (upp = &users; up = *upp; )
+    if (up->u_channel < 0) {
+      *upp = up->u_next;
+      free(up->u_name);
+      free(up);
+    } else
+      upp = &up->u_next;
 }
 
 /*---------------------------------------------------------------------------*/
