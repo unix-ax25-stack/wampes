@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.45 1995/03/24 13:00:16 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.46 1995/05/09 21:13:04 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -9,14 +9,13 @@ MKDIR      = @if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi
 RMTARGET   = @if [ -f $@ ]; then rm -f $@ || mv -f $@ $@~; fi
 SLIBS      =
 
-TARGETS    = bbs findpath killdup sfstat
+TARGETS    = bbs findpath killdup
 
 all:;   @case "`uname -sr`" in \
 	HP-UX*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=c89' \
 		'CFLAGS=-O -D_HPUX_SOURCE -I../lib' \
-		'SLIBS=-lndbm' \
 		_all;; \
 	AIX*) \
 		$(MAKE) -i -f $(MAKEFILE) \
@@ -32,7 +31,6 @@ all:;   @case "`uname -sr`" in \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O -I../lib' \
-		'SLIBS=-ldbm' \
 		_all;; \
 	386BSD*) \
 		$(MAKE) -i -f $(MAKEFILE) \
@@ -64,13 +62,12 @@ all:;   @case "`uname -sr`" in \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O6 -DULTRIX_RISC -I../lib' \
-		'SLIBS=-ldbm' \
 		_all;; \
 	A/UX*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=gcc -fpcc-struct-return' \
 		'CFLAGS=-O -D_POSIX_SOURCE -I../lib' \
-		'SLIBS=-ldbm -lposix' \
+		'SLIBS=-lposix' \
 		_all;; \
 	RISC\ iX*) \
 		$(MAKE) -i -f $(MAKEFILE) \
@@ -104,12 +101,7 @@ killdup: killdup.o $(LIBS)
 	@sleep 1
 	$(LD) $(LDFLAGS) killdup.o $(LIBS) $(SLIBS) -o $@
 
-sfstat: sfstat.o $(LIBS)
-	$(RMTARGET)
-	@sleep 1
-	$(LD) $(LDFLAGS) sfstat.o $(LIBS) $(SLIBS) -o $@
-
-install: /usr/local/bin/bbs findpath killdup /usr/local/bin/sfstat /usr/local/lib/bbs.help
+install: /usr/local/bin/bbs findpath killdup /usr/local/lib/bbs.help
 
 /usr/local/bin/bbs: bbs
 	$(MKDIR)
@@ -118,11 +110,6 @@ install: /usr/local/bin/bbs findpath killdup /usr/local/bin/sfstat /usr/local/li
 	cp $? $@
 	chmod 4555 $@
 	ln $@ /usr/local/bin/BBS
-
-/usr/local/bin/sfstat: sfstat
-	$(MKDIR)
-	$(RMTARGET)
-	cp $? $@
 
 /usr/local/lib/bbs.help: help.de
 	$(MKDIR)
@@ -138,4 +125,3 @@ bbs.o: ../lib/bbs.h ../lib/configure.h ../lib/buildsaddr.h ../lib/callvalid.h \
 findpath.o: ../lib/bbs.h ../lib/configure.h ../lib/calc_crc.h \
 	../lib/callvalid.h ../lib/seek.h
 killdup.o: ../lib/bbs.h ../lib/configure.h ../lib/md5.h ../lib/seek.h
-sfstat.o: ../lib/bbs.h ../lib/configure.h

@@ -1,12 +1,47 @@
 -------------------------------------------------------------------------------
 
-- bbs.c:  new bbs batch loader
+bbs:
+  new option for outbound only?
+  new bbs batch loader?
 
-- bbs.c:  accept /ex for EOF
+db0sao:
+  merge bbs.conf into mail.conf
+  change Xbbs to bbs in mail.conf
+  inittab: make entry for db0sdx
+  make newsfeed entries for all bbses
+    except db0sdx
+  do NOT forward stuff @db0sao (where distribution == db0sao)
+  remove bbs.conf
+  remove bid.dir
+  remove bid.pag
+  remove src
+  remove sequencer files for bbses
+    NO: keep them for locking
 
-- bbs.c:  convert cancel control msgs to E msgs
+other:
+  handle M msgs (feed to udbm?)
+  create bbs routing tables
 
-- mail_bbs.c:  X-R header lines have to be converted to R header lines
+-------------------------------------------------------------------------------
+
+- sync mail_smtp.c with bbs.c
+
+- integrate new memory allocator
+
+- mm2html:  headers are BOLD / BOLD are headers
+
+	<table border>
+	<tr><th>Header</th><th>Header</th><th>Header</th></tr>
+	<tr><th>Header</th><th>Header</th><th>Header</th></tr>
+	<tr><td>Data</td><td>Data</td><td>Data</td></tr>
+	<tr><td>Data</td><td>Data</td><td>Data</td></tr>
+	<tr><th>Header</th><th>Header</th><th>Header</th></tr>
+	<tr><th>Header</th><td>Data</td><th>Header</th></tr>
+	</table>
+
+- mm2html:  allow for multiple align lines
+
+- mm2html:  handle pictures
 
 - make a domain search list
   default: ampr.org. .
@@ -84,7 +119,7 @@ wampes manual:
   us to "normalize" the address of a block, and to calculate the address
   of its buddy.  ===== BETTER SOLUTION REQUIRED =====
 
-	pbuddy = (p - base) ^ size;
+	pbuddy = base + (p - base) ^ size;
 
 - For every block with size less than MAX_N we can tell if the block is
   free or not.  A free block does contain a pointer to an other free

@@ -1,9 +1,17 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.23 1995/03/13 13:32:10 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.24 1995/05/09 21:12:54 deyke Exp $
 
 MAKEFILE   = Makefile
 MKDIR      = @if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi
 
-all:;   @-rm -f bbs/bbs.h src/linux_include/stdlib.h util/genupd
+OBSOLETE   = bbs/bbs.h \
+	     bbs/sfstat* \
+	     examples/bbs.conf \
+	     src/linux_include/stdlib.h \
+	     src/mail_bbs.* \
+	     util/genupd \
+	     /usr/local/bin/sfstat
+
+all:;   @-rm -f $(OBSOLETE)
 	-chmod 755 cc
 	-cd lib;     $(MAKE) -i -f $(MAKEFILE) all install
 	-cd aos;     $(MAKE) -i -f $(MAKEFILE) all install

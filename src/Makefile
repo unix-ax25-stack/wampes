@@ -1,11 +1,10 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.80 1995/03/24 13:00:06 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.81 1995/05/09 21:13:00 deyke Exp $
 
 CFLAGS        = -I../lib
 
 DEST          = /tcp
 
-EXTHDRS       = ../lib/bbs.h \
-		../lib/buildsaddr.h \
+EXTHDRS       = ../lib/buildsaddr.h \
 		../lib/calc_crc.h \
 		../lib/callvalid.h \
 		../lib/configure.h \
@@ -131,7 +130,6 @@ OBJS          = adjtime.o \
 		lapbtime.o \
 		lcsum.o \
 		login.o \
-		mail_bbs.o \
 		mail_daemn.o \
 		mail_retrn.o \
 		mail_smtp.o \
@@ -241,7 +239,6 @@ SRCS          = adjtime.c \
 		lapbtime.c \
 		lcsum.c \
 		login.c \
-		mail_bbs.c \
 		mail_daemn.c \
 		mail_retrn.c \
 		mail_smtp.c \
@@ -539,8 +536,6 @@ lcsum.o: global.h ip.h mbuf.h iface.h proc.h timer.h internet.h
 login.o: ../lib/callvalid.h ../lib/configure.h ../lib/seek.h global.h mbuf.h \
 	timer.h hpux.h telnet.h tcp.h iface.h proc.h internet.h ip.h \
 	netuser.h cmdparse.h commands.h login.h
-mail_bbs.o: ../lib/bbs.h ../lib/configure.h global.h mbuf.h timer.h \
-	transport.h mail.h
 mail_daemn.o: ../lib/configure.h global.h timer.h mail.h cmdparse.h \
 	commands.h
 mail_retrn.o: ../lib/configure.h hpux.h global.h mail.h

@@ -1190,7 +1190,6 @@
 44.130.20.66    dh6kq   # Andreas From, 5190 Stolberg
 44.130.20.67    dk0oe   # Club-Stn OV Eschweiler (G05)
 44.130.20.68    dl5kci  # Ingo Geidel, Stolberg
-44.130.20.69    dl9kas  # Klaus Wings, 5163 Langerwehe
 44.130.20.70    dh4kah  # Arno Hausmann, 5190 Stolberg
 44.130.20.71    dl3kbe  # Heinz Brendt
 44.130.20.72    dl2kbj  # Wolfgang Welter, 5190 Stolberg; Atari ST
@@ -1204,8 +1203,6 @@
 44.130.20.81    dj0ju   # Henrik Olsen, 5138 Heinsberg Karken
 44.130.20.83    db1pd   # Manfred Jost, 5100 Aachen
 44.130.20.84    dl5kce  # Axel Pfaff, Eschweiler
-44.130.20.85    dj4uf   # Eckart
-44.130.20.86    dg9kaf  # Heinz Klippel, 5177 Titz
 44.130.20.88    db0mon  # Digi Monschau (DL8YQ); AX25 DB0MON-10
 44.130.20.89    db0mon-gate     # Digi Monschau, IP Gateway
 44.130.20.90    dl8yq   # Heinz Janssen, 5108 Monschau
@@ -1219,6 +1216,7 @@
 44.130.20.99    dk0hw   # Club-Stn G38, Wegberg (DK3PB)
 44.130.20.100   dd2kz   # Ralf Crumbach, 5100 Aachen
 44.130.20.101   dg3kce  # Frank, Dueren
+44.130.20.102   dg1kao  # Willi Ahn , 51156 Monschau
 44.130.20.105   dl6kcw  # Manfred, Wegberg
 44.130.20.106   dl1bke-a        # Joerg Reuter, 52072 Aachen
 44.130.20.107   dl1bke-u        # ; LINUX
@@ -1905,6 +1903,7 @@
 44.130.36.1       dc7ch         # Juergen
 44.130.36.2       DC7ER         # Andreas, 1000 Berlin 47
 44.130.36.3       DH7ABQ        # Ralf, 1000 Berlin 44
+44.130.36.4       dc7ae         # Wilfried Melzer, Berlin
 44.130.36.5       DL5HCK-1      # Klaus Simon, 1000 Berlin 41
 44.130.36.6       dl7ape        # Thomas Leng , 13355 Berlin
 44.130.36.7       DL7APN        # Christian, 1000 Berlin-Schoeneberg

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.4 1994/11/28 10:39:49 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.5 1995/05/09 21:13:05 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -7,8 +7,10 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <stdlib.h>
 #include <string.h>
 
-#define HEADERLEVELS 6
-#define LISTLEVELS 6
+#define DO_TABLES       1
+
+#define HEADERLEVELS    6
+#define LISTLEVELS      6
 
 struct numbers {
   struct numbers *next;
@@ -45,6 +47,17 @@ static struct numbers *numbers;
 static void error(const char *msg)
 {
   fprintf(stderr, "*** ERROR in line %d: %s\n", linenum, msg);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void rip(char *s)
+{
+  char *p;
+
+  for (p = s; *p; p++) ;
+  while (--p >= s && (*p == '\r' || *p == '\n')) ;
+  p[1] = 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -428,6 +441,120 @@ static void dot_SP(int argc, char **argv)
 static void dot_TS(int argc, char **argv)
 {
 
+#if DO_TABLES
+
+  char buf[1024];
+  char data_align_flgs[1024];
+  char header_align_flgs[1024];
+  char line[1024];
+  char *align_flgs;
+  char *align_str;
+  char *cp;
+  char *l1;
+  char *l;
+  char *tag;
+  int borderflg;
+  int columns;
+  int i;
+  int tab;
+
+  /* global options; */
+
+  borderflg = 0;
+  tab = '\t';
+  while (fgets(line, sizeof(line), fileptr)) {
+    if (strstr(line, "box"))
+      borderflg = 1;
+    if ((cp = strstr(line, "tab(")))
+      tab = cp[4];
+    if (strstr(line, ";\n"))
+      break;
+  }
+
+  /* column descriptors. */
+
+  columns = 0;
+  align_flgs = header_align_flgs;
+  while (fgets(line, sizeof(line), fileptr)) {
+    strcpy(buf, line);
+    columns = 0;
+    for (cp = strtok(buf, " .|\n"); cp; cp = strtok(0, " .|\n")) {
+      align_flgs[columns] = 0;
+      if (strchr(cp, 'l'))
+	align_flgs[columns] = 'l';
+      if (strchr(cp, 'r'))
+	align_flgs[columns] = 'r';
+      if (strchr(cp, 'c'))
+	align_flgs[columns] = 'c';
+      if (strchr(cp, 'n'))
+	align_flgs[columns] = 'r';
+      columns++;
+    }
+    if (strstr(line, ".\n"))
+      break;
+    align_flgs = data_align_flgs;
+  }
+
+  /* title lines, data within the table */
+
+  if (borderflg)
+    puts("<TABLE BORDER>");
+  else
+    puts("<TABLE>");
+
+  tag = "TH";
+  align_flgs = header_align_flgs;
+  while (fgets(line, sizeof(line), fileptr)) {
+    rip(line);
+    if (!strncmp(line, ".TE", 3))
+      break;
+    if (!strcmp(line, "_"))
+      continue;
+    printf("<TR>");
+    l = line;
+    for (i = 0; i < columns; i++) {
+      cp = strchr(l, tab);
+      if (cp)
+	*cp = 0;
+      while (isspace(*l & 0xff))
+	l++;
+      if (*l) {
+	for (l1 = l; *l1; l1++) ;
+	while (--l1 >= l && isspace(*l1 & 0xff)) ;
+	l1[1] = 0;
+      }
+      switch (align_flgs[i]) {
+      case 'l':
+	align_str = " ALIGN=\"left\"";
+	break;
+      case 'c':
+	align_str = " ALIGN=\"center\"";
+	break;
+      case 'r':
+	align_str = " ALIGN=\"right\"";
+	break;
+      default:
+	align_str = "";
+	break;
+      }
+      printf("<%s%s>%s</%s>",
+	     tag,
+	     align_str,
+	     *l ? escape_special_characters(buf, l) : "&nbsp;",
+	     tag);
+      if (cp)
+	l = cp + 1;
+      else
+	l = "";
+    }
+    puts("</TR>");
+    tag = "TD";
+    align_flgs = data_align_flgs;
+  }
+  puts("</TABLE>");
+
+#else
+
   FILE *tempptr;
   char *cp;
   char buf[1024];
@@ -470,6 +597,9 @@ static void dot_TS(int argc, char **argv)
   fclose(tempptr);
   if (remove(tempfilename))
     perror(tempfilename);
+
+#endif
+
 }
 
 /*---------------------------------------------------------------------------*/

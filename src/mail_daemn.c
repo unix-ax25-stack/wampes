@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.22 1994/10/09 08:22:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.23 1995/05/09 21:12:59 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -40,7 +40,6 @@ static void mail_tick(char *sysname);
 /*---------------------------------------------------------------------------*/
 
 static const struct mailers Mailers[] = {
-	{ "bbs",        mail_bbs },
 	{ "smtp",       mail_smtp },
 	{ 0,            0 }
 };

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.27 1995/04/13 14:30:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.28 1995/05/09 21:12:56 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -35,8 +35,8 @@
 #define MIN_N           3       /* Min size is 8 bytes */
 #define MAX_N           16      /* Max size is 65536 bytes */
 
-struct block {
-  struct block *next;
+union block {
+  union block *next;
 };
 
 static const int Blocksize[] = {
@@ -50,7 +50,7 @@ static const int Blocksize[] = {
   0x10000000, 0x20000000, 0x40000000, 0x80000000
 };
 
-static struct block *Freetable[33];
+static union block *Freetable[33];
 static unsigned long Memfail;   /* Count of allocation failures */
 static unsigned long Allocs;    /* Total allocations */
 static unsigned long Frees;     /* Total frees */
@@ -84,13 +84,13 @@ struct cmds Memcmds[] = {
 
 /*---------------------------------------------------------------------------*/
 
-static void putblock(struct block *p, int n)
+static void putblock(union block *p, int n)
 {
 
-  struct block **cpp;
-  struct block *cp;
-  struct block *np;
-  struct block *pp;
+  union block **cpp;
+  union block *cp;
+  union block *np;
+  union block *pp;
 
 Retry:
   if (!Memmerge || n == MAX_N) {
@@ -98,8 +98,8 @@ Retry:
     Freetable[n] = p;
     return;
   }
-  pp = (struct block *) (((char *) p) - Blocksize[n]);
-  np = (struct block *) (((char *) p) + Blocksize[n]);
+  pp = (union block *) (((char *) p) - Blocksize[n]);
+  np = (union block *) (((char *) p) + Blocksize[n]);
   for (cpp = Freetable + n; ; cpp = &cp->next) {
     cp = *cpp;
     if (cp == pp || cp == np) {
@@ -124,11 +124,11 @@ Retry:
 
 /*---------------------------------------------------------------------------*/
 
-static struct block *getblock(int n)
+static union block *getblock(int n)
 {
 
   int a;
-  struct block *p;
+  union block *p;
 
   if ((p = Freetable[n])) {
     Freetable[n] = p->next;
@@ -139,12 +139,12 @@ static struct block *getblock(int n)
     }
     Morecores++;
     Heapsize += Blocksize[MAX_N];
-    a += sizeof(struct block *);
+    a += sizeof(union block *);
     a = (a + ALIGN - 1) & ~(ALIGN - 1);
-    a -= sizeof(struct block *);
-    p = (struct block *) a;
+    a -= sizeof(union block *);
+    p = (union block *) a;
   } else if ((p = getblock(n + 1))) {
-    putblock((struct block *) (Blocksize[n] + (char *) p), n);
+    putblock((union block *) (Blocksize[n] + (char *) p), n);
     Splits++;
   } else {
     return 0;
@@ -161,9 +161,9 @@ unsigned nb)
 {
 
   int n;
-  struct block *p;
+  union block *p;
 
-  nb += sizeof(struct block *) - 1;
+  nb += sizeof(union block *) - 1;
   n = 0;
   if (nb & 0xffff0000) { n += 16; nb >>= 16; }
   if (nb & 0x0000ff00) { n +=  8; nb >>=  8; }
@@ -179,7 +179,7 @@ unsigned nb)
   if (!(p = getblock(n))) return 0;
   Sizes[n]++;
   if (Memdebug) memset((char *) p, USEDPATTERN, Blocksize[n]);
-  p->next = (struct block *) (Freetable + n);
+  p->next = (union block *) (Freetable + n);
   Allocs++;
   Inuse += Blocksize[n];
   return (void *) (p + 1);
@@ -194,16 +194,16 @@ void *blk)
 {
 
   int n;
-  struct block *p;
+  union block *p;
 
-  if ((p = (struct block *) blk)) {
+  if ((p = (union block *) blk)) {
     if ((ALIGN - 1) & (int) p) {
       fprintf(stderr, "free: bad alignment\n");
       Invalid++;
       return;
     }
     p--;
-    n = p->next - (struct block *) Freetable;
+    n = p->next - (union block *) Freetable;
     if (n < MIN_N || n > MAX_N) {
       fprintf(stderr, "free: bad free table pointer\n");
       Invalid++;
@@ -226,7 +226,7 @@ unsigned size)
 {
 
   int n;
-  struct block *tp;
+  union block *tp;
   unsigned osize;
   void *newp;
 
@@ -238,16 +238,16 @@ unsigned size)
     return 0;
   }
 
-  tp = (struct block *) area;
+  tp = (union block *) area;
   tp--;
-  n = tp->next - (struct block *) Freetable;
+  n = tp->next - (union block *) Freetable;
   if (n < MIN_N || n > MAX_N) {
     fprintf(stderr, "realloc: bad free table pointer\n");
     Invalid++;
     return malloc(size);
   }
   if ((newp = malloc(size))) {
-    osize = Blocksize[n] - sizeof(struct block *);
+    osize = Blocksize[n] - sizeof(union block *);
     memcpy(newp, area, osize < size ? osize : size);
     free(area);
   }
@@ -341,7 +341,7 @@ void *envp)
 {
 
 	int n;
-	struct block *p;
+	union block *p;
 	unsigned long l;
 	unsigned long len[33];
 
@@ -371,8 +371,8 @@ void *envp)
 
 	int n;
 	int prev;
-	struct block *p;
-	struct block *pnext;
+	union block *p;
+	union block *pnext;
 
 	prev = Memmerge;
 	setbool(&Memmerge, "Heap merging", argc, argv);
