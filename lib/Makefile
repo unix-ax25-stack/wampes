@@ -1,10 +1,14 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.1 1993/06/06 08:25:30 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.2 1993/06/10 09:46:32 deyke Exp $
 
-OS         = "`uname -s`"
+LIBRARY       = libutil.a
 
-LIBRARY    = libutil.a
-OBJS       = buildsaddr.o strdup.o strtoul.o
-RANLIB     = ranlib
+OBJS          = buildsaddr.o \
+		strdup.o \
+		strtoul.o
+
+OS            = "`uname -s`"
+
+RANLIB        = ranlib
 
 all:;   @if [ $(OS) = HP-UX ] ; then \
 		make -i \
@@ -50,7 +54,8 @@ all:;   @if [ $(OS) = HP-UX ] ; then \
 _all:   $(LIBRARY)
 
 $(LIBRARY): $(OBJS)
-	@echo "Loading $(LIBRARY) ..."
+	@echo "Loading $@ ..."
+	@sleep 1
 	@ar cru $@ $(OBJS)
 	@$(RANLIB) $@
 	@echo "done"
@@ -58,3 +63,8 @@ $(LIBRARY): $(OBJS)
 install:;
 
 clean:; rm -f *.o $(LIBRARY) *~
+
+depend:; @mkmf
+###
+buildsaddr.o: buildsaddr.h
+strdup.o: strdup.h

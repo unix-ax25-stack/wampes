@@ -1,5 +1,6 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.15 1993/06/06 08:26:34 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.16 1993/06/10 09:44:21 deyke Exp $
 
+CFLAGS     = -I../lib
 OS         = "`uname -s`"
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
@@ -53,18 +54,29 @@ all:;   @if [ $(OS) = HP-UX ] ; then \
 
 _all:   $(TARGETS)
 
-.c:
+convers: convers.o
 	$(RMTARGET)
-	$(CC) $(CFLAGS) $< $(LIBS) -o $@
+	@sleep 1
+	$(CC) $(CFLAGS) $? $(LIBS) -o $@
+
+conversd: conversd.o
+	$(RMTARGET)
+	@sleep 1
+	$(CC) $(CFLAGS) $? $(LIBS) -o $@
 
 install: /usr/local/bin/convers /tcp/conversd
 
 /usr/local/bin/convers: convers
 	$(RMTARGET)
-	cp convers $@
+	cp $? $@
 
 /tcp/conversd: conversd
 	$(RMTARGET)
-	cp conversd $@
+	cp $? $@
 
 clean:; rm -f *.o $(TARGETS) *~
+
+depend:; @mkmf
+###
+convers.o: ../lib/buildsaddr.h
+conversd.o: ../lib/buildsaddr.h ../lib/strdup.h

@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.35 1993/06/06 08:26:34 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.36 1993/06/10 09:44:22 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -35,8 +35,6 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #undef  MAXIOV
 #endif
 
-extern char *strdup();
-
 #ifndef SOMAXCONN
 #define SOMAXCONN       5
 #endif
@@ -68,6 +66,7 @@ extern int errno;
 extern int optind;
 
 #include "buildsaddr.h"
+#include "strdup.h"
 
 #define MAX_CHANNEL     32767
 #define MAX_IDLETIME    (  60*60)
@@ -953,7 +952,7 @@ static void name_command(struct link *lp)
   if (lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.35 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.36 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_channel = atoi(getarg(NULLCHAR, 0));
   if (up->u_channel < 0 || up->u_channel > MAX_CHANNEL) {

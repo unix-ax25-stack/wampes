@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.55 1993/06/06 08:23:42 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.56 1993/06/10 09:44:00 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -25,11 +25,11 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <unistd.h>
 
 extern char *optarg;
-extern char *strdup();
 extern int optind;
 
-#include "buildsaddr.h"
 #include "bbs.h"
+#include "buildsaddr.h"
+#include "strdup.h"
 
 #define SECONDS     (1L)
 #define MINUTES     (60L*SECONDS)

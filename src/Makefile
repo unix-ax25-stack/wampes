@@ -1,8 +1,10 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.40 1993/06/07 06:30:57 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.41 1993/06/10 09:43:38 deyke Exp $
+
+CFLAGS        = -I../lib
 
 DEST          = /tcp
 
-EXTHDRS       =
+EXTHDRS       = ../lib/buildsaddr.h
 
 HDRS          = arp.h \
 		asy.h \
@@ -469,7 +471,7 @@ lapb.o: global.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h ip.h internet.h
 lapbtime.o: global.h mbuf.h ax25.h iface.h proc.h timer.h lapb.h
 lcsum.o: global.h ip.h mbuf.h iface.h proc.h timer.h internet.h
 login.o: global.h mbuf.h timer.h hpux.h telnet.h session.h proc.h hardware.h \
-	ax25.h iface.h login.h
+	ax25.h iface.h cmdparse.h commands.h login.h
 mail_bbs.o: global.h mbuf.h timer.h transport.h mail.h
 mail_daemn.o: global.h timer.h mail.h cmdparse.h commands.h
 mail_retrn.o: hpux.h global.h mail.h
@@ -494,7 +496,7 @@ nrs.o: global.h mbuf.h iface.h proc.h timer.h pktdrvr.h ax25.h nrs.h asy.h \
 	trace.h commands.h
 pathname.o: global.h dirutil.h
 remote_net.o: global.h mbuf.h iface.h proc.h timer.h transport.h hpux.h \
-	main.h
+	../lib/buildsaddr.h main.h
 rip.o: global.h mbuf.h netuser.h udp.h iface.h proc.h timer.h internet.h ip.h \
 	rip.h arp.h
 ripcmd.o: global.h mbuf.h netuser.h internet.h cmdparse.h timer.h iface.h \
@@ -520,7 +522,7 @@ tcpcmd.o: global.h timer.h mbuf.h netuser.h internet.h tcp.h iface.h proc.h \
 tcpdump.o: global.h mbuf.h netuser.h internet.h tcp.h iface.h proc.h timer.h \
 	ip.h trace.h
 tcpgate.o: global.h mbuf.h netuser.h tcp.h iface.h proc.h timer.h internet.h \
-	ip.h hpux.h
+	ip.h hpux.h ../lib/buildsaddr.h
 tcphdr.o: global.h mbuf.h tcp.h iface.h proc.h timer.h internet.h ip.h \
 	netuser.h
 tcpin.o: global.h timer.h mbuf.h netuser.h internet.h tcp.h iface.h proc.h \

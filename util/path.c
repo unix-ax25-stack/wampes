@@ -1,4 +1,4 @@
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.10 1993/06/07 06:33:14 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.11 1993/06/10 09:44:07 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -8,7 +8,7 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <string.h>
 #include <time.h>
 
-extern char *strdup();
+#include "strdup.h"
 
 #define NULLCHAR        ((char *) 0)
 

@@ -1,5 +1,6 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.25 1993/06/07 06:33:13 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.26 1993/06/10 09:44:05 deyke Exp $
 
+CFLAGS     = -I../lib
 OS         = "`uname -s`"
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
@@ -54,25 +55,50 @@ all:;   chmod 755 genupd
 
 _all:   $(TARGETS)
 
-cnet:   cnet.c
+cnet:   cnet.o
 	$(RMTARGET)
-	$(CC) $(CFLAGS) cnet.c -lcurses -ltermcap $(LIBS) -o $@
+	@sleep 1
+	$(CC) $(CFLAGS) $? -lcurses -ltermcap $(LIBS) -o $@
 
-md5:    md5.c md5drivr.c md5.h
+md5:    md5.o md5drivr.o
 	$(RMTARGET)
-	$(CC) $(CFLAGS) md5.c md5drivr.c $(LIBS) -o $@
+	@sleep 1
+	$(CC) $(CFLAGS) md5.o md5drivr.o $(LIBS) -o $@
 
-netupdc: netupdc.c netupd.h
+mkhostdb: mkhostdb.o
 	$(RMTARGET)
-	$(CC) $(CFLAGS) netupdc.c $(LIBS) -o $@
+	@sleep 1
+	$(CC) $(CFLAGS) $? $(LIBS) -o $@
 
-netupds: netupds.c netupd.h
+netupdc: netupdc.o
 	$(RMTARGET)
-	$(CC) $(CFLAGS) netupds.c $(LIBS) -o $@
+	@sleep 1
+	$(CC) $(CFLAGS) $? $(LIBS) -o $@
 
-.c:
+netupds: netupds.o
 	$(RMTARGET)
-	$(CC) $(CFLAGS) $< $(LIBS) -o $@
+	@sleep 1
+	$(CC) $(CFLAGS) $? $(LIBS) -o $@
+
+path:   path.o
+	$(RMTARGET)
+	@sleep 1
+	$(CC) $(CFLAGS) $? $(LIBS) -o $@
+
+pop2d:  pop2d.o
+	$(RMTARGET)
+	@sleep 1
+	$(CC) $(CFLAGS) $? $(LIBS) -o $@
+
+udbm:   udbm.o
+	$(RMTARGET)
+	@sleep 1
+	$(CC) $(CFLAGS) $? $(LIBS) -o $@
+
+vitals: vitals.o
+	$(RMTARGET)
+	@sleep 1
+	$(CC) $(CFLAGS) $? $(LIBS) -o $@
 
 install: \
 	/usr/local/bin/cnet \
@@ -87,22 +113,31 @@ install: \
 
 /usr/local/bin/cnet: cnet
 	$(RMTARGET)
-	cp cnet $@
+	cp $? $@
 
 /usr/local/bin/md5: md5
 	$(RMTARGET)
-	cp md5 $@
+	cp $? $@
 
 /usr/local/etc/mkhostdb: mkhostdb
 	$(RMTARGET)
-	cp mkhostdb $@
+	cp $? $@
 
 /usr/local/bin/path: path
 	$(RMTARGET)
-	cp path $@
+	cp $? $@
 
 /usr/local/etc/udbm: udbm
 	$(RMTARGET)
-	cp udbm $@
+	cp $? $@
 
 clean:; rm -f *.o $(TARGETS) *~
+
+depend:; @mkmf
+###
+cnet.o: ../lib/buildsaddr.h
+md5.o: md5.h
+md5drivr.o: md5.h
+netupdc.o: ../lib/buildsaddr.h netupd.h ../lib/strdup.h
+netupds.o: netupd.h
+path.o: ../lib/strdup.h

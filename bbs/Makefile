@@ -1,5 +1,6 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.16 1993/06/06 08:23:42 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.17 1993/06/10 09:43:59 deyke Exp $
 
+CFLAGS     = -I../lib
 OS         = "`uname -s`"
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
@@ -53,37 +54,48 @@ all:;   @if [ $(OS) = HP-UX ] ; then \
 
 _all:   $(TARGETS)
 
-bbs:    bbs.c bbs.h
+bbs:    bbs.o
 	$(RMTARGET)
-	$(CC) $(CFLAGS) bbs.c $(LIBS) -o $@
+	@sleep 1
+	$(CC) $(CFLAGS) $? $(LIBS) -o $@
 
-findpath: findpath.c bbs.h
+findpath: findpath.o
 	$(RMTARGET)
-	$(CC) $(CFLAGS) findpath.c $(LIBS) -o $@
+	@sleep 1
+	$(CC) $(CFLAGS) $? $(LIBS) -o $@
 
-killdup: killdup.c bbs.h
+killdup: killdup.o
 	$(RMTARGET)
-	$(CC) $(CFLAGS) killdup.c $(LIBS) -o $@
+	@sleep 1
+	$(CC) $(CFLAGS) $? $(LIBS) -o $@
 
-sfstat: sfstat.c bbs.h
+sfstat: sfstat.o
 	$(RMTARGET)
-	$(CC) $(CFLAGS) sfstat.c $(LIBS) -o $@
+	@sleep 1
+	$(CC) $(CFLAGS) $? $(LIBS) -o $@
 
 install: /usr/local/bin/bbs findpath killdup /usr/local/bin/sfstat /users/bbs/help
 
 /usr/local/bin/bbs: bbs
 	rm -f /usr/local/bin/BBS
 	$(RMTARGET)
-	cp bbs $@
+	cp $? $@
 	chmod 4555 $@
 	ln $@ /usr/local/bin/BBS
 
 /usr/local/bin/sfstat: sfstat
 	$(RMTARGET)
-	cp sfstat $@
+	cp $? $@
 
 /users/bbs/help: help
 	$(RMTARGET)
-	cp help $@
+	cp $? $@
 
 clean:; rm -f *.o $(TARGETS) *~
+
+depend:; @mkmf
+###
+bbs.o: bbs.h ../lib/buildsaddr.h ../lib/strdup.h
+findpath.o: bbs.h
+killdup.o: bbs.h
+sfstat.o: bbs.h

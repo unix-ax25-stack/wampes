@@ -1,19 +1,21 @@
 #! /bin/csh -f
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.4 1993/06/06 08:24:10 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.5 1993/06/10 09:44:14 deyke Exp $
 
+tcpremove
 foreach dir (           \
 	~/tcp           \
 	~/tcp/bbs       \
 	~/tcp/convers   \
 	~/tcp/doc       \
+	~/tcp/lib       \
 	~/tcp/src       \
 	~/tcp/tools     \
 	~/tcp/util      )
   cd $dir
+  if (-f Makefile) make depend
   trimfiles
 end
-tcpremove
 cd ~/tcp/src
 makeall |& tee xxx
 cd ~/tcp

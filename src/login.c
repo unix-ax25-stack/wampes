@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.39 1993/06/06 08:23:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.40 1993/06/10 09:43:47 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -31,6 +31,8 @@ extern struct utmp *getutent();
 #include "timer.h"
 #include "hpux.h"
 #include "telnet.h"
+#include "cmdparse.h"
+#include "commands.h"
 #include "login.h"
 
 #define MASTERPREFIX        "/dev/pty"
@@ -41,13 +43,7 @@ extern struct utmp *getutent();
 #define SPASSWDFILE         "/.secure/etc/passwd"
 #define PWLOCKFILE          "/etc/ptmp"
 
-#define DEFAULTUSER         "guest"
-#define FIRSTUID            400
-#define MAXUID              4095
-#define GID                 400
-#define HOMEDIRPARENTPARENT "/users/funk"
-
-#define LOGFILEDIR          "/tcp/logs"
+#define MAXUID              32000
 
 /* login server control block */
 
@@ -77,7 +73,16 @@ struct login_cb {
   char option[NOPTIONS+1];      /* telnet options */
 };
 
-static int32 pty_locktime[NUMPTY];
+static char Defaultuser[16] = "guest";
+static char Homedir[80] = "/users/funk";
+static char Logfiledir[80];
+static char Shell[80];
+static int Auto = 1;
+static int Create = 1;
+static int Gid = 400;
+static int Maxuid = MAXUID;
+static int Minuid = 400;
+static int32 Pty_locktime[NUMPTY];
 
 static int find_pty(int *numptr, char *slave);
 static void restore_pty(const char *id);
@@ -88,6 +93,15 @@ static FILE *fopen_logfile(const char *user, const char *protocol);
 static int do_telnet(struct login_cb *tp, int chr);
 static void write_pty(struct login_cb *tp);
 static void death_handler(struct login_cb *tp);
+static int dologinauto(int argc, char *argv [], void *p);
+static int dologincreate(int argc, char *argv [], void *p);
+static int dologindefaultuser(int argc, char *argv [], void *p);
+static int dologingid(int argc, char *argv [], void *p);
+static int dologinhomedir(int argc, char *argv [], void *p);
+static int dologinlogfiledir(int argc, char *argv [], void *p);
+static int dologinmaxuid(int argc, char *argv [], void *p);
+static int dologinminuid(int argc, char *argv [], void *p);
+static int dologinshell(int argc, char *argv [], void *p);
 
 /*---------------------------------------------------------------------------*/
 
@@ -104,8 +118,8 @@ static int find_pty(int *numptr, char *slave)
   int num;
 
   for (num = 0; num < NUMPTY; num++)
-    if (pty_locktime[num] < secclock()) {
-      pty_locktime[num] = secclock() + 60;
+    if (Pty_locktime[num] < secclock()) {
+      Pty_locktime[num] = secclock() + 60;
       pty_name(master, MASTERPREFIX, num);
       if ((fd = open(master, O_RDWR | O_NONBLOCK, 0600)) >= 0) {
 	*numptr = num;
@@ -197,7 +211,7 @@ static char *find_user_name(const char *name)
     while (*name && !isalnum(*name & 0xff)) name++;
     for (cp = username; isalnum(*name & 0xff); *cp++ = Xtolower(*name++)) ;
     *cp = 0;
-    if (!*username) return DEFAULTUSER;
+    if (!*username) return Defaultuser;
     if (callvalid(username)) return username;
   }
 }
@@ -230,25 +244,25 @@ struct passwd *getpasswdentry(const char *name, int create)
   memset(bitmap, 0, sizeof(bitmap));
   while (pw = getpwent()) {
     if (!strcmp(name, pw->pw_name)) break;
-    if (pw->pw_uid <= MAXUID) bitmap[pw->pw_uid] = 1;
+    if (pw->pw_uid <= Maxuid) bitmap[pw->pw_uid] = 1;
   }
   endpwent();
   if (pw) {
     unlink(PWLOCKFILE);
     return pw;
   }
-  for (uid = FIRSTUID; uid <= MAXUID && bitmap[uid]; uid++) ;
-  if (uid > MAXUID) {
+  for (uid = Minuid; uid <= Maxuid && bitmap[uid]; uid++) ;
+  if (uid > Maxuid) {
     unlink(PWLOCKFILE);
     return 0;
   }
 
   /* Add user to passwd file(s) */
 
-  sprintf(homedirparent, "%s/%.3s...", HOMEDIRPARENTPARENT, name);
+  sprintf(homedirparent, "%s/%.3s...", Homedir, name);
   sprintf(homedir, "%s/%s", homedirparent, name);
 #ifdef __386BSD__
-  sprintf(cmdbuf, "chpass -a '%s::%d:%d::0:0::%s:' >/dev/null 2>&1", name, uid, GID, homedir);
+  sprintf(cmdbuf, "chpass -a '%s::%d:%d::0:0::%s:%s' >/dev/null 2>&1", name, uid, Gid, homedir, Shell);
   system(cmdbuf);
 #else
 #ifdef __hpux
@@ -263,12 +277,13 @@ struct passwd *getpasswdentry(const char *name, int create)
     return 0;
   }
   fprintf(fp,
-	  "%s:%s:%d:%d::%s:\n",
+	  "%s:%s:%d:%d::%s:%s\n",
 	  name,
 	  secured ? "*" : "",
 	  uid,
-	  GID,
-	  homedir);
+	  Gid,
+	  homedir,
+	  Shell);
   fclose(fp);
 #endif
   pw = getpwuid(uid);
@@ -278,7 +293,7 @@ struct passwd *getpasswdentry(const char *name, int create)
 
   mkdir(homedirparent, 0755);
   mkdir(homedir, 0755);
-  chown(homedir, uid, GID);
+  chown(homedir, uid, Gid);
   return pw;
 }
 
@@ -313,7 +328,8 @@ static FILE *fopen_logfile(const char *user, const char *protocol)
   static int cnt;
   struct tm *tm;
 
-  sprintf(filename, "%s/log.%05d.%04d", LOGFILEDIR, getpid(), cnt++);
+  if (!*Logfiledir) return 0;
+  sprintf(filename, "%s/log.%05d.%04d", Logfiledir, getpid(), cnt++);
   if (fp = fopen(filename, "a")) {
     tm = localtime((long *) &Secclock);
     fprintf(fp,
@@ -452,15 +468,17 @@ static void death_handler(struct login_cb *tp)
 struct login_cb *login_open(const char *user, const char *protocol, void (*read_upcall)(void *arg), void (*close_upcall)(void *arg), void *upcall_arg)
 {
 
+  char *argv[16];
   char *env = 0;
   char slave[80];
+  int argc;
   int i;
   struct login_cb *tp;
   struct passwd *pw;
   struct termios termios;
   struct utmp utmpbuf;
 
-  tp = (struct login_cb *) calloc(1, sizeof(struct login_cb ));
+  tp = (struct login_cb *) calloc(1, sizeof(*tp));
   if (!tp) return 0;
   tp->telnet = !strcmp(protocol, "TELNET");
   if ((tp->pty = find_pty(&tp->num, slave)) < 0) {
@@ -474,8 +492,11 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
   on_read(tp->pty, tp->readfnc, tp->fncarg);
   tp->logfp = fopen_logfile(user, protocol);
   if (!(tp->pid = dofork())) {
-    pw = getpasswdentry(find_user_name(user), 1);
-    if (!pw) pw = getpasswdentry(DEFAULTUSER, 0);
+    if (Auto) {
+      pw = getpasswdentry(find_user_name(user), Create);
+      if (!pw && *Defaultuser) pw = getpasswdentry(Defaultuser, 0);
+    } else
+      pw = 0;
     for (i = 0; i < FD_SETSIZE; i++) close(i);
     setsid();
     open(slave, O_RDWR, 0666);
@@ -504,7 +525,6 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
     cfsetispeed(&termios, B1200);
     cfsetospeed(&termios, B1200);
     tcsetattr(0, TCSANOW, &termios);
-    if (!pw) exit(1);
 #ifdef LOGIN_PROCESS
     memset(&utmpbuf, 0, sizeof(utmpbuf));
     strcpy(utmpbuf.ut_user, "LOGIN");
@@ -517,13 +537,21 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
     pututline(&utmpbuf);
     endutent();
 #endif
+    argc = 0;
 #if defined(sun) || defined(__386BSD__)
-    execle("/usr/bin/login", "login", "-h", protocol, pw->pw_name, (char *) 0, &env);
+    argv[argc++] = "/usr/bin/login";
+    argv[argc++] = "-h";
+    argv[argc++] = (char *) protocol;
 #elif macII
-    execle("/bin/remlogin", "login", "-h", protocol, pw->pw_name, (char *) 0, &env);
+    argv[argc++] = "/bin/remlogin";
+    argv[argc++] = "-h";
+    argv[argc++] = protocol;
 #else
-    execle("/bin/login", "login", pw->pw_name, (char *) 0, &env);
+    argv[argc++] = "/bin/login";
 #endif
+    if (pw) argv[argc++] = pw->pw_name;
+    argv[argc] = 0;
+    execve(argv[0], argv, &env);
     exit(1);
   }
   on_death(tp->pid, (void (*)()) death_handler, tp);
@@ -565,7 +593,7 @@ void login_close(struct login_cb *tp)
 #endif
     close(tp->pty);
     restore_pty(tp->id);
-    pty_locktime[tp->num] = secclock() + 20;
+    Pty_locktime[tp->num] = secclock() + 20;
   }
   if (tp->logfp) fclose(tp->logfp);
   if (tp->pid > 0) {
@@ -654,5 +682,113 @@ void login_write(struct login_cb *tp, struct mbuf *bp)
   append(&tp->sndq, bp);
   on_write(tp->pty, (void (*)()) write_pty, tp);
   if (tp->linelen) write_pty(tp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int dologinauto(int argc, char *argv[], void *p)
+{
+  return setbool(&Auto, "Auto login", argc, argv);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int dologincreate(int argc, char *argv[], void *p)
+{
+  return setbool(&Create, "Create account", argc, argv);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int dologindefaultuser(int argc, char *argv[], void *p)
+{
+  if (argc < 2)
+    printf("Default user name \"%s\"\n", Defaultuser);
+  else {
+    memcpy(Defaultuser, argv[1], sizeof(Defaultuser));
+    Defaultuser[sizeof(Defaultuser)-1] = 0;
+  }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int dologingid(int argc, char *argv[], void *p)
+{
+  return setint(&Gid, "Group ID", argc, argv);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int dologinhomedir(int argc, char *argv[], void *p)
+{
+  if (argc < 2)
+    printf("Home directory \"%s\"\n", Homedir);
+  else {
+    memcpy(Homedir, argv[1], sizeof(Homedir));
+    Homedir[sizeof(Homedir)-1] = 0;
+  }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int dologinlogfiledir(int argc, char *argv[], void *p)
+{
+  if (argc < 2)
+    printf("Logfile directory \"%s\"\n", Logfiledir);
+  else {
+    memcpy(Logfiledir, argv[1], sizeof(Logfiledir));
+    Logfiledir[sizeof(Logfiledir)-1] = 0;
+  }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int dologinmaxuid(int argc, char *argv[], void *p)
+{
+  return setintrc(&Maxuid, "Max user ID", argc, argv, 1, MAXUID);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int dologinminuid(int argc, char *argv[], void *p)
+{
+  return setintrc(&Minuid, "Min user ID", argc, argv, 1, MAXUID);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int dologinshell(int argc, char *argv[], void *p)
+{
+  if (argc < 2)
+    printf("Login shell \"%s\"\n", Shell);
+  else {
+    memcpy(Shell, argv[1], sizeof(Shell));
+    Shell[sizeof(Shell)-1] = 0;
+  }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+int dologin(int argc, char *argv[], void *p)
+{
+
+  static struct cmds Logincmds[] = {
+    "auto",         dologinauto,        0, 0, NULLCHAR,
+    "create",       dologincreate,      0, 0, NULLCHAR,
+    "defaultuser",  dologindefaultuser, 0, 0, NULLCHAR,
+    "gid",          dologingid,         0, 0, NULLCHAR,
+    "homedir",      dologinhomedir,     0, 0, NULLCHAR,
+    "logfiledir",   dologinlogfiledir,  0, 0, NULLCHAR,
+    "maxuid",       dologinmaxuid,      0, 0, NULLCHAR,
+    "minuid",       dologinminuid,      0, 0, NULLCHAR,
+    "shell",        dologinshell,       0, 0, NULLCHAR,
+    NULLCHAR
+  };
+
+  return subcmd(Logincmds, argc, argv, p);
 }
 

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.10 1993/06/06 08:23:26 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.11 1993/06/10 09:43:21 deyke Exp $
 
 PATH  = /bin:/usr/bin:/usr/lang:/usr/local/bin:/usr/contrib/bin:/usr/local/etc
 
@@ -20,3 +20,7 @@ _all:   /tcp/hostaddr.pag
 
 /usr/local/lib/users: users
 	cp users /usr/local/lib && udbm
+
+clean:;
+
+depend:;

@@ -1,8 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strdup.c,v 1.1 1993/06/06 08:25:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strdup.c,v 1.2 1993/06/10 09:46:32 deyke Exp $ */
+
+#include <stdlib.h>
 
 extern char *strcpy();
 extern int strlen();
-extern void *malloc();
+
+#include "strdup.h"
 
 char *strdup(const char *s)
 {

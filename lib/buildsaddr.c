@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.11 1993/06/06 08:24:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.12 1993/06/10 09:46:32 deyke Exp $ */
 
 #define _HPUX_SOURCE
 
@@ -13,6 +13,8 @@
 #include <sys/un.h>
 
 #include <arpa/inet.h>
+
+#include "buildsaddr.h"
 
 static union {
   struct sockaddr sa;

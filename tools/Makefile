@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.12 1993/06/06 08:24:08 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.13 1993/06/10 09:44:12 deyke Exp $
 
 CC         = c89
 CFLAGS     = -O -s
@@ -10,12 +10,34 @@ all:;   make -i _all
 
 _all:   $(TARGETS)
 
-nos-cb: nos-cb.c
+connect: connect.o
 	$(RMTARGET)
-	cc $(CFLAGS) nos-cb.c -o $@
+	@sleep 1
+	$(CC) $(CFLAGS) $? -o $@
 
-.c:
+connect2: connect2.o
 	$(RMTARGET)
-	$(CC) $(CFLAGS) $< -o $@
+	@sleep 1
+	$(CC) $(CFLAGS) $? -o $@
+
+filter: filter.o
+	$(RMTARGET)
+	@sleep 1
+	$(CC) $(CFLAGS) $? -o $@
+
+mp:     mp.o
+	$(RMTARGET)
+	@sleep 1
+	$(CC) $(CFLAGS) $? -o $@
+
+nos-cb.o: nos-cb.c
+	cc $(CFLAGS) $? -c
+
+nos-cb: nos-cb.o
+	$(RMTARGET)
+	@sleep 1
+	$(CC) $(CFLAGS) $? -o $@
 
 clean:; rm -f *.o $(TARGETS) *~
+
+depend:; @mkmf

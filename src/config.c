@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.33 1993/05/17 13:44:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.34 1993/06/10 09:43:41 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -170,6 +170,7 @@ struct cmds Cmds[] = {
 #endif
 	"kick",         dokick,         0, 0, NULLCHAR,
 	"log",          dolog,          0, 0, NULLCHAR,
+	"login",        dologin,        0, 0, NULLCHAR,
 #ifdef  MAILBOX
 /*      "mbox",         dombox,         0, 0, NULLCHAR, */
 #endif
