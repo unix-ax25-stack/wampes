@@ -1,25 +1,28 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.19 1993/04/06 13:14:02 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.20 1993/04/11 07:07:25 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
+RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 SHELL      = /bin/sh
 
 TARGETS    = cnet mkhostdb netupdc netupds path pop2d udbm vitals
 
 all:
 	@if [ `uname -s` = Linux ] ; then \
-	  make -i 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' $(TARGETS); \
+	  make -i 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' _all; \
 	elif [ `uname -s` = ULTRIX ] ; then \
-	  make -i 'CC=cc' 'CFLAGS=-DULTRIX_RISC' $(TARGETS); \
+	  make -i 'CC=cc' 'CFLAGS=-DULTRIX_RISC' _all; \
 	else \
-	  make -i 'CC=cc' 'CFLAGS=-O -s' $(TARGETS); \
+	  make -i 'CC=cc' 'CFLAGS=-O -s' _all; \
 	fi
 
+_all:   $(TARGETS)
+
 cnet:   cnet.c $(BUILDSADDR)
-	mv -f $@ /tmp/old.$$$$
+	$(RMTARGET)
 	$(CC) $(CFLAGS) -I../src cnet.c $(BUILDSADDR) -lcurses -ltermcap -o $@
 
 mkhostdb: mkhostdb.c
-	mv -f $@ /tmp/old.$$$$
+	$(RMTARGET)
 	@if [ `uname -s` = SunOS ] ; then \
 	  $(CC) $(CFLAGS) mkhostdb.c -o $@ ; \
 	elif [ `uname -s` = 386BSD ] ; then \
@@ -33,28 +36,28 @@ mkhostdb: mkhostdb.c
 	fi
 
 netupdc: netupdc.c $(BUILDSADDR)
-	mv -f $@ /tmp/old.$$$$
+	$(RMTARGET)
 	$(CC) $(CFLAGS) -I../src netupdc.c $(BUILDSADDR) -o $@
 
 netupds: netupds.c
-	mv -f $@ /tmp/old.$$$$
+	$(RMTARGET)
 	$(CC) $(CFLAGS) netupds.c -o $@
 	chmod 755 genupd
 
 path:   path.c
-	mv -f $@ /tmp/old.$$$$
+	$(RMTARGET)
 	$(CC) $(CFLAGS) path.c -o $@
 
 pop2d:  pop2d.c
-	mv -f $@ /tmp/old.$$$$
+	$(RMTARGET)
 	$(CC) $(CFLAGS) pop2d.c -o $@
 
 udbm:   udbm.c
-	mv -f $@ /tmp/old.$$$$
+	$(RMTARGET)
 	$(CC) $(CFLAGS) udbm.c -o $@
 
 vitals: vitals.c
-	mv -f $@ /tmp/old.$$$$
+	$(RMTARGET)
 	$(CC) $(CFLAGS) vitals.c -o $@
 
 install: \
@@ -68,20 +71,20 @@ install: \
 	vitals
 
 /usr/local/bin/cnet: cnet
-	mv -f $@ /tmp/old.$$$$
+	$(RMTARGET)
 	cp cnet $@
 
 /usr/local/etc/mkhostdb: mkhostdb
-	mv -f $@ /tmp/old.$$$$
+	$(RMTARGET)
 	cp mkhostdb $@
 
 /usr/local/bin/path: path
-	mv -f $@ /tmp/old.$$$$
+	$(RMTARGET)
 	cp path $@
 
 /usr/local/etc/udbm: udbm
-	mv -f $@ /tmp/old.$$$$
+	$(RMTARGET)
 	cp udbm $@
 
 clean:
-	rm -f *.o $(TARGETS)
+	rm -f *.o $(TARGETS) *~

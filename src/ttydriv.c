@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.18 1993/04/06 13:13:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.19 1993/04/11 07:06:37 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -420,11 +420,13 @@ char **buf;
 			backchr(*--pos);
 			delchr(*pos);
 			for (p = pos + 1; p < end; p++) p[-1] = *p;
+			end--;
 		}
 		while (pos > linebuf && pos[-1] != ' ') {
 			backchr(*--pos);
 			delchr(*pos);
 			for (p = pos + 1; p < end; p++) p[-1] = *p;
+			end--;
 		}
 		break;
 

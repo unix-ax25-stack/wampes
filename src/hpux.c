@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.35 1993/03/30 17:24:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.36 1993/04/11 07:06:32 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -128,7 +128,6 @@ void ioinit()
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");
-    remote_kbd_initialize();
   }
   umask(022);
   signal(SIGPIPE, SIG_IGN);

@@ -16,8 +16,6 @@
 
 - "will echo" implementieren und testen (all telnet options)
 
-- remote_kbd: stop tracing to stdout
-
 - tty.h; ttydriv an session koppeln (Schwierigkeit: keine CmdSession)
 
 - Mailer: Alle Message Delimiter entfernen

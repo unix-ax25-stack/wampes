@@ -1,10 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.19 1993/04/06 13:13:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.20 1993/04/11 07:06:35 deyke Exp $ */
 
 #include "global.h"
 
 #include <sys/types.h>
 
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -15,10 +16,14 @@
 #endif
 
 #include "mbuf.h"
+#include "iface.h"
 #include "timer.h"
 #include "transport.h"
 #include "hpux.h"
 #include "buildsaddr.h"
+#include "main.h"
+
+extern char Prompt[];
 
 struct controlblock {
   int fd;                               /* Socket descriptor */
@@ -33,7 +38,8 @@ struct cmdtable {
   int (*fnc) __ARGS((struct controlblock *cp)); /* Command function */
 };
 
-static int flisten = -1;
+static int fkbd = -1;
+static int flisten_net = -1;
 
 static char *getarg __ARGS((char *line, int all));
 static int command_switcher __ARGS((struct controlblock *cp, char *name, struct cmdtable *tableptr));
@@ -45,6 +51,7 @@ static void transport_state_upcall __ARGS((struct transport_cb *tp));
 static int ascii_command __ARGS((struct controlblock *cp));
 static int binary_command __ARGS((struct controlblock *cp));
 static int connect_command __ARGS((struct controlblock *cp));
+static int console_command __ARGS((struct controlblock *cp));
 static void command_receive __ARGS((struct controlblock *cp));
 static void accept_connection_net __ARGS((void *p));
 
@@ -206,6 +213,30 @@ struct controlblock *cp;
 
 /*---------------------------------------------------------------------------*/
 
+static int console_command(cp)
+struct controlblock *cp;
+{
+  char buf[1024];
+
+  if (fkbd >= 0 || isatty(0)) {
+    sprintf(buf, "*** %s busy\n", Hostname);
+    write(cp->fd, buf, strlen(buf));
+    return (-1);
+  }
+  fflush(stdin);
+  fflush(stdout);
+  fflush(stderr);
+  dup2(cp->fd, 0);
+  dup2(cp->fd, 1);
+  dup2(cp->fd, 2);
+  fkbd = 0;
+  on_read(fkbd, (void (*)()) keyboard, (void *) 0);
+  printf(Prompt, Hostname);
+  return (-1);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void command_receive(cp)
 struct controlblock *cp;
 {
@@ -214,6 +245,7 @@ struct controlblock *cp;
     "ascii",   ascii_command,
     "binary",  binary_command,
     "connect", connect_command,
+    "console", console_command,
     0,         0
   };
 
@@ -246,7 +278,7 @@ void *p;
   struct sockaddr addr;
 
   addrlen = sizeof(addr);
-  if ((fd = accept(flisten, &addr, &addrlen)) < 0) return;
+  if ((fd = accept(flisten_net, &addr, &addrlen)) < 0) return;
   cp = (struct controlblock *) calloc(1, sizeof (struct controlblock ));
   if (!cp) {
     close(fd);
@@ -254,6 +286,28 @@ void *p;
   }
   cp->fd = fd;
   on_read(cp->fd, (void (*)()) command_receive, cp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+int dobye(argc, argv, p)
+int argc;
+char *argv[];
+void *p;
+{
+struct iface *ifp;
+
+  if (fkbd >= 0) {
+    freopen("/dev/null", "r+", stdin);
+    freopen("/dev/null", "r+", stdout);
+    freopen("/dev/null", "r+", stderr);
+    off_read(fkbd);
+    fkbd = -1;
+    for (ifp = Ifaces; ifp; ifp = ifp->next)
+      if (ifp->trfp == NULLFILE || ifp->trfp == stdout)
+    ifp->trace = 0;
+  }
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -276,21 +330,21 @@ void remote_net_initialize()
 
   for (i = 0; socketnames[i]; i++) {
     if (addr = build_sockaddr(socketnames[i], &addrlen)) {
-      if ((flisten = socket(addr->sa_family, SOCK_STREAM, 0)) >= 0) {
+      if ((flisten_net = socket(addr->sa_family, SOCK_STREAM, 0)) >= 0) {
 	switch (addr->sa_family) {
 	case AF_UNIX:
 	  if (!Debug) unlink(addr->sa_data);
 	  break;
 	case AF_INET:
 	  arg = 1;
-	  setsockopt(flisten, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
+	  setsockopt(flisten_net, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
 	  break;
 	}
-	if (!bind(flisten, addr, addrlen) && !listen(flisten, SOMAXCONN)) {
-	  on_read(flisten, accept_connection_net, (void *) 0);
+	if (!bind(flisten_net, addr, addrlen) && !listen(flisten_net, SOMAXCONN)) {
+	  on_read(flisten_net, accept_connection_net, (void *) 0);
 	} else {
-	  close(flisten);
-	  flisten = -1;
+	  close(flisten_net);
+	  flisten_net = -1;
 	}
       }
     }

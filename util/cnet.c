@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.20 1993/03/30 17:25:27 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.21 1993/04/11 07:07:25 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -174,7 +174,7 @@ char **argv;
     Ansiterminal = 0;
 
 #if 1
-  server = (argc < 2) ? "unix:/tcp/.sockets/netkbd" : argv[1];
+  server = (argc < 2) ? "unix:/tcp/.sockets/netcmd" : argv[1];
 #else
   server = (argc < 2) ? "*:4720" : argv[1];
 #endif
@@ -190,6 +190,7 @@ char **argv;
     perror("connect");
     terminate();
   }
+  write(fdsock, "console\n", 8);
   if (Ansiterminal)
     write(fdsock, "\033[D", 3);
   else

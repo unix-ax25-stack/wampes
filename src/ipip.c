@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.6 1993/03/30 17:24:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.7 1993/04/11 07:06:33 deyke Exp $ */
 
 #include "global.h"
 
@@ -38,7 +38,7 @@ struct edv_t {
 };
 
 static int ipip_send __ARGS((struct mbuf *data, struct iface *ifp, int32 gateway, int tos));
-static void ipip_recv __ARGS((void *argp));
+static void ipip_receive __ARGS((void *argp));
 
 /*---------------------------------------------------------------------------*/
 
@@ -80,7 +80,7 @@ int tos;
 
 /*---------------------------------------------------------------------------*/
 
-static void ipip_recv(argp)
+static void ipip_receive(argp)
 void *argp;
 {
 
@@ -109,7 +109,7 @@ void *argp;
   if (l <= 0) goto Fail;
 
   if ((ipaddr = get32(bufptr + 12)) && ismyaddr(ipaddr) == NULLIF)
-    rt_add(ipaddr, 32, ntohl(addr.sin_addr.s_addr), ifp, 1L, 0x7fffffff / 1000, 0);
+    rt_add(ipaddr, 32, (int32) ntohl(addr.sin_addr.s_addr), ifp, 1L, 0x7fffffff / 1000, 0);
 
   net_route(ifp, qdata(bufptr, l));
   return;
@@ -193,7 +193,7 @@ void *p;
   ifp->edv = edv;
 
   ifp->send = ipip_send;
-  on_read(fd, ipip_recv, (void * ) ifp);
+  on_read(fd, ipip_receive, (void * ) ifp);
 
   ifp->next = Ifaces;
   Ifaces = ifp;

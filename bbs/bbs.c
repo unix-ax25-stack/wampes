@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.49 1993/03/30 17:24:19 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.50 1993/04/11 07:07:11 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -1389,6 +1389,7 @@ static void f_command(int argc, char **argv)
 
   DIR *dirp;
   FILE * fp;
+  char bid[1024];
   char cfile[1024];
   char dfile[1024];
   char dirname[1024];
@@ -1448,19 +1449,16 @@ static void f_command(int argc, char **argv)
       fclose(fp);
       if (!*to) continue;
       if (!(fp = fopen(dfile, "r"))) continue;
-      *from = *subject = 0;
-      if (fscanf(fp, "%*s %s", tmp1) == 1) {
+      *from = *subject = *bid = 0;
+      if (fscanf(fp, "From %s", tmp1) == 1) {
 	if (!strcmp(tmp1, "MAILER-DAEMON") || !strcmp(tmp1, "!"))
 	  strcpy(tmp1, myhostname);
 	sprintf(from, "%s!%s", myhostname, tmp1);
 	strtrim(from);
 	while (fgets(line, sizeof(line), fp)) {
 	  if (*line == '\n') break;
-	  if (!strncmp(line, "Subject: ", 9)) {
-	    strcpy(subject, line + 9);
-	    strtrim(subject);
-	    break;
-	  }
+	  get_header_value("Subject:", 0, line, subject);
+	  get_header_value("Bulletin-ID:", 1, line, bid);
 	}
       }
       fclose(fp);
@@ -1468,6 +1466,9 @@ static void f_command(int argc, char **argv)
       if (stat(cfile, &statbuf)) continue;
       memset((char *) &index, 0, sizeof(index));
       index.date = statbuf.st_mtime;
+      strncpy(index.bid, bid, LEN_BID);
+      index.bid[LEN_BID] = 0;
+      strupc(index.bid);
       strncpy(index.subject, subject, LEN_SUBJECT);
       index.subject[LEN_SUBJECT] = 0;
       strncpy(index.to, get_user_from_path(to), LEN_TO);
@@ -2489,7 +2490,6 @@ static void recv_from_mail_or_news(void)
 
   while (fgets(line, sizeof(line), stdin)) {
     mail = alloc_mail();
-    *mail->to = 0;
     *distr = 0;
     *expire = 0;
     from_priority = 0;

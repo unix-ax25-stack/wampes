@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.34 1993/04/02 14:26:07 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.35 1993/04/11 07:06:29 deyke Exp $
 
 DEST          = /tcp
 
@@ -134,7 +134,6 @@ OBJS          = alloc.o \
 		nrdump.o \
 		nrs.o \
 		pathname.o \
-		remote_kbd.o \
 		remote_net.o \
 		rip.o \
 		ripcmd.o \
@@ -241,7 +240,6 @@ SRCS          = alloc.c \
 		nrdump.c \
 		nrs.c \
 		pathname.c \
-		remote_kbd.c \
 		remote_net.c \
 		rip.c \
 		ripcmd.c \
@@ -276,20 +274,22 @@ SRCS          = alloc.c \
 
 # SYSHDRS       =
 
-all_test:
+RMTARGET      = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
+
+all:
 		@if [ `uname -n` = mdddhd -o `uname -n` = deyke2 ] ; then \
-		  make -i 'CC=c89' 'CFLAGS=-g -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024' all; \
+		  make -i 'CC=c89' 'CFLAGS=-g -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024' _all; \
 		elif [ `uname -s` = SunOS ] ; then \
-		  make -i 'CC=acc' 'CFLAGS=-O -s -DUNIX -DFD_SETSIZE=1024' all; \
+		  make -i 'CC=acc' 'CFLAGS=-O -s -DUNIX -DFD_SETSIZE=1024' _all; \
 		elif [ `uname -s` = Linux ] ; then \
-		  make -i 'CC=gcc' 'CFLAGS=-O6 -DUNIX -DLINUX -I./linux_include' all; \
+		  make -i 'CC=gcc' 'CFLAGS=-O6 -DUNIX -DLINUX -I./linux_include' _all; \
 		elif [ `uname -s` = ULTRIX ] ; then \
-		  make -i 'CC=gcc' 'CFLAGS=-O6 -DUNIX -DULTRIX_RISC -DFD_SETSIZE=64' all; \
+		  make -i 'CC=gcc' 'CFLAGS=-O6 -DUNIX -DULTRIX_RISC -DFD_SETSIZE=64' _all; \
 		else \
-		  make -i 'CC=cc' 'CFLAGS=-O -s -DUNIX -DFD_SETSIZE=1024' all; \
+		  make -i 'CC=cc' 'CFLAGS=-O -s -DUNIX -DFD_SETSIZE=1024' _all; \
 		fi
 
-all:            $(PROGRAM)
+_all:           $(PROGRAM)
 
 setsp.o:        setsp.c
 		@if [ `uname -s` = Linux ] ; then \
@@ -310,6 +310,7 @@ setsp.o:        setsp.c
 
 $(PROGRAM):     $(OBJS) $(LIBS)
 		@echo "Linking $(PROGRAM) ..."
+		$(RMTARGET)
 		@if [ `uname -s` = SunOS ] ; then \
 		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM) ; \
 		elif [ `uname -s` = 386BSD ] ; then \
@@ -322,9 +323,9 @@ $(PROGRAM):     $(OBJS) $(LIBS)
 		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -lndbm -o $(PROGRAM) ; \
 		fi
 
-clean:;         @rm -f $(OBJS) *.o core
+clean:;         @rm -f $(OBJS) *.o core *~
 
-clobber:;       @rm -f $(OBJS) $(PROGRAM) *.o core tags
+clobber:;       @rm -f $(OBJS) $(PROGRAM) *.o core tags *~
 
 depend:;        @mkmf -f $(MAKEFILE) ROOT=$(ROOT)
 
@@ -343,7 +344,7 @@ tags:           $(HDRS) $(SRCS); @ctags $(HDRS) $(SRCS)
 update:         $(DEST)/$(PROGRAM)
 
 $(DEST)/$(PROGRAM): $(PROGRAM)
-		mv -f $@ /tmp/old.$$$$
+		$(RMTARGET)
 		cp $(PROGRAM) $@
 
 .c.o:
@@ -465,8 +466,8 @@ nrdump.o: global.h mbuf.h timer.h ax25.h iface.h proc.h netrom.h session.h \
 nrs.o: global.h mbuf.h iface.h proc.h timer.h pktdrvr.h ax25.h nrs.h asy.h \
 	trace.h commands.h
 pathname.o: global.h dirutil.h
-remote_kbd.o: global.h hpux.h buildsaddr.h main.h proc.h mbuf.h timer.h
-remote_net.o: global.h mbuf.h timer.h transport.h hpux.h buildsaddr.h
+remote_net.o: global.h mbuf.h iface.h proc.h timer.h transport.h hpux.h \
+	buildsaddr.h main.h
 rip.o: global.h mbuf.h netuser.h udp.h iface.h proc.h timer.h internet.h ip.h \
 	rip.h arp.h
 ripcmd.o: global.h mbuf.h netuser.h internet.h cmdparse.h timer.h iface.h \
