@@ -86,7 +86,6 @@ OBJS          = alloc.o \
 		axclient.o \
 		axip.o \
 		axserver.o \
-		axudp.o \
 		buildsaddr.o \
 		cmdparse.o \
 		config.o \
@@ -188,7 +187,6 @@ SRCS          = alloc.c \
 		axclient.c \
 		axip.c \
 		axserver.c \
-		axudp.c \
 		buildsaddr.c \
 		cmdparse.c \
 		config.c \
@@ -337,8 +335,6 @@ axclient.o: global.h config.h netuser.h mbuf.h timer.h ax25.h iface.h proc.h \
 axip.o: global.h mbuf.h iface.h proc.h timer.h internet.h netuser.h ax25.h \
 	socket.h trace.h pktdrvr.h cmdparse.h hpux.h
 axserver.o: global.h timer.h ax25.h mbuf.h iface.h proc.h lapb.h login.h
-axudp.o: global.h mbuf.h iface.h proc.h timer.h internet.h netuser.h ax25.h \
-	socket.h trace.h pktdrvr.h cmdparse.h hpux.h
 buildsaddr.o: global.h
 cmdparse.o: global.h proc.h mbuf.h timer.h cmdparse.h
 config.o: global.h config.h mbuf.h timer.h proc.h iface.h ip.h internet.h \

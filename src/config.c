@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.23 1992/08/02 07:33:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.24 1992/08/11 21:32:03 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -98,7 +98,6 @@ struct cmds Cmds[] = {
 #ifdef  AX25
 	"ax25",         doax25,         0, 0, NULLCHAR,
 	"axip",         doaxip,         0, 0, NULLCHAR,
-	"axudp",        doaxudp,        0, 0, NULLCHAR,
 #endif
 #ifdef  BOOTP
 	"bootp",        dobootp,        0, 0, NULLCHAR,
@@ -309,14 +308,14 @@ struct cmds Attab[] = {
 #endif
 #ifdef  AX25
 	"axip", axip_attach, 0, 1,
-	"attach axip",
-	"axudp", axudp_attach, 0, 1,
-	"attach axudp",
+	"attach axip [<label> [ip|udp [protocol|port]]]",
 #endif
-	"ipip", ipip_attach, 0, 5,
-	"attach ipip <label> ip|udp <dest> <port>",
+	"ipip", ipip_attach, 0, 1,
+	"attach ipip [<label> [ip|udp [protocol|port]]]",
+#ifdef __hpux
 	"ni", ni_attach, 0, 3,
 	"attach ni <label> <dest> [mask]",
+#endif
 	NULLCHAR,
 };
 

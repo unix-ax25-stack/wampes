@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.29 1992/06/08 12:59:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.30 1992/08/11 21:32:11 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -457,11 +457,11 @@ void *p;
 	case 'c':
 	case 'V':
 	case 'C':
-		ifp->flags = CONNECT_MODE;
+		ifp->flags |= CONNECT_MODE;
 		break;
 	case 'd':
 	case 'D':
-		ifp->flags = DATAGRAM_MODE;
+		ifp->flags &= ~CONNECT_MODE;
 		break;
 	default:
 		printf("Usage: %s [vc | datagram]\n",argv[0]);

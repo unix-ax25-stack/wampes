@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.1 1992/08/02 07:34:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.2 1992/08/11 21:32:14 deyke Exp $ */
 
 #ifdef __hpux
 
@@ -29,12 +29,20 @@ extern int errno;
 #include "hpux.h"
 
 #define NI_MTU          256
-#define NI_HEADER       16
+#define NI_MQL          16
 #define MAX_FRAME       2048
-#define BUF_SIZE        (NI_HEADER + MAX_FRAME)
 
-static int Ni_fd;
-static struct iface *Ni_iface;
+struct edv_t {
+  int fd;
+};
+
+struct ni_packet {
+  struct sockaddr addr;
+  char data[MAX_FRAME];
+};
+
+static int ni_send __ARGS((struct mbuf *data, struct iface *ifp, int32 gateway, int tos));
+static void ni_recv __ARGS((void *argp));
 
 /*---------------------------------------------------------------------------*/
 
@@ -45,8 +53,9 @@ int32 gateway;
 int tos;
 {
 
-  char buf[BUF_SIZE];
-  int n;
+  int l;
+  struct edv_t *edv;
+  struct ni_packet ni_packet;
 
   dump(ifp, IF_TRACE_OUT, data);
   ifp->rawsndcnt++;
@@ -55,17 +64,19 @@ int tos;
   if (ifp->trace & IF_TRACE_RAW)
     raw_dump(ifp, -1, data);
 
-  n = pullup(&data, buf + NI_HEADER, sizeof(buf) - NI_HEADER);
-  if (n <= 0 || data) {
+  l = pullup(&data, ni_packet.data, sizeof(ni_packet.data));
+  if (l <= 0 || data) {
     free_p(data);
     return (-1);
   }
 
-  memset(buf, 0, NI_HEADER);
-  buf[1] = 2;
+  edv = ifp->edv;
 
-  write(Ni_fd, buf, NI_HEADER + n);
-  return n;
+  ni_packet.addr.sa_family = AF_INET;
+
+  write(edv->fd, &ni_packet, l + sizeof(ni_packet.addr));
+
+  return l;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -74,14 +85,21 @@ static void ni_recv(argp)
 void *argp;
 {
 
-  char buf[BUF_SIZE];
-  int n;
+  int l;
+  struct edv_t *edv;
+  struct iface *ifp;
+  struct ni_packet ni_packet;
 
-  n = read(Ni_fd, buf, sizeof(buf));
-  if (n > NI_HEADER)
-    net_route(Ni_iface, qdata(buf + NI_HEADER, n - NI_HEADER));
-  else
-    Ni_iface->crcerrors++;
+  ifp = argp;
+  edv = ifp->edv;
+  l = read(edv->fd, &ni_packet, sizeof(ni_packet)) - sizeof(ni_packet.addr);
+  if (l <= 0) goto Fail;
+
+  net_route(ifp, qdata(ni_packet.data, l));
+  return;
+
+Fail:
+  ifp->crcerrors++;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -92,21 +110,23 @@ char *argv[];
 void *p;
 {
 
+  char *ifname;
   int arg;
+  int fd;
   int sock_fd;
+  int unit_number;
   int32 dest;
   int32 mask;
+  struct edv_t *edv;
+  struct iface *ifp;
   struct ifreq ifreq;
   struct rtentry rtentry;
   struct sockaddr_in addr;
 
-  if (Ni_iface != NULLIF) {
-    printf("ni interface already attached\n");
-    return (-1);
-  }
+  ifname = argv[1];
 
-  if (if_lookup(argv[1]) != NULLIF) {
-    printf("Interface %s already exists\n", argv[1]);
+  if (if_lookup(ifname) != NULLIF) {
+    printf("Interface %s already exists\n", ifname);
     return (-1);
   }
 
@@ -121,39 +141,52 @@ void *p;
     return (-1);
   }
 
-  if ((Ni_fd = open("/dev/ni", O_RDWR)) < 0) {
+  if ((fd = open("/dev/ni", O_RDWR)) < 0) {
     printf("/dev/ni: %s\n", sys_errlist[errno]);
     return (-1);
   }
 
+  if (ioctl(fd, NIOCGUNIT, &unit_number)) {
+    printf("NIOCGUNIT: %s\n", sys_errlist[errno]);
+    close(fd);
+    return (-1);
+  }
+
   arg = AF_INET;
-  if (ioctl(Ni_fd, NIOCBIND, &arg)) {
+  if (ioctl(fd, NIOCBIND, &arg)) {
     printf("NIOCBIND: %s\n", sys_errlist[errno]);
-    close(Ni_fd);
+    close(fd);
     return (-1);
   }
 
   arg = NI_MTU;
-  if (ioctl(Ni_fd, NIOCSMTU, &arg)) {
+  if (ioctl(fd, NIOCSMTU, &arg)) {
     printf("NIOCSMTU: %s\n", sys_errlist[errno]);
-    close(Ni_fd);
+    close(fd);
+    return (-1);
+  }
+
+  arg = NI_MQL;
+  if (ioctl(fd, NIOCSQLEN, &arg)) {
+    printf("NIOCSQLEN: %s\n", sys_errlist[errno]);
+    close(fd);
     return (-1);
   }
 
   arg = IFF_UP | IFF_POINTOPOINT;
-  if (ioctl(Ni_fd, NIOCSFLAGS, &arg)) {
+  if (ioctl(fd, NIOCSFLAGS, &arg)) {
     printf("NIOCSFLAGS: %s\n", sys_errlist[errno]);
-    close(Ni_fd);
+    close(fd);
     return (-1);
   }
 
   if ((sock_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
     printf("socket: %s\n", sys_errlist[errno]);
-    close(Ni_fd);
+    close(fd);
     return (-1);
   }
 
-  strcpy(ifreq.ifr_name, "ni0");
+  sprintf(ifreq.ifr_name, "ni%d", unit_number);
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
 
@@ -161,7 +194,7 @@ void *p;
   ifreq.ifr_addr = *((struct sockaddr *) &addr);
   if (ioctl(sock_fd, SIOCSIFADDR, (char *) &ifreq)) {
     printf("SIOCSIFADDR: %s\n", sys_errlist[errno]);
-    close(Ni_fd);
+    close(fd);
     close(sock_fd);
     return (-1);
   }
@@ -170,7 +203,7 @@ void *p;
   ifreq.ifr_addr = *((struct sockaddr *) &addr);
   if (ioctl(sock_fd, SIOCSIFDSTADDR, (char *) &ifreq)) {
     printf("SIOCSIFDSTADDR: %s\n", sys_errlist[errno]);
-    close(Ni_fd);
+    close(fd);
     close(sock_fd);
     return (-1);
   }
@@ -179,7 +212,7 @@ void *p;
   ifreq.ifr_addr = *((struct sockaddr *) &addr);
   if (ioctl(sock_fd, SIOCSIFNETMASK, (char *) &ifreq)) {
     printf("SIOCSIFNETMASK: %s\n", sys_errlist[errno]);
-    close(Ni_fd);
+    close(fd);
     close(sock_fd);
     return (-1);
   }
@@ -193,29 +226,23 @@ void *p;
 
   close(sock_fd);
 
-  Ni_iface = callocw(1, sizeof(*Ni_iface));
-  Ni_iface->name = strdup(argv[1]);
-  Ni_iface->addr = Ip_addr;
-  Ni_iface->mtu = NI_MTU;
-  setencap(Ni_iface, "None");
-  Ni_iface->send = ni_send;
-  on_read(Ni_fd, ni_recv, (void * ) Ni_iface);
+  ifp = callocw(1, sizeof(*ifp));
+  ifp->name = strdup(ifname);
+  ifp->addr = Ip_addr;
+  ifp->mtu = NI_MTU;
+  setencap(ifp, "None");
 
-  Ni_iface->next = Ifaces;
-  Ifaces = Ni_iface;
+  edv = malloc(sizeof(*edv));
+  edv->fd = fd;
+  ifp->edv = edv;
+
+  ifp->send = ni_send;
+  on_read(fd, ni_recv, (void * ) ifp);
+
+  ifp->next = Ifaces;
+  Ifaces = ifp;
 
   return 0;
-}
-
-#else
-
-int ni_attach(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
-{
-  printf("ni interface not available\n");
-  return (-1);
 }
 
 #endif

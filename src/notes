@@ -1,36 +1,5 @@
 ===============================================================================
 
-From erb@insu1.etec.uni-karlsruhe.de Mon Jul 27 00:34 MDT 1992
-Received: from hpfcmdd.fc.hp.com by mdddhd.fc.hp.com with SMTP
-	(16.8/15.5+IOS 3.22) id AA05243; Mon, 27 Jul 92 00:34:40 -0600
-Return-Path: <erb@insu1.etec.uni-karlsruhe.de>
-Received: from hpfcla.fc.hp.com by hpfcmdd.fc.hp.com with SMTP
-	(16.6/15.5+IOS 3.22) id AA22162; Mon, 27 Jul 92 00:34:38 -0600
-Received: from nz11.rz.uni-karlsruhe.de by hpfcla.fc.hp.com with SMTP
-	(15.11.1.6/15.5+IOS 3.20) id AA16213; Mon, 27 Jul 92 00:33:57 -0600
-Received: from insu1.etec.uni-karlsruhe.de by nz11.rz.uni-karlsruhe.de
-	  with SMTP (PP) id <12300-0@nz11.rz.uni-karlsruhe.de>;
-	  Mon, 27 Jul 1992 08:34:21 +0200
-Received: by insu1.etec.uni-karlsruhe.de (5.57/Ultrix4.2) id AA24267;
-	  Mon, 27 Jul 92 08:30:14 GMT
-Date: Mon, 27 Jul 92 08:30:14 GMT
-From: erb@insu1.etec.uni-karlsruhe.de (Olaf Erb)
-Message-Id: <9207270830.AA24267@insu1.etec.uni-karlsruhe.de>
-To: deyke@hpfcla.fc.hp.com
-Subject: IP Encap
-Status: RO
-
-Hallo Dieter,
-ich habe mich mal ein bischen ueber die Ampr-Internet Gates im Internet
-informiert... Anscheinend wird da heftig IP-IP Encap gemacht. Daher auch
-meine Mail - ich kann ja nur ein IPIP Interface attachen. Was meinst Du,
-was die beste Moeglichkeit waere, mehrere Routen aufzusetzen? Wieder ax25,
-(axip) und darauf dann IP aufsetzen?
-Gruss
-Olaf
-
-===============================================================================
-
 From dc1ik@dc1ik.ampr.org Fri Jul 10 06:27 MDT 1992
 Received: from localhost by mdddhd.fc.hp.com with SMTP
 	(16.8/15.5+IOS 3.22) id AA08168; Fri, 10 Jul 92 06:27:34 -0600

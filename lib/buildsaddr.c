@@ -1,4 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.4 1991/10/11 18:56:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.5 1992/08/11 21:32:02 deyke Exp $ */
+
+#include "global.h"
 
 #include <sys/types.h>
 
@@ -10,7 +12,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include "global.h"
+#include <arpa/inet.h>
 
 static union {
   struct sockaddr sa;

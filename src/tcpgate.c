@@ -1,4 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.8 1991/06/01 22:18:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.9 1992/08/11 21:32:18 deyke Exp $ */
+
+#include "global.h"
 
 #include <sys/types.h>
 
@@ -8,7 +10,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "global.h"
 #include "mbuf.h"
 #include "netuser.h"
 #include "tcp.h"

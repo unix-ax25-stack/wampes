@@ -1,4 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.10 1991/09/17 22:22:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.11 1992/08/11 21:32:15 deyke Exp $ */
+
+#include "global.h"
 
 #include <sys/types.h>
 
@@ -8,7 +10,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "global.h"
 #include "mbuf.h"
 #include "timer.h"
 #include "transport.h"

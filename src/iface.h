@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.14 1992/07/24 20:00:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.15 1992/08/11 21:32:07 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -54,6 +54,7 @@ struct iface {
 	int16 flags;            /* Configuration flags */
 #define DATAGRAM_MODE   0       /* Send datagrams in raw link frames */
 #define CONNECT_MODE    1       /* Send datagrams in connected mode */
+#define NO_RT_ADD       2       /* Don't call rt_add in ip_route */
 
 	int16 trace;            /* Trace flags */
 #define IF_TRACE_OUT    0x01    /* Output packets */

@@ -1,4 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.2 1991/07/17 14:59:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.3 1992/08/11 21:32:05 deyke Exp $ */
+
+#include "global.h"
 
 #include <sys/types.h>
 
@@ -11,7 +13,6 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 
-#include "global.h"
 #include "timer.h"
 #include "netuser.h"
 #include "cmdparse.h"

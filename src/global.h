@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.19 1992/07/24 20:00:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.20 1992/08/11 21:32:06 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -260,6 +260,7 @@ struct asy;
 struct ax25_cb;
 struct iface;
 struct mbuf;
+struct sockaddr;
 struct usock;
 
 extern int Debug;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.14 1992/08/02 07:33:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.15 1992/08/11 21:32:03 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -227,9 +227,7 @@ void view __ARGS((int,void *,void *));
 /* In various files: */
 
 int axip_attach __ARGS((int argc,char *argv[],void *p));
-int axudp_attach __ARGS((int argc,char *argv[],void *p));
 int doaxip __ARGS((int argc,char *argv[],void *p));
-int doaxudp __ARGS((int argc,char *argv[],void *p));
 int dobye __ARGS((int argc,char *argv[],void *p));
 int dofkey __ARGS((int argc,char *argv[],void *p));
 int dosource __ARGS((int argc,char *argv[],void *p));

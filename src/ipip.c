@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.3 1992/06/01 10:34:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.4 1992/08/11 21:32:09 deyke Exp $ */
 
 #include "global.h"
 
@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 extern char *sys_errlist[];
 extern int errno;
@@ -30,10 +31,10 @@ extern int errno;
 
 struct edv_t {
   int type;
-#define IP_OVER_IP      0
-#define IP_OVER_UDP     1
+#define USE_IP          0
+#define USE_UDP         1
+  int port;
   int fd;
-  struct sockaddr_in addr;
 };
 
 static int ipip_send __ARGS((struct mbuf *data, struct iface *ifp, int32 gateway, int tos));
@@ -51,6 +52,7 @@ int tos;
   char buf[MAX_FRAME];
   int l;
   struct edv_t *edv;
+  struct sockaddr_in addr;
 
   dump(ifp, IF_TRACE_OUT, data);
   ifp->rawsndcnt++;
@@ -66,7 +68,12 @@ int tos;
   }
 
   edv = ifp->edv;
-  sendto(edv->fd, buf, l, 0, (struct sockaddr *) &edv->addr, sizeof(edv->addr));
+
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = htonl(gateway);
+  addr.sin_port = htons(edv->port);
+
+  sendto(edv->fd, buf, l, 0, (struct sockaddr *) & addr, sizeof(addr));
 
   return l;
 }
@@ -79,27 +86,35 @@ void *argp;
 
   char *bufptr;
   char buf[MAX_FRAME];
+  int addrlen;
   int hdr_len;
   int l;
+  int32 ipaddr;
   struct edv_t *edv;
   struct iface *ifp;
   struct ip *ipptr;
+  struct sockaddr_in addr;
 
   ifp = argp;
   edv = ifp->edv;
-  l = recv(edv->fd, bufptr = buf, sizeof(buf), 0);
-  if (edv->type == IP_OVER_IP) {
-    if (l <= sizeof(struct ip )) goto fail;
+  addrlen = sizeof(addr);
+  l = recvfrom(edv->fd, bufptr = buf, sizeof(buf), 0, (struct sockaddr *) & addr, &addrlen);
+  if (edv->type == USE_IP) {
+    if (l <= sizeof(struct ip )) goto Fail;
     ipptr = (struct ip *) bufptr;
     hdr_len = 4 * ipptr->ip_hl;
     bufptr += hdr_len;
     l -= hdr_len;
   }
-  if (l <= 0) goto fail;
+  if (l <= 0) goto Fail;
+
+  if ((ipaddr = get32(bufptr + 12)) && ismyaddr(ipaddr) == NULLIF)
+    rt_add(ipaddr, 32, ntohl(addr.sin_addr.s_addr), ifp, 1L, 0x7fffffff / 1000, 0);
+
   net_route(ifp, qdata(bufptr, l));
   return;
 
-fail:
+Fail:
   ifp->crcerrors++;
 }
 
@@ -111,41 +126,39 @@ char *argv[];
 void *p;
 {
 
+  char *ifname = "ipip";
   int fd;
-  int port;
-  int type;
-  int32 ipaddr;
+  int port = IP_PTCL;
+  int type = USE_IP;
   struct edv_t *edv;
   struct iface *ifp;
   struct sockaddr_in addr;
 
-  if (if_lookup(argv[1]) != NULLIF) {
-    printf("Interface %s already exists\n", argv[1]);
+  if (argc >= 2) ifname = argv[1];
+
+  if (if_lookup(ifname) != NULLIF) {
+    printf("Interface %s already exists\n", ifname);
     return (-1);
   }
 
-  switch (*argv[2]) {
-  case 'I':
-  case 'i':
-    type = IP_OVER_IP;
-    break;
-  case 'U':
-  case 'u':
-    type = IP_OVER_UDP;
-    break;
-  default:
-    printf("Type must be IP or UDP\n");
-    return (-1);
-  }
+  if (argc >= 3)
+    switch (*argv[2]) {
+    case 'I':
+    case 'i':
+      type = USE_IP;
+      break;
+    case 'U':
+    case 'u':
+      type = USE_UDP;
+      break;
+    default:
+      printf("Type must be IP or UDP\n");
+      return (-1);
+    }
 
-  if (!(ipaddr = resolve(argv[3]))) {
-    printf(Badhost, argv[3]);
-    return (-1);
-  }
+  if (argc >= 4) port = atoi(argv[3]);
 
-  port = atoi(argv[4]);
-
-  if (type == IP_OVER_IP)
+  if (type == USE_IP)
     fd = socket(AF_INET, SOCK_RAW, port);
   else
     fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -154,33 +167,34 @@ void *p;
     return (-1);
   }
 
-  if (type == IP_OVER_UDP) {
+  if (type == USE_UDP) {
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(port);
     if (bind(fd, &addr, sizeof(addr))) {
       printf("cannot bind address: %s\n", sys_errlist[errno]);
+      close(fd);
       return (-1);
     }
   }
 
   ifp = callocw(1, sizeof(*ifp));
-  ifp->name = strdup(argv[1]);
+  ifp->name = strdup(ifname);
   ifp->addr = Ip_addr;
   ifp->mtu = MAX_FRAME;
+  ifp->flags = NO_RT_ADD;
   setencap(ifp, "None");
 
-  edv = calloc(1, sizeof(*edv));
+  edv = malloc(sizeof(*edv));
   edv->type = type;
+  edv->port = port;
   edv->fd = fd;
-  edv->addr.sin_family = AF_INET;
-  edv->addr.sin_addr.s_addr = htonl(ipaddr);
-  edv->addr.sin_port = htons(port);
   ifp->edv = edv;
 
   ifp->send = ipip_send;
   on_read(fd, ipip_recv, (void * ) ifp);
+
   ifp->next = Ifaces;
   Ifaces = ifp;
 
