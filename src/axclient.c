@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.11 1993/01/29 06:48:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.12 1993/02/23 21:34:04 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -23,7 +23,7 @@ int n;
   if (!(Current && Current->type == AX25TNC && Current->cb.ax25)) return;
   if (n >= 1 && buf[n-1] == '\n') n--;
   if (!n) return;
-  send_ax25(Current->cb.ax25, qdata(buf, n));
+  send_ax25(Current->cb.ax25, qdata(buf, n), PID_NO_L3);
   if (Current->record) {
     if (buf[n-1] == '\r') buf[n-1] = '\n';
     fwrite(buf, 1, n, Current->record);
@@ -52,7 +52,7 @@ int cnt;
     cnt--;
   }
   if (bp->cnt = p - bp->data)
-    send_ax25(cp, bp);
+    send_ax25(cp, bp, PID_NO_L3);
   else
     free_p(bp);
   if (cnt) {

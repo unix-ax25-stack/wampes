@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25dump.c,v 1.5 1991/02/24 20:16:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25dump.c,v 1.6 1993/02/23 21:34:03 deyke Exp $ */
 
 /* AX25 header tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -11,7 +11,7 @@
 #include "trace.h"
 #include "socket.h"
 
-static char *decode_type __ARGS((int type));
+static char *decode_type __ARGS((int   type));
 
 /* Dump an AX.25 packet header */
 void

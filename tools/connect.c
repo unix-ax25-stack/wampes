@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.5 1993/01/29 06:48:53 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.6 1993/02/23 21:33:47 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -9,6 +9,7 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <sys/types.h>
 
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,7 +26,15 @@ extern int optind;
 #define T_FR_END        0334    /* Transposed frame end */
 #define T_FR_ESC        0335    /* Transposed frame escape */
 
+#define PIDFILE         "/tmp/connect.pid"
+
 #define uchar(c)        ((c) & 0xff)
+
+static void terminate(void)
+{
+  remove(PIDFILE);
+  exit(0);
+}
 
 int main(int argc, char **argv)
 {
@@ -35,6 +44,7 @@ int main(int argc, char **argv)
     int cnt;
   } tab[MAXCHANNELS];
 
+  FILE * fp;
   char tmp[1024];
   int ch;
   int channels = 2;
@@ -45,6 +55,13 @@ int main(int argc, char **argv)
   struct fd_set fmask;
   struct tab *tp;
   struct timeval timeout;
+
+  if (fp = fopen(PIDFILE, "r")) {
+    kill(getw(fp), SIGKILL);
+    fclose(fp);
+    sleep(1);
+  }
+  remove(PIDFILE);
 
   while ((ch = getopt(argc, argv, "c:f:s")) != EOF)
     switch (ch) {
@@ -64,7 +81,7 @@ int main(int argc, char **argv)
       break;
     }
   if (errflag || optind < argc) {
-    fprintf(stderr, "usage: %s [-c channels] [-f failures] [-s]", *argv);
+    fprintf(stderr, "usage: %s [-c channels] [-f failures] [-s]\n", *argv);
     exit(1);
   }
 
@@ -73,10 +90,15 @@ int main(int argc, char **argv)
   chdir("/");
   setsid();
 
+  if (fp = fopen(PIDFILE, "w")) {
+    putw(getpid(), fp);
+    fclose(fp);
+  }
+
   FD_ZERO(&fmask);
   for (i = 0; i < channels; i++) {
     sprintf(tmp, "/dev/ptyr%d", i + 1);
-    if (open(tmp, O_RDWR, 0666) != i) exit(1);
+    if (open(tmp, O_RDWR, 0666) != i) terminate();
     FD_SET(i, &fmask);
   }
 
@@ -89,7 +111,7 @@ int main(int argc, char **argv)
     timeout.tv_sec = 3600;
     timeout.tv_usec = 0;
     if (!select(channels, (int *) &readmask, (int *) 0, (int *) 0, &timeout))
-      exit(0);
+      terminate();
     for (i = 0; i < channels; i++)
       if (FD_ISSET(i, &readmask)) {
 	tp = tab + i;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.11 1993/01/29 06:48:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.12 1993/02/23 21:34:17 deyke Exp $ */
 
 #ifndef _TCP_H
 #define _TCP_H
@@ -264,7 +264,7 @@ void send_syn __ARGS((struct tcb *tcb));
 void tcp_input __ARGS((struct iface *iface,struct ip *ip,struct mbuf *bp,
 	int rxbroadcast));
 void tcp_icmp __ARGS((int32 icsource,int32 source,int32 dest,
-	int type,int code,struct mbuf **bpp));
+	int  type,int  code,struct mbuf **bpp));
 
 /* In tcpsubr.c: */
 void close_self __ARGS((struct tcb *tcb,int reason));
@@ -294,7 +294,7 @@ int del_tcp __ARGS((struct tcb *tcb));
 int kick __ARGS((int32 addr));
 int kick_tcp __ARGS((struct tcb *tcb));
 struct tcb *open_tcp __ARGS((struct socket *lsocket,struct socket *fsocket,
-	int mode,int window,
+	int mode,int   window,
 	void (*r_upcall) __ARGS((struct tcb *tcb,int32 cnt)),
 	void (*t_upcall) __ARGS((struct tcb *tcb,int32 cnt)),
 	void (*s_upcall) __ARGS((struct tcb *tcb,int old,int new)),
@@ -304,7 +304,7 @@ void reset_all __ARGS((void));
 void reset_tcp __ARGS((struct tcb *tcb));
 long send_tcp __ARGS((struct tcb *tcb,struct mbuf *bp));
 int space_tcp __ARGS((struct tcb *tcb));
-char *tcp_port __ARGS((int n));
+char *tcp_port __ARGS((int   n));
 int tcpval __ARGS((struct tcb *tcb));
 
 /* In tcpsocket.c: */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.15 1993/01/29 06:48:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.16 1993/02/23 21:34:08 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -482,7 +482,6 @@ register struct iface *ifp;
 	printf(" crc errors %lu bad ax25 headers %lu\n",
 	 ifp->crcerrors,ifp->ax25errors);
 }
-
 /* Detach a specified interface */
 int
 if_detach(ifp)
@@ -631,3 +630,4 @@ struct mbuf *bp;
 	free_p(bp);
 	return 0;
 }
+

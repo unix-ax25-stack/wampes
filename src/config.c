@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.29 1993/01/29 06:48:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.30 1993/02/23 21:34:05 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -128,7 +128,7 @@ struct cmds Cmds[] = {
 		 "dialer <iface> <timeout> [device-dependent args]",
 #endif
 #ifndef AMIGA
-/*      "dir",          dodir,          512, 0, NULLCHAR, /* note sequence */
+/*      "dir",          dodir,          0, 0, NULLCHAR, /* note sequence */
 #endif
 #ifdef  CDMA_DM
 	"dm",           dodm,           0, 0, NULLCHAR,
@@ -206,7 +206,7 @@ struct cmds Cmds[] = {
 	"record",       dorecord,       0, 0, NULLCHAR,
 	"remote",       doremote,       0, 3, "remote [-p port] [-k key] [-a kickaddr] <address> exit|reset|kick",
 	"rename",       dorename,       0, 3, "rename <oldfile> <newfile>",
-/*      "repeat",       dorepeat,       256, 3, "repeat <interval> <command> [args...]",*/
+/*      "repeat",       dorepeat,       1024, 3, "repeat <interval> <command> [args...]",*/
 	"reset",        doreset,        0, 0, NULLCHAR,
 #ifdef  RIP
 	"rip",          dorip,          0, 0, NULLCHAR,
@@ -407,7 +407,6 @@ static struct cmds Stopcmds[] = {
 /*      "ttylink",      ttyl0,          0, 0, NULLCHAR, */
 	"remote",       rem0,           0, 0, NULLCHAR,
 	NULLCHAR,
-
 };
 #endif  /* SERVERS */
 
@@ -675,7 +674,6 @@ int direction;
 struct mbuf *bp;
 {
 }
-
 #endif  /* TRACE */
 
 #ifndef TRACEBACK
@@ -747,7 +745,7 @@ char *dest;
 struct mbuf *bp;
 int mcast;
 {
-	nr3_input(bp, src);
+	nr3_input(src,bp);
 }
 
 #endif  /* NETROM */
@@ -871,4 +869,3 @@ void *p;
   Shortstatus = 0;
   return 0;
 }
-

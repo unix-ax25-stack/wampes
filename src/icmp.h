@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.h,v 1.6 1992/01/08 13:45:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.h,v 1.7 1993/02/23 21:34:08 deyke Exp $ */
 
 #ifndef _ICMP_H
 #define _ICMP_H
@@ -139,14 +139,14 @@ extern char *Icmptypes[],*Unreach[],*Exceed[],*Redirect[];
 
 struct icmplink {
 	char proto;
-	void (*funct) __ARGS((int32,int32,int32,int,int,struct mbuf **));
+	void (*funct) __ARGS((int32,int32,int32,int ,int ,struct mbuf **));
 };
 extern struct icmplink Icmplink[];
 
 /* In icmp.c: */
 void icmp_input __ARGS((struct iface *iface,struct ip *ip,struct mbuf *bp,
 	int rxbroadcast));
-int icmp_output __ARGS((struct ip *ip,struct mbuf *data,int type,int code,
+int icmp_output __ARGS((struct ip *ip,struct mbuf *data,int  type,int  code,
 	union icmp_args *args));
 
 /* In icmpcmd.c: */

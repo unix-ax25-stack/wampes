@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.12 1993/01/29 06:48:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.13 1993/02/23 21:34:11 deyke Exp $ */
 
 #ifndef _LAPB_H
 #define _LAPB_H
@@ -48,15 +48,6 @@
 #define Y       4       /* Too-long I-field */
 #define Z       8       /* Invalid sequence number */
 
-/* AX25 protocol constants */
-#define DST_C   1               /* Set C bit in dest addr */
-#define SRC_C   2               /* Set C bit in source addr */
-#define VERS1   0               /* AX25L2V1 compatible frame */
-#define CMD     (DST_C)         /* Command frame */
-#define POLL    (DST_C|PF)      /* Poll frame */
-#define RESP    (SRC_C)         /* Response frame */
-#define FINAL   (SRC_C|PF)      /* Final frame */
-
 /* Per-connection link control block
  * These are created and destroyed dynamically,
  * and are indexed through a hash table.
@@ -67,15 +58,13 @@ struct ax25_cb {
 
 	struct iface *iface;            /* Interface */
 
-	struct mbuf *sndq;              /* Transmit queue */
-	int32 sndqtime;                 /* Last send queue write time */
 	struct mbuf *txq;               /* Transmit queue */
-	struct axreseq {                /* Resequencing queue */
+	struct axreseq {                /* Receive resequence buffer */
 		struct mbuf *bp;
 		int sum;
 	} reseq[8];
+	struct mbuf *rxasm;             /* Receive reassembly buffer */
 	struct mbuf *rxq;               /* Receive queue */
-	int16 rcvcnt;                   /* Receive queue length */
 
 	struct ax25 hdr;                /* AX25 header */
 
@@ -84,9 +73,8 @@ struct ax25_cb {
 		int32 remotebusy;       /* Remote sent RNR */
 		char rtt_run;           /* Round trip "timer" is running */
 		char retrans;           /* A retransmission has occurred */
-/*              char clone;             /* Server-type cb, will be cloned */
-		char closed;            /* Disconnect when send queue empty */
-		char polling;           /* Poll frame has been sent */
+		char clone;             /* Server-type cb, will be cloned */
+		char closed;            /* Disconnect when transmit queue empty */
 		char rnrsent;           /* RNR frame has been sent */
 	} flags;
 
@@ -95,22 +83,29 @@ struct ax25_cb {
 #define LB_DM           1               /* Received DM from other end */
 #define LB_TIMEOUT      2               /* Excessive retries */
 
+	char response;                  /* Response owed to other end */
 	char vs;                        /* Our send state variable */
 	char vr;                        /* Our receive state variable */
 	char unack;                     /* Number of unacked frames */
+	int maxframe;                   /* Transmit flow control level, frames */
+	int16 paclen;                   /* Maximum outbound packet size, bytes */
+	int16 window;                   /* Local flow control limit, bytes */
+	char proto;                     /* Protocol version */
+#define V1      1                       /* AX.25 Version 1 */
+#define V2      2                       /* AX.25 Version 2 */
+	int16 pthresh;                  /* Poll threshold, bytes */
 	unsigned retries;               /* Retry counter */
+	unsigned n2;                    /* Retry limit */
 	int state;                      /* Link state */
 #define LAPB_DISCONNECTED       1
 #define LAPB_LISTEN             2
 #define LAPB_SETUP              3
 #define LAPB_DISCPENDING        4
 #define LAPB_CONNECTED          5
-/* #define LAPB_RECOVERY        6          not used */
+#define LAPB_RECOVERY           6
 	struct timer t1;                /* Retry timer */
-	struct timer t2;                /* Acknowledgement delay timer */
 	struct timer t3;                /* Keep-alive poll timer */
 	struct timer t4;                /* Busy timer */
-	struct timer t5;                /* Packet assembly timer */
 	int32 rtt_time;                 /* Stored clock values for RTT, ms */
 	int rtt_seq;                    /* Sequence number being timed */
 	int32 srt;                      /* Smoothed round-trip time, ms */
@@ -122,44 +117,39 @@ struct ax25_cb {
 
 	char *user;                     /* User pointer */
 
+	int segremain;                  /* Segmenter state */
 	int routing_changes;            /* Number of routing changes */
-	int mode;                       /* Connection mode */
-#define STREAM        0
-#define DGRAM         1
-	int cwind;                      /* Congestion window */
 	struct ax25_cb *peer;           /* Pointer to peer's control block */
 };
 #define NULLAX25        ((struct ax25_cb *)0)
 extern struct ax25_cb Ax25default,*Ax25_cb;
 extern char *Ax25states[],*Axreasons[];
-extern int Axirtt,T3init,Blimit;
-extern int N2,Maxframe,Paclen,Pthresh,Axwindow,Axversion;
+extern int32 Axirtt,T3init,Blimit;
+extern int   N2,Maxframe,Paclen,Pthresh,Axwindow,Axversion;
 
 extern int T1init;                      /* Retransmission timeout */
-extern int T2init;                      /* Acknowledgement delay timeout */
 extern int T4init;                      /* Busy timeout */
-extern int T5init;                      /* Packet assembly timeout */
-extern struct ax25_cb *Axcb_server;     /* Server control block */
+extern int Axserver_enabled;
 
 /* In lapb.c: */
-int lapb_input __ARGS((struct iface *iface, struct ax25 *hdr, struct mbuf *bp));
-void send_packet __ARGS((struct ax25_cb *cp, int type, int cmdrsp, struct mbuf *data));
+void est_link __ARGS((struct ax25_cb *axp));
+void lapbstate __ARGS((struct ax25_cb *axp,int s));
+int lapb_input __ARGS((struct iface *iface,struct ax25 *hdr,struct mbuf *bp));
+int lapb_output __ARGS((struct ax25_cb *axp));
+struct mbuf *segmenter __ARGS((struct mbuf *bp,int   ssize));
+int sendctl __ARGS((struct ax25_cb *axp,int cmdrsp,int cmd));
 int busy __ARGS((struct ax25_cb *cp));
-void send_ack __ARGS((struct ax25_cb *cp, int cmdrsp));
-int lapb_output __ARGS((struct ax25_cb *cp, int fill_sndq));
-void lapbstate __ARGS((struct ax25_cb *axp, int s));
-void t2_timeout __ARGS((struct ax25_cb *cp));
-void pollthem __ARGS((void *p));
-void t4_timeout __ARGS((struct ax25_cb *cp));
-void t5_timeout __ARGS((struct ax25_cb *cp));
-void build_path __ARGS((struct ax25_cb *cp, struct iface *ifp, struct ax25 *hdr, int reverse));
+void build_path __ARGS((struct ax25_cb *cp,struct iface *ifp,struct ax25 *hdr,int reverse));
 
-/* In lapbtime.c: */
+/* In lapbtimer.c: */
 void pollthem __ARGS((void *p));
 void recover __ARGS((void *p));
 
 /* In ax25subr.c: */
 int16 ftype __ARGS((int control));
 void lapb_garbage __ARGS((int drastic));
+
+/* In axserver.c: */
+void axserv_open __ARGS((struct ax25_cb *axp,int cnt));
 
 #endif  /* _LAPB_H */

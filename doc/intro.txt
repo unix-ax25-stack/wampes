@@ -105,21 +105,21 @@ and ax25 calls:
 # Sample config for WAMPES, by Olaf Erb, erb@insu1.etec.uni-karlsruhe.de
 #############################################################################
 # Here our ip address:
-ip a 44.130.41.10
+ip address 44.130.41.10
 #############################################################################
 # Hostname:
 hostname dc1ik
 #############################################################################
 # ax25 mycall:
-ax my dc1ik
+ax25 mycall dc1ik
 #############################################################################
 # Attach one serial, /dev/ttys3 with 9600 Baud and KISS:
 # NOTE: Interfacename and the device must be the same!!
-# Usage: attach asy 0 0 slip|ax25|nrs <label> <buffers> <mtu> <speed> [ip_addr]
-att asy 0 0 ax25 ttys3 2048 256 9600 44.130.41.10
+# Usage: attach asy 0 0 slip|vjslip|ax25ui|ax25i|nrs <label> 0 <mtu> <speed> [ip_addr]
+attach asy 0 0 kissui ttys3 0 256 9600
 #############################################################################
 # Pseudo-NET/ROM interface
-att netrom
+attach netrom
 # Enable login via NET/ROM:
 start netrom
 #############################################################################
@@ -127,15 +127,15 @@ start netrom
 # time-to-live:
 ip ttl 20
 # Ip reasm timeout:
-ip rt 2000
+ip rtimer 2000
 #############################################################################
 # tcp parms:
 # Initial round trip time
-tcp ir 30000
+tcp irtt 30000
 # Maximum segment size (196 for IP via NET/ROM)
 tcp mss 196
 # TCP Window
-tcp win 2048
+tcp window 2048
 #############################################################################
 # We want to see icmp messages:
 icmp trace on
@@ -145,7 +145,7 @@ ax25 t1 12000
 # ax25 t2 timer ("Ack delay timeout"):
 ax25 t2 2000
 # ax25 retry limit:
-ax ret 20
+ax25 retry 20
 # Enable ax25 login:
 start ax25
 #############################################################################
@@ -207,13 +207,13 @@ remote -s exit_key
 smtp timer 120
 #############################################################################
 # Use the unix resolver if a host isn't in /tcp/hosts:
-dom use on
+domain usegethostby on
 #############################################################################
 # the esc character:
 esc 
 #############################################################################
 # trace all of ttys3 to tty8 (virtual console)
-#tr ttys3 111 /dev/tty8
+#trace ttys3 111 /dev/tty8
 #############################################################################
 # Logging:
 log /tcp/net.log

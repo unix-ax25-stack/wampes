@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.11 1993/01/29 06:48:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.12 1993/02/23 21:34:09 deyke Exp $ */
 
 #ifndef _IP_H
 #define _IP_H
@@ -181,8 +181,8 @@ void ip_recv __ARGS((struct iface *iface,struct ip *ip,struct mbuf *bp,
 	int rxbroadcast));
 void ipip_recv __ARGS((struct iface *iface,struct ip *ip,struct mbuf *bp,
 	int rxbroadcast));
-int ip_send __ARGS((int32 source,int32 dest,int protocol,int tos,int ttl,
-	struct mbuf *bp,int length,int id,int df));
+int ip_send __ARGS((int32 source,int32 dest,int  protocol,int  tos,int  ttl,
+	struct mbuf *bp,int   length,int   id,int  df));
 struct raw_ip *raw_ip __ARGS((int protocol,void (*r_upcall) __ARGS((struct raw_ip *)) ));
 void del_ip __ARGS((struct raw_ip *rrp));
 void rquench __ARGS((struct iface *ifp,int drop));
@@ -197,19 +197,19 @@ int ip_route __ARGS((struct iface *i_iface,struct mbuf *bp,int rxbroadcast));
 int32 locaddr __ARGS((int32 addr));
 void rt_merge __ARGS((int trace));
 struct route *rt_add __ARGS((int32 target,unsigned int bits,int32 gateway,
-	struct iface *iface,int32 metric,int32 ttl,int private));
+	struct iface *iface,int32 metric,int32 ttl,int  private));
 int rt_drop __ARGS((int32 target,unsigned int bits));
 struct route *rt_lookup __ARGS((int32 target));
 struct route *rt_blookup __ARGS((int32 target,unsigned int bits));
 
 /* In iphdr.c: */
-int16 cksum __ARGS((struct pseudo_header *ph,struct mbuf *m,int len));
+int16 cksum __ARGS((struct pseudo_header *ph,struct mbuf *m,int   len));
 int16 eac __ARGS((int32 sum));
 struct mbuf *htonip __ARGS((struct ip *ip,struct mbuf *data,int cflag));
 int ntohip __ARGS((struct ip *ip,struct mbuf **bpp));
 
 /* In either lcsum.c or pcgen.asm: */
-int16 lcsum __ARGS((int16 *wp,int len));
+int16 lcsum __ARGS((int16 *wp,int   len));
 
 /* In ipsocket.c: */
 int so_ip_sock __ARGS((struct usock *up,int protocol));

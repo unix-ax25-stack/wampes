@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.9 1993/01/29 06:48:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.10 1993/02/23 21:34:17 deyke Exp $ */
 
 /* Process incoming TCP segments. Page number references are to ARPA RFC-793,
  * the TCP specification.
@@ -15,10 +15,10 @@
 #include "iface.h"
 #include "ip.h"
 
-static void update __ARGS((struct tcb *tcb,struct tcp *seg,int length));
-static void proc_syn __ARGS((struct tcb *tcb,int tos,struct tcp *seg));
-static void add_reseq __ARGS((struct tcb *tcb,int tos,struct tcp *seg,
-	struct mbuf *bp,int length));
+static void update __ARGS((struct tcb *tcb,struct tcp *seg,int   length));
+static void proc_syn __ARGS((struct tcb *tcb,int  tos,struct tcp *seg));
+static void add_reseq __ARGS((struct tcb *tcb,int  tos,struct tcp *seg,
+	struct mbuf *bp,int   length));
 static void get_reseq __ARGS((struct tcb *tcb,char *tos,struct tcp *seq,
 	struct mbuf **bp,int16 *length));
 static int trim __ARGS((struct tcb *tcb,struct tcp *seg,struct mbuf **bpp,

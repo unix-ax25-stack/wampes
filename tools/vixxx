@@ -1,13 +1,10 @@
 #! /bin/sh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/vixxx,v 1.1 1993/01/29 06:52:55 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/vixxx,v 1.2 1993/02/23 21:33:48 deyke Exp $
 
 tmp=/tmp/tmp$$
 sed <xxx >$tmp -e "
   / no change$/d
-  /Pointers are not assignment-compatible/d
-  / is not the correct type/d
-  /: Illegal pointer combination for /d
   /^cp: cannot create/d
   /^mv: /d
   /^chmod: can/d

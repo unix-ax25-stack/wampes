@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.13 1993/01/29 06:48:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.14 1993/02/23 21:34:19 deyke Exp $ */
 
 /* Packet tracing - top level and generic routines, including hex/ascii
  * Copyright 1991 Phil Karn, KA9Q
@@ -20,8 +20,8 @@
 #include "timer.h"
 
 static void ascii_dump __ARGS((FILE *fp,struct mbuf **bpp));
-static void ctohex __ARGS((char *buf,int c));
-static void fmtline __ARGS((FILE *fp,int addr,char *buf,int len));
+static void ctohex __ARGS((char *buf,int   c));
+static void fmtline __ARGS((FILE *fp,int   addr,char *buf,int   len));
 void hex_dump __ARGS((FILE *fp,struct mbuf **bpp));
 static void showtrace __ARGS((struct iface *ifp));
 

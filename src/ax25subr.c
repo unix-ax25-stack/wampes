@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.8 1993/01/29 06:48:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.9 1993/02/23 21:34:04 deyke Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -17,16 +17,16 @@
 struct ax25_cb *Ax25_cb;
 
 /* Default AX.25 parameters */
-int Maxframe = 7;               /* Transmit flow control level */
-int N2 = 10;                    /* Retry limit */
-int Axwindow = 2048;            /* Local flow control limit */
-int Paclen = 236;               /* Maximum outbound packet size */
-int Pthresh = 64;               /* Send polls for packets larger than this */
-int T1init = 5000;              /* Retransmission timeout, ms */
-int T2init = 2;                 /* Acknowledgement delay timeout, ms */
-int T3init = 900000;            /* No-activity timeout, ms */
-int T4init = 60000;             /* Busy timeout, ms */
-int T5init = 100;               /* Packet assembly timeout, ms */
+int32 T3init = 900000;          /* Keep-alive polling, ms */
+int   Maxframe = 7;             /* Transmit flow control level */
+int   N2 = 10;                  /* 10 retries */
+int   Axwindow = 2048;          /* 2K incoming text before RNR'ing */
+int   Paclen = 256;             /* 256-byte I fields */
+int   Pthresh = 64;             /* Send polls for packets larger than this */
+int   T1init = 5000;            /* Retransmission timeout, ms */
+int   T4init = 60000;           /* Busy timeout, ms */
+int   Axversion = V2;           /* Protocol version */
+int32 Blimit = 0x7fffffff;      /* Retransmission backoff limit */
 
 /* Look up entry in connection table */
 struct ax25_cb *
@@ -58,7 +58,6 @@ void
 del_ax25(conn)
 struct ax25_cb *conn;
 {
-
 	int i;
 	register struct ax25_cb *axp;
 	struct ax25_cb *axlast = NULLAX25;
@@ -70,9 +69,6 @@ struct ax25_cb *conn;
 	if(axp == NULLAX25)
 		return; /* Not found */
 
-	if(axp == Axcb_server)
-		Axcb_server = NULLAX25;
-
 	/* Remove from list */
 	if(axlast != NULLAX25)
 		axlast->next = axp->next;
@@ -81,16 +77,14 @@ struct ax25_cb *conn;
 
 	/* Timers should already be stopped, but just in case... */
 	stop_timer(&axp->t1);
-	stop_timer(&axp->t2);
 	stop_timer(&axp->t3);
 	stop_timer(&axp->t4);
-	stop_timer(&axp->t5);
 
 	/* Free allocated resources */
 	for (i = 0; i < 8; i++)
 		free_p(axp->reseq[i].bp);
-	free_q(&axp->sndq);
 	free_q(&axp->txq);
+	free_q(&axp->rxasm);
 	free_q(&axp->rxq);
 	free((char *)axp);
 }
@@ -100,30 +94,52 @@ struct ax25_cb *conn;
  * is still responsible for filling in the reply address
  */
 struct ax25_cb *
-cr_ax25(prototype)
-struct ax25_cb *prototype;
+cr_ax25(addr)
+char *addr;
 {
 	register struct ax25_cb *axp;
 
-  if (prototype) {
-    axp = malloc(sizeof(*axp));
-    *axp = *prototype;
-  } else
-    axp = calloc(1, sizeof(*axp));
-  axp->state = LAPB_DISCONNECTED;
-  axp->cwind = 1;
-  axp->t1.func = recover;
-  axp->t1.arg = axp;
-  axp->t2.func = (void (*)()) t2_timeout;
-  axp->t2.arg = axp;
-  axp->t3.func = pollthem;
-  axp->t3.arg = axp;
-  axp->t4.func = (void (*)()) t4_timeout;
-  axp->t4.arg = axp;
-  axp->t5.func = (void (*)()) t5_timeout;
-  axp->t5.arg = axp;
-  axp->next = Ax25_cb;
-  return Ax25_cb = axp;
+	if(addr == NULLCHAR)
+		return NULLAX25;
+
+	if((axp = find_ax25(addr)) == NULLAX25){
+		/* Not already in table; create an entry
+		 * and insert it at the head of the chain
+		 */
+		axp = (struct ax25_cb *)callocw(1,sizeof(struct ax25_cb));
+		axp->next = Ax25_cb;
+		Ax25_cb = axp;
+	}
+	axp->user = 0;
+	axp->state = LAPB_DISCONNECTED;
+	axp->maxframe = 1;
+	axp->window = Axwindow;
+	axp->paclen = Paclen;
+	axp->proto = Axversion; /* Default, can be changed by other end */
+	axp->pthresh = Pthresh;
+	axp->n2 = N2;
+#if 0
+	axp->srt = Axirtt;
+	set_timer(&axp->t1,2*axp->srt);
+#endif
+	axp->t1.func = recover;
+	axp->t1.arg = axp;
+
+	set_timer(&axp->t3,T3init);
+	axp->t3.func = pollthem;
+	axp->t3.arg = axp;
+
+	set_timer(&axp->t4,T4init);
+	axp->t4.func = pollthem;
+	axp->t4.arg = axp;
+
+	/* Always to a receive and state upcall as default */
+	axp->r_upcall = axserv_open;
+#if 0
+	axp->s_upcall = s_ascall;
+#endif
+
+	return axp;
 }
 
 /*
@@ -203,7 +219,7 @@ const char *addr;
 	register struct iface *ifp;
 
 	for (ifp = Ifaces; ifp; ifp = ifp->next)
-		if (ifp->output == ax_output && addreq(ifp->hwaddr, addr))
+		if (ifp->output == ax_output && addreq(ifp->hwaddr,addr))
 			break;
 	return ifp;
 }
@@ -260,7 +276,7 @@ register int control;
 }
 
 int
-ax25args_to_hdr(argc, argv, hdr)
+ax25args_to_hdr(argc,argv,hdr)
 int argc;
 char *argv[];
 struct ax25 *hdr;
@@ -270,19 +286,19 @@ struct ax25 *hdr;
     printf("Missing call\n");
     return 1;
   }
-  if (setcall(hdr->dest, *argv)) {
-    printf("Invalid call \"%s\"\n", *argv);
+  if (setcall(hdr->dest,*argv)) {
+    printf("Invalid call \"%s\"\n",*argv);
     return 1;
   }
   while (--argc) {
     argv++;
-    if (strncmp("via", *argv, strlen(*argv))) {
+    if (strncmp("via",*argv,strlen(*argv))) {
       if (hdr->ndigis >= MAXDIGIS) {
-	printf("Too many digipeaters (max %d)\n", MAXDIGIS);
+	printf("Too many digipeaters (max %d)\n",MAXDIGIS);
 	return 1;
       }
-      if (setcall(hdr->digis[hdr->ndigis++], *argv)) {
-	printf("Invalid call \"%s\"\n", *argv);
+      if (setcall(hdr->digis[hdr->ndigis++],*argv)) {
+	printf("Invalid call \"%s\"\n",*argv);
 	return 1;
       }
     }
@@ -302,17 +318,17 @@ struct ax25 *hdr;
   if (!*hdr->dest) return "*";
   p = buf;
   if (*hdr->source) {
-    pax25(p, hdr->source);
+    pax25(p,hdr->source);
     while (*p) p++;
     *p++ = '-';
     *p++ = '>';
   }
-  pax25(p, hdr->dest);
+  pax25(p,hdr->dest);
   while (*p) p++;
   for (i = 0; i < hdr->ndigis; i++) {
-    strcpy(p, i == 0 ? " via " : ",");
+    strcpy(p,i == 0 ? " via " : ",");
     while (*p) p++;
-    pax25(p, hdr->digis[i]);
+    pax25(p,hdr->digis[i]);
     while (*p) p++;
     if (i < hdr->nextdigi) *p++ = '*';
   }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.8 1993/01/29 06:48:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.9 1993/02/23 21:34:02 deyke Exp $ */
 
 #ifndef _ARP_H
 #define _ARP_H
@@ -108,15 +108,15 @@ struct arp_stat {
 extern struct arp_stat Arp_stat;
 
 /* In arp.c: */
-struct arp_tab *arp_add __ARGS((int32 ipaddr,int hardware,char *hw_addr,
+struct arp_tab *arp_add __ARGS((int32 ipaddr,int   hardware,char *hw_addr,
 	int pub));
 void arp_drop __ARGS((void *p));
 int arp_init __ARGS((unsigned int hwtype,int hwalen,int iptype,int arptype,
 	int pendtime,char *bdcst,char *(*format) __ARGS((char *,char *)),
 	int  (*scan) __ARGS((char *,char *)) ));
 void arp_input __ARGS((struct iface *iface,struct mbuf *bp));
-struct arp_tab *arp_lookup __ARGS((int hardware,int32 ipaddr));
-char *res_arp __ARGS((struct iface *iface,int hardware,int32 target,struct mbuf *bp));
+struct arp_tab *arp_lookup __ARGS((int   hardware,int32 ipaddr));
+char *res_arp __ARGS((struct iface *iface,int   hardware,int32 target,struct mbuf *bp));
 struct arp_tab *revarp_lookup __ARGS((int hardware,char *hw_addr));
 
 /* In arphdr.c: */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.h,v 1.6 1992/05/28 13:50:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.h,v 1.7 1993/02/23 21:34:20 deyke Exp $ */
 
 #ifndef _UDP_H
 #define _UDP_H
@@ -69,18 +69,18 @@ int del_udp __ARGS((struct udp_cb *up));
 struct udp_cb *open_udp __ARGS((struct socket *lsocket,
 	void (*r_upcall) __ARGS((struct iface *iface,struct udp_cb *,int))));
 int recv_udp __ARGS((struct udp_cb *up,struct socket *fsocket,struct mbuf **bp));
-int send_udp __ARGS((struct socket *lsocket,struct socket *fsocket,int tos,
-	int ttl,struct mbuf *data,int length,int id,int df));
+int send_udp __ARGS((struct socket *lsocket,struct socket *fsocket,int  tos,
+	int  ttl,struct mbuf *data,int   length,int   id,int  df));
 void udp_input __ARGS((struct iface *iface,struct ip *ip,struct mbuf *bp,
 	int rxbroadcast));
 void udp_garbage __ARGS((int drastic));
 
 #ifdef HOPCHECK
 void udp_icmp __ARGS((int32 icsource, int32 ipsource,int32 ipdest,
-	int ictype,int iccode,struct mbuf **bpp));
+	int  ictype,int  iccode,struct mbuf **bpp));
 /* In hop.c: */
 void hop_icmp __ARGS((struct udp_cb *ucb, int32 icsource, int32 ipdest,
-	int udpdest, int ictype, int iccode));
+	int   udpdest, int  ictype, int  iccode));
 #endif
 
 /* In udpcmd.c: */

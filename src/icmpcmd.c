@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.12 1992/08/19 13:20:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.13 1993/02/23 21:34:08 deyke Exp $ */
 
 /* ICMP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -321,4 +321,3 @@ struct ping *pp;
 	}
 	free(pp);
 }
-

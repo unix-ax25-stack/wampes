@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.8 1993/01/29 06:48:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.9 1993/02/23 21:34:15 deyke Exp $ */
 
 /* This file contains code to implement the Routing Information Protocol (RIP)
  * and is derived from 4.2BSD code. Mike Karels of Berkeley has stated on
@@ -34,10 +34,10 @@ struct rip_refuse *Rip_refuse;
 static void rip_rx __ARGS((struct iface *iface,struct udp_cb *sock,int cnt));
 static void proc_rip __ARGS((struct iface *iface,int32 gateway,
 	struct rip_route *ep,int32 ttl));
-static char *putheader __ARGS((char *cp,int command,int version));
-static char *putentry __ARGS((char *cp,int fam,int32 target,int32 metric));
+static char *putheader __ARGS((char *cp,int  command,int  version));
+static char *putentry __ARGS((char *cp,int   fam,int32 target,int32 metric));
 static void rip_shout __ARGS((void *p));
-static void send_routes __ARGS((int32 dest,int port,int split,int trig,
+static void send_routes __ARGS((int32 dest,int   port,int split,int trig,
 	int us));
 
 /* Send RIP CMD_RESPONSE packet(s) to the specified rip_list entry */

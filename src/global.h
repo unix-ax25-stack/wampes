@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.21 1993/01/29 06:48:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.22 1993/02/23 21:34:07 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -59,7 +59,7 @@
  * shorts are 16 bits. It is already assumed that chars are 8 bits,
  * but it doesn't matter if they're signed or unsigned.
  */
-typedef int int32;              /* 32-bit signed integer */
+typedef int  int32;             /* 32-bit signed integer */
 typedef unsigned short int16;   /* 16-bit unsigned integer */
 typedef unsigned char byte_t;   /*  8-bit unsigned integer */
 #define uchar(x) ((x) & 0xff)
@@ -174,7 +174,7 @@ int availmem __ARGS((void));
 void *callocw __ARGS((unsigned nelem,unsigned size));
 int dirps __ARGS((void));
 int getopt();
-int htob __ARGS((int c));
+int htob __ARGS((int  c));
 int htoi __ARGS((char *));
 int readhex __ARGS((char *,char *,int));
 long htol __ARGS((char *));
@@ -182,10 +182,10 @@ char *inbuf __ARGS((int16 port,char *buf,int16 cnt));
 int16 hash_ip __ARGS((int32 addr));
 int istate __ARGS((void));
 void log();
-int log2 __ARGS((int x));
+int log2 __ARGS((int   x));
 #define ltop(x) ((void *) (x))
 void *mallocw __ARGS((unsigned nb));
-int memcnt __ARGS((char *buf,int c,int size));
+int memcnt __ARGS((char *buf,int  c,int size));
 char *outbuf __ARGS((int16 port,char *buf,int16 cnt));
 #define ptol(x) ((long) (x))
 void restore __ARGS((int));

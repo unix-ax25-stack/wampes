@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.11 1992/08/21 16:42:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.12 1993/02/23 21:34:02 deyke Exp $ */
 
 /* Address Resolution Protocol (ARP) functions. Sits between IP and
  * Level 2, mapping IP to Level 2 addresses for all outgoing datagrams.
@@ -15,7 +15,7 @@
 #include "arp.h"
 #include "icmp.h"
 
-static void arp_output __ARGS((struct iface *iface,int hardware,int32 target));
+static void arp_output __ARGS((struct iface *iface,int   hardware,int32 target));
 
 /* Hash table headers */
 struct arp_tab *Arp_tab[HASHMOD];

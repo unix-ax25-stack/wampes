@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.10 1993/01/29 06:48:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.11 1993/02/23 21:34:03 deyke Exp $ */
 
 #ifndef _AX25_H
 #define _AX25_H
@@ -61,6 +61,7 @@ struct ax_route {
 	struct ax_route *digi;
 	struct iface *ifp;
 	int perm;
+	int jumpstart;
 	long time;
 };
 #define NULLAXR ((struct ax_route *)0)
@@ -102,12 +103,12 @@ extern struct axlink Axlink[];
 void ax_recv __ARGS((struct iface *,struct mbuf *));
 int axui_send __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,int tos));
 int axi_send __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,int tos));
-int ax_output __ARGS((struct iface *iface,char *dest,char *source,int pid,
+int ax_output __ARGS((struct iface *iface,char *dest,char *source,int   pid,
 	struct mbuf *data));
+int sendframe __ARGS((struct ax25_cb *axp,int cmdrsp,int ctl,struct mbuf *data));
 void axnl3 __ARGS((struct iface *iface,struct ax25_cb *axp,char *src,
 	char *dest,struct mbuf *bp,int mcast));
 int valid_remote_call __ARGS((const char *call));
-int is_flexnet __ARGS((const char *call, int store));
 struct ax_route *ax_routeptr __ARGS((const char *call, int create));
 void axroute_add __ARGS((struct iface *iface, struct ax25 *hdr, int perm));
 void axroute __ARGS((struct ax25 *hdr, struct iface **ifpp));
@@ -129,21 +130,21 @@ struct ax25_cb *open_ax25 __ARGS((struct ax25 *,
 	void (*) __ARGS((struct ax25_cb *,int)),
 	void (*) __ARGS((struct ax25_cb *,int,int)),
 	char *user));
-struct mbuf *recv_ax25 __ARGS((struct ax25_cb *axp,int cnt));
+struct mbuf *recv_ax25 __ARGS((struct ax25_cb *axp,int   cnt));
 int reset_ax25 __ARGS((struct ax25_cb *axp));
-int send_ax25 __ARGS((struct ax25_cb *axp,struct mbuf *bp));
+int send_ax25 __ARGS((struct ax25_cb *axp,struct mbuf *bp,int pid));
 int space_ax25 __ARGS((struct ax25_cb *axp));
 
 /* In ax25subr.c: */
 int addreq __ARGS((const char *a,const char *b));
-struct ax25_cb *cr_ax25 __ARGS((struct ax25_cb *prototype));
+struct ax25_cb *cr_ax25 __ARGS((char *addr));
 void del_ax25 __ARGS((struct ax25_cb *axp));
 struct ax25_cb *find_ax25 __ARGS((char *));
 char *pax25 __ARGS((char *e,char *addr));
 int setcall __ARGS((char *out,char *call));
 struct iface *ismyax25addr __ARGS((const char *addr));
-void addrcp __ARGS((char *to, const char *from));
-int ax25args_to_hdr __ARGS((int argc, char *argv [], struct ax25 *hdr));
+void addrcp __ARGS((char *to,const char *from));
+int ax25args_to_hdr __ARGS((int argc,char *argv[],struct ax25 *hdr));
 char *ax25hdr_to_string __ARGS((struct ax25 *hdr));
 
 /* In ax25file.c: */

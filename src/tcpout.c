@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.8 1993/01/29 06:48:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.9 1993/02/23 21:34:18 deyke Exp $ */
 
 /* TCP output segment processing
  * Copyright 1991 Phil Karn, KA9Q
@@ -76,9 +76,11 @@ register struct tcb *tcb;
 		/* Now we decide if we actually want to send it.
 		 * Apply John Nagle's "single outstanding segment" rule.
 		 * If data is already in the pipeline, don't send
-		 * more unless it is MSS-sized or the very last packet.
+		 * more unless it is MSS-sized, the very last packet,
+		 * or we're being forced to transmit anyway (e.g., to
+		 * ack incoming data).
 		 */
-		if(sent != 0 && ssize < tcb->mss
+		if(!tcb->flags.force && sent != 0 && ssize < tcb->mss
 		 && !(tcb->state == TCP_FINWAIT1 && ssize == tcb->sndcnt-sent)){
 			ssize = 0;
 		}

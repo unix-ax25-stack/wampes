@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.h,v 1.7 1991/06/04 11:35:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.h,v 1.8 1993/02/23 21:34:19 deyke Exp $ */
 
 #ifndef _TRANSPORT_H
 #define _TRANSPORT_H
@@ -21,17 +21,11 @@
 #define EOL_CRLF        3       /* EOL is "\r\n" */
 
 struct transport_cb {
+  int type;                     /* Connection type */
+#define TP_AX25         1
+#define TP_NETROM       2
+#define TP_TCP          3
   void *cp;                     /* Pointer to connection control block */
-  int (*recv) __ARGS((void *cp, struct mbuf **bpp, int cnt));
-				/* Recv function */
-  int (*send) __ARGS((void *cp, struct mbuf *bp));
-				/* Send function */
-  int (*send_space) __ARGS((void *cp));
-				/* Send space function */
-  int (*close) __ARGS((void *cp));
-				/* Close function */
-  int (*del) __ARGS((void *cp));
-				/* Delete function */
   void (*r_upcall) __ARGS((struct transport_cb *tp, int cnt));
 				/* Called when data arrives */
   void (*t_upcall) __ARGS((struct transport_cb *tp, int cnt));
@@ -42,16 +36,16 @@ struct transport_cb {
 				 * application control block
 				 */
   struct timer timer;           /* No activity timer */
-  int  recv_mode;               /* Recv EOL mode */
-  int  recv_char;               /* Last char received */
-  int  send_mode;               /* Send EOL mode */
-  int  send_char;               /* Last char sent */
+  int recv_mode;                /* Recv EOL mode */
+  int recv_char;                /* Last char received */
+  int send_mode;                /* Send EOL mode */
+  int send_char;                /* Last char sent */
 };
 
 /* In transport.c: */
 struct transport_cb *transport_open __ARGS((
-  char *protocol,
-  char *address,
+  const char *protocol,
+  const char *address,
   void (*r_upcall) __ARGS((struct transport_cb *tp, int cnt)),
   void (*t_upcall) __ARGS((struct transport_cb *tp, int cnt)),
   void (*s_upcall) __ARGS((struct transport_cb *tp)),

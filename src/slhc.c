@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.c,v 1.2 1993/01/29 06:48:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.c,v 1.3 1993/02/23 21:34:16 deyke Exp $ */
 
 /*
  * Routines to compress and uncompress tcp packets (for transmission
@@ -50,7 +50,7 @@
 #include "tcp.h"
 #include "slhc.h"
 
-static char *encode __ARGS((char *cp,int n));
+static char *encode __ARGS((char *cp,int   n));
 static long decode __ARGS((struct mbuf **bpp));
 
 /* Initialize compression data structure

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.12 1993/01/29 06:48:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.13 1993/02/23 21:34:16 deyke Exp $ */
 
 /* SLIP (Serial Line IP) encapsulation and control routines.
  * Copyright 1991 Phil Karn
@@ -20,7 +20,7 @@
 #include "trace.h"
 #include "pktdrvr.h"
 
-static struct mbuf *slip_decode __ARGS((struct slip *sp,int c));
+static struct mbuf *slip_decode __ARGS((struct slip *sp,int  c));
 static struct mbuf *slip_encode __ARGS((struct mbuf *bp));
 
 /* Slip level control structure */

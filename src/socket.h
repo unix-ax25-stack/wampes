@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.12 1993/01/29 06:48:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.13 1993/02/23 21:34:17 deyke Exp $ */
 
 #ifndef _SOCKET_H
 #define _SOCKET_H
@@ -117,5 +117,9 @@ char *psocket __ARGS((void *p));
 char *sockerr __ARGS((int s));
 char *sockstate __ARGS((int s));
 #endif
+
+/* In file tcpsock.c: */
+int start_tcp __ARGS((int   port,char *name,void (*task)(),int stack));
+int stop_tcp __ARGS((int   port));
 
 #endif  /* _SOCKET_H */

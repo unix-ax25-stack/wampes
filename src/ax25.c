@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.15 1993/01/29 06:48:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.16 1993/02/23 21:34:03 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -23,7 +23,6 @@
 
 static int axsend __ARGS((struct iface *iface,char *dest,char *source,
 	int cmdrsp,int ctl,struct mbuf *data));
-static int axroute_hash __ARGS((const char *call));
 
 /* List of AX.25 multicast addresses in network format (shifted ascii).
  * Only the first entry is used for transmission, but an incoming
@@ -69,14 +68,51 @@ struct iface *iface;
 int32 gateway;
 int tos;
 {
+	struct mbuf *tbp;
 	char *hw_addr;
+	struct ax25_cb *axp;
 
 	if((hw_addr = res_arp(iface,ARP_AX25,gateway,bp)) == NULLCHAR)
 		return 0;       /* Wait for address resolution */
 
+	/* UI frames are used for any one of the following three conditions:
+	 * 1. The "low delay" bit is set in the type-of-service field.
+	 * 2. The "reliability" TOS bit is NOT set and the interface is in
+	 *    datagram mode.
+	 * 3. The destination is the broadcast address (this is helpful
+	 *    when broadcasting on an interface that's in connected mode).
+	 */
+	if((tos & IP_COS) == DELAY
+	 || ((tos & IP_COS) != RELIABILITY && (iface->send == axui_send))
+	 || addreq(hw_addr,Ax25multi[0])){
 		/* Use UI frame */
 		return (*iface->output)(iface,hw_addr,iface->hwaddr,PID_IP,bp);
-
+	}
+	/* Reliability is needed; use I-frames in AX.25 connection */
+	if((axp = find_ax25(hw_addr)) == NULLAX25){
+		/* Open a new connection */
+		struct ax25 hdr;
+		hdr.ndigis = hdr.nextdigi = 0;
+		addrcp(hdr.dest,hw_addr);
+		axp = open_ax25(&hdr,
+		 AX_ACTIVE,NULLVFP,NULLVFP,NULLVFP,(char *) 0);
+		if(axp == NULLAX25){
+			free_p(bp);
+			return -1;
+		}
+	}
+	if(axp->state == LAPB_DISCONNECTED){
+		est_link(axp);
+		lapbstate(axp,LAPB_SETUP);
+	}
+	/* Insert the PID */
+	bp = pushdown(bp,1);
+	bp->data[0] = PID_IP;
+	if((tbp = segmenter(bp,axp->paclen)) == NULLBUF){
+		free_p(bp);
+		return -1;
+	}
+	return send_ax25(axp,tbp,-1);
 }
 /* Add header and send connectionless (UI) AX.25 packet.
  * Note that the calling order here must match enet_output
@@ -134,13 +170,20 @@ struct mbuf *bp;        /* Data field (includes PID) */
 	 * done at the IP router layer, but just to be safe...
 	 */
 	if(iface->forw != NULLIF){
+#if 0
+		logsrc(iface->forw,iface->forw->hwaddr);
+		logdest(iface->forw,idest);
+#endif
 		rval = (*iface->forw->raw)(iface->forw,data);
 	} else {
+#if 0
+		logsrc(iface,iface->hwaddr);
+		logdest(iface,idest);
+#endif
 		rval = (*iface->raw)(iface,data);
 	}
 	return rval;
 }
-
 /* Process incoming AX.25 packets.
  * After optional tracing, the address field is examined. If it is
  * directed to us as a digipeater, repeat it.  If it is addressed to
@@ -233,8 +276,7 @@ struct mbuf *bp;
 			hdr.nextdigi++;
 			if(Digipeat == 1 ||
 			   (bp && (*bp->data & ~PF) == UI) ||
-			   addreq(hdr.source, hdr.dest) ||
-			   is_flexnet(hdr.source, 0) && is_flexnet(hdr.dest, 0)) {
+			   addreq(hdr.source, hdr.dest)) {
 				struct iface *ifp;
 				axroute(&hdr, &ifp);
 				if((hbp = htonax25(&hdr,bp)) != NULLBUF){
@@ -293,61 +335,61 @@ struct mbuf *bp;
 
 	lapb_input(iface,&hdr,bp);
 }
+/* General purpose AX.25 frame output */
+int
+sendframe(axp,cmdrsp,ctl,data)
+struct ax25_cb *axp;
+int cmdrsp;
+int ctl;
+struct mbuf *data;
+{
+	struct mbuf *bp;
+	struct iface *ifp;
+
+	bp = pushdown(data,1);
+	bp->data[0] = ctl;
+	axp->hdr.cmdrsp = cmdrsp;
+	if((data = htonax25(&axp->hdr,bp)) == NULLBUF){
+		free_p(bp);
+		return -1;
+	}
+	if (ifp = axp->iface) {
+		if (ifp->forw)
+			ifp = ifp->forw;
+		return (*ifp->raw)(ifp,data);
+	}
+	free_p(data);
+	return -1;
+}
 
 int
 valid_remote_call(call)
 const char *call;
 {
-  char (*mpp)[AXALEN];
+	char (*mpp)[AXALEN];
 
-  if (!*call || ismyax25addr(call)) return 0;
-  for (mpp = Ax25multi; (*mpp)[0]; mpp++)
-    if (addreq(*mpp, call)) return 0;
-  return 1;
+	if (!*call || ismyax25addr(call))
+		return 0;
+	for (mpp = Ax25multi; (*mpp)[0]; mpp++)
+		if (addreq(*mpp, call))
+			return 0;
+	return 1;
 }
 
 static int
 axroute_hash(call)
 const char *call;
 {
-  int hashval;
+	int hashval;
 
-  hashval  = ((*call++ << 23) & 0x0f000000);
-  hashval |= ((*call++ << 19) & 0x00f00000);
-  hashval |= ((*call++ << 15) & 0x000f0000);
-  hashval |= ((*call++ << 11) & 0x0000f000);
-  hashval |= ((*call++ <<  7) & 0x00000f00);
-  hashval |= ((*call++ <<  3) & 0x000000f0);
-  hashval |= ((*call   >>  1) & 0x0000000f);
-  return hashval;
-}
-
-int
-is_flexnet(call, store)
-const char *call;
-int store;
-{
-
-#define FTABLESIZE 23
-
-  struct ftable_t {
-    struct ftable_t *next;
-    char call[AXALEN];
-  };
-
-  static struct ftable_t *ftable[FTABLESIZE];
-  struct ftable_t **tp;
-  struct ftable_t *p;
-
-  tp = ftable + (axroute_hash(call) % FTABLESIZE);
-  for (p = *tp; p && !addreq(p->call, call); p = p->next) ;
-  if (!p && store) {
-    p = malloc(sizeof(*p));
-    addrcp(p->call, call);
-    p->next = *tp;
-    *tp = p;
-  }
-  return (int) (p != 0);
+	hashval  = ((*call++ << 23) & 0x0f000000);
+	hashval |= ((*call++ << 19) & 0x00f00000);
+	hashval |= ((*call++ << 15) & 0x000f0000);
+	hashval |= ((*call++ << 11) & 0x0000f000);
+	hashval |= ((*call++ <<  7) & 0x00000f00);
+	hashval |= ((*call++ <<  3) & 0x000000f0);
+	hashval |= ((*call   >>  1) & 0x0000000f);
+	return hashval;
 }
 
 struct ax_route *
@@ -466,7 +508,6 @@ struct iface **ifpp;
   if (ifp)
     addrcp(hdr->nextdigi ? hdr->digis[0] : hdr->source, ifp->hwaddr);
 }
-
 /* Handle ordinary incoming data (no network protocol) */
 void
 axnl3(iface,axp,src,dest,bp,mcast)
@@ -477,5 +518,11 @@ char *dest;
 struct mbuf *bp;
 int mcast;
 {
-	free_p(bp);
+	if(axp == NULLAX25){
+		free_p(bp);
+	} else {
+		append(&axp->rxq,bp);
+		if(axp->r_upcall != NULLVFP)
+			(*axp->r_upcall)(axp,len_p(axp->rxq));
+	}
 }

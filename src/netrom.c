@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.33 1993/01/29 06:48:32 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.34 1993/02/23 21:34:13 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -19,26 +19,27 @@
 #include "cmdparse.h"
 #include "trace.h"
 
-static int  nr_maxdest     =   400;     /* not used */
-static int  nr_minqual     =     0;     /* not used */
-static int  nr_hfqual      =   192;
-static int  nr_rsqual      =   255;     /* not used */
-static int  nr_obsinit     =     3;
-static int  nr_minobs      =     0;     /* not used */
-static int  nr_bdcstint    =  1800;
-static int  nr_ttlinit     =    16;
-static int  nr_ttimeout    =    60;
-static int  nr_tretry      =     5;
-static int  nr_tackdelay   =     1;
-static int  nr_tbsydelay   =   180;
-static int  nr_twindow     =     8;
-static int  nr_tnoackbuf   =     8;
-static int  nr_timeout     =  1800;
-static int  nr_persistance =    64;     /* not used */
-static int  nr_slottime    =    10;     /* not used */
-static int  nr_callcheck   =     0;     /* not used */
-static int  nr_beacon      =     0;     /* not used */
-static int  nr_cq          =     0;     /* not used */
+static int nr_maxdest     =   400;      /* not used */
+static int nr_minqual     =     0;      /* not used */
+static int nr_hfqual      =   192;
+static int nr_rsqual      =   255;      /* not used */
+static int nr_obsinit     =     3;
+static int nr_minobs      =     0;      /* not used */
+static int nr_bdcstint    =  1800;
+static int nr_ttlinit     =    16;
+static int nr_ttimeout    =    60;
+static int nr_tretry      =     5;
+static int nr_tackdelay   =     1;
+static int nr_tbsydelay   =   180;
+static int nr_twindow     =     8;
+static int nr_tnoackbuf   =     8;
+static int nr_timeout     =  1800;
+static int nr_persistance =    64;      /* not used */
+static int nr_slottime    =    10;      /* not used */
+static int nr_t2init      =     1;      /* not used */
+static int nr_callcheck   =     0;      /* not used */
+static int nr_beacon      =     0;      /* not used */
+static int nr_cq          =     0;      /* not used */
 
 static struct parms {
   char *text;
@@ -67,7 +68,7 @@ static struct parms {
   "18 Link T1 timeout 'FRACK' (ms)               ", &T1init,         1, 0x7fffffff,
   "19 Link TX window size 'MAXFRAME' (frames)    ", &Maxframe,       1,          7,
   "20 Link maximum tries (0=forever)             ", &N2,             0,        127,
-  "21 Link T2 timeout (ms)                       ", &T2init,         1, 0x7fffffff,
+  "21 Link T2 timeout (ms)                       ", &nr_t2init,      1, 0x7fffffff,
   "22 Link T3 timeout (ms)                       ", &T3init,         0, 0x7fffffff,
   "23 AX.25 digipeating  (0=off 1=dumb 2=s&f)    ", &Digipeat,       0,          2,
   "24 Validate callsigns (0=off 1=on)            ", &nr_callcheck,   0,          1,
@@ -79,9 +80,7 @@ static struct parms {
 
 struct link;
 
-static struct node *nodeptr __ARGS((char *call, int create));
-static void ax25_state_upcall __ARGS((struct ax25_cb *cp, int oldstate, int newstate));
-static void ax25_recv_upcall __ARGS((struct ax25_cb *cp, int cnt));
+static struct node *nodeptr __ARGS((const char *call, int create));
 static void send_packet_to_neighbor __ARGS((struct mbuf *data, struct node *pn));
 static void send_broadcast_packet __ARGS((struct mbuf *data));
 static void link_manager_initialize __ARGS((void));
@@ -146,11 +145,8 @@ struct node {
   struct node *neighbor, *old_neighbor;
   double quality, old_quality, tmp_quality;
   int force_broadcast;
-  struct ax25_cb *crosslink;
   struct node *prev, *next;
 };
-
-struct ax25_cb *Netrom_server_axcb;
 
 static struct broadcast *broadcasts;
 static struct node *nodes, *mynode;
@@ -158,7 +154,7 @@ static struct node *nodes, *mynode;
 /*---------------------------------------------------------------------------*/
 
 static struct node *nodeptr(call, create)
-char *call;
+const char *call;
 int create;
 {
   struct node *pn;
@@ -181,83 +177,31 @@ int create;
 
 /*---------------------------------------------------------------------------*/
 
-static void ax25_state_upcall(cp, oldstate, newstate)
-struct ax25_cb *cp;
-int oldstate, newstate;
-{
-  struct node *pn;
-
-  if (cp->user)
-    pn = (struct node *) cp->user;
-  else
-    cp->user = (char *) (pn = nodeptr(cp->hdr.dest, 1));
-  switch (newstate) {
-  case LAPB_SETUP:
-    break;
-  case LAPB_CONNECTED:
-    pn->crosslink = cp;
-    if (update_link(mynode, pn, 1, nr_hfqual)) calculate_all();
-    break;
-  case LAPB_DISCPENDING:
-    if (cp->reason != LB_NORMAL)
-      if (update_link(mynode, pn, 1, 0)) calculate_all();
-    break;
-  case LAPB_DISCONNECTED:
-    pn->crosslink = NULLAX25;
-    if (cp->reason != LB_NORMAL)
-      if (update_link(mynode, pn, 1, 0)) calculate_all();
-    del_ax25(cp);
-    break;
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void ax25_recv_upcall(cp, cnt)
-struct ax25_cb *cp;
-int cnt;
-{
-
-  int pid;
-  struct mbuf *bp;
-
-  while (cp->rxq) {
-    bp = recv_ax25(cp, 0);
-    if ((pid = PULLCHAR(&bp)) == -1) continue;
-    if (pid == PID_NETROM)
-      nr3_input(bp, cp->hdr.dest);
-    else
-      free_p(bp);
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-
 static void send_packet_to_neighbor(data, pn)
 struct mbuf *data;
 struct node *pn;
 {
 
   struct ax25 hdr;
+  struct ax25_cb *axp;
   struct mbuf *bp;
 
-  if (!pn->crosslink) {
+  if (!(axp = find_ax25(pn->call))) {
     hdr.ndigis = hdr.nextdigi = 0;
     addrcp(hdr.dest, pn->call);
-    pn->crosslink = open_ax25(&hdr, AX_ACTIVE, ax25_recv_upcall, NULLVFP, ax25_state_upcall, (char *) pn);
-    if (!pn->crosslink) {
+    axp = open_ax25(&hdr, AX_ACTIVE, NULLVFP, NULLVFP, NULLVFP, (char *) 0);
+    if (!axp) {
       if (update_link(mynode, pn, 1, 0)) calculate_all();
       free_p(data);
       return;
     }
-    pn->crosslink->mode = DGRAM;
   }
   if (!(bp = pushdown(data, 1))) {
     free_p(data);
     return;
   }
   bp->data[0] = PID_NETROM;
-  send_ax25(pn->crosslink, bp);
+  send_ax25(axp, bp, -1);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -291,10 +235,6 @@ static void link_manager_initialize()
   free(mynode->call);
   mynode->call = Mycall;
   calculate_all();
-
-  Netrom_server_axcb = open_ax25(0, AX_SERVER, ax25_recv_upcall, NULLVFP, ax25_state_upcall, NULLCHAR);
-  Ax25_cb = Netrom_server_axcb->next;
-  Netrom_server_axcb->mode = DGRAM;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -325,14 +265,6 @@ struct routes_stat {
 static struct iface *Nr_iface;
 static struct routes_stat routes_stat;
 static struct timer broadcast_timer;
-
-/*---------------------------------------------------------------------------*/
-
-int isnetrom(call)
-char *call;
-{
-  return (nodeptr(call, 0) != 0);
-}
 
 /*---------------------------------------------------------------------------*/
 
@@ -534,7 +466,7 @@ static void calculate_all()
 
   for (pn = nodes; pn; pn = pnnext) {
     pnnext = pn->next;
-    if (pn != mynode && !pn->links && !pn->crosslink && !pn->force_broadcast) {
+    if (pn != mynode && !pn->links && !pn->force_broadcast) {
       if (pn->prev)
 	pn->prev->next = pn->next;
       else
@@ -544,15 +476,6 @@ static void calculate_all()
       free(pn);
     }
   }
-}
-
-/*---------------------------------------------------------------------------*/
-
-void new_neighbor(call)
-char *call;
-{
-  if (update_link(mynode, nodeptr(call, 1), 1, nr_hfqual))
-    calculate_all();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -808,14 +731,14 @@ int tos;
 
 /*---------------------------------------------------------------------------*/
 
-void nr3_input(bp, fromcall)
+void nr3_input(src, bp)
+const char *src;
 struct mbuf *bp;
-char *fromcall;
 {
   if (bp && bp->cnt && uchar(*bp->data) == 0xff)
-    broadcast_recv(bp, nodeptr(fromcall, 1));
+    broadcast_recv(bp, nodeptr(src, 1));
   else
-    route_packet(bp, nodeptr(fromcall, 1));
+    route_packet(bp, nodeptr(src, 1));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1150,8 +1073,8 @@ static struct circuit *create_circuit()
   pc->remoteid = -1;
   pc->state = NR4STDISC;
   pc->cwind = 1;
-  pc->srtt = 500L * nr_ttimeout;
-  pc->mdev = pc->srtt / 4;
+  pc->srtt = 0;
+  pc->mdev = (1000L * nr_ttimeout + 2) / 4;
   reset_t1(pc);
   pc->timer_t1.func = (void (*) __ARGS((void *))) l4_t1_timeout;
   pc->timer_t1.arg = pc;
@@ -1275,10 +1198,7 @@ struct mbuf *bp;
 	pc->srtt = ((AGAIN - 1) * pc->srtt + rtt + (AGAIN / 2)) / AGAIN;
 	pc->mdev = ((DGAIN - 1) * pc->mdev + abserr + (DGAIN / 2)) / DGAIN;
 	reset_t1(pc);
-	if (pc->cwind < pc->window && !pc->remote_busy) {
-	  pc->mdev += ((pc->srtt / pc->cwind + 2) / 4);
-	  pc->cwind++;
-	}
+	if (pc->cwind < pc->window && !pc->remote_busy) pc->cwind++;
       }
       while (uchar(pc->send_state - bp->data[3]) < pc->unack) {
 	pc->resndq = free_p(pc->resndq);
@@ -1355,7 +1275,7 @@ char *user;
 {
   struct circuit *pc;
 
-  if (!isnetrom(node)) {
+  if (!nodeptr(node, 0)) {
     Net_error = INVALID;
     return 0;
   }
@@ -1740,7 +1660,7 @@ void *p;
     printf("Invalid call \"%s\"\n", argv[1]);
     return 1;
   }
-  if (!isnetrom(node)) {
+  if (!nodeptr(node, 0)) {
     printf("Unknown node \"%s\"\n", argv[1]);
     return 1;
   }
@@ -2107,7 +2027,7 @@ void *p;
 	     Nr4states[pc->state],
 	     nr_addr2str(pc));
     if (server_enabled)
-      printf("                                Listen (S)     *\n");
+      printf("                                Listening      *\n");
   } else {
     pc = (struct circuit *) htol(argv[1]);
     if (!valid_nr(pc)) {

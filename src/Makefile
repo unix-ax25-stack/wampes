@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.31 1993/01/29 06:48:13 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.32 1993/02/23 21:34:01 deyke Exp $
 
 DEFINES       = -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024
 
@@ -373,7 +373,7 @@ axclient.o: global.h config.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h \
 	session.h hardware.h telnet.h
 axip.o: global.h mbuf.h iface.h proc.h timer.h internet.h netuser.h ax25.h \
 	socket.h trace.h pktdrvr.h cmdparse.h hpux.h crc.h
-axserver.o: global.h timer.h ax25.h mbuf.h iface.h proc.h lapb.h login.h
+axserver.o: global.h mbuf.h ax25.h iface.h proc.h timer.h lapb.h login.h
 buildsaddr.o: global.h
 cmdparse.o: global.h proc.h mbuf.h timer.h cmdparse.h
 config.o: global.h config.h mbuf.h timer.h proc.h iface.h ip.h internet.h \
@@ -432,8 +432,7 @@ kiss.o: global.h mbuf.h iface.h proc.h timer.h kiss.h devparam.h slip.h \
 kissdump.o: global.h mbuf.h kiss.h iface.h proc.h timer.h devparam.h ax25.h \
 	trace.h crc.h
 ksubr.o: global.h proc.h mbuf.h timer.h commands.h
-lapb.o: global.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h ip.h internet.h \
-	netrom.h session.h hardware.h telnet.h
+lapb.o: global.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h ip.h internet.h
 lapbtime.o: global.h mbuf.h ax25.h iface.h proc.h timer.h lapb.h
 lcsum.o: global.h ip.h mbuf.h iface.h proc.h timer.h internet.h
 login.o: global.h mbuf.h timer.h hpux.h telnet.h session.h proc.h hardware.h \

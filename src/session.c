@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.13 1993/01/29 06:48:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.14 1993/02/23 21:34:16 deyke Exp $ */
 
 /* NOS User Session control
  * Copyright 1991 Phil Karn, KA9Q
@@ -102,7 +102,7 @@ void *p;
 			 (Current == sp) ? '*' : ' ',
 			 (int) (sp - Sessions),
 			 (long) sp->cb.ax25,
-			 sp->cb.ax25->rcvcnt,
+			 len_p(sp->cb.ax25->rxq),
 			 Ax25states[sp->cb.ax25->state],
 			 ax25hdr_to_string(&sp->cb.ax25->hdr));
 			break;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.1 1993/01/29 06:51:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.2 1993/02/23 21:34:03 deyke Exp $ */
 
 /* AX25 control commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -25,6 +25,7 @@ static int doaxreset __ARGS((int argc,char *argv[],void *p));
 static int doaxroute __ARGS((int argc,char *argv[],void *p));
 static int doaxstat __ARGS((int argc,char *argv[],void *p));
 static int doaxwindow __ARGS((int argc,char *argv[],void *p));
+static int doblimit __ARGS((int argc,char *argv[],void *p));
 static int dodigipeat __ARGS((int argc,char *argv[],void *p));
 static int domaxframe __ARGS((int argc,char *argv[],void *p));
 static int domycall __ARGS((int argc,char *argv[],void *p));
@@ -32,14 +33,14 @@ static int don2 __ARGS((int argc,char *argv[],void *p));
 static int dopaclen __ARGS((int argc,char *argv[],void *p));
 static int dopthresh __ARGS((int argc,char *argv[],void *p));
 static int dot1 __ARGS((int argc,char *argv[],void *p));
-static int dot2 __ARGS((int argc,char *argv[],void *p));
 static int dot3 __ARGS((int argc,char *argv[],void *p));
 static int dot4 __ARGS((int argc,char *argv[],void *p));
-static int dot5 __ARGS((int argc,char *argv[],void *p));
+static int doversion __ARGS((int argc,char *argv[],void *p));
 static int dorouteadd __ARGS((int argc,char *argv[],void *p));
 static void doroutelistentry __ARGS((struct ax_route *rp));
 static int doroutelist __ARGS((int argc,char *argv[],void *p));
 static int doroutestat __ARGS((int argc,char *argv[],void *p));
+static int dojumpstart __ARGS((int argc,char *argv[],void *p));
 
 char *Ax25states[] = {
 	"",
@@ -61,7 +62,9 @@ char *Axreasons[] = {
 };
 
 static struct cmds Axcmds[] = {
+	"blimit",       doblimit,       0, 0, NULLCHAR,
 	"digipeat",     dodigipeat,     0, 0, NULLCHAR,
+	"jumpstart",    dojumpstart,    0, 2, "ax25 jumpstart <call> [ON|OFF]",
 	"kick",         doaxkick,       0, 2, "ax25 kick <axcb>",
 	"maxframe",     domaxframe,     0, 0, NULLCHAR,
 	"mycall",       domycall,       0, 0, NULLCHAR,
@@ -72,10 +75,9 @@ static struct cmds Axcmds[] = {
 	"route",        doaxroute,      0, 0, NULLCHAR,
 	"status",       doaxstat,       0, 0, NULLCHAR,
 	"t1",           dot1,           0, 0, NULLCHAR,
-	"t2",           dot2,           0, 0, NULLCHAR,
 	"t3",           dot3,           0, 0, NULLCHAR,
 	"t4",           dot4,           0, 0, NULLCHAR,
-	"t5",           dot5,           0, 0, NULLCHAR,
+	"version",      doversion,      0, 0, NULLCHAR,
 	"window",       doaxwindow,     0, 0, NULLCHAR,
 	NULLCHAR,
 };
@@ -120,10 +122,10 @@ void *p;
 		for(axp = Ax25_cb;axp != NULLAX25; axp = axp->next){
 			if(printf("%8lx %5u%c%3u/%u%c %2d%6lu  %-13s  %s\n",
 				ptol(axp),
-				axp->rcvcnt,
+				len_p(axp->rxq),
 				axp->flags.rnrsent ? '*' : ' ',
 				axp->unack,
-				axp->cwind,
+				axp->maxframe,
 				axp->flags.remotebusy ? '*' : ' ',
 				axp->retries,
 				axp->srt,
@@ -131,6 +133,8 @@ void *p;
 				ax25hdr_to_string(&axp->hdr)) == EOF)
 					return 0;
 		}
+		if (Axserver_enabled)
+			printf("                                Listening      *\n");
 		return 0;
 	}
 	axp = (struct ax25_cb *)ltop(htol(argv[1]));
@@ -146,81 +150,35 @@ void
 st_ax25(axp)
 register struct ax25_cb *axp;
 {
-
-	int i;
-	struct mbuf *bp;
+	char tmp[AXBUF];
 
 	if(axp == NULLAX25)
 		return;
+	printf("    &AXB Remote   RB V(S) V(R) Unack P Retry State\n");
 
-#define next_seq(n)  (((n) + 1) & 7)
+	printf("%8lx %-9s%c%c",ptol(axp),pax25(tmp,axp->hdr.dest),
+	 axp->flags.rejsent ? 'R' : ' ',
+	 axp->flags.remotebusy ? 'B' : ' ');
+	printf(" %4d %4d",axp->vs,axp->vr);
+	printf(" %02u/%02u %u",axp->unack,axp->maxframe,axp->proto);
+	printf(" %02u/%02u",axp->retries,axp->n2);
+	printf(" %s\n",Ax25states[axp->state]);
 
-	printf("Path:         %s\n", ax25hdr_to_string(&axp->hdr));
-	printf("Interface:    %s\n", axp->iface ? axp->iface->name : "---");
-	printf("State:        %s\n", Ax25states[axp->state]);
-	if(axp->reason)
-		printf("Reason:       %s\n", Axreasons[axp->reason]);
-	printf("Mode:         %s\n", (axp->mode == STREAM) ? "Stream" : "Dgram");
-	printf("Closed:       %s\n", axp->flags.closed ? "Yes" : "No");
-	printf("Polling:      %s\n", axp->flags.polling ? "Yes" : "No");
-	printf("RNRsent:      %s\n", axp->flags.rnrsent ? "Yes" : "No");
-	printf("REJsent:      %s\n", axp->flags.rejsent ? "Yes" : "No");
-	if(axp->flags.remotebusy)
-		printf("Remote_busy:  %lu ms\n", msclock() - axp->flags.remotebusy);
-	else
-		printf("Remote_busy:  No\n");
-	printf("CWind:        %d\n", axp->cwind);
-	printf("Retry:        %d\n", axp->retries);
-	printf("Srtt:         %ld ms\n", axp->srt);
-	printf("Mean dev:     %ld ms\n", axp->mdev);
-	printf("Timer T1:     ");
+	printf("srtt = %lu mdev = %lu ",axp->srt,axp->mdev);
+	printf("T1: ");
 	if(run_timer(&axp->t1))
-		printf("%lu", read_timer(&axp->t1));
+		printf("%lu",read_timer(&axp->t1));
 	else
 		printf("stop");
-	printf("/%lu ms\n", dur_timer(&axp->t1));
-	printf("Timer T2:     ");
-	if(run_timer(&axp->t2))
-		printf("%lu", read_timer(&axp->t2));
-	else
-		printf("stop");
-	printf("/%lu ms\n", dur_timer(&axp->t2));
-	printf("Timer T3:     ");
+	printf("/%lu ms; ",dur_timer(&axp->t1));
+
+	printf("T3: ");
 	if(run_timer(&axp->t3))
-		printf("%lu", read_timer(&axp->t3));
+		printf("%lu",read_timer(&axp->t3));
 	else
 		printf("stop");
-	printf("/%lu ms\n", dur_timer(&axp->t3));
-	printf("Timer T4:     ");
-	if(run_timer(&axp->t4))
-		printf("%lu", read_timer(&axp->t4));
-	else
-		printf("stop");
-	printf("/%lu ms\n", dur_timer(&axp->t4));
-	printf("Timer T5:     ");
-	if(run_timer(&axp->t5))
-		printf("%lu", read_timer(&axp->t5));
-	else
-		printf("stop");
-	printf("/%lu ms\n", dur_timer(&axp->t5));
-	printf("Rcv queue:    %d\n", axp->rcvcnt);
-	if(axp->reseq[0].bp || axp->reseq[1].bp ||
-	   axp->reseq[2].bp || axp->reseq[3].bp ||
-	   axp->reseq[4].bp || axp->reseq[5].bp ||
-	   axp->reseq[6].bp || axp->reseq[7].bp) {
-		printf("Reassembly queue:\n");
-		for (i = next_seq(axp->vr); i != axp->vr; i = next_seq(i))
-			if(axp->reseq[i].bp)
-				printf("              Seq %3d: %3d bytes\n",
-				       i, len_p(axp->reseq[i].bp));
-	}
-	printf("Snd queue:    %d\n", len_p(axp->sndq));
-	if(axp->txq) {
-		printf("Tx queue:\n");
-		for (i = 0, bp = axp->txq; bp; i++, bp = bp->anext)
-		printf("              Seq %3d: %3d bytes\n",
-		       (axp->vs - axp->unack + i) & 7, len_p(bp));
-	}
+	printf("/%lu ms\n",dur_timer(&axp->t3));
+
 }
 
 /* Display or change our AX.25 address */
@@ -250,8 +208,24 @@ void *p;
 {
 	return setintrc(&Digipeat,"Digipeat",argc,argv,0,2);
 }
+/* Set limit on retransmission backoff */
+static
+doblimit(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	return setint(&Blimit,"blimit",argc,argv);
+}
+static
+doversion(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	return setintrc(&Axversion,"AX25 version",argc,argv,1,2);
+}
 
-/* Set retransmission timer */
 static
 dot1(argc,argv,p)
 int argc;
@@ -259,16 +233,6 @@ char *argv[];
 void *p;
 {
 	return setintrc(&T1init,"T1 (ms)",argc,argv,1,0x7fffffff);
-}
-
-/* Set acknowledgement delay timer */
-static
-dot2(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
-{
-	return setintrc(&T2init,"T2 (ms)",argc,argv,1,0x7fffffff);
 }
 
 /* Set idle timer */
@@ -288,17 +252,7 @@ int argc;
 char *argv[];
 void *p;
 {
-	return setintrc(&T4init,"T4 (ms)",argc,argv,1,0x7fffffff);
-}
-
-/* Set packet assembly timer */
-static
-dot5(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
-{
-	return setintrc(&T5init,"T5 (ms)",argc,argv,1,0x7fffffff);
+	return setintrc(&T4init,"Busy timer (ms)",argc,argv,1,0x7fffffff);
 }
 
 /* Set retry limit count */
@@ -447,31 +401,37 @@ doroutelistentry(rp)
 struct ax_route *rp;
 {
 
-  char *cp, buf[1024];
-  int i, n;
-  int perm;
-  struct ax_route *rp_stack[20];
-  struct iface *ifp;
-  struct tm *tm;
+	char *cp;
+	char buf[1024];
+	int i;
+	int jumpstart;
+	int n;
+	int perm;
+	struct ax_route *rp_stack[20];
+	struct iface *ifp;
+	struct tm *tm;
 
-  tm = gmtime(&rp->time);
-  pax25(cp = buf, rp->target);
-  perm = rp->perm;
-  for (n = 0; rp; rp = rp->digi) {
-    rp_stack[++n] = rp;
-    ifp = rp->ifp;
-  }
-  for (i = n; i > 1; i--) {
-    strcat(cp, i == n ? " via " : ",");
-    while (*cp) cp++;
-    pax25(cp, rp_stack[i]->target);
-  }
-  printf("%2d-%.3s  %-9s  %c %s\n",
-	 tm->tm_mday,
-	 "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
-	 ifp ? ifp->name : "???",
-	 perm ? '*' : ' ',
-	 buf);
+	tm = gmtime(&rp->time);
+	pax25(cp = buf, rp->target);
+	perm = rp->perm;
+	jumpstart = rp->jumpstart;
+	for (n = 0; rp; rp = rp->digi) {
+		rp_stack[++n] = rp;
+		ifp = rp->ifp;
+	}
+	for (i = n; i > 1; i--) {
+		strcat(cp, i == n ? " via " : ",");
+		while (*cp)
+			cp++;
+		pax25(cp, rp_stack[i]->target);
+	}
+	printf("%2d-%.3s  %-9s  %c%c %s\n",
+	       tm->tm_mday,
+	       "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
+	       ifp ? ifp->name : "???",
+	       perm ? 'P' : ' ',
+	       jumpstart ? 'J' : ' ',
+	       buf);
 }
 
 static int
@@ -485,7 +445,7 @@ void *p;
   int i;
   struct ax_route *rp;
 
-  puts("Date    Interface  P Path");
+  puts("Date    Interface  PJ Path");
   if(argc < 2) {
     for (i = 0; i < AXROUTESIZE; i++)
       for (rp = Ax_routes[i]; rp; rp = rp->next) doroutelistentry(rp);
@@ -550,4 +510,25 @@ void *p;
   puts("---------  -----");
   printf("  total    %5d\n", total);
   return 0;
+}
+static int
+dojumpstart(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+
+	char *cp;
+	char buf[32];
+	char tmp[AXBUF];
+	struct ax_route *axr;
+
+	if(setcall(tmp,argv[1]) == -1)
+		return -1;
+	axr = ax_routeptr(tmp,1);
+	strcpy(cp = buf,"Jumpstart ");
+	while(*cp)
+		cp++;
+	pax25(cp,tmp);
+	return setbool(&axr->jumpstart,buf,argc - 1,argv + 1);
 }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.8 1993/01/29 06:48:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.9 1993/02/23 21:34:09 deyke Exp $ */
 
 /* Upper half of IP, consisting of send/receive primitives, including
  * fragment reassembly, for higher level protocols.
@@ -21,7 +21,7 @@ static void free_reasm __ARGS((struct reasm *rp));
 static void freefrag __ARGS((struct frag *fp));
 static struct reasm *lookup_reasm __ARGS((struct ip *ip));
 static struct reasm *creat_reasm __ARGS((struct ip *ip));
-static struct frag *newfrag __ARGS((int offset,int last,struct mbuf *bp));
+static struct frag *newfrag __ARGS((int   offset,int   last,struct mbuf *bp));
 void ttldec __ARGS((struct iface *ifp));
 
 struct mib_entry Ip_mib[20] = {
