@@ -1,0 +1,117 @@
+980206 - this files describes the installation of wampes
+on NeXT Mach / NeXTstep 3.3 systems.
+
+please read this carefully.
+
+i had 'only' the black hardware, that is with the motorola mk68040 chip,
+but i'm shure wampes would compile on i386 plattforms, too.
+
+
+if
+  you know what you are doing, just type /tcp/NeXT/make-NeXT-install.sh
+else
+  read on.
+
+cheers,
+	- thomas  <thomas@x-berg.in-berlin.de> <dl9sau@db0tud.ampr.org>
+
+---------
+
+
+wampes compiles with either NeXT Developer cc or gcc 2.7.2.2.f.2 for NeXT.
+
+you should have installed at gcc this point to get output from setsp.c,
+because cc does not understand option -E:
+> src/Makefile:
+>         NeXT*) \
+>                 gcc -E $< |grep -v ^# > setsp.s; as setsp.s -o $@;; \
+		  -> explicit gcc instead of $(CC) 
+anyway, you may extract it by hand :)
+
+
+important notes:
+----------------
+
+default creation of new accounts is set to off because NeXTstep uses
+netinfo service instead of a local passwd file.
+
+wampes has serious problems to free the pty when a user logs off.
+the system does recognice the pty as free, but wampes does not.
+
+the memory allocation routines in wampes should redefine the standard.
+but this redefinition does not work: the linker complains that those
+functions already exist.. that's why i compile with -DPURIFY.
+
+convers/conversd seem to be clear.
+
+not yet testet:
+--------------
+bbs und netupds, bridge as well as pop2d, pop3d
+but i expect no problems.
+
+if pop2d/pop3d can't get access to passwords, i suggest
+nidump passwd . > /etc/passwd
+for updating passwd from the netinfo database.
+
+udbm may not work properly (missing putpwent()), but makes no sense as long as
+netinfo service is not supported.
+
+
+compilation notes / missing system calls:
+-----------------------------------------
+
+libutil.a:
+strerror.c and strtoul.c must have a function to get libutil.a
+the placeholder
+  struct prevent_empty_file_message;
+was not sufficient.
+
+NeXT/next.c contains function that are not available opn NeXTstep 3.3:
+int setenv(char * arg1, int i, int j)
+int putpwent(const struct passwd *p, FILE *f)
+
+while the missing putpwent only affects udbm,
+the missing putenv/setenv is a real problem.
+
+
+you need bash to be able to run mkhostdb for the domain database.
+
+on my system i have the gnu utilities installed, what is recommended.
+wampes compilation has not been tested on vanilla systems.
+
+i also suggest to get a new libposix.a library from your favourite ftp
+site.
+
+posix hints:
+you know helo world [ main() { printf("helo world"); } ]
+when you compile as posix,
+  cc -lposix -o helo helo.c
+is the most wrong way: helo will crash with a floating point exception or
+segmentation fault!
+you should either compile with
+  cc -posix -o helo helo.c
+or
+  cc -posix -lposix -o helo helo.c
+
+btw: code from the three possibilities is each time different.
+
+i have deceided to compile just with cc -posix.
+
+
+new files:
+----------
+/tcp/NeXT/*
+
+changed files:
+--------------
+/tcp/README
+/tcp/Makefile, /tcp/*/Makefile
+/tcp/lib/configure
+/tcp/lib/strerror.c
+/tcp/lib/strtoul.c
+/tcp/src/global.h
+/tcp/src/ksubr.c
+/tcp/src/login.c
+/tcp/src/setsp.c
+/tcp/util/netupds.c
+
