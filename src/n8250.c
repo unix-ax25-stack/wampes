@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.25 1992/09/05 08:16:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.26 1992/09/07 19:20:41 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -7,30 +7,6 @@
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
-
-#if defined(ISC) || defined(SCO)
-#include <sys/tty.h>
-#include <sys/stream.h>
-#include <sys/ptem.h>
-#ifdef ISC
-#include <sys/pty.h>
-#endif
-#ifdef SCO
-#include <sys/vty.h>
-#endif
-#endif
-
-#ifdef sun
-#include <sys/filio.h>
-#endif
-
-#ifdef LINUX
-#define FIOSNBIO        O_NONBLOCK
-#endif
-
-#ifndef FIOSNBIO
-#define FIOSNBIO        FIONBIO
-#endif
 
 #include "global.h"
 #include "mbuf.h"
@@ -154,13 +130,13 @@ int rlsd;               /* Use Received Line Signal Detect (aka CD) */
 	register struct asy *ap;
 	char filename[80];
 	int sp;
-	long arg;
 	struct termios termios;
 
 	ap = &Asy[dev];
 	strcpy(filename, "/dev/");
 	strcat(filename, ifp->name);
-	if ((ap->fd = open(filename, O_RDWR | O_NOCTTY, 0666)) < 0) goto Fail;
+	if ((ap->fd = open(filename, O_RDWR|O_NONBLOCK|O_NOCTTY, 0644)) < 0)
+	  goto Fail;
 	ap->iface = ifp;
 	sp = find_speed(speed);
 	ap->speed = speed_table[sp].speed;
@@ -170,8 +146,6 @@ int rlsd;               /* Use Received Line Signal Detect (aka CD) */
 	if (cfsetispeed(&termios, speed_table[sp].flags)) goto Fail;
 	if (cfsetospeed(&termios, speed_table[sp].flags)) goto Fail;
 	if (tcsetattr(ap->fd, TCSANOW, &termios)) goto Fail;
-	arg = 1;
-	ioctl(ap->fd, FIOSNBIO, &arg);
 	on_read(ap->fd, (void (*)()) ifp->rxproc, ifp);
 	return 0;
 

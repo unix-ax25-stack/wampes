@@ -1,13 +1,17 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.15 1992/09/01 20:09:20 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.16 1992/09/07 19:21:13 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
 
+#define FD_SETSIZE 32
+
 #include <sys/types.h>
 
 #include <curses.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,25 +19,6 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
-
-#ifdef ISC
-#include <sys/tty.h>
-#include <sys/stream.h>
-#include <sys/ptem.h>
-#include <sys/pty.h>
-#endif
-
-#ifdef sun
-#include <sys/filio.h>
-#endif
-
-#ifdef LINUX
-#define FIOSNBIO        O_NONBLOCK
-#endif
-
-#ifndef FIOSNBIO
-#define FIOSNBIO        FIONBIO
-#endif
 
 #if defined(__TURBOC__) || defined(__STDC__)
 #define __ARGS(x)       x
@@ -44,16 +29,6 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 
 #include "buildsaddr.h"
 
-#define TERM_INP_FDES   0
-#define TERM_INP_MASK   1
-#define TERM_OUT_FDES   1
-#define TERM_OUT_MASK   2
-
-#define SOCK_INP_FDES   3
-#define SOCK_INP_MASK   8
-#define SOCK_OUT_FDES   3
-#define SOCK_OUT_MASK   8
-
 struct mbuf {
   struct mbuf *next;
   unsigned int cnt;
@@ -61,6 +36,9 @@ struct mbuf {
 };
 
 static int Ansiterminal = 1;
+static int fdin = 0;
+static int fdout = 1;
+static int fdsock = -1;
 static struct mbuf *sock_queue;
 static struct mbuf *term_queue;
 static struct termios prev_termios;
@@ -109,15 +87,12 @@ static void close_terminal()
 
 static void terminate()
 {
-  long arg;
-
-  close(SOCK_OUT_FDES);
-  arg = 0;
-  ioctl(TERM_OUT_FDES, FIOSNBIO, &arg);
+  close(fdsock);
+  fcntl(fdout, F_SETFL, fcntl(fdout, F_GETFL, 0) & ~O_NONBLOCK);
   for (; term_queue; term_queue = term_queue->next)
-    write(TERM_OUT_FDES, term_queue->data, term_queue->cnt);
+    write(fdout, term_queue->data, term_queue->cnt);
   close_terminal();
-  tcsetattr(TERM_INP_FDES, TCSANOW, &prev_termios);
+  tcsetattr(fdin, TCSANOW, &prev_termios);
   exit(0);
 }
 
@@ -133,7 +108,11 @@ struct mbuf **qp;
   struct mbuf *bp, *tp;
 
   n = read(fd, buf, sizeof(buf));
-  if (n <= 0) terminate();
+  if (!n) terminate();
+  if (n < 0) {
+    if (errno != EAGAIN) terminate();
+    return;
+  }
   bp = (struct mbuf *) malloc(sizeof(*bp) + n);
   if (!bp) terminate();
   bp->next = 0;
@@ -159,7 +138,11 @@ struct mbuf **qp;
 
   bp = *qp;
   n = write(fd, bp->data, bp->cnt);
-  if (n <= 0) terminate();
+  if (!n) terminate();
+  if (n < 0) {
+    if (errno != EAGAIN) terminate();
+    n = 0;
+  }
   bp->data += n;
   bp->cnt -= n;
   if (!bp->cnt) {
@@ -181,11 +164,17 @@ char **argv;
   char bp[1024];
   int addrlen;
   int flags;
-  int rmask;
-  int wmask;
-  long arg;
+  struct fd_set rmask;
+  struct fd_set wmask;
   struct sockaddr *addr;
   struct termios curr_termios;
+
+  signal(SIGPIPE, SIG_IGN);
+
+  tcgetattr(fdin, &prev_termios);
+  ap = area;
+  if (tgetent(bp, getenv("TERM")) == 1 && strcmp(tgetstr("up", &ap), "\033[A"))
+    Ansiterminal = 0;
 
 #ifdef ISC
   server = (argc < 2) ? "*:4720" : argv[1];
@@ -194,54 +183,51 @@ char **argv;
 #endif
   if (!(addr = build_sockaddr(server, &addrlen))) {
     fprintf(stderr, "%s: Cannot build address from \"%s\"\n", *argv, server);
-    exit(1);
+    terminate();
   }
-  close(SOCK_OUT_FDES);
-  if (socket(addr->sa_family, SOCK_STREAM, 0) != SOCK_OUT_FDES) {
-    perror(*argv);
-    exit(1);
+  if ((fdsock = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) {
+    perror("socket");
+    terminate();
   }
-  if (connect(SOCK_OUT_FDES, addr, addrlen)) {
-    perror(*argv);
-    exit(1);
+  if (connect(fdsock, addr, addrlen)) {
+    perror("connect");
+    terminate();
   }
-  if ((flags = fcntl(SOCK_OUT_FDES, F_GETFL, 0)) == -1 ||
-      fcntl(SOCK_OUT_FDES, F_SETFL, flags | O_NDELAY) == -1) {
-    perror(*argv);
-    exit(1);
+  if (Ansiterminal)
+    write(fdsock, "\033[D", 3);
+  else
+    write(fdsock, "\033D", 2);
+  if ((flags = fcntl(fdsock, F_GETFL, 0)) == -1 ||
+      fcntl(fdsock, F_SETFL, flags | O_NONBLOCK) == -1) {
+    perror("fcntl");
+    terminate();
   }
-
-  ap = area;
-  if (tgetent(bp, getenv("TERM")) == 1 && strcmp(tgetstr("up", &ap), "\033[A"))
-    Ansiterminal = 0;
 
   open_terminal();
-  arg = 1;
-  ioctl(TERM_OUT_FDES, FIOSNBIO, &arg);
-  tcgetattr(TERM_INP_FDES, &prev_termios);
   curr_termios = prev_termios;
   curr_termios.c_lflag = 0;
-  curr_termios.c_cc[VMIN] = 1;
+  curr_termios.c_cc[VMIN] = 0;
   curr_termios.c_cc[VTIME] = 0;
-  tcsetattr(TERM_INP_FDES, TCSANOW, &curr_termios);
-
-  if (Ansiterminal) {
-    if (write(SOCK_OUT_FDES, "\033[D", 3) != 3) terminate();
-  } else {
-    if (write(SOCK_OUT_FDES, "\033D", 2) != 2) terminate();
+  tcsetattr(fdin, TCSANOW, &curr_termios);
+  if ((flags = fcntl(fdout, F_GETFL, 0)) == -1 ||
+      fcntl(fdout, F_SETFL, flags | O_NONBLOCK) == -1) {
+    perror("fcntl");
+    terminate();
   }
 
   for (; ; ) {
-    rmask = SOCK_INP_MASK | TERM_INP_MASK;
-    wmask = 0;
-    if (sock_queue) wmask |= SOCK_OUT_MASK;
-    if (term_queue) wmask |= TERM_OUT_MASK;
-    if (select(4, &rmask, &wmask, (int *) 0, (struct timeval *) 0) < 1)
-      continue;
-    if (rmask & SOCK_INP_MASK) recvq(SOCK_INP_FDES, &term_queue);
-    if (rmask & TERM_INP_MASK) recvq(TERM_INP_FDES, &sock_queue);
-    if (wmask & SOCK_OUT_MASK) sendq(SOCK_OUT_FDES, &sock_queue);
-    if (wmask & TERM_OUT_MASK) sendq(TERM_OUT_FDES, &term_queue);
+    FD_ZERO(&rmask);
+    FD_SET(fdin, &rmask);
+    FD_SET(fdsock, &rmask);
+    FD_ZERO(&wmask);
+    if (sock_queue) FD_SET(fdsock, &wmask);
+    if (term_queue) FD_SET(fdout,  &wmask);
+    if (select(fdsock + 1, (int *) &rmask, (int *) &wmask, (int *) 0, (struct timeval *) 0) > 0) {
+      if (FD_ISSET(fdsock, &rmask)) recvq(fdsock, &term_queue);
+      if (FD_ISSET(fdin,   &rmask)) recvq(fdin,   &sock_queue);
+      if (FD_ISSET(fdsock, &wmask)) sendq(fdsock, &sock_queue);
+      if (FD_ISSET(fdout,  &wmask)) sendq(fdout,  &term_queue);
+    }
   }
 }
 

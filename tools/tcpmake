@@ -1,10 +1,20 @@
 #! /bin/csh -f
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.1 1992/09/05 08:14:59 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.2 1992/09/07 19:20:02 deyke Exp $
 
+foreach dir (           \
+	~/tcp           \
+	~/tcp/bbs       \
+	~/tcp/convers   \
+	~/tcp/src       \
+	~/tcp/src/tools \
+	~/tcp/util      )
+  cd $dir
+  trimfiles
+end
 tcpremove
 cd ~/tcp/src
 makeall |& tee xxx
-cd ..
+cd ~/tcp
 make
 mk make

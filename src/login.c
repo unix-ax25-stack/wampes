@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.22 1992/09/05 08:16:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.23 1992/09/07 19:20:39 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -88,7 +88,6 @@ char *slave;
 {
 
   char master[80];
-  int arg;
   int fd;
   int num;
 
@@ -98,7 +97,7 @@ char *slave;
       pty_name(master, MASTERPREFIX, num);
       if ((fd = open(master, O_RDWR | O_NONBLOCK, 0600)) >= 0) {
 #ifdef sun
-	arg = 1;
+	int arg = 1;
 	ioctl(fd, FIONBIO, &arg);
 #endif
 	*numptr = num;
@@ -383,7 +382,7 @@ void *upcall_arg;
   struct login_cb *tp;
   struct passwd *pw;
   struct termios termios;
-  struct utmp utmp;
+  struct utmp utmpbuf;
 
   tp = (struct login_cb *) calloc(1, sizeof(struct login_cb ));
   if (!tp) return 0;
@@ -422,15 +421,15 @@ void *upcall_arg;
     tcsetattr(0, TCSANOW, &termios);
     if (!pw || pw->pw_passwd[0]) exit(1);
 #ifdef LOGIN_PROCESS
-    memset(&utmp, 0, sizeof(utmp));
-    strcpy(utmp.ut_user, "LOGIN");
-    strcpy(utmp.ut_id, tp->id);
-    strcpy(utmp.ut_line, slave + 5);
-    utmp.ut_pid = getpid();
-    utmp.ut_type = LOGIN_PROCESS;
-    utmp.ut_time = secclock();
-    strncpy(utmp.ut_host, protocol, sizeof(utmp.ut_host));
-    pututline(&utmp);
+    memset(&utmpbuf, 0, sizeof(utmpbuf));
+    strcpy(utmpbuf.ut_user, "LOGIN");
+    strcpy(utmpbuf.ut_id, tp->id);
+    strcpy(utmpbuf.ut_line, slave + 5);
+    utmpbuf.ut_pid = getpid();
+    utmpbuf.ut_type = LOGIN_PROCESS;
+    utmpbuf.ut_time = secclock();
+    strncpy(utmpbuf.ut_host, protocol, sizeof(utmpbuf.ut_host));
+    pututline(&utmpbuf);
     endutent();
 #endif
 #ifdef sun
@@ -450,15 +449,20 @@ void login_close(tp)
 struct login_cb *tp;
 {
 
-  int fwtmp;
-  struct utmp utmp, *up;
+#ifdef sun
+#define UTMP_FILE       "/etc/utmp"
+#define WTMP_FILE       "/var/adm/wtmp"
+#endif
+
+  char slave[80];
+  int fdut = -1;
+  struct utmp utmpbuf;
 
   if (!tp) return;
   if (tp->pty > 0) {
     off_read(tp->pty);
     off_write(tp->pty);
     off_death(tp->pid);
-    tcflush(tp->pty, TCIOFLUSH);
     close(tp->pty);
     restore_pty(tp->id);
     pty_locktime[tp->num] = secclock() + 20;
@@ -466,25 +470,28 @@ struct login_cb *tp;
   }
   if (tp->pid > 0) {
     kill(-tp->pid, SIGHUP);
+    pty_name(slave, SLAVEPREFIX, tp->num);
+    if ((fdut = open(UTMP_FILE, O_RDWR, 0644)) >= 0) {
+      while (read(fdut, &utmpbuf, sizeof(utmpbuf)) == sizeof(utmpbuf))
+	if (!strncmp(utmpbuf.ut_line, slave + 5, sizeof(utmpbuf.ut_line))) {
+	  utmpbuf.ut_name[0] = 0;
+	  utmpbuf.ut_host[0] = 0;
+	  utmpbuf.ut_time = secclock();
 #ifdef DEAD_PROCESS
-    memset(&utmp, 0, sizeof(utmp));
-    strcpy(utmp.ut_id, tp->id);
-    utmp.ut_type = DEAD_PROCESS;
-    if (up = getutid(&utmp)) {
-      up->ut_user[0] = '\0';
-      up->ut_type = DEAD_PROCESS;
-      up->ut_exit.e_termination = 0;
-      up->ut_exit.e_exit = 0;
-      up->ut_time = secclock();
-      memcpy(&utmp, up, sizeof(utmp));
-      pututline(up);
-      fwtmp = open("/etc/wtmp", O_WRONLY | O_CREAT | O_APPEND, 0644);
-      write(fwtmp, (char *) &utmp, sizeof(utmp));
-      close(fwtmp);
-    }
-    endutent();
+	  utmpbuf.ut_type = DEAD_PROCESS;
+	  utmpbuf.ut_exit.e_termination = 0;
+	  utmpbuf.ut_exit.e_exit = 0;
 #endif
+	  lseek(fdut, -sizeof(utmpbuf), SEEK_CUR);
+	  write(fdut, &utmpbuf, sizeof(utmpbuf));
+	  close(fdut);
+	  if ((fdut = open(WTMP_FILE, O_WRONLY | O_CREAT | O_APPEND, 0644)) >= 0)
+	    write(fdut, &utmpbuf, sizeof(utmpbuf));
+	  break;
+	}
+    }
   }
+  if (fdut >= 0) close(fdut);
   free_q(&tp->sndq);
   free(tp);
 }

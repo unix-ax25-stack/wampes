@@ -1,10 +1,17 @@
-#ifndef __LINT__
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.2 1992/09/05 08:15:18 deyke Exp $";
+#ifndef __lint
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.3 1992/09/07 19:20:00 deyke Exp $";
 #endif
+
+#define _HPUX_SOURCE
+
+#define FD_SETSIZE      32
+
+#include <sys/types.h>
 
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -20,14 +27,12 @@ extern int optind;
 
 #define uchar(c)        ((c) & 0xff)
 
-int main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
 
   static struct tab {
     char buf[4096];
-    unsigned int cnt;
+    int cnt;
   } tab[MAXCHANNELS];
 
   static struct timeval timeout = {
@@ -39,9 +44,9 @@ char **argv;
   int channels = 2;
   int errflag = 0;
   int fail = 0;
-  int fmask = 0;
   int i;
   int self = 0;
+  struct fd_set fmask;
   struct tab *tp;
 
   while ((ch = getopt(argc, argv, "c:f:s")) != EOF)
@@ -62,7 +67,7 @@ char **argv;
       break;
     }
   if (errflag || optind < argc) {
-    puts("usage: connect [-c channels] [-f failures] [-s]");
+    fprintf(stderr, "usage: %s [-c channels] [-f failures] [-s]", *argv);
     exit(1);
   }
 
@@ -71,21 +76,23 @@ char **argv;
   chdir("/");
   setsid();
 
+  FD_ZERO(&fmask);
   for (i = 0; i < channels; i++) {
     sprintf(tmp, "/dev/ptyr%d", i + 1);
     if (open(tmp, O_RDWR, 0666) != i) exit(1);
-    fmask |= (1 << i);
+    FD_SET(i, &fmask);
   }
 
   for (; ; ) {
 
     char c;
     int j;
-    int readmask = fmask;
+    struct fd_set readmask = fmask;
 
-    if (!select(channels, &readmask, (int *) 0, (int *) 0, &timeout)) exit(0);
+    if (!select(channels, (int *) &readmask, (int *) 0, (int *) 0, &timeout))
+      exit(0);
     for (i = 0; i < channels; i++)
-      if (readmask & (1 << i)) {
+      if (FD_ISSET(i, &readmask)) {
 	tp = tab + i;
 	read(i, &c, 1);
 	tp->buf[tp->cnt++] = c;

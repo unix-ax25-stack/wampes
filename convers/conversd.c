@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.22 1992/09/05 08:13:25 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.23 1992/09/07 19:19:34 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -7,6 +7,7 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <sys/types.h>
 
 #include <ctype.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
@@ -15,6 +16,7 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <utmp.h>
 
@@ -31,7 +33,9 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 
 #include "buildsaddr.h"
 
-#define MAXCHANNEL 32767
+#define PROGFILE        "/tcp/conversd"
+#define CONFFILE        "/tcp/convers.conf"
+#define MAXCHANNEL      32767
 
 struct mbuf {
   struct mbuf *next;
@@ -306,7 +310,7 @@ int fd;
     close(fd);
     return 0;
   }
-  if (fcntl(fd, F_SETFL, flags | O_NDELAY) == -1) {
+  if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
     close(fd);
     return 0;
   }
@@ -480,7 +484,7 @@ int channel;
 #ifdef USER_PROCESS
 	    utmpbuf.ut_type == USER_PROCESS &&
 #endif
-	    !strncmp(utmpbuf.ut_user, toname, sizeof(utmpbuf.ut_name))
+	    !strncmp(utmpbuf.ut_name, toname, sizeof(utmpbuf.ut_name))
 	   ) {
 	  strcpy(buffer, "/dev/");
 	  strncat(buffer, utmpbuf.ut_line, sizeof(utmpbuf.ut_line));
@@ -488,7 +492,10 @@ int channel;
 	  if (!(stbuf.st_mode & 2)) continue;
 	  if ((fdtty = open(buffer, O_WRONLY | O_NOCTTY, 0644)) < 0) continue;
 	  sprintf(buffer, invitetext, fromname, timestring(currtime), channel);
-	  write(fdtty, buffer, strlen(buffer));
+	  if (!fork()) {
+	    write(fdtty, buffer, strlen(buffer));
+	    exit(0);
+	  }
 	  close(fdtty);
 	  close(fdut);
 	  clear_locks();
@@ -738,7 +745,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.22 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.23 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
@@ -997,12 +1004,11 @@ static void read_configuration()
 {
 
   FILE *fp;
-  char *conffile = "/tcp/convers.conf";
   char *host_name, *sock_name;
   char line[1024];
   struct permlink *p;
 
-  if (!(fp = fopen(conffile, "r"))) return;
+  if (!(fp = fopen(CONFFILE, "r"))) return;
   if (fgets(line, sizeof(line), fp)) {
     host_name = getarg(line, 0);
     if (*host_name) {
@@ -1024,6 +1030,31 @@ static void read_configuration()
     }
   }
   fclose(fp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void check_files_changed()
+{
+
+  static long conftime;
+  static long nexttime;
+  static long progtime;
+  struct stat statbuf;
+
+  if (nexttime > currtime) return;
+  nexttime = currtime + 600;
+
+  if (!stat(PROGFILE, &statbuf)) {
+    if (!progtime) progtime = statbuf.st_mtime;
+    if (progtime != statbuf.st_mtime && statbuf.st_mtime < currtime - 60)
+      exit(0);
+  }
+  if (!stat(CONFFILE, &statbuf)) {
+    if (!conftime) conftime = statbuf.st_mtime;
+    if (conftime != statbuf.st_mtime && statbuf.st_mtime < currtime - 60)
+      exit(0);
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1054,6 +1085,7 @@ char **argv;
   int i;
   int maxfd;
   int size;
+  int status;
   struct connection *cp;
   struct fd_set rmask;
   struct fd_set wmask;
@@ -1104,6 +1136,10 @@ char **argv;
 
     free_closed_connections();
 
+    while (waitpid(-1, &status, WNOHANG) > 0) ;
+
+    check_files_changed();
+
     connect_permlinks();
 
     maxfd = -1;
@@ -1133,10 +1169,11 @@ char **argv;
 
     for (cp = connections; cp; cp = cp->next) {
 
-      if (cp->fd >= 0 && FD_ISSET(cp->fd, &rmask))
-	if ((size = read(cp->fd, buffer, sizeof(buffer))) <= 0)
-	  bye_command(cp);
-	else {
+      if (cp->fd >= 0 && FD_ISSET(cp->fd, &rmask)) {
+	size = read(cp->fd, buffer, sizeof(buffer));
+	if (size < 0) {
+	  if (errno != EAGAIN) bye_command(cp);
+	} else {
 	  cp->received += size;
 	  for (i = 0; i < size; i++)
 	    switch (buffer[i]) {
@@ -1157,12 +1194,13 @@ char **argv;
 	      break;
 	    }
 	}
+      }
 
       if (cp->fd >= 0 && FD_ISSET(cp->fd, &wmask)) {
 	size = write(cp->fd, cp->obuf->data, strlen(cp->obuf->data));
-	if (size < 0)
-	  bye_command(cp);
-	else {
+	if (size < 0) {
+	  if (errno != EAGAIN) bye_command(cp);
+	} else {
 	  cp->xmitted += size;
 	  cp->obuf->data += size;
 	  while ((bp = cp->obuf) && !*cp->obuf->data) {
