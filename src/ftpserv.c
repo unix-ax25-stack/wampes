@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.22 1993/12/29 16:32:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.23 1993/12/30 08:25:40 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -555,7 +555,7 @@ ftpcommand(struct ftp *ftp)
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
 		log(ftp->control,"DELE %s",file);
-		AsUser(result = unlink(file));
+		AsUser(result = remove(file));
 		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.21 1993/06/10 09:43:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.22 1993/12/30 08:25:38 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -70,7 +70,6 @@ int fin0(int argc,char *argv[],void *p);
 
 /* In ftpcli.c: */
 int doftp(int argc,char *argv[],void *p);
-int doabort(int argc,char *argv[],void *p);
 
 /* In ftpserv.c: */
 int ftpstart(int argc,char *argv[],void *p);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.39 1993/06/27 07:50:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.40 1993/12/30 08:25:41 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -276,7 +276,7 @@ void *p;
 	int i;
 
 	for(i=1;i < argc; i++){
-		if(unlink(argv[i]) == -1){
+		if(remove(argv[i]) == -1){
 			printf("Can't delete %s: ",argv[i]);
 			fflush(stdout);
 			perror("");
