@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ip_routes,v 1.18 1993/08/02 19:52:58 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ip_routes,v 1.19 1993/09/06 11:37:42 deyke Exp $
 
 #host           destination     bits    iface   gateway                 private
 #------------------------------------------------------------------------------
@@ -20,7 +20,7 @@ dk0hu           dk5sg           32      ipip    15.15.80.34
 dk0hu           dl1sbl-1        32      ipip    15.136.56.132
 dk0hu           dl2sel          32      tnc0
 dk0hu           dl2sel-1        32      ipip    15.136.175.24
-dk0hu           dl4sas-1        32      ipip    15.136.216.69
+dk0hu           dl4sas-1        32      ipip    15.136.216.106
 dk0hu           dl4sel          32      tnc0
 dk0hu           dl4sel-1        32      ipip    15.136.136.223
 dk0hu           dl5ue-1         32      ipip    15.8.62.21
