@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.9 1993/02/23 21:34:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.10 1993/02/28 17:35:32 deyke Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -26,7 +26,7 @@ int   Pthresh = 64;             /* Send polls for packets larger than this */
 int   T1init = 5000;            /* Retransmission timeout, ms */
 int   T4init = 60000;           /* Busy timeout, ms */
 int   Axversion = V2;           /* Protocol version */
-int32 Blimit = 0x7fffffff;      /* Retransmission backoff limit */
+int32 Blimit = 16;              /* Retransmission backoff limit */
 
 /* Look up entry in connection table */
 struct ax25_cb *
@@ -249,7 +249,7 @@ char *addr;
 	cp = e;
 	for(i=ALEN;i != 0;i--){
 		c = (*addr++ >> 1) & 0x7f;
-		if(c != ' ')
+		if(c != ' ' && isprint(c))
 			*cp++ = c;
 	}
 	if((*addr & SSID) != 0)
