@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.2 1990/02/05 09:42:03 deyke Exp $ */
+
 /* Address Resolution Protocol (ARP) functions. Sits between IP and
  * Level 2, mapping IP to Level 2 addresses for all outgoing datagrams.
  */
@@ -331,8 +333,7 @@ int32 ipaddr;
 	hashval = hardware;
 	hashval ^= hiword(ipaddr);
 	hashval ^= loword(ipaddr);
-	hashval %= ARPSIZE;
-	return hashval;
+	return hashval % ARPSIZE;
 }
 /* Copy a host format arp structure into mbuf for transmission */
 struct mbuf *

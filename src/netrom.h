@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.2 1990/01/29 09:37:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.3 1990/02/05 09:42:17 deyke Exp $ */
 
 /* Round trip timing parameters */
 #define AGAIN   8               /* Average RTT gain = 1/8 */
@@ -39,10 +39,11 @@ struct circuit {
 #define NETWORK       3         /* Network problem */
   int  window;                  /* Negotiated window size */
   int  naksent;                 /* NAK has been sent */
+  int  chokesent;               /* CHOKE has been sent */
   int  closed;                  /* Disconnect when send queue empty */
   int  recv_state;              /* Incoming sequence number expected next */
   int  send_state;              /* Next sequence number to be sent */
-  int  remote_busy;             /* Other end's window is closed */
+  long  remote_busy;            /* Other end's window is closed */
   int  retry;                   /* Retransmission retry count */
   int32 srtt;                   /* Smoothed round trip time, milliseconds */
   int32 mdev;                   /* Mean deviation, milliseconds */

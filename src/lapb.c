@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.2 1990/01/29 09:36:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.3 1990/02/05 09:42:06 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
@@ -42,9 +42,9 @@ struct axroutesaverecord {
 
 char  *ax25states[] = {
   "Disconnected",
-  "Connecting",
+  "Conn pending",
   "Connected",
-  "Disconnecting"
+  "Disc pending"
 };
 
 char  *ax25reasons[] = {
@@ -54,14 +54,15 @@ char  *ax25reasons[] = {
   "Network"
 };
 
-int  ax_maxframe =    1;        /* Transmit flow control level */
+int  ax_maxframe =    7;        /* Transmit flow control level */
 int  ax_paclen   =  236;        /* Maximum outbound packet size */
+int  ax_pthresh  =   64;        /* Send polls for packets larger than this */
 int  ax_retry    =   10;        /* Retry limit */
 int  ax_t1init   =    5;        /* Retransmission timeout */
 int  ax_t2init   =    2;        /* Acknowledgement delay timeout */
-int  ax_t3init   =  600;        /* No-activity timeout */
+int  ax_t3init   =  900;        /* No-activity timeout */
 int  ax_t4init   =   60;        /* Busy timeout */
-int  ax_window   = 1024;        /* Local flow control limit */
+int  ax_window   = 2048;        /* Local flow control limit */
 struct axcb *axcb_server;       /* Server control block */
 
 static char  axroutefile[] = "/tcp/axroute_data";
@@ -279,6 +280,10 @@ struct axcb *cp;
 
 /*---------------------------------------------------------------------------*/
 
+#define next_seq(n)  (((n) + 1) & 7)
+
+/*---------------------------------------------------------------------------*/
+
 static void send_packet(cp, type, cmdrsp, data)
 struct axcb *cp;
 int  type;
@@ -300,7 +305,10 @@ struct mbuf *data;
   if (cmdrsp & SRC_C) p[AXALEN+6] |= C;
   p += cp->pathlen;
   control = type;
-  if (type == I) control |= (cp->vs << 1);
+  if (type == I) {
+    control |= (cp->vs << 1);
+    cp->vs = next_seq(cp->vs);
+  }
   if ((type & 3) != U) {
     control |= (cp->vr << 5);
     stop_timer(&cp->timer_t2);
@@ -324,9 +332,7 @@ struct mbuf *data;
 static int  busy(cp)
 register struct axcb *cp;
 {
-  return cp->rcvcnt >= ax_window ||
-	 cp->peer && (cp->peer->state != CONNECTED ||
-		      cp->peer->sndcnt >= ax_window);
+  return cp->peer ? space_ax(cp->peer) <= 0 : cp->rcvcnt >= ax_window;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -337,7 +343,10 @@ int  cmdrsp;
 {
   if (busy(cp))
     send_packet(cp, RNR, cmdrsp, NULLBUF);
-  else if (cp->wrongseq && !cp->rejsent)
+  else if (!cp->rejsent && (cp->reseq[0].bp || cp->reseq[1].bp ||
+			    cp->reseq[2].bp || cp->reseq[3].bp ||
+			    cp->reseq[4].bp || cp->reseq[5].bp ||
+			    cp->reseq[6].bp || cp->reseq[7].bp))
     send_packet(cp, REJ, cmdrsp, NULLBUF);
   else
     send_packet(cp, RR, cmdrsp, NULLBUF);
@@ -349,17 +358,32 @@ static void try_send(cp, fill_sndq)
 register struct axcb *cp;
 int  fill_sndq;
 {
+
+  int  cnt;
   struct mbuf *bp;
 
-  if (cp->state != CONNECTED || cp->remote_busy || run_timer(&cp->timer_t1))
-    return;
-  if (fill_sndq && cp->t_upcall && !cp->segsize && cp->sndcnt < ax_paclen && !cp->closed)
-    (*cp->t_upcall)(cp, ax_paclen - cp->sndcnt);
-  if (!cp->segsize)
-    cp->segsize = dup_p(&bp, cp->sndq, 0, (cp->mode == STREAM) ? ax_paclen : MAXINT16);
-  else
-    dup_p(&bp, cp->sndq, 0, cp->segsize);
-  if (bp) send_packet(cp, I, CMD, bp);
+  while (cp->unack < ax_maxframe) {
+    if (cp->state != CONNECTED || cp->remote_busy) return;
+    if (fill_sndq && cp->t_upcall) {
+      cnt = space_ax(cp);
+      if (cnt > 0) (*cp->t_upcall)(cp, cnt);
+    }
+    if (!cp->sndq) return;
+    if (cp->mode == STREAM) {
+      cnt = len_mbuf(cp->sndq);
+      if (!cnt || cp->unack && cnt < ax_paclen) return;
+      if (cnt > ax_paclen) cnt = ax_paclen;
+      if (!(bp = alloc_mbuf(cnt))) return;
+      pullup(&cp->sndq, bp->data, bp->cnt = cnt);
+    } else {
+      bp = dequeue(&cp->sndq);
+    }
+    enqueue(&cp->resndq, bp);
+    cp->unack++;
+    cp->sndtime[cp->vs] = currtime;
+    dup_p(&bp, bp, 0, MAXINT16);
+    send_packet(cp, I, CMD, bp);
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -412,8 +436,6 @@ int  newstate;
 static void t1_timeout(cp)
 struct axcb *cp;
 {
-  struct mbuf *bp;
-
   inc_t1(cp);
   if (++cp->retry > ax_retry) cp->reason = TIMEOUT;
   switch (cp->state) {
@@ -431,13 +453,21 @@ struct axcb *cp;
       send_packet(cp, SABM, POLL, NULLBUF);
     break;
   case CONNECTED:
-    if (cp->retry > ax_retry)
+    if (cp->retry > ax_retry) {
       setaxstate(cp, DISCONNECTING);
-    else if (!cp->remote_busy && cp->retry <= 1 && cp->segsize && cp->segsize <= 64) {
-      dup_p(&bp, cp->sndq, 0, cp->segsize);
+    } else if (!cp->polling && !cp->remote_busy && cp->unack &&
+	       len_mbuf(cp->resndq) <= ax_pthresh) {
+      int  old_vs;
+      struct mbuf *bp;
+      old_vs = cp->vs;
+      cp->vs = (cp->vs - cp->unack) & 7;
+      cp->sndtime[cp->vs] = 0;
+      dup_p(&bp, cp->resndq, 0, MAXINT16);
       send_packet(cp, I, POLL, bp);
-    } else
+      cp->vs = old_vs;
+    } else {
       send_ack(cp, POLL);
+    }
     break;
   case DISCONNECTING:
     if (cp->retry > ax_retry)
@@ -461,7 +491,7 @@ struct axcb *cp;
 static void t3_timeout(cp)
 struct axcb *cp;
 {
-  if (cp->state == CONNECTED && !run_timer(&cp->timer_t1)) send_ack(cp, POLL);
+  if (!run_timer(&cp->timer_t1)) send_ack(cp, POLL);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -603,7 +633,29 @@ struct axcb *cp;
 
 /*---------------------------------------------------------------------------*/
 
-#define next_seq(n)  (((n) + 1) & 7)
+static int  put_reseq(cp, bp, ns)
+struct axcb *cp;
+struct mbuf *bp;
+int  ns;
+{
+
+  register char  *p;
+  register int  cnt, sum;
+  register struct axreseq *rp;
+  register struct mbuf *tp;
+
+  rp = &cp->reseq[ns];
+  if (rp->bp) return 0;
+  for (sum = 0, tp = bp; tp; tp = tp->next) {
+    cnt = tp->cnt;
+    p = tp->data;
+    while (cnt--) sum += uchar(*p++);
+  }
+  if (ns != cp->vr && sum == rp->sum) return 0;
+  rp->bp = bp;
+  rp->sum = sum;
+  return 1;
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -619,8 +671,6 @@ struct mbuf *bp;
   int  nr;
   int  ns;
   int  type;
-  int32 abserr;
-  int32 rtt;
   struct axcb *cp;
   struct axcb *cpp;
 
@@ -652,9 +702,9 @@ struct mbuf *bp;
     cp = (struct axcb *) calloc(1, sizeof(struct axcb ));
     if (for_me) {
       if (netrom_server_axcb && isnetrom(axptr(bp->data + AXALEN)))
-	memcpy(cp, netrom_server_axcb, sizeof(struct axcb ));
+	*cp = *netrom_server_axcb;
       else if (axcb_server)
-	memcpy(cp, axcb_server, sizeof(struct axcb ));
+	*cp = *axcb_server;
     }
     build_path(cp, ifp, bp->data, 1);
     cp->timer_t1.func = t1_timeout;
@@ -687,15 +737,26 @@ struct mbuf *bp;
     cpp = cp->peer;
 
   if (type == SABM) {
+    int  i;
     build_path(cp, ifp, bp->data, 1);
+    if (cp->unack)
+      start_timer(&cp->timer_t1);
+    else
+      stop_timer(&cp->timer_t1);
+    stop_timer(&cp->timer_t2);
+    stop_timer(&cp->timer_t4);
     cp->polling = 0;
     cp->rnrsent = 0;
     cp->rejsent = 0;
-    cp->wrongseq = 0;
     cp->remote_busy = 0;
     cp->vr = 0;
     cp->vs = 0;
     cp->retry = 0;
+    for (i = 0; i < 8; i++)
+      if (cp->reseq[i].bp) {
+	free_p(cp->reseq[i].bp);
+	cp->reseq[i].bp = 0;
+      }
   }
 
   if (cp->mode == STREAM && type == I && uchar(cntrlptr[1]) != (PID_FIRST | PID_LAST | PID_NO_L3)) {
@@ -777,24 +838,24 @@ struct mbuf *bp;
     case RNR:
     case REJ:
       nr = control >> 5;
-      if (cp->segsize && nr == next_seq(cp->vs)) {
-	if (cp->mode == STREAM)
-	  pullup(&cp->sndq, NULLCHAR, cp->segsize);
-	else
-	  cp->sndq = free_p(cp->sndq);
-	cp->sndcnt -= cp->segsize;
-	cp->segsize = 0;
-	cp->vs = next_seq(cp->vs);
-	if (cpp && cpp->rnrsent && !busy(cpp)) send_ack(cpp, RESP);
+      if (((cp->vs - nr) & 7) < cp->unack) {
 	if (!cp->polling) {
-	  stop_timer(&cp->timer_t1);
 	  cp->retry = 0;
-	  rtt = (cp->timer_t1.start - cp->timer_t1.count) * (long) MSPTICK;
-	  abserr = (rtt > cp->srtt) ? rtt - cp->srtt : cp->srtt - rtt;
-	  cp->srtt = ((AGAIN - 1) * cp->srtt + rtt) / AGAIN;
-	  cp->mdev = ((DGAIN - 1) * cp->mdev + abserr) / DGAIN;
-	  reset_t1(cp);
+	  stop_timer(&cp->timer_t1);
+	  if (cp->sndtime[(nr-1)&7]) {
+	    int32 rtt = (currtime - cp->sndtime[(nr-1)&7]) * 1000l;
+	    int32 abserr = (rtt > cp->srtt) ? rtt - cp->srtt : cp->srtt - rtt;
+	    cp->srtt = ((AGAIN - 1) * cp->srtt + rtt) / AGAIN;
+	    cp->mdev = ((DGAIN - 1) * cp->mdev + abserr) / DGAIN;
+	    reset_t1(cp);
+	  }
 	}
+	while (((cp->vs - nr) & 7) < cp->unack) {
+	  cp->resndq = free_p(cp->resndq);
+	  cp->unack--;
+	}
+	if (cpp && cpp->rnrsent && !busy(cpp)) send_ack(cpp, RESP);
+	if (cp->unack && !cp->remote_busy) start_timer(&cp->timer_t1);
       }
       if (type == I) {
 	if (for_me &&
@@ -806,12 +867,13 @@ struct mbuf *bp;
 	  return;
 	}
 	ns = (control >> 1) & 7;
-	cp->wrongseq = (ns != cp->vr);
-	if (!cp->wrongseq) {
-	  cp->vr = next_seq(cp->vr);
-	  cp->rejsent = 0;
-	  pullup(&bp, NULLCHAR, cntrlptr - bp->data + 1 + (cp->mode == STREAM));
-	  if (bp) {
+	pullup(&bp, NULLCHAR, cntrlptr - bp->data + 1 + (cp->mode == STREAM));
+	if (!bp) bp = alloc_mbuf(0);
+	if (put_reseq(cp, bp, ns))
+	  while (bp = cp->reseq[cp->vr].bp) {
+	    cp->reseq[cp->vr].bp = 0;
+	    cp->vr = next_seq(cp->vr);
+	    cp->rejsent = 0;
 	    if (for_me) {
 	      cp->rcvcnt += len_mbuf(bp);
 	      if (cp->mode == STREAM)
@@ -820,9 +882,7 @@ struct mbuf *bp;
 		enqueue(&cp->rcvq, bp);
 	    } else
 	      send_ax(cpp, bp);
-	    bp = NULLBUF;
 	  }
-	}
 	if (cmdrsp == POLL)
 	  send_ack(cp, FINAL);
 	else {
@@ -830,11 +890,12 @@ struct mbuf *bp;
 	  start_timer(&cp->timer_t2);
 	}
 	if (cp->r_upcall && cp->rcvcnt) (*cp->r_upcall)(cp, cp->rcvcnt);
+	try_send(cp, 1);
       } else {
+	if (cmdrsp == POLL) send_ack(cp, FINAL);
 	if (cp->polling && cmdrsp == FINAL) {
 	  stop_timer(&cp->timer_t1);
-	  cp->retry = 0;
-	  cp->polling = 0;
+	  cp->retry = cp->polling = 0;
 	}
 	if (type == RNR) {
 	  if (!cp->remote_busy) cp->remote_busy = currtime;
@@ -844,11 +905,30 @@ struct mbuf *bp;
 	} else {
 	  cp->remote_busy = 0;
 	  stop_timer(&cp->timer_t4);
+	  if (cp->unack && type == REJ) {
+	    int  old_vs;
+	    struct mbuf *bp1;
+	    old_vs = cp->vs;
+	    cp->vs = (cp->vs - cp->unack) & 7;
+	    cp->sndtime[cp->vs] = 0;
+	    dup_p(&bp1, cp->resndq, 0, MAXINT16);
+	    send_packet(cp, I, CMD, bp1);
+	    cp->vs = old_vs;
+	  } else if (cp->unack && cmdrsp == FINAL) {
+	    struct mbuf *bp1, *qp;
+	    cp->vs = (cp->vs - cp->unack) & 7;
+	    for (qp = cp->resndq; qp; qp = qp->anext) {
+	      cp->sndtime[cp->vs] = 0;
+	      dup_p(&bp1, qp, 0, MAXINT16);
+	      send_packet(cp, I, CMD, bp1);
+	    }
+	    try_send(cp, 1);
+	  } else {
+	    try_send(cp, 1);
+	  }
 	}
-	if (cmdrsp == POLL) send_ack(cp, FINAL);
       }
-      try_send(cp, 1);
-      if (cp->closed && !cp->sndcnt ||
+      if (cp->closed && !cp->sndq && !cp->unack ||
 	  cp->remote_busy && cp->remote_busy + 900l < currtime)
 	setaxstate(cp, DISCONNECTING);
       break;
@@ -863,6 +943,8 @@ struct mbuf *bp;
       break;
     case UA:
       cp->remote_busy = 0;
+      stop_timer(&cp->timer_t4);
+      if (cp->unack) start_timer(&cp->timer_t1);
       try_send(cp, 1);
       break;
     case FRMR:
@@ -970,6 +1052,22 @@ char  *argv[];
     if (tmp < 1) return (-1);
     ax_paclen = tmp;
   }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Set size of I-frame above which polls will be sent after a timeout */
+
+static int  dopthresh(argc, argv)
+int  argc;
+char  *argv[];
+{
+
+  if (argc < 2)
+    printf("Pthresh %d\n", ax_pthresh);
+  else
+    ax_pthresh = atoi(argv[1]);
   return 0;
 }
 
@@ -1192,16 +1290,19 @@ static int  dostatus(argc, argv)
 int  argc;
 char  *argv[];
 {
+
+  int  i;
   register struct axcb *cp;
+  struct mbuf *bp;
 
   if (argc < 2) {
-    printf("   &AXCB Rcv-Q Snd-Q  Rt  Srtt  State          Remote socket\n");
+    printf("   &AXCB Rcv-Q Unack  Rt  Srtt  State          Remote socket\n");
     for (cp = axcb_head; cp; cp = cp->next)
       printf("%8lx %5u%c%5u%c %2d %5.1f  %-13s  %s\n",
 	     (long) cp,
 	     cp->rcvcnt,
 	     cp->rnrsent ? '*' : ' ',
-	     cp->sndcnt,
+	     cp->unack,
 	     cp->remote_busy ? '*' : ' ',
 	     cp->retry,
 	     cp->srtt / 1000.0,
@@ -1226,7 +1327,6 @@ char  *argv[];
     printf("Polling:      %s\n", cp->polling ? "Yes" : "No");
     printf("RNRsent:      %s\n", cp->rnrsent ? "Yes" : "No");
     printf("REJsent:      %s\n", cp->rejsent ? "Yes" : "No");
-    printf("Wrongseq:     %s\n", cp->wrongseq ? "Yes" : "No");
     if (cp->remote_busy)
       printf("Remote_busy:  %ld sec\n", currtime - cp->remote_busy);
     else
@@ -1254,9 +1354,24 @@ char  *argv[];
 	     cp->timer_t4.start - cp->timer_t4.count, cp->timer_t4.start);
     else
       printf("Timer T4:     Stopped\n");
-    printf("Rcvcnt:       %d\n", cp->rcvcnt);
-    printf("Sndcnt:       %d\n", cp->sndcnt);
-    printf("Segsize:      %d\n", cp->segsize);
+    printf("Rcv queue:    %d\n", cp->rcvcnt);
+    if (cp->reseq[0].bp || cp->reseq[1].bp ||
+	cp->reseq[2].bp || cp->reseq[3].bp ||
+	cp->reseq[4].bp || cp->reseq[5].bp ||
+	cp->reseq[6].bp || cp->reseq[7].bp) {
+      printf("Reassembly queue:\n");
+      for (i = 0; i < 8; i++)
+	if (cp->reseq[i].bp)
+	  printf("              Seq %3d: %3d bytes\n",
+		 (cp->vr + i) & 7, len_mbuf(cp->reseq[i].bp));
+    }
+    printf("Snd queue:    %d\n", len_mbuf(cp->sndq));
+    if (cp->resndq) {
+      printf("Resend queue:\n");
+      for (i = 0, bp = cp->resndq; bp; i++, bp = bp->anext)
+	printf("              Seq %3d: %3d bytes\n",
+	       (cp->vs - cp->unack + i) & 7, len_mbuf(bp));
+    }
   }
   return 0;
 }
@@ -1340,8 +1455,11 @@ char  *argv[];
 {
   if (argc < 2)
     printf("Window %d\n", ax_window);
-  else
-    ax_window = atoi(argv[1]);
+  else {
+    int  tmp = atoi(argv[1]);
+    if (tmp < 1) return (-1);
+    ax_window = tmp;
+  }
   return 0;
 }
 
@@ -1363,6 +1481,7 @@ char  *argv[];
     "maxframe", domaxframe, 0, NULLCHAR, "maxframe must be 1..7",
     "mycall",   domycall,   0, NULLCHAR, NULLCHAR,
     "paclen",   dopaclen,   0, NULLCHAR, "paclen must be > 0",
+    "pthresh",  dopthresh,  0, NULLCHAR, NULLCHAR,
     "reset",    doaxreset,  2, "ax25 reset <axcb>", NULLCHAR,
     "retry",    doretry,    0, NULLCHAR, NULLCHAR,
     "route",    doroute,    0, NULLCHAR, NULLCHAR,
@@ -1371,7 +1490,7 @@ char  *argv[];
     "t2",       dot2,       0, NULLCHAR, "t2 must be > 0",
     "t3",       dot3,       0, NULLCHAR, NULLCHAR,
     "t4",       dot4,       0, NULLCHAR, "t4 must be > 0",
-    "window",   dowindow,   0, NULLCHAR, NULLCHAR,
+    "window",   dowindow,   0, NULLCHAR, "window must be > 0",
 
     NULLCHAR,   NULLFP,     0, NULLCHAR, NULLCHAR
   };
@@ -1458,7 +1577,7 @@ struct mbuf *bp;
   case CONNECTING:
   case CONNECTED:
     if (!cp->closed) {
-      cp->sndcnt += (cnt = len_mbuf(bp));
+      cnt = len_mbuf(bp);
       if (cp->mode == STREAM)
 	append(&cp->sndq, bp);
       else
@@ -1479,8 +1598,6 @@ struct mbuf *bp;
 int  space_ax(cp)
 struct axcb *cp;
 {
-  int  limit;
-
   if (!cp) {
     net_error = INVALID;
     return (-1);
@@ -1491,11 +1608,8 @@ struct axcb *cp;
     return (-1);
   case CONNECTING:
   case CONNECTED:
-    if (!cp->closed) {
-      limit = ax_maxframe * ax_paclen;
-      if (ax_window > limit) limit = ax_window;
-      return limit - cp->sndcnt;
-    }
+    if (!cp->closed)
+      return (ax_maxframe - cp->unack) * ax_paclen - len_mbuf(cp->sndq);
   case DISCONNECTING:
     net_error = CON_CLOS;
     return (-1);
@@ -1566,7 +1680,7 @@ struct axcb *cp;
     setaxstate(cp, DISCONNECTED);
     return 0;
   case CONNECTED:
-    if (!cp->sndcnt) setaxstate(cp, DISCONNECTING);
+    if (!cp->sndq && !cp->unack) setaxstate(cp, DISCONNECTING);
     return 0;
   case DISCONNECTING:
     net_error = CON_CLOS;
@@ -1599,6 +1713,8 @@ struct axcb *cp;
 int  del_ax(cp)
 struct axcb *cp;
 {
+
+  int  i;
   register struct axcb *p, *q;
 
   for (q = 0, p = axcb_head; p != cp; q = p, p = p->next)
@@ -1614,8 +1730,10 @@ struct axcb *cp;
   stop_timer(&cp->timer_t2);
   stop_timer(&cp->timer_t3);
   stop_timer(&cp->timer_t4);
+  for (i = 0; i < 8; i++) free_p(cp->reseq[i].bp);
   free_q(&cp->rcvq);
   free_q(&cp->sndq);
+  free_q(&cp->resndq);
   free((char *) cp);
   return 0;
 }

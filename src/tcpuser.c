@@ -1,6 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.2 1990/01/29 09:37:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.3 1990/02/05 09:42:18 deyke Exp $ */
 
 /* User calls to TCP */
+
+#include <ctype.h>
+#include <string.h>
+
 #include "global.h"
 #include "timer.h"
 #include "mbuf.h"
@@ -411,12 +415,15 @@ register int16 port;
 int16 tcp_portnum(s)
 register char  *s;
 {
+
   register int  l;
   register struct tcp_port_table *p;
 
-  l = strlen(s);
-  for (p = tcp_port_table; p->name; p++)
-    if (!strncmp(s, p->name, l)) return p->port;
+  if (!isdigit(uchar(*s))) {
+    l = strlen(s);
+    for (p = tcp_port_table; p->name; p++)
+      if (!strncmp(s, p->name, l)) return p->port;
+  }
   return atoi(s);
 }
 

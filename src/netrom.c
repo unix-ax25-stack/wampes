@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.2 1990/01/29 09:37:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.3 1990/02/05 09:42:12 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
@@ -28,10 +28,10 @@ static int  nr_bdcstint    =  1800;
 static int  nr_ttlinit     =    16;
 static int  nr_ttimeout    =   120;
 static int  nr_tretry      =     5;
-static int  nr_tackdelay   =     6;
+static int  nr_tackdelay   =     4;
 static int  nr_tbsydelay   =   180;
 static int  nr_twindow     =     8;
-static int  nr_tnoackbuf   =     4;     /* not used */
+static int  nr_tnoackbuf   =     8;
 static int  nr_timeout     =  1800;
 static int  nr_persistance =    64;     /* not used */
 static int  nr_slottime    =    10;     /* not used */
@@ -53,9 +53,9 @@ static struct parms {
   " 5 Obsolescence count initializer (0=off)     ", &nr_obsinit,     0,   255,
   " 6 Obsolescence count min to be broadcast     ", &nr_minobs,      1,   255,
   " 7 Auto-update broadcast interval (sec, 0=off)", &nr_bdcstint,    0, 65535,
-  " 8 Network 'time-to-live' initializer         ", &nr_ttlinit,     0,   255,
+  " 8 Network 'time-to-live' initializer         ", &nr_ttlinit,     1,   255,
   " 9 Transport timeout (sec)                    ", &nr_ttimeout,    5,   600,
-  "10 Transport maximum tries                    ", &nr_tretry,      2,   127,
+  "10 Transport maximum tries                    ", &nr_tretry,      1,   127,
   "11 Transport acknowledge delay (sec)          ", &nr_tackdelay,   1,    60,
   "12 Transport busy delay (sec)                 ", &nr_tbsydelay,   1,  1000,
   "13 Transport requested window size (frames)   ", &nr_twindow,     1,   127,
@@ -189,21 +189,22 @@ int  oldstate, newstate;
 
 /*---------------------------------------------------------------------------*/
 
-static void ax25_recv_upcall(cp, cnt)
+static void ax25_recv_upcall(cp)
 struct axcb *cp;
-int16 cnt;
 {
 
   char  pid;
   struct mbuf *bp;
   void route_packet();
 
-  recv_ax(cp, &bp, 0);
-  if (pullup(&bp, &pid, 1) != 1) return;
-  if (uchar(pid) == (PID_NETROM | PID_FIRST | PID_LAST))
-    route_packet(bp, (struct neighbor *) cp->user);
-  else
-    free_p(bp);
+  while (cp->rcvq) {
+    recv_ax(cp, &bp, 0);
+    if (pullup(&bp, &pid, 1) != 1) return;
+    if (uchar(pid) == (PID_NETROM | PID_FIRST | PID_LAST))
+      route_packet(bp, (struct neighbor *) cp->user);
+    else
+      free_p(bp);
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -670,6 +671,7 @@ struct mbuf *data;
   }
   addrcp(axptr(bp->data), source);
   addrcp(axptr(bp->data + AXALEN), dest);
+  if (ttl < 255) ttl++;
   bp->data[2*AXALEN] = ttl;
   route_packet(bp, (struct neighbor *) 0);
 }
@@ -775,6 +777,14 @@ register struct circuit *pc;
 
 /*---------------------------------------------------------------------------*/
 
+static int  busy(pc)
+struct circuit *pc;
+{
+  return pc->rcvcnt >= nr_tnoackbuf * NR4MAXINFO;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void send_l4_packet(pc, opcode, data)
 struct circuit *pc;
 int  opcode;
@@ -836,6 +846,7 @@ struct mbuf *data;
       opcode |= NR4NAK;
       pc->naksent = 1;
     }
+    if (pc->chokesent = busy(pc)) opcode |= NR4CHOKE;
     stop_timer(&pc->timer_t2);
     bp->data[0] = pc->remoteindex;
     bp->data[1] = pc->remoteid;
@@ -862,8 +873,8 @@ int  fill_sndq;
 
   while (pc->unack < pc->window) {
     if (pc->state != CONNECTED || pc->remote_busy) return;
-    if (fill_sndq && pc->t_upcall && !pc->closed) {
-      cnt = (pc->window - pc->unack) * NR4MAXINFO - len_mbuf(pc->sndq);
+    if (fill_sndq && pc->t_upcall) {
+      cnt = space_nr(pc);
       if (cnt > 0) (*pc->t_upcall)(pc, cnt);
     }
     cnt = len_mbuf(pc->sndq);
@@ -963,7 +974,7 @@ struct circuit *pc;
 static void l4_t3_timeout(pc)
 struct circuit *pc;
 {
-  close_nr(pc);
+  if (!run_timer(&pc->timer_t1)) close_nr(pc);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1081,12 +1092,15 @@ struct mbuf *bp;
   case NR4OPINFO:
   case NR4OPACK:
     if (pc->state != CONNECTED) goto discard;
-    if (pc->remote_busy = (bp->data[4] & NR4CHOKE)) {
+    if (bp->data[4] & NR4CHOKE) {
+      if (!pc->remote_busy) pc->remote_busy = currtime;
       stop_timer(&pc->timer_t1);
       set_timer(&pc->timer_t4, nr_tbsydelay * 1000l);
       start_timer(&pc->timer_t4);
-    } else
+    } else {
+      pc->remote_busy = 0;
       stop_timer(&pc->timer_t4);
+    }
     if (uchar(pc->send_state - bp->data[3]) < pc->unack) {
       pc->retry = 0;
       stop_timer(&pc->timer_t1);
@@ -1190,6 +1204,7 @@ char  *user;
   pc->localindex = uchar(nextid >> 8);
   pc->localid = uchar(nextid);
   pc->remoteindex = -1;
+  pc->remoteid = -1;
   pc->outbound = 1;
   addrcp(&pc->node, node);
   addrcp(&pc->orguser, orguser);
@@ -1296,6 +1311,10 @@ int16 cnt;
       (*bpp)->cnt = cnt;
     }
     pc->rcvcnt -= cnt;
+    if (pc->chokesent && !busy(pc)) {
+      set_timer(&pc->timer_t2, nr_tackdelay * 1000l);
+      start_timer(&pc->timer_t2);
+    }
     return cnt;
   }
   switch (pc->state) {
@@ -1448,15 +1467,6 @@ int  oldstate, newstate;
 /*********************************** Client **********************************/
 /*---------------------------------------------------------------------------*/
 
-/* #include <memory.h> */
-/* #include <stdio.h> */
-
-/* #include "global.h" */
-/* #include "netuser.h" */
-/* #include "mbuf.h" */
-/* #include "timer.h" */
-/* #include "ax25.h" */
-/* #include "axproto.h" */
 #include "session.h"
 
 /*---------------------------------------------------------------------------*/
@@ -1473,9 +1483,8 @@ int16 n;
 
 /*---------------------------------------------------------------------------*/
 
-void nrclient_recv_upcall(pc, cnt)
+void nrclient_recv_upcall(pc)
 struct circuit *pc;
-int16 cnt;
 {
 
   char  c;
@@ -1913,7 +1922,7 @@ char  *argv[];
       printf("%8lx %5u%c%5u%c %2d %5.1f  %-13s  %s\n",
 	     (long) pc,
 	     pc->rcvcnt,
-	     /*** busy(pc) ? '*' :  ***/  ' ',
+	     pc->chokesent ? '*' : ' ',
 	     pc->unack,
 	     pc->remote_busy ? '*' : ' ',
 	     pc->retry,
@@ -1936,8 +1945,12 @@ char  *argv[];
       printf("Reason:       %s\n", nrreasons[pc->reason]);
     printf("Window:       %d\n", pc->window);
     printf("NAKsent:      %s\n", pc->naksent ? "Yes" : "No");
+    printf("CHOKEsent:    %s\n", pc->chokesent ? "Yes" : "No");
     printf("Closed:       %s\n", pc->closed ? "Yes" : "No");
-    printf("Remote_busy:  %s\n", pc->remote_busy ? "Yes" : "No");
+    if (pc->remote_busy)
+      printf("Remote_busy:  %ld sec\n", currtime - pc->remote_busy);
+    else
+      printf("Remote_busy:  No\n");
     printf("Retry:        %d\n", pc->retry);
     printf("Srtt:         %ld ms\n", pc->srtt);
     printf("Mean dev:     %ld ms\n", pc->mdev);
@@ -1959,7 +1972,7 @@ char  *argv[];
       printf("Timer T4:     Stopped\n");
     printf("Rcv queue:    %d\n", pc->rcvcnt);
     if (pc->reseq) {
-      printf("Resequencing queue:\n");
+      printf("Reassembly queue:\n");
       for (bp = pc->reseq; bp; bp = bp->anext)
 	printf("              Seq %3d: %3d bytes\n", uchar(bp->data[2]), len_mbuf(bp));
     }

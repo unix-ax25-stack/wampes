@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.2 1990/02/05 09:42:10 deyke Exp $ */
+
 /* AX25 protocol implementation */
 
 /* Codes for the open_ax call */
@@ -40,7 +42,6 @@ struct axcb {
   int  polling;                 /* Poll frame has been sent */
   int  rnrsent;                 /* RNR frame has been sent */
   int  rejsent;                 /* REJ frame has been sent */
-  int  wrongseq;                /* Frame with wrong sequence number received */
   long  remote_busy;            /* Other end's window is closed */
   int  vr;                      /* Incoming sequence number expected next */
   int  vs;                      /* Next sequence number to be sent */
@@ -51,16 +52,21 @@ struct axcb {
   struct timer timer_t2;        /* Acknowledgement delay timer */
   struct timer timer_t3;        /* No-activity timer */
   struct timer timer_t4;        /* Busy timer */
+  struct axreseq {              /* Resequencing queue */
+    struct mbuf *bp;
+    int  sum;
+  } reseq[8];
   struct mbuf *rcvq;            /* Receive queue */
   int16 rcvcnt;                 /* Receive queue length */
   struct mbuf *sndq;            /* Send queue */
-  int16 sndcnt;                 /* Send queue length */
-  int16 segsize;                /* Current send segment size */
+  struct mbuf *resndq;          /* Resend queue */
+  int  unack;                   /* Number of unacked frames */
+  long  sndtime[8];             /* Time of 1st transmission */
   void (*r_upcall)();           /* Call when data arrives */
   void (*t_upcall)();           /* Call when ok to send more data */
   void (*s_upcall)();           /* Call when connection state changes */
   char  *user;                  /* User parameter (e.g., for mapping to an
-				 * application control block
+				 * application control block)
 				 */
   struct axcb *peer;            /* Pointer to peer's control block */
   struct axcb *next;            /* Linked-list pointer */
@@ -73,6 +79,7 @@ extern char  *ax25states[];             /* State names */
 extern char  *pathtostr();
 extern int  ax_maxframe;                /* Transmit flow control level */
 extern int  ax_paclen;                  /* Maximum outbound packet size */
+extern int  ax_pthresh;                 /* Send polls for packets larger than this */
 extern int  ax_retry;                   /* Retry limit */
 extern int  ax_t1init;                  /* Retransmission timeout */
 extern int  ax_t2init;                  /* Acknowledgement delay timeout */
@@ -83,9 +90,11 @@ extern struct axcb *axcb_server;        /* Server control block */
 
 /* AX25 user calls */
 extern struct axcb *open_ax();
-extern int  recv_ax();
 extern int  send_ax();
+extern int  space_ax();
+extern int  recv_ax();
 extern int  close_ax();
 extern int  reset_ax();
 extern int  del_ax();
 extern int  valid_ax();
+
