@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/vixxx,v 1.7 1996/02/08 11:57:09 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/vixxx,v 1.8 1996/08/11 18:17:09 deyke Exp $
 
 tmp=/tmp/tmp$$
 sed <xxx >$tmp -e "

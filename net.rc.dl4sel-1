@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel-1,v 1.33 1995/05/31 19:20:14 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel-1,v 1.34 1996/08/11 18:15:53 deyke Exp $
 
 hostname     dl4sel-1
 ax25 mycall  dl4sel-1

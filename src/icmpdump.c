@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpdump.c,v 1.7 1995/12/20 09:46:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpdump.c,v 1.8 1996/08/11 18:16:09 deyke Exp $ */
 
 /* ICMP header tracing
  * Copyright 1991 Phil Karn, KA9Q

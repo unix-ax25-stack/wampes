@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcptimer.c,v 1.7 1995/12/20 09:46:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcptimer.c,v 1.8 1996/08/11 18:16:09 deyke Exp $ */
 
 /* TCP timeout routines
  * Copyright 1991 Phil Karn, KA9Q

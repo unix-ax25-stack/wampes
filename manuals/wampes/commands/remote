@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/remote,v 1.3 1994/08/21 10:17:31 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/remote,v 1.4 1996/08/11 18:17:44 deyke Exp $
 .H 2 "remote" " [-p \fIport\fP] [-k \fIkey\fP] [-a \fIkickaddr\fP] \fIhostid\fP exit|reset|kick"
 Send a UDP packet to the specified host commanding it
 to exit the \fBWAMPES\fP or \fBNOS\fP program, reset the processor,

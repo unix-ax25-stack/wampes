@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.h,v 1.10 1995/12/26 11:18:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.h,v 1.11 1996/08/11 18:16:09 deyke Exp $ */
 
 #ifndef _LOGIN_H
 #define _LOGIN_H

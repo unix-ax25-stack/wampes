@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.h,v 1.6 1996/05/28 15:56:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.h,v 1.7 1996/08/11 18:16:09 deyke Exp $ */
 
 #ifndef _DOMAIN_H
 #define _DOMAIN_H

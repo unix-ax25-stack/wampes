@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.h,v 1.8 1995/12/20 09:46:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.h,v 1.9 1996/08/11 18:16:09 deyke Exp $ */
 
 #ifndef _SLHC_H
 #define _SLHC_H

@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/topt,v 1.1 1995/12/20 09:48:37 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/topt,v 1.2 1996/08/11 18:17:44 deyke Exp $
 .H 2 "topt" " [on|off]"
 Display or set the flag controlling the display of client Telnet's
 option processing.

@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ipfilter,v 1.4 1995/10/14 16:42:03 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ipfilter,v 1.5 1996/08/11 18:17:44 deyke Exp $
 .H 2 "ipfilter" " [\fIsubcommand\fP]"
 Without an argument, display the IP filter table,
 which allows or denies IP packets to be received from or sent to a destination.

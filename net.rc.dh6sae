@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dh6sae,v 1.6 1994/08/21 10:16:51 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dh6sae,v 1.7 1996/08/11 18:15:53 deyke Exp $
 
 hostname     dh6sae
 ax25 mycall  dh6sae

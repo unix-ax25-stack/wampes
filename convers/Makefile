@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.38 1996/08/11 18:03:58 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.39 1996/08/11 18:16:05 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)

@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/smtp,v 1.3 1994/08/29 09:05:56 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/smtp,v 1.4 1996/08/11 18:17:44 deyke Exp $
 .H 2 "smtp" " \fIsubcommand\fP"
 These commands control the Simple Message Transport Protocol (SMTP) service
 (and all other mail delivery clients).

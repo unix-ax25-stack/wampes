@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/md5.h,v 1.3 1994/11/28 10:40:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/md5.h,v 1.4 1996/08/11 18:17:33 deyke Exp $ */
 
 /*
  ***********************************************************************

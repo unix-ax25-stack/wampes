@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/source,v 1.2 1994/07/27 09:48:00 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/source,v 1.3 1996/08/11 18:17:44 deyke Exp $
 .H 2 "source" " \fIfilename\fP"
 Read subsequent commands from \fIfilename\fP until EOF, then resume reading
 commands from the previous stream. This can be used to keep routing statements

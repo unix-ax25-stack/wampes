@@ -1,5 +1,5 @@
 #if 0
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/udpbridge.c,v 1.2 1996/02/13 15:30:55 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/udpbridge.c,v 1.3 1996/08/11 18:17:09 deyke Exp $";
 #endif
 
 #include <sys/types.h>

@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/bridge/bridge,v 1.2 1996/02/13 15:31:07 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/bridge/bridge,v 1.3 1996/08/11 18:18:22 deyke Exp $
 .nr Ej 0 \" No new page for all headers
 .H 1 "The bridge utility"
 Usage: /tcp/util/bridge [-a] [-f \fIfailures\fP]

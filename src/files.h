@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.h,v 1.6 1993/05/17 13:44:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.h,v 1.7 1996/08/11 18:16:09 deyke Exp $ */
 
 #ifndef _FILES_H
 #define _FILES_H

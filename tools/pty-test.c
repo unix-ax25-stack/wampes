@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/pty-test.c,v 1.7 1996/01/22 13:14:03 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/pty-test.c,v 1.8 1996/08/11 18:17:09 deyke Exp $";
 #endif
 
 #include <sys/types.h>

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/md5drivr.c,v 1.3 1994/10/06 16:15:46 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/md5drivr.c,v 1.4 1996/08/11 18:17:27 deyke Exp $";
 #endif
 
 /*

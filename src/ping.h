@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ping.h,v 1.1 1995/12/20 09:48:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ping.h,v 1.2 1996/08/11 18:16:09 deyke Exp $ */
 
 #ifndef _PING_H
 #define _PING_H

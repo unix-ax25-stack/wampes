@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/callvalid.c,v 1.2 1995/11/19 11:54:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/callvalid.c,v 1.3 1996/08/11 18:17:33 deyke Exp $ */
 
 #include <ctype.h>
 #include <string.h>

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/aos/strstr.c,v 1.2 1994/11/28 10:40:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/aos/strstr.c,v 1.3 1996/08/11 18:17:41 deyke Exp $ */
 
 /*-
  * Copyright (c) 1990 The Regents of the University of California.

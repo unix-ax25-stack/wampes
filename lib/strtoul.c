@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strtoul.c,v 1.6 1996/02/13 15:31:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strtoul.c,v 1.7 1996/08/11 18:17:33 deyke Exp $ */
 
 #include "configure.h"
 

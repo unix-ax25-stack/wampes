@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/flexnet,v 1.2 1994/10/30 21:27:11 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/flexnet,v 1.3 1996/08/11 18:17:44 deyke Exp $
 .H 2 "flexnet" " \fIsubcommand\fP"
 These commands control the FLEXNET service.
 .H 3 "flexnet dest" " [\fIax25_addr\fP]"

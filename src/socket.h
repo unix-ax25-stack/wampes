@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.19 1995/12/20 09:46:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.20 1996/08/11 18:16:09 deyke Exp $ */
 
 #ifndef _SOCKET_H
 #define _SOCKET_H

@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/print,v 1.5 1995/06/04 09:36:41 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/print,v 1.6 1996/08/11 18:17:09 deyke Exp $
 
 if [[ -n "$1" ]]; then
 	files="setup $*"

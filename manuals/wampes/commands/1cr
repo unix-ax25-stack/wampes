@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/1cr,v 1.2 1994/07/27 09:47:52 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/1cr,v 1.3 1996/08/11 18:17:44 deyke Exp $
 .H 2 "<cr>"
 Entering a carriage return (empty line) while in command mode
 puts you in converse mode with the current session. If there is

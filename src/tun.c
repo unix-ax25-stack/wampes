@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tun.c,v 1.1 1996/08/11 18:03:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tun.c,v 1.2 1996/08/11 18:16:09 deyke Exp $ */
 
 /*
    Interface to FreeBSD's tun device - Olaf Erb, dc1ik 960728
