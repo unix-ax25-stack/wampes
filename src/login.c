@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.11 1991/04/25 18:27:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.12 1991/06/01 22:18:21 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -56,9 +56,11 @@ struct login_cb {
   struct mbuf *sndq;            /* pty send queue */
   int  lastchr;                 /* last chr written to pty */
   int  linelen;                 /* counter for automatic line break */
-  void (*closefnc) __ARGS((void *closearg));
+  void (*readfnc) __ARGS((void *fncarg));
+				/* func to call if pty is readable */
+  void (*closefnc) __ARGS((void *fncarg));
 				/* func to call if pty gets closed */
-  void  *closearg;              /* argument for closefnc */
+  void  *fncarg;                /* argument for readfnc and closefnc */
   int  telnet;                  /* telnet mode */
   int  state;                   /* telnet state */
   char  option[NOPTIONS+1];     /* telnet options */
@@ -334,7 +336,7 @@ struct login_cb *tp;
     write(tp->pty, buf, (unsigned) cnt);
     write_log(tp->pty, buf, cnt);
   }
-  if (!tp->sndq) clrmask(chkwrite, tp->pty);
+  if (!tp->sndq) off_write(tp->pty);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -347,10 +349,10 @@ struct login_cb *tp;
   if (ioctl(tp->pty, TIOCREQCHECK, &request_info)) return;
   ioctl(tp->pty, TIOCREQSET, &request_info);
   if (request_info.request == TIOCCLOSE) {
-    clrmask(chkread, tp->pty);
-    clrmask(chkwrite, tp->pty);
-    clrmask(chkexcp, tp->pty);
-    if (tp->closefnc) (*tp->closefnc)(tp->closearg);
+    off_read(tp->pty);
+    off_write(tp->pty);
+    off_excp(tp->pty);
+    if (tp->closefnc) (*tp->closefnc)(tp->fncarg);
   }
 }
 
@@ -379,16 +381,11 @@ void  *upcall_arg;
     return 0;
   }
   strcpy(tp->id, slave + strlen(slave) - 2);
+  tp->readfnc = read_upcall;
   tp->closefnc = close_upcall;
-  tp->closearg = upcall_arg;
-  readfnc[tp->pty] = read_upcall;
-  readarg[tp->pty] = upcall_arg;
-  setmask(chkread, tp->pty);
-  writefnc[tp->pty] = (void (*)()) write_pty;
-  writearg[tp->pty] = tp;
-  excpfnc[tp->pty] = (void (*)()) excp_handler;
-  excparg[tp->pty] = tp;
-  setmask(chkexcp, tp->pty);
+  tp->fncarg = upcall_arg;
+  on_read(tp->pty, tp->readfnc, tp->fncarg);
+  on_excp(tp->pty, (void (*)()) excp_handler, tp);
   i = 1;
   ioctl(tp->pty, TIOCTRAP, &i);
   write_log_header(tp->pty, user, protocol);
@@ -444,15 +441,9 @@ struct login_cb *tp;
 
   if (!tp) return;
   if (tp->pty > 0) {
-    clrmask(chkread, tp->pty);
-    readfnc[tp->pty] = 0;
-    readarg[tp->pty] = 0;
-    clrmask(chkwrite, tp->pty);
-    writefnc[tp->pty] = 0;
-    writearg[tp->pty] = 0;
-    clrmask(chkexcp, tp->pty);
-    excpfnc[tp->pty] = 0;
-    excparg[tp->pty] = 0;
+    off_read(tp->pty);
+    off_write(tp->pty);
+    off_excp(tp->pty);
     close(tp->pty);
     restore_pty(tp->id);
     pty_inuse[tp->num] = 0;
@@ -504,10 +495,10 @@ int  cnt;
   struct mbuf *head, *tail;
 
   if (cnt <= 0) {
-    clrmask(chkread, tp->pty);
+    off_read(tp->pty);
     return 0;
   }
-  setmask(chkread, tp->pty);
+  on_read(tp->pty, tp->readfnc, tp->fncarg);
   head = 0;
   while (cnt) {
     if (tp->bufcnt <= 0) {
@@ -536,7 +527,7 @@ struct login_cb *tp;
 struct mbuf *bp;
 {
   append(&tp->sndq, bp);
-  setmask(chkwrite, tp->pty);
+  on_write(tp->pty, (void (*)()) write_pty, tp);
   if (tp->linelen) write_pty(tp);
 }
 

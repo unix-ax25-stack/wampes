@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.17 1991/05/09 07:38:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.18 1991/06/01 22:18:18 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -1346,19 +1346,18 @@ char  *user;
   struct ax25 hdr;
   struct ax25_cb *cp;
 
-  hdr.ndigis = hdr.nextdigi = 0;
-  ap = path;
-  addrcp(hdr.dest, ap);
-  ap += AXALEN;
-  addrcp(hdr.source, ap);
-  ap += AXALEN;
-  while (!(ap[-1] & E)) {
-    addrcp(hdr.digis[hdr.ndigis++], ap);
-    ap += AXALEN;
-  }
-
   switch (mode) {
   case AX_ACTIVE:
+    hdr.ndigis = hdr.nextdigi = 0;
+    ap = path;
+    addrcp(hdr.dest, ap);
+    ap += AXALEN;
+    addrcp(hdr.source, ap);
+    ap += AXALEN;
+    while (!(ap[-1] & E)) {
+      addrcp(hdr.digis[hdr.ndigis++], ap);
+      ap += AXALEN;
+    }
     for (cp = axcb_head; cp; cp = cp->next)
       if (!cp->peer && addreq(hdr.dest, cp->hdr.dest)) {
 	Net_error = CON_EXISTS;

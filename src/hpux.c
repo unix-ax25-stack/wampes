@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.17 1991/04/25 18:26:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.18 1991/06/01 22:18:08 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -19,27 +19,29 @@
 #include "hardware.h"
 #include "login.h"
 #include "commands.h"
+#include "main.h"
 #include "hpux.h"
 
 extern long  sigsetmask();
-extern void _exit();
 
 #define TIMEOUT 120
 
-int  chkread[2];
-int  actread[2];
-void (*readfnc[_NFILE]) __ARGS((void *));
-void *readarg[_NFILE];
+static int  chkread[2];
+static int  actread[2];
+static void (*readfnc[_NFILE]) __ARGS((void *));
+static void *readarg[_NFILE];
 
-int  chkwrite[2];
-int  actwrite[2];
-void (*writefnc[_NFILE]) __ARGS((void *));
-void *writearg[_NFILE];
+static int  chkwrite[2];
+static int  actwrite[2];
+static void (*writefnc[_NFILE]) __ARGS((void *));
+static void *writearg[_NFILE];
 
-int  chkexcp[2];
-int  actexcp[2];
-void (*excpfnc[_NFILE]) __ARGS((void *));
-void *excparg[_NFILE];
+static int  chkexcp[2];
+static int  actexcp[2];
+static void (*excpfnc[_NFILE]) __ARGS((void *));
+static void *excparg[_NFILE];
+
+static int  nfds = -1;
 
 static int  local_kbd;
 
@@ -63,7 +65,7 @@ struct sigcontext *scp;
 void ioinit()
 {
 
-  int i;
+  int  i;
   struct sigvec vec;
 
   if (local_kbd = isatty(0)) {
@@ -76,15 +78,15 @@ void ioinit()
     ioctl(0, TCSETA, &curr_termio);
     printf("\033&s1A");   /* enable XmitFnctn */
     fflush(stdout);
-    setmask(chkread, 0);
+    on_read(0, keyboard, (void *) 0);
   } else {
     for (i = 0; i < _NFILE; i++) close(i);
     setpgrp();
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");
+    remote_kbd_initialize();
   }
-  setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
   vec.sv_mask = vec.sv_flags = 0;
   vec.sv_handler = sigpipe_handler;
   sigvector(SIGPIPE, &vec, (struct sigvec *) 0);
@@ -124,24 +126,6 @@ void iostop()
 
 /*---------------------------------------------------------------------------*/
 
-int  kbread()
-{
-
-  static char  buf[256], *ptr;
-  static int  cnt;
-
-  if (!local_kbd) return remote_kbd();
-  if (cnt <= 0 && maskset(actread, 0)) {
-    clrmask(actread, 0);
-    cnt = read(0, ptr = buf, sizeof(buf));
-  }
-  if (cnt <= 0) return (-1);
-  cnt--;
-  return uchar(*ptr++);
-}
-
-/*---------------------------------------------------------------------------*/
-
 int  system(cmdline)
 const char *cmdline;
 {
@@ -150,13 +134,14 @@ const char *cmdline;
   long  oldmask;
 
   if (!cmdline) return 1;
+  fflush(stdout);
   switch (pid = fork()) {
   case -1:
     return (-1);
   case 0:
     for (i = 3; i < _NFILE; i++) close(i);
     execl("/bin/sh", "sh", "-c", cmdline, (char *) 0);
-    _exit(127);
+    exit(1);
   default:
     oldmask = sigsetmask(-1);
     while (wait(&status) != pid) ;
@@ -192,6 +177,90 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
+#define setmask(mask, fd) ((mask)[(fd)>>5] |=  (1 << ((fd) & 31)))
+#define clrmask(mask, fd) ((mask)[(fd)>>5] &= ~(1 << ((fd) & 31)))
+#define maskset(mask, fd) ((mask)[(fd)>>5] &   (1 << ((fd) & 31)))
+
+/*---------------------------------------------------------------------------*/
+
+void on_read(fd, fnc, arg)
+int  fd;
+void (*fnc) __ARGS((void *));
+void *arg;
+{
+  readfnc[fd] = fnc;
+  readarg[fd] = arg;
+  setmask(chkread, fd);
+  clrmask(actread, fd);
+  nfds = -1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void off_read(fd)
+int  fd;
+{
+  readfnc[fd] = 0;
+  readarg[fd] = 0;
+  clrmask(chkread, fd);
+  clrmask(actread, fd);
+  nfds = -1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void on_write(fd, fnc, arg)
+int  fd;
+void (*fnc) __ARGS((void *));
+void *arg;
+{
+  writefnc[fd] = fnc;
+  writearg[fd] = arg;
+  setmask(chkwrite, fd);
+  clrmask(actwrite, fd);
+  nfds = -1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void off_write(fd)
+int  fd;
+{
+  writefnc[fd] = 0;
+  writearg[fd] = 0;
+  clrmask(chkwrite, fd);
+  clrmask(actwrite, fd);
+  nfds = -1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void on_excp(fd, fnc, arg)
+int  fd;
+void (*fnc) __ARGS((void *));
+void *arg;
+{
+  excpfnc[fd] = fnc;
+  excparg[fd] = arg;
+  setmask(chkexcp, fd);
+  clrmask(actexcp, fd);
+  nfds = -1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void off_excp(fd)
+int  fd;
+{
+  excpfnc[fd] = 0;
+  excparg[fd] = 0;
+  clrmask(chkexcp, fd);
+  clrmask(actexcp, fd);
+  nfds = -1;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void check_files_changed()
 {
 
@@ -223,26 +292,26 @@ void eihalt()
   int  n;
   int  status;
   int32 nte;
-  register int  nfds;
   register unsigned int  i;
   struct timeval timeout;
 
   check_files_changed();
   wait3(&status, WNOHANG, (int *) 0);
   if (!Debug) alarm(TIMEOUT);
-  if (chkread[1] | chkwrite[1] | chkexcp[1]) {
-    i = chkread[1] | chkwrite[1] | chkexcp[1];
-    nfds = 32;
-  } else {
-    i = chkread[0] | chkwrite[0] | chkexcp[0];
-    nfds = 0;
-  }
-  for (n = 16; n; n >>= 1)
-    if (i & ((-1) << n)) {
-      nfds += n;
-      i >>= n;
+  if (nfds < 0) {
+    if (i = chkread[1] | chkwrite[1] | chkexcp[1])
+      nfds = 32;
+    else {
+      i = chkread[0] | chkwrite[0] | chkexcp[0];
+      nfds = 0;
     }
-  if (i) nfds++;
+    for (n = 16; n; n >>= 1)
+      if (i & ((-1) << n)) {
+	nfds += n;
+	i >>= n;
+      }
+    if (i) nfds++;
+  }
   actread [0] = chkread [0];
   actread [1] = chkread [1];
   actwrite[0] = chkwrite[0];
@@ -262,10 +331,10 @@ void eihalt()
     actwrite[0] = actwrite[1] = 0;
     actexcp [0] = actexcp [1] = 0;
   } else
-    for (i = 0; i < nfds; i++) {
-      if (readfnc [i] && maskset(actread , i)) (*readfnc [i])(readarg [i]);
-      if (writefnc[i] && maskset(actwrite, i)) (*writefnc[i])(writearg[i]);
-      if (excpfnc [i] && maskset(actexcp , i)) (*excpfnc [i])(excparg [i]);
+    for (n = nfds - 1; n >= 0; n--) {
+      if (readfnc [n] && maskset(actread , n)) (*readfnc [n])(readarg [n]);
+      if (writefnc[n] && maskset(actwrite, n)) (*writefnc[n])(writearg[n]);
+      if (excpfnc [n] && maskset(actexcp , n)) (*excpfnc [n])(excparg [n]);
     }
 }
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.8 1991/05/24 12:09:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.9 1991/06/01 22:17:47 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -171,11 +171,7 @@ int dev;
     ioctl(ap->fd, FIOSNBIO, &arg);      /*** will fail on pty master side ***/
   }
   times[dev].wait = 0;
-  readfnc[ap->fd] = 0;
-  readarg[ap->fd] = 0;
-  setmask(chkread, ap->fd);
-  writefnc[ap->fd] = (void (*)()) asy_tx;
-  writearg[ap->fd] = ap;
+  on_read(ap->fd, (void (*)()) ifp->rxproc, ifp);
   return 0;
 
 Fail:
@@ -219,14 +215,8 @@ struct iface *iface;
 	ap = &Asy[iface->dev];
 
 	if (ap->fd > 0) {
-		clrmask(chkread, ap->fd);
-		clrmask(actread, ap->fd);
-		readfnc[ap->fd] = 0;
-		readarg[ap->fd] = 0;
-		clrmask(chkwrite, ap->fd);
-		clrmask(actwrite, ap->fd);
-		writefnc[ap->fd] = 0;
-		writearg[ap->fd] = 0;
+		off_read(ap->fd);
+		off_write(ap->fd);
 		free_q(&ap->sndq);
 		close(ap->fd);
 		ap->fd = -1;
@@ -297,8 +287,6 @@ int cnt;
 	ap = Asy + dev;
 	if (ap->fd <= 0 && asy_open(dev))
 		return 0;
-	if (!maskset(actread, ap->fd))
-		return 0;
 	cnt = read(ap->fd, buf, (unsigned) cnt);
 	ap->rxints++;
 	if (cnt <= 0) {
@@ -358,7 +346,7 @@ struct mbuf *bp;
 	asyp = &Asy[dev];
 	if (asyp->fd > 0 || !asy_open(dev)) {
 		append(&asyp->sndq, bp);
-		setmask(chkwrite, asyp->fd);
+		on_write(asyp->fd, (void (*)()) asy_tx, asyp);
 	} else
 		free_p(bp);
 	return 0;
@@ -387,5 +375,5 @@ struct asy *asyp;
 	while (asyp->sndq != NULLBUF && asyp->sndq->cnt == 0)
 		asyp->sndq = free_mbuf(asyp->sndq);
 	if (asyp->sndq == NULLBUF)
-		clrmask(chkwrite, asyp->fd);
+		off_write(asyp->fd);
 }

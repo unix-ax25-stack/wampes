@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.7 1991/05/17 17:07:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.8 1991/06/01 22:18:27 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -58,6 +58,7 @@ register char *s;
 		*cp = '\0';
 }
 
+#if !(defined(hpux)||defined(__hpux))
 /* Copy a string to a malloc'ed buffer. Turbo C has this one in its
  * library, but it doesn't call mallocw() and can therefore return NULL.
  * NOS uses of strdup() generally don't check for NULL, so they need this one.
@@ -78,6 +79,7 @@ char *s;
 	out[len] = '\0';
 	return out;
 }
+#endif
 /* Routines not needed for Turbo 2.0, but available for older libraries */
 /* #ifdef  AZTEC */
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.9 1991/05/09 07:38:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.10 1991/06/01 22:18:37 deyke Exp $ */
 
 /* NOS User Session control
  * Copyright 1991 Phil Karn, KA9Q
@@ -19,7 +19,7 @@
 #include "socket.h"
 #include "cmdparse.h"
 #include "commands.h"
-/* #include "main.h" */
+#include "main.h"
 #include "axclient.h"
 #include "finger.h"
 #include "netrom.h"

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.h,v 1.3 1991/04/25 18:26:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.h,v 1.4 1991/06/01 22:18:04 deyke Exp $ */
 
 /*
  *
@@ -25,6 +25,6 @@ struct finger {
 extern char             *fingersuf,     /* see files.c */
 			*fingerpath;
 
-/* In fingcli.c: */
+/* In finger.c: */
 void fingcli_rcv __ARGS((struct tcb *tcb, int cnt));
 

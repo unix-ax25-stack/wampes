@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.h,v 1.8 1991/04/25 18:26:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.h,v 1.9 1991/06/01 22:18:09 deyke Exp $ */
 
 #ifndef _HPUX_H
 #define _HPUX_H
@@ -7,31 +7,18 @@
 #include "global.h"
 #endif
 
-extern int  chkread[];
-extern int  actread[];
-extern void (*readfnc[]) __ARGS((void *));
-extern void *readarg[];
-
-extern int  chkwrite[];
-extern int  actwrite[];
-extern void (*writefnc[]) __ARGS((void *));
-extern void *writearg[];
-
-extern int  chkexcp[];
-extern int  actexcp[];
-extern void (*excpfnc[]) __ARGS((void *));
-extern void *excparg[];
-
-#define setmask(mask, fd) ((mask)[(fd)>>5] |=  (1 << ((fd) & 31)))
-#define clrmask(mask, fd) ((mask)[(fd)>>5] &= ~(1 << ((fd) & 31)))
-#define maskset(mask, fd) ((mask)[(fd)>>5] &   (1 << ((fd) & 31)))
-
 /* In hpux.c: */
 void ioinit __ARGS((void));
 void iostop __ARGS((void));
-int kbread __ARGS((void));
 int system __ARGS((const char *cmdline));
 int _system __ARGS((char *cmdline));
+int doshell __ARGS((int argc, char *argv [], void *p));
+void on_read __ARGS((int fd, void (*fnc)(void *), void *arg));
+void off_read __ARGS((int fd));
+void on_write __ARGS((int fd, void (*fnc)(void *), void *arg));
+void off_write __ARGS((int fd));
+void on_excp __ARGS((int fd, void (*fnc)(void *), void *arg));
+void off_excp __ARGS((int fd));
 void eihalt __ARGS((void));
 
 #endif  /* _HPUX_H */

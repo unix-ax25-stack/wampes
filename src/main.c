@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.19 1991/05/29 12:02:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.20 1991/06/01 22:18:25 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -43,7 +43,7 @@
 #include "devparam.h"
 /* #include "domain.h" */
 #include "files.h"
-/* #include "main.h" */
+#include "main.h"
 #include "remote.h"
 #include "trace.h"
 #include "hpux.h"
@@ -75,10 +75,7 @@ int argc;
 char *argv[];
 {
 	static char linebuf[BUFSIZ];    /* keep it off the stack */
-	char *ttybuf;
-	int16 cnt;
 	FILE *fp;
-	struct iface *ifp;
 	int c;
 
 	Debug = (argc >= 2);
@@ -96,8 +93,7 @@ char *argv[];
 	remote_net_initialize();
 
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
-	tprintf("\n");
-	tprintf("@(#)WAMPES version 910529\n" + 4);
+	tprintf("\n================ %s ================\n", Version);
 	tprintf("(c) Copyright 1990, 1991 by Dieter Deyke, DK5SG\n");
 	tprintf("(c) Copyright 1990 by Phil Karn, KA9Q\n");
 	tprintf("\n");
@@ -126,55 +122,6 @@ char *argv[];
 
 	/* Main commutator loop */
 	for(;;){
-		/* Process any keyboard input */
-		while((c = kbread()) != -1){
-#if     (defined(MSDOS) || defined(ATARI_ST))
-			/* c == -2 means the command escape key (F10) */
-			if(c == -2){
-				if(Mode != CMD_MODE){
-					tprintf("\n");
-					cmdmode();
-				}
-				continue;
-			}
-#else
-			if(c == Escape && Escape != 0){
-				ttydriv('\r', &ttybuf);
-				Mode = CONV_MODE;
-				cmdmode();
-				continue;
-			}
-#endif
-			if ((cnt = ttydriv(c, &ttybuf)) == 0)
-				continue;
-			switch(Mode){
-			case CMD_MODE:
-				(void)cmdparse(Cmds,ttybuf,NULL);
-				fflush(stdout);
-				break;
-			case CONV_MODE:
-#ifdef  false
-				if(ttybuf[0] == Escape && Escape != 0){
-					tprintf("\n");
-					cmdmode();
-				} else
-#endif  /* MSDOS */
-					if(Current->parse != NULLVFP)
-						(*Current->parse)(ttybuf,cnt);
-
-				break;
-			}
-			if(Mode == CMD_MODE){
-				tprintf(Prompt,Hostname);
-				fflush(stdout);
-			}
-		}
-
-		/* Service the interfaces */
-		for(ifp = Ifaces; ifp != NULLIF; ifp = ifp->next){
-			if(ifp->rxproc != NULLVFP)
-				(*ifp->rxproc)(ifp);
-		}
 
 		/* Service the clock */
 		timerproc();
@@ -182,15 +129,8 @@ char *argv[];
 		if(Hopper)
 			network();
 
-#ifdef  MSDOS
-		/* Tell DoubleDos to let the other task run for awhile.
-		 * If DoubleDos isn't active, this is a no-op
-		 */
-		giveup();
-#else
 		/* Wait until interrupt, then do it all over again */
 		eihalt();
-#endif
 	}
 }
 /* Enter command mode */
@@ -204,6 +144,47 @@ cmdmode()
 		fflush(stdout);
 	}
 	return 0;
+}
+/* Keyboard input process */
+void
+keyboard(v)
+void *v;
+{
+
+	char *p;
+	char *ttybuf;
+	char buf[1024];
+	int c;
+	int cnt;
+	int n;
+
+	n = read(0, p = buf, sizeof(buf));
+	if (n <= 0) dobye(0, (char **) 0, (void * ) 0);
+	while (--n >= 0) {
+		c = uchar(*p++);
+		if (c == Escape && Escape != 0) {
+			ttydriv('\r', &ttybuf);
+			Mode = CONV_MODE;
+			cmdmode();
+			continue;
+		}
+		if ((cnt = ttydriv(c, &ttybuf)) == 0)
+			continue;
+		switch (Mode) {
+		case CMD_MODE:
+			cmdparse(Cmds, ttybuf, NULL);
+			fflush(stdout);
+			break;
+		case CONV_MODE:
+			if (Current->parse != NULLVFP)
+				(*Current->parse)(ttybuf, cnt);
+			break;
+		}
+		if (Mode == CMD_MODE) {
+			tprintf(Prompt, Hostname);
+			fflush(stdout);
+		}
+	}
 }
 /* Standard commands called from main */
 int

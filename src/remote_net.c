@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.7 1991/04/25 18:27:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.8 1991/06/01 22:18:34 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -28,6 +28,8 @@ struct cmdtable {
   int  (*fnc) __ARGS((struct controlblock *cp)); /* Command function */
 };
 
+static int  flisten = -1;
+
 static char *getarg __ARGS((char *line, int all));
 static int command_switcher __ARGS((struct controlblock *cp, char *name, struct cmdtable *tableptr));
 static void delete_controlblock __ARGS((struct controlblock *cp));
@@ -39,7 +41,7 @@ static int ascii_command __ARGS((struct controlblock *cp));
 static int binary_command __ARGS((struct controlblock *cp));
 static int connect_command __ARGS((struct controlblock *cp));
 static void command_receive __ARGS((struct controlblock *cp));
-static void accept_connection __ARGS((void *flisten));
+static void accept_connection __ARGS((void *p));
 
 /*---------------------------------------------------------------------------*/
 
@@ -91,9 +93,7 @@ struct cmdtable *tableptr;
 static void delete_controlblock(cp)
 struct controlblock *cp;
 {
-  clrmask(chkread, cp->fd);
-  readfnc[cp->fd] = 0;
-  readarg[cp->fd] = 0;
+  off_read(cp->fd);
   close(cp->fd);
   free(cp);
 }
@@ -109,14 +109,14 @@ struct controlblock *cp;
 
   cnt = transport_send_space(cp->tp);
   if (cnt <= 0) {
-    clrmask(chkread, cp->fd);
+    off_read(cp->fd);
     return;
   }
   if (!(bp = alloc_mbuf(cnt))) return;
-  cnt = doread(cp->fd, bp->data, (unsigned) cnt);
+  cnt = read(cp->fd, bp->data, (unsigned) cnt);
   if (cnt <= 0) {
     free_p(bp);
-    clrmask(chkread, cp->fd);
+    off_read(cp->fd);
     transport_close(cp->tp);
     return;
   }
@@ -138,7 +138,7 @@ int16 cnt;
   cp = (struct controlblock *) tp->user;
   transport_recv(tp, &bp, 0);
   while ((cnt = pullup(&bp, buffer, sizeof(buffer))) > 0)
-    if (dowrite(cp->fd, buffer, (unsigned) cnt) < 0) transport_close(tp);
+    if (write(cp->fd, buffer, (unsigned) cnt) != cnt) transport_close(tp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -150,7 +150,7 @@ int16 cnt;
   struct controlblock *cp;
 
   cp = (struct controlblock *) tp->user;
-  setmask(chkread, cp->fd);
+  on_read(cp->fd, (void (*)()) transport_try_send, cp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -195,7 +195,7 @@ struct controlblock *cp;
     cp->tp->recv_mode = EOL_LF;
     cp->tp->send_mode = (!strcmp(protocol, "tcp")) ? EOL_CRLF : EOL_CR;
   }
-  readfnc[cp->fd] = (void (*)()) transport_try_send;
+  on_read(cp->fd, (void (*)()) transport_try_send, cp);
   return 0;
 }
 
@@ -214,7 +214,7 @@ struct controlblock *cp;
 
   char  c;
 
-  if (doread(cp->fd, &c, 1) <= 0) {
+  if (read(cp->fd, &c, 1) <= 0) {
     delete_controlblock(cp);
     return;
   }
@@ -231,8 +231,8 @@ struct controlblock *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void accept_connection(flisten)
-void *flisten;
+static void accept_connection(p)
+void *p;
 {
 
   int  addrlen;
@@ -241,16 +241,14 @@ void *flisten;
   struct sockaddr addr;
 
   addrlen = sizeof(addr);
-  if ((fd = accept((int) flisten, &addr, &addrlen)) < 0) return;
+  if ((fd = accept(flisten, &addr, &addrlen)) < 0) return;
   cp = (struct controlblock *) calloc(1, sizeof (struct controlblock ));
   if (!cp) {
     close(fd);
     return;
   }
   cp->fd = fd;
-  readfnc[fd] = (void (*)()) command_receive;
-  readarg[fd] = cp;
-  setmask(chkread, fd);
+  on_read(cp->fd, (void (*)()) command_receive, cp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -267,7 +265,7 @@ void remote_net_initialize()
     (char *) 0
   };
 
-  int  addrlen, flisten, i;
+  int  addrlen, i;
   struct sockaddr *addr;
 
   for (i = 0; socketnames[i]; i++) {
@@ -282,11 +280,10 @@ void remote_net_initialize()
 	  break;
 	}
 	if (!bind(flisten, addr, addrlen) && !listen(flisten, SOMAXCONN)) {
-	  setmask(chkread, flisten);
-	  readfnc[flisten] = accept_connection;
-	  readarg[flisten] = (void *) flisten;
+	  on_read(flisten, accept_connection, (void *) 0);
 	} else {
 	  close(flisten);
+	  flisten = -1;
 	}
       }
     }
