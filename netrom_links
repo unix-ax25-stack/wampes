@@ -1,0 +1,34 @@
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/netrom_links,v 1.1 1992/08/19 13:13:20 deyke Exp $
+
+netrom links db0id     db0dlg-2  100 permanent
+netrom links db0id     db0hp-10  200 permanent
+netrom links db0id     db0ie     150 permanent
+netrom links db0id     db0sao    200 permanent
+
+netrom links db0sao    df1tl     192 permanent
+
+netrom links dk0hu     db0sao    250 permanent
+netrom links dk0hu     dg9sbl-1  250 permanent
+netrom links dk0hu     dg9yev-1  250 permanent
+netrom links dk0hu     dj0ze-1   250 permanent
+netrom links dk0hu     dj3eg-1   250 permanent
+netrom links dk0hu     dk5sg     250 permanent
+netrom links dk0hu     dl1sbl    192 permanent
+netrom links dk0hu     dl1sbl-1  250 permanent
+netrom links dk0hu     dl4sas-1  250 permanent
+netrom links dk0hu     dl4sel    192 permanent
+netrom links dk0hu     dl4sel-1  250 permanent
+
+# disallow flexnet login
+
+netrom links nocall    db0aal      0 permanent
+netrom links nocall    db0aau      0 permanent
+netrom links nocall    db0da       0 permanent
+netrom links nocall    db0eq       0 permanent
+netrom links nocall    db0gpp      0 permanent
+netrom links nocall    db0hp       0 permanent
+netrom links nocall    db0lai      0 permanent
+netrom links nocall    db0lx-7     0 permanent
+netrom links nocall    db0rbs      0 permanent
+netrom links nocall    db0saa      0 permanent
+netrom links nocall    db0sau      0 permanent

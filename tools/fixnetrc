@@ -1,0 +1,25 @@
+#! /bin/csh -f
+
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/fixnetrc,v 1.1 1992/08/19 13:13:20 deyke Exp $
+
+set nonomatch
+
+rm -f /tmp/iprt.*
+
+makeiprt
+if ($status) exit 1
+
+foreach i (net.rc.*)
+  set file = `expr substr $i 8 999`
+  if (-f /tmp/iprt.$file) then
+    ex - net.rc.$file <<EOF
+      %g/^route add/d
+      r /tmp/iprt.$file
+      x
+EOF
+  endif
+end
+
+trimfiles
+
+rm -f /tmp/iprt.*

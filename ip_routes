@@ -1,0 +1,53 @@
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ip_routes,v 1.1 1992/08/19 13:13:20 deyke Exp $
+
+#host           destination     bits    iface   gateway                 private
+#------------------------------------------------------------------------------
+
+hpcsos          44              9       none
+hpcsos          44.130.29       24      none
+hpcsos          44.130.41       24      none
+hpcsos          dk5sg           32      none
+
+dk5sg           15              8       ni      0                       p
+dk5sg           dk0hu           32      ipip    15.136.56.6
+dk5sg           dk5sg-u         32      ni
+dk5sg           hpcsos          32      ipip    15.255.240.16
+
+dk0hu           db0sao          32      ipip    192.1.1.1
+dk0hu           dg9sbl-1        32      ipip    15.137.34.8
+dk0hu           dg9yev-1        32      ipip    15.137.23.159
+dk0hu           dj0ze-1         32      ipip    15.137.23.135
+dk0hu           dj3eg-1         32      ipip    15.136.170.163
+dk0hu           dk5sg           32      ipip    15.15.80.34
+dk0hu           dl1sbl          32      tnc0
+dk0hu           dl1sbl-1        32      ipip    15.136.56.132
+dk0hu           dl2sel-1        32      ipip    15.136.168.71
+dk0hu           dl4sas-1        32      ipip    15.136.216.69
+dk0hu           dl4sel          32      tnc0
+dk0hu           dl4sel-1        32      ipudp   15.136.170.158
+
+dg9sbl-1        dk0hu           32      ipip    15.136.56.6
+dg9yev-1        dk0hu           32      ipip    15.136.56.6
+dj0ze-1         dk0hu           32      ipip    15.136.56.6
+dj3eg-1         dk0hu           32      ipip    15.136.56.6
+dl1sbl-1        dk0hu           32      ipip    15.136.56.6
+dl2sel-1        dk0hu           32      ipip    15.136.56.6
+dl4sas-1        dk0hu           32      ipip    15.136.56.6
+dl4sel-1        dk0hu           32      ipudp   15.136.56.6
+
+db0sao          db0id           32      tnc2
+db0sao          db0sao-u        32      ni
+db0sao          df1tl           32      tnc1
+db0sao          dk0hu           32      ipip    192.1.1.2
+
+db0id           0               0       tnc1
+db0id           db0id-u         32      ni
+db0id           db0sao          32      tnc3
+
+dl1sbl          dk0hu           32      tnc0
+dl1sbl          dl1sbl-u        32      ni
+
+dl4sel          dk0hu           32      tnc0
+
+df1tl           db0sao          32      tnc1
+df1tl           df1tl-u         32      ni
