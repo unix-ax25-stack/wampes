@@ -4,8 +4,6 @@
 
 - change ipfilter man page
 
-- verify english bbs help file
-
 - Beobachtung: Peer fehlt in der Dest Liste
 
 - delete peer only after 2nd poll timeout

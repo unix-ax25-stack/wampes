@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.81 1994/10/09 08:23:03 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.82 1994/11/09 13:47:12 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -2493,12 +2493,14 @@ int main(int argc, char **argv)
 
   umask(022);
 
-  sscanf((char *) rcsid, "%*s %*s %*s %s %s %s %s %s",
-		revision.number,
-		revision.date,
-		revision.time,
-		revision.author,
-		revision.state);
+  strcpy(buf, rcsid);           /* HP-UX bug work around */
+  sscanf(buf,
+	 "%*s %*s %*s %s %s %s %s %s",
+	 revision.number,
+	 revision.date,
+	 revision.time,
+	 revision.author,
+	 revision.state);
 
   while ((c = getopt(argc, argv, "df:mpw:")) != EOF)
     switch (c) {

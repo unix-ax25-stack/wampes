@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.19 1994/11/08 14:26:34 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.20 1994/11/09 13:47:16 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -100,7 +100,7 @@ static char *include_table[] =
   "bbs",
   "bbs/*.[ch]",
   "bbs/Makefile",
-  "bbs/help",
+  "bbs/help.???",
   "cc",
   "convers",
   "convers/*.[ch]",
@@ -608,12 +608,11 @@ static void update_mirror_from_rcs(struct file *p, const char *master, const cha
   if (!minor)
     goto Fail;
   for (; minor > 0; minor--) {
-    sprintf(buf, "co -q -p%s%d %s >%s 2>&1", major, minor, rcsfilename, mirrorfilename);
+    sprintf(buf, "co -q -p%s%d %s > %s", major, minor, rcsfilename, mirrorfilename);
     system(buf);
     getdigest(mirrorfilename, &mdContext);
     if (!memcmp(p->client.digest, (char *) mdContext.digest, DIGESTSIZE)) {
-      p->mirror.mode = S_IFREG;
-      memcpy(p->mirror.digest, (char *) mdContext.digest, DIGESTSIZE);
+      p->mirror = p->client;
       return;
     }
   }
@@ -693,7 +692,7 @@ static void send_update(struct file *p, enum e_action action, int flags, const c
 	      tempfilename);
     } else {
       sprintf(buf,
-	      "(diff -e %s %s; echo x) | %s > %s",
+	      "(diff -e %s %s; echo w) | %s > %s",
 	      mirrorfilename,
 	      masterfilename,
 	      (flags & USE_GZIP) ? GZIP_PROG " -9" : "compress",
@@ -860,7 +859,7 @@ static void scandirectory(const char *dirname, enum e_scanmode scanmode)
   DIR *dirp;
   MD5_CTX mdContext;
   char *fnp;
-  char buf[8 * 1024];
+  char buf[1024];
   char filename[1024];
   int n;
   struct dirent *dp;
@@ -917,6 +916,8 @@ static void scandirectory(const char *dirname, enum e_scanmode scanmode)
       p->mirror.mode = statbuf.st_mode;
       memcpy(p->mirror.digest, (char *) mdContext.digest, DIGESTSIZE);
       break;
+    default:
+      protoerr();
     }
     if (S_ISDIR(statbuf.st_mode))
       scandirectory(filename, scanmode);
@@ -953,7 +954,6 @@ static void server_version_0(const char *client, int flags)
   if (lstat(filename, &statbuf))
     syscallerr(filename);
   filesize = (int) statbuf.st_size;
-  printf("File size = %d\n", filesize);
   writeint(filesize);
   fd = open(filename, O_RDONLY, 0644);
   if (fd < 0)
@@ -1031,7 +1031,8 @@ static void server_version_1(const char *client, int flags)
       strcat(mirrorfilename, p->name);
       if (FTYPE(p->client.mode))
 	send_update(p, ACT_DELETE, flags, masterfilename, mirrorfilename);
-      update_mirror_from_master(p, masterfilename, mirrorfilename);
+      else
+	update_mirror_from_master(p, masterfilename, mirrorfilename);
       free(p);
     } else {
       p->next = newhead;
@@ -1081,6 +1082,8 @@ static void server_version_1(const char *client, int flags)
     case S_IFLNK:
       if (memcmp(p->master.digest, p->client.digest, DIGESTSIZE))
 	send_update(p, ACT_CREATE, flags, masterfilename, mirrorfilename);
+      else
+	update_mirror_from_master(p, masterfilename, mirrorfilename);
       break;
     default:
       protoerr();
