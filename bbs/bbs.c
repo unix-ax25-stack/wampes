@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.67 1989/06/12 21:46:47 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.68 1989/06/14 06:45:36 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -1765,13 +1765,17 @@ char  **argv;
   strlwc(strcpy(loginname, cp));
   for (hp = hosts; *hp; hp++)
     if (calleq(*hp, loginname)) hostmode = 1;
-  while ((c = getopt(argc, argv, superuser ? "df:mn" : "d")) != EOF)
+  while ((c = getopt(argc, argv, "df:mn")) != EOF)
     switch (c) {
     case 'd':
       debug = 1;
       dir = DEBUGDIR;
       break;
     case 'f':
+      if (!superuser) {
+	puts("Permission denied");
+	exit(1);
+      }
       strlwc(strcpy(loginname, optarg));
       hostmode = 1;
       mode = BBS;
@@ -1789,10 +1793,7 @@ char  **argv;
     }
   if (optind < argc) err_flag = 1;
   if (err_flag) {
-    if (superuser)
-      puts("usage: bbs [-d] [-f system|-m|-n]");
-    else
-      puts("usage: bbs [-d]");
+    puts("usage: bbs [-d] [-f system|-m|-n]");
     exit(1);
   }
   mkdir(dir, 0755);
