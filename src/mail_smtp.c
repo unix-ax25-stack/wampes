@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.6 1991/02/24 20:17:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.7 1991/05/21 19:09:00 deyke Exp $ */
 
 /* SMTP Mail Delivery Agent */
 
@@ -193,7 +193,7 @@ struct mailsys *sp;
 {
   struct mesg *mp;
 
-  mp = (struct mesg *) calloc(1, sizeof(struct mesg ));
+  mp = calloc(1, sizeof(*mp));
   mp->sp = sp;
   if (mp->tp = transport_open(sp->protocol, sp->address, mail_smtp_recv_upcall, mail_smtp_send_upcall, mail_smtp_state_upcall, (char *) mp)) {
     mp->tp->recv_mode = EOL_LF;

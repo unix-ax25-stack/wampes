@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.5 1991/05/17 17:07:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.6 1991/05/21 19:09:27 deyke Exp $ */
 
 /* General purpose software timer facilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -24,6 +24,7 @@ void
 timerproc()
 {
 	register struct timer *t;
+	int32 remaining;
 	struct timeval tv;
 	struct timezone tz;
 
@@ -31,7 +32,7 @@ timerproc()
 	Secclock = tv.tv_sec;
 	Msclock = 1000 * Secclock + tv.tv_usec / 1000;
 
-	while((t = Timers) && (Msclock - t->expiration) >= 0) {
+	while((t = Timers) && (remaining = t->expiration - Msclock) <= 0) {
 		if (Timers = t->next)
 			Timers->prev = NULLTIMER;
 		t->state = TIMER_EXPIRE;
@@ -46,6 +47,7 @@ struct timer *t;
 {
 	register struct timer *tnext;
 	struct timer *tprev = NULLTIMER;
+	int32 diff;
 
 	if(t == NULLTIMER)
 		return;
@@ -62,7 +64,7 @@ struct timer *t;
 	 * comparison of expiration times.
 	 */
 	for(tnext = Timers;tnext != NULLTIMER;tprev=tnext,tnext = tnext->next){
-		if((tnext->expiration - t->expiration) >= 0)
+		if((diff = tnext->expiration - t->expiration) >= 0)
 			break;
 	}
 	/* At this point, tprev points to the entry that should go right
@@ -106,8 +108,7 @@ struct timer *t;
 	if(t == NULLTIMER || t->state != TIMER_RUN)
 		return 0;
 
-	remaining = t->expiration - Msclock;
-	if(remaining <= 0)
+	if((remaining = t->expiration - Msclock) <= 0)
 		return 0;       /* Already expired */
 	else
 		return remaining;
@@ -117,7 +118,8 @@ next_timer_event()
 {
 	if (Timers)
 		return read_timer(Timers);
-	return 0x7fffffff;
+	else
+		return 0x7fffffff;
 }
 /* Convert time count in seconds to printable days:hr:min:sec format */
 char *

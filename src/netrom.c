@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.21 1991/05/09 07:38:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.22 1991/05/21 19:09:04 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -1036,7 +1036,7 @@ struct circuit *pc;
   case CONNECTED:
     if (pc->retry > nr_tretry)
       set_circuit_state(pc, DISCONNECTING);
-    else {
+    else if (pc->unack) {
       pc->send_state = uchar(pc->send_state - pc->unack);
       for (qp = pc->resndq; qp; qp = qp->anext) {
 	pc->sndtime[pc->send_state] = 0;

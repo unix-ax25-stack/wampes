@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.8 1991/04/12 18:35:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.9 1991/05/21 19:08:58 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -91,12 +91,6 @@ void *p;
     case MS_NEVER:
       state = "";
       break;
-    case MS_TRYING:
-      state = "Trying";
-      break;
-    case MS_TALKING:
-      state = "Talking";
-      break;
     case MS_SUCCESS:
       state = "Success";
       break;
@@ -104,6 +98,12 @@ void *p;
       state = "Failure";
       if (sp->nexttime > secclock())
 	sprintf(waittime, "%d sec", sp->nexttime - secclock());
+      break;
+    case MS_TRYING:
+      state = "Trying";
+      break;
+    case MS_TALKING:
+      state = "Talking";
       break;
     }
     tprintf("%-10s %-7s %-10s %-8s %9s\n", sp->sysname, sp->mailer->name, sp->protocol, state, waittime);
@@ -170,7 +170,7 @@ static void read_configuration()
   struct stat statbuf;
 
   for (sp = Systems; sp; sp = sp->next)
-    if (sp->jobs) return;
+    if (sp->state >= MS_TRYING) return;
   if (stat(CONFFILE, &statbuf)) return;
   if (lastmtime == statbuf.st_mtime || statbuf.st_mtime > secclock() - 5) return;
   if (!(fp = fopen(CONFFILE, "r"))) return;
@@ -190,7 +190,7 @@ static void read_configuration()
     for (mailer = Mailers; mailer->name; mailer++)
       if (!strcmp(mailer->name, mailername)) break;
     if (!mailer->name) continue;
-    sp = (struct mailsys *) calloc(1, sizeof (struct mailsys ));
+    sp = calloc(1, sizeof(*sp));
     sp->sysname = strdup(sysname);
     sp->mailer = mailer;
     sp->protocol = strdup(protocol);
@@ -230,17 +230,17 @@ char  *sysname;
   read_configuration();
 
   for (clients = 0, sp = Systems; sp; sp = sp->next)
-    if (sp->jobs) clients++;
+    if (sp->state >= MS_TRYING) clients++;
   for (sp = Systems; sp && clients < Maxclients; sp = sp->next) {
     if (sysname && !strcmp(sp->sysname, sysname)) sp->nexttime = 0;
-    if (sp->jobs || sp->nexttime > secclock()) continue;
+    if (sp->state >= MS_TRYING || sp->nexttime > secclock()) continue;
     sprintf(spooldir, "%s/%s", SPOOLDIR, sp->sysname);
     if (!(dirp = opendir(spooldir))) continue;
     filelist = 0;
     cnt = 0;
     for (dp = readdir(dirp); dp; dp = readdir(dirp)) {
       if (*dp->d_name != 'C') continue;
-      p = (struct filelist *) malloc(sizeof(struct filelist ));
+      p = malloc(sizeof(*p));
       strcpy(p->name, dp->d_name);
       if (!filelist || strcmp(p->name, filelist->name) < 0) {
 	p->next = filelist;
@@ -260,7 +260,7 @@ char  *sysname;
     closedir(dirp);
     tail = 0;
     for (; p = filelist; filelist = p->next, free(p)) {
-      memset(&mj, 0, sizeof(struct mailjob ));
+      memset(&mj, 0, sizeof(mj));
       sprintf(mj.cfile, "%s/%s", spooldir, p->name);
       if (!(fp = fopen(mj.cfile, "r"))) continue;
       while (fgets(line, sizeof(line), fp)) {
@@ -299,7 +299,8 @@ char  *sysname;
 	sprintf(mj.return_reason, "520 %s... Cannot connect for %d days\n", sp->sysname, RETURNTIME / (60L*60*24));
 	mail_return(&mj);
       } else {
-	jp = (struct mailjob *) memcpy(malloc(sizeof(struct mailjob )), &mj, sizeof(struct mailjob ));
+	jp = malloc(sizeof(*jp));
+	*jp = mj;
 	if (!sp->jobs)
 	  sp->jobs = jp;
 	else
@@ -308,8 +309,8 @@ char  *sysname;
       }
     }
     if (sp->jobs) {
-      clients++;
       sp->state = MS_TRYING;
+      clients++;
       (*sp->mailer->func)(sp);
     }
   }

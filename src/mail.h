@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.8 1991/04/12 18:35:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.9 1991/05/21 19:08:57 deyke Exp $ */
 
 #ifndef _MAIL_H
 #define _MAIL_H
@@ -18,11 +18,11 @@ struct mailsys {
   struct mailers *mailer;
   char  *protocol, *address;
   int  state;
-#define MS_NEVER        0
-#define MS_TRYING       1
-#define MS_TALKING      2
-#define MS_SUCCESS      3
-#define MS_FAILURE      4
+#define MS_NEVER        0       /* Inactive states */
+#define MS_SUCCESS      1
+#define MS_FAILURE      2
+#define MS_TRYING       3       /* Active states */
+#define MS_TALKING      4
   long  nexttime;
   struct mailjob *jobs;
   struct mailsys *next;

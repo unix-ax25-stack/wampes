@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.3 1991/02/24 20:17:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.4 1991/05/21 19:09:14 deyke Exp $ */
 
 /* This file contains code to implement the Routing Information Protocol (RIP)
  * and is derived from 4.2BSD code. Mike Karels of Berkeley has stated on
@@ -660,7 +660,9 @@ void *s;
 	stop_timer(&rp->timer);
 	if(rp->metric < RIP_INFINITY){
 		rp->metric = RIP_INFINITY;
+#if 0
 		if(dur_timer(&rp->timer) == 0)
+#endif
 			set_timer(&rp->timer,RIP_TTL*1000L);
 		/* wait 2/3 of timeout before garbage collect */
 		set_timer(&rp->timer,dur_timer(&rp->timer)*2/3);

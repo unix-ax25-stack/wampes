@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.6 1991/05/09 07:37:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.7 1991/05/21 19:08:18 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -20,14 +20,93 @@
 #include "hpux.h"
 #include "timer.h"
 
+static int find_speed __ARGS((int speed));
 static int asy_open __ARGS((int dev));
+static void asy_tx __ARGS((struct asy *asyp));
 
 struct asy Asy[ASY_MAX];
 
 /*---------------------------------------------------------------------------*/
 
-static int  asy_open(dev)
-int  dev;
+static struct {
+	int speed, flags;
+} speed_table[] = {
+#ifdef B50
+	50, B50,
+#endif
+#ifdef B75
+	75, B75,
+#endif
+#ifdef B110
+	110, B110,
+#endif
+#ifdef B134
+	134, B134,
+#endif
+#ifdef B150
+	150, B150,
+#endif
+#ifdef B200
+	200, B200,
+#endif
+#ifdef B300
+	300, B300,
+#endif
+#ifdef B600
+	600, B600,
+#endif
+#ifdef B900
+	900, B900,
+#endif
+#ifdef B1200
+	1200, B1200,
+#endif
+#ifdef B1800
+	1800, B1800,
+#endif
+#ifdef B2400
+	2400, B2400,
+#endif
+#ifdef B3600
+	3600, B3600,
+#endif
+#ifdef B4800
+	4800, B4800,
+#endif
+#ifdef B7200
+	7200, B7200,
+#endif
+#ifdef B9600
+	9600, B9600,
+#endif
+#ifdef B19200
+	19200, B19200,
+#endif
+#ifdef B38400
+	38400, B38400,
+#endif
+	-1, 0
+};
+
+/*---------------------------------------------------------------------------*/
+
+static int
+find_speed(speed)
+int speed;
+{
+	int i;
+
+	i = 0;
+	while (speed_table[i].speed < speed && speed_table[i+1].speed > 0)
+		i++;
+	return i;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int
+asy_open(dev)
+int dev;
 {
 
 #define MIN_WAIT (3*60)
@@ -40,8 +119,11 @@ int  dev;
 
   char  buf[80];
   int  addrlen;
-  register struct asy *ap;
-  register struct iface *ifp;
+  int  flags;
+  int  sp;
+  long  arg;
+  struct asy *ap;
+  struct iface *ifp;
   struct sockaddr *addr;
   struct termio termio;
 
@@ -54,32 +136,42 @@ int  dev;
   ifp = ap->iface;
   asy_stop(ifp);
   if (!strncmp(ifp->name, "ipc", 3)) {
-    if (!(addr = build_sockaddr(ap->ipc_socket, &addrlen))) return (-1);
-    if ((ap->fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) return (-1);
-    if (connect(ap->fd, addr, addrlen)) {
-      close(ap->fd);
-      ap->fd = -1;
-      return (-1);
-    }
+    if (!(addr = build_sockaddr(ap->ipc_socket, &addrlen))) goto Fail;
+    if ((ap->fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) goto Fail;
+    if (connect(ap->fd, addr, addrlen)) goto Fail;
+    if ((flags = fcntl(ap->fd, F_GETFL, 0)) == -1) goto Fail;
+    if (fcntl(ap->fd, F_SETFL, flags | O_NDELAY) == -1) goto Fail;
     ap->speed = -1;
   } else {
     strcpy(buf, "/dev/");
     strcat(buf, ifp->name);
-    if ((ap->fd = open(buf, O_RDWR)) < 0) return (-1);
+    if ((ap->fd = open(buf, O_RDWR, 0666)) < 0) goto Fail;
+    sp = find_speed(ap->speed);
+    ap->speed = speed_table[sp].speed;
     termio.c_iflag = IGNBRK | IGNPAR;
     termio.c_oflag = 0;
-    termio.c_cflag = B9600 | CS8 | CREAD | CLOCAL;
+    termio.c_cflag = speed_table[sp].flags | CS8 | CREAD | CLOCAL;
     termio.c_lflag = 0;
     termio.c_line = 0;
     termio.c_cc[VMIN] = 0;
     termio.c_cc[VTIME] = 0;
-    ioctl(ap->fd, TCSETA, &termio);
-    ioctl(ap->fd, TCFLSH, 2);
-    ap->speed = 9600;
+    if (ioctl(ap->fd, TCSETA, &termio) == -1) goto Fail;
+    if (ioctl(ap->fd, TCFLSH, 2) == -1) goto Fail;
+    arg = 1;
+    ioctl(ap->fd, FIOSNBIO, &arg);      /*** will fail on pty master side ***/
   }
-  setmask(chkread, ap->fd);
   times[dev].wait = 0;
+  readfnc[ap->fd] = 0;
+  readarg[ap->fd] = 0;
+  setmask(chkread, ap->fd);
+  writefnc[ap->fd] = (void (*)()) asy_tx;
+  writearg[ap->fd] = ap;
   return 0;
+
+Fail:
+  if (ap->fd >= 0) close(ap->fd);
+  ap->fd = -1;
+  return (-1);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -96,11 +188,14 @@ char cts;
 char rlsd;
 int16 speed;
 {
-  Asy[dev].iface = iface;
-  Asy[dev].ipc_socket = strdup(arg2);
-  asy_open(dev);
-  asy_speed(dev,speed);
-  return 0;
+	register struct asy *ap;
+
+	ap = &Asy[dev];
+	ap->iface = iface;
+	ap->ipc_socket = strdup(arg2);
+	ap->speed = speed;
+	asy_open(dev);
+	return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -109,15 +204,24 @@ int
 asy_stop(iface)
 struct iface *iface;
 {
-  register struct asy *ap;
+	register struct asy *ap;
 
-  ap = Asy + iface->dev;
-  if (ap->fd > 0) {
-    close(ap->fd);
-    clrmask(chkread, ap->fd);
-    ap->fd = -1;
-  }
-  return 0;
+	ap = &Asy[iface->dev];
+
+	if (ap->fd > 0) {
+		clrmask(chkread, ap->fd);
+		clrmask(actread, ap->fd);
+		readfnc[ap->fd] = 0;
+		readarg[ap->fd] = 0;
+		clrmask(chkwrite, ap->fd);
+		clrmask(actwrite, ap->fd);
+		writefnc[ap->fd] = 0;
+		writearg[ap->fd] = 0;
+		free_q(&ap->sndq);
+		close(ap->fd);
+		ap->fd = -1;
+	}
+	return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -129,75 +233,26 @@ int dev;
 int16 bps;
 {
 
-  register struct asy *ap;
-  register struct iface *ifp;
-  struct termio termio;
+	struct asy *asyp;
+	int sp;
+	struct termio termio;
 
-  ap = Asy + dev;
-  ifp = ap->iface;
-  if (!ifp || ap->fd <= 0 || !strncmp(ifp->name, "ipc", 3)) return (-1);
-  if (ioctl(ap->fd, TCGETA, &termio)) return (-1);
-  termio.c_cflag &= ~CBAUD;
-  switch (bps) {
-#ifdef    B50
-  case     50: termio.c_cflag |= B50;    break;
-#endif
-#ifdef    B75
-  case     75: termio.c_cflag |= B75;    break;
-#endif
-#ifdef   B110
-  case    110: termio.c_cflag |= B110;   break;
-#endif
-#ifdef   B134
-  case    134: termio.c_cflag |= B134;   break;
-#endif
-#ifdef   B150
-  case    150: termio.c_cflag |= B150;   break;
-#endif
-#ifdef   B200
-  case    200: termio.c_cflag |= B200;   break;
-#endif
-#ifdef   B300
-  case    300: termio.c_cflag |= B300;   break;
-#endif
-#ifdef   B600
-  case    600: termio.c_cflag |= B600;   break;
-#endif
-#ifdef   B900
-  case    900: termio.c_cflag |= B900;   break;
-#endif
-#ifdef  B1200
-  case   1200: termio.c_cflag |= B1200;  break;
-#endif
-#ifdef  B1800
-  case   1800: termio.c_cflag |= B1800;  break;
-#endif
-#ifdef  B2400
-  case   2400: termio.c_cflag |= B2400;  break;
-#endif
-#ifdef  B3600
-  case   3600: termio.c_cflag |= B3600;  break;
-#endif
-#ifdef  B4800
-  case   4800: termio.c_cflag |= B4800;  break;
-#endif
-#ifdef  B7200
-  case   7200: termio.c_cflag |= B7200;  break;
-#endif
-#ifdef  B9600
-  case   9600: termio.c_cflag |= B9600;  break;
-#endif
-#ifdef B19200
-  case  19200: termio.c_cflag |= B19200; break;
-#endif
-#ifdef B38400
-  case  38400: termio.c_cflag |= B38400; break;
-#endif
-  default:     return (-1);
-  }
-  if (ioctl(ap->fd, TCSETA, &termio)) return (-1);
-  ap->speed = bps;
-  return 0;
+	if(bps == 0 || dev >= ASY_MAX)
+		return -1;
+	asyp = &Asy[dev];
+	if(asyp->iface == NULLIF)
+		return -1;
+
+	if (asyp->fd <= 0 || !strncmp(asyp->iface->name, "ipc", 3))
+		return (-1);
+	sp = find_speed(bps);
+	if (ioctl(asyp->fd, TCGETA, &termio))
+		return (-1);
+	termio.c_cflag = (termio.c_cflag & ~CBAUD) | speed_table[sp].flags;
+	if (ioctl(asyp->fd, TCSETA, &termio))
+		return (-1);
+	asyp->speed = speed_table[sp].speed;
+	return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -215,26 +270,27 @@ int32 val;
 		if(set)
 			asy_speed(iface->dev,(int16)val);
 		return Asy[iface->dev].speed;
-	}
+	};
 	return -1;
 }
 
 /*---------------------------------------------------------------------------*/
 
-int  get_asy(dev, buf, cnt)
-int  dev;
-char  *buf;
-int  cnt;
+int
+get_asy(dev, buf, cnt)
+int dev;
+char *buf;
+int cnt;
 {
   struct asy *ap;
 
   ap = Asy + dev;
-  if (Asy[dev].fd <= 0 && asy_open(dev) < 0) return 0;
+  if (ap->fd <= 0 && asy_open(dev) < 0) return 0;
   if (!maskset(actread, ap->fd)) return 0;
   cnt = read(ap->fd, buf, (unsigned) cnt);
   ap->rxints++;
   if (cnt <= 0) {
-    asy_open(dev);
+    asy_stop(ap->iface);
     return 0;
   }
   ap->rxchar += cnt;
@@ -265,9 +321,10 @@ void *p;
 			asyp->rxhiwat);
 		asyp->rxhiwat = 0;
 
-		if(tprintf(" TX: %lu int, %lu chr\n",
+		if(tprintf(" TX: %lu int, %lu chr, %u q\n",
 			asyp->txints,
-			asyp->txchar) == EOF)
+			asyp->txchar,
+			len_p(asyp->sndq)) == EOF)
 			break;
 	}
 	return 0;
@@ -281,17 +338,41 @@ asy_send(dev,bp)
 int dev;
 struct mbuf *bp;
 {
+	struct asy *asyp;
 
-  char  buf[4096];
-  int  cnt;
-  struct asy *ap;
+	if(dev < 0 || dev >= ASY_MAX)
+		return -1;
+	asyp = &Asy[dev];
+	if (asyp->fd > 0 || !asy_open(dev)) {
+		append(&asyp->sndq, bp);
+		setmask(chkwrite, asyp->fd);
+	} else
+		free_p(bp);
+	return 0;
+}
 
-  ap = Asy + dev;
-  while (cnt = pullup(&bp, buf, sizeof(buf)))
-    if (ap->fd > 0 || !asy_open(dev)) {
-      if (dowrite(ap->fd, buf, (unsigned) cnt) < 0) asy_open(dev);
-      ap->txints++;
-      ap->txchar += cnt;
-    }
-  return 0;
+/*---------------------------------------------------------------------------*/
+
+/* Serial transmit process, common to all protocols */
+static void
+asy_tx(asyp)
+struct asy *asyp;
+{
+	int  n;
+
+	if (asyp->sndq != NULLBUF) {
+		n = write(asyp->fd, asyp->sndq->data, asyp->sndq->cnt);
+		if (n <= 0) {
+			asy_stop(asyp->iface);
+			return;
+		}
+		asyp->sndq->data += n;
+		asyp->sndq->cnt -= n;
+		asyp->txints++;
+		asyp->txchar += n;
+	}
+	while (asyp->sndq != NULLBUF && asyp->sndq->cnt == 0)
+		asyp->sndq = free_mbuf(asyp->sndq);
+	if (asyp->sndq == NULLBUF)
+		clrmask(chkwrite, asyp->fd);
 }
