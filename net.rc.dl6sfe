@@ -1,0 +1,67 @@
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl6sfe,v 1.1 1994/04/04 08:29:40 deyke Exp $
+
+hostname     dg2sfg
+ax25 mycall  dg2sfg
+ip address   dg2sfg
+# netrom ident
+
+# tnc1: 70 cm (db0aau)
+
+attach asy 0 0 kissi ttyS3 0 256 19200
+param ttyS3  1   9   # txdelay
+param ttyS3  2  31   # persistence
+param ttyS3  3  30   # slottime
+param ttyS3  4   3   # txtail
+param ttyS3  5   0   # full duplex
+param ttyS3 12   0   # echo
+param ttyS3 13   1   # rxdelay
+
+# attach slip interface (for communication with inetd)
+
+attach asy 0 0 vjslip ptyp7 0 512 9600
+
+attach netrom                   # ip over netrom
+
+ax25 route add permanent ttyS3 default
+
+route add  default              ttyS3    db0id
+
+arp add db0id ax25 db0id
+
+source /tcp/netrom_links
+
+# netrom broadcast ttyS3 nodes
+
+ax25 retry 20
+ax25 t1 6000
+echo refuse
+icmp trace on
+ip rtimer 300
+ip ttl 30
+log /tcp/net.log
+login logfiledir /tcp/logs
+login minuid 500
+tcp irtt 60000
+tcp mss 216
+tcp window 2048
+
+smtp timer 300
+start ax25
+start discard
+start domain
+start echo
+start ftp
+start netrom
+start remote
+start tcpgate convers unix:/tcp/sockets/convers
+start tcpgate finger
+start tcpgate netupds
+start tcpgate nntp
+start tcpgate pop2
+start tcpgate pop3
+start tcpgate smtp
+start telnet
+
+trace ttyS3 0111 /dev/tty7
+
+source /tcp/net.rc.local
