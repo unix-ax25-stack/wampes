@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dh8saw-1,v 1.2 1993/06/07 06:30:48 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dh8saw-1,v 1.3 1993/07/20 09:43:05 deyke Exp $
 
 hostname     dh8saw-1
 ax25 mycall  dh8saw-1
@@ -11,10 +11,10 @@ attach netrom                   # ip over netrom
 
 ax25 route add axip default
 
-axip route add dk0hu 15.136.56.6
+axip route add dk0hu 15.138.33.250
 
-route add  44.142.52/23     ipip     15.136.56.6
-route add  44.130/16        ipip     15.136.56.6
+route add  44.142.52/23     ipip     15.138.33.250
+route add  44.130/16        ipip     15.138.33.250
 
 source /tcp/netrom_links
 
