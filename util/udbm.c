@@ -1,7 +1,7 @@
 /* User Data Base Manager */
 
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.17 1993/03/11 14:13:10 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.18 1993/03/30 17:25:28 deyke Exp $";
 #endif
 
 #define DEBUG           0
@@ -56,8 +56,13 @@ static char userstemp[] = "/usr/local/lib/users.tmp";
 static char indexfile[] = "/users/bbs/index";
 static char passfile[]  = "/etc/passwd";
 static char passtemp[]  = "/etc/ptmp";
+#ifdef __386BSD__
+static char aliasfile[] = "/etc/aliases";
+static char aliastemp[] = "/etc/aliases.tmp";
+#else
 static char aliasfile[] = "/usr/lib/aliases";
 static char aliastemp[] = "/usr/lib/aliases.tmp";
+#endif
 #endif
 
 static const char *lockfile;
@@ -587,6 +592,8 @@ static int fixusers()
 static void fixpasswd()
 {
 
+#ifndef __386BSD__
+
   FILE * fp;
   struct passwd *pp;
   struct user *up;
@@ -595,12 +602,25 @@ static void fixpasswd()
   while ((pp = getpwent()) != NULL) {
     if (is_call(pp->pw_name) && (up = getup(pp->pw_name, 0)) != NULL)
       pp->pw_gecos = (char *) up->name;
-    putpwent(pp, fp);
+    fprintf(fp,
+	    "%s:%s%s%s:%d:%d:%s:%s:%s\n",
+	    pp->pw_name,
+	    pp->pw_passwd,
+	    *pp->pw_age ? "," : "",
+	    pp->pw_age,
+	    pp->pw_uid,
+	    pp->pw_gid,
+	    pp->pw_gecos,
+	    pp->pw_dir,
+	    pp->pw_shell);
   }
   endpwent();
   fclose(fp);
   if (rename(passtemp, passfile)) terminate(passfile);
   lockfile = NULL;
+
+#endif
+
 }
 
 /*---------------------------------------------------------------------------*/

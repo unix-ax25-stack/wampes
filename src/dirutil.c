@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.13 1992/09/25 20:07:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.14 1993/03/30 17:24:00 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -37,11 +37,7 @@ int full;
 		close(fd[1]);
 		execl("/bin/ls",
 		      "ls",
-#if defined(ISC) || defined(SCO)
-		      full ? "-l" : "-x",
-#else
 		      full ? "-Al" : "-A",
-#endif
 		      path,
 		      (char *) 0);
 		exit(1);

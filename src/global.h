@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.24 1993/03/11 15:01:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.25 1993/03/30 17:24:01 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -10,8 +10,18 @@
  * command line, so it may be safely included first.
  */
 
-#if     defined(MSDOS) || defined(vax)
-#define LITTLE_ENDIAN   1
+/*
+ * Definitions for byte order, according to byte significance from low
+ * address to high.
+ */
+#define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
+#define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
+#define PDP_ENDIAN      3412    /* LSB first in word, MSW first in long */
+
+#if defined(LINUX) || defined(ULTRIX_RISC) || defined(__386BSD__)
+#define BYTE_ORDER      LITTLE_ENDIAN
+#else
+#define BYTE_ORDER      BIG_ENDIAN
 #endif
 
 #if     defined(__TURBOC__) || defined(__STDC__) || defined(LATTICE)

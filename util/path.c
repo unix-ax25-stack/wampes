@@ -1,4 +1,4 @@
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.6 1993/02/28 17:41:02 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.7 1993/03/30 17:25:28 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -48,7 +48,6 @@ static char axroutefile[] = "/tcp/axroute_data";
 static struct axroute_tab *axroute_tab[AXROUTESIZE];
 static struct iface *Ifaces;
 
-static void swap4 __ARGS((char *p));
 static int axroute_hash __ARGS((char *call));
 static struct axroute_tab *axroute_tabptr __ARGS((char *call, int create));
 static struct iface *ifaceptr __ARGS((char *name));
@@ -57,26 +56,6 @@ static void doroutelistentry __ARGS((struct axroute_tab *rp));
 static int doroutelist __ARGS((int argc, char *argv []));
 static int doroutestat __ARGS((void));
 static void hash_performance __ARGS((void));
-
-/*---------------------------------------------------------------------------*/
-
-#ifdef __TURBOC__       /* PC specific functions */
-
-static void swap4(p)
-char *p;
-{
-  char t;
-
-  t = p[0];
-  p[0] = p[3];
-  p[3] = t;
-
-  t = p[1];
-  p[1] = p[2];
-  p[2] = t;
-}
-
-#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -288,9 +267,6 @@ static void axroute_loadfile()
     if (buf.digi[0]) rp->digi = axroute_tabptr(buf.digi, 1);
     rp->ifp = ifaceptr(ifname);
     rp->time = buf.time;
-#ifdef __TURBOC__
-    swap4((char *) & rp->time);
-#endif
   }
   fclose(fp);
 }

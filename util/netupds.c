@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.9 1993/03/11 14:13:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.10 1993/03/30 17:25:27 deyke Exp $ */
 
 /* Net Update Server */
 
@@ -15,7 +15,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#if defined(__TURBOC__) || defined(__STDC__)
+#ifdef __STDC__
 #define __ARGS(x)       x
 #else
 #define __ARGS(x)       ()

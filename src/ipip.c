@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.5 1992/08/19 13:20:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.6 1993/03/30 17:24:03 deyke Exp $ */
 
 #include "global.h"
 
@@ -172,7 +172,7 @@ void *p;
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(port);
-    if (bind(fd, &addr, sizeof(addr))) {
+    if (bind(fd, (struct sockaddr *) &addr, sizeof(addr))) {
       printf("cannot bind address: %s\n", sys_errlist[errno]);
       close(fd);
       return (-1);

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.16 1992/11/18 18:29:08 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.17 1993/03/30 17:25:27 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 CFLAGS     = -O -s
@@ -6,54 +6,54 @@ SHELL      = /bin/sh
 
 TARGETS    = cnet mkhostdb netupdc netupds path pop2d udbm vitals
 
-.IGNORE:
-
-all_test:
+all:
 	@if [ `uname -s` = Linux ] ; then \
-	  make 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' all; \
+	  make -i 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' $(TARGETS); \
 	else \
-	  make all; \
+	  make -i $(TARGETS); \
 	fi
 
-all:    $(TARGETS)
-
 cnet:   cnet.c $(BUILDSADDR)
-	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
+	mv -f $@ /tmp/old.$$$$
 	$(CC) $(CFLAGS) -I../src cnet.c $(BUILDSADDR) -lcurses -ltermcap -o $@
 
 mkhostdb: mkhostdb.c
-	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
-	if [ `uname -s` = SunOS ] ; then \
+	mv -f $@ /tmp/old.$$$$
+	@if [ `uname -s` = SunOS ] ; then \
+	  $(CC) $(CFLAGS) mkhostdb.c -o $@ ; \
+	elif [ `uname -s` = 386BSD ] ; then \
 	  $(CC) $(CFLAGS) mkhostdb.c -o $@ ; \
 	elif [ `uname -s` = Linux ] ; then \
+	  $(CC) $(CFLAGS) mkhostdb.c -ldbm -o $@ ; \
+	elif [ `uname -s` = ULTRIX ] ; then \
 	  $(CC) $(CFLAGS) mkhostdb.c -ldbm -o $@ ; \
 	else \
 	  $(CC) $(CFLAGS) mkhostdb.c -lndbm -o $@ ; \
 	fi
 
 netupdc: netupdc.c $(BUILDSADDR)
-	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
+	mv -f $@ /tmp/old.$$$$
 	$(CC) $(CFLAGS) -I../src netupdc.c $(BUILDSADDR) -o $@
 
 netupds: netupds.c
-	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
+	mv -f $@ /tmp/old.$$$$
 	$(CC) $(CFLAGS) netupds.c -o $@
 	chmod 755 genupd
 
 path:   path.c
-	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
+	mv -f $@ /tmp/old.$$$$
 	$(CC) $(CFLAGS) path.c -o $@
 
 pop2d:  pop2d.c
-	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
+	mv -f $@ /tmp/old.$$$$
 	$(CC) $(CFLAGS) pop2d.c -o $@
 
 udbm:   udbm.c
-	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
+	mv -f $@ /tmp/old.$$$$
 	$(CC) $(CFLAGS) udbm.c -o $@
 
 vitals: vitals.c
-	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
+	mv -f $@ /tmp/old.$$$$
 	$(CC) $(CFLAGS) vitals.c -o $@
 
 install: \
@@ -67,20 +67,20 @@ install: \
 	vitals
 
 /usr/local/bin/cnet: cnet
-	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
-	cp cnet $@ ; exit 0
+	mv -f $@ /tmp/old.$$$$
+	cp cnet $@
 
 /usr/local/etc/mkhostdb: mkhostdb
-	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
-	cp mkhostdb $@ ; exit 0
+	mv -f $@ /tmp/old.$$$$
+	cp mkhostdb $@
 
 /usr/local/bin/path: path
-	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
-	cp path $@ ; exit 0
+	mv -f $@ /tmp/old.$$$$
+	cp path $@
 
 /usr/local/etc/udbm: udbm
-	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
-	cp udbm $@ ; exit 0
+	mv -f $@ /tmp/old.$$$$
+	cp udbm $@
 
 clean:
 	rm -f *.o $(TARGETS)

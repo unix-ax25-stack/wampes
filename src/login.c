@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.32 1993/03/11 15:01:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.33 1993/03/30 17:24:04 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -472,7 +472,13 @@ void *upcall_arg;
     chmod(slave, 0622);
     memset((char *) &termios, 0, sizeof(termios));
     termios.c_iflag = ICRNL | IXOFF;
-    termios.c_oflag = OPOST | ONLCR | TAB3;
+    termios.c_oflag = OPOST | ONLCR;
+#ifdef TAB3
+    termios.c_oflag |= TAB3;
+#endif
+#ifdef OXTABS
+    termios.c_oflag |= OXTABS;
+#endif
     termios.c_cflag = CS8 | CREAD | CLOCAL;
     termios.c_lflag = ISIG | ICANON;
     termios.c_cc[VINTR]  = 127;

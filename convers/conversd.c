@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.28 1993/03/11 14:12:21 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.29 1993/03/30 17:23:33 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -27,17 +27,17 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #define WNOHANG         1
 #endif
 
-#ifdef LINUX
-#define FD_SET_TYPE fd_set
-#else
-#define FD_SET_TYPE struct fd_set
-#endif
-
-#if defined(__TURBOC__) || defined(__STDC__)
+#ifdef __STDC__
 #define __ARGS(x)       x
 #else
 #define __ARGS(x)       ()
 #define const
+#endif
+
+#ifdef __hpux
+#define SEL_ARG(x) ((int *) (x))
+#else
+#define SEL_ARG(x) (x)
 #endif
 
 #include "buildsaddr.h"
@@ -93,12 +93,12 @@ struct permlink {
 
 #define NULLPERMLINK  ((struct permlink *) 0)
 
-static FD_SET_TYPE chkread;
-static FD_SET_TYPE chkwrite;
 static char *myhostname;
 static int maxfd = -1;
 static long currtime;
 static struct connection *connections;
+static struct fd_set chkread;
+static struct fd_set chkwrite;
 
 static struct permlink *permlinks;
 
@@ -795,7 +795,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.28 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.29 $  Type /HELP for help.\n", myhostname);
   appendstring(cp, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
@@ -1118,15 +1118,11 @@ char **argv;
     char *name;
     int fd;
   } listeners[] = {
-#ifndef ISC
     "unix:/tcp/sockets/convers", -1,
-#endif
     "*:3600", -1,
     0, -1
   };
 
-  FD_SET_TYPE actread;
-  FD_SET_TYPE actwrite;
   char *sp;
   char buffer[2048];
   int addrlen;
@@ -1135,6 +1131,8 @@ char **argv;
   int size;
   int status;
   struct connection *cp;
+  struct fd_set actread;
+  struct fd_set actwrite;
   struct mbuf *bp;
   struct sockaddr *addr;
   struct timeval timeout;
@@ -1194,7 +1192,7 @@ char **argv;
     actwrite = chkwrite;
     timeout.tv_sec = 60;
     timeout.tv_usec = 0;
-    if (select(maxfd + 1, (int *) &actread, (int *) &actwrite, (int *) 0, &timeout) <= 0) {
+    if (select(maxfd + 1, SEL_ARG(&actread), SEL_ARG(&actwrite), SEL_ARG(0), &timeout) <= 0) {
       FD_ZERO(&actread);
       FD_ZERO(&actwrite);
     }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.15 1993/03/04 23:11:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.16 1993/03/30 17:23:57 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -156,6 +156,14 @@ unsigned size;
   struct block *tp;
   unsigned osize;
   void *q;
+
+  if (!p)
+    return malloc(size);
+
+  if (!size) {
+    free(p);
+    return 0;
+  }
 
   tp = p;
   tp--;

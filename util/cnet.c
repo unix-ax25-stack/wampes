@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.19 1993/03/11 14:13:09 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.20 1993/03/30 17:25:27 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -19,17 +19,17 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <termios.h>
 #include <unistd.h>
 
-#ifdef LINUX
-#define FD_SET_TYPE fd_set
-#else
-#define FD_SET_TYPE struct fd_set
-#endif
-
-#if defined(__TURBOC__) || defined(__STDC__)
+#ifdef __STDC__
 #define __ARGS(x)       x
 #else
 #define __ARGS(x)       ()
 #define const
+#endif
+
+#ifdef __hpux
+#define SEL_ARG(x) ((int *) (x))
+#else
+#define SEL_ARG(x) (x)
 #endif
 
 #include "buildsaddr.h"
@@ -155,14 +155,14 @@ int argc;
 char **argv;
 {
 
-  FD_SET_TYPE rmask;
-  FD_SET_TYPE wmask;
   char *ap;
   char *server;
   char area[1024];
   char bp[1024];
   int addrlen;
   int flags;
+  struct fd_set rmask;
+  struct fd_set wmask;
   struct sockaddr *addr;
   struct termios curr_termios;
 
@@ -173,10 +173,10 @@ char **argv;
   if (tgetent(bp, getenv("TERM")) == 1 && strcmp(tgetstr("up", &ap), "\033[A"))
     Ansiterminal = 0;
 
-#ifdef ISC
-  server = (argc < 2) ? "*:4720" : argv[1];
-#else
+#if 1
   server = (argc < 2) ? "unix:/tcp/.sockets/netkbd" : argv[1];
+#else
+  server = (argc < 2) ? "*:4720" : argv[1];
 #endif
   if (!(addr = build_sockaddr(server, &addrlen))) {
     fprintf(stderr, "%s: Cannot build address from \"%s\"\n", *argv, server);
@@ -219,7 +219,7 @@ char **argv;
     FD_ZERO(&wmask);
     if (sock_queue) FD_SET(fdsock, &wmask);
     if (term_queue) FD_SET(fdout,  &wmask);
-    if (select(fdsock + 1, (int *) &rmask, (int *) &wmask, (int *) 0, (struct timeval *) 0) > 0) {
+    if (select(fdsock + 1, SEL_ARG(&rmask), SEL_ARG(&wmask), SEL_ARG(0), (struct timeval *) 0) > 0) {
       if (FD_ISSET(fdsock, &rmask)) recvq(fdsock, &term_queue);
       if (FD_ISSET(fdin,   &rmask)) recvq(fdin,   &sock_queue);
       if (FD_ISSET(fdsock, &wmask)) sendq(fdsock, &sock_queue);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.34 1993/03/04 23:11:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.35 1993/03/30 17:24:01 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -37,6 +37,12 @@
 #include "hpux.h"
 
 #define TIMEOUT 120
+
+#ifdef __hpux
+#define SEL_ARG(x) ((int *) (x))
+#else
+#define SEL_ARG(x) (x)
+#endif
 
 struct proc_t {
   pid_t pid;
@@ -392,7 +398,7 @@ void eihalt()
     if (nte > 999) nte = 999;
     timeout.tv_usec = 1000 * nte;
   }
-  if (select(maxfd + 1, (int *) &actread, (int *) &actwrite, (int *) 0, &timeout) < 1) {
+  if (select(maxfd + 1, SEL_ARG(&actread), SEL_ARG(&actwrite), SEL_ARG(0), &timeout) < 1) {
     FD_ZERO(&actread);
     actwrite = actread;
   } else

@@ -1,4 +1,9 @@
-- Der from teil kann nur ! enthalten, dann steht der s&f. ==> wenn from == ! ist irgendein substitute einsetzen !!!
+- 386BSD: kein ftp server login moeglich
+
+- 386BSD: kein telnet/ax25/netrom login moeglich
+
+- Der from teil  kann nur !  enthalten,  dann  steht  der s&f.  ==> wenn
+  from == !  ist irgendein substitute einsetzen !!!
 
 - manchmal wird eine ganze Serie I Frames wiederholt
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.11 1993/01/29 06:48:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.12 1993/03/30 17:24:03 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -13,7 +13,9 @@
 /* #include "pc.h" */
 #include "commands.h"
 
+#if 0
 static oldNull;
+#endif
 
 #ifdef __TURBOC__
 /* Template for contents of jmp_buf in Turbo C */
@@ -152,7 +154,7 @@ struct env {
 };
 #define getstackptr(ep) ((ep)->sp)
 #else
-#if defined(ISC) || defined (LINUX)
+#ifdef LINUX
 struct env {
 	long    esp;
 	long    ebp;
@@ -167,10 +169,26 @@ struct env {
 };
 #define getstackptr(ep) ((ep)->esp)
 #else
+#ifdef __386BSD__
+struct env {
+	long    unknown0;
+	long    unknown1;
+	long    esp;
+	long    unknown3;
+	long    unknown4;
+	long    unknown5;
+	long    unknown6;
+	long    unknown7;
+	long    unknown8;
+	long    unknown9;
+};
+#define getstackptr(ep) ((ep)->esp)
+#else
 struct env {
 	long    dummy;
 };
 #define getstackptr(ep) (0L)
+#endif
 #endif
 #endif
 #endif

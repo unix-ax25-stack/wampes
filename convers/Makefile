@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.7 1992/09/30 15:53:55 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.8 1993/03/30 17:23:33 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 CFLAGS     = -O -s
@@ -6,16 +6,12 @@ SHELL      = /bin/sh
 
 TARGETS    = convers conversd
 
-.IGNORE:
-
-all_test:
+all:
 	@if [ `uname -s` = Linux ] ; then \
-	  make 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' all; \
+	  make -i 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' $(TARGETS); \
 	else \
-	  make all; \
+	  make -i $(TARGETS); \
 	fi
-
-all:    $(TARGETS)
 
 convers: convers.c $(BUILDSADDR)
 	$(CC) $(CFLAGS) -I../src convers.c $(BUILDSADDR) $(LIBS) -o $@
@@ -26,18 +22,12 @@ conversd: conversd.c $(BUILDSADDR)
 install: /usr/local/bin/convers /tcp/conversd
 
 /usr/local/bin/convers: convers
-	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
-	cp convers $@ ; exit 0
+	mv -f $@ /tmp/old.$$$$
+	cp convers $@
 
 /tcp/conversd: conversd
-	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
-	cp conversd $@ ; exit 0
-
-linux:
-	@make "CFLAGS=-Os -DLINUX" "LIBS=-linet" all
-
-isc:
-	@make "CFLAGS=-Os -DISC -DISC3" "LIBS=-linet" all
+	mv -f $@ /tmp/old.$$$$
+	cp conversd $@
 
 clean:
 	rm -f *.o $(TARGETS)

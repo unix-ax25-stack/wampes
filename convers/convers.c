@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.9 1992/09/01 16:46:11 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.10 1993/03/30 17:23:33 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -15,11 +15,17 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <termios.h>
 #include <unistd.h>
 
-#if defined(__TURBOC__) || defined(__STDC__)
+#ifdef __STDC__
 #define __ARGS(x)       x
 #else
 #define __ARGS(x)       ()
 #define const
+#endif
+
+#ifdef __hpux
+#define SEL_ARG(x) ((int *) (x))
+#else
+#define SEL_ARG(x) (x)
 #endif
 
 #include "buildsaddr.h"
@@ -48,10 +54,10 @@ int argc;
 char **argv;
 {
 
-#ifdef ISC
-  char *server = "*:3600";
-#else
+#if 1
   char *server = "unix:/tcp/sockets/convers";
+#else
+  char *server = "*:3600";
 #endif
 
   char buffer[2048];
@@ -65,9 +71,10 @@ char **argv;
   int errflag = 0;
   int i;
   int incnt = 0;
-  int mask;
   int outcnt = 0;
   int size;
+  struct fd_set actread;
+  struct fd_set chkread;
   struct sockaddr *addr;
   struct termios curr_termios;
 
@@ -106,10 +113,14 @@ char **argv;
   sprintf(inbuf, "/NAME %s %d\n", getenv("LOGNAME"), channel);
   if (write(3, inbuf, strlen(inbuf)) < 0) stop(*argv);
 
+  FD_ZERO(&chkread);
+  FD_SET(0, &chkread);
+  FD_SET(3, &chkread);
+
   for (; ; ) {
-    mask = 011;
-    select(4, &mask, (int *) 0, (int *) 0, (struct timeval *) 0);
-    if (mask & 1) {
+    actread = chkread;
+    select(4, SEL_ARG(&actread), SEL_ARG(0), SEL_ARG(0), (struct timeval *) 0);
+    if (FD_ISSET(0, &actread)) {
       do {
 	if ((size = read(0, buffer, sizeof(buffer))) <= 0) stop("");
 	for (i = 0; i < size; i++) {

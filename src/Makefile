@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.32 1993/02/23 21:34:01 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.33 1993/03/30 17:23:56 deyke Exp $
 
 DEFINES       = -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024
 
@@ -111,6 +111,7 @@ OBJS          = alloc.o \
 		ipcmd.o \
 		ipdump.o \
 		ipfile.o \
+		ipfilter.o \
 		iphdr.o \
 		ipip.o \
 		iproute.o \
@@ -217,6 +218,7 @@ SRCS          = alloc.c \
 		ipcmd.c \
 		ipdump.c \
 		ipfile.c \
+		ipfilter.c \
 		iphdr.c \
 		ipip.c \
 		iproute.c \
@@ -278,17 +280,17 @@ SRCS          = alloc.c \
 
 # SYSHDRS       =
 
-.IGNORE:
-
 all_test:
-		@if [ `uname -n` = mdddhd -o `uname -n` = deyke2 -o `uname -s` = SunOS ] ; then \
-		  make 'CC=c89' 'OPTIMIZE=-g' all; \
+		@if [ `uname -n` = mdddhd -o `uname -n` = deyke2 ] ; then \
+		  make -i 'OPTIMIZE=-Aa -g' all; \
+		elif [ `uname -s` = SunOS ] ; then \
+		  make -i 'CC=acc' 'OPTIMIZE=-O -s' all; \
 		elif [ `uname -s` = Linux ] ; then \
-		  make 'CC=gcc' 'CFLAGS=-O6 -I./linux_include -DUNIX -DLITTLE_ENDIAN -DLINUX' all; \
+		  make -i 'CC=gcc' 'CFLAGS=-O6 -I./linux_include -DUNIX -DLINUX' all; \
 		elif [ `uname -s` = ULTRIX ] ; then \
-		  make 'CC=gcc' 'CFLAGS=-O6 -DUNIX -DULTRIX_RISC -DFD_SETSIZE=64' all; \
+		  make -i 'CC=gcc' 'CFLAGS=-O6 -DUNIX -DULTRIX_RISC -DFD_SETSIZE=64' all; \
 		else \
-		  make 'OPTIMIZE=-O -s' all; \
+		  make -i 'OPTIMIZE=-O -s' all; \
 		fi
 
 all:            $(PROGRAM)
@@ -296,6 +298,10 @@ all:            $(PROGRAM)
 setsp.o:        setsp.c
 		@if [ `uname -s` = Linux ] ; then \
 		  $(CC) -E -DLINUX $< > setsp.s; \
+		  cc -c setsp.s; \
+		  rm -f setsp.s; \
+		elif [ `uname -s` = 386BSD ] ; then \
+		  $(CC) -E $< > setsp.s; \
 		  cc -c setsp.s; \
 		  rm -f setsp.s; \
 		elif [ `uname -s` = ULTRIX ] ; then \
@@ -309,6 +315,8 @@ setsp.o:        setsp.c
 $(PROGRAM):     $(OBJS) $(LIBS)
 		@echo "Linking $(PROGRAM) ..."
 		@if [ `uname -s` = SunOS ] ; then \
+		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM) ; \
+		elif [ `uname -s` = 386BSD ] ; then \
 		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM) ; \
 		elif [ `uname -s` = Linux ] ; then \
 		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -ldbm -o $(PROGRAM) ; \
@@ -339,8 +347,8 @@ tags:           $(HDRS) $(SRCS); @ctags $(HDRS) $(SRCS)
 update:         $(DEST)/$(PROGRAM)
 
 $(DEST)/$(PROGRAM): $(PROGRAM)
-		@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
-		cp $(PROGRAM) $@ ; exit 0
+		mv -f $@ /tmp/old.$$$$
+		cp $(PROGRAM) $@
 
 .c.o:
 		@rm -f $@
@@ -420,6 +428,7 @@ ipcmd.o: global.h mbuf.h internet.h timer.h netuser.h iface.h proc.h ip.h \
 ipdump.o: global.h mbuf.h internet.h iface.h proc.h timer.h ip.h trace.h \
 	netuser.h
 ipfile.o: global.h timer.h iface.h mbuf.h proc.h ip.h internet.h
+ipfilter.o: global.h netuser.h cmdparse.h
 iphdr.o: global.h mbuf.h ip.h iface.h proc.h timer.h internet.h
 ipip.o: global.h mbuf.h iface.h proc.h timer.h internet.h netuser.h socket.h \
 	trace.h pktdrvr.h cmdparse.h hpux.h

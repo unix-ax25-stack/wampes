@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.31 1993/03/04 23:11:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.32 1993/03/30 17:23:59 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -164,6 +164,7 @@ struct cmds Cmds[] = {
 	"icmp",         doicmp,         0, 0, NULLCHAR,
 	"ifconfig",     doifconfig,     0, 0, NULLCHAR,
 	"ip",           doip,           0, 0, NULLCHAR,
+	"ipfilter",     doipfilter,     0, 0, NULLCHAR,
 #ifdef  MSDOS
 	"isat",         doisat,         0, 0, NULLCHAR,
 #endif
@@ -562,6 +563,12 @@ struct iftype Iftypes[] = {
 	setcall,        CL_NETROM,      AXALEN,         NULLVFP,
 	NULLFP,         ip_dump,        NULLFP,         NULLFP,
 #endif  /* NETROM */
+
+#ifdef  NRS
+	"NRS",          axui_send,      ax_output,      pax25,
+	setcall,        CL_AX25,        AXALEN,         ax_recv,
+	ax_forus,       ax25_dump,      NULLFP,         NULLFP,
+#endif  /* NRS */
 
 #ifdef  SLFP
 	"SLFP",         pk_send,        NULL,           NULL,

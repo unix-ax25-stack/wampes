@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.6 1992/08/19 13:20:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.7 1993/03/30 17:23:58 deyke Exp $ */
 
 #include "global.h"
 
@@ -23,13 +23,13 @@ static union {
 /*---------------------------------------------------------------------------*/
 
 struct sockaddr *build_sockaddr(name, addrlen)
-char  *name;
-int  *addrlen;
+char *name;
+int *addrlen;
 {
 
-  char  *host_name;
-  char  *serv_name;
-  char  buf[1024];
+  char *host_name;
+  char *serv_name;
+  char buf[1024];
 
   memset((char *) &addr, 0, sizeof(addr));
   *addrlen = 0;
@@ -37,15 +37,15 @@ int  *addrlen;
   host_name = strcpy(buf, name);
   serv_name = strchr(buf, ':');
   if (!serv_name) return 0;
-  *serv_name++ = '\0';
+  *serv_name++ = 0;
   if (!*host_name || !*serv_name) return 0;
 
   if (!strcmp(host_name, "local") || !strcmp(host_name, "unix")) {
     addr.su.sun_family = AF_UNIX;
-    *addr.su.sun_path = '\0';
+    *addr.su.sun_path = 0;
     if (*serv_name != '/') strcpy(addr.su.sun_path, "/tcp/sockets/");
     strcat(addr.su.sun_path, serv_name);
-    *addrlen = sizeof(addr.su.sun_family) + strlen(addr.su.sun_path);
+    *addrlen = sizeof(struct sockaddr_un);
     return &addr.sa;
   }
 
@@ -71,7 +71,7 @@ int  *addrlen;
     addr.si.sin_port = sp->s_port;
   }
 
-  *addrlen = sizeof(struct sockaddr_in );
+  *addrlen = sizeof(struct sockaddr_in);
   return &addr.sa;
 }
 

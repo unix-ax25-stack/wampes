@@ -3,11 +3,9 @@ Don't expect something  perfect, it was just a quick hack to help people
 to solve the first  problems...  I don't  claim it's a manual,  and I do
 not mention the DK5SG-BBS.
 
-I'm now using  WAMPES on my Linux system for a long time.  In the past I
-run it  under  ISC, but with  Linux  coming I gave up  support  for this
-commercial  system.  These config files reflect parts of mine and others
-setup, use it to build your own..  Change the hostnames, ax25 calls etc.
-*please*.
+I'm now using  WAMPES on my Linux  system for a long time.  These config
+files reflect parts of mine and others setup, use it to build your own..
+Change the hostnames, ax25 calls etc.  *please*.
 
 All files should go to /tcp (mail.conf, net.rc, convers.conf).
 
@@ -296,9 +294,8 @@ db0id unix:/tcp/.sockets/netcmd connect tcp db0id 3600
 
 Some notes for using WAMPES on Linux:
 
-You should  have gcc 2.2.2d with the  inet-library  in libc.a and tcp/ip
-compiled  into  the  kernel.  This  version  of  WAMPES  requires  Linux
->0.98pl4, because Linus changed the definition of fd_set.
+I'm using Linux  0.99pl5 with gcc 2.3.3 and libc4.2, but newer  versions
+should work without problems.
 
 I don't  know any  problems  with Linux and  WAMPES,  only  sometimes  a
 file-table  overflow of the system, caused by static limits in the Linux

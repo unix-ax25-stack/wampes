@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.48 1993/03/11 15:02:09 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.49 1993/03/30 17:24:19 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -238,7 +238,7 @@ static void errorstop(int line)
 
 /*---------------------------------------------------------------------------*/
 
-#ifdef _SC_OPEN_MAX
+#if defined(_SC_OPEN_MAX) && !defined(__386BSD__)
 #define open_max()      sysconf(_SC_OPEN_MAX)
 #else
 #define open_max()      (1024)
@@ -451,7 +451,7 @@ static long parse_date(const char *str)
   if (!p) return -1;
   tm.tm_mon = (p - monthnames) / 3;
   tm.tm_isdst = 0;
-#if defined __hpux
+#if defined __hpux || defined LINUX
   t = mktime(&tm);
   if (t != -1) return t - timezone;
 #elif defined sun
@@ -1466,7 +1466,7 @@ static void f_command(int argc, char **argv)
       fclose(fp);
       if (!*from) continue;
       if (stat(cfile, &statbuf)) continue;
-      memset(&index, 0, sizeof(index));
+      memset((char *) &index, 0, sizeof(index));
       index.date = statbuf.st_mtime;
       strncpy(index.subject, subject, LEN_SUBJECT);
       index.subject[LEN_SUBJECT] = 0;
@@ -2456,7 +2456,7 @@ static void trap_signal(int sig, void (*handler)(int))
 #ifdef LINUX
   signal(sig, handler);
 #else
-#if defined(sun) || defined(BSD)
+#if defined(sun) || defined(__386BSD__)
 #define sigvector sigvec
 #endif
   struct sigvec vec;

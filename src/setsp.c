@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/setsp.c,v 1.4 1992/09/05 08:16:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/setsp.c,v 1.5 1993/03/30 17:24:07 deyke Exp $ */
 
 #ifndef __lint
 
@@ -55,23 +55,17 @@ $SHORT_STATIC_DATA$
 	.END
 #endif
 
-#ifdef ISC
+#ifdef LINUX
 	.file   "setsp.s"
-	.version        "02.01"
-	.data
-	.text
-	.align  4
-	.def    setstack;       .val    setstack;       .scl    2;      .type   044;    .endef
-	.globl  setstack
-setstack:
+	.globl  _setstack
+_setstack:
 	movl    %esp, %ebp
-	movl    newstackptr, %esp
+	movl    _newstackptr, %esp
 	jmp     *(%ebp)
-	.def    setstack;       .val    .;      .scl    -1;     .endef
-	.data
+	.align  4
 #endif
 
-#ifdef LINUX
+#ifdef __386BSD__
 	.file   "setsp.s"
 	.globl  _setstack
 _setstack:
