@@ -1,4 +1,4 @@
-/* @(#) $Id: krnlif.c,v 1.3 1998/03/09 17:42:56 deyke Exp $ */
+/* @(#) $Id: krnlif.c,v 1.4 1998/07/27 16:08:14 deyke Exp $ */
 
 #ifdef linux
 
@@ -60,10 +60,10 @@
  */
 
 #include <sys/types.h>
-#include <sys/socket.h>
+#include <linux/socket.h>
 #include <sys/ioctl.h>
 #include <errno.h>
-#include <net/if.h>
+#include <linux/if.h>
 #include <linux/if_ether.h>
 #include <linux/if_arp.h>
 #include <linux/in.h>

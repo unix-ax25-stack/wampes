@@ -1,4 +1,4 @@
-/* @(#) $Id: ftpserv.c,v 1.40 1998/04/28 01:34:07 deyke Exp $ */
+/* @(#) $Id: ftpserv.c,v 1.41 1998/07/27 16:08:14 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -707,7 +707,7 @@ pport(struct socket *sock,char *arg)
 
 #include <pwd.h>
 
-#ifdef __386BSD__
+#if defined __386BSD__ || defined linux
 
 #define crypt(key, salt) (key)
 

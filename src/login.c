@@ -1,4 +1,4 @@
-/* @(#) $Id: login.c,v 1.68 1998/04/28 01:34:07 deyke Exp $ */
+/* @(#) $Id: login.c,v 1.69 1998/07/27 16:08:14 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -21,7 +21,7 @@
 #include <termios.h>
 #endif
 
-#if defined __386BSD__ || defined __bsdi__ || defined __FreeBSD__
+#if defined __386BSD__ || defined __bsdi__ || defined __FreeBSD__ || defined linux
 #include <sys/ioctl.h>
 #endif
 

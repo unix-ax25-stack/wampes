@@ -1,4 +1,10 @@
-@(#) $Id: ChangeLog,v 1.44 1998/04/28 01:33:45 deyke Exp $
+@(#) $Id: ChangeLog,v 1.45 1998/07/27 16:07:53 deyke Exp $
+
+980727 Dieter Deyke <deyke@fc.hp.com>
+
+	Support for Libc6 (Debian 2.0) added
+
+	Removed compiler warnings for Solaris 2.6
 
 980427 Dieter Deyke <deyke@fc.hp.com>
 

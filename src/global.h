@@ -1,4 +1,4 @@
-/* @(#) $Id: global.h,v 1.43 1998/03/23 17:11:05 deyke Exp $ */
+/* @(#) $Id: global.h,v 1.44 1998/07/27 16:08:14 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -121,7 +121,7 @@ typedef unsigned char byte_t;   /*  8-bit unsigned integer */
 typedef unsigned char uint8;    /* 8-bit unsigned integer */
 #define MAXINT16 0xffff         /* Largest 16-bit integer */
 #define MAXINT32 0x7fffffff     /* Largest 32-bit integer */
-#define NBBY    8               /* 8 bits/byte */
+/* #define NBBY    8               8 bits/byte */
 
 #define HASHMOD 7               /* Modulus used by hash_ip() function */
 
