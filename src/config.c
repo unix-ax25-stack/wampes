@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.43 1996/01/04 19:11:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.44 1996/01/22 13:13:35 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -697,9 +697,9 @@ struct daemon Daemons[] = {
 };
 
 #if     0
-void (*Listusers)(FILE *network) = listusers;
+void (*Listusers)(FILE *) = listusers;
 #else
-void (*Listusers)(FILE *network) = NULL;
+void (*Listusers)(FILE *) = NULL;
 #endif  /* MAILBOX */
 
 #ifndef BOOTP

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.35 1995/11/19 11:54:17 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.36 1996/01/22 13:14:15 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -1130,7 +1130,7 @@ static void doserver(int argc, char **argv)
     open("/dev/null", O_RDWR, 0666);
     open("/dev/null", O_RDWR, 0666);
     close(fdpipe[0]);
-    execl(MAIL_PROG, MAIL_PROG, "-s", "Net Update Log", "root", (char *) 0);
+    execl(MAIL_PROG, MAIL_PROG, "-s", "Net Update Log", "root", 0);
     exit(1);
   default:
     for (i = 0; i < FD_SETSIZE; i++)

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.15 1996/01/04 19:11:50 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.16 1996/01/22 13:13:59 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -194,7 +194,7 @@ int main(int argc, char **argv)
     actread = chkread;
     timeout.tv_sec = 3600;
     timeout.tv_usec = 0;
-    if (!select(channels, SEL_ARG(&actread), SEL_ARG(0), SEL_ARG(0), &timeout))
+    if (!select(channels, SEL_ARG(&actread), 0, 0, &timeout))
       terminate();
     for (i = 0; i < channels; i++)
       if (FD_ISSET(i, &actread)) {

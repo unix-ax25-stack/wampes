@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.18 1995/04/21 12:35:44 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.19 1996/01/22 13:13:29 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -219,7 +219,7 @@ int main(int argc, char **argv)
 
   for (; ; ) {
     actread = chkread;
-    select(4, SEL_ARG(&actread), SEL_ARG(0), SEL_ARG(0), (struct timeval *) 0);
+    select(4, SEL_ARG(&actread), 0, 0, 0);
     if (FD_ISSET(0, &actread)) {
       do {
 	if ((size = read(0, buffer, sizeof(buffer))) <= 0) stop("");

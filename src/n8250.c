@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.40 1995/12/26 11:18:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.41 1996/01/22 13:13:47 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -428,7 +428,6 @@ struct asy *asyp)
 	int n;
 
 	if (asyp->sndq != NULL) {
-#ifdef MAXIOV
 		struct iovec iov[MAXIOV];
 		struct mbuf *bp;
 		n = 0;
@@ -438,9 +437,6 @@ struct asy *asyp)
 			n++;
 		}
 		n = writev(asyp->fd, iov, n);
-#else
-		n = write(asyp->fd, asyp->sndq->data, asyp->sndq->cnt);
-#endif
 		asyp->txints++;
 		if (n <= 0) {
 			asy_down(asyp);

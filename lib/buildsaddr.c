@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.14 1995/11/19 11:54:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.15 1996/01/22 13:14:19 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -55,7 +55,7 @@ struct sockaddr *build_sockaddr(const char *name, int *addrlen)
 
   if (!strcmp(host_name, "*")) {
     addr.si.sin_addr.s_addr = INADDR_ANY;
-  } else if (!strcmp(host_name, "loopback")) {
+  } else if (!strcmp(host_name, "loopback") || !strcmp(host_name, "localhost")) {
     addr.si.sin_addr.s_addr = inet_addr("127.0.0.1");
   } else if ((addr.si.sin_addr.s_addr = inet_addr(host_name)) == -1L) {
     struct hostent *hp = gethostbyname(host_name);
@@ -67,7 +67,7 @@ struct sockaddr *build_sockaddr(const char *name, int *addrlen)
   if (isdigit(*serv_name & 0xff)) {
     addr.si.sin_port = htons(atoi(serv_name));
   } else {
-    struct servent *sp = getservbyname(serv_name, (char *) 0);
+    struct servent *sp = getservbyname(serv_name, 0);
     endservent();
     if (!sp) return 0;
     addr.si.sin_port = sp->s_port;

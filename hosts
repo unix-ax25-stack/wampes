@@ -544,6 +544,7 @@
 44.130.12.73    DL4BCL  # Tim Weyland, 26409 Wittmund-Willen; WNOS
 44.130.12.74    DL4BCK  # Heiko Cassens, 26409 Wittmund; WNOS
 44.130.12.75    DG3BFL  # Thomas Brants, Woquard; WNOS
+44.130.12.76    DD8BA-2 # Steven Sporkmann, Holdorf; WNOS
 #
 #44.130.13.x    Hildesheim
 # --- lokale Adresskoordination: DC5ON
@@ -1265,6 +1266,7 @@
 44.130.20.29    DG4KCY  # Hassan Sawaf, 52076 Aachen
 44.130.20.30    DK3KO   # Wilhelm Golz, 5100 Aachen
 44.130.20.31    DG3KJK  # Jan Kunkis, 52076 Aachen
+44.130.20.32    DH2KC   # Christoph Dautzenberg, 52066 Aachen
 44.130.20.35    DF2JH   # Jochen, Aachen
 44.130.20.39    DH9KAE-1 # Detlef Brunkel, 52531 Uebach-Palenberg; Linux Router
 44.130.20.40    DH9KAE  # ; Linux, NS
@@ -2351,9 +2353,9 @@
 44.130.48.51    DL4SBM  # Wolfgang, 7000 Stgt-Muenster
 44.130.48.52    DL4SDC  # Andreas, Boeblingen; WAMPES
 44.130.48.53    DL4TA-W #
-44.130.48.54    DK4TU   # Dieter Deiss, 7057 Winnenden (ex DL6SCZ)
+44.130.48.54    DK4TU   # Dieter Deiss, 71397 Leutenbach
 44.130.48.55    DC3SN-1 # Thomas Kunert, 7000 Stuttgart
-44.130.48.56    DG3SX   # Juergen, 7000 Stuttgart-Heslach
+44.130.48.56    DJ8KI-U # Guenter Blind, Kornwestheim
 44.130.48.57    DF5SR   # Hans Vollmer, 7134 Knittlingen
 44.130.48.58    DK2ZO   # Wolfgang
 44.130.48.59    DL1SDZ  # Hans Joachim, 7400 Tuebingen
@@ -2767,6 +2769,7 @@
 44.130.176.146  DG4SEU-U        # Thomas Schreiber, 71093 Weil im Schoenbuch
 44.130.176.157  DG1UAZ-2ND      #
 44.130.176.158  DG1UAZ-3RD      #
+44.130.176.254  DK4TU-U         # Dieter Deiss, 71397 Leutenbach
 #
 #44.130.56.x    Muenchen
 # --- lokale Adress-Koordination: DG7DAH

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/pty-test.c,v 1.6 1993/10/13 22:31:31 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/pty-test.c,v 1.7 1996/01/22 13:14:03 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -152,7 +152,7 @@ void slave(void)
     else
       putchar('.');
     fflush(stdout);
-    select(0, (int *) 0, (int *) 0, (int *) 0, &timeout);
+    select(0, 0, 0, 0, &timeout);
   }
 }
 

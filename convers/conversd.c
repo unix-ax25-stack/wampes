@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.68 1996/01/15 09:29:08 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.69 1996/01/22 13:13:27 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -62,14 +62,33 @@ extern int optind;
 #include "md5.h"
 #include "strdup.h"
 
-#define HOLDTIME        (  60*60)
-#define MAX_CHANNEL     32767
-#define MAX_IDLETIME    (  60*60)
-#define MAX_UNKNOWNTIME (  15*60)
-#define MAX_WAITTIME    (3*60*60)
-#define MIN_WAITTIME    (     60)
-#define NO_NOTE         "@"
-#define UNIQMARKER      (' ' | 0x80)
+#define CHECK_UNIQUE_TIME       (  30*60)
+#define KEEP_USERS_TIME         (  60*60)
+#define MAKE_UNIQUE_TIME        (  60*60)
+#define MAX_CHANNEL             32767
+#define MAX_IDLETIME            (  60*60)
+#define MAX_PINGTIME            (2*60*60)
+#define MAX_UNKNOWNTIME         (  15*60)
+#define MAX_WAITTIME            (3*60*60)
+#define MIN_PINGTIME            (   5*60)
+#define MIN_WAITTIME            (     60)
+#define NO_NOTE                 "@"
+#define UNIQMARKER              (' ' | 0x80)
+
+enum e_dir {
+  INBOUND,
+  OUTBOUND
+};
+
+enum e_what {
+  ONE_TOKEN,
+  REST_OF_LINE
+};
+
+enum e_case {
+  KEEP_CASE,
+  LOWER_CASE
+};
 
 struct mbuf {
   struct mbuf *m_next;          /* Linked list pointer */
@@ -79,6 +98,8 @@ struct mbuf {
 
 struct host {
   char *h_name;                 /* Name of host */
+  char *h_software;             /* Software on this host */
+  char *h_capabilities;         /* Capabilities of this host */
   struct link *h_link;          /* Link to this host */
   struct host *h_next;          /* Linked list pointer */
 };
@@ -108,6 +129,11 @@ struct link {
   int l_closed;                 /* Set if BYE command was executed */
   long l_stime;                 /* Time of last state change */
   long l_mtime;                 /* Time of last input/output */
+  long l_sendtime;              /* Time PING was sent */
+  long l_nexttime;              /* Time next PING will be send */
+  long l_rxrtt;                 /* RTT received by PONG */
+  long l_txrtt;                 /* RTT measured (PONG_time - PING_time) */
+  double l_srtt;                /* Smoothed RTT */
   struct link *l_next;          /* Linked list pointer */
 };
 
@@ -129,8 +155,8 @@ static struct fd_set chkwrite;
 static void (*writefnc[FD_SETSIZE])(void *);
 static void *writearg[FD_SETSIZE];
 
-static char *conffile = "/tcp/convers.conf";
 static const char progfile[] = "/tcp/conversd";
+static const char *conffile = "/tcp/convers.conf";
 static int debug;
 static int maxfd = -1;
 static int min_waittime = MIN_WAITTIME;
@@ -146,7 +172,26 @@ static void link_send(struct link *lp);
 
 /*---------------------------------------------------------------------------*/
 
-static int is_string_unique(const char *string)
+static void strchg(char **string_ptr, const char *string)
+{
+  if (*string_ptr)
+    free(*string_ptr);
+  *string_ptr = strdup((char *) string);
+  if (!*string_ptr)
+    exit(1);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void inc_seq(long *seq_ptr)
+{
+  if (++(*seq_ptr) < currtime)
+    *seq_ptr = currtime;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int is_string_unique(const char *string, long duration)
 {
 
   struct string_t {
@@ -155,10 +200,11 @@ static int is_string_unique(const char *string)
     unsigned char s_digest[16];
   };
 
-  MD5_CTX mdContext;
   int i;
-  static struct string_t *strings[256];
+  long time_limit;
+  MD5_CTX mdContext;
   static struct string_t *stringstail[256];
+  static struct string_t *strings[256];
   struct string_t *sp;
 
   MD5Init(&mdContext);
@@ -166,16 +212,22 @@ static int is_string_unique(const char *string)
   MD5Final(&mdContext);
   i = mdContext.digest[0] & 0xff;
 
-  while ((sp = strings[i]) && sp->s_time + HOLDTIME < currtime) {
+  time_limit = currtime - MAKE_UNIQUE_TIME;
+  while ((sp = strings[i]) && sp->s_time < time_limit) {
     strings[i] = sp->s_next;
     free(sp);
   }
 
-  for (sp = strings[i]; sp; sp = sp->s_next)
-    if (!memcmp((char *) sp->s_digest, (char *) mdContext.digest, sizeof(mdContext.digest)))
+  time_limit = currtime - duration;
+  for (sp = strings[i]; sp; sp = sp->s_next) {
+    if (sp->s_time >= time_limit &&
+	!memcmp((char *) sp->s_digest, (char *) mdContext.digest, sizeof(mdContext.digest)))
       return 0;
+  }
 
   sp = (struct string_t *) malloc(sizeof(struct string_t));
+  if (!sp)
+    exit(1);
   sp->s_next = 0;
   sp->s_time = currtime;
   memcpy((char *) sp->s_digest, (char *) mdContext.digest, sizeof(mdContext.digest));
@@ -195,20 +247,23 @@ static void make_string_unique(char *string)
   char *cp;
   int i;
 
-  if (is_string_unique(string)) return;
+  if (is_string_unique(string, MAKE_UNIQUE_TIME))
+    return;
   cp = strchr(string, UNIQMARKER);
   if (cp) {
     cp++;
     i = atoi(cp);
   } else {
     for (cp = string; *cp; cp++) ;
-    if (cp > string && cp[-1] == '\n') cp--;
+    if (cp > string && cp[-1] == '\n')
+      cp--;
     *cp++ = UNIQMARKER;
     i = 0;
   }
-  for (; ; ) {
+  for (;;) {
     sprintf(cp, "%d\n", ++i);
-    if (is_string_unique(string)) return;
+    if (is_string_unique(string, MAKE_UNIQUE_TIME))
+      return;
   }
 }
 
@@ -226,7 +281,11 @@ static struct host *hostptr(const char *name)
     if (!hp || (r = strcmp(hp->h_name, name)) >= 0) {
       if (!hp || r) {
 	hp = (struct host *) calloc(1, sizeof(struct host));
-	hp->h_name = strdup((char *) name);
+	if (!hp)
+	  exit(1);
+	strchg(&hp->h_name, name);
+	strchg(&hp->h_software, "");
+	strchg(&hp->h_capabilities, "");
 	hp->h_next = *hpp;
 	*hpp = hp;
       }
@@ -251,10 +310,12 @@ static struct user *userptr(const char *name, struct host *hp)
 	(!r && (r = strcmp(up->u_host->h_name, hp->h_name)) >= 0)) {
       if (!up || r) {
 	up = (struct user *) calloc(1, sizeof(struct user));
-	up->u_name = strdup((char *) name);
+	if (!up)
+	  exit(1);
+	strchg(&up->u_name, name);
 	up->u_host = hp;
 	up->u_channel = up->u_oldchannel = -1;
-	up->u_note = strdup(NO_NOTE);
+	strchg(&up->u_note, NO_NOTE);
 	up->u_stime = currtime;
 	up->u_next = *upp;
 	*upp = up;
@@ -266,22 +327,22 @@ static struct user *userptr(const char *name, struct host *hp)
 
 /*---------------------------------------------------------------------------*/
 
-static void trace(int outbound, struct link *lp, const char *string)
+static void trace(enum e_dir dir, struct link *lp, const char *string)
 {
 
+  char buf[16];
   char *cp;
   char *name;
-  char buf[16];
 
   if (lp->l_user)
     name = lp->l_user->u_name;
   else if (lp->l_host)
     name = lp->l_host->h_name;
   else
-    sprintf(name = buf, "%p", lp);
+    sprintf(name = buf, "%08lx", (long) lp);
   cp = ctime(&currtime);
   cp[24] = 0;
-  if (outbound)
+  if (dir == OUTBOUND)
     printf("\n%s SEND %s->%s:\n%s", cp, my.h_name, name, string);
   else
     printf("\n%s RECV %s->%s:\n%s", cp, name, my.h_name, string);
@@ -298,9 +359,11 @@ static void send_string(struct link *lp, const char *string)
   struct mbuf *p;
 
   if (!*string) return;
-  if (debug) trace(1, lp, string);
+  if (debug) trace(OUTBOUND, lp, string);
   len = strlen(string);
   mp = (struct mbuf *) malloc(sizeof(struct mbuf) + len);
+  if (!mp)
+    exit(1);
   mp->m_next = 0;
   memcpy(mp->m_data = (char *) (mp + 1), string, mp->m_cnt = len);
   if (lp->l_sndq) {
@@ -355,7 +418,7 @@ static void free_resources(void)
   }
 
   for (upp = &users; (up = *upp); )
-    if (up->u_channel < 0 && up->u_stime + HOLDTIME < currtime) {
+    if (up->u_channel < 0 && up->u_stime + KEEP_USERS_TIME < currtime) {
       *upp = up->u_next;
       free(up->u_name);
       free(up->u_note);
@@ -367,7 +430,7 @@ static void free_resources(void)
 
 /*---------------------------------------------------------------------------*/
 
-static char *getarg(char *line, int all)
+static char *getarg(char *line, enum e_what what, enum e_case how)
 {
 
   char *arg;
@@ -379,14 +442,18 @@ static char *getarg(char *line, int all)
     cp[1] = 0;
     cp = line;
   }
-  while (isspace(*cp & 0xff)) cp++;
-  if (all) return cp;
+  while (isspace(*cp & 0xff))
+    cp++;
+  if (what == REST_OF_LINE)
+    return cp;
   arg = cp;
   while (*cp && !isspace(*cp & 0xff)) {
-    if (*cp >= 'A' && *cp <= 'Z') *cp = tolower(*cp);
+    if (how == LOWER_CASE && *cp >= 'A' && *cp <= 'Z')
+      *cp = tolower(*cp);
     cp++;
   }
-  if (*cp) *cp++ = 0;
+  if (*cp)
+    *cp++ = 0;
   return arg;
 }
 
@@ -491,6 +558,8 @@ static void accept_connect_request(const int *flistenptr)
     return;
   }
   lp = (struct link *) calloc(1, sizeof(struct link));
+  if (!lp)
+    exit(1);
   lp->l_fd = fd;
   lp->l_stime = lp->l_mtime = currtime;
   lp->l_next = links;
@@ -562,7 +631,7 @@ static void send_msg_to_user(const char *fromname, const char *toname, const cha
   sprintf(host_buffer, "/\377\200UMSG %s %s %s\n", fromname, toname, text);
   if (make_unique)
     make_string_unique(host_buffer);
-  else if (!is_string_unique(host_buffer))
+  else if (!is_string_unique(host_buffer, CHECK_UNIQUE_TIME))
     return;
   if ((cp = strchr(text, UNIQMARKER))) *cp = 0;
   if (strcmp(fromname, "conversd")) {
@@ -596,7 +665,7 @@ static void send_msg_to_channel(const char *fromname, int channel, char *text, i
   sprintf(host_buffer, "/\377\200CMSG %s %d %s\n", fromname, channel, text);
   if (make_unique)
     make_string_unique(host_buffer);
-  else if (!is_string_unique(host_buffer))
+  else if (!is_string_unique(host_buffer, CHECK_UNIQUE_TIME))
     return;
   if ((cp = strchr(text, UNIQMARKER))) *cp = 0;
   sprintf(prefix, "<%s>:", fromname);
@@ -633,7 +702,7 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
   sprintf(host_buffer, "/\377\200INVI %s %s %d %s\n", fromname, toname, channel, text);
   if (make_unique)
     make_string_unique(host_buffer);
-  else if (!is_string_unique(host_buffer))
+  else if (!is_string_unique(host_buffer, CHECK_UNIQUE_TIME))
     return;
 
   for (up = users; up; up = up->u_next)
@@ -728,6 +797,8 @@ static void connect_peers(void)
       continue;
     }
     lp = pp->p_link = (struct link *) calloc(1, sizeof(struct link));
+    if (!lp)
+      exit(1);
     lp->l_fd = fd;
     lp->l_stime = lp->l_mtime = currtime;
     lp->l_next = links;
@@ -750,8 +821,39 @@ static void connect_peers(void)
     }
     strcat(buffer, "convers\n/\377\200HOST ");
     strcat(buffer, my.h_name);
+    strcat(buffer, " ");
+    strcat(buffer, my.h_software);
+    strcat(buffer, " ");
+    strcat(buffer, my.h_capabilities);
     strcat(buffer, "\n");
     send_string(lp, buffer);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void send_pings(void)
+{
+
+  long d;
+  struct link *lp;
+
+  for (lp = links; lp; lp = lp->l_next) {
+    if (lp->l_host && lp->l_nexttime <= currtime) {
+      send_string(lp, "/\377\200PING\n");
+      lp->l_sendtime = currtime;
+      if (lp->l_srtt) {
+	d = (long) (60 * lp->l_srtt + 0.5);
+	if (d < MIN_PINGTIME) {
+	  d = MIN_PINGTIME;
+	} else if (d > MAX_PINGTIME) {
+	  d = MAX_PINGTIME;
+	}
+      } else {
+	d = MAX_PINGTIME;
+      }
+      lp->l_nexttime = currtime + d;
+    }
   }
 }
 
@@ -827,7 +929,7 @@ static void channel_command(struct link *lp)
   struct user *up;
 
   up = lp->l_user;
-  cp = getarg(0, 0);
+  cp = getarg(0, ONE_TOKEN, LOWER_CASE);
   if (!*cp) {
     sprintf(buffer, "*** You are on channel %d.\n", up->u_channel);
     send_string(lp, buffer);
@@ -844,7 +946,7 @@ static void channel_command(struct link *lp)
     send_string(lp, buffer);
     return;
   }
-  if (++up->u_seq < currtime) up->u_seq = currtime;
+  inc_seq(&up->u_seq);
   up->u_oldchannel = up->u_channel;
   up->u_channel = newchannel;
   send_user_change_msg(up);
@@ -896,12 +998,14 @@ static void hosts_command(struct link *lp)
   char buffer[2048];
   struct host *hp;
 
-  send_string(lp, "Name     Via\n");
+  send_string(lp, "Name     Via      Software Capabilities\n");
   for (hp = hosts; hp; hp = hp->h_next) {
     sprintf(buffer,
-	    "%-8.8s %-8.8s\n",
+	    "%-8.8s %-8.8s %-8.8s %s\n",
 	    hp->h_name,
-	    hp->h_link ? hp->h_link->l_host->h_name : "");
+	    hp->h_link ? hp->h_link->l_host->h_name : "",
+	    hp->h_software,
+	    hp->h_capabilities);
     send_string(lp, buffer);
   }
   send_string(lp, "***\n");
@@ -913,7 +1017,7 @@ static void invite_command(struct link *lp)
 {
   char *toname;
 
-  toname = getarg(0, 0);
+  toname = getarg(0, ONE_TOKEN, LOWER_CASE);
   if (*toname)
     send_invite_msg(lp->l_user->u_name, toname, lp->l_user->u_channel, "", 1);
 }
@@ -933,12 +1037,13 @@ static void kick_command(struct link *lp)
 static void links_command(struct link *lp)
 {
 
+  char buffer[2048];
+  char srttstr[80];
   char *name;
   char *state;
-  char buffer[2048];
   struct link *p;
 
-  send_string(lp, "Name     State      Since  Idle Queue Receivd Xmitted\n");
+  send_string(lp, "Name     State      Since  SRTT  Idle Queue Receivd Xmitted\n");
   for (p = links; p; p = p->l_next) {
     if (p->l_user) {
       state = "User";
@@ -953,11 +1058,16 @@ static void links_command(struct link *lp)
       state = "Closed";
       name = "";
     }
+    if (p->l_srtt)
+      sprintf(srttstr, "%5.4g", p->l_srtt);
+    else
+      strcpy(srttstr, "     ");
     sprintf(buffer,
-	    "%-8.8s %-9s %s %5ld %5d %7d %7d\n",
+	    "%-8.8s %-9s %s %s %5ld %5d %7d %7d\n",
 	    name,
 	    state,
 	    localtimestring(p->l_stime),
+	    srttstr,
 	    currtime - p->l_mtime,
 	    queuelength(p->l_sndq),
 	    p->l_received,
@@ -977,8 +1087,8 @@ static void msg_command(struct link *lp)
   char buffer[2048];
   struct user *up;
 
-  toname = getarg(0, 0);
-  text = getarg(0, 1);
+  toname = getarg(0, ONE_TOKEN, LOWER_CASE);
+  text = getarg(0, REST_OF_LINE, KEEP_CASE);
   for (up = users; up; up = up->u_next)
     if (up->u_channel >= 0 && !strcmp(up->u_name, toname)) {
       send_msg_to_user(lp->l_user->u_name, toname, text, 1);
@@ -998,11 +1108,10 @@ static void note_command(struct link *lp)
   struct user *up;
 
   up = lp->l_user;
-  note = getarg(0, 1);
+  note = getarg(0, REST_OF_LINE, KEEP_CASE);
   if (*note && strcmp(up->u_note, note)) {
-    free(up->u_note);
-    up->u_note = strdup(note);
-    if (++up->u_seq < currtime) up->u_seq = currtime;
+    strchg(&up->u_note, note);
+    inc_seq(&up->u_seq);
     up->u_oldchannel = up->u_channel;
     send_user_change_msg(up);
   }
@@ -1066,29 +1175,28 @@ static void name_command(struct link *lp)
   struct link *lpold;
   struct user *up;
 
-  name = getarg(0, 0);
+  name = getarg(0, ONE_TOKEN, LOWER_CASE);
   if (!*name) return;
   up = userptr(name, &my);
-  if (++up->u_seq < currtime) up->u_seq = currtime;
+  inc_seq(&up->u_seq);
   lpold = up->u_link;
   up->u_link = lp;
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.68 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.69 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
-  up->u_channel = atoi(getarg(0, 0));
+  up->u_channel = atoi(getarg(0, ONE_TOKEN, LOWER_CASE));
   if (up->u_channel < 0 || up->u_channel > MAX_CHANNEL) {
     sprintf(buffer, "*** Channel numbers must be in the range 0..%d.\n", MAX_CHANNEL);
     send_string(lp, buffer);
     up->u_channel = 0;
   }
-  note = getarg(0, 1);
+  note = getarg(0, REST_OF_LINE, KEEP_CASE);
   if (!*note) note = NO_NOTE;
   if (strcmp(up->u_note, note)) {
-    free(up->u_note);
-    up->u_note = strdup(note);
+    strchg(&up->u_note, note);
   }
   send_user_change_msg(up);
 }
@@ -1158,9 +1266,9 @@ static void h_cmsg_command(struct link *lp)
   char *name;
   int channel;
 
-  name = getarg(0, 0);
-  channel = atoi(getarg(0, 0));
-  send_msg_to_channel(name, channel, getarg(0, 1), 0);
+  name = getarg(0, ONE_TOKEN, LOWER_CASE);
+  channel = atoi(getarg(0, ONE_TOKEN, LOWER_CASE));
+  send_msg_to_channel(name, channel, getarg(0, REST_OF_LINE, KEEP_CASE), 0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1168,23 +1276,29 @@ static void h_cmsg_command(struct link *lp)
 static void h_host_command(struct link *lp)
 {
 
-  char *name;
   char buffer[2048];
+  char *name;
   struct host *hp;
   struct link *lpold;
   struct peer *pp;
   struct user *up;
 
-  name = getarg(0, 0);
+  name = getarg(0, ONE_TOKEN, LOWER_CASE);
   if (!*name) return;
   hp = hostptr(name);
   if (hp == &my) {
     close_link(lp);
     return;
   }
+  strchg(&hp->h_software, getarg(0, ONE_TOKEN, KEEP_CASE));
+  strchg(&hp->h_capabilities, getarg(0, ONE_TOKEN, KEEP_CASE));
   hp->h_link = lp;
   lp->l_host = hp;
   lp->l_stime = currtime;
+  if (strchr(hp->h_capabilities, 'p'))
+    lp->l_nexttime = currtime + 60;
+  else
+    lp->l_nexttime = 0x7fffffff;
 
   for (lpold = links; lpold; lpold = lpold->l_next)
     if (lpold != lp && lpold->l_host == hp) {
@@ -1202,7 +1316,11 @@ static void h_host_command(struct link *lp)
       pp->p_retrytime = currtime + min_waittime;
     }
 
-  sprintf(buffer, "/\377\200HOST %s\n", my.h_name);
+  sprintf(buffer,
+	  "/\377\200HOST %s %s %s\n",
+	  my.h_name,
+	  my.h_software,
+	  my.h_capabilities);
   send_string(lp, buffer);
 
   for (up = users; up; up = up->u_next)
@@ -1229,11 +1347,47 @@ static void h_invi_command(struct link *lp)
   char *fromname;
   char *toname;
 
-  fromname = getarg(0, 0);
-  toname = getarg(0, 0);
-  channel = getarg(0, 0);
+  fromname = getarg(0, ONE_TOKEN, LOWER_CASE);
+  toname = getarg(0, ONE_TOKEN, LOWER_CASE);
+  channel = getarg(0, ONE_TOKEN, LOWER_CASE);
   if (*channel)
-    send_invite_msg(fromname, toname, atoi(channel), getarg(0, 1), 0);
+    send_invite_msg(fromname, toname, atoi(channel), getarg(0, REST_OF_LINE, KEEP_CASE), 0);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void h_ping_command(struct link *lp)
+{
+  char buffer[2048];
+
+  sprintf(buffer, "/\377\200PONG %ld\n", lp->l_txrtt);
+  send_string(lp, buffer);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void h_pong_command(struct link *lp)
+{
+  lp->l_rxrtt = atol(getarg(0, ONE_TOKEN, LOWER_CASE));
+  if (lp->l_rxrtt > 0) {
+    if (lp->l_srtt) {
+      lp->l_srtt = (7.0 * lp->l_srtt + lp->l_rxrtt) / 8.0;
+    } else {
+      lp->l_srtt = lp->l_rxrtt;
+    }
+  }
+  if (lp->l_sendtime) {
+    lp->l_txrtt = currtime - lp->l_sendtime;
+    if (lp->l_txrtt < 1) {
+      lp->l_txrtt = 1;
+    }
+    lp->l_sendtime = 0;
+    if (lp->l_srtt) {
+      lp->l_srtt = (7.0 * lp->l_srtt + lp->l_txrtt) / 8.0;
+    } else {
+      lp->l_srtt = lp->l_txrtt;
+    }
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1244,9 +1398,9 @@ static void h_umsg_command(struct link *lp)
   char *fromname;
   char *toname;
 
-  fromname = getarg(0, 0);
-  toname = getarg(0, 0);
-  send_msg_to_user(fromname, toname, getarg(0, 1), 0);
+  fromname = getarg(0, ONE_TOKEN, LOWER_CASE);
+  toname = getarg(0, ONE_TOKEN, LOWER_CASE);
+  send_msg_to_user(fromname, toname, getarg(0, REST_OF_LINE, KEEP_CASE), 0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1264,11 +1418,11 @@ static void h_user_command(struct link *lp)
   struct host *hp;
   struct user *up;
 
-  name = getarg(0, 0);
-  host = getarg(0, 0);
-  seq = atol(getarg(0, 0));
-  getarg(0, 0); /*** oldchannel is ignored, protocol has changed ***/
-  channel = getarg(0, 0);
+  name = getarg(0, ONE_TOKEN, LOWER_CASE);
+  host = getarg(0, ONE_TOKEN, LOWER_CASE);
+  seq = atol(getarg(0, ONE_TOKEN, LOWER_CASE));
+  getarg(0, ONE_TOKEN, LOWER_CASE); /*** oldchannel is ignored, protocol has changed ***/
+  channel = getarg(0, ONE_TOKEN, LOWER_CASE);
   if (!*channel) {
     if (debug >= 2) printf("*** Syntax error: ignored.\n");
     return;
@@ -1276,7 +1430,7 @@ static void h_user_command(struct link *lp)
   newchannel = atoi(channel);
   hp = hostptr(host);
   up = userptr(name, hp);
-  note = getarg(0, 1);
+  note = getarg(0, REST_OF_LINE, KEEP_CASE);
   if (!*note) note = up->u_note;
 
   if ((seq > up->u_seq) ||
@@ -1287,7 +1441,7 @@ static void h_user_command(struct link *lp)
     up->u_seq = seq;
     if (hp == &my) {
       if (debug >= 2) printf("*** Got info about my own user: rejected.\n");
-      if (++up->u_seq < currtime) up->u_seq = currtime;
+      inc_seq(&up->u_seq);
       sprintf(buffer, "/\377\200USER %s %s %ld %d %d %s\n", name, host, up->u_seq, newchannel, up->u_channel, up->u_note);
       send_string(lp, buffer);
     } else {
@@ -1296,8 +1450,7 @@ static void h_user_command(struct link *lp)
       up->u_oldchannel = up->u_channel;
       up->u_channel = newchannel;
       if (strcmp(up->u_note, note)) {
-	free(up->u_note);
-	up->u_note = strdup(note);
+	strchg(&up->u_note, note);
       }
       if ((up->u_oldchannel ^ up->u_channel) < 0) up->u_stime = currtime;
       send_user_change_msg(up);
@@ -1365,6 +1518,8 @@ static void process_input(struct link *lp)
 
     { "\377\200cmsg",   h_cmsg_command },
     { "\377\200invi",   h_invi_command },
+    { "\377\200ping",   h_ping_command },
+    { "\377\200pong",   h_pong_command },
     { "\377\200umsg",   h_umsg_command },
     { "\377\200user",   h_user_command },
 
@@ -1376,13 +1531,13 @@ static void process_input(struct link *lp)
   const struct command * cp;
   int arglen;
 
-  if (debug) trace(0, lp, lp->l_ibuf);
+  if (debug) trace(INBOUND, lp, lp->l_ibuf);
 
   clear_locks();
   lp->l_locked = 1;
 
   if (*lp->l_ibuf == '/') {
-    arglen = strlen(arg = getarg(lp->l_ibuf + 1, 0));
+    arglen = strlen(arg = getarg(lp->l_ibuf + 1, ONE_TOKEN, LOWER_CASE));
     if (lp->l_user)
       cp = user_commands;
     else if (lp->l_host)
@@ -1399,7 +1554,7 @@ static void process_input(struct link *lp)
       send_string(lp, buffer);
     }
   } else if (lp->l_user)
-    send_msg_to_channel(lp->l_user->u_name, lp->l_user->u_channel, getarg(lp->l_ibuf, 1), 1);
+    send_msg_to_channel(lp->l_user->u_name, lp->l_user->u_channel, getarg(lp->l_ibuf, REST_OF_LINE, KEEP_CASE), 1);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1415,21 +1570,22 @@ static void read_configuration(void)
   int got_host_name = 0;
   struct peer *pp;
 
-  if ((fp = fopen(conffile, "r"))) {
+  if (*conffile && (fp = fopen(conffile, "r"))) {
     while (fgets(line, sizeof(line), fp)) {
       if ((cp = strchr(line, '#'))) *cp = 0;
-      host_name = getarg(line, 0);
+      host_name = getarg(line, ONE_TOKEN, LOWER_CASE);
       if (*host_name && !got_host_name) {
-	free(my.h_name);
-	my.h_name = strdup(host_name);
+	strchg(&my.h_name, host_name);
 	got_host_name = 1;
 	continue;
       }
-      sock_name = getarg(0, 0);
+      sock_name = getarg(0, ONE_TOKEN, LOWER_CASE);
       if (*sock_name) {
 	pp = (struct peer *) calloc(1, sizeof(struct peer));
-	pp->p_socket = strdup(sock_name);
-	pp->p_command = strdup(getarg(0, 1));
+	if (!pp)
+	  exit(1);
+	strchg(&pp->p_socket, sock_name);
+	strchg(&pp->p_command, getarg(0, REST_OF_LINE, KEEP_CASE));
 	pp->p_stime = currtime;
 	pp->p_retrytime = currtime + min_waittime;
 	pp->p_next = peers;
@@ -1458,7 +1614,7 @@ static void check_files_changed(void)
     if (progtime != statbuf.st_mtime && statbuf.st_mtime + 60 < currtime)
       exit(0);
   }
-  if (!stat(conffile, &statbuf)) {
+  if (*conffile && !stat(conffile, &statbuf)) {
     if (!conftime) conftime = statbuf.st_mtime;
     if (conftime != statbuf.st_mtime && statbuf.st_mtime + 60 < currtime)
       exit(0);
@@ -1507,11 +1663,8 @@ static void link_send(struct link *lp)
 {
 
   int n;
-  struct mbuf *mp;
-
-#ifdef MAXIOV
-
   struct iovec iov[MAXIOV];
+  struct mbuf *mp;
 
   n = 0;
   for (mp = lp->l_sndq; mp && n < MAXIOV; mp = mp->m_next) {
@@ -1520,13 +1673,6 @@ static void link_send(struct link *lp)
     n++;
   }
   n = writev(lp->l_fd, iov, n);
-
-#else
-
-  n = write(lp->l_fd, lp->l_sndq->m_data, lp->l_sndq->m_cnt);
-
-#endif
-
   if (n <= 0)
     close_link(lp);
   else {
@@ -1557,34 +1703,54 @@ static void link_send(struct link *lp)
 int main(int argc, char **argv)
 {
 
-  static struct listeners {
+  struct listeners {
     const char *s_name;
     int s_fd;
-  } listeners[] = {
-    { "unix:/tcp/sockets/convers",      -1 },
-    { "*:3600",                         -1 },
-    { 0,                                -1 }
   };
 
-  char *cp;
+  static struct listeners listeners[256] = {
+    {"unix:/tcp/sockets/convers", 0},
+    {"*:3600", 0},
+  };
+
   char buffer[256];
+  char *cp;
   int addrlen;
   int arg;
   int chr;
   int errflag = 0;
   int i;
+  int nlisteners = 0;
   int status;
   struct fd_set actread;
   struct fd_set actwrite;
   struct listeners *sp;
+  struct peer *pp;
   struct sockaddr *addr;
   struct timeval timeout;
 
-  while ((chr = getopt(argc, argv, "a:c:d")) != EOF)
+  umask(022);
+
+  time(&currtime);
+
+  gethostname(buffer, sizeof(buffer));
+  if ((cp = strchr(buffer, '.')))
+    *cp = 0;
+  strchg(&my.h_name, buffer);
+  strcpy(buffer, "W-");
+  if ((cp = strchr("$Revision: 2.69 $", ' ')))
+    strcat(buffer, cp + 1);
+  if ((cp = strchr(buffer, ' ')))
+    *cp = 0;
+  strchg(&my.h_software, buffer);
+  strchg(&my.h_capabilities, "p");
+
+  while ((chr = getopt(argc, argv, "a:c:dh:p:")) != EOF)
     switch (chr) {
     case 'a':
-      listeners[0].s_name = optarg;
-      listeners[1].s_name = 0;
+      listeners[nlisteners].s_name = optarg;
+      nlisteners++;
+      listeners[nlisteners].s_name = 0;
       break;
     case 'c':
       conffile = optarg;
@@ -1593,31 +1759,46 @@ int main(int argc, char **argv)
       debug++;
       min_waittime = 1;
       break;
+    case 'h':
+      strchg(&my.h_name, getarg(optarg, ONE_TOKEN, LOWER_CASE));
+      break;
+    case 'p':
+      pp = (struct peer *) calloc(1, sizeof(struct peer));
+      if (!pp)
+	exit(1);
+      strchg(&pp->p_socket, getarg(optarg, ONE_TOKEN, LOWER_CASE));
+      strchg(&pp->p_command, getarg(0, REST_OF_LINE, KEEP_CASE));
+      pp->p_stime = currtime;
+      pp->p_retrytime = currtime + min_waittime;
+      pp->p_next = peers;
+      peers = pp;
+      break;
     case '?':
       errflag = 1;
       break;
     }
 
   if (errflag || optind < argc) {
-    fprintf(stderr, "Usage: conversd [-a address] [-c conffile] [-d]\n");
+    fprintf(stderr,
+	    "Usage: conversd"
+	    " [-a address]"
+	    " [-c conffile]"
+	    " [-d]"
+	    " [-h hostname]"
+	    " [-p socket_address [connect_command]]"
+	    "\n");
     exit(1);
   }
 
-  umask(022);
-
   close(0);
-  for (i = debug ? 3 : 1; i < FD_SETSIZE; i++) close(i);
+  for (i = debug ? 3 : 1; i < FD_SETSIZE; i++)
+    close(i);
 
   chdir("/");
   setsid();
   signal(SIGPIPE, SIG_IGN);
-  if (!getenv("TZ")) putenv("TZ=MEZ-1MESZ");
-
-  gethostname(buffer, sizeof(buffer));
-  if ((cp = strchr(buffer, '.'))) *cp = 0;
-  my.h_name = strdup(buffer);
-
-  time(&currtime);
+  if (!getenv("TZ"))
+    putenv("TZ=MEZ-1MESZ");
 
   read_configuration();
 
@@ -1635,7 +1816,6 @@ int main(int argc, char **argv)
       }
       if (bind(sp->s_fd, addr, addrlen) || listen(sp->s_fd, SOMAXCONN)) {
 	close(sp->s_fd);
-	sp->s_fd = -1;
       } else {
 	readfnc[sp->s_fd] = (void (*)(void *)) accept_connect_request;
 	readarg[sp->s_fd] = &sp->s_fd;
@@ -1653,11 +1833,12 @@ int main(int argc, char **argv)
     free_resources();
     check_files_changed();
     connect_peers();
+    send_pings();
     actread = chkread;
     actwrite = chkwrite;
     timeout.tv_sec = min_waittime;
     timeout.tv_usec = 0;
-    i = select(maxfd + 1, SEL_ARG(&actread), SEL_ARG(&actwrite), SEL_ARG(0), &timeout);
+    i = select(maxfd + 1, SEL_ARG(&actread), SEL_ARG(&actwrite), 0, &timeout);
     time(&currtime);
     if (i > 0)
       for (i = maxfd; i >= 0; i--) {
@@ -1666,4 +1847,3 @@ int main(int argc, char **argv)
       }
   }
 }
-

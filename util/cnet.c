@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.32 1996/01/15 09:29:24 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.33 1996/01/22 13:14:13 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -276,7 +276,7 @@ int main(int argc, char **argv)
     FD_ZERO(&wmask);
     if (sock_queue) FD_SET(fdsock, &wmask);
     if (term_queue) FD_SET(fdout,  &wmask);
-    if (select(fdsock + 1, SEL_ARG(&rmask), SEL_ARG(&wmask), SEL_ARG(0), (struct timeval *) 0) > 0) {
+    if (select(fdsock + 1, SEL_ARG(&rmask), SEL_ARG(&wmask), 0, 0) > 0) {
       if (FD_ISSET(fdsock, &rmask)) recvq(fdsock, &term_queue);
       if (FD_ISSET(fdin,   &rmask)) recvq(fdin,   &sock_queue);
       if (FD_ISSET(fdsock, &wmask)) sendq(fdsock, &sock_queue);

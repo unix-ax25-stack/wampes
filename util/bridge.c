@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.13 1994/10/06 16:15:42 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.14 1996/01/22 13:13:59 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -216,7 +216,7 @@ int main(int argc, char **argv)
 
   for (; ; ) {
     actread = chkread;
-    if (select(maxfd + 1, SEL_ARG(&actread), SEL_ARG(0), SEL_ARG(0), (struct timeval *) 0) <= 0)
+    if (select(maxfd + 1, SEL_ARG(&actread), 0, 0, 0) <= 0)
       continue;
     if (FD_ISSET(flisten, &actread)) create_connection(flisten);
     for (p = connections; p; p = p->next)

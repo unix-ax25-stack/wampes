@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.56 1996/01/08 12:24:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.57 1996/01/22 13:13:39 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -436,7 +436,7 @@ void eihalt(void)
     if (nte > 999) nte = 999;
     timeout.tv_usec = 1000 * nte;
   }
-  if (select(maxfd + 1, SEL_ARG(&actread), SEL_ARG(&actwrite), SEL_ARG(0), &timeout) < 1) {
+  if (select(maxfd + 1, SEL_ARG(&actread), SEL_ARG(&actwrite), 0, &timeout) < 1) {
     FD_ZERO(&actread);
     actwrite = actread;
   } else
