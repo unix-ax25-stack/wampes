@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.59 1988/12/30 19:04:03 root Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.60 1989/01/15 08:22:44 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -1495,8 +1495,7 @@ static void bbs()
   int  i;
   register char  *p;
 
-  printf("[MBL-$]\n"); /******************************************************/
-/*printf("[DK5SG-%s-H$]\n", revision.number); /*******************************/
+  printf("[DK5SG-%s-H$]\n", revision.number);
   for (; ; ) {
     if (hostmode)
       puts(">");
