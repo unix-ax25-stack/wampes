@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.2 1991/05/07 12:28:49 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.3 1991/05/07 18:24:09 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 CFLAGS     = -O -s -N
@@ -12,7 +12,7 @@ udbm:   udbm.c
 	$(CC) $(CFLAGS) udbm.c -o $@
 
 netupdc: netupdc.c $(BUILDSADDR)
-	$(CC) $(CFLAGS) netupdc.c $(BUILDSADDR) -o $@
+	$(CC) $(CFLAGS) -I../src netupdc.c $(BUILDSADDR) -o $@
 	chmod 700 $@
 
 netupds: netupds.c

@@ -1,21 +1,34 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.4 1990/03/12 13:21:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.5 1991/05/07 18:24:12 deyke Exp $ */
 
 /* Net Update Server */
+
+#define _HPUX_SOURCE    1
 
 #include <sys/types.h>
 
 #include <ctype.h>
 #include <fcntl.h>
+#include <netinet/in.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
-extern void exit();
-extern void perror();
+#if defined(__TURBOC__) || defined(__STDC__)
+#define __ARGS(x)       x
+#else
+#define __ARGS(x)       ()
+#endif
+
+static void pexit __ARGS((const char *s));
+static void doread __ARGS((int fd, char *buf, size_t cnt));
+static void dowrite __ARGS((int fd, const char *buf, size_t cnt));
+int main __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
 
 static void pexit(s)
-char  *s;
+const char *s;
 {
   perror(s);
   exit(1);
@@ -26,7 +39,7 @@ char  *s;
 static void doread(fd, buf, cnt)
 int  fd;
 char  *buf;
-unsigned int  cnt;
+size_t cnt;
 {
 
   char  *p = buf;
@@ -34,7 +47,7 @@ unsigned int  cnt;
 
   while (cnt) {
     n = read(fd, p, cnt);
-    if (n < 0) pexit("read()");
+    if (n < 0) pexit("read");
     if (!n) {
       printf("read(): End of file\n");
       exit(1);
@@ -48,16 +61,16 @@ unsigned int  cnt;
 
 static void dowrite(fd, buf, cnt)
 int  fd;
-char  *buf;
-unsigned int  cnt;
+const char *buf;
+size_t cnt;
 {
 
-  char  *p = buf;
+  const char * p = buf;
   int  n;
 
   while (cnt) {
     n = write(fd, p, cnt);
-    if (n <= 0) pexit("write()");
+    if (n <= 0) pexit("write");
     p += n;
     cnt -= n;
   }
@@ -76,6 +89,8 @@ int  main()
   int  fdsocket;
   int  filesize;
   int  i;
+  int  net_filesize;
+  int  net_i;
   struct stat statbuf;
 
   alarm(6 * 3600);
@@ -143,7 +158,8 @@ int  main()
   printf("File size = %i\n", filesize);
   fflush(stdout);
 
-  dowrite(fdsocket, (char *) & filesize, 4);
+  net_filesize = htonl(filesize);
+  dowrite(fdsocket, (char *) &net_filesize, 4);
 
   fdfile = open(filename, O_RDONLY, 0600);
   if (fdfile < 0) pexit(filename);
@@ -153,9 +169,10 @@ int  main()
     dowrite(fdsocket, buf, (unsigned) i);
     filesize -= i;
   }
-  if (close(fdfile)) pexit("close()");
+  if (close(fdfile)) pexit("close");
 
-  doread(fdsocket, (char *) & i, 4);
+  doread(fdsocket, (char *) &net_i, 4);
+  i = ntohl(net_i);
 
   printf("Response = %i\n", i);
   fflush(stdout);
