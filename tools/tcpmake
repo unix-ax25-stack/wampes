@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.27 1995/12/20 09:47:02 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.28 1996/02/08 11:57:08 deyke Exp $
 
 save_file()
 {
@@ -109,7 +109,7 @@ nosdiff
 # jnosdiff -w
 
 cd ~/tcp/manuals
-for manual in bbs netupd smack wampes; do
+for manual in bbs bridge netupd smack wampes; do
 	cd ~/tcp/manuals/$manual
 
 	file=frontpage
@@ -128,7 +128,7 @@ cd ~/tcp/doc
 for file in *.gif; do
 	save_file $file
 done
-for manual in bbs netupd smack wampes; do
+for manual in bbs bridge netupd smack wampes; do
 	file=$manual.html
 	save_file $file
 	mm2html $manual.mm > $file

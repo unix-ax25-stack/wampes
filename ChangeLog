@@ -1,4 +1,15 @@
-@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ChangeLog,v 1.1 1996/02/04 11:17:24 deyke Exp $
+@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ChangeLog,v 1.2 1996/02/08 11:56:45 deyke Exp $
+
+960208 Dieter Deyke (deyke@fc.hp.com)
+
+	Updated domain.txt
+
+	Reduced cpu load of conversd by only recomputing routes when
+	necessary
+
+	Added new command to net: "ax25 ignoretos [on|off]"
+
+	Added new utility /tcp/util/bridge
 
 960204 Dieter Deyke (deyke@fc.hp.com)
 

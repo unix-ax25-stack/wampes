@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.11 1996/01/15 09:29:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.12 1996/02/08 11:56:57 deyke Exp $ */
 
 /* AX25 control commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -44,6 +44,7 @@ static int dorouteadd(int argc,char *argv[],void *p);
 static void doroutelistentry(struct ax_route *rp);
 static int doroutelist(int argc,char *argv[],void *p);
 static int doroutestat(int argc,char *argv[],void *p);
+static int doaxigntos(int argc,char *argv[],void *p);
 static int dojumpstart(int argc,char *argv[],void *p);
 
 char *Ax25states[] = {
@@ -71,6 +72,7 @@ static struct cmds Axcmds[] = {
 	"digipeat",     dodigipeat,     0, 0, NULL,
 	"flush",        doaxflush,      0, 0, NULL,
 	"heard",        doaxheard,      0, 0, NULL,
+	"ignoretos",    doaxigntos,     0, 0, NULL,
 	"jumpstart",    dojumpstart,    0, 2, "ax25 jumpstart <call> [ON|OFF]",
 	"kick",         doaxkick,       0, 2, "ax25 kick <axcb>",
 	"maxframe",     domaxframe,     0, 0, NULL,
@@ -701,6 +703,14 @@ void *p)
   puts("---------  -----");
   printf("  total    %5d\n", total);
   return 0;
+}
+static int
+doaxigntos(
+int argc,
+char *argv[],
+void *p)
+{
+	return setbool(&Axigntos,"Ignore TOS",argc,argv);
 }
 static int
 dojumpstart(

@@ -4,7 +4,7 @@
 </HEAD>
 <BODY>
 <H1>WAMPES Reference Manual</H1>
-Version 960204
+Version 960208
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
@@ -445,7 +445,7 @@ and is also used to open the interface device file in the directory <B>/dev</B>.
 Datagrams larger than this limit will be fragmented at the IP layer
 into smaller pieces.
 For AX.25 UI frames, this limits the size of the information field.
-For AX.25 I frames, however, the <A HREF="#H4.7.10"><B>ax25 paclen</B></A> parameter is also relevant.
+For AX.25 I frames, however, the <A HREF="#H4.7.11"><B>ax25 paclen</B></A> parameter is also relevant.
 If the datagram or fragment is still larger than <B>paclen</B>,
 it is also fragmented at the AX.25 level (as opposed to the IP level) before
 transmission.
@@ -474,7 +474,7 @@ available encapsulations.
 Datagrams larger than this limit will be fragmented at the IP layer
 into smaller pieces.
 For AX.25 UI frames, this limits the size of the information field.
-For AX.25 I frames, however, the <A HREF="#H4.7.10"><B>ax25 paclen</B></A> parameter is also relevant.
+For AX.25 I frames, however, the <A HREF="#H4.7.11"><B>ax25 paclen</B></A> parameter is also relevant.
 If the datagram or fragment is still larger than <B>paclen</B>,
 it is also fragmented at the AX.25 level (as opposed to the IP level) before
 transmission.
@@ -567,14 +567,29 @@ the packet count actually reflects the number of packets transmitted.
 This count will be correct whether or not the modem monitors
 its own transmissions.
 If <I>interface</I> is given, only the list for that interface is displayed.
-<H4><A NAME="H4.7.6">4.7.6 ax25 jumpstart <I>ax25_addr</I> [on|off]</A></H4>
+<H4><A NAME="H4.7.6">4.7.6 ax25 ignoretos [on|off]</A></H4>
+If <A HREF="#H4.7.6"><B>ax25 ignoretos</B></A> is <B>off</B>, IP frames will be encapsulated
+in AX.25 UI frames (datagram mode) if
+<UL>
+<LI>the &quot;low delay&quot; bit is set in the IP type-of-service field.
+<LI>the &quot;reliability&quot; bit is NOT set in the IP type-of-service field,
+and encapsulation is <B>ax25ui</B>, <B>kissui</B>, or <B>nrs</B>.
+<LI>the destination is the broadcast address
+(this is helpful when broadcasting on an interface
+that uses <B>ax25i</B> or <B>kissi</B> encapsulation).
+</UL>
+For all other cases I frames (virtual circuit mode) will be used.
+If <A HREF="#H4.7.6"><B>ax25 ignoretos</B></A> is <B>on</B>, the IP type-of-service field
+will be ignored in the decision whether to use UI or I frames.
+The default is <B>off</B> (TOS is not ignored).
+<H4><A NAME="H4.7.7">4.7.7 ax25 jumpstart <I>ax25_addr</I> [on|off]</A></H4>
 The default is <B>off</B>.
 MORE TO BE WRITTEN.
-<H4><A NAME="H4.7.7">4.7.7 ax25 kick <I>axcb_addr</I></A></H4>
+<H4><A NAME="H4.7.8">4.7.8 ax25 kick <I>axcb_addr</I></A></H4>
 If there is unacknowledged data on the send queue of the specified AX.25
 control block, this command forces an immediate retransmission.
-The control block address can be found with the <A HREF="#H4.7.15"><B>ax25 status</B></A> command.
-<H4><A NAME="H4.7.8">4.7.8 ax25 maxframe [<I>count</I>]</A></H4>
+The control block address can be found with the <A HREF="#H4.7.16"><B>ax25 status</B></A> command.
+<H4><A NAME="H4.7.9">4.7.9 ax25 maxframe [<I>count</I>]</A></H4>
 Display or set the maximum number of frames that will be allowed to remain
 unacknowledged at any time on AX.25 connections. This number cannot
 be greater than 7.
@@ -583,12 +598,12 @@ virtual connections, UI frames are not affected.
 The default is 7 frames.
 See the <A HREF="#H6."><B>Setting Paclen, Maxframe, MTU, MSS and Window</B></A> chapter
 for more information.
-<H4><A NAME="H4.7.9">4.7.9 ax25 mycall [<I>ax25_addr</I>]</A></H4>
+<H4><A NAME="H4.7.10">4.7.10 ax25 mycall [<I>ax25_addr</I>]</A></H4>
 Display or set the default local AX.25 address. The standard format is used,
 eg. KA9Q-0 or WB6RQN-5.
 This command must be given before any <A HREF="#H4.6"><B>attach</B></A> commands
 using AX.25 mode are given.
-<H4><A NAME="H4.7.10">4.7.10 ax25 paclen [<I>size</I>]</A></H4>
+<H4><A NAME="H4.7.11">4.7.11 ax25 paclen [<I>size</I>]</A></H4>
 Limit the size of I-fields on new AX.25 connections. If IP
 datagrams or fragments larger than this are transmitted, they will be
 transparently fragmented at the AX.25 level, sent as a series of I
@@ -599,7 +614,7 @@ the MTU of the associated interface.
 The default is 256 bytes.
 See the <A HREF="#H6."><B>Setting Paclen, Maxframe, MTU, MSS and Window</B></A> chapter
 for more information.
-<H4><A NAME="H4.7.11">4.7.11 ax25 pthresh [<I>size</I>]</A></H4>
+<H4><A NAME="H4.7.12">4.7.12 ax25 pthresh [<I>size</I>]</A></H4>
 Display or set the poll threshold to be used for new AX.25 Version 2
 connections. The poll threshold controls retransmission behavior as
 follows. If the oldest unacknowledged I frame size is less than the poll
@@ -617,56 +632,56 @@ instead to determine first if retransmitting the oldest unacknowledged
 I frame is necessary, the timeout might have been caused by a lost
 acknowledgement. This is obviously a tradeoff, so experiment with the
 poll threshold setting. The default is 64 bytes.
-<H4><A NAME="H4.7.12">4.7.12 ax25 reset <I>axcb_addr</I></A></H4>
+<H4><A NAME="H4.7.13">4.7.13 ax25 reset <I>axcb_addr</I></A></H4>
 Delete the AX.25 control block at the specified address.
-The control block address can be found with the <A HREF="#H4.7.15"><B>ax25 status</B></A> command.
-<H4><A NAME="H4.7.13">4.7.13 ax25 retry [<I>count</I>]</A></H4>
+The control block address can be found with the <A HREF="#H4.7.16"><B>ax25 status</B></A> command.
+<H4><A NAME="H4.7.14">4.7.14 ax25 retry [<I>count</I>]</A></H4>
 Limit the number of successive unsuccessful transmission attempts on
 new AX.25 connections. If this limit is exceeded, the connection
 is abandoned and all queued data is deleted.
 A <I>count</I> of 0 allows unlimited transmission attempts.
 The default is 10 tries.
-<H4><A NAME="H4.7.14">4.7.14 ax25 route [stat]</A></H4>
+<H4><A NAME="H4.7.15">4.7.15 ax25 route [stat]</A></H4>
 Display the AX.25 routing table that
 specifies the interface and digipeaters to be used in reaching a given station.
 MORE TO BE WRITTEN.
-<H5><A NAME="H4.7.14.1">4.7.14.1 ax25 route add [permanent] <I>interface</I> default|<I>ax25_addr</I> [<I>digipeater</I> ...]</A></H5>
-Add an entry to the AX.25 routing table. An automatic <A HREF="#H4.7.14.1"><B>ax25 route add</B></A>
+<H5><A NAME="H4.7.15.1">4.7.15.1 ax25 route add [permanent] <I>interface</I> default|<I>ax25_addr</I> [<I>digipeater</I> ...]</A></H5>
+Add an entry to the AX.25 routing table. An automatic <A HREF="#H4.7.15.1"><B>ax25 route add</B></A>
 is executed if digipeaters are specified in an AX.25 <A HREF="#H4.11"><B>connect</B></A>
 command, or if a connection is received from a remote station.
 Such automatic routing table entries won't override locally
 created <B>permanent</B> entries, however. MORE TO BE WRITTEN.
-<H5><A NAME="H4.7.14.2">4.7.14.2 ax25 route list [<I>ax25_addr</I> ...]</A></H5>
+<H5><A NAME="H4.7.15.2">4.7.15.2 ax25 route list [<I>ax25_addr</I> ...]</A></H5>
 TO BE WRITTEN.
-<H4><A NAME="H4.7.15">4.7.15 ax25 status [<I>axcb_addr</I>]</A></H4>
+<H4><A NAME="H4.7.16">4.7.16 ax25 status [<I>axcb_addr</I>]</A></H4>
 Without an argument, display a one-line summary of each AX.25 control block.
 If the address of a particular control block is specified, the contents of
 that control block are shown in more detail.
-<H4><A NAME="H4.7.16">4.7.16 ax25 t1 [<I>milliseconds</I>]</A></H4>
+<H4><A NAME="H4.7.17">4.7.17 ax25 t1 [<I>milliseconds</I>]</A></H4>
 Display or set the AX.25 retransmission timer.
 The default is 5000 milliseconds (5 seconds).
 MORE TO BE WRITTEN.
-<H4><A NAME="H4.7.17">4.7.17 ax25 t2 [<I>milliseconds</I>]</A></H4>
+<H4><A NAME="H4.7.18">4.7.18 ax25 t2 [<I>milliseconds</I>]</A></H4>
 Display or set the AX.25 acknowledge delay timer.
 The default is 300 milliseconds (0.3 seconds).
 MORE TO BE WRITTEN.
-<H4><A NAME="H4.7.18">4.7.18 ax25 t3 [<I>milliseconds</I>]</A></H4>
+<H4><A NAME="H4.7.19">4.7.19 ax25 t3 [<I>milliseconds</I>]</A></H4>
 Display or set the AX.25 idle poll timer.
 The default is 900000 milliseconds (15 minutes).
 MORE TO BE WRITTEN.
-<H4><A NAME="H4.7.19">4.7.19 ax25 t4 [<I>milliseconds</I>]</A></H4>
+<H4><A NAME="H4.7.20">4.7.20 ax25 t4 [<I>milliseconds</I>]</A></H4>
 Display or set the AX.25 busy timer.
 The default is 60000 milliseconds (1 minute).
 MORE TO BE WRITTEN.
-<H4><A NAME="H4.7.20">4.7.20 ax25 t5 [<I>milliseconds</I>]</A></H4>
+<H4><A NAME="H4.7.21">4.7.21 ax25 t5 [<I>milliseconds</I>]</A></H4>
 Display or set the AX.25 idle disconnect timer.
 The default is 3600000 milliseconds (60 minutes).
 MORE TO BE WRITTEN.
-<H4><A NAME="H4.7.21">4.7.21 ax25 version [1|2]</A></H4>
+<H4><A NAME="H4.7.22">4.7.22 ax25 version [1|2]</A></H4>
 Display or set the version of the AX.25 protocol to attempt to use on
 new connections. The default is 2 (the version
 that uses the poll/final bits).
-<H4><A NAME="H4.7.22">4.7.22 ax25 window [<I>size</I>]</A></H4>
+<H4><A NAME="H4.7.23">4.7.23 ax25 window [<I>size</I>]</A></H4>
 Set the number of bytes that can be pending on an AX.25 receive queue
 beyond which I frames will be answered with RNR (Receiver Not Ready)
 responses. This presently applies only to suspended interactive AX.25
@@ -938,6 +953,8 @@ and encapsulation is <B>ax25ui</B>, <B>kissui</B>, or <B>nrs</B>.
 (this is helpful when broadcasting on an interface
 that uses <B>ax25i</B> or <B>kissi</B> encapsulation).
 </UL>
+The setting of the IP type-of-service field may be ignored
+by using the <A HREF="#H4.7.6"><B>ax25 ignoretos</B></A> command.
 <H4><A NAME="H4.25.3">4.25.3 ifconfig <I>interface</I> forward <I>interface2</I></A></H4>
 When a forward is defined, all output for <I>interface</I> is redirected to
 <I>interface2</I>. To remove the forward, set <I>interface2</I> to <I>interface</I>.
@@ -1054,7 +1071,7 @@ ipfilter allow winfree.n3eua
 <H3><A NAME="H4.28">4.28 kick [<I>session#</I>]</A></H3>
 Kick all control blocks associated with a session.
 If no argument is given, kick the current session.
-Performs the same function as the <A HREF="#H4.7.7"><B>ax25 kick</B></A>,
+Performs the same function as the <A HREF="#H4.7.8"><B>ax25 kick</B></A>,
 <A HREF="#H4.33.4"><B>netrom kick</B></A>, and <A HREF="#H4.54.3"><B>tcp kick</B></A> commands,
 but is easier to type.
 <H3><A NAME="H4.29">4.29 log [stop|<I>filename</I>]</A></H3>
@@ -1198,7 +1215,7 @@ netrom broadcast tnc0 NODES
 </PRE>
 <H4><A NAME="H4.33.2">4.33.2 netrom connect <I>node</I> [<I>user</I>]</A></H4>
 Initiate a NETROM session to the specified NET/ROM <I>node</I>.
-If <I>user</I> is not specified, the value of <A HREF="#H4.7.9"><B>ax25 mycall</B></A>
+If <I>user</I> is not specified, the value of <A HREF="#H4.7.10"><B>ax25 mycall</B></A>
 will be used as user identification.
 The de-facto presentation standard format is used,
 in that each packet holds one line of

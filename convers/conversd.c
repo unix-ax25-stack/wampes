@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.72 1996/02/04 11:17:33 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.73 1996/02/08 11:56:55 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -167,6 +167,7 @@ static int debug;
 static int maxfd = -1;
 static int min_waittime = MIN_WAITTIME;
 static long currtime;
+static long next_desttime;
 static struct host my, *hosts = &my;
 static struct link *links;
 static struct peer *peers;
@@ -974,11 +975,15 @@ static void send_dests(void)
   long lastrtt;
   long minrtt;
   long rtt;
+  long sendtime;
   struct host *hp;
   struct link *lp;
   struct quality *qpbest;
   struct quality *qp;
 
+  if (next_desttime > currtime)
+    return;
+  next_desttime = 0x7fffffff;
   for (lp = links; lp; lp = lp->l_next) {
     if (!lp->l_host || !lp->l_srtt || !strchr(lp->l_host->h_capabilities, 'd'))
       continue;
@@ -1008,12 +1013,16 @@ static void send_dests(void)
 	minrtt = (lastrtt <= rtt) ? lastrtt : rtt;
 	delay = 36 * minrtt / diff;
       }
-      if (qp->q_sendtime + delay <= currtime) {
+      sendtime = qp->q_sendtime + delay;
+      if (sendtime <= currtime) {
 	if (rtt > MAX_RTT)
 	  rtt = 0;
 	sprintf(buffer, "/\377\200DEST %s %ld %s\n", hp->h_name, qp->q_lastrtt = rtt, hp->h_software);
 	send_string(lp, buffer);
 	qp->q_sendtime = currtime;
+      } else {
+	if (next_desttime > sendtime)
+	  next_desttime = sendtime;
       }
     }
   }
@@ -1065,6 +1074,7 @@ static void close_link(struct link *lp)
       }
     }
   }
+  next_desttime = 0;
 
   for (up = users; up; up = up->u_next) {
     if (up->u_channel >= 0 && up->u_link == lp) {
@@ -1419,7 +1429,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.72 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.73 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(0, ONE_TOKEN, KEEP_CASE));
@@ -1518,21 +1528,21 @@ static void h_dest_command(struct link *lp)
   struct quality *qp;
 
   name = getarg(0, ONE_TOKEN, LOWER_CASE);
-  if (!*name) {
+  if (!*name)
     return;
-  }
   hp = hostptr(name);
-  if (hp == &my || hp == lp->l_host) {
+  if (hp == &my || hp == lp->l_host)
     return;
-  }
   rtt = atol(getarg(0, ONE_TOKEN, KEEP_CASE));
-  if (rtt < 0) {
+  if (rtt < 0)
     return;
-  }
   if (rtt > MAX_RTT)
     rtt = 0;
   qp = find_quality(hp, lp);
-  qp->q_rtt = rtt;
+  if (qp->q_rtt != rtt) {
+    qp->q_rtt = rtt;
+    next_desttime = 0;
+  }
   software = getarg(0, ONE_TOKEN, KEEP_CASE);
   if (*software)
     strchg(&hp->h_software, software);
@@ -1610,6 +1620,8 @@ static void h_host_command(struct link *lp)
 	      up->u_channel >= 0 ? up->u_note : "");
       send_string(lp, buffer);
     }
+
+  next_desttime = 0;
 
 }
 
@@ -1691,6 +1703,7 @@ static void h_pong_command(struct link *lp)
     }
     qp = find_quality(lp->l_host, lp);
     qp->q_rtt = srtt;
+    next_desttime = 0;
   }
 }
 
@@ -2066,7 +2079,7 @@ int main(int argc, char **argv)
     *cp = 0;
   strchg(&my.h_name, buffer);
   strcpy(buffer, "W-");
-  if ((cp = strchr("$Revision: 2.72 $", ' ')))
+  if ((cp = strchr("$Revision: 2.73 $", ' ')))
     strcat(buffer, cp + 1);
   if ((cp = strchr(buffer, ' ')))
     *cp = 0;

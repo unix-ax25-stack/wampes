@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.10 1996/01/28 10:44:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.11 1996/02/08 11:56:59 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -49,17 +49,17 @@ struct peer {
 	int permanent;          /* True if peer was created manually */
 };
 
-struct neighbor {
-	struct neighbor *next;  /* Linked-list pointer */
+struct quality {
+	struct quality *next;   /* Linked-list pointer */
 	struct peer *peer;      /* Peer pointer */
-	int delay;              /* Delay via this neighbor */
-	int lastdelay;          /* Last delay reported to this neighbor */
+	int delay;              /* Delay via this peer */
+	int lastdelay;          /* Last delay reported to this peer */
 };
 
 struct dest {
 	struct dest *next;      /* Linked-list pointer */
 	uint8 call[FLEXLEN];    /* Flexnet call */
-	struct neighbor *neighbors;     /* List of neighbors */
+	struct quality *qualities;      /* List of qualities */
 };
 
 struct querypkt {
@@ -121,28 +121,34 @@ static struct dest *find_dest(const uint8 *call)
 
 /*---------------------------------------------------------------------------*/
 
-static struct neighbor *find_neighbor(const struct dest *pd, const struct peer *pp)
+static struct quality *find_quality(struct dest *pd, struct peer *pp)
 {
-	struct neighbor *pn;
+	struct quality *pq;
 
-	for (pn = pd->neighbors; pn; pn = pn->next)
-		if (pn->peer == pp)
-			return pn;
-	return 0;
+	for (pq = pd->qualities; pq && pq->peer != pp; pq = pq->next) ;
+	if (!pq) {
+		pq = (struct quality *) calloc(1, sizeof(struct quality));
+		if (pq) {
+			pq->peer = pp;
+			pq->next = pd->qualities;
+			pd->qualities = pq;
+		}
+	}
+	return pq;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static struct neighbor *find_best_neighbor(const struct dest *pd)
+static struct quality *find_best_quality(const struct dest *pd)
 {
 
-	struct neighbor *pn;
-	struct neighbor *pnbest = 0;
+	struct quality *pqbest = 0;
+	struct quality *pq;
 
-	for (pn = pd->neighbors; pn; pn = pn->next)
-		if (pn->delay && (!pnbest || pnbest->delay >= pn->delay))
-			pnbest = pn;
-	return pnbest;
+	for (pq = pd->qualities; pq; pq = pq->next)
+		if (pq->delay && (!pqbest || pqbest->delay >= pq->delay))
+			pqbest = pq;
+	return pqbest;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -150,18 +156,18 @@ static struct neighbor *find_best_neighbor(const struct dest *pd)
 static void update_axroute(const struct dest *pd)
 {
 
-	uint8 call[AXALEN];
 	int dest_is_peer;
-	struct ax_route *rp;
 	struct ax_route *rpd;
 	struct ax_route *rpp;
-	struct neighbor *pn;
+	struct ax_route *rp;
+	struct quality *pq;
+	uint8 call[AXALEN];
 
-	if (!(pn = find_best_neighbor(pd)))
+	if (!(pq = find_best_quality(pd)))
 		return;
-	if (!(rpp = ax_routeptr(pn->peer->call, 0)))
+	if (!(rpp = ax_routeptr(pq->peer->call, 0)))
 		return;
-	dest_is_peer = addreq(pd->call, pn->peer->call);
+	dest_is_peer = addreq(pd->call, pq->peer->call);
 	for (addrcp(call, pd->call);; call[ALEN] += 2) {
 		if (!(rpd = ax_routeptr(call, 1)))
 			return;
@@ -187,21 +193,21 @@ static void update_axroute(const struct dest *pd)
 static void delete_unreachables(void)
 {
 
-	struct dest **ppd;
 	struct dest *pd;
-	struct neighbor **ppn;
-	struct neighbor *pn;
+	struct dest **ppd;
+	struct quality *pq;
+	struct quality **ppn;
 
 	for (ppd = &Dests; (pd = *ppd);) {
-		for (ppn = &pd->neighbors; (pn = *ppn);) {
-			if (!pn->delay && !pn->lastdelay) {
-				*ppn = pn->next;
-				free(pn);
+		for (ppn = &pd->qualities; (pq = *ppn);) {
+			if (!pq->delay && !pq->lastdelay) {
+				*ppn = pq->next;
+				free(pq);
 			} else {
-				ppn = &pn->next;
+				ppn = &pq->next;
 			}
 		}
-		if (!pd->neighbors) {
+		if (!pd->qualities) {
 			*ppd = pd->next;
 			free(pd);
 		} else {
@@ -216,27 +222,20 @@ static void update_delay(const uint8 *destcall, struct peer *pp, int delay)
 {
 
 	struct dest *pd;
-	struct neighbor *pn;
+	struct quality *pq;
 
 	if (!(pd = find_dest(destcall))) {
 		if (!delay)
 			return;
 		if (!(pd = (struct dest *) calloc(1, sizeof(struct dest))))
-			return;
+			 return;
 		pd->next = Dests;
 		Dests = pd;
 		flexaddrcp(pd->call, destcall);
 	}
-	if (!(pn = find_neighbor(pd, pp))) {
-		if (!delay)
-			return;
-		if (!(pn = (struct neighbor *) calloc(1, sizeof(struct neighbor))))
-			return;
-		pn->next = pd->neighbors;
-		pd->neighbors = pn;
-		pn->peer = pp;
-	}
-	pn->delay = delay;
+	pq = find_quality(pd, pp);
+	if (pq)
+		pq->delay = delay;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -244,8 +243,8 @@ static void update_delay(const uint8 *destcall, struct peer *pp, int delay)
 static void send_init(const struct peer *pp)
 {
 
-	uint8 *cp;
 	struct mbuf *bp;
+	uint8 *cp;
 
 	if ((bp = alloc_mbuf(6))) {
 		cp = bp->data;
@@ -265,9 +264,9 @@ static void send_init(const struct peer *pp)
 static void send_poll(struct peer *pp)
 {
 
-	uint8 *cp;
 	int i;
 	struct mbuf *bp;
+	uint8 *cp;
 
 	if ((bp = alloc_mbuf(LENPOLL))) {
 		pp->lastpolltime = msclock();
@@ -287,12 +286,16 @@ static void clear_all_via_peer(struct peer *pp, int including_peer)
 {
 
 	struct dest *pd;
-	struct neighbor *pn;
+	struct quality *pq;
 
-	for (pd = Dests; pd; pd = pd->next)
-		if ((including_peer || !addreq(pd->call, pp->call)) &&
-		    (pn = find_neighbor(pd, pp)))
-			pn->delay = pn->lastdelay = 0;
+	for (pd = Dests; pd; pd = pd->next) {
+		if (including_peer || !addreq(pd->call, pp->call)) {
+			pq = find_quality(pd, pp);
+			if (pq) {
+				pq->delay = pq->lastdelay = 0;
+			}
+		}
+	}
 }
 
 /*---------------------------------------------------------------------------*/
@@ -323,33 +326,29 @@ static struct ax25_cb *setaxp(struct peer *pp)
 static void send_rout(struct peer *pp)
 {
 
-	uint8 *cp = 0;
 	int delay;
 	int i;
 	int lastdelay;
 	struct dest *pd;
 	struct mbuf *bp = 0;
-	struct neighbor *pnbest;
-	struct neighbor *pnpeer;
+	struct quality *pqbest;
+	struct quality *pq;
+	uint8 *cp = 0;
 
 	if (!setaxp(pp))
 		return;
 	for (pd = Dests; pd; pd = pd->next) {
 		if (addreq(pd->call, pp->call))
 			continue;
-		if (!(pnpeer = find_neighbor(pd, pp))) {
-			if (!(pnpeer = (struct neighbor *) calloc(1, sizeof(struct neighbor))))
-				break;
-			pnpeer->next = pd->neighbors;
-			pd->neighbors = pnpeer;
-			pnpeer->peer = pp;
-		}
-		pnbest = find_best_neighbor(pd);
-		if (pnbest && pnbest != pnpeer)
-			delay = pnbest->delay;
+		pq = find_quality(pd, pp);
+		if (!pq)
+			break;
+		pqbest = find_best_quality(pd);
+		if (pqbest && pqbest != pq)
+			delay = pqbest->delay;
 		else
 			delay = MAXDELAY + 1;
-		if (!(lastdelay = pnpeer->lastdelay))
+		if (!(lastdelay = pq->lastdelay))
 			lastdelay = MAXDELAY + 1;
 		if (delay > lastdelay || iround(1.25 * delay) < lastdelay) {
 #if 0
@@ -385,7 +384,7 @@ static void send_rout(struct peer *pp)
 			*cp++ = '0' + ((pd->call[ALEN + 1] & SSID) >> 1);
 			if (delay > MAXDELAY)
 				delay = 0;
-			sprintf((char *) cp, "%d ", pnpeer->lastdelay = delay);
+			sprintf((char *) cp, "%d ", pq->lastdelay = delay);
 			while (*cp)
 				cp++;
 		}
@@ -448,21 +447,21 @@ static void delete_peer(struct peer *peer)
 {
 
 	struct dest *pd;
-	struct neighbor **ppn;
-	struct neighbor *pn;
-	struct peer **ppp;
 	struct peer *pp;
+	struct peer **ppp;
+	struct quality *pq;
+	struct quality **ppn;
 
 	for (ppp = &Peers; (pp = *ppp);) {
 		if (pp == peer) {
 			for (pd = Dests; pd; pd = pd->next) {
-				for (ppn = &pd->neighbors; (pn = *ppn);) {
-					if (pn->peer == pp) {
-						*ppn = pn->next;
-						free(pn);
+				for (ppn = &pd->qualities; (pq = *ppn);) {
+					if (pq->peer == pp) {
+						*ppn = pq->next;
+						free(pq);
 						break;
 					} else {
-						ppn = &pn->next;
+						ppn = &pq->next;
 					}
 				}
 			}
@@ -484,8 +483,8 @@ static void delete_peer(struct peer *peer)
 static void polltimer_expired(void *unused)
 {
 
-	struct peer *pp;
 	struct peer *ppnext = 0;
+	struct peer *pp;
 
 	start_timer(&Polltimer);
 	for (pp = Peers; pp; pp = ppnext) {
@@ -535,7 +534,7 @@ static int doflexnetdest(int argc, char *argv[], void *p)
 	int next;
 	struct dest *pd1;
 	struct dest *pd;
-	struct neighbor *pn;
+	struct quality *pq;
 	uint8 call[FLEXLEN];
 
 	if (argc > 1) {
@@ -552,11 +551,11 @@ static int doflexnetdest(int argc, char *argv[], void *p)
 		if (!pd1 || pd == pd1) {
 			printf("%-12s", sprintflexcall(buf, pd->call));
 			for (curr = 1; curr != (next = 0x7fffffff); curr = next)
-				for (pn = pd->neighbors; pn; pn = pn->next)
-					if (pn->delay == curr)
-						printf("  %s (%d)", sprintflexcall(buf, pn->peer->call), pn->delay);
-					else if (pn->delay > curr && pn->delay < next)
-						next = pn->delay;
+				for (pq = pd->qualities; pq; pq = pq->next)
+					if (pq->delay == curr)
+						printf("  %s (%d)", sprintflexcall(buf, pq->peer->call), pq->delay);
+					else if (pq->delay > curr && pq->delay < next)
+						next = pq->delay;
 			putchar('\n');
 		}
 	}
@@ -570,13 +569,13 @@ static int doflexnetdestdebug(int argc, char *argv[], void *p)
 
 	char buf[FLEXBUF];
 	struct dest *pd;
-	struct neighbor *pn;
+	struct quality *pq;
 
 	printf("Call          Neighbors\n");
 	for (pd = Dests; pd; pd = pd->next) {
 		printf("%-12s", sprintflexcall(buf, pd->call));
-		for (pn = pd->neighbors; pn; pn = pn->next)
-			printf("  %s (D=%d L=%d)", sprintflexcall(buf, pn->peer->call), pn->delay, pn->lastdelay);
+		for (pq = pd->qualities; pq; pq = pq->next)
+			printf("  %s (D=%d L=%d)", sprintflexcall(buf, pq->peer->call), pq->delay, pq->lastdelay);
 		putchar('\n');
 	}
 	return 0;
@@ -766,7 +765,7 @@ static int send_query_packet(int type, const struct querypkt *qp, const uint8 *c
 	int i;
 	struct dest *pd;
 	struct mbuf *bp;
-	struct neighbor *pn;
+	struct quality *pq;
 	uint8 *cp;
 
 	for (pd = Dests; pd; pd = pd->next)
@@ -774,9 +773,9 @@ static int send_query_packet(int type, const struct querypkt *qp, const uint8 *c
 			break;
 	if (!pd)
 		return -1;
-	if (!(pn = find_best_neighbor(pd)))
+	if (!(pq = find_best_quality(pd)))
 		return -1;
-	if (!setaxp(pn->peer))
+	if (!setaxp(pq->peer))
 		return -1;
 	if (!(bp = alloc_mbuf(LENROUT)))
 		return -1;
@@ -798,7 +797,7 @@ static int send_query_packet(int type, const struct querypkt *qp, const uint8 *c
 	}
 	*cp++ = '\r';
 	bp->cnt = cp - bp->data;
-	send_ax25(pn->peer->axp, &bp, PID_FLEXNET);
+	send_ax25(pq->peer->axp, &bp, PID_FLEXNET);
 	return 0;
 }
 
@@ -807,14 +806,14 @@ static int send_query_packet(int type, const struct querypkt *qp, const uint8 *c
 static int doflexnetquery(int argc, char *argv[], void *p)
 {
 
-	char *cp;
 	char buf[AXBUF];
+	char *cp;
 	int n;
 	struct ax_route *rp;
 	struct ax_route *rp_stack[20];
 	struct dest *pd;
 	struct iface *ifp;
-	struct neighbor *pn;
+	struct quality *pq;
 	struct querypkt querypkt;
 
 	memset(&querypkt, 0, sizeof(struct querypkt));
@@ -829,12 +828,12 @@ static int doflexnetquery(int argc, char *argv[], void *p)
 		printf("Destination \"%s\" not found\n", argv[1]);
 		return 1;
 	}
-	if (!(pn = find_best_neighbor(pd))) {
+	if (!(pq = find_best_quality(pd))) {
 		printf("Destination \"%s\" not reachable\n", argv[1]);
 		return 1;
 	}
-	if (!(rp = ax_routeptr(pn->peer->call, 0))) {
-		printf("No AX.25 route for link \"%s\"\n", pax25(buf, pn->peer->call));
+	if (!(rp = ax_routeptr(pq->peer->call, 0))) {
+		printf("No AX.25 route for link \"%s\"\n", pax25(buf, pq->peer->call));
 		return 1;
 	}
 	ifp = 0;
@@ -855,7 +854,7 @@ static int doflexnetquery(int argc, char *argv[], void *p)
 		if (n > 0)
 			for (; (*cp = Xtolower(*cp)); cp++) ;
 	}
-	if (addreq(pd->call, pn->peer->call)) {
+	if (addreq(pd->call, pq->peer->call)) {
 		print_query_packet(&querypkt);
 		return 0;
 	}
@@ -864,11 +863,11 @@ static int doflexnetquery(int argc, char *argv[], void *p)
 		return 1;
 	}
 	pax25(querypkt.bufs[querypkt.numcalls++], querypkt.destcall);
-	if (send_query_packet(FLEX_QURY, &querypkt, pn->peer->call)) {
-		printf("Could not send query to %s\n", pax25(buf, pn->peer->call));
+	if (send_query_packet(FLEX_QURY, &querypkt, pq->peer->call)) {
+		printf("Could not send query to %s\n", pax25(buf, pq->peer->call));
 		return 1;
 	}
-	printf("Query sent to %s\n", pax25(buf, pn->peer->call));
+	printf("Query sent to %s\n", pax25(buf, pq->peer->call));
 	return 0;
 }
 
@@ -949,7 +948,7 @@ static void recv_rprt(struct peer *pp, struct mbuf **bpp)
 	int delay;
 	int olddelay;
 	struct dest *pd;
-	struct neighbor *pn;
+	struct quality *pq;
 
 	if (pullnumber(bpp, &delay) == -1)
 		return;
@@ -975,9 +974,9 @@ static void recv_rprt(struct peer *pp, struct mbuf **bpp)
 	delay = iround(pp->delay);
 	if (delay != olddelay) {
 		for (pd = Dests; pd; pd = pd->next)
-			for (pn = pd->neighbors; pn; pn = pn->next)
-				if (pn->peer == pp && pn->delay)
-					pn->delay = pn->delay - olddelay + delay;
+			for (pq = pd->qualities; pq; pq = pq->next)
+				if (pq->peer == pp && pq->delay)
+					pq->delay = pq->delay - olddelay + delay;
 	}
 	update_delay(pp->call, pp, delay);
 }
@@ -1051,7 +1050,7 @@ static void recv_qury(struct peer *pp, struct mbuf **bpp)
 	struct ax_route *rp;
 	struct ax_route *rp_stack[20];
 	struct dest *pd;
-	struct neighbor *pn = 0;
+	struct quality *pq = 0;
 	struct querypkt querypkt;
 
 	if (decode_query_packet(bpp, &querypkt))
@@ -1066,8 +1065,8 @@ static void recv_qury(struct peer *pp, struct mbuf **bpp)
 		if (addrmatch(querypkt.destcall, pd->call))
 			break;
 	if (pd &&
-	    (pn = find_best_neighbor(pd)) &&
-	    (rp = ax_routeptr(pn->peer->call, 0))) {
+	    (pq = find_best_quality(pd)) &&
+	    (rp = ax_routeptr(pq->peer->call, 0))) {
 		for (n = 0; rp; rp = rp->digi)
 			rp_stack[n++] = rp;
 		while (--n >= 0) {
@@ -1078,13 +1077,13 @@ static void recv_qury(struct peer *pp, struct mbuf **bpp)
 			if (n > 0)
 				for (; (*cp = Xtolower(*cp)); cp++) ;
 		}
-		if (addreq(pd->call, pn->peer->call)) {
+		if (addreq(pd->call, pq->peer->call)) {
 			send_query_packet(FLEX_RSLT, &querypkt, querypkt.srccall);
 		} else {
 			if (querypkt.numcalls >= MAXQCALLS)
 				return;
 			pax25(querypkt.bufs[querypkt.numcalls++], querypkt.destcall);
-			send_query_packet(FLEX_QURY, &querypkt, pn->peer->call);
+			send_query_packet(FLEX_QURY, &querypkt, pq->peer->call);
 		}
 	} else {
 		if (querypkt.numcalls >= MAXQCALLS)

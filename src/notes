@@ -1,6 +1,86 @@
 -------------------------------------------------------------------------------
 
-- allow sntp over vc
+- add hold-down and delayed updates to flexnet
+
+- write a BID generator for use with tin (bbs -b)
+
+-------------------------------------------------------------------------------
+
+kiss byte
+
+xxxx xxxx
+
+lower 4 bits are kiss command:
+
+0 PARAM_DATA
+1 PARAM_TXDELAY
+2 PARAM_PERSIST
+3 PARAM_SLOTTIME
+4 PARAM_TXTAIL
+5 PARAM_FULLDUP
+6 PARAM_HW
+7
+8
+9
+10
+11
+12 echo
+13 rxdelay
+14
+15 PARAM_RETURN
+
+higher 4 bits are port and crc control:
+
+0x80 smack crc
+0x40 0
+0x20 rmnc crc
+0x10 0 port (0x00 = port 0 - 0x10 = port 1 )
+
+Plain KISS: 15 ports
+SMACK: 7 ports
+RMNC: 2 ports
+
+kiss.c: kiss_attach
+config.c: kiss_attach
+slip.h: kiss
+asy.c: kiss
+iface*: port
+
+-------------------------------------------------------------------------------
+
+if only port 0 is defined, proceed as in the past
+
+if port 2 is defined, do not do RMNC stuff
+
+if port 8 is defined, do not do SMACK stuff
+
+-------------------------------------------------------------------------------
+
+x()
+{
+
+  if (bp &&
+      Slip[iface->xdev].kiss[8] == NULLIF &&
+      (*bp->data & 0x80)) {
+    if (check_crc_16(bp)) {
+      iface->crcerrors++;
+      free_p(bpp);
+      return;
+    }
+    iface->crccontrol = CRC_16;
+    *bp->data &= 0x7f;
+  }
+  port = (kisstype >> 4) & 0xf;
+
+-------------------------------------------------------------------------------
+
+> Noch 'ne kleine Bitte (falls nicht inzwischen eingebaut): einen Schalter
+> fuer Wampes, wo man einstellen kann, ob ein neuer User mit jumpstart on oder
+> off angelegt wird. Derzeit editiere ich immer im Source den Default um.
+> Koennte auch ein Compiletime-Switch sein; schoener waere natuerlich sowas
+> wie: ax25 defaultjumpstart off/on
+
+-------------------------------------------------------------------------------
 
 - create bbs routing tables
 

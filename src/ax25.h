@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.16 1995/12/20 09:46:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.17 1996/02/08 11:56:57 deyke Exp $ */
 
 #ifndef _AX25_H
 #define _AX25_H
@@ -38,6 +38,7 @@ extern uint8 Ax25multi[][AXALEN];
 
 extern int Digipeat;
 extern int Ax25mbox;
+extern int Axigntos;
 
 enum lapb_cmdrsp {
 	LAPB_UNKNOWN,

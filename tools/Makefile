@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.28 1996/02/04 11:17:45 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.29 1996/02/08 11:57:07 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -9,7 +9,6 @@ RMTARGET   = @if [ -f $@ ]; then rm -f $@ || mv -f $@ $@~; fi
 SLIBS      =
 
 TARGETS    = \
-	     bridge \
 	     check_seteugid \
 	     connect \
 	     connect2 \
@@ -17,7 +16,8 @@ TARGETS    = \
 	     import \
 	     makeiprt \
 	     mm2html \
-	     ms2mm
+	     ms2mm \
+	     udpbridge
 
 all:;   @case "`uname -sr`" in \
 	HP-UX*) \
@@ -105,11 +105,6 @@ all:;   @case "`uname -sr`" in \
 
 _all:   $(TARGETS)
 
-bridge: bridge.o $(LIBS)
-	$(RMTARGET)
-	@sleep 1
-	$(LD) $(LDFLAGS) bridge.o $(LIBS) $(SLIBS) -o $@
-
 check_seteugid: check_seteugid.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
@@ -152,6 +147,11 @@ ms2mm:  ms2mm.o $(LIBS)
 	@sleep 1
 	$(LD) $(LDFLAGS) ms2mm.o $(LIBS) $(SLIBS) -o $@
 
+udpbridge: udpbridge.o $(LIBS)
+	$(RMTARGET)
+	@sleep 1
+	$(LD) $(LDFLAGS) udpbridge.o $(LIBS) $(SLIBS) -o $@
+
 install: \
 	/usr/local/bin/import
 
@@ -164,6 +164,5 @@ clean:; @rm -f *.o $(TARGETS) *~
 
 depend:; @mkmf -f $(MAKEFILE)
 ###
-bridge.o: ../lib/buildsaddr.h
 check_seteugid.o: ../lib/seteugid.h
 hs.o: ../lib/buildsaddr.h

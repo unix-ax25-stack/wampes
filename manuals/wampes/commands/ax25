@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ax25,v 1.9 1996/01/15 09:29:26 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ax25,v 1.10 1996/02/08 11:57:14 deyke Exp $
 .H 2 "ax25" " \fIsubcommand\fP"
 These commands control the AX.25 service.
 .H 3 "ax25 blimit" " [\fIlimit\fP]"
@@ -38,6 +38,24 @@ the packet count actually reflects the number of packets transmitted.
 This count will be correct whether or not the modem monitors
 its own transmissions.
 If \fIinterface\fP is given, only the list for that interface is displayed.
+.H 3 "ax25 ignoretos" " [on|off]"
+If \fBax25 ignoretos\fP is \fBoff\fP, IP frames will be encapsulated
+in AX.25 UI frames (datagram mode) if
+.BL 5 1
+.LI
+the "low delay" bit is set in the IP type-of-service field.
+.LI
+the "reliability" bit is NOT set in the IP type-of-service field,
+and encapsulation is \fBax25ui\fP, \fBkissui\fP, or \fBnrs\fP.
+.LI
+the destination is the broadcast address
+(this is helpful when broadcasting on an interface
+that uses \fBax25i\fP or \fBkissi\fP encapsulation).
+.LE 1
+For all other cases I frames (virtual circuit mode) will be used.
+If \fBax25 ignoretos\fP is \fBon\fP, the IP type-of-service field
+will be ignored in the decision whether to use UI or I frames.
+The default is \fBoff\fP (TOS is not ignored).
 .H 3 "ax25 jumpstart" " \fIax25_addr\fP [on|off]"
 The default is \fBoff\fP.
 MORE TO BE WRITTEN.

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.20 1996/02/04 11:17:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.21 1996/02/08 11:56:57 deyke Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -29,6 +29,7 @@ int   T4init = 60000;           /* Busy timeout, ms */
 int   T5init = 3600000;         /* Idle disconnect timeout, ms */
 enum lapb_version Axversion = V2; /* Protocol version */
 int32 Blimit = 16;              /* Retransmission backoff limit */
+int   Axigntos;                 /* Ignore TOS */
 
 static int Nextid = 1;          /* Next control block ID */
 

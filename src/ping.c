@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ping.c,v 1.1 1995/12/20 09:47:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ping.c,v 1.2 1996/02/08 11:57:03 deyke Exp $ */
 
 /* ICMP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -49,7 +49,7 @@ void *p)
 		printf("Host                Sent    Rcvd   %%   Srtt   Mdev  Length  Interval\n");
 		for(i=0;i<PMOD;i++){
 			for(pp = ping[i];pp != NULL;pp = pp->next){
-				printf("%-16s",inet_ntoa(pp->target));
+				printf("%-16.16s",inet_ntoa(pp->target));
 				printf("%8lu%8lu",pp->sent,pp->responses);
 				printf("%4lu",
 				 (long)pp->responses * 100 / pp->sent);

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.39 1995/05/31 19:20:14 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.40 1996/02/08 11:56:54 deyke Exp $
 
 hostname     dk5sg
 ax25 mycall  dk5sg
@@ -7,6 +7,7 @@ netrom ident "#FC"
 
 attach axip                     # ax.25 over host ip
 attach ipip                     # ip over host ip
+attach ipip ipudp udp 20004     # ip over host udp
 attach netrom                   # ip over netrom
 attach ni ni dk5sg-u            # ip to host ip
 
@@ -16,7 +17,7 @@ axip route add db0fho   db0fho
 axip route add dl1sbl-1 15.136.120.111          # hpbblb.bbn.hp.com
 
 route add  44.130.0.0/16        ipip     15.136.120.111
-route add  44.130.12.0/24       ipip     15.255.240.16
+route add  44.130.12.0/24       ipudp    15.254.48.2
 route add  44.143.0.0/16        ipip     15.136.120.111
 route add  db0sao-u.ampr.org    ipip     15.136.120.111
 route add  db0sao.ampr.org      ipip     15.136.120.111
@@ -31,8 +32,6 @@ route add  dl1sbl-1.ampr.org    ipip     15.136.120.111
 route add  dl4sas-1.ampr.org    ipip     15.136.120.111
 route add  dl4sel-1.ampr.org    ipip     15.136.120.111
 route add  dl4sel.ampr.org      ipip     15.136.120.111
-route addp 44.0.0.0/8           ipip     15.255.240.16
-route addp hpcsos.ampr.org      ipip     15.255.240.16
 
 source /tcp/netrom_links
 

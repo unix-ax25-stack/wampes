@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.15 1996/02/04 11:17:45 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.16 1996/02/08 11:57:11 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -30,6 +30,13 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #define SEL_ARG(x) (x)
 #endif
 
+#if defined sun
+
+#define memcpy(s1, s2, n) \
+	memcpy((char *) (s1), (char *) (s2), n)
+
+#endif
+
 extern char *optarg;
 extern int optind;
 
@@ -53,21 +60,24 @@ extern int optind;
 #define REPEATED        0x80    /* Has-been-repeated bit in repeater field */
 #define SSID            0x1e    /* Sub station ID */
 
+typedef unsigned char uint8;
+
 struct connection {
-  struct connection *prev, *next;
-  char call[AXALEN];
+  struct connection *prev;
+  struct connection *next;
+  uint8 call[AXALEN];
   int fd;
-  unsigned int cnt;
-  char buf[4096];
+  int cnt;
+  uint8 buf[4096];
 };
 
 /* AX.25 broadcast address: "QST-0" in shifted ascii */
-static const char ax25_bdcst[] = {
+static const uint8 ax25_bdcst[] = {
   'Q' << 1, 'S' << 1, 'T' << 1, ' ' << 1, ' ' << 1, ' ' << 1, ('0' << 1) | E,
 };
 
 /* NET/ROM broadcast address: "NODES-0" in shifted ascii */
-static const char nr_bdcst[] = {
+static const uint8 nr_bdcst[] = {
   'N' << 1, 'O' << 1, 'D' << 1, 'E' << 1, 'S' << 1, ' ' << 1, ('0' << 1) | E
 };
 
@@ -92,7 +102,8 @@ static void create_connection(int flisten)
     p = (struct connection *) calloc(1, sizeof(struct connection));
     p->fd = fd;
     FD_SET(fd, &chkread);
-    if (maxfd < fd) maxfd = fd;
+    if (maxfd < fd)
+      maxfd = fd;
     if (connections) {
       p->next = connections;
       connections->prev = p;
@@ -106,26 +117,38 @@ static void create_connection(int flisten)
 static void close_connection(struct connection *p)
 {
   FD_CLR(p->fd, &chkread);
-  if (p->fd == maxfd)
-    while (--maxfd >= 0)
-      if (FD_ISSET(maxfd, &chkread)) break;
+  if (p->fd == maxfd) {
+    while (--maxfd >= 0) {
+      if (FD_ISSET(maxfd, &chkread))
+	break;
+    }
+  }
   close(p->fd);
-  if (p->prev) p->prev->next = p->next;
-  if (p->next) p->next->prev = p->prev;
-  if (p == connections) connections = p->next;
+  if (p->prev)
+    p->prev->next = p->next;
+  if (p->next)
+    p->next->prev = p->prev;
+  if (p == connections)
+    connections = p->next;
   free(p);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int addreq(const char *a, const char *b)
+static int addreq(const uint8 *a, const uint8 *b)
 {
-  if (*a++ != *b++) return 0;
-  if (*a++ != *b++) return 0;
-  if (*a++ != *b++) return 0;
-  if (*a++ != *b++) return 0;
-  if (*a++ != *b++) return 0;
-  if (*a++ != *b++) return 0;
+  if (*a++ != *b++)
+    return 0;
+  if (*a++ != *b++)
+    return 0;
+  if (*a++ != *b++)
+    return 0;
+  if (*a++ != *b++)
+    return 0;
+  if (*a++ != *b++)
+    return 0;
+  if (*a++ != *b++)
+    return 0;
   return (*a & SSID) == (*b & SSID);
 }
 
@@ -134,13 +157,15 @@ static int addreq(const char *a, const char *b)
 static void route_packet(struct connection *p)
 {
 
-  char *ap;
-  char *dest;
-  char *src;
   int multicast;
-  struct connection *p1, *p1next;
+  struct connection *p1next;
+  struct connection *p1;
+  uint8 *ap;
+  uint8 *dest;
+  uint8 *src;
 
-  if ((*p->buf & 0xf) != KISS_DATA) return;
+  if ((*p->buf & 0xf) != KISS_DATA)
+    return;
   dest = p->buf + 1;
   ap = src = dest + AXALEN;
   while (!(ap[6] & E)) {
@@ -157,7 +182,8 @@ static void route_packet(struct connection *p)
   for (p1 = connections; p1; p1 = p1next) {
     p1next = p1->next;
     if (multicast || !*p1->call || addreq(dest, p1->call)) {
-      if (write(p1->fd, p->buf, p->cnt) <= 0) close_connection(p1);
+      if (write(p1->fd, p->buf, p->cnt) <= 0)
+	close_connection(p1);
     }
   }
 }
@@ -187,38 +213,47 @@ int main(int argc, char **argv)
       break;
     case 'f':
       fail = atoi(optarg);
-      if (fail < 0 || fail > 100) errflag = 1;
+      if (fail < 0 || fail > 100)
+	errflag = 1;
       break;
     case '?':
       errflag = 1;
       break;
     }
+
   if (errflag || optind < argc) {
     fprintf(stderr, "Usage: %s [-a] [-f failures]\n", *argv);
     exit(1);
   }
 
-  for (n = 0; n < FD_SETSIZE; n++) close(n);
+  for (n = 0; n < FD_SETSIZE; n++)
+    close(n);
   chdir("/");
   setsid();
   signal(SIGPIPE, SIG_IGN);
 
   addr = build_sockaddr("*:4713", &addrlen);
-  if (!addr) exit(1);
+  if (!addr)
+    exit(1);
   flisten = socket(addr->sa_family, SOCK_STREAM, 0);
-  if (flisten < 0) exit(1);
+  if (flisten < 0)
+    exit(1);
   arg = 1;
   setsockopt(flisten, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
-  if (bind(flisten, addr, addrlen)) exit(1);
-  if (listen(flisten, SOMAXCONN)) exit(1);
+  if (bind(flisten, addr, addrlen))
+    exit(1);
+  if (listen(flisten, SOMAXCONN))
+    exit(1);
   FD_SET(flisten, &chkread);
-  if (maxfd < flisten) maxfd = flisten;
+  if (maxfd < flisten)
+    maxfd = flisten;
 
-  for (; ; ) {
+  for (;;) {
     actread = chkread;
     if (select(maxfd + 1, SEL_ARG(&actread), 0, 0, 0) <= 0)
       continue;
-    if (FD_ISSET(flisten, &actread)) create_connection(flisten);
+    if (FD_ISSET(flisten, &actread))
+      create_connection(flisten);
     for (p = connections; p; p = p->next)
       if (FD_ISSET(p->fd, &actread)) {
 	n = read(p->fd, buf, sizeof(buf));
@@ -235,4 +270,3 @@ int main(int argc, char **argv)
       }
   }
 }
-

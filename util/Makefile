@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.58 1995/06/04 09:36:43 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.59 1996/02/08 11:57:11 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -9,7 +9,7 @@ MKDIR      = @if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi
 RMTARGET   = @if [ -f $@ ]; then rm -f $@ || mv -f $@ $@~; fi
 SLIBS      =
 
-TARGETS    = cnet md5 mkhostdb netupdc netupds path pop2d pop3d qth udbm
+TARGETS    = bridge cnet md5 mkhostdb netupdc netupds path pop2d pop3d qth udbm
 
 all:;   @case "`uname -sr`" in \
 	HP-UX*) \
@@ -97,6 +97,11 @@ all:;   @case "`uname -sr`" in \
 
 _all:   $(TARGETS)
 
+bridge: bridge.o $(LIBS)
+	$(RMTARGET)
+	@sleep 1
+	$(LD) $(LDFLAGS) bridge.o $(LIBS) $(SLIBS) -o $@
+
 cnet:   cnet.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
@@ -147,15 +152,16 @@ udbm:   udbm.o $(LIBS)
 	$(LD) $(LDFLAGS) udbm.o $(LIBS) $(SLIBS) -o $@
 
 install: \
-	/usr/local/bin/cnet \
-	/usr/local/bin/md5 \
-	/usr/local/etc/mkhostdb \
+	bridge \
 	netupdc \
 	netupds \
-	/usr/local/bin/path \
 	pop2d \
 	pop3d \
+	/usr/local/bin/cnet \
+	/usr/local/bin/md5 \
+	/usr/local/bin/path \
 	/usr/local/bin/qth \
+	/usr/local/etc/mkhostdb \
 	/usr/local/etc/udbm
 
 /usr/local/bin/cnet: cnet
@@ -192,6 +198,7 @@ clean:; @rm -f *.o $(TARGETS) *~
 
 depend:; @mkmf -f $(MAKEFILE)
 ###
+bridge.o: ../lib/buildsaddr.h
 cnet.o: ../lib/buildsaddr.h
 md5drivr.o: ../lib/md5.h
 netupds.o: ../lib/buildsaddr.h ../lib/calc_crc.h ../lib/configure.h \

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.27 1996/02/04 11:17:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.28 1996/02/08 11:56:57 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -80,7 +80,10 @@ uint8 tos
 	 *    datagram mode.
 	 * 3. The destination is the broadcast address (this is helpful
 	 *    when broadcasting on an interface that's in connected mode).
+	 * If Axigntos is set, TOS is ignored.
 	 */
+	if(Axigntos)
+		tos = 0;
 	if((tos & IP_COS) == DELAY
 	 || ((tos & IP_COS) != RELIABILITY && (iface->send == axui_send))
 	 || addreq(hw_addr,Ax25multi[0])){

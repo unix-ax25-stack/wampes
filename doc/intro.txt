@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/intro.txt,v 1.9 1995/06/05 10:42:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/intro.txt,v 1.10 1996/02/08 11:57:09 deyke Exp $ */
 
 This file gives some info about setting up WAMPES for the first time.
 Don't expect something perfect, it was just a quick hack to help people
@@ -18,7 +18,7 @@ creates user-accounts automatically under this dir, and adds entries to
 At the end I appended some info about WAMPES under Linux.
 
 Any questions, comments etc.  about this paper please to
-erb@insu1.etec.uni-karlsruhe.de
+erb@inss1.etec.uni-karlsruhe.de
 
 73
 Olaf
@@ -106,7 +106,7 @@ Here is a sample net.rc, where you have to change the hostname, IP
 address and ax25 calls:
 
 #############################################################################
-# Sample config for WAMPES, by Olaf Erb, erb@insu1.etec.uni-karlsruhe.de
+# Sample config for WAMPES, by Olaf Erb, erb@inss1.etec.uni-karlsruhe.de
 #############################################################################
 # Here our ip address:
 ip address 44.130.41.10
@@ -305,4 +305,4 @@ NR_INODE and NR_FILE in limits.h, and build a new kernel.
 
 Please send any questions about running WAMPES under Linux to me.
 
-73, Olaf (erb@insu1.etec.uni-karlsruhe.de)
+73, Olaf (erb@inss1.etec.uni-karlsruhe.de)

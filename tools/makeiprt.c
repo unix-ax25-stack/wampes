@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.14 1996/01/04 19:11:51 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.15 1996/02/08 11:57:07 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -564,7 +564,6 @@ static void make_route_files(void)
 int main(int argc, char **argv)
 {
   Loopback_iface = get_iface("loopback");
-  add_to_cache("hpcsos.ampr.org", aton("44.1.1.1"));
 
   read_routes();
   create_links();

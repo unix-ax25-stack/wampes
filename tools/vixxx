@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/vixxx,v 1.6 1995/12/20 09:47:02 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/vixxx,v 1.7 1996/02/08 11:57:09 deyke Exp $
 
 tmp=/tmp/tmp$$
 sed <xxx >$tmp -e "
@@ -8,15 +8,18 @@ sed <xxx >$tmp -e "
 	/ change in ANSI C; /d
 	/ done$/d
 	/ Error code .* (ignored)/d
+	/ Error exit code .* (ignored)/d
 	/ is up to date/d
 	/ no change$/d
 	/ warning: macro replacement within a character constant/d
 	/acc /d
 	/This value will be ignored/d
+	/^Cannot create /d
 	/^cc /d
 	/^chmod[: ]/d
 	/^cp[: ]/d
 	/^ln[: ]/d
+	/^make: /d
 	/^mv[: ]/d
 	/^Permission denied/d
 	/^rm[: ]/d

@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ifconfig,v 1.8 1994/08/29 09:05:55 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ifconfig,v 1.9 1996/02/08 11:57:15 deyke Exp $
 .H 2 "ifconfig" " [\fIinterface\fP [[\fIsubcommand\fP \fIparameter\fP] ...]"
 Without arguments display the status of all interfaces.
 When only \fIinterface\fP is given, the status of that interface is displayed.
@@ -48,7 +48,9 @@ and encapsulation is \fBax25ui\fP, \fBkissui\fP, or \fBnrs\fP.
 the destination is the broadcast address
 (this is helpful when broadcasting on an interface
 that uses \fBax25i\fP or \fBkissi\fP encapsulation).
-.LE
+.LE 1
+The setting of the IP type-of-service field may be ignored
+by using the \fBax25 ignoretos\fP command.
 .H 3 "ifconfig \fIinterface\fP forward" " \fIinterface2\fP"
 When a forward is defined, all output for \fIinterface\fP is redirected to
 \fIinterface2\fP. To remove the forward, set \fIinterface2\fP to \fIinterface\fP.

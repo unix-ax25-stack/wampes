@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 960204" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 960208" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 960204
+Version 960208
 .S
 .SP 2
 .S 15
@@ -468,6 +468,24 @@ the packet count actually reflects the number of packets transmitted.
 This count will be correct whether or not the modem monitors
 its own transmissions.
 If \fIinterface\fP is given, only the list for that interface is displayed.
+.H 3 "ax25 ignoretos" " [on|off]"
+If \fBax25 ignoretos\fP is \fBoff\fP, IP frames will be encapsulated
+in AX.25 UI frames (datagram mode) if
+.BL 5 1
+.LI
+the "low delay" bit is set in the IP type-of-service field.
+.LI
+the "reliability" bit is NOT set in the IP type-of-service field,
+and encapsulation is \fBax25ui\fP, \fBkissui\fP, or \fBnrs\fP.
+.LI
+the destination is the broadcast address
+(this is helpful when broadcasting on an interface
+that uses \fBax25i\fP or \fBkissi\fP encapsulation).
+.LE 1
+For all other cases I frames (virtual circuit mode) will be used.
+If \fBax25 ignoretos\fP is \fBon\fP, the IP type-of-service field
+will be ignored in the decision whether to use UI or I frames.
+The default is \fBoff\fP (TOS is not ignored).
 .H 3 "ax25 jumpstart" " \fIax25_addr\fP [on|off]"
 The default is \fBoff\fP.
 MORE TO BE WRITTEN.
@@ -841,7 +859,9 @@ and encapsulation is \fBax25ui\fP, \fBkissui\fP, or \fBnrs\fP.
 the destination is the broadcast address
 (this is helpful when broadcasting on an interface
 that uses \fBax25i\fP or \fBkissi\fP encapsulation).
-.LE
+.LE 1
+The setting of the IP type-of-service field may be ignored
+by using the \fBax25 ignoretos\fP command.
 .H 3 "ifconfig \fIinterface\fP forward" " \fIinterface2\fP"
 When a forward is defined, all output for \fIinterface\fP is redirected to
 \fIinterface2\fP. To remove the forward, set \fIinterface2\fP to \fIinterface\fP.
