@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.17 1995/12/30 15:05:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.18 1996/02/13 15:30:47 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+#include "strerror.h"
 
 #include "mbuf.h"
 #include "iface.h"

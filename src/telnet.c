@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.20 1995/12/20 09:46:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.21 1996/02/13 15:30:52 deyke Exp $ */
 
 /* Internet Telnet client
  * Copyright 1991 Phil Karn, KA9Q
@@ -524,9 +524,9 @@ int r1,int r2)
 		else
 			printf("%u\n",r2);
 	}
-	s[0] = IAC;
-	s[1] = r1;
-	s[2] = r2;
+	s[0] = (char) IAC;
+	s[1] = (char) r1;
+	s[2] = (char) r2;
 	bp = qdata(s,(uint16)3);
 	send_tcp(tn->tcb,&bp);
 }

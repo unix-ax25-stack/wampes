@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/bridge/bridge,v 1.1 1996/02/08 11:58:40 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/bridge/bridge,v 1.2 1996/02/13 15:31:07 deyke Exp $
 .nr Ej 0 \" No new page for all headers
 .H 1 "The bridge utility"
 Usage: /tcp/util/bridge [-a] [-f \fIfailures\fP]
@@ -19,7 +19,7 @@ a digipeater.
 \fBbridge\fP may be started with the following, optional switches:
 .SP
 The \fB-a\fP switch relays received packets to all connections, even back to
-the connection a packet was received from. This is useful for
+the connection a packet was received from. This is useful
 for certain forms of input stress testing.
 .SP
 The \fB-f\fP \fIfailures\fP switch (0 <= \fIfailures\fP <= 100) specifies

@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^Bridge Reference Manual^-\\\\nP-^Version 960208" \" Page footer
+.PF "^Bridge Reference Manual^-\\\\nP-^Version 960213" \" Page footer
 .\"
 .S 30
 .ce
 \fBBridge Reference Manual\fP
 .ce
-Version 960208
+Version 960213
 .S
 .SP 2
 .S 15
@@ -47,7 +47,7 @@ a digipeater.
 \fBbridge\fP may be started with the following, optional switches:
 .SP
 The \fB-a\fP switch relays received packets to all connections, even back to
-the connection a packet was received from. This is useful for
+the connection a packet was received from. This is useful
 for certain forms of input stress testing.
 .SP
 The \fB-f\fP \fIfailures\fP switch (0 <= \fIfailures\fP <= 100) specifies

@@ -1,14 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strdup.c,v 1.6 1995/11/19 11:54:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strdup.c,v 1.7 1996/02/13 15:31:00 deyke Exp $ */
 
-#ifdef __cplusplus
-#define EXTERN_C        extern "C"
-#else
-#define EXTERN_C
-#endif
+#include "configure.h"
 
-EXTERN_C char *strcpy(char *s1, const char *s2);
-EXTERN_C unsigned int strlen(const char *s);
-EXTERN_C void *malloc(int size);
+#if !HAS_STRDUP
+
+#include <stdlib.h>
+#include <string.h>
 
 #include "strdup.h"
 
@@ -19,3 +16,9 @@ char *strdup(const char *s)
   if ((p = (char *) malloc(strlen(s) + 1))) strcpy(p, s);
   return p;
 }
+
+#else
+
+struct prevent_empty_file_message;
+
+#endif

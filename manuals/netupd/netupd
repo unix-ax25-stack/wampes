@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/netupd/Attic/netupd,v 1.1 1994/11/13 21:49:39 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/netupd/Attic/netupd,v 1.2 1996/02/13 15:31:06 deyke Exp $
 .nr Ej 0 \" No new page for all headers
 .H 1 "Prerequisites"
 .AL
@@ -55,7 +55,7 @@ inetd -c
 .ft P
 .DE
 .LI
-Add the following line to /tcp/net.rc or /tcp/net.rc.local:
+Add the following line to /tcp/net.rc:
 .DS I
 .ft CW
 start tcpgate netupds

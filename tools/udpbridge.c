@@ -1,5 +1,5 @@
-#ifndef __lint
-/* static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/udpbridge.c,v 1.1 1996/02/08 11:58:17 deyke Exp $"; */
+#if 0
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/udpbridge.c,v 1.2 1996/02/13 15:30:55 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -10,6 +10,8 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+#define PORT 20004
 
 struct route {
   unsigned long a_addr;
@@ -84,23 +86,87 @@ static void save_routes(void)
 
 /*---------------------------------------------------------------------------*/
 
-int main()
+static struct route *find_subnet_route(unsigned long a_addr)
 {
 
-#define PORT 20004
+  int i;
+  struct route *rp;
+  unsigned long mask;
 
-  char buffer[8192];
+  a_addr = ntohl(a_addr);
+  for (mask = 0xfffffffe; mask; mask <<= 1) {
+    a_addr &= mask;
+    for (i = 0; i < 256; i++) {
+      for (rp = Routes[i]; rp; rp = rp->next) {
+	if ((ntohl(rp->a_addr) & mask) == a_addr)
+	  return rp;
+      }
+    }
+  }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void dump_routes(void)
+{
+
+  int i;
+  struct route *rp;
+  unsigned long a_addr;
+  unsigned long i_addr;
+  unsigned short i_port;
+
+  for (i = 0; i < 256; i++) {
+    for (rp = Routes[i]; rp; rp = rp->next) {
+      a_addr = ntohl(rp->a_addr);
+      i_addr = ntohl(rp->i_addr);
+      i_port = ntohs(rp->i_port);
+      printf("%ld.%ld.%ld.%ld: %ld.%ld.%ld.%ld:%d\n",
+	     (a_addr >> 24) & 0xff,
+	     (a_addr >> 16) & 0xff,
+	     (a_addr >>  8) & 0xff,
+	     (a_addr      ) & 0xff,
+	     (i_addr >> 24) & 0xff,
+	     (i_addr >> 16) & 0xff,
+	     (i_addr >>  8) & 0xff,
+	     (i_addr      ) & 0xff,
+	     i_port);
+    }
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+int main(int argc, char **argv)
+{
+
+  struct packet {
+    unsigned long word1;
+    unsigned long word2;
+    unsigned long word3;
+    unsigned long src_addr;
+    unsigned long dst_addr;
+    unsigned char rest[8172];
+  };
+
   int addrlen;
   int fd;
   int i;
   int n;
+  struct packet packet;
   struct route *rp;
   struct sockaddr_in addr;
-  unsigned long a_addr;
+
+  if (argc >= 2) {
+    load_routes();
+    dump_routes();
+    exit(0);
+  }
 
   if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
     halt("socket");
-  memset(&addr, 0, sizeof(addr));
+  memset((char *) &addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = INADDR_ANY;
   addr.sin_port = htons(PORT);
@@ -118,16 +184,15 @@ int main()
   load_routes();
   for (;;) {
     addrlen = sizeof(addr);
-    n = recvfrom(fd, buffer, sizeof(buffer), 0, (struct sockaddr *) &addr, &addrlen);
-    if (n <= 0)
+    n = recvfrom(fd, (char *) &packet, sizeof(struct packet), 0, (struct sockaddr *) &addr, &addrlen);
+    if (n < 20)
       continue;
-    a_addr = *((unsigned long *) (buffer + 12));
-    i = (int) (a_addr & 0xff);
-    for (rp = Routes[i]; rp && rp->a_addr != a_addr; rp = rp->next) ;
+    i = (int) (packet.src_addr & 0xff);
+    for (rp = Routes[i]; rp && rp->a_addr != packet.src_addr; rp = rp->next) ;
     if (!rp) {
       rp = (struct route *) malloc(sizeof(struct route));
       if (rp) {
-	rp->a_addr = a_addr;
+	rp->a_addr = packet.src_addr;
 	rp->i_addr = 0;
 	rp->i_port = 0;
 	rp->next = Routes[i];
@@ -141,15 +206,14 @@ int main()
       rp->i_port = addr.sin_port;
       save_routes();
     }
-    a_addr = *((unsigned long *) (buffer + 16));
-    i = (int) (a_addr & 0xff);
-    for (rp = Routes[i]; rp; rp = rp->next) {
-      if (rp->a_addr == a_addr) {
-	addr.sin_addr.s_addr = rp->i_addr;
-	addr.sin_port = rp->i_port;
-	sendto(fd, buffer, n, 0, (struct sockaddr *) &addr, sizeof(addr));
-      }
+    i = (int) (packet.dst_addr & 0xff);
+    for (rp = Routes[i]; rp && rp->a_addr != packet.dst_addr; rp = rp->next) ;
+    if (!rp)
+      rp = find_subnet_route(packet.dst_addr);
+    if (rp) {
+      addr.sin_addr.s_addr = rp->i_addr;
+      addr.sin_port = rp->i_port;
+      sendto(fd, (char *) &packet, n, 0, (struct sockaddr *) &addr, sizeof(addr));
     }
   }
-  return 0;
 }

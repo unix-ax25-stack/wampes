@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^Net Update Reference Manual^-\\\\nP-^Version 960208" \" Page footer
+.PF "^Net Update Reference Manual^-\\\\nP-^Version 960213" \" Page footer
 .\"
 .S 30
 .ce
 \fBNet Update Reference Manual\fP
 .ce
-Version 960208
+Version 960213
 .S
 .SP 2
 .S 15
@@ -83,7 +83,7 @@ inetd -c
 .ft P
 .DE
 .LI
-Add the following line to /tcp/net.rc or /tcp/net.rc.local:
+Add the following line to /tcp/net.rc:
 .DS I
 .ft CW
 start tcpgate netupds

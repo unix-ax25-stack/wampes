@@ -1,4 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strtoul.c,v 1.5 1994/11/28 10:40:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strtoul.c,v 1.6 1996/02/13 15:31:01 deyke Exp $ */
+
+#include "configure.h"
+
+#if !HAS_STRTOUL
 
 /*
  * Copyright (c) 1990 Regents of the University of California.
@@ -41,6 +45,8 @@ static char sccsid[] = "@(#)strtoul.c   5.3 (Berkeley) 2/23/91";
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
+
+#include "strtoul.h"
 
 /*
  * Convert a string to an unsigned long integer.
@@ -106,3 +112,9 @@ strtoul(const char *nptr,
 		*endptr = any ? (char *)s - 1 : (char *)nptr;
 	return (acc);
 }
+
+#else
+
+struct prevent_empty_file_message;
+
+#endif

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.17 1996/02/04 11:17:45 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.18 1996/02/13 15:30:54 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -50,19 +50,21 @@ extern int optind;
 #define REPEATED        0x80    /* Has-been-repeated bit in repeater field */
 #define SSID            0x1e    /* Sub station ID */
 
+typedef unsigned char uint8;
+
 struct connection {
-  char call[AXALEN];
-  char buf[4096];
+  uint8 call[AXALEN];
+  uint8 buf[4096];
   int cnt;
 };
 
 /* AX.25 broadcast address: "QST-0" in shifted ascii */
-static const char ax25_bdcst[] = {
+static const uint8 ax25_bdcst[] = {
   'Q' << 1, 'S' << 1, 'T' << 1, ' ' << 1, ' ' << 1, ' ' << 1, ('0' << 1) | E,
 };
 
 /* NET/ROM broadcast address: "NODES-0" in shifted ascii */
-static const char nr_bdcst[] = {
+static const uint8 nr_bdcst[] = {
   'N' << 1, 'O' << 1, 'D' << 1, 'E' << 1, 'S' << 1, ' ' << 1, ('0' << 1) | E
 };
 
@@ -81,7 +83,7 @@ static void terminate(void)
 
 /*---------------------------------------------------------------------------*/
 
-static int addreq(const char *a, const char *b)
+static int addreq(const uint8 *a, const uint8 *b)
 {
   if (*a++ != *b++) return 0;
   if (*a++ != *b++) return 0;
@@ -97,12 +99,12 @@ static int addreq(const char *a, const char *b)
 static void route_packet(struct connection *p)
 {
 
-  char *ap;
-  char *dest;
-  char *src;
   int i;
   int multicast;
   struct connection *p1;
+  uint8 *ap;
+  uint8 *dest;
+  uint8 *src;
 
   if ((*p->buf & 0xf) != KISS_DATA) return;
   dest = p->buf + 1;
@@ -116,7 +118,7 @@ static void route_packet(struct connection *p)
       break;
     }
   }
-  memcpy(p->call, src, AXALEN);
+  memcpy((char *) p->call, (char *) src, AXALEN);
   multicast = all || addreq(dest, ax25_bdcst) || addreq(dest, nr_bdcst);
   for (i = 0; i < channels; i++) {
     p1 = connections + i;

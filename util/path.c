@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.23 1996/01/15 09:29:24 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.24 1996/02/13 15:30:59 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -16,6 +16,8 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 
 #define AXROUTESIZE     499
 
+typedef unsigned char uint8;
+
 struct iface {
   struct iface *next;
   const char *name;
@@ -24,7 +26,7 @@ struct iface {
 
 struct ax_route {
 	struct ax_route *next;          /* Linked list pointer */
-	char target[AXALEN];
+	uint8 target[AXALEN];
 	struct ax_route *digi;
 	const struct iface *ifp;
 /*      int perm; */
@@ -33,8 +35,8 @@ struct ax_route {
 };
 
 struct axroute_saverecord_1 {
-  char call[AXALEN];
-  char digi[AXALEN];
+  uint8 call[AXALEN];
+  uint8 digi[AXALEN];
   long time;
 /*char ifname[]; */
 };
@@ -47,7 +49,7 @@ static struct iface *Ifaces;
 
 /* Convert encoded AX.25 address to printable string */
 
-static char *pax25(char *e, const char *addr)
+static char *pax25(char *e, const uint8 *addr)
 {
 	int i;
 	char c;
@@ -75,7 +77,7 @@ static char *pax25(char *e, const char *addr)
  *   Return -1 on error, 0 if OK
  */
 
-static int setcall(char *out, const char *call)
+static int setcall(uint8 *out, const char *call)
 {
 	int csize;
 	unsigned ssid;
@@ -123,7 +125,7 @@ static int setcall(char *out, const char *call)
 
 /*---------------------------------------------------------------------------*/
 
-static int addreq(const char *a, const char *b)
+static int addreq(const uint8 *a, const uint8 *b)
 {
 	if (*a++ != *b++) return 0;
 	if (*a++ != *b++) return 0;
@@ -136,7 +138,7 @@ static int addreq(const char *a, const char *b)
 
 /*---------------------------------------------------------------------------*/
 
-static void addrcp(char *to, const char *from)
+static void addrcp(uint8 *to, const uint8 *from)
 {
 	*to++ = *from++;
 	*to++ = *from++;
@@ -149,7 +151,7 @@ static void addrcp(char *to, const char *from)
 
 /*---------------------------------------------------------------------------*/
 
-static int axroute_hash(const char *call)
+static int axroute_hash(const uint8 *call)
 {
 	int hashval;
 
@@ -165,7 +167,7 @@ static int axroute_hash(const char *call)
 
 /*---------------------------------------------------------------------------*/
 
-static struct ax_route *ax_routeptr(const char *call, int create)
+static struct ax_route *ax_routeptr(const uint8 *call, int create)
 {
 
 	struct ax_route **tp;
@@ -267,9 +269,9 @@ static void doroutelistentry(const struct ax_route *rp)
 static int doroutelist(int argc, char *argv[])
 {
 
-  char call[AXALEN];
   int i;
   struct ax_route *rp;
+  uint8 call[AXALEN];
 
   puts("Date    Time   Interface  Path");
   if (argc < 2) {

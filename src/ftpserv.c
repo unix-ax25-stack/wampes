@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.33 1995/12/20 09:46:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.34 1996/02/13 15:30:45 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -17,6 +17,7 @@
 
 #include "seek.h"
 #include "seteugid.h"
+#include "strerror.h"
 
 #include "global.h"
 #include "mbuf.h"

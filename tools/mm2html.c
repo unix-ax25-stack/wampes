@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.12 1995/11/12 12:29:02 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.13 1996/02/13 15:30:55 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -77,7 +77,7 @@ static void setnumber(const char *name, int value)
   p = (struct numbers *) malloc(sizeof(struct numbers));
   p->next = numbers;
   numbers = p;
-  p->name = strdup(name);
+  p->name = strdup((char *) name);
   p->value = value;
 }
 

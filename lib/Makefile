@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.26 1995/11/19 11:54:19 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.27 1996/02/13 15:31:00 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -125,6 +125,7 @@ callvalid.o: callvalid.h
 lockfile.o: lockfile.h seek.h
 md5.o: md5.h
 seteugid.o: seteugid.h
-strdup.o: strdup.h
-strerror.o: configure.h
+strdup.o: configure.h strdup.h
+strerror.o: configure.h strerror.h
 strmatch.o: strmatch.h
+strtoul.o: configure.h strtoul.h

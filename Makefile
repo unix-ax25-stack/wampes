@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.29 1996/02/04 11:17:32 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.30 1996/02/13 15:30:34 deyke Exp $
 
 MAKEFILE   = Makefile
 MKDIR      = @if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi
@@ -25,6 +25,9 @@ all:;   @-rm -f $(OBSOLETE)
 	-cd util;    $(MAKE) -i -f $(MAKEFILE) all install
 	-cd bbs;     $(MAKE) -i -f $(MAKEFILE) all install
 	-            $(MAKE) -i -f $(MAKEFILE) /tcp/hostaddr.pag
+	-if [ -d tools ]; then \
+	 cd tools;   $(MAKE) -i -f $(MAKEFILE) all install; \
+	 fi
 
 /tcp/hostaddr.pag: /tcp/hosts /tcp/domain.txt /usr/local/etc/mkhostdb
 	rm -f /tcp/hostaddr.* /tcp/hostname.*

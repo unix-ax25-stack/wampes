@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/import.c,v 1.2 1995/12/20 09:47:00 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/import.c,v 1.3 1996/02/13 15:30:54 deyke Exp $";
 #endif
 
 /*
@@ -171,5 +171,4 @@ int main(void)
 
   }
 
-  return 0;
 }

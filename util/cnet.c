@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.34 1996/02/04 11:17:49 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.35 1996/02/13 15:30:58 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -16,6 +16,7 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <sys/uio.h>
 #include <unistd.h>
 
 #ifdef _AIX
@@ -27,6 +28,10 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <sys/fcntl.h>
 #else
 #include <termios.h>
+#endif
+
+#ifndef MAXIOV
+#define MAXIOV          16
 #endif
 
 #ifndef O_NONBLOCK
@@ -151,16 +156,29 @@ static void sendq(int fd, struct mbuf **qp)
 {
 
   int n;
+  struct iovec iov[MAXIOV];
   struct mbuf *bp;
 
-  bp = *qp;
-  n = write(fd, bp->data, bp->cnt);
-  if (n <= 0) terminate();
-  bp->data += n;
-  bp->cnt -= n;
-  if (!bp->cnt) {
-    *qp = bp->next;
-    free(bp);
+  n = 0;
+  for (bp = *qp; bp && n < MAXIOV; bp = bp->next) {
+    iov[n].iov_base = bp->data;
+    iov[n].iov_len = bp->cnt;
+    n++;
+  }
+  n = writev(fd, iov, n);
+  if (n <= 0)
+    terminate();
+  while (n > 0) {
+    bp = *qp;
+    if (n >= bp->cnt) {
+      n -= bp->cnt;
+      *qp = bp->next;
+      free(bp);
+    } else {
+      bp->data += n;
+      bp->cnt -= n;
+      n = 0;
+    }
   }
 }
 

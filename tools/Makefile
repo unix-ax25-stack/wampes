@@ -1,10 +1,11 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.29 1996/02/08 11:57:07 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.30 1996/02/13 15:30:54 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
 LDFLAGS    = $(CFLAGS) -s
 LIBS       = ../lib/libutil.a
 MAKEFILE   = Makefile
+MKDIR      = @if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi
 RMTARGET   = @if [ -f $@ ]; then rm -f $@ || mv -f $@ $@~; fi
 SLIBS      =
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strerror.c,v 1.2 1996/01/04 19:11:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strerror.c,v 1.3 1996/02/13 15:31:00 deyke Exp $ */
 
 #include "configure.h"
 
@@ -6,6 +6,8 @@
 
 extern char *sys_errlist[];
 extern int sys_nerr;
+
+#include "strerror.h"
 
 char *strerror(int errnum)
 {
@@ -18,6 +20,6 @@ char *strerror(int errnum)
 
 #else
 
-int strerror_dummy;     /* Prevent "Empty source file" message */
+struct prevent_empty_file_message;
 
 #endif
