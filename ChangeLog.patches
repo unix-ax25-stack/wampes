@@ -1,18 +1,27 @@
-Version @(#) $Id: ChangeLog.patches,v 1.16 2003/07/24 00:47:46 dl9sau Exp $
+Version @(#) $Id: ChangeLog.patches,v 1.17 2005/03/11 14:36:09 dl9sau Exp $
 
-030724 Thomas Osterried <dl9sau>
+20050311 Thomas Osterried <dl9sau>
+	- flextalk support for netcmd: connect flextalk db0blo-12
+	- ax25-trace can now display if DAMA flag is set
+	- changed date format in this file
+	- changed convers/Makefile in order to not install the convers
+          program to /usr/local/bin, because this clashes with my other
+          open source project conversd-saupp
+	- added README.Download where to find this source
+
+20030724 Thomas Osterried <dl9sau>
 	- ethertap.c did not compile on an hpux. -> needed some #ifdef
 	  exclusions around my linux specific extensions.
 	  todo: hpux seems also capable of tun/tap, but parts my current
 	        imlpementation need to be ported.
 
-021121 Thomas Osterried <dl9sau>
+20021121 Thomas Osterried <dl9sau>
 	- login.c and doc/wampes.*, doc/intro.txt
 		- home directory "funk" for amateur radio packet users is a
 		  bit confusing for non-german users. /home/hams/ may be a
 		  better approach
 		
-021019 Thomas Osterried <dl9sau>
+20021019 Thomas Osterried <dl9sau>
 
 	- krnlif.c
 		- bugfix. sent only one packet even if several packets were
@@ -21,7 +30,7 @@ Version @(#) $Id: ChangeLog.patches,v 1.16 2003/07/24 00:47:46 dl9sau Exp $
 		    attach kernel <iface> [label] [nopromisc]
 		  also changed config.c for this
 
-020920 Thomas Osterried <dl9sau>
+20020920 Thomas Osterried <dl9sau>
 
         - patch for ARP requests (to QST-0) via multible digipeaters
 	  for an extended "collision domain". changed iface.c and ax25.c.
@@ -34,7 +43,7 @@ Version @(#) $Id: ChangeLog.patches,v 1.16 2003/07/24 00:47:46 dl9sau Exp $
 	- version.c:
 	  added DIGIARP feature
 
-020918 Thomas Osterried <dl9sau>
+20020918 Thomas Osterried <dl9sau>
 	- bugfix in ax25cmd.c's VJ part:
                 ax_routeptr(hdr.dest, 1); is right, not ".., 0)"
                 this caused a segfault in ax ro add qst
@@ -52,7 +61,7 @@ Version @(#) $Id: ChangeLog.patches,v 1.16 2003/07/24 00:47:46 dl9sau Exp $
           	  (gk locators are transmitted for e.g. as CellBroadcast by
 		  German mobile-TK-providers like O2 (ex Viag Interkomm))
 
-020619 Thomas Osterried <dl9sau>
+20020619 Thomas Osterried <dl9sau>
 
 	- fix in krnlif.c:
 	  forgot to close socket on error during attach
@@ -76,31 +85,31 @@ Version @(#) $Id: ChangeLog.patches,v 1.16 2003/07/24 00:47:46 dl9sau Exp $
 	- version.c:
 	  added TUN/TAP feature
 
-020614 Thomas Osterried <dl9sau>
+20020614 Thomas Osterried <dl9sau>
 
 	- fix in nrdump.c:
 	  trace for announced netrom broadcasts should show quality
 	  (linux / GCC problem?). instead the address of &tmp was shown.
 
-020527 Thomas Osterried <dl9sau>
+20020527 Thomas Osterried <dl9sau>
 
 	- fix in route.c / rip_route():
 	    rt_add() may return 0 in some conditions, so rp is NULL.
 	    will log this event (when trace is on).
 	- added support for linux on sparc10 (sun4m)
 
-020205 Thomas Osterried <dl9sau>
+20020205 Thomas Osterried <dl9sau>
 
 	added "axp->r_upcall = axserv_recv_upcall_discard;" instead of
 	"disc_ax25(axp);" to axserver.c, in order not to disc the ax25
 	layer while transports with other PIDs are open
 
-020123 Thomas Osterried <dl9sau>
+20020123 Thomas Osterried <dl9sau>
 
 	added comments and my name to the code where changes to the
 	original were made - for better reference
 
-020122 Thomas Osterried <dl9sau>
+20020122 Thomas Osterried <dl9sau>
 
 	software like xnet always sends PID=text CText on ax25 connects.
 	a connect from wampes to an xnet triggered by an IP frame that
@@ -110,7 +119,7 @@ Version @(#) $Id: ChangeLog.patches,v 1.16 2003/07/24 00:47:46 dl9sau Exp $
 	a modification in ax25.c now fixes this problem with non-protocol-
 	compliant hosts like xnet.
 
-020112 Thomas Osterried <dl9sau>
+20020112 Thomas Osterried <dl9sau>
 
 	mail_smtp.c had problems on ax25 smtp (where \r\n is sent as \r\r,
 	which results in an empty line.
@@ -118,7 +127,7 @@ Version @(#) $Id: ChangeLog.patches,v 1.16 2003/07/24 00:47:46 dl9sau Exp $
 	get lost. now sending \n in a seperate packet before
 	issuing cmd.smtp
 
-010213 Thomas Osterried <dl9sau>
+20010213 Thomas Osterried <dl9sau>
 
         providing patches for wampes-000304:
 

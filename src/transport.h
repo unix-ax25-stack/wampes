@@ -1,4 +1,4 @@
-/* @(#) $Id: transport.h,v 1.12 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: transport.h,v 1.13 2005/03/11 14:36:09 dl9sau Exp $ */
 
 #ifndef _TRANSPORT_H
 #define _TRANSPORT_H
@@ -25,7 +25,8 @@ enum e_transporteol {
 enum e_transporttype {
   TP_AX25,
   TP_NETROM,
-  TP_TCP
+  TP_TCP,
+  TP_AXFLEXTALK
 };
 
 struct transport_cb {

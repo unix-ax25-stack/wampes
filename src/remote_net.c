@@ -1,4 +1,4 @@
-/* @(#) $Id: remote_net.c,v 1.33 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: remote_net.c,v 1.34 2005/03/11 14:36:09 dl9sau Exp $ */
 
 #include <sys/types.h>
 
@@ -199,6 +199,8 @@ static int connect_command(struct controlblock *cp)
   address = getarg(0, 1);
   cp->tp = transport_open(protocol, address, transport_recv_upcall, transport_send_upcall, transport_state_upcall, (char *) cp);
   if (!cp->tp) return -1;
+  if (cp->tp->type == TP_AXFLEXTALK)
+    cp->binary = 1;
   if (!cp->binary) {
     cp->tp->recv_mode = EOL_LF;
     cp->tp->send_mode = (!strcmp(protocol, "tcp")) ? EOL_CRLF : EOL_CR;

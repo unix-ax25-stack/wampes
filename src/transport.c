@@ -1,4 +1,4 @@
-/* @(#) $Id: transport.c,v 1.23 2000/03/04 18:31:14 deyke Exp $ */
+/* @(#) $Id: transport.c,v 1.24 2005/03/11 14:36:09 dl9sau Exp $ */
 
 #include "global.h"
 #include "netuser.h"
@@ -84,6 +84,14 @@ static void transport_recv_upcall_ax25(struct ax25_cb *cp, int cnt)
 
 /*---------------------------------------------------------------------------*/
 
+static void transport_recv_upcall_axflextalk(struct ax25_cb *cp, int cnt)
+{
+  struct transport_cb *tp = (struct transport_cb *) cp->user;
+  if (tp->r_upcall) (*tp->r_upcall)(tp, cnt);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void transport_recv_upcall_netrom(struct circuit *cp, int cnt)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
@@ -101,6 +109,14 @@ static void transport_recv_upcall_tcp(struct tcb *cp, int32 cnt)
 /*---------------------------------------------------------------------------*/
 
 static void transport_send_upcall_ax25(struct ax25_cb *cp, int cnt)
+{
+  struct transport_cb *tp = (struct transport_cb *) cp->user;
+  if (tp->t_upcall) (*tp->t_upcall)(tp, cnt);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void transport_send_upcall_axflextalk(struct ax25_cb *cp, int cnt)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->t_upcall) (*tp->t_upcall)(tp, cnt);
@@ -228,6 +244,9 @@ struct transport_cb *transport_open(const char *protocol, const char *address, v
   if (!strcmp(protocol, "ax25")) {
     tp->type = TP_AX25;
     if ((tp->cb.axp = transport_open_ax25(address, tp))) return tp;
+  } else if (!strcmp(protocol, "flextalk")) {
+    tp->type = TP_AXFLEXTALK;
+    if ((tp->cb.axp = transport_open_ax25(address, tp))) return tp;
   } else if (!strcmp(protocol, "netrom")) {
     tp->type = TP_NETROM;
     if ((tp->cb.nrp = transport_open_netrom(address, tp))) return tp;
@@ -249,6 +268,7 @@ int transport_recv(struct transport_cb *tp, struct mbuf **bpp, int cnt)
   if dur_timer(&tp->timer) start_timer(&tp->timer);
   switch (tp->type) {
   case TP_AX25:
+  case TP_AXFLEXTALK:
     *bpp = recv_ax25(tp->cb.axp, cnt);
     result = len_p(*bpp);
     break;
@@ -275,6 +295,8 @@ int transport_send(struct transport_cb *tp, struct mbuf *bp)
   switch (tp->type) {
   case TP_AX25:
     return send_ax25(tp->cb.axp, &bp, PID_NO_L3);
+  case TP_AXFLEXTALK:
+    return send_ax25(tp->cb.axp, &bp, PID_FLEXTALK);
   case TP_NETROM:
     return send_nr(tp->cb.nrp, &bp);
   case TP_TCP:
@@ -289,6 +311,7 @@ int transport_send_space(struct transport_cb *tp)
 {
   switch (tp->type) {
   case TP_AX25:
+  case TP_AXFLEXTALK:
     return space_ax25(tp->cb.axp);
   case TP_NETROM:
     return space_nr(tp->cb.nrp);
@@ -312,6 +335,7 @@ int transport_close(struct transport_cb *tp)
 {
   switch (tp->type) {
   case TP_AX25:
+  case TP_AXFLEXTALK:
     return disc_ax25(tp->cb.axp);
   case TP_NETROM:
     return close_nr(tp->cb.nrp);
@@ -327,6 +351,7 @@ int transport_del(struct transport_cb *tp)
 {
   switch (tp->type) {
   case TP_AX25:
+  case TP_AXFLEXTALK:
     del_ax25(tp->cb.axp);
     break;
   case TP_NETROM:

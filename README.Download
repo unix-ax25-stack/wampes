@@ -1,0 +1,32 @@
+WAMPES sources could be found on
+
+ampr:
+  browseable CVS:
+    http://db0tud.ampr.org/cgi-bin/viewcvs.cgi/ampr/wampes-import/
+  http download:
+    http://db0tud.ampr.org/cgi-bin/viewcvs.cgi/ampr/wampes-import/wampes-import.tar.gz
+  public ftp:
+    ftp://db0tud.ampr.org/pub/local/wampes-import/wampes-import.tar.gz
+  anon rsync:
+    rsync -auvz --delete rsync://db0tud.ampr.org/cvs/ampr/wampes-import .
+  anon cvspserver:
+    export CVSROOT=:pserver:cvs@db0tud.ampr.org:/var/cvs
+    cvs -z6 checkout ampr/wampes-import
+
+internet:
+  browseable CVS:
+    http://x-berg.in-berlin.de/cgi-bin/viewcvs.cgi/ampr/wampes-import/
+  http download:
+    http://x-berg.in-berlin.de/cgi-bin/viewcvs.cgi/ampr/wampes-import/wampes-import.tar.gz?tarball=1
+  anon rsync:
+    rsync -auvz --delete rsync://x-berg.in-berlin.de/cvs/ampr/wampes-import .
+  anon cvspserver:
+    export CVSROOT=:pserver:cvs@x-berg.in-berlin.de:/var/cvs
+    cvs -z6 checkout ampr/wampes-import
+
+
+The Version on ftp.ucsd.edu is very old. Please use the URLs above.
+I'll investigate that the sources on ftp.ucsd.edu will be updated.
+
+73,
+	- Thomas  dl9sau

@@ -1,4 +1,4 @@
-/* @(#) $Id: config.c,v 1.61 2002/10/19 18:43:29 dl9sau Exp $ */
+/* @(#) $Id: config.c,v 1.62 2005/03/11 14:36:09 dl9sau Exp $ */
 
 /* Copyright 1991 Phil Karn, KA9Q
  */
@@ -222,6 +222,7 @@ struct axlink Axlink[] = {
         { PID_VJCOMP,     ax_rx_vjcomp },
 	{ PID_VJUNCOMP,   ax_rx_vjuncomp },
 #endif
+	{ PID_FLEXTALK,   axflextalk },
 	{ 0,              NULL }
 };
 

@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25dump.c,v 1.16 2002/09/18 18:56:06 dl9sau Exp $ */
+/* @(#) $Id: ax25dump.c,v 1.17 2005/03/11 14:36:09 dl9sau Exp $ */
 
 /* AX25 header tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -21,21 +21,25 @@ struct mbuf **bpp,
 int check       /* Not used */
 ){
 	char tmp[AXBUF];
-	char frmr[3];
-	int control,pid,seg;
+	//char frmr[3];
+	char frmr[5];
+	int control,controlx,pid,seg;
 	uint type;
 	int unsegmented;
 	struct ax25 hdr;
 	uint8 *hp;
-	char *is_dama;
+	char *s_ext;
+	int eax25 = 0;
 
-	fprintf(fp,"AX25: ");
 	/* Extract the address header */
 	if(ntohax25(&hdr,bpp) < 0){
 		/* Something wrong with the header */
-		fprintf(fp," bad header!\n");
+		fprintf(fp,"AX25: bad header!\n");
 		return;
 	}
+        eax25 = (hdr.ext & SSID_EAX25);
+	s_ext = (hdr.ext & SSID_DAMA) ? " [DAMA]\n" : "\n";
+	fprintf(fp, "%sAX25: ", eax25 ? "E" : "");
 	fprintf(fp,"%s",pax25(tmp,hdr.source));
 	fprintf(fp,"->%s",pax25(tmp,hdr.dest));
 	if(hdr.ndigis > 0){
@@ -49,14 +53,21 @@ int check       /* Not used */
 	}
 	if(hdr.qso_num != -1)
 		fprintf(fp," QSO %d",hdr.qso_num);
-	if((control = PULLCHAR(bpp)) == -1)
+	if((control = PULLCHAR(bpp)) == -1) {
+		putc('\n',fp);
 		return;
-
-	putc(' ',fp);
+	}
 	type = ftype(control);
+	if ((type & 0x3) == U)  /* modulo-128 only in I or S frames */
+		eax25 = 0;
+	if  (eax25 && (controlx = PULLCHAR(bpp)) == -1) {
+		putc('\n',fp);
+		return;
+	}
+	putc(' ',fp);
 	fprintf(fp,"%s",decode_type(type));
 	/* Dump poll/final bit */
-	if(control & PF){
+	if(eax25 ? (controlx & PF_EAX25) : (control & PF)){
 		switch(hdr.cmdrsp){
 		case LAPB_COMMAND:
 			fprintf(fp,"(P)");
@@ -71,11 +82,10 @@ int check       /* Not used */
 	}
 	/* Dump sequence numbers */
 	if((type & 0x3) != U)   /* I or S frame? */
-		fprintf(fp," NR=%d",(control>>5)&7);
-	is_dama = (!(hdr.source[ALEN] & 0x20) ? " [DAMA]\n" : "\n");
+		fprintf(fp," NR=%d",(eax25 ? ((controlx>>1)&0x7f) : (control>>5)&7));
 	if(type == I || type == UI){
 		if(type == I)
-			fprintf(fp," NS=%d",(control>>1)&7);
+			fprintf(fp," NS=%d",(eax25 ? ((control>>1) &0x7f) : (control>>1)&7));
 		/* Decode I field */
 		if((pid = PULLCHAR(bpp)) != -1){        /* Get pid */
 			if(pid == PID_SEGMENT){
@@ -90,63 +100,67 @@ int check       /* Not used */
 
 			switch(pid){
 			case PID_SEGMENT:
-				fputs(is_dama, fp);
+				fputs(s_ext, fp);
 				break;  /* Already displayed */
 			case PID_ARP:
-				fprintf(fp," pid=ARP%s", is_dama);
+				fprintf(fp," pid=ARP%s", s_ext);
 				arp_dump(fp,bpp);
 				break;
 			case PID_NETROM:
-				fprintf(fp," pid=NET/ROM%s", is_dama);
+				fprintf(fp," pid=NET/ROM%s", s_ext);
 				/* Don't verify checksums unless unsegmented */
 				netrom_dump(fp,bpp,unsegmented);
 				break;
 			case PID_IP:
-				fprintf(fp," pid=IP%s", is_dama);
+				fprintf(fp," pid=IP%s", s_ext);
 				/* Don't verify checksums unless unsegmented */
 				ip_dump(fp,bpp,unsegmented);
 				break;
 #ifdef  AX25_VJCOMP
                         case PID_VJUNCOMP:
-				fprintf(fp," pid=VJ%s", is_dama);
+				fprintf(fp," pid=VJ%s", s_ext);
 				/* Don't verify checksums */
 				ip_dump(fp,bpp,0);
 				break;
                         case PID_VJCOMP:
-                                fprintf(fp," pid=VJC%s", is_dama);
+                                fprintf(fp," pid=VJC%s", s_ext);
                                 /*sl_dump(fp,bpp,0);*/
                                 break;
 #endif
 			case PID_X25:
-				fprintf(fp," pid=X.25%s", is_dama);
+				fprintf(fp," pid=X.25%s", s_ext);
 				break;
 			case PID_TEXNET:
-				fprintf(fp," pid=TEXNET%s", is_dama);
+				fprintf(fp," pid=TEXNET%s", s_ext);
 				break;
 			case PID_FLEXNET:
-				fprintf(fp," pid=FLEXNET%s", is_dama);
+				fprintf(fp," pid=FLEXNET%s", s_ext);
 				flexnet_dump(fp,bpp);
 				break;
+			case PID_FLEXTALK:
+				fprintf(fp," pid=FLEXTALK%s", s_ext);
+				break;
 			case PID_NO_L3:
-				fprintf(fp," pid=Text%s", is_dama);
+				fprintf(fp," pid=Text%s", s_ext);
 				break;
 			default:
-				fprintf(fp," pid=0x%x%s",pid, is_dama);
+				fprintf(fp," pid=0x%x%s",pid, s_ext);
 			}
 		}
-	} else if(type == FRMR && pullup(bpp,frmr,3) == 3){
+	} else if(type == FRMR && pullup(bpp,frmr,(eax25 ? 5 : 3)) == (eax25 ? 5 : 3)){
 		fprintf(fp,": %s",decode_type(ftype(frmr[0])));
-		fprintf(fp," Vr = %d Vs = %d",(frmr[1] >> 5) & MMASK,
-			(frmr[1] >> 1) & MMASK);
-		if(frmr[2] & W)
+		fprintf(fp," Vr = %d Vs = %d",
+			(eax25 ? (frmr[3] >> 1) & EMMASK : (frmr[1] >> 5) & MMASK),
+			(eax25 ? (frmr[2] >> 1) & EMMASK : (frmr[1] >> 1) & MMASK));
+		if(frmr[eax25 ? 4 : 2] & W)
 			fprintf(fp," Invalid control field");
-		if(frmr[2] & X)
+		if(frmr[eax25 ? 4 : 2] & X)
 			fprintf(fp," Illegal I-field");
-		if(frmr[2] & Y)
+		if(frmr[eax25 ? 4 : 2] & Y)
 			fprintf(fp," Too-long I-field");
-		if(frmr[2] & Z)
+		if(frmr[eax25 ? 4 : 2] & Z)
 			fprintf(fp," Invalid seq number");
-		fputs(is_dama, fp);
+		fputs(s_ext, fp);
 	} else
 		putc('\n',fp);
 
@@ -159,6 +173,8 @@ decode_type(uint type)
 		return "I";
 	case SABM:
 		return "SABM";
+	case SABME:
+		return "SABME";
 	case DISC:
 		return "DISC";
 	case DM:

@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25.h,v 1.26 2002/09/19 19:11:44 dl9sau Exp $ */
+/* @(#) $Id: ax25.h,v 1.27 2005/03/11 14:36:09 dl9sau Exp $ */
 
 #ifndef _AX25_H
 #define _AX25_H
@@ -29,6 +29,8 @@ extern char Ax25_eol[];
 #define REPEATED        0x80    /* Has-been-repeated bit in repeater field */
 #define E               0x01    /* Address extension bit */
 #define C               0x80    /* Command/response designation */
+#define SSID_DAMA       0x20    /* DAMA flag */
+#define SSID_EAX25      0x40    /* EAX25 session marker */
 
 /* Our AX.25 address */
 extern uint8 Mycall[];
@@ -55,6 +57,7 @@ struct ax25 {
 	int nextdigi;                   /* Index to next digi in chain */
 	enum lapb_cmdrsp cmdrsp;        /* Command/response */
 	int qso_num;                    /* QSO number or -1 */
+	uint8 ext;                      /* ax25 extensions like DAMA, modulo-128 (EAX25) */
 };
 
 /* AX.25 routing table entry */
@@ -80,6 +83,7 @@ extern struct iface *Axroute_default_ifp;
 #define PID_VJUNCOMP    0x07    /* MW: VJ uncompressed */
 #endif
 #define PID_SEGMENT     0x08    /* Segmentation fragment */
+#define PID_FLEXTALK    0x0f    /* FLEXTALK - voice over ax25 */
 #define PID_TEXNET      0xc3    /* TEXNET datagram protocol */
 #define PID_LQ          0xc4    /* Link quality protocol */
 #define PID_APPLETALK   0xca    /* Appletalk */

@@ -1,4 +1,4 @@
-/* @(#) $Id: lapb.c,v 1.42 2002/01/12 15:55:53 dl9sau Exp $ */
+/* @(#) $Id: lapb.c,v 1.43 2005/03/11 14:36:09 dl9sau Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -1015,3 +1015,21 @@ int mcast
 	}
 }
 
+/* Handle ordinary incoming data (no network protocol) */
+void
+axflextalk(
+struct iface *iface,
+struct ax25_cb *axp,
+uint8 *src,
+uint8 *dest,
+struct mbuf **bpp,
+int mcast
+){
+	if(axp == NULL){
+		free_p(bpp);
+	} else {
+		append(&axp->rxq,bpp);
+		if(axp->r_upcall != NULL)
+			(*axp->r_upcall)(axp,len_p(axp->rxq));
+	}
+}

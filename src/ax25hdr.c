@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25hdr.c,v 1.11 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: ax25hdr.c,v 1.12 2005/03/11 14:36:09 dl9sau Exp $ */
 
 /* AX25 header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -65,6 +65,14 @@ struct mbuf **bpp
 		cp[ALEN] |= C;
 	else
 		cp[ALEN] &= ~C;
+	if (hdr->ext & SSID_EAX25)
+		cp[ALEN] &= ~SSID_EAX25;
+	else
+		cp[ALEN] |= SSID_EAX25;
+	if (hdr->ext & SSID_DAMA)
+		cp[ALEN] &= ~SSID_DAMA;
+	else
+		cp[ALEN] |= SSID_DAMA;
 	/* Set E bit on source address if no digis */
 	if(hdr->ndigis == 0){
 		cp[ALEN] |= E;
@@ -137,6 +145,11 @@ struct mbuf **bpp
 
 	hdr->ndigis = 0;
 	hdr->nextdigi = 0;
+	hdr->ext = 0;
+	if (!(hdr->source[ALEN] & SSID_EAX25))
+		hdr->ext |= SSID_EAX25;
+	if (!(hdr->source[ALEN] & SSID_DAMA))
+		hdr->ext |= SSID_DAMA;
 	if(hdr->source[ALEN] & E)
 		return 2;       /* No digis */
 

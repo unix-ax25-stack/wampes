@@ -1,4 +1,4 @@
-/* @(#) $Id: lapb.h,v 1.26 2002/01/12 15:55:53 dl9sau Exp $ */
+/* @(#) $Id: lapb.h,v 1.27 2005/03/11 14:36:09 dl9sau Exp $ */
 
 #ifndef _LAPB_H
 #define _LAPB_H
@@ -33,14 +33,18 @@
 #define REJ     0x09    /* Reject */
 #define U       0x03    /* Unnumbered frames */
 #define SABM    0x2f    /* Set Asynchronous Balanced Mode */
+#define SABME   0x6f    /* Set Asynchronous Balanced Mode moduluo-128 */
 #define DISC    0x43    /* Disconnect */
 #define DM      0x0f    /* Disconnected mode */
 #define UA      0x63    /* Unnumbered acknowledge */
 #define FRMR    0x87    /* Frame reject */
 #define UI      0x03    /* Unnumbered information */
 #define PF      0x10    /* Poll/final bit */
+#define PF_EAX25 0x01   /* Poll/final bit in extra eax25 byte */
+
 
 #define MMASK   7       /* Mask for modulo-8 sequence numbers */
+#define EMMASK  0x7f    /* Mask for modulo-128 sequence numbers */
 
 /* FRMR reason bits */
 #define W       1       /* Invalid control field */
@@ -199,6 +203,8 @@ struct mbuf *segmenter(struct mbuf **bp,uint ssize);
 int sendctl(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int cmd);
 int sendframe(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int ctl,struct mbuf **data);
 void axnl3(struct iface *iface,struct ax25_cb *axp,uint8 *src,
+	uint8 *dest,struct mbuf **bp,int mcast);
+void axflextalk(struct iface *iface,struct ax25_cb *axp,uint8 *src,
 	uint8 *dest,struct mbuf **bp,int mcast);
 int busy(struct ax25_cb *cp);
 void ax_t2_timeout(void *p);
