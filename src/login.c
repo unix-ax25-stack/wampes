@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.49 1993/11/06 16:59:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.50 1994/01/09 16:19:44 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -26,6 +26,7 @@
 extern struct utmp *getutent();
 #endif
 
+#include "callvalid.h"
 #include "configure.h"
 
 #include "global.h"
@@ -88,7 +89,6 @@ static int32 Pty_locktime[NUMPTY];
 
 static int find_pty(int *numptr, char *slave);
 static void restore_pty(const char *id);
-static int callvalid(const char *call);
 static char *find_user_name(const char *name);
 static void write_log(struct login_cb *tp, const char *buf, int cnt);
 static FILE *fopen_logfile(const char *user, const char *protocol);
@@ -179,26 +179,6 @@ void fixutmpfile(void)
 
 #endif
 
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int callvalid(const char *call)
-{
-  int d, l;
-
-  l = strlen(call);
-  if (l < 3 || l > 6) return 0;
-  if (isdigit(uchar(call[0])) && isdigit(uchar(call[1]))) return 0;
-  if (!(isdigit(uchar(call[1])) || isdigit(uchar(call[2])))) return 0;
-  if (!isalpha(uchar(call[l-1]))) return 0;
-  d = 0;
-  for (; *call; call++) {
-    if (!isalnum(uchar(*call))) return 0;
-    if (isdigit(uchar(*call))) d++;
-  }
-  if (d < 1 || d > 2) return 0;
-  return 1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -429,7 +409,7 @@ static void write_pty(struct login_cb *tp)
     while ((chr = PULLCHAR(&tp->sndq)) != -1) {
       lastchr = tp->lastchr;
       tp->lastchr = chr;
-      if (!tp->telnet || do_telnet(tp, uchar(chr))) {
+      if (!tp->telnet || do_telnet(tp, chr & 0xff)) {
 	if (lastchr != '\r' || chr != '\0' && chr != '\n') {
 	  *p++ = chr;
 	  if (chr == '\r' || chr == '\n') {
@@ -654,7 +634,7 @@ struct mbuf *login_read(struct login_cb *tp, int cnt)
       write_log(tp, tp->inpbuf, tp->inpcnt);
     }
     tp->inpcnt--;
-    chr = uchar(*tp->inpptr++);
+    chr = *tp->inpptr++ & 0xff;
     if (chr == 0x11 || chr == 0x13) {
       /* ignore XON / XOFF */
     } else if (tp->telnet) {

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.23 1993/06/30 11:50:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.24 1994/01/09 16:19:48 deyke Exp $ */
 
 #include "global.h"
 
@@ -65,7 +65,7 @@ static char *getarg(char *line, int all)
   static char *p;
 
   if (line) p = line;
-  while (isspace(uchar(*p))) p++;
+  while (isspace(*p & 0xff)) p++;
   if (all) return p;
   quote = 0;
   if (*p == '"' || *p == '\'') quote = *p++;
@@ -73,7 +73,7 @@ static char *getarg(char *line, int all)
   if (quote) {
     if (!(p = strchr(p, quote))) p = "";
   } else
-    while (*p && !isspace(uchar(*p))) {
+    while (*p && !isspace(*p & 0xff)) {
       *p = Xtolower(*p);
       p++;
     }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.15 1993/10/13 22:30:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.16 1994/01/09 16:19:44 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -138,7 +138,7 @@ static void strtrim(char *s)
   char *p = s;
 
   while (*p) p++;
-  while (--p >= s && isspace(uchar(*p))) ;
+  while (--p >= s && isspace(*p & 0xff)) ;
   p[1] = 0;
 }
 
@@ -148,6 +148,7 @@ static void read_configuration(void)
 {
 
   FILE *fp;
+  char *cp;
   char *sysname, *mailername, *protocol, *address;
   char line[1024];
   static long lastmtime;
@@ -168,6 +169,7 @@ static void read_configuration(void)
     free(sp);
   }
   while (fgets(line, sizeof(line), fp)) {
+    if (cp = strchr(line, '#')) *cp = 0;
     if (!(sysname = strtok(line, ":"))) continue;
     if (!(mailername = strtok(NULLCHAR, ":"))) continue;
     if (!(protocol = strtok(NULLCHAR, ":"))) continue;

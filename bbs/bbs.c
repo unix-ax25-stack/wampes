@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.67 1993/11/28 07:42:57 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.68 1994/01/09 16:19:57 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -27,6 +27,7 @@ extern int optind;
 
 #include "bbs.h"
 #include "buildsaddr.h"
+#include "callvalid.h"
 #include "configure.h"
 #include "strdup.h"
 
@@ -115,7 +116,6 @@ static char *getstring(char *s);
 static char *timestr(long gmt);
 static char *rfc822_date(long gmt);
 static long parse_date(const char *str);
-static int callvalid(const char *call);
 static void make_parent_directories(const char *filename);
 static char *getfilename(int mesg);
 static void get_seq(void);
@@ -137,10 +137,10 @@ static void fix_address(char *addr);
 static struct mail *alloc_mail(void);
 static void free_mail(struct mail *mail);
 static void route_mail(struct mail *mail);
-static void append_line(struct mail *mail, char *line);
+static void append_line(struct mail *mail, const char *line);
 static int get_header_value(const char *name, int do822, char *line, char *value);
 static char *get_host_from_header(const char *line);
-static int host_in_header(char *fname, char *host);
+static int host_in_header(const char *fname, const char *host);
 static void delete_command(int argc, char **argv);
 static void dir_print(struct dir_entry *p);
 static void dir_command(int argc, char **argv);
@@ -162,7 +162,7 @@ static void status_command(int argc, char **argv);
 static void unknown_command(int argc, char **argv);
 static void xcrunch_command(int argc, char **argv);
 static void xscreen_command(int argc, char **argv);
-static char *connect_addr(char *host);
+static char *connect_addr(const char *host);
 static void connect_bbs(void);
 static void parse_command_line(char *line);
 static void bbs(void);
@@ -229,10 +229,6 @@ static void errorstop(int line)
 /*---------------------------------------------------------------------------*/
 
 #define halt() errorstop(__LINE__)
-
-/*---------------------------------------------------------------------------*/
-
-#define uchar(x) ((x) & 0xff)
 
 /*---------------------------------------------------------------------------*/
 
@@ -448,26 +444,6 @@ static long parse_date(const char *str)
   for (i = 1970; i < yy; i++) jdate += 365 + (i % 4 == 0);
   jdate *= (24L * 60L * 60L);
   return jdate + 3600 * h + 60 * m + s;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int callvalid(const char *call)
-{
-  int d, l;
-
-  l = strlen(call);
-  if (l < 3 || l > 6) return 0;
-  if (isdigit(uchar(call[0])) && isdigit(uchar(call[1]))) return 0;
-  if (!(isdigit(uchar(call[1])) || isdigit(uchar(call[2])))) return 0;
-  if (!isalpha(uchar(call[l-1]))) return 0;
-  d = 0;
-  for (; *call; call++) {
-    if (!isalnum(uchar(*call))) return 0;
-    if (isdigit(uchar(*call))) d++;
-  }
-  if (d < 1 || d > 2) return 0;
-  return 1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1128,7 +1104,7 @@ Done:
 
 /*---------------------------------------------------------------------------*/
 
-static void append_line(struct mail *mail, char *line)
+static void append_line(struct mail *mail, const char *line)
 {
   struct strlist *p;
 
@@ -1165,7 +1141,7 @@ static int get_header_value(const char *name, int do822, char *line, char *value
     }
   }
 
-  while (isspace(uchar(*line))) line++;
+  while (isspace(*line & 0xff)) line++;
   strcpy(value, strtrim(line));
   return 1;
 }
@@ -1180,8 +1156,8 @@ static char *get_host_from_header(const char *line)
 
   if (*line == 'R' && line[1] == ':' && (p = strchr(strcpy(buf, line), '@'))) {
     p++;
-    while (*p == ':' || isspace(uchar(*p))) p++;
-    for (q = p; isalnum(uchar(*q)); q++) ;
+    while (*p == ':' || isspace(*p & 0xff)) p++;
+    for (q = p; isalnum(*q & 0xff); q++) ;
     *q = 0;
     return p;
   }
@@ -1190,7 +1166,7 @@ static char *get_host_from_header(const char *line)
 
 /*---------------------------------------------------------------------------*/
 
-static int host_in_header(char *fname, char *host)
+static int host_in_header(const char *fname, const char *host)
 {
 
   FILE *fp;
@@ -1803,7 +1779,7 @@ static void reply_command(int argc, char **argv)
   }
   strlwc(mail->to);
   for (p = index.subject; ; ) {
-    while (isspace(uchar(*p))) p++;
+    while (isspace(*p & 0xff)) p++;
     if (Strncasecmp(p, "Re:", 3)) break;
     p += 3;
   }
@@ -2154,7 +2130,7 @@ static void xscreen_command(int argc, char **argv)
 	fp = 0;
       }
       if (!(fp = fopen(getfilename(pi->mesg), "r"))) halt();
-      printf("\033&a0y0C\033JMsg# %d   To: %s%s%s   From: %s   Date: %s\n", pi->mesg, pi->to, *pi->at ? " @" : "", pi->at, pi->from, timestr(pi->date));
+      printf("\033[H\033[J\033H\033JMsg# %d   To: %s%s%s   From: %s   Date: %s\n", pi->mesg, pi->to, *pi->at ? " @" : "", pi->at, pi->from, timestr(pi->date));
       lines++;
       if (*pi->subject) {
 	printf("Subject: %s\n", pi->subject);
@@ -2289,7 +2265,7 @@ static void xscreen_command(int argc, char **argv)
 
 /*---------------------------------------------------------------------------*/
 
-static char *connect_addr(char *host)
+static char *connect_addr(const char *host)
 {
 
   FILE *fp;
@@ -2298,19 +2274,20 @@ static char *connect_addr(char *host)
   char *p;
   static char line[1024];
 
+  if (!(fp = fopen(CONFIGFILE, "r"))) rename("config", CONFIGFILE);
+  if (!(fp = fopen(CONFIGFILE, "r"))) return 0;
   addr = 0;
-  if (fp = fopen(CONFIGFILE, "r")) {
-    while (fgets(line, sizeof(line), fp)) {
-      for (p = line; isspace(uchar(*p)); p++) ;
-      for (h = p; *p && !isspace(uchar(*p)); p++) ;
-      if (*p) *p++ = 0;
-      if (!strcmp(h, host)) {
-	addr = strtrim(p);
-	break;
-      }
+  while (fgets(line, sizeof(line), fp)) {
+    if (p = strchr(line, '#')) *p = 0;
+    for (p = line; isspace(*p & 0xff); p++) ;
+    for (h = p; *p && !isspace(*p & 0xff); p++) ;
+    if (*p) *p++ = 0;
+    if (!strcmp(h, host)) {
+      addr = strtrim(p);
+      break;
     }
-    fclose(fp);
   }
+  fclose(fp);
   return addr;
 }
 
@@ -2358,7 +2335,7 @@ static void parse_command_line(char *line)
   argc = 0;
   memset((char *) argv, 0, sizeof(argv));
   for (f = line, t = buf; ; ) {
-    while (isspace(uchar(*f))) f++;
+    while (isspace(*f & 0xff)) f++;
     if (!*f) break;
     argv[argc++] = t;
     if (*f == '"' || *f == '\'') {
@@ -2368,7 +2345,7 @@ static void parse_command_line(char *line)
     } else if (strchr(STARTDELIM ANYDELIM, *f)) {
       *t++ = *f++;
     } else {
-      while (*f && !isspace(uchar(*f)) && !strchr(ANYDELIM, *f)) *t++ = *f++;
+      while (*f && !isspace(*f & 0xff) && !strchr(ANYDELIM, *f)) *t++ = *f++;
     }
     *t++ = 0;
   }

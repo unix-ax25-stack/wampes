@@ -28,7 +28,7 @@ What program does what? -  a quick overview.
 /tcp/net            (copied from /tcp/src/net)
 /usr/local/bin/cnet (copied from /tcp/util/cnet)
 
-The main  program.  It's  the  interface  to the  KISS/Slip  ports,  the
+The main  program.  It's  the  interface  to the  KISS/SLIP  ports,  the
 program that controls logins, connections etc.  It can be started in the
 background,  on my Linux system with /tcp/net < /dev/null & , if I start
 it from a shell.  If I omit the /dev/null, it does not disconnect itself
@@ -47,8 +47,7 @@ Shows an ax25 path to a host.
 
 /tcp/util/pop2d
 
-The pop2  daemon.  You have to set up an link  from  /usr/spool/mail  to
-/usr/mail for this, if you're running Linux!
+The pop2 daemon.
 
 /tcp/util/netupd[c,s]
 
@@ -56,7 +55,8 @@ Netupdate-Client+Server.  Allows WAMPES  clients to get new revisions of
 the WAMPES  software from a WAMPES source server.  Used in the Stuttgart
 area to update all local WAMPES systems automatically from cron.
 
-/tcp/util/[vitals,genupd]
+/usr/local/bin/md5 (copied from /tcp/util/md5)
+/tcp/util/genupd
 
 Needed by netupd[c,s].
 
@@ -140,8 +140,6 @@ icmp trace on
 #############################################################################
 # ax25 t1 timer ("frack"):
 ax25 t1 12000
-# ax25 t2 timer ("Ack delay timeout"):
-ax25 t2 2000
 # ax25 retry limit:
 ax25 retry 20
 # Enable ax25 login:
@@ -277,9 +275,6 @@ Running a converse bridge with WAMPES
 A convers  connection to another  WAMPES (or NOS) host running  conversd
 can be configured with convers.conf.  It is read at the time conversd is
 started.  If this file is changed after startup, conversd will exit.
-
-Please,  make sure you are  not(!)  building  loops  with your  conversd
-setup.
 
 A sample /tcp/convers.conf:
 

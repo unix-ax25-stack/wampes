@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.4 1993/11/06 16:59:29 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.5 1994/01/09 16:20:12 deyke Exp $
 
 tab="\
 	"
@@ -85,7 +85,7 @@ echo "#define _CONFIGURE_H"
 echo
 
 finddir HOME_DIR /home /users /u
-finddir MAIL_DIR /var/mail /var/spool/mail /usr/mail
+finddir MAIL_DIR /var/mail /var/spool/mail /usr/mail /usr/spool/mail
 finddir SPOOL_DIR /var/spool /usr/spool
 finddir UUCP_DIR /var/spool/uucp /usr/spool/uucp
 

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.57 1993/10/14 14:00:23 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.58 1994/01/09 16:21:19 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -1201,7 +1201,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.57 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.58 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1525,20 +1525,19 @@ static void read_configuration(void)
   char *host_name;
   char *sock_name;
   char line[1024];
+  int got_host_name = 0;
   struct peer *pp;
 
   if (fp = fopen(conffile, "r")) {
-    if (fgets(line, sizeof(line), fp)) {
-      if (cp = strchr(line, '#')) *cp = 0;
-      host_name = getarg(line, 0);
-      if (*host_name) {
-	free(my.h_name);
-	my.h_name = strdup(host_name);
-      }
-    }
     while (fgets(line, sizeof(line), fp)) {
       if (cp = strchr(line, '#')) *cp = 0;
-      getarg(line, 0);  /*** ignore first field ***/
+      host_name = getarg(line, 0);
+      if (*host_name && !got_host_name) {
+	free(my.h_name);
+	my.h_name = strdup(host_name);
+	got_host_name = 1;
+	continue;
+      }
       sock_name = getarg(NULLCHAR, 0);
       if (*sock_name) {
 	pp = (struct peer *) calloc(1, sizeof(*pp));

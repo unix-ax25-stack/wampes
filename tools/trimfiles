@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.7 1993/10/13 22:31:31 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.8 1994/01/09 16:23:29 deyke Exp $
 
 PATH=/usr/5bin:$PATH
 tmp=tmp$$
@@ -9,6 +9,7 @@ if [ ! -f .trimtime ] ; then
 fi
 for i in `find * -prune -type f '(' \
 	-name '*.c'          -o \
+	-name '*.conf'       -o \
 	-name '*.h'          -o \
 	-name 'Makefile'     -o \
 	-name 'README'       -o \

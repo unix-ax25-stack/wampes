@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.29 1993/11/06 16:59:54 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.30 1994/01/09 16:20:06 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -20,6 +20,7 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <unistd.h>
 
 #include "bbs.h"
+#include "callvalid.h"
 #include "configure.h"
 
 struct user {
@@ -69,7 +70,6 @@ static const char *strsave(const char *s);
 static char *strlwc(char *s);
 static char *rmspaces(char *s);
 static char *strtrim(char *s);
-static int is_call(const char *s);
 static int is_qth(const char *s);
 static int is_phone(const char *s);
 static int is_mail(const char *s);
@@ -89,10 +89,6 @@ static void terminate(const char *s)
   if (lockfile) unlink(lockfile);
   exit(1);
 }
-
-/*---------------------------------------------------------------------------*/
-
-#define uchar(x) ((x) & 0xff)
 
 /*---------------------------------------------------------------------------*/
 
@@ -242,22 +238,6 @@ static char *strtrim(char *s)
 
 /*---------------------------------------------------------------------------*/
 
-static int is_call(const char *s)
-{
-  int d, l;
-
-  l = strlen(s);
-  if (l < 4 || l > 6) return 0;
-  if (!isalpha(uchar(s[l-1]))) return 0;
-  for (d = 0; *s; s++) {
-    if (!isalnum(uchar(*s))) return 0;
-    if (isdigit(uchar(*s))) d++;
-  }
-  return (d >= 1 && d <= 2);
-}
-
-/*---------------------------------------------------------------------------*/
-
 static int is_qth(const char *s)
 {
   switch (strlen(s)) {
@@ -292,7 +272,7 @@ static int is_phone(const char *s)
   for (slash = 0; *s; s++)
     if (*s == '/')
       slash++;
-    else if (!isdigit(uchar(*s)))
+    else if (!isdigit(*s & 0xff))
       return 0;
   return (slash == 1);
 }
@@ -416,7 +396,7 @@ static int fixusers(void)
   fpo = fopenexcl(userstemp);
   while (fgets(line, sizeof(line), fpi)) {
     for (f = line; *f; f++)
-      if (isspace(uchar(*f))) *f = ' ';
+      if (isspace(*f & 0xff)) *f = ' ';
     for (t = f = line; *f; f++)
       if (*f != ' ' || f[1] != ' ') *t++ = *f;
     if (t > line && t[-1] == ' ') t--;
@@ -440,7 +420,7 @@ static int fixusers(void)
     if (!nf) continue;
     for (i = 0; i < NF; i++)
       if (field[i]) {
-	if (!*user.call && is_call(field[i])) {
+	if (!*user.call && callvalid(field[i])) {
 	  user.call = strsave(strlwc(field[i]));
 	  field[i] = NULL;
 	  nf--;
@@ -512,9 +492,9 @@ static int fixusers(void)
     while (fread((char *) &index, sizeof(index), 1, fpi))
       if (index.to[0] == 'M' && index.to[1] == 0                 &&
 	  !strcmp(index.at, "THEBOX")                            &&
-	  is_call(index.from)                                    &&
+	  callvalid(index.from)                                  &&
 	  sscanf(index.subject, "%s %d", mybbs, &timestamp) == 2 &&
-	  is_call(mybbs)) {
+	  callvalid(mybbs)) {
 	up = getup(strlwc(index.from), 1);
 	*line = '@';
 	strcpy(line+1, strlwc(mybbs));
@@ -525,7 +505,7 @@ static int fixusers(void)
 
   gethostname(hostname, sizeof(hostname));
   if (cp = strchr(hostname, '.')) *cp = 0;
-  if (is_call(hostname)) {
+  if (callvalid(hostname)) {
     up = getup(hostname, 1);
     *line = '@';
     strcpy(line + 1, up->call);
@@ -559,7 +539,7 @@ static void fixpasswd(void)
 #endif
   fp = fopenexcl(passtemp);
   while ((pp = getpwent()) != NULL) {
-    if (is_call(pp->pw_name) &&
+    if (callvalid(pp->pw_name) &&
 	(up = getup(pp->pw_name, 0)) != NULL &&
 	*up->name)
       pp->pw_gecos = (char *) up->name;
@@ -592,10 +572,10 @@ static void fixaliases(void)
   while (fgets(line, sizeof(line), fpi)) {
     if (!strncmp(line, "# Generated", 11)) break;
     fputs(line, fpo);
-    if (isspace(uchar(*line))) continue;
+    if (isspace(*line & 0xff)) continue;
     if ((p = strchr(line, '#')) != NULL) *p = 0;
     if (!(p = strchr(line, ':'))) continue;
-    while (--p >= line && isspace(uchar(*p))) ;
+    while (--p >= line && isspace(*p & 0xff)) ;
     p[1] = 0;
     if ((up = getup(line, 0)) != NULL) up->alias = 1;
   }

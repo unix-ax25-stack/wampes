@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.57 1993/12/29 16:32:13 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.58 1994/01/09 16:19:41 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -6,6 +6,7 @@ DEST          = /tcp
 
 EXTHDRS       = ../lib/bbs.h \
 		../lib/buildsaddr.h \
+		../lib/callvalid.h \
 		../lib/configure.h
 
 HDRS          = arp.h \
@@ -500,8 +501,9 @@ ksubr.o: global.h proc.h mbuf.h timer.h commands.h
 lapb.o: global.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h ip.h internet.h
 lapbtime.o: global.h mbuf.h ax25.h iface.h proc.h timer.h lapb.h
 lcsum.o: global.h ip.h mbuf.h iface.h proc.h timer.h internet.h
-login.o: ../lib/configure.h global.h mbuf.h timer.h hpux.h telnet.h session.h \
-	proc.h hardware.h ax25.h iface.h cmdparse.h commands.h login.h
+login.o: ../lib/callvalid.h ../lib/configure.h global.h mbuf.h timer.h hpux.h \
+	telnet.h session.h proc.h hardware.h ax25.h iface.h cmdparse.h \
+	commands.h login.h
 mail_bbs.o: ../lib/bbs.h ../lib/configure.h global.h mbuf.h timer.h \
 	transport.h mail.h
 mail_daemn.o: ../lib/configure.h global.h timer.h mail.h cmdparse.h \
