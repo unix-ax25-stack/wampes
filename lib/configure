@@ -1,4 +1,4 @@
-# @(#) $Id: configure,v 1.40 2002/05/27 03:16:13 dl9sau Exp $
+# @(#) $Id: configure,v 1.41 2002/05/27 03:20:37 dl9sau Exp $
 
 CC='cc'
 CFLAGS='-O -I../lib'
@@ -56,6 +56,7 @@ Linux*)
 	fi
 	SLIBS="-l$LIBDBM"
 
+	case `uname -m` in
 	sparc*)
 		CFLAGS="$CFLAGS -DSINGLE_THREADED";;
 	esac
