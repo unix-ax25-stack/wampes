@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.31 1994/05/03 14:30:27 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.32 1994/05/11 10:46:22 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -4148,6 +4148,7 @@
 44.143.1.15     OE8DHK   # Hannes, Wien
 44.143.1.16     OE6GOD   # Gerald, Wien 16, Possingergasse, OE1GOD
 44.143.1.17     OE1DSS   # Gerd Soritz, 1050 Wien, Schoenbrunnerstr.94/1/12
+44.143.1.18     OE1WHU   # Wolfgang, Wien, JN88fh
 # 1200 bit/s Knoten
 44.143.1.100    OE1XRR   # Irmela Gagern
 44.143.1.101    OE1XXB   # Amateurfunkklub Alterlaa, 1230 Wien, Helmut
@@ -4201,7 +4202,7 @@
 44.143.3.5      OE3DZW   # Dietmar
 44.143.3.6      OE3IGW   # Alois, JN79ma
 44.143.3.7      OE3FAS   # Franz
-44.143.3.8
+44.143.3.8      OE3KEU   # Karl, Brunn am Gebirge
 44.143.3.9
 44.143.3.10
 44.143.3.31     OE3GMW   # Gottfried Motowidlo, 2351 Wiener Neudorf
@@ -4253,6 +4254,9 @@
 44.143.5.16    OE5LEN   # Harald
 44.143.5.17    OE5OHO   #
 44.143.5.18    OE5BKL   #
+44.143.5.19    OE5PSM   # Peter, Linz
+44.143.5.20    OE5PSO   # Peter Stockenreiter, Billrothstrasse 36,
+			# 4600 Wels
 # 1200 bit/s Knoten
 44.143.5.100   JKULINZ  # OE5X.., Linz, Oper. OE5LEN
 # 9600 bit/s Knoten

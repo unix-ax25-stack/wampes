@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.4 1994/05/08 11:00:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.5 1994/05/11 10:46:40 deyke Exp $ */
 
 /* Simple Network Time Protocol (SNTP) (see RFC1361) */
 
@@ -7,10 +7,6 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <sys/time.h>
-
-#ifdef __hpux
-int adjtime(const struct timeval *delta, struct timeval *olddelta);
-#endif
 
 #include "global.h"
 #include "mbuf.h"
@@ -21,6 +17,8 @@ int adjtime(const struct timeval *delta, struct timeval *olddelta);
 #include "netuser.h"
 #include "cmdparse.h"
 #include "session.h"
+
+#include "configure.h"
 
 #define NTP_MIN_PACKET_SIZE 48
 #define NTP_PACKET_SIZE 60
@@ -388,6 +386,7 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 	peer->mindelay = peer->delay;
 
 	if (peer->offset > -Step_threshold && peer->offset < Step_threshold) {
+#if HAS_ADJTIME || defined __hpux
 		tv.tv_sec = peer->offset;
 		tv.tv_usec = (peer->offset - (signed long) tv.tv_sec) * MILLION;
 		if (!adjtime(&tv, (struct timeval *) 0)) {
@@ -396,6 +395,7 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 		} else {
 			if (Ntrace) perror("adjtime()");
 		}
+#endif
 		return;
 	}
 	if (gettimeofday(&tv, &tz)) return;

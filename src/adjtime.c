@@ -1,6 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/adjtime.c,v 1.1 1994/05/02 16:52:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/adjtime.c,v 1.2 1994/05/11 10:46:30 deyke Exp $ */
 
-#ifdef __hpux
+#if defined __hpux && !HAS_ADJTIME
 
 #include <sys/types.h>
 

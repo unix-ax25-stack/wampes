@@ -1,11 +1,43 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.11 1994/05/05 11:18:30 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.12 1994/05/11 10:46:47 deyke Exp $
+
+case "`uname -sr`" in
+HP-UX*)
+	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=c89;;
+AIX*)
+	isdir=-d; isexec=-x; isfile=-f; islink=-L; cc=cc;;
+IRIX*)
+	isdir=-d; isexec=-x; isfile=-f; islink=-L; cc=cc;;
+Linux*)
+	isdir=-d; isexec=-x; isfile=-f; islink=-L; cc=gcc;;
+386BSD*)
+	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=cc;;
+BSD/386*)
+	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=cc;;
+SunOS\ 4.*)
+	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=acc;;
+SunOS\ 5.*)
+	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=cc;;
+ULTRIX*)
+	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=gcc;;
+A/UX*)
+	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=gcc;;
+RISC\ iX*)
+	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=/tcp/cc;;
+AOS*)
+	isdir=-d; isexec=-x; isfile=-f; islink=-L; cc=/usr/local/bin/gcc;;
+*)
+	echo System `uname -sr` is not supported >&2
+	exit 1;;
+esac
+
+tmp=tmp$$
 
 findfile()
 {
 	name=$1
 	shift
-	for i in $* ; do
-		if [ $isfile $i -a ! $islink $i ] ; then
+	for i in $*; do
+		if [ $isfile $i -a ! $islink $i ]; then
 			echo "#define ${name} \"$i\""
 			return
 		fi
@@ -17,14 +49,14 @@ findprog()
 {
 	name=$1
 	shift
-	for i in $* ; do
-		if [ $isfile $i -a $isexec $i -a ! $islink $i ] ; then
+	for i in $*; do
+		if [ $isfile $i -a $isexec $i -a ! $islink $i ]; then
 			echo "#define ${name} \"$i\""
 			return
 		fi
 	done
-	for i in $* ; do
-		if [ $isfile $i -a $isexec $i ] ; then
+	for i in $*; do
+		if [ $isfile $i -a $isexec $i ]; then
 			echo "#define ${name} \"$i\""
 			return
 		fi
@@ -36,14 +68,14 @@ finddir()
 {
 	name=$1
 	shift
-	for i in $* ; do
-		if [ $isdir $i -a ! $islink $i ] ; then
+	for i in $*; do
+		if [ $isdir $i -a ! $islink $i ]; then
 			echo "#define ${name} \"$i\""
 			return
 		fi
 	done
-	for i in $* ; do
-		if [ $isdir $i ] ; then
+	for i in $*; do
+		if [ $isdir $i ]; then
 			echo "#define ${name} \"$i\""
 			return
 		fi
@@ -51,35 +83,16 @@ finddir()
 	echo "#define ${name} \"\""
 }
 
-case "`uname -sr`" in
-HP-UX*)
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
-AIX*)
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L;;
-IRIX*)
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L;;
-Linux*)
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L;;
-386BSD*)
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
-BSD/386*)
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
-SunOS\ 4.*)
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
-SunOS\ 5.*)
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
-ULTRIX*)
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
-A/UX*)
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
-RISC\ iX*)
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
-AOS*)
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L;;
-*)
-	echo System `uname -sr` is not supported >&2
-	exit 1;;
-esac
+checksymbol()
+{
+	echo "$2" > $tmp.c
+	if $cc $tmp.c -o $tmp >/dev/null 2>&1; then
+		echo "#define $1 1"
+	else
+		echo "#define $1 0"
+	fi
+	rm -f $tmp*
+}
 
 echo "#ifndef _CONFIGURE_H"
 echo "#define _CONFIGURE_H"
@@ -105,6 +118,10 @@ findprog NEWALIASES_PROG /usr/bin/newaliases /usr/ucb/newaliases /usr/bsd/newali
 findprog PATCH_PROG /usr/bin/patch /usr/local/bin/patch
 findprog RNEWS_PROG /usr/bin/rnews /usr/local/bin/rnews
 findprog SENDMAIL_PROG /usr/sbin/sendmail /usr/lib/sendmail
+
+echo
+
+checksymbol HAS_ADJTIME "main(){adjtime(0,0);}"
 
 echo
 echo "#endif"
