@@ -1,4 +1,4 @@
-/* @(#) $Id: krnlif.c,v 1.9 2002/01/12 15:55:53 dl9sau Exp $ */
+/* @(#) $Id: krnlif.c,v 1.10 2002/06/19 11:24:30 dl9sau Exp $ */
 
 #if defined linux
 
@@ -479,11 +479,13 @@ int krnlif_attach(int argc, char *argv[], void *p)
 	if (ioctl(fd, SIOCGIFADDR, &ifr) < 0) {
 		perror("ioctl (SIOCGIFADDR)");
 		printf("cannot get inet addr for interface %s\n", argv[1]);
+		close(fd);
 		return -1;
 	}
 	if (ifr.ifr_addr.sa_family != AF_INET) {
 		printf("Interface %s: not AF_INET, %d\n", argv[1],
 		       in.sin_family);
+		close(fd);
 		return -1;
 	}
 #ifdef	USE_OBSOLETE_SOCK_PACKET
@@ -492,6 +494,7 @@ int krnlif_attach(int argc, char *argv[], void *p)
 	if (ioctl(fd, SIOCGIFADDR, &ifr) < 0) {
 		perror("ioctl (SIOCGIFADDR)");
 		printf("cannot get hw addr for interface %s\n", argv[1]);
+		close(fd);
 		return -1;
 	}
 #endif
@@ -500,12 +503,14 @@ int krnlif_attach(int argc, char *argv[], void *p)
 	if (ioctl(fd, SIOCGIFINDEX, &ifr_h) < 0) {
 		perror("ioctl (SIOCGIFINDEX)");
 		printf("cannot get index of interface %s\n", argv[1]);
+		close(fd);
 		return -1;
 	}
 	strncpy(ifr.ifr_name, argv[1], sizeof(ifr.ifr_name));
 	if (ioctl(fd, SIOCGIFHWADDR, &ifr) < 0) {
 		perror("ioctl (SIOCGIHWADDR)");
 		printf("cannot get hw addr for interface %s\n", argv[1]);
+		close(fd);
 		return -1;
 	}
 #endif
@@ -519,6 +524,7 @@ int krnlif_attach(int argc, char *argv[], void *p)
 	if (ioctl(fd, SIOCGIFMTU, &ifr) < 0) {
 		perror("ioctl (SIOCGIFMTU)");
 		printf("cannot get mtu for interface %s\n", argv[1]);
+		close(fd);
 		return -1;
 	}
 
