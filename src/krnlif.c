@@ -1,4 +1,4 @@
-/* @(#) $Id: krnlif.c,v 1.12 2002/10/19 12:16:36 dl9sau Exp $ */
+/* @(#) $Id: krnlif.c,v 1.13 2002/10/19 12:19:59 dl9sau Exp $ */
 
 #if defined linux
 
@@ -288,7 +288,7 @@ static void krnlif_tx(struct krnlif *ki)
 	printf("debug: krnlif_tx: sendto() returned %d while sending %d bytes\n", i, cnt);
 	if (errno == EMSGSIZE) {
 		// drop packet
-		free_p(&ki->sndq);
+		ki->sndq = free_p(&ki->sndq);
 		return;
 	}
 	if (errno == EWOULDBLOCK)
