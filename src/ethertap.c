@@ -1,4 +1,27 @@
-/* @(#) $Id: ethertap.c,v 1.3 2002/06/19 11:59:05 dl9sau Exp $ */
+/* @(#) $Id: ethertap.c,v 1.4 2002/06/19 12:05:55 dl9sau Exp $ */
+
+/* the ethertap device. now with TUN/TAP support (by dl9sau) */
+
+/*
+ * Changes:
+ *
+ * 20020619 dl9sau:
+ * - now with the generic TUN/TAP driver support for kernel >= 2.4.x
+ *   linux kernel doku: the classic ethertap device (/dev/tapX)
+ *   is obsolete and will be removed soon. tun/tap uses /dev/net/tun
+ * - now supports rx/tx BPQether protocol (ax25-over-ethernet)
+ *   the bpqether device generated automaticaly:
+ *   "attach ethertap linux" becomes linux and linuxBPQ
+ *   this is a more efficient way than attaching an mkiss device
+ *   to a pseudo-tty for the link between kernel-ax25 and wampes.
+ * - cave MTU: there seems to be a bug. mtu = 1500 has a throughput
+ *   of 9k6 bit/s. mtu = 1024 makes ca. 1Mbit -> you may use the new mtu
+ *   arg when attaching an ethertap device
+ * - on attach, we now probe the hardware-address (MAC) of the device.
+ *   this is needed because tun/tap accepts only correctly addressed
+ *   packets.
+ */
+
 
 /* the ethertap device. now with TUN/TAP support (by dl9sau) */
 
