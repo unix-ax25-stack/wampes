@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.12 1989/05/03 20:14:36 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.13 1989/06/28 20:33:39 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -696,7 +696,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.12 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.13 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
@@ -960,6 +960,11 @@ static void read_configuration()
   struct permlink *p;
 
   if (!(fp = fopen(conffile, "r"))) return;
+  if (fgets(line, sizeof(line), fp)) {
+    host_name = getarg(line, 0);
+    if (*host_name)
+      myhostname = strcpy(malloc((unsigned) (strlen(host_name) + 1)), host_name);
+  }
   while (fgets(line, sizeof(line), fp)) {
     host_name = getarg(line, 0);
     sock_name = getarg(0, 0);
@@ -985,7 +990,7 @@ char  **argv;
 
   static char  *socketnames[] = {
     "unix:/tcp/sockets/convers",
-/*****    "*:convers",     Currently not used *****/
+/** "*:convers",                  Currently not used **/
     (char *) 0
   };
 
@@ -1014,7 +1019,6 @@ char  **argv;
   putenv("TZ=MEZ-1MESZ");
   uname(&utsname);
   myhostname = utsname.nodename;
-  if (!strcmp(myhostname, "hpbeo11")) myhostname = "dk0hu";
   time(&currtime);
 
   if (argc < 2) {
