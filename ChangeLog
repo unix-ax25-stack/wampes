@@ -1,4 +1,9 @@
-@(#) $Id: ChangeLog,v 1.65 1999/11/20 16:30:19 deyke Exp $
+@(#) $Id: ChangeLog,v 1.66 1999/11/22 22:31:04 deyke Exp $
+
+991122 Dieter Deyke <deyke@hotpop.com>
+
+	Removed domain.txt and hosts from distribution
+	(You can get domain.txt from ftp://ftp.ucsd.edu/hamradio/ampr.tar.Z)
 
 991120 Dieter Deyke <deyke@hotpop.com>
 

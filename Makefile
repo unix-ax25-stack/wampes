@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.42 1999/10/08 03:33:21 deyke Exp $
+# @(#) $Id: Makefile,v 1.43 1999/11/22 22:31:04 deyke Exp $
 
 OBSOLETE   = /usr/local/bin/sfstat \
 	     /usr/local/etc/mkhostdb \
@@ -34,6 +34,12 @@ all:;   @-rm -f $(OBSOLETE)
 	@-$(MAKE) -i /tcp/hostaddr.pag
 	@-if [ -d tools ]; then ( cd tools; $(MAKE) -i all install ); fi
 
+/tcp/hosts:
+	[ -f /tcp/hosts ] || touch /tcp/hosts
+
+/tcp/domain.txt:
+	[ -f /tcp/domain.txt ] || touch /tcp/domain.txt
+
 /tcp/hostaddr.pag: /tcp/hosts /tcp/domain.txt util/mkhostdb
 	rm -f /tcp/hostaddr.* /tcp/hostname.*
 	util/mkhostdb >/dev/null 2>&1
@@ -61,9 +67,7 @@ distrib:
 		convers/*.[ch] \
 		convers/Makefile \
 		doc/?*.* \
-		domain.txt \
 		examples/?*.* \
-		hosts \
 		lib/*.[ch] \
 		lib/Makefile \
 		lib/configure \
