@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.25 1994/12/15 11:28:09 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.26 1995/01/04 10:34:47 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -102,7 +102,7 @@ static char *include_table[] =
   "bbs",
   "bbs/*.[ch]",
   "bbs/Makefile",
-  "bbs/help.???",
+  "bbs/help.*",
   "cc",
   "convers",
   "convers/*.[ch]",
