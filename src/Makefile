@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.19 1992/08/24 10:49:13 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.20 1992/08/25 09:28:59 deyke Exp $
 
 DEFINES       = -DUNIX -D_HPUX_SOURCE
 
@@ -275,9 +275,9 @@ SRCS          = alloc.c \
 
 all_test:
 		@if [ `uname -n` = mdddhd -o `uname -n` = deyke2 ] ; then \
-		  make CC=c89 OPTIMIZE=-g all  ; \
+		  make 'CC=c89' 'OPTIMIZE=-g'    all ; \
 		else \
-		  make        OPTIMIZE=-Os all ; \
+		  make          'OPTIMIZE=-O -s' all ; \
 		fi
 
 all:            $(PROGRAM)

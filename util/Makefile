@@ -1,13 +1,12 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.10 1992/08/24 19:09:33 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.11 1992/08/25 09:29:40 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
-CFLAGS     = -Os
+CFLAGS     = -O -s
 SHELL      = /bin/sh
 
 .IGNORE:
 
 all:    cnet netupdc netupds path pop2d udbm vitals
-	rm -f bridge*
 
 cnet:   cnet.c $(BUILDSADDR)
 	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
