@@ -1,38 +1,8 @@
 -------------------------------------------------------------------------------
 
-- purify & test flexnet
-
 - change ipfilter man page
 
-- Beobachtung: Peer fehlt in der Dest Liste
-
 - delete peer only after 2nd poll timeout
-
--------------------------------------------------------------------------------
-
-dk5sg> flexnet dest
-Call          Neighbors
-DK0HU         DL1SBL-1 (2)
-DB0SAO        DL1SBL-1 (3)
-dk5sg> fl qu db0sao
-Destination "db0sao" not found
-dk5sg>
-
--------------------------------------------------------------------------------
-
-flexnet dest
-Call          Neighbors
-DK0HU         DL1SBL-1 (2)
-DB0SAO        DL1SBL-1 (3)
-dk5sg> fl qu DB0SAO
-Could not send query to DL1SBL-1
-dk5sg> ax sta
-   &AXCB Rcv-Q Unack  Rt  Srtt  State          Remote
-40060fe0     0   0/7   0   183  Connected      DK5SG->DL1SBL-1
-400719e8     0   0/1   0     0  Connected      DK5SG->DG1SEK-15
-dk5sg>
-
--------------------------------------------------------------------------------
 
 - TCP with closed windows: spinning
 

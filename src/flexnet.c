@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.6 1994/11/13 21:48:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.7 1994/11/21 11:36:29 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -309,7 +309,8 @@ static struct ax25_cb *setaxp(struct peer *pp)
 	}
 	if (pp->id != pp->axp->id) {
 		pp->id = pp->axp->id;
-		pp->token = NOTOKEN;
+		pp->token = memcmp(pp->axp->hdr.dest, pp->axp->hdr.source, AXALEN) < 0 ?
+			NOTOKEN : HAVETOKEN;
 		clear_all_via_peer(pp, 0);
 		send_init(pp);
 		send_poll(pp);
@@ -708,7 +709,8 @@ static int decode_query_packet(struct mbuf *bp, struct querypkt *qp)
 		chr = PULLCHAR(&bp);
 		if ((chr == -1 || chr == ' ' || chr == '\r') && cp != qp->bufs[qp->numcalls]) {
 			*cp = 0;
-			if (setcall(qp->destcall, qp->bufs[qp->numcalls]))
+			if (strcmp(qp->bufs[qp->numcalls], "???") &&
+			    setcall(qp->destcall, qp->bufs[qp->numcalls]))
 				goto discard;
 			qp->numcalls++;
 			if (!gotsrc) {
@@ -724,7 +726,8 @@ static int decode_query_packet(struct mbuf *bp, struct querypkt *qp)
 		} else if ((chr >= '0' && chr <= '9') ||
 			   (chr >= 'A' && chr <= 'Z') ||
 			   (chr >= 'a' && chr <= 'z') ||
-			   (chr == '-')) {
+			   (chr == '-') ||
+			   (chr == '?')) {
 			if (qp->numcalls >= MAXQCALLS)
 				goto discard;
 			*cp++ = chr;
@@ -932,7 +935,8 @@ static void recv_init(struct peer *pp, struct mbuf *bp)
 	if ((chr = PULLCHAR(&bp)) != -1)
 		pp->call[ALEN + 1] = ((chr << 1) & SSID) | 0x60;
 	free_p(bp);
-	pp->token = NOTOKEN;
+	pp->token = memcmp(pp->axp->hdr.dest, pp->axp->hdr.source, AXALEN) < 0 ?
+		NOTOKEN : HAVETOKEN;
 	clear_all_via_peer(pp, 0);
 }
 
@@ -1058,29 +1062,35 @@ static void recv_qury(struct peer *pp, struct mbuf *bp)
 	for (pd = Dests; pd; pd = pd->next)
 		if (addrmatch(querypkt.destcall, pd->call))
 			break;
-	if (!pd)
-		return;
-	if (!(pn = find_best_neighbor(pd)))
-		return;
-	if (!(rp = ax_routeptr(pn->peer->call, 0)))
-		return;
-	for (n = 0; rp; rp = rp->digi)
-		rp_stack[n++] = rp;
-	while (--n >= 0) {
-		if (querypkt.numcalls >= MAXQCALLS)
-			return;
-		cp = querypkt.bufs[querypkt.numcalls++];
-		pax25(cp, rp_stack[n]->target);
-		if (n > 0)
-			for (; (*cp = Xtolower(*cp)); cp++) ;
-	}
-	if (addreq(pd->call, pn->peer->call)) {
-		send_query_packet(FLEX_RSLT, &querypkt, querypkt.srccall);
+	if (pd &&
+	    (pn = find_best_neighbor(pd)) &&
+	    (rp = ax_routeptr(pn->peer->call, 0))) {
+		for (n = 0; rp; rp = rp->digi)
+			rp_stack[n++] = rp;
+		while (--n >= 0) {
+			if (querypkt.numcalls >= MAXQCALLS)
+				return;
+			cp = querypkt.bufs[querypkt.numcalls++];
+			pax25(cp, rp_stack[n]->target);
+			if (n > 0)
+				for (; (*cp = Xtolower(*cp)); cp++) ;
+		}
+		if (addreq(pd->call, pn->peer->call)) {
+			send_query_packet(FLEX_RSLT, &querypkt, querypkt.srccall);
+		} else {
+			if (querypkt.numcalls >= MAXQCALLS)
+				return;
+			pax25(querypkt.bufs[querypkt.numcalls++], querypkt.destcall);
+			send_query_packet(FLEX_QURY, &querypkt, pn->peer->call);
+		}
 	} else {
 		if (querypkt.numcalls >= MAXQCALLS)
 			return;
+		strcpy(querypkt.bufs[querypkt.numcalls++], "???");
+		if (querypkt.numcalls >= MAXQCALLS)
+			return;
 		pax25(querypkt.bufs[querypkt.numcalls++], querypkt.destcall);
-		send_query_packet(FLEX_QURY, &querypkt, pn->peer->call);
+		send_query_packet(FLEX_RSLT, &querypkt, querypkt.srccall);
 	}
 }
 

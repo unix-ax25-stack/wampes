@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/Attic/netupd.mm,v 1.2 1994/11/18 11:36:54 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/Attic/netupd.mm,v 1.3 1994/11/21 11:36:38 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
@@ -19,13 +19,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^Net Update Reference Manual^-\\\\nP-^Version 941118" \" Page footer
+.PF "^Net Update Reference Manual^-\\\\nP-^Version 941121" \" Page footer
 .\"
 .S 30
 .ce
 \fBNet Update Reference Manual\fP
 .ce
-Version 941118
+Version 941121
 .S
 .SP 2
 .S 15

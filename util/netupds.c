@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.21 1994/11/13 21:48:38 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.22 1994/11/21 11:36:40 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -16,6 +16,7 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #ifdef _AIX
@@ -77,8 +78,8 @@ struct file {
 };
 
 static char *inpptr;
-static char inpbuf[4 * 1024];
-static char outbuf[4 * 1024];
+static char inpbuf[1024];
+static char outbuf[1024];
 static int fdinp;
 static int fdout;
 static int inpcnt;

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.2 1994/11/18 11:36:53 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.3 1994/11/21 11:36:37 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -26,6 +26,10 @@ struct headers {
 };
 
 static FILE *fileptr;
+static char title[1024];
+static int afterheader;
+static int aftertitle;
+static int centered;
 static int headercnt[HEADERLEVELS];
 static int headerlevel;
 static int linenum;
@@ -229,6 +233,37 @@ static char *escape_special_characters(char *outbuf, const char *inbuf)
 
 /*---------------------------------------------------------------------------*/
 
+static void print_contents(void)
+{
+
+  int lastlevel;
+  struct headers *hp;
+
+  if (headers) {
+    lastlevel = 0;
+    puts("<H2>Table of Contents</H2>");
+    for (hp = headers; hp; hp = hp->next) {
+      if (hp->in_toc) {
+	while (lastlevel < hp->level) {
+	  puts("<OL>");
+	  lastlevel++;
+	}
+	while (lastlevel > hp->level) {
+	  puts("</OL>");
+	  lastlevel--;
+	}
+	printf("<LI><A HREF=\"#%s\">%s</A>\n", hp->label, hp->text);
+      }
+    }
+    while (lastlevel > 0) {
+      puts("</OL>");
+      lastlevel--;
+    }
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void start_list(int type)
 {
   if (listlevel < LISTLEVELS)
@@ -360,10 +395,14 @@ static void dot_H(int argc, char **argv)
     headerstail = hp;
     break;
   case 2:
-    printf("<H%d><A NAME=\"%s\">%s %s", level, label, label + 1, argv[2]);
+    if (!afterheader) {
+      print_contents();
+      afterheader = 1;
+    }
+    printf("<H%d><A NAME=\"%s\">%s %s", level + 1, label, label + 1, argv[2]);
     if (argc > 3)
       printf("%s", argv[3]);
-    printf("</A></H%d>\n", level);
+    printf("</A></H%d>\n", level + 1);
     break;
   }
 }
@@ -440,6 +479,17 @@ static void dot_VL(int argc, char **argv)
 
 /*---------------------------------------------------------------------------*/
 
+static void dot_ce(int argc, char **argv)
+{
+  if (argc != 1) {
+    error("incorrect argument count");
+    return;
+  }
+  centered = 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void dot_nr(int argc, char **argv)
 {
   if (argc != 3) {
@@ -471,37 +521,6 @@ static void do_ignore(int argc, char **argv)
 static void not_implemented(int argc, char **argv)
 {
   error("not implemented");
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void print_contents(void)
-{
-
-  int lastlevel;
-  struct headers *hp;
-
-  if (headers) {
-    lastlevel = 0;
-    puts("<P>\nCONTENTS\n<P>");
-    for (hp = headers; hp; hp = hp->next) {
-      if (hp->in_toc) {
-	while (lastlevel < hp->level) {
-	  puts("<OL>");
-	  lastlevel++;
-	}
-	while (lastlevel > hp->level) {
-	  puts("</OL>");
-	  lastlevel--;
-	}
-	printf("<LI><A HREF=\"#%s\">%s</A>\n", hp->label, hp->text);
-      }
-    }
-    while (lastlevel > 0) {
-      puts("</OL>");
-      lastlevel--;
-    }
-  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -540,7 +559,7 @@ static const struct commandtable pass2_commandtable[] =
   {".TS", dot_TS},
   {".VL", dot_VL},
   {".\\\"", do_ignore},
-  {".ce", do_ignore},
+  {".ce", dot_ce},
   {".ds", do_ignore},
   {".ft", do_ignore},
   {".nr", dot_nr},
@@ -612,6 +631,9 @@ static void reset_state(void)
 {
   struct numbers *np;
 
+  afterheader = 0;
+  aftertitle = 0;
+  centered = 0;
   headerlevel = 0;
   linenum = 0;
   listlevel = 0;
@@ -651,6 +673,11 @@ int main(int argc, char **argv)
     linenum++;
     if (*line == '.')
       parse_command_line(line, pass1_commandtable);
+    else if (!*title) {
+      escape_special_characters(title, line);
+      while ((cp = strchr(title, '<')))
+	strcpy(cp, strchr(cp, '>') + 1);
+    }
   }
 
   rewind(fileptr);
@@ -659,16 +686,31 @@ int main(int argc, char **argv)
   pass = 2;
 
   puts("<HTML>");
+  if (*title) {
+    puts("<HEAD>");
+    printf("<TITLE>%s</TITLE>\n", title);
+    puts("</HEAD>");
+  }
   puts("<BODY>");
-  print_contents();
   while (fgets(line, sizeof(line), fileptr)) {
     if ((cp = strchr(line, '\n')))
       *cp = 0;
     linenum++;
     if (*line == '.')
       parse_command_line(line, pass2_commandtable);
-    else
-      puts(escape_special_characters(buf, line));
+    else {
+      if (!aftertitle) {
+	printf("<H1>%s</H1>\n", title);
+	aftertitle = 1;
+	centered = 0;
+      } else {
+	puts(escape_special_characters(buf, line));
+	if (centered) {
+	  puts("<BR>");
+	  centered = 0;
+	}
+      }
+    }
   }
   puts("</BODY>");
   puts("</HTML>");
