@@ -1,4 +1,4 @@
-/* @(#) $Id: ethertap.c,v 1.5 2002/06/19 12:10:40 dl9sau Exp $ */
+/* @(#) $Id: ethertap.c,v 1.6 2002/06/19 12:19:41 dl9sau Exp $ */
 
 /* the ethertap device. now with TUN/TAP support (by dl9sau) */
 
@@ -42,11 +42,12 @@
 #define LINUX_VERSION_CODE KERNEL_VERSION(2,4,0)-1
 #endif
 
-#include <net/if.h>
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0)
 #define TRY_TUNTAP 1
+#include <net/if.h>
 #include <linux/if_tun.h>
+#else
+#include <linux/if.h>
 #endif
 
 #endif /* linux */
