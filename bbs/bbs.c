@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.69 1989/06/17 14:12:11 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.70 1989/06/17 15:15:28 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -1664,7 +1664,7 @@ char  *host;
       for (h = p; *p && !isspace(uchar(*p)); p++) ;
       if (*p) *p++ = '\0';
       if (!strcmp(h, host)) {
-	addr = p;
+	addr = strtrim(p);
 	break;
       }
     }
