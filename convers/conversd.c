@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.45 1993/07/17 20:35:25 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.46 1993/07/18 19:52:21 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -73,13 +73,13 @@ extern int optind;
 #include "md5.h"
 #endif
 
+#define HOLDTIME        (  30*60)
 #define MAX_CHANNEL     32767
 #define MAX_IDLETIME    (  60*60)
 #define MAX_UNKNOWNTIME (  15*60)
 #define MAX_WAITTIME    (3*60*60)
 #define MIN_WAITTIME    (     60)
 #define NO_NOTE         "@"
-#define STRINGHOLDTIME  (  30*60)
 #define UNIQMARKER      (' ' | 0x80)
 
 #define NULLCHAR        ((char *) 0)
@@ -164,7 +164,7 @@ static struct user *userptr(const char *name, struct host *hp);
 static void trace(struct link *lp, const char *string);
 static void send_string(struct link *lp, const char *string);
 static int queuelength(const struct mbuf *mp);
-static void free_closed_links(void);
+static void free_resources(void);
 static char *getarg(char *line, int all);
 static char *formatline(const char *prefix, const char *text);
 static char *localtimestring(long utc);
@@ -230,7 +230,7 @@ static int is_string_unique(const char *string)
   MD5Final(&mdContext);
   i = mdContext.digest[0] & 0xff;
 
-  while ((sp = strings[i]) && sp->s_time + STRINGHOLDTIME < currtime) {
+  while ((sp = strings[i]) && sp->s_time + HOLDTIME < currtime) {
     strings[i] = sp->s_next;
     free(sp);
   }
@@ -311,7 +311,7 @@ static int is_string_unique(const char *string)
   }
   i = crc & 0xff;
 
-  while ((sp = strings[i]) && sp->s_time + STRINGHOLDTIME < currtime) {
+  while ((sp = strings[i]) && sp->s_time + HOLDTIME < currtime) {
     strings[i] = sp->s_next;
     free(sp);
   }
@@ -471,12 +471,14 @@ static int queuelength(const struct mbuf *mp)
 
 /*---------------------------------------------------------------------------*/
 
-static void free_closed_links(void)
+static void free_resources(void)
 {
 
   struct link **lpp;
   struct link *lp;
   struct mbuf *mp;
+  struct user **upp;
+  struct user *up;
 
   for (lpp = &links; lp = *lpp; ) {
     if (lp->l_user || lp->l_host) {
@@ -494,6 +496,16 @@ static void free_closed_links(void)
     } else
       lpp = &lp->l_next;
   }
+
+  for (upp = &users; up = *upp; )
+    if (up->u_channel < 0 && up->u_stime + HOLDTIME < currtime) {
+      *upp = up->u_next;
+      free(up->u_name);
+      free(up->u_note);
+      free(up);
+    } else
+      upp = &up->u_next;
+
 }
 
 /*---------------------------------------------------------------------------*/
@@ -703,11 +715,12 @@ static void send_msg_to_user(const char *fromname, const char *toname, const cha
     sprintf(prefix, "%s\n", text);
     formatted_line = prefix;
   }
-  for (up = users; up; up = up->u_next) {
-    lp = up->u_link;
-    if (!lp->l_locked && !strcmp(up->u_name, toname))
-      send_string(lp, lp->l_host ? host_buffer : formatted_line);
-  }
+  for (up = users; up; up = up->u_next)
+    if (up->u_channel >= 0) {
+      lp = up->u_link;
+      if (!lp->l_locked && !strcmp(up->u_name, toname))
+	send_string(lp, lp->l_host ? host_buffer : formatted_line);
+    }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -731,11 +744,12 @@ static void send_msg_to_channel(const char *fromname, int channel, char *text, i
   if (cp = strchr(text, UNIQMARKER)) *cp = 0;
   sprintf(prefix, "<%s>:", fromname);
   formatted_line = formatline(prefix, text);
-  for (up = users; up; up = up->u_next) {
-    lp = up->u_link;
-    if (!lp->l_locked && up->u_channel == channel)
-      send_string(lp, lp->l_host ? host_buffer : formatted_line);
-  }
+  for (up = users; up; up = up->u_next)
+    if (up->u_channel >= 0) {
+      lp = up->u_link;
+      if (!lp->l_locked && up->u_channel == channel)
+	send_string(lp, lp->l_host ? host_buffer : formatted_line);
+    }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -774,7 +788,7 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
     }
 
   for (up = users; up; up = up->u_next)
-    if (up->u_link->l_user && !strcmp(up->u_name, toname)) {
+    if (up->u_channel >= 0 && up->u_link->l_user && !strcmp(up->u_name, toname)) {
       sprintf(buffer, invitetext, fromname, localtimestring(currtime), channel);
       send_string(up->u_link, buffer);
       clear_locks();
@@ -784,7 +798,7 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
     }
 
   for (up = users; up; up = up->u_next)
-    if (!up->u_link->l_locked && !strcmp(up->u_name, toname)) {
+    if (up->u_channel >= 0 && !up->u_link->l_locked && !strcmp(up->u_name, toname)) {
       send_string(up->u_link, host_buffer);
       return;
     }
@@ -892,7 +906,6 @@ static void close_link(struct link *lp)
   int fd;
   struct host *hp;
   struct peer *pp;
-  struct user **upp;
   struct user *up;
 
   lp->l_user = 0;
@@ -918,19 +931,19 @@ static void close_link(struct link *lp)
       pp->p_link = 0;
     }
 
-  for (upp = &users; up = *upp; )
+  for (up = users; up; up = up->u_next)
     if (up->u_link == lp) {
-      if (up->u_seq) up->u_seq++;
+      if (up->u_seq) {
+	up->u_seq++;
+	if (up->u_host == &my && up->u_seq < currtime) up->u_seq = currtime;
+      }
+      up->u_link = 0;
       up->u_oldchannel = up->u_channel;
       up->u_channel = -1;
+      up->u_stime = currtime;
       clear_locks();
       send_user_change_msg(up);
-      *upp = up->u_next;
-      free(up->u_name);
-      free(up->u_note);
-      free(up);
-    } else
-      upp = &up->u_next;
+    }
 
   for (hp = hosts; hp; hp = hp->h_next)
     if (hp->h_link == lp) hp->h_link = 0;
@@ -1090,7 +1103,7 @@ static void msg_command(struct link *lp)
   toname = getarg(NULLCHAR, 0);
   text = getarg(NULLCHAR, 1);
   for (up = users; up; up = up->u_next)
-    if (!strcmp(up->u_name, toname)) {
+    if (up->u_channel >= 0 && !strcmp(up->u_name, toname)) {
       send_msg_to_user(lp->l_user->u_name, toname, text, 1);
       return;
     }
@@ -1185,7 +1198,7 @@ static void name_command(struct link *lp)
   if (lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.45 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.46 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1212,16 +1225,17 @@ static void users_command(struct link *lp)
   struct user *up;
 
   send_string(lp, "User     Host     Channel   Time Personal note\n");
-  for (up = users; up; up = up->u_next) {
-    sprintf(buffer,
-	    "%-8.8s %-8.8s %7d %s %s\n",
-	    up->u_name,
-	    up->u_host->h_name,
-	    up->u_channel,
-	    localtimestring(up->u_stime),
-	    strcmp(up->u_note, NO_NOTE) ? up->u_note : "");
-    send_string(lp, buffer);
-  }
+  for (up = users; up; up = up->u_next)
+    if (up->u_channel >= 0) {
+      sprintf(buffer,
+	      "%-8.8s %-8.8s %7d %s %s\n",
+	      up->u_name,
+	      up->u_host->h_name,
+	      up->u_channel,
+	      localtimestring(up->u_stime),
+	      strcmp(up->u_note, NO_NOTE) ? up->u_note : "");
+      send_string(lp, buffer);
+    }
   send_string(lp, "***\n");
 }
 
@@ -1238,7 +1252,8 @@ static void who_command(struct link *lp)
   send_string(lp, "Channel Users\n");
   nextchannel = MAX_CHANNEL + 1;
   for (up = users; up; up = up->u_next)
-    if (up->u_channel < nextchannel) nextchannel = up->u_channel;
+    if (up->u_channel >= 0 && up->u_channel < nextchannel)
+      nextchannel = up->u_channel;
   while (nextchannel <= MAX_CHANNEL) {
     channel = nextchannel;
     nextchannel = MAX_CHANNEL + 1;
@@ -1313,10 +1328,11 @@ static void h_host_command(struct link *lp)
   sprintf(buffer, "/\377\200HOST %s\n", my.h_name);
   send_string(lp, buffer);
 
-  for (up = users; up; up = up->u_next) {
-    sprintf(buffer, "/\377\200USER %s %s %ld %d %d %s\n", up->u_name, up->u_host->h_name, up->u_seq, -1, up->u_channel, up->u_note);
-    send_string(lp, buffer);
-  }
+  for (up = users; up; up = up->u_next)
+    if (up->u_channel >= 0) {
+      sprintf(buffer, "/\377\200USER %s %s %ld %d %d %s\n", up->u_name, up->u_host->h_name, up->u_seq, -1, up->u_channel, up->u_note);
+      send_string(lp, buffer);
+    }
 
 }
 
@@ -1362,7 +1378,6 @@ static void h_user_command(struct link *lp)
   int newchannel;
   long seq;
   struct host *hp;
-  struct user **upp;
   struct user *up;
 
   name = getarg(NULLCHAR, 0);
@@ -1374,9 +1389,10 @@ static void h_user_command(struct link *lp)
   newchannel = atoi(channel);
   hp = hostptr(host);
   up = userptr(name, hp);
-  if (!seq)
+  if (!seq) {
+    if (up->u_link != lp) return;
     seq = up->u_seq;
-  else if (seq < up->u_seq)
+  } else if (seq < up->u_seq)
     return;
   note = getarg(NULLCHAR, 1);
   if (!*note) note = up->u_note;
@@ -1388,25 +1404,19 @@ static void h_user_command(struct link *lp)
       sprintf(buffer, "/\377\200USER %s %s %ld %d %d %s\n", name, host, up->u_seq, newchannel, up->u_channel, up->u_note);
       send_string(lp, buffer);
     } else {
+      hp->h_link = lp;
+      up->u_link = (up->u_channel >= 0) ? lp : 0;
       up->u_oldchannel = up->u_channel;
       up->u_channel = newchannel;
       if (strcmp(up->u_note, note)) {
 	free(up->u_note);
 	up->u_note = strdup(note);
       }
-      up->u_link = hp->h_link = lp;
+      if ((up->u_oldchannel ^ up->u_channel) < 0) up->u_stime = currtime;
       send_user_change_msg(up);
     }
   }
 
-  for (upp = &users; up = *upp; )
-    if (up->u_channel < 0) {
-      *upp = up->u_next;
-      free(up->u_name);
-      free(up->u_note);
-      free(up);
-    } else
-      upp = &up->u_next;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1728,7 +1738,7 @@ int main(int argc, char **argv)
 
   for (; ; ) {
     waitpid(-1, &status, WNOHANG);
-    free_closed_links();
+    free_resources();
     check_files_changed();
     connect_peers();
     actread = chkread;

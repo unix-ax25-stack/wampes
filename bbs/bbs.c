@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.60 1993/07/17 20:34:32 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.61 1993/07/18 19:52:54 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -418,29 +418,37 @@ static char *rfc822_date(long gmt)
 static long parse_date(const char *str)
 {
 
+  static int mdays[] = {
+    31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+  };
+
   char *p;
   char monthstr[4];
-  long t;
-  struct tm tm;
+  int dd;
+  int h;
+  int i;
+  int m;
+  int mm;
+  int s;
+  int yy;
+  long jdate;
 
   if (sscanf((char *) str,
 	     "%*s %d %3s %d %d:%d:%d",
-	     &tm.tm_mday,
-	     monthstr,
-	     &tm.tm_year,
-	     &tm.tm_hour,
-	     &tm.tm_min,
-	     &tm.tm_sec) != 6) return -1;
+	     &dd, monthstr, &yy, &h, &m, &s) != 6) return -1;
+  if (yy <= 37) yy += 2000;
+  if (yy <= 99) yy += 1900;
   if (strlen(monthstr) != 3) return -1;
   p = strstr(monthnames, monthstr);
   if (!p) return -1;
-  tm.tm_mon = (p - monthnames) / 3;
-  tm.tm_isdst = 0;
-#if defined __hpux || defined linux
-  t = mktime(&tm);
-  if (t != -1) return t - timezone;
-#endif
-  return -1;
+  mm = (p - monthnames) / 3;
+  mdays[1] = 28 + (yy % 4 == 0 && (yy % 100 || yy % 400 == 0));
+  if (yy < 1970 || yy > 2037 || dd < 1 || dd > mdays[mm]) return -1;
+  jdate = dd - 1;
+  for (i = 0; i < mm; i++) jdate += mdays[i];
+  for (i = 1970; i < yy; i++) jdate += 365 + (i % 4 == 0);
+  jdate *= (24L * 60L * 60L);
+  return jdate + 3600 * h + 60 * m + s;
 }
 
 /*---------------------------------------------------------------------------*/

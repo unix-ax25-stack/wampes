@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.21 1993/07/17 20:35:25 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.22 1993/07/18 19:52:21 deyke Exp $
 
 CFLAGS     = -I../lib
 OS         = "`uname -s`"
@@ -25,7 +25,7 @@ all:;   @if [ $(OS) = HP-UX ] ; then \
 		'LIBS=../lib/libutil.a' \
 		_all; \
 	elif [ $(OS) = SunOS ] ; then \
-		if [ -x /usr/lang/acc ] ; then \
+		(if [ -x /usr/lang/acc ] ; then \
 			make -i \
 			'CC=acc' \
 			'CFLAGS=-O -s -I../lib' \
@@ -37,7 +37,7 @@ all:;   @if [ $(OS) = HP-UX ] ; then \
 			'CFLAGS=-O -s -I../lib' \
 			'LIBS=../lib/libutil.a -lsocket -lnsl' \
 			_all; \
-		fi \
+		fi) \
 	elif [ $(OS) = ULTRIX ] ; then \
 		make -i \
 		'CC=gcc' \
