@@ -1,6 +1,7 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.22 1993/07/18 19:52:21 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.23 1993/08/01 18:07:21 deyke Exp $
 
 CFLAGS     = -I../lib
+MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
 OS         = "`uname -s`"
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
@@ -75,6 +76,7 @@ conversd: conversd.o
 install: /usr/local/bin/convers /tcp/conversd
 
 /usr/local/bin/convers: convers
+	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
 

@@ -1,7 +1,8 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.22 1993/07/18 19:52:54 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.23 1993/08/01 18:07:29 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
+MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
 OS         = "`uname -s`"
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
@@ -87,6 +88,7 @@ sfstat: sfstat.o
 install: /usr/local/bin/bbs findpath killdup /usr/local/bin/sfstat /users/bbs/help
 
 /usr/local/bin/bbs: bbs
+	$(MKDIR)
 	rm -f /usr/local/bin/BBS
 	$(RMTARGET)
 	cp $? $@
@@ -94,10 +96,12 @@ install: /usr/local/bin/bbs findpath killdup /usr/local/bin/sfstat /users/bbs/he
 	ln $@ /usr/local/bin/BBS
 
 /usr/local/bin/sfstat: sfstat
+	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
 
 /users/bbs/help: help
+	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
 

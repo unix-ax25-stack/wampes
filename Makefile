@@ -1,6 +1,7 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.12 1993/07/17 20:33:11 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.13 1993/08/01 18:07:12 deyke Exp $
 
-PATH = /opt/SUNWspro/bin:/usr/lang:/bin:/usr/bin:/usr/ccs/bin:/usr/ucb:/usr/contrib/bin:/usr/local/bin:/usr/local/etc
+PATH       = /opt/SUNWspro/bin:/usr/lang:/bin:/usr/bin:/usr/ccs/bin:/usr/ucb:/usr/contrib/bin:/usr/local/bin:/usr/local/etc
+MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
 
 all:;   chmod 755 cc
 	-(dir=lib    ; if [ -d $$dir ]; then cd $$dir; make -i all install; fi)
@@ -19,6 +20,7 @@ _all:   /tcp/hostaddr.pag
 	if [ -f /tcp/hostaddr.db ]; then ln /tcp/hostaddr.db $@; fi
 
 /usr/local/lib/users: users
+	$(MKDIR)
 	cp users /usr/local/lib && udbm
 
 clean:;

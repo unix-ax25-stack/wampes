@@ -1,6 +1,7 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.33 1993/07/18 19:53:06 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.34 1993/08/01 18:07:38 deyke Exp $
 
 CFLAGS     = -I../lib
+MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
 OS         = "`uname -s`"
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
@@ -114,22 +115,27 @@ install: \
 	/usr/local/etc/udbm
 
 /usr/local/bin/cnet: cnet
+	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
 
 /usr/local/bin/md5: md5
+	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
 
 /usr/local/etc/mkhostdb: mkhostdb
+	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
 
 /usr/local/bin/path: path
+	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
 
 /usr/local/etc/udbm: udbm
+	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
 

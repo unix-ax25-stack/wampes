@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/start,v 1.1 1993/05/28 06:51:07 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/start,v 1.2 1993/08/01 18:07:22 deyke Exp $
 
 dir=/tmp/c
 
@@ -21,7 +21,7 @@ mkdir $dir
 host=""
 for i in `cat testconfig` ; do
 	if [ $i = ";" ] ; then
-		conversd -a unix:$dir/$host -c $dir/$host.cnf -d &
+		conversd -a unix:$dir/$host -c $dir/$host.cnf -dd &
 		echo kill -9 $! >> end
 		echo $host started
 		sleep 2

@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.48 1993/07/28 21:19:06 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.49 1993/08/01 18:07:21 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -938,7 +938,7 @@ static void close_link(struct link *lp)
     }
 
   for (up = users; up; up = up->u_next)
-    if (up->u_link == lp) {
+    if (up->u_channel >= 0 && up->u_link == lp) {
       if (up->u_seq) {
 	up->u_seq++;
 	if (up->u_host == &my && up->u_seq < currtime) up->u_seq = currtime;
@@ -1201,10 +1201,10 @@ static void name_command(struct link *lp)
   if (++up->u_seq < currtime) up->u_seq = currtime;
   lpold = up->u_link;
   up->u_link = lp;
-  if (lpold) close_link(lpold);
+  if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.48 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.49 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1391,27 +1391,30 @@ static void h_user_command(struct link *lp)
   seq = atol(getarg(NULLCHAR, 0));
   getarg(NULLCHAR, 0); /*** oldchannel is ignored, protocol has changed ***/
   channel = getarg(NULLCHAR, 0);
-  if (!*channel) return;
+  if (!*channel) {
+    if (debug >= 2) printf("*** Syntax error: ignored.\n");
+    return;
+  }
   newchannel = atoi(channel);
   hp = hostptr(host);
   up = userptr(name, hp);
-  if (!seq) {
-    if (up->u_link && up->u_link != lp) return;
-    seq = up->u_seq;
-  } else if (seq < up->u_seq)
-    return;
   note = getarg(NULLCHAR, 1);
   if (!*note) note = up->u_note;
 
-  if (up->u_channel != newchannel || newchannel >= 0 && strcmp(up->u_note, note)) {
+  if ((seq > up->u_seq) ||
+      (seq == 0 &&
+       up->u_seq == 0 &&
+       (!up->u_link || lp == up->u_link) &&
+       (newchannel != up->u_channel || newchannel >= 0 && strcmp(note, up->u_note)))) {
     up->u_seq = seq;
     if (hp == &my) {
+      if (debug >= 2) printf("*** Got info about my own user: rejected.\n");
       if (++up->u_seq < currtime) up->u_seq = currtime;
       sprintf(buffer, "/\377\200USER %s %s %ld %d %d %s\n", name, host, up->u_seq, newchannel, up->u_channel, up->u_note);
       send_string(lp, buffer);
     } else {
-      hp->h_link = lp;
-      up->u_link = (newchannel >= 0) ? lp : 0;
+      if (debug >= 2) printf("*** New user info: accepted.\n");
+      up->u_link = hp->h_link = lp;
       up->u_oldchannel = up->u_channel;
       up->u_channel = newchannel;
       if (strcmp(up->u_note, note)) {
@@ -1421,6 +1424,8 @@ static void h_user_command(struct link *lp)
       if ((up->u_oldchannel ^ up->u_channel) < 0) up->u_stime = currtime;
       send_user_change_msg(up);
     }
+  } else {
+    if (debug >= 2) printf("*** Bad sequencer or no change: ignored.\n");
   }
 
 }
