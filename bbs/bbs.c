@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.68 1989/06/14 06:45:36 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.69 1989/06/17 14:12:11 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -101,16 +101,6 @@ static int  superuser;
 static struct seq seq;
 static struct utsname utsname;
 
-static char  *hosts[] = {
-  "db0aaa",
-  "db0cz",
-  "db0gv",
-  "db0ie",
-  "db0kg",
-  "db0sao",
-  NULL
-};
-
 /*---------------------------------------------------------------------------*/
 
 static void errorstop(line)
@@ -201,18 +191,21 @@ char  *s;
   fflush(stdout);
   for (p = s; ; ) {
     *p = '\0';
-    if (ferror(stdin) || feof(stdin)) return NULL;
     lastchr = chr;
-    switch (chr = getchar()) {
+    chr = getchar();
+    if (ferror(stdin) || feof(stdin)) return NULL;
+    switch (chr) {
     case EOF:
-      if (p == s) return NULL;
+      return (p == s) ? NULL : strtrim(s);
+    case '\0':
+      break;
     case '\r':
       return strtrim(s);
     case '\n':
       if (lastchr != '\r') return strtrim(s);
       break;
     default:
-      if (chr) *p++ = chr;
+      *p++ = chr;
     }
   }
 }
@@ -1654,13 +1647,43 @@ static void z_cmd()
 
 /*---------------------------------------------------------------------------*/
 
+static char  *connect_addr(host)
+char  *host;
+{
+
+  FILE * fp;
+  char  *addr;
+  char  *h;
+  char  *p;
+  static char  line[1024];
+
+  addr = 0;
+  if (fp = fopen("config", "r")) {
+    while (fgets(line, sizeof(line), fp)) {
+      for (p = line; isspace(uchar(*p)); p++) ;
+      for (h = p; *p && !isspace(uchar(*p)); p++) ;
+      if (*p) *p++ = '\0';
+      if (!strcmp(h, host)) {
+	addr = p;
+	break;
+      }
+    }
+    fclose(fp);
+  }
+  return addr;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void connect_bbs()
 {
 
+  char  *address;
   int  addrlen;
   int  fd;
   struct sockaddr *addr;
 
+  if (!(address = connect_addr(loginname))) exit(1);
   if (!(addr = build_sockaddr("unix:/tcp/sockets/netcmd", &addrlen))) exit(1);
   if ((fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) exit(1);
   if (connect(fd, addr, addrlen)) exit(1);
@@ -1669,7 +1692,7 @@ static void connect_bbs()
   close(fd);
   fdopen(0, "r+");
   fdopen(1, "r+");
-  printf("connect tcp %s telnet\n", loginname);
+  printf("connect %s\n", address);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1744,7 +1767,6 @@ char  **argv;
 #define RMAIL 1
 #define RNEWS 2
 
-  char  **hp;
   char  *cp;
   char  *dir = WRKDIR;
   int  c;
@@ -1763,8 +1785,6 @@ char  **argv;
   cp = getenv("LOGNAME");
   if (!cp || !*cp) halt();
   strlwc(strcpy(loginname, cp));
-  for (hp = hosts; *hp; hp++)
-    if (calleq(*hp, loginname)) hostmode = 1;
   while ((c = getopt(argc, argv, "df:mn")) != EOF)
     switch (c) {
     case 'd':
@@ -1798,6 +1818,7 @@ char  **argv;
   }
   mkdir(dir, 0755);
   if (chdir(dir)) halt();
+  if (connect_addr(loginname)) hostmode = 1;
   if ((findex = open("index", O_RDWR | O_CREAT, 0644)) < 0) halt();
   mkdir("seq", 0755);
   get_seq();
