@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.4 1990/09/11 13:46:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.5 1990/10/12 19:26:58 deyke Exp $ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -13,7 +13,7 @@
 #include "tcp.h"
 #include "transport.h"
 
-extern int16 lport;
+extern int16 Lport;
 
 /*---------------------------------------------------------------------------*/
 
@@ -66,7 +66,7 @@ int  mode, *last_chr;
 /*---------------------------------------------------------------------------*/
 
 static void transport_recv_upcall_ax25(cp, cnt)
-struct axcb *cp;
+struct ax25_cb *cp;
 int16 cnt;
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
@@ -96,7 +96,7 @@ int16 cnt;
 /*---------------------------------------------------------------------------*/
 
 static void transport_send_upcall_ax25(cp, cnt)
-struct axcb *cp;
+struct ax25_cb *cp;
 int16 cnt;
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
@@ -126,7 +126,7 @@ int16 cnt;
 /*---------------------------------------------------------------------------*/
 
 static void transport_state_upcall_ax25(cp, oldstate, newstate)
-struct axcb *cp;
+struct ax25_cb *cp;
 int  oldstate, newstate;
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
@@ -151,10 +151,10 @@ char  oldstate, newstate;
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   switch (newstate) {
-  case CLOSE_WAIT:
+  case TCP_CLOSE_WAIT:
     close_tcp(cp);
     break;
-  case CLOSED:
+  case TCP_CLOSED:
     if (tp->s_upcall) (*tp->s_upcall)(tp);
     break;
   }
@@ -162,7 +162,7 @@ char  oldstate, newstate;
 
 /*---------------------------------------------------------------------------*/
 
-static struct axcb *transport_open_ax25(address, tp)
+static struct ax25_cb *transport_open_ax25(address, tp)
 char  *address;
 struct transport_cb *tp;
 {
@@ -223,22 +223,22 @@ char  *address;
 struct transport_cb *tp;
 {
 
-  char  *strptr, tmp[1024];
+  char  *host, *port, tmp[1024];
   int  recv_tcp(), send_tcp(), space_tcp(), close_tcp(), del_tcp();
   struct socket fsocket, lsocket;
 
-  if (!(strptr = strtok(strcpy(tmp, address), " \t\r\n"))) return 0;
-  if (!(fsocket.address = resolve(strptr))) return 0;
-  if (!(strptr = strtok((char *) 0, " \t\r\n"))) return 0;
-  if (!(fsocket.port = tcp_portnum(strptr))) return 0;
+  if (!(host = strtok(strcpy(tmp, address), " \t\r\n"))) return 0;
+  if (!(port = strtok(NULLCHAR, " \t\r\n"))) return 0;
+  if (!(fsocket.address = resolve(host))) return 0;
+  if (!(fsocket.port = tcp_port_number(port))) return 0;
   lsocket.address = Ip_addr;
-  lsocket.port = lport++;
+  lsocket.port = Lport++;
   tp->recv = recv_tcp;
   tp->send = send_tcp;
   tp->send_space = space_tcp;
   tp->close = close_tcp;
   tp->del = del_tcp;
-  return open_tcp(&lsocket, &fsocket, TCP_ACTIVE, 0, transport_recv_upcall_tcp, transport_send_upcall_tcp, transport_state_upcall_tcp, 0, (char *) tp);
+  return open_tcp(&lsocket, &fsocket, TCP_ACTIVE, 0, transport_recv_upcall_tcp, transport_send_upcall_tcp, transport_state_upcall_tcp, 0, (int) tp);
 }
 
 /*---------------------------------------------------------------------------*/

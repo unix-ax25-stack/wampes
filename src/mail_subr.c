@@ -1,8 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_subr.c,v 1.2 1990/08/23 17:33:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_subr.c,v 1.3 1990/10/12 19:26:10 deyke Exp $ */
 
 #include <string.h>
 
-#include "global.h"
 #include "hpux.h"
 #include "mail.h"
 
@@ -11,7 +10,7 @@
 char  *get_user_from_path(path)
 char  *path;
 {
-  register char  *cp;
+  char  *cp;
 
   return (cp = strrchr(path, '!')) ? cp + 1 : path;
 }
@@ -22,7 +21,7 @@ char  *get_host_from_path(path)
 char  *path;
 {
 
-  register char  *cp;
+  char  *cp;
   static char  tmp[1024];
 
   strcpy(tmp, path);
@@ -33,14 +32,14 @@ char  *path;
 
 /*---------------------------------------------------------------------------*/
 
-void abort_mailjob(sp)
+void free_mailjobs(sp)
 struct mailsys *sp;
 {
   struct mailjob *jp;
 
-  while (jp = sp->nextjob) {
-    sp->nextjob = jp->nextjob;
-    free((char *) jp);
+  while (jp = sp->jobs) {
+    sp->jobs = jp->next;
+    free(jp);
   }
   sp->nexttime = currtime + RETRYTIME;
 }

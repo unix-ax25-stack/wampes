@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.5 1990/09/11 13:45:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.6 1990/10/12 19:25:48 deyke Exp $ */
 
 /* ICMP-related user commands */
 #include <stdio.h>
@@ -24,11 +24,11 @@
 /* Hash table list heads */
 struct ping *ping[PMOD];
 
-static int doicmpstat __ARGS((int argc, char *argv [], void *p));
-static int doicmptr __ARGS((int argc, char *argv [], void *p));
-static int doicmpec __ARGS((int argc, char *argv [], void *p));
+static int doicmpec __ARGS((int argc, char *argv[],void *p));
+static int doicmpstat __ARGS((int argc, char *argv[],void *p));
+static int doicmptr __ARGS((int argc, char *argv[],void *p));
+static int pingem __ARGS((int32 target,int seq,int id,int len));
 static void ptimeout __ARGS((void *p));
-static int pingem __ARGS((int32 target, int seq, int id, int len));
 static int16 hash_ping __ARGS((int32 dest));
 static struct ping *add_ping __ARGS((int32 dest));
 static void del_ping __ARGS((struct ping *pp));
@@ -105,17 +105,17 @@ void *p;
 	int16 len;
 
 	if(argc < 2){
-		printf("Host                Sent    Rcvd   %%   Srtt   Mdev  Length  Interval\n");
+		tprintf("Host                Sent    Rcvd   %%   Srtt   Mdev  Length  Interval\n");
 		for(i=0;i<PMOD;i++){
 			for(pp = ping[i];pp != NULLPING;pp = pp->next){
-				printf("%-16s",inet_ntoa(pp->target));
-				printf("%8lu%8lu",pp->sent,pp->responses);
-				printf("%4lu",
+				tprintf("%-16s",inet_ntoa(pp->target));
+				tprintf("%8lu%8lu",pp->sent,pp->responses);
+				tprintf("%4lu",
 				 (long)pp->responses * 100 / pp->sent);
-				printf("%7lu", pp->srtt);
-				printf("%7lu", pp->mdev);
-				printf("%8u", pp->len);
-				printf("%10lu\n",
+				tprintf("%7lu", pp->srtt);
+				tprintf("%7lu", pp->mdev);
+				tprintf("%8u", pp->len);
+				tprintf("%10lu\n",
 				 ((long)pp->timer.start * MSPTICK + 500) / 1000);
 			}
 		}
@@ -131,13 +131,13 @@ void *p;
 		return 0;
 	}
 	if((dest = resolve(argv[1])) == 0){
-		printf("Host %s unknown\n",argv[1]);
+		tprintf("Host %s unknown\n",argv[1]);
 		return 1;
 	}
 	if(argc > 2) {
 		len = atoi(argv[2]);
 		if (len < ICMPLEN) {
-			printf("packet size too small, minimum size is %d bytes\n", ICMPLEN);
+			tprintf("packet size too small, minimum size is %d bytes\n", ICMPLEN);
 			return 1;
 		}
 	} else
@@ -210,7 +210,7 @@ struct mbuf *bp;
 	if(pp == NULLPING || icmp->args.echo.id != REPEAT){
 		if(!Icmp_echo)
 			return;
-		printf(
+		tprintf(
 		  (rtt == -1) ?
 		    "%s: echo reply id %u seq %u\n" :
 		    "%s: echo reply id %u seq %u, %lu ms\n",

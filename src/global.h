@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.4 1990/09/11 13:45:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.5 1990/10/12 19:25:43 deyke Exp $ */
 
 #ifndef MAXINT16
 
@@ -118,9 +118,9 @@ int htoi __ARGS((char *));
 long htol __ARGS((char *));
 char *inbuf __ARGS((int16 port,char *buf,int16 cnt));
 int istate __ARGS((void));
-/* void log __ARGS((struct tcb *tcb,char *fmt, ...)); */
 void log();
-void *ltop __ARGS((long));
+/* void *ltop __ARGS((long)); */
+#define ltop(x) ((void *) x)
 void *mallocw __ARGS((unsigned nb));
 char *outbuf __ARGS((int16 port,char *buf,int16 cnt));
 /* long ptol __ARGS((void *)); */
@@ -135,8 +135,6 @@ char *strdup __ARGS((char *));
 int wildmat __ARGS((char *s,char *p,char **argv));
 
 #define tprintf printf
-#include <sys/types.h>          /* for HP-UX 6.5 compatibility */
-#define _SIZE_T                 /* for HP-UX 6.5 compatibility */
 #include <stdlib.h>
 #include <string.h>
 
@@ -195,6 +193,8 @@ extern char Version[];
 extern char Eol[];
 
 extern void (*Gcollect[])();
+
+extern int Shortstatus;
 
 #endif  /* MAXINT16 */
 

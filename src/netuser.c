@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.5 1990/09/11 13:46:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.6 1990/10/12 19:26:21 deyke Exp $ */
 
 /* Miscellaneous format conversion subroutines */
 
@@ -152,29 +152,29 @@ register int32 addr;
 
 /*---------------------------------------------------------------------------*/
 
-char  *psocket(s)
-struct socket *s;
+/* Convert hex-ascii string to long integer */
+long
+htol(s)
+char *s;
 {
-  static char  buf[64];
+	long ret;
+	char c;
 
-  sprintf(buf, "%s:%s", inet_ntoa(s->address), tcp_port(s->port));
-  return buf;
-}
-
-/*---------------------------------------------------------------------------*/
-
-long  htol(s)
-register char  *s;
-{
-
-  register int  c;
-  register long  l = 0;
-
-  while (isxdigit(c = (*s++ & 0x7f))) {
-    if (c > '9') c -= 7;
-    l = (l << 4) | (c & 0xf);
-  }
-  return l;
+	ret = 0;
+	while((c = *s++) != '\0'){
+		c &= 0x7f;
+		if(c == 'x')
+			continue;       /* Ignore 'x', e.g., '0x' prefixes */
+		if(c >= '0' && c <= '9')
+			ret = ret*16 + (c - '0');
+		else if(c >= 'a' && c <= 'f')
+			ret = ret*16 + (10 + c - 'a');
+		else if(c >= 'A' && c <= 'F')
+			ret = ret*16 + (10 + c - 'A');
+		else
+			break;
+	}
+	return ret;
 }
 char *
 pinet(s)

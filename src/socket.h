@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.1 1990/08/23 17:34:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.2 1990/10/12 19:26:38 deyke Exp $ */
 
 #ifndef SOCK_STREAM
 
@@ -55,8 +55,6 @@
 #define EMSGSIZE        16
 #define EALARM          17
 #define EABORT          18
-
-extern int Console;     /* Console socket number */
 
 /* Berkeley format socket address structures. These things were rather
  * poorly thought out, but compatibility is important (or so they say).

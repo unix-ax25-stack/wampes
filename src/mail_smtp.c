@@ -1,18 +1,17 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.3 1990/09/11 13:45:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.4 1990/10/12 19:26:09 deyke Exp $ */
 
 /* SMTP Mail Delivery Agent */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "global.h"
 #include "mbuf.h"
 #include "timer.h"
 #include "transport.h"
 #include "mail.h"
-
-static void mail_smtp_send_upcall();
 
 struct mesg {
   int  state;
@@ -31,6 +30,11 @@ struct mesg {
   struct transport_cb *tp;
 };
 
+static void mail_smtp_transaction __ARGS((struct mesg *mp));
+static void mail_smtp_recv_upcall __ARGS((struct transport_cb *tp, int cnt));
+static void mail_smtp_send_upcall __ARGS((struct transport_cb *tp, int cnt));
+static void mail_smtp_state_upcall __ARGS((struct transport_cb *tp));
+
 /*---------------------------------------------------------------------------*/
 
 static void mail_smtp_transaction(mp)
@@ -40,7 +44,7 @@ struct mesg *mp;
   char  tmp[1024];
   struct mailjob *jp;
 
-  jp = mp->sp->nextjob;
+  jp = mp->sp->jobs;
   if (mp->state == SMTP_OPEN_STATE && (*mp->buf < '0' || *mp->buf > '9')) return;
   if (*mp->buf == (mp->state == SMTP_DATA_STATE ? '3' : '2'))
     switch (mp->state) {
@@ -58,7 +62,7 @@ nextjob:
 	      get_host_from_path(jp->from));
       transport_send(mp->tp, qdata(tmp, strlen(tmp)));
       break;
-    case SMTP_MAIL_STATE :
+    case SMTP_MAIL_STATE:
       mp->state = SMTP_RCPT_STATE;
       sprintf(tmp,
 	      "rcpt to:<%s@%s>\n",
@@ -66,27 +70,29 @@ nextjob:
 	      get_host_from_path(jp->to));
       transport_send(mp->tp, qdata(tmp, strlen(tmp)));
       break;
-    case SMTP_RCPT_STATE :
+    case SMTP_RCPT_STATE:
       mp->state = SMTP_DATA_STATE;
       transport_send(mp->tp, qdata("data\n", 5));
       break;
     case SMTP_DATA_STATE:
-      mp->state = SMTP_SEND_STATE;
-      mp->fp = fopen(jp->dfile, "r");
-      fgets(tmp, sizeof(tmp), mp->fp);
-      mail_smtp_send_upcall(mp->tp, 80);
+      if (mp->fp = fopen(jp->dfile, "r")) {
+	mp->state = SMTP_SEND_STATE;
+	fgets(tmp, sizeof(tmp), mp->fp);
+	mail_smtp_send_upcall(mp->tp, transport_send_space(mp->tp));
+      } else {
+	mp->state = SMTP_QUIT_STATE;
+	transport_close(mp->tp);
+      }
       break;
     case SMTP_SEND_STATE:
       break;
     case SMTP_UNLK_STATE:
-      fclose(mp->fp);
-      mp->fp = 0;
-      unlink(jp->dfile);
       unlink(jp->cfile);
+      unlink(jp->dfile);
       unlink(jp->xfile);
-      mp->sp->nextjob = jp->nextjob;
-      free((char *) jp);
-      if (jp = mp->sp->nextjob) goto nextjob;
+      mp->sp->jobs = jp->next;
+      free(jp);
+      if (jp = mp->sp->jobs) goto nextjob;
       mp->state = SMTP_QUIT_STATE;
       transport_send(mp->tp, qdata("quit\n", 5));
       break;
@@ -109,12 +115,12 @@ nextjob:
 
 static void mail_smtp_recv_upcall(tp, cnt)
 struct transport_cb *tp;
-int16 cnt;
+int  cnt;
 {
 
   int  c;
-  register struct mesg *mp;
   struct mbuf *bp;
+  struct mesg *mp;
 
   mp = (struct mesg *) tp->user;
   transport_recv(tp, &bp, 0);
@@ -123,7 +129,8 @@ int16 cnt;
       mp->buf[mp->cnt] = '\0';
       mail_smtp_transaction(mp);
       mp->cnt = 0;
-    } else
+    }
+    else if (mp->cnt < sizeof(mp->buf) - 1)
       mp->buf[mp->cnt++] = c;
 }
 
@@ -131,7 +138,7 @@ int16 cnt;
 
 static void mail_smtp_send_upcall(tp, cnt)
 struct transport_cb *tp;
-int16 cnt;
+int  cnt;
 {
 
   char  *p;
@@ -140,7 +147,7 @@ int16 cnt;
   struct mesg *mp;
 
   mp = (struct mesg *) tp->user;
-  if (mp->state != SMTP_SEND_STATE) return;
+  if (mp->state != SMTP_SEND_STATE || cnt <= 0) return;
   if (!(bp = alloc_mbuf(cnt))) return;
   p = bp->data;
   while (p - bp->data < cnt && (c = getc(mp->fp)) != EOF)
@@ -150,6 +157,8 @@ int16 cnt;
   else
     free_p(bp);
   if (c == EOF) {
+    fclose(mp->fp);
+    mp->fp = 0;
     transport_send(mp->tp, qdata(".\n", 2));
     mp->state = SMTP_UNLK_STATE;
   }
@@ -164,8 +173,8 @@ struct transport_cb *tp;
 
   if (mp = (struct mesg *) tp->user) {
     if (mp->fp) fclose(mp->fp);
-    if (mp->sp->nextjob) abort_mailjob(mp->sp);
-    free((char *) mp);
+    if (mp->sp->jobs) free_mailjobs(mp->sp);
+    free(mp);
   }
   transport_del(tp);
 }
@@ -186,8 +195,8 @@ struct mailsys *sp;
     if (strcmp(sp->protocol, "tcp"))
       transport_send(mp->tp, qdata("cmd.smtp\n", 9));
   } else {
-    abort_mailjob(sp);
-    free((char *) mp);
+    free_mailjobs(sp);
+    free(mp);
   }
 }
 

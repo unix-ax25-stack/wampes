@@ -1,7 +1,14 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.8 1990/09/11 13:46:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.9 1990/10/12 19:26:20 deyke Exp $ */
 
 #ifndef NETROM_INCLUDED
 #define NETROM_INCLUDED
+
+#include "global.h"
+#include "ax25.h"
+#include "timer.h"
+#include "mbuf.h"
+#include "iface.h"
+#include "session.h"
 
 /* Round trip timing parameters */
 #define AGAIN   8               /* Average RTT gain = 1/8 */
@@ -75,9 +82,7 @@ struct circuit {
   struct circuit *next;         /* Linked-list pointer */
 };
 
-struct session; /* announce struct session */
-
-/* netrom.c */
+/* In netrom.c: */
 int isnetrom __ARGS((struct ax25_addr *call));
 int new_neighbor __ARGS((struct ax25_addr *call));
 int nr_send __ARGS((struct mbuf *bp, struct iface *iface, int32 gateway, int prec, int del, int tput, int rel));
@@ -92,10 +97,10 @@ int del_nr __ARGS((struct circuit *pc));
 int valid_nr __ARGS((struct circuit *pc));
 void nrclient_send_upcall __ARGS((struct circuit *pc, int cnt));
 void nrclient_recv_upcall __ARGS((struct circuit *pc, int cnt));
-int print_netrom_session __ARGS((struct session *s));
 int nr_attach __ARGS((int argc, char *argv [], void *p));
 int donetrom __ARGS((int argc, char *argv [], void *p));
 int netrom_initialize __ARGS((void));
+char *nr_addr2str __ARGS((struct circuit *pc));
 
 #endif  /* NETROM_INCLUDED */
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.2 1990/09/17 11:51:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.3 1990/10/12 19:25:27 deyke Exp $ */
 
 /* Stuff heavily dependent on the configuration info in config.h */
 
@@ -34,6 +34,7 @@ static int dostatus __ARGS((int argc,char *argv[],void *p));
 
 struct mbuf *Hopper;
 unsigned Nsessions = NSESSIONS;
+int Shortstatus;
 
 /* Free memory threshold, below which things start to happen to conserve
  * memory, like garbage collection, source quenching and refusing connects
@@ -71,7 +72,7 @@ struct arp_type Arp_type[NHWTYPES] = {
 	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_EETHER */
 
 #ifdef  AX25
-	AXALEN, PID_IP, PID_ARP, 10, (char *)&Ax25_bdcst, psax25, setpath,
+	AXALEN, PID_IP, PID_ARP, 10, Ax25_bdcst, psax25, setpath,
 #else
 	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_AX25 */
 #endif
@@ -493,6 +494,7 @@ void *p;
 {
   char *my_argv[3];
 
+  Shortstatus = 1;
   my_argv[1] = "status";
   my_argv[2] = NULLCHAR;
 
@@ -512,6 +514,11 @@ void *p;
   my_argv[0] = "tcp";
   dotcp(2, my_argv, p);
 
+  puts("------------------------------------- UDP -------------------------------------");
+  my_argv[0] = "udp";
+  doudp(2, my_argv, p);
+
+  Shortstatus = 0;
   return 0;
 }
 #endif  /* SERVERS */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.3 1990/09/11 13:46:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.4 1990/10/12 19:26:35 deyke Exp $ */
 
 #ifndef NULLSESSION
 
@@ -21,7 +21,7 @@ struct session {
 		struct ftp *ftp;
 		struct telnet *telnet;
 #ifdef  AX25
-		struct axcb *ax25;
+		struct ax25_cb *ax25;
 #endif
 		struct finger *finger;
 #ifdef  NETROM
@@ -36,20 +36,20 @@ struct session {
 };
 #define NULLSESSION     (struct session *)0
 extern unsigned Nsessions;              /* Maximum number of sessions */
-extern struct session *sessions;
-extern struct session *current;
+extern struct session *Sessions;
+extern struct session *Current;
 
-/* session.c */
-int dosession __ARGS((int argc, char *argv [], void *p));
+/* In session.c: */
+int dosession __ARGS((int argc, char *argv[], void *p));
 int go __ARGS((int argc,char *argv[],void *p));
-int doclose __ARGS((int argc, char *argv [], void *p));
-int doreset __ARGS((int argc, char *argv [], void *p));
-int dokick __ARGS((int argc, char *argv [], void *p));
+int doclose __ARGS((int argc, char *argv[], void *p));
+int doreset __ARGS((int argc, char *argv[], void *p));
+int dokick __ARGS((int argc, char *argv[], void *p));
 struct session *newsession __ARGS((void));
 int freesession __ARGS((struct session *s));
-int dorecord __ARGS((int argc, char *argv [], void *p));
-int doupload __ARGS((int argc, char *argv [], void *p));
+int dorecord __ARGS((int argc, char *argv[], void *p));
+int doupload __ARGS((int argc, char *argv[], void *p));
 
-extern int16 lport;
+extern int16 Lport;
 
 #endif  /* NULLSESSION */

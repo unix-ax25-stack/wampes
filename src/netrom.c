@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.14 1990/09/11 13:46:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.15 1990/10/12 19:26:15 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -24,8 +24,8 @@ extern long  currtime;
 struct circuit; /* announce struct circuit */
 
 static struct node *nodeptr __ARGS((struct ax25_addr *call, int create));
-static void ax25_state_upcall __ARGS((struct axcb *cp, int oldstate, int newstate));
-static void ax25_recv_upcall __ARGS((struct axcb *cp, int cnt));
+static void ax25_state_upcall __ARGS((struct ax25_cb *cp, int oldstate, int newstate));
+static void ax25_recv_upcall __ARGS((struct ax25_cb *cp, int cnt));
 static void send_packet_to_neighbor __ARGS((struct mbuf *data, struct node *pn));
 static void send_broadcast_packet __ARGS((struct mbuf *data));
 static void link_manager_initialize __ARGS((void));
@@ -39,7 +39,6 @@ static void send_broadcast __ARGS((void));
 static void route_packet __ARGS((struct mbuf *bp, struct node *fromneighbor));
 static void send_l3_packet __ARGS((struct ax25_addr *source, struct ax25_addr *dest, int ttl, struct mbuf *data));
 static void routing_manager_initialize __ARGS((void));
-static char *print_address __ARGS((struct circuit *pc));
 static void reset_t1 __ARGS((struct circuit *pc));
 static void inc_t1 __ARGS((struct circuit *pc));
 static int busy __ARGS((struct circuit *pc));
@@ -58,14 +57,14 @@ static void nrserv_send_upcall __ARGS((struct circuit *pc, int cnt));
 static void nrserv_state_upcall __ARGS((struct circuit *pc, int oldstate, int newstate));
 static nrclient_parse __ARGS((char *buf, int n));
 static void nrclient_state_upcall __ARGS((struct circuit *pc, int oldstate, int newstate));
-static int doconnect __ARGS((int argc, char *argv [], void *p));
+static int donconnect __ARGS((int argc, char *argv [], void *p));
 static int dobroadcast __ARGS((int argc, char *argv [], void *p));
 static int doident __ARGS((int argc, char *argv [], void *p));
 static int dolinks __ARGS((int argc, char *argv [], void *p));
 static int donodes __ARGS((int argc, char *argv [], void *p));
 static int doparms __ARGS((int argc, char *argv [], void *p));
 static int donreset __ARGS((int argc, char *argv [], void *p));
-static int dostatus __ARGS((int argc, char *argv [], void *p));
+static int donstatus __ARGS((int argc, char *argv [], void *p));
 
 static int  nr_maxdest     =   400;     /* not used */
 static int  nr_minqual     =     0;     /* not used */
@@ -146,11 +145,11 @@ struct node {
   struct node *neighbor, *old_neighbor;
   double  quality, old_quality, tmp_quality;
   int  force_broadcast;
-  struct axcb *crosslink;
+  struct ax25_cb *crosslink;
   struct node *prev, *next;
 };
 
-struct axcb *netrom_server_axcb;
+struct ax25_cb *netrom_server_axcb;
 
 static struct broadcast *broadcasts;
 static struct node *nodes, *mynode;
@@ -182,7 +181,7 @@ int  create;
 /*---------------------------------------------------------------------------*/
 
 static void ax25_state_upcall(cp, oldstate, newstate)
-struct axcb *cp;
+struct ax25_cb *cp;
 int  oldstate, newstate;
 {
   register struct node *pn;
@@ -214,7 +213,7 @@ int  oldstate, newstate;
 /*---------------------------------------------------------------------------*/
 
 static void ax25_recv_upcall(cp, cnt)
-struct axcb *cp;
+struct ax25_cb *cp;
 int  cnt;
 {
 
@@ -818,7 +817,7 @@ static struct circuit *circuits;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *print_address(pc)
+char  *nr_addr2str(pc)
 register struct circuit *pc;
 {
 
@@ -1570,7 +1569,7 @@ int  oldstate, newstate;
 {
   switch (newstate) {
   case CONNECTED:
-    pc->user = (char *) login_open(print_address(pc), "NETROM", (void (*)()) nrserv_send_upcall, (void (*)()) close_nr, pc);
+    pc->user = (char *) login_open(nr_addr2str(pc), "NETROM", (void (*)()) nrserv_send_upcall, (void (*)()) close_nr, pc);
     if (!pc->user) close_nr(pc);
     break;
   case DISCONNECTED:
@@ -1592,13 +1591,13 @@ static nrclient_parse(buf, n)
 char  *buf;
 int16 n;
 {
-  if (!(current && current->type == NRSESSION && current->cb.netrom)) return;
+  if (!(Current && Current->type == NRSESSION && Current->cb.netrom)) return;
   if (n >= 1 && buf[n-1] == '\n') n--;
   if (!n) return;
-  send_nr(current->cb.netrom, qdata(buf, n));
-  if (current->record) {
+  send_nr(Current->cb.netrom, qdata(buf, n));
+  if (Current->record) {
     if (buf[n-1] == '\r') buf[n-1] = '\n';
-    fwrite(buf, 1, n, current->record);
+    fwrite(buf, 1, n, Current->record);
   }
 }
 
@@ -1645,12 +1644,12 @@ int  cnt;
   int  c;
   struct mbuf *bp;
 
-  if (!(mode == CONV_MODE && current && current->type == NRSESSION && current->cb.netrom == pc)) return;
+  if (!(mode == CONV_MODE && Current && Current->type == NRSESSION && Current->cb.netrom == pc)) return;
   recv_nr(pc, &bp, 0);
   while ((c = PULLCHAR(&bp)) != -1) {
     if (c == '\r') c = '\n';
     putchar(c);
-    if (current->record) putc(c, current->record);
+    if (Current->record) putc(c, Current->record);
   }
   fflush(stdout);
 }
@@ -1663,7 +1662,7 @@ int  oldstate, newstate;
 {
   int  notify;
 
-  notify = (current && current->type == NRSESSION && current == (struct session *) pc->user);
+  notify = (Current && Current->type == NRSESSION && Current == (struct session *) pc->user);
   if (newstate != DISCONNECTED) {
     if (notify) printf("%s\n", ax25states[newstate]);
   } else {
@@ -1676,21 +1675,7 @@ int  oldstate, newstate;
 
 /*---------------------------------------------------------------------------*/
 
-print_netrom_session(s)
-struct session *s;
-{
-  printf("%c%-3d%8lx NETROM  %4d  %-13s%-s",
-	 (current == s) ? '*' : ' ',
-	 (int) (s - sessions),
-	 (long) s->cb.netrom,
-	 s->cb.netrom->rcvcnt,
-	 ax25states[s->cb.netrom->state],
-	 print_address(s->cb.netrom));
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int  doconnect(argc, argv, p)
+static int  donconnect(argc, argv, p)
 int  argc;
 char  *argv[];
 void *p;
@@ -1717,7 +1702,7 @@ void *p;
     printf("Too many sessions\n");
     return 1;
   }
-  current = s;
+  Current = s;
   s->type = NRSESSION;
   s->name = NULLCHAR;
   s->cb.netrom = 0;
@@ -2011,12 +1996,11 @@ int  argc;
 char  *argv[];
 void *p;
 {
-  extern char  notval[];
   struct circuit *pc;
 
   pc = (struct circuit *) htol(argv[1]);
   if (!valid_nr(pc)) {
-    printf(notval);
+    printf(Notval);
     return 1;
   }
   reset_nr(pc);
@@ -2025,7 +2009,7 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-static int  dostatus(argc, argv, p)
+static int  donstatus(argc, argv, p)
 int  argc;
 char  *argv[];
 void *p;
@@ -2036,7 +2020,8 @@ void *p;
   struct mbuf *bp;
 
   if (argc < 2) {
-    printf("bdcsts rcvd %d bdcsts sent %d\n", routes_stat.rcvd, routes_stat.sent);
+    if (!Shortstatus)
+      printf("bdcsts rcvd %d bdcsts sent %d\n", routes_stat.rcvd, routes_stat.sent);
     printf("   &NRCB Rcv-Q Unack  Rt  Srtt  State          Remote socket\n");
     for (pc = circuits; pc; pc = pc->next)
       printf("%8lx %5u%c%3u/%u%c %2d %5.1f  %-13s  %s\n",
@@ -2049,7 +2034,7 @@ void *p;
 	     pc->retry,
 	     pc->srtt / 1000.0,
 	     ax25states[pc->state],
-	     print_address(pc));
+	     nr_addr2str(pc));
     if (server_enabled)
       printf("                                Listen (S)     *\n");
   } else {
@@ -2058,7 +2043,7 @@ void *p;
       printf("Not a valid control block address\n");
       return 1;
     }
-    printf("Address:      %s\n", print_address(pc));
+    printf("Address:      %s\n", nr_addr2str(pc));
     printf("Remote id:    %d/%d\n", pc->remoteindex, pc->remoteid);
     printf("Local id:     %d/%d\n", pc->localindex, pc->localid);
     printf("State:        %s\n", ax25states[pc->state]);
@@ -2133,13 +2118,13 @@ void *p;
 
   static struct cmds netromcmds[] = {
     "broadcast",dobroadcast,0, 0, NULLCHAR,
-    "connect",  doconnect,  0, 2, "netrom connect <node> [<user>]",
+    "connect",  donconnect, 0, 2, "netrom connect <node> [<user>]",
     "ident",    doident,    0, 0, NULLCHAR,
     "links",    dolinks,    0, 0, NULLCHAR,
     "nodes",    donodes,    0, 0, NULLCHAR,
     "parms",    doparms,    0, 0, NULLCHAR,
     "reset",    donreset,   0, 2, "netrom reset <nrcb>",
-    "status",   dostatus,   0, 0, NULLCHAR,
+    "status",   donstatus,  0, 0, NULLCHAR,
     NULLCHAR,   NULLFP,     0, 0, NULLCHAR
   };
 

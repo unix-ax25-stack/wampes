@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcptimer.c,v 1.2 1990/08/23 17:34:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcptimer.c,v 1.3 1990/10/12 19:26:49 deyke Exp $ */
 
 /* TCP timeout routines */
 #include <stdio.h>
@@ -11,13 +11,12 @@
 
 /* Timer timeout */
 void
-tcp_timeout(arg)
-char *arg;
+tcp_timeout(p)
+void *p;
 {
 	register struct tcb *tcb;
 
-	tcb = (struct tcb *)arg;
-
+	tcb = p;
 	if(tcb == NULLTCB)
 		return;
 
@@ -25,11 +24,11 @@ char *arg;
 	stop_timer(&tcb->timer);
 
 	switch(tcb->state){
-	case TIME_WAIT:         /* 2MSL timer has expired */
+	case TCP_TIME_WAIT:     /* 2MSL timer has expired */
 		close_self(tcb,NORMAL);
 		break;
 	default:                /* Retransmission timer has expired */
-		tcb->flags |= RETRAN;   /* Indicate > 1  transmission */
+		tcb->flags.retran = 1;  /* Indicate > 1  transmission */
 		tcb->backoff++;
 		if (tcb->backoff > 10) {
 			close_self(tcb,TIMEOUT);
@@ -45,17 +44,10 @@ char *arg;
 	}
 }
 /* Backoff function - the subject of much research */
+int32
 backoff(n)
 int n;
 {
-	/* Use binary exponential up to retry #4, and quadratic after that
-	 * This yields the sequence
-	 * 1, 2, 4, 8, 16, 25, 36, 49, 64, 81, 100 ...
-	 */
-
-	if(n <= 4)
-		return 1 << n;  /* Binary exponential back off */
-	else
-		return n * n;   /* Quadratic back off */
+	return 1L << n; /* Binary exponential back off */
 }
 

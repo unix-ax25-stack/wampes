@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.3 1990/09/11 13:45:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.4 1990/10/12 19:25:41 deyke Exp $ */
 
 /* FTP Server state machine - see RFC 959 */
 
@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <time.h>
+#include <unistd.h>
 #ifdef  __TURBOC__
 #include <io.h>
 #include <dir.h>
@@ -102,6 +103,22 @@ static char okay[] = "200 Ok\r\n";
 
 static struct tcb *ftp_tcb;
 
+/* Do printf on a tcp connection */
+/*VARARGS2*/
+static void Xprintf(tcb,message,arg1,arg2,arg3)
+struct tcb *tcb;
+char *message,*arg1,*arg2,*arg3;
+{
+	struct mbuf *bp;
+
+	if(tcb == NULLTCB)
+		return;
+
+	bp = alloc_mbuf(256);
+	sprintf(bp->data,message,arg1,arg2,arg3);
+	bp->cnt = strlen(bp->data);
+	send_tcp(tcb,bp);
+}
 /* Start up FTP service */
 ftpstart(argc,argv,p)
 int argc;
@@ -116,9 +133,9 @@ void *p;
 	if(argc < 2)
 		lsocket.port = IPPORT_FTP;
 	else
-		lsocket.port = tcp_portnum(argv[1]);
+		lsocket.port = tcp_port_number(argv[1]);
 
-	ftp_tcb = open_tcp(&lsocket,NULLSOCK,TCP_SERVER,0,ftpscr,NULLVFP,ftpscs,0,(char *)NULL);
+	ftp_tcb = open_tcp(&lsocket,NULLSOCK,TCP_SERVER,0,ftpscr,NULLVFP,ftpscs,0,0);
 	return 0;
 }
 /* Shut down FTP server */
@@ -149,9 +166,9 @@ char old,new;
  * so its use is not (yet) recommended.
 */
 #ifdef  QUICKSTART
-	case SYN_RECEIVED:
+	case TCP_SYN_RECEIVED:
 #else
-	case ESTABLISHED:
+	case TCP_ESTABLISHED:
 #endif
 		if((ftp = ftp_create(LINELEN)) == NULLFTP){
 			/* No space, kill connection */
@@ -159,7 +176,7 @@ char old,new;
 			return;
 		}
 		ftp->control = tcb;             /* Downward link */
-		tcb->user = (char *)ftp;        /* Upward link */
+		tcb->user = (int)ftp;           /* Upward link */
 
 		/* Set default data port */
 		ftp->port.address = tcb->conn.remote.address;
@@ -172,10 +189,10 @@ char old,new;
 			*cp1 = '\0';
 		Xprintf(ftp->control,banner,Hostname,Version,cp);
 		break;
-	case CLOSE_WAIT:
+	case TCP_CLOSE_WAIT:
 		close_tcp(tcb);
 		break;
-	case CLOSED:
+	case TCP_CLOSED:
 		log(tcb,"close FTP");
 		if((ftp = (struct ftp *)tcb->user) != NULLFTP)
 			ftp_delete(ftp);
@@ -244,14 +261,14 @@ char old,new;
 	if((ftp = (struct ftp *)tcb->user) == NULLFTP){
 		/* Unknown connection. Kill it */
 		del_tcp(tcb);
-	} else if((old == FINWAIT1 || old == CLOSING) && ftp->state == SENDING_STATE){
+	} else if((old == TCP_FINWAIT1 || old == TCP_CLOSING) && ftp->state == SENDING_STATE){
 		/* We've received an ack of our FIN while sending; we're done */
 		ftp->state = COMMAND_STATE;
 		Xprintf(ftp->control,txok);
 		/* Kick command parser if something is waiting */
 		if(ftp->control->rcvcnt != 0)
 			ftpscr(ftp->control,ftp->control->rcvcnt);
-	} else if(ftp->state == RECEIVING_STATE && new == CLOSE_WAIT){
+	} else if(ftp->state == RECEIVING_STATE && new == TCP_CLOSE_WAIT){
 		/* FIN received on incoming file */
 #ifdef  CPM
 		if(ftp->type == ASCII_TYPE)
@@ -266,7 +283,7 @@ char old,new;
 		/* Kick command parser if something is waiting */
 		if(ftp->control->rcvcnt != 0)
 			ftpscr(ftp->control,ftp->control->rcvcnt);
-	} else if(new == CLOSED){
+	} else if(new == TCP_CLOSED){
 		if(tcb->reason != NORMAL){
 			/* Data connection was reset, complain about it */
 			Xprintf(ftp->control,noconn);
@@ -439,7 +456,7 @@ register struct ftp *ftp;
 			ftp->state = SENDING_STATE;
 			Xprintf(ftp->control,sending,"RETR",arg);
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
-			 0,NULLVFP,ftpdt,ftpsds,ftp->control->tos,(char *)ftp);
+			 0,NULLVFP,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
 		}
 		free(file);
 		break;
@@ -464,7 +481,7 @@ register struct ftp *ftp;
 			ftp->state = RECEIVING_STATE;
 			Xprintf(ftp->control,sending,"STOR",arg);
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
-			 0,ftpdr,NULLVFP,ftpsds,ftp->control->tos,(char *)ftp);
+			 0,ftpdr,NULLVFP,ftpsds,ftp->control->tos,(int)ftp);
 		}
 		free(file);
 		break;
@@ -492,7 +509,7 @@ register struct ftp *ftp;
 			ftp->state = SENDING_STATE;
 			Xprintf(ftp->control,sending,"LIST",file);
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
-			 0,NULLVFP,ftpdt,ftpsds,ftp->control->tos,(char *)ftp);
+			 0,NULLVFP,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
 		}
 		free(file);
 		break;
@@ -512,7 +529,7 @@ register struct ftp *ftp;
 			ftp->state = SENDING_STATE;
 			Xprintf(ftp->control,sending,"NLST",file);
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
-			 0,NULLVFP,ftpdt,ftpsds,ftp->control->tos,(char *)ftp);
+			 0,NULLVFP,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
 		}
 		free(file);
 		break;

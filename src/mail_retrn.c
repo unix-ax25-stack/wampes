@@ -1,14 +1,13 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.2 1990/08/23 17:33:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.3 1990/10/12 19:26:08 deyke Exp $ */
 
 /* Mail Delivery Agent for returned Mails */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/rtprio.h>
+#include <unistd.h>
 
-#include "global.h"
 #include "mail.h"
-
-extern void _exit();
 
 /*---------------------------------------------------------------------------*/
 
@@ -20,6 +19,7 @@ struct mailjob *jp;
   char  line[1024];
   int  i;
 
+  fflush((FILE * ) 0);
   if (fork()) return;
   rtprio(0, RTPRIO_RTOFF);
   for (i = 0; i < _NFILE; i++) close(i);
@@ -27,24 +27,25 @@ struct mailjob *jp;
   fopen("/dev/null", "r+");
   fopen("/dev/null", "r+");
   fopen("/dev/null", "r+");
-  sprintf(line, "/usr/lib/sendmail -oi -oem -f '<>' %s", jp->from);
-  if (!(fpo = popen(line, "w"))) _exit(1);
-  fprintf(fpo, "From: Mail Delivery Subsystem <MAILER-DAEMON>\n");
-  fprintf(fpo, "To: %s\n", jp->from);
-  fprintf(fpo, "Subject: Returned mail\n");
-  putc('\n', fpo);
-  fprintf(fpo, "   ----- Transcript of session follows -----\n");
-  fprintf(fpo, "%s\n", jp->return_reason);
-  putc('\n', fpo);
-  fprintf(fpo, "   ----- Unsent message follows -----\n");
-  fpi = fopen(jp->dfile, "r");
-  fgets(line, sizeof(line), fpi);
-  while (fgets(line, sizeof(line), fpi)) fputs(line, fpo);
-  fclose(fpi);
-  pclose(fpo);
+  if (fpi = fopen(jp->dfile, "r")) {
+    sprintf(line, "/usr/lib/sendmail -oi -oem -f '<>' %s", jp->from);
+    if (!(fpo = popen(line, "w"))) exit(1);
+    fprintf(fpo, "From: Mail Delivery Subsystem <MAILER-DAEMON>\n");
+    fprintf(fpo, "To: %s\n", jp->from);
+    fprintf(fpo, "Subject: Returned mail\n");
+    putc('\n', fpo);
+    fprintf(fpo, "   ----- Transcript of session follows -----\n");
+    fprintf(fpo, "%s\n", jp->return_reason);
+    putc('\n', fpo);
+    fprintf(fpo, "   ----- Unsent message follows -----\n");
+    fgets(line, sizeof(line), fpi);
+    while (fgets(line, sizeof(line), fpi)) fputs(line, fpo);
+    pclose(fpo);
+    fclose(fpi);
+  }
   unlink(jp->cfile);
   unlink(jp->dfile);
   unlink(jp->xfile);
-  _exit(0);
+  exit(0);
 }
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.3 1990/09/11 13:46:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.4 1990/10/12 19:27:03 deyke Exp $ */
 
 /* UDP-related user commands */
 #include <stdio.h>
@@ -32,7 +32,7 @@ int n;
 	if(n == 0)
 		tprintf("    &UCB Rcv-Q  Local socket\n");
 
-	return tprintf("%8lx%6u  %s\n",ptol(udp),udp->rcvcnt,pinet(&udp->socket));
+	return tprintf("%8lx%6u  %s\n",ptol(udp),udp->rcvcnt,pinet_udp(&udp->socket));
 }
 
 /* Dump UDP statistics and control blocks */
@@ -45,6 +45,7 @@ void *p;
 	register struct udp_cb *udp;
 	register int i;
 
+    if(!Shortstatus){
 	for(i=1;i<=NUMUDPMIB;i++){
 		tprintf("(%2u)%-20s%10lu",i,
 		 Udp_mib[i].name,Udp_mib[i].value.integer);
@@ -55,6 +56,7 @@ void *p;
 	}
 	if((i % 2) == 0)
 		tprintf("\n");
+    }
 
 	tprintf("    &UCB Rcv-Q  Local socket\n");
 	for(i=0;i<NUDP;i++){

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpdump.c,v 1.2 1990/08/23 17:34:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpdump.c,v 1.3 1990/10/12 19:26:42 deyke Exp $ */
 
 #include <stdio.h>
 #include "global.h"
@@ -7,10 +7,11 @@
 #include "internet.h"
 #include "timer.h"
 #include "tcp.h"
+#include "ip.h"
 #include "trace.h"
 
 /* TCP segment header flags */
-char *tcpflags[] = {
+static char *Tcpflags[] = {
 	"FIN",  /* 0x01 */
 	"SYN",  /* 0x02 */
 	"RST",  /* 0x04 */
@@ -27,7 +28,6 @@ struct mbuf **bpp;
 int32 source,dest;      /* IP source and dest addresses */
 int check;              /* 0 if checksum test is to be bypassed */
 {
-	int i;
 	struct tcp seg;
 	struct pseudo_header ph;
 	int16 csum;
@@ -45,21 +45,29 @@ int check;              /* 0 if checksum test is to be bypassed */
 	ntohtcp(&seg,bpp);
 
 	fprintf(fp,"TCP: %u->%u Seq x%lx",seg.source,seg.dest,seg.seq,seg.ack);
-	if(seg.flags & ACK)
+	if(seg.flags.ack)
 		fprintf(fp," Ack x%lx",seg.ack);
-	for(i=0;i<6;i++){
-		if(seg.flags & 1 << i){
-			fprintf(fp," %s",tcpflags[i]);
-		}
-	}
+	if(seg.flags.urg)
+		fprintf(fp," %s",Tcpflags[5]);
+	if(seg.flags.ack)
+		fprintf(fp," %s",Tcpflags[4]);
+	if(seg.flags.psh)
+		fprintf(fp," %s",Tcpflags[3]);
+	if(seg.flags.rst)
+		fprintf(fp," %s",Tcpflags[2]);
+	if(seg.flags.syn)
+		fprintf(fp," %s",Tcpflags[1]);
+	if(seg.flags.fin)
+		fprintf(fp," %s",Tcpflags[0]);
+
 	fprintf(fp," Wnd %u",seg.wnd);
-	if(seg.flags & URG)
+	if(seg.flags.urg)
 		fprintf(fp," UP x%x",seg.up);
 	/* Print options, if any */
 	if(seg.mss != 0)
 		fprintf(fp," MSS %u",seg.mss);
 	if(check && csum != 0)
-		fprintf(fp," CHECKSUM ERROR (%u)",i);
-	fprintf(fp,"\n");
+		fprintf(fp," CHECKSUM ERROR (%u)",csum);
+	putc('\n',fp);
 }
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.3 1990/09/11 13:45:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.4 1990/10/12 19:25:36 deyke Exp $ */
 
 /*
  *
@@ -62,7 +62,7 @@ void *p;
 	}
 
 	lsocket.address = Ip_addr;
-	lsocket.port = lport++;
+	lsocket.port = Lport++;
 
 /*
  *      Extract user/host information.  It can be of the form:
@@ -115,7 +115,7 @@ void *p;
 		free_finger(finger);
 		return 1;
 	}
-	current = s;
+	Current = s;
 	s->cb.finger = finger;
 	finger->session = s;
 
@@ -128,10 +128,9 @@ void *p;
 	s->parse = (int (*)()) NULL;
 
 	tcb = open_tcp(&lsocket, &fsocket, TCP_ACTIVE, 0,
-	 fingcli_rcv, (void (*)()) 0, f_state, 0, (int *) finger);
+	 fingcli_rcv, (void (*)()) 0, f_state, 0, (int) finger);
 
 	finger->tcb = tcb;
-	tcb->user = (char *)finger;
 	go(argc, argv, p);
 	return 0;
 }
@@ -183,8 +182,8 @@ int16                   cnt;
 	}
 
 	/* Hold output if we're not the current session */
-	if (mode != CONV_MODE || current == NULLSESSION
-		|| current->type != FINGER)
+	if (mode != CONV_MODE || Current == NULLSESSION
+		|| Current->type != FINGER)
 		return;
 
 	/*
@@ -226,26 +225,24 @@ char                    old,            /* old state */
 {
 	struct finger   *finger;
 	char            notify = 0;
-	extern char     *tcpstates[];
-	extern char     *reasons[];
 	struct mbuf     *bp;
 
 	finger = (struct finger *)tcb->user;
 
-	if(current != NULLSESSION && current->type == FINGER)
+	if(Current != NULLSESSION && Current->type == FINGER)
 		notify = 1;
 
 	switch(new){
 
-	case CLOSE_WAIT:
+	case TCP_CLOSE_WAIT:
 		if(notify)
-			printf("%s\n",tcpstates[new]);
+			printf("%s\n",Tcpstates[new]);
 		close_tcp(tcb);
 		break;
 
-	case CLOSED:    /* finish up */
+	case TCP_CLOSED:    /* finish up */
 		if(notify) {
-			printf("%s (%s", tcpstates[new], reasons[tcb->reason]);
+			printf("%s (%s", Tcpstates[new], Tcpreasons[tcb->reason]);
 			if (tcb->reason == NETWORK){
 				switch(tcb->type){
 				case ICMP_DEST_UNREACH:
@@ -263,18 +260,18 @@ char                    old,            /* old state */
 			free_finger(finger);
 		del_tcp(tcb);
 		break;
-	case ESTABLISHED:
+	case TCP_ESTABLISHED:
 		if (notify) {
-			printf("%s\n",tcpstates[new]);
+			printf("%s\n",Tcpstates[new]);
 		}
-		printf("[%s]\n", current->name);
+		printf("[%s]\n", Current->name);
 		bp = qdata(finger->user, (int16) strlen(finger->user));
 		send_tcp(tcb, bp);
 		break;
 
 	default:
 		if(notify)
-			printf("%s\n",tcpstates[new]);
+			printf("%s\n",Tcpstates[new]);
 		break;
 	}
 	fflush(stdout);

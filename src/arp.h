@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.3 1990/09/11 13:44:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.4 1990/10/12 19:25:07 deyke Exp $ */
 
 #ifndef ARPSIZE
 
@@ -111,9 +111,9 @@ char *res_arp __ARGS((struct iface *iface,int hardware,int32 target,struct mbuf 
 struct mbuf *htonarp __ARGS((struct arp *arp));
 int ntoharp __ARGS((struct arp *arp,struct mbuf **bpp));
 
-/* arpfile.c */
-int arp_savefile __ARGS((void));
-int arp_loadfile __ARGS((void));
+/* In arpfile.c: */
+void arp_savefile __ARGS((void));
+void arp_loadfile __ARGS((void));
 
 #endif /* ARPSIZE */
 

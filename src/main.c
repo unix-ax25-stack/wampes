@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.7 1990/09/11 13:45:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.8 1990/10/12 19:26:11 deyke Exp $ */
 
 /* Main network program - provides both client and server functions */
 #include <stdio.h>
@@ -30,9 +30,9 @@
 #include "ip.h"
 #include "tcp.h"
 #include "udp.h"
+#include "hardware.h"
 #include "commands.h"
-
-extern long currtime;
+#include "hpux.h"
 
 extern struct cmds Cmds[],Startcmds[],Stopcmds[],Attab[];
 
@@ -48,7 +48,7 @@ char Prompt[] = "%s> ";
 char Nospace[] = "No space!!\n";        /* Generic malloc fail message */
 static FILE *Logfp;
 int32 resolve();
-int16 lport = 1001;
+int16 Lport = 1001;
 
 main(argc,argv)
 int argc;
@@ -73,14 +73,14 @@ char *argv[];
 	chktasker();
 #endif
 #ifdef  MSDOS
-	printf("KA9Q Internet Protocol Package, v%s DS = %x\n",Version,
+	tprintf("KA9Q Internet Protocol Package, v%s DS = %x\n",Version,
 		getds());
 #else
-	printf("KA9Q Internet Protocol Package, v%s\n",Version);
+	tprintf("KA9Q Internet Protocol Package, v%s\n",Version);
 #endif
 
-	printf("Copyright 1988 by Phil Karn, KA9Q\n");
-	sessions = (struct session *)calloc(Nsessions,sizeof(struct session));
+	tprintf("Copyright 1988 by Phil Karn, KA9Q\n");
+	Sessions = (struct session *)calloc(Nsessions,sizeof(struct session));
 	if(argc > 1){
 		/* Read startup file named on command line */
 		fp = fopen(argv[1],"r");
@@ -107,7 +107,7 @@ char *argv[];
 			/* c == -2 means the command escape key (F10) */
 			if(c == -2){
 				if(mode != CMD_MODE){
-					printf("\n");
+					tprintf("\n");
 					cmdmode();
 				}
 				continue;
@@ -131,17 +131,17 @@ char *argv[];
 			case CONV_MODE:
 #ifdef  false
 				if(ttybuf[0] == Escape && Escape != 0){
-					printf("\n");
+					tprintf("\n");
 					cmdmode();
 				} else
 #endif  /* MSDOS */
-					if(current->parse != NULLFP)
-						(*current->parse)(ttybuf,cnt);
+					if(Current->parse != NULLFP)
+						(*Current->parse)(ttybuf,cnt);
 
 				break;
 			}
 			if(mode == CMD_MODE){
-				printf(Prompt,Hostname);
+				tprintf(Prompt,Hostname);
 				fflush(stdout);
 			}
 		}
@@ -178,7 +178,7 @@ cmdmode()
 	if(mode != CMD_MODE){
 		mode = CMD_MODE;
 		cooked();
-		printf(Prompt,Hostname);
+		tprintf(Prompt,Hostname);
 		fflush(stdout);
 	}
 	return 0;
@@ -219,9 +219,9 @@ void *p;
 	static char logname[256];
 	if(argc < 2){
 		if(Logfp)
-			printf("Logging to %s\n",logname);
+			tprintf("Logging to %s\n",logname);
 		else
-			printf("Logging off\n");
+			tprintf("Logging off\n");
 		return 0;
 	}
 	if(Logfp){
@@ -236,8 +236,7 @@ void *p;
 }
 
 /* Attach an interface
- * Syntax: attach <hw type> <I/O address> <vector> <mode> <label> <bufsize> [<sp
-eed>]
+ * Syntax: attach <hw type> <I/O address> <vector> <mode> <label> <bufsize> [<speed>]
  */
 int
 doattach(argc,argv,p)
@@ -283,7 +282,7 @@ int32 arg1,arg2,arg3,arg4;
 	cp = ctime(&currtime);
 	rip(cp);
     if (tcb)
-	fprintf(Logfp,"%s %s - ",cp,psocket(&tcb->conn.remote));
+	fprintf(Logfp,"%s %s - ",cp,pinet_tcp(&tcb->conn.remote));
     else
 	fprintf(Logfp,"%s - ",cp);
 	fprintf(Logfp,fmt,arg1,arg2,arg3,arg4);
@@ -341,7 +340,7 @@ char *argv[];
 void *p;
 {
 	if(argc < 2)
-		printf("0x%x\n",Escape);
+		tprintf("0x%x\n",Escape);
 	else
 		Escape = *argv[1];
 	return 0;
@@ -371,7 +370,7 @@ void *p;
 		switch(c){
 		case 'a':
 			if (!(addr = resolve(optarg))) {
-				printf("Host %s unknown\n",optarg);
+				tprintf("Host %s unknown\n",optarg);
 				return 1;
 			}
 			break;
@@ -388,14 +387,14 @@ void *p;
 		}
 	}
 	if(optind > argc - 2){
-		printf("Insufficient args\n");
+		tprintf("Insufficient args\n");
 		return 1;
 	}
 	host = argv[optind++];
 	cmd = argv[optind];
 
 	if (!(fsock.address = resolve(host))) {
-		printf("Host %s unknown\n",host);
+		tprintf("Host %s unknown\n",host);
 		return 1;
 	}
 	lsock.address = Ip_addr;
@@ -435,7 +434,7 @@ void *p;
 		}
 		break;
 	default:
-		printf("Unknown command %s\n",cmd);
+		tprintf("Unknown command %s\n",cmd);
 		free_p(bp);
 		return 1;
 	}
@@ -455,7 +454,7 @@ void *p;
   char  inbuf[BUFSIZ];
 
   if (!(fp = fopen(argv[1], "r"))) {
-    printf("cannot open %s\n", argv[1]);
+    tprintf("cannot open %s\n", argv[1]);
     return 1;
   }
   while (fgets(inbuf, BUFSIZ, fp))
@@ -480,9 +479,9 @@ void *p;
   if (argc < 2) {
     tmp = rtprio(0, RTPRIO_NOCHG);
     if (tmp == RTPRIO_RTOFF)
-      printf("Rtprio off\n");
+      tprintf("Rtprio off\n");
     else
-      printf("Rtprio %d\n", tmp);
+      tprintf("Rtprio %d\n", tmp);
   } else {
     tmp = atoi(argv[1]);
     if (tmp <= 0 || tmp > 127) tmp = RTPRIO_RTOFF;

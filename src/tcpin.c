@@ -1,9 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.4 1990/09/11 13:46:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.5 1990/10/12 19:26:45 deyke Exp $ */
 
 /* Process incoming TCP segments. Page number references are to ARPA RFC-793,
  * the TCP specification.
  */
-
 #include "global.h"
 #include "timer.h"
 #include "mbuf.h"
@@ -14,17 +13,15 @@
 #include "iface.h"
 #include "ip.h"
 
-void send_syn();
-
-static void reset __ARGS((int32 source, int32 dest, int tos, int length, struct tcp *seg));
-static void update __ARGS((struct tcb *tcb, struct tcp *seg));
-static int in_window __ARGS((struct tcb *tcb, int32 seq));
-static void proc_syn __ARGS((struct tcb *tcb, int tos, struct tcp *seg));
-static void add_reseq __ARGS((struct tcb *tcb, int tos, struct tcp *seg, struct mbuf *bp, int length));
-static void get_reseq __ARGS((struct tcb *tcb, char *tos, struct tcp *seg, struct mbuf **bp, int16 *length));
-static int trim __ARGS((struct tcb *tcb, struct tcp *seg, struct mbuf **bp, int16 *length));
-
-struct tcp_stat tcp_stat;
+static void update __ARGS((struct tcb *tcb,struct tcp *seg));
+static void proc_syn __ARGS((struct tcb *tcb,int tos,struct tcp *seg));
+static void add_reseq __ARGS((struct tcb *tcb,int tos,struct tcp *seg,
+	struct mbuf *bp,int length));
+static void get_reseq __ARGS((struct tcb *tcb,char *tos,struct tcp *seq,
+	struct mbuf **bp,int16 *length));
+static int trim __ARGS((struct tcb *tcb,struct tcp *seg,struct mbuf **bpp,
+	int16 *length));
+static int in_window __ARGS((struct tcb *tcb,int32 seq));
 
 /* This function is called from IP with the IP header in machine byte order,
  * along with a mbuf chain pointing to the TCP header.
@@ -36,6 +33,7 @@ struct mbuf *bp;        /* Data field, if any */
 struct ip *ip;          /* IP header */
 int rxbroadcast;        /* Incoming broadcast - discard if true */
 {
+	struct tcb *ntcb;
 	register struct tcb *tcb;       /* TCP Protocol control block */
 	struct tcp seg;                 /* Local copy of segment header */
 	struct connection conn;         /* Local copy of addresses */
@@ -46,11 +44,11 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 	if(bp == NULLBUF)
 		return;
 
+	tcpInSegs++;
 	if(rxbroadcast){
 		/* Any TCP packet arriving as a broadcast is
 		 * to be completely IGNORED!!
 		 */
-		tcp_stat.bdcsts++;
 		free_p(bp);
 		return;
 	}
@@ -61,14 +59,13 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 	ph.length = length;
 	if(cksum(&ph,bp,length) != 0){
 		/* Checksum failed, ignore segment completely */
-		tcp_stat.checksum++;
+		tcpInErrs++;
 		free_p(bp);
 		return;
 	}
 	/* Form local copy of TCP header in host byte order */
 	if((hdrlen = ntohtcp(&seg,&bp)) < 0){
 		/* TCP header is too small */
-		tcp_stat.runt++;
 		free_p(bp);
 		return;
 	}
@@ -81,36 +78,38 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 	conn.remote.port = seg.source;
 
 	if((tcb = lookup_tcb(&conn)) == NULLTCB){
-		struct tcb *ntcb;
-		void link_tcb();
-
-		/* Check that this segment carries a SYN, and that
-		 * there's a LISTEN on this socket with
-		 * unspecified source address and port
+		/* If this segment doesn't carry a SYN, reject it */
+		if(!seg.flags.syn){
+			free_p(bp);
+			reset(ip,&seg);
+			return;
+		}
+		/* See if there's a TCP_LISTEN on this socket with
+		 * unspecified remote address and port
 		 */
 		conn.remote.address = 0;
 		conn.remote.port = 0;
-		if(!(seg.flags & SYN) || (tcb = lookup_tcb(&conn)) == NULLTCB){
-			/* No unspecified LISTEN either, so reject */
-			free_p(bp);
-			reset(ip->source,ip->dest,ip->tos,length,&seg);
-			return;
-		}
-		/* We've found an server listen socket, so clone the TCB */
-		if(tcb->flags & CLONE){
-			if((ntcb = (struct tcb *)malloc(sizeof (struct tcb))) == NULLTCB){
+		if((tcb = lookup_tcb(&conn)) == NULLTCB){
+			/* Nope, try unspecified local address too */
+			conn.local.address = 0;
+			if((tcb = lookup_tcb(&conn)) == NULLTCB){
+				/* No LISTENs, so reject */
 				free_p(bp);
-				/* This may fail, but we should at least try */
-				reset(ip->source,ip->dest,ip->tos,length,&seg);
+				reset(ip,&seg);
 				return;
 			}
+		}
+		/* We've found an server listen socket, so clone the TCB */
+		if(tcb->flags.clone){
+			ntcb = (struct tcb *)mallocw(sizeof (struct tcb));
 			ASSIGN(*ntcb,*tcb);
 			tcb = ntcb;
 			tcb->timer.arg = tcb;
 		} else
 			unlink_tcb(tcb);        /* It'll be put back on later */
 
-		/* Stuff the foreign socket into the TCB */
+		/* Put all the socket info into the TCB */
+		tcb->conn.local.address = ip->dest;
 		tcb->conn.remote.address = ip->source;
 		tcb->conn.remote.port = seg.source;
 
@@ -119,44 +118,44 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 	}
 	/* Do unsynchronized-state processing (p. 65-68) */
 	switch(tcb->state){
-	case CLOSED:
+	case TCP_CLOSED:
 		free_p(bp);
-		reset(ip->source,ip->dest,ip->tos,length,&seg);
+		reset(ip,&seg);
 		return;
-	case LISTEN:
-		if(seg.flags & RST){
+	case TCP_LISTEN:
+		if(seg.flags.rst){
 			free_p(bp);
 			return;
 		}
-		if(seg.flags & ACK){
+		if(seg.flags.ack){
 			free_p(bp);
-			reset(ip->source,ip->dest,ip->tos,length,&seg);
+			reset(ip,&seg);
 			return;
 		}
-		if(seg.flags & SYN){
+		if(seg.flags.syn){
 			/* (Security check is bypassed) */
 			/* page 66 */
-			tcp_stat.conin++;
 			proc_syn(tcb,ip->tos,&seg);
 			send_syn(tcb);
-			setstate(tcb,SYN_RECEIVED);
-			if(length != 0 || (seg.flags & FIN)) {
-				break;          /* Continue processing if there's more */
+			setstate(tcb,TCP_SYN_RECEIVED);
+			if(length != 0 || seg.flags.fin) {
+				/* Continue processing if there's more */
+				break;
 			}
 			tcp_output(tcb);
 		}
 		free_p(bp);     /* Unlikely to get here directly */
 		return;
-	case SYN_SENT:
-		if(seg.flags & ACK){
+	case TCP_SYN_SENT:
+		if(seg.flags.ack){
 			if(!seq_within(seg.ack,tcb->iss+1,tcb->snd.nxt)){
 				free_p(bp);
-				reset(ip->source,ip->dest,ip->tos,length,&seg);
+				reset(ip,&seg);
 				return;
 			}
 		}
-		if(seg.flags & RST){    /* p 67 */
-			if(seg.flags & ACK){
+		if(seg.flags.rst){      /* p 67 */
+			if(seg.flags.ack){
 				/* The ack must be acceptable since we just checked it.
 				 * This is how the remote side refuses connect requests.
 				 */
@@ -167,23 +166,23 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 		}
 		/* (Security check skipped here) */
 		/* Check incoming precedence; it must match if there's an ACK */
-		if((seg.flags & ACK) && PREC(ip->tos) != PREC(tcb->tos)){
+		if(seg.flags.ack && PREC(ip->tos) != PREC(tcb->tos)){
 			free_p(bp);
-			reset(ip->source,ip->dest,ip->tos,length,&seg);
+			reset(ip,&seg);
 			return;
 		}
-		if(seg.flags & SYN){
+		if(seg.flags.syn){
 			proc_syn(tcb,ip->tos,&seg);
-			if(seg.flags & ACK){
+			if(seg.flags.ack){
 				/* Our SYN has been acked, otherwise the ACK
 				 * wouldn't have been valid.
 				 */
 				update(tcb,&seg);
-				setstate(tcb,ESTABLISHED);
+				setstate(tcb,TCP_ESTABLISHED);
 			} else {
-				setstate(tcb,SYN_RECEIVED);
+				setstate(tcb,TCP_SYN_RECEIVED);
 			}
-			if(length != 0 || (seg.flags & FIN)) {
+			if(length != 0 || seg.flags.fin) {
 				break;          /* Continue processing if there's more */
 			}
 			tcp_output(tcb);
@@ -200,8 +199,13 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 	/* Trim segment to fit receive window. */
 	if(trim(tcb,&seg,&bp,&length) == -1){
 		/* Segment is unacceptable */
-		if(!(seg.flags & RST)){
-			tcb->flags |= FORCE;
+		if(!seg.flags.rst){     /* NEVER answer RSTs */
+			/* In SYN_RECEIVED state, answer a retransmitted SYN
+			 * with a retransmitted SYN/ACK.
+			 */
+			if(tcb->state == TCP_SYN_RECEIVED)
+				tcb->snd.ptr = tcb->snd.una;
+			tcb->flags.force = 1;
 			tcp_output(tcb);
 		}
 		return;
@@ -214,9 +218,9 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 	 * flags or data should be safe, however.
 	 */
 	if(seg.seq != tcb->rcv.nxt
-	 && (length != 0 || (seg.flags & (SYN|FIN)) )){
+	 && (length != 0 || seg.flags.syn || seg.flags.fin)){
 		add_reseq(tcb,ip->tos,&seg,bp,length);
-		tcb->flags |= FORCE;
+		tcb->flags.force = 1;
 		tcp_output(tcb);
 		return;
 	}
@@ -228,13 +232,13 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 		 * are in the window, and the starting sequence number equals rcv.nxt
 		 * (p. 70)
 		 */
-		if(seg.flags & RST){
-			if(tcb->state == SYN_RECEIVED
-			 && !(tcb->flags & (CLONE|ACTIVE))){
+		if(seg.flags.rst){
+			if(tcb->state == TCP_SYN_RECEIVED
+			 && !tcb->flags.clone && !tcb->flags.active){
 				/* Go back to listen state only if this was
 				 * not a cloned or active server TCB
 				 */
-				setstate(tcb,LISTEN);
+				setstate(tcb,TCP_LISTEN);
 			} else {
 				close_self(tcb,RESET);
 			}
@@ -243,63 +247,62 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 		}
 		/* (Security check skipped here) p. 71 */
 		/* Check for precedence mismatch or erroneous extra SYN */
-		if(PREC(ip->tos) != PREC(tcb->tos) || (seg.flags & SYN)){
+		if(PREC(ip->tos) != PREC(tcb->tos) || seg.flags.syn){
 			free_p(bp);
-			reset(ip->source,ip->dest,ip->tos,length,&seg);
+			reset(ip,&seg);
 			return;
 		}
 		/* Check ack field p. 72 */
-		if(!(seg.flags & ACK)){
+		if(!seg.flags.ack){
 			free_p(bp);     /* All segments after synchronization must have ACK */
 			return;
 		}
 		/* Process ACK */
 		switch(tcb->state){
-		case SYN_RECEIVED:
+		case TCP_SYN_RECEIVED:
 			if(seq_within(seg.ack,tcb->snd.una+1,tcb->snd.nxt)){
 				update(tcb,&seg);
-				setstate(tcb,ESTABLISHED);
+				setstate(tcb,TCP_ESTABLISHED);
 			} else {
 				free_p(bp);
-				reset(ip->source,ip->dest,ip->tos,length,&seg);
+				reset(ip,&seg);
 				return;
 			}
 			break;
-		case ESTABLISHED:
-		case CLOSE_WAIT:
+		case TCP_ESTABLISHED:
+		case TCP_CLOSE_WAIT:
 			update(tcb,&seg);
 			break;
-		case FINWAIT1:  /* p. 73 */
+		case TCP_FINWAIT1:      /* p. 73 */
 			update(tcb,&seg);
 			if(tcb->sndcnt == 0){
 				/* Our FIN is acknowledged */
-				setstate(tcb,FINWAIT2);
+				setstate(tcb,TCP_FINWAIT2);
 			}
 			break;
-		case FINWAIT2:
+		case TCP_FINWAIT2:
 			update(tcb,&seg);
 			break;
-		case CLOSING:
+		case TCP_CLOSING:
 			update(tcb,&seg);
 			if(tcb->sndcnt == 0){
 				/* Our FIN is acknowledged */
-				setstate(tcb,TIME_WAIT);
+				setstate(tcb,TCP_TIME_WAIT);
 				tcb->timer.start = MSL2 * (1000 / MSPTICK);
 				start_timer(&tcb->timer);
 			}
 			break;
-		case LAST_ACK:
+		case TCP_LAST_ACK:
 			update(tcb,&seg);
 			if(tcb->sndcnt == 0){
 				/* Our FIN is acknowledged, close connection */
 				close_self(tcb,NORMAL);
 				return;
 			}
-/* I think this is wrong, and can cause permanent ACK-ACK loops.  dmf.
-		case TIME_WAIT:
-			tcb->flags |= FORCE;
+			break;
+		case TCP_TIME_WAIT:
 			start_timer(&tcb->timer);
-*/
+			break;
 		}
 
 		/* (URGent bit processing skipped here) */
@@ -307,16 +310,19 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 		/* Process the segment text, if any, beginning at rcv.nxt (p. 74) */
 		if(length != 0){
 			switch(tcb->state){
-			case SYN_RECEIVED:
-			case ESTABLISHED:
-			case FINWAIT1:
-			case FINWAIT2:
+			case TCP_SYN_RECEIVED:
+			case TCP_ESTABLISHED:
+			case TCP_FINWAIT1:
+			case TCP_FINWAIT2:
 				/* Place on receive queue */
 				append(&tcb->rcvq,bp);
 				tcb->rcvcnt += length;
 				tcb->rcv.nxt += length;
 				tcb->rcv.wnd -= length;
-				tcb->flags |= FORCE;
+				tcb->flags.force = 1;
+				/* Notify user */
+				if(tcb->r_upcall)
+					(*tcb->r_upcall)(tcb,tcb->rcvcnt);
 				break;
 			default:
 				/* Ignore segment text */
@@ -324,53 +330,44 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 				break;
 			}
 		}
-		/* If the user has set up a r_upcall function and there's
-		 * data to be read, notify him.
-		 *
-		 * This is done before sending an acknowledgement,
-		 * to give the user a chance to piggyback some reply data.
-		 * It's also done before processing FIN so that the state
-		 * change upcall will occur after the user has had a chance
-		 * to read the last of the incoming data.
-		 */
-		if(tcb->r_upcall && tcb->rcvcnt != 0){
-			(*tcb->r_upcall)(tcb,tcb->rcvcnt);
-		}
 		/* process FIN bit (p 75) */
-		if(seg.flags & FIN){
-			tcb->flags |= FORCE;    /* Always respond with an ACK */
+		if(seg.flags.fin){
+			tcb->flags.force = 1;   /* Always respond with an ACK */
 
 			switch(tcb->state){
-			case SYN_RECEIVED:
-			case ESTABLISHED:
+			case TCP_SYN_RECEIVED:
+			case TCP_ESTABLISHED:
 				tcb->rcv.nxt++;
-				setstate(tcb,CLOSE_WAIT);
+				setstate(tcb,TCP_CLOSE_WAIT);
 				break;
-			case FINWAIT1:
+			case TCP_FINWAIT1:
 				tcb->rcv.nxt++;
 				if(tcb->sndcnt == 0){
-					/* Our FIN has been acked; bypass CLOSING state */
-					setstate(tcb,TIME_WAIT);
+					/* Our FIN has been acked; bypass TCP_CLOSING state */
+					setstate(tcb,TCP_TIME_WAIT);
 					tcb->timer.start = MSL2 * (1000/MSPTICK);
 					start_timer(&tcb->timer);
 				} else {
-					setstate(tcb,CLOSING);
+					setstate(tcb,TCP_CLOSING);
 				}
 				break;
-			case FINWAIT2:
+			case TCP_FINWAIT2:
 				tcb->rcv.nxt++;
-				setstate(tcb,TIME_WAIT);
+				setstate(tcb,TCP_TIME_WAIT);
 				tcb->timer.start = MSL2 * (1000/MSPTICK);
 				start_timer(&tcb->timer);
 				break;
-			case CLOSE_WAIT:
-			case CLOSING:
-			case LAST_ACK:
+			case TCP_CLOSE_WAIT:
+			case TCP_CLOSING:
+			case TCP_LAST_ACK:
 				break;          /* Ignore */
-			case TIME_WAIT: /* p 76 */
+			case TCP_TIME_WAIT:     /* p 76 */
 				start_timer(&tcb->timer);
 				break;
 			}
+			/* Call the client again so he can see EOF */
+			if(tcb->r_upcall)
+				(*tcb->r_upcall)(tcb,tcb->rcvcnt);
 		}
 		/* Scan the resequencing queue, looking for a segment we can handle,
 		 * and freeing all those that are now obsolete.
@@ -419,22 +416,14 @@ struct mbuf **bpp;              /* First 8 bytes of TCP header */
 	if(!seq_within(seg.seq,tcb->snd.una,tcb->snd.nxt))
 		return;
 
-	/* The strategy here is that Destination Unreachable and Time Exceeded
-	 * messages that occur after a connection has been established are likely
-	 * to be transient events, and shouldn't kill our connection (at least
-	 * until after we've tried a few more times). On the other hand, if
-	 * they occur on our very first attempt to send a datagram on a new
-	 * connection, they're probably "for real". In any event, the info
-	 * is saved.
+	/* Destination Unreachable and Time Exceeded messages never kill a
+	 * connection; the info is merely saved for future reference.
 	 */
 	switch(uchar(type)){
 	case ICMP_DEST_UNREACH:
 	case ICMP_TIME_EXCEED:
 		tcb->type = type;
 		tcb->code = code;
-		if(tcb->state == SYN_SENT || tcb->state == SYN_RECEIVED){
-			close_self(tcb,NETWORK);
-		}
 		break;
 	case ICMP_QUENCH:
 		/* Source quench; cut the congestion window in half,
@@ -448,64 +437,61 @@ struct mbuf **bpp;              /* First 8 bytes of TCP header */
 /* Send an acceptable reset (RST) response for this segment
  * The RST reply is composed in place on the input segment
  */
-static void
-reset(source,dest,tos,length,seg)
-int32 source;                   /* Remote IP address */
-int32 dest;                     /* Our IP address */
-char tos;                       /* Type of Service */
-int16 length;                   /* Length of data portion */
+void
+reset(ip,seg)
+struct ip *ip;                  /* Offending IP header */
 register struct tcp *seg;       /* Offending TCP header */
 {
 	struct mbuf *hbp;
 	struct pseudo_header ph;
 	int16 tmp;
-	char rflags;
 
-	if(seg->flags & RST)
+	if(seg->flags.rst)
 		return; /* Never send an RST in response to an RST */
 
-	tcp_stat.resets++;
-
 	/* Compose the RST IP pseudo-header, swapping addresses */
-	ph.source = dest;
-	ph.dest = source;
+	ph.source = ip->dest;
+	ph.dest = ip->source;
 	ph.protocol = TCP_PTCL;
 	ph.length = TCPLEN;
 
 	/* Swap port numbers */
-	tmp = seg->dest;
-	seg->dest = seg->source;
-	seg->source = tmp;
+	tmp = seg->source;
+	seg->source = seg->dest;
+	seg->dest = tmp;
 
-	rflags = RST;
-	if(seg->flags & ACK){
+	if(seg->flags.ack){
 		/* This reset is being sent to clear a half-open connection.
 		 * Set the sequence number of the RST to the incoming ACK
 		 * so it will be acceptable.
 		 */
+		seg->flags.ack = 0;
 		seg->seq = seg->ack;
 		seg->ack = 0;
 	} else {
-		/* We're rejecting a connect request (SYN) from LISTEN state
+		/* We're rejecting a connect request (SYN) from TCP_LISTEN state
 		 * so we have to "acknowledge" their SYN.
 		 */
-		rflags |= ACK;
+		seg->flags.ack = 1;
 		seg->ack = seg->seq;
 		seg->seq = 0;
-		if(seg->flags & SYN)
-			seg->ack++;
-		seg->ack += length;
-		if(seg->flags & FIN)
+		if(seg->flags.syn)
 			seg->ack++;
 	}
-	seg->flags = rflags;
+	/* Set remaining parts of packet */
+	seg->flags.urg = 0;
+	seg->flags.psh = 0;
+	seg->flags.rst = 1;
+	seg->flags.syn = 0;
+	seg->flags.fin = 0;
 	seg->wnd = 0;
 	seg->up = 0;
 	seg->mss = 0;
 	if((hbp = htontcp(seg,NULLBUF,&ph)) == NULLBUF)
 		return;
 	/* Ship it out (note swap of addresses) */
-	ip_send(dest,source,TCP_PTCL,tos,0,hbp,ph.length,0,0);
+	ip_send(ip->dest,ip->source,TCP_PTCL,ip->tos,0,hbp,ph.length,0,0);
+	tcpOutRsts++;
 }
 
 /* Process an incoming acknowledgement and window indication.
@@ -521,7 +507,7 @@ register struct tcp *seg;
 
 	acked = 0;
 	if(seq_gt(seg->ack,tcb->snd.nxt)){
-		tcb->flags |= FORCE;    /* Acks something not yet sent */
+		tcb->flags.force = 1;   /* Acks something not yet sent */
 		return;
 	}
 	/* Decide if we need to do a window update.
@@ -577,16 +563,17 @@ register struct tcp *seg;
 		}
 	}
 	/* Round trip time estimation */
-	if(run_timer(&tcb->rtt_timer) && seq_ge(seg->ack,tcb->rttseq)){
+	if(tcb->flags.rtt_run && seq_ge(seg->ack,tcb->rttseq)){
 		/* A timed sequence number has been acked */
-		if(!(tcb->flags & RETRAN)){
+		tcb->flags.rtt_run = 0;
+		if(!(tcb->flags.retran)){
 			int32 rtt;      /* measured round trip time */
 			int32 abserr;   /* abs(rtt - srtt) */
 
 			/* This packet was sent only once and now
 			 * it's been acked, so process the round trip time
 			 */
-			rtt = (dur_timer(&tcb->rtt_timer) - read_timer(&tcb->rtt_timer)) * MSPTICK;
+			rtt = (Clock - tcb->rtt_time) * MSPTICK;
 
 			/* If this ACKs our SYN, this is the first ACK
 			 * we've received; base our entire SRTT estimate
@@ -594,21 +581,22 @@ register struct tcp *seg;
 			 * history, also computing mean deviation.
 			 */
 			if(rtt > tcb->srtt &&
-			 (tcb->state == SYN_SENT || tcb->state == SYN_RECEIVED)){
+			 (tcb->state == TCP_SYN_SENT || tcb->state == TCP_SYN_RECEIVED)){
 				tcb->srtt = rtt;
 			} else {
 				abserr = (rtt > tcb->srtt) ? rtt - tcb->srtt : tcb->srtt - rtt;
-				tcb->srtt = ((AGAIN-1)*tcb->srtt + rtt) / AGAIN;
-				tcb->mdev = ((DGAIN-1)*tcb->mdev + abserr) / DGAIN;
+				/* Run SRTT and MDEV integrators, with rounding */
+				tcb->srtt = ((AGAIN-1)*tcb->srtt + rtt + (AGAIN/2)) >> LAGAIN;
+				tcb->mdev = ((DGAIN-1)*tcb->mdev + abserr + (DGAIN/2)) >> LDGAIN;
 			}
+			rtt_add(tcb->conn.remote.address,rtt);
 			/* Reset the backoff level */
 			tcb->backoff = 0;
 		}
-		stop_timer(&tcb->rtt_timer);
 	}
 	/* If we're waiting for an ack of our SYN, note it and adjust count */
-	if(!(tcb->flags & SYNACK)){
-		tcb->flags |= SYNACK;
+	if(!(tcb->flags.synack)){
+		tcb->flags.synack = 1;
 		acked--;
 		tcb->sndcnt--;
 	}
@@ -639,16 +627,18 @@ register struct tcp *seg;
 	 * unacknowledged segment (the only one that is ever retransmitted)
 	 * has now been acked.
 	 */
-	tcb->flags &= ~RETRAN;
+	tcb->flags.retran = 0;
 
 	/* If outgoing data was acked, notify the user so he can send more
 	 * unless we've already sent a FIN.
 	 */
-	if(acked != 0 && tcb->t_upcall && tcb->window > tcb->sndcnt){
+	if(acked != 0){
 		switch(tcb->state){
-		case ESTABLISHED:
-		case CLOSE_WAIT:
-			(*tcb->t_upcall)(tcb,tcb->window - tcb->sndcnt);
+		case TCP_ESTABLISHED:
+		case TCP_CLOSE_WAIT:
+			if(tcb->t_upcall && tcb->window > tcb->sndcnt){
+				(*tcb->t_upcall)(tcb,tcb->window - tcb->sndcnt);
+			}
 		}
 	}
 }
@@ -672,9 +662,10 @@ register struct tcb *tcb;
 char tos;
 struct tcp *seg;
 {
-	int16 mtu,ip_mtu();
+	int16 mtu;
+	struct tcp_rtt *tp;
 
-	tcb->flags |= FORCE;    /* Always send a response */
+	tcb->flags.force = 1;   /* Always send a response */
 
 	/* Note: It's not specified in RFC 793, but SND.WL1 and
 	 * SND.WND are initialized here since it's possible for the
@@ -697,6 +688,11 @@ struct tcp *seg;
 		mtu -= TCPLEN + IPLEN;
 		tcb->cwind = tcb->mss = min(mtu,tcb->mss);
 	}
+	/* See if there's round-trip time experience */
+	if((tp = rtt_get(tcb->conn.remote.address)) != NULLRTT){
+		tcb->srtt = tp->srtt;
+		tcb->mdev = tp->mdev;
+	}
 }
 
 /* Generate an initial sequence number and put a SYN on the send queue */
@@ -704,11 +700,11 @@ void
 send_syn(tcb)
 register struct tcb *tcb;
 {
-	tcb->iss = iss();
+	tcb->iss = geniss();
 	tcb->rttseq = tcb->snd.wl2 = tcb->snd.una = tcb->iss;
 	tcb->snd.ptr = tcb->snd.nxt = tcb->rttseq;
 	tcb->sndcnt++;
-	tcb->flags |= FORCE;
+	tcb->flags.force = 1;
 }
 
 /* Add an entry to the resequencing queue in the proper place */
@@ -782,28 +778,26 @@ int16 *length;
  * unacceptable.
  */
 static int
-trim(tcb,seg,bp,length)
+trim(tcb,seg,bpp,length)
 register struct tcb *tcb;
 register struct tcp *seg;
-struct mbuf **bp;
+struct mbuf **bpp;
 int16 *length;
 {
-	struct mbuf *nbp;
 	long dupcnt,excess;
 	int16 len;              /* Segment length including flags */
-	char accept;
+	char accept = 0;
 
-	accept = 0;
 	len = *length;
-	if(seg->flags & SYN)
+	if(seg->flags.syn)
 		len++;
-	if(seg->flags & FIN)
+	if(seg->flags.fin)
 		len++;
 
 	/* Acceptability tests */
 	if(tcb->rcv.wnd == 0){
-		/* Only in-order, zero-length segments are acceptable when our window
-		 * is closed.
+		/* Only in-order, zero-length segments are acceptable when
+		 * our window is closed.
 		 */
 		if(seg->seq == tcb->rcv.nxt && len == 0){
 			return 0;       /* Acceptable, no trimming needed */
@@ -820,34 +814,31 @@ int16 *length;
 		}
 	}
 	if(!accept){
-		free_p(*bp);
+		tcb->rerecv += len;     /* Assume all of it was a duplicate */
+		free_p(*bpp);
 		return -1;
 	}
-	dupcnt = tcb->rcv.nxt - seg->seq;
-	if(dupcnt > 0){
+	if((dupcnt = tcb->rcv.nxt - seg->seq) > 0){
 		tcb->rerecv += dupcnt;
 		/* Trim off SYN if present */
-		if(seg->flags & SYN){
+		if(seg->flags.syn){
 			/* SYN is before first data byte */
-			seg->flags &= ~SYN;
+			seg->flags.syn = 0;
 			seg->seq++;
 			dupcnt--;
 		}
 		if(dupcnt > 0){
-			pullup(bp,NULLCHAR,(int16)dupcnt);
+			pullup(bpp,NULLCHAR,(int16)dupcnt);
 			seg->seq += dupcnt;
 			*length -= dupcnt;
 		}
 	}
-	excess = seg->seq + *length - (tcb->rcv.nxt + tcb->rcv.wnd);
-	if(excess > 0){
+	if((excess = seg->seq + *length - (tcb->rcv.nxt + tcb->rcv.wnd)) > 0){
 		tcb->rerecv += excess;
 		/* Trim right edge */
 		*length -= excess;
-		nbp = copy_p(*bp,*length);
-		free_p(*bp);
-		*bp = nbp;
-		seg->flags &= ~FIN;     /* FIN follows last data byte */
+		trim_mbuf(bpp,*length);
+		seg->flags.fin = 0;     /* FIN follows last data byte */
 	}
 	return 0;
 }

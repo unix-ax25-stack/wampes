@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.5 1990/09/11 13:44:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.6 1990/10/12 19:25:13 deyke Exp $ */
 
 /* Low level AX.25 frame processing - address header */
 
@@ -14,14 +14,12 @@
 #include "ax25.h"
 
 /* AX.25 broadcast address: "QST-0" in shifted ascii */
-struct ax25_addr Ax25_bdcst = {
-	'Q'<<1, 'S'<<1, 'T'<<1, ' '<<1, ' '<<1, ' '<<1,
-	('0'<<1) | E,
+char Ax25_bdcst[AXALEN] = {
+	'Q'<<1, 'S'<<1, 'T'<<1, ' '<<1, ' '<<1, ' '<<1, ('0'<<1)|E,
 };
 /* NET/ROM broadcast address: "NODES-0" in shifted ascii */
-static struct ax25_addr nr_bdcst = {
-	'N'<<1, 'O'<<1, 'D'<<1, 'E'<<1, 'S'<<1, ' '<<1,
-	('0'<<1) | E
+static char Nr_nodebc[AXALEN] = {
+	'N'<<1, 'O'<<1, 'D'<<1, 'E'<<1, 'S'<<1, ' '<<1, ('0'<<1)|E,
 };
 char Mycall[AXALEN];
 int Digipeat = 2;       /* Controls digipeating */
@@ -129,9 +127,9 @@ struct mbuf *bp;
 
   if (ismycall(bp->data))
     multicast = 0;
-  else if (addreq(bp->data, (char *) &Ax25_bdcst))
+  else if (addreq(bp->data, Ax25_bdcst))
     multicast = 1;
-  else if (addreq(bp->data, (char *) &nr_bdcst))
+  else if (addreq(bp->data, Nr_nodebc))
     multicast = 1;
   else
     goto discard;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.12 1990/09/17 11:51:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.13 1990/10/12 19:25:44 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -18,11 +18,14 @@
 #include "iface.h"
 #include "asy.h"
 #include "files.h"
+#include "hardware.h"
 #include "hpux.h"
 
 extern int  debug;
 extern long  sigsetmask();
 extern void _exit();
+
+#define TIMEOUT 120
 
 struct asy {
   struct iface *iface;  /* Associated interface structure */
@@ -102,7 +105,7 @@ void ioinit()
   sigvector(SIGPIPE, &vec, (struct sigvec *) 0);
   vec.sv_handler = (void (*)()) abort;
   sigvector(SIGALRM, &vec, (struct sigvec *) 0);
-  if (!debug) alarm(60l);
+  if (!debug) alarm(TIMEOUT);
   umask(022);
   if (!debug) rtprio(0, 127);
   if (!getenv("HOME"))
@@ -347,7 +350,6 @@ void check_time()
   while (lasttime < currtime) { /* Handle possibility of several missed ticks */
     lasttime++;
     tick();
-    iss();
   }
 }
 
@@ -441,7 +443,7 @@ eihalt()
 
   check_files_changed();
   wait3(&status, WNOHANG, (int *) 0);
-  if (!debug) alarm(60l);
+  if (!debug) alarm(TIMEOUT);
   timeout.tv_sec = timeout.tv_usec = 0;
   if (!Hopper) {
     gettimeofday(&t, &tz);

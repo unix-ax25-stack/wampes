@@ -1,11 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.7 1990/09/11 13:46:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.8 1990/10/12 19:26:50 deyke Exp $ */
 
 /* User calls to TCP */
-
-#include <ctype.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <stdio.h>
 #include "global.h"
 #include "timer.h"
 #include "mbuf.h"
@@ -13,8 +9,10 @@
 #include "socket.h"
 #include "internet.h"
 #include "tcp.h"
+#include "ip.h"
+#include "icmp.h"
 
-int16 tcp_window = DEF_WND;
+int16 Tcp_window = DEF_WND;
 
 struct tcb *
 open_tcp(lsocket,fsocket,mode,window,r_upcall,t_upcall,s_upcall,tos,user)
@@ -25,20 +23,17 @@ int16 window;           /* Receive window (and send buffer) sizes */
 void (*r_upcall)();     /* Function to call when data arrives */
 void (*t_upcall)();     /* Function to call when ok to send more data */
 void (*s_upcall)();     /* Function to call when connection state changes */
-char tos;
-char *user;             /* User linkage area */
+int tos;
+int user;               /* User linkage area */
 {
 	struct connection conn;
 	register struct tcb *tcb;
-	void send_syn();
 
 	if(lsocket == NULLSOCK){
 		Net_error = INVALID;
 		return NULLTCB;
 	}
 	conn.local.address = lsocket->address;
-	if (!conn.local.address)
-		conn.local.address = Ip_addr;
 	conn.local.port = lsocket->port;
 	if(fsocket != NULLSOCK){
 		conn.remote.address = fsocket->address;
@@ -52,7 +47,7 @@ char *user;             /* User linkage area */
 			Net_error = NO_MEM;
 			return NULLTCB;
 		}
-	} else if(tcb->state != LISTEN){
+	} else if(tcb->state != TCP_LISTEN){
 		Net_error = CON_EXISTS;
 		return NULLTCB;
 	}
@@ -60,24 +55,24 @@ char *user;             /* User linkage area */
 	if(window != 0)
 		tcb->window = tcb->rcv.wnd = window;
 	else
-		tcb->window = tcb->rcv.wnd = tcp_window;
+		tcb->window = tcb->rcv.wnd = Tcp_window;
+	tcb->snd.wnd = 1;       /* Allow space for sending a SYN */
 	tcb->r_upcall = r_upcall;
 	tcb->t_upcall = t_upcall;
 	tcb->s_upcall = s_upcall;
 	tcb->tos = tos;
 	switch(mode){
 	case TCP_SERVER:
-		tcb->flags |= CLONE;
+		tcb->flags.clone = 1;
 	case TCP_PASSIVE:       /* Note fall-thru */
-		setstate(tcb,LISTEN);
+		setstate(tcb,TCP_LISTEN);
 		break;
 	case TCP_ACTIVE:
-		/* Send SYN, go into SYN_SENT state */
-		tcb->flags |= ACTIVE;
+		/* Send SYN, go into TCP_SYN_SENT state */
+		tcb->flags.active = 1;
 		send_syn(tcb);
-		setstate(tcb,SYN_SENT);
+		setstate(tcb,TCP_SYN_SENT);
 		tcp_output(tcb);
-		tcp_stat.conout++;
 		break;
 	}
 	return tcb;
@@ -89,7 +84,6 @@ register struct tcb *tcb;
 struct mbuf *bp;
 {
 	int16 cnt;
-	void send_syn();
 
 	if(tcb == NULLTCB || bp == NULLBUF){
 		free_p(bp);
@@ -97,41 +91,40 @@ struct mbuf *bp;
 		return -1;
 	}
 	cnt = len_p(bp);
-#ifdef  TIGHT
-	/* If this would overfill our send queue, reject it entirely */
-	if(tcb->sndcnt + cnt > tcb->window){
-		free_p(bp);
-		Net_error = WOULDBLK;
-		return -1;
-	}
-#endif
 	switch(tcb->state){
-	case CLOSED:
+	case TCP_CLOSED:
 		free_p(bp);
 		Net_error = NO_CONN;
 		return -1;
-	case LISTEN:    /* Change state from passive to active */
-		tcb->flags |= ACTIVE;
+	case TCP_LISTEN:
+		if(tcb->conn.remote.address == 0 && tcb->conn.remote.port == 0){
+			/* Save data for later */
+			append(&tcb->sndq,bp);
+			tcb->sndcnt += cnt;
+			break;
+		}
+		/* Change state from passive to active */
+		tcb->flags.active = 1;
 		send_syn(tcb);
-		setstate(tcb,SYN_SENT); /* Note fall-thru */
-	case SYN_SENT:
-	case SYN_RECEIVED:
-	case ESTABLISHED:
-	case CLOSE_WAIT:
+		setstate(tcb,TCP_SYN_SENT);     /* Note fall-thru */
+	case TCP_SYN_SENT:
+	case TCP_SYN_RECEIVED:
+	case TCP_ESTABLISHED:
+	case TCP_CLOSE_WAIT:
 		append(&tcb->sndq,bp);
 		tcb->sndcnt += cnt;
 		tcp_output(tcb);
 		break;
-	case FINWAIT1:
-	case FINWAIT2:
-	case CLOSING:
-	case LAST_ACK:
-	case TIME_WAIT:
+	case TCP_FINWAIT1:
+	case TCP_FINWAIT2:
+	case TCP_CLOSING:
+	case TCP_LAST_ACK:
+	case TCP_TIME_WAIT:
 		free_p(bp);
 		Net_error = CON_CLOS;
 		return -1;
 	}
-	return cnt;
+	return (int)cnt;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -146,21 +139,21 @@ struct tcb *tcb;
     return (-1);
   }
   switch (tcb->state) {
-  case CLOSED:
+  case TCP_CLOSED:
     Net_error = NO_CONN;
     return (-1);
-  case LISTEN:
-  case SYN_SENT:
-  case SYN_RECEIVED:
-  case ESTABLISHED:
-  case CLOSE_WAIT:
+  case TCP_LISTEN:
+  case TCP_SYN_SENT:
+  case TCP_SYN_RECEIVED:
+  case TCP_ESTABLISHED:
+  case TCP_CLOSE_WAIT:
     cnt = tcb->window - tcb->sndcnt;
     return (cnt > 0) ? cnt : 0;
-  case FINWAIT1:
-  case FINWAIT2:
-  case CLOSING:
-  case LAST_ACK:
-  case TIME_WAIT:
+  case TCP_FINWAIT1:
+  case TCP_FINWAIT2:
+  case TCP_CLOSING:
+  case TCP_LAST_ACK:
+  case TCP_TIME_WAIT:
     Net_error = CON_CLOS;
     return (-1);
   }
@@ -171,69 +164,60 @@ struct tcb *tcb;
 
 /* User receive routine */
 int
-recv_tcp(tcb,bp,cnt)
+recv_tcp(tcb,bpp,cnt)
 register struct tcb *tcb;
-struct mbuf **bp;
+struct mbuf **bpp;
 int16 cnt;
 {
-	if(tcb == NULLTCB || bp == (struct mbuf **)NULL){
+	if(tcb == NULLTCB || bpp == (struct mbuf **)NULL){
 		Net_error = INVALID;
 		return -1;
+	}
+	if(tcb->rcvcnt == 0){
+		/* If there's nothing on the queue, our action depends on what state
+		 * we're in (i.e., whether or not we're expecting any more data).
+		 * If no more data is expected, then simply return 0; this is
+		 * interpreted as "end of file". Otherwise return -1.
+		 */
+		switch(tcb->state){
+		case TCP_LISTEN:
+		case TCP_SYN_SENT:
+		case TCP_SYN_RECEIVED:
+		case TCP_ESTABLISHED:
+		case TCP_FINWAIT1:
+		case TCP_FINWAIT2:
+			Net_error = WOULDBLK;
+			return -1;
+		case TCP_CLOSED:
+		case TCP_CLOSE_WAIT:
+		case TCP_CLOSING:
+		case TCP_LAST_ACK:
+		case TCP_TIME_WAIT:
+			*bpp = NULLBUF;
+			return 0;
+		}
 	}
 	/* cnt == 0 means "I want it all" */
 	if(cnt == 0)
 		cnt = tcb->rcvcnt;
-	/* If there's something on the queue, just return it regardless
-	 * of the state we're in.
-	 */
-	if(tcb->rcvcnt != 0){
-		/* See if the user can take all of it */
-		if(tcb->rcvcnt <= cnt){
-			cnt = tcb->rcvcnt;
-			*bp = tcb->rcvq;
-			tcb->rcvq = NULLBUF;
-		} else {
-			if((*bp = alloc_mbuf(cnt)) == NULLBUF){
-				Net_error = NO_MEM;
-				return -1;
-			}
-			pullup(&tcb->rcvq,(*bp)->data,cnt);
-			(*bp)->cnt = cnt;
-		}
-		tcb->rcvcnt -= cnt;
-		tcb->rcv.wnd += cnt;
-		/* Do a window update if it was closed */
-		if(cnt == tcb->rcv.wnd){
-			tcb->flags |= FORCE;
-			tcp_output(tcb);
-		}
-		return cnt;
+	/* See if the user can take all of it */
+	if(tcb->rcvcnt <= cnt){
+		cnt = tcb->rcvcnt;
+		*bpp = tcb->rcvq;
+		tcb->rcvq = NULLBUF;
 	} else {
-		/* If there's nothing on the queue, our action depends on what state
-		 * we're in (i.e., whether or not we're expecting any more data).
-		 * If no more data is expected, then simply return 0; this is
-		 * interpreted as "end of file".
-		 */
-		switch(tcb->state){
-		case LISTEN:
-		case SYN_SENT:
-		case SYN_RECEIVED:
-		case ESTABLISHED:
-		case FINWAIT1:
-		case FINWAIT2:
-			*bp = NULLBUF;
-			Net_error = WOULDBLK;
-			return -1;
-		case CLOSED:
-		case CLOSE_WAIT:
-		case CLOSING:
-		case LAST_ACK:
-		case TIME_WAIT:
-			*bp = NULLBUF;
-			return 0;
-		}
+		*bpp = ambufw(cnt);
+		pullup(&tcb->rcvq,(*bpp)->data,cnt);
+		(*bpp)->cnt = cnt;
 	}
-	return 0;       /* Not reached, but lint doesn't know that */
+	tcb->rcvcnt -= cnt;
+	tcb->rcv.wnd += cnt;
+	/* Do a window update if it was closed */
+	if(cnt == tcb->rcv.wnd){
+		tcb->flags.force = 1;
+		tcp_output(tcb);
+	}
+	return (int)cnt;
 }
 /* This really means "I have no more data to send". It only closes the
  * connection in one direction, and we can continue to receive data
@@ -248,42 +232,43 @@ register struct tcb *tcb;
 		return -1;
 	}
 	switch(tcb->state){
-	case LISTEN:
-	case SYN_SENT:
+	case TCP_CLOSED:
+		return 0;       /* Unlikely */
+	case TCP_LISTEN:
+	case TCP_SYN_SENT:
 		close_self(tcb,NORMAL);
 		return 0;
-	case SYN_RECEIVED:
-	case ESTABLISHED:
+	case TCP_SYN_RECEIVED:
+	case TCP_ESTABLISHED:
 		tcb->sndcnt++;
 		tcb->snd.nxt++;
-		setstate(tcb,FINWAIT1);
+		setstate(tcb,TCP_FINWAIT1);
 		tcp_output(tcb);
 		return 0;
-	case CLOSE_WAIT:
+	case TCP_CLOSE_WAIT:
 		tcb->sndcnt++;
 		tcb->snd.nxt++;
-		setstate(tcb,LAST_ACK);
+		setstate(tcb,TCP_LAST_ACK);
 		tcp_output(tcb);
 		return 0;
-	case FINWAIT1:
-	case FINWAIT2:
-	case CLOSING:
-	case LAST_ACK:
-	case TIME_WAIT:
+	case TCP_FINWAIT1:
+	case TCP_FINWAIT2:
+	case TCP_CLOSING:
+	case TCP_LAST_ACK:
+	case TCP_TIME_WAIT:
 		Net_error = CON_CLOS;
 		return -1;
 	}
 	return -1;      /* "Can't happen" */
 }
 /* Delete TCB, free resources. The user is not notified, even if the TCB is
- * not in the CLOSED state. This function should normally be called by the
- * user only in response to a state change upcall to CLOSED state.
+ * not in the TCP_CLOSED state. This function should normally be called by the
+ * user only in response to a state change upcall to TCP_CLOSED state.
  */
 int
 del_tcp(tcb)
 register struct tcb *tcb;
 {
-	void unlink_tcb();
 	struct reseq *rp,*rp1;
 
 	if(tcb == NULLTCB){
@@ -292,7 +277,6 @@ register struct tcb *tcb;
 	}
 	unlink_tcb(tcb);
 	stop_timer(&tcb->timer);
-	stop_timer(&tcb->rtt_timer);
 	for(rp = tcb->reseq;rp != NULLRESEQ;rp = rp1){
 		rp1 = rp->next;
 		free_p(rp->bp);
@@ -303,24 +287,6 @@ register struct tcb *tcb;
 	free_p(tcb->sndq);
 	free((char *)tcb);
 	return 0;
-}
-/* Do printf on a tcp connection */
-/*VARARGS*/
-Xprintf(tcb,message,arg1,arg2,arg3)
-struct tcb *tcb;
-char *message,*arg1,*arg2,*arg3;
-{
-	struct mbuf *bp;
-	int len;
-
-	if(tcb == NULLTCB)
-		return 0;
-
-	bp = alloc_mbuf(256);
-	len = sprintf(bp->data,message,arg1,arg2,arg3);
-	bp->cnt = strlen(bp->data);
-	send_tcp(tcb,bp);
-	return len;
 }
 /* Return 1 if arg is a valid TCB, 0 otherwise */
 int
@@ -333,21 +299,21 @@ struct tcb *tcb;
 	if(tcb == NULLTCB)
 		return 0;       /* Null pointer can't be valid */
 	for(i=0;i<NTCB;i++){
-		for(tcb1=tcbs[i];tcb1 != NULLTCB;tcb1 = tcb1->next){
+		for(tcb1=Tcbs[i];tcb1 != NULLTCB;tcb1 = tcb1->next){
 			if(tcb1 == tcb)
 				return 1;
 		}
 	}
 	return 0;
 }
+/* Kick a particular TCP connection */
+int
 kick_tcp(tcb)
 register struct tcb *tcb;
 {
-	void tcp_timeout();
-
 	if(!tcpval(tcb))
 		return -1;
-	tcp_timeout((char *)tcb);
+	tcp_timeout(tcb);
 	return 0;
 }
 /* Kick all TCP connections to specified address; return number kicked */
@@ -360,7 +326,7 @@ int32 addr;
 	int cnt = 0;
 
 	for(i=0;i<NTCB;i++){
-		for(tcb=tcbs[i];tcb != NULLTCB;tcb = tcb->next){
+		for(tcb=Tcbs[i];tcb != NULLTCB;tcb = tcb->next){
 			if(tcb->conn.remote.address == addr){
 				kick_tcp(tcb);
 				cnt++;
@@ -369,85 +335,73 @@ int32 addr;
 	}
 	return cnt;
 }
+/* Clear all TCP connections */
+void
+reset_all()
+{
+	register int i;
+	register struct tcb *tcb;
+
+	for(i=0;i<NTCB;i++){
+		for(tcb=Tcbs[i];tcb != NULLTCB;tcb = tcb->next)
+			reset_tcp(tcb);
+	}
+}
+void
 reset_tcp(tcb)
 register struct tcb *tcb;
 {
+	struct tcp fakeseg;
+	struct ip fakeip;
+
+	if(tcb == NULLTCB)
+		return;
+	if(tcb->state != TCP_LISTEN){
+		/* Compose a fake segment with just enough info to generate the
+		 * correct RST reply
+		 */
+		fakeseg.flags.rst = 0;
+		fakeseg.dest = tcb->conn.local.port;
+		fakeseg.source = tcb->conn.remote.port;
+		fakeseg.flags.ack = 1;
+		/* Here we try to pick a sequence number with the greatest likelihood
+		 * of being in his receive window.
+		 */
+		fakeseg.ack = tcb->snd.nxt + tcb->snd.wnd - 1;
+		fakeip.dest = tcb->conn.local.address;
+		fakeip.source = tcb->conn.remote.address;
+		fakeip.tos = tcb->tos;
+		reset(&fakeip,&fakeseg);
+	}
 	close_self(tcb,RESET);
 }
-
-/*---------------------------------------------------------------------------*/
-
-static struct tcp_port_table {
-  char  *name;
-  int16 port;
-} tcp_port_table[] = {
-  "*",           0,
-  "convers",     3600,
-  "discard",     IPPORT_DISCARD,/* ARPA discard protocol */
-  "echo",        IPPORT_ECHO,   /* ARPA echo protocol */
-  "finger",      IPPORT_FINGER, /* ARPA finger protocol */
-  "ftp",         IPPORT_FTP,    /* ARPA file transfer protocol (cmd) */
-  "ftp-data",    IPPORT_FTPD,   /* ARPA file transfer protocol (data) */
-  "smtp",        IPPORT_SMTP,   /* ARPA simple mail transfer protocol */
-  "telnet",      IPPORT_TELNET, /* ARPA virtual terminal protocol */
-#if 0
-  "domain",         53,         /* ARPA domain nameserver */
-  "portmap",       111,         /* map RPC program numbers to ports */
-  "netbios_ns",    137,         /* NetBIOS Name Service */
-  "netbios_dgm",   138,         /* NetBIOS Datagram Service */
-  "netbios_ssn",   139,         /* NetBIOS Session Service */
-  "exec",          512,         /* remote execution, passwd required */
-  "login",         513,         /* remote login */
-  "shell",         514,         /* remote command, no passwd used */
-  "printer",       515,         /* remote print spooling */
-  "DAServer",      987,         /* SQL distributed access */
-  "rlb",          1260,         /* remote loopback diagnostic */
-  "nft",          1536,         /* NS network file transfer */
-  "netdist",      2106,         /* update(1m) network distribution service */
-  "rfa",          4672,         /* NS remote file access */
-  "lanmgrx.osB",  5696,         /* LAN Manager/X for B.00.00 OfficeShare */
-  "X10_LI",       5800,         /* X10 server, little endian */
-  "X10_MI",       5900,         /* X10 server, big endian */
-  "grmd",         5999,         /* graphics resource manager */
-  "X11",          6000,         /* X11 server */
-  "mserve",       6060,         /* broadcast messages */
-  "spc",          6111,         /* sub-process control */
-#endif
-  NULLCHAR,      0
-};
-
-/*---------------------------------------------------------------------------*/
-
+#ifdef  notused
 /* Return character string corresponding to a TCP well-known port, or
  * the decimal number if unknown.
  */
-
-char  *tcp_port(port)
-register int16 port;
+char *
+tcp_port(n)
+int16 n;
 {
-  register struct tcp_port_table *p;
-  static char  buf[8];
+	static char buf[32];
 
-  for (p = tcp_port_table; p->name; p++)
-    if (port == p->port) return p->name;
-  sprintf(buf, "%u", port);
-  return buf;
+	switch(n){
+	case IPPORT_ECHO:
+		return "echo";
+	case IPPORT_DISCARD:
+		return "discard";
+	case IPPORT_FTPD:
+		return "ftp_data";
+	case IPPORT_FTP:
+		return "ftp";
+	case IPPORT_TELNET:
+		return "telnet";
+	case IPPORT_SMTP:
+		return "smtp";
+	default:
+		sprintf(buf,"%u",n);
+		return buf;
+	}
 }
-
-/*---------------------------------------------------------------------------*/
-
-int16 tcp_portnum(s)
-register char  *s;
-{
-
-  register int  l;
-  register struct tcp_port_table *p;
-
-  if (!isdigit(uchar(*s))) {
-    l = strlen(s);
-    for (p = tcp_port_table; p->name; p++)
-      if (!strncmp(s, p->name, l)) return p->port;
-  }
-  return atoi(s);
-}
+#endif
 

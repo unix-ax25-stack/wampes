@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.3 1990/09/11 13:44:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.4 1990/10/12 19:25:08 deyke Exp $ */
 
 #include <stdio.h>
 #include <ctype.h>
@@ -50,7 +50,6 @@ int argc;
 char *argv[];
 void *p;
 {
-	arp_loadfile();
 	if(argc < 2){
 		dumparp();
 		return 0;
@@ -187,6 +186,7 @@ dumparp()
 	register struct arp_tab *ap;
 	char e[128];
 
+	arp_loadfile();
 	tprintf("received %u badtype %u bogus addr %u reqst in %u replies %u reqst out %u\n",
 	 Arp_stat.recv,Arp_stat.badtype,Arp_stat.badaddr,Arp_stat.inreq,
 	 Arp_stat.replies,Arp_stat.outreq);

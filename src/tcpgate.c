@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.4 1990/09/11 13:46:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.5 1990/10/12 19:26:43 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 #include "global.h"
 #include "mbuf.h"
@@ -25,7 +26,7 @@ struct tcb *tcb;
   int  cnt, fd;
   struct mbuf *bp;
 
-  fd = (int) tcb->user;
+  fd = tcb->user;
   if ((cnt = space_tcp(tcb)) <= 0) {
     clrmask(chkread, fd);
     return;
@@ -53,7 +54,7 @@ int16 cnt;
   int  fd;
   struct mbuf *bp;
 
-  fd = (int) tcb->user;
+  fd = tcb->user;
   recv_tcp(tcb, &bp, 0);
   while ((cnt = pullup(&bp, buffer, sizeof(buffer))) > 0)
     if (dowrite(fd, buffer, (unsigned) cnt) < 0) close_tcp(tcb);
@@ -67,7 +68,7 @@ int16 cnt;
 {
   int  fd;
 
-  fd = (int) tcb->user;
+  fd = tcb->user;
   setmask(chkread, fd);
 }
 
@@ -83,17 +84,17 @@ char  old, new;
 
   switch (new) {
 #ifdef  QUICKSTART
-  case SYN_RECEIVED:
+  case TCP_SYN_RECEIVED:
 #else
-  case ESTABLISHED:
+  case TCP_ESTABLISHED:
 #endif
-    log(tcb, "open %s", tcp_port(tcb->conn.local.port));
-    if (!(addr = build_sockaddr(tcb->user, &addrlen)) ||
+    log(tcb, "open %s", tcp_port_name(tcb->conn.local.port));
+    if (!(addr = build_sockaddr((char *) tcb->user, &addrlen)) ||
 	(fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) {
       close_tcp(tcb);
       return;
     }
-    tcb->user = (char *) fd;
+    tcb->user = fd;
     if (connect(fd, addr, addrlen)) {
       close_tcp(tcb);
       return;
@@ -102,17 +103,17 @@ char  old, new;
     readfnc[fd] = tcp_send;
     readarg[fd] = (char *) tcb;
     return;
-  case CLOSE_WAIT:
+  case TCP_CLOSE_WAIT:
     close_tcp(tcb);
     return;
-  case CLOSED:
-    if (old == LISTEN) {
-      free(tcb->user);
+  case TCP_CLOSED:
+    if (old == TCP_LISTEN) {
+      free((void *) tcb->user);
       del_tcp(tcb);
       return;
     }
-    log(tcb, "close %s", tcp_port(tcb->conn.local.port));
-    fd = (int) tcb->user;
+    log(tcb, "close %s", tcp_port_name(tcb->conn.local.port));
+    fd = tcb->user;
     if (fd > 0 && fd < _NFILE) {
       clrmask(chkread, fd);
       readfnc[fd] = (void (*)()) 0;
@@ -137,13 +138,13 @@ void *p;
   struct socket lsocket;
 
   lsocket.address = INADDR_ANY;
-  lsocket.port = tcp_portnum(argv[1]);
+  lsocket.port = tcp_port_number(argv[1]);
   if (argc < 3)
     sprintf(socketname = buf, "loopback:%d", lsocket.port);
   else
     socketname = argv[2];
   socketname = strcpy(malloc((unsigned) (strlen(socketname) + 1)), socketname);
-  open_tcp(&lsocket, NULLSOCK, TCP_SERVER, 0, tcp_receive, tcp_ready, tcp_state, 0, socketname);
+  open_tcp(&lsocket, NULLSOCK, TCP_SERVER, 0, tcp_receive, tcp_ready, tcp_state, 0, (int) socketname);
   return 0;
 }
 

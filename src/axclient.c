@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.5 1990/09/11 13:45:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.6 1990/10/12 19:25:18 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -18,20 +18,20 @@ static axclient_parse(buf, n)
 char  *buf;
 int16 n;
 {
-  if (!(current && current->type == AX25TNC && current->cb.ax25)) return;
+  if (!(Current && Current->type == AX25TNC && Current->cb.ax25)) return;
   if (n >= 1 && buf[n-1] == '\n') n--;
   if (!n) return;
-  send_ax(current->cb.ax25, qdata(buf, n));
-  if (current->record) {
+  send_ax(Current->cb.ax25, qdata(buf, n));
+  if (Current->record) {
     if (buf[n-1] == '\r') buf[n-1] = '\n';
-    fwrite(buf, 1, n, current->record);
+    fwrite(buf, 1, n, Current->record);
   }
 }
 
 /*---------------------------------------------------------------------------*/
 
 void axclient_send_upcall(cp, cnt)
-struct axcb *cp;
+struct ax25_cb *cp;
 int  cnt;
 {
 
@@ -64,19 +64,19 @@ int  cnt;
 /*---------------------------------------------------------------------------*/
 
 void axclient_recv_upcall(cp, cnt)
-struct axcb *cp;
+struct ax25_cb *cp;
 int  cnt;
 {
 
   int  c;
   struct mbuf *bp;
 
-  if (!(mode == CONV_MODE && current && current->type == AX25TNC && current->cb.ax25 == cp)) return;
+  if (!(mode == CONV_MODE && Current && Current->type == AX25TNC && Current->cb.ax25 == cp)) return;
   recv_ax(cp, &bp, 0);
   while ((c = PULLCHAR(&bp)) != -1) {
     if (c == '\r') c = '\n';
     putchar(c);
-    if (current->record) putc(c, current->record);
+    if (Current->record) putc(c, Current->record);
   }
   fflush(stdout);
 }
@@ -84,12 +84,12 @@ int  cnt;
 /*---------------------------------------------------------------------------*/
 
 static void axclient_state_upcall(cp, oldstate, newstate)
-struct axcb *cp;
+struct ax25_cb *cp;
 int  oldstate, newstate;
 {
   int  notify;
 
-  notify = (current && current->type == AX25TNC && current == (struct session *) cp->user);
+  notify = (Current && Current->type == AX25TNC && Current == (struct session *) cp->user);
   if (newstate != DISCONNECTED) {
     if (notify) printf("%s\n", ax25states[newstate]);
   } else {
@@ -98,20 +98,6 @@ int  oldstate, newstate;
     del_ax(cp);
     if (notify) cmdmode();
   }
-}
-
-/*---------------------------------------------------------------------------*/
-
-print_ax25_session(s)
-struct session *s;
-{
-  printf("%c%-3d%8lx AX25    %4d  %-13s%-s",
-	 (current == s) ? '*' : ' ',
-	 (int) (s - sessions),
-	 (long) s->cb.ax25,
-	 s->cb.ax25->rcvcnt,
-	 ax25states[s->cb.ax25->state],
-	 pathtostr(s->cb.ax25));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -153,7 +139,7 @@ void *p;
     printf("Too many sessions\n");
     return 1;
   }
-  current = s;
+  Current = s;
   s->type = AX25TNC;
   s->name = NULLCHAR;
   s->cb.ax25 = NULLAXCB;

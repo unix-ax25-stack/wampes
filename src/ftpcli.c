@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.2 1990/08/23 17:32:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.3 1990/10/12 19:25:40 deyke Exp $ */
 
 /* FTP client (interactive user) code */
 #include <stdio.h>
@@ -13,8 +13,6 @@
 #include "ftp.h"
 #include "session.h"
 #include "cmdparse.h"
-
-extern struct session *current;
 
 void ftpdr(),ftpdt(),ftpccr();
 int doabort();
@@ -76,7 +74,7 @@ void *p;
 	struct socket lsocket,fsocket;
 
 	lsocket.address = Ip_addr;
-	lsocket.port = lport++;
+	lsocket.port = Lport++;
 	if((fsocket.address = resolve(argv[1])) == 0){
 		printf(Badhost,argv[1]);
 		return 1;
@@ -84,14 +82,14 @@ void *p;
 	if(argc < 3)
 		fsocket.port = IPPORT_FTP;
 	else
-		fsocket.port = tcp_portnum(argv[2]);
+		fsocket.port = tcp_port_number(argv[2]);
 
 	/* Allocate a session control block */
 	if((s = newsession()) == NULLSESSION){
 		printf("Too many sessions\n");
 		return 1;
 	}
-	current = s;
+	Current = s;
 	if((s->name = malloc((unsigned)strlen(argv[1])+1)) != NULLCHAR)
 		strcpy(s->name,argv[1]);
 	s->type = FTP;
@@ -109,7 +107,7 @@ void *p;
 
 	/* Now open the control connection */
 	tcb = open_tcp(&lsocket,&fsocket,TCP_ACTIVE,
-		0,ftpccr,NULLVFP,ftpccs,0,(char *)ftp);
+		0,ftpccr,NULLVFP,ftpccs,0,(int)ftp);
 	ftp->control = tcb;
 	go(argc, argv, p);
 	return 0;
@@ -122,7 +120,7 @@ int16 len;
 {
 	struct mbuf *bp;
 
-	if(current->cb.ftp->state != COMMAND_STATE){
+	if(Current->cb.ftp->state != COMMAND_STATE){
 		/* The only command allowed in data transfer state is ABORT */
 		if(cmdparse(ftpabort,line,NULL) == -1){
 			printf("Transfer in progress; only ABORT is acceptable\n");
@@ -137,7 +135,7 @@ int16 len;
 	if(cmdparse(ftpcmds,line,NULL) == -1){
 		/* Send it direct */
 		if(bp != NULLBUF)
-			send_tcp(current->cb.ftp->control,bp);
+			send_tcp(Current->cb.ftp->control,bp);
 		else
 			printf(Nospace);
 	} else {
@@ -164,7 +162,7 @@ void *p;
 {
 	register struct ftp *ftp;
 
-	ftp = current->cb.ftp;
+	ftp = Current->cb.ftp;
 	return sndftpmsg(ftp,"CWD %s\r\n",argv[1]);
 }
 /* Translate 'mkdir' to 'xmkd' for convenience */
@@ -177,7 +175,7 @@ void *p;
 {
 	register struct ftp *ftp;
 
-	ftp = current->cb.ftp;
+	ftp = Current->cb.ftp;
 	return sndftpmsg(ftp,"XMKD %s\r\n",argv[1]);
 }
 /* Translate 'rmdir' to 'xrmd' for convenience */
@@ -190,7 +188,7 @@ void *p;
 {
 	register struct ftp *ftp;
 
-	ftp = current->cb.ftp;
+	ftp = Current->cb.ftp;
 	return sndftpmsg(ftp,"XRMD %s\r\n",argv[1]);
 }
 static
@@ -202,7 +200,7 @@ void *p;
 {
 	register struct ftp *ftp;
 
-	ftp = current->cb.ftp;
+	ftp = Current->cb.ftp;
 	ftp->type = ASCII_TYPE;
 	return sndftpmsg(ftp,"TYPE A\r\n","");
 }
@@ -215,7 +213,7 @@ void *p;
 {
 	register struct ftp *ftp;
 
-	ftp = current->cb.ftp;
+	ftp = Current->cb.ftp;
 	ftp->type = IMAGE_TYPE;
 	return sndftpmsg(ftp,"TYPE I\r\n","");
 }
@@ -229,7 +227,7 @@ void *p;
 {
 	register struct ftp *ftp;
 
-	ftp = current->cb.ftp;
+	ftp = Current->cb.ftp;
 	if(argc < 2){
 		switch(ftp->type){
 		case IMAGE_TYPE:
@@ -276,7 +274,7 @@ void *p;
 	register struct ftp *ftp;
 	char *mode;
 
-	ftp = current->cb.ftp;
+	ftp = Current->cb.ftp;
 	if(ftp == NULLFTP){
 		printf(notsess);
 		return 1;
@@ -317,7 +315,7 @@ void *p;
 {
 	register struct ftp *ftp;
 
-	ftp = current->cb.ftp;
+	ftp = Current->cb.ftp;
 	if(ftp == NULLFTP){
 		printf(notsess);
 		return 1;
@@ -354,7 +352,7 @@ void *p;
 {
 	register struct ftp *ftp;
 
-	ftp = current->cb.ftp;
+	ftp = Current->cb.ftp;
 	if(ftp == NULLFTP){
 		printf(notsess);
 		return 1;
@@ -388,7 +386,7 @@ void *p;
 	char *mode;
 	struct ftp *ftp;
 
-	if((ftp = current->cb.ftp) == NULLFTP){
+	if((ftp = Current->cb.ftp) == NULLFTP){
 		printf(notsess);
 		return 1;
 	}
@@ -426,7 +424,7 @@ void *p;
 {
 	register struct ftp *ftp;
 
-	ftp = current->cb.ftp;
+	ftp = Current->cb.ftp;
 
 	/* Close the local file */
 	if(ftp->fp != NULLFILE && ftp->fp != stdout)
@@ -468,7 +466,7 @@ void (*state)();
 	struct mbuf *bp;
 
 	lsocket.address = Ip_addr;
-	lsocket.port = lport++;
+	lsocket.port = Lport++;
 
 	/* Compose and send PORT a,a,a,a,p,p message */
 
@@ -489,7 +487,7 @@ void (*state)();
 
 	/* Post a listen on the data connection */
 	ftp->data = open_tcp(&lsocket,NULLSOCK,TCP_PASSIVE,0,
-		recv,send,state,0,(char *)ftp);
+		recv,send,state,0,(int)ftp);
 }
 /* FTP Client Control channel Receiver upcall routine */
 void
@@ -506,7 +504,7 @@ int16 cnt;
 		return;
 	}
 	/* Hold output if we're not the current session */
-	if(mode != CONV_MODE || current == NULLSESSION || current->cb.ftp != ftp)
+	if(mode != CONV_MODE || Current == NULLSESSION || Current->cb.ftp != ftp)
 		return;
 
 	if(recv_tcp(tcb,&bp,cnt) > 0){
@@ -527,26 +525,24 @@ char old,new;
 {
 	struct ftp *ftp;
 	char notify = 0;
-	extern char *tcpstates[];
-	extern char *reasons[];
 
 	/* Can't add a check for unknown connection here, it would loop
 	 * on a close upcall! We're just careful later on.
 	 */
 	ftp = (struct ftp *)tcb->user;
 
-	if(current != NULLSESSION && current->cb.ftp == ftp)
+	if(Current != NULLSESSION && Current->cb.ftp == ftp)
 		notify = 1;
 
 	switch(new){
-	case CLOSE_WAIT:
+	case TCP_CLOSE_WAIT:
 		if(notify)
-			printf("%s\n",tcpstates[new]);
+			printf("%s\n",Tcpstates[new]);
 		close_tcp(tcb);
 		break;
-	case CLOSED:    /* heh heh */
+	case TCP_CLOSED:    /* heh heh */
 		if(notify){
-			printf("%s (%s",tcpstates[new],reasons[tcb->reason]);
+			printf("%s (%s",Tcpstates[new],Tcpreasons[tcb->reason]);
 			if(tcb->reason == NETWORK){
 				switch(tcb->type){
 				case ICMP_DEST_UNREACH:
@@ -566,7 +562,7 @@ char old,new;
 		break;
 	default:
 		if(notify)
-			printf("%s\n",tcpstates[new]);
+			printf("%s\n",Tcpstates[new]);
 		break;
 	}
 	if(notify)
@@ -586,21 +582,21 @@ char old,new;
 		return;
 	}
 	switch(new){
-	case FINWAIT2:
-	case TIME_WAIT:
+	case TCP_FINWAIT2:
+	case TCP_TIME_WAIT:
 		if(ftp->state == SENDING_STATE){
 			/* We've received an ack of our FIN, so
 			 * return to command mode
 			 */
 			ftp->state = COMMAND_STATE;
-			if(current != NULLSESSION && current->cb.ftp == ftp){
+			if(Current != NULLSESSION && Current->cb.ftp == ftp){
 				printf("Put complete, %lu bytes sent\n",
 					tcb->snd.una - tcb->iss - 2);
 				fflush(stdout);
 			}
 		}
 		break;
-	case CLOSE_WAIT:
+	case TCP_CLOSE_WAIT:
 		close_tcp(tcb);
 		if(ftp->state == RECEIVING_STATE){
 			/* End of file received on incoming file */
@@ -612,14 +608,14 @@ char old,new;
 				fclose(ftp->fp);
 			ftp->fp = NULLFILE;
 			ftp->state = COMMAND_STATE;
-			if(current != NULLSESSION && current->cb.ftp == ftp){
+			if(Current != NULLSESSION && Current->cb.ftp == ftp){
 				printf("Get complete, %lu bytes received\n",
 					tcb->rcv.nxt - tcb->irs - 2);
 				fflush(stdout);
 			}
 		}
 		break;
-	case CLOSED:
+	case TCP_CLOSED:
 		ftp->data = NULLTCB;
 		del_tcp(tcb);
 		break;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.8 1990/09/11 13:45:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.9 1990/10/12 19:26:02 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -13,6 +13,7 @@
 #include <string.h>
 #include <sys/ptyio.h>
 #include <sys/rtprio.h>
+#include <sys/stat.h>
 #include <termio.h>
 #include <time.h>
 #include <unistd.h>
@@ -357,8 +358,8 @@ struct login_cb *tp;
 
 struct login_cb *login_open(user, protocol, read_upcall, close_upcall, upcall_arg)
 char  *user, *protocol;
-void (*read_upcall) __ARGS((void *upcall_arg));
-void (*close_upcall) __ARGS((void *upcall_arg));
+void (*read_upcall) __ARGS((void *arg));
+void (*close_upcall) __ARGS((void *arg));
 void  *upcall_arg;
 {
 

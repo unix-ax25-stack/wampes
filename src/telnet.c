@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.3 1990/09/11 13:46:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.4 1990/10/12 19:26:52 deyke Exp $ */
 
 #include <stdio.h>
 #include "global.h"
@@ -55,7 +55,7 @@ void *p;
 	struct socket lsocket,fsocket;
 
 	lsocket.address = Ip_addr;
-	lsocket.port = lport++;
+	lsocket.port = Lport++;
 	if((fsocket.address = resolve(argv[1])) == 0){
 		printf(Badhost,argv[1]);
 		return 1;
@@ -63,7 +63,7 @@ void *p;
 	if(argc < 3)
 		fsocket.port = IPPORT_TELNET;
 	else
-		fsocket.port = tcp_portnum(argv[2]);
+		fsocket.port = tcp_port_number(argv[2]);
 
 	/* Allocate a session descriptor */
 	if((s = newsession()) == NULLSESSION){
@@ -78,7 +78,7 @@ void *p;
 	} else {
 		s->parse = send_tel;
 	}
-	current = s;
+	Current = s;
 
 	/* Create and initialize a Telnet protocol descriptor */
 	if((tn = (struct telnet *)calloc(1,sizeof(struct telnet))) == NULLTN){
@@ -91,7 +91,7 @@ void *p;
 	s->cb.telnet = tn;      /* Downward pointer */
 
 	tcb = open_tcp(&lsocket,&fsocket,TCP_ACTIVE,0,
-	 rcv_char,tn_tx,t_state,0,(char *)tn);
+	 rcv_char,tn_tx,t_state,0,(int)tn);
 
 	tn->tcb = tcb;  /* Downward pointer */
 	go(argc, argv, p);
@@ -120,14 +120,14 @@ char *buf;
 int16 n;
 {
 	struct mbuf *bp;
-	if(current == NULLSESSION || current->cb.telnet == NULLTN
-	 || current->cb.telnet->tcb == NULLTCB)
+	if(Current == NULLSESSION || Current->cb.telnet == NULLTN
+	 || Current->cb.telnet->tcb == NULLTCB)
 		return;
 	/* If we're doing our own echoing and recording is enabled, record it */
-	if(!current->cb.telnet->remote[TN_ECHO] && current->record != NULLFILE)
-		fwrite(buf,1,n,current->record);
+	if(!Current->cb.telnet->remote[TN_ECHO] && Current->record != NULLFILE)
+		fwrite(buf,1,n,Current->record);
 	bp = qdata(buf,n);
-	send_tcp(current->cb.telnet->tcb,bp);
+	send_tcp(Current->cb.telnet->tcb,bp);
 }
 
 /* Process incoming TELNET characters */
@@ -220,8 +220,8 @@ int16 cnt;
 		return;
 	}
 	/* Hold output if we're not the current session */
-	if(mode != CONV_MODE || current == NULLSESSION
-	 || current->type != TELNET || current->cb.telnet != tn)
+	if(mode != CONV_MODE || Current == NULLSESSION
+	 || Current->type != TELNET || Current->cb.telnet != tn)
 		return;
 
 	if(recv_tcp(tcb,&bp,cnt) > 0)
@@ -271,29 +271,27 @@ char old,new;
 {
 	struct telnet *tn;
 	char notify = 0;
-	extern char *tcpstates[];
-	extern char *reasons[];
 
 	/* Can't add a check for unknown connection here, it would loop
 	 * on a close upcall! We're just careful later on.
 	 */
 	tn = (struct telnet *)tcb->user;
 
-	if(current != NULLSESSION && current->type == TELNET && current->cb.telnet == tn)
+	if(Current != NULLSESSION && Current->type == TELNET && Current->cb.telnet == tn)
 	{
 		notify = 1;
 		cooked();       /* prettify things... -- hyc */
 	}
 
 	switch(new){
-	case CLOSE_WAIT:
+	case TCP_CLOSE_WAIT:
 		if(notify)
-			printf("%s\n",tcpstates[new]);
+			printf("%s\n",Tcpstates[new]);
 		close_tcp(tcb);
 		break;
-	case CLOSED:    /* court adjourned */
+	case TCP_CLOSED:    /* court adjourned */
 		if(notify){
-			printf("%s (%s",tcpstates[new],reasons[tcb->reason]);
+			printf("%s (%s",Tcpstates[new],Tcpreasons[tcb->reason]);
 			if(tcb->reason == NETWORK){
 				switch(tcb->type){
 				case ICMP_DEST_UNREACH:
@@ -313,7 +311,7 @@ char old,new;
 		break;
 	default:
 		if(notify)
-			printf("%s\n",tcpstates[new]);
+			printf("%s\n",Tcpstates[new]);
 		break;
 	}
 	fflush(stdout);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.2 1990/08/23 17:32:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.3 1990/10/12 19:25:10 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -23,7 +23,7 @@ static char  arp_tmpfilename[] = "/tcp/arp_tmp";
 
 /*---------------------------------------------------------------------------*/
 
-arp_savefile()
+void arp_savefile()
 {
 
   FILE * fp;
@@ -54,7 +54,7 @@ arp_savefile()
 
 /*---------------------------------------------------------------------------*/
 
-arp_loadfile()
+void arp_loadfile()
 {
 
   FILE * fp;

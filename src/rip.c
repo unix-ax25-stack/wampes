@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.1 1990/09/11 13:46:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.2 1990/10/12 19:26:30 deyke Exp $ */
 
 /* This file contains code to implement the Routing Information Protocol (RIP)
  * and is derived from 4.2BSD code. Mike Karels of Berkeley has stated on
@@ -664,7 +664,7 @@ void *s;
 			rp->timer.start = RIP_TTL;
 		/* wait 2/3 of timeout before garbage collect */
 		rp->timer.start = (rp->timer.start<<1)/3;
-		rp->timer.func = (void *)rt_timeout;
+		rp->timer.func = rt_timeout;
 		rp->timer.arg = (void *)rp;
 		start_timer(&rp->timer);
 		/* Route changed; mark it for triggered update */

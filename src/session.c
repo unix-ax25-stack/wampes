@@ -1,25 +1,30 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.4 1990/09/11 13:46:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.5 1990/10/12 19:26:34 deyke Exp $ */
 
 /* Session control */
 #include <stdio.h>
 #include "global.h"
 #include "config.h"
 #include "mbuf.h"
-#include "netuser.h"
-#include "timer.h"
-#include "tcp.h"
-#include "ax25.h"
+#include "socket.h"
 #include "iface.h"
+#include "tcp.h"
+#include "netrom.h"
+#include "axclient.h"
 #include "ftp.h"
 #include "telnet.h"
 #include "finger.h"
+#include "icmp.h"
+#include "netuser.h"
 #include "session.h"
 #include "cmdparse.h"
+#include "timer.h"
+#include "commands.h"
+#include "hardware.h"
 
-struct session *sessions;
-struct session *current;
-char notval[] = "Not a valid control block\n";
-char badsess[] = "Invalid session\n";
+struct session *Sessions;
+struct session *Current;
+char Notval[] = "Not a valid control block\n";
+static char Badsess[] = "Invalid session\n";
 
 /* Convert a character string containing a decimal session index number
  * into a pointer. If the arg is NULLCHAR, use the current default session.
@@ -29,20 +34,20 @@ static struct session *
 sessptr(cp)
 char *cp;
 {
-	register struct session *s;
+	register struct session *sp;
 	unsigned int i;
 
 	if(cp == NULLCHAR){
-		s = current;
+		sp = Current;
 	} else {
 		if((i = atoi(cp)) >= Nsessions)
 			return NULLSESSION;
-		s = &sessions[i];
+		sp = &Sessions[i];
 	}
-	if(s == NULLSESSION || s->type == FREE)
+	if(sp == NULLSESSION || sp->type == FREE)
 		return NULLSESSION;
 
-	return s;
+	return sp;
 }
 
 /* Select and display sessions */
@@ -51,66 +56,75 @@ int argc;
 char *argv[];
 void *p;
 {
-	struct session *s;
-	extern char *tcpstates[];
-	char *psocket();
-	extern char *ax25states[];
+	struct session *sp;
 
 	if(argc > 1){
-		if((current = sessptr(argv[1])) != NULLSESSION)
+		if((Current = sessptr(argv[1])) != NULLSESSION)
 			go(argc,argv,p);
 		return 0;
 	}
-	printf(" #       &CB Type   Rcv-Q  State        Remote socket\n");
-	for(s=sessions; s < &sessions[Nsessions];s++){
-		switch(s->type){
+	tprintf(" #       &CB Type   Rcv-Q  State        Remote socket\n");
+	for(sp=Sessions; sp < &Sessions[Nsessions];sp++){
+		switch(sp->type){
 		case TELNET:
-			printf("%c%-3d%8lx Telnet  %4d  %-13s%-s",
-			 (current == s)? '*':' ',
-			 (int)(s - sessions),
-			 (long)s->cb.telnet->tcb,
-			 s->cb.telnet->tcb->rcvcnt,
-			 tcpstates[s->cb.telnet->tcb->state],
-			 psocket(&s->cb.telnet->tcb->conn.remote));
+			tprintf("%c%-3d%8lx Telnet  %4d  %-13s%-s",
+			 (Current == sp)? '*':' ',
+			 (int)(sp - Sessions),
+			 (long)sp->cb.telnet->tcb,
+			 sp->cb.telnet->tcb->rcvcnt,
+			 Tcpstates[sp->cb.telnet->tcb->state],
+			 pinet_tcp(&sp->cb.telnet->tcb->conn.remote));
 			break;
 		case FTP:
-			printf("%c%-3d%8lx FTP     %4d  %-13s%-s",
-			 (current == s)? '*':' ',
-			 (int)(s - sessions),
-			 (long)s->cb.ftp->control,
-			 s->cb.ftp->control->rcvcnt,
-			 tcpstates[s->cb.ftp->control->state],
-			 psocket(&s->cb.ftp->control->conn.remote));
+			tprintf("%c%-3d%8lx FTP     %4d  %-13s%-s",
+			 (Current == sp)? '*':' ',
+			 (int)(sp - Sessions),
+			 (long)sp->cb.ftp->control,
+			 sp->cb.ftp->control->rcvcnt,
+			 Tcpstates[sp->cb.ftp->control->state],
+			 pinet_tcp(&sp->cb.ftp->control->conn.remote));
 			break;
 #ifdef  AX25
 		case AX25TNC:
-			print_ax25_session(s);
+			tprintf("%c%-3d%8lx AX25    %4d  %-13s%-s",
+			 (Current == sp) ? '*' : ' ',
+			 (int) (sp - Sessions),
+			 (long) sp->cb.ax25,
+			 sp->cb.ax25->rcvcnt,
+			 ax25states[sp->cb.ax25->state],
+			 pathtostr(sp->cb.ax25));
 			break;
 #endif
 		case FINGER:
-			printf("%c%-3d%8lx Finger  %4d  %-13s%-s",
-			 (current == s)? '*':' ',
-			 (int)(s - sessions),
-			 (long)s->cb.finger->tcb,
-			 s->cb.finger->tcb->rcvcnt,
-			 tcpstates[s->cb.finger->tcb->state],
-			 psocket(&s->cb.finger->tcb->conn.remote));
+			tprintf("%c%-3d%8lx Finger  %4d  %-13s%-s",
+			 (Current == sp)? '*':' ',
+			 (int)(sp - Sessions),
+			 (long)sp->cb.finger->tcb,
+			 sp->cb.finger->tcb->rcvcnt,
+			 Tcpstates[sp->cb.finger->tcb->state],
+			 pinet_tcp(&sp->cb.finger->tcb->conn.remote));
 			break;
 #ifdef NETROM
 		case NRSESSION:
-			print_netrom_session(s);
+			tprintf("%c%-3d%8lx NETROM  %4d  %-13s%-s",
+			 (Current == sp) ? '*' : ' ',
+			 (int) (sp - Sessions),
+			 (long) sp->cb.netrom,
+			 sp->cb.netrom->rcvcnt,
+			 ax25states[sp->cb.netrom->state],
+			 nr_addr2str(sp->cb.netrom));
 			break;
 #endif
 		default:
 			continue;
 		}
-		if(s->rfile != NULLCHAR || s->ufile != NULLCHAR)
-			printf("\t");
-		if(s->rfile != NULLCHAR)
-			printf("Record: %s ",s->rfile);
-		if(s->ufile != NULLCHAR)
-			printf("Upload: %s",s->ufile);
-		printf("\n");
+		if(sp->rfile != NULLCHAR || sp->ufile != NULLCHAR)
+			tprintf("\t");
+		if(sp->rfile != NULLCHAR)
+			tprintf("Record: %s ",sp->rfile);
+		if(sp->ufile != NULLCHAR)
+			tprintf("Upload: %s",sp->ufile);
+		tprintf("\n");
 	}
 	return 0;
 }
@@ -121,31 +135,31 @@ int argc;
 char *argv[];
 void *p;
 {
-	void rcv_char(),ftpccr(),ax_rx(),fingcli_rcv() ;
+	void rcv_char(),ftpccr(),fingcli_rcv();
 
-	if(current == NULLSESSION || current->type == FREE)
+	if(Current == NULLSESSION || Current->type == FREE)
 		return 0;
 	mode = CONV_MODE;
-	switch(current->type){
+	switch(Current->type){
 	case TELNET:
-		if(current->cb.telnet->remote[TN_ECHO])
+		if(Current->cb.telnet->remote[TN_ECHO])
 			raw();  /* Re-establish raw mode if it was set */
-		rcv_char(current->cb.telnet->tcb,0); /* Get any pending input */
+		rcv_char(Current->cb.telnet->tcb,0); /* Get any pending input */
 		break;
 	case FTP:
-		ftpccr(current->cb.ftp->control,0);
+		ftpccr(Current->cb.ftp->control,0);
 		break;
 #ifdef  AX25
 	case AX25TNC:
-		axclient_recv_upcall(current->cb.ax25,0);
+		axclient_recv_upcall(Current->cb.ax25,0);
 		break;
 #endif
 	case FINGER:
-		fingcli_rcv(current->cb.finger->tcb,0) ;
+		fingcli_rcv(Current->cb.finger->tcb,0) ;
 		break ;
 #ifdef  NETROM
 	case NRSESSION:
-		nrclient_recv_upcall(current->cb.netrom,0);
+		nrclient_recv_upcall(Current->cb.netrom,0);
 		break;
 #endif
 	}
@@ -156,30 +170,30 @@ int argc;
 char *argv[];
 void *p;
 {
-	struct session *s;
+	struct session *sp;
 
-	if((s = sessptr(argc > 1 ? argv[1] : NULLCHAR)) == NULLSESSION){
-		printf(badsess);
+	if((sp = sessptr(argc > 1 ? argv[1] : NULLCHAR)) == NULLSESSION){
+		tprintf(Badsess);
 		return -1;
 	}
-	switch(s->type){
+	switch(sp->type){
 	case TELNET:
-		close_tcp(s->cb.telnet->tcb);
+		close_tcp(sp->cb.telnet->tcb);
 		break;
 	case FTP:
-		close_tcp(s->cb.ftp->control);
+		close_tcp(sp->cb.ftp->control);
 		break;
 #ifdef  AX25
 	case AX25TNC:
-		close_ax(s->cb.ax25);
+		close_ax(sp->cb.ax25);
 		break;
 #endif
 	case FINGER:
-		close_tcp(s->cb.finger->tcb);
+		close_tcp(sp->cb.finger->tcb);
 		break;
 #ifdef NETROM
 	case NRSESSION:
-		close_nr(s->cb.netrom);
+		close_nr(sp->cb.netrom);
 		break;
 #endif
 	}
@@ -190,35 +204,34 @@ int argc;
 char *argv[];
 void *p;
 {
-	long htol();
-	struct session *s;
+	struct session *sp;
 
-	if((s = sessptr(argc > 1 ? argv[1] : NULLCHAR)) == NULLSESSION){
-		printf(badsess);
+	if((sp = sessptr(argc > 1 ? argv[1] : NULLCHAR)) == NULLSESSION){
+		tprintf(Badsess);
 		return -1;
 	}
-	switch(s->type){
+	switch(sp->type){
 	case TELNET:
-		reset_tcp(s->cb.telnet->tcb);
+		reset_tcp(sp->cb.telnet->tcb);
 		break;
 	case FTP:
-		if(s->cb.ftp->data != NULLTCB){
-			reset_tcp(s->cb.ftp->data);
-			s->cb.ftp->data = NULLTCB;
+		if(sp->cb.ftp->data != NULLTCB){
+			reset_tcp(sp->cb.ftp->data);
+			sp->cb.ftp->data = NULLTCB;
 		}
-		reset_tcp(s->cb.ftp->control);
+		reset_tcp(sp->cb.ftp->control);
 		break;
 #ifdef  AX25
 	case AX25TNC:
-		reset_ax(s->cb.ax25);
+		reset_ax(sp->cb.ax25);
 		break;
 #endif
 	case FINGER:
-		reset_tcp(s->cb.finger->tcb);
+		reset_tcp(sp->cb.finger->tcb);
 		break;
 #ifdef NETROM
 	case NRSESSION:
-		reset_nr(s->cb.netrom);
+		reset_nr(sp->cb.netrom);
 		break;
 #endif
 	}
@@ -230,37 +243,35 @@ int argc;
 char *argv[];
 void *p;
 {
-	long htol();
-	void tcp_timeout();
-	struct session *s;
+	struct session *sp;
 
-	if((s = sessptr(argc > 1 ? argv[1] : NULLCHAR)) == NULLSESSION){
-		printf(badsess);
+	if((sp = sessptr(argc > 1 ? argv[1] : NULLCHAR)) == NULLSESSION){
+		tprintf(Badsess);
 		return -1;
 	}
-	switch(s->type){
+	switch(sp->type){
 	case TELNET:
-		if(kick_tcp(s->cb.telnet->tcb) == -1){
-			printf(notval);
+		if(kick_tcp(sp->cb.telnet->tcb) == -1){
+			tprintf(Notval);
 			return 1;
 		}
 		break;
 	case FTP:
-		if(kick_tcp(s->cb.ftp->control) == -1){
+		if(kick_tcp(sp->cb.ftp->control) == -1){
 
-			printf(notval);
+			tprintf(Notval);
 			return 1;
 		}
-		if(s->cb.ftp->data != NULLTCB)
-			kick_tcp(s->cb.ftp->data);
+		if(sp->cb.ftp->data != NULLTCB)
+			kick_tcp(sp->cb.ftp->data);
 		break;
 #ifdef  AX25
 	case AX25TNC:
 		break;
 #endif
 	case FINGER:
-		if(kick_tcp(s->cb.finger->tcb) == -1){
-			printf(notval);
+		if(kick_tcp(sp->cb.finger->tcb) == -1){
+			tprintf(Notval);
 			return 1;
 		}
 		break;
@@ -277,39 +288,39 @@ newsession()
 	register int i;
 
 	for(i=0;i<Nsessions;i++)
-		if(sessions[i].type == FREE)
-			return &sessions[i];
+		if(Sessions[i].type == FREE)
+			return &Sessions[i];
 	return NULLSESSION;
 }
-freesession(s)
-struct session *s;
+freesession(sp)
+struct session *sp;
 {
-	if(s == NULLSESSION)
+	if(sp == NULLSESSION)
 		return;
-	if(s->record != NULLFILE){
-		fclose(s->record);
-		s->record = NULLFILE;
+	if(sp->record != NULLFILE){
+		fclose(sp->record);
+		sp->record = NULLFILE;
 	}
-	if(s->rfile != NULLCHAR){
-		free(s->rfile);
-		s->rfile = NULLCHAR;
+	if(sp->rfile != NULLCHAR){
+		free(sp->rfile);
+		sp->rfile = NULLCHAR;
 	}
-	if(s->upload != NULLFILE){
-		fclose(s->upload);
-		s->upload = NULLFILE;
+	if(sp->upload != NULLFILE){
+		fclose(sp->upload);
+		sp->upload = NULLFILE;
 	}
-	if(s->ufile != NULLCHAR){
-		free(s->ufile);
-		s->ufile = NULLCHAR;
+	if(sp->ufile != NULLCHAR){
+		free(sp->ufile);
+		sp->ufile = NULLCHAR;
 	}
-	if(s->name != NULLCHAR){
-		free(s->name);
-		s->name = NULLCHAR;
+	if(sp->name != NULLCHAR){
+		free(sp->name);
+		sp->name = NULLCHAR;
 	}
-	s->type = FREE;
-	memset((char *) s, 0, sizeof(struct session));
-	if(s == current)
-		current = NULLSESSION;
+	sp->type = FREE;
+	memset((char *) sp, 0, sizeof(struct session));
+	if(sp == Current)
+		Current = NULLSESSION;
 }
 /* Control session recording */
 dorecord(argc,argv,p)
@@ -317,30 +328,30 @@ int argc;
 char *argv[];
 void *p;
 {
-	if(current == NULLSESSION){
-		printf("No current session\n");
+	if(Current == NULLSESSION){
+		tprintf("No current session\n");
 		return 1;
 	}
 	if(argc > 1){
-		if(current->rfile != NULLCHAR){
-			fclose(current->record);
-			free(current->rfile);
-			current->record = NULLFILE;
-			current->rfile = NULLCHAR;
+		if(Current->rfile != NULLCHAR){
+			fclose(Current->record);
+			free(Current->rfile);
+			Current->record = NULLFILE;
+			Current->rfile = NULLCHAR;
 		}
 		/* Open new record file, unless file name is "off", which means
 		 * disable recording
 		 */
 		if(strcmp(argv[1],"off") != 0
-		 && (current->record = fopen(argv[1],"a")) != NULLFILE){
-			current->rfile = malloc((unsigned)strlen(argv[1])+1);
-			strcpy(current->rfile,argv[1]);
+		 && (Current->record = fopen(argv[1],"a")) != NULLFILE){
+			Current->rfile = malloc((unsigned)strlen(argv[1])+1);
+			strcpy(Current->rfile,argv[1]);
 		}
 	}
-	if(current->rfile != NULLCHAR)
-		printf("Recording into %s\n",current->rfile);
+	if(Current->rfile != NULLCHAR)
+		tprintf("Recording into %s\n",Current->rfile);
 	else
-		printf("Recording off\n");
+		tprintf("Recording off\n");
 	return 0;
 }
 /* Control file transmission */
@@ -350,65 +361,65 @@ char *argv[];
 void *p;
 {
 	struct tcb *tcb;
-	struct axcb *axp;
+	struct ax25_cb *axp;
 	struct circuit *cb;
 
-	if(current == NULLSESSION){
-		printf("No current session\n");
+	if(Current == NULLSESSION){
+		tprintf("No current session\n");
 		return 1;
 	}
 	if(argc > 1){
-		switch(current->type){
+		switch(Current->type){
 		case FTP:
-			printf("Uploading on FTP control channel not supported\n");
+			tprintf("Uploading on FTP control channel not supported\n");
 			return 1;
 		case FINGER:
-			printf("Uploading on FINGER session not supported\n");
+			tprintf("Uploading on FINGER session not supported\n");
 			return 1;
 		}
 		/* Abort upload */
-		if(current->upload != NULLFILE){
-			fclose(current->upload);
-			current->upload = NULLFILE;
+		if(Current->upload != NULLFILE){
+			fclose(Current->upload);
+			Current->upload = NULLFILE;
 		}
-		if(current->ufile != NULLCHAR){
-			free(current->ufile);
-			current->ufile = NULLCHAR;
+		if(Current->ufile != NULLCHAR){
+			free(Current->ufile);
+			Current->ufile = NULLCHAR;
 		}
 		if(strcmp(argv[1],"stop") != 0){
 			/* Open upload file */
-			if((current->upload = fopen(argv[1],"r")) == NULLFILE){
-				printf("Can't read %s\n",argv[1]);
+			if((Current->upload = fopen(argv[1],"r")) == NULLFILE){
+				tprintf("Can't read %s\n",argv[1]);
 				return 1;
 			}
-			current->ufile = malloc((unsigned)strlen(argv[1])+1);
-			strcpy(current->ufile,argv[1]);
+			Current->ufile = malloc((unsigned)strlen(argv[1])+1);
+			strcpy(Current->ufile,argv[1]);
 			/* All set, kick transmit upcall to get things rolling */
-			switch(current->type){
+			switch(Current->type){
 #ifdef  AX25
 			case AX25TNC:
-				axp = current->cb.ax25;
+				axp = Current->cb.ax25;
 				axclient_send_upcall(axp, space_ax(axp));
 				break;
 #endif
 #ifdef NETROM
 			case NRSESSION:
-				cb = current->cb.netrom;
+				cb = Current->cb.netrom;
 				nrclient_send_upcall(cb, space_nr(cb));
 				break;
 #endif
 			case TELNET:
-				tcb = current->cb.telnet->tcb;
+				tcb = Current->cb.telnet->tcb;
 				if(tcb->snd.wnd > tcb->sndcnt)
 					(*tcb->t_upcall)(tcb,tcb->snd.wnd - tcb->sndcnt);
 				break;
 			}
 		}
 	}
-	if(current->ufile != NULLCHAR)
-		printf("Uploading %s\n",current->ufile);
+	if(Current->ufile != NULLCHAR)
+		tprintf("Uploading %s\n",Current->ufile);
 	else
-		printf("Uploading off\n");
+		tprintf("Uploading off\n");
 	return 0;
 }
 

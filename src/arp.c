@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.4 1990/09/11 13:44:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.5 1990/10/12 19:25:06 deyke Exp $ */
 
 /* Address Resolution Protocol (ARP) functions. Sits between IP and
  * Level 2, mapping IP to Level 2 addresses for all outgoing datagrams.
@@ -260,6 +260,7 @@ int32 ipaddr;
 {
 	register struct arp_tab *ap;
 
+	arp_loadfile();
 	for(ap = Arp_tab[arp_hash(hardware,ipaddr)]; ap != NULLARP; ap = ap->next){
 		if(ap->ip_addr == ipaddr && ap->hardware == hardware)
 			break;

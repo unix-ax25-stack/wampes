@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.4 1990/09/11 13:45:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.5 1990/10/12 19:25:24 deyke Exp $ */
 
 #include <stdlib.h>
 
@@ -7,14 +7,14 @@
 #include "axproto.h"
 #include "login.h"
 
-static void axserv_recv_upcall __ARGS((struct axcb *cp, int cnt));
-static void axserv_send_upcall __ARGS((struct axcb *cp, int cnt));
-static void axserv_state_upcall __ARGS((struct axcb *cp, int oldstate, int newstate));
+static void axserv_recv_upcall __ARGS((struct ax25_cb *cp, int cnt));
+static void axserv_send_upcall __ARGS((struct ax25_cb *cp, int cnt));
+static void axserv_state_upcall __ARGS((struct ax25_cb *cp, int oldstate, int newstate));
 
 /*---------------------------------------------------------------------------*/
 
 static void axserv_recv_upcall(cp, cnt)
-struct axcb *cp;
+struct ax25_cb *cp;
 int  cnt;
 {
   struct mbuf *bp;
@@ -26,7 +26,7 @@ int  cnt;
 /*---------------------------------------------------------------------------*/
 
 static void axserv_send_upcall(cp, cnt)
-struct axcb *cp;
+struct ax25_cb *cp;
 int  cnt;
 {
   struct mbuf *bp;
@@ -38,7 +38,7 @@ int  cnt;
 /*---------------------------------------------------------------------------*/
 
 static void axserv_state_upcall(cp, oldstate, newstate)
-struct axcb *cp;
+struct ax25_cb *cp;
 int  oldstate, newstate;
 {
   switch (newstate) {

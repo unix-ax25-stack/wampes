@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.3 1990/09/11 13:45:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.4 1990/10/12 19:26:07 deyke Exp $ */
 
 /* Mailer Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -16,15 +16,18 @@
 #include "hpux.h"
 #include "mail.h"
 
-static struct mailsys *mailsys;
+static struct mailsys *systems;
 static struct timer timer;
+
+static void strtrim __ARGS((char *s));
+static void read_configuration __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
 
 static void strtrim(s)
-register char  *s;
+char  *s;
 {
-  register char  *p = s;
+  char  *p = s;
 
   while (*p) p++;
   while (--p >= s && isspace(uchar(*p))) ;
@@ -42,25 +45,25 @@ static void read_configuration()
   static long  lastmtime;
   struct mailsys *sp;
   struct stat statbuf;
-  void (*mailer)();
+  void (*mailer) __ARGS((struct mailsys *));
 
-  for (sp = mailsys; sp; sp = sp->nextsys) if (sp->nextjob) return;
+  for (sp = systems; sp; sp = sp->next)
+    if (sp->jobs) return;
   if (stat(CONFFILE, &statbuf)) return;
   if (lastmtime == statbuf.st_mtime || statbuf.st_mtime > currtime - 5) return;
-  lastmtime = statbuf.st_mtime;
-  while (sp = mailsys) {
-    mailsys = mailsys->nextsys;
+  if (!(fp = fopen(CONFFILE, "r"))) return;
+  while (sp = systems) {
+    systems = systems->next;
     free(sp->sysname);
     free(sp->protocol);
     free(sp->address);
-    free((char *) sp);
+    free(sp);
   }
-  if (!(fp = fopen(CONFFILE, "r"))) return;
   while (fgets(line, sizeof(line), fp)) {
-    sysname = line;
-    if (mailername = strchr(sysname, ':')) *mailername++ = '\0'; else continue;
-    if (protocol = strchr(mailername, ':')) *protocol++ = '\0'; else continue;
-    if (address = strchr(protocol, ':')) *address++ = '\0'; else continue;
+    if (!(sysname = strtok(line, ":"))) continue;
+    if (!(mailername = strtok(NULLCHAR, ":"))) continue;
+    if (!(protocol = strtok(NULLCHAR, ":"))) continue;
+    if (!(address = strtok(NULLCHAR, ":"))) continue;
     strtrim(address);
     if (!strcmp(mailername, "bbs"))
       mailer = mail_bbs;
@@ -69,14 +72,15 @@ static void read_configuration()
     else
       continue;
     sp = (struct mailsys *) calloc(1, sizeof (struct mailsys ));
-    sp->sysname = strcpy(malloc((unsigned) (strlen(sysname) + 1)), sysname);
+    sp->sysname = strdup(sysname);
     sp->mailer = mailer;
-    sp->protocol = strcpy(malloc((unsigned) (strlen(protocol) + 1)), protocol);
-    sp->address = strcpy(malloc((unsigned) (strlen(address) + 1)), address);
-    sp->nextsys = mailsys;
-    mailsys = sp;
+    sp->protocol = strdup(protocol);
+    sp->address = strdup(address);
+    sp->next = systems;
+    systems = sp;
   }
   fclose(fp);
+  lastmtime = statbuf.st_mtime;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -93,29 +97,30 @@ void *argp;
   char  spooldir[80];
   char  tmp1[1024];
   char  tmp2[1024];
+  int  cnt;
   struct dirent *dp;
-  struct mailjob mj, *jp;
+  struct mailjob mj, *jp, *tail;
   struct mailsys *sp;
   struct stat statbuf;
 
   struct filelist {
     struct filelist *next;
-    char  name[15];
+    char  name[16];
   } *filelist, *p, *q;
 
-  read_configuration();
-  if (!mailsys) return;
-
-  timer.start = POLLTIME * 1000l / MSPTICK;
   timer.func = (void (*)()) mail_daemon;
   timer.arg = NULLCHAR;
+  set_timer(&timer, POLLTIME * 1000l);
   start_timer(&timer);
 
-  for (sp = mailsys; sp; sp = sp->nextsys) {
-    if (sp->nextjob || sp->nexttime > currtime) continue;
+  read_configuration();
+
+  for (sp = systems; sp; sp = sp->next) {
+    if (sp->jobs || sp->nexttime > currtime) continue;
     sprintf(spooldir, "%s/%s", SPOOLDIR, sp->sysname);
     if (!(dirp = opendir(spooldir))) continue;
     filelist = 0;
+    cnt = 0;
     for (dp = readdir(dirp); dp; dp = readdir(dirp)) {
       if (*dp->d_name != 'C') continue;
       p = (struct filelist *) malloc(sizeof(struct filelist ));
@@ -128,10 +133,17 @@ void *argp;
 	p->next = q->next;
 	q->next = p;
       }
+      if (++cnt > MAXJOBS) {
+	for (p = filelist; p->next; q = p, p = p->next) ;
+	q->next = 0;
+	free(p);
+	cnt--;
+      }
     }
     closedir(dirp);
-    for (; p = filelist; filelist = p->next, free((char *) p)) {
-      memset((char *) & mj, 0, sizeof(struct mailjob ));
+    tail = 0;
+    for (; p = filelist; filelist = p->next, free(p)) {
+      memset(&mj, 0, sizeof(struct mailjob ));
       sprintf(mj.cfile, "%s/%s", spooldir, p->name);
       if (!(fp = fopen(mj.cfile, "r"))) continue;
       while (fgets(line, sizeof(line), fp)) {
@@ -165,20 +177,20 @@ void *argp;
       }
       fclose(fp);
       if (!*mj.from) continue;
-      stat(mj.cfile, &statbuf);
+      if (stat(mj.cfile, &statbuf)) continue;
       if (statbuf.st_mtime + RETURNTIME < currtime) {
 	sprintf(mj.return_reason, "520 %s... Cannot connect for %d days\n", sp->sysname, RETURNTIME / (60l*60*24));
 	mail_return(&mj);
       } else {
-	jp = (struct mailjob *) memcpy(malloc(sizeof(struct mailjob )), (char *) & mj, sizeof(struct mailjob ));
-	if (sp->nextjob)
-	  sp->lastjob = sp->lastjob->nextjob = jp;
+	jp = (struct mailjob *) memcpy(malloc(sizeof(struct mailjob )), &mj, sizeof(struct mailjob ));
+	if (!sp->jobs)
+	  sp->jobs = jp;
 	else
-	  sp->lastjob = sp->nextjob = jp;
-	jp->nextjob = (struct mailjob *) 0;
+	  tail->next = jp;
+	tail = jp;
       }
     }
-    if (sp->nextjob) (*sp->mailer)(sp);
+    if (sp->jobs) (*sp->mailer)(sp);
   }
 }
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.2 1990/08/23 17:34:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.3 1990/10/12 19:26:41 deyke Exp $ */
 
 #include <stdio.h>
 #include "global.h"
@@ -8,49 +8,29 @@
 #include "internet.h"
 #include "tcp.h"
 #include "cmdparse.h"
+#include "commands.h"
 
-static int dotcpreset __ARGS((int argc, char *argv [], void *p));
-static int doirtt __ARGS((int argc, char *argv [], void *p));
-static int dortt __ARGS((int argc, char *argv [], void *p));
-static int dotcpkick __ARGS((int argc, char *argv [], void *p));
-static int domss __ARGS((int argc, char *argv [], void *p));
-static int dowindow __ARGS((int argc, char *argv [], void *p));
-static int dotcpstat __ARGS((int argc, char *argv [], void *p));
+static int doirtt __ARGS((int argc,char *argv[],void *p));
+static int domss __ARGS((int argc,char *argv[],void *p));
+static int dortt __ARGS((int argc,char *argv[],void *p));
+static int dotcpkick __ARGS((int argc,char *argv[],void *p));
+static int dotcpreset __ARGS((int argc,char *argv[],void *p));
+static int dotcpstat __ARGS((int argc,char *argv[],void *p));
+static int dotcptr __ARGS((int argc,char *argv[],void *p));
+static int dowindow __ARGS((int argc,char *argv[],void *p));
 static int tstat __ARGS((void));
 
-/* TCP connection states */
-char *tcpstates[] = {
-	"Closed",
-	"Listen",
-	"SYN sent",
-	"SYN received",
-	"Established",
-	"FIN wait 1",
-	"FIN wait 2",
-	"Close wait",
-	"Closing",
-	"Last ACK",
-	"Time wait"
-};
-
-/* TCP closing reasons */
-char *reasons[] = {
-	"Normal",
-	"Reset",
-	"Timeout",
-	"ICMP"
-};
 /* TCP subcommand table */
-struct cmds tcpcmds[] = {
-	"irtt",         doirtt,         0, 0,      NULLCHAR,
-	"kick",         dotcpkick,      0, 2,      "tcp kick <tcb>",
-	"mss",          domss,          0, 0,      NULLCHAR,
-	"reset",        dotcpreset,     0, 2,      "tcp reset <tcb>",
-	"rtt",          dortt,          0, 3,      "tcp rtt <tcb> <val>",
-	"status",       dotcpstat,      0, 0,      NULLCHAR,
-	"window",       dowindow,       0, 0,      NULLCHAR,
-	NULLCHAR,       NULLFP,         0, 0,
-		"tcp subcommands: irtt kick mss reset rtt status window"
+static struct cmds Tcpcmds[] = {
+	"irtt",         doirtt,         0, 0,   NULLCHAR,
+	"kick",         dotcpkick,      0, 2,   "tcp kick <tcb>",
+	"mss",          domss,          0, 0,   NULLCHAR,
+	"reset",        dotcpreset,     0, 2,   "tcp reset <tcb>",
+	"rtt",          dortt,          0, 3,   "tcp rtt <tcb> <val>",
+	"status",       dotcpstat,      0, 0,   NULLCHAR,
+	"trace",        dotcptr,        0, 0,   NULLCHAR,
+	"window",       dowindow,       0, 0,   NULLCHAR,
+	NULLCHAR,
 };
 int
 dotcp(argc,argv,p)
@@ -58,7 +38,15 @@ int argc;
 char *argv[];
 void *p;
 {
-	return subcmd(tcpcmds,argc,argv,p);
+	return subcmd(Tcpcmds,argc,argv,p);
+}
+static int
+dotcptr(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	return setbool(&Tcp_trace,"TCP state tracing",argc,argv);
 }
 
 /* Eliminate a TCP connection */
@@ -69,11 +57,10 @@ char *argv[];
 void *p;
 {
 	register struct tcb *tcb;
-	extern char notval[];
 
-	tcb = (struct tcb *)htol(argv[1]);
+	tcb = (struct tcb *)ltop(htol(argv[1]));
 	if(!tcpval(tcb)){
-		printf(notval);
+		tprintf(Notval);
 		return 1;
 	}
 	close_self(tcb,RESET);
@@ -87,10 +74,19 @@ int argc;
 char *argv[];
 void *p;
 {
-	if(argc < 2)
-		printf("%lu\n",tcp_irtt);
-	else
-		tcp_irtt = atol(argv[1]);
+	struct tcp_rtt *tp;
+
+	setlong(&Tcp_irtt,"TCP default irtt",argc,argv);
+	if(argc < 2){
+		for(tp = &Tcp_rtt[0];tp < &Tcp_rtt[RTTCACHE];tp++){
+			if(tp->addr != 0){
+				if(tprintf("%s: srtt %lu mdev %lu\n",
+				 inet_ntoa(tp->addr),
+				 tp->srtt,tp->mdev) == EOF)
+					break;
+			}
+		}
+	}
 	return 0;
 }
 
@@ -102,11 +98,10 @@ char *argv[];
 void *p;
 {
 	register struct tcb *tcb;
-	extern char notval[];
 
-	tcb = (struct tcb *)htol(argv[1]);
+	tcb = (struct tcb *)ltop(htol(argv[1]));
 	if(!tcpval(tcb)){
-		printf(notval);
+		tprintf(Notval);
 		return 1;
 	}
 	tcb->srtt = atol(argv[2]);
@@ -121,11 +116,10 @@ char *argv[];
 void *p;
 {
 	register struct tcb *tcb;
-	extern char notval[];
 
-	tcb = (struct tcb *)htol(argv[1]);
+	tcb = (struct tcb *)ltop(htol(argv[1]));
 	if(kick_tcp(tcb) == -1){
-		printf(notval);
+		tprintf(Notval);
 		return 1;
 	}
 	return 0;
@@ -138,11 +132,7 @@ int argc;
 char *argv[];
 void *p;
 {
-	if(argc < 2)
-		printf("%u\n",tcp_mss);
-	else
-		tcp_mss = atoi(argv[1]);
-	return 0;
+	return setshort(&Tcp_mss,"TCP MSS",argc,argv);
 }
 
 /* Set default window size */
@@ -152,11 +142,7 @@ int argc;
 char *argv[];
 void *p;
 {
-	if(argc < 2)
-		printf("%u\n",tcp_window);
-	else
-		tcp_window = atoi(argv[1]);
-	return 0;
+	return setshort(&Tcp_window,"TCP window",argc,argv);
 }
 
 /* Display status of TCBs */
@@ -167,16 +153,15 @@ char *argv[];
 void *p;
 {
 	register struct tcb *tcb;
-	extern char notval[];
 
 	if(argc < 2){
 		tstat();
 	} else {
-		tcb = (struct tcb *)htol(argv[1]);
+		tcb = (struct tcb *)ltop(htol(argv[1]));
 		if(tcpval(tcb))
-			state_tcp(tcb);
+			st_tcp(tcb);
 		else
-			printf(notval);
+			tprintf(Notval);
 	}
 	return 0;
 }
@@ -190,29 +175,41 @@ tstat()
 {
 	register int i;
 	register struct tcb *tcb;
-	char *psocket();
+	int j;
 
-	printf("conout %u conin %u reset out %u runt %u chksum err %u bdcsts %u\n",
-		tcp_stat.conout,tcp_stat.conin,tcp_stat.resets,tcp_stat.runt,
-		tcp_stat.checksum,tcp_stat.bdcsts);
-	printf("    &TCB Rcv-Q Snd-Q  Local socket           Remote socket          State\n");
+    if(!Shortstatus){
+	for(j=i=1;i<=NUMTCPMIB;i++){
+		if(Tcp_mib[i].name == NULLCHAR)
+			continue;
+		tprintf("(%2u)%-20s%10lu",i,Tcp_mib[i].name,
+		 Tcp_mib[i].value.integer);
+		if(j++ % 2)
+			tprintf("     ");
+		else
+			tprintf("\n");
+	}
+	if((j % 2) == 0)
+		tprintf("\n");
+    }
+
+	tprintf("    &TCB Rcv-Q Snd-Q  Local socket           Remote socket          State\n");
 	for(i=0;i<NTCB;i++){
-		for(tcb=tcbs[i];tcb != NULLTCB;tcb = tcb->next){
-			printf("%8lx%6u%6u  ",(long)tcb,tcb->rcvcnt,tcb->sndcnt);
-			printf("%-23s",psocket(&tcb->conn.local));
-			printf("%-23s",psocket(&tcb->conn.remote));
-			printf("%-s",tcpstates[tcb->state]);
-			if(tcb->state == LISTEN && (tcb->flags & CLONE))
-				printf(" (S)");
-			printf("\n");
+		for(tcb=Tcbs[i];tcb != NULLTCB;tcb = tcb->next){
+			tprintf("%8lx%6u%6u  ",ptol(tcb),tcb->rcvcnt,tcb->sndcnt);
+			tprintf("%-23s",pinet_tcp(&tcb->conn.local));
+			tprintf("%-23s",pinet_tcp(&tcb->conn.remote));
+			tprintf("%-s",Tcpstates[tcb->state]);
+			if(tcb->state == TCP_LISTEN && tcb->flags.clone)
+				tprintf(" (S)");
+			if(tprintf("\n") == EOF)
+				return 0;
 		}
 	}
-	fflush(stdout);
 	return 0;
 }
 /* Dump a TCP control block in detail */
 void
-state_tcp(tcb)
+st_tcp(tcb)
 struct tcb *tcb;
 {
 	int32 sent,recvd;
@@ -223,87 +220,87 @@ struct tcb *tcb;
 	sent = tcb->snd.una - tcb->iss; /* Acknowledged data only */
 	recvd = tcb->rcv.nxt - tcb->irs;
 	switch(tcb->state){
-	case LISTEN:
-	case SYN_SENT:          /* Nothing received or acked yet */
+	case TCP_LISTEN:
+	case TCP_SYN_SENT:      /* Nothing received or acked yet */
 		sent = recvd = 0;
 		break;
-	case SYN_RECEIVED:
+	case TCP_SYN_RECEIVED:
 		recvd--;        /* Got SYN, no data acked yet */
 		sent = 0;
 		break;
-	case ESTABLISHED:       /* Got and sent SYN */
-	case FINWAIT1:          /* FIN not acked yet */
+	case TCP_ESTABLISHED:   /* Got and sent SYN */
+	case TCP_FINWAIT1:      /* FIN not acked yet */
 		sent--;
 		recvd--;
 		break;
-	case FINWAIT2:          /* Our SYN and FIN both acked */
+	case TCP_FINWAIT2:      /* Our SYN and FIN both acked */
 		sent -= 2;
 		recvd--;
 		break;
-	case CLOSE_WAIT:        /* Got SYN and FIN, our FIN not yet acked */
-	case CLOSING:
-	case LAST_ACK:
+	case TCP_CLOSE_WAIT:    /* Got SYN and FIN, our FIN not yet acked */
+	case TCP_CLOSING:
+	case TCP_LAST_ACK:
 		sent--;
 		recvd -= 2;
 		break;
-	case TIME_WAIT:         /* Sent and received SYN/FIN, all acked */
+	case TCP_TIME_WAIT:     /* Sent and received SYN/FIN, all acked */
 		sent -= 2;
 		recvd -= 2;
 		break;
 	}
-	printf("Local: %s",psocket(&tcb->conn.local));
-	printf(" Remote: %s",psocket(&tcb->conn.remote));
-	printf(" State: %s\n",tcpstates[tcb->state]);
-	printf("      Init seq    Unack     Next Resent CWind Thrsh  Wind  MSS Queue      Total\n");
-	printf("Send:");
-	printf("%9lx",tcb->iss);
-	printf("%9lx",tcb->snd.una);
-	printf("%9lx",tcb->snd.nxt);
-	printf("%7lu",tcb->resent);
-	printf("%6u",tcb->cwind);
-	printf("%6u",tcb->ssthresh);
-	printf("%6u",tcb->snd.wnd);
-	printf("%5u",tcb->mss);
-	printf("%6u",tcb->sndcnt);
-	printf("%11lu\n",sent);
+	tprintf("Local: %s",pinet_tcp(&tcb->conn.local));
+	tprintf(" Remote: %s",pinet_tcp(&tcb->conn.remote));
+	tprintf(" State: %s\n",Tcpstates[tcb->state]);
+	tprintf("      Init seq    Unack     Next Resent CWind Thrsh  Wind  MSS Queue      Total\n");
+	tprintf("Send:");
+	tprintf("%9lx",tcb->iss);
+	tprintf("%9lx",tcb->snd.una);
+	tprintf("%9lx",tcb->snd.nxt);
+	tprintf("%7lu",tcb->resent);
+	tprintf("%6u",tcb->cwind);
+	tprintf("%6u",tcb->ssthresh);
+	tprintf("%6u",tcb->snd.wnd);
+	tprintf("%5u",tcb->mss);
+	tprintf("%6u",tcb->sndcnt);
+	tprintf("%11lu\n",sent);
 
-	printf("Recv:");
-	printf("%9lx",tcb->irs);
-	printf("         ");
-	printf("%9lx",tcb->rcv.nxt);
-	printf("%7lu",tcb->rerecv);
-	printf("      ");
-	printf("      ");
-	printf("%6u",tcb->rcv.wnd);
-	printf("     ");
-	printf("%6u",tcb->rcvcnt);
-	printf("%11lu\n",recvd);
+	tprintf("Recv:");
+	tprintf("%9lx",tcb->irs);
+	tprintf("         ");
+	tprintf("%9lx",tcb->rcv.nxt);
+	tprintf("%7lu",tcb->rerecv);
+	tprintf("      ");
+	tprintf("      ");
+	tprintf("%6u",tcb->rcv.wnd);
+	tprintf("     ");
+	tprintf("%6u",tcb->rcvcnt);
+	tprintf("%11lu\n",recvd);
 
 	if(tcb->reseq != (struct reseq *)NULL){
 		register struct reseq *rp;
 
-		printf("Reassembly queue:\n");
+		tprintf("Reassembly queue:\n");
 		for(rp = tcb->reseq;rp != (struct reseq *)NULL; rp = rp->next){
-			printf("  seq x%lx %u bytes\n",rp->seg.seq,rp->length);
+			if(tprintf("  seq x%lx %u bytes\n",
+			 rp->seg.seq,rp->length) == EOF)
+				return;
 		}
 	}
 	if(tcb->backoff > 0)
-		printf("Backoff %u ",tcb->backoff);
-	if(tcb->flags & RETRAN)
-		printf("Retrying ");
+		tprintf("Backoff %u ",tcb->backoff);
+	if(tcb->flags.retran)
+		tprintf("Retrying ");
 	switch(tcb->timer.state){
 	case TIMER_STOP:
-		printf("Timer stopped ");
+		tprintf("Timer stopped ");
 		break;
 	case TIMER_RUN:
-		printf("Timer running (%ld/%ld ms) ",
+		tprintf("Timer running (%ld/%ld ms) ",
 		 (long)MSPTICK * read_timer(&tcb->timer),
 		 (long)MSPTICK * dur_timer(&tcb->timer));
 		break;
 	case TIMER_EXPIRE:
-		printf("Timer expired ");
+		tprintf("Timer expired ");
 	}
-	printf("SRTT %ld ms Mean dev %ld ms\n",tcb->srtt,tcb->mdev);
-	fflush(stdout);
+	tprintf("SRTT %ld ms Mean dev %ld ms\n",tcb->srtt,tcb->mdev);
 }
-

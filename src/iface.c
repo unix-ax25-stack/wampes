@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.3 1990/09/11 13:45:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.4 1990/10/12 19:25:52 deyke Exp $ */
 
 #include <stdio.h>
 #include "global.h"
@@ -203,7 +203,7 @@ char *mode;
 	struct iftype *ift;
 
 	for(ift = &Iftypes[0];ift->name != NULLCHAR;ift++)
-		if(strnicmp(ift->name,mode,strlen(mode)) == 0)
+		if(strnicmp(ift->name,mode,(int)strlen(mode)) == 0)
 			break;
 	if(ift->name == NULLCHAR){
 		return -1;

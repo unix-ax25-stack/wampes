@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.4 1990/09/11 13:46:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.5 1990/10/12 19:26:55 deyke Exp $ */
 
 #include "global.h"
 #include "socket.h"
@@ -7,14 +7,13 @@
 #include "tcp.h"
 #include "login.h"
 
-char  *psocket();
-
 static struct tcb *tcb_server;
 
 /*---------------------------------------------------------------------------*/
 
-static void tnserv_recv_upcall(tcb)
+static void tnserv_recv_upcall(tcb, cnt)
 struct tcb *tcb;
+int  cnt;
 {
   struct mbuf *bp;
 
@@ -24,8 +23,9 @@ struct tcb *tcb;
 
 /*---------------------------------------------------------------------------*/
 
-static void tnserv_send_upcall(tcb)
+static void tnserv_send_upcall(tcb, cnt)
 struct tcb *tcb;
+int  cnt;
 {
   struct mbuf *bp;
 
@@ -41,21 +41,21 @@ char  old, new;
 {
   switch (new) {
 #ifdef  QUICKSTART
-  case SYN_RECEIVED:
+  case TCP_SYN_RECEIVED:
 #else
-  case ESTABLISHED:
+  case TCP_ESTABLISHED:
 #endif
-    tcb->user = (char *) login_open(psocket(&tcb->conn.remote), "TELNET", (void (*)()) tnserv_send_upcall, (void (*)()) close_tcp, tcb);
+    tcb->user = (int) login_open(pinet_tcp(&tcb->conn.remote), "TELNET", (void (*)()) tnserv_send_upcall, (void (*)()) close_tcp, tcb);
     if (!tcb->user)
       close_tcp(tcb);
     else
       log(tcb, "open TELNET");
     break;
-  case CLOSE_WAIT:
+  case TCP_CLOSE_WAIT:
     close_tcp(tcb);
     break;
-  case CLOSED:
-    if (old != LISTEN) {
+  case TCP_CLOSED:
+    if (old != TCP_LISTEN) {
       login_close((struct login_cb *) tcb->user);
       log(tcb, "close TELNET");
     }
@@ -87,9 +87,9 @@ void *p;
 
   if (tcb_server) close_tcp(tcb_server);
   lsocket.address = INADDR_ANY;
-  lsocket.port = (argc < 2) ? IPPORT_TELNET : tcp_portnum(argv[1]);
+  lsocket.port = (argc < 2) ? IPPORT_TELNET : tcp_port_number(argv[1]);
   tcb_server = open_tcp(&lsocket, NULLSOCK, TCP_SERVER, 0, tnserv_recv_upcall,
-			tnserv_send_upcall, tnserv_state_upcall, 0, NULLCHAR);
+			tnserv_send_upcall, tnserv_state_upcall, 0, 0);
   return 0;
 }
 

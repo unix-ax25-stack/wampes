@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.h,v 1.3 1990/09/11 13:46:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.h,v 1.4 1990/10/12 19:27:00 deyke Exp $ */
 
 #ifndef TRANSPORT_INCLUDED
 #define TRANSPORT_INCLUDED
@@ -28,7 +28,7 @@ struct transport_cb {
   int  send_char;               /* Last char sent */
 };
 
-/* transport.c */
+/* In transport.c: */
 struct transport_cb *transport_open __ARGS((char *protocol, char *address, void (*r_upcall )(), void (*t_upcall )(), void (*s_upcall )(), char *user));
 int transport_recv __ARGS((struct transport_cb *tp, struct mbuf **bpp, int cnt));
 int transport_send __ARGS((struct transport_cb *tp, struct mbuf *bp));

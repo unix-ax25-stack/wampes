@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.3 1990/09/11 13:45:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.4 1990/10/12 19:25:55 deyke Exp $ */
 
 #ifndef NROUTE
 
@@ -179,7 +179,7 @@ int ntohip __ARGS((struct ip *ip,struct mbuf **bpp));
 /* In either lcsum.c or pcgen.asm: */
 int16 lcsum __ARGS((int16 *wp,int len));
 
-/* ipfile.c */
+/* In ipfile.c: */
 int route_savefile __ARGS((void));
 int route_loadfile __ARGS((void));
 

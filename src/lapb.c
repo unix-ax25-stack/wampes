@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.11 1990/09/11 13:45:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.12 1990/10/12 19:25:19 deyke Exp $ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +18,7 @@
 
 extern int  debug;
 extern long  currtime;
-extern struct axcb *netrom_server_axcb;
+extern struct ax25_cb *netrom_server_axcb;
 
 #define AXROUTEHOLDTIME (60l*60*24*90)
 #define AXROUTESAVETIME (60l*10)
@@ -63,11 +63,11 @@ int  ax_t3init   =  900;        /* No-activity timeout */
 int  ax_t4init   =   60;        /* Busy timeout */
 int  ax_t5init   =    2;        /* Packet assembly timeout */
 int  ax_window   = 2048;        /* Local flow control limit */
-struct axcb *axcb_server;       /* Server control block */
+struct ax25_cb *axcb_server;    /* Server control block */
 
 static char  axroutefile[] = "/tcp/axroute_data";
 static char  axroutetmpfile[] = "/tcp/axroute_tmp";
-static struct axcb *axcb_head;
+static struct ax25_cb *axcb_head;
 static struct axroute_tab *axroute_tab[AXROUTESIZE];
 static struct iface *axroute_default_ifp;
 
@@ -180,7 +180,7 @@ static void axroute_loadfile()
 /*---------------------------------------------------------------------------*/
 
 static void axroute_add(cp, perm)
-struct axcb *cp;
+struct ax25_cb *cp;
 int  perm;
 {
 
@@ -222,7 +222,7 @@ int  perm;
 /*---------------------------------------------------------------------------*/
 
 int  axroute(cp, bp)
-struct axcb *cp;
+struct ax25_cb *cp;
 struct mbuf *bp;
 {
 
@@ -256,7 +256,7 @@ struct mbuf *bp;
 /*---------------------------------------------------------------------------*/
 
 static void reset_t1(cp)
-struct axcb *cp;
+struct ax25_cb *cp;
 {
   cp->timer_t1.start = (cp->srtt + 2 * cp->mdev + MSPTICK) / MSPTICK;
   if (cp->timer_t1.start < 2) cp->timer_t1.start = 2;
@@ -265,7 +265,7 @@ struct axcb *cp;
 /*---------------------------------------------------------------------------*/
 
 static void inc_t1(cp)
-struct axcb *cp;
+struct ax25_cb *cp;
 {
   int32 tmp;
 
@@ -285,7 +285,7 @@ struct axcb *cp;
 /*---------------------------------------------------------------------------*/
 
 static void send_packet(cp, type, cmdrsp, data)
-struct axcb *cp;
+struct ax25_cb *cp;
 int  type;
 int  cmdrsp;
 struct mbuf *data;
@@ -329,7 +329,7 @@ struct mbuf *data;
 /*---------------------------------------------------------------------------*/
 
 static int  busy(cp)
-register struct axcb *cp;
+register struct ax25_cb *cp;
 {
   return cp->peer ? space_ax(cp->peer) <= 0 : cp->rcvcnt >= ax_window;
 }
@@ -337,7 +337,7 @@ register struct axcb *cp;
 /*---------------------------------------------------------------------------*/
 
 static void send_ack(cp, cmdrsp)
-struct axcb *cp;
+struct ax25_cb *cp;
 int  cmdrsp;
 {
   if (busy(cp))
@@ -354,7 +354,7 @@ int  cmdrsp;
 /*---------------------------------------------------------------------------*/
 
 static void try_send(cp, fill_sndq)
-register struct axcb *cp;
+register struct ax25_cb *cp;
 int  fill_sndq;
 {
 
@@ -399,7 +399,7 @@ int  fill_sndq;
 /*---------------------------------------------------------------------------*/
 
 static void setaxstate(cp, newstate)
-struct axcb *cp;
+struct ax25_cb *cp;
 int  newstate;
 {
   int  oldstate;
@@ -445,7 +445,7 @@ int  newstate;
 /*---------------------------------------------------------------------------*/
 
 static void t1_timeout(cp)
-struct axcb *cp;
+struct ax25_cb *cp;
 {
   inc_t1(cp);
   cp->cwind = 1;
@@ -493,7 +493,7 @@ struct axcb *cp;
 /*---------------------------------------------------------------------------*/
 
 static void t2_timeout(cp)
-struct axcb *cp;
+struct ax25_cb *cp;
 {
   send_ack(cp, RESP);
 }
@@ -501,7 +501,7 @@ struct axcb *cp;
 /*---------------------------------------------------------------------------*/
 
 static void t3_timeout(cp)
-struct axcb *cp;
+struct ax25_cb *cp;
 {
   if (!run_timer(&cp->timer_t1)) send_ack(cp, POLL);
 }
@@ -509,7 +509,7 @@ struct axcb *cp;
 /*---------------------------------------------------------------------------*/
 
 static void t4_timeout(cp)
-struct axcb *cp;
+struct ax25_cb *cp;
 {
   if (!cp->polling) send_ack(cp, POLL);
 }
@@ -517,23 +517,23 @@ struct axcb *cp;
 /*---------------------------------------------------------------------------*/
 
 static void t5_timeout(cp)
-struct axcb *cp;
+struct ax25_cb *cp;
 {
   try_send(cp, 1);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static struct axcb *create_axcb(prototype)
-struct axcb *prototype;
+static struct ax25_cb *create_axcb(prototype)
+struct ax25_cb *prototype;
 {
-  register struct axcb *cp;
+  register struct ax25_cb *cp;
 
   if (prototype) {
-    cp = (struct axcb *) malloc(sizeof(struct axcb ));
+    cp = (struct ax25_cb *) malloc(sizeof(struct ax25_cb ));
     *cp = *prototype;
   } else
-    cp = (struct axcb *) calloc(1, sizeof(struct axcb ));
+    cp = (struct ax25_cb *) calloc(1, sizeof(struct ax25_cb ));
   cp->cwind = 1;
   cp->timer_t1.func = (void (*) __ARGS((void *))) t1_timeout;
   cp->timer_t1.arg = (char *) cp;
@@ -552,7 +552,7 @@ struct axcb *prototype;
 /*---------------------------------------------------------------------------*/
 
 static void build_path(cp, ifp, newpath, reverse)
-register struct axcb *cp;
+register struct ax25_cb *cp;
 struct iface *ifp;
 char  *newpath;
 int  reverse;
@@ -651,7 +651,7 @@ int  reverse;
 /*---------------------------------------------------------------------------*/
 
 char  *pathtostr(cp)
-struct axcb *cp;
+struct ax25_cb *cp;
 {
 
   register char  *ap, *p;
@@ -682,7 +682,7 @@ struct axcb *cp;
 /*---------------------------------------------------------------------------*/
 
 static int  put_reseq(cp, bp, ns)
-struct axcb *cp;
+struct ax25_cb *cp;
 struct mbuf *bp;
 int  ns;
 {
@@ -720,8 +720,8 @@ struct mbuf *bp;
   int  nr;
   int  ns;
   int  type;
-  struct axcb *cp;
-  struct axcb *cpp;
+  struct ax25_cb *cp;
+  struct ax25_cb *cpp;
 
   for (cntrlptr = bp->data + AXALEN; !(cntrlptr[6] & E); cntrlptr += AXALEN) ;
   cntrlptr += AXALEN;
@@ -1087,13 +1087,12 @@ int  argc;
 char  *argv[];
 void *p;
 {
-  struct axcb *cp;
-  extern char  notval[];
+  struct ax25_cb *cp;
   long  htol();
 
-  cp = (struct axcb *) htol(argv[1]);
+  cp = (struct ax25_cb *) htol(argv[1]);
   if (!valid_ax(cp)) {
-    printf(notval);
+    printf(Notval);
     return 1;
   }
   reset_ax(cp);
@@ -1122,7 +1121,7 @@ void *p;
 
   char  *ap;
   int  perm;
-  struct axcb cb;
+  struct ax25_cb cb;
   struct iface *if_lookup();
 
   argc--;
@@ -1270,7 +1269,7 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-static int  doroute(argc, argv, p)
+static int  doaxroute(argc, argv, p)
 int  argc;
 char  *argv[];
 void *p;
@@ -1295,14 +1294,14 @@ void *p;
 
 /* Display AX.25 link level control blocks */
 
-static int  dostatus(argc, argv, p)
+static int  doaxstatus(argc, argv, p)
 int  argc;
 char  *argv[];
 void *p;
 {
 
   int  i;
-  register struct axcb *cp;
+  register struct ax25_cb *cp;
   struct mbuf *bp;
 
   if (argc < 2) {
@@ -1323,7 +1322,7 @@ void *p;
       printf("%8lx                        Listen (S)     *\n",
 	     (long) axcb_server);
   } else {
-    cp = (struct axcb *) htol(argv[1]);
+    cp = (struct ax25_cb *) htol(argv[1]);
     if (!valid_ax(cp)) {
       printf("Not a valid control block address\n");
       return 1;
@@ -1462,7 +1461,7 @@ void *p;
 
 /* Set high water mark on receive queue that triggers RNR */
 
-static int  dowindow(argc, argv, p)
+static int  doaxwindow(argc, argv, p)
 int  argc;
 char  *argv[];
 void *p;
@@ -1490,14 +1489,14 @@ void *p;
     "pthresh",  dopthresh,  0, 0, NULLCHAR,
     "reset",    doaxreset,  0, 2, "ax25 reset <axcb>",
     "retry",    doretry,    0, 0, NULLCHAR,
-    "route",    doroute,    0, 0, NULLCHAR,
-    "status",   dostatus,   0, 0, NULLCHAR,
+    "route",    doaxroute,  0, 0, NULLCHAR,
+    "status",   doaxstatus, 0, 0, NULLCHAR,
     "t1",       dot1,       0, 0, NULLCHAR,
     "t2",       dot2,       0, 0, NULLCHAR,
     "t3",       dot3,       0, 0, NULLCHAR,
     "t4",       dot4,       0, 0, NULLCHAR,
     "t5",       dot5,       0, 0, NULLCHAR,
-    "window",   dowindow,   0, 0, NULLCHAR,
+    "window",   doaxwindow, 0, 0, NULLCHAR,
 
     NULLCHAR,   NULLFP,     0, 0, NULLCHAR
   };
@@ -1509,15 +1508,15 @@ void *p;
 /***************************** User Calls to AX25 ****************************/
 /*---------------------------------------------------------------------------*/
 
-struct axcb *open_ax(path, mode, r_upcall, t_upcall, s_upcall, user)
+struct ax25_cb *open_ax(path, mode, r_upcall, t_upcall, s_upcall, user)
 char  *path;
 int  mode;
-void (*r_upcall) __ARGS((struct axcb *p, int cnt));
-void (*t_upcall) __ARGS((struct axcb *p, int cnt));
-void (*s_upcall) __ARGS((struct axcb *p, int oldstate, int newstate));
+void (*r_upcall) __ARGS((struct ax25_cb *p, int cnt));
+void (*t_upcall) __ARGS((struct ax25_cb *p, int cnt));
+void (*s_upcall) __ARGS((struct ax25_cb *p, int oldstate, int newstate));
 char  *user;
 {
-  register struct axcb *cp;
+  register struct ax25_cb *cp;
 
   switch (mode) {
   case AX25_ACTIVE:
@@ -1538,7 +1537,7 @@ char  *user;
     setaxstate(cp, CONNECTING);
     return cp;
   case AX25_SERVER:
-    if (!(cp = (struct axcb *) calloc(1, sizeof(struct axcb )))) {
+    if (!(cp = (struct ax25_cb *) calloc(1, sizeof(struct ax25_cb )))) {
       Net_error = NO_MEM;
       return NULLAXCB;
     }
@@ -1556,7 +1555,7 @@ char  *user;
 /*---------------------------------------------------------------------------*/
 
 int  send_ax(cp, bp)
-struct axcb *cp;
+struct ax25_cb *cp;
 struct mbuf *bp;
 {
   int16 cnt;
@@ -1595,7 +1594,7 @@ struct mbuf *bp;
 /*---------------------------------------------------------------------------*/
 
 int  space_ax(cp)
-struct axcb *cp;
+struct ax25_cb *cp;
 {
   int  cnt;
 
@@ -1623,7 +1622,7 @@ struct axcb *cp;
 /*---------------------------------------------------------------------------*/
 
 int  recv_ax(cp, bpp, cnt)
-struct axcb *cp;
+struct ax25_cb *cp;
 struct mbuf **bpp;
 int16 cnt;
 {
@@ -1664,7 +1663,7 @@ int16 cnt;
 /*---------------------------------------------------------------------------*/
 
 int  close_ax(cp)
-struct axcb *cp;
+struct ax25_cb *cp;
 {
   if (!cp) {
     Net_error = INVALID;
@@ -1695,7 +1694,7 @@ struct axcb *cp;
 /*---------------------------------------------------------------------------*/
 
 int  reset_ax(cp)
-struct axcb *cp;
+struct ax25_cb *cp;
 {
   if (!cp) {
     Net_error = INVALID;
@@ -1714,11 +1713,11 @@ struct axcb *cp;
 /*---------------------------------------------------------------------------*/
 
 int  del_ax(cp)
-struct axcb *cp;
+struct ax25_cb *cp;
 {
 
   int  i;
-  register struct axcb *p, *q;
+  register struct ax25_cb *p, *q;
 
   for (q = 0, p = axcb_head; p != cp; q = p, p = p->next)
     if (!p) {
@@ -1745,9 +1744,9 @@ struct axcb *cp;
 /*---------------------------------------------------------------------------*/
 
 int  valid_ax(cp)
-register struct axcb *cp;
+register struct ax25_cb *cp;
 {
-  register struct axcb *p;
+  register struct ax25_cb *p;
 
   if (!cp) return 0;
   if (cp == axcb_server) return 1;

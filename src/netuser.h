@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.h,v 1.3 1990/09/11 13:46:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.h,v 1.4 1990/10/12 19:26:22 deyke Exp $ */
 
 /* Global structures and constants needed by an Internet user process */
 #ifndef NCONN
@@ -48,5 +48,13 @@ char *resolve_a __ARGS((int32 ip_address));
 int32 aton __ARGS((char *s));
 char *inet_ntoa __ARGS((int32 a));
 char *pinet __ARGS((struct socket *s));
+
+/* In services.c: */
+char *tcp_port_name __ARGS((int port));
+char *udp_port_name __ARGS((int port));
+int tcp_port_number __ARGS((char *name));
+int udp_port_number __ARGS((char *name));
+char *pinet_tcp __ARGS((struct socket *s));
+char *pinet_udp __ARGS((struct socket *s));
 
 #endif  /* NCONN */

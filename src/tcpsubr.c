@@ -1,17 +1,62 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.5 1990/09/11 13:46:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.6 1990/10/12 19:26:48 deyke Exp $ */
 
+#include <stdio.h>
 #include "global.h"
 #include "timer.h"
 #include "mbuf.h"
 #include "netuser.h"
 #include "internet.h"
 #include "tcp.h"
+#include "ip.h"
 
-static int16 hash_tcb();
+static int16 hash_tcb __ARGS((struct connection *conn));
 
-struct tcb *tcbs[NTCB];
-int16 tcp_mss = DEF_MSS;        /* Maximum segment size to be sent with SYN */
-int32 tcp_irtt = DEF_RTT;       /* Initial guess at round trip time */
+/* TCP connection states */
+char *Tcpstates[] = {
+	"",
+	"Closed",
+	"Listen",
+	"SYN sent",
+	"SYN received",
+	"Established",
+	"FIN wait 1",
+	"FIN wait 2",
+	"Close wait",
+	"Last ACK",
+	"Closing",
+	"Time wait"
+};
+
+/* TCP closing reasons */
+char *Tcpreasons[] = {
+	"Normal",
+	"Reset/Refused",
+	"Timeout",
+	"ICMP"
+};
+struct tcb *Tcbs[NTCB];
+int16 Tcp_mss = DEF_MSS;        /* Maximum segment size to be sent with SYN */
+int32 Tcp_irtt = DEF_RTT;       /* Initial guess at round trip time */
+int Tcp_trace;                  /* State change tracing flag */
+struct tcp_rtt Tcp_rtt[RTTCACHE];
+struct mib_entry Tcp_mib[] = {
+	NULLCHAR,               0,
+	"tcpRtoAlgorithm",      4,      /* Van Jacobsen's algorithm */
+	"tcpRtoMin",            MSPTICK,        /* No lower bound */
+	"tcpRtoMax",            MAXINT32,       /* No upper bound */
+	"tcpMaxConn",           -1L,    /* No limit */
+	"tcpActiveOpens",       0,
+	"tcpPassiveOpens",      0,
+	"tcpAttemptFails",      0,
+	"tcpEstabResets",       0,
+	"tcpCurrEstab",         0,
+	"tcpInSegs",            0,
+	"tcpOutSegs",           0,
+	"tcpRetransSegs",       0,
+	NULLCHAR,               0,      /* Connection state goes here */
+	"tcpInErrs",            0,
+	"tcpOutRsts",           0,
+};
 
 /* Lookup connection, return TCB pointer or NULLTCB if nonexistant */
 struct tcb *
@@ -20,7 +65,7 @@ struct connection *conn;
 {
 	register struct tcb *tcb;
 
-	tcb = tcbs[hash_tcb(conn)];
+	tcb = Tcbs[hash_tcb(conn)];
 	while(tcb != NULLTCB){
 		/* Yet another structure compatibility hack */
 		if(conn->local.address == tcb->conn.local.address
@@ -39,23 +84,26 @@ create_tcb(conn)
 struct connection *conn;
 {
 	register struct tcb *tcb;
-	void tcp_timeout(),tcp_msl();
-	void link_tcb();
+	struct tcp_rtt *tp;
 
 	if((tcb = lookup_tcb(conn)) != NULLTCB)
 		return tcb;
-	if((tcb = (struct tcb *)calloc(1,sizeof (struct tcb))) == NULLTCB)
-		return NULLTCB;
+	tcb = (struct tcb *)callocw(1,sizeof (struct tcb));
 	ASSIGN(tcb->conn,*conn);
 
-	tcb->cwind = tcb->mss = tcp_mss;
+	tcb->state = TCP_CLOSED;
+	tcb->cwind = tcb->mss = Tcp_mss;
 	tcb->ssthresh = 65535;
-	tcb->srtt = tcp_irtt;
+	if((tp = rtt_get(tcb->conn.remote.address)) != NULLRTT){
+		tcb->srtt = tp->srtt;
+		tcb->mdev = tp->mdev;
+	} else {
+		tcb->srtt = Tcp_irtt;   /* mdev = 0 */
+	}
 	/* Initialize timer intervals */
 	tcb->timer.start = tcb->srtt / MSPTICK;
 	tcb->timer.func = tcp_timeout;
-	tcb->timer.arg = (char *)tcb;
-	tcb->rtt_timer.start = MAX_TIME; /* Largest possible value */
+	tcb->timer.arg = tcb;
 
 	link_tcb(tcb);
 	return tcb;
@@ -65,12 +113,15 @@ struct connection *conn;
 void
 close_self(tcb,reason)
 register struct tcb *tcb;
-char reason;
+int reason;
 {
-	struct reseq *rp,*rp1;
+	struct reseq *rp1;
+	register struct reseq *rp;
+
+	if(tcb == NULLTCB)
+		return;
 
 	stop_timer(&tcb->timer);
-	stop_timer(&tcb->rtt_timer);
 	tcb->reason = reason;
 
 	/* Flush reassembly queue; nothing more can arrive */
@@ -80,17 +131,7 @@ char reason;
 		free((char *)rp);
 	}
 	tcb->reseq = NULLRESEQ;
-	setstate(tcb,CLOSED);
-}
-
-/* Determine initial sequence number */
-int32
-iss()
-{
-	static int32 seq;
-
-	seq += 250000;
-	return seq;
+	setstate(tcb,TCP_CLOSED);
 }
 
 /* Sequence number comparisons
@@ -116,12 +157,14 @@ register int32 x,y;
 {
 	return (long)(x-y) < 0;
 }
+#ifdef  notdef
 int
 seq_le(x,y)
 register int32 x,y;
 {
 	return (long)(x-y) <= 0;
 }
+#endif  /* notdef */
 int
 seq_gt(x,y)
 register int32 x,y;
@@ -145,12 +188,13 @@ struct connection *conn;
 	/* Compute hash function on connection structure */
 	hval = hiword(conn->remote.address);
 	hval ^= loword(conn->remote.address);
+#ifdef  notdef  /* Never changes, so not really needed */
 	hval ^= hiword(conn->local.address);
 	hval ^= loword(conn->local.address);
+#endif
 	hval ^= conn->remote.port;
 	hval ^= conn->local.port;
-	hval %= NTCB;
-	return hval;
+	return (int16)(hval % NTCB);
 }
 /* Insert TCB at head of proper hash chain */
 void
@@ -160,11 +204,11 @@ register struct tcb *tcb;
 	register struct tcb **tcbhead;
 
 	tcb->prev = NULLTCB;
-	tcbhead = &tcbs[hash_tcb(&tcb->conn)];
+	tcbhead = &Tcbs[hash_tcb(&tcb->conn)];
 	tcb->next = *tcbhead;
-	if(tcb->next != NULLTCB){
+	if(tcb->next != NULLTCB)
 		tcb->next->prev = tcb;
-	}
+
 	*tcbhead = tcb;
 }
 /* Remove TCB from whatever hash chain it may be on */
@@ -174,10 +218,10 @@ register struct tcb *tcb;
 {
 	register struct tcb **tcbhead;
 
-	tcbhead = &tcbs[hash_tcb(&tcb->conn)];
-	if(*tcbhead == tcb)
+	tcbhead = &Tcbs[hash_tcb(&tcb->conn)];
+	if(tcb->prev == NULLTCB)
 		*tcbhead = tcb->next;   /* We're the first one on the chain */
-	if(tcb->prev != NULLTCB)
+	else
 		tcb->prev->next = tcb->next;
 	if(tcb->next != NULLTCB)
 		tcb->next->prev = tcb->prev;
@@ -185,119 +229,119 @@ register struct tcb *tcb;
 void
 setstate(tcb,newstate)
 register struct tcb *tcb;
-register char newstate;
+register int newstate;
 {
 	register char oldstate;
 
 	oldstate = tcb->state;
 	tcb->state = newstate;
-	if(tcb->s_upcall){
+	if(Tcp_trace)
+		printf("TCB %lx %s -> %s\n",ptol(tcb),
+		 Tcpstates[oldstate],Tcpstates[newstate]);
+
+	/* Update MIB variables */
+	if(oldstate == TCP_CLOSED && newstate == TCP_SYN_SENT)
+		tcpActiveOpens++;
+	else if(oldstate == TCP_LISTEN && newstate == TCP_SYN_RECEIVED)
+		tcpPassiveOpens++;
+	else if((oldstate == TCP_SYN_SENT || oldstate == TCP_SYN_RECEIVED)
+	 && newstate == TCP_CLOSED)
+		tcpAttemptFails++;
+	else if(oldstate == TCP_SYN_RECEIVED && newstate == TCP_LISTEN)
+		tcpAttemptFails++;
+	else if((oldstate == TCP_ESTABLISHED || oldstate == TCP_CLOSE_WAIT)
+	 && newstate == TCP_CLOSED)
+		tcpEstabResets++;
+
+	if(oldstate == TCP_ESTABLISHED || oldstate == TCP_CLOSE_WAIT)
+		tcpCurrEstab--;
+
+	if(newstate == TCP_ESTABLISHED || newstate == TCP_CLOSE_WAIT)
+		tcpCurrEstab++;
+
+	if(tcb->s_upcall)
 		(*tcb->s_upcall)(tcb,oldstate,newstate);
-	}
-	/* Notify the user that he can begin sending data */
-	if(tcb->t_upcall && newstate == ESTABLISHED && tcb->window > tcb->sndcnt){
-		(*tcb->t_upcall)(tcb,tcb->window - tcb->sndcnt);
+
+	switch(newstate){
+	case TCP_ESTABLISHED:
+		/* Notify the user that he can begin sending data */
+		if(tcb->t_upcall && tcb->window > tcb->sndcnt)
+			(*tcb->t_upcall)(tcb,tcb->window - tcb->sndcnt);
+		break;
 	}
 }
-/* Convert TCP header in host format into mbuf ready for transmission,
- * link in data (if any), and compute checksum
+/* Round trip timing cache routines.
+ * These functions implement a very simple system for keeping track of
+ * network performance for future use in new connections.
+ * The emphasis here is on speed of update (rather than optimum cache hit
+ * ratio) since rtt_add is called every time a TCP connection updates
+ * its round trip estimate.
  */
-struct mbuf *
-htontcp(tcph,data,ph)
-struct tcp *tcph;
-struct mbuf *data;
-struct pseudo_header *ph;
+void
+rtt_add(addr,rtt)
+int32 addr;             /* Destination IP address */
+int32 rtt;
 {
-	int16 hdrlen;
-	struct mbuf *bp;
-	register char *cp;
-	int16 csum;
+	register struct tcp_rtt *tp;
+	int32 abserr;
 
-	hdrlen = (tcph->mss != 0) ? TCPLEN + MSS_LENGTH : TCPLEN;
-
-	if((bp = pushdown(data,hdrlen)) == NULLBUF){
-		free_p(data);
-		return NULLBUF;
+	if(addr == 0)
+		return;
+	tp = &Tcp_rtt[(unsigned short)addr % RTTCACHE];
+	if(tp->addr != addr){
+		/* New entry */
+		tp->addr = addr;
+		tp->srtt = rtt;
+		tp->mdev = 0;
+	} else {
+		/* Run our own SRTT and MDEV integrators, with rounding */
+		abserr = (rtt > tp->srtt) ? rtt - tp->srtt : tp->srtt - rtt;
+		tp->srtt = ((AGAIN-1)*tp->srtt + rtt + (AGAIN/2)) >> LAGAIN;
+		tp->mdev = ((DGAIN-1)*tp->mdev + abserr + (DGAIN/2)) >> LDGAIN;
 	}
-	cp = bp->data;
-	cp = put16(cp,tcph->source);
-	cp = put16(cp,tcph->dest);
-	cp = put32(cp,tcph->seq);
-	cp = put32(cp,tcph->ack);
-	*cp++ = hdrlen << 2;    /* Offset field */
-	*cp++ = tcph->flags;
-	cp = put16(cp,tcph->wnd);
-	*cp++ = 0;      /* Zero out checksum field */
-	*cp++ = 0;
-	cp = put16(cp,tcph->up);
-
-	if(tcph->mss != 0){
-		*cp++ = MSS_KIND;
-		*cp++ = MSS_LENGTH;
-		cp = put16(cp,tcph->mss);
-	}
-	csum = cksum(ph,bp,ph->length);
-	cp = &bp->data[16];     /* Checksum field */
-	*cp++ = csum >> 8;
-	*cp = csum;
-
-	return bp;
 }
-/* Pull TCP header off mbuf */
-int
-ntohtcp(tcph,bpp)
-struct tcp *tcph;
-struct mbuf **bpp;
+struct tcp_rtt *
+rtt_get(addr)
+int32 addr;
 {
-	int16 hdrlen;
-	int16 i,optlen;
+	register struct tcp_rtt *tp;
 
-	tcph->source = pull16(bpp);
-	tcph->dest = pull16(bpp);
-	tcph->seq = pull32(bpp);
-	tcph->ack = pull32(bpp);
-	if(*bpp == NULLBUF)
-		/* Buffer too short to pull off header length */
-		return -1;
-	hdrlen = (PULLCHAR(bpp) & 0xf0) >> 2;
-	tcph->flags = PULLCHAR(bpp);
-	tcph->wnd = pull16(bpp);
-	(void)pull16(bpp);      /* Skip checksum */
-	tcph->up = pull16(bpp);
-	tcph->mss = 0;
+	if(addr == 0)
+		return NULLRTT;
+	tp = &Tcp_rtt[(unsigned short)addr % RTTCACHE];
+	if(tp->addr != addr)
+		return NULLRTT;
+	return tp;
+}
 
-	/* Check for option field. Only space for one is allowed, but
-	 * since there's only one TCP option (MSS) this isn't a problem
-	 */
-	if(hdrlen < TCPLEN)
-		return -1;      /* Header smaller than legal minimum */
-	if(hdrlen == TCPLEN)
-		return hdrlen;  /* No options, all done */
+/* TCP garbage collection - called by storage allocator when free space
+ * runs low. The send and receive queues are crunched. If the situation
+ * is red, the resequencing queue is discarded; otherwise it is
+ * also crunched.
+ */
+void
+tcp_garbage(red)
+int red;
+{
+	register struct tcb *tcb;
+	int i;
+	struct reseq *rp,*rp1;
 
-	if(hdrlen > len_p(*bpp) + TCPLEN){
-		/* Remainder too short for options length specified */
-		return -1;
-	}
-	/* Process options */
-	for(i=TCPLEN; i < hdrlen;){
-		switch(PULLCHAR(bpp)){
-		case EOL_KIND:
-			i++;
-			goto eol;       /* End of options list */
-		case NOOP_KIND:
-			i++;
-			break;
-		case MSS_KIND:
-			optlen = PULLCHAR(bpp);
-			if(optlen == MSS_LENGTH)
-				tcph->mss = pull16(bpp);
-			i += optlen;
-			break;
+	for(i=0;i<NTCB;i++){
+		for(tcb = Tcbs[i];tcb != NULLTCB;tcb = tcb->next){
+			mbuf_crunch(&tcb->rcvq);
+			mbuf_crunch(&tcb->sndq);
+			for(rp = tcb->reseq;rp != NULLRESEQ;rp = rp1){
+				rp1 = rp->next;
+				if(red){
+					free_p(rp->bp);
+					free((char *)rp);
+				} else {
+					mbuf_crunch(&rp->bp);
+				}
+			}
+			if(red)
+				tcb->reseq = NULLRESEQ;
 		}
 	}
-eol:
-	/* Get rid of any padding */
-	if(i < hdrlen)
-		pullup(bpp,NULLCHAR,hdrlen - i);
-	return hdrlen;
 }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.3 1990/09/11 13:44:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.4 1990/10/12 19:25:15 deyke Exp $ */
 
 #ifndef AX25_INCLUDED
 #define AX25_INCLUDED
@@ -53,7 +53,9 @@ struct ax25_addr {
 extern char Mycall[AXALEN];
 
 /* AX.25 broadcast address: "QST   -0" in shifted ASCII */
-extern struct ax25_addr Ax25_bdcst;
+extern char Ax25_bdcst[AXALEN];
+
+extern int Digipeat;
 
 /* Internal representation of an AX.25 header */
 struct ax25 {
@@ -88,13 +90,12 @@ struct ax25 {
 #define axptr(a)         ((struct ax25_addr *) (a))
 #define ismycall(call)   addreq(call, Mycall)
 
-/* ax25.c */
+/* In ax25.c: */
 int ax_send __ARGS((struct mbuf *bp, struct iface *iface, int32 gateway, int precedence, int delay, int throughput, int reliability));
 int ax_output __ARGS((struct iface *iface, char *dest, char *source, int pid, struct mbuf *data));
 void ax_recv __ARGS((struct iface *iface, struct mbuf *bp));
-int axarp __ARGS((void));
 
-/* ax25subr.c */
+/* In ax25subr.c: */
 int setcall __ARGS((char *out,char *call));
 int setpath __ARGS((char *out, char *in [], int cnt));
 int addreq __ARGS((char *a, char *b));
@@ -108,7 +109,7 @@ int atohax25 __ARGS((struct ax25 *hdr, char *hwaddr, struct ax25_addr *source));
 int ntohax25 __ARGS((struct ax25 *hdr, struct mbuf **bpp));
 int16 ftype __ARGS((int control));
 
-/* idigi.c */
+/* In idigi.c: */
 int idigi __ARGS((struct iface *ifp, struct mbuf *bp));
 int doidigi __ARGS((int argc, char *argv [], void *p));
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.4 1990/09/11 13:45:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.5 1990/10/12 19:25:17 deyke Exp $ */
 
 #include <stdio.h>
 #include "global.h"
@@ -70,7 +70,7 @@ int cnt;        /* Number of callsigns in array */
 {
 	if(cnt == 0)
 		return;
-	while(cnt-- != 0){
+	while(cnt-- > 0){
 		setcall(out,*in++);
 		out += AXALEN;
 	}
