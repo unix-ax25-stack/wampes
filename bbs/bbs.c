@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.8 1989/08/31 19:42:52 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.9 1989/09/03 10:23:25 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -930,18 +930,22 @@ char  **argv;
       switch (tolower(uchar(*buf))) {
       case 'o':
 	puts(index.subject);
-	tm = gmtime(&index.date);
-	printf("R:%02d%02d%02d/%02d%02dz @%-6s %s\n",
-	       tm->tm_year % 100,
-	       tm->tm_mon + 1,
-	       tm->tm_mday,
-	       tm->tm_hour,
-	       tm->tm_min,
-	       myhostname,
-	       mydesc);
-	if (!(fp = fopen(filename(index.mesg), "r"))) halt();
-	while ((c = getc(fp)) != EOF) putchar(c);
-	fclose(fp);
+	if (!strcmp(index.to, "E") || !strcmp(index.to, "M"))
+	  putchar('\n');
+	else {
+	  tm = gmtime(&index.date);
+	  printf("R:%02d%02d%02d/%02d%02dz @%-6s %s\n",
+		 tm->tm_year % 100,
+		 tm->tm_mon + 1,
+		 tm->tm_mday,
+		 tm->tm_hour,
+		 tm->tm_min,
+		 myhostname,
+		 mydesc);
+	  if (!(fp = fopen(filename(index.mesg), "r"))) halt();
+	  while ((c = getc(fp)) != EOF) putchar(c);
+	  fclose(fp);
+	}
 	puts("\032");
 	wait_for_prompt();
 	break;
@@ -1471,12 +1475,16 @@ char  **argv;
 {
 
   int  active = 0;
+  int  crunchok = 0;
+  int  deleted = 0;
   int  highest = 0;
   int  n;
   int  new = 0;
   int  readable = 0;
+  long  validdate;
   struct index *pi, index[1000];
 
+  validdate = time((long *) 0) - 90 * DAYS;
   printf("DK5SG-BBS  Revision: %s %s\n", revision.number, revision.date);
   if (lseek(findex, 0l, 0)) halt();
   for (; ; ) {
@@ -1484,7 +1492,10 @@ char  **argv;
     if (n < 1) break;
     for (; n; n--, pi++) {
       highest = pi->mesg;
-      if (!pi->deleted) {
+      if (pi->deleted) {
+	deleted++;
+	if (!*pi->bid || pi->date < validdate) crunchok++;
+      } else {
 	active++;
 	if (read_allowed(pi)) {
 	  readable++;
@@ -1493,11 +1504,15 @@ char  **argv;
       }
     }
   }
-  printf("%5d highest message number\n", highest);
-  printf("%5d active messages\n", active);
-  printf("%5d readable messages\n", readable);
-  printf("%5d last message listed\n", user.seq);
-  printf("%5d new messages\n", new);
+  printf("%5d  Highest message number\n", highest);
+  printf("%5d  Active messages\n", active);
+  printf("%5d  Readable messages\n", readable);
+  if (level == ROOT) {
+    printf("%5d  Deleted messages\n", deleted);
+    printf("%5d  Messages may be crunched\n", crunchok);
+  }
+  printf("%5d  Last message listed\n", user.seq);
+  printf("%5d  New messages\n", new);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1844,7 +1859,7 @@ static void bbs()
     connect_bbs();
     wait_for_prompt();
   }
-  if (level == MBOX) printf("[THEBOX-1.5H-$]\n");
+  if (level == MBOX) printf("[THEBOX-1.5l-$]\n");
   if (doforward) wait_for_prompt();
   for (; ; ) {
     if (doforward)
@@ -2000,7 +2015,7 @@ char  **argv;
 		revision.state);
   sprintf(mydesc, MYDESC, revision.number);
 
-  while ((c = getopt(argc, argv, "df:mn")) != EOF)
+  while ((c = getopt(argc, argv, "df:mnw:")) != EOF)
     switch (c) {
     case 'd':
       debug = 1;
@@ -2021,13 +2036,16 @@ char  **argv;
     case 'n':
       mode = RNEWS;
       break;
+    case 'w':
+      sleep((unsigned long) atoi(optarg));
+      break;
     case '?':
       err_flag = 1;
       break;
     }
   if (optind < argc) err_flag = 1;
   if (err_flag) {
-    puts("usage: bbs [-d] [-f system|-m|-n]");
+    puts("usage: bbs [-d] [-w seconds] [-f system|-m|-n]");
     exit(1);
   }
 
