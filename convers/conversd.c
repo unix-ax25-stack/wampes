@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.10 1989/01/28 12:03:08 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.11 1989/01/29 08:28:29 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -417,7 +417,7 @@ int  channel;
 
   static char  invitetext[] = "\n\007\007*** Message from %s at %s ...\nPlease join convers channel %d.\n\007\007\n";
 
-  static char  responsetext[] = "*** Invitation sent to %s @ %s.\n";
+  static char  responsetext[] = "*** Invitation sent to %s @ %s.";
 
   char  buffer[2048];
   int  fd;
@@ -429,7 +429,7 @@ int  channel;
     if (p->type == CT_USER && !strcmp(p->name, toname)) {
       if (p->channel == channel) {
 	clear_locks();
-	sprintf(buffer, "*** User %s is already on this channel.\n", toname);
+	sprintf(buffer, "*** User %s is already on this channel.", toname);
 	send_msg_to_user("conversd", fromname, buffer);
 	return;
       }
@@ -696,7 +696,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.10 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.11 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
