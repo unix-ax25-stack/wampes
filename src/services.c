@@ -1,4 +1,4 @@
-/* @(#) $Id: services.c,v 1.13 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: services.c,v 1.14 1998/12/06 17:23:27 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -22,6 +22,7 @@ static struct port_table tcp_port_table[] = {
   { "ftp",      IPPORT_FTP },           /* ARPA file transfer protocol (cmd) */
   { "ftp-data", IPPORT_FTPD },          /* ARPA file transfer protocol (data) */
   { "http",     80 },                   /* World Wide Web HTTP */
+  { "imap",     143 },                  /* Internet Message Access Protocol */
   { "netupds",  4715 },
   { "nntp",     IPPORT_NNTP },
   { "pop2",     IPPORT_POP2 },          /* Post Office Prot. v2 */

@@ -1,4 +1,10 @@
-@(#) $Id: ChangeLog,v 1.47 1998/10/01 18:01:05 deyke Exp $
+@(#) $Id: ChangeLog,v 1.48 1998/12/06 17:23:06 deyke Exp $
+
+981206 Dieter Deyke <deyke@fc.hp.com>
+
+	Removed POP2 and POP3 servers from the distribution
+
+	Updated domain.txt
 
 981001 Dieter Deyke <deyke@fc.hp.com>
 

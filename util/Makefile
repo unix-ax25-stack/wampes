@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.67 1998/04/24 19:26:39 deyke Exp $
+# @(#) $Id: Makefile,v 1.68 1998/12/06 17:25:15 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -9,7 +9,7 @@ MKDIR      = @if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi
 RMTARGET   = @if [ -f $@ ]; then rm -f $@ || mv -f $@ $@~; fi
 SLIBS      =
 
-TARGETS    = bridge cnet md5 mkhostdb netupdc netupds path pop2d pop3d qth udbm
+TARGETS    = bridge cnet md5 mkhostdb netupdc netupds path qth udbm
 
 all:;   @case "`uname -sr`" in \
 	HP-UX*) \
@@ -139,16 +139,6 @@ path:   path.o $(LIBS)
 	@sleep 1
 	$(LD) $(LDFLAGS) path.o $(LIBS) $(SLIBS) -o $@
 
-pop2d:  pop2d.o $(LIBS)
-	$(RMTARGET)
-	@sleep 1
-	$(LD) $(LDFLAGS) pop2d.o $(LIBS) $(SLIBS) -o $@
-
-pop3d:  pop3d.o $(LIBS)
-	$(RMTARGET)
-	@sleep 1
-	$(LD) $(LDFLAGS) pop3d.o $(LIBS) $(SLIBS) -o $@
-
 qth:    qth.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
@@ -163,8 +153,6 @@ install: \
 	bridge \
 	netupdc \
 	netupds \
-	pop2d \
-	pop3d \
 	/usr/local/bin/cnet \
 	/usr/local/bin/md5 \
 	/usr/local/bin/path \
@@ -212,6 +200,4 @@ md5drivr.o: ../lib/md5.h
 netupds.o: ../lib/buildsaddr.h ../lib/calc_crc.h ../lib/configure.h \
 	../lib/lockfile.h ../lib/md5.h ../lib/strdup.h ../lib/strmatch.h
 path.o: ../lib/strdup.h ../lib/configure.h
-pop2d.o: ../lib/configure.h ../lib/lockfile.h ../lib/seek.h
-pop3d.o: ../lib/configure.h ../lib/lockfile.h
 udbm.o: ../lib/calc_crc.h ../lib/callvalid.h ../lib/configure.h
