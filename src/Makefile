@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.60 1994/01/21 11:10:53 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.61 1994/01/31 12:57:31 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -413,7 +413,7 @@ $(DEST)/$(PROGRAM): $(PROGRAM)
 		$(CC) $(CFLAGS) -c $<
 
 ###
-alloc.o: global.h mbuf.h
+alloc.o: global.h mbuf.h cmdparse.h
 arp.o: global.h mbuf.h timer.h iface.h proc.h enet.h ax25.h icmp.h internet.h \
 	ip.h session.h hardware.h telnet.h arp.h
 arpcmd.o: global.h mbuf.h timer.h enet.h iface.h proc.h ax25.h arp.h \
