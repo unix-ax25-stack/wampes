@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25user.c,v 1.6 1995/12/20 09:46:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25user.c,v 1.7 1995/12/26 11:18:39 deyke Exp $ */
 
 /* User interface subroutines for AX.25
  * Copyright 1991 Phil Karn, KA9Q
@@ -19,7 +19,8 @@ struct ax25 *hdr,
 int mode,               /* active/passive/server */
 void (*r_upcall)(struct ax25_cb *,int),        /* Receiver upcall handler */
 void (*t_upcall)(struct ax25_cb *,int),        /* Transmitter upcall handler */
-void (*s_upcall)(struct ax25_cb *,int,int),    /* State-change upcall handler */
+void (*s_upcall)(struct ax25_cb *,enum lapb_state,enum lapb_state),
+					       /* State-change upcall handler */
 char *user)             /* User linkage area */
 {
 	struct ax25_cb *axp;
@@ -209,7 +210,7 @@ int
 reset_ax25(
 struct ax25_cb *axp)
 {
-	void (*upcall)(struct ax25_cb *,int,int);
+	void (*upcall)(struct ax25_cb *,enum lapb_state,enum lapb_state);
 
 	if(axp == NULL)
 		return -1;

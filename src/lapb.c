@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.34 1995/12/20 09:46:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.35 1995/12/26 11:18:42 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -714,7 +714,7 @@ int poll)
 	if(ns != ((axp->vr - 1) & MMASK) && rp->bp == NULL){
 		for(sum = 0,tp = *bpp;tp;tp = tp->next)
 			for(p = tp->data,cnt = tp->cnt;cnt > 0;cnt--)
-				sum += *p++ & 0xff;
+				sum += *p++;
 		if(ns == axp->vr || sum != rp->sum){
 			rp->sum = sum;
 			rp->bp = *bpp;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.8 1995/12/20 09:46:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.9 1995/12/26 11:18:41 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -680,7 +680,7 @@ static int addrmatch(const uint8 *axcall, const uint8 *flexcall)
 
 /*---------------------------------------------------------------------------*/
 
-static int decode_query_packet(struct mbuf *bp, struct querypkt *qp)
+static int decode_query_packet(struct mbuf **bpp, struct querypkt *qp)
 {
 
 	char *cp;
@@ -688,14 +688,14 @@ static int decode_query_packet(struct mbuf *bp, struct querypkt *qp)
 	int gotsrc;
 	int i;
 
-	if ((chr = PULLCHAR(&bp)) == -1)
+	if ((chr = PULLCHAR(bpp)) == -1)
 		goto discard;
 	qp->hopcnt = chr - ' ';
 	if (qp->hopcnt < 0 || qp->hopcnt > MAXHOPCNT)
 		goto discard;
 	qp->qsonum = 0;
 	for (i = 0; i < 5; i++) {
-		chr = PULLCHAR(&bp);
+		chr = PULLCHAR(bpp);
 		if (chr == ' ')
 			continue;
 		if (chr < '0' || chr > '9')
@@ -706,7 +706,7 @@ static int decode_query_packet(struct mbuf *bp, struct querypkt *qp)
 	qp->numcalls = 0;
 	cp = qp->bufs[qp->numcalls];
 	for (;;) {
-		chr = PULLCHAR(&bp);
+		chr = PULLCHAR(bpp);
 		if ((chr == -1 || chr == ' ' || chr == '\r') && cp != qp->bufs[qp->numcalls]) {
 			*cp = 0;
 			if (strcmp(qp->bufs[qp->numcalls], "???") &&
@@ -737,11 +737,11 @@ static int decode_query_packet(struct mbuf *bp, struct querypkt *qp)
 			goto discard;
 		}
 	}
-	free_p(&bp);
+	free_p(bpp);
 	return 0;
 
       discard:
-	free_p(&bp);
+	free_p(bpp);
 	return -1;
 }
 
@@ -928,13 +928,13 @@ static int pullflexcall(struct mbuf **bpp, int chr, uint8 *call)
 
 /*---------------------------------------------------------------------------*/
 
-static void recv_init(struct peer *pp, struct mbuf *bp)
+static void recv_init(struct peer *pp, struct mbuf **bpp)
 {
 	int chr;
 
-	if ((chr = PULLCHAR(&bp)) != -1)
+	if ((chr = PULLCHAR(bpp)) != -1)
 		pp->call[ALEN + 1] = ((chr << 1) & SSID) | 0x60;
-	free_p(&bp);
+	free_p(bpp);
 	pp->token = memcmp(pp->axp->hdr.dest, pp->axp->hdr.source, AXALEN) < 0 ?
 		NOTOKEN : HAVETOKEN;
 	clear_all_via_peer(pp, 0);
@@ -942,7 +942,7 @@ static void recv_init(struct peer *pp, struct mbuf *bp)
 
 /*---------------------------------------------------------------------------*/
 
-static void recv_rprt(struct peer *pp, struct mbuf *bp)
+static void recv_rprt(struct peer *pp, struct mbuf **bpp)
 {
 
 	int delay;
@@ -950,9 +950,9 @@ static void recv_rprt(struct peer *pp, struct mbuf *bp)
 	struct dest *pd;
 	struct neighbor *pn;
 
-	if (pullnumber(&bp, &delay) == -1)
+	if (pullnumber(bpp, &delay) == -1)
 		return;
-	free_p(&bp);
+	free_p(bpp);
 	olddelay = iround(pp->delay);
 	if (delay > 0 && delay != DEFAULTDELAY) {
 		pp->remdelay = delay;
@@ -983,9 +983,11 @@ static void recv_rprt(struct peer *pp, struct mbuf *bp)
 
 /*---------------------------------------------------------------------------*/
 
-static void recv_poll(const struct peer *pp, struct mbuf *bp)
+static void recv_poll(const struct peer *pp, struct mbuf **bpp)
 {
-	free_p(&bp);
+	struct mbuf *bp;
+
+	free_p(bpp);
 	if ((bp = alloc_mbuf(20))) {
 		sprintf((char *) bp->data, "%c%d\r", FLEX_RPRT, pp->locdelay ? pp->locdelay : DEFAULTDELAY);
 		bp->cnt = strlen((char *) bp->data);
@@ -995,21 +997,21 @@ static void recv_poll(const struct peer *pp, struct mbuf *bp)
 
 /*---------------------------------------------------------------------------*/
 
-static void recv_rout(struct peer *pp, struct mbuf *bp)
+static void recv_rout(struct peer *pp, struct mbuf **bpp)
 {
 
 	int chr;
 	int delay;
-	struct mbuf *bp2;
+	struct mbuf *bp;
 	uint8 call[FLEXLEN];
 	uint8 *cp;
 
 	for (;;) {
-		chr = PULLCHAR(&bp);
+		chr = PULLCHAR(bpp);
 		if ((chr >= '0' && chr <= '9') || (chr >= 'A' && chr <= 'Z')) {
-			if (pullflexcall(&bp, chr, call))
+			if (pullflexcall(bpp, chr, call))
 				break;
-			if (pullnumber(&bp, &delay) == -1)
+			if (pullnumber(bpp, &delay) == -1)
 				break;
 			if (!ismyax25addr(call)) {
 				if (delay)
@@ -1018,13 +1020,13 @@ static void recv_rout(struct peer *pp, struct mbuf *bp)
 					update_delay(call, pp, 0);
 			}
 		} else if (chr == '+') {
-			if ((bp2 = alloc_mbuf(3))) {
-				cp = bp2->data;
+			if ((bp = alloc_mbuf(3))) {
+				cp = bp->data;
 				*cp++ = FLEX_ROUT;
 				*cp++ = '-';
 				*cp++ = '\r';
-				bp2->cnt = 3;
-				send_ax25(pp->axp, &bp2, PID_FLEXNET);
+				bp->cnt = 3;
+				send_ax25(pp->axp, &bp, PID_FLEXNET);
 				pp->token = NOTOKEN;
 			}
 			break;
@@ -1035,12 +1037,12 @@ static void recv_rout(struct peer *pp, struct mbuf *bp)
 			break;
 		}
 	}
-	free_p(&bp);
+	free_p(bpp);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void recv_qury(struct peer *pp, struct mbuf *bp)
+static void recv_qury(struct peer *pp, struct mbuf **bpp)
 {
 
 	char *cp;
@@ -1051,7 +1053,7 @@ static void recv_qury(struct peer *pp, struct mbuf *bp)
 	struct neighbor *pn = 0;
 	struct querypkt querypkt;
 
-	if (decode_query_packet(bp, &querypkt))
+	if (decode_query_packet(bpp, &querypkt))
 		return;
 	querypkt.hopcnt++;
 	if (ismyax25addr(querypkt.destcall)) {
@@ -1096,11 +1098,11 @@ static void recv_qury(struct peer *pp, struct mbuf *bp)
 
 /*---------------------------------------------------------------------------*/
 
-static void recv_rslt(struct peer *pp, struct mbuf *bp)
+static void recv_rslt(struct peer *pp, struct mbuf **bpp)
 {
 	struct querypkt querypkt;
 
-	if (decode_query_packet(bp, &querypkt))
+	if (decode_query_packet(bpp, &querypkt))
 		return;
 	querypkt.hopcnt++;
 	if (ismyax25addr(querypkt.srccall))
@@ -1114,11 +1116,10 @@ static void recv_rslt(struct peer *pp, struct mbuf *bp)
 void flexnet_input(struct iface *iface, struct ax25_cb *axp, uint8 *src, uint8 *destination, struct mbuf **bpp, int mcast)
 {
 
-	struct mbuf *bp = *bpp;
 	struct peer *pp;
 	uint8 call[FLEXLEN];
 
-	if (!axp || !bp || mcast)
+	if (!axp || !bpp || !*bpp || mcast)
 		goto discard;
 	if (!(pp = find_peer(src))) {
 		if (ismyax25addr(src))
@@ -1130,30 +1131,30 @@ void flexnet_input(struct iface *iface, struct ax25_cb *axp, uint8 *src, uint8 *
 	} else if (pp->id != axp->id) {
 		setaxp(pp);
 	}
-	switch (PULLCHAR(&bp)) {
+	switch (PULLCHAR(bpp)) {
 
 	case FLEX_INIT:
-		recv_init(pp, bp);
+		recv_init(pp, bpp);
 		break;
 
 	case FLEX_RPRT:
-		recv_rprt(pp, bp);
+		recv_rprt(pp, bpp);
 		break;
 
 	case FLEX_POLL:
-		recv_poll(pp, bp);
+		recv_poll(pp, bpp);
 		break;
 
 	case FLEX_ROUT:
-		recv_rout(pp, bp);
+		recv_rout(pp, bpp);
 		break;
 
 	case FLEX_QURY:
-		recv_qury(pp, bp);
+		recv_qury(pp, bpp);
 		break;
 
 	case FLEX_RSLT:
-		recv_rslt(pp, bp);
+		recv_rslt(pp, bpp);
 		break;
 
 	default:
@@ -1164,7 +1165,7 @@ void flexnet_input(struct iface *iface, struct ax25_cb *axp, uint8 *src, uint8 *
 	return;
 
       discard:
-	free_p(&bp);
+	free_p(bpp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1240,7 +1241,7 @@ void flexnet_dump(FILE *fp, struct mbuf **bpp)
 			fprintf(fp, " Route query");
 		else
 			fprintf(fp, " Query response");
-		if (decode_query_packet(*bpp, &querypkt)) {
+		if (decode_query_packet(bpp, &querypkt)) {
 			*bpp = 0;
 			fprintf(fp, " - bad packet\n");
 			return;

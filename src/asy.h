@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.h,v 1.15 1995/12/20 09:46:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.h,v 1.16 1995/12/26 11:18:39 deyke Exp $ */
 
 #ifndef _ASY_H
 #define _ASY_H
@@ -33,7 +33,7 @@ int asy_speed(int dev,long bps);
 int asy_send(int dev,struct mbuf **bpp);
 int asy_stop(struct iface *ifp);
 int get_rlsd_asy(int dev, int new_rlsd);
-int get_asy(int dev,char *buf,int cnt);
+int get_asy(int dev,uint8 *buf,int cnt);
 void fp_stop(void);
 
 /* In asyvec.asm: */

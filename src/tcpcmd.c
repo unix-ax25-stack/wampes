@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.16 1995/12/20 15:49:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.17 1995/12/26 11:18:46 deyke Exp $ */
 
 /* TCP control and status routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -16,7 +16,8 @@
 #include "session.h"
 #include "main.h"
 
-int Tcp_tstamps = 1;
+int Tcp_tstamps = 0;
+int Tcp_wscale = 0;
 
 static int doirtt(int argc,char *argv[],void *p);
 static int domss(int argc,char *argv[],void *p);
@@ -28,6 +29,7 @@ static int dotcptr(int argc,char *argv[],void *p);
 static int dowindow(int argc,char *argv[],void *p);
 static int dosyndata(int argc,char *argv[],void *p);
 static int dotimestamps(int argc,char *argv[],void *p);
+static int dowscale(int argc,char *argv[],void *p);
 static int tstat(void);
 static void tcprepstat(int interval,void *p1,void *p2);
 
@@ -43,7 +45,8 @@ static struct cmds Tcpcmds[] = {
 	"timestamps",   dotimestamps,   0, 0,   NULL,
 	"trace",        dotcptr,        0, 0,   NULL,
 	"window",       dowindow,       0, 0,   NULL,
-	NULL,
+	"wscale",       dowscale,       0, 0,   NULL,
+	NULL,           NULL,           0, 0,   NULL
 };
 int
 dotcp(
@@ -68,6 +71,14 @@ char *argv[],
 void *p)
 {
 	return setbool(&Tcp_tstamps,"TCP timestamps",argc,argv);
+}
+static int
+dowscale(
+int argc,
+char *argv[],
+void *p)
+{
+	return setbool(&Tcp_wscale,"TCP window scale",argc,argv);
 }
 
 /* Eliminate a TCP connection */

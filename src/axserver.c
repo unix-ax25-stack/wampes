@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.13 1995/12/20 09:46:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.14 1995/12/26 11:18:39 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -15,7 +15,7 @@ static void axserv_recv_upcall(struct ax25_cb *axp, int cnt)
   struct mbuf *bp;
 
   bp = recv_ax25(axp, 0);
-  if (bp) login_write((struct login_cb *) axp->user, bp);
+  login_write((struct login_cb *) axp->user, &bp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -30,7 +30,7 @@ static void axserv_send_upcall(struct ax25_cb *axp, int cnt)
 
 /*---------------------------------------------------------------------------*/
 
-static void axserv_state_upcall(struct ax25_cb *axp, int oldstate, int newstate)
+static void axserv_state_upcall(struct ax25_cb *axp, enum lapb_state oldstate, enum lapb_state newstate)
 {
   if (newstate == LAPB_DISCONNECTED) {
     login_close((struct login_cb *) axp->user);

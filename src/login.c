@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.60 1995/12/20 09:46:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.61 1995/12/26 11:18:43 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -728,11 +728,14 @@ struct mbuf *login_read(struct login_cb *tp, int cnt)
 
 /*---------------------------------------------------------------------------*/
 
-void login_write(struct login_cb *tp, struct mbuf *bp)
+void login_write(struct login_cb *tp, struct mbuf **bpp)
 {
-  append(&tp->sndq, &bp);
-  on_write(tp->pty, (void (*)(void *)) write_pty, tp);
-  if (tp->linelen) write_pty(tp);
+  if (bpp && *bpp) {
+    append(&tp->sndq, bpp);
+    on_write(tp->pty, (void (*)(void *)) write_pty, tp);
+    if (tp->linelen)
+      write_pty(tp);
+  }
 }
 
 /*---------------------------------------------------------------------------*/

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.19 1995/12/20 09:46:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.20 1995/12/26 11:18:43 deyke Exp $ */
 
 #ifndef _LAPB_H
 #define _LAPB_H
@@ -126,7 +126,8 @@ struct ax25_cb {
 
 	void (*r_upcall)(struct ax25_cb *,int); /* Receiver upcall */
 	void (*t_upcall)(struct ax25_cb *,int); /* Transmit upcall */
-	void (*s_upcall)(struct ax25_cb *,int,int);     /* State change upcall */
+	void (*s_upcall)(struct ax25_cb *,enum lapb_state,enum lapb_state);
+					/* State change upcall */
 
 	char *user;                     /* User pointer */
 
@@ -176,7 +177,7 @@ struct ax25_cb *open_ax25(struct ax25 *,
 	int,
 	void (*)(struct ax25_cb *,int),
 	void (*)(struct ax25_cb *,int),
-	void (*)(struct ax25_cb *,int,int),
+	void (*)(struct ax25_cb *,enum lapb_state,enum lapb_state),
 	char *user);
 struct mbuf *recv_ax25(struct ax25_cb *axp,uint16 cnt);
 int reset_ax25(struct ax25_cb *axp);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.39 1995/12/20 09:46:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.40 1995/12/26 11:18:44 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -337,7 +337,7 @@ int32 val)
 int
 get_asy(
 int dev,
-char *buf,
+uint8 *buf,
 int cnt)
 {
 	struct asy *ap;

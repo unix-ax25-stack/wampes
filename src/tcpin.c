@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.14 1995/12/20 09:46:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.15 1995/12/26 11:18:46 deyke Exp $ */
 
 /* Process incoming TCP segments. Page number references are to ARPA RFC-793,
  * the TCP specification.
@@ -772,7 +772,7 @@ struct tcp *seg)
 	tcb->snd.wnd = seg->wnd;        /* Never scaled in a SYN */
 	if(seg->flags.mss)
 		tcb->mss = seg->mss;
-	if(seg->flags.wscale){
+	if(seg->flags.wscale && Tcp_wscale){
 		tcb->snd.wind_scale = seg->wsopt;
 		tcb->rcv.wind_scale = DEF_WSCALE;
 		tcb->flags.ws_ok = 1;

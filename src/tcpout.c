@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.14 1995/12/20 09:46:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.15 1995/12/26 11:18:47 deyke Exp $ */
 
 /* TCP output segment processing
  * Copyright 1991 Phil Karn, KA9Q
@@ -127,8 +127,10 @@ register struct tcb *tcb)
 			/* Also send MSS, wscale and tstamp (if OK) */
 			seg.mss = Tcp_mss;
 			seg.flags.mss = 1;
-			seg.wsopt = DEF_WSCALE;
-			seg.flags.wscale = 1;
+			if(Tcp_wscale){
+				seg.wsopt = DEF_WSCALE;
+				seg.flags.wscale = 1;
+			}
 			if(Tcp_tstamps){
 				seg.flags.tstamp = 1;
 				seg.tsval = msclock();

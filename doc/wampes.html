@@ -4,7 +4,7 @@
 </HEAD>
 <BODY>
 <H1>WAMPES Reference Manual</H1>
-Version 951221
+Version 951226
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
@@ -1905,8 +1905,10 @@ Display or set the TCP SYN+data piggybacking flag.
 Some TCP implementations cannot handle SYN+data together.
 The default is <B>off</B>.
 <H4><A NAME="H4.54.9">4.54.9 tcp timestamps [on|off]</A></H4>
-Display or set the TCP timestamps flag.
+Display or set the TCP timestamps flag,
+which controls the use of the TCP ECHO option.
 The default is <B>off</B>.
+See also RFC1072.
 <H4><A NAME="H4.54.10">4.54.10 tcp trace [on|off]</A></H4>
 Display or set the TCP trace flag.
 The default is <B>off</B>.
@@ -1916,6 +1918,11 @@ when creating new connections. Existing connections are unaffected.
 The default is 2048 bytes.
 See the <A HREF="#H6."><B>Setting Paclen, Maxframe, MTU, MSS and Window</B></A> chapter
 for more information.
+<H4><A NAME="H4.54.12">4.54.12 tcp wscale [on|off]</A></H4>
+Display or set the TCP wscale flag,
+which controls the use of the TCP WINDOW SCALE option.
+The default is <B>off</B>.
+See also RFC1072.
 <H3><A NAME="H4.55">4.55 telnet <I>hostid</I> [<I>port</I>]</A></H3>
 Create a Telnet session to the specified host and enter converse mode.
 If <I>port</I> is given that port is used. Default port is 23.

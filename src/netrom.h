@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.19 1995/12/20 09:46:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.20 1995/12/26 11:18:45 deyke Exp $ */
 
 #ifndef _NETROM_H
 #define _NETROM_H
@@ -59,34 +59,37 @@
 #define NR4NAK          0x40    /* NAK bit */
 #define NR4CHOKE        0x80    /* CHOKE bit */
 
+enum netrom_state {
+  NR4STDISC,                    /* Disconnected */
+  NR4STCPEND,                   /* Connection pending */
+  NR4STCON,                     /* Connected */
+  NR4STDPEND,                   /* Disconnect requested locally */
+  NR4STLISTEN                   /* Listening for incoming connections */
+};
+
 struct circuit {
   int localindex;               /* Local circuit index */
   int localid;                  /* Local circuit ID */
   int remoteindex;              /* Remote circuit index */
   int remoteid;                 /* Remote circuit ID */
-  int outbound;                 /* Circuit was created by local request */
+  unsigned int outbound:1;      /* Circuit was created by local request */
   uint8 node[AXALEN];           /* Call of peer node */
   uint8 cuser[AXALEN];          /* Call of user */
-  int state;                    /* Connection state */
-#define NR4STDISC       0                       /* disconnected */
-#define NR4STCPEND      1                       /* connection pending */
-#define NR4STCON        2                       /* connected */
-#define NR4STDPEND      3                       /* disconnect requested locally */
-#define NR4STLISTEN     4                       /* listening for incoming connections */
-  int reason;                   /* Reason for disconnecting */
-#define NR4RNORMAL      0                       /* Normal, requested disconnect */
-#define NR4RREMOTE      1                       /* Remote requested */
-#define NR4RTIMEOUT     2                       /* Connection timed out */
-#define NR4RRESET       3                       /* Connection reset locally */
-#define NR4RREFUSED     4                       /* Connect request refused */
+  enum netrom_state state;      /* Connection state */
+  uint8 reason;                 /* Reason for disconnecting */
+#define NR4RNORMAL      0               /* Normal, requested disconnect */
+#define NR4RREMOTE      1               /* Remote requested */
+#define NR4RTIMEOUT     2               /* Connection timed out */
+#define NR4RRESET       3               /* Connection reset locally */
+#define NR4RREFUSED     4               /* Connect request refused */
   int window;                   /* Negotiated window size */
-  int naksent;                  /* NAK has been sent */
-  int chokesent;                /* CHOKE has been sent */
-  int closed;                   /* Disconnect when send queue empty */
+  unsigned int naksent:1;       /* NAK has been sent */
+  unsigned int chokesent:1;     /* CHOKE has been sent */
+  unsigned int closed:1;        /* Disconnect when send queue empty */
   int recv_state;               /* Incoming sequence number expected next */
   int send_state;               /* Next sequence number to be sent */
   int cwind;                    /* Congestion window */
-  int response;                 /* Response owed to other end */
+  unsigned int response:1;      /* Response owed to other end */
   int32 remote_busy;            /* Other end's window is closed */
   int retry;                    /* Retransmission retry count */
   int32 srtt;                   /* Smoothed round trip time, milliseconds */
@@ -105,7 +108,7 @@ struct circuit {
 				/* Call when data arrives */
   void (*t_upcall)(struct circuit *p, int cnt);
 				/* Call when ok to send more data */
-  void (*s_upcall)(struct circuit *p, int oldstate, int newstate);
+  void (*s_upcall)(struct circuit *p, enum netrom_state oldstate, enum netrom_state newstate);
 				/* Call when connection state changes */
   char *user;                   /* User parameter (e.g., for mapping to an
 				 * application control block)
@@ -117,10 +120,10 @@ extern char *Nr4states[];
 
 /* In netrom.c: */
 int nr_send(struct mbuf **bpp, struct iface *iface, int32 gateway, uint8 tos);
-void nr3_input(const uint8 *src, struct mbuf *bp);
+void nr3_input(const uint8 *src, struct mbuf **bpp);
 char *nr_addr2str(struct circuit *pc);
-struct circuit *open_nr(uint8 *node, uint8 *cuser, int window, void (*r_upcall)(struct circuit *p, int cnt), void (*t_upcall)(struct circuit *p, int cnt), void (*s_upcall)(struct circuit *p, int oldstate, int newstate), char *user);
-int send_nr(struct circuit *pc, struct mbuf *bp);
+struct circuit *open_nr(uint8 *node, uint8 *cuser, int window, void (*r_upcall)(struct circuit *p, int cnt), void (*t_upcall)(struct circuit *p, int cnt), void (*s_upcall)(struct circuit *p, enum netrom_state oldstate, enum netrom_state newstate), char *user);
+int send_nr(struct circuit *pc, struct mbuf **bpp);
 int space_nr(struct circuit *pc);
 int recv_nr(struct circuit *pc, struct mbuf **bpp, int cnt);
 int close_nr(struct circuit *pc);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.48 1995/12/20 09:46:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.49 1995/12/26 11:18:44 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -82,8 +82,8 @@ static const uint8 L3RTT[] = {
 struct link;
 
 static struct node *nodeptr(const uint8 *call, int create);
-static void send_packet_to_neighbor(struct mbuf *data, struct node *pn);
-static void send_broadcast_packet(struct mbuf *data);
+static void send_packet_to_neighbor(struct mbuf **data, struct node *pn);
+static void send_broadcast_packet(struct mbuf **bpp);
 static void link_manager_initialize(void);
 static struct linkinfo *linkinfoptr(struct node *node1, struct node *node2);
 static int update_link(struct node *node1, struct node *node2, int source, int quality);
@@ -91,27 +91,27 @@ static int link_valid(struct node *pn, struct link *pl);
 static void calculate_hopcnts(struct node *pn);
 static void calculate_qualities(struct node *pn);
 static void calculate_all(void);
-static void broadcast_recv(struct mbuf *bp, struct node *pn);
+static void broadcast_recv(struct mbuf **bpp, struct node *pn);
 static struct mbuf *alloc_broadcast_packet(void);
 static void send_broadcast(void);
-static void route_packet(struct mbuf *bp, struct node *fromneighbor);
-static void send_l3_packet(uint8 *source, uint8 *dest, int ttl, struct mbuf *data);
+static void route_packet(struct mbuf **bpp, struct node *fromneighbor);
+static void send_l3_packet(uint8 *source, uint8 *dest, int ttl, struct mbuf **data);
 static void routing_manager_initialize(void);
 static void reset_t1(struct circuit *pc);
 static int nrbusy(struct circuit *pc);
-static void send_l4_packet(struct circuit *pc, int opcode, struct mbuf *data);
+static void send_l4_packet(struct circuit *pc, int opcode, struct mbuf **data);
 static void try_send(struct circuit *pc, int fill_sndq);
-static void set_circuit_state(struct circuit *pc, int newstate);
+static void set_circuit_state(struct circuit *pc, enum netrom_state newstate);
 static void l4_t1_timeout(struct circuit *pc);
 static void l4_t3_timeout(struct circuit *pc);
 static void l4_t4_timeout(struct circuit *pc);
 static struct circuit *create_circuit(void);
-static void circuit_manager(struct mbuf *bp);
+static void circuit_manager(struct mbuf **bpp);
 static void nrserv_recv_upcall(struct circuit *pc, int cnt);
 static void nrserv_send_upcall(struct circuit *pc, int cnt);
-static void nrserv_state_upcall(struct circuit *pc, int oldstate, int newstate);
+static void nrserv_state_upcall(struct circuit *pc, enum netrom_state oldstate, enum netrom_state newstate);
 static void nrclient_parse(char *buf, int n);
-static void nrclient_state_upcall(struct circuit *pc, int oldstate, int newstate);
+static void nrclient_state_upcall(struct circuit *pc, enum netrom_state oldstate, enum netrom_state newstate);
 static int donconnect(int argc, char *argv[], void *p);
 static int dobroadcast(int argc, char *argv[], void *p);
 static int doident(int argc, char *argv[], void *p);
@@ -173,7 +173,7 @@ static struct node *nodeptr(const uint8 *call, int create)
 
 /*---------------------------------------------------------------------------*/
 
-static void send_packet_to_neighbor(struct mbuf *bp, struct node *pn)
+static void send_packet_to_neighbor(struct mbuf **bpp, struct node *pn)
 {
 
   struct ax25 hdr;
@@ -185,18 +185,18 @@ static void send_packet_to_neighbor(struct mbuf *bp, struct node *pn)
     axp = open_ax25(&hdr, AX_ACTIVE, NULL, NULL, NULL, 0);
     if (!axp) {
       if (update_link(mynode, pn, 1, 0)) calculate_all();
-      free_p(&bp);
+      free_p(bpp);
       return;
     }
   }
-  pushdown(&bp, NULL, 1);
-  bp->data[0] = PID_NETROM;
-  send_ax25(axp, &bp, -1);
+  pushdown(bpp, NULL, 1);
+  (*bpp)->data[0] = PID_NETROM;
+  send_ax25(axp, bpp, -1);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void send_broadcast_packet(struct mbuf *data)
+static void send_broadcast_packet(struct mbuf **bpp)
 {
 
   struct broadcast *p;
@@ -204,14 +204,14 @@ static void send_broadcast_packet(struct mbuf *data)
 
   for (p = broadcasts; p; p = p->next) {
     addrcp(p->hdr.source, p->iface->hwaddr);
-    dup_p(&bp, data, 0, MAXINT16);
+    dup_p(&bp, *bpp, 0, MAXINT16);
     htonax25(&p->hdr, &bp);
     if (p->iface->forw)
       (*p->iface->forw->raw)(p->iface->forw, &bp);
     else
       (*p->iface->raw)(p->iface, &bp);
   }
-  free_p(&data);
+  free_p(bpp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -461,7 +461,7 @@ static void calculate_all(void)
 
 /*---------------------------------------------------------------------------*/
 
-static void broadcast_recv(struct mbuf *bp, struct node *pn)
+static void broadcast_recv(struct mbuf **bpp, struct node *pn)
 {
 
   char ident[IDENTLEN];
@@ -472,11 +472,11 @@ static void broadcast_recv(struct mbuf *bp, struct node *pn)
 
   routes_stat.rcvd++;
   if (pn == mynode) goto discard;
-  if (PULLCHAR(&bp) != 0xff) goto discard;
-  if (pullup(&bp, ident, IDENTLEN) != IDENTLEN) goto discard;
+  if (PULLCHAR(bpp) != 0xff) goto discard;
+  if (pullup(bpp, ident, IDENTLEN) != IDENTLEN) goto discard;
   if (*ident > ' ') memcpy(pn->ident, ident, IDENTLEN);
   update_link(mynode, pn, 1, nr_hfqual);
-  while (pullup(&bp, buf, NRRTDESTLEN) == NRRTDESTLEN) {
+  while (pullup(bpp, buf, NRRTDESTLEN) == NRRTDESTLEN) {
     if (!*buf) break;
     if (addreq(buf, Mycall)) continue;
     pd = nodeptr(buf, 1);
@@ -503,7 +503,7 @@ static void broadcast_recv(struct mbuf *bp, struct node *pn)
   calculate_all();
 
 discard:
-  free_p(&bp);
+  free_p(bpp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -553,7 +553,7 @@ static void send_broadcast(void)
 	  p += AXALEN;
 	  *p++ = (char) pn->quality;
 	  if ((bp->cnt = p - bp->data) > 258 - NRRTDESTLEN) {
-	    send_broadcast_packet(bp);
+	    send_broadcast_packet(&bp);
 	    routes_stat.sent++;
 	    bp = NULL;
 	  }
@@ -561,14 +561,14 @@ static void send_broadcast(void)
 	  nexthopcnt = pn->hopcnt;
   }
   if (bp) {
-    send_broadcast_packet(bp);
+    send_broadcast_packet(&bp);
     routes_stat.sent++;
   }
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void route_packet(struct mbuf *bp, struct node *fromneighbor)
+static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
 {
 
   int ttl;
@@ -576,11 +576,11 @@ static void route_packet(struct mbuf *bp, struct node *fromneighbor)
   struct arp_tab *ap;
   struct node *pn;
 
-  if (!bp || bp->cnt < 15) goto discard;
+  if (!bpp || !*bpp || (*bpp)->cnt < 15) goto discard;
 
   if (fromneighbor != mynode) {
     if (update_link(mynode, fromneighbor, 1, nr_hfqual)) calculate_all();
-    pn = nodeptr(bp->data, 1);
+    pn = nodeptr((*bpp)->data, 1);
     if (pn == mynode) goto discard;  /* ROUTING ERROR */
     if (!pn->neighbor) {
       struct linkinfo *pi = linkinfoptr(mynode, fromneighbor);
@@ -592,50 +592,50 @@ static void route_packet(struct mbuf *bp, struct node *fromneighbor)
     }
   }
 
-  if (addreq(bp->data + AXALEN, Mycall)) {
+  if (addreq((*bpp)->data + AXALEN, Mycall)) {
     uint8 hwaddr[AXALEN];
-    if (bp->cnt >= 40                   &&
-	bp->data[19] == 0               &&
-	bp->data[15] == NRPROTO_IP      &&
-	bp->data[16] == NRPROTO_IP      &&
-	(ipaddr = get32(bp->data + 32)) &&
+    if ((*bpp)->cnt >= 40                   &&
+	(*bpp)->data[19] == 0               &&
+	(*bpp)->data[15] == NRPROTO_IP      &&
+	(*bpp)->data[16] == NRPROTO_IP      &&
+	(ipaddr = get32((*bpp)->data + 32)) &&
 	Nr_iface) {
       Nr_iface->rawrecvcnt++;
       Nr_iface->lastrecv = secclock();
       if ((ap = arp_lookup(ARP_NETROM, ipaddr)) == NULL ||
 	  ap->state != ARP_VALID ||
 	  run_timer(&ap->timer)) {
-	addrcp(hwaddr, bp->data);
+	addrcp(hwaddr, (*bpp)->data);
 	arp_add(ipaddr, ARP_NETROM, hwaddr, 0);
       }
-      pullup(&bp, NULL, 20);
-      dump(Nr_iface, IF_TRACE_IN, bp);
-      ip_route(Nr_iface, &bp, 0);
+      pullup(bpp, NULL, 20);
+      dump(Nr_iface, IF_TRACE_IN, *bpp);
+      ip_route(Nr_iface, bpp, 0);
       return;
     }
-    pullup(&bp, NULL, 15);
-    if (!bp) return;
+    pullup(bpp, NULL, 15);
+    if (!*bpp) return;
     if (fromneighbor == mynode) {
-      struct mbuf *hbp = copy_p(bp, len_p(bp));
-      free_p(&bp);
-      bp = hbp;
+      struct mbuf *hbp = copy_p(*bpp, len_p(*bpp));
+      free_p(bpp);
+      *bpp = hbp;
     }
-    circuit_manager(bp);
+    circuit_manager(bpp);
     return;
   }
 
-  ttl = bp->data[2*AXALEN];
+  ttl = (*bpp)->data[2*AXALEN];
   if (--ttl <= 0) goto discard;
-  bp->data[2*AXALEN] = ttl;
+  (*bpp)->data[2*AXALEN] = ttl;
 
-  if (addreq(bp->data + AXALEN, L3RTT)) {
-    if ((bp->data[AXALEN*2+5] & NR4OPCODE) != NR4OPINFO) goto discard;
-    if (memcmp("L3RTT:", bp->data + AXALEN * 2 + 6, 6)) goto discard;
-    send_packet_to_neighbor(bp, fromneighbor);
+  if (addreq((*bpp)->data + AXALEN, L3RTT)) {
+    if (((*bpp)->data[AXALEN*2+5] & NR4OPCODE) != NR4OPINFO) goto discard;
+    if (memcmp("L3RTT:", (*bpp)->data + AXALEN * 2 + 6, 6)) goto discard;
+    send_packet_to_neighbor(bpp, fromneighbor);
     return;
   }
 
-  pn = nodeptr(bp->data + AXALEN, 1);
+  pn = nodeptr((*bpp)->data + AXALEN, 1);
   if (!pn->neighbor) {
     if (fromneighbor != mynode) {
       pn->force_broadcast = 1;
@@ -648,63 +648,61 @@ static void route_packet(struct mbuf *bp, struct node *fromneighbor)
 
 #ifdef FORCE_BC
   if (pn->neighbor == fromneighbor ||
-      addreq(pn->neighbor->call, bp->data)) send_broadcast();
+      addreq(pn->neighbor->call, (*bpp)->data)) send_broadcast();
 #endif
 
-  send_packet_to_neighbor(bp, pn->neighbor);
+  send_packet_to_neighbor(bpp, pn->neighbor);
   return;
 
 discard:
-  free_p(&bp);
+  free_p(bpp);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void send_l3_packet(uint8 *source, uint8 *dest, int ttl, struct mbuf *bp)
+static void send_l3_packet(uint8 *source, uint8 *dest, int ttl, struct mbuf **bpp)
 {
-  pushdown(&bp, NULL, 2 * AXALEN + 1);
-  addrcp(bp->data, source);
-  addrcp(bp->data + AXALEN, dest);
+  pushdown(bpp, NULL, 2 * AXALEN + 1);
+  addrcp((*bpp)->data, source);
+  addrcp((*bpp)->data + AXALEN, dest);
   if (++ttl > 255) ttl = 255;
-  bp->data[2*AXALEN] = ttl;
-  route_packet(bp, mynode);
+  (*bpp)->data[2*AXALEN] = ttl;
+  route_packet(bpp, mynode);
 }
 
 /*---------------------------------------------------------------------------*/
 
 int nr_send(struct mbuf **bpp, struct iface *iface, int32 gateway, uint8 tos)
 {
-
   struct arp_tab *arp;
-  struct mbuf *bp = *bpp;
 
-  dump(iface, IF_TRACE_OUT, bp);
+  dump(iface, IF_TRACE_OUT, *bpp);
   iface->rawsndcnt++;
   iface->lastsent = secclock();
   if (!(arp = arp_lookup(ARP_NETROM, gateway))) {
-    free_p(&bp);
+    free_p(bpp);
     return -1;
   }
-  pushdown(&bp, NULL, 5);
-  bp->data[0] = NRPROTO_IP;
-  bp->data[1] = NRPROTO_IP;
-  bp->data[2] = 0;
-  bp->data[3] = 0;
-  bp->data[4] = 0;
+  pushdown(bpp, NULL, 5);
+  (*bpp)->data[0] = NRPROTO_IP;
+  (*bpp)->data[1] = NRPROTO_IP;
+  (*bpp)->data[2] = 0;
+  (*bpp)->data[3] = 0;
+  (*bpp)->data[4] = 0;
   if (iface->trace & IF_TRACE_RAW)
-    raw_dump(iface, -1, bp);
-  send_l3_packet(Mycall, arp->hw_addr, nr_ttlinit, bp);
+    raw_dump(iface, -1, *bpp);
+  send_l3_packet(Mycall, arp->hw_addr, nr_ttlinit, bpp);
   return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-void nr3_input(const uint8 *src, struct mbuf *bp)
+void nr3_input(const uint8 *src, struct mbuf **bpp)
 {
-  if (bp && bp->cnt && *bp->data == 0xff)
-    broadcast_recv(bp, nodeptr(src, 1));
+  if (bpp && *bpp && (*bpp)->cnt && *(*bpp)->data == 0xff)
+    broadcast_recv(bpp, nodeptr(src, 1));
   else
-    route_packet(bp, nodeptr(src, 1));
+    route_packet(bpp, nodeptr(src, 1));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -781,66 +779,73 @@ static int nrbusy(struct circuit *pc)
 
 /*---------------------------------------------------------------------------*/
 
-static void send_l4_packet(struct circuit *pc, int opcode, struct mbuf *bp)
+static void send_l4_packet(struct circuit *pc, int opcode, struct mbuf **bpp)
 {
+
   int start_t1_timer = 0;
+  struct mbuf *bp;
+
+  if (bpp == NULL) {
+    bp = NULL;
+    bpp = &bp;
+  }
 
   switch (opcode & NR4OPCODE) {
   case NR4OPCONRQ:
-    pushdown(&bp, NULL, 20);
-    bp->data[0] = pc->localindex;
-    bp->data[1] = pc->localid;
-    bp->data[2] = 0;
-    bp->data[3] = 0;
-    bp->data[4] = opcode;
-    bp->data[5] = pc->window;
-    addrcp(bp->data + 6, pc->cuser);
-    addrcp(bp->data + 13, Mycall);
+    pushdown(bpp, NULL, 20);
+    (*bpp)->data[0] = pc->localindex;
+    (*bpp)->data[1] = pc->localid;
+    (*bpp)->data[2] = 0;
+    (*bpp)->data[3] = 0;
+    (*bpp)->data[4] = opcode;
+    (*bpp)->data[5] = pc->window;
+    addrcp((*bpp)->data + 6, pc->cuser);
+    addrcp((*bpp)->data + 13, Mycall);
     start_t1_timer = 1;
     break;
   case NR4OPCONAK:
-    pushdown(&bp, NULL, 6);
-    bp->data[0] = pc->remoteindex;
-    bp->data[1] = pc->remoteid;
-    bp->data[2] = pc->localindex;
-    bp->data[3] = pc->localid;
-    bp->data[4] = opcode;
-    bp->data[5] = pc->window;
+    pushdown(bpp, NULL, 6);
+    (*bpp)->data[0] = pc->remoteindex;
+    (*bpp)->data[1] = pc->remoteid;
+    (*bpp)->data[2] = pc->localindex;
+    (*bpp)->data[3] = pc->localid;
+    (*bpp)->data[4] = opcode;
+    (*bpp)->data[5] = pc->window;
     break;
   case NR4OPDISRQ:
     start_t1_timer = 1;
   case NR4OPDISAK:
-    pushdown(&bp, NULL, 5);
-    bp->data[0] = pc->remoteindex;
-    bp->data[1] = pc->remoteid;
-    bp->data[2] = 0;
-    bp->data[3] = 0;
-    bp->data[4] = opcode;
+    pushdown(bpp, NULL, 5);
+    (*bpp)->data[0] = pc->remoteindex;
+    (*bpp)->data[1] = pc->remoteid;
+    (*bpp)->data[2] = 0;
+    (*bpp)->data[3] = 0;
+    (*bpp)->data[4] = opcode;
     break;
   case NR4OPINFO:
     start_t1_timer = 1;
   case NR4OPACK:
-    pushdown(&bp, NULL, 5);
+    pushdown(bpp, NULL, 5);
     if (pc->reseq && !pc->naksent) {
       opcode |= NR4NAK;
       pc->naksent = 1;
     }
     if ((pc->chokesent = nrbusy(pc))) opcode |= NR4CHOKE;
     pc->response = 0;
-    bp->data[0] = pc->remoteindex;
-    bp->data[1] = pc->remoteid;
-    bp->data[2] = pc->send_state;
-    bp->data[3] = pc->recv_state;
-    bp->data[4] = opcode;
+    (*bpp)->data[0] = pc->remoteindex;
+    (*bpp)->data[1] = pc->remoteid;
+    (*bpp)->data[2] = pc->send_state;
+    (*bpp)->data[3] = pc->recv_state;
+    (*bpp)->data[4] = opcode;
     if ((opcode & NR4OPCODE) == NR4OPINFO)
       pc->send_state = (pc->send_state + 1) & 0xff;
     break;
   default:
-    free_p(&bp);
+    free_p(bpp);
     return;
   }
   if (start_t1_timer) start_timer(&pc->timer_t1);
-  send_l3_packet(Mycall, pc->node, nr_ttlinit, bp);
+  send_l3_packet(Mycall, pc->node, nr_ttlinit, bpp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -871,15 +876,15 @@ static void try_send(struct circuit *pc, int fill_sndq)
     enqueue(&pc->resndq, &bp);
     pc->unack++;
     pc->sndtime[pc->send_state] = msclock();
-    send_l4_packet(pc, NR4OPINFO, bp1);
+    send_l4_packet(pc, NR4OPINFO, &bp1);
   }
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void set_circuit_state(struct circuit *pc, int newstate)
+static void set_circuit_state(struct circuit *pc, enum netrom_state newstate)
 {
-  int oldstate;
+  enum netrom_state oldstate;
 
   oldstate = pc->state;
   pc->state = newstate;
@@ -902,6 +907,8 @@ static void set_circuit_state(struct circuit *pc, int newstate)
   case NR4STDPEND:
     if (pc->s_upcall) (*pc->s_upcall)(pc, oldstate, newstate);
     send_l4_packet(pc, NR4OPDISRQ, NULL);
+    break;
+  case NR4STLISTEN:
     break;
   }
 }
@@ -932,7 +939,7 @@ static void l4_t1_timeout(struct circuit *pc)
       for (qp = pc->resndq; qp; qp = qp->anext) {
 	pc->sndtime[pc->send_state] = 0;
 	dup_p(&bp, qp, 0, NR4MAXINFO);
-	send_l4_packet(pc, NR4OPINFO, bp);
+	send_l4_packet(pc, NR4OPINFO, &bp);
       }
     }
     break;
@@ -941,6 +948,8 @@ static void l4_t1_timeout(struct circuit *pc)
       set_circuit_state(pc, NR4STDISC);
     else
       send_l4_packet(pc, NR4OPDISRQ, NULL);
+    break;
+  case NR4STLISTEN:
     break;
   }
 }
@@ -991,28 +1000,28 @@ static struct circuit *create_circuit(void)
 
 /*---------------------------------------------------------------------------*/
 
-static void circuit_manager(struct mbuf *bp)
+static void circuit_manager(struct mbuf **bpp)
 {
 
   int nakrcvd;
   struct circuit *pc;
   struct mbuf *p;
 
-  if (!bp || bp->cnt < 5) goto discard;
+  if (!bpp || !*bpp || (*bpp)->cnt < 5) goto discard;
 
-  if ((bp->data[4] & NR4OPCODE) == NR4OPCONRQ) {
-    if (bp->cnt < 20) goto discard;
+  if (((*bpp)->data[4] & NR4OPCODE) == NR4OPCONRQ) {
+    if ((*bpp)->cnt < 20) goto discard;
     for (pc = circuits; pc; pc = pc->next)
-      if (pc->remoteindex == bp->data[0] &&
-	  pc->remoteid == bp->data[1] &&
-	  addreq(pc->cuser, bp->data + 6) &&
-	  addreq(pc->node, bp->data + 13)) break;
+      if (pc->remoteindex == (*bpp)->data[0] &&
+	  pc->remoteid == (*bpp)->data[1] &&
+	  addreq(pc->cuser, (*bpp)->data + 6) &&
+	  addreq(pc->node, (*bpp)->data + 13)) break;
     if (!pc) {
       pc = create_circuit();
-      pc->remoteindex = bp->data[0];
-      pc->remoteid = bp->data[1];
-      addrcp(pc->cuser, bp->data + 6);
-      addrcp(pc->node, bp->data + 13);
+      pc->remoteindex = (*bpp)->data[0];
+      pc->remoteid = (*bpp)->data[1];
+      addrcp(pc->cuser, (*bpp)->data + 6);
+      addrcp(pc->node, (*bpp)->data + 13);
       pc->r_upcall = nrserv_recv_upcall;
       pc->t_upcall = nrserv_send_upcall;
       pc->s_upcall = nrserv_state_upcall;
@@ -1020,19 +1029,19 @@ static void circuit_manager(struct mbuf *bp)
   } else
     for (pc = circuits; ; pc = pc->next) {
       if (!pc) goto discard;
-      if (pc->localindex == bp->data[0] &&
-	  pc->localid == bp->data[1]) break;
+      if (pc->localindex == (*bpp)->data[0] &&
+	  pc->localid == (*bpp)->data[1]) break;
     }
 
   set_timer(&pc->timer_t3, nr_timeout * 1000L);
   start_timer(&pc->timer_t3);
 
-  switch (bp->data[4] & NR4OPCODE) {
+  switch ((*bpp)->data[4] & NR4OPCODE) {
 
   case NR4OPCONRQ:
     switch (pc->state) {
     case NR4STDISC:
-      pc->window = bp->data[5];
+      pc->window = (*bpp)->data[5];
       if (pc->window > nr_twindow) pc->window = nr_twindow;
       if (pc->window < 1) pc->window = 1;
       if (server_enabled) {
@@ -1053,11 +1062,11 @@ static void circuit_manager(struct mbuf *bp)
 
   case NR4OPCONAK:
     if (pc->state != NR4STCPEND) goto discard;
-    pc->remoteindex = bp->data[2];
-    pc->remoteid = bp->data[3];
-    if (pc->window > bp->data[5]) pc->window = bp->data[5];
+    pc->remoteindex = (*bpp)->data[2];
+    pc->remoteid = (*bpp)->data[3];
+    if (pc->window > (*bpp)->data[5]) pc->window = (*bpp)->data[5];
     if (pc->window < 1) pc->window = 1;
-    if (bp->data[4] & NR4CHOKE) {
+    if ((*bpp)->data[4] & NR4CHOKE) {
       pc->reason = NR4RREFUSED;
       set_circuit_state(pc, NR4STDISC);
     } else
@@ -1079,7 +1088,7 @@ static void circuit_manager(struct mbuf *bp)
   case NR4OPACK:
     if (pc->state != NR4STCON) goto discard;
     stop_timer(&pc->timer_t1);
-    if (bp->data[4] & NR4CHOKE) {
+    if ((*bpp)->data[4] & NR4CHOKE) {
       if (!pc->remote_busy) pc->remote_busy = msclock();
       set_timer(&pc->timer_t4, nr_tbsydelay * 1000L);
       start_timer(&pc->timer_t4);
@@ -1087,37 +1096,37 @@ static void circuit_manager(struct mbuf *bp)
       pc->remote_busy = 0;
       stop_timer(&pc->timer_t4);
     }
-    if (((pc->send_state - bp->data[3]) & 0xff) < pc->unack) {
+    if (((pc->send_state - (*bpp)->data[3]) & 0xff) < pc->unack) {
       pc->retry = 0;
-      if (pc->sndtime[(bp->data[3]-1) & 0xff]) {
-	int32 rtt = msclock() - pc->sndtime[(bp->data[3]-1) & 0xff];
+      if (pc->sndtime[((*bpp)->data[3]-1) & 0xff]) {
+	int32 rtt = msclock() - pc->sndtime[((*bpp)->data[3]-1) & 0xff];
 	int32 abserr = (rtt > pc->srtt) ? rtt - pc->srtt : pc->srtt - rtt;
 	pc->srtt = ((AGAIN - 1) * pc->srtt + rtt + (AGAIN / 2)) / AGAIN;
 	pc->mdev = ((DGAIN - 1) * pc->mdev + abserr + (DGAIN / 2)) / DGAIN;
 	reset_t1(pc);
 	if (pc->cwind < pc->window) pc->cwind++;
       }
-      while (((pc->send_state - bp->data[3]) & 0xff) < pc->unack) {
+      while (((pc->send_state - (*bpp)->data[3]) & 0xff) < pc->unack) {
 	pc->resndq = free_p(&pc->resndq);
 	pc->unack--;
       }
     }
-    nakrcvd = bp->data[4] & NR4NAK;
-    if ((bp->data[4] & NR4OPCODE) == NR4OPINFO) {
+    nakrcvd = (*bpp)->data[4] & NR4NAK;
+    if (((*bpp)->data[4] & NR4OPCODE) == NR4OPINFO) {
       pc->response = 1;
-      if (((bp->data[2] - pc->recv_state) & 0xff) < pc->window) {
-	if (!pc->reseq || (bp->data[2] - pc->reseq->data[2]) & 0x80) {
-	  bp->anext = pc->reseq;
-	  pc->reseq = bp;
-	  bp = NULL;
+      if ((((*bpp)->data[2] - pc->recv_state) & 0xff) < pc->window) {
+	if (!pc->reseq || ((*bpp)->data[2] - pc->reseq->data[2]) & 0x80) {
+	  (*bpp)->anext = pc->reseq;
+	  pc->reseq = (*bpp);
+	  (*bpp) = NULL;
 	} else {
 	  for (p = pc->reseq;
-	       p->next && (p->data[2] - bp->data[2] - 1) & 0x80;
+	       p->next && (p->data[2] - (*bpp)->data[2] - 1) & 0x80;
 	       p = p->anext) ;
-	  if (p->data[2] != bp->data[2]) {
-	    bp->anext = p->anext;
-	    p->anext = bp;
-	    bp = NULL;
+	  if (p->data[2] != (*bpp)->data[2]) {
+	    (*bpp)->anext = p->anext;
+	    p->anext = (*bpp);
+	    (*bpp) = NULL;
 	  }
 	}
 	while (pc->reseq && !((pc->reseq->data[2] - pc->recv_state) & 0xff)) {
@@ -1142,7 +1151,7 @@ static void circuit_manager(struct mbuf *bp)
       pc->send_state = (pc->send_state - pc->unack) & 0xff;
       pc->sndtime[pc->send_state] = 0;
       dup_p(&bp1, pc->resndq, 0, NR4MAXINFO);
-      send_l4_packet(pc, NR4OPINFO, bp1);
+      send_l4_packet(pc, NR4OPINFO, &bp1);
       pc->send_state = old_send_state;
     }
     try_send(pc, 1);
@@ -1154,14 +1163,14 @@ static void circuit_manager(struct mbuf *bp)
   }
 
 discard:
-  free_p(&bp);
+  free_p(bpp);
 }
 
 /*---------------------------------------------------------------------------*/
 /********************************* User Calls ********************************/
 /*---------------------------------------------------------------------------*/
 
-struct circuit *open_nr(uint8 *node, uint8 *cuser, int window, void (*r_upcall)(struct circuit *p, int cnt), void (*t_upcall)(struct circuit *p, int cnt), void (*s_upcall)(struct circuit *p, int oldstate, int newstate), char *user)
+struct circuit *open_nr(uint8 *node, uint8 *cuser, int window, void (*r_upcall)(struct circuit *p, int cnt), void (*t_upcall)(struct circuit *p, int cnt), void (*s_upcall)(struct circuit *p, enum netrom_state oldstate, enum netrom_state newstate), char *user)
 {
   struct circuit *pc;
 
@@ -1189,33 +1198,35 @@ struct circuit *open_nr(uint8 *node, uint8 *cuser, int window, void (*r_upcall)(
 
 /*---------------------------------------------------------------------------*/
 
-int send_nr(struct circuit *pc, struct mbuf *bp)
+int send_nr(struct circuit *pc, struct mbuf **bpp)
 {
   int cnt;
 
-  if (!(pc && bp)) {
-    free_p(&bp);
+  if (!(pc && bpp && *bpp)) {
+    free_p(bpp);
     Net_error = INVALID;
     return -1;
   }
   switch (pc->state) {
   case NR4STDISC:
-    free_p(&bp);
+    free_p(bpp);
     Net_error = NO_CONN;
     return -1;
   case NR4STCPEND:
   case NR4STCON:
     if (!pc->closed) {
-      if ((cnt = len_p(bp))) {
-	append(&pc->sndq, &bp);
+      if ((cnt = len_p(*bpp))) {
+	append(&pc->sndq, bpp);
 	try_send(pc, 0);
       }
       return cnt;
     }
   case NR4STDPEND:
-    free_p(&bp);
+    free_p(bpp);
     Net_error = CON_CLOS;
     return -1;
+  case NR4STLISTEN:
+    break;
   }
   return -1;
 }
@@ -1243,6 +1254,8 @@ int space_nr(struct circuit *pc)
   case NR4STDPEND:
     Net_error = CON_CLOS;
     return -1;
+  case NR4STLISTEN:
+    break;
   }
   return -1;
 }
@@ -1281,6 +1294,8 @@ int recv_nr(struct circuit *pc, struct mbuf **bpp, int cnt)
   case NR4STDPEND:
     *bpp = NULL;
     return 0;
+  case NR4STLISTEN:
+    break;
   }
   return -1;
 }
@@ -1311,6 +1326,8 @@ int close_nr(struct circuit *pc)
   case NR4STDPEND:
     Net_error = CON_CLOS;
     return -1;
+  case NR4STLISTEN:
+    break;
   }
   return -1;
 }
@@ -1389,8 +1406,9 @@ static void nrserv_recv_upcall(struct circuit *pc, int cnt)
 {
   struct mbuf *bp;
 
+  bp = 0;
   recv_nr(pc, &bp, 0);
-  login_write((struct login_cb *) pc->user, bp);
+  login_write((struct login_cb *) pc->user, &bp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1400,12 +1418,12 @@ static void nrserv_send_upcall(struct circuit *pc, int cnt)
   struct mbuf *bp;
 
   if ((bp = login_read((struct login_cb *) pc->user, space_nr(pc))))
-    send_nr(pc, bp);
+    send_nr(pc, &bp);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void nrserv_state_upcall(struct circuit *pc, int oldstate, int newstate)
+static void nrserv_state_upcall(struct circuit *pc, enum netrom_state oldstate, enum netrom_state newstate)
 {
   switch (newstate) {
   case NR4STCON:
@@ -1415,6 +1433,8 @@ static void nrserv_state_upcall(struct circuit *pc, int oldstate, int newstate)
   case NR4STDISC:
     login_close((struct login_cb *) pc->user);
     del_nr(pc);
+    break;
+  default:
     break;
   }
 }
@@ -1429,10 +1449,13 @@ static void nrserv_state_upcall(struct circuit *pc, int oldstate, int newstate)
 
 static void nrclient_parse(char *buf, int n)
 {
+  struct mbuf *bp;
+
   if (!(Current && Current->type == NRSESSION && Current->cb.netrom)) return;
   if (n >= 1 && buf[n-1] == '\n') n--;
   if (!n) return;
-  send_nr(Current->cb.netrom, qdata(buf, n));
+  bp = qdata(buf, n);
+  send_nr(Current->cb.netrom, &bp);
   if (Current->record) {
     if (buf[n-1] == '\r') buf[n-1] = '\n';
     fwrite(buf, 1, n, Current->record);
@@ -1459,7 +1482,7 @@ void nrclient_send_upcall(struct circuit *pc, int cnt)
     cnt--;
   }
   if ((bp->cnt = p - bp->data))
-    send_nr(pc, bp);
+    send_nr(pc, &bp);
   else
     free_p(&bp);
   if (cnt) {
@@ -1489,7 +1512,7 @@ void nrclient_recv_upcall(struct circuit *pc, int cnt)
 
 /*---------------------------------------------------------------------------*/
 
-static void nrclient_state_upcall(struct circuit *pc, int oldstate, int newstate)
+static void nrclient_state_upcall(struct circuit *pc, enum netrom_state oldstate, enum netrom_state newstate)
 {
   int notify;
 
@@ -1934,7 +1957,7 @@ int donetrom(int argc, char *argv[], void *p)
     "parms",    doparms,    0, 0, NULL,
     "reset",    donreset,   0, 2, "netrom reset <nrcb>",
     "status",   donstatus,  0, 0, NULL,
-    NULL,   NULL,     0, 0, NULL
+    NULL,       NULL,       0, 0, NULL
   };
 
   return subcmd(netromcmds, argc, argv, p);

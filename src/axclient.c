@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.16 1995/12/20 09:46:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.17 1995/12/26 11:18:39 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -77,7 +77,7 @@ void axclient_recv_upcall(struct ax25_cb *cp, int cnt)
 
 /*---------------------------------------------------------------------------*/
 
-static void axclient_state_upcall(struct ax25_cb *cp, int oldstate, int newstate)
+static void axclient_state_upcall(struct ax25_cb *cp, enum lapb_state oldstate, enum lapb_state newstate)
 {
   int notify;
 

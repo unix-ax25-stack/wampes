@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 951221" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 951226" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 951221
+Version 951226
 .S
 .SP 2
 .S 15
@@ -1877,8 +1877,10 @@ Display or set the TCP SYN+data piggybacking flag.
 Some TCP implementations cannot handle SYN+data together.
 The default is \fBoff\fP.
 .H 3 "tcp timestamps" " [on|off]"
-Display or set the TCP timestamps flag.
+Display or set the TCP timestamps flag,
+which controls the use of the TCP ECHO option.
 The default is \fBoff\fP.
+See also RFC1072.
 .H 3 "tcp trace" " [on|off]"
 Display or set the TCP trace flag.
 The default is \fBoff\fP.
@@ -1888,6 +1890,11 @@ when creating new connections. Existing connections are unaffected.
 The default is 2048 bytes.
 See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
 for more information.
+.H 3 "tcp wscale" " [on|off]"
+Display or set the TCP wscale flag,
+which controls the use of the TCP WINDOW SCALE option.
+The default is \fBoff\fP.
+See also RFC1072.
 .H 2 "telnet" " \fIhostid\fP [\fIport\fP]"
 Create a Telnet session to the specified host and enter converse mode.
 If \fIport\fP is given that port is used. Default port is 23.

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.h,v 1.14 1995/12/20 09:46:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.h,v 1.15 1995/12/26 11:18:46 deyke Exp $ */
 
 #ifndef _SLIP_H
 #define _SLIP_H
@@ -39,7 +39,7 @@ struct slip {
 	uint16 errors;          /* Receiver input errors */
 	int type;               /* Protocol of input */
 	int (*send)(int,struct mbuf **);        /* send mbufs to device */
-	int (*get)(int,char *,int);     /* fetch input chars from device */
+	int (*get)(int,uint8 *,int);    /* fetch input chars from device */
 	struct slcompress *slcomp;      /* TCP header compression table */
 };
 

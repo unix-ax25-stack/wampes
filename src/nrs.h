@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.h,v 1.10 1995/12/20 09:46:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.h,v 1.11 1995/12/26 11:18:45 deyke Exp $ */
 
 #ifndef _NRS_H
 #define _NRS_H
@@ -44,7 +44,7 @@ struct nrs {
 	long packets ;          /* Number of packets received successfully */
 	struct iface *iface ;   /* Associated interface structure */
 	int (*send)(int,struct mbuf **);/* Routine to send mbufs */
-	int (*get)(int,char *,int);/* Routine to fetch input chars */
+	int (*get)(int,uint8 *,int);/* Routine to fetch input chars */
 };
 
 extern struct nrs Nrs[];

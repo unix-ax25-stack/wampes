@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.16 1995/12/20 09:46:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.17 1995/12/26 11:18:47 deyke Exp $ */
 
 #ifndef _TCP_H
 #define _TCP_H
@@ -259,6 +259,7 @@ extern char *Tcpreasons[];
 
 /* In tcpcmd.c: */
 extern int Tcp_tstamps;
+extern int Tcp_wscale;
 extern int32 Tcp_irtt;
 extern uint16 Tcp_limit;
 extern uint16 Tcp_mss;

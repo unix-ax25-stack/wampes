@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.41 1995/12/20 09:46:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.42 1995/12/26 11:18:40 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -808,7 +808,7 @@ uint8 *dest,
 struct mbuf **bpp,
 int mcast
 ){
-	nr3_input(src,*bpp);
+	nr3_input(src,bpp);
 }
 
 #endif  /* NETROM */

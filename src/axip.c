@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.21 1995/12/20 09:46:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.22 1995/12/26 11:18:39 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -271,7 +271,7 @@ static void axip_route_add(uint8 *call, int32 dest)
 
 static struct cmds Axipcmds[] = {
   "route",  doaxiproute, 0, 0, NULL,
-  NULL,     NULL,      0, 0, NULL
+  NULL,     NULL,        0, 0, NULL
 };
 
 int doaxip(int argc, char *argv[], void *p)
@@ -284,7 +284,7 @@ int doaxip(int argc, char *argv[], void *p)
 static struct cmds Axiproutecmds[] = {
   "add",    doaxiprouteadd,  0, 3, "axip route add <call> <host>",
   "drop",   doaxiproutedrop, 0, 2, "axip route drop <call>",
-  NULL,     NULL,          0, 0, NULL
+  NULL,     NULL,            0, 0, NULL
 };
 
 static int doaxiproute(int argc, char *argv[], void *p)

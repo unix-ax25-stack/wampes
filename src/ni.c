@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.9 1995/12/20 09:46:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.10 1995/12/26 11:18:45 deyke Exp $ */
 
 #ifdef __hpux
 
@@ -48,20 +48,19 @@ static int ni_send(struct mbuf **bpp, struct iface *ifp, int32 gateway, uint8 to
 
   int l;
   struct edv_t *edv;
-  struct mbuf *data = *bpp;
   struct ni_packet ni_packet;
 
-  dump(ifp, IF_TRACE_OUT, data);
+  dump(ifp, IF_TRACE_OUT, *bpp);
   ifp->rawsndcnt++;
   ifp->lastsent = secclock();
 
   if (ifp->trace & IF_TRACE_RAW)
-    raw_dump(ifp, -1, data);
+    raw_dump(ifp, -1, *bpp);
 
   memset(&ni_packet, 0, sizeof(struct ni_packet));
-  l = pullup(&data, ni_packet.data, sizeof(ni_packet.data));
-  if (l <= 0 || data) {
-    free_p(&data);
+  l = pullup(bpp, ni_packet.data, sizeof(ni_packet.data));
+  if (l <= 0 || *bpp) {
+    free_p(bpp);
     return -1;
   }
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.17 1995/12/20 09:46:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.18 1995/12/26 11:18:46 deyke Exp $ */
 
 /* SLIP (Serial Line IP) encapsulation and control routines.
  * Copyright 1991 Phil Karn
@@ -253,8 +253,10 @@ struct iface *iface)
 	struct mbuf *bp;
 	register struct slip *sp;
 	int cdev;
-	char *cp,buf[4096];
-	int cnt,xdev;
+	uint8 *cp;
+	uint8 buf[4096];
+	int cnt;
+	int xdev;
 
 	xdev = iface->xdev;
 	sp = &Slip[xdev];
@@ -262,7 +264,7 @@ struct iface *iface)
 
 	cnt = (*sp->get)(cdev,cp=buf,sizeof(buf));
 	while(--cnt >= 0){
-		if((bp = slip_decode(sp,*cp++ & 0xff)) == NULL)
+		if((bp = slip_decode(sp,*cp++)) == NULL)
 			continue;       /* More to come */
 
 		if (sp->iface->trace & IF_TRACE_RAW)

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfilter.c,v 1.6 1995/12/20 09:46:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfilter.c,v 1.7 1995/12/26 11:18:42 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -200,12 +200,12 @@ int doipfilter(int argc, char *argv[], void *parg)
 			printf("%lu.%lu.%lu.%lu to %lu.%lu.%lu.%lu\n",
 			       (p->lo >> 24) & 0xff,
 			       (p->lo >> 16) & 0xff,
-			       (p->lo >> 8) & 0xff,
-			       (p->lo) & 0xff,
+			       (p->lo >>  8) & 0xff,
+			       (p->lo      ) & 0xff,
 			       (p->hi >> 24) & 0xff,
 			       (p->hi >> 16) & 0xff,
-			       (p->hi >> 8) & 0xff,
-			       (p->hi) & 0xff);
+			       (p->hi >>  8) & 0xff,
+			       (p->hi      ) & 0xff);
 	}
 	return 0;
 }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.18 1995/12/20 09:46:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.19 1995/12/26 11:18:47 deyke Exp $ */
 
 #include "global.h"
 #include "netuser.h"
@@ -20,8 +20,8 @@ static void transport_recv_upcall_tcp(struct tcb *cp, int32 cnt);
 static void transport_send_upcall_ax25(struct ax25_cb *cp, int cnt);
 static void transport_send_upcall_netrom(struct circuit *cp, int cnt);
 static void transport_send_upcall_tcp(struct tcb *cp, int32 cnt);
-static void transport_state_upcall_ax25(struct ax25_cb *cp, int oldstate, int newstate);
-static void transport_state_upcall_netrom(struct circuit *cp, int oldstate, int newstate);
+static void transport_state_upcall_ax25(struct ax25_cb *cp, enum lapb_state oldstate, enum lapb_state newstate);
+static void transport_state_upcall_netrom(struct circuit *cp, enum netrom_state oldstate, enum netrom_state newstate);
 static void transport_state_upcall_tcp(struct tcb *cp, enum tcp_state oldstate, enum tcp_state newstate);
 static struct ax25_cb *transport_open_ax25(const char *address, struct transport_cb *tp);
 static struct circuit *transport_open_netrom(const char *address, struct transport_cb *tp);
@@ -124,7 +124,7 @@ static void transport_send_upcall_tcp(struct tcb *cp, int32 cnt)
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_state_upcall_ax25(struct ax25_cb *cp, int oldstate, int newstate)
+static void transport_state_upcall_ax25(struct ax25_cb *cp, enum lapb_state oldstate, enum lapb_state newstate)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->s_upcall && newstate == LAPB_DISCONNECTED) (*tp->s_upcall)(tp);
@@ -132,7 +132,7 @@ static void transport_state_upcall_ax25(struct ax25_cb *cp, int oldstate, int ne
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_state_upcall_netrom(struct circuit *cp, int oldstate, int newstate)
+static void transport_state_upcall_netrom(struct circuit *cp, enum netrom_state oldstate, enum netrom_state newstate)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->s_upcall && newstate == NR4STDISC) (*tp->s_upcall)(tp);
@@ -272,7 +272,7 @@ int transport_send(struct transport_cb *tp, struct mbuf *bp)
   case TP_AX25:
     return send_ax25(tp->cb.axp, &bp, PID_NO_L3);
   case TP_NETROM:
-    return send_nr(tp->cb.nrp, bp);
+    return send_nr(tp->cb.nrp, &bp);
   case TP_TCP:
     return send_tcp(tp->cb.tcp, &bp);
   }
