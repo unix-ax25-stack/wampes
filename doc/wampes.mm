@@ -1,28 +1,32 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.3 1994/07/27 09:49:36 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.4 1994/08/05 10:44:20 deyke Exp $
 .\"
 .\" Format this manual with:
+.\"
 .\" tbl -TX < manual.mm | nroff -mm | col
-.\" or:
+.\" - or -
 .\" tbl < manual.mm | troff -mm
+.\" - or -
+.\" gtbl < manual.mm | gnroff -mgm
+.\" - or -
+.\" gtbl < manual.mm | groff -mgm
 .\"
 .PH "" \" Page header
 .SA 1 \" Right justified
-.ds Ci 0 0 0 0 0 0 0 \" Table of contents indent list
 .ds HF 3 3 3 3 3 3 3 \" All headers bold
 .ds HP +2 +2 +2 +2 +2 +2 +2 \" All headers 2 points bigger
-.nr Cl 7 \" Save all headers for table of contents
+.nr Cl 7 \" Max level of header for table of contents
 .nr Ej 1 \" Level 1 headers on new page
 .nr Hb 7 \" Break after all headers
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940727" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940805" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 940727
+Version 940805
 .S
 .SP 2
 .S 15
@@ -31,6 +35,7 @@ Dieter Deyke, DK5SG/N0PRA
 .ce
 deyke@fc.hp.com
 .S
+.nr Cl 7 \" Max level of header for table of contents
 .H 1 "Credits"
 This manual is based in part on publications authored by
 .DS I
@@ -38,6 +43,198 @@ Phil Karn, KA9Q
 Bdale Garbee, N3EUA
 Gerard van der Grinten, PA0GRI
 .DE
+.nr Cl 2 \" Max level of header for table of contents
+.H 1 "The /tcp/net Program"
+The executable file \fB/tcp/net\fP
+(further called \fBWAMPES\fP) provides Internet (TCP/IP),
+NET/ROM and AX.25
+facilities. Because it has an internal multi-tasking system,
+\fBWAMPES\fP can act simultaneously as a client, a server and a packet switch
+for all three sets of protocols. That is, while a local user accesses remote
+services, the system can also provide those same services to remote users
+while also switching IP, NET/ROM and AX.25 packets and frames between other
+client and server nodes.
+.P
+The keyboard and display is used by the local operator to control both host
+and gateway level functions, for which a number of commands are provided.
+.H 2 "Startup"
+.DS I
+\fB/tcp/net [-g] [-v]\fP [\fIstartup file\fP]
+.DE
+When \fBWAMPES\fP is executed without arguments,
+it attempts to open the file \fB/tcp/net.rc\fP.
+If it exists, it is read and executed as though its contents
+were typed on the console as commands.
+This feature is useful for configuring network addresses,
+attaching communication interfaces, and starting the various services.
+.P
+The following command-line options are accepted:
+.VL 20 2
+.LI \fB-g\fP
+The \fB-g\fP option causes \fBWAMPES\fP to run in \fBdebug\fP mode.
+In \fBdebug\fP mode, \fBWAMPES\fP will NOT:
+.SP
+.BL 5 1
+.LI
+load or save the ARP table, the IP routing table, or the AX.25 routing table
+from or to a disc file
+.LI
+unlink any UNIX domain sockets
+.LI
+enable the 120 seconds watch dog timer
+.LI
+change its UNIX scheduling priority
+.LI
+check the files \fB/tcp/net\fP and \fB/tcp/net.rc\fP for modifications
+.LE
+.LI \fB-v\fP
+The \fB-v\fP option allows the user to view command execution during
+the startup of \fBWAMPES\fP.
+It echoes the commands read from the startup file before they are executed.
+This is a nice help if \fBWAMPES\fP stops (hangs) during initialization.
+.LE 1
+After all command line options, the name of an alternate startup file may
+be specified. This file is then opened and read instead
+of \fB/tcp/net.rc\fP.
+.H 2 "Environment variables"
+The following environment variables are read by \fBWAMPES\fP:
+.H 3 "TZ"
+The TZ variable should be set to the local timezone. Default is TZ=MEZ-1MESZ.
+This is used in various time stamps.
+.nr Cl 7 \" Max level of header for table of contents
+.H 1 "Console modes"
+The console may be in one of two modes: \fBcommand mode\fP or
+\fBconverse mode\fP.
+In \fBcommand mode\fP the prompt \fIhostname\fP> is displayed and any of the
+commands described in the \fBCommands\fP chapter may be entered.
+In \fBconverse mode\fP
+keyboard input is processed according to the current session.
+.P
+Sessions come in many types: Telnet, FTP, AX25,
+Finger, and NETROM.
+.P
+In a Telnet, AX25, or NETROM
+session keyboard input is sent to the
+remote system, and any output from the remote system is displayed on the
+console. In an FTP session keyboard input has to consist of
+known local commands
+(see the \fBFTP Subcommands\fP chapter).
+A Finger session is used to peek at a
+remote system for its users (and what they are doing on some UNIX systems).
+.P
+The keyboard also has \fBcooked\fP and \fBraw\fP states.
+In \fBcooked\fP state input
+is line-at-a-time. The user may use the editing keys described below
+to edit the line.
+Hitting either Return or Linefeed passes the
+complete line to the application.
+In \fBraw\fP mode each character is
+immediately passed to the application as it is typed.
+The keyboard is always in \fBcooked\fP state in command mode.
+It is also \fBcooked\fP in converse mode on an AX25, FTP, or NETROM session.
+In a Telnet session it depends on
+whether the remote end has issued (and the local end has
+accepted) the Telnet WILL ECHO option (see the \fBecho\fP command).
+.P
+To escape back to \fBcommand mode\fP
+the user must enter the \fIescape\fP character, which is by
+default Control-] (0x1d, ASCII GS). Note that this is distinct from the
+ASCII character of the same name. The escape character can be changed (see
+the \fBescape\fP command).
+Setting the escape character to an unreachable code renders a system inescapable
+and the user hung in a session.
+.P
+The following editing keys are available:
+.VL 20 2 1
+.LI Control-A
+.LI Home
+.LI Shift-LeftArrow
+Move cursor to start of line.
+.SP
+.LI Escape\ b
+Move cursor backward one word.
+.SP
+.LI Control-B
+.LI LeftArrow
+Move cursor backward one character.
+.SP
+.LI Control-F
+.LI RightArrow
+Move cursor forward one character.
+.SP
+.LI Escape\ f
+Move cursor forward one word.
+.SP
+.LI Control-E
+.LI Shift-Home
+.LI Shift-RightArrow
+Move cursor to end of line.
+.SP
+.LI Control-W
+.LI Escape\ Backspace
+.LI Escape\ DEL
+Delete previous word.
+.SP
+.LI Backspace
+.LI Control-H
+.LI DEL
+Delete previous character.
+.SP
+.LI Escape\ d
+Delete current word.
+.SP
+.LI Control-D
+.LI DeleteChar
+Delete current character.
+.SP
+.LI Control-K
+.LI ClearLine
+Delete from cursor to end of line.
+.SP
+.LI Control-U
+.LI Control-X
+.LI DeleteLine
+Delete entire line.
+.SP
+.LI Control-V
+Escape next character. Editing characters
+can be entered in a command line or in
+a search string if preceded by a Control-V.
+Control-V removes the
+next character's editing features (if any).
+.SP
+.LI Control-L
+Linefeed and print line.
+.SP
+.LI Control-P
+.LI Prev
+.LI UpArrow
+Fetch previous command.
+Each time Control-P is entered,
+the next previous command in the history list is accessed.
+.SP
+.LI Control-N
+.LI DownArrow
+.LI Next
+Fetch next command.
+Each time Control-N is entered,
+the next command in the history list is accessed.
+.SP
+.LI Control-R\fIstring\fP
+Search the history list for a previous command line
+containing \fIstring\fP.
+\fIstring\fP is terminated by a Return or Linefeed.
+.SP
+.LI Control-J
+.LI Control-M
+.LI Enter
+.LI Return
+Append Return+Linefeed, then execute line.
+.SP
+.LI Control-T
+Execute line without appending Return+Linefeed to it.
+.LE
+.nr Cl 2 \" Max level of header for table of contents
 .H 1 "Commands"
 This section describes the commands recognized in command mode, or
 within a startup file such as \fBnet.rc\fP. These are given in the following
@@ -52,12 +249,12 @@ notation:
 Many commands take subcommands or parameters, which may be optional or
 required. In general, if a required subcommand or parameter is omitted,
 an error message will summarize the available subcommands or required
-parameters. (Giving a '?' in place of the subcommand will also
+parameters. Giving a '?' in place of the subcommand will also
 generate the message. This is useful when the command word alone is a
-valid command.) If a command takes an optional value parameter, issuing
+valid command. If a command takes an optional value parameter, issuing
 the command without the parameter generally displays the current value
-of the variable. (Exceptions to this rule are noted in the individual
-command descriptions.)
+of the variable. Exceptions to this rule are noted in the individual
+command descriptions.
 .P
 Two or more parameters separated by vertical bar(s) denote a choice
 between the specified values. Optional parameters are shown enclosed in
@@ -74,7 +271,10 @@ full.
 .P
 FTP subcommands (eg. put, get, dir, etc) are recognized only in
 converse mode with the appropriate FTP session, they are not recognized
-in command mode. (See the \fBFTP Subcommands\fP chapter.)
+in command mode (see the \fBFTP Subcommands\fP chapter).
+.P
+A word beginning with \fB#\fP causes that word and all the following
+characters on the same line to be ignored.
 .H 2 "<cr>"
 Entering a carriage return (empty line) while in command mode
 puts you in converse mode with the current session. If there is
@@ -112,15 +312,17 @@ you might want the first machine to publish it's own AX.25 address
 as the right answer for ARP queries addressing the second machine.
 This way, the rest of the world doesn't know the second machine
 isn't really on the air.
-(Use this feature with great care.)
+Use this feature with great care.
 .H 2 "asystat" " [\fIinterface\fP ...]"
 Display statistics on the specified or all
 attached asynchronous communications interfaces.
-The display for each interface consists of three lines.
-.P
+The display for each interface consists of three lines:
+.SP
+.BL
+.LI
 The first line shows the interface name and the speed in
 bits per second.
-.P
+.LI
 The second line shows receiver (RX) event
 counts: the total number of read system calls, received
 characters, and the receiver high water mark. The receiver high water
@@ -129,11 +331,12 @@ device during a single system call. This is useful for
 monitoring system interrupt latency margins as it shows how
 close the port hardware has come to overflowing due to the
 inability of the CPU to respond in time.
-The high water mark will be reset to 0 after \fBasystat\fP has
+The high water mark is reset to 0 after \fBasystat\fP has
 displayed its value.
-.P
+.LI
 The third line shows transmit (TX) statistics, including the total
 number of write system calls and transmitted characters.
+.LE
 .H 2 "attach" " \fItype\fP [\fItype specific options\fP]
 Configure and attach an interface to the system.
 The details are highly interface type dependent.
@@ -161,8 +364,8 @@ but instead of talking directly to a hardware device file, this interface type
 will open a UNIX TCP connection to \fIip-addr\fP and \fIport\fP.
 The primary use of this interface type is to talk to some TNC which is
 connected to the system via the LAN.
-\fIip-addr\fP is the destination IP address.
-It has to be specified as one hexadecimal number.
+\fIip-addr\fP is the destination IP address,
+and has to be specified as one hexadecimal number.
 For example, 127.0.0.1 has to be given as 7f000001.
 \fIport\fP is the numeric destination TCP port address.
 See the \fBifconfig encapsulation\fP command for the list of
@@ -178,7 +381,7 @@ it is also fragmented at the AX.25 level (as opposed to the IP level) before
 transmission.
 See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
 for more information.
-\fIspeed\fP must be specified, but is ignored.
+\fIspeed\fP must be specified, but is not used.
 .H 3 "attach axip" " [\fIname\fP [ip|udp [\fIport\fP]]]"
 This creates an AX.25 frame encapsulator for transmission
 of AX.25 frames over the UNIX's networking system.
@@ -230,7 +433,7 @@ Display or set the digipeat mode. The default is 2. MORE TO BE WRITTEN.
 Clear the AX.25 "heard" list (see \fBax25 heard\fP).
 .H 3 "ax25 heard" " [\fIinterface\fP]"
 Display the AX.25 "heard" list. For each interface that is configured to
-use AX.25, a list of all ax25_addresses heard through that interface is
+use AX.25, a list of all addresses heard through that interface is
 shown, along with a count of the number of packets heard from each station
 and the interval, in days:hr:min:sec format, since each station was last heard.
 The local station appears first in the listing, the packet count
@@ -245,14 +448,16 @@ control block, this command forces an immediate retransmission.
 The control block address can be found with the \fBax25 status\fP command.
 .H 3 "ax25 maxframe" " [\fIcount\fP]"
 Display or set the maximum number of frames that will be allowed to remain
-unacknowledged at one time on AX.25 connections. This number cannot
+unacknowledged at any time on AX.25 connections. This number cannot
 be greater than 7.
 Note that the maximum outstanding frame count only works with
 virtual connections, UI frames are not affected.
 The default is 7 frames.
+See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
+for more information.
 .H 3 "ax25 mycall" " [\fIax25_addr\fP]"
 Display or set the default local AX.25 address. The standard format is used,
-(eg. KA9Q-0 or WB6RQN-5).
+eg. KA9Q-0 or WB6RQN-5.
 This command must be given before any \fBattach\fP commands
 using AX.25 mode are given.
 .H 3 "ax25 paclen" " [\fIsize\fP]"
@@ -264,6 +469,8 @@ the other end of the link. To have any effect on IP datagrams,
 this parameter should be less than or equal to
 the MTU of the associated interface.
 The default is 256 bytes.
+See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
+for more information.
 .H 3 "ax25 pthresh" " [\fIsize\fP]"
 Display or set the poll threshold to be used for new AX.25 Version 2
 connections. The poll threshold controls retransmission behavior as
@@ -295,12 +502,12 @@ The default is 10 tries.
 Display the AX.25 routing table that
 specifies the interface and digipeaters to be used in reaching a given station.
 MORE TO BE WRITTEN.
-.H 4 "ax25 route add" " [permanent] \fIinterface\fP default|\fIpath\fP"
+.H 4 "ax25 route add" " [permanent] \fIinterface\fP default|\fIax25_addr\fP [\fIdigipeater\fP ...]"
 Add an entry to the AX.25 routing table. An automatic \fBax25 route add\fP
 is executed if digipeaters are specified in an AX.25 \fBconnect\fP
-command, or if a connection is received from a remote station via
-digipeaters. Such automatic routing table entries won't override locally
-created entries, however. MORE TO BE WRITTEN.
+command, or if a connection is received from a remote station.
+Such automatic routing table entries won't override locally
+created permanent entries, however. MORE TO BE WRITTEN.
 .H 4 "ax25 route list" " [\fIax25_addr\fP ...]"
 TO BE WRITTEN.
 .H 3 "ax25 status" " [\fIaxcb_addr\fP]"
@@ -311,7 +518,7 @@ that control block are dumped in more detail.
 Display or set the AX.25 retransmission timer.
 The default is 5000 milliseconds (5 seconds). MORE TO BE WRITTEN.
 .H 3 "ax25 t3" " [\fImilliseconds\fP]"
-Display or set the AX.25 idle "keep alive" timer.
+Display or set the AX.25 "keep alive" timer.
 The default is 900000 milliseconds (15 minutes).
 .H 3 "ax25 t4" " [\fImilliseconds\fP]"
 The default is 60000 milliseconds (1 minute).
@@ -319,7 +526,7 @@ MORE TO BE WRITTEN.
 .H 3 "ax25 version" " [1|2]"
 Display or set the version of the AX.25 protocol to attempt to use on
 new connections. The default is 2 (the version
-that does use the poll/final bits).
+that uses the poll/final bits).
 .H 3 "ax25 window" " [\fIsize\fP]"
 Set the number of bytes that can be pending on an AX.25 receive queue
 beyond which I frames will be answered with RNR (Receiver Not Ready)
@@ -386,8 +593,8 @@ Display or set the flag controlling the tracing of domain name server
 requests and responses.
 The default is \fBoff\fP.
 .H 3 "domain usegethostby" " [on|off]"
-Enable or disable the use of the UNIX functions gethostbyname()
-and gethostbyaddr().
+Enable or disable the use of the UNIX functions gethostbyname
+and gethostbyaddr.
 The default is \fBoff\fP.
 MORE TO BE WRITTEN.
 .H 2 "echo" " [accept|refuse]"
@@ -400,8 +607,7 @@ of a negotiated agreement to the contrary, neither end echoes
 data received from the other. In this mode, a Telnet client
 session echoes keyboard input locally and nothing is actually
 sent until a carriage return is typed. Local line editing is
-also performed: backspace deletes the last character typed,
-while control-U deletes the entire line.
+also performed, see the \fBConsole modes\fP chapter.
 .P
 When communicating from keyboard to keyboard the standard local
 echo mode is used, so the setting of this parameter has no
@@ -432,10 +638,11 @@ use it only when you find that a particular system responds to line feeds
 but not carriage returns.
 Only SunOS release 3.2 seems to exhibit this behavior, later releases are fixed.
 The default is \fBstandard\fP.
-.H 2 "escape" " [\fIchar\fP]"
+.H 2 "escape" " [\fIcharacter\fP]"
 Display or set the current command-mode escape character.
-Control characters have to be prefixed by control-V.
-The default is control-] (0x1d).
+To enter a control character from the keyboard it has
+to be prefixed by Control-V.
+The default is Control-] (0x1d, ASCII GS).
 .H 2 "exit"
 Exit (terminate) \fBWAMPES\fP.
 .H 2 "finger" " [\fIuser\fP]@\fIhostid\fP"
@@ -443,7 +650,8 @@ Issue a network finger request for user \fIuser\fP at host \fIhostid\fP. If only
 @\fIhostid\fP is given, all users on that host are identified.
 .H 2 "fkey" " \fIkey#\fP \fItext\fP"
 Set the value for a programmable key on the keyboard.
-Control characters have to be prefixed by control-V.
+To enter a control character from the keyboard it has
+to be prefixed by Control-V.
 \fIText\fP has to be enclosed in double quotes if it
 contains white space.
 .H 2 "ftp" " \fIhostid\fP"
@@ -455,11 +663,11 @@ in a FTP session.
 .H 2 "hostname" " [\fIhostname\fP]"
 Display or set the local host's name. By convention this should
 be the same as the host's primary domain name. This string is
-used only in the greeting messages of the various network
+used only in greeting messages of various network
 servers, and in the command line prompt.
 Note that \fBhostname\fP does NOT set the system's IP address.
 .P
-If \fIhostname\fP is the same as the name of an interface,
+If \fIhostname\fP is the same as the name of an attached interface,
 \fIhostname\fP will be substituted by the canonical host name
 which corresponds to the IP address of that interface.
 .H 2 "icmp" " \fIsubcommand\fP"
@@ -471,7 +679,7 @@ pings to work (see the \fBping\fP command). The default is \fBon\fP.
 .H 3 "icmp status"
 Display statistics about the Internet Control Message Protocol
 (ICMP), including the number of ICMP messages of each type sent
-or received.
+and received.
 .H 3 "icmp trace" " [on|off]"
 Display or set the flag controlling the display of ICMP error
 messages. These informational messages are generated by
@@ -482,29 +690,58 @@ The default is \fBoff\fP.
 Without arguments display the status of all interfaces.
 When only \fIinterface\fP is given, the status of that interface is displayed.
 Multiple subcommand/parameter pairs can be put on one line.
-.H 3 "ifconfig \fIinterface\fP broadcast" " \fIaddr\fP"
-Set the broadcast address of \fIinterface\fP to \fIaddr\fP.
+.H 3 "ifconfig \fIinterface\fP broadcast" " \fIaddress\fP"
+Set the broadcast address of \fIinterface\fP to \fIaddress\fP.
 This is related to the \fBnetmask\fP subcommand.
 See also the \fBarp\fP command.
 .H 3 "ifconfig \fIinterface\fP encapsulation" " \fIencapsulation\fP"
 Set the encapsulation for \fIinterface\fP to \fIencapsulation\fP.
-\fIEncapsulation\fP may be one of
-\fBnone\fP,
-\fBax25ui\fP,
-\fBax25i\fP,
-\fBkissui\fP,
-\fBkissi\fP,
-\fBslip\fP,
-\fBvjslip\fP,
-\fBnetrom\fP,
-or
-\fBnrs\fP.
-MORE TO BE WRITTEN.
-.H 3 "ifconfig \fIinterface\fP forward" " \fIinterface-2\fP"
+\fIEncapsulation\fP may be one of:
+.VL 20 2
+.LI \fBnone\fP
+No encapsulation.
+.LI \fBslip\fP
+Serial Line Internet Protocol.
+Encapsulates IP datagrams directly in SLIP frames without a link
+header. This is for operation on point-to-point lines and is compatible
+with 4.2BSD UNIX SLIP.
+.LI \fBvjslip\fP
+Compressed SLIP.
+.LI \fBax25ui\fP,\ \fBax25i\fP
+Similar to \fBslip\fP, except that an AX.25 header
+is added to the datagram before SLIP encoding.
+.LI \fBkissui\fP,\ \fBkissi\fP
+Similar to \fBslip\fP, except that an AX.25 header
+and a KISS TNC control header
+is added to the datagram before SLIP encoding.
+.LI \fBnetrom\fP
+Adds a NET/ROM network header to the datagram.
+.LI \fBnrs\fP
+Adds an AX.25 header,
+then encodes the frame using
+the NET/ROM asynchronous framing technique
+for communication with a local NET/ROM TNC.
+.LE 1
+For AX.25 based encapsulations UI frames (datagram mode) will be used
+if any of the following conditions is true,
+otherwise I frames (virtual circuit mode) will be used:
+.SP
+.BL 5 1
+.LI
+the "low delay" bit is set in the IP type-of-service field.
+.LI
+the "reliability" bit is NOT set in the IP type-of-service field,
+and encapsulation is \fBax25ui\fP, \fBkissui\fP, or \fBnrs\fP.
+.LI
+the destination is the broadcast address
+(this is helpful when broadcasting on an interface
+that uses \fBax25i\fP or \fBkissi\fP encapsulation).
+.LE
+.H 3 "ifconfig \fIinterface\fP forward" " \fIinterface2\fP"
 When a forward is defined, all output for \fIinterface\fP is redirected to
-\fIinterface-2\fP. To remove the forward, set \fIinterface-2\fP to \fIinterface\fP.
-.H 3 "ifconfig \fIinterface\fP ipaddress" " \fIaddr\fP"
-Set the IP address to \fIaddr\fP for this interface. This might be necessary
+\fIinterface2\fP. To remove the forward, set \fIinterface2\fP to \fIinterface\fP.
+.H 3 "ifconfig \fIinterface\fP ipaddress" " \fIaddress\fP"
+Set the IP address to \fIaddress\fP for this interface. This might be necessary
 when a system acts as a gateway.
 See also the \fBhostname\fP and \fBip address\fP commands.
 .H 3 "ifconfig \fIinterface\fP linkaddress" " \fIhardware-dependent\fP"
@@ -520,7 +757,7 @@ Set the subnet mask for this interface.
 The \fIaddress\fP takes the form of an IP address
 with 1's in the network and subnet parts of the address,
 and 0's in the host part of the address.
-Sample:
+Example:
 .DS I
 .ft CW
 ifconfig ec0 netmask 0xffffff00
@@ -634,12 +871,17 @@ n0pra will be:
 The default is HOME_DIR/funk.
 .P
 HOME_DIR is defined in /tcp/lib/configure.h and has a value of
-.DS I
+.SP
+.BL 5 1
+.LI
 /home
+.LI
 /u
+.LI
 /users
+.LI
 /usr/people
-.DE
+.LE 1
 depending on the system configuration.
 .H 3 "login logfiledir" " [\fIlogfiledir\fP]"
 Display or set the directory to be used for user log files. If
@@ -682,25 +924,31 @@ Display the total number (counted since program startup) of all memory
 allocation requests. Requests for different block sizes (rounded up to
 the next power of two) are counted separately.
 .H 3 "memory status"
-Display a summary of storage allocator statistics. The first line
+Display a summary of storage allocator statistics:
+.SP
+.BL
+.LI
+The first line
 shows the total size of the heap, the amount of heap
 memory available in bytes and as a percentage of the total heap size,
-and the number of sbrk() system calls used to increase the heap size.
-.P
+and the number of sbrk system calls used to increase the heap size.
+.LI
 The second line shows the total number of calls to allocate and free blocks
 of memory, the difference of these two values (i.e., the number of allocated
 blocks outstanding), the number of allocation requests that were denied
-due to lack of memory, and the number of calls to free() that attempted to
+due to lack of memory, and the number of calls to free that attempted to
 free garbage
 (eg. by freeing the same block twice or freeing a garbled pointer).
-.P
+.LI
 The third line shows the total number of splits
 (breaking a big heap block into two small blocks)
 and merges
 (combining two adjacent small blocks into one big block),
 and the difference of these two values.
-.P
-The fourth line shows the number of calls to pushdown, and the number of calls to pushdown which resulted in a call to malloc.
+.LI
+The fourth line shows the number of calls to pushdown,
+and the number of calls to pushdown which resulted in a call to malloc.
+.LE
 .H 2 "mkdir" " \fIdirname\fP"
 Create the specified directory.
 .H 2 "netrom" " \fIsubcommand\fP"
@@ -729,42 +977,41 @@ Without an argument, display a one-line summary of each NET/ROM control block.
 If the address of a particular control block is specified, the contents of
 that control block are dumped in more detail.
 .H 2 "nrstat"
-Displays the netrom interface statistics.
-.H 2 "param" " \fIinterface\fP [\fIparameter-name\fP [\fIparameter-value\fP]]"
+Display statistics on all attached NET/ROM serial interfaces.
+.H 2 "param" " \fIinterface\fP [\fIname\fP|\fInumber\fP [\fIvalue\fP]]"
 Invoke a device-specific control routine.
 The following parameter names are recognized by the \fBparam\fP command,
 but not all are supported by each device type.
 Most commands deal only with half-duplex packet radio interfaces.
-.DS I
 .TS
 center box tab(;) ;
-cB | cB
-l | l.
-Name;Meaning
+cB | cB | cB
+l | n | l.
+Name;Number;Meaning
 _
-Data;
-TxDelay;transmit keyup delay
-Persist;P-persistence setting
-SlotTime;persistence slot time setting
-TxTail;transmit done holdup delay
-FullDup;enable/disable full duplex
-Hardware;hardware specific command
-TxMute;experimental transmit mute command
-DTR;control Data Terminal Ready (DTR) signal to modem
-RTS;control Request to Send (RTS) signal to modem
-Speed;set line speed
-EndDelay;
-Group;
-Idle;
-Min;
-MaxKey;
-Wait;
-Down;drop modem control lines
-Up;raise modem control lines
-Blind;
-Return;return a KISS TNC to command mode
+Data;0;
+TxDelay;1;Transmit keyup delay
+Persist;2;P-persistence
+SlotTime;3;Persistence slot time
+TxTail;4;Transmit done holdup delay
+FullDup;5;Enable/disable full duplex
+Hardware;6;Hardware specific command
+TxMute;7;Experimental transmit mute command
+DTR;8;Control Data Terminal Ready (DTR) signal to modem
+RTS;9;Control Request to Send (RTS) signal to modem
+Speed;10;Line speed
+EndDelay;11;
+Group;12;
+Idle;13;
+Min;14;
+MaxKey;15;
+Wait;16;
+Down;129;Drop modem control lines
+Up;130;Raise modem control lines
+Blind;131;
+Return;255;Return a KISS TNC to command mode
 .TE
-.DE
+.SP
 Depending on the interface type, some parameters can be read back by
 omitting a new value. This is not possible with KISS TNCs as
 there are no KISS commands for reading back previously sent
@@ -775,13 +1022,13 @@ control packets to the TNC. Data bytes are treated as decimal.
 For example,
 .DS I
 .ft CW
-param ax0 txdelay 255
+param ax0 TxDelay 255
 .ft P
 .DE
 will set the keyup timer
 (type field = 1) on the KISS TNC configured as ax0 to 2.55
-seconds (255 x .01 sec). On all asy interfaces (slip, kiss/ax25,
-nrs) the \fBparam\fP \fIinterface\fP \fBspeed\fP command allows the baud rate to
+seconds (255 x .01 sec). On all asy interfaces (slip, ax25, kiss,
+nrs) the \fBparam\fP \fIinterface\fP \fBSpeed\fP command allows the baud rate to
 be read or set.
 .P
 The implementation of this command for the various interface
@@ -808,35 +1055,43 @@ otherwise a single, "one shot" ping is done.
 Responses to one-shot pings appear asynchronously on the command screen.
 .H 2 "ps"
 Display all current processes in the system. The fields are as follows:
-.P
-\fBPID\fP - Process ID (the address of the process control block).
-.P
-\fBSP\fP - The current value of the process stack pointer.
-.P
-\fBstksize\fP - The size of the stack allocated to the process.
-.P
-\fBmaxstk\fP - The apparent peak stack utilization of this process. This is
-done in a somewhat heuristic fashion, so the numbers should be treated
-as approximate. If this number reaches or exceeds the stksize figure,
+.VL 20 2
+.LI \fBPID\fP
+The process ID (the address of the process control block).
+.LI \fBSP\fP
+The current value of the process stack pointer.
+.LI \fBstksize\fP
+The size of the stack allocated to the process, measured in 16 bit words.
+.LI \fBmaxstk\fP
+The apparent peak stack utilization of this process,
+measured in 16 bit words.
+This is done in a somewhat heuristic fashion, so the numbers should be treated
+as approximate. If this number reaches or exceeds the \fBstksize\fP figure,
 the system is almost certain to crash,
 and \fBWAMPES\fP should be recompiled
 to give the process a larger allocation when it is started.
-.P
-\fBevent\fP - The event this task is waiting for, if it is not runnable.
-.P
-\fBfl\fP - Process status flags. There are two:
+.LI \fBevent\fP
+The event this process is waiting for, if it is not runnable.
+.LI \fBfl\fP
+The process status flags. There are two:
 W (Waiting for event) and S (suspended - not currently used).
-The W flag indicates that the process is waiting for an event, the \fBevent\fP
-column will be non-zero. Note that although there may be several
-runnable processes at any time (shown in the \fBps\fP listing as those
-without the W flag and with zero event fields) only one
-process is actually running at any one instant.
+The W flag indicates that the process is waiting for an event.
+Note that although there may be several runnable processes at any time
+(shown in the \fBps\fP listing as those without the W flag)
+only one process is actually running at any one instant.
+.LI \fBin\fP
+Always zero.
+.LI \fBout\fP
+Always zero.
+.LI \fBname\fP
+The name of the process.
+.LE
 .H 2 "record" " [off|\fIfilename\fP]"
-Append to \fIfilename\fP all data received on the current
-session. Data sent on the current session is also written into the file
-except for Telnet sessions in remote echo mode. The command \fBrecord off\fP
-stops recording and closes the file. If no
-argument is specified the current status is displayed.
+Append to \fIfilename\fP all data received on the current session.
+Data sent on the current session is also written into the file
+except for Telnet sessions in remote echo mode.
+The command \fBrecord off\fP stops recording and closes the file.
+If no argument is specified the current status is displayed.
 .H 2 "remote" " [-p \fIport\fP] [-k \fIkey\fP] [-a \fIkickaddr\fP] \fIhostid\fP exit|reset|kick"
 Send a UDP packet to the specified host commanding it
 to exit the \fBWAMPES\fP or \fBNOS\fP program, reset the processor,
@@ -884,9 +1139,9 @@ message performs a similar role. Both are used to get rid of a lingering
 half-open connection after a remote system has crashed.)
 .H 2 "rip" " \fIsubcommand\fP"
 These commands control the Routing Information Protocol (RIP) service.
-.H 3 "rip accept" " \fIgateway\fP"
-Remove the specified gateway from the RIP filter table, allowing future
-broadcasts from that gateway to be accepted.
+.H 3 "rip accept" " \fIhostid\fP"
+Remove the specified host from the RIP filter table, allowing future
+broadcasts from that host to be accepted.
 .H 3 "rip add" " \fIhostid\fP \fIseconds\fP [\fIflags\fP]"
 Add an entry to the RIP broadcast table. The IP routing table will be sent
 to \fIhostid\fP every interval of \fIseconds\fP. If
@@ -896,7 +1151,7 @@ for this destination. That is, any IP routing table entries pointing to the
 interface that will be used to send this update will be removed from the
 update. If split horizon processing is not specified, then all routing
 table entries except those marked "private" will be sent in each update.
-(Private entries are never sent in RIP packets).
+Private entries are never sent in RIP packets.
 .P
 Triggered updates are always done. That is, any change in the routing table
 that causes a previously reachable destination to become unreachable will
@@ -907,23 +1162,17 @@ Note that for RIP packets to be sent properly to a broadcast address, there
 must exist correct IP routing and ARP table entries that will first steer
 the broadcast to the correct interface and then place the correct link-level
 broadcast address in the link-level destination field. If a standard IP
-broadcast address convention is used (eg. 128.96.0.0 or 128.96.255.255)
+broadcast address convention is used (eg. 44.255.255.255)
 then chances are you already have the necessary IP routing table entry, but
 unusual subnet or cluster-addressed networks may require special attention.
 However, an \fBarp add\fP command will be required to translate this address to
-the appropriate link level broadcast address. For example,
-.DS I
-.ft CW
-arp add 128.96.0.0 ethernet ff:ff:ff:ff:ff:ff
-.ft P
-.DE
-for an Ethernet network, and
+the appropriate link level broadcast address. For example:
 .DS I
 .ft CW
 arp add 44.255.255.255 ax25 qst-0
 .ft P
 .DE
-for an AX25 packet radio channel.
+for an AX.25 packet radio channel.
 .H 3 "rip drop" " \fIhostid\fP"
 Remove an entry from the RIP broadcast table.
 .H 3 "rip merge" " [on|off]"
@@ -935,26 +1184,25 @@ entry already in the table. That is, the target address(es) specified
 by the entry in question must also match the target addresses of the
 less specific entry and the two entries must have the same interface
 and gateway fields. For example, if the routing table contains
-.DS I
 .TS
-tab(;) ;
+center tab(;) ;
 lB lB lB lB lB lB lB lB
 l l l l l l l l.
 Dest;Len;Interface;Gateway;Metric;P;Timer;Use
 1.2.3.4;32;ethernet0;128.96.1.2;1;0;0;0
 1.2.3;24;ethernet0;128.96.1.2;1;0;0;0
 .TE
-.DE
+.SP
 then the first entry would be deleted as redundant since packets sent to
 1.2.3.4 will still be routed correctly by the second entry. Note that the
 relative metrics of the entries are ignored.
 The default is \fBoff\fP.
-.H 3 "rip refuse" " \fIgateway\fP"
-Refuse to accept RIP updates from the specified gateway by adding the
-gateway to the RIP filter table. It may be later removed with the \fBrip
+.H 3 "rip refuse" " \fIhostid\fP"
+Refuse to accept RIP updates from the specified host by adding the
+host to the RIP filter table. It may be later removed with the \fBrip
 accept\fP command.
-.H 3 "rip request" " \fIgateway\fP"
-Send a RIP Request packet to the specified gateway, causing it to reply
+.H 3 "rip request" " \fIhostid\fP"
+Send a RIP Request packet to the specified host, causing it to reply
 with a RIP Response packet containing its routing table.
 .H 3 "rip status"
 Display RIP status, including a count of the number of packets sent
@@ -1035,20 +1283,20 @@ route add 44.0.0.3 sl0
 .DS I
 .ft CW
 # Route all default traffic to the gateway on the local Ethernet
-# with IP address 44.0.0.1
+# with IP address 44.0.0.1.
 route add default ec0 44.0.0.1
 .ft P
 .DE
 .DS I
 .ft CW
 # The local Ethernet has an ARPA Class-C address assignment.
-# Route all IP addresses beginning with 192.4.8 to it
+# Route all IP addresses beginning with 192.4.8 to it.
 route add 192.4.8/24 ec0
 .ft P
 .DE
 .DS I
 .ft CW
-# The station with IP address 44.0.0.10 is on the local AX.25 channel
+# The station with IP address 44.0.0.10 is on the local AX.25 channel.
 route add 44.0.0.10 ax0
 .ft P
 .DE
@@ -1065,10 +1313,11 @@ entries are not affected.
 .H 3 "route lookup" " \fIhostid\fP"
 TO BE WRITTEN.
 .H 2 "session" " [\fIsession#\fP]"
-Without arguments, display the list of current sessions, including
-session number, remote TCP or AX.25 address and the address of the TCP or
-AX.25 control block. An asterisk (*) is shown next to the current
-session. Entering a session number as an argument to the \fBsession\fP
+Without arguments, display the list of current sessions,
+including session number, remote TCP, AX.25, or NET/ROM address
+and the address of the TCP, AX.25, or NET/ROM control block.
+An asterisk (*) is shown next to the current session.
+Entering a session number as an argument to the \fBsession\fP
 command will put you in converse mode with that session.
 .H 2 "shell" " \fIshell_command_line\fP"
 Suspend \fBWAMPES\fP and execute a subshell (/bin/sh).
@@ -1111,9 +1360,9 @@ with each one, response times, etc.
 .H 3 "sntp step_threshold" " [\fIstep_threshold\fP]"
 Display or set the step threshold (measured in seconds). If the
 required time adjustment is less than the step threshold, the
-adjtime() system call will be used to slow down or to accelerate
+adjtime system call will be used to slow down or to accelerate
 the clock, otherwise the clock will be stepped using
-settimeofday().
+settimeofday.
 The default is 1 second.
 .H 3 "sntp sys"
 Display the sntp server configuration.
@@ -1122,19 +1371,16 @@ Display or set the sntp server leap indicator. This is a
 two-bit code warning of an impending leap second to be
 inserted/deleted in the last minute of the current day, coded as
 follows:
-.DS
-.TS
-center box tab(;) ;
-cB | cB
-l | l.
-Value;Meaning
-_
-0;no warning
-1;last minute has 61 seconds
-2;last minute has 59 seconds)
-3;alarm condition (clock not synchronized)
-.TE
-.DE
+.VL 20 2 1
+.LI \fB0\fP
+no warning
+.LI \fB1\fP
+last minute has 61 seconds
+.LI \fB2\fP
+last minute has 59 seconds)
+.LI \fB3\fP
+alarm condition (clock not synchronized)
+.LE 1
 The default is 0.
 .H 4 "sntp sys precision" " [\fIprecision\fP]"
 Display or set the sntp server precision. This is an eight-bit
@@ -1150,7 +1396,6 @@ stratum 0 (unspecified) or stratum 1 (primary reference), this
 is a string of up to 4 characters. While not enumerated as part
 of the NTP specification, the following are representative ASCII
 identifiers:
-.DS
 .TS
 center box tab(;) ;
 cB | cB | cB
@@ -1171,7 +1416,7 @@ _
 2;address;secondary reference (four-octet Internet address
 ;;of the NTP server)
 .TE
-.DE
+.SP
 The default is UNIX.
 .H 4 "sntp sys reftime"
 Display the sntp server reference time.
@@ -1195,19 +1440,16 @@ The default is 0.
 Display or set the sntp server stratum. This is a eight-bit
 integer indicating the stratum level of the local clock, with
 values defined as follows:
-.DS
-.TS
-center box tab(;) ;
-cB | cB
-l | l.
-Stratum;Meaning
-_
-0;unspecified or unavailable
-1;primary reference (e.g., radio clock)
-2-15;secondary reference (via NTP or SNTP)
-16-255;reserved
-.TE
-.DE
+.VL 20 2 1
+.LI \fB0\fP
+unspecified or unavailable
+.LI \fB1\fP
+primary reference (e.g., radio clock)
+.LI \fB2\fP-\fB15\fP
+secondary reference (via NTP or SNTP)
+.LI \fB16\fP-\fB255\fP
+reserved
+.LE 1
 The default is 1.
 .H 3 "sntp trace" " [on|off]"
 Enable or disable sntp tracing.
@@ -1264,28 +1506,34 @@ TO BE WRITTEN.
 .H 2 "stop" " \fIserver\fP"
 Stop the specified server, rejecting any further remote connect
 requests. Existing connections are allowed to complete normally.
-.H 3 "stop ax25"
-TO BE WRITTEN.
-.H 3 "stop discard"
-TO BE WRITTEN.
-.H 3 "stop domain"
-TO BE WRITTEN.
-.H 3 "stop echo"
-TO BE WRITTEN.
-.H 3 "stop ftp"
-TO BE WRITTEN.
-.H 3 "stop netrom"
-TO BE WRITTEN.
-.H 3 "stop rip"
-TO BE WRITTEN.
-.H 3 "stop sntp"
-TO BE WRITTEN.
-.H 3 "stop telnet"
-TO BE WRITTEN.
-.H 3 "stop time"
-TO BE WRITTEN.
-.H 3 "stop remote"
-TO BE WRITTEN.
+See also the \fBstart\fP command.
+.P
+\fIserver\fP has to be one of:
+.SP
+.BL 5 1
+.LI
+\fBax25\fP
+.LI
+\fBdiscard\fP
+.LI
+\fBdomain\fP
+.LI
+\fBecho\fP
+.LI
+\fBftp\fP
+.LI
+\fBnetrom\fP
+.LI
+\fBrip\fP
+.LI
+\fBsntp\fP
+.LI
+\fBtelnet\fP
+.LI
+\fBtime\fP
+.LI
+\fBremote\fP
+.LE
 .H 2 "tcp" " \fIsubcommand\fP"
 These commands control the Transmission Control Protocol service.
 .H 3 "tcp irtt" " [\fImilliseconds\fP]"
@@ -1326,16 +1574,18 @@ The default is 512 bytes.
 Delete the TCP control block at the specified address.
 The control block address can be found with the \fBtcp status\fP command.
 .H 3 "tcp rtt" " \fItcb_addr\fP \fImilliseconds\fP"
-Replaces the automatically computed round trip time in the specified TCB
-with the rtt in milliseconds. This command is useful to speed up
-recovery from a series of lost packets since it provides a manual bypass
-around the normal backoff retransmission timing mechanisms.
+Replaces the automatically computed round trip time in the specified
+TCP control block with the rtt in milliseconds.
+This command is useful to speed up recovery from a series of lost packets
+since it provides a manual bypass around the
+normal backoff retransmission timing mechanisms.
 .H 3 "tcp status" " [\fItcb_addr\fP]"
-Without arguments, displays several TCP-level statistics, plus a summary of
-all existing TCP connections, including TCB address, send and receive queue
-sizes, local and remote sockets, and connection state. If \fItcb_addr\fP is
-specified, a more detailed dump of the specified TCB is generated, including
-send and receive sequence numbers and timer information.
+Without arguments, display several TCP-level statistics, plus a summary of
+all existing TCP connections, including TCP control block address,
+send and receive queue sizes, local and remote sockets, and connection state.
+If \fItcb_addr\fP is specified, a more detailed dump of the specified
+TCP control block is generated, including send and receive sequence numbers
+and timer information.
 .H 3 "tcp syndata" " [on|off]"
 Display or set the TCP SYN+data piggybacking flag.
 Some TCP implementations cannot handle SYN+data together.
@@ -1360,62 +1610,69 @@ and their tracing status.
 Output can be limited to a single interface by specifying it,
 and the control flags can be changed by specifying them as well.
 \fIflags\fP is constructed from the logical OR of the following flag bits:
-.DS
-.TS
-center box tab(;) ;
-cB | cB
-l | l.
-Flag;Meaning
-_
-0001;Trace output packets
-0010;Trace input packets
-_
-0000;Decode headers
-0100;Print data (but not headers) in ASCII
-0200;Print headers and data in HEX and ASCII
-_
-1000;Trace only packets addressed to me, suppress broadcasts
-_
-2000;Print all packet bytes (input and output), no interpretation
-.TE
-.DE
+.VL 20 2 1
+.LI \fB0001\fP
+Trace output packets
+.LI \fB0010\fP
+Trace input packets
+.SP
+.LI \fB0000\fP
+Decode headers
+.LI \fB0100\fP
+Print data (but not headers) in ASCII
+.LI \fB0200\fP
+Print headers and data in HEX and ASCII
+.SP
+.LI \fB1000\fP
+Trace only packets addressed to me, suppress broadcasts
+.LI \fB2000\fP
+Print all packet bytes (input and output), no interpretation
+.LE 1
 Instead of defining the trace flags numerically one of the following
 subcommands may be given:
-.DS
-.TS
-center box tab(;) ;
-cB | cB
-l | l.
-Subcommand;Meaning
-_
--ascii;Decode headers only
--broadcast;Disable trace of broadcasts
--hex;Print data (but not headers) in ASCII
--input;Disable input trace
--output;Disable output trace
--raw;Disable raw packet dumps
-ascii;Print data (but not headers) in ASCII
-broadcast;Enable trace of broadcasts
-hex;Print headers and data in HEX and ASCII
-input;Enable input trace
-off;Turn off all trace output
-output;Enable output trace
-raw;Enable raw packet dumps
-.TE
-.DE
+.VL 20 2 1
+.LI \fB-ascii\fP
+Decode headers only
+.LI \fB-broadcast\fP
+Disable trace of broadcasts
+.LI \fB-hex\fP
+Print data (but not headers) in ASCII
+.LI \fB-input\fP
+Disable input trace
+.LI \fB-output\fP
+Disable output trace
+.LI \fB-raw\fP
+Disable raw packet dumps
+.LI \fBascii\fP
+Print data (but not headers) in ASCII
+.LI \fBbroadcast\fP
+Enable trace of broadcasts
+.LI \fBhex\fP
+Print headers and data in HEX and ASCII
+.LI \fBinput\fP
+Enable input trace
+.LI \fBoff\fP
+Turn off all trace output
+.LI \fBoutput\fP
+Enable output trace
+.LI \fBraw\fP
+Enable raw packet dumps
+.LE 1
 If \fItracefile\fP is not specified, tracing will be to the console.
 .H 2 "udp" " \fIsubcommand\fP"
 These commands control the User Datagram Protocol service.
 .H 3 "udp status"
 Displays the status of all UDP receive queues.
-.H 2 "upload" " [\fIfilename\fP]"
+.H 2 "upload" " [stop|\fIfilename\fP]"
 Open \fIfilename\fP and send it on the current session as though it were
-typed on the terminal. If \fIfilename\fP is not specified the current status
-is displayed.
+typed on the terminal.
+The command \fBupload stop\fP stops uploading and closes the file.
+If no argument is specified the current status is displayed.
+.nr Cl 2 \" Max level of header for table of contents
 .H 1 "FTP Subcommands"
 TO BE WRITTEN.
 .H 2 "abort"
-Aborts a file transfer operation in progress.
+Abort a file transfer operation in progress.
 When receiving a file, \fBabort\fP simply resets the data connection.
 The next incoming data packet will generate a TCP RST (reset) in response
 which will clear the remote server.
@@ -1477,7 +1734,7 @@ was not specified with the \fBuser\fP command.
 Copy \fIlocal-file\fP to \fIremote-file\fP. If \fIremote-file\fP is unspecified,
 ftp assigns the \fIlocal-file\fP name to the \fIremote-file\fP name.
 .H 2 "pwd"
-Write the name of the remote working directory to stdout.
+Write the name of the remote working directory to standard output.
 .H 2 "quit"
 An alias for the \fBbye\fP command.
 .H 2 "quote" " \fIftp-command\fP"
@@ -1527,6 +1784,7 @@ remote system how large the byte size is. \fIbytesize\fP is typically 8.
 .H 2 "user" " \fIuser-name\fP [\fIpassword\fP]"
 Log into the server host on the current connection, which must
 already be open.
+.nr Cl 7 \" Max level of header for table of contents
 .H 1 "Setting Paclen, Maxframe, MTU, MSS and Window"
 Many \fBWAMPES\fP users are confused by these parameters and do not know how to
 set them properly. This chapter will first review these parameters and

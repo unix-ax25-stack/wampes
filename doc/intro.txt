@@ -49,6 +49,10 @@ Shows an ax25 path to a host.
 
 The pop2 daemon.
 
+/tcp/util/pop3d
+
+The pop3 daemon.
+
 /tcp/util/netupd[c,s]
 
 Netupdate-Client+Server.  Allows WAMPES  clients to get new revisions of
@@ -113,7 +117,7 @@ ax25 mycall dc1ik
 #############################################################################
 # Attach one serial, /dev/ttys3 with 9600 Baud and KISS:
 # NOTE: Interfacename and the device must be the same!!
-# Usage: attach asy 0 0 slip|vjslip|ax25ui|ax25i|nrs <label> 0 <mtu> <speed> [ip_addr]
+# Usage: attach asy 0 0 slip|vjslip|ax25ui|ax25i|kissui|kissi|nrs <label> 0 <mtu> <speed>
 attach asy 0 0 kissui ttys3 0 256 9600
 #############################################################################
 # Pseudo-NET/ROM interface
