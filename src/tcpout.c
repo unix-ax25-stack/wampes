@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.5 1991/05/09 07:38:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.6 1992/01/08 13:45:40 deyke Exp $ */
 
 /* TCP output segment processing
  * Copyright 1991 Phil Karn, KA9Q
@@ -39,6 +39,7 @@ register struct tcb *tcb;
 	int16 usable;           /* Usable window */
 	int16 sent;             /* Sequence count (incl SYN/FIN) already
 				 * in the pipe but not yet acked */
+	int32 rto;              /* Retransmit timeout setting */
 
 	if(tcb == NULLTCB)
 		return;
@@ -204,8 +205,8 @@ register struct tcb *tcb;
 		 */
 		if(ssize != 0){
 			/* Set round trip timer. */
-			set_timer(&tcb->timer,mybackoff(tcb->backoff)
-			 * (4 * tcb->mdev + tcb->srtt));
+			rto = mybackoff(tcb->backoff) * (4 * tcb->mdev + tcb->srtt);
+			set_timer(&tcb->timer,max(MIN_RTO,rto));
 			if(!run_timer(&tcb->timer))
 				start_timer(&tcb->timer);
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpmsg.c,v 1.4 1991/02/24 20:16:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpmsg.c,v 1.5 1992/01/08 13:45:13 deyke Exp $ */
 
 /* ICMP message type tables
  * Copyright 1991 Phil Karn, KA9Q
@@ -34,7 +34,15 @@ char *Unreach[] = {
 	"Protocol",
 	"Port",
 	"Fragmentation",
-	"Source route"
+	"Source route",
+	"Dest net unknown",
+	"Dest host unknown",
+	"Source host isolated",
+	"Net prohibited",
+	"Host prohibited",
+	"Net TOS",
+	"Host TOS",
+	"Administratively Prohibited"
 };
 /* ICMP Time exceeded messages */
 char *Exceed[] = {

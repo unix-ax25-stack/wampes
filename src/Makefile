@@ -1,10 +1,10 @@
-ANSI          = -Aa -D_HPUX_SOURCE
 ANSI          =
+ANSI          = -Aa -D_HPUX_SOURCE
 
 DEFINES       = -DUNIX
 
-CFLAGS        = $(ANSI) $(DEFINES) -g
 CFLAGS        = $(ANSI) $(DEFINES) -O
+CFLAGS        = $(ANSI) $(DEFINES) -g
 
 DEST          = /tcp
 
@@ -108,6 +108,7 @@ OBJS          = 8250.o \
 		ipdump.o \
 		ipfile.o \
 		iphdr.o \
+		ipip.o \
 		iproute.o \
 		kernel.o \
 		kiss.o \
@@ -208,6 +209,7 @@ SRCS          = 8250.c \
 		ipdump.c \
 		ipfile.c \
 		iphdr.c \
+		ipip.c \
 		iproute.c \
 		kernel.c \
 		kiss.c \
@@ -325,8 +327,8 @@ ax25hdr.o: global.h mbuf.h ax25.h iface.h proc.h timer.h
 ax25subr.o: global.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h
 axclient.o: global.h config.h netuser.h mbuf.h timer.h ax25.h iface.h proc.h \
 	lapb.h session.h hardware.h telnet.h
-axip.o: global.h mbuf.h iface.h proc.h timer.h netuser.h ax25.h socket.h \
-	trace.h pktdrvr.h cmdparse.h hpux.h
+axip.o: global.h mbuf.h iface.h proc.h timer.h internet.h netuser.h ax25.h \
+	socket.h trace.h pktdrvr.h cmdparse.h hpux.h
 axserver.o: global.h timer.h ax25.h mbuf.h iface.h proc.h lapb.h login.h
 buildsaddr.o: global.h
 cmdparse.o: global.h proc.h mbuf.h timer.h cmdparse.h
@@ -371,6 +373,8 @@ ipdump.o: global.h mbuf.h internet.h iface.h proc.h timer.h ip.h trace.h \
 	netuser.h
 ipfile.o: global.h timer.h iface.h mbuf.h proc.h ip.h internet.h
 iphdr.o: global.h mbuf.h ip.h iface.h proc.h timer.h internet.h
+ipip.o: global.h mbuf.h iface.h proc.h timer.h internet.h netuser.h socket.h \
+	trace.h pktdrvr.h cmdparse.h hpux.h
 iproute.o: global.h mbuf.h iface.h proc.h timer.h internet.h ip.h netuser.h \
 	icmp.h session.h hardware.h telnet.h ax25.h rip.h udp.h trace.h \
 	pktdrvr.h bootp.h socket.h

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.6 1991/07/16 17:55:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.7 1992/01/08 13:45:38 deyke Exp $ */
 
 /* TCP control and status routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -68,7 +68,7 @@ void *p;
 		tprintf(Notval);
 		return 1;
 	}
-	close_self(tcb,RESET);
+	reset_tcp(tcb);
 	return 0;
 }
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.4 1991/05/09 07:37:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.5 1992/01/08 13:44:59 deyke Exp $ */
 
 /* Generic serial line interface routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -34,8 +34,6 @@
  * argv[6]: maximum transmission unit, bytes
  * argv[7]: interface speed, e.g, "9600"
  * argv[8]: optional flags,
- *              'c' for cts flow control;
- *              'r' for RLSD (RS232 pin 8, CD) physical link up/down;
  *              'v' for Van Jacobson TCP header compression (SLIP only,
  *                  use ppp command for VJ compression with PPP);
  */
@@ -47,11 +45,11 @@ void *p;
 {
 	register struct iface *ifp;
 	struct asy *asyp;
+	char *ifn;
 	int dev;
 	int xdev;
 	int trigchar = -1;
-	char cts = FALSE;
-	char rlsd = FALSE;
+	char monitor = FALSE;
 #if     defined(SLIP) || defined(AX25)
 	struct slip *sp;
 #endif
@@ -96,7 +94,7 @@ void *p;
 		setencap(ifp,"SLIP");
 		ifp->ioctl = asy_ioctl;
 		ifp->raw = slip_raw;
-		ifp->status = slip_status;
+		ifp->show = slip_status;
 		ifp->flags = 0;
 		ifp->xdev = xdev;
 
@@ -131,7 +129,7 @@ void *p;
 		setencap(ifp,"AX25");
 		ifp->ioctl = kiss_ioctl;
 		ifp->raw = kiss_raw;
-		ifp->status = slip_status;
+		ifp->show = slip_status;
 
 		if(ifp->hwaddr == NULLCHAR)
 			ifp->hwaddr = mallocw(AXALEN);
@@ -177,14 +175,12 @@ void *p;
 	if(stricmp(argv[3],"PPP") == 0) {
 		/* Setup for Point-to-Point Protocol */
 		trigchar = HDLC_FLAG;
+		monitor = TRUE;
 		setencap(ifp,"PPP");
 		ifp->ioctl = asy_ioctl;
 		ifp->flags = FALSE;
 
 		/* Initialize parameters for various PPP phases/protocols */
-		if((argc > 8) && (strchr(argv[8],'r') != NULLCHAR))
-			rlsd = TRUE;
-
 		if (ppp_init(ifp) != 0) {
 			tprintf("Cannot allocate PPP control block\n");
 			free(ifp->name);
@@ -205,10 +201,7 @@ void *p;
 	ifp->next = Ifaces;
 	Ifaces = ifp;
 
-	if((argc > 8) && (strchr(argv[8],'c') != NULLCHAR))
-		cts = TRUE;
-
 	asy_init(dev,ifp,argv[1],argv[2],(int16)atol(argv[5]),
-		trigchar,cts,rlsd,(int16)atol(argv[7]));
+		trigchar,monitor,(int16)atol(argv[7]));
 	return 0;
 }

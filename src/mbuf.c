@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.7 1991/10/11 18:56:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.8 1992/01/08 13:45:26 deyke Exp $ */
 
 /* mbuf (message buffer) primitives
  * Copyright 1991 Phil Karn, KA9Q
@@ -320,7 +320,7 @@ int16 size;
 	 * that it itself isn't a duplicate before checking to see if
 	 * there's enough space at its front.
 	 */
-	if(bp != NULLBUF && bp->refcnt == 1 && bp->size != 0
+	if(bp != NULLBUF && bp->refcnt == 1 && bp->dup == NULLBUF
 	 && bp->data - (char *)(bp+1) >= size){
 		/* No need to alloc new mbuf, just adjust this one */
 		bp->data -= size;
@@ -433,8 +433,7 @@ struct mbuf **bpp;
 	char buf[2];
 
 	if(pullup(bpp,buf,2) != 2){
-		/* Return -1 if insufficient buffer */
-		return -1;
+		return -1;              /* Nothing left */
 	}
 	return get16(buf);
 }

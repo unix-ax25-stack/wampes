@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.24 1991/10/25 15:01:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.25 1992/01/08 13:45:25 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -67,6 +67,7 @@ char Prompt[] = "%s> ";
 char Nospace[] = "No space!!\n";        /* Generic malloc fail message */
 struct proc *Cmdpp;
 static FILE *Logfp;
+time_t StartTime;                       /* time that NOS was started */
 int16 Lport = 1024;
 static int Verbose;
 
@@ -81,6 +82,8 @@ char *argv[];
 	FILE *fp;
 	struct daemon *tp;
 	int c;
+
+	time(&StartTime);
 
 	Debug = (argc >= 2);
 
@@ -100,8 +103,8 @@ char *argv[];
 
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
 	tprintf("\n================ %s ================\n", Version);
-	tprintf("(c) Copyright 1990, 1991 by Dieter Deyke, DK5SG\n");
-	tprintf("(c) Copyright 1990 by Phil Karn, KA9Q\n");
+	tprintf("(c) Copyright 1990-1992 by Dieter Deyke, DK5SG / N0PRA\n");
+	tprintf("(c) Copyright 1991 by Phil Karn, KA9Q\n");
 	tprintf("\n");
 
 	/* Start background Daemons */
@@ -252,8 +255,15 @@ int argc;
 char *argv[];
 void *p;
 {
+	time_t StopTime;
+	char tbuf[32];
+
+	time(&StopTime);
 	reset_all();
 	shuttrace();
+	strcpy(tbuf,ctime(&StopTime));
+	rip(tbuf);
+	log(NULLTCB,"NOS was stopped at %s", tbuf);
 	if(Logfp){
 		fclose(Logfp);
 		Logfp = NULLFILE;
@@ -298,6 +308,7 @@ char *argv[];
 void *p;
 {
 	static char *logname;
+	char tbuf[32];
 
 	if(argc < 2){
 		if(Logfp)
@@ -307,6 +318,7 @@ void *p;
 		return 0;
 	}
 	if(Logfp){
+		log(NULLTCB,"NOS log closed");
 		fclose(Logfp);
 		Logfp = NULLFILE;
 		free(logname);
@@ -315,6 +327,12 @@ void *p;
 	if(strcmp(argv[1],"stop") != 0){
 		logname = strdup(argv[1]);
 		Logfp = fopen(logname,APPEND_TEXT);
+		strcpy(tbuf,ctime(&StartTime));
+		rip(tbuf);
+		log(NULLTCB,"NOS was started at %s", tbuf);
+#ifdef MSDOS
+		log(NULLTCB,"NOS load information: CS=0x%04x DS=0x%04x", _CS, _DS);
+#endif
 	}
 	return 0;
 }

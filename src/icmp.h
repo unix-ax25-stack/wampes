@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.h,v 1.5 1991/02/24 20:16:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.h,v 1.6 1992/01/08 13:45:12 deyke Exp $ */
 
 #ifndef _ICMP_H
 #define _ICMP_H
@@ -104,8 +104,9 @@ struct icmp {
 #define ICMP_PORT_UNREACH       3       /* Port unreachable */
 #define ICMP_FRAG_NEEDED        4       /* Fragmentation needed and DF set */
 #define ICMP_ROUTE_FAIL         5       /* Source route failed */
+#define ICMP_ADMIN_PROHIB       13      /* Administrativly prohibbited */
 
-#define NUNREACH        6
+#define NUNREACH        14
 
 /* Time Exceeded codes */
 #define ICMP_TTL_EXCEED         0       /* Time-to-live exceeded */

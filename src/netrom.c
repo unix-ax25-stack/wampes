@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.24 1991/10/25 15:01:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.25 1992/01/08 13:45:28 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -864,7 +864,8 @@ struct circuit *pc;
   int32 tmp;
 
   tmp = pc->srtt + 2 * pc->mdev;
-  set_timer(&pc->timer_t1, tmp > 0 ? tmp : 1);
+  if (tmp < 500) tmp = 500;
+  set_timer(&pc->timer_t1, tmp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -876,7 +877,8 @@ struct circuit *pc;
 
   tmp = (dur_timer(&pc->timer_t1) * 5 + 2) / 4;
   if (tmp > 10 * pc->srtt) tmp = 10 * pc->srtt;
-  set_timer(&pc->timer_t1, tmp > 0 ? tmp : 1);
+  if (tmp < 500) tmp = 500;
+  set_timer(&pc->timer_t1, tmp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1773,18 +1775,20 @@ void *p;
 /****************************** NETROM Commands ******************************/
 /*---------------------------------------------------------------------------*/
 
-int  nr_attach(argc, argv, p)
-int  argc;
-char  *argv[];
+int nr_attach(argc, argv, p)
+int argc;
+char *argv[];
 void *p;
 {
-  if (Nr_iface) {
-    tprintf("netrom interface already attached\n");
-    return -1;
+  char *ifname = "netrom";
+
+  if (Nr_iface || if_lookup(ifname) != NULLIF) {
+    tprintf("Interface %s already exists\n", ifname);
+    return (-1);
   }
   Nr_iface = callocw(1, sizeof(*Nr_iface));
   Nr_iface->addr = Ip_addr;
-  Nr_iface->name = strdup("netrom");
+  Nr_iface->name = strdup(ifname);
   Nr_iface->hwaddr = mallocw(AXALEN);
   memcpy(Nr_iface->hwaddr, Mycall, AXALEN);
   Nr_iface->mtu = NR4MAXINFO;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.7 1991/07/16 17:55:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.8 1992/01/08 13:45:16 deyke Exp $ */
 
 /* IP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -14,6 +14,8 @@
 #include "cmdparse.h"
 #include "commands.h"
 #include "rip.h"
+
+int32 Ip_addr;
 
 static int doadd __ARGS((int argc,char *argv[],void *p));
 static int dodrop __ARGS((int argc,char *argv[],void *p));

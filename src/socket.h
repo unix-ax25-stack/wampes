@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.8 1991/10/25 15:01:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.9 1992/01/08 13:45:37 deyke Exp $ */
 
 #ifndef _SOCKET_H
 #define _SOCKET_H
@@ -25,11 +25,7 @@
 #endif
 
 /* IP protocol numbers */
-#define IPPROTO_ICMP    1
-#define IPPROTO_TCP     6
-#define IPPROTO_UDP     17
-#define IPPROTO_AX25    93
-#define IPPROTO_IP      94
+/* now in internet.h */
 
 /* TCP port numbers */
 #define IPPORT_ECHO     7       /* Echo data port */
@@ -88,8 +84,6 @@
 
 #define EALARM          17
 #define EABORT          18
-
-extern int32 Ip_addr;
 
 #if 0
 

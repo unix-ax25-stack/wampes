@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.1 1991/10/11 18:57:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.2 1992/01/08 13:45:18 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1991 Phil Karn, KA9Q
@@ -36,7 +36,7 @@ extern void setstack __ARGS((void));
 FILE *proclog;
 FILE *proctrace;
 #endif
-int Stkchk = 1;
+int Stkchk = 0;
 struct proc *Curproc;           /* Currently running process */
 struct proc *Rdytab;            /* Processes ready to run (not including curproc) */
 struct proc *Waittab[PHASH];    /* Waiting process list */

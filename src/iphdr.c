@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iphdr.c,v 1.3 1991/05/09 07:38:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iphdr.c,v 1.4 1992/01/08 13:45:16 deyke Exp $ */
 
 /* IP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -24,6 +24,8 @@ int cflag;
 	int16 fl_offs;
 
 	hdr_len = IPLEN + ip->optlen;
+	if(hdr_len > IPLEN + IP_MAXOPT)
+		hdr_len = IPLEN + IP_MAXOPT;
 	if((bp = pushdown(data,hdr_len)) == NULLBUF){
 		free_p(data);
 		return NULLBUF;
@@ -56,7 +58,7 @@ int cflag;
 	cp = put32(cp,ip->source);
 	cp = put32(cp,ip->dest);
 	if(ip->optlen != 0)
-		memcpy(cp,ip->options,ip->optlen);
+		memcpy(cp,ip->options,min(ip->optlen,IP_MAXOPT));
 
 	/* If requested, recompute checksum and insert into header */
 	if(!cflag)
@@ -70,7 +72,7 @@ ntohip(ip,bpp)
 register struct ip *ip;
 struct mbuf **bpp;
 {
-	int16 ihl;
+	int ihl;
 	int16 fl_offs;
 	char ipbuf[IPLEN];
 
@@ -82,7 +84,7 @@ struct mbuf **bpp;
 	ip->length = get16(&ipbuf[2]);
 	ip->id = get16(&ipbuf[4]);
 	fl_offs = get16(&ipbuf[6]);
-	ip->offset = fl_offs << 3;
+	ip->offset = (fl_offs & 0x1fff) << 3;
 	ip->flags.mf = (fl_offs & 0x2000) ? 1 : 0;
 	ip->flags.df = (fl_offs & 0x4000) ? 1 : 0;
 	ip->flags.congest = (fl_offs & 0x8000) ? 1 : 0;
@@ -95,13 +97,14 @@ struct mbuf **bpp;
 	ihl = (ipbuf[0] & 0xf) << 2;
 	if(ihl < IPLEN){
 		/* Bogus packet; header is too short */
+		ip->optlen = 0;
 		return -1;
 	}
-	ip->optlen = ihl - IPLEN;
-	if(ip->optlen != 0)
-		pullup(bpp,ip->options,ip->optlen);
-
-	return ip->optlen + IPLEN;
+	if ( (ip->optlen = ihl - IPLEN) != 0 ) {
+		if ( pullup(bpp,ip->options,ip->optlen) < ip->optlen )
+			return -1;
+	}
+	return ihl;
 }
 /* Perform end-around-carry adjustment */
 int16

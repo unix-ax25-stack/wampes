@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.8 1991/05/17 17:07:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.9 1992/01/08 13:45:43 deyke Exp $ */
 
 /* Packet tracing - top level and generic routines, including hex/ascii
  * Copyright 1991 Phil Karn, KA9Q
@@ -8,6 +8,9 @@
 #include <ctype.h>
 #include <time.h>
 #include "global.h"
+#ifdef  ANSIPROTO
+#include <stdarg.h>
+#endif
 #include "mbuf.h"
 #include "iface.h"
 #include "pktdrvr.h"
@@ -44,8 +47,8 @@ struct tracecmd Tracecmd[] = {
 };
 
 void
-dump(iface,direction,type,bp)
-register struct iface *iface;
+dump(ifp,direction,type,bp)
+register struct iface *ifp;
 int direction;
 unsigned type;
 struct mbuf *bp;
@@ -56,29 +59,29 @@ struct mbuf *bp;
 	time_t timer;
 	char *cp;
 
-	if(iface == NULL || (iface->trace & direction) == 0)
+	if(ifp == NULL || (ifp->trace & direction) == 0)
 		return; /* Nothing to trace */
 
 	switch(direction){
 	case IF_TRACE_IN:
-		if((iface->trace & IF_TRACE_NOBC)
+		if((ifp->trace & IF_TRACE_NOBC)
 		 && (Tracef[type].addrtest != NULLFP)
-		 && (*Tracef[type].addrtest)(iface,bp) == 0)
+		 && (*Tracef[type].addrtest)(ifp,bp) == 0)
 			return;         /* broadcasts are suppressed */
 		timer = secclock();
 		cp = ctime(&timer);
 		cp[24] = '\0';
-		fprintf(iface->trfp,"\n%s - %s recv:\n",cp,iface->name);
+		fprintf(ifp->trfp,"\n%s - %s recv:\n",cp,ifp->name);
 		break;
 	case IF_TRACE_OUT:
 		timer = secclock();
 		cp = ctime(&timer);
 		cp[24] = '\0';
-		fprintf(iface->trfp,"\n%s - %s sent:\n",cp,iface->name);
+		fprintf(ifp->trfp,"\n%s - %s sent:\n",cp,ifp->name);
 		break;
 	}
 	if(bp == NULLBUF || (size = len_p(bp)) == 0){
-		fprintf(iface->trfp,"empty packet!!\n");
+		fprintf(ifp->trfp,"empty packet!!\n");
 		return;
 	}
 
@@ -89,44 +92,44 @@ struct mbuf *bp;
 
 	dup_p(&tbp,bp,0,size);
 	if(tbp == NULLBUF){
-		fprintf(iface->trfp,nospace);
+		fprintf(ifp->trfp,nospace);
 		return;
 	}
 	if(func != NULLVFP)
-		(*func)(iface->trfp,&tbp,1);
-	if(iface->trace & IF_TRACE_ASCII){
+		(*func)(ifp->trfp,&tbp,1);
+	if(ifp->trace & IF_TRACE_ASCII){
 		/* Dump only data portion of packet in ascii */
-		ascii_dump(iface->trfp,&tbp);
-	} else if(iface->trace & IF_TRACE_HEX){
+		ascii_dump(ifp->trfp,&tbp);
+	} else if(ifp->trace & IF_TRACE_HEX){
 		/* Dump entire packet in hex/ascii */
 		free_p(tbp);
 		dup_p(&tbp,bp,0,len_p(bp));
 		if(tbp != NULLBUF)
-			hex_dump(iface->trfp,&tbp);
+			hex_dump(ifp->trfp,&tbp);
 		else
-			fprintf(iface->trfp,nospace);
+			fprintf(ifp->trfp,nospace);
 	}
 	free_p(tbp);
 }
 
 /* Dump packet bytes, no interpretation */
 void
-raw_dump(iface,direction,bp)
-struct iface *iface;
+raw_dump(ifp,direction,bp)
+struct iface *ifp;
 int direction;
 struct mbuf *bp;
 {
 	struct mbuf *tbp;
 
 	/* Dump entire packet in hex/ascii */
-	fprintf(iface->trfp,"\n******* raw packet dump (%s %s)\n",
-		((direction & IF_TRACE_OUT) ? "send" : "recv"),iface->name);
+	fprintf(ifp->trfp,"\n******* raw packet dump (%s %s)\n",
+		((direction & IF_TRACE_OUT) ? "send" : "recv"),ifp->name);
 	dup_p(&tbp,bp,0,len_p(bp));
 	if(tbp != NULLBUF)
-		hex_dump(iface->trfp,&tbp);
+		hex_dump(ifp->trfp,&tbp);
 	else
-		fprintf(iface->trfp,nospace);
-	fprintf(iface->trfp,"*******\n");
+		fprintf(ifp->trfp,nospace);
+	fprintf(ifp->trfp,"*******\n");
 	free_p(tbp);
 	return;
 }
@@ -316,4 +319,54 @@ shuttrace()
 		ifp->trfp = NULLFILE;
 	}
 }
+
+/* Log messages of the form
+ * Tue Jan 31 00:00:00 1987 44.64.0.7:1003 open FTP
+ */
+#if     defined(ANSIPROTO)
+void
+trace_log(struct iface *ifp,char *fmt, ...)
+{
+	va_list ap;
+	char *cp;
+	long t;
+
+	if(ifp->trfp == NULLFILE)
+		return;
+
+	t = secclock();
+	cp = ctime(&t);
+	rip(cp);
+	fprintf(ifp->trfp,"%s",cp);
+
+	fprintf(ifp->trfp," - ");
+	va_start(ap,fmt);
+	vfprintf(ifp->trfp,fmt,ap);
+	va_end(ap);
+	fprintf(ifp->trfp,"\n");
+}
+#else
+/*VARARGS2*/
+void
+trace_log(ifp,fmt,arg1,arg2,arg3,arg4,arg5)
+struct iface *ifp;
+char *fmt;
+int arg1,arg2,arg3,arg4,arg5;
+{
+	char *cp;
+	long t;
+
+	if(ifp->trfp == NULLFILE)
+		return;
+
+	t = secclock();
+	cp = ctime(&t);
+	rip(cp);
+	fprintf(ifp->trfp,"%s",cp);
+
+	fprintf(ifp->trfp," - ");
+	fprintf(ifp->trfp,fmt,arg1,arg2,arg3,arg4,arg5);
+	fprintf(ifp->trfp,"\n");
+}
+#endif
 

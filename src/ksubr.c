@@ -1,10 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.2 1991/10/18 18:41:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.3 1992/01/08 13:45:19 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <stdio.h>
+#include <time.h>
 /* #include <dos.h> */
 #include "global.h"
 #include "proc.h"
@@ -90,6 +91,11 @@ void *p;
 	register struct proc *pp;
 	register struct env *ep;
 	int i;
+
+	extern time_t StartTime;
+
+	tprintf("Uptime %s",tformat(secclock()-StartTime));
+	tprintf("\n");
 
 	tprintf("PID       SP        stksize   maxstk    event     fl  in  out  name\n");
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.10 1991/07/16 17:55:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.11 1992/01/08 13:45:17 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -25,7 +25,6 @@ struct route R_default = {              /* Default route entry */
 	RIP_INFINITY            /* Init metric to infinity */
 };
 
-int32 Ip_addr;
 static struct rt_cache Rt_cache;
 
 /* Initialize modulo lookup table used by hash_ip() in pcgen.asm */
@@ -68,7 +67,7 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 	char *opt;              /* -> beginning of current option */
 	int i;
 	struct mbuf *tbp;
-	int ckgood = 1;
+	int ckgood = IP_CS_OLD; /* Has good checksum without modification */
 	int pointer;            /* Relative pointer index for sroute/rroute */
 
 	if(i_iface != NULLIF){
@@ -183,7 +182,7 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 			ip.dest = get32(&opt[pointer]);
 			put32(&opt[pointer],locaddr(ip.dest));
 			opt[2] += 4;
-			ckgood = 0;
+			ckgood = IP_CS_NEW;
 			break;
 		case IP_RROUTE: /* Record route */
 			if(opt_len < 3){
@@ -219,7 +218,7 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 				 */
 				put32(&opt[pointer],locaddr(ip.dest));
 				opt[2] += 4;
-				ckgood = 0;
+				ckgood = IP_CS_NEW;
 			}
 			break;
 		}
@@ -351,7 +350,7 @@ no_opt:
 			return -1;
 		}
 		/* Put IP header back on, recomputing checksum */
-		if((tbp = htonip(&ip,f_data,0)) == NULLBUF){
+		if((tbp = htonip(&ip,f_data,IP_CS_NEW)) == NULLBUF){
 			free_p(f_data);
 			free_p(bp);
 			ipFragFails++;
@@ -418,11 +417,14 @@ char private;           /* Inhibit advertising this entry ? */
 	if(iface == NULLIF)
 		return NULLROUTE;
 
-	/* Mask off target according to width */   /* Fix by Tim Shepard */
-	target &= ~0L << (32-bits);                /* Fix by Tim Shepard */
+	if(bits > 32)
+		bits = 32;              /* Bulletproofing */
 
 	if(bits == 32 && ismyaddr(target))
 		return NULLROUTE;       /* Don't accept routes to ourselves */
+
+	/* Mask off don't-care bits of target */
+	target &= ~0L << (32-bits);
 
 	/* Encapsulated routes must specify gateway, and it can't be
 	 *  ourselves

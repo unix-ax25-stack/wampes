@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.5 1991/05/09 07:38:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.6 1992/01/08 13:45:14 deyke Exp $ */
 
 /* Upper half of IP, consisting of send/receive primitives, including
  * fragment reassembly, for higher level protocols.
@@ -69,8 +69,8 @@ int16 id;                       /* Optional identification */
 char df;                        /* Don't-fragment flag */
 {
 	struct mbuf *tbp;
-	struct ip ip;           /* Pointer to IP header */
-	static int16 id_cntr;   /* Datagram serial number */
+	struct ip ip;                   /* IP header */
+	static int16 id_cntr = 0;       /* Datagram serial number */
 	struct phdr phdr;
 
 	ipOutRequests++;
@@ -98,7 +98,7 @@ char df;                        /* Don't-fragment flag */
 	ip.source = source;
 	ip.dest = dest;
 	ip.optlen = 0;
-	if((tbp = htonip(&ip,bp,0)) == NULLBUF){
+	if((tbp = htonip(&ip,bp,IP_CS_NEW)) == NULLBUF){
 		free_p(bp);
 		return -1;
 	}
@@ -153,7 +153,7 @@ int rxbroadcast;        /* True if received on subnet broadcast address */
 		rxcnt++;
 		/* Duplicate the data portion, and put the header back on */
 		dup_p(&bp1,bp,0,len_p(bp));
-		if(bp1 != NULLBUF && (tbp = htonip(ip,bp1,1)) != NULLBUF){
+		if(bp1 != NULLBUF && (tbp = htonip(ip,bp1,IP_CS_OLD)) != NULLBUF){
 			enqueue(&rp->rcvq,tbp);
 			if(rp->r_upcall != NULLVFP)
 				(*rp->r_upcall)(rp);

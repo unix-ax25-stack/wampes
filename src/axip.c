@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.4 1991/10/11 18:56:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.5 1992/01/08 13:45:02 deyke Exp $ */
 
 #include "global.h"
 
@@ -12,14 +12,13 @@
 #include <string.h>
 #include <sys/socket.h>
 
-#undef IPPROTO_IP
-
 extern char *sys_errlist[];
 extern int errno;
 
 #include "mbuf.h"
 #include "iface.h"
 #include "timer.h"
+#include "internet.h"
 #include "netuser.h"
 #include "ax25.h"
 #include "socket.h"
@@ -49,7 +48,7 @@ static int doaxiproutedrop __ARGS((int argc, char *argv [], void *p));
 
 /*---------------------------------------------------------------------------*/
 
-static int16 fcstab[256] = {
+static const int16 fcstab[256] = {
   0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf,
   0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c, 0xdbe5, 0xe97e, 0xf8f7,
   0x1081, 0x0108, 0x3393, 0x221a, 0x56a5, 0x472c, 0x75b7, 0x643e,
@@ -210,13 +209,14 @@ int argc;
 char *argv[];
 void *p;
 {
+  char *ifname = "axip";
 
-  if (Axip_iface) {
-    tprintf("axip interface already attached\n");
+  if (Axip_iface || if_lookup(ifname) != NULLIF) {
+    tprintf("Interface %s already exists\n", ifname);
     return (-1);
   }
 
-  sock = socket(AF_INET, SOCK_RAW, IPPROTO_AX25);
+  sock = socket(AF_INET, SOCK_RAW, AX25_PTCL);
   if (sock < 0) {
     tprintf("cannot create raw socket: %s\n", sys_errlist[errno]);
     return (-1);
@@ -224,7 +224,7 @@ void *p;
 
   Axip_iface = callocw(1, sizeof(struct iface ));
   Axip_iface->addr = Ip_addr;
-  Axip_iface->name = strdup("axip");
+  Axip_iface->name = strdup(ifname);
   Axip_iface->hwaddr = mallocw(AXALEN);
   addrcp(Axip_iface->hwaddr, Mycall);
   Axip_iface->mtu = 256;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.6 1991/05/09 07:38:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.7 1992/01/08 13:45:37 deyke Exp $ */
 
 #ifndef _TCP_H
 #define _TCP_H
@@ -32,12 +32,12 @@
 #include "timer.h"
 #endif
 
+#define DEF_MSS 512     /* Default maximum segment size */
 #define DEF_WND 2048    /* Default receiver window */
 #define RTTCACHE 16     /* # of TCP round-trip-time cache entries */
-#define DEF_MSS 512     /* Default maximum segment size */
 #define DEF_RTT 5000    /* Initial guess at round trip time (5 sec) */
 #define MSL2    30      /* Guess at two maximum-segment lifetimes */
-#define TCP_MAXOPT      40      /* Largest option field, bytes */
+#define MIN_RTO 500L    /* Minimum timeout, milliseconds */
 
 #define geniss()        ((int32)msclock() << 12) /* Increment clock at 4 MB/sec */
 
@@ -52,14 +52,20 @@
 
 /* TCP segment header -- internal representation
  * Note that this structure is NOT the actual header as it appears on the
- * network (in particular, the offset and checksum fields are missing).
+ * network (in particular, the offset field is missing).
  * All that knowledge is in the functions ntohtcp() and htontcp() in tcpsubr.c
  */
+#define TCPLEN          20      /* Minimum Header length, bytes */
+#define TCP_MAXOPT      40      /* Largest option field, bytes */
 struct tcp {
 	int16 source;   /* Source port */
 	int16 dest;     /* Destination port */
 	int32 seq;      /* Sequence number */
 	int32 ack;      /* Acknowledgment number */
+	int16 wnd;                      /* Receiver flow control window */
+	int16 checksum;                 /* Checksum */
+	int16 up;                       /* Urgent pointer */
+	int16 mss;                      /* Optional max seg size */
 	struct {
 		char congest;   /* Echoed IP congestion experienced bit */
 		char urg;
@@ -69,20 +75,15 @@ struct tcp {
 		char syn;
 		char fin;
 	} flags;
-	int16 wnd;                      /* Receiver flow control window */
-	int16 checksum;                 /* Checksum */
-	int16 up;                       /* Urgent pointer */
-	int16 mss;                      /* Optional max seg size */
+	char optlen;                    /* Length of options field, bytes */
 	char options[TCP_MAXOPT];       /* Options field */
-	int optlen;                     /* Length of options field, bytes */
 };
 /* TCP options */
 #define EOL_KIND        0
 #define NOOP_KIND       1
 #define MSS_KIND        2
-
-#define TCPLEN          20
 #define MSS_LENGTH      4
+
 /* Resequencing queue entry */
 struct reseq {
 	struct reseq *next;     /* Linked-list pointer */
@@ -151,6 +152,7 @@ struct tcb {
 	int16 mss;              /* Maximum segment size */
 
 	int16 window;           /* Receiver window and send queue limit */
+	int16 limit;            /* Send queue limit */
 
 	void (*r_upcall) __ARGS((struct tcb *tcb,int cnt));
 		/* Call when "significant" amount of data arrives */
@@ -227,15 +229,17 @@ extern struct mib_entry Tcp_mib[];
 #define NUMTCPMIB       15
 
 extern struct tcb *Tcbs;
-extern int16 Tcp_mss;
-extern int16 Tcp_window;
-extern int32 Tcp_irtt;
-extern int Tcp_trace;
-extern int Tcp_syndata;
 extern char *Tcpstates[];
 extern char *Tcpreasons[];
 
 /* In tcpcmd.c: */
+extern int32 Tcp_irtt;
+extern int16 Tcp_limit;
+extern int16 Tcp_mss;
+extern int Tcp_syndata;
+extern int Tcp_trace;
+extern int16 Tcp_window;
+
 void st_tcp __ARGS((struct tcb *tcb));
 
 /* In tcphdr.c: */

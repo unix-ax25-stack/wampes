@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.11 1991/10/25 15:00:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.12 1992/01/08 13:44:55 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -199,20 +199,19 @@ Fail:
 
 /* Initialize asynch port "dev" */
 int
-asy_init(dev,iface,arg1,arg2,bufsize,trigchar,cts,rlsd,speed)
+asy_init(dev,ifp,arg1,arg2,bufsize,trigchar,monitor,speed)
 int dev;
-struct iface *iface;
+struct iface *ifp;
 char *arg1,*arg2;       /* Attach args for address and vector */
 int16 bufsize;
 int trigchar;
-char cts;
-char rlsd;
-int16 speed;
+char monitor;
+long speed;
 {
 	register struct asy *ap;
 
 	ap = &Asy[dev];
-	ap->iface = iface;
+	ap->iface = ifp;
 	ap->ipc_socket = strdup(arg2);
 	ap->speed = speed;
 	asy_open(dev);
@@ -222,12 +221,12 @@ int16 speed;
 /*---------------------------------------------------------------------------*/
 
 int
-asy_stop(iface)
-struct iface *iface;
+asy_stop(ifp)
+struct iface *ifp;
 {
 	register struct asy *ap;
 
-	ap = &Asy[iface->dev];
+	ap = &Asy[ifp->dev];
 
 	if (ap->fd > 0) {
 		off_read(ap->fd);
@@ -245,14 +244,14 @@ struct iface *iface;
 int
 asy_speed(dev,bps)
 int dev;
-int16 bps;
+long bps;
 {
 
 	struct asy *asyp;
 	int sp;
 	struct termio termio;
 
-	if(bps == 0 || dev >= ASY_MAX)
+	if(bps <= 0 || dev >= ASY_MAX)
 		return -1;
 	asyp = &Asy[dev];
 	if(asyp->iface == NULLIF)
@@ -274,8 +273,8 @@ int16 bps;
 
 /* Asynchronous line I/O control */
 int32
-asy_ioctl(iface,cmd,set,val)
-struct iface *iface;
+asy_ioctl(ifp,cmd,set,val)
+struct iface *ifp;
 int cmd;
 int set;
 int32 val;
@@ -283,8 +282,8 @@ int32 val;
 	switch(cmd){
 	case PARAM_SPEED:
 		if(set)
-			asy_speed(iface->dev,(int16)val);
-		return Asy[iface->dev].speed;
+			asy_speed(ifp->dev,val);
+		return Asy[ifp->dev].speed;
 	};
 	return -1;
 }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.14 1991/10/11 18:56:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.15 1992/01/08 13:45:04 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -162,6 +162,7 @@ struct mbuf **bpp;
 /* daemons to be run at startup time */
 struct daemon Daemons[] = {
 	"killer",       1024,   killer,
+/*      "gcollect",     256,    gcollect,       */
 	"timer",        16000,  timerproc,
 	"network",      16000,  network,
 /*      "keyboard",     250,    keyboard,       */
@@ -454,6 +455,8 @@ struct cmds Attab[] = {
 	"axip", axip_attach, 0, 1,
 	"attach axip",
 #endif
+	"ipip", ipip_attach, 0, 5,
+	"attach ipip <label> ip|udp <dest> <port>",
 	NULLCHAR,
 };
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.7 1991/05/09 07:38:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.8 1992/01/08 13:45:36 deyke Exp $ */
 
 /* SLIP (Serial Line IP) encapsulation and control routines.
  * Copyright 1991 Phil Karn
@@ -67,7 +67,6 @@ struct mbuf *bp;
 	iface->rawsndcnt++;
 	iface->lastsent = secclock();
 	if((bp1 = slip_encode(bp)) == NULLBUF){
-		free_p(bp);
 		return -1;
 	}
 	if (iface->trace & IF_TRACE_RAW)
@@ -132,7 +131,6 @@ char c;         /* Incoming character */
 	case FR_END:
 		bp = sp->rbp_head;
 		sp->rbp_head = NULLBUF;
-		sp->rcnt = 0;
 		return bp;      /* Will be NULLBUF if empty frame */
 	case FR_ESC:
 		sp->escaped |= SLIP_FLAG;
@@ -167,7 +165,6 @@ char c;         /* Incoming character */
 			/* No memory, drop whole thing */
 			free_p(sp->rbp_head);
 			sp->rbp_head = NULLBUF;
-			sp->rcnt = 0;
 			return NULLBUF;
 		}
 		sp->rbp_tail = sp->rbp_tail->next;
@@ -178,7 +175,6 @@ char c;         /* Incoming character */
 	 */
 	*sp->rcp++ = c;
 	sp->rbp_tail->cnt++;
-	sp->rcnt++;
 	return NULLBUF;
 }
 /* Process SLIP line input */
@@ -231,7 +227,7 @@ struct iface *iface;
 }
 
 /* Show serial line status */
-int
+void
 slip_status(iface)
 struct iface *iface;
 {
@@ -239,12 +235,12 @@ struct iface *iface;
 
 	if (iface->xdev > SLIP_MAX)
 		/* Must not be a SLIP device */
-		return 1;
+		return;
 
 	sp = &Slip[iface->xdev];
 	if (sp->iface != iface)
 		/* Must not be a SLIP device */
-		return 1;
+		return;
 
 	tprintf("  IN:\t%lu pkts\n", iface->rawrecvcnt);
 #ifdef VJCOMPRESS
@@ -254,6 +250,5 @@ struct iface *iface;
 #ifdef VJCOMPRESS
 	slhc_o_status(sp->slcomp);
 #endif
-	return 0;
 }
 

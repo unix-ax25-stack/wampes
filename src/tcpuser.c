@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.13 1991/06/18 17:27:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.14 1992/01/08 13:45:41 deyke Exp $ */
 
 /* User calls to TCP
  * Copyright 1991 Phil Karn, KA9Q
@@ -354,7 +354,7 @@ reset_all()
 	for(tcb=Tcbs;tcb != NULLTCB;tcb = tcb->next)
 		reset_tcp(tcb);
 
-/*      pwait(NULL);    /* Let the RSTs go forth */
+	pwait(NULL);    /* Let the RSTs go forth */
 }
 void
 reset_tcp(tcb)

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.8 1991/10/03 11:04:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.9 1992/01/08 13:45:03 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -233,6 +233,7 @@ int dofkey __ARGS((int argc,char *argv[],void *p));
 int dortprio __ARGS((int argc,char *argv[],void *p));
 int dosource __ARGS((int argc,char *argv[],void *p));
 int dostime __ARGS((int argc,char *argv[],void *p));
+int ipip_attach __ARGS((int argc,char *argv[],void *p));
 int tcpgate1 __ARGS((int argc,char *argv[],void *p));
 
 #endif  /* _COMMANDS_H */

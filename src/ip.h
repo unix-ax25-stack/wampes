@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.7 1991/05/09 07:38:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.8 1992/01/08 13:45:15 deyke Exp $ */
 
 #ifndef _IP_H
 #define _IP_H
@@ -23,11 +23,11 @@
 #include "timer.h"
 #endif
 
-#define TLB     30      /* Default reassembly timeout, sec */
+#define TLB             30      /* Default reassembly timeout, sec */
 #define IPVERSION       4
-#define IP_MAXOPT       40      /* Largest option field, bytes */
+#define IP_CS_OLD       1       /* use saved checksum */
+#define IP_CS_NEW       0       /* calculate checksum */
 
-extern int32 Ip_addr;   /* Our IP address for ICMP and source routing */
 extern char Hashtab[];  /* Modulus lookup table */
 
 /* SNMP MIB variables, used for statistics and control. See RFC 1066 */
@@ -55,28 +55,30 @@ extern struct mib_entry Ip_mib[];
 #define NUMIPMIB        19
 
 /* IP header, INTERNAL representation */
+#define IPLEN           20      /* Length of standard IP header */
+#define IP_MAXOPT       40      /* Largest option field, bytes */
 struct ip {
-	char version;           /* IP version number */
-	char tos;               /* Type of service */
+	int32 source;           /* Source address */
+	int32 dest;             /* Destination address */
 	int16 length;           /* Total length */
 	int16 id;               /* Identification */
 	int16 offset;           /* Fragment offset in bytes */
+	int16 checksum;         /* Header checksum */
+
 	struct {
 		char congest;   /* Congestion experienced bit (exp) */
 		char df;        /* Don't fragment flag */
 		char mf;        /* More Fragments flag */
 	} flags;
 
+	char version;           /* IP version number */
+	char tos;               /* Type of service */
 	char ttl;               /* Time to live */
 	char protocol;          /* Protocol */
-	int16 checksum;         /* Header checksum */
-	int32 source;           /* Source address */
-	int32 dest;             /* Destination address */
+	char optlen;            /* Length of options field, bytes */
 	char options[IP_MAXOPT];/* Options field */
-	int optlen;             /* Length of options field, bytes */
 };
 #define NULLIP  (struct ip *)0
-#define IPLEN   20      /* Length of standard IP header */
 
 /* Fields in option type byte */
 #define OPT_COPIED      0x80    /* Copied-on-fragmentation flag */
@@ -199,11 +201,11 @@ int16 eac __ARGS((int32 sum));
 struct mbuf *htonip __ARGS((struct ip *ip,struct mbuf *data,int cflag));
 int ntohip __ARGS((struct ip *ip,struct mbuf **bpp));
 
-/* In either lcsum.c or pcgen.asm: */
-int16 lcsum __ARGS((int16 *wp,int len));
-
 /* In ipfile.c: */
 void route_savefile __ARGS((void));
 void route_loadfile __ARGS((void));
+
+/* In either lcsum.c or pcgen.asm: */
+int16 lcsum __ARGS((int16 *wp,int len));
 
 #endif /* _IP_H */

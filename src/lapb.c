@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.18 1991/06/01 22:18:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.19 1992/01/08 13:45:20 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -44,6 +44,7 @@ struct ax25_cb *axcb_server;    /* Server control block */
 
 static struct ax25_cb *axcb_head;
 
+static int is_flexnet __ARGS((char *call, int store));
 static void reset_t1 __ARGS((struct ax25_cb *cp));
 static void inc_t1 __ARGS((struct ax25_cb *cp));
 static void send_packet __ARGS((struct ax25_cb *cp, int type, int cmdrsp, struct mbuf *data));
@@ -81,13 +82,53 @@ static int doaxwindow __ARGS((int argc, char *argv [], void *p));
 
 /*---------------------------------------------------------------------------*/
 
+static int is_flexnet(call, store)
+char *call;
+int store;
+{
+
+#define FTABLESIZE 23
+
+  struct ftable_t {
+    struct ftable_t *next;
+    char call[AXALEN];
+  };
+
+  char *cp;
+  long hashval;
+  static struct ftable_t *ftable[FTABLESIZE];
+  struct ftable_t **tp;
+  struct ftable_t *p;
+
+  cp = call;
+  hashval  = ((*cp++ << 23) & 0x0f000000);
+  hashval |= ((*cp++ << 19) & 0x00f00000);
+  hashval |= ((*cp++ << 15) & 0x000f0000);
+  hashval |= ((*cp++ << 11) & 0x0000f000);
+  hashval |= ((*cp++ <<  7) & 0x00000f00);
+  hashval |= ((*cp++ <<  3) & 0x000000f0);
+  hashval |= ((*cp   >>  1) & 0x0000000f);
+  tp = ftable + (hashval % FTABLESIZE);
+  for (p = *tp; p && !addreq(p->call, call); p = p->next) ;
+  if (!p && store) {
+    p = malloc(sizeof(*p));
+    addrcp(p->call, call);
+    p->next = *tp;
+    *tp = p;
+  }
+  return (int) (p != 0);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void reset_t1(cp)
 struct ax25_cb *cp;
 {
   int32 tmp;
 
   tmp = cp->srtt + 2 * cp->mdev;
-  set_timer(&cp->timer_t1, tmp > 0 ? tmp : 1);
+  if (tmp < 500) tmp = 500;
+  set_timer(&cp->timer_t1, tmp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -99,7 +140,8 @@ struct ax25_cb *cp;
 
   tmp = (dur_timer(&cp->timer_t1) * 5 + 2) / 4;
   if (tmp > 10 * cp->srtt) tmp = 10 * cp->srtt;
-  set_timer(&cp->timer_t1, tmp > 0 ? tmp : 1);
+  if (tmp < 500) tmp = 500;
+  set_timer(&cp->timer_t1, tmp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -518,7 +560,10 @@ struct mbuf *bp;
   type = ftype(control);
   for_me = (ismyax25addr(hdr->dest) != NULLIF);
 
-  if (!for_me && (type == UI || addreq(hdr->source, hdr->dest))) {
+  if (!for_me &&
+      (type == UI ||
+       addreq(hdr->source, hdr->dest) ||
+       is_flexnet(hdr->source, 0) && is_flexnet(hdr->dest, 0))) {
     struct mbuf *hbp;
     if (!(hbp = htonax25(hdr, bp))) {
       free_p(bp);
@@ -528,8 +573,11 @@ struct mbuf *bp;
     return 0;
   }
 
-  PULLCHAR(&bp);
-  if (bp) pid = uchar(*bp->data);
+  (void) PULLCHAR(&bp);
+  if (bp) {
+    pid = uchar(*bp->data);
+    if (pid == PID_FLEXNET) is_flexnet(hdr->source, 1);
+  }
 
   switch (hdr->cmdrsp) {
   case LAPB_COMMAND:
@@ -702,7 +750,7 @@ struct mbuf *bp;
 	    cp->reseq[cp->vr].bp = 0;
 	    cp->vr = next_seq(cp->vr);
 	    cp->rejsent = 0;
-	    if (cp->mode == STREAM) PULLCHAR(&bp);
+	    if (cp->mode == STREAM) (void) PULLCHAR(&bp);
 	    if (for_me) {
 	      cp->rcvcnt += len_p(bp);
 	      if (cp->mode == STREAM)
