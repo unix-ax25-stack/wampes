@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.11 1989/09/11 23:00:11 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.12 1989/09/17 23:31:28 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -19,6 +19,7 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <unistd.h>
 
 extern char  *calloc();
+extern char  *getcwd();
 extern char  *getenv();
 extern char  *malloc();
 extern char  *optarg;
@@ -85,6 +86,7 @@ struct user {
   int  gid;
   char  *dir;
   char  *shell;
+  char  *cwd;
   int  seq;
 };
 
@@ -1510,6 +1512,7 @@ char  **argv;
     setgid(user.gid);
     setuid(user.uid);
     for (i = 3; i < _NFILE; i++) close(i);
+    chdir(user.cwd);
     *command = '\0';
     for (i = 1; i < argc; i++) {
       if (i > 1) strcat(command, " ");
@@ -1632,11 +1635,12 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
-#define Invalid (                       \
-   pi->deleted                     ||   \
-   *from && strcmp(pi->from, from) ||   \
-   *to   && strcmp(pi->to,   to)   ||   \
-   *at   && strcmp(pi->at,   at)        \
+#define Invalid (                                   \
+   pi->deleted                                   || \
+   *from    &&  strcmp(pi->from, from)           || \
+   *to      &&  strcmp(pi->to,   to)             || \
+   *at      &&  strcmp(pi->at,   at)             || \
+   *subject && !strcasepos(pi->subject, subject)    \
    )
 
 static void xscreen_command(argc, argv)
@@ -1648,6 +1652,7 @@ char  **argv;
   char  at[1024];
   char  buf[1024];
   char  from[1024];
+  char  subject[1024];
   char  to[1024];
   int  cmd;
   int  indexarrayentries;
@@ -1677,7 +1682,7 @@ char  **argv;
   ioctl(0, TCSETA, &curr_termio);
   if (!(maxlines = atoi(getenv("LINES")))) maxlines = 24;
 
-  *from = *to = *at = '\0';
+  *from = *to = *at = *subject = '\0';
   pi = indexarray;
   cmd = '\b';
   for (; ; ) {
@@ -1763,7 +1768,7 @@ char  **argv;
       break;
 
     case '<':
-      *from = *to = *at = '\0';
+      *from = *to = *at = *subject = '\0';
       ioctl(0, TCSETA, &prev_termio);
       printf("\nFROM field: ");
       gets(from);
@@ -1773,7 +1778,7 @@ char  **argv;
       break;
 
     case '>':
-      *from = *to = *at = '\0';
+      *from = *to = *at = *subject = '\0';
       ioctl(0, TCSETA, &prev_termio);
       printf("\nTO field: ");
       gets(to);
@@ -1783,12 +1788,21 @@ char  **argv;
       break;
 
     case '@':
-      *from = *to = *at = '\0';
+      *from = *to = *at = *subject = '\0';
       ioctl(0, TCSETA, &prev_termio);
       printf("\nAT field: ");
       gets(at);
       ioctl(0, TCSETA, &curr_termio);
       strupc(at);
+      cmd = Invalid ? '\n' : 'r';
+      break;
+
+    case 's':
+      *from = *to = *at = *subject = '\0';
+      ioctl(0, TCSETA, &prev_termio);
+      printf("\nSUBJECT substring: ");
+      gets(subject);
+      ioctl(0, TCSETA, &curr_termio);
       cmd = Invalid ? '\n' : 'r';
       break;
 
@@ -1802,11 +1816,12 @@ char  **argv;
 
     case 'q':
       ioctl(0, TCSETA, &prev_termio);
-      exit(0);
-      break;
+      free((char *) indexarray);
+      return;
 
     case '?':
       puts("----------------------------------- Commands ----------------------------------");
+
       puts("<          specify FROM field");
       puts("<number>   show numbered entry");
       puts(">          specify TO field");
@@ -1818,7 +1833,9 @@ char  **argv;
       puts("k          delete current entry");
       puts("q          quit BBS");
       puts("r          redisplay current entry");
+      puts("s          specify SUBJECT substring");
       puts("v          edit current entry");
+
       printf("\nPress any key to continue ");
       getchar();
       cmd = 'r';
@@ -1830,6 +1847,8 @@ char  **argv;
     }
   }
 }
+
+#undef Invalid
 
 /*---------------------------------------------------------------------------*/
 
@@ -2179,7 +2198,7 @@ char  **argv;
     puts("usage: bbs [-d] [-w seconds] [-f system|-m|-n]");
     exit(1);
   }
-
+  user.cwd = getcwd((char *) 0, 256);
   if (chdir(dir)) {
     mkdir(dir, 0755);
     if (chdir(dir)) halt();
@@ -2200,16 +2219,6 @@ char  **argv;
   if (fp = fopen(fname, "r")) {
     fscanf(fp, "%d", &user.seq);
     fclose(fp);
-  } else {
-    int  f, l;
-    sprintf(fname, "seq/seq.%s", user.name);
-    if (fp = fopen(fname, "r")) {
-      fscanf(fp, "%d %d", &f, &l);
-      fclose(fp);
-      user.seq = connect_addr(user.name) ? f : l;
-      put_seq();
-      unlink(fname);
-    }
   }
   if (!user.uid) level = ROOT;
   if (connect_addr(user.name)) level = MBOX;
