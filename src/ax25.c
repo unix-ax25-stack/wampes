@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25.c,v 1.38 2002/09/20 15:07:49 dl9sau Exp $ */
+/* @(#) $Id: ax25.c,v 1.39 2002/09/20 15:18:50 dl9sau Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -300,7 +300,8 @@ struct mbuf **bpp       /* Data field (follows PID) */
 	/* Prepend pid to data */
 	pushdown(bpp,NULL,1);
 	(*bpp)->data[0] = (uint8)pid;
-	// dl9sau: patch for ARP requests (to QST) via multible digipeaters
+
+	// dl9sau: patch for ARP requests (to QST-0 or directly to a digipeater)
 	// for an extended "collision domain"
 	if (iface && iface->iftype && addreq(dest,Ax25multi[0])) {
 		uint8 **ax_via;
@@ -314,9 +315,15 @@ struct mbuf **bpp       /* Data field (follows PID) */
 			  continue;
 			}
 			dup_p(&tbp,*bpp,0,len_p(*bpp));
-			ret = axsend(iface,*ax_via,source,LAPB_COMMAND,UI,&tbp, 0);
-			dup_p(&tbp,*bpp,0,len_p(*bpp));
-			ret = axsend(iface,dest,source,LAPB_COMMAND,UI,&tbp, *ax_via);
+			if (ax_via[0][AXALEN-1] & 0x01) {
+			  uint8 digi[AXALEN];
+			  addrcp(digi, ax_via[0]);
+			  // delete marker - just 2b sure
+			  digi[AXALEN-1] &= ~0x01;
+			  ret = axsend(iface,dest,source,LAPB_COMMAND,UI,&tbp, digi);
+			} else {
+			  ret = axsend(iface,*ax_via,source,LAPB_COMMAND,UI,&tbp, 0);
+			}
 		}
 		if (no_direct_arp)
 		  return ret;

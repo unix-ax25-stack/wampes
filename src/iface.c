@@ -1,4 +1,4 @@
-/* @(#) $Id: iface.c,v 1.34 2002/09/20 15:07:49 dl9sau Exp $ */
+/* @(#) $Id: iface.c,v 1.35 2002/09/20 15:18:50 dl9sau Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -526,7 +526,7 @@ iftxqlen(int argc,char *argv[],void *p)
 	return 0;
 }
 
-// dl9sau: patch for ARP requests (to QST-0) via multible digipeaters
+// dl9sau: patch for ARP requests (to QST-0 or directly to a digipeater)
 // for an extended "collision domain"
 static int
 ifdigiarp(int argc, char *argv[], void *p)
@@ -536,6 +536,8 @@ ifdigiarp(int argc, char *argv[], void *p)
 	uint8 **ax_via;
 	int len;
 	char *cmd;
+	int arp_to_digi = 1;
+	char *cp;
 
 	if (!ifp || !ifp->iftype || !(ax_via = ifp->iftype->ax_mcast_digis)) {
 	  printf("Not supported by this interface\n");
@@ -545,6 +547,14 @@ ifdigiarp(int argc, char *argv[], void *p)
 	cmd = *(++argv);
 	len = strlen(cmd);
 	++argv;
+
+	// an ARP request could go to
+	// QST-0 (normal, direct), to a DIGI or to QST-0 via DIGI
+	if (len > 3 && (cp = strstr(cmd, "v")) && !strncmp("via", cp, strlen(cp))) {
+	  arp_to_digi = 0;
+	  *cp = 0;
+	  len = cp-cmd;
+	}
 	if (!strncmp("add", cmd, len)) {
 	  uint8 call[AXALEN];
 	  // "-" means no direct ARPs
@@ -554,13 +564,16 @@ ifdigiarp(int argc, char *argv[], void *p)
 	  }
 	  if (!strcmp(*argv, "-"))
 	    memset(call, 0, AXALEN);
-          else if (setcall(call, *argv)) {
+          else if (!setcall(call, *argv)) {
+	    if (!arp_to_digi)
+	      call[AXALEN-1] |= 1;	// this is safe through addreq (ssid field)
+	  } else {
 	    printf("Not a valid call: %s\n", *argv);
 	    return -1;
 	  }
 	  for (len = 0; len < AX_MCAST_DIGIS_MAX; len++) {
 	    if (ax_via[len]) {
-	      if (addreq(ax_via[len], call)) {
+	      if (addreq(ax_via[len], call) && ax_via[len][AXALEN-1] == call[AXALEN-1]) {
 		printf("Already stored: %s\n", *argv);
 		return 0;
 	      }
@@ -584,12 +597,15 @@ ifdigiarp(int argc, char *argv[], void *p)
 	  // "-" means no direct ARPs
 	  if (!strcmp(*argv, "-"))
 	    memset(call, 0, AXALEN);
-          else if (setcall(call, *argv)) {
+          else if (!setcall(call, *argv)) {
+	    if (!arp_to_digi)
+	      call[AXALEN-1] |= 0x01;	// this is safe through addreq (ssid field)
+	  } else {
 	    printf("Not a valid call: %s\n", *argv);
 	    return -1;
 	  }
 	  for (len = 0; len < AX_MCAST_DIGIS_MAX && ax_via[len]; len++) {
-	    if (!addreq(ax_via[len], call))
+	    if (!addreq(ax_via[len], call) || ax_via[len][AXALEN-1] != call[AXALEN-1])
 	      continue;
 	    free(ax_via[len]);
 	    while (len < AX_MCAST_DIGIS_MAX-1) {
@@ -604,14 +620,18 @@ ifdigiarp(int argc, char *argv[], void *p)
 	} else if (!strncmp("list", cmd, len)) {
 	  if (ax_via[0]) {
 	    for (len = 0; len < AX_MCAST_DIGIS_MAX && ax_via[len]; len++) {
-	      printf("%s ", (ax_via[len][0] ? pax25(tmp, ax_via[len]) : "[no direct ARPs]"));
+	      if ((ax_via[len][AXALEN-1] & 0x01) == 1)
+		printf("QST-0 via ");
+	      printf("%s\n", (ax_via[len][0] ? pax25(tmp, ax_via[len]) : "[no direct ARPs]"));
 	    }
-	    putchar('\n');
 	  }
 	  else
 	    printf("No entries\n");
 	} else {
-  	  printf("Subcommands: list | add [digi] | del [digi]. digi = \"-\": no direct ARPs\n");
+  	  printf("Subcommands: list | <add|del|addvia|delvia> <digi>.\n");
+	  printf("               digi:   \"-\" means no direct ARPs\n");
+	  printf("               add:    ARP directly to digi\n");
+	  printf("               addvia: ARP to QST-0 via digi\n");
 	  return -1;
 	}
 	return 0;
