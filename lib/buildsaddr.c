@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.3 1991/03/28 19:39:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.4 1991/10/11 18:56:11 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -11,8 +11,6 @@
 #include <sys/un.h>
 
 #include "global.h"
-
-extern u_long inet_addr __ARGS((char *cp));
 
 static union {
   struct sockaddr sa;

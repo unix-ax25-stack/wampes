@@ -1,4 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.3 1991/10/03 11:04:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.4 1991/10/11 18:56:11 deyke Exp $ */
+
+#include "global.h"
 
 #include <sys/types.h>
 
@@ -15,7 +17,6 @@
 extern char *sys_errlist[];
 extern int errno;
 
-#include "global.h"
 #include "mbuf.h"
 #include "iface.h"
 #include "timer.h"

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.9 1991/04/25 18:26:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.10 1991/10/11 18:56:07 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -6,15 +6,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "global.h"
 
-extern char *sbrk __ARGS((int incr));
-
 #define DEBUG           1
 
-#define ALLOCSIZE       0x4000
-#define FREETABLESIZE   1024
+#define ALLOCSIZE       0x8000
+#define FREETABLESIZE   2048
 #define MEMFULL         ((struct block *) (-1))
 #define MINSIZE         16
 #define SBRK(i)         ((struct block *) sbrk((int) (i)))

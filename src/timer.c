@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.7 1991/05/24 12:10:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.8 1991/10/11 18:56:42 deyke Exp $ */
 
 /* General purpose software timer facilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -7,8 +7,12 @@
 #include <time.h>
 #include "global.h"
 #include "timer.h"
-
-extern int gettimeofday __ARGS((struct timeval *tp, struct timezone *tzp));
+#include "proc.h"
+#include "mbuf.h"
+#include "commands.h"
+#include "daemon.h"
+#include "hardware.h"
+#include "socket.h"
 
 int32 Msclock;
 int32 Secclock;
@@ -21,23 +25,31 @@ static struct timer *Timers;
 
 /* Process that handles clock ticks */
 void
-timerproc()
+timerproc(i,v1,v2)
+int i;
+void *v1,*v2;
 {
 	register struct timer *t;
 	int32 bugfix;
 	struct timeval tv;
 	struct timezone tz;
 
-	gettimeofday(&tv, &tz);
-	Secclock = tv.tv_sec;
-	Msclock = 1000 * Secclock + tv.tv_usec / 1000;
+	for(;;){
 
-	while((t = Timers) && (bugfix = t->expiration - Msclock) <= 0) {
-		if (Timers = t->next)
-			Timers->prev = NULLTIMER;
-		t->state = TIMER_EXPIRE;
-		if(t->func)
-			(*t->func)(t->arg);
+		fflush(stdout); /* And flush out stdout too */
+
+		gettimeofday(&tv, &tz);
+		Secclock = tv.tv_sec;
+		Msclock = 1000 * Secclock + tv.tv_usec / 1000;
+
+		while((t = Timers) && (bugfix = t->expiration - Msclock) <= 0) {
+			if (Timers = t->next)
+				Timers->prev = NULLTIMER;
+			t->state = TIMER_EXPIRE;
+			if(t->func)
+				(*t->func)(t->arg);
+		}
+		pwait(NULL);    /* Let them run before handling more ticks */
 	}
 }
 /* Start a timer */

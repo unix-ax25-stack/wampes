@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.15 1991/10/08 12:54:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.16 1991/10/11 18:56:26 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -25,11 +25,6 @@
 #include "hpux.h"
 #include "telnet.h"
 #include "login.h"
-
-extern struct utmp *getutent();
-extern struct utmp *getutid();
-extern void endutent();
-extern void pututline();
 
 #define MASTERPREFIX        "/dev/pty"
 #define SLAVEPREFIX         "/dev/tty"

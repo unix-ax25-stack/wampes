@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.22 1991/10/03 11:05:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.23 1991/10/11 18:56:29 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -39,7 +39,7 @@
 #include "socket.h"
 #include "cmdparse.h"
 #include "commands.h"
-/* #include "daemon.h" */
+#include "daemon.h"
 #include "devparam.h"
 /* #include "domain.h" */
 #include "files.h"
@@ -65,6 +65,7 @@ char Badhost[] = "Unknown host %s\n";
 char *Hostname;
 char Prompt[] = "%s> ";
 char Nospace[] = "No space!!\n";        /* Generic malloc fail message */
+struct proc *Cmdpp;
 static FILE *Logfp;
 int16 Lport = 1024;
 static int Verbose;
@@ -76,6 +77,7 @@ char *argv[];
 {
 	static char linebuf[BUFSIZ];    /* keep it off the stack */
 	FILE *fp;
+	struct daemon *tp;
 	int c;
 
 	Debug = (argc >= 2);
@@ -87,16 +89,25 @@ char *argv[];
 			break;
 		}
 	}
+	kinit();
 	ipinit();
 	ioinit();
 	netrom_initialize();
 	remote_net_initialize();
+	Cmdpp = mainproc("cmdintrp");
 
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
 	tprintf("\n================ %s ================\n", Version);
 	tprintf("(c) Copyright 1990, 1991 by Dieter Deyke, DK5SG\n");
 	tprintf("(c) Copyright 1990 by Phil Karn, KA9Q\n");
 	tprintf("\n");
+
+	/* Start background Daemons */
+	for(tp=Daemons;;tp++){
+		if(tp->name == NULLCHAR)
+			break;
+		newproc(tp->name,tp->stksize,tp->fp,0,NULLCHAR,NULL,0);
+	}
 
 	if(optind < argc){
 		/* Read startup file named on command line */
@@ -122,14 +133,7 @@ char *argv[];
 
 	/* Main commutator loop */
 	for(;;){
-
-		fflush(stdout);
-
-		/* Service the clock */
-		timerproc();
-
-		if(Hopper)
-			network();
+		pwait(NULL);
 
 		/* Wait until interrupt, then do it all over again */
 		eihalt();
@@ -177,8 +181,10 @@ int c;
 }
 /* Keyboard input process */
 void
-keyboard(v)
-void *v;
+keyboard(i,v1,v2)
+int i;
+void *v1;
+void *v2;
 {
 
 	char *p;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.6 1991/05/09 07:38:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.7 1991/10/11 18:56:30 deyke Exp $ */
 
 /* mbuf (message buffer) primitives
  * Copyright 1991 Phil Karn, KA9Q
@@ -351,6 +351,7 @@ struct mbuf *bp;
 			;
 		p->anext = bp;
 	}
+	psignal(q,1);
 }
 /* Unlink a packet from the head of the queue */
 struct mbuf *

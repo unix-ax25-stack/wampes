@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.h,v 1.1 1991/06/01 22:19:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.h,v 1.2 1991/10/11 18:56:30 deyke Exp $ */
 
 #ifndef _MAIN_H
 #define _MAIN_H
@@ -15,6 +15,6 @@ extern char Badhost[];
 extern char *Hostname;
 extern char Nospace[];                  /* Generic malloc fail message */
 
-void keyboard __ARGS((void *v));
+void keyboard __ARGS((int,void*,void*));
 
 #endif  /* _MAIN_H */

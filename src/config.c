@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.13 1991/10/03 11:04:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.14 1991/10/11 18:56:13 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -42,7 +42,7 @@
 /* #include "ax25mail.h" */
 /* #include "nr4mail.h" */
 /* #include "tipmail.h" */
-/* #include "daemon.h" */
+#include "daemon.h"
 #include "bootp.h"
 
 static int dostart __ARGS((int argc,char *argv[],void *p));
@@ -158,6 +158,15 @@ struct mbuf **bpp;
 	return 0;
 }
 #endif
+
+/* daemons to be run at startup time */
+struct daemon Daemons[] = {
+	"killer",       1024,   killer,
+	"timer",        16000,  timerproc,
+	"network",      16000,  network,
+/*      "keyboard",     250,    keyboard,       */
+	NULLCHAR,       0,      NULLVFP
+};
 
 struct iftype Iftypes[] = {
 	/* This entry must be first, since Loopback refers to it */
@@ -322,7 +331,7 @@ struct cmds Cmds[] = {
 #ifdef PPP
 	"ppp",          doppp_commands, 0, 0, NULLCHAR,
 #endif
-/*      "ps",           ps,             0, 0, NULLCHAR, */
+	"ps",           ps,             0, 0, NULLCHAR,
 #if     !defined(UNIX) && !defined(AMIGA)
 	"pwd",          docd,           0, 0, NULLCHAR,
 #endif
@@ -731,16 +740,23 @@ struct mbuf *bp;
 	 * do the next packet.  This will allow this packet to
 	 * go on toward its ultimate destination. [Karn]
 	 */
-/*      pwait(NULL); */
+	pwait(NULL);
 	return 0;
 }
 
 /* Process packets in the Hopper */
 void
-network()
+network(i,v1,v2)
+int i;
+void *v1;
+void *v2;
 {
 	struct mbuf *bp;
 	struct phdr phdr;
+
+loop:
+	while(Hopper == NULLBUF)
+		pwait(&Hopper);
 
 	/* Process the input packet */
 	bp = dequeue(&Hopper);
@@ -793,5 +809,6 @@ network()
 	/* Let everything else run - this keeps the system from wedging
 	 * when we're hit by a big burst of packets
 	 */
-/*      pwait(NULL); */
+	pwait(NULL);
+	goto loop;
 }

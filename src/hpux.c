@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.20 1991/09/17 22:21:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.21 1991/10/11 18:56:17 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/rtprio.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <termio.h>
@@ -21,8 +22,6 @@
 #include "commands.h"
 #include "main.h"
 #include "hpux.h"
-
-extern long  sigsetmask();
 
 #define TIMEOUT 120
 
@@ -85,7 +84,7 @@ void ioinit()
     curr_termio.c_cc[VTIME] = 0;
     ioctl(0, TCSETA, &curr_termio);
     printf("\033&s1A");   /* enable XmitFnctn */
-    on_read(0, keyboard, (void *) 0);
+    on_read(0, (void (*)()) keyboard, (void *) 0);
   } else {
     for (i = 0; i < _NFILE; i++) close(i);
     setpgrp();
@@ -112,7 +111,16 @@ void ioinit()
     putenv("SHELL=/bin/sh");
   if (!getenv("TZ"))
     putenv("TZ=MEZ-1MESZ");
-  timerproc();          /* Init times */
+
+  {
+    /* Init times */
+    struct timeval tv;
+    struct timezone tz;
+    gettimeofday(&tv, &tz);
+    Secclock = tv.tv_sec;
+    Msclock = 1000 * Secclock + tv.tv_usec / 1000;
+  }
+
   fixutmpfile();
 }
 
