@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/attach,v 1.8 1994/08/29 09:05:53 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/attach,v 1.9 1994/09/11 18:36:52 deyke Exp $
 .H 2 "attach" " \fItype\fP [\fItype specific options\fP]
 Configure and attach an interface to the system.
 The details are highly interface type dependent.
@@ -19,6 +19,10 @@ transmission.
 See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
 for more information.
 \fIspeed\fP is the transmission speed in bits per second (eg. 9600).
+.P
+If any I/O error is encountered reading or writing the interface device file,
+the interface will be marked \fBDOWN\fP.
+Use the \fBparam\fP \fIname\fP \fBUp\fP command to re-enable the interface.
 .H 3 "attach asy \fIip-addr\fP" " \fIport\fP \fIencapsulation\fP \fIname\fP 0 \fImtu\fP \fIspeed\fP"
 Configure and attach a UNIX TCP connection based interface to the system.
 This is very similar to the asynchronous communications interface described above,
@@ -44,6 +48,10 @@ transmission.
 See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
 for more information.
 \fIspeed\fP must be specified, but is not used.
+.P
+If any I/O error is encountered reading or writing the UNIX TCP connection,
+the interface will be marked \fBDOWN\fP.
+Use the \fBparam\fP \fIname\fP \fBUp\fP command to re-enable the interface.
 .H 3 "attach axip" " [\fIname\fP [ip|udp [\fIport\fP]]]"
 This creates an AX.25 frame encapsulator for transmission
 of AX.25 frames over the UNIX's networking system.

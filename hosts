@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.38 1994/08/29 09:05:08 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.39 1994/09/11 18:34:30 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -1902,7 +1902,7 @@
 #44.130.42.x    Koblenz
 44.130.42.1     DL5DI   # Hans-Juergen Barthen, 5473 Kruft
 44.130.42.2     DL5DI-amiga     # Hans-Juergen Barthen
-44.130.42.3     DB0LJ   # PBBS Mittelrhein (DL5DI); *** WNOS,
+44.130.42.3     DB0LJ-1 # PBBS Mittelrhein (DL5DI); *** WNOS,
 #                               ARP via DB0LJ-1 RMNC+NETROM
 44.130.42.4     DL5DI-p # Hans-Juergen Barthen
 44.130.42.5     DG2PU   # Thomas, 5477 Nickenich
@@ -1919,6 +1919,8 @@
 44.130.42.18    DD3PO   # Heinz Hilger, 5405 Ochtendung
 44.130.42.20    DF3PM   # Juergen, 56626 Andernach; PC LINUX
 44.130.42.21    DF9PV   # Franz Kohlmann, 56564 Neuwied; Amiga
+44.130.42.100   DB0LJ-R # WAMPES-Router
+44.130.42.101   DB0LJ-B # DieBox (NFS-Adresse)
 #
 #44.130.44.x    Trier, Eifel
 # lokale Adresskoordination: DG6VJ

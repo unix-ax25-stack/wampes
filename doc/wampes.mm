@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.10 1994/09/06 17:04:05 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.11 1994/09/11 18:35:26 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
@@ -20,13 +20,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940906" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940911" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 940906
+Version 940911
 .S
 .SP 2
 .S 15
@@ -321,8 +321,9 @@ attached asynchronous communications interfaces.
 The display for each interface consists of three lines:
 .BL
 .LI
-The first line shows the interface name and the speed in
-bits per second.
+The first line shows the interface name,
+the state (\fBUP\fP or \fBDOWN\fP),
+and the speed in bits per second.
 .LI
 The second line shows receiver (RX) event
 counts: the total number of read system calls, received
@@ -358,6 +359,10 @@ transmission.
 See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
 for more information.
 \fIspeed\fP is the transmission speed in bits per second (eg. 9600).
+.P
+If any I/O error is encountered reading or writing the interface device file,
+the interface will be marked \fBDOWN\fP.
+Use the \fBparam\fP \fIname\fP \fBUp\fP command to re-enable the interface.
 .H 3 "attach asy \fIip-addr\fP" " \fIport\fP \fIencapsulation\fP \fIname\fP 0 \fImtu\fP \fIspeed\fP"
 Configure and attach a UNIX TCP connection based interface to the system.
 This is very similar to the asynchronous communications interface described above,
@@ -383,6 +388,10 @@ transmission.
 See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
 for more information.
 \fIspeed\fP must be specified, but is not used.
+.P
+If any I/O error is encountered reading or writing the UNIX TCP connection,
+the interface will be marked \fBDOWN\fP.
+Use the \fBparam\fP \fIname\fP \fBUp\fP command to re-enable the interface.
 .H 3 "attach axip" " [\fIname\fP [ip|udp [\fIport\fP]]]"
 This creates an AX.25 frame encapsulator for transmission
 of AX.25 frames over the UNIX's networking system.

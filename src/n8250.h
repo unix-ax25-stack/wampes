@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.h,v 1.6 1992/09/01 16:52:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.h,v 1.7 1994/09/11 18:34:45 deyke Exp $ */
 
 /* Various I/O definitions specific to asynch I/O */
 #ifndef _N8250_H
@@ -20,6 +20,8 @@ struct asy {
 
 	struct mbuf *sndq;      /* Transmit queue */
 
+	unsigned addr;          /* Base I/O address */
+	int vec;                /* Interrupt vector */
 	long speed;             /* Line speed in bits per second */
 
 	long rxints;            /* receive interrupts */

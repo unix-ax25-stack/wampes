@@ -1,12 +1,13 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/asystat,v 1.5 1994/08/24 11:27:22 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/asystat,v 1.6 1994/09/11 18:36:52 deyke Exp $
 .H 2 "asystat" " [\fIinterface\fP ...]"
 Display statistics on the specified or all
 attached asynchronous communications interfaces.
 The display for each interface consists of three lines:
 .BL
 .LI
-The first line shows the interface name and the speed in
-bits per second.
+The first line shows the interface name,
+the state (\fBUP\fP or \fBDOWN\fP),
+and the speed in bits per second.
 .LI
 The second line shows receiver (RX) event
 counts: the total number of read system calls, received

@@ -1,12 +1,8 @@
 -------------------------------------------------------------------------------
 
-- use param up/down for TCP asy interface ?
-
-- loosing the ASY TCP connection causes spinning
+- TCP with closed windows: spinning
 
 - netupd should resync automatically
-
-- upload of a big file to telnet:loopback:echo causes spinning
 
 - muss die pty beim login erst geflushed werden?
 

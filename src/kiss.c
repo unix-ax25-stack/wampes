@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.13 1993/01/29 06:48:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.14 1994/09/11 18:34:44 deyke Exp $ */
 
 /* Routines for AX.25 encapsulation in KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -171,6 +171,8 @@ int32 val;
 	case PARAM_SPEED:       /* These go to the local asy driver */
 	case PARAM_DTR:
 	case PARAM_RTS:
+	case PARAM_DOWN:
+	case PARAM_UP:
 		rval = asy_ioctl(iface,cmd,set,val);
 		break;
 	default:                /* Not implemented */

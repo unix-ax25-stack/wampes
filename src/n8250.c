@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.36 1994/02/07 12:39:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.37 1994/09/11 18:34:45 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -52,72 +52,72 @@ static struct {
 	speed_t flags;
 } speed_table[] = {
 #ifdef B50
-	50, B50,
+	{ 50, B50 },
 #endif
 #ifdef B75
-	75, B75,
+	{ 75, B75 },
 #endif
 #ifdef B110
-	110, B110,
+	{ 110, B110 },
 #endif
 #ifdef B134
-	134, B134,
+	{ 134, B134 },
 #endif
 #ifdef B150
-	150, B150,
+	{ 150, B150 },
 #endif
 #ifdef B200
-	200, B200,
+	{ 200, B200 },
 #endif
 #ifdef B300
-	300, B300,
+	{ 300, B300 },
 #endif
 #ifdef B600
-	600, B600,
+	{ 600, B600 },
 #endif
 #ifdef B900
-	900, B900,
+	{ 900, B900 },
 #endif
 #ifdef B1200
-	1200, B1200,
+	{ 1200, B1200 },
 #endif
 #ifdef B1800
-	1800, B1800,
+	{ 1800, B1800 },
 #endif
 #ifdef B2400
-	2400, B2400,
+	{ 2400, B2400 },
 #endif
 #ifdef B3600
-	3600, B3600,
+	{ 3600, B3600 },
 #endif
 #ifdef B4800
-	4800, B4800,
+	{ 4800, B4800 },
 #endif
 #ifdef B7200
-	7200, B7200,
+	{ 7200, B7200 },
 #endif
 #ifdef B9600
-	9600, B9600,
+	{ 9600, B9600 },
 #endif
 #ifdef B19200
-	19200, B19200,
+	{ 19200, B19200 },
 #endif
 #ifdef B38400
-	38400, B38400,
+	{ 38400, B38400 },
 #endif
 #ifdef B57600
-	57600, B57600,
+	{ 57600, B57600 },
 #endif
 #ifdef B115200
-	115200, B115200,
+	{ 115200, B115200 },
 #endif
 #ifdef B230400
-	230400, B230400,
+	{ 230400, B230400 },
 #endif
 #ifdef B460800
-	460800, B460800,
+	{ 460800, B460800 },
 #endif
-	-1, 0
+	{ -1, 0 }
 };
 
 /*---------------------------------------------------------------------------*/
@@ -136,46 +136,36 @@ long speed;
 
 /*---------------------------------------------------------------------------*/
 
-/* Initialize asynch port "dev" */
-int
-asy_init(dev,ifp,base,irq,bufsize,trigchar,speed,cts,rlsd,chain)
-int dev;
-struct iface *ifp;
-int base;
-int irq;
-uint16 bufsize;
-int trigchar;
-long speed;
-int cts;                /* Use CTS flow control */
-int rlsd;               /* Use Received Line Signal Detect (aka CD) */
-int chain;              /* Chain interrupts */
+static int
+asy_up(struct asy *ap)
 {
-	register struct asy *ap;
 	int sp;
 
-	ap = &Asy[dev];
-	if (irq && base) {      /* Hide TCP connections in here */
+	if (ap->fd >= 0)        /* Already UP */
+		return 0;
+
+	if (ap->addr && ap->vec) {      /* Hide TCP connections in here */
 		struct sockaddr_in addr;
 		memset((char *) &addr, 0, sizeof(addr));
 		addr.sin_family = AF_INET;
-		addr.sin_addr.s_addr = htonl((unsigned long) base);
-		addr.sin_port = htons((unsigned short) irq);
-		if ((ap->fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) goto Fail;
-		if (connect(ap->fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) goto Fail;
-		ap->iface = ifp;
-		sp = find_speed(speed);
+		addr.sin_addr.s_addr = htonl((unsigned long) ap->addr);
+		addr.sin_port = htons((unsigned short) ap->vec);
+		if ((ap->fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+			goto Fail;
+		if (connect(ap->fd, (struct sockaddr *) &addr, sizeof(addr)) < 0)
+			goto Fail;
+		sp = find_speed(ap->speed);
 		ap->speed = speed_table[sp].speed;
 	} else {
 		char filename[80];
 		strcpy(filename, "/dev/");
-		strcat(filename, ifp->name);
+		strcat(filename, ap->iface->name);
 		if ((ap->fd = open(filename, O_RDWR|O_NONBLOCK|O_NOCTTY, 0644)) < 0)
 			goto Fail;
 #ifdef ibm032
 		fcntl(ap->fd, F_SETFL, O_NONBLOCK | fcntl(ap->fd, F_GETFL, 0));
 #endif
-		ap->iface = ifp;
-		sp = find_speed(speed);
+		sp = find_speed(ap->speed);
 		ap->speed = speed_table[sp].speed;
 		{
 #ifdef ibm032
@@ -200,7 +190,7 @@ int chain;              /* Chain interrupts */
 #endif
 		}
 	}
-	on_read(ap->fd, (void (*)()) ifp->rxproc, ifp);
+	on_read(ap->fd, (void (*)()) ap->iface->rxproc, ap->iface);
 	return 0;
 
 Fail:
@@ -208,8 +198,49 @@ Fail:
 		close(ap->fd);
 		ap->fd = -1;
 	}
-	ap->iface = NULLIF;
 	return -1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int asy_down(struct asy *ap)
+{
+	if (ap->fd < 0)         /* Already DOWN */
+		return 0;
+
+	off_read(ap->fd);
+	off_write(ap->fd);
+	free_q(&ap->sndq);
+	close(ap->fd);
+	ap->fd = -1;
+	return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Initialize asynch port "dev" */
+int
+asy_init(dev,ifp,base,irq,bufsize,trigchar,speed,cts,rlsd,chain)
+int dev;
+struct iface *ifp;
+int base;
+int irq;
+uint16 bufsize;
+int trigchar;
+long speed;
+int cts;                /* Use CTS flow control */
+int rlsd;               /* Use Received Line Signal Detect (aka CD) */
+int chain;              /* Chain interrupts */
+{
+	register struct asy *ap;
+
+	ap = &Asy[dev];
+	ap->fd = -1;
+	ap->iface = ifp;
+	ap->addr = base;
+	ap->vec = irq;
+	ap->speed = speed;
+	return asy_up(ap);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -224,13 +255,8 @@ struct iface *ifp;
 
 	if(ap->iface == NULLIF)
 		return -1;      /* Not allocated */
+	asy_down(ap);
 	ap->iface = NULLIF;
-
-	off_read(ap->fd);
-	off_write(ap->fd);
-	free_q(&ap->sndq);
-	close(ap->fd);
-
 	return 0;
 }
 
@@ -255,7 +281,8 @@ long bps;
 	if(bps == 0)
 		return -1;
 	sp = find_speed(bps);
-	{
+
+	if (asyp->fd >= 0 && (asyp->addr == 0 || asyp->vec == 0)) {
 #ifdef ibm032
 		struct sgttyb sgttyb;
 		if (ioctl(asyp->fd, TIOCGETP, &sgttyb))
@@ -298,6 +325,10 @@ int32 val;
 		if(set)
 			asy_speed(ifp->dev,val);
 		return ap->speed;
+	case PARAM_DOWN:
+		return asy_down(ap) ? 0 : 1;
+	case PARAM_UP:
+		return asy_up(ap) ? 0 : 1;
 	}
 	return -1;
 }
@@ -317,8 +348,10 @@ int cnt;
 		return 0;
 	cnt = read(ap->fd,buf,cnt);
 	ap->rxints++;
-	if (cnt <= 0)
+	if (cnt <= 0) {
+		asy_down(ap);
 		return 0;
+	}
 	ap->rxchar += cnt;
 	if (ap->rxhiwat < cnt)
 		ap->rxhiwat = cnt;
@@ -370,6 +403,10 @@ struct asy *asyp;
 {
 
 	printf("%s:",asyp->iface->name);
+	if(asyp->fd < 0)
+		printf(" [DOWN]");
+	else
+		printf(" [UP]");
 
 	printf(" %lu bps\n",asyp->speed);
 
@@ -406,8 +443,11 @@ struct asy *asyp;
 		n = write(asyp->fd, asyp->sndq->data, asyp->sndq->cnt);
 #endif
 		asyp->txints++;
-		if (n > 0)
-			asyp->txchar += n;
+		if (n <= 0) {
+			asy_down(asyp);
+			return;
+		}
+		asyp->txchar += n;
 		while (n > 0) {
 			if (n >= asyp->sndq->cnt) {
 				n -= asyp->sndq->cnt;
@@ -439,7 +479,7 @@ struct mbuf *bp;
 	}
 	asyp = &Asy[dev];
 
-	if(asyp->iface == NULLIF)
+	if(asyp->iface == NULLIF || asyp->fd < 0)
 		free_p(bp);
 	else {
 		append(&asyp->sndq, bp);
