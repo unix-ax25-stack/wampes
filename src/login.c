@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.58 1995/05/13 18:46:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.59 1995/07/01 11:15:16 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -52,8 +52,9 @@ extern struct utmp *getutent();
 EXTERN_C char *ptsname(int fildes);
 
 #define PASSWDFILE          "/etc/passwd"
+#define PWLOCKFILE1         "/etc/ptmp"
+#define PWLOCKFILE2         "/etc/passwd.tmp"
 #define SPASSWDFILE         "/.secure/etc/passwd"
-#define PWLOCKFILE          "/etc/ptmp"
 
 #define MAXUID              32000
 
@@ -230,25 +231,33 @@ static char *find_user_name(const char *name)
 struct passwd *getpasswdentry(const char *name, int create)
 {
 
-  FILE *fp;
   char cmdbuf[1024];
-  char homedir[80];
   char homedirparent[80];
+  char homedir[80];
+  FILE *fp;
   int fd;
   int secured = 0;
   int uid;
-  static char bitmap[MAXUID+1];         /* Keep off the stack */
+  static char bitmap[MAXUID + 1];       /* Keep off the stack */
   struct passwd *pw;
   struct stat statbuf;
 
   /* Search existing passwd entry */
 
-  if ((pw = getpwnam(name))) return pw;
-  if (!create) return 0;
+  if ((pw = getpwnam(name)))
+    return pw;
+  if (!create)
+    return 0;
 
   /* Find free user id */
 
-  if ((fd = open(PWLOCKFILE, O_WRONLY | O_CREAT | O_EXCL, 0644)) < 0) return 0;
+  if ((fd = open(PWLOCKFILE1, O_WRONLY | O_CREAT | O_EXCL, 0644)) < 0)
+    return 0;
+  close(fd);
+  if ((fd = open(PWLOCKFILE2, O_WRONLY | O_CREAT | O_EXCL, 0644)) < 0) {
+    remove(PWLOCKFILE1);
+    return 0;
+  }
   close(fd);
   memset(bitmap, 0, sizeof(bitmap));
   while ((pw = getpwent())) {
@@ -257,12 +266,14 @@ struct passwd *getpasswdentry(const char *name, int create)
   }
   endpwent();
   if (pw) {
-    unlink(PWLOCKFILE);
+    remove(PWLOCKFILE2);
+    remove(PWLOCKFILE1);
     return pw;
   }
   for (uid = Minuid; uid <= Maxuid && bitmap[uid]; uid++) ;
   if (uid > Maxuid) {
-    unlink(PWLOCKFILE);
+    remove(PWLOCKFILE2);
+    remove(PWLOCKFILE1);
     return 0;
   }
 
@@ -286,7 +297,8 @@ struct passwd *getpasswdentry(const char *name, int create)
   }
 #endif
   if (!(fp = fopen(PASSWDFILE, "a"))) {
-    unlink(PWLOCKFILE);
+    remove(PWLOCKFILE2);
+    remove(PWLOCKFILE1);
     return 0;
   }
   fprintf(fp,
@@ -306,7 +318,8 @@ struct passwd *getpasswdentry(const char *name, int create)
 #endif
 
   pw = getpwuid(uid);
-  unlink(PWLOCKFILE);
+  remove(PWLOCKFILE2);
+  remove(PWLOCKFILE1);
 
   /* Create home directory */
 

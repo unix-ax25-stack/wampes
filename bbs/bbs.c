@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.97 1995/06/23 15:05:30 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.98 1995/07/01 11:15:19 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -981,7 +981,7 @@ static void free_mail(struct mail *mail)
 
 /*---------------------------------------------------------------------------*/
 
-static void generate_bid_and_mid(struct mail *mail)
+static void generate_bid_and_mid(struct mail *mail, int generate_bid)
 {
 
   char *cp = 0;
@@ -997,7 +997,7 @@ static void generate_bid_and_mid(struct mail *mail)
     mail->bid[strlen(mail->bid) - strlen(MIDSUFFIX)] = 0;
   }
 
-  if (!*mail->bid) {
+  if (generate_bid && !*mail->bid) {
     if ((fdlock = lock_file(BIDLOCKFILE, 0)) < 0)
       halt();
     t = t1 = time(0);
@@ -1029,7 +1029,7 @@ static void generate_bid_and_mid(struct mail *mail)
   mail->bid[LEN_BID] = 0;
   strupc(mail->bid);
 
-  if (!*mail->mid) {
+  if (*mail->bid && !*mail->mid) {
     strcpy(mail->mid, mail->bid);
     strcat(mail->mid, MIDSUFFIX);
   }
@@ -1120,7 +1120,7 @@ static void route_mail(struct mail *mail)
 
   /* Set bid and mid */
 
-  generate_bid_and_mid(mail);
+  generate_bid_and_mid(mail, 1);
 
   /* Set subject */
 
@@ -1379,7 +1379,11 @@ static struct mail *read_mail_or_news_file(const char *filename, enum e_type src
     strcpy(mail->tohost, distribution);
   }
 
-  generate_bid_and_mid(mail);
+  generate_bid_and_mid(mail, 0);
+  if (!*mail->bid) {
+    free_mail(mail);
+    return 0;
+  }
 
   if ((expiretime = parse_rfc822_date(expires)) != -1) {
     mail->lifetime = (int) ((expiretime - time(0) + DAYS - 1) / DAYS);
@@ -1404,7 +1408,7 @@ static struct mail *read_mail_or_news_file(const char *filename, enum e_type src
 
   if (src == NEWS && !*mail->touser) {
     free_mail(mail);
-    mail = 0;
+    return 0;
   }
 
   return mail;
@@ -2073,7 +2077,7 @@ static void send_command(int argc, char **argv)
   if (!*mail->fromuser || level < MBOX)
     strcpy(mail->fromuser, user.name);
   if (*mail->bid) {
-    generate_bid_and_mid(mail);
+    generate_bid_and_mid(mail, 1);
     if (nntp_channel.fd < 0)
       open_nntp();
     sprintf(line, "stat <%s>\r\n", mail->mid);

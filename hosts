@@ -542,22 +542,29 @@
 44.130.13.201   DB0WAR-1        # Digi; 1200Bd
 #
 #44.130.14.x    Goettingen
-# lokale Adresskoordination: DH8AAG
+# --- Lokale Adresskoordination Raum Goettingen: DL8OCK
 44.130.14.1     DL2LK   # Wilfried Ahlborn, 37079 Goettingen
 44.130.14.2     DL4AL   # Ute Ahlborn, 37079 Goettingen
-44.130.14.3     DH8AAG  # Oliver Grellert, 37075 Goettingen
-44.130.14.4     DL8AAU  # Alex Kurpiers, 37075 Goettingen
-44.130.14.5     SERVER.DH8AAG   #
-44.130.14.6     DC3AV   # Andree Utermoehlen, 3400 Goettingen
+44.130.14.3     DL8OCK  # Oliver Grellert, 37077 Goettingen
+44.130.14.4     DL8AAU  # Alex Kurpiers, 37081 Goettingen
+44.130.14.5     server.DL8OCK   # Oliver Grellert, 37077 Goettingen
+44.130.14.6     DC3AV   # Andree Utermoehlen, 37075 Goettingen
 44.130.14.7     DG3AAF  # Andreas Kiehl, 37083 Goettingen
-44.130.14.8     DL1AAU  # Wolfgang Kuehn, 37120 Bovenden
-44.130.14.9     DL1WT   # Guenther Fraebel, 37083 Goettingen
-44.130.14.10    DL0ALK  # ALK Club-Stn, 37075 Goettingen
+44.130.14.8     DL1AAU  # Wolfgang KÅhn, 37120 Bovenden
+44.130.14.9     DL1WT   # GÅnther FrÑbel, 37083 Goettingen
+44.130.14.10    DL0ALK  # ALK-Club-Stn, 37075 Goettingen
+44.130.14.11    DG5ABO  # Kai Baaske, 37170 Uslar
+44.130.14.12    DG3AAX  # Dirk Fischer, 37170 Uslar
 44.130.14.20    DB0KG   # PBBS, 37079 Goettingen
-44.130.14.25    DL1AAZ  # Andre, Uslar
+44.130.14.24            # frei
+44.130.14.25    DL1AAZ  # Andre Fischer, 37170 Uslar
+44.130.14.26    DL1AAZ-1        # Andre Fischer, 37170 Uslar
+44.130.14.27    DF0US   # Clubstation OV Solling H34, 37170 Uslar
+44.130.14.28    laptop.DL1AAZ   # Andre Fischer, 37170 Uslar
+44.130.14.29    pc.DL1AAZ       # Andre Fischer, 37170 Uslar
 44.130.14.30    DK0AUG  # Amateurfunkgruppe Universitaet Goettingen
 44.130.14.40    DL0RSW  # Personn-Realschule Weende, 37075 Goettingen
-44.130.14.100   DB0SMG  # Sprachmailbox, 37085 Goettingen
+44.130.14.100   DB0SMG  # Sprachmailbox Goettingen, 37085 Goettingen
 #
 #44.130.15.x    Meschede
 # lokale Adress-Koordination: DJ5RK
@@ -2989,10 +2996,14 @@
 # Bernd                  Magdeburg
 44.130.82.30    dl8msg
 #
+# Rene, Osterwieck -   WAMPES
+44.130.82.31    dl6cpf-u
+#
+# Uwe  Magdeburg
+44.130.82.35    dg2acg
+#
 # TCP/IP Teil DB0OCA   HUY/Halberstadt
 44.130.82.100 db0oca
-#
-44.130.82.200   dg6mja-2
 #
 #44.130.83.x    Dessau
 44.130.83.1     DG1HRG  # Guido, Woerlitz
@@ -3034,12 +3045,15 @@
 44.130.88.27    DG2LWH  # Holger Baumgaertner, 04157 Leipzig
 44.130.88.28    DG2LWD  # Andreas Donat, 04347 Leipzig
 44.130.88.29    DG0LHL  # Wilfried Ploog, 04349 Leipzig
+44.130.88.30    DG0LGA-OS2  # AX25: DG0LGA-2
+44.130.88.31    DG0LSK  # Klaus Schollmeyer, 04299 Leipzig
+44.130.88.32    DG0LJS  # Achim Schulze, 04209 Leipzig
 #
 44.130.88.34    DG2LWH-2 # ax25: DG2LWH-2
 44.130.88.35    DL1LRK  # Uwe Kasubek, Delitzsch
 44.130.88.36    DG0LEH  # Edgar Hornig, 04277 Leipzig
 #
-44.130.88.100   DB0LPZ-SVR  # ax25: DB0LPZ-10 (in Kuerze QRV)
+44.130.88.100   DB0LPZ-SVR  # ax25: DB0LPZ-10
 #
 #44.130.89.x    Chemnitz
 44.130.89.1     Y28PN   # Uwe Huebner, O-9052 Chemnitz; UNIX/NOS
