@@ -1,0 +1,54 @@
+#! /bin/sh
+
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.1 1993/10/13 22:32:08 deyke Exp $
+
+findfile()
+{
+	name=$1
+	shift
+	for i in $* ; do
+		if [ -f $i ] ; then
+			echo "#define $name \"$i\""
+			return
+		fi
+	done
+	echo "#define $name \"\""
+}
+
+findprog()
+{
+	name=$1
+	shift
+	for i in $* ; do
+		if [ -f $i -a -x $i ] ; then
+			echo "#define $name \"$i\""
+			return
+		fi
+	done
+	echo "#define $name \"\""
+}
+
+finddir()
+{
+	name=$1
+	shift
+	for i in $* ; do
+		if [ -d $i ] ; then
+			echo "#define $name \"$i\""
+			return
+		fi
+	done
+	echo "#define $name \"\""
+}
+
+finddir MAIL_DIR /var/mail /var/spool/mail /usr/mail
+finddir UUCP_DIR /var/spool/uucp /usr/spool/uucp
+
+findfile ALIASES_FILE /etc/aliases /usr/lib/aliases
+
+findprog GZIP_PROG /usr/bin/gzip /usr/local/bin/gzip
+findprog MAIL_PROG /usr/openwin/bin/xview/mail /bin/mailx /usr/bin/mailx /bin/mail /usr/bin/mail
+findprog NEWALIASES_PROG /usr/bin/newaliases /usr/ucb/newaliases
+findprog PATCH_PROG /usr/bin/patch /usr/local/bin/patch
+findprog SENDMAIL_PROG /usr/sbin/sendmail /usr/lib/sendmail
+
