@@ -1340,7 +1340,7 @@
 44.130.23.40    DG1DCN  # Marc Noeker, Lennestadt: Amiga 2000
 44.130.23.102   DK3AK-14        # Siegmar Krause, 5982 Neuenrade
 #
-#44.130.144.xxx Bielefeld/Oerlinghausen Stand 28.12.94
+#44.130.144.xxx Bielefeld/Oerlinghausen Stand 14.01.95
 44.130.144.1    DB0NOS  # TCP/IP-Svr Oerlinghausen ***
 #44.130.144.2-44.130.144.15 fuer DB0NOS-Peripherie und Subrechner
 44.130.144.16   DL3YEN  # Wolf, Bielefeld
@@ -1369,10 +1369,13 @@
 44.130.144.39   DG4YHU  # Stephan, Detmold
 44.130.144.40   DL3YEO  # Herko, Bielefeld
 44.130.144.41   DG8YHT  # Jens, Detmold
+44.130.144.42   DH9YAX  # Udo, Verl
+44.130.144.43   DL1YDI  # Dirk, Steinhagen
 44.130.144.56   DK3RC   # Horst, Detmold
 44.130.144.57   DK3RC-1 # Horst, Bielstein
 44.130.144.58   DL0JW   # Clubstation N58, Oerlinghausen
 44.130.144.60   SYS2.DG6YGD     # Dirk, Detmold
+44.130.144.66   DG1YAY  # Christof, Buende
 #
 #44.130.24.x    Rhein-Main
 # lokale Adress-Koordination: DG1ZX
@@ -2659,8 +2662,8 @@
 44.130.61.100   DK0TT   # Club Stn A23 Taubertal
 44.130.61.111   DB0SWR  # Digi Wertheim
 #
-#44.130.62.x    Bamberg/Bayreuth
-# lokale Adresskoordination: DL1NAT
+#    Region Bamberg/Bayreuth            Stand:  06.01.95
+#    zusammengestellt/koordiniert von DL1NAT [44.130.62.3]
 44.130.62.1    DD8NE          # Hans-Joachim Hetscher Stegaurach
 44.130.62.2    DL9NCF         # Alfred Schloegel Bamberg
 44.130.62.3    DL1NAT         # Paul Dorn Bamberg
@@ -2677,8 +2680,9 @@
 44.130.62.19   DG7NEF-GATE    # Wolfgang Bamberg
 44.130.62.20   DG7NEF         # Wolfgang Bamberg
 44.130.62.21   DL9NBX         # Roland Coburg
-44.130.62.30   DL1NV          # Guenther Kestel Kronach
-44.130.62.100  DB0BBG-10      # Digipeater Bamberg Kaelberberg
+44.130.62.22   DF9NE          # Anton Spindler Stadtsteinach
+44.130.62.30   DL1NV          # GÅnther Kronach
+44.130.62.100  DB0BBG-10      # Digipeater Bamberg KÑlberberg
 #
 #44.130.63.x    Franken
 # lokale Adresskoordination: DL1NC
@@ -4654,27 +4658,28 @@
 #
 #44.143.1.xxx   WIEN
 #
-44.143.1.1      OE1YSS   # Irmela Gagern, 1200 Wien
-44.143.1.2      OE1JTB   # Alex
-44.143.1.3      OE1TKW   # Helmut Klein, 1160 Wien
-44.143.1.4      OE1WRS   # Werner Roedl, 1110 Wien
-44.143.1.5      OE1ACC   # Alexander Czernin-Morzin, 1070 Wien
-44.143.1.6      MARS.OE1KIB # Klaus, mars.oe1kib.ampr.org,
-44.143.1.7      OE1MMA   # Markus
-44.143.1.8      SP7MUD   # Adam, 1080 Wien
+44.143.1.1      OE1YSS   # Irmela Gagern, 1200 Wien, Pasettistr. 72/6/24
+44.143.1.2      OE1JTB   # Alexander Tschapka, 1210 Wien,
+			 # Florisdorfer Hauptstr. 14
+44.143.1.3      OE1TKW   # Helmut Klein, 1160 Wien, Nauseag.24/26
+44.143.1.4      OE1WRS   # Werner Roedl, 1110 Wien, Sedlitzkyg. 43/1/14
+44.143.1.5      OE1ACC   # Alexander Czernin-Morzin, 1070 Wien, Seideng. 31
+44.143.1.6      OE1KIB   # Klaus Kudielka, 1180 Wien, Peter Jordanstr. 165
+44.143.1.7      OE1MMA   # Markus Melcher, 1030 Wien, WeissgeberlÑnde 22/12
+44.143.1.8      SP7MUD   # Adam Merwart, 1140 Wien
 44.143.1.9      OE1SMC   # Hans Mayer, 1238 Wien, Am Hasensprung 6-8
-			   mayer@ping.at.unisys.com
-44.143.1.10     OE1RZB   # Robert Zak, 1210 Wien
+			 # mayer@ping.at.unisys.com
+44.143.1.10     OE1RZB   # Robert Zak, 1210 Wien, Koloniestr. 2-10/10/2
 44.143.1.11     TER.OE1XXB # Amateurfunkklub Alterlaa, 1230 Wien, Helmut
-44.143.1.12     OE1JMU   # Juergen Mauch, 1130 Wien
-44.143.1.13     OE1HMC   # Heinz, Wien
-44.143.1.14     OE1ATU   # Andi, Wien
-44.143.1.15     OE1DHK   # Hannes, Wien
-44.143.1.16     OE6GOD   # Gerald, Wien 16, Possingergasse, OE1GOD
+44.143.1.12     OE1JMU   # Juergen Mauch, 1130 Wien, Dvorakg. 40A/1/3
+44.143.1.13     OE1HMC   # Heinz Moser, 1160 Wien, Veronikag. 5/26
+44.143.1.14     OE1ATU   # Andreas Tobolka, 1160 Wien, Koppstr. 4/6
+44.143.1.15     OE1DHK   # Hannes Defner, Wien
+44.143.1.16     OE6GOD   # Gerald Moritz, 1160 Wien, Possingergasse, OE1GOD
 44.143.1.17     OE1DSS   # Gerd Soritz, 1050 Wien, Schoenbrunnerstr.94/1/12
 44.143.1.18     OE1WHU   # Wolfgang, Wien, JN88fh
-44.143.1.19
-44.143.1.20
+44.143.1.19     OE1MSB   # Michael Steiner, 1140 Wien, Hlavacekweg 14
+44.143.1.20     OE1HZA   # Helmut Zemann, 1160 Wien, Ottakringerstr. 242/5/11
 44.143.1.21     OE1WWL   # Wolfgang, 1180 Wien, Abt-Karl-Gasse 22/2/6
 			   emzr.911@ofis.unisys.com
 # 1200 bit/s Knoten
@@ -4689,7 +4694,7 @@
 44.143.1.108    OE1XTU   # Radioklub der TU Wien
 44.143.1.144    OE1KDA   # Koordinator Oesterreich
 44.143.1.145    SEC.OE1KDA # Krzysztof Dabrowski, 1230 Wien, Othellog.1/3/2
-44.143.1.150    SEC.OE1HMC #
+44.143.1.146    TER.OE1KDA #
 44.143.1.200    OE1XBR   # Robert Zak, 1210 Wien
 44.143.1.206    SEC.OE1XAR # Testknoten, Wien
 # 9600 bit/s Knoten
@@ -4698,6 +4703,10 @@
 44.143.17.107   9K6.OE1XLR # Knoten Laaberg (geplannt), Wien
 # Schnelle Knoten (Zukunft)
 44.143.33.xx
+# Subnetz OE1HMC 44.143.177.0
+44.143.177.1    SEC.OE1HMC # Netz-"Master",
+44.143.177.2    NEWS.OE1HMC # nntp server
+44.143.177.3    NET.OE1HMC # Host moser.co.at: 192.164.66.50
 # Subnetz OE1KIB (Token Ring) 44.143.241.0
 44.143.241.1    MARS.OE1KIB # Gateway (JNOS)
 44.143.241.2    SATURN.OE1KIB
@@ -4707,13 +4716,13 @@
 #
 #44.143.2.xxx   SALZBURG
 #
-44.143.2.1      OE2CEN   # Claus
+44.143.2.1      OE2CEN   # Claus Bleichinger, 5162 Obertrum, Rîmerweg 14
 44.143.2.2      OE2PTN   # Peter Tarmann, 5580 Tamsweg, Kirchengasse 93
 44.143.2.3      OE2PBP   # Peter, Salzburg
 44.143.2.4      SEC.OE2PBP # Peter, Salzburg
-44.143.2.5
-44.143.2.6
-44.143.2.7
+44.143.2.5      OE2WMI   # Manfred Wieser
+44.143.2.6      OE2IWM   # Josef Wimmer, 5400 Hallein, Rieferhauptstr. 41
+44.143.2.7      OE2HEM   # Hermann Eckel, 5431 Kuchl, Markt 169
 44.143.2.8
 44.143.2.9      OE2HHN   # Herbert Heitzmann, 5580 Tamsweg, Taurachweg 150
 44.143.2.10
@@ -4727,25 +4736,32 @@
 #
 #44.143.3.xxx   NIEDEROESTERREICH
 #
-44.143.3.1      OE3FEA   # Franz Ebert, 2560 Berndorf
-44.143.3.2      OE3KLU   # Karl Lichtenecker, Schwechat, JN88FD
+44.143.3.1      OE3FEA   # Franz Ebert, 2560 Berndorf, Hernsteinerstr. 183
+44.143.3.2      OE3KLU   # Karl Lichtenecker, 2320 Schwechat,
+			 # Dr. Fritz Hess-Gasse 3/2/13, JN88FD
 44.143.3.3      OE3ACC   # Alexander Czernin-Morzin, 2802 Hochwolkersdorf
 44.143.3.4      OE3PZU   # Piotr Metzger, Zistersdorf
-44.143.3.5      OE3DZW   # Dietmar
-44.143.3.6      OE3IGW   # Alois, JN79ma
-44.143.3.7      OE3FAS   # Franz
-44.143.3.8      OE3KEU   # Karl, Brunn am Gebirge
+44.143.3.5      OE3DZW   # Dietmar Zlabinger, 3861 Eggern,
+			 # Reinberg-Heidenreichstein 31
+44.143.3.6      OE3IGW   # Alois Gabler, 3874 Litschau, Rottal 36, JN79ma
+44.143.3.7      OE3FAS   # Franz Hastik, 3021 Pressbaum, Pfalzauerstr. 41
+44.143.3.8      OE3KEU   # Karl Seebacher, 2345 Brunn am Gebirge,
+			 # Alexander Grossgasse 67
 44.143.3.9      OE3HGB   # Heinz, 3512 Mautern/Donau, Kerner von Marilaunstr. 13
 44.143.3.10     OE3GFS   # Gerhard, 2332 Hennersdorf, Raimundstr. 6
 44.143.3.11     OE3TAN   # Anton Neu, 3321 Ardagger, Stefanshart 34
 44.143.3.12     OE3KSG   # Karl, JN78ui, ADL 307,
-44.143.3.13     OE3ALS   # Arne
+44.143.3.13     OE3ALS   # Arne Herler, 3106 St. Pîlten-Spratzern,
+			 # Schwadorferstr. 14
 44.143.3.14     OE3XDU   # Klubstation der Forschungszentrum Seibersdorf
-44.143.3.31     OE3GMW   # Gottfried Motowidlo, 2351 Wiener Neudorf
+44.143.3.31     OE3GMW   # Gottfried Motowidlo, 2351 Wiener Neudorf,
+			 # Reisenbauerring 7/2/18
 # 1200 bit/s Knoten
 44.143.3.100    OE3XAC   # Klubstation d. Amateurfunkklub Schwechat
 44.143.3.101    OE3XWR   # Knoten Windischhuette (geplannt)
 44.143.3.102    OE3XSR   # Waldviertler Amateurradioklub, Haugschlag, JN79ma
+44.143.3.103    OE3XZR   # Knoten Zwettl, Waldviertler Amateur Radio Club
+44.143.3.104    OE3XNR   # Knoten Nebelstein, OeVSV-L3
 44.143.3.200    OE3XKR   # Knoten Schwechat/Rannersdorf (geplannt)
 # 9600 bit/s Knoten
 44.143.19.xx
@@ -4756,8 +4772,8 @@
 #44.143.4.xxx   BURGENLAND
 #
 44.143.4.1      SEC.OE3KLU # St.Andrae/Zicksee
-44.143.4.2      OE4TEA   # Walter Enz, 7121 Weiden am See
-44.143.4.3
+44.143.4.2      OE4TEA   # Walter Enz, 7121 Weiden am See, Neubaugasse 43
+44.143.4.3      OE4HZA   # Helmut Zemann, OE1HZA
 44.143.4.4
 44.143.4.5
 # 1200 bit/s Knoten
@@ -4772,11 +4788,13 @@
 #
 44.143.5.1     OE5GDL   # Gerald Dickinger, 4652 Steinerkirchen
 44.143.5.2     OE5CG    # Josef Schweiger, 4910 Ried
-44.143.5.3     OE5KVN   # Karl Kiniger, 4650 Lambach
-44.143.5.4     OE5ROL   # Fritz Rockenbauer, 4810 Gmunden
-44.143.5.5     OE5ARM   # Arthur Floh, 4222 St.Georgen/Gusen
-44.143.5.6     SEC.OE5ROL # Fritz Rockenbauer, 4810 Gmunden
-44.143.5.7     OE5AON   # Erich, Linz
+44.143.5.3     OE5KVN   # Karl Kiniger, 4650 Lambach, Hafferlstr. 53,
+			# SÅdtirolerstr. 16
+44.143.5.4     OE5ROL   # Fritz Rockenbauer, 4810 Gmunden, Bahnhofstr. 29A/11
+44.143.5.5     OE5ARM   # Arthur Floh, 4222 St.Georgen/Gusen, Bachstr. 18
+44.143.5.6     SEC.OE5ROL # Fritz Rockenbauer, 4810 Gmunden,
+			# Bahnhofstr. 29A/11
+44.143.5.7     OE5AON   # Erich Floh, 4020 Linz, Franckstr. 7
 44.143.5.8     OE5ODO   # Martin Werner, Linz, Strahembergerstr. 66/6/38
 			# 4020 Linz, JN78DH
 44.143.5.9     OE5HHN   # Herbert Anton Heitzmann, DÅrnauerstr. 94/74
@@ -4784,17 +4802,22 @@
 44.143.5.10    OE5JKL   # Karl Jaeger, 4210 Gallneukirchen,
 			# Hanriederstrasse 5
 44.143.5.11    OE5GWN   # Gerhard Winsberger, 5122 Ach, (DJ0MGW)
-44.143.5.12    OE5SFO   # Franz, Linz
+44.143.5.12    OE5SFO   # Franz Staudinger, 4040 Linz, Aubrunnerweg 7
 44.143.5.13    OE5RI    # Karl Reinprecht, 4400 Steyer, Derflingerstr. 7
-44.143.5.14    OE5HAN   #
-44.143.5.15    OE5HDN   #
-44.143.5.16    OE5LEN   # Harald
-44.143.5.17    OE5OHO   #
-44.143.5.18    OE5BKL   #
-44.143.5.19    OE5PSM   # Peter, Linz
+44.143.5.14    OE5HAN   # Gerald Hanusch, 4600 Wels, Semmelweisstr. 22
+44.143.5.15    OE5HDN   # Heinz-Dieter Huber, 4060 Leonding,
+			# Hainzenbachstr. 89
+44.143.5.16    OE5LEN   # Harald Landvoigt, 4060 Leonding, Koppelweg 24
+44.143.5.17    OE5OHO   # Oliver Huber, 4060 Leonding, Hainzenbachstr. 89
+44.143.5.18    OE5BKL   # Alois Haderer, 4020 Linz, Kapuzinerstr. 1
+44.143.5.19    OE5PSM   # Peter Scheer, 4040 Linz, Verl. Kirchengasse 15
 44.143.5.20    OE5PSO   # Peter Stockenreiter, Billrothstrasse 36,
 			# 4600 Wels
 44.143.5.21    OE5WWL   # Wolfgang, 4910 Ried im Innkreis, Sennstrasse 13
+44.143.5.22    OE5FJL   # Josef Falzeder, 9161 Maria Rain, Angersbichl 29
+44.143.5.23    OE5RHO   # Roland Haider, 4060 Leonding, Weesestrasse 10
+44.143.5.24    OE5BBM   # Siegfried Brunnbauer, 4490 St. Florian,
+			# Bachgasse 18
 # 1200 bit/s Knoten
 44.143.5.100   OE5XUR   # JKULINZ, Linz, Oper. OE5LEN, packet-internet
 			# gateway: 140.78.4.35 hamgate.edvz.uni-linz.ac.at
@@ -4806,39 +4829,42 @@
 #
 #44.143.6.xxx   STEIERMARK
 #
-44.143.6.1     OE6BUD   # Ulrich Braendle, 8121 Deutsch-Feistritz
-44.143.6.2     OE6FAD   # Fritz, Graz
-44.143.6.3     OE6UBG   # Brani Wusser, 8053 Graz
-44.143.6.4     OE6PWD   # Walter Pflanzl, 8020 Graz
-44.143.6.5     OE6CRD   # Christian Steger, 8132 Pernegg, JN77qi
+44.143.6.1     OE6BUD   # Ulrich BrÑndle, 8121 Deutsch-Feistritz 227
+44.143.6.2     OE6FAD   # Fritz Ganter, 8045 Graz, Grazerstr. 26A
+44.143.6.3     OE6UBG   # Brani Wusser, 8053 Graz, Wagner Jauregg Platz 1/7
+44.143.6.4     OE6PWD   # Walter Pflanzl, 8020 Graz, Marieng. 36
+44.143.6.5     OE6CRD   # Christian Steger, 8132 Pernegg 104, JN77qi
 44.143.6.6     OE6CLD   # Claus Stehlik, 8111 Judendorf
 44.143.6.7     OE6OWG   # Walter
-44.143.6.8     OE6WND   # Wolfgang, Graz, JN77rr
-44.143.6.9     OE6HCD   # Hans-Christian Caluba, 8010 Graz
+44.143.6.8     OE6WND   # Wolfgang Ninaus, 8010 Graz, MÅnzgrabengÅrtel 21,
+			# JN77rr
+44.143.6.9     OE6HCD   # Hans-Christian Caluba, 8010 Graz, Riesstr. 118
 44.143.6.10    SEC.OE7TKT # Thomas Kuschel, Stiftingtalstr 221/ 4, 8010 Graz
-44.143.6.11    OE6RHT   # Reinhard
-44.143.6.12    OE6ISD   # Dieter, Graz
+44.143.6.11    OE6RHT   # Reinhard Hîllrigl, 8045 Graz, Zieglerstr. 55
+44.143.6.12    OE6ISD   # Dieter Sabathi, 8020 Graz, Vinzenz Muchitschstr. 6
 44.143.6.13    OE6UTD   # Helmut
 44.143.6.14    OE6PRG   # Andreas
-44.143.6.15    OE6MCD   # Dietmar Schantin, Herrgottwiesgasse 233
-			# A-8055 Graz
-44.143.6.16    OE6IFD   # Heinz
-44.143.6.17    OE6DLD   # Gerry
+44.143.6.15    OE6MCD   # Dietmar Schantin, 8055 Graz, Herrgottwiesgasse 233
+44.143.6.16    OE6IFD   # Heinz Fleischhacker, 8010 Graz, Grabenstr. 37/10
+44.143.6.17    OE6DLD   # Gerry Peklar, 8230 Hartberg, Grillparzerstr. 20
 44.143.6.18    OE6PTG   # Tom
-44.143.6.66    OE6IWG   # Walter Steinwender, Kapfenberg, JN77pk
-44.143.6.67    OE6YNE   # Ingrid Steinwender, Kapfenberg, JN87pk
+44.143.6.19    OE6HLD   # Herbert Rienessel, 8055 Graz, Staudenweg 7
+44.143.6.20    OE6JWD   # Klaus Dieter Wolf, Graz, JN77rb
+44.143.6.66    OE6IWG   # Walter Steinwender, 8605 Kapfenberg,
+			# Hugo v. Hoffmansthalw. 3/4, JN77pk
+44.143.6.67    OE6YNE   # Ingrid Steinwender, 8605 Kapfenberg, JN77pk
 # 1200 bit/s Knoten
-44.143.6.100   OE6XWR   # Kapfenberg-Rennleld, JN77pk
+44.143.6.100   OE6XWR   # Kapfenberg-Rennleld, JN77qj
 # 9600 bit/s Knoten
-44.143.22.xx
+44.143.22.100  9K6.OE6XWR # Kapfengerg-Rennfeld, JN77qj
 # Schnelle Knoten (Zukunft)
-44.143.38.xx
+44.143.38.100  SEC.OE6XWR # Kapfenberg-Rennfeld, JN77qj
 # -----------------------------------------------------------------------
 #
 #44.143.7.xxx   TIROL
-44.143.7.1     OE7EKJ   # Helmut Kupsa, 6176 Voels
-44.143.7.2     OE7AHN   # Alois
-44.143.7.3     OE7HNT   # Georg
+44.143.7.1     OE7EKJ   # Helmut Kupsa, 6176 Vîls, Ulrichweg 14
+44.143.7.2     OE7AHN   # Alfred Hollinetz, 4655 Vorchdorf, Neue Landstr. 15
+44.143.7.3     OE7HNT   # Georg Sassermann, 6471 Arzl, Hauptsr. 88
 44.143.7.4     OE7KKT   # Karsten, Innsbruck
 44.143.7.5     OE7DGJ   # Gerald, Innsbruck
 44.143.7.6
@@ -4864,10 +4890,11 @@
 #
 44.143.8.1     OE8HWK   # Hans Wirnsberger, 9872 Millstatt, Laubendorf 24
 44.143.8.2     SEC.OE8HWK # Hans Wirnsberger, 9872 Millstatt, Laubendorf 24
-44.143.8.3     OE8LWQ   # Wolfgang, Villach, JN66wl
-44.143.8.4     OE8DJK   # Bernd, Velden
+44.143.8.3     OE8LWQ   # Wolfgang Linde, 9500 Villach,
+			# Markus-Pernhartstr. 13/3, JN66wl
+44.143.8.4     OE8DJK   # Bernd Stroj, 9220 Velden, Aicherstr. 6
 44.143.8.5     OE8AGK   # Alexander, Klagenfurt
-44.143.8.15    OE8DHK   # Hannes,
+44.143.8.15    OE8DHK   # Hannes Defner, 9802 Spittal/Drau, Pf. 88
 # 1200 bit/s Knoten
 44.143.8.100
 # 9600 bit/s Knoten
@@ -4878,12 +4905,12 @@
 #
 #44.143.9.xxx   VORARLBERG
 #
-44.143.9.1     OE9NAI   # Norbert
+44.143.9.1     OE9NAI   # Norbert Amann, 6845 Hohenems, Beethowenstr. 20 A
 44.143.9.2     OE9WLJ   # Wilfried Haeusle, 6800 Tosters, Egelseestrasse 13
-44.143.9.3     OE9DGV   # Guntram
+44.143.9.3     OE9DGV   # Guntram Summer, 6845 Hohenems, Hochquellenstr. 20 A
 44.143.9.4     OE9LAJ   # Alexander List, 6824 Schlins, Dafens. 4
 44.143.9.5
-44.143.9.27    OE9HHV   # Hubert
+44.143.9.27    OE9HHV   # Hubert HÑmerle, 6850 Dornbirn, Im Horn 27
 44.143.9.72    OE9MKV   # Mario Kienspergher, Juxweg 6, 6800 Feldkirch-
 			# Altenstadt, BBS OE9XPI, Digi OE9XFR-2
 44.143.9.55    OE9GWV   # Guntram Wagner, 6710 Nenzing,

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.22 1994/11/08 14:26:35 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.23 1995/01/16 13:20:18 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -16,7 +16,9 @@ OBJS          = buildsaddr.o \
 
 RANLIB        = ranlib
 
-all:;   if [ -x /bin/ksh ] ; then \
+all:;   if [ -x /bin/bash ] ; then \
+		/bin/bash < configure > configure.tmp; \
+	elif [ -x /bin/ksh ] ; then \
 		/bin/ksh < configure > configure.tmp; \
 	else \
 		/bin/sh < configure > configure.tmp; \
