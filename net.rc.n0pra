@@ -1,0 +1,42 @@
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.n0pra,v 1.1 1992/09/01 16:38:57 deyke Exp $
+
+hostname     n0pra
+ax25 mycall  n0pra
+ip address   44.128.4.4
+netrom ident "#fc1"
+
+attach axip                     # ax.25 over host ip
+attach ipip                     # ip over host ip
+attach netrom                   # ip over netrom
+
+ax25 route add axip default
+
+axip route add dk0hu 15.136.56.6 # hp0hu.bbn.hp.com
+
+route add  default          ipip     15.136.56.6
+route add  dk5sg            ipip     15.15.80.34
+route add  dk5sg-u          ipip     15.15.80.34
+
+source /tcp/netrom_links
+
+# netrom broadcast axip nodes
+
+domain useserver off
+echo accept
+icmp trace on
+ip rtimer 100
+ip ttl 30
+log /tcp/net.log
+tcp mss 216
+tcp window 2048
+
+smtp timer 300
+start discard
+start echo
+start ftp
+start remote
+start tcpgate convers unix:/tcp/sockets/convers
+start tcpgate finger
+start tcpgate smtp
+
+source /tcp/net.rc.local
