@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.19 1993/09/17 09:32:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.20 1994/01/26 11:11:30 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -23,13 +23,15 @@
 #include "global.h"
 #include "mbuf.h"
 
-#define DEBUG           1
+#define DEBUGLEVEL      1
 
 #define ALLOCSIZE       0x8000
+#define FREEPATTERN     0xbb
 #define FREETABLESIZE   2048
 #define MEMFULL         ((struct block *) (-1))
 #define MINSIZE         16
 #define SBRK(i)         ((struct block *) sbrk((int) (i)))
+#define USEDPATTERN     0xdd
 
 struct block {
   struct block *next;
@@ -71,7 +73,7 @@ unsigned size;
 
   size = (size + sizeof(struct block *) + MINSIZE - 1) & ~(MINSIZE - 1);
   if ((tp = Freetable + size / MINSIZE) >= Freetable + FREETABLESIZE)
-    giveup("malloc: requested block too large\n");
+    giveup("malloc: size too large\n");
   if (p = tp->next)
     tp->next = p->next;
   else {
@@ -97,6 +99,9 @@ unsigned size;
     freespace += (size / sizeof(struct block *));
     freesize -= size;
   }
+#if DEBUGLEVEL >= 2
+  memset(p, USEDPATTERN, size);
+#endif
   p->next = tp;
   Allocs++;
   Inuse += size;
@@ -114,23 +119,24 @@ void *pp;
 
   if (p = (struct block *) pp) {
     if ((MINSIZE - 1) & (int) p) {
-#if DEBUG
+#if DEBUGLEVEL >= 1
       giveup("free: bad alignment\n");
-#else
+#endif
       Invalid++;
       return;
-#endif
     }
     p--;
     tp = p->next;
     if (tp < Freetable || tp >= Freetable + FREETABLESIZE) {
-#if DEBUG
+#if DEBUGLEVEL >= 1
       giveup("free: bad free table pointer\n");
-#else
+#endif
       Invalid++;
       return;
-#endif
     }
+#if DEBUGLEVEL >= 2
+    memset(p, FREEPATTERN, (tp - Freetable) * MINSIZE);
+#endif
     Frees++;
     Inuse -= (tp - Freetable) * MINSIZE;
     p->next = tp->next;

@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.71 1994/01/21 11:11:22 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.72 1994/01/26 11:11:54 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -134,6 +134,7 @@ static void send_to_bbs(struct mail *mail);
 static void send_to_mail(struct mail *mail);
 static void send_to_news(struct mail *mail);
 static void fix_address(char *addr);
+static void remove_message_delimiters(char *line);
 static struct mail *alloc_mail(void);
 static void free_mail(struct mail *mail);
 static void route_mail(struct mail *mail);
@@ -910,6 +911,21 @@ static void fix_address(char *addr)
 
 /*---------------------------------------------------------------------------*/
 
+static void remove_message_delimiters(char *line)
+{
+
+  char *f;
+  char *t;
+
+  if (*line == '.' && !line[1]) *line = 0;
+  for (t = f = line; *f; f++)
+    if (*f != '\004' && *f != '\032') *t++ = *f;
+  *t = 0;
+  if (!Strncasecmp(line, "***end", 6)) *line = ' ';
+}
+
+/*---------------------------------------------------------------------------*/
+
 static struct mail *alloc_mail(void)
 {
   struct mail *mail;
@@ -941,7 +957,6 @@ static void route_mail(struct mail *mail)
 
   FILE *fp;
   char *cp;
-  char *s;
   char *tohost;
   char *touser;
   int n;
@@ -1002,13 +1017,8 @@ static void route_mail(struct mail *mail)
 
   /* Remove message delimiters */
 
-  for (p = mail->head; p; p = p->next) {
-    s = p->str;
-    if (*s == '.' && !s[1]) *s = 0;
-    while (cp = strchr(s, '\004')) while (cp[0] = cp[1]) cp++;
-    while (cp = strchr(s, '\032')) while (cp[0] = cp[1]) cp++;
-    if (!Strncasecmp(s, "***end", 6)) *s = ' ';
-  }
+  for (p = mail->head; p; p = p->next)
+    remove_message_delimiters(p->str);
 
   /* Call delivery agents */
 
@@ -1213,8 +1223,8 @@ static void forward_message(const struct index *index, const char *filename, int
 {
 
   FILE * fp;
+  char *cp;
   char buf[1024];
-  int c;
   int lifetime;
   struct tm *tm;
 
@@ -1257,7 +1267,11 @@ static void forward_message(const struct index *index, const char *filename, int
       if (!(fp = fopen(filename, "r"))) halt();
       if (skip_header)
 	while (fgets(buf, sizeof(buf), fp) && *buf != '\n') ;
-      while ((c = getc(fp)) != EOF) putchar(c);
+      while (fgets(buf, sizeof(buf), fp)) {
+	if (cp = strchr(buf, '\n')) *cp = 0;
+	remove_message_delimiters(buf);
+	puts(buf);
+      }
       fclose(fp);
     }
     sleep(5); /* Bugfix for TheBox 1.9 */
@@ -1354,7 +1368,7 @@ static void f_command(int argc, char **argv)
       if (!(fp = fopen(dfile, "r"))) continue;
       *from = *subject = *bid = 0;
       if (fscanf(fp, "From %s", tmp1) == 1) {
-	if (!strcmp(tmp1, "MAILER-DAEMON") || !strcmp(tmp1, "!"))
+	if (!strcmp(tmp1, "MAILER-DAEMON") || tmp1[strlen(tmp1) - 1] == '!')
 	  strcpy(tmp1, myhostname);
 	sprintf(from, "%s!%s", myhostname, tmp1);
 	strtrim(from);
