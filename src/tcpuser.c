@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.9 1991/02/24 20:17:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.10 1991/03/28 19:40:15 deyke Exp $ */
 
 /* User calls to TCP
  * Copyright 1991 Phil Karn, KA9Q
@@ -315,6 +315,7 @@ register struct tcb *tcb;
 {
 	if(!tcpval(tcb))
 		return -1;
+	tcb->flags.force = 1;   /* Send ACK even if no data */
 	tcp_timeout(tcb);
 	return 0;
 }

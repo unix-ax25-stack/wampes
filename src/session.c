@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.6 1991/02/24 20:17:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.7 1991/03/28 19:40:05 deyke Exp $ */
 
 /* NOS User Session control
  * Copyright 1991 Phil Karn, KA9Q
@@ -101,7 +101,7 @@ void *p;
 			 (long) sp->cb.ax25,
 			 sp->cb.ax25->rcvcnt,
 			 ax25states[sp->cb.ax25->state],
-			 pathtostr(sp->cb.ax25));
+			 ax25hdr_to_string(&sp->cb.ax25->hdr));
 			break;
 #endif
 		case FINGER:
@@ -147,7 +147,7 @@ void *p;
 
 	if(Current == NULLSESSION || Current->type == FREE)
 		return 0;
-	mode = CONV_MODE;
+	Mode = CONV_MODE;
 	switch(Current->type){
 	case TELNET:
 		if(Current->cb.telnet->remote[TN_ECHO])

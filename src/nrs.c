@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.5 1991/02/24 20:17:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.6 1991/03/28 19:39:58 deyke Exp $ */
 
 /* This module implements the serial line framing method used by
  * net/rom nodes.  This allows the net/rom software to talk to
@@ -9,6 +9,7 @@
  */
 #include <stdio.h>
 #include "global.h"
+#include "timer.h"
 #include "mbuf.h"
 #include "iface.h"
 #include "pktdrvr.h"

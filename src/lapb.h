@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.8 1991/02/24 20:17:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.9 1991/03/28 19:39:45 deyke Exp $ */
 
 #ifndef _LAPB_H
 #define _LAPB_H
@@ -63,8 +63,7 @@
 
 /* AX25 connection control block */
 struct ax25_cb {
-  char  path[70];               /* AX25 address field */
-  int  pathlen;                 /* Length of AX25 address field */
+  struct ax25 hdr;              /* AX25 header */
   struct iface *ifp;            /* Pointer to interface structure */
   int  state;                   /* Connection state */
 #define DISCONNECTED  0
@@ -136,8 +135,7 @@ extern int  ax_window;                  /* Local flow control limit */
 extern struct ax25_cb *axcb_server;     /* Server control block */
 
 /* In lapb.c: */
-char *pathtostr __ARGS((struct ax25_cb *cp));
-int axproto_recv __ARGS((struct iface *ifp, struct mbuf *bp));
+int lapb_input __ARGS((struct iface *iface, struct ax25 *hdr, struct mbuf *bp));
 int doax25 __ARGS((int argc, char *argv [], void *p));
 struct ax25_cb *open_ax __ARGS((char *path, int mode, void (*r_upcall )__ARGS ((struct ax25_cb *p, int cnt )), void (*t_upcall )__ARGS ((struct ax25_cb *p, int cnt )), void (*s_upcall )__ARGS ((struct ax25_cb *p, int oldstate, int newstate )), char *user));
 int send_ax __ARGS((struct ax25_cb *cp, struct mbuf *bp));

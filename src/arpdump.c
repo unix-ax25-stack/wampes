@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpdump.c,v 1.4 1991/02/24 20:16:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpdump.c,v 1.5 1991/03/28 19:38:59 deyke Exp $ */
 
 /* ARP packet tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -66,14 +66,13 @@ struct mbuf **bpp;
 		break;
 	}
 	fprintf(fp,"\n");
-	fprintf(fp,"     sender hwaddr %s",at->format(tmp,arp.shwaddr));
+	fprintf(fp,"sender");
 	if(is_ip)
-		fprintf(fp," IPaddr %s\n",inet_ntoa(arp.sprotaddr));
-	else
-		fprintf(fp,"\n");
-	fprintf(fp,"     target hwaddr %s",at->format(tmp,arp.thwaddr));
+		fprintf(fp," IPaddr %s",inet_ntoa(arp.sprotaddr));
+	fprintf(fp," hwaddr %s\n",at->format(tmp,arp.shwaddr));
+
+	fprintf(fp,"target");
 	if(is_ip)
-		fprintf(fp," IPaddr %s\n",inet_ntoa(arp.tprotaddr));
-	else
-		fprintf(fp,"\n");
+		fprintf(fp," IPaddr %s",inet_ntoa(arp.tprotaddr));
+	fprintf(fp," hwaddr %s\n",at->format(tmp,arp.thwaddr));
 }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.6 1991/02/24 20:16:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.7 1991/03/28 19:39:12 deyke Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -31,9 +31,9 @@ char *call;
 	register char *dp;
 	char c;
 
-	if(out == NULLCHAR || call == NULLCHAR || *call == '\0'){
+	if(out == NULLCHAR || call == NULLCHAR || *call == '\0')
 		return -1;
-	}
+
 	/* Find dash, if any, separating callsign from ssid
 	 * Then compute length of callsign field and make sure
 	 * it isn't excessive
@@ -80,6 +80,20 @@ register char *a,*b;
 	if (*a++ != *b++) return 0;
 	return (*a & SSID) == (*b & SSID);
 }
+/* Return iface pointer if 'addr' belongs to one of our interfaces,
+ * NULLIF otherwise.
+ */
+struct iface *
+ismyax25addr(addr)
+char *addr;
+{
+	register struct iface *ifp;
+
+	for (ifp = Ifaces; ifp; ifp = ifp->next)
+		if (ifp->output == ax_output && addreq(ifp->hwaddr, addr))
+			break;
+	return ifp;
+}
 void
 addrcp(to,from)
 register char *to,*from;
@@ -108,7 +122,7 @@ char *addr;
 		if(c != ' ')
 			*cp++ = c;
 	}
-	if ((*addr & SSID) != 0)
+	if((*addr & SSID) != 0)
 		sprintf(cp,"-%d",(*addr >> 1) & 0xf);   /* ssid */
 	else
 		*cp = '\0';

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.6 1991/02/24 20:16:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.7 1991/03/28 19:39:16 deyke Exp $ */
 
 #include <stdlib.h>
 
@@ -42,9 +42,12 @@ static void axserv_state_upcall(cp, oldstate, newstate)
 struct ax25_cb *cp;
 int  oldstate, newstate;
 {
+  char  callsign[AXBUF];
+
   switch (newstate) {
   case CONNECTED:
-    cp->user = (char *) login_open(pathtostr(cp), "AX25", (void (*)()) axserv_send_upcall, (void (*)()) close_ax, cp);
+    pax25(callsign, cp->hdr.dest);
+    cp->user = (char *) login_open(callsign, "AX25", (void (*)()) axserv_send_upcall, (void (*)()) close_ax, cp);
     if (!cp->user) close_ax(cp);
     break;
   case DISCONNECTED:

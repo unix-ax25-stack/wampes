@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.11 1991/02/24 20:17:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.12 1991/03/28 19:39:50 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -10,11 +10,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
-#ifdef  __TURBOC__
+#if     defined(__TURBOC__) && defined(MSDOS)
 #include <io.h>
 #include <conio.h>
 #endif
+#include <unistd.h>
 #include "global.h"
 #ifdef  ANSIPROTO
 #include <stdarg.h>
@@ -39,6 +39,7 @@
 #include "udp.h"
 #include "hardware.h"
 #include "commands.h"
+#include "trace.h"
 #include "hpux.h"
 
 extern int errno;
@@ -51,13 +52,12 @@ static char Escape = 0x1d;      /* default escape character is ^] */
 #endif
 
 int debug;
-int mode;
+int Mode;
 char Badhost[] = "Unknown host %s\n";
 char *Hostname;
 char Prompt[] = "%s> ";
 char Nospace[] = "No space!!\n";        /* Generic malloc fail message */
 static FILE *Logfp;
-int32 resolve();
 int16 Lport = 1024;
 static int Verbose;
 
@@ -89,7 +89,7 @@ char *argv[];
 
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
 	tprintf("\n");
-	tprintf("WAMPES version 910224\n");
+	tprintf("WAMPES version 910303\n");
 	tprintf("(c) Copyright 1990, 1991 by Dieter Deyke, DK5SG\n");
 	tprintf("(c) Copyright 1990 by Phil Karn, KA9Q\n");
 	tprintf("\n");
@@ -123,7 +123,7 @@ char *argv[];
 #if     (defined(MSDOS) || defined(ATARI_ST))
 			/* c == -2 means the command escape key (F10) */
 			if(c == -2){
-				if(mode != CMD_MODE){
+				if(Mode != CMD_MODE){
 					tprintf("\n");
 					cmdmode();
 				}
@@ -133,14 +133,14 @@ char *argv[];
 #ifdef SYS5
 			if(c == Escape && Escape != 0){
 				ttydriv('\r', &ttybuf);
-				mode = CONV_MODE;
+				Mode = CONV_MODE;
 				cmdmode();
 				continue;
 			}
 #endif   /* SYS5 */
 			if ((cnt = ttydriv(c, &ttybuf)) == 0)
 				continue;
-			switch(mode){
+			switch(Mode){
 			case CMD_MODE:
 				(void)cmdparse(Cmds,ttybuf,NULL);
 				fflush(stdout);
@@ -157,7 +157,7 @@ char *argv[];
 
 				break;
 			}
-			if(mode == CMD_MODE){
+			if(Mode == CMD_MODE){
 				tprintf(Prompt,Hostname);
 				fflush(stdout);
 			}
@@ -190,8 +190,8 @@ char *argv[];
 int
 cmdmode()
 {
-	if(mode != CMD_MODE){
-		mode = CMD_MODE;
+	if(Mode != CMD_MODE){
+		Mode = CMD_MODE;
 		cooked();
 		tprintf(Prompt,Hostname);
 		fflush(stdout);
@@ -232,6 +232,11 @@ char *argv[];
 void *p;
 {
 	reset_all();
+	shuttrace();
+	if(Logfp){
+		fclose(Logfp);
+		Logfp = NULLFILE;
+	}
 	iostop();
 	exit(0);
 	return 0;       /* To satisfy lint */
@@ -251,7 +256,7 @@ void *p;
 
 		if((ifp = if_lookup(argv[1])) != NULLIF){
 			if((name = resolve_a(ifp->addr, FALSE)) == NULLCHAR){
-				tprintf("interface name not defined\n");
+				tprintf("Interface address not resolved\n");
 				return 1;
 			} else {
 				/* free(argv[1]); */
@@ -391,7 +396,7 @@ void *p;
 	return 0;
 }
 
-#if     ((!defined(MSDOS) && !defined(ATARI_ST)) || defined(PC9801))
+#ifndef MSDOS
 int
 doescape(argc,argv,p)
 int argc;
@@ -525,7 +530,7 @@ void *p;
   while (fgets(inbuf, BUFSIZ, fp))
     cmdparse(Cmds, inbuf, NULL);
   fclose(fp);
-  mode = CMD_MODE;
+  Mode = CMD_MODE;
   cooked();
   return 0;
 }

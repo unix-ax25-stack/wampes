@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.5 1991/02/24 20:16:32 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.6 1991/03/28 19:39:07 deyke Exp $ */
 
 #ifndef _AX25_H
 #define _AX25_H
@@ -21,10 +21,6 @@
 #define ALEN            6       /* Number of chars in callsign field */
 #define AXALEN          7       /* Total AX.25 address length, including SSID */
 #define AXBUF           10      /* Buffer size for maximum-length ascii call */
-
-#ifndef _LAPB_H
-#include "lapb.h"
-#endif
 
 /* Bits within SSID field of AX.25 address */
 #define SSID            0x1e    /* Sub station ID */
@@ -114,6 +110,7 @@ void axnl3 __ARGS((struct iface *iface,struct ax25_cb *axp,char *src,
 struct ax_route *ax_routeptr __ARGS((char *call, int create));
 void axroute_add __ARGS((struct iface *iface, struct ax25 *hdr, int perm));
 int axroute __ARGS((struct ax25_cb *cp, struct mbuf *bp));
+char *ax25hdr_to_string __ARGS((struct ax25 *hdr));
 
 /* In axhdr.c: */
 struct mbuf *htonax25 __ARGS((struct ax25 *hdr,struct mbuf *data));
@@ -121,6 +118,7 @@ int ntohax25 __ARGS((struct ax25 *hdr,struct mbuf **bpp));
 
 /* In ax25subr.c: */
 int addreq __ARGS((char *a,char *b));
+struct iface *ismyax25addr __ARGS((char *addr));
 void addrcp __ARGS((char *to,char *from));
 char *pax25 __ARGS((char *e,char *addr));
 int setcall __ARGS((char *out,char *call));

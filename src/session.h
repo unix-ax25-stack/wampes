@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.5 1991/02/24 20:17:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.6 1991/03/28 19:40:07 deyke Exp $ */
 
 #ifndef _SESSION_H
 #define _SESSION_H
@@ -25,7 +25,7 @@
 #include "ax25.h"
 #endif
 
-extern int mode;
+extern int Mode;
 #define CMD_MODE        1       /* Command mode */
 #define CONV_MODE       2       /* Converse mode */
 

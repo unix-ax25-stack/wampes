@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.6 1991/02/24 20:16:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.7 1991/03/28 19:38:56 deyke Exp $ */
 
 /* Address Resolution Protocol (ARP) functions. Sits between IP and
  * Level 2, mapping IP to Level 2 addresses for all outgoing datagrams.
@@ -165,7 +165,7 @@ struct mbuf *bp;
 	} else if(arp.opcode == REVARP_REQUEST){
 		for(i=0;i<HASHMOD;i++)
 			for(ap = Arp_tab[i];ap != NULLARP;ap = ap->next)
-				if(memcmp(ap->hw_addr, arp.thwaddr,at->hwalen) == 0)
+				if(memcmp(ap->hw_addr,arp.thwaddr,at->hwalen) == 0)
 					goto found;
 	found:  if(ap != NULLARP && ap->pub){
 			memcpy(arp.shwaddr,iface->hwaddr,at->hwalen);

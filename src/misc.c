@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.4 1991/02/24 20:17:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.5 1991/03/28 19:39:52 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -214,5 +214,20 @@ register char *cp;
 
 	return rval;
 }
+/* Compute int(log2(x)) */
+int
+log2(x)
+register int16 x;
+{
+	register int n = 16;
+	for(;n != 0;n--){
+		if(x & 0x8000)
+			break;
+		x <<= 1;
+	}
+	n--;
+	return n;
+}
+
 #endif
 

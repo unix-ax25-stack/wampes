@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.1 1991/02/24 20:18:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.2 1991/03/28 19:38:54 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -154,25 +154,61 @@ long autospeed;
   if (ioctl(ap->fd, TCGETA, &termio)) return (-1);
   termio.c_cflag &= ~CBAUD;
   switch (speed) {
-  case    50: termio.c_cflag |= B50;    break;
-  case    75: termio.c_cflag |= B75;    break;
-  case   110: termio.c_cflag |= B110;   break;
-  case   134: termio.c_cflag |= B134;   break;
-  case   150: termio.c_cflag |= B150;   break;
-  case   200: termio.c_cflag |= B200;   break;
-  case   300: termio.c_cflag |= B300;   break;
-  case   600: termio.c_cflag |= B600;   break;
-  case   900: termio.c_cflag |= B900;   break;
-  case  1200: termio.c_cflag |= B1200;  break;
-  case  1800: termio.c_cflag |= B1800;  break;
-  case  2400: termio.c_cflag |= B2400;  break;
-  case  3600: termio.c_cflag |= B3600;  break;
-  case  4800: termio.c_cflag |= B4800;  break;
-  case  7200: termio.c_cflag |= B7200;  break;
-  case  9600: termio.c_cflag |= B9600;  break;
-  case 19200: termio.c_cflag |= B19200; break;
-  case 38400: termio.c_cflag |= B38400; break;
-  default:    return (-1);
+#ifdef    B50
+  case     50: termio.c_cflag |= B50;    break;
+#endif
+#ifdef    B75
+  case     75: termio.c_cflag |= B75;    break;
+#endif
+#ifdef   B110
+  case    110: termio.c_cflag |= B110;   break;
+#endif
+#ifdef   B134
+  case    134: termio.c_cflag |= B134;   break;
+#endif
+#ifdef   B150
+  case    150: termio.c_cflag |= B150;   break;
+#endif
+#ifdef   B200
+  case    200: termio.c_cflag |= B200;   break;
+#endif
+#ifdef   B300
+  case    300: termio.c_cflag |= B300;   break;
+#endif
+#ifdef   B600
+  case    600: termio.c_cflag |= B600;   break;
+#endif
+#ifdef   B900
+  case    900: termio.c_cflag |= B900;   break;
+#endif
+#ifdef  B1200
+  case   1200: termio.c_cflag |= B1200;  break;
+#endif
+#ifdef  B1800
+  case   1800: termio.c_cflag |= B1800;  break;
+#endif
+#ifdef  B2400
+  case   2400: termio.c_cflag |= B2400;  break;
+#endif
+#ifdef  B3600
+  case   3600: termio.c_cflag |= B3600;  break;
+#endif
+#ifdef  B4800
+  case   4800: termio.c_cflag |= B4800;  break;
+#endif
+#ifdef  B7200
+  case   7200: termio.c_cflag |= B7200;  break;
+#endif
+#ifdef  B9600
+  case   9600: termio.c_cflag |= B9600;  break;
+#endif
+#ifdef B19200
+  case  19200: termio.c_cflag |= B19200; break;
+#endif
+#ifdef B38400
+  case  38400: termio.c_cflag |= B38400; break;
+#endif
+  default:     return (-1);
   }
   if (ioctl(ap->fd, TCSETA, &termio)) return (-1);
   ap->speed = speed;

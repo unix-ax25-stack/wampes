@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.5 1991/02/24 20:16:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.6 1991/03/28 19:39:27 deyke Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q
@@ -493,7 +493,7 @@ int16 cnt;
 		return;
 	}
 	/* Hold output if we're not the current session */
-	if(mode != CONV_MODE || Current == NULLSESSION || Current->cb.ftp != ftp)
+	if(Mode != CONV_MODE || Current == NULLSESSION || Current->cb.ftp != ftp)
 		return;
 
 	if(recv_tcp(tcb,&bp,cnt) > 0){

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.5 1991/02/24 20:16:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.6 1991/03/28 19:39:32 deyke Exp $ */
 
 /* Internet Control Message Protocol (ICMP)
  * Copyright 1991 Phil Karn, KA9Q
@@ -202,7 +202,7 @@ union icmp_args *args;
 		return -1;      /* The caller will free data */
 
 	/* Recreate and tack on offending IP header */
-	if((data = htonip(ip,bp,1)) == NULLBUF){
+	if((data = htonip(ip,bp,0)) == NULLBUF){
 		free_p(bp);
 		icmpOutErrors++;
 		return -1;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.6 1991/02/24 20:16:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.7 1991/03/28 19:39:29 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -131,6 +131,7 @@ char *inbuf __ARGS((int16 port,char *buf,int16 cnt));
 int16 hash_ip __ARGS((int32 addr));
 int istate __ARGS((void));
 void log();
+int log2 __ARGS((int x));
 #define ltop(x) ((void *) x)
 void *mallocw __ARGS((unsigned nb));
 char *outbuf __ARGS((int16 port,char *buf,int16 cnt));

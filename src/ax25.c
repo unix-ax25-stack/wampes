@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.8 1991/02/24 20:16:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.9 1991/03/28 19:39:05 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -172,17 +172,17 @@ struct mbuf *bp;
 			 */
 			axroute_add(iface, &hdr, 0);
 			hdr.nextdigi++;
-			if((hbp = htonax25(&hdr,bp)) != NULLBUF){
-				switch(Digipeat){
-				case 1:
+			switch(Digipeat){
+			case 1:
+				if((hbp = htonax25(&hdr,bp)) != NULLBUF){
 					axroute(NULL,hbp);
 					bp = NULLBUF;
-					break;
-				case 2:
-					axproto_recv(iface,hbp);
-					bp = NULLBUF;
-					break;
 				}
+				break;
+			case 2:
+				lapb_input(iface,&hdr,bp);
+				bp = NULLBUF;
+				break;
 			}
 		}
 		free_p(bp);     /* Dispose if not forwarded */
@@ -247,11 +247,7 @@ struct mbuf *bp;
 		return;
 	}
 
-	if((hbp = htonax25(&hdr,bp)) != NULLBUF){
-		axproto_recv(iface,hbp);
-	} else {
-		free_p(bp);
-	}
+	lapb_input(iface,&hdr,bp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -389,4 +385,34 @@ struct mbuf *bp;
 int mcast;
 {
 	free_p(bp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+char  *ax25hdr_to_string(hdr)
+struct ax25 *hdr;
+{
+
+  char  *p;
+  int  i;
+  static char  buf[128];
+
+  if (!*hdr->dest) return "*";
+  p = buf;
+  if (*hdr->source) {
+    pax25(p, hdr->source);
+    while (*p) p++;
+    *p++ = '-';
+    *p++ = '>';
+  }
+  pax25(p, hdr->dest);
+  while (*p) p++;
+  for (i = 0; i < hdr->ndigis; i++) {
+    *p++ = ',';
+    pax25(p, hdr->digis[i]);
+    while (*p) p++;
+    if (i < hdr->nextdigi) *p++ = '*';
+  }
+  *p = '\0';
+  return buf;
 }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.3 1991/02/24 20:16:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.4 1991/03/28 19:39:19 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -26,6 +26,7 @@ int ax250 __ARGS((int argc,char *argv[],void *p));
 int ax25start __ARGS((int argc,char *argv[],void *p));
 int doax25 __ARGS((int argc,char *argv[],void *p));
 int doaxheard __ARGS((int argc,char *argv[],void *p));
+int doaxdest __ARGS((int argc,char *argv[],void *p));
 int doconnect __ARGS((int argc,char *argv[],void *p));
 
 /* In dialer.c: */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.17 1991/02/24 20:17:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.18 1991/03/28 19:39:54 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -28,7 +28,7 @@ static int  nr_bdcstint    =  1800;
 static int  nr_ttlinit     =    16;
 static int  nr_ttimeout    =    60;
 static int  nr_tretry      =     5;
-static int  nr_tackdelay   =     4;
+static int  nr_tackdelay   =  1900;
 static int  nr_tbsydelay   =   180;
 static int  nr_twindow     =     8;
 static int  nr_tnoackbuf   =     8;
@@ -56,7 +56,7 @@ static struct parms {
   " 8 Network 'time-to-live' initializer         ", &nr_ttlinit,     1,        255,
   " 9 Transport timeout (sec)                    ", &nr_ttimeout,    5,        600,
   "10 Transport maximum tries                    ", &nr_tretry,      1,        127,
-  "11 Transport acknowledge delay (sec)          ", &nr_tackdelay,   1,         60,
+  "11 Transport acknowledge delay (ms)           ", &nr_tackdelay,   1,      60000,
   "12 Transport busy delay (sec)                 ", &nr_tbsydelay,   1,       1000,
   "13 Transport requested window size (frames)   ", &nr_twindow,     1,        127,
   "14 Congestion control threshold (frames)      ", &nr_tnoackbuf,   1,        127,
@@ -189,7 +189,7 @@ int  oldstate, newstate;
   if (cp->user)
     pn = (struct node *) cp->user;
   else
-    cp->user = (char *) (pn = nodeptr(cp->path, 1));
+    cp->user = (char *) (pn = nodeptr(cp->hdr.dest, 1));
   switch (newstate) {
   case CONNECTING:
     break;
@@ -224,7 +224,7 @@ int  cnt;
     recv_ax(cp, &bp, 0);
     if ((pid = PULLCHAR(&bp)) == -1) continue;
     if (pid == PID_NETROM)
-      nr3_input(bp, cp->path);
+      nr3_input(bp, cp->hdr.dest);
     else
       free_p(bp);
   }
@@ -1246,7 +1246,7 @@ struct mbuf *bp;
     }
     nakrcvd = bp->data[4] & NR4NAK;
     if ((bp->data[4] & NR4OPCODE) == NR4OPINFO) {
-      set_timer(&pc->timer_t2, nr_tackdelay * 1000l);
+      set_timer(&pc->timer_t2, nr_tackdelay);
       start_timer(&pc->timer_t2);
       if (uchar(bp->data[2] - pc->recv_state) < pc->window) {
 	struct mbuf *curr, *prev;
@@ -1423,7 +1423,7 @@ int cnt;
     }
     pc->rcvcnt -= cnt;
     if (pc->chokesent && !busy(pc)) {
-      set_timer(&pc->timer_t2, nr_tackdelay * 1000l);
+      set_timer(&pc->timer_t2, nr_tackdelay);
       start_timer(&pc->timer_t2);
     }
     return cnt;
@@ -1642,7 +1642,7 @@ int  cnt;
   int  c;
   struct mbuf *bp;
 
-  if (!(mode == CONV_MODE && Current && Current->type == NRSESSION && Current->cb.netrom == pc)) return;
+  if (!(Mode == CONV_MODE && Current && Current->type == NRSESSION && Current->cb.netrom == pc)) return;
   recv_nr(pc, &bp, 0);
   while ((c = PULLCHAR(&bp)) != -1) {
     if (c == '\r') c = '\n';

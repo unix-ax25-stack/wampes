@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.4 1991/02/24 20:17:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.5 1991/03/28 19:39:40 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -66,6 +66,7 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 	char *opt;              /* -> beginning of current option */
 	char *ptr;              /* -> pointer field in source route fields */
 	struct mbuf *tbp;
+	int ckgood = 1;
 
 	if(i_iface != NULLIF){
 		ipInReceives++; /* Not locally generated */
@@ -136,9 +137,9 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 			 */
 			if(ismyaddr(ip.dest) == NULLIF)
 				break;  /* Skip to next option */
-			if(uchar(opt[2]) >= opt_len){
+			if(uchar(opt[2]) >= opt_len)
 				break;  /* Route exhausted; it's for us */
-			}
+
 			/* Put address for next hop into destination field,
 			 * put our address into the route field, and bump
 			 * the pointer
@@ -147,6 +148,7 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 			ip.dest = get32(ptr);
 			put32(ptr,locaddr(ip.dest));
 			opt[2] += 4;
+			ckgood = 0;
 			break;
 		case IP_RROUTE: /* Record route */
 			if(uchar(opt[2]) > opt_len-3){
@@ -166,6 +168,7 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 				ptr = opt + uchar(opt[2]) - 1;
 				ptr = put32(ptr,locaddr(ip.dest));
 				opt[2] += 4;
+				ckgood = 0;
 			}
 			break;
 		}
@@ -191,6 +194,11 @@ no_opt:
 	 */
 	if(i_iface != NULLIF)
 		ipForwDatagrams++;
+
+	/* Adjust the header checksum to allow for the modified TTL */
+	ip.checksum += 0x100;
+	if((ip.checksum & 0xff00) == 0)
+		ip.checksum++;  /* end-around carry */
 
 	/* Decrement TTL and discard if zero. We don't have to check
 	 * rxbroadcast here because it's already been checked
@@ -219,7 +227,7 @@ no_opt:
 		iface = iface->forw;
 
 	/* Find gateway; zero gateway in routing table means "send direct" */
-	if(rp->gateway == (int32)0)
+	if(rp->gateway == 0)
 		gateway = ip.dest;
 	else
 		gateway = rp->gateway;
@@ -240,12 +248,9 @@ no_opt:
 
 	if(ip.length <= iface->mtu){
 		/* Datagram smaller than interface MTU; put header
-		 * back on and send normally. Adjust the header checksum
-		 * to allow for the modified TTL.
+		 * back on and send normally.
 		 */
-		if(((ip.checksum += 0x100) & 0xff00) == 0)
-			ip.checksum++;  /* End-around carry */
-		if((tbp = htonip(&ip,bp,1)) == NULLBUF){
+		if((tbp = htonip(&ip,bp,ckgood)) == NULLBUF){
 			free_p(bp);
 			return -1;
 		}

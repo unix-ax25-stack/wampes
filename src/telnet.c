@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.6 1991/02/24 20:17:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.7 1991/03/28 19:40:16 deyke Exp $ */
 
 /* Internet Telnet client
  * Copyright 1991 Phil Karn, KA9Q
@@ -223,7 +223,7 @@ int16 cnt;
 		return;
 	}
 	/* Hold output if we're not the current session */
-	if(mode != CONV_MODE || Current == NULLSESSION
+	if(Mode != CONV_MODE || Current == NULLSESSION
 	 || Current->type != TELNET || Current->cb.telnet != tn)
 		return;
 

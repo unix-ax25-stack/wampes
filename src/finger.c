@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.4 1990/10/12 19:25:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.5 1991/03/28 19:39:25 deyke Exp $ */
 
 /*
  *
@@ -182,7 +182,7 @@ int16                   cnt;
 	}
 
 	/* Hold output if we're not the current session */
-	if (mode != CONV_MODE || Current == NULLSESSION
+	if (Mode != CONV_MODE || Current == NULLSESSION
 		|| Current->type != FINGER)
 		return;
 

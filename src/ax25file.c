@@ -1,9 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.1 1991/02/24 20:18:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.2 1991/03/28 19:39:10 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
 
 #include "global.h"
+#include "timer.h"
 #include "iface.h"
 #include "ax25.h"
 #include "asy.h"

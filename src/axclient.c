@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.7 1991/02/24 20:16:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.8 1991/03/28 19:39:13 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -71,7 +71,7 @@ int  cnt;
   int  c;
   struct mbuf *bp;
 
-  if (!(mode == CONV_MODE && Current && Current->type == AX25TNC && Current->cb.ax25 == cp)) return;
+  if (!(Mode == CONV_MODE && Current && Current->type == AX25TNC && Current->cb.ax25 == cp)) return;
   recv_ax(cp, &bp, 0);
   while ((c = PULLCHAR(&bp)) != -1) {
     if (c == '\r') c = '\n';

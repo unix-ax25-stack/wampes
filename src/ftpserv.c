@@ -1,10 +1,12 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.6 1991/02/24 20:16:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.7 1991/03/28 19:39:28 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
  */
 
 #define LINELEN         128     /* Length of command buffer */
+
+#include <sys/types.h>
 
 #include <stdio.h>
 #include <ctype.h>

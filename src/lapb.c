@@ -1,19 +1,18 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.14 1991/02/24 20:17:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.15 1991/03/28 19:39:42 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
  */
-
 #include <time.h>
-
 #include "global.h"
-#include "netuser.h"
+#include "mbuf.h"
 #include "timer.h"
 #include "ax25.h"
 #include "lapb.h"
 #include "netrom.h"
-#include "cmdparse.h"
 #include "asy.h"
+#include "cmdparse.h"
+#include "netuser.h"
 
 extern struct ax25_cb *netrom_server_axcb;
 
@@ -58,7 +57,7 @@ static void t3_timeout __ARGS((struct ax25_cb *cp));
 static void t4_timeout __ARGS((struct ax25_cb *cp));
 static void t5_timeout __ARGS((struct ax25_cb *cp));
 static struct ax25_cb *create_axcb __ARGS((struct ax25_cb *prototype));
-static void build_path __ARGS((struct ax25_cb *cp, struct iface *ifp, char *newpath, int reverse));
+static void build_path __ARGS((struct ax25_cb *cp, struct iface *ifp, struct ax25 *hdr, int reverse));
 static int put_reseq __ARGS((struct ax25_cb *cp, struct mbuf *bp, int ns));
 static int dodigipeat __ARGS((int argc, char *argv [], void *p));
 static int domaxframe __ARGS((int argc, char *argv [], void *p));
@@ -116,19 +115,18 @@ int  cmdrsp;
 struct mbuf *data;
 {
 
-  char  *p;
   int  control;
   struct mbuf *bp;
 
-  if (!(bp = alloc_mbuf(cp->pathlen + 2))) {
-    free_p(data);
-    return;
+  if (cp->mode == STREAM && (type == I || type == UI)) {
+    if (!(bp = pushdown(data, 1))) {
+      free_p(data);
+      return;
+    }
+    *bp->data = PID_NO_L3;
+    data = bp;
   }
-  p = bp->data;
-  memcpy(p, cp->path, cp->pathlen);
-  if (cmdrsp & DST_C) p[6] |= C;
-  if (cmdrsp & SRC_C) p[AXALEN+6] |= C;
-  p += cp->pathlen;
+
   control = type;
   if (type == I) {
     control |= (cp->vs << 1);
@@ -139,16 +137,32 @@ struct mbuf *data;
     stop_timer(&cp->timer_t2);
   }
   if (cmdrsp & PF) control |= PF;
-  *p++ = control;
-  if (cp->mode == STREAM && (type == I || type == UI)) *p++ = PID_NO_L3;
+  if (!(bp = pushdown(data, 1))) {
+    free_p(data);
+    return;
+  }
+  *bp->data = control;
+  data = bp;
+
+  if (cmdrsp & DST_C)
+    cp->hdr.cmdrsp = LAPB_COMMAND;
+  else if (cmdrsp & SRC_C)
+    cp->hdr.cmdrsp = LAPB_RESPONSE;
+  else
+    cp->hdr.cmdrsp = VERS1;
+  if (!(bp = htonax25(&cp->hdr, data))) {
+    free_p(data);
+    return;
+  }
+  data = bp;
+
   if (type == RR || type == REJ || type == UA) cp->rnrsent = 0;
   if (type == RNR) cp->rnrsent = 1;
   if (type == REJ) cp->rejsent = 1;
   if (cmdrsp == POLL) cp->polling = 1;
   if (type == I || cmdrsp == POLL) start_timer(&cp->timer_t1);
-  bp->cnt = p - bp->data;
-  bp->next = data;
-  axroute(cp, bp);
+
+  axroute(cp, data);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -376,128 +390,82 @@ struct ax25_cb *prototype;
 
 /*---------------------------------------------------------------------------*/
 
-static void build_path(cp, ifp, newpath, reverse)
+static void build_path(cp, ifp, hdr, reverse)
 struct ax25_cb *cp;
 struct iface *ifp;
-char  *newpath;
+struct ax25 *hdr;
 int  reverse;
 {
 
-  char  *ap, *tp, *myaddr;
-  char  buf[10*AXALEN];
-  int  len, ndigi;
+  char  *dest;
+  int  d;
+  int  i;
   struct ax_route *rp;
 
-  /*** find address length and copy address into control block ***/
-
-  for (ap = newpath; !(ap[6] & E); ap += AXALEN) ;
-  cp->pathlen = ap - newpath + AXALEN;
   if (reverse) {
-    addrcp(cp->path, newpath + AXALEN);
-    addrcp(cp->path + AXALEN, newpath);
-    for (tp = cp->path + 2 * AXALEN;
-	 tp < cp->path + cp->pathlen;
-	 tp += AXALEN, ap -= AXALEN)
-      addrcp(tp, ap);
-  } else
-    memcpy(cp->path, newpath, cp->pathlen);
 
-  /*** store interface pointer into control block ***/
+    /*** copy hdr into control block ***/
 
-  cp->ifp = ifp;
+    addrcp(cp->hdr.dest, hdr->source);
+    addrcp(cp->hdr.source, hdr->dest);
+    for (i = 0; i < hdr->ndigis; i++)
+      addrcp(cp->hdr.digis[i], hdr->digis[hdr->ndigis-1-i]);
+    cp->hdr.ndigis = hdr->ndigis;
 
-  /*** find my digipeater address (use the last one) ***/
+    /*** find my last address ***/
 
-  myaddr = NULLCHAR;
-  for (ap = cp->path + 2 * AXALEN; ap < cp->path + cp->pathlen; ap += AXALEN)
-    if (ismycall(ap)) myaddr = ap;
+    cp->hdr.nextdigi = 0;
+    for (i = 0; i < cp->hdr.ndigis; i++)
+      if (ismyax25addr(cp->hdr.digis[i])) cp->hdr.nextdigi = i + 1;
 
-  /*** autorouting ***/
+    cp->ifp = ifp;
 
-  if (!reverse) {
+  } else {
+
+    /*** copy hdr into control block ***/
+
+    cp->hdr = *hdr;
+
+    /*** find my last address ***/
+
+    cp->hdr.nextdigi = 0;
+    for (i = 0; i < cp->hdr.ndigis; i++)
+      if (ismyax25addr(cp->hdr.digis[i])) cp->hdr.nextdigi = i + 1;
 
     /*** remove all digipeaters before me ***/
 
-    if (myaddr && myaddr > cp->path + 2 * AXALEN) {
-      len = (cp->path + cp->pathlen) - myaddr;
-      memcpy(buf, myaddr, len);
-      myaddr = cp->path + 2 * AXALEN;
-      memcpy(myaddr, buf, len);
-      cp->pathlen = 2 * AXALEN + len;
+    d = cp->hdr.nextdigi - 1;
+    if (d > 0) {
+      for (i = d; i < cp->hdr.ndigis; i++)
+	addrcp(cp->hdr.digis[i-d], cp->hdr.digis[i]);
+      cp->hdr.ndigis -= d;
+      cp->hdr.nextdigi = 1;
     }
 
     /*** add necessary digipeaters and find interface ***/
 
-    ap = myaddr ? myaddr + AXALEN : cp->path + 2 * AXALEN;
-    rp = ax_routeptr((ap >= cp->path + cp->pathlen) ? cp->path : ap, 0);
-    for (; rp; rp = rp->digi) {
-      if (rp->digi && cp->pathlen < sizeof(cp->path)) {
-	len = (cp->path + cp->pathlen) - ap;
-	if (len) memcpy(buf, ap, len);
-	addrcp(ap, rp->digi->call);
-	if (len) memcpy(ap + AXALEN, buf, len);
-	cp->pathlen += AXALEN;
+    dest = cp->hdr.nextdigi < cp->hdr.ndigis ? cp->hdr.digis[cp->hdr.nextdigi] : cp->hdr.dest;
+    for (rp = ax_routeptr(dest, 0); rp; rp = rp->digi) {
+      if (rp->digi && cp->hdr.ndigis < MAXDIGIS) {
+	for (i = cp->hdr.ndigis - 1; i >= cp->hdr.nextdigi; i--)
+	  addrcp(cp->hdr.digis[i+1], cp->hdr.digis[i]);
+	cp->hdr.ndigis++;
+	addrcp(cp->hdr.digis[cp->hdr.nextdigi], rp->digi->call);
       }
       cp->ifp = rp->ifp;
     }
     if (!cp->ifp) cp->ifp = axroute_default_ifp;
+
+    /*** replace my address with hwaddr of interface ***/
+
+    addrcp(cp->hdr.nextdigi ? cp->hdr.digis[0] : cp->hdr.source,
+	   cp->ifp ? cp->ifp->hwaddr : Mycall);
+
   }
 
-  /*** clear all address bits ***/
-
-  for (ap = cp->path; ap < cp->path + cp->pathlen; ap += AXALEN)
-    ap[6] = (ap[6] & SSID) | 0x60;
-
-  /*** set REPEATED bits for all digipeaters before and including me ***/
-
-  if (myaddr)
-    for (ap = cp->path + 2 * AXALEN; ap <= myaddr; ap += AXALEN)
-      ap[6] |= REPEATED;
-
-  /*** mark end of address field ***/
-
-  cp->path[cp->pathlen-1] |= E;
-
-  /*** estimate round trip time ***/
-
-  if (myaddr)
-    ndigi = (cp->path + cp->pathlen - myaddr) / AXALEN - 1;
-  else
-    ndigi = cp->pathlen / AXALEN - 2;
-  cp->srtt = (ax_t1init * (1 + 2 * ndigi)) / 2;
+  cp->srtt = (ax_t1init * (1 + 2 * (cp->hdr.ndigis - cp->hdr.nextdigi))) / 2;
   cp->mdev = cp->srtt / 2;
   reset_t1(cp);
-}
-
-/*---------------------------------------------------------------------------*/
-
-char  *pathtostr(cp)
-struct ax25_cb *cp;
-{
-
-  char  *ap, *p;
-  static char  buf[128];
-
-  if (!cp->pathlen) return "*";
-  p = buf;
-  ap = cp->path + AXALEN;
-  if (!ismycall(ap)) {
-    pax25(p, ap);
-    while (*p) p++;
-    *p++ = '-';
-    *p++ = '>';
-  }
-  pax25(p, cp->path);
-  while (*p) p++;
-  while (!(ap[6] & E)) {
-    ap += AXALEN;
-    *p++ = ',';
-    pax25(p, ap);
-    while (*p) p++;
-    if (ap[6] & REPEATED) *p++ = '*';
-  }
-  *p = '\0';
-  return buf;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -529,57 +497,66 @@ int  ns;
 
 /*---------------------------------------------------------------------------*/
 
-int  axproto_recv(ifp, bp)
-struct iface *ifp;
+int  lapb_input(iface, hdr, bp)
+struct iface *iface;
+struct ax25 *hdr;
 struct mbuf *bp;
 {
 
-  char  *cntrlptr;
   int  cmdrsp;
   int  control;
   int  for_me;
   int  nr;
   int  ns;
+  int  pid;
   int  type;
   struct ax25_cb *cp;
   struct ax25_cb *cpp;
 
-  for (cntrlptr = bp->data + AXALEN; !(cntrlptr[6] & E); cntrlptr += AXALEN) ;
-  cntrlptr += AXALEN;
-  control = uchar(*cntrlptr);
-  if (control & 1) {
-    if (control & 2)
-      type = control & ~PF;
-    else
-      type = control & 0xf;
-  } else
-    type = I;
-  for_me = ismycall(bp->data);
+  if (!bp) return (-1);
+  control = uchar(*bp->data);
+  type = ftype(control);
+  for_me = (ismyax25addr(hdr->dest) != NULLIF);
 
-  if (!for_me && (type == UI || addreq(bp->data, bp->data + AXALEN))) {
-    axroute(NULLAXCB, bp);
-    return;
+  if (!for_me && (type == UI || addreq(hdr->source, hdr->dest))) {
+    struct mbuf *hbp;
+    if (!(hbp = htonax25(hdr, bp))) {
+      free_p(bp);
+      return (-1);
+    }
+    axroute(NULLAXCB, hbp);
+    return 0;
   }
 
-  if ((bp->data[6] & C) == (bp->data[AXALEN+6] & C))
+  PULLCHAR(&bp);
+  if (bp) pid = uchar(*bp->data);
+
+  switch (hdr->cmdrsp) {
+  case LAPB_COMMAND:
+    cmdrsp = DST_C | (control & PF);
+    break;
+  case LAPB_RESPONSE:
+    cmdrsp = SRC_C | (control & PF);
+    break;
+  default:
     cmdrsp = VERS1;
-  else
-    cmdrsp = ((bp->data[6] & C) ? DST_C : SRC_C) | (control & PF);
+    break;
+  }
 
   for (cp = axcb_head; cp; cp = cp->next)
-    if (addreq(bp->data + AXALEN, cp->path) && addreq(bp->data, cp->path + AXALEN)) break;
+    if (addreq(hdr->source, cp->hdr.dest) && addreq(hdr->dest, cp->hdr.source)) break;
   if (!cp) {
-    if (for_me && netrom_server_axcb && isnetrom(bp->data + AXALEN))
+    if (for_me && netrom_server_axcb && isnetrom(hdr->source))
       cp = create_axcb(netrom_server_axcb);
     else if (for_me && axcb_server)
       cp = create_axcb(axcb_server);
     else
       cp = create_axcb(NULLAXCB);
-    build_path(cp, ifp, bp->data, 1);
+    build_path(cp, iface, hdr, 1);
     if (!for_me) {
       cp->peer = cpp = create_axcb(NULLAXCB);
       cpp->peer = cp;
-      build_path(cpp, NULLIF, bp->data, 0);
+      build_path(cpp, NULLIF, hdr, 0);
     } else
       cpp = NULLAXCB;
   } else
@@ -587,7 +564,7 @@ struct mbuf *bp;
 
   if (type == SABM) {
     int  i;
-    build_path(cp, ifp, bp->data, 1);
+    build_path(cp, iface, hdr, 1);
     if (cp->unack)
       start_timer(&cp->timer_t1);
     else
@@ -608,7 +585,7 @@ struct mbuf *bp;
       }
   }
 
-  if (cp->mode == STREAM && type == I && uchar(cntrlptr[1]) != PID_NO_L3) {
+  if (cp->mode == STREAM && type == I && pid != PID_NO_L3) {
     cp->mode = DGRAM;
     if (cpp) cpp->mode = DGRAM;
   }
@@ -632,7 +609,7 @@ struct mbuf *bp;
       if (type == SABM && cmdrsp != VERS1 && cpp->state == DISCONNECTED) {
 	setaxstate(cpp, CONNECTING);
       } else if (type == SABM && cmdrsp != VERS1 && cpp->state == CONNECTING) {
-	build_path(cpp, NULLIF, bp->data, 0);
+	build_path(cpp, NULLIF, hdr, 0);
 	send_packet(cpp, SABM, POLL, NULLBUF);
       } else {
 	if (cmdrsp != RESP && cmdrsp != FINAL)
@@ -711,21 +688,21 @@ struct mbuf *bp;
       }
       if (type == I) {
 	if (for_me &&
-	    uchar(cntrlptr[1]) == PID_NETROM &&
+	    pid == PID_NETROM &&
 	    cp->r_upcall != netrom_server_axcb->r_upcall) {
-	  new_neighbor(bp->data + AXALEN);
+	  new_neighbor(hdr->source);
 	  setaxstate(cp, DISCONNECTING);
 	  free_p(bp);
-	  return;
+	  return 0;
 	}
 	ns = (control >> 1) & 7;
-	pullup(&bp, NULLCHAR, cntrlptr - bp->data + 1 + (cp->mode == STREAM));
 	if (!bp) bp = alloc_mbuf(0);
 	if (put_reseq(cp, bp, ns))
 	  while (bp = cp->reseq[cp->vr].bp) {
 	    cp->reseq[cp->vr].bp = 0;
 	    cp->vr = next_seq(cp->vr);
 	    cp->rejsent = 0;
+	    if (cp->mode == STREAM) PULLCHAR(&bp);
 	    if (for_me) {
 	      cp->rcvcnt += len_p(bp);
 	      if (cp->mode == STREAM)
@@ -824,6 +801,7 @@ struct mbuf *bp;
   }
 
   free_p(bp);
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -837,8 +815,6 @@ int  argc;
 char  *argv[];
 void *p;
 {
-  extern int  Digipeat;
-
   return setintrc(&Digipeat, "Digipeat", argc, argv, 0, 2);
 }
 
@@ -1147,7 +1123,7 @@ void *p;
 	     cp->retry,
 	     cp->srtt,
 	     ax25states[cp->state],
-	     pathtostr(cp));
+	     ax25hdr_to_string(&cp->hdr));
     if (axcb_server)
       printf("%8lx                        Listen (S)     *\n",
 	     (long) axcb_server);
@@ -1157,7 +1133,7 @@ void *p;
       printf("Not a valid control block address\n");
       return 1;
     }
-    printf("Path:         %s\n", pathtostr(cp));
+    printf("Path:         %s\n", ax25hdr_to_string(&cp->hdr));
     printf("Interface:    %s\n", cp->ifp ? cp->ifp->name : "---");
     printf("State:        %s\n", (cp == axcb_server) ? "Listen (S)" : ax25states[cp->state]);
     if (cp->reason)
@@ -1345,12 +1321,26 @@ void (*t_upcall) __ARGS((struct ax25_cb *p, int cnt));
 void (*s_upcall) __ARGS((struct ax25_cb *p, int oldstate, int newstate));
 char  *user;
 {
+
+  char  *ap;
+  struct ax25 hdr;
   struct ax25_cb *cp;
+
+  hdr.ndigis = hdr.nextdigi = 0;
+  ap = path;
+  addrcp(hdr.dest, ap);
+  ap += AXALEN;
+  addrcp(hdr.source, ap);
+  ap += AXALEN;
+  while (!(ap[-1] & E)) {
+    addrcp(hdr.digis[hdr.ndigis++], ap);
+    ap += AXALEN;
+  }
 
   switch (mode) {
   case AX_ACTIVE:
     for (cp = axcb_head; cp; cp = cp->next)
-      if (!cp->peer && addreq(path, cp->path)) {
+      if (!cp->peer && addreq(hdr.dest, cp->hdr.dest)) {
 	Net_error = CON_EXISTS;
 	return NULLAXCB;
       }
@@ -1358,7 +1348,7 @@ char  *user;
       Net_error = NO_MEM;
       return NULLAXCB;
     }
-    build_path(cp, NULLIF, path, 0);
+    build_path(cp, NULLIF, &hdr, 0);
     cp->r_upcall = r_upcall;
     cp->t_upcall = t_upcall;
     cp->s_upcall = s_upcall;

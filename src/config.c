@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.5 1991/02/24 20:16:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.6 1991/03/28 19:39:20 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -22,7 +22,7 @@
 /* #include "ppp.h" */
 #include "pktdrvr.h"
 #include "slip.h"
-/* #include "slcompre.h" */
+/* #include "slcomp.h" */
 /* #include "usock.h" */
 #include "kiss.h"
 #include "enet.h"

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.5 1991/02/24 20:17:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.6 1991/03/28 19:40:19 deyke Exp $ */
 
 /* Packet tracing - top level and generic routines, including hex/ascii
  * Copyright 1991 Phil Karn, KA9Q
@@ -50,7 +50,7 @@ struct mbuf *bp;
 		timer = secclock();
 		cp = ctime(&timer);
 		cp[24] = '\0';
-		fprintf(iface->trfp,"%s  - %s recv:\n",cp,iface->name);
+		fprintf(iface->trfp,"%s - %s recv:\n",cp,iface->name);
 		break;
 	case IF_TRACE_OUT:
 		timer = secclock();
