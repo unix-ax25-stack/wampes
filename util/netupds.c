@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.31 1995/06/05 10:42:51 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.32 1995/06/10 17:23:42 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -1102,10 +1102,11 @@ static void server_version_1(const char *client, int flags)
       }
       if (memcmp(p->client.digest, p->mirror.digest, DIGESTSIZE))
 	update_mirror_from_rcs(p, master, mirrorfilename);
-      if (!memcmp(p->client.digest, p->mirror.digest, DIGESTSIZE))
-	send_update(p, ACT_UPDATE, flags, masterfilename, mirrorfilename);
-      else
+      if (memcmp(p->client.digest, p->mirror.digest, DIGESTSIZE) ||
+	  stringmatch(p->name, "*.gif"))
 	send_update(p, ACT_CREATE, flags, masterfilename, mirrorfilename);
+      else
+	send_update(p, ACT_UPDATE, flags, masterfilename, mirrorfilename);
       break;
     case S_IFLNK:
       if (memcmp(p->master.digest, p->client.digest, DIGESTSIZE))

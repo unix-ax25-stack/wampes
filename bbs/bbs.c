@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.94 1995/06/07 09:29:43 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.95 1995/06/10 17:23:35 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -43,7 +43,6 @@ typedef int pid_t;
 extern char *optarg;
 extern int optind;
 
-#include "bbs.h"
 #include "buildsaddr.h"
 #include "callvalid.h"
 #include "configure.h"
@@ -54,10 +53,46 @@ extern int optind;
 
 #define DEBUG_NNTP      0
 
+#define MIDSUFFIX               "@bbs.net"
+#define NEWSGROUPSPREFIX        "ampr.bbs."
+
+#define BBSCONFIGFILE   "/tcp/bbs.conf"
+#define HELPFILE        "/usr/local/lib/bbs.help"
+#define INFOFILE        "/usr/local/lib/station.data"
+#define LOCKDIR         "/tcp/locks"
+#define MAILCONFIGFILE  "/tcp/mail.conf"
+#define RCFILE          ".bbsrc"
+#define SEQFILE         ".bbsseq"
+#define WRKDIR          SPOOL_DIR "/bbs"
+
+#define BIDLOCKFILE     LOCKDIR "/bbs.bid"
+#define INDEXFILE       WRKDIR "/index"
+#define SENDLOCKFILE    LOCKDIR "/bbs.snd"
+
 #define SECONDS         (1L)
 #define MINUTES         (60L*SECONDS)
 #define HOURS           (60L*MINUTES)
 #define DAYS            (24L*HOURS)
+
+#define LEN_BID         12
+#define LEN_SUBJECT     80
+#define LEN_TO           8
+#define LEN_AT           8
+#define LEN_FROM         8
+
+struct index {
+  long size;
+  long date;
+  int mesg;
+  char bid[LEN_BID + 1];
+  char pad1;
+  char subject[LEN_SUBJECT + 1];
+  char pad2;
+  char to[LEN_TO + 1];
+  char at[LEN_AT + 1];
+  char from[LEN_FROM + 1];
+  char deleted;
+};
 
 #define SIZEINDEX       (sizeof(struct index))
 
@@ -141,6 +176,8 @@ static struct nntp_channel nntp_channel = {
   -1
 };
 
+static char mydomain[1024];
+static char myhostname[1024];
 static char prompt[1024] = "bbs> ";
 static const char daynames[] = "SunMonTueWedThuFriSat";
 static const char monthnames[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
@@ -420,24 +457,32 @@ static long calculate_date(int yy, int mm, int dd,
 static long parse_rfc822_date(const char *str)
 {
 
-  char monthstr[4];
+  char buf[1024];
+  char monthstr[1024];
+  char timestr[1024];
   char tzstr[1024];
+  char *cp;
   char *p;
   int dd;
   int h;
-  int i;
   int m;
   int s;
-  int tzcorrection;
+  int tzcorrection = 0;
   int yy;
 
-  i = sscanf((char *) str,
-	     "%*s %d %3s %d %d:%d:%d %s",
-	     &dd, monthstr, &yy, &h, &m, &s, tzstr);
-  if (i < 6)
-    return -1;
-  tzcorrection = 0;
-  if (i == 7) {
+  strcpy(buf, str);
+
+  /* Skip day "," */
+
+  if ((cp = strchr(buf, ',')))
+    cp++;
+  else
+    cp = buf;
+
+  switch (sscanf(cp, "%d %s %d %s %s", &dd, monthstr, &yy, timestr, tzstr)) {
+  case 4:
+    break;
+  case 5:
     if (!strcmp(tzstr, "EDT"))
       strcpy(tzstr, "-0400");
     else if (!strcmp(tzstr, "EST") || !strcmp(tzstr, "CDT"))
@@ -462,7 +507,21 @@ static long parse_rfc822_date(const char *str)
       if (tzstr[0] == '-')
 	tzcorrection = -tzcorrection;
     }
+    break;
+  default:
+    return -1;
   }
+
+  switch (sscanf(timestr, "%d:%d:%d", &h, &m, &s)) {
+  case 2:
+    s = 0;
+    break;
+  case 3:
+    break;
+  default:
+    return -1;
+  }
+
   if (strlen(monthstr) != 3)
     return -1;
   p = strstr(monthnames, monthstr);
@@ -710,7 +769,7 @@ static void split_address(const char *addr, char *userpart, char *hostpart)
   strcpy(userpart, buf);
   cp = strchr(userpart, '@');
   if (!cp) {
-    strcpy(hostpart, MYHOSTNAME);
+    strcpy(hostpart, myhostname);
   } else {
     *cp = 0;
     strcpy(hostpart, cp + 1);
@@ -720,11 +779,11 @@ static void split_address(const char *addr, char *userpart, char *hostpart)
   }
 
   if (!*userpart || !strcmp(userpart, "mailer-daemon"))
-    strcpy(userpart, MYHOSTNAME);
+    strcpy(userpart, myhostname);
   if ((cp = strchr(hostpart, '.')))
     *cp = 0;
   if (!*hostpart)
-    strcpy(hostpart, MYHOSTNAME);
+    strcpy(hostpart, myhostname);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -959,7 +1018,7 @@ static void generate_bid_and_mid(struct mail *mail)
     *--cp = '_';
     *--cp = '_';
     *--cp = '_';
-    strncpy(mail->bid, MYHOSTNAME, strlen(MYHOSTNAME));
+    strncpy(mail->bid, myhostname, strlen(myhostname));
     while (t == time(0))
       sleep(1);
     close(fdlock);
@@ -1039,9 +1098,9 @@ static void route_mail(struct mail *mail)
   if ((cp = strchr(mail->tohost, '.')))
     *cp = 0;
   if (!*mail->fromhost)
-    strcpy(mail->fromhost, MYHOSTNAME);
+    strcpy(mail->fromhost, myhostname);
   if (!*mail->tohost)
-    strcpy(mail->tohost, MYHOSTNAME);
+    strcpy(mail->tohost, myhostname);
   strlwc(mail->fromuser);
   strlwc(mail->fromhost);
   strlwc(mail->touser);
@@ -1077,14 +1136,14 @@ static void route_mail(struct mail *mail)
 	  tm->tm_mday,
 	  tm->tm_hour,
 	  tm->tm_min,
-	  MYHOSTNAME,
-	  MYDOMAIN);
+	  myhostname,
+	  mydomain);
   append_line(mail, strupc(buf), HEAD);
 
   /* Call delivery agents */
 
   if (callvalid(mail->touser) ||
-      (callvalid(mail->tohost) && !calleq(mail->tohost, MYHOSTNAME))) {
+      (callvalid(mail->tohost) && !calleq(mail->tohost, myhostname))) {
     send_to_mail_or_news(mail, MAIL);
   } else {
     send_to_mail_or_news(mail, NEWS);
@@ -1892,7 +1951,7 @@ static void reply_command(int argc, char **argv)
       if (!(p = get_host_from_header(line)))
 	break;
     fclose(fp);
-    strcpy(mail->tohost, host ? host : MYHOSTNAME);
+    strcpy(mail->tohost, host ? host : myhostname);
   }
   for (p = index.subject;;) {
     while (isspace(*p & 0xff))
@@ -1973,7 +2032,7 @@ static void send_command(int argc, char **argv)
     return;
   }
   if (!*mail->tohost)
-    strcpy(mail->tohost, MYHOSTNAME);
+    strcpy(mail->tohost, myhostname);
   if (!*mail->fromuser || level < MBOX)
     strcpy(mail->fromuser, user.name);
   if (*mail->bid) {
@@ -2247,7 +2306,7 @@ static int connect_addr(const char *host, char *proto, char *addr)
   char *sysname;
   FILE *fp;
 
-  if (!(fp = fopen(CONFIGFILE, "r")))
+  if (!(fp = fopen(MAILCONFIGFILE, "r")))
     return 0;
   while (fgets(line, sizeof(line), fp)) {
     if ((cp = strchr(line, '#')))
@@ -2403,6 +2462,7 @@ int main(int argc, char **argv)
   char buf[1024];
   char *cp;
   char *sysname = 0;
+  FILE *fp;
   int c;
   int err_flag = 0;
   struct passwd *pw;
@@ -2428,6 +2488,16 @@ int main(int argc, char **argv)
 	 revision.time,
 	 revision.author,
 	 revision.state);
+
+  if (!(fp = fopen(BBSCONFIGFILE, "r")))
+    halt();
+  while (fgets(buf, sizeof(buf), fp)) {
+    get_header_value("Hostname:", 0, buf, myhostname);
+    get_header_value("Domain:", 0, buf, mydomain);
+  }
+  fclose(fp);
+  if (!*myhostname || !*mydomain)
+    halt();
 
   while ((c = getopt(argc, argv, "f:pw:")) != EOF)
     switch (c) {

@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.21 1995/06/04 09:36:41 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.22 1995/06/10 17:23:39 deyke Exp $
 
 save_file()
 {
@@ -121,7 +121,7 @@ for manual in bbs netupd smack wampes; do
 done
 
 cd ~/tcp/doc
-for manual in netupd smack wampes; do
+for manual in bbs netupd smack wampes; do
 	file=$manual.html
 	save_file $file
 	mm2html $manual.mm > $file

@@ -1,12 +1,12 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/frontpage,v 1.69 1995/06/07 09:29:53 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/frontpage,v 1.70 1995/06/10 17:23:56 deyke Exp $
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 950607" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 950610" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 950607
+Version 950610
 .S
 .SP 2
 .S 15

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.6 1995/05/14 14:48:44 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.7 1995/06/10 17:23:38 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -27,8 +27,9 @@ struct headers {
   int linenum;
 };
 
-static FILE *fileptr;
+static char manual[1024];
 static char title[1024];
+static FILE *fileptr;
 static int afterheader;
 static int aftertitle;
 static int centered;
@@ -38,8 +39,9 @@ static int linenum;
 static int listlevel;
 static int listtype[LISTLEVELS];
 static int pass;
-static struct headers *headers;
+static int picturecnt;
 static struct headers *headerstail;
+static struct headers *headers;
 static struct numbers *numbers;
 
 /*---------------------------------------------------------------------------*/
@@ -431,6 +433,45 @@ static void dot_P(int argc, char **argv)
 
 /*---------------------------------------------------------------------------*/
 
+static void dot_PS(int argc, char **argv)
+{
+
+  char buf[1024];
+  char filename[1024];
+  char line[1024];
+  FILE *tempptr;
+
+  sprintf(filename, "%s.%d.gif", manual, ++picturecnt);
+  printf("<IMG SRC=\"%s\" ALT=\"[picture]\">\n", filename);
+  sprintf(buf,
+	  "groff -p | "
+	  "gs -sDEVICE=ppmraw -r125 -q -dNOPAUSE -sOutputFile=- - | "
+	  "pnmcrop | "
+	  "ppmtogif -transparent black > %s", filename);
+  if (!(tempptr = popen(buf, "w"))) {
+    perror("popen");
+    exit(1);
+  }
+  fprintf(tempptr, ".PS\n");
+  for (;;) {
+    if (!fgets(line, sizeof(line), fileptr)) {
+      error("picture nesting error");
+      fprintf(tempptr, ".PE\n");
+      break;
+    }
+    linenum++;
+    fprintf(tempptr, "%s", line);
+    if (!strncmp(line, ".PE", 3))
+      break;
+  }
+  if (pclose(tempptr)) {
+    perror("pclose");
+    exit(1);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void dot_SP(int argc, char **argv)
 {
   puts("<P>");
@@ -710,6 +751,7 @@ static const struct commandtable pass2_commandtable[] =
   {".P", dot_P},
   {".PF", do_ignore},
   {".PH", do_ignore},
+  {".PS", dot_PS},
   {".S", do_ignore},
   {".SP", dot_SP},
   {".TC", do_ignore},
@@ -809,9 +851,9 @@ static void reset_state(void)
 int main(int argc, char **argv)
 {
 
-  char *cp;
   char buf[1024];
   char line[1024];
+  char *cp;
 
   if (argc != 2) {
     fprintf(stderr, "Usage: mm2html file\n");
@@ -821,6 +863,10 @@ int main(int argc, char **argv)
     perror(argv[1]);
     exit(1);
   }
+  strcpy(manual, argv[1]);
+  cp = strstr(manual, ".mm");
+  if (cp && cp - manual == strlen(manual) - 3)
+    *cp = 0;
 
   reset_state();
   pass = 1;

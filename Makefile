@@ -1,10 +1,12 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.26 1995/06/05 10:42:35 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.27 1995/06/10 17:23:20 deyke Exp $
 
 MAKEFILE   = Makefile
 MKDIR      = @if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi
 
-OBSOLETE   = bbs/sfstat* \
-	     examples/bbs.conf \
+OBSOLETE   = bbs/bbs.h \
+	     bbs/findpath* \
+	     bbs/killdup* \
+	     bbs/sfstat* \
 	     lib/bbs.h \
 	     src/linux_include/stdlib.h \
 	     src/mail_bbs.* \

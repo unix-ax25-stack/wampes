@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.20 1995/06/04 09:36:44 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.21 1995/06/10 17:23:44 deyke Exp $
 
 case "`uname -sr`" in
 HP-UX*)
@@ -111,7 +111,7 @@ echo "#ifndef _CONFIGURE_H"
 echo "#define _CONFIGURE_H"
 echo
 
-finddir HOME_DIR /home /users /u /usr/people
+finddir HOME_DIR /home /users /usr/people /u
 finddir MAIL_DIR /var/mail /var/spool/mail /usr/mail /usr/spool/mail
 finddir NEWS_DIR /var/spool/news /usr/spool/news
 finddir SPOOL_DIR /var/spool /usr/spool
@@ -121,7 +121,7 @@ echo
 
 findfile ALIASES_FILE /etc/aliases /etc/mail/aliases /usr/lib/aliases
 findfile UTMP__FILE /var/adm/utmp /var/run/utmp /etc/utmp
-findfile WTMP__FILE /var/adm/wtmp /var/log/wtmp /usr/adm/wtmp /etc/wtmp
+findfile WTMP__FILE /var/adm/wtmp /var/log/wtmp /etc/wtmp /usr/adm/wtmp
 
 echo
 
@@ -129,7 +129,7 @@ findprog CTLINND_PROG /usr/local/news/bin/ctlinnd
 findprog GZIP_PROG /usr/bin/gzip /bin/gzip /usr/local/bin/gzip /usr/contrib/bin/gzip
 findprog LS_PROG /usr/bin/ls /bin/ls
 findprog MAIL_PROG /usr/openwin/bin/xview/mail /usr/bin/mailx /bin/mailx /usr/sbin/Mail /usr/bin/mail /bin/mail
-findprog NEWALIASES_PROG /usr/bin/newaliases /usr/ucb/newaliases /usr/bsd/newaliases
+findprog NEWALIASES_PROG /usr/bin/newaliases /usr/sbin/newaliases /usr/ucb/newaliases /usr/bsd/newaliases
 findprog RNEWS_PROG /usr/bin/rnews /usr/local/bin/rnews
 findprog SENDMAIL_PROG /usr/sbin/sendmail /usr/lib/sendmail
 
