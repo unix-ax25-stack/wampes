@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.18 1995/12/20 09:46:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.19 1996/01/15 09:29:10 deyke Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -17,15 +17,16 @@
 struct ax25_cb *Ax25_cb;
 
 /* Default AX.25 parameters */
-int   T3init = 900000;          /* Keep-alive polling, ms */
 int   Maxframe = 7;             /* Transmit flow control level */
 int   N2 = 10;                  /* 10 retries */
 int   Axwindow = 2048;          /* 2K incoming text before RNR'ing */
 int   Paclen = 256;             /* 256-byte I fields */
 int   Pthresh = 64;             /* Send polls for packets larger than this */
 int   T1init = 5000;            /* Retransmission timeout, ms */
-int   T2init = 300;             /* Acknowledgement delay timeout, ms */
+int   T2init = 300;             /* Acknowledge delay timeout, ms */
+int   T3init = 900000;          /* Idle polling timeout, ms */
 int   T4init = 60000;           /* Busy timeout, ms */
+int   T5init = 3600000;         /* Idle disconnect timeout, ms */
 enum lapb_version Axversion = V2; /* Protocol version */
 int32 Blimit = 16;              /* Retransmission backoff limit */
 
@@ -83,6 +84,7 @@ struct ax25_cb *conn)
 	stop_timer(&axp->t2);
 	stop_timer(&axp->t3);
 	stop_timer(&axp->t4);
+	stop_timer(&axp->t5);
 
 	/* Free allocated resources */
 	for (i = 0; i < 8; i++)
@@ -140,6 +142,10 @@ uint8 *addr)
 	set_timer(&axp->t4,T4init);
 	axp->t4.func = pollthem;
 	axp->t4.arg = axp;
+
+	set_timer(&axp->t5,T5init);
+	axp->t5.func = ax_t5_timeout;
+	axp->t5.arg = axp;
 
 	/* Always to a receive and state upcall as default */
 	axp->r_upcall = axserv_open;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.21 1996/01/04 19:11:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.22 1996/01/15 09:29:14 deyke Exp $ */
 
 #ifndef _LAPB_H
 #define _LAPB_H
@@ -116,9 +116,10 @@ struct ax25_cb {
 	unsigned n2;                    /* Retry limit */
 	enum lapb_state state;          /* Link state */
 	struct timer t1;                /* Retry timer */
-	struct timer t2;                /* Acknowledgement delay timer */
-	struct timer t3;                /* Keep-alive poll timer */
+	struct timer t2;                /* Acknowledge delay timer */
+	struct timer t3;                /* Idle poll timer */
 	struct timer t4;                /* Busy timer */
+	struct timer t5;                /* Idle disconnect timer */
 	int32 rtt_time;                 /* Stored clock values for RTT, ms */
 	int rtt_seq;                    /* Sequence number being timed */
 	int32 srt;                      /* Smoothed round-trip time, ms */
@@ -152,13 +153,14 @@ extern struct axlink Axlink[];
 extern struct ax25_cb Ax25default,*Ax25_cb;
 extern char *Ax25states[],*Axreasons[];
 extern int32 Axirtt,Blimit;
-extern int   T3init;
-extern int    N2,Maxframe,Paclen,Pthresh,Axwindow;
+extern int N2,Maxframe,Paclen,Pthresh,Axwindow;
 extern enum lapb_version Axversion;
 
 extern int T1init;                      /* Retransmission timeout */
-extern int T2init;                      /* Acknowledgement delay timeout */
+extern int T2init;                      /* Acknowledge delay timeout */
+extern int T3init;                      /* Idle poll timeout */
 extern int T4init;                      /* Busy timeout */
+extern int T5init;                      /* Idle disconnect timeout */
 extern int Axserver_enabled;
 
 /* In ax25cmd.c: */
@@ -196,6 +198,7 @@ void axnl3(struct iface *iface,struct ax25_cb *axp,uint8 *src,
 	uint8 *dest,struct mbuf **bp,int mcast);
 int busy(struct ax25_cb *cp);
 void ax_t2_timeout(void *p);
+void ax_t5_timeout(void *p);
 void build_path(struct ax25_cb *cp,struct iface *ifp,struct ax25 *hdr,int reverse);
 
 /* In lapbtimer.c: */

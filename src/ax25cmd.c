@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.10 1995/12/20 15:49:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.11 1996/01/15 09:29:10 deyke Exp $ */
 
 /* AX25 control commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -38,6 +38,7 @@ static int dot1(int argc,char *argv[],void *p);
 static int dot2(int argc,char *argv[],void *p);
 static int dot3(int argc,char *argv[],void *p);
 static int dot4(int argc,char *argv[],void *p);
+static int dot5(int argc,char *argv[],void *p);
 static int doversion(int argc,char *argv[],void *p);
 static int dorouteadd(int argc,char *argv[],void *p);
 static void doroutelistentry(struct ax_route *rp);
@@ -84,6 +85,7 @@ static struct cmds Axcmds[] = {
 	"t2",           dot2,           0, 0, NULL,
 	"t3",           dot3,           0, 0, NULL,
 	"t4",           dot4,           0, 0, NULL,
+	"t5",           dot5,           0, 0, NULL,
 	"version",      doversion,      0, 0, NULL,
 	"window",       doaxwindow,     0, 0, NULL,
 	NULL,
@@ -326,6 +328,20 @@ register struct ax25_cb *axp)
 		printf("stop");
 	printf("/%lu ms\n",dur_timer(&axp->t3));
 
+	printf("T4: ");
+	if(run_timer(&axp->t4))
+		printf("%lu",read_timer(&axp->t4));
+	else
+		printf("stop");
+	printf("/%lu ms; ",dur_timer(&axp->t4));
+
+	printf("T5: ");
+	if(run_timer(&axp->t5))
+		printf("%lu",read_timer(&axp->t5));
+	else
+		printf("stop");
+	printf("/%lu ms\n",dur_timer(&axp->t5));
+
 }
 
 /* Display or change our AX.25 address */
@@ -385,7 +401,7 @@ int argc,
 char *argv[],
 void *p)
 {
-	return setintrc(&T1init,"T1 (ms)",argc,argv,1,0x7fffffff);
+	return setintrc(&T1init,"Retry timer (ms)",argc,argv,1,0x7fffffff);
 }
 
 static int
@@ -394,10 +410,10 @@ int argc,
 char *argv[],
 void *p)
 {
-	return setintrc(&T2init,"T2 (ms)",argc,argv,1,0x7fffffff);
+	return setintrc(&T2init,"Acknowledge timer (ms)",argc,argv,1,0x7fffffff);
 }
 
-/* Set idle timer */
+/* Set idle poll timer */
 static int
 dot3(
 int argc,
@@ -415,6 +431,16 @@ char *argv[],
 void *p)
 {
 	return setintrc(&T4init,"Busy timer (ms)",argc,argv,1,0x7fffffff);
+}
+
+/* Set idle disconnect timer */
+static int
+dot5(
+int argc,
+char *argv[],
+void *p)
+{
+	return setintrc(&T5init,"Idle disconnect timer (ms)",argc,argv,0,0x7fffffff);
 }
 
 /* Set retry limit count */

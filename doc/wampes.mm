@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 960108" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 960115" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 960108
+Version 960115
 .S
 .SP 2
 .S 15
@@ -545,15 +545,23 @@ If the address of a particular control block is specified, the contents of
 that control block are shown in more detail.
 .H 3 "ax25 t1" " [\fImilliseconds\fP]"
 Display or set the AX.25 retransmission timer.
-The default is 5000 milliseconds (5 seconds). MORE TO BE WRITTEN.
+The default is 5000 milliseconds (5 seconds).
+MORE TO BE WRITTEN.
 .H 3 "ax25 t2" " [\fImilliseconds\fP]"
-The default is 300 milliseconds.
+Display or set the AX.25 acknowledge delay timer.
+The default is 300 milliseconds (0.3 seconds).
 MORE TO BE WRITTEN.
 .H 3 "ax25 t3" " [\fImilliseconds\fP]"
-Display or set the AX.25 "keep alive" timer.
+Display or set the AX.25 idle poll timer.
 The default is 900000 milliseconds (15 minutes).
+MORE TO BE WRITTEN.
 .H 3 "ax25 t4" " [\fImilliseconds\fP]"
+Display or set the AX.25 busy timer.
 The default is 60000 milliseconds (1 minute).
+MORE TO BE WRITTEN.
+.H 3 "ax25 t5" " [\fImilliseconds\fP]"
+Display or set the AX.25 idle disconnect timer.
+The default is 3600000 milliseconds (60 minutes).
 MORE TO BE WRITTEN.
 .H 3 "ax25 version" " [1|2]"
 Display or set the version of the AX.25 protocol to attempt to use on

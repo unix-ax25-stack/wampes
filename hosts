@@ -1887,10 +1887,7 @@
 44.130.28.30    DL8ZAD  # Juergen, 35789 Weilmuenster nr Wetzlar
 44.130.28.58    DF0WS   # ClubStn F58, 35396 Giessen-Wieseck
 #
-# KA_HOSTS BEGIN [951026]
-# Hier die Karlsruher IP-Adressen:
-#
-44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc1ik@db0sao.ampr.org
+44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc1ik@db0lj-1.ampr.org
 #                       # erb@inss1.etec.uni-karlsruhe.de
 #
 44.130.29.1  db0rot-w   # JN48ft *** Mailbox Rotensol 76332 Bad Herrenalb
@@ -2025,6 +2022,7 @@
 44.130.29.137 dc1iap    # Peter
 44.130.29.138 dc1iap-w  # Peter
 44.130.29.139 dl3it-l   # JN49ea Thomas Wischnack     76135 Karlsruhe
+44.130.29.140 dg6am     # JN49EA Lars Schubert        76131 Karlsruhe
 #
 #44.130.30.x    Nordhessen
 # --- lokale Adresskoordination: DG1ZX-A

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.22 1996/01/04 19:11:55 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.23 1996/01/15 09:29:24 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -9,8 +9,6 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <time.h>
 
 #include "strdup.h"
-
-#define NULLCHAR        ((char *) 0)
 
 #define ALEN            6       /* Number of chars in callsign field */
 #define AXALEN          7       /* Total AX.25 address length, including SSID */
@@ -85,7 +83,7 @@ static int setcall(char *out, const char *call)
 	char *dp;
 	char c;
 
-	if(out == NULLCHAR || call == NULLCHAR || *call == '\0')
+	if(!out || !call || !*call)
 		return -1;
 
 	/* Find dash, if any, separating callsign from ssid
@@ -93,14 +91,14 @@ static int setcall(char *out, const char *call)
 	 * it isn't excessive
 	 */
 	dp = strchr(call,'-');
-	if(dp == NULLCHAR)
+	if(!dp)
 		csize = strlen(call);
 	else
 		csize = dp - call;
 	if(csize > ALEN)
 		return -1;
 	/* Now find and convert ssid, if any */
-	if(dp != NULLCHAR){
+	if(dp){
 		dp++;   /* skip dash */
 		ssid = atoi(dp);
 		if(ssid > 15)

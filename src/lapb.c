@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.36 1996/01/04 19:11:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.37 1996/01/15 09:29:14 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -117,6 +117,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			axp->unack = axp->vr = axp->vs = 0;
 			lapbstate(axp,LAPB_CONNECTED);/* Resets state counters */
 			start_timer(&axp->t3);
+			start_timer(&axp->t5);
 			if(!axp->s_upcall){
 				struct ax_route *axr;
 				axr = ax_routeptr(axp->hdr.dest,0);
@@ -174,11 +175,13 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			/* Note: xmit queue not cleared */
 			stop_timer(&axp->t1);
 			start_timer(&axp->t3);
+			start_timer(&axp->t5);
 			axp->unack = axp->vr = axp->vs = 0;
 			lapbstate(axp,LAPB_CONNECTED);
 			if(axp->peer){
 				sendctl(axp->peer,LAPB_RESPONSE,UA|PF);
 				start_timer(&axp->peer->t3);
+				start_timer(&axp->peer->t5);
 				lapbstate(axp->peer,LAPB_CONNECTED);
 			}
 			break;
@@ -223,6 +226,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			/* free_q(&axp->txq); */
 			stop_timer(&axp->t1);
 			start_timer(&axp->t3);
+			start_timer(&axp->t5);
 			for(tmp = 0; tmp < 8; tmp++){
 				free_p(&axp->reseq[tmp].bp);
 			}
@@ -285,6 +289,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			/* inv_rex(axp); */
 			break;
 		case I:
+			start_timer(&axp->t5);
 			ackours(axp,nr,0); /** == -1) */
 			resequence(axp,bpp,ns,pf,poll);
 			break;
@@ -299,6 +304,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			clr_ex(axp);
 			stop_timer(&axp->t1);
 			start_timer(&axp->t3);
+			start_timer(&axp->t5);
 			for(tmp = 0; tmp < 8; tmp++){
 				free_p(&axp->reseq[tmp].bp);
 			}
@@ -393,6 +399,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			}
 			break;
 		case I:
+			start_timer(&axp->t5);
 			ackours(axp,nr,0); /** == -1) */
 			/* Make sure timer is running, since an I frame
 			 * cannot satisfy a poll
@@ -672,6 +679,7 @@ enum lapb_state s
 		stop_timer(&axp->t2);
 		stop_timer(&axp->t3);
 		stop_timer(&axp->t4);
+		stop_timer(&axp->t5);
 		free_q(&axp->txq);
 		if (axp->peer)
 			disc_ax25(axp->peer);
@@ -898,6 +906,23 @@ void *p)
 		}
 	}
 	sendctl(axp, LAPB_RESPONSE, busy(axp) ? RNR : RR);
+}
+
+void
+ax_t5_timeout(
+void *p)
+{
+	register struct ax25_cb *axp;
+
+	axp = (struct ax25_cb *)p;
+	if(axp->state == LAPB_CONNECTED || axp->state == LAPB_RECOVERY){
+		free_q(&axp->txq);
+		axp->retries = 0;
+		sendctl(axp,LAPB_COMMAND,DISC|PF);
+		stop_timer(&axp->t3);
+		start_timer(&axp->t1);
+		lapbstate(axp,LAPB_DISCPENDING);
+	}
 }
 
 void

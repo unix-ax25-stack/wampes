@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.31 1995/11/19 11:54:16 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.32 1996/01/15 09:29:24 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -63,12 +63,6 @@ static struct ltchars prev_ltchars;
 #else
 static struct termios prev_termios;
 #endif
-
-static void open_terminal(void);
-static void close_terminal(void);
-static void terminate(void);
-static void recvq(int fd, struct mbuf **qp);
-static void sendq(int fd, struct mbuf **qp);
 
 /*---------------------------------------------------------------------------*/
 

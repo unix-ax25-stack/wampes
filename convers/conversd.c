@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.67 1996/01/04 19:11:37 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.68 1996/01/15 09:29:08 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -71,21 +71,17 @@ extern int optind;
 #define NO_NOTE         "@"
 #define UNIQMARKER      (' ' | 0x80)
 
-#define NULLCHAR        ((char *) 0)
-
 struct mbuf {
   struct mbuf *m_next;          /* Linked list pointer */
   char *m_data;                 /* Active working pointer */
   int m_cnt;                    /* Number of bytes in data buffer */
 };
-#define NULLMBUF        ((struct mbuf *) 0)
 
 struct host {
   char *h_name;                 /* Name of host */
   struct link *h_link;          /* Link to this host */
   struct host *h_next;          /* Linked list pointer */
 };
-#define NULLHOST        ((struct host *) 0)
 
 struct user {
   char *u_name;                 /* Name of user */
@@ -98,7 +94,6 @@ struct user {
   long u_stime;                 /* Connect time */
   struct user *u_next;          /* Linked list pointer */
 };
-#define NULLUSER        ((struct user *) 0)
 
 struct link {
   struct user *l_user;          /* Pointer to user if user link */
@@ -115,7 +110,6 @@ struct link {
   long l_mtime;                 /* Time of last input/output */
   struct link *l_next;          /* Linked list pointer */
 };
-#define NULLLINK        ((struct link *) 0)
 
 struct peer {
   char *p_socket;               /* Name of socket to connect to */
@@ -126,7 +120,6 @@ struct peer {
   struct link *p_link;          /* Pointer to link if connected */
   struct peer *p_next;          /* Linked list pointer */
 };
-#define NULLPEER        ((struct peer *) 0)
 
 static struct fd_set chkread;
 static void (*readfnc[FD_SETSIZE])(void *);
@@ -147,56 +140,9 @@ static struct link *links;
 static struct peer *peers;
 static struct user *users;
 
-static int is_string_unique(const char *string);
-static void make_string_unique(char *string);
-static struct host *hostptr(const char *name);
-static struct user *userptr(const char *name, struct host *hp);
-static void trace(int outbound, struct link *lp, const char *string);
-static void send_string(struct link *lp, const char *string);
-static int queuelength(const struct mbuf *mp);
-static void free_resources(void);
-static char *getarg(char *line, int all);
-static char *formatline(const char *prefix, const char *text);
-static char *localtimestring(long utc);
-static void accept_connect_request(const int *flistenptr);
-static void clear_locks(void);
-static void send_user_change_msg(const struct user *up);
-static void send_msg_to_user(const char *fromname, const char *toname, const char *text, int make_unique);
-static void send_msg_to_channel(const char *fromname, int channel, char *text, int make_unique);
-static void send_invite_msg(const char *fromname, const char *toname, int channel, const char *text, int make_unique);
-static void connect_peers(void);
 static void close_link(struct link *lp);
-static void bye_command(struct link *lp);
-static void channel_command(struct link *lp);
-static void help_command(struct link *lp);
-static void hosts_command(struct link *lp);
-static void invite_command(struct link *lp);
-static void kick_command(struct link *lp);
-static void links_command(struct link *lp);
-static void msg_command(struct link *lp);
-static void note_command(struct link *lp);
-static void peers_command(struct link *lp);
-static void name_command(struct link *lp);
-static void users_command(struct link *lp);
-static void who_command(struct link *lp);
-static void h_cmsg_command(struct link *lp);
-static void h_host_command(struct link *lp);
-static void h_invi_command(struct link *lp);
-static void h_umsg_command(struct link *lp);
-static void h_user_command(struct link *lp);
-static void process_input(struct link *lp);
-static void read_configuration(void);
-static void check_files_changed(void);
 static void link_recv(struct link *lp);
 static void link_send(struct link *lp);
-
-/*---------------------------------------------------------------------------*/
-
-/* Work around bug in prototype generator */
-
-static void dummy(void)
-{
-}
 
 /*---------------------------------------------------------------------------*/
 
@@ -881,7 +827,7 @@ static void channel_command(struct link *lp)
   struct user *up;
 
   up = lp->l_user;
-  cp = getarg(NULLCHAR, 0);
+  cp = getarg(0, 0);
   if (!*cp) {
     sprintf(buffer, "*** You are on channel %d.\n", up->u_channel);
     send_string(lp, buffer);
@@ -967,7 +913,7 @@ static void invite_command(struct link *lp)
 {
   char *toname;
 
-  toname = getarg(NULLCHAR, 0);
+  toname = getarg(0, 0);
   if (*toname)
     send_invite_msg(lp->l_user->u_name, toname, lp->l_user->u_channel, "", 1);
 }
@@ -1031,8 +977,8 @@ static void msg_command(struct link *lp)
   char buffer[2048];
   struct user *up;
 
-  toname = getarg(NULLCHAR, 0);
-  text = getarg(NULLCHAR, 1);
+  toname = getarg(0, 0);
+  text = getarg(0, 1);
   for (up = users; up; up = up->u_next)
     if (up->u_channel >= 0 && !strcmp(up->u_name, toname)) {
       send_msg_to_user(lp->l_user->u_name, toname, text, 1);
@@ -1052,7 +998,7 @@ static void note_command(struct link *lp)
   struct user *up;
 
   up = lp->l_user;
-  note = getarg(NULLCHAR, 1);
+  note = getarg(0, 1);
   if (*note && strcmp(up->u_note, note)) {
     free(up->u_note);
     up->u_note = strdup(note);
@@ -1120,7 +1066,7 @@ static void name_command(struct link *lp)
   struct link *lpold;
   struct user *up;
 
-  name = getarg(NULLCHAR, 0);
+  name = getarg(0, 0);
   if (!*name) return;
   up = userptr(name, &my);
   if (++up->u_seq < currtime) up->u_seq = currtime;
@@ -1129,16 +1075,16 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.67 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.68 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
-  up->u_channel = atoi(getarg(NULLCHAR, 0));
+  up->u_channel = atoi(getarg(0, 0));
   if (up->u_channel < 0 || up->u_channel > MAX_CHANNEL) {
     sprintf(buffer, "*** Channel numbers must be in the range 0..%d.\n", MAX_CHANNEL);
     send_string(lp, buffer);
     up->u_channel = 0;
   }
-  note = getarg(NULLCHAR, 1);
+  note = getarg(0, 1);
   if (!*note) note = NO_NOTE;
   if (strcmp(up->u_note, note)) {
     free(up->u_note);
@@ -1212,9 +1158,9 @@ static void h_cmsg_command(struct link *lp)
   char *name;
   int channel;
 
-  name = getarg(NULLCHAR, 0);
-  channel = atoi(getarg(NULLCHAR, 0));
-  send_msg_to_channel(name, channel, getarg(NULLCHAR, 1), 0);
+  name = getarg(0, 0);
+  channel = atoi(getarg(0, 0));
+  send_msg_to_channel(name, channel, getarg(0, 1), 0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1229,7 +1175,7 @@ static void h_host_command(struct link *lp)
   struct peer *pp;
   struct user *up;
 
-  name = getarg(NULLCHAR, 0);
+  name = getarg(0, 0);
   if (!*name) return;
   hp = hostptr(name);
   if (hp == &my) {
@@ -1283,11 +1229,11 @@ static void h_invi_command(struct link *lp)
   char *fromname;
   char *toname;
 
-  fromname = getarg(NULLCHAR, 0);
-  toname = getarg(NULLCHAR, 0);
-  channel = getarg(NULLCHAR, 0);
+  fromname = getarg(0, 0);
+  toname = getarg(0, 0);
+  channel = getarg(0, 0);
   if (*channel)
-    send_invite_msg(fromname, toname, atoi(channel), getarg(NULLCHAR, 1), 0);
+    send_invite_msg(fromname, toname, atoi(channel), getarg(0, 1), 0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1298,9 +1244,9 @@ static void h_umsg_command(struct link *lp)
   char *fromname;
   char *toname;
 
-  fromname = getarg(NULLCHAR, 0);
-  toname = getarg(NULLCHAR, 0);
-  send_msg_to_user(fromname, toname, getarg(NULLCHAR, 1), 0);
+  fromname = getarg(0, 0);
+  toname = getarg(0, 0);
+  send_msg_to_user(fromname, toname, getarg(0, 1), 0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1318,11 +1264,11 @@ static void h_user_command(struct link *lp)
   struct host *hp;
   struct user *up;
 
-  name = getarg(NULLCHAR, 0);
-  host = getarg(NULLCHAR, 0);
-  seq = atol(getarg(NULLCHAR, 0));
-  getarg(NULLCHAR, 0); /*** oldchannel is ignored, protocol has changed ***/
-  channel = getarg(NULLCHAR, 0);
+  name = getarg(0, 0);
+  host = getarg(0, 0);
+  seq = atol(getarg(0, 0));
+  getarg(0, 0); /*** oldchannel is ignored, protocol has changed ***/
+  channel = getarg(0, 0);
   if (!*channel) {
     if (debug >= 2) printf("*** Syntax error: ignored.\n");
     return;
@@ -1330,7 +1276,7 @@ static void h_user_command(struct link *lp)
   newchannel = atoi(channel);
   hp = hostptr(host);
   up = userptr(name, hp);
-  note = getarg(NULLCHAR, 1);
+  note = getarg(0, 1);
   if (!*note) note = up->u_note;
 
   if ((seq > up->u_seq) ||
@@ -1479,11 +1425,11 @@ static void read_configuration(void)
 	got_host_name = 1;
 	continue;
       }
-      sock_name = getarg(NULLCHAR, 0);
+      sock_name = getarg(0, 0);
       if (*sock_name) {
 	pp = (struct peer *) calloc(1, sizeof(struct peer));
 	pp->p_socket = strdup(sock_name);
-	pp->p_command = strdup(getarg(NULLCHAR, 1));
+	pp->p_command = strdup(getarg(0, 1));
 	pp->p_stime = currtime;
 	pp->p_retrytime = currtime + min_waittime;
 	pp->p_next = peers;
