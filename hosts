@@ -555,6 +555,7 @@
 44.130.12.76    DD8BA-2 # Steven Sporkmann, Holdorf; WNOS
 44.130.12.77    DL1BIZ  # Dieter Koeppen, Emden; JNOS
 44.130.12.78    DC6BV   # Reinhardt Schucht, Norden;
+44.130.12.79    DK0FHW-S        # Clubstation Wilhelmshaven; TNOS
 #
 #44.130.13.x    Hildesheim
 # --- lokale Adresskoordination: DC5ON
@@ -1317,6 +1318,7 @@
 44.130.20.81    DJ0JU   # Henrik Olsen, 5138 Heinsberg Karken
 44.130.20.83    DH0KAI  # Manfred Jost, 5100 Aachen (ex DB1PD)
 44.130.20.84    DL5KCE  # Axel Pfaff, Eschweiler
+44.130.20.85    DL0THA  # Computer Club a.d. RWTH Aachen (CCAC)
 #44.130.20.86   Reserviert
 #44.130.20.87   Reserviert
 44.130.20.88    DB0MON  # Digi Monschau (DL8YQ); AX25 DB0MON-10
@@ -1528,7 +1530,7 @@
 44.130.23.20    DG1DBH  # Harald Husemann, Plettenberg
 44.130.23.40    DG1DCN  # Marc Noeker, Lennestadt: Amiga 2000
 44.130.23.102   DK3AK-14        # Siegmar Krause, 5982 Neuenrade
-#44.130.144.xxx Bielefeld/Oerlinghausen Stand 25.03.96
+#44.130.144.xxx Bielefeld/Oerlinghausen Stand 10.04.96
 44.130.144.1    DB0NOS  # TCP/IP-Svr Oerlinghausen ***
 44.130.144.2    FTP.DB0NOS      # FTP-Svr Oerlinghausen ***
 #44.130.144.3-44.130.144.15 fuer DB0NOS-Peripherie und Subrechner
@@ -1575,11 +1577,13 @@
 44.130.144.56   DK3RC   # Horst, Detmold
 44.130.144.57   DK3RC-1 # Horst, Bielstein
 44.130.144.58   DL0JW   # Clubstation N58, Oerlinghausen
+44.130.144.59   DG6VJ-W # Jochen, Muenster, WAMPES
 44.130.144.60   LINUX.DG6YGD    # Dirk, Augustdorf
 44.130.144.61   DD3QQ   # Kurt, Muenster
-44.130.144.62   DG6VJ-2 # Jochen, Muenster
+44.130.144.62   DG6VJ   # Jochen, Muenster
 44.130.144.66   DG1YAY  # Christof, Buende
 44.130.144.67   DG1YAY-7        # TCP/IP-Router Buende
+44.130.144.70   DG1YGH  # Henning, Bielefeld
 #
 #44.130.147.x   Siegen
 44.130.147.1    DJ5ZD   # Alexander, Bad Laasphe
@@ -3149,7 +3153,7 @@
 44.130.61.111   DB0SWR  # Digi Wertheim
 #
 #    Die oberfraenkischen Hosts:
-#                                       Stand:  16.03.96
+#                                       Stand:  12.04.96
 # 44.130.62.xx (Bamberg/Bayreuth)
 # lokale Adresskoordination DL1NAT [44.130.62.3]
 #
@@ -3181,6 +3185,7 @@
 44.130.62.26   DL9RBG         # Manfred Amschler Redwitz
 44.130.62.27   DL3NEY         # Florian Thienel Burgebrach
 44.130.62.28   DL3NEU         # Daniel Goetz Hirschaid
+44.130.62.29   DG2NBN         # Dieter Puchinger Forchheim
 44.130.62.30   DL1NV          # GÅnther Kestel Kronach
 44.130.62.31   DG1NBH         # Bernd Schuberth Altendorf
 44.130.62.32   DG1NBH-2       # Bernd Schuberth Altendorf
