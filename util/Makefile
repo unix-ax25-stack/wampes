@@ -1,11 +1,13 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.48 1994/02/28 11:55:41 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.49 1994/04/11 11:08:43 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
 LDFLAGS    = $(CFLAGS) -s
+LIBS       = ../lib/libutil.a
 MAKEFILE   = Makefile
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
+SLIBS      =
 
 TARGETS    = cnet md5 mkhostdb netupdc netupds path pop2d qth udbm
 
@@ -15,67 +17,68 @@ all:;   chmod 755 genupd
 		make -i -f $(MAKEFILE) \
 		'CC=c89' \
 		'CFLAGS=-O -D_HPUX_SOURCE -I../lib' \
-		'LIBS=../lib/libutil.a -lcurses -lndbm' \
+		'SLIBS=-lcurses -lndbm' \
 		_all;; \
 	AIX*) \
 		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -qchars=signed -D_ALL_SOURCE -I../lib' \
-		'LIBS=../lib/libutil.a -lcurses' \
+		'SLIBS=-lcurses' \
 		_all;; \
 	Linux*) \
 		make -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O -I../lib' \
-		'LIBS=../lib/libutil.a -lcurses -ltermcap -ldbm' \
+		'SLIBS=-lcurses -ltermcap -ldbm' \
 		_all;; \
 	386BSD*) \
 		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -I../lib' \
-		'LIBS=../lib/libutil.a -lcurses -ltermcap' \
+		'SLIBS=-lcurses -ltermcap' \
 		_all;; \
 	BSD/386*) \
 		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -I../lib' \
-		'LIBS=../lib/libutil.a -lcurses -ltermcap' \
+		'SLIBS=-lcurses -ltermcap' \
 		_all;; \
 	SunOS\ 4.*) \
 		make -i -f $(MAKEFILE) \
 		'CC=acc' \
 		'CFLAGS=-O -I../lib' \
-		'LIBS=../lib/libutil.a -lcurses -ltermcap' \
+		'SLIBS=-lcurses -ltermcap' \
 		_all;; \
 	SunOS\ 5.*) \
 		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -I../lib' \
-		'LIBS=../lib/libutil.a -lcurses -lsocket -lnsl' \
+		'SLIBS=-lcurses -lsocket -lnsl' \
 		_all;; \
 	ULTRIX*) \
 		make -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O6 -DULTRIX_RISC -I../lib' \
-		'LIBS=../lib/libutil.a -lcurses -ltermcap -ldbm' \
+		'SLIBS=-lcurses -ltermcap -ldbm' \
 		_all;; \
 	A/UX*) \
 		make -i -f $(MAKEFILE) \
 		'CC=gcc -fpcc-struct-return' \
 		'CFLAGS=-O -D_POSIX_SOURCE -I../lib' \
-		'LIBS=../lib/libutil.a -lcurses -ltermcap -ldbm -lposix' \
+		'SLIBS=-lcurses -ltermcap -ldbm -lposix' \
 		_all;; \
 	RISC\ iX*) \
 		make -i -f $(MAKEFILE) \
 		'CC=/tcp/cc' \
 		'CFLAGS=-DRISCiX -I../lib' \
-		'LIBS=../lib/libutil.a -lcurses -ltermcap' \
+		'SLIBS=-lcurses -ltermcap' \
 		_all;; \
 	AOS*) \
 		/usr/local/bin/make -i -f $(MAKEFILE) \
 		'CC=/usr/local/bin/gcc' \
 		'CFLAGS=-O2 -Dibm6153 -I../lib' \
-		'LIBS=../aos/libaos.a ../lib/libutil.a -lcurses -ltermcap' \
+		'LIBS=../aos/libaos.a ../lib/libutil.a' \
+		'SLIBS=-lcurses -ltermcap' \
 		_all;; \
 	*) \
 		echo System `uname -sr` is not supported;; \
@@ -83,50 +86,50 @@ all:;   chmod 755 genupd
 
 _all:   $(TARGETS)
 
-cnet:   cnet.o
+cnet:   cnet.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
-	$(LD) $(LDFLAGS) $? $(LIBS) -o $@
+	$(LD) $(LDFLAGS) cnet.o $(LIBS) $(SLIBS) -o $@
 
-md5:    md5drivr.o
+md5:    md5drivr.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
-	$(LD) $(LDFLAGS) md5drivr.o $(LIBS) -o $@
+	$(LD) $(LDFLAGS) md5drivr.o $(LIBS) $(SLIBS) -o $@
 
-mkhostdb: mkhostdb.o
+mkhostdb: mkhostdb.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
-	$(LD) $(LDFLAGS) $? $(LIBS) -o $@
+	$(LD) $(LDFLAGS) mkhostdb.o $(LIBS) $(SLIBS) -o $@
 
-netupdc: netupdc.o
+netupdc: netupdc.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
-	$(LD) $(LDFLAGS) $? $(LIBS) -o $@
+	$(LD) $(LDFLAGS) netupdc.o $(LIBS) $(SLIBS) -o $@
 
-netupds: netupds.o
+netupds: netupds.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
-	$(LD) $(LDFLAGS) $? $(LIBS) -o $@
+	$(LD) $(LDFLAGS) netupds.o $(LIBS) $(SLIBS) -o $@
 
-path:   path.o
+path:   path.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
-	$(LD) $(LDFLAGS) $? $(LIBS) -o $@
+	$(LD) $(LDFLAGS) path.o $(LIBS) $(SLIBS) -o $@
 
-pop2d:  pop2d.o
+pop2d:  pop2d.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
-	$(LD) $(LDFLAGS) $? $(LIBS) -o $@
+	$(LD) $(LDFLAGS) pop2d.o $(LIBS) $(SLIBS) -o $@
 
-qth:    qth.o
+qth:    qth.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
-	$(LD) $(LDFLAGS) $? $(LIBS) -lm -o $@
+	$(LD) $(LDFLAGS) qth.o $(LIBS) $(SLIBS) -lm -o $@
 
-udbm:   udbm.o
+udbm:   udbm.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
-	$(LD) $(LDFLAGS) $? $(LIBS) -o $@
+	$(LD) $(LDFLAGS) udbm.o $(LIBS) $(SLIBS) -o $@
 
 install: \
 	/usr/local/bin/cnet \

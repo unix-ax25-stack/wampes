@@ -1,6 +1,5 @@
-wampes-940409.tar.Z  (compressed) and wampes-940409.tar.gz (gzipped) are
-tar archives of WAMPES,  which is a NET/NOS  port to various  flavors of
-Unix.
+wampes-940411.tar.gz  (gzipped)  is a tar archive of WAMPES,  which is a
+NET/NOS port to various flavors of Unix.
 
 WAMPES currently supports the following configurations:
 
@@ -37,13 +36,19 @@ WAMPES currently supports the following configurations:
 |               |                 |   <s_schroeter@irav1.ira.uka.de>          |
 +---------------+-----------------+-------------------------------------------+
 
-To unpack this archive you have to create the  directory  /tcp and cd to
-it.  After unpacking please read the file  /tcp/doc/intro.txt.  For RISC
-iX you have to copy *.R to  /usr/lib.  Now  type  "make  -i" to  compile
+To unpack this archive you have to:
+
+	su
+	mkdir /tcp
+	cd /tcp
+	gzip -d < wampes-940411.tar.gz | tar xvf -
+
+After  unpacking  please read the file  /tcp/doc/intro.txt.  For RISC iX
+you  have to  copy  *.R to  /usr/lib.  Now  type  "make  -i" to  compile
 everything.
 
-wampes-940409.tar.Z    and    wampes-940409.tar.gz    should   go   into
-/hamradio/packet/tcpip/wampes on UCSD.EDU.
+wampes-940411.tar.gz  should  go into  /hamradio/packet/tcpip/wampes  on
+UCSD.EDU.
 
 73,
 Dieter Deyke, DK5SG / N0PRA, <deyke@fc.hp.com>

@@ -1,11 +1,13 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.38 1994/02/28 11:55:35 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.39 1994/04/11 11:08:09 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
 LDFLAGS    = $(CFLAGS) -s
+LIBS       = ../lib/libutil.a
 MAKEFILE   = Makefile
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
+SLIBS      =
 
 TARGETS    = bbs findpath killdup sfstat
 
@@ -14,61 +16,56 @@ all:;   @case "`uname -sr`" in \
 		make -i -f $(MAKEFILE) \
 		'CC=c89' \
 		'CFLAGS=-O -D_HPUX_SOURCE -I../lib' \
-		'LIBS=../lib/libutil.a -lndbm' \
+		'SLIBS=-lndbm' \
 		_all;; \
 	AIX*) \
 		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -qchars=signed -D_ALL_SOURCE -I../lib' \
-		'LIBS=../lib/libutil.a' \
 		_all;; \
 	Linux*) \
 		make -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O -I../lib' \
-		'LIBS=../lib/libutil.a -ldbm' \
+		'SLIBS=-ldbm' \
 		_all;; \
 	386BSD*) \
 		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -I../lib' \
-		'LIBS=../lib/libutil.a' \
 		_all;; \
 	BSD/386*) \
 		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -I../lib' \
-		'LIBS=../lib/libutil.a' \
 		_all;; \
 	SunOS\ 4.*) \
 		make -i -f $(MAKEFILE) \
 		'CC=acc' \
 		'CFLAGS=-O -I../lib' \
-		'LIBS=../lib/libutil.a' \
 		_all;; \
 	SunOS\ 5.*) \
 		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -I../lib' \
-		'LIBS=../lib/libutil.a -lsocket -lnsl' \
+		'SLIBS=-lsocket -lnsl' \
 		_all;; \
 	ULTRIX*) \
 		make -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O6 -DULTRIX_RISC -I../lib' \
-		'LIBS=../lib/libutil.a -ldbm' \
+		'SLIBS=-ldbm' \
 		_all;; \
 	A/UX*) \
 		make -i -f $(MAKEFILE) \
 		'CC=gcc -fpcc-struct-return' \
 		'CFLAGS=-O -D_POSIX_SOURCE -I../lib' \
-		'LIBS=../lib/libutil.a -ldbm -lposix' \
+		'SLIBS=-ldbm -lposix' \
 		_all;; \
 	RISC\ iX*) \
 		make -i -f $(MAKEFILE) \
 		'CC=/tcp/cc' \
 		'CFLAGS=-DRISCiX -I../lib' \
-		'LIBS=../lib/libutil.a' \
 		_all;; \
 	AOS*) \
 		/usr/local/bin/make -i -f $(MAKEFILE) \
@@ -82,25 +79,25 @@ all:;   @case "`uname -sr`" in \
 
 _all:   $(TARGETS)
 
-bbs:    bbs.o
+bbs:    bbs.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
-	$(LD) $(LDFLAGS) $? $(LIBS) -o $@
+	$(LD) $(LDFLAGS) bbs.o $(LIBS) $(SLIBS) -o $@
 
-findpath: findpath.o
+findpath: findpath.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
-	$(LD) $(LDFLAGS) $? $(LIBS) -o $@
+	$(LD) $(LDFLAGS) findpath.o $(LIBS) $(SLIBS) -o $@
 
-killdup: killdup.o
+killdup: killdup.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
-	$(LD) $(LDFLAGS) $? $(LIBS) -o $@
+	$(LD) $(LDFLAGS) killdup.o $(LIBS) $(SLIBS) -o $@
 
-sfstat: sfstat.o
+sfstat: sfstat.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
-	$(LD) $(LDFLAGS) $? $(LIBS) -o $@
+	$(LD) $(LDFLAGS) sfstat.o $(LIBS) $(SLIBS) -o $@
 
 install: /usr/local/bin/bbs findpath killdup /usr/local/bin/sfstat /usr/local/lib/bbs.help
 

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.25 1994/04/09 15:30:17 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.26 1994/04/11 11:07:52 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -4752,6 +4752,8 @@
 44.144.9.22     on4ake  on4ake.ampr.org #Chris,Ruislede
 44.144.9.23     on1bvk  on1bvk.ampr.org #Koen,Jabbeke
 44.144.9.24     on1atq  on1atq.ampr.org #Brecht,Wervik
+#
+44.144.22.1     on1abr  on1abr.ampr.org #Igor,Grimbergen
 #
 #
 #                             H O S T S . N E T
