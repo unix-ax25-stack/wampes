@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 960729" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 960811" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 960729
+Version 960811
 .S
 .SP 2
 .S 15
@@ -429,6 +429,10 @@ attach ni ni dk5sg-u # ip to host ip
 .DE
 .P
 Currently \fBattach ni\fP is available on HP-UX systems only.
+.H 3 "attach tun" " \fIname\fP"
+This creates an IP point-to-point link between \fBWAMPES\fP and UNIX,
+by creating a new interface named \fIname\fP on the \fBWAMPES\fP side.
+Currently \fBattach tun\fP is available on FreeBSD systems only.
 .H 2 "ax25" " \fIsubcommand\fP"
 These commands control the AX.25 service.
 .H 3 "ax25 blimit" " [\fIlimit\fP]"

@@ -10,224 +10,273 @@
 # Spalte 3: Kommentar: Name des/r Betreiber/s/in, Ort. Verlaessliche TCP/IP-
 #           Routing-Knotenrechner sind mit *** gekennzeichnet
 # -----------------------------------------------------------------------
-#
-#
 #44.130.0.x     Hamburg
-# --- lokale Adresskoordination Raum Hamburg: DK8HI
-44.130.0.1      DL2VO   # Gunter Hille, 2000 Hamburg 20 (Gateway)
-44.130.0.2      DL2VO-1 #
-44.130.0.3      DK5XA   # Hartmut Krueger, 2000 Hamburg 60
-44.130.0.4      DB2HK   # Klaus Kleemann
-44.130.0.5      DL5HAI  # Juergen Drews, 2000 Hamburg
-44.130.0.6      DL3HCM  # Marita Illies, 2000 Hamburg 65
-44.130.0.7      DF7HI   # Thomas Illies, 2000 Hamburg 65
-44.130.0.8      DK8HI   # Karl-Heinz Pape, 2000 Schenefeld
-44.130.0.9      DB0DJ.TEST      # Digipeater/Node, 2000 Hamburg
-44.130.0.10     DB0HB.TEST      # PBBS, 2000 Hamburg 65
-44.130.0.11     DB8HN   # Heinz Schultz, 2000 Hamburg 53
-44.130.0.12     DL6HAT  # Rudi Schwenniger
-44.130.0.16     DL4HBJ  # Jens
-44.130.0.19     DB8XT   # Heinz Timme
-44.130.0.20     DL3XAJ  # Joerg Kliewer, 2105 Seevetal 2
-44.130.0.21     DL1XAS  # Andreas Spilker
-44.130.0.22     DF3XZ   # Ehrhart
-44.130.0.23     DG4HAM  # Manfred Fuhge
-44.130.0.24     DL6XAB  # Brigitte Stahmer
-44.130.0.25     DL8HAK  # Walter Koenig, 2050 Hamburg 80; Atari
-44.130.0.26     DL8HAK-1        # Walter Koenig, 2050 Hamburg 80; Amiga
-44.130.0.27     DK7HR   # Rolf
-44.130.0.28     DL8XAW  # Joerg
-44.130.0.30     DL8XAS  # Andreas Sons, 2000 Hamburg 50 Altona
-44.130.0.31     DK1NI   # Peter Voss
-44.130.0.32     DF4HN   # Joerg Neugebauer
-44.130.0.33     DC3HN   # Horst Lenzen, 2000 Hamburg 70
-44.130.0.34     DG4HH   # Holger, 2000 Hamburg
-44.130.0.35     DL5LAC  # Carsten, 2203 Horst
-44.130.0.36     DL6HAZ  # Hartmut
-44.130.0.37     DD7LL   # Lutz, 2200 Elmshorn
-44.130.0.38     DB8XO   # Joachim
-44.130.0.39     DL2BCD  # Joerg "Yogi" Elmers, 2102 Hamburg 93
-44.130.0.40     DK3UD   # Manfred
-44.130.0.41     DH8BAG  # Guido, 2000 Hamburg 60
-44.130.0.42     DB2HB   # Gerhard
-44.130.0.44     DF4HR   # Michael Regitz
-44.130.0.45     DL5HCD  # Rainer Diekmann, 2000 Wedel
-44.130.0.46     DL6HBO  # Rainer Schubert, 2075 Ammersbek
-44.130.0.48     DL8HBG  # Gila, 2075 Ammersbek
-44.130.0.49     DL1HCS  # Anke Schenk, 2000 Wedel
-44.130.0.51     DH1HAD  # Dirk, Buxtehude
-44.130.0.52     DL2HCP  # Petra Schmidt, 25469 Halstenbek
-44.130.0.53     DL8HAV  # Wilfried Bestmann, 25469 Halstenbek
-44.130.0.54     DC4XC   # Ralf Schwart, 2000 Hamburg-Hamm
-44.130.0.55     DH5LAP  # Manfred Pelzl, 2082 Uetersen
-44.130.0.56     DL6LAY  # Hein Kipar, 2082 Uetersen
-44.130.0.57     DL3XAK-4        # Karsten, 2153 Neu Wulmstorf; Atari ST
-44.130.0.58     DK2HE   # Eric, 21514 Buechen
-44.130.0.59     DL9HCJ  # Matthias, Grosshansdorf
-44.130.0.61     DL1CR   # Kurt
-44.130.0.62     DL2HAT  # Thomas Lehmann, Meckelfeld
-44.130.0.63     DL3HBO  # Ottmar
-44.130.0.66     DG2HL   # Roger Luff, 2000 Barsbuettel
-44.130.0.67     DL4XM   # Mattias Schwarze, 2000 Hamburg 74
-44.130.0.68     DG8HO   # David, Hamburg
-44.130.0.69     DG9HZ   # Werner Schramm, 2000 Hamburg 73
-44.130.0.70     DL0YB   # Clubstation OV Sachsenwald E06
-44.130.0.71     DK1NH   # Horst Damaschke, 2054 Geesthacht/Elbe
-44.130.0.73     DJ2HZ   # Werner S. Zielke, 2055 Dassendorf/Sachsenwald
-44.130.0.75     DG5HE   # Dirk, 2000 Hamburg 90
-44.130.0.76     DL6HAX  # Helga M. Zielke, 2055 Dassendorf/Sachsenwald
-44.130.0.77     DJ7WL   # Joachim Paul, 2071 Delingsdorf
-44.130.0.78     DL0HE   # ClubStn Z72, 25336 Elmshorn
-44.130.0.79     DC0TF   # Dieter Fischer, 2000 Hamburg 54
-44.130.0.80     DL0LH   # Lufthansa Clubstation, Weg beim Jaeger
-44.130.0.81     DK3UZ   # Edmund 'Eddi' Ramm, 22175 Hamburg
-44.130.0.82     DL2LAY  # Kurt Wittmann, 2082 Uetersen
-44.130.0.83     DG3XD   # Dieter, 20535 Hamburg-Hamm
-44.130.0.84     DJ4EK   # Juergen, Ahrensburg
-44.130.0.85     DL5XB   # Hans-Juergen
-44.130.0.86     DC6PS   # Ernst Helms, 2061 Lasbek
-44.130.0.87     DG3BAK  #
-44.130.0.88     DG3BAK-1        # Sven Schley; Test
-44.130.0.89     DB9XQ   # Michael, Hamburg
-44.130.0.90     DL0HPS  # Schulstation E19
-44.130.0.91     DL1LBZ  # Michael, Uetersen
-44.130.0.92     DL2HAD  # Klaus, 2082 Uetersen
-44.130.0.93     DC3HC-1 # Carsten
-44.130.0.94     DG4HU   # Udo Menck, 2160 Stade 5
-44.130.0.95     DL5HAC  # Iris, 2082 Uetersen
-44.130.0.96     DG4HU-2 # Udo
-44.130.0.97     DG7LAN  # Andy, Uetersen
-44.130.0.100    DB0HHT  # TCP/IP Server Hamburg Mitte; ***
-44.130.0.101    DL1XAO  # Odo, 2050 Hamburg 80
-44.130.0.102    DL2HAO  # Martin Fritz, 2000 Hamburg 60
-44.130.0.103    DL3HX   # Bernd Michaelsen, 22159 Hamburg
-44.130.0.104    DB4HM   # Mike
-44.130.0.106    DG6HJ   # Jens Brandau, 2000 Hamburg 63
-44.130.0.107    DF7HI-1 # Thomas Illies; Test
-44.130.0.110    DL0EH   # Clubstn E02
-44.130.0.111    DB1HN   # Frank, 2000 Hamburg 93
-44.130.0.112    DG2YEK  # Randolf
-44.130.0.113    DF3OA   # Ingmar, 2150 Buxtehude
-44.130.0.114    DG4JG   # Heinz
-44.130.0.116    DL6HAC  # Frieder
-44.130.0.117    DG8XP   # Peter, Hamburg
-44.130.0.118    DG8XT   # Thomas, Hamburg
-44.130.0.119    DK3HG-2 # Michael
-44.130.0.120    DK3HG   # Michael Meifert, 2075 Ammersbek; WAMPES
-44.130.0.121    DK3HG-L # ; LINUX
-44.130.0.122    DK3HG-1 #
-44.130.0.123    DG4HAM-6        # Manfred Fuhge
-44.130.0.124    DG4HX   # Andreas Westphal, Gateway
-44.130.0.125    DC1HI   # Dirk Westphal
-44.130.0.126    DG4HX-Host      # Irmgart Westphal
-44.130.0.127    DL1HDW  # Guenter Westphal
-44.130.0.130    DD0XP   # Peter, 2070 Ahrensburg
-44.130.0.131    DD6XL   # Michael Lipka, 2150 Buxtehude
-44.130.0.132    DD2XT   # Harry
-44.130.0.133    DF3HU   # Kurt, Barsbuettel
-44.130.0.136    DG6XA   # Alex
-44.130.0.137    DG7XT   # Lewi, Grosshansdorf
-44.130.0.139    DB9XM   # Michi, Volksdorf
-44.130.0.140    DL0AT   # ClubStn E13, Hamburg-Alstertal
-44.130.0.141    DL1HBT  # Tom, Hamburg-Harburg
-44.130.0.143    DL3HAH  # Kai
-44.130.0.146    DL6HBO-ARCHIE   # Rainer Schubert, Ammersbek
-44.130.0.150    DL0HHA  # ClubStn OePNV
-44.130.0.151    DC1XM   # Michael
-44.130.0.152    DF2XP   # Willi, Buxtehude
-44.130.0.153    DL3LBA  # Kai, HH-Borgfelde
-44.130.0.157    DL3XAK-3        # Karsten; Test
-44.130.0.160    DB0HHT-L        # ; LINUX
-44.130.0.163    DG3LAD  # Boris
-44.130.0.168    DG8HO-NOS       #
-44.130.0.170    DC0TK   # Manfred
-44.130.0.173    DG3GJ   # Johannes
-44.130.0.181    DK3UZ-SVR       # Edmund Ramm, 22175 Hamburg
-44.130.0.200    DB0SEF  #
-44.130.0.202    DG5HT-1 # Thomas Kochanek; Test (Gateway)
-44.130.0.203    DL8XAS-Host     # Andreas
-44.130.0.207    DF7HI-2 # Thomas Illies; Test
-#44.130.0.211   DH1HAD  # Dirk, Buxtehude; reserviert fuer Gateway
-44.130.0.218    SYS2.DG8XT      # Thomas, Hamburg
-44.130.0.220    DL0HEW  # ClubStn HEW
-44.130.0.222    DL0CCC  # ClubStn Computer Communications Club
-44.130.0.246    DL6HBO-SYS2     # Rainer; System 2
-44.130.1.1      DF2LH   # Thomas Seibt, 2359 Henstedt-Ulzburg
-44.130.1.2      DL1HAZ  # Walter Zimmer, 2086 Ellerau
-44.130.1.3      DK9HS   # Karl-Heinz, 2000 Norderstedt
-44.130.1.4      DF7HU   # Gerrit Kattendorf
-44.130.1.5      DL5HCK  # Klaus Simon, 2086 Ellerau
-44.130.1.6      DF3OI   # Torsten Freygang, 2000 Hamburg-Norderstedt
-44.130.1.7      DJ5HZ   # Kai Bettermann, 2000 Norderstedt; Atari ST
-44.130.1.8      DL8LBK  # Karsten, 2359 Kaltenkirchen
-44.130.1.9      DL4HAE  # Peter, 2000 Norderstedt
-44.130.1.10     DG5HV   # Michael, 2000 Norderstedt
-44.130.1.11     DL8LAQ  # Norbert, 2358 Kaltenkirchen
-44.130.1.12     DL3HDB  # Hanfried Braune, Norderstedt
-44.130.1.13     DJ3HZ   # Klaus, Norderstedt
-44.130.1.18     DG6BDO-3        #
-44.130.1.19     DF9HU   # Franz Schwenke, 2085 Quickborn-Heide
-44.130.1.20     DD0LD   # Dieter Gothner, 24568 Kaltenkirchen
-#44.130.1.25    DG5LAN  # Nina, Kattendorf
-44.130.1.29     DD9LM   # Marc, Kattendorf
-44.130.1.50     DF2IAD-2        # Jan, Quickborn; PC
-44.130.1.53     DL3HAD  # Klaus Dieckmann, 2061 Suelfeld
-44.130.1.60     DB1HZ   # Hans, 22880 Wedel; AT486
-44.130.1.81     DK3UZ-KAKI      # Edmund Ramm, 24568 Kaltenkirchen
-44.130.1.98     DG6LAC  # Christian, Uetersen
-44.130.1.99     DL2XAP  # Helge Peters, Pinneberg; Mac-II
-44.130.1.100    DB0HHN  # Digi Goetzberg
-44.130.1.153    DL3LBA-1        # Kai, Elmshorn
-44.130.1.199    DL2XAP-2        # Helge Peters, Berkenthin; Mac-Plus
-44.130.2.1      DG1HG   # Dirk Gantert
-44.130.2.2      DG5HT   # Thoms Kochanek
-44.130.2.3      DC3HC   # Carsten
-44.130.2.4      DL8XAS-TST      # Andreas Sons
-44.130.2.5      DG4HX-9K6       # Andreas Westphal
-44.130.2.6      DL3HAQ  # Jens Janssen
-44.130.2.7      DG1HG-SVR       # Dirk
-44.130.2.8      DL3XAK-SMTP     # Karsten; SMTP Server ***
-44.130.2.9      DL3XAK-2        #
-44.130.2.10     DG5HT-SVR       # Thomas Kochanek; Server
-44.130.2.11     DC4XC-2 # Ralf Schwarz, 2000 HH-Hamm
-44.130.2.12     DG1YEK-1        # Randolf
-44.130.2.14     DG4HG-1 # Heinz
-44.130.2.16     DL6XJ   # Jens, Buechen
-44.130.2.24     DL4HAD  # Torsten Dreyer, 21075 Hamburg
-44.130.2.25     DL4HAD-A        # Torsten Dreyer, Auswaerts-QTH
-44.130.2.29     DF9LM   # Andreas
-44.130.2.32     DL0HWL  # ClubStn E33; Router
-44.130.2.33     DH3HAO  # Carsten Hirsch, 2091 Radbruch
-44.130.2.34     DD2HO   # Botho
-44.130.2.35     DC8LA   # Gunnar
-44.130.2.36     DL1HBD  # Dieter Kumpres
-44.130.2.37     DL2XBB  # Burkhard, Winsen
-44.130.2.38     DL1HCW  # Klaus
-44.130.2.51     PE1IUA-DC       # Ron
-44.130.2.58     DG8XC   # Cora
-44.130.2.96     DB0HHS-NET      # HHS local Ethernet
-44.130.2.97     DB0HHS-NEWS     # HHS NNTP-Server
-44.130.2.98     DG8HD-SVR       # Dirk Pfau, Mailserver & Gateway
-44.130.2.99     DG8HD-HOST      # Zweitrechner, Testbetrieb
-44.130.2.100    DB0HHS  # TCP/IP Knoten Hamburg-Sued Wilhelmsburg
-44.130.2.101    DB0HHS-ETH      # HHS, .2.100 connecten
-44.130.2.102    DB0HHS-WMP      # HHS; WAMPES, nur Router, .2.100 connecten
-44.130.2.103    DB0HHS-BD       # HHS
-44.130.2.129    DF9LM-SVR       # Andreas
+# local coordination dk3uz
+#last update 960807
 #
-# Lueneburg
-44.130.2.200    DB0AGI  # Digi
-44.130.2.201    DB0AGM          # Mailbox; LINUX
-44.130.2.202    DB0AGM-U        # Mailbox; WAMPES
-44.130.2.205    DL5XC   # Karsten Albrecht, 2120 Lueneburg
-44.130.2.208    DJ4KW-DOS       # Gerd R. Sapper, Lueneburg
-44.130.2.209    DJ4KW-ISC       # Gerd; UNIX
-44.130.2.210    DL5XC-1 #
-44.130.2.211    DL0HSL  # ClubStn E05 Herderschule
-44.130.2.212    DL0LG   # ClubStn E05
-44.130.2.213    DB5HD   # , Lueneburg
-44.130.2.214    DK9HE   # Andreas, Ashausen
-44.130.2.221    DL1HAJ  # Joachim
+44.130.0.1      dl2vo   dl2vo.ampr.org
+44.130.0.2      dl2vo-1 dl2vo-1.ampr.org
+44.130.0.3      dk5xa   dk5xa.ampr.org
+44.130.0.4      db2hk   db2hk.ampr.org
+44.130.0.5      dl5hai  dl5hai.ampr.org
+44.130.0.6      dl3hcm  dl3hcm.ampr.org
+44.130.0.7      df7hi   df7hi.ampr.org
+44.130.0.8      dk8hi   dk8hi.ampr.org
+44.130.0.9      df0hmb.test     df0hmb.test.ampr.org
+44.130.0.10     db0hb.test      db0hb.test.ampr.org
+44.130.0.11     db8hn   db8hn.ampr.org
+44.130.0.12     dl6hat  dl6hat.ampr.org
+44.130.0.16     dl4hbj  dl4hbj.ampr.org
+44.130.0.19     db8xt   db8xt.ampr.org
+44.130.0.20     dl3xaj  dl3xaj.ampr.org
+44.130.0.21     dl1xas  dl1xas.ampr.org
+44.130.0.22     df3xz   df3xz.ampr.org
+44.130.0.23     dg4ham  dg4ham.ampr.org
+44.130.0.24     dl6xab  dl6xab.ampr.org
+44.130.0.25     dl8hak  dl8hak.ampr.org
+44.130.0.26     dl8hak-1        dl8hak-1.ampr.org
+44.130.0.27     dk7hr   dk7hr.ampr.org
+44.130.0.28     dl8xaw  dl8xaw.ampr.org
+44.130.0.30     dl8xas  dl8xas.ampr.org
+44.130.0.31     dk1ni   dk1ni.ampr.org
+44.130.0.32     df4hn   df4hn.ampr.org
+44.130.0.33     dc3hn   dc3hn.ampr.org
+44.130.0.34     dg4hh   dg4hh.ampr.org
+44.130.0.35     dl5lac  dl5lac.ampr.org
+44.130.0.36     dl6haz  dl6haz.ampr.org
+44.130.0.37     dd7ll   dd7ll.ampr.org
+44.130.0.38     db8xo   db8xo.ampr.org
+44.130.0.39     dl2bcd  dl2bcd.ampr.org
+44.130.0.40     dk3ud   dk3ud.ampr.org
+44.130.0.41     dh8bag  dh8bag.ampr.org
+44.130.0.42     db2hb   db2hb.ampr.org
+44.130.0.44     df4hr   df4hr.ampr.org
+44.130.0.45     dl5hcd  dl5hcd.ampr.org
+44.130.0.46     dl6hbo  dl6hbo.ampr.org
+44.130.0.48     dl8hbg  dl8hbg.ampr.org
+44.130.0.49     dl1hcs  dl1hcs.ampr.org
+44.130.0.51     dh1had  dh1had.ampr.org
+44.130.0.52     dl2hcp  dl2hcp.ampr.org
+44.130.0.53     dl8hav  dl8hav.ampr.org
+44.130.0.54     dc4xc   dc4xc.ampr.org
+44.130.0.55     dh5lap  dh5lap.ampr.org
+44.130.0.56     dl6lay  dl6lay.ampr.org
+44.130.0.57     dl3xak  dl3xak.ampr.org
+44.130.0.58     dk2he   dk2he.ampr.org
+44.130.0.59     dl9hcj  dl9hcj.ampr.org
+44.130.0.61     dl1cr   dl1cr.ampr.org
+44.130.0.62     dl2hat  dl2hat.ampr.org
+44.130.0.63     dl3hbo  dl3hbo.ampr.org
+44.130.0.66     dg2hl   dg2hl.ampr.org
+44.130.0.67     dl4xm   dl4xm.ampr.org
+44.130.0.68     dg8ho   dg8ho.ampr.org
+44.130.0.69     dg9hz   dg9hz.ampr.org
+44.130.0.70     dl0yb   dl0yb.ampr.org
+44.130.0.71     dk1nh   dk1nh.ampr.org
+44.130.0.73     dj2hz   dj2hz.ampr.org
+44.130.0.75     dg5he   dg5he.ampr.org
+44.130.0.76     dl6hax  dl6hax.ampr.org
+44.130.0.77     dj7wl   dj7wl.ampr.org
+44.130.0.78     dl0he   dl0he.ampr.org
+44.130.0.79     dc0tf   dc0tf.ampr.org
+44.130.0.80     dl0lh   dl0lh.ampr.org
+44.130.0.81     dk3uz   dk3uz.ampr.org
+44.130.0.82     dl2lay  dl2lay.ampr.org
+44.130.0.83     dg3xd   dg3xd.ampr.org
+44.130.0.84     dj4ek   dj4ek.ampr.org
+44.130.0.85     dl5xb   dl5xb.ampr.org
+44.130.0.86     dc6ps   dc6ps.ampr.org
+44.130.0.87     dg3bak  dg3bak.ampr.org
+44.130.0.88     dg3bak-1        dg3bak-1.ampr.org
+44.130.0.89     db9xq   db9xq.ampr.org
+44.130.0.90     dl0hps  dl0hps.ampr.org
+44.130.0.91     dl1lbz  dl1lbz.ampr.org
+44.130.0.92     dl2had  dl2had.ampr.org
+44.130.0.93     dc3hc-1 dc3hc-1.ampr.org
+44.130.0.94     dg4hu   dg4hu.ampr.org
+44.130.0.95     dl5hac  dl5hac.ampr.org
+44.130.0.96     dg4hu-2 dg4hu-2.ampr.org
+44.130.0.97     dg7lan  dg7lan.ampr.org
+44.130.0.100    db0hht  db0hht.ampr.org
+44.130.0.101    dl1xao  dl1xao.ampr.org
+44.130.0.102    dl2hao  dl2hao.ampr.org
+44.130.0.103    dl3hx   dl3hx.ampr.org
+44.130.0.104    db4hm   db4hm.ampr.org
+44.130.0.106    dg6hj   dg6hj.ampr.org
+44.130.0.107    df7hi-1 df7hi-1.ampr.org
+44.130.0.110    dl0eh   dl0eh.ampr.org
+44.130.0.111    db1hn   db1hn.ampr.org
+44.130.0.112    dg2yek  dg2yek.ampr.org
+44.130.0.113    df3oa   df3oa.ampr.org
+44.130.0.114    dg4hg   dg4hg.ampr.org
+44.130.0.116    dl6hac  dl6hac.ampr.org
+44.130.0.117    dg8xp   dg8xp.ampr.org
+44.130.0.118    dg8xt   dg8xt.ampr.org
+44.130.0.119    dk3hg-2 dk3hg-2.ampr.org
+44.130.0.120    dk3hg   dk3hg.ampr.org
+44.130.0.121    dk3hg-l dk3hg-l.ampr.org
+44.130.0.122    dk3hg-1 dk3hg-1.ampr.org
+44.130.0.123    dg4ham-6        dg4ham-6.ampr.org
+44.130.0.124    dg4hx   dg4hx.ampr.org
+44.130.0.125    dc1hi   dc1hi.ampr.org
+44.130.0.126    dg4hx-host      dg4hx-host.ampr.org
+44.130.0.127    dl1hdw  dl1hdw.ampr.org
+44.130.0.130    dd0xp   dd0xp.ampr.org
+44.130.0.131    dd6xl   dd6xl.ampr.org
+44.130.0.132    dd2xt   dd2xt.ampr.org
+44.130.0.133    df3hu   df3hu.ampr.org
+44.130.0.136    dg6xa   dg6xa.ampr.org
+44.130.0.137    dg7xt   dg7xt.ampr.org
+44.130.0.139    dg9xm   dg9xm.ampr.org
+44.130.0.140    dl0at   dl0at.ampr.org
+44.130.0.141    dl1hbt  dl1hbt.ampr.org
+44.130.0.143    dl3hah  dl3hah.ampr.org
+44.130.0.146    dl6hbo-archie   dl6hbo-archie.ampr.org
+44.130.0.150    dl0hha  dl0hha.ampr.org
+44.130.0.151    dc1xm   dc1xm.ampr.org
+44.130.0.152    df2xp   df2xp.ampr.org
+44.130.0.153    dl3lba  dl3lba.ampr.org
+44.130.0.156    dg6xl   dg6xl.ampr.org
+44.130.0.157    dl3xak-2        dl3xak-2.ampr.org
+44.130.0.160    db0hht-l        db0hht-l.ampr.org
+44.130.0.161    dg1hw   dg1hw.ampr.org
+44.130.0.162    dg2mh   dg2mh.ampr.org
+44.130.0.163    dg3lad  dg3lad.ampr.org
+44.130.0.164    dg3lad-s        dg3lad-s.ampr.org
+44.130.0.166    dg6xa-2 dg6xa-2.ampr.org
+44.130.0.168    dg8ho-nos       dg8ho-nos.ampr.org
+44.130.0.170    dc0tk   dc0tk.ampr.org
+44.130.0.171    dd1li   dd1li.ampr.org
+44.130.0.172    dg2hd   dg2hd.ampr.org
+44.130.0.173    dg3gj   dg3gj.ampr.org
+44.130.0.174    dg4lbi  dg4lbi.ampr.org
+44.130.0.175    dg5lbi  dg5lbi.ampr.org
+44.130.0.180    dh0lae  dh0lae.ampr.org
+44.130.0.181    dk3uz-svr       dk3uz-svr.ampr.org
+44.130.0.182    dg7laz  dg7laz.ampr.org
+44.130.0.183    dl7laz-2        dl7laz-2.ampr.org
+44.130.0.200    db0sef  db0sef.ampr.org
+44.130.0.202    dg5ht-1 dg5ht-1.ampr.org
+44.130.0.203    dl8xas-host     dl8xas-host.ampr.org
+44.130.0.207    df7hi-2 df7hi-2.ampr.org
+44.130.0.211    dh1had-2        dh1had-2.ampr.org
+44.130.0.218    dg8xt-2 dg8xt-2.ampr.org
+44.130.0.220    dl0hew  dl0hew.ampr.org
+44.130.0.222    dl0ccc  dl0ccc.ampr.org
+44.130.0.228    dg8xt-3 dg8xt-3.ampr.org
+44.130.0.238    dg8xt-4 dg8xt-4.ampr.org
+44.130.0.246    dl6hbo-sys2     dl6hbo-sys2.ampr.org
+44.130.0.250    hhtest0 hhtest0.ampr.org
+44.130.0.251    hhtest1 hhtest1.ampr.org
+44.130.0.252    hhtest2 hhtest2.ampr.org
+44.130.0.253    hhtest3 hhtest3.ampr.org
+#
+# 44.130.1.x    Hamburg North
+# local coordination dk3uz
+# last update 960807
+44.130.1.1      df2lh   df2lh.ampr.org
+44.130.1.2      dl1haz  dl1haz.ampr.org
+44.130.1.3      dk9hs   dk9hs.ampr.org
+44.130.1.4      df7hu   df7hu.ampr.org
+44.130.1.5      dl5hck  dl5hck.ampr.org
+44.130.1.6      df3oi   df3oi.ampr.org
+44.130.1.7      dj5hz   dj5hz.ampr.org
+44.130.1.8      dl8lbk  dl8lbk.ampr.org
+44.130.1.9      dl4hae  dl4hae.ampr.org
+44.130.1.10     dg5hv   dg5hv.ampr.org
+44.130.1.11     dl8laq  dl8laq.ampr.org
+44.130.1.12     dl3hdb  dl3hdb.ampr.org
+44.130.1.13     dj3hz   dj3hz.ampr.org
+44.130.1.15     dl5lbw  dl5lbw.ampr.org
+44.130.1.17     dh7acp  dh7acp.ampr.org
+44.130.1.19     df9hu   df9hu.ampr.org
+44.130.1.20     dd0ld   dd0ld.ampr.org
+44.130.1.22     dg2lbi  dg2lbi.ampr.org
+44.130.1.25     dg5lan  dg5lan.ampr.org
+44.130.1.28     dl8xi   dl8xi.ampr.org
+44.130.1.29     dd9lm   dd9lm.ampr.org
+44.130.1.50     df2iad-2        df2iad-2.ampr.org
+44.130.1.53     dl3had  dl3had.ampr.org
+44.130.1.60     db1hz   db1hz.ampr.org
+44.130.1.81     dk3uz-kaki      dk3uz-kaki.ampr.org
+44.130.1.98     dg6lac  dg6lac.ampr.org
+44.130.1.99     dl2xap  dl2xap.ampr.org
+44.130.1.100    db0hhn  db0hhn.ampr.org
+44.130.1.153    dl3lba-1        dl3lba-1.ampr.org
+#
+# 44.130.2.x    Hamburg South
+# local coordination dk3uz
+# last update 960807
+44.130.2.1      dg1hg   dg1hg.ampr.org
+44.130.2.2      dg5ht   dg5ht.ampr.org
+44.130.2.3      dc3hc   dc3hc.ampr.org
+44.130.2.4      dl8xas-tst      dl8xas-tst.ampr.org
+44.130.2.5      dg4hx-9k6       dg4hx-9k6.ampr.org
+44.130.2.6      dl3haq  dl3haq.ampr.org
+44.130.2.7      dg1hg-svr       dg1hg-svr.ampr.org
+44.130.2.10     dg5ht-svr       dg5ht-svr.ampr.org
+44.130.2.11     dc4xc-2 dc4xc-2.ampr.org
+44.130.2.12     dg2yek-1        dg2yek-1.ampr.org
+44.130.2.14     dg4hg-1 dg4hg-1.ampr.org
+44.130.2.16     dl6xj   dl6xj.ampr.org
+44.130.2.24     dl4had  dl4had.ampr.org
+44.130.2.25     dl4had/a        dl4had/a.ampr.org
+44.130.2.29     df9lm   df9lm.ampr.org
+44.130.2.32     dl0hwl  dl0hwl.ampr.org
+44.130.2.33     dh3hao  dh3hao.ampr.org
+44.130.2.34     dk9he-wl        dk9he-wl.ampr.org
+44.130.2.35     dc8la   dc8la.ampr.org
+44.130.2.36     dl1hbd  dl1hbd.ampr.org
+44.130.2.37     dl2xbb  dl2xbb.ampr.org
+44.130.2.38     dl1hcw  dl1hcw.ampr.org
+#44.130.2.39    # reserved for E33
+#   ...
+#44.130.2.47    # reserved for E33
+44.130.2.51     pe1iua-dc       pe1iua-dc.ampr.org
+44.130.2.58     dg8xc   dg8xc.ampr.org
+44.130.2.96     db0hhs-net      db0hhs-net.ampr.org
+44.130.2.97     dg8hd-eth       dg8hd-eth.ampr.org
+44.130.2.98     dg8hd   dg8hd.ampr.org
+44.130.2.99     dg8hd-host      dg8hd-host.ampr.org
+44.130.2.100    db0hhs  db0hhs.ampr.org
+44.130.2.101    db0hhs-eth      db0hhs-eth.ampr.org
+44.130.2.102    db0hhs-wmp      db0hhs-wmp.ampr.org
+44.130.2.103    db0hhs-bdc      db0hhs-bdc.ampr.org
+44.130.2.129    df9lm-svr       df9lm-svr.ampr.org
+#
+# 44.130.2.192/26 Lueneburg
+# local coordination dj4kw
+44.130.2.200    db0agi  db0agi.ampr.org
+44.130.2.201    db0agm  db0agm.ampr.org
+44.130.2.202    db0agm-u        db0agm-u.ampr.org
+44.130.2.203    db0agm-s        db0agm-s.ampr.org
+44.130.2.204    dj4kw   dj4kw.ampr.org
+44.130.2.205    dl5xc-1 dl5xc-1.ampr.org
+44.130.2.206    dk9gg   dk9gg.ampr.org
+44.130.2.208    dj4kw-dos       dj4kw-dos.ampr.org
+44.130.2.209    dj4kw-isc       dj4kw-isc.ampr.org
+44.130.2.210    dl5xc   dl5xc.ampr.org
+44.130.2.211    dl0hsl  dl0hsl.ampr.org
+44.130.2.212    dl0lg   dl0lg.ampr.org
+44.130.2.213    db5hd   db5hd.ampr.org
+44.130.2.214    dl4hch  dl4hch.ampr.org
+44.130.2.215    dc8jm   dc8jm.ampr.org
+44.130.2.216    dj6tk   dj6tk.ampr.org
+44.130.2.217    dl2hbi  dl2hbi.ampr.org
+44.130.2.218    db8oh   db8oh.ampr.org
+44.130.2.219    dk9he   dk9he.ampr.org
+44.130.2.220    dc2hc   dc2hc.ampr.org
+44.130.2.221    dk8xk   dk8xk.ampr.org
+44.130.2.222    dl4hn   dl4hn.ampr.org
+44.130.2.223    dd4xa   dd4xa.ampr.org
+44.130.2.224    dg7xd   dg7xd.ampr.org
+44.130.2.225    dg6xu   dg6xu.ampr.org
+44.130.2.226    dk2he-2 dk2he-2.ampr.org
+44.130.2.227    dg6xu-1 dg6xu-1.ampr.org
+44.130.2.228    dg6xu-2 dg6xu-2.ampr.org
+44.130.2.229    dg2hak  dg2hak.ampr.org
+44.130.2.230    dg2hak-2        dg2hak-2.ampr.org
+44.130.2.254    dk0iu   dk0iu.ampr.org
 #
 #44.130.3.x     Elbe/Weser
 44.130.3.1      DL4BBD  # Rene Baucke, 2750 Oerel/Barchel
@@ -1294,6 +1343,7 @@
 44.130.20.43    DG1KFA  # Andreas Franck, 50171 Kerpen
 44.130.20.44    DG3KQ   # Andreas Kuensgen, 52072 Aachen
 44.130.20.45    DL1KBL  # Achim Hoelker, 52525 Waldfeucht
+44.130.20.46    DB1KS   # Harm Siegers, 52538 Havert-Selfkant
 44.130.20.47    DD3KF   # Norbert, Aachen
 44.130.20.48    DG1KBN  # Juergen Jaeger, 5100 Aachen
 44.130.20.49    DG2KSA  # Stephan, Aachen
@@ -2600,7 +2650,7 @@
 44.130.48.225   DH1FAT  # Thomas, Taunusstein
 44.130.48.226   DL4KU   # Peter Piepkorn, 7000 Stuttgart 31; Atari ST1040 STF
 44.130.48.227   DL9SDN  # Werner Haas, 7014 Kornwestheim
-44.130.48.228   DC7TU   # Markus Zuegel, 7140 Ludwigsburg
+44.130.48.228   DJ2TK   # Michael, Stuttgart Stammheim
 44.130.48.229   DL3SEL-U        # Stefan Karl, Office; WAMPES
 44.130.48.230   DL4SCI  # Jochen Jacobs; WAMPES
 44.130.48.231   DL4SCI-U        # ; WAMPES
@@ -3447,71 +3497,99 @@
 44.130.89.99    DL2JKT-3        # Carsten, O-9026 Chemnitz; UNIX
 44.130.89.100   DB0HOT  # Digi Hohenstein-Ernstthal
 #
-#44.130.90.x    Dresden
-# --- lokale Adresskoordination: DG1RTF
-44.130.90.1     DG0DU   # Thomas Rudolph, 01127 Dresden (ex Y37JL)
-44.130.90.2     DG1RTF  # Thomas Fichte, 01157 Dresden
-44.130.90.3     DD0VS   # Harald Fritsche, 01809 Heidenau
-44.130.90.4     DG0DI   # Dirk Guenther, 01189 Dresden
-44.130.90.5     DL0TUD  # Club-Stn S07 TU, Dresden
-44.130.90.6     DL1DSD  # Joerg Fruehauf, 01157 Dresden
-44.130.90.7     DG0NF   # Helge Tefs, 17438 Wolgast
-44.130.90.8     DG0DC   # Torsten Wolf, 01640 Coswig
-44.130.90.9     DL1DTM  # Ulf Riechen, 01237 Dresden
-44.130.90.10    DG2DWL  # Hartmut Siegel, 01169 Dresden
-44.130.90.11    DL3BZN  # Guido Vattrodt, O-8020 Dresden
-44.130.90.12    DG2VQ   # Steffen Koehler, 01157 Dresden
-44.130.90.13    DG0JY   # Kai Zscheile, 09224 Gruena
-44.130.90.14    DG2DRA  # Heiko, O-2601 Obergurig
-44.130.90.15    DG1VS   # Karsten Schmidt, O-8010 Dresden
-44.130.90.16    DG0VP   # Joerg Genscher, 01277 Dresden
-44.130.90.17    DL1DQI  # Olf Zimmerhackl, O-8020 Dresden
-44.130.90.18    DL1DSX  # Andreas Westfeld, 01277 Dresden
-44.130.90.19    DL6DUG  # Roland Gentsch, 01069 Dresden
-44.130.90.20    DH1AKY  # Jens Wagner, 01307 Dresden
-44.130.90.21    DG0MD   # Falk Winter, 01307 Dresden
-44.130.90.22    DG1RTF-U        # Thomas Fichte; UNIX
-44.130.90.23    DL1DWW  # Ronald Konschak, 01069 Dresden
-44.130.90.24    DG2VG   # Gunar Scholz, 01309 Dresden
-44.130.90.25    DL3BZN-U        # Guido Vattrotd; UNIX
-44.130.90.26    DG0LGK  # Harald Junghans, 04107 Leipzig
-44.130.90.27    DG2VQ-U # Steffen Koehler; UNIX
-44.130.90.28    DD0VU   # Jens Knoepfchen, 01738 Klingenberg
-44.130.90.29    DL1DSD-U        # Joerg Fruehauf; UNIX
-44.130.90.30    DG1VX   # Andreas Minner, 01099 Dresden
-44.130.90.31    DD0VX   # Eckhard Stephan, 01704 Freital
-44.130.90.32    DG0NF-H # Helge Tefs; Palmtop
-44.130.90.33    DL9DRA  # Ralf Stieber, 01445 Radebeul (ex DG0VF)
-44.130.90.34    DD0VU-U # Jens Knoepfchen; UNIX
-44.130.90.35    DL2DRI  # Roland Pelz, 01809 Heidenau
-44.130.90.36    DG1VD   # Volkmar Hofmann, 01454 Radebeul
-44.130.90.37    DH0DZ   # Dieter Wachsmuth, 01237 Dresden
-44.130.90.38    DG1OA   # Falko Ziller, 01738 Colmnitz
-44.130.90.39    DG0EL   # Mirko Taschenber, 09634 Siebenlehn
-44.130.90.40    DG0KB   # Udo Lies, 01099 Dresden
-44.130.90.41    DG0DC-U # Joerg Wolf; Unix
-44.130.90.42    DG0VP-U # ; Unix
-44.130.90.43    DG2VM   # Andre Weinhold, 01097 Dresden
-44.130.90.44    DL2DVT  # Wolfgang Kobitzki, 01239 Dresden
-44.130.90.45    DL2VIC  # Andreas Peschl, 01609 Groeditz
-44.130.90.47    DG1HTK  # Dirk Haenelt, 01237 Dresden
-44.130.90.48    DL2NUM  # Matthias Lemke, O-8020 Dresden
-44.130.90.49    DL6MUG  # Hendrik Wagener, 01157 Dresden
-44.130.90.50    DG1RTF-G        # ; Unix
-44.130.90.51    DL2VEA  # Guenther Horn, 01900 Grossroehrsdorf
-44.130.90.52    DG1VY   # Juergen Boettcher, 01159 Dresden
-44.130.90.53    DD0VU-H #
-44.130.90.54    DL0HTW  # Clubstn HTW, Dresden
-44.130.90.55    DG3VT   # Michael Mueller, 01127 Dresden
-44.130.90.56    DG3VT-U # ; Unix
-44.130.90.57    DG4VI   # Fred Siegmund, 01189 Dresden
-44.130.90.58    DL1DWW-U        # ; Unix
-44.130.90.100   DB0TUD  # WAMPES-Digi, Dresden (S07)
-44.130.90.101   DB0TUD-U        # ; UNIX, MB
+# 44.130.90.x Dresden
+# --- Lokale Adresskoordination Raum Dresden: DG1RTF
 #
-#44.130.91.x    Zwickau
-44.130.91.1     DL4VAR  # Henry Rix, 08066 Zwickau
-44.130.91.2     DL1JHN  # Reinhard Baudach, Zwickau
+44.130.90.1     DG0DU           # Thomas Rudolph, 01127 Dresden
+44.130.90.2     DG1RTF          # Thomas Fichte, 01157 Dresden
+44.130.90.3     DD0VS           # Harald Fritsche, 01809 Heidenau
+44.130.90.4     DG0DI           # Dirk, Guenther, 01189 Dresden
+44.130.90.5     DL0TUD          # Club-Stn TU Dresden S07
+44.130.90.6     DL1DSD          # Joerg Frueauf, 01157 Dresden
+44.130.90.7     DG0NF           # Helge Tefs, Heimat-QTH: 17438 Wolgast
+44.130.90.8     DG0DC           # Torsten Wolf, 01640 Coswig
+44.130.90.9     DL1DTM          # Ulf Riechen, 01237 Dresden
+44.130.90.10    DG2DWL          # Hartmut Siegel, 01169 Dresden
+44.130.90.11    DL3BZN          # Guido Vattrodt, O-8020 Dresden
+44.130.90.12    DG2VQ           # Steffen Koehler, 01157 Dresden
+44.130.90.13    DG0JY           # Kai Zscheile, 09224 Gruena
+44.130.90.14    DG2DRA          # Heiko, O-2601 Obergurig
+44.130.90.15    DG1VS           # Karsten Schmidt, 01139 Dresden
+44.130.90.16    DG0VP           # Joerg Genscher, 01277 Dresden
+44.130.90.17    DL1DQI          # Olaf Zimmerhackl, O-8020 Dresden
+44.130.90.18    DL1DSX          # Andreas Westfeld, 01277 Dresden
+44.130.90.19    DL6DUG          # Roland Gentsch, 01069 Dresden
+44.130.90.20    DH1AKY          # Jens Wagner, 01307 Dresden
+44.130.90.21    DG0MD           # Falk Winter, 01307 Dresden
+44.130.90.22    DG1RTF-U        # Thomas Fichte UNIX
+44.130.90.23    DL1DWW          # Ronald Konschak, 01069 Dresden
+44.130.90.24    DG2VG           # Gunar Scholz 01309 Dresden
+44.130.90.25    DL3BZN-U        # Guido Vattrotd UNIX
+44.130.90.26    DG0LGK          # Harald Junghans, 04107 Leipzig
+44.130.90.27    DG2VQ-U         # Steffen Koehler UNIX
+44.130.90.28    DD0VU           # Jens Knoepfchen, 01738 Klingenberg
+44.130.90.29    DL1DSD-U        # Joerg Fruehauf UNIX
+44.130.90.30    DG1VX           # Adreas Minner, 01099 Dresden
+44.130.90.31    DD0VX           # Eckhard Stephan, 01705 Freital
+44.130.90.32    DG0NF-H         # Helge Tefs PALMTOP
+44.130.90.33    DL9DRA          # Ralf Stieber, 01445 Radebeul
+44.130.90.34    DD0VU-U         # Jens Knoepfchen UNIX
+44.130.90.35    DL2DRI          # Roland Pelz, 01809 Heidenau
+44.130.90.36    DG1VD           # Volkmar Hofmann, 01454 Radeberg
+44.130.90.37    DH0DZ           # Dieter Wachsmuth, 01237 Dresden
+44.130.90.38    DG1OA           # Falko Ziller, 01738 Colmnitz
+44.130.90.39    DG0EL           # Mirko Taschenber, 09634 Siebenlehn
+44.130.90.40    DG0KB           # Udo Lies, 01099 Dresden
+44.130.90.41    DG0DC-U         # Joerg Wolf UNIX
+44.130.90.42    DG0VP-U         # Joerg Genscher UNIX
+44.130.90.43    DG2VM           # Andre Weinhold, 01097 Dresden
+44.130.90.44    DL2DVT          # Wolfgang Kobitzki, 01239 Dresden
+44.130.90.45    DL2VIC          # Andreas Peschel, 01609 Groeditz
+44.130.90.46    DELETED
+44.130.90.47    DG1HTK          # Dirk Haenelt, 01237 Dresden
+44.130.90.48    DL2NUM          # Matthias Lemke, O-8020 Dresden
+44.130.90.49    DL6MUG          # Hendrik Wagener, 01157 Dresden
+44.130.90.50    DG1RTF-G        # Thomas Fichte, UNIX
+44.130.90.51    DL2VEA          # Guenther Horn, 01900 Grossroehrsdorf
+44.130.90.52    DG1VY           # Juergen Boettcher, 01159 Dresden
+44.130.90.53    DD0VU-H         # Jens Knoepfchen
+44.130.90.54    DL0HTW          # Klubstation HTW Dresden
+44.130.90.55    DG3VT           # Michael Mueller, 01127 Dresden
+44.130.90.56    DG3VT-U         # Michael Mueller, UNIX
+44.130.90.57    DG4VI           # Fred Siegmund, 01189 Dresden
+44.130.90.58    DL1DWW-U        # Ronald Konschak, UNIX
+44.130.90.59    DG1HTK-U        # Dirk Haenelt, UNIX
+44.130.90.60    DL1DTU          # Withold Schuetze, Dresden
+44.130.90.61    DH0DR           # Andreas Musche, Dresden, jo61ua
+44.130.90.62    DH0DR-U         # Andreas Musche, UNIX
+44.130.90.63    DG2DRA-U        # Heiko, UNIX
+44.130.90.64    DL1DSL          # Winfried Voitus, Dresden
+44.130.90.65    DL2NUM-U        # Matthias, Unix
+44.130.90.67    DG0DT           # Wolfgang Beranek, 01326 Dresden
+44.130.90.68    DH0DW           # Maik, 01612 Nuenchritz
+44.130.90.69    DG1VS-L         # Karsten Schmidt, LINUX
+44.130.90.70    DG1VS-W         # Karsten Schmidt, WAMPES
+#----------------------------------------------------------------------------
+44.130.90.100   DB0TUD          # WAMPES Digi Dresden, Betreiber: S07
+44.130.90.101   DB0TUD-U        # UNIX, MB Dresden
+44.130.90.102   SMB.DB0TUD      # Sprach-MBox Dresden
+44.130.90.103   ATV.DB0TUD      # ATV-Relais Dresden
+#
+#-------------------------------------------------------------------------
+#
+# 44.130.91.x  Zwickau  (08000-08099)
+# Lokale Adresskoordination Raum Zwickau/Zwickau-Land: DG0LP
+#
+44.130.91.1     DL5SS           # Henry Rix, 08066 Zwickau
+44.130.91.2     DL9VW           # Reinhard Baudach, Zwickau
+44.130.91.3     DG0LP           # Lutz Poetschulat, 08056 Zwickau
+44.130.91.4     DG0JAZ          # Jan Hinterkopf, Zwickau
+44.130.91.5     DG0LP-U         # Lutz Poetschulat, 08056 Zwickau
+#
+44.130.91.100   DB0ZWI-SVR      # WAMPES Zwickau (S60)
+44.130.91.101   DB0ZWI-U        # UNIX/INN Zwickau (S60)
+#
+# Stand 11.Aug.96
 #
 #44.130.96.x    Suhl
 44.130.96.1     Y31JK   # Ralf Schueler, O-6300 Ilmenau; AT286

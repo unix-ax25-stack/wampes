@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.89 1996/06/20 11:48:50 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.90 1996/08/11 18:11:36 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -177,6 +177,7 @@ OBJS          = adjtime.o \
 		trace.o \
 		transport.o \
 		ttydriv.o \
+		tun.o \
 		udp.o \
 		udpcmd.o \
 		udpdump.o \
@@ -287,6 +288,7 @@ SRCS          = adjtime.c \
 		trace.c \
 		transport.c \
 		ttydriv.c \
+		tun.c \
 		udp.c \
 		udpcmd.c \
 		udpdump.c \
@@ -316,11 +318,19 @@ all:;   chmod 755 cc
 		'CFLAGS=-O -framepointer -signed -DUNIX -DFD_SETSIZE=1024 -I../lib' \
 		_all;; \
 	Linux*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc' \
-		'CFLAGS=-O6 -DUNIX -I./linux_include -I../lib' \
-		'SLIBS=-ldbm' \
-		_all;; \
+		if [ -r /lib/libc.so.5 ]; then \
+			$(MAKE) -i -f $(MAKEFILE) \
+			'CC=gcc' \
+			'CFLAGS=-O6 -DUNIX -I./linux_include -I../lib' \
+			'SLIBS=-lgdbm' \
+			_all; \
+		else \
+			$(MAKE) -i -f $(MAKEFILE) \
+			'CC=gcc' \
+			'CFLAGS=-O6 -DUNIX -I./linux_include -I../lib' \
+			'SLIBS=-ldbm' \
+			_all; \
+		fi;; \
 	386BSD*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
@@ -416,15 +426,15 @@ $(PROGRAM):     $(OBJS) $(LIBS)
 		$(RMTARGET)
 		@$(LD) $(LDFLAGS) $(OBJS) $(LIBS) $(SLIBS) -o $(PROGRAM)
 
-clean:;         @rm -f *.o *~
+clean:;         @rm -f *.o *~ \#*\#
 
-clobber:        clean; @rm -f $(PROGRAM) lint tags
+clobber:        clean; @rm -f $(PROGRAM) lint tags TAGS
 
 depend:;        @mkmf -f $(MAKEFILE)
 
 echo:;          @echo $(HDRS) $(SRCS)
 
-index:;         @ctags -wx $(HDRS) $(SRCS)
+index:;         @PATH=/usr/bin:$$PATH ctags -wx $(HDRS) $(SRCS)
 
 install:        $(DEST)/$(PROGRAM)
 
@@ -432,7 +442,11 @@ lint:           $(HDRS) $(SRCS); @lih $(SRCS) > lint
 
 print:;         @$(PRINT) $(HDRS) $(SRCS)
 
-tags:           $(HDRS) $(SRCS); @ctags $(HDRS) $(SRCS)
+tags:           $(HDRS) $(SRCS)
+		@PATH=/usr/bin:$$PATH ctags -w $(HDRS) $(SRCS)
+
+TAGS:           $(HDRS) $(SRCS)
+		@etags $(HDRS) $(SRCS)
 
 update:         $(DEST)/$(PROGRAM)
 
@@ -667,6 +681,8 @@ transport.o: global.h ../lib/strdup.h ../lib/configure.h netuser.h mbuf.h \
 	timer.h ax25.h iface.h proc.h lapb.h netrom.h session.h hardware.h \
 	telnet.h tcp.h internet.h ip.h transport.h
 ttydriv.o: global.h ../lib/strdup.h ../lib/configure.h tty.h
+tun.o: global.h ../lib/strdup.h ../lib/configure.h ../lib/strerror.h mbuf.h \
+	iface.h proc.h timer.h netuser.h trace.h hpux.h
 udp.o: global.h ../lib/strdup.h ../lib/configure.h mbuf.h netuser.h iface.h \
 	proc.h timer.h udp.h internet.h ip.h icmp.h
 udpcmd.o: global.h ../lib/strdup.h ../lib/configure.h mbuf.h netuser.h udp.h \

@@ -4,7 +4,7 @@
 </HEAD>
 <BODY>
 <H1>WAMPES Reference Manual</H1>
-Version 960729
+Version 960811
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
@@ -528,6 +528,10 @@ attach ni ni dk5sg-u # ip to host ip
 </PRE>
 <P>
 Currently <A HREF="#H4.6.6"><B>attach ni</B></A> is available on HP-UX systems only.
+<H4><A NAME="H4.6.7">4.6.7 attach tun <I>name</I></A></H4>
+This creates an IP point-to-point link between <B>WAMPES</B> and UNIX,
+by creating a new interface named <I>name</I> on the <B>WAMPES</B> side.
+Currently <A HREF="#H4.6.7"><B>attach tun</B></A> is available on FreeBSD systems only.
 <H3><A NAME="H4.7">4.7 ax25 <I>subcommand</I></A></H3>
 These commands control the AX.25 service.
 <H4><A NAME="H4.7.1">4.7.1 ax25 blimit [<I>limit</I>]</A></H4>
