@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.7 1993/10/05 08:32:44 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.8 1993/10/11 09:27:28 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -2290,119 +2290,287 @@
 #
 #===========================================================================
 # AMPR.ORG Amateur Packet Radio TCP/IP Network
-# 44.142.xxx.xxx - Internet Protocol Adress list for HB9 - Switzerland
+# 44.142.xxx.xxx - Internet Protocol Address list for HB9 - Switzerland
+# Administered by HB9CAT
 #===========================================================================
-#
+44.142.0.0     CH_amprnet
 # 44.142.1.xxx   Tel.Area  01 : Zuerich
 #
-44.142.1.1     HB9ZZ          # ETH Zuerich,ip gate (HB9CAT sysop) NOS
+44.142.1.1     hb9zz          # ETH Zuerich,ip gate
 #                               also hb9zz.ethz.ch (129.132.20.19)
-44.142.1.2     HB9CTB         # Markus, Dietikon                  NOS
-44.142.1.3     HB9CKO         # Jacques, Altstetten               NOS
-44.142.1.5     HB9CAT         # Marco, Zuerich; Atari ST          NET PE1CHL
-44.142.1.6     st.HB9DDO      # Stephan, Zuerich; Atari ST        NET PE1CHL
-44.142.1.7     mac.HB9DDO     #    "        "   ; Mac portable    Mac NOS
-44.142.1.8     HB9CXE         # Emil, Zuerich
-44.142.1.9     2nd.HB9CXE     #   "      "   ; 2nd computer
-44.142.1.10    HB9BGC         # Peter, Zuerich
-#---------------------------------------------------------------------------
+44.142.1.2     hb9ctb         # Markus, Dietikon
+44.142.1.3     hb9cko         # Jacques, Altstetten
+44.142.1.4     linux.hb9cat   # Marco, Opfikon (mzolling@wellfleet.com)
+44.142.1.5     hb9cat         # Marco, Opfikon
+44.142.1.8     hb9cxe         # Emil, Zuerich
+44.142.1.9     2nd.hb9cxe     #   "      "   ; 2nd computer
+44.142.1.10    hb9bgc         # Peter, Zuerich
+44.142.1.12    hb9rmh         # Theo, Uster
+44.142.1.13    hb9sfn         # Gerda, Uster
+44.142.1.15    hb9bxq         # Renato, Zuerich
+44.142.1.16    hb9cwp         # Rolf, Zuerich; Amiga
+44.142.1.17    hb9cam         # Tobias, Zuerich tobias@nari.ikt.ethz.ch
+44.142.1.18    hb9pae         # Peter
+44.142.1.19    2nd.hb9pqx     # Ruedi
+44.142.1.20    hb9avk         # Paul
+44.142.1.21    hb9ak          # Swiss-ARTG
 #
+#        22-30 reserved for Swiss-ARTG
+#
+44.142.1.32    hb9ddo         # Stephan, Zuerich
+#
+#        33-39 reserved for hb9ddo
+#
+44.142.1.40    hb9cet         # Peter
+44.142.1.41    hb9lcu         # Beat
+44.142.1.42    hb9cjf         # Frank
+44.142.1.43    hb9mvj         # Adolf
+44.142.1.44    hb9ccq         # Franz
+44.142.1.45    qrl.hb9hvf     # Bruno, Studium Zuerich
+44.142.1.47    hb9bvb         # Helmut Scharrer, Glattbrugg
+44.142.1.48    hb9sdn         # Claudio, Uster
+44.142.1.50    hb9svv         # Peter, Uster
+44.142.1.52    hb9vqv         # Peter, Meilen
+
+#---------------------------------------------------------------------------
+# 44.142.22.xx2x  Tel.Area 022 : Geneve
+#
+# 44.142.22. 1-50 under administration of IPARC, repr. by HB9VAB
+#
+44.142.22.1    hb9iap         # International Amateur Packet Club
+44.142.22.2    hb9iac         # International Amateur Packet Club
+44.142.22.3    hb9vab         # Rodolphe
+44.142.22.4    hb9mah         # Richard
+44.142.22.5    hb9vai         #
+44.142.22.6    hb9vaf         #
+44.142.22.7    hb9rte         #
+#
+#---------------------------------------------------------------------------
+# 44.142.24.xxx  Tel.Area 024 : Yverdon
+#
+44.142.24.1    hb9rdp         # Louis, Yverdon
+#---------------------------------------------------------------------------
+# 44.142.28.xxx  Tel.Area 028 : Brig
+#
+44.142.28.2    hb9uqs         #
+44.142.28.3    2nd.hb9uqs     #
+#-------------------------------------------------------------------------
 # 44.142.31.xxx  Tel.Area 031 : Bern
 #
-44.142.31.1    qrl.HB9AOO     # Kurt, qrl Bern
-44.142.31.2    HB9CKN         # Noel, Kehrsatz
-44.142.31.3    HB9PVI         # Ernst, Grafenried
+44.142.31.1    qrl.hb9aoo     # Kurt, qrl Bern
+44.142.31.2    hb9ckn         # Noel, Kehrsatz
+44.142.31.3    hb9pvi         # Ernst, Grafenried
+44.142.31.4    hb9dmb         # Siem, Gasel
+44.142.31.5    hb9cgh         # Manfred
+44.142.31.6    hb9ssj         # Jack
+44.142.31.7    hb9hvf         # Bruno Steffisburg
+44.142.31.10   hb9sat         # Fredy
+44.142.31.11   linux.hb9sat   # Fredy, Unix
+44.142.31.12   qrl.hb9cob     # Erwin
+44.142.31.14   hb9tax         # Jean-Marc Luethi, Utzingen
+44.142.31.15   unix.hb9tax    # 2te Adresse
+44.142.31.16   hb9gav         # Andreas, Bern, Mac
+#
+# 20-40 (50) reserved for future use by hb9EH, HTL Burgdorf (hb9rms)
+#
+44.142.31.64   hb9c
+#
+# 44.142.31.65-71 hb9c betrieb erst Anfang Juni
+#
+44.142.31.72   hb9auz         # Christoph, Zimmerwald
+44.142.31.74   hb9cuf         # Paul Adrien, Bern
+44.142.31.76   hb9prh         # Heinz
+44.142.31.100  hb9tbr         # Danny, Münchenbuchsee
+44.142.31.101  2nd.hb9tbr     #
+44.142.31.102  3rd.hb9tbr     #
+
 #---------------------------------------------------------------------------
 # 44.142.32.xxx  Tel.Area 032 : Biel
 #
-44.142.32.1    HB9SIN         # Gino, Pery
-44.142.32.2    2nd.HB9SIN     # Gino, 2.computer
-44.142.32.3    HB9PXT         # Germain, Le Fuet
-44.142.32.4    HB9FMC         # Pascal, Sonceboz
-44.142.32.5    HB9XC          # Digi/Host Test Betrieb, Pery      NOS
-44.142.32.6    HB9CVV         # Peter, Port
-44.142.32.7    2nd.HB9CVV     # Peter, 2.Computer
-44.142.32.8    HB9SDD         # Bruno
-44.142.32.9    2nd.HB9SDD     # Bruno, 2.Computer
-44.142.32.10   HB9AOO         # Kurt, Seedorf
+44.142.32.1    hb9sin         # Gino, Pery
+44.142.32.2    2nd.hb9sin     # Gino, 2.computer
+44.142.32.3    hb9pxt         # Germain, Le Fuet
+44.142.32.4    hb9fmc         # Pascal, Sonceboz
+44.142.32.5    hb9xc          # Digi/Host Test Betrieb, Pery
+44.142.32.6    hb9cvv         # Peter, Port
+44.142.32.7    2nd.hb9cvv     # Peter, 2.Computer
+44.142.32.8    hb9sdd         # Bruno
+44.142.32.9    2nd.hb9sdd     # Bruno, 2.Computer
+44.142.32.10   hb9aoo         # Kurt, Seedorf
+44.142.32.11   hb9mrr         # Roland
+#-------------------------------------------------------------------------
+# 44.142.33.xxx  Tel.Area 033 : Thun
+#
+44.142.33.2    hb9rnp         # Peter, Nibach
 #---------------------------------------------------------------------------
+# 44.142.37.xxx  Tel.Area 037 : Fribourg
+#
+44.142.37.2    hb9hfn         # Cedric
+#-------------------------------------------------------------------------
 # 44.142.41.xxx  Tel.Area 041 : Luzern
 #
-44.142.41.1    rigi.HB9DDO    # Stephan, Rigi-Scheidegg
-44.142.41.2    rigi.HB9CXE    # Emil, Rigi-Scheidegg
-#---------------------------------------------------------------------------
+44.142.41.1    hb9cw          # USKA Sektion Rigi, (hb9ddo)
+44.142.41.2    rigi.hb9cxe    # Emil, Rigi-Scheidegg
+44.142.41.3    hb9diz         # Markus
+44.142.41.32   rigi.hb9ddo    # Stephan, Rigi-Scheidegg
+#
+# 32 - 39 reserved for hb9ddo
+#
+44.142.41.42   hb9wad         # Konrad, Littau
+##---------------------------------------------------------------------------
 # 44.142.42.xxx  Tel.Area 042 : Zug
 #
-44.142.42.1    HB9AYA         # Rene, Sins; Unix-Kernel           Unix Kernel
-44.142.42.2    2nd.HB9AYA     # Rene, 2nd computer
+44.142.42.1    hb9aya         # Rene, Sins; Unix-Kernel
+44.142.42.2    2nd.hb9aya     # Rene, 2nd computer
+#---------------------------------------------------------------------------
+# 44.142.43.xxx  Tel.Area 043 : Schwyz
+#
+44.142.43.1    hb9jay         # Walter
+#---------------------------------------------------------------------------
+# 44.142.52.xxx  Tel. Area 052 : Winterthur
+#
+44.142.52.1    hb9cfe         # Paul
+44.142.52.2    hb9sje         # Axel
+44.142.52.3    hb9rwl         # Albert
+44.142.52.4    hb9jnw         # Ruedi
+44.142.52.5    hb9cgr         # Kaspar
+44.142.52.6    hb9w           # USKA Sektion Winterthur
+44.142.52.7    2nd.hb9w       #
+44.142.52.8    hb9wnm         # Paul, Ricketwil
+44.142.52.12   hb9wnr         # Thomas
+44.142.52.13   pc2.hb9wnr     # (now HB9JNX)
+44.142.52.14   temp.hb9wnr    #
+44.142.52.15   mac.hb9wnr     #
+#
+#44.142.52.16-31 reserved for HB9JNX
+#
+44.142.52.33   hb9cmw         # Richi, Neftenbach
+44.142.52.36   hb9vvq         # Yves
+44.142.52.37   2nd.hb9vvq     #   "
+44.142.52.47   hb9ruz         # Peter
+44.142.52.48   unix.hb9ruz    # Peter, Unix
+
+#---------------------------------------------------------------------------
+# 44.142.53.xxx  Tel.Area 053 : Schaffausen
+#
+44.142.53.1    hb9blt         # Max
+44.142.53.2    hb9brj         # Markus
+#---------------------------------------------------------------------------
+# 44.142.54.xxx  Tel.Area 054 : Frauenfeld
+#
+44.142.54.1    hb9ajl         # Arno
+44.142.54.2    hb9arc         # Greta
+#---------------------------------------------------------------------------
+# 44.142.55.xxx  Tel.Area 055 : Rapperswil
+#
+44.142.55.1    hb9iqc         # Rene, Freienbach
+44.142.55.2    hb9rlz         # Manfred, Jona
+44.142.55.4    hb9iqa         # Rolf, Pfäffikon SZ
+44.142.55.5    linux.hb9iqa   #
 #---------------------------------------------------------------------------
 # 44.142.56.xxx  Tel.Area 056 : Baden
 #
-44.142.56.1    HB9DFD         # Michael, Gebenstorf
+44.142.56.1    hb9dfd         # Michael, Gebenstorf
+44.142.56.2    hb9apc         #  ?
+44.142.56.5    hb9ret         # Bruno
+44.142.56.6    hb9cwg         # Hans
+44.142.56.9    hb9avv         # Rolf, Ennetbaden
+#---------------------------------------------------------------------------
+# 44.142.57.xxx  Tel.Area 057 : Wohlen
+#
+44.142.57.1    hb9pta         # Walter
+44.142.57.2    hb9mmf         # Werner
+44.142.57.3    hb9lar         # Christoph
+44.142.57.4    hb9biq         # Tadeus
+44.142.57.5    hb9np          # Fred
 #---------------------------------------------------------------------------
 # 44.142.61.xxx  Tel.Area 061 : Basel
 #
-44.142.61.1    HB9RZJ         # Mario
-44.142.61.2    HB9BGY         # Werner, Riehen
-44.142.61.3    HB9CGB         # RCGB, Basel ( TCP/IP-DIGI )
-44.142.61.4    HB9CMU         # Erich, Liestal
-44.142.61.5    HB9CVT         # Tibor, Binningen
-44.142.61.6    HB9BCR         # Hans, Binningen
-44.142.61.7    HB9CZB         # Rene, Riehen
-44.142.61.8    HB9MIE         # Nikolaus, Pratteln
-44.142.61.9    HB9BPP         # Samy, Allschwil
-44.142.61.10   HB9AC          # RMNC-Knoten Binningen
-44.142.61.11   HB9NBB         # Joseph, Basel
-44.142.61.12   HB9MST         # Toni, Basel
+44.142.61.1    hb9rzj         # Mario
+44.142.61.2    hb9bgy         # Werner, Riehen
+44.142.61.3    hb9cgb         # RCGB, Basel ( TCP/IP-DIGI )
+44.142.61.4    hb9cmu         # Erich, Liestal
+44.142.61.5    hb9cvt         # Tibor, Binningen
+44.142.61.6    hb9bcr         # Hans, Binningen
+44.142.61.7    hb9czb         # Rene, Riehen
+44.142.61.8    hb9mie         # Nikolaus, Pratteln
+44.142.61.9    hb9bpp         # Samy, Allschwil
+44.142.61.10   hb9ac          # RMNC-Knoten Binningen
+44.142.61.11   hb9nbb         # Joseph, Basel
+44.142.61.12   hb9mst         # Toni, Basel
+#
 #         16-31 reserved for future use by HB9EAS
-44.142.61.32   HB9NAW         # Mike, Basel
-44.142.61.34   HB9NAV         # Thomas, Allschwil
-44.142.61.36   HB9PCX         # Wolfgang, Aesch
-44.142.61.37   2nd.HB9PCX     #     "       "  , 2te maschine
+#
+44.142.61.32   hb9naw         # Mike, Basel
+44.142.61.34   hb9nav         # Thomas, Allschwil
+44.142.61.36   hb9pcx         # Wolfgang, Aesch
+44.142.61.37   2nd.hb9pcx     #     "       "  , 2te maschine
+44.142.61.38   hb9pcu         # Hans-Peter, hpr@hpr.pr.net.ch
+44.142.61.39   hb9cey         # Gerald
 #---------------------------------------------------------------------------
 # 44.142.62.xxx  Tel. Area 062 : Olten
 #
-44.142.62.1    HB9RWM         # Marcel, Safenwil                  NOS
-#         2-3 reserved for future use by hb9rwm
-44.142.62.4    HB9RWF         # Heinz, Safenwil
-44.142.62.5    HB9FX          # Zofingerrunde, Zofingen           NOS
-#         6-9 reserved for future use by hb9fx
-44.142.62.10   HB9BHU         # Fredy, Zofingen                   NOS
-44.142.62.11   HB9CRZ         # Manfred, Zofingen
-44.142.62.12   HB9MUE         # Werner, Wikon
+44.142.62.1    hb9rwm         # Marcel, Safenwil
+44.142.62.2    2nd.hb9rwm
+44.142.62.3    3rd.hb9rwm
+44.142.62.4    hb9rwf         # Heinz, Safenwil
+44.142.62.5    hb9fx          # Zofingerrunde, Zofingen
+#
+#44.142.62.6-9 reseved for future use by hb9fx
+#
+44.142.62.10   hb9bhu         # Fredy, Zofingen
+44.142.62.11   hb9crz         # Manfred, Zofingen
+44.142.62.12   hb9mue         # Werner, Wikon
+44.142.62.13   hb9bbm         # Willy
+44.142.62.14   hb9bmi         # Hans-Peter
 #---------------------------------------------------------------------------
 # 44.142.64.xxx  Tel.Area 064 : Aarau
 #
-44.142.64.1    HB9CZF         # Dominique, Oberentfelden
-44.142.64.4    HB9CMS         #
+44.142.64.1    hb9czf         # Dominique, Oberentfelden
+44.142.64.4    hb9cms         #
+44.142.64.5    hb9pqx         # Ruedi
+44.142.64.6    hb9mir         # Arturo
+44.142.64.7    hb9djd         # Daniel
+44.142.64.8    hb9szh         # Peter
+44.142.64.10   hb9cob         # Brant Erwin
+44.142.64.21   hb9xar         # Thomas, Muhen
 #---------------------------------------------------------------------------
 # 44.142.71.xxx  Tel.Area 071 : St.Gallen
 #
-44.142.71.1    HB9CJX         # Marco, St.Gallen (?), sysop HB9KNB
-44.142.71.2    HB9BRJ         # Markus, St.Gallen
+44.142.71.1    hb9cjx         # Marco, St.Gallen (?), sysop HB9KNB
+# NOT USED, TO BE CLEARED IN UCSD :
+# 44.142.71.2    hb9brj         # Markus, St.Gallen, now 53.2
+#---------------------------------------------------------------------------
+# 44.142.73.xxx  Tel.Area 073 : Wil
+#
+44.142.73.1    hb9sof         # Charlie
 #---------------------------------------------------------------------------
 # 44.142.91.xxx  Tel.Area 091 : Lugano
 #
-44.142.91.1    HB9MPL         # Carlo, Lugano
-44.142.91.2    ti.HB9CAT      # Marco, 2nd Qth Lugano
-44.142.91.3    HB9DHG         # Fulvio, Melide
-44.142.91.100  south.HB9TC    # Radio Club Ticino
+44.142.91.1    hb9mpl         # Carlo, Lugano
+44.142.91.2    ti.hb9cat      # Marco, 2nd Qth Lugano
+44.142.91.3    hb9dhg         # Fulvio, Melide
+44.142.91.4    hb9obh         # Giovanni
+44.142.91.100  south.hb9tc    # Radio Club Ticino
 #---------------------------------------------------------------------------
 # 44.142.92.xxx  Tel.Area 092 : Bellinzona
 #
-44.142.92.1    HB9AFZ         # Franceso, Bellinzona
-44.142.92.2    HB9AGC         # Ado, Daro
-44.142.92.3    HB9OAB         # Franco, Bellinzona
-44.142.92.10   2nd.HB9AFZ     # Francesco, 2a macchina
-44.142.92.11   2nd.HB9MPL     # Carlo, Bodio (2nd qth)
-44.142.92.20   2nd.HB9AGC     # Ado, 2a macchina
-44.142.92.100  nord.HB9TC     # Radio Club Ticino
+44.142.92.1    hb9afz         # Franceso, Bellinzona
+44.142.92.2    hb9agc         # Ado, Daro
+44.142.92.3    hb9oab         # Franco, Bellinzona hb9oab@mpc.mhs.imp.com
+44.142.92.10   2nd.hb9afz     # Francesco, 2a macchina
+44.142.92.11   2nd.hb9mpl     # Carlo, Bodio (2nd qth)
+44.142.92.20   2nd.hb9agc     # Ado, 2a macchina
+44.142.92.50   hb9ok          # TERA Radio Club
+44.142.92.100  nord.hb9tc     # Radio Club Ticino
 #---------------------------------------------------------------------------
 # 44.142.93.xxx  Tel.Area 093 : Locarno
 #
-44.142.93.1    HB9SFD         # Marco, Minusio
-44.142.93.2    HB9OAV         # Andrea, Ascona
-44.142.93.4    west.HB9TC     # Radio Club Ticino (ax25: hb9tc-7)
-44.142.93.5    HB9SVW         # Hans, Magadino
-44.142.93.6    2nd.HB9SVW     # Hans, 2a macchina
+44.142.93.1    hb9sfd         # Marco, Minusio
+44.142.93.2    hb9oav         # Andrea, Ascona
+44.142.93.4    west.hb9tc     # Radio Club Ticino
+44.142.93.5    hb9suw         # Hans, Magadino
+44.142.93.6    2nd.hb9suw     # Hans, 2a macchina
+#
+#         10-15 reserved for future use by hb9h, A.R.T.
 #---------------------------------------------------------------------------
