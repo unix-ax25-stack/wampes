@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.96 1995/06/20 15:57:45 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.97 1995/06/23 15:05:30 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -184,6 +184,7 @@ static const char monthnames[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
 static int did_forward;
 static int do_forward;
 static int errors;
+static int export;
 static int fdindex;
 static int level;
 static int packetcluster;
@@ -1292,28 +1293,6 @@ static void disconnect_command(int argc, char **argv)
 
 /*---------------------------------------------------------------------------*/
 
-static int lock_forward(void)
-{
-
-  char fname[1024];
-  static int fdlockfwd = -1;
-
-  if (fdlockfwd < 0) {
-    sprintf(fname, FWDLOCKFILE "%s", user.name);
-    fdlockfwd = open(fname, O_RDWR | O_CREAT, 0644);
-    if (fdlockfwd < 0)
-      halt();
-    if (lock_fd(fdlockfwd, 1)) {
-      close(fdlockfwd);
-      fdlockfwd = -1;
-      return 0;
-    }
-  }
-  return 1;
-}
-
-/*---------------------------------------------------------------------------*/
-
 static struct mail *read_mail_or_news_file(const char *filename, enum e_type src)
 {
 
@@ -1481,6 +1460,28 @@ static void forward_message(struct mail *mail)
 
 /*---------------------------------------------------------------------------*/
 
+static void export_message(struct mail *mail)
+{
+
+  char buf[1024];
+  struct strlist *p;
+
+  sprintf(buf, "SB %s", mail->touser);
+  if (*mail->tohost)
+    sprintf(buf + strlen(buf), " @ %s", mail->tohost);
+  if (*mail->fromuser)
+    sprintf(buf + strlen(buf), " < %s", mail->fromuser);
+  if (*mail->bid)
+    sprintf(buf + strlen(buf), " $%s", mail->bid);
+  puts(strupc(buf));
+  puts(*mail->subject ? mail->subject : "(no subject)");
+  for (p = mail->head; p; p = p->next)
+    puts(p->str);
+  puts("/EX");
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void forward_mail(void)
 {
 
@@ -1639,7 +1640,10 @@ static void forward_news(void)
   while (filelist) {
     if (!stat(filelist->str, &statbuf)) {
       if ((mail = read_mail_or_news_file(filelist->str, NEWS))) {
-	forward_message(mail);
+	if (export)
+	  export_message(mail);
+	else
+	  forward_message(mail);
 	free_mail(mail);
       }
     }
@@ -1672,10 +1676,14 @@ static void forward_news(void)
 
 static void f_command(int argc, char **argv)
 {
+
+  char fname[1024];
   int did_any_forward;
+  int fdlock;
 
   did_any_forward = 0;
-  if (lock_forward()) {
+  sprintf(fname, FWDLOCKFILE "%s", user.name);
+  if ((fdlock = lock_file(fname, 1)) >= 0) {
     for (;;) {
       did_forward = 0;
       forward_mail();
@@ -1684,6 +1692,7 @@ static void f_command(int argc, char **argv)
 	break;
       did_any_forward = 1;
     }
+    close(fdlock);
   }
   if (!do_forward && !did_any_forward)
     exit(0);
@@ -2486,6 +2495,21 @@ static void bbs(void)
 
 /*---------------------------------------------------------------------------*/
 
+static void doexport(void)
+{
+
+  char fname[1024];
+  int fdlock;
+
+  sprintf(fname, FWDLOCKFILE "%s", user.name);
+  if ((fdlock = lock_file(fname, 1)) >= 0) {
+    forward_news();
+    close(fdlock);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 int main(int argc, char **argv)
 {
 
@@ -2529,8 +2553,15 @@ int main(int argc, char **argv)
   if (!*myhostname || !*mydomain)
     halt();
 
-  while ((c = getopt(argc, argv, "f:pw:")) != EOF)
+  while ((c = getopt(argc, argv, "ef:pw:")) != EOF)
     switch (c) {
+    case 'e':
+      if (getuid()) {
+	puts("The 'e' option is for Store&Forward use only.");
+	exit(1);
+      }
+      export = 1;
+      break;
     case 'f':
       if (getuid()) {
 	puts("The 'f' option is for Store&Forward use only.");
@@ -2549,26 +2580,32 @@ int main(int argc, char **argv)
       err_flag = 1;
       break;
     }
+  if (export && !do_forward) err_flag = 1;
   if (optind < argc) err_flag = 1;
   if (err_flag) {
-    puts("usage: bbs [-w seconds] [-f system] [-p]");
+    puts("usage: bbs [-w seconds] [-f system [-e]] [-p]");
     exit(1);
   }
 
   mkdir(LOCKDIR, 0755);
   mkdir(WRKDIR, 0755);
 
-  pw = do_forward ? getpwnam(sysname) : getpwuid(getuid());
-  if (!pw) halt();
-  if (!(user.name = strdup(pw->pw_name))) halt();
-  user.uid = (int) pw->pw_uid;
-  user.gid = (int) pw->pw_gid;
-  if (!(user.dir = strdup(pw->pw_dir))) halt();
-  if (!pw->pw_shell || !*pw->pw_shell) pw->pw_shell = "/bin/sh";
-  if (!(user.shell = strdup(pw->pw_shell))) halt();
-  endpwent();
-  if (!user.uid) level = ROOT;
-  if (connect_addr(user.name, buf, buf)) level = MBOX;
+  if (export) {
+    if (!(user.name = strdup(sysname))) halt();
+    level = MBOX;
+  } else {
+    pw = do_forward ? getpwnam(sysname) : getpwuid(getuid());
+    if (!pw) halt();
+    if (!(user.name = strdup(pw->pw_name))) halt();
+    user.uid = (int) pw->pw_uid;
+    user.gid = (int) pw->pw_gid;
+    if (!(user.dir = strdup(pw->pw_dir))) halt();
+    if (!pw->pw_shell || !*pw->pw_shell) pw->pw_shell = "/bin/sh";
+    if (!(user.shell = strdup(pw->pw_shell))) halt();
+    endpwent();
+    if (!user.uid) level = ROOT;
+    if (connect_addr(user.name, buf, buf)) level = MBOX;
+  }
 
   if (!getenv("LOGNAME")) {
     sprintf(buf, "LOGNAME=%s", user.name);
@@ -2590,14 +2627,12 @@ int main(int argc, char **argv)
   if (!getenv("TZ"))
     putenv("TZ=MEZ-1MESZ");
 
-  if (do_forward && !lock_forward()) {
-    printf("Sorry, already forwarding to %s.\n", user.name);
-    exit(1);
+  if (export) {
+    doexport();
+  } else {
+    if ((fdindex = open(INDEXFILE, O_RDWR | O_CREAT, 0644)) < 0) halt();
+    bbs();
   }
-
-  if ((fdindex = open(INDEXFILE, O_RDWR | O_CREAT, 0644)) < 0) halt();
-
-  bbs();
 
   return 0;
 }

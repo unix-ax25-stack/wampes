@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.8 1995/06/19 11:20:35 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.9 1995/06/23 15:05:32 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -447,11 +447,7 @@ static void dot_PS(int argc, char **argv)
 	  "groff -p | "
 	  "gs -sDEVICE=pbmraw -r125 -q -dNOPAUSE -sOutputFile=- - | "
 	  "pnmcrop | "
-#if 0
-	  "ppmtogif -transparent white > %s",
-#else
-	  "ppmtogif > %s",
-#endif
+	  "ppmtogif -transparent rgb:ffff/ffff/ffff > %s",
 	  filename);
   if (!(tempptr = popen(buf, "w"))) {
     perror("popen");

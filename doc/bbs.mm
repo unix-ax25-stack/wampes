@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^BBS Reference Manual^-\\\\nP-^Version 950620" \" Page footer
+.PF "^BBS Reference Manual^-\\\\nP-^Version 950623" \" Page footer
 .\"
 .S 30
 .ce
 \fBBBS Reference Manual\fP
 .ce
-Version 950620
+Version 950623
 .S
 .SP 2
 .S 15
