@@ -1,9 +1,9 @@
-/* @(#) $Id: alloc.c,v 1.36 1999/01/27 18:45:40 deyke Exp $ */
+/* @(#) $Id: alloc.c,v 1.37 1999/02/01 22:24:25 deyke Exp $ */
 
 /* memory allocation routines
  */
 
-#if defined PURIFY || defined __sgi
+#if defined PURIFY || defined __NeXT__ || defined __NetBSD__ || defined __sgi
 #define USE_WAMPES_MALLOC 0
 #else
 #define USE_WAMPES_MALLOC 1

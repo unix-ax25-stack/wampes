@@ -1,4 +1,4 @@
-/* @(#) $Id: misc.c,v 1.24 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: misc.c,v 1.25 1999/02/01 22:24:25 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -135,30 +135,6 @@ memxor(uint8 *a,uint8 *b,unsigned int n)
 		*a++ ^= *b++;
 }
 
-#if 0
-/* Copy a string to a malloc'ed buffer. Turbo C has this one in its
- * library, but it doesn't call mallocw() and can therefore return NULL.
- * NOS uses of strdup() generally don't check for NULL, so they need this one.
- */
-char *
-strdup(const char *s)
-{
-	char *out;
-	int len;
-
-	if(s == NULL)
-		return NULL;
-	len = strlen(s);
-	out = mallocw(len+1);
-	/* This is probably a tad faster than strcpy, since we know the len */
-	memcpy(out,s,len);
-	out[len] = '\0';
-	return out;
-}
-#endif
-/* Routines not needed for Turbo 2.0, but available for older libraries */
-/* #ifdef  AZTEC */
-
 /* Case-insensitive string comparison */
 
 int stricmp(char *s1,char *s2)
@@ -190,62 +166,6 @@ int strnicmp(char *a,char *b,size_t n)
 	}
 	return 0;
 }
-
-#ifdef  AZTEC
-char *
-strtok(
-char *s1,       /* Source string (first call) or NULL */
-#ifdef  __STDC__        /* Ugly kludge for aztec's declaration */
-const char *s2) /* Delimiter string */
-#else
-char *s2)       /* Delimiter string */
-#endif
-{
-	static int isdelim();
-	static char *next;
-	char *cp;
-	char *tmp;
-
-	if(s2 == NULL)
-		return NULL;    /* Must give delimiter string */
-
-	if(s1 != NULL)
-		next = s1;              /* First call */
-
-	if(next == NULL)
-		return NULL;    /* No more */
-
-	/* Find beginning of this token */
-	for(cp = next;*cp != '\0' && isdelim(*cp,s2);cp++)
-		;
-
-	if(*cp == '\0')
-		return NULL;    /* Trailing delimiters, no token */
-
-	/* Save the beginning of this token, and find its end */
-	tmp = cp;
-	next = NULL;    /* In case we don't find another delim */
-	for(;*cp != '\0';cp++){
-		if(isdelim(*cp,s2)){
-			*cp = '\0';
-			next = cp + 1;  /* Next call will begin here */
-			break;
-		}
-	}
-	return tmp;
-}
-static int
-isdelim(char c,char *delim)
-{
-	char d;
-
-	while((d = *delim++) != '\0'){
-		if(c == d)
-			return 1;
-	}
-	return 0;
-}
-#endif  /* AZTEC */
 
 /* Host-network conversion routines, replaced on the x86 with
  * assembler code in pcgen.asm

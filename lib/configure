@@ -1,4 +1,4 @@
-# @(#) $Id: configure,v 1.31 1999/01/24 22:25:18 deyke Exp $
+# @(#) $Id: configure,v 1.32 1999/02/01 22:26:20 deyke Exp $
 
 CC='cc'
 CFLAGS='-O -I../lib'
@@ -57,6 +57,11 @@ Linux*)
 	CFLAGS="$CFLAGS -DFD_SETSIZE=1024"
 	;;
 
+NetBSD*)
+	CFLAGS="$CFLAGS -DFD_SETSIZE=1024"
+	SLIBS='-L/usr/pkg/lib -lcrypt -lgdbm'
+	;;
+
 FreeBSD*)
 	CFLAGS="$CFLAGS -DFD_SETSIZE=1024"
 	SLIBS='-lcrypt'
@@ -102,7 +107,7 @@ AOS*)
 
 NeXT*)
 	CC='gcc'
-	CFLAGS="$CFLAGS -posix -D_POSIX_SOURCE -DPURIFY -DFD_SETSIZE=256"
+	CFLAGS="$CFLAGS -posix -D_POSIX_SOURCE -DFD_SETSIZE=256"
 	LIBS="../NeXT/libnext.a $LIBS"
 	SLIBS='-ldbm'
 	;;

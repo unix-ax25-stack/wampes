@@ -1,4 +1,4 @@
-/* @(#) $Id: setsp.c,v 1.15 1998/03/09 17:42:56 deyke Exp $ */
+/* @(#) $Id: setsp.c,v 1.16 1999/02/01 22:24:25 deyke Exp $ */
 
 #ifndef __lint
 
@@ -86,6 +86,16 @@ _setstack:
 #endif
 
 #ifdef __386BSD__
+	.file   "setsp.s"
+	.globl  _setstack
+_setstack:
+	movl    %esp, %ebp
+	movl    _newstackptr, %esp
+	jmp     *(%ebp)
+	.align  4
+#endif
+
+#ifdef __NetBSD__
 	.file   "setsp.s"
 	.globl  _setstack
 _setstack:

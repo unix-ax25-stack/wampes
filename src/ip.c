@@ -1,6 +1,5 @@
-/* @(#) $Id: ip.c,v 1.17 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: ip.c,v 1.18 1999/02/01 22:24:25 deyke Exp $ */
 
-#undef SIM
 /* Upper half of IP, consisting of send/receive primitives, including
  * fragment reassembly, for higher level protocols.
  * Not needed when running as a standalone gateway.
@@ -105,11 +104,7 @@ char df                         /* Don't-fragment flag */
 		/* Pretend it has been sent by the loopback interface before
 		 * it appears in the receive queue
 		 */
-#ifdef  SIM
-		net_sim(bpp);
-#else
 		net_route(&Loopback,bpp);
-#endif
 		Loopback.ipsndcnt++;
 		Loopback.rawsndcnt++;
 		Loopback.lastsent = secclock();

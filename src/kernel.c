@@ -1,11 +1,8 @@
-/* @(#) $Id: kernel.c,v 1.29 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: kernel.c,v 1.30 1999/02/01 22:24:25 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
  */
-#if     defined(PROCLOG) || defined(PROCTRACE)
-#include <stdio.h>
-#endif
 #ifndef ibm032
 #include <setjmp.h>
 #endif
@@ -15,7 +12,6 @@
 #include "timer.h"
 #include "socket.h"
 #include "daemon.h"
-#include "hardware.h"
 
 #if defined __hpux || defined ULTRIX_RISC || defined macII
 #define setjmp          _setjmp
@@ -32,11 +28,6 @@ EXTERN_C void setstack(void);
 #endif
 
 uint16 *newstackptr;
-
-#ifdef  PROCLOG
-FILE *proclog;
-FILE *proctrace;
-#endif
 
 struct proc *Curproc;           /* Currently running process */
 struct proc *Rdytab;            /* Processes ready to run (not including curproc) */
@@ -90,19 +81,12 @@ mainproc(char *name)
 
 	/* Create name */
 	pp->name = strdup(name);
-#ifndef AMIGA
 	pp->stksize = 0;
-#else
-	init_psetup(pp);
-#endif
+
 	/* Make current */
 	pp->flags.suspend = pp->flags.waiting = 0;
 	Curproc = pp;
 
-#ifdef  PROCLOG
-	proclog = fopen("proclog",APPEND_TEXT);
-	proctrace = fopen("proctrace",APPEND_TEXT);
-#endif
 	return pp;
 }
 #ifndef SINGLE_THREADED
@@ -132,9 +116,6 @@ int freeargs            /* If set, free arg list on parg1 at termination */
 	pp->name = strdup(name);
 
 	/* Allocate stack */
-#ifdef  AMIGA
-	stksize += SIGQSIZE0;   /* DOS overhead */
-#endif
 	stksize = (stksize + 3) & ~3;
 	pp->stksize = stksize;
 	if((pp->stack = (uint16 *)malloc(sizeof(uint16)*stksize)) == NULL){
@@ -146,21 +127,10 @@ int freeargs            /* If set, free arg list on parg1 at termination */
 	for(i=0;i<stksize;i++)
 		pp->stack[i] = STACKPAT;
 
-#if 0
-	/* Do machine-dependent initialization of stack */
-	psetup(pp,iarg,parg1,parg2,pc);
-#endif
-
 	pp->flags.freeargs = freeargs;
 	pp->iarg = iarg;
 	pp->parg1 = parg1;
 	pp->parg2 = parg2;
-
-#if 0
-	/* Inherit creator's input and output sockets */
-	pp->input = fdup(stdin);
-	pp->output = fdup(stdout);
-#endif
 
 	pp->flags.suspend = pp->flags.waiting = 0;
 
@@ -263,10 +233,6 @@ killproc(struct proc **ppp)
 	*ppp = NULL;
 	if(pp == Curproc)
 		killself();     /* Doesn't return */
-#if 0
-	fclose(pp->input);
-	fclose(pp->output);
-#endif
 
 	/* Stop alarm clock in case it's running */
 	stop_timer(&pp->alarm);
@@ -277,13 +243,6 @@ killproc(struct proc **ppp)
 	/* Remove from appropriate table */
 	delproc(pp);
 
-#ifdef  PROCLOG
-	fprintf(proclog,"id %p name %s stack %u/%u\n",pp,
-		pp->name,stkutil(pp),pp->stksize);
-	fclose(proclog);
-	proclog = fopen("proclog",APPEND_TEXT);
-	proctrace = fopen("proctrace",APPEND_TEXT);
-#endif
 	/* Free allocated memory resources */
 	if(pp->flags.freeargs){
 		argv = (char **) pp->parg1;
@@ -355,21 +314,13 @@ resume(struct proc *pp)
 }
 
 /* Wakeup waiting process, regardless of event it's waiting for. The process
- * will see a return value of "val" from its kwait() call. Must not be
- * called from an interrupt handler.
+ * will see a return value of "val" from its kwait() call.
  */
 void
 alert(struct proc *pp,int val)
 {
 	if(pp == NULL)
 		return;
-#ifdef  notdef
-	if(pp->flags.waiting == 0)
-		return;
-#endif
-#ifdef  PROCTRACE
-	logmsg(-1,"alert(%p,%u) [%s]",pp,val,pp->name);
-#endif
 	if(pp != Curproc)
 		delproc(pp);
 	pp->flags.waiting = 0;
@@ -385,39 +336,15 @@ alert(struct proc *pp,int val)
  * is terminating; in this case the wait never returns.
  *
  * Kwait() returns 0 if the event was signaled; otherwise it returns the
- * arg in an alert() call. Kwait must not be called from interrupt level.
- *
- * Before waiting and after giving up the CPU, kwait() processes the signal
- * queue containing events signaled when interrupts were off. This means
- * the process queues are no longer modified by interrupt handlers,
- * so it is no longer necessary to run with interrupts disabled here. This
- * greatly improves interrupt latencies.
+ * arg in an alert() call.
  */
 int
 kwait(void *event)
 {
 	struct proc *oldproc;
 	int tmp;
-#if 0
-	int i_state;
 
-	if(!istate()){
-		stktrace();
-	}
-#endif
 	Ksig.kwaits++;
-
-#if 0
-	/* Enable interrupts, after saving the current state.
-	 * This minimizes interrupt latency since we may have a lot
-	 * of work to do. This seems safe, since care has been taken
-	 * here to ensure that signals from interrupt level are not lost, e.g.,
-	 * if we're waiting on an event, we post it before we scan the
-	 * signal queue.
-	 */
-	i_state = istate();
-	enable();
-#endif
 
 	if(event != NULL){
 		/* Post a wait for the specified event */
@@ -434,30 +361,15 @@ kwait(void *event)
 		if(Rdytab == NULL){
 			/* Nothing else is ready, so just return */
 			Ksig.kwaitnops++;
-#if 0
-			restore(i_state);
-#endif
 			return 0;
 		}
 		addproc(Curproc); /* Put us on the end of the ready list */
 	}
 	/* Look for a ready process and run it. If there are none,
-	 * loop or halt until an interrupt makes something ready.
+	 * exit.
 	 */
 	while(Rdytab == NULL){
-		/* Give system back to upper-level multitasker, if any.
-		 * Note that this function enables interrupts internally
-		 * to prevent deadlock, but it restores our state
-		 * before returning.
-		 */
-
-#if 0
-		giveup();
-#else
 		exit(0);
-#endif
-		/* Process signals that occurred during the giveup() */
-		procsigs();
 	}
 	/* Remove first entry from ready list */
 	oldproc = Curproc;
@@ -473,38 +385,14 @@ kwait(void *event)
 	 * value of 1, the comparison with 0 will bypass the longjmp(), which
 	 * would otherwise cause an infinite loop.
 	 */
-#ifdef  PROCTRACE
-	if(strcmp(oldproc->name,Curproc->name) != 0){
-		logmsg(-1,"-> %s(%d)",Curproc->name,Curproc->flags.istate);
-	}
-#endif
-#if 0
-	/* Save old state */
-	oldproc->flags.istate = 0;
-	if(i_state)
-		oldproc->flags.istate = 1;
-#endif
 	if(setjmp(oldproc->env) == 0){
 		/* We're still running in the old task; load new task context.
-		 * The interrupt state is restored here in case longjmp
-		 * doesn't do it (e.g., systems other than Turbo-C).
 		 */
-#if 0
-		restore(Curproc->flags.istate);
-#endif
 		longjmp(Curproc->env,1);
 	}
 	/* At this point, we're running in the newly dispatched task */
 	tmp = Curproc->retval;
 	Curproc->retval = 0;
-
-	/* Also restore the true interrupt state here, in case the longjmp
-	 * DOES restore the interrupt state saved at the time of the setjmp().
-	 * This is the case with Turbo-C's setjmp/longjmp.
-	 */
-#if 0
-	restore(Curproc->flags.istate);
-#endif
 
 	/* If an exception signal was sent and we're prepared, take it */
 	if((Curproc->flags.sset) && tmp == Curproc->signo)
@@ -517,61 +405,20 @@ kwait(void *event)
 void
 ksignal(void *event,int n)
 {
-#if 0
-	static void *lastevent;
-
-	if(istate()){
-#endif
-		/* Interrupts are on, just call ksig directly after
-		 * processing the previously queued signals
-		 */
 		procsigs();
 		ksig(event,n);
-#if 0
-		return;
-	}
-	/* Interrupts are off, so quickly queue event */
-	Ksig.ksigsqueued++;
-
-	/* Ignore duplicate signals to protect against a mad device driver
-	 * overflowing the signal queue
-	 */
-	if(event == lastevent && Ksig.nentries != 0){
-		Ksig.duksigs++;
-		return;
-	}
-	if(Ksig.nentries == SIGQSIZE){
-		/* It's hard to handle this gracefully */
-		Ksig.lostsigs++;
-		return;
-	}
-	lastevent = Ksig.wp->event = event;
-	Ksig.wp->n = n;
-	if(++Ksig.wp >= &Ksig.entry[SIGQSIZE])
-		Ksig.wp = Ksig.entry;
-	Ksig.nentries++;
-#endif
 }
 static int
 procsigs(void)
 {
 	int cnt = 0;
 	int tmp;
-#if 0
-	int i_state;
-#endif
 
 	for(;;){
 		/* Atomic read and decrement of entry count */
-#if 0
-		i_state = disable();
-#endif
 		tmp = Ksig.nentries;
 		if(tmp != 0)
 			Ksig.nentries--;
-#if 0
-		restore(i_state);
-#endif
 		if(tmp == 0)
 			break;
 		ksig(Ksig.rp->event,Ksig.rp->n);
@@ -586,9 +433,7 @@ procsigs(void)
 /* Make ready the first 'n' processes waiting for a given event. The ready
  * processes will see a return value of 0 from kwait().  Note that they don't
  * actually get control until we explicitly give up the CPU ourselves through
- * a kwait(). ksig is now called from pwait, which is never called at
- * interrupt time, so it is no longer necessary to protect the proc queues
- * against interrupts. This also helps interrupt latencies considerably.
+ * a kwait().
  */
 static void
 ksig(
@@ -614,10 +459,6 @@ int n           /* Max number of processes to wake up */
 	for(pp = Waittab[hashval];n != 0 && pp != NULL;pp = pnext){
 		pnext = pp->next;
 		if(pp->event == event){
-#ifdef  PROCTRACE
-				logmsg(-1,"ksignal(%p,%u) wake %p [%s]",event,n,
-				 pp,pp->name);
-#endif
 			delproc(pp);
 			pp->flags.waiting = 0;
 			pp->retval = 0;
@@ -630,10 +471,6 @@ int n           /* Max number of processes to wake up */
 	for(pp = Susptab;n != 0 && pp != NULL;pp = pnext){
 		pnext = pp->next;
 		if(pp->event == event){
-#ifdef  PROCTRACE
-				logmsg(-1,"ksignal(%p,%u) wake %p [%s]",event,n,
-				 pp,pp->name);
-#endif /* PROCTRACE */
 			delproc(pp);
 			pp->flags.waiting = 0;
 			pp->event = 0;

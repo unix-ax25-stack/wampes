@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25subr.c,v 1.24 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: ax25subr.c,v 1.25 1999/02/01 22:24:25 deyke Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -122,10 +122,6 @@ cr_ax25(uint8 *addr)
 	axp->proto = Axversion; /* Default, can be changed by other end */
 	axp->pthresh = Pthresh;
 	axp->n2 = N2;
-#if 0
-	axp->srt = Axirtt;
-	set_timer(&axp->t1,2*axp->srt);
-#endif
 	axp->t1.func = recover;
 	axp->t1.arg = axp;
 
@@ -147,9 +143,6 @@ cr_ax25(uint8 *addr)
 
 	/* Always to a receive and state upcall as default */
 	axp->r_upcall = axserv_open;
-#if 0
-	axp->s_upcall = s_ascall;
-#endif
 
 	axp->id = Nextid++;
 

@@ -1,4 +1,4 @@
-/* @(#) $Id: proc.h,v 1.13 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: proc.h,v 1.14 1999/02/01 22:24:25 deyke Exp $ */
 
 #ifndef _PROC_H
 #define _PROC_H
@@ -25,7 +25,6 @@ struct proc {
 	struct {
 		unsigned int suspend:1;         /* Process is suspended */
 		unsigned int waiting:1;         /* Process is waiting */
-		unsigned int istate:1;          /* Process has interrupts enabled */
 		unsigned int sset:1;            /* Process has set sig */
 		unsigned int freeargs:1;        /* Free args on termination */
 	} flags;

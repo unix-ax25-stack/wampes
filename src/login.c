@@ -1,4 +1,4 @@
-/* @(#) $Id: login.c,v 1.70 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: login.c,v 1.71 1999/02/01 22:24:25 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -21,7 +21,7 @@
 #include <termios.h>
 #endif
 
-#if defined __386BSD__ || defined __bsdi__ || defined __FreeBSD__ || defined linux
+#if defined __386BSD__ || defined __NetBSD__ || defined __bsdi__ || defined __FreeBSD__ || defined linux
 #include <sys/ioctl.h>
 #endif
 
@@ -293,7 +293,7 @@ struct passwd *getpasswdentry(const char *name, int create)
   sprintf(homedirparent, "%s/%.3s...", Homedir, name);
   sprintf(homedir, "%s/%s", homedirparent, name);
 
-#if defined __386BSD__ || defined __bsdi__ || defined __FreeBSD__
+#if defined __386BSD__ || defined __NetBSD__ || defined __bsdi__ || defined __FreeBSD__
 
   {
     char cmdbuf[1024];

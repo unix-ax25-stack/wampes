@@ -1,4 +1,4 @@
-/* @(#) $Id: global.h,v 1.47 1999/01/27 18:45:40 deyke Exp $ */
+/* @(#) $Id: global.h,v 1.48 1999/02/01 22:24:25 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -8,8 +8,19 @@
 typedef int pid_t;
 #endif
 
+#include <sys/types.h>
+
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef _CONFIGURE_H
+#include "configure.h"
+#endif
+
+#ifndef _STRDUP_H
+#include "strdup.h"
+#endif
 
 #if defined sun
 
@@ -50,38 +61,12 @@ typedef int pid_t;
 #define EXTERN_C
 #endif
 
-#if     !defined(AMIGA) && (defined(MAC) || defined(MSDOS))
-/* These compilers require special open modes when reading binary files.
- *
- * "The single most brilliant design decision in all of UNIX was the
- * choice of a SINGLE character as the end-of-line indicator" -- M. O'Dell
- *
- * "Whoever picked the end-of-line conventions for MS-DOS and the Macintosh
- * should be shot!" -- P. Karn's corollary to O'Dell's declaration
- */
-#define READ_BINARY     "rb"
-#define WRITE_BINARY    "wb"
-#define APPEND_BINARY   "ab+"
-#define READ_TEXT       "rt"
-#define WRITE_TEXT      "wt"
-#define APPEND_TEXT     "at+"
-
-#else
-
 #define READ_BINARY     "r"
 #define WRITE_BINARY    "w"
 #define APPEND_BINARY   "a+"
 #define READ_TEXT       "r"
 #define WRITE_TEXT      "w"
 #define APPEND_TEXT     "a+"
-
-#endif
-
-#include <sys/types.h>
-
-#ifndef _CONFIGURE_H
-#include "configure.h"
-#endif
 
 /* These two lines assume that your compiler's longs are 32 bits and
  * shorts are 16 bits. It is already assumed that chars are 8 bits,
@@ -101,12 +86,6 @@ typedef unsigned char uint8;    /* 8-bit unsigned integer */
 #define MAXINT32 0x7fffffff     /* Largest 32-bit integer */
 
 #define HASHMOD 7               /* Modulus used by hash_ip() function */
-
-/* Define null object pointer in case stdio.h isn't included */
-#ifndef NULL
-/* General purpose NULL pointer */
-#define NULL 0
-#endif
 
 /* standard boolean constants */
 #define FALSE 0
@@ -146,8 +125,6 @@ int memcnt(const uint8 *buf,uint8 c,int size);
 void memxor(uint8 *,uint8 *,unsigned int);
 void rip(char *);
 char *smsg(char *msgs[],unsigned nmsgs,unsigned n);
-void stktrace(void);
-#include "strdup.h"
 
 int stricmp(char *s1, char *s2);
 int strnicmp(char *s1, char *s2, size_t maxlen);

@@ -1,4 +1,4 @@
-/* @(#) $Id: asy.c,v 1.16 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: asy.c,v 1.17 1999/02/01 22:24:25 deyke Exp $ */
 
 /* Generic serial line interface routines
  * Copyright 1992 Phil Karn, KA9Q
@@ -122,11 +122,6 @@ void *p)
 		chain = 0;
 	asy_init(dev,ifp,base,irq,(uint)atol(argv[5]),
 		trigchar,(uint)atol(argv[7]),cts,rlsd,chain);
-#if 0
-	cp = if_name(ifp," tx");
-	ifp->txproc = newproc(cp,768,if_tx,0,ifp,NULL,0);
-	free(cp);
-#endif
 	return 0;
 }
 

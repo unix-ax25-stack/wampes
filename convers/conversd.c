@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: conversd.c,v 2.79 1998/03/09 17:42:49 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: conversd.c,v 2.80 1999/02/01 22:24:22 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -1433,7 +1433,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.79 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.80 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(0, ONE_TOKEN, KEEP_CASE));
@@ -2083,7 +2083,7 @@ int main(int argc, char **argv)
     *cp = 0;
   strchg(&my.h_name, buffer);
   strcpy(buffer, "W-");
-  if ((cp = strchr("$Revision: 2.79 $", ' ')))
+  if ((cp = strchr("$Revision: 2.80 $", ' ')))
     strcat(buffer, cp + 1);
   if ((cp = strchr(buffer, ' ')))
     *cp = 0;
@@ -2162,6 +2162,9 @@ int main(int argc, char **argv)
       if (bind(sp->s_fd, addr, addrlen) || listen(sp->s_fd, SOMAXCONN)) {
 	close(sp->s_fd);
       } else {
+	if (addr->sa_family == AF_UNIX) {
+	  chmod(addr->sa_data, 0666);
+	}
 	readfnc[sp->s_fd] = (void (*)(void *)) accept_connect_request;
 	readarg[sp->s_fd] = &sp->s_fd;
 	FD_SET(sp->s_fd, &chkread);

@@ -1,4 +1,4 @@
-/* @(#) $Id: smisc.c,v 1.18 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: smisc.c,v 1.19 1999/02/01 22:24:25 deyke Exp $ */
 
 /* Miscellaneous Internet servers: discard, echo and remote
  * Copyright 1991 Phil Karn, KA9Q
@@ -12,7 +12,6 @@
 #include "tcp.h"
 #include "udp.h"
 #include "commands.h"
-#include "hardware.h"
 #include "main.h"
 
 char *Rempass;          /* Remote access password */
@@ -145,18 +144,6 @@ int cnt)
 	recv_udp(up,&fsock,&bp);
 	command = PULLCHAR(&bp);
 	switch(command & 0xff){
-#ifdef  MSDOS   /* Only present on PCs running MSDOS */
-	case SYS__RESET:
-		i = chkrpass(bp);
-		logmsg(Rem,"%s - Remote reset %s",
-		 pinet_udp((struct sockaddr *)&fsock),
-		 i == 0 ? "PASSWORD FAIL" : "" );
-		if(i != 0){
-			iostop();
-			sysreset();     /* No return */
-		}
-		break;
-#endif
 	case SYS__EXIT:
 		if(chkrpass(bp) == 0){
 			logmsg(NULL,"%s - Remote exit PASSWORD FAIL",

@@ -1,4 +1,4 @@
-/* @(#) $Id: ksubr.c,v 1.35 1998/03/09 17:42:56 deyke Exp $ */
+/* @(#) $Id: ksubr.c,v 1.36 1999/02/01 22:24:25 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -14,10 +14,6 @@
 #include "proc.h"
 #include "commands.h"
 #include "main.h"
-
-#if 0
-static oldNull;
-#endif
 
 #if defined __hp9000s300
 struct env {
@@ -244,6 +240,20 @@ struct env {
 	long    unknown9;
 };
 #define getstackptr(ep) ((ep)->esp)
+#elif defined __NetBSD__
+struct env {
+	long    unknown0;
+	long    unknown1;
+	long    esp;
+	long    unknown3;
+	long    unknown4;
+	long    unknown5;
+	long    unknown6;
+	long    unknown7;
+	long    unknown8;
+	long    unknown9;
+};
+#define getstackptr(ep) ((ep)->esp)
 #elif defined __FreeBSD__
 struct env {
 	long    unknown0;
@@ -385,7 +395,7 @@ struct proc *pp)
 	printf("%08lx  %08lx  %7u   %6u    %08lx  %c%c%c %3d %3d  %s\n",
 	 (long)pp,getstackptr(ep),pp->stksize,stkutil(pp),
 	 (long)pp->event,
-	 pp->flags.istate ? 'I' : ' ',
+	 ' ',
 	 pp->flags.waiting ? 'W' : ' ',
 	 pp->flags.suspend ? 'S' : ' ',
 	 (int)pp->input,(int)pp->output,pp->name);

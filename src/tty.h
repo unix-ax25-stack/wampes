@@ -1,9 +1,9 @@
-/* @(#) $Id: tty.h,v 1.5 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: tty.h,v 1.6 1999/02/01 22:24:25 deyke Exp $ */
 
 #ifndef _TTY_H
 #define _TTY_H
 
-#define NUM_FKEY        10      /* Number of function keys */
+#define NUM_FKEY        12      /* Number of function keys */
 
 /* In main.c: */
 extern char Escape;

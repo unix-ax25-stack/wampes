@@ -1,4 +1,4 @@
-/* @(#) $Id: tcpsubr.c,v 1.22 1999/01/27 18:45:40 deyke Exp $ */
+/* @(#) $Id: tcpsubr.c,v 1.23 1999/02/01 22:24:25 deyke Exp $ */
 
 /* Low level TCP routines:
  *  control block management
@@ -177,15 +177,6 @@ int32 x,int32 y)
 	int32 bugfix;
 	return (long)(bugfix=x-y) < 0;
 }
-#ifdef  notdef
-int
-seq_le(
-int32 x,int32 y)
-{
-	int32 bugfix;
-	return (long)(bugfix=x-y) <= 0;
-}
-#endif  /* notdef */
 int
 seq_gt(
 int32 x,int32 y)

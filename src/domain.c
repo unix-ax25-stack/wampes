@@ -1,4 +1,4 @@
-/* @(#) $Id: domain.c,v 1.26 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: domain.c,v 1.27 1999/02/01 22:24:25 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -723,29 +723,6 @@ struct mbuf *bp)
     dumpdomain(dhp);
   }
   bp = htondomain(dhp);
-
-#if 0
-  {
-
-    struct dhdr *dhp1;
-    struct mbuf *bp1;
-
-    dup_p(&bp1, bp, 0, 9999);
-    dhp1 = (struct dhdr *) malloc(sizeof(struct dhdr));
-    if (ntohdomain(dhp1, &bp1)) {
-      printf("ntohdomain failed!\n");
-    } else {
-      printf("check: ");
-      dumpdomain(dhp1);
-    }
-    free_rr(&dhp1->questions);
-    free_rr(&dhp1->answers);
-    free_rr(&dhp1->authority);
-    free_rr(&dhp1->additional);
-    free(dhp1);
-
-  }
-#endif
 
 Done:
   free_rr(&dhp->questions);

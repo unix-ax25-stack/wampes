@@ -1,4 +1,4 @@
-/* @(#) $Id: icmp.c,v 1.21 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: icmp.c,v 1.22 1999/02/01 22:24:25 deyke Exp $ */
 
 /* Internet Control Message Protocol (ICMP)
  * Copyright 1991 Phil Karn, KA9Q
@@ -134,7 +134,6 @@ int32 said
 		icmp.type = ICMP_ECHO_REPLY;
 		htonicmp(&icmp,bpp);
 		icmpOutEchoReps++;
-#if 1
 		{
 		int32 tmp = ip->source;
 		ip->source = ip->dest;
@@ -144,9 +143,6 @@ int32 said
 		icmpOutMsgs++;
 		net_route(NULL,bpp);
 		}
-#else
-		ip_send(ip->dest,ip->source,ICMP_PTCL,ip->tos,0,bpp,length,0,0);
-#endif
 		return;
 	case ICMP_REDIRECT:     /* Redirect */
 		icmpInRedirects++;

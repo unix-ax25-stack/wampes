@@ -1,4 +1,4 @@
-/* @(#) $Id: tcpout.c,v 1.20 1996/08/23 15:49:05 deyke Exp $ */
+/* @(#) $Id: tcpout.c,v 1.21 1999/02/01 22:24:25 deyke Exp $ */
 
 /* TCP output segment processing
  * Copyright 1991 Phil Karn, KA9Q
@@ -129,10 +129,6 @@ tcp_output(struct tcb *tcb)
 			/* Also send MSS, wscale and tstamp (if OK) */
 			seg.mss = Tcp_mss;
 			seg.flags.mss = 1;
-#if 0
-			seg.wsopt = DEF_WSCALE;
-			seg.flags.wscale = 1;
-#endif
 			if(Tcp_tstamps){
 				seg.flags.tstamp = 1;
 				seg.tsval = msclock();

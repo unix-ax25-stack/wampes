@@ -1,4 +1,4 @@
-/* @(#) $Id: pathname.c,v 1.9 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: pathname.c,v 1.10 1999/02/01 22:24:25 deyke Exp $ */
 
 /* Convert relative to absolute pathnames
  * Copyright 1991 Phil Karn, KA9Q
@@ -19,32 +19,9 @@ char *cd,       /* Current working directory */
 char *path)     /* Pathname argument */
 {
 	register char *buf;
-#ifdef  MSDOS
-	char *cp,c;
-	char *tbuf;
-	int tflag = 0;
-#endif
 
 	if(cd == NULL || path == NULL)
 		return NULL;
-
-#ifdef  MSDOS
-	/* If path has any backslashes, make a local copy with them
-	 * translated into forward slashes
-	 */
-	if(strchr(path,'\\') != NULL){
-		tflag = 1;
-		cp = tbuf = mallocw(strlen(path));
-		while((c = *path++) != '\0'){
-			if(c == '\\')
-				*cp++ = '/';
-			else
-				*cp++ = c;
-		}
-		*cp = '\0';
-		path = tbuf;
-	}
-#endif
 
 	/* Strip any leading white space on args */
 	while(*cd == ' ' || *cd == '\t')
@@ -67,10 +44,6 @@ char *path)     /* Pathname argument */
 		buf[0] = '/';
 		buf[1] = '\0';
 	}
-#ifdef  MSDOS
-	if(tflag)
-		free(tbuf);
-#endif
 	return buf;
 }
 

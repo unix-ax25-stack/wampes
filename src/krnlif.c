@@ -1,4 +1,4 @@
-/* @(#) $Id: krnlif.c,v 1.4 1998/07/27 16:08:14 deyke Exp $ */
+/* @(#) $Id: krnlif.c,v 1.5 1999/02/01 22:24:25 deyke Exp $ */
 
 #ifdef linux
 
@@ -321,15 +321,8 @@ static struct hwencap {
 	unsigned short family;
 	char *encap;
 } hwencap[] = {
-#ifdef NETROM
 	{ ARPHRD_NETROM,        "NETROM" },
-#endif
-#ifdef ETHER
-	{ ARPHRD_ETHER,         "Ethernet" },
-#endif
-#ifdef KISS
 	{ ARPHRD_AX25,          "KISSI" },
-#endif
 	{ 0,                    0 }
 };
 
@@ -425,11 +418,6 @@ int krnlif_attach(int argc, char *argv[], void *p)
 	ifp->next = Ifaces;
 	Ifaces = ifp;
 
-#if 0
-	cp = if_name(ifp," tx");
-	ifp->txproc = newproc(cp,768,if_tx,0,ifp,NULL,0);
-	free(cp);
-#endif
 	return krnlif_up(ki);
 }
 

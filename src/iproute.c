@@ -1,4 +1,4 @@
-/* @(#) $Id: iproute.c,v 1.37 1999/01/27 18:45:40 deyke Exp $ */
+/* @(#) $Id: iproute.c,v 1.38 1999/02/01 22:24:25 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -17,9 +17,6 @@
 #include "icmp.h"
 #include "rip.h"
 #include "trace.h"
-#ifdef  IPSEC
-#include "ipsec.h"
-#endif
 #include "ipfilter.h"
 
 struct route *Routes[32][HASHMOD];      /* Routing table */
@@ -217,16 +214,7 @@ no_opt:
 
 	/* See if it's a broadcast or addressed to us, and kick it upstairs */
 	if(ismyaddr(ip.dest) != NULL || rxbroadcast){
-#ifdef  GWONLY
-	/* We're only a gateway, we have no host level protocols */
-		if(!rxbroadcast)
-			icmp_output(&ip,*bpp,ICMP_DEST_UNREACH,
-			 ICMP_PROT_UNREACH,NULL);
-		ipInUnknownProtos++;
-		free_p(bpp);
-#else
 		ip_recv(i_iface,&ip,bpp,rxbroadcast,0);
-#endif
 		return 0;
 	}
 	/* Packet is not destined to us. If it originated elsewhere, count
@@ -282,12 +270,6 @@ no_opt:
 		ipOutNoRoutes++;
 		return -1;
 	}
-#ifdef  IPSEC
-	if(sec_output(iface,&ip,bpp) != 0){
-		/* We inserted a security header, recompute hdr checksum */
-		ckgood = IP_CS_NEW;     /* Recompute IP checksum */
-	}
-#endif
 	if(ip.length <= iface->mtu){
 		/* Datagram smaller than interface MTU; put header
 		 * back on and send normally.
@@ -370,85 +352,15 @@ struct ip *ip,
 struct mbuf **bpp,
 int ckgood
 ){
-#if 0
-	struct mbuf *tlast,*tbp;
-	struct tcp tcp;
-	struct qhdr qhdr,qtmp;
-	int i;
-#endif
-
 	iface->ipsndcnt++;
 	htonip(ip,bpp,ckgood);
 
-#if 1
 	if(iface->send){
 		(*iface->send)(bpp,iface,gateway,ip->tos & 0xfc);
 	} else {
 		free_p(bpp);
 		return -1;
 	}
-#else
-	/* create priority field consisting of tos with 2 unused
-	 * low order bits stripped, one of which we'll use as an
-	 * "interactive" flag.
-	 */
-	qhdr.tos = (ip->tos & 0xfc);
-	qhdr.gateway = gateway;
-
-	if(iface->outq == NULL){
-		/* Queue empty, no priority decisions to be made
-		 * This is the usual case for fast networks like Ethernet,
-		 * so we can avoid some time-consuming stuff
-		 */
-		pushdown(bpp,&qhdr,sizeof(qhdr));
-		iface->outq = *bpp;
-		*bpp = NULL;
-	} else {
-		/* See if this packet references a "priority" TCP port number */
-		if(ip->protocol == TCP_PTCL && ip->offset == 0){
-			/* Extract a copy of the TCP header */
-			if(dup_p(&tbp,*bpp,sizeof(struct qhdr)+IPLEN+
-			 ip->optlen,TCPLEN+TCP_MAXOPT) >= TCPLEN){
-				ntohtcp(&tcp,&tbp);
-
-				for(i=0;Tcp_interact[i] != -1;i++){
-					if(tcp.source == Tcp_interact[i]
-					 || tcp.dest == Tcp_interact[i]){
-						qhdr.tos |= 1;
-						break;
-					}
-				}
-			}
-			free_p(&tbp);
-		}
-		pushdown(bpp,&qhdr,sizeof(qhdr));
-		/* Search the queue looking for the first packet with precedence
-		 * lower than our packet
-		 */
-		tlast = NULL;
-		for(tbp = iface->outq;tbp != NULL;tlast=tbp,tbp = tbp->anext){
-			memcpy(&qtmp,tbp->data,sizeof(qtmp));
-			if(qhdr.tos > qtmp.tos){
-				break;  /* Add it just before tbp */
-			}
-		}
-		(*bpp)->anext = tbp;
-		if(tlast == NULL){
-			/* First on queue */
-			iface->outq = *bpp;
-		} else {
-			tlast->anext = *bpp;
-		}
-		*bpp = NULL;
-	}
-	ksignal(&iface->outq,1);
-	if(iface->outlim != 0 && len_q(iface->outq) >= iface->outlim){
-		/* Output queue is at limit; return source quench to
-		 * the sender of a randomly selected packet on the queue
-		 */
-		rquench(iface,0);
-	}
-#endif
 	return 0;
 }
 int
@@ -518,11 +430,6 @@ uint8 private           /* Inhibit advertising this entry ? */
 	 */
 	if(iface == &Encap && (gateway == 0 || ismyaddr(gateway)))
 		return NULL;
-
-#if 0
-	for(i=0;i<HASHMOD;i++)
-		Rt_cache[i].route = NULL;       /* Flush cache */
-#endif
 
 	/* Zero bits refers to the default route */
 	if(bits == 0){
@@ -615,7 +522,6 @@ unsigned int bits
 	free(rp);
 	return 0;
 }
-#if 1
 
 /* Compute hash function on IP address */
 uint
@@ -628,8 +534,6 @@ int32 addr
 	ret ^= loword(addr);
 	return ret % HASHMOD;
 }
-#endif
-#ifndef GWONLY
 /* Given an IP address, return the MTU of the local interface used to
  * reach that destination. This is used by TCP to avoid local fragmentation
  */
@@ -648,17 +552,10 @@ int32 addr
 		return ip_mtu(rp->gateway) - IPLEN;     /* no options? */
 	}
 	iface = rp->iface;
-#ifdef  IPSEC
-	if(iface->forw != NULL)
-		return iface->forw->mtu - sec_overhead(addr);
-	else
-		return iface->mtu - sec_overhead(addr);
-#else
 	if(iface->forw != NULL)
 		return iface->forw->mtu;
 	else
 		return iface->mtu;
-#endif
 }
 /* Given a destination address, return the IP address of the local
  * interface that will be used to reach it. If there is no route
@@ -702,7 +599,6 @@ int32 addr)
 	else
 		return ifp->addr;
 }
-#endif
 /* Look up target in hash table, matching the entry having the largest number
  * of leading bits in common. Return default route if not found;
  * if default route not set, return NULL

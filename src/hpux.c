@@ -1,4 +1,4 @@
-/* @(#) $Id: hpux.c,v 1.61 1998/03/09 17:42:56 deyke Exp $ */
+/* @(#) $Id: hpux.c,v 1.62 1999/02/01 22:24:25 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -36,7 +36,6 @@
 #include "iface.h"
 #include "timer.h"
 #include "files.h"
-#include "hardware.h"
 #include "login.h"
 #include "commands.h"
 #include "main.h"

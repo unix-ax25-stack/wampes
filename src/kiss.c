@@ -1,4 +1,4 @@
-/* @(#) $Id: kiss.c,v 1.20 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: kiss.c,v 1.21 1999/02/01 22:24:25 deyke Exp $ */
 
 /* Routines for AX.25 encapsulation in KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -20,9 +20,6 @@ kiss_init(struct iface *ifp)
 {
 	int xdev;
 	struct slip *sp;
-#if 0
-	char *ifn;
-#endif
 
 	for(xdev = 0;xdev < SLIP_MAX;xdev++){
 		sp = &Slip[xdev];
@@ -47,13 +44,7 @@ kiss_init(struct iface *ifp)
 	sp->send = asy_send;
 	sp->get = get_asy;
 	sp->type = CL_KISS;
-#if 0
-	ifp->rxproc = newproc( ifn = if_name( ifp, " rx" ),
-		256,slip_rx,xdev,NULL,NULL,0);
-	free(ifn);
-#else
 	ifp->rxproc = slip_rx;
-#endif
 	return 0;
 }
 int

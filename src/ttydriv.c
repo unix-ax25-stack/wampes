@@ -1,4 +1,4 @@
-/* @(#) $Id: ttydriv.c,v 1.30 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: ttydriv.c,v 1.31 1999/02/01 22:24:25 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -29,6 +29,8 @@ enum e_keyaction {
   KA_FK8,               /* Function key 8 */
   KA_FK9,               /* Function key 9 */
   KA_FK10,              /* Function key 10 */
+  KA_FK11,              /* Function key 11 */
+  KA_FK12,              /* Function key 12 */
   KA_DEL_CURR_CHAR,     /* Delete current character */
   KA_DEL_CURR_WORD,     /* Delete current word */
   KA_DEL_LINE,          /* Delete whole line */
@@ -127,12 +129,18 @@ static const struct keytable Keytable[] = {
 	{ "\033[17~",   TT_ANSI,        KA_FK6 },
 	{ "\033[18~",   TT_ANSI,        KA_FK7 },
 	{ "\033[19~",   TT_ANSI,        KA_FK8 },
+	{ "\033[20~",   TT_ANSI,        KA_FK9 },
+	{ "\033[21~",   TT_ANSI,        KA_FK10 },
+	{ "\033[23~",   TT_ANSI,        KA_FK11 },
+	{ "\033[24~",   TT_ANSI,        KA_FK12 },
 	{ "\033[5~",    TT_ANSI,        KA_PREV },
 	{ "\033[6~",    TT_ANSI,        KA_NEXT },
 	{ "\033[A",     TT_ANSI,        KA_PREV },
 	{ "\033[B",     TT_ANSI,        KA_NEXT },
 	{ "\033[C",     TT_ANSI,        KA_RIGHT_CHAR },
 	{ "\033[D",     TT_ANSI,        KA_LEFT_CHAR },
+	{ "\033[F",     TT_ANSI,        KA_RIGHT_MAX },
+	{ "\033[H",     TT_ANSI,        KA_LEFT_MAX },
 	{ "\033[P",     TT_ANSI,        KA_FK1 },
 	{ "\033[Q",     TT_ANSI,        KA_FK2 },
 	{ "\033[R",     TT_ANSI,        KA_FK3 },
@@ -364,6 +372,8 @@ int ttydriv(int chr, char **buf)
 	case KA_FK8:
 	case KA_FK9:
 	case KA_FK10:
+	case KA_FK11:
+	case KA_FK12:
 		Fkey_ptr = Fkey_table[keyaction-KA_FK1];
 		break;
 

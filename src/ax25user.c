@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25user.c,v 1.12 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: ax25user.c,v 1.13 1999/02/01 22:24:25 deyke Exp $ */
 
 /* User interface subroutines for AX.25
  * Copyright 1991 Phil Karn, KA9Q
@@ -54,22 +54,8 @@ char *user)             /* User linkage area */
 		est_link(axp);
 		lapbstate(axp,LAPB_SETUP);
 		break;
-#if 0
-	case LAPB_SETUP:
-		free_q(&axp->txq);
-		break;
-	case LAPB_DISCPENDING:  /* Ignore */
-		break;
-	case LAPB_RECOVERY:
-	case LAPB_CONNECTED:
-		free_q(&axp->txq);
-		est_link(axp);
-		lapbstate(axp,LAPB_SETUP);
-		break;
-#else
 	default:
 		break;
-#endif
 	}
 	return axp;
 }
@@ -210,21 +196,9 @@ int
 reset_ax25(
 struct ax25_cb *axp)
 {
-#if 0
-	void (*upcall)(struct ax25_cb *,enum lapb_state,enum lapb_state);
-#endif
-
 	if(axp == NULL)
 		return -1;
-#if 0
-	upcall = axp->s_upcall;
-#endif
 	lapbstate(axp,LAPB_DISCONNECTED);
-#if 0
-	/* Clean up if the standard upcall isn't in use */
-	if(upcall != s_ascall)
-		del_ax25(axp);
-#endif
 	return 0;
 }
 

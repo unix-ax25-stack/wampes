@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25.h,v 1.20 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: ax25.h,v 1.21 1999/02/01 22:24:25 deyke Exp $ */
 
 #ifndef _AX25_H
 #define _AX25_H
@@ -99,21 +99,6 @@ struct lq {
 	struct iface *iface;    /* Interface address was heard on */
 	int32 time;             /* Time station was last heard */
 	int32 currxcnt; /* Current # of packets heard from this station */
-
-#ifdef  notdef          /* Not yet implemented */
-	/* # of packets heard from this station as of his last update */
-	int32 lastrxcnt;
-
-	/* # packets reported as transmitted by station as of his last update */
-	int32 lasttxcnt;
-
-	uint hisqual;   /* Fraction (0-1000) of station's packets heard
-			 * as of last update
-			 */
-	uint myqual;    /* Fraction (0-1000) of our packets heard by station
-			 * as of last update
-			 */
-#endif
 };
 
 extern struct lq *Lq;   /* Link quality record headers */

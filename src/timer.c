@@ -1,4 +1,4 @@
-/* @(#) $Id: timer.c,v 1.22 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: timer.c,v 1.23 1999/02/01 22:24:25 deyke Exp $ */
 
 /* General purpose software timer facilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -11,7 +11,6 @@
 #include "mbuf.h"
 #include "commands.h"
 #include "daemon.h"
-#include "hardware.h"
 #include "socket.h"
 
 int32 Msclock;

@@ -1,4 +1,16 @@
-@(#) $Id: ChangeLog,v 1.52 1999/01/27 18:45:24 deyke Exp $
+@(#) $Id: ChangeLog,v 1.53 1999/02/01 22:24:01 deyke Exp $
+
+990201 Dieter Deyke <deyke@fc.hp.com>
+
+	Fixed permissions of convers socket
+
+	Added suport for function keys 11 and 12
+
+	Added support for NetBSD (thanks to Berndt Josef Wulf <wulf@ping.net.au>
+
+	Cleaned up code
+
+	Updated domain.txt
 
 990127 Dieter Deyke <deyke@fc.hp.com>
 

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: udbm.c,v 1.48 1999/01/22 21:22:04 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: udbm.c,v 1.49 1999/02/01 22:26:12 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -544,7 +544,7 @@ static int fixusers(void)
 static void fixpasswd(void)
 {
 
-#if !(defined __386BSD__ || defined __bsdi__ || defined ibm032 || defined __FreeBSD__)
+#if !(defined __386BSD__ || defined __NetBSD__|| defined __bsdi__ || defined ibm032 || defined __FreeBSD__)
 
   FILE *fp1;
   FILE *fp2;

@@ -1,4 +1,4 @@
-/* @(#) $Id: nrs.c,v 1.19 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: nrs.c,v 1.20 1999/02/01 22:24:25 deyke Exp $ */
 
 /* This module implements the serial line framing method used by
  * net/rom nodes.  This allows the net/rom software to talk to
@@ -29,9 +29,6 @@ struct iface *ifp)
 {
 	int xdev;
 	struct nrs *np;
-#if 0
-	char *ifn;
-#endif
 
 	/* Set up a net/rom serial iface */
 	for(xdev = 0;xdev < NRS_MAX;xdev++){
@@ -53,13 +50,7 @@ struct iface *ifp)
 	np->iface = ifp;
 	np->send = asy_send;
 	np->get = get_asy;
-#if 0
-	ifp->rxproc = newproc( ifn = if_name( ifp, " nrs" ),
-		256,nrs_recv,xdev,NULL,NULL,0);
-	free(ifn);
-#else
 	ifp->rxproc = nrs_recv;
-#endif
 	return 0;
 }
 int
@@ -243,10 +234,6 @@ struct iface *iface)
 			continue;
 		net_route(np->iface,&bp);
 	}
-#if 0
-	if(np->iface->rxproc == Curproc)
-		np->iface->rxproc = NULL;
-#endif
 }
 /* donrstat:  display status of active net/rom serial interfaces */
 int

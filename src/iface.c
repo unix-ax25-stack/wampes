@@ -1,4 +1,4 @@
-/* @(#) $Id: iface.c,v 1.30 1999/01/27 18:45:40 deyke Exp $ */
+/* @(#) $Id: iface.c,v 1.31 1999/02/01 22:24:25 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -160,14 +160,6 @@ if_tx(int dev,void *arg1,void *unused)
 		bp = dequeue(&iface->outq);
 		pullup(&bp,&qhdr,sizeof(qhdr));
 		if(iface->dtickle != NULL && (*iface->dtickle)(iface) == -1){
-#ifdef  notdef  /* Confuses some non-compliant hosts */
-			struct ip ip;
-
-			/* Link redial failed; bounce with unreachable */
-			ntohip(&ip,&bp);
-			icmp_output(&ip,bp,ICMP_DEST_UNREACH,ICMP_HOST_UNREACH,
-			 NULL);
-#endif
 			free_p(&bp);
 		} else {
 			(*iface->send)(&bp,iface,qhdr.gateway,qhdr.tos);
@@ -466,42 +458,9 @@ int
 if_detach(struct iface *ifp)
 {
 	struct iface *iftmp;
-#if 0
-	struct route *rp,*rptmp;
-	int i,j;
-#endif
 
 	if(ifp == &Loopback || ifp == &Encap)
 		return -1;
-
-#if 0
-	/* Drop all routes that point to this interface */
-	if(R_default.iface == ifp)
-		rt_drop(0L,0);  /* Drop default route */
-
-	for(i=0;i<HASHMOD;i++){
-		for(j=0;j<32;j++){
-			for(rp = Routes[j][i];rp != NULL;rp = rptmp){
-				/* Save next pointer in case we delete this entry */
-				rptmp = rp->next;
-				if(rp->iface == ifp)
-					rt_drop(rp->target,rp->bits);
-			}
-		}
-	}
-	/* Unforward any other interfaces forwarding to this one */
-	for(iftmp = Ifaces;iftmp != NULL;iftmp = iftmp->next){
-		if(iftmp->forw == ifp)
-			iftmp->forw = NULL;
-	}
-	/* Call device shutdown routine, if any */
-	if(ifp->stop != NULL)
-		(*ifp->stop)(ifp);
-
-	killproc(&ifp->rxproc);
-	killproc(&ifp->txproc);
-	killproc(&ifp->supv);
-#endif
 
 	/* Free allocated memory associated with this interface */
 	if(ifp->name != NULL)

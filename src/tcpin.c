@@ -1,4 +1,4 @@
-/* @(#) $Id: tcpin.c,v 1.19 1999/01/27 18:45:40 deyke Exp $ */
+/* @(#) $Id: tcpin.c,v 1.20 1999/02/01 22:24:25 deyke Exp $ */
 
 /* Process incoming TCP segments. Page number references are to ARPA RFC-793,
  * the TCP specification.
@@ -168,14 +168,6 @@ int32 said              /* Authenticated packet */
 			return;
 		}
 		/* (Security check skipped here) */
-#ifdef  PREC_CHECK      /* Turned off for compatibility with BSD */
-		/* Check incoming precedence; it must match if there's an ACK */
-		if(seg.flags.ack && PREC(ip->tos) != PREC(tcb->tos)){
-			free_p(bpp);
-			reset(ip,&seg);
-			return;
-		}
-#endif
 		if(seg.flags.syn){
 			proc_syn(tcb,ip->tos,&seg);
 			if(seg.flags.ack){
@@ -253,14 +245,6 @@ int32 said              /* Authenticated packet */
 			return;
 		}
 		/* (Security check skipped here) p. 71 */
-#ifdef  PREC_CHECK
-		/* Check for precedence mismatch */
-		if(PREC(ip->tos) != PREC(tcb->tos)){
-			free_p(bpp);
-			reset(ip,&seg);
-			return;
-		}
-#endif
 		/* Check for erroneous extra SYN */
 		if(seg.flags.syn){
 			free_p(bpp);

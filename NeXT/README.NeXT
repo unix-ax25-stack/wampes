@@ -40,7 +40,7 @@ the system does recognice the pty as free, but wampes does not.
 
 the memory allocation routines in wampes should redefine the standard.
 but this redefinition does not work: the linker complains that those
-functions already exist.. that's why i compile with -DPURIFY.
+functions already exist.. that's why i turned the wampes functions off.
 
 convers/conversd seem to be clear.
 

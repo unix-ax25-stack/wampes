@@ -1,4 +1,4 @@
-/* @(#) $Id: axheard.c,v 1.6 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: axheard.c,v 1.7 1999/02/01 22:24:25 deyke Exp $ */
 
 /* AX25 link callsign monitoring. Also contains beginnings of
  * an automatic link quality monitoring scheme (incomplete)
@@ -17,102 +17,6 @@ static struct ld *ad_lookup(struct iface *ifp,uint8 *addr,int sort);
 static struct ld *ad_create(struct iface *ifp,uint8 *addr);
 struct lq *Lq;
 struct ld *Ld;
-
-#ifdef  notdef
-/* Send link quality reports to interface */
-void
-genrpt(
-struct iface *ifp)
-{
-	struct mbuf *bp;
-	uint8 *cp;
-	int i;
-	struct lq *lp;
-	int maxentries,nentries;
-
-	maxentries = (Paclen - LQHDR) / LQENTRY;
-	if((bp = alloc_mbuf(Paclen)) == NULL)
-		return;
-	cp = bp->data;
-	nentries = 0;
-
-	/* Build and emit header */
-	cp = putlqhdr(cp,LINKVERS,Ip_addr);
-
-	/* First entry is for ourselves. Since we're examining the Axsent
-	 * variable before we've sent this frame, add one to it so it'll
-	 * match the receiver's count after he gets this frame.
-	 */
-	cp = putlqentry(cp,ifp->hwaddr,Axsent+1);
-	nentries++;
-
-	/* Now add entries from table */
-	for(lp = lq;lp != NULL;lp = lp->next){
-		cp = putlqentry(cp,&lp->addr,lp->currxcnt);
-		if(++nentries >= MAXENTRIES){
-			/* Flush */
-			bp->cnt = nentries*LQENTRY + LQHDR;
-			ax_output(ifp,Ax25multi[0],ifp->hwaddr,PID_LQ,bp);
-			if((bp = alloc_mbuf(Paclen)) == NULL)
-				return;
-			cp = bp->data;
-		}
-	}
-	if(nentries > 0){
-		bp->cnt = nentries*LQENTRY + LQHDR;
-		ax_output(ifp,Ax25multi[0],ifp->hwaddr,LQPID,bp);
-	} else {
-		free_p(&bp);
-	}
-}
-
-/* Pull the header off a link quality packet */
-void
-getlqhdr(
-struct lqhdr *hp,
-struct mbuf **bpp)
-{
-	hp->version = pull16(bpp);
-	hp->ip_addr = pull32(bpp);
-}
-
-/* Put a header on a link quality packet.
- * Return pointer to buffer immediately following header
- */
-uint8 *
-putlqhdr(
-uint8 *cp,
-uint16 version,
-int32 ip_addr)
-{
-	cp = put16(cp,version);
-	return put32(cp,ip_addr);
-}
-
-/* Pull an entry off a link quality packet */
-void
-getlqentry(
-struct lqentry *ep,
-struct mbuf **bpp)
-{
-	pullup(bpp,ep->addr,AXALEN);
-	ep->count = pull32(bpp);
-}
-
-/* Put an entry on a link quality packet
- * Return pointer to buffer immediately following header
- */
-uint8 *
-putlqentry(
-uint8 *cp,
-uint8 *addr,
-int32 count)
-{
-	memcpy(cp,addr,AXALEN);
-	cp += AXALEN;
-	return put32(cp,count);
-}
-#endif
 
 /* Log the source address of an incoming packet */
 void

@@ -1,4 +1,4 @@
-/* @(#) $Id: main.c,v 1.65 1999/01/27 18:45:40 deyke Exp $ */
+/* @(#) $Id: main.c,v 1.66 1999/02/01 22:24:25 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -12,10 +12,6 @@
 #include <stdio.h>
 #include <time.h>
 #include <ctype.h>
-#if     defined(__TURBOC__) && defined(MSDOS)
-#include <io.h>
-#include <conio.h>
-#endif
 #include "global.h"
 #include <stdarg.h>
 #include "mbuf.h"
@@ -33,7 +29,6 @@
 #include "telnet.h"
 #include "tty.h"
 #include "session.h"
-#include "hardware.h"
 #include "socket.h"
 #include "cmdparse.h"
 #include "commands.h"
@@ -49,9 +44,7 @@
 
 extern struct cmds Cmds[],Startcmds[],Stopcmds[],Attab[];
 
-#ifndef MSDOS                   /* PC uses F-10 key always */
 char Escape = 0x1d;             /* default escape character is ^] */
-#endif
 
 char Badhost[] = "Unknown host %s\n";
 char *Hostname;
@@ -479,7 +472,6 @@ logmsg(void *tcb, const char *fmt, const char *arg)
 	fflush(Logfp);
 }
 
-#ifndef MSDOS
 int
 doescape(
 int argc,
@@ -492,7 +484,6 @@ void *p
 		Escape = *argv[1];
 	return 0;
 }
-#endif  /* MSDOS */
 /* Generate system command packet. Synopsis:
  * remote [-p port#] [-k key] [-a hostname] <hostname> reset|exit|kickme
  */

@@ -1,4 +1,4 @@
-/* @(#) $Id: tcpuser.c,v 1.25 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: tcpuser.c,v 1.26 1999/02/01 22:24:25 deyke Exp $ */
 
 /* User calls to TCP
  * Copyright 1991 Phil Karn, KA9Q
@@ -350,17 +350,8 @@ kick(int32 addr)
 void
 reset_all(void)
 {
-#if 0
-	struct tcb *tcb,*tcbnext;
-
-	for(tcb=Tcbs;tcb != NULL;tcb = tcbnext){
-		tcbnext = tcb->next;
-		reset_tcp(tcb);
-	}
-#else
 	while(Tcbs)
 		reset_tcp(Tcbs);
-#endif
 	kwait(NULL);    /* Let the RSTs go forth */
 }
 void
@@ -391,36 +382,3 @@ reset_tcp(struct tcb *tcb)
 	}
 	close_self(tcb,RESET);
 }
-#ifdef  notused
-/* Return character string corresponding to a TCP well-known port, or
- * the decimal number if unknown.
- */
-char *
-tcp_port(uint n)
-{
-	static char buf[32];
-
-	switch(n){
-	case IPPORT_ECHO:
-		return "echo";
-	case IPPORT_DISCARD:
-		return "discard";
-	case IPPORT_FTPD:
-		return "ftp_data";
-	case IPPORT_FTP:
-		return "ftp";
-	case IPPORT_TELNET:
-		return "telnet";
-	case IPPORT_SMTP:
-		return "smtp";
-	case IPPORT_POP2:
-		return "pop2";
-	case IPPORT_POP3:
-		return "pop3";
-	default:
-		sprintf(buf,"%u",n);
-		return buf;
-	}
-}
-#endif
-

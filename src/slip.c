@@ -1,4 +1,4 @@
-/* @(#) $Id: slip.c,v 1.21 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: slip.c,v 1.22 1999/02/01 22:24:25 deyke Exp $ */
 
 /* SLIP (Serial Line IP) encapsulation and control routines.
  * Copyright 1991 Phil Karn
@@ -32,9 +32,6 @@ struct iface *ifp)
 {
 	int xdev;
 	struct slip *sp;
-#if 0
-	char *ifn;
-#endif
 
 	for(xdev = 0;xdev < SLIP_MAX;xdev++){
 		sp = &Slip[xdev];
@@ -57,13 +54,7 @@ struct iface *ifp)
 	if(ifp->send == vjslip_send){
 		sp->slcomp = slhc_init(16,16);
 	}
-#if 0
-	ifp->rxproc = newproc( ifn = if_name( ifp, " rx" ),
-		512,slip_rx,xdev,NULL,NULL,0);
-	free(ifn);
-#else
 	ifp->rxproc = slip_rx;
-#endif
 	return 0;
 }
 int
@@ -293,10 +284,6 @@ struct iface *iface)
 		 */
 		kwait(NULL);
 	}
-#if 0
-	if(sp->iface->rxproc == Curproc)
-		sp->iface->rxproc = NULL;
-#endif
 }
 
 /* Show serial line status */

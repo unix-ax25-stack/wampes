@@ -1,4 +1,4 @@
-/* @(#) $Id: session.c,v 1.21 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: session.c,v 1.22 1999/02/01 22:24:25 deyke Exp $ */
 
 /* NOS User Session control
  * Copyright 1991 Phil Karn, KA9Q
@@ -15,7 +15,6 @@
 #include "telnet.h"
 #include "tty.h"
 #include "session.h"
-#include "hardware.h"
 #include "socket.h"
 #include "cmdparse.h"
 #include "commands.h"
@@ -96,7 +95,6 @@ void *p)
 			 Tcpstates[sp->cb.ftp->control->state],
 			 pinet_tcp(&sp->cb.ftp->control->conn.remote));
 			break;
-#ifdef  AX25
 		case AX25TNC:
 			printf("%c%-3d%8lx AX25    %4d  %-13s%-s",
 			 (Current == sp) ? '*' : ' ',
@@ -106,7 +104,6 @@ void *p)
 			 Ax25states[sp->cb.ax25->state],
 			 ax25hdr_to_string(&sp->cb.ax25->hdr));
 			break;
-#endif
 		case FINGER:
 			printf("%c%-3d%8lx Finger  %4ld  %-13s%-s",
 			 (Current == sp)? '*':' ',
@@ -116,7 +113,6 @@ void *p)
 			 Tcpstates[sp->cb.finger->tcb->state],
 			 pinet_tcp(&sp->cb.finger->tcb->conn.remote));
 			break;
-#ifdef NETROM
 		case NRSESSION:
 			printf("%c%-3d%8lx NETROM  %4d  %-13s%-s",
 			 (Current == sp) ? '*' : ' ',
@@ -126,7 +122,6 @@ void *p)
 			 Nr4states[sp->cb.netrom->state],
 			 nr_addr2str(sp->cb.netrom));
 			break;
-#endif
 		default:
 			continue;
 		}
@@ -157,19 +152,15 @@ void *p)
 	case FTP:
 		ftpccr(Current->cb.ftp->control,0);
 		break;
-#ifdef  AX25
 	case AX25TNC:
 		axclient_recv_upcall(Current->cb.ax25,0);
 		break;
-#endif
 	case FINGER:
 		fingcli_rcv(Current->cb.finger->tcb,0) ;
 		break ;
-#ifdef  NETROM
 	case NRSESSION:
 		nrclient_recv_upcall(Current->cb.netrom,0);
 		break;
-#endif
 	default:
 		break;
 	}
@@ -194,19 +185,15 @@ void *p)
 	case FTP:
 		close_tcp(sp->cb.ftp->control);
 		break;
-#ifdef  AX25
 	case AX25TNC:
 		disc_ax25(sp->cb.ax25);
 		break;
-#endif
 	case FINGER:
 		close_tcp(sp->cb.finger->tcb);
 		break;
-#ifdef NETROM
 	case NRSESSION:
 		close_nr(sp->cb.netrom);
 		break;
-#endif
 	default:
 		break;
 	}
@@ -235,19 +222,15 @@ void *p)
 		}
 		reset_tcp(sp->cb.ftp->control);
 		break;
-#ifdef  AX25
 	case AX25TNC:
 		reset_ax25(sp->cb.ax25);
 		break;
-#endif
 	case FINGER:
 		reset_tcp(sp->cb.finger->tcb);
 		break;
-#ifdef NETROM
 	case NRSESSION:
 		reset_nr(sp->cb.netrom);
 		break;
-#endif
 	default:
 		break;
 	}
@@ -283,28 +266,24 @@ void *p)
 		    sp->cb.ftp->data != NULL)
 			kick_tcp(sp->cb.ftp->data);
 		break;
-#ifdef  AX25
 	case AX25TNC:
 		if(kick_ax25(sp->cb.ax25) == -1){
 			printf(Notval);
 			return 1;
 		}
 		break;
-#endif
 	case FINGER:
 		if(kick_tcp(sp->cb.finger->tcb) == -1){
 			printf(Notval);
 			return 1;
 		}
 		break;
-#ifdef NETROM
 	case NRSESSION:
 		if(kick_nr(sp->cb.netrom) == -1){
 			printf(Notval);
 			return 1;
 		}
 		break;
-#endif
 	default:
 		break;
 	}
@@ -429,18 +408,14 @@ void *p)
 			strcpy(Current->ufile,argv[1]);
 			/* All set, kick transmit upcall to get things rolling */
 			switch(Current->type){
-#ifdef  AX25
 			case AX25TNC:
 				axp = Current->cb.ax25;
 				axclient_send_upcall(axp, space_ax25(axp));
 				break;
-#endif
-#ifdef NETROM
 			case NRSESSION:
 				cb = Current->cb.netrom;
 				nrclient_send_upcall(cb, space_nr(cb));
 				break;
-#endif
 			case TELNET:
 				tcb = Current->cb.telnet->tcb;
 				if(tcb->snd.wnd > tcb->sndcnt)

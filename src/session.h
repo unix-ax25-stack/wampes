@@ -1,4 +1,4 @@
-/* @(#) $Id: session.h,v 1.13 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: session.h,v 1.14 1999/02/01 22:24:25 deyke Exp $ */
 
 #ifndef _SESSION_H
 #define _SESSION_H
@@ -11,10 +11,6 @@
 
 #ifndef _PROC_H
 #include "proc.h"
-#endif
-
-#ifndef _HARDWARE_H
-#include "hardware.h"
 #endif
 
 #ifndef _TELNET_H
@@ -45,13 +41,9 @@ struct session {
 	union {
 		struct ftp *ftp;
 		struct telnet *telnet;
-#ifdef  AX25
 		struct ax25_cb *ax25;
-#endif
 		struct finger *finger;
-#ifdef  NETROM
 		struct circuit *netrom;
-#endif
 	} cb;
 	void (*parse)(char *,int);
 				/* Where to hand typed input when conversing */
