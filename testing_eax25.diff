@@ -1372,7 +1372,7 @@ diff -c -r1.42 lapb.c
   				/* Update timeout */
   				tmp = 4*axp->mdev+axp->srt;
 ! 				set_timer(&axp->t1,(max(tmp,500)));
-! 				if(axp->maxframe < (axp->mmask == EMMASK ? EMaxframe : Maxframe));
+! 				if(axp->maxframe < (axp->mmask == EMMASK ? EMaxframe : Maxframe))
   					axp->maxframe++;
   			}
   			axp->flags.retrans = 0;
