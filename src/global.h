@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.37 1995/12/20 09:46:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.38 1996/02/04 11:17:38 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -59,11 +59,11 @@ typedef int pid_t;
 #define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
 #define PDP_ENDIAN      3412    /* LSB first in word, MSW first in long */
 
-#if defined linux       || \
-    defined ULTRIX_RISC || \
-    defined __386BSD__  || \
-    defined __bsdi__    || \
-    defined __FreeBSD__
+#if ( defined linux && !defined __mc68000__ ) || \
+      defined ULTRIX_RISC                     || \
+      defined __386BSD__                      || \
+      defined __bsdi__                        || \
+      defined __FreeBSD__
 #define BYTE_ORDER      LITTLE_ENDIAN
 #else
 #define BYTE_ORDER      BIG_ENDIAN
@@ -235,9 +235,7 @@ void restore(int);
 void rip(char *);
 char *smsg(char *msgs[],unsigned nmsgs,unsigned n);
 void stktrace(void);
-#if 0
-char *strdup(const char *);
-#endif
+#include "strdup.h"
 int urandom(unsigned int n);
 int wildmat(char *s,char *p,char **argv);
 

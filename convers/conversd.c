@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.71 1996/01/30 14:44:48 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.72 1996/02/04 11:17:33 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -44,7 +44,7 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #define WNOHANG         1
 #endif
 
-#ifdef __hpux
+#if defined __hpux && !defined _FD_SET
 #define SEL_ARG(x) ((int *) (x))
 #else
 #define SEL_ARG(x) (x)
@@ -97,6 +97,7 @@ struct quality {
   struct link *q_link;          /* Pointer to link */
   long q_rtt;                   /* RTT via this link */
   long q_lastrtt;               /* Last RTT reported to this link */
+  long q_sendtime;              /* Time DEST was sent to this link */
   struct quality *q_next;       /* Linked-list pointer */
 };
 
@@ -968,7 +969,10 @@ static void send_dests(void)
 {
 
   char buffer[2048];
+  long delay;
+  long diff;
   long lastrtt;
+  long minrtt;
   long rtt;
   struct host *hp;
   struct link *lp;
@@ -985,16 +989,31 @@ static void send_dests(void)
       qpbest = find_best_quality(hp);
       if (qpbest && qpbest != qp) {
 	rtt = qpbest->q_rtt + lround(lp->l_srtt);
+	if (rtt > MAX_RTT) {
+	  rtt = MAX_RTT + 1;
+	}
       } else {
 	rtt = MAX_RTT + 1;
       }
       if (!(lastrtt = qp->q_lastrtt))
 	lastrtt = MAX_RTT + 1;
-      if (rtt > lastrtt || lround(1.25 * rtt) < lastrtt) {
+      diff = (rtt >= lastrtt) ? (rtt - lastrtt) : (lastrtt - rtt);
+      if (!diff)
+	continue;
+      if (rtt > MAX_RTT) {
+	delay = 0;
+      } else if (lastrtt > MAX_RTT) {
+	delay = 3 * rtt;
+      } else {
+	minrtt = (lastrtt <= rtt) ? lastrtt : rtt;
+	delay = 36 * minrtt / diff;
+      }
+      if (qp->q_sendtime + delay <= currtime) {
 	if (rtt > MAX_RTT)
 	  rtt = 0;
 	sprintf(buffer, "/\377\200DEST %s %ld %s\n", hp->h_name, qp->q_lastrtt = rtt, hp->h_software);
 	send_string(lp, buffer);
+	qp->q_sendtime = currtime;
       }
     }
   }
@@ -1046,7 +1065,6 @@ static void close_link(struct link *lp)
       }
     }
   }
-  send_dests();
 
   for (up = users; up; up = up->u_next) {
     if (up->u_channel >= 0 && up->u_link == lp) {
@@ -1148,9 +1166,8 @@ static void help_command(struct link *lp)
     "/LINKS               Show all links\n"
     "/PEERS               Show all peers\n"
     "/USERS               Show all users\n"
-    "/ONLINE              Show all users\n"
 
-    "/ROUTE host          Show route to host\n"
+    "/ROUTE host [ttl]    Show route to host\n"
 
     "***\n");
 }
@@ -1316,10 +1333,25 @@ static void note_command(struct link *lp)
 
 static void route_command(struct link *lp)
 {
+
   char *toname;
+  char *ttlstr;
+  int ttl;
 
   toname = getarg(0, ONE_TOKEN, LOWER_CASE);
-  handle_rout_msg(lp->l_user->u_name, toname, 99);
+  if (!*toname) {
+    return;
+  }
+  ttlstr = getarg(0, ONE_TOKEN, KEEP_CASE);
+  if (*ttlstr) {
+    ttl = atoi(ttlstr);
+    if (ttl > 99) {
+      ttl = 99;
+    }
+  } else {
+    ttl = 16;
+  }
+  handle_rout_msg(lp->l_user->u_name, toname, ttl);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1387,7 +1419,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.71 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.72 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(0, ONE_TOKEN, KEEP_CASE));
@@ -1480,6 +1512,7 @@ static void h_dest_command(struct link *lp)
 {
 
   char *name;
+  char *software;
   long rtt;
   struct host *hp;
   struct quality *qp;
@@ -1493,15 +1526,16 @@ static void h_dest_command(struct link *lp)
     return;
   }
   rtt = atol(getarg(0, ONE_TOKEN, KEEP_CASE));
-  if (rtt < 0 || rtt == 1) {
+  if (rtt < 0) {
     return;
   }
   if (rtt > MAX_RTT)
     rtt = 0;
   qp = find_quality(hp, lp);
   qp->q_rtt = rtt;
-  strchg(&hp->h_software, getarg(0, ONE_TOKEN, KEEP_CASE));
-  send_dests();
+  software = getarg(0, ONE_TOKEN, KEEP_CASE);
+  if (*software)
+    strchg(&hp->h_software, software);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1577,8 +1611,6 @@ static void h_host_command(struct link *lp)
       send_string(lp, buffer);
     }
 
-  send_dests();
-
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1612,7 +1644,7 @@ static void h_ping_command(struct link *lp)
 static void update_srtt(struct link *lp, long rtt)
 {
   if (lp->l_srtt) {
-    lp->l_srtt = (3.0 * lp->l_srtt + rtt) / 4.0;
+    lp->l_srtt = (7.0 * lp->l_srtt + rtt) / 8.0;
   } else {
     lp->l_srtt = rtt;
   }
@@ -1659,7 +1691,6 @@ static void h_pong_command(struct link *lp)
     }
     qp = find_quality(lp->l_host, lp);
     qp->q_rtt = srtt;
-    send_dests();
   }
 }
 
@@ -1763,6 +1794,7 @@ static void process_input(struct link *lp)
     { "name",           name_command },
 
     { "bye",            bye_command },
+    { "cstat",          links_command },
     { "exit",           bye_command },
     { "hosts",          hosts_command },
     { "kick",           kick_command },
@@ -1778,8 +1810,11 @@ static void process_input(struct link *lp)
 
   static const struct command user_commands[] = {
 
+    { "?",              help_command },
+
     { "bye",            bye_command },
     { "channel",        channel_command },
+    { "cstat",          links_command },
     { "exit",           bye_command },
     { "help",           help_command },
     { "hosts",          hosts_command },
@@ -1796,7 +1831,6 @@ static void process_input(struct link *lp)
     { "users",          users_command },
     { "who",            who_command },
     { "write",          msg_command },
-    { "?",              help_command },
 
     { 0,                0 }
   };
@@ -2032,7 +2066,7 @@ int main(int argc, char **argv)
     *cp = 0;
   strchg(&my.h_name, buffer);
   strcpy(buffer, "W-");
-  if ((cp = strchr("$Revision: 2.71 $", ' ')))
+  if ((cp = strchr("$Revision: 2.72 $", ' ')))
     strcat(buffer, cp + 1);
   if ((cp = strchr(buffer, ' ')))
     *cp = 0;
@@ -2128,9 +2162,10 @@ int main(int argc, char **argv)
     check_files_changed();
     connect_peers();
     send_pings();
+    send_dests();
     actread = chkread;
     actwrite = chkwrite;
-    timeout.tv_sec = min_waittime;
+    timeout.tv_sec = 10;
     timeout.tv_usec = 0;
     i = select(maxfd + 1, SEL_ARG(&actread), SEL_ARG(&actwrite), 0, &timeout);
     time(&currtime);

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.36 1996/01/22 13:14:15 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.37 1996/02/04 11:17:49 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -59,24 +59,24 @@ enum e_action {
   ACT_UPDATE
 };
 
-struct fileentry {
-  unsigned short mode;                  /* File mode */
-  char digest[DIGESTSIZE];              /* MD5 digest */
+struct s_fileentry {
+  unsigned short mode;          /* File mode */
+  char digest[DIGESTSIZE];      /* MD5 digest */
 };
 
-struct file {
-  struct file *next;                    /* Linked list pointer */
-  struct file *hashlink;                /* Hash list pointer */
-  struct fileentry master;              /* Master file info */
-  struct fileentry mirror;              /* Mirror file info */
-  struct fileentry client;              /* Client file info */
-  char name[1];                         /* File name, variable length,
-					   must be last in struct !!! */
+struct s_file {
+  struct s_file *next;          /* Linked list pointer */
+  struct s_file *hashlink;      /* Hash list pointer */
+  struct s_fileentry master;    /* Master file info */
+  struct s_fileentry mirror;    /* Mirror file info */
+  struct s_fileentry client;    /* Client file info */
+  char name[1];                 /* File name, variable length, must be last in
+				   struct !!! */
 };
 
-static char *inpptr;
 static char inpbuf[1024];
 static char outbuf[1024];
+static char *inpptr;
 static int fdinp;
 static int fdlock = -1;
 static int fdout;
@@ -84,8 +84,8 @@ static int inpcnt;
 static int outcnt;
 static int received;
 static int xmitted;
-static struct file *Filehead;
-static struct file *Hashtable[HASHSIZE];
+static struct s_file *Filehead;
+static struct s_file *Hashtable[HASHSIZE];
 
 /*---------------------------------------------------------------------------*/
 
@@ -100,6 +100,7 @@ static char *include_table[] =
   "bbs/Makefile",
   "bbs/*.[ch]",
   "cc",
+  "ChangeLog",
   "convers",
   "convers/Makefile",
   "convers/*.[ch]",
@@ -323,17 +324,17 @@ static void generate_dynamic_include_table(const char *client)
 
 /*---------------------------------------------------------------------------*/
 
-static struct file *getfileptr(const char *filename)
+static struct s_file *getfileptr(const char *filename)
 {
 
-  struct file **hp;
-  struct file *p;
+  struct s_file *p;
+  struct s_file **hp;
 
   hp = Hashtable + calc_crc_16(filename) % HASHSIZE;
   for (p = *hp; p; p = p->hashlink)
     if (!strcmp(p->name, filename))
       return p;
-  p = (struct file *) calloc(1, sizeof(struct file) + strlen(filename));
+  p = (struct s_file *) calloc(1, sizeof(struct s_file) + strlen(filename));
   if (!p)
     syscallerr("malloc");
   p->next = Filehead;
@@ -503,7 +504,7 @@ static void print_action(enum e_action action, unsigned short filemode, const ch
 
 /*---------------------------------------------------------------------------*/
 
-static void update_mirror_from_master(struct file *p, const char *masterfilename, const char *mirrorfilename)
+static void update_mirror_from_master(struct s_file *p, const char *masterfilename, const char *mirrorfilename)
 {
 
   char buf[8 * 1024];
@@ -570,17 +571,17 @@ static void update_mirror_from_master(struct file *p, const char *masterfilename
 
 /*---------------------------------------------------------------------------*/
 
-static void update_mirror_from_rcs(struct file *p, const char *master, const char *mirrorfilename)
+static void update_mirror_from_rcs(struct s_file *p, const char *master, const char *mirrorfilename)
 {
 
-  FILE *fp;
-  MD5_CTX mdContext;
-  char *cp;
   char buf[8 * 1024];
   char major[1024];
   char rcsfilename[1024];
+  char *cp;
+  FILE *fp;
   int len;
   int minor;
+  MD5_CTX mdContext;
 
   strcpy(rcsfilename, master);
   strcat(rcsfilename, "/");
@@ -615,7 +616,7 @@ static void update_mirror_from_rcs(struct file *p, const char *master, const cha
 
 Fail:
   remove(mirrorfilename);
-  memset((char *) &p->mirror, 0, sizeof(struct fileentry));
+  memset((char *) &p->mirror, 0, sizeof(struct s_fileentry));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -623,13 +624,13 @@ Fail:
 static void apply_diffs(const char *sourcename, const char *diffname)
 {
 
-  FILE *fpdiff;
-  FILE *fpsource;
-  FILE *fptemp;
-  char *cp;
   char cmd;
   char line[2048];
   char tempname[1024];
+  char *cp;
+  FILE *fpdiff;
+  FILE *fpsource;
+  FILE *fptemp;
   int chr;
   int linenum;
   int numlines;
@@ -698,7 +699,7 @@ static void apply_diffs(const char *sourcename, const char *diffname)
 
 /*---------------------------------------------------------------------------*/
 
-static void send_update(struct file *p, enum e_action action, int flags, const char *masterfilename, const char *mirrorfilename)
+static void send_update(struct s_file *p, enum e_action action, int flags, const char *masterfilename, const char *mirrorfilename)
 {
 
   char buf[8 * 1024];
@@ -804,7 +805,6 @@ static void send_update(struct file *p, enum e_action action, int flags, const c
 static int recv_update(int flags)
 {
 
-  MD5_CTX mdContext;
   char buf[8 * 1024];
   char digest[DIGESTSIZE];
   char filename[1024];
@@ -815,6 +815,7 @@ static int recv_update(int flags)
   int filesize;
   int len;
   int opcode;
+  MD5_CTX mdContext;
   unsigned short filemode;
 
   if (!(opcode = readchar()))
@@ -918,15 +919,15 @@ static int recv_update(int flags)
 static void scandirectory(const char *dirname, enum e_scanmode scanmode)
 {
 
-  DIR *dirp;
-  MD5_CTX mdContext;
-  char *fnp;
   char buf[1024];
   char filename[1024];
+  char *fnp;
+  DIR *dirp;
   int n;
+  MD5_CTX mdContext;
   struct dirent *dp;
-  struct file *p;
   struct stat statbuf;
+  struct s_file *p;
 
   if (!(dirp = opendir(dirname)))
     syscallerr(dirname);
@@ -995,11 +996,11 @@ static void server_version_1(const char *client, int flags)
   char digest[DIGESTSIZE];
   char filename[1024];
   char masterfilename[1024];
-  char mirror[1024];
   char mirrorfilename[1024];
+  char mirror[1024];
   const char *master;
-  struct file *newhead;
-  struct file *p;
+  struct s_file *newhead;
+  struct s_file *p;
   unsigned short filemode;
 
   generate_dynamic_include_table(client);
@@ -1045,7 +1046,7 @@ static void server_version_1(const char *client, int flags)
 	   FTYPE(p->mirror.mode) != FTYPE(p->master.mode))) {
 	if (remove(mirrorfilename))
 	  syscallerr(mirrorfilename);
-	memset((char *) &p->mirror, 0, sizeof(struct fileentry));
+	memset((char *) &p->mirror, 0, sizeof(struct s_fileentry));
       }
       p->next = newhead;
       newhead = p;
@@ -1178,10 +1179,10 @@ static void doserver(int argc, char **argv)
 static void doclient(int argc, char **argv)
 {
 
+  char buf[1024];
   char *client;
   char *cp;
   char *server;
-  char buf[1024];
   int addrlen;
   int flags;
   struct sockaddr *addr;

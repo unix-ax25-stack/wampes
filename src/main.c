@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.55 1996/01/08 12:24:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.56 1996/02/04 11:17:40 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -570,21 +570,21 @@ void *p)
 
 	switch(cmd[0]){
 	case 'r':
-		bp->data[0] = SYS_RESET;
+		bp->data[0] = SYS__RESET;
 		if(key != NULL) {
 			strncpy((char *) (&bp->data[1]),key,klen);
 			bp->cnt += klen;
 		}
 		break;
 	case 'e':
-		bp->data[0] = SYS_EXIT;
+		bp->data[0] = SYS__EXIT;
 		if(key != NULL) {
 			strncpy((char *) (&bp->data[1]),key,klen);
 			bp->cnt += klen;
 		}
 		break;
 	case 'k':
-		bp->data[0] = KICK_ME;
+		bp->data[0] = KICK__ME;
 		if(addr != 0) {
 			put32(&bp->data[1],addr);
 			bp->cnt += sizeof(int32);

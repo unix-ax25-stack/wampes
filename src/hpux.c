@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.57 1996/01/22 13:13:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.58 1996/02/04 11:17:38 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -44,7 +44,7 @@
 
 #define TIMEOUT 120
 
-#ifdef __hpux
+#if defined __hpux && !defined _FD_SET
 #define SEL_ARG(x) ((int *) (x))
 #else
 #define SEL_ARG(x) (x)

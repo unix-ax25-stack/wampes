@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.14 1996/01/22 13:13:59 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.15 1996/02/04 11:17:45 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -24,7 +24,7 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #define SOMAXCONN       5
 #endif
 
-#ifdef __hpux
+#if defined __hpux && !defined _FD_SET
 #define SEL_ARG(x) ((int *) (x))
 #else
 #define SEL_ARG(x) (x)

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.26 1995/12/20 09:46:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.27 1996/02/04 11:17:36 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -8,6 +8,7 @@
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <stdio.h>
+#include <ctype.h>
 #include "global.h"
 #include "mbuf.h"
 #include "iface.h"
@@ -18,7 +19,6 @@
 #include "netrom.h"
 #include "ip.h"
 #include "devparam.h"
-#include <ctype.h>
 #include "lapb.h"
 
 /* List of AX.25 multicast addresses in network format (shifted ascii).

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.33 1996/01/22 13:14:13 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.34 1996/02/04 11:17:49 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -35,7 +35,7 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 
 char *tgetstr();
 
-#ifdef __hpux
+#if defined __hpux && !defined _FD_SET
 #define SEL_ARG(x) ((int *) (x))
 #else
 #define SEL_ARG(x) (x)
@@ -208,11 +208,7 @@ int main(int argc, char **argv)
   if (tgetent(bp, getenv("TERM")) == 1 && strcmp(tgetstr("up", &ap), "\033[A"))
     Ansiterminal = 0;
 
-#if 1
   server = (argc < 2) ? "unix:/tcp/.sockets/netcmd" : argv[1];
-#else
-  server = (argc < 2) ? "*:4720" : argv[1];
-#endif
   if (!(addr = build_sockaddr(server, &addrlen))) {
     fprintf(stderr, "%s: Cannot build address from \"%s\"\n", *argv, server);
     terminate();

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.14 1995/12/20 09:46:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.15 1996/02/04 11:17:43 deyke Exp $ */
 
 /* Miscellaneous Internet servers: discard, echo and remote
  * Copyright 1991 Phil Karn, KA9Q
@@ -146,7 +146,7 @@ int cnt)
 	command = PULLCHAR(&bp);
 	switch(command & 0xff){
 #ifdef  MSDOS   /* Only present on PCs running MSDOS */
-	case SYS_RESET:
+	case SYS__RESET:
 		i = chkrpass(bp);
 		logmsg(Rem,"%s - Remote reset %s",
 		 pinet_udp((struct sockaddr *)&fsock),
@@ -157,7 +157,7 @@ int cnt)
 		}
 		break;
 #endif
-	case SYS_EXIT:
+	case SYS__EXIT:
 		if(chkrpass(bp) == 0){
 			logmsg(NULL,"%s - Remote exit PASSWORD FAIL",
 			 pinet_udp(&fsock));
@@ -167,7 +167,7 @@ int cnt)
 			main_exit = 1;
 		}
 		break;
-	case KICK_ME:
+	case KICK__ME:
 		if(len_p(bp) >= sizeof(int32))
 			addr = pull32(&bp);
 		else

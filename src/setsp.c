@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/setsp.c,v 1.11 1995/12/30 15:05:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/setsp.c,v 1.12 1996/02/04 11:17:42 deyke Exp $ */
 
 #ifndef __lint
 
@@ -60,15 +60,28 @@ $SHORT_STATIC_DATA$
 #ifdef __ELF__
 	.globl  setstack
 setstack:
+#ifdef __mc68000__
+	movel   sp@,a0
+	movel   newstackptr,sp
+	jmp     a0@
+#else
 	movl    %esp, %ebp
 	movl    newstackptr, %esp
+	jmp     *(%ebp)
+#endif
 #else
 	.globl  _setstack
 _setstack:
+#ifdef __mc68000__
+	movel   sp@,a0
+	movel   _newstackptr,sp
+	jmp     a0@
+#else
 	movl    %esp, %ebp
 	movl    _newstackptr, %esp
-#endif
 	jmp     *(%ebp)
+#endif
+#endif
 	.align  4
 #endif
 

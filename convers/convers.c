@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.19 1996/01/22 13:13:29 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.20 1996/02/04 11:17:34 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -24,7 +24,7 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <termios.h>
 #endif
 
-#ifdef __hpux
+#if defined __hpux && !defined _FD_SET
 #define SEL_ARG(x) ((int *) (x))
 #else
 #define SEL_ARG(x) (x)
@@ -59,12 +59,6 @@ static void stop(const char *arg)
 int main(int argc, char **argv)
 {
 
-#if 1
-  char *server = "unix:/tcp/sockets/convers";
-#else
-  char *server = "*:3600";
-#endif
-
   char buffer[2048];
   char c;
   char inbuf[2048];
@@ -72,6 +66,7 @@ int main(int argc, char **argv)
   char *cp;
   char *name;
   char *note = 0;
+  const char *server = "unix:/tcp/sockets/convers";
   int addrlen;
   int channel = 0;
   int ch;

@@ -1,6 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.29 1996/01/28 10:44:38 deyke Exp $ */
-
-#include "global.h"
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.30 1996/02/04 11:17:42 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -13,6 +11,7 @@
 #define SOMAXCONN       5
 #endif
 
+#include "global.h"
 #include "mbuf.h"
 #include "iface.h"
 #include "timer.h"
@@ -293,11 +292,7 @@ void remote_net_initialize(void)
 {
 
   static const char *socketnames[] = {
-#if 1
     "unix:/tcp/.sockets/netcmd",
-#else
-    "*:4718",
-#endif
     0
   };
 

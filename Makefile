@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.28 1995/11/07 22:55:00 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.29 1996/02/04 11:17:32 deyke Exp $
 
 MAKEFILE   = Makefile
 MKDIR      = @if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi
@@ -30,6 +30,38 @@ all:;   @-rm -f $(OBSOLETE)
 	rm -f /tcp/hostaddr.* /tcp/hostname.*
 	/usr/local/etc/mkhostdb >/dev/null 2>&1
 	if [ -f /tcp/hostaddr.db ]; then ln /tcp/hostaddr.db $@; fi
+
+distrib:
+	@version=`awk -F- '/.#.WAMPES-/ {print substr($$2,1,6)}' < src/version.c`; \
+	sources=`find \
+		aos/Makefile \
+		aos/*.[ch] \
+		bbs/bbs.help \
+		bbs/Makefile \
+		bbs/*.[ch] \
+		cc \
+		ChangeLog \
+		convers/Makefile \
+		convers/*.[ch] \
+		doc/?*.* \
+		domain.txt \
+		examples/?*.* \
+		hosts \
+		lib/configure \
+		lib/Makefile \
+		lib/*.[ch] \
+		Makefile \
+		README \
+		src/cc \
+		src/linux_include/*/*.h \
+		src/Makefile \
+		src/*.[ch] \
+		util/Makefile \
+		util/*.[ch] \
+		*.R \
+		! -name configure.h -print`; \
+	tar cvf - $$sources | gzip -9 -v > wampes-$$version.tar.gz; \
+	cp README wampes-$$version.txt
 
 clean:;
 

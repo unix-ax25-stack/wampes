@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.19 1996/01/15 09:29:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.20 1996/02/04 11:17:35 deyke Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -7,12 +7,12 @@
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <stdio.h>
+#include <ctype.h>
 #include "global.h"
 #include "mbuf.h"
 #include "timer.h"
 #include "ax25.h"
 #include "lapb.h"
-#include <ctype.h>
 
 struct ax25_cb *Ax25_cb;
 

@@ -1,8 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25user.c,v 1.8 1996/01/04 19:11:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25user.c,v 1.9 1996/02/04 11:17:36 deyke Exp $ */
 
 /* User interface subroutines for AX.25
  * Copyright 1991 Phil Karn, KA9Q
  */
+#include <ctype.h>
 #include "global.h"
 #include "mbuf.h"
 #include "timer.h"
@@ -10,7 +11,6 @@
 #include "lapb.h"
 #include "ax25.h"
 #include "lapb.h"
-#include <ctype.h>
 
 /* Open an AX.25 connection */
 struct ax25_cb *

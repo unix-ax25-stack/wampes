@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.15 1995/03/13 13:32:23 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.16 1996/02/04 11:17:46 deyke Exp $
 
 save_file()
 {
@@ -23,6 +23,7 @@ if [[ ! -f .trimtime ]]; then
 fi
 
 for file in $(find * -prune -type f \( \
+	-name 'ChangeLog' -o \
 	-name 'configure' -o \
 	-name 'doc' -o \
 	-name 'fixnetrc' -o \

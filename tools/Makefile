@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.27 1995/06/19 11:20:34 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.28 1996/02/04 11:17:45 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -166,3 +166,4 @@ depend:; @mkmf -f $(MAKEFILE)
 ###
 bridge.o: ../lib/buildsaddr.h
 check_seteugid.o: ../lib/seteugid.h
+hs.o: ../lib/buildsaddr.h
