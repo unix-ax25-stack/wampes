@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.24 1994/04/05 14:07:43 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.25 1994/04/09 15:30:17 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -4353,11 +4353,11 @@
 #
 #     Eric LANGHENDRIES,
 #       ON7LE / KA3WII
-#   27, rue des Carriäres,
+#   27, rue des Carrieres,
 #   B-5570         WINENNE
 #          BELGIUM
 #
-#   Date: 14/FEB/1994.
+#   Date: 08/APR/1994.
 #
 #
 # I DO NOT SEND UNNECESSARY LISTS WHEN THERE ARE NO CHANGES !!!!!
@@ -4383,6 +4383,12 @@
 44.144.10.1     on1anr  on1anr.ampr.org #TCP-IP node,Antwerpen
 #
 #Province of Brabant
+#
+# ATTENTION ATTENTION ATTENTION
+# As from the 01/01/95 there will be a new system for Brabant and/or Brussels
+# ---------------------------------------------------------------------------
+#             ========
+# I will already include the changes BUT NOT ACTIVATE those changes
 #
 44.144.2.1      on7kl   on7kl.ampr.org  #Ted,Bruxelles
 44.144.2.2      on5eb   on5eb.ampr.org  #Jean,Kraainem
@@ -4446,7 +4452,7 @@
 44.144.2.60     sys2.on1aqc  sys2.on1aqc.ampr.org    #Stefaan,Brussel
 44.144.2.61     sys2.on5vy   sys2.on5vy.ampr.org     #Tony,Bruxelles
 44.144.2.62     on1arx  on1arx.ampr.org #Ken,St.Pieters-Leeuw
-44.144.2.63     on1beu  on1beu.ampr.org #Erik, Tildonk
+44.144.2.63     on1beu  on1beu.ampr.org #Erik,Tildonk
 44.144.2.64     on7yi   on7yi.ampr.org  #Peter,Couture-St-Germain
 44.144.2.65     on1bxb  on1bxb.ampr.org #Bartel,Leuven
 44.144.2.66     on1bge  on1bge.ampr.org #Eddy,Erps-Kwerps
@@ -4455,6 +4461,86 @@
 44.144.2.69     on7be   on7be.ampr.org  #Bernard,Limal
 44.144.2.70     on1adb  on1adb.ampr.org #Erik,Dilbeek
 44.144.2.73     on6lo   on6lo.ampr.org  #Patrice,Koekelberg
+#
+#Region of Brussels (Capital-city = 19 communes)
+#
+#44.144.21.1    on7kl   on7kl.ampr.org  #Ted,Bruxelles
+#44.144.21.3    on7jb   on7jb.ampr.org  #Jacques,Bruxelles
+#44.144.21.14   on6yo   on6yo.ampr.org  #Daniel,Bruxelles
+#44.144.21.16   on7nu   on7nu.ampr.org  #Daniel,Bruxelles
+#44.144.21.17   on5av   on5av.ampr.org  #Patrick,Bruxelles
+#44.144.21.22   on5xl   on5xl.ampr.org  #Red Cross Emergency Stn,Brussels
+#44.144.21.23   on1bz   on1bz.ampr.org  #Marc,Bruxelles
+#44.144.21.24   on1kdx  on1kdx.ampr.org #Philippe,Bruxelles
+#44.144.21.28   sys1.on5vy  sys1.on5vy.ampr.org #Tony,Bruxelles
+#44.144.21.29   on5iq   on5iq.ampr.org  #William,Bruxelles
+#44.144.21.32   on6mh   on6mh.ampr.org  #Michel,Bruxelles
+#44.144.21.33   on9cmb  on9cmb.ampr.org #Martine,Bruxelles
+#44.144.21.45   on1aqc  on1aqc.ampr.org #Stefaan,Brussel
+#44.144.21.46   on1bgx  on1bgx.ampr.org #Xavier,Brussel
+#44.144.21.47   on1aog  on1aog.ampr.org #Bart,Brussel
+#44.144.21.49   on6ky   on6ky.ampr.org  #Andre,Bruxelles
+#44.144.21.54   on6zq   on6zq.ampr.org  #Christophe,Bruxelles
+#44.144.21.60   sys2.on1aqc  sys2.on1aqc.ampr.org    #Stefaan,Brussel
+#44.144.21.61   sys2.on5vy   sys2.on5vy.ampr.org     #Tony,Bruxelles
+#44.144.21.73   on6lo   on6lo.ampr.org  #Patrice,Bruxelles
+#
+#Province of Flemish-Brabant
+#
+#44.144.22.2    on5eb   on5eb.ampr.org  #Jean,Kraainem
+#44.144.22.4    on7im   on7im.ampr.org  #Robert,Opwijk
+#44.144.22.5    on4awv  on4awv.ampr.org #Wim,Leuven
+#44.144.22.6    on1caj  on1caj.ampr.org #Henri,Kortenberg
+#44.144.22.7    on7um   on7um.ampr.org  #Andre,Lubbeek
+#44.144.22.8    on1bgo  on1bgo.ampr.org #Andre,Leuven
+#44.144.22.9    on4aod  on4aod.ampr.org #Daniel,Leuven
+#44.144.22.10   on7fh   on7fh.ampr.org  #Herman,Aarschot
+#44.144.22.11   on4dst  on4dst.ampr.org #Klub,Diest
+#44.144.22.12   on1cbt  on1cbt.ampr.org #Marc,Diest
+#44.144.22.13   on7vq   on7vq.ampr.org  #Freddy,Erps-Kwerps
+#44.144.22.15   on4aau  on4aau.ampr.org #Marc,Kortenberg
+#44.144.22.18   on4dv   on4dv.ampr.org  #Bob,Herent
+#44.144.22.20   on1bet  on1bet.ampr.org #Dirk,Herent
+#44.144.22.21   on4afr  on4afr.ampr.org #Wim,Kessel-Lo
+#44.144.22.26   on4awn  on4awn.ampr.org #Herman,Erps-Kwerps
+#44.144.22.30   on9cep  on9cep.ampr.org #Achim,Wezembeek
+#44.144.22.31   on7hu   on7hu.ampr.org  #Walter,Zoutleeuw
+#44.144.22.34   on9bas  on9bas.ampr.org #Mike,Wezembeek
+#44.144.22.35   on1kvx  on1kvx.ampr.org #Yves,Opwijk
+#44.144.22.36   on1aml  on1aml.ampr.org #Patrick,Zemst-Elewijt
+#44.144.22.37   on4cp-6 on4cp-6.ampr.org #Radio Club "De Antenne",Leuven
+#44.144.22.38   on1cfx-1 on1cfx-1.ampr.org #Christophe,Leuven
+#44.144.22.39   on4jg   on4jg.ampr.org  #Edmond,Grimbergen
+#44.144.22.55   on1cht  on1cht.ampr.org #Peter,Deurne-Diest
+#44.144.22.56   on6ng   on6ng.bt.be.ampr.org  #Marc,Leuven
+#44.144.22.57   on1bno  on1bno.ampr.org #Noach,Linter
+#44.144.22.58   on1mh   on1mh.ampr.org  #Johan,Everberg
+#44.144.22.59   on4id   on4id.ampr.org  #Medard,Jezus-Eik
+#44.144.22.62   on1arx  on1arx.ampr.org #Ken,St.Pieters-Leeuw
+#44.144.22.63   on1beu  on1beu.ampr.org #Erik,Tildonk
+#44.144.22.65   on1bxb  on1bxb.ampr.org #Bartel,Leuven
+#44.144.22.66   on1bge  on1bge.ampr.org #Eddy,Erps-Kwerps
+#44.144.22.67   on6ng-sys  on6ng-sys.bt.be.ampr.org  #Marc,Leuven
+#44.144.22.68   on1azh  on1azh.ampr.org #Louis,Oud-Heverlee
+#44.144.22.70   on1adb  on1adb.ampr.org #Erik,Dilbeek
+#
+#Province of Wallon-Brabant
+#
+#44.144.23.19   on1kjp  on1kjp.ampr.org #Jean-Pierre,St.Jean Geest
+#44.144.23.25   on4kch  on4kch.ampr.org #Jean-Pierre,Jodoigne
+#44.144.23.27   on1kjp-3  on1kjp-3.ampr.org #Jean-Pierre,St.Jean Geest
+#44.144.23.40   on1klm  on1klm.ampr.org #Michel,Lasne
+#44.144.23.41   on4kch-1  on4kch-1.ampr.org       #Jean-Pierre,Jodoigne
+#44.144.23.42   sys2.on5yf  sys2.on5yf.ampr.org   #Daniel,Rixensart
+#44.144.23.43   sys1.on5yf  sys1.on5yf.ampr.org   #Daniel,Rixensart
+#44.144.23.44   on5yf   on5yf.ampr.org  #Daniel,Rixensart
+#44.144.23.48   on6lf   on6lf.ampr.org  #Jean,Nil-St.Vincent
+#44.144.23.50   on4wx   on4wx.ampr.org  #Stephan,Nivelles
+#44.144.23.51   on7zd   on7zd.ampr.org  #Jacques,Jandrenouille
+#44.144.23.52   on1kot  on1kot.ampr.org #Marc,Rebecq
+#44.144.23.53   on1lhj  on1lhj.ampr.org #Jean-Francois,Nivelles
+#44.144.23.64   on7yi   on7yi.ampr.org  #Peter,Couture-St-Germain
+#44.144.23.69   on7be   on7be.ampr.org  #Bernard,Limal
 #
 #Province of Hainaut
 #
@@ -4494,6 +4580,7 @@
 44.144.3.34     on9acn  on9acn.ampr.org #Christos,Mons
 44.144.3.35     on1lvl  on1lvl.ampr.org #Luc,Montignies-sur-Sambre
 44.144.3.36     on6op   on6op.ampr.org  #Bernard,Hornu
+44.144.3.37     on5jj   on5jj.ampr.org  #Jeannot,Charleroi
 44.144.30.1     on4hu-5 on4hu-5.ampr.org  #Server,Mouscron
 44.144.30.2     on6rm   on6rm.ampr.org  #Radio-Club du Borinage,Server
 44.144.30.3     on6cm   on6cm.ampr.org  #Radio-Club,Server
@@ -4526,9 +4613,9 @@
 44.144.4.18     on1kcf-1 on1kcf-1.ampr.org  #Jean,Baelen
 44.144.4.19     on1lbo  on1lbo.ampr.org #Olivier,Stembert
 44.144.4.20     on6dp   on6dp.ampr.org  #Paul,Plainevaux
-44.144.5.21     on1ktz  on1ktz.ampr.org #Jean-Marie,Lierneux
-44.144.5.22     on5dg   on5dg.ampr.org  #Guy,Boncelles
-44.144.5.23     on5ni   on5ni.ampr.org  #Jacques,Boncelles
+44.144.4.21     on1ktz  on1ktz.ampr.org #Jean-Marie,Lierneux
+44.144.4.22     on5dg   on5dg.ampr.org  #Guy,Boncelles
+44.144.4.23     on5ni   on5ni.ampr.org  #Jacques,Boncelles
 44.144.40.1     on5pl-6 on5pl-6.ampr.org  #Server
 #
 #Province of Limburg
@@ -4549,6 +4636,8 @@
 44.144.5.14     on1byi  on1byi.ampr.org #Yvo,St-Truiden
 44.144.5.15     on1auw  on1auw.ampr.org #Ennio,Beringen-Mijn
 44.144.5.16     on1ank  on1ank.ampr.org #Alfons,Kaulille
+44.144.5.17     on1afn  on1afn.ampr.org #Filip,Genk
+44.144.5.18     on4fk   on4fk.ampr.org  #Filip,Bree
 44.144.50.1     on4aic-8  on4aic-8.ampr.org  #Klubstation (LPV),Hasselt
 #
 #Province of Luxemburg
@@ -4634,6 +4723,8 @@
 44.144.8.21     on1hc   on1hc.ampr.org  #Luc,Wondelgem
 44.144.8.22     on1bdv  on1bdv.ampr.org #Arnout,Aalst
 44.144.8.23     on6ej   on6ej.ampr.org  #Jan,Aalst
+44.144.8.24     on4gj   on4gj.ampr.org  #Johan,Wondelgem
+44.144.8.25     on7ko-1 on7ko-1.ampr.org #Omer,Vrasene
 #
 #Province of West-Flanders
 #

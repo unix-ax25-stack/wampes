@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/seteugid.c,v 1.1 1994/01/21 11:12:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/seteugid.c,v 1.2 1994/04/09 15:30:51 deyke Exp $ */
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -20,7 +20,8 @@ void seteugid(int uid, int gid)
 #elif defined _AIX
     setuidx(ID_REAL | ID_EFFECTIVE, uid);
 #else
-    setreuid(-1, uid);
+    setreuid(0, 0);
+    setreuid(0, uid);
 #endif
   } else {
     setuid(0);
