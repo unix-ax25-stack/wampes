@@ -1,4 +1,4 @@
-/* @(#) $Id: mail_smtp.c,v 1.21 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: mail_smtp.c,v 1.22 2002/01/12 16:09:55 dl9sau Exp $ */
 
 /* SMTP Mail Delivery Agent */
 
@@ -52,6 +52,9 @@ static void mail_smtp_transaction(struct mesg *mp)
 		 (mp->buf[3] == ' ' || mp->buf[3] == '-'));
   if (mp->state == SMTP_OPEN_STATE && !valid_reply) return;
   if (valid_reply && mp->buf[3] == '-') return;
+  // linux sendmail sends CR-LF. linux axspawn converts it to LF-LF. ->
+  // ignore empty line
+  if (!mp->buf[0]) return;
   if (valid_reply && *mp->buf == (mp->state == SMTP_DATA_STATE ? '3' : '2'))
     switch (mp->state) {
     case SMTP_OPEN_STATE:
@@ -199,8 +202,10 @@ void mail_smtp(struct mailsys *sp)
     mp->tp->recv_mode = EOL_LF;
     mp->tp->send_mode = strcmp(sp->protocol, "tcp") ? EOL_CR : EOL_CRLF;
     transport_set_timeout(mp->tp, 3600);
-    if (strcmp(sp->protocol, "tcp"))
+    if (strcmp(sp->protocol, "tcp")) {
+      transport_send(mp->tp, qdata("\n", 1));	// trigger
       transport_send(mp->tp, qdata("cmd.smtp\n", 9));
+    }
   } else {
     mailer_failed(sp);
     free(mp);
