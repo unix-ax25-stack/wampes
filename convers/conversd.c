@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.47 1993/07/19 20:50:32 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.48 1993/07/28 21:19:06 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -73,7 +73,7 @@ extern int optind;
 #include "md5.h"
 #endif
 
-#define HOLDTIME        (  30*60)
+#define HOLDTIME        (  60*60)
 #define MAX_CHANNEL     32767
 #define MAX_IDLETIME    (  60*60)
 #define MAX_UNKNOWNTIME (  15*60)
@@ -161,7 +161,7 @@ static int is_string_unique(const char *string);
 static void make_string_unique(char *string);
 static struct host *hostptr(const char *name);
 static struct user *userptr(const char *name, struct host *hp);
-static void trace(struct link *lp, const char *string);
+static void trace(int outbound, struct link *lp, const char *string);
 static void send_string(struct link *lp, const char *string);
 static int queuelength(const struct mbuf *mp);
 static void free_resources(void);
@@ -415,9 +415,10 @@ static struct user *userptr(const char *name, struct host *hp)
 
 /*---------------------------------------------------------------------------*/
 
-static void trace(struct link *lp, const char *string)
+static void trace(int outbound, struct link *lp, const char *string)
 {
 
+  char *cp;
   char *name;
   char buf[16];
 
@@ -427,7 +428,12 @@ static void trace(struct link *lp, const char *string)
     name = lp->l_host->h_name;
   else
     sprintf(name = buf, "%p", lp);
-  printf("%s->%s: %s", my.h_name, name, string);
+  cp = ctime(&currtime);
+  cp[24] = 0;
+  if (outbound)
+    printf("\n%s SEND %s->%s:\n%s", cp, my.h_name, name, string);
+  else
+    printf("\n%s RECV %s->%s:\n%s", cp, name, my.h_name, string);
   fflush(stdout);
 }
 
@@ -441,7 +447,7 @@ static void send_string(struct link *lp, const char *string)
   struct mbuf *p;
 
   if (!*string) return;
-  if (debug) trace(lp, string);
+  if (debug) trace(1, lp, string);
   len = strlen(string);
   mp = (struct mbuf *) malloc(sizeof(*mp) + len);
   mp->m_next = 0;
@@ -1198,7 +1204,7 @@ static void name_command(struct link *lp)
   if (lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.47 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.48 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1474,6 +1480,8 @@ static void process_input(struct link *lp)
   const struct command * cp;
   int arglen;
 
+  if (debug) trace(0, lp, lp->l_ibuf);
+
   clear_locks();
   lp->l_locked = 1;
 
@@ -1585,6 +1593,7 @@ static void link_recv(struct link *lp)
       case '\n':
       case '\r':
 	if (lp->l_icnt) {
+	  lp->l_ibuf[lp->l_icnt++] = '\n';
 	  lp->l_ibuf[lp->l_icnt] = 0;
 	  lp->l_icnt = 0;
 	  process_input(lp);
@@ -1682,7 +1691,7 @@ int main(int argc, char **argv)
       conffile = optarg;
       break;
     case 'd':
-      debug = 1;
+      debug++;
       min_waittime = 1;
       break;
     case '?':
