@@ -1,8 +1,9 @@
 #! /bin/csh -f
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.6 1993/06/13 18:36:57 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.7 1993/10/14 14:00:45 deyke Exp $
 
 tcpremove
+~/tcp/configure > ~/tcp/lib/configure.h
 foreach dir ( \
 	~/tcp \
 	~/tcp/bbs \

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.46 1993/09/22 16:44:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.47 1993/10/14 14:00:36 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -25,6 +25,8 @@
 #undef LOGIN_PROCESS
 extern struct utmp *getutent();
 #endif
+
+#include "configure.h"
 
 #include "global.h"
 #include "mbuf.h"
@@ -569,22 +571,6 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
 void login_close(struct login_cb *tp)
 {
 
-#ifndef UTMP_FILE
-#ifdef _PATH_UTMP
-#define UTMP_FILE       _PATH_UTMP
-#else
-#define UTMP_FILE       "/etc/utmp"
-#endif
-#endif
-
-#ifndef WTMP_FILE
-#ifdef _PATH_WTMP
-#define WTMP_FILE       _PATH_WTMP
-#else
-#define WTMP_FILE       "/var/adm/wtmp"
-#endif
-#endif
-
   char slave[80];
   int fdut = -1;
   struct utmp utmpbuf;
@@ -605,7 +591,7 @@ void login_close(struct login_cb *tp)
   if (tp->pid > 0) {
     kill(-tp->pid, SIGHUP);
     pty_name(slave, SLAVEPREFIX, tp->num);
-    if ((fdut = open(UTMP_FILE, O_RDWR, 0644)) >= 0) {
+    if (*UTMP__FILE && (fdut = open(UTMP__FILE, O_RDWR, 0644)) >= 0) {
       while (read(fdut, &utmpbuf, sizeof(utmpbuf)) == sizeof(utmpbuf))
 	if (!strncmp(utmpbuf.ut_line, slave + 5, sizeof(utmpbuf.ut_line))) {
 	  utmpbuf.ut_name[0] = 0;
@@ -620,7 +606,7 @@ void login_close(struct login_cb *tp)
 	  lseek(fdut, -sizeof(utmpbuf), SEEK_CUR);
 	  write(fdut, &utmpbuf, sizeof(utmpbuf));
 	  close(fdut);
-	  if ((fdut = open(WTMP_FILE, O_WRONLY | O_CREAT | O_APPEND, 0644)) >= 0)
+	  if (*WTMP__FILE && (fdut = open(WTMP__FILE, O_WRONLY | O_CREAT | O_APPEND, 0644)) >= 0)
 	    write(fdut, &utmpbuf, sizeof(utmpbuf));
 	  break;
 	}

@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.1 1993/10/13 22:32:08 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.2 1993/10/14 14:00:15 deyke Exp $
 
 findfile()
 {
@@ -45,6 +45,8 @@ finddir MAIL_DIR /var/mail /var/spool/mail /usr/mail
 finddir UUCP_DIR /var/spool/uucp /usr/spool/uucp
 
 findfile ALIASES_FILE /etc/aliases /usr/lib/aliases
+findfile UTMP__FILE /var/adm/utmp /var/run/utmp /etc/utmp
+findfile WTMP__FILE /var/adm/wtmp /var/log/wtmp /usr/adm/wtmp /etc/wtmp
 
 findprog GZIP_PROG /usr/bin/gzip /usr/local/bin/gzip
 findprog MAIL_PROG /usr/openwin/bin/xview/mail /bin/mailx /usr/bin/mailx /bin/mail /usr/bin/mail

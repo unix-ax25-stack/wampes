@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.56 1993/10/13 22:31:14 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.57 1993/10/14 14:00:23 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -47,14 +47,6 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #define S_IWOTH         2
 #endif
 
-#ifndef UTMP_FILE
-#ifdef _PATH_UTMP
-#define UTMP_FILE       _PATH_UTMP
-#else
-#define UTMP_FILE       "/etc/utmp"
-#endif
-#endif
-
 #ifndef WNOHANG
 #define WNOHANG         1
 #endif
@@ -72,6 +64,7 @@ extern int optind;
 #define USE_MD5         1
 
 #include "buildsaddr.h"
+#include "configure.h"
 #include "strdup.h"
 #if USE_MD5
 #include "md5.h"
@@ -813,7 +806,7 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
       return;
     }
 
-  if ((fdut = open(UTMP_FILE, O_RDONLY, 0644)) >= 0) {
+  if (*UTMP__FILE && (fdut = open(UTMP__FILE, O_RDONLY, 0644)) >= 0) {
     while (read(fdut, &utmpbuf, sizeof(utmpbuf)) == sizeof(utmpbuf))
       if (
 #ifdef USER_PROCESS
@@ -1208,7 +1201,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.56 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.57 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
