@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.26 1992/01/12 18:40:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.27 1992/05/14 13:20:17 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -103,10 +103,10 @@ char *argv[];
 	Cmdpp = mainproc("cmdintrp");
 
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
-	tprintf("\n================ %s ================\n", Version);
-	tprintf("(c) Copyright 1990-1992 by Dieter Deyke, DK5SG / N0PRA\n");
-	tprintf("(c) Copyright 1991 by Phil Karn, KA9Q\n");
-	tprintf("\n");
+	printf("\n================ %s ================\n", Version);
+	printf("(c) Copyright 1990-1992 by Dieter Deyke, DK5SG / N0PRA\n");
+	printf("(c) Copyright 1991 by Phil Karn, KA9Q\n");
+	printf("\n");
 
 	/* Start background Daemons */
 	for(tp=Daemons;;tp++){
@@ -118,7 +118,7 @@ char *argv[];
 	if(optind < argc){
 		/* Read startup file named on command line */
 		if((fp = fopen(argv[optind],READ_TEXT)) == NULLFILE)
-			tprintf("Can't read config file %s: %s\n",
+			printf("Can't read config file %s: %s\n",
 			 argv[optind],sys_errlist[errno]);
 	} else {
 		fp = fopen(Startup,READ_TEXT);
@@ -128,9 +128,9 @@ char *argv[];
 			char intmp[BUFSIZ];
 			strcpy(intmp,linebuf);
 			if(Verbose)
-				tprintf("%s",intmp);
+				printf("%s",intmp);
 			if(cmdparse(Cmds,linebuf,NULL) != 0){
-				tprintf("input line: %s",intmp);
+				printf("input line: %s",intmp);
 			}
 		}
 		fclose(fp);
@@ -152,7 +152,7 @@ cmdmode()
 	if(Mode != CMD_MODE){
 		Mode = CMD_MODE;
 		cooked();
-		tprintf(Prompt,Hostname);
+		printf(Prompt,Hostname);
 	}
 	return 0;
 }
@@ -183,7 +183,7 @@ int c;
 		break;
 	}
 	if (Mode == CMD_MODE)
-		tprintf(Prompt, Hostname);
+		printf(Prompt, Hostname);
 }
 /* Keyboard input process */
 void
@@ -215,7 +215,7 @@ void *p;
 
 	n = atoi(argv[1]) - 1;
 	if (n < 0 || n >= NUM_FKEY) {
-		tprintf("key# must be 1..%d\n", NUM_FKEY);
+		printf("key# must be 1..%d\n", NUM_FKEY);
 		return 1;
 	}
 	if (Fkey_table[n])
@@ -234,7 +234,7 @@ void *p;
 
 	for(i=1;i < argc; i++){
 		if(unlink(argv[i]) == -1){
-			tprintf("Can't delete %s: %s\n",
+			printf("Can't delete %s: %s\n",
 			 argv[i],sys_errlist[errno]);
 		}
 	}
@@ -247,7 +247,7 @@ char *argv[];
 void *p;
 {
 	if(rename(argv[1],argv[2]) == -1)
-		tprintf("Can't rename: %s\n",sys_errlist[errno]);
+		printf("Can't rename: %s\n",sys_errlist[errno]);
 	return 0;
 }
 int
@@ -280,14 +280,14 @@ char *argv[];
 void *p;
 {
 	if(argc < 2)
-		tprintf("%s\n",Hostname);
+		printf("%s\n",Hostname);
 	else {
 		struct iface *ifp;
 		char *name;
 
 		if((ifp = if_lookup(argv[1])) != NULLIF){
 			if((name = resolve_a(ifp->addr, FALSE)) == NULLCHAR){
-				tprintf("Interface address not resolved\n");
+				printf("Interface address not resolved\n");
 				return 1;
 			} else {
 				if(Hostname != NULLCHAR)
@@ -298,7 +298,7 @@ void *p;
 				if ( Hostname[strlen(Hostname)] == '.' ) {
 					Hostname[strlen(Hostname)] = '\0';
 				}
-				tprintf("Hostname set to %s\n", name );
+				printf("Hostname set to %s\n", name );
 			}
 		} else {
 			if(Hostname != NULLCHAR)
@@ -319,9 +319,9 @@ void *p;
 
 	if(argc < 2){
 		if(Logfp)
-			tprintf("Logging to %s\n",logname);
+			printf("Logging to %s\n",logname);
 		else
-			tprintf("Logging off\n");
+			printf("Logging off\n");
 		return 0;
 	}
 	if(Logfp){
@@ -367,24 +367,24 @@ void *p;
 	int32 val;
 
 	if((ifp = if_lookup(argv[1])) == NULLIF){
-		tprintf("Interface \"%s\" unknown\n",argv[1]);
+		printf("Interface \"%s\" unknown\n",argv[1]);
 		return 1;
 	}
 	if(ifp->ioctl == NULL){
-		tprintf("Not supported\n");
+		printf("Not supported\n");
 		return 1;
 	}
 	if(argc < 3){
 		for(param=1;param<=16;param++){
 			val = (*ifp->ioctl)(ifp,param,FALSE,0L);
 			if(val != -1)
-				tprintf("%s: %ld\n",parmname(param),val);
+				printf("%s: %ld\n",parmname(param),val);
 		}
 		return 0;
 	}
 	param = devparam(argv[2]);
 	if(param == -1){
-		tprintf("Unknown parameter %s\n",argv[2]);
+		printf("Unknown parameter %s\n",argv[2]);
 		return 1;
 	}
 	if(argc < 4){
@@ -396,9 +396,9 @@ void *p;
 	}
 	val = (*ifp->ioctl)(ifp,param,set,val);
 	if(val == -1){
-		tprintf("Parameter %s not supported\n",argv[2]);
+		printf("Parameter %s not supported\n",argv[2]);
 	} else {
-		tprintf("%s: %ld\n",parmname(param),val);
+		printf("%s: %ld\n",parmname(param),val);
 	}
 	return 0;
 }
@@ -444,11 +444,11 @@ void *p;
 	register struct iface *ifp;
 
 	if((ifp = if_lookup(argv[1])) == NULLIF){
-		tprintf("Interface \"%s\" unknown\n",argv[1]);
+		printf("Interface \"%s\" unknown\n",argv[1]);
 		return 1;
 	}
 	if(argc < 3){
-		tprintf("%s: %s\n",ifp->name,
+		printf("%s: %s\n",ifp->name,
 		 (ifp->flags & CONNECT_MODE) ? "VC mode" : "Datagram mode");
 		return 0;
 	}
@@ -464,7 +464,7 @@ void *p;
 		ifp->flags = DATAGRAM_MODE;
 		break;
 	default:
-		tprintf("Usage: %s [vc | datagram]\n",argv[0]);
+		printf("Usage: %s [vc | datagram]\n",argv[0]);
 		return 1;
 	}
 	return 0;
@@ -478,7 +478,7 @@ char *argv[];
 void *p;
 {
 	if(argc < 2)
-		tprintf("0x%x\n",Escape);
+		printf("0x%x\n",Escape);
 	else
 		Escape = *argv[1];
 	return 0;
@@ -522,14 +522,14 @@ void *p;
 		}
 	}
 	if(optind > argc - 2){
-		tprintf("Insufficient args\n");
+		printf("Insufficient args\n");
 		return -1;
 	}
 	host = argv[optind++];
 	cmd = argv[optind];
 
 	if (!(fsock.address = resolve(host))) {
-		tprintf("Host %s unknown\n",host);
+		printf("Host %s unknown\n",host);
 		return 1;
 	}
 	lsock.address = INADDR_ANY;
@@ -569,7 +569,7 @@ void *p;
 		}
 		break;
 	default:
-		tprintf("Unknown command %s\n",cmd);
+		printf("Unknown command %s\n",cmd);
 		free_p(bp);
 		return 1;
 	}
@@ -598,7 +598,7 @@ void *p;
   char  linebuf[BUFSIZ];
 
   if (!(fp = fopen(argv[1], "r"))) {
-    tprintf("cannot open %s\n", argv[1]);
+    printf("cannot open %s\n", argv[1]);
     return 1;
   }
   while (fgets(linebuf, BUFSIZ, fp))
@@ -623,9 +623,9 @@ void *p;
   if (argc < 2) {
     tmp = rtprio(0, RTPRIO_NOCHG);
     if (tmp == RTPRIO_RTOFF)
-      tprintf("Rtprio off\n");
+      printf("Rtprio off\n");
     else
-      tprintf("Rtprio %d\n", tmp);
+      printf("Rtprio %d\n", tmp);
   } else {
     tmp = atoi(argv[1]);
     if (tmp <= 0 || tmp > 127) tmp = RTPRIO_RTOFF;

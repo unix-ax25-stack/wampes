@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.5 1991/05/09 07:38:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.6 1992/05/14 13:19:48 deyke Exp $ */
 
 /* Parse command line, set up command arguments Unix-style, and call function.
  * Note: argument is modified (delimiters are overwritten with nulls)
@@ -187,13 +187,13 @@ void *p;
 	}
 	if(cmdp->name == NULLCHAR) {
 		if(cmdp->argc_errmsg != NULLCHAR)
-			tprintf("%s\n",cmdp->argc_errmsg);
+			printf("%s\n",cmdp->argc_errmsg);
 		return -1;
 	} else {
 		argv[0] = cmdp->name;
 		if(argc < cmdp->argcmin) {
 			/* Insufficient arguments */
-			tprintf("Usage: %s\n",cmdp->argc_errmsg);
+			printf("Usage: %s\n",cmdp->argc_errmsg);
 			return -1;
 		} else {
 				return (*cmdp->func)(argc,argv,p);
@@ -215,9 +215,9 @@ void *p;
 	/* Strip off first token and pass rest of line to subcommand */
 	if (argc < 2) {
 		if (argc < 1)
-			tprintf("SUBCMD - Don't know what to do?\n");
+			printf("SUBCMD - Don't know what to do?\n");
 		else {
-			tprintf("\"%s\" subcommands:\n", argv[0]);
+			printf("\"%s\" subcommands:\n", argv[0]);
 			print_help(tab);
 		}
 		return -1;
@@ -231,14 +231,14 @@ void *p;
 		}
 	}
 	if(!found){
-		tprintf("\"%s\" subcommands:\n", argv[-1]);
+		printf("\"%s\" subcommands:\n", argv[-1]);
 		print_help(tab);
 		return -1;
 	}
 	argv[0] = cmdp->name;
 	if(argc < cmdp->argcmin){
 		if(cmdp->argc_errmsg != NULLCHAR)
-			tprintf("Usage: %s\n",cmdp->argc_errmsg);
+			printf("Usage: %s\n",cmdp->argc_errmsg);
 		return -1;
 	}
 		return (*cmdp->func)(argc,argv,p);
@@ -250,7 +250,7 @@ register struct cmds *cmdp;
 	register int  i;
 
 	for (i = 0; cmdp->name; cmdp++, i++)
-		tprintf((i % 5) < 4 ? "%-16s" : "%s\n", cmdp->name);
+		printf((i % 5) < 4 ? "%-16s" : "%s\n", cmdp->name);
 	if (i % 5) putchar('\n');
 	putchar('\n');
 	return 0;
@@ -267,7 +267,7 @@ char *argv[];
 	struct boolcmd *bc;
 
 	if(argc < 2){
-		tprintf("%s: %s\n",label,*var ? "on":"off");
+		printf("%s: %s\n",label,*var ? "on":"off");
 		return 0;
 	}
 	for(bc = Boolcmds;bc->str != NULLCHAR;bc++){
@@ -276,11 +276,11 @@ char *argv[];
 			return 0;
 		}
 	}
-	tprintf("Valid options:");
+	printf("Valid options:");
 	for(bc = Boolcmds;bc->str != NULLCHAR;bc++)
-		if(tprintf(" %s",bc->str) == EOF)
+		if(printf(" %s",bc->str) == EOF)
 			return 1;
-	tprintf("\n");
+	printf("\n");
 	return 1;
 }
 
@@ -314,7 +314,7 @@ int argc;
 char *argv[];
 {
 	if(argc < 2)
-		tprintf("%s: %ld\n",label,*var);
+		printf("%s: %ld\n",label,*var);
 	else
 		*var = atol(argv[1]);
 
@@ -329,7 +329,7 @@ int argc;
 char *argv[];
 {
 	if(argc < 2)
-		tprintf("%s: %u\n",label,*var);
+		printf("%s: %u\n",label,*var);
 	else
 		*var = atoi(argv[1]);
 
@@ -344,7 +344,7 @@ int argc;
 char *argv[];
 {
 	if(argc < 2)
-		tprintf("%s: %i\n",label,*var);
+		printf("%s: %i\n",label,*var);
 	else
 		*var = atoi(argv[1]);
 
@@ -360,7 +360,7 @@ int argc;
 char *argv[];
 {
 	if(argc < 2)
-		tprintf("%s: %u\n",label,*var);
+		printf("%s: %u\n",label,*var);
 	else
 		*var = atoi(argv[1]);
 
@@ -378,11 +378,11 @@ int  minval;
 int  maxval;
 {
   if (argc < 2)
-    tprintf("%s: %i\n", label, *var);
+    printf("%s: %i\n", label, *var);
   else {
     int  tmp = atoi(argv[1]);
     if (tmp < minval || tmp > maxval) {
-      tprintf("%s must be %i..%i\n", label, minval, maxval);
+      printf("%s must be %i..%i\n", label, minval, maxval);
       return 1;
     }
     *var = tmp;

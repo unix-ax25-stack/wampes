@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.9 1992/01/08 13:45:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.10 1992/05/14 13:19:49 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -200,6 +200,9 @@ int smtp0 __ARGS((int argc,char *argv[],void *p));
 /* In sockcmd.c: */
 int dosock __ARGS((int argc,char *argv[],void *p));
 
+/* In stdio.c: */
+int dofiles __ARGS((int argc,char *argv[],void *p));
+
 /* In sw.c: */
 int doswatch __ARGS((int argc,char *argv[],void *p));
 
@@ -227,7 +230,9 @@ int doudp __ARGS((int argc,char *argv[],void *p));
 /* In various files: */
 
 int axip_attach __ARGS((int argc,char *argv[],void *p));
+int axudp_attach __ARGS((int argc,char *argv[],void *p));
 int doaxip __ARGS((int argc,char *argv[],void *p));
+int doaxudp __ARGS((int argc,char *argv[],void *p));
 int dobye __ARGS((int argc,char *argv[],void *p));
 int dofkey __ARGS((int argc,char *argv[],void *p));
 int dortprio __ARGS((int argc,char *argv[],void *p));

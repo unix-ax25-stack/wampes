@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.8 1991/07/16 17:54:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.9 1992/05/14 13:19:41 deyke Exp $ */
 
 /* ARP commands
  * Copyright 1991, Phil Karn, KA9Q
@@ -75,7 +75,7 @@ void *p;
 	if(argv[0][0] == 'p')   /* Is this entry published? */
 		pub = 1;
 	if((addr = resolve(argv[1])) == 0){
-		tprintf(Badhost,argv[1]);
+		printf(Badhost,argv[1]);
 		return 1;
 	}
 	/* This is a kludge. It really ought to be table driven */
@@ -95,7 +95,7 @@ void *p;
 			hardware = ARP_ARCNET;
 			break;
 		default:
-			tprintf("unknown hardware type \"%s\"\n",argv[2]);
+			printf("unknown hardware type \"%s\"\n",argv[2]);
 			return -1;
 		}
 		break;
@@ -103,7 +103,7 @@ void *p;
 		hardware = ARP_APPLETALK;
 		break;
 	default:
-		tprintf("unknown hardware type \"%s\"\n",argv[2]);
+		printf("unknown hardware type \"%s\"\n",argv[2]);
 		return -1;
 	}
 	/* If an entry already exists, clear it */
@@ -112,7 +112,7 @@ void *p;
 
 	at = &Arp_type[hardware];
 	if(at->scan == NULLFP){
-		tprintf("Attach device first\n");
+		printf("Attach device first\n");
 		return 1;
 	}
 	/* Allocate buffer for hardware address and fill with remaining args */
@@ -137,7 +137,7 @@ void *p;
 	struct arp_tab *ap;
 
 	if((addr = resolve(argv[1])) == 0){
-		tprintf(Badhost,argv[1]);
+		printf(Badhost,argv[1]);
 		return 1;
 	}
 	/* This is a kludge. It really ought to be table driven */
@@ -203,33 +203,33 @@ dumparp()
 	char e[128];
 
 	arp_loadfile();
-	tprintf("received %u badtype %u bogus addr %u reqst in %u replies %u reqst out %u\n",
+	printf("received %u badtype %u bogus addr %u reqst in %u replies %u reqst out %u\n",
 	 Arp_stat.recv,Arp_stat.badtype,Arp_stat.badaddr,Arp_stat.inreq,
 	 Arp_stat.replies,Arp_stat.outreq);
 
-	tprintf("IP addr            Type              Time Q Addr\n");
+	printf("IP addr            Type              Time Q Addr\n");
 	for(i=0;i<HASHMOD;i++){
 		for(ap = Arp_tab[i];ap != (struct arp_tab *)NULL;ap = ap->next){
-			tprintf("%-18.18s ",inet_ntoa(ap->ip_addr));
-			tprintf("%-15s",smsg(Arptypes,NHWTYPES,ap->hardware));
-			tprintf("%7ld ",read_timer(&ap->timer)/1000L);
+			printf("%-18.18s ",inet_ntoa(ap->ip_addr));
+			printf("%-15s",smsg(Arptypes,NHWTYPES,ap->hardware));
+			printf("%7ld ",read_timer(&ap->timer)/1000L);
 			if(ap->state == ARP_PENDING)
-				tprintf("%-2u",len_q(ap->pending));
+				printf("%-2u",len_q(ap->pending));
 			else
-				tprintf("  ");
+				printf("  ");
 			if(ap->state == ARP_VALID){
 				if(Arp_type[ap->hardware].format != NULL){
 					(*Arp_type[ap->hardware].format)(e,ap->hw_addr);
 				} else {
 					e[0] = '\0';
 				}
-				tprintf("%s",e);
+				printf("%s",e);
 			} else {
-				tprintf("[unknown]");
+				printf("[unknown]");
 			}
 			if(ap->pub)
-				tprintf(" (published)");
-			if(tprintf("\n") == EOF)
+				printf(" (published)");
+			if(printf("\n") == EOF)
 				return;
 		}
 	}

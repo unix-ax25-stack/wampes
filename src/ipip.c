@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.1 1992/01/08 13:45:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.2 1992/05/14 13:20:10 deyke Exp $ */
 
 #include "global.h"
 
@@ -123,7 +123,7 @@ void *p;
   struct sockaddr_in addr;
 
   if (if_lookup(argv[1]) != NULLIF) {
-    tprintf("Interface %s already exists\n", argv[1]);
+    printf("Interface %s already exists\n", argv[1]);
     return (-1);
   }
 
@@ -137,12 +137,12 @@ void *p;
     type = IP_OVER_UDP;
     break;
   default:
-    tprintf("Type must be IP or UDP\n");
+    printf("Type must be IP or UDP\n");
     return (-1);
   }
 
   if (!(ipaddr = resolve(argv[3]))) {
-    tprintf(Badhost, argv[3]);
+    printf(Badhost, argv[3]);
     return (-1);
   }
 
@@ -153,7 +153,7 @@ void *p;
   else
     fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (fd < 0) {
-    tprintf("cannot create socket: %s\n", sys_errlist[errno]);
+    printf("cannot create socket: %s\n", sys_errlist[errno]);
     return (-1);
   }
 
@@ -163,7 +163,7 @@ void *p;
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(port);
     if (bind(fd, &addr, sizeof(addr))) {
-      tprintf("cannot bind address: %s\n", sys_errlist[errno]);
+      printf("cannot bind address: %s\n", sys_errlist[errno]);
       return (-1);
     }
   }

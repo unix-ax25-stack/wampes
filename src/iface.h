@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.10 1992/01/08 13:45:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.11 1992/05/14 13:20:06 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -68,7 +68,7 @@ struct iface {
 	struct proc *txproc;    /* Transmitter process, if any */
 	struct proc *supv;      /* Supervisory process, if any */
 
-	/* Device dependant */
+	/* Device dependent */
 	int dev;                /* Subdevice number to pass to send */
 				/* To device -- control */
 	int32 (*ioctl) __ARGS((struct iface *,int cmd,int set,int32 val));
@@ -78,7 +78,7 @@ struct iface {
 	int (*stop) __ARGS((struct iface *));
 	char *hwaddr;           /* Device hardware address, if any */
 
-	/* Encapsulation dependant */
+	/* Encapsulation dependent */
 	void *edv;              /* Pointer to protocol extension block, if any */
 	int type;               /* Link header type for phdr */
 	int xdev;               /* Associated Slip or Nrs channel, if any */

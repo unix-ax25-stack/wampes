@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.11 1991/06/04 11:34:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.12 1992/05/14 13:20:34 deyke Exp $ */
 
 /* Internet Telnet client
  * Copyright 1991 Phil Karn, KA9Q
@@ -337,9 +337,9 @@ void *p;
 {
 	if(argc < 2){
 		if(Refuse_echo)
-			tprintf("Refuse\n");
+			printf("Refuse\n");
 		else
-			tprintf("Accept\n");
+			printf("Accept\n");
 	} else {
 		if(argv[1][0] == 'r')
 			Refuse_echo = 1;
@@ -359,16 +359,16 @@ void *p;
 {
 	if(argc < 2){
 		if(Tn_cr_mode)
-			tprintf("null\n");
+			printf("null\n");
 		else
-			tprintf("standard\n");
+			printf("standard\n");
 	} else {
 		if(argv[1][0] == 'n')
 			Tn_cr_mode = 1;
 		else if(argv[1][0] == 's')
 			Tn_cr_mode = 0;
 		else {
-			tprintf("Usage: %s [standard|null]\n",argv[0]);
+			printf("Usage: %s [standard|null]\n",argv[0]);
 			return -1;
 		}
 	}

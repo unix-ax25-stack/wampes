@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.16 1992/01/12 18:39:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.17 1992/05/14 13:19:50 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -28,6 +28,7 @@
 #include "enet.h"
 #include "kiss.h"
 /* #include "nr4.h" */
+#include "nrs.h"
 #include "netrom.h"
 #include "pktdrvr.h"
 /* #include "ppp.h" */
@@ -44,6 +45,11 @@
 /* #include "tipmail.h" */
 #include "daemon.h"
 #include "bootp.h"
+#include "asy.h"
+#include "trace.h"
+#ifdef  QTSO
+#include "qtso.h"
+#endif
 
 static int dostart __ARGS((int argc,char *argv[],void *p));
 static int dostop __ARGS((int argc,char *argv[],void *p));
@@ -56,9 +62,9 @@ static void axarp __ARGS((struct iface *iface,struct ax25_cb *axp,char *src,
 	char *dest,struct mbuf *bp,int mcast));
 static void axnr __ARGS((struct iface *iface,struct ax25_cb *axp,char *src,
 	char *dest,struct mbuf *bp,int mcast));
-#endif
+#endif  /* AX25 */
 
-struct mbuf *Hopper;
+struct mbuf *Hopper;            /* Queue of incoming packets */
 unsigned Nsessions = NSESSIONS;
 int Shortstatus;
 
@@ -66,141 +72,6 @@ int Shortstatus;
  * memory, like garbage collection, source quenching and refusing connects
  */
 int32 Memthresh = MTHRESH;
-
-/* Transport protocols atop IP */
-struct iplink Iplink[] = {
-	TCP_PTCL,       tcp_input,
-	UDP_PTCL,       udp_input,
-	ICMP_PTCL,      icmp_input,
-	IP_PTCL,        ipip_recv,
-	0,              0
-};
-
-/* Transport protocols atop ICMP */
-struct icmplink Icmplink[] = {
-	TCP_PTCL,       tcp_icmp,
-	0,              0
-};
-
-/* ARP protocol linkages */
-struct arp_type Arp_type[NHWTYPES] = {
-#ifdef  NETROM
-	AXALEN, 0, 0, 0, NULLCHAR, pax25, setcall,      /* ARP_NETROM */
-#else
-	0, 0, 0, 0, NULLCHAR,NULL,NULL,
-#endif
-
-#ifdef  ETHER
-	EADDR_LEN,IP_TYPE,ARP_TYPE,1,Ether_bdcst,pether,gether, /* ARP_ETHER */
-#else
-	0, 0, 0, 0, NULLCHAR,NULL,NULL,
-#endif
-
-	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_EETHER */
-
-#ifdef  AX25
-	AXALEN, PID_IP, PID_ARP, 10, Ax25multi[0], pax25, setcall,
-#else
-	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_AX25 */
-#endif
-
-	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_PRONET */
-
-	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_CHAOS */
-
-	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_IEEE802 */
-
-#ifdef  ARCNET
-	AADDR_LEN, ARC_IP, ARC_ARP, 1, ARC_bdcst, parc, garc, /* ARP_ARCNET */
-#else
-	0, 0, 0, 0, NULLCHAR,NULL,NULL,
-#endif
-
-	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_APPLETALK */
-};
-
-#ifdef  AX25
-/* Linkage to network protocols atop ax25 */
-struct axlink Axlink[] = {
-	PID_IP,         axip,
-	PID_ARP,        axarp,
-#ifdef  NETROM
-	PID_NETROM,     axnr,
-#endif
-	PID_NO_L3,      axnl3,
-	0,              NULL,
-};
-#endif
-
-#if     0
-void (*Listusers) __ARGS((int s)) = listusers;
-#else
-void (*Listusers) __ARGS((int s)) = NULL;
-#endif
-
-#ifndef BOOTP
-int WantBootp = 0;
-
-int
-bootp_validPacket(ip,bpp)
-struct ip *ip;
-struct mbuf **bpp;
-{
-	return 0;
-}
-#endif
-
-/* daemons to be run at startup time */
-struct daemon Daemons[] = {
-	"killer",       1024,   killer,
-/*      "gcollect",     256,    gcollect,       */
-	"timer",        16000,  timerproc,
-	"network",      16000,  network,
-/*      "keyboard",     250,    keyboard,       */
-	NULLCHAR,       0,      NULLVFP
-};
-
-struct iftype Iftypes[] = {
-	/* This entry must be first, since Loopback refers to it */
-	"None",         NULL,           NULL,           NULL,
-	NULL,           CL_NONE,        0,
-
-#ifdef  AX25
-	"AX25",         ax_send,        ax_output,      pax25,
-	setcall,        CL_AX25,        AXALEN,
-#endif
-
-#ifdef  SLIP
-	"SLIP",         slip_send,      NULL,           NULL,
-	NULL,           CL_NONE,        0,
-#endif
-
-#ifdef  ETHER
-	/* Note: NULL is specified for the scan function even though
-	 * gether() exists because the packet drivers don't support
-	 * address setting.
-	 */
-	"Ethernet",     enet_send,      enet_output,    pether,
-	NULL,           CL_ETHERNET,    EADDR_LEN,
-#endif
-
-#ifdef  NETROM
-	"NETROM",       nr_send,        NULL,           pax25,
-	setcall,        CL_NETROM,      AXALEN,
-#endif
-
-#ifdef  SLFP
-	"SLFP",         pk_send,        NULL,           NULL,
-	NULL,           CL_NONE,        0,
-#endif
-
-#ifdef  PPP
-	"PPP",          ppp_send,       ppp_output,     NULL,
-	NULL,           CL_PPP, 0,
-#endif
-
-	NULLCHAR
-};
 
 /* Command lookup and branch tables */
 struct cmds Cmds[] = {
@@ -227,6 +98,7 @@ struct cmds Cmds[] = {
 #ifdef  AX25
 	"ax25",         doax25,         0, 0, NULLCHAR,
 	"axip",         doaxip,         0, 0, NULLCHAR,
+	"axudp",        doaxudp,        0, 0, NULLCHAR,
 #endif
 #ifdef  BOOTP
 	"bootp",        dobootp,        0, 0, NULLCHAR,
@@ -247,8 +119,8 @@ struct cmds Cmds[] = {
 	"delete",       dodelete,       0, 2, "delete <file>",
 /*      "detach",       dodetach,       0, 2, "detach <interface>", */
 #ifdef  DIALER
-	"dialer",       dodialer,       512, 3,
-	"dialer <iface> [<file> [<seconds> [<pings> [<hostid>]]]]",
+	"dialer",       dodialer,       0, 2,
+	"dialer <iface> <timeout> [<raise script> <lower script>]",
 #endif
 #ifndef AMIGA
 /*      "dir",          dodir,          512, 0, NULLCHAR, /* note sequence */
@@ -265,10 +137,8 @@ struct cmds Cmds[] = {
 #if     !defined(MSDOS)
 	"escape",       doescape,       0, 0, NULLCHAR,
 #endif
-#ifdef  PC_EC
-	"etherstat",    doetherstat,    0, 0, NULLCHAR,
-#endif
 	"exit",         doexit,         0, 0, NULLCHAR,
+/*      "files",        dofiles,        0, 0, NULLCHAR, */
 	"finger",       dofinger,       1024, 2, "finger name@host",
 	"fkey",         dofkey,         0, 3, "fkey <key#> <text>",
 	"ftp",          doftp,          2048, 2, "ftp <address>",
@@ -355,9 +225,10 @@ struct cmds Cmds[] = {
 	"stime",        dostime,        0, 0, NULLCHAR,
 	"tcp",          dotcp,          0, 0, NULLCHAR,
 	"telnet",       dotelnet,       1024, 2, "telnet <address>",
+/*      "test",         dotest,         1024, 0, NULLCHAR, */
 /*      "tip",          dotip,          256, 2, "tip <iface", */
 #ifdef  TRACE
-	"trace",        dotrace,        0, 0, NULLCHAR,
+	"trace",        dotrace,        512, 0, NULLCHAR,
 #endif
 	"udp",          doudp,          0, 0, NULLCHAR,
 	"upload",       doupload,       0, 0, NULLCHAR,
@@ -371,11 +242,6 @@ struct cmds Cmds[] = {
 
 /* List of supported hardware devices */
 struct cmds Attab[] = {
-#ifdef  PC_EC
-	/* 3-Com Ethernet interface */
-	"3c500", ec_attach, 0, 7,
-	"attach 3c500 <address> <vector> arpa <label> <buffers> <mtu> [ip_addr]",
-#endif
 #ifdef  ASY
 	/* Ordinary PC asynchronous adaptor */
 	"asy", asy_attach, 0, 8,
@@ -445,11 +311,231 @@ struct cmds Attab[] = {
 #ifdef  AX25
 	"axip", axip_attach, 0, 1,
 	"attach axip",
+	"axudp", axudp_attach, 0, 1,
+	"attach axudp",
 #endif
 	"ipip", ipip_attach, 0, 5,
 	"attach ipip <label> ip|udp <dest> <port>",
 	NULLCHAR,
 };
+
+#ifdef  SERVERS
+/* "start" and "stop" subcommands */
+static struct cmds Startcmds[] = {
+#if     defined(AX25) && defined(MAILBOX)
+	"ax25",         ax25start,      256, 0, NULLCHAR,
+#endif
+	"discard",      dis1,           256, 0, NULLCHAR,
+	"echo",         echo1,          256, 0, NULLCHAR,
+/*      "finger",       finstart,       256, 0, NULLCHAR, */
+	"ftp",          ftpstart,       256, 0, NULLCHAR,
+	"tcpgate",      tcpgate1,       256, 2, "start tcpgate <tcp port> [<host:service>]",
+#if     defined(NETROM) && defined(MAILBOX)
+	"netrom",       nr4start,       256, 0, NULLCHAR,
+#endif
+#ifdef POP
+	"pop",          pop1,           256, 0, NULLCHAR,
+#endif
+#ifdef  RIP
+	"rip",          doripinit,      0,   0, NULLCHAR,
+#endif
+/*      "smtp",         smtp1,          256, 0, NULLCHAR, */
+#if     defined(MAILBOX)
+	"telnet",       telnet1,        256, 0, NULLCHAR,
+/*      "tip",          tipstart,       256, 2, "start tip <interface>", */
+#endif
+/*      "ttylink",      ttylstart,      256, 0, NULLCHAR, */
+	"remote",       rem1,           768, 0, NULLCHAR,
+	NULLCHAR,
+};
+
+static struct cmds Stopcmds[] = {
+#if     defined(AX25) && defined(MAILBOX)
+	"ax25",         ax250,          0, 0, NULLCHAR,
+#endif
+	"discard",      dis0,           0, 0, NULLCHAR,
+	"echo",         echo0,          0, 0, NULLCHAR,
+/*      "finger",       fin0,           0, 0, NULLCHAR, */
+	"ftp",          ftp0,           0, 0, NULLCHAR,
+#if     defined(NETROM) && defined(MAILBOX)
+	"netrom",       nr40,           0, 0, NULLCHAR,
+#endif
+#ifdef  POP
+	"pop",          pop0,           0, 0, NULLCHAR,
+#endif
+#ifdef  RIP
+	"rip",          doripstop,      0, 0, NULLCHAR,
+#endif
+/*      "smtp",         smtp0,          0, 0, NULLCHAR, */
+#ifdef  MAILBOX
+	"telnet",       telnet0,        0, 0, NULLCHAR,
+/*      "tip",          tip0,           0, 2, "stop tip <interface>", */
+#endif
+/*      "ttylink",      ttyl0,          0, 0, NULLCHAR, */
+	"remote",       rem0,           0, 0, NULLCHAR,
+	NULLCHAR,
+
+};
+#endif  /* SERVERS */
+
+/* TCP port numbers to be considered "interactive" by the IP routing
+ * code and given priority in queueing
+ */
+int Tcp_interact[] = {
+	IPPORT_FTP,     /* FTP control (not data!) */
+	IPPORT_TELNET,  /* Telnet */
+	IPPORT_LOGIN,   /* BSD rlogin */
+	IPPORT_MTP,     /* Secondary telnet */
+	-1
+};
+
+/* Transport protocols atop IP */
+struct iplink Iplink[] = {
+	TCP_PTCL,       tcp_input,
+	UDP_PTCL,       udp_input,
+	ICMP_PTCL,      icmp_input,
+	IP_PTCL,        ipip_recv,
+	0,              0
+};
+
+/* Transport protocols atop ICMP */
+struct icmplink Icmplink[] = {
+	TCP_PTCL,       tcp_icmp,
+	0,              0
+};
+
+#ifdef  AX25
+/* Linkage to network protocols atop ax25 */
+struct axlink Axlink[] = {
+	PID_IP,         axip,
+	PID_ARP,        axarp,
+#ifdef  NETROM
+	PID_NETROM,     axnr,
+#endif
+	PID_NO_L3,      axnl3,
+	0,              NULL,
+};
+#endif  /* AX25 */
+
+/* ARP protocol linkages, indexed by arp's hardware type */
+struct arp_type Arp_type[NHWTYPES] = {
+#ifdef  NETROM
+	AXALEN, 0, 0, 0, NULLCHAR, pax25, setcall,      /* ARP_NETROM */
+#else
+	0, 0, 0, 0, NULLCHAR,NULL,NULL,
+#endif
+
+#ifdef  ETHER
+	EADDR_LEN,IP_TYPE,ARP_TYPE,1,Ether_bdcst,pether,gether, /* ARP_ETHER */
+#else
+	0, 0, 0, 0, NULLCHAR,NULL,NULL,
+#endif
+
+	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_EETHER */
+
+#ifdef  AX25
+	AXALEN, PID_IP, PID_ARP, 10, Ax25multi[0], pax25, setcall,
+#else
+	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_AX25 */
+#endif
+
+	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_PRONET */
+
+	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_CHAOS */
+
+	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_IEEE802 */
+
+#ifdef  ARCNET
+	AADDR_LEN, ARC_IP, ARC_ARP, 1, ARC_bdcst, parc, garc, /* ARP_ARCNET */
+#else
+	0, 0, 0, 0, NULLCHAR,NULL,NULL,
+#endif
+
+	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_APPLETALK */
+};
+/* Get rid of trace references in Iftypes[] if TRACE is turned off */
+#ifndef TRACE
+#define ip_dump         NULLVFP
+#define ax25_dump       NULLVFP
+#define ki_dump         NULLVFP
+#define sl_dump         NULLVFP
+#define ether_dump      NULLVFP
+#define ppp_dump        NULLVFP
+#define arc_dump        NULLVFP
+#endif  /* TRACE */
+
+/* Table of interface types. Contains most device- and encapsulation-
+ * dependent info
+ */
+struct iftype Iftypes[] = {
+	/* This entry must be first, since Loopback refers to it */
+	"None",         NULL,           NULL,           NULL,
+	NULL,           CL_NONE,        0,
+
+#ifdef  AX25
+	"AX25",         ax_send,        ax_output,      pax25,
+	setcall,        CL_AX25,        AXALEN,
+#endif
+
+#ifdef  SLIP
+	"SLIP",         slip_send,      NULL,           NULL,
+	NULL,           CL_NONE,        0,
+#endif
+
+#ifdef  ETHER
+	/* Note: NULL is specified for the scan function even though
+	 * gether() exists because the packet drivers don't support
+	 * address setting.
+	 */
+	"Ethernet",     enet_send,      enet_output,    pether,
+	NULL,           CL_ETHERNET,    EADDR_LEN,
+#endif
+
+#ifdef  NETROM
+	"NETROM",       nr_send,        NULL,           pax25,
+	setcall,        CL_NETROM,      AXALEN,
+#endif
+
+#ifdef  SLFP
+	"SLFP",         pk_send,        NULL,           NULL,
+	NULL,           CL_NONE,        0,
+#endif
+
+#ifdef  PPP
+	"PPP",          ppp_send,       ppp_output,     NULL,
+	NULL,           CL_PPP, 0,
+#endif
+
+	NULLCHAR
+};
+
+/* daemons to be run at startup time */
+struct daemon Daemons[] = {
+	"killer",       1024,   killer,
+/*      "gcollect",     256,    gcollect,       */
+	"timer",        16000,  timerproc,
+	"network",      16000,  network,
+/*      "keyboard",     250,    keyboard,       */
+	NULLCHAR,       0,      NULLVFP
+};
+
+#if     0
+void (*Listusers) __ARGS((FILE *network)) = listusers;
+#else
+void (*Listusers) __ARGS((FILE *network)) = NULL;
+#endif  /* MAILBOX */
+
+#ifndef BOOTP
+int WantBootp = 0;
+
+int
+bootp_validPacket(ip,bpp)
+struct ip *ip;
+struct mbuf **bpp;
+{
+	return 0;
+}
+#endif  /* BOOTP */
 
 /* Packet tracing stuff */
 #ifdef  TRACE
@@ -542,6 +628,21 @@ struct mbuf *bp;
 
 #endif  /* TRACE */
 
+#ifndef TRACEBACK
+void
+stktrace()
+{
+}
+#endif
+
+#ifndef LZW
+void
+lzwfree(up)
+struct usock *up;
+{
+}
+#endif
+
 #ifdef  AX25
 /* Hooks for passing incoming AX.25 data frames to network protocols */
 static void
@@ -553,8 +654,9 @@ char *dest;
 struct mbuf *bp;
 int mcast;
 {
-	if (bp && bp->cnt >= 20)
-		arp_add(get32(bp->data + 12), ARP_AX25, src, 0);
+	int32 ipaddr;
+	if (bp && bp->cnt >= 20 && (ipaddr = get32(bp->data + 12)))
+		arp_add(ipaddr, ARP_AX25, src, 0);
 	(void)ip_route(iface,bp,mcast);
 }
 
@@ -598,62 +700,59 @@ void *s;
 }
 #endif
 
-#ifdef  SERVERS
-/* "start" and "stop" subcommands */
-static struct cmds Startcmds[] = {
-#if     defined(AX25) && defined(MAILBOX)
-	"ax25",         ax25start,      256, 0, NULLCHAR,
+/* Stubs for demand dialer */
+#ifndef DIALER
+void
+dialer_kick(asyp)
+struct asy *asyp;
+{
+}
 #endif
-	"discard",      dis1,           256, 0, NULLCHAR,
-	"echo",         echo1,          256, 0, NULLCHAR,
-/*      "finger",       finstart,       256, 0, NULLCHAR, */
-	"ftp",          ftpstart,       256, 0, NULLCHAR,
-	"tcpgate",      tcpgate1,       256, 2, "start tcpgate <tcp port> [<host:service>]",
-#if     defined(NETROM) && defined(MAILBOX)
-	"netrom",       nr4start,       256, 0, NULLCHAR,
-#endif
-#ifdef POP
-	"pop",          pop1,           256, 0, NULLCHAR,
-#endif
-#ifdef  RIP
-	"rip",          doripinit,      0,   0, NULLCHAR,
-#endif
-/*      "smtp",         smtp1,          256, 0, NULLCHAR, */
-#if     defined(MAILBOX)
-	"telnet",       telnet1,        256, 0, NULLCHAR,
-/*      "tip",          tipstart,       256, 2, "start tip <interface>", */
-#endif
-/*      "ttylink",      ttylstart,      256, 0, NULLCHAR, */
-	"remote",       rem1,           768, 0, NULLCHAR,
-	NULLCHAR,
-};
-static struct cmds Stopcmds[] = {
-#if     defined(AX25) && defined(MAILBOX)
-	"ax25",         ax250,          0, 0, NULLCHAR,
-#endif
-	"discard",      dis0,           0, 0, NULLCHAR,
-	"echo",         echo0,          0, 0, NULLCHAR,
-/*      "finger",       fin0,           0, 0, NULLCHAR, */
-	"ftp",          ftp0,           0, 0, NULLCHAR,
-#if     defined(NETROM) && defined(MAILBOX)
-	"netrom",       nr40,           0, 0, NULLCHAR,
-#endif
-#ifdef  POP
-	"pop",          pop0,           0, 0, NULLCHAR,
-#endif
-#ifdef  RIP
-	"rip",          doripstop,      0, 0, NULLCHAR,
-#endif
-/*      "smtp",         smtp0,          0, 0, NULLCHAR, */
-#ifdef  MAILBOX
-	"telnet",       telnet0,        0, 0, NULLCHAR,
-/*      "tip",          tip0,           0, 2, "stop tip <interface>", */
-#endif
-/*      "ttylink",      ttyl0,          0, 0, NULLCHAR, */
-	"remote",       rem0,           0, 0, NULLCHAR,
-	NULLCHAR,
 
-};
+/* Stubs for Van Jacobsen header compression */
+#if !defined(VJCOMPRESS) && defined(ASY)
+struct slcompress *
+slhc_init(rslots,tslots)
+int rslots;
+int tslots;
+{
+	return NULLSLCOMPR;
+}
+int
+slhc_compress(comp, bpp, compress_cid)
+struct slcompress *comp;
+struct mbuf **bpp;
+int compress_cid;
+{
+	return SL_TYPE_IP;
+}
+int
+slhc_uncompress(comp, bpp)
+struct slcompress *comp;
+struct mbuf **bpp;
+{
+	return -1;      /* Can't decompress */
+}
+void
+shlc_i_status(comp)
+struct slcompress *comp;
+{
+}
+void
+shlc_o_status(comp)
+struct slcompress *comp;
+{
+}
+int
+slhc_remember(comp, bpp)
+struct slcompress *comp;
+struct mbuf **bpp;
+{
+	return -1;
+}
+#endif /* !defined(VJCOMPRESS) && defined(ASY) */
+
+#ifdef  SERVERS
 static int
 dostart(argc,argv,p)
 int argc;
@@ -670,6 +769,8 @@ void *p;
 {
 	return subcmd(Stopcmds,argc,argv,p);
 }
+#endif  /* SERVERS */
+
 static int
 dostatus(argc,argv,p)
 int argc;
@@ -705,104 +806,4 @@ void *p;
   Shortstatus = 0;
   return 0;
 }
-#endif  /* SERVERS */
 
-/* Various configuration-dependent functions */
-
-/* put mbuf into Hopper for network task
- * returns 0 if OK
- */
-int
-net_route(ifp, type, bp)
-struct iface *ifp;
-int type;
-struct mbuf *bp;
-{
-	struct mbuf *nbp;
-	struct phdr phdr;
-
-	phdr.iface = ifp;
-	phdr.type = type;
-
-	if ((nbp = pushdown(bp,sizeof(phdr))) == NULLBUF ){
-		return -1;
-	}
-	memcpy( &nbp->data[0],(char *)&phdr,sizeof(phdr));
-	enqueue(&Hopper,nbp);
-	/* Especially on slow machines, serial I/O can be quite
-	 * compute intensive, so release the machine before we
-	 * do the next packet.  This will allow this packet to
-	 * go on toward its ultimate destination. [Karn]
-	 */
-	pwait(NULL);
-	return 0;
-}
-
-/* Process packets in the Hopper */
-void
-network(i,v1,v2)
-int i;
-void *v1;
-void *v2;
-{
-	struct mbuf *bp;
-	struct phdr phdr;
-
-loop:
-	while(Hopper == NULLBUF)
-		pwait(&Hopper);
-
-	/* Process the input packet */
-	bp = dequeue(&Hopper);
-	pullup(&bp,(char *)&phdr,sizeof(phdr));
-	if(phdr.iface != NULLIF){
-		phdr.iface->rawrecvcnt++;
-		phdr.iface->lastrecv = secclock();
-	}
-	dump(phdr.iface,IF_TRACE_IN,phdr.type,bp);
-	switch(phdr.type){
-#ifdef  KISS
-	case CL_KISS:
-		kiss_recv(phdr.iface,bp);
-		break;
-#endif
-#ifdef  AX25
-	case CL_AX25:
-		ax_recv(phdr.iface,bp);
-		break;
-#endif
-#ifdef  ETHER
-	case CL_ETHERNET:
-		eproc(phdr.iface,bp);
-		break;
-#endif
-#ifdef ARCNET
-	case CL_ARCNET:
-		aproc(phdr.iface,bp);
-		break;
-#endif
-#ifdef PPP
-	case CL_PPP:
-		ppp_proc(phdr.iface,bp);
-		break;
-#endif
-	/* These types have no link layer protocol at the point when they're
-	 * put in the hopper, so they can be handed directly to IP. The
-	 * separate types are just for user convenience when running the
-	 * "iface" command.
-	 */
-	case CL_NONE:
-	case CL_SERIAL_LINE:
-	case CL_SLFP:
-		ip_route(phdr.iface,bp,0);
-		break;
-	default:
-		free_p(bp);
-		break;
-	}
-	/* Let everything else run - this keeps the system from wedging
-	 * when we're hit by a big burst of packets
-	 */
-	pwait(NULL);
-	goto loop;
-}

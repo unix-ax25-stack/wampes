@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.14 1992/03/31 14:33:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.15 1992/05/14 13:20:02 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -137,19 +137,18 @@ void log();
 int log2 __ARGS((int x));
 #define ltop(x) ((void *) (x))
 void *mallocw __ARGS((unsigned nb));
+int memcnt __ARGS((char *buf,char c,int size));
 char *outbuf __ARGS((int16 port,char *buf,int16 cnt));
 #define ptol(x) ((long) (x))
 void restore __ARGS((int));
-void rflush __ARGS((void));
 void rip __ARGS((char *));
 char *smsg __ARGS((char *msgs[],unsigned nmsgs,unsigned n));
-int tprintf __ARGS((char *fmt,...));
+void stktrace __ARGS((void));
 #if     !defined __TURBOC__
 char *strdup();
 #endif
 int wildmat __ARGS((char *s,char *p,char **argv));
 
-#define tprintf printf
 #include <stdlib.h>
 #include <string.h>
 
@@ -162,12 +161,6 @@ int strnicmp __ARGS((char *s1, char *s2, size_t maxlen));
 
 #if     defined(__TURBOC__) && defined(MSDOS)
 #define movblock(so,ss,do,ds,c) movedata(ss,so,ds,do,c)
-#ifndef outportw
-#define outportw outport
-#endif
-#ifndef inportw
-#define inportw inport
-#endif
 
 #else
 
@@ -216,6 +209,9 @@ extern char Version[];
 
 /* Your system's end-of-line convention */
 extern char Eol[];
+
+/* Your system's temp directory */
+extern char *Tmpdir;
 
 extern void (*Gcollect[])();
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.14 1992/01/22 11:12:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.15 1992/05/14 13:19:39 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -328,16 +328,16 @@ void *p;
 		if(asyp->iface == NULLIF)
 			continue;
 
-		tprintf("%s:",asyp->iface->name);
-		tprintf(" %ld bps\n",asyp->speed);
+		printf("%s:",asyp->iface->name);
+		printf(" %ld bps\n",asyp->speed);
 
-		tprintf(" RX: %lu int, %lu chr, %lu hw hi\n",
+		printf(" RX: %lu int, %lu chr, %lu hw hi\n",
 			asyp->rxints,
 			asyp->rxchar,
 			asyp->rxhiwat);
 		asyp->rxhiwat = 0;
 
-		if(tprintf(" TX: %lu int, %lu chr, %u q\n",
+		if(printf(" TX: %lu int, %lu chr, %u q\n",
 			asyp->txints,
 			asyp->txchar,
 			len_p(asyp->sndq)) == EOF)

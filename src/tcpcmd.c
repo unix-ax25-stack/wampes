@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.7 1992/01/08 13:45:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.8 1992/05/14 13:20:31 deyke Exp $ */
 
 /* TCP control and status routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -65,7 +65,7 @@ void *p;
 
 	tcb = (struct tcb *)ltop(htol(argv[1]));
 	if(!tcpval(tcb)){
-		tprintf(Notval);
+		printf(Notval);
 		return 1;
 	}
 	reset_tcp(tcb);
@@ -85,7 +85,7 @@ void *p;
 	if(argc < 2){
 		for(tp = &Tcp_rtt[0];tp < &Tcp_rtt[RTTCACHE];tp++){
 			if(tp->addr != 0){
-				if(tprintf("%s: srtt %lu mdev %lu\n",
+				if(printf("%s: srtt %lu mdev %lu\n",
 				 inet_ntoa(tp->addr),
 				 tp->srtt,tp->mdev) == EOF)
 					break;
@@ -106,7 +106,7 @@ void *p;
 
 	tcb = (struct tcb *)ltop(htol(argv[1]));
 	if(!tcpval(tcb)){
-		tprintf(Notval);
+		printf(Notval);
 		return 1;
 	}
 	tcb->srtt = atol(argv[2]);
@@ -124,7 +124,7 @@ void *p;
 
 	tcb = (struct tcb *)ltop(htol(argv[1]));
 	if(kick_tcp(tcb) == -1){
-		tprintf(Notval);
+		printf(Notval);
 		return 1;
 	}
 	return 0;
@@ -175,7 +175,7 @@ void *p;
 		if(tcpval(tcb))
 			st_tcp(tcb);
 		else
-			tprintf(Notval);
+			printf(Notval);
 	}
 	return 0;
 }
@@ -195,26 +195,26 @@ tstat()
 	for(j=i=1;i<=NUMTCPMIB;i++){
 		if(Tcp_mib[i].name == NULLCHAR)
 			continue;
-		tprintf("(%2u)%-20s%10lu",i,Tcp_mib[i].name,
+		printf("(%2u)%-20s%10lu",i,Tcp_mib[i].name,
 		 Tcp_mib[i].value.integer);
 		if(j++ % 2)
-			tprintf("     ");
+			printf("     ");
 		else
-			tprintf("\n");
+			printf("\n");
 	}
 	if((j % 2) == 0)
-		tprintf("\n");
+		printf("\n");
     }
 
-	tprintf("    &TCB Rcv-Q Snd-Q  Local socket           Remote socket          State\n");
+	printf("    &TCB Rcv-Q Snd-Q  Local socket           Remote socket          State\n");
 	for(tcb=Tcbs;tcb != NULLTCB;tcb = tcb->next){
-		tprintf("%8lx%6u%6u  ",ptol(tcb),tcb->rcvcnt,tcb->sndcnt);
-		tprintf("%-22.22s ",pinet_tcp(&tcb->conn.local));
-		tprintf("%-22.22s ",pinet_tcp(&tcb->conn.remote));
-		tprintf("%-s",Tcpstates[tcb->state]);
+		printf("%8lx%6u%6u  ",ptol(tcb),tcb->rcvcnt,tcb->sndcnt);
+		printf("%-22.22s ",pinet_tcp(&tcb->conn.local));
+		printf("%-22.22s ",pinet_tcp(&tcb->conn.remote));
+		printf("%-s",Tcpstates[tcb->state]);
 		if(tcb->state == TCP_LISTEN && tcb->flags.clone)
-			tprintf(" (S)");
-		if(tprintf("\n") == EOF)
+			printf(" (S)");
+		if(printf("\n") == EOF)
 			return 0;
 	}
 	return 0;
@@ -260,59 +260,59 @@ struct tcb *tcb;
 		recvd -= 2;
 		break;
 	}
-	tprintf("Local: %s",pinet_tcp(&tcb->conn.local));
-	tprintf(" Remote: %s",pinet_tcp(&tcb->conn.remote));
-	tprintf(" State: %s\n",Tcpstates[tcb->state]);
-	tprintf("      Init seq    Unack     Next Resent CWind Thrsh  Wind  MSS Queue      Total\n");
-	tprintf("Send:");
-	tprintf("%9lx",tcb->iss);
-	tprintf("%9lx",tcb->snd.una);
-	tprintf("%9lx",tcb->snd.nxt);
-	tprintf("%7lu",tcb->resent);
-	tprintf("%6u",tcb->cwind);
-	tprintf("%6u",tcb->ssthresh);
-	tprintf("%6u",tcb->snd.wnd);
-	tprintf("%5u",tcb->mss);
-	tprintf("%6u",tcb->sndcnt);
-	tprintf("%11lu\n",sent);
+	printf("Local: %s",pinet_tcp(&tcb->conn.local));
+	printf(" Remote: %s",pinet_tcp(&tcb->conn.remote));
+	printf(" State: %s\n",Tcpstates[tcb->state]);
+	printf("      Init seq    Unack     Next Resent CWind Thrsh  Wind  MSS Queue      Total\n");
+	printf("Send:");
+	printf("%9lx",tcb->iss);
+	printf("%9lx",tcb->snd.una);
+	printf("%9lx",tcb->snd.nxt);
+	printf("%7lu",tcb->resent);
+	printf("%6u",tcb->cwind);
+	printf("%6u",tcb->ssthresh);
+	printf("%6u",tcb->snd.wnd);
+	printf("%5u",tcb->mss);
+	printf("%6u",tcb->sndcnt);
+	printf("%11lu\n",sent);
 
-	tprintf("Recv:");
-	tprintf("%9lx",tcb->irs);
-	tprintf("         ");
-	tprintf("%9lx",tcb->rcv.nxt);
-	tprintf("%7lu",tcb->rerecv);
-	tprintf("      ");
-	tprintf("      ");
-	tprintf("%6u",tcb->rcv.wnd);
-	tprintf("     ");
-	tprintf("%6u",tcb->rcvcnt);
-	tprintf("%11lu\n",recvd);
+	printf("Recv:");
+	printf("%9lx",tcb->irs);
+	printf("         ");
+	printf("%9lx",tcb->rcv.nxt);
+	printf("%7lu",tcb->rerecv);
+	printf("      ");
+	printf("      ");
+	printf("%6u",tcb->rcv.wnd);
+	printf("     ");
+	printf("%6u",tcb->rcvcnt);
+	printf("%11lu\n",recvd);
 
 	if(tcb->reseq != (struct reseq *)NULL){
 		register struct reseq *rp;
 
-		tprintf("Reassembly queue:\n");
+		printf("Reassembly queue:\n");
 		for(rp = tcb->reseq;rp != (struct reseq *)NULL; rp = rp->next){
-			if(tprintf("  seq x%lx %u bytes\n",
+			if(printf("  seq x%lx %u bytes\n",
 			 rp->seg.seq,rp->length) == EOF)
 				return;
 		}
 	}
 	if(tcb->backoff > 0)
-		tprintf("Backoff %u ",tcb->backoff);
+		printf("Backoff %u ",tcb->backoff);
 	if(tcb->flags.retran)
-		tprintf("Retrying ");
+		printf("Retrying ");
 	switch(tcb->timer.state){
 	case TIMER_STOP:
-		tprintf("Timer stopped ");
+		printf("Timer stopped ");
 		break;
 	case TIMER_RUN:
-		tprintf("Timer running (%ld/%ld ms) ",
+		printf("Timer running (%ld/%ld ms) ",
 		 (long)read_timer(&tcb->timer),
 		 (long)dur_timer(&tcb->timer));
 		break;
 	case TIMER_EXPIRE:
-		tprintf("Timer expired ");
+		printf("Timer expired ");
 	}
-	tprintf("SRTT %ld ms Mean dev %ld ms\n",tcb->srtt,tcb->mdev);
+	printf("SRTT %ld ms Mean dev %ld ms\n",tcb->srtt,tcb->mdev);
 }

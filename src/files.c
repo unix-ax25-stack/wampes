@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.7 1991/06/18 17:26:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.8 1992/05/14 13:19:56 deyke Exp $ */
 
 /* System-dependent definitions of various files, spool directories, etc */
 #include <stdio.h>
@@ -25,6 +25,7 @@ char *Popusers = "/popusers";           /* POP user and passwd file */
 char *Signature = "/spool/signatur"; /* Mail signature file directory */
 char *Forwardfile = "/spool/forward.bbs"; /* Mail forwarding file */
 char *Historyfile = "/spool/history"; /* Message ID history file */
+char *Tmpdir = "/tmp";
 char Eol[] = "\r\n";
 #define SEPARATOR       "/"
 #endif
@@ -49,6 +50,7 @@ char *Popusers = "./popusers";          /* POP user and passwd file */
 char *Signature = "./signatur"; /* Mail signature file directory */
 char *Forwardfile = "./forward.bbs"; /* Mail forwarding file */
 char *Historyfile = "./history"; /* Message ID history file */
+char *Tmpdir = "/tmp";
 #define SEPARATOR       "/"
 char Eol[] = "\n";
 #endif
@@ -73,6 +75,7 @@ char *Popusers = "TCPIP:/popusers";     /* POP user and passwd file */
 char *Signature = "TCPIP:spool/signatur"; /* Mail signature file directory */
 char *Forwardfile = "TCPIP:spool/forward.bbs"; /* Mail forwarding file */
 char *Historyfile = "TCPIP:spool/history"; /* Message ID history file */
+char *Tmpdir = "TCPIP:tmp";
 #define SEPARATOR       "/"
 char Eol[] = "\r\n";
 #endif
@@ -97,7 +100,8 @@ char *Popusers = "Mikes Hard Disk:/popusers";   /* POP user and passwd file */
 char *Signature = "Mikes Hard Disk:spool/signatur"; /* Mail signature file directory */
 char *Forwardfile = "Mikes Hard Disk:spool/forward.bbs"; /* Mail forwarding file */
 char *Historyfile = "Mikes Hard Disk:spool/history"; /* Message ID history file */
-#define SEPARATOR       ":"
+char *Tmpdir = "Mikes Hard Disk:tmp";
+#define SEPARATOR       "/"
 char Eol[] = "\r";
 #endif
 

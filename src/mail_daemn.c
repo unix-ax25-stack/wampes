@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.9 1991/05/21 19:08:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.10 1992/05/14 13:20:16 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -84,7 +84,7 @@ void *p;
   char  waittime[16];
   struct mailsys *sp;
 
-  tprintf("System     Mailer  Transport  State    Wait time\n");
+  printf("System     Mailer  Transport  State    Wait time\n");
   for (sp = Systems; sp; sp = sp->next) {
     *waittime = '\0';
     switch (sp->state) {
@@ -106,7 +106,7 @@ void *p;
       state = "Talking";
       break;
     }
-    tprintf("%-10s %-7s %-10s %-8s %9s\n", sp->sysname, sp->mailer->name, sp->protocol, state, waittime);
+    printf("%-10s %-7s %-10s %-8s %9s\n", sp->sysname, sp->mailer->name, sp->protocol, state, waittime);
   }
   return 0;
 }
@@ -121,7 +121,7 @@ char  *argv[];
 void *p;
 {
   if (argc < 2) {
-    tprintf("%lu/%lu\n",
+    printf("%lu/%lu\n",
 	    read_timer(&Mail_timer) / 1000,
 	    dur_timer(&Mail_timer) / 1000);
     return 0;

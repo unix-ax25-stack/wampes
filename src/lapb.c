@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.21 1992/04/07 10:15:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.22 1992/05/14 13:20:12 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -879,7 +879,7 @@ void *p;
 
   axp = (struct ax25_cb *) ltop(htol(argv[1]));
   if (!valid_ax(axp)) {
-    tprintf(Notval);
+    printf(Notval);
     return 1;
   }
   kick_ax(axp);
@@ -1235,36 +1235,36 @@ void *p;
     printf("Retry:        %d\n", cp->retry);
     printf("Srtt:         %ld ms\n", cp->srtt);
     printf("Mean dev:     %ld ms\n", cp->mdev);
-    tprintf("Timer T1:     ");
+    printf("Timer T1:     ");
     if (run_timer(&cp->timer_t1))
-      tprintf("%lu", read_timer(&cp->timer_t1));
+      printf("%lu", read_timer(&cp->timer_t1));
     else
-      tprintf("stop");
-    tprintf("/%lu ms\n", dur_timer(&cp->timer_t1));
-    tprintf("Timer T2:     ");
+      printf("stop");
+    printf("/%lu ms\n", dur_timer(&cp->timer_t1));
+    printf("Timer T2:     ");
     if (run_timer(&cp->timer_t2))
-      tprintf("%lu", read_timer(&cp->timer_t2));
+      printf("%lu", read_timer(&cp->timer_t2));
     else
-      tprintf("stop");
-    tprintf("/%lu ms\n", dur_timer(&cp->timer_t2));
-    tprintf("Timer T3:     ");
+      printf("stop");
+    printf("/%lu ms\n", dur_timer(&cp->timer_t2));
+    printf("Timer T3:     ");
     if (run_timer(&cp->timer_t3))
-      tprintf("%lu", read_timer(&cp->timer_t3));
+      printf("%lu", read_timer(&cp->timer_t3));
     else
-      tprintf("stop");
-    tprintf("/%lu ms\n", dur_timer(&cp->timer_t3));
-    tprintf("Timer T4:     ");
+      printf("stop");
+    printf("/%lu ms\n", dur_timer(&cp->timer_t3));
+    printf("Timer T4:     ");
     if (run_timer(&cp->timer_t4))
-      tprintf("%lu", read_timer(&cp->timer_t4));
+      printf("%lu", read_timer(&cp->timer_t4));
     else
-      tprintf("stop");
-    tprintf("/%lu ms\n", dur_timer(&cp->timer_t4));
-    tprintf("Timer T5:     ");
+      printf("stop");
+    printf("/%lu ms\n", dur_timer(&cp->timer_t4));
+    printf("Timer T5:     ");
     if (run_timer(&cp->timer_t5))
-      tprintf("%lu", read_timer(&cp->timer_t5));
+      printf("%lu", read_timer(&cp->timer_t5));
     else
-      tprintf("stop");
-    tprintf("/%lu ms\n", dur_timer(&cp->timer_t5));
+      printf("stop");
+    printf("/%lu ms\n", dur_timer(&cp->timer_t5));
     printf("Rcv queue:    %d\n", cp->rcvcnt);
     if (cp->reseq[0].bp || cp->reseq[1].bp ||
 	cp->reseq[2].bp || cp->reseq[3].bp ||

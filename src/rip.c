@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.5 1992/01/22 11:12:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.6 1992/05/14 13:20:25 deyke Exp $ */
 
 /* This file contains code to implement the Routing Information Protocol (RIP)
  * and is derived from 4.2BSD code. Mike Karels of Berkeley has stated on
@@ -153,7 +153,7 @@ char flags;
 	struct route *rp;
 
 	if((rp = rt_lookup(dest)) == NULLROUTE){
-		tprintf("%s is unreachable\n",inet_ntoa(dest));
+		printf("%s is unreachable\n",inet_ntoa(dest));
 		return 1;
 	}
 	for(rl = Rip_list; rl != NULLRL; rl = rl->next)

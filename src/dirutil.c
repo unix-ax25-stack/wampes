@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.8 1991/09/24 05:52:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.9 1992/05/14 13:19:53 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -62,7 +62,7 @@ char *argv[];
 void *p;
 {
 	if(mkdir(argv[1],0777) == -1)
-		tprintf("Can't make %s: %s\n",argv[1],sys_errlist[errno]);
+		printf("Can't make %s: %s\n",argv[1],sys_errlist[errno]);
 	return 0;
 }
 /* Remove directory */
@@ -73,6 +73,6 @@ char *argv[];
 void *p;
 {
 	if(rmdir(argv[1]) == -1)
-		tprintf("Can't remove %s: %s\n",argv[1],sys_errlist[errno]);
+		printf("Can't remove %s: %s\n",argv[1],sys_errlist[errno]);
 	return 0;
 }

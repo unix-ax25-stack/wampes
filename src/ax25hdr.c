@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25hdr.c,v 1.2 1991/02/24 20:16:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25hdr.c,v 1.3 1992/05/14 13:19:45 deyke Exp $ */
 
 /* AX25 header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -9,11 +9,10 @@
 
 /* Convert a host-format AX.25 header into a mbuf ready for transmission */
 struct mbuf *
-htonax25(hdr,data)
+htonax25(hdr,bp)
 register struct ax25 *hdr;
-struct mbuf *data;
+struct mbuf *bp;
 {
-	struct mbuf *bp;
 	register char *cp;
 	register int16 i;
 
@@ -22,8 +21,7 @@ struct mbuf *data;
 
 	/* Allocate space for return buffer */
 	i = AXALEN * (2 + hdr->ndigis);
-	if((bp = pushdown(data,i)) == NULLBUF)
-		return NULLBUF;
+	bp = pushdown(bp,i);
 
 	/* Now convert */
 	cp = bp->data;          /* cp -> dest field */

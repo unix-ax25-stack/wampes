@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.h,v 1.7 1992/01/08 13:45:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.h,v 1.8 1992/05/14 13:20:29 deyke Exp $ */
 
 #ifndef _SLIP_H
 #define _SLIP_H
@@ -9,6 +9,10 @@
 
 #ifndef _IFACE_H
 #include "iface.h"
+#endif
+
+#ifndef _SLHC_H
+#include "slhc.h"
 #endif
 
 #define SLIP_MAX 16             /* Maximum number of slip channels */

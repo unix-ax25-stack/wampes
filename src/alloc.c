@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.10 1991/10/11 18:56:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.11 1992/05/14 13:19:40 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -234,9 +234,9 @@ int  argc;
 char  *argv[];
 void *p;
 {
-  tprintf("heap size %lu avail %lu (%lu%%) morecores %lu\n",
+  printf("heap size %lu avail %lu (%lu%%) morecores %lu\n",
    Heapsize, Heapsize - Inuse, 100L * (Heapsize - Inuse) / Heapsize, Morecores);
-  tprintf("allocs %lu frees %lu (diff %lu) alloc fails %lu invalid frees %lu\n",
+  printf("allocs %lu frees %lu (diff %lu) alloc fails %lu invalid frees %lu\n",
    Allocs, Frees, Allocs - Frees, Memfail, Invalid);
   return 0;
 }

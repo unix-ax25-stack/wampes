@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.9 1992/01/08 13:45:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.10 1992/05/14 13:20:36 deyke Exp $ */
 
 /* Packet tracing - top level and generic routines, including hex/ascii
  * Copyright 1991 Phil Karn, KA9Q
@@ -234,7 +234,7 @@ void *p;
 		return 0;
 	}
 	if((ifp = if_lookup(argv[1])) == NULLIF){
-		tprintf("Interface %s unknown\n",argv[1]);
+		printf("Interface %s unknown\n",argv[1]);
 		return 1;
 	}
 	if(argc == 2){
@@ -261,7 +261,7 @@ void *p;
 
 	if(argc >= 4){
 		if((ifp->trfp = fopen(argv[3],APPEND_TEXT)) == NULLFILE){
-			tprintf("Can't write to %s\n",argv[3]);
+			printf("Can't write to %s\n",argv[3]);
 			ifp->trfp = stdout;
 		} else {
 			ifp->trfile = strdup(argv[3]);
@@ -277,31 +277,31 @@ register struct iface *ifp;
 {
 	if(ifp == NULLIF)
 		return;
-	tprintf("%s:",ifp->name);
+	printf("%s:",ifp->name);
 	if(ifp->trace & (IF_TRACE_IN | IF_TRACE_OUT | IF_TRACE_RAW)){
 		if(ifp->trace & IF_TRACE_IN)
-			tprintf(" input");
+			printf(" input");
 		if(ifp->trace & IF_TRACE_OUT)
-			tprintf(" output");
+			printf(" output");
 
 		if(ifp->trace & IF_TRACE_NOBC)
-			tprintf(" - no broadcasts");
+			printf(" - no broadcasts");
 
 		if(ifp->trace & IF_TRACE_HEX)
-			tprintf(" (Hex/ASCII dump)");
+			printf(" (Hex/ASCII dump)");
 		else if(ifp->trace & IF_TRACE_ASCII)
-			tprintf(" (ASCII dump)");
+			printf(" (ASCII dump)");
 		else
-			tprintf(" (headers only)");
+			printf(" (headers only)");
 
 		if(ifp->trace & IF_TRACE_RAW)
-			tprintf(" Raw output");
+			printf(" Raw output");
 
 		if(ifp->trfile != NULLCHAR)
-			tprintf(" trace file: %s",ifp->trfile);
-		tprintf("\n");
+			printf(" trace file: %s",ifp->trfile);
+		printf("\n");
 	} else
-		tprintf(" tracing off\n");
+		printf(" tracing off\n");
 }
 
 /* shut down all trace files */

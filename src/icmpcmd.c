@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.10 1991/06/04 11:33:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.11 1992/05/14 13:20:04 deyke Exp $ */
 
 /* ICMP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -68,9 +68,9 @@ void *p;
 	 */
 	lim = NUMICMPMIB/2;
 	for(i=1;i<=lim;i++){
-		tprintf("(%2u)%-20s%10lu",i,Icmp_mib[i].name,
+		printf("(%2u)%-20s%10lu",i,Icmp_mib[i].name,
 		 Icmp_mib[i].value.integer);
-		tprintf("     (%2u)%-20s%10lu\n",i+lim,Icmp_mib[i+lim].name,
+		printf("     (%2u)%-20s%10lu\n",i+lim,Icmp_mib[i+lim].name,
 		 Icmp_mib[i+lim].value.integer);
 	}
 	return 0;
@@ -107,17 +107,17 @@ void *p;
 	int16 len;
 
 	if(argc < 2){
-		tprintf("Host                Sent    Rcvd   %%   Srtt   Mdev  Length  Interval\n");
+		printf("Host                Sent    Rcvd   %%   Srtt   Mdev  Length  Interval\n");
 		for(i=0;i<PMOD;i++){
 			for(pp = ping[i];pp != NULLPING;pp = pp->next){
-				tprintf("%-16s",inet_ntoa(pp->target));
-				tprintf("%8lu%8lu",pp->sent,pp->responses);
-				tprintf("%4lu",
+				printf("%-16s",inet_ntoa(pp->target));
+				printf("%8lu%8lu",pp->sent,pp->responses);
+				printf("%4lu",
 				 (long)pp->responses * 100 / pp->sent);
-				tprintf("%7lu", pp->srtt);
-				tprintf("%7lu", pp->mdev);
-				tprintf("%8u", pp->len);
-				tprintf("%10lu\n",
+				printf("%7lu", pp->srtt);
+				printf("%7lu", pp->mdev);
+				printf("%8u", pp->len);
+				printf("%10lu\n",
 				 dur_timer(&pp->timer) / 1000);
 			}
 		}
@@ -133,13 +133,13 @@ void *p;
 		return 0;
 	}
 	if((dest = resolve(argv[1])) == 0){
-		tprintf("Host %s unknown\n",argv[1]);
+		printf("Host %s unknown\n",argv[1]);
 		return 1;
 	}
 	if(argc > 2) {
 		len = atoi(argv[2]);
 		if (len < ICMPLEN) {
-			tprintf("packet size too small, minimum size is %d bytes\n", ICMPLEN);
+			printf("packet size too small, minimum size is %d bytes\n", ICMPLEN);
 			return 1;
 		}
 	} else
@@ -212,7 +212,7 @@ struct mbuf *bp;
 	if(pp == NULLPING || icmp->args.echo.id != REPEAT){
 		if(!Icmp_echo)
 			return;
-		tprintf(
+		printf(
 		  (rtt == -1) ?
 		    "%s: echo reply id %u seq %u\n" :
 		    "%s: echo reply id %u seq %u, %lu ms\n",

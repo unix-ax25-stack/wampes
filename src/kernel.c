@@ -1,10 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.2 1992/01/08 13:45:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.3 1992/05/14 13:20:11 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
- * Copyright 1991 Phil Karn, KA9Q
+ * Copyright 1992 Phil Karn, KA9Q
  */
-
-#define SUSPEND_PROC    1
 
 #if     defined(PROCLOG) || defined(PROCTRACE)
 #include <stdio.h>
@@ -47,7 +45,9 @@ static void addproc __ARGS((struct proc *entry));
 static void delproc __ARGS((struct proc *entry));
 
 /* Create a process descriptor for the main function. Must be actually
- * called from the main function!
+ * called from the main function, and must be called before any other
+ * tasking functions are called!
+ *
  * Note that standard I/O is NOT set up here.
  */
 struct proc *
@@ -249,7 +249,6 @@ void *v2;
 	}
 }
 
-#ifdef  SUSPEND_PROC
 /* Inhibit a process from running */
 void
 suspend(pp)
@@ -276,10 +275,10 @@ struct proc *pp;
 	pp->state &= ~SUSPEND;
 	addproc(pp);
 }
-#endif  /* SUSPEND_PROC */
 
 /* Wakeup waiting process, regardless of event it's waiting for. The process
- * will see a return value of "val" from its pwait() call.
+ * will see a return value of "val" from its pwait() call. Must not be
+ * called from an interrupt handler.
  */
 void
 alert(pp,val)
@@ -300,7 +299,7 @@ int val;
 		delproc(pp);
 	pp->state &= ~WAITING;
 	pp->retval = val;
-	pp->event = 0;
+	pp->event = NULL;
 	if(pp != Curproc)
 		addproc(pp);
 }
@@ -450,7 +449,6 @@ int n;          /* Max number of processes to wake up */
 			cnt++;
 		}
 	}
-#ifdef  SUSPEND_PROC
 	for(pp = Susptab;n != 0 && pp != NULLPROC;pp = pnext){
 		pnext = pp->next;
 		if(pp->event == event){
@@ -470,7 +468,6 @@ int n;          /* Max number of processes to wake up */
 			cnt++;
 		}
 	}
-#endif  /* SUSPEND_PROC */
 	restore(i_state);
 	return cnt;
 }
@@ -507,12 +504,10 @@ register struct proc *entry;    /* Pointer to entry */
 		case WAITING:
 			Waittab[phash(entry->event)] = entry->next;
 			break;
-#ifdef  SUSPEND_PROC
 		case SUSPEND:
 		case SUSPEND|WAITING:
 			Susptab = entry->next;
 			break;
-#endif
 		}
 	}
 	restore(i_state);
@@ -536,12 +531,10 @@ register struct proc *entry;    /* Pointer to entry */
 	case WAITING:
 		head = &Waittab[phash(entry->event)];
 		break;
-#ifdef  SUSPEND_PROC
 	case SUSPEND:
 	case SUSPEND|WAITING:
 		head = &Susptab;
 		break;
-#endif
 	}
 	entry->next = NULLPROC;
 	i_state = dirps();

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.10 1991/06/01 22:18:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.11 1992/05/14 13:20:27 deyke Exp $ */
 
 /* NOS User Session control
  * Copyright 1991 Phil Karn, KA9Q
@@ -72,14 +72,14 @@ void *p;
 		if((Current = sessptr(argv[1])) != NULLSESSION){
 			go(0,NULL,sp);
 		} else
-			tprintf("Session %s not active\n",argv[1]);
+			printf("Session %s not active\n",argv[1]);
 		return 0;
 	}
-	tprintf(" #       &CB Type   Rcv-Q  State        Remote socket\n");
+	printf(" #       &CB Type   Rcv-Q  State        Remote socket\n");
 	for(sp=Sessions; sp < &Sessions[Nsessions];sp++){
 		switch(sp->type){
 		case TELNET:
-			tprintf("%c%-3d%8lx Telnet  %4d  %-13s%-s",
+			printf("%c%-3d%8lx Telnet  %4d  %-13s%-s",
 			 (Current == sp)? '*':' ',
 			 (int)(sp - Sessions),
 			 (long)sp->cb.telnet->tcb,
@@ -88,7 +88,7 @@ void *p;
 			 pinet_tcp(&sp->cb.telnet->tcb->conn.remote));
 			break;
 		case FTP:
-			tprintf("%c%-3d%8lx FTP     %4d  %-13s%-s",
+			printf("%c%-3d%8lx FTP     %4d  %-13s%-s",
 			 (Current == sp)? '*':' ',
 			 (int)(sp - Sessions),
 			 (long)sp->cb.ftp->control,
@@ -98,7 +98,7 @@ void *p;
 			break;
 #ifdef  AX25
 		case AX25TNC:
-			tprintf("%c%-3d%8lx AX25    %4d  %-13s%-s",
+			printf("%c%-3d%8lx AX25    %4d  %-13s%-s",
 			 (Current == sp) ? '*' : ' ',
 			 (int) (sp - Sessions),
 			 (long) sp->cb.ax25,
@@ -108,7 +108,7 @@ void *p;
 			break;
 #endif
 		case FINGER:
-			tprintf("%c%-3d%8lx Finger  %4d  %-13s%-s",
+			printf("%c%-3d%8lx Finger  %4d  %-13s%-s",
 			 (Current == sp)? '*':' ',
 			 (int)(sp - Sessions),
 			 (long)sp->cb.finger->tcb,
@@ -118,7 +118,7 @@ void *p;
 			break;
 #ifdef NETROM
 		case NRSESSION:
-			tprintf("%c%-3d%8lx NETROM  %4d  %-13s%-s",
+			printf("%c%-3d%8lx NETROM  %4d  %-13s%-s",
 			 (Current == sp) ? '*' : ' ',
 			 (int) (sp - Sessions),
 			 (long) sp->cb.netrom,
@@ -131,10 +131,10 @@ void *p;
 			continue;
 		}
 		if(sp->rfile != NULLCHAR)
-			tprintf("    Record: %s ",sp->rfile);
+			printf("    Record: %s ",sp->rfile);
 		if(sp->ufile != NULLCHAR)
-			tprintf("    Upload: %s",sp->ufile);
-		tprintf("\n");
+			printf("    Upload: %s",sp->ufile);
+		printf("\n");
 	}
 	return 0;
 }
@@ -182,7 +182,7 @@ void *p;
 	struct session *sp;
 
 	if((sp = sessptr(argc > 1 ? argv[1] : NULLCHAR)) == NULLSESSION){
-		tprintf(Badsess);
+		printf(Badsess);
 		return -1;
 	}
 	switch(sp->type){
@@ -217,7 +217,7 @@ void *p;
 	struct session *sp;
 
 	if((sp = sessptr(argc > 1 ? argv[1] : NULLCHAR)) == NULLSESSION){
-		tprintf(Badsess);
+		printf(Badsess);
 		return -1;
 	}
 	switch(sp->type){
@@ -256,20 +256,20 @@ void *p;
 	struct session *sp;
 
 	if((sp = sessptr(argc > 1 ? argv[1] : NULLCHAR)) == NULLSESSION){
-		tprintf(Badsess);
+		printf(Badsess);
 		return -1;
 	}
 	switch(sp->type){
 	case TELNET:
 		if(kick_tcp(sp->cb.telnet->tcb) == -1){
-			tprintf(Notval);
+			printf(Notval);
 			return 1;
 		}
 		break;
 	case FTP:
 		if(kick_tcp(sp->cb.ftp->control) == -1){
 
-			tprintf(Notval);
+			printf(Notval);
 			return 1;
 		}
 		if(sp->cb.ftp->data != NULLTCB)
@@ -278,21 +278,21 @@ void *p;
 #ifdef  AX25
 	case AX25TNC:
 		if(kick_ax(sp->cb.ax25) == -1){
-			tprintf(Notval);
+			printf(Notval);
 			return 1;
 		}
 		break;
 #endif
 	case FINGER:
 		if(kick_tcp(sp->cb.finger->tcb) == -1){
-			tprintf(Notval);
+			printf(Notval);
 			return 1;
 		}
 		break;
 #ifdef NETROM
 	case NRSESSION:
 		if(kick_nr(sp->cb.netrom) == -1){
-			tprintf(Notval);
+			printf(Notval);
 			return 1;
 		}
 		break;
@@ -349,7 +349,7 @@ char *argv[];
 void *p;
 {
 	if(Current == NULLSESSION){
-		tprintf("No current session\n");
+		printf("No current session\n");
 		return 1;
 	}
 	if(argc > 1){
@@ -369,9 +369,9 @@ void *p;
 		}
 	}
 	if(Current->rfile != NULLCHAR)
-		tprintf("Recording into %s\n",Current->rfile);
+		printf("Recording into %s\n",Current->rfile);
 	else
-		tprintf("Recording off\n");
+		printf("Recording off\n");
 	return 0;
 }
 /* Control file transmission */
@@ -386,16 +386,16 @@ void *p;
 	struct circuit *cb;
 
 	if(Current == NULLSESSION){
-		tprintf("No current session\n");
+		printf("No current session\n");
 		return 1;
 	}
 	if(argc > 1){
 		switch(Current->type){
 		case FTP:
-			tprintf("Uploading on FTP control channel not supported\n");
+			printf("Uploading on FTP control channel not supported\n");
 			return 1;
 		case FINGER:
-			tprintf("Uploading on FINGER session not supported\n");
+			printf("Uploading on FINGER session not supported\n");
 			return 1;
 		}
 		/* Abort upload */
@@ -410,7 +410,7 @@ void *p;
 		if(strcmp(argv[1],"stop") != 0){
 			/* Open upload file */
 			if((Current->upload = fopen(argv[1],"r")) == NULLFILE){
-				tprintf("Can't read %s\n",argv[1]);
+				printf("Can't read %s\n",argv[1]);
 				return 1;
 			}
 			Current->ufile = malloc((unsigned)strlen(argv[1])+1);
@@ -438,9 +438,9 @@ void *p;
 		}
 	}
 	if(Current->ufile != NULLCHAR)
-		tprintf("Uploading %s\n",Current->ufile);
+		printf("Uploading %s\n",Current->ufile);
 	else
-		tprintf("Uploading off\n");
+		printf("Uploading off\n");
 	return 0;
 }
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.8 1992/01/08 13:45:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.9 1992/05/14 13:20:28 deyke Exp $ */
 
 /* SLIP (Serial Line IP) encapsulation and control routines.
  * Copyright 1991 Phil Karn
@@ -15,7 +15,7 @@
 #include "mbuf.h"
 #include "iface.h"
 #include "ip.h"
-/* #include "slhc.h" */
+#include "slhc.h"
 #include "asy.h"
 #include "slip.h"
 #include "trace.h"
@@ -242,11 +242,11 @@ struct iface *iface;
 		/* Must not be a SLIP device */
 		return;
 
-	tprintf("  IN:\t%lu pkts\n", iface->rawrecvcnt);
+	printf("  IN:\t%lu pkts\n", iface->rawrecvcnt);
 #ifdef VJCOMPRESS
 	slhc_i_status(sp->slcomp);
 #endif
-	tprintf("  OUT:\t%lu pkts\n", iface->rawsndcnt);
+	printf("  OUT:\t%lu pkts\n", iface->rawsndcnt);
 #ifdef VJCOMPRESS
 	slhc_o_status(sp->slcomp);
 #endif

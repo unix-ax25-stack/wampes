@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ripcmd.c,v 1.2 1991/02/24 20:17:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ripcmd.c,v 1.3 1992/05/14 13:20:26 deyke Exp $ */
 
 /* RIP-related user commands
  *   Al Broscious, N3FCT
@@ -129,23 +129,23 @@ void *p;
 	struct rip_list *rl;
 	struct rip_refuse *rfl;
 
-	tprintf("RIP: sent %lu rcvd %lu reqst %lu resp %lu unk %lu refused %lu\n",
+	printf("RIP: sent %lu rcvd %lu reqst %lu resp %lu unk %lu refused %lu\n",
 	 Rip_stat.output, Rip_stat.rcvd, Rip_stat.request, Rip_stat.response,
 	 Rip_stat.unknown,Rip_stat.refusals);
 	if(Rip_list != NULLRL){
-		tprintf("Active RIP output interfaces:\n");
-		tprintf("Dest Addr       Interval Split\n");
+		printf("Active RIP output interfaces:\n");
+		printf("Dest Addr       Interval Split\n");
 		for(rl=Rip_list; rl != NULLRL; rl = rl->next){
-			if(tprintf("%-16s%-9lu%-6u\n",
+			if(printf("%-16s%-9lu%-6u\n",
 			 inet_ntoa(rl->dest),rl->interval,
 			 !!(rl->flags&RIP_SPLIT)) == EOF)
 				break;
 		}
 	}
 	if(Rip_refuse != NULLREF){
-		tprintf("Refusing announcements from gateways:\n");
+		printf("Refusing announcements from gateways:\n");
 		for(rfl=Rip_refuse; rfl != NULLREF;rfl = rfl->next){
-			if(tprintf("%s\n",inet_ntoa(rfl->target)) == EOF)
+			if(printf("%s\n",inet_ntoa(rfl->target)) == EOF)
 				break;
 		}
 	}

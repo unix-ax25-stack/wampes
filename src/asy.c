@@ -1,7 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.5 1992/01/08 13:44:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.6 1992/05/14 13:19:43 deyke Exp $ */
 
 /* Generic serial line interface routines
- * Copyright 1991 Phil Karn, KA9Q
+ * Copyright 1992 Phil Karn, KA9Q
  */
 #include <stdio.h>
 #include "global.h"
@@ -9,7 +9,7 @@
 #include "proc.h"
 #include "iface.h"
 #include "netuser.h"
-/* #include "slhc.h" */
+#include "slhc.h"
 #include "8250.h"
 #include "asy.h"
 #include "ax25.h"
@@ -58,7 +58,7 @@ void *p;
 #endif
 
 	if(if_lookup(argv[4]) != NULLIF){
-		tprintf("Interface %s already exists\n",argv[4]);
+		printf("Interface %s already exists\n",argv[4]);
 		return -1;
 	}
 	/* Find unused asy control block */
@@ -68,7 +68,7 @@ void *p;
 			break;
 	}
 	if(dev >= ASY_MAX){
-		tprintf("Too many asynch controllers\n");
+		printf("Too many asynch controllers\n");
 		return -1;
 	}
 
@@ -88,7 +88,7 @@ void *p;
 				break;
 		}
 		if(xdev >= SLIP_MAX) {
-			tprintf("Too many slip devices\n");
+			printf("Too many slip devices\n");
 			return -1;
 		}
 		setencap(ifp,"SLIP");
@@ -123,7 +123,7 @@ void *p;
 				break;
 		}
 		if(xdev >= SLIP_MAX) {
-			tprintf("Too many slip devices\n");
+			printf("Too many slip devices\n");
 			return -1;
 		}
 		setencap(ifp,"AX25");
@@ -153,7 +153,7 @@ void *p;
 				break;
 		}
 		if(xdev >= SLIP_MAX) {
-			tprintf("Too many nrs devices\n");
+			printf("Too many nrs devices\n");
 			return -1;
 		}
 		/* no call supplied? */
@@ -182,7 +182,7 @@ void *p;
 
 		/* Initialize parameters for various PPP phases/protocols */
 		if (ppp_init(ifp) != 0) {
-			tprintf("Cannot allocate PPP control block\n");
+			printf("Cannot allocate PPP control block\n");
 			free(ifp->name);
 			free((char *)ifp);
 			return -1;
@@ -190,7 +190,7 @@ void *p;
 	} else
 #endif
 	{
-		tprintf("Mode %s unknown for interface %s\n",
+		printf("Mode %s unknown for interface %s\n",
 			argv[3],argv[4]);
 		free(ifp->name);
 		free(ifp);

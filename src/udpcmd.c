@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.6 1991/05/09 07:39:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.7 1992/05/14 13:20:39 deyke Exp $ */
 
 /* UDP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -32,9 +32,9 @@ struct udp_cb *udp;
 int n;
 {
 	if(n == 0)
-		tprintf("    &UCB Rcv-Q  Local socket\n");
+		printf("    &UCB Rcv-Q  Local socket\n");
 
-	return tprintf("%8lx%6u  %s\n",ptol(udp),udp->rcvcnt,pinet_udp(&udp->socket));
+	return printf("%8lx%6u  %s\n",ptol(udp),udp->rcvcnt,pinet_udp(&udp->socket));
 }
 
 /* Dump UDP statistics and control blocks */
@@ -49,18 +49,18 @@ void *p;
 
     if(!Shortstatus){
 	for(i=1;i<=NUMUDPMIB;i++){
-		tprintf("(%2u)%-20s%10lu",i,
+		printf("(%2u)%-20s%10lu",i,
 		 Udp_mib[i].name,Udp_mib[i].value.integer);
 		if(i % 2)
-			tprintf("     ");
+			printf("     ");
 		else
-			tprintf("\n");
+			printf("\n");
 	}
 	if((i % 2) == 0)
-		tprintf("\n");
+		printf("\n");
     }
 
-	tprintf("    &UCB Rcv-Q  Local socket\n");
+	printf("    &UCB Rcv-Q  Local socket\n");
 	for(udp = Udps;udp != NULLUDP; udp = udp->next){
 		if(st_udp(udp,1) == EOF)
 			return 0;

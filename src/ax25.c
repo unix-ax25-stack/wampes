@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.12 1992/01/12 18:39:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.13 1992/05/14 13:19:43 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -70,38 +70,32 @@ int rel;
  * since ARP also uses it.
  */
 int
-ax_output(iface,dest,source,pid,data)
+ax_output(iface,dest,source,pid,bp)
 struct iface *iface;    /* Interface to use; overrides routing table */
 char *dest;             /* Destination AX.25 address (7 bytes, shifted) */
 char *source;           /* Source AX.25 address (7 bytes, shifted) */
 int16 pid;              /* Protocol ID */
-struct mbuf *data;      /* Data field (follows PID) */
+struct mbuf *bp;        /* Data field (follows PID) */
 {
-	struct mbuf *bp;
-
 	/* Prepend pid to data */
-	bp = pushdown(data,1);
-	if(bp == NULLBUF){
-		free_p(data);
-		return -1;
-	}
+	bp = pushdown(bp,1);
 	bp->data[0] = (char)pid;
 	return axsend(iface,dest,source,LAPB_COMMAND,UI,bp);
 }
 /* Common subroutine for sendframe() and ax_output() */
 static int
-axsend(iface,dest,source,cmdrsp,ctl,data)
+axsend(iface,dest,source,cmdrsp,ctl,bp)
 struct iface *iface;    /* Interface to use; overrides routing table */
 char *dest;             /* Destination AX.25 address (7 bytes, shifted) */
 char *source;           /* Source AX.25 address (7 bytes, shifted) */
 int cmdrsp;             /* Command/response indication */
 int ctl;                /* Control field */
-struct mbuf *data;      /* Data field (includes PID) */
+struct mbuf *bp;        /* Data field (includes PID) */
 {
-	struct mbuf *cbp;
 	struct ax25 addr;
 	struct ax_route *dp,*rp;
 	int rval;
+	struct mbuf *data;
 	int i;
 
 	/* If the source addr is unspecified, use the interface address */
@@ -128,14 +122,11 @@ struct mbuf *data;      /* Data field (includes PID) */
 	addr.nextdigi = 0;
 
 	/* Allocate mbuf for control field, and fill in */
-	if((cbp = pushdown(data,1)) == NULLBUF){
-		free_p(data);
-		return -1;
-	}
-	cbp->data[0] = ctl;
+	bp = pushdown(bp,1);
+	bp->data[0] = ctl;
 
-	if((data = htonax25(&addr,cbp)) == NULLBUF){
-		free_p(cbp);    /* Also frees data */
+	if((data = htonax25(&addr,bp)) == NULLBUF){
+		free_p(bp);
 		return -1;
 	}
 	/* This shouldn't be necessary because redirection has already been

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.8 1992/01/08 13:45:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.9 1992/05/14 13:20:08 deyke Exp $ */
 
 /* IP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -71,9 +71,9 @@ void *p;
 	int32 n;
 
 	if(argc < 2) {
-		tprintf("%s\n",inet_ntoa(Ip_addr));
+		printf("%s\n",inet_ntoa(Ip_addr));
 	} else if((n = resolve(argv[1])) == 0){
-		tprintf(Badhost,argv[1]);
+		printf(Badhost,argv[1]);
 		return 1;
 	} else
 		Ip_addr = n;
@@ -114,7 +114,7 @@ void *p;
 	 * Dest            Len Interface    Gateway          Use
 	 * 192.001.002.003 32  sl0          192.002.003.004  0
 	 */
-	tprintf(
+	printf(
 "Dest               Len Interface    Gateway            Metric P   Timer Use\n");
 
 	for(bits=31;bits>=0;bits--){
@@ -166,17 +166,17 @@ void *p;
 			bits = 32;
 
 		if((dest = resolve(argv[1])) == 0){
-			tprintf(Badhost,argv[1]);
+			printf(Badhost,argv[1]);
 			return 1;
 		}
 	}
 	if((ifp = if_lookup(argv[2])) == NULLIF){
-		tprintf("Interface \"%s\" unknown\n",argv[2]);
+		printf("Interface \"%s\" unknown\n",argv[2]);
 		return 1;
 	}
 	if(argc > 3){
 		if((gateway = resolve(argv[3])) == 0){
-			tprintf(Badhost,argv[3]);
+			printf(Badhost,argv[3]);
 			return 1;
 		}
 	} else {
@@ -188,7 +188,7 @@ void *p;
 		metric = 1;
 
 	if(rt_add(dest,bits,gateway,ifp,metric,0,private) == NULLROUTE)
-		tprintf("Can't add route\n");
+		printf("Can't add route\n");
 	return 0;
 }
 /* Drop an entry from the routing table
@@ -219,7 +219,7 @@ void *p;
 			bits = 32;
 
 		if((n = resolve(argv[1])) == 0){
-			tprintf(Badhost,argv[1]);
+			printf(Badhost,argv[1]);
 			return 1;
 		}
 	}
@@ -262,19 +262,19 @@ register struct route *rp;
 		cp = inet_ntoa(rp->target);
 	else
 		cp = "default";
-	tprintf("%-18.18s ",cp);
-	tprintf("%-4u",rp->bits);
-	tprintf("%-13s",rp->iface->name);
+	printf("%-18.18s ",cp);
+	printf("%-4u",rp->bits);
+	printf("%-13s",rp->iface->name);
 	if(rp->gateway != 0)
 		cp = inet_ntoa(rp->gateway);
 	else
 		cp = "";
-	tprintf("%-18.18s ",cp);
-	tprintf("%-7lu",rp->metric);
-	tprintf("%c ",(rp->flags & RTPRIVATE) ? 'P' : ' ');
-	tprintf("%7lu ",
+	printf("%-18.18s ",cp);
+	printf("%-7lu",rp->metric);
+	printf("%c ",(rp->flags & RTPRIVATE) ? 'P' : ' ');
+	printf("%7lu ",
 	 read_timer(&rp->timer) / 1000L);
-	return tprintf("%lu\n",rp->uses);
+	return printf("%lu\n",rp->uses);
 }
 
 static int
@@ -288,11 +288,11 @@ void *p;
 
 	addr = resolve(argv[1]);
 	if(addr == 0){
-		tprintf("Host %s unknown\n",argv[1]);
+		printf("Host %s unknown\n",argv[1]);
 		return 1;
 	}
 	if((rp = rt_lookup(addr)) == NULLROUTE){
-		tprintf("Host %s (%s) unreachable\n",argv[1],inet_ntoa(addr));
+		printf("Host %s (%s) unreachable\n",argv[1],inet_ntoa(addr));
 		return 1;
 	}
 	dumproute(rp);
@@ -310,27 +310,27 @@ void *p;
 	int i;
 
 	for(i=1;i<=NUMIPMIB;i++){
-		tprintf("(%2u)%-20s%10lu",i,
+		printf("(%2u)%-20s%10lu",i,
 		 Ip_mib[i].name,Ip_mib[i].value.integer);
 		if(i % 2)
-			tprintf("     ");
+			printf("     ");
 		else
-			tprintf("\n");
+			printf("\n");
 	}
 	if((i % 2) == 0)
-		tprintf("\n");
+		printf("\n");
 
 	if(Reasmq != NULLREASM)
-		tprintf("Reassembly fragments:\n");
+		printf("Reassembly fragments:\n");
 	for(rp = Reasmq;rp != NULLREASM;rp = rp->next){
-		tprintf("src %s",inet_ntoa(rp->source));
-		tprintf(" dest %s",inet_ntoa(rp->dest));
-		if(tprintf(" id %u pctl %u time %lu len %u\n",
+		printf("src %s",inet_ntoa(rp->source));
+		printf(" dest %s",inet_ntoa(rp->dest));
+		if(printf(" id %u pctl %u time %lu len %u\n",
 		 rp->id,uchar(rp->protocol),read_timer(&rp->timer),
 		 rp->length) == EOF)
 			break;
 		for(fp = rp->fraglist;fp != NULLFRAG;fp = fp->next){
-			if(tprintf(" offset %u last %u\n",fp->offset,
+			if(printf(" offset %u last %u\n",fp->offset,
 			fp->last) == EOF)
 				break;
 		}

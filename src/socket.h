@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.9 1992/01/08 13:45:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.10 1992/05/14 13:20:30 deyke Exp $ */
 
 #ifndef _SOCKET_H
 #define _SOCKET_H
@@ -34,10 +34,12 @@
 #define IPPORT_FTP      21      /* FTP Control port */
 #define IPPORT_TELNET   23      /* Telnet port */
 #define IPPORT_SMTP     25      /* Mail port */
+#define IPPORT_MTP      57      /* Secondary telnet protocol */
 #define IPPORT_FINGER   79      /* Finger port */
 #define IPPORT_TTYLINK  87      /* Chat port */
 #define IPPORT_POP      109     /* pop2 port */
 #define IPPORT_NNTP     119     /* Netnews port */
+#define IPPORT_LOGIN    513     /* BSD rlogin port */
 
 /* UDP port numbers */
 #define IPPORT_DOMAIN   53
@@ -123,7 +125,6 @@ int sendto __ARGS((int s,char *buf,int len,int flags,char *to,int tolen));
 int seteol __ARGS((int s,char *seq));
 int sockmode __ARGS((int s,int mode));
 void tflush __ARGS((void));
-int tprintf __ARGS((char *fmt,...));
 int tputc __ARGS((char c));
 int tputs __ARGS((char *s));
 int usflush __ARGS((int s));

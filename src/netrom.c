@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.28 1992/04/15 18:53:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.29 1992/05/14 13:20:19 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -1790,7 +1790,7 @@ void *p;
   char *ifname = "netrom";
 
   if (Nr_iface || if_lookup(ifname) != NULLIF) {
-    tprintf("Interface %s already exists\n", ifname);
+    printf("Interface %s already exists\n", ifname);
     return (-1);
   }
   Nr_iface = callocw(1, sizeof(*Nr_iface));
@@ -1902,7 +1902,7 @@ void *p;
 
   pc = (struct circuit *) ltop(htol(argv[1]));
   if (!valid_nr(pc)) {
-    tprintf(Notval);
+    printf(Notval);
     return 1;
   }
   kick_nr(pc);
@@ -2143,36 +2143,36 @@ void *p;
     printf("Retry:        %d\n", pc->retry);
     printf("Srtt:         %ld ms\n", pc->srtt);
     printf("Mean dev:     %ld ms\n", pc->mdev);
-    tprintf("Timer T1:     ");
+    printf("Timer T1:     ");
     if (run_timer(&pc->timer_t1))
-      tprintf("%lu", read_timer(&pc->timer_t1));
+      printf("%lu", read_timer(&pc->timer_t1));
     else
-      tprintf("stop");
-    tprintf("/%lu ms\n", dur_timer(&pc->timer_t1));
-    tprintf("Timer T2:     ");
+      printf("stop");
+    printf("/%lu ms\n", dur_timer(&pc->timer_t1));
+    printf("Timer T2:     ");
     if (run_timer(&pc->timer_t2))
-      tprintf("%lu", read_timer(&pc->timer_t2));
+      printf("%lu", read_timer(&pc->timer_t2));
     else
-      tprintf("stop");
-    tprintf("/%lu ms\n", dur_timer(&pc->timer_t2));
-    tprintf("Timer T3:     ");
+      printf("stop");
+    printf("/%lu ms\n", dur_timer(&pc->timer_t2));
+    printf("Timer T3:     ");
     if (run_timer(&pc->timer_t3))
-      tprintf("%lu", read_timer(&pc->timer_t3));
+      printf("%lu", read_timer(&pc->timer_t3));
     else
-      tprintf("stop");
-    tprintf("/%lu ms\n", dur_timer(&pc->timer_t3));
-    tprintf("Timer T4:     ");
+      printf("stop");
+    printf("/%lu ms\n", dur_timer(&pc->timer_t3));
+    printf("Timer T4:     ");
     if (run_timer(&pc->timer_t4))
-      tprintf("%lu", read_timer(&pc->timer_t4));
+      printf("%lu", read_timer(&pc->timer_t4));
     else
-      tprintf("stop");
-    tprintf("/%lu ms\n", dur_timer(&pc->timer_t4));
-    tprintf("Timer T5:     ");
+      printf("stop");
+    printf("/%lu ms\n", dur_timer(&pc->timer_t4));
+    printf("Timer T5:     ");
     if (run_timer(&pc->timer_t5))
-      tprintf("%lu", read_timer(&pc->timer_t5));
+      printf("%lu", read_timer(&pc->timer_t5));
     else
-      tprintf("stop");
-    tprintf("/%lu ms\n", dur_timer(&pc->timer_t5));
+      printf("stop");
+    printf("/%lu ms\n", dur_timer(&pc->timer_t5));
     printf("Rcv queue:    %d\n", pc->rcvcnt);
     if (pc->reseq) {
       printf("Reassembly queue:\n");

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.6 1992/01/12 18:39:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.7 1992/05/14 13:19:46 deyke Exp $ */
 
 #include "global.h"
 
@@ -212,13 +212,13 @@ void *p;
   char *ifname = "axip";
 
   if (Axip_iface || if_lookup(ifname) != NULLIF) {
-    tprintf("Interface %s already exists\n", ifname);
+    printf("Interface %s already exists\n", ifname);
     return (-1);
   }
 
   sock = socket(AF_INET, SOCK_RAW, AX25_PTCL);
   if (sock < 0) {
-    tprintf("cannot create raw socket: %s\n", sys_errlist[errno]);
+    printf("cannot create raw socket: %s\n", sys_errlist[errno]);
     return (-1);
   }
 
@@ -291,9 +291,9 @@ void *p;
   if (argc >= 2)
     return subcmd(Axiproutecmds, argc, argv, p);
 
-  tprintf("Call       Addr\n");
+  printf("Call       Addr\n");
   for (rp = Axip_routes; rp; rp = rp->next)
-    tprintf("%-9s  %s\n",
+    printf("%-9s  %s\n",
 	    pax25(buf, rp->call),
 	    inet_ntoa(ntohl(rp->addr.sin_addr.s_addr)));
   return 0;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.10 1991/06/04 11:33:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.11 1992/05/14 13:20:01 deyke Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q
@@ -76,7 +76,7 @@ void *p;
 	lsocket.address = INADDR_ANY;
 	lsocket.port = Lport++;
 	if((fsocket.address = resolve(argv[1])) == 0){
-		tprintf(Badhost,argv[1]);
+		printf(Badhost,argv[1]);
 		return 1;
 	}
 	if(argc < 3)
@@ -86,7 +86,7 @@ void *p;
 
 	/* Allocate a session control block */
 	if((s = newsession()) == NULLSESSION){
-		tprintf("Too many sessions\n");
+		printf("Too many sessions\n");
 		return 1;
 	}
 	Current = s;
@@ -98,7 +98,7 @@ void *p;
 	/* Allocate an FTP control block */
 	if((ftp = ftp_create(0)) == NULLFTP){
 		s->type = FREE;
-		tprintf(Nospace);
+		printf(Nospace);
 		return 1;
 	}
 	ftp->state = COMMAND_STATE;
@@ -123,7 +123,7 @@ int len;
 	if(Current->cb.ftp->state != COMMAND_STATE){
 		/* The only command allowed in data transfer state is ABORT */
 		if(cmdparse(Ftpabort,line,NULL) == -1){
-			tprintf("Transfer in progress; only ABORT is acceptable\n");
+			printf("Transfer in progress; only ABORT is acceptable\n");
 		}
 		return;
 	}
@@ -136,7 +136,7 @@ int len;
 		if(bp != NULLBUF)
 			send_tcp(Current->cb.ftp->control,bp);
 		else
-			tprintf(Nospace);
+			printf(Nospace);
 	} else {
 		free_p(bp);
 	}
@@ -214,10 +214,10 @@ void *p;
 	if(argc < 2){
 		switch(ftp->type){
 		case IMAGE_TYPE:
-			tprintf("Image\n");
+			printf("Image\n");
 			break;
 		case ASCII_TYPE:
-			tprintf("Ascii\n");
+			printf("Ascii\n");
 			break;
 		}
 		return 0;
@@ -241,7 +241,7 @@ void *p;
 		sndftpmsg(ftp,"TYPE L %s\r\n",argv[2]);
 		break;
 	default:
-		tprintf("Invalid type %s\n",argv[1]);
+		printf("Invalid type %s\n",argv[1]);
 		return 1;
 	}
 	return 0;
@@ -259,7 +259,7 @@ void *p;
 
 	ftp = Current->cb.ftp;
 	if(ftp == NULLFTP){
-		tprintf(Notsess);
+		printf(Notsess);
 		return 1;
 	}
 	if(ftp->fp != NULLFILE && ftp->fp != stdout)
@@ -280,7 +280,7 @@ void *p;
 	if(!strcmp(localname, "-")){
 		ftp->fp = stdout;
 	} else if((ftp->fp = fopen(localname,mode)) == NULLFILE){
-		tprintf(cantwrite,localname);
+		printf(cantwrite,localname);
 		return 1;
 	}
 	ftp->state = RECEIVING_STATE;
@@ -300,7 +300,7 @@ void *p;
 
 	ftp = Current->cb.ftp;
 	if(ftp == NULLFTP){
-		tprintf(Notsess);
+		printf(Notsess);
 		return 1;
 	}
 	if(ftp->fp != NULLFILE && ftp->fp != stdout)
@@ -310,7 +310,7 @@ void *p;
 	if(argc < 3 || !strcmp(argv[2], "-")){
 		ftp->fp = stdout;
 	} else if((ftp->fp = fopen(argv[2],"w")) == NULLFILE){
-		tprintf(cantwrite,argv[2]);
+		printf(cantwrite,argv[2]);
 		return 1;
 	}
 	ftp->state = RECEIVING_STATE;
@@ -337,7 +337,7 @@ void *p;
 
 	ftp = Current->cb.ftp;
 	if(ftp == NULLFTP){
-		tprintf(Notsess);
+		printf(Notsess);
 		return 1;
 	}
 	if(ftp->fp != NULLFILE && ftp->fp != stdout)
@@ -347,7 +347,7 @@ void *p;
 	if(argc < 3 || !strcmp(argv[2], "-")){
 		ftp->fp = stdout;
 	} else if((ftp->fp = fopen(argv[2],"w")) == NULLFILE){
-		tprintf(cantwrite,argv[2]);
+		printf(cantwrite,argv[2]);
 		return 1;
 	}
 	ftp->state = RECEIVING_STATE;
@@ -370,7 +370,7 @@ void *p;
 	struct ftp *ftp;
 
 	if((ftp = Current->cb.ftp) == NULLFTP){
-		tprintf(Notsess);
+		printf(Notsess);
 		return 1;
 	}
 	localname = argv[1];
@@ -388,7 +388,7 @@ void *p;
 		mode = "r";
 
 	if((ftp->fp = fopen(localname,mode)) == NULLFILE){
-		tprintf(cantread,localname);
+		printf(cantread,localname);
 		return 1;
 	}
 	ftp->state = SENDING_STATE;
@@ -422,7 +422,7 @@ void *p;
 		 * for us to send something.
 		 */
 		close_tcp(ftp->data);
-		tprintf("Put aborted\n");
+		printf("Put aborted\n");
 		break;
 	case RECEIVING_STATE:
 		/* Just exterminate the data channel TCB; this will
@@ -431,7 +431,7 @@ void *p;
 		 */
 		del_tcp(ftp->data);
 		ftp->data = NULLTCB;
-		tprintf("Get aborted\n");
+		printf("Get aborted\n");
 		break;
 	}
 	ftp->state = COMMAND_STATE;
@@ -454,7 +454,7 @@ void (*state)();
 	/* Compose and send PORT a,a,a,a,p,p message */
 
 	if((bp = alloc_mbuf(35)) == NULLBUF){   /* 5 more than worst case */
-		tprintf(Nospace);
+		printf(Nospace);
 		return 0;
 	}
 	/* I know, this looks gross, but it works! */
@@ -519,23 +519,23 @@ char old,new;
 	switch(new){
 	case TCP_CLOSE_WAIT:
 		if(notify)
-			tprintf("%s\n",Tcpstates[new]);
+			printf("%s\n",Tcpstates[new]);
 		close_tcp(tcb);
 		break;
 	case TCP_CLOSED:    /* heh heh */
 		if(notify){
-			tprintf("%s (%s",Tcpstates[new],Tcpreasons[tcb->reason]);
+			printf("%s (%s",Tcpstates[new],Tcpreasons[tcb->reason]);
 			if(tcb->reason == NETWORK){
 				switch(tcb->type){
 				case ICMP_DEST_UNREACH:
-					tprintf(": %s unreachable",Unreach[tcb->code]);
+					printf(": %s unreachable",Unreach[tcb->code]);
 					break;
 				case ICMP_TIME_EXCEED:
-					tprintf(": %s time exceeded",Exceed[tcb->code]);
+					printf(": %s time exceeded",Exceed[tcb->code]);
 					break;
 				}
 			}
-			tprintf(")\n");
+			printf(")\n");
 			cmdmode();
 		}
 		del_tcp(tcb);
@@ -544,7 +544,7 @@ char old,new;
 		break;
 	default:
 		if(notify)
-			tprintf("%s\n",Tcpstates[new]);
+			printf("%s\n",Tcpstates[new]);
 		break;
 	}
 }
@@ -570,7 +570,7 @@ char old,new;
 			 */
 			ftp->state = COMMAND_STATE;
 			if(Current != NULLSESSION && Current->cb.ftp == ftp){
-				tprintf("Put complete, %lu bytes sent\n",
+				printf("Put complete, %lu bytes sent\n",
 					tcb->snd.una - tcb->iss - 2);
 			}
 		}
@@ -588,7 +588,7 @@ char old,new;
 			ftp->fp = NULLFILE;
 			ftp->state = COMMAND_STATE;
 			if(Current != NULLSESSION && Current->cb.ftp == ftp){
-				tprintf("Get complete, %lu bytes received\n",
+				printf("Get complete, %lu bytes received\n",
 					tcb->rcv.nxt - tcb->irs - 2);
 			}
 		}
@@ -612,7 +612,7 @@ char *arg;
 
 	len = strlen(fmt) + strlen(arg) + 10;   /* fudge factor */
 	if((bp = alloc_mbuf(len)) == NULLBUF){
-		tprintf(Nospace);
+		printf(Nospace);
 		return 1;
 	}
 	sprintf(bp->data,fmt,arg);

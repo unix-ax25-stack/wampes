@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.5 1992/01/20 17:17:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.6 1992/05/14 13:20:12 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -108,14 +108,14 @@ void *p;
 
 	extern time_t StartTime;
 
-	tprintf("Uptime %s",tformat(secclock()-StartTime));
-	tprintf("\n");
+	printf("Uptime %s",tformat(secclock()-StartTime));
+	printf("\n");
 
-	tprintf("PID       SP        stksize   maxstk    event     fl  in  out  name\n");
+	printf("PID       SP        stksize   maxstk    event     fl  in  out  name\n");
 
 	for(pp = Susptab;pp != NULLPROC;pp = pp->next){
 		ep = (struct env *)&pp->env;
-		if(tprintf("%08lx  %08lx  %-10u%-10u%08lx  %c%c%c %3d %3d  %s\n",
+		if(printf("%08lx  %08lx  %-10u%-10u%08lx  %c%c%c %3d %3d  %s\n",
 		 ptol(pp),
 		 getstackptr(ep),
 		 pp->stksize,
@@ -131,7 +131,7 @@ void *p;
 	for(i=0;i<PHASH;i++){
 		for(pp = Waittab[i];pp != NULLPROC;pp = pp->next){
 			ep = (struct env *)&pp->env;
-			if(tprintf("%08lx  %08lx  %-10u%-10u%08lx  %c%c%c %3d %3d  %s\n",
+			if(printf("%08lx  %08lx  %-10u%-10u%08lx  %c%c%c %3d %3d  %s\n",
 			 ptol(pp),getstackptr(ep),pp->stksize,stkutil(pp),
 			 ptol(pp->event),
 			 pp->i_state ? 'I' : ' ',
@@ -144,7 +144,7 @@ void *p;
 	}
 	for(pp = Rdytab;pp != NULLPROC;pp = pp->next){
 		ep = (struct env *)&pp->env;
-		if(tprintf("%08lx  %08lx  %-10u%-10u          %c%c%c %3d %3d  %s\n",
+		if(printf("%08lx  %08lx  %-10u%-10u          %c%c%c %3d %3d  %s\n",
 		 ptol(pp),getstackptr(ep),pp->stksize,stkutil(pp),
 		 pp->i_state ? 'I' : ' ',
 		 (pp->state & WAITING) ? 'W' : ' ',
@@ -155,7 +155,7 @@ void *p;
 	}
 	if(Curproc != NULLPROC){
 		ep = (struct env *)&Curproc->env;
-		tprintf("%08lx  %08lx  %-10u%-10u          %c   %3d %3d  %s\n",
+		printf("%08lx  %08lx  %-10u%-10u          %c   %3d %3d  %s\n",
 		 ptol(Curproc),getstackptr(ep),Curproc->stksize,
 		 stkutil(Curproc),
 		 Curproc->i_state ? 'I' : ' ',

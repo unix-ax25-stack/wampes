@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iphdr.c,v 1.4 1992/01/08 13:45:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iphdr.c,v 1.5 1992/05/14 13:20:09 deyke Exp $ */
 
 /* IP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,23 +13,19 @@
  * otherwise compute it automatically.
  */
 struct mbuf *
-htonip(ip,data,cflag)
+htonip(ip,bp,cflag)
 register struct ip *ip;
-struct mbuf *data;
+struct mbuf *bp;
 int cflag;
 {
 	int16 hdr_len;
-	struct mbuf *bp;
 	register char *cp;
 	int16 fl_offs;
 
 	hdr_len = IPLEN + ip->optlen;
 	if(hdr_len > IPLEN + IP_MAXOPT)
 		hdr_len = IPLEN + IP_MAXOPT;
-	if((bp = pushdown(data,hdr_len)) == NULLBUF){
-		free_p(data);
-		return NULLBUF;
-	}
+	bp = pushdown(bp,hdr_len);
 	cp = bp->data;
 
 	*cp++ = (ip->version << 4) | (hdr_len >> 2);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.2 1991/06/18 17:27:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.3 1992/05/14 13:20:27 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -17,6 +17,7 @@ static struct port_table tcp_port_table[] = {
   "*",           0,
   "convers",     3600,
   "discard",     IPPORT_DISCARD,/* ARPA discard protocol */
+  "domain",      IPPORT_DOMAIN, /* ARPA domain nameserver */
   "echo",        IPPORT_ECHO,   /* ARPA echo protocol */
   "finger",      IPPORT_FINGER, /* ARPA finger protocol */
   "ftp",         IPPORT_FTP,    /* ARPA file transfer protocol (cmd) */
@@ -24,6 +25,7 @@ static struct port_table tcp_port_table[] = {
   "netupds",     4715,
   "nntp",        IPPORT_NNTP,
   "pop2",        IPPORT_POP,    /* Post Office Prot. v2 */
+  "pop3",        110,           /* Post Office Prot. v3 */
   "smtp",        IPPORT_SMTP,   /* ARPA simple mail transfer protocol */
   "telnet",      IPPORT_TELNET, /* ARPA virtual terminal protocol */
   "ttylink",     IPPORT_TTYLINK,

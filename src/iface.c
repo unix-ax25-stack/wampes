@@ -1,10 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.10 1992/01/08 13:45:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.11 1992/05/14 13:20:06 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <stdio.h>
 #include "global.h"
+#include "config.h"
 #include "mbuf.h"
 #include "proc.h"
 #include "iface.h"
@@ -129,6 +130,104 @@ struct cmds Ifcmds[] = {
 	NULLCHAR,
 };
 
+/* Process packets in the Hopper */
+void
+network(i,v1,v2)
+int i;
+void *v1;
+void *v2;
+{
+	struct mbuf *bp;
+	struct phdr phdr;
+
+loop:
+	while(Hopper == NULLBUF)
+		pwait(&Hopper);
+
+	/* Process the input packet */
+	bp = dequeue(&Hopper);
+	pullup(&bp,(char *)&phdr,sizeof(phdr));
+	if(phdr.iface != NULLIF){
+		phdr.iface->rawrecvcnt++;
+		phdr.iface->lastrecv = secclock();
+	}
+	dump(phdr.iface,IF_TRACE_IN,phdr.type,bp);
+	switch(phdr.type){
+#ifdef  KISS
+	case CL_KISS:
+		kiss_recv(phdr.iface,bp);
+		break;
+#endif
+#ifdef  AX25
+	case CL_AX25:
+		ax_recv(phdr.iface,bp);
+		break;
+#endif
+#ifdef  ETHER
+	case CL_ETHERNET:
+		eproc(phdr.iface,bp);
+		break;
+#endif
+#ifdef ARCNET
+	case CL_ARCNET:
+		aproc(phdr.iface,bp);
+		break;
+#endif
+#ifdef PPP
+	case CL_PPP:
+		ppp_proc(phdr.iface,bp);
+		break;
+#endif
+	/* These types have no link layer protocol at the point when they're
+	 * put in the hopper, so they can be handed directly to IP. The
+	 * separate types are just for user convenience when running the
+	 * "iface" command.
+	 */
+	case CL_NONE:
+	case CL_SERIAL_LINE:
+	case CL_SLFP:
+		ip_route(phdr.iface,bp,0);
+		break;
+	default:
+		free_p(bp);
+		break;
+	}
+	/* Let everything else run - this keeps the system from wedging
+	 * when we're hit by a big burst of packets
+	 */
+	pwait(NULL);
+	goto loop;
+}
+
+/* put mbuf into Hopper for network task
+ * returns 0 if OK
+ */
+int
+net_route(ifp, type, bp)
+struct iface *ifp;
+int type;
+struct mbuf *bp;
+{
+	struct mbuf *nbp;
+	struct phdr phdr;
+
+	phdr.iface = ifp;
+	phdr.type = type;
+
+	if ((nbp = pushdown(bp,sizeof(phdr))) == NULLBUF ){
+		return -1;
+	}
+	memcpy( &nbp->data[0],(char *)&phdr,sizeof(phdr));
+	enqueue(&Hopper,nbp);
+	/* Especially on slow machines, serial I/O can be quite
+	 * compute intensive, so release the machine before we
+	 * do the next packet.  This will allow this packet to
+	 * go on toward its ultimate destination. [Karn]
+	 */
+	pwait(NULL);
+	return 0;
+}
+
 /* Set interface parameters */
 int
 doifconfig(argc,argv,p)
@@ -145,7 +244,7 @@ void *p;
 		return 0;
 	}
 	if((ifp = if_lookup(argv[1])) == NULLIF){
-		tprintf("Interface %s unknown\n",argv[1]);
+		printf("Interface %s unknown\n",argv[1]);
 		return 1;
 	}
 	if(argc == 2){
@@ -156,7 +255,7 @@ void *p;
 		return 0;
 	}
 	if(argc == 3){
-		tprintf("Argument missing\n");
+		printf("Argument missing\n");
 		return 1;
 	}
 	for(i=2;i<argc-1;i+=2)
@@ -188,7 +287,7 @@ void *p;
 	struct iface *ifp = p;
 
 	if(ifp->iftype == NULLIFT || ifp->iftype->scan == NULL){
-		tprintf("Can't set link address\n");
+		printf("Can't set link address\n");
 		return 1;
 	}
 	if(ifp->hwaddr != NULLCHAR)
@@ -250,7 +349,7 @@ void *p;
 	struct iface *ifp = p;
 
 	if(setencap(ifp,argv[1]) != 0){
-		tprintf("Encapsulation mode '%s' unknown\n",argv[1]);
+		printf("Encapsulation mode '%s' unknown\n",argv[1]);
 		return 1;
 	}
 	return 0;
@@ -331,29 +430,29 @@ register struct iface *ifp;
 {
 	char tmp[25];
 
-	tprintf("%-10s IP addr %s MTU %u Link encap ",ifp->name,
+	printf("%-10s IP addr %s MTU %u Link encap ",ifp->name,
 	 inet_ntoa(ifp->addr),(int)ifp->mtu);
 	if(ifp->iftype == NULLIFT){
-		tprintf("not set\n");
+		printf("not set\n");
 	} else {
-		tprintf("%s\n",ifp->iftype->name);
+		printf("%s\n",ifp->iftype->name);
 		if(ifp->iftype->format != NULL && ifp->hwaddr != NULLCHAR)
-			tprintf("           Link addr %s\n",
+			printf("           Link addr %s\n",
 			 (*ifp->iftype->format)(tmp,ifp->hwaddr));
 	}
-	tprintf("           flags %u trace 0x%x netmask 0x%08lx broadcast %s\n",
+	printf("           flags %u trace 0x%x netmask 0x%08lx broadcast %s\n",
 		ifp->flags,ifp->trace,ifp->netmask,inet_ntoa(ifp->broadcast));
 	if(ifp->forw != NULLIF)
-		tprintf("           output forward to %s\n",ifp->forw->name);
-	tprintf("           sent: ip %lu tot %lu idle %s\n",
+		printf("           output forward to %s\n",ifp->forw->name);
+	printf("           sent: ip %lu tot %lu idle %s\n",
 	 ifp->ipsndcnt,ifp->rawsndcnt,tformat(secclock() - ifp->lastsent));
-	tprintf("           recv: ip %lu tot %lu idle %s\n",
+	printf("           recv: ip %lu tot %lu idle %s\n",
 	 ifp->iprecvcnt,ifp->rawrecvcnt,tformat(secclock() - ifp->lastrecv));
-	tprintf("           CRC %s errors %lu\n",
+	printf("           CRC %s errors %lu\n",
 	 ifp->sendcrc ? "enabled" : "disabled", ifp->crcerrors);
-	tprintf("           bad ax25 headers %lu\n",
+	printf("           bad ax25 headers %lu\n",
 	 ifp->ax25errors);
-	tprintf("\n");
+	printf("\n");
 }
 
 /* Given the ascii name of an interface, return a pointer to the structure,

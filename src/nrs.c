@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.6 1991/03/28 19:39:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.7 1992/05/14 13:20:22 deyke Exp $ */
 
 /* This module implements the serial line framing method used by
  * net/rom nodes.  This allows the net/rom software to talk to
@@ -216,11 +216,11 @@ void *p;
 	register struct nrs *np;
 	register int i;
 
-	tprintf("Interface   RcvB  NumReceived  CSumErrors\n");
+	printf("Interface   RcvB  NumReceived  CSumErrors\n");
 
 	for(i = 0, np = Nrs; i < ASY_MAX; i++, np++)
 		if(np->iface != NULLIF)
-			if(tprintf(" %8s   %4d   %10lu  %10lu\n",
+			if(printf(" %8s   %4d   %10lu  %10lu\n",
 			 np->iface->name, np->rcnt,
 			 np->packets, np->errors) == EOF)
 				break;

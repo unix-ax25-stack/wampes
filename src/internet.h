@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/internet.h,v 1.5 1991/07/16 17:55:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/internet.h,v 1.6 1992/05/14 13:20:07 deyke Exp $ */
 
 #ifndef _INTERNET_H
 #define _INTERNET_H
@@ -21,6 +21,7 @@
 #define MAXTTL          255     /* Maximum possible IP time-to-live value */
 
 /* DoD-style precedences */
+#define IP_PRECEDENCE   0xe0    /* Mask for precedence field */
 #define ROUTINE         0x00
 #define PRIORITY        0x20
 #define IMMEDIATE       0x40
@@ -37,6 +38,7 @@
 #define AM_EMERGENCY    0x60
 
 /* Class-of-service bits */
+#define IP_COS          0x1c    /* Mask for class-of-service bits */
 #define LOW_DELAY       0x10
 #define THROUGHPUT      0x08
 #define RELIABILITY     0x04
