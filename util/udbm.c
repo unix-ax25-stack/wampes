@@ -1,6 +1,6 @@
 /* User Data Base Manager */
 
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.13 1992/01/20 17:22:28 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.14 1992/04/07 10:26:52 deyke Exp $";
 
 #define DEBUG           0
 
@@ -148,7 +148,7 @@ const char *s;
 
 /*---------------------------------------------------------------------------*/
 
-#define uchar(c)  ((unsigned char) (c))
+#define uchar(x) ((x) & 0xff)
 
 /*---------------------------------------------------------------------------*/
 

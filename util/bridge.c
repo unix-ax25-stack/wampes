@@ -1,4 +1,4 @@
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.10 1991/11/22 16:21:01 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.11 1992/04/07 10:26:49 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -39,7 +39,7 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #define REPEATED        0x80    /* Has-been-repeated bit in repeater field */
 #define SSID            0x1e    /* Sub station ID */
 
-#define uchar(c)        ((unsigned char) (c))
+#define uchar(x) ((x) & 0xff)
 
 struct conn {
   struct conn *prev, *next;

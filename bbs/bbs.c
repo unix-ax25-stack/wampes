@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.33 1992/01/19 09:07:16 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.34 1992/04/07 10:24:24 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -232,7 +232,7 @@ static void errorstop(int line)
 
 /*---------------------------------------------------------------------------*/
 
-#define uchar(x) ((unsigned char)(x))
+#define uchar(x) ((x) & 0xff)
 
 /*---------------------------------------------------------------------------*/
 

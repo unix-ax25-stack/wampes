@@ -1,4 +1,4 @@
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.18 1991/11/22 16:17:02 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.19 1992/04/07 10:25:41 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -127,7 +127,7 @@ static void read_configuration __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
 
-#define uchar(c)  ((unsigned char) (c))
+#define uchar(x) ((x) & 0xff)
 
 /*---------------------------------------------------------------------------*/
 
@@ -735,7 +735,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.18 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.19 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
