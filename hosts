@@ -5322,6 +5322,7 @@
 44.143.5.28    OE5DWN   # Daniel,
 44.143.5.29    OE5GJN   # Gerald Jungbauer, Leonfelderstr. 75, 4040 Linz
 44.143.5.30    OE5FOL   # Hans Prader, 4552 Wartberg, Penzendorf 84
+44.143.5.31    OE5FSL   # Franz Sonnleitner, 4600 Wels, Enzianstr. 12
 # 1200 bit/s Knoten
 44.143.5.100   OE5XUR   # [GA], JKULINZ, Linz, Oper. OE5AON, packet-internet
 			# gateway: 140.78.4.35 hamgate.edvz.uni-linz.ac.at
@@ -5343,7 +5344,8 @@
 44.143.6.8     OE6WND   # Wolfgang Ninaus, 8010 Graz, MÅnzgrabengÅrtel 21,
 			# JN77rr
 44.143.6.9     OE6HCD   # Hans-Christian Caluba, 8010 Graz, Riesstr. 118
-44.143.6.10    SEC.OE7TKT # Thomas Kuschel, Stiftingtalstr 221/ 4, 8010 Graz
+44.143.6.10    SEC.OE7TKT # Thomas Kuschel, Teichhofweg 6/9i, 8044 Graz
+			# tkt@sbox.tu-graz.ac.at
 44.143.6.11    OE6RHT   # Reinhard Hîllrigl, 8045 Graz, Zieglerstr. 55
 44.143.6.12    OE6ISD   # Dieter Sabathi, 8020 Graz, Vinzenz Muchitschstr. 6
 44.143.6.13    OE6UTD   # Helmut
