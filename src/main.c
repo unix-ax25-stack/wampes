@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.34 1993/01/29 06:48:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.35 1993/03/04 23:11:53 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -8,14 +8,15 @@
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <sys/types.h>
-#include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <stdio.h>
 #include <time.h>
+#include <ctype.h>
 #if     defined(__TURBOC__) && defined(MSDOS)
 #include <io.h>
 #include <conio.h>
 #endif
-#include <unistd.h>
 #include "global.h"
 #ifdef  ANSIPROTO
 #include <stdarg.h>
@@ -72,6 +73,7 @@ char Prompt[] = "%s> ";
 static FILE *Logfp;
 time_t StartTime;                       /* time that NOS was started */
 static int Verbose;
+static int stop_repeat;
 
 static void process_char __ARGS((int c));
 
@@ -85,6 +87,7 @@ char *argv[];
 	int c;
 	char cmdbuf[256];
 
+	setvbuf(stdout,NULLCHAR,_IOFBF,8192);
 	time(&StartTime);
 	Hostname = strdup("net");
 
@@ -110,11 +113,13 @@ char *argv[];
 	printf("(c) Copyright 1992 by Phil Karn, KA9Q\n");
 	printf("\n");
 	/* Start background Daemons */
+#ifndef PURIFY
 	for(tp=Daemons;;tp++){
 		if(tp->name == NULLCHAR)
 			break;
 		newproc(tp->name,tp->stksize,tp->fp,0,NULLCHAR,NULL,0);
 	}
+#endif
 	if(optind < argc){
 		/* Read startup file named on command line */
 		if((fp = fopen(argv[optind],READ_TEXT)) == NULLFILE){
@@ -143,7 +148,12 @@ char *argv[];
 	cmdmode();
 
 	for(;;){
+#ifndef PURIFY
 		pwait(NULL);
+#else
+		timerproc(0,0,0);
+		network(0,0,0);
+#endif
 		eihalt();
 	}
 }
@@ -199,6 +209,7 @@ void *v2;
 	char buf[1024];
 	int n;
 
+	stop_repeat = 1;
 	n = read(0, p = buf, sizeof(buf));
 	if (n <= 0) dobye(0, (char **) 0, (void * ) 0);
 	while (--n >= 0) {
@@ -226,6 +237,34 @@ void *p;
 	return 0;
 }
 /* Standard commands called from main */
+int
+dorepeat(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	int32 interval;
+	int ret;
+
+	if(isdigit(argv[1][0])){
+		interval = atol(argv[1]);
+		if(interval <= 0)
+			interval = 1;
+		argc--;
+		argv++;
+	} else {
+		interval = 1000;
+	}
+	stop_repeat = 0;
+	while(1){
+		printf("\033[H\033[J\033H\033J");       /* Clear screen */
+		ret = subcmd(Cmds,argc,argv,p);
+		fflush(stdout);
+		if(stop_repeat || ret != 0 || Xpause(interval) == -1)
+			break;
+	}
+	return 0;
+}
 int
 dodelete(argc,argv,p)
 int argc;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.14 1993/01/29 06:48:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.15 1993/03/04 23:11:56 deyke Exp $ */
 
 /* Internet Telnet client
  * Copyright 1991 Phil Karn, KA9Q
@@ -120,15 +120,17 @@ send_tel(buf,n)
 char *buf;
 int n;
 {
-	struct mbuf *bp;
 	if(Current == NULLSESSION || Current->cb.telnet == NULLTN
 	 || Current->cb.telnet->tcb == NULLTCB)
 		return;
+	send_tcp(Current->cb.telnet->tcb,qdata(buf,n));
 	/* If we're doing our own echoing and recording is enabled, record it */
+	if(n >= 2 && buf[n-2] == '\r' && buf[n-1] == '\n') {
+	  buf[n-2] = '\n';
+	  n--;
+	}
 	if(!Current->cb.telnet->remote[TN_ECHO] && Current->record != NULLFILE)
 		fwrite(buf,1,n,Current->record);
-	bp = qdata(buf,n);
-	send_tcp(Current->cb.telnet->tcb,bp);
 }
 
 /* Process incoming TELNET characters */
@@ -140,13 +142,16 @@ struct mbuf *bp;
 	int c;
 	FILE *record;
 
+	record = tn->session->record;
 	/* Optimization for very common special case -- no special chars */
 	if(tn->state == TS_DATA){
 		while(bp != NULLBUF && memchr(bp->data,IAC,bp->cnt) == NULLCHAR){
-			if((record = tn->session->record) != NULLFILE)
-				fwrite(bp->data,1,bp->cnt,record);
-			while(bp->cnt-- != 0)
-				putchar(*bp->data++);
+			while(bp->cnt-- != 0){
+				c = *bp->data++;
+				putchar(c);
+				if(record != NULLFILE && c != '\r')
+					putc(c,record);
+			}
 			bp = free_mbuf(bp);
 		}
 	}
@@ -159,7 +164,7 @@ struct mbuf *bp;
 				if(!tn->remote[TN_TRANSMIT_BINARY])
 					c &= 0x7f;
 				putchar(c);
-				if((record = tn->session->record) != NULLFILE)
+				if(record != NULLFILE && c != '\r')
 					putc(c,record);
 			}
 			break;

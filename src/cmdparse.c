@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.8 1993/02/23 21:34:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.9 1993/03/04 23:11:49 deyke Exp $ */
 
 /* Parse command line, set up command arguments Unix-style, and call function.
  * Note: argument is modified (delimiters are overwritten with nulls)
@@ -126,7 +126,8 @@ void *p;
 {
 	struct cmds *cmdp;
 	char *argv[NARG];
-	int argc;
+	char **pargv;
+	int argc,i;
 
 	/* Remove cr/lf */
 	rip(line);
@@ -182,15 +183,27 @@ void *p;
 		if(cmdp->argc_errmsg != NULLCHAR)
 			printf("%s\n",cmdp->argc_errmsg);
 		return -1;
+	}
+	argv[0] = cmdp->name;
+	if(argc < cmdp->argcmin) {
+		/* Insufficient arguments */
+		printf("Usage: %s\n",cmdp->argc_errmsg);
+		return -1;
+	}
+	if(cmdp->func == NULLFP)
+		return 0;
+	if(cmdp->stksize == 0){
+		return (*cmdp->func)(argc,argv,p);
 	} else {
-		argv[0] = cmdp->name;
-		if(argc < cmdp->argcmin) {
-			/* Insufficient arguments */
-			printf("Usage: %s\n",cmdp->argc_errmsg);
-			return -1;
-		} else {
-				return (*cmdp->func)(argc,argv,p);
-		}
+		/* Make private copy of argv and args,
+		 * spawn off subprocess and return.
+		 */
+		pargv = (char **)callocw(argc,sizeof(char *));
+		for(i=0;i<argc;i++)
+			pargv[i] = strdup(argv[i]);
+		newproc(cmdp->name,cmdp->stksize,
+		(void (*)())cmdp->func,argc,pargv,p,1);
+		return 0;
 	}
 }
 
@@ -203,7 +216,9 @@ char *argv[];
 void *p;
 {
 	register struct cmds *cmdp;
+	char **pargv;
 	int found = 0;
+	int i;
 
 	/* Strip off first token and pass rest of line to subcommand */
 	if (argc < 2) {
@@ -228,13 +243,22 @@ void *p;
 		print_help(tab);
 		return -1;
 	}
-	argv[0] = cmdp->name;
 	if(argc < cmdp->argcmin){
 		if(cmdp->argc_errmsg != NULLCHAR)
 			printf("Usage: %s\n",cmdp->argc_errmsg);
 		return -1;
 	}
+	if(cmdp->stksize == 0){
 		return (*cmdp->func)(argc,argv,p);
+	} else {
+		/* Make private copy of argv and args */
+		pargv = (char **)callocw(argc,sizeof(char *));
+		for(i=0;i<argc;i++)
+			pargv[i] = strdup(argv[i]);
+		newproc(cmdp->name,cmdp->stksize,
+		 (void (*)())cmdp->func,argc,pargv,p,1);
+		return(0);
+	}
 }
 
 static int print_help(cmdp)

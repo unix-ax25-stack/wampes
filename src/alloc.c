@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.14 1992/09/01 16:52:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.15 1993/03/04 23:11:48 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifndef PURIFY
 
 #include "global.h"
 #include "mbuf.h"
@@ -201,6 +203,8 @@ unsigned int nelem, elsize;
   return calloc(nelem, elsize);
 }
 
+#endif
+
 /*---------------------------------------------------------------------------*/
 
 void *mallocw(size)
@@ -239,6 +243,7 @@ int argc;
 char *argv[];
 void *envp;
 {
+#ifndef PURIFY
 	printf("heap size %lu avail %lu (%lu%%) morecores %lu\n",
 	 Heapsize,Heapsize-Inuse,100L*(Heapsize-Inuse)/Heapsize,
 	 Morecores);
@@ -246,6 +251,6 @@ void *envp;
 		Allocs,Frees,Allocs-Frees,Memfail,Invalid);
 	printf("pushdown calls %lu pushdown calls to malloc %lu\n",
 		Pushdowns,Pushalloc);
+#endif
 	return 0;
 }
-

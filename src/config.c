@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.30 1993/02/23 21:34:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.31 1993/03/04 23:11:49 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -112,7 +112,7 @@ struct cmds Cmds[] = {
 	"bye",          dobye,          0, 0, NULLCHAR,
 /* This one is out of alpabetical order to allow abbreviation to "c" */
 #ifdef  AX25
-	"connect",      doconnect,      1024, 2,
+	"connect",      doconnect,      0, 2,
 	"connect callsign [digipeaters]",
 #endif
 #if     !defined(UNIX) && !defined(AMIGA)
@@ -147,9 +147,9 @@ struct cmds Cmds[] = {
 #endif
 	"exit",         doexit,         0, 0, NULLCHAR,
 /*      "files",        dofiles,        0, 0, NULLCHAR, */
-	"finger",       dofinger,       1024, 2, "finger name@host",
+	"finger",       dofinger,       0, 2, "finger name@host",
 	"fkey",         dofkey,         0, 3, "fkey <key#> <text>",
-	"ftp",          doftp,          2048, 2, "ftp <address>",
+	"ftp",          doftp,          0, 2, "ftp <address>",
 #ifdef HAPN
 	"hapnstat",     dohapnstat,     0, 0, NULLCHAR,
 #endif
@@ -188,7 +188,7 @@ struct cmds Cmds[] = {
 #endif  /* NRS */
 /*      "page",         dopage,         0, 2, "page <command> [args...]", */
 	"param",        doparam,        0, 2, "param <interface>",
-	"ping",         doping,         512, 0,
+	"ping",         doping,         0, 0,
 	NULLCHAR,
 #ifdef  PI
 	"pistatus",     dopistat,       0, 0, NULLCHAR,
@@ -206,7 +206,7 @@ struct cmds Cmds[] = {
 	"record",       dorecord,       0, 0, NULLCHAR,
 	"remote",       doremote,       0, 3, "remote [-p port] [-k key] [-a kickaddr] <address> exit|reset|kick",
 	"rename",       dorename,       0, 3, "rename <oldfile> <newfile>",
-/*      "repeat",       dorepeat,       1024, 3, "repeat <interval> <command> [args...]",*/
+	"repeat",       dorepeat,       16000, 3, "repeat <interval> <command> [args...]",
 	"reset",        doreset,        0, 0, NULLCHAR,
 #ifdef  RIP
 	"rip",          dorip,          0, 0, NULLCHAR,
@@ -232,13 +232,13 @@ struct cmds Cmds[] = {
 	"stop",         dostop,         0, 2, "stop <servername>",
 #endif
 	"tcp",          dotcp,          0, 0, NULLCHAR,
-	"telnet",       dotelnet,       1024, 2, "telnet <address>",
+	"telnet",       dotelnet,       0, 2, "telnet <address>",
 #ifdef  notdef
-	"test",         dotest,         1024, 0, NULLCHAR,
+	"test",         dotest,         0, 0, NULLCHAR,
 #endif
-/*      "tip",          dotip,          256, 2, "tip <iface", */
+/*      "tip",          dotip,          0, 2, "tip <iface", */
 #ifdef  TRACE
-	"trace",        dotrace,        512, 0, NULLCHAR,
+	"trace",        dotrace,        0, 0, NULLCHAR,
 #endif
 	"udp",          doudp,          0, 0, NULLCHAR,
 	"upload",       doupload,       0, 0, NULLCHAR,
@@ -346,34 +346,34 @@ struct cmds Attab[] = {
 /* "start" and "stop" subcommands */
 static struct cmds Startcmds[] = {
 #if     defined(AX25) && defined(MAILBOX)
-	"ax25",         ax25start,      256, 0, NULLCHAR,
+	"ax25",         ax25start,      0, 0, NULLCHAR,
 #endif
-/*      "bsr",          bsr1,           256, 2, "start bsr <interface> [<port>]", */
-	"discard",      dis1,           256, 0, NULLCHAR,
-	"domain",       domain1,        256, 0, NULLCHAR,
-	"echo",         echo1,          256, 0, NULLCHAR,
-/*      "finger",       finstart,       256, 0, NULLCHAR, */
-	"ftp",          ftpstart,       256, 0, NULLCHAR,
-	"tcpgate",      tcpgate1,       256, 2, "start tcpgate <tcp port> [<host:service>]",
+/*      "bsr",          bsr1,           0, 2, "start bsr <interface> [<port>]", */
+	"discard",      dis1,           0, 0, NULLCHAR,
+	"domain",       domain1,        0, 0, NULLCHAR,
+	"echo",         echo1,          0, 0, NULLCHAR,
+/*      "finger",       finstart,       0, 0, NULLCHAR, */
+	"ftp",          ftpstart,       0, 0, NULLCHAR,
+	"tcpgate",      tcpgate1,       0, 2, "start tcpgate <tcp port> [<host:service>]",
 #if     defined(NETROM) && defined(MAILBOX)
-	"netrom",       nr4start,       256, 0, NULLCHAR,
+	"netrom",       nr4start,       0, 0, NULLCHAR,
 #endif
 #ifdef POP
-	"pop",          pop1,           256, 0, NULLCHAR,
+	"pop",          pop1,           0, 0, NULLCHAR,
 #endif
 #ifdef  RIP
 	"rip",          doripinit,      0,   0, NULLCHAR,
 #endif
 #ifdef  SMTP
-/*      "smtp",         smtp1,          256, 0, NULLCHAR, */
+/*      "smtp",         smtp1,          0, 0, NULLCHAR, */
 #endif
 #if     defined(MAILBOX)
-	"telnet",       telnet1,        256, 0, NULLCHAR,
-/*      "tip",          tipstart,       256, 2, "start tip <interface>", */
+	"telnet",       telnet1,        0, 0, NULLCHAR,
+/*      "tip",          tipstart,       0, 2, "start tip <interface>", */
 #endif
-/*      "term",         term1,          256, 0, NULLCHAR, */
-/*      "ttylink",      ttylstart,      256, 0, NULLCHAR, */
-	"remote",       rem1,           768, 0, NULLCHAR,
+/*      "term",         term1,          0, 0, NULLCHAR, */
+/*      "ttylink",      ttylstart,      0, 0, NULLCHAR, */
+	"remote",       rem1,           0, 0, NULLCHAR,
 	NULLCHAR,
 };
 

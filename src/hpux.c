@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.33 1993/01/29 06:48:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.34 1993/03/04 23:11:50 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -385,7 +385,7 @@ void eihalt()
   actread  = chkread;
   actwrite = chkwrite;
   timeout.tv_sec = 0;
-  if (Hopper)
+  if (Rdytab && Rdytab->next)
     timeout.tv_usec = 0;
   else {
     nte = next_timer_event();

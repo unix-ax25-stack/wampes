@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.7 1993/02/26 10:17:22 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.8 1993/03/04 23:13:08 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -13,7 +13,7 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 extern char *optarg;

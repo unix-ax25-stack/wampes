@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.44 1993/03/02 12:51:31 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.45 1993/03/04 23:12:04 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -1087,16 +1087,26 @@ static void append_line(struct mail *mail, char *line)
 
 static int get_header_value(const char *name, char *line, char *value)
 {
+
   char *p1, *p2;
+  int c, comment;
 
   while (*name)
     if (tolower(uchar(*name++)) != tolower(uchar(*line++))) return 0;
-  while (isspace(uchar(*line))) line++;
+
+  for (comment = 0, p1 = line; c = *p1; p1++) {
+    if (c == '(') comment++;
+    if (comment) *p1 = ' ';
+    if (comment && c == ')') comment--;
+  }
+
   while ((p1 = strchr(line, '<')) && (p2 = strrchr(p1, '>'))) {
     *p2 = 0;
     line = p1 + 1;
   }
-  strcpy(value, line);
+
+  while (isspace(uchar(*line))) line++;
+  strcpy(value, strtrim(line));
   return 1;
 }
 

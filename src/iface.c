@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.16 1993/02/23 21:34:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.17 1993/03/04 23:11:51 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -199,7 +199,11 @@ loop:
 			bp = dequeue(&Hopper);
 			break;
 		}
+#ifndef PURIFY
 		pwait(&Hopper);
+#else
+		return;
+#endif
 	}
 	/* Process the input packet */
 	pullup(&bp,(char *)&ifp,sizeof(ifp));
@@ -219,8 +223,10 @@ loop:
 	/* Let everything else run - this keeps the system from wedging
 	 * when we're hit by a big burst of packets
 	 */
+#ifndef PURIFY
 	pwait(NULL);
 	goto loop;
+#endif
 }
 
 /* put mbuf into Hopper for network task

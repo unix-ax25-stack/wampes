@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.27 1993/02/26 10:17:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.28 1993/03/04 23:11:52 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -474,8 +474,8 @@ int rex_all;
 				if(axp->maxframe < Maxframe)
 					axp->maxframe++;
 			}
+			axp->flags.retrans = 0;
 		}
-		axp->flags.retrans = 0;
 		axp->retries = 0;
 		oldest = (oldest + 1) & MMASK;
 	}
@@ -488,6 +488,7 @@ int rex_all;
 		start_timer(&axp->t1);
 	}
 	if(rex_all){
+		axp->flags.retrans = 1;
 		axp->vs -= axp->unack;
 		axp->vs &= MMASK;
 		axp->unack = 0;
