@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.27 1995/02/15 11:47:08 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.28 1995/03/29 22:03:39 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -992,6 +992,28 @@ static void scandirectory(const char *dirname, enum e_scanmode scanmode)
 
 /*---------------------------------------------------------------------------*/
 
+static void server_version_0(void)
+{
+
+  char buf[8 * 1024];
+  char *bootfile = "/users/funk/dk5sg/tcp/util/bootupd.Z";
+  int fd;
+  int len;
+  struct stat statbuf;
+
+  if (stat(bootfile, &statbuf))
+    syscallerr(bootfile);
+  writeint((int) statbuf.st_size);
+  if ((fd = open(bootfile, O_RDONLY, 0644)) < 0)
+    syscallerr(bootfile);
+  while ((len = read(fd, buf, sizeof(buf))) > 0)
+    writebuf(buf, len);
+  close(fd);
+  flushoutbuf();
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void server_version_1(const char *client, int flags)
 {
 
@@ -1169,6 +1191,9 @@ static void doserver(int argc, char **argv)
       syscallerr(buf);
   }
   switch (version) {
+  case 0:
+    server_version_0();
+    break;
   case 1:
     server_version_1(client, flags);
     break;
