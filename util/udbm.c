@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.43 1996/01/04 19:11:55 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.44 1996/04/01 13:16:54 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -48,7 +48,8 @@ struct user {
 static const char usersfile[] = "users";
 static const char userstemp[] = "users.tmp";
 static const char passfile[]  = "passwd";
-static const char passtemp[]  = "ptmp";
+static const char passtemp1[]  = "ptmp";
+static const char passtemp2[]  = "passwd.tmp";
 static const char spassfile[] = "spasswd";
 static const char aliasfile[] = "aliases";
 static const char aliastemp[] = "aliases.tmp";
@@ -56,7 +57,8 @@ static const char aliastemp[] = "aliases.tmp";
 static const char usersfile[] = "/usr/local/lib/users";
 static const char userstemp[] = "/usr/local/lib/users.tmp";
 static const char passfile[]  = "/etc/passwd";
-static const char passtemp[]  = "/etc/ptmp";
+static const char passtemp1[]  = "/etc/ptmp";
+static const char passtemp2[]  = "/etc/passwd.tmp";
 static const char spassfile[] = "/.secure/etc/passwd";
 static const char aliasfile[] = ALIASES_FILE;
 static const char aliastemp[] = ALIASES_FILE ".tmp";
@@ -541,27 +543,38 @@ static void fixpasswd(void)
 
 #if !(defined __386BSD__ || defined __bsdi__ || defined ibm032 || defined __FreeBSD__)
 
-  FILE *fp;
+  FILE *fp1;
+  FILE *fp2;
   int secured = 0;
   struct passwd *pp;
   struct stat statbuf;
   struct user *up = 0;
 
 #ifdef __hpux
-  if (!stat(spassfile, &statbuf)) secured = 1;
+  if (!stat(spassfile, &statbuf))
+    secured = 1;
 #endif
-  fp = fopenexcl(passtemp);
+  fp1 = fopenexcl(passtemp1);
+  fp2 = fopenexcl(passtemp2);
   while ((pp = getpwent())) {
     if (callvalid(pp->pw_name) &&
 	(up = getup(pp->pw_name, 0)) &&
 	*up->name)
       pp->pw_gecos = (char *) up->name;
-    if (secured) pp->pw_passwd = "*";
-    putpwent(pp, fp);
+    if (secured)
+      pp->pw_passwd = "*";
+    putpwent(pp, fp1);
   }
   endpwent();
-  fclose(fp);
-  if (rename(passtemp, passfile)) terminate(passfile);
+  fclose(fp2);
+  fclose(fp1);
+  if (rename(passtemp1, passfile)) {
+    remove(passtemp2);
+    remove(passtemp1);
+    terminate(passfile);
+  }
+  if (remove(passtemp2))
+    terminate(passtemp2);
   Lockfile = 0;
 
 #endif

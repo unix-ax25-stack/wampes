@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.23 1995/12/20 09:46:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.24 1996/04/01 13:16:15 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -38,8 +38,8 @@ struct iface Loopback = {
 	&Encap,         /* Link to next entry */
 	"loopback",     /* name         */
 	0x7f000001L,    /* addr         127.0.0.1 */
-	0xffffffffL,    /* broadcast    255.255.255.255 */
-	0xffffffffL,    /* netmask      255.255.255.255 */
+	-1,             /* broadcast    255.255.255.255 */
+	-1,             /* netmask      255.255.255.255 */
 	MAXINT16,       /* mtu          No limit */
 	0,              /* trace        */
 	NULL,   /* trfp         */
@@ -83,8 +83,8 @@ struct iface Encap = {
 	NULL,
 	"encap",        /* name         */
 	INADDR_ANY,     /* addr         0.0.0.0 */
-	0xffffffffL,    /* broadcast    255.255.255.255 */
-	0xffffffffL,    /* netmask      255.255.255.255 */
+	-1,             /* broadcast    255.255.255.255 */
+	-1,             /* netmask      255.255.255.255 */
 	MAXINT16,       /* mtu          No limit */
 	0,              /* trace        */
 	NULL,   /* trfp         */

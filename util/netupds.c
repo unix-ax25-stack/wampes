@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.37 1996/02/04 11:17:49 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.38 1996/04/01 13:16:53 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -34,10 +34,11 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #define DEFAULTSERVER   "db0sao"        /* Default netupd server */
 #define DIGESTSIZE      16              /* MD5 digest size */
 #define HASHSIZE        499             /* Hash table size */
-#define LOCKFILE        "/tcp/locks/netupd" /* Lock file */
+#define LOCKDIR         MASTERDIR "/locks" /* Lock directory */
+#define LOCKFILE        LOCKDIR "/netupd" /* Lock file */
 #define MASTERDIR       "/tcp"          /* Master directory */
-#define MIRRORDIR       "/tcp/netupdmirrors" /* Mirror directory */
-#define NETCMD          "unix:/tcp/.sockets/netcmd" /* Net Cmd socket */
+#define MIRRORDIR       MASTERDIR "/netupdmirrors" /* Mirror directory */
+#define NETCMD          "unix:" MASTERDIR "/.sockets/netcmd" /* Net Cmd socket */
 #define TIMEOUT         (6*3600)        /* Client/Server timeout (6 hours) */
 #define UMASK           022             /* Client/Server umask */
 #define VERSION         1               /* Client version */
@@ -1158,7 +1159,7 @@ static void doserver(int argc, char **argv)
   strcat(buf, "/");
   strcat(buf, client);
   if (chdir(buf)) {
-    mkdir("/tcp", 0755);
+    mkdir(MASTERDIR, 0755);
     mkdir(MIRRORDIR, 0755);
     mkdir(buf, 0755);
     if (chdir(buf))
@@ -1279,25 +1280,33 @@ int main(int argc, char **argv)
   if (!getenv("TZ"))
     putenv("TZ=MEZ-1MESZ");
 
-#if !DEBUG
-  mkdir("/tcp/locks", 0755);
-  if ((fdlock = lock_file(LOCKFILE, 1, 0)) < 0)
-    syscallerr(LOCKFILE);
-#endif
-
   if (argc > 0) {
     if ((progname = strrchr(argv[0], '/')))
       progname++;
     else
       progname = argv[0];
-    if (!strcmp(progname, "netupds"))
+    if (!strcmp(progname, "netupds")) {
+#if !DEBUG
+      mkdir(LOCKDIR, 0755);
+      if ((fdlock = lock_file(LOCKFILE, 0, 0)) < 0) {
+	syscallerr(LOCKFILE);
+      }
+#endif
       doserver(argc, argv);
-    else if (!strcmp(progname, "netupdc"))
+    } else if (!strcmp(progname, "netupdc")) {
+#if !DEBUG
+      mkdir(LOCKDIR, 0755);
+      if ((fdlock = lock_file(LOCKFILE, 1, 0)) < 0) {
+	syscallerr(LOCKFILE);
+      }
+#endif
       doclient(argc, argv);
-    else
+    } else {
       usererr("Unknown program name");
-  } else
+    }
+  } else {
     usererr("Unknown program name");
+  }
 
   return 0;
 }

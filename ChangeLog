@@ -1,4 +1,12 @@
-@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ChangeLog,v 1.6 1996/03/14 17:06:00 deyke Exp $
+@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ChangeLog,v 1.7 1996/04/01 13:15:49 deyke Exp $
+
+960401 Dieter Deyke (deyke@fc.hp.com)
+
+	Allowed multiple concurrent netupds servers
+
+	Added second passwd lock file to udbm.c for HP-UX 10.xx
+
+	Updated domain.txt and hosts
 
 960314 Dieter Deyke (deyke@fc.hp.com)
 

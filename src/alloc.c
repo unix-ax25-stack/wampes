@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.30 1995/12/20 09:46:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.31 1996/04/01 13:16:03 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -41,7 +41,7 @@ struct block {
   struct block *next;           /* Linked-list pointer (free blocks only) */
 };
 
-static const int Blocksize[] = {
+static const unsigned int Blocksize[] = {
   0x00000001, 0x00000002, 0x00000004, 0x00000008,
   0x00000010, 0x00000020, 0x00000040, 0x00000080,
   0x00000100, 0x00000200, 0x00000400, 0x00000800,

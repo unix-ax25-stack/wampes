@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.16 1996/02/04 11:17:46 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.17 1996/04/01 13:16:45 deyke Exp $
 
 save_file()
 {
@@ -28,7 +28,7 @@ for file in $(find * -prune -type f \( \
 	-name 'doc' -o \
 	-name 'fixnetrc' -o \
 	-name 'hosts' -o \
-	-name 'hosts.[0-9][0-9][0-9]' -o \
+	-name 'hosts.[0-9]*' -o \
 	-name 'intro.txt' -o \
 	-name 'ip_routes' -o \
 	-name 'Makefile' -o \
