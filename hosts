@@ -1,186 +1,170 @@
 44.128.4.4      n0pra   # Dieter Deyke
 44.128.4.5      n0pra-u # Dieter Deyke
-#
-# 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
-#                       in Deutschland
-# -----------------------------------------------------------------------
-# Die Adressenliste besteht aus 3 Spalten, die durch TABs getrennt sind:
-# Spalte 1: IP-Adresse, 32 bit, dargestellt in 4 Bytes
-# Spalte 2: abgekuerzter Host-Name (ergaenze in <name>.AMPR.ORG)
-# Spalte 3: Kommentar: Name des/r Betreiber/s/in, Ort. Verlaessliche TCP/IP-
-#           Routing-Knotenrechner sind mit *** gekennzeichnet
-# -----------------------------------------------------------------------
-#
-# 44.130.0.x    Hamburg
-# local coordination dk3uz
-# 970306
-44.130.0.1      dl2vo
-44.130.0.2      dl2vo-1
-44.130.0.3      dk5xa
-44.130.0.4      db2hk
-44.130.0.5      dl5hai
-44.130.0.6      dl3hcm
-44.130.0.7      df7hi
-44.130.0.8      dk8hi
-44.130.0.9      dg9xp
-44.130.0.10     test.db0hb
-44.130.0.11     db8hn
-44.130.0.12     dl6hat
-44.130.0.13     dc6xs
-44.130.0.14     dg7xf
-44.130.0.15     dh9haw
-44.130.0.16     dl4hbj
-44.130.0.19     db8xt
-44.130.0.20     dl3xaj
-44.130.0.21     dl1xas
-44.130.0.22     df3xz
-44.130.0.23     dg4ham
-44.130.0.24     dl6xab
-44.130.0.25     dl8hak
-44.130.0.26     dl8hak-1
-44.130.0.27     dk7hr
-44.130.0.28     dl8xaw
-44.130.0.30     dl8xas
-44.130.0.31     dk1ni
-44.130.0.32     df4hn
-44.130.0.33     dc3hn
-44.130.0.34     dg4hh
-44.130.0.35     dl5lac
-44.130.0.36     dl6haz
-44.130.0.37     dd7ll
-44.130.0.38     db8xo
-44.130.0.39     dl2bcd
-44.130.0.40     dk3ud
-44.130.0.41     dh8bag
-44.130.0.42     db2hb
-44.130.0.43     dl3haq-t
-44.130.0.44     df4hr
-44.130.0.45     dl5hcd
-44.130.0.46     dl6hbo
-44.130.0.47     dc6xs-b
-44.130.0.48     dl8hbg
-44.130.0.49     dl1hcs
-44.130.0.50     dd1hs
-44.130.0.51     dh1had
-44.130.0.52     dl2hcp
-44.130.0.53     dl8hav
-44.130.0.54     dc4xc
-44.130.0.55     dh5lap
-44.130.0.56     dl6lay
-44.130.0.57     dl3xak
-44.130.0.58     dk2he
-44.130.0.59     dl9hcj
-44.130.0.61     dl1cr
-44.130.0.62     dl2hat
-44.130.0.63     dl3hbo
-44.130.0.66     dg2hl
-44.130.0.67     dl4xm
-44.130.0.68     dg8ho
-44.130.0.69     dg9hz
-44.130.0.70     dl0yb
-44.130.0.71     dk1nh
-44.130.0.73     dj2hz
-44.130.0.75     dg5he
-44.130.0.76     dl6hax
-44.130.0.77     dj7wl
-44.130.0.78     dl0he
-44.130.0.79     dc0tf
-44.130.0.80     dl0lh
-44.130.0.81     dk3uz
-44.130.0.82     dl2lay
-44.130.0.83     dg3xd
-44.130.0.84     dj4ek
-44.130.0.85     dl5xb
-44.130.0.86     dc6ps
-44.130.0.87     dg3bak
-44.130.0.88     dg3bak-1
-44.130.0.89     db9xq
-44.130.0.90     dl0hps
-44.130.0.91     dl1lbz
-44.130.0.92     dl2had
-44.130.0.93     dc3hc-1
-44.130.0.94     dg4hu
-44.130.0.95     dl5hac
-44.130.0.96     dg4hu-2
-44.130.0.97     dg7lan
-44.130.0.100    db0hht
-44.130.0.101    dl1xao
-44.130.0.102    dl2hao
-44.130.0.103    dl3hx
-44.130.0.104    db4hm
-44.130.0.106    dg6hj
-44.130.0.107    df7hi-1
-44.130.0.110    dl0eh
-44.130.0.111    db1hn
-44.130.0.112    dg2yek
-44.130.0.113    df3oa
-44.130.0.114    dg4hg
-44.130.0.116    dl6hac
-44.130.0.117    dg8xp
-44.130.0.118    dg8xt
-44.130.0.119    dk3hg-2
-44.130.0.120    dk3hg
-44.130.0.121    dk3hg-l
-44.130.0.122    dk3hg-1
-44.130.0.123    dg4ham-6
-44.130.0.124    dg4hx
-44.130.0.125    dg4hx-wampes
-44.130.0.126    dc1hi
-44.130.0.127    dl1hdw
-44.130.0.128    dk3hg-3
-44.130.0.129    dk3hg-3svr
-44.130.0.130    dd0xp
-44.130.0.131    dd6xl
-44.130.0.132    dd2xt
-44.130.0.133    df3hu
-44.130.0.136    dg6xa
-44.130.0.137    dg7xt
-44.130.0.139    dg9xm
-44.130.0.140    dl0at
-44.130.0.141    dl1hbt
-44.130.0.143    dl3hah
-44.130.0.146    dl6hbo-archie
-44.130.0.150    dl0hha
-44.130.0.151    dc1xm
-44.130.0.152    df2xp
-44.130.0.153    dl3lba
+44.130.0.1      dl2vo   dl2vo.ampr.org
+44.130.0.2      dl2vo-1 dl2vo-1.ampr.org
+44.130.0.3      dk5xa   dk5xa.ampr.org
+44.130.0.4      db2hk   db2hk.ampr.org
+44.130.0.5      dl5hai  dl5hai.ampr.org
+44.130.0.6      dl3hcm  dl3hcm.ampr.org
+44.130.0.7      df7hi   df7hi.ampr.org
+44.130.0.8      dk8hi   dk8hi.ampr.org
+44.130.0.9      dg9xp   dg9xp.ampr.org
+44.130.0.10     test.db0hb      test.db0hb.ampr.org
+44.130.0.11     db8hn   db8hn.ampr.org
+44.130.0.12     dl6hat  dl6hat.ampr.org
+44.130.0.13     dc6xs   dc6xs.ampr.org
+44.130.0.14     dg7xf   dg7xf.ampr.org
+44.130.0.15     dh9haw  dh9haw.ampr.org
+44.130.0.16     dl4hbj  dl4hbj.ampr.org
+44.130.0.19     db8xt   db8xt.ampr.org
+44.130.0.20     dl3xaj  dl3xaj.ampr.org
+44.130.0.21     dl1xas  dl1xas.ampr.org
+44.130.0.22     df3xz   df3xz.ampr.org
+44.130.0.23     dg4ham  dg4ham.ampr.org
+44.130.0.24     dl6xab  dl6xab.ampr.org
+44.130.0.25     dl8hak  dl8hak.ampr.org
+44.130.0.26     dl8hak-1        dl8hak-1.ampr.org
+44.130.0.27     dk7hr   dk7hr.ampr.org
+44.130.0.28     dl8xaw  dl8xaw.ampr.org
+44.130.0.30     dl8xas  dl8xas.ampr.org
+44.130.0.31     dk1ni   dk1ni.ampr.org
+44.130.0.32     df4hn   df4hn.ampr.org
+44.130.0.33     dc3hn   dc3hn.ampr.org
+44.130.0.34     dg4hh   dg4hh.ampr.org
+44.130.0.35     dl5lac  dl5lac.ampr.org
+44.130.0.36     dl6haz  dl6haz.ampr.org
+44.130.0.37     dd7ll   dd7ll.ampr.org
+44.130.0.38     db8xo   db8xo.ampr.org
+44.130.0.39     dl2bcd  dl2bcd.ampr.org
+44.130.0.40     dk3ud   dk3ud.ampr.org
+44.130.0.41     dh8bag  dh8bag.ampr.org
+44.130.0.42     db2hb   db2hb.ampr.org
+44.130.0.43     dl3haq-t        dl3haq-t.ampr.org
+44.130.0.44     df4hr   df4hr.ampr.org
+44.130.0.45     dl5hcd  dl5hcd.ampr.org
+44.130.0.46     dl6hbo  dl6hbo.ampr.org
+44.130.0.47     dc6xs-b dc6xs-b.ampr.org
+44.130.0.48     dl8hbg  dl8hbg.ampr.org
+44.130.0.49     dl1hcs  dl1hcs.ampr.org
+44.130.0.50     dd1hs   dd1hs.ampr.org
+44.130.0.51     dh1had  dh1had.ampr.org
+44.130.0.52     dl2hcp  dl2hcp.ampr.org
+44.130.0.53     dl8hav  dl8hav.ampr.org
+44.130.0.54     dc4xc   dc4xc.ampr.org
+44.130.0.55     dh5lap  dh5lap.ampr.org
+44.130.0.56     dl6lay  dl6lay.ampr.org
+44.130.0.57     dl3xak  dl3xak.ampr.org
+44.130.0.58     dk2he   dk2he.ampr.org
+44.130.0.59     dl9hcj  dl9hcj.ampr.org
+44.130.0.61     dl1cr   dl1cr.ampr.org
+44.130.0.62     dl2hat  dl2hat.ampr.org
+44.130.0.63     dl3hbo  dl3hbo.ampr.org
+44.130.0.64     dc4xu   dc4xu.ampr.org
+44.130.0.65     dc4xu-w dc4xu-w.ampr.org
+44.130.0.66     dg2hl   dg2hl.ampr.org
+44.130.0.67     dl4xm   dl4xm.ampr.org
+44.130.0.68     dg8ho   dg8ho.ampr.org
+44.130.0.69     dg9hz   dg9hz.ampr.org
+44.130.0.70     dl0yb   dl0yb.ampr.org
+44.130.0.71     dk1nh   dk1nh.ampr.org
+44.130.0.73     dj2hz   dj2hz.ampr.org
+44.130.0.75     dg5he   dg5he.ampr.org
+44.130.0.76     dl6hax  dl6hax.ampr.org
+44.130.0.77     dj7wl   dj7wl.ampr.org
+44.130.0.78     dl0he   dl0he.ampr.org
+44.130.0.79     dc0tf   dc0tf.ampr.org
+44.130.0.80     dl0lh   dl0lh.ampr.org
+44.130.0.81     dk3uz   dk3uz.ampr.org
+44.130.0.82     dl2lay  dl2lay.ampr.org
+44.130.0.83     dg3xd   dg3xd.ampr.org
+44.130.0.84     dj4ek   dj4ek.ampr.org
+44.130.0.85     dl5xb   dl5xb.ampr.org
+44.130.0.86     dc6ps   dc6ps.ampr.org
+44.130.0.87     dg3bak  dg3bak.ampr.org
+44.130.0.88     dg3bak-1        dg3bak-1.ampr.org
+44.130.0.89     db9xq   db9xq.ampr.org
+44.130.0.90     dl0hps  dl0hps.ampr.org
+44.130.0.91     dl1lbz  dl1lbz.ampr.org
+44.130.0.92     dl2had  dl2had.ampr.org
+44.130.0.93     dc3hc-1 dc3hc-1.ampr.org
+44.130.0.94     dg4hu   dg4hu.ampr.org
+44.130.0.95     dl5hac  dl5hac.ampr.org
+44.130.0.96     dg4hu-2 dg4hu-2.ampr.org
+44.130.0.97     dg7lan  dg7lan.ampr.org
+44.130.0.100    db0hht  db0hht.ampr.org
+44.130.0.101    dl1xao  dl1xao.ampr.org
+44.130.0.102    dl2hao  dl2hao.ampr.org
+44.130.0.103    dl3hx   dl3hx.ampr.org
+44.130.0.104    db4hm   db4hm.ampr.org
+44.130.0.106    dg6hj   dg6hj.ampr.org
+44.130.0.107    df7hi-1 df7hi-1.ampr.org
+44.130.0.110    dl0eh   dl0eh.ampr.org
+44.130.0.111    db1hn   db1hn.ampr.org
+44.130.0.112    dg2yek  dg2yek.ampr.org
+44.130.0.113    df3oa   df3oa.ampr.org
+44.130.0.114    dg4hg   dg4hg.ampr.org
+44.130.0.116    dl6hac  dl6hac.ampr.org
+44.130.0.117    dg8xp   dg8xp.ampr.org
+44.130.0.118    dg8xt   dg8xt.ampr.org
+44.130.0.119    dk3hg-2 dk3hg-2.ampr.org
+44.130.0.120    dk3hg   dk3hg.ampr.org
+44.130.0.121    dk3hg-l dk3hg-l.ampr.org
+44.130.0.122    dk3hg-1 dk3hg-1.ampr.org
+44.130.0.123    dg4ham-6        dg4ham-6.ampr.org
+44.130.0.124    dg4hx   dg4hx.ampr.org
+44.130.0.125    dg4hx-wampes    dg4hx-wampes.ampr.org
+44.130.0.126    dc1hi   dc1hi.ampr.org
+44.130.0.127    dl1hdw  dl1hdw.ampr.org
+44.130.0.128    dk3hg-3 dk3hg-3.ampr.org
+44.130.0.129    dk3hg-3svr      dk3hg-3svr.ampr.org
+44.130.0.130    dd0xp   dd0xp.ampr.org
+44.130.0.131    dd6xl   dd6xl.ampr.org
+44.130.0.132    dd2xt   dd2xt.ampr.org
+44.130.0.133    df3hu   df3hu.ampr.org
+44.130.0.136    dg6xa   dg6xa.ampr.org
+44.130.0.137    dg7xt   dg7xt.ampr.org
+44.130.0.139    dg9xm   dg9xm.ampr.org
+44.130.0.140    dl0at   dl0at.ampr.org
+44.130.0.141    dl1hbt  dl1hbt.ampr.org
+44.130.0.143    dl3hah  dl3hah.ampr.org
+44.130.0.146    dl6hbo-archie   dl6hbo-archie.ampr.org
+44.130.0.150    dl0hha  dl0hha.ampr.org
+44.130.0.151    dc1xm   dc1xm.ampr.org
+44.130.0.152    df2xp   df2xp.ampr.org
+44.130.0.153    dl3lba  dl3lba.ampr.org
 44.130.0.156    dg6xl
-44.130.0.157    dl3xak-2
-44.130.0.160    db0hht-l
-44.130.0.161    dg1hw
-44.130.0.162    dl1tcp
-44.130.0.163    dg3lad
-44.130.0.164    dg3lad-s
-44.130.0.166    dg6xa-2
-44.130.0.168    dg8ho-nos
-44.130.0.170    dc0tk
-44.130.0.171    dd1li
-44.130.0.172    dg2hd
-44.130.0.173    dg3gj
-44.130.0.174    dg4lbi
-44.130.0.175    dg5lbi
-44.130.0.181    dk3uz-svr
-44.130.0.182    dg7laz
-44.130.0.183    dl7laz-2
-44.130.0.200    db0sef
-44.130.0.202    dg5ht-1
-44.130.0.203    dl8xas-wampes
-44.130.0.207    df7hi-2
-44.130.0.211    dh1had-2
-44.130.0.218    dg8xt-2
-44.130.0.220    dl0hew
-44.130.0.222    dl0ccc
-44.130.0.228    dg8xt-3
-44.130.0.238    dg8xt-4
-44.130.0.246    dl6hbo-sys2
-44.130.0.250    hhtest0
-44.130.0.251    hhtest1
-44.130.0.252    hhtest2
-44.130.0.253    hhtest3
-#
-# 44.130.1.x Hamburg North
-# local coordination dk3uz
-# last update 961025
+44.130.0.157    dl3xak-2        dl3xak-2.ampr.org
+44.130.0.160    db0hht-l        db0hht-l.ampr.org
+44.130.0.161    dg1hw   dg1hw.ampr.org
+44.130.0.162    dl1tcp  dl1tcp.ampr.org
+44.130.0.163    dg3lad  dg3lad.ampr.org
+44.130.0.164    dg3lad-s        dg3lad-s.ampr.org
+44.130.0.166    dg6xa-2 dg6xa-2.ampr.org
+44.130.0.168    dg8ho-nos       dg8ho-nos.ampr.org
+44.130.0.170    dc0tk   dc0tk.ampr.org
+44.130.0.171    dd1li   dd1li.ampr.org
+44.130.0.172    dg2hd   dg2hd.ampr.org
+44.130.0.173    dg3gj   dg3gj.ampr.org
+44.130.0.174    dg4lbi  dg4lbi.ampr.org
+44.130.0.175    dg5lbi  dg5lbi.ampr.org
+44.130.0.181    dk3uz-svr       dk3uz-svr.ampr.org
+44.130.0.182    dg7laz  dg7laz.ampr.org
+44.130.0.183    dl7laz-2        dl7laz-2.ampr.org
+44.130.0.200    db0sef  db0sef.ampr.org
+44.130.0.202    dg5ht-1 dg5ht-1.ampr.org
+44.130.0.203    dl8xas-wampes   dl8xas-wampes.ampr.org
+44.130.0.207    df7hi-2 df7hi-2.ampr.org
+44.130.0.211    dh1had-2        dh1had-2.ampr.org
+44.130.0.218    dg8xt-2 dg8xt-2.ampr.org
+44.130.0.220    dl0hew  dl0hew.ampr.org
+44.130.0.222    dl0ccc  dl0ccc.ampr.org
+44.130.0.228    dg8xt-3 dg8xt-3.ampr.org
+44.130.0.238    dg8xt-4 dg8xt-4.ampr.org
+44.130.0.246    dl6hbo-sys2     dl6hbo-sys2.ampr.org
+44.130.0.250    hhtest0 hhtest0.ampr.org
+44.130.0.251    hhtest1 hhtest1.ampr.org
+44.130.0.252    hhtest2 hhtest2.ampr.org
+44.130.0.253    hhtest3 hhtest3.ampr.org
 44.130.1.1      df2lh   df2lh.ampr.org
 44.130.1.2      dl1haz  dl1haz.ampr.org
 44.130.1.3      dk9hs   dk9hs.ampr.org
@@ -215,10 +199,6 @@
 44.130.1.153    dl3lba-1        dl3lba-1.ampr.org
 44.130.1.198    dg6lac-svr      dg6lac-svr.ampr.org
 44.130.1.199    dl2xap-2        dl2xap-2.ampr.org
-#
-# 44.130.2.x    Hamburg South
-# local coordination dk3uz
-# 19970501
 44.130.2.1      dg1hg
 44.130.2.2      dg5ht
 44.130.2.3      dc3hc
@@ -240,9 +220,6 @@
 44.130.2.36     dl1hbd
 44.130.2.37     dl2xbb
 44.130.2.38     dl1hcw
-#44.130.2.39    # reserved for E33
-#   ...
-#44.130.2.47    # reserved for E33
 44.130.2.51     pe1iua-dc
 44.130.2.58     dg8xc
 44.130.2.97     dg8hd-eth
@@ -251,10 +228,6 @@
 44.130.2.100    db0hhs
 44.130.2.101    db0hhs-test
 44.130.2.102    db0hhs-wampes
-#
-# 44.130.2.192/26 Lueneburg
-# local coordination dj4kw
-# 19970501
 44.130.2.192    db0agi
 44.130.2.200    db0agm-d
 44.130.2.201    db0agm
@@ -286,16 +259,12 @@
 44.130.2.229    dg2hak
 44.130.2.230    dg2hak-2
 44.130.2.254    dk0iu
-#
-#44.130.3.x     Elbe/Weser
 44.130.3.1      DL4BBD  # Rene Baucke, 2750 Oerel/Barchel
 44.130.3.2      DL4XZ   # Guenter Wannagat, 2161 Wedel
 44.130.3.3      DL1BGF  # Klaus Bardenhagen, 2740 Elm
 44.130.3.4      DG3BBG  # Ruediger Kueck, 2742 Gnarrenburg
 44.130.3.5      DG8BBG  # Manfred Potthast, 2742 Gnarrenburg
 44.130.3.6      DL5BG   # Rainer Victoria, 2740 Bremervoerde
-#
-#44.130.4.x     Kiel
 44.130.4.1      DB0OQ   # PBBS-Kiel (DH1LAH)
 44.130.4.2      DH1LAH  # Hans-Herrmann Schnoor, 2300 Kiel 1
 44.130.4.3      DD9LS   # Folke Stender, 2301 Westensee/Brux
@@ -331,8 +300,6 @@
 44.130.4.193    DB0KCC  # Cluster Kiel
 44.130.4.194    DF4PA   # Mark Leicher
 44.130.4.195    DJ7SW   # Lup SchlÅter
-#
-#44.130.5.x     Husum
 44.130.5.1      DB0HES  # PBBS Westkueste (DG5LK)
 44.130.5.2      DD7LP   # Christian Petersen, 2251 Ahrenshoeft
 44.130.5.3      DG5LK   # Gerd Krueger, 2251 Ostenfeld
@@ -348,8 +315,6 @@
 44.130.5.65     DB0SYL  # Digi Sylt
 44.130.5.66     DL3LK   # Volker Burkhardt, List auf Sylt
 44.130.5.81     DG6BDO  # Andreas, Kronshagen
-#
-#44.130.6.x     Itzehoe
 44.130.6.1      DB0HHW  # Digi Uetersen
 44.130.6.2      DD9LY   # Herbert Peters, 2219 Laegerdorf
 44.130.6.3      SYS1-DG7LAN     # Andy Schinkel, Uetersen
@@ -357,8 +322,6 @@
 44.130.6.5      DG5LAL  # Jens Beesen, Elmshorn
 44.130.6.20     DL8XI   # Ingo, Wilstedt
 44.130.6.21     DK2LS   # Ulrich Schmiech, 25436 Uetersen
-#
-#44.130.7.x     Luebeck
 44.130.7.1      DB0MAR  # Digi Timmendorfer Strand
 44.130.7.2      DL1LAB  # Wilfried Strehling, 2430 Neustadt
 44.130.7.3      DJ8TQ   # Ernst Lembke, 2430 Neustadt
@@ -374,15 +337,9 @@
 44.130.7.14     DF0SE   # ClubStn M14, Bad Segeberg
 44.130.7.20     DL2GG   # Rainer, Eutin
 44.130.7.129    DB0SEG  # Fuelldigi, Schieren nr Bad Segeberg
-# 44.130.7.193  ??????  # geplanter Digi Raum Heiligenhafen
 44.130.7.194    DK7LS   # Gerd-Uwe Schmidt, Gremersdorf
 44.130.7.195    DK3LL   # Christian Langbehn, Oldenburg
 44.130.7.196    DL2ZP   # Bernd Rîper, Damlos
-#
-# 44.130.8.x    Region 8 Osnabrueck
-#
-# - lokale Adresskoordination: DG9BFO "Dieter Oder" 49593 Bersenbrueck
-#
 44.130.8.1      DL1BFF   # Michael, Osnabrueck
 44.130.8.2      DL2BCR   # Hartmut, Osnabrueck
 44.130.8.3      DL4MFM   # Mario, Fietz, D - 49126 Wallenhorst
@@ -422,8 +379,6 @@
 44.130.8.73     DL0NY    # Club Stn I33, Nordhorn
 44.130.8.88     DB0NON   # ;arp db0non-10 /jo32nk / LinuX (DL1BKU)
 44.130.8.100    DB0SM    # geplanter IP-Router, 49716 Meppen
-#
-#44.130.9.x     Braunschweig, lokale Koordination DF2AU
 44.130.9.1      DK4EG   # Detlef Schmidt, 3300 Braunschweig
 44.130.9.2      DB0FC-L # Digi Braunschweig (DF2AU), Linux Kernel
 44.130.9.3      DK3NY   # Gert Bemman, 3320 Salzgitter
@@ -460,6 +415,8 @@
 44.130.9.35     DC9IR-2 #
 44.130.9.36     DG1AM   # Mario Klebsch, Wolfenbuettel
 44.130.9.37     DL5ABB  # Sven Pape, Hornburg
+44.130.9.39     DG3AAU  #
+44.130.9.40     DB0FC   # Digipeater DB0FC, Wampe
 44.130.9.41     DC1AR   # Jens, Salzgitter-Bad
 44.130.9.42     DC2AJ   # KLaus-Dieter, Braunschweig
 44.130.9.43     DK6AJ   # Juergen, Braunschweig
@@ -467,8 +424,6 @@
 44.130.9.46     DG2ACE-1        #
 44.130.9.47     DG6ABM  #
 44.130.9.48     DG6ABM-1        #
-44.130.9.39     DG3AAU  #
-44.130.9.40     DB0FC   # Digipeater DB0FC, Wampe
 44.130.9.50     DH0OAE  # Oliver Teuber, 37534 Badenhausen
 44.130.9.51     DK3NY-1 # Gert Bemann, 38228 Salzgitter
 44.130.9.52     DB7AF   # Martin Kuehn, 38228 Salzgitter
@@ -478,8 +433,6 @@
 44.130.9.56     DL9OCD  # Michael Alfred Gross, 29323 Wietze
 44.130.9.100    DB0NID  # TCP/IP-Server Harz, 38678 Torfhaus
 44.130.9.101    DB0NID-U        #
-#
-#44.130.10.x    Bremen
 44.130.10.1     DL0HT   # Clubstn HFT
 44.130.10.2     DB9WY   # Manfred
 44.130.10.3     DK8LL   # Bernd
@@ -536,9 +489,6 @@
 44.130.10.110   DD2BN   # Peter, Bremen
 44.130.10.200   DB0BRU  # Univ. Bremen (DL6BBP)
 44.130.10.201   DB0BRU-SVR      #
-#
-#44.130.11.x    Hannover
-# --- lokale Adresskoordination: DC5ON
 44.130.11.1     DB2OS   # Peter Guelzow, 3014 Laatzen
 44.130.11.2     DC4OX   # Michael Roehner, 3068 Helpsen
 44.130.11.3     DC8AM   # Horst Ulrich, 3000 Hannover
@@ -571,9 +521,6 @@
 44.130.11.100   DB0NER  # Digi, Neustadt (DL8OBX)
 44.130.11.101   DL8OBX  # Bernd Anding, 3057 Neustadt
 44.130.11.102   DG4OBJ  # Axel, Arnum; Amiga-1200
-#
-#44.130.12.x    Oldenburg/Emden
-# lokale Adresskoordination: DL1BJL
 44.130.12.1     DC1BI   # Guido Leister, 2903 Bad Zwischenahn
 44.130.12.2     DG9BAE  # Thorsten, 2905 Edewecht
 44.130.12.3     DG7BBO  # Norbert, 2903 Petersfehn II
@@ -656,9 +603,6 @@
 44.130.12.97    DG9BJK-2        # Jens Kueck, Emden;
 44.130.12.98    DB0WHV  # Digipeater Wilhelmshaven; TNN
 44.130.12.99    DF3DT-1 # Uwe Brockmueller, 26203 Wardenburg;
-#
-#44.130.13.x    Hildesheim
-# --- lokale Adresskoordination: DC5ON
 44.130.13.1     DD8OA   # Jan Oppermann, 3200 Hildesheim
 44.130.13.2     DD8OA-1 # Jan Oppermann
 44.130.13.3     DL9OAO  # Mario, 3200 Hildesheim
@@ -686,7 +630,6 @@
 44.130.13.37    DF2OU   # Rolf, Sibbesse
 44.130.13.38    DJ5YG   # Peter, Hildesheim
 44.130.13.100   DB0UHI  # TCPIP-Digi, QTH Laatzen (DD4OB); ***
-#44.130.13.101  DB0UHI-2        #
 44.130.13.150   DG7AAR  # Frank, Warzen
 44.130.13.151   DD7OG   # Gustav, Delligsen
 44.130.13.160   DG9OAA  # Jonny, Alfeld
@@ -694,9 +637,6 @@
 44.130.13.199   DB4OF   # Gerd, Alfeld
 44.130.13.200   DB0WAR  # Digi, Alfeld; 9600Bd
 44.130.13.201   DB0WAR-1        # Digi; 1200Bd
-#
-#44.130.14.x    Goettingen
-# --- lokale Adresskoordination: DL8OCK
 44.130.14.1     DL2LK   # Wilfried Ahlborn, 37079 Goettingen-Holtensen
 44.130.14.2     DL4AL   # Ute Ahlborn, 37079 Goettingen-Holtensen
 44.130.14.3     DL8OCK  # Oliver Grellert, 37133 Friedland-Gross Schneen
@@ -739,9 +679,6 @@
 44.130.14.105   DG6OBH  # Marco
 44.130.14.112   DL8AV   # Peter Linne, 37181 Hardegsen-Asche
 44.130.14.200   DB0TVG  # ATV-Relais Goettingen, 37079 Goettingen-Hetjershsn.
-#
-#44.130.15.x    Meschede
-# --- lokale Adress-Koordination: DJ5RK
 44.130.15.1     DD2DB   # Franz Brieden, 59872 Meschede-Freienohl
 44.130.15.2     DB0HSK  # MultiDigi Stimm Stamm (DG8DG)
 44.130.15.3     DL3FC   # Lothar Schwarz, 59872 Meschede
@@ -773,7 +710,6 @@
 44.130.15.31    DL3DBQ  # Peter Schuermann, 59602 Ruethen-Drewer
 44.130.15.32    DJ1XQ   # Hans Lohmann, 59581 Warstein
 44.130.15.33    DJ2XJ   # Rudi Thiel, 59556 Lippstadt
-44.130.15.34    DB2KC   # Jan G. Loeschner, 33129 Delbrueck
 44.130.15.35    DG5DAS  # Martin Kreussler, 59846 Sundern
 44.130.15.36    DG5DCV  # Christian Ruether, 59519 Moehnesee-Bruellingsen
 44.130.15.37    DJ2DV   # Raimund Beerwerth, 59581 Warstein-Suttrop
@@ -814,59 +750,62 @@
 44.130.15.114   DB3JV-14        # Manfred Siepe, 59846 Sundern/Sauerland
 44.130.15.141   DG3DCG-14       # Oliver Gola, 59846 Sundern/Sauerland
 44.130.15.143   DG8DG-14        # Werner Goebel, 59929 Brilon-Neden
-#
-#44.130.16.x    Paderborn
-44.130.16.1     DL2YAP  # Heinz Cordes, 4791 Lichtenau-Atteln
+44.130.16.1     DL2YAP  # Heinz-Josef Cordes, Lichtenau
 44.130.16.2     DL2YAT  # Thomas Brockmeyer, 4790 Paderborn
-44.130.16.3     DL1YAU  # Meinhard Zimmermann, 4791 Altenbeken
+44.130.16.3     DL1YAU  # Meinhard Zimmermann, Altenbeken
 44.130.16.4     DL4YCZ  # Christoph Bothe, 4790 Paderborn
-44.130.16.5     DL5YCC  # Ursula Luethen, 4790 Paderborn
+44.130.16.5     DL5YCC  # Ursula Luethen, Paderborn
 44.130.16.6     DF6QU   # Rudolf Konersmann, 4790 Paderborn
 44.130.16.7     DG2YDS  # Christoph Brockmeyer, 4790 Paderborn
-44.130.16.8     DL8YAU  # Holger Wolff, 4790 Paderborn
+44.130.16.8     DL8YAU  # Holger Wolff, Delbrueck
 44.130.16.9     DK9QF   # Ludger Konersmann, 4790 Paderborn
-44.130.16.10    DB0BQ   # Mailbox Paderborn, QRG: 438,150 MHz
-44.130.16.11    DL2YAP-1        # Heinz Cordes, 4791 Lichtenau-Atteln
-44.130.16.12    DC0KK   # Peter Vossen, 4790 Paderborn-Dahl
+44.130.16.10    DB0BQ   # TCP/IP-Router Paderborn-Elsen (PC/TNN) ***
+44.130.16.11    DL2YAP-1        # Heinz-Josef Cordes, Lichtenau
+44.130.16.12    DC0KK   # Peter Vossen, Paderborn-Dahl
 44.130.16.13    DL1YBB  # Heinrich Ihmor, 4790 Paderborn-Dahl
-44.130.16.14    DL5YAT  # Bernhard Luethen, 4790 Paderborn
-44.130.16.15    DL5YEC  # Wilhelm Schroeder, 4790 Paderborn
-44.130.16.16    DL5YEC-1        # Knotenrechner
-44.130.16.17    DH2YAL  # Volker Knieling, 4790 Paderborn
-44.130.16.18    DL4YCC  # Klaus Burchardt, 4790 Paderborn
-44.130.16.19    DF6QN   # Peter Bleier, 4790 Paderborn
-44.130.16.20    DF9QE   # Siegfried Kohn, 4790 Paderborn
-44.130.16.21    DJ6YB   # Gerd Wolters, 4790 Paderborn
+44.130.16.14    DL5YAT  # Bernhard Luethen, Paderborn
+44.130.16.15    DL5YEC  # Wilhelm Schroeder, Paderborn
+44.130.16.16    DL5YEC-1        # Wilhelm Schroeder, Paderborn
+44.130.16.17    DH2YAL  # Volker Knieling, Paderborn
+44.130.16.18    DL4YCC  # Gerd Klaus Burchardt, Paderborn
+44.130.16.19    DF6QN   # Peter Bleier, Paderborn-Elsen
+44.130.16.20    DF9QE   # Siegfried Kohn, Paderborn
+44.130.16.21    DJ6YB   # Gerhard Wolters, Paderborn
 44.130.16.22    DF5BW   # Stefan Hess, 4790 Paderborn
 44.130.16.23    DD2QC   # Helmut Kinsky, 4792 Bad Lippspringe
 44.130.16.24    DD2QC-1 #
-44.130.16.25    DL3YDK  # Karl-Josef Menne, 4790 Paderborn
-44.130.16.26    DL2QH   # Bernhard Schroeder, 4790 Paderborn
-44.130.16.27    DF6QQ   # Ulrich Ernst, 4790 Paderborn
-44.130.16.29    DL4QJ   # Manfred Gonschor, 4791 Lichtenau-Atteln
+44.130.16.25    DL3YDK  # Karl Josef Menne, Paderborn
+44.130.16.26    DL2QH   # Bernhard Schroeder, Paderborn
+44.130.16.27    DF6QQ   # Ulrich Ernst, Paderborn
+44.130.16.28    DK0HSN  # Schule, Paderborn
+44.130.16.29    DL4QJ   # Manfred Gonschor, Lichtenau
 44.130.16.32    DB7YAH  # Dieter Macke, 4950 Minden
 44.130.16.33    DB9QB   # Michael Riechmann, 4950 Minden
-44.130.16.34    DL1YAK  # Peter Janda, 4973 Vlotho
-44.130.16.35    DB1YAK  # Gerd Motzko, 4971 Huellhorst
-44.130.16.36    DL1YEG  # Uwe Grothas, 4990 Luebbecke
+44.130.16.34    DL1YAK  # Peter Janda, Vlotho
+44.130.16.35    DB1YAK  # Gerd Motzko, Huellhorst
+44.130.16.36    DL1YEG  # Uwe Grothus, Luebbecke
 44.130.16.40    DL2NB   # Werner Mindner, 4503 Dissen
 44.130.16.41    DC4QN   # Reiner Schmidt, 4804 Versmold
-44.130.16.42    DL8QP   # Uwe Rehage, 4502 Bad Rothenfelde
-44.130.16.43    DK0TO   # Clubstn I24 Teuto (DL8QP)
-44.130.16.44    DH1YWA  # Rene Scheike, 33104 Paderborn
+44.130.16.42    DL8QP   # Uwe Rehage, Bad Rothenfelde
+44.130.16.43    DK0TO   # Clubstation OV Teuto I-24, Bad Rothenfelde (DL8QP)
+44.130.16.44    DH1YWA  # Rene Scheike, Paderborn
 44.130.16.45    DG1YGF  # Andreas Spelter, 4937 Lage
 44.130.16.52    DL3YDL  # Burkhard Mertens, 33100 Paderborn; AT486 WNOS
 44.130.16.53    DL3YDL-3        # ; LINUX/WAMPES
 44.130.16.55    DG5KX   # Martin Freiss
 44.130.16.56    DG1YGL  # Thorsten Poser, 33104 Paderborn 2; Amiga 2000
-44.130.16.66    DH4YBB  # Martin, 33106 Paderborn
-44.130.16.67    DH4YBB-L        # ; LINUX
-44.130.16.68    DL3YGK  # Frank Koschnick, 33100 Paderborn
-44.130.16.80    DL5YDK  # Dieter Wegge, 33100 Paderborn
-44.130.16.81    DF9QK   # Klaus Peter Wegge, 33106 Paderborn
-#
-#44.130.17.x    Dortmund
-# --- lokale Adress-Koordination: DD0DX
+44.130.16.66    DH4YBB  # Martin Kuipers, Paderborn
+44.130.16.67    DH4YBB-1        # Martin Kuipers, Paderborn
+44.130.16.68    DL3YGK  # Frank Koschnick, Paderborn
+44.130.16.80    DL5YDK  # Dieter Wegge Paderborn
+44.130.16.81    DF9QK   # Klaus-Peter Wegge, Paderborn
+44.130.16.100   DB0AX-1 # TCP/IP-Router Wuennenberg/Helmern (PC/TNN) ***
+44.130.16.153   DG8YGZ-10       # Olaf Polan, Borgentreich-Manrode
+44.130.16.192   DB0HE   # TCP/IP-Router Minden (TNC3/TNN) ***
+44.130.16.193   DB9QB   # Michael Riechmann, Minden
+44.130.16.194   DB7YAH  # Dieter Macke, Minden
+44.130.16.253   DG1YGF  # Andreas Spelter, Lage
+44.130.16.254   DB0LIP  # TCP/IP-Router Lemgo/Lippe (PC/TNN) ***
 44.130.17.1     DL2DBM  # Hans Kraemer, 4600 Dortmund
 44.130.17.2     DL2DBM-1        #
 44.130.17.3     DL5DH   # Juergen, Dortmund
@@ -1045,9 +984,6 @@
 44.130.17.202   DG3DCP  # Bernhard, Dortmund
 44.130.17.203   DG8DBQ  # Thorsten, Unna
 44.130.17.204   DC6MH   # Christian, Unna
-#
-#44.130.18.x    Essen
-# --- lokale Adress-Koordination: DF5JZ
 44.130.18.1     DD1EG   # Detlef Broetz,   Essen 1
 44.130.18.2     DF5JY   # Peter Plischka,   Essen 1
 44.130.18.3     DF5JZ-QRL       # Buero DF5JZ
@@ -1258,19 +1194,6 @@
 44.130.18.252   DB5DA   # Ferdi, Bochum Wattenscheid
 44.130.18.253   DG1EI   #  Essen
 44.130.18.254   DF5JZ-SEBO      # DF5JZ Testrechner 2
-#
-#44.130.145.x   Hagen
-# --- lokale Adress-Koordination: DD0DX
-#
-#44.130.146.x   Essen 2
-# --- lokale Adress-Koordination: DF5JZ
-44.130.146.100  DB0RES  # Digi/BBS/Newsgate, Rees (DD9QP)
-44.130.146.101  DB0RES-SVR      # FTP-Server
-44.130.146.200  DK0HN   # Club stn Herten, Server
-44.130.146.210  DG2YHX  #
-#
-#44.130.19.x    Koeln/Duesseldorf
-# --- lokale Adresskoordination: DG1EAD
 44.130.19.1     DG8JT   # Joachim Hoeft, 40627 Duesseldorf
 44.130.19.2     DD9EY   # Bernhard, 4000 Duesseldorf
 44.130.19.3     DH4EAQ  # Wolfgang, 4030 Ratingen
@@ -1364,9 +1287,6 @@
 44.130.19.252   DG9EKC-U        # ; Linux
 44.130.19.253   DG9EKC  # Stephan Eickel, 40724 Hilden; AT386
 44.130.19.254   TEST.DD9EY      # DD9EY Testrechner
-#
-#44.130.20.x    Aachen
-# --- lokale Adresskoordination: DH9KAE
 44.130.20.1     DG2KK   # Walter Doerr, 5160 Dueren
 44.130.20.2     ST.DG2KK        # Walter Doerr; Atari
 44.130.20.4     DL4YDP  # Joe, Aachen
@@ -1404,7 +1324,7 @@
 44.130.20.36    DL3KSB  # Bernd Schulz, 52070 Aachen
 44.130.20.37    DH9KAE-3  # Detlef Brunkel, 52531 Uebach-Palenberg
 44.130.20.38    DH9KAE-2  # WNOS Test Rechner
-44.130.20.39    DH9KAE-1  # Linux - Gateway zum Lap-Net
+44.130.20.39    DH9KAE-1  # Detlef Brunkel, 52531 Uebach-Palenberg
 44.130.20.40    DH9KAE  # Linux Server mit IP-Gateway + DNS
 44.130.20.41    DJ0AAL  # Jeronimo Diaz, 5120 Herzogenrath 3
 44.130.20.42    DG6KBB  # Karl de Jong, 5132 Uebach-Palenberg
@@ -1461,7 +1381,6 @@
 44.130.20.97    DG3KCI  # Horst Plnecken, 5166 Kreuzau; AT
 44.130.20.98    DH3KR-SVR # Ralf Borowski,52428 Juelich
 44.130.20.99    DK0HW   # Club-Stn G38, Wegberg (DK3PB)
-#44.130.20.100  Reserviert
 44.130.20.101   DG3KCE  # Frank, Dueren
 44.130.20.102   DG1KAO  # Willi Ahn, 51156 Monsschau
 44.130.20.103   DG1KAO-1 #
@@ -1486,10 +1405,6 @@
 44.130.20.130   DL3KH   # Alexander Schwarz, Huertgenwald
 44.130.20.131   DD3KC   # Petra Schwarz, Huertgenwald
 44.130.20.200   DL1EDB  # Chris Schlaeger, 5100 Aachen; Atari ST
-#44.130.20.255  Broadcast Region20
-#
-#44.130.21.x    Bonn/Euskirchen
-# Lokaler Koordinator: DG1KJD  Router/NS: dg1kjd-svr v. db0me
 44.130.21.1     DL4KW   # Rolf Willerscheid, 5350 Euskirchen
 44.130.21.2     DG4KS-1 # Andreas Kempf, 5350 Euskirchen
 44.130.21.4     DC8TS   # Reinhard Schulze, 5350 Euskirchen
@@ -1574,46 +1489,9 @@
 44.130.21.250   DC6SV   # Meinolf Braeutigam, 53359 Rheinbach
 44.130.21.251   DC6SV-1 #
 44.130.21.252   DC6SV-2 #
-#
-#44.130.22.x    Muenster
-# --- lokale Adresskoordination: DL6DX
-# 44.130.22.1...126: Subnetz 9K6
-# Netz 44.130.22.0, Bcst 44.130.22.127, Netmask 255.255.255.128 (0xffffff80)
 44.130.22.1     DD7PQ   # Wolfgang Moellendorff, 4402 Greven 1
 44.130.22.2     DK2QG   # Otto Kerkhoff, Muenster
 44.130.22.3     R2.DK2QG        #
-44.130.22.20    ROUTER.DL6DX    # Stefan Wagner, 48291 Telgte; Router (keine Server)
-44.130.22.21    ERNA.DL6DX      # ; DOS-PC (nur Client)
-44.130.22.22    UPUC.DL6DX      # ; Linux (QRL)
-44.130.22.23    JUPITER.DL6DX   # ; Linux
-44.130.22.50    DL5YBI  # Ludger Thesing, 4405 Nottuln
-44.130.22.51    DL5YBI-1        #
-44.130.22.122   DB0MSC  # ; 9k6-Interface
-# 44.130.22.128...190: Subnetz 4K8
-# Netz 44.130.22.240, Bcst 44.130.22.191, Netmask 255.255.255.192 (0xffffffc0)
-44.130.22.144   DB0MSC-4K8              # 4k8-Interface
-# 44.130.22.192...222: Subnetz 1K2
-# Netz 44.130.22.192, Bcst 44.130.22.223, Netmask 255.255.255.224 (0xffffffe0)
-44.130.22.202   ROUTER.DH2YBE   # Markus Mueller, Senden
-44.130.22.203   ATLANTIS.DH2YBE #
-44.130.22.204   BERTI.DH2YBE    #
-44.130.22.206   DG7YEO  # Elmar Ernst, Muenster
-44.130.22.207   DG6YCZ  # Heinz Schmidt, Muenster
-44.130.22.208   DK2YI   # Gerd Geisler, Drensteinfurt
-44.130.22.209   DK0EP   # ClubStn N34, Drensteinfurt
-44.130.22.210   DF6YL   # Peter Beutel, Ahlen
-44.130.22.211   DG1YEM  # Ilona Beutel, 4730 Ahlen
-44.130.22.212   SYS2.DF6YL      # Peter Beutel, 4730 Ahlen
-44.130.22.213   DJ2BP   # Ernst Riede, Muenster
-44.130.22.222   DB0MSC-1K2      # TCP/IP Gateway Muenster; 1K2, IP-Router ***
-# 44.130.22.240...254: Lokales Netz (Ethernet) am Digistandort
-# Netz 44.130.22.240, Bcst 44.130.22.255, Netmask 255.255.255.240 (0xfffffff0)
-44.130.22.240   DB0MSC-ETH      # Ethernet-Interface
-44.130.22.244   DB0MSC-SVR      # Mailhost und News-Server
-44.130.22.245   DB0MSC-TEST     # Testrechner
-44.130.22.250   DG6YY   # Diethard Klinkenberg, Muenster
-44.130.22.251   SYS2.DG6YY      #
-#
 44.130.22.4     DL8YDH  # Guenter Goedde, Emsdetten
 44.130.22.5     DG6YFI  # Ingo Junker, Emsdettem
 44.130.22.6     DL2YCN  # Karl-Heinz, Altenberge
@@ -1627,6 +1505,10 @@
 44.130.22.17    DK0ML   # Clubstn N32 Muenster-Land
 44.130.22.18    DG7YGV  # Eric Dressel, Muenster
 44.130.22.19    DG3YEI  # Ralph Bremer, Muenster
+44.130.22.20    ROUTER.DL6DX    # Stefan Wagner, 48291 Telgte; Router (keine Server)
+44.130.22.21    ERNA.DL6DX      # ; DOS-PC (nur Client)
+44.130.22.22    UPUC.DL6DX      # ; Linux (QRL)
+44.130.22.23    JUPITER.DL6DX   # ; Linux
 44.130.22.25    DF3QF   # Josef Eickseler, Telgte
 44.130.22.26    DG2YEP  # Wolfgang, Telgte
 44.130.22.29    DF6XN   # Werner Wortmann, Emsdetten
@@ -1638,12 +1520,30 @@
 44.130.22.38    DAISY.DG4YDQ    #
 44.130.22.39    ROUTER.DG4YDQ   #
 44.130.22.40    DD9DC   # Iris Wagner, Telgte
+44.130.22.50    DL5YBI  # Ludger Thesing, 4405 Nottuln
+44.130.22.51    DL5YBI-1        #
 44.130.22.66    DF6VY   # Juergen Jahrbeck, 48159 Muenster
 44.130.22.67    DF6VZ   # Dirk Jahrbeck, 48159 Muenster
 44.130.22.70    DG5YEW  # Ludger, Muenster
-#
-#44.130.23.x    Werdohl
-# --- lokale Adresskoordination: DL8DBL
+44.130.22.122   DB0MSC  # ; 9k6-Interface
+44.130.22.144   DB0MSC-4K8              # 4k8-Interface
+44.130.22.202   ROUTER.DH2YBE   # Markus Mueller, Senden
+44.130.22.203   ATLANTIS.DH2YBE #
+44.130.22.204   BERTI.DH2YBE    #
+44.130.22.206   DG7YEO  # Elmar Ernst, Muenster
+44.130.22.207   DG6YCZ  # Heinz Schmidt, Muenster
+44.130.22.208   DK2YI   # Gerd Geisler, Drensteinfurt
+44.130.22.209   DK0EP   # ClubStn N34, Drensteinfurt
+44.130.22.210   DF6YL   # Peter Beutel, Ahlen
+44.130.22.211   DG1YEM  # Ilona Beutel, 4730 Ahlen
+44.130.22.212   SYS2.DF6YL      # Peter Beutel, 4730 Ahlen
+44.130.22.213   DJ2BP   # Ernst Riede, Muenster
+44.130.22.222   DB0MSC-1K2      # TCP/IP Gateway Muenster; 1K2, IP-Router ***
+44.130.22.240   DB0MSC-ETH      # Ethernet-Interface
+44.130.22.244   DB0MSC-SVR      # Mailhost und News-Server
+44.130.22.245   DB0MSC-TEST     # Testrechner
+44.130.22.250   DG6YY   # Diethard Klinkenberg, Muenster
+44.130.22.251   SYS2.DG6YY      #
 44.130.23.1     DB0MKN  # Digi, Neuenrade (DK3AK); ***
 44.130.23.2     DK3AK   # Siegmar Krause, 5982 Neuenrade
 44.130.23.3     DD3DZ   # Peter Hoffrecht, 5983 Balve
@@ -1666,411 +1566,400 @@
 44.130.23.20    DG1DBH  # Harald Husemann, Plettenberg
 44.130.23.40    DG1DCN  # Marc Noeker, Lennestadt: Amiga 2000
 44.130.23.102   DK3AK-14        # Siegmar Krause, 5982 Neuenrade
-#
-#44.130.144.xxx Bielefeld/Oerlinghausen Stand 15.03.97
-44.130.144.1    DB0NOS  # TCP/IP-Svr Oerlinghausen ***
-44.130.144.2    FTP.DB0NOS      # FTP-Svr Oerlinghausen ***
-#44.130.144.3-44.130.144.15 fuer DB0NOS-Peripherie und Subrechner
-44.130.144.16   DL3YEN  # Wolf, Bielefeld
-44.130.144.17   KR4PH   #
-44.130.144.18   DL8KD   # Roland, Oerlinghausen
-44.130.144.19   SYS2.DL8KD      #
-44.130.144.20   DG6YGD  # Dirk, Augustdorf
-44.130.144.21   DL2YEN  # Tom, Paderborn
-44.130.144.22   DG7YBQ  # Uwe, Bielefeld
-44.130.144.23   DL9YEM  # Stefan, Schloss Holte
-44.130.144.24   DG6YDZ  # Dieter, Oerlinghausen
-44.130.144.25   DH4YAJ  # Christian, Bielefeld
-44.130.144.26   DG8YFL  # Karl-Heinz, Bielefeld
-44.130.144.27   DG6YL   # Herbert, Augustdorf
-44.130.144.28   DL8YEA  # Peter, Bielefeld
-44.130.144.29   DG3YFS  # Raymond, Lichtenau
-44.130.144.30   DH6YAY  # Stefan, Guetersloh
-44.130.144.31   AA2RL   #
-44.130.144.32   DG9YGJ  # Stefan, Roedinghausen
-44.130.144.33   SYS1.DG8YAY     # Joerg, Bielefeld
-44.130.144.34   SYS2.DG8YAY     #
-44.130.144.35   DL5YDE  # Ernst, Stukenbrock
-44.130.144.36   DG4YDB  # Michael, Bielefeld
-44.130.144.37   DG7YHV  # Juergen
-44.130.144.38   DG6YGF  # Erhard, Bielefeld
-44.130.144.39   DG4YHU  # Stephan, Detmold
-44.130.144.40   DL3YEO  # Herko, Bielefeld
-44.130.144.41   DG8YHT  # Jens, Detmold
-44.130.144.42   DH9YAX  # Udo, Verl
-44.130.144.43   DL1YDI  # Dirk, Steinhagen
-44.130.144.44   DL5YEQ  # Jens, Bielefeld
-44.130.144.45   DH2YAU  # Andreas, Bielefeld-Senne
-44.130.144.46   DB0CGS  # Clubstation, Bielefeld-Sennestadt
-44.130.144.47   DL3YGK-1        # Frank, Paderborn
-44.130.144.48   DG1YHN  # Sven, Paderborn
-44.130.144.49   DL1YCG  # Andreas, Bielefeld-Senne
-44.130.144.50   DB9WT   # Hans, Bad Iburg
-44.130.144.51   DB9WT-2 # Hans, Bad Iburg
-44.130.144.52   DG5DBV-2        # Oli, Lippetal (Gestinghausen),Rechner 1 DOS/WIN
-44.130.144.53   LINUX.DG5DBV    # Oli,Lippetal (Gestinghausen), Rechner 2 Linux/Netware
-44.130.144.54   DG7YHQ  # Friedhelm, Schloss Holte
-44.130.144.55   DG6DBM  # Hans, 59519 Moehnesee
-44.130.144.56   DK3RC   # Horst, Detmold
-44.130.144.57   DK3RC-1 # Horst, Bielstein
-44.130.144.58   DL0JW   # Clubstation Heidequell N58, Oerlinghausen
-44.130.144.59   DG6VJ-W # Jochen, Muenster, WAMPES
-44.130.144.60   LINUX.DG6YGD    # Dirk Wacker, Augustdorf
-44.130.144.61   DD3QQ   # Kurt, 48153 Muenster
-44.130.144.62   DG6VJ   # Jochen, Muenster
-44.130.144.63   SERVER.DG6YGD   # Dirk, Augustdorf
-44.130.144.64   DK2PH   # Hans, 33415 Verl
-44.130.144.65   DH9YBE  # Jan, Paderborn
-44.130.144.66   DG1YAY  # Christof, 32257 Buende
-44.130.144.67   DG1YAY-7        # TCP/IP-Router, 32257 Buende
-44.130.144.68   DG8YBM  # Markus, 33330 Guetersloh
-44.130.144.69   DG6YGH  # Torsten, 33332 Guetersloh
-44.130.144.70   DG1YGH  # Henning, Bielefeld
-44.130.144.71   DG1YGH-1        # Henning, Bielefeld
-44.130.144.72   DG1YGH-2        # Henning, Bielefeld
-44.130.144.73   DG1YGH-3        # Henning, Bielefeld
-44.130.144.74   DG5YAH  # Ansgar, 59302 Oelde-Lette
-44.130.144.75   DL6YDY  # Norman, 33330 Guetersloh
-44.130.144.76   DG4YFA  # Michael, 33604 Bielefeld
-44.130.144.77   DL5YCX  # Klaus, Muenster
-44.130.144.78   DG6VJ-F # Jochen, Muenster
-44.130.144.79   DG4YGG  # Thomas
-44.130.144.80   DG4YGG-U        # Thomas
-44.130.144.100  DB0EA-9 # LinuX, Muenster (testweise)
-44.130.144.101  DB0EA-U # Digi Muenster
-#
-#44.130.147.x   Siegen
-44.130.147.1    DJ5ZD   # Alexander, Bad Laasphe
-#
-#44.130.24.x    Rhein-Main
-# --- lokale Adress-Koordination: DG1ZX
-44.130.24.1     DF7FE   # Peter Ott, 65817 Eppstein
-44.130.24.2     DF7FE-1 # Peter Ott, 65817 Eppstein
-44.130.24.3     DC6VQ   # Gerhard Sexauer, 65817 Niederjosbach
-44.130.24.4     DG3FBL  # Jochen Sonnabend, 64546 Moerfelden
-44.130.24.5     DK1YZ   # Fred Boersch, 65830 Kriftel
-44.130.24.6     DJ9KM   # Klaus Metternich, 65719 Diedenbergen
-44.130.24.7     DK1VJ   # Bernd Breuer, 65795 Okriftel
-44.130.24.8     DB3PA   # Bernd Schneider, 65931 Zeilsheim
-44.130.24.9     DG1FO   # Claus Hobeck, 65812 Neuenhain
-44.130.24.10    DC0NE   # Karl Doerrer, 65817 Vockenhausen
-44.130.24.11    DB7ZD   # Dieter Hummel, 65931 Sindlingen
-44.130.24.12    DL4FAA  # Gerd Bader, 65931 Zeilsheim
-44.130.24.13    DF4OR   # Ekki Plicht, 64297 Darmstadt
-44.130.24.14    DF4OR-9 #
-44.130.24.15    DF4WC   # Andreas Kurzke, 55237 Flonheim
-44.130.24.16    DK7WJ   # Gunter Jost, Darmstadt
-44.130.24.17    DL6ZAD  # Stefan Hasel, 65719 Hofheim
-44.130.24.18    DL2OBA  # Goetz Ulrich, 63450 Hanau
-44.130.24.19    DG1KBB  # Joerg Proemper, 63110 Rodgau Nieder-Roden
-44.130.24.20    DL1ZAY  # Mathias Funke, 65812 Bad-Soden
-44.130.24.21    DF5JC   # Volker, 65817 Eppstein
-44.130.24.22    DF9FZ   # Gerhard, 64372 Ober-Ramstadt
-44.130.24.23    DL7FAI  # Gerhard, 65843 Sulzbach/TS
-44.130.24.24    DJ0IJ   # Alessio Favilla, 6230 FFM 80
-44.130.24.25    DL6FAL  # Erich Behrens, 6000 FFM 71
-44.130.24.26    DA1CP   # Christopher G. Gilbert, 65817 Eppstein
-44.130.24.27    DL0TS   # ClubStn OV F27 Maintaunus
-44.130.24.28    DC4FK   # Martin, 64347 Griesheim
-44.130.24.29    DL9FAT  # Walter, 65760 Niederhoechstadt
-44.130.24.30    DB0TCP  # Knotenrechner F27 (433.675; DB3PA)
-44.130.24.31    DA1RS   # Richard Steward, 64572 Worfelden
-44.130.24.32    DF9ZE   # Rudolf, 65843 Sulzbach/Ts
-44.130.24.33    DC8ZM   # Stephan Leicht, 6100 Darmstadt
-44.130.24.34    DF9ZD   # Klaus Berthold, 64342 Seeheim
-44.130.24.35    DC8ZM-ST        # Stephan Leicht, 6100 Darmstadt
-44.130.24.36    DJ8HP   # Gerhard Albert, 64678 Lindenfels
-44.130.24.37    DG7FBD  # Hans-Joachim Schmitt, 65830 Kriftel
-44.130.24.38    DG8FAU  # Ralf, 64807 Dieburg
-44.130.24.39    DH8FAG  # Axel Huebner, 64572 Buettelborn
-44.130.24.40    DL0TD   # TH Darmstadt
-44.130.24.41    DK7WJ-1 # Gunter Jost, Darmstadt
-44.130.24.42    DK7WJ-2 #
-44.130.24.43    DK7WJ-3 #
-44.130.24.44    DK7WJ-4 #
-44.130.24.45    DK7WJ-5 #
-44.130.24.46    DK7WJ-6 #
-44.130.24.47    DK7WJ-7 #
-44.130.24.48    DG2FY   # Oliver Weis, 65779 Kelkheim
-44.130.24.49    DD0FG-P # Andre de la Croix /portable
-44.130.24.50    DK0TD   # TH Darmstadt
-44.130.24.51    DL8OBC-7        # Felix J. Riess, 64285 Darmstadt
-44.130.24.52    DF7ZU   # Wolfgang Kremer, 65779 Kelkheim
-44.130.24.53    DF6DX   # Juergen Guettlich, 64285 Darmstadt
-44.130.24.54    DK9ZK   # Helmut Maurer, 65812 Bad Soden
-44.130.24.55    DK7WZ   # Wolfgang
-44.130.24.56    DG5FCP  # Andreas Koester, 65396 Walluf
-44.130.24.57    DF5YI   # Michael Koenig, 64823 Gross-Umstadt
-44.130.24.58    DL5FM   # Ilse
-44.130.24.59    DL7FAT  # Dieter Hack, 64569 Nauheim
-44.130.24.60    DL6ZBA  # Matthias, 63654 Buedingen
-44.130.24.61    DH4FBL  # Gregor, 65232 Taunusstein (ex DC4ZG)
-44.130.24.62    DL3FAF  # Bernd Barnekow, 65343 Eltville/Rhein
-44.130.24.63    DJ7JD   # Manfred Ross, 65205 Wiesbaden-Delkenheim
-44.130.24.64    DK0BP   # FH Dieburg
-44.130.24.65    DK8ZG   # Peter, Klein-Gerau; AT
-44.130.24.66    DL6FBH  # Benny, 65232 Taunusstein
-44.130.24.67    DL1SDA  # Gerald, 64807 Dieburg
-44.130.24.68    DA2GM   # Marc, 53919 Bodenheim; Mac SE
-44.130.24.69    DA1SC   # Scott, Wiesbaden (N4WQE)
-44.130.24.70    DA2JL   # Tim Knechtly, 65189 Wiesbaden (WB8TEV)
-44.130.24.71    DC0HK   # Barry Titmarsh, 64293 Darmstadt (GM8SAU); LINUX
-44.130.24.72    DC0HK-IPSW      # ; IP-Switch; WNOS
-44.130.24.73    DF7FW   # Horst Stolz, 65824 Schwalbach/Ts
-44.130.24.74    DC0HK-SYS2      # Barry Titmarsh, Darmstadt; Unix NFS Server
-44.130.24.75    DD7ZO   # Achim Gottschalk, 65779 Kelkheim-Fischbach
-44.130.24.76    DK5FY   # Bodo, 63607 Aufenau
-44.130.24.77    DH4FAH  # Michael, 63150 Heusenstamm
-44.130.24.78    DG8FBV  # Thomas Otterbein, 64382 Babenhausen; *** WNOS, via DB0DA
-44.130.24.79    DG5ZI   # Klaus Mueller, 65760 Eschborn
-44.130.24.80    DD3IF-2 # Hans Huebinger, 61184 Karben
-44.130.24.81    DG7FCD  # Horst Doebert, 63179 Obertshausen
-44.130.24.82    DH0ZAL  # Andreas, Hanau
-44.130.24.83    DA2DX   # Danny, Wiesbaden
-44.130.24.84    DJ7JD-1 # Manfred Ross, 65205 Wiesbaden-Delkenheim
-44.130.24.85    DL1IS   # Martin, Offenbach
-44.130.24.86    DG9FED  # Mathias, Rimbach/Odw
-44.130.24.87    DL1FY   # Torsten, 68519 Viernheim
-44.130.24.89    DG8ZK   # Ralf Bauerfeind, 63303 Dreieich
-44.130.24.90    DL0ESA  # ESOC Clubstn, Darmstadt
+44.130.24.1     DF7FE           # Peter Ott, 65817 Eppstein
+44.130.24.2     DF7FE-1         # Peter Ott, 65817 Eppstein
+44.130.24.3     DB2ZW           # Markus Heinzinger, 63456 Hanau
+44.130.24.4     DG3FBL          # Jochen Sonnabend, 64546 Moerfelden
+44.130.24.5     DL0WMF          # Felix, Clubstation Darmstadt
+44.130.24.6     DJ9KM           # Klaus Metternich, 65719 Hofheim
+44.130.24.7     DK1VJ           # Bernd Breuer, 65795 Okriftel
+44.130.24.8     DB3PA           # Bernd Schneider, 65931 Zeilsheim
+44.130.24.9     DG1FO           # Claus Hobeck, 65812 Neuenhain
+44.130.24.10    DC0NE           # Karl Doerrer, 65817 Vockenhausen
+44.130.24.11    DB7ZD           # Dieter Hummel, 65931 Sindlingen
+44.130.24.12    DL4FAA          # Gerd Bader, 65931 Zeilsheim
+44.130.24.13    DF4OR           # Ekki Plicht, 64297 Darmstadt
+44.130.24.14    DF4OR-9         #
+44.130.24.15    DF4WC           # Andreas Kurzke, 55237 Flonheim
+44.130.24.16    DL0TD           # TH Darmstadt
+44.130.24.17    DL6ZAD          # Stefan Hasel, 65719 Hofheim
+44.130.24.18    DL2OBA          # Goetz Ulrich, 63450 Hanau
+44.130.24.19    DG1KBB          # Joerg Proemper, 63110 Rodgau Nieder-Roden
+44.130.24.20    DL1ZAY          # Mathias Funke, 65812 Bad-Soden
+44.130.24.21    DF5JC           # Volker, 65817 Eppstein
+44.130.24.22    DF9FZ           # Gerhard, 64372 Ober-Ramstadt
+44.130.24.23    DL7FAI          # Gerhard, 65843 Sulzbach/TS
+44.130.24.24    DJ0IJ           # Alessio Favilla, FFM
+44.130.24.25    DL6FAL          # Erich Behrens, FFM
+44.130.24.26    DA1CP           # Christopher G. Gilbert, 65817 Eppstein
+44.130.24.27    DL0TS           # Clubstation OV F27 Maintaunus
+44.130.24.28    DC4FK           # Martin, 64347 Griesheim
+44.130.24.29    DL9FAT          # Walter, 65760 Niederhoechstadt
+44.130.24.30    DB0TCP          # Knotenrechner F27 (433.675; DB3PA)
+44.130.24.31    DA1RS           # Richard Steward, 64572 Worfelden
+44.130.24.32    DF9ZE           # Rudolf, 65843 Sulzbach/Ts
+44.130.24.33    DC8ZM           # Stephan Leicht, Darmstadt
+44.130.24.34    DF9ZD           # Klaus Berthold, 64342 Seeheim
+44.130.24.35    DC8ZM-ST        # Stephan Leicht, Darmstadt
+44.130.24.36    DJ8HP           # Gerhard Albert, 64678 Lindenfels
+44.130.24.37    DG7FBD          # Hans-Joachim Schmitt, 65830 Kriftel
+44.130.24.38    DG8FAU          # Ralf, 64807 Dieburg
+44.130.24.39    DH8FAG          # Axel HÅbner, 64572 Buettelborn
+44.130.24.40    DK7WJ           # Gunter Jost, Darmstadt
+44.130.24.41    DK7WJ-1         # Gunter Jost, Darmstadt
+44.130.24.42    DK7WJ-2         #
+44.130.24.43    DK7WJ-3         #
+44.130.24.44    DK7WJ-4         #
+44.130.24.45    DK7WJ-5         #
+44.130.24.46    DK7WJ-6         #
+44.130.24.47    DK7WJ-7         #
+44.130.24.48    DG2FY           # Oliver Weis, 65779 Kelkheim
+44.130.24.49    DD0FG-P         # Andre de la Croix (portable)
+44.130.24.50    DK0TD           # TH Darmstadt
+44.130.24.51    DL8OBC-7        # Felix J. Riess, 64285 Darmstadt-Bessungen
+44.130.24.52    DF7ZU           # Wolfgang Kremer, 65779 Kelkheim
+44.130.24.53    DF6DX           # JÅrgen GÅttlich, 64285 Darmstadt
+44.130.24.54    DK9ZK           # Helmut Maurer, 65812 Bad Soden
+44.130.24.55    DK7WZ           # Wolfgang
+44.130.24.56    DG5FCP          # Andreas Koester, 65396 Walluf
+44.130.24.57    DF5YI           # Michael Koenig, 64823 Gross-Umstadt
+44.130.24.58    DL5FM           # Ilse
+44.130.24.59    DL7FAT          # Dieter Hack, 64569 Nauheim
+44.130.24.60    DL6ZBA          # Matthias, 63654 Buedingen
+44.130.24.61    DH4FBL          # Gregor, 65232 Taunusstein
+44.130.24.62    DL3FAF          # Bernd Barnekow, 65343 Eltville/Rhein
+44.130.24.63    DJ7JD           # Manfred Ross, 65205 Wiesbaden-Delkenheim
+44.130.24.64    DK0BP           # FH Dieburg
+44.130.24.65    DK8ZG           # Peter, Klein-Gerau; AT
+44.130.24.66    DL6FBH          # Benny, 65232 Taunusstein
+44.130.24.67    DH5IAE          # Bernd Ludewig, 64807 Dieburg
+44.130.24.68    DA2GM           # Marc, 53919 Bodenheim; Mac SE
+44.130.24.69    DA1SC           # Scott, Wiesbaden (N4WQE)
+44.130.24.70    DA2JL           # Tim Knechtly, 65189 Wiesbaden (WB8TEV)
+44.130.24.71    DC0HK           # Barry Titmarsh, Darmstadt, Linux UNIX
+44.130.24.72    DC0HK-IPSW      # Barry Titmarsh, Darmstadt, WNOS-4 router/bridge
+44.130.24.73    DF7FW           # Horst Stolz, 65824 Schwalbach/Ts
+44.130.24.74    DC0HK-SYS2      # Barry Titmarsh, Darmstadt, Linux UNIX nfs server
+44.130.24.75    DD7ZO           # Achim Gottschalk, 65779 Kelkheim-Fischbach
+44.130.24.76    DK5FY           # Bodo, 63607 Aufenau
+44.130.24.77    DH4FAH          # Michael, 63150 Heusenstamm
+44.130.24.78    DG8FBV          # Thomas Otterbein, 64382 Babenhausen; *** WNOS, via DB0DA
+44.130.24.79    DL2FP           # Klaus Mueller, 65760 Eschborn
+44.130.24.80    DD3IF-2         # Hans Huebinger, 61184 Karben
+44.130.24.81    DG7FCD          # Horst Doebert, 63179 Obertshausen
+44.130.24.82    DH0ZAL          # Andreas, Hanau
+44.130.24.83    DA2DX           # Danny, Wiesbaden
+44.130.24.84    DJ7JD-1         # Manfred Ross, 65205 Wiesbaden-Delkenheim
+44.130.24.85    DL1IS           # Martin, Offenbach
+44.130.24.86    DG9FED          # Mathias Gaertner, Fuerth/Odw.
+44.130.24.87    DL1FY           # Torsten, 68519 Viernheim
+44.130.24.88    DD8FR-1         # Joerg Trieschmann, 64390 Erzhausen
+44.130.24.89    DG8ZK           # Ralf Bauerfeind, 63303 Dreieich
+44.130.24.90    DL0ESA          # ESOC Clubstn, Darmstadt (DC0HK)
 44.130.24.91    SYS2.DL0ESA     # ESOC Spacecraft Database, Darmstadt
-44.130.24.92    DG2FAK  # Mathias Gitler, 61137 Schoeneck ; AT386 WNOS
-44.130.24.93    DG8FEH  # Michael Traut, 61137 Schoeneck ; AT486 WNOS
+44.130.24.92    DG2FAK          # Mathias Gitler, 61137 Schoeneck ; AT386 WNOS
+44.130.24.93    DG8FEH          # Michael Traut, 61137 Schoeneck ; AT486 WNOS
 44.130.24.94    DG8FBV-1        # Thomas Otterbein, 64382 Babenhausen
-44.130.24.95    DB4II   # Roland Irion, 63179 Obertshausen 1
+44.130.24.95    DB4II           # Roland Irion, 63179 Obertshausen 1
 44.130.24.96    DG8FBV-3        # Thomas Otterbein, 64382 Babenhausen
 44.130.24.97    DG8FBV-2        # Thomas Otterbein, 64382 Babenhausen
 44.130.24.98    DL8AAU-A        # Alexander Kurpiers, 64285 Darmstadt
-44.130.24.99    UNIX.DD0FG      #
-44.130.24.100   DD0FG   # Andre de la Croix, 63322 Roedermark-Waldacker
-44.130.24.101   DG9FCQ  # Erik Meissner, 65719 Hofheim/Ts
+44.130.24.99    UNIX.DD0FG      # Andre de la Croix (unix)
+44.130.24.100   DD0FG           # Andre de la Croix, 63322 Roedermark, JN49JX (main)
+44.130.24.101   DG9FCQ          # Erik Meissner, 65719 Hofheim/Ts
 44.130.24.102   DL6ZBA-SYS2     # Matthias, 63654 Buedingen
-44.130.24.103   DK5FJ   # Gerd, 65205 Wiesbaden
-44.130.24.104   DK9FQ   # Lothar Schwarz, 64354 Reinheim
-44.130.24.105   KC4BQG  # Jarred James, Darmstadt
-44.130.24.106   DK2FR-6 # Wenno, 64285 Darmstadt
-44.130.24.107   DL8OBC-P        # Felix J. Riess, 64285 Darmstadt
-44.130.24.108   DG8FAY  # Konrad Brueckmann, 65843 Sulzbach/Ts
-44.130.24.109   DF9ZK   # Baldur Jacobi, 65795 Hattersheim
-44.130.24.110   DL3TE   # Helmut Gerwat, 65451 Kelsterbach
-44.130.24.111   DJ2ZS   # Peter Bertram, 64572 Buettelborn
-44.130.24.112   DH0FAK  # Achim Scheib, 65510 Huenstetten; AT
-44.130.24.113   DG2FEV  # Rainer, 65510 Huenstetten
-44.130.24.114   DH5FBR  # Joerg, 63486 Bruchkoebel
-44.130.24.115   DL6FCB  # Lars, 61130 Nidderau; Mac-Quadra
-44.130.24.116   DC0HK-PC        #
-44.130.24.117   DG3FEO  # Florian Petri, 64579 Gernsheim
-44.130.24.118   DJ0WQ   # James Clarkston, Reichelsheim
-44.130.24.119   DD1FT   # Reinhold, Reichelsheim
-44.130.24.120   DH0AAJ  # Jan
-44.130.24.121   DB3FP   # Joachim, Hanau
-44.130.24.122   DL2RMF  # Mike Fried, 64572 Buettelborn
+44.130.24.103   DK5FJ           # Gerd, 65205 Wiesbaden-Nordenstadt
+44.130.24.104   DK9FQ           # Lothar Schwarz, 64354 Reinheim
+44.130.24.105   KC4BQG          # Jarred James, Darmstadt
+44.130.24.106   DK2FR-6         # Wenno, 64285 Darmstadt-Bessungen
+44.130.24.107   DL8OBC-P        # Felix J. Riess, 64285 Darmstadt-Bessungen
+44.130.24.108   DG8FAY          # Konrad Brueckmann, 65843 Sulzbach/Ts
+44.130.24.109   DF9ZK           # Baldur Jacobi, 65795 Hattersheim
+44.130.24.110   DL3TE           # Helmut Gerwat, 65451 Kelsterbach
+44.130.24.111   DJ2ZS           # Peter Bertram, 64572 Buettelborn
+44.130.24.112   DH0FAK          # Achim Scheib, 65510 Huenstetten; AT
+44.130.24.113   DG2FEV          # Rainer, 65510 HÅnstetten-Strinz Trinitatis
+44.130.24.114   DH5FBR          # Joerg, 63486 Bruchkoebel
+44.130.24.115   DL6FCB          # Lars, 61130 Nidderau; Macintosh Quadra
+44.130.24.116   DC0HK-PC        # Barry Titmarsh, Darmstadt
+44.130.24.117   DG3FEO          # Florian Petri, 64579 Gernsheim
+44.130.24.118   DJ0WQ           # James Clarkston, Reichelsheim
+44.130.24.119   DD1FT           # Reinhold, Reichelsheim
+44.130.24.120   DH0AAJ          # Jan
+44.130.24.121   DB3FP           # Joachim, Hanau
+44.130.24.122   DL2RMF          # Mike Fried, 64572 Buettelborn
 44.130.24.123   PC2.DH0ZAL      # Andreas, Hanau
-44.130.24.124   PC3.DH0ZAL      #
-44.130.24.125   DB2FK   # Simon Schoar, 63150 Rembruecken
-44.130.24.126   DJ3QD   # Wolfgang, Woellstadt
-44.130.24.127   DL8FBH  # Michael Wuensche, Hanau
-44.130.24.128   DK2PS   # Gerry, 65527 Oberjosach
-44.130.24.129   DJ8WL   # Peter Bobeck, 64380 Rossdorf
-44.130.24.130   DL1FAM  # Dieter, 63225 Langen
-44.130.24.131   DG2FY-1 # Oliver Weis, 65779 Kelkheim
-44.130.24.132   DG2FY-2 #
-44.130.24.133   DL6FBE  # Joachim Radloff, 63450 Hanau
-44.130.24.134   DC0VD   # Winfried, 65185 Wiesbaden
-44.130.24.135   DC0VD-UX        #
-44.130.24.154   DK5ZG   # Regina Mitzscherling, 64331 Weiterstadt
-44.130.24.155   DK5ZF   # Juergen Mitzscherling, 64331 Weiterstadt
-44.130.24.156   DA1LA   # Lawrence, Wiesbaden
-44.130.24.157   DA4DS   # Carlos Gustavo de Risio, 63457 Hanau
-44.130.24.158   DG2FDQ  # Holger, 64750 Luetzelbach-Seckmauern
-44.130.24.159   DL5YBZ  # Olaf Wessels, 6050 Offenbach
+44.130.24.124   PC3.DH0ZAL      # Andreas, Hanau
+44.130.24.125   DB2FK           # Simon Schoar, 63150 Rembruecken
+44.130.24.126   DJ3QD           # Wolfgang, Woellstadt
+44.130.24.127   DL8FBH          # Michael Wuensche, Hanau
+44.130.24.128   DK2PS           # Gerry, 65527 Oberjosach
+44.130.24.129   DJ8WL           # Peter Bobek, 64380 Rossdorf
+44.130.24.130   DL1FAM          # Dieter, 63225 Langen
+44.130.24.131   DG2FY-1         # Oliver Weis, 65779 Kelkheim
+44.130.24.132   DG2FY-2         # Oliver Weis, 65779 Kelkheim
+44.130.24.133   DL6FBE          # Joachim Radloff, 63450 Hanau
+44.130.24.134   DC0VD           # Winfried, 65185 Wiesbaden
+44.130.24.135   DC0VD-UX        # Winfried, 65185 Wiesbaden
+44.130.24.136   DG9FDL          # Michael, Waechtersbach
+44.130.24.137   DB8ZH           # Stephan Gottschalk, 65779 Kelkheim
+44.130.24.138   DB5FX           # Andreas Pabst, Darmstadt
+44.130.24.139   DJ7JD-2         # Manfred Ross, 65205 Wiesbaden-Delkenheim
+44.130.24.140   DJ7JD-3         # Manfred Ross, 65205 Wiesbaden-Delkenheim
+44.130.24.141   DG2FEF-2        # Matthias Welwarsky, 64295 Darmstadt, Linux/i386
+44.130.24.142   WAMPES.DG2FEF-2 # Matthias Welwarsky, 64295 Darmstadt, WAMPES
+44.130.24.143   DL2FCL          # Wilhelm M. Dewald, 63607 Waechtersbach - Neudorf
+44.130.24.145   DH0ZAL-1        # Andreas, Hanau
+44.130.24.146   DL2ZAP          # Michael, 63547 Hanau
+44.130.24.147   DG8FFB          # Ute, 63547 Hanau
+44.130.24.148   DG3FAJ          # Klaus Hermann, 64356 Muehltal
+44.130.24.149   DL6FT           # Marcus Engel, 64331 Weiterstadt
+44.130.24.150   DL8ZAL          # Bernd Joris, 64404 Bickenbach
+44.130.24.151   DG1ZE           # Bernhard von Pentz, 65812 Bad-Soden
+44.130.24.152   DG4FO           # Eberhard Kraemer, 64560 Riedstadt
+44.130.24.153   DG7FEI          # Frank, 64331 Weiterstadt
+44.130.24.154   DK5ZG           # Regina Mitzscherling, 64331 Weiterstadt
+44.130.24.155   DK5ZF           # Juergen Mitzscherling, 64331 Weiterstadt
+44.130.24.156   DA1LA           # Lawrence, Wiesbaden
+44.130.24.157   DA4DS           # Carlos Gustavo de Risio, 63457 Hanau
+44.130.24.158   DG2FDQ          # Holger, 64750 Luetzelbach-Seckmauern
+44.130.24.159   DL5YBZ          # Olaf Wessels, Offenbach
+44.130.24.160   DL5YBZ-1        # Olaf Wessels, Offenbach
+44.130.24.161   DB7ZC           # Bernd, 65439 Floersheim-Wicker
+44.130.24.162   DC5FI           # Eberhard Ludolph, 65205 Wiesbaden-Delkenheim
+44.130.24.167   DL8FBH-10       # Michael Wuensche, Hanau
 44.130.24.170   DF2ZP-2 #
-44.130.24.200   DD4EB-2 # Kirsten Wieck, 64807 Dieburg
-44.130.24.201   DJ6PY-2 # Karl Thiel, 64807 Dieburg
-44.130.24.202   DG2FEF  # Matthias Welwarsky, 64295 Darmstadt
-44.130.24.203   DG2FEF-1        # Linux68K/Amiga
+44.130.24.183   DG4FFP          # Achim Fortner, 68623 Lampertheim
+44.130.24.184   DJ4RX           # Dietmar Grossmann, 64289 Darmstadt
+44.130.24.185   DJ4RX-1         # Dietmar Grossmann, 64289 Darmstadt
+44.130.24.186   DG9FED-U        # Mathias Gaertner, Fuerth/Odw.
+44.130.24.187   DH6FAA          # Gerd Molitor, 64732 Bad Koenig
+44.130.24.188   DL2ZBN          # Martin Liebeck, 64295 Darmstadt
+44.130.24.189   WY1X            # Martin Liebeck, 64295 Darmstadt
+44.130.24.190   DB0DAR          # Digi Darmstadt
+44.130.24.200   DD4EB-2         # Kirsten Wieck, 64807 Dieburg
+44.130.24.201   DJ6PY-2         # Karl Thiel, 64807 Dieburg
+44.130.24.202   DG2FEF          # Matthias Welwarsky, 64295 Darmstadt
+44.130.24.203   DG2FEF-1        # Matthias Welwarsky, Linux68k/Amiga
+44.130.24.204   DD0BG-2         # Helmut, 64291 Darmstadt
+44.130.24.220   DL0FFM          # (DF5FF)
+44.130.24.221   DB0GV           # Digi Maintal/Ffm, JO40KD
+44.130.24.222   DF5FF           # Helmut Landolt, 63477 Maintal
 44.130.24.234   DF2ZP-3 #
-#
-#44.130.25.x    Frankfurt
-# --- lokale Adress-Koordination: DG1ZX
-44.130.25.1     DJ3FC   # Walter Michel, 6000 Frankfurt 50 Nordwest
-44.130.25.2     DD9ZY   # Peter Michel, 6000 Frankfurt 50 Nordwest
-44.130.25.3     DL2FCQ  # Klaus-Dieter Friedrich, 6000 Frankfurt 50
-44.130.25.4     DL8LE   # Juergen Sturhahn, 61449 Steinbach/Taunus
-44.130.25.5     DB5ZF   # Oliver Teske, 6000 Frankfurt 50 Eschersheim
-44.130.25.6     DL2FBF  # Michael Dillmann, 6000 Frankfurt 71
-44.130.25.7     DD1ZP   # Bernd Listmann, 6000 Frankfurt 50 Eschersheim
-44.130.25.8     DG9YAG  # Thomas Beiderwieden, 6000 Frankft 1
-44.130.25.9     DB8FW   # Stefan Sczekalla, 6000 Frankfurt 80 Griesheim
-44.130.25.10    DC1TY   # Roland Veser, 6000 Frankfurt 60 Bornheim
-44.130.25.11    DJ3FC-2 # Walter Michel, 6000 Frankfurt 50 NW
-44.130.25.12    DD9ZY-2 # Peter Michel, 6000 Frankfurt 50 NW
-44.130.25.13    DG2FBH  # Ralf Wichary, 6000 Frankfurt 1
-44.130.25.14    DL1FCJ  # Norman Diehl, 65760 Eschborn
-44.130.25.15    DG3ZQ   # Dieter Fischer, 6000 Frankfurt 90 Bockenheim
-44.130.25.16    DL5FBD  # Gerd M. Ritter, 6230 Frankfurt 80 Nied
-44.130.25.17    DL4EM   # Frank Morawietz, 6000 Frankfurt 90 Roedelhm
-44.130.25.18    DB6ZP   # Peter Kilber, 6230 Frankfurt/Hoechst
-44.130.25.19    DG4ZP   # Norbert Hormann, 6000 Frankfurt 50
-44.130.25.20    DG8ZP   # Jens Reichmann, 6000 Frankfurt 1
-44.130.25.21    DA2NB   # Mike, 6000 Frankfurt
-44.130.25.22    DD0FF   # Harald Schaefer, 65931 Sindlingen
-44.130.25.23    DL0EJ   # OV F43, 65760 Eschborn
-44.130.25.24    DF9ZI   # Peter, 6000 Frankfurt Bergen-Enkheim
-44.130.25.25    DG8ZP-2 # Jens Reichmann, 6000 Frankfurt 1
-44.130.25.26    DG8ZP-3 #
-44.130.25.27    DG8ZP-4 #
-44.130.25.28    DG8ZP-5 #
-44.130.25.29    DG8ZP-6 #
-44.130.25.30    DG8ZP-7 #
-44.130.25.31    DB2FA   # Michael Weiland, 6050 Offenbach
-44.130.25.32    DF0TN   # Clubstn TELENORMA, 6000 Frankfurt 1
-44.130.25.33    DL5FCH  # Stefan Schatz, 6000 Frankfurt 1
-44.130.25.34    DL2SUT  # Matthias Moeller, 60599 Frankfurt
-44.130.25.35    DL4FCG  # Denis David, 6000 Frankfurt 90 Hausen
-44.130.25.36    DG9FEG  # Ingo Stengel, 63071 Offenbach
-44.130.25.37    DL2FZN  # Andreas Fischer, 60385 Frankfurt
-44.130.25.38    DG4FDK  # Norbert Marek, 65933 Frankfurt
-44.130.25.39    DC9FO   # Wolfgang Hampe, Offenbach
-44.130.25.40    DA2WD   # Rick Hendricks, 61440 Oberursel/Ts (KE0GB)
+44.130.25.1     DJ3FC           # Walter Michel, Frankfurt Nordwest
+44.130.25.2     DD9ZY           # Peter Michel, Frankfurt Nordwest
+44.130.25.3     DL2FCQ          # Klaus-Dieter Friedrich, Frankfurt Nordwest
+44.130.25.4     DL8LE           # Juergen Sturhahn, 61449 Steinbach/Taunus
+44.130.25.5     DB5ZF           # Oliver Teske, Frankfurt-Eschersheim
+44.130.25.6     DL2FBF          # Michael Dillmann, Frankfurt
+44.130.25.7     DL1FZP          # Bernd Listmann, Frankfurt-Eschersheim
+44.130.25.8     DL3FDU          # Thomas Beiderwieden, Frankfurt
+44.130.25.9     DB8FW           # Stefan Sczekalla, Frankfurt-Griesheim
+44.130.25.10    DC1TY           # Roland Veser, Frankfurt-Bornheim
+44.130.25.11    DJ3FC-2         # Walter Michel, Frankfurt Nordwest
+44.130.25.12    DD9ZY-2         # Peter Michel, Frankfurt Nordwest
+44.130.25.13    DG2FBH          # Ralf Wichary, Frankfurt
+44.130.25.14    DL1FCJ          # Norman Diehl, 65760 Eschborn
+44.130.25.15    DG3ZQ           # Dieter Fischer, Frankfurt-Bockenheim
+44.130.25.16    DL5FBD          # Gerd M. Ritter, Frankfurt-Nied
+44.130.25.17    DL4EM           # Frank Morawietz, Frankfurt-Roedelheim
+44.130.25.18    DB6ZP           # Peter Kilber, Frankfurt/Hoechst
+44.130.25.19    DG4ZP           # Norbert Hormann, Frankfurt Nordwest
+44.130.25.20    DG8ZP           # Jens Reichmann, Frankfurt
+44.130.25.21    DA2NB           # Mike, Frankfurt
+44.130.25.22    DD0FF           # Harald Schaefer, 65931 Sindlingen
+44.130.25.23    DL0EJ           # OV F43, 65760 Eschborn
+44.130.25.24    DF9ZI           # Peter, Frankfurt Bergen-Enkheim
+44.130.25.25    DG8ZP-2         # Jens Reichmann, Frankfurt
+44.130.25.26    DG8ZP-3         # Jens Reichmann, Frankfurt
+44.130.25.27    DG8ZP-4         # Jens Reichmann, Frankfurt
+44.130.25.28    DG8ZP-5         # Jens Reichmann, Frankfurt
+44.130.25.29    DG8ZP-6         # Jens Reichmann, Frankfurt
+44.130.25.30    DG8ZP-7         # Jens Reichmann, Frankfurt
+44.130.25.31    DB2FA           # Michael Weiland, Offenbach
+44.130.25.32    DF0TN           # Clubstn TELENORMA, Frankfurt
+44.130.25.33    DL5FCH          # Stefan Schatz, Frankfurt
+44.130.25.34    DL2SUT          # Matthias Moeller, 60599 Frankfurt
+44.130.25.35    DL4FCG          # Denis David, Frankfurt-Hausen
+44.130.25.36    DG9FEG          # Ingo Stengel, 63071 Offenbach/Main
+44.130.25.37    DL2FZN          # Andreas Fischer, 60385 Frankfurt-Ostend
+44.130.25.38    DG4FDK          # Norbert Marek, 65933 Frankfurt
+44.130.25.39    DC9FO           # Wolfgang Hampe, Offenbach/Main
+44.130.25.40    DA2WD           # Rick Hendricks, 61440 Oberursel/Ts (KE0GB)
 44.130.25.41    DA2WD-SYS2      # Rick Hendricks, 61440 Oberursel/Ts
-44.130.25.43    DA1AD-1 # Tony Dangelo
-44.130.25.44    DA1AD   # Tony Dangelo, 6000 Frankfurt-Berkersheim
-44.130.25.45    DK9OM   # Hans-Joachim Koch, 61184 Karben
-44.130.25.46    DG9YAG-1        # Thomas Beiderwieden, 6000 Frankfurt
-44.130.25.47    DB1FG   # Sigrun Zuleeg, 6000 Frankfurt 1
-44.130.25.48    DL4FW   # Hans W. Spang, 6000 Frankfurt 71
-44.130.25.49    DL4FDG  # Yusuf, Fulda
-44.130.25.50    DA4LA   # Alfonso Lugaro, 6400 Fulda (N2MUC)
-44.130.25.51    DL8DBU  # Jens-Olaf Berge, 6000 Frankfurt 90 Roedelhm
-44.130.25.55    DH3PAX  # Erich Saenger, 60431 Frankfurt
-44.130.25.56    DF7FA   # Reginald Loehr, 6000 Frankfurt 60
-44.130.25.57    DC8QT   # Werner Nitschke, 65843 Sulzbach/Ts; AT-386, WNOS
-44.130.25.58    DD8ZO   # Johannes Stein, 6000 Frankfurt
+44.130.25.42    DL9FCK          # Gerald Schreiber, 61440 Oberursel
+44.130.25.43    DA1AD-1         # Tony Dangelo
+44.130.25.44    DA1AD           # Tony Dangelo, Frankfurt-Berkersheim
+44.130.25.45    DK9OM           # Hans-Joachim Koch, 61184 Karben
+44.130.25.46    DL3FDU-1        # Thomas Beiderwieden, Frankfurt
+44.130.25.47    DB1FG           # Sigrun Zuleeg, Frankfurt
+44.130.25.48    DL4FW           # Hans W. Spang, Frankfurt
+44.130.25.49    DL4FDG          # Yusuf, Fulda
+44.130.25.50    DA4LA           # Alfonso Lugaro, Fulda (N2MUC)
+44.130.25.51    DL8DBU          # Jens-Olaf Berge, Frankfurt-Roedelheim
+44.130.25.52    DL5ABL          # Annja, 60431 Frankfurt
+44.130.25.53    DL4VBP          # Patrick, 60431 Frankfurt
+44.130.25.55    DH3PAX          # Erich Saenger, 60431 Frankfurt/Main
+44.130.25.56    DF7FA           # Reginald Loehr, Frankfurt
+44.130.25.57    DC8QT           # Werner Nitschke, 65843 Sulzbach/Ts; AT-386, WNOS
+44.130.25.58    DD8ZO           # Johannes Stein, Frankfurt
 44.130.25.59    DD8ZO-AT        #
-44.130.25.60    N1KYS   # Albert Burgess, Fulda-Haimbach (DH/N1KYS)
-44.130.25.61    DC2FG   # Alex, 6000 Frankfurt
-44.130.25.65    DK9OM-1 # Hans-Joachim Koch, 61184 Karben
-44.130.25.70    DA2DM   # Dale
-44.130.25.71    DG4FCO  # Frank, Frankfurt
-#
-#44.130.26.x    Hochtaunus
-# --- lokale Adress-Koordination: DG1ZX
-44.130.26.1     DK4ZB   # Gerd-Felix Wegner, 61250 Usingen
+44.130.25.60    N1KYS           # Albert Burgess, Fulda-Haimbach (DH/N1KYS)
+44.130.25.61    DC2FG           # Alex, Frankfurt
+44.130.25.62    DG3FAS          # Manfred, 63065 Offenbach
+44.130.25.63    DG9FBC          # Rolf Otto, 63069 Offenbach
+44.130.25.65    DK9OM-1         # Hans-Joachim Koch, 61184 Karben
+44.130.25.66    DL5FBX          # Gerhard Ritter, 65934 Frankfurt
+44.130.25.67    DL2FZN-1        # Andreas Fischer, 60385 Frankfurt-Ostend
+44.130.25.68    DG1FAZ          # Ulf Haueisen, 61440 Oberursel
+44.130.25.69    DG1FAZ-10       # Ulf Haueisen, 61440 Oberursel
+44.130.25.70    DA2DM           # Dale
+44.130.25.71    DG4FCO
+44.130.25.72    DG1FEO          # Ralf, Frankfurt
+44.130.25.73    DL3FDU-2        # Thomas Beiderwieden, Frankfurt
+44.130.25.74    DL3FDU-3
+44.130.25.75    DL3FDU-4
+44.130.25.76    DL3FDU-5
+44.130.25.77    DL3FDU-6
+44.130.25.78    DL3FIY          # Ali, Frankfurt-Raunheim
+44.130.25.79    DB4ZT           # Tarik, Frankfurt-Raunheim
+44.130.25.80    DB0AIS          # Frankfurt, AX.25 Call DB0AIS-3
+44.130.25.81    DB0AIS-1        #
+44.130.25.82    DB0AIS-2        #
+44.130.25.83    DB0AIS-3        #
+44.130.25.84    DB0AIS-4        #
+44.130.25.85    DB0AIS-5        #
+44.130.25.86    DL4VBP-W        # Patrick Scheidhauer, 60431 Frankfurt
+44.130.25.87    DL4VBP-U        # Patrick Scheidhauer, 60431 Frankfurt
+44.130.25.88    DL4VBP-N        # Patrick Scheidhauer, 60431 Frankfurt
+44.130.25.89    DL1FZP-W        # Bernd Listmann, 60433 Frankfurt
+44.130.25.90    DL1FZP-U        # Bernd Listmann, 60433 Frankfurt
+44.130.25.91    DL1FZP-N        # Bernd Listmann, 60433 Frankfurt
+44.130.26.1     DK4ZB           # Gerd-Felix Wegner, 61250 Usingen
 44.130.26.2     DK4ZB-11        #
-44.130.26.3     DL5ZAK  # Rolf Uhlemann, 61184 Karben
-44.130.26.4     DL1FAI  # Karlheinz Betz, 61200 Woelfersheim
-44.130.26.5     DB8FE   # Wilfried Philippi, 61231 Bad Nauheim
-44.130.26.6     DB8FE-1 #
-44.130.26.7     DC0ZE   # Michael, 35428 Langgoens-Niederkleen
-44.130.26.8     DC0ZE-10        # Michael, 6380 Bad Homburg
-44.130.26.9     DC1ZX   # Ulrich Noack, 65527 Niedernhausen
-44.130.26.10    DF9FP   # Reiner Hammer, 35647 Waldsolms
-44.130.26.11    DD9FJ   # Michael Walther, 6380 Bad Homburg
-44.130.26.12    DL9HCZ  # Peter Koerner, 61118 Bad Vilbel
-44.130.26.13    DL6XAM  # Michael Jans, 61118 Bad Vilbel
-44.130.26.14    DB1ZI   # Werner, 61381 Friedrichsdorf
-44.130.26.16    DG3FAM  # Heinz Mahler, 61250 Usingen
-44.130.26.17    DG3FAM-1        #
-44.130.26.18    DG3FAM-2        #
-44.130.26.20    DL2FAG  # Karl-Heinz, 61250 Usingen
-44.130.26.21    DA1RY   # Bernhard M. Bloom, 6380 Bad Homburg
-44.130.26.25    DC6FU   # Stefan, 6000 Frankfurt 56
-44.130.26.26    DG3FAH  # Stephan Weber, 61169 Friedberg; AT
-44.130.26.30    DB3FL   # Michael Bentrup, 61267 Neu-Anspach
-44.130.26.36    DG1FAR  # Joachim Purps, 61169 Friedberg
-44.130.26.40    DB5FM   # Uwe Schepp, 35647 Waldsolms
-44.130.26.41    DB5FM-1 #
-44.130.26.45    DG6FEE  # Wolfram Mathes, 61276 Weilrod
-44.130.26.46    DG6FEE-1        #
+44.130.26.3     DL5ZAK          # Rolf Uhlemann, 61184 Karben
+44.130.26.4     DL1FAI          # Karlheinz Betz, 61200 Woelfersheim
+44.130.26.5     DB8FE           # Wilfried Philippi, 61231 Bad Nauheim
+44.130.26.6     DB8FE-1         #
+44.130.26.7     DC0ZE           # Michael, 35428 Langgoens-Niederkleen
+44.130.26.8     DC0ZE-10        # Michael, Bad Homburg
+44.130.26.9     DC1ZX           # Ulrich Noack, 65527 Niedernhausen
+44.130.26.10    DF9FP           # Reiner Hammer, 35647 Waldsolms
+44.130.26.11    DD9FJ           # Michael Walther, Bad Homburg
+44.130.26.12    DL9HCZ          # Peter Koerner, 61118 Bad Vilbel
+44.130.26.13    DL6XAM          # Michael Jans, 61118 Bad Vilbel
+44.130.26.14    DB1ZI           # Werner, 61381 Friedrichsdorf
+44.130.26.16    DG3FAM          # Heinz Mahler, 61250 Usingen
+44.130.26.17    DG3FAM-1        # Heinz Mahler, 61250 Usingen
+44.130.26.18    DG3FAM-2        # Heinz Mahler, 61250 Usingen
+44.130.26.20    DL2FAG          # Karl-Heinz, 61250 Usingen
+44.130.26.21    DA1RY           # Bernhard M. Bloom, Bad Homburg
+44.130.26.25    DC6FU           # Stefan, Frankfurt
+44.130.26.26    DG3FAH          # Stephan Weber, 61169 Friedberg; AT
+44.130.26.29    DL6ZBN          # Joerg Hochheimer, 61462 Koenigstein
+44.130.26.30    DB3FL           # Michael Bentrup, 61267 Neu-Anspach
+44.130.26.36    DG1FAR-1        # Achim Purps, 61169 Friedberg, Terminal (doMeS-DOS)
+44.130.26.37    DG1FAR-5        # Achim Purps, 61169 Friedberg
+44.130.26.38    DG1FAR-6        # Achim Purps, 61169 Friedberg, LAN-Gateway (FAFUDSYS-NET)
+44.130.26.40    DB5FM           # Uwe Schepp, 35647 Waldsolms
+44.130.26.41    DB5FM-1         # Uwe Schepp, 35647 Waldsolms
+44.130.26.42    DG1FAR-8        # Achim Purps, 61169 Friedberg, Terminal (Linux)
+44.130.26.43    DL5ZAA          # Werner Kloess, 61118 Bad Vilbel
+44.130.26.45    DG6FEE          # Wolfram Mathes, 61276 Weilrod
+44.130.26.46    DG6FEE-1        # Wolfram Mathes, 61276 Weilrod
 44.130.26.47    DG6FEE-2        # Wolfram Mathes, 61169 Friedberg
-44.130.26.48    DG6FEE-3        #
+44.130.26.48    DG6FEE-3        # Wolfram Mathes, 61169 Friedberg
 44.130.26.126   DG3FAH-1        # Stephan Weber, 61169 Friedberg; Amiga 500
-#
-#44.130.27.x    Kassel
-# --- lokale Adress-Koordination: DG1ZX
-44.130.27.1     DL8ZAW  # Frank Altenbrand, 35279 Neustadt/Hessen
-44.130.27.2     DD1FR   # Ralf Altenbrand, 35279 Neustadt/Hessen
-44.130.27.3     DL8MC   # Helwig Klippert, 34626 Neukirchen-Riebelsdorf
-44.130.27.4     DD9FH   # Rainer Mahle, 35279 Neustadt/Hessen
-44.130.27.5     DG9FAM  # Harald Engelhardt, 35260 Stadtallendorf
-44.130.27.6     DF2YA   # Michael Punge, 36280 Olberode (Oberaula)
-44.130.27.7     DF7ZE   # Hans-Hermann Kleinberg, 35447 Reiskirchen
-44.130.27.8     DF7ZE-1 #
-44.130.27.9     DF7ZE-2 #
-44.130.27.10    DJ8DT   # Dieter Solf, 36304 Alsfeld
-44.130.27.11    DB9FY   # Bernhard Totenbier, 35279 Neustadt/Hessen
-44.130.27.12    DJ0LN   # Rein Couperus, 34246 Vellmar
-44.130.27.13    DG9FV   # Bernd Kemper, Kassel
-44.130.27.14    DL4FBT  # Gerd Emde, 34396 Liebenau
-44.130.27.15    DK5JJ   # Reinhard Sayn, 34246 Vellmar
+44.130.27.1     DL8ZAW          # Frank Altenbrand, 35279 Neustadt/Hessen
+44.130.27.2     DD1FR           # Ralf Altenbrand, 35279 Neustadt/Hessen
+44.130.27.3     DL8MC           # Helwig Klippert, 34626 Neukirchen-Riebelsdorf
+44.130.27.4     DD9FH           # Rainer Mahle, 35279 Neustadt/Hessen
+44.130.27.5     DG9FAM          # Harald Engelhardt, 35260 Stadtallendorf
+44.130.27.6     DF2YA           # Michael Punge, 36280 Olberode (Oberaula)
+44.130.27.7     DF7ZE           # Hans-Hermann Kleinberg, 35447 Reiskirchen
+44.130.27.8     DF7ZE-1         # Hans-Hermann Kleinberg, 35447 Reiskirchen
+44.130.27.9     DF7ZE-2         # Hans-Hermann Kleinberg, 35447 Reiskirchen
+44.130.27.10    DJ8DT           # Dieter Solf, 36304 Alsfeld
+44.130.27.11    DB9FY           # Bernhard Totenbier, 35279 Neustadt/Hessen
+44.130.27.12    DJ0LN           # Rein Couperus, 34246 Vellmar
+44.130.27.13    DG9FV           # Bernd Kemper, Kassel
+44.130.27.14    DL4FBT          # Gerd Emde, 34396 Liebenau
+44.130.27.15    DK5JJ           # Reinhard Sayn, 34246 Vellmar
 44.130.27.16    DD9FH-PC        # Rainer Mahle, 35279 Neustadt/Hessen
-44.130.27.17    DL3YDN  # Thomas Wallat, 34432 Borgentreich
-44.130.27.18    DL5ZBG  # Steffen Weinreich, 3500 Kassel
-44.130.27.19    DF0FKB  # ClubStn Frankenberg
+44.130.27.17    DL3YDN          # Thomas Wallat, 34432 Borgentreich
+44.130.27.18    DL5ZBG          # Steffen Weinreich, Kassel
+44.130.27.19    DF0FKB          # Clubstn Frankenberg
 44.130.27.20    DL2FAG-10       # Karl-Heinz, 34286 Spangenberg
-44.130.27.21    DL5ZBP  # Thomas, Marburg
-44.130.27.22    DB5ZP   # Hans Metz, 36199 Rotenburg/Fulda; Amiga
-44.130.27.23    DG1ZX   # Armin Barth, 36199 Rotenburg/Fulda
-44.130.27.24    DG7FAQ  # Andreas Hluchy, 34466 Ippinghausen
-44.130.27.25    DB8AS   # Joachim Schirjack, 34127 Kassel
-44.130.27.26    DL3FAN  # Hartmut BÅchling, 34317 Habichtswald
-44.130.27.27    DK0HR   # ClubStn F32, 36199 Rotenburg/Fulda
-44.130.27.28    DL8ZBW  # Joachim Nowak, 36277 Schenklengsfeld
-44.130.27.29    DL2FCB  # Tom, 36251 Bad Hersfeld
-44.130.27.30    DK2FR   # Wenno, 36199 Rotenburg/Fulda
-44.130.27.31    DD8FR   # Joerg, 36179 Bebra-Weiterode
+44.130.27.21    DL5ZBP          # Thomas, Marburg
+44.130.27.22    DB5ZP           # Hans Metz, 36199 Rotenburg/Fulda; Amiga
+44.130.27.23    DG1ZX           # Armin Barth, 36199 Rotenburg/Fulda
+44.130.27.24    DG7FAQ          # Andreas Hluchy, 34466 Ippinghausen
+44.130.27.25    DB8AS           # Joachim Schirjack, 34127 Kassel
+44.130.27.26    DL3FAN          # Hartmut BÅchling, 34317 Habichtswald
+44.130.27.27    DK0HR           # Clubstation F32, 36199 Rotenburg/Fulda
+44.130.27.28    DL8ZBW          # Joachim Nowak, 36277 Schenklengsfeld
+44.130.27.29    DL2FCB          # Tom, 36251 Bad Hersfeld
+44.130.27.30    DK2FR           # Wenno, 36199 Rotenburg/Fulda
+44.130.27.31    DD8FR           # Joerg, 36179 Bebra-Weiterode
 44.130.27.32    HOST.DJ0LN      # Rein, 34246 Vellmar/Kassel
-44.130.27.33    DL4FBW  # Wolfgang Wantia, 34497 Korbach
-44.130.27.34    DB5ZP-2 # Hans Metz, 36199 Rotenburg/Fulda; PC
-44.130.27.35    DL6FBN  # Frank, 36251 Bad Hersfeld
+44.130.27.33    DL4FBW          # Wolfgang Wantia, 34497 Korbach
+44.130.27.34    DB5ZP-2         # Hans Metz, 36199 Rotenburg/Fulda; PC
+44.130.27.35    DL6FBN          # Frank, 36251 Bad Hersfeld
 44.130.27.36    DL4ZBH  # Joachim
-44.130.27.37    DG1FCQ  # Dominik Heinrich, 36251 Bad Hersfeld
+44.130.27.37    DG1FCQ          # Dominik Heinrich, 36251 Bad Hersfeld
 44.130.27.38    DG8FAU-1        # Ralf, Kassel
-44.130.27.39    DL2FE   # Peter, 36132 Eiterfeld
-44.130.27.40    DG6FBH  # Dieter, Hann.Muenden
-44.130.27.41    DD5OJ   # Peter, 34246 Vellmar
-44.130.27.42    DF2ZP   # Harald, Kassel
-44.130.27.43    DG5FAU  # Peter, nr. Kassel
-44.130.27.44    DL1ZAX  # Dietmar, nr. Kassel
-44.130.27.45    DG9FU   # Henning, Kassel
-44.130.27.46    DL2FE-1 #
-44.130.27.48    DJ0GN   # Franco, 34253 Lohfelden
-44.130.27.49    DC5ZP   # Fred, 34253 Lohfelden
-44.130.27.50    DL4FBZ  # Harri, Kassel
-44.130.27.51    DL8ZBW-2        #
-44.130.27.52    DB6ZE   # Susanne, 36282 Hauneck-Rotensee
+44.130.27.39    DL2FE           # Peter, 36132 Eiterfeld
+44.130.27.40    DG6FBH          # Dieter, Hann.Muenden
+44.130.27.41    DD5OJ           # Peter, 34246 Vellmar
+44.130.27.42    DF2ZP           # Harald, Kassel
+44.130.27.43    DG5FAU          # Peter, nr. Kassel
+44.130.27.44    DL1ZAX          # Dietmar, nr. Kassel
+44.130.27.45    DG9FU           # Henning, Kassel
+44.130.27.46    DL2FE-1         # Peter, 36132 Eiterfeld
+44.130.27.47    DD4ZN           # Karl Heinz Strack, 36277 Schenklengsfeld
+44.130.27.48    DJ0GN           # Franco, 34253 Lohfelden
+44.130.27.49    DC5ZP           # Fred, 34253 Lohfelden
+44.130.27.50    DL4FBZ          # Harri, Kassel
+44.130.27.51    DL8ZBW-2        # Joachim Nowak, 36277 Schenklengsfeld
+44.130.27.52    DB6ZE           # Susanne, 36282 Hauneck-Rotensee
+44.130.27.53    DH0ZAC          # Frank, 36217 Ronshausen
+44.130.27.54    DG7FDL          # Frank Apel, 36251 Bad Hersfeld
+44.130.27.55    DG8FBL          # Helmut, Hofgeismar
+44.130.27.56    DG7FM           # Michael, 36167 Nuesttal-Morles
+44.130.27.57    DG7FM-1         # Michael, 36167 Nuesttal-Morles
+44.130.27.60    DB0MW           # Mailbox Bad Hersfeld, DL6FBN
+44.130.27.61    DB0MW-BBS       # Mailbox Bad Hersfeld, DL6FBN
+44.130.27.65    DL9ZBQ          # Peter, Korbach
 44.130.27.66    DL3YDN-3        # Thomas Wallat, 34432 Borgentreich
-44.130.27.80    DB0EAM  # Digi, Kassel
-44.130.27.90    DB0VFK  # Digi, Kassel
+44.130.27.67    DL3DA-10        # Karl-Heinz
+44.130.27.80    DB0EAM          # Digi, Kassel
+44.130.27.90    DB0VFK          # Digi, Kassel
 44.130.27.100   DB0KH   # IP-Router Knuell
 44.130.27.150   DG8YGZ  # Olaf, 34434 Borgentreich-Manrode
-44.130.27.151   DG5YGZ  # Marco, 34434 Borgentreich-Manrode
-44.130.27.152   DG8YGZ-10       #
-44.130.27.153   DG5YGZ-10       #
-#
-#44.130.28.x    Mittelhessen
-# --- lokale Adresskoordination: DG1ZX-A
-44.130.28.1     DL3FCE  # Andreas Ebert, 35396 Giessen
-44.130.28.2     DG1ZX-A # Armin Barth, 35418 Buseck-Trohe
-44.130.28.3     SYS2.DG1ZX-A    #
-44.130.28.6     DD2FR   # Holger Bock, 35305 Gruenberg
-44.130.28.7     DG4FEO  # Michael, 35708 Haiger/Dillkreis
-44.130.28.8     DG8FZ   # Karl Kramer, 35396 Giessen
-44.130.28.9     DL3FT   # Oliver Kolbe, 35232 Dautphetal
-44.130.28.14    DL1ZBS  # Markus Anhalt, 65604 Elz
-44.130.28.15    DJ4VI   # Uwe Machens, 35396 Giessen
-44.130.28.16    DK5EW   # Thomas, Marburg
-44.130.28.30    DL8ZAD  # Juergen, 35789 Weilmuenster nr Wetzlar
-44.130.28.58    DF0WS   # ClubStn F58, 35396 Giessen-Wieseck
-#---------------------------------------------------------------------------
-# KA_HOSTS BEGIN [960926]
-# Hier die Karlsruher IP-Adressen:
-#
+44.130.27.151   DG5YGZ          # Marco, 34434 Borgentreich-Manrode
+44.130.27.152   DG8YGZ          # Olaf, 34434 Borgentreich-Manrode
+44.130.27.153   DG5YGZ-10       # Marco, 34434 Borgentreich-Manrode
+44.130.28.1     DL3FCE          # Andreas Ebert, 35396 Giessen
+44.130.28.2     DG1ZX-A         # Armin Barth, 35418 Buseck-Trohe
+44.130.28.3     SYS2.DG1ZX-A    # Armin Barth, 35418 Buseck-Trohe
+44.130.28.4     SYS3.DG1ZX-A    # Armin Barth, 35418 Buseck-Trohe
+44.130.28.5     DG1FBP          # Michael Schultz, 35767 Breitscheid
+44.130.28.6     DD2FR           # Holger Bock, 35305 Gruenberg
+44.130.28.7     DG4FEO          # Michael, 35708 Haiger/Dillkreis
+44.130.28.8     DG8FZ           # Karl Kramer, 35396 Giessen
+44.130.28.9     DL3FT           # Oliver Kolbe, 35232 Dautphetal
+44.130.28.10    DL6FBS          # Bernd Lehnhausen, 35418 Buseck
+44.130.28.11    DL6FBS-SVR      # Bernd Lehnhausen, 35418 Buseck
+44.130.28.12    DL6FBS-NT       # Bernd Lehnhausen, 35418 Buseck
+44.130.28.13    DL6FBS-DOS      # Bernd Lehnhausen, 35418 Buseck
+44.130.28.14    DL1ZBS          # Markus Anhalt, 65604 Elz
+44.130.28.15    DJ4VI           # Uwe Machens, 35396 Giessen
+44.130.28.16    DK5EW           # Thomas, Marburg
+44.130.28.30    DL8ZAD          # Juergen, 35789 Weilmuenster nr Wetzlar
+44.130.28.58    DF0WS           # ClubStn F58, 35396 Giessen-Wieseck
+44.130.28.100   DB0SIF          # Bernd Lehnhausen, 35418 Buseck
+44.130.28.101   DB0SIF-SVR      # Bernd Lehnhausen, 35418 Buseck
 44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc1ik@db0sao.ampr.org,
-#                       # dc1ik@db0sao.#bw.deu.eu,
-#                       # erb@inss1.etec.uni-karlsruhe.de,erb@bofh.ampr.org
-#
 44.130.29.1  db0rot-w   # JN48ft *** Mailbox Rotensol 76332 Bad Herrenalb
 44.130.29.2  dg9bad-7   #        Thomas Waehner       89171 Illerkirchberg
 44.130.29.3  dc6iq-w    # JN49fb Fred Baumgarten      76297 Stutensee
@@ -2219,21 +2108,17 @@
 44.130.29.153 dg3acw-u  # JN48ea Martin Dinkloh       76131 Karlsruhe
 44.130.29.154 dh0glg    # JN48DW Guido Liedtke        76287 Rheinstetten
 44.130.29.155 dh9iag-3  # JN48ex Gunnar Bernstein     76199 Karlsruhe
-#
-# KA_HOSTS END
-#---------------------------------------------------------------------------
-#
-#44.130.30.x    Nordhessen
-# --- lokale Adresskoordination: DG1ZX-A
-44.130.30.1     DL8UI   # Bernd Nasner, 37213 Witzenhausen
-44.130.30.2     DF3AO   # Claudia Nasner, 37213 Witzenhausen
-44.130.30.3     DK6AN   # Erna Nasner, 37213 Witzenhausen
-44.130.30.4     DJ9VO   # Gerd Vogler, 37213 Witzenhausen
-44.130.30.5     DL6AAO  # Arthur Scheps, 37213 Witzenhausen
-44.130.30.6     DC9AV   # Christel Scheps, 37213 Witzenhausen
-44.130.30.10    DL0HES  # Distrikt Hessen, 37213 Witzenhausen
-44.130.30.11    DL0MET  # Afu-Gruppe Thies
-#
+44.130.30.1     DL8UI           # Bernd Nasner, 37213 Witzenhausen
+44.130.30.2     DF3AO           # Claudia Nasner, 37213 Witzenhausen
+44.130.30.3     DK6AN           # Erna Nasner, 37213 Witzenhausen
+44.130.30.4     DJ9VO           # Gerd Vogler, 37213 Witzenhausen
+44.130.30.5     DL6AAO          # Arthur Scheps, 37213 Witzenhausen
+44.130.30.6     DC9AV           # Christel Scheps, 37213 Witzenhausen
+44.130.30.7     DL6ABL          # Birgit, 37213 Witzenhausen
+44.130.30.8     DL9ABL          # Roland, 37213 Witzenhausen
+44.130.30.10    DL0HES          # Distrikt Hessen, 37213 Witzenhausen
+44.130.30.11    DL0MET          # Afu-Gruppe Thies
+44.130.30.20    DL1FHM          # Matthias Heibert, 37269 Eschwege
 44.130.32.1     DK8GD   # Karl Ebel, 5060 Bergisch-Gladbach
 44.130.32.2     DK8GD-1 #
 44.130.32.3     DK8GD-2 #
@@ -2275,7 +2160,6 @@
 44.130.33.12    DG6VB-3
 44.130.33.15    DK3XT   # Bernd, Dettenheim (Loc. JN49FE)
 44.130.33.42    DF7CB   # Christoph, Blieskastel (Loc. JN39PF) ex dg8vd
-#
 44.130.34.1     DB0NWS  # ; ***
 44.130.34.2     DD4PN   # Volker, 5248 Mittelhof
 44.130.34.3     DD9WV   # Jens
@@ -2284,7 +2168,6 @@
 44.130.34.8     DJ5KP-QRL       # Michael Meys
 44.130.34.9     DG4PG   # Matthias, Steinebach
 44.130.34.10    DD0PZ   # Wolfgang, 5249 Roth
-#
 44.130.35.1     DL3DBT  # Dirk Neeb, 5900 Siegen
 44.130.35.2     DK9DV   # Dieter, 5900 Siegen
 44.130.35.4     DC5DM   # Marcus, 5902 Netphen 3
@@ -2295,14 +2178,6 @@
 44.130.35.12    DL2KRC  # Robert Courte, 51789 Lindlar
 44.130.35.14    DD4KO   # Olaf Jung, 5270 Gummersbach
 44.130.35.15    DG2KHE  # Hagen Erdmann, 5270 Gummersbach
-#
-# Benutzte IP Adressen in Berlin  ( 08.11.1996 )
-# -------------------------------------------------------------------
-#   Host          Call
-# -------------------------------------------------------------------
-#
-# 44.130.36.xxx - 44.130.39.xxx Berlin
-#
 44.130.36.1       DC7CH         # Juergen Sawala, Berlin
 44.130.36.2       DC7ER         # Andreas, 1000 Berlin 47
 44.130.36.3       DH7ABQ        # Ralf, 1000 Berlin 44
@@ -2321,7 +2196,7 @@
 44.130.36.16      DL7VTL        # Joe , Berlin
 44.130.36.17      DL7AWA        # Matthias , Berlin
 44.130.36.18      DL7UFO-2      # Sven , 10409 Berlin
-44.130.36.19      dd6vnr        # Ralf , Berlin
+44.130.36.19      DD6VNR        # Ralf , Berlin
 44.130.36.20      DC7FO         # Uli, 1000 Berlin
 44.130.36.21      DC7FO-1       #
 44.130.36.22      DC7FO-2       #
@@ -2331,28 +2206,33 @@
 44.130.36.26      DL4YBG        # Mark , Berlin
 44.130.36.27      DL4YBG-1      #
 44.130.36.28      DL4YBG-2      #
-44.130.36.29      dl7avj        # Herbert
+44.130.36.29      DL7AVJ        # Herbert
 44.130.36.30      DL7UWO        # Manfred
-44.130.36.31      dh7adr        # Andreas, Berlin
+44.130.36.31      DH7ADR        # Andreas, Berlin
 44.130.36.32      DF1GX         # Claus-Peter Schulz, Berlin
 44.130.36.33      ST.DF1GX      #
 44.130.36.34      PC.DF1GX      #
 44.130.36.35      DF1GX-2       #
 44.130.36.36      DF1GX-3       #
+44.130.36.37      dl7axl        # JÅrgen, Berlin-Spandau
+44.130.36.38      dc7gb         # Tom
+44.130.36.39      dc7gb-1       #
 44.130.36.40      DL7VKH        # Karl-Heinz, Berlin-Pankow
 44.130.36.41      DK7IN-1       # Rolf, 1000 Berlin 65; AT486
 44.130.36.42      DK7IN-2       # Rolf, 1000 Berlin 65; XT
 44.130.36.43      DK7IN         # Rolf, 1000 Berlin 65; AT386
 44.130.36.44      DL9SAU        # Thomas Osterried, Berlin; AT486 WAMPES
 44.130.36.45      WAMPES.DL9SAU #
+44.130.36.46      dl7and        # Michael
+44.130.36.47      dl7vea        # Axel , Berlin
 44.130.36.50      DL7UAZ        # Andre' Zwadlo, Berlin-Koepenick;486DX WAMPES
 44.130.36.51      DL7UAZ-U      # Andre' Zwadlo, Berlin-Koepenick;486DX Linux
 44.130.36.52      DL7AMN        # Edgar Vennmanns, 10779 Berlin
 44.130.36.55      DD6RI         # Christian
 44.130.36.56      DL7VWH-1      # Wolfgang , Berlin
 44.130.36.57      DL7VWH-2      #
-44.130.36.58      dl7vwh-3      #
-44.130.36.59      dl7vwh-4      #
+44.130.36.58      DL7VWH-3      #
+44.130.36.59      DL7VWH-4      #
 44.130.36.60      DL7ARO        # Marco; WAMPES
 44.130.36.65      DB5QO         # Dieter, Berlin 46
 44.130.36.66      DD5MP         # Antonio, Berlin
@@ -2368,13 +2248,10 @@
 44.130.36.95      DD5AA         # Alain, Berlin-Wedding ;NNTP, SMTP, POP-Server
 44.130.36.96      DD5AA-PC      #
 44.130.36.97      DL7NW         # Siegbert Langer, Berlin
-# 44.130.36.100                 # reserviert fuer TCP/IP Digi Berlin
-# 44.130.36.101                 # reserviert fuer TCP/IP Digi Berlin
-44.130.36.110     dl7vwh-5      # Wolfgang , Berlin
+44.130.36.110     DL7VWH-5      # Wolfgang , Berlin
 44.130.36.111     DL7UAW        # Andy
+44.130.36.200     db0bln        # Digi Berlin Wannsee
 44.130.36.210     DL7UAE        # Thomas, Berlin
-#
-#44.130.40.x    Mainz
 44.130.40.1     DG4KS   # Andreas Kempf, 6501 Dexheim
 44.130.40.2     DF3WE   # Rainer Sander, 6504 Oppenheim
 44.130.40.3     DF4WP   # Arthur Haas, 6501 Saulheim
@@ -2394,8 +2271,6 @@
 44.130.40.26    DG4PY   # Martina, Mainz
 44.130.40.27    DL8WM   # Manfred, Mainz
 44.130.40.99    DJ6RX   # Klaus Heintzenberg, 6501 Gau Bischofsheim
-#
-#44.130.41.x    Pfalz, daneben auch Mannheim, Heidelberg
 44.130.41.1     DK6PX   # Stefan Brendjes, 6580 Idar-Oberstein
 44.130.41.2     DG3IX   # Thomas Koziel, 6750 Kaiserslautern, DG3IX/p
 44.130.41.3     DK6PX-2 # Stefan, 6580 Idar-Oberstein
@@ -2457,11 +2332,6 @@
 44.130.41.133   DJ5JI-U # ; Linux
 44.130.41.200   DH6IAL-SVR      # Mark
 44.130.41.245   DD0WF   # Thomas Schleicher, Muenschweiler nr Pirmasens
-#
-# Hostliste Region 42, Stand 3. Mai 1996
-#
-#44.130.42.x    Koblenz
-# --- lokale Adresskoordination Raum Koblenz: DL5DI
 44.130.42.1     DL5DI   # Hans-Juergen Barthen, 56642 Kruft
 44.130.42.2     DL5DI-amiga     # Hans-Juergen Barthen
 44.130.42.3     DB0LJ-1 # PBBS Mittelrhein (DL5DI); *** Linux Server
@@ -2492,9 +2362,6 @@
 44.130.42.51    DF4PM-2 # Heinz, 56073 Koblenz; WAMPES-Router
 44.130.42.52    DF4PM-nb # Heinz, 56073 Koblenz; Notebook LinuX
 44.130.42.100   DB0LJ-R # ; Wampes Router
-#
-#44.130.44.x    Trier, Eifel
-# --- lokale Adresskoordination: DH9KAE
 44.130.44.1     DF2OO   # Thomas, Konz
 44.130.44.3     DG4EK   # Peter, Dreis-Brueck
 44.130.44.4     DG6PX   # Guenter, Pelm
@@ -2516,6 +2383,7 @@
 44.130.44.20    DF7PO   # Winfried Schubert, 54295 Trier
 44.130.44.21    DG3HDA  # Dietrich, 66538 Neunkirchen
 44.130.44.22    DF4WN   # Hartmut Diedrichs, 54439 Saarburg
+44.130.44.23    DJ9VSA  # Viktor Schulmeister, 54568 Gerolstein
 44.130.44.88    DB2VM-1 # Andreas, Trier
 44.130.44.99    DD8PZ   # Jochen van Geldern, 54329 Konz,
 44.130.44.100   DB2VM-2 # Andreas, Trier
@@ -2523,10 +2391,6 @@
 44.130.44.200   DB0GH-6 # TCP/IP Server 54290 Trier
 44.130.44.201   DB0GH-SVR # TCP/IP Server 54290 Trier (Router)
 44.130.44.202   DL0BBS  # Clubstation der Berufbildenden Schule G & T Trier
-#44.130.44.255  Broadcast Region44
-#
-#44.130.48.x    Stuttgart
-# lokale Adresskoordination im Raum Stuttgart: DC3SN
 44.130.48.1     DL4TA   # Ralf D. Kloth, 71638 Ludwigsburg; AT286
 44.130.48.2     DJ7KA   # Hans Ulrich Wandel, 72076 Tuebingen; AT
 44.130.48.3     DB0SAO  # BBS/Digipeater; *** WAMPES
@@ -2554,7 +2418,6 @@
 44.130.48.25    DL1SAL  # Peter Hiemer, 7447 Aichtal
 44.130.48.26    DK9SJ   # Ulf Kumm, 7000 Stuttgart
 44.130.48.27    DL9SAU  # Thomas Osterried, 7120 Bietigheim;
-#               *** AT486, WAMPES-Test
 44.130.48.28    DG1SBG  # Frank Goenninger, 7430 Metzingen
 44.130.48.29    DL8PV   # Otto Beck, 7410 Reutlingen-Mittelstadt
 44.130.48.30    DH2SAQ  # Hans-Peter Fricke, 7148 Remseck 1 Neckarrems
@@ -2782,11 +2645,6 @@
 44.130.48.252   DL4SDC-U        # Andreas, Boeblingen
 44.130.48.253   DG2GGI-3        # Thorsten
 44.130.48.254   DL4TA-S # Ralf D. Kloth, 70174 Stuttgart
-#
-# 44.130.49.x   Region Schwarzwald-Baar-Heuberg
-# lokale Adresskoordination: DG1GKQ@DB0NDR.#NDS.DEU.EU
-#       email: klaus@skylink.de
-#
 44.130.49.1     dg3saj  # Hans-Juergen; Brigachtal JN48FA; @DB0CZ
 44.130.49.2     dh9gar  #
 44.130.49.3     dl1gnc  # Czeslaw
@@ -2800,6 +2658,11 @@
 44.130.49.14    sys2.dl2grd     # Dirk; Villingen JN48FB; @DB0CZ
 44.130.49.15    dg1gmy  # Michael
 44.130.49.16    dl2gwy  # Wendy; Burgberg
+44.130.49.17    linux.dg1gmy    # Michael
+44.130.49.18    dg2giw  # Wolfgang
+44.130.49.20    df4ud   # Arnulf
+44.130.49.21    dj8bf   # Helmmut; Moenchweiler; @DB0CZ
+44.130.49.22    dh8gbm  # Michael; Zimmern; @DB0CZ
 44.130.49.33    dk8ts   # Franz; St. Georgen, JN48DD; @DB0CZ
 44.130.49.34    dc5gy   # Johannes; St. Georgen, JN48DD; @DB0CZ
 44.130.49.35    dl2gps  # Sven; St. Georgen, JN48DD; @DB0CZ
@@ -2811,8 +2674,6 @@
 44.130.49.69    df1gt   # Juergen; Guetenbach; @DB0CZ
 44.130.49.70    dk0jw   # Clubstation Jugendwohnheim Don Bosco
 44.130.49.100   dl0fhf  # Clubstation Fachhochschule Furtwangen
-#
-#44.130.50.x    Karlsruhe/Baden-Baden
 44.130.50.1     DB1GU   # Michael, 7570 Baden-Baden
 44.130.50.2     DL0BB   # Clubstation Baden-Baden
 44.130.50.3     DL0BB-A #
@@ -2830,9 +2691,6 @@
 44.130.50.35    DK2GQ   # Rainer Schoettgen, 7590 Achern
 44.130.50.36    DG1GSD  # Matthias, Kehl
 44.130.50.37    DG5GAF  # Uwe Bastian, Gaggenau
-#
-#44.130.51.x    Freiburg
-# --- lokale Adresskoordination: DH0GLG
 44.130.51.1     DL7GAP  # Herbert Jaegle, 7808 Waldkirch
 44.130.51.2     DL7GAP-1        #
 44.130.51.3     DG6GAS  # Ralf Scherzinger, Freiburg; AT386
@@ -2852,8 +2710,6 @@
 44.130.51.52    DG1GKQ-A        # Klaus May, Freiburg
 44.130.51.60    DL9GBA  # Markus Stopper, 79279 Voerstetten; AT486
 44.130.51.77    UNIX.DL1GSJ     # Joachim, Freiburg
-#
-#44.130.52.x    Mannheim, Heidelberg, Odenwald
 44.130.52.1     DK9UL   # Ulrich, 6953 Gundelsheim
 44.130.52.2     DK9UL-1 #
 44.130.52.5     DB4IO   # Peter, 6803 Edingen-Neckarhausen
@@ -2869,17 +2725,35 @@
 44.130.52.26    DA1US   # USAR Heidelberg ARC
 44.130.52.30    DL1IT   # Knut Haberkant, 6900 Heidelberg 1
 44.130.52.31    DL1IT-U #
-44.130.52.32    DL0GSA  # Club-Stn Albert-Schweitzer-Gymnasium, Sandhausen
+44.130.52.32    DL0GSA  # ClubStn Albert-Schweitzer-Gymnasium, Sandhausen
 44.130.52.33    DJ5UK   # Klaus Haberkant, 6900 Heidelberg
 44.130.52.35    DL1IT-1 #
 44.130.52.40    DC8UV   # Matthias Zimmermann, 6805 Heddesheim
 44.130.52.42    DH2FAB  # Holger Berghaeuser, Weinheim
 44.130.52.50    DL4ZBB  # Uwe John, 64668 Rimbach/Odw.
 44.130.52.51    DL4ZBB-U        #
+44.130.52.65    ROUTER.DG4FDI   # Thomas Thiers, WAMPES
+44.130.52.66    SYS2.DG4FDI     #
+44.130.52.67    SYS3.DG4FDI     #
+44.130.52.68    SYS4.DG4FDI     #
+44.130.52.72    DG9UBF  # Andreas Schmitt, D-68xxx Mannheim
+44.130.52.73    ROUTER.DG9UBF # Andreas Schmitt, WAMPES
+44.130.52.74    SYS2.DG9UBF     #
+44.130.52.75    SYS3.DG9UBF     #
 44.130.52.77    DG4FDI-12       # Thomas Thiers, 68305 Mannheim
+44.130.52.80    DG3IAU  # Robert Wagner, D-68199  Mannheim
+44.130.52.81    ROUTER.DG3IAU   # ; WAMPES
+44.130.52.82    SYS2.DG3IAU     # ; JNOS
 44.130.52.85    DG4IAD-PC       # Hans-Peter Zorn, Mannheim; PC
-#
-#44.130.53.x    Crailsheim/Heidenheim/Schw.Hall
+44.130.52.88    DG4IAD  # Hans-Peter Zorn, D-68259 Mannheim
+44.130.52.89    ROUTER.DG4IAD   # ; WAMPES
+44.130.52.90    SYS2.DG4IAD     # ; 286,axip
+44.130.52.96    DL1IAZ  # Patrick Scheele, Oftersheim
+44.130.52.97    ROUTER.DL1IAZ   #
+44.130.52.100   DB0HDB  # TCP/IP-Server, Heidelberg (DG4IAD) ***
+44.130.52.101   ROUTER.DB0HDB   # ; WAMPES, ax25:DB0HDB-10  ***
+44.130.52.102   SYS2.DB0HDB     #
+44.130.52.108   DG4PAL #
 44.130.53.1     DG1SBC  # Uwe Reiner, 7920 Heidenheim; PC
 44.130.53.2     DL9SDS  # Michael Aigle, 7920 Heidenheim
 44.130.53.5     DL5SDK  # Axel Stuehler, 7180 Crailsheim
@@ -2887,14 +2761,10 @@
 44.130.53.7     DJ9EZ-3 # Werner Woehr, 73432 Aalen
 44.130.53.10    DG1GOB  # Oliver, Aalen; LINUX/WAMPES
 44.130.53.11    DJ4LE   # Dietrich Boeckler, 74523 Schwaebisch Hall
-#
-#44.130.54.x    Hochrhein
 44.130.54.1     DL2GKA  # Albert Komm, 7897 Kuessaberg-Kuessnach
 44.130.54.2     DL2GKH  # Hermann Komm, 7897 Kuessaberg-Kuessnach
 44.130.54.3     DB7GV   # Hermann, 7894 Stuehlingen
 44.130.54.4     DG5GAK  # Klaus, 79787 Lauchringen
-#
-#44.130.55.x    Bodensee
 44.130.55.1     DL1GEK  # Klaus, 7750 Konstanz
 44.130.55.2     DB2GM   # Michael
 44.130.55.3     DL7GAI  # Hans Baechle, 7750 Konstanz
@@ -2918,115 +2788,6 @@
 44.130.55.54    DG2GGI-2        #
 44.130.55.55    DG2GGI  # Thorsten Gendritzki, 88400 Biberach
 44.130.55.56    DL1GFH  # Harald Fuessinger, Ravensburg; WAMPES
-#
-#44.130.176.x   Stuttgart 2
-44.130.176.1    DL4TA-G # Ralf D. Kloth, 71638 Ludwigsburg; AT286 WNOS
-44.130.176.2    DL4TA-3 # ; AT386 NOS, route via 44.130.48.1
-44.130.176.3    DL4TA-4 # ; P5, route via 44.130.48.1
-44.130.176.4    DG7SAV  # Ralf, Aichwald
-44.130.176.5    DG3SEU  # Martin, Boeblingen
-44.130.176.6    DG3SEU-U        #
-44.130.176.7    DL6SDC-2        # Felix Schroeter, Muehlacker
-44.130.176.8    DL6SDC-U        #
-44.130.176.9    DH6SBP  # Reinhold, Boeblingen
-44.130.176.10   DH6SBP-2        #
-44.130.176.11   DG5SEJ  # Quick, Weilheim/Teck
-44.130.176.12   DG7SAS  # Rolf Maeule, 7307 Aichwald
-44.130.176.13   DG1SDV  # Daniel Blaschke, Backnang
-44.130.176.14   DG4SDT  # Manuel, 7140 Ludwigsburg; AT386
-44.130.176.16   DJ0TS   # Henk, 71101 Schoenaich
-44.130.176.17   DF3DU-1 # Uwe Behle, Ehningen
-44.130.176.18   DG7SEP  # Andi, Filderstadt
-44.130.176.19   DG4SEP  # Oliver Kurfess, 70794 Filderstadt Plattenhardt; Amiga
-44.130.176.20   DL6SFA  # Markus
-44.130.176.21   DJ7KA-1 # Uli Wandel, 72076 Tuebingen
-44.130.176.22   DJ7KA-2 #
-44.130.176.23   DJ7KA-3 #
-44.130.176.24   DJ7KA-4 #
-44.130.176.25   DG9SCI  # Bernd
-44.130.176.26   DG9SCI-U        #
-44.130.176.27   DL6SFE  # Ingmar Baumgart, Nuertingen
-44.130.176.28   DL5SEC  # Rainer Stahl, 75417 Muehlacker
-44.130.176.29   DL5SEC-U        # ; Linux
-44.130.176.30   DK5GA   # Alexander Sprinz, 73265 Dettingen/Teck
-44.130.176.31   DL4TA-3L        # ; Linux
-44.130.176.32   DL4TA-3W        # ; WAMPES
-44.130.176.33   DL6SDM-LNX      # Gunther
-44.130.176.34   DL6SDM-P        #
-44.130.176.35   DL6SDM-1        #
-44.130.176.36   DL4TA-SNMP      #
-44.130.176.37   DL6SFE-U        #
-44.130.176.38   DL5SAF  # Rainer Elschenbroich, 71032 Boeblingen
-44.130.176.39   DL5SAF-1        #
-44.130.176.40   DF9SR   # Joachim Weller, 71083 Herrenberg
-44.130.176.41   DF9SR-U # ; UNIX
-44.130.176.42   DF9SR-1 # , QRL
-44.130.176.43   DF9SR-2 # , QRL; UNIX
-44.130.176.44   DL4SDD  # Robert Rother, Stgt Sillenbuch
-44.130.176.45   DL4SDD-U        # ; UNIX
-44.130.176.46   DJ9SI   # Wolfgang
-44.130.176.47   DL4TJ-2 # Werner
-44.130.176.48   DL4TJ-3 # Werner
-44.130.176.49   DL8SK   # Simon
-44.130.176.50   DK3SI-SUN       # Harald Tietze
-44.130.176.51   DK3SI-LNX       #
-44.130.176.52   DG2SFC  # Dieter Klotzbuecher, 74074 Heilbronn
-44.130.176.53   DB0WAN-U        #
-44.130.176.54   DL6SEU  # Shannon, Althengstett
-44.130.176.55   DF3CE   # Wolfgang Mett, 74722 Buchen-Hainstadt
-44.130.176.56   DG4UAM  # Stefan Mett, 74722 Buchen-Hainstadt
-44.130.176.57   DG1UAZ  # Ralf Foehner, 74927 Eschelbronn
-44.130.176.58   DG6UAX  # Thomas Ruhmann, 75177 Pforzheim
-44.130.176.59   DG4SGE  # Michael, Reutlingen
-44.130.176.60   DG9SGA  # Didi, Leinfelden-Echterdingen
-44.130.176.61   DL5SFI  # Stefen Kaiser, Leonberg
-44.130.176.62   DG1SAR  # Ortwin, Stuttgart
-44.130.176.72   DL6SFA-1        # Markus Rettstatt
-44.130.176.73   DL6SFB  # Juergen, Tuebingen
-44.130.176.74   DL6SFB-U        #
-44.130.176.75   DL2SBL  # Wolfram Koppisch, Winnenden
-44.130.176.76   DL2SEO  # Markus
-44.130.176.77   DG4SEH-U        # Gunther, Winnenden
-44.130.176.78   DG8SC   # Ekkehard
-44.130.176.79   DL0RT   # Clubstn P07, Reutlingen
-44.130.176.80   DG2SFK  # Alexander Kern, 72072 Tuebingen
-44.130.176.81   DG2SFK-U        #
-44.130.176.82   DL1SDZ-U        #
-44.130.176.83   DL1SEW  # Werner Braun, 72406 Bisingen
-44.130.176.96   DL4TA-4U        #
-44.130.176.97   DL4TA-4L        #
-44.130.176.98   DL4TA-4W        #
-44.130.176.100  DB0RBS-10       # TCP/IP Server Schwieberdingen (DL1SEM)
-#44.130.176.110 DB0GAT  # IP-Router Remstal (geplant); 486, PMNOS
-#44.130.176.111 DB0GAT-1        # ; OS2
-44.130.176.120  DL4IS   # Karl-Heinz Kreutel, 75245 Neulingen
-44.130.176.121  DG2SBV-IPGW     # IP-Router Remstal; WNOS
-44.130.176.122  DG2SBV-OS2      # ; OS2, WW-Convers-Server
-44.130.176.123  DG2SBV-SATGATE  # ; 486, PMNOS, IP-Server, Satellite-Gateway
-44.130.176.124  DG2SBV-SATBBS   # ; P5, Linux, WWW & Mudgames Server
-44.130.176.125  DG2SBV  # Horst Venzke, 73630 Remshalden-Geradstetten; 286, WNOS
-44.130.176.129  DG8SER  # Andreas Muenzenmaier
-44.130.176.130  DG8SER-U        # ; UNIX
-44.130.176.131  DG8SER-A        #
-44.130.176.132  DG8SER-B        #
-44.130.176.133  DG8SER-C        #
-44.130.176.134  DG8SER-D        #
-44.130.176.135  DG8SER-E        #
-44.130.176.137  DL1SEZ-7        # Klaus Micheler, Sachsenheim
-44.130.176.140  DG7SGL          # Rainer Weber-Krug, 71116 Gaertringen
-44.130.176.141  DG7SGL-1        # Rainer Weber-Krug, 71116 Gaertringen
-44.130.176.142  DG7SGL-2        # Rainer Weber-Krug, 71116 Gaertringen (Schulstation)
-44.130.176.143  DG7SGL-3        # Rainer Weber-Krug, 71116 Gaertringen (Schulstation)
-44.130.176.144  SYS2.DG3SDK     # Andre Baumann; JNOS; Stuttgart Ruit
-44.130.176.145  DG4SEU          # Thomas Schreiber, 71093 Weil im Schoenbuch
-44.130.176.146  DG4SEU-U        # Thomas Schreiber, 71093 Weil im Schoenbuch
-44.130.176.147  DL3SEI          # Andrzej Oleksiak, 71638 Ludwigsburg
-44.130.176.157  DG1UAZ-2ND      #
-44.130.176.158  DG1UAZ-3RD      #
-44.130.176.254  DK4TU-U         # Dieter Deiss, 71397 Leutenbach
-#
-#44.130.56.x    Muenchen
-# --- lokale Adress-Koordination: DG7DAH
 44.130.56.1     DL2RBI  # Werner Dirschedl, 8000 Muenchen
 44.130.56.2     DJ9KV   # Hans Knebel, 8000 Muenchen
 44.130.56.3     DJ3TQ   # Walther Reimann, 8131 Berg 1
@@ -3039,7 +2800,6 @@
 44.130.56.12    DK5UR   # Klaus Mulder, 8542 Roth
 44.130.56.13    DF1OY   # Friedrich Fabri, 8000 Muenchen 70
 44.130.56.14    DD5NC   # Victor Wood (G1BIG), 8000 Muenchen 70; Atari 520ST,
-#                               PD FTP PC/ST/PSION/CPM, route via 56.29
 44.130.56.15    DL8RAF  # Heinrich Niessner, 8000 Muenchen; PC
 44.130.56.16    DL8RAD  # Egon Niessner, 8905 Mering
 44.130.56.17    DL3MCW  # Roland, 85591 Vaterstetten; WAMPES
@@ -3169,7 +2929,6 @@
 44.130.56.168   MAJESTIX.DG5MLI #
 44.130.56.169   DL8SEK  # Dieter Bauder, 82377 Penzberg; AT-386
 44.130.56.200   DG7DAH-7        # Harm van Houten, 8000 Muenchen Waldperlach;
-#                               AT, SCO-Unix, Domain-Name-Server
 44.130.56.208   QUADERNO.DL3MFQ #
 44.130.56.209   XT.DL3MFQ       # Peter Freitag, Freising
 44.130.56.210   DL3MFQ-U        #
@@ -3193,11 +2952,6 @@
 44.130.56.241   DL3MCW-G        # ; WAMPES, route via DL3MCW
 44.130.56.242   DL3MCW-D        #
 44.130.56.243   DJ6OM   # Martin Zippe, 80935 Muenchen
-#
-#44.130.57.x    Ulm, Neu-Ulm
-#
-# --- lokale Adresskoordination: DC2SF @DB0ULM
-#
 44.130.57.1     DD1GV   # Vajk, Neu-Ulm
 44.130.57.2     DC2SF   # Stefan, Bellenberg
 44.130.57.3     DL9LAO  # Karl H. Figur, 89075 Ulm
@@ -3225,11 +2979,8 @@
 44.130.57.100   DB0ULM-baybox   # (DC2SF); BBS Baybox
 44.130.57.101   DB0ULM-bu       # (DC2SF); BBS Unix-Port Baybox
 44.130.57.200   DB0ULM-10       # (DC2SF); BBS 89287 Bellenberg WAMPES ***
-#44.130.57.200   DB0ULM  # (DC2SF); BBS 89287 Bellenberg WAMPES ***
 44.130.57.201   DB0ULM-u# (DC2SF); BBS 89287 Bellenberg LINUX  ***
 44.130.57.202    DC2SF-u# DC2SF LINUX
-#
-#44.130.58.x    Augsburg
 44.130.58.1     DB0ZKA  # Digi Augsburg (DL3MEW)
 44.130.58.2     DB0ZKA-TEST     #
 44.130.58.3     DL3MEW  # Bodo Assner, 8902 Neusaess
@@ -3259,8 +3010,6 @@
 44.130.58.29    DL4MEA-2        #
 44.130.58.35    DH2MBM  # Reinald Cronauer; Wampes
 44.130.58.36    DH2MBM-U        # ; Linux
-#
-#44.130.59.x    Bayern-Ost
 44.130.59.1     DL2RDH  # Wolfgang Reischl, 8480 Weiden OPf
 44.130.59.2     DG9RAK  # Heribert Spiessl, 8481 Etzenricht/Weiden OPf
 44.130.59.3     DF0DB   # Club-Stn OV Z64, 8480 Weiden OPf
@@ -3289,14 +3038,6 @@
 44.130.59.129   DG8RBZ-2        # ; PC
 44.130.59.130   DG2RCW  # Otmar Weidenhoefer, 92318 Neumarkt; Amiga
 44.130.59.131   DG2RCW-2        # ; PC
-#
-# Subnet 44.130.60.x (Nuernberg/Fuerth/Erlangen)
-# coordinated by Sebastian M Schweda, DL9NEC
-#
-# PR AX.25       : DL9NEC@DB0SIF.#HES.DEU.EU
-# PR TCP/IP      : dl9nec@db0bm.ampr.org
-# Internet E-Mail: schweda@rzmail.uni-erlangen.de
-#
 44.130.60.1     DF4NR           # Bernie Arndt, 8500 (90xxx) Nuernberg
 44.130.60.2     DL6NBC          # Harry Weidner, 8500 (90xxx) Nuernberg
 44.130.60.3     DC9YK           # Reinhard Speyerer, 8500 (90xxx) Nuernberg
@@ -3384,7 +3125,6 @@
 44.130.60.132   DL9SBM          # Jens Nolte, 90489 Nuernberg
 44.130.60.135   DJ8YH           # Wilfried Hess, 91334 Hemhofen
 44.130.60.150   DC5WT           # Juergen, (91334) Hemhofen; AT486
-#
 44.130.61.1     DB4IW   # Friedrich, 97877 Wertheim; AT
 44.130.61.2     DF7IM   # Juergen Suenkel, Schweinfurt
 44.130.61.3     DC3ID   # Volkmar Ries, 97877 Wertheim
@@ -3397,12 +3137,6 @@
 44.130.61.23    DD1UN   # Uwe, Hoepfingen
 44.130.61.100   DK0TT   # Club Stn A23 Taubertal
 44.130.61.111   DB0SWR  # Digi Wertheim
-#
-#    Die oberfraenkischen Hosts:
-#                                       Stand:  03.04.97
-# 44.130.62.xx (Oberfranken)
-# lokale Adresskoordination DL1NAT [44.130.62.3]
-#
 44.130.62.1    DD8NE          # Hans-Joachim Hetscher Stegaurach
 44.130.62.2    DL9NCF         # Alfred Schloegel Bamberg
 44.130.62.3    DL1NAT         # Paul Dorn Bamberg
@@ -3445,13 +3179,6 @@
 44.130.62.48   DL1NAL         # Siegfried Ottner Marktredwitz
 44.130.62.49   DB0MAK         # DIGI Marktredwitz
 44.130.62.50   DB0MAK-10      # DIGI-Server Marktredwitz
-#44.130.62.100  DB0BBG-10      # Digipeater Bamberg Kaelberberg
-#44.130.62.200  DB0FOR-10      # Digipeater Forchheim Haetzles
-#
-#44.130.63.x    Unterfranken, Stand: 06.03.97
-# PLZ 63700-63999, 97000-97999
-# lokale Adressenkoordination: DL1NC
-#44.130.63.1    dd6cv   # Christan Volk, 63867 Johannesberg
 44.130.63.2     dh4nbc  # Michael Reinicke, 97074 Wuerzburg
 44.130.63.3     dh4nbc-l
 44.130.63.5     dl1nc   # Robert Steinhaeusser, 97249 Eisingen
@@ -3483,60 +3210,40 @@
 44.130.63.73    dg7nfo  # Christian Schmitt, 97072 Wuerzburg
 44.130.63.80    dg7ndh  # Robert
 44.130.63.81    dg7ndh-w
-#44.130.63.100   db0aja  # Digi Wuerzburg, DL6NDG, JN59AS
 44.130.63.123   dg1neg  # Ralph Gessner, 97084 Wuerzburg
 44.130.63.144   dg9neq  # Guenter Wolf, 97084 Wuerzburg (***)
 44.130.63.145   dg9neq-w
 44.130.63.178   dl6nag  # Hendrik Fischer, 97084 Wuerzburg
 44.130.63.179   dl6nag-w
 44.130.63.222   dh4nbc-u
-#
-#44.130.184.x   Memmingen/Kempten
-44.130.184.1    DG4MKB  # Alexander Schmidt, 87700 Memmingen
-#
-#44.130.185.x   Traunstein
-44.130.185.1    DG5NMN  # Herbert A. Heitzmann, 83457 Bayerisch Gmain
-#
-#44.130.64.x    Rostock
-44.130.64.1     DL9GYA  # Roland, Bad Suelze
-44.130.64.2     DL1KWS  # Wolfgang, Rostock
-44.130.64.3     DL9GNA  # Helge Kruse, Rostock (ex Y53NA)
-44.130.64.6     DL9GEA  # Dieter Lindemann, 18107 Rostock
-44.130.64.8     DG0GX   # Rene, 18057 Rostock
-44.130.64.10    DL9GFA  # Gerrit, Ribnitz-Damgarten
-#
-#44.130.65.x    Neubrandenburg
+44.130.64.1     dl9gya  dl9gya.ampr.org
+44.130.64.2     dl1kws  dl1kws.ampr.org
+44.130.64.3     dl9gna  dl9gna.ampr.org
+44.130.64.6     dl9gea  dl9gea.ampr.org
+44.130.64.8     dg0gx   dg0gx.ampr.org
+44.130.64.10    dl9gfa  dl9gfa.ampr.org
+44.130.64.11    dl9gks  dl9gks.ampr.org
+44.130.64.100   db0hro  db0hro.ampr.org
+44.130.64.101   db0hro-u        db0hro-u.ampr.org
+44.130.64.225   db0rgn  db0rgn.ampr.org
 44.130.65.1     DL8NTE  # Armin, Neubrandenburg
-#
-#44.130.72.x    Barnim/Maerkisch-Oderland
-# --- lokale Adresskoordination in Brandenburg: DL8UEF
 44.130.72.1     DG0FT   # Rene Stange, Strausberg (ex Y51GE)
 44.130.72.2     DG3BTA  # Andre, Eberswalde
-#
-#44.130.73.x    Oberhavel/Uckermark
 44.130.73.1     DG1RMV  # Mario Herrmann, Hohen Neuendorf
 44.130.73.2     DG1RMV-U        #
-#
-#44.130.75.x    Havelland/Potsdam
 44.130.75.1     DL3ROB  # Robert Bastubbe, 14480 Potsdam
 44.130.75.2     DL1RSH  # Holger Mehrhout, 14480 Potsdam
 44.130.75.3     DL1RSH-1        #
 44.130.75.4     DL2RXE  # Michael Kuemmel, 14427 Potsdam
-#
-#44.130.78.x    Elbe-Elster/Obersprewald-Lausitz
 44.130.78.1     DL8UEF  # Harald Domann, 03222 Luebbenau
 44.130.78.2     DG6IBW  # Hans Reischel, 03226 Vetschau
 44.130.78.4     DL9UFB  # Wolfgang Vormelchert, 03205 Calau
-#
-#44.130.80.x    Harz
 44.130.80.1     DL2HSI  # Michael 'Miki' Stengel, 06493 Ballenstedt (ex Y23FH)
 44.130.80.2     DL2HSI-U        #
 44.130.80.3     DL2HSI-A        #
 44.130.80.4     DG1HUN  # Dirk, Thale
 44.130.80.100   DL0TAL  # AG Afu, Gymnasium Thale (DL4HSG)
 44.130.80.200   DL0TAL-2        #
-#44.130.81.x    Halle/S.
-# --- lokale Adresskoordination: DL5SA
 44.130.81.1     DL9HQH  # Juergen Engelhardt,    06128 Halle/S.
 44.130.81.2     DL3HRT  # Karsten Hansky,        06712 Kretzschau
 44.130.81.3     DL5SA   # Eberhard Zuch,         06110 Halle/S.
@@ -3546,18 +3253,12 @@
 44.130.81.7     DL5SA-U # Eberhard Zuch,         06110 Halle/S.
 44.130.81.18    DL1HRC  # Andreas Bier,          06217 Leuna-Merseburg
 44.130.81.100   DL0MLU  # ClubStn W35 MLU-Halle, 06108 Halle/S.
-#
-# Stand: 10/96
-#
-# 44.130.82.xx  - Raum Magdeburg
-# Lokale Adresskoordination Raum Magdeburg : DL6MPG
-#
 44.130.82.1     dg0cad
 44.130.82.2     dl9mgg
 44.130.82.3     dl6mpg
 44.130.82.4     dg6mue
-44.130.82.6     dg6mue-1
 44.130.82.5     dg6mja
+44.130.82.6     dg6mue-1
 44.130.82.7     dg6mja-1
 44.130.82.8     dl8mmr
 44.130.82.9     dl6cibold
@@ -3598,16 +3299,11 @@
 44.130.82.46    dg1kwa-u
 44.130.82.47    dg0cco
 44.130.82.48    dg0cco-u
-#
 44.130.82.100   db0oca
 44.130.82.101   db0oca-u
 44.130.82.102   db0oca-t
 44.130.82.103   db0oca-d
 44.130.82.222   dl6mpg-u
-#
-# 44.130.82.xx  - Raum Dessau
-# Lokale Adresskoordination Raum Dessau : DL6MPG
-#
 44.130.83.1    dg1hrg
 44.130.83.2    dl1hqh
 44.130.83.3    dg1hsi
@@ -3622,16 +3318,9 @@
 44.130.83.12    dl4htr # Harald , Dessau
 44.130.83.13    dl4htr-svr      # Harald, Dessau, Server
 44.130.83.14    dl4htr-10       # 2.Rechner
-#
-#44.130.87.x    Weissenfels
 44.130.87.9     DG1HQO  # Sven Werner, Weissenfels
 44.130.87.10    DG1HQI  # Karsten, Burgwerben
 44.130.87.11    DG1HQB-1        # Jens, Bonau nr Teuchern
-#
-#44.130.88.x    Leipzig
-# lokale Adresskoordination: DL9WUM
-# Postleitzahlen Bereich 04 (04000-04999)
-#
 44.130.88.1     DL8WPM  # Henry Luedemann, Leipzig
 44.130.88.2     DL8WIZ  # Micha Neumann, Leipzig
 44.130.88.3     DL9WIZ  # Ron Ruemmler, Leipzig
@@ -3691,12 +3380,6 @@
 44.130.88.203   DL8WIZ-SVR  # Wampes
 44.130.88.204   DL8WIZ-U    # Linux
 44.130.88.222   DG0LGF-A    # ax25: DG0LGF-13
-#
-#
-#
-# Stand per 29.Mar.97
-#
-#44.130.89.x    Chemnitz
 44.130.89.1     Y28PN   # Uwe Huebner, O-9052 Chemnitz; UNIX/NOS
 44.130.89.2     DL3LSM  # Mario Illgen, O-9022 Chemnitz (ex Y27SM); UNIX/NOS
 44.130.89.3     DL2JKT  # Carsten, O-9026 Chemnitz (ex Y22KT); NOS
@@ -3717,10 +3400,6 @@
 44.130.89.33    DL2JKT-2        # Carsten, O-9026 Chemnitz; WAMPES
 44.130.89.99    DL2JKT-3        # Carsten, O-9026 Chemnitz; UNIX
 44.130.89.100   DB0HOT  # Digi Hohenstein-Ernstthal
-#
-# 44.130.90.x Dresden
-# --- Lokale Adresskoordination Raum Dresden: DG1RTF
-#
 44.130.90.1     DG0DU           # Thomas Rudolph, 01127 Dresden
 44.130.90.2     DG1RTF          # Thomas Fichte, 01157 Dresden
 44.130.90.3     DD0VS           # Harald Fritsche, 01809 Heidenau
@@ -3732,7 +3411,7 @@
 44.130.90.9     DL1DTM          # Ulf Riechen, 01237 Dresden
 44.130.90.10    DG2DWL          # Hartmut Siegel, 01169 Dresden
 44.130.90.11    DL3BZN          # Guido Vattrodt, O-8020 Dresden
-44.130.90.12    DG2VQ           # Steffen Koehler, 01157 Dresden
+44.130.90.12    DH1DM           # Steffen Koehler, 01157 Dresden
 44.130.90.13    DG0JY           # Kai Zscheile, 09224 Gruena
 44.130.90.14    DG2DRA          # Heiko, O-2601 Obergurig
 44.130.90.15    DG1VS           # Karsten Schmidt, 01139 Dresden
@@ -3747,7 +3426,7 @@
 44.130.90.24    DG2VG           # Gunar Scholz 01309 Dresden
 44.130.90.25    DL3BZN-U        # Guido Vattrotd UNIX
 44.130.90.26    DG0LGK          # Harald Junghans, 04107 Leipzig
-44.130.90.27    DG2VQ-U         # Steffen Koehler UNIX
+44.130.90.27    DH1DM-U         # Steffen Koehler UNIX
 44.130.90.28    DD0VU           # Jens Knoepfchen, 01738 Klingenberg
 44.130.90.29    DL1DSD-U        # Joerg Fruehauf UNIX
 44.130.90.30    DG1VX           # Adreas Minner, 01099 Dresden
@@ -3792,17 +3471,17 @@
 44.130.90.71    WIN.DH0DW       # Maik Toepfer, Windows
 44.130.90.72    MAC.DG1RTF      # Thomas Fichte
 44.130.90.73    DG2VY           # Mario Frost, 02809 Goerlitz
-#----------------------------------------------------------------------------
+44.130.90.74    DL1JAD          # Erik Cyrener, 09600 Kleinschirma
+44.130.90.75    DL2JTT          # Gunter Roessel, 09599 Freiberg
+44.130.90.76    DG0MY           # Andre Roessel, 09599 Freiberg
+44.130.90.77    WAMPES.DL1DTM   # Ulf Riechen
+44.130.90.78    DG3VL           # Udo Schulze, 01189 Dresden
+44.130.90.79    DL2VL           # Joerg Marotzke, 01796 Pirna
 44.130.90.100   DB0TUD          # WAMPES Digi Dresden, Betreiber: S07
 44.130.90.101   DB0TUD-U        # UNIX, MB Dresden
 44.130.90.102   SMB.DB0TUD      # Sprach-MBox Dresden
 44.130.90.103   ATV.DB0TUD      # ATV-Relais Dresden
 44.130.90.104   CLX.DB0TUD      # DX-Cluster Dresden
-#
-# 44.130.91.x      Zwickau und Zwickau-Land, Stand: 21.04.97
-# PLZ 08000-08099
-# lokale Adressenkoordination: DG0LP
-#
 44.130.91.1     DL5SS           # Henry Rix, 08066 Zwickau
 44.130.91.2     DL9VW           # Reinhard Baudach, Zwickau
 44.130.91.3     DG0LP           # Lutz Poetschulat, 08058 Zwickau
@@ -3811,96 +3490,218 @@
 44.130.91.6     DL1PI           # Udo Pampel, Zwickau-Weissenborn
 44.130.91.7     DG0LPW          # Lutz Peters, 08396 Waldenburg
 44.130.91.8     DL2JFL          # Frank Lohse, 09246 Pleissa
-#
 44.130.91.100   DB0ZWI-SVR      # DB0ZWI-10 WAMPES Server Zwickau (S60)
 44.130.91.101   DB0ZWI-U        # UNIX INN Zwickau gw DB0ZWI-SVR
 44.130.91.102   DB0ZWI-CLX      # DX-Cluster Zwickau gw DB0ZWI-SVR
 44.130.91.200   DL0KSL          # Klubstation S35 (Verantw. DL3LRH)
-#
-#44.130.96.x    Suhl
 44.130.96.1     Y31JK   # Ralf Schueler, O-6300 Ilmenau; AT286
 44.130.96.2     DG0WF   # Ingo, 96524 Foeritz
-#
-#44.130.97.x    Gera
 44.130.97.1     DG0OBQ  # Rainer, Eisenberg; PC
 44.130.97.2     DG0OBQ-2        # Rainer, Eisenberg; Amiga
 44.130.97.3     DL4AST  # Peter Schlausch, 07549 Gera
 44.130.97.4     DL4AST-2        #
 44.130.97.5     DL5ARG  # Gert Thom, Gera
 44.130.97.10    DL1ATD  # Dieter, 99897 Tambach-Dietharz
-#
 44.130.98.1     DG1HVV  # Steffen Schwenke, 99734 Nordhausen
-#
-#44.130.99.x    Erfurt
 44.130.99.1     DG0OFZ  # Thomas, Weimar
 44.130.99.99    DL5MFK  #  Axel
-#
-#44.130.100.x   Eisenach
 44.130.100.1    DL4AKB  # Marcus Lorenz, 99819 Eisenach (ex Y44RI)
 44.130.100.2    SYS2.DL4AKB     #
 44.130.100.3    DL4AKB-U        # ; Linux
-#
-# 44.130.128.x Hamburg-2
-# local coordination dk3uz
-# 19970502
-44.130.128.1    df0hmb-digi
-44.130.128.2    df0hmb
-#
-44.130.128.65   db0hhb
-44.130.128.66   dk4hpa
-# $Id: hosts,v 1.124 1997/05/12 18:56:26 deyke Exp $
-#
-# 44.130.150.x
-# local coordination dk3hg@db0hht.ampr.org
-# router: db0nds.ampr.org arp db0nds
-#
+44.130.128.1    df0hmb-digi     df0hmb-digi.ampr.org
+44.130.128.2    df0hmb  df0hmb.ampr.org
+44.130.128.3    dl4xav  dl4xav.ampr.org
+44.130.128.4    dg6xl   dg6xl.ampr.org
+44.130.128.65   db0hhb  db0hhb.ampr.org
+44.130.128.66   dk4hpa  dk4hpa.ampr.org
+44.130.144.1    DB0NOS  # TCP/IP-Svr Oerlinghausen ***
+44.130.144.2    FTP.DB0NOS      # FTP-Svr Oerlinghausen ***
+44.130.144.8    BBS.DB0NOS      # BayCom-Mailbox Oerlinghausen
+44.130.144.16   DL3YEN  # Wolfgang Beckmann, Bielefeld
+44.130.144.17   KR4PH   # Wolfgang Beckmann, Bielefeld
+44.130.144.18   DL8KD   # Roland Werner, Oerlinghausen
+44.130.144.19   SYS2.DL8KD      # Roland Werner, Bielefeld
+44.130.144.20   DG6YGD  # Dirk Wacker, Detmold
+44.130.144.21   DL2YEN  # Tom Woller, Paderborn
+44.130.144.22   DG7YBQ  # Uwe Herrmann, Bielefeld
+44.130.144.23   DL9YEM  # Stefan Rupprecht, Schloss Holte
+44.130.144.24   DG6YDZ  # Dieter Hergast, Oerlinghausen
+44.130.144.25   DH4YAJ  # Christian Mueller, Bielefeld
+44.130.144.26   DG8YFL  # Karl-Heinz Reisner, Bielefeld
+44.130.144.27   DG6YL   # Herbert Wienciers, Augustdorf
+44.130.144.28   DL8YEA  # Peter Virtel, Bielefeld
+44.130.144.29   DG3YFS  # Raymond Beard, Lichtenau
+44.130.144.30   DH6YAY  # Stefan Meyer, Guetersloh
+44.130.144.31   AA2RL   # Tom Woller, Detmold
+44.130.144.32   DB2KC   # Jan Loeschner, Delbrueck
+44.130.144.33   SYS1.DG8YAY     # Joerg Frommenjohann, Bielefeld
+44.130.144.34   SYS2.DG8YAY     # Joerg Frommenjohann, Bielefeld
+44.130.144.35   DL5YDE  # Ernst Luehr, Stukenbrock
+44.130.144.36   DG4YDB  # Michael Brand, Bielefeld
+44.130.144.37   DG7YHV  # Juergen, Oelde
+44.130.144.38   DG6YGF  # Erhard Golling, Bielefeld
+44.130.144.39   DG4YHU  # Stephan, Detmold
+44.130.144.40   DL3YEO  # Herko Upmann, Bielefeld
+44.130.144.41   DG8YHT  # Jens Bergemann, Detmold
+44.130.144.42   DH9YAX  # Udo Willinghoefer, Verl
+44.130.144.43   DL1YDI  # Dirk Gassdorf, Steinhagen
+44.130.144.44   DL5YEQ  # Jens Eickelmann, Bielefeld
+44.130.144.45   DH2YAU  # Andreas Christian Salder, Bielefeld-Senne
+44.130.144.46   DB0CGS  # Clubstation, Bielefeld-Sennestadt, DH2YAU
+44.130.144.47   DL3YGK-1        # Frank Koschnick, Paderborn
+44.130.144.48   DG1YHN  # Sven Ziegenspeck, Paderborn
+44.130.144.49   DL1YCG  # Andreas Berger, Bielefeld-Senne
+44.130.144.50   DB9WT   # Hans Buth, Bad Iburg
+44.130.144.51   DB9WT-2 # Hans Buth, Bad Iburg
+44.130.144.52   DG5DBV-2        # Oliver Gottlob, Lippetal (Gestinghausen),Host 1 DOS/WIN
+44.130.144.53   LINUX.DG5DBV    # Oliver Gottlob,Lippetal (Gestinghausen), Host 2 Linux/Netware
+44.130.144.54   DG7YHQ  # Friedhelm Becker, Schloss Holte
+44.130.144.55   DG6DBM  # Hans Wilhelm Meininghaus, 59519 Moehnesee-Ellingsen
+44.130.144.56   DK3RC   # Horst Brueggemann, Detmold
+44.130.144.57   DK3RC-1 # Horst Brueggemann, Bielstein
+44.130.144.58   DL0JW   # Clubstation Heidequell N58, Oerlinghausen, DL8KD
+44.130.144.59   DG6VJ-W # Jochen Sarrazin, Muenster, WAMPES
+44.130.144.60   LINUX.DG6YGD    # Dirk Wacker, Detmold
+44.130.144.61   DD3QQ   # Kurt Hartelt, 48153 Muenster
+44.130.144.62   DG6VJ   # Jochen Sarrazin, Muenster
+44.130.144.63   SERVER.DG6YGD   # Dirk Wacker, Detmold
+44.130.144.64   DK2PH   # Hans Wilke, 33415 Verl
+44.130.144.65   DH9YBE  # Jan, Paderborn
+44.130.144.66   DG1YAY  # Christof Ellerbusch, 32257 Buende
+44.130.144.67   DG1YAY-7        # TCP/IP-Router, 32257 Buende
+44.130.144.68   DG8YBM  # Markus Baumann, 33330 Guetersloh
+44.130.144.69   DG6YGH  # Torsten Gondek, 33332 Guetersloh
+44.130.144.70   DG1YGH  # Henning Heedfeld, Bielefeld
+44.130.144.71   DG1YGH-1        # Henning Heedfeld, Bielefeld
+44.130.144.72   DG1YGH-2        # Henning Heedfeld, Bielefeld
+44.130.144.73   DG1YGH-3        # Henning Heedfeld, Bielefeld
+44.130.144.74   DG5YAH  # Ansgar Hartwig, 59302 Oelde-Lette
+44.130.144.75   DL6YDY  # Norman Osthus, 33330 Guetersloh
+44.130.144.76   DG4YFA  # Michael Borgelt, 33604 Bielefeld
+44.130.144.77   DL5YCX  # Klaus Heymann, Muenster
+44.130.144.78   DG6VJ-F # Jochen Sarrazin, Muenster
+44.130.144.79   DG4YGG  # Thomas Schulte-Derne, Bad Oeynhausen
+44.130.144.80   DG4YGG-U        # Thomas Schulte-Derne, Bad Oeynhausen
+44.130.144.81   DC4QN   # Reiner Schmidt, Versmold
+44.130.144.82   DC4QN-R # Reiner Schmidt, Versmold
+44.130.144.83   DG8BP   # Rolf Poeppel, Versmold
+44.130.144.88   DF9ED   # Bernhard Waechter, Bielefeld
+44.130.144.89   DF9VB   # Alfred Schoel, Herford
+44.130.144.90   DL2YMR  # Michael, Guetersloh
+44.130.144.100  DB0EA-9 # LinuX, Muenster (test)
+44.130.144.101  DB0EA-U # Digi Muenster (test)
+44.130.146.100  DB0RES  # Digi/BBS/Newsgate, Rees (DD9QP)
+44.130.146.101  DB0RES-SVR      # FTP-Server
+44.130.146.200  DK0HN   # Club stn Herten, Server
+44.130.146.210  DG2YHX  #
+44.130.147.1    DJ5ZD   # Alexander, Bad Laasphe
 44.130.150.1    dg3aah
 44.130.150.100  db0nds
 44.130.150.254  nds-test
-#
-# ... and this is the end ...
-#
-# 44.137        Rob Janssen PE1CHL Holland
-#
-#       Rob Janssen
-#       Normandie 173
-#       3524 RJ  UTRECHT
-#       bbs: 030-2805420 (nu 24uur/dag!  ook ISDN)
-#
-#       Aanvraag IP adres: stuur per e-mail
-#        - voornaam,
-#        - woonplaats,
-#        - provincie,
-#        - call,
-#        - home-bbs.
-#
-#       naar:   PE1CHL@PI8WNO.#UTR.NLD.EU
-#       of:     ip_adres@ip_node (pi1awt, pi1brd, pi1daz, pi1dre, pi1ehv,
-#                                 pi1esa, pi1ezq, pi1gas, pi1gtb, pi1hwb,
-#                                 pi1nos, pi1nym, pi1rmd, pi1rni, pi1shb,
-#                                 pi8utr, pi1vrz, pi1wfl, pi8wno, pi1yrc)
-#
-#       Controleer goed of alle gevraagde info aanwezig is alvorens het
-#       bericht te sturen!  Het spaart de aanvrager en mij veel tijd.
-#       Aanvragen moeten gestuurd worden door de machtiginghouder zelf,
-#       niet "namens iemand anders".
-#
-#       Aanvragen per telefoon of brief zijn niet meer mogelijk.
-#       Houd er AUB rekening mee dat het verwerken van de aanvraag een
-#       paar dagen kan duren.  Komt er geen antwoord, kijk dan eerst of
-#       er een update voor hosts.net in de BBS verspreid is (als bulletin),
-#       misschien is het antwoord zoekgeraakt en is het toegekende IP
-#       adres in deze update terug te vinden.
-#       De volledige hostslijst is te vinden als hosts137.lzh in pi1nos,
-#       en in mijn telefoon BBS: 030-2805420.  Daar staat ook een naar
-#       "domain" notatie geconverteerde versie, en een volledige domain
-#       zone file voor ampr.org.
-#
-#       Deze lijst werd vroeger bijgehouden door Gerard PA0GRI.  Val hem
-#       AUB niet meer lastig met nieuwe aanvragen!
-#
-# revision 18 apr 1997
-#
+44.130.176.1    DL4TA-G # Ralf D. Kloth, 71638 Ludwigsburg; AT286 WNOS
+44.130.176.2    DL4TA-3 # ; AT386 NOS, route via 44.130.48.1
+44.130.176.3    DL4TA-4 # ; P5, route via 44.130.48.1
+44.130.176.4    DG7SAV  # Ralf, Aichwald
+44.130.176.5    DG3SEU  # Martin, Boeblingen
+44.130.176.6    DG3SEU-U        #
+44.130.176.7    DL6SDC-2        # Felix Schroeter, Muehlacker
+44.130.176.8    DL6SDC-U        #
+44.130.176.9    DH6SBP  # Reinhold, Boeblingen
+44.130.176.10   DH6SBP-2        #
+44.130.176.11   DG5SEJ  # Quick, Weilheim/Teck
+44.130.176.12   DG7SAS  # Rolf Maeule, 7307 Aichwald
+44.130.176.13   DG1SDV  # Daniel Blaschke, Backnang
+44.130.176.14   DG4SDT  # Manuel, 7140 Ludwigsburg; AT386
+44.130.176.16   DJ0TS   # Henk, 71101 Schoenaich
+44.130.176.17   DF3DU-1 # Uwe Behle, Ehningen
+44.130.176.18   DG7SEP  # Andi, Filderstadt
+44.130.176.19   DG4SEP  # Oliver Kurfess, 70794 Filderstadt Plattenhardt; Amiga
+44.130.176.20   DL6SFA  # Markus
+44.130.176.21   DJ7KA-1 # Uli Wandel, 72076 Tuebingen
+44.130.176.22   DJ7KA-2 #
+44.130.176.23   DJ7KA-3 #
+44.130.176.24   DJ7KA-4 #
+44.130.176.25   DG9SCI  # Bernd
+44.130.176.26   DG9SCI-U        #
+44.130.176.27   DL6SFE  # Ingmar Baumgart, Nuertingen
+44.130.176.28   DL5SEC  # Rainer Stahl, 75417 Muehlacker
+44.130.176.29   DL5SEC-U        # ; Linux
+44.130.176.30   DK5GA   # Alexander Sprinz, 73265 Dettingen/Teck
+44.130.176.31   DL4TA-3L        # ; Linux
+44.130.176.32   DL4TA-3W        # ; WAMPES
+44.130.176.33   DL6SDM-LNX      # Gunther
+44.130.176.34   DL6SDM-P        #
+44.130.176.35   DL6SDM-1        #
+44.130.176.36   DL4TA-SNMP      #
+44.130.176.37   DL6SFE-U        #
+44.130.176.38   DL5SAF  # Rainer Elschenbroich, 71032 Boeblingen
+44.130.176.39   DL5SAF-1        #
+44.130.176.40   DF9SR   # Joachim Weller, 71083 Herrenberg
+44.130.176.41   DF9SR-U # ; UNIX
+44.130.176.42   DF9SR-1 # , QRL
+44.130.176.43   DF9SR-2 # , QRL; UNIX
+44.130.176.44   DL4SDD  # Robert Rother, Stgt Sillenbuch
+44.130.176.45   DL4SDD-U        # ; UNIX
+44.130.176.46   DJ9SI   # Wolfgang
+44.130.176.47   DL4TJ-2 # Werner
+44.130.176.48   DL4TJ-3 # Werner
+44.130.176.49   DL8SK   # Simon
+44.130.176.50   DK3SI-SUN       # Harald Tietze
+44.130.176.51   DK3SI-LNX       #
+44.130.176.52   DG2SFC  # Dieter Klotzbuecher, 74074 Heilbronn
+44.130.176.53   DB0WAN-U        #
+44.130.176.54   DL6SEU  # Shannon, Althengstett
+44.130.176.55   DF3CE   # Wolfgang Mett, 74722 Buchen-Hainstadt
+44.130.176.56   DG4UAM  # Stefan Mett, 74722 Buchen-Hainstadt
+44.130.176.57   DG1UAZ  # Ralf Foehner, 74927 Eschelbronn
+44.130.176.58   DG6UAX  # Thomas Ruhmann, 75177 Pforzheim
+44.130.176.59   DG4SGE  # Michael, Reutlingen
+44.130.176.60   DG9SGA  # Didi, Leinfelden-Echterdingen
+44.130.176.61   DL5SFI  # Stefen Kaiser, Leonberg
+44.130.176.62   DG1SAR  # Ortwin, Stuttgart
+44.130.176.72   DL6SFA-1        # Markus Rettstatt
+44.130.176.73   DL6SFB  # Juergen, Tuebingen
+44.130.176.74   DL6SFB-U        #
+44.130.176.75   DL2SBL  # Wolfram Koppisch, Winnenden
+44.130.176.76   DL2SEO  # Markus
+44.130.176.77   DG4SEH-U        # Gunther, Winnenden
+44.130.176.78   DG8SC   # Ekkehard
+44.130.176.79   DL0RT   # Clubstn P07, Reutlingen
+44.130.176.80   DG2SFK  # Alexander Kern, 72072 Tuebingen
+44.130.176.81   DG2SFK-U        #
+44.130.176.82   DL1SDZ-U        #
+44.130.176.83   DL1SEW  # Werner Braun, 72406 Bisingen
+44.130.176.96   DL4TA-4U        #
+44.130.176.97   DL4TA-4L        #
+44.130.176.98   DL4TA-4W        #
+44.130.176.100  DB0RBS-10       # TCP/IP Server Schwieberdingen (DL1SEM)
+44.130.176.120  DL4IS   # Karl-Heinz Kreutel, 75245 Neulingen
+44.130.176.121  DG2SBV-IPGW     # IP-Router Remstal; WNOS
+44.130.176.122  DG2SBV-OS2      # ; OS2, WW-Convers-Server
+44.130.176.123  DG2SBV-SATGATE  # ; 486, PMNOS, IP-Server, Satellite-Gateway
+44.130.176.124  DG2SBV-SATBBS   # ; P5, Linux, WWW & Mudgames Server
+44.130.176.125  DG2SBV  # Horst Venzke, 73630 Remshalden-Geradstetten; 286, WNOS
+44.130.176.129  DG8SER  # Andreas Muenzenmaier
+44.130.176.130  DG8SER-U        # ; UNIX
+44.130.176.131  DG8SER-A        #
+44.130.176.132  DG8SER-B        #
+44.130.176.133  DG8SER-C        #
+44.130.176.134  DG8SER-D        #
+44.130.176.135  DG8SER-E        #
+44.130.176.137  DL1SEZ-7        # Klaus Micheler, Sachsenheim
+44.130.176.140  DG7SGL          # Rainer Weber-Krug, 71116 Gaertringen
+44.130.176.141  DG7SGL-1        # Rainer Weber-Krug, 71116 Gaertringen
+44.130.176.142  DG7SGL-2        # Rainer Weber-Krug, 71116 Gaertringen (Schulstation)
+44.130.176.143  DG7SGL-3        # Rainer Weber-Krug, 71116 Gaertringen (Schulstation)
+44.130.176.144  SYS2.DG3SDK     # Andre Baumann; JNOS; Stuttgart Ruit
+44.130.176.145  DG4SEU          # Thomas Schreiber, 71093 Weil im Schoenbuch
+44.130.176.146  DG4SEU-U        # Thomas Schreiber, 71093 Weil im Schoenbuch
+44.130.176.147  DL3SEI          # Andrzej Oleksiak, 71638 Ludwigsburg
+44.130.176.157  DG1UAZ-2ND      #
+44.130.176.158  DG1UAZ-3RD      #
+44.130.176.254  DK4TU-U         # Dieter Deiss, 71397 Leutenbach
+44.130.184.1    DG4MKB  # Alexander Schmidt, 87700 Memmingen
+44.130.185.1    DG5NMN  # Herbert A. Heitzmann, 83457 Bayerisch Gmain
 44.137.0.0      PA_ZH1net       # /22 subnet - mask 255.255.252.0
 44.137.0.3      pa3chk          # olaf
 44.137.0.4      pa3ggz          # jan
@@ -4146,15 +3947,12 @@
 44.137.0.251    sys3.pe1nnh     # peter
 44.137.0.252    pe1evi          # rob
 44.137.0.253    sys3.pa3cgf     # dolf
-#
-# pa0okc subnet  16-31
 44.137.1.16     sys2.pa0okc     # chris
 44.137.1.17     sys3.pa0okc     # chris
 44.137.1.18     sys4.pa0okc     # chris
 44.137.1.19     sys5.pa0okc     # chris
 44.137.1.20     sys6.pa0okc     # chris
 44.137.1.21     gw.pa0okc       # chris
-#
 44.137.2.1      pe1puj          # edwin
 44.137.2.2      pe1prx          # johan
 44.137.2.3      pi5thr          # student
@@ -4222,7 +4020,6 @@
 44.137.2.65     pd0nlr          # jan
 44.137.2.66     pe1pts          # michel
 44.137.2.67     sys4.pe1nnh     # peter
-#
 44.137.4.0      PA_LBnet        # /22 subnet - mask 255.255.252.0
 44.137.4.1      pe1ayx          # hans
 44.137.4.2      home.pa3eug     # ramon
@@ -4293,7 +4090,6 @@
 44.137.4.69     pa3gje          # leon
 44.137.4.70     pd0rtl          # ton
 44.137.4.71     linux.pe1mul    # huub
-#
 44.137.8.0      PA_NBWnet       # /22 subnet - mask 255.255.252.0
 44.137.8.1      pa0hwb          # hans
 44.137.8.2      pi1hwb  pi8hwb  # hans
@@ -4407,7 +4203,6 @@
 44.137.8.115    pa3gwa          # willem
 44.137.8.116    sys2.pa3gwa     # willem
 44.137.8.117    sys3.pa3gwa     # willem
-#
 44.137.11.0     pa0grinet       # gerard subnet 0-31
 44.137.11.1     net.pa0gri      net     # TCP/IP net server and IP switch
 44.137.11.2     devel.pa0gri    # gerard
@@ -4421,7 +4216,6 @@
 44.137.11.10    chakka.pa0gri   chakka  # gvdg
 44.137.11.11    sunny.pa0gri    sunny   # gvdg
 44.137.11.13    katje.pa0gri    katje   # gvdg
-#
 44.137.11.32    pe1mhpnet       # jan subnet 32-47
 44.137.11.33    gw.pe1mhp       pe1mhp  # jan
 44.137.11.34    voyager.pe1mhp  sys2.pe1mhp     # jan
@@ -4430,7 +4224,6 @@
 44.137.11.37    shuttle.pe1mhp  sys5.pe1mhp     # jan
 44.137.11.38    saturn.pe1mhp   sys6.pe1mhp     # jan
 44.137.11.47    bc.pe1mhp       # jan
-#
 44.137.12.0     PA_GRnet        # /22 subnet - mask 255.255.252.0
 44.137.12.1     pa3esk          # frans
 44.137.12.2     pe1ljf          # harm
@@ -4476,7 +4269,6 @@
 44.137.12.43    sys3.pe1hyu     # frans
 44.137.12.44    sys4.pe1hyu     # frans
 44.137.12.45    sys5.pe1hyu     # frans
-#
 44.137.16.0     PA_NH1net       # /22 subnet - mask 255.255.252.0
 44.137.16.1     pa3efu          # jan
 44.137.16.2     sys2.pe1btv     # ruud
@@ -4600,13 +4392,10 @@
 44.137.16.127   pa0dra          # rein
 44.137.16.128   pa3awz          # ted
 44.137.16.129   pe1pab          # fred
-#
-# subnet voor demo (HCC etc..)
 44.137.17.1     pa0hzp-1        # henk
 44.137.17.2     pa0hzp-2        # henk
 44.137.17.3     pa0hzp-3        # henk
 44.137.17.4     pa0hzp-4        # henk
-#
 44.137.20.0     PA_FLnet        # /22 subnet - mask 255.255.252.0
 44.137.20.2     pa3ffs          # marijn
 44.137.20.3     pe1mrn          # jan
@@ -4638,7 +4427,6 @@
 44.137.20.30    sys2.pe1plo     # rob
 44.137.20.31    sys3.pe1plo     # rob
 44.137.20.32    pd1abj          # jeroen
-#
 44.137.24.0     PA_NBOnet       # /22 subnet - mask 255.255.252.0
 44.137.24.1     pi8tcp          # club
 44.137.24.2     pe1dtn          # peter
@@ -4723,7 +4511,6 @@
 44.137.24.83    pe1dgw          # ad
 44.137.24.84    pe1ltt          # peter
 44.137.24.85    pb0ajn          # andre
-44.137.24.86    pb0aia  pi8rty  # kees
 44.137.24.86    pi1rty  pi8cwg  # kees
 44.137.24.87    sys2.pe1iua     # ron
 44.137.24.88    pa3fyw          # herman
@@ -4897,7 +4684,6 @@
 44.137.25.7     pd1aai          # det
 44.137.25.8     pa3gyh          # jo
 44.137.25.9     pd0sdp          # nick
-#
 44.137.28.0     PA_ZLnet        # /22 subnet - mask 255.255.252.0
 44.137.28.1     pb0acz          # bram
 44.137.28.2     pe1khx          # rob
@@ -4993,7 +4779,6 @@
 44.137.28.94    pd0scl          # walther
 44.137.28.95    pe1ger          # theo
 44.137.28.96    pe1cyn          # jan
-#
 44.137.32.0     PA_ZH2net       # /22 subnet - mask 255.255.252.0
 44.137.32.1     pa3dlt          # koos
 44.137.32.2     pe1gwo          #
@@ -5216,7 +5001,6 @@
 44.137.32.233   warp.pa3fwc     # martin
 44.137.32.234   pi4vhw          # veron hoekse waard
 44.137.32.235   pe1dcd          # peter
-#
 44.137.33.0     pa2aganet       # adam subnet 0-15
 44.137.33.2     gatorbox.pa2aga gatorbox        # adam
 44.137.33.3     aruba.pa2aga    aruba   # adam
@@ -5227,7 +5011,6 @@
 44.137.33.8     MacTCP2.pa2aga  MacTCP2 # adam
 44.137.33.9     MacTCP3.pa2aga  MacTCP3 # adam
 44.137.33.10    pa2aga-10       # adam
-#
 44.137.36.0     PA_NH2net       # /22 subnet - mask 255.255.252.0
 44.137.36.1     pa0lky          # lupko
 44.137.36.2     pa0rjv          # robert
@@ -5377,12 +5160,10 @@
 44.137.36.152   pd1acy          # rene
 44.137.36.153   pa0mrs          # jan
 44.137.36.154   pa0pry          # henk
-#
 44.137.37.0     pa3fymnet       # remco subnet 0-15
 44.137.37.2     lithium.pa3fym  # remco
 44.137.37.3     natrium.pa3fym  # remco
 44.137.37.4     kalium.pa3fym   # remco
-#
 44.137.40.0     PA_UTnet        # /22 subnet - mask 255.255.252.0
 44.137.40.1     pe1chl          # rob
 44.137.40.2     sys2.pe1chl     # rob
@@ -5541,7 +5322,6 @@
 44.137.40.163   sys2.pa3dxs     # gerjan
 44.137.40.164   pd0mgx          # carl
 44.137.40.165   pa3atr          # frans
-#
 44.137.41.0     koxnet          # rob subnet 0-15
 44.137.41.16    pa3fmknet       # olbert subnet 16-31
 44.137.41.17    sys1.pa3fmk     # olbert
@@ -5549,10 +5329,6 @@
 44.137.41.19    sys3.pa3fmk     # olbert
 44.137.41.20    sys4.pa3fmk     # olbert
 44.137.41.21    sys5.pa3fmk     # olbert
-#
-#
-# subnet land van maas en waal en rijn
-#
 44.137.44.0     PA_GL1net       # /24 subnet - mask 255.255.255.0
 44.137.44.1     pa0hbp          # hans
 44.137.44.2     pa3dso          # ron
@@ -5634,9 +5410,6 @@
 44.137.44.79    sys2.pe1pxn     # berry
 44.137.44.80    sys3.pe1pxn     # berry
 44.137.44.81    pe1rbf          # theo
-#
-# subnet achterhoek
-#
 44.137.45.0     PA_GL2net       # /24 subnet - mask 255.255.255.0
 44.137.45.1     pe1dkc          # ed
 44.137.45.2     pe1ivp          # sander
@@ -5652,9 +5425,6 @@
 44.137.45.12    pe1izr          # hans
 44.137.45.13    pa3gsl          # stephan
 44.137.45.14    pa3dro          # jan
-#
-# subnet veluwe
-#
 44.137.46.0     PA_GL3net       # /24 subnet - mask 255.255.255.0
 44.137.46.1     pe1gox          # rob
 44.137.46.2     pa0dal          # bert
@@ -5722,7 +5492,6 @@
 44.137.46.65    sys2.pe1mtt     # herre
 44.137.46.66    pe1rbz          # cil
 44.137.46.67    pd0nrw          # gerhard
-#
 44.137.47.0     pd0pglnet       # iskander subnet 0-15
 44.137.47.1     pd0pgl          # iskander
 44.137.47.2     gate.pd0pgl     # iskander
@@ -5731,7 +5500,6 @@
 44.137.47.5     unix.pd0pgl     # iskander
 44.137.47.6     win.pd0pgl      # iskander
 44.137.47.7     winnt.pd0pgl    # iskander
-#
 44.137.48.0     PA_OV1net       # /24 subnet - mask 255.255.255.0
 44.137.48.1     pa0apa          # andre
 44.137.48.2     pa3ffa          # erik
@@ -5815,7 +5583,6 @@
 44.137.48.86    pe1puy          # martinus
 44.137.48.87    sys2.pe1puy     # martinus
 44.137.48.88    pd0onx          # kees
-#
 44.137.49.0     PA_OV2net       # /24 subnet - mask 255.255.255.0
 44.137.49.1     pi4vrn          # henk
 44.137.49.2     pe0rtm          # henk
@@ -5846,11 +5613,8 @@
 44.137.49.29    pa3div          # paul
 44.137.49.30    pd0cca          # ben
 44.137.49.31    pa3buq          # jan
-#
 44.137.50.0     PA_OV3net       # /24 subnet - mask 255.255.255.0
-#
 44.137.51.0     PA_OV4net       # /24 subnet - mask 255.255.255.0
-#
 44.137.52.0     PA_DRnet        # /22 subnet - mask 255.255.252.0
 44.137.52.1     pa0adc          # henk
 44.137.52.2     pa0nam          # bert
@@ -5885,7 +5649,6 @@
 44.137.52.31    pd0pxx          # bert
 44.137.52.32    sys2.pd0pxx     # bert
 44.137.52.33    sys3.pd0pxx     # bert
-#
 44.137.56.0     PA_FRnet        # /22 subnet - mask 255.255.252.0
 44.137.56.1     pa3ffy          # ton
 44.137.56.2     pe1dvx          # kees
@@ -5968,18 +5731,9 @@
 44.137.56.81    sys2.pe1rgj     # andre
 44.137.56.82    sys3.pe1rgj     # andre
 44.137.56.83    sys4.pe1rgj     # andre
-#
 44.137.60.0     PA_SPAREnet     # /22 subnet - mask 255.255.252.0
-#===========================================================================
-# AMPR.ORG Amateur Packet Radio TCP/IP Network
-# 44.142.xxx.xxx - Internet Protocol Address list for HB9 - Switzerland
-# Administered by HB9CAT
-#===========================================================================
 44.142.0.0     CH_amprnet
-# 44.142.1.xxx   Tel.Area  01 : Zuerich
-#
 44.142.1.1     hb9zz          # ETH Zuerich,ip gate
-#                               also hb9zz.ethz.ch (129.132.20.19)
 44.142.1.2     hb9ctb         # Markus, Dietikon
 44.142.1.3     hb9cko         # Jacques, Altstetten
 44.142.1.4     linux.hb9cat   # Marco, Opfikon (mzolling@wellfleet.com)
@@ -5996,13 +5750,7 @@
 44.142.1.19    2nd.hb9pqx     # Ruedi
 44.142.1.20    hb9avk         # Paul
 44.142.1.21    hb9ak          # Swiss-ARTG
-#
-#        22-30 reserved for Swiss-ARTG
-#
 44.142.1.32    hb9ddo         # Stephan, Zuerich
-#
-#        33-39 reserved for hb9ddo
-#
 44.142.1.40    hb9cet         # Peter
 44.142.1.41    hb9lcu         # Beat
 44.142.1.42    hb9cjf         # Frank
@@ -6013,12 +5761,6 @@
 44.142.1.48    hb9sdn         # Claudio, Uster
 44.142.1.50    hb9svv         # Peter, Uster
 44.142.1.52    hb9vqv         # Peter, Meilen
-
-#---------------------------------------------------------------------------
-# 44.142.22.xx2x  Tel.Area 022 : Geneve
-#
-# 44.142.22. 1-50 under administration of IPARC, repr. by HB9VAB
-#
 44.142.22.1    hb9iap         # International Amateur Packet Club
 44.142.22.2    hb9iac         # International Amateur Packet Club
 44.142.22.3    hb9vab         # Rodolphe
@@ -6026,19 +5768,9 @@
 44.142.22.5    hb9vai         #
 44.142.22.6    hb9vaf         #
 44.142.22.7    hb9rte         #
-#
-#---------------------------------------------------------------------------
-# 44.142.24.xxx  Tel.Area 024 : Yverdon
-#
 44.142.24.1    hb9rdp         # Louis, Yverdon
-#---------------------------------------------------------------------------
-# 44.142.28.xxx  Tel.Area 028 : Brig
-#
 44.142.28.2    hb9uqs         #
 44.142.28.3    2nd.hb9uqs     #
-#-------------------------------------------------------------------------
-# 44.142.31.xxx  Tel.Area 031 : Bern
-#
 44.142.31.1    qrl.hb9aoo     # Kurt, qrl Bern
 44.142.31.2    hb9ckn         # Noel, Kehrsatz
 44.142.31.3    hb9pvi         # Ernst, Grafenried
@@ -6052,23 +5784,13 @@
 44.142.31.14   hb9tax         # Jean-Marc Luethi, Utzingen
 44.142.31.15   unix.hb9tax    # 2te Adresse
 44.142.31.16   hb9gav         # Andreas, Bern, Mac
-#
-# 20-40 (50) reserved for future use by hb9EH, HTL Burgdorf (hb9rms)
-#
 44.142.31.64   hb9c
-#
-# 44.142.31.65-71 hb9c betrieb erst Anfang Juni
-#
 44.142.31.72   hb9auz         # Christoph, Zimmerwald
 44.142.31.74   hb9cuf         # Paul Adrien, Bern
 44.142.31.76   hb9prh         # Heinz
 44.142.31.100  hb9tbr         # Danny, M¸nchenbuchsee
 44.142.31.101  2nd.hb9tbr     #
 44.142.31.102  3rd.hb9tbr     #
-
-#---------------------------------------------------------------------------
-# 44.142.32.xxx  Tel.Area 032 : Biel
-#
 44.142.32.1    hb9sin         # Gino, Pery
 44.142.32.2    2nd.hb9sin     # Gino, 2.computer
 44.142.32.3    hb9pxt         # Germain, Le Fuet
@@ -6080,37 +5802,16 @@
 44.142.32.9    2nd.hb9sdd     # Bruno, 2.Computer
 44.142.32.10   hb9aoo         # Kurt, Seedorf
 44.142.32.11   hb9mrr         # Roland
-#-------------------------------------------------------------------------
-# 44.142.33.xxx  Tel.Area 033 : Thun
-#
 44.142.33.2    hb9rnp         # Peter, Nibach
-#---------------------------------------------------------------------------
-# 44.142.37.xxx  Tel.Area 037 : Fribourg
-#
 44.142.37.2    hb9hfn         # Cedric
-#-------------------------------------------------------------------------
-# 44.142.41.xxx  Tel.Area 041 : Luzern
-#
 44.142.41.1    hb9cw          # USKA Sektion Rigi, (hb9ddo)
 44.142.41.2    rigi.hb9cxe    # Emil, Rigi-Scheidegg
 44.142.41.3    hb9diz         # Markus
 44.142.41.32   rigi.hb9ddo    # Stephan, Rigi-Scheidegg
-#
-# 32 - 39 reserved for hb9ddo
-#
 44.142.41.42   hb9wad         # Konrad, Littau
-##---------------------------------------------------------------------------
-# 44.142.42.xxx  Tel.Area 042 : Zug
-#
 44.142.42.1    hb9aya         # Rene, Sins; Unix-Kernel
 44.142.42.2    2nd.hb9aya     # Rene, 2nd computer
-#---------------------------------------------------------------------------
-# 44.142.43.xxx  Tel.Area 043 : Schwyz
-#
 44.142.43.1    hb9jay         # Walter
-#---------------------------------------------------------------------------
-# 44.142.52.xxx  Tel. Area 052 : Winterthur
-#
 44.142.52.1    hb9cfe         # Paul
 44.142.52.2    hb9sje         # Axel
 44.142.52.3    hb9rwl         # Albert
@@ -6123,51 +5824,29 @@
 44.142.52.13   pc2.hb9wnr     # (now HB9JNX)
 44.142.52.14   temp.hb9wnr    #
 44.142.52.15   mac.hb9wnr     #
-#
-#44.142.52.16-31 reserved for HB9JNX
-#
 44.142.52.33   hb9cmw         # Richi, Neftenbach
 44.142.52.36   hb9vvq         # Yves
 44.142.52.37   2nd.hb9vvq     #   "
 44.142.52.47   hb9ruz         # Peter
 44.142.52.48   unix.hb9ruz    # Peter, Unix
-
-#---------------------------------------------------------------------------
-# 44.142.53.xxx  Tel.Area 053 : Schaffausen
-#
 44.142.53.1    hb9blt         # Max
 44.142.53.2    hb9brj         # Markus
-#---------------------------------------------------------------------------
-# 44.142.54.xxx  Tel.Area 054 : Frauenfeld
-#
 44.142.54.1    hb9ajl         # Arno
 44.142.54.2    hb9arc         # Greta
-#---------------------------------------------------------------------------
-# 44.142.55.xxx  Tel.Area 055 : Rapperswil
-#
 44.142.55.1    hb9iqc         # Rene, Freienbach
 44.142.55.2    hb9rlz         # Manfred, Jona
 44.142.55.4    hb9iqa         # Rolf, Pf‰ffikon SZ
 44.142.55.5    linux.hb9iqa   #
-#---------------------------------------------------------------------------
-# 44.142.56.xxx  Tel.Area 056 : Baden
-#
 44.142.56.1    hb9dfd         # Michael, Gebenstorf
 44.142.56.2    hb9apc         #  ?
 44.142.56.5    hb9ret         # Bruno
 44.142.56.6    hb9cwg         # Hans
 44.142.56.9    hb9avv         # Rolf, Ennetbaden
-#---------------------------------------------------------------------------
-# 44.142.57.xxx  Tel.Area 057 : Wohlen
-#
 44.142.57.1    hb9pta         # Walter
 44.142.57.2    hb9mmf         # Werner
 44.142.57.3    hb9lar         # Christoph
 44.142.57.4    hb9biq         # Tadeus
 44.142.57.5    hb9np          # Fred
-#---------------------------------------------------------------------------
-# 44.142.61.xxx  Tel.Area 061 : Basel
-#
 44.142.61.1    hb9rzj         # Mario
 44.142.61.2    hb9bgy         # Werner, Riehen
 44.142.61.3    hb9cgb         # RCGB, Basel ( TCP/IP-DIGI )
@@ -6180,34 +5859,22 @@
 44.142.61.10   hb9ac          # RMNC-Knoten Binningen
 44.142.61.11   hb9nbb         # Joseph, Basel
 44.142.61.12   hb9mst         # Toni, Basel
-#
-#         16-31 reserved for future use by HB9EAS
-#
 44.142.61.32   hb9naw         # Mike, Basel
 44.142.61.34   hb9nav         # Thomas, Allschwil
 44.142.61.36   hb9pcx         # Wolfgang, Aesch
 44.142.61.37   2nd.hb9pcx     #     "       "  , 2te maschine
 44.142.61.38   hb9pcu         # Hans-Peter, hpr@hpr.pr.net.ch
 44.142.61.39   hb9cey         # Gerald
-#---------------------------------------------------------------------------
-# 44.142.62.xxx  Tel. Area 062 : Olten
-#
 44.142.62.1    hb9rwm         # Marcel, Safenwil
 44.142.62.2    2nd.hb9rwm
 44.142.62.3    3rd.hb9rwm
 44.142.62.4    hb9rwf         # Heinz, Safenwil
 44.142.62.5    hb9fx          # Zofingerrunde, Zofingen
-#
-#44.142.62.6-9 reseved for future use by hb9fx
-#
 44.142.62.10   hb9bhu         # Fredy, Zofingen
 44.142.62.11   hb9crz         # Manfred, Zofingen
 44.142.62.12   hb9mue         # Werner, Wikon
 44.142.62.13   hb9bbm         # Willy
 44.142.62.14   hb9bmi         # Hans-Peter
-#---------------------------------------------------------------------------
-# 44.142.64.xxx  Tel.Area 064 : Aarau
-#
 44.142.64.1    hb9czf         # Dominique, Oberentfelden
 44.142.64.4    hb9cms         #
 44.142.64.5    hb9pqx         # Ruedi
@@ -6216,29 +5883,15 @@
 44.142.64.8    hb9szh         # Peter
 44.142.64.10   hb9cob         # Brant Erwin
 44.142.64.21   hb9xar         # Thomas, Muhen
-#---------------------------------------------------------------------------
-# 44.142.71.xxx  Tel.Area 071 : St.Gallen
-#
 44.142.71.1    hb9cjx         # Marco, St.Gallen (?), sysop HB9KNB
-# NOT USED, TO BE CLEARED IN UCSD :
-# 44.142.71.2    hb9brj         # Markus, St.Gallen, now 53.2
 44.142.71.8     hb9kop        # Jan, St. Gallen JN47QK
 44.142.71.9     2nd.hb9kop    # Jan, St. Gallen JN47QK
-#---------------------------------------------------------------------------
-# 44.142.73.xxx  Tel.Area 073 : Wil
-#
 44.142.73.1    hb9sof         # Charlie
-#---------------------------------------------------------------------------
-# 44.142.91.xxx  Tel.Area 091 : Lugano
-#
 44.142.91.1    hb9mpl         # Carlo, Lugano
 44.142.91.2    ti.hb9cat      # Marco, 2nd Qth Lugano
 44.142.91.3    hb9dhg         # Fulvio, Melide
 44.142.91.4    hb9obh         # Giovanni
 44.142.91.100  south.hb9tc    # Radio Club Ticino
-#---------------------------------------------------------------------------
-# 44.142.92.xxx  Tel.Area 092 : Bellinzona
-#
 44.142.92.1    hb9afz         # Franceso, Bellinzona
 44.142.92.2    hb9agc         # Ado, Daro
 44.142.92.3    hb9oab         # Franco, Bellinzona hb9oab@mpc.mhs.imp.com
@@ -6247,196 +5900,11 @@
 44.142.92.20   2nd.hb9agc     # Ado, 2a macchina
 44.142.92.50   hb9ok          # TERA Radio Club
 44.142.92.100  nord.hb9tc     # Radio Club Ticino
-#---------------------------------------------------------------------------
-# 44.142.93.xxx  Tel.Area 093 : Locarno
-#
 44.142.93.1    hb9sfd         # Marco, Minusio
 44.142.93.2    hb9oav         # Andrea, Ascona
 44.142.93.4    west.hb9tc     # Radio Club Ticino
 44.142.93.5    hb9suw         # Hans, Magadino
 44.142.93.6    2nd.hb9suw     # Hans, 2a macchina
-#
-#         10-15 reserved for future use by hb9h, A.R.T.
-#---------------------------------------------------------------------------
-44.143.16.1     OE1XIR
-44.143.16.2     OE1XIB
-44.143.16.3     OE1XTR
-44.143.16.10    GW.OE1HMC
-44.143.16.11    SEC.OE1HMC
-44.143.16.12    TER.OE1HMC
-44.143.16.13    OE1HMC
-44.143.16.14    OE1DMW
-44.143.16.15    SEC.OE1DMW
-44.143.16.16    OE1MSB
-44.143.16.17    SEC.OE1MSB
-44.143.16.18    SP7MUD
-44.143.16.19    OE1MMA
-44.143.16.20    OE3GFS
-44.143.16.21    OE1SMC
-44.143.16.22    OE1CMS
-44.143.16.24    OE1GOU
-44.143.16.25    OE1YXU
-44.143.16.26    OE1WWL
-44.143.16.27    SEC.OE1WWL
-44.143.16.28    TER.OE1WWL
-44.143.16.30    OE1GWW
-44.143.16.31    OE3GMW
-44.143.16.32    OE3DNA
-44.143.16.33    OE3PHA
-44.143.16.34    OE1WCA
-44.143.16.35    OE3UGW
-44.143.16.36    OE1JEB
-44.143.16.37    OE1HHC
-44.143.16.38    OE1FWU
-44.143.16.39    OE1AZS
-44.143.16.40    OE1TKW
-44.143.16.41    OE1RMB
-44.143.16.42    WIEN.OE3DZW
-44.143.16.43    OE1DGG
-44.143.16.44    OE1PPA
-44.143.16.45    OE1GOB
-44.143.16.46    OE1MEB
-44.143.16.47    OE4CFC
-44.143.16.48    OE1HZA
-44.143.16.49    SEC.OE1HZA
-44.143.16.50    OE1RZB
-44.143.16.51    OE1DHK
-44.143.16.100   OE3KLU
-44.143.16.144   OE1KDA
-44.143.16.145   VERDI.OE1KDA
-44.143.16.146   TER.OE1KDA
-44.143.18.1     OE1XAR
-44.143.18.14    OE1ATU
-44.143.22.1     OE1XTU
-44.143.22.65    VENUS.OE1KIB
-44.143.22.66    SATURN.OE1KIB
-44.143.22.67    MERKUR.OE1KIB
-44.143.22.68    BOSON.OE1NKW
-44.143.22.69    LEPTON.OE1NKW
-44.143.22.70    MESON.OE1NKW
-44.143.22.71    56K.OE1TKW
-44.143.23.10    OE1YSS
-44.143.33.10    OE2PBP
-44.143.33.11    SEC.OE2PBP
-44.143.33.12    OE2IWM
-44.143.33.13    OE2TBM
-44.143.33.14    OE2DON
-44.143.33.15    OE2HEM
-44.143.33.16    OE2EHP
-44.143.33.17    OE2IWM
-44.143.33.18    OE2MAL
-44.143.33.19    OE2HHN
-44.143.33.20    OE2WPO
-44.143.33.21    OE2CEN
-44.143.33.22    OE2MSN
-44.143.33.23    OE2LJP
-44.143.33.24    OE2IJL
-44.143.33.25    OE2RKO
-44.143.48.1     OE3XSR
-44.143.48.1     ROUTER.OE3XSR
-44.143.48.2     BBS.OE3XSR
-44.143.48.2     FTP.OE3XSR
-44.143.48.2     WWW.OE3XSR
-44.143.48.3     NODE.OE3XSR
-44.143.48.4     WAMPES.OE3XSR
-44.143.48.10    OE3DZW
-44.143.48.11    OE3DBB
-44.143.48.12    OE3XYW
-44.143.48.13    OE3DSB
-44.143.48.14    OE5PON
-44.143.48.15    OE3IGW
-44.143.48.16    OE3FRU
-44.143.48.17    OE3GWU
-44.143.48.18    OK1DWJ
-44.143.48.19    OE3GOS
-44.143.50.1     OE3XNR
-44.143.51.10    ZWETTL.OE3DZW
-44.143.51.12    ZWETTL.OE3XYW
-44.143.51.13    OE3DSB
-44.143.51.20    OE3DJB
-44.143.51.21    OE3JLC
-44.143.64.1     OE3XKR
-44.143.67.10    OE3YSS
-44.143.67.11    OE3WLS
-44.143.67.12    OE3HGB
-44.143.67.13    SEC.OE3HGB
-44.143.67.14    OE3JBB
-44.143.69.1     OE3XPR
-44.143.69.2     BCM.OE3XPR
-44.143.69.3     TNOS.OE3XPR
-44.143.69.10    OE3RPU
-44.143.69.11    OE6JAD
-44.143.70.10    OE4HZA
-44.143.70.11    SEC.OE4HZA
-44.143.99.1     OE5XUR
-44.143.99.2     OE5AON
-44.143.99.11    OE5ODO
-44.143.99.12    OE5SFO
-44.143.99.13    OE5CG
-44.143.99.14    OE5WEL
-44.143.99.15    OE5HDN
-44.143.99.16    OE5LEN
-44.143.99.17    OE5OHO
-44.143.99.18    OE5BKL
-44.143.99.19    OE5PSM
-44.143.99.20    SEC.OE5PSM
-44.143.99.22    OE5FJL
-44.143.99.24    OE5BBM
-44.143.99.25    OE5EOI
-44.143.99.26    OE5FFN
-44.143.99.27    OE5BYL
-44.143.99.29    OE5GJN
-44.143.99.30    OE5FOL
-44.143.99.32    OE5RLO
-44.143.144.10   OE6OWG
-44.143.144.11   OE6LID
-44.143.144.14   OE6PTG
-44.143.146.11   OE6RHT
-44.143.146.12   OE6DLD
-44.143.146.13   OE6BUD
-44.143.146.14   OE6ISD
-44.143.146.15   OE6PWD
-44.143.146.16   OE6DUG
-44.143.146.17   OE6UBG
-44.143.146.19   OE6MMA
-44.143.146.43   OE6DGG
-44.143.152.10   OE6MKD
-44.143.152.11   OE6IWG
-44.143.152.12   OE6YNE
-44.143.152.13   OE6NCE
-44.143.152.14   OE6RKE
-44.143.153.10   OE6IHI
-44.143.160.10   OE7IHI
-44.143.181.11   OE7FTJ
-44.143.181.12   SEC.OE7FTJ
-44.143.182.11   OE7RHT
-44.143.193.11   OE7BHT
-44.143.193.12   OE7JTK
-44.143.216.19   OE8TGK
-44.143.225.1    W.OE9XFR
-44.143.225.2    OE9XFR
-44.143.225.10   OE9MKV
-44.143.225.11   VANESSA.OE9MKV
-44.143.225.12   OE9FKI
-44.143.225.14   OE9WAV
-44.143.225.16   OE9WLJ
-44.143.225.17   NET.OE9WLJ
-44.143.225.20   OE9LKI
-44.143.225.21   NET.OE9LKI
-#
-# 44.143.xxx.xxx * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
-#                            in OESTERREICH
-# -----------------------------------------------------------------------
-# Spalte 1: IP-Nummer, 32 bit, dargestellt in 4 Bytes
-# Spalte 2: abgekuerzter Host-Name (ergaenze in <name>.AMPR.ORG)
-# Spalte 3: Kommentar: Name des Betreibers, Ort. FÅr Knotenstationen:
-# Attribute [P] - Plannung, [A] - aktiv, [G] - Gateway, [N] - abgeschaltet.
-# -----------------------------------------------------------------------
-#
-# Benutzte IP Adressen in Wien, [A] Aktiv; [P] Planung
-#------------------------------------------------------------------------
-# Host          Call
-#------------------------------------------------------------------------
 44.143.1.1      OE1YSS        # Irmela Gagern, 1200 Wien, Pasettistr. 72/6/24
 44.143.1.2      OE1JTB        # Alexander Tschapka, 1210 Wien, Florisdorfer Hauptstr. 14
 44.143.1.3      OE1TKW        # Helmut Klein, 1160 Wien, Nauseag.24/26
@@ -6485,25 +5953,6 @@
 44.143.1.146    TER.OE1KDA    #
 44.143.1.200    OE1XBR        # [P] Robert Zak, 1210 Wien
 44.143.1.206    SEC.OE1XAR    # [P] Testknoten, 1160 Wien
-44.143.17.105   9K6.OE1XAB    # [P] Mailbox, 1100 Wien
-44.143.17.106   9K6.OE1XAR    # [P] Testknoten, Wien
-44.143.17.107   9K6.OE1XLR    # [P] Knoten Laaberg, 1100 Wien
-44.143.17.108   OE1XTU        # [P] Radioklub der TU Wien
-44.143.33.6     OE1KIB        # Klaus Kudielka, 1180 Wien, Peter Jordanstr. 165
-44.143.33.108   OE1XTU        # [P] Radioklub der TU Wien
-44.143.177.1    OE1XIR        # [A] Knoten WIEN mit DNS (AX: OE1XIR-15)
-44.143.177.2    OE1XIR-N      # [P] News server
-44.143.177.3    OE1XIR-C      # [P] Convers server
-44.143.177.4    GW.OE1XIR     # [P] Gateway
-44.143.177.10   GW.OE1HMC     # [A] Gateway und DNS
-44.143.177.11   SEC.OE1HMC    # [A]
-44.143.177.12   OE1DMW        # [A] Erhard Schramm, 1070 Wien, Neustiftgasse 25/1/6
-44.143.193.1    OE1XNC        # [P] OeVSV Landesverband Wien, 1060 Wien, Eisvogelgasse 4
-44.143.241.1    MARS.OE1KIB   # Subnetz OE1KIB (Token Ring) 44.143.241.0/28
-44.143.241.2    SATURN.OE1KIB #
-#
-#44.143.2.xxx   SALZBURG
-#
 44.143.2.1      OE2CEN   # Claus Bleichinger, 5162 Obertrum, Rîmerweg 14
 44.143.2.2      OE2PTN   # Peter Tarmann, 5580 Tamsweg, Kirchengasse 93
 44.143.2.3      OE2PBP   # Peter, Salzburg
@@ -6514,117 +5963,70 @@
 44.143.2.8      OE2MAL   # Markus, 5020 Salzburg, Eugen MÅllerstr. 53
 44.143.2.9      OE2HHN   # Herbert Heitzmann, 5580 Tamsweg, Taurachweg 150
 44.143.2.10     OE2TBM   # Herbert SchÅtz, 5023 Salzburg,
-			 # Schillinghoferstr. 27, ADL 201
 44.143.2.11     OE2DON   # Richard Maier, 5020 Salzburg, Erzabt Klotzstr. 21
-# 1200 bit/s Knoten
-44.143.2.100
-# 9600 bit/s Knoten [P]
-44.143.18.xx
-# Schnelle Knoten [P]
-44.143.34.xx
-# -----------------------------------------------------------------------
-#
-#44.143.3.xxx   NIEDEROESTERREICH
-#
 44.143.3.1      OE3FEA   # Franz Ebert, 2560 Berndorf, Hernsteinerstr. 183
 44.143.3.2      OE3KLU   # Karl Lichtenecker, 2320 Schwechat,
-			 # Dr. Fritz Hess-Gasse 3/2/13, JN88fd
 44.143.3.3      OE3ACC   # Alexander Czernin-Morzin, 2802 Hochwolkersdorf
 44.143.3.4      OE3PZU   # Piotr Metzger, Zistersdorf
 44.143.3.5      OE3DZW   # Dietmar Zlabinger, 3861 Eggern,
-			 # Reinberg-Heidenreichstein 31
 44.143.3.6      OE3IGW   # Alois Gabler, 3874 Litschau, Rottal 36, JN79ma
 44.143.3.7      OE3FAS   # Franz Hastik, 3021 Pressbaum, Pfalzauerstr. 41
 44.143.3.8      OE3KEU   # Karl Seebacher, 2345 Brunn am Gebirge,
-			 # Alexander Grossgasse 67
 44.143.3.9      OE3HGB   # Heinz, 3512 Mautern/Donau, Kerner von Marilaunstr. 13
 44.143.3.10     OE3GFS   # Gerhard, 2332 Hennersdorf, Raimundstr. 6
 44.143.3.11     OE3TAN   # Anton Neu, 3321 Ardagger, Stefanshart 34
 44.143.3.12     OE3KSG   # Karl, JN78ui, ADL 307,
 44.143.3.13     OE3ALS   # Arne Herler, 3106 St. Pîlten-Spratzern,
-			 # Schwadorferstr. 14
 44.143.3.14     OE3XDU   # Klubstation der Forschungszentrum Seibersdorf
 44.143.3.15     OE3PHA   # Peter Hofmann, 1090 Wien, Hîrlgasse 18/14
 44.143.3.16     OE3BLA   # Brunold Loidl, 3400 Klosterneuburg,
-			 # Alleestr.9a
 44.143.3.17     OE3MGB   # Michael,
 44.143.3.18     OE3BHB   # Heinz Binder, 3860 Heidenreichstein,
-			 # Anton Hobbigerstr. 760
 44.143.3.19     OE3DBB   # Daniela Bîhm, Eggern,
 44.143.3.20     OE3FRU   # Franz Rodinger, 3871 Alt Nagelberg,
-			 # Hinterpocherstr. 227
 44.143.3.21     OE3YSS   # Irmela Gagern, (OE3YSS-6)
 44.143.3.22     OE3GWU   # Hartwig Weninger, 3973 Karlstift, Nr. 131
 44.143.3.23     OE3DJB   # Friedman Jagsch, 3910 Zwettl, Neubaustrasse 1
 44.143.3.24     OE3JLC   # Johannes Loidl, 3910 Zwettl, Kremserstr. 5
 44.143.3.31     OE3GMW   # Gottfried Motowidlo, 2351 Wiener Neudorf,
-			 # Reisenbauerring 7/2/18
-# 1200 bit/s Knoten
 44.143.3.100    OE3XAC   # [P] Klubstation d. Amateurfunkklub Schwechat
 44.143.3.101    OE3XWR   # [N] Knoten Windischhuette
 44.143.3.102    OE3XSR   # [A] Waldviertler Amateurradioklub, Haugschlag,
-			 # JN79ma (OE3XSR-6)
 44.143.3.103    OE3XZR   # [P] Knoten Zwettl, Waldviertler Amateur Radio Club
 44.143.3.104    OE3XNR   # [A] Knoten Nebelstein, OeVSV-L3
 44.143.3.200    OE3XKR   # [A] Knoten Schwechat/Rannersdorf (NOD.OE3XKR)
 44.143.3.230    OE3XLR   # [P] Knoten Muckenkogel (OE3XLR-5)
 44.143.3.231    SEC.OE3XLR # [P] Knoten Muckenkogel OE3XLR-6)
 44.143.3.232    SEC.OE1XRR # [P] Versuche unter OE1XRR/3
-# 9600 bit/s Knoten [P]
-44.143.19.xx
-# Schnelle Knoten [P]
-44.143.35.xx
-# -----------------------------------------------------------------------
-#
-#44.143.4.xxx   BURGENLAND
-#
 44.143.4.1      SEC.OE3KLU # St.Andrae/Zicksee
 44.143.4.2      OE4TEA   # Walter Enz, 7121 Weiden am See, Neubaugasse 43
 44.143.4.3      OE4HZA   # Helmut Zemann, OE1HZA
 44.143.4.4      OE4JHW   # JÅrgen, Neufeld/Leitha, JN87eu
 44.143.4.5      OE4JSW   # JÅrgen Stîger, Neudîrfl, Siedlergasse 40a,
-			 # JN87dt
-# 1200 bit/s Knoten
-44.143.4.100
-# 9600 bit/s Knoten [P]
-44.143.20.xx
-# Schnelle Knoten [P]
-44.143.36.xx
-# -----------------------------------------------------------------------
-#
-#44.143.5.xxx  OBEROESTERREICH
-#
 44.143.5.1     OE5GDL   # Gerald Dickinger, 4652 Steinerkirchen
 44.143.5.2     OE5CG    # Josef Schwaiger, 4910 Ried, SÅdtirolerstr. 16
 44.143.5.3     OE5KVN   # Karl Kiniger, 4650 Lambach, Hafferlstr. 53,
-			# SÅdtirolerstr. 16
 44.143.5.4     OE5ROL   # Fritz Rockenbauer, 4810 Gmunden, Bahnhofstr. 29A/11
 44.143.5.5     OE5ARM   # Arthur Floh, 4222 St.Georgen/Gusen, Bachstr. 18
 44.143.5.6     SEC.OE5ROL # Fritz Rockenbauer, 4810 Gmunden,
-			# Bahnhofstr. 29A/11
 44.143.5.7     OE5AON   # Erich Floh, 4020 Linz, Boschweg 1a
 44.143.5.8     OE5ODO   # Martin Werner, 4020 Linz, Strahembergerstr. 66/6/38
-			# JN78DH
 44.143.5.9              #
 44.143.5.10    OE5JKL   # Karl Jaeger, 4210 Gallneukirchen,
-			# Hanriederstrasse 5
 44.143.5.11    OE5GWN   # Gerhard Winsberger, 5122 Ach, (DJ0MGW)
 44.143.5.12    OE5SFO   # Franz Staudinger, 4040 Linz, Aubrunnerweg 7
 44.143.5.13    OE5RI    # Karl Reinprecht, 4400 Steyer, Derflingerstr. 7
 44.143.5.14    OE5HAN   # Gerald Hanusch, 4600 Wels, Semmelweisstr. 22
 44.143.5.15    OE5HDN   # Heinz-Dieter Huber, 4060 Leonding,
-			# Hainzenbachstr. 89
 44.143.5.16    OE5LEN   # Harald Landvoigt, 4060 Leonding, Koppelweg 24
 44.143.5.17    OE5OHO   # Oliver Huber, 4060 Leonding, Hainzenbachstr. 89
 44.143.5.18    OE5BKL   # Alois Haderer, 4020 Linz, Kapuzinerstr. 1
 44.143.5.19    OE5PSM   # Peter Scheer, 4040 Linz, Verl. Kirchengasse 15
 44.143.5.20    OE5PSO   # Peter Stockenreiter, Billrothstrasse 36,
-			# 4600 Wels
 44.143.5.21    OE5WWL   # Wolfgang Wagner, 4910 Ried im Innkreis, Sennstrasse 13
 44.143.5.22    OE5FJL   # Josef Falzeder, 4696 Ohlsdorf/Gmunden, Hauptstr. 2
 44.143.5.23    OE5RHO   # Roland Haider, 4060 Leonding, Weesestrasse 10
 44.143.5.24    OE5BBM   # Siegfried Brunnbauer, 4490 St. Florian,
-			# Bachgasse 18
 44.143.5.25    OE5EOI   # Edwin Olinowetz, 5310 Mondsee, Keuschen 181
 44.143.5.26    OE5FFN   # Arno, Linz
 44.143.5.27    OE5BYL   # Johann Bachl, 4910 Ried/Innkreis, Rosenweg 6
@@ -6632,17 +6034,7 @@
 44.143.5.29    OE5GJN   # Gerald Jungbauer, Leonfelderstr. 75, 4040 Linz
 44.143.5.30    OE5FOL   # Hans Prader, 4552 Wartberg, Penzendorf 84
 44.143.5.31    OE5FSL   # Franz Sonnleitner, 4600 Wels, Enzianstr. 12
-# 1200 bit/s Knoten
 44.143.5.100   OE5XUR   # [GA], JKULINZ, Linz, Oper. OE5AON, packet-internet
-			# gateway: 140.78.4.35 hamgate.edvz.uni-linz.ac.at
-# 9600 bit/s Knoten [P]
-44.143.21.xx
-# Schnelle Knoten [P]
-44.143.37.xx
-# -----------------------------------------------------------------------
-#
-#44.143.6.xxx   STEIERMARK
-#
 44.143.6.1     OE6BUD   # Ulrich BrÑndle, 8121 Deutsch-Feistritz 227
 44.143.6.2     OE6FAD   # Fritz Ganter, 8045 Graz, Grazerstr. 26A
 44.143.6.3     OE6UBG   # Brani Wusser, 8053 Graz, Wagner Jauregg Platz 1/7
@@ -6651,10 +6043,8 @@
 44.143.6.6     OE6CLD   # Claus Stehlik, 8111 Judendorf, Murfeldsiedlung 39
 44.143.6.7     OE6OWG   # Walter
 44.143.6.8     OE6WND   # Wolfgang Ninaus, 8010 Graz, MÅnzgrabengÅrtel 21,
-			# JN77rr
 44.143.6.9     OE6HCD   # Hans-Christian Caluba, 8010 Graz, Riesstr. 118
 44.143.6.10    SEC.OE7TKT # Thomas Kuschel, Teichhofweg 6/9i, 8044 Graz
-			# tkt@sbox.tu-graz.ac.at
 44.143.6.11    OE6RHT   # Reinhard Hîllrigl, 8045 Graz, Zieglerstr. 55
 44.143.6.12    OE6ISD   # Dieter Sabathi, 8020 Graz, Vinzenz Muchitschstr. 6
 44.143.6.13    OE6UTD   # Helmut
@@ -6666,22 +6056,11 @@
 44.143.6.19    OE6HLD   # Herbert Rienessel, 8055 Graz, Staudenweg 7
 44.143.6.20    OE6JWD   # Klaus Dieter Wolf, Graz, JN77rb
 44.143.6.21    OE6KQG   # Reinhard Kreiner, Weinberggasse 9,
-			# 8230 Hartberg
 44.143.6.22    OE6DNG   # Gerald Fodor, 8442 Kitzeck, Gauitsch 44
 44.143.6.28    OE6MKD   # RenÇ Mayrhold, 8605 Kapfenberg, Johann Fuxstrasse 7
-			# JN77pl
 44.143.6.66    OE6IWG   # Walter Steinwender, 8605 Kapfenberg,
-			# Hugo v. Hoffmansthalw. 3/4, JN77pk
 44.143.6.67    OE6YNE   # Ingrid Steinwender, 8605 Kapfenberg, JN77pk
-# 1200 bit/s Knoten
 44.143.6.100   OE6XWR   # [P] Kapfenberg-Rennleld, JN77qj
-# 9600 bit/s Knoten
-44.143.22.100  9K6.OE6XWR # [P] Kapfengerg-Rennfeld, JN77qj
-# Schnelle Knoten
-44.143.38.100  SEC.OE6XWR # [P] Kapfenberg-Rennfeld, JN77qj
-# -----------------------------------------------------------------------
-#
-#44.143.7.xxx   TIROL
 44.143.7.1     OE7EKJ   # Helmut Kupsa, 6176 Vîls, Ulrichweg 14
 44.143.7.2     OE7AHN   # Alfred Hollinetz, 4655 Vorchdorf, Neue Landstr. 15
 44.143.7.3     OE7HNT   # Georg Sassermann, 6471 Arzl, Hauptsr. 88
@@ -6689,40 +6068,18 @@
 44.143.7.5     OE7DGJ   # Gerald, Innsbruck
 44.143.7.6     OE7BHT   # Hermann Bacher, 9900 Lienz, Peggetzstr. 15
 44.143.7.7     OE7JTK   # Josef Schett, 9900 Lienz, Probst-
-			# Weingartnerstrasse 1
 44.143.7.10    OE7TKT   # Thomas Kuschel, Winkelweg 13, 6064 Rum
 44.143.7.11    SEC.OE6RHT # Reinhard
-# 1200 bit/s Knoten
 44.143.7.100   OE7XIR   # [P] Helmut Kupsa
-# 9600 bit/s Knoten [P]
-44.143.23.xx
-# Schnelle Knoten [P]
-44.143.39.xx
-# -----------------------------------------------------------------------
-#
-#44.143.8.xxx   KAERNTEN
-#
 44.143.8.1     OE8HWK   # Hans Wirnsberger, 9872 Millstatt, Laubendorf 24
 44.143.8.2     SEC.OE8HWK # Hans Wirnsberger, 9872 Millstatt, Laubendorf 24
 44.143.8.3     OE8LWQ   # Wolfgang Linde, 9500 Villach,
-			# Markus-Pernhartstr. 13/3, JN66wl
 44.143.8.4     OE8DJK   # Bernd Stroj, 9220 Velden, Aicherstr. 6
 44.143.8.5     OE8AGK   # Alexander, Klagenfurt
 44.143.8.6     OE8CIQ   # Chris,
 44.143.8.10    OE8PCK   # Paul Clay, 9020 Klagenfurt, Ludengasse 56
 44.143.8.15    OE8DHK   # Hannes Defner, 9802 Spittal/Drau, Pf. 88
 44.143.8.19    OE8TGK   # Alexander Kînig, 9201 Krumpendorf, Blumenweg 15,
-			# JN76cb
-# 1200 bit/s Knoten
-44.143.8.100
-# 9600 bit/s Knoten [P]
-44.143.24.xx
-# Schnelle Knoten [P]
-44.143.40.xx
-# -----------------------------------------------------------------------
-#
-#44.143.9.xxx   VORARLBERG
-#
 44.143.9.1     OE9NAI   # Norbert Amann, 6845 Hohenems, Beethowenstr. 20 A
 44.143.9.2     OE9WLJ   # Wilfried Haeusle, 6800 Tosters, Egelseestrasse 13
 44.143.9.3     OE9DGV   # Guntram Summer, 6845 Hohenems, Hochquellenstr. 20 A
@@ -6730,45 +6087,193 @@
 44.143.9.6     OE9LKI   # Kurt Lampert, 6841 Maeder, Torkelweg 8a
 44.143.9.27    OE9HHV   # Hubert HÑmerle, 6850 Dornbirn, Im Horn 27
 44.143.9.55    OE9GWV   # Guntram Wagner, 6710 Nenzing,
-			# Anderas Gassnerstr. 11, JN47ue
 44.143.9.72    OE9MKV   # Mario Kienspergher, Juxweg 6, 6800 Feldkirch-
-			# Altenstadt, BBS OE9XPI, Digi OE9XFR-2
-# 1200 bit/s Knoten
 44.143.9.100   W.OE9XFR # [A] WAMPES-Knoten Feldkirch (Wampes)
 44.143.9.101   OE9XFR   # [A] WAMPES-Knoten Feldkirch (Unix)
-# 9600 bit/s Knoten
-44.143.25.xx
-# Schnelle Knoten [P]
-44.143.41.xx
-# Subnetz OE9WLJ 44.143.57.0/28
+44.143.16.1     OE1XIR
+44.143.16.2     OE1XIB
+44.143.16.3     OE1XTR
+44.143.16.10    GW.OE1HMC
+44.143.16.11    SEC.OE1HMC
+44.143.16.12    TER.OE1HMC
+44.143.16.13    OE1HMC
+44.143.16.14    OE1DMW
+44.143.16.15    SEC.OE1DMW
+44.143.16.16    OE1MSB
+44.143.16.17    SEC.OE1MSB
+44.143.16.18    SP7MUD
+44.143.16.19    OE1MMA
+44.143.16.20    OE3GFS
+44.143.16.21    OE1SMC
+44.143.16.22    OE1CMS
+44.143.16.24    OE1GOU
+44.143.16.25    OE1YXU
+44.143.16.26    OE1WWL
+44.143.16.27    SEC.OE1WWL
+44.143.16.28    TER.OE1WWL
+44.143.16.30    OE1GWW
+44.143.16.31    OE3GMW
+44.143.16.32    OE3DNA
+44.143.16.33    OE3PHA
+44.143.16.34    OE1WCA
+44.143.16.35    OE3UGW
+44.143.16.36    OE1JEB
+44.143.16.37    OE1HHC
+44.143.16.38    OE1FWU
+44.143.16.39    OE1AZS
+44.143.16.40    OE1TKW
+44.143.16.41    OE1RMB
+44.143.16.42    WIEN.OE3DZW
+44.143.16.43    OE1DGG
+44.143.16.44    OE1PPA
+44.143.16.45    OE1GOB
+44.143.16.46    OE1MEB
+44.143.16.47    OE4CFC
+44.143.16.48    OE1HZA
+44.143.16.49    SEC.OE1HZA
+44.143.16.50    OE1RZB
+44.143.16.51    OE1DHK
+44.143.16.100   OE3KLU
+44.143.16.144   OE1KDA
+44.143.16.145   VERDI.OE1KDA
+44.143.16.146   TER.OE1KDA
+44.143.17.105   9K6.OE1XAB    # [P] Mailbox, 1100 Wien
+44.143.17.106   9K6.OE1XAR    # [P] Testknoten, Wien
+44.143.17.107   9K6.OE1XLR    # [P] Knoten Laaberg, 1100 Wien
+44.143.17.108   OE1XTU        # [P] Radioklub der TU Wien
+44.143.18.1     OE1XAR
+44.143.18.14    OE1ATU
+44.143.22.1     OE1XTU
+44.143.22.65    VENUS.OE1KIB
+44.143.22.66    SATURN.OE1KIB
+44.143.22.67    MERKUR.OE1KIB
+44.143.22.68    BOSON.OE1NKW
+44.143.22.69    LEPTON.OE1NKW
+44.143.22.70    MESON.OE1NKW
+44.143.22.71    56K.OE1TKW
+44.143.22.100  9K6.OE6XWR # [P] Kapfengerg-Rennfeld, JN77qj
+44.143.23.10    OE1YSS
+44.143.33.6     OE1KIB        # Klaus Kudielka, 1180 Wien, Peter Jordanstr. 165
+44.143.33.10    OE2PBP
+44.143.33.11    SEC.OE2PBP
+44.143.33.12    OE2IWM
+44.143.33.13    OE2TBM
+44.143.33.14    OE2DON
+44.143.33.15    OE2HEM
+44.143.33.16    OE2EHP
+44.143.33.17    OE2IWM
+44.143.33.18    OE2MAL
+44.143.33.19    OE2HHN
+44.143.33.20    OE2WPO
+44.143.33.21    OE2CEN
+44.143.33.22    OE2MSN
+44.143.33.23    OE2LJP
+44.143.33.24    OE2IJL
+44.143.33.25    OE2RKO
+44.143.33.108   OE1XTU        # [P] Radioklub der TU Wien
+44.143.38.100  SEC.OE6XWR # [P] Kapfenberg-Rennfeld, JN77qj
+44.143.48.1     ROUTER.OE3XSR
+44.143.48.2     WWW.OE3XSR
+44.143.48.3     NODE.OE3XSR
+44.143.48.4     WAMPES.OE3XSR
+44.143.48.10    OE3DZW
+44.143.48.11    OE3DBB
+44.143.48.12    OE3XYW
+44.143.48.13    OE3DSB
+44.143.48.14    OE5PON
+44.143.48.15    OE3IGW
+44.143.48.16    OE3FRU
+44.143.48.17    OE3GWU
+44.143.48.18    OK1DWJ
+44.143.48.19    OE3GOS
+44.143.50.1     OE3XNR
+44.143.51.10    ZWETTL.OE3DZW
+44.143.51.12    ZWETTL.OE3XYW
+44.143.51.13    OE3DSB
+44.143.51.20    OE3DJB
+44.143.51.21    OE3JLC
 44.143.57.1    NET.OE9WLJ #
-# Subnetz OE9MKV 44.143.73.0/28
+44.143.64.1     OE3XKR
+44.143.67.10    OE3YSS
+44.143.67.11    OE3WLS
+44.143.67.12    OE3HGB
+44.143.67.13    SEC.OE3HGB
+44.143.67.14    OE3JBB
+44.143.69.1     OE3XPR
+44.143.69.2     BCM.OE3XPR
+44.143.69.3     TNOS.OE3XPR
+44.143.69.10    OE3RPU
+44.143.69.11    OE6JAD
+44.143.70.10    OE4HZA
+44.143.70.11    SEC.OE4HZA
 44.143.73.1    VANESSA.OE9MKV #
 44.143.73.2    OE9FKI   # Franz Kienspergher, Juxweg 6, 6800 Feldkirch-
-			# Altenstadt
-#
-# Subnetz OE9LKI 44.143.105.0/28
+44.143.99.1     OE5XUR
+44.143.99.2     OE5AON
+44.143.99.11    OE5ODO
+44.143.99.12    OE5SFO
+44.143.99.13    OE5CG
+44.143.99.14    OE5WEL
+44.143.99.15    OE5HDN
+44.143.99.16    OE5LEN
+44.143.99.17    OE5OHO
+44.143.99.18    OE5BKL
+44.143.99.19    OE5PSM
+44.143.99.20    SEC.OE5PSM
+44.143.99.22    OE5FJL
+44.143.99.24    OE5BBM
+44.143.99.25    OE5EOI
+44.143.99.26    OE5FFN
+44.143.99.27    OE5BYL
+44.143.99.29    OE5GJN
+44.143.99.30    OE5FOL
+44.143.99.32    OE5RLO
 44.143.105.1   NET.OE9LKI #
-#HOSTS.NET FOR BELGIUM
-#
-# 44.144 Eric Langhendries ON7LE Belgium
-#
-#     Eric LANGHENDRIES,
-#       ON7LE / KA3WII
-#   27, rue des Carrieres,
-#   B-5570         WINENNE
-#          BELGIUM
-#
-#   Date: 08/APR/1994.
-#
-#
-# I DO NOT SEND UNNECESSARY LISTS WHEN THERE ARE NO CHANGES !!!!!
-#
-#
-#
-#
-#Province of Antwerp
-#
+44.143.144.10   OE6OWG
+44.143.144.11   OE6LID
+44.143.144.14   OE6PTG
+44.143.146.11   OE6RHT
+44.143.146.12   OE6DLD
+44.143.146.13   OE6BUD
+44.143.146.14   OE6ISD
+44.143.146.15   OE6PWD
+44.143.146.16   OE6DUG
+44.143.146.17   OE6UBG
+44.143.146.19   OE6MMA
+44.143.146.43   OE6DGG
+44.143.152.10   OE6MKD
+44.143.152.11   OE6IWG
+44.143.152.12   OE6YNE
+44.143.152.13   OE6NCE
+44.143.152.14   OE6RKE
+44.143.153.10   OE6IHI
+44.143.160.10   OE7IHI
+44.143.177.1    OE1XIR        # [A] Knoten WIEN mit DNS (AX: OE1XIR-15)
+44.143.177.2    OE1XIR-N      # [P] News server
+44.143.177.3    OE1XIR-C      # [P] Convers server
+44.143.177.4    GW.OE1XIR     # [P] Gateway
+44.143.177.10   GW.OE1HMC     # [A] Gateway und DNS
+44.143.177.11   SEC.OE1HMC    # [A]
+44.143.177.12   OE1DMW        # [A] Erhard Schramm, 1070 Wien, Neustiftgasse 25/1/6
+44.143.181.11   OE7FTJ
+44.143.181.12   SEC.OE7FTJ
+44.143.182.11   OE7RHT
+44.143.193.1    OE1XNC        # [P] OeVSV Landesverband Wien, 1060 Wien, Eisvogelgasse 4
+44.143.193.11   OE7BHT
+44.143.193.12   OE7JTK
+44.143.216.19   OE8TGK
+44.143.225.1    W.OE9XFR
+44.143.225.2    OE9XFR
+44.143.225.10   OE9MKV
+44.143.225.11   VANESSA.OE9MKV
+44.143.225.12   OE9FKI
+44.143.225.14   OE9WAV
+44.143.225.16   OE9WLJ
+44.143.225.17   NET.OE9WLJ
+44.143.225.20   OE9LKI
+44.143.225.21   NET.OE9LKI
+44.143.241.1    MARS.OE1KIB   # Subnetz OE1KIB (Token Ring) 44.143.241.0/28
+44.143.241.2    SATURN.OE1KIB #
 44.144.1.1      on8mc   on8mc.ampr.org  #Herwig,Herenthout
 44.144.1.2      on1awb  on1awb.ampr.org  #Bert,Antwerpen
 44.144.1.3      on8sq   on8sq.ampr.org  #Emil,Merksem
@@ -6783,16 +6288,6 @@
 44.144.1.12     on1awu  on1awu.ampr.org #Willy,Edegem
 44.144.1.13     on1gl   on1gl.ampr.org  #Luc,Borgerhout
 44.144.1.14     on1apu  on1apu.ampr.org #Karel,Antwerpen
-44.144.10.1     on1anr  on1anr.ampr.org #TCP-IP node,Antwerpen
-#
-#Province of Brabant
-#
-# ATTENTION ATTENTION ATTENTION
-# As from the 01/01/95 there will be a new system for Brabant and/or Brussels
-# ---------------------------------------------------------------------------
-#             ========
-# I will already include the changes BUT NOT ACTIVATE those changes
-#
 44.144.2.1      on7kl   on7kl.ampr.org  #Ted,Bruxelles
 44.144.2.2      on5eb   on5eb.ampr.org  #Jean,Kraainem
 44.144.2.3      on7jb   on7jb.ampr.org  #Jacques,Bruxelles
@@ -6864,89 +6359,6 @@
 44.144.2.69     on7be   on7be.ampr.org  #Bernard,Limal
 44.144.2.70     on1adb  on1adb.ampr.org #Erik,Dilbeek
 44.144.2.73     on6lo   on6lo.ampr.org  #Patrice,Koekelberg
-#
-#Region of Brussels (Capital-city = 19 communes)
-#
-#44.144.21.1    on7kl   on7kl.ampr.org  #Ted,Bruxelles
-#44.144.21.3    on7jb   on7jb.ampr.org  #Jacques,Bruxelles
-#44.144.21.14   on6yo   on6yo.ampr.org  #Daniel,Bruxelles
-#44.144.21.16   on7nu   on7nu.ampr.org  #Daniel,Bruxelles
-#44.144.21.17   on5av   on5av.ampr.org  #Patrick,Bruxelles
-#44.144.21.22   on5xl   on5xl.ampr.org  #Red Cross Emergency Stn,Brussels
-#44.144.21.23   on1bz   on1bz.ampr.org  #Marc,Bruxelles
-#44.144.21.24   on1kdx  on1kdx.ampr.org #Philippe,Bruxelles
-#44.144.21.28   sys1.on5vy  sys1.on5vy.ampr.org #Tony,Bruxelles
-#44.144.21.29   on5iq   on5iq.ampr.org  #William,Bruxelles
-#44.144.21.32   on6mh   on6mh.ampr.org  #Michel,Bruxelles
-#44.144.21.33   on9cmb  on9cmb.ampr.org #Martine,Bruxelles
-#44.144.21.45   on1aqc  on1aqc.ampr.org #Stefaan,Brussel
-#44.144.21.46   on1bgx  on1bgx.ampr.org #Xavier,Brussel
-#44.144.21.47   on1aog  on1aog.ampr.org #Bart,Brussel
-#44.144.21.49   on6ky   on6ky.ampr.org  #Andre,Bruxelles
-#44.144.21.54   on6zq   on6zq.ampr.org  #Christophe,Bruxelles
-#44.144.21.60   sys2.on1aqc  sys2.on1aqc.ampr.org    #Stefaan,Brussel
-#44.144.21.61   sys2.on5vy   sys2.on5vy.ampr.org     #Tony,Bruxelles
-#44.144.21.73   on6lo   on6lo.ampr.org  #Patrice,Bruxelles
-#
-#Province of Flemish-Brabant
-#
-#44.144.22.2    on5eb   on5eb.ampr.org  #Jean,Kraainem
-#44.144.22.4    on7im   on7im.ampr.org  #Robert,Opwijk
-#44.144.22.5    on4awv  on4awv.ampr.org #Wim,Leuven
-#44.144.22.6    on1caj  on1caj.ampr.org #Henri,Kortenberg
-#44.144.22.7    on7um   on7um.ampr.org  #Andre,Lubbeek
-#44.144.22.8    on1bgo  on1bgo.ampr.org #Andre,Leuven
-#44.144.22.9    on4aod  on4aod.ampr.org #Daniel,Leuven
-#44.144.22.10   on7fh   on7fh.ampr.org  #Herman,Aarschot
-#44.144.22.11   on4dst  on4dst.ampr.org #Klub,Diest
-#44.144.22.12   on1cbt  on1cbt.ampr.org #Marc,Diest
-#44.144.22.13   on7vq   on7vq.ampr.org  #Freddy,Erps-Kwerps
-#44.144.22.15   on4aau  on4aau.ampr.org #Marc,Kortenberg
-#44.144.22.18   on4dv   on4dv.ampr.org  #Bob,Herent
-#44.144.22.20   on1bet  on1bet.ampr.org #Dirk,Herent
-#44.144.22.21   on4afr  on4afr.ampr.org #Wim,Kessel-Lo
-#44.144.22.26   on4awn  on4awn.ampr.org #Herman,Erps-Kwerps
-#44.144.22.30   on9cep  on9cep.ampr.org #Achim,Wezembeek
-#44.144.22.31   on7hu   on7hu.ampr.org  #Walter,Zoutleeuw
-#44.144.22.34   on9bas  on9bas.ampr.org #Mike,Wezembeek
-#44.144.22.35   on1kvx  on1kvx.ampr.org #Yves,Opwijk
-#44.144.22.36   on1aml  on1aml.ampr.org #Patrick,Zemst-Elewijt
-#44.144.22.37   on4cp-6 on4cp-6.ampr.org #Radio Club "De Antenne",Leuven
-#44.144.22.38   on1cfx-1 on1cfx-1.ampr.org #Christophe,Leuven
-#44.144.22.39   on4jg   on4jg.ampr.org  #Edmond,Grimbergen
-#44.144.22.55   on1cht  on1cht.ampr.org #Peter,Deurne-Diest
-#44.144.22.56   on6ng   on6ng.bt.be.ampr.org  #Marc,Leuven
-#44.144.22.57   on1bno  on1bno.ampr.org #Noach,Linter
-#44.144.22.58   on1mh   on1mh.ampr.org  #Johan,Everberg
-#44.144.22.59   on4id   on4id.ampr.org  #Medard,Jezus-Eik
-#44.144.22.62   on1arx  on1arx.ampr.org #Ken,St.Pieters-Leeuw
-#44.144.22.63   on1beu  on1beu.ampr.org #Erik,Tildonk
-#44.144.22.65   on1bxb  on1bxb.ampr.org #Bartel,Leuven
-#44.144.22.66   on1bge  on1bge.ampr.org #Eddy,Erps-Kwerps
-#44.144.22.67   on6ng-sys  on6ng-sys.bt.be.ampr.org  #Marc,Leuven
-#44.144.22.68   on1azh  on1azh.ampr.org #Louis,Oud-Heverlee
-#44.144.22.70   on1adb  on1adb.ampr.org #Erik,Dilbeek
-#
-#Province of Wallon-Brabant
-#
-#44.144.23.19   on1kjp  on1kjp.ampr.org #Jean-Pierre,St.Jean Geest
-#44.144.23.25   on4kch  on4kch.ampr.org #Jean-Pierre,Jodoigne
-#44.144.23.27   on1kjp-3  on1kjp-3.ampr.org #Jean-Pierre,St.Jean Geest
-#44.144.23.40   on1klm  on1klm.ampr.org #Michel,Lasne
-#44.144.23.41   on4kch-1  on4kch-1.ampr.org       #Jean-Pierre,Jodoigne
-#44.144.23.42   sys2.on5yf  sys2.on5yf.ampr.org   #Daniel,Rixensart
-#44.144.23.43   sys1.on5yf  sys1.on5yf.ampr.org   #Daniel,Rixensart
-#44.144.23.44   on5yf   on5yf.ampr.org  #Daniel,Rixensart
-#44.144.23.48   on6lf   on6lf.ampr.org  #Jean,Nil-St.Vincent
-#44.144.23.50   on4wx   on4wx.ampr.org  #Stephan,Nivelles
-#44.144.23.51   on7zd   on7zd.ampr.org  #Jacques,Jandrenouille
-#44.144.23.52   on1kot  on1kot.ampr.org #Marc,Rebecq
-#44.144.23.53   on1lhj  on1lhj.ampr.org #Jean-Francois,Nivelles
-#44.144.23.64   on7yi   on7yi.ampr.org  #Peter,Couture-St-Germain
-#44.144.23.69   on7be   on7be.ampr.org  #Bernard,Limal
-#
-#Province of Hainaut
-#
 44.144.3.1      on4hu   on4hu.ampr.org  #Andre,Mouscron
 44.144.3.2      on4hu-6 on4hu-6.ampr.org  #Andre,Mouscron
 44.144.3.3      on4hu-8 on4hu-8.ampr.org  #Andre,Mouscron
@@ -6984,18 +6396,6 @@
 44.144.3.35     on1lvl  on1lvl.ampr.org #Luc,Montignies-sur-Sambre
 44.144.3.36     on6op   on6op.ampr.org  #Bernard,Hornu
 44.144.3.37     on5jj   on5jj.ampr.org  #Jeannot,Charleroi
-44.144.30.1     on4hu-5 on4hu-5.ampr.org  #Server,Mouscron
-44.144.30.2     on6rm   on6rm.ampr.org  #Radio-Club du Borinage,Server
-44.144.30.3     on6cm   on6cm.ampr.org  #Radio-Club,Server
-44.144.31.1     on4hu-1 on4hu-1.ampr.org  #IProuter
-44.144.31.2     on4hu-2 on4hu-2.ampr.org  #IProuter
-44.144.31.3     on4hu-3 on4hu-3.ampr.org  #IProuter
-44.144.31.4     on4hu-4 on4hu-4.ampr.org  #IProuter
-44.144.31.9     on4hu-9 on4hu-9.ampr.org  #IProuter
-44.144.31.10    on4hu-10 on4hu-10.ampr.org #IProuter
-#
-#Province of Liege
-#
 44.144.4.1      on5ki   on5ki.ampr.org  #Nadine,Verviers
 44.144.4.2      on5cq   on5cq.ampr.org  #Claude,Blegny-Trembleur
 44.144.4.3      on5th   on5th.ampr.org  #Jean-Claude,Neuville-en-Condroz
@@ -7019,10 +6419,6 @@
 44.144.4.21     on1ktz  on1ktz.ampr.org #Jean-Marie,Lierneux
 44.144.4.22     on5dg   on5dg.ampr.org  #Guy,Boncelles
 44.144.4.23     on5ni   on5ni.ampr.org  #Jacques,Boncelles
-44.144.40.1     on5pl-6 on5pl-6.ampr.org  #Server
-#
-#Province of Limburg
-#
 44.144.5.1      on7ks   on7ks.ampr.org  #Maurice,Beringen
 44.144.5.2      on1mq   on1mq.ampr.org  #Paul,Borgloon
 44.144.5.3      on6nt   on6nt.ampr.org  #Tony,Hasselt
@@ -7041,10 +6437,6 @@
 44.144.5.16     on1ank  on1ank.ampr.org #Alfons,Kaulille
 44.144.5.17     on1afn  on1afn.ampr.org #Filip,Genk
 44.144.5.18     on4fk   on4fk.ampr.org  #Filip,Bree
-44.144.50.1     on4aic-8  on4aic-8.ampr.org  #Klubstation (LPV),Hasselt
-#
-#Province of Luxemburg
-#
 44.144.6.1      on1kxm-1 on1kxm-1.ampr.org  #Patrick,Arlon
 44.144.6.2      on1kxm  on1kxm.ampr.org #Patrick,Arlon
 44.144.6.3      on5da-1 on5da-1.ampr.org  #Daniel
@@ -7063,10 +6455,6 @@
 44.144.6.16     on5hf   on5hf.ampr.org  #Michel,Guerlange
 44.144.6.17     on4mu   on4mu.ampr.org  #Denis,Martelange
 44.144.6.18     on1kbu  on1kbu.ampr.org #Jose,Bastogne
-44.144.60.1     on7lu   on7lu.ampr.org  #Radio-Club,Athus
-#
-#Province of Namur
-#
 44.144.7.1      on7le   on7le.ampr.org  #Eric,Winenne
 44.144.7.2      on4yh   on4yh.ampr.org  #Paul,Tarcienne
 44.144.7.3      on5eb-1 on5eb-1.ampr.org  #Jean,Pessoux
@@ -7100,9 +6488,6 @@
 44.144.7.31     on1dr   on1dr.ampr.org  #Rene,Bois-de-Villers
 44.144.7.32     on5qk   on5qk.ampr.org  #Roland,Sombreffe
 44.144.7.33     on5pp   on5pp.ampr.org  #Roger,Malonne
-#
-#Province of East-Flanders
-#
 44.144.8.1      on1bbo  on1bbo.ampr.org #Luc,Lebbeke
 44.144.8.2      on1bjc  on1bjc.ampr.org #Jan,Mere
 44.144.8.3      on5ex   on5ex.ampr.org  #Johan,De Pinte
@@ -7115,7 +6500,6 @@
 44.144.8.10     on4xi   on4xi.ampr.org  #Marcel,St.Niklaas
 44.144.8.11     on4ro   on4ro.ampr.org  #Guy,Eeklo
 44.144.8.12     on9cyl  on9cyl.ampr.org #Tiny,Eeklo
-#44.144.8.13    on1bxb  on1bxb.ampr.org #Bartel,Ninove (TO BE CONFIRMED LATER)
 44.144.8.14     on7ko   on7ko.ampr.org  #Omer,Vrasene
 44.144.8.15     on1bhm  on1bhm.ampr.org #Guy,St.Niklaas
 44.144.8.16     on7ce   on7ce.ampr.org  #Eduard,Dendermonde
@@ -7128,9 +6512,6 @@
 44.144.8.23     on6ej   on6ej.ampr.org  #Jan,Aalst
 44.144.8.24     on4gj   on4gj.ampr.org  #Johan,Wondelgem
 44.144.8.25     on7ko-1 on7ko-1.ampr.org #Omer,Vrasene
-#
-#Province of West-Flanders
-#
 44.144.9.1      on1buc  on1buc.ampr.org #Francois,Eernegem
 44.144.9.2      on1ced  on1ced.ampr.org #Philip,Zwevezele
 44.144.9.3      on4awd  on4awd.ampr.org #Filip,Tielt
@@ -7155,27 +6536,24 @@
 44.144.9.22     on4ake  on4ake.ampr.org #Chris,Ruislede
 44.144.9.23     on1bvk  on1bvk.ampr.org #Koen,Jabbeke
 44.144.9.24     on1atq  on1atq.ampr.org #Brecht,Wervik
-#
+44.144.10.1     on1anr  on1anr.ampr.org #TCP-IP node,Antwerpen
 44.144.22.1     on1abr  on1abr.ampr.org #Igor,Grimbergen
-#
-#
-#  August 27th,1995
-#
-#
-#  44.151       Pierre-Francois MONET  f5bqp  (FRANCE)
-#
-#
-#               BBS      :   f5bqp@ff6ptt-1
-#               Internet :   pf@paris.csd.harris.com
-#
-
+44.144.30.1     on4hu-5 on4hu-5.ampr.org  #Server,Mouscron
+44.144.30.2     on6rm   on6rm.ampr.org  #Radio-Club du Borinage,Server
+44.144.30.3     on6cm   on6cm.ampr.org  #Radio-Club,Server
+44.144.31.1     on4hu-1 on4hu-1.ampr.org  #IProuter
+44.144.31.2     on4hu-2 on4hu-2.ampr.org  #IProuter
+44.144.31.3     on4hu-3 on4hu-3.ampr.org  #IProuter
+44.144.31.4     on4hu-4 on4hu-4.ampr.org  #IProuter
+44.144.31.9     on4hu-9 on4hu-9.ampr.org  #IProuter
+44.144.31.10    on4hu-10 on4hu-10.ampr.org #IProuter
+44.144.40.1     on5pl-6 on5pl-6.ampr.org  #Server
+44.144.50.1     on4aic-8  on4aic-8.ampr.org  #Klubstation (LPV),Hasselt
+44.144.60.1     on7lu   on7lu.ampr.org  #Radio-Club,Athus
 44.151.1.1      f5iqa f5iqa.ampr.org
 44.151.1.2      f5iqa-1 f5iqa-1.ampr.org
-
 44.151.2.1      f5jvi f5jvi.ampr.org
-
 44.151.4.1      f6gzl-1 f6gzl-1.ampr.org
-
 44.151.6.1      f5cau f5cau.ampr.org
 44.151.6.2      f6hzo f6hzo.ampr.org
 44.151.6.3      f6kdj f6kdj.ampr.org
@@ -7183,9 +6561,7 @@
 44.151.6.5      f1bdb f1bdb.ampr.org
 44.151.6.6      f5pxm f5pxm.ampr.org
 44.151.6.7      f1syy f1syy.ampr.org
-
 44.151.8.1      f6aku f6aku.ampr.org
-
 44.151.13.1     f5pz f5pz.ampr.org
 44.151.13.2     f5raj f5raj.ampr.org
 44.151.13.3     f6gaq f6gaq.ampr.org
@@ -7195,27 +6571,20 @@
 44.151.13.7     f5me f5me.ampr.org
 44.151.13.8     f1hgh f1hgh.ampr.org
 44.151.13.9     f5nkg f5nkg.ampr.org
-
 44.151.16.1     f5rue f5rue.ampr.org
 44.151.16.2     fa1lqp fa1lqp.ampr.org
-
 44.151.17.1     f1rke f1rke.ampr.org
-
 44.151.20.1     f5npb-1 f5npb-1.ampr.org
-
 44.151.21.2     f1iyj f1iyj.ampr.org
 44.151.21.3     f1ref f1ref.ampr.org
 44.151.21.4     f5oeg f5oeg.ampr.org
 44.151.21.5     f1rgv f1rgv.ampr.org
 44.151.21.9     f5pcw f5pcw.ampr.org
 44.151.21.10    f5fyu f5fyu.ampr.org
-
 44.151.24.1     f1mac f1mac.ampr.org
-
 44.151.25.1     f1jhs f1jhs.ampr.org
 44.151.25.2     f5jio f5jio.ampr.org
 44.151.25.3     f5jio-1 f5jio-1.ampr.org
-
 44.151.26.1     f5odp f5odp.ampr.org
 44.151.26.2     f5odp-2 f5odp-2.ampr.org
 44.151.26.3     f5odp-3 f5odp-3.ampr.org
@@ -7223,24 +6592,18 @@
 44.151.26.5     f5odp-5 f5odp-5.ampr.org
 44.151.26.7     f5odp-7 f5odp-7.ampr.org
 44.151.26.8     f5shh f5shh.ampr.org
-
 44.151.27.1     f6gnj f6gnj.ampr.org
 44.151.27.2     f5rkg-1 f5rkg-1.ampr.org
-
 44.151.28.1     f1suy f1suy.ampr.org
 44.151.28.2     f1suy-1 f1suy-1.ampr.org
-
 44.151.29.1     f1sio f1sio.ampr.org
-
 44.151.30.1     f5qw f5qw.ampr.org
 44.151.30.2     f5ong f5ong.ampr.org
 44.151.30.3     fa1tda fa1tda.ampr.org
-
 44.151.31.1     f6css f6css.ampr.org
 44.151.31.2     f1foy f1foy.ampr.org
 44.151.31.3     f1jtr f1jtr.ampr.org
 44.151.31.4     f6bhk f6bhk.ampr.org
-
 44.151.33.1     f5nnn f5nnn.ampr.org
 44.151.33.2     f1ont f1ont.ampr.org
 44.151.33.3     f1te f1te.ampr.org
@@ -7249,7 +6612,6 @@
 44.151.33.6     f5nsl f5nsl.ampr.org
 44.151.33.7     fb1olf fb1olf.ampr.org
 44.151.33.8     f5lct f5lct.ampr.org
-
 44.151.34.1     f5rws f5rws.ampr.org
 44.151.34.2     f1fnm f1fnm.ampr.org
 44.151.34.3     f1dmg f1dmg.ampr.org
@@ -7258,9 +6620,7 @@
 44.151.34.6     fa1aez fa1aez.ampr.org
 44.151.34.7     f1jkj f1jkj.ampr.org
 44.151.34.8     f5uhx f5uhx.ampr.org
-
 44.151.36.1     f6ctb f6ctb.ampr.org
-
 44.151.38.1     pa0kkv pa0kkv.ampr.org
 44.151.38.2     f5oxl f5oxl.ampr.org
 44.151.38.3     f1epq f1epq.ampr.org
@@ -7310,15 +6670,12 @@
 44.151.38.130   f6kjj-7 f6kjj-7.ampr.org
 44.151.38.131   f6kjj-9 f6kjj-9.ampr.org
 44.151.38.254   pa0kkv-1 pa0kkv-1.ampr.org
-
 44.151.39.1     f5sn f5sn.ampr.org
 44.151.39.2     f1tiv f1tiv.ampr.org
 44.151.39.3     f1ivt f1ivt.ampr.org
 44.151.39.4     fa1tnk fa1tnk.ampr.org
-
 44.151.41.1     f1lil f1lil.ampr.org
 44.151.41.2     f6cwo f6cwo.ampr.org
-
 44.151.44.1     f1jln f1jln.ampr.org
 44.151.44.2     f1mby f1mby.ampr.org
 44.151.44.3     f1mby-2 f1mby-2.ampr.org
@@ -7346,30 +6703,24 @@
 44.151.44.26    f6hqg f6hqg.ampr.org
 44.151.44.27    f1tbr f1tbr.ampr.org
 44.151.44.31    f6daa f6daa.ampr.org
-
 44.151.47.1     f6cnn f6cnn.ampr.org
 44.151.47.2     f5mww f5mww.ampr.org
 44.151.47.3     f6gvc f6gvc.ampr.org
 44.151.47.4     f6hrw f6hrw.ampr.org
-
 44.151.49.1     f5jpy f5jpy.ampr.org
 44.151.49.2     f1gsr f1gsr.ampr.org
 44.151.49.3     f9yb f9yb.ampr.org
 44.151.49.4     f1tro f1tro.ampr.org
 44.151.49.5     f6djc f6djc.ampr.org
-
 44.151.50.1     f1rzn f1rzn.ampr.org
 44.151.50.2     f1rzn-1 f1rzn-1.ampr.org
-
 44.151.51.1     f1zi f1zi.ampr.org
 44.151.51.2     f6ajk f6ajk.ampr.org
 44.151.51.3     f1zi-1 f1zi-1.ampr.org
 44.151.51.4     f6kif f6kif.ampr.org
 44.151.51.5     f6kif-1 f6kif-1.ampr.org
 44.151.51.6     pa3dsz pa3dsz.ampr.org
-
 44.151.53.1     f1exl f1exl.ampr.org
-
 44.151.54.1     f1rzi f1rzi.ampr.org
 44.151.54.2     f1onz f1onz.ampr.org
 44.151.54.3     f5muz f5muz.ampr.org
@@ -7388,13 +6739,11 @@
 44.151.54.16    f6kim f6kim.ampr.org
 44.151.54.17    f3tk f3tk.ampr.org
 44.151.54.18    f5ngz f5ngz.ampr.org
-
 44.151.55.1     f6hvg f6hvg.ampr.org
 44.151.55.2     f6hvg-1 f6hvg-1.ampr.org
 44.151.55.3     f1hdj f1hdj.ampr.org
 44.151.55.4     f5owj f5owj.ampr.org
 44.151.55.5     F5lkd f5lkd.ampr.org
-
 44.151.57.1     f5gi f5gi.ampr.org
 44.151.57.2     f5gi-1 f5gi-1.ampr.org
 44.151.57.3     f6baz f6baz.ampr.org
@@ -7430,7 +6779,6 @@
 44.151.57.34    f5ojo f5ojo.ampr.org
 44.151.57.35    f5gel f5gel.ampr.org
 44.151.57.36    f5ulr f5ulr.ampr.org
-
 44.151.59.1     f3cf f3cf.ampr.org
 44.151.59.2     f6btx f6btx.ampr.org
 44.151.59.3     f1heq f1heq.ampr.org
@@ -7477,13 +6825,11 @@
 44.151.59.44    fa1ayr fa1ayr.ampr.org
 44.151.59.45    f5ohw-8 f5ohw-8.ampr.org
 44.151.59.170   f1gyg-59 f1gyg-59.ampr.org
-
 44.151.60.1     f9so f9so.ampr.org
 44.151.60.2     f9so-1 f9so-1.ampr.org
 44.151.60.3     f5yg f5yg.ampr.org
 44.151.60.4     f1czs f1czs.ampr.org
 44.151.60.5     f5sem f5sem.ampr.org
-
 44.151.62.1     f6hsi f6hsi.ampr.org
 44.151.62.2     f6hsi-3 f6hsi-3.ampr.org
 44.151.62.3     f6hdw f6hdw.ampr.org
@@ -7497,23 +6843,19 @@
 44.151.62.11    f5gnu f5gnu.ampr.org
 44.151.62.12    f5nud f5nud.ampr.org
 44.151.62.13    f5ohw f5ohw.ampr.org
-
 44.151.63.2     f6cbl-3 f6cbl-3.ampr.org
 44.151.63.3     f6cbl-4 f6cbl-4.ampr.org
 44.151.63.4     f5xw f5xw.ampr.org
 44.151.63.5     f5xw-1 f5xw-1.ampr.org
 44.151.63.6     f1phr f1phr.ampr.org
 44.151.63.7     f1phr-1 f1phr-1.ampr.org
-
 44.151.64.1     f1acm f1acm.ampr.org
 44.151.64.2     f1acm-6 f1acm-6.ampr.org
 44.151.64.3     f6kdu f6kdu.ampr.org
 44.151.64.4     f5pmm f5pmm.ampr.org
-
 44.151.65.1     f6kph f6kph.ampr.org
 44.151.65.2     f5sgy f5sgy.ampr.org
 44.151.65.3     f5sdm-2 f5sdm-2.ampr.org
-
 44.151.67.1     f6dhd f6dhd.ampr.org
 44.151.67.2     f6bec f6bec.ampr.org
 44.151.67.3     f6knj f6knj.ampr.org
@@ -7535,7 +6877,6 @@
 44.151.67.19    f5lkh f5lkh.ampr.org
 44.151.67.20    f1iqi f1iqi.ampr.org
 44.151.67.21    fa1ovv fa1ovv.ampr.org
-
 44.151.68.1     f1aan f1aan.ampr.org
 44.151.68.2     f5sny f5sny.ampr.org
 44.151.68.3     f1ski f1ski.ampr.org
@@ -7544,7 +6885,6 @@
 44.151.68.6     f6avw f6avw.ampr.org
 44.151.68.7     f1ipi f1ipi.ampr.org
 44.151.68.8     f1uii f1uii.ampr.org
-
 44.151.69.1     f5pql f5pql.ampr.org
 44.151.69.2     f8kly f8kly.ampr.org
 44.151.69.3     f5loz f5loz.ampr.org
@@ -7556,16 +6896,12 @@
 44.151.69.9     fa1thn fa1thn.ampr.org
 44.151.69.10    f1its f1its.ampr.org
 44.151.69.11    fa1thn fa1thn.ampr.org
-
 44.151.70.1     f6cuo f6cuo.ampr.org
 44.151.70.2     f6cuo-1 f6cuo-1.ampr.org
-
 44.151.71.1     f1msl f1msl.ampr.org
 44.151.71.2     f1nxz f1nxz.ampr.org
 44.151.71.3     f1gyt f1gyt.ampr.org
-
 44.151.73.1     f1mcq f1mcq.ampr.org
-
 44.151.74.1     f5djl f5djl.ampr.org
 44.151.74.2     f5djl-1 f5djl-1.ampr.org
 44.151.74.3     f6big f6big.ampr.org
@@ -7580,7 +6916,6 @@
 44.151.74.12    f9io f9io.ampr.org
 44.151.74.13    fa1joc fa1joc.ampr.org
 44.151.74.14    f6hye f6hye.ampr.org
-
 44.151.75.1     f6abj-2 f6abj-2.ampr.org
 44.151.75.2     f2kl f2kl.ampr.org
 44.151.75.3     f6dks f6dks.ampr.org
@@ -7588,9 +6923,7 @@
 44.151.75.5     f6gls f6gls.ampr.org
 44.151.75.6     f1suy-4 f1suy-4.ampr.org
 44.151.75.7     f1tup f1tup.ampr.org
-
 44.151.77.1     f1ebn f1ebn.ampr.org
-44.151.77.2
 44.151.77.3     f6frz f6frz.ampr.org
 44.151.77.4     f1jsn f1jsn.ampr.org
 44.151.77.5     f5hom f5hom.ampr.org
@@ -7606,7 +6939,6 @@
 44.151.77.15    f5hpe f5hpe.ampr.org
 44.151.77.16    f1afw f1afw.ampr.org
 44.151.77.17    fa1ukp fa1ukp.ampr.org
-
 44.151.78.1     f5dh f5dh.ampr.org
 44.151.78.2     f6fgo f6fgo.ampr.org
 44.151.78.3     f1pnl f1pnl.ampr.org
@@ -7638,7 +6970,6 @@
 44.151.78.29    f5ilg f5ilg.ampr.org
 44.151.78.30    fa1sxc fa1sxc.ampr.org
 44.151.78.31    fa1ame fa1ame.ampr.org
-
 44.151.80.0     f6kvj-1 f6kvj-1.ampr.org
 44.151.80.1     f6ign f6ign.ampr.org
 44.151.80.2     f6ign-3 f6ign-3.ampr.org
@@ -7647,15 +6978,12 @@
 44.151.80.5     f6bxh-1 f6bxh-1.ampr.org
 44.151.80.10    f6ign-5 f6ign-5.ampr.org
 44.151.80.15    f6bxh-5 f6bxh-5.ampr.org
-44.151.80.255
-
 44.151.81.1     f1rsu f1rsu.ampr.org
 44.151.81.2     f6css-1 f6css-1.ampr.org
 44.151.81.3     f5pmd-3 f5pmd-3.ampr.org
 44.151.81.4     f5kbq-4 f5kbq-4.ampr.org
 44.151.81.5     f5rsy-1 f5rsy-1.ampr.org
 44.151.81.20    f5rsy-8 f5rsy-8.ampr.org
-
 44.151.83.1     f2xc f2xc.ampr.org
 44.151.83.2     f2ad f2ad.ampr.org
 44.151.83.3     f2ti f2ti.ampr.org
@@ -7663,20 +6991,16 @@
 44.151.83.5     f6cuo-10 f6cuo-10.ampr.org
 44.151.83.6     f6exe f6exe.ampr.org
 44.151.83.7     f5smz f5smz.ampr.org
-
 44.151.86.1     f6fdn f6fdn.ampr.org
 44.151.86.2     f6fdn-1 f6fdn-1.ampr.org
 44.151.86.3     f6fdn-2 f6fdn-2.ampr.org
 44.151.86.4     f3zz f3zz.ampr.org
 44.151.86.5     f6huk-1 f6huk-1.ampr.org
-
 44.151.88.1     f1hpa f1hpa.ampr.org
 44.151.88.2     f6gis f6gis.ampr.org
 44.151.88.3     f1dwf f1dwf.ampr.org
 44.151.88.4     f5msr f5msr.ampr.org
-
 44.151.89.1     f1phk f1phk.ampr.org
-
 44.151.91.1     f5bqp f5bqp.ampr.org
 44.151.91.2     f5djl f5djl.ampr.org
 44.151.91.3     f5djl-1 f5djl-1.ampr.org
@@ -7731,7 +7055,6 @@
 44.151.91.96    f5bqp-9 f5bqp-9.ampr.org
 44.151.91.112   dl7mw dl7mw.ampr.org
 44.151.91.113   f5vag f5vag.ampr.org
-
 44.151.92.1     f6ano f6ano.ampr.org
 44.151.92.2     f6adt f6adt.ampr.org
 44.151.92.3     f6dwj f6dwj.ampr.org
@@ -7744,24 +7067,19 @@
 44.151.92.10    f6dwj-2 f6dwj-2.ampr.org
 44.151.92.11    f6dwj-3 f6dwj-3.ampr.org
 44.151.92.12    f1oat f1oat.ampr.org
-
 44.151.92.96    f1tdi-9 f1tdi-9.ampr.org
-
 44.151.93.1     f6itu f6itu.ampr.org
 44.151.93.2     f5lff f5lff.ampr.org
 44.151.93.3     f5dys f5dys.ampr.org
 44.151.93.4     f5lrg f5lrg.ampr.org
-44.151.93.5
 44.151.93.6     f6kds f6kds.ampr.org
 44.151.93.7     ve2fp ve2fp.ampr.org
 44.151.93.8     fa1sek fa1sek.ampr.org
 44.151.93.9     f5kef f5kef.ampr.org
-44.151.93.10
 44.151.93.11    f5ozq f5ozq.ampr.org
 44.151.93.12    f5pzq f5pzq.ampr.org
 44.151.93.13    f5kjt f5kjt.ampr.org
 44.151.93.14    f5kjt-1 f5kjt-1.ampr.org
-
 44.151.94.1     f2zv f2zv.ampr.org
 44.151.94.3     f5dtk f5dtk.ampr.org
 44.151.94.4     f6hqz f6hqz.ampr.org
@@ -7784,7 +7102,6 @@
 44.151.94.21    f5lxs f5lxs.ampr.org
 44.151.94.22    f1baq f1baq.ampr.org
 44.151.94.96    f5dtk-9 f5dtk-9.ampr.org
-
 44.151.95.1     f1aav f1aav.ampr.org
 44.151.95.2     f1eou f1eou.ampr.org
 44.151.95.3     f6enb f6enb.ampr.org
@@ -7803,14 +7120,7 @@
 44.151.95.16    fa1tpg fa1tpg.ampr.org
 44.151.95.17    fa1tpg-1 fa1tpg-1.ampr.org
 44.151.95.73    f6bzo-1 f6bzo-1.ampr.org
-
-###
-# TCP/IP Hosts for Luxembourg 44.161.x.x
-# Coordinator: LX1BZ
-# Date: November 22, 1995
-###
 44.161.0.0   lx          lx.ampr.org
-#
 44.161.1.1   lx1jb       lx1jb.ampr.org       # Jean, 1232 Howald
 44.161.1.2   lx1jb-1     lx1jb-1.ampr.org     # Jean, 1232 Howald
 44.161.1.3   lx1sk       lx1sk.ampr.org       # John, 1461 Luxembourg
@@ -7824,12 +7134,10 @@
 44.161.1.11  lx2jl       lx2jl.ampr.org       # Jean-Luc, 1618 Luxembourg
 44.161.1.12  lx1kt       lx1kt.ampr.org       # Guy, 1924 Luxembourg
 44.161.1.100 lx0ist      lx0ist.ampr.org      # Tcp/Ip-Digi, Luxembourg
-#
 44.161.2.1   lx1ar       lx1ar.ampr.org       # Alfred, 2172 Luxembourg
 44.161.2.2   lx1gh       lx1gh.ampr.org       # Georges, 2410 Luxembourg
 44.161.2.3   lx2jd       lx2jd.ampr.org       # Joseph, 2143 Luxembourg
 44.161.2.4   lx1kx       lx1kx.ampr.org       # Serge, 2444 Bonnevoie
-#
 44.161.3.1   lx1dk       lx1dk.ampr.org       # Josy, 3530 Dudelange
 44.161.3.2   lx1pf       lx1pf.ampr.org       # Pierre, 3322 Bivange
 44.161.3.3   lx1ew       lx1ew.ampr.org       # Ernest, 3473 Dudelange
@@ -7842,7 +7150,6 @@
 44.161.3.10  lx1zf       lx1zf.ampr.org       # Francis, 3940 Mondercange
 44.161.3.11  lx1hy       lx1hy.ampr.org       # Henri, 3260 Bettembourg
 44.161.3.12  lx1dm       lx1dm.ampr.org       # Marc, 3739 Rumelange
-#
 44.161.4.1   lx1jr       lx1jr.ampr.org       # Roland, 4813 Rodange
 44.161.4.2   lx1jr-1     lx1jr-1.ampr.org     # Roland, 4813 Rodange
 44.161.4.3   lx9aa       lx9aa.ampr.org       # TELECO, 4122 Esch-Alzette
@@ -7862,7 +7169,6 @@
 44.161.4.17  lx1nw       linux.lx1nw.ampr.org # Michel, 4482 Soleuvre
 44.161.4.18  lx1nw       shack.lx1nw.ampr.org # Michel, 4482 Soleuvre
 44.161.4.19  lx2dx       lx2dx.ampr.org       # Jean-Claude, 4962 Clemency
-#
 44.161.5.1   lx1db       lx1db.ampr.org       # Willy, 5254 Sandweiler
 44.161.5.2   lx1gv       lx1gv.ampr.org       # Guy, 5402 Assel
 44.161.5.3   lx1gv-1     lx1gv-1.ampr.org     # Guy, 5402 Assel
@@ -7870,7 +7176,6 @@
 44.161.5.5   lx2ar       lx2ar.ampr.org       # Angelo, 5816 Hesperange
 44.161.5.6   lx1sf       lx1sf.ampr.org       # Fernand, 5353 Oetrange
 44.161.5.7   lx1hw       lx1hw.ampr.org       # Hubert, 5351 Oetrange
-#
 44.161.6.1   lx1si       lx1si.ampr.org       # Marcel, 6979 Rameldange
 44.161.6.2   lx1se       lx1se.ampr.org       # Francois, 6160 Bourglinster
 44.161.6.3   lx1kq       lx1kq.ampr.org       # Mich, 6170 Godbrange
@@ -7880,12 +7185,10 @@
 44.161.6.7   lx2ec       lx2ec.ampr.org       # Edward, 6133 Junglinster
 44.161.6.8   lx2ec-m     lx2ec-m.ampr.org     # Edward, 6133 Junglinster
 44.161.6.9   lx2mp       lx2mp.ampr.org       # Sandro, 6633 Wasserbillig
-#
 44.161.7.1   lx1jc       lx1jc.ampr.org       # Jean, 7206 Steinsel
 44.161.7.2   lx1pl       lx1pl.ampr.org       # Paul, 7381 Bofferdange
 44.161.7.3   lx1qa       lx1qa.ampr.org       # Louis, 7244 Bereldange
 44.161.7.4   lx1bb       lx1bb.ampr.org       # Georges, 7348 Heisdorf
-#
 44.161.8.1   lx2hh       lx2hh.ampr.org       # Hermann, 8293 Keispelt
 44.161.8.2   lx9eg       lx9eg.ampr.org       # Exped. Group, 8036 Strassen
 44.161.8.3   lx1dt       lx1dt.ampr.org       # Henry, 8010 Strassen
@@ -7898,6 +7201,4 @@
 44.161.8.10  lx1cf       lx1cf.ampr.org       # Leo, 8295 Keispelt
 44.161.8.11  lx1jm       lx1jm.ampr.org       # Jeng, 8361 Goetzingen
 44.161.8.12  lx1pa       lx1pa.ampr.org       # Arthur, 8015 Strassen
-#
 44.161.9.1   lx1cw       lx1cw.ampr.org       # Gilbert, 9179 Oberfeulen
-#

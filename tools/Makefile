@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.34 1996/08/12 18:52:58 deyke Exp $
+# @(#) $Id: Makefile,v 1.35 1997/06/09 16:58:22 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -16,6 +16,7 @@ TARGETS    = \
 	     filter \
 	     import \
 	     makeiprt \
+	     mergehosts \
 	     mm2html \
 	     ms2mm \
 	     udpbridge
@@ -146,6 +147,11 @@ makeiprt: makeiprt.o $(LIBS)
 	@sleep 1
 	$(LD) $(LDFLAGS) makeiprt.o $(LIBS) $(SLIBS) -o $@
 
+mergehosts: mergehosts.o $(LIBS)
+	$(RMTARGET)
+	@sleep 1
+	$(LD) $(LDFLAGS) mergehosts.o $(LIBS) $(SLIBS) -o $@
+
 mm2html: mm2html.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
@@ -162,9 +168,15 @@ udpbridge: udpbridge.o $(LIBS)
 	$(LD) $(LDFLAGS) udpbridge.o $(LIBS) $(SLIBS) -o $@
 
 install: \
-	/usr/local/bin/import
+	/usr/local/bin/import \
+	/usr/local/bin/mergehosts
 
 /usr/local/bin/import: import
+	$(MKDIR)
+	$(RMTARGET)
+	cp $? $@
+
+/usr/local/bin/mergehosts: mergehosts
 	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@

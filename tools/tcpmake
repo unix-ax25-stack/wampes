@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Id: tcpmake,v 1.34 1996/08/19 16:31:45 deyke Exp $
+# @(#) $Id: tcpmake,v 1.35 1997/06/09 16:58:22 deyke Exp $
 
 save_file()
 {
@@ -32,18 +32,7 @@ save_file $file
 ksh < configure > configure.h
 check_file $file
 
-cd ~/tcp/hostfiles
-trimfiles
-
 cd ~/tcp
-
-file=hosts
-save_file $file
-cd hostfiles
-include < hosts > ../$file
-cd ..
-check_file $file
-
 file=README
 save_file $file
 sed "s/wampes-....../wampes-$date/g" < $file.old > $file
