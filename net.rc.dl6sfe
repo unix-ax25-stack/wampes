@@ -1,8 +1,8 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl6sfe,v 1.4 1994/05/06 17:15:32 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl6sfe,v 1.5 1994/06/03 08:40:10 deyke Exp $
 
-hostname     dg2sfg
-ax25 mycall  dg2sfg
-ip address   dg2sfg
+hostname     dl6sfe
+ax25 mycall  dl6sfe
+ip address   dl6sfe
 # netrom ident
 
 # tnc1: 70 cm (db0aau)

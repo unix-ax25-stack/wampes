@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.32 1994/05/11 10:46:22 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.33 1994/06/03 08:40:07 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -1571,12 +1571,16 @@
 #
 #44.130.36.x    Berlin
 # lokale Adresskoordination: DL7UAZ
+#
 44.130.36.1     DL6DBH  # Meinolf, 1000 Berlin; AT
 44.130.36.2     DC7ER   # Andreas, 1000 Berlin 47
-44.130.36.3     DH7ABQ  # Ralf, 1000 Berlin 21
+44.130.36.3     DH7ABQ  # Ralf, 1000 Berlin 44
 44.130.36.5     DL5HCK-1        # Klaus Simon, 1000 Berlin 41
 44.130.36.7     DL7APN  # Christian, 1000 Berlin-Schoeneberg
 44.130.36.10    DL7SV   # Joachim, 1000 Berlin; Mac
+44.130.36.11    DC7FB   # Ralf, Berlin-Rudow
+44.130.36.12    DC7FB-1 #
+44.130.36.18    DL7UFO-2        # Sven, 10409 Berlin
 44.130.36.20    DC7FO   # Uli, 1000 Berlin
 44.130.36.21    DC7FO-1 #
 44.130.36.22    DC7FO-2 #
@@ -1596,17 +1600,17 @@
 44.130.36.52    DL7AMN  # Edgar Vennmanns, 10779 Berlin
 44.130.36.65    DB5QO   # Dieter, Berlin 46
 44.130.36.66    DD5MP   # Antonio, Berlin
-44.130.36.70    DD6OA   # Bodo, Berlin-Buckow
-44.130.36.75    DL7VFX  # Tom Kroeger, O-1170 Berlin (ex Y37TO)
+44.130.36.70    DD6OA-7 # Bodo, Berlin-Buckow (-7 = TCP/IP;-0 = AX25)
+44.130.36.75    DL7VFX  # Thomas Kroeger, Berlin (ex Y37TO)
 44.130.36.80    DL7UEA  # Bernd, Berlin
-44.130.36.81    DL9SAU-1        # Thomas Osterried, 1000 Berlin
-44.130.36.82    DL9SAU-A        #
+44.130.36.81    DL9SAU-1        # Thommas Osterried, Berlin
+44.130.36.82    DL9SAU-A        # Thommas Osterried, Berlin
 44.130.36.83    DL7ARX  # Gerhard Petzold, 12279 Berlin
 44.130.36.84    DD6RG   # Joachim Henschke, 12249 Berlin
-44.130.36.95    DD5AA   # Alain; NNTP, SMTP, POP-Server
+44.130.36.95    DD5AA   # Alain, Berlin-Wedding; NNTP, SMTP, POP-Server
 44.130.36.97    DL7NW   # Siegbert, Berlin
 44.130.36.111   DL7UAW  # Andy (ex Y24LO)
-44.130.36.200   DL7AUC  # Pat, Berlin
+44.130.36.200   DL7AUC  # Pat, 1000 Berlin
 44.130.36.201   DL7AUC-1        #
 44.130.36.202   DL7AUC-2        #
 44.130.36.203   DL7AUC-3        #
@@ -2076,7 +2080,8 @@
 44.130.176.24   DJ7KA-4 #
 44.130.176.25   DG9SCI  # Bernd
 44.130.176.26   DG9SCI-U        #
-44.130.176.27   DG2SFG  # Ingmar, Nuertingen
+44.130.176.27   DL6SFE  # Ingmar, Nuertingen
+44.130.176.37   DL6SFE-U        # Ingmar, Nuertingen
 44.130.176.40   DF9SR   # Joachim Weller, 71083 Herrenberg
 44.130.176.41   DF9SR-U # Joachim Weller, 71083 Herrenberg, Unix
 44.130.176.42   DF9SR-1 # Joachim Weller, 71083 Herrenberg, QRL
@@ -2350,21 +2355,24 @@
 #
 #44.130.63.x    Franken
 44.130.63.1     DD6CV   # Christan Volk, 8752 Johannesberg
-44.130.63.3     DJ9UN   # Werner Steinhaeusser, 8702 Eisingen
-44.130.63.4     DG2NDT-2        # Werner Maier, Wuerzburg
-44.130.63.5     DL1NC   # Robert Steinhaeusser, 8702 Eisingen
-44.130.63.6     DG5NEX  # Uli Leicht, 8702 Eisingen
+44.130.63.3     DJ9UN   # Werner Steinhaeuser, 97249 Eisingen
+44.130.63.4     DH1NAD-2        # Werner Maier, Wuerzburg (ex DG6NDT)
+44.130.63.5     DL1NC   # Robert Steinhaeuser, 97249 Eisingen
+44.130.63.6     DG9NBT  # Martin Leicht, 97249 Eisingen
 44.130.63.9     DG8NCY  # Claus, Zeil
 44.130.63.10    DL4NCQ  # Bruno Hoffmann, 8751 Kleinwallstadt
 44.130.63.11    DL6FBN-1        # Frank, Wuerzburg
-44.130.63.13    DL1NDU  # Christian
-44.130.63.14    DL4NDE  # Bernd, Schweinfurt
+44.130.63.13    DL1NDU  # Christian Schneider, Retzbach
+44.130.63.14    DL4NDE  # Bernd Goetter, Schweinfurt
 44.130.63.15    DH4NAH  # Norbert Fecher, 63877 Sailauf
 44.130.63.16    DL4NDE-P        #
 44.130.63.20    DG5NER  # Maximilian Ibel, 8700 Wuerzburg
 44.130.63.25    DG1NED  # Holger Grund
+44.130.63.44    DG1NBB  # Holger Albrecht, Grosswallstadt
 44.130.63.100   DB0AJA  # Digi Wuerzburg (DL6NDG)
-44.130.63.144   DG9NEQ  # Guenter, Wuerzburg
+44.130.63.123   DG1NEG  # Ralph Gessner, Wuerzburg
+44.130.63.144   DG9NEQ  # Guenter Wolf, Wuerzburg
+44.130.63.178   DG5NBY  # Hendrik Fischer, Wuerzburg
 #
 #44.130.64.x    Rostock
 44.130.64.1     DL9GYA  # Roland, Bad Suelze
