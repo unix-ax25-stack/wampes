@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.54 1994/11/08 14:26:33 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.55 1994/12/15 11:28:08 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -11,8 +11,7 @@ SLIBS      =
 
 TARGETS    = cnet md5 mkhostdb netupdc netupds path pop2d pop3d qth udbm
 
-all:;   chmod 755 genupd
-	@case "`uname -sr`" in \
+all:;   @case "`uname -sr`" in \
 	HP-UX*) \
 		make -i -f $(MAKEFILE) \
 		'CC=c89' \

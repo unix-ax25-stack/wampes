@@ -1,9 +1,9 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.21 1994/11/23 09:36:31 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.22 1994/12/15 11:27:08 deyke Exp $
 
 MAKEFILE   = Makefile
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
 
-all:;   @-rm -f bbs/bbs.h src/linux_include/stdlib.h
+all:;   @-rm -f bbs/bbs.h src/linux_include/stdlib.h util/genupd
 	-chmod 755 cc
 	-cd lib;     make -i -f $(MAKEFILE) all install
 	-cd aos;     make -i -f $(MAKEFILE) all install

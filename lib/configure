@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.15 1994/07/05 10:48:22 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.16 1994/12/15 11:28:12 deyke Exp $
 
 case "`uname -sr`" in
 HP-UX*)
@@ -110,19 +110,12 @@ findfile WTMP__FILE /var/adm/wtmp /var/log/wtmp /usr/adm/wtmp /etc/wtmp
 
 echo
 
-findprog GZIP_PROG /usr/bin/gzip /usr/local/bin/gzip
+findprog GZIP_PROG /usr/bin/gzip /bin/gzip /usr/local/bin/gzip
 findprog LS_PROG /usr/bin/ls /bin/ls
 findprog MAIL_PROG /usr/openwin/bin/xview/mail /usr/bin/mailx /bin/mailx /usr/sbin/Mail /usr/bin/mail /bin/mail
 findprog NEWALIASES_PROG /usr/bin/newaliases /usr/ucb/newaliases /usr/bsd/newaliases
 findprog RNEWS_PROG /usr/bin/rnews /usr/local/bin/rnews
 findprog SENDMAIL_PROG /usr/sbin/sendmail /usr/lib/sendmail
-
-case "`uname -sr`" in
-HP-UX*)
-	findprog PATCH_PROG /usr/local/bin/patch;;
-*)
-	findprog PATCH_PROG /usr/bin/patch /usr/local/bin/patch;;
-esac
 
 echo
 

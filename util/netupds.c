@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.24 1994/12/11 17:00:44 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.25 1994/12/15 11:28:09 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -44,10 +44,8 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 
 /* Flag bits */
 
-#define USE_PATCH       0x00000001      /* Otherwise use ex, ignored if
-					   USE_INTERNAL is set */
 #define USE_GZIP        0x00000002      /* Otherwise use compress */
-#define USE_INTERNAL    0x00000004      /* Otherwise use ex or patch */
+#define USE_INTERNAL    0x00000004      /* Always set */
 #define VERSIONMASK     0x0000ff00      /* Reserved for version information */
 
 enum e_scanmode {
@@ -131,7 +129,6 @@ static char *include_table[] =
   "util",
   "util/*.[ch]",
   "util/Makefile",
-  "util/genupd",
 
   0
 };
@@ -764,28 +761,12 @@ static void send_update(struct file *p, enum e_action action, int flags, const c
 	    tempfilename);
     break;
   case ACT_UPDATE:
-    if (flags & USE_INTERNAL) {
-      sprintf(buf,
-	      "diff -n %s %s | %s > %s",
-	      mirrorfilename,
-	      masterfilename,
-	      (flags & USE_GZIP) ? GZIP_PROG " -9" : "compress",
-	      tempfilename);
-    } else if (flags & USE_PATCH) {
-      sprintf(buf,
-	      "gdiff -U2 %s %s | %s > %s",
-	      mirrorfilename,
-	      masterfilename,
-	      (flags & USE_GZIP) ? GZIP_PROG " -9" : "compress",
-	      tempfilename);
-    } else {
-      sprintf(buf,
-	      "(diff -e %s %s; echo w) | %s > %s",
-	      mirrorfilename,
-	      masterfilename,
-	      (flags & USE_GZIP) ? GZIP_PROG " -9" : "compress",
-	      tempfilename);
-    }
+    sprintf(buf,
+	    "diff -n %s %s | %s > %s",
+	    mirrorfilename,
+	    masterfilename,
+	    (flags & USE_GZIP) ? GZIP_PROG " -9" : "compress",
+	    tempfilename);
     break;
   default:
     protoerr();
@@ -904,26 +885,16 @@ static int recv_update(int flags)
   if (close(fd))
     syscallerr("close");
   if (action == ACT_UPDATE) {
-    if (flags & USE_INTERNAL) {
-      tmpnam(tempfilename2);
-      sprintf(buf,
-	      "%s -d < %s > %s",
-	      (flags & USE_GZIP) ? GZIP_PROG : "compress",
-	      tempfilename1,
-	      tempfilename2);
-      system(buf);
-      apply_diffs(filename, tempfilename2);
-      if (remove(tempfilename2))
-	syscallerr(tempfilename2);
-    } else {
-      sprintf(buf,
-	      "%s -d < %s | %s %s",
-	      (flags & USE_GZIP) ? GZIP_PROG : "compress",
-	      tempfilename1,
-	      (flags & USE_PATCH) ? PATCH_PROG " -u -f -s" : "ex -",
-	      filename);
-      system(buf);
-    }
+    tmpnam(tempfilename2);
+    sprintf(buf,
+	    "%s -d < %s > %s",
+	    (flags & USE_GZIP) ? GZIP_PROG : "compress",
+	    tempfilename1,
+	    tempfilename2);
+    system(buf);
+    apply_diffs(filename, tempfilename2);
+    if (remove(tempfilename2))
+      syscallerr(tempfilename2);
   } else if (action == ACT_CREATE) {
     remove(filename);
     sprintf(buf,
@@ -937,14 +908,6 @@ static int recv_update(int flags)
   }
   if (remove(tempfilename1))
     syscallerr(tempfilename1);
-  if (action == ACT_UPDATE && !(flags & USE_INTERNAL) && (flags & USE_PATCH)) {
-    strcpy(buf, filename);
-    strcat(buf, ".orig");
-    remove(buf);
-    strcpy(buf, filename);
-    strcat(buf, "~");
-    remove(buf);
-  }
   getdigest(filename, &mdContext);
   if (memcmp((char *) mdContext.digest, digest, DIGESTSIZE)) {
     writechar(0);
@@ -1026,61 +989,6 @@ static void scandirectory(const char *dirname, enum e_scanmode scanmode)
       scandirectory(filename, scanmode);
   }
   closedir(dirp);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void server_version_0(const char *client, int flags)
-{
-
-  char buf[1024];
-  char filename[1024];
-  int fd;
-  int filesize;
-  int i;
-  struct stat statbuf;
-
-#ifdef linux
-  if (!(flags & USE_PATCH))
-    usererr("Attempt to use \"ex\" - shutting down");
-#endif
-  if ((flags & USE_PATCH) && !*PATCH_PROG)
-    usererr("patch not available - shutting down");
-  tmpnam(filename);
-  sprintf(buf,
-	  "/tcp/util/genupd %s %s | %s > %s",
-	  client,
-	  (flags & USE_PATCH) ? "patch" : "ex",
-	  (flags & USE_GZIP) ? GZIP_PROG " -9" : "compress",
-	  filename);
-  system(buf);
-  if (lstat(filename, &statbuf))
-    syscallerr(filename);
-  filesize = (int) statbuf.st_size;
-  writeint(filesize);
-  fd = open(filename, O_RDONLY, 0644);
-  if (fd < 0)
-    syscallerr(filename);
-  while (filesize > 0) {
-    i = filesize < sizeof(buf) ? filesize : sizeof(buf);
-    if (read(fd, buf, i) != i)
-      usererr("read: End of file");
-    writebuf(buf, i);
-    filesize -= i;
-  }
-  if (close(fd))
-    syscallerr("close");
-  i = readint();
-  printf("Response = %d\n", i);
-  if (!i) {
-    sprintf(buf,
-	    "%s -d < %s | sh",
-	    (flags & USE_GZIP) ? GZIP_PROG : "compress",
-	    filename);
-    system(buf);
-  }
-  if (remove(filename))
-    syscallerr(filename);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1245,17 +1153,10 @@ static void doserver(int argc, char **argv)
     readclientname(client, sizeof(client));
   }
   version = (flags >> 8) & 0xff;
-  printf("Client=%s Version=%d Patcher=%s Compressor=%s\n",
+  printf("Client=%s Version=%d Compressor=%s\n",
 	 client,
 	 version,
-	 (flags & USE_INTERNAL) ?
-		"INTERNAL" :
-		((flags & USE_PATCH) ?
-			"PATCH" :
-			"EX"),
-	 (flags & USE_GZIP) ?
-		"GZIP" :
-		"COMPRESS");
+	 (flags & USE_GZIP) ? "GZIP" : "COMPRESS");
   if ((flags & USE_GZIP) && !*GZIP_PROG)
     usererr("gzip not available - shutting down");
   strcpy(buf, MIRRORDIR);
@@ -1269,9 +1170,6 @@ static void doserver(int argc, char **argv)
       syscallerr(buf);
   }
   switch (version) {
-  case 0:
-    server_version_0(client, flags);
-    break;
   case 1:
     server_version_1(client, flags);
     break;
