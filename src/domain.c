@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.14 1993/09/10 16:05:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.15 1993/10/01 13:36:05 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -87,7 +87,7 @@ static int dousegethostby(int argc, char *argv[], void *p);
  **/
 
 static struct cmds Dcmds[] = {
-	"query",        dodnsquery,   512, 2, "domain query <name|addr>",
+	"query",        dodnsquery,     0, 2, "domain query <name|addr>",
 	"trace",        dodnstrace,     0, 0, NULLCHAR,
 	"cache",        docache,        0, 0, NULLCHAR,
 	"usegethostby", dousegethostby, 0, 0, NULLCHAR,
@@ -95,7 +95,7 @@ static struct cmds Dcmds[] = {
 };
 
 static struct cmds Dcachecmds[] = {
-	"list",         docachelist,  512, 0, NULLCHAR,
+	"list",         docachelist,    0, 0, NULLCHAR,
 	"flush",        docacheflush,   0, 0, NULLCHAR,
 	NULLCHAR,
 };
