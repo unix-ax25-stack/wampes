@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dh6sae,v 1.8 1996/08/12 18:50:57 deyke Exp $
+# @(#) $Id: net.rc.dh6sae,v 1.9 1999/10/08 03:33:27 deyke Exp $
 
 hostname     dh6sae
 ax25 mycall  dh6sae
@@ -25,8 +25,6 @@ route add  db0aau.ampr.org      pk232
 arp add db0aau ax25 db0aau
 # arp add db0id  ax25 db0id
 
-source /tcp/netrom_links
-
 domain usegethostby on
 echo refuse
 escape 
@@ -35,7 +33,6 @@ ip rtimer 300
 ip ttl 30
 log /tcp/net.log
 login logfiledir /usr/spool/wampes/logs
-netrom parms 9 180
 tcp irtt 60000
 tcp mss 216
 tcp window 2048

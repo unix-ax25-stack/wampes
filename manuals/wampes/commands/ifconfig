@@ -1,4 +1,4 @@
-.\" @(#) $Id: ifconfig,v 1.12 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
+.\" @(#) $Id: ifconfig,v 1.13 1999/10/08 03:33:34 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "ifconfig" " [\fIinterface\fP [[\fIsubcommand\fP \fIparameter\fP] ...]"
 Without arguments display the status of all interfaces.
 When only \fIinterface\fP is given, the status of that interface is displayed.
@@ -9,6 +9,18 @@ Enable or disable the automatic learning of routes through this interface.
 Set the broadcast address of \fIinterface\fP to \fIhostid\fP.
 This is related to the \fBnetmask\fP subcommand.
 See also the \fBarp\fP command.
+.H 3 "ifconfig \fIinterface\fP crc" " \fImode\fP"
+Set the CRC mode used on this interface. Valid \fImodes\fP are:
+.BL 5 1
+.LI
+\fBOFF\fP
+.LI
+\fB16\fP
+.LI
+\fBRMNC\fP
+.LI
+\fBCCITT\fP
+.LE 1
 .H 3 "ifconfig \fIinterface\fP encapsulation" " \fIencapsulation\fP"
 Set the encapsulation for \fIinterface\fP to \fIencapsulation\fP.
 \fIEncapsulation\fP may be one of:

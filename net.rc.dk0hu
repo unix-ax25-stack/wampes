@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dk0hu,v 1.58 1999/05/15 20:15:28 deyke Exp $
+# @(#) $Id: net.rc.dk0hu,v 1.59 1999/10/08 03:33:28 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -8,6 +8,7 @@ netrom ident "#BOEB"
 # tnc0: 2 m
 
 attach asy 0 0 kissi tnc0 0 256 9600
+ifconfig tnc0 crc 16
 param tnc0 TxDelay   30
 param tnc0 Persist   31
 param tnc0 SlotTime  30
@@ -43,8 +44,6 @@ route add  dl4sel-1.ampr.org    ipip     15.136.120.113       1 2147483
 route add  dl4sel.ampr.org      tnc0     0                    1 2147483
 
 arp add dl4sel ax25 dl4sel
-
-source /tcp/netrom_links
 
 # netrom broadcast tnc0 nodes
 netrom broadcast axip nodes

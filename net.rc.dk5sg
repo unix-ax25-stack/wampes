@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dk5sg,v 1.47 1999/05/15 20:15:28 deyke Exp $
+# @(#) $Id: net.rc.dk5sg,v 1.48 1999/10/08 03:33:28 deyke Exp $
 
 hostname     dk5sg
 ax25 mycall  dk5sg
@@ -19,8 +19,6 @@ axip route add dl1sbl-1 15.136.120.113
 route add  44.130.12.0/24       ipudp    15.254.48.2          1 0
 route add  default              ipip     15.136.120.113       1 0
 route add  dk5sg-u.ampr.org     ni       0                    1 2147483
-
-source /tcp/netrom_links
 
 netrom broadcast axip nodes
 

@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dl6sfe,v 1.8 1996/08/12 18:50:57 deyke Exp $
+# @(#) $Id: net.rc.dl6sfe,v 1.9 1999/10/08 03:33:29 deyke Exp $
 
 hostname     dl6sfe
 ax25 mycall  dl6sfe
@@ -27,8 +27,6 @@ ax25 route add permanent ttyS3 default
 # route add  default              ttyS3    db0id
 
 # arp add db0id ax25 db0id
-
-source /tcp/netrom_links
 
 # netrom broadcast ttyS3 nodes
 

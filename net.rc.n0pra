@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.n0pra,v 1.17 1999/05/15 20:15:29 deyke Exp $
+# @(#) $Id: net.rc.n0pra,v 1.18 1999/10/08 03:33:29 deyke Exp $
 
 hostname     n0pra
 ax25 mycall  n0pra
@@ -21,9 +21,6 @@ route add  db0fho/24            ipudp    15.254.48.2          1 0
 route add  dc1ik/24             ipudp    15.254.48.2          1 0
 route add  default              ipip     15.136.120.113       1 0
 route add  n0pra-u              ni       0                    1 0
-
-source /tcp/netrom_links
-netrom links n0pra dl1sbl-1 200 permanent
 
 netrom broadcast axip nodes
 

@@ -12,20 +12,20 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 990926" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 991007" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 990926
+Version 991007
 .S
 .SP 2
 .S 15
 .ce
 Dieter Deyke, DK5SG/N0PRA
 .ce
-deyke@fc.hp.com
+deyke@hotpop.com
 .S
 .nr Cl 7 \" Max level of header for table of contents
 .H 1 "Credits"
@@ -828,6 +828,18 @@ Enable or disable the automatic learning of routes through this interface.
 Set the broadcast address of \fIinterface\fP to \fIhostid\fP.
 This is related to the \fBnetmask\fP subcommand.
 See also the \fBarp\fP command.
+.H 3 "ifconfig \fIinterface\fP crc" " \fImode\fP"
+Set the CRC mode used on this interface. Valid \fImodes\fP are:
+.BL 5 1
+.LI
+\fBOFF\fP
+.LI
+\fB16\fP
+.LI
+\fBRMNC\fP
+.LI
+\fBCCITT\fP
+.LE 1
 .H 3 "ifconfig \fIinterface\fP encapsulation" " \fIencapsulation\fP"
 Set the encapsulation for \fIinterface\fP to \fIencapsulation\fP.
 \fIEncapsulation\fP may be one of:

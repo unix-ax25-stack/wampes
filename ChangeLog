@@ -1,4 +1,10 @@
-@(#) $Id: ChangeLog,v 1.62 1999/09/26 17:18:26 deyke Exp $
+@(#) $Id: ChangeLog,v 1.63 1999/10/08 03:33:21 deyke Exp $
+
+991007 Dieter Deyke <deyke@hotpop.com>
+
+	Added ifconfig <interface> crc command
+
+	Retired netrom_links
 
 990926 Dieter Deyke <deyke@hotpop.com>
 

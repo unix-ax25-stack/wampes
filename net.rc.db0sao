@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.db0sao,v 1.66 1999/05/15 20:15:27 deyke Exp $
+# @(#) $Id: net.rc.db0sao,v 1.67 1999/10/08 03:33:27 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -8,6 +8,7 @@ netrom ident GAERT
 # tnc1: user access (70cm)
 
 attach asy 0 0 kissi tnc1 0 256 9600
+ifconfig tnc1 crc 16
 param tnc1 TxDelay   40
 param tnc1 Persist   31
 param tnc1 SlotTime  30
@@ -16,9 +17,10 @@ param tnc1 FullDup    0
 param tnc1 12         0 # Echo
 param tnc1 13         1 # RxDelay
 
-# tnc2: db0id (23cm)
+# tnc2: db0rbs (23cm)
 
 attach asy 0 0 kissi tnc2 0 256 9600
+ifconfig tnc2 crc 16
 param tnc2 TxDelay   10
 param tnc2 Persist  255
 param tnc2 SlotTime   1
@@ -34,10 +36,8 @@ attach ni ni db0sao-u           # ip to host ip
 
 ax25 route add permanent axip dk0hu
 ax25 route add permanent tnc1 default
-# ax25 route add permanent tnc2 db0id
-# ax25 route add permanent tnc2 db0rot db0id
 
-axip route add dk0hu    192.1.1.2
+axip route add dk0hu 192.1.1.2
 
 route add  44.130.0.0/16        tnc1     0                    1 0
 route add  44.130.12.0/24       ipip     192.1.1.2            1 0
@@ -55,10 +55,7 @@ route add  dl4sas-1.ampr.org    ipip     192.1.1.2            1 2147483
 route add  dl4sel-1.ampr.org    ipip     192.1.1.2            1 2147483
 route add  dl4sel.ampr.org      ipip     192.1.1.2            1 2147483
 
-# arp add db0id   ax25 db0id
-arp add dk0hu   ax25 dk0hu
-
-source /tcp/netrom_links
+arp add dk0hu ax25 dk0hu
 
 # netrom broadcast tnc1 nodes
 # netrom broadcast tnc2 nodes

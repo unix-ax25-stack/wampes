@@ -1,4 +1,4 @@
-/* @(#) $Id: iface.c,v 1.31 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: iface.c,v 1.32 1999/10/08 03:33:34 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -21,6 +21,7 @@ static int mask2width(int32 mask);
 static int ifipaddr(int argc,char *argv[],void *p);
 static int iflinkadr(int argc,char *argv[],void *p);
 static int ifbroad(int argc,char *argv[],void *p);
+static int ifcrc(int argc,char *argv[],void *p);
 static int ifnetmsk(int argc,char *argv[],void *p);
 static int ifrxbuf(int argc,char *argv[],void *p);
 static int ifmtu(int argc,char *argv[],void *p);
@@ -128,6 +129,7 @@ char Noipaddr[] = "IP address field missing, and ip address not set\n";
 struct cmds Ifcmds[] = {
 	{ "autoroute",            ifautoroute,    0,      2,      NULL },
 	{ "broadcast",            ifbroad,        0,      2,      NULL },
+	{ "crc",                  ifcrc,          0,      2,      NULL },
 	{ "encapsulation",        ifencap,        0,      2,      NULL },
 	{ "forward",              ifforw,         0,      2,      NULL },
 	{ "ipaddress",            ifipaddr,       0,      2,      NULL },
@@ -336,6 +338,35 @@ ifbroad(int argc,char *argv[],void *p)
 	return 0;
 }
 
+/* Set interface CRC mode.
+ */
+static int
+ifcrc(int argc,char *argv[],void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+
+	switch (argv[1][0]) {
+	case 'O':
+	case 'o':
+		ifp->crccontrol = CRC_OFF;
+		break;
+	case '1':
+		ifp->crccontrol = CRC_16;
+		break;
+	case 'R':
+	case 'r':
+		ifp->crccontrol = CRC_RMNC;
+		break;
+	case 'C':
+	case 'c':
+		ifp->crccontrol = CRC_CCITT;
+		break;
+	default:
+		return -1;
+	}
+	return 0;
+}
+
 /* Set the network mask. This is actually done by installing
  * a routing entry.
  */
@@ -443,7 +474,7 @@ showiface(struct iface *ifp)
 	printf("           recv: ip %lu tot %lu idle %s\n",
 	 ifp->iprecvcnt,ifp->rawrecvcnt,tformat(secclock() - ifp->lastrecv));
 	switch (ifp->crccontrol){
-	default:            printf("           crc disabled");      break;
+	default:            printf("           crc off");           break;
 	case CRC_TEST_16:   printf("           crc-16 test");       break;
 	case CRC_TEST_RMNC: printf("           crc-rmnc test");     break;
 	case CRC_16:        printf("           crc-16 enabled");    break;
@@ -561,4 +592,3 @@ bitbucket(struct iface *ifp,struct mbuf **bpp)
 	free_p(bpp);
 	return 0;
 }
-

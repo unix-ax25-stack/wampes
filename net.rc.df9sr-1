@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.df9sr-1,v 1.25 1999/05/15 20:15:28 deyke Exp $
+# @(#) $Id: net.rc.df9sr-1,v 1.26 1999/10/08 03:33:27 deyke Exp $
 
 hostname     df9sr-1
 ax25 mycall  df9sr-1
@@ -28,9 +28,7 @@ route add  dl4sas-1.ampr.org    ipip     15.136.120.113       1 2147483
 route add  dl4sel-1.ampr.org    ipip     15.136.120.113       1 2147483
 route add  dl4sel.ampr.org      ipip     15.136.120.113       1 2147483
 
-source /tcp/netrom_links
-
-# netrom broadcast axip nodes
+netrom broadcast axip nodes
 
 echo accept
 icmp trace on

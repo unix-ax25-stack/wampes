@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dl1sbl-1,v 1.41 1999/05/15 20:15:28 deyke Exp $
+# @(#) $Id: net.rc.dl1sbl-1,v 1.42 1999/10/08 03:33:28 deyke Exp $
 
 hostname     dl1sbl-1
 ax25 mycall  dl1sbl-1
@@ -37,8 +37,6 @@ route add  dl1sbl.ampr.org      ni       0                    1 2147483
 route add  dl4sas-1.ampr.org    ipip     15.136.157.138       1 2147483
 route add  dl4sel-1.ampr.org    ipip     15.136.162.7         1 2147483
 route add  dl4sel.ampr.org      ipip     15.138.33.250        1 2147483
-
-source /tcp/netrom_links
 
 netrom broadcast axip nodes
 

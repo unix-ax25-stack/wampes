@@ -12,20 +12,20 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^BBS Reference Manual^-\\\\nP-^Version 990926" \" Page footer
+.PF "^BBS Reference Manual^-\\\\nP-^Version 991007" \" Page footer
 .\"
 .S 30
 .ce
 \fBBBS Reference Manual\fP
 .ce
-Version 990926
+Version 991007
 .S
 .SP 2
 .S 15
 .ce
 Dieter Deyke, DK5SG/N0PRA
 .ce
-deyke@fc.hp.com
+deyke@hotpop.com
 .S
 .nr Cl 2 \" Max level of header for table of contents
 .H 1 "Start"
