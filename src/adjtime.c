@@ -1,4 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/adjtime.c,v 1.4 1994/10/06 16:15:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/adjtime.c,v 1.5 1994/12/11 17:00:34 deyke Exp $ */
+
+#include "configure.h"
 
 #if defined __hpux && !HAS_ADJTIME
 
@@ -37,12 +39,12 @@ typedef union {
 #define DELTA2  1
 
 int adjtime(
-     register struct timeval *delta,
-     register struct timeval *olddelta)
+     const struct timeval *delta,
+     struct timeval *olddelta)
 {
-  register int mqid;
+  int mqid;
   MsgBuf msg;
-  register MsgBuf *msgp = &msg;
+  MsgBuf *msgp = &msg;
   long mask;
 /*
  * get the key to the adjtime message queue

@@ -5746,7 +5746,7 @@
 
 # TCP/IP Hosts for Luxembourg 44.161.x.x
 #
-# Date: December 3, 1994
+# Date: December 5, 1994
 ###
 44.161.1.1   lx1jb       lx1jb.ampr.org       # Jean, 1232 Howald
 44.161.1.2   lx1jb-1     lx1jb-1.ampr.org     # Jean, 1232 Howald
@@ -5785,11 +5785,12 @@
 44.161.4.6   lx1tb       lx1tb.ampr.org       # Arsene, 4720 Petange
 44.161.4.7   lx1tb-1     lx1tb-1.ampr.org     # Arsene, 4720 Petange
 44.161.4.8   lx1om       lx1om.ampr.org       # Marc, 4750 Petange
-44.161.4.9   lx1om-1     lx1om.ampr.org       # Marc, 4750 Petange
+44.161.4.9   lx1om-1     lx1om-1.ampr.org     # Marc, 4750 Petange
 44.161.4.10  lx1sx       lx1sx.ampr.org       # Jean-Marie, 4837 Rodange
 44.161.4.11  lx1sx-1     lx1sx-1.ampr.org     # Jean-Marie, 4837 Rodange
 44.161.4.12  lx1em       lx1em.ampr.org       # Marc, 4393 Pontpierre
 44.161.4.13  lx1em-1     lx1em-1.ampr.org     # Marc, 4393 Pontpierre
+44.161.4.14  lx1bi       lx1bi.ampr.org       # Roger, 4442 Soleuvre
 #
 44.161.5.1   lx1db       lx1db.ampr.org       # Willy, 5254 Sandweiler
 44.161.5.2   lx1gv       lx1gv.ampr.org       # Guy, 5402 Assel

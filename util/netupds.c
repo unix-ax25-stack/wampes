@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.23 1994/11/23 09:36:47 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.24 1994/12/11 17:00:44 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -1368,7 +1368,19 @@ int main(int argc, char **argv)
 
   putenv("HOME=/");
   putenv("LOGNAME=root");
-  putenv("PATH=/opt/SUNWspro/bin:/usr/bsd:/usr/lang:/bin/posix:/bin:/usr/bin:/usr/ccs/bin:/usr/ucb:/usr/contrib/bin:/usr/local/bin:/usr/local/etc");
+  putenv("PATH="
+	"/opt/ansic/bin:"
+	"/opt/SUNWspro/bin:"
+	"/usr/bsd:"
+	"/usr/lang:"
+	"/bin/posix:"
+	"/bin:"
+	"/usr/bin:"
+	"/usr/ccs/bin:"
+	"/usr/ucb:"
+	"/usr/contrib/bin:"
+	"/usr/local/bin:"
+	"/usr/local/etc");
   putenv("LD_LIBRARY_PATH=/opt/SUNWspro/lib");
   putenv("SHELL=/bin/sh");
   if (!getenv("TZ"))

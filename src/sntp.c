@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.9 1994/10/09 08:22:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.10 1994/12/11 17:00:39 deyke Exp $ */
 
 /* Simple Network Time Protocol (SNTP) (see RFC1361) */
 
@@ -21,8 +21,8 @@
 
 #include "configure.h"
 
-#if defined __hpux
-int adjtime(struct timeval *delta, struct timeval *olddelta);
+#if defined __hpux && !HAS_ADJTIME
+int adjtime(const struct timeval *delta, struct timeval *olddelta);
 #endif
 
 #define NTP_MIN_PACKET_SIZE     48

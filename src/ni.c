@@ -1,8 +1,12 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.7 1994/10/06 16:15:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.8 1994/12/11 17:00:38 deyke Exp $ */
 
 #ifdef __hpux
 
 #include "global.h"
+#undef  hiword
+#undef  loword
+#undef  hibyte
+#undef  lobyte
 
 #include <sys/types.h>
 
