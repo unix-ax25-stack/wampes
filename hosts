@@ -1902,57 +1902,61 @@
 #
 #44.130.36.x    Berlin
 # lokale Adresskoordination: DL7UAZ
-44.130.36.2     DC7ER   # Andreas, 1000 Berlin 47
-44.130.36.3     DH7ABQ  # Ralf, 1000 Berlin 44
-44.130.36.5     DL5HCK-1        # Klaus Simon, 1000 Berlin 41
-44.130.36.7     DL7APN  # Christian, 1000 Berlin-Schoeneberg
-44.130.36.10    DL7SV   # Joachim, 1000 Berlin; Mac
-44.130.36.11    DC7FB   # Ralf, Berlin
-44.130.36.12    DC7FB-1 #
-44.130.36.13    DD6VD   # Michael
-44.130.36.14    DC7CH-PC        # Juergen, Berlin
-44.130.36.18    DL7UFO-2        # Sven, 10409 Berlin
-44.130.36.20    DC7FO   # Uli, 1000 Berlin
-44.130.36.21    DC7FO-1 #
-44.130.36.22    DC7FO-2 #
-44.130.36.23    DC7FO-3 #
-44.130.36.24    DC7FO-4 #
-44.130.36.25    DC7FO-5 #
-44.130.36.30    DL7UWO  # Manfred (ex Y23WO)
-44.130.36.32    DF1GX   # Claus-Peter Schulz, Berlin
-44.130.36.33    ST.DF1GX        #
-44.130.36.34    PC.DF1GX        #
-44.130.36.35    DF1GX-2 #
-44.130.36.36    DF1GX-3 #
-44.130.36.40    DL7VKH  # Karl-Heinz, Berlin-Pankow (ex Y26WO)
-44.130.36.41    DK7IN-1 # Rolf, 1000 Berlin 65; AT486
-44.130.36.42    DK7IN-2 # Rolf, 1000 Berlin 65; XT
-44.130.36.43    DK7IN   # Rolf, 1000 Berlin 65; AT386
-44.130.36.50    DL7UAZ  # Andre Zwadlo, Berlin-Koepenick
-44.130.36.51    DL7UAZ-1        #
-44.130.36.52    DL7AMN  # Edgar Vennmanns, 10779 Berlin
-44.130.36.55    DD6RI   # Christian
-44.130.36.60    DL7ARO  # Marco; WAMPES
-44.130.36.65    DB5QO   # Dieter, Berlin 46
-44.130.36.66    DD5MP   # Antonio, Berlin
-44.130.36.70    DD6OA-7 # Bodo, Berlin-Buckow
-44.130.36.75    DL7VFX  # Tom Kroeger, O-1170 Berlin (ex Y37TO)
-44.130.36.80    DL7UEA  # Bernd, Berlin
-44.130.36.81    DL9SAU-1        # Thomas Osterried, 1000 Berlin
-44.130.36.82    DL9SAU-A        #
-44.130.36.83    DL7ARX  # Gerhard Petzold, 12279 Berlin
-44.130.36.84    DD6RG   # Joachim Henschke, 12249 Berlin
-44.130.36.85    DL7ARX-1        # ; Amiga
-44.130.36.95    DD5AA   # Alain, Berlin-Wedding; NNTP, SMTP, POP-Server
-44.130.36.97    DL7NW   # Siegbert Langer, Berlin
-44.130.36.111   DL7UAW  # Andy (ex Y24LO)
-44.130.36.200   DL7AUC  # Pat, Berlin
-44.130.36.201   DL7AUC-1        #
-44.130.36.202   DL7AUC-2        #
-44.130.36.203   DL7AUC-3        #
-44.130.36.204   DL7AUC-4        #
-44.130.36.205   DL7AUC-5        #
-44.130.36.210   DL7UAE  # Thomas, Berlin
+44.130.36.1       dc7ch         # Juergen
+44.130.36.2       DC7ER         # Andreas, 1000 Berlin 47
+44.130.36.3       DH7ABQ        # Ralf, 1000 Berlin 44
+44.130.36.5       DL5HCK-1      # Klaus Simon, 1000 Berlin 41
+44.130.36.6       dl7ape        # Thomas Leng , 13355 Berlin
+44.130.36.7       DL7APN        # Christian, 1000 Berlin-Schoeneberg
+44.130.36.10      DL7SV         # Joachim, 1000 Berlin; Mac
+44.130.36.11      DC7FB         # Ralf, Berlin-Rudow
+44.130.36.12      DC7FB-1       #
+44.130.36.13      DD6VD         # Michael
+44.130.36.14      DC7CH-PC      # Juergen , Berlin
+44.130.36.18      DL7UFO-2      # Sven , 10409 Berlin
+44.130.36.20      DC7FO         # Uli, 1000 Berlin
+44.130.36.21      DC7FO-1       #
+44.130.36.22      DC7FO-2       #
+44.130.36.23      DC7FO-3       #
+44.130.36.24      DC7FO-4       #
+44.130.36.25      DC7FO-5       #
+44.130.36.30      DL7UWO        # Manfred
+44.130.36.32      DF1GX         # Claus-Peter
+44.130.36.33      st.DF1GX      #
+44.130.36.34      pc.DF1GX      #
+44.130.36.35      DF1GX-2       #
+44.130.36.36      DF1GX-3       #
+44.130.36.40      DL7VKH        # Karl-Heinz, Berlin-Pankow
+44.130.36.41      DK7IN-1       # Rolf, 1000 Berlin 65; AT486
+44.130.36.42      DK7IN-2       # Rolf, 1000 Berlin 65; XT
+44.130.36.43      DK7IN         # Rolf, 1000 Berlin 65; AT386
+44.130.36.50      DL7UAZ        # Andre' Zwadlo, Berlin-Koepenick
+44.130.36.51      DL7UAZ-1      #
+44.130.36.52      DL7AMN        # Edgar
+44.130.36.55      DD6RI         # Christian
+44.130.36.60      DL7ARO        # Marco (WAMPES)
+44.130.36.65      DB5QO         # Dieter, Berlin 46
+44.130.36.66      DD5MP         # Antonio, Berlin
+44.130.36.70      DD6OA-7       # Bodo, Berlin-Buckow (-7 = TCP/IP;-0 = AX25)
+44.130.36.75      DL7VFX        # Thomas Kroeger, Berlin
+44.130.36.80      DL7UEA        # Bernd, Berlin
+44.130.36.81      DL9SAU-1      # Thommas Osterried, Berlin
+44.130.36.82      DL9SAU-A      # Thommas Osterried, Berlin
+44.130.36.83      DL7ARX        # Gerhard Petzold , Berlin-Marienfelde ; PC
+44.130.36.84      DD6RG         # Joachim Henschke, 12249 Berlin
+44.130.36.85      DL7ARX-1      # Gerhard Petzold , Berlin-Marienfelde ; Amiga
+44.130.36.95      DD5AA         # Alain, Berlin-Wedding ;NNTP, SMTP, POP-Server
+44.130.36.97      DL7NW         # Siegbert, Berlin
+# 44.130.36.100                 # reserviert fuer TCP/IP Digi Berlin
+# 44.130.36.101                 # reserviert fuer TCP/IP Digi Berlin
+44.130.36.111     DL7UAW        # Andy
+44.130.36.200     DL7AUC        # Pat, 1000 Berlin
+44.130.36.201     DL7AUC-1      #
+44.130.36.202     DL7AUC-2      #
+44.130.36.203     DL7AUC-3      #
+44.130.36.204     DL7AUC-4      #
+44.130.36.205     DL7AUC-5      #
+44.130.36.210     DL7UAE        # Thomas, Berlin
 #
 #44.130.40.x    Mainz
 44.130.40.1     DG4KS   # Andreas Kempf, 6501 Dexheim
@@ -4963,7 +4967,9 @@
 			 # Florisdorfer Hauptstr. 14
 44.143.1.3      OE1TKW   # Helmut Klein, 1160 Wien, Nauseag.24/26
 44.143.1.4      OE1WRS   # Werner Roedl, 1110 Wien, Sedlitzkyg. 43/1/14
-44.143.1.5      OE1ACC   # Alexander Czernin-Morzin, 1070 Wien, Seideng. 31
+44.143.1.5      OE1ACC   # Alexander Czernin-Morzin, 1090 Wien,
+			 # Schul-Strassnitzki Gasse 5,
+			 # 72047.1712@compuserve.com
 44.143.1.6      OE1KIB   # Klaus Kudielka, 1180 Wien, Peter Jordanstr. 165
 44.143.1.7      OE1MMA   # Markus Melcher, 1030 Wien, WeissgeberlÑnde 22/12
 44.143.1.8      SP7MUD   # Adam Merwart, 1140 Wien
@@ -5030,6 +5036,8 @@
 44.143.2.7      OE2HEM   # Hermann Eckel, 5431 Kuchl, Markt 169
 44.143.2.8      OE2MAL   # Markus, 5020 Salzburg, Eugen MÅllerstr. 53
 44.143.2.9      OE2HHN   # Herbert Heitzmann, 5580 Tamsweg, Taurachweg 150
+44.143.2.10     OE2TBM   # Herbert SchÅtz, 5023 Salzburg,
+			 # Schillinghoferstr. 27, ADL 201
 # 1200 bit/s Knoten
 44.143.2.100
 # 9600 bit/s Knoten
@@ -5083,7 +5091,8 @@
 44.143.4.2      OE4TEA   # Walter Enz, 7121 Weiden am See, Neubaugasse 43
 44.143.4.3      OE4HZA   # Helmut Zemann, OE1HZA
 44.143.4.4      OE4JHW   # JÅrgen, Neufeld/Leitha, JN87eu
-44.143.4.5      OE4JSW   # Hermann
+44.143.4.5      OE4JSW   # JÅrgen Stîger, Neudîrfl, Siedlergasse 40a,
+			 # JN87dt
 # 1200 bit/s Knoten
 44.143.4.100
 # 9600 bit/s Knoten
@@ -5102,7 +5111,7 @@
 44.143.5.5     OE5ARM   # Arthur Floh, 4222 St.Georgen/Gusen, Bachstr. 18
 44.143.5.6     SEC.OE5ROL # Fritz Rockenbauer, 4810 Gmunden,
 			# Bahnhofstr. 29A/11
-44.143.5.7     OE5AON   # Erich Floh, 4020 Linz, Franckstr. 7
+44.143.5.7     OE5AON   # Erich Floh, 4020 Linz, Boschweg 1a
 44.143.5.8     OE5ODO   # Martin Werner, Linz, Strahembergerstr. 66/6/38
 			# 4020 Linz, JN78DH
 44.143.5.9     OE5HHN   # Herbert Anton Heitzmann, DÅrnauerstr. 94/74
@@ -5131,7 +5140,7 @@
 44.143.5.27    OE5BYL   # Johann Bachl, 4910 Ried/Innkreis, Rosenweg 6
 44.143.5.28    OE5DWN   # Daniel,
 # 1200 bit/s Knoten
-44.143.5.100   OE5XUR   # JKULINZ, Linz, Oper. OE5LEN, packet-internet
+44.143.5.100   OE5XUR   # JKULINZ, Linz, Oper. OE5AON, packet-internet
 			# gateway: 140.78.4.35 hamgate.edvz.uni-linz.ac.at
 # 9600 bit/s Knoten
 44.143.21.xx
@@ -5146,7 +5155,7 @@
 44.143.6.3     OE6UBG   # Brani Wusser, 8053 Graz, Wagner Jauregg Platz 1/7
 44.143.6.4     OE6PWD   # Walter Pflanzl, 8020 Graz, Marieng. 36
 44.143.6.5     OE6CRD   # Christian Steger, 8132 Pernegg 104, JN77qi
-44.143.6.6     OE6CLD   # Claus Stehlik, 8111 Judendorf
+44.143.6.6     OE6CLD   # Claus Stehlik, 8111 Judendorf, Murfeldsiedlung 39
 44.143.6.7     OE6OWG   # Walter
 44.143.6.8     OE6WND   # Wolfgang Ninaus, 8010 Graz, MÅnzgrabengÅrtel 21,
 			# JN77rr
@@ -5223,6 +5232,7 @@
 44.143.9.2     OE9WLJ   # Wilfried Haeusle, 6800 Tosters, Egelseestrasse 13
 44.143.9.3     OE9DGV   # Guntram Summer, 6845 Hohenems, Hochquellenstr. 20 A
 44.143.9.4     OE9LAJ   # Alexander List, 6824 Schlins, Dafens. 4
+44.143.9.5     U.OE9WLJ # Wilfried Haeusle UNIX,
 44.143.9.27    OE9HHV   # Hubert HÑmerle, 6850 Dornbirn, Im Horn 27
 44.143.9.55    OE9GWV   # Guntram Wagner, 6710 Nenzing,
 			# Anderas Gassnerstr. 11, JN47ue
@@ -5231,7 +5241,8 @@
 44.143.9.73    OE9FKI   # Franz Kienspergher, Juxweg 6, 6800 Feldkirch-
 			# Altenstadt
 # 1200 bit/s Knoten
-44.143.9.100
+44.143.9.100   W.OE9XFR # WAMPES-Knoten Feldkirch (Wampes)
+44.143.9.101   OE9XFR   # WAMPES-Knoten Feldkirch (Unix)
 # 9600 bit/s Knoten
 44.143.25.xx
 # Schnelle Knoten (Zukunft)
@@ -6304,11 +6315,3 @@
 #
 44.161.9.1   lx1cw       lx1cw.ampr.org       # Gilbert, 9179 Oberfeulen
 #
-
-connect2.c
-pty-test.c
-makeiprt.c
-tcpcheckin
-spellcheck
-connect2.o
-makeiprt.o

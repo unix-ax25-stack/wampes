@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.19 1995/03/01 09:25:02 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.20 1995/04/10 12:02:14 deyke Exp $
 
 save_file()
 {
@@ -29,11 +29,14 @@ fi
 cd ~/tcp/lib
 ksh < configure > configure.h
 
+cd ~/tcp/hostfiles
+trimfiles
+
 cd ~/tcp
 
 file=hosts
 save_file $file
-cat hostfiles/* > $file
+cat hostfiles/hosts.* > $file
 check_file $file
 
 file=README
