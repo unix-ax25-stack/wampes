@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.7 1990/02/27 11:09:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.8 1990/03/01 11:03:16 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
@@ -391,8 +391,7 @@ static void calculate_all()
   for (pn = nodes; pn; pn = pn->next)
     for (pl = pn->links; pl; pl = plnext) {
       plnext = pl->next;
-      if (pl->info->time < timelimit                       ||
-	  pl->info->time != MAX_TIME && !pl->info->quality ||
+      if (pl->info->time < timelimit ||
 	  pl->info->time != MAX_TIME && pl->info->level > pn->level + 1) {
 	if (pl->prev) pl->prev->next = pl->next;
 	if (pl->next) pl->next->prev = pl->prev;
@@ -1211,7 +1210,6 @@ struct mbuf *bp;
 	struct mbuf *curr, *prev;
 	for (curr = pc->reseq; curr && curr->data[2] != bp->data[2]; curr = curr->anext) ;
 	if (!curr) {
-	  int  found = 0;
 	  bp->anext = pc->reseq;
 	  pc->reseq = bp;
 	  bp = NULLBUF;
@@ -1230,10 +1228,9 @@ search_again:
 	      }
 	      pc->recv_state = uchar(pc->recv_state + 1);
 	      pc->naksent = 0;
-	      found = 1;
 	      goto search_again;
 	    }
-	  if (found && pc->r_upcall) (*pc->r_upcall)(pc, pc->rcvcnt);
+	  if (pc->r_upcall && pc->rcvcnt) (*pc->r_upcall)(pc, pc->rcvcnt);
 	}
       }
     }
