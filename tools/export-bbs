@@ -1,0 +1,18 @@
+#! /bin/sh
+
+host=n0mpi
+from=deyke@mdddhd.fc.hp.com
+dest=import@hprwp.fc.hp.com
+
+tmp=/tmp/bbs$$
+
+/usr/local/bin/bbs -f $host -e > $tmp
+if grep -q '^SB .* @ .* < ' < $tmp; then
+	(
+		echo From: $from
+		echo To: $dest
+		echo
+		cat $tmp
+	) | /bin/mail $dest
+fi
+rm -f $tmp
