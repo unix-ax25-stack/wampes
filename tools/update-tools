@@ -1,0 +1,73 @@
+#! /usr/bin/perl -w
+
+# @(#) $Id: update-tools,v 1.1 2000/03/04 18:31:15 deyke Exp $
+
+use Symbol;
+
+use strict;
+
+use vars '$basedir';
+use vars '%included';
+
+$basedir = '/home/deyke/WorkManager';
+
+#------------------------------------------------------------------------------
+
+sub include {
+
+	my ($out, $filename) = @_;
+
+	my ($in);
+	my ($line);
+
+	return if exists($included{$filename});
+	$included{$filename} = 1;
+
+	$in = gensym();
+	if (-f "../$filename.in") {
+		$filename = "../$filename.in";
+	} else {
+		$filename = "$basedir/$filename";
+	}
+	open($in, $filename) or die("$filename: $!\n");
+	while ($line = <$in>) {
+		if ($line =~ m!^require\s+['"](.+)["']\s*;!) {
+			include($out, $1);
+		} else {
+			print($out $line);
+		}
+	}
+	close($in);
+}
+
+#------------------------------------------------------------------------------
+
+sub update_tools {
+
+	my ($filename);
+	my ($out);
+
+	foreach $filename ('htmldiff.c', 'pdiff', 'trimfiles') {
+		%included = ();
+		unlink($filename);
+		$out = gensym();
+		open($out, ">$filename") or die("$filename: $!\n");
+		include($out, "tools/$filename");
+		close($out);
+		chmod(0755, $filename) unless $filename =~ m!\.[ch]$!;
+	}
+
+	foreach $filename ('make_depend') {
+		%included = ();
+		unlink($filename);
+		$out = gensym();
+		open($out, ">$filename") or die("$filename: $!\n");
+		include($out, "tools/$filename");
+		close($out);
+		chmod(0755, $filename) unless $filename =~ m!\.[ch]$!;
+	}
+}
+
+#------------------------------------------------------------------------------
+
+update_tools();

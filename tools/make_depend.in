@@ -5,7 +5,7 @@
 # Copyright (c) 1997-2000 CoCreate Software GmbH. All Rights Reserved.
 # Company Confidential
 
-# @(#) $Id: make_depend,v 1.2 2000/03/04 18:31:15 deyke Exp $
+# @(#) $Id: make_depend.in,v 1.1 2000/03/04 18:31:15 deyke Exp $
 
 require 5.003;
 
@@ -13,112 +13,8 @@ use Symbol;
 
 use strict;
 
-# -*- CPerl -*-
-
-# Dieter Deyke
-# February 14, 2000
-# Copyright (c) 2000-2000 CoCreate Software GmbH. All Rights Reserved.
-# Company Confidential
-
-use Symbol;
-
-# Return list of files in directory
-
-sub lsdir {
-
-	my ($dirname) = @_;
-
-	my ($dirhandle);
-	my ($file);
-	my (@files);
-
-	@files = ();
-	$dirhandle = gensym();
-	opendir($dirhandle, $dirname) or die("opendir(\"$dirname\"): $!\n");
-	foreach $file (readdir($dirhandle)) {
-		push(@files, $file) unless ($file eq '.' or $file eq '..');
-	}
-	closedir($dirhandle);
-	return @files;
-}
-
-1;
-# -*- CPerl -*-
-
-# Dieter Deyke
-# February 14, 2000
-# Copyright (c) 2000-2000 CoCreate Software GmbH. All Rights Reserved.
-# Company Confidential
-
-# -*- CPerl -*-
-
-# Dieter Deyke
-# February 14, 2000
-# Copyright (c) 2000-2000 CoCreate Software GmbH. All Rights Reserved.
-# Company Confidential
-
-use Symbol;
-
-# Compare two files, returning:
-#
-# 0 --> Files are identical.
-# 1 --> Files are not identical.
-# 2 --> One or both files inaccessible.
-
-sub cmpfiles {
-
-	my ($file1, $file2) = @_;
-
-	my ($buffer1, $n1);
-	my ($buffer2, $n2);
-	my ($fh1, $fh2);
-	my ($retval);
-
-	return 2 unless -e $file1;
-	$n1 = -s _;
-	return 2 unless -e $file2;
-	$n2 = -s _;
-	return 1 unless $n1 == $n2;
-	$fh1 = gensym();
-	open($fh1, $file1) or return 2;
-	binmode($fh1);
-	$fh2 = gensym();
-	open($fh2, $file2) or return 2;
-	binmode($fh2);
-	$retval = 0;
-	$buffer1 = $buffer2 = '';
-	while ($n1 = sysread($fh1, $buffer1, 8192)) {
-		$n2 = sysread($fh2, $buffer2, 8192);
-		if ($n1 != $n2 or $buffer1 ne $buffer2) {
-			$retval = 1;
-			last;
-		}
-	}
-	close($fh1);
-	close($fh2);
-	return $retval;
-}
-
-1;
-
-sub selectfile {
-
-	my ($oldfile, $newfile) = @_;
-
-	my (@statbuf);
-
-	if (cmpfiles($oldfile, $newfile)) {
-		if (@statbuf = stat($oldfile)) {
-			chmod($statbuf[2] & 0777, $newfile) or die("chmod(\"$newfile\"): $!\n");
-		}
-		unlink($oldfile);
-		rename($newfile, $oldfile) or die("rename(\"$newfile\", \"$oldfile\"): $!\n");
-	} else {
-		unlink($newfile) or die("$newfile: $!\n");
-	}
-}
-
-1;
+require 'tools/perlsubs/lsdir';
+require 'tools/perlsubs/selectfile';
 
 use vars '%files';
 use vars '%i';

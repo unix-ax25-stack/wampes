@@ -1,4 +1,4 @@
-.\" @(#) $Id: sf_pic,v 1.5 1998/03/09 17:48:41 deyke Exp $ -*- Mode: Nroff -*-
+.\" @(#) $Id: sf_pic,v 1.6 2000/03/04 18:31:12 deyke Exp $ -*- Mode: Nroff -*-
 .H 1 "S&F data flow"
 .PS
 reset
@@ -14,13 +14,6 @@ arrow
 BBSOUT: box "bbs"
 arrow
 box invis "outgoing" "BBS traffic"
-move to top of BBSOUT
-up
-move
-UDBM: box "udbm"
-arrow from NEWSSPOOL \
-	to 1/3 of the way between UDBM.sw and UDBM.nw \
-	chop circlerad chop 0
 up
 arrow <-> from top of INN
 box invis "other news" "systems"

@@ -1,4 +1,4 @@
-/* @(#) $Id: transport.c,v 1.22 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: transport.c,v 1.23 2000/03/04 18:31:14 deyke Exp $ */
 
 #include "global.h"
 #include "netuser.h"
@@ -178,15 +178,19 @@ static struct ax25_cb *transport_open_ax25(const char *address, struct transport
 static struct circuit *transport_open_netrom(const char *address, struct transport_cb *tp)
 {
 
-  char *ascii_node, *ascii_user;
-  uint8 node[AXALEN], user[AXALEN];
+  char *ascii_node;
+  char *ascii_user;
   char tmp[1024];
+  uint8 node[AXALEN];
+  uint8 user[AXALEN];
 
   strcpy(tmp, address);
-  if (!(ascii_node = strtok(tmp, delim)) || setcall(node, ascii_node))
+  if (!(ascii_node = strtok(tmp, delim)) || setcall(node, ascii_node)) {
     return 0;
-  if (!(ascii_user = strtok(NULL, delim)) || setcall(user, ascii_user))
-    addrcp(user, Mycall);
+  }
+  if (!(ascii_user = strtok(NULL, delim)) || setcall(user, ascii_user)) {
+    user[0] = 0;
+  }
   return open_nr(node, user, 0, transport_recv_upcall_netrom, transport_send_upcall_netrom, transport_state_upcall_netrom, (char *) tp);
 }
 

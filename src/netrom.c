@@ -1,4 +1,4 @@
-/* @(#) $Id: netrom.c,v 1.57 1999/06/20 17:47:47 deyke Exp $ */
+/* @(#) $Id: netrom.c,v 1.58 2000/03/04 18:31:14 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -475,7 +475,7 @@ static void broadcast_recv(struct mbuf **bpp, struct node *pn)
   update_link(mynode, pn, 1, nr_hfqual);
   while (pullup(bpp, buf, NRRTDESTLEN) == NRRTDESTLEN) {
     if (!*buf) break;
-    if (addreq(buf, Mycall)) continue;
+    if (addreq(buf, mynode->call)) continue;
     pd = nodeptr(buf, 1);
     if (buf[AXALEN] > ' ') memcpy(pd->ident, buf + AXALEN, IDENTLEN);
     pb = nodeptr(buf + AXALEN + IDENTLEN, 1);
@@ -592,7 +592,7 @@ static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
     }
   }
 
-  if (addreq((*bpp)->data + AXALEN, Mycall)) {
+  if (addreq((*bpp)->data + AXALEN, mynode->call)) {
     uint8 hwaddr[AXALEN];
     if ((*bpp)->cnt >= 40                   &&
 	(*bpp)->data[19] == 0               &&
@@ -691,7 +691,7 @@ int nr_send(struct mbuf **bpp, struct iface *iface, int32 gateway, uint8 tos)
   (*bpp)->data[4] = 0;
   if (iface->trace & IF_TRACE_RAW)
     raw_dump(iface, -1, *bpp);
-  send_l3_packet(Mycall, arp->hw_addr, nr_ttlinit, bpp);
+  send_l3_packet(mynode->call, arp->hw_addr, nr_ttlinit, bpp);
   return 0;
 }
 
@@ -800,7 +800,7 @@ static void send_l4_packet(struct circuit *pc, int opcode, struct mbuf **bpp)
     (*bpp)->data[4] = opcode;
     (*bpp)->data[5] = pc->window;
     addrcp((*bpp)->data + 6, pc->cuser);
-    addrcp((*bpp)->data + 13, Mycall);
+    addrcp((*bpp)->data + 13, mynode->call);
     start_t1_timer = 1;
     break;
   case NR4OPCONAK:
@@ -845,7 +845,7 @@ static void send_l4_packet(struct circuit *pc, int opcode, struct mbuf **bpp)
     return;
   }
   if (start_t1_timer) start_timer(&pc->timer_t1);
-  send_l3_packet(Mycall, pc->node, nr_ttlinit, bpp);
+  send_l3_packet(mynode->call, pc->node, nr_ttlinit, bpp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1178,8 +1178,12 @@ struct circuit *open_nr(uint8 *node, uint8 *cuser, int window, void (*r_upcall)(
     Net_error = INVALID;
     return 0;
   }
-  if (!cuser) cuser = Mycall;
-  if (!window) window = nr_twindow;
+  if (!cuser || !*cuser) {
+    cuser = mynode->call;
+  }
+  if (!window) {
+    window = nr_twindow;
+  }
   if (!(pc = create_circuit())) {
     Net_error = NO_MEM;
     return 0;
@@ -1532,8 +1536,9 @@ static void nrclient_state_upcall(struct circuit *pc, enum netrom_state oldstate
 static int donconnect(int argc, char *argv[], void *p)
 {
 
-  uint8 node[AXALEN], cuser[AXALEN];
   struct session *s;
+  uint8 cuser[AXALEN];
+  uint8 node[AXALEN];
 
   if (setcall(node, argv[1])) {
     printf("Invalid call \"%s\"\n", argv[1]);
@@ -1543,9 +1548,9 @@ static int donconnect(int argc, char *argv[], void *p)
     printf("Unknown node \"%s\"\n", argv[1]);
     return 1;
   }
-  if (argc < 3)
-    addrcp(cuser, Mycall);
-  else if (setcall(cuser, argv[2])) {
+  if (argc < 3) {
+    cuser[0] = 0;
+  } else if (setcall(cuser, argv[2])) {
     printf("Invalid call \"%s\"\n", argv[2]);
     return 1;
   }

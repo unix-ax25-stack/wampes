@@ -1,4 +1,4 @@
-/* @(#) $Id: iface.h,v 1.26 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: iface.h,v 1.27 2000/03/04 18:31:13 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -28,9 +28,9 @@ struct iftype {
 				/* Routine to send an IP datagram */
 	int (*output)(struct iface *,uint8 *,uint8 *,uint,struct mbuf **);
 				/* Routine to send link packet */
-	char *(*format)(char *,uint8 *);
+	char *(*format)(char *,const uint8 *);
 				/* Function that formats addresses */
-	int (*scan)(uint8 *,char *);
+	int (*scan)(uint8 *,const char *);
 				/* Reverse of format */
 	int type;               /* Type field for network process */
 	int hwalen;             /* Length of hardware address, if any */

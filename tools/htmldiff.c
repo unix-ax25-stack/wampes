@@ -1,9 +1,9 @@
-/* @(#) $Id: htmldiff.c,v 1.2 1999/08/25 01:06:01 deyke Exp $ */
+/* @(#) $Id: htmldiff.c,v 1.3 2000/03/04 18:31:15 deyke Exp $ */
 
 /*
    Dieter Deyke
    May 4, 1996
-   Copyright (c) 1996-1999 CoCreate Software GmbH. All Rights Reserved.
+   Copyright (c) 1996-2000 CoCreate Software GmbH. All Rights Reserved.
    Company Confidential
 */
 
@@ -53,7 +53,7 @@ static int chargroup[256];
 /*
    Dieter Deyke
    January 13, 1997
-   Copyright (c) 1997-1999 CoCreate Software GmbH.  All Rights Reserved.
+   Copyright (c) 1997-2000 CoCreate Software GmbH.  All Rights Reserved.
    Company Confidential
 */
 
@@ -83,7 +83,7 @@ int getopt(int argc, char *const *argv, char *opts);
 /*
    Dieter Deyke
    January 13, 1997
-   Copyright (c) 1997-1999 CoCreate Software GmbH.  All Rights Reserved.
+   Copyright (c) 1997-2000 CoCreate Software GmbH.  All Rights Reserved.
    Company Confidential
 */
 

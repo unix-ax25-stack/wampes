@@ -1,6 +1,6 @@
 		    BBS Reference Manual
 
-		       Version 000213
+		       Version 000304
 
 		 Dieter Deyke, DK5SG/N0PRA
 		    deyke@crosswinds.net
@@ -376,7 +376,7 @@ number-number   All articles from the number to number.
 S&F data flow
 
 			other news
-			 systems                 udbm
+			 systems
 			     |
 			     |
 			     |

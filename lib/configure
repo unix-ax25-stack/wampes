@@ -1,4 +1,4 @@
-# @(#) $Id: configure,v 1.37 2000/02/13 19:01:37 deyke Exp $
+# @(#) $Id: configure,v 1.38 2000/03/04 18:31:11 deyke Exp $
 
 CC='cc'
 CFLAGS='-O -I../lib'
@@ -245,11 +245,6 @@ checksymbol()
 
 	echo
 
-	findfile ALIASES_FILE \
-		/etc/aliases \
-		/etc/mail/aliases \
-		/usr/lib/aliases
-
 	findfile UTMP__FILE \
 		/var/run/utmp \
 		/var/adm/utmp \
@@ -279,12 +274,6 @@ checksymbol()
 		/usr/sbin/Mail \
 		/usr/bin/mail \
 		/bin/mail
-
-	findprog NEWALIASES_PROG \
-		/usr/bin/newaliases \
-		/usr/sbin/newaliases \
-		/usr/ucb/newaliases \
-		/usr/bsd/newaliases
 
 	findprog RNEWS_PROG \
 		/usr/local/news/bin/rnews \

@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^BBS Reference Manual^-\\\\nP-^Version 000213" \" Page footer
+.PF "^BBS Reference Manual^-\\\\nP-^Version 000304" \" Page footer
 .\"
 .S 30
 .ce
 \fBBBS Reference Manual\fP
 .ce
-Version 000213
+Version 000304
 .S
 .SP 2
 .S 15
@@ -294,13 +294,6 @@ arrow
 BBSOUT: box "bbs"
 arrow
 box invis "outgoing" "BBS traffic"
-move to top of BBSOUT
-up
-move
-UDBM: box "udbm"
-arrow from NEWSSPOOL \
-	to 1/3 of the way between UDBM.sw and UDBM.nw \
-	chop circlerad chop 0
 up
 arrow <-> from top of INN
 box invis "other news" "systems"

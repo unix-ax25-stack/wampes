@@ -7,11 +7,71 @@
 
 require 5.003;
 
-use FileHandle;
+use Symbol;
 
 use strict;
 
-#------------------------------------------------------------------------------
+# -*- CPerl -*-
+
+# Dieter Deyke
+# February 14, 2000
+# Copyright (c) 2000-2000 CoCreate Software GmbH. All Rights Reserved.
+# Company Confidential
+
+use Symbol;
+
+# -*- CPerl -*-
+
+# Dieter Deyke
+# February 14, 2000
+# Copyright (c) 2000-2000 CoCreate Software GmbH. All Rights Reserved.
+# Company Confidential
+
+# Return basename of path
+
+sub basename {
+
+	my ($file) = @_;
+
+	$file =~ s!.*[/\\]!!;
+	return $file;
+}
+
+1;
+# -*- CPerl -*-
+
+# Dieter Deyke
+# February 14, 2000
+# Copyright (c) 2000-2000 CoCreate Software GmbH. All Rights Reserved.
+# Company Confidential
+
+# Return dirname of path
+
+sub dirname {
+
+	my ($dir) = @_;
+
+	$dir =~ s![/\\][^/\\]*$!! or return '.';
+	return '/' if $dir eq '';
+	return $dir;
+}
+
+1;
+# -*- CPerl -*-
+
+# Dieter Deyke
+# February 14, 2000
+# Copyright (c) 2000-2000 CoCreate Software GmbH. All Rights Reserved.
+# Company Confidential
+
+# -*- CPerl -*-
+
+# Dieter Deyke
+# February 14, 2000
+# Copyright (c) 2000-2000 CoCreate Software GmbH. All Rights Reserved.
+# Company Confidential
+
+use Symbol;
 
 # Compare two files, returning:
 #
@@ -25,29 +85,35 @@ sub cmpfiles {
 
 	my ($buffer1, $n1);
 	my ($buffer2, $n2);
+	my ($fh1, $fh2);
 	my ($retval);
 
-	-e $file1 or return 2;
+	return 2 unless -e $file1;
 	$n1 = -s _;
-	-e $file2 or return 2;
+	return 2 unless -e $file2;
 	$n2 = -s _;
-	$n1 == $n2 or return 1;
-	open(FILE1, $file1) or return 2;
-	binmode(FILE1);
-	open(FILE2, $file2) or close(FILE1), return 2;
-	binmode(FILE2);
+	return 1 unless $n1 == $n2;
+	$fh1 = gensym();
+	open($fh1, $file1) or return 2;
+	binmode($fh1);
+	$fh2 = gensym();
+	open($fh2, $file2) or return 2;
+	binmode($fh2);
 	$retval = 0;
 	$buffer1 = $buffer2 = '';
-	while ($n1 = sysread(FILE1, $buffer1, 8192)) {
-		$n2 = sysread(FILE2, $buffer2, $n1);
-		($n1 != $n2 or $buffer1 ne $buffer2) and $retval = 1, last;
+	while ($n1 = sysread($fh1, $buffer1, 8192)) {
+		$n2 = sysread($fh2, $buffer2, 8192);
+		if ($n1 != $n2 or $buffer1 ne $buffer2) {
+			$retval = 1;
+			last;
+		}
 	}
-	close(FILE1);
-	close(FILE2);
+	close($fh1);
+	close($fh2);
 	return $retval;
 }
 
-#------------------------------------------------------------------------------
+1;
 
 sub selectfile {
 
@@ -66,7 +132,7 @@ sub selectfile {
 	}
 }
 
-#------------------------------------------------------------------------------
+1;
 
 # Trim one file
 
@@ -74,14 +140,32 @@ sub trimfile {
 
 	my ($filename) = @_;
 
+	my ($base);
 	my ($blank_lines_skipped) = -1;
 	my ($current_year) = (localtime(time()))[5] + 1900;
+	my ($dst);
+	my ($istextfile);
 	my ($line);
+	my ($src);
 	my ($tmpfilename) = "$filename.tmp";
 
-	open(SRC, $filename) or die("$filename: $!\n");
-	open(DST,">$tmpfilename") or die("$tmpfilename: $!\n");
-	while (defined($line = <SRC>)) {
+	$src = gensym();
+	open($src, dirname($filename) . '/CVS/Entries') or return;
+	$istextfile = 0;
+	$base = basename($filename);
+	while ($line = <$src>) {
+		if ($line =~ m!^/$base.*//$!) {
+			$istextfile = 1;
+		}
+	}
+	close($src);
+	return unless $istextfile;
+
+	$src = gensym();
+	open($src, $filename) or die("$filename: $!\n");
+	$dst = gensym();
+	open($dst, ">$tmpfilename") or die("$tmpfilename: $!\n");
+	while (defined($line = <$src>)) {
 		# Fix copyright dates
 		$line =~ s!(copyright.*19[89]\d)\s*-\s*\d\d\d\d!"$1-$current_year"!ei;
 		# Remove trailing whitespace
@@ -95,23 +179,23 @@ sub trimfile {
 		$line =~ s!^(\s*)\(\s*void\s*\)\s*!$1! unless $line =~ m!\(void\),!;
 		# Output line
 		if ($line ne '') {
-			print(DST "\n") if $blank_lines_skipped == 1;
-			print(DST "$line\n");
+			print($dst "\n") if $blank_lines_skipped == 1;
+			print($dst "$line\n");
 			$blank_lines_skipped = 0;
 		} else {
 			$blank_lines_skipped = 1 if $blank_lines_skipped == 0;
 		}
 	}
-	close(SRC);
-	close(DST);
+	close($src);
+	close($dst);
 	selectfile($filename, $tmpfilename);
 }
+
+1;
 
 #------------------------------------------------------------------------------
 
 # Trim modified text files
-
-# SYNTAX: trimfiles
 
 sub trimfiles {
 
@@ -124,39 +208,30 @@ sub trimfiles {
 
 	if (@ARGV) {
 		foreach $file (@ARGV) {
-			if (-T $file) {
-				trimfile($file);
-			}
+			trimfile($file);
 		}
 		return;
 	}
 
 	$timestampfile = '.trimtime';
-	if (-f $timestampfile) {
-		$timestamp = -M $timestampfile;
-	} else {
-		$timestamp = 1e99;
-	}
+	$timestamp = (-f $timestampfile) ? (-M $timestampfile) : 1e99;
+
+	$fh = gensym();
 
 	@files = ();
-	$fh = FileHandle->new();
-	$fh->open('cvs -q -n update |') or die("cvs: $!\n");
+	open($fh, 'cvs -q -n update |') or die("cvs: $!\n");
 	while (defined($line = <$fh>)) {
 		push(@files, $2) if $line =~ m!^(A|M) (.*)\n!;
 	}
-	$fh->close();
+	close($fh);
 	foreach $file (@files) {
-		if (-M $file < $timestamp and -T $file) {
-			### print("Trimming $file ...\n");
-			trimfile($file);
-		}
+		trimfile($file) if (-M $file) < $timestamp;
 	}
 
 	unlink($timestampfile);
-	$fh = FileHandle->new();
-	$fh->open(">$timestampfile") or die("$timestampfile: $!\n");
+	open($fh, ">$timestampfile") or die("$timestampfile: $!\n");
 	print($fh "\n");
-	$fh->close();
+	close($fh);
 }
 
 #------------------------------------------------------------------------------

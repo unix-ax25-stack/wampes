@@ -1,4 +1,4 @@
-/* @(#) $Id: flexnet.c,v 1.13 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: flexnet.c,v 1.14 2000/03/04 18:31:13 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -87,7 +87,7 @@ static struct timer Polltimer;  /* Poll timer */
 
 static int flexsetcall(uint8 *call, const char *ascii)
 {
-	if (setcall(call, (char *) ascii)) {
+	if (setcall(call, ascii)) {
 		printf("Invalid call \"%s\"\n", ascii);
 		return -1;
 	}
@@ -409,20 +409,20 @@ static char *sprintflexcall(char *buf, const uint8 *call)
 
 	cp = buf;
 	for (i = 0; i < ALEN; i++) {
-		chr = (*call++ >> 1) & 0x7f;
-		if (chr == ' ')
-			break;
-		*cp++ = chr;
+		chr = (call[i] >> 1) & 0x7f;
+		if (chr != ' ') {
+			*cp++ = chr;
+		}
 	}
-	min_ssid = (*call++ & SSID) >> 1;
-	max_ssid = (*call & SSID) >> 1;
-	if (min_ssid || min_ssid != max_ssid) {
-		if (min_ssid == max_ssid)
-			sprintf(cp, "-%d", min_ssid);
-		else
-			sprintf(cp, "-%d-%d", min_ssid, max_ssid);
-	} else
+	min_ssid = (call[ALEN    ] & SSID) >> 1;
+	max_ssid = (call[ALEN + 1] & SSID) >> 1;
+	if (!min_ssid && !max_ssid) {
 		*cp = 0;
+	} else if (min_ssid == max_ssid) {
+		sprintf(cp, "-%d", min_ssid);
+	} else {
+		sprintf(cp, "-%d-%d", min_ssid, max_ssid);
+	}
 	return buf;
 }
 

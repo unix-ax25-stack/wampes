@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25subr.c,v 1.25 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: ax25subr.c,v 1.26 2000/03/04 18:31:13 deyke Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -156,7 +156,7 @@ cr_ax25(uint8 *addr)
  *   Return -1 on error, 0 if OK
  */
 int
-setcall(uint8 *out,char *call)
+setcall(uint8 *out,const char *call)
 {
 	int i,csize;
 	unsigned ssid;
@@ -239,7 +239,7 @@ const uint8 *from)
 }
 /* Convert encoded AX.25 address to printable string */
 char *
-pax25(char *e,uint8 *addr)
+pax25(char *e,const uint8 *addr)
 {
 	int i;
 	char c,*cp;
@@ -333,4 +333,3 @@ struct ax25 *hdr)
   *p = 0;
   return buf;
 }
-

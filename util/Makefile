@@ -1,6 +1,6 @@
-# @(#) $Id: Makefile,v 1.75 2000/02/12 19:39:29 deyke Exp $
+# @(#) $Id: Makefile,v 1.76 2000/03/04 18:31:16 deyke Exp $
 
-TARGETS    = bridge cnet md5 mkhostdb path qth udbm
+TARGETS    = bridge cnet md5 mkhostdb path qth
 
 all:;        @. ../lib/configure.mak; $(MAKE) -i _all
 install:;    @. ../lib/configure.mak; $(MAKE) -i _install
@@ -31,17 +31,12 @@ qth:    qth.o $(LIBS)
 	$(RMTARGET)
 	$(LD) $(LDFLAGS) qth.o $(LIBS) $(SLIBS) -lm -o $@
 
-udbm:   udbm.o $(LIBS)
-	$(RMTARGET)
-	$(LD) $(LDFLAGS) udbm.o $(LIBS) $(SLIBS) -o $@
-
 _install: \
 	bridge \
 	/usr/local/bin/cnet \
 	/usr/local/bin/md5 \
 	/usr/local/bin/path \
-	/usr/local/bin/qth \
-	/usr/local/etc/udbm
+	/usr/local/bin/qth
 
 /usr/local/bin/cnet: cnet
 	$(MKDIR)
@@ -59,11 +54,6 @@ _install: \
 	cp $? $@
 
 /usr/local/bin/qth: qth
-	$(MKDIR)
-	$(RMTARGET)
-	cp $? $@
-
-/usr/local/etc/udbm: udbm
 	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
@@ -90,8 +80,3 @@ path.o:\
 	path.c
 qth.o:\
 	qth.c
-udbm.o:\
-	../lib/calc_crc.h\
-	../lib/callvalid.h\
-	../lib/configure.h\
-	udbm.c

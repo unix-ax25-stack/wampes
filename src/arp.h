@@ -1,4 +1,4 @@
-/* @(#) $Id: arp.h,v 1.15 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: arp.h,v 1.16 2000/03/04 18:31:13 deyke Exp $ */
 
 #ifndef _ARP_H
 #define _ARP_H
@@ -61,9 +61,9 @@ struct arp_type {
 	uint arptype;           /* Hardware type field for ARP */
 	uint pendtime;  /* # secs to wait pending response */
 	uint8 *bdcst;           /* Hardware broadcast address */
-	char *(*format)(char *,uint8 *);
+	char *(*format)(char *,const uint8 *);
 				/* Function that formats addresses */
-	int (*scan)(uint8 *,char *);
+	int (*scan)(uint8 *,const char *);
 				/* Reverse of format */
 };
 extern struct arp_type Arp_type[];

@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.49 2000/02/13 19:01:30 deyke Exp $
+# @(#) $Id: Makefile,v 1.50 2000/03/04 18:31:08 deyke Exp $
 
 DIRS       = lib \
 	     aos \
@@ -39,6 +39,7 @@ distrib:
 		aos/*.[ch] \
 		aos/Makefile \
 		bbs/*.[ch] \
+		bbs/*.py \
 		bbs/Makefile \
 		bbs/bbs.help \
 		cc \

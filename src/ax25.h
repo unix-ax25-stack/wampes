@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25.h,v 1.21 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: ax25.h,v 1.22 2000/03/04 18:31:13 deyke Exp $ */
 
 #ifndef _AX25_H
 #define _AX25_H
@@ -31,7 +31,7 @@ extern char Ax25_eol[];
 #define C               0x80    /* Command/response designation */
 
 /* Our AX.25 address */
-extern uint8 Mycall[AXALEN];
+extern uint8 Mycall[];
 
 /* List of AX.25 multicast addresses, e.g., "QST   -0" in shifted ASCII */
 extern uint8 Ax25multi[][AXALEN];
@@ -142,8 +142,8 @@ struct lq *al_lookup(struct iface *ifp,uint8 *addr,int sort);
 
 /* In ax25subr.c: */
 int addreq(const uint8 *a,const uint8 *b);
-char *pax25(char *e,uint8 *addr);
-int setcall(uint8 *out,char *call);
+char *pax25(char *e,const uint8 *addr);
+int setcall(uint8 *out,const char *call);
 struct iface *ismyax25addr(const uint8 *addr);
 void addrcp(uint8 *to,const uint8 *from);
 int ax25args_to_hdr(int argc,char *argv[],struct ax25 *hdr);

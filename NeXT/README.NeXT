@@ -46,9 +46,6 @@ not yet testet:
 bbs and bridge
 but i expect no problems.
 
-udbm may not work properly (missing putpwent()), but makes no sense as long as
-netinfo service is not supported.
-
 compilation notes / missing system calls:
 -----------------------------------------
 
@@ -62,7 +59,6 @@ NeXT/next.c contains function that are not available opn NeXTstep 3.3:
 int setenv(char * arg1, int i, int j)
 int putpwent(const struct passwd *p, FILE *f)
 
-while the missing putpwent only affects udbm,
 the missing putenv/setenv is a real problem.
 
 you need bash to be able to run mkhostdb for the domain database.
