@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.31 1992/11/16 10:20:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.32 1992/11/25 12:29:01 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -92,7 +92,7 @@ void ioinit()
 #define fixdir(name, mode) \
 	{ mkdir((name), (mode)); chmod((name), (mode)); }
 
-#ifndef LINUX
+#ifdef RLIMIT_NOFILE
   getrlimit(RLIMIT_NOFILE, &rlp);
   rlp.rlim_cur = FD_SETSIZE;
   if (rlp.rlim_max < rlp.rlim_cur) rlp.rlim_max = rlp.rlim_cur;
@@ -275,7 +275,7 @@ int fd;
 /*---------------------------------------------------------------------------*/
 
 void on_death(pid, fnc, arg)
-pid_t pid;
+int pid;
 void (*fnc) __ARGS((void *));
 void *arg;
 {
@@ -298,7 +298,7 @@ void *arg;
 /*---------------------------------------------------------------------------*/
 
 void off_death(pid)
-pid_t pid;
+int pid;
 {
   struct proc_t *prev, *curr;
 

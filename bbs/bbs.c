@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.39 1992/11/17 10:35:44 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.40 1992/11/25 12:30:00 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -230,6 +230,14 @@ static void errorstop(int line)
 /*---------------------------------------------------------------------------*/
 
 #define uchar(x) ((x) & 0xff)
+
+/*---------------------------------------------------------------------------*/
+
+#ifdef _SC_OPEN_MAX
+#define open_max()      sysconf(_SC_OPEN_MAX)
+#else
+#define open_max()      (1024)
+#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -762,7 +770,7 @@ static void send_to_mail(struct mail *mail)
   case 0:
     setgid(0);
     setuid(0);
-    for (i = sysconf(_SC_OPEN_MAX) - 1; i >= 0; i--) close(i);
+    for (i = open_max() - 1; i >= 0; i--) close(i);
     setsid();
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");
@@ -817,7 +825,7 @@ static void send_to_news(struct mail *mail)
   case 0:
     setgid(0);
     setuid(0);
-    for (i = sysconf(_SC_OPEN_MAX) - 1; i >= 0; i--) close(i);
+    for (i = open_max() - 1; i >= 0; i--) close(i);
     setsid();
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");
@@ -1769,7 +1777,7 @@ static void shell_command(int argc, char **argv)
   case 0:
     setgid(user.gid);
     setuid(user.uid);
-    for (i = sysconf(_SC_OPEN_MAX) - 1; i >= 3; i--) close(i);
+    for (i = open_max() - 1; i >= 3; i--) close(i);
     chdir(user.cwd);
     *command = 0;
     for (i = 1; i < argc; i++) {
@@ -2261,7 +2269,7 @@ static void trap_signal(int sig, void (*handler)(int))
 #ifdef LINUX
   signal(sig, handler);
 #else
-#ifdef sun
+#if defined(sun) || defined(BSD)
 #define sigvector sigvec
 #endif
   struct sigvec vec;

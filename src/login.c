@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.28 1992/11/19 13:16:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.29 1992/11/25 12:29:14 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -71,6 +71,7 @@ static int32 pty_locktime[NUMPTY];
 static int find_pty __ARGS((int *numptr, char *slave));
 static void restore_pty __ARGS((const char *id));
 static int callvalid __ARGS((const char *call));
+static char *find_user_name __ARGS((const char *name));
 static void write_log __ARGS((struct login_cb *tp, const char *buf, int cnt));
 static FILE *fopen_logfile __ARGS((const char *user, const char *protocol));
 static int do_telnet __ARGS((struct login_cb *tp, int chr));
@@ -171,37 +172,40 @@ const char *call;
 
 /*---------------------------------------------------------------------------*/
 
+static char *find_user_name(name)
+const char *name;
+{
+
+  char *cp;
+  static char username[128];
+
+  for (; ; ) {
+    while (*name && !isalnum(uchar(*name))) name++;
+    for (cp = username; isalnum(uchar(*name)); *cp++ = tolower(uchar(*name++))) ;
+    *cp = 0;
+    if (!*username) return DEFAULTUSER;
+    if (callvalid(username)) return username;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 struct passwd *getpasswdentry(name, create)
 const char *name;
 int create;
 {
 
   FILE *fp;
-  char *cp;
   char bitmap[MAXUID+1];
   char homedir[80];
   char homedirparent[80];
-  char username[128];
   int fd;
   int uid;
   struct passwd *pw;
 
-  /* Find user name */
-
-  for (; ; ) {
-    while (*name && !isalnum(uchar(*name))) name++;
-    for (cp = username; isalnum(uchar(*name)); *cp++ = tolower(uchar(*name++))) ;
-    *cp = 0;
-    if (!*username) {
-      strcpy(username, DEFAULTUSER);
-      break;
-    }
-    if (callvalid(username)) break;
-  }
-
   /* Search existing passwd entry */
 
-  if (pw = getpwnam(username)) return pw;
+  if (pw = getpwnam(name)) return pw;
   if (!create) return 0;
 
   /* Find free user id */
@@ -210,7 +214,7 @@ int create;
   close(fd);
   memset(bitmap, 0, sizeof(bitmap));
   while (pw = getpwent()) {
-    if (!strcmp(username, pw->pw_name)) break;
+    if (!strcmp(name, pw->pw_name)) break;
     if (pw->pw_uid <= MAXUID) bitmap[pw->pw_uid] = 1;
   }
   endpwent();
@@ -226,16 +230,16 @@ int create;
 
   /* Add user to passwd file */
 
-  sprintf(homedirparent, "%s/%.3s...", HOMEDIRPARENTPARENT, username);
-  sprintf(homedir, "%s/%s", homedirparent, username);
+  sprintf(homedirparent, "%s/%.3s...", HOMEDIRPARENTPARENT, name);
+  sprintf(homedir, "%s/%s", homedirparent, name);
   if (!(fp = fopen(PASSWDFILE, "a"))) {
     unlink(PWLOCKFILE);
     return 0;
   }
 #ifndef LINUX
-  fprintf(fp, "%s:,./:%d:%d::%s:\n", username, uid, GID, homedir);
+  fprintf(fp, "%s:,./:%d:%d::%s:\n", name, uid, GID, homedir);
 #else
-  fprintf(fp, "%s::%d:%d::%s:\n", username, uid, GID, homedir);
+  fprintf(fp, "%s::%d:%d::%s:\n", name, uid, GID, homedir);
 #endif
   fclose(fp);
   pw = getpwuid(uid);
@@ -455,8 +459,8 @@ void *upcall_arg;
   on_read(tp->pty, tp->readfnc, tp->fncarg);
   tp->logfp = fopen_logfile(user, protocol);
   if (!(tp->pid = dofork())) {
-    pw = getpasswdentry(user, 1);
-    if (!pw || pw->pw_passwd[0]) pw = getpasswdentry("", 0);
+    pw = getpasswdentry(find_user_name(user), 1);
+    if (!pw || pw->pw_passwd[0]) pw = getpasswdentry(DEFAULTUSER, 0);
     for (i = 0; i < FD_SETSIZE; i++) close(i);
     setsid();
     open(slave, O_RDWR, 0666);
@@ -506,8 +510,11 @@ void login_close(tp)
 struct login_cb *tp;
 {
 
-#ifdef sun
+#ifndef UTMP_FILE
 #define UTMP_FILE       "/etc/utmp"
+#endif
+
+#ifndef WTMP_FILE
 #define WTMP_FILE       "/var/adm/wtmp"
 #endif
 

@@ -1,29 +1,3 @@
-===============================================================================
-
-dann ist es kein Bug, aber trotzdem unschoen. In meinem /etc/profile
-pruefe ich auf Anzahl der Felder in /etc/passwd und finde es unschoen
-wenn die variert. Das duerfte auch einige andere scripts die von einer
-festen Anzahl Felder in /etc/passwd ausgehen stoeren. Mir waere es daher
-lieb das z. Bsp. ueber net.rc konfigurieren zu koennen.
-Ist das mit der Default-Shell auch bei sun/dec/at&t/.. so oder nur bei
-hp-ux?
-
-===============================================================================
-
-Hallo Dieter,
-was haelst Du denn vom 'reget' Command bei FTP?
-(bzw. REST-Command)
-Leider ist es so, dass die Links oft zusammenbrechen und ein erneutes
-Getten eines Files erforderlich ist.
-Ein 'reget' waere nicht schlecht, der Server muss es aber verstehen.
-Ich hatte erst den Fall, dass ich 2 von 4MB FTPd habe, und die Gegenstation
-abgestuerzt ist... nun muss ich alles nochmal holen, obwohl es mit 'reget'
-moeglich waere nur das fehlende Fragment zu getten.
-Der FTP von meinem Unix kann das. Anscheinend gibt es auch NOS/NET Derivate
-fuer MS-DOS, die auch 'reget' koennen.
-
-===============================================================================
-
 - 'rs' does not work on hp-terminals
 
 - even in raw mode it should be possible to send ^] without leaving the session
@@ -36,26 +10,11 @@ fuer MS-DOS, die auch 'reget' koennen.
 
 - telnet record puts \r into file
 
-- tcp irtt cache size?
-
 - CHECK:        overflow in mail buffers
 
 - IMPLEMENT:    ax25 blimit
 
 - IMPLEMENT:    netrom blimit
-
-===============================================================================
-
-    &TCB Rcv-Q Snd-Q  Local socket           Remote socket          State
-   62880     0  1017  dk5sg:ftp-data         dc3sn:1008             Closed
-
-Local: dk5sg:ftp-data Remote: dc3sn:1008 State: Closed
-      Init seq    Unack     Next Resent CWind Thrsh  Wind  MSS Queue      Total
-Send: 3c580000 3c58e809 3c58e9ba  11233   432   216  1080  216  1017      59401
-Recv: 7538eff0          7538eff1      0              1080          0          1
-Backoff 11 Retrying Timer stopped SRTT 12130 ms Mean dev 7213 ms
-
-===============================================================================
 
 - richtige Verwendung von Mycall pruefen
 
@@ -97,86 +56,15 @@ Backoff 11 Retrying Timer stopped SRTT 12130 ms Mean dev 7213 ms
 
 - Mailer:  Use 'host-mode'
 
-===============================================================================
+- BBS Mailer:
 
-From dl5ue Wed Mar 22 14:44 MEZ 1989
-Received: by db0sao; Wed, 22 Mar 89 14:44:33 mez
-Date: Wed, 22 Mar 89 14:44:33 mez
-From: Jan Schiefer <dl5ue>
-Return-Path: <dl5ue>
-To: dk5sg
-Subject: netrom.c
-Status: R
+  - wenn ich eine SID bekomme antworte ich mit meiner SID
 
-Hallo Dieter,
+  - nach dem S Kommando wird auf OK/NO gewartet
 
-leider bin ich erst heute dazu gekommen, mir netrom.c in Ruhe anzusehen. Am
-Montag war mir aufgefallen, dass von den WAMPI sehr haeufig gebroadcastet
-wurde. Heute trat das Problem scheinbar nicht auf, hast Du was geaendert?
+  - bei OK wird die Msg gesendet
 
-Beim Lesen Deines Codes sind mir einige Dinge aufgefallen: In calculate_
-routes ziehst Du den Broacast-Timer auf 10s auf. Ich finde, man sollte da
-unbedingt eine Zufallszahl in der Groessenordnung 0...60s dazuaddieren, da
-sonst folgendes passieren koennte:
-A broadcastet Aenderungen, B und C hoeren dies, bei beiden ergeben sich
-auch Aenderungen. Sie starten ihre Broadcast-Timer und broadcasten zwar
-ohne Kollision, aber doch fast gleichzeitig. Da ist die Chance sehr gut,
-dass der Bs BC im TNC wartet, bis Cs BC vorbei ist. Anschliessend BCed B
-veraltete Routen, was wiederum A und C hoeren....usw.
+  - bei NO wird die Msg dem return_mailer uebergeben
 
-Ausserdem fiel mir auf, dass auch bei einem BC 'ausser der Reihe' immer
-alle Routen gebroadcasted werden. Was haeltst Du davon, bei solchen BCs
-nur neighbor und quality derjenigen Destinations zu senden, bei  denen
-force_broadcast != 0 ist? Dadurch wuerde das Datenvolumen auf dem Kanal
-kleiner, ausserdem koennten mitlesende Spanner leichter beobachten, ob es
-Probleme bzw. Schwingungszustaende gibt. (Dann allerdings sollte man die
-normalen BCs grundsaetzlich immer machen, wenn der obsolesence_timer aus-
-laeuft, da sonst bei anderen Stationen der obs-counter u.U. veraltet, wenn
-laenger als 1/2 h kein vollstaendiger BC kommt).
-
-Das was eigentlich das, was mir ins Auge stach. Ach ja, nochwas: So schwer
-ist das ja eigentlich gar nicht zu lesen + verstehen....
-
-Gibt's was Neues von Deinem 70er Funk?
-
-Bis bald,
-Jan
-
-===============================================================================
-
-bbs mailer:
-
-- wenn ich eine SID bekomme antworte ich mit meiner SID
-
-- nach dem S Kommando wird auf OK/NO gewartet
-
-- bei OK wird die Msg gesendet
-
-- bei NO wird die Msg dem return_mailer uebergeben
-
-- ich sende wenn moeglich hierachical adresses
-
-===============================================================================
-
-HP:
----
-
-ftp> put /hp-ux /tmp/x
-200 PORT command okay.
-150 Opening data connection for /tmp/x (127.0.0.1,1103).
-226 Transfer complete.
-802432 bytes sent in 6.72 seconds (116.58 Kbytes/sec)
-
-ftp>
-
-WAMPES:
--------
-
-put /users/funk/dk5sg/p.Z
-200 Port command okay
-150 Opening data connection for STOR /users/funk/dk5sg/p.Z
-Put complete, 3638 bytes sent
-226 File received OK
-
-===============================================================================
+  - ich sende wenn moeglich hierachical adresses
 

@@ -244,7 +244,7 @@ dc6iq Never
 
 Then edit /tcp/mail.conf and create entries like this:
 
-dk5sg:smtp:tcp:db4ut smtp
+dk5sg:smtp:tcp:dk5sg smtp
 db0id:smtp:tcp:db0id smtp
 dc6iq:smtp:tcp:dc6iq smtp
 
