@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.4 1990/02/14 12:27:10 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.5 1990/02/22 12:49:20 deyke Exp $";
 
 #include <sys/types.h>
 
@@ -46,6 +46,9 @@ char  **argv;
   termio.c_cc[VTIME] = 0;
   ioctl(0, TCSETA, &termio);
 
+  printf("\033&s1A");   /* enable XmitFnctn */
+  fflush(stdout);
+
   for (; ; ) {
     mask = 011;
     select(4, &mask, (int *) 0, (int *) 0, (struct timeval *) 0);
@@ -62,6 +65,10 @@ char  **argv;
   }
 
   ioctl(0, TCSETA, &termio_save);
+
+  printf("\033&s0A");   /* disable XmitFnctn */
+  fflush(stdout);
+
   return 0;
 }
 
