@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.37 1996/01/15 09:29:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.38 1996/03/03 09:40:59 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -622,6 +622,7 @@ register struct ax25_cb *axp)
 			stop_timer(&axp->t3);
 			start_timer(&axp->t1);
 		}
+		start_timer(&axp->t5);
 		sent++;
 		bp = bp->anext;
 		if(!axp->flags.rtt_run){

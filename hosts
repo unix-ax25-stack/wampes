@@ -1895,7 +1895,7 @@
 44.130.28.30    DL8ZAD  # Juergen, 35789 Weilmuenster nr Wetzlar
 44.130.28.58    DF0WS   # ClubStn F58, 35396 Giessen-Wieseck
 #
-# KA_HOSTS BEGIN [960126]
+# KA_HOSTS BEGIN [960302]
 # Hier die Karlsruher IP-Adressen:
 #
 44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc1ik@db0lj-1.ampr.org,
@@ -2024,7 +2024,6 @@
 44.130.29.120 df7tc     # JN49ea Dirk Canzler         76185 Karlsruhe
 44.130.29.121 dc1ik-d   # JN49ea Olaf Erb             76131 Karlsruhe
 44.130.29.122 dc1ik-e   # JN49ea Olaf Erb             76131 Karlsruhe
-44.130.29.123 dc1ik-3   # JN49ea Olaf Erb             76131 Karlsruhe
 44.130.29.130 db0sel    # JN48iv Digi Pforzheim       75179 Pforzheim
 44.130.29.131 db0sel-w  # JN48iv Digi Pforzheim       75179 Pforzheim
 44.130.29.132 db0sel-l  # JN48iv Digi Pforzheim       75179 Pforzheim
@@ -2036,8 +2035,8 @@
 44.130.29.138 dc1iap-w  # Peter Lambeck
 44.130.29.139 dl3it-l   # JN49ea Thomas Wischnack     76135 Karlsruhe
 44.130.29.140 dg6am     # JN49EA Lars Schubert        76131 Karlsruhe
-44.130.29.141 dg7uaw    # Detlev ???????              Karlsruhe-Rueppurr
-44.130.29.142 dg7uaw-1  # Detlev ???????              Karlsruhe-Rueppurr
+44.130.29.141 dk2hd     # Detlev Hollmann             Karlsruhe-Rueppurr
+44.130.29.142 dk2hd-1   # Detlev Hollmann             Karlsruhe-Rueppurr
 44.130.29.143 dc1iap-2  # Peter Lambeck
 44.130.29.144 dc1iap-s  # Peter Lambeck
 44.130.29.145 dh9iam    # Michael Lambeck
@@ -2088,11 +2087,12 @@
 # --- lokale Adresskoordination: DL4VAP
 44.130.33.1     DF3VI   # Patrick, 6650 Homburg
 44.130.33.2     DL4VCN  # George Nashan, 66424 Homburg (ex DC1VL)
-44.130.33.3     DL4VAP  # Marcus Meier, 66578 Schiffweiler (JN39NI)
+44.130.33.3     DL4VAP  # Marcus Meier, 66578 Schiffweiler
 44.130.33.4     DL4VAP-U
 44.130.33.5     DL4VAP-2
 44.130.33.6     DD1VZ   # Peter , Kleinblittersdorf/Saar
 44.130.33.7     DB6VP   # Peter , Voelklingen (Loc. JN39KG)
+44.130.33.8     DJ0QO   # Rene Zimnoch, Rehlingen-Siersburg
 44.130.33.10    DG6VB   # Thomas , Ludweiler
 44.130.33.11    DG6VB-2
 44.130.33.12    DG6VB-3
@@ -5380,6 +5380,43 @@
 #
 #         10-15 reserved for future use by hb9h, A.R.T.
 #---------------------------------------------------------------------------
+#
+#  IP-Adressen Raum Wien,  44.143.16/24
+#
+#
+#--------------------------------------
+44.143.16.1    oe1xir        #
+44.143.16.10   gw.oe1hmc     #
+44.143.16.100  oe3klu        #
+44.143.16.11   sec.oe1hmc    #
+44.143.16.12   ter.oe1hmc    #
+44.143.16.13   oe1hmc        #
+44.143.16.14   oe1dmw        #
+44.143.16.144  oe1kda        #
+44.143.16.145  verdi.oe1kda  #
+44.143.16.146  ter.oe1kda    #
+44.143.16.15   sec.oe1dmw    #
+44.143.16.16   oe1msb        #
+44.143.16.17   sec.oe1msb    #
+44.143.16.18   sp7mud        #
+44.143.16.19   oe1mma        #
+44.143.16.20   oe3gfs        #
+44.143.16.200  sat.oe3gfs    #
+44.143.16.21   oe1smc        #
+44.143.16.22   oe1cms        #
+44.143.16.23   oe1xya        #
+44.143.16.24   oe1gou        #
+44.143.16.25   oe1yxu        #
+44.143.16.26   oe1wwl        #
+44.143.16.27   sec.oe1wwl    #
+44.143.16.28   ter.oe1wwl    #
+44.143.16.31   oe3gmw        #
+44.143.16.32   oe3dna        #
+44.143.16.33   oe3pha        #
+44.143.16.34   oe1wca        #
+44.143.16.35   oe3ugw        #
+44.143.16.9    oe1xtu        #
+#
 # 44.143.xxx.xxx * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                            in OESTERREICH
 # -----------------------------------------------------------------------
@@ -5702,7 +5739,7 @@
 44.143.73.1    VANESSA.OE9MKV #
 44.143.73.2    OE9FKI   # Franz Kienspergher, Juxweg 6, 6800 Feldkirch-
 			# Altenstadt
-
+#
 # Subnetz OE9LKI 44.143.105.0/28
 44.143.105.1   NET.OE9LKI #
 #HOSTS.NET FOR BELGIUM

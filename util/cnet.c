@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.35 1996/02/13 15:30:58 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.36 1996/03/03 09:41:37 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -187,10 +187,12 @@ static void sendq(int fd, struct mbuf **qp)
 int main(int argc, char **argv)
 {
 
-  char *ap;
-  char *server;
   char area[1024];
   char bp[1024];
+  char *areaptr;
+  char *server;
+  char *termstr;
+  char *upstr;
   int addrlen;
   int flags;
   struct fd_set rmask;
@@ -222,9 +224,15 @@ int main(int argc, char **argv)
 #else
   tcgetattr(fdin, &prev_termios);
 #endif
-  ap = area;
-  if (tgetent(bp, getenv("TERM")) == 1 && strcmp(tgetstr("up", &ap), "\033[A"))
-    Ansiterminal = 0;
+
+  termstr = getenv("TERM");
+  if (termstr && tgetent(bp, termstr) == 1) {
+    areaptr = area;
+    upstr = tgetstr("up", &areaptr);
+    if (upstr && strcmp(upstr, "\033[A")) {
+      Ansiterminal = 0;
+    }
+  }
 
   server = (argc < 2) ? "unix:/tcp/.sockets/netcmd" : argv[1];
   if (!(addr = build_sockaddr(server, &addrlen))) {

@@ -1,12 +1,12 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/bridge/frontpage,v 1.3 1996/02/20 12:59:51 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/bridge/frontpage,v 1.4 1996/03/03 09:42:13 deyke Exp $
 .\"
-.PF "^Bridge Reference Manual^-\\\\nP-^Version 960220" \" Page footer
+.PF "^Bridge Reference Manual^-\\\\nP-^Version 960303" \" Page footer
 .\"
 .S 30
 .ce
 \fBBridge Reference Manual\fP
 .ce
-Version 960220
+Version 960303
 .S
 .SP 2
 .S 15
