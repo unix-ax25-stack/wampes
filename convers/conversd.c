@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.9 1989/01/28 11:26:07 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.10 1989/01/28 12:03:08 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -371,8 +371,10 @@ char  *fromname, *toname, *text;
 	  if (strcmp(fromname, "conversd")) {
 	    sprintf(buffer, "<*%s*>:", fromname);
 	    appendstring(&p->obuf, formatline(buffer, text));
-	  } else
+	  } else {
 	    appendstring(&p->obuf, text);
+	    appendstring(&p->obuf, "\n");
+	  }
 	  p->locked = 1;
 	}
       }
@@ -694,7 +696,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.9 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.10 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
