@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.5 1993/07/08 21:14:35 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.6 1993/07/17 20:34:39 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -28,10 +28,18 @@ all:;   @if [ $(OS) = HP-UX ] ; then \
 		'CFLAGS=-O' \
 		_all; \
 	elif [ $(OS) = SunOS ] ; then \
-		make -i \
-		'CC=acc' \
-		'CFLAGS=-O' \
-		_all; \
+		if [ -x /usr/lang/acc ] ; then \
+			make -i \
+			'CC=acc' \
+			'CFLAGS=-O' \
+			_all; \
+		else \
+			make -i \
+			'CC=cc' \
+			'CFLAGS=-O' \
+			'RANLIB=:' \
+			_all; \
+		fi \
 	elif [ $(OS) = ULTRIX ] ; then \
 		make -i \
 		'CC=gcc' \

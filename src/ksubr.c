@@ -1,10 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.16 1993/06/21 21:46:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.17 1993/07/17 20:34:01 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <sys/types.h>
+#include <setjmp.h>
 #include <stdio.h>
 #include <time.h>
 /* #include <dos.h> */
@@ -56,6 +57,7 @@ struct env {
 };
 #define getstackptr(ep) ((ep)->sp)
 #elif sun
+#if _JBLEN == 9
 struct env {
 	long    onsstack;
 	long    sigmask;
@@ -68,6 +70,15 @@ struct env {
 	long    wbcnt;
 };
 #define getstackptr(ep) ((ep)->sp)
+#elif _JBLEN == 12
+struct env {
+	long    i_dont_know;
+	long    sp;
+};
+#define getstackptr(ep) ((ep)->sp)
+#else
+#error error: unknown jmp_buf size
+#endif
 #elif ULTRIX_RISC
 struct env {
 	long    on;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.13 1993/06/06 08:23:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.14 1993/07/17 20:34:00 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -16,7 +16,7 @@
 #include "daemon.h"
 #include "hardware.h"
 
-#if defined(__hpux) || defined(ULTRIX_RISC) || defined(sun) || defined(macII)
+#if defined(__hpux) || defined(ULTRIX_RISC) || defined(macII)
 #define setjmp          _setjmp
 #define longjmp         _longjmp
 #endif
@@ -161,10 +161,19 @@ int freeargs;           /* If set, free arg list on parg1 at termination */
 	newstackptr = pp->stack + (pp->stksize - 128);
 #endif
 #ifdef sun
+#if _JBLEN == 9
 	if (!setjmp(jmpenv)) {
 	  jmpenv[2] = (int) newstackptr;
 	  longjmp(jmpenv, 1);
 	}
+#elif _JBLEN == 12
+	if (!setjmp(jmpenv)) {
+	  jmpenv[1] = (int) newstackptr;
+	  longjmp(jmpenv, 1);
+	}
+#else
+#error error: unknown jmp_buf size
+#endif
 #elif ULTRIX_RISC
 	if (!setjmp(jmpenv)) {
 	  jmpenv[32] = (int) newstackptr;

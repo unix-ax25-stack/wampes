@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.44 1993/06/21 21:46:29 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.45 1993/07/17 20:33:57 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -294,11 +294,20 @@ all:;   chmod 755 cc
 		'LIBS=../lib/libutil.a' \
 		_all; \
 	elif [ $(OS) = SunOS ] ; then \
-		make -i \
-		'CC=acc' \
-		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
-		'LIBS=../lib/libutil.a' \
-		_all; \
+		if [ -x /usr/lang/acc ] ; then \
+			make -i \
+			'CC=acc' \
+			'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
+			'LIBS=../lib/libutil.a' \
+			_all; \
+		else \
+			make -i \
+			'CC=cc' \
+			'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
+			'LD=/usr/ucb/cc' \
+			'LIBS=../lib/libutil.a' \
+			_all; \
+		fi \
 	elif [ $(OS) = ULTRIX ] ; then \
 		make -i \
 		'CC=gcc' \
@@ -327,15 +336,12 @@ setsp.o: setsp.c
 	@if [ $(OS) = HP-UX ] ; then \
 		$(CC) -E $< > setsp.s; \
 		as setsp.s -o $@; \
-		rm -f setsp.s; \
 	elif [ $(OS) = Linux ] ; then \
-		$(CC) -E -DLINUX $< > setsp.s; \
+		$(CC) -E $< > setsp.s; \
 		cc -c setsp.s; \
-		rm -f setsp.s; \
 	elif [ $(OS) = 386BSD ] ; then \
 		$(CC) -E $< > setsp.s; \
 		cc -c setsp.s; \
-		rm -f setsp.s; \
 	elif [ $(OS) = SunOS ] ; then \
 		$(CC) $(CFLAGS) -c setsp.c; \
 	elif [ $(OS) = ULTRIX ] ; then \
@@ -345,10 +351,10 @@ setsp.o: setsp.c
 	elif [ $(OS) = "RISC iX" ] ; then \
 		$(CC) -E -DRISCiX $< > setsp.s; \
 		cc -c setsp.s; \
-		rm -f setsp.s; \
 	else \
 		echo System $(OS) is not supported; \
 	fi
+	@rm -f setsp.s
 
 $(PROGRAM):     $(OBJS)
 		@echo "Linking $(PROGRAM) ..."

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.1 1993/06/14 19:49:03 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.2 1993/07/17 20:33:12 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -1829,6 +1829,7 @@
 44.130.176.14   DG4SDT  # Manuel, 7140 Ludwigsburg
 44.130.176.15   DG4SDT-1        #
 44.130.176.16   DG4SDT-2        #
+44.130.176.17   DF3DU-1	# Uwe Behle, Office
 #
 #44.130.56.x    Muenchen
 # --- lokale Adress-Koordination: DG7DAH

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.43 1993/06/21 21:46:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.44 1993/07/17 20:34:01 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -164,7 +164,7 @@ void fixutmpfile(void)
   while (up = getutent())
     if (up->ut_type == USER_PROCESS && kill(up->ut_pid, 0)) {
       restore_pty(up->ut_id);
-      up->ut_user[0] = 0;
+      up->ut_name[0] = 0;
       up->ut_type = DEAD_PROCESS;
 #ifndef linux
       up->ut_exit.e_termination = 0;
@@ -527,13 +527,15 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
     tcsetattr(0, TCSANOW, &termios);
 #ifdef LOGIN_PROCESS
     memset(&utmpbuf, 0, sizeof(utmpbuf));
-    strcpy(utmpbuf.ut_user, "LOGIN");
+    strcpy(utmpbuf.ut_name, "LOGIN");
     strcpy(utmpbuf.ut_id, tp->id);
     strcpy(utmpbuf.ut_line, slave + 5);
     utmpbuf.ut_pid = getpid();
     utmpbuf.ut_type = LOGIN_PROCESS;
     utmpbuf.ut_time = secclock();
+#ifdef __hpux
     strncpy(utmpbuf.ut_host, protocol, sizeof(utmpbuf.ut_host));
+#endif
     pututline(&utmpbuf);
     endutent();
 #endif
@@ -607,7 +609,6 @@ void login_close(struct login_cb *tp)
       while (read(fdut, &utmpbuf, sizeof(utmpbuf)) == sizeof(utmpbuf))
 	if (!strncmp(utmpbuf.ut_line, slave + 5, sizeof(utmpbuf.ut_line))) {
 	  utmpbuf.ut_name[0] = 0;
-	  utmpbuf.ut_host[0] = 0;
 	  utmpbuf.ut_time = secclock();
 #ifdef DEAD_PROCESS
 	  utmpbuf.ut_type = DEAD_PROCESS;

@@ -1,59 +1,44 @@
-wampes-930714.tar.Z  (compressed) and wampes-930714.tar.gz (gzipped) are
-tar archives of WAMPES,  which is a NET/NOS port to HP-UX.  It currently
-supports HP 9000 series 300, 400, 700, and 800 computers,  running HP-UX
-08.xx or HP-UX 09.xx.
+wampes-930717.tar.Z  (compressed) and wampes-930717.tar.gz (gzipped) are
+tar archives of WAMPES,  which is a NET/NOS  port to various  flavors of
+Unix.
 
-I ported  WAMPES to SunOS  4.1.2 and to 386BSD  0.1.34,  and it compiles
-there, but I do not have  enough  time to really  test it.  Feedback  is
-welcome.
+WAMPES currently supports the following configurations:
 
-WAMPES was ported to Linux running on a 386 by Olaf Erb, dc1ik.  He also
-ported it to ULTRIX  4.2A on a  Decstation  5000 with gcc  2.3.3, but it
-wasn't tested properly, too.  Comments and questions about the Linux and
-Ultrix      port     of     WAMPES      please     to     Olaf      Erb,
-<erb@insu1.etec.uni-karlsruhe.de>.
++---------------+-----------------+-------------------------------------------+
+| OS:           | hardware:       | contact person:                           |
++---------------+-----------------+-------------------------------------------+
+| HP-UX 08.xx   | HP9000/300      | Dieter Deyke <deyke@fc.hp.com>            |
+| HP-UX 09.xx   | HP9000/400      |                                           |
+|               | HP9000/700      |                                           |
+|               | HP9000/800      |                                           |
++---------------+-----------------+-------------------------------------------+
+| SunOS 4.1.2   | sparc           | Dieter Deyke <deyke@fc.hp.com>            |
+| SunOS 5.2     | sparc           |                                           |
++---------------+-----------------+-------------------------------------------+
+| 386BSD 0.1.34 | 386             | Dieter Deyke <deyke@fc.hp.com>            |
++---------------+-----------------+-------------------------------------------+
+| NetBSD 0.8a   | 386             | Dieter Deyke <deyke@fc.hp.com>            |
++---------------+-----------------+-------------------------------------------+
+| Linux         | 386             | Olaf Erb <erb@insu1.etec.uni-karlsruhe.de>|
++---------------+-----------------+-------------------------------------------+
+| ULTRIX 4.2A   | Decstation 5000 | Olaf Erb <erb@insu1.etec.uni-karlsruhe.de>|
+|   gcc 2.3.3   |                 |                                           |
++---------------+-----------------+-------------------------------------------+
+| A/UX 3.0      | ?               | Paul Traina <pst@cisco.com>               |
++---------------+-----------------+-------------------------------------------+
+| RISC iX       | Acorn R260      | Felix Schroeter                           |
+|               |                 |   <uk1o@ibm3090.rz.uni-karlsruhe.de or>   |
+|               |                 |   <s_schroeter@irav1.ira.uka.de>          |
++---------------+-----------------+-------------------------------------------+
 
-To unpack this archive you should  create the  directory  /tcp and cd to
-it.  After unpacking please read the file /tcp/doc/intro.txt.
+To unpack this archive you have to create the  directory  /tcp and cd to
+it.  After unpacking please read the file  /tcp/doc/intro.txt.  For RISC
+iX you have to copy *.R to  /usr/lib.  Now  type  "make  -i" to  compile
+everything.
 
-wampes-930714.tar.Z,  wampes-930714.tar.gz,  and all followups should go
-into /hamradio/packet/tcpip/wampes on UCSD.EDU.
+wampes-930717.tar.Z    and    wampes-930717.tar.gz    should   go   into
+/hamradio/packet/tcpip/wampes on UCSD.EDU.
 
 73,
 Dieter Deyke, DK5SG / N0PRA, <deyke@fc.hp.com>
 
--------------------------------------------------------------------------------
-
-From: Paul Traina <pst@cisco.com>
-
-The A/UX 3.0 port is fully  functional  now.  This is a  straight-across
-port with no operational changes.
-
--------------------------------------------------------------------------------
-
-Now it's here!
-
-This is the  documentation  for the RISC iX  (Acorn  R260  etc)  port of
-DK5SG's Wampes.
-
-To install it, unpack the archive in a directory  named /tcp.  Then copy
-the files *.R into  /usr/lib  (you must be root of  course).  Then cd to
-/tcp/src,  run make  (without  arguments...)  and  ignore  the  compiler
-warnings...
-
-To compile convers, cd to /tcp/convers and run make.
-
-I hope, the port is 100 percent correct.  It works here at least :-)
-
-Have fun with it.
-
-73 de Felix, dl6sdc.  For bug reports and questions  related to the RISC
-iX port please mail to
-BBS-Net:        dl6sdc@db0sao.deu.eu
-Amprnet:        dl6sdc@db0sao.ampr.org
-Bitnet:         uk1o@DKAUNI2
-Internet:       uk1o@ibm3090.rz.uni-karlsruhe.de or
-		s_schroeter@irav1.ira.uka.de
-
-For  questions  related  to  Wampes in  general  please  mail to  Dieter
-although I would really try to answer such a question too.

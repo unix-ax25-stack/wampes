@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.44 1993/07/14 10:51:48 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.45 1993/07/17 20:35:25 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -236,13 +236,13 @@ static int is_string_unique(const char *string)
   }
 
   for (sp = strings[i]; sp; sp = sp->s_next)
-    if (!memcmp(sp->s_digest, mdContext.digest, sizeof(mdContext.digest)))
+    if (!memcmp((char *) sp->s_digest, (char *) mdContext.digest, sizeof(mdContext.digest)))
       return 0;
 
   sp = (struct string *) malloc(sizeof(*sp));
   sp->s_next = 0;
   sp->s_time = currtime;
-  memcpy(sp->s_digest, mdContext.digest, sizeof(mdContext.digest));
+  memcpy((char *) sp->s_digest, (char *) mdContext.digest, sizeof(mdContext.digest));
   if (strings[i])
     stringstail[i]->s_next = sp;
   else
@@ -1185,7 +1185,7 @@ static void name_command(struct link *lp)
   if (lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.44 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.45 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));

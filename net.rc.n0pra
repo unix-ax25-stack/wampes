@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.n0pra,v 1.5 1993/06/07 06:30:50 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.n0pra,v 1.6 1993/07/17 20:33:13 deyke Exp $
 
 hostname     n0pra
 ax25 mycall  n0pra
@@ -11,16 +11,15 @@ attach netrom                   # ip over netrom
 
 ax25 route add axip default
 
-axip route add dk0hu 15.136.56.6 # hp0hu.bbn.hp.com
+axip route add dk5sg 15.15.80.34 # mdddhd.fc.hp.com
 
-route add  default          ipip     15.136.56.6
-route add  dk5sg            ipip     15.15.80.34
-route add  dk5sg-u          ipip     15.15.80.34
+route add  default          ipip     15.15.80.34
 
 source /tcp/netrom_links
 
 # netrom broadcast axip nodes
 
+domain usegethostby off
 echo accept
 icmp trace on
 ip rtimer 300
@@ -30,7 +29,6 @@ tcp irtt 60000
 tcp mss 216
 tcp window 2048
 
-smtp timer 300
 start discard
 start domain
 start echo

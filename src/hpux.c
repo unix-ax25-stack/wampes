@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.44 1993/06/30 11:50:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.45 1993/07/17 20:33:59 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -17,10 +17,6 @@
 #include <unistd.h>
 
 #include <sys/resource.h>
-
-#ifdef __hpux
-#include <sys/rtprio.h>
-#endif
 
 #ifndef WNOHANG
 #define WNOHANG 1
@@ -80,9 +76,7 @@ pid_t dofork(void)
 
   fflush(stdout);
   if (!(pid = fork())) {
-#ifdef __hpux
-    rtprio(0, RTPRIO_RTOFF);
-#endif
+    nice(-nice(0));
     signal(SIGPIPE, SIG_DFL);
   }
   return pid;
@@ -143,9 +137,7 @@ void ioinit(void)
   if (!Debug) {
     signal(SIGALRM, (void (*)()) abort);
     alarm(TIMEOUT);
-#ifdef __hpux
-    rtprio(0, 127);
-#endif
+    nice(-39);
   }
   if (!getenv("HOME"))
     putenv("HOME=/users/root");

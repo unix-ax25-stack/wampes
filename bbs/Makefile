@@ -1,6 +1,7 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.20 1993/06/23 06:09:58 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.21 1993/07/17 20:34:31 deyke Exp $
 
 CFLAGS     = -I../lib
+LD         = $(CC)
 OS         = "`uname -s`"
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
@@ -25,11 +26,20 @@ all:;   @if [ $(OS) = HP-UX ] ; then \
 		'LIBS=../lib/libutil.a' \
 		_all; \
 	elif [ $(OS) = SunOS ] ; then \
-		make -i \
-		'CC=acc' \
-		'CFLAGS=-O -s -I../lib' \
-		'LIBS=../lib/libutil.a' \
-		_all; \
+		if [ -x /usr/lang/acc ] ; then \
+			make -i \
+			'CC=acc' \
+			'CFLAGS=-O -s -I../lib' \
+			'LIBS=../lib/libutil.a' \
+			_all; \
+		else \
+			make -i \
+			'CC=cc' \
+			'CFLAGS=-O -s -I../lib' \
+			'LD=/usr/ucb/cc' \
+			'LIBS=../lib/libutil.a' \
+			_all; \
+		fi \
 	elif [ $(OS) = ULTRIX ] ; then \
 		make -i \
 		'CC=gcc' \
@@ -57,7 +67,7 @@ _all:   $(TARGETS)
 bbs:    bbs.o
 	$(RMTARGET)
 	@sleep 1
-	$(CC) $(CFLAGS) $? $(LIBS) -o $@
+	$(LD) $(CFLAGS) $? $(LIBS) -o $@
 
 findpath: findpath.o
 	$(RMTARGET)

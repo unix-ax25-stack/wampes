@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/setsp.c,v 1.7 1993/06/21 21:46:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/setsp.c,v 1.8 1993/07/17 20:34:03 deyke Exp $ */
 
 #ifndef __lint
 
@@ -18,12 +18,12 @@ setstack
 	.PROC
 	.CALLINFO CALLER,FRAME=0
 	.ENTRY
-	ADDIL   LR'newstackptr-$global$,%r27    ;offset 0x0
-	LDW     RR'newstackptr-$global$(0,%r1),%r31     ;offset 0x4
-	BV      %r0(%r2)        ;offset 0xc
+	ADDIL   LR'newstackptr-$global$,%r27            ;offset 0x0 '
+	LDW     RR'newstackptr-$global$(0,%r1),%r31     ;offset 0x4 '
+	BV      %r0(%r2)                                ;offset 0xc
 	.EXIT
-	COPY    %r31,%r30       ;patch to set SP
-	.PROCEND ;
+	COPY    %r31,%r30                               ;patch to set SP
+	.PROCEND
 
 	.SPACE  $TEXT$
 	.SUBSPA $LIT$,QUAD=0,ALIGN=8,ACCESS=44,SORT=16
