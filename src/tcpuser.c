@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.10 1991/03/28 19:40:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.11 1991/05/09 07:39:01 deyke Exp $ */
 
 /* User calls to TCP
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,6 +13,7 @@
 #include "tcp.h"
 #include "ip.h"
 #include "icmp.h"
+#include "proc.h"
 
 int16 Tcp_window = DEF_WND;
 
@@ -268,16 +269,26 @@ register struct tcb *tcb;
  * user only in response to a state change upcall to TCP_CLOSED state.
  */
 int
-del_tcp(tcb)
-register struct tcb *tcb;
+del_tcp(conn)
+struct tcb *conn;
 {
+	register struct tcb *tcb;
+	struct tcb *tcblast = NULLTCB;
 	struct reseq *rp,*rp1;
 
+	/* Remove from list */
+	for(tcb=Tcbs;tcb != NULLTCB;tcblast = tcb,tcb = tcb->next)
+		if(tcb == conn)
+			break;
 	if(tcb == NULLTCB){
 		Net_error = INVALID;
-		return -1;
+		return -1;      /* conn was NULL, or not on list */
 	}
-	unlink_tcb(tcb);
+	if(tcblast != NULLTCB)
+		tcblast->next = tcb->next;
+	else
+		Tcbs = tcb->next;       /* was first on list */
+
 	stop_timer(&tcb->timer);
 	for(rp = tcb->reseq;rp != NULLRESEQ;rp = rp1){
 		rp1 = rp->next;
@@ -295,16 +306,13 @@ int
 tcpval(tcb)
 struct tcb *tcb;
 {
-	register int i;
 	register struct tcb *tcb1;
 
 	if(tcb == NULLTCB)
 		return 0;       /* Null pointer can't be valid */
-	for(i=0;i<NTCB;i++){
-		for(tcb1=Tcbs[i];tcb1 != NULLTCB;tcb1 = tcb1->next){
-			if(tcb1 == tcb)
-				return 1;
-		}
+	for(tcb1=Tcbs;tcb1 != NULLTCB;tcb1 = tcb1->next){
+		if(tcb1 == tcb)
+			return 1;
 	}
 	return 0;
 }
@@ -324,16 +332,13 @@ int
 kick(addr)
 int32 addr;
 {
-	register int i;
 	register struct tcb *tcb;
 	int cnt = 0;
 
-	for(i=0;i<NTCB;i++){
-		for(tcb=Tcbs[i];tcb != NULLTCB;tcb = tcb->next){
-			if(tcb->conn.remote.address == addr){
-				kick_tcp(tcb);
-				cnt++;
-			}
+	for(tcb=Tcbs;tcb != NULLTCB;tcb = tcb->next){
+		if(tcb->conn.remote.address == addr){
+			kick_tcp(tcb);
+			cnt++;
 		}
 	}
 	return cnt;
@@ -342,13 +347,12 @@ int32 addr;
 void
 reset_all()
 {
-	register int i;
 	register struct tcb *tcb;
 
-	for(i=0;i<NTCB;i++){
-		for(tcb=Tcbs[i];tcb != NULLTCB;tcb = tcb->next)
-			reset_tcp(tcb);
-	}
+	for(tcb=Tcbs;tcb != NULLTCB;tcb = tcb->next)
+		reset_tcp(tcb);
+
+/*      pwait(NULL);    /* Let the RSTs go forth */
 }
 void
 reset_tcp(tcb)
@@ -363,7 +367,8 @@ register struct tcb *tcb;
 		/* Compose a fake segment with just enough info to generate the
 		 * correct RST reply
 		 */
-		fakeseg.flags.rst = 0;
+		memset((char *)&fakeseg,0,sizeof(fakeseg));
+		memset((char *)&fakeip,0,sizeof(fakeip));
 		fakeseg.dest = tcb->conn.local.port;
 		fakeseg.source = tcb->conn.remote.port;
 		fakeseg.flags.ack = 1;

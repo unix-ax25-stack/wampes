@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.5 1991/04/25 18:26:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.6 1991/05/09 07:37:54 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -10,17 +10,15 @@
 #include <unistd.h>
 
 #include "global.h"
-#include "config.h"
 #include "mbuf.h"
+#include "proc.h"
 #include "iface.h"
-#include "timer.h"
-#include "asy.h"
-#include "slip.h"
-#include "nrs.h"
-#include "hpux.h"
 #include "8250.h"
+#include "asy.h"
 #include "devparam.h"
 #include "buildsaddr.h"
+#include "hpux.h"
+#include "timer.h"
 
 static int asy_open __ARGS((int dev));
 
@@ -88,18 +86,21 @@ int  dev;
 
 /* Initialize asynch port "dev" */
 int
-asy_init(dev,iface,arg1,arg2,bufsize,trigchar,cts,rlsd)
+asy_init(dev,iface,arg1,arg2,bufsize,trigchar,cts,rlsd,speed)
 int dev;
 struct iface *iface;
 char *arg1,*arg2;       /* Attach args for address and vector */
-unsigned bufsize;
+int16 bufsize;
 int trigchar;
 char cts;
 char rlsd;
+int16 speed;
 {
   Asy[dev].iface = iface;
   Asy[dev].ipc_socket = strdup(arg2);
-  return asy_open(dev);
+  asy_open(dev);
+  asy_speed(dev,speed);
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -121,32 +122,11 @@ struct iface *iface;
 
 /*---------------------------------------------------------------------------*/
 
-/* Asynchronous line I/O control */
-int32
-asy_ioctl(iface,cmd,set,val)
-struct iface *iface;
-int cmd;
-int set;
-int32 val;
-{
-	switch(cmd){
-	case PARAM_SPEED:
-		if(set){
-			asy_speed(iface->dev,val,0L);
-		}
-		return Asy[iface->dev].speed;
-	}
-	return -1;
-}
-
-/*---------------------------------------------------------------------------*/
-
 /* Set asynch line speed */
 int
-asy_speed(dev,speed,autospeed)
+asy_speed(dev,bps)
 int dev;
-long speed;
-long autospeed;
+int16 bps;
 {
 
   register struct asy *ap;
@@ -158,7 +138,7 @@ long autospeed;
   if (!ifp || ap->fd <= 0 || !strncmp(ifp->name, "ipc", 3)) return (-1);
   if (ioctl(ap->fd, TCGETA, &termio)) return (-1);
   termio.c_cflag &= ~CBAUD;
-  switch (speed) {
+  switch (bps) {
 #ifdef    B50
   case     50: termio.c_cflag |= B50;    break;
 #endif
@@ -216,8 +196,27 @@ long autospeed;
   default:     return (-1);
   }
   if (ioctl(ap->fd, TCSETA, &termio)) return (-1);
-  ap->speed = speed;
+  ap->speed = bps;
   return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Asynchronous line I/O control */
+int32
+asy_ioctl(iface,cmd,set,val)
+struct iface *iface;
+int cmd;
+int set;
+int32 val;
+{
+	switch(cmd){
+	case PARAM_SPEED:
+		if(set)
+			asy_speed(iface->dev,(int16)val);
+		return Asy[iface->dev].speed;
+	}
+	return -1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -251,23 +250,27 @@ int argc;
 char *argv[];
 void *p;
 {
-  register struct asy *asyp;
+	register struct asy *asyp;
 
-  for (asyp = Asy; asyp < &Asy[ASY_MAX]; asyp++) {
-    if (asyp->iface == NULLIF) continue;
-    tprintf("%s:", asyp->iface->name);
-    tprintf(" [%ld baud]", asyp->speed);
-    tprintf("\n");
-    tprintf(" RX: int %lu chr %lu hiwat %lu",
-	    asyp->rxints, asyp->rxchar, asyp->rxhiwat);
-    asyp->rxhiwat = 0;
-    tprintf("\n");
-    if (tprintf(" TX: int %lu chr %lu\n",
-		asyp->txints, asyp->txchar) == EOF) break;
-    /* Show more stats if SLIP and VJ TCP compression */
-    doslstat(asyp->iface);
-  }
-  return 0;
+	for(asyp = Asy;asyp < &Asy[ASY_MAX];asyp++){
+		if(asyp->iface == NULLIF)
+			continue;
+
+		tprintf("%s:",asyp->iface->name);
+		tprintf(" %d bps\n",asyp->speed);
+
+		tprintf(" RX: %lu int, %lu chr, %lu hw hi\n",
+			asyp->rxints,
+			asyp->rxchar,
+			asyp->rxhiwat);
+		asyp->rxhiwat = 0;
+
+		if(tprintf(" TX: %lu int, %lu chr\n",
+			asyp->txints,
+			asyp->txchar) == EOF)
+			break;
+	}
+	return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -292,4 +295,3 @@ struct mbuf *bp;
     }
   return 0;
 }
-

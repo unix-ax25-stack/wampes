@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.5 1991/02/24 20:18:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.6 1991/05/09 07:39:10 deyke Exp $ */
 
 /* UDP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -61,11 +61,9 @@ void *p;
     }
 
 	tprintf("    &UCB Rcv-Q  Local socket\n");
-	for(i=0;i<NUDP;i++){
-		for(udp = Udps[i];udp != NULLUDP; udp = udp->next){
-			if(st_udp(udp,1) == EOF)
-				return 0;
-		}
+	for(udp = Udps;udp != NULLUDP; udp = udp->next){
+		if(st_udp(udp,1) == EOF)
+			return 0;
 	}
 	return 0;
 }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.4 1991/02/24 20:16:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.5 1991/05/09 07:38:06 deyke Exp $ */
 
 /* Parse command line, set up command arguments Unix-style, and call function.
  * Note: argument is modified (delimiters are overwritten with nulls)
@@ -6,11 +6,16 @@
  * Copyright 1991 Phil Karn, KA9Q
  *
  * Improved error handling by Brian Boesch of Stanford University
+ * Feb '91 - Bill Simpson
+ *              bit16cmd for PPP
+ * Mar '91 - Glenn McGregor
+ *              handle string escaped sequences
  */
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include "global.h"
+#include "proc.h"
 #include "cmdparse.h"
 
 struct boolcmd {
@@ -38,7 +43,87 @@ static struct boolcmd Boolcmds[] = {
 };
 
 static int print_help __ARGS((struct cmds *cmdp));
-static int strcmpi __ARGS((char *s1, char *s2));
+static char *stringparse __ARGS((char *line));
+
+static char *
+stringparse(line)
+char *line;
+{
+	register char *cp = line;
+	unsigned long num;
+
+	while ( *line != '\0' && *line != '\"' ) {
+		if ( *line == '\\' ) {
+			line++;
+			switch ( *line++ ) {
+			case 'n':
+				*cp++ = '\n';
+				break;
+			case 't':
+				*cp++ = '\t';
+				break;
+			case 'v':
+				*cp++ = '\v';
+				break;
+			case 'b':
+				*cp++ = '\b';
+				break;
+			case 'r':
+				*cp++ = '\r';
+				break;
+			case 'f':
+				*cp++ = '\f';
+				break;
+#if defined(__STDC__)
+			case 'a':
+				*cp++ = '\a';
+				break;
+#endif
+			case '\\':
+				*cp++ = '\\';
+				break;
+#if defined(__STDC__)
+			case '\?':
+				*cp++ = '\?';
+				break;
+#endif
+			case '\'':
+				*cp++ = '\'';
+				break;
+			case '\"':
+				*cp++ = '\"';
+				break;
+			case 'x':
+				num = strtoul( --line, &line, 16 );
+				*cp++ = (char) num;
+				break;
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+				num = strtoul( --line, &line, 8 );
+				*cp++ = (char) num;
+				break;
+			case '\0':
+				return NULLCHAR;
+			default:
+				*cp++ = *(line - 1);
+				break;
+			};
+		} else {
+			*cp++ = *line++;
+		}
+	}
+
+	if ( *line == '\"' )
+		line++;         /* skip final quote */
+	*cp = '\0';             /* terminate string */
+	return line;
+}
 
 int
 cmdparse(cmds,line,p)
@@ -48,7 +133,7 @@ void *p;
 {
 	struct cmds *cmdp;
 	char *argv[NARG];
-	int argc,qflag;
+	int argc;
 
 	/* Remove cr/lf */
 	rip(line);
@@ -57,7 +142,8 @@ void *p;
 		argv[argc] = NULLCHAR;
 
 	for(argc = 0;argc < NARG;){
-		qflag = 0;
+		register int qflag = FALSE;
+
 		/* Skip leading white space */
 		while(isspace(uchar(*line)))
 			line++;
@@ -67,15 +153,16 @@ void *p;
 		if(*line == '#')
 			break;
 		/* Check for quoted token */
-		if(*line == '"' || *line == '\'')
-			qflag = *line++; /* Suppress quote */
-
+		if(*line == '"'){
+			line++; /* Suppress quote */
+			qflag = TRUE;
+		}
 		argv[argc++] = line;    /* Beginning of token */
-		/* Find terminating delimiter */
+
 		if(qflag){
-			/* Find quote */
-			if((line = strchr(line, qflag)) == NULLCHAR){
-				line = "";
+			/* Find terminating delimiter */
+			if((line = stringparse(line)) == NULLCHAR){
+				return -1;
 			}
 		} else {
 			/* Find space or tab. If not present,
@@ -109,7 +196,7 @@ void *p;
 			tprintf("Usage: %s\n",cmdp->argc_errmsg);
 			return -1;
 		} else {
-			return (*cmdp->func)(argc,argv,p);
+				return (*cmdp->func)(argc,argv,p);
 		}
 	}
 }
@@ -154,7 +241,7 @@ void *p;
 			tprintf("Usage: %s\n",cmdp->argc_errmsg);
 		return -1;
 	}
-	return (*cmdp->func)(argc,argv,p);
+		return (*cmdp->func)(argc,argv,p);
 }
 
 static int print_help(cmdp)
@@ -167,14 +254,6 @@ register struct cmds *cmdp;
 	if (i % 5) putchar('\n');
 	putchar('\n');
 	return 0;
-}
-
-static int  strcmpi(s1, s2)
-char  *s1, *s2;
-{
-  while (tolower(uchar(*s1)) == tolower(uchar(*s2++)))
-    if (!*s1++) return 0;
-  return tolower(uchar(*s1)) - tolower(uchar(s2[-1]));
 }
 
 /* Subroutine for setting and displaying boolean flags */
@@ -192,7 +271,7 @@ char *argv[];
 		return 0;
 	}
 	for(bc = Boolcmds;bc->str != NULLCHAR;bc++){
-		if(strcmpi(argv[1],bc->str) == 0){
+		if(stricmp(argv[1],bc->str) == 0){
 			*var = bc->val;
 			return 0;
 		}
@@ -204,6 +283,28 @@ char *argv[];
 	tprintf("\n");
 	return 1;
 }
+
+/* Subroutine for setting and displaying bit values */
+int
+bit16cmd(bits,mask,label,argc,argv)
+int16 *bits;
+int16 mask;
+char *label;
+int argc;
+char *argv[];
+{
+	int doing = (*bits & mask);
+	int result = setbool( &doing, label, argc, argv );
+
+	if ( !result ) {
+		if ( doing )
+			*bits |= mask;
+		else
+			*bits &= ~mask;
+	}
+	return result;
+}
+
 /* Subroutine for setting and displaying long variables */
 int
 setlong(var,label,argc,argv)

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/devparam.h,v 1.1 1991/04/12 18:36:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/devparam.h,v 1.2 1991/05/09 07:38:11 deyke Exp $ */
 
 #ifndef _DEVPARAM_H
 #define _DEVPARAM_H
@@ -25,6 +25,8 @@
 #define PARAM_MIN       14
 #define PARAM_MAXKEY    15
 #define PARAM_WAIT      16
+#define PARAM_DOWN      0x81
+#define PARAM_UP        0x82
 #define PARAM_RETURN    0xff
 
 /* In devparam.c: */

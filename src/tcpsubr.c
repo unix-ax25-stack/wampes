@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.7 1991/02/24 20:17:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.8 1991/05/09 07:39:00 deyke Exp $ */
 
 /* Low level TCP routines:
  *  control block management
@@ -17,8 +17,6 @@
 #include "internet.h"
 #include "tcp.h"
 #include "ip.h"
-
-static int16 hash_tcb __ARGS((struct connection *conn));
 
 /* TCP connection states */
 char *Tcpstates[] = {
@@ -43,7 +41,7 @@ char *Tcpreasons[] = {
 	"Timeout",
 	"ICMP"
 };
-struct tcb *Tcbs[NTCB];
+struct tcb *Tcbs;               /* Head of control block list */
 int16 Tcp_mss = DEF_MSS;        /* Maximum segment size to be sent with SYN */
 int32 Tcp_irtt = DEF_RTT;       /* Initial guess at round trip time */
 int Tcp_trace;                  /* State change tracing flag */
@@ -68,24 +66,34 @@ struct mib_entry Tcp_mib[] = {
 	"tcpOutRsts",           0,
 };
 
-/* Lookup connection, return TCB pointer or NULLTCB if nonexistant */
+/* Look up TCP connection
+ * Return TCB pointer or NULLTCB if nonexistant.
+ * Also move the entry to the top of the list to speed future searches.
+ */
 struct tcb *
 lookup_tcb(conn)
-struct connection *conn;
+register struct connection *conn;
 {
 	register struct tcb *tcb;
+	struct tcb *tcblast = NULLTCB;
 
-	tcb = Tcbs[hash_tcb(conn)];
-	while(tcb != NULLTCB){
+	for(tcb=Tcbs;tcb != NULLTCB;tcblast = tcb,tcb = tcb->next){
 		/* Yet another structure compatibility hack */
-		if(conn->local.address == tcb->conn.local.address
-		 && conn->remote.address == tcb->conn.remote.address
+		if(conn->remote.port == tcb->conn.remote.port
 		 && conn->local.port == tcb->conn.local.port
-		 && conn->remote.port == tcb->conn.remote.port)
-			break;
-		tcb = tcb->next;
+		 && conn->remote.address == tcb->conn.remote.address
+		 && conn->local.address == tcb->conn.local.address){
+			if(tcblast != NULLTCB){
+				/* Move to top of list */
+				tcblast->next = tcb->next;
+				tcb->next = Tcbs;
+				Tcbs = tcb;
+			}
+			return tcb;
+		}
+
 	}
-	return tcb;
+	return NULLTCB;
 }
 
 /* Create a TCB, return pointer. Return pointer if TCB already exists. */
@@ -115,7 +123,8 @@ struct connection *conn;
 	tcb->timer.func = tcp_timeout;
 	tcb->timer.arg = tcb;
 
-	link_tcb(tcb);
+	tcb->next = Tcbs;
+	Tcbs = tcb;
 	return tcb;
 }
 
@@ -188,54 +197,6 @@ register int32 x,y;
 	return (long)(x-y) >= 0;
 }
 
-/* Hash a connect structure into the hash chain header array */
-static int16
-hash_tcb(conn)
-struct connection *conn;
-{
-	register int16 hval;
-
-	/* Compute hash function on connection structure */
-	hval = hiword(conn->remote.address);
-	hval ^= loword(conn->remote.address);
-#ifdef  notdef  /* Never changes, so not really needed */
-	hval ^= hiword(conn->local.address);
-	hval ^= loword(conn->local.address);
-#endif
-	hval ^= conn->remote.port;
-	hval ^= conn->local.port;
-	return (int16)(hval % NTCB);
-}
-/* Insert TCB at head of proper hash chain */
-void
-link_tcb(tcb)
-register struct tcb *tcb;
-{
-	register struct tcb **tcbhead;
-
-	tcb->prev = NULLTCB;
-	tcbhead = &Tcbs[hash_tcb(&tcb->conn)];
-	tcb->next = *tcbhead;
-	if(tcb->next != NULLTCB)
-		tcb->next->prev = tcb;
-
-	*tcbhead = tcb;
-}
-/* Remove TCB from whatever hash chain it may be on */
-void
-unlink_tcb(tcb)
-register struct tcb *tcb;
-{
-	register struct tcb **tcbhead;
-
-	tcbhead = &Tcbs[hash_tcb(&tcb->conn)];
-	if(tcb->prev == NULLTCB)
-		*tcbhead = tcb->next;   /* We're the first one on the chain */
-	else
-		tcb->prev->next = tcb->next;
-	if(tcb->next != NULLTCB)
-		tcb->next->prev = tcb->prev;
-}
 void
 setstate(tcb,newstate)
 register struct tcb *tcb;
@@ -351,25 +312,21 @@ tcp_garbage(red)
 int red;
 {
 	register struct tcb *tcb;
-	int i;
 	struct reseq *rp,*rp1;
 
-	for(i=0;i<NTCB;i++){
-		for(tcb = Tcbs[i];tcb != NULLTCB;tcb = tcb->next){
-			mbuf_crunch(&tcb->rcvq);
-			mbuf_crunch(&tcb->sndq);
-			for(rp = tcb->reseq;rp != NULLRESEQ;rp = rp1){
-				rp1 = rp->next;
-				if(red){
-					free_p(rp->bp);
-					free((char *)rp);
-				} else {
-					mbuf_crunch(&rp->bp);
-				}
+	for(tcb = Tcbs;tcb != NULLTCB;tcb = tcb->next){
+		mbuf_crunch(&tcb->rcvq);
+		mbuf_crunch(&tcb->sndq);
+		for(rp = tcb->reseq;rp != NULLRESEQ;rp = rp1){
+			rp1 = rp->next;
+			if(red){
+				free_p(rp->bp);
+				free((char *)rp);
+			} else {
+				mbuf_crunch(&rp->bp);
 			}
-			if(red)
-				tcb->reseq = NULLRESEQ;
 		}
+		if(red)
+			tcb->reseq = NULLRESEQ;
 	}
 }
-

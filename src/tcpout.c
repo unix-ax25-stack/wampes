@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.4 1991/02/24 20:17:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.5 1991/05/09 07:38:59 deyke Exp $ */
 
 /* TCP output segment processing
  * Copyright 1991 Phil Karn, KA9Q
@@ -118,6 +118,7 @@ register struct tcb *tcb;
 		seg.flags.syn = 0; /* syn/fin/psh set later if needed */
 		seg.flags.fin = 0;
 		seg.flags.psh = 0;
+		seg.flags.congest = tcb->flags.congest;
 
 		hsize = TCPLEN; /* Except when SYN being sent */
 		seg.mss = 0;

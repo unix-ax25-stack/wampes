@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iphdr.c,v 1.2 1991/02/24 20:17:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iphdr.c,v 1.3 1991/05/09 07:38:27 deyke Exp $ */
 
 /* IP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -35,6 +35,8 @@ int cflag;
 	cp = put16(cp,ip->length);
 	cp = put16(cp,ip->id);
 	fl_offs = ip->offset >> 3;
+	if(ip->flags.congest)
+		fl_offs |= 0x8000;
 	if(ip->flags.df)
 		fl_offs |= 0x4000;
 	if(ip->flags.mf)
@@ -80,9 +82,10 @@ struct mbuf **bpp;
 	ip->length = get16(&ipbuf[2]);
 	ip->id = get16(&ipbuf[4]);
 	fl_offs = get16(&ipbuf[6]);
-	ip->offset = (fl_offs & 0x1fff) << 3;
+	ip->offset = fl_offs << 3;
 	ip->flags.mf = (fl_offs & 0x2000) ? 1 : 0;
 	ip->flags.df = (fl_offs & 0x4000) ? 1 : 0;
+	ip->flags.congest = (fl_offs & 0x8000) ? 1 : 0;
 	ip->ttl = ipbuf[8];
 	ip->protocol = ipbuf[9];
 	ip->checksum = get16(&ipbuf[10]);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.6 1991/04/12 18:34:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.7 1991/05/09 07:38:24 deyke Exp $ */
 
 #ifndef _IP_H
 #define _IP_H
@@ -62,6 +62,7 @@ struct ip {
 	int16 id;               /* Identification */
 	int16 offset;           /* Fragment offset in bytes */
 	struct {
+		char congest;   /* Congestion experienced bit (exp) */
 		char df;        /* Don't fragment flag */
 		char mf;        /* More Fragments flag */
 	} flags;
@@ -126,8 +127,7 @@ struct rt_cache {
 
 /* Reassembly descriptor */
 struct reasm {
-	struct reasm *next;     /* Linked list pointers */
-	struct reasm *prev;
+	struct reasm *next;     /* Linked list pointer */
 	struct timer timer;     /* Reassembly timeout timer */
 	struct frag *fraglist;  /* Head of data fragment chain */
 	int16 length;           /* Entire datagram length, if known */
@@ -152,8 +152,7 @@ extern struct reasm *Reasmq;    /* The list of reassembly descriptors */
 
 /* Structure for handling raw IP user sockets */
 struct raw_ip {
-	struct raw_ip *prev;
-	struct raw_ip *next;
+	struct raw_ip *next;    /* Linked list pointer */
 
 	struct mbuf *rcvq;      /* receive queue */
 	void (*r_upcall) __ARGS((struct raw_ip *));
@@ -173,6 +172,8 @@ extern struct iplink Iplink[];
 void ip_garbage __ARGS((int drastic));
 void ip_recv __ARGS((struct iface *iface,struct ip *ip,struct mbuf *bp,
 	int rxbroadcast));
+void ipip_recv __ARGS((struct iface *iface,struct ip *ip,struct mbuf *bp,
+	int rxbroadcast));
 int ip_send __ARGS((int32 source,int32 dest,int protocol,int tos,int ttl,
 	struct mbuf *bp,int length,int id,int df));
 struct raw_ip *raw_ip __ARGS((int protocol,void (*r_upcall) __ARGS((struct raw_ip *)) ));
@@ -181,6 +182,8 @@ void del_ip __ARGS((struct raw_ip *rrp));
 /* In iproute.c: */
 void ipinit __ARGS((void));
 int16 ip_mtu __ARGS((int32 addr));
+int ip_encap __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,
+	int prec,int del,int tput,int rel));
 int ip_route __ARGS((struct iface *i_iface,struct mbuf *bp,int rxbroadcast));
 int32 locaddr __ARGS((int32 addr));
 void rt_merge __ARGS((int trace));

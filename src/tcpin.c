@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.6 1991/02/24 20:17:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.7 1991/05/09 07:38:58 deyke Exp $ */
 
 /* Process incoming TCP segments. Page number references are to ARPA RFC-793,
  * the TCP specification.
@@ -107,17 +107,16 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 			ASSIGN(*ntcb,*tcb);
 			tcb = ntcb;
 			tcb->timer.arg = tcb;
-		} else
-			unlink_tcb(tcb);        /* It'll be put back on later */
-
+			/* Put on list */
+			tcb->next = Tcbs;
+			Tcbs = tcb;
+		}
 		/* Put all the socket info into the TCB */
 		tcb->conn.local.address = ip->dest;
 		tcb->conn.remote.address = ip->source;
 		tcb->conn.remote.port = seg.source;
-
-		/* NOW put on right hash chain */
-		link_tcb(tcb);
 	}
+	tcb->flags.congest = ip->flags.congest;
 	/* Do unsynchronized-state processing (p. 65-68) */
 	switch(tcb->state){
 	case TCP_CLOSED:
@@ -590,8 +589,10 @@ int16 length;
 	/* We're here, so the ACK must have actually acked something */
 	acked = seg->ack - tcb->snd.una;
 
-	/* Expand congestion window if not already at limit */
-	if(tcb->cwind < tcb->snd.wnd){
+	/* Expand congestion window if not already at limit and if
+	 * this packet wasn't retransmitted
+	 */
+	if(tcb->cwind < tcb->snd.wnd && !tcb->flags.retran){
 		if(tcb->cwind < tcb->ssthresh){
 			/* Still doing slow start/CUTE, expand by amount acked */
 			expand = min(acked,tcb->mss);

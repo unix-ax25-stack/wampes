@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.9 1991/04/25 18:26:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.10 1991/05/09 07:38:17 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -52,6 +52,7 @@
  */
 typedef int int32;              /* 32-bit signed integer */
 typedef unsigned short int16;   /* 16-bit unsigned integer */
+typedef unsigned char byte_t;   /*  8-bit unsigned integer */
 #define uchar(x) ((unsigned char)(x))
 #define MAXINT16 65535          /* Largest 16-bit integer */
 #define MAXINT32 4294967295L    /* Largest 32-bit integer */
@@ -150,6 +151,9 @@ int wildmat __ARGS((char *s,char *p,char **argv));
 #include <stdlib.h>
 #include <string.h>
 
+int stricmp __ARGS((const char *s1, const char *s2));
+int strnicmp __ARGS((const char *s1, const char *s2, size_t maxlen));
+
 #ifdef  AZTEC
 #define rewind(fp)      fseek(fp,0L,0);
 #endif
@@ -170,7 +174,7 @@ int wildmat __ARGS((char *s,char *p,char **argv));
 #endif
 #ifdef  MSDOS
 #define MK_FP(seg,ofs)  ((void far *) \
-			   (((unsigned long)(seg) << 16) | (unsigned)(ofs)))
+			(((unsigned long)(seg) << 16) | (unsigned)(ofs)))
 #endif
 #endif  /* __TURBOC __ */
 
@@ -211,8 +215,9 @@ extern void (*Gcollect[])();
 
 /*
  * The following extern statements are to allow compilation by
- *  Turbo C++ 1.00
+ * Turbo C++ 1.00
  */
+#if 1
 extern struct ax25_cb;
 extern struct dirsort;
 extern struct iface;
@@ -222,6 +227,7 @@ extern struct mbuf;
 extern struct nr4cb;
 extern struct session;
 extern struct slip;
+#endif
 
 extern int Debug;
 extern int Shortstatus;

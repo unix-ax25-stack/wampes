@@ -1,7 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.5 1991/04/12 18:34:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.6 1991/05/09 07:38:13 deyke Exp $ */
 
 /* System-dependent definitions of various files, spool directories, etc */
+#include <stdio.h>
 #include "global.h"
+#include "netuser.h"
 #include "files.h"
 
 #ifdef  MSDOS
@@ -22,17 +24,12 @@ char *Newsdir = "/spool/news";          /* News messages and NNTP data */
 char *Signature = "/spool/signatur"; /* Mail signature file directory */
 char *Forwardfile = "/spool/forward.bbs"; /* Mail forwarding file */
 char *Historyfile = "/spool/history"; /* Message ID history file */
-char *PPPhosts = "/ppphosts";   /* peer ID to IP address lookup table */
 char Eol[] = "\r\n";
 #define SEPARATOR       "/"
 #endif
 
 #ifdef  UNIX
-#if (defined(hpux)||defined(__hpux)||defined(ISC))
 char *Startup = "/tcp/net.rc";          /* Initialization file */
-#else
-char *Startup = "./startup.net";        /* Initialization file */
-#endif
 char *Config = "./config.net";  /* Device configuration list */
 char *Userfile = "./ftpusers";
 char *Mailspool = "./mail";
@@ -50,7 +47,6 @@ char *Newsdir = "./news";               /* News messages and NNTP data */
 char *Signature = "./signatur"; /* Mail signature file directory */
 char *Forwardfile = "./forward.bbs"; /* Mail forwarding file */
 char *Historyfile = "./history"; /* Message ID history file */
-char *PPPhosts = "./ppphosts";  /* peer ID to IP address lookup table */
 #define SEPARATOR       "/"
 char Eol[] = "\n";
 #endif
@@ -74,7 +70,6 @@ char *Newsdir = "TCPIP:spool/news";     /* News messages and NNTP data */
 char *Signature = "TCPIP:spool/signatur"; /* Mail signature file directory */
 char *Forwardfile = "TCPIP:spool/forward.bbs"; /* Mail forwarding file */
 char *Historyfile = "TCPIP:spool/history"; /* Message ID history file */
-char *PPPhosts = "TCPIP:ppphosts";      /* peer ID to IP address lookup table */
 #define SEPARATOR       "/"
 char Eol[] = "\r\n";
 #endif
@@ -98,12 +93,11 @@ char *Newsdir = "Mikes Hard Disk:spool/news"; /* News messages and NNTP data */
 char *Signature = "Mikes Hard Disk:spool/signatur"; /* Mail signature file directory */
 char *Forwardfile = "Mikes Hard Disk:spool/forward.bbs"; /* Mail forwarding file */
 char *Historyfile = "Mikes Hard Disk:spool/history"; /* Message ID history file */
-char *PPPhosts = "Mikes Hard Disk:ppphosts";    /* peer ID to IP address lookup table */
 #define SEPARATOR       ":"
 char Eol[] = "\r";
 #endif
 
-static char *strcatdup __ARGS((char *a,char *b,char *c));
+static char *rootdir = "";
 
 /* Establish a root directory other than the default. Can only be called
  * once, at startup time
@@ -112,48 +106,58 @@ void
 initroot(root)
 char *root;
 {
-	Startup = strcatdup(root,SEPARATOR,Startup);
-	Userfile = strcatdup(root,SEPARATOR,Userfile);
-	Maillog = strcatdup(root,SEPARATOR,Maillog);
-	Mailspool = strcatdup(root,SEPARATOR,Mailspool);
-	Mailqdir = strcatdup(root,SEPARATOR,Mailqdir);
-	Mailqueue = strcatdup(root,SEPARATOR,Mailqueue);
-	Routeqdir = strcatdup(root,SEPARATOR,Routeqdir);
-	Alias = strcatdup(root,SEPARATOR,Alias);
-	Dfile = strcatdup(root,SEPARATOR,Dfile);
-	Fdir = strcatdup(root,SEPARATOR,Fdir);
-	Arealist = strcatdup(root,SEPARATOR,Arealist);
-	Helpdir = strcatdup(root,SEPARATOR,Helpdir);
-	Rewritefile = strcatdup(root,SEPARATOR,Rewritefile);
-	Newsdir = strcatdup(root,SEPARATOR,Newsdir);
-	Signature = strcatdup(root,SEPARATOR,Signature);
-	Forwardfile = strcatdup(root,SEPARATOR,Forwardfile);
-	Historyfile = strcatdup(root,SEPARATOR,Historyfile);
-	PPPhosts = strcatdup(root,SEPARATOR,PPPhosts);
+	rootdir = strdup( root );
+
+	Startup = rootdircat(Startup);
+	Userfile = rootdircat(Userfile);
+	Maillog = rootdircat(Maillog);
+	Mailspool = rootdircat(Mailspool);
+	Mailqdir = rootdircat(Mailqdir);
+	Mailqueue = rootdircat(Mailqueue);
+	Routeqdir = rootdircat(Routeqdir);
+	Alias = rootdircat(Alias);
+	Dfile = rootdircat(Dfile);
+	Fdir = rootdircat(Fdir);
+	Arealist = rootdircat(Arealist);
+	Helpdir = rootdircat(Helpdir);
+	Rewritefile = rootdircat(Rewritefile);
+	Newsdir = rootdircat(Newsdir);
+	Signature = rootdircat(Signature);
+	Forwardfile = rootdircat(Forwardfile);
+	Historyfile = rootdircat(Historyfile);
 }
 
 /* Concatenate root, separator and arg strings into a malloc'ed output
  * buffer, then remove repeated occurrences of the separator char
  */
-static char *
-strcatdup(a,b,c)
-char *a,*b,*c;
+char *
+rootdircat(filename)
+char *filename;
 {
-	char *out,*p1,*p2;
+	char *out = filename;
 
-	out = mallocw(strlen(a) + strlen(b) + strlen(c) + 1);
-	strcpy(out,a);
-	strcat(out,b);
-	strcat(out,c);
-	if(*b != '\0'){
-		/* Remove any repeated occurrences of the separator char */
-		p1 = p2 = out;
-		while(*p2 != '\0'){
-			*p1++ = *p2++;
-			while(p2[0] == p2[-1] && p2[0] == b[0])
-				p2++;
+	if ( strlen(rootdir) > 0 ) {
+		char *separator = SEPARATOR;
+
+		out = mallocw( strlen(rootdir)
+				+ strlen(separator)
+				+ strlen(filename) + 1);
+
+		strcpy(out,rootdir);
+		strcat(out,separator);
+		strcat(out,filename);
+		if(*separator != '\0'){
+			char *p1, *p2;
+
+			/* Remove any repeated occurrences */
+			p1 = p2 = out;
+			while(*p2 != '\0'){
+				*p1++ = *p2++;
+				while(p2[0] == p2[-1] && p2[0] == *separator)
+					p2++;
+			}
+			*p1 = '\0';
 		}
-		*p1 = '\0';
 	}
 	return out;
 }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.8 1991/04/25 18:27:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.9 1991/05/09 07:39:03 deyke Exp $ */
 
 /* Internet Telnet client
  * Copyright 1991 Phil Karn, KA9Q
@@ -9,6 +9,7 @@
 #include "socket.h"
 #include "telnet.h"
 #include "session.h"
+#include "proc.h"
 #include "icmp.h"
 #include "tcp.h"
 #include "tty.h"
@@ -51,7 +52,6 @@ int argc;
 char *argv[];
 void *p;
 {
-	int32 resolve();
 	struct session *s;
 	struct telnet *tn;
 	struct tcb *tcb;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.4 1991/02/24 20:16:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.5 1991/05/09 07:38:23 deyke Exp $ */
 
 /* Upper half of IP, consisting of send/receive primitives, including
  * fragment reassembly, for higher level protocols.
@@ -92,6 +92,7 @@ char df;                        /* Don't-fragment flag */
 	ip.offset = 0;
 	ip.flags.mf = 0;
 	ip.flags.df = df;
+	ip.flags.congest = 0;
 	ip.ttl = ttl;
 	ip.protocol = protocol;
 	ip.source = source;
@@ -112,6 +113,7 @@ char df;                        /* Don't-fragment flag */
 		phdr.iface = &Loopback;
 		Loopback.ipsndcnt++;
 		Loopback.rawsndcnt++;
+		Loopback.lastsent = secclock();
 	} else
 		phdr.iface = NULLIF;
 	phdr.type = CL_NONE;
@@ -181,6 +183,28 @@ int rxbroadcast;        /* True if received on subnet broadcast address */
 		free_p(bp);
 	}
 }
+/* Handle IP packets encapsulated inside IP */
+void
+ipip_recv(iface,ip,bp,rxbroadcast)
+struct iface *iface;    /* Incoming interface */
+struct ip *ip;          /* Extracted IP header */
+struct mbuf *bp;        /* Data portion */
+int rxbroadcast;        /* True if received on subnet broadcast address */
+{
+	struct phdr phdr;
+	struct mbuf *tbp;
+
+	if((tbp = pushdown(bp,sizeof(phdr))) == NULLBUF){
+		free_p(bp);
+		return;
+	}
+	bp = tbp;
+	phdr.iface = &Encap;
+	phdr.type = CL_NONE;
+	memcpy(&bp->data[0],(char *)&phdr,sizeof(phdr));
+	enqueue(&Hopper,bp);
+}
+
 /* Process IP datagram fragments
  * If datagram is complete, return it with ip->length containing the data
  * length (MINUS header); otherwise return NULLBUF
@@ -343,8 +367,6 @@ void (*r_upcall)();
 	rp->protocol = protocol;
 	rp->r_upcall = r_upcall;
 	rp->next = Raw_ip;
-	if(rp->next != NULLRIP)
-		rp->next->prev = rp;
 	Raw_ip = rp;
 	return rp;
 }
@@ -353,22 +375,21 @@ void
 del_ip(rpp)
 struct raw_ip *rpp;
 {
+	struct raw_ip *rplast = NULLRIP;
 	register struct raw_ip *rp;
 
 	/* Do sanity check on arg */
-	for(rp = Raw_ip;rp != NULLRIP;rp = rp->next)
+	for(rp = Raw_ip;rp != NULLRIP;rplast=rp,rp = rp->next)
 		if(rp == rpp)
 			break;
 	if(rp == NULLRIP)
 		return; /* Doesn't exist */
 
 	/* Unlink */
-	if(rp->prev != NULLRIP)
-		rp->prev->next = rp->next;
+	if(rplast != NULLRIP)
+		rplast->next = rp->next;
 	else
 		Raw_ip = rp->next;
-	if(rp->next != NULLRIP)
-		rp->next->prev = rp->prev;
 	/* Free resources */
 	free_q(&rp->rcvq);
 	free((char *)rp);
@@ -379,34 +400,23 @@ lookup_reasm(ip)
 struct ip *ip;
 {
 	register struct reasm *rp;
+	struct reasm *rplast = NULLREASM;
 
-	for(rp = Reasmq;rp != NULLREASM;rp = rp->next){
-		if(ip->source == rp->source && ip->dest == rp->dest
-		 && ip->protocol == rp->protocol && ip->id == rp->id)
+	for(rp = Reasmq;rp != NULLREASM;rplast=rp,rp = rp->next){
+		if(ip->id == rp->id && ip->source == rp->source
+		 && ip->dest == rp->dest && ip->protocol == rp->protocol){
+			if(rplast != NULLREASM){
+				/* Move to top of list for speed */
+				rplast->next = rp->next;
+				rp->next = Reasmq;
+				Reasmq = rp;
+			}
 			return rp;
+		}
+
 	}
 	return NULLREASM;
 }
-#ifdef  FOO
-static
-int16
-hash_reasm(source,dest,protocol,id)
-int32 source;
-int32 dest,
-char protocol;
-int16 id;
-{
-	register unsigned int hval;
-
-	hval = loword(source);
-	hval ^= hiword(source);
-	hval ^= loword(dest);
-	hval ^= hiword(dest);
-	hval ^= uchar(protocol);
-	hval ^= id;
-	return hval % RHASH;
-}
-#endif
 /* Create a reassembly descriptor,
  * put at head of reassembly list
  */
@@ -422,32 +432,37 @@ register struct ip *ip;
 	rp->dest = ip->dest;
 	rp->id = ip->id;
 	rp->protocol = ip->protocol;
-	set_timer(&rp->timer,ipReasmTimeout * 1000);
+	set_timer(&rp->timer,ipReasmTimeout * 1000L);
 	rp->timer.func = ip_timeout;
 	rp->timer.arg = rp;
 
 	rp->next = Reasmq;
-	if(rp->next != NULLREASM)
-		rp->next->prev = rp;
 	Reasmq = rp;
 	return rp;
 }
 
 /* Free all resources associated with a reassembly descriptor */
 static void
-free_reasm(rp)
-register struct reasm *rp;
+free_reasm(r)
+struct reasm *r;
 {
+	register struct reasm *rp;
+	struct reasm *rplast = NULLREASM;
 	register struct frag *fp;
+
+	for(rp = Reasmq;rp != NULLREASM;rplast = rp,rp=rp->next)
+		if(r == rp)
+			break;
+	if(rp == NULLREASM)
+		return; /* Not on list */
 
 	stop_timer(&rp->timer);
 	/* Remove from list of reassembly descriptors */
-	if(rp->prev != NULLREASM)
-		rp->prev->next = rp->next;
+	if(rplast != NULLREASM)
+		rplast->next = rp->next;
 	else
 		Reasmq = rp->next;
-	if(rp->next != NULLREASM)
-		rp->next->prev = rp->prev;
+
 	/* Free any fragments on list, starting at beginning */
 	while((fp = rp->fraglist) != NULLFRAG){
 		rp->fraglist = fp->next;
@@ -469,8 +484,7 @@ void *arg;
 	ipReasmFails++;
 }
 /* Create a fragment */
-static
-struct frag *
+static struct frag *
 newfrag(offset,last,bp)
 int16 offset,last;
 struct mbuf *bp;
@@ -488,8 +502,7 @@ struct mbuf *bp;
 	return fp;
 }
 /* Delete a fragment, return next one on queue */
-static
-void
+static void
 freefrag(fp)
 struct frag *fp;
 {

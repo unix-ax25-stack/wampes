@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.h,v 1.4 1991/02/24 20:18:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.h,v 1.5 1991/05/09 07:39:10 deyke Exp $ */
 
 #ifndef _UDP_H
 #define _UDP_H
@@ -36,7 +36,6 @@ extern struct mib_entry Udp_mib[];
 #define NUMUDPMIB       4
 
 /* User Datagram Protocol definitions */
-#define NUDP    20
 
 /* Structure of a UDP protocol header */
 struct udp {
@@ -52,7 +51,6 @@ struct udp {
  * remote socket structure, followed by any data
  */
 struct udp_cb {
-	struct udp_cb *prev;    /* Linked list pointers */
 	struct udp_cb *next;
 	struct socket socket;   /* Local port accepting datagrams */
 	void (*r_upcall) __ARGS((struct iface *iface,struct udp_cb *,int));
@@ -61,7 +59,7 @@ struct udp_cb {
 	int rcvcnt;             /* Count of pending datagrams */
 	int user;               /* User link */
 };
-extern struct udp_cb *Udps[];   /* Hash table for UDP structures */
+extern struct udp_cb *Udps;     /* Hash table for UDP structures */
 #define NULLUDP (struct udp_cb *)0
 
 /* UDP primitives */
@@ -91,5 +89,6 @@ int st_udp __ARGS((struct udp_cb *udp,int n));
 /* In udphdr.c: */
 struct mbuf *htonudp __ARGS((struct udp *udp,struct mbuf *data,struct pseudo_header *ph));
 int ntohudp __ARGS((struct udp *udp,struct mbuf **bpp));
+int16 udpcksum __ARGS((struct mbuf *bp));
 
 #endif  /* _UDP_H */

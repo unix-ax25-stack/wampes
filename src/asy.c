@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.3 1991/03/28 19:39:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.4 1991/05/09 07:37:59 deyke Exp $ */
 
 /* Generic serial line interface routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -6,40 +6,38 @@
 #include <stdio.h>
 #include "global.h"
 #include "config.h"
+#include "proc.h"
 #include "iface.h"
-#include "pktdrvr.h"
 #include "netuser.h"
-#include "asy.h"
+/* #include "slhc.h" */
 #include "8250.h"
+#include "asy.h"
 #include "ax25.h"
 #include "kiss.h"
-/* #include "ppp.h" */
-#include "slip.h"
 #include "nrs.h"
-#include "config.h"
-/* #include "proc.h" */
+#include "pktdrvr.h"
+#include "slip.h"
+/* #include "ppp.h" */
 #include "commands.h"
-/* #include "slcomp.h" */
 
 /* Attach a serial interface to the system
  * argv[0]: hardware type, must be "asy"
  * argv[1]: I/O address, e.g., "0x3f8"
  * argv[2]: vector, e.g., "4"
  * argv[3]: mode, may be:
- *          "slip" (point-to-point SLIP)
- *          "ax25" (AX.25 frame format in SLIP for raw TNC)
- *          "nrs" (NET/ROM format serial protocol)
- *          "ppp" (Point-to-Point Protocol, RFC1171, RFC1172)
+ *              "slip" (point-to-point SLIP)
+ *              "ax25" (AX.25 frame format in SLIP for raw TNC)
+ *              "nrs" (NET/ROM format serial protocol)
+ *              "ppp" (Point-to-Point Protocol, RFC1171, RFC1172)
  * argv[4]: interface label, e.g., "sl0"
  * argv[5]: receiver ring buffer size in bytes
  * argv[6]: maximum transmission unit, bytes
  * argv[7]: interface speed, e.g, "9600"
- * argv[8]: optional flags, e.g., 'c' for cts flow control;
- *          'v' for Van Jacobson TCP header compression (SLIP only,
- *          use 'ppp ipcomp' command for VJ compression with PPP);
- *          'r' for RLSD (RS232 pin 8, CD) physical link up/down
- *          indicator (PPP only); 'a' for autobaud message handling
- *          (PPP only)
+ * argv[8]: optional flags,
+ *              'c' for cts flow control;
+ *              'r' for RLSD (RS232 pin 8, CD) physical link up/down;
+ *              'v' for Van Jacobson TCP header compression (SLIP only,
+ *                  use ppp command for VJ compression with PPP);
  */
 int
 asy_attach(argc,argv,p)
@@ -47,22 +45,24 @@ int argc;
 char *argv[];
 void *p;
 {
-	register struct iface *if_asy;
+	register struct iface *ifp;
+	struct asy *asyp;
 	int dev;
-	int mode;
 	int xdev;
 	int trigchar = -1;
-	char cts;
-	struct asy *asyp;
-	char rlsd = 0;
-	unsigned long autospeed = 0L;
-#if     defined(SLIP) || defined(AX25) || defined(PPP)
+	char cts = FALSE;
+	char rlsd = FALSE;
+#if     defined(SLIP) || defined(AX25)
 	struct slip *sp;
 #endif
 #ifdef  NRS
 	struct nrs *np;
 #endif
 
+	if(if_lookup(argv[4]) != NULLIF){
+		tprintf("Interface %s already exists\n",argv[4]);
+		return -1;
+	}
 	/* Find unused asy control block */
 	for(dev=0;dev < ASY_MAX;dev++){
 		asyp = &Asy[dev];
@@ -73,32 +73,17 @@ void *p;
 		tprintf("Too many asynch controllers\n");
 		return -1;
 	}
-	if(if_lookup(argv[4]) != NULLIF){
-		tprintf("Interface %s already exists\n",argv[4]);
-		return -1;
-	}
-	if(strcmp(argv[3],"slip") == 0)
-		mode = SLIP_MODE;
-	else if(strcmp(argv[3],"ax25") == 0)
-		mode = AX25_MODE;
-	else if(strcmp(argv[3],"nrs") == 0)
-		mode = NRS_MODE;
-	else if(strcmp(argv[3],"ppp") == 0)
-		mode = PPP_MODE;
-	else
-		mode = UNKNOWN_MODE;
 
 	/* Create interface structure and fill in details */
-	if_asy = (struct iface *)callocw(1,sizeof(struct iface));
-	if_asy->addr = Ip_addr;
-	if_asy->name = strdup(argv[4]);
-	if_asy->mtu = atoi(argv[6]);
-	if_asy->dev = dev;
-	if_asy->stop = asy_stop;
+	ifp = (struct iface *)callocw(1,sizeof(struct iface));
+	ifp->addr = Ip_addr;
+	ifp->name = strdup(argv[4]);
+	ifp->mtu = atoi(argv[6]);
+	ifp->dev = dev;
+	ifp->stop = asy_stop;
 
-	switch(mode){
 #ifdef  SLIP
-	case SLIP_MODE:
+	if(stricmp(argv[3],"SLIP") == 0) {
 		for(xdev = 0;xdev < SLIP_MAX;xdev++){
 			sp = &Slip[xdev];
 			if(sp->iface == NULLIF)
@@ -108,13 +93,14 @@ void *p;
 			tprintf("Too many slip devices\n");
 			return -1;
 		}
-		setencap(if_asy,"SLIP");
-		if_asy->ioctl = asy_ioctl;
-		if_asy->raw = slip_raw;
-		if_asy->flags = 0;
-		if_asy->xdev = xdev;
+		setencap(ifp,"SLIP");
+		ifp->ioctl = asy_ioctl;
+		ifp->raw = slip_raw;
+		ifp->status = slip_status;
+		ifp->flags = 0;
+		ifp->xdev = xdev;
 
-		sp->iface = if_asy;
+		sp->iface = ifp;
 		sp->send = asy_send;
 		sp->get = get_asy;
 		sp->type = CL_SERIAL_LINE;
@@ -122,17 +108,17 @@ void *p;
 #ifdef VJCOMPRESS
 		if((argc > 8) && (strchr(argv[8],'v') != NULLCHAR)) {
 			sp->escaped |= SLIP_VJCOMPR;
-			sp->slcomp = (struct slcompress *)mallocw(sizeof(struct slcompress));
-			sl_compress_init(sp->slcomp);
+			sp->slcomp = slhc_init(16,16);
 		}
 #else
-/*              sp->slcomp = 0L; */
+		sp->slcomp = NULL;
 #endif  /* VJCOMPRESS */
-		if_asy->rxproc = asy_rx;
-		break;
+		ifp->rxproc = asy_rx;
+	} else
 #endif
 #ifdef  AX25
-	case AX25_MODE:  /* Set up a SLIP link to use AX.25 */
+	if(stricmp(argv[3],"AX25") == 0) {
+		/* Set up a SLIP link to use AX.25 */
 		for(xdev = 0;xdev < SLIP_MAX;xdev++){
 			sp = &Slip[xdev];
 			if(sp->iface == NULLIF)
@@ -142,24 +128,27 @@ void *p;
 			tprintf("Too many slip devices\n");
 			return -1;
 		}
-		setencap(if_asy,"AX25");
-		if_asy->ioctl = kiss_ioctl;
-		if_asy->raw = kiss_raw;
-		if(if_asy->hwaddr == NULLCHAR)
-			if_asy->hwaddr = mallocw(AXALEN);
-		memcpy(if_asy->hwaddr,Mycall,AXALEN);
-		if_asy->xdev = xdev;
+		setencap(ifp,"AX25");
+		ifp->ioctl = kiss_ioctl;
+		ifp->raw = kiss_raw;
+		ifp->status = slip_status;
 
-		sp->iface = if_asy;
+		if(ifp->hwaddr == NULLCHAR)
+			ifp->hwaddr = mallocw(AXALEN);
+		memcpy(ifp->hwaddr,Mycall,AXALEN);
+		ifp->xdev = xdev;
+
+		sp->iface = ifp;
 		sp->send = asy_send;
 		sp->get = get_asy;
 		sp->type = CL_KISS;
 		trigchar = FR_END;
-		if_asy->rxproc = asy_rx;
-		break;
+		ifp->rxproc = asy_rx;
+	} else
 #endif
 #ifdef  NRS
-	case NRS_MODE: /* Set up a net/rom serial iface */
+	if(stricmp(argv[3],"NRS") == 0) {
+		/* Set up a net/rom serial iface */
 		for(xdev = 0;xdev < SLIP_MAX;xdev++){
 			np = &Nrs[xdev];
 			if(np->iface == NULLIF)
@@ -170,93 +159,56 @@ void *p;
 			return -1;
 		}
 		/* no call supplied? */
-		setencap(if_asy,"AX25");
-		if_asy->ioctl = asy_ioctl;
-		if_asy->raw = nrs_raw;
-		if_asy->hwaddr = mallocw(AXALEN);
-		memcpy(if_asy->hwaddr,Mycall,AXALEN);
-		if_asy->xdev = xdev;
-		np->iface = if_asy;
+		setencap(ifp,"AX25");
+		ifp->ioctl = asy_ioctl;
+		ifp->raw = nrs_raw;
+
+		ifp->hwaddr = mallocw(AXALEN);
+		memcpy(ifp->hwaddr,Mycall,AXALEN);
+		ifp->xdev = xdev;
+		np->iface = ifp;
 		np->send = asy_send;
 		np->get = get_asy;
 		trigchar = ETX;
-		if_asy->rxproc = nrs_recv;
-		break;
+		ifp->rxproc = nrs_recv;
+	} else
 #endif
 #ifdef  PPP
-	case PPP_MODE:  /* Setup for Point-to-Point Protocol */
-		for(xdev = 0;xdev < SLIP_MAX;xdev++){
-			sp = &Slip[xdev];
-			if(sp->iface == NULLIF)
-				break;
-		}
-		if(xdev >= SLIP_MAX) {
-			tprintf("Too many slip/ppp devices\n");
-			return -1;
-		}
-		setencap(if_asy,"PPP");
-		if_asy->ioctl = asy_ioctl;
-		if_asy->raw = ppp_raw;
-		if_asy->flags = 0;
-		if_asy->xdev = xdev;
-
-		sp->iface = if_asy;
-		sp->send = asy_send;
-		sp->get = get_asy;
-		sp->type = CL_PPP;
-		sp->get_rlsd = get_rlsd_asy;
-		sp->escaped = 0;
+	if(stricmp(argv[3],"PPP") == 0) {
+		/* Setup for Point-to-Point Protocol */
 		trigchar = HDLC_FLAG;
-		/* Allocate PPP control structure */
-		sp->pppio = (struct pppctl *)calloc(1,sizeof(struct pppctl));
-		if (sp->pppio == NULLPPPCTL) {
-			tprintf("Cannot allocate PPP control block\n");
-			free(if_asy->name);
-			free((char *)if_asy);
-			return -1;
-		}
+		setencap(ifp,"PPP");
+		ifp->ioctl = asy_ioctl;
+		ifp->flags = FALSE;
+
 		/* Initialize parameters for various PPP phases/protocols */
 		if((argc > 8) && (strchr(argv[8],'r') != NULLCHAR))
-			rlsd = 1;
-		else
-			rlsd = 0;
-		if((argc > 8) && (strchr(argv[8],'a') != NULLCHAR)) {
-			autospeed = atoi(argv[7]);
-		} else {
-			autospeed = 0;
-		}
-		/* Initialize parameters for various PPP phases/protocols */
-		if (ppp_init(xdev,rlsd,autospeed) == -1) {
-			free(if_asy->name);
-			free((char *)if_asy);
+			rlsd = TRUE;
+
+		if (ppp_init(ifp) != 0) {
+			tprintf("Cannot allocate PPP control block\n");
+			free(ifp->name);
+			free((char *)ifp);
 			return -1;
 		}
-		if (autospeed != 0) {
-			if_asy->rxproc = newproc("ppp autobaud", 256,
-			 ppp_autobaud, xdev, NULL, NULL,0);
-		} else {
-			if_asy->rxproc = newproc("ppp recv", 256,
-			 ppp_recv, xdev, NULL, NULL,0);
-		}
-		if (rlsd)
-			if_asy->txproc = newproc("ppp rlsd", 256, ppp_rlsd,
-			 xdev, (void *)autospeed, NULL,0);
-		break;
-#endif /* PPP */
-	default:
+	} else
+#endif
+	{
 		tprintf("Mode %s unknown for interface %s\n",
 			argv[3],argv[4]);
-		free(if_asy->name);
-		free((char *)if_asy);
+		free(ifp->name);
+		free(ifp);
 		return -1;
 	}
-	if_asy->next = Ifaces;
-	Ifaces = if_asy;
+
+	/* Link in the interface */
+	ifp->next = Ifaces;
+	Ifaces = ifp;
+
 	if((argc > 8) && (strchr(argv[8],'c') != NULLCHAR))
-		cts = 1;
-	else
-		cts = 0;
-	asy_init(dev,if_asy,argv[1],argv[2],(unsigned)atoi(argv[5]),trigchar,cts,rlsd);
-	asy_speed(dev,atol(argv[7]),autospeed);
+		cts = TRUE;
+
+	asy_init(dev,ifp,argv[1],argv[2],(int16)atol(argv[5]),
+		trigchar,cts,rlsd,(int16)atol(argv[7]));
 	return 0;
 }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.4 1991/02/24 20:17:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.5 1991/05/09 07:38:26 deyke Exp $ */
 
 /* IP header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -57,6 +57,9 @@ int check;
 		fprintf(fp," MF");
 		check = 0;      /* Bypass host-level checksum verify */
 	}
+	if(ip.flags.congest){
+		fprintf(fp," CE");
+	}
 	if(csum != 0)
 		fprintf(fp," CHECKSUM ERROR (%u)",csum);
 
@@ -65,6 +68,10 @@ int check;
 		return;
 	}
 	switch(uchar(ip.protocol)){
+	case IP_PTCL:
+		fprintf(fp," prot IP\n");
+		ip_dump(fp,bpp,check);
+		break;
 	case TCP_PTCL:
 		fprintf(fp," prot TCP\n");
 		tcp_dump(fp,bpp,ip.source,ip.dest,check);

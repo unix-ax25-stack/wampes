@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.14 1991/04/25 18:27:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.15 1991/05/09 07:38:37 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -19,31 +19,35 @@
 #ifdef  ANSIPROTO
 #include <stdarg.h>
 #endif
-#include "files.h"
 #include "mbuf.h"
-#include "socket.h"
-#include "iface.h"
-#include "netuser.h"
-#include "ftp.h"
-#include "telnet.h"
-#include "remote.h"
-#include "session.h"
-#include "cmdparse.h"
-#include "ax25.h"
-#include "kiss.h"
-#include "enet.h"
 #include "timer.h"
-#include "tty.h"
-#include "usock.h"
-#include "netrom.h"
+#include "proc.h"
+#include "iface.h"
 #include "ip.h"
 #include "tcp.h"
 #include "udp.h"
+#include "ax25.h"
+#include "kiss.h"
+#include "enet.h"
+#include "netrom.h"
+#include "ftp.h"
+#include "telnet.h"
+#include "tty.h"
+#include "session.h"
 #include "hardware.h"
+/* #include "usock.h" */
+#include "socket.h"
+#include "cmdparse.h"
 #include "commands.h"
-#include "trace.h"
+/* #include "daemon.h" */
 #include "devparam.h"
+/* #include "domain.h" */
+#include "files.h"
+/* #include "main.h" */
+#include "remote.h"
+#include "trace.h"
 #include "hpux.h"
+#include "netuser.h"
 #include "remote_net.h"
 
 extern int errno;
@@ -70,7 +74,7 @@ main(argc,argv)
 int argc;
 char *argv[];
 {
-	static char inbuf[BUFSIZ];      /* keep it off the stack */
+	static char linebuf[BUFSIZ];    /* keep it off the stack */
 	char *ttybuf;
 	int16 cnt;
 	FILE *fp;
@@ -93,7 +97,7 @@ char *argv[];
 
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
 	tprintf("\n");
-	tprintf("@(#)WAMPES version 910425\n" + 4);
+	tprintf("@(#)WAMPES version 910509\n" + 4);
 	tprintf("(c) Copyright 1990, 1991 by Dieter Deyke, DK5SG\n");
 	tprintf("(c) Copyright 1990 by Phil Karn, KA9Q\n");
 	tprintf("\n");
@@ -107,12 +111,12 @@ char *argv[];
 		fp = fopen(Startup,READ_TEXT);
 	}
 	if(fp != NULLFILE){
-		while(fgets(inbuf,BUFSIZ,fp) != NULLCHAR){
+		while(fgets(linebuf,BUFSIZ,fp) != NULLCHAR){
 			char intmp[BUFSIZ];
-			strcpy(intmp,inbuf);
+			strcpy(intmp,linebuf);
 			if(Verbose)
 				tprintf("%s",intmp);
-			if(cmdparse(Cmds,inbuf,NULL) != 0){
+			if(cmdparse(Cmds,linebuf,NULL) != 0){
 				tprintf("input line: %s",intmp);
 			}
 		}
@@ -331,9 +335,9 @@ void *p;
 		tprintf("Not supported\n");
 		return 1;
 	}
-	if(argc <= 2){
+	if(argc < 3){
 		for(param=1;param<=16;param++){
-			val = (*ifp->ioctl)(ifp,param,0,0L);
+			val = (*ifp->ioctl)(ifp,param,FALSE,0L);
 			if(val != -1)
 				tprintf("%s: %ld\n",parmname(param),val);
 		}
@@ -344,16 +348,18 @@ void *p;
 		tprintf("Unknown parameter %s\n",argv[2]);
 		return 1;
 	}
-	if(argc > 3){
-		set = 1;
+	if(argc < 4){
+		set = FALSE;
+		val = 0L;
+	} else {
+		set = TRUE;
 		val = atol(argv[3]);
-	} else
-		set = 0;
+	}
 	val = (*ifp->ioctl)(ifp,param,set,val);
 	if(val == -1){
 		tprintf("Parameter %s not supported\n",argv[2]);
 	} else {
-		printf("%s: %ld\n",parmname(param),val);
+		tprintf("%s: %ld\n",parmname(param),val);
 	}
 	return 0;
 }
@@ -550,14 +556,14 @@ void *p;
 {
 
   FILE * fp;
-  char  inbuf[BUFSIZ];
+  char  linebuf[BUFSIZ];
 
   if (!(fp = fopen(argv[1], "r"))) {
     tprintf("cannot open %s\n", argv[1]);
     return 1;
   }
-  while (fgets(inbuf, BUFSIZ, fp))
-    cmdparse(Cmds, inbuf, NULL);
+  while (fgets(linebuf, BUFSIZ, fp))
+    cmdparse(Cmds, linebuf, NULL);
   fclose(fp);
   Mode = CMD_MODE;
   cooked();

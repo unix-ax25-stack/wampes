@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.5 1991/02/24 20:17:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.6 1991/05/09 07:38:38 deyke Exp $ */
 
 /* mbuf (message buffer) primitives
  * Copyright 1991 Phil Karn, KA9Q
@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
-#include "config.h"
+#include "proc.h"
 
 /* Allocate mbuf with associated buffer of 'size' bytes. If interrupts
  * are enabled, use the regular heap. If they're off, use the special
@@ -54,20 +54,21 @@ struct mbuf *
 free_mbuf(bp)
 register struct mbuf *bp;
 {
-	register struct mbuf *bp1 = NULLBUF;
+	struct mbuf *bpnext;
 
-	if(bp != NULLBUF){
-		bp1 = bp->next;
-			/* Follow indirection, if any */
-			free_mbuf(bp->dup);
+	if(bp == NULLBUF)
+		return NULLBUF;
 
-			/* If reference count has gone to zero, put it
-			 * back on the heap
-			 */
-			if(--bp->refcnt <= 0)
-				free((char *)bp);
+	bpnext = bp->next;
+	if(bp->dup != NULLBUF){
+		free_mbuf(bp->dup);     /* Follow indirection */
+		bp->dup = NULLBUF;
 	}
-	return bp1;
+	/* Decrement reference count. If it has gone to zero, free it. */
+	if(--bp->refcnt <= 0){
+			free((char *)bp);
+	}
+	return bpnext;
 }
 
 /* Free packet (a chain of mbufs). Return pointer to next packet on queue,

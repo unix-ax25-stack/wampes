@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.h,v 1.6 1991/04/12 18:35:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.h,v 1.7 1991/05/09 07:38:44 deyke Exp $ */
 
 #ifndef _NETUSER_H
 #define _NETUSER_H
@@ -13,9 +13,9 @@
 
 extern int32 Ip_addr;   /* Our IP address */
 extern int Net_error;   /* Error return code */
-#define NONE    0               /* No error */
+#define NONE            0       /* No error */
 #define CON_EXISTS      1       /* Connection already exists */
-#define NO_CONN 2               /* Connection does not exist */
+#define NO_CONN         2       /* Connection does not exist */
 #define CON_CLOS        3       /* Connection closing */
 #define NO_MEM          4       /* No memory for TCB creation */
 #define WOULDBLK        5       /* Would block */

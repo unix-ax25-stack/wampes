@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.5 1991/03/28 19:39:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.6 1991/05/09 07:38:39 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -54,6 +54,8 @@ register char *s;
 
 	if((cp = strchr(s,'\n')) != NULLCHAR)
 		*cp = '\0';
+	if((cp = strchr(s,'\r')) != NULLCHAR)
+		*cp = '\0';
 }
 
 /* Copy a string to a malloc'ed buffer. Turbo C has this one in its
@@ -80,9 +82,18 @@ char *s;
 /* #ifdef  AZTEC */
 
 /* Case-insensitive string comparison */
+
+int  stricmp(s1, s2)
+const char  *s1, *s2;
+{
+  while (tolower(uchar(*s1)) == tolower(uchar(*s2++)))
+    if (!*s1++) return 0;
+  return tolower(uchar(*s1)) - tolower(uchar(s2[-1]));
+}
+
 strnicmp(a,b,n)
-register char *a,*b;
-register int n;
+const char *a,*b;
+size_t n;
 {
 	char a1,b1;
 

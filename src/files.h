@@ -1,7 +1,19 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.h,v 1.2 1991/02/24 20:16:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.h,v 1.3 1991/05/09 07:38:14 deyke Exp $ */
 
 #ifndef _FILES_H
 #define _FILES_H
+
+/* Permission bits in FTPUSERS file */
+#define FTP_READ        1       /* Read files */
+#define FTP_CREATE      2       /* Create new files */
+#define FTP_WRITE       4       /* Overwrite or delete existing files */
+#define AX25_CMD        8       /* AX.25 gateway operation allowed */
+#define TELNET_CMD      16      /* Telnet gateway operation allowed */
+#define NETROM_CMD      32      /* NET/ROM gateway operation allowed */
+#define SYSOP_CMD       64      /* Remote sysop access allowed */
+#define EXCLUDED_CMD    128     /* This user is banned from the BBS */
+#define PPP_ACCESS_PRIV 0x0100  /* Priv bit for PPP connection */
+#define PPP_PWD_LOOKUP  0x0200  /* Priv bit for peerID/pass lookup */
 
 /* External definitions for configuration-dependent file names set in
  * files.c
@@ -23,7 +35,11 @@ extern char *Newsdir;           /* News messages and NNTP data */
 extern char *Signature;         /* Mail signature file directory */
 extern char *Forwardfile;       /* Mail forwarding file */
 extern char *Historyfile;       /* Message ID history file */
-extern char *PPPhosts;          /* peer ID to IP address lookup table */
+
 void initroot __ARGS((char *root));
+char *rootdircat __ARGS((char *filename));
+int userlogin __ARGS((char *name,char *pass,char **path,int len,int *pwdignore));
+char *userlookup __ARGS((char *username, char **password, char **directory,
+			int *permission, int32 *ip_address));
 
 #endif  /* _FILES_H */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.6 1991/04/12 18:35:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.7 1991/05/09 07:38:27 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -7,14 +7,15 @@
  */
 #include "global.h"
 #include "mbuf.h"
-#include "internet.h"
-#include "timer.h"
-#include "netuser.h"
-#include "ip.h"
-#include "icmp.h"
 #include "iface.h"
-#include "trace.h"
+#include "timer.h"
+#include "internet.h"
+#include "ip.h"
+#include "netuser.h"
+#include "icmp.h"
 #include "rip.h"
+#include "trace.h"
+#include "pktdrvr.h"
 
 struct route *Routes[32][HASHMOD];      /* Routing table */
 struct route R_default = {              /* Default route entry */
@@ -221,6 +222,7 @@ no_opt:
 		return -1;
 	}
 	rp->uses++;
+
 	/* Check for output forwarding and divert if necessary */
 	iface = rp->iface;
 	if(iface->forw != NULLIF)
@@ -319,6 +321,33 @@ no_opt:
 	free_p(bp);
 	return 0;
 }
+int
+ip_encap(bp,iface,gateway,prec,del,tput,rel)
+struct mbuf *bp;
+struct iface *iface;
+int32 gateway;
+int prec;
+int del;
+int tput;
+int rel;
+{
+	struct ip ip;
+
+	dump(iface,IF_TRACE_OUT,CL_NONE,bp);
+	iface->rawsndcnt++;
+	iface->lastsent = secclock();
+
+	if(gateway == 0L){
+		/* Gateway must be specified */
+		ntohip(&ip,&bp);
+		icmp_output(&ip,bp,ICMP_DEST_UNREACH,ICMP_HOST_UNREACH,NULLICMP);
+		free_p(bp);
+		ipOutNoRoutes++;
+		return -1;
+	}
+	/* Encapsulate in an IP packet from us to the gateway */
+	return ip_send(INADDR_ANY,gateway,IP_PTCL,0,0,bp,0,0,0);
+}
 
 /* Add an entry to the IP routing table. Returns 0 on success, -1 on failure */
 struct route *
@@ -332,8 +361,19 @@ int32 ttl;              /* Lifetime of this route entry in sec */
 char private;           /* Inhibit advertising this entry ? */
 {
 	struct route *rp,**hp;
+	struct route *rptmp;
+	int32 gwtmp;
 
 	if(iface == NULLIF)
+		return NULLROUTE;
+
+	if(bits == 32 && ismyaddr(target))
+		return NULLROUTE;       /* Don't accept routes to ourselves */
+
+	/* Encapsulated routes must specify gateway, and it can't be
+	 *  ourselves
+	 */
+	if(iface == &Encap && (gateway == 0 || ismyaddr(gateway)))
 		return NULLROUTE;
 
 	Rt_cache.route = NULLROUTE;     /* Flush cache */
@@ -342,17 +382,7 @@ char private;           /* Inhibit advertising this entry ? */
 	if(bits == 0){
 		rp = &R_default;
 	} else {
-		if(bits > 32)
-			bits = 32;
-
-		/* Mask off target according to width */
-		target &= ~0L << (32-bits);
-
-		/* Search appropriate chain for existing entry */
-		for(rp = Routes[bits-1][hash_ip(target)];rp != NULLROUTE;rp = rp->next){
-			if(rp->target == target)
-				break;
-		}
+		rp = rt_blookup(target,bits);
 	}
 	if(rp == NULLROUTE){
 		/* The target is not already in the table, so create a new
@@ -380,6 +410,21 @@ char private;           /* Inhibit advertising this entry ? */
 	stop_timer(&rp->timer);
 	start_timer(&rp->timer); /* start the timer if appropriate */
 
+	/* Check to see if this created an encapsulation loop */
+	gwtmp = gateway;
+	for(;;){
+		rptmp = rt_lookup(gwtmp);
+		if(rptmp == NULLROUTE)
+			break;  /* No route to gateway, so no loop */
+		if(rptmp->iface != &Encap)
+			break;  /* Non-encap interface, so no loop */
+		if(rptmp == rp){
+			rt_drop(target,bits);   /* Definite loop */
+			return NULLROUTE;
+		}
+		if(rptmp->gateway != 0)
+			gwtmp = rptmp->gateway;
+	}
 	route_savefile();
 	return rp;
 }
@@ -481,14 +526,25 @@ int32 addr;
 	if(rp != NULLROUTE && rp->iface != NULLIF)
 		ifp = rp->iface;
 	else {
+		/* No route currently exists, so just pick the first real
+		 * interface and use its address
+		 */
 		for(ifp = Ifaces;ifp != NULLIF;ifp = ifp->next){
-			if(ifp != &Loopback)
+			if(ifp != &Loopback && ifp != &Encap)
 				break;
 		}
 	}
 	if(ifp == NULLIF || ifp == &Loopback)
 		return 0;       /* No dice */
 
+	if(ifp == &Encap){
+		/* Recursive call - we assume that there are no circular
+		 * encapsulation references in the routing table!!
+		 * (There is a check at the end of rt_add() that goes to
+		 * great pains to ensure this.)
+		 */
+		return locaddr(rp->gateway);
+	}
 	if(ifp->forw != NULLIF)
 		return ifp->forw->addr;
 	else

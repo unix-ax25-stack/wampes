@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.7 1991/04/12 18:34:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.8 1991/05/09 07:38:08 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -12,34 +12,34 @@
 #include <stdio.h>
 /* #include <dos.h> */
 #include "global.h"
-#include "mbuf.h"
-/* #include "proc.h" */
-#include "cmdparse.h"
 #include "config.h"
-/* #include "daemon.h" */
+#include "mbuf.h"
 #include "timer.h"
+#include "proc.h"
 #include "iface.h"
-/* #include "ppp.h" */
-#include "pktdrvr.h"
-#include "slip.h"
-/* #include "slcomp.h" */
-#include "usock.h"
-#include "kiss.h"
-#include "enet.h"
-#include "ax25.h"
-#include "lapb.h"
-#include "netrom.h"
-/* #include "nr4.h" */
-#include "arp.h"
 #include "ip.h"
-#include "icmp.h"
 #include "tcp.h"
 #include "udp.h"
-#include "commands.h"
-#include "hardware.h"   /***/
 #ifdef  ARCNET
 #include "arcnet.h"
 #endif
+#include "lapb.h"
+#include "ax25.h"
+#include "enet.h"
+#include "kiss.h"
+/* #include "nr4.h" */
+#include "netrom.h"
+#include "pktdrvr.h"
+/* #include "ppp.h" */
+#include "slip.h"
+#include "arp.h"
+#include "icmp.h"
+#include "hardware.h"   /***/
+/* #include "usock.h" */
+#include "cmdparse.h"
+#include "commands.h"
+/* #include "mailbox.h" */
+/* #include "daemon.h" */
 
 static int dostart __ARGS((int argc,char *argv[],void *p));
 static int dostop __ARGS((int argc,char *argv[],void *p));
@@ -68,6 +68,7 @@ struct iplink Iplink[] = {
 	TCP_PTCL,       tcp_input,
 	UDP_PTCL,       udp_input,
 	ICMP_PTCL,      icmp_input,
+	IP_PTCL,        ipip_recv,
 	0,              0
 };
 
@@ -198,39 +199,35 @@ struct cmds Cmds[] = {
 #ifdef  ASY
 	"asystat",      doasystat,      0, 0, NULLCHAR,
 #endif
+	"attach",       doattach,       0, 2,
+		"attach <hardware> <hw specific options>",
 #ifdef  AX25
 	"ax25",         doax25,         0, 0, NULLCHAR,
 #endif
-	"attach",       doattach,       0, 2,
-		"attach <hardware> <hw specific options>",
 	"bye",          dobye,          0, 0, NULLCHAR,
 /* This one is out of alpabetical order to allow abbreviation to "c" */
 #ifdef  AX25
-	"connect",      doconnect,      1024, 2,"connect callsign [digipeaters]",
+	"connect",      doconnect,      1024, 2,
+	"connect callsign [digipeaters]",
 #endif
 #if     !defined(UNIX) && !defined(AMIGA)
 	"cd",           docd,           0, 0, NULLCHAR,
 #endif
 	"close",        doclose,        0, 0, NULLCHAR,
+/* This one is out of alpabetical order to allow abbreviation to "d" */
 	"disconnect",   doclose,        0, 0, NULLCHAR,
+	"delete",       dodelete,       0, 2, "delete <file>",
+/*      "detach",       dodetach,       0, 2, "detach <interface>", */
+#ifdef  DIALER
+	"dialer",       dodialer,       512, 3,
+	"dialer <iface> <seconds> <hostid> <pings> <file>",
+#endif
 #ifndef AMIGA
 /*      "dir",          dodir,          512, 0, NULLCHAR, /* note sequence */
 #endif
-#ifdef  DIALER
-	"dialer",       dodialer,       512, 3,
-		"dialer <interface> <interval> <ping target> <script_file>",
-#endif
-	"delete",       dodelete,       0, 2, "delete <file>",
-/*      "detach",       dodetach,       0, 2, "detach <interface>", */
 /*      "domain",       dodomain,       0, 0, NULLCHAR, */
 #ifdef  DRSI
 	"drsistat",     dodrstat,       0, 0, NULLCHAR,
-#endif
-#ifdef  HOPCHECK
-	"hopcheck",     dohop,          0, 0, NULLCHAR,
-#endif
-#ifdef  HS
-	"hs",           dohs,           0, 0, NULLCHAR,
 #endif
 #ifdef  EAGLE
 	"eaglestat",    doegstat,       0, 0, NULLCHAR,
@@ -250,7 +247,13 @@ struct cmds Cmds[] = {
 	"hapnstat",     dohapnstat,     0, 0, NULLCHAR,
 #endif
 /*      "help",         dohelp,         0, 0, NULLCHAR, */
+#ifdef  HOPCHECK
+	"hop",          dohop,          0, 0, NULLCHAR,
+#endif
 	"hostname",     dohostname,     0, 0, NULLCHAR,
+#ifdef  HS
+	"hs",           dohs,           0, 0, NULLCHAR,
+#endif
 	"icmp",         doicmp,         0, 0, NULLCHAR,
 	"ifconfig",     doifconfig,     0, 0, NULLCHAR,
 	"ip",           doip,           0, 0, NULLCHAR,
@@ -262,11 +265,13 @@ struct cmds Cmds[] = {
 #ifdef  MAILBOX
 /*      "mbox",         dombox,         0, 0, NULLCHAR, */
 #endif
-	"mem",          domem,          0, 0, NULLCHAR,
+#if     1
+	"memory",       domem,          0, 0, NULLCHAR,
+#endif
+	"mkdir",        domkd,          0, 2, "mkdir <directory>",
 #ifdef  AX25
 	"mode",         domode,         0, 2, "mode <interface>",
 #endif
-	"mkdir",        domkd,          0, 2, "mkdir <directory>",
 /*      "more",         domore,         512, 2, "more <filename>", */
 #ifdef  NETROM
 	"netrom",       donetrom,       0, 0, NULLCHAR,
@@ -278,12 +283,13 @@ struct cmds Cmds[] = {
 	"nrstat",       donrstat,       0, 0, NULLCHAR,
 #endif  /* NRS */
 	"param",        doparam,        0, 2, "param <interface>",
-	"ping",         doping,         512, 0, NULLCHAR,
+	"ping",         doping,         512, 0,
+	NULLCHAR,
 #ifdef  PI
 	"pistatus",     dopistat,       0, 0, NULLCHAR,
 #endif
 #ifdef PPP
-	"ppp",          dopppcontrol,   0, 0, NULLCHAR,
+	"ppp",          doppp_commands, 0, 0, NULLCHAR,
 #endif
 /*      "ps",           ps,             0, 0, NULLCHAR, */
 #if     !defined(UNIX) && !defined(AMIGA)
@@ -400,9 +406,9 @@ struct cmds Attab[] = {
 #endif
 #ifdef SCC
 	"scc", scc_attach, 0, 7,
-	"\nattach scc <devices> init <addr> <spacing> <Aoff> <Boff> <Dataoff>\
-\n   <intack> <vec> [p]<clock> [hdwe] [param]\
-\nattach scc <chan> slip|kiss|nrs|ax25 <label> <mtu> <speed> <bufsize> [call] ",
+	"attach scc <devices> init <addr> <spacing> <Aoff> <Boff> <Dataoff>\n"
+	"   <intack> <vec> [p]<clock> [hdwe] [param]\n"
+	"attach scc <chan> slip|kiss|nrs|ax25 <label> <mtu> <speed> <bufsize> [call] ",
 #endif
 	NULLCHAR,
 };
@@ -476,6 +482,7 @@ struct trace Tracef[] = {
 	NULLFP,         NULLVFP,
 #endif /* PPP */
 };
+
 #else   /* TRACE */
 
 /* Stub for packet dump function */
@@ -487,6 +494,14 @@ unsigned type;
 struct mbuf *bp;
 {
 }
+void
+raw_dump(iface,direction,bp)
+struct iface *iface;
+int direction;
+struct mbuf *bp;
+{
+}
+
 #endif  /* TRACE */
 
 #ifdef  AX25
@@ -568,7 +583,7 @@ static struct cmds Startcmds[] = {
 /*      "tip",          tipstart,       256, 2, "start tip <interface>", */
 #endif
 /*      "ttylink",      ttylstart,      256, 0, NULLCHAR, */
-	"remote",       rem1,           256, 0, NULLCHAR,
+	"remote",       rem1,           768, 0, NULLCHAR,
 	NULLCHAR,
 };
 static struct cmds Stopcmds[] = {
@@ -650,6 +665,35 @@ void *p;
 
 /* Various configuration-dependent functions */
 
+/* put mbuf into Hopper for network task
+ * returns 0 if OK
+ */
+int
+net_route(ifp, type, bp)
+struct iface *ifp;
+int type;
+struct mbuf *bp;
+{
+	struct mbuf *nbp;
+	struct phdr phdr;
+
+	phdr.iface = ifp;
+	phdr.type = type;
+
+	if ((nbp = pushdown(bp,sizeof(phdr))) == NULLBUF ){
+		return -1;
+	}
+	memcpy( &nbp->data[0],(char *)&phdr,sizeof(phdr));
+	enqueue(&Hopper,nbp);
+	/* Especially on slow machines, serial I/O can be quite
+	 * compute intensive, so release the machine before we
+	 * do the next packet.  This will allow this packet to
+	 * go on toward its ultimate destination. [Karn]
+	 */
+/*      pwait(NULL); */
+	return 0;
+}
+
 /* Process packets in the Hopper */
 void
 network()
@@ -688,7 +732,7 @@ network()
 #endif
 #ifdef PPP
 	case CL_PPP:
-		pproc(phdr.iface,bp);
+		ppp_proc(phdr.iface,bp);
 		break;
 #endif
 	/* These types have no link layer protocol at the point when they're
@@ -708,4 +752,5 @@ network()
 	/* Let everything else run - this keeps the system from wedging
 	 * when we're hit by a big burst of packets
 	 */
+/*      pwait(NULL); */
 }

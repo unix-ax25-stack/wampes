@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.5 1991/04/12 18:34:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.6 1991/05/09 07:38:25 deyke Exp $ */
 
 /* IP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -113,7 +113,7 @@ void *p;
 	 * 192.001.002.003 32  sl0          192.002.003.004  0
 	 */
 	tprintf(
-"Dest            Len Interface    Gateway          Metric  P Timer   Use\n");
+"Dest            Len Interface    Gateway          Metric  P   Timer Use\n");
 
 	for(bits=31;bits>=0;bits--){
 		for(i=0;i<HASHMOD;i++){
@@ -185,7 +185,8 @@ void *p;
 	else
 		metric = 1;
 
-	rt_add(dest,bits,gateway,ifp,metric,0,private);
+	if(rt_add(dest,bits,gateway,ifp,metric,0,private) == NULLROUTE)
+		tprintf("Can't add route\n");
 	return 0;
 }
 /* Drop an entry from the routing table
@@ -269,7 +270,7 @@ register struct route *rp;
 	tprintf("%-17s",cp);
 	tprintf("%-8lu",rp->metric);
 	tprintf("%c ",(rp->flags & RTPRIVATE) ? 'P' : ' ');
-	tprintf("%-8lu",
+	tprintf("%7lu ",
 	 read_timer(&rp->timer) / 1000L);
 	return tprintf("%lu\n",rp->uses);
 }

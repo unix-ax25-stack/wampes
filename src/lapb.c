@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.16 1991/04/12 18:35:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.17 1991/05/09 07:38:29 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -820,6 +820,26 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
+/* Force a retransmission */
+
+static int  doaxkick(argc, argv, p)
+int  argc;
+char  *argv[];
+void *p;
+{
+  struct ax25_cb *axp;
+
+  axp = (struct ax25_cb *) ltop(htol(argv[1]));
+  if (!valid_ax(axp)) {
+    tprintf(Notval);
+    return 1;
+  }
+  kick_ax(axp);
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* Set maximum number of frames that will be allowed in flight */
 
 static int  domaxframe(argc, argv, p)
@@ -885,7 +905,6 @@ char  *argv[];
 void *p;
 {
   struct ax25_cb *cp;
-  long  htol();
 
   cp = (struct ax25_cb *) htol(argv[1]);
   if (!valid_ax(cp)) {
@@ -1288,6 +1307,7 @@ void *p;
   static struct cmds axcmds[] = {
 
     "digipeat", dodigipeat, 0, 0, NULLCHAR,
+    "kick",     doaxkick,   0, 2, "ax25 kick <axcb>",
     "maxframe", domaxframe, 0, 0, NULLCHAR,
     "mycall",   domycall,   0, 0, NULLCHAR,
     "paclen",   dopaclen,   0, 0, NULLCHAR,
@@ -1571,6 +1591,18 @@ struct ax25_cb *cp;
   if (cp == axcb_server) return 1;
   for (p = axcb_head; p; p = p->next)
     if (p == cp) return 1;
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Force a retransmission */
+
+int  kick_ax(axp)
+struct ax25_cb *axp;
+{
+  if (!valid_ax(axp)) return -1;
+  t1_timeout(axp);
   return 0;
 }
 

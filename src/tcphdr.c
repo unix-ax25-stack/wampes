@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcphdr.c,v 1.2 1991/02/24 20:17:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcphdr.c,v 1.3 1991/05/09 07:38:57 deyke Exp $ */
 
 /* TCP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -40,6 +40,8 @@ struct pseudo_header *ph;
 	cp = put32(cp,tcph->ack);
 	*cp++ = hdrlen << 2;    /* Offset field */
 	*cp = 0;
+	if(tcph->flags.congest)
+		*cp |= 64;
 	if(tcph->flags.urg)
 		*cp |= 32;
 	if(tcph->flags.ack)
@@ -100,6 +102,7 @@ struct mbuf **bpp;
 	tcph->ack = get32(&hdrbuf[8]);
 	hdrlen = (hdrbuf[12] & 0xf0) >> 2;
 	flags = hdrbuf[13];
+	tcph->flags.congest = flags & 64;
 	tcph->flags.urg = flags & 32;
 	tcph->flags.ack = flags & 16;
 	tcph->flags.psh = flags & 8;

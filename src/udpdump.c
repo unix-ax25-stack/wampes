@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpdump.c,v 1.4 1991/02/24 20:18:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpdump.c,v 1.5 1991/05/09 07:39:11 deyke Exp $ */
 
 /* UDP packet tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -40,8 +40,8 @@ int check;              /* If 0, bypass checksum verify */
 
 	ntohudp(&udp,bpp);
 
-	fprintf(fp," %u->%u",udp.source,udp.dest);
 	fprintf(fp," len %u",udp.length);
+	fprintf(fp," %u->%u",udp.source,udp.dest);
 	if(udp.length > UDPHDR)
 		fprintf(fp," Data %u",udp.length - UDPHDR);
 	if(udp.checksum == 0)

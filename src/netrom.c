@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.20 1991/04/25 18:27:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.21 1991/05/09 07:38:40 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -1522,6 +1522,18 @@ struct circuit *pc;
 }
 
 /*---------------------------------------------------------------------------*/
+
+/* Force a retransmission */
+
+int  kick_nr(pc)
+struct circuit *pc;
+{
+  if (!valid_nr(pc)) return -1;
+  l4_t1_timeout(pc);
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
 /******************************** Login Server *******************************/
 /*---------------------------------------------------------------------------*/
 
@@ -1842,6 +1854,26 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
+/* Force a retransmission */
+
+static int  donkick(argc, argv, p)
+int  argc;
+char  *argv[];
+void *p;
+{
+  struct circuit *pc;
+
+  pc = (struct circuit *) ltop(htol(argv[1]));
+  if (!valid_nr(pc)) {
+    tprintf(Notval);
+    return 1;
+  }
+  kick_nr(pc);
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static int  dolinks(argc, argv, p)
 int  argc;
 char  *argv[];
@@ -2137,6 +2169,7 @@ void *p;
     "broadcast",dobroadcast,0, 0, NULLCHAR,
     "connect",  donconnect, 0, 2, "netrom connect <node> [<user>]",
     "ident",    doident,    0, 0, NULLCHAR,
+    "kick",     donkick,    0, 2, "netrom kick <nrcb>",
     "links",    dolinks,    0, 0, NULLCHAR,
     "nodes",    donodes,    0, 0, NULLCHAR,
     "parms",    doparms,    0, 0, NULLCHAR,

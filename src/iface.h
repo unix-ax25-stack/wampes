@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.6 1991/04/25 18:27:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.7 1991/05/09 07:38:22 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -11,6 +11,10 @@
 #include "mbuf.h"
 #endif
 
+#ifndef _PROC_H
+#include "proc.h"
+#endif
+
 #include <stdio.h>
 
 /* Interface control structure */
@@ -19,25 +23,33 @@ struct iface {
 	char *name;             /* Ascii string with interface name */
 	int type;               /* Link header type for phdr */
 	struct iftype *iftype;  /* Pointer to appropriate iftype entry */
+
 	int32 addr;             /* IP address */
 	int32 broadcast;        /* Broadcast address */
 	int32 netmask;          /* Network mask */
+
+				/* To device -- control */
 	int32 (*ioctl) __ARGS((struct iface *,int cmd,int set,int32 val));
-				/* Function to handle device control */
+				/* From device -- when status changes */
+	int (*iostatus) __ARGS((struct iface *,int cmd,int32 val));
+				/* Encapsulate an IP datagram */
 	int (*send) __ARGS((struct mbuf *,struct iface *,int32,int,int,int,int));
-				/* Routine to send an IP datagram */
+				/* Encapsulate any link packet */
 	int (*output) __ARGS((struct iface *,char *,char *,int,struct mbuf *));
-				/* Routine to send link packet */
+				/* Send raw packet */
 	int (*raw) __ARGS((struct iface *,struct mbuf *));
-				/* Routine to call to send raw packet */
+				/* Call before detaching */
 	int (*stop) __ARGS((struct iface *));
-				/* Routine to call before detaching */
+				/* Display status */
+	int (*status) __ARGS((struct iface *));
+
 	int16 mtu;              /* Maximum transmission unit size */
 	int dev;                /* Subdevice number to pass to send */
 	int xdev;               /* Associated Slip or Nrs channel, if any */
 	int16 flags;            /* Configuration flags */
 #define DATAGRAM_MODE   0       /* Send datagrams in raw link frames */
 #define CONNECT_MODE    1       /* Send datagrams in connected mode */
+
 	int16 trace;            /* Trace flags */
 #define IF_TRACE_OUT    0x01    /* Output packets */
 #define IF_TRACE_IN     0x10    /* Packets to me except broadcast */
@@ -47,23 +59,29 @@ struct iface {
 #define IF_TRACE_RAW    0x2000  /* Raw dump, if supported */
 	char *trfile;           /* Trace file name, if any */
 	FILE *trfp;             /* Stream to trace to */
+
 	char *hwaddr;           /* Device hardware address, if any */
 	struct iface *forw;     /* Forwarding interface for output, if rx only */
+
 	int32 ipsndcnt;         /* IP datagrams sent */
 	int32 rawsndcnt;        /* Raw packets sent */
 	int32 iprecvcnt;        /* IP datagrams received */
 	int32 rawrecvcnt;       /* Raw packets received */
 	int32 lastsent;         /* Clock time of last send */
 	int32 lastrecv;         /* Clock time of last receive */
+
 	void (*rxproc) __ARGS((struct iface *)); /* Receiver process, if any */
 	struct proc *txproc;    /* Transmitter process, if any */
 	struct proc *supv;      /* Supervisory process, if any */
 	int sendcrc;            /* Send CRC if true (KISS only) */
 	int32 crcerrors;        /* Packets received with CRC errors (KISS only) */
+
+	void *extension;        /* Pointer to protocol extension block, if any */
 };
 #define NULLIF  (struct iface *)0
 extern struct iface *Ifaces;    /* Head of interface list */
 extern struct iface Loopback;   /* Optional loopback interface */
+extern struct iface Encap;      /* IP-in-IP pseudo interface */
 
 /* Header put on front of each packet in input queue */
 struct phdr {
@@ -73,7 +91,7 @@ struct phdr {
 extern char Noipaddr[];
 extern struct mbuf *Hopper;
 
-/* Interface encapsulation mode table entry. An array of these strctures
+/* Interface encapsulation mode table entry. An array of these structures
  * are initialized in config.c with all of the information necessary
  * to attach a device.
  */
@@ -98,6 +116,10 @@ struct iface *if_lookup __ARGS((char *name));
 struct iface *ismyaddr __ARGS((int32 addr));
 int if_detach __ARGS((struct iface *ifp));
 int setencap __ARGS((struct iface *ifp,char *mode));
-int dumppkt __ARGS((struct iface *ifp,struct mbuf *bp));
+char *if_name __ARGS((struct iface *ifp,char *comment));
+int bitbucket __ARGS((struct iface *ifp,struct mbuf *bp));
+
+/* In config.c: */
+int net_route __ARGS((struct iface *ifp,int type,struct mbuf *bp));
 
 #endif  /* _IFACE_H */

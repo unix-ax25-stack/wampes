@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.11 1991/04/25 18:27:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.12 1991/05/09 07:38:43 deyke Exp $ */
 
 #ifndef _NETROM_H
 #define _NETROM_H
@@ -129,6 +129,7 @@ int close_nr __ARGS((struct circuit *pc));
 int reset_nr __ARGS((struct circuit *pc));
 int del_nr __ARGS((struct circuit *pc));
 int valid_nr __ARGS((struct circuit *pc));
+int kick_nr __ARGS((struct circuit *pc));
 void nrclient_send_upcall __ARGS((struct circuit *pc, int cnt));
 void nrclient_recv_upcall __ARGS((struct circuit *pc, int cnt));
 int nr_attach __ARGS((int argc, char *argv [], void *p));

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.c,v 1.4 1991/02/24 20:17:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.c,v 1.5 1991/05/09 07:39:09 deyke Exp $ */
 
 /* Internet User Data Protocol (UDP)
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,7 +13,6 @@
 #include "icmp.h"
 
 static struct udp_cb *lookup_udp __ARGS((struct socket *socket));
-static int16 hash_udp __ARGS((struct socket *socket));
 
 struct mib_entry Udp_mib[] = {
 	"",                     0,
@@ -23,8 +22,8 @@ struct mib_entry Udp_mib[] = {
 	"udpOutDatagrams",      0,
 };
 
-/* Hash table for UDP structures */
-struct udp_cb *Udps[NUDP] = { NULLUDP} ;
+/* UDP control structures list */
+struct udp_cb *Udps;
 
 /* Create a UDP control block for lsocket, so that we can queue
  * incoming datagrams.
@@ -35,20 +34,19 @@ struct socket *lsocket;
 void (*r_upcall)();
 {
 	register struct udp_cb *up;
-	int16 hval;
 
-	if((up = lookup_udp(lsocket)) != NULLUDP)
-		return up;      /* Already exists */
+	if((up = lookup_udp(lsocket)) != NULLUDP){
+		/* Already exists */
+		Net_error = CON_EXISTS;
+		return NULLUDP;
+	}
 	up = (struct udp_cb *)callocw(1,sizeof (struct udp_cb));
 	up->socket.address = lsocket->address;
 	up->socket.port = lsocket->port;
 	up->r_upcall = r_upcall;
 
-	hval = hash_udp(lsocket);
-	up->next = Udps[hval];
-	if(up->next != NULLUDP)
-		up->next->prev = up;
-	Udps[hval] = up;
+	up->next = Udps;
+	Udps = up;
 	return up;
 }
 
@@ -139,13 +137,19 @@ struct mbuf **bp;               /* Place to stash data packet */
 }
 /* Delete a UDP control block */
 int
-del_udp(up)
-struct udp_cb *up;
+del_udp(conn)
+struct udp_cb *conn;
 {
 	struct mbuf *bp;
-	int16 hval;
+	register struct udp_cb *up;
+	struct udp_cb *udplast = NULLUDP;
 
+	for(up = Udps;up != NULLUDP;udplast = up,up = up->next){
+		if(up == conn)
+			break;
+	}
 	if(up == NULLUDP){
+		/* Either conn was NULL or not found on list */
 		Net_error = INVALID;
 		return -1;
 	}
@@ -156,13 +160,11 @@ struct udp_cb *up;
 		free_p(bp);
 		up->rcvcnt--;
 	}
-	hval = hash_udp(&up->socket);
-	if(up->prev == NULLUDP)
-		Udps[hval] = up->next;          /* First on list */
+	/* Remove from list */
+	if(udplast != NULLUDP)
+		udplast->next = up->next;
 	else
-		up->prev->next = up->next;
-	if(up->next != NULLUDP)
-		up->next->prev = up->prev;
+		Udps = up->next;        /* was first on list */
 
 	free((char *)up);
 	return 0;
@@ -181,7 +183,6 @@ int rxbroadcast;        /* The only protocol that accepts 'em */
 	struct socket lsocket;
 	struct socket fsocket;
 	struct mbuf *packet;
-	int ckfail = 0;
 	int16 length;
 
 	if(bp == NULLBUF)
@@ -194,17 +195,20 @@ int rxbroadcast;        /* The only protocol that accepts 'em */
 	length = ip->length - IPLEN - ip->optlen;
 	ph.length = length;
 
-	if(cksum(&ph,bp,length) != 0)
-		/* Checksum apparently failed, note for later */
-		ckfail++;
-
-	/* Extract UDP header in host order */
-	ntohudp(&udp,&bp);
-
-	/* If the checksum field is zero, then ignore a checksum error.
-	 * I think this is dangerously wrong, but it is in the spec.
+	/* Peek at header checksum before we extract the header. This
+	 * allows us to bypass cksum() if the checksum field was not
+	 * set by the sender.
 	 */
-	if(ckfail && udp.checksum != 0){
+	udp.checksum = udpcksum(bp);
+	if(udp.checksum != 0 && cksum(&ph,bp,length) != 0){
+		/* Checksum non-zero, and wrong */
+		udpInErrors++;
+		free_p(bp);
+		return;
+	}
+	/* Extract UDP header in host order */
+	if(ntohudp(&udp,&bp) != 0){
+		/* Truncated header */
 		udpInErrors++;
 		free_p(bp);
 		return;
@@ -245,43 +249,43 @@ int rxbroadcast;        /* The only protocol that accepts 'em */
 	if(up->r_upcall)
 		(*up->r_upcall)(iface,up,up->rcvcnt);
 }
-/* Look up UDP socket, return control block pointer or NULLUDP if nonexistant */
-static
-struct udp_cb *
+/* Look up UDP socket.
+ * Return control block pointer or NULLUDP if nonexistant
+ * As side effect, move control block to top of list to speed future
+ * searches.
+ */
+static struct udp_cb *
 lookup_udp(socket)
 struct socket *socket;
 {
 	register struct udp_cb *up;
+	struct udp_cb *uplast = NULLUDP;
 
-	for(up = Udps[hash_udp(socket)];up != NULLUDP;up = up->next){
+	for(up = Udps;up != NULLUDP;uplast = up,up = up->next){
 		if(socket->port == up->socket.port
 		 && (socket->address == up->socket.address
-		     || up->socket.address == INADDR_ANY))
-			break;
+		 || up->socket.address == INADDR_ANY)){
+			if(uplast != NULLUDP){
+				/* Move to top of list */
+				uplast->next = up->next;
+				up->next = Udps;
+				Udps = up;
+			}
+			return up;
+		}
 	}
-	return up;
+	return NULLUDP;
 }
 
-/* Hash a UDP socket (address and port) structure */
-static
-int16
-hash_udp(socket)
-struct socket *socket;
-{
-	/* Hash depends only on port number, to make addr wildcarding work */
-	return (int16)(socket->port % NUDP);
-}
-
-void udp_garbage(red)
+/* Attempt to reclaim unused space in UDP receive queues */
+void
+udp_garbage(red)
 int red;
 {
-	int i;
-	struct udp_cb *udp;
+	register struct udp_cb *udp;
 
-	for(i=0;i<NUDP;i++){
-		for(udp = Udps[i];udp != NULLUDP; udp = udp->next){
-			mbuf_crunch(&udp->rcvq);
-		}
+	for(udp = Udps;udp != NULLUDP; udp = udp->next){
+		mbuf_crunch(&udp->rcvq);
 	}
 }
 

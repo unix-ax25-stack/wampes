@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/devparam.c,v 1.1 1991/04/12 18:36:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/devparam.c,v 1.2 1991/05/09 07:38:10 deyke Exp $ */
 
 #include <string.h>
 #include <ctype.h>
@@ -27,6 +27,8 @@ static struct param Parms[] = {
 	PARAM_MIN,      "Min",
 	PARAM_MAXKEY,   "MaxKey",
 	PARAM_WAIT,     "Wait",
+	PARAM_DOWN,     "Down",
+	PARAM_UP,       "Up",
 	PARAM_RETURN,   "Return",
 	-1,             NULLCHAR,
 };

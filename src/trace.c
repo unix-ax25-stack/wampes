@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.6 1991/03/28 19:40:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.7 1991/05/09 07:39:06 deyke Exp $ */
 
 /* Packet tracing - top level and generic routines, including hex/ascii
  * Copyright 1991 Phil Karn, KA9Q
@@ -9,10 +9,10 @@
 #include "global.h"
 #include "mbuf.h"
 #include "iface.h"
-#include "timer.h"
-#include "trace.h"
 #include "pktdrvr.h"
 #include "commands.h"
+#include "trace.h"
+#include "timer.h"
 
 static void ascii_dump __ARGS((FILE *fp,struct mbuf **bpp));
 static void ctohex __ARGS((char *buf,int c));
@@ -24,6 +24,23 @@ static void showtrace __ARGS((struct iface *ifp));
  * in the rest of the package
  */
 static char nospace[] = "No space!!\n";
+
+struct tracecmd Tracecmd[] = {
+	"input",        IF_TRACE_IN,    IF_TRACE_IN,
+	"-input",       0,              IF_TRACE_IN,
+	"output",       IF_TRACE_OUT,   IF_TRACE_OUT,
+	"-output",      0,              IF_TRACE_OUT,
+	"broadcast",    0,              IF_TRACE_NOBC,
+	"-broadcast",   IF_TRACE_NOBC,  IF_TRACE_NOBC,
+	"raw",          IF_TRACE_RAW,   IF_TRACE_RAW,
+	"-raw",         0,              IF_TRACE_RAW,
+	"ascii",        IF_TRACE_ASCII, IF_TRACE_ASCII|IF_TRACE_HEX,
+	"-ascii",       0,              IF_TRACE_ASCII|IF_TRACE_HEX,
+	"hex",          IF_TRACE_HEX,   IF_TRACE_ASCII|IF_TRACE_HEX,
+	"-hex",         IF_TRACE_ASCII, IF_TRACE_ASCII|IF_TRACE_HEX,
+	"off",          0,              0xffff,
+	NULLCHAR,       0,              0
+};
 
 void
 dump(iface,direction,type,bp)
@@ -50,13 +67,13 @@ struct mbuf *bp;
 		timer = secclock();
 		cp = ctime(&timer);
 		cp[24] = '\0';
-		fprintf(iface->trfp,"%s - %s recv:\n",cp,iface->name);
+		fprintf(iface->trfp,"\n%s - %s recv:\n",cp,iface->name);
 		break;
 	case IF_TRACE_OUT:
 		timer = secclock();
 		cp = ctime(&timer);
 		cp[24] = '\0';
-		fprintf(iface->trfp,"%s - %s sent:\n",cp,iface->name);
+		fprintf(iface->trfp,"\n%s - %s sent:\n",cp,iface->name);
 		break;
 	}
 	if(bp == NULLBUF || (size = len_p(bp)) == 0){
@@ -101,7 +118,7 @@ struct mbuf *bp;
 	struct mbuf *tbp;
 
 	/* Dump entire packet in hex/ascii */
-	fprintf(iface->trfp,"******* raw packet dump (%s %s)\n",
+	fprintf(iface->trfp,"\n******* raw packet dump (%s %s)\n",
 		((direction & IF_TRACE_OUT) ? "send" : "recv"),iface->name);
 	dup_p(&tbp,bp,0,len_p(bp));
 	if(tbp != NULLBUF)
@@ -205,6 +222,7 @@ char *argv[];
 void *p;
 {
 	struct iface *ifp;
+	struct tracecmd *tp;
 
 	if(argc < 2){
 		for(ifp = Ifaces; ifp != NULLIF; ifp = ifp->next)
@@ -215,9 +233,20 @@ void *p;
 		tprintf("Interface %s unknown\n",argv[1]);
 		return 1;
 	}
-	if(argc >= 3)
-		ifp->trace = htoi(argv[2]);
-
+	if(argc == 2){
+		showtrace(ifp);
+		return 0;
+	}
+	/* MODIFY THIS TO HANDLE MULTIPLE OPTIONS */
+	if(argc >= 3){
+		for(tp = Tracecmd;tp->name != NULLCHAR;tp++)
+			if(strncmp(tp->name,argv[2],strlen(argv[2])) == 0)
+				break;
+		if(tp->name != NULLCHAR)
+			ifp->trace = (ifp->trace & ~tp->mask) | tp->val;
+		else
+			ifp->trace = htoi(argv[2]);
+	}
 	/* Always default to stdout unless trace file is given */
 	if(ifp->trfp != NULLFILE && ifp->trfp != stdout)
 		fclose(ifp->trfp);
@@ -272,7 +301,8 @@ register struct iface *ifp;
 }
 
 /* shut down all trace files */
-void shuttrace()
+void
+shuttrace()
 {
 	struct iface *ifp;
 

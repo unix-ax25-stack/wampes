@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpdump.c,v 1.4 1991/02/24 20:17:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpdump.c,v 1.5 1991/05/09 07:38:56 deyke Exp $ */
 
 /* TCP header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -19,7 +19,8 @@ static char *Tcpflags[] = {
 	"RST",  /* 0x04 */
 	"PSH",  /* 0x08 */
 	"ACK",  /* 0x10 */
-	"URG"   /* 0x20 */
+	"URG",  /* 0x20 */
+	"CE"    /* 0x40 */
 };
 
 /* Dump a TCP segment header. Assumed to be in network byte order */
@@ -50,6 +51,8 @@ int check;              /* 0 if checksum test is to be bypassed */
 	fprintf(fp,"TCP: %u->%u Seq x%lx",seg.source,seg.dest,seg.seq,seg.ack);
 	if(seg.flags.ack)
 		fprintf(fp," Ack x%lx",seg.ack);
+	if(seg.flags.congest)
+		fprintf(fp," %s",Tcpflags[6]);
 	if(seg.flags.urg)
 		fprintf(fp," %s",Tcpflags[5]);
 	if(seg.flags.ack)

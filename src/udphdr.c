@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udphdr.c,v 1.2 1991/02/24 20:18:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udphdr.c,v 1.3 1991/05/09 07:39:12 deyke Exp $ */
 
 /* UDP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -55,5 +55,18 @@ struct mbuf **bpp;
 	udp->length = get16(&udpbuf[4]);
 	udp->checksum = get16(&udpbuf[6]);
 	return 0;
+}
+/* Extract UDP checksum value from a network-format header without
+ * disturbing the header
+ */
+int16
+udpcksum(bp)
+struct mbuf *bp;
+{
+	struct mbuf *dup;
+
+	if(dup_p(&dup,bp,6,2) != 2)
+		return 0;
+	return pull16(&dup);
 }
 

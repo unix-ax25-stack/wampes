@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.h,v 1.4 1991/02/24 20:17:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.h,v 1.5 1991/05/09 07:39:07 deyke Exp $ */
 
 #ifndef _TRACE_H
 #define _TRACE_H
@@ -14,6 +14,14 @@
 #include <stdio.h>
 
 /* Definitions for packet dumping */
+
+/* Table of trace subcommands */
+struct tracecmd {
+	char *name;     /* Name of trace subcommand */
+	int val;        /* New setting for these bits */
+	int mask;       /* Mask of bits affected in trace word */
+};
+extern struct tracecmd Tracecmd[];      /* Defined in trace.c */
 
 /* List of address testing and tracing functions for each interface.
  * Entries are placed in this table by conditional compilation in main.c.

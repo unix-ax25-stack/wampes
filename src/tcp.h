@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.5 1991/02/24 20:17:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.6 1991/05/09 07:38:55 deyke Exp $ */
 
 #ifndef _TCP_H
 #define _TCP_H
@@ -33,7 +33,6 @@
 #endif
 
 #define DEF_WND 2048    /* Default receiver window */
-#define NTCB    19      /* # TCB hash table headers */
 #define RTTCACHE 16     /* # of TCP round-trip-time cache entries */
 #define DEF_MSS 512     /* Default maximum segment size */
 #define DEF_RTT 5000    /* Initial guess at round trip time (5 sec) */
@@ -62,6 +61,7 @@ struct tcp {
 	int32 seq;      /* Sequence number */
 	int32 ack;      /* Acknowledgment number */
 	struct {
+		char congest;   /* Echoed IP congestion experienced bit */
 		char urg;
 		char ack;
 		char psh;
@@ -95,8 +95,7 @@ struct reseq {
 
 /* TCP connection control block */
 struct tcb {
-	struct tcb *prev;       /* Linked list pointers for hash table */
-	struct tcb *next;
+	struct tcb *next;       /* Linked list pointer */
 
 	struct connection conn;
 
@@ -166,6 +165,7 @@ struct tcb {
 		char active;    /* TCB created with an active open */
 		char synack;    /* Our SYN has been acked */
 		char rtt_run;   /* We're timing a segment */
+		char congest;   /* Copy of last IP congest bit received */
 	} flags;
 	char tos;               /* Type of service (for IP) */
 	int backoff;            /* Backoff interval */
@@ -226,7 +226,7 @@ extern struct mib_entry Tcp_mib[];
 #define tcpOutRsts      Tcp_mib[15].value.integer
 #define NUMTCPMIB       15
 
-extern struct tcb *Tcbs[];
+extern struct tcb *Tcbs;
 extern int16 Tcp_mss;
 extern int16 Tcp_window;
 extern int32 Tcp_irtt;
@@ -254,7 +254,6 @@ void tcp_icmp __ARGS((int32 icsource,int32 source,int32 dest,
 /* In tcpsubr.c: */
 void close_self __ARGS((struct tcb *tcb,int reason));
 struct tcb *create_tcb __ARGS((struct connection *conn));
-void link_tcb __ARGS((struct tcb *tcb));
 struct tcb *lookup_tcb __ARGS((struct connection *conn));
 void rtt_add __ARGS((int32 addr,int32 rtt));
 struct tcp_rtt *rtt_get __ARGS((int32 addr));
@@ -264,7 +263,6 @@ int seq_le __ARGS((int32 x,int32 y));
 int seq_lt __ARGS((int32 x,int32 y));
 int seq_within __ARGS((int32 x,int32 low,int32 high));
 void setstate __ARGS((struct tcb *tcb,int newstate));
-void unlink_tcb __ARGS((struct tcb *tcb));
 void tcp_garbage __ARGS((int red));
 
 /* In tcpout.c: */

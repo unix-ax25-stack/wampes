@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.7 1991/04/25 18:27:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.8 1991/05/09 07:38:51 deyke Exp $ */
 
 #ifndef _SESSION_H
 #define _SESSION_H
@@ -9,16 +9,16 @@
 #include "global.h"
 #endif
 
+#ifndef _PROC_H
+#include "proc.h"
+#endif
+
 #ifndef _HARDWARE_H
 #include "hardware.h"
 #endif
 
 #ifndef _TELNET_H
 #include "telnet.h"
-#endif
-
-#ifndef _ICMP_H
-#include "icmp.h"
 #endif
 
 #ifndef _AX25_H

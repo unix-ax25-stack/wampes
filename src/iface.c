@@ -1,20 +1,20 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.6 1991/04/25 18:27:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.7 1991/05/09 07:38:21 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <stdio.h>
 #include "global.h"
-#include "iface.h"
 #include "mbuf.h"
-#include "pktdrvr.h"
+#include "proc.h"
+#include "iface.h"
 #include "ip.h"
 #include "netuser.h"
+#include "ax25.h"
+#include "enet.h"
+#include "pktdrvr.h"
 #include "cmdparse.h"
 #include "commands.h"
-#include "enet.h"
-#include "ax25.h"
-/* #include "proc.h" */
 
 static void showiface __ARGS((struct iface *ifp));
 static int mask2width __ARGS((int32 mask));
@@ -33,33 +33,79 @@ struct iface *Ifaces = &Loopback;
 
 /* Loopback pseudo-interface */
 struct iface Loopback = {
+	&Encap,         /* Link to next entry */
+	"loopback",     /* name         */
+	CL_NONE,        /* type         */
+	&Iftypes[0],    /* iftype       */
+	0x7f000001L,    /* addr         127.0.0.1 */
+	0xffffffffL,    /* broadcast    255.255.255.255 */
+	0xffffffffL,    /* netmask      255.255.255.255 */
+	NULL,           /* (*ioctl)     */
+	NULLFP,         /* (*iostatus)  */
+	NULLFP,         /* (*send)      */
+	NULLFP,         /* (*output)    */
+	NULLFP,         /* (*raw)       */
+	NULLFP,         /* (*stop)      */
+	NULLFP,         /* (*status)    */
+	MAXINT16,       /* mtu          No limit */
+	0,              /* dev          */
+	0,              /* xdev         */
+	0,              /* flags        */
+	0,              /* trace        */
+	NULLCHAR,       /* trfile       */
+	NULLFILE,       /* trfp         */
+	NULLCHAR,       /* hwaddr       */
+	NULLIF,         /* forw         */
+	0,              /* ipsndcnt     */
+	0,              /* rawsndcnt    */
+	0,              /* iprcvcnt     */
+	0,              /* rawrcvcnt    */
+	0,              /* lastsent     */
+	0,              /* lastrecv     */
+	NULL,           /* rxproc       */
+	NULL,           /* txproc       */
+	NULL,           /* supv         */
+	0,              /* sendcrc      */
+	0,              /* crcerrors    */
+	NULL,           /* extension    */
+};
+/* Encapsulation pseudo-interface */
+struct iface Encap = {
 	NULLIF,
-	"loopback",
-	CL_NONE,
-	&Iftypes[0],
-	0x7f000001,     /* 127.0.0.1 */
-	0xffffffff,     /* 255.255.255.255 */
-	0xffffffff,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	MAXINT16,       /* No limit on MTU */
-	0,
-	0,
-	0,
-	0,
-	NULLCHAR,
-	NULLFILE,
-	NULLCHAR,
-	NULLIF,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0
+	"encap",        /* name         */
+	CL_NONE,        /* type         */
+	&Iftypes[0],    /* iftype       */
+	INADDR_ANY,     /* addr         0.0.0.0 */
+	0xffffffffL,    /* broadcast    255.255.255.255 */
+	0xffffffffL,    /* netmask      255.255.255.255 */
+	NULL,           /* (*ioctl)     */
+	NULLFP,         /* (*iostatus)  */
+	ip_encap,       /* (*send)      */
+	NULLFP,         /* (*output)    */
+	NULLFP,         /* (*raw)       */
+	NULLFP,         /* (*stop)      */
+	NULLFP,         /* (*status)    */
+	MAXINT16,       /* mtu          No limit */
+	0,              /* dev          */
+	0,              /* xdev         */
+	0,              /* flags        */
+	0,              /* trace        */
+	NULLCHAR,       /* trfile       */
+	NULLFILE,       /* trfp         */
+	NULLCHAR,       /* hwaddr       */
+	NULLIF,         /* forw         */
+	0,              /* ipsndcnt     */
+	0,              /* rawsndcnt    */
+	0,              /* iprcvcnt     */
+	0,              /* rawrcvcnt    */
+	0,              /* lastsent     */
+	0,              /* lastrecv     */
+	NULL,           /* rxproc       */
+	NULL,           /* txproc       */
+	NULL,           /* supv         */
+	0,              /* sendcrc      */
+	0,              /* crcerrors    */
+	NULL,           /* extension    */
 };
 
 char Noipaddr[] = "IP address field missing, and ip address not set\n";
@@ -98,6 +144,9 @@ void *p;
 	}
 	if(argc == 2){
 		showiface(ifp);
+		if ( ifp->status != NULLFP ) {
+			(*ifp->status)(ifp);
+		}
 		return 0;
 	}
 	if(argc == 3){
@@ -209,7 +258,7 @@ char *mode;
 	struct iftype *ift;
 
 	for(ift = &Iftypes[0];ift->name != NULLCHAR;ift++)
-		if(strnicmp(ift->name,mode,(int)strlen(mode)) == 0)
+		if(strnicmp(ift->name,mode,strlen(mode)) == 0)
 			break;
 	if(ift->name == NULLCHAR){
 		return -1;
@@ -348,9 +397,21 @@ int32 mask;
 	}
 	return width;
 }
-/* Raw output routine that dumps all packets. Used by dialer,  tip, etc */
+
+/* return buffer with name + comment */
+char *
+if_name(ifp,comment)
+struct iface *ifp;
+char *comment;
+{
+	char *result = mallocw( strlen(ifp->name) + strlen(comment) + 1 );
+	strcpy( result, ifp->name );
+	return strcat( result, comment );
+}
+
+/* Raw output routine that tosses all packets. Used by dialer, tip, etc */
 int
-dumppkt(ifp,bp)
+bitbucket(ifp,bp)
 struct iface *ifp;
 struct mbuf *bp;
 {

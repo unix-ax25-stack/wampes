@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.4 1991/03/28 19:39:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.5 1991/05/09 07:38:07 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -18,12 +18,7 @@ int doarp __ARGS((int argc,char *argv[],void *p));
 /* In asy.c: */
 int asy_attach __ARGS((int argc,char *argv[],void *p));
 
-/* In ax_mbx.c: */
-int dombox __ARGS((int argc,char *argv[],void *p));
-
 /* In ax25cmd.c: */
-int ax250 __ARGS((int argc,char *argv[],void *p));
-int ax25start __ARGS((int argc,char *argv[],void *p));
 int doax25 __ARGS((int argc,char *argv[],void *p));
 int doaxheard __ARGS((int argc,char *argv[],void *p));
 int doaxdest __ARGS((int argc,char *argv[],void *p));
@@ -40,7 +35,6 @@ int dormd __ARGS((int argc,char *argv[],void *p));
 
 /* In domain.c: */
 int dodomain __ARGS((int argc,char *argv[],void *p));
-int dodtrace __ARGS((int argc,char *argv[],void *p));
 
 /* In drsi.c: */
 int dodrstat __ARGS((int argc,char *argv[],void *p));
@@ -113,13 +107,20 @@ int doescape __ARGS((int argc,char *argv[],void *p));
 int doremote __ARGS((int argc,char *argv[],void *p));
 int doboot __ARGS((int argc,char *argv[],void *p));
 
+/* In mailbox.c: */
+int dombox __ARGS((int argc,char *argv[],void *p));
+int ax250 __ARGS((int argc,char *argv[],void *p));
+int ax25start __ARGS((int argc,char *argv[],void *p));
+int nr40 __ARGS((int argc,char *argv[],void *p));
+int nr4start __ARGS((int argc,char *argv[],void *p));
+int telnet0 __ARGS((int argc,char *argv[],void *p));
+int telnet1 __ARGS((int argc,char *argv[],void *p));
+
 /* In nntpcli.c: */
 int donntp __ARGS((int argc,char *argv[],void *p));
 
 /* In nrcmd.c: */
 int donetrom __ARGS((int argc,char *argv[],void *p));
-int nr40 __ARGS((int argc,char *argv[],void *p));
-int nr4start __ARGS((int argc,char *argv[],void *p));
 int nr_attach __ARGS((int argc,char *argv[],void *p));
 
 /* In pc.c: */
@@ -137,7 +138,7 @@ int pi_attach __ARGS((int argc,char *argv[],void *p));
 int dopistat __ARGS((int argc,char *argv[],void *p));
 
 /* In pppcmd.c: */
-int dopppcontrol __ARGS((int argc,char *argv[], void *p));
+int doppp_commands __ARGS((int argc,char *argv[], void *p));
 
 /* In rarp.c: */
 int dorarp __ARGS((int argc,char *argv[],void *p));
@@ -172,8 +173,6 @@ int dorecord __ARGS((int argc,char *argv[],void *p));
 int doupload __ARGS((int argc,char *argv[],void *p));
 
 /* In smisc.c: */
-int telnet1 __ARGS((int argc,char *argv[],void *p));
-int telnet0 __ARGS((int argc,char *argv[],void *p));
 int dis1 __ARGS((int argc,char *argv[],void *p));
 int dis0 __ARGS((int argc,char *argv[],void *p));
 int echo1 __ARGS((int argc,char *argv[],void *p));

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.9 1991/03/28 19:39:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.10 1991/05/09 07:38:32 deyke Exp $ */
 
 #ifndef _LAPB_H
 #define _LAPB_H
@@ -145,5 +145,6 @@ int close_ax __ARGS((struct ax25_cb *cp));
 int reset_ax __ARGS((struct ax25_cb *cp));
 int del_ax __ARGS((struct ax25_cb *cp));
 int valid_ax __ARGS((struct ax25_cb *cp));
+int kick_ax __ARGS((struct ax25_cb *cp));
 
 #endif  /* _LAPB_H */

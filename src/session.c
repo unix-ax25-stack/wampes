@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.8 1991/04/25 18:27:32 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.9 1991/05/09 07:38:50 deyke Exp $ */
 
 /* NOS User Session control
  * Copyright 1991 Phil Karn, KA9Q
@@ -7,22 +7,22 @@
 #include "global.h"
 #include "config.h"
 #include "mbuf.h"
-#include "socket.h"
-#include "iface.h"
+#include "proc.h"
 #include "tcp.h"
-#include "netrom.h"
-#include "axclient.h"
-#include "ftp.h"
-#include "telnet.h"
-#include "finger.h"
-#include "icmp.h"
 #include "netuser.h"
-#include "session.h"
-#include "cmdparse.h"
-#include "timer.h"
+#include "ftp.h"
+#include "icmp.h"
+#include "telnet.h"
 #include "tty.h"
-#include "commands.h"
+#include "session.h"
 #include "hardware.h"
+#include "socket.h"
+#include "cmdparse.h"
+#include "commands.h"
+/* #include "main.h" */
+#include "axclient.h"
+#include "finger.h"
+#include "netrom.h"
 
 struct session *Sessions;
 struct session *Current;
@@ -277,6 +277,10 @@ void *p;
 		break;
 #ifdef  AX25
 	case AX25TNC:
+		if(kick_ax(sp->cb.ax25) == -1){
+			tprintf(Notval);
+			return 1;
+		}
 		break;
 #endif
 	case FINGER:
@@ -287,6 +291,10 @@ void *p;
 		break;
 #ifdef NETROM
 	case NRSESSION:
+		if(kick_nr(sp->cb.netrom) == -1){
+			tprintf(Notval);
+			return 1;
+		}
 		break;
 #endif
 	}
