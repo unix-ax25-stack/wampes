@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.19 1995/03/29 22:03:40 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.20 1995/06/04 09:36:44 deyke Exp $
 
 case "`uname -sr`" in
 HP-UX*)
@@ -63,6 +63,18 @@ findprog()
 			return
 		fi
 	done
+	for i in $*; do
+		if [ $isfile $i -a ! $islink $i ]; then
+			echo "#define ${name} \"$i\""
+			return
+		fi
+	done
+	for i in $*; do
+		if [ $isfile $i ]; then
+			echo "#define ${name} \"$i\""
+			return
+		fi
+	done
 	echo "#define ${name} \"\""
 }
 
@@ -101,6 +113,7 @@ echo
 
 finddir HOME_DIR /home /users /u /usr/people
 finddir MAIL_DIR /var/mail /var/spool/mail /usr/mail /usr/spool/mail
+finddir NEWS_DIR /var/spool/news /usr/spool/news
 finddir SPOOL_DIR /var/spool /usr/spool
 finddir UUCP_DIR /var/spool/uucp /usr/spool/uucp
 
@@ -112,6 +125,7 @@ findfile WTMP__FILE /var/adm/wtmp /var/log/wtmp /usr/adm/wtmp /etc/wtmp
 
 echo
 
+findprog CTLINND_PROG /usr/local/news/bin/ctlinnd
 findprog GZIP_PROG /usr/bin/gzip /bin/gzip /usr/local/bin/gzip /usr/contrib/bin/gzip
 findprog LS_PROG /usr/bin/ls /bin/ls
 findprog MAIL_PROG /usr/openwin/bin/xview/mail /usr/bin/mailx /bin/mailx /usr/sbin/Mail /usr/bin/mail /bin/mail

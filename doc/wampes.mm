@@ -1,13 +1,7 @@
 .\"
 .\" Format this manual with:
 .\"
-.\" tbl -TX < manual.mm | nroff -mm | col
-.\" - or -
-.\" tbl < manual.mm | troff -mm
-.\" - or -
-.\" gtbl < manual.mm | gnroff -mgm
-.\" - or -
-.\" gtbl < manual.mm | groff -mgm
+.\" groff -t -p -mgm manual.mm
 .\"
 .PH "" \" Page header
 .ds HF 3 3 3 3 3 3 3 \" All headers bold
@@ -18,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 950531" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 950604" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 950531
+Version 950604
 .S
 .SP 2
 .S 15

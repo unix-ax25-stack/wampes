@@ -1,14 +1,8 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/common/setup,v 1.5 1994/10/30 21:27:13 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/common/setup,v 1.6 1995/06/04 09:36:51 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
-.\" tbl -TX < manual.mm | nroff -mm | col
-.\" - or -
-.\" tbl < manual.mm | troff -mm
-.\" - or -
-.\" gtbl < manual.mm | gnroff -mgm
-.\" - or -
-.\" gtbl < manual.mm | groff -mgm
+.\" groff -t -p -mgm manual.mm
 .\"
 .PH "" \" Page header
 .ds HF 3 3 3 3 3 3 3 \" All headers bold

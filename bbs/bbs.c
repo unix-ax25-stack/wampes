@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.92 1995/05/23 21:51:59 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.93 1995/06/04 09:36:39 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -142,7 +142,6 @@ static struct nntp_channel nntp_channel = {
 };
 
 static char prompt[1024] = "bbs> ";
-static char *myhostname;
 static const char daynames[] = "SunMonTueWedThuFriSat";
 static const char monthnames[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
 static int did_forward;
@@ -701,7 +700,7 @@ static void split_address(const char *addr, char *userpart, char *hostpart)
   strcpy(userpart, buf);
   cp = strchr(userpart, '@');
   if (!cp) {
-    strcpy(hostpart, myhostname);
+    strcpy(hostpart, MYHOSTNAME);
   } else {
     *cp = 0;
     strcpy(hostpart, cp + 1);
@@ -711,11 +710,11 @@ static void split_address(const char *addr, char *userpart, char *hostpart)
   }
 
   if (!*userpart || !strcmp(userpart, "mailer-daemon"))
-    strcpy(userpart, myhostname);
+    strcpy(userpart, MYHOSTNAME);
   if ((cp = strchr(hostpart, '.')))
     *cp = 0;
   if (!*hostpart)
-    strcpy(hostpart, myhostname);
+    strcpy(hostpart, MYHOSTNAME);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -950,7 +949,7 @@ static void generate_bid_and_mid(struct mail *mail)
     *--cp = '_';
     *--cp = '_';
     *--cp = '_';
-    strncpy(mail->bid, myhostname, strlen(myhostname));
+    strncpy(mail->bid, MYHOSTNAME, strlen(MYHOSTNAME));
     while (t == time(0))
       sleep(1);
     close(fdlock);
@@ -1030,9 +1029,9 @@ static void route_mail(struct mail *mail)
   if ((cp = strchr(mail->tohost, '.')))
     *cp = 0;
   if (!*mail->fromhost)
-    strcpy(mail->fromhost, myhostname);
+    strcpy(mail->fromhost, MYHOSTNAME);
   if (!*mail->tohost)
-    strcpy(mail->tohost, myhostname);
+    strcpy(mail->tohost, MYHOSTNAME);
   strlwc(mail->fromuser);
   strlwc(mail->fromhost);
   strlwc(mail->touser);
@@ -1068,14 +1067,14 @@ static void route_mail(struct mail *mail)
 	  tm->tm_mday,
 	  tm->tm_hour,
 	  tm->tm_min,
-	  myhostname,
+	  MYHOSTNAME,
 	  MYDOMAIN);
   append_line(mail, strupc(buf), HEAD);
 
   /* Call delivery agents */
 
   if (callvalid(mail->touser) ||
-      (callvalid(mail->tohost) && !calleq(mail->tohost, myhostname))) {
+      (callvalid(mail->tohost) && !calleq(mail->tohost, MYHOSTNAME))) {
     send_to_mail_or_news(mail, MAIL);
   } else {
     send_to_mail_or_news(mail, NEWS);
@@ -1501,12 +1500,12 @@ static void forward_news(void)
   struct strlist *filetail;
   struct strlist *p;
 
-  sprintf(batchfile, NEWSSPOOL "/out.going/%s", user.name);
+  sprintf(batchfile, NEWS_DIR "/out.going/%s", user.name);
   sprintf(workfile, "%s.bbs", batchfile);
   if (!(fp = fopen(workfile, "r"))) {
     if (rename(batchfile, workfile))
       return;
-    sprintf(line, CTLINND " -s flush %s", user.name);
+    sprintf(line, CTLINND_PROG " -s flush %s", user.name);
     system(line);
     for (i = 0;; i++) {
       if (!stat(batchfile, &statbuf))
@@ -1528,7 +1527,7 @@ static void forward_news(void)
     }
     if (*line != '/') {
       char tmp[1024];
-      sprintf(tmp, NEWSSPOOL "/%s", line);
+      sprintf(tmp, NEWS_DIR "/%s", line);
       strcpy(line, tmp);
     }
     if (!stat(line, &statbuf)) {
@@ -1883,7 +1882,7 @@ static void reply_command(int argc, char **argv)
       if (!(p = get_host_from_header(line)))
 	break;
     fclose(fp);
-    strcpy(mail->tohost, host ? host : myhostname);
+    strcpy(mail->tohost, host ? host : MYHOSTNAME);
   }
   for (p = index.subject;;) {
     while (isspace(*p & 0xff))
@@ -1964,7 +1963,7 @@ static void send_command(int argc, char **argv)
     return;
   }
   if (!*mail->tohost)
-    strcpy(mail->tohost, myhostname);
+    strcpy(mail->tohost, MYHOSTNAME);
   if (!*mail->fromuser || level < MBOX)
     strcpy(mail->fromuser, user.name);
   if (*mail->bid) {
@@ -2398,9 +2397,11 @@ int main(int argc, char **argv)
   int err_flag = 0;
   struct passwd *pw;
 
-  if (!*UUCP_DIR ||
+  if (!*CTLINND_PROG ||
+      !*NEWS_DIR ||
+      !*RNEWS_PROG ||
       !*SENDMAIL_PROG ||
-      !*RNEWS_PROG)
+      !*UUCP_DIR)
     halt();
 
   signal(SIGINT,  interrupt_handler);
@@ -2446,10 +2447,6 @@ int main(int argc, char **argv)
 
   mkdir(LOCKDIR, 0755);
   mkdir(WRKDIR, 0755);
-
-  if (gethostname(buf, sizeof(buf))) halt();
-  if ((cp = strchr(buf, '.'))) *cp = 0;
-  if (!(myhostname = strdup(buf))) halt();
 
   pw = do_forward ? getpwnam(sysname) : getpwuid(getuid());
   if (!pw) halt();

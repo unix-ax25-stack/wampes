@@ -1,13 +1,7 @@
 .\"
 .\" Format this manual with:
 .\"
-.\" tbl -TX < manual.mm | nroff -mm | col
-.\" - or -
-.\" tbl < manual.mm | troff -mm
-.\" - or -
-.\" gtbl < manual.mm | gnroff -mgm
-.\" - or -
-.\" gtbl < manual.mm | groff -mgm
+.\" groff -t -p -mgm manual.mm
 .\"
 .PH "" \" Page header
 .ds HF 3 3 3 3 3 3 3 \" All headers bold

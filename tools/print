@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/print,v 1.4 1995/03/13 13:32:22 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/print,v 1.5 1995/06/04 09:36:41 deyke Exp $
 
 if [[ -n "$1" ]]; then
 	files="setup $*"
@@ -15,11 +15,11 @@ nprint)
 tprint)
 	cat $files | tbl | troff -mm
 	;;
-gnprint)
-	cat $files | gtbl | gnroff -mgm
+aprint)
+	cat $files | groff -p -t -mgm -Tascii
 	;;
-gtprint)
-	cat $files | gtbl | groff -mgm
+pprint)
+	cat $files | groff -p -t -mgm -Tps
 	;;
 *)
 	echo $0 not recognized
