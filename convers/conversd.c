@@ -1,11 +1,10 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.1 1988/09/12 20:20:58 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.2 1988/09/13 22:27:09 dk5sg Exp $";
 
 #include <sys/types.h>
 
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <netdb.h>
 #include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>
@@ -587,62 +586,6 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void connect_command(cp)
-struct connection *cp;
-{
-
-  char  *host;
-  char  buffer[2048];
-  int  fd;
-  register struct connection *p;
-  struct hostent *hp;
-  struct sockaddr_in addr;
-
-  addr.sin_family = AF_INET;
-  host = getarg(0, 0);
-  addr.sin_port = atoi(getarg(0, 0));
-  if (!*host || !addr.sin_port) {
-    appendstring(&cp->obuf, "*** Usage: /CONNECT <host> <port>\n");
-    return;
-  }
-  if (!(hp = gethostbyname(host))) {
-    endhostent();
-    sprintf(buffer, "*** %s not found in /etc/hosts\n", host);
-    appendstring(&cp->obuf, buffer);
-    return;
-  }
-  addr.sin_addr.s_addr = ((struct in_addr *) (hp->h_addr))->s_addr;
-  endhostent();
-  if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    appendstring(&cp->obuf, "*** Cannot create socket\n");
-    return;
-  }
-  if (connect(fd, &addr, sizeof(addr))) {
-    close(fd);
-    sprintf(buffer, "*** Cannot connect to %s:%d\n", host, addr.sin_port);
-    appendstring(&cp->obuf, buffer);
-    return;
-  }
-  cp = (struct connection *) calloc(1, sizeof(struct connection ));
-  cp->time = currtime;
-  cp->fd = fd;
-  cp->fmask = (1 << fd);
-  cp->next = connections;
-  connections = cp;
-  sprintf(buffer, "/\377\200HOST %s\n", myhostname);
-  appendstring(&cp->obuf, buffer);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void disconnect_command(cp)
-struct connection *cp;
-{
-  /*** not implemented yet ***/
-}
-
-/*---------------------------------------------------------------------------*/
-
 static void help_command(cp)
 struct connection *cp;
 {
@@ -657,7 +600,7 @@ struct connection *cp;
   appendstring(&cp->obuf, "/LINKS [L]           List all connections to other hosts\n");
   appendstring(&cp->obuf, "/MSG user text...    Send a private message to user\n");
   appendstring(&cp->obuf, "/QUIT                Terminate the convers session\n");
-  appendstring(&cp->obuf, "/WHO [L]             List all users and their channel numbers\n");
+  appendstring(&cp->obuf, "/WHO [Q] [L]         List all users and their channel numbers\n");
   appendstring(&cp->obuf, "/WRITE user text...  Send a private message to user\n");
 
   appendstring(&cp->obuf, "***\n");
@@ -745,7 +688,7 @@ struct connection *cp;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
   cp->channel = atoi(getarg(0, 0));
-  sprintf(buffer, "conversd @ %s $Revision: 2.1 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.2 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   send_user_change_msg(cp->name, cp->host, cp->time, -1, cp->channel);
 }
@@ -757,10 +700,44 @@ struct connection *cp;
 {
 
   char  buffer[2048];
-  int  full;
+  int  channel;
+  int  full = 0;
+  int  quick = 0;
   struct connection *p;
 
-  full = *(getarg(0, 0));
+  switch (*(getarg(0, 0))) {
+  case 'l':
+    full = 1;
+    break;
+  case 'q':
+    quick = 1;
+    break;
+  }
+
+  if (quick) {
+    appendstring(&cp->obuf, "Channel Users\n");
+    for (p = connections; p; p = p->next) p->locked = 0;
+    do {
+      channel = -1;
+      for (p = connections; p; p = p->next)
+	if (p->type == CT_USER && !p->locked && (channel < 0 || channel == p->channel)) {
+	  if (channel < 0) {
+	    channel = p->channel;
+	    sprintf(buffer, "%7d", channel);
+	  }
+	  strcat(buffer, " ");
+	  strcat(buffer, p->name);
+	  p->locked = 1;
+	}
+      if (channel >= 0) {
+	strcat(buffer, "\n");
+	appendstring(&cp->obuf, buffer);
+      }
+    } while (channel >= 0);
+    appendstring(&cp->obuf, "***\n");
+    return;
+  }
+
   appendstring(&cp->obuf, full ?
       "User     Host     Via      Channel   Time Queue Receivd Xmitted\n" :
       "User     Host     Via      Channel   Time\n");
@@ -781,7 +758,6 @@ struct connection *cp;
       appendstring(&cp->obuf, buffer);
     }
   appendstring(&cp->obuf, "***\n");
-  return;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -907,8 +883,6 @@ struct connection *cp;
     "?",          help_command,       CM_USER,
     "bye",        bye_command,        CM_USER,
     "channel",    channel_command,    CM_USER,
-    "connect",    connect_command,    CM_USER,
-    "disconnect", disconnect_command, CM_USER,
     "exit",       bye_command,        CM_USER,
     "help",       help_command,       CM_USER,
     "invite",     invite_command,     CM_USER,
