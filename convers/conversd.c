@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.51 1993/08/02 19:53:07 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.52 1993/09/01 16:00:00 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -1204,7 +1204,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.51 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.52 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1335,8 +1335,15 @@ static void h_host_command(struct link *lp)
   send_string(lp, buffer);
 
   for (up = users; up; up = up->u_next)
-    if (up->u_channel >= 0) {
-      sprintf(buffer, "/\377\200USER %s %s %ld %d %d %s\n", up->u_name, up->u_host->h_name, up->u_seq, -1, up->u_channel, up->u_note);
+    if (up->u_channel >= 0 || up->u_seq) {
+      sprintf(buffer,
+	      "/\377\200USER %s %s %ld %d %d %s\n",
+	      up->u_name,
+	      up->u_host->h_name,
+	      up->u_seq,
+	      -1,
+	      up->u_channel,
+	      up->u_channel >= 0 ? up->u_note : "");
       send_string(lp, buffer);
     }
 

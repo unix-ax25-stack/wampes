@@ -1,7 +1,7 @@
 /* qth: qth, locator, distance, and course computations */
 
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/qth.c,v 1.8 1993/08/30 15:04:01 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/qth.c,v 1.9 1993/09/01 16:00:12 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -14,12 +14,13 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #define M_PI            3.14159265358979323846
 #endif
 
-#define MYLATITUDE       (48L * 3600L + 38L * 60L + 33L)
-#define MYLONGITUDE     -( 8L * 3600L + 53L * 60L + 28L)
+#define QTH_INI         "/usr/local/lib/qth.ini"
 #define RADIUS          6370.0
 
 static char **argv;
 static int argc;
+static long mylatitude  =  (48L *3600L + 38L *60L + 33L);
+static long mylongitude = -( 8L *3600L + 53L *60L + 28L);
 
 /*---------------------------------------------------------------------------*/
 
@@ -172,8 +173,8 @@ static void qra_to_sec(char *qra, long *longitude, long *latitude)
 	       + (7 - (z - 1) / 10) * 450L
 	       + btab[qra[4] - 'A']
 	       + 75L;
-  *longitude = centervalue(*longitude, MYLONGITUDE, 26 * 7200L);
-  *latitude  = centervalue(*latitude,  MYLATITUDE,  26 * 3600L);
+  *longitude = centervalue(*longitude, mylongitude, 26 * 7200L);
+  *latitude  = centervalue(*latitude,  mylatitude,  26 * 3600L);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -202,7 +203,7 @@ static const char *course_name(double a)
 
 /*---------------------------------------------------------------------------*/
 
-static int get_int(char *s, int lower, int upper)
+static int get_int(const char *s, int lower, int upper)
 {
   int i;
 
@@ -213,7 +214,7 @@ static int get_int(char *s, int lower, int upper)
 
 /*---------------------------------------------------------------------------*/
 
-static void print_qth(char *prompt, long longitude, long latitude, char *loc, char *qra)
+static void print_qth(const char *prompt, long longitude, long latitude, const char *loc, const char *qra)
 {
   char *pl, *pb;
 
@@ -315,7 +316,16 @@ int main(int pargc, char **pargv)
   long latitude1;
   long latitude2;
   long longitude1;
+  FILE * fp;
   long longitude2;
+
+  if (fp = fopen(QTH_INI, "r")) {
+    if (fscanf(fp, "%ld %ld", &longitude1, &latitude1) == 2) {
+      mylongitude = longitude1;
+      mylatitude = latitude1;
+    }
+    fclose(fp);
+  }
 
   argc = --pargc;
   argv = ++pargv;
@@ -326,8 +336,8 @@ int main(int pargc, char **pargv)
 
   two_is_me = 0;
   if (parse_arg(&longitude2, &latitude2)) {
-    longitude2 = MYLONGITUDE;
-    latitude2  = MYLATITUDE;
+    longitude2 = mylongitude;
+    latitude2  = mylatitude;
     two_is_me = 1;
   }
   sec_to_loc(longitude2, latitude2, loc2);
