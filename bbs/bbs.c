@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.76 1994/04/13 09:51:57 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.77 1994/04/15 16:13:57 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -1296,6 +1296,7 @@ static void f_command(int argc, char **argv)
   char xfile[1024];
   int do_not_exit;
   int lifetime;
+  long expiretime;
   struct dirent *dp;
   struct filelist *filelist = 0;
   struct filelist *p;
@@ -1366,12 +1367,9 @@ static void f_command(int argc, char **argv)
       fclose(fp);
       if (!*from) continue;
       lifetime = -1;
-      if (*expire) {
-	lifetime = parse_date(expire);
-	if (lifetime != -1) {
-	  lifetime = (lifetime - time((long *) 0)) / DAYS;
-	  if (lifetime < 1) lifetime = 1;
-	}
+      if ((expiretime = parse_date(expire)) != -1) {
+	lifetime = (expiretime - time((long *) 0) + DAYS - 1) / DAYS;
+	if (lifetime < 1) lifetime = 1;
       }
       if (stat(cfile, &statbuf)) continue;
       memset((char *) &index, 0, sizeof(index));
@@ -2402,6 +2400,7 @@ static void recv_from_mail_or_news(void)
   int from_priority;
   int n;
   int state;
+  long expiretime;
   struct mail *mail;
 
   while (fgets(line, sizeof(line), stdin)) {
@@ -2455,12 +2454,9 @@ static void recv_from_mail_or_news(void)
 	strcat(mail->to, "@");
 	strcat(mail->to, distr);
       }
-      if (*expire) {
-	mail->lifetime = parse_date(expire);
-	if (mail->lifetime != -1) {
-	  mail->lifetime = (mail->lifetime - time((long *) 0)) / DAYS;
-	  if (mail->lifetime < 1) mail->lifetime = 1;
-	}
+      if ((expiretime = parse_date(expire)) != -1) {
+	mail->lifetime = (expiretime - time((long *) 0) + DAYS - 1) / DAYS;
+	if (mail->lifetime < 1) mail->lifetime = 1;
       }
       route_mail(mail);
     } else
