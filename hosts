@@ -66,6 +66,7 @@
 44.130.0.63     DL3HBO  # Ottmar
 44.130.0.66     DG2HL   # Roger Luff, 2000 Barsbuettel
 44.130.0.67     DL4XM   # Mattias Schwarze, 2000 Hamburg 74
+44.130.0.68     DG8HO   # David, Hamburg
 44.130.0.69     DG9HZ   # Werner Schramm, 2000 Hamburg 73
 44.130.0.70     DL0YB   # Clubstation OV Sachsenwald E06
 44.130.0.71     DK1NH   # Horst Damaschke, 2054 Geesthacht/Elbe
@@ -85,6 +86,7 @@
 44.130.0.87     DG3BAK  #
 44.130.0.88     DG3BAK-1        # Sven Schley; Test
 44.130.0.90     DL0HPS  # Schulstation E19
+44.130.0.91     DL1LBZ  # Michael, Uetersen
 44.130.0.92     DL2HAD  # Klaus, 2082 Uetersen
 44.130.0.93     DC3HC-1 # Carsten
 44.130.0.94     DG4HU   # Udo Menck, 2160 Stade 5
@@ -103,6 +105,7 @@
 44.130.0.112    DG2YEK  # Randolf
 44.130.0.113    DF3OA   # Ingmar, 2150 Buxtehude
 44.130.0.114    DG4JG   # Heinz
+44.130.0.116    DL6HAC  # Frieder
 44.130.0.117    DG8XP   # Peter, Hamburg
 44.130.0.118    DG8XT   # Thomas, Hamburg
 44.130.0.120    DK3HG   # Michael Meifert, 2075 Ammersbek; WAMPES
@@ -125,9 +128,13 @@
 44.130.0.146    DL6HBO-ARCHIE   # Rainer Schubert, Ammersbek
 44.130.0.150    DL0HHA  # ClubStn OePNV
 44.130.0.151    DC1XM   # Michael
+44.130.0.152    DF2XP   # Willi, Buxtehude
 44.130.0.153    DL3LBA  # Kai, HH-Borgfelde
 44.130.0.157    DL3XAK-3        # Karsten; Test
 44.130.0.160    DB0HHT-L        # ; LINUX
+44.130.0.163    DG3LAD  # Boris
+44.130.0.168    DG8HO-NOS       #
+44.130.0.170    DC0TK   # Manfred
 44.130.0.181    DK3UZ-SVR       # Edmund Ramm, 22175 Hamburg
 44.130.0.200    DB0SEF  #
 44.130.0.202    DG5HT-1 # Thomas Kochanek; Test (Gateway)
@@ -150,7 +157,6 @@
 44.130.1.11     DL8LAQ  # Norbert, 2358 Kaltenkirchen
 44.130.1.12     DL3HDB  # Hanfried Braune, Norderstedt
 44.130.1.13     DJ3HZ   # Klaus, Norderstedt
-44.130.1.18     DG6BDO-2        # Andreas
 44.130.1.19     DF9HU   # Franz Schwenke, 2085 Quickborn-Heide
 44.130.1.20     DD0LD   # Dieter Gothner, 24568 Kaltenkirchen
 #44.130.1.25    DG5LAN  # Nina, Kattendorf
@@ -188,6 +194,8 @@
 44.130.2.36     DL1HBD  # Dieter Kumpres
 44.130.2.37     DL2XBB  # Burkhard, Winsen
 44.130.2.38     DL1HCW  # Klaus
+44.130.2.51     PE1IUA-DC       # Ron
+44.130.2.58     DG8XC   # Cora
 44.130.2.96     DB0HHS-NET      # HHS local Ethernet
 44.130.2.97     DB0HHS-NEWS     # HHS NNTP-Server
 44.130.2.98     DG8HD-SVR       # Dirk Pfau, Mailserver & Gateway
@@ -265,6 +273,7 @@
 44.130.5.11     DG8LAV  # Karlheinz Hagen, 2381 Dannewerk
 44.130.5.12     DC4LQ   # Michael Littwin, 2380 Schleswig
 44.130.5.13     DG9LAO  #
+44.130.5.81     DG6BDO  # Andreas, Kronshagen
 #
 #44.130.6.x     Itzehoe
 44.130.6.2      DD9LY   # Herbert Peters, 2219 Laegerdorf
@@ -291,6 +300,8 @@
 44.130.8.3      DL4MFM  # Mario, 4512 Wallenhorst
 44.130.8.4      DC1BF   # Bettina, 4512 Wallenhorst
 44.130.8.5      DB2BI   # Torsten, 4550 Bramsche
+44.130.8.6      DB9BJ   # Lars Naber, 48531 Nordhorn
+44.130.8.7      DG8BBF  # Wolfgang, Neuenkirchen
 44.130.8.10     DG8BBT  # Harald, 4550 Bramsche 3
 44.130.8.11     DL1BKE  # Joerg Reuter, 49716 Meppen
 44.130.8.12     DB9WT   # Hans Buth, 49186 Bad Iburg; AT486
@@ -310,7 +321,7 @@
 #
 #44.130.9.x     Braunschweig
 44.130.9.1      DK4EG   # Detlef Schmidt, 3300 Braunschweig
-44.130.9.2      DB0FC   # Detlef Schmidt (Digi)
+44.130.9.2      DB0FC   # Digi Braunschweig (DK4EG)
 44.130.9.3      DK3NY   # Gert Bemman, 3320 Salzgitter
 44.130.9.4      DF3AV   # Reinhard Ruediger, 3150 Peine
 44.130.9.5      DF3AV-1 # /DK0MAV-Test (BBS)
@@ -340,9 +351,18 @@
 44.130.9.29     DL0PPP-U        #
 44.130.9.30     DG9ABY  # Thomas, Meerdorf/Peine
 44.130.9.31     DL4OCE  # Arne, Ahnsen (ex DG6OBZ)
+44.130.9.33     DF2AU   # Hans Georg Giese, Braunschweig
+44.130.9.34     DC9IR   # Ulli, 38165 Lehre
+44.130.9.35     DC9IR-2 #
+44.130.9.36     DG1AM   # Mario Klebsch, Wolfenbuettel
 44.130.9.41     DC1AR   # Jens, Salzgitter-Bad
 44.130.9.42     DC2AJ   # KLaus-Dieter, Braunschweig
 44.130.9.43     DK6AJ   # Juergen, Braunschweig
+44.130.9.45     DG2ACE  #
+44.130.9.46     DG2ACE-1        #
+44.130.9.47     DG6ABM  #
+44.130.9.48     DG6ABM-1        #
+44.130.9.50     DH0OAE  # Oliver Teuber, 37534 Badenhausen
 #
 #44.130.10.x    Bremen
 44.130.10.1     DL0HT   # Clubstn HFT
@@ -362,11 +382,12 @@
 44.130.10.15    DG8BK   #
 44.130.10.16    DL2BAN  # Hermann
 44.130.10.17    DL9BU   # Guenter
-44.130.10.18    DL6YCl  # Guenter
+44.130.10.18    DL6YCL  # Guenter
 44.130.10.19    DL2BAS  # Friedhelm
 44.130.10.20    DL3BBC  #
 44.130.10.21    DL6BCB  # Thomas, 2870 Delmenhorst
 44.130.10.22    DF7BX   # Hans-Guenther, 2876 Berne 2
+44.130.10.23    DG9BHQ  # Mirko, Worpswede
 44.130.10.25    DL3BCI  # Matthias
 44.130.10.26    DC6KY   # Ruediger Wulf, 2807 Achim
 44.130.10.28    DL0DAM  # Clubstn OV Unterweser I56
@@ -378,12 +399,14 @@
 44.130.10.34    DL8BBW  # Erich Zieger, Bremerhaven; AT286
 44.130.10.35    DG1BA   # Dieter, 2800 Bremen
 44.130.10.36    DL6BBP  # Thomas Miesner, 2800 Bremen 1
+44.130.10.37    DL6BAW  # Fred Boehling, Bremen
 44.130.10.38    DG1BBQ  # Axel Bauda, 2850 Bremerhaven
+44.130.10.39    DG9HJ   # Hans Juergen, Cuxhaven
 44.130.10.40    DF7BZ   # Klaus, 2805 Stuhr; AT386SX
 44.130.10.44    DD0BG   # Helmut Kreiser, Bremen
 44.130.10.45    DG1BBC  # Joern, Bremen
 44.130.10.50    DL0BXX  # ClubStn MBB-ERNO
-44.130.10.81    DG6BDO  # Andreas, Bremerhaven
+44.130.10.81    DG6BDO-2        # Andreas, Bremerhaven
 44.130.10.82    DG9BCJ  # Peter, Bremerhaven
 44.130.10.83    DG9BIE  # Kai Uwe Gosda, 27578 Bremerhaven
 44.130.10.84    DG9BIN  # Conny, Wehdel nr Bremerhaven
@@ -406,6 +429,7 @@
 44.130.11.5     DD2OJ   # Andreas Guelzow, 3000 Hannover
 44.130.11.6     DB1OM   # Ulf Rimkus, 3002 Wedemark 2; Atari-ST
 44.130.11.7     DL2OAG  # Klaus Santelmann, 30159 Hannover
+44.130.11.8     DL8OBC  #
 44.130.11.10    DG1OBW  # Uwe Wippermann, Rinteln/Weser
 44.130.11.11    DK2OV   # Peter Pliefke, 3063 Obernkirchen
 44.130.11.20    DG8OX   # Michael, 3000 Hannover
@@ -423,6 +447,8 @@
 44.130.11.36    DL6OBN  # Christian, Hannover
 44.130.11.38    DL4OCA  # Stephan, Langenhagen
 44.130.11.39    DG1ACR  # Leif Jakob, 31535 Neustadt am Ruebenberge
+44.130.11.41    DB1AP   # Armin
+44.130.11.42    DK6OV   #
 44.130.11.100   DB0NER  # Digi, Neustadt (DL8OBX)
 44.130.11.101   DL8OBX  # Bernd Anding, 3057 Neustadt
 44.130.11.102   DG4OBJ  # Axel, Arnum; Amiga-1200
@@ -449,7 +475,7 @@
 44.130.12.35    SYS2.DL1BJL     # Matthias Wermann, Emden; JNOS
 44.130.12.36    SYS2.DB0FHO     # ; CONVERS-Server; ***
 44.130.12.37    SYS3.DB0FHO     # ; User-Terminal
-44.130.12.38    DB9BIG  # Daniela Gand, Emden
+44.130.12.38    DG9BIG  # Daniela Gand, Emden
 44.130.12.39    DG9BBT  # Heinz Park, Emden
 44.130.12.40    DG3BBI  # Michael Dlubatz, Emden
 44.130.12.41    DG1BAZ  # Stefan Frank, Emden; JNOS
@@ -467,12 +493,14 @@
 44.130.12.53    DG8BAH  # Kai Siebels, Westoverledingen; JNOS
 44.130.12.54    DC1BE   # Dirk Wahrheit, Papenburg; JNOS
 44.130.12.55    DL1BAH  # Karl Heinz Schirmer, Norden; JNOS
+44.130.12.56    DL8BCJ  # Horst, 26757 Borkum
 #
 #44.130.13.x    Hildesheim
 # lokale Adresskoordination: DC5ON
 44.130.13.1     DD8OA   # Jan Oppermann, 3200 Hildesheim
 44.130.13.2     DD8OA-1 # Jan Oppermann
 44.130.13.3     DL9OAO  # Mario, 3200 Hildesheim
+44.130.13.4     DL8OBC-A        #
 44.130.13.7     DL4OAQ  # Paul, 3200 Hildesheim
 44.130.13.11    DL9OBK  # Volker, Seesen
 44.130.13.12    DL2OBL  # Karin, Seesen
@@ -506,25 +534,22 @@
 44.130.13.201   DB0WAR-1        # Digi; 1200Bd
 #
 #44.130.14.x    Goettingen
-# --- Lokale Adresskoordination Raum Goettingen: DH8AAG
+# lokale Adresskoordination: DH8AAG
 44.130.14.1     DL2LK   # Wilfried Ahlborn, 37079 Goettingen
 44.130.14.2     DL4AL   # Ute Ahlborn, 37079 Goettingen
 44.130.14.3     DH8AAG  # Oliver Grellert, 37075 Goettingen
-44.130.14.4     DL8AAU  # Alex Kurpiers, 37081 Goettingen
-44.130.14.5     server.DH8AAG   # Oliver Grellert, 37075 Goettingen
-44.130.14.6     DC3AV   # Andree Utermoehlen, 37075 Goettingen
+44.130.14.4     DL8AAU  # Alex Kurpiers, 37075 Goettingen
+44.130.14.5     SERVER.DH8AAG   #
+44.130.14.6     DC3AV   # Andree Utermoehlen, 3400 Goettingen
 44.130.14.7     DG3AAF  # Andreas Kiehl, 37083 Goettingen
-44.130.14.8     DL1AAU  # Wolfgang KÅhn, 37120 Bovenden
-44.130.14.9     DL1WT   # GÅnther FrÑbel, 37083 Goettingen
-44.130.14.10    DL0ALK  # ALK-Club-Stn, 37075 Goettingen
-44.130.14.11            # frei
-44.130.14.12            # frei
+44.130.14.8     DL1AAU  # Wolfgang Kuehn, 37120 Bovenden
+44.130.14.9     DL1WT   # Guenther Fraebel, 37083 Goettingen
+44.130.14.10    DL0ALK  # ALK Club-Stn, 37075 Goettingen
 44.130.14.20    DB0KG   # PBBS, 37079 Goettingen
-44.130.14.24            # frei
 44.130.14.25    DL1AAZ  # Andre, Uslar
 44.130.14.30    DK0AUG  # Amateurfunkgruppe Universitaet Goettingen
 44.130.14.40    DL0RSW  # Personn-Realschule Weende, 37075 Goettingen
-44.130.14.100   DB0SMG  # Sprachmailbox Goettingen, 37085 Goettingen
+44.130.14.100   DB0SMG  # Sprachmailbox, 37085 Goettingen
 #
 #44.130.15.x    Meschede
 # lokale Adress-Koordination: DJ5RK
@@ -621,6 +646,7 @@
 44.130.16.41    DC4QN   # Reiner Schmidt, 4804 Versmold
 44.130.16.42    DL8QP   # Uwe Rehage, 4502 Bad Rothenfelde
 44.130.16.43    DK0TO   # Clubstn I24 Teuto (DL8QP)
+44.130.16.44    DH1YWA  # Rene Scheike, 33104 Paderborn
 44.130.16.45    DG1YGF  # Andreas Spelter, 4937 Lage
 44.130.16.52    DL3YDL  # Burkhard Mertens, 33100 Paderborn; AT486 WNOS
 44.130.16.53    DL3YDL-3        # ; LINUX/WAMPES
@@ -636,7 +662,7 @@
 44.130.17.1     DL2DBM  # Hans Kraemer, 4600 Dortmund
 44.130.17.2     DL2DBM-1        #
 44.130.17.3     DL5DH   # Juergen, Dortmund
-44.130.17.4     DG4DAM  # Klaus Koths
+44.130.17.4     DG4DAM  # Klaus Koths, Dortmund
 44.130.17.5     DG8YFP  # Heiner, Castrop
 44.130.17.6     DG5DBQ  # Jochen, Bochum; Atari
 44.130.17.7     DF0FR   # Clubstn Fern-Uni Hagen
@@ -664,7 +690,7 @@
 44.130.17.29    DC6MR   # Heinz, Dortmund
 44.130.17.30    DJ3DF   # Winfried, 4600 Dortmund
 44.130.17.31    DG1DBU  # Olaf, Wetter
-44.130.17.32    DH0DAT  # Christian, Castrop-Rauxel (ex DG7DBC)
+44.130.17.32    DH0DAT  # Christian, Castrop-Rauxel
 44.130.17.33    DG3DBU  # Klaus-Martin, Dortmund
 44.130.17.34    DL4DI-SVR       # Manfred, Hagen
 44.130.17.35    DF4ZC   # Detlef, Luenen
@@ -693,8 +719,8 @@
 44.130.17.58    DK0YA   # OV Werl, 4660 Werl (DL3BAA)
 44.130.17.59    DL1DCE  # Egon Tetting, 4760 Werl
 44.130.17.60    DK5DC   # Peter Glasmacher, 4600 Dortmund
-44.130.17.61    DL3DAL  # Gerd, Menden
-44.130.17.62    DB1DE   # Guenter, Hagen
+44.130.17.61    DL3DAL  # Gerd, Iserlohn
+44.130.17.62    DL5DQ   # Guenter, Hagen (ex DB1DE)
 44.130.17.63    DG6DBN  # Andre, Bochum
 44.130.17.64    DG6DBX  # Carsten
 44.130.17.65    DG5EAJ  # Reiner, Wuppertal
@@ -707,14 +733,14 @@
 44.130.17.72    DK0OW   # ClubStn AFG Witten
 44.130.17.73    DG1DBU-1        # Olaf, Wetter
 44.130.17.74    DG9DBX  # Stephan, Dortmund
-44.130.17.75    DG9DAP  # Reinhard, Wetter
+44.130.17.75    DG6DAP  # Reinhard, Wetter
 44.130.17.76    DL0DO   # ClubStn O05
 44.130.17.77    DL0WD   # ClubStn Wetter/Ruhr
 44.130.17.78    DL8DAA  # Frank Weitkus, Herdecke
 44.130.17.79    DG4DBW  # Axel Wolters, 4670 Luenen; AT286
 44.130.17.80    DG3YGD  # Bodo, Dortmund
 44.130.17.81    DL2BW   # Jochen, Ettlingen
-44.130.17.82    DG8DBX  # Heinrich, Bergkamen
+44.130.17.82    DL5DCJ  # Heinrich, Bergkamen (ex DG8DBX)
 44.130.17.83    DH5DAH  # Bernd, Dortmund
 44.130.17.84    DG5DH   # Claas, Dortmund-Brackel
 44.130.17.85    DG2DAA-1        # Friedhelm, Kamen
@@ -746,7 +772,7 @@
 44.130.17.126   DC0QA   # Jochen, Datteln
 44.130.17.127   DC8AG   # Gerdried, Dortmund
 44.130.17.130   DL8DAI  # Uli Pieper, Hagen
-44.130.17.131   DL3DAD-SVR      # Gerd, Menden
+44.130.17.131   DL3DAL-SVR      # Gerd, Iserlohn
 44.130.17.132   DG8DCR  # Karl, Do-Brackel
 44.130.17.133   DB2DF   # Horst, Dortmund
 44.130.17.134   DF2JI   # Volker, Bochum
@@ -789,15 +815,30 @@
 44.130.17.171   DG6DCG  # Rene, Herne
 44.130.17.172   DG4YDF  # Uwe, Olfen
 44.130.17.173   DL2DAC  # Thomas, Bochum
-44.130.17.174   AA6HM   # Peter dk5dc
+44.130.17.174   AA6HM   # Peter (=DK5DC)
 44.130.17.175   DH4DAP  # Andre, Gevelsberg
+44.130.17.176   DL3TR   # Heinz, Bochum
+44.130.17.177   DJ3DY   # Rudolf, Wattenscheid
+44.130.17.178   DL4DAC  # Thomas, Bochum
+44.130.17.179   DL9DCA  # Bjoern, Herne
 44.130.17.180   DL3DK   # Rolf, Dortmund
 44.130.17.181   DL5DT   # Jochen, Dortmund
 44.130.17.182   DB2DH   # Eckhard, Froendenberg
+44.130.17.183   PE1NRO  # Juergen, Gelsenkirchen
+44.130.17.184   DG2DCR  # Frank, 45529 Hattingen
+44.130.17.185   DL6DBW  # Bruno, Schwerte
+44.130.17.186   DG3DCH  # Carsten Hausdorf, 44651 Herne
 44.130.17.190   DL9DK   #
+44.130.17.191   DG5YRW  # Rainer, Recklinghausen
+44.130.17.192   DC8JA   # Rolf, Wuppertal
+44.130.17.193   DF9EE   # Hubert, 45712 Haltern
 44.130.17.200   DF8XQ   # Hans Streibel, Dortmund
+44.130.17.201   DF9DG   # ELmar, Duelmen
+44.130.17.202   DG3DCP  # Bernhard, Dortmund
+44.130.17.203   DG8DBQ  # Thorsten, Unna
+44.130.17.204   DC6MH   # Christian, Unna
 #
-#44.130.18.xxx  und 44.130.146.xxx Essen
+#44.130.18.x    Essen
 # --- lokale Adress-Koordination: DF5JZ
 44.130.18.1     DD1EG   # Detlef Broetz, 4300 Essen 1
 44.130.18.2     DF5JY   # Peter Plischka, 4300 Essen 1
@@ -821,23 +862,22 @@
 44.130.18.20    DH6EAE  # Michael, Bochum
 44.130.18.21    DF2OW   # Bert, 4300 Essen 14
 44.130.18.22    DB5JY   #
-44.130.18.23    DL1EER  # Roland 4178 Wetten
+44.130.18.23    DL1EER  # Roland, 4178 Wetten
 44.130.18.24    DD8ED   # Frank Tofahrn, 4100 Duisburg 18
-44.130.18.25    FREI
 44.130.18.26    DH0EAV  # Schorsch, Dinslaken
-44.130.18.27    DF5JZ    # Detlef Meis, Dinslaken; Knotenrechner
-44.130.18.28    DF5JZ-TEST      # Detlef Meis, Dinslaken; DET
+44.130.18.27    DF5JZ   # Detlef Meis, Dinslaken; Knotenrechner
+44.130.18.28    DF5JZ-TEST      # ; DET
 44.130.18.29    DG5EAH  # Ursula, Dinslaken
 44.130.18.30    DB0DV   # Clubstation L30, Dinslaken
 44.130.18.31    DL2EF   # Frank
 44.130.18.32    DB6EI   # , Vorde
-44.130.18.33    dd8qk   # klaus wohlfarth
-44.130.18.34    dg8yhc  # heinz-peter sause
-44.130.18.35    dj5qe   # udo hornfischer+?>
-44.130.18.36    df7vh   # udo kirchhoff
+44.130.18.33    DD8QK   # Klaus Wohlfarth
+44.130.18.34    DG8YHC  # Heinz-Peter Sause
+44.130.18.35    DJ5QE   # Udo Hornfischer
+44.130.18.36    DF7VH   # Udo Kirchhoff
 44.130.18.37    LAP.DH0EAV      #
 44.130.18.38    DL6EBJ  # Werner, Dinslaken
-44.130.18.39    DG5JR   # , Dinslaken
+44.130.18.39    DG5JR   # Karlheinz, Dinslaken
 44.130.18.40    DG4YU   # Christoph, Dorsten
 44.130.18.41    DG1YFI  # Udo
 44.130.18.42    DJ7UA   # , Voerde
@@ -849,11 +889,10 @@
 44.130.18.48    DL7EE   # , Essen
 44.130.18.49    DG5JR-TEST      # , Dinslaken
 44.130.18.50    DK0EN   # Clubstation L10, Essen
-44.130.18.51    Frei
-44.130.18.52    DF4EM   #
+44.130.18.52    DF4EM   # Kai
 44.130.18.53    DC5JB   # Claus, Essen
 44.130.18.54    DG3ED-TEST      # Michael, Essen
-44.130.18.55    DG3ED   # Michael, Essen
+44.130.18.55    DG3ED   #
 44.130.18.56    DG2ET   # Peter, 4300 Essen
 44.130.18.57    DL3ECD  # Uli, Essen
 44.130.18.58    DH3JN   #
@@ -863,31 +902,31 @@
 44.130.18.62    DL2EAA  # Dirk, Oberhausen
 44.130.18.63    DL8EBM  # Joerg, Duisburg
 44.130.18.64    DB5JL   #
-44.130.18.65    DC9DA   # Bernd Gerlsenkirchen
-44.130.18.66    DL2EF-test   #
-44.130.18.67    DC4JZ
-44.130.18.68    DG3EAH
-44.130.18.69    DL1EIO  #Markus Duisburg
+44.130.18.65    DC9DA   # Bernd, Gelsenkirchen
+44.130.18.66    DL2EF-TEST      #
+44.130.18.67    DC4JZ   #
+44.130.18.68    DG3EAH  #
+44.130.18.69    DL1EIO  # Markus, Duisburg
 44.130.18.70    DF3EY   # Gerd, 4137 Rheurdt
-44.130.18.71    DG7EAV  # Thomas, Moers 3 !!DL2EBB der VorgÑnger will nicht mehr!!
+44.130.18.71    DG7EAV  # Thomas, Moers
 44.130.18.72    DL2PP   # Alois, Kamplintfort
 44.130.18.73    DG7EL   # , Kamplintfort
-44.130.18.74    DB1JT
-44.130.18.75    DB9JA   # Thomas Essen
+44.130.18.74    DB1JT   #
+44.130.18.75    DB9JA   # Thomas, Essen
 44.130.18.76    DB7JG   # Joerg, 5620 Velbert
-44.130.18.77    DL9EBR  # Bernhard Rateike, 4152 Kempen 3
+44.130.18.77    DL9EBR  # Bernhard Rateike, 47906 Kempen
 44.130.18.78    DG6EAJ  # Holger, 5620 Velbert
-44.130.18.79    DG1EFV  #
+44.130.18.79    DG1EFV  # Werner, Oberhausen
 44.130.18.80    DL2WP   # , Gelsenkirchen
 44.130.18.81    DF7YC   # , Gelsenkirchen
 44.130.18.82    DK7JY   # Klaus Dittloff, Oberhausen
 44.130.18.83    DB3ED   # Rudolf Fenten, 4200 Oberhausen
-44.130.18.84    DJ6DH   # Oliver Hirsch , 4630 Bochum
+44.130.18.84    DJ6DH   # Oliver Hirsch, 4630 Bochum
 44.130.18.85    DJ4EO   #
-44.130.18.86    DH2JW   # Wolfgang Hoffmann 4100 Duisburg
-44.130.18.87    DC0EO   # Dieter Duisburg
+44.130.18.86    DH2JW   # Wolfgang Hoffmann, 4100 Duisburg
+44.130.18.87    DC0EO   # Dieter, Duisburg
 44.130.18.88    DB1JR   #
-44.130.18.89    DF8QJ   # Klaus Dieter Galdbeck
+44.130.18.89    DF8QJ   # Klaus Dieter, Gladbeck
 44.130.18.90    DB2QS   # Wolfgang, Recklinghausen
 44.130.18.91    DL3QQ   # , Gladbeck
 44.130.18.92    DL1YDD  # Hartmut Paesler, 4350 Recklinghausen
@@ -897,42 +936,37 @@
 44.130.18.96    DF5DH   # Friedrich Liebig, 4250 Bottrop
 44.130.18.97    DL9DBP  # Guido Elsner, 4630 Bochum
 44.130.18.99    DG9DAX  # Martin Meise, 4630 Bochum
-#
-#
-44.130.18.100   DB0QS  # TCP/IP Digi Dinslaken (DF5JZ)
-44.130.18.101   DB0QS-svr
-44.130.18.101   DB0QS-s
-44.130.18.101   DB0QS-test
-44.130.18.102   DB0QS-mail
-44.130.18.102   DB0QS-m
-#
-#
-44.130.15.105   DH5JB   # Holger ,Velbert
+44.130.18.100   DB0QS   # TCP/IP Digi Dinslaken (DF5JZ)
+44.130.18.101   DB0QS-SVR       #
+44.130.18.102   DB0QS-MAIL      #
+44.130.18.105   DH5JB   # Holger, Velbert
 44.130.18.106   DH1DAC  # Stefan Schroeer, 4630 Bochum
 44.130.18.107   DG7JD   #
 44.130.18.108   DF7EU   #
-44.130.18.109   DG1EBK  # Rainer Essen
-44.130.18.110   DG1EDP  # Thomas Gelsenkirchen
+44.130.18.109   DG1EBK  # Rainer, Essen
+44.130.18.110   DG1EDP  # Thomas, Gelsenkirchen
 44.130.18.111   DL9YAP  #
 44.130.18.112   DL1EJP  #
 44.130.18.113   DG4EAW  # Hannes, 4236 Hamminkeln
-44.130.18.114   qrl.dd9qp       # Egbert Zimmermann, 4242 Rees 1; NOS
+44.130.18.114   QRL.DD9QP       # Egbert Zimmermann, 4242 Rees 1; NOS
 44.130.18.115   DF6JZ   # , Kranenburg
-44.130.18.116   DL1EDA  # Ralf Essen
-44.130.18.117   DK2ER   # Andre Essen
-44.130.18.118   DL6YEW  # Werner Gladbeck
-44.130.18.119   DG7YGE  # Theo Gladbeck
+44.130.18.116   DL1EDA  # Ralf, Essen
+44.130.18.117   DK2ER   # Andre, Essen
+44.130.18.118   DL6YEW  # Werner, Gladbeck
+44.130.18.119   DG7YGE  # Theo, Gladbeck
 44.130.18.120   DF9DD   # Eckhard Schnaare, 4320 Hattingen
-44.130.18.121   DJ7ES   # Horst MÅlheim
-44.130.18.122   DL1EFJ  #
-44.130.18.123   DJ0MDW  #       Essen
-44.130.18.124   DJ2JC   # Joerg Essen
-44.130.18.125   DG2EN   # Klaus Duisbur
-44.130.18.126   DG3EAJ  # Hanz Wilchelm Duisburg
+44.130.18.121   DJ7ES   # Horst, Muelheim
+44.130.18.122   DL1EFJ  # Norbert
+44.130.18.123   DJ0MDW  # , Essen
+44.130.18.124   DJ2JC   # Joerg, Essen
+44.130.18.125   DG2EN   # Klaus
+44.130.18.126   DG3EAJ  # Hans Wilhelm, Duisburg
+44.130.18.127   DL1YCS  # Michael, Haltern
 44.130.18.128   DD8ED-1 # OBTEST
-44.130.18.130   DH4JT   #
-44.130.18.131   DF7EU   #
-44.130.18.132   DG7JB   # JÅrgen Essen
+44.130.18.130   DH4JT   # Thomas Klapper, 4300 Essen
+44.130.18.131   DF7EU-2 #
+44.130.18.132   DG7JB   # Juergen, Essen
+44.130.18.133   DD1JAW  # Tobias Wandtke, Essen
 44.130.18.139   DL3JR   #
 44.130.18.140   DL3EAM  # Rolf, 4130 Moers
 44.130.18.141   DJ8IO   # Conni, Moers
@@ -949,160 +983,165 @@
 44.130.18.152   DH3JE   # Jens, Muehlheim
 44.130.18.153   DD7EZ   # Kai, Muehlheim
 44.130.18.154   DG9YFH  # Thomas, Herten
-44.130.18.155   DL1ELY  #EX DD9EP   Steffan Voerde
-44.130.18.156   DL6YEM  # Recklinkhausen
-44.130.18.157   DH7YAX  # Carsten , Marl  EX DG7YGP
-44.130.18.158   DG1EIL  # Erik Essen
-44.130.18.159   DL8MDV  #
-44.130.18.160   DL5EAT
-44.130.18.161   DL1EFR  # Dieter Ringenberg
-44.130.18.162   DL2EAA-SYS
-44.130.18.163   DG1ECE  # Ulrich Moers
-44.130.18.164   DH4DAN  # Jîrg Castrop-Rauxel
-44.130.18.165   DL3YDM  # Michael Bottropp
-44.130.18.166   DH5JF   # Albrecht Muehlheim
-44.130.18.167   DL5YEY  # Joerg    Bottrop
-44.130.18.168   DJ0PR   # Harry Kempen
-44.130.18.171   DL9EBR-U
-44.130.18.172   DL1EKZ Hans Kindel, Wittfeldstr. 13  4130 Moers
-44.130.18.173   DL1YAF  # Christof Bottrop
-44.130.18.174   DG6YDV  # Jurgen   Oberhausen
-44.130.18.175   DH6JG   # Gerd Niederkruechten-Emlpt
+44.130.18.155   DL1ELY  # Stefan, Voerde
+44.130.18.156   DL6YEM  # Heiko, Recklinghausen
+44.130.18.157   DH7YAX  # Carsten Michel, Marl (ex DG7YGP)
+44.130.18.158   DG1EIL  # Erik, Essen
+44.130.18.159   DL8MDV  # Marten Guettner, 4330 Muelheim
+44.130.18.160   DL5EAT  #
+44.130.18.161   DL1EFR  # Dieter, Ringenberg
+44.130.18.162   DL2EAA-SYS      #
+44.130.18.163   DG1ECE  # Ulrich, Moers
+44.130.18.164   DH4DAN-2        # Joerg, Castrop-Rauxel
+44.130.18.165   DL3YDM  # Michael, Bottrop
+44.130.18.166   DH5JF   # Albrecht, Muehlheim
+44.130.18.167   DL5YEY  # Joerg, Bottrop
+44.130.18.168   DJ0PR   # Harry, Kempen
+44.130.18.171   DL9EBR-U        #
+44.130.18.172   DL1EKZ  # Hans Kindel, 4130 Moers
+44.130.18.173   DL1YAF  # Christof, Bottrop
+44.130.18.174   DG6YDV  # Juergen, Oberhausen
+44.130.18.175   DH8JG   # Gerd, Niederkruechten
 44.130.18.180   DL8YEX  # Holger
-44.130.18.187   DG1EAD Dieter Hinsch Duesseldorf
-44.130.18.188   DB6QB   # Joerg  Rechlinkgausen
-44.130.18.189   DG4YFV  # EDDI Dorsten
-44.130.18.190   DG5EAU  # Michael Meerbusch
-44.130.18.191   DG6EAU  #         Meerbusch
-44.130.18.192   DL9YEZ  # Lars Gollub, 4370 Marl ex DG6YGL [44.130.18.190]
+44.130.18.187   DG1EAD-2        # Dieter Hinsch, Duesseldorf
+44.130.18.188   DB6QB   # Joerg Willimzik, Recklinghausen; AT386
+44.130.18.189   DG4YFV  # Eddy, Dorsten
+44.130.18.190   DG5EAU  # Michael, Meerbusch
+44.130.18.191   DG6EAU  # , Meerbusch
+44.130.18.192   DL9YEZ  # Lars Gollub, 4370 Marl
 44.130.18.200   DL0THE  # Technisches Hilfswerk, Essen
 44.130.18.201   DL2DBS  # Uwe, Bochum
-44.130.18.202   DL6EO   # Micheal Essen
-44.130.18.203   DG5EH   # Marco Essen
+44.130.18.202   DL6EO   # Michael, Essen (ex DD8EO)
+44.130.18.203   DG5EH   # Marco, Essen
 44.130.18.205   DL3DAZ  # Falk, Bochum; UNIX
-44.130.18.206   DL4DZ
-44.130.18.207   DL1EFO  # Dominik Essen
-44.130.18.208   DL1EKA  # Ansger Essen
-44.130.18.209   DL1EKV  # Stefan Essen
-44.130.18.210   DH0EAE  # Benno Rheinhausen
-44.130.18.211   DL8EBZ  # PA0WCH Deutsches call WILL
-44.130.18.214   lap.dd9qp
-44.130.18.215   DL9EH   # Peter Essen
-44.130.18.216   DG1EDM  # Frank ESSEN
-44.130.18.220   DL1EFO-svr  # Server
-44.130.18.221   DL1EAP  # Wolfgang Duisburg
+44.130.18.206   DL4DZ   #
+44.130.18.207   DL1EFO  # Dominik, Essen
+44.130.18.208   DL1EKA  # Ansger, Essen
+44.130.18.209   DL1EKV  # Stefan, Essen
+44.130.18.210   DH0EAE  # Benno, Recklinhausen
+44.130.18.211   DL8EBZ  # Will, PA0WCH
+44.130.18.214   LAP.DD9QP       #
+44.130.18.215   DL9EH   # Peter, Essen
+44.130.18.216   DG1EDM  # Frank, Essen
+44.130.18.220   DL1EFO-SVR      #
+44.130.18.221   DL1EAP  # Wolfgang, Duisburg
 44.130.18.222   DL6YAK  # Martin Hoeppner, Gelsenkirchen
 44.130.18.223   DH6JP   # Peter
-44.130.18.224   DD8ED-9600      # 9600-Bd-Test
-44.130.18.225   DL1EJT  # Horst Essen
-44.130.18.226   DG4EKF  # Evelin Essen
+44.130.18.224   DD8ED-9600      # 9600Bd-Test
+44.130.18.225   DL1EJT  # Horst, Essen
+44.130.18.226   DG4EKF  # Evelin, Essen
 44.130.18.230   DC4JG   # Werner, Wesel
 44.130.18.233   DG5EM   #
-44.130.18.234   DG7EF   # Frank Bohl Duisburg
-44.130.18.235   DL3EBS  # Andere Kamplintfort
+44.130.18.234   DG7EF   # Frank Bohl, Duisburg
+44.130.18.235   DL3EBS  # Andre, Kamplinfort
 44.130.18.236   DG1EKN  #
-44.130.18.237   DL1EHF  # Hans-Joachim Duisburg
+44.130.18.237   DL1EHF  # Hans-Joachim, Duisburg
 44.130.18.240   DG9ET   # , Voerde
 44.130.18.241   DG1EGV  # , Voerde
 44.130.18.242   DG8EAE  #
-44.130.18.244   DG8EG-svr # Server von DG8EG
-44.130.18.245   DL3ED   # Ulrich , MÅhlheim
-44.130.18.246   DG4EAX  # Bernd , MÅhlheim
-44.130.18.249   DG2EAN  # Frank Mones Dinslaken
+44.130.18.244   DG8EG-SVR       #
+44.130.18.245   DL3ED   # Ulrich, Muelheim
+44.130.18.246   DG4EAX  # Bernd, Muelheim
+44.130.18.249   DG2EAN  # Frank Mones, 46537 Dinslaken
 44.130.18.250   DH8EAD  # Joerg, Essen Stoppenberg
 44.130.18.251   ST.DH8EAD       # Joerg; Atari-ST
 44.130.18.252   DB5DA   # Ferdi, Bochum Wattenscheid
 44.130.18.253   DF5JZ-LARRY     # DF5JZ Testrechner 1
 44.130.18.254   DF5JZ-SEBO      # DF5JZ Testrechner 2
 #
-#44.130.145.x   Dortmund 2
-44.130.145.144  DL4DAC  # Thomas, Bochum
+#44.130.145.x   Hagen
+# --- lokale Adress-Koordination: DD0DX
 #
 #44.130.146.x   Essen 2
-44.130.146.100  DB0RES     # Digi,BBS,Newsgate Rees , JO31ES (DD9QP)
-44.130.146.101  DB0RES-SVR # FTP-server DB0RES      , JO31ES (DD9QP)
-44.130.146.200  DK0HN      # Clubstation Herten Sever
-44.130.146.210  DG2YHX     #
+# --- lokale Adress-Koordination: DF5JZ
+44.130.146.100  DB0RES  # Digi/BBS/Newsgate, Rees (DD9QP)
+44.130.146.101  DB0RES-SVR      # FTP-Server
+44.130.146.200  DK0HN   # Club stn Herten, Server
+44.130.146.210  DG2YHX  #
 #
-#44.130.19.x  Koeln/Duesseldorf
+#44.130.19.x    Koeln/Duesseldorf
 # lokale Adresskoordination: DG8JT
-44.130.19.1   DG8JT   # Joachim Hoeft, 40627 Duesseldorf
-44.130.19.2   DD9EY   # Bernhard, 4000 Duesseldorf
-44.130.19.3   DH4EAQ  # Wolfgang, 4030 Ratingen
-44.130.19.4   DK6JD   # Karl-Heinz, 4030 Ratingen
-44.130.19.5   DK0RC   # Clubstn R12, Ratingen
-44.130.19.6   DL3EBN  # Walter, Ratingen
-44.130.19.7   DG8EKG  # Ansgar, Duesseldorf - Unterrath
-44.130.19.10  DF6KI   # Wolfgang Voogd, 5090 Leverkusen 1
-44.130.19.11  DL0THK  # THW, 5090 Leverkusen
-44.130.19.12  DL1EGL  # Robert, 4048 Grevenbroich 5
-44.130.19.14  DF1ER   # Frank   Erkrath/Hochdahl
-44.130.19.19  DL2EBV  # Ernst Kirschbaum, 4048 Grevenbroich 1
-44.130.19.20  DH5JG   # Frank Valdor, 5090 Leverkusen
-44.130.19.32  DG6EAE  # Juergen Hussels, 5650 Solingen 1
-44.130.19.33  DB1JJ   # Robert Schneider, 5650 Solingen
-44.130.19.34  DG6KK   # Bernhard Hoffmann, Koeln/Dellbrueck
-44.130.19.39  DF8IK   # Peter Perner, 5024 Pulheim-Brauweiler
-44.130.19.40  DH3EAN  # Kaspar Klingholz, 5650 Solingen
-44.130.19.41  DL0AAA  # , 5060 Bensberg (DJ7CT)
-44.130.19.44  DG2JH   # Norbert Muench, 5600 Wuppertal 1
-44.130.19.45  DG3EAZ  # Jost, Duesseldorf-Oberkassel
-44.130.19.46  DG1JN   # Rolf Wagner, 5000 Koeln
-44.130.19.47  DH9EAX  # Rolf, Kaarst
-44.130.19.48  DL1WX   # Josef Wankerl, 4018 Langenfeld
-44.130.19.49  DD9JN   # Werner, Duesseldorf
-44.130.19.50  DG9EP   # Walter Koch, 4006 Erkrath-Hochdahl
-44.130.19.51  DK8JV   # Eberhard Backeshoff, 4020 Mettmann
-44.130.19.52  DJ0ZE   # Eric Donato, 4030 Ratingen
-44.130.19.53  DJ0ZE-1 #
-44.130.19.54  DG9YEV  # Georg Baxmann, 4390 Gladbeck
-44.130.19.55  DG9YEV-1        #
-44.130.19.56  DD2JX   # Ludger Theis, 4020 Mettmann
-44.130.19.57  DD2JX-1 #
-44.130.19.58  DF9JD   # Alfred Spitzer, 5650 Solingen
-44.130.19.61  DL3NCW  # Joachim Herzig, 4050 Moenchengladbach; 386SX, WNOS
-44.130.19.62  DG1ECH  # Bernd Janssen, 4006 Meerbusch
-44.130.19.63  DL1KBB  # Thomas Redeker, 5000 Koeln 80
-44.130.19.66  DJ5JQ   # Eckhard Grah, 5650 Solingen
-44.130.19.67  DL1ER   # Uli, Viersen
-44.130.19.68  DG2EAT  # Arno Loehdorf, 5650 Solingen 1
-44.130.19.69  DH8KAM  # Ingo, Fliesteden
-44.130.19.70  DC2JK   # Oliver, Remscheid
-44.130.19.71  DG1KJD  # Jens David, 53881 Euskirchen-Elsig
-44.130.19.72  DG8KBR  # Rolf
-44.130.19.73  DC4KO  # Oliver, Bensberg
-44.130.19.74  GM6TKS  # Mark, Moenchengladbach
-44.130.19.75  DL3KHB  # Klaus, 50181 Bedburg/Erft
-44.130.19.76  DG1KHR  # Hans, Eitorf
-44.130.19.78  DL6KL   # Adolf Loosen, Koeln 90 Porz
-44.130.19.79  DG5MGQ-2        # Toby
-44.130.19.80  DC6BC   # Norbert; Atari
-44.130.19.81  DC6BC-1 # ; AT386
-44.130.19.82  DC6BC-2 # ; AT386 Unix V
-44.130.19.86  DL3DBT-QRL      # Dirk, Duesseldorf
-44.130.19.100 DB0SYS  # IP-Server Duesseldorf (DG8JT); ***
-44.130.19.110 DJ0MDJ  # Christoph
-44.130.19.111 DG8JT-1 # Joachim Hoeft, Duesseldorf; WNOS
-44.130.19.112 DG1EHE  # Ulf Uhrmann, 42655 Solingen
-44.130.19.113 DB5VP   # Ralf Schwab, 4000 Duesseldorf 1
-44.130.19.114 DB9ER   # Dieter Schneider, 40699 Erkrath
-44.130.19.115 DG1EAD  # Dieter Hinsch, 4000 Duesseldorf 13
-44.130.19.116 DG6YGW  # Martin, Duesseldorf-Oberkassel
-44.130.19.117 DG1ELC  # Serge Urbaniak, 41472 Neuss
-44.130.19.118 DG1EGR  # Ingo, Duesseldorf
-44.130.19.144 DG1JL   # Mike, 5620 Velbert; Amiga-3000
-44.130.19.145 DL7ZY   # Stefan, Bergheim-Glessen
-44.130.19.146 DL7ZY-2 #
-44.130.19.147 DL1MI   # Hans, Viersen
-44.130.19.150 DB0MJ   # PR/RTTY GATE (DG1EAD)
-44.130.19.154 DL3EBB  # Achim Breuer, 41236 Moenchengladbach; AT486
-44.130.19.155 DL3EBB-U        # ; Linux
-44.130.19.156 DL3EBB-2        # ; GNOS
-44.130.19.157 DD3EX   # Heiko Streeck
-44.130.19.158 DD1JD   # Dirk Symons, 40233 Duesseldorf
-44.130.19.200 DD4EB   # Kirsten Wieck, 4018 Langenfeld
-44.130.19.253 DG9EKC  # Stephan Eickel, 40724 Hilden; AT386
-44.130.19.254 TEST.DD9EY      # DD9EY Testrechner
+44.130.19.1     DG8JT   # Joachim Hoeft, 40627 Duesseldorf
+44.130.19.2     DD9EY   # Bernhard, 4000 Duesseldorf
+44.130.19.3     DH4EAQ  # Wolfgang, 4030 Ratingen
+44.130.19.4     DK6JD   # Karl-Heinz, 4030 Ratingen
+44.130.19.5     DK0RC   # Clubstn R12, Ratingen
+44.130.19.6     DL3EBN  # Walter, Ratingen
+44.130.19.7     DG8EKG  # Ansgar, Duesseldorf Unterrath
+44.130.19.8     DL1KVH  # Rolf, Duesseldorf
+44.130.19.9     DG1KJD-SVR      # Jens
+44.130.19.10    DF6KI   # Wolfgang Voogd, 5090 Leverkusen 1
+44.130.19.11    DL0THK  # THW, 5090 Leverkusen
+44.130.19.12    DL1EGL  # Robert, 4048 Grevenbroich 5
+44.130.19.14    DF1ER   # Frank, Erkrath/Hochdahl
+44.130.19.15    DL2ECC  # Wolfgang
+44.130.19.16    DL2ECC-1        # Wolfgang
+44.130.19.19    DL2EBV  # Ernst Kirschbaum, 4048 Grevenbroich 1
+44.130.19.20    DH5JG   # Frank Valdor, 5090 Leverkusen
+44.130.19.32    DG6EAE  # Juergen Hussels, 5650 Solingen 1
+44.130.19.33    DB1JJ   # Robert Schneider, 5650 Solingen
+44.130.19.34    DG6KK   # Bernhard Hoffmann, Koeln/Dellbrueck
+44.130.19.39    DF8IK   # Peter Perner, 5024 Pulheim-Brauweiler
+44.130.19.40    DH3EAN  # Kaspar Klingholz, 5650 Solingen
+44.130.19.41    DL0AAA  # , 5060 Bensberg (DJ7CT)
+44.130.19.44    DG2JH   # Norbert Muench, 5600 Wuppertal 1
+44.130.19.45    DG3EAZ  # Jost, Duesseldorf-Oberkassel
+44.130.19.46    DG1JN   # Rolf Wagner, 5000 Koeln
+44.130.19.47    DH9EAX  # Rolf, Kaarst
+44.130.19.48    DL1WX   # Josef Wankerl, 4018 Langenfeld
+44.130.19.49    DD9JN   # Werner, Duesseldorf
+44.130.19.50    DG9EP   # Walter Koch, 4006 Erkrath-Hochdahl
+44.130.19.51    DK8JV   # Eberhard Backeshoff, 4020 Mettmann
+44.130.19.52    DJ0ZE   # Eric Donato, 4030 Ratingen
+44.130.19.53    DJ0ZE-1 #
+44.130.19.54    DG9YEV  # Georg Baxmann, 4390 Gladbeck
+44.130.19.55    DG9YEV-1        #
+44.130.19.56    DD2JX   # Ludger Theis, 4020 Mettmann
+44.130.19.57    DD2JX-1 #
+44.130.19.58    DF9JD   # Alfred Spitzer, 5650 Solingen
+44.130.19.61    DL3NCW  # Joachim Herzig, 4050 Moenchengladbach; 386SX, WNOS
+44.130.19.62    DG1ECH  # Bernd Janssen, 4006 Meerbusch
+44.130.19.63    DL1KBB  # Thomas Redeker, 5000 Koeln 80
+44.130.19.66    DJ5JQ   # Eckhard Grah, 5650 Solingen
+44.130.19.67    DL1ER   # Uli, Viersen
+44.130.19.68    DG2EAT  # Arno Loehdorf, 5650 Solingen 1
+44.130.19.69    DH8KAM  # Ingo, Fliesteden
+44.130.19.70    DC2JK   # Oliver, Remscheid
+44.130.19.71    DG1KJD  # Jens David, 53881 Euskirchen-Elsig
+44.130.19.72    DG8KBR  #
+44.130.19.73    DC4KO   # Oliver, Bensberg
+44.130.19.74    GM6TKS  # Mark, Moenchengladbach
+44.130.19.75    DL3KHB  # Klaus, 50181 Bedburg/Erft
+44.130.19.76    DG1KHR  # Hans, Eitorf
+44.130.19.78    DL6KL   # Adolf Loosen, Koeln 90 Porz
+44.130.19.79    DG5MGQ-2        # Toby
+44.130.19.80    DC6BC   # Norbert; Atari
+44.130.19.81    DC6BC-1 # ; AT386
+44.130.19.82    DC6BC-2 # ; AT386 Unix V
+44.130.19.86    DL3DBT-QRL      # Dirk, Duesseldorf
+44.130.19.100   DB0SYS  # IP-Server Duesseldorf (DG8JT); ***
+44.130.19.110   DJ0MDJ  # Christoph
+44.130.19.111   DG8JT-1 # Joachim Hoeft, Duesseldorf; WNOS
+44.130.19.112   DG1EHE  # Ulf Uhrmann, 42655 Solingen
+44.130.19.113   DB5VP   # Ralf Schwab, 4000 Duesseldorf 1
+44.130.19.114   DB9ER   # Dieter Schneider, 40699 Erkrath
+44.130.19.115   DG1EAD  # Dieter Hinsch, 4000 Duesseldorf 13
+44.130.19.116   DG6YGW  # Martin, Duesseldorf-Oberkassel
+44.130.19.117   DG1ELC  # Serge Urbaniak, 41472 Neuss
+44.130.19.118   DG1EGR  # Ingo, Duesseldorf
+44.130.19.144   DG1JL   # Mike, 5620 Velbert; Amiga-3000
+44.130.19.145   DL7ZY   # Stefan, Bergheim-Glessen
+44.130.19.146   DL7ZY-2 #
+44.130.19.147   DL1MI   # Hans, Viersen
+44.130.19.150   DB0MJ   # PR/RTTY Gate, TCP/IP Server, Duesseldorf
+44.130.19.154   DL3EBB  # Achim Breuer, 41236 Moenchengladbach; AT486
+44.130.19.155   DL3EBB-U        # ; Linux
+44.130.19.156   DL3EBB-2        # ; GNOS
+44.130.19.157   DD3EX   # Heiko Streeck
+44.130.19.158   DD1JD   # Dirk Symons, 40233 Duesseldorf
+44.130.19.200   DD4EB   # Kirsten Wieck, 4018 Langenfeld
+44.130.19.253   DG9EKC  # Stephan Eickel, 40724 Hilden; AT386
+44.130.19.254   TEST.DD9EY      # DD9EY Testrechner
 #
 #44.130.20.x    Aachen
 44.130.20.1     DG2KK   # Walter Doerr, 5160 Dueren
@@ -1128,9 +1167,10 @@
 44.130.20.40    DH9KAE  #
 44.130.20.41    DJ0AAL  # Jeronimo Diaz, 5120 Herzogenrath 3
 44.130.20.42    DG6KBB  # Karl de Jong, 5132 Uebach-Palenberg
-#44.130.20.44   DC3KM   # Karl-Heinz Hochrieser, 5112 Baesweiler
 44.130.20.45    DL1KBL  # Armin Hoelker, 5133 Gangelt
+44.130.20.47    DD3KF   # Norbert, Aachen
 44.130.20.48    DG1KBN  # Juergen Jaeger, 5100 Aachen
+44.130.20.49    DG2KSA  # Stephan, Aachen
 44.130.20.50    DB0PRA  # Digi Aachen-Eschweiler
 44.130.20.51    DB0PRA-9        # Test-Server
 44.130.20.55    DJ9ZL   # Juergen Meissburger; AT
@@ -1161,8 +1201,8 @@
 44.130.20.84    DL5KCE  # Axel Pfaff, Eschweiler
 44.130.20.85    DJ4UF   # Eckart
 44.130.20.86    DG9KAF  # Heinz Klippel, 5177 Titz
-#44.130.20.88   DB0...  # Digi Monschau (DL8YQ)
-#44.120.20.89   DB0...  # Digi Monschau
+44.130.20.88    DB0MON  # Digi Monschau (DL8YQ); AX25 DB0MON-10
+44.130.20.89    DB0MON-GATE     # Digi Monschau, IP Gateway
 44.130.20.90    DL8YQ   # Heinz Janssen, 5108 Monschau
 44.130.20.91    DL8YQ-1 #
 44.130.20.92    DG3KAD  # Lothar Kolbe, 5143 Wassenberg
@@ -1219,18 +1259,28 @@
 44.130.21.31    DD8KO   # Klaus Jasper, Wachtberg
 44.130.21.32    DD8KY   # Clemens Becher, 5300 Bonn
 44.130.21.33    DJ6EE   # Horst Franzbach, 5300 Bonn 1
-44.130.21.34    DG3KCR  # Wolfgang Roenn, 5202 Hennef 1
+44.130.21.34    DG3KCR  # Wolfgang Roenn, 53773 Hennef
 44.130.21.35    DC6IQ-A # Fred Baumgarten, 5202 Hennef 1
+44.130.21.36    DG3KCR-W        #
+44.130.21.37    DG3KCR-V        #
+44.130.21.38    DG3KCR-N        #
+44.130.21.39    DG3KCR-P        #
 44.130.21.40    DF8ML   # Arnold Muehrer, 5205 St.Augustin
 44.130.21.41    DD7PQ-A # Wolfgang Moellendorff, 5300 Bonn 1
 44.130.21.42    DL3SO   # Rudolf Binz, 5300 Bonn 3
 44.130.21.43    DJ2JI   # Hans Rolf Willerscheid, 5350 Euskirchen
 44.130.21.44    DG2KF   # Heinz Birrenkoven, 5350 Euskirchen
+44.130.21.45    DB0WST  # Digi Birk
+44.130.21.46    DB0WST-W        #
+44.130.21.47    DB0WST-V        #
+44.130.21.48    DB0WST-N        #
 44.130.21.49    DH0KM   # Michael, 5300 Bonn
 44.130.21.50    DF2KC   # Hans-Udo Pleiss, 5203 Much; AT386SX
 44.130.21.51    DL9KCB  # Berthold, 5300 Bonn
 44.130.21.52    DH0KV   # Volker, 5204 Lohmar
 44.130.21.53    DK8JN   # Hubert Dedden, 5220 Waldbroel
+44.130.21.54    DL1KRD  # Rainer Dahnke, 53343 Wachtberg
+44.130.21.55    DL6DBH  # Meinolf, nr Bonn
 44.130.21.61    DL3KMS  # Martin, Bonn Bad Godesberg
 44.130.21.62    DC5KC   # Hans-Peter Walber, 5370 Kall
 44.130.21.63    DL8SH   # Dieter, 5204 Lohmar
@@ -1241,9 +1291,17 @@
 44.130.21.72    DB5KW   # Marcel Arndt, 5308 Rheinbach
 44.130.21.77    DG1KBI  # Werner Bayer, 53879 Euskirchen
 44.130.21.89    DG6KAO  # Joerg Siebertz, 53757 Sankt Augustin
+44.130.21.90    DG3KCR-R        #
+44.130.21.91    DG3KCR-S        #
+44.130.21.92    DG3KCR-D        #
+44.130.21.93    DG3KCR-A        #
+44.130.21.94    DG3KCR-L        #
 44.130.21.111   DG2KMN  # Michael
 44.130.21.128   DB0NET-8        # Euskirchen TCP/IP Switch; ***, ARP via DB0NET RMNC
 44.130.21.130   DD8KV   # Andreas, Koenigswinter
+44.130.21.134   DC7OP   # Andreas, Mechernich
+44.130.21.135   DC7OP-2 #
+44.130.21.136   DL8KAX  # Juergen
 44.130.21.250   DC6SV   # Meinolf Braeutigam, 53359 Rheinbach
 44.130.21.251   DC6SV-1 #
 44.130.21.252   DC6SV-2 #
@@ -1328,7 +1386,7 @@
 44.130.23.9     DK1JH   # Gert Dierker, Dahle
 44.130.23.10    DH5DAJ  # Klaus Schulte, Dahle
 44.130.23.11    DL9XE   # Helmut Gall, 5983 Balve 3
-44.130.23.12    DL1DCS  # Axel Schaab, 5980 Werdohl (ex DG7DBY)
+44.130.23.12    DL1DCS  # Axel Schaab, 5980 Werdohl
 44.130.23.13    DG2DBG  # Oliver Kaiser, 5982 Neuenrade
 44.130.23.14    DL0WL   # Clubstn O18, Werdohl
 44.130.23.15    DK7DH   # Sigrid Hiltenkamp, 5982 Neuenrade 2
@@ -1340,42 +1398,38 @@
 44.130.23.40    DG1DCN  # Marc Noeker, Lennestadt: Amiga 2000
 44.130.23.102   DK3AK-14        # Siegmar Krause, 5982 Neuenrade
 #
-#44.130.144.xxx Bielefeld/Oerlinghausen Stand 14.01.95
-44.130.144.1    DB0NOS  # TCP/IP-Svr Oerlinghausen ***
-#44.130.144.2-44.130.144.15 fuer DB0NOS-Peripherie und Subrechner
-44.130.144.16   DL3YEN  # Wolf, Bielefeld
+#44.130.144.x   Bielefeld
+# lokale Addresskoordination: DL3YEN
+#44.130.144...  fuer Digipeater und Mailbox BI/Oerlinghausen
+44.130.144.1    DB0NOS  # TCP/IP Server, Oerlinghausen; ***
+44.130.144.10   ROUTER.DB0NOS   # IP Router, Oerlinghausen; ***
+44.130.144.16   DL3YEN  # Wolfgang Beckmann, 4800 Bielefeld 13; AT
 44.130.144.17   KR4PH   #
-44.130.144.18   DL8KD   # Roland, Oerlinghausen
+44.130.144.18   DL8KD   # Roland Werner, 4811 Oerlinghausen; Amiga
 44.130.144.19   SYS2.DL8KD      #
-44.130.144.20   DG6YGD  # Dirk, Detmold
-44.130.144.21   DL2YEN  # Tom, Detmold
-44.130.144.22   DG7YBQ  # Uwe, Bielefeld
-44.130.144.23   DL9YEM  # Stefan, Schloss Holte
-44.130.144.24   DG6YDZ  # Dieter, Oerlinghausen
-44.130.144.25   DH4YAJ  # Christian, Bielefeld
-44.130.144.26   DG8YFL  # Karl-Heinz, Bielefeld
-44.130.144.27   DG6YL   # Herbert, Augustdorf
+44.130.144.20   DG6YGD  # Dirk Wacker, 4930 Detmold
+44.130.144.21   DL2YEN  # Tom Woller, 4930 Detmold
+44.130.144.22   DG7YBQ  # Uwe Herrmann, 4800 Bielefeld 14; Amiga
+44.130.144.23   DL9YEM  # Stefan Rupprecht, 4815 Schloss-Holte-Stukenbrock
+44.130.144.24   DG6YDZ  # Dieter Hergast, 4811 Oerlinghausen
+44.130.144.25   DH4YAJ  # Carl-Christian Mueller, 4800 Bielefeld 11; Amiga
+44.130.144.26   DG8YFL  # Karl-Heinz Reisner, Bielefeld; Amiga
+44.130.144.27   DG6YL   # Herbert Wienciers, Augustdorf
 44.130.144.28   DL8YEA  # Peter, Bielefeld
-44.130.144.29   DG3YFS  # Raymond, Stromberg
-44.130.144.30   DL9YET  # Malte, Roedinghausen
-44.130.144.31   AA2RL   #
-44.130.144.32   DG9YGJ  # Stefan, Roedinghausen
-44.130.144.33   SYS1.DG8YAY     # Joerg, Bielefeld
+44.130.144.29   DG3YFS  # Raymond Beard, Stromberg
+44.130.144.30   DL9YET  # Malte Rudolf, 4986 Roedinghausen; AT
+44.130.144.31   DL9YET-7        # ; Mac
+44.130.144.32   DG9YGJ  # Stefan Liebner, 4986 Roedinghausen; IBM386
+44.130.144.33   SYS1.DG8YAY     # Joerg Frommenjohann, 4800 Bielefeld 1
 44.130.144.34   SYS2.DG8YAY     #
-44.130.144.35   DL5YDE  # Ernst, Stukenbrock
+44.130.144.35   DL5YDE  # Ernst Luehr, 4815 Schloss-Holte-Stukenbrock
 44.130.144.36   DG4YDB  # Michael, Bielefeld
-44.130.144.37   DG7YHV  # Juergen
-44.130.144.38   DG6YGF  # Erhard, Bielefeld
-44.130.144.39   DG4YHU  # Stephan, Detmold
-44.130.144.40   DL3YEO  # Herko, Bielefeld
-44.130.144.41   DG8YHT  # Jens, Detmold
-44.130.144.42   DH9YAX  # Udo, Verl
-44.130.144.43   DL1YDI  # Dirk, Steinhagen
-44.130.144.56   DK3RC   # Horst, Detmold
-44.130.144.57   DK3RC-1 # Horst, Bielstein
-44.130.144.58   DL0JW   # Clubstation N58, Oerlinghausen
+44.130.144.38   DG6YGF  # Erhard Golling, Bielefeld; Amiga
+44.130.144.40   DL3YEO  # Heiko, Bielefeld
+44.130.144.56   DK3RC   # Horst Brueggemann, 4930 Detmold
+44.130.144.57   DK3RC-1 # Horst Brueggemann, Bielstein
+44.130.144.58   DL0JW   # Clubstn N58, 4811 Oerlinghausen
 44.130.144.60   SYS2.DG6YGD     # Dirk, Detmold
-44.130.144.66   DG1YAY  # Christof, Buende
 #
 #44.130.24.x    Rhein-Main
 # lokale Adress-Koordination: DG1ZX
@@ -1436,10 +1490,10 @@
 44.130.24.68    DA2GM   # Marc, 53919 Bodenheim; Mac SE
 44.130.24.69    DA1SC   # Scott, Wiesbaden (N4WQE)
 44.130.24.70    DA2JL   # Tim Knechtly, 65189 Wiesbaden (WB8TEV)
-44.130.24.71    DC0HK   # Barry Titmarsh, 64293 Darmstadt (GM8SAU); O/S since 14-May-94
-44.130.24.72    DC0HK.IPSW      # ; IP-Switch, O/S since 14-May-1994
+44.130.24.71    DC0HK   # Barry Titmarsh, 64293 Darmstadt (GM8SAU); LINUX
+44.130.24.72    DC0HK-IPSW      # ; IP-Switch; WNOS
 44.130.24.73    DF7FW   # Horst Stolz, 65824 Schwalbach/Ts
-44.130.24.74    DC0HK.SYS2      # Barry Titmarsh, Darmstadt; WorkStn, O/S since 14-May-94
+44.130.24.74    DC0HK-SYS2      # Barry Titmarsh, Darmstadt; WorkStn
 44.130.24.75    DD7ZO   # Achim Gottschalk, 65779 Kelkheim-Fischbach
 44.130.24.76    DK5FY   # Bodo, 63607 Aufenau
 44.130.24.77    DH4FAH  # Michael, 63150 Heusenstamm
@@ -1465,11 +1519,13 @@
 44.130.24.101   DG9FCQ  # Erik Meissner, 65719 Hofheim/Ts
 44.130.24.102   DL6ZBA.SYS2     # Matthias, 63654 Buedingen
 44.130.24.105   KC4BQG  # Jarred James, Darmstadt
+44.130.24.106   DF2ZP-1 #
 44.130.24.108   DG8FAY  # Konrad Brueckmann, 65843 Sulzbach/Ts
 44.130.24.109   DF9ZK   # Baldur Jacobi, 65795 Hattersheim
 44.130.24.110   DL3TE   # Helmut Gerwat, 65451 Kelsterbach
 44.130.24.111   DJ2ZS   # Peter Bertram, 64572 Buettelborn
 44.130.24.112   DH0FAK  # Achim Scheib, 65510 Huenstetten; AT
+44.130.24.115   DL6FCB  # Lars, Nidderau
 44.130.24.118   DJ0WQ   # James Clarkston, Reichelsheim
 44.130.24.119   DD1FT   # Reinhold, Reichelsheim
 44.130.24.120   DH0AAJ  # Jan
@@ -1480,11 +1536,14 @@
 44.130.24.125   DB2FK   # Simon Schoar, 63150 Rembruecken
 44.130.24.126   DJ3QD   # Wolfgang, Woellstadt
 44.130.24.127   DL8FBH  # Michael Wuensche, Hanau
+44.130.24.156   DA1LA   # Lawrence, Wiesbaden
 44.130.24.158   DG2FDQ  # Holger, 64750 Luetzelbach-Seckmauern
 44.130.24.159   DL5YBZ  # Olaf Wessels, 6050 Offenbach
+44.130.24.170   DF2ZP-2 #
 44.130.24.200   DD4EB-2 # Kirsten Wieck, 64807 Dieburg
 44.130.24.201   DJ6PY-2 # Karl Thiel, 64807 Dieburg
 44.130.24.202   DG2FEF  # Matthias Welwarsky, 64295 Darmstadt; XT, WNOS
+44.130.24.234   DF2ZP-3 #
 #
 #44.130.25.x    Frankfurt
 # lokale Adress-Koordination: DG1ZX
@@ -1558,6 +1617,8 @@
 44.130.26.10    DF9FP   # Reiner Hammer, 35647 Waldsolms
 44.130.26.11    DD9FJ   # Michael Walther, 6380 Bad Homburg
 44.130.26.16    DG3FAM  # Heinz Mahler, 61250 Usingen
+44.130.26.17    DG3FAM-1        #
+44.130.26.18    DG3FAM-2        #
 44.130.26.20    DL2FAG  # Karl-Heinz, 61250 Usingen
 44.130.26.21    DA1RY   # Bernhard M. Bloom, 6380 Bad Homburg
 44.130.26.25    DC6FU   # Stefan, 6000 Frankfurt 56
@@ -1640,125 +1701,124 @@
 44.130.28.30    DL8ZAD  # Juergen, 35789 Weilmuenster nr Wetzlar
 44.130.28.58    DF0WS   # ClubStn F58, 35396 Giessen-Wieseck
 #
-44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc6iq@db0sao
-#
-44.130.29.1  db0rot-w   # JN48fw *** Mailbox Rotensol 76332 Bad Herrenalb
-44.130.29.2  dg9bad-7   #        Thomas Waehner       89171 Illerkirchberg
-44.130.29.3  dc6iq-w    # JN49fb Fred Baumgarten      76297 Stutensee
-44.130.29.4  dj0vl      # JN48fx Jean Thilges         76227 Karlsruhe
-44.130.29.5  db0rot     # JN48fw Reinhard Meyer       76332 Bad Herrenalb
-44.130.29.6  dk6ii      #        Erich H. Franke      75203 Koenigsbach-Stein
-44.130.29.7  db6is      # JN49fb Hinrich Bernas       76139 Karlsruhe
-44.130.29.8  df0uk      # JN49ea Univers. Karlsruhe   76131 Karlsruhe; ClbSt
-44.130.29.9  df0uk-u    # JN49ea Univers. Karlsruhe   76131 Karlsruhe; ClbSt
-44.130.29.10 dc6iq      # JN49fb Fred Baumgarten      76297 Stutensee
-44.130.29.11 dc6iq-n    # JN49fb Fred Baumgarten      76297 Stutensee
-44.130.29.12 dl5ycy     # JN48fx Volker Baumgarte     76227 Karlsruhe
-44.130.29.13 dl5ycy-1   # JN48fx Volker Baumgarte     76227 Karlsruhe
-44.130.29.14 dl5uy-1    # JN48fw Reinhard Meyer       76332 Bad Herrenalb
-44.130.29.15 dl5uy-2    # JN48fw Reinhard Meyer       76332 Bad Herrenalb
-44.130.29.16 dl5uy-3    # JN48fw Reinhard Meyer       76332 Bad Herrenalb
-44.130.29.17 dl5uy-4    # JN48fw Reinhard Meyer       76332 Bad Herrenalb
-44.130.29.18 dl5uy-5    # JN48fw *** Mailbox Rotensol 76332 Bad Herrenalb
-44.130.29.19 dl5uy-6    # JN48fw Reinhard Meyer       76332 Bad Herrenalb
-44.130.29.20 dl5uy-7    # JN48fw Reinhard Meyer       76332 Bad Herrenalb
-44.130.29.21 dl5uy-8    # JN48fw Reinhard Meyer       76332 Bad Herrenalb
-44.130.29.22 dl5uy-9    # JN48fw Reinhard Meyer       76332 Bad Herrenalb
-44.130.29.23 dl5uy-10   # JN48fw Reinhard Meyer       76332 Bad Herrenalb
-44.130.29.24 dc2ir      # JN49ea Norbert Mehl         76131 Karlsruhe
-44.130.29.25 dc1ik-1    # JN49ea Olaf Erb             76131 Karlsruhe
-44.130.29.26 dc1ik-7    # JN49ea Olaf Erb             76131 Karlsruhe
-44.130.29.27 da2dr      #        Dave Rettke          76646 Bruchsal
-44.130.29.28 dg2gaz     # JN48fx Gerd Haenssler       76227 Karlsruhe
-44.130.29.29 df3iar     # JN49ea Andreas Gross        76133 Karlsruhe
-44.130.29.30 dh8iag     #        Manfred Guenzl       76199 Karlsruhe
-44.130.29.31 db4ut      # JN49ea Bernd Hollerbach     76131 Karlsruhe
-44.130.29.32 dl6kcu     # JN48fw Klaus Baerwald       76275 Ettlingen
-44.130.29.33 dd3uh      #        Dieter Schlaier      76689 Karlsdorf
-44.130.29.34 dd3uc      # JN49ea Christoph W. Rieger  76131 Karlsruhe
-44.130.29.35 dj4ul      #        Herbert
-44.130.29.36 dl6iu      # JN49ea Klaus Heimannsfeld   76131 Karlsruhe
-44.130.29.37 dl6iu-1    # JN49ea Klaus Heimannsfeld   76131 Karlsruhe
-44.130.29.38 dh1iar-1   # JN49ea Peter Herttrich      76131 Karlsruhe
-44.130.29.39 dc3ts-1    # JN48fw Wolfgang Heim        75334 Straubenhardt
-44.130.29.40 dc3ts      # JN48fw Wolfgang Heim        75334 Straubenhardt
-44.130.29.41 df3iar-u   # JN49ea Andreas Gross        76133 Karlsruhe
-44.130.29.42 db4ut-1    # JN49ea Bernd Hollerbach     76131 Karlsruhe
-44.130.29.43 dc1ik-2    # JN49ea Olaf Erb             76131 Karlsruhe
-44.130.29.44 dc1ik-3    # JN49ea Olaf Erb             76131 Karlsruhe
-44.130.29.45 dj0vl-os9  # JN48fx Jean Thilges         76227 Karlsruhe
-44.130.29.46 dj0vl-pc   # JN48fx Jean Thilges         76227 Karlsruhe
-44.130.29.47 df3iar-l   # JN49ea Andreas Gross        76133 Karlsruhe
-44.130.29.48 dh2paf     # JN49fa Wolfgang Tremmel     76131 Karlsruhe
-44.130.29.49 dh2paf-u   # JN49fa Wolfgang Tremmel     76131 Karlsruhe
-44.130.29.50 dc6iq-p    # JN49fb Fred Baumgarten      76297 Stutensee
-44.130.29.51 dc1ik-l    # JN49ea Olaf Erb             76131 Karlsruhe
-44.130.29.52 dc1ik-w    # JN49ea Olaf Erb             76131 Karlsruhe
-44.130.29.53 dc6iq-s    # JN49fb Fred Baumgarten      76297 Stutensee
-44.130.29.54 dc6iq-v    # JN49fb Fred Baumgarten      76297 Stutensee
-44.130.29.55 dg5iai     # JN49ea Carsten Klaus        76131 Karlsruhe
-44.130.29.56 dg5iai-u   # JN49ea Carsten Klaus        76131 Karlsruhe
-44.130.29.57 dc6iq-h    # JN49fb Fred Baumgarten      76297 Stutensee
-44.130.29.58 dc6iq-g    # JN49fb Fred Baumgarten      76297 Stutensee
-44.130.29.59 dc6iq-j    # JN49fb Fred Baumgarten      76297 Stutensee
-44.130.29.60 dh4ial     #        Axel
-44.130.29.61 dh4ial-xt  #        Axel
-44.130.29.62 dl5ycy-w   # JN48fx Volker Baumgarte     76227 Karlsruhe
-44.130.29.63 dl5ycy-k   # JN48fx Volker Baumgarte     76227 Karlsurhe
-44.130.29.64 db2gl      # JN49fa Gerald Lang          76131 Karlsruhe
-44.130.29.65 db2gl-u    # JN49fa Gerald Lang          76131 Karlsruhe
-44.130.29.66 dd2ih      # JN49ea Heinz Zerbes         76131 Karlsruhe
-44.130.29.67 dd2ih-u    # JN49ea Heinz Zerbes         76131 Karlsruhe
-44.130.29.68 dd2ih-n    # JN49ea Heinz Zerbes         76131 Karlsruhe
-44.130.29.69 dd3uc-i    # JN49ea Christoph W. Rieger  76131 Karlsruhe
-44.130.29.70 df4iaa     # JN49ea Andreas Arnold       76131 Karlsruhe
-44.130.29.71 df4iaa-u   # JN49ea Andreas Arnold       76131 Karlsruhe
-44.130.29.72 df4iaa-l   # JN49ea Andreas Arnold       76131 Karlsruhe
-44.130.29.73 df4iaa-p   # JN49ea Andreas Arnold       76131 Karlsruhe
-44.130.29.74 dl5bct     # JN48fx Peter Cornelius      76227 Karlsruhe
-44.130.29.75 dl5bct-1   # JN48fx Peter Cornelius      76227 Karlsruhe
-44.130.29.76 dc1ik-i    # JN49ea Olaf Erb             76131 Karlsruhe
-44.130.29.77 dg1sek-1   # JN48mv Frieder Loeffler     71706 Markgroeningen
-44.130.29.78 dg1sek-2   # JN48mv Frieder Loeffler     71706 Markgroeningen
-44.130.29.79 dg1sek-3   # JN48mv Frieder Loeffler     71706 Markgroeningen
-44.130.29.80 dg3ual     # JN48fx Gerd Flaig           76227 Karlsruhe
-44.130.29.81 dg3ual-w   # JN48fx Gerd Flaig           76227 Karlsruhe
-44.130.29.82 dd2ih-v    # JN49ea Heinz Zerbes         76131 Karlsruhe
-44.130.29.83 dd2ih-w    # JN49ea Heinz Zerbes         76131 Karlsruhe
-44.130.29.84 dg8sev-k   # JN48nr Stephan Block        70569 Stuttgart
-44.130.29.85 dg1sek-r   # JN48mv Frieder Loeffler     71706 Markgroeningen
-44.130.29.86 dl3it      # JN49ea Thomas Wischnack     76135 Karlsruhe
-44.130.29.87 dl3it-u    # JN49ea Thomas Wischnack     76135 Karlsruhe
-44.130.29.88 dg1ie      # JN48ex Gunnar Bernstein     76199 Karlsruhe
-44.130.29.89 dh8iag-w   #        Manfred Guenzl       76199 Karlsruhe
-44.130.29.90 dh8iag-1   #        Manfred Guenzl       76199 Karlsruhe
-44.130.29.91 dg1gwy     #        Werner Guenzl        78713 Schramberg
-44.130.29.92 dg1gwy-w   #        Werner Guenzl        78713 Schramberg
-44.130.29.93 df3iar-s   # JN49ea Andreas Gross        76133 Karlsruhe
-44.130.29.94 dh5iag     # JN49ea Peter Boegler        76131 Karlsruhe
-44.130.29.95 dg1ie-u    # JN48ex Gunnar Bernstein     76199 Karlsruhe
-44.130.29.96 dg1ian     # JN48ex Sascha Schlindwein   76137 Karlsruhe
-44.130.29.97 dg4ial     # JN49ea Axel Hartmann        76133 Karlsruhe
-44.130.29.98 dg4ial-1   # JN49ea Axel Hartmann        76133 Karlsruhe
-44.130.29.99  db4ut-u   # JN49ea Bernd Hollerbach     76131 Karlsruhe
-44.130.29.100 db4ut-w   # JN49ea Bernd Hollerbach     76131 Karlsruhe
-44.130.29.101 dl5iae    # JN49be Steffen Engmann      76829 Landau
-44.130.29.102 dl5iae-w  # JN49be Steffen Engmann      76829 Landau
-44.130.29.103 dl3it-n   # JN49ea Thomas Wischnack     76135 Karlsruhe
-44.130.29.104 dl3it-w   # JN49ea Thomas Wischnack     76135 Karlsruhe
-44.130.29.105 dg1ie-2   # JN48ex Gunnar Bernstein     76199 Karlsruhe
-44.130.29.106 dh4iad    # JN49da Ralf Burkart         76744 Woerth
-44.130.29.107 dh4iad-w  # JN49da Ralf Burkart         76744 Woerth
-44.130.29.108 dg3uaj    #        Joerg Kliewer        76185 Karlsruhe
-44.130.29.109 dg3uaj-w  #        Joerg Kliewer        76185 Karlsruhe
-44.130.29.110 dg1ian-w  # JN48ex Sascha Schlindwein   76137 Karlsruhe
-44.130.29.111 dg3iae    # JN49ea Dirk Schwaderer      76187 Karlsruhe
-44.130.29.112 dg4scv-l  # JN49fb Rolf Rose            76297 Stutensee
-44.130.29.113 dl6sef-l  # JN49fb Verena Rose          76297 Stutensee
-44.130.29.114 dg4scv-v  # JN49fb Rolf Rose            76297 Stutensee
-44.130.29.115 dl6sef-v  # JN49fb Verena Rose          76297 Stutensee
-44.130.29.116 dg4uah    # JN49ea Erwin Hug            76187 Karlsruhe
-44.130.29.117 dg4uah-w  # JN49ea Erwin Hug            76187 Karlsruhe
+# lokale Adresskoordination ...29.x : DC6IQ
+44.130.29.1     DB0ROT-W        # Mailbox Rotensol, 76332 Bad Herrenalb; *** UNIX
+44.130.29.2     DG9BAD-7        # Thomas Waehner, 89171 Illerkirchberg
+44.130.29.3     DC6IQ-W # Fred Baumgarten, 76297 Stutensee
+44.130.29.4     DJ0VL   # Jean Thilges, 76227 Karlsruhe
+44.130.29.5     DB0ROT  # Reinhard Meyer, 76332 Bad Herrenalb
+44.130.29.6     DK6II   # Erich H. Franke, 75203 Koenigsbach-Stein
+44.130.29.7     DB6IS   # Hinrich Bernas, 76139 Karlsruhe
+44.130.29.8     DF0UK   # ClubStn Universitaet, 76131 Karlsruhe
+44.130.29.9     DF0UK-U #
+44.130.29.10    DC6IQ   # Fred Baumgarten, 76297 Stutensee
+44.130.29.11    DC6IQ-N #
+44.130.29.12    DL5YCY  # Volker Baumgarte, 76227 Karlsruhe
+44.130.29.13    DL5YCY-1        #
+44.130.29.14    DL5UY-1 # Reinhard Meyer, 76332 Bad Herrenalb
+44.130.29.15    DL5UY-2 #
+44.130.29.16    DL5UY-3 #
+44.130.29.17    DL5UY-4 #
+44.130.29.18    DL5UY-5 #
+44.130.29.19    DL5UY-6 #
+44.130.29.20    DL5UY-7 #
+44.130.29.21    DL5UY-8 #
+44.130.29.22    DL5UY-9 #
+44.130.29.23    DL5UY-10        #
+44.130.29.24    DC2IR   # Norbert Mehl, 76131 Karlsruhe
+44.130.29.25    DC1IK-1 # Olaf Erb, 76131 Karlsruhe
+44.130.29.26    DC1IK-7 #
+44.130.29.27    DA2DR   # Dave Rettke, 76646 Bruchsal
+44.130.29.28    DG2GAZ  # Gerd Haenssler, 76227 Karlsruhe
+44.130.29.29    DF3IAR  # Andreas Gross, 76133 Karsruhe
+44.130.29.30    DH8IAG  # Manfred Guenzl, 76199 Karlsruhe
+44.130.29.31    DB4UT   # Bernd Hollerbach, 76131 Karlsruhe
+44.130.29.32    DL6KCU  # Klaus Baerwald, 76275 Ettlingen
+44.130.29.33    DD3UH   # Dieter Schlaier, 76689 Karlsdorf
+44.130.29.34    DD3UC   # Christoph W. Rieger, 76131 Karlsruhe
+44.130.29.35    DJ4UL   # Herbert
+44.130.29.36    DL6IU   # Klaus Heimannsfeld, 76131 Karlsruhe
+44.130.29.37    DL6IU-1 #
+44.130.29.38    DH1IAR-1        # Peter Herttrich, 76131 Karlsruhe
+44.130.29.39    DC3TS-1 # Wolfgang Hein, 75334 Straubenhardt
+44.130.29.40    DC3TS   #
+44.130.29.41    DF3IAR-U        # Andreas Gross, 76133 Karlsruhe; UNIX
+44.130.29.42    DB4UT-1 # Bernd Hollerbach, 76131 Karlsruhe
+44.130.29.43    DC1IK-2 # Olaf Erb, 76131 Karlsruhe
+44.130.29.44    DC1IK-3 #
+44.130.29.45    DJ0VL-OS9       # Jean Thilges, 76227 Karlsruhe
+44.130.29.46    DJ0VL-PC        #
+44.130.29.47    DF3IAR-L        # Andreas Gros, 76133 Karlsruhe
+44.130.29.48    DH2PAF  # Wolfgang Tremmel, 76131 Karlsruhe
+44.130.29.49    DH2PAF-U        #
+44.130.29.50    DC6IQ-P # Fred Baumgarten, 76297 Stutensee
+44.130.29.51    DC1IK-L # Olaf Erb, 76131 Karlsruhe
+44.130.29.52    DC1IK-W #
+44.130.29.53    DC6IQ-S # Fred Baumgarten, 76297 Stutensee
+44.130.29.54    DC6IQ-V #
+44.130.29.55    DG5IAI  # Carsten Klaus, 76131 Karlsruhe
+44.130.29.56    DG5IAI-U        #
+44.130.29.57    DC6IQ-H # Fred Baumgarten, 76297 Stutensee
+44.130.29.58    DC6IQ-G #
+44.130.29.59    DC6IQ-J #
+44.130.29.60    DH4IAL  # Axel
+44.130.29.61    DH4IAL-XT       #
+44.130.29.62    DL5YCY-W        # Volker Baumgarte, 76227 Karlsruhe
+44.130.29.63    DL5YCY-K        #
+44.130.29.64    DB2GL   # Gerald Lang, 76131 Karlsruhe
+44.130.29.65    DG2GL-U #
+44.130.29.66    DD2IH   # Heinz Zerbes, 76131 Karlsruhe
+44.130.29.67    DD2IH-U #
+44.130.29.68    DD2IH-N #
+44.130.29.69    DD3UC-I # Christoph W. Rieger, 76131 Karlsruhe
+44.130.29.70    DF4IAA  # Andreas Arnold, 76131 Karlsruhe
+44.130.29.71    DF4IAA-U        #
+44.130.29.72    DF4IAA-L        #
+44.130.29.73    DF4IAA-P        #
+44.130.29.74    DL5BCT  # Peter Cornelius, 76227 Karlsruhe
+44.130.29.75    DL5BCT-1        #
+44.130.29.76    DC1IK-I # Olaf Erb, 76131 Karlsruhe
+44.130.29.77    DG1SEK-1        # Frieder Loeffler, 71706 Markgroeningen
+44.130.29.78    DG1SEK-2        #
+44.130.29.79    DG1SEK-3        #
+44.130.29.80    DG3UAL  # Gerd Flaig, 76227 Karlsruhe
+44.130.29.81    DG3UAL-W        #
+44.130.29.82    DD2IH-V # Heinz Zerbes, 76131 Karlsruhe
+44.130.29.83    DD2IH-W #
+44.130.29.84    DG8SEV-K        # Stephan Block, 70569 Stuttgart
+44.130.29.85    DG1SEK-R        # Frieder Loeffler, 71706 Markgroeningen
+44.130.29.86    DL3IT   # Thomas Wischnack, 76135 Karlsruhe
+44.130.29.87    DL3IT-U #
+44.130.29.88    DG1IE   # Gunnar Bernstein, 76199 Karlsruhe
+44.130.29.89    DH8IAG-W        # Manfred Guenzl, 76199 Karlsruhe
+44.130.29.90    DH8IAG-1        #
+44.130.29.91    DG1GWY  # Werner Guenzl, 78713 Schramberg
+44.130.29.92    DG1GWY-W        #
+44.130.29.93    DF3IAR-S        # Andreas Gross, 76133 Karlsruhe
+44.130.29.94    DH5IAG  # Peter Boegler, 76131 Karlsruhe
+44.130.29.95    DG1IE-U # Gunnar Bernstein, 76199 Karlsruhe
+44.130.29.96    DG1IAN  # Sascha Schlindwein, 76137 Karlsruhe
+44.130.29.97    DG4IAL  # Axel Hartmann, 76133 Karlsruhe
+44.130.29.98    DG4IAL-1        #
+44.130.29.99    DB4UT-U # Bernd Hollerbach, 76131 Karlsruhe
+44.130.29.100   DB4UT-W #
+44.130.29.101   DL5IAE  # Steffen Engmann, 76829 Landau
+44.130.29.102   DL5IAE-W        #
+44.130.29.103   DL3IT-N # Thomas Wischnack, 76135 Karlsruhe
+44.130.29.104   DL3IT-W #
+44.130.29.105   DG1IE-2 # Gunnar Bernstein, 76199 Karlsruhe
+44.130.29.106   DH4IAD  # Ralf Burkart, 76744 Woerth
+44.130.29.107   DH4IAD-W        #
+44.130.29.108   DG3UAJ  # Joerg Kliewer, 76185 Karlsruhe
+44.130.29.109   DG3UAJ-W        #
+44.130.29.110   DG1IAN-W        # Sascha Schlindwein, 76137 Karlsruhe
+44.130.29.111   DG3IAE  # Dirk Schwaderer, 76187 Karlsruhe
+44.130.29.112   DG4SCV-L        # Rolf Rose, 76297 Stutensee
+44.130.29.113   DL6SEF-L        # Verena Rose, 76297 Stutensee
+44.130.29.114   DG4SCV-V        #
+44.130.29.115   DL6SEF-V        #
+44.130.29.116   DG4UAH  # Erwin Hug, 76187 Karlsruhe
+44.130.29.117   DG4UAH-W        #
 #
 #44.130.30.x    Nordhessen
 # lokale Adresskoordination: DG1ZX-A
@@ -1801,7 +1861,9 @@
 #
 #44.130.33.x    Saarland
 44.130.33.1     DF3VI   # Patrick, 6650 Homburg
-44.130.33.2     DC1VL   # George Nashan, 66424 Homburg
+44.130.33.2     DL4VCN  # George Nashan, 66424 Homburg (ex DC1VL)
+44.130.33.3     DL4VAP  # Marcus Meier, 66578 Schiffweiler
+44.130.33.4     DL4VAP-U        #
 #
 44.130.34.1     DB0NWS  # ; ***
 44.130.34.2     DD4PN   # Volker, 5248 Mittelhof
@@ -1817,66 +1879,65 @@
 44.130.35.4     DC5DM   # Marcus, 5902 Netphen 3
 44.130.35.5     DL6DBN  # Frank, 5900 Siegen
 44.130.35.7     DG9DBL  # Carsten, 5900 Siegen
+44.130.35.10    DJ7CO-U #
 44.130.35.11    DJ7CO   # Rudolf Wendel, 51688 Wipperfuerth
-44.130.35.12    DL2KRC  # Robert Courte, 51789 Lindlar (ex DD1KA)
+44.130.35.12    DL2KRC  # Robert Courte, 51789 Lindlar
 44.130.35.14    DD4KO   # Olaf Jung, 5270 Gummersbach
 44.130.35.15    DG2KHE  # Hagen Erdmann, 5270 Gummersbach
 #
-# 44.130.36.xxx - 44.130.39.xxx Berlin
-#
-#44.130.36.1      dc7ch         # Juergen
-44.130.36.2       DC7ER         # Andreas, 1000 Berlin 47
-44.130.36.3       DH7ABQ        # Ralf, 1000 Berlin 44
-44.130.36.5       DL5HCK-1      # Klaus Simon, 1000 Berlin 41
-44.130.36.7       DL7APN        # Christian, 1000 Berlin-Schoeneberg
-44.130.36.10      DL7SV         # Joachim, 1000 Berlin; Mac
-44.130.36.11      dc7fb         # Ralf, Berlin-Rudow
-44.130.36.12      dc7fb-1       #
-44.130.36.13      dd6vd         # Michael
-44.130.36.14      dc7ch         # Juergen , Berlin
-44.130.36.18      DL7UFO-2      # Sven , 10409 Berlin
-44.130.36.20      DC7FO         # Uli, 1000 Berlin
-44.130.36.21      DC7FO-1       #
-44.130.36.22      DC7FO-2       #
-44.130.36.23      DC7FO-3       #
-44.130.36.24      DC7FO-4       #
-44.130.36.25      DC7FO-5       #
-44.130.36.30      DL7UWO        # Manfred
-44.130.36.32      DF1GX         # Claus-Peter
-44.130.36.33      st.DF1GX      #
-44.130.36.34      pc.DF1GX      #
-#44.130.36.35     df1gx         #
-#44.130.36.36     df1gx         #
-44.130.36.40      DL7VKH        # Karl-Heinz, Berlin-Pankow
-44.130.36.41      DK7IN-1       # Rolf, 1000 Berlin 65; AT486
-44.130.36.42      DK7IN-2       # Rolf, 1000 Berlin 65; XT
-44.130.36.43      DK7IN         # Rolf, 1000 Berlin 65; AT386
-44.130.36.50      DL7UAZ        # Andre' Zwadlo, Berlin-Koepenick
-44.130.36.51      DL7UAZ-1      #
-44.130.36.52      DL7AMN        # Edgar
-44.130.36.55      dd6ri         # Christian
-44.130.36.60      dl7aro        # Marco (WAMPES)
-44.130.36.65      DB5QO         # Dieter, Berlin 46
-44.130.36.66      DD5MP         # Antonio, Berlin
-44.130.36.70      DD6OA-7       # Bodo, Berlin-Buckow (-7 = TCP/IP;-0 = AX25)
-44.130.36.75      DL7VFX        # Thomas Kroeger, Berlin
-44.130.36.80      DL7UEA        # Bernd, Berlin
-44.130.36.81      DL9SAU-1      # Thommas Osterried, Berlin
-44.130.36.82      DL9SAU-A      # Thommas Osterried, Berlin
-44.130.36.83      DL7ARX        # Gerhard Petzold , 12279 Berlin
-44.130.36.84      DD6RG         # Joachim Henschke, 12249 Berlin
-44.130.36.95      DD5AA         # Alain, Berlin-Wedding ;NNTP, SMTP, POP-Server
-44.130.36.97      DL7NW         # Siegbert, Berlin
-# 44.130.36.100                 # reserviert fuer TCP/IP Digi Berlin
-# 44.130.36.101                 # reserviert fuer TCP/IP Digi Berlin
-44.130.36.111     DL7UAW        # Andy
-44.130.36.200     DL7AUC        # Pat, 1000 Berlin
-44.130.36.201     DL7AUC-1      #
-44.130.36.202     DL7AUC-2      #
-44.130.36.203     DL7AUC-3      #
-44.130.36.204     DL7AUC-4      #
-44.130.36.205     DL7AUC-5      #
-44.130.36.210     DL7UAE        # Thomas, Berlin
+#44.130.36.x    Berlin
+# lokale Adresskoordination: DL7UAZ
+44.130.36.2     DC7ER   # Andreas, 1000 Berlin 47
+44.130.36.3     DH7ABQ  # Ralf, 1000 Berlin 44
+44.130.36.5     DL5HCK-1        # Klaus Simon, 1000 Berlin 41
+44.130.36.7     DL7APN  # Christian, 1000 Berlin-Schoeneberg
+44.130.36.10    DL7SV   # Joachim, 1000 Berlin; Mac
+44.130.36.11    DC7FB   # Ralf, Berlin
+44.130.36.12    DC7FB-1 #
+44.130.36.13    DD6VD   # Michael
+44.130.36.14    DC7CH-PC        # Juergen, Berlin
+44.130.36.18    DL7UFO-2        # Sven, 10409 Berlin
+44.130.36.20    DC7FO   # Uli, 1000 Berlin
+44.130.36.21    DC7FO-1 #
+44.130.36.22    DC7FO-2 #
+44.130.36.23    DC7FO-3 #
+44.130.36.24    DC7FO-4 #
+44.130.36.25    DC7FO-5 #
+44.130.36.30    DL7UWO  # Manfred (ex Y23WO)
+44.130.36.32    DF1GX   # Claus-Peter Schulz, Berlin
+44.130.36.33    ST.DF1GX        #
+44.130.36.34    PC.DF1GX        #
+44.130.36.35    DF1GX-2 #
+44.130.36.36    DF1GX-3 #
+44.130.36.40    DL7VKH  # Karl-Heinz, Berlin-Pankow (ex Y26WO)
+44.130.36.41    DK7IN-1 # Rolf, 1000 Berlin 65; AT486
+44.130.36.42    DK7IN-2 # Rolf, 1000 Berlin 65; XT
+44.130.36.43    DK7IN   # Rolf, 1000 Berlin 65; AT386
+44.130.36.50    DL7UAZ  # Andre Zwadlo, Berlin-Koepenick
+44.130.36.51    DL7UAZ-1        #
+44.130.36.52    DL7AMN  # Edgar Vennmanns, 10779 Berlin
+44.130.36.55    DD6RI   # Christian
+44.130.36.60    DL7ARO  # Marco; WAMPES
+44.130.36.65    DB5QO   # Dieter, Berlin 46
+44.130.36.66    DD5MP   # Antonio, Berlin
+44.130.36.70    DD6OA-7 # Bodo, Berlin-Buckow
+44.130.36.75    DL7VFX  # Tom Kroeger, O-1170 Berlin (ex Y37TO)
+44.130.36.80    DL7UEA  # Bernd, Berlin
+44.130.36.81    DL9SAU-1        # Thomas Osterried, 1000 Berlin
+44.130.36.82    DL9SAU-A        #
+44.130.36.83    DL7ARX  # Gerhard Petzold, 12279 Berlin
+44.130.36.84    DD6RG   # Joachim Henschke, 12249 Berlin
+44.130.36.85    DL7ARX-1        # ; Amiga
+44.130.36.95    DD5AA   # Alain, Berlin-Wedding; NNTP, SMTP, POP-Server
+44.130.36.97    DL7NW   # Siegbert Langer, Berlin
+44.130.36.111   DL7UAW  # Andy (ex Y24LO)
+44.130.36.200   DL7AUC  # Pat, Berlin
+44.130.36.201   DL7AUC-1        #
+44.130.36.202   DL7AUC-2        #
+44.130.36.203   DL7AUC-3        #
+44.130.36.204   DL7AUC-4        #
+44.130.36.205   DL7AUC-5        #
+44.130.36.210   DL7UAE  # Thomas, Berlin
 #
 #44.130.40.x    Mainz
 44.130.40.1     DG4KS   # Andreas Kempf, 6501 Dexheim
@@ -1887,6 +1948,8 @@
 44.130.40.10    DF7PN   # Wolfgang Hallmann, 6500 Mainz 1
 44.130.40.11    DG9PW   # Hans Heine, 6501 Saulheim
 44.130.40.12    DC1JU   # Ralf Goess, 6502 Heidesheim
+44.130.40.13    DJ9XG   # Uwe, 55270 Ober-Olm
+44.130.40.14    DD7WE   # Wieland, Bodenheim
 44.130.40.20    DD9WQ   # Guido, Trechtingshausen
 44.130.40.21    DF3PJ   # Rainer, Mainz
 44.130.40.22    DD9WG   # Michael, Bingen
@@ -1899,7 +1962,6 @@
 44.130.41.3     DK6PX-2 # Stefan, 6580 Idar-Oberstein
 44.130.41.4     DB9UQ   # Thomas Hauck, Rohrhof
 44.130.41.5     DF5IY   # Udo Koch, 6719 Lautersheim
-#44.130.41.6    DA2CY   # Jerry Crawford; left DL
 44.130.41.7     DF2IAQ-1        #
 44.130.41.8     DB0CPU  # Digi Ludwigshafen (DF1IAQ)
 44.130.41.9     DL9TD   # Wolfgang, Ludwigshafen
@@ -1915,25 +1977,25 @@
 44.130.41.22    DF2IAQ-2        #
 44.130.41.23    DF2IAQ-P        #
 44.130.41.25    DL8NCI  # Matthias Jordan, Otterbach
-44.130.41.26    DG4IAD  # Hans-Peter Zorn, Mannheim; AT286
+44.130.41.26    DG4IAD  # Hans-Peter Zorn, Mannheim; Atari
 44.130.41.27    DH0IAY  # Ulrich Habel, 6802 Ladenburg; Amiga
 44.130.41.30    DG1IC   # Ralf Gember, 6800 Mannheim 1
 44.130.41.42    DD3IF   # Hans Huebinger, 6700 Ludwigshafen
 44.130.41.50    DF2IAD  # Jan, Bad Bergzabern
 44.130.41.64    DB0KLN  # Digi Kaiserslautern (DL1BKU); AT: NNTP,SMTP,FTP
-44.130.41.65    DB0KLN-SVR      # Digi Kaiserslautern; POP, AX25 DB0AAC-10
-44.130.41.66    DB0KLN-TEST     #
+44.130.41.65    DB0KLN-SVR      # Digi Kaiserslautern; POP, AX25, NETROM
+44.130.41.66    DB0KLN-TEST     # ; Sun, Wampes
 44.130.41.67    DF2VL   # Joachim Groh, 6750 Kaiserslautern
 44.130.41.69    DL5UJ   # Jens Ritter, 6750 Kaiserslautern
 44.130.41.70    DB5WZ   # Oliver Diry, 6520 Worms
-44.130.41.72    DL0XK   # Clubstn Kaiserslautern
+44.130.41.72    DL0XK   # Clubstn Uni Kaiserslautern
 44.130.41.73    DL1BKU  # Joerg Zastrau, 6750 Kaiserslautern
 44.130.41.74    DL1BKU-SVR      #
-44.130.41.76    DH4PAH  # Raymond Faust, 67346 Speyer
+44.130.41.76    DJ7WN   # Raymond Faust, 67346 Speyer (ex DH4PAH)
 44.130.41.77    DG4FDI-5        # Thomas Thiers, 68519 Viernheim
 44.130.41.78    DB8IS   # Rene Reutter, 67346 Speyer
 44.130.41.79    DL2IAP  # Andreas, nr Heidelberg
-44.130.41.80    DG1IAJ  # Andreas, Dossenheim
+44.130.41.80    DF4IAE  # Andreas, Dossenheim (ex DG1IAJ)
 44.130.41.81    DL2IAR  # Bernhard Landwehr, 6909 Walldorf
 44.130.41.82    DD4UP   # Michael Barth, 6900 Heidelberg-Wieblingen; Atari ST
 44.130.41.83    DK9UV   # Chris, Edingen nr. Heidelberg
@@ -1948,21 +2010,22 @@
 44.130.41.99    DC1IK-U #
 44.130.41.100   DJ6PY   # Karl Thiel, 6730 Neustadt
 44.130.41.110   DA2XX   # Bob, Konken (WY7O)
-44.130.41.111   DL9DAZ  # Karl-Heniz Menne, 67551 Worms
+44.130.41.111   DL9DAZ  # Karl-Heinz Menne, 67551 Worms
 44.130.41.112   DL1UW   # Christan, Hilsbach
 44.130.41.123   DH6IAL  # Mark Weimann, Kaiserlautern; WNOS
 44.130.41.124   DL7UC   # Ludwig, Kaiserslautern
-44.130.41.130   DG4IAX  # Mario Duckstein, 67766 Hockenheim (Wampes)
-44.130.41.131   DG4IAX-U #Mario Duckstein, 67766 Hockenheim (Linux)
-44.130.41.132   DJ5JI   # Rudi Burkard, 68775 Ketsch (Wampes)
-44.130.41.133   DJ5JI-U # Rudi Burkard, 68775 Ketsch (Linux)
+44.130.41.129   DC8WP   # Stefan Kutsche; AT-486
+44.130.41.130   DG4IAX  # Mario Duck-Stein, 67766 Hockenheim; Wampes
+44.130.41.131   DG4IAX-U        #
+44.130.41.132   DJ5JI   # Rudi Burkard, 68775 Ketsch; Wampes
+44.130.41.133   DJ5JI-U # ; Linux
 44.130.41.200   DH6IAL-SVR      # Mark
+44.130.41.245   DD0WF   # Thomas Schleicher, Muenschweiler nr Pirmasens
 #
 #44.130.42.x    Koblenz
 44.130.42.1     DL5DI   # Hans-Juergen Barthen, 5473 Kruft
 44.130.42.2     DL5DI-amiga     # Hans-Juergen Barthen
-44.130.42.3     DB0LJ-1 # PBBS Mittelrhein (DL5DI); *** WNOS,
-#                               ARP via DB0LJ-1 RMNC+NETROM
+44.130.42.3     DB0LJ-1 # PBBS Mittelrhein (DL5DI); *** Linux Server
 44.130.42.4     DL5DI-p # Hans-Juergen Barthen
 44.130.42.5     DG2PU   # Thomas, 5477 Nickenich
 44.130.42.6     DB7JI   # Kajo, Lonnig
@@ -1973,13 +2036,15 @@
 44.130.42.12    DF6PR   # Gerd Roth, 5410 Hoehr-Grenzhausen
 44.130.42.13    DB2PY   #
 44.130.42.14    DB7PB   #
+44.130.42.15    DF2PA   # Ulrich Weingart, 56759 Kaisersesch
 44.130.42.16    DG2PR   #
 44.130.42.17    DG3PO   #
 44.130.42.18    DD3PO   # Heinz Hilger, 5405 Ochtendung
+44.130.42.19    DJ0IM   # Pierre Lentignac, 56269 Dierdorf
 44.130.42.20    DF3PM   # Juergen, 56626 Andernach; PC LINUX
 44.130.42.21    DF9PV   # Franz Kohlmann, 56564 Neuwied; Amiga
-44.130.42.100   DB0LJ-R # WAMPES-Router
-44.130.42.101   DB0LJ-B # DieBox (NFS-Adresse)
+44.130.42.100   DB0LJ-R # ; Wampes Router
+44.130.42.101   DB0LJ-B # ; DieBox/PC-NFS-Client
 #
 #44.130.44.x    Trier, Eifel
 # lokale Adresskoordination: DG6VJ
@@ -1990,6 +2055,10 @@
 44.130.44.5     DG6VJ-1 # ; Convers-Server, Test
 44.130.44.6     DG6PY   # Hans-Peter, Pelm
 44.130.44.7     DB2VM   # Andreas, Trier
+44.130.44.8     DH0VZ   # Paul, Wittlich
+44.130.44.9     DH0VF   # Jan, Wittlich
+44.130.44.10    DF8SK   # Peter, Konz
+44.130.44.11    DB0DAU  # Digi Daun/Eifel
 44.130.44.127   DF9WM   # Christoph Bungard, Germersheim
 #
 #44.130.48.x    Stuttgart
@@ -2098,7 +2167,7 @@
 44.130.48.101   DL9SAV  # Peter Schweitzer, 7141 Schwieberdingen
 44.130.48.102   DL1SBR  # Frank Grossmann, 7123 Sachsenheim
 44.130.48.103   DL2SAE-1        # Axel Wankmueller, Leonberg
-44.130.48.104   gw.dg9sci       # Rolf Rose
+44.130.48.104   GW.DG9SCI       # Bernd
 44.130.48.105   DG4SCV  # Rolf Rose, 7250 Leonberg
 44.130.48.106   DD2FX   # Rolf Surauf, 75433 Maulbronn-Schmie; *** UNIX
 44.130.48.107   DD2FX-IDEFIX    # ; ***
@@ -2138,7 +2207,7 @@
 44.130.48.141   DL5SAQ-11       #
 44.130.48.142   DL5SAQ-12       #
 44.130.48.143   DB0ADF-U        # 2m-Dopplerpeilsystem, Boeblingen; WAMPES
-44.130.48.144   DL9SET  # Andreas Reischle, 74074 Heilbronn (ex DG2SDB)
+44.130.48.144   DL9SET  # Andreas Reischle, 74074 Heilbronn
 44.130.48.145   DL9SK   # Ralf
 44.130.48.146   DG6SDK  # Uli
 44.130.48.147   DG1SCV  # Rainer, Herrenberg/Gueltstein
@@ -2201,7 +2270,7 @@
 44.130.48.204   DL5SBT  # Werner Heker, 7400 Tuebingen; AT
 44.130.48.205   DH2SAQ-10       # Hans-Peter Fricke, 7148 Remseck 1 Neckarrems
 44.130.48.206   DL3SEE  # Wolfgang, 7140 Ludwigsburg
-44.130.48.207   DL4SEO  # Gerald, Magstadt
+44.130.48.207   DL4SEO  # Gerald, Magstadt (ex DG5SBX)
 44.130.48.208   DG1SBP  # Bernd, Pforzheim
 44.130.48.209   DL4SDH  # Heiko, Kirchheim
 44.130.48.210   DF7XT   # Reiner Gundelach, 7410 Reutlingen 17
@@ -2242,11 +2311,11 @@
 44.130.48.245   DF1IAR-U        # Werner Klueppel, 75179 Pforzheim
 44.130.48.246   DF1IAR-P        #
 44.130.48.247   DH6SAE  # Bernd Rilling, 72655 Altdorf
+44.130.48.248   DD2FX-VERLEIHNIX        #'; *** UNIX
 44.130.48.249   DG5SCM  # Peter, 7400 Tuebingen
 44.130.48.250   DB7SR   # Detlef, 7123 Sachsenheim
 44.130.48.251   DD7SD   # Yvonne Nass, 7123 Sachsenheim
 44.130.48.252   DL4SDC-U        # Andreas, Boeblingen
-44.130.48.253   DD5KX   # Gerhard Kmle, Rutesheim
 44.130.48.254   DL4TA-S # Ralf D. Kloth, 70174 Stuttgart
 #
 #44.130.49.x    Villingen/Schwenningen/Hechingen
@@ -2264,6 +2333,7 @@
 44.130.50.25    DC3UI   # Wolfgang, 7500 Karlsruhe 1
 44.130.50.26    DF8UO   # Daniel, Karlsruhe
 44.130.50.30    DG1GRT  # Thomas Rosenkranz, 7580 Buehl 21
+44.130.50.32    DH0GHU  # Ulrich, Kehl
 44.130.50.35    DK2GQ   # Rainer Schoettgen, 7590 Achern
 44.130.50.36    DG1GSD  # Matthias, Kehl
 44.130.50.37    DG5GAF  # Uwe Bastian, Gaggenau
@@ -2295,10 +2365,14 @@
 44.130.52.2     DK9UL-1 #
 44.130.52.5     DB4IO   # Peter, 6803 Edingen-Neckarhausen
 44.130.52.10    DL2IAR-2        # Bernhard Landwehr, 6909 Walldorf
+44.130.52.11    DF3IX   # Horst, Mannheim
 44.130.52.12    DG4UAJ  # Ulf Zimmermann, 69245 Bammental
 44.130.52.20    DF3IAC  # Volker, Weinheim; Atari Mega 1 ST
 44.130.52.21    DG3IAU  # Robert Wagner, Mannheim
 44.130.52.22    DG6UG   # Walter, Mannheim
+44.130.52.23    DG3IAU-2        #
+44.130.52.24    DG3IAU-3        #
+44.130.52.25    DG3IAU-4        #
 44.130.52.30    DL1IT   # Knut Haberkant, 6900 Heidelberg 1
 44.130.52.31    DL1IT-U #
 44.130.52.32    DL0GSA  # Club-Stn Albert-Schweitzer-Gymnasium, Sandhausen
@@ -2309,6 +2383,7 @@
 44.130.52.50    DL4ZBB  # Uwe John, 64668 Rimbach/Odw.
 44.130.52.51    DL4ZBB-U        #
 44.130.52.77    DG4FDI-12       # Thomas Thiers, 68305 Mannheim
+44.130.52.85    DG4IAD-PC       # Hans-Peter Zorn, Mannheim; PC
 #
 #44.130.53.x    Crailsheim/Heidenheim
 44.130.53.1     DG1SBC  # Uwe Reiner, 7920 Heidenheim; PC
@@ -2335,9 +2410,13 @@
 44.130.55.15    DG1GHG  # Georg Holland, 7750 Konstanz
 44.130.55.16    DG1GHG-2        #
 44.130.55.20    DL1GLH  # Hardy, Tettnang
+44.130.55.21    DJ0GF   # Michel, 88045 Friedrichshafen
 44.130.55.25    DL1GJI  # Jimy, 7947 Mengen
 44.130.55.26    DG8GAD  # Roland, 7947 Mengen
 44.130.55.27    DL3SBB  # Thomas Maisl, 78467 Konstanz; AT WNOS
+44.130.55.32    DL2WO   # Norbert Wolff, 72488 Sigmaringen
+44.130.55.33    DF7UT   # Andreas Wolff, 88213 Ravensburg
+44.130.55.55    DG2GGI  # Thorsten Gendritzki, 88400 Biberach
 44.130.55.56    DL1GFH  # Harald Fuessinger, Ravensburg; WAMPES
 #
 #44.130.176.x   Stuttgart 2
@@ -2359,14 +2438,14 @@
 44.130.176.17   DF3DU-1 # Uwe Behle, Ehningen
 44.130.176.18   DG7SEP  # Andi, Filderstadt
 44.130.176.19   DG4SEP  # Oliver Kurfess, 70794 Filderstadt Plattenhardt; Amiga
-44.130.176.20   DL6SFA  # Markus (ex DH6SBR)
+44.130.176.20   DL6SFA  # Markus
 44.130.176.21   DJ7KA-1 # Uli Wandel, 72076 Tuebingen
 44.130.176.22   DJ7KA-2 #
 44.130.176.23   DJ7KA-3 #
 44.130.176.24   DJ7KA-4 #
 44.130.176.25   DG9SCI  # Bernd
 44.130.176.26   DG9SCI-U        #
-44.130.176.27   DL6SFE  # Ingmar, Nuertingen (ex DG2SFG)
+44.130.176.27   DL6SFE  # Ingmar Baumgart, Nuertingen
 44.130.176.28   DL5SEC  # Rainer Stahl, 75417 Muehlacker
 44.130.176.29   DL5SEC-U        # ; Linux
 44.130.176.30   DK5GA   # Alexander Sprinz, 73265 Dettingen/Teck
@@ -2377,6 +2456,8 @@
 44.130.176.35   DL6SDM-1        #
 44.130.176.36   DL4TA-SNMP      #
 44.130.176.37   DL6SFE-U        #
+44.130.176.38   DL5SAF  # Rainer Elschenbroich, 71032 Boeblingen
+44.130.176.39   DL5SAF-1        #
 44.130.176.40   DF9SR   # Joachim Weller, 71083 Herrenberg
 44.130.176.41   DF9SR-U # ; UNIX
 44.130.176.42   DF9SR-1 # , QRL
@@ -2391,7 +2472,16 @@
 44.130.176.51   DK3SI-LNX       #
 44.130.176.52   DG2SFC  # Dieter Klotzbuecher, 74074 Heilbronn
 44.130.176.53   DB0WAN-U        #
-44.130.176.60   DG9SGA  # Didi, Leinf.Echterdingen
+44.130.176.54   DL6SEU  # Shannon, Althengstett
+44.130.176.55   DF3CE   # Wolfgang Mett, 74722 Buchen-Hainstadt
+44.130.176.56   DG4UAM  # Stefan Mett, 74722 Buchen-Hainstadt
+44.130.176.57   DG1UAZ  # Ralf, 74927 Eschelbronn
+44.130.176.58   DG6UAX  # Thomas Ruhmann, 75177 Pforzheim
+44.130.176.59   DG4SGE  # Michael, Reutlingen
+44.130.176.60   DG9SGA  # Didi, Leinfelden-Echterdingen
+44.130.176.73   DL6SFB  # Juergen, Tuebingen
+44.130.176.74   DL6SFB-U        #
+44.130.176.75   DL2SBL   Wolfram Koppisch, Winnenden
 44.130.176.100  DB0RBS-10       # TCP/IP Server Schwieberdingen (DL1SEM)
 44.130.176.120  DL4IS   # Karl-Heinz Kreutel, 75245 Neulingen
 44.130.176.123  DG2SBV-SATGATE  #
@@ -2414,7 +2504,7 @@
 44.130.56.4     DB0MWE  # Digi Muenchen-West; *** Router 44.130.56.0/24
 44.130.56.5     DB0LAN  # Digi Landshut
 44.130.56.6     DG5MFG  # Angelika, 8034 Germering
-44.130.56.9     DL3MFQ  # Peter Freitag, 8000 Muenchen Schwabing; XT
+44.130.56.9     DL3MFQ  # Peter Freitag, 80804 Muenchen Schwabing
 44.130.56.10    DC3MX   # Alfred Pertler, 8034 Germering
 44.130.56.11    DG4MFG  # Hans, 8034 Germering
 44.130.56.12    DK5UR   # Klaus Mulder, 8542 Roth
@@ -2434,7 +2524,7 @@
 44.130.56.25    DB0PV   # BBS/Netzknoten Muenchen-Sued (DC4MB)
 44.130.56.26    DG8RAD  # Jochen Hummel, Passau
 44.130.56.27    DG8RAD-2        # Jochen Hummel, Muenchen-Grosshadern
-44.130.56.28    DL8RAL  #
+44.130.56.28    DG8RAD-W        #
 44.130.56.29    SYS2.DD5NC      # Vic (G1BIG);  Atari 286/30
 44.130.56.30    DG7MFW  # Soenke, 8014 Neubiberg
 44.130.56.31    DL9MBB-2        # Rudolf, Gilching
@@ -2480,7 +2570,7 @@
 44.130.56.72    DH0DL   # Mirko, Muenchen
 44.130.56.73    DH6MBV  # Wolfgang, Muenchen
 44.130.56.74    DL6RAI  # Ben
-44.130.56.75    DG5MLI-2        # Robert, Muenchen
+44.130.56.75    DG5MLI-U        # Robert, Muenchen
 44.130.56.76    DH0RAK  # Juergen Brunner, 8300 Landshut
 44.130.56.77    DH2BAW  # Philipp, 8130 Starnberg; AT386SX
 44.130.56.78    DH0DL-2 # Mirko, Muenchen
@@ -2491,23 +2581,42 @@
 44.130.56.83    DK4TB   # Klaus, Muenchen
 44.130.56.84    DF0OM   # ClubStn C18
 44.130.56.85    DG2MFZ  # Peter, Muenchen
+44.130.56.86    DC3YH   # Helmut, Englschalking
 44.130.56.88    DG5MCO-U        # Karl Hanns (Charly) Bauer,83109 Grosskarolinenfeld
 44.130.56.90    DF1RW   # Ralf Werner, Muenchen
 44.130.56.92    DC4RU-1 # Robert P. Brunner, 8300 Landshut; route via 44.130.56.43
 44.130.56.93    DC4RU-2 # ; via 44.130.56.43
 44.130.56.94    DC4RU-3 # ; via 44.130.56.43
 44.130.56.95    DL4MGJ  # Roger (G4IRK)
-44.130.56.99    DG5MCO  # Charly
+44.130.56.96    DG9RCG  # Uli, Muenchen
+44.130.56.97    DD5NN   # Jakob, Muenchen
+44.130.56.98    DG5MCO-2        #
+44.130.56.99    DG5MCO  #
 44.130.56.100   DB0MFG  # TCP/IP-Digi Muenchen Germering (DG5MFG)
 44.130.56.101   DG2MIX  # Oliver Krause, Traunstein; Amiga
 44.130.56.102   DG1GGZ  # Markus Frank, 8000 Muenchen 71
+44.130.56.103   DD5FK   # Martin, Altdorf
+44.130.56.104   DD5FK-1 #
+44.130.56.105   DG4MFA  # Rolf Peter, Muenchen
+44.130.56.106   DL2NBU  # Peter, Muenchen
 44.130.56.109   AMIGA-DL3MFQ    # Peter Freitag
 44.130.56.110   DB0MWS-U        # Digi, Muenchen-West
 44.130.56.111   DB0MWS  # Netzknoten, Muenchen-Schwabing (DL2RBI)
+44.130.56.112   DF4OR-D1        # Ekki, Olching
+44.130.56.113   DF4OR-D2        #
 44.130.56.120   DG5MKU-U        # Michael, Muenchen
+44.130.56.121   GATE.DG5MLI     #
+44.130.56.122   SYS2.DG5MLI     #
+44.130.56.125   DB0PV-U #
+44.130.56.128   DG2RBF-U        # Franz Stahl
+44.130.56.156   DL4MFV  # Josef Nyitrai, 80686 Muenchen
+44.130.56.168   MAJESTIX.DG5MLI #
+44.130.56.169   DL8SEK  # Dieter Bauder, 82377 Penzberg; AT-386
 44.130.56.200   DG7DAH-7        # Harm van Houten, 8000 Muenchen Waldperlach;
 #                               AT, SCO-Unix, Domain-Name-Server
-44.130.56.209   XT-DL3MFQ       # Peter Freitag, Freising
+44.130.56.208   QUADERNO.DL3MFQ #
+44.130.56.209   XT.DL3MFQ       # Peter Freitag, Freising
+44.130.56.210   DL3MFQ-U        #
 44.130.56.211   DB4MI   # Dieter, 8206 Bruckmuehl
 44.130.56.218   DG6RBB  # Uwe Woehler, Muenchen
 44.130.56.219   DL2ECW-3        # Frank Panser; Mac
@@ -2558,6 +2667,11 @@
 44.130.58.21    DG8MGV-L        #
 44.130.58.22    DG3MHX  # Georg Gabrielides, 8901 Kissing; Amiga
 44.130.58.23    DG2MDJ  # Wolfgang Hartmuth
+44.130.58.24    DG3MNA  # Roland Ebrecht, 86154 Augsburg
+44.130.58.25    DL4MEA  # Guenter Koellner
+44.130.58.26    DB0KCP  # Mailbox Langerringen
+44.130.58.27    DB0FAI  #
+44.130.58.29    DL4MEA-2        #
 #
 #44.130.59.x    Bayern-Ost
 44.130.59.1     DL2RDH  # Wolfgang Reischl, 8480 Weiden OPf
@@ -2574,9 +2688,9 @@
 44.130.59.21    DB0EV   # Digi Oberpfaelzer Wald Altenschneeberg; Atari 1040
 44.130.59.22    DL8RAF-2        # Heinrich Niessner, 8474 Oberviechtach
 44.130.59.23    DK6RS   # Josef Schmitt, 8400 Regensburg
-44.130.59.33    DG6RBI  # Stefan Brandl, 8493 Koetzting
-44.130.59.34    DL4RCG  # Christoph Windpassinger, nr. Passau (ex DG8RAZ)
-44.130.59.44    DG6RBI-P        #
+44.130.59.33    DG6RBI  # Stefan Brandl, 93444 Koetzting; Linux
+44.130.59.34    DL4RCG  # Christoph Windpassinger, nr. Passau
+44.130.59.44    DG6RBI-P        # ; Wampes
 44.130.59.65    DL9RDZ  # Hansi, Passau
 44.130.59.66    DL6RDE  # Charlie
 44.130.59.67    DG6RBY  # Christoph Korb, 95676 Wiesau
@@ -2612,20 +2726,22 @@
 44.130.60.24    DL5NAM  # Chris Sauvageot, 8524 Ermreuth
 44.130.60.25    DB0OVA  # DX-Cluster Franken, Dillberg (DL5NAM)
 44.130.60.28    DL2NCA  # Jens Miltner, 8520 Erlangen
-44.130.60.29    DG6NDT  # Werner Maier, 8500 Nuernberg
 44.130.60.30    DF6NL   # Torsten H. Bischoff, 8540 Schwabach
 44.130.60.31    DF6NL-1 #
 44.130.60.32    DG8NAR  # Bernhard, 8500 Nuernberg 60
 44.130.60.33    DL8KAN  # Jens Stein, 8500 Nuernberg
+44.130.60.40    DG3MAL  # Josef Kraus, 90449 Nuernberg
 44.130.60.44    DG8SCO  # Walter H. Munz, 8500 Nuernberg 21
 44.130.60.46    DG5NDP  # Stefan Edenharter, 8500 Nuernberg; Amiga
-44.130.60.47    DL4NDW  # Juergen Raschka, 90429 Nuernberg (ex DG4NDW); PC
+44.130.60.47    DL4NDW  # Juergen Raschka, 90429 Nuernberg; PC
 44.130.60.48    DG6NER  # Erik Steinmueller, 8507 Oberasbach
 44.130.60.50    DC5YF   # Heinz Fleischmann, 8500 Nuernberg 10
 44.130.60.51    DC5YF-1 # Office
 44.130.60.52    DF6NC   # Norbert Fleischmann, 8500 Nuernberg 10
 44.130.60.53    DC3NO   #
+44.130.60.54    DL8RH   # Hans, Hoechstadt/Aisch
 44.130.60.55    DJ9UI   # Guenter Albrecht, 8500 Nuernberg 10
+44.130.60.56    DL4NEC  # Florian, Nuernberg
 44.130.60.60    DL4NDJ  # Peter Wojner, Erlangen
 44.130.60.61    DK3KC   # Raul Gerstel, 8524 Neunkirchen/Brand; AT286
 44.130.60.64    DF9RY   # Reiner Knoebl, 92702 Kohlberg
@@ -2661,52 +2777,54 @@
 44.130.61.7     DG6IQ   # Otto Hettler, 97900 Kuelsheim/Baden
 44.130.61.8     DF6DO   # Mario Olk, 97941 Tauberbischofsheim
 44.130.61.10    DB4IW-LAP       # ; Lap
+44.130.61.23    DD1UN   # Uwe, Hoepfingen
 44.130.61.100   DK0TT   # Club Stn A23 Taubertal
 44.130.61.111   DB0SWR  # Digi Wertheim
 #
-#    Region Bamberg/Bayreuth            Stand:  06.01.95
-#    zusammengestellt/koordiniert von DL1NAT [44.130.62.3]
-44.130.62.1    DD8NE          # Hans-Joachim Hetscher Stegaurach
-44.130.62.2    DL9NCF         # Alfred Schloegel Bamberg
-44.130.62.3    DL1NAT         # Paul Dorn Bamberg
-44.130.62.4    DL1NAT-A       # Paul Dorn Bamberg
-44.130.62.5    DL6NED         # Andre Bergmann Kasendorf
-44.130.62.6    DD8NE-GATE     # Hans-Joachim Hetscher Stegaurach
-44.130.62.7    DJ7YD          # Winfried Kopp Hof/Saale
-44.130.62.8    DG2NAE         # Harry Sapper Coburg
-44.130.62.9    DL8NCC         # Klaus Voelkel Bamberg
-44.130.62.10   DG1NBR         # Matthias Klauda Breitbrunn
-44.130.62.11   DH3NBA         # Heiko Eschrich Drosendorf
-44.130.62.12   DL8NDN         # Harms Gundelsheim
-44.130.62.14   DG2NBD         # Bernd Drechsel Bamberg
-44.130.62.19   DG7NEF-GATE    # Wolfgang Bamberg
-44.130.62.20   DG7NEF         # Wolfgang Bamberg
-44.130.62.21   DL9NBX         # Roland Coburg
-44.130.62.22   DF9NE          # Anton Spindler Stadtsteinach
-44.130.62.30   DL1NV          # GÅnther Kronach
-44.130.62.100  DB0BBG-10      # Digipeater Bamberg KÑlberberg
+#44.130.62.x    Bamberg/Bayreuth
+# lokale Adresskoordination: DL1NAT
+44.130.62.1     DD8NE   # Hans-Joachim Hetscher, 8602 Stegaurach; PC
+44.130.62.2     DL9NCF  # Alfred Schloegel, 8600 Bamberg
+44.130.62.3     DL1NAT  # Paul Dorn, Bamberg
+44.130.62.4     DL1NAT-A        #
+44.130.62.5     DL6NED  # Andre Bergmann, 95359 Kasendorf; AT386
+44.130.62.6     DD8NE-GATE      #
+44.130.62.7     DJ7YD   # Winfried Kopp, Hof/Saale
+44.130.62.8     DG2NAE  # Harald Sapper, Coburg
+44.130.62.9     DL8NCC  # Klaus Voelkel, Bamberg
+44.130.62.10    DG1NBR  # Matthias Klauda, 8601 Breitbrunn
+44.130.62.11    DH3NBA  # Heiko Eschrich, 96117 Memmelsdorf
+44.130.62.12    DL8NDN  # Harms, Gundelsheim
+44.130.62.14    DG2NBD  # Bernd Drechsel, Bamberg
+44.130.62.19    DG7NEF-GATE     # Wolfgang, Bamberg
+44.130.62.20    DG7NEF  # Wolfgang, Bamberg
+44.130.62.21    DL9NBX  # Roland Voellmer, 96450 Coburg
+44.130.62.22    DF9NE   # Anton Spindler, Stadtsteinach
+44.130.62.30    DL1NV   # Guenther Kestel, 96317 Kronach
+44.130.62.100   DB0BBG-10       # Digi Bamberg Kaelberberg
 #
 #44.130.63.x    Franken
 # lokale Adresskoordination: DL1NC
 44.130.63.1     DD6CV   # Christan Volk, 8752 Johannesberg
-44.130.63.3     DJ9UN   # Werner Steinhaeusser, 97249 Eisingen
-44.130.63.4     DH1NAD-2        # Werner Maier, Wuerzburg (ex DG2NDT)
-44.130.63.5     DL1NC   # Robert Steinhaeusser, 97249 Eisingen
+44.130.63.3     DJ9UN   # Werner Steinhaeuser, 97249 Eisingen
+44.130.63.4     DL4NER  # Werner Maier, Wuerzburg (ex DH1NAD-2)
+44.130.63.5     DL1NC   # Robert Steinhaeuser, 97249 Eisingen
 44.130.63.6     DG9NBT  # Martin Leicht, 97249 Eisingen
-44.130.63.9     DG8NCY  # Claus, Zeil
+44.130.63.9     DG8NCY  # Claus Kuhn, 97475 Zeil
 44.130.63.10    DL4NCQ  # Bruno Hoffmann, 8751 Kleinwallstadt
 44.130.63.11    DL6FBN-1        # Frank, Wuerzburg
 44.130.63.13    DL1NDU  # Christian Schneider, Retzbach
-44.130.63.14    DL4NDE  # Bernd, Schweinfurt
+44.130.63.14    DL4NDE  # Bernd Goetter, Schweinfurt
 44.130.63.15    DH4NAH  # Norbert Fecher, 63877 Sailauf
 44.130.63.16    DL4NDE-P        #
 44.130.63.20    DG5NER  # Maximilian Ibel, 8700 Wuerzburg
 44.130.63.25    DG1NED  # Holger Grund, Grossheubach
 44.130.63.26    DG1NED-2        #
 44.130.63.44    DG1NBB  # Holger Albrecht, 63868 Grosswallstadt
+44.130.63.73    DG7NFO  # Christian Schmitt, Wuerzburg
 44.130.63.100   DB0AJA  # Digi Wuerzburg (DL6NDG)
-44.130.63.123   DG1NEG  # Ralph Gessmer, Wuerzburg
-44.130.63.144   DG9NEQ  # Guenter Wolf, Wuerzburg
+44.130.63.123   DG1NEG  # Ralph Gessner, Wuerzburg
+44.130.63.144   DG9NEQ  # Guenter Wolf, Wuerzburg; ***
 44.130.63.178   DG5NBY  # Hendrik Fischer, Wuerzburg
 #
 #44.130.184.x   Memmingen/Kempten
@@ -2720,18 +2838,25 @@
 44.130.64.8     DG0GX   # Rene, 18057 Rostock
 44.130.64.10    DL9GFA  # Gerrit, Ribnitz-Damgarten
 #
-#44.130.72.x    Brandenburg
+#44.130.72.x    Strausberg/Eberswalde
 44.130.72.1     DG0FT   # Rene Stange, Strausberg (ex Y51GE)
+44.130.72.2     DG3BTA  # Andre, Eberswalde
+#
+#44.130.73.x    Oranienburg
+44.130.73.1     DG1RMV  # Mario, Hohen Neuendorf
 #
 #44.130.80.x    Harz
 44.130.80.1     DL2HSI  # Michael 'Miki' Stengel, 06493 Ballenstedt (ex Y23FH)
 44.130.80.2     DL2HSI-U        #
 44.130.80.3     DL2HSI-A        #
 44.130.80.4     DG1HUN  # Dirk, Thale
+44.130.80.100   DL0TAL  # AG Afu, Gymnasium Thale (DL4HSG)
+44.130.80.200   DL0TAL-2        #
 #
 #44.130.81.x    Halle
 44.130.81.1     Y34YH   # Juergen, Halle
 44.130.81.2     Y81XH   # Karsten Hansky, O-4901 Kretzschau Kr. Zeitz; AT386SX
+44.130.81.3     DH0HQB  # Eberhard Zuch, 06110 Halle
 44.130.81.5     DG1HQY  # Ralf, Aschersleben
 #
 #44.130.82.x    Magdeburg
@@ -2745,48 +2870,51 @@
 44.130.82.8     DL8MMR  # Mario Roeber, Magdeburg
 44.130.82.9     DL6CIB  # Olaf Fischer, Magdeburg
 44.130.82.10    Y71G    # Mailbox, Magdeburg
+44.130.82.11    DL6MKG  # Burkhard Schroeder, 39218 Schoenebeck
+44.130.82.12    DL6CPF  # Rene, Osterwieck
+44.130.82.100   DB0OCA-10       # ; Huy, nr Halberstadt (DL6MPG)
 #
 #44.130.83.x    Dessau
 44.130.83.1     DG1HRG  # Guido, Woerlitz
 44.130.83.2     DL1HQH  # Joerg, Dessau
 44.130.83.3     DG1HSI  # Frank, Dessau
 44.130.83.4     DG1HVL  # Hans Vogl, 06842 Dessau
+44.130.83.5     DG1HSI-1        #
 #
 #44.130.87.x    Weissenfels
 44.130.87.9     DG1HQO  # Sven Werner, Weissenfels
 44.130.87.10    DG1HQI  # Karsten, Burgwerben
+44.130.87.11    DG1HQB-1        # Jens, Bonau nr Teuchern
 #
 #44.130.88.x    Leipzig
 # lokale Adresskoordination: DL9WUM
 44.130.88.1     DL8WPM  # Henry Luedemann, O-7010 Leipzig; AT (ex Y22PM)
-44.130.88.2     DL8WIZ  # * Micha, Leipzig (ex Y49FM)
+44.130.88.2     DL8WIZ  # Micha, Leipzig (ex Y49FM)
 44.130.88.3     DL9WIZ  # Ron, Leipzig (ex Y49GM)
-44.130.88.4     DL3LST  # * Rainer Streubel, Leipzig
-44.130.88.5     DL3LSM-2        # ? Mario Illgen
-44.130.88.6     DL9WUM  # * Rolf Lieske, 04207 Leipzig
-44.130.88.7     Y23VE   # ? Aldo Jesovka, O-7010 Leipzig
+44.130.88.4     DL3LST  # Rainer Streubel, Leipzig
+44.130.88.5     DL3LSM-2        # Mario Illgen
+44.130.88.6     DL9WUM  # Rolf Lieske, 04207 Leipzig
+44.130.88.7     Y23VE   # Aldo Jesovka, O-7010 Leipzig
 44.130.88.10    DL8WKR  # Knut Rothe, O-7220 Pegau
 44.130.88.11    DL2LQB  # Michael Wollschlaeger, O-7222 Groitzsch
-44.130.88.13    DG0LDK-TEST # * Wolfgang Winter, 04357 Leipzig  ax25: DG0LDK-2
-44.130.88.14    DD3DA   # * Joerg Schlottmann, Leipzig
+44.130.88.13    DG0LDK-TEST     #
+44.130.88.14    DD3DA   # Joerg Schlottmann, Leipzig
 44.130.88.15    DG3LSW  # Joachim Hilprecht, Leipzig
-44.130.88.16    DL6YTM  # * Peter Wilkert, 04685 Nerchau
-44.130.88.17    DL6KWM  # * Karsten Wilkert, 04685 Nerchau
+44.130.88.16    DL6YTM  # Peter Wilkert, 04685 Nerchau
+44.130.88.17    DL6KWM  # Karsten Wilkert, 04685 Nerchau
 44.130.88.18    DG0LAT  # Uwe Rost, 05516 Markkleeberg
-44.130.88.19    DL5YYM  # * Guenter Dornblut, 04179 Leipzig
-44.130.88.20    DG0LDK  # * Wolfgang Winter, 04357 Leipzig
+44.130.88.19    DL5YYM  # Guenter Dornblut, 04179 Leipzig
+44.130.88.20    DG0LDK  # Wolfgang Winter, 04357 Leipzig
 44.130.88.21    DG0LGJ  # Torsten, Rosswein
-44.130.88.22    DG0LGF  # * Axel Maercker, Leipzig  ax25: DG0LGF-15
-44.130.88.23    DG0LGA  # * Raoul Brosch, Markkleeberg
-44.130.88.24    DG0LHW  # * Mike Wittenbecher, 04315 Leipzig
+44.130.88.22    DG0LGF  # Axel Maercker, Leipzig
+44.130.88.23    DG0LGA  # Raoul Brosch, Markkleeberg
+44.130.88.24    DG0LHW  # Mike Wittenbecher, 04315 Leipzig
 44.130.88.25    DL8LWH  # Hendrik Wendschuch, Leipzig
 44.130.88.26    DL5YRM  # Tom Bolle, Leipzig
-44.130.88.27    DG2LWH  # * Holger Baumgaertner, 04157 Leipzig
-44.130.88.28    DG2LWD  # * Andreas Donat, 04347 Leipzig
-#
-44.130.88.35    DL1LRK  # * Uwe Kasubek, Delitzsch
-#
-#44.130.88.100  DB0LPZ  # reserviert
+44.130.88.28    DG2LWD  # Andread Donat, 04347 Leipzig
+44.130.88.29    DG0LHL  # Wilfried Ploog, 04349 Leipzig
+44.130.88.35    DL1LRK  # Uwe Kasubek, Delitzsch
+44.130.88.100   DB0LPZ#
 #
 #44.130.89.x    Chemnitz
 44.130.89.1     Y28PN   # Uwe Huebner, O-9052 Chemnitz; UNIX/NOS
@@ -2797,6 +2925,12 @@
 44.130.89.6     DL2JXT  # Uwe Czaika, St.Egidien
 44.130.89.7     Y56GG   # Torsten Baecker, O-9023 Chemnitz
 44.130.89.8     DL3JPN  # Steffen Ackermann, O-9273 Oberlungwitz (ex Y23PN)
+44.130.89.9     DL5JAG  # Ronny, 09126 Chemnitz
+44.130.89.10    DG0OAM  # Olaf Anders, Floeha
+44.130.89.11    DG0JAJ  # Andy, Schwarzenberg
+44.130.89.12    DG1JLA  # Jan Liebers, 09244 Oberlichten
+44.130.89.13    DG0JAC  # , Chemnitz
+44.130.89.21    DG0JAB-U        #
 44.130.89.22    DG0JAB  # Mario Lorenz, 08340 Schwarzenberg
 44.130.89.23    DL1ORN  # Simon, Raschau
 44.130.89.24    DL9JON  # Heiko, Chemnitz
@@ -2806,13 +2940,13 @@
 #
 #44.130.90.x    Dresden
 # lokale Adresskoordination: DG1RTF
-44.130.90.1     DG0DU   # Thomas Rudolph, O-8023 Dresden
+44.130.90.1     DG0DU   # Thomas Rudolph, O-8023 Dresden (ex Y37JL)
 44.130.90.2     DG1RTF  # Thomas Fichte, 01157 Dresden
 44.130.90.3     DD0VS   # Harald Fritsche, 01809 Heidenau
-44.130.90.4     DG0DI   # Dirk, Guenther, O-8040 Dresden
-44.130.90.5     DL0TUD  # Club-Stn TU Dresden S07
-44.130.90.6     DL1DSD  # Joerg Frueauf, O-8029 Dresden
-44.130.90.7     DG0NF   # Helge Tefs, Heimat-QTH: 17438 Wolgast
+44.130.90.4     DG0DI   # Dirk Guenther, O-8040 Dresden
+44.130.90.5     DL0TUD  # Club-Stn S07 TU, Dresden
+44.130.90.6     DL1DSD  # Joerg Fruehauf, O-8029 Dresden
+44.130.90.7     DG0NF   # Helge Tefs
 44.130.90.8     DG0DC   # Torsten Wolf, 01640 Coswig
 44.130.90.9     DL1DTM  # Ulf Riechen, O-8045 Dresden
 44.130.90.10    DG2DWL  # Hartmut Siegel, 01169 Dresden
@@ -2822,38 +2956,42 @@
 44.130.90.14    DG2DRA  # Heiko, O-2601 Obergurig
 44.130.90.15    DG1VS   # Karsten Schmidt, O-8010 Dresden
 44.130.90.16    DG0VP   # Joerg Genscher, 01277 Dresden
-44.130.90.17    DL1DQI  # Olaf Zimmerhackl, O-8020 Dresden
+44.130.90.17    DL1DQI  # Olf Zimmerhackl, O-8020 Dresden
 44.130.90.18    DL1DSX  # Andreas Westfeld, 01277 Dresden
 44.130.90.19    DL6DUG  # Roland Gentsch, 01069 Dresden
 44.130.90.20    DH1AKY  # Jens Wagner, 01307 Dresden
 44.130.90.21    DG0MD   # Falk Winter, O-8019 Dresden
-44.130.90.22    DG1RTF-U        # Thomas Fichte UNIX
+44.130.90.22    DG1RTF-U        # Thomas Fichte; UNIX
 44.130.90.23    DL1DWW  # Ronald Konschak, 01069 Dresden
-44.130.90.24    DG2VG   # Gunar Scholz 01309 Dresden
-44.130.90.25    DL3BZN-U        # Guido Vattrotd UNIX
+44.130.90.24    DG2VG   # Gunar Scholz, 01309 Dresden
+44.130.90.25    DL3BZN-U        # Guido Vattrotd; UNIX
 44.130.90.26    DG0LGK  # Harald Junghans, 04107 Leipzig
-44.130.90.27    DG2VQ-U # Steffen Koehler UNIX
+44.130.90.27    DG2VQ-U # Steffen Koehler; UNIX
 44.130.90.28    DD0VU   # Jens Knoepfchen, 01738 Klingenberg
-44.130.90.29    DL1DSD-U        # Joerg Fruehauf UNIX
-44.130.90.30    DG1VX   # Adreas Minner, Dresden
-44.130.90.31    DD0VX   # Eckhard Stephan, 01705 Freital
-44.130.90.32    DG0NF-H # Helge Tefs PALMTOP
+44.130.90.29    DL1DSD-U        # Joerg Fruehauf; UNIX
+44.130.90.30    DG1VX   # Andreas Minner, Dresden
+44.130.90.31    DD0VX   # Eckhard Stephan, 01704 Freital
+44.130.90.32    DG0NF-H # Helge Tefs; Palmtop
 44.130.90.33    DG0VF   # Ralf Stieber, 01445 Radebeul
-44.130.90.34    DD0VU-U # Jens Knoepfchen UNIX
+44.130.90.34    DD0VU-U # Jens Knoepfchen; UNIX
 44.130.90.35    DL2DRI  # Roland Pelz, 01809 Heidenau
-44.130.90.36    DG1VD   # Volkmar Hofmann, 01454 Radeburg
+44.130.90.36    DG1VD   #
 44.130.90.37    DH0DZ   # Dieter Wachsmuth, 01237 Dresden
 44.130.90.38    DG1OA   # Falko Ziller, 01738 Colmnitz
 44.130.90.39    DG0EL   # Mirko Taschenber, 09634 Siebenlehn
 44.130.90.40    DG0KB   # Udo Lies, 01099 Dresden
-44.130.90.41    DG0DC-U # Joerg Wolf UNIX
-44.130.90.42    DG0VP-U # Joerg Genscher UNIX
+44.130.90.41    DG0DC-U # Joerg Wolf; Unix
+44.130.90.42    DG0VP-U # ; Unix
 44.130.90.43    DG2VM   # Andre Weinhold, 01097 Dresden
-44.130.90.44    DL2DVT  # Wolfgang Kobitzki, ????? XXXXXXXXX
-44.130.90.45    DL2VIC  # Andreas Peschel, 01609 Groeditz
-44.130.90.46    DL2DQF  # Fritz Krulis, 01099 Dresden
-44.130.90.100   db0tud  # WAMPES-Mailbox S07, Dresden
-44.130.90.101   db0tud-U  # WAMPES-Mailbox S07 UNIX
+44.130.90.44    DL2DVT  # Wolfgang Kobitzki
+44.130.90.45    DL2VIC  # Andreas Peschl, 01609 Groeditz
+44.130.90.46    DL2DQF  # Fritz Kulig, 01099 Dresden
+44.130.90.100   DB0TUD  # WAMPES-Mailbox S07, Dresden
+44.130.90.101   DB0TUD-U        # ; UNIX
+#
+#44.130.91.x    Zwickau
+44.130.91.1     DL4VAR  # Henry Rix, 08066 Zwickau
+44.130.91.2     DL1JHN  # Reinhard Baudach, Zwickau
 #
 #44.130.96.x    Suhl
 44.130.96.1     Y31JK   # Ralf Schueler, O-6300 Ilmenau; AT286
@@ -5791,9 +5929,10 @@
 44.151.95.10    f1ciy f1ciy.ampr.org
 44.151.95.73    f6bzo-1 f6bzo-1.ampr.org
 
+###
 # TCP/IP Hosts for Luxembourg 44.161.x.x
-#
-# Date: December 5, 1994
+# Coordinator: LX1BZ
+# Date: February 1, 1995
 ###
 44.161.1.1   lx1jb       lx1jb.ampr.org       # Jean, 1232 Howald
 44.161.1.2   lx1jb-1     lx1jb-1.ampr.org     # Jean, 1232 Howald
@@ -5823,6 +5962,7 @@
 44.161.3.8   lx1bp       lx1bp.ampr.org       # Pierre, 3560 Dudelange
 44.161.3.9   lx1kj       lx1kj.ampr.org       # Josy, 3551 Dudelange
 44.161.3.10  lx1zf       lx1zf.ampr.org       # Francis, 3940 Mondercange
+44.161.3.11  lx1hy       lx1hy.ampr.org       # Henri, 3260 Bettembourg
 #
 44.161.4.1   lx1jr       lx1jr.ampr.org       # Roland, 4813 Rodange
 44.161.4.2   lx1jr-1     lx1jr-1.ampr.org     # Roland, 4813 Rodange
@@ -5848,6 +5988,7 @@
 44.161.6.2   lx1se       lx1se.ampr.org       # Francois, 6160 Bourglinster
 44.161.6.3   lx1kq       lx1kq.ampr.org       # Mich, 6170 Godbrange
 44.161.6.4   lx2df       lx2df.ampr.org       # Freddy, 6160 Bourglinster
+44.161.6.5   lx1ht       lx1ht.ampr.org       # Ted, 6165 Ernster
 #
 44.161.7.1   lx1jc       lx1jc.ampr.org       # Jean, 7206 Steinsel
 44.161.7.2   lx1pl       lx1pl.ampr.org       # Paul, 7381 Bofferdange
@@ -5863,4 +6004,6 @@
 44.161.8.7   lx1la       lx1la.ampr.org       # Laurent, 8472 Eischen
 44.161.8.8   lx1la-1     lx1la-1.ampr.org     # Laurent, 8472 Eischen
 44.161.8.9   lx1wz       lx1wz.ampr.org       # Laurent, 8366 Hagen
+44.161.8.10  lx1cf       lx1cf.ampr.org       # Leon, 8295 Keispelt
+44.161.8.11  lx1jm       lx1jm.ampr.org       # Jeng, 8361 Goetzingen
 #
