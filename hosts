@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.11 1993/12/08 13:11:54 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.12 1994/01/17 14:52:41 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -1354,87 +1354,98 @@
 44.130.28.30    DL8ZAD  # Juergen, Weilmuenster nr Wetzlar
 44.130.28.58    DF0WS   # Clubstn F58, 6300 Giessen-Wieseck
 #
-44.130.29.1     DB0ROT-C        # Mailbox Rotensol, 76332 Bad Herrenalb; *** UNIX
-44.130.29.2     DG9BAD-7        # Thomas Waehner, 89171 Illerkirchberg
-44.130.29.3     DC6IQ-W # Fred Baumgarten, 76297 Stutensee
-44.130.29.4     DJ0VL   # Jean Thilges, 76227 Karlsruhe
-44.130.29.5     DB0IE-U # Reinhard Meyer, 76332 Bad Herrenalb
-44.130.29.6     DK6II   # Erich H. Franke, 75203 Koenigsbach-Stein
-44.130.29.7     DB6IS   # Hinrich Bernas, 76139 Karlsruhe
-44.130.29.8     DF0UK   # Universitaet, 76131 Karlsruhe
-44.130.29.9     DF0UK-U #
-44.130.29.10    DC6IQ   # Fred Baumgarten, 76297 Stutensee
-44.130.29.11    DC6IQ-N #
-44.130.29.12    DL5YCY  # Volker Baumgarte, 76227 Karlsruhe
-44.130.29.13    DL5YCY-1        #
-44.130.29.14    DL5UY-1 # Reinhard Meyer, 76332 Bad Herrenalb
-44.130.29.15    DL5UY-2 #
-44.130.29.16    DL5UY-TEST      #
-44.130.29.17    DL5UY-SERV      #
-44.130.29.18    DB0ROT  # Mailbiox Rotensol, 76332 Bad Herrenalb; *** UNIX
-44.130.29.19    DL5UY-MAIN      # Reinhard Meyer, 76332 Bad Herrenalb
-44.130.29.20    DL5UY-PORT      #
-44.130.29.21    DL5UY-WORK      #
-44.130.29.22    DL5UY-RES1      #
-44.130.29.23    DL5UY-RES2      #
-44.130.29.24    DC2IR   # Norbert Mehl, 76131 Karlsruhe
-44.130.29.25    DC1IK-1 # Olaf Erb, 76131 Karlsruhe
-44.130.29.26    DC1IK-7 #
-44.130.29.27    DA2DR   # Dave Rettke, 76646 Bruchsal
-44.130.29.28    DG2GAZ  # Gerd, 76227 Karlsruhe
-44.130.29.29    DF3IAR  # Andreas Gross, 76133 Karsruhe
-44.130.29.30    DH8IAG  # Manfred Guenzl, 76199 Karlsruhe
-44.130.29.31    DB4UT   # Bernd Hollerbach, 76131 Karlsruhe
-44.130.29.32    DL6KCU  # Klaus Baerwald, 76275 Ettlingen
-44.130.29.33    DD3UH   # Dieter Schlaier, 76689 Karlsdorf
-44.130.29.34    DD3UC   # Christoph W. Rieger, 761310 Karlsruhe
-44.130.29.35    DJ4UL   # Herbert
-44.130.29.36    DL6IU   # Klaus Heimannsfeld, 76131 Karlsruhe
-44.130.29.37    DL6IU-1 #
-44.130.29.38    DH1IAR-1        # Peter Herttrich, 76131 Karlsruhe
-44.130.29.39    DC3TS-1 # Wolfgang Hein, 75334 Straubenhardt
-44.130.29.40    DC3TS   #
-44.130.29.41    DF3IAR-U        # Andreas Gross, 76133 Karlsruhe; UNIX
-44.130.29.42    DB4UT-1 # Bernhard Hollerbach, 76131 Karlsruhe
-44.130.29.43    DC1IK-2 # Olaf Erb, 76131 Karlsruhe
-44.130.29.44    DC1IK-3 #
-44.130.29.45    DJ0VL-OS9       # Jean Thilges, 76227 Karlsruhe
-44.130.29.46    DJ0VL-PC        #
-44.130.29.47    DF3IAR-L        # Andreas Gros, 76133 Karlsruhe
-44.130.29.48    DH2PAF  # Wolfgang Tremmel, 76131 Karlsruhe
-44.130.29.49    DH2PAF-U        #
-44.130.29.50    DC6IQ-P # Fred Baumgarten, 76297 Stutensee
-44.130.29.51    DC1IK-L # Olaf Erb, 76131 Karlsruhe
-44.130.29.52    DC1IK-W #
-44.130.29.53    DC6IQ-S # Fred Baumgarten, 76297 Stutensee
-44.130.29.54    DC6IQ-K #
-44.130.29.55    DG5IAI  # Carsten Klaus, 76131 Karlsruhe
-44.130.29.56    DG5IAI-U        #
-44.130.29.57    DC6IQ-H # Fred Baumgarten, 76297 Stutensee
-44.130.29.58    DC6IQ-G #
-44.130.29.59    DC6IQ-J #
-44.130.29.60    DH4IAL  # Axel
-44.130.29.61    DH4IAL-XT       #
-44.130.29.62    DL5YCY-W        # Volker Baumgarte, 76227 Karlsruhe
-44.130.29.63    DL5YCY-K        #
-44.130.29.64    DB2GL   # Gerald Lang, 76131 Karlsruhe
-44.130.29.65    DG2GL-U #
-44.130.29.66    DD2IH   # Heinz Zerbes, 76131 Karlsruhe
-44.130.29.67    DD2IH-U #
-44.130.29.68    DD2IH-N #
-44.130.29.69    DD3UC-I # Christoph Rieger, 76131 Karlsruhe
-44.130.29.70    DH3IAX  # Andreas Arnold, 68549 Ilvesheim
-44.130.29.71    DH3IAX-U        #
-44.130.29.72    DH3IAX-L        #
-44.130.29.73    DH3IAX-P        #
-44.130.29.74    DL5BCT  # Peter Cornelius, 76227 Karlsruhe
-44.130.29.75    DL5BCT-1        #
-44.130.29.76    DC1IK-I # Olaf Erb, 76131 Karlsruhe
-44.130.29.77    DG1SEK-1        # Frieder Loeffler, 71706 Markgroeningen
-44.130.29.78    DG1SEK-2        #
-44.130.29.79    DG1SEK-3        #
-44.130.29.80    DG3UAL  # Gerd Flaig, 76227 Karlsruhe
-44.130.29.81    DG3UAL-W        #
+# Hier das Update der Karlsruher IP-Adressen (18.11.93):
+#
+44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc6iq@db0sao
+#
+44.130.29.1  db0rot-c   # JN48fw *** Mailbox Rotensol 76332 Bad Herrenalb
+44.130.29.2  dg9bad-7   #        Thomas Waehner       89171 Illerkirchberg
+44.130.29.3  dc6iq-w    # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.4  dj0vl      # JN48fx Jean Thilges         76227 Karlsruhe
+44.130.29.5  db0ie-u    # JN48fw Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.6  dk6ii      #        Erich H. Franke      75203 Koenigsbach-Stein
+44.130.29.7  db6is      # JN49fb Hinrich Bernas       76139 Karlsruhe
+44.130.29.8  df0uk      # JN49ea Univers. Karlsruhe   76131 Karlsruhe; ClbSt
+44.130.29.9  df0uk-u    # JN49ea Univers. Karlsruhe   76131 Karlsruhe; ClbSt
+44.130.29.10 dc6iq      # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.11 dc6iq-n    # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.12 dl5ycy     # JN48fx Volker Baumgarte     76227 Karlsruhe
+44.130.29.13 dl5ycy-1   # JN48fx Volker Baumgarte     76227 Karlsruhe
+44.130.29.14 dl5uy-1    # JN48fw Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.15 dl5uy-2    # JN48fw Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.16 dl5uy-test # JN48fw Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.17 dl5uy-serv # JN48fw Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.18 db0rot     # JN48fw *** Mailbox Rotensol 76332 Bad Herrenalb
+44.130.29.19 dl5uy-main # JN48fw Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.20 dl5uy-port # JN48fw Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.21 dl5uy-work # JN48fw Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.22 dl5uy-res1 # JN48fw Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.23 dl5uy-res2 # JN48fw Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.24 dc2ir      # JN49ea Norbert Mehl         76131 Karlsruhe
+44.130.29.25 dc1ik-1    # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.26 dc1ik-7    # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.27 da2dr      #        Dave Rettke          76646 Bruchsal
+44.130.29.28 dg2gaz     # JN48fx Gerd Haenssler       76227 Karlsruhe
+44.130.29.29 df3iar     # JN49ea Andreas Gross        76133 Karlsruhe
+44.130.29.30 dh8iag     #        Manfred Guenzl       76199 Karlsruhe
+44.130.29.31 db4ut      # JN49ea Bernd Hollerbach     76131 Karlsruhe
+44.130.29.32 dl6kcu     # JN48fw Klaus Baerwald       76275 Ettlingen
+44.130.29.33 dd3uh      #        Dieter Schlaier      76689 Karlsdorf
+44.130.29.34 dd3uc      # JN49ea Christoph W. Rieger  76131 Karlsruhe
+44.130.29.35 dj4ul      #        Herbert
+44.130.29.36 dl6iu      # JN49ea Klaus Heimannsfeld   76131 Karlsruhe
+44.130.29.37 dl6iu-1    # JN49ea Klaus Heimannsfeld   76131 Karlsruhe
+44.130.29.38 dh1iar-1   # JN49ea Peter Herttrich      76131 Karlsruhe
+44.130.29.39 dc3ts-1    # JN48fw Wolfgang Heim        75334 Straubenhardt
+44.130.29.40 dc3ts      # JN48fw Wolfgang Heim        75334 Straubenhardt
+44.130.29.41 df3iar-u   # JN49ea Andreas Gross        76133 Karlsruhe
+44.130.29.42 db4ut-1    # JN49ea Bernd Hollerbach     76131 Karlsruhe
+44.130.29.43 dc1ik-2    # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.44 dc1ik-3    # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.45 dj0vl-os9  # JN48fx Jean Thilges         76227 Karlsruhe
+44.130.29.46 dj0vl-pc   # JN48fx Jean Thilges         76227 Karlsruhe
+44.130.29.47 df3iar-l   # JN49ea Andreas Gross        76133 Karlsruhe
+44.130.29.48 dh2paf     # JN49fa Wolfgang Tremmel     76131 Karlsruhe
+44.130.29.49 dh2paf-u   # JN49fa Wolfgang Tremmel     76131 Karlsruhe
+44.130.29.50 dc6iq-p    # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.51 dc1ik-l    # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.52 dc1ik-w    # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.53 dc6iq-s    # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.54 dc6iq-v    # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.55 dg5iai     # JN49ea Carsten Klaus        76131 Karlsruhe
+44.130.29.56 dg5iai-u   # JN49ea Carsten Klaus        76131 Karlsruhe
+44.130.29.57 dc6iq-h    # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.58 dc6iq-g    # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.59 dc6iq-j    # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.60 dh4ial     #        Axel
+44.130.29.61 dh4ial-xt  #        Axel
+44.130.29.62 dl5ycy-w   # JN48fx Volker Baumgarte     76227 Karlsruhe
+44.130.29.63 dl5ycy-k   # JN48fx Volker Baumgarte     76227 Karlsurhe
+44.130.29.64 db2gl      # JN49fa Gerald Lang          76131 Karlsruhe
+44.130.29.65 db2gl-u    # JN49fa Gerald Lang          76131 Karlsruhe
+44.130.29.66 dd2ih      # JN49ea Heinz Zerbes         76131 Karlsruhe
+44.130.29.67 dd2ih-u    # JN49ea Heinz Zerbes         76131 Karlsruhe
+44.130.29.68 dd2ih-n    # JN49ea Heinz Zerbes         76131 Karlsruhe
+44.130.29.69 dd3uc-i    # JN49ea Christoph W. Rieger  76131 Karlsruhe
+44.130.29.70 dh3iax     # JN49gl Andreas Arnold       68549 Ilvesheim
+44.130.29.71 dh3iax-u   # JN49gl Andreas Arnold       68549 Ilvesheim
+44.130.29.72 dh3iax-l   # JN49gl Andreas Arnold       68549 Ilvesheim
+44.130.29.73 dh3iax-p   # JN49gl Andreas Arnold       68549 Ilvesheim
+44.130.29.74 dl5bct     # JN48fx Peter Cornelius      76227 Karlsruhe
+44.130.29.75 dl5bct-1   # JN48fx Peter Cornelius      76227 Karlsruhe
+44.130.29.76 dc1ik-i    # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.77 dg1sek-1   # JN48mv Frieder Loeffler     71706 Markgroeningen
+44.130.29.78 dg1sek-2   # JN48mv Frieder Loeffler     71706 Markgroeningen
+44.130.29.79 dg1sek-3   # JN48mv Frieder Loeffler     71706 Markgroeningen
+44.130.29.80 dg3ual     # JN48fx Gerd Flaig           76227 Karlsruhe
+44.130.29.81 dg3ual-w   # JN48fx Gerd Flaig           76227 Karlsruhe
+44.130.29.82 dd2ih-v    # JN49ea Heinz Zerbes         76131 Karlsruhe
+44.130.29.83 dd2ih-w    # JN49ea Heinz Zerbes         76131 Karlsruhe
+44.130.29.84 dg8sev-k   # JN48nr Stephan Block        70569 Stuttgart
+44.130.29.85 dg1sek-r   # JN48mv Frieder Loeffler     71706 Markgroeningen
+44.130.29.86 dl3it      # JN49ea Thomas Wischnack     76135 Karlsruhe
+44.130.29.87 dl3it-u    # JN49ea Thomas Wischnack     76135 Karlsruhe
+44.130.29.88 dg1ie      # JN48ex Gunnar               76... Karlsruhe
 #
 #44.130.30.x    Nordhessen
 44.130.30.1     DL8UI   # Bernd Nasner, 3430 Witzenhausen
@@ -2291,7 +2302,1307 @@
 #44.130.97.x    Gera
 44.130.97.1     DG0OBQ  # Rainer, Eisenberg; PC
 44.130.97.2     DG0OBQ-2        # Rainer, Eisenberg; Amiga
+# 44.137        Gerard van der Grinten  PA0GRI  Holland
 #
+#       Gerard J van der Grinten
+#       Elzenlaan 8
+#       3465 TJ  DRIEBRUGGEN
+#       phone 03487-1606
+#         data: 03487-2359 (fridley v32-9600b)
+#         gvdg@fridley!gvdg (UUCP)
+#       pa0gri@net.pa0gri.ampr.org.
+#
+#
+#       HOT NEWS * HOT NEWS * HOT NEWS * HOT NEWS * HOT NEWS *
+#
+#       ********* Het support BBS komt in Januari te vervallen ******
+#       NET/NOS support BBS     015-153101 (1200/2400 baud)
+#                               015-153102 (9600 baud (v32)
+#
+#       HOT NEWS * HOT NEWS * HOT NEWS * HOT NEWS * HOT NEWS *
+#
+#
+# revision 09 jan 1994
+#
+44.137.0.0      PA_ZH1net
+44.137.0.1      bbs.pa0gri      bbs     #  bbs  144.675 + 432.675
+44.137.0.2      pa0gri          # gerard
+44.137.0.3      pa3chk          # olaf
+44.137.0.4      pa3ggz          # jan
+44.137.0.5      pa3eaj          # bart
+44.137.0.6      sys3.pa3bmg     # ton    via pa3bmg
+44.137.0.7      pa3bmg          # ton
+44.137.0.8      pa3ale          # phil
+44.137.0.9      pe1ahq          # piet
+44.137.0.10     pa3fqq          # ron
+44.137.0.11     pa0okc          # chris
+44.137.0.12     pa0wdn          # hans
+44.137.0.14     pa3fbg          # walter
+44.137.0.15     pa3ecp          # ton
+44.137.0.16     pe1kmn          # john
+44.137.0.17     pe1knw          # hans
+44.137.0.18     pa3bay          # hennie
+44.137.0.19     pa0bdw          # ben
+44.137.0.20     pa0bdh          # bob
+44.137.0.21     sys2.pa3eaj     # bart
+44.137.0.22     pa3axo          # jack
+44.137.0.23     sys7.pa3ecp     # ton
+44.137.0.24     pa3frh          # ruud
+44.137.0.25     pa3bba          # ruud
+44.137.0.26     pa0bm           # ger
+44.137.0.27     pe1ajn          # ferdi
+44.137.0.28     pa0jwo          # jan_willem
+44.137.0.29     pa3bat          # roel
+44.137.0.30     pa3bzt          # fred
+44.137.0.31     pa3bpu          # jaap
+44.137.0.32     pa0aax          # jan
+44.137.0.33     pa0yz           # piet
+44.137.0.34     pa3bib          # hans
+44.137.0.35     pa2ern          # henk
+44.137.0.36     pa3bwe          # antoon
+44.137.0.37     pa0psa          # andre
+44.137.0.38     pa3cay          # wim
+44.137.0.39     pe1lso          # frank
+44.137.0.40     pe1knl          # frank
+44.137.0.41     pe1lzt          # marian
+44.137.0.42     pe1jwn          # frans
+44.137.0.43     sys2.pa3ecp     # ton
+44.137.0.44     pe1mna          # dennis
+44.137.0.45     pa3cak          # matthijs
+44.137.0.46     sys2.pa3cak     # matthijs
+44.137.0.47     pa0pos          # piet
+44.137.0.48     pe1mnb          # edwin
+44.137.0.49     pe1mvx          # hans
+44.137.0.50     pa3dfr          # paul
+44.137.0.51     pe1lyu          # ben
+44.137.0.52     pa3elz          # jaap
+44.137.0.53     pa0zwr          # john
+44.137.0.54     pe1lkv          # ruud
+44.137.0.55     pe1drl          # hans
+44.137.0.56     sys1.pa3bay     # hennie
+44.137.0.57     pe1jzh          # hans
+44.137.0.58     pa0wwm          # wim
+44.137.0.59     sys2.pa3fbg     # walter
+44.137.0.60     pa3dah          # ber
+44.137.0.61     pa3ein          # felix
+44.137.0.62     pb0ajk          # hans
+44.137.0.63     pe1nae          # frank
+44.137.0.64     pa3fyf  pe1ncb  # peter
+44.137.0.65     pe1ghl          # ronald
+44.137.0.66     pe1mur          # nico
+44.137.0.67     pe1nnh          # peter
+44.137.0.69     pa3eie          # gerard
+44.137.0.70     sys2.pa0wdn     # hans
+44.137.0.71     pa3ftc          # siem
+44.137.0.72     pi4raz          # veron
+44.137.0.73     pa3fyl  pe1drx  # ardy
+44.137.0.74     sys2.pa3ein     # felix
+44.137.0.75     pe1lur          # robert
+44.137.0.76     pa3dkc          # jaco
+44.137.0.77     pe1nms          # marcel
+44.137.0.78     pe1ngw          # willem
+44.137.0.79     sys2.pe1mnb     # edwin
+44.137.0.80     sys2.pa3dfr     # paul
+44.137.0.81     pe1mfu          # robert
+44.137.0.82     pe1mte          # jacco
+44.137.0.83     i0wtd           # stefano
+44.137.0.85     pa3fng          # fred
+44.137.0.86     pa3cdi          # ron
+44.137.0.87     sys2.pa3cay     # wim
+44.137.0.88     pa3fcu          # clive
+44.137.0.89     pa3epw          # henk
+44.137.0.90     pa3dab          # leo
+44.137.0.91     pa3erc          # rob
+44.137.0.92     pa3bgq          # rob
+44.137.0.93     pa0tcd          # gert
+44.137.0.94     pa0qbs          # harold
+44.137.0.95     pa0wkd          # wim
+44.137.0.96     pe1aio          # kees
+44.137.0.97     pe1iit          # ida
+44.137.0.98     pe0cvl          # cor
+44.137.0.99     pe1ntw          # wim
+44.137.0.100    pa0fhg          # frits
+44.137.0.101    pe1azj          # jan
+44.137.0.102    sys2.pa0bdw     # ben
+44.137.0.103    pa3bdr          # tjalling
+44.137.0.104    pe1ngy          # arie
+44.137.0.105    pa0cve          # leo
+44.137.0.106    pa3fbo          # peter
+44.137.0.107    pa0guy          # guy
+44.137.0.108    sys2.pe1mvx     # hans
+44.137.0.109    pa0ad           # flip
+44.137.0.110    pe1hko          # wim
+44.137.0.111    pa3fmy          # giel
+44.137.0.112    pa3cxc          # john
+44.137.0.113    pe1bud          # hans
+44.137.0.114    sys2.pa2ern     # henk
+44.137.0.115    pe1cul          # jack
+44.137.0.116    pe1nws          # fred
+44.137.0.117    pe1knt          # rene
+44.137.0.118    pe1oco          # hans
+44.137.0.119    pa3cba          # wil
+44.137.0.120    sys3.pa3fbg     # walter
+44.137.0.121    sys4.pa3fbg     # walter
+44.137.0.122    pa3ffq          # fred
+44.137.0.123    sys3.pa3dfr     # paul
+44.137.0.124    pa3ebk          # john
+44.137.0.125    pi4ris          # scout
+44.137.0.126    pe1nsv          # frank
+44.137.0.127    pe1lxt          # han
+44.137.0.128    pa3afm          # mike
+44.137.0.129    sys2.pa3bat     # roel
+44.137.0.130    pa3gcg          # ron
+44.137.0.131    pe1nza          # peter
+44.137.0.132    pe1ofa          # erik
+44.137.0.134    mac.pa3ecp      # ton
+44.137.0.135    sys2.pa3fbo     # peter
+44.137.0.136    pa2ipa          # nico
+44.137.0.137    pa3fwi          # jan-willem
+44.137.0.138    pa3fux          # jan
+44.137.0.139    pe1oei          # hans
+44.137.0.140    i1ccx           # emilio
+44.137.0.141    pa3fly          # marcel
+44.137.0.142    sys2.pe1nnh     # peter
+44.137.0.143    pa3evz          # jacques
+44.137.0.144    pa3fvb          # marc
+44.137.0.145    pi4gv           # matthijs
+44.137.0.146    pa2hjm          # henk
+44.137.0.147    pe1iiw          # joep
+44.137.0.148    pe1oot          # bert
+44.137.0.149    pa3gid          # michel
+44.137.0.150    pe1nsu          # willem
+44.137.0.151    pe1mhf          # michael
+44.137.0.152    pa3fyd          # koos
+44.137.0.153    sys2.pa3bwe     # antoon
+44.137.0.154    pe1khs          # henk
+44.137.0.155    pa0tvh          # tjeerd
+44.137.0.156    pe1lye          # bram
+44.137.0.157    pe1ail          # peter
+44.137.0.158    pa3gge          # peter
+44.137.0.159    pi8esa          # walter
+44.137.0.160    pe1mzy          # george
+44.137.0.161    pa3emv          # henk
+44.137.0.162    pa0wof          # paul
+44.137.0.163    pa3ezh          # juergen
+44.137.0.164    sys1.pi5tck     # niek
+44.137.0.165    sys2.pi5tck     # niek
+44.137.0.166    sys3.pi5tck     # niek
+44.137.0.167    sys4.pi5tck     # niek
+44.137.0.168    pe1kjj          # paul
+44.137.0.169    pa3fmb          # joop
+44.137.0.170    pe0mgb          # gert
+44.137.0.171    pe1osg          # kees
+44.137.0.172    pe1otx          # henk
+44.137.0.173    pa3fsi          # gys
+44.137.0.174    pa3dir          # han
+44.137.0.175    pe1nmx          # wisse
+44.137.0.176    pe1nlp          # rene
+44.137.0.177    pe1lzj          # rien
+44.137.0.178    pe1owa          # martien
+44.137.0.179    sys2.pa0bdh     # bob
+44.137.0.180    pe1nyx          # sjaak
+44.137.0.181    pe1own          # henk
+44.137.0.182    pa3ekz          # hens
+44.137.0.183    sys3.pa3ein     # felix
+44.137.0.184    pa3dfi          # ruud
+44.137.0.185    pe1lro          # arie
+44.137.0.186    pe1bjb          # george
+44.137.0.187    pe1nmj          # nico
+44.137.0.188    pa3ezc          # walter
+44.137.0.189    pa0jlf          # jan
+44.137.0.190    pe1doq          # henk
+44.137.0.191    pe1ozs          # dustin
+44.137.0.192    pa0vdy          # nick
+44.137.0.193    sys2.pe1bjb     # george
+44.137.0.194    sys3.pa0wdn     # hans
+44.137.0.195    pe1onh          # tom
+44.137.0.196    pa0wca          # wim
+44.137.0.197    pa3cgf          # dolf
+44.137.0.198    pi4kgl          # wim
+44.137.0.199    pa3biz          # wim
+44.137.0.200    pa3dmt          # willem
+44.137.0.201    pe1mey          # hans
+44.137.0.202    pe1nyg          # ronald
+44.137.0.203    pe1pgq          # eelco
+44.137.0.204    pe1pfw          # bart
+44.137.0.205    pa0wkm          # wim
+44.137.0.206  sys2.pe1osg     # kees
+44.137.0.207  pe1pda          # gerard
+44.137.0.208  pa3fan          # rob
+44.137.0.209  sys3.pa3bwe     # antoon
+44.137.1.1      net.pa0gri      net     # TCP/IP net server and IP switch
+44.137.1.2      devel.pa0gri    # gerard
+44.137.1.3      fridley.pa0gri  # gvdg
+44.137.1.4      bimbo.pa0gri    # gerard
+44.137.1.5      tester.pa0gri   # gerard
+44.137.1.6      perry.pa0gri    # gerard
+44.137.1.8      gr08pc          # gvdg
+44.137.1.16     sys2.pa0okc     # chris
+44.137.1.17     sys3.pa0okc     # chris
+44.137.1.18     sys4.pa0okc     # chris
+44.137.1.19     sys5.pa0okc     # chris
+#
+44.137.4.0      PA_LBnet
+44.137.4.1      pe1ayx          # hans
+44.137.4.2      home.pa3eug     # ramon
+44.137.4.3      pa3bvp          # john
+44.137.4.4      pe1lhc          # elmar
+44.137.4.5      pa3cum          # rob
+44.137.4.6      pa3fkm          # pascal
+44.137.4.7      pa3ghh          # marcel
+44.137.4.10     pi8hrl          # pgl
+44.137.4.11     pa3dkr          # theo
+44.137.4.12     pa3fgp          # hans
+44.137.4.13     pa0psk          # paul
+44.137.4.14     pe1mul          # huub
+44.137.4.15     sys2.pe1mul     # huub
+44.137.4.16     pa3axi          # rob
+44.137.4.17     pa3ese          # harrie
+44.137.4.18     pa0lpe          # bert
+44.137.4.19     pe1lsh          # herman
+44.137.4.20     pe1lun          # jos
+44.137.4.21     pe1mue          # frans
+44.137.4.22     pa3asp          # wim
+44.137.4.23     pa3dnr          # jan
+44.137.4.24     pe1nhz          # peter
+44.137.4.25     pe1ohy          # willem
+44.137.4.26     pe1mkj          # gustav
+44.137.4.27     pe1oig          # andre
+44.137.4.28     pa3elb          # frank
+44.137.4.29     pe1oss          # marc
+44.137.4.30     pe1knv          # jo
+44.137.4.31     pe1bpy          # jo
+44.137.4.32     pa3dya          # ardo
+44.137.4.33     pa3ann          # joop
+44.137.4.34     sys2.pa3asp     # wim
+44.137.4.35     pa3etc          # hans
+44.137.4.36     sys3.pa3asp     # wim
+44.137.4.37     pi8rmd          # jackq
+44.137.4.38     pe1jrq          # ad
+44.137.4.39     pb0ajw          # carlo
+44.137.4.40     sys2.pa3ann     # joop
+44.137.4.41     pa3dsz          # koos
+#
+44.137.8.0      PA_NBWnet
+44.137.8.1      pa0hwb          # hans
+44.137.8.2      pi8hwb          # hans
+44.137.8.3      pe1gqe          # joop
+44.137.8.4      pa3eqv          # hans
+44.137.8.5      sys2.pa3eqv     # hans
+44.137.8.6      pa0spz          # jos
+44.137.8.7      pa3emh          # tom
+44.137.8.8      pe1mfk          # peter
+44.137.8.9      pi5amb          # mts
+44.137.8.10     pa0lan          # rob
+44.137.8.11     pa0cvn          # kees
+44.137.8.12     pe0pjv          # peter
+44.137.8.13     pa0gtb  pi8gtb  # cor
+44.137.8.14     pa3enm          # erik
+44.137.8.15     pa3elk          # wim
+44.137.8.16     pa3abe          # tom
+44.137.8.17     pe1kod          # wim
+44.137.8.18     pa3eub          # jos
+44.137.8.19     pe0tor          # jac
+44.137.8.20     pe1gpt          # henk
+44.137.8.21     pa3don          # jan
+44.137.8.22     pa3dlu          # ad
+44.137.8.23     pe0lag          # theo
+44.137.8.24     pi5stv          # ivo
+44.137.8.25     pa3epn          # toon
+44.137.8.26     sys2.pi8gtb     # cor
+44.137.8.27     pe1mgs          # juan
+44.137.8.29     pa3ggt          # paul
+44.137.8.30     pe1gsk          # robert
+44.137.8.31     pa3fhu          # peter
+44.137.8.32     pe1miq          # john
+44.137.8.33     pe1cde          # peter
+44.137.8.34     pa3dpl          # ad
+44.137.8.35     sys2.pa0lan     # rob
+44.137.8.36     pe1grx          # frans
+44.137.8.37     pa3ggm          # bart
+44.137.8.38     pi8brd          # hans
+44.137.8.39     sys2.pa0gtb     # cor
+44.137.8.40     pe1ocq          # marco
+44.137.8.41     pe1nlu          # peter
+44.137.8.42     pi4wbr          # toon
+44.137.8.43     sys2.pi4wbr     # toon
+44.137.8.44     pi4rmb          # marco
+44.137.8.45     pa3bad          # ad
+44.137.8.46     sys2.pe1ocq     # marco
+44.137.8.47     pa0pwg          # piet
+44.137.8.48     pe1fxo          # karel
+44.137.8.49     pa0ado          # toon
+44.137.8.50     pe1mzp          # frits
+44.137.8.51     sys2.pa3ggm     # bart
+44.137.8.52     sys2.pe0pjv     # peter
+44.137.8.53     sys3.pe0pjv     # peter
+44.137.8.54     pe1ffs          # loes
+44.137.8.55     pa0ana          # piet
+44.137.8.56     pa3cnh          # rob
+44.137.8.57     pa3ces          # henk
+44.137.8.58     pe1mhp          # jan
+44.137.8.59     sys2.pa3elk     # wim
+44.137.8.60     sys2.pa0spz     # jos
+44.137.8.61     pa3fsy          # dirk
+44.137.8.62     sys3.pa0lan     # rob
+44.137.8.63     pe0kgz          # gerard
+44.137.8.64     sys2.pa3dpl     # ad
+44.137.8.65     pa3gdv          # edward
+44.137.8.66     pe1otm          # teo
+44.137.8.67     pa0ldz          # wim
+44.137.8.68     sys2.pa3ggt     # paul
+44.137.8.69     pa3fsf          # carol
+44.137.8.70     pe1nzs          # marcel
+44.137.8.71     sys2.pa3fsy     # dirk
+44.137.8.72     pe1otp          # rob
+44.137.8.73     pe1imk          # ton
+44.137.8.74     pa3gjk          # piet
+44.137.8.75     pe1nzc          # thuur
+#
+44.137.8.76     sys3.pa3dpl     # ad
+44.137.8.77     sys4.pa3dpl     # ad
+44.137.8.78     sys2.pa3gbv     # stefan
+44.137.8.79     pi5kma          # rien
+44.137.8.80     pa3gag          # rien
+44.137.8.81   pa0car          # anton
+44.137.12.0     PA_GRnet
+44.137.12.1     pa3esk          # frans
+44.137.12.2     pe1ljf          # harm
+44.137.12.3     pe1ndu          # rieks
+44.137.12.4     pa3bzk          # piet
+44.137.12.5     pe0jri          # joop
+44.137.12.6     sys1.pa0ahx     # arno (verhuist 1/9/90)
+44.137.12.7     sys2.pa0ahx     # arno
+44.137.12.8     pa0jpl          # jan
+44.137.12.9     pe1ifh          # anthony
+44.137.12.10    pe1awt          # henk
+44.137.12.11    pi8awt          # henk
+44.137.12.12    pa3gbe          # jan
+44.137.12.13    pa3cpl          # aart
+44.137.12.14    pi8gro          # koos
+44.137.12.15    pe1cim          # max
+44.137.12.16    pe1hyp          # koos
+44.137.12.17    pi8esk          # frans
+44.137.12.18    pe0mot          # jack
+44.137.12.19    pi8dxg  sys2.pe1ljf     # harm
+44.137.12.20    pe1net          # frans
+44.137.12.21    pe1jht          # wiebe
+44.137.12.22    sys2.pe0mot     # jack
+44.137.12.23    qrl.pe0mot      # jack
+44.137.12.24    sys2.pa3cpl     # aart
+44.137.12.25    pe1oid          # jan
+44.137.12.26    pa3fzw          # alex
+44.137.12.27    pa3gjy          # hans
+44.137.12.28    pa0oos          # jaap
+44.137.12.29    sys2.pa3gjy     # hans
+44.137.12.30    pa3fpo          # joop
+44.137.12.31    pa0wah          # willyan
+44.137.12.32    sys3.pa3cpl     # aart
+44.137.12.33    sys2.pa3esk     # frans
+44.137.12.34    pe1hyu          # frans
+#
+44.137.16.0     PA_NH1net
+44.137.16.1     pa3efu          # jan
+44.137.16.2     sys2.pe1btv     # ruud
+44.137.16.3     pa0rys          # ger
+44.137.16.4     pa3asm          # jur
+44.137.16.5     pe1btv          # ruud
+44.137.16.6     pa3daq          # hans
+44.137.16.7     pa0oke          # jan
+44.137.16.8     pa0hzp          # henk
+44.137.16.9     pe0wbl          # wil
+44.137.16.10    pa3cuf          # ron
+44.137.16.11    pa3fcw          # phill
+44.137.16.12    pe1kbj          # rene
+44.137.16.13    pa2jwm          # job
+44.137.16.14    pe1aqa          # ted
+44.137.16.15    pe1lxs          # tjalf
+44.137.16.16    pa3csm          # jan
+44.137.16.17    pa3edu          # jan
+44.137.16.18    pe1fvu          # wim
+44.137.16.19    pe1fbc          # nico
+44.137.16.20    pe1cmg          # peter
+44.137.16.21    pb0ajf          # bert
+44.137.16.22    pa0key          # jurn
+44.137.16.23    pe1kie          # ben
+44.137.16.24    pa3fce          # cees
+44.137.16.25    pa3fmn          # peter
+44.137.16.26    pa0hgz          # herman
+44.137.16.27    pe1nat          # ed
+44.137.16.28    pi8yrc          # ruud
+44.137.16.29    pa3eli          # jan
+44.137.16.30    pa3aqj          # hans
+44.137.16.31    pa3egu          # roger
+44.137.16.32    pe1njc          # frank
+44.137.16.34    pa0vab          # peter
+44.137.16.35    pe1jyt          # fred
+44.137.16.36    pe1byw          # jan
+44.137.16.37    pa0rvt          # rein
+44.137.16.38    sys2.pe1nat     # ed
+44.137.16.39    pe1bxr          # erik
+44.137.16.40    pa3ato          # ted
+44.137.16.41    pe1brv          # joop
+44.137.16.42    pi8dhr          # nico
+44.137.16.43    pa3cbq          # peter
+44.137.16.44    pa3fdq          # paul
+44.137.16.45    pi5dd           # paul
+44.137.16.46    pa3bhn          # jos
+44.137.16.47    pa2vlg          # johan
+44.137.16.48    pa0jvh          # jan
+44.137.16.49    pa0jhs          # jacob
+44.137.16.50    pe1hns          # bert
+44.137.16.51    pe1nzd          # johan
+44.137.16.52    pi8nat          # ed
+44.137.16.53    sys2.pe1fbc     # nico
+44.137.16.54    pe1hln          # emil
+44.137.16.55    pa3bgj          # jacques
+44.137.16.56    pe1bgq          # pieter
+44.137.16.57    pi8hdr          # nico
+44.137.16.58    pe1aho          # bert
+44.137.16.59    pe1nsq          # rick
+44.137.16.60    pe1ijy          # martin
+44.137.16.61    pa3aes          # cees
+44.137.16.62    pe1oyu          # richard
+44.137.16.63    sys2.pa0vab     # peter
+44.137.16.64    pe1dgz          # jan-charles
+44.137.16.65    pe1ozh          # ron
+44.137.16.66    pa3fkq          # ben
+44.137.16.67    pe1ohc          # michiel
+44.137.16.68    pe1ory          # herman
+44.137.16.69    pa3ezq          # hans
+44.137.16.70    pi8pkt          # hans
+44.137.16.71    pi8wfl          # cees
+44.137.16.72    sys2.pa3fmn     # peter
+44.137.16.73    sys3.pa3fmn     # peter
+44.137.16.74    pi5yct          # peter
+44.137.16.75    pa0mir          # nico
+#
+44.137.17.1     pa0hzp-1        # henk
+44.137.17.2     pa0hzp-2        # henk
+44.137.17.3     pa0hzp-3        # henk
+44.137.17.4     pa0hzp-4        # henk
+#
+44.137.20.0     PA_FLnet
+44.137.20.2     pa3ffs          # marijn
+44.137.16.83    pe1nnq          # arjan
+44.137.16.84  pe1oaf          # norbert
+44.137.20.3     pe1mrn          # jan
+44.137.20.4     sys2.pa3ffs     # marijn
+44.137.20.5     pa3aao          # wim
+44.137.20.6     pa3axa          # rens
+44.137.20.7     pe1dcy          # martin
+44.137.20.8     pa3epj          # carlo
+44.137.20.9     pe1bmm          # william
+44.137.20.10    pe1nkr          # jacob
+44.137.20.12    pe1nvf          # bert
+44.137.20.13    pa2pme          # peter
+44.137.20.14    pa3geu          # rene
+44.137.20.15    pa3fnt          # foeke
+44.137.20.16    pe1akf          # ruud
+44.137.20.17    pe1hhy          # peter
+#
+44.137.24.0     PA_NBOnet
+44.137.24.1     pi8tcp          # club
+44.137.24.2     pe1dtn          # peter
+44.137.24.3     pe1hzg          # geert jan
+44.137.24.4     pa0wch          # will
+44.137.24.5     pe1dna          # joop
+44.137.24.6     pa3dsc          # martin
+44.137.24.7     pi8zaa          # club
+44.137.24.8     pa3eip          # gert
+44.137.24.9     pa0jjt          # jack
+44.137.24.10    pa0kls          # klaas
+44.137.24.11    pa3clh          # johan
+44.137.24.12    pa0hct          # henk
+44.137.24.13    pa3eah          # ronald
+44.137.24.14    pa3fvf          # michel
+44.137.24.15    pe1hvy          # theo
+44.137.24.16    pa0tw           # wim
+44.137.24.17    pe1fvd          # jac
+44.137.24.18    sys2.pa3fvf     # michel
+44.137.24.19    pi5ehv          # tue
+44.137.24.20    sys2.pi5ehv     # tue
+44.137.24.21    pe1eyh          # aarnout
+44.137.24.22    unix.pa3dsc     # martin
+44.137.24.23    sys2.pa3dsc     # martin
+44.137.24.24    pe1llv          # hans
+44.137.24.25    pa3bpl          # han
+44.137.24.26    sys2.pe1dna     # joop
+44.137.24.27    sys2.pa0wch     # wil
+44.137.24.28    unix.pa0wch     # wil
+44.137.24.29    pa0bje          # jan
+44.137.24.30    pe1bey          # kees
+44.137.24.31    pa3eug          # ramon
+44.137.24.32    pa0ahx          # arno
+44.137.24.33    pe0jhm          # jochem
+44.137.24.34    pa3agw          # bert
+44.137.24.35    pa3cev          # eric
+44.137.24.36    pa3fws          # rob
+44.137.24.37    pa0hfu          # harry
+44.137.24.38    pa0kms          # karel
+44.137.24.39    pa0dlo          # nico
+44.137.24.40    pi8ehv          # node
+44.137.24.41    pe1hml          # hendrik
+44.137.24.42    pe1feo          # harrie
+44.137.24.43    pe1lki          # kees
+44.137.24.44    pa0son          # paul
+44.137.24.45    pa2ajs          # arthur
+44.137.24.46    pa3dot          # els
+44.137.24.47    pe1nmu-a        # martin (/a in eindhoven)
+44.137.24.48    pa0jmv          # joop
+44.137.24.50    pa3bzo          # piet
+44.137.24.51    pa3aou          # harry
+44.137.24.52    pe1dxp          # wim
+44.137.24.53    pe1nlk          # marc
+44.137.24.54    pa3cii          # john
+44.137.24.55    pe1ndd          # thijs
+44.137.24.56    pa3fjd          # jos
+44.137.24.57    pa3fqf          # jan
+44.137.24.58    pa0kvn          # otfried
+44.137.24.59    pa0pop          # jan
+44.137.24.60    pa0bwl          # wil
+44.137.24.61    pe1fzq          # simon
+44.137.24.62    pe1npp          # nico
+44.137.24.63    pe1gle          # ton
+44.137.24.64    pa3bxm          # peter
+44.137.24.65    pa3ewk          # jos
+44.137.24.66    pe1iua          # ron
+44.137.24.67    pe1mnl          # martyn
+44.137.24.68    pi5hse          # ramon
+44.137.24.69    sys2.pa0bje     # jan
+44.137.24.70    sys2.pa3aou     # harry
+44.137.24.71    pe1mmz          # charles
+44.137.24.72    pa0lya          # ed
+44.137.24.73    pe1hvx          # jos
+44.137.24.74    pa3fbl          # gerry
+44.137.24.75    pe1gms          # herman
+44.137.24.76    pe1keh          # bertus
+44.137.24.77    sys2.pa0jjt     # jack
+44.137.24.78    sys3.pa0jjt     # jack
+44.137.24.79    pi8pac          # jack
+44.137.24.80    pa3cvi          # cees
+44.137.24.81    pa3cry          # piet
+44.137.24.82    pe1gqw          # rian
+44.137.24.83    pe1dgw          # ad
+44.137.24.84    pe1ltt          # peter
+44.137.24.85    pb0ajn          # andre
+44.137.24.86    pb0aia pi8rty   # kees
+44.137.24.86    pi1rty pi8cwg   # kees
+44.137.24.87    sys2.pe1iua     # ron
+44.137.24.88    pa3fyw          # herman
+44.137.24.89    pe1npd          # bas
+44.137.24.90    pe1obp          # richard
+44.137.24.91    pa3gbv          # stefan
+44.137.24.92    pe1meo          # leon
+44.137.24.93    pe1nex          # johan
+44.137.24.94    sys2.pe1mnl     # martyn
+44.137.24.95    pa3gbu          # martin
+44.137.24.96    unix.pa3eug     # ramon
+44.137.24.97    sys2.pa3cii     # john
+44.137.24.98    pe1nzl          # louis
+44.137.24.99    pa3ffl          # gerrit
+44.137.24.100   sys2.pa3cry     # piet
+44.137.24.101   pe1npc          # kwangsoo
+44.137.24.102   sys3.pe1dna     # joop
+44.137.24.103   sys2.pi8ehv     # node
+44.137.24.104   sys3.pa3aou     # harry
+44.137.24.105   pa3ewc          # andre
+44.137.24.106   pe1ndo          # wilfred
+44.137.24.107   pb0acw          # peter
+44.137.24.108   pa3ert          # piet
+44.137.24.109   pe1ofl          # patrick
+44.137.24.110   pe1ogt          # hans
+44.137.24.111   sys2.pe1ndo     # wilfred
+44.137.24.112   sys2.pb0aia     # kees
+44.137.24.113   atari.pb0aia    # kees
+44.137.24.114   vax.pb0aia      # kees
+44.137.24.115   sys3.pe1ndo     # wilfred
+44.137.24.116   pe1mql          # jan
+44.137.24.117   pe1ohg          # maarten
+44.137.24.118   pa3ghy          # ben
+44.137.24.119   pe1ocj          # michel
+44.137.24.120   pa0nzh          # gert
+44.137.24.121   sys2.pa3ewk     # jos
+44.137.24.122   pe1iok          # frits
+44.137.24.123   pa3gcj          # frank
+44.137.24.124   pe1nqw          # jos
+44.137.24.117 pa3gmb          # maarten
+44.137.24.126   pe1ovs          # ton
+44.137.24.127   pa0ruy          # hans
+44.137.24.128   pe1nfk          # martin
+44.137.24.129   pa3cbb          # jan
+44.137.24.130   pa3fvc          # ruud
+44.137.24.131   pe1dwo          # wijm
+44.137.24.132   pe1bxl          # paul
+44.137.24.133   pe1fzs          # ico
+44.137.24.134   pe1alh          # ton
+44.137.24.135   pe1oye          # jan
+44.137.24.136   pe1ful          # walter
+44.137.24.137   pi5tle          # hans
+44.137.24.138   pa0fbt          # fred
+44.137.24.139   pi8shb          # henk
+44.137.24.140   pa3gcz          # peter
+44.137.24.141   sys2.pa3gcz     # peter
+44.137.24.142   sys2.pa0bwl     # wil
+44.137.24.143   pa0shy          # sjoerd
+44.137.24.144   pe1iku          # jos
+44.137.24.145   pa0ppe          # peter
+44.137.24.146   sys2.pe1npd     # bas
+44.137.24.147   pe1icq          # arno
+44.137.24.148   pa0oss          # jan
+44.137.24.149   pa0als          # helmus
+44.137.24.150   pe1nnz          # guido
+44.137.24.151   sys2.pe1nnz     # guido
+44.137.24.152   sys3.pe1nnz     # guido
+44.137.24.153   sys4.pe1nnz     # guido
+44.137.24.154   pa0paz          # peter
+44.137.24.155   sys2.pe1ogt     # hans
+44.137.24.156   pa3fgk          # maarten
+44.137.24.138   pa0fbt          # fred
+#
+44.137.28.0     PA_ZLnet
+44.137.28.1     pb0acz          # bram
+44.137.28.2     pe1khx          # rob
+44.137.28.3     pa3cwi          # kees
+44.137.28.4     pi5vls          # mts
+44.137.28.5     pa3egv          # liesbeth
+44.137.24.157 pe1pgn          # maarten
+44.137.28.6     pe1koo          # annard
+44.137.28.7     pi8mid          # rob
+44.137.28.8     pe1mpi          # evert
+44.137.28.9     pa3eob          # henk
+44.137.28.10    pi4zld          # rdb
+44.137.28.11    pe1fmw          # piet
+44.137.28.12    sys2.pa3cwi     # kees
+44.137.28.13    sys2.pi5vls     # mts
+44.137.28.14    pa0jaw          # wim
+44.137.28.15    sys3.pa3cwi     # kees
+44.137.28.16    pe0gwm          # willem
+44.137.28.17    sys2.pe0gwm     # willem
+44.137.28.18    pa3eru          # jurgen
+44.137.28.19    pe1mwb          # jeroen
+44.137.28.20    pe1nbq          # wijnand
+44.137.28.21    pa0bak          # ron
+44.137.28.22    pe1npx          # piet
+44.137.28.23    pe1mgl          # erik
+44.137.28.24    pi8vli          # a55
+44.137.28.25    pi4vli          # a55
+44.137.28.26    pa3ftq          # ernie
+44.137.28.27    pi8goe          # henk
+44.137.28.28    sys2.pe1nbq     # wijnand
+44.137.28.29    sys3.pe1nbq     # wijnand
+44.137.28.30    pa0ril          # adrie
+44.137.28.31    sys2.pa0ril     # adrie
+44.137.28.32    sys3.pa0ril     # adrie
+44.137.28.33    sys2.pa0bak     # ron
+44.137.28.34    sys2.pa3eru     # jurgen
+44.137.28.35    pe1cig          # eddy
+44.137.28.36    sys2.pe1mwb     # jeroen
+44.137.28.37    pe1npz          # richard
+44.137.28.38    pe1nqb          # hielke
+44.137.28.39    sys2.pe1nqb     # hielke
+44.137.28.40    sys2.pa0jaw     # wim
+44.137.28.41    pi4zwn          # zwn
+44.137.28.42    sys2.pe1cig     # eddy
+44.137.28.43    pa3akz          # kees
+44.137.28.44    sys2.pa3akz     # kees
+44.137.28.45    pa3erp          # john
+44.137.28.46    sys3.pa0bak     # ron
+44.137.28.47    sys4.pa0bak     # ron
+44.137.28.48    pa3gcu          # richard
+44.137.28.49    pe1nqh          # dennis
+44.137.28.51    on1cj           # joran
+44.137.28.52    sys3.pa3erp     # john
+44.137.28.53    sys3.pa3akz     # kees
+44.137.28.54    pe1atc          # john
+44.137.28.55    pe1onb          # gerard
+44.137.28.56    sys2.pe1khx     # rob
+44.137.28.50    pa0ekv          # elzo
+#
+44.137.32.0     PA_ZH2net
+44.137.32.1     pa3dlt          # koos
+44.137.32.2     pe1gwo          #
+44.137.32.3     pe1huz          # djur
+44.137.32.4     pa3bvt          # wim
+44.137.32.5     pe1ago          # hans
+44.137.32.6     pe1itn          # hans
+44.137.32.7     pe0mar          # mar
+44.137.32.8     pa0mjr          # martin
+44.137.32.9     pa2aga          # adam
+44.137.32.10    pa2aga-10       # adam
+44.137.32.11    pa3bjk          # rick
+44.137.32.12    pa3csi          # bram
+44.137.28.64    pa0uyl          # herman
+44.137.28.65    sys3.pe0gwm     # willem
+44.137.32.13    pe0aph          # arie
+44.137.32.14    pa3eae          # vera
+44.137.32.15    pa3egb          # joop
+44.137.32.16    pi8eae          # vera
+44.137.32.17    pa0sch          # nico
+44.137.32.18    pa3ffu          # joop
+44.137.32.19    pa2aga-2        # adam
+44.137.32.20    pe1kml          # erik jan
+44.137.32.21    pa0aho          # ollie
+44.137.32.22    pi8mac          # adam (big mac)
+44.137.32.23    pa0dtl          # fokko
+44.137.32.24    pa3dlb          # peter
+44.137.32.25    pa3fxy          # evert
+44.137.32.26    pa3fnw          # cor
+44.137.32.27    sys2.pe0mar     # mar
+44.137.32.28    pa3bxw  pa3cbm  # hans / trudy
+44.137.32.29    pe1mhm          # jan
+44.137.32.30    pe1gac          # reno
+44.137.32.31    pb0ahx          # herman
+44.137.32.32    pe1aal          # egbert jan
+44.137.32.33    pa0ser          # roel
+44.137.32.34    pa3esz          # hans
+44.137.32.35    pi8vnw  pi4vnw  # hans
+44.137.32.36    pe1bcy          # ruud
+44.137.32.37    pa3gae          # hugo
+44.137.32.38    pa0aas          # karel
+44.137.32.39    pe1drr          # jan
+44.137.32.40    pe1ayi          # ad
+44.137.32.41    pa3ckg          # jan
+44.137.32.42    pa3fqx          # vincent
+44.137.32.43    pe1lwr          # addy
+44.137.32.44    pa3bvm          # arie
+44.137.32.45    pe0zon          # kees
+44.137.32.46    pe1hew          # alex
+44.137.32.47    pi8hvh          # mar
+44.137.32.48    pa3dbf          # paul
+44.137.32.49    pe1ngq          # richard
+44.137.32.50    pe1nmb          # erwin
+44.137.32.51    pa3apv          # rinus
+44.137.32.52    pa3ggy          # klaas
+44.137.32.53    pe1nmu          # martin
+44.137.32.54    pe1mzt          # frans
+44.137.32.55    pa0qrb          # harold
+44.137.32.56    sys2.pa0qrb     # harold
+44.137.32.57    pa0vm           # joop
+44.137.32.58    pe1cxo          # rene
+44.137.32.59    pe1ghg          # john
+44.137.32.60    sys2.pe1nmb     # erwin
+44.137.32.61    pa2aga-1        # adam
+44.137.32.62    sys3.pa2aga     # adam
+44.137.32.63    pa3dfn          # philip
+44.137.32.64    pe1agp          # aad
+44.137.32.65    pa3cuh          # wim
+44.137.32.66    pa3eki          # jaap
+44.137.32.67    pa3dtk          # bertus
+44.137.32.68    pe1nmk          # hans
+44.137.32.69    pe1nau          # mike
+44.137.32.70    pa3fgr          # frans
+44.137.32.71    pi8omp          # olaf
+44.137.32.72    pa3daw          # bob
+44.137.32.73    pa3czc          # hans
+44.137.32.74    pe1bti          # ben
+44.137.32.75    pa3dhr          # dirk
+44.137.32.62  MacTCP.pa2aga   # adam
+44.137.32.77    pa0stw          # eef
+44.137.32.78    pa3dqp          # jeroen
+44.137.32.79    pa3aql          # paul
+44.137.32.80    pa0pcb          # bram
+44.137.32.81    pa2gon          # wim
+44.137.32.82    sys2.pa0mjr     # martin
+44.137.32.83    pa0phg          # piet
+44.137.32.84    pa0cvg          # chris
+44.137.32.85    pa2jok          # joop
+44.137.32.86    pa3dbj          # anton
+44.137.32.87    sys2.pa3fgr     # frans
+44.137.32.88    pe1jmz          # peter
+44.137.32.89    pe1kyi          # ton
+44.137.32.91    pe1hvr          # rins
+44.137.32.92    sys2.pa0aho     # ollie
+44.137.32.93    sys2.pa3bvm     # arie
+44.137.32.94    sys3.pa3bvm     # arie
+44.137.32.95    pa3fxh          # jan
+44.137.32.96    pa0rvr          # richard
+44.137.32.97    pe1cdb          # andre
+44.137.32.98    pa3bbr          # edwin
+44.137.32.99    pe1hzx          # cees
+44.137.32.100   pa2crs          # chris
+44.137.32.101   pa3esj          # cees
+44.137.32.102   pe1nrj          # bram
+44.137.32.103   pe1lvw          # fok
+44.137.32.104   pa0gln          # jan
+44.137.32.105   sys2.pa3dfn     # philip
+44.137.32.106   pa3con          # frank
+44.137.32.107   sys2.pe1bcy     # ruud
+44.137.32.108   pi4dec          # rinus
+44.137.32.109   sys2.pi4dec     # rinus
+44.137.32.110   pe1luc          # wim
+44.137.32.111   sys2.pe1luc     # wim
+44.137.32.112   pa3dkt          # dennis
+44.137.32.113   pe1lwc          # cock
+44.137.32.114   pe1mxu          # rinus
+44.137.32.115   pa0hrp          # hans
+44.137.32.116   pe1opm          # will
+44.137.32.117   sys2.pe1opm     # will
+44.137.32.118   pa3ffm          # ruud
+44.137.32.119   pe1oeu          # arnold
+44.137.32.120   pi8flk          # arie
+44.137.32.121   pa3dtf          # john
+44.137.32.122   sys2.pa3esz     # hans
+44.137.32.123   pa0gpe          # gilles
+44.137.32.124   sys2.pe1hvr     # rins
+44.137.32.125   pa0pz           # ton
+44.137.32.126   pe1opg          # ruud
+44.137.32.127   pa3bwd          # kees
+44.137.32.128   pe1lqs          # frans
+44.137.32.129   pe1obu          # marco
+44.137.32.130   pe1nhd          # jos
+44.137.32.131   pe1abv          # joop
+44.137.32.132   pa0crb          # cees
+44.137.32.133   pe1kws          # frans
+44.137.32.134   pe1hez          # mels
+44.137.32.135   pa3fxn          # hans
+44.137.32.136   pi5ch           # kees
+44.137.32.137   pe1npf          # edwin
+44.137.32.138   pe1ovc          # frank
+44.137.32.139   pe1mui          # roel
+44.137.32.140   sys2.pe1nmk     # hans
+44.137.32.141   pa3cov          # tjakko
+44.137.32.142   sys2.pa3cov     # tjakko
+44.137.32.143   pa3eoy          # frank
+44.137.32.144   sys2.pe1kml     # erik jan
+44.137.32.145   pi8dec          # dec
+44.137.32.146   pe1oxo          # xander
+44.137.32.147   pa0wpd          # wim
+44.137.32.148   pa3ecq          # peter
+44.137.32.149   gatorbox.pa2aga # adam
+44.137.32.150   unix.pa2aga     # adam
+44.137.32.151   pe1osb          # govert
+44.137.32.152   pe1oup          # richard
+44.137.32.154   pe1oyh          # nico
+44.137.32.155   pb0amt          # ad
+44.137.32.156   pe1jcg          # hans
+44.137.32.157   pa3dmm          # henk
+44.137.32.158   pa3gix          # wim
+44.137.32.159   pa3bwa          # pieter
+44.137.32.160   sys3.pe1nmb     # erwin
+44.137.32.153   pb0afk          # henk
+#
+44.137.36.0     PA_NH2net
+44.137.36.1     pa0lky          # lupko
+44.137.36.2     pa0rjv          # robert
+44.137.36.3     pe1kpr          # john
+44.137.36.4     pa3fmc          # henk
+44.137.36.5     pa3eke          # rob
+44.137.36.6     pa0wvo          # wim
+44.137.32.155 pa3glg          # ad
+44.137.36.8     pa0sgl          # daan
+44.137.36.9     pa3gas          # maarten
+44.137.36.10    pa0rkb          # ronald
+44.137.36.11    pe1gcb          # viktor
+44.137.36.13    pa0trx          # wim
+44.137.32.161   pe1iqu          # rob
+44.137.36.14    pi8nvp          # philip
+44.137.36.15    pe1aue          # philip
+44.137.36.16    pi8nos          # node
+44.137.36.17    pe1hmd          # jan
+44.137.36.18    pa3bti          # rolf
+44.137.36.19    pe1lpl          # paul
+44.137.36.20    pa3dbl          # rob
+44.137.36.22    pa3cqj          # rutger
+44.137.36.23    pe1jmo          # peter
+44.137.36.24    pa3cjp          # jan
+44.137.36.25    pa0ma           # cor
+44.137.36.26    pa0lbn          # jan
+44.137.36.27    pe1mxz          # arnt
+44.137.36.28    sys2.pa3gas     # maarten
+44.137.36.29    pe1ifx          # gerrit
+44.137.36.30    pa0pil          # bert
+44.137.36.31    pe1mzu          # jack
+44.137.36.32    pa3fof          # rob
+44.137.36.33    pa2lth          # leo
+44.137.36.34    pa3dbv          # peter
+44.137.36.36    pa3bbp          # peter
+44.137.36.37    pe1iyr          # salo
+44.137.36.38    pa3bma          # wim
+44.137.36.39    pa0rvn          # richard
+44.137.36.40    sys2.pa3fmc     # henk
+44.137.36.41    sys3.pa3fmc     # henk
+44.137.36.42    pe1nse          # tjerry
+44.137.36.44    sys2.pa0trx     # wim
+44.137.36.45    pa2max          # max
+44.137.36.46    pa3drz          # ed
+44.137.36.47    pa0jwg          # jan
+44.137.36.48    pe1ona          # marco
+44.137.36.49    pe1oqd          # jeroen
+44.137.36.50    pa0rct          # rein
+44.137.36.51    pe1kdh          # rens
+44.137.36.52    pa3cld          # wim
+44.137.36.53    pe1kqo          # peter
+44.137.36.54    sys2.pa0rct     # rein
+44.137.36.55    pe1kda          # jelle
+44.137.36.56    sys2.pe1kda     # jelle
+44.137.36.57    pi8dbv          # peter
+44.137.36.58    sys2.pe1mzu     # jack
+44.137.36.59    pa3arh          # jan
+44.137.36.60    pe1ool          # mario
+44.137.36.61    pa0wdg          # wim
+44.137.36.62    pe1dmt          # jos
+44.137.36.64    pe1kjl          # pim
+44.137.36.65    sys2.pe1hmd     # jan
+44.137.36.66    pa3fym          # remco
+44.137.36.63    pe1oto          # almar
+#
+44.137.40.0     PA_UTnet
+44.137.40.1     pe1chl          # rob
+44.137.40.2     sys2.pe1chl     # rob
+44.137.40.3     pe1jlj          # roel
+44.137.40.4     pe1lde          # henk
+44.137.40.5     pa3eoa          # herman
+44.137.40.6     sys2.pe1jlj     # roel
+44.137.40.7     pa3fmk          # olbert
+44.137.40.8     pa0erg          # eddy
+44.137.40.9     pa3agn          # koen
+44.137.40.10    pa3edn          # egon
+44.137.40.11    pa0jmo          # joop
+44.137.40.12    pe1gwx          # carlo
+44.137.40.13    pa3azk          # marcel
+44.137.40.14    pa3awg          # martin
+44.137.40.15    pa3eju          # andre
+44.137.40.16    pe1don          # evert
+44.137.40.17    pa3epp          # hans
+44.137.40.18    pa3bkx          # herman
+44.137.40.19    pa3dov          # rinus
+44.137.40.20    pe1ayg          # gerard
+44.137.40.21    pe1bqc          # wim
+44.137.40.22    pa3apn          # gerard
+44.137.40.24    pa0fra          # freerk
+44.137.40.25    pe1miz          # johan
+44.137.40.26    pa3cor          # wim
+44.137.40.27    pe1jsi          # dirk
+44.137.40.28    pb0aaq          # frank
+44.137.40.29    pe1krc          # john
+44.137.40.30    pa3def          # govert
+44.137.40.31    pa0rni          # rene
+44.137.40.32    pa3dwb          # auke
+44.137.40.33    pa3eqb          # rob
+44.137.40.34    pa3dxs          # gerjan
+44.137.40.35    pa0mwu          # martin
+44.137.40.36    pa3eje          # wim
+44.137.40.37    sys2.pa3edn     # egon
+44.137.40.38    sys2.pe1bqc     # wim
+44.137.40.39    pa3cre          # gerard
+44.137.40.40    pa6hcc          # paul
+44.137.40.41    pa3bnx          # lodewyk
+44.137.40.42    sys2.pa3azk     # marcel
+44.137.40.43    pa3dco          # paul
+44.137.40.44    pe1ktm          # dick
+44.137.40.45    pe1hjr          # rob
+44.137.40.46    sys2.pa3eqb     # rob
+44.137.40.47    pe1ock          # jan
+44.137.40.48    pa3egh          # jan
+44.137.40.49    pi8rni          # node
+44.137.40.50    pa3fyj          # ken
+44.137.40.51    sys2.pa3fyj     # ken
+44.137.40.52    pa3cmi          # wim
+44.137.40.53    pa3fil          # frank
+44.137.40.54    sys2.pb0aaq     # frank
+44.137.40.55    pa3cpm          # henni
+44.137.40.56    sys2.pa3dco     # paul
+44.137.40.57    pa3etk          # hans
+44.137.40.58    pa3fxw          # robert
+44.137.40.59    pa3ftk          # theo
+44.137.40.60    pe1mpz          # evert
+44.137.40.61    pa3bya          # gerrit
+44.137.40.62    pe1asc          # gerhard
+44.137.40.63    pe1lzx          # erwin
+44.137.40.64    pe1nhx          # sander
+44.137.40.65    pe1fdv          # hennie
+44.137.40.66    pa3azh          # rinus
+44.137.40.67    pe1llg          # haye
+44.137.40.68    pe1kto          # wim
+44.137.40.69    pa3cpj          # piet
+44.137.40.70    pe1nwv          # auke-jan
+44.137.40.71    pa3exp          # rob
+44.137.40.72    pe1kox          # rob
+44.137.40.73    sys3.pe1chl     # rob
+44.137.40.74    pa3agg          # pim
+44.137.40.75    pa3ctm          # didier
+44.137.40.76    pe1nkc          # rene
+44.137.40.77    g3hzp           # jimmy
+44.137.40.78    pe1otg          # kok
+44.137.40.79    sys2.pe1kox     # rob
+44.137.40.80    sys3.pa3edn     # egon
+44.137.40.81    pe1ntu          # patrick
+44.137.40.82    utrnet.pa0gri   # gerard
+44.137.40.83    utrdev.pa0gri   # gerard
+44.137.40.85    pa3cvb          # gys
+44.137.40.86    pe1njb          # klaas
+44.137.40.87    pe1krs          # nico
+44.137.40.84    pi8nwg          # erwin
+#
+44.137.44.0     PA_GLnet
+# subnet land van maas en waal en rijn
+44.137.44.1     pa0hbp          # hans
+44.137.44.2     pa3dso          # ron
+44.137.44.3     sys2.pa2dso     # ron
+44.137.44.4     sys2.pe1abt     # bern
+44.137.44.5     pa3gec          # max
+44.137.44.6     pa0ads          # arie
+44.137.44.7     pe1ivq          # arnold
+44.137.44.8     pa3bkl          # robbert
+44.137.44.9     pe1brj          # peter
+44.137.44.10    pa2wcb          # willem
+44.137.40.87  pe1krs          # frank
+44.137.40.88    pi8wno          #
+44.137.40.89    sys2.pe1nwv     # auke-jan
+44.137.40.90    sys3.pe1nwv     # auke-jan
+44.137.40.91    pb0aja          # jaap
+44.137.40.92  sys2.pe1krs     # frank
+44.137.40.93  sys3.pe1krs     # frank
+44.137.40.94  pe1lxx          # paul
+44.137.44.12    pa0wja          # wout
+44.137.44.13    pa2fox          # bart
+44.137.44.14    pa3cqa          # bas
+44.137.44.15    pe1abt          # bern
+44.137.44.16    sys2.pe1ivq     # arnold
+44.137.44.17    pa3air          # piet
+44.137.44.18    pa3eii          # martin
+44.137.44.19    pa0lwz          # louis
+44.137.44.20    pa3erk          # etienne
+44.137.44.21    pa3fjm          # jan
+44.137.44.22    pe1fyw          # theo
+44.137.44.23    pa0dln          # hans
+44.137.44.24    pe1ipv          # jacques
+44.137.44.25    pa3dca          # corrie
+44.137.44.26    pe0hgd          # hans
+44.137.44.27    pa3cgh          # pieter_jan
+44.137.44.28    pa3eko          # jan
+44.137.44.29    pa3ead          # piet
+44.137.44.30    pe1mdm          # tjeerd
+44.137.44.31    pe1lps          # berto
+44.137.44.32    pe1cgy          # roel
+44.137.44.33    pe1afj          # peter
+44.137.44.34    pe1ojj          # breun
+44.137.44.35    pa0faw          # fred
+44.137.44.36    pe1nap          # wim
+44.137.44.37    pe1nzi          # martin
+44.137.44.38    pe1ank          # wim
+44.137.44.39    sys3.pe1abt     # bern
+44.137.44.40    pa0sar          # aart
+44.137.44.41    sys2.pa0dln     # hans
+44.137.44.42    pe0jee          # jacques
+44.137.44.43    sys2.pe0jee     # jacques
+44.137.44.44    pe1cwu          # robert
+44.137.44.45    pb0aez          # jan
+44.137.44.46    pe1lns          # hans
+44.137.44.48    pa3ggi          # marcel
+44.137.44.47    pa3ekf          # marcel
+# subnet achterhoek
+44.137.45.1     pe1dkc          # ed
+44.137.45.2     pe1ivp          # sander
+44.137.45.3     pa0dlf          # dolf
+44.137.45.4     pa3ccu          # rinus
+44.137.45.5     pa3etz          # albert
+44.137.45.6     pa3cpr  pe1maq          # jan christa
+44.137.45.7     pe1anw          # frans
+44.137.45.8     pa3fpl          # henk
+44.137.45.9     pe1nxv          # ben
+44.137.45.10    pe0fko          # fred
+# subnet veluwe
+44.137.46.1     pe1gox          # rob
+44.137.46.2     pa0dal          # bert
+44.137.46.3     pa3ayb          # bert
+44.137.44.50    pa3exh          # nico
+44.137.46.4     pa3cuv          # bert
+44.137.46.5     pa3amo          # robert
+44.137.46.6     pa3ayh  all alle eu ww nldnet amsat sat ans kepler dl           # chris
+44.137.46.7     pa3dqo          # klaas
+44.137.46.8     pe1mew          # remko
+44.137.46.9     pe1fiq          # bert
+44.137.46.10    pe1bke          # bert
+44.137.46.11    pa3dpu          # martin
+44.137.46.12    pa2hbn          # hans
+44.137.46.13    sys2.pa3amo     # robert
+44.137.46.14    sys2.pa3ayh     # chris
+44.137.46.15    pe1mex          # wim
+44.137.46.16    sys2.pe1mew     # remko
+44.137.46.17    pe1hiz          # ron
+44.137.46.18    sys2.pe1hiz     # ron
+44.137.46.19    pi8vrz          # ron
+44.137.46.20    sys2.pa2hbn     # hans
+44.137.46.21    pe1cir          # pieter
+44.137.46.22    pa0hwe          # hans
+44.137.46.23    pa3fgy          # henk
+44.137.46.24    pa0mra          # louis
+44.137.46.25    pe1omn          # jan
+44.137.46.26    pa0eht          # eddy
+44.137.46.27    sys2.pa0eht     # eddy
+44.137.46.28    pa0pur          # george
+44.137.46.29    pa3cdm          # lex
+44.137.46.30    pa3duy          # dirk
+44.137.46.31    pe1hbn          # erik
+44.137.46.32    sys3.pe1mew     # remko
+44.137.46.33    sys4.pe1mew     # remko
+44.137.46.34    pe1njz          # hans
+44.137.46.35    pa3cwl          # janjaap
+44.137.46.36    pi4vrz          # ron
+44.137.46.38    sys2.pi8vrz     # ron
+44.137.46.39    pe1jdx          # jan
+44.137.46.37    pe1lif          # marinus
+#
+44.137.48.0     PA_OVnet1
+44.137.48.1     pa0apa          # andre
+44.137.48.2     pa3ffa          # erik
+44.137.48.3     pi8daz          # eduard
+44.137.48.4     pi8tht          # eduard
+44.137.48.5     pi4tht          # etgd
+44.137.48.6     pi8dbr          # piet
+44.137.48.7     pa0rht          # rob
+44.137.48.8     pa0zmd          # johan
+44.137.48.9     pa0heb          # harm
+44.137.48.10    pa3daz          # eduard
+44.137.48.11    pa0mbo          # ties
+44.137.48.12    pa3cxb          # jan
+44.137.48.13    sys2.pa3ffa     # erik
+44.137.48.15    pa3fen          # jan
+44.137.48.16    pa0esh          # erik
+44.137.48.17    pa3dbp          # bas
+44.137.48.18    pa3ekl          # ge
+44.137.48.19    pa3btz          # simon
+44.137.48.20    pa3cdf          # benny
+44.137.48.21    pa3czl          # marcel
+44.137.48.22    pa0nc           # roel
+44.137.48.23    pa0jbx          # jan
+44.137.48.24    pe1bsf          # paul
+44.137.48.25    pa3dba          # albert
+44.137.48.26    pe1khe          # theo
+44.137.48.27    pe1cfh          # gerrit
+44.137.48.29    pa3edo          # huub
+44.137.48.30    pa3ehe          # fred
+44.137.48.31    pi5tsk          # ruud
+44.137.48.32    pa0rpd          # ruud
+44.137.48.33    pa0fns          # frans
+44.137.48.34    pa3eoq          # henri
+44.137.48.35    pa3cax          # wim
+44.137.48.36    pe1mtx          # rob
+44.137.48.37    pa3bvk          # ricardo
+44.137.48.38    pa3aio          # ron
+44.137.48.39    pe1dli          # jan
+44.137.48.41    pa0hlt          # henk
+44.137.48.42    pi4zi           # henk
+44.137.48.43    pa3dbr          # piet
+44.137.48.44    pe1nhs          # ruud
+44.137.48.45    pe1gnv          # arend
+44.137.48.46    pa3bhi          # ellen
+44.137.48.47    pe1ntl          # robbert
+44.137.48.48    pe1ntm          # robert
+44.137.48.49    pe1ntn          # timo
+44.137.48.50    pe1ntp          # mathys
+44.137.48.51    pe1nuu          # peter
+44.137.48.52    pe1mlf          # erik
+44.137.48.53    pe1nez          # marco
+44.137.48.54    sys3.pe1ljf     # harm
+44.137.48.55    pa3fwm          # pieter tjerk
+44.137.48.56    pe1omh          # gerard
+44.137.48.57    pe1oqh          # erjan
+44.137.48.58    pe1nkk          # fons
+44.137.48.59    pa3dzf          # leo
+44.137.48.60    pe1oov          # bas
+44.137.48.61    pa3dwz          # carlo
+44.137.48.62    pe1osy          # trijnus
+44.137.48.63    pe1bsc          # gerard
+44.137.48.65    sys2.pa3gdv     # edward
+44.137.48.66    sys2.pi8daz     # eduard
+44.137.48.67    pa3bek          # peter
+44.137.48.68    pa3ghs          # edwin
+44.137.48.69    pe1nut          # paul
+44.137.48.70    pe1oqx          # piet
+44.137.48.71    pe0rki          # fred
+44.137.48.72    pe1mho          # pete
+44.137.48.56  pa3glt          # gerard
+#
+44.137.49.0     PA_OVnet2
+44.137.49.1     pi4vrn          # henk
+44.137.49.2     pe0rtm          # henk
+44.137.49.3     pa3dhs          # klaas
+44.137.49.4     sys2.pa3dhs     # klaas
+44.137.49.6     pa3fyj-a        # ken
+44.137.49.7     pa3dhq          # jan
+44.137.49.8     pi4ysm          # jan
+44.137.49.9     pa3ebv          # peter
+44.137.49.10    pe1mth          # theo
+44.137.49.11    pa3ahi          # roland
+44.137.49.12    pa3apj          # jan-willem
+44.137.49.13    pa3aqi          # herman
+44.137.49.14    pe1jnw          # marcel
+44.137.49.15    pa0ghk          # gerrit
+44.137.48.74    pe1osz          # rob
+44.137.49.16    pa0vlz          # pieter
+44.137.49.17    pa3fqa          # dick
+44.137.49.19    sys2.pe1mth     # theo
+44.137.49.20    pe1ohk          # nico
+44.137.49.18    pe1juq          # hans
+#
+44.137.52.0     PA_DRnet
+44.137.52.1     pa0adc          # henk
+44.137.52.2     pa0nam          # bert
+44.137.52.3     pa0fa           # jan
+44.137.52.4     pa3aod          # bert
+44.137.52.5     pa3fbp          # andre
+44.137.52.6     pe1mgd          # jan
+44.137.52.7     pa3ffc          # jannet
+44.137.52.8     pa3ang          # johan
+44.137.52.9     pa3eds          # klaas
+44.137.52.10    pa3cef          # thomas
+44.137.52.11    pa3cmr          # hans
+44.137.52.12    pi8dre          # node
+44.137.52.13    pi8eds          # klaas
+44.137.52.14    pa3aot  pa3cxq  # be en grietje
+44.137.52.15    pa3ful          # piet
+44.137.52.16    pa0bro          # peter
+44.137.52.17    pe1ldp          # karel
+44.137.52.18    pe1gcj          # hans
+#
+44.137.56.0     PA_FRnet
+44.137.56.1     pa3ffy          # ton
+44.137.56.2     pe1dvx          # kees
+44.137.56.3     pe1dzq          # alfred
+44.137.56.4     pa3cpu          # andre
+44.137.56.5     pe1kkv          # durk
+44.137.56.6     pa0hah          # henk
+44.137.56.7     pa0mhz          # jelke
+44.137.56.8     pa3dvg          # arend
+44.137.56.9     pa3ara          # mathijs
+44.137.56.10    pa2cjh          # kees
+44.137.56.11    pe1mqp          # jan
+44.137.56.12    pa3emm          # theo
+44.137.56.13    pe1lwv          # migchiel
+44.137.56.14    pa0pio          # kees
+44.137.56.15    pa3fcc          # victor
+44.137.56.16    pa3bjd          # bram
+44.137.56.17    pa3etq          # jan
+44.137.56.18    pa3fgf          # bert
+44.137.56.19    pa2mos          # jelle
+44.137.56.20    pa0ldr          # sjaak
+44.137.56.21    sys2.pa0pio     # kees
+44.137.56.22    pe1kzn          # walter
+44.137.56.23    sys2.pa0ldr     # sjaak
+44.137.56.24    pa0jyl          # joop
+44.137.56.25    pi8jyl          # joop
+44.137.56.26    pa3fwz          # fokko
+44.137.56.27    pi8kzn          # walter
+44.137.56.28    pe1kzb          # piet
+44.137.56.29    pe1opi          # freerk
+44.137.56.30    pe1nbb          # ep
+44.137.56.31    pa3esf          # weit
+44.137.56.32    pa3bhs          # kees
+44.137.56.33    pa0kdv          # kor
+44.137.56.34    pa3byu          # sake
+44.137.56.35    pi4eme          # kor
+44.137.56.36    pa3jpc          # jelle
+44.137.56.37    pe1jhq          # sake
+44.137.56.38    sys2.pe1mqp     # jan
+44.137.56.39    sys3.pe1mqp     # jan
+44.137.56.40    pi8mqp          # jan
+44.137.56.41    pe1ouf          # benno
+44.137.56.42    pe1ofq          # tjibbe
+#
+44.137.60.0     PA_SPAREnet
 #===========================================================================
 # AMPR.ORG Amateur Packet Radio TCP/IP Network
 # 44.142.xxx.xxx - Internet Protocol Address list for HB9 - Switzerland
