@@ -1,4 +1,19 @@
-@(#) $Id: ChangeLog,v 1.18 1996/08/20 18:07:17 deyke Exp $
+@(#) $Id: ChangeLog,v 1.19 1996/08/23 15:48:40 deyke Exp $
+
+960823 Dieter Deyke <deyke@fc.hp.com>
+
+	net:
+
+		Fixed bug in IP checksum calculation
+
+		Removed TCP window scaling
+
+	bbs:
+
+		Extended HELP command to deal with abbreviations and
+		aliases
+
+	Updated domain.txt and hosts
 
 960820 Dieter Deyke <deyke@fc.hp.com>
 

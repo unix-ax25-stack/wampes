@@ -1,4 +1,4 @@
-/* @(#) $Id: iphdr.c,v 1.12 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: iphdr.c,v 1.13 1996/08/23 15:49:05 deyke Exp $ */
 
 /* IP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -152,7 +152,7 @@ uint len
 			 */
 			csum1 = lcsum((uint16 *)up, cnt >> 1);
 			if(swap)
-				csum1 = (csum1 << 8) | (csum1 >> 8);
+				csum1 = ((csum1 << 8) | (csum1 >> 8)) & 0xffff;
 			csum += csum1;
 		}
 		/* Handle odd trailing byte */

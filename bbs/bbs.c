@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Id: bbs.c,v 3.6 1996/08/19 16:31:43 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: bbs.c,v 3.7 1996/08/23 15:50:22 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -181,12 +181,12 @@ static char myhostname[1024];
 static char prompt[1024] = "\\w:\\c > ";
 static const char daynames[] = "SunMonTueWedThuFriSat";
 static const char monthnames[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
+static enum e_level level;
 static int current_article;
 static int did_forward;
 static int do_forward;
 static int errors;
 static int export;
-static int level;
 static int maxage = 7;
 static int output_only;
 static int packetcluster;
@@ -2770,21 +2770,66 @@ static const struct cmdtable cmdtable[] = {
 
 /*---------------------------------------------------------------------------*/
 
+static void find_command(const char *name, const struct cmdtable **cpp, struct alias **app)
+{
+
+  const struct cmdtable *cp;
+  int len;
+  struct alias *ap;
+
+  *cpp = 0;
+  *app = 0;
+
+  if (!(len = strlen(name))) {
+    return;
+  }
+
+  /* Check for full match on alias */
+
+  for (ap = aliases; ap; ap = ap->next) {
+    if (!Strcasecmp(ap->name, name)) {
+      *app = ap;
+      return;
+    }
+  }
+
+  /* Check for substring match on built-in command */
+
+  for (cp = cmdtable; cp->name; cp++) {
+    if (level >= cp->level && !Strncasecmp(cp->name, name, len)) {
+      *cpp = cp;
+      return;
+    }
+  }
+
+  /* Check for substring match on alias */
+
+  for (ap = aliases; ap; ap = ap->next) {
+    if (!Strncasecmp(ap->name, name, len)) {
+      *app = ap;
+      return;
+    }
+  }
+
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void help_command(int argc, const char **argv)
 {
 
   char line[1024];
-  const struct alias *aliasp;
-  const struct cmdtable *cmdp;
+  const struct cmdtable *cp;
   FILE *fp;
   int i;
   int state;
+  struct alias *ap;
 
   if (argc < 2) {
     puts("Commands may be abbreviated.  Commands are:");
-    for (i = 0, cmdp = cmdtable; cmdp->name; cmdp++) {
-      if (level >= cmdp->level) {
-	printf((i++ % 6) < 5 ? "%-13s" : "%s\n", cmdp->name);
+    for (i = 0, cp = cmdtable; cp->name; cp++) {
+      if (level >= cp->level) {
+	printf((i++ % 6) < 5 ? "%-13s" : "%s\n", cp->name);
       }
     }
     if (i % 6) {
@@ -2792,8 +2837,8 @@ static void help_command(int argc, const char **argv)
     }
     if (aliases) {
       puts("Currently defined aliases:");
-      for (i = 0, aliasp = aliases; aliasp; aliasp = aliasp->next) {
-	printf((i++ % 6) < 5 ? "%-13s" : "%s\n", aliasp->name);
+      for (i = 0, ap = aliases; ap; ap = ap->next) {
+	printf((i++ % 6) < 5 ? "%-13s" : "%s\n", ap->name);
       }
       if (i % 6) {
 	putchar('\n');
@@ -2801,29 +2846,44 @@ static void help_command(int argc, const char **argv)
     }
     return;
   }
-
+  find_command(argv[1], &cp, &ap);
+  if (ap) {
+    printf("%s is an alias for \"%s\"\n", ap->name, ap->value);
+    return;
+  }
+  if (cp) {
+    argv[1] = cp->name;
+  }
   if (!(fp = fopen(HELPFILE, "r"))) {
     puts("Sorry, cannot open help file.");
     return;
   }
   if (!Strcasecmp(argv[1], "all")) {
-    while (!stopped && fgets(line, sizeof(line), fp))
-      if (*line != '^') fputs(line, stdout);
+    while (!stopped && fgets(line, sizeof(line), fp)) {
+      if (*line != '^') {
+	fputs(line, stdout);
+      }
+    }
   } else {
     state = 0;
     while (!stopped && fgets(line, sizeof(line), fp)) {
       rip(line);
-      if (state == 0 && *line == '^' && !Strcasecmp(line + 1, argv[1]))
+      if (state == 0 && *line == '^' && !Strcasecmp(line + 1, argv[1])) {
 	state = 1;
-      if (state == 1 && *line != '^')
+      }
+      if (state == 1 && *line != '^') {
 	state = 2;
+      }
       if (state == 2) {
-	if (*line == '^') break;
+	if (*line == '^') {
+	  break;
+	}
 	puts(line);
       }
     }
-    if (!stopped && state < 2)
+    if (!stopped && state < 2) {
       printf("Sorry, there is no help available for '%s'.\n", argv[1]);
+    }
   }
   fclose(fp);
 }
@@ -2906,9 +2966,8 @@ static void connect_bbs(void)
 static void execute_command(int argc, const char **argv, int recursion_level)
 {
 
-  const struct cmdtable *cmdp;
-  int len;
-  struct alias *p;
+  const struct cmdtable *cp;
+  struct alias *ap;
 
   if (stopped)
     return;
@@ -2920,51 +2979,24 @@ static void execute_command(int argc, const char **argv, int recursion_level)
     return;
   }
 
-  if (!(len = strlen(*argv))) {
-    puts("Unknown command ''.  Type HELP for help.");
+  find_command(*argv, &cp, &ap);
+  if (ap) {
+    parse_command_line(ap->value, argc - 1, argv + 1, recursion_level + 1);
+  } else if (cp) {
+    if (argc < cp->minargs) {
+      printf("Too few arguments.  Type HELP %s for help.\n", cp->name);
+      inc_errors();
+    } else if (argc > cp->maxargs) {
+      printf("Too many arguments.  Type HELP %s for help.\n", cp->name);
+      inc_errors();
+    } else {
+      *argv = cp->name;
+      cp->fnc(argc, argv);
+    }
+  } else {
+    printf("Unknown command '%s'.  Type HELP for help.\n", *argv);
     inc_errors();
-    return;
   }
-
-  /* Check for full match on alias */
-
-  for (p = aliases; p; p = p->next) {
-    if (!Strcasecmp(p->name, *argv)) {
-      parse_command_line(p->value, argc - 1, argv + 1, recursion_level + 1);
-      return;
-    }
-  }
-
-  /* Check for substring match on built-in command */
-
-  for (cmdp = cmdtable; cmdp->name; cmdp++) {
-    if (level >= cmdp->level && !Strncasecmp(cmdp->name, *argv, len)) {
-      if (argc < cmdp->minargs) {
-	printf("Too few arguments.  Type HELP %s for help.\n", cmdp->name);
-	inc_errors();
-      } else if (argc > cmdp->maxargs) {
-	printf("Too many arguments.  Type HELP %s for help.\n", cmdp->name);
-	inc_errors();
-      } else {
-	if (cmdp->name)
-	  argv[0] = cmdp->name;
-	(*cmdp->fnc)(argc, argv);
-      }
-      return;
-    }
-  }
-
-  /* Check for substring match on alias */
-
-  for (p = aliases; p; p = p->next) {
-    if (!Strncasecmp(p->name, *argv, len)) {
-      parse_command_line(p->value, argc - 1, argv + 1, recursion_level + 1);
-      return;
-    }
-  }
-
-  printf("Unknown command '%s'.  Type HELP for help.\n", *argv);
-  inc_errors();
 }
 
 /*---------------------------------------------------------------------------*/
