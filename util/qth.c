@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: qth.c,v 1.20 2002/09/18 19:07:54 dl9sau Exp $";
+static const char rcsid[] = "@(#) $Id: qth.c,v 1.21 2002/11/10 11:22:24 dl9sau Exp $";
 #endif
 
 /* qth: qth, locator, distance, and course computations */
@@ -54,6 +54,7 @@ static void usage(void)
   printf("Examples: qth jn48kp\n");
   printf("          qth ei25e\n");
   printf("          qth 8 53 28 east 48 38 33 north\n");
+  printf("          qth 8 53.47 east 48.642 north\n");
   printf("          qth jn48aa 9 east 48 30 north\n");
   printf("          qth 345827543286\n");
   printf("          qth 34582705432860\n");
@@ -238,6 +239,16 @@ static int get_int(const char *s, int lower, int upper)
 
 /*---------------------------------------------------------------------------*/
 
+static float get_float(const char *s)
+{
+  float f;
+
+  if (!sscanf((char *) s, "%f", &f)) usage();
+  return f;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void print_qth(const char *prompt, long longitude, long latitude, const char *loc, const char *qra)
 {
   char *pl, *pb;
@@ -394,12 +405,12 @@ void potsdam_to_wgs84(double *d_long, double *d_lat)
 }
 
 /*---------------------------------------------------------------------------*/
-/* see GPL gauss converter gauss.pl from Nobert Hüttisch (nobbi@nobbi.com)   */
 
 static int parse_arg(long *longitude, long *latitude)
 {
   int c;
   int len;
+  char *q;
 
   if (! *argv) return -1;
 
@@ -447,13 +458,23 @@ static int parse_arg(long *longitude, long *latitude)
   }
 
   *longitude = 3600L * get_int(*argv, 0, 179);
-  argv++;
-  if (*argv && isdigit(*argv[0])) {
-    *longitude += 60L * get_int(*argv, 0, 59);
+  if ((q = strchr(*argv, '.'))) {
+    *longitude += 3600.0 * get_float(q);
+    argv++;
+  } else {
     argv++;
     if (*argv && isdigit(*argv[0])) {
-      *longitude += get_int(*argv, 0, 59);
-      argv++;
+      *longitude += 60L * get_int(*argv, 0, 59);
+      if ((q = strchr(*argv, '.'))) {
+        *longitude += 60.0 * get_float(q);
+        argv++;
+      } else {
+        argv++;
+        if (*argv && isdigit(*argv[0])) {
+          *longitude += get_int(*argv, 0, 59);
+          argv++;
+        }
+      }
     }
   }
   if (! *argv) usage();
@@ -464,13 +485,23 @@ static int parse_arg(long *longitude, long *latitude)
 
   if (! *argv) usage();
   *latitude = 3600L * get_int(*argv, 0, 89);
-  argv++;
-  if (*argv && isdigit(*argv[0])) {
-    *latitude += 60L * get_int(*argv, 0, 59);
+  if ((q = strchr(*argv, '.'))) {
+    *latitude += 3600.0 * get_float(q);
+    argv++;
+  } else {
     argv++;
     if (*argv && isdigit(*argv[0])) {
-      *latitude += get_int(*argv, 0, 59);
-      argv++;
+      *latitude += 60L * get_int(*argv, 0, 59);
+      if ((q = strchr(*argv, '.'))) {
+        *latitude += 60.0 * get_float(q);
+        argv++;
+      } else {
+        argv++;
+        if (*argv && isdigit(*argv[0])) {
+          *latitude += get_int(*argv, 0, 59);
+          argv++;
+        }
+      }
     }
   }
   if (! *argv) usage();
@@ -483,8 +514,9 @@ static int parse_arg(long *longitude, long *latitude)
 }
 
 /*---------------------------------------------------------------------------*/
+/* see GPL gauss converter gauss.pl from Nobert Hüttisch (nobbi@nobbi.com)   */
 
-void do_nmea(int pargc, int do_gpgga, int do_time, int is_invalid, long longitude, long latitude, char *s_height, char *s_hdop)
+int do_nmea(int pargc, int do_gpgga, int do_time, int is_invalid, long longitude, long latitude, char *s_height, char *s_hdop)
 {
 #define	nmea_GPGGA_head "$GPGGA"
 #define	nmea_GPGGA_tail ",%d,%2.2d,%s,%5.5d,%s,,,,"
@@ -524,9 +556,11 @@ void do_nmea(int pargc, int do_gpgga, int do_time, int is_invalid, long longitud
       nmea_head = argv[0];
     if (pargc > 2)
       nmea_tail = argv[1];
-   }
- }
- print_nmea(longitude, latitude, nmea_head, nmea_tail);
+    }
+  }
+  print_nmea(longitude, latitude, nmea_head, nmea_tail);
+
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -605,8 +639,8 @@ int main(int pargc, char **pargv)
 
   if (parse_arg(&longitude1, &latitude1)) usage();
   if (nmea) {
-    do_nmea(pargc, a_set, t_set, i_set, longitude1, latitude1, h_arg, d_arg);
-    exit(0);
+    int ret = do_nmea(pargc, a_set, t_set, i_set, longitude1, latitude1, h_arg, d_arg);
+    exit(ret);
   }
 
   sec_to_loc(longitude1, latitude1, loc1);
