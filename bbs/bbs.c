@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.41 1993/01/29 06:50:27 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.42 1993/02/26 10:17:59 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -2251,8 +2251,10 @@ static void connect_bbs(void)
 static void parse_command_line(char *line)
 {
 
+#define STARTDELIM      "#$<["
+#define ANYDELIM        "@>"
+
   char *argv[256];
-  char *delim = "<>@$#[";
   char *f;
   char *t;
   char buf[2048];
@@ -2271,10 +2273,10 @@ static void parse_command_line(char *line)
       quote = *f++;
       while (*f && *f != quote) *t++ = *f++;
       if (*f) f++;
-    } else if (strchr(delim, *f)) {
+    } else if (strchr(STARTDELIM ANYDELIM, *f)) {
       *t++ = *f++;
     } else {
-      while (*f && !isspace(uchar(*f)) && !strchr(delim, *f)) *t++ = *f++;
+      while (*f && !isspace(uchar(*f)) && !strchr(ANYDELIM, *f)) *t++ = *f++;
     }
     *t++ = 0;
   }
@@ -2314,7 +2316,7 @@ static void bbs(void)
     connect_bbs();
     wait_for_prompt();
   }
-  if (level == MBOX) printf("[THEBOX-1.9-H$]\n");
+  if (level == MBOX) printf("[THEBOX-1.8-H$]\n");
   if (doforward) wait_for_prompt();
   for (; ; ) {
     if (doforward)

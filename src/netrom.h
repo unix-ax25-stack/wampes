@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.16 1993/02/23 21:34:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.17 1993/02/26 10:17:50 deyke Exp $ */
 
 #ifndef _NETROM_H
 #define _NETROM_H
@@ -86,20 +86,18 @@ struct circuit {
   int recv_state;               /* Incoming sequence number expected next */
   int send_state;               /* Next sequence number to be sent */
   int cwind;                    /* Congestion window */
+  int response;                 /* Response owed to other end */
   int32 remote_busy;            /* Other end's window is closed */
   int retry;                    /* Retransmission retry count */
   int32 srtt;                   /* Smoothed round trip time, milliseconds */
   int32 mdev;                   /* Mean deviation, milliseconds */
   struct timer timer_t1;        /* Retransmission timer */
-  struct timer timer_t2;        /* Acknowledgement delay timer */
   struct timer timer_t3;        /* No-activity timer */
   struct timer timer_t4;        /* Busy timer */
-  struct timer timer_t5;        /* Packet assembly timer */
   struct mbuf *reseq;           /* Resequencing queue */
   struct mbuf *rcvq;            /* Receive queue */
   int16 rcvcnt;                 /* Receive queue length */
   struct mbuf *sndq;            /* Send queue */
-  int32 sndqtime;               /* Last send queue write time */
   struct mbuf *resndq;          /* Resend queue */
   int unack;                    /* Number of unacked frames */
   int32 sndtime[256];           /* Time of 1st transmission */

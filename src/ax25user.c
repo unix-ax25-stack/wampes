@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25user.c,v 1.2 1993/02/23 21:34:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25user.c,v 1.3 1993/02/26 10:17:43 deyke Exp $ */
 
 /* User interface subroutines for AX.25
  * Copyright 1991 Phil Karn, KA9Q
@@ -228,11 +228,10 @@ struct ax25_cb *axp;
 
 	if(axp == NULLAX25)
 		return -1;
-	if(axp->state == LAPB_SETUP || axp->state == LAPB_CONNECTED ||
-	   axp->state == LAPB_RECOVERY)
-		if (!axp->flags.closed) {
-			cnt = (axp->maxframe - len_q(axp->txq)) * axp->paclen;
-			return (cnt > 0) ? cnt : 0;
-		}
+	if((axp->state == LAPB_SETUP || axp->state == LAPB_CONNECTED ||
+	    axp->state == LAPB_RECOVERY) && !axp->flags.closed) {
+		cnt = (axp->maxframe - len_q(axp->txq)) * axp->paclen;
+		return (cnt > 0) ? cnt : 0;
+	}
 	return -1;
 }

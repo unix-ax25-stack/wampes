@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.9 1993/01/29 06:48:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.10 1993/02/26 10:17:42 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -49,7 +49,8 @@ void axroute_savefile()
   putc(AXROUTE_FILE_VERSION, fp);
   for (i = 0; i < AXROUTESIZE; i++)
     for (lp = 0, rp = Ax_routes[i]; rp; )
-      if (rp->perm || rp->time + AXROUTE_HOLDTIME >= secclock()) {
+      if (rp->perm || rp->jumpstart ||
+	  rp->time + AXROUTE_HOLDTIME >= secclock()) {
 	addrcp(buf.call, rp->target);
 	if (rp->digi)
 	  addrcp(buf.digi, rp->digi->target);

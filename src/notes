@@ -2,22 +2,6 @@
 
 - wir senden zuerst RR, dann REJ
 
-- connect:  Frames nur an den Empfaenger schicken
-
-- connect:  use buffered input
-
-- check that t1 is always running when t3 is stopped
-
-- remove netrom t2
-
-- check rnrsent
-
-- check closed
-
-- check digipeating
-
-- after this, check NETROM
-
 - richtige Verwendung von Mycall pruefen
 
 - 'rs' does not work on hp-terminals

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.34 1993/02/23 21:34:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.35 1993/02/26 10:17:49 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -29,7 +29,7 @@ static int nr_bdcstint    =  1800;
 static int nr_ttlinit     =    16;
 static int nr_ttimeout    =    60;
 static int nr_tretry      =     5;
-static int nr_tackdelay   =     1;
+static int nr_tackdelay   =     1;      /* not used */
 static int nr_tbsydelay   =   180;
 static int nr_twindow     =     8;
 static int nr_tnoackbuf   =     8;
@@ -97,16 +97,13 @@ static void route_packet __ARGS((struct mbuf *bp, struct node *fromneighbor));
 static void send_l3_packet __ARGS((char *source, char *dest, int ttl, struct mbuf *data));
 static void routing_manager_initialize __ARGS((void));
 static void reset_t1 __ARGS((struct circuit *pc));
-static void inc_t1 __ARGS((struct circuit *pc));
 static int nrbusy __ARGS((struct circuit *pc));
 static void send_l4_packet __ARGS((struct circuit *pc, int opcode, struct mbuf *data));
 static void try_send __ARGS((struct circuit *pc, int fill_sndq));
 static void set_circuit_state __ARGS((struct circuit *pc, int newstate));
 static void l4_t1_timeout __ARGS((struct circuit *pc));
-static void l4_t2_timeout __ARGS((struct circuit *pc));
 static void l4_t3_timeout __ARGS((struct circuit *pc));
 static void l4_t4_timeout __ARGS((struct circuit *pc));
-static void l4_t5_timeout __ARGS((struct circuit *pc));
 static struct circuit *create_circuit __ARGS((void));
 static void circuit_manager __ARGS((struct mbuf *bp));
 static void nrserv_recv_upcall __ARGS((struct circuit *pc, int cnt));
@@ -804,21 +801,8 @@ struct circuit *pc;
 {
   int32 tmp;
 
-  tmp = pc->srtt + 4 * pc->mdev;
-  if (tmp < 500) tmp = 500;
-  set_timer(&pc->timer_t1, tmp);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void inc_t1(pc)
-struct circuit *pc;
-{
-  int32 tmp;
-
-  tmp = (dur_timer(&pc->timer_t1) * 5 + 2) / 4;
-  if (tmp < 500) tmp = 500;
-  set_timer(&pc->timer_t1, tmp);
+  tmp = 4 * pc->mdev + pc->srtt;
+  set_timer(&pc->timer_t1, max(tmp, 500));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -893,7 +877,7 @@ struct mbuf *data;
       pc->naksent = 1;
     }
     if (pc->chokesent = nrbusy(pc)) opcode |= NR4CHOKE;
-    stop_timer(&pc->timer_t2);
+    pc->response = 0;
     bp->data[0] = pc->remoteindex;
     bp->data[1] = pc->remoteid;
     bp->data[2] = pc->send_state;
@@ -917,7 +901,6 @@ int fill_sndq;
   int cnt;
   struct mbuf *bp;
 
-  stop_timer(&pc->timer_t5);
   while (pc->unack < pc->cwind) {
     if (pc->state != NR4STCON || pc->remote_busy) return;
     if (fill_sndq && pc->t_upcall) {
@@ -929,14 +912,7 @@ int fill_sndq;
     }
     if (!pc->sndq) return;
     cnt = len_p(pc->sndq);
-    if (cnt < NR4MAXINFO) {
-      if (pc->unack) return;
-      if (pc->sndqtime + 100 - msclock() > 0) {
-	set_timer(&pc->timer_t5, pc->sndqtime + 100 - msclock());
-	start_timer(&pc->timer_t5);
-	return;
-      }
-    }
+    if (cnt < NR4MAXINFO && pc->unack) return;
     if (cnt > NR4MAXINFO) cnt = NR4MAXINFO;
     if (!(bp = alloc_mbuf(cnt))) return;
     pullup(&pc->sndq, bp->data, bp->cnt = cnt);
@@ -960,9 +936,7 @@ int newstate;
   pc->state = newstate;
   pc->retry = 0;
   stop_timer(&pc->timer_t1);
-  stop_timer(&pc->timer_t2);
   stop_timer(&pc->timer_t4);
-  stop_timer(&pc->timer_t5);
   reset_t1(pc);
   switch (newstate) {
   case NR4STDISC:
@@ -990,8 +964,8 @@ struct circuit *pc;
 {
   struct mbuf *bp, *qp;
 
-  inc_t1(pc);
-  pc->cwind = 1;
+  set_timer(&pc->timer_t1, (dur_timer(&pc->timer_t1) * 5 + 2) / 4);
+  if (pc->cwind > 1) pc->cwind--;
   if (++pc->retry > nr_tretry) pc->reason = NR4RTIMEOUT;
   switch (pc->state) {
   case NR4STDISC:
@@ -1025,14 +999,6 @@ struct circuit *pc;
 
 /*---------------------------------------------------------------------------*/
 
-static void l4_t2_timeout(pc)
-struct circuit *pc;
-{
-  send_l4_packet(pc, NR4OPACK, NULLBUF);
-}
-
-/*---------------------------------------------------------------------------*/
-
 static void l4_t3_timeout(pc)
 struct circuit *pc;
 {
@@ -1046,14 +1012,6 @@ struct circuit *pc;
 {
   pc->remote_busy = 0;
   if (pc->unack) start_timer(&pc->timer_t1);
-  try_send(pc, 1);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void l4_t5_timeout(pc)
-struct circuit *pc;
-{
   try_send(pc, 1);
 }
 
@@ -1073,19 +1031,14 @@ static struct circuit *create_circuit()
   pc->remoteid = -1;
   pc->state = NR4STDISC;
   pc->cwind = 1;
-  pc->srtt = 0;
   pc->mdev = (1000L * nr_ttimeout + 2) / 4;
   reset_t1(pc);
   pc->timer_t1.func = (void (*) __ARGS((void *))) l4_t1_timeout;
   pc->timer_t1.arg = pc;
-  pc->timer_t2.func = (void (*) __ARGS((void *))) l4_t2_timeout;
-  pc->timer_t2.arg = pc;
   pc->timer_t3.func = (void (*) __ARGS((void *))) l4_t3_timeout;
   pc->timer_t3.arg = pc;
   pc->timer_t4.func = (void (*) __ARGS((void *))) l4_t4_timeout;
   pc->timer_t4.arg = pc;
-  pc->timer_t5.func = (void (*) __ARGS((void *))) l4_t5_timeout;
-  pc->timer_t5.arg = pc;
   pc->next = circuits;
   return circuits = pc;
 }
@@ -1185,7 +1138,6 @@ struct mbuf *bp;
       if (!pc->remote_busy) pc->remote_busy = msclock();
       set_timer(&pc->timer_t4, nr_tbsydelay * 1000L);
       start_timer(&pc->timer_t4);
-      pc->cwind = 1;
     } else {
       pc->remote_busy = 0;
       stop_timer(&pc->timer_t4);
@@ -1198,7 +1150,7 @@ struct mbuf *bp;
 	pc->srtt = ((AGAIN - 1) * pc->srtt + rtt + (AGAIN / 2)) / AGAIN;
 	pc->mdev = ((DGAIN - 1) * pc->mdev + abserr + (DGAIN / 2)) / DGAIN;
 	reset_t1(pc);
-	if (pc->cwind < pc->window && !pc->remote_busy) pc->cwind++;
+	if (pc->cwind < pc->window) pc->cwind++;
       }
       while (uchar(pc->send_state - bp->data[3]) < pc->unack) {
 	pc->resndq = free_p(pc->resndq);
@@ -1207,8 +1159,7 @@ struct mbuf *bp;
     }
     nakrcvd = bp->data[4] & NR4NAK;
     if ((bp->data[4] & NR4OPCODE) == NR4OPINFO) {
-      set_timer(&pc->timer_t2, nr_tackdelay);
-      start_timer(&pc->timer_t2);
+      pc->response = 1;
       if (uchar(bp->data[2] - pc->recv_state) < pc->window) {
 	if (!pc->reseq || (bp->data[2] - pc->reseq->data[2]) & 0x80) {
 	  bp->anext = pc->reseq;
@@ -1248,9 +1199,9 @@ struct mbuf *bp;
       dup_p(&bp1, pc->resndq, 0, NR4MAXINFO);
       send_l4_packet(pc, NR4OPINFO, bp1);
       pc->send_state = old_send_state;
-      pc->cwind = 1;
     }
     try_send(pc, 1);
+    if (pc->response) send_l4_packet(pc, NR4OPACK, NULLBUF);
     if (pc->unack && !pc->remote_busy) start_timer(&pc->timer_t1);
     if (pc->closed && !pc->sndq && !pc->unack)
       set_circuit_state(pc, NR4STDPEND);
@@ -1320,7 +1271,6 @@ struct mbuf *bp;
     if (!pc->closed) {
       if (cnt = len_p(bp)) {
 	append(&pc->sndq, bp);
-	pc->sndqtime = msclock();
 	try_send(pc, 0);
       }
       return cnt;
@@ -1385,10 +1335,7 @@ int cnt;
       (*bpp)->cnt = cnt;
     }
     pc->rcvcnt -= cnt;
-    if (pc->chokesent && !nrbusy(pc)) {
-      set_timer(&pc->timer_t2, nr_tackdelay);
-      start_timer(&pc->timer_t2);
-    }
+    if (pc->chokesent && !nrbusy(pc)) send_l4_packet(pc, NR4OPACK, NULLBUF);
     return cnt;
   }
   switch (pc->state) {
@@ -1467,10 +1414,8 @@ struct circuit *pc;
   else
     circuits = p->next;
   stop_timer(&pc->timer_t1);
-  stop_timer(&pc->timer_t2);
   stop_timer(&pc->timer_t3);
   stop_timer(&pc->timer_t4);
-  stop_timer(&pc->timer_t5);
   free_q(&pc->reseq);
   free_q(&pc->rcvq);
   free_q(&pc->sndq);
@@ -2058,12 +2003,6 @@ void *p;
     else
       printf("stop");
     printf("/%lu ms\n", dur_timer(&pc->timer_t1));
-    printf("Timer T2:     ");
-    if (run_timer(&pc->timer_t2))
-      printf("%lu", read_timer(&pc->timer_t2));
-    else
-      printf("stop");
-    printf("/%lu ms\n", dur_timer(&pc->timer_t2));
     printf("Timer T3:     ");
     if (run_timer(&pc->timer_t3))
       printf("%lu", read_timer(&pc->timer_t3));
@@ -2076,12 +2015,6 @@ void *p;
     else
       printf("stop");
     printf("/%lu ms\n", dur_timer(&pc->timer_t4));
-    printf("Timer T5:     ");
-    if (run_timer(&pc->timer_t5))
-      printf("%lu", read_timer(&pc->timer_t5));
-    else
-      printf("stop");
-    printf("/%lu ms\n", dur_timer(&pc->timer_t5));
     printf("Rcv queue:    %d\n", pc->rcvcnt);
     if (pc->reseq) {
       printf("Reassembly queue:\n");

@@ -1,9 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.10 1993/01/29 06:48:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.11 1993/02/26 10:17:48 deyke Exp $ */
 
 /* Mail Delivery Agent for returned Mails */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #ifdef ULTRIX_RISC
 #include <sys/signal.h>
 #endif
