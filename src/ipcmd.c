@@ -1,4 +1,4 @@
-/* @(#) $Id: ipcmd.c,v 1.18 1999/04/25 16:56:41 deyke Exp $ */
+/* @(#) $Id: ipcmd.c,v 1.19 1999/04/25 17:09:06 deyke Exp $ */
 
 /* IP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -186,13 +186,13 @@ void *p)
 		printf("Interface \"%s\" unknown\n",argv[2]);
 		return 1;
 	}
-	if(argc > 3){
-		if((gateway = resolve(argv[3])) == 0){
-			printf(Badhost,argv[3]);
+	gateway = 0;
+	if (argc > 3 && strcmp(argv[3], "0")) {
+		gateway = resolve(argv[3]);
+		if (!gateway) {
+			printf(Badhost, argv[3]);
 			return 1;
 		}
-	} else {
-		gateway = 0;
 	}
 	if (argc > 4)
 		metric = atol(argv[4]);
