@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Id: bbs.c,v 3.9 1996/11/24 17:27:24 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: bbs.c,v 3.10 1997/05/12 18:58:18 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -3283,6 +3283,7 @@ int main(int argc, char **argv)
   FILE *fp;
   int c;
   int err_flag = 0;
+  int generate_bid = 0;
   struct passwd *pw;
 
   if (!*CTLINND_PROG ||
@@ -3317,8 +3318,11 @@ int main(int argc, char **argv)
   if (!*myhostname || !*mydomain)
     halt();
 
-  while ((c = getopt(argc, argv, "ef:opw:")) != EOF)
+  while ((c = getopt(argc, argv, "bef:opw:")) != EOF)
     switch (c) {
+    case 'b':
+      generate_bid = 1;
+      break;
     case 'e':
       if (getuid()) {
 	puts("The 'e' option is for Store&Forward use only.");
@@ -3350,7 +3354,7 @@ int main(int argc, char **argv)
   if (export && !do_forward) err_flag = 1;
   if (optind < argc) err_flag = 1;
   if (err_flag) {
-    puts("usage: bbs [-w seconds] [-f system [-e]] [-o] [-p]");
+    puts("usage: bbs [-b] [-w seconds] [-f system [-e]] [-o] [-p]");
     exit(1);
   }
 
@@ -3393,7 +3397,12 @@ int main(int argc, char **argv)
   if (!getenv("TZ"))
     putenv("TZ=MEZ-1MESZ");
 
-  if (export) {
+  if (generate_bid) {
+    struct mail *mail = alloc_mail();
+    generate_bid_and_mid(mail, 1);
+    printf("Bulletin-ID: <%s>\n", mail->bid);
+    free(mail);
+  } else if (export) {
     doexport();
   } else {
     bbs();
