@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.14 1993/07/20 09:43:06 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.15 1993/10/10 08:19:25 deyke Exp $
 
 hostname     dk5sg
 ax25 mycall  dk5sg
@@ -14,11 +14,11 @@ ax25 route add axip default
 
 axip route add dk0hu 15.138.33.250 # hp0hu.bbn.hp.com
 
-route add  dk5sg-u          ni
-route add  44.142.52/23     ipip     15.138.33.250
-route add  44.130/16        ipip     15.138.33.250
-route addp 44/8             ipip     15.255.240.16
-route addp 15/8             ni
+route add  dk5sg-u.ampr.org     ni
+route add  44.142.52.0/23       ipip     15.138.33.250
+route add  44.130.0.0/16        ipip     15.138.33.250
+route addp 44.0.0.0/8           ipip     15.255.240.16
+route addp 15.0.0.0/8           ni
 
 source /tcp/netrom_links
 

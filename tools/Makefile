@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.15 1993/09/17 09:32:47 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.16 1993/10/10 08:19:32 deyke Exp $
 
 CC         = c89
 CFLAGS     = -O -s -D_HPUX_SOURCE
@@ -28,7 +28,7 @@ filter: filter.o
 makeiprt: makeiprt.o
 	$(RMTARGET)
 	@sleep 1
-	$(CC) $(CFLAGS) $? -o $@
+	$(CC) $(CFLAGS) $? -lndbm -o $@
 
 mp:     mp.o
 	$(RMTARGET)

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel,v 1.10 1993/07/11 15:04:05 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel,v 1.11 1993/10/10 08:19:26 deyke Exp $
 
 hostname     dl4sel
 ax25 mycall  dl4sel
@@ -21,8 +21,8 @@ attach netrom                   # ip over netrom
 ax25 route add tnc0 default
 ax25 route add permanent tnc0 dk0hu
 
-route add  44.142.52/23     tnc0     dk0hu
-route add  44.130/16        tnc0     dk0hu
+route add  44.142.52.0/23       tnc0     dk0hu.ampr.org
+route add  44.130.0.0/16        tnc0     dk0hu.ampr.org
 
 arp add dk0hu ax25 dk0hu
 

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.24 1993/09/17 09:32:24 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.25 1993/10/10 08:19:24 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -40,25 +40,25 @@ ax25 route add permanent tnc2 db0rot db0id
 
 axip route add dk0hu 192.1.1.2
 
-route add  dk5sg-u          ipip     192.1.1.2
-route add  df3du-1          ipip     192.1.1.2
-route add  dh8saw-1         ipip     192.1.1.2
-route add  dj3eg-1          ipip     192.1.1.2
-route add  dk5sg            ipip     192.1.1.2
-route add  dl1sbl-1         ipip     192.1.1.2
-route add  dl2sel           ipip     192.1.1.2
-route add  dl2sel-1         ipip     192.1.1.2
-route add  dl4sas-1         ipip     192.1.1.2
-route add  dl4sel           ipip     192.1.1.2
-route add  dl4sel-1         ipip     192.1.1.2
-route add  dl5ue-1          ipip     192.1.1.2
-route add  df1tl-u          tnc1     df1tl-1
-route add  df5oo            tnc1     df1tl-1
-route add  dk0hu            ipip     192.1.1.2
-route add  df1tl-1          tnc1
-route add  db0sao-u         ni
-route add  44.142.52/23     tnc2     db0id
-route add  44.130/16        tnc2     db0id
+route add  dk5sg-u.ampr.org     ipip     192.1.1.2
+route add  df3du-1.ampr.org     ipip     192.1.1.2
+route add  dh8saw-1.ampr.org    ipip     192.1.1.2
+route add  dj3eg-1.ampr.org     ipip     192.1.1.2
+route add  dk5sg.ampr.org       ipip     192.1.1.2
+route add  dl1sbl-1.ampr.org    ipip     192.1.1.2
+route add  dl2sel.ampr.org      ipip     192.1.1.2
+route add  dl2sel-1.ampr.org    ipip     192.1.1.2
+route add  dl4sas-1.ampr.org    ipip     192.1.1.2
+route add  dl4sel.ampr.org      ipip     192.1.1.2
+route add  dl4sel-1.ampr.org    ipip     192.1.1.2
+route add  dl5ue-1.ampr.org     ipip     192.1.1.2
+route add  df1tl-u.ampr.org     tnc1     df1tl-1.ampr.org
+route add  df5oo.ampr.org       tnc1     df1tl-1.ampr.org
+route add  dk0hu.ampr.org       ipip     192.1.1.2
+route add  df1tl-1.ampr.org     tnc1
+route add  db0sao-u.ampr.org    ni
+route add  44.142.52.0/23       tnc2     db0id.ampr.org
+route add  44.130.0.0/16        tnc2     db0id.ampr.org
 
 arp add db0id   ax25 db0id
 arp add df1tl-1 ax25 df1tl

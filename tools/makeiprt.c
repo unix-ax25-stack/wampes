@@ -1,16 +1,25 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.4 1993/01/29 06:48:03 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.5 1993/10/10 08:19:33 deyke Exp $";
 #endif
 
 #include <sys/types.h>
 
 #include <ctype.h>
+#include <fcntl.h>
+#include <ndbm.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 
-struct host {
-  struct host *next;
+#define DBHOSTADDR      "/tcp/hostaddr"
+#define DBHOSTNAME      "/tcp/hostname"
+#define LOCALDOMAIN     "ampr.org"
+
+struct cache {
+  struct cache *next;
   long addr;
   char name[1];
 };
@@ -46,10 +55,13 @@ struct node {
   struct node *next;
 };
 
-static const struct iface *loopback_iface;
-static struct host *hosts;
-static struct iface *ifaces;
-static struct node *nodes;
+static DBM *Dbhostaddr;
+static DBM *Dbhostname;
+static const struct iface *Loopback_iface;
+static int Usegethostby;
+static struct cache *Cache;
+static struct iface *Ifaces;
+static struct node *Nodes;
 
 /*---------------------------------------------------------------------------*/
 
@@ -82,41 +94,15 @@ static long aton(const char *name)
 
 /*---------------------------------------------------------------------------*/
 
-static void add_to_hosts(const char *name, long addr)
+static void add_to_cache(const char *name, long addr)
 {
-  struct host *hp;
+  struct cache *cp;
 
-  hp = malloc(sizeof(*hp) + strlen(name));
-  strlwc(hp->name, name);
-  hp->addr = addr;
-  hp->next = hosts;
-  hosts = hp;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void read_hosts(void)
-{
-
-  FILE * fp;
-  char *p;
-  char addrstr[1024];
-  char line[1024];
-  char name[1024];
-  long addr;
-
-  if (!(fp = fopen("/tcp/hosts", "r"))) {
-    perror("/tcp/hosts");
-    exit(1);
-  }
-  add_to_hosts("hpcsos", aton("44.1.1.1"));         /* special case */
-  while (fgets(line, sizeof(line), fp)) {
-    if (p = strchr(line, '#')) *p = 0;
-    if (sscanf(line, "%s %s", addrstr, name) == 2 &&
-	((addr = aton(addrstr)) != -1))
-      add_to_hosts(name, addr);
-  }
-  fclose(fp);
+  cp = malloc(sizeof(*cp) + strlen(name));
+  strcpy(cp->name, name);
+  cp->addr = addr;
+  cp->next = Cache;
+  Cache = cp;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -124,19 +110,61 @@ static void read_hosts(void)
 static long resolve(const char *name)
 {
 
+  char *p;
+  char names[3][1024];
+  datum daddr;
+  datum dname;
+  int i;
   long addr;
-  struct host *curr, *prev;
+  struct cache *curr;
+  struct cache *prev;
+  struct hostent *hp;
 
-  if ((addr = aton(name)) != -1) return addr;
-  for (prev = 0, curr = hosts; curr; prev = curr, curr = curr->next)
-    if (!strcmp(curr->name, name)) {
-      if (prev) {
-	prev->next = curr->next;
-	curr->next = hosts;
-	hosts = curr;
+  if ((addr = aton(name)) != -1L) return addr;
+
+  strlwc(names[0], name);
+  p = names[0] + strlen(names[0]) - 1;
+  if (*p == '.') {
+    *p = 0;
+    names[1][0] = 0;
+  } else {
+    strcpy(names[1], names[0]);
+    strcat(names[0], ".");
+    strcat(names[0], LOCALDOMAIN);
+    names[2][0] = 0;
+  }
+
+  for (i = 0; names[i][0]; i++) {
+    for (prev = 0, curr = Cache; curr; prev = curr, curr = curr->next)
+      if (!strcmp(curr->name, names[i])) {
+	if (prev) {
+	  prev->next = curr->next;
+	  curr->next = Cache;
+	  Cache = curr;
+	}
+	return curr->addr;
       }
-      return curr->addr;
+  }
+
+  if (Dbhostaddr || (Dbhostaddr = dbm_open(DBHOSTADDR, O_RDONLY, 0644)))
+    for (i = 0; names[i][0]; i++) {
+      dname.dptr = names[i];
+      dname.dsize = strlen(names[i]) + 1;
+      daddr = dbm_fetch(Dbhostaddr, dname);
+      if (daddr.dptr) {
+	memcpy((char *) &addr, daddr.dptr, sizeof(addr));
+	add_to_cache(names[i], addr);
+	return addr;
+      }
     }
+
+  if (Usegethostby && (hp = gethostbyname(name))) {
+    addr = ntohl(((struct in_addr *)(hp->h_addr))->s_addr);
+    strlwc(names[0], hp->h_name);
+    add_to_cache(names[0], addr);
+    return addr;
+  }
+
   fprintf(stderr, "Cannot resolve \"%s\"\n", name);
   exit(1);
   return 0;
@@ -147,29 +175,51 @@ static long resolve(const char *name)
 static const char *resolve_a(long addr)
 {
 
-  char name[1024];
-  struct host *curr, *prev;
+  char buf[1024];
+  datum daddr;
+  datum dname;
+  struct cache *curr;
+  struct cache *prev;
+  struct hostent *hp;
+  struct in_addr in_addr;
 
-  for (prev = 0, curr = hosts; curr; prev = curr, curr = curr->next)
+  for (prev = 0, curr = Cache; curr; prev = curr, curr = curr->next)
     if (curr->addr == addr) {
       if (prev) {
 	prev->next = curr->next;
-	curr->next = hosts;
-	hosts = curr;
+	curr->next = Cache;
+	Cache = curr;
       }
-      return curr->name;
+      return Cache->name;
     }
-  sprintf(name, "%d", (addr >> 24) & 0xff);
-  if (addr & 0x00ffffff) {
-    sprintf(name + strlen(name), ".%d", (addr >> 16) & 0xff);
-    if (addr & 0x0000ffff) {
-      sprintf(name + strlen(name), ".%d", (addr >> 8) & 0xff);
-      if (addr & 0x000000ff)
-	sprintf(name + strlen(name), ".%d", addr & 0xff);
+
+  if (Dbhostname || (Dbhostname = dbm_open(DBHOSTNAME, O_RDONLY, 0644))) {
+    daddr.dptr = (char *) &addr;
+    daddr.dsize = sizeof(addr);
+    dname = dbm_fetch(Dbhostname, daddr);
+    if (dname.dptr) {
+      add_to_cache(dname.dptr, addr);
+      return Cache->name;
     }
   }
-  add_to_hosts(name, addr);
-  return hosts->name;
+
+  if (Usegethostby) {
+    in_addr.s_addr = htonl(addr);
+    hp = gethostbyaddr((char *) &in_addr, sizeof(in_addr), AF_INET);
+    if (hp) {
+      strlwc(buf, hp->h_name);
+      add_to_cache(buf, addr);
+      return Cache->name;
+    }
+  }
+
+  sprintf(buf, "%u.%u.%u.%u",
+	  (addr >> 24) & 0xff,
+	  (addr >> 16) & 0xff,
+	  (addr >>  8) & 0xff,
+	  (addr      ) & 0xff);
+  add_to_cache(buf, addr);
+  return Cache->name;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -178,12 +228,12 @@ static const struct iface *get_iface(const char *name)
 {
   struct iface *ip;
 
-  for (ip = ifaces; ip && strcmp(ip->name, name); ip = ip->next) ;
+  for (ip = Ifaces; ip && strcmp(ip->name, name); ip = ip->next) ;
   if (!ip) {
     ip = malloc(sizeof(*ip) + strlen(name));
     strcpy(ip->name, name);
-    ip->next = ifaces;
-    ifaces = ip;
+    ip->next = Ifaces;
+    Ifaces = ip;
   }
   return ip;
 }
@@ -226,13 +276,13 @@ static struct node *get_node(long addr)
 {
   struct node *np;
 
-  for (np = nodes; np && np->addr != addr; np = np->next) ;
+  for (np = Nodes; np && np->addr != addr; np = np->next) ;
   if (!np) {
     np = calloc(1, sizeof(*np));
     np->addr = addr;
-    np->next = nodes;
-    nodes = np;
-    add_route(np, addr, 32, loopback_iface, 0, 0, 0);
+    np->next = Nodes;
+    Nodes = np;
+    add_route(np, addr, 32, Loopback_iface, 0, 0, 0);
   }
   return np;
 }
@@ -293,10 +343,10 @@ static void create_links(void)
   struct node *np;
   struct route *rp;
 
-  for (np = nodes; np; np = np->next)
+  for (np = Nodes; np; np = np->next)
     for (rp = np->routes; rp; rp = rp->next)
       if (rp->bits == 32 && rp->dest != np->addr) {
-	for (nnp = nodes; nnp && nnp->addr != rp->dest; nnp = nnp->next) ;
+	for (nnp = Nodes; nnp && nnp->addr != rp->dest; nnp = nnp->next) ;
 	if (nnp) {
 	  lp = malloc(sizeof(*lp));
 	  lp->node = nnp;
@@ -308,7 +358,7 @@ static void create_links(void)
 	}
       }
 
-  for (np = nodes; np; np = np->next)
+  for (np = Nodes; np; np = np->next)
     for (lp = np->links; lp; lp = lp->next) {
       for (nlp = lp->node->links; nlp; nlp = nlp->next)
 	if (nlp->node == np) goto Found;
@@ -332,7 +382,7 @@ static void propagate_routes(void)
 
   do {
     changed = 0;
-    for (np = nodes; np; np = np->next) {
+    for (np = Nodes; np; np = np->next) {
       np->changed = 0;
       for (lp = np->links; lp; lp = lp->next)
 	for (rp = lp->node->routes; rp; rp = rp->next)
@@ -353,7 +403,7 @@ static void sort_routes(void)
   struct route *rp;
   struct route *rt[33];
 
-  for (np = nodes; np; np = np->next) {
+  for (np = Nodes; np; np = np->next) {
     for (bits = 0; bits <= 32; bits++)
       rt[bits] = 0;
     while (rp = np->routes) {
@@ -381,7 +431,7 @@ static void merge_routes(void)
   struct route *prev;
   struct route *rp;
 
-  for (np = nodes; np; np = np->next) {
+  for (np = Nodes; np; np = np->next) {
 Retry:
     for (prev = 0, curr = np->routes; curr; prev = curr, curr = curr->next) {
       for (rp = curr->next; rp; rp = rp->next) {
@@ -409,9 +459,9 @@ static void print_links(void)
   struct node *np;
 
   printf("\nLINKS:\n\n");
-  for (np = nodes; np; np = np->next) {
+  for (np = Nodes; np; np = np->next) {
     for (lp = np->links; lp; lp = lp->next)
-      printf("%-16.16s %-16.16s %-8.8s %-16.16s\n", resolve_a(np->addr), resolve_a(lp->node->addr), lp->iface->name, resolve_a(lp->gateway));
+      printf("%-20s %-20s %-8s %-20s\n", resolve_a(np->addr), resolve_a(lp->node->addr), lp->iface->name, resolve_a(lp->gateway));
   }
 }
 
@@ -426,7 +476,7 @@ static void print_routes(void)
   struct route *rp;
 
   printf("\nROUTES:\n\n");
-  for (np = nodes; np; np = np->next) {
+  for (np = Nodes; np; np = np->next) {
     for (rp = np->routes; rp; rp = rp->next) {
       if (!rp->bits)
 	strcpy(dest, "default");
@@ -434,12 +484,12 @@ static void print_routes(void)
 	strcpy(dest, resolve_a(rp->dest));
       else
 	sprintf(dest, "%s/%d", resolve_a(rp->dest), rp->bits);
-      if (rp->iface != loopback_iface) {
+      if (rp->iface != Loopback_iface) {
 	if (!rp->gateway || rp->bits == 32 && rp->dest == rp->gateway)
 	  gateway = "";
 	else
 	  gateway = resolve_a(rp->gateway);
-	printf("%-16.16s %-16.16s %-8.8s %-16.16s %2d %c\n", resolve_a(np->addr), dest, rp->iface->name, gateway, rp->metric, rp->private ? 'P' : ' ');
+	printf("%-20s %-20s %-8s %-20s %2d %c\n", resolve_a(np->addr), dest, rp->iface->name, gateway, rp->metric, rp->private ? 'P' : ' ');
       }
     }
     printf("\n");
@@ -452,14 +502,17 @@ static void make_route_files(void)
 {
 
   FILE * fp;
+  char *cp;
   char dest[1024];
   char filename[1024];
   const char * gateway;
   struct node *np;
   struct route *rp;
 
-  for (np = nodes; np; np = np->next) {
-    sprintf(filename, "/tmp/iprt.%s", resolve_a(np->addr));
+  for (np = Nodes; np; np = np->next) {
+    strcpy(dest, resolve_a(np->addr));
+    if (cp = strchr(dest, '.')) *cp = 0;
+    sprintf(filename, "/tmp/iprt.%s", dest);
     if (!(fp = fopen(filename, "w"))) {
       perror(filename);
       exit(1);
@@ -472,12 +525,12 @@ static void make_route_files(void)
 	strcpy(dest, resolve_a(rp->dest));
       else
 	sprintf(dest, "%s/%d", resolve_a(rp->dest), rp->bits);
-      if (rp->iface != loopback_iface) {
+      if (rp->iface != Loopback_iface) {
 	if (!rp->gateway || rp->bits == 32 && rp->dest == rp->gateway)
 	  gateway = "";
 	else
 	  gateway = resolve_a(rp->gateway);
-	fprintf(fp, "route add%c %-16s %-8s %-16s\n", rp->private ? 'p' : ' ', dest, rp->iface->name, gateway);
+	fprintf(fp, "route add%c %-20s %-8s %-20s\n", rp->private ? 'p' : ' ', dest, rp->iface->name, gateway);
       }
     }
     fprintf(fp, "\n");
@@ -489,13 +542,15 @@ static void make_route_files(void)
 
 int main()
 {
-  loopback_iface = get_iface("loopback");
-  read_hosts();
+  Loopback_iface = get_iface("loopback");
+  add_to_cache("hpcsos.ampr.org", aton("44.1.1.1"));
+
   read_routes();
   create_links();
   propagate_routes();
   sort_routes();
   merge_routes();
+
 #if 0
   print_links();
 #endif
@@ -505,6 +560,7 @@ int main()
 #if 1
   make_route_files();
 #endif
+
   return 0;
 }
 
