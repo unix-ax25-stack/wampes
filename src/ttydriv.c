@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.10 1991/10/03 11:05:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.11 1991/10/08 12:54:52 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -252,6 +252,7 @@ char  **buf;
       Fkey_ptr = Fkey_table[8];
       break;
 
+    case 'Y': /* ansi function key 10 */
     case 'u': /* ansi function key 10 */
       Fkey_ptr = Fkey_table[9];
       break;

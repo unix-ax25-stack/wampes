@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.14 1991/09/30 11:58:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.15 1991/10/08 12:54:38 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -50,12 +50,15 @@ struct login_cb {
   int  num;                     /* pty number */
   char  id[4];                  /* pty id (last 2 chars) */
   int  pid;                     /* process id of login process */
-  char  buffer[512];            /* pty read buffer */
-  char  *bufptr;                /* pty read buffer index */
-  int  bufcnt;                  /* pty read buffer count */
+  char  inpbuf[512];            /* pty read buffer */
+  char  *inpptr;                /* pty read buffer pointer */
+  int  inpcnt;                  /* pty read buffer count */
   struct mbuf *sndq;            /* pty send queue */
-  int  lastchr;                 /* last chr written to pty */
+  int  lastchr;                 /* last chr fetched from send queue */
   int  linelen;                 /* counter for automatic line break */
+  char  outbuf[256];            /* pty write buffer */
+  char  *outptr;                /* pty write buffer pointer */
+  int  outcnt;                  /* pty write buffer count */
   void (*readfnc) __ARGS((void *fncarg));
 				/* func to call if pty is readable */
   void (*closefnc) __ARGS((void *fncarg));
@@ -307,36 +310,42 @@ static void write_pty(tp)
 struct login_cb *tp;
 {
 
-  char  *p;
-  char  buf[256];
-  int  chr;
-  int  cnt;
-  int  lastchr;
+  char *p;
+  int chr;
+  int lastchr;
+  int n;
 
-  p = buf;
-  while ((chr = PULLCHAR(&tp->sndq)) != -1) {
-    lastchr = tp->lastchr;
-    tp->lastchr = chr;
-    if (!tp->telnet || do_telnet(tp, uchar(chr))) {
-      if (lastchr != '\r' || chr != '\0' && chr != '\n') {
-	*p++ = chr;
-	if (chr == '\r' || chr == '\n') {
-	  tp->linelen = 0;
-	  break;
-	}
-	if (++tp->linelen >= 250) {
-	  *p++ = '\n';
-	  tp->linelen = 0;
-	  break;
+  if (!tp->outcnt) {
+    p = tp->outbuf;
+    while ((chr = PULLCHAR(&tp->sndq)) != -1) {
+      lastchr = tp->lastchr;
+      tp->lastchr = chr;
+      if (!tp->telnet || do_telnet(tp, uchar(chr))) {
+	if (lastchr != '\r' || chr != '\0' && chr != '\n') {
+	  *p++ = chr;
+	  if (chr == '\r' || chr == '\n') {
+	    tp->linelen = 0;
+	    break;
+	  }
+	  if (++tp->linelen >= 250) {
+	    *p++ = '\n';
+	    tp->linelen = 0;
+	    break;
+	  }
 	}
       }
     }
+    tp->outptr = tp->outbuf;
+    tp->outcnt = p - tp->outbuf;
   }
-  if (cnt = p - buf) {
-    write(tp->pty, buf, (unsigned) cnt);
-    write_log(tp->pty, buf, cnt);
+  if (tp->outcnt) {
+    n = write(tp->pty, tp->outptr, tp->outcnt);
+    if (n < 0) n = 0;
+    if (n) write_log(tp->pty, tp->outptr, n);
+    tp->outptr += n;
+    tp->outcnt -= n;
   }
-  if (!tp->sndq) off_write(tp->pty);
+  if (!tp->outcnt && !tp->sndq) off_write(tp->pty);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -501,13 +510,13 @@ int  cnt;
   on_read(tp->pty, tp->readfnc, tp->fncarg);
   head = 0;
   while (cnt) {
-    if (tp->bufcnt <= 0) {
-      if ((tp->bufcnt = read(tp->pty, tp->bufptr = tp->buffer, sizeof(tp->buffer))) <= 0)
+    if (tp->inpcnt <= 0) {
+      if ((tp->inpcnt = read(tp->pty, tp->inpptr = tp->inpbuf, sizeof(tp->inpbuf))) <= 0)
 	return head;
-      write_log(tp->pty, tp->buffer, tp->bufcnt);
+      write_log(tp->pty, tp->inpbuf, tp->inpcnt);
     }
-    tp->bufcnt--;
-    chr = uchar(*tp->bufptr++);
+    tp->inpcnt--;
+    chr = uchar(*tp->inpptr++);
     if (chr == 0x11 || chr == 0x13) {
       /* ignore XON / XOFF */
     } else if (tp->telnet) {
