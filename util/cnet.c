@@ -1,48 +1,46 @@
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.2 1989/01/16 20:44:49 dk5sg Exp $";
+
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+
 #include <stdio.h>
-#include <netdb.h>
+#include <sys/socket.h>
 #include <termio.h>
 #include <time.h>
-#include <sys/utsname.h>
 
+extern struct sockaddr *build_sockaddr();
 extern void exit();
 extern void perror();
-
-static struct utsname utsname;
 
 main(argc, argv)
 int  argc;
 char  **argv;
 {
 
-  char  *hostname, buffer[1024];
+  char  *server;
+  char  buffer[1024];
+  int  addrlen;
   int  i, mask, size;
-  static struct sockaddr_in addr;
-  struct hostent *hp;
+  struct sockaddr *addr;
   struct termio termio, termio_save;
 
-  if (uname(&utsname)) {
-    perror(argv[0]);
+  /*****
+  server = (argc < 2) ? "unix:/tcp/sockets/netkbd" : argv[1];
+  *****/
+  server = (argc < 2) ? "loopback:netkbd" : argv[1];
+  if (!(addr = build_sockaddr(server, &addrlen))) {
+    fprintf(stderr, "%s: Cannot build address from \"%s\"\n", argv[0], server);
     exit(1);
   }
-  addr.sin_family = AF_INET;
-  if (!(hp = gethostbyname(hostname = argc >= 2 ? argv[1] : utsname.nodename))) {
-    fprintf(stderr, "%s: %s not found in /etc/hosts\n", argv[0], hostname);
-    exit(1);
-  }
-  addr.sin_addr.s_addr = ((struct in_addr *)(hp->h_addr))->s_addr;
-  addr.sin_port = 4712;
   close(3);
-  if (socket(AF_INET, SOCK_STREAM, 0) != 3) {
+  if (socket(addr->sa_family, SOCK_STREAM, 0) != 3) {
     perror(argv[0]);
     exit(1);
   }
-  if (connect(3, &addr, sizeof(struct sockaddr_in )) == -1) {
+  if (connect(3, addr, addrlen)) {
     perror(argv[0]);
     exit(1);
   }
+
   ioctl(0, TCGETA, &termio);
   ioctl(0, TCGETA, &termio_save);
   termio.c_lflag = 0;
@@ -52,7 +50,7 @@ char  **argv;
 
   for (; ; ) {
     mask = 011;
-    select(4, &mask, 0, 0, (struct timeval *) 0);
+    select(4, &mask, (int *) 0, (int *) 0, (struct timeval *) 0);
     if (mask & 1) {
       size = read(0, buffer, sizeof(buffer));
       if (size <= 0) break;
@@ -69,3 +67,4 @@ char  **argv;
   ioctl(0, TCSETA, &termio_save);
   return 0;
 }
+
