@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.8 1990/04/05 11:14:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.9 1990/04/10 15:54:54 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
@@ -368,7 +368,10 @@ int  fill_sndq;
     if (cp->state != CONNECTED || cp->remote_busy) return;
     if (fill_sndq && cp->t_upcall) {
       cnt = space_ax(cp);
-      if (cnt > 0) (*cp->t_upcall)(cp, cnt);
+      if (cnt > 0) {
+	(*cp->t_upcall)(cp, cnt);
+	if (cp->unack >= cp->cwind) return;
+      }
     }
     if (!cp->sndq) return;
     if (cp->mode == STREAM) {
@@ -864,11 +867,11 @@ struct mbuf *bp;
     case RR:
     case RNR:
     case REJ:
+      stop_timer(&cp->timer_t1);
       nr = control >> 5;
       if (((cp->vs - nr) & 7) < cp->unack) {
 	if (!cp->polling) {
 	  cp->retry = 0;
-	  stop_timer(&cp->timer_t1);
 	  if (cp->sndtime[(nr-1)&7]) {
 	    int32 rtt = (currtime - cp->sndtime[(nr-1)&7]) * 1000l;
 	    int32 abserr = (rtt > cp->srtt) ? rtt - cp->srtt : cp->srtt - rtt;
@@ -886,7 +889,6 @@ struct mbuf *bp;
 	  cp->unack--;
 	}
 	if (cpp && cpp->rnrsent && !busy(cpp)) send_ack(cpp, RESP);
-	if (cp->unack && !cp->remote_busy) start_timer(&cp->timer_t1);
       }
       if (type == I) {
 	if (for_me &&
@@ -921,16 +923,11 @@ struct mbuf *bp;
 	  start_timer(&cp->timer_t2);
 	}
 	if (cp->r_upcall && cp->rcvcnt) (*cp->r_upcall)(cp, cp->rcvcnt);
-	try_send(cp, 1);
       } else {
 	if (cmdrsp == POLL) send_ack(cp, FINAL);
-	if (cp->polling && cmdrsp == FINAL) {
-	  stop_timer(&cp->timer_t1);
-	  cp->retry = cp->polling = 0;
-	}
+	if (cp->polling && cmdrsp == FINAL) cp->retry = cp->polling = 0;
 	if (type == RNR) {
 	  if (!cp->remote_busy) cp->remote_busy = currtime;
-	  stop_timer(&cp->timer_t1);
 	  cp->timer_t4.start = ax_t4init;
 	  start_timer(&cp->timer_t4);
 	  cp->cwind = 1;
@@ -955,12 +952,12 @@ struct mbuf *bp;
 	      dup_p(&bp1, qp, 0, MAXINT16);
 	      send_packet(cp, I, CMD, bp1);
 	    }
-	    try_send(cp, 1);
-	  } else {
-	    try_send(cp, 1);
 	  }
 	}
       }
+      try_send(cp, 1);
+      if (cp->polling || cp->unack && !cp->remote_busy)
+	start_timer(&cp->timer_t1);
       if (cp->closed && !cp->sndq && !cp->unack ||
 	  cp->remote_busy && cp->remote_busy + 900l < currtime)
 	setaxstate(cp, DISCONNECTING);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.11 1990/04/05 11:14:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.12 1990/04/10 15:54:58 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
@@ -923,7 +923,10 @@ int  fill_sndq;
     if (pc->state != CONNECTED || pc->remote_busy) return;
     if (fill_sndq && pc->t_upcall) {
       cnt = space_nr(pc);
-      if (cnt > 0) (*pc->t_upcall)(pc, cnt);
+      if (cnt > 0) {
+	(*pc->t_upcall)(pc, cnt);
+	if (pc->unack >= pc->cwind) return;
+      }
     }
     if (!pc->sndq) return;
     cnt = len_mbuf(pc->sndq);
@@ -1176,9 +1179,9 @@ struct mbuf *bp;
   case NR4OPINFO:
   case NR4OPACK:
     if (pc->state != CONNECTED) goto discard;
+    stop_timer(&pc->timer_t1);
     if (bp->data[4] & NR4CHOKE) {
       if (!pc->remote_busy) pc->remote_busy = currtime;
-      stop_timer(&pc->timer_t1);
       set_timer(&pc->timer_t4, nr_tbsydelay * 1000l);
       start_timer(&pc->timer_t4);
       pc->cwind = 1;
@@ -1188,7 +1191,6 @@ struct mbuf *bp;
     }
     if (uchar(pc->send_state - bp->data[3]) < pc->unack) {
       pc->retry = 0;
-      stop_timer(&pc->timer_t1);
       if (pc->sndtime[uchar(bp->data[3]-1)]) {
 	int32 rtt = (currtime - pc->sndtime[uchar(bp->data[3]-1)]) * 1000l;
 	int32 abserr = (rtt > pc->srtt) ? rtt - pc->srtt : pc->srtt - rtt;
@@ -1204,7 +1206,6 @@ struct mbuf *bp;
 	pc->resndq = free_p(pc->resndq);
 	pc->unack--;
       }
-      if (pc->unack && !pc->remote_busy) start_timer(&pc->timer_t1);
     }
     nakrcvd = bp->data[4] & NR4NAK;
     if ((bp->data[4] & NR4OPCODE) == NR4OPINFO) {
@@ -1250,6 +1251,7 @@ search_again:
       pc->cwind = 1;
     }
     try_send(pc, 1);
+    if (pc->unack && !pc->remote_busy) start_timer(&pc->timer_t1);
     if (pc->closed && !pc->sndq && !pc->unack)
       set_circuit_state(pc, DISCONNECTING);
     break;
