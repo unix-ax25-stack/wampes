@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.18 1990/10/24 10:39:30 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.19 1991/01/02 16:50:28 deyke Exp $";
 
 #define _HPUX_SOURCE 1
 
@@ -775,6 +775,8 @@ struct mail *mail;
       putc('\n', fp);
       p = mail->head;
       while (p && p->str[0] == 'R' && p->str[1] == ':') p = p->next;
+      if (p && p->str[0] == 'd' && p->str[1] == 'e' && p->str[2] == ' ')
+	p = p->next;
       while (p && p->str[0] == '\0') p = p->next;
       while (p) {
 	fputs(p->str, fp);
@@ -1292,10 +1294,10 @@ char  **argv;
   char  *from = 0;
   char  *subject = 0;
   char  *to = 0;
-  int  count = 99999;
+  int  count = 999999;
   int  found = 0;
   int  i;
-  int  max = 99999;
+  int  max = 999999;
   int  min = 1;
   int  update_seq = 0;
   size_t len;
@@ -1347,10 +1349,10 @@ char  **argv;
 	  (!at       || !strcmp(index.at, at))         &&
 	  (!subject  || strcasepos(index.subject, subject))) {
 	if (!found) {
-	  puts(" Msg#  Size To      @ BBS     From     Date    Subject");
+	  puts("  Msg#  Size To      @ BBS     From     Date    Subject");
 	  found = 1;
 	}
-	printf("%5d %5ld %-8s%c%-8s %-8s %-7.7s %.32s\n",
+	printf("%6d %5ld %-8s%c%-8s %-8s %-7.7s %.31s\n",
 	       index.mesg,
 	       index.size,
 	       index.to,
@@ -1744,15 +1746,15 @@ char  **argv;
       }
     }
   }
-  printf("%5d  Highest message number\n", highest);
-  printf("%5d  Active messages\n", active);
-  printf("%5d  Readable messages\n", readable);
+  printf("%6d  Highest message number\n", highest);
+  printf("%6d  Active messages\n", active);
+  printf("%6d  Readable messages\n", readable);
   if (level == ROOT) {
-    printf("%5d  Deleted messages\n", deleted);
-    printf("%5d  Messages may be crunched\n", crunchok);
+    printf("%6d  Deleted messages\n", deleted);
+    printf("%6d  Messages may be crunched\n", crunchok);
   }
-  printf("%5d  Last message listed\n", user.seq);
-  printf("%5d  New messages\n", new);
+  printf("%6d  Last message listed\n", user.seq);
+  printf("%6d  New messages\n", new);
 }
 
 /*---------------------------------------------------------------------------*/
