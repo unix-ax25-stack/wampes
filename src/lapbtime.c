@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapbtime.c,v 1.2 1993/02/23 21:34:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapbtime.c,v 1.3 1993/02/28 17:35:36 deyke Exp $ */
 
 /* LAPB (AX25) timer recovery routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -20,9 +20,7 @@ void *p;
 
 	axp->flags.retrans = 1;
 	axp->retries++;
-#if 0
-	if((1L << axp->retries) < Blimit)
-#endif
+	if(axp->retries < Blimit)
 		/* Back off retransmit timer */
 		set_timer(&axp->t1,(dur_timer(&axp->t1)*5+2)/4);
 	if(axp->maxframe > 1)

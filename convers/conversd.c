@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.26 1993/01/29 06:50:16 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.27 1993/02/28 17:40:55 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -138,6 +138,21 @@ static void check_files_changed __ARGS((void));
 /*---------------------------------------------------------------------------*/
 
 #define uchar(x) ((x) & 0xff)
+
+/*---------------------------------------------------------------------------*/
+
+#ifdef ULTRIX_RISC
+
+static char *strdup(s)
+const char *s;
+{
+  char *p;
+
+  if (p = malloc(strlen(s) + 1)) strcpy(p, s);
+  return p;
+}
+
+#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -758,7 +773,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.26 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.27 $  Type /HELP for help.\n", myhostname);
   appendstring(cp, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {

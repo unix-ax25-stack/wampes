@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.4 1992/11/18 18:28:32 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.5 1993/02/28 17:35:24 deyke Exp $
 
 PATH=/usr/5bin:$PATH
 tmp=tmp$$
@@ -18,7 +18,8 @@ for i in `find * -prune -type f '(' \
 	-name 'ip_routes'    -o \
 	-name 'net.rc*'      -o \
 	-name 'netrom_links' -o \
-	-name 'notes'           \
+	-name 'notes'        -o \
+	-name 'smack.ms'        \
 	')' -newer .trimtime -print`
 do
   echo "$i \c"

@@ -1,4 +1,4 @@
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.5 1992/09/01 16:58:45 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.6 1993/02/28 17:41:02 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -74,6 +74,21 @@ char *p;
   t = p[1];
   p[1] = p[2];
   p[2] = t;
+}
+
+#endif
+
+/*---------------------------------------------------------------------------*/
+
+#ifdef ULTRIX_RISC
+
+static char *strdup(s)
+const char *s;
+{
+  char *p;
+
+  if (p = malloc(strlen(s) + 1)) strcpy(p, s);
+  return p;
 }
 
 #endif

@@ -2,8 +2,6 @@
 
 - wir senden zuerst RR, dann REJ
 
-- richtige Verwendung von Mycall pruefen
-
 - 'rs' does not work on hp-terminals
 
 - even in raw mode it should be possible to send ^] without leaving the session
@@ -11,38 +9,68 @@
 
 - logfiles abschaltbar machen
 
-- NOS function resolve_a() returns malloc()ed string which is free()ed by
-  caller, WAMPES returns pointer to string in cache.
-
 - telnet record puts \r into file
 
 - check overflow in mail buffers
 
 - "will echo" implementieren und testen (all telnet options)
 
-- ax25 rtt cache?
-
-- netrom rtt cache?
-
 - remote_kbd: stop tracing to stdout
 
 - tty.h; ttydriv an session koppeln (Schwierigkeit: keine CmdSession)
 
-- wo soll retry = 0 gesetzt werden ?
-
-- Netrom: Knoten sollen durch Ident ansprechbar sein
-
-- Netrom: print_destname ueberall verwenden
-
-- Netrom: den Ident wie eine AX25 Adresse behandeln
-
-- Netrom: struct circuit doppelt verpointern
-
-- Netrom: TTL default auf 25 erhoehen ?
-
 - Mailer: Alle Message Delimiter entfernen
 
-- BBS Mailer:
+===============================================================================
 
-  - ich sende wenn moeglich hierachical adresses
+axclient.c:
+-----------
+
+  if (Current->record) {
+    if (buf[n-1] == '\r') buf[n-1] = '\n';
+    fwrite(buf, 1, n, Current->record);
+  }
+
+  while ((c = PULLCHAR(&bp)) != -1) {
+    if (c == '\r') c = '\n';
+    putchar(c);
+    if (Current->record) putc(c, Current->record);
+  }
+
+netrom.c:
+---------
+
+  if (Current->record) {
+    if (buf[n-1] == '\r') buf[n-1] = '\n';
+    fwrite(buf, 1, n, Current->record);
+  }
+
+  while ((c = PULLCHAR(&bp)) != -1) {
+    if (c == '\r') c = '\n';
+    putchar(c);
+    if (Current->record) putc(c, Current->record);
+  }
+
+telnet.c:
+---------
+
+	/* If we're doing our own echoing and recording is enabled, record it */
+	if(!Current->cb.telnet->remote[TN_ECHO] && Current->record != NULLFILE)                fwrite(buf,1,n,Current->record);
+	bp = qdata(buf,n);
+	send_tcp(Current->cb.telnet->tcb,bp);
+
+			if((record = tn->session->record) != NULLFILE)
+				fwrite(bp->data,1,bp->cnt,record);
+			while(bp->cnt-- != 0)
+				putchar(*bp->data++);
+			bp = free_mbuf(bp);
+		}
+
+			} else {
+				if(!tn->remote[TN_TRANSMIT_BINARY])
+					c &= 0x7f;
+				putchar(c);
+				if((record = tn->session->record) != NULLFILE)
+					putc(c,record);
+			}
 
