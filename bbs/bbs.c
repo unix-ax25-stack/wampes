@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.87 1995/04/16 11:24:05 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.88 1995/04/24 11:28:46 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -129,7 +129,6 @@ static struct revision revision;
 static struct user user;
 static volatile int stopped;
 
-/* In bbs.c: */
 static void errorstop(int line);
 static int Xtolower(int c);
 static int Xtoupper(int c);
@@ -151,9 +150,10 @@ static void wait_for_prompt(void);
 static int get_index(int n, struct index *index);
 static int read_allowed(const struct index *index);
 static char *get_user_from_path(char *path);
-static char *get_host_from_path(char *path);
+static char *get_host_from_path(const char *path);
 static int msg_uniq(const char *bid, const char *mid);
 static void send_to_bbs(struct mail *mail);
+static void send_to_mail_or_news(struct mail *mail, int to_news);
 static void send_to_mail(struct mail *mail);
 static void send_to_news(struct mail *mail);
 static void fix_address(char *addr);
@@ -612,18 +612,24 @@ static char *get_user_from_path(char *path)
 
 /*---------------------------------------------------------------------------*/
 
-static char *get_host_from_path(char *path)
+static char *get_host_from_path(const char *path)
 {
 
-  char *cp;
-  static char tmp[1024];
+#define NTMPS 4
 
-  strcpy(tmp, path);
-  cp = strrchr(tmp, '!');
-  if (!cp) return myhostname;
+  char *cp;
+  static char tmp[NTMPS][1024];
+  static int i;
+
+  if (++i >= NTMPS)
+    i = 0;
+  strcpy(tmp[i], path);
+  cp = strrchr(tmp[i], '!');
+  if (!cp)
+    return myhostname;
   *cp = 0;
-  cp = strrchr(tmp, '!');
-  return cp ? (cp + 1) : tmp;
+  cp = strrchr(tmp[i], '!');
+  return cp ? (cp + 1) : tmp[i];
 }
 
 /*---------------------------------------------------------------------------*/
@@ -664,7 +670,6 @@ static void send_to_bbs(struct mail *mail)
   struct index index;
   struct strlist *p;
 
-  if (!*mail->subject) return;
   if ((fdlock = lock_file(LOCKFILE, 0)) < 0) halt();
   if (msg_uniq(mail->bid, mail->mid)) {
     if (lseek(fdindex, -sizeof(struct index), SEEK_END) < 0)
@@ -721,22 +726,33 @@ static void send_to_bbs(struct mail *mail)
 
 /*---------------------------------------------------------------------------*/
 
-static void send_to_mail(struct mail *mail)
+static void send_to_mail_or_news(struct mail *mail, int to_news)
 {
 
-  FILE *fp;
+  char cmid[1024];
   char command[1024];
+  char *fromhost;
+  char *fromuser;
+  char *pp;
+  char *prog;
+  char *tohost;
+  char *touser;
+  FILE *fp;
   int i;
   struct strlist *p;
 
-  if (!*SENDMAIL_PROG) return;
+  prog = to_news ? RNEWS_PROG : SENDMAIL_PROG;
+  if (!*prog)
+    return;
+
   switch (fork()) {
   case -1:
     halt();
   case 0:
     setgid(0);
     setuid(0);
-    for (i = open_max() - 1; i >= 0; i--) close(i);
+    for (i = open_max() - 1; i >= 0; i--)
+      close(i);
     setsid();
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");
@@ -745,15 +761,50 @@ static void send_to_mail(struct mail *mail)
     case -1:
       _exit(1);
     case 0:
-      sprintf(command, "%s -oi -oem -f %s %s", SENDMAIL_PROG, mail->from, mail->to);
-      if (!(fp = popen(command, "w"))) _exit(1);
-      fprintf(fp, "From: %s\n", mail->from);
-      fprintf(fp, "To: %s\n", mail->to);
+      fromhost = get_host_from_path(mail->from);
+      fromuser = get_user_from_path(mail->from);
+      tohost = get_host_from_path(mail->to);
+      touser = get_user_from_path(mail->to);
+      if (to_news)
+	sprintf(command, "%s", prog);
+      else
+	sprintf(command, "%s -oi -oem -f %s %s", prog, mail->from, mail->to);
+      if (!(fp = popen(command, "w")))
+	_exit(1);
+      fprintf(fp, "From: %s@%s%s\n", fromuser, fromhost, strchr(fromhost, '.') ? "" : ".ampr.org");
+      if (to_news) {
+	if (debug)
+	  fprintf(fp, "Newsgroups: %s.test\n", myhostname);
+	else
+	  fprintf(fp, "Newsgroups: ampr.bbs.%s\n", touser);
+      } else {
+	fprintf(fp, "To: %s\n", mail->to);
+      }
+      if (!strcmp(touser, "e")) {
+	strcpy(cmid, mail->subject);
+	cmid[LEN_BID] = 0;
+	strupc(cmid);
+	strcat(cmid, MidSuffix);
+	fprintf(fp, "Control: cancel <%s>\n", cmid);
+	fprintf(fp, "Subject: cmsg cancel <%s>\n", cmid);
+      } else {
+	fprintf(fp, "Subject: %s\n", mail->subject);
+      }
       fprintf(fp, "Date: %s\n", rfc822_date(mail->date));
-      if (*mail->subject) fprintf(fp, "Subject: %s\n", mail->subject);
       fprintf(fp, "Message-ID: <%s>\n", mail->mid);
-      if (mail->lifetime != -1)
+      if (to_news) {
+	i = strlen(myhostname);
+	if (!strncmp(mail->from, myhostname, i) && mail->from[i] == '!')
+	  pp = mail->from + i + 1;
+	else
+	  pp = mail->from;
+	fprintf(fp, "Path: %s\n", pp);
+	fprintf(fp, "Distribution: %s\n", tohost);
+      }
+      if (mail->lifetime != -1) {
+	fprintf(fp, "Lifetime: %d\n", mail->lifetime);
 	fprintf(fp, "Expires: %s\n", rfc822_date(mail->date + DAYS * mail->lifetime));
+      }
       fprintf(fp, "Bulletin-ID: <%s>\n", mail->bid);
       p = mail->head;
       while (p && p->str[0] == 'R' && p->str[1] == ':') {
@@ -780,84 +831,16 @@ static void send_to_mail(struct mail *mail)
 
 /*---------------------------------------------------------------------------*/
 
+static void send_to_mail(struct mail *mail)
+{
+  send_to_mail_or_news(mail, 0);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void send_to_news(struct mail *mail)
 {
-
-  FILE *fp;
-  char *fromhost;
-  char *pp;
-  int i;
-  struct strlist *p;
-
-  if (!*mail->subject) return;
-
-  if (!*RNEWS_PROG) return;
-  switch (fork()) {
-  case -1:
-    halt();
-  case 0:
-    setgid(0);
-    setuid(0);
-    for (i = open_max() - 1; i >= 0; i--) close(i);
-    setsid();
-    fopen("/dev/null", "r+");
-    fopen("/dev/null", "r+");
-    fopen("/dev/null", "r+");
-    switch (fork()) {
-    case -1:
-      _exit(1);
-    case 0:
-      if (!(fp = popen(RNEWS_PROG, "w"))) _exit(1);
-      fromhost = get_host_from_path(mail->from);
-      fprintf(fp, "From: %s@%s%s\n", get_user_from_path(mail->from), fromhost, strchr(fromhost, '.') ? "" : ".ampr.org");
-      fprintf(fp, "Date: %s\n", rfc822_date(mail->date));
-      if (debug)
-	fprintf(fp, "Newsgroups: %s.test\n", myhostname);
-      else
-	fprintf(fp, "Newsgroups: ampr.bbs.%s\n", get_user_from_path(mail->to));
-      if (!strcmp(get_user_from_path(mail->to), "e")) {
-	char cmid[1024];
-	strcpy(cmid, mail->subject);
-	cmid[LEN_BID] = 0;
-	strupc(cmid);
-	strcat(cmid, MidSuffix);
-	fprintf(fp, "Control: cancel <%s>\n", cmid);
-	fprintf(fp, "Subject: cmsg cancel <%s>\n", cmid);
-      } else {
-	fprintf(fp, "Subject: %s\n", mail->subject);
-      }
-      fprintf(fp, "Message-ID: <%s>\n", mail->mid);
-      i = strlen(myhostname);
-      if (!strncmp(mail->from, myhostname, i) && mail->from[i] == '!')
-	pp = mail->from + i + 1;
-      else
-	pp = mail->from;
-      fprintf(fp, "Path: %s\n", pp);
-      if (mail->lifetime != -1)
-	fprintf(fp, "Expires: %s\n", rfc822_date(mail->date + DAYS * mail->lifetime));
-      fprintf(fp, "Distribution: %s\n", get_host_from_path(mail->to));
-      fprintf(fp, "Bulletin-ID: <%s>\n", mail->bid);
-      p = mail->head;
-      while (p && p->str[0] == 'R' && p->str[1] == ':') {
-	fprintf(fp, "X-R: %s\n", p->str + 2);
-	p = p->next;
-      }
-      while (p && p->str[0] == 0)
-	p = p->next;
-      putc('\n', fp);
-      while (p) {
-	fputs(p->str, fp);
-	putc('\n', fp);
-	p = p->next;
-      }
-      pclose(fp);
-      _exit(0);
-    default:
-      _exit(0);
-    }
-  default:
-    wait((int *) 0);
-  }
+  send_to_mail_or_news(mail, 1);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1019,6 +1002,11 @@ static void route_mail(struct mail *mail)
     strcpy(mail->mid, mail->bid);
     strcat(mail->mid, MidSuffix);
   }
+
+  /* Set subject */
+
+  if (!*mail->subject)
+    strcpy(mail->subject, "<none>");
 
   /* Remove message delimiters */
 
@@ -1256,7 +1244,7 @@ static void forward_message(const struct index *index, const char *filename, int
   switch (*buf) {
   case 'O':
   case 'o':
-    puts(*index->subject ? index->subject : "no subject");
+    puts(*index->subject ? index->subject : "<none>");
     sleep(5); /* Bugfix for TheBox 1.9 */
     if (!strcmp(index->to, "E") || !strcmp(index->to, "M"))
       putchar('\n');
@@ -1311,14 +1299,13 @@ static void f_command(int argc, char **argv)
     char name[16];
   };
 
-  DIR *dirp;
-  FILE * fp;
   char bid[1024];
   char cfile[1024];
   char dfile[1024];
   char dirname[1024];
   char expire[1024];
   char from[1024];
+  char lifetimestr[1024];
   char line[1024];
   char subject[1024];
   char tmp1[1024];
@@ -1326,6 +1313,8 @@ static void f_command(int argc, char **argv)
   char tmp3[1024];
   char to[1024];
   char xfile[1024];
+  DIR *dirp;
+  FILE *fp;
   int do_not_exit;
   int lifetime;
   long bulletin_time;
@@ -1343,7 +1332,8 @@ forward_personal_mail:
   sprintf(dirname, "%s/%s", UUCP_DIR, user.name);
   if ((dirp = opendir(dirname))) {
     for (dp = readdir(dirp); dp; dp = readdir(dirp)) {
-      if (*dp->d_name != 'C') continue;
+      if (*dp->d_name != 'C')
+	continue;
       p = (struct filelist *) malloc(sizeof(struct filelist));
       strcpy(p->name, dp->d_name);
       if (!filelist || strcmp(p->name, filelist->name) < 0) {
@@ -1358,7 +1348,8 @@ forward_personal_mail:
     closedir(dirp);
     for (; (p = filelist); filelist = p->next, free(p)) {
       sprintf(cfile, "%s/%s/%s", UUCP_DIR, user.name, p->name);
-      if (!(fp = fopen(cfile, "r"))) continue;
+      if (!(fp = fopen(cfile, "r")))
+	continue;
       *dfile = *xfile = *to = 0;
       while (fgets(line, sizeof(line), fp)) {
 	if (*line == 'E' && sscanf(line, "%*s %*s %*s %*s %*s %s %*s %*s %*s %s %s", tmp1, tmp2, tmp3) == 3 && *tmp1 == 'D' && !strcmp(tmp2, "rmail")) {
@@ -1372,9 +1363,11 @@ forward_personal_mail:
 	  sprintf(xfile, "%s/%s/%s", UUCP_DIR, user.name, tmp2);
       }
       fclose(fp);
-      if (!*dfile) continue;
+      if (!*dfile)
+	continue;
       if (*xfile) {
-	if (!(fp = fopen(xfile, "r"))) continue;
+	if (!(fp = fopen(xfile, "r")))
+	  continue;
 	while (fgets(line, sizeof(line), fp))
 	  if (!strncmp(line, "C rmail ", 8)) {
 	    sprintf(to, "%s!%s", user.name, line + 8);
@@ -1383,29 +1376,41 @@ forward_personal_mail:
 	  }
 	fclose(fp);
       }
-      if (!*to) continue;
-      if (!(fp = fopen(dfile, "r"))) continue;
-      *from = *subject = *bid = *expire = 0;
+      if (!*to)
+	continue;
+      if (!(fp = fopen(dfile, "r")))
+	continue;
+      *from = *subject = *bid = *expire = *lifetimestr = 0;
       if (fscanf(fp, "From %s", tmp1) == 1) {
 	if (!strcmp(tmp1, "MAILER-DAEMON") || tmp1[strlen(tmp1) - 1] == '!')
 	  strcpy(tmp1, myhostname);
 	sprintf(from, "%s!%s", myhostname, tmp1);
 	strtrim(from);
 	while (fgets(line, sizeof(line), fp)) {
-	  if (*line == '\n') break;
+	  if (*line == '\n')
+	    break;
 	  get_header_value("Subject:", 0, line, subject);
+	  get_header_value("Lifetime:", 1, line, lifetimestr);
 	  get_header_value("Expires:", 1, line, expire);
 	  get_header_value("Bulletin-ID:", 1, line, bid);
 	}
       }
       fclose(fp);
-      if (!*from) continue;
+      if (!*from)
+	continue;
       lifetime = -1;
       if ((expiretime = parse_date(expire)) != -1) {
 	lifetime = (int) ((expiretime - time((long *) 0) + DAYS - 1) / DAYS);
-	if (lifetime < 1) lifetime = 1;
+	if (lifetime < 1)
+	  lifetime = 1;
       }
-      if (stat(cfile, &statbuf)) continue;
+      if (*lifetimestr) {
+	lifetime = atoi(lifetimestr);
+	if (lifetime < 1)
+	  lifetime = 1;
+      }
+      if (stat(cfile, &statbuf))
+	continue;
       memset((char *) &index, 0, sizeof(index));
       index.date = statbuf.st_mtime;
       index.lifetime_h = (lifetime + 1) >> 8;
@@ -1425,19 +1430,23 @@ forward_personal_mail:
       index.from[LEN_FROM] = 0;
       strupc(index.from);
       forward_message(&index, dfile, 1);
-      if (unlink(cfile)) halt();
-      if (unlink(dfile)) halt();
-      if (*xfile && unlink(xfile)) halt();
+      if (unlink(cfile))
+	halt();
+      if (unlink(dfile))
+	halt();
+      if (*xfile && unlink(xfile))
+	halt();
       do_not_exit = 1;
     }
   }
 
   bulletin_time = time((long *) 0);
   if (!get_index(user.seq, &index))
-    if (lseek(fdindex, 0L, SEEK_SET)) halt();
+    if (lseek(fdindex, 0L, SEEK_SET))
+      halt();
   while (read(fdindex, &index, sizeof(struct index)) == sizeof(struct index)) {
-    if (!index.deleted                &&
-	index.mesg > user.seq         &&
+    if (!index.deleted &&
+	index.mesg > user.seq &&
 	!calleq(index.at, myhostname) &&
 	!host_in_header(getfilename(index.mesg), user.name)) {
       forward_message(&index, getfilename(index.mesg), 0);
@@ -1447,10 +1456,12 @@ forward_personal_mail:
       user.seq = index.mesg;
       put_seq();
     }
-    if (bulletin_time + 600 <= time((long *) 0)) goto forward_personal_mail;
+    if (bulletin_time + 600 <= time((long *) 0))
+      goto forward_personal_mail;
   }
 
-  if (!do_not_exit) exit(0);
+  if (!do_not_exit)
+    exit(0);
   putchar('F');
 }
 
@@ -2443,6 +2454,7 @@ static void recv_from_mail_or_news(void)
 
   char distr[1024];
   char expire[1024];
+  char lifetime[1024];
   char line[1024];
   char Rline[1024];
   char *cp;
@@ -2455,6 +2467,7 @@ static void recv_from_mail_or_news(void)
   while (fgets(line, sizeof(line), stdin)) {
     mail = alloc_mail();
     *distr = 0;
+    *lifetime = 0;
     *expire = 0;
     from_priority = 0;
     state = 0;
@@ -2473,6 +2486,7 @@ static void recv_from_mail_or_news(void)
 	  get_header_value("Subject:", 0, line, mail->subject);
 	  get_header_value("Message-ID:", 1, line, mail->mid);
 	  get_header_value("Distribution:", 1, line, distr);
+	  get_header_value("Lifetime:", 1, line, lifetime);
 	  get_header_value("Expires:", 1, line, expire);
 	  get_header_value("Bulletin-ID:", 1, line, mail->bid);
 	  if (get_header_value("X-R:", 0, line, Rline + 2)) {
@@ -2517,6 +2531,11 @@ static void recv_from_mail_or_news(void)
       }
       if ((expiretime = parse_date(expire)) != -1) {
 	mail->lifetime = (int) ((expiretime - time((long *) 0) + DAYS - 1) / DAYS);
+	if (mail->lifetime < 1)
+	  mail->lifetime = 1;
+      }
+      if (*lifetime) {
+	mail->lifetime = atoi(lifetime);
 	if (mail->lifetime < 1)
 	  mail->lifetime = 1;
       }
@@ -2645,4 +2664,3 @@ int main(int argc, char **argv)
   }
   return 0;
 }
-

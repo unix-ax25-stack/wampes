@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.54 1995/03/07 16:41:07 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.55 1995/04/24 11:28:23 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -34,7 +34,6 @@ attach ni ni db0sao-u           # ip to host ip
 
 ax25 route add permanent axip dk0hu
 ax25 route add permanent tnc1 default
-ax25 route add permanent tnc1 df1tl
 # ax25 route add permanent tnc2 db0id
 # ax25 route add permanent tnc2 db0rot db0id
 
@@ -60,7 +59,7 @@ route add  dl4sel-1.ampr.org    ipip     192.1.1.2
 route add  dl4sel.ampr.org      ipip     192.1.1.2
 
 # arp add db0id   ax25 db0id
-arp add df1tl-1 ax25 df1tl
+arp add dk0hu   ax25 dk0hu
 
 source /tcp/netrom_links
 
