@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.11 1993/06/06 08:23:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.12 1993/06/27 07:50:46 deyke Exp $ */
 
 /* Parse command line, set up command arguments Unix-style, and call function.
  * Note: argument is modified (delimiters are overwritten with nulls)
@@ -139,7 +139,7 @@ void *p;
 		register int qflag = FALSE;
 
 		/* Skip leading white space */
-		while(isspace(uchar(*line)))
+		while(isspace(*line & 0xff))
 			line++;
 		if(*line == '\0')
 			break;
@@ -163,11 +163,11 @@ void *p;
 			 * then we've already found the last
 			 * token.
 			 */
-			while(*line && !isspace(uchar(*line)))
+			while(*line && !isspace(*line & 0xff))
 				line++;
 		}
 		if(*line)
-			*line++ = '\0';
+			*line++ = 0;
 	}
 	if (argc < 1) {         /* empty command line */
 		argc = 1;

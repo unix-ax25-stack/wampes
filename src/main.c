@@ -1,11 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.38 1993/06/21 21:46:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.39 1993/06/27 07:50:50 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
  *  keyboard processing
  *  generic user commands
  *
- * Copyright 1991 Phil Karn, KA9Q
+ * Copyright 1993 Phil Karn, KA9Q
  */
 #include <sys/types.h>
 #include <string.h>
@@ -112,7 +112,7 @@ char *argv[];
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
 	printf("\n================ %s ================\n", Version);
 	printf("(c) Copyright 1990-1993 by Dieter Deyke, DK5SG / N0PRA\n");
-	printf("(c) Copyright 1992 by Phil Karn, KA9Q\n");
+	printf("(c) Copyright 1986-1993 by Phil Karn, KA9Q\n");
 	printf("\n");
 	/* Start background Daemons */
 #ifndef PURIFY

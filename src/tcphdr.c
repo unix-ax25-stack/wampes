@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcphdr.c,v 1.5 1993/05/17 13:45:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcphdr.c,v 1.6 1993/06/27 07:50:52 deyke Exp $ */
 
 /* TCP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -64,12 +64,13 @@ struct pseudo_header *ph;
 
 	/* Write options, if any */
 	if(hdrlen > TCPLEN){
-		if(tcph->mss != 0){
+		if(tcph->optlen > 0)
+			memcpy(cp,tcph->options,tcph->optlen);
+		else if(tcph->mss != 0){
 			*cp++ = MSS_KIND;
 			*cp++ = MSS_LENGTH;
 			cp = put16(cp,tcph->mss);
-		} else
-			memcpy(cp,tcph->options,tcph->optlen);
+		}
 	}
 	/* Recompute checksum, if requested */
 	if(ph != NULLHEADER)

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.21 1993/05/17 13:45:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.22 1993/06/27 07:50:51 deyke Exp $ */
 
 #include "global.h"
 
@@ -34,7 +34,7 @@ struct controlblock {
 };
 
 struct cmdtable {
-  char *name;                           /* Command name (lower case) */
+  const char *name;                     /* Command name (lower case) */
   int (*fnc)(struct controlblock *cp);  /* Command function */
 };
 
@@ -42,7 +42,7 @@ static int fkbd = -1;
 static int flisten_net = -1;
 
 static char *getarg(char *line, int all);
-static int command_switcher(struct controlblock *cp, char *name, struct cmdtable *tableptr);
+static int command_switcher(struct controlblock *cp, const char *name, const struct cmdtable *tableptr);
 static void delete_controlblock(struct controlblock *cp);
 static void transport_try_send(struct controlblock *cp);
 static void transport_recv_upcall(struct transport_cb *tp, int cnt);
@@ -67,7 +67,7 @@ static char *getarg(char *line, int all)
   if (line) p = line;
   while (isspace(uchar(*p))) p++;
   if (all) return p;
-  quote = '\0';
+  quote = 0;
   if (*p == '"' || *p == '\'') quote = *p++;
   arg = p;
   if (quote) {
@@ -77,13 +77,13 @@ static char *getarg(char *line, int all)
       *p = Xtolower(*p);
       p++;
     }
-  if (*p) *p++ = '\0';
+  if (*p) *p++ = 0;
   return arg;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int command_switcher(struct controlblock *cp, char *name, struct cmdtable *tableptr)
+static int command_switcher(struct controlblock *cp, const char *name, const struct cmdtable *tableptr)
 {
   int namelen;
 
@@ -224,7 +224,7 @@ static int console_command(struct controlblock *cp)
 static void command_receive(struct controlblock *cp)
 {
 
-  static struct cmdtable command_table[] = {
+  static const struct cmdtable command_table[] = {
     "ascii",   ascii_command,
     "binary",  binary_command,
     "connect", connect_command,
@@ -243,7 +243,7 @@ static void command_receive(struct controlblock *cp)
     if (cp->bufcnt >= sizeof(cp->buffer)) delete_controlblock(cp);
     return;
   }
-  cp->buffer[cp->bufcnt] = '\0';
+  cp->buffer[cp->bufcnt] = 0;
   cp->bufcnt = 0;
   if (command_switcher(cp, getarg(cp->buffer, 0), command_table))
     delete_controlblock(cp);
@@ -261,7 +261,7 @@ static void accept_connection_net(void *p)
 
   addrlen = sizeof(addr);
   if ((fd = accept(flisten_net, &addr, &addrlen)) < 0) return;
-  cp = (struct controlblock *) calloc(1, sizeof (struct controlblock ));
+  cp = (struct controlblock *) calloc(1, sizeof(*cp));
   if (!cp) {
     close(fd);
     return;
@@ -294,7 +294,7 @@ struct iface *ifp;
 void remote_net_initialize(void)
 {
 
-  static char *socketnames[] = {
+  static const char *socketnames[] = {
 #if 1
     "unix:/tcp/.sockets/netcmd",
 #else
