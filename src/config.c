@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.20 1992/06/01 10:34:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.21 1992/06/08 12:59:16 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -171,7 +171,7 @@ struct cmds Cmds[] = {
 #ifdef  AX25
 	"mode",         domode,         0, 2, "mode <interface>",
 #endif
-/*      "more",         domore,         512, 2, "more <filename>", */
+/*      "more",         doview,         0, 2, "more <filename>", */
 #ifdef  NETROM
 	"netrom",       donetrom,       0, 0, NULLCHAR,
 #endif  /* NETROM */
@@ -230,6 +230,7 @@ struct cmds Cmds[] = {
 #endif
 	"udp",          doudp,          0, 0, NULLCHAR,
 	"upload",       doupload,       0, 0, NULLCHAR,
+/*      "view",         doview,         0, 2, "view <filename>", */
 #ifdef  MSDOS
 	"watch",        doswatch,       0, 0, NULLCHAR,
 #endif

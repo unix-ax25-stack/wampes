@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.4 1992/06/01 10:34:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.5 1992/06/08 12:59:23 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -40,9 +40,13 @@ struct proc *Rdytab;            /* Processes ready to run (not including curproc
 struct proc *Waittab[PHASH];    /* Waiting process list */
 struct proc *Susptab;           /* Suspended processes */
 static struct mbuf *Killq;
+struct ksig Ksig;
 
 static void addproc __ARGS((struct proc *entry));
 static void delproc __ARGS((struct proc *entry));
+
+static void _psignal __ARGS((void *event,int n));
+static int procsigs __ARGS((void));
 
 /* Create a process descriptor for the main function. Must be actually
  * called from the main function, and must be called before any other
@@ -109,7 +113,7 @@ int freeargs;           /* If set, free arg list on parg1 at termination */
 
 	/* Allocate stack */
 #ifdef  AMIGA
-	stksize += 2000;        /* DOS overhead */
+	stksize += SIGQSIZE0;   /* DOS overhead */
 #endif
 	stksize = (stksize + 3) & ~3;
 	pp->stksize = stksize;
@@ -122,17 +126,21 @@ int freeargs;           /* If set, free arg list on parg1 at termination */
 	for(i=0;i<stksize;i++)
 		pp->stack[i] = STACKPAT;
 
-	pp->freeargs = freeargs;
+#if 0
+	/* Do machine-dependent initialization of stack */
+	psetup(pp,iarg,parg1,parg2,pc);
+#endif
+
+	if(freeargs)
+		pp->flags |= P_FREEARGS;
 	pp->iarg = iarg;
 	pp->parg1 = parg1;
 	pp->parg2 = parg2;
 
 #if 0
 	/* Inherit creator's input and output sockets */
-	usesock(Curproc->input);
-	pp->input = Curproc->input;
-	usesock(Curproc->output);
-	pp->output = Curproc->output;
+	pp->input = fdup(stdin);
+	pp->output = fdup(stdout);
 #endif
 
 	pp->state = READY;
@@ -171,16 +179,11 @@ register struct proc *pp;
 	/* Don't check the stack here! Will cause infinite recursion if
 	 * called from a stack error
 	 */
-
 	if(pp == Curproc)
 		killself();     /* Doesn't return */
-
 #if 0
-	/* Close any open sockets */
-	freesock(pp);
-
-	close_s(pp->input);
-	close_s(pp->output);
+	fclose(pp->input);
+	fclose(pp->output);
 #endif
 
 	/* Stop alarm clock in case it's running */
@@ -200,7 +203,7 @@ register struct proc *pp;
 	proctrace = fopen("proctrace",APPEND_TEXT);
 #endif
 	/* Free allocated memory resources */
-	if(pp->freeargs){
+	if(pp->flags & P_FREEARGS){
 		argv = pp->parg1;
 		while(pp->iarg-- != 0)
 			free(*argv++);
@@ -208,7 +211,6 @@ register struct proc *pp;
 	}
 	free(pp->name);
 	free(pp->stack);
-	free(pp->outbuf);
 	free((char *)pp);
 }
 /* Terminate current process by sending a request to the killer process.
@@ -219,11 +221,9 @@ killself()
 {
 	register struct mbuf *bp;
 
-	if(Curproc != NULLPROC){
-		bp = pushdown(NULLBUF,sizeof(Curproc));
-		memcpy(bp->data,(char *)&Curproc,sizeof(Curproc));
-		enqueue(&Killq,bp);
-	}
+	bp = pushdown(NULLBUF,sizeof(Curproc));
+	memcpy(bp->data,(char *)&Curproc,sizeof(Curproc));
+	enqueue(&Killq,bp);
 	/* "Wait for me; I will be merciful and quick." */
 	for(;;)
 		pwait(NULL);
@@ -293,7 +293,6 @@ int val;
 #endif
 #ifdef  PROCTRACE
 	printf("alert(%lx,%u) [%s]\n",ptol(pp),val,pp->name);
-	fflush(stdout);
 #endif
 	if(pp != Curproc)
 		delproc(pp);
@@ -341,7 +340,7 @@ void *event;
 			Curproc->event = event;
 			Curproc->state = WAITING;
 		}
-		addproc(Curproc);
+		addproc(Curproc);       /* Put us on the wait list */
 	}
 	/* Look for a ready process and run it. If there are none,
 	 * loop or halt until an interrupt makes something ready.
@@ -372,20 +371,18 @@ void *event;
 	 */
 #ifdef  PROCTRACE
 	if(strcmp(oldproc->name,Curproc->name) != 0){
-		printf("-> %s(%d)\n",Curproc->name,!!Curproc->i_state);
-		fflush(stdout);
+		printf("-> %s(%d)\n",Curproc->name,!!(Curproc->flags & P_ISTATE));
 	}
 #endif
 	/* Note use of comma operator to save old interrupt state only if
 	 * oldproc is non-null
 	 */
-	if(oldproc == NULLPROC
-	 || (oldproc->i_state = istate(), setjmp(oldproc->env) == 0)){
+	if(oldproc == NULLPROC || setjmp(oldproc->env) == 0){
 		/* We're still running in the old task; load new task context.
 		 * The interrupt state is restored here in case longjmp
 		 * doesn't do it (e.g., systems other than Turbo-C).
 		 */
-		restore(Curproc->i_state);
+		restore(Curproc->flags & P_ISTATE);
 		longjmp(Curproc->env,1);
 	}
 	/* At this point, we're running in the newly dispatched task */
@@ -396,7 +393,7 @@ void *event;
 	 * DOES restore the interrupt state saved at the time of the setjmp().
 	 * This is the case with Turbo-C's setjmp/longjmp.
 	 */
-	restore(Curproc->i_state);
+	restore(Curproc->flags & P_ISTATE);
 	return tmp;
 }
 #pragma OPTIMIZE ON

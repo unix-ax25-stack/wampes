@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.h,v 1.9 1992/06/01 10:34:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.h,v 1.10 1992/06/08 12:59:13 deyke Exp $ */
 
 #ifndef _ASY_H
 #define _ASY_H
@@ -25,7 +25,7 @@ struct asymode {
 };
 extern struct asymode Asymode[];
 
-/* In 8250.c: */
+/* In n8250.c: */
 int asy_init __ARGS((int dev,struct iface *ifp,char *arg1,char *arg2,
 	int bufsize,int trigchar,long speed,int cts,int rlsd));
 int32 asy_ioctl __ARGS((struct iface *ifp,int cmd,int set,int32 val));

@@ -1,9 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.12 1992/05/28 13:50:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.13 1992/06/08 12:59:16 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
 
-/* In 8250.c, amiga.c: */
+/* In n8250.c, amiga.c: */
 int doasystat __ARGS((int argc,char *argv[],void *p));
 
 /* In alloc.c: */
@@ -106,7 +106,6 @@ int dohelp __ARGS((int argc,char *argv[],void *p));
 int doattach __ARGS((int argc,char *argv[],void *p));
 int doparam __ARGS((int argc,char *argv[],void *p));
 int domode __ARGS((int argc,char *argv[],void *p));
-int domore __ARGS((int argc,char *argv[],void *p));
 int donothing __ARGS((int argc,char *argv[],void *p));
 int donrstat __ARGS((int argc,char *argv[],void *p));
 int doescape __ARGS((int argc,char *argv[],void *p));
@@ -115,10 +114,6 @@ int doboot __ARGS((int argc,char *argv[],void *p));
 
 /* In mailbox.c: */
 int dombox __ARGS((int argc,char *argv[],void *p));
-
-/* In more.c: */
-int domore __ARGS((int argc,char *argv[],void *p));
-void more __ARGS((int,void *,void *));
 
 /* In nntpcli.c: */
 int donntp __ARGS((int argc,char *argv[],void *p));
@@ -224,6 +219,10 @@ int dotrace __ARGS((int argc,char *argv[],void *p));
 
 /* In udpcmd.c: */
 int doudp __ARGS((int argc,char *argv[],void *p));
+
+/* In view.c: */
+int doview __ARGS((int argc,char *argv[],void *p));
+void view __ARGS((int,void *,void *));
 
 /* In various files: */
 

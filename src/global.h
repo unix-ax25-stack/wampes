@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.17 1992/06/01 10:34:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.18 1992/06/08 12:59:19 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -212,6 +212,9 @@ extern char Eol[];
 
 /* Your system's temp directory */
 extern char *Tmpdir;
+
+extern unsigned Nfiles; /* Maximum number of open files */
+extern unsigned Nsock;  /* Maximum number of open sockets */
 
 extern void (*Gcollect[])();
 

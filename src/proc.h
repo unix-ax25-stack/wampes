@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/proc.h,v 1.3 1992/06/01 10:34:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/proc.h,v 1.4 1992/06/08 12:59:29 deyke Exp $ */
 
 #ifndef _PROC_H
 #define _PROC_H
@@ -13,7 +13,7 @@
 #include "timer.h"
 #endif
 
-#define OUTBUFSIZE      512     /* Size to be malloc'ed for outbuf */
+#define SIGQSIZE        200     /* Entries in psignal queue */
 
 /* Kernel process control block */
 #define PHASH   16              /* Number of wait table hash chains */
@@ -21,9 +21,14 @@ struct proc {
 	struct proc *prev;      /* Process table pointers */
 	struct proc *next;
 
-	jmp_buf env;            /* Process state */
-	char i_state;           /* Process interrupt state */
+	int flags;
+#define P_ISTATE        1       /* Process has interrupts enabled */
+#define P_SSET          2       /* Process has set sig */
+#define P_FREEARGS      4       /* Free args on termination */
 
+	jmp_buf env;            /* Process state */
+	jmp_buf sig;            /* State for alert signal */
+	int signo;              /* Arg to alert to cause signal */
 	unsigned short state;
 #define READY   0
 #define WAITING 1
@@ -34,13 +39,11 @@ struct proc {
 	char *name;             /* Arbitrary user-assigned name */
 	int retval;             /* Return value from next pwait() */
 	struct timer alarm;     /* Alarm clock timer */
-	struct mbuf *outbuf;    /* Terminal output buffer */
-	int input;              /* standard input socket */
-	int output;             /* standard output socket */
+	FILE *input;
+	FILE *output;
 	int iarg;               /* Copy of iarg */
 	void *parg1;            /* Copy of parg1 */
 	void *parg2;            /* Copy of parg2 */
-	int freeargs;           /* Free args on termination if set */
 };
 #define NULLPROC (struct proc *)0
 extern struct proc *Waittab[];  /* Head of wait list */
@@ -48,6 +51,39 @@ extern struct proc *Rdytab;     /* Head of ready list */
 extern struct proc *Curproc;    /* Currently running process */
 extern struct proc *Susptab;    /* Suspended processes */
 extern int Stkchk;              /* Stack checking flag */
+
+struct sigentry {
+	void *event;
+	int n;
+};
+struct ksig {
+	struct sigentry entry[SIGQSIZE];
+	struct sigentry *wp;
+	struct sigentry *rp;
+	volatile int nentries;  /* modified both by interrupts and main */
+	int maxentries;
+	int32 dupsigs;
+	int lostsigs;
+	int32 psigs;            /* Count of psignal calls */
+	int32 psigwakes;        /* Processes woken */
+	int32 psignops;         /* Psignal calls that didn't wake anything */
+	int32 psigsqueued;      /* Psignal calls queued with ints off */
+	int32 pwaits;           /* Count of pwait calls */
+	int32 pwaitnops;        /* pwait calls that didn't block */
+	int32 pwaitints;        /* Pwait calls from interrupt context (error) */
+};
+extern struct ksig Ksig;
+
+/* Prepare for an exception signal and return 0. If after this macro
+ * is executed any other process executes alert(pp,val), this will
+ * invoke the exception and cause this macro to return a second time,
+ * but with the return value 1. This cannot be a function since the stack
+ * frame current at the time setjmp is called must still be current
+ * at the time the signal is taken. Note use of comma operators to return
+ * the value of setjmp as the overall macro expression value.
+ */
+#define SETSIG(val)     (Curproc->flags |= P_SSET,\
+	Curproc->signo = (val),setjmp(Curproc->sig))
 
 /* In  kernel.c: */
 void alert __ARGS((struct proc *pp,int val));
@@ -61,6 +97,7 @@ struct proc *newproc __ARGS((char *name,unsigned int stksize,
 void psignal __ARGS((void *event,int n));
 int pwait __ARGS((void *event));
 void resume __ARGS((struct proc *pp));
+int setsig __ARGS((int val));
 void suspend __ARGS((struct proc *pp));
 
 /* In ksubr.c: */

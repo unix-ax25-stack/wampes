@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.13 1992/06/01 10:34:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.14 1992/06/08 12:59:23 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -464,8 +464,14 @@ int tos;
 		ipOutNoRoutes++;
 		return -1;
 	}
-	/* Encapsulate in an IP packet from us to the gateway */
-	return ip_send(INADDR_ANY,gateway,IP_PTCL,0,0,bp,0,0,0);
+	/* Encapsulate in an IP packet from us to the gateway.
+	 * The outer source address is taken from the encap interface
+	 * structure. This defaults to INADDR_ANY, so unless it is
+	 * changed (with iface encap ipaddr ...), the IP address
+	 * of the physical interface used to reach the encap gateway
+	 * will be used.
+	 */
+	return ip_send(Encap.addr,gateway,IP_PTCL,0,0,bp,0,0,0);
 }
 
 /* Add an entry to the IP routing table. Returns 0 on success, -1 on failure */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.6 1992/05/14 13:20:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.7 1992/06/08 12:59:24 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -121,7 +121,7 @@ void *p;
 		 pp->stksize,
 		 stkutil(pp),
 		 ptol(pp->event),
-		 pp->i_state ? 'I' : ' ',
+		 (pp->flags & P_ISTATE) ? 'I' : ' ',
 		 (pp->state & WAITING) ? 'W' : ' ',
 		 (pp->state & SUSPEND) ? 'S' : ' ',
 		 pp->input, pp->output,
@@ -134,7 +134,7 @@ void *p;
 			if(printf("%08lx  %08lx  %-10u%-10u%08lx  %c%c%c %3d %3d  %s\n",
 			 ptol(pp),getstackptr(ep),pp->stksize,stkutil(pp),
 			 ptol(pp->event),
-			 pp->i_state ? 'I' : ' ',
+			 (pp->flags & P_ISTATE) ? 'I' : ' ',
 			 (pp->state & WAITING) ? 'W' : ' ',
 			 (pp->state & SUSPEND) ? 'S' : ' ',
 			 pp->input,pp->output,
@@ -146,7 +146,7 @@ void *p;
 		ep = (struct env *)&pp->env;
 		if(printf("%08lx  %08lx  %-10u%-10u          %c%c%c %3d %3d  %s\n",
 		 ptol(pp),getstackptr(ep),pp->stksize,stkutil(pp),
-		 pp->i_state ? 'I' : ' ',
+		 (pp->flags & P_ISTATE) ? 'I' : ' ',
 		 (pp->state & WAITING) ? 'W' : ' ',
 		 (pp->state & SUSPEND) ? 'S' : ' ',
 		 pp->input,pp->output,
@@ -158,7 +158,7 @@ void *p;
 		printf("%08lx  %08lx  %-10u%-10u          %c   %3d %3d  %s\n",
 		 ptol(Curproc),getstackptr(ep),Curproc->stksize,
 		 stkutil(Curproc),
-		 Curproc->i_state ? 'I' : ' ',
+		 (Curproc->flags & P_ISTATE) ? 'I' : ' ',
 		 Curproc->input,Curproc->output,
 		 Curproc->name);
 	}

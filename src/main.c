@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.28 1992/05/26 10:09:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.29 1992/06/08 12:59:26 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -105,7 +105,7 @@ char *argv[];
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
 	printf("\n================ %s ================\n", Version);
 	printf("(c) Copyright 1990-1992 by Dieter Deyke, DK5SG / N0PRA\n");
-	printf("(c) Copyright 1991 by Phil Karn, KA9Q\n");
+	printf("(c) Copyright 1992 by Phil Karn, KA9Q\n");
 	printf("\n");
 
 	/* Start background Daemons */
