@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.36 1996/03/03 09:41:37 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.37 1996/04/08 13:19:59 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -31,7 +31,11 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #endif
 
 #ifndef MAXIOV
+#if defined IOV_MAX
+#define MAXIOV          IOV_MAX
+#else
 #define MAXIOV          16
+#endif
 #endif
 
 #ifndef O_NONBLOCK

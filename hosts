@@ -311,32 +311,39 @@
 44.130.7.129    db0seg  db0seg.ampr.org.        # FÅlldigi Schieren bei Bad Segeberg, JO53EW
 #
 #44.130.8.x     Osnabrueck
+# --- lokale Adresskoordination: DG9BFO
 44.130.8.1      DL1BFF  # Michael, 4500 Osnabrueck
 44.130.8.2      DL2BCR  # Hartmut, 4500 Osnabrueck
-44.130.8.3      DL4MFM  # Mario, 4512 Wallenhorst
+44.130.8.3      DL4MFM  # Mario, Fietz, D - 49126 Wallenhorst
 44.130.8.4      DC1BF   # Bettina, 4512 Wallenhorst
 44.130.8.5      DB2BI   # Torsten, 4550 Bramsche
 44.130.8.6      DB9BJ   # Lars Naber, 48531 Nordhorn
 44.130.8.7      DG8BBF  # Wolfgang, Neuenkirchen
+44.130.8.8      DL0QW   # Mario Fietz, D - 49126 Wallenhorst
+44.130.8.9      DJ5BA   # Jochen Bredemeyer, Diepholz
 44.130.8.10     DG8BBT  # Harald, 4550 Bramsche 3
 44.130.8.11     DL1BKE  # Joerg Reuter, 49716 Meppen
+44.130.8.12     DB9WT   # Hans Buth, 49186 Bad Iburg; AT486
+44.130.8.13     DB9WT-1 # ; Amiga 2000
 44.130.8.14     SYS1.DK9BW      # Heiner Bischof, Hilter
 44.130.8.15     SYS2.DK9BW      #
 44.130.8.16     SYS1.DG4BD      # Jochen Krause, Bad Rothenfelde
 44.130.8.17     SYS2.DG4BD      #
-44.130.8.18     DG7BAM  # Peter Lehmann, Hilter
-44.130.8.19     MARVIN.DL8BCU   # Thorsten Kranzowski, Dissen
-44.130.8.20     DJ6UZ   # Guenter Meiche, 4450 Lingen/Ems; PC
-44.130.8.21     LASLO.DL8BCU    #
-44.130.8.22     DL6BAT  # Ralf Schlueter, 49716 Meppen; AT286
-44.130.8.23     DL6BBH  # Ansgar, Lathen/Emsland
-44.130.8.24     DG9BJA  # Ludger, Holdorf
-44.130.8.30     DG9BFO  # Dieter ODer, 49593 Bersenbrueck; Linux/Wampes
-44.130.8.31     DG9BFO-1        #
-44.130.8.32     DG9BFO-2        # ; WNOS
-44.130.8.50     DK7BW   # Hermann, 49835 Wietmarschen-Lohne
-44.130.8.73     DL0NY   # Club Stn I33, 4460 Nordhorn
-44.130.8.100    DB0ACM  # geplanter IP-Router, 49716 Meppen
+44.130.8.18     DG7BAM   # Peter Lehmann, Hilter
+44.130.8.19     MARVIN.DL8BCU # Thorsten Kranzowski, Dissen
+44.130.8.20     DJ6UZ    # Guenter Meiche, 4450 Lingen/Ems; PC
+44.130.8.21     LASLO.DL8BCU # Thorsten Kranzowski, Dissen
+44.130.8.22     DL6BAT   # Ralf Schlueter, 49716 Meppen; AT286
+44.130.8.23     DL6BBH   # Ansgar, Lathen/Emsland
+44.130.8.24     DG9BJA   # Ludger, Holdorf
+44.130.8.30     DG9BFO   # Dieter Oder, 49593 Bersenbrueck; linuX
+44.130.8.31     DG9BFO-1 # linuX
+44.130.8.32     DG9BFO-2 # Wnos/LinuX
+44.139.8.50     DK7BW    # Herman 49835 witmarschen lohne
+44.130.8.55     DL5DBM   # Anwar, Kettenkamp
+44.130.8.56     DL5DBM-2 # Anwar, Kettenkamp
+44.130.8.73     DL0NY    # Club Stn I33, 4460 Nordhorn
+44.130.8.100    DB0SM    # geplanter IP-Router, 49716 Meppen
 #
 #44.130.9.x     Braunschweig
 44.130.9.1      DK4EG   # Detlef Schmidt, 3300 Braunschweig
@@ -5406,39 +5413,41 @@
 #
 #  IP-Adressen Raum Wien,  44.143.16/24
 #
-#
-#--------------------------------------
+#------------------------------------------------------
 44.143.16.1    oe1xir        #
 44.143.16.10   gw.oe1hmc     #
-44.143.16.100  oe3klu        #
+44.143.16.100  oe3klu        # Karl, Schwechat bei Wien
 44.143.16.11   sec.oe1hmc    #
 44.143.16.12   ter.oe1hmc    #
-44.143.16.13   oe1hmc        #
-44.143.16.14   oe1dmw        #
-44.143.16.144  oe1kda        #
+44.143.16.13   oe1hmc        # Heinz, Wien
+44.143.16.14   oe1dmw        # Erhard, Wien
+44.143.16.144  oe1kda        # Krzysztof, Koordinator OE
 44.143.16.145  verdi.oe1kda  #
 44.143.16.146  ter.oe1kda    #
 44.143.16.15   sec.oe1dmw    #
-44.143.16.16   oe1msb        #
+44.143.16.16   oe1msb        # Michael, Wien
 44.143.16.17   sec.oe1msb    #
 44.143.16.18   sp7mud        #
-44.143.16.19   oe1mma        #
-44.143.16.20   oe3gfs        #
+44.143.16.19   oe1mma        # Markus, Wien
+44.143.16.20   oe3gfs        # Gerhard, Hennersdorf
 44.143.16.200  sat.oe3gfs    #
-44.143.16.21   oe1smc        #
+44.143.16.21   oe1smc        # Hans, Wien
 44.143.16.22   oe1cms        #
 44.143.16.23   oe1xya        #
-44.143.16.24   oe1gou        #
-44.143.16.25   oe1yxu        #
-44.143.16.26   oe1wwl        #
+44.143.16.24   oe1gou        # Gerald, Wien
+44.143.16.25   oe1yxu        # Gertrud, Wien
+44.143.16.26   oe1wwl        # Walter, Wien
 44.143.16.27   sec.oe1wwl    #
 44.143.16.28   ter.oe1wwl    #
-44.143.16.31   oe3gmw        #
+44.143.16.31   oe3gmw        # Gottfried, Wr. Neudorf
 44.143.16.32   oe3dna        #
-44.143.16.33   oe3pha        #
-44.143.16.34   oe1wca        #
-44.143.16.35   oe3ugw        #
-44.143.16.9    oe1xtu        #
+44.143.16.33   oe3pha        # Peter, Wien
+44.143.16.34   oe1wca        # Werner, Wien
+44.143.16.35   oe3ugw        # Paul, Kapellerfeld
+44.143.16.36   oe1jeb        #
+44.143.16.37   oe1hhc        #
+44.143.16.38   oe1fwu        #
+44.143.16.9    oe1xtu        # Clubstation der TU-Wien
 #
 # 44.143.xxx.xxx * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                            in OESTERREICH

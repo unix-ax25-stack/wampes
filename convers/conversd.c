@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.74 1996/02/13 15:30:40 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.75 1996/04/08 13:18:20 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -25,7 +25,11 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #endif
 
 #ifndef MAXIOV
+#if defined IOV_MAX
+#define MAXIOV          IOV_MAX
+#else
 #define MAXIOV          16
+#endif
 #endif
 
 #ifndef O_NOCTTY
@@ -1429,7 +1433,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.74 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.75 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(0, ONE_TOKEN, KEEP_CASE));
@@ -2079,7 +2083,7 @@ int main(int argc, char **argv)
     *cp = 0;
   strchg(&my.h_name, buffer);
   strcpy(buffer, "W-");
-  if ((cp = strchr("$Revision: 2.74 $", ' ')))
+  if ((cp = strchr("$Revision: 2.75 $", ' ')))
     strcat(buffer, cp + 1);
   if ((cp = strchr(buffer, ' ')))
     *cp = 0;
