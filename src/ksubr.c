@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.8 1992/08/19 13:20:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.9 1992/08/24 10:09:33 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -56,7 +56,7 @@ struct env {
 };
 #define getstackptr(ep) ((ep)->sp)
 #else
-#ifdef ISC
+#if defined(ISC) || defined (LINUX)
 struct env {
 	long    esp;
 	long    ebp;

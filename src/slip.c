@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.10 1992/06/01 10:34:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.11 1992/08/24 10:09:42 deyke Exp $ */
 
 /* SLIP (Serial Line IP) encapsulation and control routines.
  * Copyright 1991 Phil Karn
@@ -54,13 +54,11 @@ int vj;
 	sp->send = asy_send;
 	sp->get = get_asy;
 	sp->type = CL_SERIAL_LINE;
-#if 0
 	if(vj){
 		sp->escaped |= SLIP_VJCOMPR;
 		sp->slcomp = slhc_init(16,16);
 		setencap(ifp,"VJSLIP");
 	} else
-#endif
 		setencap(ifp,"SLIP");
 
 #if 0
@@ -79,12 +77,10 @@ struct iface *ifp;
 	struct slip *sp;
 
 	sp = &Slip[ifp->xdev];
-#if 0
 	if(sp->slcomp != NULLSLCOMPR){
 		slhc_free(sp->slcomp);
 		sp->slcomp = NULLSLCOMPR;
 	}
-#endif
 	sp->iface = NULLIF;
 	return 0;
 }
@@ -96,23 +92,19 @@ struct iface *iface;    /* Pointer to interface control block */
 int32 gateway;          /* Ignored (SLIP is point-to-point) */
 int tos;
 {
-#if 0
 	register struct slip *sp;
 	int type;
-#endif
 
 	if(iface == NULLIF){
 		free_p(bp);
 		return -1;
 	}
-#if 0
 	sp = &Slip[iface->xdev];
 	if (sp->escaped & SLIP_VJCOMPR) {
 		/* Attempt IP/ICP header compression */
 		type = slhc_compress(sp->slcomp,&bp,TRUE);
 		bp->data[0] |= type;
 	}
-#endif
 	return (*iface->raw)(iface,bp);
 }
 /* Send a raw slip frame */
@@ -237,17 +229,18 @@ char c;         /* Incoming character */
 	sp->rbp_tail->cnt++;
 	return NULLBUF;
 }
+
 /* Process SLIP line input */
 void
 slip_rx(iface)
 struct iface *iface;
 {
-
-	char *cp,buf[4096];
-	int cnt,xdev;
+	int c;
 	struct mbuf *bp;
 	register struct slip *sp;
 	int cdev;
+	char *cp,buf[4096];
+	int cnt,xdev;
 
 	xdev = iface->xdev;
 	sp = &Slip[xdev];
@@ -261,7 +254,6 @@ struct iface *iface;
 		if (sp->iface->trace & IF_TRACE_RAW)
 			raw_dump(sp->iface,IF_TRACE_IN,bp);
 
-#if 0
 		if (sp->escaped & SLIP_VJCOMPR) {
 			if ((c = bp->data[0]) & SL_TYPE_COMPRESSED_TCP) {
 				if ( slhc_uncompress(sp->slcomp, &bp) <= 0 ) {
@@ -278,7 +270,6 @@ struct iface *iface;
 				}
 			}
 		}
-#endif
 		net_route( sp->iface, bp);
 		/* Especially on slow machines, serial I/O can be quite
 		 * compute intensive, so release the machine before we
@@ -287,6 +278,10 @@ struct iface *iface;
 		 */
 		pwait(NULL);
 	}
+#if 0
+	if(sp->iface->rxproc == Curproc)
+		sp->iface->rxproc = NULLPROC;
+#endif
 }
 
 /* Show serial line status */
@@ -305,8 +300,6 @@ struct iface *iface;
 		/* Must not be a SLIP device */
 		return;
 
-#if 0
 	slhc_i_status(sp->slcomp);
 	slhc_o_status(sp->slcomp);
-#endif
 }

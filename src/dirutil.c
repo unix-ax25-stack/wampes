@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.10 1992/08/19 13:20:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.11 1992/08/24 10:09:27 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -12,7 +12,11 @@
 #include "dirutil.h"
 #include "commands.h"
 
+#ifdef LINUX
+extern const char* const sys_errlist[];
+#else
 extern char *sys_errlist[];
+#endif
 
 /* Create a directory listing in a temp file and return the resulting file
  * descriptor. If full == 1, give a full listing; else return just a list

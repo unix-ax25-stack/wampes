@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.12 1992/03/30 09:16:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.13 1992/08/24 10:09:46 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -269,7 +269,11 @@ char  **buf;
   } else if (!esc) {
     switch (chr) {
 
+#ifdef LINUX
+    case 127: /* delete */
+#else
     case '\b': /* backspace */
+#endif
       if (pos > linebuf) {
 	backchr(*--pos);
 	delchr(*pos);
@@ -345,6 +349,7 @@ char  **buf;
       ansimode = 0;
       break;
 
+#ifndef LINUX
     case 127: /* DEL, delete char */
       if (pos < end) {
 	delchr(*pos);
@@ -352,6 +357,7 @@ char  **buf;
 	end--;
       }
       break;
+#endif
 
     default:
       if (end - linebuf >= LINEMAX)

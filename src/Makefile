@@ -1,10 +1,8 @@
-ANSI          =
-ANSI          = -Aa -D_HPUX_SOURCE
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.18 1992/08/24 10:09:22 deyke Exp $
 
-DEFINES       = -DUNIX
+DEFINES       = -DUNIX -D_HPUX_SOURCE
 
-CFLAGS        = $(ANSI) $(DEFINES) -O
-CFLAGS        = $(ANSI) $(DEFINES) -g
+CFLAGS        = $(OPTIMIZE) $(DEFINES)
 
 DEST          = /tcp
 
@@ -143,6 +141,8 @@ OBJS          = alloc.o \
 		services.o \
 		session.o \
 		setsp.o \
+		slhc.o \
+		slhcdump.o \
 		slip.o \
 		smisc.o \
 		tcpcmd.o \
@@ -244,6 +244,8 @@ SRCS          = alloc.c \
 		services.c \
 		session.c \
 		setsp.c \
+		slhc.c \
+		slhcdump.c \
 		slip.c \
 		smisc.c \
 		tcpcmd.c \
@@ -271,6 +273,13 @@ SRCS          = alloc.c \
 
 .IGNORE:
 
+all_test:
+		@if [ `uname -n` = mdddhd -o `uname -n` = deyke2 ] ; then \
+		  make all CC=c89 OPTIMIZE=-g ; \
+		else \
+		  make all        OPTIMIZE=-Os ; \
+		fi
+
 all:            $(PROGRAM)
 
 setsp.o:        setsp.c
@@ -294,7 +303,7 @@ index:;         @ctags -wx $(HDRS) $(SRCS)
 
 install:        $(DEST)/$(PROGRAM)
 
-lint:;          @lint -v $(ANSI) $(DEFINES) $(SRCS)
+lint:;          @lint -Aa -v $(DEFINES) $(SRCS)
 
 print:;         @$(PRINT) $(HDRS) $(SRCS)
 
@@ -432,6 +441,10 @@ session.o: global.h config.h mbuf.h proc.h timer.h tcp.h iface.h internet.h \
 	ip.h netuser.h ftp.h icmp.h session.h hardware.h telnet.h ax25.h \
 	tty.h socket.h cmdparse.h commands.h main.h axclient.h lapb.h \
 	finger.h netrom.h
+slhc.o: global.h mbuf.h internet.h ip.h iface.h proc.h timer.h tcp.h \
+	netuser.h slhc.h
+slhcdump.o: global.h mbuf.h internet.h ip.h iface.h proc.h timer.h slhc.h \
+	tcp.h netuser.h trace.h
 slip.o: global.h mbuf.h iface.h proc.h timer.h ip.h internet.h slhc.h tcp.h \
 	netuser.h asy.h slip.h trace.h pktdrvr.h
 smisc.o: global.h mbuf.h socket.h proc.h timer.h remote.h tcp.h iface.h \

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.5 1992/08/19 13:20:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.6 1992/08/24 10:09:35 deyke Exp $ */
 
 /* Mail Delivery Agent for returned Mails */
 
@@ -6,7 +6,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#ifdef LINUX
+#include "linux.h"
+#else
 #include "hpux.h"
+#endif
 #include "mail.h"
 
 /*---------------------------------------------------------------------------*/

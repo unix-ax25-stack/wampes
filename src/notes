@@ -34,8 +34,6 @@ fuer MS-DOS, die auch 'reget' koennen.
 
 - IMPLEMENT:    netrom blimit
 
-- ping (record route) does not work
-
 ===============================================================================
 
     &TCB Rcv-Q Snd-Q  Local socket           Remote socket          State

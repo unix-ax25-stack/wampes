@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.21 1992/08/19 13:20:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.22 1992/08/24 10:09:36 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -18,6 +18,10 @@
 #ifdef SCO
 #include <sys/vty.h>
 #endif
+#endif
+
+#ifdef LINUX
+#define FIONBIO O_NONBLOCK
 #endif
 
 #if defined(sun)
