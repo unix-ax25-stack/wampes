@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.29 1992/10/14 17:00:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.30 1992/11/13 17:19:58 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -23,11 +23,6 @@
 #define WNOHANG 1
 #endif
 
-#ifdef LINUX
-#define FD_SET_TYPE fd_set
-#else
-#define FD_SET_TYPE struct fd_set
-#endif
 
 #include "global.h"
 #include "iface.h"
@@ -50,13 +45,13 @@ struct proc_t {
 
 static struct proc_t *procs;
 
-static FD_SET_TYPE chkread;
-static FD_SET_TYPE actread;
+static struct fd_set chkread;
+static struct fd_set actread;
 static void (*readfnc[FD_SETSIZE]) __ARGS((void *));
 static void *readarg[FD_SETSIZE];
 
-static FD_SET_TYPE chkwrite;
-static FD_SET_TYPE actwrite;
+static struct fd_set chkwrite;
+static struct fd_set actwrite;
 static void (*writefnc[FD_SETSIZE]) __ARGS((void *));
 static void *writearg[FD_SETSIZE];
 
