@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.db0sao,v 1.60 1996/08/12 18:50:57 deyke Exp $
+# @(#) $Id: net.rc.db0sao,v 1.61 1997/11/13 23:42:14 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -19,11 +19,11 @@ param tnc1 13         1 # RxDelay
 # tnc2: db0id (23cm)
 
 attach asy 0 0 kissi tnc2 0 256 9600
-param tnc2 TxDelay   20
+param tnc2 TxDelay   10
 param tnc2 Persist  255
 param tnc2 SlotTime   1
-param tnc2 TxTail     3
-param tnc2 FullDup    0
+param tnc2 TxTail   100
+param tnc2 FullDup    1
 param tnc2 12         0 # Echo
 param tnc2 13         1 # RxDelay
 
