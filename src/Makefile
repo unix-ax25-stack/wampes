@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.101 1999/02/01 22:24:25 deyke Exp $
+# @(#) $Id: Makefile,v 1.102 1999/02/11 19:26:49 deyke Exp $
 
 DEST          = /tcp
 
@@ -19,7 +19,6 @@ HDRS          = arp.h \
 		axclient.h \
 		cmdparse.h \
 		commands.h \
-		config.h \
 		crc.h \
 		daemon.h \
 		devparam.h \
@@ -380,9 +379,9 @@ ax25subr.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h ax25.h \
 	iface.h proc.h lapb.h
 ax25user.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h \
 	iface.h proc.h lapb.h ax25.h
-axclient.o: global.h ../lib/configure.h ../lib/strdup.h config.h mbuf.h \
-	timer.h ax25.h iface.h proc.h lapb.h session.h telnet.h tcp.h \
-	internet.h ip.h netuser.h
+axclient.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h ax25.h \
+	iface.h proc.h lapb.h session.h telnet.h tcp.h internet.h ip.h \
+	netuser.h
 axheard.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
 	timer.h ax25.h ip.h internet.h
 axip.o: global.h ../lib/configure.h ../lib/strdup.h ../lib/strerror.h mbuf.h \
@@ -392,11 +391,11 @@ axserver.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h ax25.h iface.h \
 	proc.h timer.h lapb.h login.h
 cmdparse.o: ../lib/strtoul.h ../lib/configure.h global.h ../lib/strdup.h \
 	proc.h mbuf.h timer.h cmdparse.h
-config.o: ../lib/configure.h global.h ../lib/strdup.h config.h mbuf.h timer.h \
-	proc.h iface.h ip.h internet.h tcp.h netuser.h udp.h lapb.h ax25.h \
-	kiss.h nrs.h netrom.h session.h telnet.h pktdrvr.h slip.h slhc.h \
-	arp.h icmp.h cmdparse.h commands.h ax25mail.h tipmail.h daemon.h \
-	socket.h asy.h trace.h flexnet.h
+config.o: ../lib/configure.h global.h ../lib/strdup.h mbuf.h timer.h proc.h \
+	iface.h ip.h internet.h tcp.h netuser.h udp.h lapb.h ax25.h kiss.h \
+	nrs.h netrom.h session.h telnet.h pktdrvr.h slip.h slhc.h arp.h \
+	icmp.h cmdparse.h commands.h ax25mail.h tipmail.h daemon.h socket.h \
+	asy.h trace.h flexnet.h
 crc.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h crc.h \
 	../lib/calc_crc.h
 devparam.o: global.h ../lib/configure.h ../lib/strdup.h devparam.h
@@ -408,9 +407,9 @@ domain.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
 domhdr.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h domain.h proc.h \
 	timer.h
 files.o: files.h
-finger.o: config.h global.h ../lib/configure.h ../lib/strdup.h mbuf.h \
-	socket.h proc.h timer.h internet.h icmp.h iface.h ip.h netuser.h \
-	tcp.h ftp.h session.h telnet.h ax25.h finger.h
+finger.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h socket.h proc.h \
+	timer.h internet.h icmp.h iface.h ip.h netuser.h tcp.h ftp.h \
+	session.h telnet.h ax25.h finger.h
 flexnet.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h iface.h \
 	proc.h ax25.h lapb.h trace.h flexnet.h cmdparse.h commands.h
 ftp.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h netuser.h timer.h \
@@ -452,9 +451,9 @@ iphdr.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h ip.h iface.h \
 ipip.o: global.h ../lib/configure.h ../lib/strdup.h ../lib/strerror.h mbuf.h \
 	iface.h proc.h timer.h internet.h netuser.h socket.h trace.h \
 	cmdparse.h hpux.h
-iproute.o: config.h global.h ../lib/configure.h ../lib/strdup.h mbuf.h \
-	iface.h proc.h timer.h internet.h ip.h tcp.h netuser.h icmp.h rip.h \
-	udp.h trace.h ipfilter.h
+iproute.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
+	timer.h internet.h ip.h tcp.h netuser.h icmp.h rip.h udp.h trace.h \
+	ipfilter.h
 kernel.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h proc.h timer.h \
 	socket.h daemon.h
 kiss.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
@@ -463,8 +462,7 @@ kiss.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
 kissdump.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h kiss.h iface.h \
 	proc.h timer.h devparam.h ax25.h trace.h crc.h
 krnlif.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
-	timer.h netuser.h commands.h devparam.h trace.h hpux.h config.h \
-	ax25.h
+	timer.h netuser.h commands.h devparam.h trace.h hpux.h ax25.h
 ksubr.o: global.h ../lib/configure.h ../lib/strdup.h proc.h mbuf.h timer.h \
 	commands.h main.h
 lapb.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h ax25.h \
@@ -492,9 +490,9 @@ misc.o: global.h ../lib/configure.h ../lib/strdup.h socket.h mbuf.h proc.h \
 	timer.h
 n8250.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h proc.h timer.h \
 	iface.h n8250.h asy.h devparam.h hpux.h
-netrom.o: global.h ../lib/configure.h ../lib/strdup.h config.h netuser.h \
-	mbuf.h timer.h iface.h proc.h arp.h ip.h internet.h ax25.h lapb.h \
-	netrom.h session.h telnet.h tcp.h cmdparse.h trace.h login.h
+netrom.o: global.h ../lib/configure.h ../lib/strdup.h netuser.h mbuf.h \
+	timer.h iface.h proc.h arp.h ip.h internet.h ax25.h lapb.h netrom.h \
+	session.h telnet.h tcp.h cmdparse.h trace.h login.h
 netuser.o: global.h ../lib/configure.h ../lib/strdup.h netuser.h
 ni.o: ../lib/configure.h global.h ../lib/strdup.h ../lib/strerror.h mbuf.h \
 	iface.h proc.h timer.h netuser.h trace.h hpux.h
@@ -519,10 +517,10 @@ ripdump.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h netuser.h \
 	timer.h rip.h iface.h proc.h udp.h internet.h ip.h trace.h
 services.o: global.h ../lib/configure.h ../lib/strdup.h socket.h mbuf.h \
 	proc.h timer.h netuser.h
-session.o: global.h ../lib/configure.h ../lib/strdup.h config.h mbuf.h proc.h \
-	timer.h tcp.h iface.h internet.h ip.h netuser.h ftp.h session.h \
-	telnet.h ax25.h icmp.h tty.h socket.h cmdparse.h commands.h main.h \
-	axclient.h lapb.h finger.h netrom.h
+session.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h proc.h timer.h \
+	tcp.h iface.h internet.h ip.h netuser.h ftp.h session.h telnet.h \
+	ax25.h icmp.h tty.h socket.h cmdparse.h commands.h main.h axclient.h \
+	lapb.h finger.h netrom.h
 slhc.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h internet.h ip.h \
 	iface.h proc.h timer.h tcp.h netuser.h slhc.h
 slhcdump.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h internet.h \

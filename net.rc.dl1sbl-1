@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dl1sbl-1,v 1.37 1996/10/28 22:46:12 deyke Exp $
+# @(#) $Id: net.rc.dl1sbl-1,v 1.38 1999/02/11 19:26:34 deyke Exp $
 
 hostname     dl1sbl-1
 ax25 mycall  dl1sbl-1
@@ -7,21 +7,22 @@ netrom ident "#BOEB1"
 
 attach axip                     # ax.25 over host ip
 attach ipip                     # ip over host ip
+attach ipip ipudp udp 20004     # ip over host udp
 attach netrom                   # ip over netrom
 
 ax25 route add axip default
 
+axip route add db0fho   db0fho
 axip route add df3du-1  15.138.80.94            # hpbidmp2.bbn.hp.com
 axip route add df9sr-1  15.136.35.218           # bmdjw.bbn.hp.com
 axip route add dh8saw-1 15.138.72.40            # hpbbis90.bbn.hp.com
 axip route add dj3eg-1  15.136.160.150          # hpbmosm0.bbn.hp.com
 axip route add dk0hu    15.138.33.250           # hp0hu.bbn.hp.com
-axip route add dk5sg    15.15.80.34             # mdddhd.fc.hp.com
 axip route add dl4sas-1 15.136.157.138          # hpbid1gf.bbn.hp.com
 axip route add dl4sel-1 15.136.162.7            # hpbbis45.bbn.hp.com
 
 route add  44.130.0.0/16        ipip     15.138.33.250
-route add  44.130.12.0/24       ipip     15.15.80.34
+route add  44.130.12.0/24       ipudp    15.254.48.2
 route add  44.143.0.0/16        ipip     15.138.33.250
 route add  db0sao-u.ampr.org    ipip     15.138.33.250
 route add  db0sao.ampr.org      ipip     15.138.33.250
@@ -31,8 +32,6 @@ route add  dh8saw-1.ampr.org    ipip     15.138.72.40
 route add  dj3eg-1.ampr.org     ipip     15.136.160.150
 route add  dk0hu-u.ampr.org     ipip     15.138.33.250
 route add  dk0hu.ampr.org       ipip     15.138.33.250
-route add  dk5sg-u.ampr.org     ipip     15.15.80.34
-route add  dk5sg.ampr.org       ipip     15.15.80.34
 route add  dl4sas-1.ampr.org    ipip     15.136.157.138
 route add  dl4sel-1.ampr.org    ipip     15.136.162.7
 route add  dl4sel.ampr.org      ipip     15.138.33.250
@@ -42,7 +41,6 @@ source /tcp/netrom_links
 netrom broadcast axip nodes
 
 flexnet link add dk0hu
-flexnet link add dk5sg
 
 domain usegethostby on
 echo accept

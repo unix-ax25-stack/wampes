@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.db0sao,v 1.62 1998/12/06 17:23:06 deyke Exp $
+# @(#) $Id: net.rc.db0sao,v 1.63 1999/02/11 19:26:34 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -49,8 +49,6 @@ route add  dh8saw-1.ampr.org    ipip     192.1.1.2
 route add  dj3eg-1.ampr.org     ipip     192.1.1.2
 route add  dk0hu-u.ampr.org     ipip     192.1.1.2
 route add  dk0hu.ampr.org       ipip     192.1.1.2
-route add  dk5sg-u.ampr.org     ipip     192.1.1.2
-route add  dk5sg.ampr.org       ipip     192.1.1.2
 route add  dl1sbl-1.ampr.org    ipip     192.1.1.2
 route add  dl4sas-1.ampr.org    ipip     192.1.1.2
 route add  dl4sel-1.ampr.org    ipip     192.1.1.2

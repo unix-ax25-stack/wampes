@@ -1,11 +1,10 @@
-/* @(#) $Id: session.c,v 1.22 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: session.c,v 1.23 1999/02/11 19:26:49 deyke Exp $ */
 
 /* NOS User Session control
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <stdio.h>
 #include "global.h"
-#include "config.h"
 #include "mbuf.h"
 #include "proc.h"
 #include "tcp.h"

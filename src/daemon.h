@@ -1,4 +1,4 @@
-/* @(#) $Id: daemon.h,v 1.6 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: daemon.h,v 1.7 1999/02/11 19:26:49 deyke Exp $ */
 
 #ifndef _DAEMON_H
 #define _DAEMON_H
@@ -10,19 +10,12 @@ struct daemon {
 };
 extern struct daemon Daemons[];
 
-/* In alloc.c: */
-void gcollect(int,void*,void*);
-
 /* In main.c: */
 void keyboard(int,void*,void*);
 void network(int,void *,void *);
-void display(int,void *,void *);
 
 /* In kernel.c: */
 void killer(int,void*,void*);
-
-/* In random.c: */
-void rand_init(int,void*,void*);
 
 /* In timer.c: */
 void timerproc(int,void*,void*);

@@ -1,10 +1,9 @@
-/* @(#) $Id: netrom.c,v 1.55 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: netrom.c,v 1.56 1999/02/11 19:26:49 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
 
 #include "global.h"
-#include "config.h"
 #include "netuser.h"
 #include "mbuf.h"
 #include "timer.h"

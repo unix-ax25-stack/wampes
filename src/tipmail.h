@@ -1,6 +1,4 @@
-/* @(#) $Id: tipmail.h,v 1.4 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: tipmail.h,v 1.5 1999/02/11 19:26:49 deyke Exp $ */
 
-int tipstart(int argc,char *argv[],void *p);
-int tip0(int argc,char *argv[],void *p);
 int telnet0(int argc,char *argv[],void *p);
 int telnet1(int argc,char *argv[],void *p);

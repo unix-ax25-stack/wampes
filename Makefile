@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.39 1999/02/01 22:24:01 deyke Exp $
+# @(#) $Id: Makefile,v 1.40 1999/02/11 19:26:34 deyke Exp $
 
 OBSOLETE   = /usr/local/bin/sfstat \
 	     /usr/local/etc/mkhostdb \
@@ -11,6 +11,7 @@ OBSOLETE   = /usr/local/bin/sfstat \
 	     lib/bbs.h \
 	     src/bootp.h \
 	     src/cc \
+	     src/config.h \
 	     src/enet.h \
 	     src/hardware.h \
 	     src/linux_include/stdlib.h \

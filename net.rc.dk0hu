@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dk0hu,v 1.54 1998/03/23 17:10:41 deyke Exp $
+# @(#) $Id: net.rc.dk0hu,v 1.55 1999/02/11 19:26:34 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -36,8 +36,6 @@ route add  df9sr-1.ampr.org     ipip     15.136.125.16
 route add  dh8saw-1.ampr.org    ipip     15.136.125.16
 route add  dj3eg-1.ampr.org     ipip     15.136.125.16
 route add  dk0hu-u.ampr.org     ni
-route add  dk5sg-u.ampr.org     ipip     15.136.125.16
-route add  dk5sg.ampr.org       ipip     15.136.125.16
 route add  dl1sbl-1.ampr.org    ipip     15.136.125.16
 route add  dl4sas-1.ampr.org    ipip     15.136.125.16
 route add  dl4sel-1.ampr.org    ipip     15.136.125.16

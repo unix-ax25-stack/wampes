@@ -1,4 +1,4 @@
-/* @(#) $Id: krnlif.c,v 1.5 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: krnlif.c,v 1.6 1999/02/11 19:26:49 deyke Exp $ */
 
 #ifdef linux
 
@@ -79,7 +79,6 @@
 #include "devparam.h"
 #include "trace.h"
 #include "hpux.h"
-#include "config.h"
 #include "ax25.h"
 
 #define KRNLIF_MAX 16

@@ -1,9 +1,8 @@
-/* @(#) $Id: axclient.c,v 1.19 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: axclient.c,v 1.20 1999/02/11 19:26:49 deyke Exp $ */
 
 #include <stdio.h>
 
 #include "global.h"
-#include "config.h"
 #include "mbuf.h"
 #include "timer.h"
 #include "ax25.h"

@@ -1,22 +1,16 @@
-# @(#) $Id: netrom_links,v 1.21 1996/08/12 18:50:57 deyke Exp $
-
-# netrom links db0id     db0dlg-2  100 permanent
-# netrom links db0id     db0hp-10  200 permanent
-# netrom links db0id     db0rot    150 permanent
-# netrom links db0id     db0sao    200 permanent
+# @(#) $Id: netrom_links,v 1.22 1999/02/11 19:26:34 deyke Exp $
 
 netrom links dk0hu     db0sao    250 permanent
 netrom links dk0hu     dl1sbl-1  250 permanent
 netrom links dk0hu     dl4sel    192 permanent
 
+netrom links dl1sbl-1  db0fho    250 permanent
 netrom links dl1sbl-1  df3du-1   250 permanent
 netrom links dl1sbl-1  df9sr-1   250 permanent
 netrom links dl1sbl-1  dh8saw-1  250 permanent
 netrom links dl1sbl-1  dj3eg-1   250 permanent
-netrom links dl1sbl-1  dk5sg     250 permanent
 netrom links dl1sbl-1  dl4sas-1  250 permanent
 netrom links dl1sbl-1  dl4sel-1  250 permanent
 
 netrom links db0fho    db0ndr    200 permanent
 netrom links db0fho    db0ndr-4  200 permanent
-netrom links db0fho    dk5sg     200 permanent

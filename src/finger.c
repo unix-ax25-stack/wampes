@@ -1,4 +1,4 @@
-/* @(#) $Id: finger.c,v 1.16 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: finger.c,v 1.17 1999/02/11 19:26:49 deyke Exp $ */
 
 /*
  *
@@ -12,7 +12,6 @@
  */
 
 #include <stdio.h>
-#include "config.h"
 #include "global.h"
 #include "mbuf.h"
 #include "socket.h"

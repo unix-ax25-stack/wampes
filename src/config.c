@@ -1,19 +1,12 @@
-/* @(#) $Id: config.c,v 1.54 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: config.c,v 1.55 1999/02/11 19:26:49 deyke Exp $ */
 
-/* A collection of stuff heavily dependent on the configuration info
- * in config.h. The idea is that configuration-dependent tables should
- * be located here to avoid having to pepper lots of .c files with #ifdefs,
- * requiring them to include config.h and be recompiled each time config.h
- * is modified.
- *
- * Copyright 1991 Phil Karn, KA9Q
+/* Copyright 1991 Phil Karn, KA9Q
  */
 
 #include "configure.h"
 
 #include <stdio.h>
 #include "global.h"
-#include "config.h"
 #include "mbuf.h"
 #include "timer.h"
 #include "proc.h"
@@ -53,7 +46,7 @@ static void axnr(struct iface *iface,struct ax25_cb *axp,uint8 *src,
 	uint8 *dest,struct mbuf **bp,int mcast);
 
 struct mbuf *Hopper;            /* Queue of incoming packets */
-unsigned Nsessions = NSESSIONS;
+unsigned Nsessions = 20;
 int Shortstatus;
 
 /* Command lookup and branch tables */

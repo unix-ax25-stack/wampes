@@ -1,11 +1,10 @@
-/* @(#) $Id: iproute.c,v 1.38 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: iproute.c,v 1.39 1999/02/11 19:26:49 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
  *
  * Copyright 1991 Phil Karn, KA9Q
  */
-#include "config.h"
 #include "global.h"
 #include "mbuf.h"
 #include "iface.h"
