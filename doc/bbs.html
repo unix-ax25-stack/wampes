@@ -4,7 +4,7 @@
 </HEAD>
 <BODY>
 <H1>BBS Reference Manual</H1>
-Version 951107
+Version 951112
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
@@ -53,8 +53,8 @@ To start the BBS you must type 'bbs' after you have connected to the
 system.
 If your home directory contains the file '.bbsrc' it's contents will be
 executed automatically. This allows the customization of the
-<A HREF="#H4.14">PROMPT</A> text, or the automatic execution of (for example)
-<A HREF="#H4.1">ALIAS</A>, <A HREF="#H4.21">SUBSCRIBE</A>, or <A HREF="#H4.3">DIR</A> commands.
+<A HREF="#H4.14"><B>PROMPT</B></A> text, or the automatic execution of (for example)
+<A HREF="#H4.1"><B>ALIAS</B></A>, <A HREF="#H4.21"><B>SUBSCRIBE</B></A>, or <A HREF="#H4.3"><B>DIR</B></A> commands.
 <HR><H2><A NAME="H2.">2. Command Input</A></H2>
 A command consists of a command name and optional arguments. Commands
 are not case sensitive, and may be abbreviated. If the command
@@ -71,7 +71,7 @@ may be changed using the Unix command &quot;stty intr&quot; before starting the
 BBS.
 <HR><H2><A NAME="H4.">4. Commands</A></H2>
 <H3><A NAME="H4.1">4.1 ALIAS [<I>name</I> [<I>text</I>]]</A></H3>
-The <A HREF="#H4.1">ALIAS</A> command shows or sets command aliases. After a command
+The <A HREF="#H4.1"><B>ALIAS</B></A> command shows or sets command aliases. After a command
 line is scanned, it is parsed into distinct commands and the first word
 of each command, left-to-right, is checked to see if it has an alias.
 If it does, it is replaced by the text which is the alias for that
@@ -105,31 +105,32 @@ redefined:
 <TR><TD ALIGN="left">|<TD ALIGN="left">&quot;PIPE&quot;
 </TABLE>
 <H3><A NAME="H4.2">4.2 DELETE <I>range ...</I></A></H3>
-The <A HREF="#H4.2">DELETE</A> command deletes the specified articles from the current
-group. Only articles written by the user may be deleted. See also
-<A HREF="#H6.">Ranges</A>.
+The <A HREF="#H4.2"><B>DELETE</B></A> command deletes the specified articles from the current
+group. Only articles written by the user may be deleted. The
+<A HREF="#H4.2"><B>DELETE</B></A> request will also be automatically forwarded to other BBS
+systems. See also <A HREF="#H6."><B>Ranges</B></A>.
 <H3><A NAME="H4.3">4.3 DIR [<I>pattern ...</I>]</A></H3>
-The <A HREF="#H4.3">DIR</A> command with no arguments shows all subscribed-to groups
-containing one or more unread articles. If <A HREF="#H4.3">DIR</A> is followed by one
+The <A HREF="#H4.3"><B>DIR</B></A> command with no arguments shows all subscribed-to groups
+containing one or more unread articles. If <A HREF="#H4.3"><B>DIR</B></A> is followed by one
 or more patterns it shows all groups matching those patterns, counting
-all articles (read or unread). See also <A HREF="#H5.">Patterns</A> and the
-<A HREF="#H4.21">SUBSCRIBE</A> and <A HREF="#H4.23">UNSUBSCRIBE</A> commands.
+all articles (read or unread). See also <A HREF="#H5."><B>Patterns</B></A> and the
+<A HREF="#H4.21"><B>SUBSCRIBE</B></A> and <A HREF="#H4.23"><B>UNSUBSCRIBE</B></A> commands.
 <H3><A NAME="H4.4">4.4 DISCONNECT</A></H3>
-The <A HREF="#H4.4">DISCONNECT</A> command ends the current BBS session, and then
+The <A HREF="#H4.4"><B>DISCONNECT</B></A> command ends the current BBS session, and then
 tries to terminate the connection. If the BBS was started using a Unix
-shell with job control (eg /bin/csh or /bin/ksh), <A HREF="#H4.4">DISCONNECT</A> will
+shell with job control (eg /bin/csh or /bin/ksh), <A HREF="#H4.4"><B>DISCONNECT</B></A> will
 not be able to terminate the connection. In this case the user has to
 enter 'exit' to the shell in order to disconnect.
 <H3><A NAME="H4.5">4.5 GROUP [<I>group</I>]</A></H3>
-The <A HREF="#H4.5">GROUP</A> command shows or sets the current group.
+The <A HREF="#H4.5"><B>GROUP</B></A> command shows or sets the current group.
 <H3><A NAME="H4.6">4.6 HELP [<I>command</I>|<B>ALL</B>]</A></H3>
-The <A HREF="#H4.6">HELP</A> command with no arguments prints a short list of all
-possible BBS commands, <A HREF="#H4.6">HELP</A> followed by <I>command</I> prints
-help specific to that command, <A HREF="#H4.6">HELP</A> <B>ALL</B> prints the complete BBS
+The <A HREF="#H4.6"><B>HELP</B></A> command with no arguments prints a short list of all
+possible BBS commands, <A HREF="#H4.6"><B>HELP</B></A> followed by <I>command</I> prints
+help specific to that command, <A HREF="#H4.6"><B>HELP</B></A> <B>ALL</B> prints the complete BBS
 manual.
 <H3><A NAME="H4.7">4.7 HEADERS [<I>flags</I>]</A></H3>
-The <A HREF="#H4.7">HEADERS</A> command shows or sets the flags controlling the output
-of article header lines by the <A HREF="#H4.16">READ</A>, <A HREF="#H4.25">WRITE</A>, and <A HREF="#H4.13">PIPE</A>
+The <A HREF="#H4.7"><B>HEADERS</B></A> command shows or sets the flags controlling the output
+of article header lines by the <A HREF="#H4.16"><B>READ</B></A>, <A HREF="#H4.25"><B>WRITE</B></A>, and <A HREF="#H4.13"><B>PIPE</B></A>
 commands. <I>flags</I> contains one character for each header line to be
 output:
 <P>
@@ -148,41 +149,41 @@ output:
 <P>
 The default for <I>flags</I> is &quot;DFS&quot;.
 <H3><A NAME="H4.8">4.8 INFO</A></H3>
-The <A HREF="#H4.8">INFO</A> command prints the contents of the file
+The <A HREF="#H4.8"><B>INFO</B></A> command prints the contents of the file
 &quot;/usr/local/lib/station.data&quot;, which may contain station information.
 <H3><A NAME="H4.9">4.9 LIST [<I>pattern ...</I>]</A></H3>
-The <A HREF="#H4.9">LIST</A> command with no arguments lists all unread articles in
+The <A HREF="#H4.9"><B>LIST</B></A> command with no arguments lists all unread articles in
 the current group. If the current group does not contain any unread
-articles, <A HREF="#H4.9">LIST</A> will enter the next subscribed-to group containing
+articles, <A HREF="#H4.9"><B>LIST</B></A> will enter the next subscribed-to group containing
 unread articles, make that the current group, and list all unread
-articles in this new group. The <A HREF="#H4.9">LIST</A> command followed by one or
+articles in this new group. The <A HREF="#H4.9"><B>LIST</B></A> command followed by one or
 more patterns shows all articles (read or unread) matching those
 patterns. The patterns are matched against the Subject and From fields.
-See also <A HREF="#H5.">Patterns</A>.
+See also <A HREF="#H5."><B>Patterns</B></A>.
 <H3><A NAME="H4.10">4.10 MARK [<I>range ...</I>]</A></H3>
-The <A HREF="#H4.10">MARK</A> command marks the current or the specified articles in
-the current group as being read. See also <A HREF="#H6.">Ranges</A>.
+The <A HREF="#H4.10"><B>MARK</B></A> command marks the current or the specified articles in
+the current group as being read. See also <A HREF="#H6."><B>Ranges</B></A>.
 <H3><A NAME="H4.11">4.11 MAXAGE [<I>maxage</I>]</A></H3>
-The <A HREF="#H4.11">MAXAGE</A> command shows or sets the maximum age of unread
-articles. Whenever a group is listed with the <A HREF="#H4.9">LIST</A> command, all
+The <A HREF="#H4.11"><B>MAXAGE</B></A> command shows or sets the maximum age of unread
+articles. Whenever a group is listed with the <A HREF="#H4.9"><B>LIST</B></A> command, all
 articles older than <I>maxage</I> days are automatically marked as being
 read. To disable this feature set <I>maxage</I> to some large number (eg
 99999). The default for <I>maxage</I> is 7 (days).
 <H3><A NAME="H4.12">4.12 MYBBS <I>mailbox</I></A></H3>
-The <A HREF="#H4.12">MYBBS</A> command stores <I>mailbox</I> as the users home
+The <A HREF="#H4.12"><B>MYBBS</B></A> command stores <I>mailbox</I> as the users home
 mailbox. All incoming messages to this user will be
-forwarded to this home mailbox. This <A HREF="#H4.12">MYBBS</A> information will be
+forwarded to this home mailbox. This <A HREF="#H4.12"><B>MYBBS</B></A> information will be
 automatically transferred to other BBS systems.
 <H3><A NAME="H4.13">4.13 PIPE <I>unix-command</I> [<I>range ...</I>]</A></H3>
-The <A HREF="#H4.13">PIPE</A> command with no <I>range</I> arguments pipes the next
+The <A HREF="#H4.13"><B>PIPE</B></A> command with no <I>range</I> arguments pipes the next
 unread article in the current group to <I>unix-command</I>. If the
-current group does not contain any unread articles, <A HREF="#H4.13">PIPE</A> will
+current group does not contain any unread articles, <A HREF="#H4.13"><B>PIPE</B></A> will
 enter the next subscribed-to group containing unread articles, make that
 the current group, and pipe the first unread article in this new group.
-The <A HREF="#H4.13">PIPE</A> command followed by one or more <I>ranges</I> pipes the
-specified articles in the current group. See also <A HREF="#H6.">Ranges</A>.
+The <A HREF="#H4.13"><B>PIPE</B></A> command followed by one or more <I>ranges</I> pipes the
+specified articles in the current group. See also <A HREF="#H6."><B>Ranges</B></A>.
 <H3><A NAME="H4.14">4.14 PROMPT [<I>prompt-string</I>]</A></H3>
-The <A HREF="#H4.14">PROMPT</A> command shows or sets the text that the BBS transmits
+The <A HREF="#H4.14"><B>PROMPT</B></A> command shows or sets the text that the BBS transmits
 to indicate that it is ready for more user input. If
 <I>prompt-string</I> contains space characters, it must be enclosed in
 either single or double quotes. The following special character
@@ -202,58 +203,58 @@ sequences are recognized:
 <P>
 The default <I>prompt-string</I> is &quot;\w:\c &gt; &quot;.
 <H3><A NAME="H4.15">4.15 QUIT</A></H3>
-The <A HREF="#H4.15">QUIT</A> command exits the BBS program.
+The <A HREF="#H4.15"><B>QUIT</B></A> command exits the BBS program.
 <H3><A NAME="H4.16">4.16 READ [<I>range ...</I>]</A></H3>
-The <A HREF="#H4.16">READ</A> command with no <I>range</I> arguments reads the next
+The <A HREF="#H4.16"><B>READ</B></A> command with no <I>range</I> arguments reads the next
 unread article in the current group. If the current group does not
-contain any unread articles, <A HREF="#H4.16">READ</A> will enter the next
+contain any unread articles, <A HREF="#H4.16"><B>READ</B></A> will enter the next
 subscribed-to group containing unread articles, make that the current
 group, and read the first unread article in this new group. The
-<A HREF="#H4.16">READ</A> command followed by one or more <I>ranges</I> reads the
-specified articles in the current group. See also <A HREF="#H6.">Ranges</A>.
+<A HREF="#H4.16"><B>READ</B></A> command followed by one or more <I>ranges</I> reads the
+specified articles in the current group. See also <A HREF="#H6."><B>Ranges</B></A>.
 <H3><A NAME="H4.17">4.17 RELOAD</A></H3>
-The <A HREF="#H4.17">RELOAD</A> command checks for new groups and articles.
+The <A HREF="#H4.17"><B>RELOAD</B></A> command checks for new groups and articles.
 <H3><A NAME="H4.18">4.18 REPLY [ALL] [<I>article-number</I>]</A></H3>
-The <A HREF="#H4.18">REPLY</A> command sends a response to the current or the specified
+The <A HREF="#H4.18"><B>REPLY</B></A> command sends a response to the current or the specified
 article in the current group. If <B>ALL</B> is used, the response will
 be delivered to all recipients of the original message, otherwise it
 will be sent to the author only.
 <H3><A NAME="H4.19">4.19 SEND <I>recipient</I>|<I>group</I> [@ <I>mailbox</I>|<I>distribution</I>] [&lt; <I>sender</I>] [$<I>bulletin-id</I>] [# <I>lifetime</I>]</A></H3>
-The <A HREF="#H4.19">SEND</A> command sends a personal mail to
+The <A HREF="#H4.19"><B>SEND</B></A> command sends a personal mail to
 <I>recipient</I>@<I>mailbox</I>, or posts an article to <I>group</I> with
 distribution <I>distribution</I>. Mail messages and articles are
 forwarded to other BBS systems if necessary. Terminate message entry
 with a line containing just ^Z (control Z), /EX, or ***END.
 <H3><A NAME="H4.20">4.20 SHELL [<I>unix-command</I>]</A></H3>
-The <A HREF="#H4.20">SHELL</A> command starts a Unix shell process. If a Unix command
+The <A HREF="#H4.20"><B>SHELL</B></A> command starts a Unix shell process. If a Unix command
 is specified with the shell command, only this command will be executed,
 and the BBS will be re-started when the command has completed. If the
 Unix command contain spaces, it must be enclosed in either single or
 double quotes.
 <H3><A NAME="H4.21">4.21 SUBSCRIBE [<I>pattern ...</I>]</A></H3>
-The <A HREF="#H4.21">SUBSCRIBE</A> command with no arguments subscribes to the current
-group. If <A HREF="#H4.21">SUBSCRIBE</A> is followed by one or more patterns it
+The <A HREF="#H4.21"><B>SUBSCRIBE</B></A> command with no arguments subscribes to the current
+group. If <A HREF="#H4.21"><B>SUBSCRIBE</B></A> is followed by one or more patterns it
 subscribes to all groups matching those patterns. See also
-<A HREF="#H5.">Patterns</A>.
+<A HREF="#H5."><B>Patterns</B></A>.
 <H3><A NAME="H4.22">4.22 UNMARK [<I>range ...</I>]</A></H3>
-The <A HREF="#H4.22">UNMARK</A> command marks the current or the specified articles in
-the current group as NOT being read. See also <A HREF="#H6.">Ranges</A>.
+The <A HREF="#H4.22"><B>UNMARK</B></A> command marks the current or the specified articles in
+the current group as NOT being read. See also <A HREF="#H6."><B>Ranges</B></A>.
 <H3><A NAME="H4.23">4.23 UNSUBSCRIBE [<I>pattern ...</I>]</A></H3>
-The <A HREF="#H4.23">UNSUBSCRIBE</A> command with no arguments unsubscribes from the
-current group. If <A HREF="#H4.23">UNSUBSCRIBE</A> is followed by one or more patterns
+The <A HREF="#H4.23"><B>UNSUBSCRIBE</B></A> command with no arguments unsubscribes from the
+current group. If <A HREF="#H4.23"><B>UNSUBSCRIBE</B></A> is followed by one or more patterns
 it unsubscribes from all groups matching those patterns. See also
-<A HREF="#H5.">Patterns</A>.
+<A HREF="#H5."><B>Patterns</B></A>.
 <H3><A NAME="H4.24">4.24 VERSION</A></H3>
-The <A HREF="#H4.24">VERSION</A> command shows the current BBS version number, and some
+The <A HREF="#H4.24"><B>VERSION</B></A> command shows the current BBS version number, and some
 status information.
 <H3><A NAME="H4.25">4.25 WRITE <I>filename</I> [<I>range ...</I>]</A></H3>
-The <A HREF="#H4.25">WRITE</A> command with no <I>range</I> arguments writes (appends)
+The <A HREF="#H4.25"><B>WRITE</B></A> command with no <I>range</I> arguments writes (appends)
 the next unread article in the current group to <I>filename</I>. If the
-current group does not contain any unread articles, <A HREF="#H4.25">WRITE</A> will
+current group does not contain any unread articles, <A HREF="#H4.25"><B>WRITE</B></A> will
 enter the next subscribed-to group containing unread articles, make that
 the current group, and write the first unread article in this new group.
-The <A HREF="#H4.25">WRITE</A> command followed by one or more <I>ranges</I> writes the
-specified articles in the current group. See also <A HREF="#H6.">Ranges</A>.
+The <A HREF="#H4.25"><B>WRITE</B></A> command followed by one or more <I>ranges</I> writes the
+specified articles in the current group. See also <A HREF="#H6."><B>Ranges</B></A>.
 <HR><H2><A NAME="H5.">5. Patterns</A></H2>
 Some BBS commands take patterns as arguments. The syntax of patterns is:
 <P>

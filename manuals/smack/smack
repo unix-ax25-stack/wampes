@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/smack/smack,v 1.1 1995/03/01 09:28:04 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/smack/smack,v 1.2 1995/11/12 12:29:11 deyke Exp $
 .nr Ej 0 \" No new page for all headers
 .H 1 "Introduction"
 .P
@@ -47,13 +47,15 @@ received first.
 The following diagrams show the frame format of data packets, one
 with checksum and one without:
 .DS
-.SP 1
+
 +------+------+------+------+-----+------+------+
 | FEND | 0x00 | DATA | DATA | ... | DATA | FEND |
 +------+------+------+------+-----+------+------+
 
 KISS data frame (without checksum)
-.SP 2
+
+.\"
+
 +------+------+------+------+----
 | FEND | 0x80 | DATA | DATA | ...
 +------+------+------+------+----

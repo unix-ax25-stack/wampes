@@ -1,6 +1,6 @@
                     BBS Reference Manual
 
-                       Version 951107
+                       Version 951112
 
                  Dieter Deyke, DK5SG/N0PRA
                       deyke@fc.hp.com
@@ -65,6 +65,7 @@ CHECK       "DIR"
 ERASE       "DELETE"
 EXIT        "QUIT"
 KILL        "DELETE"
+
 MAIL        "SHELL mailx"
 MORE        "PIPE more"
 NEWNEWS     "RELOAD; DIR"
@@ -86,28 +87,29 @@ DELETE range ...
 
 The DELETE command deletes the specified articles  from  the
 current  group.  Only  articles  written  by the user may be
-deleted. See also Ranges.
+deleted. The DELETE request will also be automatically  for-
+warded to other BBS systems. See also Ranges.
 
 ^DIR
 
 DIR [pattern ...]
 
-The DIR command with no arguments  shows  all  subscribed-to
-groups  containing  one  or  more unread articles. If DIR is
-followed by one or more patterns it shows all groups  match-
-ing  those patterns, counting all articles (read or unread).
-See also Patterns and the  SUBSCRIBE  and  UNSUBSCRIBE  com-
+The  DIR  command  with no arguments shows all subscribed-to
+groups containing one or more unread  articles.  If  DIR  is
+followed  by one or more patterns it shows all groups match-
+ing those patterns, counting all articles (read or  unread).
+See  also  Patterns  and  the SUBSCRIBE and UNSUBSCRIBE com-
 mands.
 
 ^DISCONNECT
 
 DISCONNECT
 
-The  DISCONNECT  command  ends  the current BBS session, and
-then tries to terminate  the  connection.  If  the  BBS  was
-started  using a Unix shell with job control (eg /bin/csh or
+The DISCONNECT command ends the  current  BBS  session,  and
+then  tries  to  terminate  the  connection.  If the BBS was
+started using a Unix shell with job control (eg /bin/csh  or
 /bin/ksh), DISCONNECT will not be able to terminate the con-
-nection.  In  this  case the user has to enter 'exit' to the
+nection. In this case the user has to enter  'exit'  to  the
 shell in order to disconnect.
 
 ^GROUP
@@ -120,18 +122,19 @@ The GROUP command shows or sets the current group.
 
 HELP [command|ALL]
 
-The HELP command with no arguments prints a  short  list  of
-all  possible  BBS commands, HELP followed by command prints
-help specific to that command, HELP ALL prints the  complete
+The  HELP  command  with no arguments prints a short list of
+all possible BBS commands, HELP followed by  command  prints
+help  specific to that command, HELP ALL prints the complete
 BBS manual.
 
 ^HEADERS
 
 HEADERS [flags]
 
-The  HEADERS command shows or sets the flags controlling the
-output of article header lines by the READ, WRITE, and  PIPE
-commands.  flags contains one character for each header line
+The HEADERS command shows or sets the flags controlling  the
+
+output  of article header lines by the READ, WRITE, and PIPE
+commands. flags contains one character for each header  line
 to be output:
 
 B   Bulletin-ID:
@@ -151,7 +154,7 @@ The default for flags is "DFS".
 
 INFO
 
-The  INFO  command  prints  the   contents   of   the   file
+The   INFO   command   prints   the  contents  of  the  file
 "/usr/local/lib/station.data",  which  may  contain  station
 information.
 
@@ -160,14 +163,13 @@ information.
 LIST [pattern ...]
 
 The LIST command with no arguments lists all unread articles
-in  the current group. If the current group does not contain
-any unread articles, LIST will enter the next  subscribed-to
-group  containing  unread  articles,  make  that the current
-group, and list all unread articles in this new  group.  The
-LIST  command  followed  by  one  or more patterns shows all
-
-articles (read or unread) matching those patterns. The  pat-
-terns  are matched against the Subject and From fields.  See
+in the current group. If the current group does not  contain
+any  unread articles, LIST will enter the next subscribed-to
+group containing unread  articles,  make  that  the  current
+group,  and  list all unread articles in this new group. The
+LIST command followed by one  or  more  patterns  shows  all
+articles  (read or unread) matching those patterns. The pat-
+terns are matched against the Subject and From fields.   See
 also Patterns.
 
 ^MARK
@@ -181,42 +183,42 @@ in the current group as being read. See also Ranges.
 
 MAXAGE [maxage]
 
-The  MAXAGE  command shows or sets the maximum age of unread
-articles. Whenever a group is listed with the LIST  command,
+The MAXAGE command shows or sets the maximum age  of  unread
+articles.  Whenever a group is listed with the LIST command,
 all articles older than maxage days are automatically marked
-as being read. To disable this feature set  maxage  to  some
+as  being  read.  To disable this feature set maxage to some
 large number (eg 99999). The default for maxage is 7 (days).
 
 ^MYBBS
 
 MYBBS mailbox
 
-The MYBBS command stores mailbox as the users home  mailbox.
+The  MYBBS command stores mailbox as the users home mailbox.
 All incoming messages to this user will be forwarded to this
-home mailbox. This MYBBS information will  be  automatically
+home  mailbox.  This MYBBS information will be automatically
 transferred to other BBS systems.
 
 ^PIPE
 
 PIPE unix-command [range ...]
 
-The  PIPE  command  with  no  range arguments pipes the next
-unread article in the current group to unix-command. If  the
-current  group  does  not  contain any unread articles, PIPE
-will enter the next subscribed-to  group  containing  unread
-articles,  make  that  the current group, and pipe the first
+The PIPE command with no  range  arguments  pipes  the  next
+unread  article in the current group to unix-command. If the
+current group does not contain  any  unread  articles,  PIPE
+will  enter  the  next subscribed-to group containing unread
+articles, make that the current group, and  pipe  the  first
 unread article in this new group.  The PIPE command followed
-by  one  or  more ranges pipes the specified articles in the
+by one or more ranges pipes the specified  articles  in  the
 current group. See also Ranges.
 
 ^PROMPT
 
 PROMPT [prompt-string]
 
-The PROMPT command shows or  sets  the  text  that  the  BBS
-transmits  to indicate that it is ready for more user input.
-If prompt-string  contains  space  characters,  it  must  be
-enclosed  in  either  single or double quotes. The following
+The  PROMPT  command  shows  or  sets  the text that the BBS
+transmits to indicate that it is ready for more user  input.
+If  prompt-string  contains  space  characters,  it  must be
+enclosed in either single or double  quotes.  The  following
 special character sequences are recognized:
 
 \c     current article number
@@ -241,13 +243,13 @@ The QUIT command exits the BBS program.
 
 READ [range ...]
 
-The READ command with no  range  arguments  reads  the  next
-unread  article  in  the current group. If the current group
-does not contain any unread articles, READ  will  enter  the
-next  subscribed-to  group  containing unread articles, make
+The  READ  command  with  no  range arguments reads the next
+unread article in the current group. If  the  current  group
+does  not  contain  any unread articles, READ will enter the
+next subscribed-to group containing  unread  articles,  make
 that the current group, and read the first unread article in
-this  new  group.  The  READ command followed by one or more
-ranges reads the specified articles in  the  current  group.
+this new group. The READ command followed  by  one  or  more
+ranges  reads  the  specified articles in the current group.
 See also Ranges.
 
 ^RELOAD
@@ -260,8 +262,9 @@ The RELOAD command checks for new groups and articles.
 
 REPLY [ALL] [article-number]
 
-The  REPLY  command  sends  a response to the current or the
-specified article in the current group. If ALL is used,  the
+The REPLY command sends a response to  the  current  or  the
+specified  article in the current group. If ALL is used, the
+
 response will be delivered to all recipients of the original
 message, otherwise it will be sent to the author only.
 
@@ -272,44 +275,43 @@ sender] [$bulletin-id] [# lifetime]
 
 The SEND command sends a personal mail to recipient@mailbox,
 or posts an article to group with distribution distribution.
-Mail messages and articles are forwarded to other  BBS  sys-
-tems  if necessary. Terminate message entry with a line con-
+Mail  messages  and articles are forwarded to other BBS sys-
+tems if necessary. Terminate message entry with a line  con-
 taining just ^Z (control Z), /EX, or ***END.
 
 ^SHELL
 
 SHELL [unix-command]
 
-The SHELL command starts a Unix shell  process.  If  a  Unix
-command  is specified with the shell command, only this com-
-mand will be executed, and the BBS will be  re-started  when
-the  command  has  completed.  If  the  Unix command contain
-spaces, it must be  enclosed  in  either  single  or  double
+The  SHELL  command  starts  a Unix shell process. If a Unix
+command is specified with the shell command, only this  com-
+mand  will  be executed, and the BBS will be re-started when
+the command has  completed.  If  the  Unix  command  contain
+spaces,  it  must  be  enclosed  in  either single or double
 quotes.
 
 ^SUBSCRIBE
 
 SUBSCRIBE [pattern ...]
 
-The  SUBSCRIBE  command  with no arguments subscribes to the
-current group. If SUBSCRIBE is followed by one or more  pat-
-terns  it  subscribes to all groups matching those patterns.
+The SUBSCRIBE command with no arguments  subscribes  to  the
+current  group. If SUBSCRIBE is followed by one or more pat-
+terns it subscribes to all groups matching  those  patterns.
 See also Patterns.
 
 ^UNMARK
 
 UNMARK [range ...]
 
-The UNMARK  command  marks  the  current  or  the  specified
-
-articles  in  the  current group as NOT being read. See also
+The  UNMARK command marks the current or the specified arti-
+cles in the current  group  as  NOT  being  read.  See  also
 Ranges.
 
 ^UNSUBSCRIBE
 
 UNSUBSCRIBE [pattern ...]
 
-The UNSUBSCRIBE command with no arguments unsubscribes  from
+The  UNSUBSCRIBE command with no arguments unsubscribes from
 the current group. If UNSUBSCRIBE is followed by one or more
 patterns it unsubscribes from all groups matching those pat-
 terns. See also Patterns.
@@ -318,19 +320,20 @@ terns. See also Patterns.
 
 VERSION
 
-The  VERSION  command  shows the current BBS version number,
+The VERSION command shows the current  BBS  version  number,
 and some status information.
 
 ^WRITE
 
 WRITE filename [range ...]
 
-The WRITE command with no range arguments  writes  (appends)
+The  WRITE  command with no range arguments writes (appends)
 the next unread article in the current group to filename. If
-the current group does  not  contain  any  unread  articles,
-WRITE  will  enter  the  next subscribed-to group containing
-unread articles, make that the current group, and write  the
-first  unread  article in this new group.  The WRITE command
+the  current  group  does  not  contain any unread articles,
+WRITE will enter the  next  subscribed-to  group  containing
+unread  articles, make that the current group, and write the
+first unread article in this new group.  The  WRITE  command
+
 followed by one or more ranges writes the specified articles
 in the current group. See also Ranges.
 
@@ -338,7 +341,7 @@ in the current group. See also Ranges.
 
 Patterns
 
-Some  BBS commands take patterns as arguments. The syntax of
+Some BBS commands take patterns as arguments. The syntax  of
 patterns is:
 
 *       Matches any string, including the null string.
@@ -358,7 +361,7 @@ All pattern matches are case insensitive.
 
 Ranges
 
-Some BBS commands take ranges as arguments.  The  syntax  of
+Some  BBS  commands  take ranges as arguments. The syntax of
 ranges is:
 
 *               All articles.

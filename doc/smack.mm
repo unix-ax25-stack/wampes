@@ -76,13 +76,15 @@ received first.
 The following diagrams show the frame format of data packets, one
 with checksum and one without:
 .DS
-.SP 1
+
 +------+------+------+------+-----+------+------+
 | FEND | 0x00 | DATA | DATA | ... | DATA | FEND |
 +------+------+------+------+-----+------+------+
 
 KISS data frame (without checksum)
-.SP 2
+
+.\"
+
 +------+------+------+------+----
 | FEND | 0x80 | DATA | DATA | ...
 +------+------+------+------+----

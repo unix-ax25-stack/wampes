@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^BBS Reference Manual^-\\\\nP-^Version 951107" \" Page footer
+.PF "^BBS Reference Manual^-\\\\nP-^Version 951112" \" Page footer
 .\"
 .S 30
 .ce
 \fBBBS Reference Manual\fP
 .ce
-Version 951107
+Version 951112
 .S
 .SP 2
 .S 15
@@ -29,6 +29,7 @@ deyke@fc.hp.com
 .S
 .nr Cl 2 \" Max level of header for table of contents
 .H 1 "Start"
+.nr Ej 0 \" From now on do not start a new page for any header level
 To start the BBS you must type 'bbs' after you have connected to the
 system.
 If your home directory contains the file '.bbsrc' it's contents will be
@@ -88,8 +89,9 @@ TYPE~"READ"
 .TE
 .H 2 "DELETE" " \fIrange ...\fP"
 The \fBDELETE\fP command deletes the specified articles from the current
-group. Only articles written by the user may be deleted. See also
-\fBRanges\fP.
+group. Only articles written by the user may be deleted. The
+\fBDELETE\fP request will also be automatically forwarded to other BBS
+systems. See also \fBRanges\fP.
 .H 2 "DIR" " [\fIpattern ...\fP]"
 The \fBDIR\fP command with no arguments shows all subscribed-to groups
 containing one or more unread articles. If \fBDIR\fP is followed by one

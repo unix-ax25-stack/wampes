@@ -4,7 +4,7 @@
 </HEAD>
 <BODY>
 <H1>WAMPES Reference Manual</H1>
-Version 951107
+Version 951112
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
@@ -203,7 +203,7 @@ This is used in various time stamps.
 The console may be in one of two modes: <B>command mode</B> or
 <B>converse mode</B>.
 In <B>command mode</B> the prompt <I>hostname</I>&gt; is displayed and any of the
-commands described in the <A HREF="#H4.">Commands</A> chapter may be entered.
+commands described in the <A HREF="#H4."><B>Commands</B></A> chapter may be entered.
 In <B>converse mode</B>
 keyboard input is processed according to the current session.
 <P>
@@ -215,7 +215,7 @@ session keyboard input is sent to the
 remote system, and any output from the remote system is displayed on the
 console. In a FTP session keyboard input has to consist of
 known local commands
-(see the <A HREF="#H5.">FTP Subcommands</A> chapter).
+(see the <A HREF="#H5."><B>FTP Subcommands</B></A> chapter).
 A Finger session is used to peek at a
 remote system for its users (and what they are doing on some UNIX systems).
 <P>
@@ -231,13 +231,13 @@ The keyboard is always in <B>cooked</B> state in command mode.
 It is also <B>cooked</B> in converse mode on an AX25, FTP, or NETROM session.
 In a Telnet session it depends on
 whether the remote end has issued (and the local end has
-accepted) the Telnet WILL ECHO option (see the <A HREF="#H4.15">echo</A> command).
+accepted) the Telnet WILL ECHO option (see the <A HREF="#H4.15"><B>echo</B></A> command).
 <P>
 To escape back to <B>command mode</B>
 the user must enter the <I>escape</I> character, which is by
 default Control-] (0x1d, ASCII GS). Note that this is distinct from the
 ASCII character of the same name. The escape character can be changed (see
-the <A HREF="#H4.17">escape</A> command).
+the <A HREF="#H4.17"><B>escape</B></A> command).
 Setting the escape character to an unreachable code renders a system inescapable
 and the user hung in a session.
 <P>
@@ -345,7 +345,7 @@ notation:
 Many commands take subcommands or parameters, which may be optional or
 required. In general, if a required subcommand or parameter is omitted,
 an error message will summarize the available subcommands or required
-parameters. Giving a <A HREF="#H4.3">?</A> in place of the subcommand will also
+parameters. Giving a <A HREF="#H4.3"><B>?</B></A> in place of the subcommand will also
 generate the message. This is useful when the command word alone is a
 valid command. If a command takes an optional value parameter, issuing
 the command without the parameter generally displays the current value
@@ -367,7 +367,7 @@ full.
 <P>
 FTP subcommands (eg. put, get, dir, etc) are recognized only in
 converse mode with the appropriate FTP session, they are not recognized
-in command mode (see the <A HREF="#H5.">FTP Subcommands</A> chapter).
+in command mode (see the <A HREF="#H5."><B>FTP Subcommands</B></A> chapter).
 <P>
 A word beginning with <B>#</B> causes that word and all the following
 characters on the same line to be ignored.
@@ -376,28 +376,28 @@ Entering a carriage return (empty line) while in command mode
 puts you in converse mode with the current session. If there is
 no current session, <B>WAMPES</B> remains in command mode.
 <H3><A NAME="H4.2">4.2 ! <I>shell_command_line</I></A></H3>
-An alias for the <A HREF="#H4.47">shell</A> command.
+An alias for the <A HREF="#H4.47"><B>shell</B></A> command.
 <H3><A NAME="H4.3">4.3 ?</A></H3>
 Display a brief summary of top-level commands.
 <H3><A NAME="H4.4">4.4 arp [<I>subcommand</I>]</A></H3>
 Without an argument,
 display the Address Resolution Protocol table that maps IP addresses
 to their subnet (link) addresses.
-For each IP address entry the subnet type (eg. <A HREF="#H4.7">ax25</A>, <A HREF="#H4.33">netrom</A>),
+For each IP address entry the subnet type (eg. <A HREF="#H4.7"><B>ax25</B></A>, <A HREF="#H4.33"><B>netrom</B></A>),
 link address, and time to expiration is shown.
 If the link address is currently unknown,
 the number of IP datagrams awaiting resolution is also shown.
 <H4><A NAME="H4.4.1">4.4.1 arp add <I>hostid</I> ax25|netrom <I>link_addr</I></A></H4>
 Add a permanent entry to the ARP table. It will not time out as
 will an automatically created entry, but must be removed with the
-<A HREF="#H4.4.2">arp drop</A> command.
+<A HREF="#H4.4.2"><B>arp drop</B></A> command.
 <H4><A NAME="H4.4.2">4.4.2 arp drop <I>hostid</I> ax25|netrom</A></H4>
 Remove the specified entry from the ARP table.
 <H4><A NAME="H4.4.3">4.4.3 arp flush</A></H4>
 Drop all automatically created entries from the ARP table, permanent
 entries are not affected.
 <H4><A NAME="H4.4.4">4.4.4 arp publish <I>hostid</I> ax25|netrom <I>link_addr</I></A></H4>
-The <A HREF="#H4.4.4">arp publish</A> command is similar to the <A HREF="#H4.4.1">arp add</A> command,
+The <A HREF="#H4.4.4"><B>arp publish</B></A> command is similar to the <A HREF="#H4.4.1"><B>arp add</B></A> command,
 but <B>WAMPES</B> will also respond to any ARP request it sees on the network
 that seeks the specified address.
 This is commonly referred to as &quot;proxy arp&quot;,
@@ -426,7 +426,7 @@ device during a single read system call. This is useful for
 monitoring system interrupt latency margins as it shows how
 close the port hardware has come to overflowing due to the
 inability of the CPU to respond in time.
-The high water mark is reset to 0 after <A HREF="#H4.5">asystat</A> has
+The high water mark is reset to 0 after <A HREF="#H4.5"><B>asystat</B></A> has
 displayed its value.
 <LI>The third line shows transmit (TX) statistics, including the total
 number of write system calls and transmitted characters.
@@ -444,17 +444,17 @@ and is also used to open the interface device file in the directory <B>/dev</B>.
 Datagrams larger than this limit will be fragmented at the IP layer
 into smaller pieces.
 For AX.25 UI frames, this limits the size of the information field.
-For AX.25 I frames, however, the <A HREF="#H4.7.10">ax25 paclen</A> parameter is also relevant.
+For AX.25 I frames, however, the <A HREF="#H4.7.10"><B>ax25 paclen</B></A> parameter is also relevant.
 If the datagram or fragment is still larger than <B>paclen</B>,
 it is also fragmented at the AX.25 level (as opposed to the IP level) before
 transmission.
-See the <A HREF="#H6.">Setting Paclen, Maxframe, MTU, MSS and Window</A> chapter
+See the <A HREF="#H6."><B>Setting Paclen, Maxframe, MTU, MSS and Window</B></A> chapter
 for more information.
 <I>speed</I> is the transmission speed in bits per second (eg. 9600).
 <P>
 If any I/O error is encountered reading or writing the interface device file,
 the interface will be marked <B>DOWN</B>.
-Use the <A HREF="#H4.35">param</A> <I>name</I> <B>Up</B> command to re-enable the interface.
+Use the <A HREF="#H4.35"><B>param</B></A> <I>name</I> <B>Up</B> command to re-enable the interface.
 <H4><A NAME="H4.6.2">4.6.2 attach asy <I>ip-addr</I> <I>port</I> <I>encapsulation</I> <I>name</I> 0 <I>mtu</I> <I>speed</I></A></H4>
 Configure and attach a UNIX TCP connection based interface to the system.
 This is very similar to the asynchronous communications interface described above,
@@ -473,27 +473,27 @@ available encapsulations.
 Datagrams larger than this limit will be fragmented at the IP layer
 into smaller pieces.
 For AX.25 UI frames, this limits the size of the information field.
-For AX.25 I frames, however, the <A HREF="#H4.7.10">ax25 paclen</A> parameter is also relevant.
+For AX.25 I frames, however, the <A HREF="#H4.7.10"><B>ax25 paclen</B></A> parameter is also relevant.
 If the datagram or fragment is still larger than <B>paclen</B>,
 it is also fragmented at the AX.25 level (as opposed to the IP level) before
 transmission.
-See the <A HREF="#H6.">Setting Paclen, Maxframe, MTU, MSS and Window</A> chapter
+See the <A HREF="#H6."><B>Setting Paclen, Maxframe, MTU, MSS and Window</B></A> chapter
 for more information.
 <I>speed</I> must be specified, but is not used.
 <P>
 If any I/O error is encountered reading or writing the UNIX TCP connection,
 the interface will be marked <B>DOWN</B>.
-Use the <A HREF="#H4.35">param</A> <I>name</I> <B>Up</B> command to re-enable the interface.
+Use the <A HREF="#H4.35"><B>param</B></A> <I>name</I> <B>Up</B> command to re-enable the interface.
 <H4><A NAME="H4.6.3">4.6.3 attach axip [<I>name</I> [ip|udp [<I>port</I>]]]</A></H4>
 This creates an AX.25 frame encapsulator for transmission
 of AX.25 frames over the UNIX's networking system.
 The interface will be named <I>name</I>,
-or <A HREF="#H4.8">axip</A> if <I>name</I> is not specified.
+or <A HREF="#H4.8"><B>axip</B></A> if <I>name</I> is not specified.
 The default encapsulation will use IP protocol 93,
 but it is possible to use UDP instead.
 If <I>port</I> is specified that IP protocol number or UDP port number
 will be used instead of 93.
-See also RFC1226 and the <A HREF="#H4.8">axip</A> command.
+See also RFC1226 and the <A HREF="#H4.8"><B>axip</B></A> command.
 <H4><A NAME="H4.6.4">4.6.4 attach ipip [<I>name</I> [ip|udp [<I>port</I>]]]</A></H4>
 This creates an IP frame encapsulator for transmission
 of IP frames over the UNIX's networking system.
@@ -507,7 +507,7 @@ will be used instead of 4.
 This creates an IP frame encapsulator for transmission
 of IP frames over the NET/ROM transport.
 The interface will be named
-<A HREF="#H4.33">netrom</A>.
+<A HREF="#H4.33"><B>netrom</B></A>.
 <H4><A NAME="H4.6.6">4.6.6 attach ni <I>name</I> <I>ip-addr</I> [<I>netmask</I>]</A></H4>
 This creates an IP point-to-point link between <B>WAMPES</B> and UNIX,
 by creating a new interface named <I>name</I> on the <B>WAMPES</B> side,
@@ -526,7 +526,7 @@ Example:
 attach ni ni dk5sg-u # ip to host ip
 </PRE>
 <P>
-Currently <A HREF="#H4.6.6">attach ni</A> is available on HP-UX systems only.
+Currently <A HREF="#H4.6.6"><B>attach ni</B></A> is available on HP-UX systems only.
 <H3><A NAME="H4.7">4.7 ax25 <I>subcommand</I></A></H3>
 These commands control the AX.25 service.
 <H4><A NAME="H4.7.1">4.7.1 ax25 blimit [<I>limit</I>]</A></H4>
@@ -553,7 +553,7 @@ If <I>interface</I> is given, only the list for that interface is displayed.
 Display or set the digipeat mode. The default is 2. MORE TO BE WRITTEN.
 <H4><A NAME="H4.7.4">4.7.4 ax25 flush</A></H4>
 Clear the AX.25 &quot;heard&quot; and &quot;destination&quot; lists
-(see <A HREF="#H4.7.5">ax25 heard</A> and <A HREF="#H4.7.2">ax25 destlist</A>).
+(see <A HREF="#H4.7.5"><B>ax25 heard</B></A> and <A HREF="#H4.7.2"><B>ax25 destlist</B></A>).
 <H4><A NAME="H4.7.5">4.7.5 ax25 heard [<I>interface</I>]</A></H4>
 Display the AX.25 &quot;heard&quot; list.
 For each interface that is configured to use AX.25,
@@ -572,7 +572,7 @@ MORE TO BE WRITTEN.
 <H4><A NAME="H4.7.7">4.7.7 ax25 kick <I>axcb_addr</I></A></H4>
 If there is unacknowledged data on the send queue of the specified AX.25
 control block, this command forces an immediate retransmission.
-The control block address can be found with the <A HREF="#H4.7.15">ax25 status</A> command.
+The control block address can be found with the <A HREF="#H4.7.15"><B>ax25 status</B></A> command.
 <H4><A NAME="H4.7.8">4.7.8 ax25 maxframe [<I>count</I>]</A></H4>
 Display or set the maximum number of frames that will be allowed to remain
 unacknowledged at any time on AX.25 connections. This number cannot
@@ -580,12 +580,12 @@ be greater than 7.
 Note that the maximum outstanding frame count only works with
 virtual connections, UI frames are not affected.
 The default is 7 frames.
-See the <A HREF="#H6.">Setting Paclen, Maxframe, MTU, MSS and Window</A> chapter
+See the <A HREF="#H6."><B>Setting Paclen, Maxframe, MTU, MSS and Window</B></A> chapter
 for more information.
 <H4><A NAME="H4.7.9">4.7.9 ax25 mycall [<I>ax25_addr</I>]</A></H4>
 Display or set the default local AX.25 address. The standard format is used,
 eg. KA9Q-0 or WB6RQN-5.
-This command must be given before any <A HREF="#H4.6">attach</A> commands
+This command must be given before any <A HREF="#H4.6"><B>attach</B></A> commands
 using AX.25 mode are given.
 <H4><A NAME="H4.7.10">4.7.10 ax25 paclen [<I>size</I>]</A></H4>
 Limit the size of I-fields on new AX.25 connections. If IP
@@ -596,7 +596,7 @@ the other end of the link. To have any effect on IP datagrams,
 this parameter should be less than or equal to
 the MTU of the associated interface.
 The default is 256 bytes.
-See the <A HREF="#H6.">Setting Paclen, Maxframe, MTU, MSS and Window</A> chapter
+See the <A HREF="#H6."><B>Setting Paclen, Maxframe, MTU, MSS and Window</B></A> chapter
 for more information.
 <H4><A NAME="H4.7.11">4.7.11 ax25 pthresh [<I>size</I>]</A></H4>
 Display or set the poll threshold to be used for new AX.25 Version 2
@@ -618,7 +618,7 @@ acknowledgement. This is obviously a tradeoff, so experiment with the
 poll threshold setting. The default is 64 bytes.
 <H4><A NAME="H4.7.12">4.7.12 ax25 reset <I>axcb_addr</I></A></H4>
 Delete the AX.25 control block at the specified address.
-The control block address can be found with the <A HREF="#H4.7.15">ax25 status</A> command.
+The control block address can be found with the <A HREF="#H4.7.15"><B>ax25 status</B></A> command.
 <H4><A NAME="H4.7.13">4.7.13 ax25 retry [<I>count</I>]</A></H4>
 Limit the number of successive unsuccessful transmission attempts on
 new AX.25 connections. If this limit is exceeded, the connection
@@ -630,8 +630,8 @@ Display the AX.25 routing table that
 specifies the interface and digipeaters to be used in reaching a given station.
 MORE TO BE WRITTEN.
 <H5><A NAME="H4.7.14.1">4.7.14.1 ax25 route add [permanent] <I>interface</I> default|<I>ax25_addr</I> [<I>digipeater</I> ...]</A></H5>
-Add an entry to the AX.25 routing table. An automatic <A HREF="#H4.7.14.1">ax25 route add</A>
-is executed if digipeaters are specified in an AX.25 <A HREF="#H4.11">connect</A>
+Add an entry to the AX.25 routing table. An automatic <A HREF="#H4.7.14.1"><B>ax25 route add</B></A>
+is executed if digipeaters are specified in an AX.25 <A HREF="#H4.11"><B>connect</B></A>
 command, or if a connection is received from a remote station.
 Such automatic routing table entries won't override locally
 created <B>permanent</B> entries, however. MORE TO BE WRITTEN.
@@ -688,7 +688,7 @@ close (QUIT to FTP, or the logout command appropriate for the
 remote system in the case of Telnet). When either FTP or Telnet
 sees the incoming half of a TCP connection close, it
 automatically responds by closing the outgoing half of the
-connection. <A HREF="#H4.10">close</A> is more graceful than the <A HREF="#H4.42">reset</A> command, in
+connection. <A HREF="#H4.10"><B>close</B></A> is more graceful than the <A HREF="#H4.42"><B>reset</B></A> command, in
 that it is less likely to leave the remote TCP in a &quot;half-open&quot;
 state.
 <H3><A NAME="H4.11">4.11 connect <I>ax25_addr</I> [<I>digipeater</I> ...]</A></H3>
@@ -705,7 +705,7 @@ by their AX.25 Protocol IDs.
 <H3><A NAME="H4.12">4.12 delete <I>filename</I> ...</A></H3>
 Remove the specified files from the file system.
 <H3><A NAME="H4.13">4.13 disconnect [<I>session#</I>]</A></H3>
-An alias for the <A HREF="#H4.10">close</A> command (for the benefit of AX.25 users).
+An alias for the <A HREF="#H4.10"><B>close</B></A> command (for the benefit of AX.25 users).
 <H3><A NAME="H4.14">4.14 domain <I>subcommand</I></A></H3>
 These commands control the Domain Name Service (DNS).
 <H4><A NAME="H4.14.1">4.14.1 domain cache list</A></H4>
@@ -738,7 +738,7 @@ of a negotiated agreement to the contrary, neither end echoes
 data received from the other. In this mode, a Telnet client
 session echoes keyboard input locally and nothing is actually
 sent until a carriage return is typed. Local line editing is
-also performed, see the <A HREF="#H3.">Console modes</A> chapter.
+also performed, see the <A HREF="#H3."><B>Console modes</B></A> chapter.
 <P>
 When communicating from keyboard to keyboard the standard local
 echo mode is used, so the setting of this parameter has no
@@ -827,7 +827,7 @@ The fields are as follows:
 then the link was created manually,
 and is <B>permanent</B>.
 A permanent link can only be removed
-with the <A HREF="#H4.21.3.2">flexnet link delete</A> command.
+with the <A HREF="#H4.21.3.2"><B>flexnet link delete</B></A> command.
 <DT><B>T</B>
 <DD>The state of the routing token encoded as follows:
 <DL>
@@ -854,14 +854,14 @@ Open a FTP control channel to the specified remote host
 and enter converse mode on the new session.
 If <I>port</I> is given that port is used. Default port is 21.
 Responses from the remote server are displayed directly on the screen.
-See the <A HREF="#H5.">FTP Subcommands</A> chapter for descriptions of the commands
+See the <A HREF="#H5."><B>FTP Subcommands</B></A> chapter for descriptions of the commands
 available in a FTP session.
 <H3><A NAME="H4.23">4.23 hostname [<I>hostname</I>]</A></H3>
 Display or set the local host's name. By convention this should
 be the same as the host's primary domain name. This string is
 used in greeting messages of various network
 servers, and in the command line prompt.
-Note that <A HREF="#H4.23">hostname</A> does NOT set the system's IP address.
+Note that <A HREF="#H4.23"><B>hostname</B></A> does NOT set the system's IP address.
 <P>
 If <I>hostname</I> is the same as the name of an attached interface,
 <I>hostname</I> will be substituted by the canonical host name
@@ -871,7 +871,7 @@ These commands control the Internet Control Message Protocol (ICMP) service.
 <H4><A NAME="H4.24.1">4.24.1 icmp echo [on|off]</A></H4>
 Display or set the flag controlling the asynchronous display of
 ICMP Echo Reply packets. This flag must be <B>on</B> for one-shot
-pings to work (see the <A HREF="#H4.36">ping</A> command). The default is <B>on</B>.
+pings to work (see the <A HREF="#H4.36"><B>ping</B></A> command). The default is <B>on</B>.
 <H4><A NAME="H4.24.2">4.24.2 icmp status</A></H4>
 Display statistics about the Internet Control Message Protocol
 (ICMP), including the number of ICMP messages of each type sent
@@ -889,7 +889,7 @@ Multiple subcommand/parameter pairs can be put on one line.
 <H4><A NAME="H4.25.1">4.25.1 ifconfig <I>interface</I> broadcast <I>hostid</I></A></H4>
 Set the broadcast address of <I>interface</I> to <I>hostid</I>.
 This is related to the <B>netmask</B> subcommand.
-See also the <A HREF="#H4.4">arp</A> command.
+See also the <A HREF="#H4.4"><B>arp</B></A> command.
 <H4><A NAME="H4.25.2">4.25.2 ifconfig <I>interface</I> encapsulation <I>encapsulation</I></A></H4>
 Set the encapsulation for <I>interface</I> to <I>encapsulation</I>.
 <I>Encapsulation</I> may be one of:
@@ -910,7 +910,7 @@ is added to the datagram before SLIP encoding.
 <DD>Similar to <B>slip</B>, except that an AX.25 header
 and a KISS TNC control header
 is added to the datagram before SLIP encoding.
-<DT><A HREF="#H4.33">netrom</A>
+<DT><A HREF="#H4.33"><B>netrom</B></A>
 <DD>Adds a NET/ROM network header to the datagram.
 <DT><B>nrs</B>
 <DD>Adds an AX.25 header,
@@ -935,14 +935,14 @@ When a forward is defined, all output for <I>interface</I> is redirected to
 <H4><A NAME="H4.25.4">4.25.4 ifconfig <I>interface</I> ipaddress <I>hostid</I></A></H4>
 Set the IP address to <I>hostid</I> for this interface. This might be necessary
 when a system acts as a gateway.
-See also the <A HREF="#H4.26.1">ip address</A> command.
+See also the <A HREF="#H4.26.1"><B>ip address</B></A> command.
 <H4><A NAME="H4.25.5">4.25.5 ifconfig <I>interface</I> linkaddress <I>hardware-dependent</I></A></H4>
 Set the hardware dependent address for this interface. For
 AX.25 this can be the callsign, for ethernet an ethernet
 address.
 <H4><A NAME="H4.25.6">4.25.6 ifconfig <I>interface</I> mtu <I>parameter</I></A></H4>
 Set the maximum transfer unit to <I>parameter</I> octeds (bytes).
-See the <A HREF="#H6.">Setting Paclen, Maxframe, MTU, MSS and Window</A> chapter
+See the <A HREF="#H6."><B>Setting Paclen, Maxframe, MTU, MSS and Window</B></A> chapter
 for more information.
 <H4><A NAME="H4.25.7">4.25.7 ifconfig <I>interface</I> netmask <I>address</I></A></H4>
 Set the subnet mask for this interface.
@@ -955,7 +955,7 @@ ifconfig ec0 netmask 0xffffff00
 </PRE>
 for a class C network (24 bits).
 This is related to the <B>broadcast</B> subcommand.
-See also the <A HREF="#H4.45">route</A> command.
+See also the <A HREF="#H4.45"><B>route</B></A> command.
 <H4><A NAME="H4.25.8">4.25.8 ifconfig <I>interface</I> rxbuf <I>size</I></A></H4>
 Set the receive buffer size.
 This value is currently not used by <B>WAMPES</B>.
@@ -967,7 +967,7 @@ If set to 0 the transmit queue is unlimited.
 These commands control the Internet Protocol (IP) service.
 <H4><A NAME="H4.26.1">4.26.1 ip address [<I>hostid</I>]</A></H4>
 Display or set the default local IP address. This command must be given before
-an <A HREF="#H4.6">attach</A> command if it is to be used as the default IP address for
+an <A HREF="#H4.6"><B>attach</B></A> command if it is to be used as the default IP address for
 that interface.
 <H4><A NAME="H4.26.2">4.26.2 ip rtimer [<I>seconds</I>]</A></H4>
 Display or set the IP fragment reassembly timeout. The default is 30 seconds.
@@ -1026,10 +1026,10 @@ is equivalent to
 <PRE>
 ipfilter allow 44.1.0.0 to 44.3.255.255
 </PRE>
-The <A HREF="#H4.27">ipfilter</A> command tries to combine multiple <B>allow</B> and <B>deny</B>
+The <A HREF="#H4.27"><B>ipfilter</B></A> command tries to combine multiple <B>allow</B> and <B>deny</B>
 commands into as few IP filter table entries as possible.
 Because the table initially allows everything,
-the first <A HREF="#H4.27">ipfilter</A> command must be <B>deny</B> to have any effect.
+the first <A HREF="#H4.27"><B>ipfilter</B></A> command must be <B>deny</B> to have any effect.
 To only allow certain IP addresses use something like
 the following command sequence:
 <PRE>
@@ -1045,12 +1045,12 @@ ipfilter allow winfree.n3eua
 <H3><A NAME="H4.28">4.28 kick [<I>session#</I>]</A></H3>
 Kick all control blocks associated with a session.
 If no argument is given, kick the current session.
-Performs the same function as the <A HREF="#H4.7.7">ax25 kick</A>,
-<A HREF="#H4.33.4">netrom kick</A>, and <A HREF="#H4.54.3">tcp kick</A> commands,
+Performs the same function as the <A HREF="#H4.7.7"><B>ax25 kick</B></A>,
+<A HREF="#H4.33.4"><B>netrom kick</B></A>, and <A HREF="#H4.54.3"><B>tcp kick</B></A> commands,
 but is easier to type.
 <H3><A NAME="H4.29">4.29 log [stop|<I>filename</I>]</A></H3>
 Display the current log filename or set the filename for logging
-server sessions. If <A HREF="#H4.53">stop</A> is given as the argument,
+server sessions. If <A HREF="#H4.53"><B>stop</B></A> is given as the argument,
 logging is terminated (the servers themselves are unaffected).
 If a file name is given as an argument, server session log
 entries will be appended to it.
@@ -1078,12 +1078,12 @@ cannot be mapped to a valid user name. If <I>username</I> is set to
 The default is guest.
 <H4><A NAME="H4.30.4">4.30.4 login gid [<I>gid</I>]</A></H4>
 Display or set the group id to be used when creating new user
-accounts (see <A HREF="#H4.30.2">login create</A>).
+accounts (see <A HREF="#H4.30.2"><B>login create</B></A>).
 The default is 400.
 <H4><A NAME="H4.30.5">4.30.5 login homedir [<I>homedir</I>]</A></H4>
 Display or set the base directory to be used for user home
 directories when creating new user accounts (see
-<A HREF="#H4.30.2">login create</A>).
+<A HREF="#H4.30.2"><B>login create</B></A>).
 <P>
 To avoid huge directories the actual home directory is created
 in a subdirectory:
@@ -1092,7 +1092,7 @@ in a subdirectory:
 </PRE>
 Example:
 <P>
-If <A HREF="#H4.30.5">login homedir</A> is set to /home/radio the home directory for
+If <A HREF="#H4.30.5"><B>login homedir</B></A> is set to /home/radio the home directory for
 n0pra will be:
 <PRE>
 /home/radio/n0p.../n0pra
@@ -1113,17 +1113,17 @@ set to &quot;&quot; no logging is done.
 The default is &quot;&quot;.
 <H4><A NAME="H4.30.7">4.30.7 login maxuid [<I>maxuid</I>]</A></H4>
 Display or set the maximum user id to be used when creating new
-user accounts (see <A HREF="#H4.30.2">login create</A>).
+user accounts (see <A HREF="#H4.30.2"><B>login create</B></A>).
 <I>maxuid</I> must be between 1 and 32000.
 The default is 32000.
 <H4><A NAME="H4.30.8">4.30.8 login minuid [<I>minuid</I>]</A></H4>
 Display or set the minimum user id to be used when creating new
-user accounts (see <A HREF="#H4.30.2">login create</A>).
+user accounts (see <A HREF="#H4.30.2"><B>login create</B></A>).
 <I>minuid</I> must be between 1 and 32000.
 The default is 400.
 <H4><A NAME="H4.30.9">4.30.9 login shell [<I>shell</I>]</A></H4>
 Display or set the login shell to be used when creating new user
-accounts (see <A HREF="#H4.30.2">login create</A>). If set to &quot;&quot; UNIX will
+accounts (see <A HREF="#H4.30.2"><B>login create</B></A>). If set to &quot;&quot; UNIX will
 choose its own default shell.
 The default is &quot;&quot;.
 <H3><A NAME="H4.31">4.31 memory <I>subcommand</I></A></H3>
@@ -1189,7 +1189,7 @@ netrom broadcast tnc0 NODES
 </PRE>
 <H4><A NAME="H4.33.2">4.33.2 netrom connect <I>node</I> [<I>user</I>]</A></H4>
 Initiate a NETROM session to the specified NET/ROM <I>node</I>.
-If <I>user</I> is not specified, the value of <A HREF="#H4.7.9">ax25 mycall</A>
+If <I>user</I> is not specified, the value of <A HREF="#H4.7.9"><B>ax25 mycall</B></A>
 will be used as user identification.
 The de-facto presentation standard format is used,
 in that each packet holds one line of
@@ -1202,7 +1202,7 @@ using the <B>ident</B> as destination address.
 <H4><A NAME="H4.33.4">4.33.4 netrom kick <I>nrcb_addr</I></A></H4>
 If there is unacknowledged data on the send queue of the specified NET/ROM
 control block, this command forces an immediate retransmission.
-The control block address can be found with the <A HREF="#H4.33.9">netrom status</A> command.
+The control block address can be found with the <A HREF="#H4.33.9"><B>netrom status</B></A> command.
 <H4><A NAME="H4.33.5">4.33.5 netrom links [<I>node</I> [<I>node2</I> <I>quality</I> [permanent]]]</A></H4>
 Display or change the NET/ROM links table,
 which controls the NET/ROM routing.
@@ -1301,7 +1301,7 @@ The following parameters are available:
 </TABLE>
 <H4><A NAME="H4.33.8">4.33.8 netrom reset <I>nrcb_addr</I></A></H4>
 Delete the NET/ROM control block at the specified address.
-The control block address can be found with the <A HREF="#H4.33.9">netrom status</A> command.
+The control block address can be found with the <A HREF="#H4.33.9"><B>netrom status</B></A> command.
 <H4><A NAME="H4.33.9">4.33.9 netrom status [<I>nrcb_addr</I>]</A></H4>
 Without an argument, display a one-line summary of each NET/ROM control block.
 If the address of a particular control block is specified, the contents of
@@ -1310,7 +1310,7 @@ that control block are shown in more detail.
 Display statistics on all attached NET/ROM serial interfaces.
 <H3><A NAME="H4.35">4.35 param <I>interface</I> [<I>name</I>|<I>number</I> [<I>value</I>]]</A></H3>
 Invoke a device-specific control routine.
-The following parameter names are recognized by the <A HREF="#H4.35">param</A> command,
+The following parameter names are recognized by the <A HREF="#H4.35"><B>param</B></A> command,
 but not all are supported by each device type.
 Most commands deal only with half-duplex packet radio interfaces.
 <TABLE BORDER>
@@ -1343,7 +1343,7 @@ omitting a new value. This is not possible with KISS TNCs as
 there are no KISS commands for reading back previously sent
 parameters.
 <P>
-On a KISS TNC interface, the <A HREF="#H4.35">param</A> command generates and sends
+On a KISS TNC interface, the <A HREF="#H4.35"><B>param</B></A> command generates and sends
 control packets to the TNC. Data bytes are treated as decimal.
 For example,
 <PRE>
@@ -1352,7 +1352,7 @@ param ax0 TxDelay 255
 will set the keyup timer
 (type field = 1) on the KISS TNC configured as ax0 to 2.55
 seconds (255 x .01 sec). On all asy interfaces (slip, ax25, kiss,
-nrs) the <A HREF="#H4.35">param</A> <I>interface</I> <B>Speed</B> command allows the baud rate to
+nrs) the <A HREF="#H4.35"><B>param</B></A> <I>interface</I> <B>Speed</B> command allows the baud rate to
 be read or set.
 <P>
 The implementation of this command for the various interface
@@ -1377,7 +1377,7 @@ In this case the round-trip times are not displayed.
 <P>
 If <I>interval</I> is specified,
 pings will be repeated at the specified interval (in seconds)
-until the <A HREF="#H4.36.1">ping clear</A> command is issued,
+until the <A HREF="#H4.36.1"><B>ping clear</B></A> command is issued,
 otherwise a single, &quot;one shot&quot; ping is done.
 Responses to one-shot pings appear asynchronously on the command screen,
 while responses from repetitive pings are stored in the Ping table.
@@ -1405,7 +1405,7 @@ to give the process a larger allocation when it is started.
 W (Waiting for event) and S (suspended - not currently used).
 The W flag indicates that the process is waiting for an event.
 Note that although there may be several runnable processes at any time
-(shown in the <A HREF="#H4.37">ps</A> listing as those without the W flag)
+(shown in the <A HREF="#H4.37"><B>ps</B></A> listing as those without the W flag)
 only one process is actually running at any one instant.
 <DT><B>in</B>
 <DD>Always zero.
@@ -1424,8 +1424,8 @@ If no argument is specified the current status is displayed.
 Send a UDP packet to the specified host commanding it
 to exit the <B>WAMPES</B> or <B>NOS</B> program, reset the processor,
 or force a retransmission on TCP connections. For this
-command to be accepted, the remote system must be running the <A HREF="#H4.39">remote</A>
-server, and the port number used by the local <A HREF="#H4.39">remote</A> command must match
+command to be accepted, the remote system must be running the <A HREF="#H4.39"><B>remote</B></A>
+server, and the port number used by the local <A HREF="#H4.39"><B>remote</B></A> command must match
 the port number used by the remote server.
 If the port numbers do not match, or if the remote server is not running
 on the target system, the command packet is ignored. Even if the
@@ -1433,12 +1433,12 @@ command is accepted there is no acknowledgement.
 <P>
 If the <B>-p</B> option is not specified, port 1234 will be used.
 <P>
-The <A HREF="#H4.28">kick</A> command forces a retransmission timeout on all
+The <A HREF="#H4.28"><B>kick</B></A> command forces a retransmission timeout on all
 TCP connections that the remote node may have with the local node.
 If the <B>-a</B> option is used, connections to the specified host are
-kicked instead. No key is required for the <A HREF="#H4.28">kick</A> subcommand.
+kicked instead. No key is required for the <A HREF="#H4.28"><B>kick</B></A> subcommand.
 <P>
-The <A HREF="#H4.18">exit</A> subcommand is mainly useful for
+The <A HREF="#H4.18"><B>exit</B></A> subcommand is mainly useful for
 restarting the <B>WAMPES</B> program on a remote
 unattended system after a configuration file has been updated. The
 remote system should invoke the <B>WAMPES</B> program automatically upon booting,
@@ -1448,18 +1448,18 @@ For example:
 net :23456:respawn:env TZ=MST7MDT /tcp/net
 </PRE>
 <H4><A NAME="H4.39.1">4.39.1 remote -s <I>key</I></A></H4>
-The <A HREF="#H4.18">exit</A> and <A HREF="#H4.42">reset</A> subcommands of <A HREF="#H4.39">remote</A> require a password.
+The <A HREF="#H4.18"><B>exit</B></A> and <A HREF="#H4.42"><B>reset</B></A> subcommands of <A HREF="#H4.39"><B>remote</B></A> require a password.
 The password is set on the server with the <B>-s</B> option,
 and it is specified to the client with the <B>-k</B> option.
 If no password is set with the <B>-s</B> option,
-then the <A HREF="#H4.18">exit</A> and <A HREF="#H4.42">reset</A> subcommands are disabled.
+then the <A HREF="#H4.18"><B>exit</B></A> and <A HREF="#H4.42"><B>reset</B></A> subcommands are disabled.
 <H3><A NAME="H4.40">4.40 rename <I>oldfilename</I> <I>newfilename</I></A></H3>
 Rename <I>oldfilename</I> to <I>newfilename</I>.
 <H3><A NAME="H4.41">4.41 repeat [<I>milliseconds</I>] <I>command</I> [<I>arguments</I> ...]</A></H3>
 Execute <I>command</I> every <I>milliseconds</I>,
 or once every second if <I>milliseconds</I> is not specified.
 Before each iteration the screen is cleared.
-<A HREF="#H4.41">repeat</A> is terminated if any keyboard input is made,
+<A HREF="#H4.41"><B>repeat</B></A> is terminated if any keyboard input is made,
 or if <I>command</I> returns an error.
 Example:
 <PRE>
@@ -1471,7 +1471,7 @@ Reset the specified session, if no argument is given, reset the current
 session. This command should be used with caution since it does not
 reliably inform the remote end that the connection no longer exists. In
 TCP a reset (RST) message will be automatically generated should the remote
-TCP send anything after a local <A HREF="#H4.42">reset</A> has been done. In AX.25 the DM
+TCP send anything after a local <A HREF="#H4.42"><B>reset</B></A> has been done. In AX.25 the DM
 message performs a similar role. Both are used to get rid of a lingering
 half-open connection after a remote system has crashed.
 <H3><A NAME="H4.43">4.43 rip <I>subcommand</I></A></H3>
@@ -1502,7 +1502,7 @@ broadcast address in the link-level destination field. If a standard IP
 broadcast address convention is used (eg. 44.255.255.255),
 then chances are you already have the necessary IP routing table entry, but
 unusual subnet or cluster-addressed networks may require special attention.
-However, an <A HREF="#H4.4.1">arp add</A> command will be required to translate this address to
+However, an <A HREF="#H4.4.1"><B>arp add</B></A> command will be required to translate this address to
 the appropriate link level broadcast address. For example:
 <PRE>
 arp add 44.255.255.255 ax25 QST-0
@@ -1532,7 +1532,7 @@ The default is <B>off</B>.
 <H4><A NAME="H4.43.5">4.43.5 rip refuse <I>hostid</I></A></H4>
 Refuse to accept RIP updates from the specified host by adding the
 host to the RIP filter table. It may be later removed with the
-<A HREF="#H4.43.1">rip accept</A> command.
+<A HREF="#H4.43.1"><B>rip accept</B></A> command.
 <H4><A NAME="H4.43.6">4.43.6 rip request <I>hostid</I></A></H4>
 Send a RIP Request packet to the specified host, causing it to reply
 with a RIP Response packet containing its routing table.
@@ -1557,8 +1557,8 @@ Without an argument, display the IP routing table.
 <H4><A NAME="H4.45.1">4.45.1 route add <I>hostid</I>[/<I>bits</I>]|default <I>interface</I> [<I>gateway_hostid</I> [<I>metric</I>]]</A></H4>
 Add a permanent entry to the IP routing table.
 It will not time out as will an automatically created entry,
-but must be removed with the <A HREF="#H4.45.3">route drop</A> command.
-<A HREF="#H4.45.1">route add</A> requires at least two more arguments,
+but must be removed with the <A HREF="#H4.45.3"><B>route drop</B></A> command.
+<A HREF="#H4.45.1"><B>route add</B></A> requires at least two more arguments,
 the <I>hostid</I> of the destination and the name of
 the <I>interface</I> to which its packets should be sent. If the destination is
 not local, the gateway's hostid should also be specified. If the interface
@@ -1602,7 +1602,7 @@ There are two built-in interfaces: <B>loopback</B> and <B>encap</B>.
 encapsulator interface. It is used to encapsulate a complete IP datagram
 into an IP datagram so that it gets &quot;piggy-backed&quot;.
 <P>
-Here are some examples of the <A HREF="#H4.45">route</A> command:
+Here are some examples of the <A HREF="#H4.45"><B>route</B></A> command:
 <PRE>
 # Route datagrams to IP address 44.0.0.3 to SLIP line #0.
 # No gateway is needed because SLIP is point-to point.
@@ -1623,7 +1623,7 @@ route add 192.4.8/24 ec0
 route add default ec0 192.4.8.1
 </PRE>
 <H4><A NAME="H4.45.2">4.45.2 route addprivate <I>hostid</I>[/<I>bits</I>]|default <I>interface</I> [<I>gateway_hostid</I> [<I>metric</I>]]</A></H4>
-This command is identical to <A HREF="#H4.45.1">route add</A> except that it also marks the new
+This command is identical to <A HREF="#H4.45.1"><B>route add</B></A> except that it also marks the new
 entry as private, it will never be included in outgoing RIP updates.
 <H4><A NAME="H4.45.3">4.45.3 route drop <I>hostid</I>[/<I>bits</I>]|default</A></H4>
 Remove the specified entry from the IP routing table.
@@ -1639,7 +1639,7 @@ Without arguments, display the list of current sessions,
 including session number, remote TCP, AX.25, or NET/ROM address
 and the address of the TCP, AX.25, or NET/ROM control block.
 An asterisk (*) is shown next to the current session.
-Entering a session number as an argument to the <A HREF="#H4.46">session</A>
+Entering a session number as an argument to the <A HREF="#H4.46"><B>session</B></A>
 command will put you in converse mode with that session.
 <H3><A NAME="H4.47">4.47 shell <I>shell_command_line</I></A></H3>
 Suspend <B>WAMPES</B> and execute a subshell (/bin/sh).
@@ -1654,7 +1654,7 @@ Run through the outgoing mail queue and attempt to deliver any pending mail.
 If <I>destination</I> is specified try only to deliver mail to this system.
 This command allows the user to &quot;kick&quot; the mail system manually.
 Normally, this command is periodically invoked by a timer
-whenever <B>WAMPES</B> is running (see <A HREF="#H4.48.4">smtp timer</A>). MORE TO BE WRITTEN.
+whenever <B>WAMPES</B> is running (see <A HREF="#H4.48.4"><B>smtp timer</B></A>). MORE TO BE WRITTEN.
 <H4><A NAME="H4.48.2">4.48.2 smtp list</A></H4>
 List the current jobs. MORE TO BE WRITTEN.
 <H4><A NAME="H4.48.3">4.48.3 smtp maxclients [<I>count</I>]</A></H4>
@@ -1665,7 +1665,7 @@ is a problem.
 Display or set the interval between scans of the outbound
 mail queue. For example, <B>smtp timer 600</B> will cause the system to check
 for outgoing mail every 10 minutes and attempt to deliver anything it finds,
-subject of course to the <A HREF="#H4.48.3">smtp maxclients</A> limit. Setting a value of zero
+subject of course to the <A HREF="#H4.48.3"><B>smtp maxclients</B></A> limit. Setting a value of zero
 disables
 queue scanning altogether, note that this is the default!
 <H3><A NAME="H4.49">4.49 sntp <I>subcommand</I></A></H3>
@@ -1781,7 +1781,7 @@ in a separate file, which can be read at some point in <B>net.rc</B>.
 Start the specified server, allowing remote connection requests.
 <H4><A NAME="H4.51.1">4.51.1 start ax25</A></H4>
 Start the AX.25 Login server.
-See also the <A HREF="#H4.7">ax25</A> and <A HREF="#H4.30">login</A> commands.
+See also the <A HREF="#H4.7"><B>ax25</B></A> and <A HREF="#H4.30"><B>login</B></A> commands.
 <H4><A NAME="H4.51.2">4.51.2 start discard [<I>port</I>]</A></H4>
 Start the TCP DISCARD server.
 Default <I>port</I> is 9.
@@ -1789,7 +1789,7 @@ See also RFC863.
 <H4><A NAME="H4.51.3">4.51.3 start domain [<I>port</I>]</A></H4>
 Start the TCP/UDP DOMAIN server.
 Default <I>port</I> is 53.
-See also the <A HREF="#H4.14">domain</A> command, RFC1034, and RFC1035.
+See also the <A HREF="#H4.14"><B>domain</B></A> command, RFC1034, and RFC1035.
 <H4><A NAME="H4.51.4">4.51.4 start echo [<I>port</I>]</A></H4>
 Start the TCP ECHO server.
 Default <I>port</I> is 7.
@@ -1797,50 +1797,50 @@ See also RFC862.
 <H4><A NAME="H4.51.5">4.51.5 start ftp [<I>port</I>]</A></H4>
 Start the TCP FTP server.
 Default <I>port</I> is 21.
-See also the <A HREF="#H4.22">ftp</A> command.
+See also the <A HREF="#H4.22"><B>ftp</B></A> command.
 <H4><A NAME="H4.51.6">4.51.6 start tcpgate <I>port</I> [<I>host</I>[:<I>service</I>]]</A></H4>
 Start a <B>WAMPES</B> TCP to UNIX TCP gateway.
 MORE TO BE WRITTEN.
 <H4><A NAME="H4.51.7">4.51.7 start netrom</A></H4>
 Start the NET/ROM Login server.
-See also the <A HREF="#H4.33">netrom</A> and <A HREF="#H4.30">login</A> commands.
+See also the <A HREF="#H4.33"><B>netrom</B></A> and <A HREF="#H4.30"><B>login</B></A> commands.
 <H4><A NAME="H4.51.8">4.51.8 start rip</A></H4>
 Start the UDP RIP server on port 520.
-See also the <A HREF="#H4.43">rip</A> command and RFC1058.
+See also the <A HREF="#H4.43"><B>rip</B></A> command and RFC1058.
 <H4><A NAME="H4.51.9">4.51.9 start sntp</A></H4>
 Start the UDP SNTP server on port 123.
-See also the <A HREF="#H4.49">sntp</A> command and RFC1361.
+See also the <A HREF="#H4.49"><B>sntp</B></A> command and RFC1361.
 <H4><A NAME="H4.51.10">4.51.10 start telnet [<I>port</I>]</A></H4>
 Start the TCP TELNET server.
 Default <I>port</I> is 23.
-See also the <A HREF="#H4.30">login</A> command.
+See also the <A HREF="#H4.30"><B>login</B></A> command.
 <H4><A NAME="H4.51.11">4.51.11 start time</A></H4>
 Start the UDP TIME server on port 37.
 See also RFC868.
 <H4><A NAME="H4.51.12">4.51.12 start remote [<I>port</I>]</A></H4>
 Start the UDP REMOTE server.
 Default <I>port</I> is 1234.
-See also the <A HREF="#H4.39">remote</A> command.
+See also the <A HREF="#H4.39"><B>remote</B></A> command.
 <H3><A NAME="H4.52">4.52 status</A></H3>
 Display a one-line summary of each AX.25, NET/ROM, TCP, and UDP control block.
 <H3><A NAME="H4.53">4.53 stop <I>server</I></A></H3>
 Stop the specified server, rejecting any further remote connect
 requests. Existing connections are allowed to complete normally.
-See also the <A HREF="#H4.51">start</A> command.
+See also the <A HREF="#H4.51"><B>start</B></A> command.
 <P>
 <I>server</I> has to be one of:
 <UL>
-<LI><A HREF="#H4.7">ax25</A>
+<LI><A HREF="#H4.7"><B>ax25</B></A>
 <LI><B>discard</B>
-<LI><A HREF="#H4.14">domain</A>
-<LI><A HREF="#H4.15">echo</A>
-<LI><A HREF="#H4.22">ftp</A>
-<LI><A HREF="#H4.33">netrom</A>
-<LI><A HREF="#H4.43">rip</A>
-<LI><A HREF="#H4.49">sntp</A>
-<LI><A HREF="#H4.55">telnet</A>
+<LI><A HREF="#H4.14"><B>domain</B></A>
+<LI><A HREF="#H4.15"><B>echo</B></A>
+<LI><A HREF="#H4.22"><B>ftp</B></A>
+<LI><A HREF="#H4.33"><B>netrom</B></A>
+<LI><A HREF="#H4.43"><B>rip</B></A>
+<LI><A HREF="#H4.49"><B>sntp</B></A>
+<LI><A HREF="#H4.55"><B>telnet</B></A>
 <LI><B>time</B>
-<LI><A HREF="#H4.39">remote</A>
+<LI><A HREF="#H4.39"><B>remote</B></A>
 </UL>
 <H3><A NAME="H4.54">4.54 tcp <I>subcommand</I></A></H3>
 These commands control the Transmission Control Protocol (TCP) service.
@@ -1871,18 +1871,18 @@ executed from a startup file such as <B>net.rc</B>.
 <H4><A NAME="H4.54.3">4.54.3 tcp kick <I>tcb_addr</I></A></H4>
 If there is unacknowledged data on the send queue of the specified TCP
 control block, this command forces an immediate retransmission.
-The control block address can be found with the <A HREF="#H4.54.7">tcp status</A> command.
+The control block address can be found with the <A HREF="#H4.54.7"><B>tcp status</B></A> command.
 <H4><A NAME="H4.54.4">4.54.4 tcp mss [<I>size</I>]</A></H4>
 Display or set the TCP Maximum Segment Size in bytes that will be sent on all
 outgoing TCP connect request (SYN segments). This tells the remote end the
 size of the largest segment (packet) it may send. Changing MSS affects
 only future connections, existing connections are unaffected.
 The default is 512 bytes.
-See the <A HREF="#H6.">Setting Paclen, Maxframe, MTU, MSS and Window</A> chapter
+See the <A HREF="#H6."><B>Setting Paclen, Maxframe, MTU, MSS and Window</B></A> chapter
 for more information.
 <H4><A NAME="H4.54.5">4.54.5 tcp reset <I>tcb_addr</I></A></H4>
 Delete the TCP control block at the specified address.
-The control block address can be found with the <A HREF="#H4.54.7">tcp status</A> command.
+The control block address can be found with the <A HREF="#H4.54.7"><B>tcp status</B></A> command.
 <H4><A NAME="H4.54.6">4.54.6 tcp rtt <I>tcb_addr</I> <I>milliseconds</I></A></H4>
 Replaces the automatically computed round trip time in the specified
 TCP control block with the rtt in milliseconds.
@@ -1907,7 +1907,7 @@ The default is <B>off</B>.
 Display or set the default receive window size in bytes to be used by TCP
 when creating new connections. Existing connections are unaffected.
 The default is 2048 bytes.
-See the <A HREF="#H6.">Setting Paclen, Maxframe, MTU, MSS and Window</A> chapter
+See the <A HREF="#H6."><B>Setting Paclen, Maxframe, MTU, MSS and Window</B></A> chapter
 for more information.
 <H3><A NAME="H4.55">4.55 telnet <I>hostid</I> [<I>port</I>]</A></H3>
 Create a Telnet session to the specified host and enter converse mode.
@@ -1917,7 +1917,7 @@ Control packet tracing by the interface drivers.
 Specific bits in <I>flags</I> enable tracing of the various interfaces
 and control the amount of information produced.
 Tracing is controlled on a per-interface basis.
-Without arguments, <A HREF="#H4.56">trace</A> displays a list of all defined interfaces
+Without arguments, <A HREF="#H4.56"><B>trace</B></A> displays a list of all defined interfaces
 and their tracing status.
 Output can be limited to a single interface by specifying it,
 and the control flags can be changed by specifying them as well.
@@ -1955,7 +1955,7 @@ subcommands may be given:
 <DD>Disable output trace
 <DT><B>-raw</B>
 <DD>Disable raw packet dumps
-<DT><A HREF="#H5.3">ascii</A>
+<DT><A HREF="#H5.3"><B>ascii</B></A>
 <DD>Print data (but not headers) in ASCII
 <DT><B>broadcast</B>
 <DD>Enable trace of broadcasts
@@ -1991,11 +1991,11 @@ that begin with the same series of letters.
 Parameters, however, must be typed in full.
 <H3><A NAME="H5.1">5.1 abort</A></H3>
 Abort a file transfer operation in progress.
-When receiving a file, <A HREF="#H5.1">abort</A> simply resets the data connection.
+When receiving a file, <A HREF="#H5.1"><B>abort</B></A> simply resets the data connection.
 The next incoming data packet will generate a TCP RST (reset) in response
 which will clear the remote server.
-When sending a file, <A HREF="#H5.1">abort</A> sends a premature end-of-file.
-Note that in both cases <A HREF="#H5.1">abort</A> will leave a partial copy of the file on
+When sending a file, <A HREF="#H5.1"><B>abort</B></A> sends a premature end-of-file.
+Note that in both cases <A HREF="#H5.1"><B>abort</B></A> will leave a partial copy of the file on
 the destination machine, which must be removed manually if it is
 unwanted. <B>Abort</B> is valid only when a transfer is in progress.
 <H3><A NAME="H5.2">5.2 append <I>local-file</I> [<I>remote-file</I>]</A></H3>
@@ -2004,10 +2004,10 @@ If <I>remote-file</I> is left unspecified,
 the local file name is used in naming the remote file.
 <H3><A NAME="H5.3">5.3 ascii</A></H3>
 Set the file transfer type to network ASCII. This is the default type.
-See also the <A HREF="#H5.29">type</A> command.
+See also the <A HREF="#H5.29"><B>type</B></A> command.
 <H3><A NAME="H5.4">5.4 binary</A></H3>
 Set the file transfer type to BINARY/IMAGE.
-See also the <A HREF="#H5.29">type</A> command.
+See also the <A HREF="#H5.29"><B>type</B></A> command.
 <H3><A NAME="H5.5">5.5 bye</A></H3>
 Close the connection to the server host.
 <H3><A NAME="H5.6">5.6 cd <I>remote-directory</I></A></H3>
@@ -2023,7 +2023,7 @@ Write a listing of <I>remote-directory</I> to standard output or optionally to
 The listing includes any system-dependent information that the server chooses
 to include.
 For example, most UNIX systems produce output from the command
-<B>ls -l</B> (see also <A HREF="#H5.15">nlist</A>).
+<B>ls -l</B> (see also <A HREF="#H5.15"><B>nlist</B></A>).
 If neither <I>remote-directory</I> nor <I>local-file</I> is specified,
 list the remote working directory to standard output.
 <H3><A NAME="H5.10">5.10 get <I>remote-file</I> [<I>local-file</I>]</A></H3>
@@ -2031,9 +2031,9 @@ Copy <I>remote-file</I> to <I>local-file</I>. If <I>local-file</I> is unspecifie
 ftp uses the specified <I>remote-file</I> name as the <I>local-file</I> name.
 <H3><A NAME="H5.11">5.11 image</A></H3>
 Set the file transfer type to BINARY/IMAGE.
-See also the <A HREF="#H5.29">type</A> command.
+See also the <A HREF="#H5.29"><B>type</B></A> command.
 <H3><A NAME="H5.12">5.12 ls [<I>remote-directory</I> [<I>local-file</I>]]</A></H3>
-An alias for the <A HREF="#H5.9">dir</A> command.
+An alias for the <A HREF="#H5.9"><B>dir</B></A> command.
 <H3><A NAME="H5.13">5.13 mkdir <I>remote-directory</I></A></H3>
 Create <I>remote-directory</I>.
 <H3><A NAME="H5.14">5.14 modtime <I>remote-file</I></A></H3>
@@ -2046,28 +2046,28 @@ list the remote working directory to standard output.
 <H3><A NAME="H5.16">5.16 password <I>password</I></A></H3>
 Supply the <I>password</I> required by a remote system to complete
 the login procedure.
-The <A HREF="#H5.16">password</A> command has only to be used if <I>password</I>
-was not specified with the <A HREF="#H5.30">user</A> command.
+The <A HREF="#H5.16"><B>password</B></A> command has only to be used if <I>password</I>
+was not specified with the <A HREF="#H5.30"><B>user</B></A> command.
 <H3><A NAME="H5.17">5.17 put <I>local-file</I> [<I>remote-file</I>]</A></H3>
 Copy <I>local-file</I> to <I>remote-file</I>. If <I>remote-file</I> is unspecified,
 ftp assigns the <I>local-file</I> name to the <I>remote-file</I> name.
 <H3><A NAME="H5.18">5.18 pwd</A></H3>
 Write the name of the remote working directory to standard output.
 <H3><A NAME="H5.19">5.19 quit</A></H3>
-An alias for the <A HREF="#H5.5">bye</A> command.
+An alias for the <A HREF="#H5.5"><B>bye</B></A> command.
 <H3><A NAME="H5.20">5.20 quote <I>ftp-command</I></A></H3>
 Send <I>ftp-command</I>, verbatim, to the server host.
 <H3><A NAME="H5.21">5.21 recv <I>remote-file</I> [<I>local-file</I>]</A></H3>
-An alias for the <A HREF="#H5.10">get</A> command.
+An alias for the <A HREF="#H5.10"><B>get</B></A> command.
 <H3><A NAME="H5.22">5.22 reget <I>remote-file</I> [<I>local-file</I>]</A></H3>
-<A HREF="#H5.22">reget</A> acts like <A HREF="#H5.10">get</A>, except that if <I>local-file</I> exists and is
+<A HREF="#H5.22"><B>reget</B></A> acts like <A HREF="#H5.10"><B>get</B></A>, except that if <I>local-file</I> exists and is
 smaller than <I>remote-file</I>, <I>local-file</I> is presumed to be a
 partially transferred copy of <I>remote-file</I> and the transfer is
 continued from the apparent point of failure. This command is
 useful when transferring very large files over networks that tend
 to drop connections.
 <H3><A NAME="H5.23">5.23 restart <I>offset</I></A></H3>
-Restart the immediately following <A HREF="#H5.10">get</A> or <A HREF="#H5.17">put</A>
+Restart the immediately following <A HREF="#H5.10"><B>get</B></A> or <A HREF="#H5.17"><B>put</B></A>
 at the indicated <I>offset</I>.
 <H3><A NAME="H5.24">5.24 rhelp [<I>command-name</I>]</A></H3>
 Request help from the server host. If <I>command-name</I> is specified,
@@ -2076,7 +2076,7 @@ supply it to the server.
 Delete <I>remote-directory</I>. <I>remote-directory</I> must be an empty
 directory.
 <H3><A NAME="H5.26">5.26 send <I>local-file</I> [<I>remote-file</I>]</A></H3>
-An alias for the <A HREF="#H5.17">put</A> command.
+An alias for the <A HREF="#H5.17"><B>put</B></A> command.
 <H3><A NAME="H5.27">5.27 size <I>remote-file</I></A></H3>
 Show the size of <I>remote-file</I>.
 <H3><A NAME="H5.28">5.28 system</A></H3>
@@ -2145,7 +2145,7 @@ The minimum acceptable interface MTU is 28
 bytes: 20 bytes for the IP (fragment) header, plus 8 bytes of data.
 <P>
 There is no default MTU in <B>WAMPES</B>, it must be explicitly specified for
-each interface as part of the <A HREF="#H4.6">attach</A> command.
+each interface as part of the <A HREF="#H4.6"><B>attach</B></A> command.
 <H4><A NAME="H6.2.2">6.2.2 MSS</A></H4>
 MSS (Maximum Segment Size) is a TCP-level parameter that limits the
 amount of data that the remote TCP will send in a single TCP
@@ -2158,7 +2158,7 @@ destination. It then subtracts 40 from the MTU value to allow for the
 overhead of the TCP and IP headers. If the result is less than the MSS
 received from the remote TCP, it is used instead.
 <P>
-The default value of <A HREF="#H6.2.2">MSS</A> is 512 bytes.
+The default value of <A HREF="#H6.2.2"><B>MSS</B></A> is 512 bytes.
 <H4><A NAME="H6.2.3">6.2.3 Window</A></H4>
 This is a TCP-level parameter that controls how much data the local TCP
 will allow the remote TCP to send before it must stop and wait for an
@@ -2169,7 +2169,7 @@ TCP minus the unacknowledged data in flight, and the <I>congestion window</I>,
 an automatically computed time-varying estimate of how much
 data the network can handle.
 <P>
-The default value of <A HREF="#H6.2.3">Window</A> is 2048 bytes.
+The default value of <A HREF="#H6.2.3"><B>Window</B></A> is 2048 bytes.
 <H3><A NAME="H6.3">6.3 Discussion</A></H3>
 <H4><A NAME="H6.3.1">6.3.1 IP Fragmentation vs AX.25 Segmentation</A></H4>
 IP-level fragmentation often makes it possible to interconnect two
@@ -2182,7 +2182,7 @@ memory at the destination, and it is never easy
 to decide how long to wait for missing fragments before
 giving up and discarding those that have already arrived.
 A reassembly timer controls this process.
-In <B>WAMPES</B> it is (re)initialized with the <A HREF="#H4.26.2">ip rtimer</A> parameter
+In <B>WAMPES</B> it is (re)initialized with the <A HREF="#H4.26.2"><B>ip rtimer</B></A> parameter
 (default 30 seconds) whenever progress is made in reassembling a datagram
 (i.e., a new fragment is received).
 It is not necessary that all of the fragments belonging to a datagram
@@ -2274,10 +2274,10 @@ than <B>paclen</B> are never handed to AX.25. A NET/ROM transport header is
 5 bytes long and a NET/ROM network header takes 15 bytes, so 20 bytes must
 be added to the size of an IP datagram when figuring the size of the AX.25
 I frame data field. If <B>paclen</B> is 256, this leaves 236 bytes for the IP
-datagram. This is the default MTU of the <A HREF="#H4.33">netrom</A> pseudo-interface, so
+datagram. This is the default MTU of the <A HREF="#H4.33"><B>netrom</B></A> pseudo-interface, so
 as long as <B>paclen</B> is at least 256 bytes, AX.25 segmentation can't
-happen. But if smaller values of <B>paclen</B> are used, the <A HREF="#H4.33">netrom</A> MTU
-must also be reduced with the <A HREF="#H4.25">ifconfig</A> command.
+happen. But if smaller values of <B>paclen</B> are used, the <A HREF="#H4.33"><B>netrom</B></A> MTU
+must also be reduced with the <A HREF="#H4.25"><B>ifconfig</B></A> command.
 <P>
 On the other hand, if you're running IP directly on top of AX.25, chances
 are all of the nodes are running <B>WAMPES</B> and support AX.25 segmentation.
@@ -2329,7 +2329,7 @@ that data. Fortunately, new algorithms for dynamic controlling the
 effective TCP flow control window have been developed over the past few
 years and are now widely deployed.
 <B>WAMPES</B> includes them, and you can watch them
-in action with the <A HREF="#H4.54.7">tcp status</A> <I>tcb_addr</I> command.
+in action with the <A HREF="#H4.54.7"><B>tcp status</B></A> <I>tcb_addr</I> command.
 Look at the <B>cwind</B> (congestion window) value.
 <P>
 In most cases it is safe to set the TCP window to a small integer

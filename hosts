@@ -3274,14 +3274,12 @@
 44.130.88.6     DL9WUM  # Rolf Lieske, 04207 Leipzig
 44.130.88.10    DL8WKR  # Knut Rothe, Pegau
 44.130.88.11    DL2LQB  # Michael Wollschlaeger, Groitzsch
-44.130.88.13    DG0LDK-TEST # Wolfgang Winter, 04357 Leipzig  ax25: DG0LDK-2
 44.130.88.14    DD3DA   # Joerg Schlottmann, Leipzig
 44.130.88.15    DG3LSW  # Joachim Hilprecht, Leipzig
 44.130.88.16    DL6YTM  # Peter Wilkert, 04685 Nerchau
 44.130.88.17    DL6KWM  # Karsten Wilkert, 04685 Nerchau
 44.130.88.18    DG0LAT  # Uwe Rost, 05516 Markkleeberg
 44.130.88.19    DL5YYM  # Guenter Dornblut, 04179 Leipzig
-44.130.88.20    DG0LDK  # Wolfgang Winter, 04357 Leipzig
 44.130.88.21    DG0LGJ  # Torsten, Rosswein
 44.130.88.22    DG0LGF  # Axel Maercker, Leipzig  ax25: DG0LGF-14
 44.130.88.24    DG0LHW  # Mike Wittenbecher, 04315 Leipzig
@@ -3290,8 +3288,6 @@
 44.130.88.28    DG2LWD  # Andreas Donat, 04347 Leipzig
 44.130.88.29    DG0LHL  # Wilfried Ploog, 04349 Leipzig
 44.130.88.31    DG0LSK  # Klaus Schollmeyer, 04299 Leipzig
-44.130.88.32    DG0LJS  # Achim Schulze, 04209 Leipzig
-44.130.88.33    DG0LDK-U # Linux-System  ax25: DG0LDK-1
 44.130.88.36    DG0LEH  # Edgar Hornig, 04277 Leipzig
 44.130.88.37    DL2LQA  # Jo Hoppe, 04229 Leipzig
 44.130.88.38    DB5RB   # Raoul Brosch, Markkleeberg
@@ -3300,7 +3296,12 @@
 44.130.88.41    DB5RB-2 # System2  ax25: DB5RB-2
 44.130.88.42    DF8MM   # Uwe Kasubek, Delitzsch
 44.130.88.43    DL1DRZ  # Wilfried Reil, 04157 Leipzig
-#
+44.130.88.44    DC3WW   # Wolfgang Winter, 04357 Leipzig
+44.130.88.45    DC3WW-D # ax25: DC3WW-2
+44.130.88.46    DC8AS   # Achim Schulze, 04209 Leipzig
+44.130.88.47    DG0LHG  # Heiko, Aschershain Loc:JO61LC
+44.130.88.50    DC3WW-U # ax25: DC3WW-1
+44.130.88.51    DC3WW-TEST #
 44.130.88.100   DB0LPZ-SVR  # ax25: DB0LPZ-10
 #
 #44.130.89.x    Chemnitz
