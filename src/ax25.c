@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25.c,v 1.37 2002/09/19 19:11:44 dl9sau Exp $ */
+/* @(#) $Id: ax25.c,v 1.38 2002/09/20 15:07:49 dl9sau Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -313,6 +313,8 @@ struct mbuf **bpp       /* Data field (follows PID) */
 			  no_direct_arp = 1;
 			  continue;
 			}
+			dup_p(&tbp,*bpp,0,len_p(*bpp));
+			ret = axsend(iface,*ax_via,source,LAPB_COMMAND,UI,&tbp, 0);
 			dup_p(&tbp,*bpp,0,len_p(*bpp));
 			ret = axsend(iface,dest,source,LAPB_COMMAND,UI,&tbp, *ax_via);
 		}

@@ -1,4 +1,4 @@
-/* @(#) $Id: mail_smtp.c,v 1.23 2002/01/23 22:43:28 dl9sau Exp $ */
+/* @(#) $Id: mail_smtp.c,v 1.24 2002/09/20 15:07:49 dl9sau Exp $ */
 
 /* SMTP Mail Delivery Agent */
 
@@ -29,6 +29,9 @@ struct mesg {
   FILE *fp;
   struct mailsys *sp;
   struct transport_cb *tp;
+#define	MP_INLINE	1
+#define MP_LEADING_DOT	2
+  char flags;
 };
 
 static void mail_smtp_transaction(struct mesg *mp);
@@ -87,12 +90,20 @@ nextjob:
     case SMTP_DATA_STATE:
       if ((mp->fp = fopen(jp->dfile, "r"))) {
 	mp->state = SMTP_SEND_STATE;
-	fgets(tmp, sizeof(tmp), mp->fp);
-	mail_smtp_send_upcall(mp->tp, transport_send_space(mp->tp));
-      } else {
-	mp->state = SMTP_QUIT_STATE;
-	transport_close(mp->tp);
+	while (fgets(tmp, sizeof(tmp), mp->fp)) {
+	  char *q;
+	  if ((q = strpbrk(tmp, " \t\r\n")))
+	    *q = 0;
+	  if (!strcmp(tmp, "From"))
+	    break;
+	}
+	if (!feof(mp->fp)) {
+	  mail_smtp_send_upcall(mp->tp, transport_send_space(mp->tp));
+	  break;
+	}
       }
+      mp->state = SMTP_QUIT_STATE;
+      transport_close(mp->tp);
       break;
     case SMTP_SEND_STATE:
       break;
@@ -160,8 +171,27 @@ static void mail_smtp_send_upcall(struct transport_cb *tp, int cnt)
   if (!(bp = alloc_mbuf(cnt))) return;
   p = bp->data;
   c = 0;
-  while (p - bp->data < cnt && (c = getc(mp->fp)) != EOF)
-    if (c && c != '\004' && c != '\032') *p++ = c;
+  while (p - bp->data < cnt && (c = getc(mp->fp)) != EOF) {
+    if (!(mp->flags & MP_INLINE) && c == '.') {
+      mp->flags = MP_INLINE | MP_LEADING_DOT;
+      continue;
+     }
+    if (c == '\n') {
+      mp->flags &= ~MP_INLINE;
+    } else {
+      mp->flags |= MP_INLINE;
+      if (mp->flags & MP_LEADING_DOT) {
+        *p++ = '.';
+        mp->flags &= ~MP_LEADING_DOT;
+      }
+    }
+    if (!(mp->flags & MP_INLINE) && (mp->flags & MP_LEADING_DOT)) {
+      c = EOF;
+      break;
+    }
+    if (c && c != '\004' && c != '\032')
+      *p++ = c;
+  }
   if ((bp->cnt = p - bp->data))
     transport_send(tp, bp);
   else
@@ -169,7 +199,7 @@ static void mail_smtp_send_upcall(struct transport_cb *tp, int cnt)
   if (c == EOF) {
     fclose(mp->fp);
     mp->fp = 0;
-    transport_send(mp->tp, qdata(".\n", 2));
+    transport_send(mp->tp, ((mp->flags & MP_INLINE) ? qdata("\n.\n", 3) : qdata(".\n", 2)));
     mp->state = SMTP_UNLK_STATE;
   }
 }

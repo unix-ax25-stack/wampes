@@ -1,4 +1,4 @@
-/* @(#) $Id: mail_subr.c,v 1.10 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: mail_subr.c,v 1.11 2002/09/20 15:07:49 dl9sau Exp $ */
 
 #include "timer.h"
 #include "mail.h"
@@ -7,9 +7,21 @@
 
 char *get_user_from_path(char *path)
 {
-  char *cp;
+  char *cp, *cp2;
+  static char tmp[1024];
 
-  return (cp = strrchr(path, '!')) ? cp + 1 : path;
+  if ((cp = strrchr(path, '!')))
+    cp++;
+  else
+    cp = path;
+  if (!(cp2 = strchr(cp, '@')))
+    cp++;
+  else {
+    strncpy(tmp, cp, cp2-cp);
+    tmp[cp2-cp] = 0;
+    cp = tmp;
+  }
+  return (*cp ? cp : "MAILER-DAEMON");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -17,13 +29,26 @@ char *get_user_from_path(char *path)
 char *get_host_from_path(char *path)
 {
 
-  char *cp;
+  char *cp, *cp2;
   static char tmp[1024];
 
-  strcpy(tmp, path);
-  if (!(cp = strrchr(tmp, '!'))) return "";
-  *cp = '\0';
-  return (cp = strrchr(tmp, '!')) ? cp + 1 : tmp;
+  if ((cp = strrchr(path, '@'))) {
+    cp++;
+    if ((cp2 = strchr(cp, '!'))) {
+      strncpy(tmp, cp, cp2-cp);
+      tmp[cp2-cp] = 0;
+      cp = tmp;
+    }
+  } else {
+    strcpy(tmp, path);
+    if ((cp = strrchr(tmp, '!')))
+      *cp = '\0';
+    if ((cp = strrchr(tmp, '!')))
+      cp++;
+    else
+      cp = tmp;
+  }
+  return (*cp ? cp : Hostname);
 }
 
 /*---------------------------------------------------------------------------*/

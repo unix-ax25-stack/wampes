@@ -1,4 +1,4 @@
-/* @(#) $Id: mail_daemn.c,v 1.28 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: mail_daemn.c,v 1.29 2002/09/20 15:07:49 dl9sau Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -204,6 +204,7 @@ static void mail_tick(char *sysname)
   char tmp3[1024];
   int clients;
   int cnt;
+  int is_taylor = 0;
   struct dirent *dp;
   struct mailjob mj, *jp, *tail;
   struct mailsys *sp;
@@ -212,6 +213,7 @@ static void mail_tick(char *sysname)
   struct filelist {
     struct filelist *next;
     char name[16];
+    uint8 is_taylor;
   } *filelist, *p, *q;
 
   if (!*UUCP_DIR) return;
@@ -225,13 +227,19 @@ static void mail_tick(char *sysname)
     if (sysname && !strcmp(sp->sysname, sysname)) sp->nexttime = 0;
     if (sp->state >= MS_TRYING || sp->nexttime > secclock()) continue;
     sprintf(spooldir, "%s/%s", UUCP_DIR, sp->sysname);
-    if (!(dirp = opendir(spooldir))) continue;
     filelist = 0;
     cnt = 0;
+    if (!(dirp = opendir(spooldir))) continue;
+again:
     for (dp = readdir(dirp); dp; dp = readdir(dirp)) {
       if (*dp->d_name != 'C') continue;
+      if (!is_taylor && !strcmp(dp->d_name, "C.")) {
+	is_taylor = 1;
+	continue;
+      }
       p = (struct filelist *) malloc(sizeof(struct filelist));
       strcpy(p->name, dp->d_name);
+      p->is_taylor = (is_taylor > 1);
       if (!filelist || strcmp(p->name, filelist->name) < 0) {
 	p->next = filelist;
 	filelist = p;
@@ -248,21 +256,28 @@ static void mail_tick(char *sysname)
       }
     }
     closedir(dirp);
+    if (is_taylor == 1) {
+      strcat(spooldir, "/C.");
+      if (!(dirp = opendir(spooldir))) continue;
+      spooldir[strlen(spooldir)-3] = 0;
+      is_taylor = 2;
+      goto again;
+    }
     tail = 0;
     for (; (p = filelist); filelist = p->next, free(p)) {
       memset(&mj, 0, sizeof(mj));
-      sprintf(mj.cfile, "%s/%s", spooldir, p->name);
+      sprintf(mj.cfile, "%s/%s%s", spooldir, (p->is_taylor ? "C./" : ""), p->name);
       if (!(fp = fopen(mj.cfile, "r"))) continue;
       while (fgets(line, sizeof(line), fp)) {
-	if (*line == 'E' && sscanf(line, "%*s %*s %*s %*s %*s %s %*s %*s %*s %s %s", tmp1, tmp2, tmp3) == 3 && *tmp1 == 'D' && !strcmp(tmp2, "rmail")) {
-	  sprintf(mj.dfile, "%s/%s", spooldir, tmp1);
+	if (*line == 'E' && sscanf(line, "%*s %*s %*s %*s %*s %s %*s %*s %*s %s %s", tmp1, tmp2, tmp3) == 3 && *tmp1 == 'D' && !strcmp(tmp2, "rmail") || !strcmp(tmp2+1, "smtp")) {
+	  sprintf(mj.dfile, "%s/%s%s", spooldir, (p->is_taylor ? "D./" : ""), tmp1);
 	  sprintf(mj.to, "%s!%s", sp->sysname, tmp3);
 	  strtrim(mj.to);
 	}
 	if (*line == 'S' && sscanf(line, "%*s %*s %s %*s %*s %s", tmp1, tmp2) == 2 && *tmp1 == 'D')
-	  sprintf(mj.dfile, "%s/%s", spooldir, tmp2);
+	  sprintf(mj.dfile, "%s/%s%s", spooldir, (p->is_taylor ? "D./" : ""), tmp2);
 	if (*line == 'S' && sscanf(line, "%*s %*s %s %*s %*s %s", tmp1, tmp2) == 2 && *tmp1 == 'X')
-	  sprintf(mj.xfile, "%s/%s", spooldir, tmp2);
+	  sprintf(mj.xfile, "%s/%s%s", spooldir, (p->is_taylor ? "X./" : ""), tmp2);
       }
       fclose(fp);
       if (!*mj.dfile) continue;
@@ -278,17 +293,37 @@ static void mail_tick(char *sysname)
       }
       if (!*mj.to) continue;
       if (!(fp = fopen(mj.dfile, "r"))) continue;
-      if (fscanf(fp, "%*s %s", tmp1) == 1) {
-	if (!strcmp(tmp1, "MAILER-DAEMON") || !strcmp(tmp1, "!"))
-	  strcpy(tmp1, Hostname);
-	sprintf(mj.from, "%s!%s", Hostname, tmp1);
-	strtrim(mj.from);
-	while (fgets(line, sizeof(line), fp))
-	  if (!strncmp(line, "Subject: ", 9)) {
-	    strcpy(mj.subject, line + 9);
-	    strtrim(mj.subject);
-	    break;
+      if (fscanf(fp, "%s %s", tmp2, tmp1) == 2) {
+	if (!strcmp(tmp2, "HELO")) {
+	  // (b)rsmtp
+	  if (fscanf(fp, "%s %s", tmp1, tmp2) == 2 && !strcmp(tmp1, "MAIL") && !strncmp(tmp2, "FROM:<", 6) && tmp2[strlen(tmp2)-1] == '>') {
+            char *p_tmp = tmp2+5;
+	    if (!strcmp(p_tmp, "<>")) {
+	      // MAILER-DAEMON
+	      sprintf(mj.from, "%s@%s", "MAILER-DAEMON", Hostname);
+	    } else {
+	      strcpy(mj.from, p_tmp+1);
+	      mj.from[strlen(mj.from)-1] = 0;
+	      strtrim(mj.from);
+	    }
+	    if (fscanf(fp, "%s %s", tmp1, tmp2) == 2 && !strcmp(tmp1, "RCPT") && !strncmp(tmp2, "TO:<", 3) && tmp2[strlen(tmp2)-1] == '>' && fscanf(fp, "%s", line) == 1 && !strcmp(line, "DATA")) {
+	      strcpy(mj.to, tmp2+4);
+	      mj.to[strlen(mj.to)-1] = 0;
+	      strtrim(mj.to);
+	    }
 	  }
+	} else {
+	  if (!strcmp(tmp1, "MAILER-DAEMON") || !strcmp(tmp1, "!"))
+	    strcpy(tmp1, Hostname);
+	  sprintf(mj.from, "%s!%s", Hostname, tmp1);
+	  strtrim(mj.from);
+	  while (fgets(line, sizeof(line), fp))
+	    if (!strncmp(line, "Subject: ", 9)) {
+	      strcpy(mj.subject, line + 9);
+	      strtrim(mj.subject);
+	      break;
+	    }
+	}
       }
       fclose(fp);
       if (!*mj.from) continue;

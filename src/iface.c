@@ -1,4 +1,4 @@
-/* @(#) $Id: iface.c,v 1.33 2002/09/19 19:11:44 dl9sau Exp $ */
+/* @(#) $Id: iface.c,v 1.34 2002/09/20 15:07:49 dl9sau Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -29,7 +29,7 @@ static int ifforw(int argc,char *argv[],void *p);
 static int ifencap(int argc,char *argv[],void *p);
 static int iftxqlen(int argc,char *argv[],void *p);
 static int ifautoroute(int argc,char *argv[],void *p);
-static int ifaxmcast_digis(int argc,char *argv[],void *p);
+static int ifdigiarp(int argc,char *argv[],void *p);
 
 /* Interface list header */
 struct iface *Ifaces = &Loopback;
@@ -129,7 +129,7 @@ char Noipaddr[] = "IP address field missing, and ip address not set\n";
 
 struct cmds Ifcmds[] = {
 	{ "autoroute",            ifautoroute,    0,      2,      NULL },
-	{ "axmcast_digis",        ifaxmcast_digis,0,      2,      NULL },
+	{ "digiarp",              ifdigiarp,      0,      2,      NULL },
 	{ "broadcast",            ifbroad,        0,      2,      NULL },
 	{ "crc",                  ifcrc,          0,      2,      NULL },
 	{ "encapsulation",        ifencap,        0,      2,      NULL },
@@ -526,10 +526,10 @@ iftxqlen(int argc,char *argv[],void *p)
 	return 0;
 }
 
-// dl9sau: patch for ARP requests (to QST) via multible digipeaters
+// dl9sau: patch for ARP requests (to QST-0) via multible digipeaters
 // for an extended "collision domain"
 static int
-ifaxmcast_digis(int argc, char *argv[], void *p)
+ifdigiarp(int argc, char *argv[], void *p)
 {
 	struct iface *ifp = (struct iface *) p;
 	char tmp[AXBUF];

@@ -1,4 +1,35 @@
-Version @(#) $Id: ChangeLog.patches,v 1.11 2002/09/19 19:11:44 dl9sau Exp $
+Version @(#) $Id: ChangeLog.patches,v 1.12 2002/09/20 15:07:49 dl9sau Exp $
+
+020920 Thomas Osterried <dl9sau>
+
+        - patch for ARP requests (to QST-0) via multible digipeaters
+	  for an extended "collision domain". changed iface.c and ax25.c.
+	  examples:
+	    ifconfig linuxBPQ digiarp add db0tud  # arp directly to db0tud
+	    ifconfig linuxBPQ digiarp add -       # no direct ARPs
+	    ifconfig linuxBPQ digiarp addvia db0tud  # arp to QST-0 via db0tud
+	- builtin smtp client now capable of taylor uucp spool formats
+	  and bsmtp encoded spool files
+	- version.c:
+	  added DIGIARP feature
+
+020918 Thomas Osterried <dl9sau>
+	- bugfix in ax25cmd.c's VJ part:
+                ax_routeptr(hdr.dest, 1); is right, not ".., 0)"
+                this caused a segfault in ax ro add qst
+                (which is not valid due to other reasons, but caused a
+                race condition)
+	- ax25dump.c:
+		trace on ax25 interfaces now displays DAMA flag
+	- krnlif.c:
+       		- fix in error message
+        	- added params to krnlif_ioctl, like in kiss.c/kiss_ioctl()
+
+	- util/qth.c:
+		- added nmea GPGGA conform output
+        	- Gauss-Krueger coordinaties now a possible input format
+          	  (gk locators are transmitted for e.g. as CellBroadcast by
+		  German mobile-TK-providers like O2 (ex Viag Interkomm))
 
 020619 Thomas Osterried <dl9sau>
 
@@ -76,3 +107,4 @@ Version @(#) $Id: ChangeLog.patches,v 1.11 2002/09/19 19:11:44 dl9sau Exp $
 
         II. krnlif.c modification for linux-kernel 2.2 compatibility
             force the old behaviour with -DUSE_OBSOLETE_SOCK_PACKET
+
