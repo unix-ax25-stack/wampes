@@ -1,9 +1,11 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.3 1988/09/01 21:29:32 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.4 1988/09/09 22:17:38 dk5sg Exp $";
 
 #include <sys/types.h>
 
+#include <errno.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <sys/utsname.h>
@@ -11,6 +13,8 @@ static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampe
 #include <time.h>
 
 extern char  *getenv();
+extern char  *optarg;
+extern int  optind;
 extern void exit();
 extern void perror();
 
@@ -18,6 +22,54 @@ extern void perror();
 
 static struct termio prev_termio;
 static struct utsname utsname;
+
+/*---------------------------------------------------------------------------*/
+
+/*
+ * Executes read(2), cares about EINTR
+ */
+
+int  doread(fildes, buf, nbyte)
+int  fildes;
+char  *buf;
+unsigned  nbyte;
+{
+  int  cnt;
+
+  for (; ; ) {
+    cnt = read(fildes, buf, nbyte);
+    if (cnt >= 0) return cnt;
+    if (errno != EINTR) return (-1);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+/*
+ * Executes write(2), retries until all data is send, cares about EINTR
+ *
+ * WARNING: SIGPIPE should be ignored by the calling context!
+ */
+
+int  dowrite(fildes, buf, nbyte)
+int  fildes;
+char  *buf;
+unsigned  nbyte;
+{
+  int  cnt, len;
+
+  len = nbyte;
+  while (nbyte) {
+    cnt = write(fildes, buf, nbyte);
+    if (cnt < 0) {
+      if (errno != EINTR) return (-1);
+      cnt = 0;
+    }
+    buf += cnt;
+    nbyte -= cnt;
+  }
+  return len;
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -41,15 +93,21 @@ char  **argv;
   char  c;
   char  inbuf[2048];
   char  outbuf[2048];
+  int  ch;
+  int  channel = 0;
   int  echo;
+  int  errflag = 0;
   int  i;
   int  incnt = 0;
   int  mask;
   int  outcnt = 0;
+  int  port = PORT;
   int  size;
   static struct sockaddr_in addr;
   struct hostent *hp;
   struct termio curr_termio;
+
+  signal(SIGPIPE, SIG_IGN);
 
   if (ioctl(0, TCGETA, &prev_termio)) stop(*argv);
   if (ioctl(0, TCGETA, &curr_termio)) stop(*argv);
@@ -60,43 +118,66 @@ char  **argv;
   if (ioctl(0, TCSETA, &curr_termio)) stop(*argv);
 
   if (uname(&utsname)) stop(*argv);
+  hostname = utsname.nodename;
+
+  while ((ch = getopt(argc, argv, "c:h:p:")) != EOF)
+    switch (ch) {
+    case 'c':
+      channel = atoi(optarg);
+      break;
+    case 'h':
+      hostname = optarg;
+      break;
+    case 'p':
+      port = atoi(optarg);
+      break;
+    case '?':
+      errflag = 1;
+      break;
+    }
+
+  if (errflag || optind < argc) {
+    fprintf(stderr, "usage: convers [-c channel] [-h host] [-p port]\n");
+    stop(0);
+  }
+
   addr.sin_family = AF_INET;
-  if (!(hp = gethostbyname(hostname = (argc >= 2) ? argv[1] : utsname.nodename))) {
+  if (!(hp = gethostbyname(hostname))) {
     fprintf(stderr, "%s: %s not found in /etc/hosts\n", *argv, hostname);
     stop(0);
   }
   addr.sin_addr.s_addr = ((struct in_addr *) (hp->h_addr))->s_addr;
-  addr.sin_port = (argc >= 3) ? atoi(argv[2]) : PORT;
+  addr.sin_port = port;
   close(3);
   if (socket(AF_INET, SOCK_STREAM, 0) != 3) stop(*argv);
   if (connect(3, &addr, sizeof(struct sockaddr_in ))) stop(*argv);
 
-  i = sprintf(inbuf, "/NAME %s\n", getenv("LOGNAME"));
-  if (write(3, inbuf, (unsigned) i) != i) stop(*argv);
+  i = sprintf(inbuf, "/NAME %s %d\n", getenv("LOGNAME"), channel);
+  if (dowrite(3, inbuf, (unsigned) i) < 0) stop(*argv);
 
   for (; ; ) {
     mask = 011;
     select(4, &mask, 0, 0, (struct timeval *) 0);
     if (mask & 1) {
       do {
-	if ((size = read(0, buffer, sizeof(buffer))) <= 0) stop(0);
+	if ((size = doread(0, buffer, sizeof(buffer))) <= 0) stop(0);
 	for (i = 0; i < size; i++) {
 	  c = buffer[i];
 	  if (c == '\r') c = '\n';
 	  if (c == prev_termio.c_cc[VERASE]) {
 	    if (incnt) {
 	      incnt--;
-	      if (echo && write(1, "\b \b", 3) != 3) stop(*argv);
+	      if (echo && dowrite(1, "\b \b", 3) < 0) stop(*argv);
 	    }
 	  } else if (c == prev_termio.c_cc[VKILL]) {
 	    for (; incnt; incnt--)
-	      if (echo && write(1, "\b \b", 3) != 3) stop(*argv);
+	      if (echo && dowrite(1, "\b \b", 3) < 0) stop(*argv);
 	  } else if (echo && c == 18) {
-	    if (write(1, "^R\n", 3) != 3) stop(*argv);
-	    if (write(1, inbuf, (unsigned) incnt) != incnt) stop(*argv);
+	    if (dowrite(1, "^R\n", 3) < 0) stop(*argv);
+	    if (dowrite(1, inbuf, (unsigned) incnt) < 0) stop(*argv);
 	  } else {
 	    inbuf[incnt++] = c;
-	    if (echo && write(1, &c, 1) != 1) stop(*argv);
+	    if (echo && dowrite(1, &c, 1) < 0) stop(*argv);
 	  }
 	  if (c == '\n' || incnt == sizeof(inbuf) - 1) {
 	    if (*inbuf == '!') {
@@ -104,22 +185,22 @@ char  **argv;
 	      if (ioctl(0, TCSETA, &prev_termio)) stop(*argv);
 	      system(inbuf + 1);
 	      if (ioctl(0, TCSETA, &curr_termio)) stop(*argv);
-	      if (write(1, "!\n", 2) != 2) stop(*argv);
+	      if (dowrite(1, "!\n", 2) < 0) stop(*argv);
 	    } else {
-	      if (write(3, inbuf, (unsigned) incnt) != incnt) stop(*argv);
+	      if (dowrite(3, inbuf, (unsigned) incnt) < 0) stop(*argv);
 	    }
 	    incnt = 0;
 	  }
 	}
       } while (incnt);
     } else {
-      size = read(3, buffer, sizeof(buffer));
+      size = doread(3, buffer, sizeof(buffer));
       if (size <= 0) stop(0);
       for (i = 0; i < size; i++) {
 	c = buffer[i];
 	if (c != '\r') outbuf[outcnt++] = c;
 	if (c == '\n' || outcnt == sizeof(outbuf)) {
-	  if (write(1, outbuf, (unsigned) outcnt) != outcnt) stop(*argv);
+	  if (dowrite(1, outbuf, (unsigned) outcnt) < 0) stop(*argv);
 	  outcnt = 0;
 	}
       }
