@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.47 1995/06/04 09:36:40 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.48 1995/06/07 09:29:44 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -9,7 +9,7 @@ MKDIR      = @if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi
 RMTARGET   = @if [ -f $@ ]; then rm -f $@ || mv -f $@ $@~; fi
 SLIBS      =
 
-TARGETS    = bbs findpath killdup
+TARGETS    = bbs findpath
 
 all:;   @case "`uname -sr`" in \
 	HP-UX*) \
@@ -96,12 +96,7 @@ findpath: findpath.o $(LIBS)
 	@sleep 1
 	$(LD) $(LDFLAGS) findpath.o $(LIBS) $(SLIBS) -o $@
 
-killdup: killdup.o $(LIBS)
-	$(RMTARGET)
-	@sleep 1
-	$(LD) $(LDFLAGS) killdup.o $(LIBS) $(SLIBS) -o $@
-
-install: /usr/local/bin/bbs findpath killdup /usr/local/lib/bbs.help
+install: /usr/local/bin/bbs findpath /usr/local/lib/bbs.help
 
 /usr/local/bin/bbs: bbs
 	$(MKDIR)
@@ -124,4 +119,3 @@ bbs.o: bbs.h ../lib/configure.h ../lib/buildsaddr.h ../lib/callvalid.h \
 	../lib/lockfile.h ../lib/seek.h ../lib/seteugid.h ../lib/strdup.h
 findpath.o: bbs.h ../lib/configure.h ../lib/calc_crc.h ../lib/callvalid.h \
 	../lib/seek.h
-killdup.o: bbs.h ../lib/configure.h ../lib/md5.h ../lib/seek.h

@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.93 1995/06/04 09:36:39 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.94 1995/06/07 09:29:43 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -436,22 +436,32 @@ static long parse_rfc822_date(const char *str)
 	     &dd, monthstr, &yy, &h, &m, &s, tzstr);
   if (i < 6)
     return -1;
-  if (i == 7 &&
-      (tzstr[0] == '-' || tzstr[0] == '+') &&
-      isdigit(tzstr[1] & 0xff) &&
-      isdigit(tzstr[2] & 0xff) &&
-      isdigit(tzstr[3] & 0xff) &&
-      isdigit(tzstr[4] & 0xff) &&
-      !tzstr[5]) {
-    tzcorrection =
-	(tzstr[1] - '0') * 36000 +
-	(tzstr[2] - '0') * 3600 +
-	(tzstr[3] - '0') * 600 +
-	(tzstr[4] - '0') * 60;
-    if (tzstr[0] == '-')
-      tzcorrection = -tzcorrection;
-  } else {
-    tzcorrection = 0;
+  tzcorrection = 0;
+  if (i == 7) {
+    if (!strcmp(tzstr, "EDT"))
+      strcpy(tzstr, "-0400");
+    else if (!strcmp(tzstr, "EST") || !strcmp(tzstr, "CDT"))
+      strcpy(tzstr, "-0500");
+    else if (!strcmp(tzstr, "CST") || !strcmp(tzstr, "MDT"))
+      strcpy(tzstr, "-0600");
+    else if (!strcmp(tzstr, "MST") || !strcmp(tzstr, "PDT"))
+      strcpy(tzstr, "-0700");
+    else if (!strcmp(tzstr, "PST"))
+      strcpy(tzstr, "-0800");
+    if ((tzstr[0] == '-' || tzstr[0] == '+') &&
+	isdigit(tzstr[1] & 0xff) &&
+	isdigit(tzstr[2] & 0xff) &&
+	isdigit(tzstr[3] & 0xff) &&
+	isdigit(tzstr[4] & 0xff) &&
+	!tzstr[5]) {
+      tzcorrection =
+	  (tzstr[1] - '0') * 36000 +
+	  (tzstr[2] - '0') * 3600 +
+	  (tzstr[3] - '0') * 600 +
+	  (tzstr[4] - '0') * 60;
+      if (tzstr[0] == '-')
+	tzcorrection = -tzcorrection;
+    }
   }
   if (strlen(monthstr) != 3)
     return -1;

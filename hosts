@@ -1158,7 +1158,8 @@
 44.130.20.3     oh2mkq-dh
 44.130.20.4     dl4ydp
 44.130.20.5     dl4kbs  # Tobias Dingwerth, 52070 Aachen
-44.130.20.10    dg2kca  # Wolfram Sauerteig, 5100 Aachen
+44.130.20.6     dg9kbu  # Uli Berens, 52074 Aachen-Laurensberg
+44.130.20.10    dh3kac  # Wolfram Sauerteig, 52062 Aachen
 44.130.20.12    dk0af   # AMDAT e.V., 5100 Aachen; SUN-Gateway
 44.130.20.13    dk0af-1 #
 44.130.20.14    dk0af-2 #
@@ -1197,7 +1198,7 @@
 44.130.20.66    dh6kq   # Andreas From, 5190 Stolberg
 44.130.20.67    dk0oe   # Club-Stn OV Eschweiler (G05)
 44.130.20.68    dl5kci  # Ingo Geidel, Stolberg
-44.130.20.69    dl1kj   # Rolf
+44.130.20.69    dl1kj   # Rolf Dohmen, 50226 Frechen
 44.130.20.70    dh4kah  # Arno Hausmann, 5190 Stolberg
 44.130.20.71    dl3kbe  # Heinz Brendt
 44.130.20.72    dl2kbj  # Wolfgang Welter, 5190 Stolberg; Atari ST
@@ -1239,6 +1240,8 @@
 44.130.20.121   dl2kff  # Fritz Friedhoff, 52074 Aachen
 44.130.20.122   dg1kdd  # Dirk Henning, 52353 Dueren
 44.130.20.123   dg1kdd-svr      #
+44.130.20.130   dl3kh  # Alexander Schwarz, Huertgenwald
+44.130.20.131   dd3kc  # Petra Schwarz, Huertgenwald
 44.130.20.200   dl1edb  # Chris Schlaeger, 5100 Aachen; Atari ST
 #
 #44.130.21.x    Bonn/Euskirchen
