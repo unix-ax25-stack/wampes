@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.13 1994/10/06 16:15:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.14 1994/10/09 08:22:46 deyke Exp $ */
 
 /* Parse command line, set up command arguments Unix-style, and call function.
  * Note: argument is modified (delimiters are overwritten with nulls)
@@ -325,7 +325,7 @@ char *argv[])
 /* Subroutine for setting and displaying long variables */
 int
 setlong(
-int32 *var,
+long *var,
 char *label,
 int argc,
 char *argv[])

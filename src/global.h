@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.32 1994/10/06 16:15:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.33 1994/10/09 08:22:49 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -69,10 +69,10 @@
  * shorts are 16 bits. It is already assumed that chars are 8 bits,
  * but it doesn't matter if they're signed or unsigned.
  */
-typedef int  int32;             /* 32-bit signed integer */
+typedef long int32;             /* 32-bit signed integer */
 typedef unsigned short uint16;  /* 16-bit unsigned integer */
 typedef unsigned char byte_t;   /*  8-bit unsigned integer */
-#define uchar(x) ((x) & 0xff)
+#define uchar(x) ((unsigned char)(x))
 #define MAXINT16 65535          /* Largest 16-bit integer */
 #define MAXINT32 4294967295L    /* Largest 32-bit integer */
 #define NBBY    8               /* 8 bits/byte */
@@ -187,7 +187,6 @@ typedef unsigned char byte_t;   /*  8-bit unsigned integer */
 int availmem(void);
 void *callocw(unsigned nelem,unsigned size);
 int dirps(void);
-int getopt();
 int htob(char c);
 int htoi(char *);
 int readhex(char *,char *,int);
@@ -206,8 +205,8 @@ void restore(int);
 void rip(char *);
 char *smsg(char *msgs[],unsigned nmsgs,unsigned n);
 void stktrace(void);
-#if     !defined __TURBOC__
-char *strdup();
+#if 0
+char *strdup(const char *);
 #endif
 int wildmat(char *s,char *p,char **argv);
 

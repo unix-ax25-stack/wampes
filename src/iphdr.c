@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iphdr.c,v 1.7 1994/10/06 16:15:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iphdr.c,v 1.8 1994/10/09 08:22:51 deyke Exp $ */
 
 /* IP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -109,7 +109,7 @@ register int32 sum)     /* Carries in high order 16 bits */
 {
 	register uint16 csum;
 
-	while((csum = sum >> 16) != 0)
+	while((csum = (uint16) (sum >> 16)) != 0)
 		sum = csum + (sum & 0xffffL);
 	return (uint16) (sum & 0xffffl);        /* Chops to 16 bits */
 }

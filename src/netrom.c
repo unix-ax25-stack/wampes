@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.43 1994/10/06 16:15:32 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.44 1994/10/09 08:22:55 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -47,33 +47,33 @@ static struct parms {
   int minval;
   int maxval;
 } parms[] = {
-  "",                                               (int *) 0,       0,          0,
-  " 1 Maximum destination list entries           ", &nr_maxdest,     1,        400,
-  " 2 Worst quality for auto-updates             ", &nr_minqual,     0,        255,
-  " 3 Channel 0 (HDLC) quality                   ", &nr_hfqual,      0,        255,
-  " 4 Channel 1 (RS232) quality                  ", &nr_rsqual,      0,        255,
-  " 5 Obsolescence count initializer (0=off)     ", &nr_obsinit,     0,        255,
-  " 6 Obsolescence count min to be broadcast     ", &nr_minobs,      0,        255,
-  " 7 Auto-update broadcast interval (sec, 0=off)", &nr_bdcstint,    0,      65535,
-  " 8 Network 'time-to-live' initializer         ", &nr_ttlinit,     1,        255,
-  " 9 Transport timeout (sec)                    ", &nr_ttimeout,    5,        600,
-  "10 Transport maximum tries                    ", &nr_tretry,      1,        127,
-  "11 Transport acknowledge delay (ms)           ", &nr_tackdelay,   1,      60000,
-  "12 Transport busy delay (sec)                 ", &nr_tbsydelay,   1,       1000,
-  "13 Transport requested window size (frames)   ", &nr_twindow,     1,        127,
-  "14 Congestion control threshold (frames)      ", &nr_tnoackbuf,   1,        127,
-  "15 No-activity timeout (sec, 0=off)           ", &nr_timeout,     0,      65535,
-  "16 Persistance                                ", &nr_persistance, 0,        255,
-  "17 Slot time (10msec increments)              ", &nr_slottime,    0,        127,
-  "18 Link T1 timeout 'FRACK' (ms)               ", &T1init,         1, 0x7fffffff,
-  "19 Link TX window size 'MAXFRAME' (frames)    ", &Maxframe,       1,          7,
-  "20 Link maximum tries (0=forever)             ", &N2,             0,        127,
-  "21 Link T2 timeout (ms)                       ", &nr_t2init,      1, 0x7fffffff,
-  "22 Link T3 timeout (ms)                       ", &T3init,         0, 0x7fffffff,
-  "23 AX.25 digipeating  (0=off 1=dumb 2=s&f)    ", &Digipeat,       0,          2,
-  "24 Validate callsigns (0=off 1=on)            ", &nr_callcheck,   0,          1,
-  "25 Station ID beacons (0=off 1=after 2=every) ", &nr_beacon,      0,          2,
-  "26 CQ UI frames       (0=off 1=on)            ", &nr_cq,          0,          1,
+  { "",                                               (int *) 0,       0,          0 },
+  { " 1 Maximum destination list entries           ", &nr_maxdest,     1,        400 },
+  { " 2 Worst quality for auto-updates             ", &nr_minqual,     0,        255 },
+  { " 3 Channel 0 (HDLC) quality                   ", &nr_hfqual,      0,        255 },
+  { " 4 Channel 1 (RS232) quality                  ", &nr_rsqual,      0,        255 },
+  { " 5 Obsolescence count initializer (0=off)     ", &nr_obsinit,     0,        255 },
+  { " 6 Obsolescence count min to be broadcast     ", &nr_minobs,      0,        255 },
+  { " 7 Auto-update broadcast interval (sec, 0=off)", &nr_bdcstint,    0,      65535 },
+  { " 8 Network 'time-to-live' initializer         ", &nr_ttlinit,     1,        255 },
+  { " 9 Transport timeout (sec)                    ", &nr_ttimeout,    5,        600 },
+  { "10 Transport maximum tries                    ", &nr_tretry,      1,        127 },
+  { "11 Transport acknowledge delay (ms)           ", &nr_tackdelay,   1,      60000 },
+  { "12 Transport busy delay (sec)                 ", &nr_tbsydelay,   1,       1000 },
+  { "13 Transport requested window size (frames)   ", &nr_twindow,     1,        127 },
+  { "14 Congestion control threshold (frames)      ", &nr_tnoackbuf,   1,        127 },
+  { "15 No-activity timeout (sec, 0=off)           ", &nr_timeout,     0,      65535 },
+  { "16 Persistance                                ", &nr_persistance, 0,        255 },
+  { "17 Slot time (10msec increments)              ", &nr_slottime,    0,        127 },
+  { "18 Link T1 timeout 'FRACK' (ms)               ", &T1init,         1, 0x7fffffff },
+  { "19 Link TX window size 'MAXFRAME' (frames)    ", &Maxframe,       1,          7 },
+  { "20 Link maximum tries (0=forever)             ", &N2,             0,        127 },
+  { "21 Link T2 timeout (ms)                       ", &nr_t2init,      1, 0x7fffffff },
+  { "22 Link T3 timeout (ms)                       ", &T3init,         0, 0x7fffffff },
+  { "23 AX.25 digipeating  (0=off 1=dumb 2=s&f)    ", &Digipeat,       0,          2 },
+  { "24 Validate callsigns (0=off 1=on)            ", &nr_callcheck,   0,          1 },
+  { "25 Station ID beacons (0=off 1=after 2=every) ", &nr_beacon,      0,          2 },
+  { "26 CQ UI frames       (0=off 1=on)            ", &nr_cq,          0,          1 }
 };
 
 #define NPARMS 26
@@ -555,7 +555,7 @@ static void send_broadcast(void)
 	  p += IDENTLEN;
 	  addrcp(p, pn->neighbor ? pn->neighbor->call : pn->call);
 	  p += AXALEN;
-	  *p++ = pn->quality;
+	  *p++ = (char) pn->quality;
 	  if ((bp->cnt = p - bp->data) > 258 - NRRTDESTLEN) {
 	    send_broadcast_packet(bp);
 	    routes_stat.sent++;
@@ -576,7 +576,7 @@ static void route_packet(struct mbuf *bp, struct node *fromneighbor)
 {
 
   int ttl;
-  int32 ipaddr;
+  int32 ipaddr = 0;
   struct arp_tab *ap;
   struct node *pn;
 
@@ -1693,7 +1693,8 @@ static int dolinks(int argc, char *argv[], void *p)
   long timestamp;
   struct link *pl;
   struct linkinfo *pi;
-  struct node *pn1, *pn2;
+  struct node *pn1 = 0;
+  struct node *pn2 = 0;
 
   if (argc >= 2) {
     if (setcall(call, argv[1])) {
@@ -1716,9 +1717,9 @@ static int dolinks(int argc, char *argv[], void *p)
 	for (pl = pn2->links; pl; pl = pl->next) {
 	  pax25(buf2, pl->node->call);
 	  if (pl->info->time != PERMANENT)
-	    printf("%-9s  %-9s  %5i  %7i  %4i\n", buf1, buf2, pl->info->source, pl->info->quality, secclock() - pl->info->time);
+	    printf("%-9s  %-9s  %5d  %7d  %4ld\n", buf1, buf2, pl->info->source, pl->info->quality, secclock() - pl->info->time);
 	  else
-	    printf("%-9s  %-9s  %5i  %7i\n", buf1, buf2, pl->info->source, pl->info->quality);
+	    printf("%-9s  %-9s  %5d  %7d\n", buf1, buf2, pl->info->source, pl->info->quality);
 	}
       }
     return 0;
@@ -1770,7 +1771,8 @@ static int donodes(int argc, char *argv[], void *p)
 
   char buf1[20], buf2[20];
   char call[AXALEN];
-  struct node *pn, *pn1;
+  struct node *pn = 0;
+  struct node *pn1 = 0;
 
   if (argc >= 2) {
     if (setcall(call, argv[1])) {
@@ -1790,7 +1792,7 @@ static int donodes(int argc, char *argv[], void *p)
 	pax25(buf2, pn->neighbor->call);
       else
 	*buf2 = '\0';
-      printf("%-9s  %-6.6s  %-9s  %5i  %7i\n", buf1, pn->ident, buf2, pn->hopcnt, (int) pn->quality);
+      printf("%-9s  %-6.6s  %-9s  %5d  %7d\n", buf1, pn->ident, buf2, pn->hopcnt, (int) pn->quality);
     }
   return 0;
 }

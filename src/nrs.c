@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.13 1994/10/06 16:15:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.14 1994/10/09 08:22:56 deyke Exp $ */
 
 /* This module implements the serial line framing method used by
  * net/rom nodes.  This allows the net/rom software to talk to
@@ -30,7 +30,9 @@ struct iface *ifp)
 {
 	int xdev;
 	struct nrs *np;
+#if 0
 	char *ifn;
+#endif
 
 	/* Set up a net/rom serial iface */
 	for(xdev = 0;xdev < NRS_MAX;xdev++){

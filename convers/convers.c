@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.16 1994/09/05 12:47:25 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.17 1994/10/09 08:22:42 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -41,11 +41,9 @@ static struct sgttyb prev_sgttyb;
 static struct termios prev_termios;
 #endif
 
-static void stop(char *arg);
-
 /*---------------------------------------------------------------------------*/
 
-static void stop(char *arg)
+static void stop(const char *arg)
 {
   if (*arg) perror(arg);
 #ifdef ibm032
@@ -88,7 +86,7 @@ int main(int argc, char **argv)
   struct fd_set actread;
   struct fd_set chkread;
   struct passwd *pw;
-  struct sockaddr *addr;
+  struct sockaddr *addr = 0;
 
 #ifdef ibm032
   struct sgttyb curr_sgttyb;

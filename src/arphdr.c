@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arphdr.c,v 1.5 1994/10/06 16:15:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arphdr.c,v 1.6 1994/10/09 08:22:44 deyke Exp $ */
 
 /* ARP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -47,11 +47,11 @@ struct mbuf **bpp)
 	if(arp == (struct arp *)NULL || bpp == NULLBUFP)
 		return -1;
 
-	arp->hardware = pull16(bpp);
-	arp->protocol = pull16(bpp);
+	arp->hardware = (uint16) pull16(bpp);
+	arp->protocol = (uint16) pull16(bpp);
 	arp->hwalen = PULLCHAR(bpp);
 	arp->pralen = PULLCHAR(bpp);
-	arp->opcode = pull16(bpp);
+	arp->opcode = (uint16) pull16(bpp);
 	pullup(bpp,arp->shwaddr,(uint16)uchar(arp->hwalen));
 	arp->sprotaddr = pull32(bpp);
 	pullup(bpp,arp->thwaddr,(uint16)uchar(arp->hwalen));

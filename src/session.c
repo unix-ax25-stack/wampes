@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.16 1994/10/06 16:15:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.17 1994/10/09 08:22:57 deyke Exp $ */
 
 /* NOS User Session control
  * Copyright 1991 Phil Karn, KA9Q
@@ -79,7 +79,7 @@ void *p)
 	for(sp=Sessions; sp < &Sessions[Nsessions];sp++){
 		switch(sp->type){
 		case TELNET:
-			printf("%c%-3d%8lx Telnet  %4d  %-13s%-s",
+			printf("%c%-3d%8lx Telnet  %4ld  %-13s%-s",
 			 (Current == sp)? '*':' ',
 			 (int)(sp - Sessions),
 			 (long)sp->cb.telnet->tcb,
@@ -88,7 +88,7 @@ void *p)
 			 pinet_tcp(&sp->cb.telnet->tcb->conn.remote));
 			break;
 		case FTP:
-			printf("%c%-3d%8lx FTP     %4d  %-13s%-s",
+			printf("%c%-3d%8lx FTP     %4ld  %-13s%-s",
 			 (Current == sp)? '*':' ',
 			 (int)(sp - Sessions),
 			 (long)sp->cb.ftp->control,
@@ -108,7 +108,7 @@ void *p)
 			break;
 #endif
 		case FINGER:
-			printf("%c%-3d%8lx Finger  %4d  %-13s%-s",
+			printf("%c%-3d%8lx Finger  %4ld  %-13s%-s",
 			 (Current == sp)? '*':' ',
 			 (int)(sp - Sessions),
 			 (long)sp->cb.finger->tcb,

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.25 1994/10/06 16:15:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.26 1994/10/09 08:22:52 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -359,7 +359,7 @@ void *p)
 	printf("Uptime %s",tformat(secclock()-StartTime));
 	printf("\n");
 
-	printf("psigs %lu queued %lu hiwat %u woken %lu nops %lu dups %u\n",Ksig.psigs,
+	printf("psigs %lu queued %lu hiwat %u woken %lu nops %lu dups %lu\n",Ksig.psigs,
 	 Ksig.psigsqueued,Ksig.maxentries,Ksig.psigwakes,Ksig.psignops,Ksig.dupsigs);
 	Ksig.maxentries = 0;
 	printf("pwaits %lu nops %lu from int %lu\n",

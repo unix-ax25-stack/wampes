@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.21 1994/10/06 16:15:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.22 1994/10/09 08:22:50 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -494,8 +494,10 @@ if_detach(
 register struct iface *ifp)
 {
 	struct iface *iftmp;
+#if 0
 	struct route *rp,*rptmp;
 	int i,j;
+#endif
 
 	if(ifp == &Loopback || ifp == &Encap)
 		return -1;

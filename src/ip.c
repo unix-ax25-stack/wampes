@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.11 1994/10/06 16:15:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.12 1994/10/09 08:22:51 deyke Exp $ */
 
 /* Upper half of IP, consisting of send/receive primitives, including
  * fragment reassembly, for higher level protocols.
@@ -82,7 +82,7 @@ char df)                        /* Don't-fragment flag */
 	if(id == 0)
 		id = id_cntr++;
 	if(ttl == 0)
-		ttl = ipDefaultTTL;
+		ttl = (char) ipDefaultTTL;
 
 	/* Fill in IP header */
 	ip.version = IPVERSION;
@@ -155,11 +155,11 @@ int rxbroadcast)        /* True if received on subnet broadcast address */
 		}
 	}
 	/* Look it up in the transport protocol table */
-	for(ipp = Iplink;ipp->funct        ;ipp++){
+	for(ipp = Iplink;ipp->funct != NULL;ipp++){
 		if(ipp->proto == ip->protocol)
 			break;
 	}
-	if(ipp->funct        ){
+	if(ipp->funct != NULL){
 		/* Found, call transport protocol */
 		(*ipp->funct)(iface,ip,bp,rxbroadcast);
 	} else {

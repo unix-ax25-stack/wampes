@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.30 1994/10/06 16:15:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.31 1994/10/09 08:22:49 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -30,7 +30,7 @@
 
 static void Xprintf(struct tcb *tcb, char *message, char *arg1, char *arg2, char *arg3);
 static void ftpscs(struct tcb *tcb, int old, int new);
-static void ftpscr(struct tcb *tcb, int cnt);
+static void ftpscr(struct tcb *tcb, int32 cnt);
 static void ftpsds(struct tcb *tcb, int old, int new);
 static char *errmsg(const char *filename);
 static void ftpcommand(struct ftp *ftp);
@@ -102,7 +102,6 @@ static char okay[] = "200 Ok\r\n";
 static struct tcb *ftp_tcb;
 
 /* Do printf on a tcp connection */
-/*VARARGS2*/
 static void Xprintf(struct tcb *tcb,char *message,char *arg1,char *arg2,char *arg3)
 {
 	struct mbuf *bp;
@@ -197,7 +196,7 @@ ftpscs(struct tcb *tcb,int old,int new)
 /* FTP Server Control channel Receiver upcall handler */
 static
 void
-ftpscr(struct tcb *tcb,int cnt)
+ftpscr(struct tcb *tcb,int32 cnt)
 {
 	register struct ftp *ftp;
 	int c;
@@ -700,7 +699,7 @@ pport(struct socket *sock,char *arg)
 		return -1;
 	arg++;
 	n = atoi(arg) + (n << 8);
-	sock->port = n;
+	sock->port = (uint16) n;
 	return 0;
 }
 

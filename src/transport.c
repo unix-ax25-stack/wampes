@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.16 1994/10/06 16:15:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.17 1994/10/09 08:23:02 deyke Exp $ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -19,10 +19,10 @@ static const char delim[] = " \t\r\n";
 static int convert_eol(struct mbuf **bpp, enum e_transporteol mode, int *last_chr);
 static void transport_recv_upcall_ax25(struct ax25_cb *cp, int cnt);
 static void transport_recv_upcall_netrom(struct circuit *cp, int cnt);
-static void transport_recv_upcall_tcp(struct tcb *cp, int cnt);
+static void transport_recv_upcall_tcp(struct tcb *cp, int32 cnt);
 static void transport_send_upcall_ax25(struct ax25_cb *cp, int cnt);
 static void transport_send_upcall_netrom(struct circuit *cp, int cnt);
-static void transport_send_upcall_tcp(struct tcb *cp, int cnt);
+static void transport_send_upcall_tcp(struct tcb *cp, int32 cnt);
 static void transport_state_upcall_ax25(struct ax25_cb *cp, int oldstate, int newstate);
 static void transport_state_upcall_netrom(struct circuit *cp, int oldstate, int newstate);
 static void transport_state_upcall_tcp(struct tcb *cp, int oldstate, int newstate);
@@ -95,10 +95,10 @@ static void transport_recv_upcall_netrom(struct circuit *cp, int cnt)
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_recv_upcall_tcp(struct tcb *cp, int cnt)
+static void transport_recv_upcall_tcp(struct tcb *cp, int32 cnt)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
-  if (tp->r_upcall) (*tp->r_upcall)(tp, cnt);
+  if (tp->r_upcall) (*tp->r_upcall)(tp, (int) cnt);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -119,10 +119,10 @@ static void transport_send_upcall_netrom(struct circuit *cp, int cnt)
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_send_upcall_tcp(struct tcb *cp, int cnt)
+static void transport_send_upcall_tcp(struct tcb *cp, int32 cnt)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
-  if (tp->t_upcall) (*tp->t_upcall)(tp, cnt);
+  if (tp->t_upcall) (*tp->t_upcall)(tp, (int) cnt);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -253,7 +253,7 @@ int transport_recv(struct transport_cb *tp, struct mbuf **bpp, int cnt)
     result = recv_nr(tp->cb.nrp, bpp, cnt);
     break;
   case TP_TCP:
-    result = recv_tcp(tp->cb.tcp, bpp, cnt);
+    result = (int) recv_tcp(tp->cb.tcp, bpp, (int32) cnt);
     break;
   default:
     result = -1;

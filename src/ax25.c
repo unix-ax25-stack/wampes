@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.23 1994/10/06 16:15:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.24 1994/10/09 08:22:45 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -317,11 +317,11 @@ struct mbuf *bp)
 		if((pid = PULLCHAR(&bp)) == -1)
 			return;         /* No PID */
 		/* Find network level protocol and hand it off */
-		for(ipp = Axlink;ipp->funct        ;ipp++){
+		for(ipp = Axlink;ipp->funct != NULL;ipp++){
 			if(ipp->pid == pid)
 				break;
 		}
-		if(ipp->funct        )
+		if(ipp->funct != NULL)
 			(*ipp->funct)(iface,NULLAX25,hdr.source,hdr.dest,bp,mcast);
 		else
 			free_p(bp);

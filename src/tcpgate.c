@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.12 1994/10/06 16:15:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.13 1994/10/09 08:22:59 deyke Exp $ */
 
 #include "global.h"
 
@@ -50,7 +50,7 @@ static void tcp_send(struct tcb *tcb)
 
 /*---------------------------------------------------------------------------*/
 
-static void tcp_receive(struct tcb *tcb, int cnt)
+static void tcp_receive(struct tcb *tcb, int32 cnt)
 {
 
   char buffer[1024];
@@ -69,7 +69,7 @@ static void tcp_receive(struct tcb *tcb, int cnt)
 
 /*---------------------------------------------------------------------------*/
 
-static void tcp_ready(struct tcb *tcb, int cnt)
+static void tcp_ready(struct tcb *tcb, int32 cnt)
 {
   if (tcb->user > 0) on_read(tcb->user, (void (*)(void *)) tcp_send, tcb);
 }
@@ -81,7 +81,7 @@ static void tcp_state(struct tcb *tcb, int old, int new)
 
   int addrlen;
   struct dest *dp;
-  struct sockaddr *addr;
+  struct sockaddr *addr = 0;
 
   switch (new) {
 #ifdef QUICKSTART

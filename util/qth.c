@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/qth.c,v 1.13 1994/09/05 12:47:29 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/qth.c,v 1.14 1994/10/09 08:23:09 deyke Exp $";
 #endif
 
 /* qth: qth, locator, distance, and course computations */
@@ -18,7 +18,6 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #define RADIUS          6370.0
 
 static char **argv;
-static int argc;
 static long mylatitude  =  (48L *3600L + 38L *60L + 33L);
 static long mylongitude = -( 8L *3600L + 53L *60L + 28L);
 
@@ -331,7 +330,6 @@ int main(int pargc, char **pargv)
     fclose(fp);
   }
 
-  argc = --pargc;
   argv = ++pargv;
 
   if (parse_arg(&longitude1, &latitude1)) usage();

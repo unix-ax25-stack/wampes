@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.10 1994/10/06 16:15:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.11 1994/10/09 08:23:01 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -12,7 +12,7 @@ static struct tcb *tcb_server;
 
 /*---------------------------------------------------------------------------*/
 
-static void tnserv_recv_upcall(struct tcb *tcb, int cnt)
+static void tnserv_recv_upcall(struct tcb *tcb, int32 cnt)
 {
   struct mbuf *bp;
 
@@ -24,7 +24,7 @@ static void tnserv_recv_upcall(struct tcb *tcb, int cnt)
 
 /*---------------------------------------------------------------------------*/
 
-static void tnserv_send_upcall(struct tcb *tcb, int cnt)
+static void tnserv_send_upcall(struct tcb *tcb, int32 cnt)
 {
   struct mbuf *bp;
 

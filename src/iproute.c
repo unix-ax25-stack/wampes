@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.28 1994/10/06 16:15:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.29 1994/10/09 08:22:51 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -68,7 +68,7 @@ int rxbroadcast)        /* True if packet had link broadcast address */
 	uint16 offset;                  /* Offset into current fragment */
 	uint16 mf_flag;                 /* Original datagram MF flag */
 	int strict = 0;                 /* Strict source routing flag */
-	uint16 opt_len;         /* Length of current option */
+	uint16 opt_len = 0;     /* Length of current option */
 	char *opt;              /* -> beginning of current option */
 	int i;
 	int ckgood = IP_CS_OLD; /* Has good checksum without modification */
@@ -383,11 +383,14 @@ struct ip *ip,
 struct mbuf *bp,
 int ckgood)
 {
+	struct mbuf *tbp;
+#if 0
 	struct mbuf *tbp,*tlast;
 	struct tcp tcp;
 	struct qhdr qhdr;
 	struct qhdr qtmp;
 	int i;
+#endif
 
 	if((tbp = htonip(ip,bp,ckgood)) == NULLBUF){
 		free_p(bp);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.21 1994/10/06 16:15:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.22 1994/10/09 08:22:54 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -96,7 +96,7 @@ static int domail_list(int argc, char *argv[], void *p)
     case MS_FAILURE:
       state = "Failure";
       if (sp->nexttime > secclock())
-	sprintf(waittime, "%d sec", sp->nexttime - secclock());
+	sprintf(waittime, "%ld sec", sp->nexttime - secclock());
       break;
     case MS_TRYING:
       state = "Trying";
@@ -120,7 +120,7 @@ static int domail_list(int argc, char *argv[], void *p)
 static int domail_timer(int argc, char *argv[], void *p)
 {
   if (argc < 2) {
-    printf("%d/%d\n",
+    printf("%ld/%ld\n",
 	    read_timer(&Mail_timer) / 1000,
 	    dur_timer(&Mail_timer) / 1000);
     return 0;

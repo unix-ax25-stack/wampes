@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.11 1994/10/06 16:15:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.12 1994/10/09 08:22:45 deyke Exp $ */
 
 /* Generic serial line interface routines
  * Copyright 1992 Phil Karn, KA9Q
@@ -54,7 +54,6 @@ void *p)
 	int trigchar = -1;
 	int cts,rlsd;
 	struct asymode *ap;
-	char *cp;
 	int base;
 	int irq;
 	int chain;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.6 1994/10/06 16:15:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.7 1994/10/09 08:22:45 deyke Exp $ */
 
 /* AX25 control commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -365,7 +365,7 @@ int argc,
 char *argv[],
 void *p)
 {
-	return setint(&Blimit,"blimit",argc,argv);
+	return setlong(&Blimit,"blimit",argc,argv);
 }
 static int
 doversion(

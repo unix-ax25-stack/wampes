@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.18 1994/10/06 16:15:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.19 1994/10/09 08:22:47 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -73,7 +73,7 @@ static void dumpdomain(struct dhdr *dhp);
 static int32 in_addr_arpa(char *name);
 static struct mbuf *domain_server(struct mbuf *bp);
 static void domain_server_udp(struct iface *iface, struct udp_cb *up, int cnt);
-static void domain_server_tcp_recv(struct tcb *tcb, int cnt);
+static void domain_server_tcp_recv(struct tcb *tcb, int32 cnt);
 static void domain_server_tcp_state(struct tcb *tcb, int old, int new);
 static int docacheflush(int argc, char *argv[], void *p);
 static int docachelist(int argc, char *argv[], void *p);
@@ -772,7 +772,7 @@ int cnt)
 
 /*---------------------------------------------------------------------------*/
 
-static void domain_server_tcp_recv(struct tcb *tcb, int cnt)
+static void domain_server_tcp_recv(struct tcb *tcb, int32 cnt)
 {
 
   int len;
@@ -783,7 +783,7 @@ static void domain_server_tcp_recv(struct tcb *tcb, int cnt)
   rcvqptr = (struct mbuf **) &tcb->user;
   append(rcvqptr, bp);
   if (len_p(*rcvqptr) < 2) return;
-  len = pull16(rcvqptr);
+  len = (int) pull16(rcvqptr);
   if (len_p(*rcvqptr) < len) {
     *rcvqptr = pushdown(*rcvqptr, 2);
     put16((*rcvqptr)->data, len);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.9 1994/10/06 16:15:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.10 1994/10/09 08:22:48 deyke Exp $ */
 
 /* Stuff common to both the FTP server and client */
 #include <stdio.h>
@@ -14,7 +14,7 @@
 void
 ftpdr(
 struct tcb *tcb,
-int cnt)
+int32 cnt)
 {
 	register struct ftp *ftp;
 	struct mbuf *bp;
@@ -51,7 +51,7 @@ int cnt)
 void
 ftpdt(
 struct tcb *tcb,
-int cnt)
+int32 cnt)
 {
 	struct ftp *ftp;
 	struct mbuf *bp;
@@ -64,13 +64,13 @@ int cnt)
 		close_tcp(tcb);
 		return;
 	}
-	if((bp = alloc_mbuf(cnt)) == NULLBUF){
+	if((bp = alloc_mbuf((uint16) cnt)) == NULLBUF){
 		/* Hard to know what to do here */
 		return;
 	}
 	eof_flag = 0;
 	if(ftp->type != ASCII_TYPE){
-		bp->cnt = fread(bp->data,1,cnt,ftp->fp);
+		bp->cnt = fread(bp->data,1,(unsigned) cnt,ftp->fp);
 		if(bp->cnt != cnt)
 			eof_flag = 1;
 	} else {

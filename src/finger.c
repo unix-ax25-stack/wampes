@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.10 1994/10/06 16:15:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.11 1994/10/09 08:22:48 deyke Exp $ */
 
 /*
  *
@@ -41,16 +41,16 @@ static void f_state(struct tcb *tcb, int old, int new);
 
 int
 dofinger(
-int     argc,
-char    *argv[],
+int argc,
+char *argv[],
 void *p)
 {
-	struct session  *s;
-	struct tcb      *tcb;
-	struct socket   lsocket,
-			fsocket;
-	struct finger   *finger;
-	char            *host;
+	struct session *s;
+	struct tcb *tcb;
+	struct socket lsocket;
+	struct socket fsocket;
+	struct finger *finger;
+	char *host;
 
 	if (argc < 2) {
 		printf("usage: %s [user | user@host | @host]\n", argv[0]);
@@ -166,11 +166,11 @@ struct finger *finger)
 /* Finger receiver upcall routine */
 void
 fingcli_rcv(
-register struct tcb     *tcb,
-int                     cnt)
+register struct tcb *tcb,
+int32 cnt)
 {
-	struct mbuf     *bp;
-	char            *buf;
+	struct mbuf *bp;
+	char *buf;
 
 	/* Make sure it's a valid finger session */
 	if ((struct finger *) tcb->user == NULLFING) {
@@ -214,13 +214,13 @@ int                     cnt)
 /* State change upcall routine */
 static void
 f_state(
-register struct tcb     *tcb,
-int                     old,            /* old state */
-int                     new)            /* new state */
+register struct tcb *tcb,
+int old,        /* old state */
+int new)        /* new state */
 {
-	struct finger   *finger;
-	char            notify = 0;
-	struct mbuf     *bp;
+	struct finger *finger;
+	char notify = 0;
+	struct mbuf *bp;
 
 	finger = (struct finger *)tcb->user;
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.17 1994/10/06 16:15:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.18 1994/10/09 08:23:00 deyke Exp $ */
 
 /* Internet Telnet client
  * Copyright 1991 Phil Karn, KA9Q
@@ -19,7 +19,7 @@
 static void unix_send_tel(char *buf, int n);
 static void send_tel(char *buf, int n);
 static void tel_input(struct telnet *tn, struct mbuf *bp);
-static void tn_tx(struct tcb *tcb, int cnt);
+static void tn_tx(struct tcb *tcb, int32 cnt);
 static void t_state(struct tcb *tcb, int old, int new);
 static void free_telnet(struct telnet *tn);
 static void willopt(struct telnet *tn, int opt);
@@ -215,7 +215,7 @@ struct mbuf *bp)
 void
 rcv_char(
 register struct tcb *tcb,
-int cnt)
+int32 cnt)
 {
 	struct mbuf *bp;
 	struct telnet *tn;
@@ -240,10 +240,10 @@ int cnt)
 static void
 tn_tx(
 struct tcb *tcb,
-int cnt)
+int32 cnt)
 {
 	struct telnet *tn;
-	struct session *s;
+	struct session *s = 0;
 	struct mbuf *bp;
 	int size;
 
@@ -251,9 +251,9 @@ int cnt)
 	 || (s = tn->session) == NULLSESSION
 	 || s->upload == NULLFILE)
 		return;
-	if((bp = alloc_mbuf(cnt)) == NULLBUF)
+	if((bp = alloc_mbuf((uint16) cnt)) == NULLBUF)
 		return;
-	if((size = fread(bp->data,1,cnt,s->upload)) > 0){
+	if((size = fread(bp->data,1,(unsigned) cnt,s->upload)) > 0){
 		bp->cnt = (uint16)size;
 		send_tcp(tcb,bp);
 	} else {

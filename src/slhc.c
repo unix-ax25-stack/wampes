@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.c,v 1.5 1994/10/06 16:15:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.c,v 1.6 1994/10/09 08:22:58 deyke Exp $ */
 
 /*
  * Routines to compress and uncompress tcp packets (for transmission
@@ -274,7 +274,7 @@ found:
 	 */
 	if(th.flags.urg){
 		deltaS = th.up;
-		cp = encode(cp,deltaS);
+		cp = encode(cp,(uint16) deltaS);
 		changes |= NEW_U;
 	} else if(th.up != oth->up){
 		/* argh! URG not set but urp changed -- a sensible
@@ -284,19 +284,19 @@ found:
 		goto uncompressed;
 	}
 	if((deltaS = th.wnd - oth->wnd) != 0){
-		cp = encode(cp,deltaS);
+		cp = encode(cp,(uint16) deltaS);
 		changes |= NEW_W;
 	}
 	if((deltaA = th.ack - oth->ack) != 0L){
 		if(deltaA > 0x0000ffff)
 			goto uncompressed;
-		cp = encode(cp,deltaA);
+		cp = encode(cp,(uint16) deltaA);
 		changes |= NEW_A;
 	}
 	if((deltaS = th.seq - oth->seq) != 0L){
 		if(deltaS > 0x0000ffff)
 			goto uncompressed;
-		cp = encode(cp,deltaS);
+		cp = encode(cp,(uint16) deltaS);
 		changes |= NEW_S;
 	}
 
@@ -335,7 +335,7 @@ found:
 	}
 	deltaS = iph.id - cs->cs_ip.id;
 	if(deltaS != 1){
-		cp = encode(cp,deltaS);
+		cp = encode(cp,(uint16) deltaS);
 		changes |= NEW_I;
 	}
 	if(th.flags.psh)
@@ -354,18 +354,18 @@ found:
 	 */
 	deltaS = cp - new_seq;
 	if(compress_cid == 0 || comp->xmit_current != cs->this){
-		bp = *bpp = pushdown(*bpp,deltaS + 4);
+		bp = *bpp = pushdown(*bpp,(uint16) (deltaS + 4));
 		cp = bp->data;
 		*cp++ = changes | NEW_C;
 		*cp++ = cs->this;
 		comp->xmit_current = cs->this;
 	} else {
-		bp = *bpp = pushdown(*bpp,deltaS + 3);
+		bp = *bpp = pushdown(*bpp,(uint16) (deltaS + 3));
 		cp = bp->data;
 		*cp++ = changes;
 	}
 	cp = put16(cp,(uint16)deltaA);  /* Write TCP checksum */
-	memcpy(cp,new_seq,deltaS);      /* Write list of deltas */
+	memcpy(cp,new_seq,(unsigned) deltaS); /* Write list of deltas */
 	comp->sls_o_compressed++;
 	return SL_TYPE_COMPRESSED_TCP;
 
@@ -411,7 +411,7 @@ struct mbuf **bpp)
 			goto bad;
 
 		comp->flags &=~ SLF_TOSS;
-		comp->recv_current = x;
+		comp->recv_current = (unsigned char) x;
 	} else {
 		/* this packet has an implicit state index.  If we've
 		 * had a line error since the last time we got an
@@ -426,7 +426,7 @@ struct mbuf **bpp)
 
 	if((x = pull16(bpp)) == -1)     /* Read the TCP checksum */
 		goto bad;
-	thp->checksum = x;
+	thp->checksum = (uint16) x;
 
 	thp->flags.psh = (changes & TCP_PUSH_BIT) ? 1 : 0;
 
@@ -450,13 +450,13 @@ struct mbuf **bpp)
 			thp->flags.urg = 1;
 			if((x = decode(bpp)) == -1)
 				goto bad;
-			thp->up = x;
+			thp->up = (uint16) x;
 		} else
 			thp->flags.urg = 0;
 		if(changes & NEW_W){
 			if((x = decode(bpp)) == -1)
 				goto bad;
-			thp->wnd += x;
+			thp->wnd += (uint16) x;
 		}
 		if(changes & NEW_A){
 			if((x = decode(bpp)) == -1)
@@ -473,7 +473,7 @@ struct mbuf **bpp)
 	if(changes & NEW_I){
 		if((x = decode(bpp)) == -1)
 			goto bad;
-		cs->cs_ip.id += x;
+		cs->cs_ip.id += (uint16) x;
 	} else
 		cs->cs_ip.id++;
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.15 1994/10/06 16:15:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.16 1994/10/09 08:22:53 deyke Exp $ */
 
 #ifndef _LAPB_H
 #define _LAPB_H
@@ -127,7 +127,8 @@ struct ax25_cb {
 #define NULLAX25        ((struct ax25_cb *)0)
 extern struct ax25_cb Ax25default,*Ax25_cb;
 extern char *Ax25states[],*Axreasons[];
-extern int32 Axirtt,T3init,Blimit;
+extern int32 Axirtt,Blimit;
+extern int   T3init;
 extern int    N2,Maxframe,Paclen,Pthresh,Axwindow,Axversion;
 
 extern int T1init;                      /* Retransmission timeout */

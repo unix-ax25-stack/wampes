@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.15 1994/10/06 16:15:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.16 1994/10/09 08:22:58 deyke Exp $ */
 
 /* SLIP (Serial Line IP) encapsulation and control routines.
  * Copyright 1991 Phil Karn
@@ -32,7 +32,9 @@ struct iface *ifp)
 {
 	int xdev;
 	struct slip *sp;
+#if 0
 	char *ifn;
+#endif
 
 	for(xdev = 0;xdev < SLIP_MAX;xdev++){
 		sp = &Slip[xdev];

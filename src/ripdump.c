@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ripdump.c,v 1.4 1994/10/06 16:15:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ripdump.c,v 1.5 1994/10/09 08:22:57 deyke Exp $ */
 
 /* RIP packet tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -50,7 +50,7 @@ struct mbuf **bpp)
 			/* Skip non-IP addresses */
 			continue;
 		}
-		fprintf(fp,"%-16s%-3u ",inet_ntoa(entry.target),entry.metric);
+		fprintf(fp,"%-16s%-3lu ",inet_ntoa(entry.target),entry.metric);
 		if((++i % 3) == 0){
 			putc('\n',fp);
 		}

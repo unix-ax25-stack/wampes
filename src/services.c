@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.9 1994/09/05 12:47:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.10 1994/10/09 08:22:57 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -14,34 +14,34 @@ struct port_table {
 };
 
 static struct port_table tcp_port_table[] = {
-  "*",           0,
-  "convers",     3600,
-  "discard",     IPPORT_DISCARD,/* ARPA discard protocol */
-  "domain",      IPPORT_DOMAIN, /* ARPA domain nameserver */
-  "echo",        IPPORT_ECHO,   /* ARPA echo protocol */
-  "finger",      IPPORT_FINGER, /* ARPA finger protocol */
-  "ftp",         IPPORT_FTP,    /* ARPA file transfer protocol (cmd) */
-  "ftp-data",    IPPORT_FTPD,   /* ARPA file transfer protocol (data) */
-  "netupds",     4715,
-  "nntp",        IPPORT_NNTP,
-  "pop2",        IPPORT_POP2,   /* Post Office Prot. v2 */
-  "pop3",        IPPORT_POP3,   /* Post Office Prot. v3 */
-  "smtp",        IPPORT_SMTP,   /* ARPA simple mail transfer protocol */
-  "telnet",      IPPORT_TELNET, /* ARPA virtual terminal protocol */
-  "ttylink",     IPPORT_TTYLINK,
-  NULLCHAR
+  { "*",        0 },
+  { "convers",  3600 },
+  { "discard",  IPPORT_DISCARD },       /* ARPA discard protocol */
+  { "domain",   IPPORT_DOMAIN },        /* ARPA domain nameserver */
+  { "echo",     IPPORT_ECHO },          /* ARPA echo protocol */
+  { "finger",   IPPORT_FINGER },        /* ARPA finger protocol */
+  { "ftp",      IPPORT_FTP },           /* ARPA file transfer protocol (cmd) */
+  { "ftp-data", IPPORT_FTPD },          /* ARPA file transfer protocol (data) */
+  { "netupds",  4715 },
+  { "nntp",     IPPORT_NNTP },
+  { "pop2",     IPPORT_POP2 },          /* Post Office Prot. v2 */
+  { "pop3",     IPPORT_POP3 },          /* Post Office Prot. v3 */
+  { "smtp",     IPPORT_SMTP },          /* ARPA simple mail transfer protocol */
+  { "telnet",   IPPORT_TELNET },        /* ARPA virtual terminal protocol */
+  { "ttylink",  IPPORT_TTYLINK },
+  { 0,          0 }
 };
 
 static struct port_table udp_port_table[] = {
-  "*",           0,
-  "bootpc",      IPPORT_BOOTPC,
-  "bootps",      IPPORT_BOOTPS,
-  "domain",      IPPORT_DOMAIN, /* ARPA domain nameserver */
-  "ntp",         IPPORT_NTP,    /* Network Time Protocol */
-  "remote",      IPPORT_REMOTE,
-  "rip",         IPPORT_RIP,
-  "time",        IPPORT_TIME,   /* Time Protocol */
-  NULLCHAR
+  { "*",        0 },
+  { "bootpc",   IPPORT_BOOTPC },
+  { "bootps",   IPPORT_BOOTPS },
+  { "domain",   IPPORT_DOMAIN },        /* ARPA domain nameserver */
+  { "ntp",      IPPORT_NTP },           /* Network Time Protocol */
+  { "remote",   IPPORT_REMOTE },
+  { "rip",      IPPORT_RIP },
+  { "time",     IPPORT_TIME },          /* Time Protocol */
+  { 0,          0 }
 };
 
 /*---------------------------------------------------------------------------*/

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.14 1994/09/19 17:08:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.15 1994/10/09 08:22:54 deyke Exp $ */
 
 #ifndef _MAIL_H
 #define _MAIL_H
@@ -25,7 +25,7 @@ struct mailsys {
   const struct mailers *mailer;
   char *protocol, *address;
   enum e_mailer_state state;
-  int nexttime;
+  int32 nexttime;
   struct mailjob *jobs;
   struct mailsys *next;
 };

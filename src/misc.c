@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.19 1994/10/06 16:15:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.20 1994/10/09 08:22:54 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -262,10 +262,10 @@ put32(
 register char *cp,
 int32 x)
 {
-	*cp++ = x >> 24;
-	*cp++ = x >> 16;
-	*cp++ = x >> 8;
-	*cp++ = x;
+	*cp++ = (char) (x >> 24);
+	*cp++ = (char) (x >> 16);
+	*cp++ = (char) (x >>  8);
+	*cp++ = (char) (x      );
 	return cp;
 }
 /* Put a short in host order into a char array in network order */

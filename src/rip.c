@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.11 1994/10/06 16:15:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.12 1994/10/09 08:22:56 deyke Exp $ */
 
 /* This file contains code to implement the Routing Information Protocol (RIP)
  * and is derived from 4.2BSD code. Mike Karels of Berkeley has stated on
@@ -422,7 +422,7 @@ int
 nbits(
 int32 target)
 {
-	int bits;
+	int bits = 0;
 
 	if(target == 0)
 		return 0;       /* Special case: 0.0.0.0 is the default route */
@@ -626,7 +626,7 @@ pullentry(
 register struct rip_route *ep,
 struct mbuf **bpp)
 {
-	ep->addr_fam = pull16(bpp);
+	ep->addr_fam = (uint16) pull16(bpp);
 	(void)pull16(bpp);
 	ep->target = pull32(bpp);
 	(void)pull32(bpp);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.17 1994/10/06 16:15:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.18 1994/10/09 08:22:49 deyke Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q
@@ -32,7 +32,7 @@ static int donlst(int argc, char *argv [], void *p);
 static int doput(int argc, char *argv [], void *p);
 static int doappend(int argc, char *argv [], void *p);
 static int doabort(int argc, char *argv [], void *p);
-static int ftpsetup(struct ftp *ftp, void (*recv)(struct tcb *,int), void (*send)(struct tcb *,int), void (*state)(struct tcb *,int,int));
+static int ftpsetup(struct ftp *ftp, void (*recv)(struct tcb *,int32), void (*send)(struct tcb *,int32), void (*state)(struct tcb *,int,int));
 static void ftpccs(struct tcb *tcb, int old, int new);
 static void ftpcds(struct tcb *tcb, int old, int new);
 static int sndftpmsg(struct ftp *ftp, char *fmt, char *arg);
@@ -266,7 +266,7 @@ static int doreget(int argc, char *argv[], void *p)
 {
 
 	char *remotename, *localname;
-	int rest;
+	long rest;
 	struct ftp *ftp;
 
 	ftp = Current->cb.ftp;
@@ -289,7 +289,7 @@ static int doreget(int argc, char *argv[], void *p)
 	rest = ftell(ftp->fp);
 	if(rest){
 		char buf[16];
-		sprintf(buf,"%d",rest);
+		sprintf(buf,"%ld",rest);
 		sndftpmsg(ftp,"REST %s\r\n",buf);
 	}
 
@@ -438,7 +438,7 @@ static int doabort(int argc, char *argv[], void *p)
 	return 0;
 }
 
-static int ftpsetup(struct ftp *ftp, void (*recv)(struct tcb *,int), void (*send)(struct tcb *,int), void (*state)(struct tcb *,int,int))
+static int ftpsetup(struct ftp *ftp, void (*recv)(struct tcb *,int32), void (*send)(struct tcb *,int32), void (*state)(struct tcb *,int,int))
 {
 
 	struct mbuf *bp;
@@ -472,7 +472,7 @@ static int ftpsetup(struct ftp *ftp, void (*recv)(struct tcb *,int), void (*send
 
 /* FTP Client Control channel Receiver upcall routine */
 
-void ftpccr(struct tcb *tcb, int cnt)
+void ftpccr(struct tcb *tcb, int32 cnt)
 {
 
 	struct ftp *ftp;
@@ -592,7 +592,6 @@ static void ftpcds(struct tcb *tcb, int old, int new)
 
 /* Send a message on the control channel */
 
-/*VARARGS*/
 static int sndftpmsg(struct ftp *ftp, char *fmt, char *arg)
 {
 

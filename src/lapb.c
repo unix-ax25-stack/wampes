@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.31 1994/10/06 16:15:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.32 1994/10/09 08:22:53 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -36,8 +36,8 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 	char pf;                /* extracted poll/final bit */
 	char poll = 0;
 	char final = 0;
-	uint16 nr;              /* ACK number of incoming frame */
-	uint16 ns;              /* Seq number of incoming frame */
+	uint16 nr = 0;          /* ACK number of incoming frame */
+	uint16 ns = 0;          /* Seq number of incoming frame */
 	uint16 tmp;
 	int digipeat;
 	int32 bugfix;
@@ -499,7 +499,7 @@ int rex_all)
 		 */
 		tmp = (axp->maxframe - len_q(axp->txq)) * axp->paclen;
 		if(axp->t_upcall != NULLVFP && tmp > 0)
-			(*axp->t_upcall)(axp,tmp);
+			(*axp->t_upcall)(axp,(int)tmp);
 		if(axp->peer && axp->peer->flags.rnrsent && !busy(axp->peer))
 			sendctl(axp->peer,LAPB_RESPONSE,RR);
 	}
@@ -826,11 +826,11 @@ struct mbuf *bp)
 {
 	struct axlink *ipp;
 
-	for(ipp = Axlink;ipp->funct        ;ipp++){
+	for(ipp = Axlink;ipp->funct != NULL;ipp++){
 		if(ipp->pid == pid)
 			break;
 	}
-	if(ipp->funct        )
+	if(ipp->funct != NULL)
 		(*ipp->funct)(axp->iface,axp,axp->hdr.dest,axp->hdr.source,bp,0);
 	else
 		free_p(bp);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.21 1994/10/06 16:15:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.22 1994/10/09 08:22:52 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -694,7 +694,7 @@ addproc(
 register struct proc *entry)    /* Pointer to entry */
 {
 	register struct proc *pp;
-	struct proc **head;
+	struct proc **head = 0;
 
 	if(entry == NULLPROC)
 		return;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.12 1994/10/06 16:15:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.13 1994/10/09 08:22:59 deyke Exp $ */
 
 /* Process incoming TCP segments. Page number references are to ARPA RFC-793,
  * the TCP specification.
@@ -904,13 +904,13 @@ uint16 *length)
 		if(dupcnt > 0){
 			pullup(bpp,NULLCHAR,(uint16)dupcnt);
 			seg->seq += dupcnt;
-			*length -= dupcnt;
+			*length -= (uint16) dupcnt;
 		}
 	}
 	if((excess = seg->seq + *length - (tcb->rcv.nxt + tcb->rcv.wnd)) > 0){
 		tcb->rerecv += excess;
 		/* Trim right edge */
-		*length -= excess;
+		*length -= (uint16) excess;
 		trim_mbuf(bpp,*length);
 		seg->flags.fin = 0;     /* FIN follows last data byte */
 	}

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.15 1994/10/06 16:15:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.16 1994/10/09 08:22:52 deyke Exp $ */
 
 /* Routines for AX.25 encapsulation in KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -21,7 +21,9 @@ struct iface *ifp)
 {
 	int xdev;
 	struct slip *sp;
+#if 0
 	char *ifn;
+#endif
 
 	for(xdev = 0;xdev < SLIP_MAX;xdev++){
 		sp = &Slip[xdev];
@@ -163,17 +165,17 @@ int32 val)
 		}
 		cp = hbp->data;
 		*cp++ = cmd;
-		*cp = val;
+		*cp = (char) val;
 		hbp->cnt = 2;
 		slip_raw(iface,hbp);    /* Even more "raw" than kiss_raw */
-		rval = val;             /* per Jay Maynard -- mce */
+		rval = (int) val;       /* per Jay Maynard -- mce */
 		break;
 	case PARAM_SPEED:       /* These go to the local asy driver */
 	case PARAM_DTR:
 	case PARAM_RTS:
 	case PARAM_DOWN:
 	case PARAM_UP:
-		rval = asy_ioctl(iface,cmd,set,val);
+		rval = (int) asy_ioctl(iface,cmd,set,val);
 		break;
 	default:                /* Not implemented */
 		rval = -1;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.11 1994/10/06 16:15:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.12 1994/10/09 08:22:58 deyke Exp $ */
 
 /* Miscellaneous Internet servers: discard, echo and remote
  * Copyright 1991 Phil Karn, KA9Q
@@ -19,8 +19,8 @@ char *Rempass;          /* Remote access password */
 static struct tcb *disc_tcb,*echo_tcb;
 static struct udp_cb *remote_up;
 
-static void disc_server(struct tcb *tcb, int cnt);
-static void echo_server(struct tcb *tcb, int cnt);
+static void disc_server(struct tcb *tcb, int32 cnt);
+static void echo_server(struct tcb *tcb, int32 cnt);
 static void uremote(struct iface *iface, struct udp_cb *up, int cnt);
 static int chkrpass(struct mbuf *bp);
 static void misc_state(struct tcb *tcb, int old, int new);
@@ -46,7 +46,7 @@ void *p)
 static void
 disc_server(
 struct tcb *tcb,
-int cnt)
+int32 cnt)
 {
 	struct mbuf *bp;
 
@@ -87,10 +87,10 @@ void *p)
 static void
 echo_server(
 struct tcb *tcb,
-int cnt)
+int32 cnt)
 {
+	int32 acnt;
 	struct mbuf *bp;
-	int acnt;
 
 	acnt = tcb->window - tcb->sndcnt;
 	if (acnt > tcb->rcvcnt)

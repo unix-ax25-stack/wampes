@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.8 1994/10/06 16:15:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.9 1994/10/09 08:22:58 deyke Exp $ */
 
 /* Simple Network Time Protocol (SNTP) (see RFC1361) */
 
@@ -44,7 +44,7 @@ int adjtime(struct timeval *delta, struct timeval *olddelta);
 #define MODE_CONTROL    6       /* Control mode packet */
 #define MODE_PRIVATE    7       /* Implementation defined function */
 
-#define TIMEBIAS        2208988800
+#define TIMEBIAS        2208988800UL
 #define USEC2F          4294.967296
 
 struct fp {
@@ -59,7 +59,7 @@ struct sys {
 	struct fp rho;                  /* (1 << precision) */
 	struct fp rootdelay;
 	struct fp rootdispersion;
-	int refid;
+	int32 refid;
 	struct fp reftime;
 };
 
@@ -89,7 +89,7 @@ struct pkt {
 	signed char precision;
 	struct fp rootdelay;
 	struct fp rootdispersion;
-	int refid;
+	int32 refid;
 	struct fp reftime;
 	struct fp org;
 	struct fp rec;
@@ -166,7 +166,7 @@ static struct fp fpadd(struct fp fp1, struct fp fp2)
 	unsigned long l;
 	unsigned short s;
 
-	s = l = (fp1.f & 0xffff) + (fp2.f & 0xffff);
+	s = (unsigned short) (l = (fp1.f & 0xffff) + (fp2.f & 0xffff));
 	l = (l >> 16) + (fp1.f >> 16) + (fp2.f >> 16);
 	fp1.f = (l << 16) | s;
 
@@ -190,7 +190,7 @@ static struct fp fpsub(struct fp fp1, struct fp fp2)
 		fp2.f = -fp2.f;
 	}
 
-	s = l = (fp1.f & 0xffff) + (fp2.f & 0xffff);
+	s = (unsigned short) (l = (fp1.f & 0xffff) + (fp2.f & 0xffff));
 	l = (l >> 16) + (fp1.f >> 16) + (fp2.f >> 16);
 	fp1.f = (l << 16) | s;
 
@@ -225,12 +225,12 @@ static struct fp double2fp(double d)
 	struct fp fp;
 
 	if (d >= 0) {
-		fp.i = d;
-		fp.f = (d - fp.i) * FACTOR32;
+		fp.i = (long) d;
+		fp.f = (unsigned long) ((d - fp.i) * FACTOR32);
 	} else {
 		d = -d;
-		fp.i = d;
-		fp.f = (d - fp.i) * FACTOR32;
+		fp.i = (long) d;
+		fp.f = (unsigned long) ((d - fp.i) * FACTOR32);
 		if (!fp.f) {
 			fp.i = -fp.i;
 		} else {
@@ -302,12 +302,12 @@ static int ntohntp(struct pkt *pkt, struct mbuf **bpp)
 	if (n < NTP_MIN_PACKET_SIZE) return (-1);
 	p = buf;
 	w = ntohl(*p++);
-	pkt->leap = (w >> 30) & 0x03;
-	pkt->version = (w >> 27) & 0x07;
-	pkt->mode = (w >> 24) & 0x07;
-	pkt->stratum = w >> 16;
-	pkt->poll = w >> 8;
-	pkt->precision = w;
+	pkt->leap = (unsigned char) ((w >> 30) & 0x03);
+	pkt->version = (unsigned char) ((w >> 27) & 0x07);
+	pkt->mode = (unsigned char) ((w >> 24) & 0x07);
+	pkt->stratum = (unsigned char) (w >> 16);
+	pkt->poll = (signed char) (w >> 8);
+	pkt->precision = (signed char) w;
 	w = ntohl(*p++);
 	pkt->rootdelay.i = ((signed long) w) >> 16;
 	pkt->rootdelay.f = w << 16;
@@ -375,7 +375,7 @@ static struct fp sys_clock(void)
 
 	if (gettimeofday(&tv, (struct timezone *) 0)) return Zero;
 	fp.i = TIMEBIAS + tv.tv_sec;
-	fp.f = USEC2F * tv.tv_usec;
+	fp.f = (unsigned long) (USEC2F * tv.tv_usec);
 	return fp;
 }
 
@@ -504,7 +504,7 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 	if (abs_offset.i < Step_threshold) {
 #if HAS_ADJTIME || defined __hpux
 		tv.tv_sec = peer->offset.i;
-		tv.tv_usec = peer->offset.f / USEC2F;
+		tv.tv_usec = (long) (peer->offset.f / USEC2F);
 		if (!adjtime(&tv, (struct timeval *) 0)) {
 			peer->adjts++;
 			if (Ntrace) printf("Clock adjusted\n");
@@ -517,7 +517,7 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 	if (gettimeofday(&tv, (struct timezone *) 0)) return;
 	now = fpadd(sys_clock(), peer->offset);
 	tv.tv_sec = now.i - TIMEBIAS;
-	tv.tv_usec = now.f / USEC2F;
+	tv.tv_usec = (long) (now.f / USEC2F);
 	if (!settimeofday(&tv, (struct timezone *) 0)) {
 		peer->steps++;
 		if (Ntrace) printf("Clock stepped\n");
@@ -561,8 +561,8 @@ static void sntp_client_send(void *arg)
 static int dosntpadd(int argc, char **argv, void *p)
 {
 
-	int addr;
 	int interval;
+	int32 addr;
 	struct peer *peer;
 	struct socket lsocket;
 
@@ -601,7 +601,7 @@ static int dosntpadd(int argc, char **argv, void *p)
 static int dosntpdrop(int argc, char **argv, void *p)
 {
 
-	int addr;
+	int32 addr;
 	struct peer **pp;
 	struct peer *peer;
 
@@ -669,7 +669,7 @@ static int dosntpsysprecision(int argc, char **argv, void *p)
 
 	i = sys.precision;
 	setint(&i, "sntp sys precision", argc, argv);
-	sys.precision = i;
+	sys.precision = (signed char) i;
 	sys.rho = fpshift(One, sys.precision);
 	return 0;
 }
@@ -680,8 +680,8 @@ static int dosntpsysrefid(int argc, char **argv, void *p)
 {
 
 	char *cp;
-	int addr;
 	int i;
+	int32 addr;
 
 	if (argc < 2) {
 		printf("sntp sys refid: ");

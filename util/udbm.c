@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.35 1994/10/06 16:15:47 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.36 1994/10/09 08:23:10 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -486,7 +486,7 @@ static void fixpasswd(void)
   int secured = 0;
   struct passwd *pp;
   struct stat statbuf;
-  struct user *up;
+  struct user *up = 0;
 
 #ifdef __hpux
   if (!stat(spassfile, &statbuf)) secured = 1;

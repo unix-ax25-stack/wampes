@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.14 1994/10/06 16:15:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.15 1994/10/09 08:22:46 deyke Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -17,7 +17,7 @@
 struct ax25_cb *Ax25_cb;
 
 /* Default AX.25 parameters */
-int32 T3init = 900000;          /* Keep-alive polling, ms */
+int   T3init = 900000;          /* Keep-alive polling, ms */
 int   Maxframe = 7;             /* Transmit flow control level */
 int   N2 = 10;                  /* 10 retries */
 int   Axwindow = 2048;          /* 2K incoming text before RNR'ing */

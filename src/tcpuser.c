@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.20 1994/10/06 16:15:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.21 1994/10/09 08:23:00 deyke Exp $ */
 
 /* User calls to TCP
  * Copyright 1991 Phil Karn, KA9Q
@@ -155,7 +155,7 @@ struct tcb *tcb)
   case TCP_SYN_RECEIVED:
   case TCP_ESTABLISHED:
   case TCP_CLOSE_WAIT:
-    cnt = tcb->window - tcb->sndcnt;
+    cnt = (int) (tcb->window - tcb->sndcnt);
     return (cnt > 0) ? cnt : 0;
   case TCP_FINWAIT1:
   case TCP_FINWAIT2:
@@ -214,9 +214,9 @@ int32 cnt)
 		*bpp = tcb->rcvq;
 		tcb->rcvq = NULLBUF;
 	} else {
-		*bpp = ambufw(cnt);
-		pullup(&tcb->rcvq,(*bpp)->data,cnt);
-		(*bpp)->cnt = cnt;
+		*bpp = ambufw((uint16) cnt);
+		pullup(&tcb->rcvq,(*bpp)->data,(uint16) cnt);
+		(*bpp)->cnt = (uint16) cnt;
 	}
 	tcb->rcvcnt -= cnt;
 	tcb->rcv.wnd += cnt;

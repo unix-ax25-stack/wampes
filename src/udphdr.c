@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udphdr.c,v 1.6 1994/10/06 16:15:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udphdr.c,v 1.7 1994/10/09 08:23:03 deyke Exp $ */
 
 /* UDP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -33,7 +33,7 @@ struct pseudo_header *ph)
 	 * all-zero checksum from no checksum at all
 	 */
 	if((checksum = cksum(ph,bp,ph->length)) == 0)
-		checksum = 0xffffffff;
+		checksum = 0xffff;
 	put16(cp,checksum);
 	return bp;
 }

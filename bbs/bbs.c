@@ -1,6 +1,10 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.80 1994/10/06 16:15:40 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.81 1994/10/09 08:23:03 deyke Exp $";
 
 /* Bulletin Board System */
+
+#ifdef __cplusplus
+#define volatile
+#endif
 
 #include <sys/types.h>
 
@@ -58,12 +62,16 @@ extern int optind;
 #define HOURS       (60L*MINUTES)
 #define DAYS        (24L*HOURS)
 
-#define USER        0
-#define MBOX        1
-#define ROOT        2
+enum e_level {
+  USER,
+  MBOX,
+  ROOT
+};
 
-#define BBS         0
-#define MAILorNEWS  1
+enum e_mode {
+  BBS,
+  MAILorNEWS
+};
 
 struct revision {
   char number[16];
@@ -111,13 +119,13 @@ static char *myhostname;
 static char prompt[1024] = "bbs> ";
 static const char daynames[] = "SunMonTueWedThuFriSat";
 static const char monthnames[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
+static enum e_mode mode = BBS;
 static int debug;
 static int doforward;
 static int errors;
 static int fdindex;
 static int fdseq;
 static int level;
-static int mode = BBS;
 static int packetcluster;
 static struct revision revision;
 static struct user user;
@@ -195,7 +203,7 @@ static const struct cmdtable {
   const char *name;
   void (*fnc)(int argc, char **argv);
   int argc;
-  int level;
+  enum e_level level;
 } cmdtable[] = {
 
   { "!",                shell_command,          0,      USER },
@@ -251,7 +259,7 @@ static void errorstop(int line)
 /*---------------------------------------------------------------------------*/
 
 #if defined _SC_OPEN_MAX && !(defined __386BSD__ || defined __bsdi__)
-#define open_max()      sysconf(_SC_OPEN_MAX)
+#define open_max()      ((int) sysconf(_SC_OPEN_MAX))
 #else
 #define open_max()      (1024)
 #endif
@@ -353,7 +361,7 @@ static char *getstring(char *s)
   static int chr, lastchr;
 
   fflush(stdout);
-  alarm(1 * HOURS);
+  alarm((unsigned) (1 * HOURS));
   for (p = s; ; ) {
     *p = 0;
     lastchr = chr;
@@ -1368,7 +1376,7 @@ static void f_command(int argc, char **argv)
       if (!*from) continue;
       lifetime = -1;
       if ((expiretime = parse_date(expire)) != -1) {
-	lifetime = (expiretime - time((long *) 0) + DAYS - 1) / DAYS;
+	lifetime = (int) ((expiretime - time((long *) 0) + DAYS - 1) / DAYS);
 	if (lifetime < 1) lifetime = 1;
       }
       if (stat(cfile, &statbuf)) continue;
@@ -2455,7 +2463,7 @@ static void recv_from_mail_or_news(void)
 	strcat(mail->to, distr);
       }
       if ((expiretime = parse_date(expire)) != -1) {
-	mail->lifetime = (expiretime - time((long *) 0) + DAYS - 1) / DAYS;
+	mail->lifetime = (int) ((expiretime - time((long *) 0) + DAYS - 1) / DAYS);
 	if (mail->lifetime < 1) mail->lifetime = 1;
       }
       route_mail(mail);

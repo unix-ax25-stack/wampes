@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.16 1994/10/06 16:15:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.17 1994/10/09 08:23:01 deyke Exp $ */
 
 /* General purpose software timer facilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -191,13 +191,13 @@ int32 t)
 	} else
 		minus = 0;
 
-	secs = t % 60;
+	secs = (unsigned) (t % 60);
 	t /= 60;
-	mins = t % 60;
+	mins = (unsigned) (t % 60);
 	t /= 60;
-	hrs = t % 24;
+	hrs = (unsigned) (t % 24);
 	t /= 24;
-	days = t;
+	days = (unsigned) t;
 	if(minus){
 		cp = buf+1;
 		buf[0] = '-';

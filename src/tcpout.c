@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.12 1994/10/06 16:15:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.13 1994/10/09 08:23:00 deyke Exp $ */
 
 /* TCP output segment processing
  * Copyright 1991 Phil Karn, KA9Q
@@ -11,10 +11,7 @@
 #include "tcp.h"
 #include "ip.h"
 
-static double mybackoff(int n);
-
-static double mybackoff(
-int n)
+static double mybackoff(int n)
 {
   double b;
 
@@ -70,8 +67,8 @@ register struct tcb *tcb)
 		 * smallest of the usable window, the mss, or the amount
 		 * we have on hand. (I don't like optimistic windows)
 		 */
-		ssize = min(tcb->sndcnt - sent,usable);
-		ssize = min(ssize,tcb->mss);
+		ssize = (uint16) (min(tcb->sndcnt - sent,usable));
+		ssize = (uint16) (min(ssize,tcb->mss));
 
 		/* Now we decide if we actually want to send it.
 		 * Apply John Nagle's "single outstanding segment" rule.
@@ -135,7 +132,7 @@ register struct tcb *tcb)
 		}
 		seg.seq = tcb->snd.ptr;
 		seg.ack = tcb->rcv.nxt;
-		seg.wnd = tcb->rcv.wnd;
+		seg.wnd = (uint16) tcb->rcv.wnd;
 		seg.up = 0;
 
 		/* Now try to extract some data from the send queue. Since
@@ -201,7 +198,7 @@ register struct tcb *tcb)
 		 */
 		if(ssize != 0){
 			/* Set round trip timer. */
-			rto = mybackoff(tcb->backoff) * (4 * tcb->mdev + tcb->srtt);
+			rto = (int32) (mybackoff(tcb->backoff) * (4 * tcb->mdev + tcb->srtt));
 			set_timer(&tcb->timer,max(MIN_RTO,rto));
 			if(!run_timer(&tcb->timer))
 				start_timer(&tcb->timer);
