@@ -1,0 +1,37 @@
+#! /bin/sh
+
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/start,v 1.1 1993/05/28 06:51:07 deyke Exp $
+
+dir=/tmp/c
+
+PATH=.:$PATH
+
+if [ ! -f testconfig ] ; then
+	echo ERROR: configuration file \"testconfig\" is missing
+	exit 1
+fi
+
+if [ -x end ] ; then
+	end
+fi
+
+rm -rf $dir end
+mkdir $dir
+
+host=""
+for i in `cat testconfig` ; do
+	if [ $i = ";" ] ; then
+		conversd -a unix:$dir/$host -c $dir/$host.cnf -d &
+		echo kill -9 $! >> end
+		echo $host started
+		sleep 2
+		host=""
+	elif [ X$host = X ] ; then
+		host=$i
+		echo $host > $dir/$host.cnf
+	else
+		echo $i unix:$dir/$i >> $dir/$host.cnf
+	fi
+done
+echo rm -rf $dir end >> end
+chmod 755 end
