@@ -1,6 +1,6 @@
 /* User Data Base Manager */
 
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.7 1989/10/14 10:29:53 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.8 1989/10/15 19:41:37 dk5sg Exp $";
 
 #include <ctype.h>
 #include <fcntl.h>
@@ -18,10 +18,11 @@ struct user {
   char  qth[8];
   char  phone[80];
   char  mail[80];
+  int  alias;
   struct user *next;
 };
 
-#define NUM_USERS 1001
+#define NUM_USERS 2003
 
 static int  errors;
 static struct user *users[NUM_USERS];
@@ -34,21 +35,20 @@ static struct utsname utsname;
 /*---------------------------------------------------------------------------*/
 
 char  *malloc(size)
-register unsigned int  size;
+unsigned int  size;
 {
 
 #define ALLOCSIZE (64*1024)
 
-  char  *sbrk();
-  register char  *p;
+  char  *p, *sbrk();
   static char  *freespace;
   static int  freesize;
 
   if (size & 1) size++;
   if (size > freesize) {
-    if (size > ALLOCSIZE) return (char *) 0;
+    if (size > ALLOCSIZE) return 0;
     p = sbrk(ALLOCSIZE);
-    if ((int) p == -1) return (char *) 0;
+    if ((int) p == -1) return 0;
     freespace = p;
     freesize = ALLOCSIZE;
   }
@@ -71,7 +71,7 @@ char  *p;
 char  *calloc(nelem, elsize)
 unsigned int  nelem, elsize;
 {
-  register unsigned int  size;
+  unsigned int  size;
 
   size = nelem * elsize;
   return memset(malloc(size), 0, (int) size);
@@ -82,7 +82,7 @@ unsigned int  nelem, elsize;
 /* Calculate crc16 for a null terminated string (used for hashing) */
 
 static unsigned short  calc_crc(str)
-register char  *str;
+char  *str;
 {
 
   static unsigned short  crc_table[] = {
@@ -120,7 +120,7 @@ register char  *str;
     0x8201, 0x42c0, 0x4380, 0x8341, 0x4100, 0x81c1, 0x8081, 0x4040
   };
 
-  register unsigned short  crc = 0;
+  unsigned short  crc = 0;
 
   while (*str)
     crc = (crc >> 8) ^ crc_table[uchar(crc ^ *str++)];
@@ -130,9 +130,9 @@ register char  *str;
 /*---------------------------------------------------------------------------*/
 
 static char  *strlwc(s)
-register char  *s;
+char  *s;
 {
-  register char *p;
+  char *p;
 
   for (p = s; *p = tolower(uchar(*p)); p++) ;
   return s;
@@ -141,9 +141,9 @@ register char  *s;
 /*---------------------------------------------------------------------------*/
 
 static char  *rmspaces(s)
-register char  *s;
+char  *s;
 {
-  register char  *f, *t;
+  char  *f, *t;
 
   for (f = t = s; *f; f++)
     if (*f != ' ') *t++ = *f;
@@ -154,9 +154,9 @@ register char  *s;
 /*---------------------------------------------------------------------------*/
 
 static char  *strtrim(s)
-register char  *s;
+char  *s;
 {
-  register char  *p;
+  char  *p;
 
   for (p = s; *p; p++) ;
   while (--p >= s && *p == ' ') ;
@@ -169,12 +169,12 @@ register char  *s;
 static char  *strpos(str, pat)
 char  *str, *pat;
 {
-  register char  *s, *p;
+  char  *s, *p;
 
   for (; ; str++)
     for (s = str, p = pat; ; ) {
       if (!*p) return str;
-      if (!*s) return (char *) 0;
+      if (!*s) return 0;
       if (*s++ != *p++) break;
     }
 }
@@ -182,9 +182,9 @@ char  *str, *pat;
 /*---------------------------------------------------------------------------*/
 
 static int  is_call(s)
-register char  *s;
+char  *s;
 {
-  register int  d, l;
+  int  d, l;
 
   l = strlen(s);
   if (l < 4 || l > 6) return 0;
@@ -199,7 +199,7 @@ register char  *s;
 /*---------------------------------------------------------------------------*/
 
 static int  is_qth(s)
-register char  *s;
+char  *s;
 {
   char  buf[8];
 
@@ -229,7 +229,7 @@ register char  *s;
 /*---------------------------------------------------------------------------*/
 
 static int  is_phone(s)
-register char  *s;
+char  *s;
 {
   int  slash;
 
@@ -244,7 +244,7 @@ register char  *s;
 /*---------------------------------------------------------------------------*/
 
 static int  is_mail(s)
-register char  *s;
+char  *s;
 {
   return (int) (strchr(s, '@') != (char *) 0);
 }
@@ -252,7 +252,7 @@ register char  *s;
 /*---------------------------------------------------------------------------*/
 
 static void clear_user(up)
-register struct user *up;
+struct user *up;
 {
   *up->call = '\0';
   *up->name = '\0';
@@ -261,13 +261,14 @@ register struct user *up;
   *up->qth = '\0';
   *up->phone = '\0';
   *up->mail = '\0';
-  up->next = (struct user *) 0;
+  up->alias = 0;
+  up->next = 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
 static int  join(s1, s2)
-register char  *s1, *s2;
+char  *s1, *s2;
 {
   if (strpos(s2, s1)) {
     strcpy(s1, s2);
@@ -288,7 +289,7 @@ int  create;
 {
 
   int  hash;
-  register struct user *up;
+  struct user *up;
 
   for (up = users[hash = calc_crc(call) % NUM_USERS]; up && strcmp(call, up->call); up = up->next) ;
   if (create && !up) {
@@ -312,7 +313,7 @@ char  *path;
 
   for (try = 1; ; try++) {
     if ((fd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0444)) >= 0) break;
-    if (try == 10) return (FILE * ) 0;
+    if (try == 10) return 0;
     sleep(try);
   }
   return fdopen(fd, "w");
@@ -321,7 +322,7 @@ char  *path;
 /*---------------------------------------------------------------------------*/
 
 static void output_line(up, fp)
-register struct user *up;
+struct user *up;
 FILE *fp;
 {
 
@@ -335,7 +336,7 @@ FILE *fp;
   }
 
   char  line[1024];
-  register char  *f, *t;
+  char  *f, *t;
 
   t = line;
   *t = '\0';
@@ -369,24 +370,25 @@ static void fixusers()
     long  date;
     int  mesg;
     char  bid[LEN_BID+1];
-    char  type;
+    char  pad1;
     char  subject[LEN_SUBJECT+1];
-    char  status;
+    char  pad2;
     char  to[LEN_TO+1];
     char  at[LEN_AT+1];
     char  from[LEN_FROM+1];
+    char  deleted;
   };
 
   static char  tempfile[] = "/usr/local/lib/users.tmp";
   static char  usersfile[] = "/usr/local/lib/users";
 
   FILE * fpi, *fpo;
+  char  *f, *t;
   char  *field[NF];
   char  line[1024], orig_line[1024], mybbs[1024];
   int  fd, i, nf, timestamp;
-  register char  *f, *t;
-  register struct user *up;
   struct index index;
+  struct user *up;
   struct user user;
 
   if (!(fpi = fopen(usersfile, "r"))) {
@@ -524,8 +526,8 @@ static void fixpasswd()
   static char  tempfile[] = "/etc/ptmp";
 
   FILE * fp;
-  register struct passwd *pp;
-  register struct user *up;
+  struct passwd *pp;
+  struct user *up;
 
   if (!(fp = fopenexcl(tempfile))) {
     errors++;
@@ -549,9 +551,10 @@ static void fixaliases()
   static char  tempfile[] = "/usr/lib/aliases.tmp";
 
   FILE * fpi, *fpo;
+  char  *p;
   char  line[1024];
   int  i;
-  register struct user *up;
+  struct user *up;
 
   if (!(fpi = fopen(aliasfile, "r"))) {
     errors++;
@@ -564,12 +567,18 @@ static void fixaliases()
   while (fgets(line, sizeof(line), fpi)) {
     if (!strncmp(line, "# Generated", 11)) break;
     fputs(line, fpo);
+    if (isspace(uchar(*line))) continue;
+    if (p = strchr(line, '#')) *p = '\0';
+    if (!(p = strchr(line, ':'))) continue;
+    while (--p >= line && isspace(uchar(*p))) ;
+    p[1] = '\0';
+    if (up = getup(line, 0)) up->alias = 1;
   }
   fclose(fpi);
   fputs("# Generated aliases\n", fpo);
   for (i = 0; i < NUM_USERS; i++)
     for (up = users[i]; up; up = up->next)
-      if (*up->mail && strcmp(up->name, "Mailing List"))
+      if (!up->alias && *up->mail)
 	if (*up->mail == '@')
 	  fprintf(fpo, "%s\t\t: %s%s\n", up->call, up->call, up->mail);
 	else
