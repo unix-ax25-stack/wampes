@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.9 1993/01/29 06:48:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.10 1993/05/10 11:23:40 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -21,7 +21,11 @@
 #define longjmp         _longjmp
 #endif
 
-extern void setstack __ARGS((void));
+#ifdef RISCiX
+void setstack __ARGS((int16 *));
+#else
+void setstack __ARGS((void));
+#endif
 
 #define DISABLE()
 #define RESTORE()
@@ -168,7 +172,11 @@ int freeargs;           /* If set, free arg list on parg1 at termination */
 	  longjmp(jmpenv, 1);
 	}
 #else
+#ifdef RISCiX
+	setstack(newstackptr);
+#else
 	setstack();
+#endif
 #endif
 #endif
 	(*func)(pp->iarg, pp->parg1, pp->parg2);

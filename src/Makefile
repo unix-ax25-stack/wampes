@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.35 1993/04/11 07:06:29 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.36 1993/05/10 11:23:16 deyke Exp $
 
 DEST          = /tcp
 
@@ -170,8 +170,6 @@ PRINT         = pr
 
 PROGRAM       = net
 
-SHELL         = /bin/sh
-
 SRCS          = alloc.c \
 		arp.c \
 		arpcmd.c \
@@ -274,17 +272,21 @@ SRCS          = alloc.c \
 
 # SYSHDRS       =
 
+OS            = "`uname -s`"
 RMTARGET      = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
 all:
-		@if [ `uname -n` = mdddhd -o `uname -n` = deyke2 ] ; then \
+		chmod 755 cc
+		@if [ "`uname -n`" = mdddhd -o "`uname -n`" = deyke2 ] ; then \
 		  make -i 'CC=c89' 'CFLAGS=-g -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024' _all; \
-		elif [ `uname -s` = SunOS ] ; then \
+		elif [ $(OS) = SunOS ] ; then \
 		  make -i 'CC=acc' 'CFLAGS=-O -s -DUNIX -DFD_SETSIZE=1024' _all; \
-		elif [ `uname -s` = Linux ] ; then \
+		elif [ $(OS) = Linux ] ; then \
 		  make -i 'CC=gcc' 'CFLAGS=-O6 -DUNIX -DLINUX -I./linux_include' _all; \
-		elif [ `uname -s` = ULTRIX ] ; then \
+		elif [ $(OS) = ULTRIX ] ; then \
 		  make -i 'CC=gcc' 'CFLAGS=-O6 -DUNIX -DULTRIX_RISC -DFD_SETSIZE=64' _all; \
+		elif [ $(OS) = "RISC iX" ] ; then \
+		  make -i 'CC=/tcp/src/cc' 'CFLAGS=-DUNIX -DRISCiX' _all; \
 		else \
 		  make -i 'CC=cc' 'CFLAGS=-O -s -DUNIX -DFD_SETSIZE=1024' _all; \
 		fi
@@ -292,16 +294,20 @@ all:
 _all:           $(PROGRAM)
 
 setsp.o:        setsp.c
-		@if [ `uname -s` = Linux ] ; then \
+		@if [ $(OS) = Linux ] ; then \
 		  $(CC) -E -DLINUX $< > setsp.s; \
 		  cc -c setsp.s; \
 		  rm -f setsp.s; \
-		elif [ `uname -s` = 386BSD ] ; then \
+		elif [ $(OS) = 386BSD ] ; then \
 		  $(CC) -E $< > setsp.s; \
 		  cc -c setsp.s; \
 		  rm -f setsp.s; \
-		elif [ `uname -s` = ULTRIX ] ; then \
+		elif [ $(OS) = ULTRIX ] ; then \
 		  cc -c setsp.c; \
+		elif [ $(OS) = "RISC iX" ] ; then \
+		  $(CC) -E -DRISCiX $< > setsp.s; \
+		  cc -c setsp.s; \
+		  rm -f setsp.s; \
 		else \
 		  $(CC) $(CFLAGS) -P $<; \
 		  as setsp.i -o $@; \
@@ -311,14 +317,16 @@ setsp.o:        setsp.c
 $(PROGRAM):     $(OBJS) $(LIBS)
 		@echo "Linking $(PROGRAM) ..."
 		$(RMTARGET)
-		@if [ `uname -s` = SunOS ] ; then \
+		@if [ $(OS) = SunOS ] ; then \
 		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM) ; \
-		elif [ `uname -s` = 386BSD ] ; then \
+		elif [ $(OS) = 386BSD ] ; then \
 		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM) ; \
-		elif [ `uname -s` = Linux ] ; then \
+		elif [ $(OS) = Linux ] ; then \
 		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -ldbm -o $(PROGRAM) ; \
-		elif [ `uname -s` = ULTRIX ] ; then \
+		elif [ $(OS) = ULTRIX ] ; then \
 		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -ldbm -o $(PROGRAM) ; \
+		elif [ $(OS) = "RISC iX" ] ; then \
+		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM) ; \
 		else \
 		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -lndbm -o $(PROGRAM) ; \
 		fi

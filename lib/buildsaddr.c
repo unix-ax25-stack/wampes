@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.8 1993/04/26 14:47:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.9 1993/05/10 11:23:25 deyke Exp $ */
 
 #include "global.h"
 
@@ -45,7 +45,11 @@ int *addrlen;
     *addr.su.sun_path = 0;
     if (*serv_name != '/') strcpy(addr.su.sun_path, "/tcp/sockets/");
     strcat(addr.su.sun_path, serv_name);
+#ifdef RISCiX
+    *addrlen = sizeof(addr.su.sun_family) + strlen(addr.su.sun_path);
+#else
     *addrlen = sizeof(struct sockaddr_un);
+#endif
     return &addr.sa;
   }
 

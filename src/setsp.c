@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/setsp.c,v 1.5 1993/03/30 17:24:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/setsp.c,v 1.6 1993/05/10 11:23:52 deyke Exp $ */
 
 #ifndef __lint
 
@@ -73,6 +73,14 @@ _setstack:
 	movl    _newstackptr, %esp
 	jmp     *(%ebp)
 	.align  4
+#endif
+
+#ifdef RISCiX
+	.text
+	.global _setstack
+_setstack:
+	mov     r13,r0
+	movs    r15,r14
 #endif
 
 #endif

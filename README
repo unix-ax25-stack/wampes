@@ -1,4 +1,4 @@
-wampes-930507.tar.Z  is a compressed  tar archive of WAMPES,  which is a
+wampes-930510.tar.Z  is a compressed  tar archive of WAMPES,  which is a
 NET/NOS  port to HP-UX.  It currently  supports HP 9000 series 300, 400,
 700, and 800 computers, running HP-UX 08.xx or HP-UX 09.xx.
 
@@ -15,8 +15,37 @@ and     Ultrix     port    of    WAMPES     please    to    Olaf    Erb,
 To unpack this archive you should  create the  directory  /tcp and cd to
 it.  After unpacking please read the file /tcp/doc/intro.txt.
 
-wampes-930507.tar.Z     and    all    followups     should    go    into
+wampes-930510.tar.Z     and    all    followups     should    go    into
 /hamradio/packet/tcpip/wampes on UCSD.EDU.
 
 73,
 Dieter Deyke, DK5SG / N0PRA, <deyke@fc.hp.com>
+
+-------------------------------------------------------------------------------
+
+Now it's here!
+
+This is the  documentation  for the RISC iX  (Acorn  R260  etc)  port of
+DK5SG's Wampes.
+
+To install it, unpack the archive in a directory  named /tcp.  Then copy
+the files *.R into  /usr/lib  (you must be root of  course).  Then cd to
+/tcp/src,  run make  (without  arguments...)  and  ignore  the  compiler
+warnings...
+
+To compile convers, cd to /tcp/convers and run make.
+
+I hope, the port is 100 percent correct.  It works here at least :-)
+
+Have fun with it.
+
+73 de Felix, dl6sdc.  For bug reports and questions  related to the RISC
+iX port please mail to
+BBS-Net:        dl6sdc@db0sao.deu.eu
+Amprnet:        dl6sdc@db0sao.ampr.org
+Bitnet:         uk1o@DKAUNI2
+Internet:       uk1o@ibm3090.rz.uni-karlsruhe.de or
+		s_schroeter@irav1.ira.uka.de
+
+For  questions  related  to  Wampes in  general  please  mail to  Dieter
+although i would really try to answer such a question too.

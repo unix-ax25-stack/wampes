@@ -1,9 +1,9 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.8 1993/04/11 07:05:41 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.9 1993/05/10 11:22:16 deyke Exp $
 
 PATH  = /bin:/usr/bin:/usr/lang:/usr/local/bin:/usr/contrib/bin:/usr/local/etc
-SHELL = /bin/sh
 
 all:
+	chmod 755 cc
 	-(dir=src     ; if [ -d $$dir ]; then cd $$dir; make -i; make -i install; fi)
 	-(dir=convers ; if [ -d $$dir ]; then cd $$dir; make -i; make -i install; fi)
 	-(dir=util    ; if [ -d $$dir ]; then cd $$dir; make -i; make -i install; fi)

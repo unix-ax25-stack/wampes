@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.36 1993/04/11 07:06:32 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.37 1993/05/10 11:23:34 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -174,6 +174,8 @@ void iostop()
 
 /*---------------------------------------------------------------------------*/
 
+#ifndef RISCiX
+
 int system(cmdline)
 const char *cmdline;
 {
@@ -199,13 +201,7 @@ const char *cmdline;
   }
 }
 
-/*---------------------------------------------------------------------------*/
-
-int _system(cmdline)
-char *cmdline;
-{
-  return system(cmdline);
-}
+#endif
 
 /*---------------------------------------------------------------------------*/
 

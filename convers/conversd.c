@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.29 1993/03/30 17:23:33 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.30 1993/05/10 11:22:50 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -539,7 +539,11 @@ int channel;
 	  strcpy(buffer, "/dev/");
 	  strncat(buffer, utmpbuf.ut_line, sizeof(utmpbuf.ut_line));
 	  if (stat(buffer, &stbuf)) continue;
-	  if (!(stbuf.st_mode & 2)) continue;
+#ifdef RISCiX
+	  if (!(stbuf.st_mode & 020)) continue;
+#else
+	  if (!(stbuf.st_mode & 002)) continue;
+#endif
 	  if ((fdtty = open(buffer, O_WRONLY | O_NOCTTY, 0644)) < 0) continue;
 	  sprintf(buffer, invitetext, fromname, timestring(currtime), channel);
 	  if (!fork()) {
@@ -795,7 +799,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.29 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.30 $  Type /HELP for help.\n", myhostname);
   appendstring(cp, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {

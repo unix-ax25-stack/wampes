@@ -1,15 +1,16 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.20 1993/04/11 07:07:25 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.21 1993/05/10 11:24:12 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
+OS         = "`uname -s`"
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
-SHELL      = /bin/sh
 
 TARGETS    = cnet mkhostdb netupdc netupds path pop2d udbm vitals
 
 all:
-	@if [ `uname -s` = Linux ] ; then \
+	chmod 755 genupd
+	@if [ $(OS) = Linux ] ; then \
 	  make -i 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' _all; \
-	elif [ `uname -s` = ULTRIX ] ; then \
+	elif [ $(OS) = ULTRIX ] ; then \
 	  make -i 'CC=cc' 'CFLAGS=-DULTRIX_RISC' _all; \
 	else \
 	  make -i 'CC=cc' 'CFLAGS=-O -s' _all; \
@@ -23,13 +24,13 @@ cnet:   cnet.c $(BUILDSADDR)
 
 mkhostdb: mkhostdb.c
 	$(RMTARGET)
-	@if [ `uname -s` = SunOS ] ; then \
+	@if [ $(OS) = SunOS ] ; then \
 	  $(CC) $(CFLAGS) mkhostdb.c -o $@ ; \
-	elif [ `uname -s` = 386BSD ] ; then \
+	elif [ $(OS) = 386BSD ] ; then \
 	  $(CC) $(CFLAGS) mkhostdb.c -o $@ ; \
-	elif [ `uname -s` = Linux ] ; then \
+	elif [ $(OS) = Linux ] ; then \
 	  $(CC) $(CFLAGS) mkhostdb.c -ldbm -o $@ ; \
-	elif [ `uname -s` = ULTRIX ] ; then \
+	elif [ $(OS) = ULTRIX ] ; then \
 	  $(CC) $(CFLAGS) mkhostdb.c -ldbm -o $@ ; \
 	else \
 	  $(CC) $(CFLAGS) mkhostdb.c -lndbm -o $@ ; \
@@ -42,7 +43,6 @@ netupdc: netupdc.c $(BUILDSADDR)
 netupds: netupds.c
 	$(RMTARGET)
 	$(CC) $(CFLAGS) netupds.c -o $@
-	chmod 755 genupd
 
 path:   path.c
 	$(RMTARGET)
