@@ -1,0 +1,26 @@
+#! /bin/ksh
+
+# @(#) $Id: tcpce,v 1.1 1999/01/27 18:30:08 deyke Exp $
+
+if hp9000s300; then
+	cutarg='-c15-'
+else
+	cutarg='-c5-'
+fi
+
+rm -f def undef jnk tmp1 suspect
+nm -pu ~/tcp/src/*.o | cut $cutarg | sort -u > undef
+for file in ~/tcp/src/*.o; do
+	nm -p $file |
+		egrep ' [BCDT] | [bcdt]S ' |
+		cut -c15- |
+		sort -u > def
+	comm -23 def undef > tmp1
+	if [[ -s tmp1 ]]; then
+		echo ' ' >> suspect
+		echo "=== $file ===" >> suspect
+		echo ' ' >> suspect
+		cat tmp1 >> suspect
+	fi
+done
+rm -f def undef jnk tmp1
