@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.2 1990/08/23 17:33:13 deyke Exp $ */
+
 #include <stdio.h>
 
 #include "global.h"
@@ -40,13 +42,13 @@ route_savefile()
   putc(ROUTE_FILE_VERSION, fp);
   for (bits = 1; bits <= 32; bits++)
     for (i = 0; i < NROUTE; i++)
-      for (p = routes[bits-1][i]; p; p = p->next) {
+      for (p = Routes[bits-1][i]; p; p = p->next) {
 	buf.dest = p->target;
 	buf.bits = bits;
 	buf.gateway = p->gateway;
 	buf.metric = p->metric;
 	fwrite((char *) & buf, sizeof(buf), 1, fp);
-	fwrite(p->interface->name, strlen(p->interface->name) + 1, 1, fp);
+	fwrite(p->iface->name, strlen(p->iface->name) + 1, 1, fp);
       }
   fclose(fp);
   rename(route_tmpfilename, route_filename);
@@ -61,7 +63,7 @@ route_loadfile()
   char  ifname[1024];
   register char  *cp;
   register int  c;
-  register struct interface *ifp;
+  register struct iface *ifp;
   static int  done;
   struct route_saverecord buf;
 
@@ -77,7 +79,7 @@ route_loadfile()
 	  return;
 	}
       } while (*cp++ = c);
-      for (ifp = ifaces; ifp && strcmp(ifp->name, ifname); ifp = ifp->next) ;
+      for (ifp = Ifaces; ifp && strcmp(ifp->name, ifname); ifp = ifp->next) ;
       if (ifp) rt_add(buf.dest, buf.bits, buf.gateway, buf.metric, ifp);
     }
   fclose(fp);

@@ -1,31 +1,39 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.2 1990/01/29 09:37:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.3 1990/08/23 17:33:35 deyke Exp $ */
 
 /* Primitive mbuf allocate/free routines */
 
+#include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
 
-/* Allocate mbuf with associated buffer of 'size' bytes */
+/* Allocate mbuf with associated buffer of 'size' bytes. If interrupts
+ * are enabled, use the regular heap. If they're off, use the special
+ * interrupt buffer pool.
+ */
 struct mbuf *
 alloc_mbuf(size)
 register int16 size;
 {
 	register struct mbuf *bp;
 
-	if((bp = (struct mbuf *)malloc((unsigned)(size + sizeof(struct mbuf)))) == NULLBUF)
+	bp = (struct mbuf *)malloc((unsigned)(size + sizeof(struct mbuf)));
+
+	if(bp == NULLBUF)
 		return NULLBUF;
 	bp->next = bp->anext = NULLBUF;
-	if(size != 0){
+	if((bp->size = size) != 0){
 		bp->data = (char *)(bp + 1);
 	} else {
 		bp->data = NULLCHAR;
 	}
-	bp->size = size;
+	bp->refcnt = 1;
+	bp->dup = NULLBUF;
 	bp->cnt = 0;
 	return bp;
 }
 
-/* Free all resources associated with mbuf
+/* Decrement the reference pointer in an mbuf. If it goes to zero,
+ * free all resources associated with mbuf.
  * Return pointer to next mbuf in packet chain
  */
 struct mbuf *
@@ -36,9 +44,12 @@ register struct mbuf *bp;
 
 	if(bp != NULLBUF){
 		bp1 = bp->next;
-		bp->next = NULLBUF;     /* detect attempts to use */
-		bp->data = NULLCHAR;    /* a freed mbuf */
-		free((char *)bp);
+		/* Follow indirection, if any */
+		free_mbuf(bp->dup);
+
+		if(--bp->refcnt == 0){
+			free((char *)bp);
+		}
 	}
 	return bp1;
 }
@@ -50,7 +61,7 @@ struct mbuf *
 free_p(bp)
 register struct mbuf *bp;
 {
-	struct mbuf *abp;
+	register struct mbuf *abp;
 
 	if(bp == NULLBUF)
 		return NULLBUF;
@@ -60,6 +71,7 @@ register struct mbuf *bp;
 	return abp;
 }
 /* Free entire queue of packets (of mbufs) */
+void
 free_q(q)
 struct mbuf **q;
 {
@@ -69,12 +81,12 @@ struct mbuf **q;
 		free_p(bp);
 }
 
-/* Count up the total number of bytes in an mbuf */
+/* Count up the total number of bytes in a packet */
 int16
-len_mbuf(bp)
+len_p(bp)
 register struct mbuf *bp;
 {
-	register int cnt = 0;
+	register int16 cnt = 0;
 
 	while(bp != NULLBUF){
 		cnt += bp->cnt;
@@ -87,13 +99,14 @@ int16
 len_q(bp)
 register struct mbuf *bp;
 {
-	register int cnt;
+	register int16 cnt;
 
 	for(cnt=0;bp != NULLBUF;cnt++,bp = bp->anext)
 		;
 	return cnt;
 }
 /* Trim mbuf to specified length by lopping off end */
+void
 trim_mbuf(bpp,length)
 struct mbuf **bpp;
 int16 length;
@@ -164,6 +177,17 @@ register int16 cnt;
 	}
 	tot = 0;
 	for(;;){
+		/* Make sure we get the original, "real" buffer (i.e. handle the
+		 * case of duping a dupe)
+		 */
+		if(bp->dup != NULLBUF)
+			cp->dup = bp->dup;
+		else
+			cp->dup = bp;
+
+		/* Increment the duplicated buffer's reference count */
+		cp->dup->refcnt++;
+
 		cp->data = bp->data + offset;
 		cp->cnt = min(cnt,bp->cnt - offset);
 		offset = 0;
@@ -229,7 +253,16 @@ int16 cnt;
 		bp->data += n;
 		bp->cnt -= n;
 		if(bp->cnt == 0){
-			*bph = free_mbuf(bp);
+			/* If this is the last mbuf of a packet but there
+			 * are others on the queue, return a pointer to
+			 * the next on the queue. This allows pullups to
+			 * to work on a packet queue
+			 */
+			if(bp->next == NULLBUF && bp->anext != NULLBUF){
+				*bph = bp->anext;
+				free_mbuf(bp);
+			} else
+				*bph = free_mbuf(bp);
 		}
 	}
 	return tot;
@@ -267,11 +300,12 @@ int16 size;
 {
 	register struct mbuf *nbp;
 
-	/* Check that bp is real and that there's data space associated with
-	 * this buffer (i.e., this is not a buffer from dup_p) before
-	 * checking to see if there's enough space at its front
+	/* Check that bp is real, that it hasn't been duplicated, and
+	 * that it itself isn't a duplicate before checking to see if
+	 * there's enough space at its front.
 	 */
-	if(bp != NULLBUF && bp->size != 0 && bp->data - (char *)(bp+1) >= size){
+	if(bp != NULLBUF && bp->refcnt == 1 && bp->size != 0
+	 && bp->data - (char *)(bp+1) >= size){
 		/* No need to alloc new mbuf, just adjust this one */
 		bp->data -= size;
 		bp->cnt += size;
@@ -342,7 +376,8 @@ struct mbuf *bp;
 char *buf;
 unsigned cnt;
 {
-	unsigned n,tot;
+	int16 tot;
+	unsigned n;
 	struct mbuf *bp1;
 
 	if(buf == NULLCHAR)
@@ -364,46 +399,26 @@ int32
 pull32(bpp)
 struct mbuf **bpp;
 {
-	int32 rval;
 	char buf[4];
-	register char *cp;
 
 	if(pullup(bpp,buf,4) != 4){
 		/* Return zero if insufficient buffer */
 		return 0;
 	}
-	cp = buf;
-
-	/* Unwound for speed */
-	rval = uchar(*cp++);
-	rval <<= 8;
-	rval |= uchar(*cp++);
-	rval <<= 8;
-	rval |= uchar(*cp++);
-	rval <<= 8;
-	rval |= uchar(*cp);
-
-	return rval;
+	return get32(buf);
 }
 /* Pull a 16-bit integer in host order from buffer in network byte order */
 int16
 pull16(bpp)
 struct mbuf **bpp;
 {
-	int16 rval;
 	char buf[2];
-	register char *cp;
 
 	if(pullup(bpp,buf,2) != 2){
 		/* Return zero if insufficient buffer */
 		return 0;
 	}
-	cp = buf;
-
-	rval = uchar(*cp++);
-	rval <<= 8;
-	rval |= uchar(*cp);
-	return rval;
+	return get16(buf);
 }
 /* Pull single character from mbuf */
 char
@@ -417,26 +432,15 @@ struct mbuf **bpp;
 		c = 0;
 	return c;
 }
-/* Put a long in host order into a char array in network order */
-char *
-put32(cp,x)
-register char *cp;
-int32 x;
+int
+write_p(fp,bp)
+FILE *fp;
+struct mbuf *bp;
 {
-	*cp++ = x >> 24;
-	*cp++ = x >> 16;
-	*cp++ = x >> 8;
-	*cp++ = x;
-	return cp;
-}
-/* Put a short in host order into a char array in network order */
-char *
-put16(cp,x)
-register char *cp;
-int16 x;
-{
-	*cp++ = x >> 8;
-	*cp++ = x;
-
-	return cp;
+	while(bp != NULLBUF){
+		if(fwrite(bp->data,1,bp->cnt,fp) != bp->cnt)
+			return -1;
+		bp = bp->next;
+	}
+	return 0;
 }

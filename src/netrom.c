@@ -1,7 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.12 1990/04/10 15:54:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.13 1990/08/23 17:33:42 deyke Exp $ */
 
-#include <memory.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "global.h"
@@ -17,7 +17,55 @@
 
 extern int  digipeat;
 extern long  currtime;
-extern void free();
+
+struct circuit; /* announce struct circuit */
+
+static struct node *nodeptr __ARGS((struct ax25_addr *call, int create));
+static void ax25_state_upcall __ARGS((struct axcb *cp, int oldstate, int newstate));
+static void ax25_recv_upcall __ARGS((struct axcb *cp));
+static void send_packet_to_neighbor __ARGS((struct mbuf *data, struct node *pn));
+static void send_broadcast_packet __ARGS((struct mbuf *data));
+static void link_manager_initialize __ARGS((void));
+static struct linkinfo *linkinfoptr __ARGS((struct node *node1, struct node *node2));
+static int update_link __ARGS((struct node *node1, struct node *node2, int level, int quality));
+static void calculate_node __ARGS((struct node *pn));
+static void calculate_all __ARGS((void));
+static void broadcast_recv __ARGS((struct mbuf *bp, struct node *pn));
+static struct mbuf *alloc_broadcast_packet __ARGS((void));
+static void send_broadcast __ARGS((void));
+static void route_packet __ARGS((struct mbuf *bp, struct node *fromneighbor));
+static void send_l3_packet __ARGS((struct ax25_addr *source, struct ax25_addr *dest, int ttl, struct mbuf *data));
+static int nr_send __ARGS((struct mbuf *bp, struct iface *interface, int32 gateway));
+static void routing_manager_initialize __ARGS((void));
+static char *print_address __ARGS((struct circuit *pc));
+static void reset_t1 __ARGS((struct circuit *pc));
+static void inc_t1 __ARGS((struct circuit *pc));
+static int busy __ARGS((struct circuit *pc));
+static void send_l4_packet __ARGS((struct circuit *pc, int opcode, struct mbuf *data));
+static void try_send __ARGS((struct circuit *pc, int fill_sndq));
+static void set_circuit_state __ARGS((struct circuit *pc, int newstate));
+static void l4_t1_timeout __ARGS((struct circuit *pc));
+static void l4_t2_timeout __ARGS((struct circuit *pc));
+static void l4_t3_timeout __ARGS((struct circuit *pc));
+static void l4_t4_timeout __ARGS((struct circuit *pc));
+static void l4_t5_timeout __ARGS((struct circuit *pc));
+static struct circuit *create_circuit __ARGS((void));
+static void circuit_manager __ARGS((struct mbuf *bp));
+static void nrserv_recv_upcall __ARGS((struct circuit *pc));
+static void nrserv_send_upcall __ARGS((struct circuit *pc));
+static void nrserv_state_upcall __ARGS((struct circuit *pc, int oldstate, int newstate));
+static nrclient_parse __ARGS((char *buf, int n));
+static void nrclient_state_upcall __ARGS((struct circuit *pc, int oldstate, int newstate));
+static int doconnect __ARGS((int argc, char *argv [], void *p));
+static int dobroadcast __ARGS((int argc, char *argv [], void *p));
+static int doident __ARGS((int argc, char *argv [], void *p));
+static int dolinks __ARGS((int argc, char *argv [], void *p));
+static int donodes __ARGS((int argc, char *argv [], void *p));
+static int doparms __ARGS((int argc, char *argv [], void *p));
+static int donreset __ARGS((int argc, char *argv [], void *p));
+static int dostatus __ARGS((int argc, char *argv [], void *p));
+static int dostart __ARGS((int argc, char *argv [], void *p));
+static int dostop __ARGS((int argc, char *argv [], void *p));
 
 static int  nr_maxdest     =   400;     /* not used */
 static int  nr_minqual     =     0;     /* not used */
@@ -85,7 +133,7 @@ static struct parms {
 #define MAXLEVEL   256
 
 struct broadcast {
-  struct interface *ifp;
+  struct iface *ifp;
   char *path;
   struct broadcast *next;
 };
@@ -106,7 +154,6 @@ struct axcb *netrom_server_axcb;
 
 static struct broadcast *broadcasts;
 static struct node *nodes, *mynode;
-static void calculate_all();
 
 /*---------------------------------------------------------------------------*/
 
@@ -274,7 +321,7 @@ struct routes_stat {
   int  sent;
 };
 
-static struct interface nr_interface;
+static struct iface nr_interface;
 static struct routes_stat routes_stat;
 static struct timer broadcast_timer;
 
@@ -503,7 +550,7 @@ struct node *pn;
   if (pn == mynode) goto discard;
   if (pullup(&bp, &id, 1) != 1 || uchar(id) != 0xff) goto discard;
   if (pullup(&bp, ident, IDENTLEN) != IDENTLEN) goto discard;
-  if (len_mbuf(bp) % NRRTDESTLEN) goto discard;
+  if (len_p(bp) % NRRTDESTLEN) goto discard;
   if (*ident > ' ') memcpy(pn->ident, ident, IDENTLEN);
   update_link(mynode, pn, 1, nr_hfqual);
   while (pullup(&bp, buf, NRRTDESTLEN) == NRRTDESTLEN) {
@@ -600,7 +647,6 @@ struct node *fromneighbor;
 
   int  ttl;
   register struct node *pn;
-  void circuit_manager();
 
   if (!bp || bp->cnt < 15) goto discard;
 
@@ -625,7 +671,7 @@ struct node *fromneighbor;
 	uchar(bp->data[16]) == PID_IP) {
 
       int32 src_ipaddr;
-      struct arp_tab *arp, *arp_add();
+      struct arp_tab *arp;
       struct ax25_addr hw_addr;
 
       src_ipaddr = (uchar(bp->data[32]) << 24) |
@@ -646,7 +692,7 @@ struct node *fromneighbor;
     pullup(&bp, NULLCHAR, 15);
     if (!bp) return;
     if (fromneighbor == mynode) {
-      struct mbuf *hbp = copy_p(bp, len_mbuf(bp));
+      struct mbuf *hbp = copy_p(bp, len_p(bp));
       free_p(bp);
       bp = hbp;
     }
@@ -659,11 +705,13 @@ struct node *fromneighbor;
   bp->data[2*AXALEN] = ttl;
 
   pn = nodeptr(axptr(bp->data + AXALEN), 1);
-  if (!pn->neighbor && fromneighbor != mynode) {
-    pn->force_broadcast = 1;
+  if (!pn->neighbor) {
+    if (fromneighbor != mynode) {
+      pn->force_broadcast = 1;
 #ifdef FORCE_BC
-    send_broadcast();
+      send_broadcast();
 #endif
+    }
     goto discard;
   }
 
@@ -703,7 +751,7 @@ struct mbuf *data;
 
 static int  nr_send(bp, interface, gateway)
 struct mbuf *bp;
-struct interface *interface;
+struct iface *interface;
 int32 gateway;
 {
 
@@ -743,17 +791,15 @@ struct ax25_addr *fromcall;
 
 static void routing_manager_initialize()
 {
-  int  psax25(), setpath();
-
   nr_interface.name = "netrom";
   nr_interface.mtu = 236;
   nr_interface.send = nr_send;
-  nr_interface.next = ifaces;
-  ifaces = &nr_interface;
+  nr_interface.next = Ifaces;
+  Ifaces = &nr_interface;
 
-  arp_init(ARP_NETROM, AXALEN, 0, 0, NULLCHAR, psax25, setpath);
+  arp_init(ARP_NETROM, AXALEN, 0, 0, 0, NULLCHAR, psax25, setpath);
 
-  broadcast_timer.func = send_broadcast;
+  broadcast_timer.func = (void (*) __ARGS((void *))) send_broadcast;
   set_timer(&broadcast_timer, 10 * 1000l);
   start_timer(&broadcast_timer);
 
@@ -929,7 +975,7 @@ int  fill_sndq;
       }
     }
     if (!pc->sndq) return;
-    cnt = len_mbuf(pc->sndq);
+    cnt = len_p(pc->sndq);
     if (cnt < NR4MAXINFO) {
       if (pc->unack) return;
       if (pc->sndqtime + 2 > currtime) {
@@ -1076,15 +1122,15 @@ static struct circuit *create_circuit()
   pc->srtt = 500l * nr_ttimeout;
   pc->mdev = pc->srtt / 2;
   reset_t1(pc);
-  pc->timer_t1.func = l4_t1_timeout;
+  pc->timer_t1.func = (void (*) __ARGS((void *))) l4_t1_timeout;
   pc->timer_t1.arg = (char *) pc;
-  pc->timer_t2.func = l4_t2_timeout;
+  pc->timer_t2.func = (void (*) __ARGS((void *))) l4_t2_timeout;
   pc->timer_t2.arg = (char *) pc;
-  pc->timer_t3.func = l4_t3_timeout;
+  pc->timer_t3.func = (void (*) __ARGS((void *))) l4_t3_timeout;
   pc->timer_t3.arg = (char *) pc;
-  pc->timer_t4.func = l4_t4_timeout;
+  pc->timer_t4.func = (void (*) __ARGS((void *))) l4_t4_timeout;
   pc->timer_t4.arg = (char *) pc;
-  pc->timer_t5.func = l4_t5_timeout;
+  pc->timer_t5.func = (void (*) __ARGS((void *))) l4_t5_timeout;
   pc->timer_t5.arg = (char *) pc;
   pc->next = circuits;
   return circuits = pc;
@@ -1098,7 +1144,6 @@ struct mbuf *bp;
 
   int  nakrcvd;
   register struct circuit *pc;
-  void nrserv_recv_upcall(), nrserv_send_upcall(), nrserv_state_upcall();
 
   if (!bp || bp->cnt < 5) goto discard;
 
@@ -1228,7 +1273,7 @@ search_again:
 	      curr->anext = NULLBUF;
 	      pullup(&curr, NULLCHAR, 5);
 	      if (curr) {
-		pc->rcvcnt += len_mbuf(curr);
+		pc->rcvcnt += len_p(curr);
 		append(&pc->rcvq, curr);
 	      }
 	      pc->recv_state = uchar(pc->recv_state + 1);
@@ -1276,13 +1321,13 @@ char  *user;
   struct circuit *pc;
 
   if (!isnetrom(node)) {
-    net_error = INVALID;
+    Net_error = INVALID;
     return 0;
   }
   if (!cuser) cuser = &mycall;
   if (!window) window = nr_twindow;
   if (!(pc = create_circuit())) {
-    net_error = NO_SPACE;
+    Net_error = NO_MEM;
     return 0;
   }
   pc->outbound = 1;
@@ -1307,18 +1352,18 @@ struct mbuf *bp;
 
   if (!(pc && bp)) {
     free_p(bp);
-    net_error = INVALID;
+    Net_error = INVALID;
     return (-1);
   }
   switch (pc->state) {
   case DISCONNECTED:
     free_p(bp);
-    net_error = NO_CONN;
+    Net_error = NO_CONN;
     return (-1);
   case CONNECTING:
   case CONNECTED:
     if (!pc->closed) {
-      if (cnt = len_mbuf(bp)) {
+      if (cnt = len_p(bp)) {
 	append(&pc->sndq, bp);
 	pc->sndqtime = currtime;
 	try_send(pc, 0);
@@ -1327,7 +1372,7 @@ struct mbuf *bp;
     }
   case DISCONNECTING:
     free_p(bp);
-    net_error = CON_CLOS;
+    Net_error = CON_CLOS;
     return (-1);
   }
   return (-1);
@@ -1341,21 +1386,21 @@ struct circuit *pc;
   int  cnt;
 
   if (!pc) {
-    net_error = INVALID;
+    Net_error = INVALID;
     return (-1);
   }
   switch (pc->state) {
   case DISCONNECTED:
-    net_error = NO_CONN;
+    Net_error = NO_CONN;
     return (-1);
   case CONNECTING:
   case CONNECTED:
     if (!pc->closed) {
-      cnt = (pc->cwind - pc->unack) * NR4MAXINFO - len_mbuf(pc->sndq);
+      cnt = (pc->cwind - pc->unack) * NR4MAXINFO - len_p(pc->sndq);
       return (cnt > 0) ? cnt : 0;
     }
   case DISCONNECTING:
-    net_error = CON_CLOS;
+    Net_error = CON_CLOS;
     return (-1);
   }
   return (-1);
@@ -1369,16 +1414,16 @@ struct mbuf **bpp;
 int16 cnt;
 {
   if (!(pc && bpp)) {
-    net_error = INVALID;
+    Net_error = INVALID;
     return (-1);
   }
   if (pc->rcvcnt) {
     if (!cnt || pc->rcvcnt <= cnt) {
       *bpp = dequeue(&pc->rcvq);
-      cnt = len_mbuf(*bpp);
+      cnt = len_p(*bpp);
     } else {
       if (!(*bpp = alloc_mbuf(cnt))) {
-	net_error = NO_SPACE;
+	Net_error = NO_MEM;
 	return (-1);
       }
       pullup(&pc->rcvq, (*bpp)->data, cnt);
@@ -1395,7 +1440,7 @@ int16 cnt;
   case CONNECTING:
   case CONNECTED:
     *bpp = NULLBUF;
-    net_error = WOULDBLK;
+    Net_error = WOULDBLK;
     return (-1);
   case DISCONNECTED:
   case DISCONNECTING:
@@ -1411,17 +1456,17 @@ int  close_nr(pc)
 struct circuit *pc;
 {
   if (!pc) {
-    net_error = INVALID;
+    Net_error = INVALID;
     return (-1);
   }
   if (pc->closed) {
-    net_error = CON_CLOS;
+    Net_error = CON_CLOS;
     return (-1);
   }
   pc->closed = 1;
   switch (pc->state) {
   case DISCONNECTED:
-    net_error = NO_CONN;
+    Net_error = NO_CONN;
     return (-1);
   case CONNECTING:
     set_circuit_state(pc, DISCONNECTED);
@@ -1430,7 +1475,7 @@ struct circuit *pc;
     if (!pc->sndq && !pc->unack) set_circuit_state(pc, DISCONNECTING);
     return 0;
   case DISCONNECTING:
-    net_error = CON_CLOS;
+    Net_error = CON_CLOS;
     return (-1);
   }
   return (-1);
@@ -1442,7 +1487,7 @@ int  reset_nr(pc)
 struct circuit *pc;
 {
   if (!pc) {
-    net_error = INVALID;
+    Net_error = INVALID;
     return (-1);
   }
   pc->reason = RESET;
@@ -1459,7 +1504,7 @@ struct circuit *pc;
 
   for (q = 0, p = circuits; p != pc; q = p, p = p->next)
     if (!p) {
-      net_error = INVALID;
+      Net_error = INVALID;
       return (-1);
     }
   if (q)
@@ -1647,9 +1692,10 @@ struct session *s;
 
 /*---------------------------------------------------------------------------*/
 
-static int  doconnect(argc, argv)
+static int  doconnect(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
 
   struct ax25_addr node, cuser;
@@ -1678,9 +1724,9 @@ char  *argv[];
   s->name = NULLCHAR;
   s->cb.netrom = 0;
   s->parse = nrclient_parse;
-  if (!(s->cb.netrom = open_nr(&node, &cuser, 0, nrclient_recv_upcall, nrclient_send_upcall, nrclient_state_upcall, (char *) s))) {
+  if (!(s->cb.netrom = open_nr(&node, &cuser, 0, (void (*)()) nrclient_recv_upcall, (void (*)()) nrclient_send_upcall, nrclient_state_upcall, (char *) s))) {
     freesession(s);
-    switch (net_error) {
+    switch (Net_error) {
     case NONE:
       printf("No error\n");
       break;
@@ -1693,7 +1739,7 @@ char  *argv[];
     case CON_CLOS:
       printf("Connection closing\n");
       break;
-    case NO_SPACE:
+    case NO_MEM:
       printf("No memory\n");
       break;
     case WOULDBLK:
@@ -1708,7 +1754,7 @@ char  *argv[];
     }
     return 1;
   }
-  go();
+  go(argc, argv, p);
   return 0;
 }
 
@@ -1716,21 +1762,21 @@ char  *argv[];
 /****************************** NETROM Commands ******************************/
 /*---------------------------------------------------------------------------*/
 
-static int  dobroadcast(argc, argv)
+static int  dobroadcast(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
 
   char  buf[1024];
-  struct broadcast *p;
-  struct interface *if_lookup();
-  struct interface *ifp;
+  struct broadcast *b;
+  struct iface *ifp;
 
   if (argc < 3) {
     puts("Interface  Path");
-    for (p = broadcasts; p; p = p->next) {
-      psax25(buf, p->path);
-      printf("%-9s  %s\n", p->ifp->name, buf);
+    for (b = broadcasts; b; b = b->next) {
+      psax25(buf, b->path);
+      printf("%-9s  %s\n", b->ifp->name, buf);
     }
     return 0;
   }
@@ -1742,20 +1788,21 @@ char  *argv[];
     printf("Interface \"%s\" not kiss\n", argv[1]);
     return 1;
   }
-  p = (struct broadcast *) malloc(sizeof(struct broadcast ));
-  p->ifp = ifp;
-  p->path = malloc((unsigned) ((argc - 2) * AXALEN));
-  setpath(p->path, argv + 2, argc - 2);
-  p->next = broadcasts;
-  broadcasts = p;
+  b = (struct broadcast *) malloc(sizeof(struct broadcast ));
+  b->ifp = ifp;
+  b->path = malloc((unsigned) ((argc - 2) * AXALEN));
+  setpath(b->path, argv + 2, argc - 2);
+  b->next = broadcasts;
+  broadcasts = b;
   return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int  doident(argc, argv)
+static int  doident(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
 
   char  *cp;
@@ -1772,9 +1819,10 @@ char  *argv[];
 
 /*---------------------------------------------------------------------------*/
 
-static int  dolinks(argc, argv)
+static int  dolinks(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
 
   char  buf1[20], buf2[20];
@@ -1814,7 +1862,10 @@ char  *argv[];
     return 0;
   }
 
-  if (argc < 4 || argc > 5) return (-1);
+  if (argc < 4 || argc > 5) {
+    printf("Usage: netrom links [<node> [<node2> <quality> [permanent]]]\n");
+    return 1;
+  }
 
   if (setcall(&call, argv[2])) {
     printf("Invalid call \"%s\"\n", argv[2]);
@@ -1839,7 +1890,10 @@ char  *argv[];
   if (argc < 5)
     timestamp = currtime;
   else {
-    if (strncmp(argv[4], "permanent", strlen(argv[4]))) return (-1);
+    if (strncmp(argv[4], "permanent", strlen(argv[4]))) {
+      printf("Usage: netrom links [<node> [<node2> <quality> [permanent]]]\n");
+      return 1;
+    }
     timestamp = MAX_TIME;
   }
 
@@ -1853,9 +1907,10 @@ char  *argv[];
 
 /*---------------------------------------------------------------------------*/
 
-static int  donodes(argc, argv)
+static int  donodes(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
 
   char  buf1[20], buf2[20];
@@ -1887,9 +1942,10 @@ char  *argv[];
 
 /*---------------------------------------------------------------------------*/
 
-static int  doparms(argc, argv)
+static int  doparms(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
   int  i, j;
 
@@ -1929,12 +1985,12 @@ char  *argv[];
 
 /*---------------------------------------------------------------------------*/
 
-static int  doreset(argc, argv)
+static int  donreset(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
   extern char  notval[];
-  long  htol();
   struct circuit *pc;
 
   pc = (struct circuit *) htol(argv[1]);
@@ -1948,9 +2004,10 @@ char  *argv[];
 
 /*---------------------------------------------------------------------------*/
 
-static int  dostatus(argc, argv)
+static int  dostatus(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
 
   int  i;
@@ -1998,38 +2055,48 @@ char  *argv[];
     printf("Retry:        %d\n", pc->retry);
     printf("Srtt:         %ld ms\n", pc->srtt);
     printf("Mean dev:     %ld ms\n", pc->mdev);
-    if (pc->timer_t1.state == TIMER_RUN)
-      printf("Timer T1:     %ld/%ld sec\n", pc->timer_t1.start - pc->timer_t1.count, pc->timer_t1.start);
+    if (run_timer(&pc->timer_t1))
+      printf("Timer T1:     %ld/%ld sec\n",
+	     read_timer(&pc->timer_t1) * MSPTICK / 1000,
+	     dur_timer (&pc->timer_t1) * MSPTICK / 1000);
     else
       printf("Timer T1:     Stopped\n");
-    if (pc->timer_t2.state == TIMER_RUN)
-      printf("Timer T2:     %ld/%ld sec\n", pc->timer_t2.start - pc->timer_t2.count, pc->timer_t2.start);
+    if (run_timer(&pc->timer_t2))
+      printf("Timer T2:     %ld/%ld sec\n",
+	     read_timer(&pc->timer_t2) * MSPTICK / 1000,
+	     dur_timer (&pc->timer_t2) * MSPTICK / 1000);
     else
       printf("Timer T2:     Stopped\n");
-    if (pc->timer_t3.state == TIMER_RUN)
-      printf("Timer T3:     %ld/%ld sec\n", pc->timer_t3.start - pc->timer_t3.count, pc->timer_t3.start);
+    if (run_timer(&pc->timer_t3))
+      printf("Timer T3:     %ld/%ld sec\n",
+	     read_timer(&pc->timer_t3) * MSPTICK / 1000,
+	     dur_timer (&pc->timer_t3) * MSPTICK / 1000);
     else
       printf("Timer T3:     Stopped\n");
-    if (pc->timer_t4.state == TIMER_RUN)
-      printf("Timer T4:     %ld/%ld sec\n", pc->timer_t4.start - pc->timer_t4.count, pc->timer_t4.start);
+    if (run_timer(&pc->timer_t4))
+      printf("Timer T4:     %ld/%ld sec\n",
+	     read_timer(&pc->timer_t4) * MSPTICK / 1000,
+	     dur_timer (&pc->timer_t4) * MSPTICK / 1000);
     else
       printf("Timer T4:     Stopped\n");
-    if (pc->timer_t5.state == TIMER_RUN)
-      printf("Timer T5:     %ld/%ld sec\n", pc->timer_t5.start - pc->timer_t5.count, pc->timer_t5.start);
+    if (run_timer(&pc->timer_t5))
+      printf("Timer T5:     %ld/%ld sec\n",
+	     read_timer(&pc->timer_t5) * MSPTICK / 1000,
+	     dur_timer (&pc->timer_t5) * MSPTICK / 1000);
     else
       printf("Timer T5:     Stopped\n");
     printf("Rcv queue:    %d\n", pc->rcvcnt);
     if (pc->reseq) {
       printf("Reassembly queue:\n");
       for (bp = pc->reseq; bp; bp = bp->anext)
-	printf("              Seq %3d: %3d bytes\n", uchar(bp->data[2]), len_mbuf(bp));
+	printf("              Seq %3d: %3d bytes\n", uchar(bp->data[2]), len_p(bp));
     }
-    printf("Snd queue:    %d\n", len_mbuf(pc->sndq));
+    printf("Snd queue:    %d\n", len_p(pc->sndq));
     if (pc->resndq) {
       printf("Resend queue:\n");
       for (i = 0, bp = pc->resndq; bp; i++, bp = bp->anext)
 	printf("              Seq %3d: %3d bytes\n",
-	       uchar(pc->send_state - pc->unack + i), len_mbuf(bp));
+	       uchar(pc->send_state - pc->unack + i), len_p(bp));
     }
   }
   return 0;
@@ -2037,9 +2104,10 @@ char  *argv[];
 
 /*---------------------------------------------------------------------------*/
 
-static int  dostart(argc, argv)
+static int  dostart(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
   server_enabled = 1;
   return 0;
@@ -2047,9 +2115,10 @@ char  *argv[];
 
 /*---------------------------------------------------------------------------*/
 
-static int  dostop(argc, argv)
+static int  dostop(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
   server_enabled = 0;
   return 0;
@@ -2057,27 +2126,27 @@ char  *argv[];
 
 /*---------------------------------------------------------------------------*/
 
-int  donetrom(argc, argv)
+int  donetrom(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
 
   static struct cmds netromcmds[] = {
-    "broadcast",dobroadcast,0, NULLCHAR, NULLCHAR,
-    "connect",  doconnect,  2, "netrom connect <node> [<user>]", NULLCHAR,
-    "ident",    doident,    0, NULLCHAR, NULLCHAR,
-    "links",    dolinks,    0, NULLCHAR,
-	"Usage: netrom links [<node> [<node2> <quality> [permanent]]]",
-    "nodes",    donodes,    0, NULLCHAR, NULLCHAR,
-    "parms",    doparms,    0, NULLCHAR, NULLCHAR,
-    "reset",    doreset,    2, "netrom reset <nrcb>", NULLCHAR,
-    "status",   dostatus,   0, NULLCHAR, NULLCHAR,
-    "start",    dostart,    0, NULLCHAR, NULLCHAR,
-    "stop",     dostop,     0, NULLCHAR, NULLCHAR,
-    NULLCHAR,   NULLFP,     0, NULLCHAR, NULLCHAR
+    "broadcast",dobroadcast,0, 0, NULLCHAR,
+    "connect",  doconnect,  0, 2, "netrom connect <node> [<user>]",
+    "ident",    doident,    0, 0, NULLCHAR,
+    "links",    dolinks,    0, 0, NULLCHAR,
+    "nodes",    donodes,    0, 0, NULLCHAR,
+    "parms",    doparms,    0, 0, NULLCHAR,
+    "reset",    donreset,   0, 2, "netrom reset <nrcb>",
+    "status",   dostatus,   0, 0, NULLCHAR,
+    "start",    dostart,    0, 0, NULLCHAR,
+    "stop",     dostop,     0, 0, NULLCHAR,
+    NULLCHAR,   NULLFP,     0, 0, NULLCHAR
   };
 
-  return subcmd(netromcmds, argc, argv);
+  return subcmd(netromcmds, argc, argv, p);
 }
 
 /*---------------------------------------------------------------------------*/

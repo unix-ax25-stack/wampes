@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.2 1990/08/23 17:32:52 deyke Exp $ */
+
 /* FTP client (interactive user) code */
 #include <stdio.h>
 #include <string.h>
@@ -7,66 +9,80 @@
 #include "icmp.h"
 #include "timer.h"
 #include "tcp.h"
+#include "socket.h"
 #include "ftp.h"
 #include "session.h"
 #include "cmdparse.h"
 
 extern struct session *current;
-extern char nospace[];
-extern char badhost[];
+
+void ftpdr(),ftpdt(),ftpccr();
+int doabort();
+
 static char notsess[] = "Not an FTP session!\n";
 static char cantwrite[] = "Can't write %s\n";
 static char cantread[] = "Can't read %s\n";
 
-int donothing(),doftpcd(),dolist(),doget(),dols(),doput(),dotype(),doabort(),
-	domkdir(),dormdir();
-int doascii(),dobinary();
+static int donothing __ARGS((int argc, char *argv [], void *p));
+static int doftpcd __ARGS((int argc, char *argv [], void *p));
+static int domkdir __ARGS((int argc, char *argv [], void *p));
+static int dormdir __ARGS((int argc, char *argv [], void *p));
+static int doascii __ARGS((int argc, char *argv [], void *p));
+static int dobinary __ARGS((int argc, char *argv [], void *p));
+static int dotype __ARGS((int argc, char *argv [], void *p));
+static doget __ARGS((int argc, char *argv [], void *p));
+static dolist __ARGS((int argc, char *argv [], void *p));
+static dols __ARGS((int argc, char *argv [], void *p));
+static doput __ARGS((int argc, char *argv [], void *p));
+static ftpsetup __ARGS((struct ftp *ftp, void (*recv )(), void (*send )(), void (*state )()));
+static void ftpccs __ARGS((struct tcb *tcb, int old, int new));
+static void ftpcds __ARGS((struct tcb *tcb, int old, int new));
+static int sndftpmsg __ARGS((struct ftp *ftp, char *fmt, char *arg));
 
 struct cmds ftpabort[] = {
-	"",             donothing,      0,      NULLCHAR,               NULLCHAR,
-	"abort",        doabort,        0,      NULLCHAR,               NULLCHAR,
-	NULLCHAR,       NULLFP,         0,      "Only valid command is \"abort\"", NULLCHAR,
+	"",             donothing,      0, 0,      NULLCHAR,
+	"abort",        doabort,        0, 0,      NULLCHAR,
+	NULLCHAR,       NULLFP,         0, 0,      "Only valid command is \"abort\""
 };
 
 struct cmds ftpcmds[] = {
-	"",             donothing,      0,      NULLCHAR,               NULLCHAR,
-	"ascii",        doascii,        0,      NULLCHAR,               NULLCHAR,
-	"binary",       dobinary,       0,      NULLCHAR,               NULLCHAR,
-	"cd",           doftpcd,        2,      "cd <directory>",       NULLCHAR,
-	"dir",          dolist,         0,      NULLCHAR,               NULLCHAR,
-	"list",         dolist,         0,      NULLCHAR,               NULLCHAR,
-	"get",          doget,          2,      "get remotefile <localfile>",   NULLCHAR,
-	"ls",           dols,           0,      NULLCHAR,               NULLCHAR,
-	"mkdir",        domkdir,        2,      "mkdir <directory>",    NULLCHAR,
-	"nlst",         dols,           0,      NULLCHAR,               NULLCHAR,
-	"rmdir",        dormdir,        2,      "rmdir <directory>",    NULLCHAR,
-	"put",          doput,          2,      "put localfile <remotefile>",   NULLCHAR,
-	"type",         dotype,         0,      NULLCHAR,               NULLCHAR,
-	NULLCHAR,       NULLFP,         0,       NULLCHAR,              NULLCHAR,
+	"",             donothing,      0, 0,      NULLCHAR,
+	"ascii",        doascii,        0, 0,      NULLCHAR,
+	"binary",       dobinary,       0, 0,      NULLCHAR,
+	"cd",           doftpcd,        0, 2,      "cd <directory>",
+	"dir",          dolist,         0, 0,      NULLCHAR,
+	"list",         dolist,         0, 0,      NULLCHAR,
+	"get",          doget,          0, 2,      "get remotefile <localfile>",
+	"ls",           dols,           0, 0,      NULLCHAR,
+	"mkdir",        domkdir,        0, 2,      "mkdir <directory>",
+	"nlst",         dols,           0, 0,      NULLCHAR,
+	"rmdir",        dormdir,        0, 2,      "rmdir <directory>",
+	"put",          doput,          0, 2,      "put localfile <remotefile>",
+	"type",         dotype,         0, 0,      NULLCHAR,
+	NULLCHAR,       NULLFP,         0, 0,      NULLCHAR
 };
 
 /* Handle top-level FTP command */
-doftp(argc,argv)
+doftp(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	int32 resolve();
 	int ftpparse();
-	char *inet_ntoa();
-	void ftpccr(),ftpccs();
 	struct session *s;
 	struct ftp *ftp,*ftp_create();
 	struct tcb *tcb;
 	struct socket lsocket,fsocket;
 
-	lsocket.address = ip_addr;
+	lsocket.address = Ip_addr;
 	lsocket.port = lport++;
 	if((fsocket.address = resolve(argv[1])) == 0){
-		printf(badhost,argv[1]);
+		printf(Badhost,argv[1]);
 		return 1;
 	}
 	if(argc < 3)
-		fsocket.port = FTP_PORT;
+		fsocket.port = IPPORT_FTP;
 	else
 		fsocket.port = tcp_portnum(argv[2]);
 
@@ -84,7 +100,7 @@ char *argv[];
 	/* Allocate an FTP control block */
 	if((ftp = ftp_create(0)) == NULLFTP){
 		s->type = FREE;
-		printf(nospace);
+		printf(Nospace);
 		return 1;
 	}
 	ftp->state = COMMAND_STATE;
@@ -95,7 +111,7 @@ char *argv[];
 	tcb = open_tcp(&lsocket,&fsocket,TCP_ACTIVE,
 		0,ftpccr,NULLVFP,ftpccs,0,(char *)ftp);
 	ftp->control = tcb;
-	go();
+	go(argc, argv, p);
 	return 0;
 }
 /* Parse user FTP commands */
@@ -108,7 +124,7 @@ int16 len;
 
 	if(current->cb.ftp->state != COMMAND_STATE){
 		/* The only command allowed in data transfer state is ABORT */
-		if(cmdparse(ftpabort,line) == -1){
+		if(cmdparse(ftpabort,line,NULL) == -1){
 			printf("Transfer in progress; only ABORT is acceptable\n");
 		}
 		fflush(stdout);
@@ -118,12 +134,12 @@ int16 len;
 	/* Save it now because cmdparse modifies the original */
 	bp = qdata(line,len);
 
-	if(cmdparse(ftpcmds,line) == -1){
+	if(cmdparse(ftpcmds,line,NULL) == -1){
 		/* Send it direct */
 		if(bp != NULLBUF)
 			send_tcp(current->cb.ftp->control,bp);
 		else
-			printf(nospace);
+			printf(Nospace);
 	} else {
 		free_p(bp);
 	}
@@ -132,17 +148,19 @@ int16 len;
 /* Handle null line to avoid trapping on first command in table */
 static
 int
-donothing(argc,argv)
+donothing(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 }
 /* Translate 'cd' to 'cwd' for convenience */
 static
 int
-doftpcd(argc,argv)
+doftpcd(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	register struct ftp *ftp;
 
@@ -152,9 +170,10 @@ char *argv[];
 /* Translate 'mkdir' to 'xmkd' for convenience */
 static
 int
-domkdir(argc,argv)
+domkdir(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	register struct ftp *ftp;
 
@@ -164,9 +183,10 @@ char *argv[];
 /* Translate 'rmdir' to 'xrmd' for convenience */
 static
 int
-dormdir(argc,argv)
+dormdir(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	register struct ftp *ftp;
 
@@ -175,34 +195,37 @@ char *argv[];
 }
 static
 int
-doascii(argc,argv)
+doascii(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	register struct ftp *ftp;
 
 	ftp = current->cb.ftp;
 	ftp->type = ASCII_TYPE;
-	return sndftpmsg(ftp,"TYPE A\r\n");
+	return sndftpmsg(ftp,"TYPE A\r\n","");
 }
 static
 int
-dobinary(argc,argv)
+dobinary(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	register struct ftp *ftp;
 
 	ftp = current->cb.ftp;
 	ftp->type = IMAGE_TYPE;
-	return sndftpmsg(ftp,"TYPE I\r\n");
+	return sndftpmsg(ftp,"TYPE I\r\n","");
 }
 /* Handle "type" command from user */
 static
 int
-dotype(argc,argv)
+dotype(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	register struct ftp *ftp;
 
@@ -224,12 +247,12 @@ char *argv[];
 	case 'B':
 	case 'b':
 		ftp->type = IMAGE_TYPE;
-		sndftpmsg(ftp,"TYPE I\r\n");
+		sndftpmsg(ftp,"TYPE I\r\n","");
 		break;
 	case 'A':
 	case 'a':
 		ftp->type = ASCII_TYPE;
-		sndftpmsg(ftp,"TYPE A\r\n");
+		sndftpmsg(ftp,"TYPE A\r\n","");
 		break;
 	case 'L':
 	case 'l':
@@ -244,11 +267,11 @@ char *argv[];
 }
 /* Start receive transfer. Syntax: get <remote name> [<local name>] */
 static
-doget(argc,argv)
+doget(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
-	void ftpdr(),ftpcds();
 	char *remotename,*localname;
 	register struct ftp *ftp;
 	char *mode;
@@ -269,7 +292,7 @@ char *argv[];
 		localname = argv[2];
 
 	if(ftp->type == IMAGE_TYPE)
-		mode = binmode[WRITE_BINARY];
+		mode = WRITE_BINARY;
 	else
 		mode = "w";
 
@@ -287,11 +310,11 @@ char *argv[];
 }
 /* List remote directory. Syntax: dir <remote directory/file> [<local name>] */
 static
-dolist(argc,argv)
+dolist(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
-	void ftpdr(),ftpcds();
 	register struct ftp *ftp;
 
 	ftp = current->cb.ftp;
@@ -324,11 +347,11 @@ char *argv[];
  * Syntax: ls <remote directory/file> [<local name>]
  */
 static
-dols(argc,argv)
+dols(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
-	void ftpdr(),ftpcds();
 	register struct ftp *ftp;
 
 	ftp = current->cb.ftp;
@@ -356,11 +379,11 @@ char *argv[];
 }
 /* Start transmit. Syntax: put <local name> [<remote name>] */
 static
-doput(argc,argv)
+doput(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
-	void ftpdt(),ftpcds();
 	char *remotename,*localname;
 	char *mode;
 	struct ftp *ftp;
@@ -379,7 +402,7 @@ char *argv[];
 		fclose(ftp->fp);
 
 	if(ftp->type == IMAGE_TYPE)
-		mode = binmode[READ_BINARY];
+		mode = READ_BINARY;
 	else
 		mode = "r";
 
@@ -396,9 +419,10 @@ char *argv[];
 /* Abort a GET or PUT operation in progress. Note: this will leave
  * the partial file on the local or remote system
  */
-doabort(argc,argv)
+doabort(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	register struct ftp *ftp;
 
@@ -443,13 +467,13 @@ void (*state)();
 	struct socket lsocket;
 	struct mbuf *bp;
 
-	lsocket.address = ip_addr;
+	lsocket.address = Ip_addr;
 	lsocket.port = lport++;
 
 	/* Compose and send PORT a,a,a,a,p,p message */
 
 	if((bp = alloc_mbuf(35)) == NULLBUF){   /* 5 more than worst case */
-		printf(nospace);
+		printf(Nospace);
 		return;
 	}
 	/* I know, this looks gross, but it works! */
@@ -501,13 +525,10 @@ ftpccs(tcb,old,new)
 register struct tcb *tcb;
 char old,new;
 {
-	void ftp_delete();
 	struct ftp *ftp;
 	char notify = 0;
 	extern char *tcpstates[];
 	extern char *reasons[];
-	extern char *unreach[];
-	extern char *exceed[];
 
 	/* Can't add a check for unknown connection here, it would loop
 	 * on a close upcall! We're just careful later on.
@@ -528,11 +549,11 @@ char old,new;
 			printf("%s (%s",tcpstates[new],reasons[tcb->reason]);
 			if(tcb->reason == NETWORK){
 				switch(tcb->type){
-				case DEST_UNREACH:
-					printf(": %s unreachable",unreach[tcb->code]);
+				case ICMP_DEST_UNREACH:
+					printf(": %s unreachable",Unreach[tcb->code]);
 					break;
-				case TIME_EXCEED:
-					printf(": %s time exceeded",exceed[tcb->code]);
+				case ICMP_TIME_EXCEED:
+					printf(": %s time exceeded",Exceed[tcb->code]);
 					break;
 				}
 			}
@@ -552,8 +573,7 @@ char old,new;
 		fflush(stdout);
 }
 /* FTP Client Data channel State change upcall handler */
-static
-void
+static void
 ftpcds(tcb,old,new)
 struct tcb *tcb;
 char old,new;
@@ -619,7 +639,7 @@ char *arg;
 
 	len = strlen(fmt) + strlen(arg) + 10;   /* fudge factor */
 	if((bp = alloc_mbuf(len)) == NULLBUF){
-		printf(nospace);
+		printf(Nospace);
 		return 1;
 	}
 	sprintf(bp->data,fmt,arg);

@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcptimer.c,v 1.2 1990/08/23 17:34:15 deyke Exp $ */
+
 /* TCP timeout routines */
 #include <stdio.h>
 #include "global.h"

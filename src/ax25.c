@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.3 1990/04/05 11:14:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.4 1990/08/23 17:32:29 deyke Exp $ */
 
 /* Low level AX.25 frame processing - address header */
 
@@ -8,6 +8,7 @@
 #include "mbuf.h"
 #include "iface.h"
 #include "timer.h"
+#include "ip.h"
 #include "arp.h"
 #include "slip.h"
 #include "ax25.h"
@@ -27,23 +28,23 @@ int digipeat;           /* Controls digipeating */
 
 /* Send IP datagrams across an AX.25 link */
 int
-ax_send(bp,interface,gateway,precedence,delay,throughput,reliability)
+ax_send(bp,iface,gateway,precedence,delay,throughput,reliability)
 struct mbuf *bp;
-struct interface *interface;
+struct iface *iface;
 int32 gateway;
 char precedence;
 char delay;
 char throughput;
 char reliability;
 {
-	char *hw_addr,*res_arp();
+	char *hw_addr;
 
-	if((hw_addr = res_arp(interface,ARP_AX25,gateway,bp)) == NULLCHAR)
+	if((hw_addr = res_arp(iface,ARP_AX25,gateway,bp)) == NULLCHAR)
 		return 0;       /* Wait for address resolution */
 
 		/* Use UI frame */
-		return (*interface->output)(interface,hw_addr,
-			interface->hwaddr,PID_FIRST|PID_LAST|PID_IP,bp);
+		return (*iface->output)(iface,hw_addr,
+			iface->hwaddr,PID_FIRST|PID_LAST|PID_IP,bp);
 
 }
 /* Add AX.25 link header and send packet.
@@ -51,8 +52,8 @@ char reliability;
  * since ARP also uses it.
  */
 int
-ax_output(interface,dest,source,pid,data)
-struct interface *interface;
+ax_output(iface,dest,source,pid,data)
+struct iface *iface;
 char *dest;             /* Destination AX.25 address (7 bytes, shifted) */
 			/* Also includes digipeater string */
 char *source;           /* Source AX.25 address (7 bytes, shifted) */
@@ -78,16 +79,17 @@ struct mbuf *data;      /* Data field (follows PID) */
 	/* This shouldn't be necessary because redirection has already been
 	 * done at the IP router layer, but just to be safe...
 	 */
-	if(interface->forw != NULLIF)
-		return (*interface->forw->raw)(interface->forw,abp);
+	if(iface->forw != NULLIF)
+		return (*iface->forw->raw)(iface->forw,abp);
 	else
-		return (*interface->raw)(interface,abp);
+		return (*iface->raw)(iface,abp);
 }
 
 /*---------------------------------------------------------------------------*/
 
-int  ax_recv(interface, bp)
-struct interface *interface;
+void
+ax_recv(iface, bp)
+struct iface *iface;
 struct mbuf *bp;
 {
 
@@ -103,7 +105,7 @@ struct mbuf *bp;
   addrsize = cntrlptr - bp->data;
   if (addrsize <  2 * AXALEN || addrsize >= bp->cnt ||
       addrsize > 10 * AXALEN || addrsize % AXALEN) goto discard;
-  if (!idigi(interface, bp)) return;
+  if (!idigi(iface, bp)) return;
   for (ap = bp->data + 2 * AXALEN; ap < cntrlptr; ap += AXALEN)
     if (!(ap[6] & REPEATED)) {
       if (!ismycall(axptr(ap))) goto discard;
@@ -113,7 +115,7 @@ struct mbuf *bp;
 	axroute(NULL, bp);
 	return;
       case 2:
-	axproto_recv(interface, bp);
+	axproto_recv(iface, bp);
 	return;
       default:
 	goto discard;
@@ -122,7 +124,7 @@ struct mbuf *bp;
 
   if ((*cntrlptr & ~PF) != UI) {
     if (!ismycall(axptr(bp->data))) goto discard;
-    axproto_recv(interface, bp);
+    axproto_recv(iface, bp);
     return;
   }
 
@@ -145,13 +147,13 @@ struct mbuf *bp;
       char  hw_addr[10*AXALEN];
       int32 src_ipaddr;
       register char  *fp, *tp;
-      struct arp_tab *arp, *arp_add();
+      struct arp_tab *arp;
 
       src_ipaddr = (uchar(bp->data[12]) << 24) |
 		   (uchar(bp->data[13]) << 16) |
 		   (uchar(bp->data[14]) <<  8) |
 		    uchar(bp->data[15]);
-      rt_add(src_ipaddr, 32, 0, 0, interface);
+      rt_add(src_ipaddr, 32, 0, 0, iface);
       tp = hw_addr;
       addrcp(axptr(tp), axptr(axheader + AXALEN));
       tp += AXALEN;
@@ -170,7 +172,7 @@ struct mbuf *bp;
     ip_route(bp, multicast);
     return;
   case (PID_ARP | PID_FIRST | PID_LAST):
-    arp_input(interface, bp);
+    arp_input(iface, bp);
     return;
   case (PID_NETROM | PID_FIRST | PID_LAST):
     nr3_input(bp, axptr(axheader + AXALEN));
@@ -188,9 +190,7 @@ discard:
 /* Initialize AX.25 entry in arp device table */
 axarp()
 {
-	int psax25(),setpath();
-
 	arp_init(ARP_AX25,AXALEN,PID_FIRST|PID_LAST|PID_IP,
-	 PID_FIRST|PID_LAST|PID_ARP,(char *)&ax25_bdcst,psax25,setpath);
+	 PID_FIRST|PID_LAST|PID_ARP,15,(char *)&ax25_bdcst,psax25,setpath);
 }
 

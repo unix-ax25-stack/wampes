@@ -1,3 +1,11 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.h,v 1.2 1990/08/23 17:33:52 deyke Exp $ */
+
+#ifndef NRS_ALLOC
+
+#include "global.h"
+
+#define NRS_MAX 5               /* Maximum number of Nrs channels */
+
 /* SLIP definitions */
 #define NRS_ALLOC       512     /* Receiver allocation increment */
 
@@ -16,16 +24,21 @@
 struct nrs {
 	struct mbuf *sndq;      /* Encapsulated packets awaiting transmission */
 	int16 sndcnt;           /* Number of datagrams on queue */
-	char state;                     /* Receiver State control flag */
+	char state;             /* Receiver State control flag */
 	unsigned char csum;     /* Accumulating checksum */
 	struct mbuf *rbp;       /* Head of mbuf chain being filled */
 	struct mbuf *rbp1;      /* Pointer to mbuf currently being written */
-	char *rcp;                      /* Write pointer */
-	int16 rcnt;                     /* Length of mbuf chain */
+	char *rcp;              /* Write pointer */
+	int16 rcnt;             /* Length of mbuf chain */
 	struct mbuf *tbp;       /* Transmit mbuf being sent */
 	long errors;            /* Checksum errors detected */
 	long packets ;          /* Number of packets received successfully */
-	struct interface *iface ;       /* Associated interface structure */
+	struct iface *iface ;   /* Associated interface structure */
 };
 
-extern struct nrs nrs[];
+extern struct nrs Nrs[];
+/* In nrs.c: */
+int nrs_raw __ARGS((struct iface *iface,struct mbuf *bp));
+void nrs_recv __ARGS((struct iface *interface));
+
+#endif  /* NRS_ALLOC */

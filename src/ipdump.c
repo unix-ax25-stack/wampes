@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.2 1990/08/23 17:33:13 deyke Exp $ */
+
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
@@ -8,14 +10,12 @@
 #include "trace.h"
 #include "netuser.h"
 
-extern FILE *trfp;
-
-int
-ip_dump(bpp,check)
+void
+ip_dump(fp,bpp,check)
+FILE *fp;
 struct mbuf **bpp;
 int check;
 {
-	void tcp_dump(),udp_dump(),icmp_dump();
 	struct ip ip;
 	int16 ip_len;
 	int16 offset;
@@ -25,11 +25,11 @@ int check;
 	if(bpp == NULLBUFP || *bpp == NULLBUF)
 		return;
 
-	fprintf(trfp,"IP:");
+	fprintf(fp,"IP:");
 	/* Sneak peek at IP header and find length */
 	ip_len = ((*bpp)->data[0] & 0xf) << 2;
 	if(ip_len < IPLEN){
-		fprintf(trfp," bad header\n");
+		fprintf(fp," bad header\n");
 		return;
 	}
 	if(check)
@@ -42,43 +42,43 @@ int check;
 	/* Trim data segment if necessary. */
 	length = ip.length - ip_len;    /* Length of data portion */
 	trim_mbuf(bpp,length);
-	fprintf(trfp," len %u",ip.length);
-	fprintf(trfp," %s",inet_ntoa(ip.source));
-	fprintf(trfp,"->%s ihl %u ttl %u",
+	fprintf(fp," len %u",ip.length);
+	fprintf(fp," %s",inet_ntoa(ip.source));
+	fprintf(fp,"->%s ihl %u ttl %u",
 		inet_ntoa(ip.dest),ip_len,uchar(ip.ttl));
 	if(ip.tos != 0)
-		fprintf(trfp," tos %u",uchar(ip.tos));
+		fprintf(fp," tos %u",uchar(ip.tos));
 	offset = (ip.fl_offs & F_OFFSET) << 3;
 	if(offset != 0 || (ip.fl_offs & MF))
-		fprintf(trfp," id %u offs %u",ip.id,offset);
+		fprintf(fp," id %u offs %u",ip.id,offset);
 	if(ip.fl_offs & DF)
-		fprintf(trfp," DF");
+		fprintf(fp," DF");
 	if(ip.fl_offs & MF){
-		fprintf(trfp," MF");
+		fprintf(fp," MF");
 		check = 0;      /* Bypass host-level checksum verify */
 	}
 	if(csum != 0)
-		fprintf(trfp," CHECKSUM ERROR (%u)",csum);
+		fprintf(fp," CHECKSUM ERROR (%u)",csum);
 
 	if(offset != 0){
-		fprintf(trfp,"\n");
+		fprintf(fp,"\n");
 		return;
 	}
 	switch(uchar(ip.protocol)){
 	case TCP_PTCL:
-		fprintf(trfp," prot TCP\n");
-		tcp_dump(bpp,ip.source,ip.dest,check);
+		fprintf(fp," prot TCP\n");
+		tcp_dump(fp,bpp,ip.source,ip.dest,check);
 		break;
 	case UDP_PTCL:
-		fprintf(trfp," prot UDP\n");
-		udp_dump(bpp,ip.source,ip.dest,check);
+		fprintf(fp," prot UDP\n");
+		udp_dump(fp,bpp,ip.source,ip.dest,check);
 		break;
 	case ICMP_PTCL:
-		fprintf(trfp," prot ICMP\n");
-		icmp_dump(bpp,ip.source,ip.dest,check);
+		fprintf(fp," prot ICMP\n");
+		icmp_dump(fp,bpp,ip.source,ip.dest,check);
 		break;
 	default:
-		fprintf(trfp," prot %u\n",uchar(ip.protocol));
+		fprintf(fp," prot %u\n",uchar(ip.protocol));
 		break;
 	}
 }

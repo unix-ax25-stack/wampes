@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.h,v 1.2 1990/08/23 17:32:49 deyke Exp $ */
+
 /*
  *
  *      Finger support...

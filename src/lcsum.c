@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lcsum.c,v 1.2 1990/08/23 17:33:18 deyke Exp $ */
+
 #include "global.h"
 #if     (defined(MPU8086) || defined(MPU8080) || defined(vax) || defined(iAPX286))
 #define LITTLE_ENDIAN   /* Low order bytes are first in memory */

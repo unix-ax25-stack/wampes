@@ -1,8 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.2 1990/01/29 09:37:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.3 1990/08/23 17:33:56 deyke Exp $ */
 
 #include <sys/types.h>
 
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 
@@ -14,7 +15,6 @@
 
 extern int  debug;
 extern struct sockaddr *build_sockaddr();
-extern void free();
 
 struct controlblock {
   int  fd;                              /* Socket descriptor */
@@ -175,8 +175,8 @@ struct controlblock *cp;
 {
   char  *protocol, *address;
 
-  protocol = getarg(0, 0);
-  address = getarg(0, 1);
+  protocol = getarg((char *) 0, 0);
+  address = getarg((char *) 0, 1);
   cp->tp = transport_open(protocol, address, transport_recv_upcall, transport_send_upcall, transport_state_upcall, (char *) cp);
   if (!cp->tp) return (-1);
   if (!cp->binary) {

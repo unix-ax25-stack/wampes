@@ -1,3 +1,11 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.2 1990/08/23 17:32:30 deyke Exp $ */
+
+#ifndef AX25_INCLUDED
+#define AX25_INCLUDED
+
+#include "global.h"
+#include "iface.h"
+
 /* AX.25 datagram (address) sub-layer definitions */
 
 /* Upper sub-layer (LAPB) definitions */
@@ -56,9 +64,9 @@ struct ax25 {
 };
 
 /* C-bit stuff */
-#define UNKNOWN         0
-#define COMMAND         1
-#define RESPONSE        2
+#define LAPB_UNKNOWN            0
+#define LAPB_COMMAND            1
+#define LAPB_RESPONSE           2
 
 /* Bit fields in AX.25 Level 3 Protocol IDs (PIDs)
  * The high order two bits control multi-frame messages.
@@ -77,4 +85,30 @@ struct ax25 {
 
 #define axptr(a)         ((struct ax25_addr *) (a))
 #define ismycall(call)   addreq((call), &mycall)
+
+/* ax25.c */
+int ax_send __ARGS((struct mbuf *bp, struct iface *iface, int32 gateway, int precedence, int delay, int throughput, int reliability));
+int ax_output __ARGS((struct iface *iface, char *dest, char *source, int pid, struct mbuf *data));
+void ax_recv __ARGS((struct iface *iface, struct mbuf *bp));
+int axarp __ARGS((void));
+
+/* ax25subr.c */
+int setcall __ARGS((struct ax25_addr *out, char *call));
+int setpath __ARGS((char *out, char *in [], int cnt));
+int addreq __ARGS((struct ax25_addr *a, struct ax25_addr *b));
+void addrcp __ARGS((struct ax25_addr *to, struct ax25_addr *from));
+int pax25 __ARGS((char *e, struct ax25_addr *addr));
+char *psax25 __ARGS((char *e, char *addr));
+char *getaxaddr __ARGS((struct ax25_addr *ap, char *cp));
+char *putaxaddr __ARGS((char *cp, struct ax25_addr *ap));
+struct mbuf *htonax25 __ARGS((struct ax25 *hdr, struct mbuf *data));
+int atohax25 __ARGS((struct ax25 *hdr, char *hwaddr, struct ax25_addr *source));
+int ntohax25 __ARGS((struct ax25 *hdr, struct mbuf **bpp));
+int16 ftype __ARGS((int control));
+
+/* idigi.c */
+int idigi __ARGS((struct iface *ifp, struct mbuf *bp));
+int doidigi __ARGS((int argc, char *argv [], void *p));
+
+#endif  /* AX25_INCLUDED */
 

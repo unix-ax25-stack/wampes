@@ -1,11 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.2 1990/01/29 09:36:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.3 1990/08/23 17:32:40 deyke Exp $ */
+
+#include <stdlib.h>
 
 #include "global.h"
 #include "timer.h"
 #include "axproto.h"
 #include "login.h"
-
-extern void free();
 
 /*---------------------------------------------------------------------------*/
 

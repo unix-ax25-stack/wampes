@@ -1,8 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.4 1990/03/19 12:33:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.5 1990/08/23 17:34:30 deyke Exp $ */
 
 /* TTY input driver */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define LINESIZE     1024

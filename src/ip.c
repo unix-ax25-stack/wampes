@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.2 1990/08/23 17:33:09 deyke Exp $ */
+
 /* Upper half of IP, consisting of send/receive primitives, including
  * fragment reassembly, for higher level protocols.
  * Not needed when running as a standalone gateway.
@@ -13,9 +15,14 @@
 
 void ip_recv();
 
-char ip_ttl = MAXTTL;   /* Default time-to-live for IP datagrams */
+static struct mbuf *fraghandle();
+static void ip_timeout(),freefrag(),free_reasm();
+static struct reasm *lookup_reasm(),*creat_reasm();
+static struct frag *newfrag();
 
-struct reasm *reasmq;
+int32 ip_ttl = MAXTTL;  /* Default time-to-live for IP datagrams */
+
+struct reasm *Reasmq;
 
 #define INSERT  0
 #define APPEND  1
@@ -39,10 +46,9 @@ char df;                        /* Don't-fragment flag */
 	struct mbuf *htonip(),*tbp;
 	struct ip ip;           /* Pointer to IP header */
 	static int16 id_cntr;   /* Datagram serial number */
-	int ip_route();         /* Datagram router */
 
 	if(length == 0 && bp != NULLBUF)
-		length = len_mbuf(bp);
+		length = len_p(bp);
 	if(id == 0)
 		id = id_cntr++;
 	if(ttl == 0)
@@ -77,7 +83,6 @@ struct ip *ip;          /* Extracted IP header */
 struct mbuf *bp;        /* Data portion */
 char rxbroadcast;       /* True if received on subnet broadcast address */
 {
-	struct mbuf *fraghandle();
 	void (*recv)(); /* Function to call with completed datagram */
 	void tcp_input(),udp_input(),icmp_input();
 
@@ -94,10 +99,10 @@ char rxbroadcast;       /* True if received on subnet broadcast address */
 		break;
 	default:
 		/* Send an ICMP Protocol Unknown response... */
-		ip_stats.badproto++;
+		Ip_stats.badproto++;
 		/* ...unless it's a broadcast */
 		if(!rxbroadcast){
-			icmp_output(ip,bp,DEST_UNREACH,PROT_UNREACH,(union icmp_args *)NULL);
+			icmp_output(ip,bp,ICMP_DEST_UNREACH,ICMP_PROT_UNREACH,(union icmp_args *)NULL);
 		}
 		free_p(bp);
 		return;
@@ -120,10 +125,8 @@ fraghandle(ip,bp)
 struct ip *ip;          /* IP header, host byte order */
 struct mbuf *bp;        /* The fragment itself */
 {
-	void ip_timeout(),freefrag(),free_reasm();
-	struct reasm *lookup_reasm(),*creat_reasm();
 	register struct reasm *rp; /* Pointer to reassembly descriptor */
-	struct frag *lastfrag,*nextfrag,*tfp,*newfrag();
+	struct frag *lastfrag,*nextfrag,*tfp;
 	struct mbuf *tbp;
 	int16 i;
 	int16 offset;           /* Index of first byte in fragment */
@@ -268,7 +271,7 @@ struct ip *ip;
 {
 	register struct reasm *rp;
 
-	for(rp = reasmq;rp != NULLREASM;rp = rp->next){
+	for(rp = Reasmq;rp != NULLREASM;rp = rp->next){
 		if(ip->source == rp->source && ip->dest == rp->dest
 		 && ip->protocol == rp->protocol && ip->id == rp->id)
 			return rp;
@@ -304,7 +307,6 @@ creat_reasm(ip)
 register struct ip *ip;
 {
 	register struct reasm *rp;
-	void ip_timeout();
 
 	if((rp = (struct reasm *)calloc(1,sizeof(struct reasm))) == NULLREASM)
 		return rp;      /* No space for descriptor */
@@ -316,10 +318,10 @@ register struct ip *ip;
 	rp->timer.func = ip_timeout;
 	rp->timer.arg = (char *)rp;
 
-	rp->next = reasmq;
+	rp->next = Reasmq;
 	if(rp->next != NULLREASM)
 		rp->next->prev = rp;
-	reasmq = rp;
+	Reasmq = rp;
 	return rp;
 }
 
@@ -335,7 +337,7 @@ register struct reasm *rp;
 	if(rp->prev != NULLREASM)
 		rp->prev->next = rp->next;
 	else
-		reasmq = rp->next;
+		Reasmq = rp->next;
 	if(rp->next != NULLREASM)
 		rp->next->prev = rp->prev;
 	/* Free any fragments on list, starting at beginning */

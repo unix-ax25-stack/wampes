@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.2 1990/04/05 11:14:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.3 1990/08/23 17:32:59 deyke Exp $ */
 
 /* Internet Control Message Protocol */
 #include "global.h"
@@ -11,6 +11,36 @@
 
 struct icmp_errors icmp_errors;
 struct icmp_stats icmp_stats;
+
+struct mib_entry Icmp_mib[] = {
+	"",                     0,
+	"icmpInMsgs",           0,
+	"icmpInErrors",         0,
+	"icmpInDestUnreachs",   0,
+	"icmpInTimeExcds",      0,
+	"icmpInParmProbs",      0,
+	"icmpInSrcQuenchs",     0,
+	"icmpInRedirects",      0,
+	"icmpInEchos",          0,
+	"icmpInEchoReps",       0,
+	"icmpInTimestamps",     0,
+	"icmpInTimestampReps",  0,
+	"icmpInAddrMasks",      0,
+	"icmpInAddrMaskReps",   0,
+	"icmpOutMsgs",          0,
+	"icmpOutErrors",        0,
+	"icmpOutDestUnreachs",  0,
+	"icmpOutTimeExcds",     0,
+	"icmpOutParmProbs",     0,
+	"icmpOutSrcQuenchs",    0,
+	"icmpOutRedirects",     0,
+	"icmpOutEchos",         0,
+	"icmpOutEchoReps",      0,
+	"icmpOutTimestamps",    0,
+	"icmpOutTimestampReps", 0,
+	"icmpOutAddrMasks",     0,
+	"icmpOutAddrMaskReps",  0,
+};
 
 /* Process an incoming ICMP packet */
 void
@@ -50,9 +80,9 @@ char rxbroadcast;
 		icmp_stats.input[type]++;
 
 	switch(uchar(type)){
-	case TIME_EXCEED:       /* Time-to-live Exceeded */
-	case DEST_UNREACH:      /* Destination Unreachable */
-	case QUENCH:            /* Source Quench */
+	case ICMP_TIME_EXCEED:       /* Time-to-live Exceeded */
+	case ICMP_DEST_UNREACH:      /* Destination Unreachable */
+	case ICMP_QUENCH:            /* Source Quench */
 		ntohip(&ip,&bp);        /* Extract offending IP header */
 		switch(uchar(ip.protocol)){
 		case TCP_PTCL:
@@ -60,29 +90,29 @@ char rxbroadcast;
 			break;
 		}
 		break;
-	case ECHO:              /* Echo Request */
-		/* Change type to ECHO_REPLY, recompute checksum,
+	case ICMP_ECHO:              /* Echo Request */
+		/* Change type to ICMP_ECHO_REPLY, recompute checksum,
 		 * and return datagram.
 		 */
-		icmp.type = ECHO_REPLY;
+		icmp.type = ICMP_ECHO_REPLY;
 		if((tbp = htonicmp(&icmp,bp)) == NULLBUF){
 			free_p(bp);
 			return;
 		}
-		icmp_stats.output[ECHO_REPLY]++;
+		icmp_stats.output[ICMP_ECHO_REPLY]++;
 		ip_send(dest,source,ICMP_PTCL,tos,0,tbp,length,0,0);
 		return;
-	case REDIRECT:          /* Redirect */
-	case PARAM_PROB:        /* Parameter Problem */
+	case ICMP_REDIRECT:          /* Redirect */
+	case ICMP_PARAM_PROB:        /* Parameter Problem */
 		break;
-       case ECHO_REPLY:         /* Echo Reply */
+       case ICMP_ECHO_REPLY:         /* Echo Reply */
 		echo_proc(source,dest,&icmp,bp);
 		bp = NULLBUF;   /* so it won't get freed */
 		break;
-	case TIMESTAMP:         /* Timestamp */
-	case TIME_REPLY:        /* Timestamp Reply */
-	case INFO_RQST:         /* Information Request */
-	case INFO_REPLY:        /* Information Reply */
+	case ICMP_TIMESTAMP:         /* Timestamp */
+	case ICMP_TIME_REPLY:        /* Timestamp Reply */
+	case ICMP_INFO_RQST:         /* Information Request */
+	case ICMP_INFO_REPLY:        /* Information Reply */
 		break;
 	}
 	free_p(bp);
@@ -103,7 +133,7 @@ union icmp_args *args;
 	struct icmp icmp;       /* ICMP protocol header */
 	int16 dlen;             /* Length of data portion of offending pkt */
 	int16 length;           /* Total length of reply */
-	extern int32 ip_addr;   /* Our IP address */
+	extern int32 Ip_addr;   /* Our IP address */
 
 	if(ip == NULLIP)
 		return -1;
@@ -118,7 +148,7 @@ union icmp_args *args;
 	/* Compute amount of original datagram to return.
 	 * We return the original IP header, and up to 8 bytes past that.
 	 */
-	dlen = min(8,len_mbuf(data));
+	dlen = min(8,len_p(data));
 	length = dlen + ICMPLEN + IPLEN + ip->optlen;
 	/* Take excerpt from data portion */
 	if(data != NULLBUF && (bp = copy_p(data,dlen)) == NULLBUF)
@@ -132,18 +162,18 @@ union icmp_args *args;
 	icmp.type = type;
 	icmp.code = code;
 	switch(uchar(icmp.type)){
-	case PARAM_PROB:
+	case ICMP_PARAM_PROB:
 		icmp.args.pointer = args->pointer;
 		break;
-	case REDIRECT:
+	case ICMP_REDIRECT:
 		icmp.args.address = args->address;
 		break;
-	case ECHO:
-	case ECHO_REPLY:
-	case INFO_RQST:
-	case INFO_REPLY:
-	case TIMESTAMP:
-	case TIME_REPLY:
+	case ICMP_ECHO:
+	case ICMP_ECHO_REPLY:
+	case ICMP_INFO_RQST:
+	case ICMP_INFO_REPLY:
+	case ICMP_TIMESTAMP:
+	case ICMP_TIME_REPLY:
 		icmp.args.echo.id = args->echo.id;
 		icmp.args.echo.seq = args->echo.seq;
 		break;
@@ -156,7 +186,7 @@ union icmp_args *args;
 		free_p(data);
 		return -1;
 	}
-	return ip_send(ip_addr,ip->source,ICMP_PTCL,ip->tos,0,bp,length,0,0);
+	return ip_send(Ip_addr,ip->source,ICMP_PTCL,ip->tos,0,bp,length,0,0);
 }
 /* Generate ICMP header in network byte order, link data, compute checksum */
 struct mbuf *
@@ -179,7 +209,7 @@ struct mbuf *data;
 	cp = put16(cp,icmp->args.echo.seq);
 
 	/* Compute checksum, and stash result */
-	checksum = cksum(NULLHEADER,bp,len_mbuf(bp));
+	checksum = cksum(NULLHEADER,bp,len_p(bp));
 	cp = &bp->data[2];
 	cp = put16(cp,checksum);
 

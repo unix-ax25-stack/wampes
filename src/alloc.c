@@ -1,7 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.3 1990/02/12 11:55:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.4 1990/08/23 17:32:20 deyke Exp $ */
 
-#include <memory.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 extern char  *sbrk();
 
@@ -33,7 +34,7 @@ char  *mesg;
 
 /*---------------------------------------------------------------------------*/
 
-char  *malloc(size)
+void *malloc(size)
 register unsigned int  size;
 {
 
@@ -72,12 +73,20 @@ register unsigned int  size;
   }
   p->next = tp;
   inuse += size;
-  return (char *) (p + 1);
+  return (void *) (p + 1);
 }
 
 /*---------------------------------------------------------------------------*/
 
-char  *_malloc(size)
+void *mallocw(size)
+unsigned int  size;
+{
+  return malloc(size);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void *_malloc(size)
 unsigned int  size;
 {
   return malloc(size);
@@ -86,7 +95,7 @@ unsigned int  size;
 /*---------------------------------------------------------------------------*/
 
 void free(pp)
-char  *pp;
+void *pp;
 {
   register struct block *p, *tp;
 
@@ -113,7 +122,7 @@ char  *pp;
 /*---------------------------------------------------------------------------*/
 
 void _free(pp)
-char  *pp;
+void *pp;
 {
   free(pp);
 }
@@ -123,7 +132,7 @@ char  *pp;
 /* Return size of allocated buffer, in bytes */
 
 unsigned int  blksize(p)
-char  *p;
+void *p;
 {
   register struct block *tp;
 
@@ -135,18 +144,18 @@ char  *p;
 
 /*---------------------------------------------------------------------------*/
 
-char  *realloc(p, size)
-char  *p;
+void *realloc(p, size)
+void *p;
 unsigned int  size;
 {
 
-  char  *q;
   unsigned int  oldsize;
+  void *q;
 
   oldsize = blksize(p);
   if (size <= oldsize) return p;
   if (q = malloc(size)) {
-    memcpy(q, p, (int) oldsize);
+    memcpy(q, p, oldsize);
     free(p);
   }
   return q;
@@ -154,8 +163,8 @@ unsigned int  size;
 
 /*---------------------------------------------------------------------------*/
 
-char  *_realloc(p, size)
-char  *p;
+void *_realloc(p, size)
+void *p;
 unsigned int  size;
 {
   return realloc(p, size);
@@ -163,20 +172,30 @@ unsigned int  size;
 
 /*---------------------------------------------------------------------------*/
 
-char  *calloc(nelem, elsize)
+void *calloc(nelem, elsize)
 unsigned int  nelem, elsize;
 {
-  register char  *p, *q;
-  register unsigned int  size;
 
-  if (p = q = malloc(size = nelem * elsize))
-    while (size--) *q++ = '\0';
+  register char  *q;
+  register unsigned int  size;
+  register void *p;
+
+  if (p = malloc(size = nelem * elsize))
+    for (q = (char *) p;  size--; *q++ = '\0') ;
   return p;
 }
 
 /*---------------------------------------------------------------------------*/
 
-char  *_calloc(nelem, elsize)
+void *callocw(nelem, elsize)
+unsigned int  nelem, elsize;
+{
+  return calloc(nelem, elsize);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void *_calloc(nelem, elsize)
 unsigned int  nelem, elsize;
 {
   return calloc(nelem, elsize);

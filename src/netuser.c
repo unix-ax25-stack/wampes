@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.3 1990/03/23 12:11:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.4 1990/08/23 17:33:49 deyke Exp $ */
 
 /* Miscellaneous format conversion subroutines */
 
@@ -6,6 +6,7 @@
 
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 
@@ -13,9 +14,7 @@
 #include "netuser.h"
 #include "hpux.h"
 
-extern void free();
-
-int net_error;
+int Net_error;
 
 static struct hosttable {
   struct hosttable *next;
@@ -33,7 +32,7 @@ register char  *to, *from;
 
 /*---------------------------------------------------------------------------*/
 
-static int32 aton(s)
+int32 aton(s)
 register char  *s;
 {
 
@@ -80,14 +79,14 @@ static void read_hosttable()
 
   if (nextchecktime > currtime) return;
   nextchecktime = currtime + 60;
-  if (stat(hosts, &statbuf)) return;
+  if (stat("/tcp/hosts", &statbuf)) return;
   if (lastmtime == statbuf.st_mtime || statbuf.st_mtime > currtime - 5) return;
   lastmtime = statbuf.st_mtime;
   while (hp = hosttable) {
     hosttable = hosttable->next;
     free((char *) hp);
   }
-  if (!(fp = fopen(hosts, "r"))) return;
+  if (!(fp = fopen("/tcp/hosts", "r"))) return;
   while (fgets(line, sizeof(line), fp)) {
     if (p = strchr(line, '#')) *p = '\0';
     if (sscanf(line, "%s %s", addr, name) == 2 && (n = aton(addr)))

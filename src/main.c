@@ -1,15 +1,20 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.5 1990/04/12 17:51:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.6 1990/08/23 17:33:32 deyke Exp $ */
 
 /* Main network program - provides both client and server functions */
 
 #define HOSTNAMELEN 64
 unsigned restricted_dev=1000;
-extern char *startup;   /* File to read startup commands from */
+extern char *Startup;   /* File to read startup commands from */
 #include <stdio.h>
+#include <time.h>
+#ifdef  __TURBOC__
+#include <io.h>
+#endif
 #include <string.h>
 #include "config.h"
 #include "global.h"
 #include "mbuf.h"
+#include "socket.h"
 #include "netuser.h"
 #include "timer.h"
 #include "icmp.h"
@@ -23,6 +28,7 @@ extern char *startup;   /* File to read startup commands from */
 #include "remote.h"
 #include "session.h"
 #include "cmdparse.h"
+#include "commands.h"
 
 #ifdef  ASY
 #include "asy.h"
@@ -74,11 +80,10 @@ long    _stksize = 16384L;      /* Fixed stack size... -- hyc */
 #ifdef  TRACE
 #include "trace.h"
 /* Dummy structure for loopback tracing */
-struct interface loopback = { NULLIF, "loopback" };
+struct iface loopback = { NULLIF, "loopback" };
 #endif
 
-extern struct interface *ifaces;
-extern char version[];
+extern struct iface *Ifaces;
 extern struct mbuf *loopq;
 extern FILE *trfp;
 extern char trname[];
@@ -87,13 +92,13 @@ extern long currtime;
 int debug;
 int mode;
 FILE *logfp;
-char badhost[] = "Unknown host %s\n";
-char hostname[HOSTNAMELEN];
+char Badhost[] = "Unknown host %s\n";
+char Hostname[HOSTNAMELEN];
 unsigned nsessions = NSESSIONS;
 int32 resolve();
 int16 lport = 1001;
 char prompt[] = "%s> ";
-char nospace[] = "No space!!\n";        /* Generic malloc fail message */
+char Nospace[] = "No space!!\n";        /* Generic malloc fail message */
 #ifdef  SYS5
 int io_active = 0;
 #endif
@@ -102,48 +107,18 @@ int io_active = 0;
 static char escape = 0x1d;      /* default escape character is ^] */
 #endif
 
+static void showtrace __ARGS((struct iface *ifp));
+static int dostatus __ARGS((int argc, char *argv [], void *p));
+static int dosource __ARGS((int argc, char *argv [], void *p));
+static int dortprio __ARGS((int argc, char *argv [], void *p));
+
 /* Command lookup and branch table */
 
-int  cmdmode();
-int  doarp();
-int  doattach();
-int  doax25();
 int  dobye();
-int  doclose();
-int  doconnect();
-int  doecho();
-int  doeol();
-int  doescape();
-int  doexit();
 int  doforward();
-int  doftp();
-int  dohostname();
-int  doicmp();
-int  doip();
-int  dokick();
-int  dolog();
-int  domode();
-int  donetrom();
-int  donrstat();
-int  doparam();
-int  doping();
-int  dorecord();
-int  doremote();
-int  doreset();
-int  doroute();
-int  dortprio();
-int  dosession();
-int  dosource();
 int  dostart();
-int  dostatus();
 int  dostime();
 int  dostop();
-int  dotcp();
-int  dotelnet();
-int  dotrace();
-int  doudp();
-int  doupload();
-int  go();
 int  mail_daemon();
 int  memstat();
 
@@ -156,143 +131,126 @@ int doegstat();
 #ifdef HAPN
 int dohapnstat();
 #endif
-#ifdef _FINGER
-int dofinger();
-#endif
 
 static struct cmds cmds[] = {
 	/* The "go" command must be first */
-	"",             go,             0, NULLCHAR,    NULLCHAR,
+	"",             go,             0, 0, NULLCHAR,
 #if     (MAC && APPLETALK)
-	"applestat",    doatstat,       0,      NULLCHAR,       NULLCHAR,
+	"applestat",    doatstat,       0, 0, NULLCHAR,
 #endif
 #if     (AX25 || ETHER || APPLETALK)
-	"arp",          doarp,          0, NULLCHAR,    NULLCHAR,
+	"arp",          doarp,          0, 0, NULLCHAR,
 #endif
 #ifdef  AX25
-	"ax25",         doax25,         0, NULLCHAR,    NULLCHAR,
+	"ax25",         doax25,         0, 0, NULLCHAR,
 #endif
-	"attach",       doattach,       2,
-		"attach <hardware> <hw specific options>", NULLCHAR,
-	"bye",          dobye,          0, NULLCHAR,    NULLCHAR,
+	"attach",       doattach,       0, 2,
+		"attach <hardware> <hw specific options>",
+	"bye",          dobye,          0, 0, NULLCHAR,
 /* This one is out of alpabetical order to allow abbreviation to "c" */
 #ifdef  AX25
-	"connect",      doconnect,      2,"connect callsign [digipeaters]", NULLCHAR,
+	"connect",      doconnect,      0, 2,"connect callsign [digipeaters]",
 #endif
 #ifndef UNIX    /* BSD or SYS5 */
-	"cd",           docd,           0, NULLCHAR,    NULLCHAR,
+	"cd",           docd,           0, 0, NULLCHAR,
 #endif
-	"close",        doclose,        0, NULLCHAR,    NULLCHAR,
-	"disconnect",   doclose,        0, NULLCHAR,    NULLCHAR,
+	"close",        doclose,        0, 0, NULLCHAR,
+	"disconnect",   doclose,        0, 0, NULLCHAR,
 #ifdef  EAGLE
-	"eaglestat",    doegstat,       0, NULLCHAR,    NULLCHAR,
+	"eaglestat",    doegstat,       0, 0, NULLCHAR,
 #endif
-	"echo",         doecho,         0, NULLCHAR,    "echo [refuse|accept]",
-	"eol",          doeol,          0, NULLCHAR,
-		"eol options: unix, standard",
+	"echo",         doecho,         0, 0, NULLCHAR,
+	"eol",          doeol,          0, 0, NULLCHAR,
 #if     ((!defined(MSDOS) && !defined(ATARI_ST)) || defined(PC9801))
-	"escape",       doescape,       0, NULLCHAR,    NULLCHAR,
+	"escape",       doescape,       0, 0, NULLCHAR,
 #endif
 #ifdef  PC_EC
-	"etherstat",    doetherstat,    0, NULLCHAR,    NULLCHAR,
-#endif  PC_EC
-	"exit",         doexit,         0, NULLCHAR,    NULLCHAR,
-#ifdef _FINGER
-	"finger",       dofinger,       0, NULLCHAR, NULLCHAR,
+	"etherstat",    doetherstat,    0, 0, NULLCHAR,
 #endif
-	"forward",      doforward,      0, NULLCHAR,    NULLCHAR,
-	"ftp",          doftp,          2, "ftp <address>",     NULLCHAR,
+	"exit",         doexit,         0, 0, NULLCHAR,
+	"finger",       dofinger,       0, 0, NULLCHAR,
+	"forward",      doforward,      0, 0, NULLCHAR,
+	"ftp",          doftp,          0, 2, "ftp <address>",
 #ifdef HAPN
-	"hapnstat",     dohapnstat,     0, NULLCHAR,    NULLCHAR,
+	"hapnstat",     dohapnstat,     0, 0, NULLCHAR,
 #endif
-	"hostname",     dohostname,     0, NULLCHAR,    NULLCHAR,
-	"kick",         dokick,         0, NULLCHAR,    NULLCHAR,
-	"log",          dolog,          0, NULLCHAR,    NULLCHAR,
-	"ip",           doip,           0, NULLCHAR,    NULLCHAR,
-	"memstat",      memstat,        0, NULLCHAR,    NULLCHAR,
-	"mail_daemon",  mail_daemon,    0, NULLCHAR,    NULLCHAR,
+	"hostname",     dohostname,     0, 0, NULLCHAR,
+	"kick",         dokick,         0, 0, NULLCHAR,
+	"log",          dolog,          0, 0, NULLCHAR,
+	"ip",           doip,           0, 0, NULLCHAR,
+	"memstat",      memstat,        0, 0, NULLCHAR,
+	"mail_daemon",  mail_daemon,    0, 0, NULLCHAR,
 #ifdef  AX25
-	"mode",         domode,         2, "mode <interface>",  NULLCHAR,
+	"mode",         domode,         0, 2, "mode <interface>",
 #endif
 #ifdef  MULPORT
-	"mulport",      mulport,        2, "mulport <on|off>",  NULLCHAR,
+	"mulport",      mulport,        0, 2, "mulport <on|off>",
 #endif
 #ifdef  NETROM
-	"netrom",       donetrom,       0, NULLCHAR,    NULLCHAR,
+	"netrom",       donetrom,       0, 0, NULLCHAR,
 #ifdef  NRS
-	"nrstat",       donrstat,       0, NULLCHAR,    NULLCHAR,
+	"nrstat",       donrstat,       0, 0, NULLCHAR,
 #endif
 #endif
-	"param",        doparam,        2, "param <interface>", NULLCHAR,
-	"ping",         doping,         0, NULLCHAR,    NULLCHAR,
+	"param",        doparam,        0, 2, "param <interface>",
+	"ping",         doping,         0, 0, NULLCHAR,
 #ifndef UNIX /* BSD or SYS5 */
-	"pwd",          docd,           0, NULLCHAR,    NULLCHAR,
+	"pwd",          docd,           0, 0, NULLCHAR,
 #endif
-	"record",       dorecord,       0, NULLCHAR,    NULLCHAR,
-	"remote",       doremote,       3, "remote [-p port] [-k key] [-a kickaddr] <address> exit|reset|kick",
-							NULLCHAR,
-	"reset",        doreset,        0, NULLCHAR,    NULLCHAR,
-	"route",        doroute,        0, NULLCHAR,    NULLCHAR,
-	"rtprio",       dortprio,       0, NULLCHAR,    NULLCHAR,
-	"status",       dostatus,       0, NULLCHAR,    NULLCHAR,
-	"session",      dosession,      0, NULLCHAR,    NULLCHAR,
-	"source",       dosource,       2, "source <filename>", NULLCHAR,
+	"record",       dorecord,       0, 0, NULLCHAR,
+	"remote",       doremote,       0, 3, "remote [-p port] [-k key] [-a kickaddr] <address> exit|reset|kick",
+	"reset",        doreset,        0, 0, NULLCHAR,
+	"route",        doroute,        0, 0, NULLCHAR,
+	"rtprio",       dortprio,       0, 0, NULLCHAR,
+	"status",       dostatus,       0, 0, NULLCHAR,
+	"session",      dosession,      0, 0, NULLCHAR,
+	"source",       dosource,       0, 2, "source <filename>",
 #ifdef  SERVERS
-	"start",        dostart,        2, "start <servername>",NULLCHAR,
-	"stime",        dostime,        0, NULLCHAR,    NULLCHAR,
-	"stop",         dostop,         2, "stop <servername>", NULLCHAR,
+	"start",        dostart,        0, 2, "start <servername>",
+	"stime",        dostime,        0, 0, NULLCHAR,
+	"stop",         dostop,         0, 2, "stop <servername>",
 #endif
-	"tcp",          dotcp,          0, NULLCHAR,    NULLCHAR,
-	"telnet",       dotelnet,       2, "telnet <address>",  NULLCHAR,
+	"tcp",          dotcp,          0, 0, NULLCHAR,
+	"telnet",       dotelnet,       0, 2, "telnet <address>",
 #ifdef  TRACE
-	"trace",        dotrace,        0, NULLCHAR,    NULLCHAR,
+	"trace",        dotrace,        0, 0, NULLCHAR,
 #endif
-	"udp",          doudp,          0, NULLCHAR,    NULLCHAR,
-	"upload",       doupload,       0, NULLCHAR,    NULLCHAR,
-	NULLCHAR,       NULLFP,         0,
-		"Unknown command; type \"?\" for list",   NULLCHAR,
+	"udp",          doudp,          0, 0, NULLCHAR,
+	"upload",       doupload,       0, 0, NULLCHAR,
+	NULLCHAR,       NULLFP,         0, 0,
+		"Unknown command; type \"?\" for list"
 };
 
 #ifdef  SERVERS
 /* "start" and "stop" subcommands */
-int dis1(),echo1(),ftp1(),smtp1(),tn1(),rem1();
+int ftp1(),tn1();
 int axserv_start(),tcpgate1();
-
-#ifdef _FINGER
 int finger1();
-#endif
 
 static struct cmds startcmds[] = {
-	"ax25",         axserv_start,   0, NULLCHAR, NULLCHAR,
-	"discard",      dis1,           0, NULLCHAR, NULLCHAR,
-	"echo",         echo1,          0, NULLCHAR, NULLCHAR,
-#ifdef _FINGER
-   /*** "finger",       finger1,        0, NULLCHAR, NULLCHAR, ***/
-#endif
-	"ftp",          ftp1,           0, NULLCHAR, NULLCHAR,
-	"tcpgate",      tcpgate1,       2, "start tcpgate <tcp port> [<host:service>]", NULLCHAR,
-	"telnet",       tn1,            0, NULLCHAR, NULLCHAR,
-	"remote",       rem1,           0, NULLCHAR, NULLCHAR,
-	NULLCHAR,       NULLFP,         0, NULLCHAR, NULLCHAR,
+	"ax25",         axserv_start,   0, 0, NULLCHAR,
+	"discard",      dis1,           0, 0, NULLCHAR,
+	"echo",         echo1,          0, 0, NULLCHAR,
+   /*** "finger",       finger1,        0, 0, NULLCHAR, ***/
+	"ftp",          ftp1,           0, 0, NULLCHAR,
+	"tcpgate",      tcpgate1,       0, 2, "start tcpgate <tcp port> [<host:service>]",
+	"telnet",       tn1,            0, 0, NULLCHAR,
+	"remote",       rem1,           0, 0, NULLCHAR,
+	NULLCHAR,       NULLFP,         0, 0, NULLCHAR
 };
-int dis0(),echo0(),ftp0(),smtp0(),tn0(),rem0();
+int tn0();
 int axserv_stop();
-
-#ifdef _FINGER
 int finger0();
-#endif
 
 static struct cmds stopcmds[] = {
-	"ax25",         axserv_stop,    0, NULLCHAR, NULLCHAR,
-	"discard",      dis0,           0, NULLCHAR, NULLCHAR,
-	"echo",         echo0,          0, NULLCHAR, NULLCHAR,
-#ifdef _FINGER
-   /*** "finger",       finger0,        0, NULLCHAR, NULLCHAR, ***/
-#endif
-	"ftp",          ftp0,           0, NULLCHAR, NULLCHAR,
-	"telnet",       tn0,            0, NULLCHAR, NULLCHAR,
-	"remote",       rem0,           0, NULLCHAR, NULLCHAR,
-	NULLCHAR,       NULLFP,         0, NULLCHAR, NULLCHAR,
+	"ax25",         axserv_stop,    0, 0, NULLCHAR,
+	"discard",      dis0,           0, 0, NULLCHAR,
+	"echo",         echo0,          0, 0, NULLCHAR,
+   /*** "finger",       finger0,        0, 0, NULLCHAR, ***/
+	"ftp",          ftp0,           0, 0, NULLCHAR,
+	"telnet",       tn0,            0, 0, NULLCHAR,
+	"remote",       rem0,           0, 0, NULLCHAR,
+	NULLCHAR,       NULLFP,         0, 0, NULLCHAR
 };
 #endif
 
@@ -308,7 +266,7 @@ char *argv[];
 	int cmdparse();
 	void check_time();
 	FILE *fp;
-	struct interface *ifp;
+	struct iface *ifp;
 	struct mbuf *bp;
 
 	debug = (argc >= 2);
@@ -320,10 +278,10 @@ char *argv[];
 	chktasker();
 #endif
 #ifdef  MSDOS
-	printf("KA9Q Internet Protocol Package, v%s DS = %x\n",version,
+	printf("KA9Q Internet Protocol Package, v%s DS = %x\n",Version,
 		getds());
 #else
-	printf("KA9Q Internet Protocol Package, v%s\n",version);
+	printf("KA9Q Internet Protocol Package, v%s\n",Version);
 #endif
 
 	printf("Copyright 1988 by Phil Karn, KA9Q\n");
@@ -332,11 +290,11 @@ char *argv[];
 		/* Read startup file named on command line */
 		fp = fopen(argv[1],"r");
 	} else {
-		fp = fopen(startup,"r");
+		fp = fopen(Startup,"r");
 	}
 	if(fp != NULLFILE){
 		while(fgets(inbuf,BUFSIZ,fp) != NULLCHAR){
-			cmdparse(cmds,inbuf);
+			cmdparse(cmds,inbuf,NULL);
 		}
 		fclose(fp);
 	}
@@ -368,7 +326,7 @@ char *argv[];
 				continue;
 			switch(mode){
 			case CMD_MODE:
-				(void)cmdparse(cmds,ttybuf);
+				(void)cmdparse(cmds,ttybuf,NULL);
 				fflush(stdout);
 				break;
 			case CONV_MODE:
@@ -384,7 +342,7 @@ char *argv[];
 				break;
 			}
 			if(mode == CMD_MODE){
-				printf(prompt,hostname);
+				printf(prompt,Hostname);
 				fflush(stdout);
 			}
 		}
@@ -400,7 +358,7 @@ char *argv[];
 		}
 
 		/* Service the interfaces */
-		for(ifp = ifaces; ifp != NULLIF; ifp = ifp->next){
+		for(ifp = Ifaces; ifp != NULLIF; ifp = ifp->next){
 			if(ifp->recv != NULLVFP)
 				(*ifp->recv)(ifp);
 		}
@@ -428,12 +386,15 @@ cmdmode()
 	if(mode != CMD_MODE){
 		mode = CMD_MODE;
 		cooked();
-		printf(prompt,hostname);
+		printf(prompt,Hostname);
 		fflush(stdout);
 	}
 	return 0;
 }
-doexit()
+doexit(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
 {
 	if(logfp != NULLFILE)
 		fclose(logfp);
@@ -444,24 +405,25 @@ doexit()
 #endif
 	exit(0);
 }
-static
-dohostname(argc,argv)
+int
+dohostname(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	char *strncpy();
 
 	if(argc < 2)
-		printf("%s\n",hostname);
+		printf("%s\n",Hostname);
 	else
-		strncpy(hostname,argv[1],HOSTNAMELEN);
+		strncpy(Hostname,argv[1],HOSTNAMELEN);
 	return 0;
 }
-static
 int
-dolog(argc,argv)
+dolog(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	char *strncpy();
 
@@ -483,10 +445,11 @@ char *argv[];
 	}
 	return 0;
 }
-
-doecho(argc,argv)
+int
+doecho(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	extern int refuse_echo;
 
@@ -506,9 +469,11 @@ char *argv[];
 	return 0;
 }
 /* set for unix end of line for remote echo mode telnet */
-doeol(argc,argv)
+int
+doeol(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	extern int unix_line_mode;
 
@@ -531,22 +496,24 @@ char *argv[];
 /* Attach an interface
  * Syntax: attach <hw type> <I/O address> <vector> <mode> <label> <bufsize> [<speed>]
  */
-doattach(argc,argv)
+doattach(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	extern struct cmds attab[];
 
-	return subcmd(attab,argc,argv);
+	return subcmd(attab,argc,argv,p);
 }
 /* Manipulate I/O device parameters */
-doparam(argc,argv)
+doparam(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
-	register struct interface *ifp;
+	register struct iface *ifp;
 
-	for(ifp=ifaces;ifp != NULLIF;ifp = ifp->next){
+	for(ifp=Ifaces;ifp != NULLIF;ifp = ifp->next){
 		if(strcmp(argv[1],ifp->name) == 0)
 			break;
 	}
@@ -565,6 +532,7 @@ char *argv[];
  * Tue Jan 31 00:00:00 1987 44.64.0.7:1003 open FTP
  */
 /*VARARGS2*/
+void
 log(tcb,fmt,arg1,arg2,arg3,arg4)
 struct tcb *tcb;
 char *fmt;
@@ -593,7 +561,7 @@ int32 arg1,arg2,arg3,arg4;
 /* Configuration-dependent code */
 
 /* List of supported hardware devices */
-int modem_init(),asy_attach(),pc_attach(),at_attach();
+int modem_init(),pc_attach(),at_attach();
 
 #ifdef  EAGLE
 int eg_attach();
@@ -611,13 +579,12 @@ int pk_attach();
 struct cmds attab[] = {
 #ifdef  PC_EC
 	/* 3-Com Ethernet interface */
-	"3c500", ec_attach, 7,
+	"3c500", ec_attach, 0, 7,
 	"attach 3c500 <address> <vector> arpa <label> <buffers> <mtu>",
-	"Could not attach 3c500",
 #endif
 #ifdef  ASY
 	/* Ordinary PC asynchronous adaptor */
-	"asy", asy_attach, 8,
+	"asy", asy_attach, 0, 8,
 #ifdef  UNIX
 #ifndef SLFP
 	"attach asy 0 <ttyname> slip|ax25|nrs <label> <buffers> <mtu> <speed>",
@@ -631,48 +598,40 @@ struct cmds attab[] = {
 	"attach asy <address> <vector> slip|ax25|nrs|slfp <label> <buffers> <mtu> <speed>",
 #endif  /* SLFP */
 #endif
-	"Could not attach asy",
 #endif
 #ifdef  PC100
 	/* PACCOMM PC-100 8530 HDLC adaptor */
-	"pc100", pc_attach, 8,
+	"pc100", pc_attach, 0, 8,
 	"attach pc100 <address> <vector> ax25 <label> <buffers> <mtu> <speed>",
-	"Could not attach pc100",
 #endif
 #ifdef  EAGLE
 	/* EAGLE RS-232C 8530 HDLC adaptor */
-	"eagle", eg_attach, 8,
+	"eagle", eg_attach, 0, 8,
 	"attach eagle <address> <vector> ax25 <label> <buffers> <mtu> <speed>",
-	"Could not attach eagle",
 #endif
 #ifdef  HAPN
 	/* Hamilton Area Packet Radio (HAPN) 8273 HDLC adaptor */
-	"hapn", hapn_attach, 8,
+	"hapn", hapn_attach, 0, 8,
 	"attach hapn <address> <vector> ax25 <label> <rx bufsize> <mtu> csma|full",
-	"Could not attach hapn",
 #endif
 #ifdef  APPLETALK
 	/* Macintosh AppleTalk */
-	"0", at_attach, 7,
+	"0", at_attach, 0, 7,
 	"attach 0 <protocol type> <device> arpa <label> <rx bufsize> <mtu>",
-	"Could not attach Appletalk",
 #endif
 #ifdef  PACKET
 	/* FTP Software's packet driver spec */
-	"packet", pk_attach, 4,
+	"packet", pk_attach, 0, 4,
 	"attach packet <int#> <label> <buffers> <mtu>",
-	"Could not attach packet driver",
 #endif
-	NULLCHAR, NULLFP, 0,
-	"Unknown device",
-	NULLCHAR,
+	NULLCHAR, NULLFP, 0, 0,
+	"Unknown device"
 };
 
 /* Protocol tracing function pointers */
 #ifdef  TRACE
-int ax25_dump(),ether_dump(),ip_dump(),at_dump(),slfp_dump();
 
-int (*tracef[])() = {
+void (*tracef[])() = {
 #ifdef  AX25
 	ax25_dump,
 #else
@@ -682,26 +641,26 @@ int (*tracef[])() = {
 #ifdef  ETHER
 	ether_dump,
 #else
-	NULLFP,
+	(void (*)()) NULLFP,
 #endif
 	ip_dump,
 
 #ifdef  APPLETALK
 	at_dump,
 #else
-	NULLFP,
+	(void (*)()) NULLFP,
 #endif
 
 #ifdef  SLFP
 	slfp_dump,
 #else
-	NULLFP,
+	(void (*)()) NULLFP,
 #endif
 };
 #else
 int (*tracef[])() = { NULLFP }; /* No tracing at all */
 dump(interface,direction,type,bp)
-struct interface *interface;
+struct iface *interface;
 int direction;
 unsigned type;
 struct mbuf *bp;
@@ -729,21 +688,20 @@ struct mbuf *bp;
  *          optional modem L.sys style command (SLIP only)
  */
 int
-asy_attach(argc,argv)
+asy_attach(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
-	register struct interface *if_asy;
-	extern struct interface *ifaces;
+	register struct iface *if_asy;
+	extern struct iface *Ifaces;
 	int16 dev;
 	int mode;
-	int asy_init();
 	int asy_send();
 	int asy_ioctl();
 	void doslip();
 	int asy_stop();
 	int ax_send();
-	int ax_output();
 	void kiss_recv();
 	int kiss_raw();
 	int kiss_ioctl();
@@ -762,10 +720,9 @@ char *argv[];
 #ifdef  AX25
 	struct ax25_addr addr ;
 #endif
-	int ax_send(),ax_output(),nrs_raw(),asy_ioctl();
-	void nrs_recv();
+	int ax_send(),nrs_raw(),asy_ioctl();
 
-	if(nasy >= ASY_MAX){
+	if(Nasy >= ASY_MAX){
 		printf("Too many asynch controllers\n");
 		return -1;
 	}
@@ -789,10 +746,10 @@ char *argv[];
 		return(-1);
 	}
 
-	dev = nasy++;
+	dev = Nasy++;
 
 	/* Create interface structure and fill in details */
-	if_asy = (struct interface *)calloc(1,sizeof(struct interface));
+	if_asy = (struct iface *)calloc(1,sizeof(struct iface));
 	if_asy->name = malloc((unsigned)strlen(argv[4])+1);
 	strcpy(if_asy->name,argv[4]);
 	if_asy->mtu = atoi(argv[6]);
@@ -808,7 +765,7 @@ char *argv[];
 		if_asy->output = NULLFP;        /* ARP isn't used */
 		if_asy->raw = slip_raw;
 		if_asy->flags = 0;
-		slip[dev].recv = slip_recv;
+		Slip[dev].recv = slip_recv;
 		break;
 #endif
 #ifdef  AX25
@@ -818,7 +775,7 @@ char *argv[];
 			printf("set mycall first\n");
 			free(if_asy->name);
 			free((char *)if_asy);
-			nasy--;
+			Nasy--;
 			return -1;
 		}
 		if_asy->ioctl = kiss_ioctl;
@@ -828,7 +785,7 @@ char *argv[];
 		if(if_asy->hwaddr == NULLCHAR)
 			if_asy->hwaddr = malloc(sizeof(mycall));
 		memcpy(if_asy->hwaddr,(char *)&mycall,sizeof(mycall));
-		slip[dev].recv = kiss_recv;
+		Slip[dev].recv = kiss_recv;
 		break;
 #endif
 #ifdef  NRS
@@ -847,7 +804,7 @@ char *argv[];
 				printf ("bad callsign on attach line\n");
 				free(if_asy->name);
 				free((char *)if_asy);
-				nasy--;
+				Nasy--;
 				return -1;
 			}
 		}
@@ -859,7 +816,7 @@ char *argv[];
 		if(if_asy->hwaddr == NULLCHAR)
 			if_asy->hwaddr = malloc(sizeof(addr));
 		memcpy(if_asy->hwaddr,(char *)&addr,sizeof(addr));
-		nrs[dev].iface = if_asy;
+		Nrs[dev].iface = if_asy;
 		break;
 #endif
 #ifdef  SLFP
@@ -874,8 +831,8 @@ char *argv[];
 		break;
 #endif
 	}
-	if_asy->next = ifaces;
-	ifaces = if_asy;
+	if_asy->next = Ifaces;
+	Ifaces = if_asy;
 	asy_init(dev,argv[1],argv[2],(unsigned)atoi(argv[5]));
 	asy_speed(dev,atoi(argv[7]));
 /*
@@ -887,10 +844,10 @@ char *argv[];
 	    if((modem_init(dev,argc-8,argv+8)) == -1) {
 		printf("\nModem command sequence failed.\n");
 		asy_stop(if_asy);
-		ifaces = if_asy->next;
+		Ifaces = if_asy->next;
 		free(if_asy->name);
 		free((char *)if_asy);
-		nasy--;
+		Nasy--;
 		restricted_dev=1000;
 		return -1;
 	    }
@@ -903,10 +860,10 @@ char *argv[];
 	    if(slfp_init(if_asy, argc>7?argv[8]:NULLCHAR) == -1) {
 		printf("Request for IP address failed.\n");
 		asy_stop(if_asy);
-		ifaces = if_asy->next;
+		Ifaces = if_asy->next;
 		free(if_asy->name);
 		free((char *)if_asy);
-		nasy--;
+		Nasy--;
 		return -1;
 	    }
 #endif
@@ -915,13 +872,14 @@ char *argv[];
 #endif
 
 /* Display or set IP interface control flags */
-domode(argc,argv)
+domode(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
-	register struct interface *ifp;
+	register struct iface *ifp;
 
-	for(ifp=ifaces;ifp != NULLIF;ifp = ifp->next){
+	for(ifp=Ifaces;ifp != NULLIF;ifp = ifp->next){
 		if(strcmp(argv[1],ifp->name) == 0)
 			break;
 	}
@@ -953,29 +911,31 @@ char *argv[];
 }
 
 #ifdef SERVERS
-dostart(argc,argv)
+dostart(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
-	return subcmd(startcmds,argc,argv);
+	return subcmd(startcmds,argc,argv,p);
 }
-dostop(argc,argv)
+dostop(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
-	return subcmd(stopcmds,argc,argv);
+	return subcmd(stopcmds,argc,argv,p);
 }
-#endif SERVERS
+#endif
 
 #ifdef  TRACE
-static
 int
-dotrace(argc,argv)
+dotrace(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	extern int notraceall;  /* trace only in command mode? */
-	struct interface *ifp;
+	struct iface *ifp;
 
 	if(argc < 2 || strcmp(argv[1], "all") == 0){
 		printf("trace mode is %s\n", (notraceall ? "cmdmode" : "allmode"));
@@ -983,7 +943,7 @@ char *argv[];
 		if(argc >= 3)
 			loopback.trace = htoi(argv[2]);
 		showtrace(&loopback);
-		for(ifp = ifaces; ifp != NULLIF; ifp = ifp->next) {
+		for(ifp = Ifaces; ifp != NULLIF; ifp = ifp->next) {
 			if(argc >= 3)
 				ifp->trace = htoi(argv[2]);
 			showtrace(ifp);
@@ -1018,7 +978,7 @@ char *argv[];
 		notraceall = 0;
 		return 0;
 	} else
-		for(ifp = ifaces; ifp != NULLIF; ifp = ifp->next)
+		for(ifp = Ifaces; ifp != NULLIF; ifp = ifp->next)
 			if(strcmp(ifp->name,argv[1]) == 0)
 				break;
 
@@ -1033,9 +993,9 @@ char *argv[];
 	return 0;
 }
 /* Display the trace flags for a particular interface */
-static
+static void
 showtrace(ifp)
-register struct interface *ifp;
+register struct iface *ifp;
 {
 	if(ifp == NULLIF)
 		return;
@@ -1060,11 +1020,11 @@ register struct interface *ifp;
 #endif
 
 #if     ((!defined(MSDOS) && !defined(ATARI_ST)) || defined(PC9801))
-static
 int
-doescape(argc,argv)
+doescape(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	if(argc < 2)
 		printf("0x%x\n",escape);
@@ -1076,10 +1036,11 @@ char *argv[];
 /* Generate system command packet. Synopsis:
  * remote [-p port#] [-k key] [-a hostname] <hostname> reset|exit|kickme
  */
-static int
-doremote(argc,argv)
+int
+doremote(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	struct socket fsock,lsock;
 	struct mbuf *bp;
@@ -1123,7 +1084,7 @@ char *argv[];
 		printf("Host %s unknown\n",host);
 		return 1;
 	}
-	lsock.address = ip_addr;
+	lsock.address = Ip_addr;
 	lsock.port = fsock.port = port;
 
 	len = 1;
@@ -1170,9 +1131,10 @@ char *argv[];
 
 /*---------------------------------------------------------------------------*/
 
-static int  dostatus(argc, argv)
+static int  dostatus(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
   char  *my_argv[3];
 
@@ -1182,33 +1144,34 @@ char  *argv[];
 #ifdef  AX25
   puts("------------------------------------ AX.25 ------------------------------------");
   my_argv[0] = "ax25";
-  doax25(2, my_argv);
+  doax25(2, my_argv, p);
 #endif
 
   puts("------------------------------------ NETROM -----------------------------------");
   my_argv[0] = "netrom";
-  donetrom(2, my_argv);
+  donetrom(2, my_argv, p);
 
   puts("------------------------------------- TCP -------------------------------------");
   my_argv[0] = "tcp";
-  dotcp(2, my_argv);
+  dotcp(2, my_argv, p);
 
   puts("------------------------------------- UDP -------------------------------------");
   my_argv[0] = "udp";
-  doudp(2, my_argv);
+  doudp(2, my_argv, p);
 
   puts("----------------------------------- IP/ICMP -----------------------------------");
   my_argv[0] = "ip";
-  doip(2, my_argv);
+  doip(2, my_argv, p);
 
   return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int  dosource(argc, argv)
+static int  dosource(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
 
   FILE * fp;
@@ -1219,7 +1182,7 @@ char  *argv[];
     return 1;
   }
   while (fgets(inbuf, BUFSIZ, fp))
-    cmdparse(cmds, inbuf);
+    cmdparse(cmds, inbuf, NULL);
   fclose(fp);
   mode = CMD_MODE;
   cooked();
@@ -1230,9 +1193,10 @@ char  *argv[];
 
 #include <sys/rtprio.h>
 
-static int  dortprio(argc, argv)
+static int  dortprio(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
   int  tmp;
 

@@ -1,10 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote.h,v 1.2 1990/04/12 17:51:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote.h,v 1.3 1990/08/23 17:33:54 deyke Exp $ */
 
 #ifndef SYS_RESET
 
 /* Remote reset/restart server definitions */
-
-#define IPPORT_REMOTE   1234    /* Pulled out of the air */
 
 extern char *Rempass;
 

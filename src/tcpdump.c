@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpdump.c,v 1.2 1990/08/23 17:34:08 deyke Exp $ */
+
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
@@ -6,8 +8,6 @@
 #include "timer.h"
 #include "tcp.h"
 #include "trace.h"
-
-extern FILE *trfp;
 
 /* TCP segment header flags */
 char *tcpflags[] = {
@@ -21,7 +21,8 @@ char *tcpflags[] = {
 
 /* Dump a TCP segment header. Assumed to be in network byte order */
 void
-tcp_dump(bpp,source,dest,check)
+tcp_dump(fp,bpp,source,dest,check)
+FILE *fp;
 struct mbuf **bpp;
 int32 source,dest;      /* IP source and dest addresses */
 int check;              /* 0 if checksum test is to be bypassed */
@@ -38,27 +39,27 @@ int check;              /* 0 if checksum test is to be bypassed */
 	ph.source = source;
 	ph.dest = dest;
 	ph.protocol = TCP_PTCL;
-	ph.length = len_mbuf(*bpp);
+	ph.length = len_p(*bpp);
 	csum = cksum(&ph,*bpp,ph.length);
 
 	ntohtcp(&seg,bpp);
 
-	fprintf(trfp,"TCP: %u->%u Seq x%lx",seg.source,seg.dest,seg.seq,seg.ack);
+	fprintf(fp,"TCP: %u->%u Seq x%lx",seg.source,seg.dest,seg.seq,seg.ack);
 	if(seg.flags & ACK)
-		fprintf(trfp," Ack x%lx",seg.ack);
+		fprintf(fp," Ack x%lx",seg.ack);
 	for(i=0;i<6;i++){
 		if(seg.flags & 1 << i){
-			fprintf(trfp," %s",tcpflags[i]);
+			fprintf(fp," %s",tcpflags[i]);
 		}
 	}
-	fprintf(trfp," Wnd %u",seg.wnd);
+	fprintf(fp," Wnd %u",seg.wnd);
 	if(seg.flags & URG)
-		fprintf(trfp," UP x%x",seg.up);
+		fprintf(fp," UP x%x",seg.up);
 	/* Print options, if any */
 	if(seg.mss != 0)
-		fprintf(trfp," MSS %u",seg.mss);
+		fprintf(fp," MSS %u",seg.mss);
 	if(check && csum != 0)
-		fprintf(trfp," CHECKSUM ERROR (%u)",i);
-	fprintf(trfp,"\n");
+		fprintf(fp," CHECKSUM ERROR (%u)",i);
+	fprintf(fp,"\n");
 }
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.3 1990/03/19 12:33:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.4 1990/08/23 17:32:34 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -115,38 +115,39 @@ struct session *s;
 
 /*---------------------------------------------------------------------------*/
 
-int  doconnect(argc, argv)
+int  doconnect(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
 
-  char  *p;
+  char  *ap;
   char  path[10*AXALEN];
   struct session *s;
 
   argc--;
   argv++;
-  for (p = path; argc > 0; argc--, argv++) {
+  for (ap = path; argc > 0; argc--, argv++) {
     if (!strncmp("via", *argv, strlen(*argv))) continue;
-    if (p > path + sizeof(path) - 1) {
+    if (ap > path + sizeof(path) - 1) {
       printf("Too many digipeaters (max 8)\n");
       return 1;
     }
-    if (setcall(axptr(p), *argv)) {
+    if (setcall(axptr(ap), *argv)) {
       printf("Invalid call \"%s\"\n", *argv);
       return 1;
     }
-    if (p == path) {
-      p += AXALEN;
-      addrcp(axptr(p), &mycall);
+    if (ap == path) {
+      ap += AXALEN;
+      addrcp(axptr(ap), &mycall);
     }
-    p += AXALEN;
+    ap += AXALEN;
   }
-  if (p < path + 2 * AXALEN) {
+  if (ap < path + 2 * AXALEN) {
     printf("Missing call\n");
     return 1;
   }
-  p[-1] |= E;
+  ap[-1] |= E;
   if (!(s = newsession())) {
     printf("Too many sessions\n");
     return 1;
@@ -158,7 +159,7 @@ char  *argv[];
   s->parse = axclient_parse;
   if (!(s->cb.ax25 = open_ax(path, AX25_ACTIVE, axclient_recv_upcall, axclient_send_upcall, axclient_state_upcall, (char *) s))) {
     freesession(s);
-    switch (net_error) {
+    switch (Net_error) {
     case NONE:
       printf("No error\n");
       break;
@@ -171,7 +172,7 @@ char  *argv[];
     case CON_CLOS:
       printf("Connection closing\n");
       break;
-    case NO_SPACE:
+    case NO_MEM:
       printf("No memory\n");
       break;
     case WOULDBLK:
@@ -186,7 +187,7 @@ char  *argv[];
     }
     return 1;
   }
-  go();
+  go(argc, argv, p);
   return 0;
 }
 

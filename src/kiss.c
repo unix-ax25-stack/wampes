@@ -1,12 +1,15 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.2 1990/08/23 17:33:16 deyke Exp $ */
+
 #include "global.h"
 #include "mbuf.h"
 #include "iface.h"
 #include "kiss.h"
+#include "ax25.h"
 #include "trace.h"
 
 /* Send raw data packet on KISS TNC */
 kiss_raw(interface,data)
-struct interface *interface;
+struct iface *interface;
 struct mbuf *data;
 {
 	register struct mbuf *bp;
@@ -28,7 +31,7 @@ struct mbuf *data;
 /* Process incoming KISS TNC frame */
 void
 kiss_recv(interface,bp)
-struct interface *interface;
+struct iface *interface;
 struct mbuf *bp;
 {
 	char kisstype;
@@ -43,7 +46,7 @@ struct mbuf *bp;
 }
 /* Perform device control on KISS TNC by sending control messages */
 kiss_ioctl(interface,argc,argv)
-struct interface *interface;
+struct iface *interface;
 int argc;
 char *argv[];
 {

@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.2 1990/08/23 17:34:06 deyke Exp $ */
+
 #include <stdio.h>
 #include "global.h"
 #include "timer.h"
@@ -6,6 +8,15 @@
 #include "internet.h"
 #include "tcp.h"
 #include "cmdparse.h"
+
+static int dotcpreset __ARGS((int argc, char *argv [], void *p));
+static int doirtt __ARGS((int argc, char *argv [], void *p));
+static int dortt __ARGS((int argc, char *argv [], void *p));
+static int dotcpkick __ARGS((int argc, char *argv [], void *p));
+static int domss __ARGS((int argc, char *argv [], void *p));
+static int dowindow __ARGS((int argc, char *argv [], void *p));
+static int dotcpstat __ARGS((int argc, char *argv [], void *p));
+static int tstat __ARGS((void));
 
 /* TCP connection states */
 char *tcpstates[] = {
@@ -30,35 +41,32 @@ char *reasons[] = {
 	"ICMP"
 };
 /* TCP subcommand table */
-int domss(),doirtt(),dortt(),dotcpstat(),dowindow(),dotcpkick(),dotcpreset();
 struct cmds tcpcmds[] = {
-	"irtt",         doirtt,         0,      NULLCHAR,       NULLCHAR,
-	"kick",         dotcpkick,      2,      "tcp kick <tcb>",
-		NULLCHAR,
-	"mss",          domss,          0,      NULLCHAR,       NULLCHAR,
-	"reset",        dotcpreset,     2,      "tcp reset <tcb>",
-		NULLCHAR,
-	"rtt",          dortt,          3,      "tcp rtt <tcb> <val>",
-		NULLCHAR,
-	"status",       dotcpstat,      0,      NULLCHAR,       NULLCHAR,
-	"window",       dowindow,       0,      NULLCHAR,       NULLCHAR,
-	NULLCHAR,       NULLFP,         0,
-		"tcp subcommands: irtt kick mss reset rtt status window",
-		NULLCHAR,
+	"irtt",         doirtt,         0, 0,      NULLCHAR,
+	"kick",         dotcpkick,      0, 2,      "tcp kick <tcb>",
+	"mss",          domss,          0, 0,      NULLCHAR,
+	"reset",        dotcpreset,     0, 2,      "tcp reset <tcb>",
+	"rtt",          dortt,          0, 3,      "tcp rtt <tcb> <val>",
+	"status",       dotcpstat,      0, 0,      NULLCHAR,
+	"window",       dowindow,       0, 0,      NULLCHAR,
+	NULLCHAR,       NULLFP,         0, 0,
+		"tcp subcommands: irtt kick mss reset rtt status window"
 };
 int
-dotcp(argc,argv)
+dotcp(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
-	return subcmd(tcpcmds,argc,argv);
+	return subcmd(tcpcmds,argc,argv,p);
 }
 
 /* Eliminate a TCP connection */
 static int
-dotcpreset(argc,argv)
+dotcpreset(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	register struct tcb *tcb;
 	extern char notval[];
@@ -74,9 +82,10 @@ char *argv[];
 
 /* Set initial round trip time for new connections */
 static int
-doirtt(argc,argv)
+doirtt(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	if(argc < 2)
 		printf("%lu\n",tcp_irtt);
@@ -87,9 +96,10 @@ char *argv[];
 
 /* Set smoothed round trip time for specified TCB */
 static int
-dortt(argc,argv)
+dortt(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	register struct tcb *tcb;
 	extern char notval[];
@@ -105,9 +115,10 @@ char *argv[];
 
 /* Force a retransmission */
 static int
-dotcpkick(argc,argv)
+dotcpkick(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	register struct tcb *tcb;
 	extern char notval[];
@@ -122,9 +133,10 @@ char *argv[];
 
 /* Set default maximum segment size */
 static int
-domss(argc,argv)
+domss(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	if(argc < 2)
 		printf("%u\n",tcp_mss);
@@ -135,9 +147,10 @@ char *argv[];
 
 /* Set default window size */
 static int
-dowindow(argc,argv)
+dowindow(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	if(argc < 2)
 		printf("%u\n",tcp_window);
@@ -148,9 +161,10 @@ char *argv[];
 
 /* Display status of TCBs */
 static int
-dotcpstat(argc,argv)
+dotcpstat(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	register struct tcb *tcb;
 	extern char notval[];
@@ -197,7 +211,7 @@ tstat()
 	return 0;
 }
 /* Dump a TCP control block in detail */
-static void
+void
 state_tcp(tcb)
 struct tcb *tcb;
 {
@@ -283,8 +297,8 @@ struct tcb *tcb;
 		break;
 	case TIMER_RUN:
 		printf("Timer running (%ld/%ld ms) ",
-		 (long)MSPTICK * (tcb->timer.start - tcb->timer.count),
-		 (long)MSPTICK * tcb->timer.start);
+		 (long)MSPTICK * read_timer(&tcb->timer),
+		 (long)MSPTICK * dur_timer(&tcb->timer));
 		break;
 	case TIMER_EXPIRE:
 		printf("Timer expired ");

@@ -1,11 +1,13 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.2 1990/08/23 17:33:27 deyke Exp $ */
+
 /* Mailer Daemon, checks for outbound mail and starts mail delivery agents */
 
 #include <sys/types.h>
 
 #include <ctype.h>
-#include <memory.h>
-#include <ndir.h>
+#include <dirent.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 
@@ -13,9 +15,6 @@
 #include "timer.h"
 #include "hpux.h"
 #include "mail.h"
-
-extern char  hostname[];
-extern void free();
 
 static struct mailsys *mailsys;
 static struct timer timer;
@@ -91,7 +90,7 @@ mail_daemon()
   char  spooldir[80];
   char  tmp1[1024];
   char  tmp2[1024];
-  struct direct *dp;
+  struct dirent *dp;
   struct mailjob mj, *jp;
   struct mailsys *sp;
   struct stat statbuf;
@@ -151,8 +150,8 @@ mail_daemon()
       if (!*mj.to) continue;
       if (!(fp = fopen(mj.dfile, "r"))) continue;
       if (fscanf(fp, "%*s %s", tmp1) == 1) {
-	if (!strcmp(tmp1, "MAILER-DAEMON")) strcpy(tmp1, hostname);
-	sprintf(mj.from, "%s!%s", hostname, tmp1);
+	if (!strcmp(tmp1, "MAILER-DAEMON")) strcpy(tmp1, Hostname);
+	sprintf(mj.from, "%s!%s", Hostname, tmp1);
 	strtrim(mj.from);
 	while (fgets(line, sizeof(line), fp))
 	  if (!strncmp(line, "Subject: ", 9)) {

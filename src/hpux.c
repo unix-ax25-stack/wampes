@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.9 1990/04/05 11:14:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.10 1990/08/23 17:32:57 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -19,7 +19,6 @@
 #include "hpux.h"
 
 extern char  *getenv();
-extern int  abort();
 extern int  debug;
 extern long  sigsetmask();
 extern long  time();
@@ -42,10 +41,10 @@ int  actexcp[2];
 void (*excpfnc[_NFILE])();
 char *excparg[_NFILE];
 
-struct asy asy[ASY_MAX];
-struct interface *ifaces;
+int  Nasy;
 long  currtime;
-unsigned  nasy;
+struct asy asy[ASY_MAX];
+struct iface *Ifaces;
 
 static int  local_kbd;
 static long  lasttime;
@@ -115,14 +114,14 @@ int  ioinit()
 
 int  iostop()
 {
-  register struct interface *ifp;
+  register struct iface *ifp;
 
   if (local_kbd) {
     ioctl(0, TCSETA, &prev_termio);
     printf("\033&s0A");   /* disable XmitFnctn */
     fflush(stdout);
   }
-  for (ifp = ifaces; ifp; ifp = ifp->next)
+  for (ifp = Ifaces; ifp; ifp = ifp->next)
     if (ifp->stop) (*ifp->stop)(ifp->dev);
 }
 
@@ -131,17 +130,17 @@ int  iostop()
 int  kbread()
 {
 
-  static char  inbuf[256], *inptr;
-  static int  incnt;
+  static char  buf[256], *ptr;
+  static int  cnt;
 
   if (!local_kbd) return remote_kbd();
-  if (incnt <= 0 && maskset(actread, 0)) {
+  if (cnt <= 0 && maskset(actread, 0)) {
     clrmask(actread, 0);
-    incnt = read(0, inptr = inbuf, sizeof(inbuf));
+    cnt = read(0, ptr = buf, sizeof(buf));
   }
-  if (incnt <= 0) return (-1);
-  incnt--;
-  return uchar(*inptr++);
+  if (cnt <= 0) return (-1);
+  cnt--;
+  return uchar(*ptr++);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -173,7 +172,7 @@ int16 dev;
   char  buf[80];
   int  addrlen;
   register struct asy *asp;
-  register struct interface *ifp;
+  register struct iface *ifp;
   struct sockaddr *addr;
   struct sockaddr *build_sockaddr();
   struct termio termio;
@@ -183,7 +182,7 @@ int16 dev;
   if (times[dev].wait < MIN_WAIT) times[dev].wait = MIN_WAIT;
   if (times[dev].wait > MAX_WAIT) times[dev].wait = MAX_WAIT;
   times[dev].next = currtime + times[dev].wait;
-  for (ifp = ifaces; ifp; ifp = ifp->next)
+  for (ifp = Ifaces; ifp; ifp = ifp->next)
     if (ifp->dev == dev && ifp->stop == asy_stop) break;
   if (!ifp) return (-1);
   asy_stop(dev);
@@ -234,11 +233,11 @@ int  dev, speed;
 {
 
   register struct asy *asp;
-  register struct interface *ifp;
+  register struct iface *ifp;
   struct termio termio;
 
   asp = asy + dev;
-  for (ifp = ifaces; ifp; ifp = ifp->next)
+  for (ifp = Ifaces; ifp; ifp = ifp->next)
     if (ifp->dev == dev && ifp->stop == asy_stop) break;
   if (!ifp || asp->fd <= 0 || !strncmp(ifp->name, "ipc", 3)) return (-1);
   if (ioctl(asp->fd, TCGETA, &termio)) return (-1);
@@ -272,7 +271,7 @@ int  dev, speed;
 /*---------------------------------------------------------------------------*/
 
 asy_ioctl(interface, argc, argv)
-struct interface *interface;
+struct iface *interface;
 int  argc;
 char  *argv[];
 {
@@ -293,7 +292,7 @@ int  dev;
 
 /*---------------------------------------------------------------------------*/
 
-int  asy_output(dev, buf, cnt)
+void asy_output(dev, buf, cnt)
 int  dev;
 char  *buf;
 unsigned short  cnt;
@@ -350,7 +349,7 @@ void check_time()
 /*---------------------------------------------------------------------------*/
 
 int  system(cmdline)
-char  *cmdline;
+const char *cmdline;
 {
 
   int  i, pid, status;
@@ -438,7 +437,7 @@ static void check_files_changed()
   if (rc_time != statbuf.st_mtime && statbuf.st_mtime < currtime - 3600)
     changed = 1;
 
-  if (changed) doexit();
+  if (changed) doexit(0, NULL, NULL);
 }
 
 /*---------------------------------------------------------------------------*/

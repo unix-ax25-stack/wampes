@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.2 1990/02/12 11:55:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.3 1990/08/23 17:34:11 deyke Exp $ */
 
 /* Process incoming TCP segments. Page number references are to ARPA RFC-793,
  * the TCP specification.
@@ -13,6 +13,16 @@
 #include "icmp.h"
 #include "iface.h"
 #include "ip.h"
+
+void send_syn();
+
+static void reset __ARGS((int32 source, int32 dest, int tos, int length, struct tcp *seg));
+static void update __ARGS((struct tcb *tcb, struct tcp *seg));
+static int in_window __ARGS((struct tcb *tcb, int32 seq));
+static void proc_syn __ARGS((struct tcb *tcb, int tos, struct tcp *seg));
+static void add_reseq __ARGS((struct tcb *tcb, int tos, struct tcp *seg, struct mbuf *bp, int length));
+static void get_reseq __ARGS((struct tcb *tcb, char *tos, struct tcp *seg, struct mbuf **bp, int16 *length));
+static int trim __ARGS((struct tcb *tcb, struct tcp *seg, struct mbuf **bp, int16 *length));
 
 struct tcp_stat tcp_stat;
 
@@ -29,8 +39,6 @@ char tos;               /* Type of Service */
 int16 length;           /* Length of data field */
 char rxbroadcast;       /* Incoming broadcast - discard if true */
 {
-	void reset(),update();
-	void proc_syn(),send_syn(),add_reseq(),get_reseq(),unlink_tcb();
 
 	register struct tcb *tcb;       /* TCP Protocol control block */
 	struct tcp seg;                 /* Local copy of segment header */
@@ -420,15 +428,15 @@ struct mbuf **bpp;              /* First 8 bytes of TCP header */
 	 * is saved.
 	 */
 	switch(uchar(type)){
-	case DEST_UNREACH:
-	case TIME_EXCEED:
+	case ICMP_DEST_UNREACH:
+	case ICMP_TIME_EXCEED:
 		tcb->type = type;
 		tcb->code = code;
 		if(tcb->state == SYN_SENT || tcb->state == SYN_RECEIVED){
 			close_self(tcb,NETWORK);
 		}
 		break;
-	case QUENCH:
+	case ICMP_QUENCH:
 		/* Source quench; cut the congestion window in half,
 		 * but don't let it go below one packet
 		 */
@@ -579,8 +587,7 @@ register struct tcp *seg;
 			/* This packet was sent only once and now
 			 * it's been acked, so process the round trip time
 			 */
-			rtt = tcb->rtt_timer.start - tcb->rtt_timer.count;
-			rtt *= MSPTICK;         /* milliseconds */
+			rtt = (dur_timer(&tcb->rtt_timer) - read_timer(&tcb->rtt_timer)) * MSPTICK;
 
 			/* If this ACKs our SYN, this is the first ACK
 			 * we've received; base our entire SRTT estimate

@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.2 1990/08/23 17:34:13 deyke Exp $ */
+
 #include "global.h"
 #include "timer.h"
 #include "mbuf.h"

@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strmatch.c,v 1.2 1990/08/23 17:34:04 deyke Exp $ */
+
 int  strmatch(s, p)
 register unsigned char  *s;
 register unsigned char  *p;

@@ -1,44 +1,76 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.2 1990/04/12 17:51:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.3 1990/08/23 17:32:56 deyke Exp $ */
+
+#ifndef MAXINT16
 
 /* Global definitions used by every source file.
  * Some may be compiler dependent.
  */
-#define MK_FP(seg,ofs)  ((void far *) \
-			   (((unsigned long)(seg) << 16) | (unsigned)(ofs)))
-/*wa6ngo* Switch "a" and "b" below as these functions are called with
-	  the offset as the first param and the segment as the second*/
-#define pokew(a,b,c)    (*((int  far*)MK_FP((b),(a))) = (int)(c))
-#define pokeb(a,b,c)    (*((char far*)MK_FP((b),(a))) = (char)(c))
-#define peekw(a,b)      (*((int  far*)MK_FP((b),(a))))
-#define peekb(a,b)      (*((char far*)MK_FP((b),(a))))
-#define movblock(so,ss,do,ds,c) movedata(ss,so,ds,do,c)
 
-#define outportw outport
-#define inportw inport
-#define index strchr
-#define rindex strrchr
+#if     defined(__TURBOC__) || defined(__STDC__) || defined(LATTICE)
+#define ANSIPROTO       1
+#endif
 
-/* Indexes into binmode in files.c; hook for compilers that have special
- * open modes for binary files
+#ifndef __ARGS
+#ifdef  ANSIPROTO
+#define __ARGS(x)       x
+#else
+#define __ARGS(x)       ()
+#endif
+#endif
+
+#if     !defined(AMIGA) && (defined(LATTICE) || defined(MAC) || defined(__TURBOC__))
+/* These compilers require special open modes when reading binary files.
+ *
+ * "The single most brilliant design decision in all of UNIX was the
+ * choice of a SINGLE character as the end-of-line indicator" -- M. O'Dell
+ *
+ * "Whoever picked the end-of-line conventions for MS-DOS and the Macintosh
+ * should be shot!" -- P. Karn's corollary to O'Dells' declaration
  */
-#define READ_BINARY     0
-#define WRITE_BINARY    1
-#define APPEND_BINARY   2
-extern char *binmode[];
+#define READ_BINARY     "rb"
+#define WRITE_BINARY    "wb"
+#define READ_TEXT       "rt"
+#define WRITE_TEXT      "wt"
+#define APPEND_TEXT     "at+"
 
-/* not all compilers grok defined() */
-#ifdef NODEFINED
-#define defined(x) (x)
+#else
+
+#define READ_BINARY     "r"
+#define WRITE_BINARY    "w"
+#define READ_TEXT       "r"
+#define WRITE_TEXT      "w"
+#define APPEND_TEXT     "a+"
+
 #endif
 
 /* These two lines assume that your compiler's longs are 32 bits and
  * shorts are 16 bits. It is already assumed that chars are 8 bits,
  * but it doesn't matter if they're signed or unsigned.
  */
-typedef long int32;             /* 32-bit signed integer */
+typedef int int32;              /* 32-bit signed integer */
 typedef unsigned short int16;   /* 16-bit unsigned integer */
 #define uchar(x) ((unsigned char)(x))
 #define MAXINT16 65535          /* Largest 16-bit integer */
+#define MAXINT32 4294967295L    /* Largest 32-bit integer */
+
+/* The "interrupt" keyword is non-standard, so make it configurable */
+#ifdef  __TURBOC__
+#define INTERRUPT       void interrupt
+#else
+#define INTERRUPT       void
+#endif
+
+/* Note that these definitions are on by default if none of the Turbo-C style
+ * memory model definitions are on; this avoids having to change them when
+ * porting to 68K environments.
+ */
+#if     !defined(__TINY__) && !defined(__SMALL__) && !defined(__MEDIUM__)
+#define LARGEDATA       1
+#endif
+
+#if     !defined(__TINY__) && !defined(__SMALL__) && !defined(__COMPACT__)
+#define LARGECODE       1
+#endif
 
 /* Since not all compilers support structure assignment, the ASSIGN()
  * macro is used. This controls how it's actually implemented.
@@ -52,81 +84,109 @@ typedef unsigned short int16;   /* 16-bit unsigned integer */
 /* Define null object pointer in case stdio.h isn't included */
 #ifndef NULL
 /* General purpose NULL pointer */
-#ifdef ATARI_ST
-#define NULL (char *)0          /* MW does not like funny typecasts on void */
-#else
 #define NULL (void *)0
 #endif
-#endif
 #define NULLCHAR (char *)0      /* Null character pointer */
+#define NULLCHARP (char **)0    /* Null character pointer pointer */
+#define NULLINT (int *)0        /* Null integer pointer */
 #define NULLFP   (int (*)())0   /* Null pointer to function returning int */
 #define NULLVFP  (void (*)())0  /* Null pointer to function returning void */
+#define NULLVIFP (INTERRUPT (*)())0
 #define NULLFILE (FILE *)0      /* Null file pointer */
 
-/* General purpose function macros */
-#define min(x,y)        ((x)<(y)?(x):(y))       /* Lesser of two args */
-#define max(x,y)        ((x)>(y)?(x):(y))       /* Greater of two args */
-
-/* Convert an address to a LONG value for printing */
-#ifdef MSDOS
-long    ptr2long();                     /* for fuzzy segment addresses */
-#else
-#define ptr2long(x)     ((long) (x))    /* typecast suffices for others */
-#endif
-
-#ifdef  MPU8080 /* Assembler routines are available */
-int16 hinibble(),lonibble(),hibyte(),lobyte(),hiword(),loword();
-
-#else
-
 /* Extract a short from a long */
-/* According to my docs, this bug is fixed in MWC 3.0. (from 3.0.6 release
-   notes.) -- hyc */
-#if     (ATARI_ST && (MWC < 306))
-extern int Sixteen;
-#define hiword(x)       ((int16)((x) >> Sixteen)) /* hide compiler bug.. */
-#else
 #define hiword(x)       ((int16)((x) >> 16))
-#endif
 #define loword(x)       ((int16)(x))
 
 /* Extract a byte from a short */
-#define hibyte(x)       (((x) >> 8) & 0xff)
-#define lobyte(x)       ((x) & 0xff)
+#define hibyte(x)       ((unsigned char)((x) >> 8))
+#define lobyte(x)       ((unsigned char)(x))
 
 /* Extract nibbles from a byte */
 #define hinibble(x)     (((x) >> 4) & 0xf)
 #define lonibble(x)     ((x) & 0xf)
 
+/* Various low-level and miscellaneous functions */
+unsigned long availmem __ARGS((void));
+void *callocw __ARGS((unsigned nelem,unsigned size));
+int dirps __ARGS((void));
+void freeargs __ARGS((int argc,char *argv[]));
+int getopt __ARGS((int argc,char *argv[],char *opts));
+int htoi __ARGS((char *));
+long htol __ARGS((char *));
+char *inbuf __ARGS((int16 port,char *buf,int16 cnt));
+int istate __ARGS((void));
+/* void log __ARGS((struct tcb *tcb,char *fmt, ...)); */
+void log();
+void *ltop __ARGS((long));
+void *mallocw __ARGS((unsigned nb));
+char *outbuf __ARGS((int16 port,char *buf,int16 cnt));
+long ptol __ARGS((void *));
+void restore __ARGS((int));
+void rip __ARGS((char *));
+char *smsg __ARGS((char *msgs[],unsigned nmsgs,unsigned n));
+int tprintf __ARGS((char *fmt,...));
+#if     !defined __TURBOC__
+char *strdup __ARGS((char *));
+#endif
+int wildmat __ARGS((char *s,char *p,char **argv));
+
+#define tprintf printf
+#include <sys/types.h>          /* for HP-UX 6.5 compatibility */
+#define _SIZE_T                 /* for HP-UX 6.5 compatibility */
+#include <stdlib.h>
+#include <string.h>
+
+#ifdef  AZTEC
+#define rewind(fp)      fseek(fp,0L,0);
 #endif
 
-#if     (defined(SYS5) || (defined(ATARI_ST) && defined(LATTICE)))
-#define rindex  strrchr
-#define index   strchr
+#ifdef  __TURBOC__
+#define movblock(so,ss,do,ds,c) movedata(ss,so,ds,do,c)
+#define outportw outport
+#define inportw inport
+
+#else
+
+/* General purpose function macros already defined in turbo C */
+#ifndef min
+#define min(x,y)        ((x)<(y)?(x):(y))       /* Lesser of two args */
 #endif
-
-/* Heavily used functions from the standard library */
-char *index(),*rindex(),*malloc(),*calloc(),*ctime(),*tmpnam();
-
-#if     ATARI_ST && MICRORTX
-/* the 68000 processor won't let you disable interrupts in user mode
- * therefore, a trap handler has been defined to do this, and it's
- * installed as trap #5. The Mark Williams compiler generates a trap #5
- * when you call the magic function "micro_rtx" (their multi-tasking
- * executive).
- * the trap handler returns the previous processor level as a char.
- */
-
-#define disable()       micro_rtx(6)
-#define restore(state)  micro_rtx(state)
-
-/* a quick, non-checking free() function as a macro */
-#ifdef QFREE
-#define free(p)         ((char *) (p))[-1] |= 1;
+#ifndef max
+#define max(x,y)        ((x)>(y)?(x):(y))       /* Greater of two args */
 #endif
+#ifdef  MSDOS
+#define MK_FP(seg,ofs)  ((void far *) \
+			   (((unsigned long)(seg) << 16) | (unsigned)(ofs)))
+#endif
+#endif  /* __TURBOC __ */
+
+#ifdef  AMIGA
+/* super kludge de WA3YMH */
+#ifndef fileno
+#include <stdio.h>
+#endif
+#define fclose(fp)      amiga_fclose(fp)
+extern int amiga_fclose __ARGS((FILE *));
+extern FILE *tmpfile __ARGS((void));
+
+extern char *sys_errlist[];
+extern int errno;
 #endif
 
 /* Externals used by getopt */
 extern int optind;
 extern char *optarg;
+
+/* Threshold setting on available memory */
+extern int32 Memthresh;
+
+/* Various useful standard error messages */
+extern char Badhost[];
+extern char Nospace[];
+extern char Notval[];
+extern char Hostname[];
+extern char Version[];
+
+#endif  /* MAXINT16 */
 

@@ -1,6 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.2 1990/01/29 09:37:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.3 1990/08/23 17:34:23 deyke Exp $ */
 
 #include "global.h"
+#include "socket.h"
 #include "netuser.h"
 #include "timer.h"
 #include "tcp.h"
@@ -78,8 +79,8 @@ char  *argv[];
   struct socket lsocket;
 
   if (tcb_server) close_tcp(tcb_server);
-  lsocket.address = ip_addr;
-  lsocket.port = (argc < 2) ? TELNET_PORT : tcp_portnum(argv[1]);
+  lsocket.address = Ip_addr;
+  lsocket.port = (argc < 2) ? IPPORT_TELNET : tcp_portnum(argv[1]);
   tcb_server = open_tcp(&lsocket, NULLSOCK, TCP_SERVER, 0, tnserv_recv_upcall, tnserv_send_upcall, tnserv_state_upcall, 0, NULLCHAR);
 }
 

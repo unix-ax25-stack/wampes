@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.2 1990/08/23 17:32:48 deyke Exp $ */
+
 /*
  *
  *      Finger support...
@@ -27,8 +29,9 @@
 #include "session.h"
 /* #include "nr4.h" */
 
-extern char     badhost[],
-		hostname[];
+static struct finger *alloc_finger __ARGS((void));
+static int free_finger __ARGS((struct finger *finger));
+static void f_state __ARGS((struct tcb *tcb, int old, int new));
 
 /*
  *
@@ -37,13 +40,13 @@ extern char     badhost[],
  */
 
 int
-dofinger(argc,argv)
+dofinger(argc,argv,p)
 int     argc;
 char    *argv[];
+void *p;
 {
 	void            f_state(),
 			fingcli_rcv();
-	char            *inet_ntoa();
 	int32           resolve();
 	struct session  *s;
 	struct tcb      *tcb;
@@ -58,7 +61,7 @@ char    *argv[];
 		return(1);
 	}
 
-	lsocket.address = ip_addr;
+	lsocket.address = Ip_addr;
 	lsocket.port = lport++;
 
 /*
@@ -72,8 +75,8 @@ char    *argv[];
 	if ((finger = alloc_finger()) == NULLFING)
 		return(1);
 
-	if ((host = index(argv[1], '@')) == NULL) {
-		fsocket.address = ip_addr;      /* no host, use local */
+	if ((host = strchr(argv[1], '@')) == NULL) {
+		fsocket.address = Ip_addr;      /* no host, use local */
 		if ((finger->user = malloc(strlen(argv[1]) + 3)) == NULL) {
 			free_finger(finger);
 			return(1);
@@ -92,7 +95,7 @@ char    *argv[];
 		}
 		if ((fsocket.address = resolve(host)) == 0) {
 			printf("%s: ", argv[0]);
-			printf(badhost, host);
+			printf(Badhost, host);
 			free_finger(finger);
 			return(1);
 		}
@@ -117,7 +120,7 @@ char    *argv[];
 	finger->session = s;
 
 	if (!host)                              /* if no host specified */
-		host = hostname;                /* use local host name */
+		host = Hostname;                /* use local host name */
 	if ((s->name = malloc(strlen(host)+1)) != NULLCHAR)
 		strcpy(s->name, host);
 
@@ -129,14 +132,14 @@ char    *argv[];
 
 	finger->tcb = tcb;
 	tcb->user = (char *)finger;
-	go();
+	go(argc, argv, p);
 	return 0;
 }
 
 /*
  *      Allocate a finger structure for the new session
  */
-struct finger *
+static struct finger *
 alloc_finger()
 {
 	struct finger *tmp;
@@ -151,7 +154,7 @@ alloc_finger()
 /*
  *      Free a finger structure
  */
-int
+static int
 free_finger(finger)
 struct finger *finger;
 {
@@ -215,7 +218,7 @@ int16                   cnt;
 }
 
 /* State change upcall routine */
-void
+static void
 f_state(tcb,old,new)
 register struct tcb     *tcb;
 char                    old,            /* old state */
@@ -225,8 +228,6 @@ char                    old,            /* old state */
 	char            notify = 0;
 	extern char     *tcpstates[];
 	extern char     *reasons[];
-	extern char     *unreach[];
-	extern char     *exceed[];
 	struct mbuf     *bp;
 
 	finger = (struct finger *)tcb->user;
@@ -247,11 +248,11 @@ char                    old,            /* old state */
 			printf("%s (%s", tcpstates[new], reasons[tcb->reason]);
 			if (tcb->reason == NETWORK){
 				switch(tcb->type){
-				case DEST_UNREACH:
-					printf(": %s unreachable",unreach[tcb->code]);
+				case ICMP_DEST_UNREACH:
+					printf(": %s unreachable",Unreach[tcb->code]);
 					break;
-				case TIME_EXCEED:
-					printf(": %s time exceeded",exceed[tcb->code]);
+				case ICMP_TIME_EXCEED:
+					printf(": %s time exceeded",Exceed[tcb->code]);
 					break;
 				}
 			}

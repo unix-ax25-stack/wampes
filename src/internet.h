@@ -1,3 +1,9 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/internet.h,v 1.2 1990/08/23 17:33:08 deyke Exp $ */
+
+#ifndef MAXTTL
+
+#include "global.h"
+
 /* Global structures and constants pertaining to the interface between IP and
  *      higher level protocols
  */
@@ -45,6 +51,13 @@ struct pseudo_header {
 };
 #define NULLHEADER      (struct pseudo_header *)0
 
-void tcp_input(),udp_input(),dump_ip();
-int16 cksum();
-int ip_send();
+/* Format of a MIB entry for statistics gathering */
+struct mib_entry {
+	char *name;
+	struct {
+		int32 integer;
+	} value;
+};
+
+#endif  /* MAXTTL */
+

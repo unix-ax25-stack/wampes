@@ -1,6 +1,24 @@
-/* Miscellaneous machine independent utilities */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.2 1990/08/23 17:33:41 deyke Exp $ */
 
+/* Miscellaneous machine independent utilities */
+#include <stdio.h>
 #include "global.h"
+#include "socket.h"
+#include "mbuf.h"
+
+/* Select from an array of strings, or return ascii number if out of range */
+char *
+smsg(msgs,nmsgs,n)
+char *msgs[];
+unsigned nmsgs,n;
+{
+	static char buf[16];
+
+	if(n < nmsgs && msgs[n] != NULLCHAR)
+		return msgs[n];
+	sprintf(buf,"%u",n);
+	return buf;
+}
 
 /* Convert hex-ascii to integer */
 int
@@ -25,18 +43,39 @@ char *s;
 	return i;
 }
 /* replace terminating end of line marker(s) with null */
+void
 rip(s)
 register char *s;
 {
 	register char *cp;
 
-	if((cp = index(s,'\r')) != NULLCHAR)
-		*cp = '\0';
-	if((cp = index(s,'\n')) != NULLCHAR)
+	if((cp = strchr(s,'\n')) != NULLCHAR)
 		*cp = '\0';
 }
+
+/* Routines not needed for Turbo 2.0, but available for older libraries */
+#ifdef  AZTEC
+
+/* Copy a string to a malloc'ed buffer */
+char *
+strdup(s)
+const char *s;
+{
+	register char *out;
+	register int len;
+
+	if(s == NULLCHAR)
+		return NULLCHAR;
+	len = strlen(s);
+	out = mallocw(len+1);
+	/* This is probably a tad faster than strcpy, since we know the len */
+	memcpy(out,s,len);
+	out[len] = '\0';
+	return out;
+}
+
 /* Case-insensitive string comparison */
-strncasecmp(a,b,n)
+strnicmp(a,b,n)
 register char *a,*b;
 register int n;
 {
@@ -56,3 +95,116 @@ register int n;
 	}
 	return 0;
 }
+
+char *
+strtok(s1,s2)
+char *s1;       /* Source string (first call) or NULL */
+#ifdef  __STDC__        /* Ugly kludge for aztec's declaration */
+const char *s2; /* Delimiter string */
+#else
+char *s2;       /* Delimiter string */
+#endif
+{
+	static int isdelim();
+	static char *next;
+	register char *cp;
+	char *tmp;
+
+	if(s2 == NULLCHAR)
+		return NULLCHAR;        /* Must give delimiter string */
+
+	if(s1 != NULLCHAR)
+		next = s1;              /* First call */
+
+	if(next == NULLCHAR)
+		return NULLCHAR;        /* No more */
+
+	/* Find beginning of this token */
+	for(cp = next;*cp != '\0' && isdelim(*cp,s2);cp++)
+		;
+
+	if(*cp == '\0')
+		return NULLCHAR;        /* Trailing delimiters, no token */
+
+	/* Save the beginning of this token, and find its end */
+	tmp = cp;
+	next = NULLCHAR;        /* In case we don't find another delim */
+	for(;*cp != '\0';cp++){
+		if(isdelim(*cp,s2)){
+			*cp = '\0';
+			next = cp + 1;  /* Next call will begin here */
+			break;
+		}
+	}
+	return tmp;
+}
+static int
+isdelim(c,delim)
+char c;
+register char *delim;
+{
+	char d;
+
+	while((d = *delim++) != '\0'){
+		if(c == d)
+			return 1;
+	}
+	return 0;
+}
+#endif  /* AZTEC */
+
+/* Host-network conversion routines, replaced on the 8086 with assembler */
+#ifndef MSDOS
+/* Put a long in host order into a char array in network order */
+char *
+put32(cp,x)
+register char *cp;
+int32 x;
+{
+	*cp++ = x >> 24;
+	*cp++ = x >> 16;
+	*cp++ = x >> 8;
+	*cp++ = x;
+	return cp;
+}
+/* Put a short in host order into a char array in network order */
+char *
+put16(cp,x)
+register char *cp;
+int16 x;
+{
+	*cp++ = x >> 8;
+	*cp++ = x;
+
+	return cp;
+}
+int16
+get16(cp)
+register char *cp;
+{
+	register int16 x;
+
+	x = uchar(*cp++);
+	x <<= 8;
+	x |= uchar(*cp);
+	return x;
+}
+/* Machine-independent, alignment insensitive network-to-host long conversion */
+int32
+get32(cp)
+register char *cp;
+{
+	int32 rval;
+
+	rval = uchar(*cp++);
+	rval <<= 8;
+	rval |= uchar(*cp++);
+	rval <<= 8;
+	rval |= uchar(*cp++);
+	rval <<= 8;
+	rval |= uchar(*cp);
+
+	return rval;
+}
+#endif
+

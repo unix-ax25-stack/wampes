@@ -1,7 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.9 1990/04/10 15:54:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.10 1990/08/23 17:32:35 deyke Exp $ */
 
-#include <memory.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -15,11 +15,9 @@
 #include "cmdparse.h"
 #include "asy.h"
 
-extern int  ax_output();
 extern int  debug;
 extern long  currtime;
 extern struct axcb *netrom_server_axcb;
-extern void free();
 
 #define AXROUTEHOLDTIME (60l*60*24*90)
 #define AXROUTESAVETIME (60l*10)
@@ -28,7 +26,7 @@ extern void free();
 struct axroute_tab {
   struct ax25_addr call;
   struct axroute_tab *digi;
-  struct interface *ifp;
+  struct iface *ifp;
   int  perm;
   long  time;
   struct axroute_tab *next;
@@ -70,7 +68,7 @@ static char  axroutefile[] = "/tcp/axroute_data";
 static char  axroutetmpfile[] = "/tcp/axroute_tmp";
 static struct axcb *axcb_head;
 static struct axroute_tab *axroute_tab[AXROUTESIZE];
-static struct interface *axroute_default_ifp;
+static struct iface *axroute_default_ifp;
 
 /*---------------------------------------------------------------------------*/
 
@@ -160,13 +158,13 @@ static void axroute_loadfile()
   static int  done;
   struct axroute_tab *rp;
   struct axroutesaverecord buf;
-  struct interface *ifp, *ifptable[ASY_MAX];
+  struct iface *ifp, *ifptable[ASY_MAX];
 
   if (done) return;
   done = 1;
   if (debug || !(fp = fopen(axroutefile, "r"))) return;
   memset((char *) ifptable, 0, sizeof(ifptable));
-  for (ifp = ifaces; ifp; ifp = ifp->next)
+  for (ifp = Ifaces; ifp; ifp = ifp->next)
     if (ifp->output == ax_output) ifptable[ifp->dev] = ifp;
   while (fread((char *) & buf, sizeof(buf), 1, fp)) {
     if (buf.time + AXROUTEHOLDTIME < currtime) continue;
@@ -229,7 +227,7 @@ struct mbuf *bp;
 
   register char  *dest;
   register struct axroute_tab *rp;
-  struct interface *ifp;
+  struct iface *ifp;
 
   if (cp && cp->ifp)
     ifp = cp->ifp;
@@ -375,7 +373,7 @@ int  fill_sndq;
     }
     if (!cp->sndq) return;
     if (cp->mode == STREAM) {
-      cnt = len_mbuf(cp->sndq);
+      cnt = len_p(cp->sndq);
       if (cnt < ax_paclen) {
 	if (cp->unack) return;
 	if (!cp->peer && cp->sndqtime + ax_t5init > currtime) {
@@ -470,7 +468,7 @@ struct axcb *cp;
     if (cp->retry > ax_retry) {
       setaxstate(cp, DISCONNECTING);
     } else if (!cp->polling && !cp->remote_busy && cp->unack &&
-	       len_mbuf(cp->resndq) <= ax_pthresh) {
+	       len_p(cp->resndq) <= ax_pthresh) {
       int  old_vs;
       struct mbuf *bp;
       old_vs = cp->vs;
@@ -537,15 +535,15 @@ struct axcb *prototype;
   } else
     cp = (struct axcb *) calloc(1, sizeof(struct axcb ));
   cp->cwind = 1;
-  cp->timer_t1.func = t1_timeout;
+  cp->timer_t1.func = (void (*) __ARGS((void *))) t1_timeout;
   cp->timer_t1.arg = (char *) cp;
-  cp->timer_t2.func = t2_timeout;
+  cp->timer_t2.func = (void (*) __ARGS((void *))) t2_timeout;
   cp->timer_t2.arg = (char *) cp;
-  cp->timer_t3.func = t3_timeout;
+  cp->timer_t3.func = (void (*) __ARGS((void *))) t3_timeout;
   cp->timer_t3.arg = (char *) cp;
-  cp->timer_t4.func = t4_timeout;
+  cp->timer_t4.func = (void (*) __ARGS((void *))) t4_timeout;
   cp->timer_t4.arg = (char *) cp;
-  cp->timer_t5.func = t5_timeout;
+  cp->timer_t5.func = (void (*) __ARGS((void *))) t5_timeout;
   cp->timer_t5.arg = (char *) cp;
   cp->next = axcb_head;
   return axcb_head = cp;
@@ -555,7 +553,7 @@ struct axcb *prototype;
 
 static void build_path(cp, ifp, newpath, reverse)
 register struct axcb *cp;
-struct interface *ifp;
+struct iface *ifp;
 char  *newpath;
 int  reverse;
 {
@@ -711,7 +709,7 @@ int  ns;
 /*---------------------------------------------------------------------------*/
 
 int  axproto_recv(ifp, bp)
-struct interface *ifp;
+struct iface *ifp;
 struct mbuf *bp;
 {
 
@@ -908,7 +906,7 @@ struct mbuf *bp;
 	    cp->vr = next_seq(cp->vr);
 	    cp->rejsent = 0;
 	    if (for_me) {
-	      cp->rcvcnt += len_mbuf(bp);
+	      cp->rcvcnt += len_p(bp);
 	      if (cp->mode == STREAM)
 		append(&cp->rcvq, bp);
 	      else
@@ -1013,47 +1011,36 @@ struct mbuf *bp;
 
 /* Control AX.25 digipeating */
 
-static int  dodigipeat(argc, argv)
+static int  dodigipeat(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
   extern int  digipeat;
 
-  if (argc < 2)
-    printf("Digipeat %d\n", digipeat);
-  else {
-    int  tmp = atoi(argv[1]);
-    if (tmp < 0 || tmp > 2) return (-1);
-    digipeat = tmp;
-  }
-  return 0;
+  return setintrc(&digipeat, "Digipeat", argc, argv, 0, 2);
 }
 
 /*---------------------------------------------------------------------------*/
 
 /* Set maximum number of frames that will be allowed in flight */
 
-static domaxframe(argc, argv)
+static int  domaxframe(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
-  if (argc < 2)
-    printf("Maxframe %d\n", ax_maxframe);
-  else {
-    int  tmp = atoi(argv[1]);
-    if (tmp < 1 || tmp > 7) return (-1);
-    ax_maxframe = tmp;
-  }
-  return 0;
+  return setintrc(&ax_maxframe, "Maxframe", argc, argv, 1, 7);
 }
 
 /*---------------------------------------------------------------------------*/
 
 /* Display or change our AX.25 address */
 
-static int  domycall(argc, argv)
+static int  domycall(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
   char  buf[15];
 
@@ -1061,7 +1048,7 @@ char  *argv[];
     pax25(buf, &mycall);
     printf("Mycall %s\n", buf);
   } else {
-    if (setcall(&mycall, argv[1]) == -1) return (-1);
+    if (setcall(&mycall, argv[1]) == -1) return 1;
     mycall.ssid |= E;
   }
   return 0;
@@ -1071,42 +1058,34 @@ char  *argv[];
 
 /* Set maximum length of I-frame data field */
 
-static int  dopaclen(argc, argv)
+static int  dopaclen(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
-  if (argc < 2)
-    printf("Paclen %d\n", ax_paclen);
-  else {
-    int  tmp = atoi(argv[1]);
-    if (tmp < 1) return (-1);
-    ax_paclen = tmp;
-  }
-  return 0;
+  return setintrc(&ax_paclen, "Paclen", argc, argv, 1, MAXINT16);
 }
 
 /*---------------------------------------------------------------------------*/
 
 /* Set size of I-frame above which polls will be sent after a timeout */
 
-static int  dopthresh(argc, argv)
+static int  dopthresh(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
-  if (argc < 2)
-    printf("Pthresh %d\n", ax_pthresh);
-  else
-    ax_pthresh = atoi(argv[1]);
-  return 0;
+  return setintrc(&ax_pthresh, "Pthresh", argc, argv, 0, MAXINT16);
 }
 
 /*---------------------------------------------------------------------------*/
 
 /* Eliminate a AX25 connection */
 
-static int  doaxreset(argc, argv)
+static int  doaxreset(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
   struct axcb *cp;
   extern char  notval[];
@@ -1125,28 +1104,26 @@ char  *argv[];
 
 /* Set retry limit count */
 
-static int  doretry(argc, argv)
+static int  doretry(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
-  if (argc < 2)
-    printf("Retry %d\n", ax_retry);
-  else
-    ax_retry = atoi(argv[1]);
-  return 0;
+  return setintrc(&ax_retry, "Retry", argc, argv, 0, MAXINT16);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int  dorouteadd(argc, argv)
+static int  dorouteadd(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
 
-  char  *p;
+  char  *ap;
   int  perm;
   struct axcb cb;
-  struct interface *if_lookup();
+  struct iface *if_lookup();
 
   argc--;
   argv++;
@@ -1170,28 +1147,28 @@ char  *argv[];
     axroute_default_ifp = cb.ifp;
     return 0;
   }
-  for (p = cb.path; argc > 0; argc--, argv++) {
+  for (ap = cb.path; argc > 0; argc--, argv++) {
     if (!strncmp("via", *argv, strlen(*argv))) continue;
-    if (p >= cb.path + sizeof(cb.path)) {
+    if (ap >= cb.path + sizeof(cb.path)) {
       printf("Too many digipeaters (max 8)\n");
       return 1;
     }
-    if (setcall(axptr(p), *argv)) {
+    if (setcall(axptr(ap), *argv)) {
       printf("Invalid call \"%s\"\n", *argv);
       return 1;
     }
-    if (p == cb.path) {
-      p += AXALEN;
-      addrcp(axptr(p), &mycall);
+    if (ap == cb.path) {
+      ap += AXALEN;
+      addrcp(axptr(ap), &mycall);
     }
-    p += AXALEN;
+    ap += AXALEN;
   }
-  if (p < cb.path + 2 * AXALEN) {
+  if (ap < cb.path + 2 * AXALEN) {
     printf("Missing call\n");
     return 1;
   }
-  p[-1] |= E;
-  cb.pathlen = p - cb.path;
+  ap[-1] |= E;
+  cb.pathlen = ap - cb.path;
   axroute_add(&cb, perm);
   return 0;
 }
@@ -1206,7 +1183,7 @@ struct axroute_tab *rp;
   int  i, n;
   int  perm;
   struct axroute_tab *rp_stack[20];
-  struct interface *ifp;
+  struct iface *ifp;
   struct tm *tm;
 
   tm = gmtime(&rp->time);
@@ -1231,9 +1208,10 @@ struct axroute_tab *rp;
 
 /*---------------------------------------------------------------------------*/
 
-static int  doroutelist(argc, argv)
+static int  doroutelist(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
 
   int  i;
@@ -1258,17 +1236,20 @@ char  *argv[];
 
 /*---------------------------------------------------------------------------*/
 
-static int  doroutestat()
+static int  doroutestat(argc, argv, p)
+int  argc;
+char  *argv[];
+void *p;
 {
 
   int  count[ASY_MAX], total;
   register int  i, dev;
   register struct axroute_tab *rp, *dp;
-  struct interface *ifp, *ifptable[ASY_MAX];
+  struct iface *ifp, *ifptable[ASY_MAX];
 
   memset((char *) ifptable, 0, sizeof(ifptable));
   memset((char *) count, 0, sizeof(count));
-  for (ifp = ifaces; ifp; ifp = ifp->next)
+  for (ifp = Ifaces; ifp; ifp = ifp->next)
     if (ifp->output == ax_output) ifptable[ifp->dev] = ifp;
   for (i = 0; i < AXROUTESIZE; i++)
     for (rp = axroute_tab[i]; rp; rp = rp->next) {
@@ -1289,24 +1270,24 @@ static int  doroutestat()
 
 /*---------------------------------------------------------------------------*/
 
-static int  doroute(argc, argv)
+static int  doroute(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
 
   static struct cmds routecmds[] = {
 
-    "add",    dorouteadd,  3, "ax25 route add [permanent] <interface> <path>",
-								   NULLCHAR,
-    "list",   doroutelist, 0, NULLCHAR,                            NULLCHAR,
-    "stat",   doroutestat, 0, NULLCHAR,                            NULLCHAR,
+    "add",  dorouteadd,  0, 3, "ax25 route add [permanent] <interface> <path>",
+    "list", doroutelist, 0, 0, NULLCHAR,
+    "stat", doroutestat, 0, 0, NULLCHAR,
 
-    NULLCHAR, NULLFP,      0, NULLCHAR,                            NULLCHAR
+    NULLCHAR, NULLFP,    0, 0, NULLCHAR
   };
 
   axroute_loadfile();
-  if (argc >= 2) return subcmd(routecmds, argc, argv);
-  doroutestat();
+  if (argc >= 2) return subcmd(routecmds, argc, argv, p);
+  doroutestat(argc, argv, p);
   return 0;
 }
 
@@ -1314,9 +1295,10 @@ char  *argv[];
 
 /* Display AX.25 link level control blocks */
 
-static int  dostatus(argc, argv)
+static int  dostatus(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
 
   int  i;
@@ -1366,27 +1348,32 @@ char  *argv[];
     printf("Mean dev:     %ld ms\n", cp->mdev);
     if (run_timer(&cp->timer_t1))
       printf("Timer T1:     %ld/%ld sec\n",
-	     cp->timer_t1.start - cp->timer_t1.count, cp->timer_t1.start);
+	     read_timer(&cp->timer_t1) * MSPTICK / 1000,
+	     dur_timer (&cp->timer_t1) * MSPTICK / 1000);
     else
       printf("Timer T1:     Stopped\n");
     if (run_timer(&cp->timer_t2))
       printf("Timer T2:     %ld/%ld sec\n",
-	      cp->timer_t2.start - cp->timer_t2.count, cp->timer_t2.start);
+	     read_timer(&cp->timer_t2) * MSPTICK / 1000,
+	     dur_timer (&cp->timer_t2) * MSPTICK / 1000);
     else
       printf("Timer T2:     Stopped\n");
     if (run_timer(&cp->timer_t3))
       printf("Timer T3:     %ld/%ld sec\n",
-	     cp->timer_t3.start - cp->timer_t3.count, cp->timer_t3.start);
+	     read_timer(&cp->timer_t3) * MSPTICK / 1000,
+	     dur_timer (&cp->timer_t3) * MSPTICK / 1000);
     else
       printf("Timer T3:     Stopped\n");
     if (run_timer(&cp->timer_t4))
       printf("Timer T4:     %ld/%ld sec\n",
-	     cp->timer_t4.start - cp->timer_t4.count, cp->timer_t4.start);
+	     read_timer(&cp->timer_t4) * MSPTICK / 1000,
+	     dur_timer (&cp->timer_t4) * MSPTICK / 1000);
     else
       printf("Timer T4:     Stopped\n");
     if (run_timer(&cp->timer_t5))
       printf("Timer T5:     %ld/%ld sec\n",
-	     cp->timer_t5.start - cp->timer_t5.count, cp->timer_t5.start);
+	     read_timer(&cp->timer_t5) * MSPTICK / 1000,
+	     dur_timer (&cp->timer_t5) * MSPTICK / 1000);
     else
       printf("Timer T5:     Stopped\n");
     printf("Rcv queue:    %d\n", cp->rcvcnt);
@@ -1398,14 +1385,14 @@ char  *argv[];
       for (i = next_seq(cp->vr); i != cp->vr; i = next_seq(i))
 	if (cp->reseq[i].bp)
 	  printf("              Seq %3d: %3d bytes\n",
-		 i, len_mbuf(cp->reseq[i].bp));
+		 i, len_p(cp->reseq[i].bp));
     }
-    printf("Snd queue:    %d\n", len_mbuf(cp->sndq));
+    printf("Snd queue:    %d\n", len_p(cp->sndq));
     if (cp->resndq) {
       printf("Resend queue:\n");
       for (i = 0, bp = cp->resndq; bp; i++, bp = bp->anext)
 	printf("              Seq %3d: %3d bytes\n",
-	       (cp->vs - cp->unack + i) & 7, len_mbuf(bp));
+	       (cp->vs - cp->unack + i) & 7, len_p(bp));
     }
   }
   return 0;
@@ -1415,141 +1402,107 @@ char  *argv[];
 
 /* Set retransmission timer */
 
-static int  dot1(argc, argv)
+static int  dot1(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
-  if (argc < 2)
-    printf("T1 %d sec\n", ax_t1init);
-  else {
-    int  tmp = atoi(argv[1]);
-    if (tmp < 1 || tmp > 15) return (-1);
-    ax_t1init = tmp;
-  }
-  return 0;
+  return setintrc(&ax_t1init, "T1 (sec)", argc, argv, 1, 15);
 }
 
 /*---------------------------------------------------------------------------*/
 
 /* Set acknowledgement delay timer */
 
-static int  dot2(argc, argv)
+static int  dot2(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
-  if (argc < 2)
-    printf("T2 %d sec\n", ax_t2init);
-  else {
-    int  tmp = atoi(argv[1]);
-    if (tmp < 1) return (-1);
-    ax_t2init = tmp;
-  }
-  return 0;
+  return setintrc(&ax_t2init, "T2 (sec)", argc, argv, 1, MAXINT16);
 }
 
 /*---------------------------------------------------------------------------*/
 
 /* Set no-activity timer */
 
-static int  dot3(argc, argv)
+static int  dot3(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
-  if (argc < 2)
-    printf("T3 %d sec\n", ax_t3init);
-  else
-    ax_t3init = atoi(argv[1]);
-  return 0;
+  return setintrc(&ax_t3init, "T3 (sec)", argc, argv, 0, MAXINT16);
 }
 
 /*---------------------------------------------------------------------------*/
 
 /* Set busy timer */
 
-static int  dot4(argc, argv)
+static int  dot4(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
-  if (argc < 2)
-    printf("T4 %d sec\n", ax_t4init);
-  else {
-    int  tmp = atoi(argv[1]);
-    if (tmp < 1) return (-1);
-    ax_t4init = tmp;
-  }
-  return 0;
+  return setintrc(&ax_t4init, "T4 (sec)", argc, argv, 1, MAXINT16);
 }
 
 /*---------------------------------------------------------------------------*/
 
 /* Set packet assembly timer */
 
-static int  dot5(argc, argv)
+static int  dot5(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
-  if (argc < 2)
-    printf("T5 %d sec\n", ax_t5init);
-  else {
-    int  tmp = atoi(argv[1]);
-    if (tmp < 1) return (-1);
-    ax_t5init = tmp;
-  }
-  return 0;
+  return setintrc(&ax_t5init, "T5 (sec)", argc, argv, 1, MAXINT16);
 }
 
 /*---------------------------------------------------------------------------*/
 
 /* Set high water mark on receive queue that triggers RNR */
 
-static int  dowindow(argc, argv)
+static int  dowindow(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
-  if (argc < 2)
-    printf("Window %d\n", ax_window);
-  else {
-    int  tmp = atoi(argv[1]);
-    if (tmp < 1) return (-1);
-    ax_window = tmp;
-  }
-  return 0;
+  return setintrc(&ax_window, "Window", argc, argv, 1, MAXINT16);
 }
 
 /*---------------------------------------------------------------------------*/
 
 /* Multiplexer for top-level ax25 command */
 
-int  doax25(argc, argv)
+int  doax25(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
-
-  int  doidigi();
 
   static struct cmds axcmds[] = {
 
-    "digipeat", dodigipeat, 0, NULLCHAR, "digipeat must be 0..2",
-    "idigi",    doidigi,    0, NULLCHAR, "Usage: ax25 idigi <interface> <call>",
-    "maxframe", domaxframe, 0, NULLCHAR, "maxframe must be 1..7",
-    "mycall",   domycall,   0, NULLCHAR, NULLCHAR,
-    "paclen",   dopaclen,   0, NULLCHAR, "paclen must be > 0",
-    "pthresh",  dopthresh,  0, NULLCHAR, NULLCHAR,
-    "reset",    doaxreset,  2, "ax25 reset <axcb>", NULLCHAR,
-    "retry",    doretry,    0, NULLCHAR, NULLCHAR,
-    "route",    doroute,    0, NULLCHAR, NULLCHAR,
-    "status",   dostatus,   0, NULLCHAR, NULLCHAR,
-    "t1",       dot1,       0, NULLCHAR, "t1 must be 1..15",
-    "t2",       dot2,       0, NULLCHAR, "t2 must be > 0",
-    "t3",       dot3,       0, NULLCHAR, NULLCHAR,
-    "t4",       dot4,       0, NULLCHAR, "t4 must be > 0",
-    "t5",       dot5,       0, NULLCHAR, "t5 must be > 0",
-    "window",   dowindow,   0, NULLCHAR, "window must be > 0",
+    "digipeat", dodigipeat, 0, 0, NULLCHAR,
+    "idigi",    doidigi,    0, 0, NULLCHAR,
+    "maxframe", domaxframe, 0, 0, NULLCHAR,
+    "mycall",   domycall,   0, 0, NULLCHAR,
+    "paclen",   dopaclen,   0, 0, NULLCHAR,
+    "pthresh",  dopthresh,  0, 0, NULLCHAR,
+    "reset",    doaxreset,  0, 2, "ax25 reset <axcb>",
+    "retry",    doretry,    0, 0, NULLCHAR,
+    "route",    doroute,    0, 0, NULLCHAR,
+    "status",   dostatus,   0, 0, NULLCHAR,
+    "t1",       dot1,       0, 0, NULLCHAR,
+    "t2",       dot2,       0, 0, NULLCHAR,
+    "t3",       dot3,       0, 0, NULLCHAR,
+    "t4",       dot4,       0, 0, NULLCHAR,
+    "t5",       dot5,       0, 0, NULLCHAR,
+    "window",   dowindow,   0, 0, NULLCHAR,
 
-    NULLCHAR,   NULLFP,     0, NULLCHAR, NULLCHAR
+    NULLCHAR,   NULLFP,     0, 0, NULLCHAR
   };
 
-  return subcmd(axcmds, argc, argv);
+  return subcmd(axcmds, argc, argv, p);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1570,11 +1523,11 @@ char  *user;
   case AX25_ACTIVE:
     for (cp = axcb_head; cp; cp = cp->next)
       if (!cp->peer && addreq(axptr(path), axptr(cp->path))) {
-	net_error = CON_EXISTS;
+	Net_error = CON_EXISTS;
 	return NULLAXCB;
       }
     if (!(cp = create_axcb(NULLAXCB))) {
-      net_error = NO_SPACE;
+      Net_error = NO_MEM;
       return NULLAXCB;
     }
     build_path(cp, NULLIF, path, 0);
@@ -1586,7 +1539,7 @@ char  *user;
     return cp;
   case AX25_SERVER:
     if (!(cp = (struct axcb *) calloc(1, sizeof(struct axcb )))) {
-      net_error = NO_SPACE;
+      Net_error = NO_MEM;
       return NULLAXCB;
     }
     cp->r_upcall = r_upcall;
@@ -1595,7 +1548,7 @@ char  *user;
     cp->user = user;
     return cp;
   default:
-    net_error = INVALID;
+    Net_error = INVALID;
     return NULLAXCB;
   }
 }
@@ -1610,18 +1563,18 @@ struct mbuf *bp;
 
   if (!(cp && bp)) {
     free_p(bp);
-    net_error = INVALID;
+    Net_error = INVALID;
     return (-1);
   }
   switch (cp->state) {
   case DISCONNECTED:
     free_p(bp);
-    net_error = NO_CONN;
+    Net_error = NO_CONN;
     return (-1);
   case CONNECTING:
   case CONNECTED:
     if (!cp->closed) {
-      if (cnt = len_mbuf(bp)) {
+      if (cnt = len_p(bp)) {
 	if (cp->mode == STREAM)
 	  append(&cp->sndq, bp);
 	else
@@ -1633,7 +1586,7 @@ struct mbuf *bp;
     }
   case DISCONNECTING:
     free_p(bp);
-    net_error = CON_CLOS;
+    Net_error = CON_CLOS;
     return (-1);
   }
   return (-1);
@@ -1647,21 +1600,21 @@ struct axcb *cp;
   int  cnt;
 
   if (!cp) {
-    net_error = INVALID;
+    Net_error = INVALID;
     return (-1);
   }
   switch (cp->state) {
   case DISCONNECTED:
-    net_error = NO_CONN;
+    Net_error = NO_CONN;
     return (-1);
   case CONNECTING:
   case CONNECTED:
     if (!cp->closed) {
-      cnt = (cp->cwind - cp->unack) * ax_paclen - len_mbuf(cp->sndq);
+      cnt = (cp->cwind - cp->unack) * ax_paclen - len_p(cp->sndq);
       return (cnt > 0) ? cnt : 0;
     }
   case DISCONNECTING:
-    net_error = CON_CLOS;
+    Net_error = CON_CLOS;
     return (-1);
   }
   return (-1);
@@ -1675,16 +1628,16 @@ struct mbuf **bpp;
 int16 cnt;
 {
   if (!(cp && bpp)) {
-    net_error = INVALID;
+    Net_error = INVALID;
     return (-1);
   }
   if (cp->rcvcnt) {
     if (cp->mode == DGRAM || !cnt || cp->rcvcnt <= cnt) {
       *bpp = dequeue(&cp->rcvq);
-      cnt = len_mbuf(*bpp);
+      cnt = len_p(*bpp);
     } else {
       if (!(*bpp = alloc_mbuf(cnt))) {
-	net_error = NO_SPACE;
+	Net_error = NO_MEM;
 	return (-1);
       }
       pullup(&cp->rcvq, (*bpp)->data, cnt);
@@ -1698,7 +1651,7 @@ int16 cnt;
   case CONNECTING:
   case CONNECTED:
     *bpp = NULLBUF;
-    net_error = WOULDBLK;
+    Net_error = WOULDBLK;
     return (-1);
   case DISCONNECTED:
   case DISCONNECTING:
@@ -1714,17 +1667,17 @@ int  close_ax(cp)
 struct axcb *cp;
 {
   if (!cp) {
-    net_error = INVALID;
+    Net_error = INVALID;
     return (-1);
   }
   if (cp->closed) {
-    net_error = CON_CLOS;
+    Net_error = CON_CLOS;
     return (-1);
   }
   cp->closed = 1;
   switch (cp->state) {
   case DISCONNECTED:
-    net_error = NO_CONN;
+    Net_error = NO_CONN;
     return (-1);
   case CONNECTING:
     setaxstate(cp, DISCONNECTED);
@@ -1733,7 +1686,7 @@ struct axcb *cp;
     if (!cp->sndq && !cp->unack) setaxstate(cp, DISCONNECTING);
     return 0;
   case DISCONNECTING:
-    net_error = CON_CLOS;
+    Net_error = CON_CLOS;
     return (-1);
   }
   return (-1);
@@ -1745,7 +1698,7 @@ int  reset_ax(cp)
 struct axcb *cp;
 {
   if (!cp) {
-    net_error = INVALID;
+    Net_error = INVALID;
     return (-1);
   }
   if (cp == axcb_server) {
@@ -1769,7 +1722,7 @@ struct axcb *cp;
 
   for (q = 0, p = axcb_head; p != cp; q = p, p = p->next)
     if (!p) {
-      net_error = INVALID;
+      Net_error = INVALID;
       return (-1);
     }
   if (q)

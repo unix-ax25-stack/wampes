@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.2 1990/03/19 12:33:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.3 1990/08/23 17:33:57 deyke Exp $ */
 
 /* Session control */
 #include <stdio.h>
@@ -12,9 +12,7 @@
 #include "iface.h"
 #include "ftp.h"
 #include "telnet.h"
-#ifdef _FINGER
 #include "finger.h"
-#endif
 #include "session.h"
 #include "cmdparse.h"
 
@@ -48,9 +46,10 @@ char *cp;
 }
 
 /* Select and display sessions */
-dosession(argc,argv)
+dosession(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	struct session *s;
 	extern char *tcpstates[];
@@ -59,7 +58,7 @@ char *argv[];
 
 	if(argc > 1){
 		if((current = sessptr(argv[1])) != NULLSESSION)
-			go();
+			go(argc,argv,p);
 		return 0;
 	}
 	printf(" #       &CB Type   Rcv-Q  State        Remote socket\n");
@@ -88,7 +87,6 @@ char *argv[];
 			print_ax25_session(s);
 			break;
 #endif
-#ifdef  _FINGER
 		case FINGER:
 			printf("%c%-3d%8lx Finger  %4d  %-13s%-s",
 			 (current == s)? '*':' ',
@@ -98,7 +96,6 @@ char *argv[];
 			 tcpstates[s->cb.finger->tcb->state],
 			 psocket(&s->cb.finger->tcb->conn.remote));
 			break;
-#endif
 #ifdef NETROM
 		case NRSESSION:
 			print_netrom_session(s);
@@ -119,7 +116,10 @@ char *argv[];
 }
 /* Enter conversational mode with current session */
 int
-go()
+go(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
 {
 	void rcv_char(),ftpccr(),ax_rx(),fingcli_rcv() ;
 
@@ -140,11 +140,9 @@ go()
 		axclient_recv_upcall(current->cb.ax25);
 		break;
 #endif
-#ifdef _FINGER
 	case FINGER:
 		fingcli_rcv(current->cb.finger->tcb,0) ;
 		break ;
-#endif
 #ifdef  NETROM
 	case NRSESSION:
 		nrclient_recv_upcall(current->cb.netrom);
@@ -153,9 +151,10 @@ go()
 	}
 	return 0;
 }
-doclose(argc,argv)
+doclose(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	struct session *s;
 
@@ -175,11 +174,9 @@ char *argv[];
 		close_ax(s->cb.ax25);
 		break;
 #endif
-#ifdef _FINGER
 	case FINGER:
 		close_tcp(s->cb.finger->tcb);
 		break;
-#endif
 #ifdef NETROM
 	case NRSESSION:
 		close_nr(s->cb.netrom);
@@ -188,9 +185,10 @@ char *argv[];
 	}
 	return 0;
 }
-doreset(argc,argv)
+doreset(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	long htol();
 	struct session *s;
@@ -215,11 +213,9 @@ char *argv[];
 		reset_ax(s->cb.ax25);
 		break;
 #endif
-#ifdef _FINGER
 	case FINGER:
 		reset_tcp(s->cb.finger->tcb);
 		break;
-#endif
 #ifdef NETROM
 	case NRSESSION:
 		reset_nr(s->cb.netrom);
@@ -229,9 +225,10 @@ char *argv[];
 	return 0;
 }
 int
-dokick(argc,argv)
+dokick(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	long htol();
 	void tcp_timeout();
@@ -261,14 +258,12 @@ char *argv[];
 	case AX25TNC:
 		break;
 #endif
-#ifdef _FINGER
 	case FINGER:
 		if(kick_tcp(s->cb.finger->tcb) == -1){
 			printf(notval);
 			return 1;
 		}
 		break;
-#endif
 #ifdef NETROM
 	case NRSESSION:
 		break;
@@ -317,9 +312,10 @@ struct session *s;
 		current = NULLSESSION;
 }
 /* Control session recording */
-dorecord(argc,argv)
+dorecord(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	if(current == NULLSESSION){
 		printf("No current session\n");
@@ -348,9 +344,10 @@ char *argv[];
 	return 0;
 }
 /* Control file transmission */
-doupload(argc,argv)
+doupload(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	struct tcb *tcb;
 	struct axcb *axp;
@@ -365,11 +362,9 @@ char *argv[];
 		case FTP:
 			printf("Uploading on FTP control channel not supported\n");
 			return 1;
-#ifdef  _FINGER
 		case FINGER:
 			printf("Uploading on FINGER session not supported\n");
 			return 1;
-#endif
 		}
 		/* Abort upload */
 		if(current->upload != NULLFILE){

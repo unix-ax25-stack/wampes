@@ -1,114 +1,119 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.2 1990/08/23 17:32:47 deyke Exp $ */
+
 /* System-dependent definitions of various files, spool directories, etc */
-
 #include "global.h"
-#include "config.h"
+#include "files.h"
 
-#if     (defined(__TURBOC__) || defined(LATTICE) || defined(MAC) || defined(ATARI_ST))
-/* These compilers require special open modes when reading binary files
- *
- * "The single most brilliant design decision in all of UNIX was the
- * choice of a SINGLE character as the end-of-line indicator" -- M. O'Dell
- *
- * "Whoever picked the end-of-line conventions for MS-DOS and the Macintosh
- * should be shot!" -- P. Karn's corollary to O'Dells' declaration
- *
- * Index definitions for this array are in global.h
- */
-char *binmode[] = {
-	"rb",   /* Read binary */
-	"wb",   /* Write binary */
-	"ab"    /* Append binary */
-};
-#else
-/* fopen modes for binary files under Aztec -- same as UNIX */
-char *binmode[] = {
-	"r",    /* Read */
-	"w",    /* Write */
-	"a"     /* Append */
-};
-#endif
-
-#ifdef  ATARI_ST
-char *startup    = "\\net.rc";                  /* Initialization file */
-char *userfile   = "\\ftpusers";                /* Authorized FTP users */
-char *hosts      = "\\hosts.net";               /* Unix style host table */
-char *mailspool = "\\spool\\mail";              /* Incoming mail */
-char *mailqdir   = "\\spool\\mqueue";           /* Outgoing mail spool */
-char *mailqueue = "\\spool\\mqueue\\*.wrk";     /* Outgoing mail work files */
-char *routeqdir = "\\spool\\rqueue";            /* Queue for router */
-char *alias      = "\\alias";                   /* The alias file */
-#ifdef  _FINGER
-char *fingersuf = ".txt";               /* Text info for finger command */
-char *fingerpath = "\\finger\\";        /* Path to finger info files */
-#endif
-#endif
-
-#ifdef  MSDOS || __TURBOC__
-char *startup = "/autoexec.net";        /* Initialization file */
-char *userfile = "/ftpusers";           /* Authorized FTP users and passwords */
-char *hosts = "/hosts.net";             /* Network host table */
-char *mailspool = "/spool/mail";        /* Incoming mail */
-char *mailqdir = "/spool/mqueue";       /* Outgoing mail spool */
-char *mailqueue = "/spool/mqueue/*.wrk";/* Outgoing mail work files */
-char *routeqdir = "/spool/rqueue";      /* queue for router */
-char *alias = "/alias";                 /* the alias file */
-#ifdef _FINGER
-char *fingersuf = ".txt";               /* Text info for finger command */
-char *fingerpath = "/finger/";          /* Path to finger info files */
-#endif
+#ifdef  MSDOS
+char *Startup = "/autoexec.net";        /* Initialization file */
+char *Userfile = "/ftpusers";   /* Authorized FTP users and passwords */
+char *Maillog = "/spool/mail.log";      /* mail log */
+char *Mailspool = "/spool/mail";        /* Incoming mail */
+char *Mailqdir = "/spool/mqueue";               /* Outgoing mail spool */
+char *Mailqueue = "/spool/mqueue/*.wrk";        /* Outgoing mail work files */
+char *Routeqdir = "/spool/rqueue";              /* queue for router */
+char *Alias = "/alias";         /* the alias file */
+char *Dfile = "/domain.txt";    /* Domain cache */
+char *Fdir = "/finger";         /* Finger info directory */
+char *Arealist = "/spool/areas";/* List of message areas */
+char *Helpdir = "/spool/help";  /* Mailbox help file directory */
+char *Rewritefile = "/spool/rewrite"; /* Address rewrite file */
+#define SEPARATOR       "/"
 #endif
 
 #ifdef  UNIX
-#ifdef  hpux
-char *startup = "/tcp/net.rc";          /* Initialization file */
-char *hosts = "/tcp/hosts";
+#if (defined(hpux)||defined(__hpux))
+char *Startup = "/tcp/net.rc";          /* Initialization file */
 #else
-char *netexe = "net";            /* where the binary lives for reset */
-char *startup = "startup.net";          /* Initialization file */
-char *config = "config.net";            /* Device configuration list */
-char *userfile = "ftpusers";
-char *hosts = "hosts.net";
-char *mailspool = "mail";
-char *mailqdir = "mqueue";
-char *mailqueue = "mqueue/*.wrk";
-char *routeqdir = "rqueue";        /* queue for router */
-char *alias = "aliases";        /* the alias file */
-#ifdef _FINGER
-char *fingersuf = ".txt";               /* Text info for finger command */
-char *fingerpath = "finger/";           /* Path to finger info files */
+char *Startup = "./startup.net";        /* Initialization file */
 #endif
-#endif
+char *Config = "./config.net";  /* Device configuration list */
+char *Userfile = "./ftpusers";
+char *Mailspool = "./mail";
+char *Maillog = "./mail.log";   /* mail log */
+char *Mailqdir = "./mqueue";
+char *Mailqueue = "./mqueue/*.wrk";
+char *Routeqdir = "./rqueue";           /* queue for router */
+char *Alias = "./alias";        /* the alias file */
+char *Dfile = "./domain.txt";   /* Domain cache */
+char *Fdir = "./finger";                /* Finger info directory */
+char *Arealist = "./areas";             /* List of message areas */
+char *Helpdir = "./help";       /* Mailbox help file directory */
+char *Rewritefile = "./rewrite"; /* Address rewrite file */
+#define SEPARATOR       "/"
 #endif
 
 #ifdef  AMIGA
-char startup[] = "TCPIP:net.start";
-char config[] = "TCPIP:config.net";     /* Device configuration list */
-char userfile[] = "TCPIP:ftpusers";
-char hosts[] = "TCPIP:hosts.net";
-char mailspool[] = "TCPIP:spool/mail";
-char mailqdir[] = "TCPIP:spool/mqueue";
-char mailqueue[] = "TCPIP:spool/mqueue/*.wrk";
-char routeqdir[] = "TCPIP:spool/rqueue";                /* queue for router */
-char alias[] = "TCPIP:alias";   /* the alias file */
-#ifdef _FINGER
-char fingersuf[] = ".txt";              /* Text info for finger command */
-char fingerpath[] = "TCPIP:finger/";    /* Path to finger info files */
-#endif
+char *Startup = "TCPIP:net-startup";
+char *Config = "TCPIP:config.net";      /* Device configuration list */
+char *Userfile = "TCPIP:ftpusers";
+char *Mailspool = "TCPIP:spool/mail";
+char *Maillog = "TCPIP:spool/mail.log";
+char *Mailqdir = "TCPIP:spool/mqueue";
+char *Mailqueue = "TCPIP:spool/mqueue/#?.wrk";
+char *Routeqdir = "TCPIP:spool/rqueue";         /* queue for router */
+char *Alias = "TCPIP:alias";    /* the alias file */
+char *Dfile = "TCPIP:domain.txt";       /* Domain cache */
+char *Fdir = "TCPIP:finger";            /* Finger info directory */
+char *Arealist = "TCPIP:spool/areas";   /* List of message areas */
+char *Helpdir = "TCPIP:spool/help";     /* Mailbox help file directory */
+char *Rewritefile = "TCPIP:spool/rewrite"; /* Address rewrite file */
+#define SEPARATOR       "/"
 #endif
 
 #ifdef  MAC
-char startup[] ="Mikes Hard Disk:net.start";
-char config[] = "Mikes Hard Disk:config.net";   /* Device configuration list */
-char userfile[] = "Mikes Hard Disk:ftpusers";
-char hosts[] = "Mikes Hard Disk:hosts.net";
-char mailspool[] = "Mikes Hard Disk:spool:mail:";
-char mailqdir[] = "Mikes Hard Disk:spool:mqueue:";
-char mailqueue[] = "Mikes Hard Disk:spool:mqueue:*.wrk";
-char routeqdir[] = "Mikes Hard Disk:spool/rqueue:";     /* queue for router */
-char alias[] = "Mikes Hard Disk:alias"; /* the alias file */
-#ifdef _FINGER
-/* is this for real? */
-char fingersuf[] = ".txt";              /* Text info for finger command */
-char fingerpath[] = "Mikes Hard Disk:finger/";  /* Path to finger info files */
+char *Startup ="Mikes Hard Disk:net.start";
+char *Config = "Mikes Hard Disk:config.net";    /* Device configuration list */
+char *Userfile = "Mikes Hard Disk:ftpusers";
+char *Mailspool = "Mikes Hard Disk:spool:mail:";
+char *Maillog = "Mikes Hard Disk:spool:mail.log:";
+char *Mailqdir = "Mikes Hard Disk:spool:mqueue:";
+char *Mailqueue = "Mikes Hard Disk:spool:mqueue:*.wrk";
+char *Routeqdir = "Mikes Hard Disk:spool/rqueue:";      /* queue for router */
+char *Alias = "Mikes Hard Disk:alias";  /* the alias file */
+char *Dfile = "Mikes Hard Disk:domain:txt";     /* Domain cache */
+char *Fdir = "Mikes Hard Disk:finger";          /* Finger info directory */
+char *Arealist = "Mikes Hard Disk:spool/areas"; /* List of message areas */
+char *Helpdir = "Mikes Hard Disk:spool/help"; /* Mailbox help file directory */
+char *Rewritefile = "Mikes Hard Disk:spool/rewrite"; /* Address rewrite file */
+#define SEPARATOR       ":"
 #endif
-#endif
+
+static char *strcatdup __ARGS((char *a,char *b,char *c));
+
+/* Establish a root directory other than the default. Can only be called
+ * once, at startup time
+ */
+void
+initroot(root)
+char *root;
+{
+	Startup = strcatdup(root,SEPARATOR,Startup);
+	Userfile = strcatdup(root,SEPARATOR,Userfile);
+	Maillog = strcatdup(root,SEPARATOR,Maillog);
+	Mailspool = strcatdup(root,SEPARATOR,Mailspool);
+	Mailqdir = strcatdup(root,SEPARATOR,Mailqdir);
+	Mailqueue = strcatdup(root,SEPARATOR,Mailqueue);
+	Routeqdir = strcatdup(root,SEPARATOR,Routeqdir);
+	Alias = strcatdup(root,SEPARATOR,Alias);
+	Dfile = strcatdup(root,SEPARATOR,Dfile);
+	Fdir = strcatdup(root,SEPARATOR,Fdir);
+	Arealist = strcatdup(root,SEPARATOR,Arealist);
+	Helpdir = strcatdup(root,SEPARATOR,Helpdir);
+	Rewritefile = strcatdup(root,SEPARATOR,Rewritefile);
+}
+
+/* Concatenate three strings into a malloc'ed output buffer */
+static char *
+strcatdup(a,b,c)
+char *a,*b,*c;
+{
+	char *out;
+
+	out = mallocw(strlen(a) + strlen(b) + strlen(c) + 1);
+	strcpy(out,a);
+	strcat(out,b);
+	strcat(out,c);
+	return out;
+}
+

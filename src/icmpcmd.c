@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.3 1990/04/12 17:51:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.4 1990/08/23 17:33:01 deyke Exp $ */
 
 /* ICMP-related user commands */
 #include <stdio.h>
@@ -9,14 +9,31 @@
 #include "netuser.h"
 #include "internet.h"
 #include "timer.h"
-#include "ping.h"
+
+static int pingem __ARGS((int32 target, int seq, int id, int len));
+static int16 hash_ping __ARGS((int32 dest));
+static struct ping *add_ping __ARGS((int32 dest));
+static void del_ping __ARGS((struct ping *pp));
+
+#define NULLPING (struct ping *)0
+#define PMOD    7
+
+/* ID fields for pings; indicates a oneshot or repeat ping */
+#define ONESHOT 0
+#define REPEAT  1
+
+/* Hash table list heads */
+struct ping *ping[PMOD];
 
 int
-doicmpstat()
+doicmpstat(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
 {
 	extern struct icmp_errors icmp_errors;
 	extern struct icmp_stats icmp_stats;
-	extern char *icmptypes[];
+	extern char *Icmptypes[];
 	register int i;
 
 	printf("ICMP: chksum err %u no space %u icmp %u bdcsts %u\n",
@@ -28,26 +45,24 @@ doicmpstat()
 			continue;
 		printf("%-6u%-6u%-6u",i,icmp_stats.input[i],
 			icmp_stats.output[i]);
-		if(icmptypes[i] != NULLCHAR)
-			printf("  %s",icmptypes[i]);
+		if(Icmptypes[i] != NULLCHAR)
+			printf("  %s",Icmptypes[i]);
 		printf("\n");
 	}
 	return 0;
 }
 
-/* Hash table list heads */
-struct ping *ping[PMOD];
-
 /* Send ICMP Echo Request packets */
-doping(argc,argv)
+doping(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	int32 dest;
-	struct ping *add_ping(),*pp1;
+	struct ping *pp1;
 	register struct ping *pp;
 	void ptimeout();
-	int16 hval,hash_ping();
+	int16 hval;
 	int i;
 	char *inet_ntoa();
 	int16 len;
@@ -153,8 +168,8 @@ int16 len;      /* Length of data field */
 		gettimeofday(&tv, &tz);
 		memcpy(data->data, (char *) &tv, sizeof(struct timeval));
 	}
-	icmp_stats.output[ECHO]++;
-	icmp.type = ECHO;
+	icmp_stats.output[ICMP_ECHO]++;
+	icmp.type = ICMP_ECHO;
 	icmp.code = 0;
 	icmp.args.echo.seq = seq;
 	icmp.args.echo.id = id;
@@ -162,10 +177,11 @@ int16 len;      /* Length of data field */
 		free_p(data);
 		return 0;
 	}
-	return ip_send(ip_addr,target,ICMP_PTCL,0,0,bp,len,0,0);
+	return ip_send(Ip_addr,target,ICMP_PTCL,0,0,bp,len,0,0);
 }
 
 /* Called with incoming Echo Reply packet */
+void
 echo_proc(source,dest,icmp,bp)
 int32 source;
 int32 dest;
@@ -173,7 +189,7 @@ struct icmp *icmp;
 struct mbuf *bp;
 {
 	register struct ping *pp;
-	int16 hval,hash_ping();
+	int16 hval;
 	char *inet_ntoa();
 	int32 rtt,abserr;
 	struct timeval tv,timestamp;
@@ -219,8 +235,7 @@ struct mbuf *bp;
 		}
 	}
 }
-static
-int16
+static int16
 hash_ping(dest)
 int32 dest;
 {
@@ -236,7 +251,7 @@ add_ping(dest)
 int32 dest;
 {
 	struct ping *pp;
-	int16 hval,hash_ping();
+	int16 hval;
 
 	pp = (struct ping *)calloc(1,sizeof(struct ping));
 	if(pp == NULLPING)
@@ -251,11 +266,11 @@ int32 dest;
 	return pp;
 }
 /* Delete entry from ping table */
-static
+static void
 del_ping(pp)
 struct ping *pp;
 {
-	int16 hval,hash_ping();
+	int16 hval;
 
 	stop_timer(&pp->timer);
 

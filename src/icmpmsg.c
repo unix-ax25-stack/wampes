@@ -1,8 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpmsg.c,v 1.2 1990/04/05 11:14:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpmsg.c,v 1.3 1990/08/23 17:33:03 deyke Exp $ */
 
 #include "global.h"
 /* ICMP message types */
-char *icmptypes[] = {
+char *Icmptypes[] = {
 	"Echo Reply",
 	NULLCHAR,
 	NULLCHAR,
@@ -25,7 +25,7 @@ char *icmptypes[] = {
 };
 
 /* ICMP unreachable messages */
-char *unreach[] = {
+char *Unreach[] = {
 	"Network",
 	"Host",
 	"Protocol",
@@ -34,13 +34,13 @@ char *unreach[] = {
 	"Source route"
 };
 /* ICMP Time exceeded messages */
-char *exceed[] = {
+char *Exceed[] = {
 	"Time-to-live",
 	"Fragment reassembly"
 };
 
 /* ICMP redirect messages */
-char *redirect[] = {
+char *Redirect[] = {
 	"Network",
 	"Host",
 	"TOS & Network",

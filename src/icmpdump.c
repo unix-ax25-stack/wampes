@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpdump.c,v 1.2 1990/08/23 17:33:02 deyke Exp $ */
+
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
@@ -5,11 +7,10 @@
 #include "icmp.h"
 #include "trace.h"
 
-extern FILE *trfp;
-
 /* Dump an ICMP header */
 void
-icmp_dump(bpp,source,dest,check)
+icmp_dump(fp,bpp,source,dest,check)
+FILE *fp;
 struct mbuf **bpp;
 int32 source,dest;
 int check;              /* If 0, bypass checksum verify */
@@ -19,59 +20,59 @@ int check;              /* If 0, bypass checksum verify */
 
 	if(bpp == NULLBUFP || *bpp == NULLBUF)
 		return;
-	csum = cksum(NULLHEADER,*bpp,len_mbuf(*bpp));
+	csum = cksum(NULLHEADER,*bpp,len_p(*bpp));
 
 	ntohicmp(&icmp,bpp);
 
-	if(uchar(icmp.type) <= 16 && icmptypes[uchar(icmp.type)] != NULLCHAR)
-		fprintf(trfp,"ICMP: %s",icmptypes[uchar(icmp.type)]);
+	if(uchar(icmp.type) <= 16 && Icmptypes[uchar(icmp.type)] != NULLCHAR)
+		fprintf(fp,"ICMP: %s",Icmptypes[uchar(icmp.type)]);
 	else
-		fprintf(trfp,"ICMP: type %u",uchar(icmp.type));
+		fprintf(fp,"ICMP: type %u",uchar(icmp.type));
 
 	switch(uchar(icmp.type)){
-	case DEST_UNREACH:
+	case ICMP_DEST_UNREACH:
 		if(uchar(icmp.code) <= 5)
-			fprintf(trfp," %s",unreach[uchar(icmp.code)]);
+			fprintf(fp," %s",Unreach[uchar(icmp.code)]);
 		else
-			fprintf(trfp," code %u",uchar(icmp.code));
+			fprintf(fp," code %u",uchar(icmp.code));
 		break;
-	case REDIRECT:
+	case ICMP_REDIRECT:
 		if(uchar(icmp.code) <= 3)
-			fprintf(trfp," %s",redirect[uchar(icmp.code)]);
+			fprintf(fp," %s",Redirect[uchar(icmp.code)]);
 		else
-			fprintf(trfp," code %u",uchar(icmp.code));
+			fprintf(fp," code %u",uchar(icmp.code));
 		break;
-	case TIME_EXCEED:
+	case ICMP_TIME_EXCEED:
 		if(uchar(icmp.code) <= 1)
-			fprintf(trfp," %s",exceed[uchar(icmp.code)]);
+			fprintf(fp," %s",Exceed[uchar(icmp.code)]);
 		else
-			fprintf(trfp," code %u",uchar(icmp.code));
+			fprintf(fp," code %u",uchar(icmp.code));
 		break;
-	case PARAM_PROB:
-		fprintf(trfp," pointer = %u",icmp.args.pointer);
+	case ICMP_PARAM_PROB:
+		fprintf(fp," pointer = %u",icmp.args.pointer);
 		break;
-	case ECHO:
-	case ECHO_REPLY:
-	case INFO_RQST:
-	case INFO_REPLY:
-	case TIMESTAMP:
-	case TIME_REPLY:
-		fprintf(trfp," id %u seq %u",icmp.args.echo.id,icmp.args.echo.seq);
+	case ICMP_ECHO:
+	case ICMP_ECHO_REPLY:
+	case ICMP_INFO_RQST:
+	case ICMP_INFO_REPLY:
+	case ICMP_TIMESTAMP:
+	case ICMP_TIME_REPLY:
+		fprintf(fp," id %u seq %u",icmp.args.echo.id,icmp.args.echo.seq);
 		break;
 	}
 	if(check && csum != 0){
-		fprintf(trfp," CHECKSUM ERROR (%u)",csum);
+		fprintf(fp," CHECKSUM ERROR (%u)",csum);
 	}
-	fprintf(trfp,"\n");
+	fprintf(fp,"\n");
 	/* Dump the offending IP header, if any */
 	switch(icmp.type){
-	case DEST_UNREACH:
-	case TIME_EXCEED:
-	case PARAM_PROB:
-	case QUENCH:
-	case REDIRECT:
-		fprintf(trfp,"Returned ");
-		ip_dump(bpp,0);
+	case ICMP_DEST_UNREACH:
+	case ICMP_TIME_EXCEED:
+	case ICMP_PARAM_PROB:
+	case ICMP_QUENCH:
+	case ICMP_REDIRECT:
+		fprintf(fp,"Returned ");
+		ip_dump(fp,bpp,0);
 	}
 }
 

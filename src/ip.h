@@ -1,8 +1,16 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.2 1990/08/23 17:33:10 deyke Exp $ */
+
+#ifndef NROUTE
+
+#include "global.h"
+#include "internet.h"
+#include "timer.h"
+
 #define NROUTE  5       /* Number of hash chains in routing table */
 
-extern int32 ip_addr;   /* Our IP address for ICMP and source routing */
+extern int32 Ip_addr;   /* Our IP address for ICMP and source routing */
 
-extern char ip_ttl;     /* Default time-to-live for IP datagrams */
+extern int32 ip_ttl;    /* Default time-to-live for IP datagrams */
 
 #define IPVERSION       4
 /* IP header, INTERNAL representation */
@@ -54,11 +62,11 @@ struct route {
 	int32 target;           /* Target IP address */
 	int32 gateway;          /* IP address of local gateway for this target */
 	int metric;             /* Hop count, whatever */
-	struct interface *interface;    /* Device interface structure */
+	struct iface *iface;    /* Device interface structure */
 };
 #define NULLROUTE       (struct route *)0
-extern struct route *routes[32][NROUTE];        /* Routing table */
-extern struct route r_default;                  /* Default route entry */
+extern struct route *Routes[32][NROUTE];        /* Routing table */
+extern struct route R_default;                  /* Default route entry */
 
 /* Cache for the last-used routing entry, speeds up the common case where
  * we handle a burst of packets to the same destination
@@ -93,7 +101,7 @@ struct frag {
 };
 #define NULLFRAG        (struct frag *)0
 
-extern struct reasm *reasmq;    /* The list of reassembly descriptors */
+extern struct reasm *Reasmq;    /* The list of reassembly descriptors */
 
 /* IP error logging counters */
 struct ip_stats {
@@ -104,4 +112,35 @@ struct ip_stats {
 	unsigned checksum;      /* IP header checksum errors */
 	unsigned badproto;      /* Unsupported protocol */
 };
-extern struct ip_stats ip_stats;
+extern struct ip_stats Ip_stats;
+
+/* In ip.c: */
+void ip_recv __ARGS((struct ip *ip,struct mbuf *bp,
+	int rxbroadcast));
+int ip_send __ARGS((int32 source,int32 dest,int protocol,int tos,int ttl,
+	struct mbuf *bp,int length,int id,int df));
+struct raw_ip *raw_ip __ARGS((int protocol,void (*r_upcall) __ARGS((struct raw_ip *)) ));
+void del_ip __ARGS((struct raw_ip *rrp));
+
+/* In iproute.c: */
+int16 ip_mtu __ARGS((int32 addr));
+int ip_route __ARGS((struct mbuf *bp,int rxbroadcast));
+int32 locaddr __ARGS((int32 addr));
+void rt_merge __ARGS((int trace));
+struct route *rt_add __ARGS((int32 target,unsigned int bits,int32 gateway,
+	int32 metric,struct iface *iface));
+int rt_drop __ARGS((int32 target,unsigned int bits));
+struct route *rt_lookup __ARGS((int32 target));
+struct route *rt_blookup __ARGS((int32 target,unsigned int bits));
+
+/* In iphdr.c: */
+int16 cksum __ARGS((struct pseudo_header *ph,struct mbuf *m,int len));
+int16 eac __ARGS((int32 sum));
+struct mbuf *htonip __ARGS((struct ip *ip,struct mbuf *data));
+int ntohip __ARGS((struct ip *ip,struct mbuf **bpp));
+
+/* In either lcsum.c or pcgen.asm: */
+int16 lcsum __ARGS((int16 *wp,int len));
+
+#endif /* NROUTE */
+

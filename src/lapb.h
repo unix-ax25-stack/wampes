@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.4 1990/02/27 10:59:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.5 1990/08/23 17:32:39 deyke Exp $ */
 
 /* AX25 protocol implementation */
 
@@ -24,7 +24,7 @@
 struct axcb {
   char  path[70];               /* AX25 address field */
   int  pathlen;                 /* Length of AX25 address field */
-  struct interface *ifp;        /* Pointer to interface structure */
+  struct iface *ifp;            /* Pointer to interface structure */
   int  state;                   /* Connection state */
 #define DISCONNECTED  0
 #define CONNECTING    1

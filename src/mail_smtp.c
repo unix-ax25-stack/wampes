@@ -1,6 +1,9 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.2 1990/08/23 17:33:30 deyke Exp $ */
+
 /* SMTP Mail Delivery Agent */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "global.h"
@@ -9,8 +12,7 @@
 #include "transport.h"
 #include "mail.h"
 
-extern char  hostname[];
-extern void free();
+static void mail_smtp_send_upcall();
 
 struct mesg {
   int  state;
@@ -37,7 +39,6 @@ struct mesg *mp;
 
   char  tmp[1024];
   struct mailjob *jp;
-  void mail_smtp_send_upcall();
 
   jp = mp->sp->nextjob;
   if (mp->state == SMTP_OPEN_STATE && (*mp->buf < '0' || *mp->buf > '9')) return;
@@ -45,7 +46,7 @@ struct mesg *mp;
     switch (mp->state) {
     case SMTP_OPEN_STATE:
       mp->state = SMTP_HELO_STATE;
-      sprintf(tmp, "helo %s\n", hostname);
+      sprintf(tmp, "helo %s\n", Hostname);
       transport_send(mp->tp, qdata(tmp, strlen(tmp)));
       break;
     case SMTP_HELO_STATE:

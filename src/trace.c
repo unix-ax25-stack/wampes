@@ -1,13 +1,16 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.2 1990/02/22 12:42:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.3 1990/08/23 17:34:24 deyke Exp $ */
 
 #include <stdio.h>
 #include <ctype.h>
+#include <time.h>
 #include "global.h"
 #include "config.h"
 #include "mbuf.h"
 #include "iface.h"
 #include "trace.h"
 #include "session.h"
+
+static void ctohex();
 
 /* Redefined here so that programs calling dump in the library won't pull
  * in the rest of the package
@@ -24,16 +27,16 @@ int notraceall;                 /* 0 = trace all, 1 = only in cmd mode */
 extern int mode;                /* command mode or not */
 extern long  currtime;
 
+void
 dump(interface,direction,type,bp)
-register struct interface *interface;
+register struct iface *interface;
 int direction;
 unsigned type;
 struct mbuf *bp;
 {
 	struct mbuf *tbp;
 	void ascii_dump(),hex_dump();
-	int ax25_dump(),ether_dump(),ip_dump(),at_dump(),slfp_dump();
-	int (*func)();
+	void (*func) __ARGS((FILE *,struct mbuf **,int));
 	char *cp;
 	long t;
 	int16 size;
@@ -44,12 +47,9 @@ struct mbuf *bp;
 	if (notraceall && mode != CMD_MODE)
 		return; /* No trace while in session, if mode */
 
-	if(bp == NULLBUF || (size = len_mbuf(bp)) == 0)
+	if(bp == NULLBUF || (size = len_p(bp)) == 0)
 		return;
 
-#ifdef SCREEN
-	(void)outscreen(1);             /* DG2KK: switch to trace screen */
-#endif
 	cp = ctime(&currtime);
 	rip(cp);
 
@@ -61,14 +61,14 @@ struct mbuf *bp;
 		fprintf(trfp,if_tr_o,interface->name,cp);
 		break;
 	}
-	if(bp == NULLBUF || (size = len_mbuf(bp)) == 0){
+	if(bp == NULLBUF || (size = len_p(bp)) == 0){
 		fprintf(trfp,nullpak);
 		goto trdone;
 	}
 	if(type < NTRACE)
 		func = tracef[type];
 	else
-		func = NULLFP;
+		func = 0;
 
 	dup_p(&tbp,bp,0,size);
 	if(tbp == NULLBUF){
@@ -77,15 +77,15 @@ struct mbuf *bp;
 		  printf(nospace);
 		goto trdone;
 	}
-	if(func != NULLFP)
-		(*func)(&tbp,1);
+	if(func)
+		(*func)(trfp,&tbp,1);
 	if(interface->trace & IF_TRACE_ASCII){
 		/* Dump only data portion of packet in ascii */
 		ascii_dump(&tbp);
 	} else if(interface->trace & IF_TRACE_HEX){
 		/* Dump entire packet in hex/ascii */
 		free_p(tbp);
-		dup_p(&tbp,bp,0,len_mbuf(bp));
+		dup_p(&tbp,bp,0,len_p(bp));
 		if(tbp != NULLBUF)
 			hex_dump(&tbp);
 		else {
@@ -197,7 +197,6 @@ int16 len;
 	char line[80];
 	register char *aptr,*cptr;
 	register int16 c;
-	void ctohex();
 
 	memset(line,' ',sizeof(line));
 	ctohex(line,(int16)hibyte(addr));

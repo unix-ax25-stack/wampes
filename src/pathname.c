@@ -1,4 +1,8 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pathname.c,v 1.2 1990/08/23 17:33:53 deyke Exp $ */
+
 #include "global.h"
+
+static crunch __ARGS((char *buf, char *path));
 
 /* Given a working directory and an arbitrary pathname, resolve them into
  * an absolute pathname. Memory is allocated for the result, which
@@ -22,14 +26,14 @@ char *path;     /* Pathname argument */
 	strcpy(pathtmp,path);
 	path = pathtmp;
 	if((cp = path) != NULLCHAR){
-		while((cp = index(cp,'\\')) != NULLCHAR)
+		while((cp = strchr(cp,'\\')) != NULLCHAR)
 			*cp = '/';
 	}
 	cdtmp = malloc((unsigned)strlen(cd)+1);
 	strcpy(cdtmp,cd);
 	cd = cdtmp;
 	if((cp = cd) != NULLCHAR){
-		while((cp = index(cp,'\\')) != NULLCHAR)
+		while((cp = strchr(cp,'\\')) != NULLCHAR)
 			*cp = '/';
 	}
 #endif
@@ -58,7 +62,7 @@ char *path;     /* Pathname argument */
 #if     (defined(MSDOS) || defined(ATARI_ST))
 	/* Translate all /'s back to \'s and free temp copies of args */
 	if((cp = buf) != NULLCHAR){
-		while((cp = index(cp,'/')) != NULLCHAR)
+		while((cp = strchr(cp,'/')) != NULLCHAR)
 			*cp = '\\';
 	}
 	free(cdtmp);
@@ -91,7 +95,7 @@ register char *path;
 		 */
 		if(strcmp(path,"..") == 0 || strncmp(path,"../",3) == 0){
 			/* Hop up a level */
-			if((cp = rindex(buf,'/')) == NULLCHAR)
+			if((cp = strrchr(buf,'/')) == NULLCHAR)
 				cp = buf;       /* Don't back up beyond root */
 			*cp = '\0';             /* In case there's another .. */
 			path += 2;              /* Skip ".." */

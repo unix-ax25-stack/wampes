@@ -1,10 +1,18 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.2 1990/08/23 17:32:23 deyke Exp $ */
+
+#ifndef ARPSIZE
+
+#include "global.h"
+#include "iface.h"
+#include "timer.h"
+
 /* Size of ARP hash table */
 #define ARPSIZE 17
 
 /* Lifetime of a valid ARP entry */
 #define ARPLIFE         900     /* 15 minutes */
 /* Lifetime of a pending ARP entry */
-#define PENDTIME        30      /* 30 seconds */
+#define PENDTIME        15      /* 15 seconds */
 
 /* ARP definitions (see RFC 826) */
 
@@ -23,10 +31,10 @@
 #define ARP_AX25        3       /* Assigned to AX.25 Level 2 */
 #define ARP_PRONET      4       /* Assigned to PROnet token ring */
 #define ARP_CHAOS       5       /* Assigned to Chaosnet */
-#define ARP_IEEE802     6       /* Assigned to IEEE 802 Networks */
-#define ARP_ARCNET      7       /* Assigned to ARCNET */
-#define ARP_APPLETALK   8       /* Assigned to APPLETALK */
-extern char *arptypes[];        /* Type fields in ASCII, defined in arpcmd */
+#define ARP_IEEE802     6       /* Who uses this? */
+#define ARP_ARCNET      7
+#define ARP_APPLETALK   8
+extern char *Arptypes[];        /* Type fields in ASCII, defined in arpcmd */
 #define NHWTYPES 9
 
 /* Table of hardware types known to ARP */
@@ -34,11 +42,14 @@ struct arp_type {
 	int16 hwalen;           /* Hardware length */
 	int16 iptype;           /* Hardware type field for IP */
 	int16 arptype;          /* Hardware type field for ARP */
+	int16 pendtime;         /* # secs to wait pending response */
 	char *bdcst;            /* Hardware broadcast address */
-	int (*format)();        /* Function that formats addresses */
-	int (*scan)();          /* Reverse of format */
+	char *(*format) __ARGS((char *,char *));
+				/* Function that formats addresses */
+	int (*scan) __ARGS((char *out,char *in[],int cnt));
+				/* Reverse of format */
 };
-extern struct arp_type arp_type[];
+extern struct arp_type Arp_type[];
 #define NULLATYPE       (struct arp_type *)0
 
 /* Format of an ARP request or reply packet. From p. 3 */
@@ -58,20 +69,19 @@ struct arp {
 struct arp_tab {
 	struct arp_tab *next;   /* Doubly-linked list pointers */
 	struct arp_tab *prev;
+	struct timer timer;     /* Time until aging this entry */
+	struct mbuf *pending;   /* Queue of datagrams awaiting resolution */
 	int32 ip_addr;          /* IP Address, host order */
 	int16 hardware;         /* Hardware type */
 	int16 hwalen;           /* Hardware length */
-	char *hw_addr;          /* Hardware address */
 	char state;             /* (In)complete */
 #define ARP_PENDING     0
 #define ARP_VALID       1
 	char pub;               /* Respond to requests for this entry? */
-	struct timer timer;     /* Time until aging this entry */
-	struct mbuf *pending;   /* Queue of datagrams awaiting resolution */
+	char *hw_addr;          /* Hardware address */
 };
-struct arp_tab *arp_lookup(),*arp_add();
 #define NULLARP (struct arp_tab *)0
-extern struct arp_tab *arp_tab[];
+extern struct arp_tab *Arp_tab[];
 
 struct arp_stat {
 	unsigned recv;          /* Total number of ARP packets received */
@@ -82,3 +92,26 @@ struct arp_stat {
 	unsigned replies;       /* Replies sent */
 	unsigned outreq;        /* Outoging requests sent */
 };
+extern struct arp_stat Arp_stat;
+
+/* In arp.c: */
+struct arp_tab *arp_add __ARGS((int32 ipaddr,int hardware,char *hw_addr,
+	int hw_alen,int pub));
+void arp_drop __ARGS((void *p));
+int arp_init __ARGS((unsigned int hwtype,int hwalen,int iptype,int arptype,
+	int pendtime,char *bdcst,char *(*format) __ARGS((char *,char *)),
+	int  (*scan) __ARGS((char *out,char *in[],int cnt)) ));
+void arp_input __ARGS((struct iface *iface,struct mbuf *bp));
+struct arp_tab *arp_lookup __ARGS((int hardware,int32 ipaddr));
+char *res_arp __ARGS((struct iface *iface,int hardware,int32 target,struct mbuf *bp));
+
+/* In arphdr.c: */
+struct mbuf *htonarp __ARGS((struct arp *arp));
+int ntoharp __ARGS((struct arp *arp,struct mbuf **bpp));
+
+/* arpfile.c */
+int arp_savefile __ARGS((void));
+int arp_loadfile __ARGS((void));
+
+#endif /* ARPSIZE */
+

@@ -1,34 +1,38 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.2 1990/08/23 17:32:24 deyke Exp $ */
+
 #include <stdio.h>
+#include <ctype.h>
 #include "global.h"
 #include "mbuf.h"
 #include "timer.h"
 #include "enet.h"
 #include "ax25.h"
 #include "arp.h"
+#include "netuser.h"
 #include "cmdparse.h"
+#include "commands.h"
 
-extern char badhost[];
-extern char nospace[];
+static int doarpadd __ARGS((int argc,char *argv[],void *p));
+static int doarpdrop __ARGS((int argc,char *argv[],void *p));
+static int doarpflush __ARGS((int argc,char *argv[],void *p));
+static void dumparp __ARGS((void));
 
-int doarpadd(),doarpdrop();
-struct cmds arpcmds[] = {
-	"add", doarpadd, 4,
+static struct cmds Arpcmds[] = {
+	"add", doarpadd, 0, 4,
 	"arp add <hostid> ether|ax25|netrom <ether addr|callsign>",
-	"arp add failed",
 
-	"drop", doarpdrop, 3,
+	"drop", doarpdrop, 0, 3,
 	"arp drop <hostid> ether|ax25|netrom",
-	"not in table",
 
-	"publish", doarpadd, 4,
+	"flush", doarpflush, 0, 0,
+	NULLCHAR,
+
+	"publish", doarpadd, 0, 4,
 	"arp publish <hostid> ether|ax25|netrom <ether addr|callsign>",
-	"arp add failed",
 
-	NULLCHAR, NULLFP, 0,
-	"arp subcommands: add, drop, publish",
 	NULLCHAR,
 };
-char *arptypes[] = {
+char *Arptypes[] = {
 	"NET/ROM",
 	"10 Mb Ethernet",
 	"3 Mb Ethernet",
@@ -41,34 +45,35 @@ char *arptypes[] = {
 };
 
 int
-doarp(argc,argv)
+doarp(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	arp_loadfile();
 	if(argc < 2){
 		dumparp();
 		return 0;
 	}
-	return subcmd(arpcmds,argc,argv);
+	return subcmd(Arpcmds,argc,argv,p);
 }
 static
-doarpadd(argc,argv)
+doarpadd(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	int16 hwalen,hardware,naddr;
-	int32 addr,resolve();
+	int32 addr;
 	char *hwaddr;
 	struct arp_tab *ap;
 	struct arp_type *at;
-	void arp_drop();
 	int pub = 0;
 
 	if(argv[0][0] == 'p')   /* Is this entry published? */
 		pub = 1;
 	if((addr = resolve(argv[1])) == 0){
-		printf(badhost,argv[1]);
+		tprintf(Badhost,argv[1]);
 		return 1;
 	}
 	/* This is a kludge. It really ought to be table driven */
@@ -77,7 +82,7 @@ char *argv[];
 		hardware = ARP_NETROM;
 		naddr = argc - 3 ;
 		if (naddr != 1) {
-			printf("No digipeaters in NET/ROM arp entries - ") ;
+			tprintf("No digipeaters in NET/ROM arp entries - ") ;
 			return 1 ;
 		}
 		break;
@@ -94,24 +99,21 @@ char *argv[];
 		naddr = 1;
 		break;
 	default:
-		printf("unknown hardware type \"%s\"\n",argv[2]);
+		tprintf("unknown hardware type \"%s\"\n",argv[2]);
 		return -1;
 	}
 	/* If an entry already exists, clear it */
 	if((ap = arp_lookup(hardware,addr)) != NULLARP)
 		arp_drop(ap);
 
-	at = &arp_type[hardware];
+	at = &Arp_type[hardware];
 	if(at->scan == NULLFP){
-		printf("Attach device first\n");
+		tprintf("Attach device first\n");
 		return 1;
 	}
 	/* Allocate buffer for hardware address and fill with remaining args */
 	hwalen = at->hwalen * naddr;
-	if((hwaddr = malloc(hwalen)) == NULLCHAR){
-		printf(nospace);
-		return 0;
-	}
+	hwaddr = mallocw(hwalen);
 	/* Destination address */
 	(*at->scan)(hwaddr,&argv[3],argc - 3);
 	ap = arp_add(addr,hardware,hwaddr,hwalen,pub);  /* Put in table */
@@ -122,17 +124,17 @@ char *argv[];
 }
 /* Remove an ARP entry */
 static
-doarpdrop(argc,argv)
+doarpdrop(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	int16 hardware;
-	int32 addr,resolve();
+	int32 addr;
 	struct arp_tab *ap;
-	void arp_drop();
 
 	if((addr = resolve(argv[1])) == 0){
-		printf(badhost,argv[1]);
+		tprintf(Badhost,argv[1]);
 		return 1;
 	}
 	/* This is a kludge. It really ought to be table driven */
@@ -158,45 +160,64 @@ char *argv[];
 	arp_drop(ap);
 	return 0;
 }
-/* Dump ARP table */
-static
-dumparp()
+/* Flush all automatic entries in the arp cache */
+static int
+doarpflush(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
 {
-	register int i;
-	extern struct arp_stat arp_stat;
 	register struct arp_tab *ap;
-	char e[128];
-	char *inet_ntoa();
-	extern char *arptypes[];
+	struct arp_tab *aptmp;
+	int i;
 
-	printf("received %u badtype %u bogus addr %u reqst in %u replies %u reqst out %u\n",
-	 arp_stat.recv,arp_stat.badtype,arp_stat.badaddr,arp_stat.inreq,
-	 arp_stat.replies,arp_stat.outreq);
-
-	printf("IP addr         Type           Time Q Addr\n");
 	for(i=0;i<ARPSIZE;i++){
-		for(ap = arp_tab[i];ap != (struct arp_tab *)NULL;ap = ap->next){
-			printf("%-16s",inet_ntoa(ap->ip_addr));
-			printf("%-15s",arptypes[ap->hardware]);
-			printf("%-5ld",ap->timer.count*(long)MSPTICK/1000);
-			if(ap->state == ARP_PENDING)
-				printf("%-2u",len_q(ap->pending));
-			else
-				printf("  ");
-			if(ap->state == ARP_VALID){
-				if(arp_type[ap->hardware].format != NULLFP){
-					(*arp_type[ap->hardware].format)(e,ap->hw_addr);
-				} else {
-					e[0] = '\0';
-				}
-				printf("%s",e);
-			} else {
-				printf("[unknown]");
-			}
-			if(ap->pub)
-				printf(" (published)");
-			printf("\n");
+		for(ap = Arp_tab[i];ap != NULLARP;ap = aptmp){
+			aptmp = ap->next;
+			if(ap->timer.start != 0)
+				arp_drop(ap);
 		}
 	}
 	return 0;
+}
+
+/* Dump ARP table */
+static void
+dumparp()
+{
+	register int i;
+	register struct arp_tab *ap;
+	char e[128];
+
+	tprintf("received %u badtype %u bogus addr %u reqst in %u replies %u reqst out %u\n",
+	 Arp_stat.recv,Arp_stat.badtype,Arp_stat.badaddr,Arp_stat.inreq,
+	 Arp_stat.replies,Arp_stat.outreq);
+
+	tprintf("IP addr         Type           Time Q Addr\n");
+	for(i=0;i<ARPSIZE;i++){
+		for(ap = Arp_tab[i];ap != (struct arp_tab *)NULL;ap = ap->next){
+			tprintf("%-16s",inet_ntoa(ap->ip_addr));
+			tprintf("%-15s",smsg(Arptypes,NHWTYPES,ap->hardware));
+			tprintf("%-5ld",read_timer(&ap->timer)*(long)MSPTICK/1000);
+			if(ap->state == ARP_PENDING)
+				tprintf("%-2u",len_q(ap->pending));
+			else
+				tprintf("  ");
+			if(ap->state == ARP_VALID){
+				if(Arp_type[ap->hardware].format != NULL){
+					(*Arp_type[ap->hardware].format)(e,ap->hw_addr);
+				} else {
+					e[0] = '\0';
+				}
+				tprintf("%s",e);
+			} else {
+				tprintf("[unknown]");
+			}
+			if(ap->pub)
+				tprintf(" (published)");
+			if(tprintf("\n") == EOF)
+				return;
+		}
+	}
+	return;
 }

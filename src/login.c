@@ -1,14 +1,15 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.6 1990/03/29 12:15:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.7 1990/08/23 17:33:19 deyke Exp $ */
 
 #include <sys/types.h>
+
+#include <stdio.h>      /* must be before pwd.h */
 
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <memory.h>
 #include <pwd.h>
 #include <signal.h>
-#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/ptyio.h>
 #include <sys/rtprio.h>
@@ -26,8 +27,6 @@
 extern struct utmp *getutent();
 extern struct utmp *getutid();
 extern void endutent();
-extern void exit();
-extern void free();
 extern void pututline();
 
 #define MASTERPREFIX        "/dev/pty"
@@ -412,6 +411,9 @@ char  *upcall_arg;
     utmp.ut_pid = getpid();
     utmp.ut_type = LOGIN_PROCESS;
     utmp.ut_time = currtime;
+#ifdef _UTMP_INCLUDED   /* for HP-UX 6.5 compatibility */
+    strncpy(utmp.ut_host, protocol, sizeof(utmp.ut_host));
+#endif
     pututline(&utmp);
     endutent();
     execle("/bin/login", "login", pw->pw_name, (char *) 0, &env);

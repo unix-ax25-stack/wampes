@@ -1,6 +1,10 @@
-#define CTLZ    26              /* EOF for CP/M systems */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.h,v 1.2 1990/08/23 17:32:51 deyke Exp $ */
 
-extern char *userfile;  /* List of user names and permissions */
+/* Definitions common to both FTP servers and clients */
+
+#ifndef ASCII_TYPE
+
+#define CTLZ    26              /* EOF for CP/M systems */
 
 /* Per-session control block */
 struct ftp {
@@ -40,4 +44,6 @@ struct ftp {
 };
 
 #define NULLFTP (struct ftp *)0
+
+#endif  /* ASCII_TYPE */
 

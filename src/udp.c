@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.c,v 1.2 1990/08/23 17:34:31 deyke Exp $ */
+
 /* Send and receive User Datagram Protocol packets */
 #include "global.h"
 #include "mbuf.h"
@@ -5,8 +7,11 @@
 #include "udp.h"
 #include "internet.h"
 
+static struct udp_cb *lookup_udp();
+static int16 hash_udp();
+
 /* Hash table for UDP structures */
-struct udp_cb *udps[NUDP] = { NULLUDP} ;
+struct udp_cb *Udps[NUDP] = { NULLUDP} ;
 struct udp_stat udp_stat;       /* Statistics */
 
 /* Create a UDP control block for lsocket, so that we can queue
@@ -18,13 +23,12 @@ struct socket *lsocket;
 void (*r_upcall)();
 {
 	register struct udp_cb *up;
-	struct udp_cb *lookup_udp();
-	int16 hval,hash_udp();
+	int16 hval;
 
 	if((up = lookup_udp(lsocket)) != NULLUDP)
 		return 0;       /* Already exists */
 	if((up = (struct udp_cb *)malloc(sizeof (struct udp_cb))) == NULLUDP){
-		net_error = NO_SPACE;
+		Net_error = NO_MEM;
 		return -1;
 	}
 	up->rcvq = NULLBUF;
@@ -34,11 +38,11 @@ void (*r_upcall)();
 	up->r_upcall = r_upcall;
 
 	hval = hash_udp(lsocket);
-	up->next = udps[hval];
+	up->next = Udps[hval];
 	up->prev = NULLUDP;
 	if(up->next != NULLUDP)
 		up->next->prev = up;
-	udps[hval] = up;
+	Udps[hval] = up;
 	return 0;
 }
 
@@ -60,7 +64,7 @@ char df;                        /* Don't Fragment flag for IP */
 
 	length = UDPHDR;
 	if(data != NULLBUF)
-		length += len_mbuf(data);
+		length += len_p(data);
 
 	udp.source = lsocket->port;
 	udp.dest = fsocket->port;
@@ -73,7 +77,7 @@ char df;                        /* Don't Fragment flag for IP */
 	ph.protocol = UDP_PTCL;
 
 	if((bp = htonudp(&udp,data,&ph)) == NULLBUF){
-		net_error = NO_SPACE;
+		Net_error = NO_MEM;
 		free_p(data);
 		return 0;
 	}
@@ -89,7 +93,6 @@ struct socket *lsocket;         /* Local socket to receive on */
 struct socket *fsocket;         /* Place to stash incoming socket */
 struct mbuf **bp;                       /* Place to stash data packet */
 {
-	struct udp_cb *lookup_udp();
 	register struct udp_cb *up;
 	struct socket *sp;
 	struct mbuf *buf;
@@ -97,11 +100,11 @@ struct mbuf **bp;                       /* Place to stash data packet */
 
 	up = lookup_udp(lsocket);
 	if(up == NULLUDP){
-		net_error = NO_CONN;
+		Net_error = NO_CONN;
 		return -1;
 	}
 	if(up->rcvcnt == 0){
-		net_error = WOULDBLK;
+		Net_error = WOULDBLK;
 		return -1;
 	}
 	buf = dequeue(&up->rcvq);
@@ -115,7 +118,7 @@ struct mbuf **bp;                       /* Place to stash data packet */
 	}
 	/* Strip socket header and hand data to user */
 	pullup(&buf,NULLCHAR,sizeof(struct socket));
-	length = len_mbuf(buf);
+	length = len_p(buf);
 	if(bp != (struct mbuf **)NULL)
 		*bp = buf;
 	else
@@ -128,12 +131,11 @@ del_udp(lsocket)
 struct socket *lsocket;
 {
 	register struct udp_cb *up;
-	struct udp_cb *lookup_udp();
 	struct mbuf *bp;
-	int16 hval,hash_udp();
+	int16 hval;
 
 	if((up = lookup_udp(lsocket)) == NULLUDP){
-		net_error = INVALID;
+		Net_error = INVALID;
 		return -1;
 	}
 	/* Get rid of any pending packets */
@@ -144,9 +146,9 @@ struct socket *lsocket;
 		up->rcvcnt--;
 	}
 	hval = hash_udp(&up->socket);
-	if(udps[hval] == up){
+	if(Udps[hval] == up){
 		/* First on list */
-		udps[hval] = up->next;
+		Udps[hval] = up->next;
 		if (up->next != NULLUDP)
 			up->next->prev = NULLUDP;
 	} else {
@@ -170,7 +172,7 @@ char rxbroadcast;       /* The only protocol that accepts 'em */
 {
 	struct pseudo_header ph;
 	struct udp udp;
-	struct udp_cb *up,*lookup_udp();
+	struct udp_cb *up;
 	struct socket lsocket;
 	struct socket *fsocket;
 	struct mbuf *packet;
@@ -204,7 +206,7 @@ char rxbroadcast;       /* The only protocol that accepts 'em */
 	}
 	/* If this was a broadcast packet, pretend it was sent to us */
 	if(rxbroadcast){
-		lsocket.address = ip_addr;
+		lsocket.address = Ip_addr;
 		udp_stat.bdcsts++;
 	} else
 		lsocket.address = dest;
@@ -240,9 +242,8 @@ lookup_udp(socket)
 struct socket *socket;
 {
 	register struct udp_cb *up;
-	int16 hash_udp();
 
-	up = udps[hash_udp(socket)];
+	up = Udps[hash_udp(socket)];
 	while(up != NULLUDP){
 		if(memcmp((char *)socket,(char *)&up->socket,sizeof(struct socket)) == 0)
 			break;

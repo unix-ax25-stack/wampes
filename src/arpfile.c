@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.2 1990/08/23 17:32:27 deyke Exp $ */
+
 #include <stdio.h>
 
 #include "global.h"
@@ -37,7 +39,7 @@ arp_savefile()
   if (!(fp = fopen(arp_tmpfilename, "w"))) return;
   putc(ARP_FILE_VERSION, fp);
   for (i = 0; i < ARPSIZE; i++)
-    for (p = arp_tab[i]; p; p = p->next)
+    for (p = Arp_tab[i]; p; p = p->next)
       if (p->hw_addr && p->state == ARP_VALID) {
 	buf.ip_addr = p->ip_addr;
 	buf.hardware = p->hardware;

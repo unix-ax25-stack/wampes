@@ -1,5 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.2 1990/04/05 11:14:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.3 1990/08/23 17:34:28 deyke Exp $ */
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "global.h"
@@ -13,7 +14,6 @@
 #include "transport.h"
 
 extern int16 lport;
-extern void free();
 
 /*---------------------------------------------------------------------------*/
 
@@ -231,7 +231,7 @@ struct transport_cb *tp;
   if (!(fsocket.address = resolve(strptr))) return 0;
   if (!(strptr = strtok((char *) 0, " \t\r\n"))) return 0;
   if (!(fsocket.port = tcp_portnum(strptr))) return 0;
-  lsocket.address = ip_addr;
+  lsocket.address = Ip_addr;
   lsocket.port = lport++;
   tp->recv = recv_tcp;
   tp->send = send_tcp;
@@ -257,7 +257,7 @@ char  *user;
   tp->user = user;
   tp->timer.func = (void (*)()) transport_close;
   tp->timer.arg = (char *) tp;
-  net_error = INVALID;
+  Net_error = INVALID;
   if (!strcmp(protocol, "ax25"))
     tp->cp = (char *) transport_open_ax25(address, tp);
   else if (!strcmp(protocol, "netrom"))
@@ -265,7 +265,7 @@ char  *user;
   else if (!strcmp(protocol, "tcp"))
     tp->cp = (char *) transport_open_tcp(address, tp);
   else
-    net_error = NOPROTO;
+    Net_error = NOPROTO;
   if (tp->cp) return tp;
   free((char *) tp);
   return 0;

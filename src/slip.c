@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.2 1990/08/23 17:34:00 deyke Exp $ */
+
 /* Send and receive IP datagrams on serial lines. Compatible with SLIP
  * under Berkeley Unix.
  */
@@ -20,10 +22,17 @@ int asy_ioctl();
 int kiss_ioctl();
 int slip_send();
 void doslip();
-int asy_output();
+
+static int slipq __ARGS((int dev, struct mbuf *data));
+static void asy_start __ARGS((int dev));
+static struct mbuf *slip_encode __ARGS((struct mbuf *bp));
+static struct mbuf *slip_decode __ARGS((int dev, int c));
+static int m_send __ARGS((unsigned dev, char *a));
+static int xinstr __ARGS((char *src, char *pat));
+static int m_expect __ARGS((unsigned dev, char *a));
 
 /* Slip level control structure */
-struct slip slip[ASY_MAX];
+struct slip Slip[ASY_MAX];
 
 /* Send routine for point-to-point slip
  * This is a trivial function since there is no slip link-level header
@@ -31,7 +40,7 @@ struct slip slip[ASY_MAX];
 int
 slip_send(data,interface,gateway,precedence,delay,throughput,reliability)
 struct mbuf *data;              /* Buffer to send */
-struct interface *interface;    /* Pointer to interface control block */
+struct iface *interface;    /* Pointer to interface control block */
 int32 gateway;                  /* Ignored (SLIP is point-to-point) */
 char precedence;
 char delay;
@@ -48,7 +57,7 @@ char reliability;
 /* Send a raw slip frame -- also trivial */
 int
 slip_raw(interface,data)
-struct interface *interface;
+struct iface *interface;
 struct mbuf *data;
 {
 	/* Queue a frame on the slip output queue and start transmitter */
@@ -63,13 +72,12 @@ int16 dev;              /* Serial line number */
 struct mbuf *data;      /* Buffer to be sent */
 {
 	register struct slip *sp;
-	struct mbuf *slip_encode(),*bp;
-	void asy_start();
+	struct mbuf *bp;
 
 	if((bp = slip_encode(data)) == NULLBUF)
 		return -1;
 
-	sp = &slip[dev];
+	sp = &Slip[dev];
 	enqueue(&sp->sndq,bp);
 	sp->sndcnt++;
 	if(sp->tbp == NULLBUF)
@@ -86,7 +94,7 @@ int16 dev;
 	if(!stxrdy(dev))
 		return;         /* Transmitter not ready */
 
-	sp = &slip[dev];
+	sp = &Slip[dev];
 	if(sp->tbp != NULLBUF){
 		/* transmission just completed */
 		free_p(sp->tbp);
@@ -112,7 +120,7 @@ struct mbuf *bp;
 	/* Allocate output mbuf that's twice as long as the packet.
 	 * This is a worst-case guess (consider a packet full of FR_ENDs!)
 	 */
-	lbp = alloc_mbuf(2*len_mbuf(bp) + 2);
+	lbp = alloc_mbuf(2*len_p(bp) + 2);
 	if(lbp == NULLBUF){
 		/* No space; drop */
 		free_p(bp);
@@ -154,7 +162,7 @@ char c;         /* Incoming character */
 	struct mbuf *bp;
 	register struct slip *sp;
 
-	sp = &slip[dev];
+	sp = &Slip[dev];
 	switch(uchar(c)){
 	case FR_END:
 		bp = sp->rbp;
@@ -211,7 +219,7 @@ char c;         /* Incoming character */
 /* Process SLIP line I/O */
 void
 doslip(interface)
-struct interface *interface;
+struct iface *interface;
 {
 	char c;
 	struct mbuf *bp;
@@ -223,7 +231,7 @@ struct interface *interface;
 	/* Process any pending input */
 	while(asy_recv(dev,&c,1) != 0)
 		if((bp = slip_decode(dev,c)) != NULLBUF)
-			(*slip[dev].recv)(interface,bp);
+			(*Slip[dev].recv)(interface,bp);
 
 	/* Kick the transmitter if it's idle */
 	if(stxrdy(dev))
@@ -234,11 +242,9 @@ struct interface *interface;
  */
 void
 slip_recv(interface,bp)
-struct interface *interface;
+struct iface *interface;
 struct mbuf *bp;
 {
-	int ip_route();
-
 	/* By definition, all incoming packets are "addressed" to us */
 	dump(interface,IF_TRACE_IN,TRACE_IP,bp);
 	ip_route(bp,0);

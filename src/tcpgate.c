@@ -1,8 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.2 1990/01/29 09:37:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.3 1990/08/23 17:34:10 deyke Exp $ */
 
 #include <sys/types.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 
@@ -14,7 +15,6 @@
 #include "hpux.h"
 
 extern struct sockaddr *build_sockaddr();
-extern void free();
 
 /*---------------------------------------------------------------------------*/
 
@@ -135,7 +135,7 @@ char  *argv[];
   char  buf[80];
   struct socket lsocket;
 
-  lsocket.address = ip_addr;
+  lsocket.address = Ip_addr;
   lsocket.port = tcp_portnum(argv[1]);
   if (argc < 3)
     sprintf(socketname = buf, "loopback:%d", lsocket.port);

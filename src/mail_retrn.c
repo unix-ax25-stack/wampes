@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.2 1990/08/23 17:33:29 deyke Exp $ */
+
 /* Mail Delivery Agent for returned Mails */
 
 #include <stdio.h>

@@ -1,5 +1,12 @@
-/* User Datagram Protocol definitions */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.h,v 1.2 1990/08/23 17:34:33 deyke Exp $ */
 
+#ifndef NUDP
+
+#include "global.h"
+#include "netuser.h"
+#include "internet.h"
+
+/* User Datagram Protocol definitions */
 #define NUDP    20
 
 /* Structure of a UDP protocol header */
@@ -23,7 +30,7 @@ struct udp_cb {
 	struct mbuf *rcvq;      /* Queue of pending datagrams */
 	int rcvcnt;             /* Count of pending datagrams */
 };
-extern struct udp_cb *udps[];   /* Hash table for UDP structures */
+extern struct udp_cb *Udps[];   /* Hash table for UDP structures */
 #define NULLUDP (struct udp_cb *)0
 
 /* UDP statistics counters */
@@ -37,4 +44,6 @@ struct udp_stat {
 
 /* UDP primitives */
 int open_udp(),recv_udp(),send_udp(),del_udp();
-void udp_dump();
+
+#endif  /* NUDP */
+

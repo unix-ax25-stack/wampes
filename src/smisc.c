@@ -1,9 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.2 1990/04/12 17:51:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.3 1990/08/23 17:34:02 deyke Exp $ */
 
 /* Miscellaneous servers */
 #include <stdio.h>
+#include <time.h>
 #include "global.h"
 #include "mbuf.h"
+#include "socket.h"
 #include "netuser.h"
 #include "timer.h"
 #include "tcp.h"
@@ -16,32 +18,39 @@ char *Rempass = " ";    /* Remote access password */
 static struct tcb *disc_tcb,*echo_tcb;
 static struct socket remsock;
 
+static void disc_recv __ARGS((struct tcb *tcb, int cnt));
+static void echo_recv __ARGS((struct tcb *tcb, int cnt));
+static void echo_trans __ARGS((struct tcb *tcb, int cnt));
+static void misc_state __ARGS((struct tcb *tcb, int old, int new));
+static void uremote __ARGS((struct socket *sock, int cnt));
+static int chkrpass __ARGS((struct mbuf **bpp));
+
 /* Start up discard server */
-dis1(argc,argv)
+dis1(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	struct socket lsocket;
-	void disc_recv(),misc_state();
 
-	lsocket.address = ip_addr;
+	lsocket.address = Ip_addr;
 	if(argc < 2)
-		lsocket.port = DISCARD_PORT;
+		lsocket.port = IPPORT_DISCARD;
 	else
 		lsocket.port = tcp_portnum(argv[1]);
 	disc_tcb = open_tcp(&lsocket,NULLSOCK,TCP_SERVER,0,disc_recv,NULLVFP,misc_state,0,(char *)NULL);
 }
 /* Start echo server */
-echo1(argc,argv)
+echo1(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
-	void echo_recv(),echo_trans(),misc_state();
 	struct socket lsocket;
 
-	lsocket.address = ip_addr;
+	lsocket.address = Ip_addr;
 	if(argc < 2)
-		lsocket.port = ECHO_PORT;
+		lsocket.port = IPPORT_ECHO;
 	else
 		lsocket.port = tcp_portnum(argv[1]);
 	echo_tcb = open_tcp(&lsocket,NULLSOCK,TCP_SERVER,0,echo_recv,echo_trans,misc_state,0,(char *)NULL);
@@ -49,13 +58,13 @@ char *argv[];
 }
 
 /* Start remote exit/reboot server */
-rem1(argc,argv)
+rem1(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
-	void uremote();
 
-	remsock.address = ip_addr;
+	remsock.address = Ip_addr;
 	if(argc < 2)
 		remsock.port = IPPORT_REMOTE;
 	else
@@ -64,17 +73,26 @@ char *argv[];
 }
 
 /* Shut down miscellaneous servers */
-dis0()
+dis0(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
 {
 	if(disc_tcb != NULLTCB)
 		close_tcp(disc_tcb);
 }
-echo0()
+echo0(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
 {
 	if(echo_tcb != NULLTCB)
 		close_tcp(echo_tcb);
 }
-rem0()
+rem0(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
 {
 	del_udp(&remsock);
 }
@@ -202,7 +220,7 @@ int16 cnt;
 		}
 		break;
 	case KICK_ME:
-		if(len_mbuf(bp) >= sizeof(int32))
+		if(len_p(bp) >= sizeof(int32))
 			addr = pull32(&bp);
 		else
 			addr = fsock.address;
@@ -221,7 +239,7 @@ struct mbuf **bpp;
 	int16 len;
 	int rval = 0;
 
-	len = len_mbuf(*bpp);
+	len = len_p(*bpp);
 	if(strlen(Rempass) == len) {
 		lbuf = malloc(len);
 		pullup(bpp,lbuf,len);

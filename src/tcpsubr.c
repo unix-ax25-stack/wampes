@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.3 1990/02/12 11:55:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.4 1990/08/23 17:34:14 deyke Exp $ */
 
 #include "global.h"
 #include "timer.h"
@@ -6,6 +6,8 @@
 #include "netuser.h"
 #include "internet.h"
 #include "tcp.h"
+
+static int16 hash_tcb();
 
 struct tcb *tcbs[NTCB];
 int16 tcp_mss = DEF_MSS;        /* Maximum segment size to be sent with SYN */
@@ -17,7 +19,6 @@ lookup_tcb(conn)
 struct connection *conn;
 {
 	register struct tcb *tcb;
-	int16 hash_tcb();
 
 	tcb = tcbs[hash_tcb(conn)];
 	while(tcb != NULLTCB){
@@ -157,7 +158,6 @@ link_tcb(tcb)
 register struct tcb *tcb;
 {
 	register struct tcb **tcbhead;
-	int16 hash_tcb();
 
 	tcb->prev = NULLTCB;
 	tcbhead = &tcbs[hash_tcb(&tcb->conn)];
@@ -173,7 +173,6 @@ unlink_tcb(tcb)
 register struct tcb *tcb;
 {
 	register struct tcb **tcbhead;
-	int16 hash_tcb();
 
 	tcbhead = &tcbs[hash_tcb(&tcb->conn)];
 	if(*tcbhead == tcb)
@@ -275,7 +274,7 @@ struct mbuf **bpp;
 	if(hdrlen == TCPLEN)
 		return hdrlen;  /* No options, all done */
 
-	if(hdrlen > len_mbuf(*bpp) + TCPLEN){
+	if(hdrlen > len_p(*bpp) + TCPLEN){
 		/* Remainder too short for options length specified */
 		return -1;
 	}

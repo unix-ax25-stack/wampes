@@ -1,6 +1,9 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.2 1990/08/23 17:34:17 deyke Exp $ */
+
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
+#include "socket.h"
 #include "timer.h"
 #include "icmp.h"
 #include "netuser.h"
@@ -8,10 +11,19 @@
 #include "telnet.h"
 #include "session.h"
 
+void rcv_char();
+
+static void tn_tx __ARGS((struct tcb *tcb, int cnt));
+static void t_state __ARGS((struct tcb *tcb, int old, int new));
+static free_telnet __ARGS((struct telnet *tn));
+static void willopt __ARGS((struct telnet *tn, int opt));
+static void wontopt __ARGS((struct telnet *tn, int opt));
+static void doopt __ARGS((struct telnet *tn, int opt));
+static void dontopt __ARGS((struct telnet *tn, int opt));
+static void answer __ARGS((struct telnet *tn, int r1, int r2));
+
 #define CTLZ    26
 
-extern char nospace[];
-extern char badhost[];
 int refuse_echo = 0;
 int unix_line_mode = 0;    /* if true turn <cr> to <nl> when in line mode */
 
@@ -29,12 +41,11 @@ char *t_options[] = {
 
 /* Execute user telnet command */
 int
-dotelnet(argc,argv)
+dotelnet(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
-	void t_state(),rcv_char(),tn_tx();
-	char *inet_ntoa();
 	int32 resolve();
 	int send_tel();
 	int unix_send_tel();
@@ -43,14 +54,14 @@ char *argv[];
 	struct tcb *tcb;
 	struct socket lsocket,fsocket;
 
-	lsocket.address = ip_addr;
+	lsocket.address = Ip_addr;
 	lsocket.port = lport++;
 	if((fsocket.address = resolve(argv[1])) == 0){
-		printf(badhost,argv[1]);
+		printf(Badhost,argv[1]);
 		return 1;
 	}
 	if(argc < 3)
-		fsocket.port = TELNET_PORT;
+		fsocket.port = IPPORT_TELNET;
 	else
 		fsocket.port = tcp_portnum(argv[2]);
 
@@ -71,7 +82,7 @@ char *argv[];
 
 	/* Create and initialize a Telnet protocol descriptor */
 	if((tn = (struct telnet *)calloc(1,sizeof(struct telnet))) == NULLTN){
-		printf(nospace);
+		printf(Nospace);
 		s->type = FREE;
 		return 1;
 	}
@@ -83,7 +94,7 @@ char *argv[];
 	 rcv_char,tn_tx,t_state,0,(char *)tn);
 
 	tn->tcb = tcb;  /* Downward pointer */
-	go();
+	go(argc, argv, p);
 	return 0;
 }
 
@@ -108,7 +119,7 @@ send_tel(buf,n)
 char *buf;
 int16 n;
 {
-	struct mbuf *bp,*qdata();
+	struct mbuf *bp;
 	if(current == NULLSESSION || current->cb.telnet == NULLTN
 	 || current->cb.telnet->tcb == NULLTCB)
 		return;
@@ -126,9 +137,7 @@ register struct telnet *tn;
 struct mbuf *bp;
 {
 	char c;
-	void doopt(),dontopt(),willopt(),wontopt(),answer();
 	FILE *record;
-	char *memchr();
 
 	/* Optimization for very common special case -- no special chars */
 	if(tn->state == TS_DATA){
@@ -223,7 +232,7 @@ int16 cnt;
 		fflush(record);
 }
 /* Handle transmit upcalls. Used only for file uploading */
-void
+static void
 tn_tx(tcb,cnt)
 struct tcb *tcb;
 int16 cnt;
@@ -255,7 +264,7 @@ int16 cnt;
 }
 
 /* State change upcall routine */
-void
+static void
 t_state(tcb,old,new)
 register struct tcb *tcb;
 char old,new;
@@ -264,8 +273,6 @@ char old,new;
 	char notify = 0;
 	extern char *tcpstates[];
 	extern char *reasons[];
-	extern char *unreach[];
-	extern char *exceed[];
 
 	/* Can't add a check for unknown connection here, it would loop
 	 * on a close upcall! We're just careful later on.
@@ -289,11 +296,11 @@ char old,new;
 			printf("%s (%s",tcpstates[new],reasons[tcb->reason]);
 			if(tcb->reason == NETWORK){
 				switch(tcb->type){
-				case DEST_UNREACH:
-					printf(": %s unreachable",unreach[tcb->code]);
+				case ICMP_DEST_UNREACH:
+					printf(": %s unreachable",Unreach[tcb->code]);
 					break;
-				case TIME_EXCEED:
-					printf(": %s time exceeded",exceed[tcb->code]);
+				case ICMP_TIME_EXCEED:
+					printf(": %s time exceeded",Exceed[tcb->code]);
 					break;
 				}
 			}
@@ -324,7 +331,7 @@ struct telnet *tn;
 }
 
 /* The guts of the actual Telnet protocol: negotiating options */
-void
+static void
 willopt(tn,opt)
 struct telnet *tn;
 char opt;
@@ -362,7 +369,7 @@ char opt;
 	}
 	answer(tn,ack,opt);
 }
-void
+static void
 wontopt(tn,opt)
 struct telnet *tn;
 char opt;
@@ -385,7 +392,7 @@ char opt;
 	}
 	answer(tn,DONT,opt);    /* Must always accept */
 }
-void
+static void
 doopt(tn,opt)
 struct telnet *tn;
 char opt;
@@ -413,7 +420,7 @@ char opt;
 	}
 	answer(tn,ack,opt);
 }
-void
+static void
 dontopt(tn,opt)
 struct telnet *tn;
 char opt;
@@ -442,7 +449,7 @@ answer(tn,r1,r2)
 struct telnet *tn;
 int r1,r2;
 {
-	struct mbuf *bp,*qdata();
+	struct mbuf *bp;
 	char s[3];
 
 #ifdef  DEBUG

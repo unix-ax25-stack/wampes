@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.2 1990/08/23 17:33:51 deyke Exp $ */
+
 /* This module implements the serial line framing method used by
  * net/rom nodes.  This allows the net/rom software to talk to
  * an actual net/rom over its serial interface, which is useful
@@ -13,14 +15,17 @@
 #include "asy.h"
 #include "trace.h"
 
-int asy_output();
+static nrsq __ARGS((int dev, struct mbuf *bp));
+static nrasy_start __ARGS((int dev));
+static struct mbuf *nrs_encode __ARGS((struct mbuf *bp));
+static struct mbuf *nrs_decode __ARGS((int dev, int c));
 
 /* control structures, sort of overlayed on async control blocks */
-struct nrs nrs[ASY_MAX];
+struct nrs Nrs[ASY_MAX];
 
 /* Send a raw net/rom serial frame */
 nrs_raw(interface,bp)
-struct interface *interface;
+struct iface *interface;
 struct mbuf *bp;
 {
 	dump(interface,IF_TRACE_OUT,TRACE_AX25,bp) ;
@@ -38,12 +43,11 @@ int16 dev;              /* Serial line number */
 struct mbuf *bp;        /* Buffer to be sent */
 {
 	register struct nrs *sp;
-	struct mbuf *nrs_encode();
 
 	if((bp = nrs_encode(bp)) == NULLBUF)
 		return;
 
-	sp = &nrs[dev];
+	sp = &Nrs[dev];
 	enqueue(&sp->sndq,bp);
 	sp->sndcnt++;
 	if(sp->tbp == NULLBUF)
@@ -60,7 +64,7 @@ int16 dev;
 	if(!stxrdy(dev))
 		return;         /* Transmitter not ready */
 
-	sp = &nrs[dev];
+	sp = &Nrs[dev];
 	if(sp->tbp != NULLBUF){
 		/* transmission just completed */
 		free_p(sp->tbp);
@@ -89,7 +93,7 @@ struct mbuf *bp;
 	 * This is a worst-case guess (consider a packet full of STX's!)
 	 * Add five bytes for STX, ETX, checksum, and two nulls.
 	 */
-	lbp = alloc_mbuf(2*len_mbuf(bp) + 5);
+	lbp = alloc_mbuf(2*len_p(bp) + 5);
 	if(lbp == NULLBUF){
 		/* No space; drop */
 		free_p(bp);
@@ -132,7 +136,7 @@ char c;         /* Incoming character */
 	struct mbuf *bp;
 	register struct nrs *sp;
 
-	sp = &nrs[dev];
+	sp = &Nrs[dev];
 	switch(sp->state) {
 		case NRS_INTER:
 			if (uchar(c) == STX) {  /* look for start of frame */
@@ -217,13 +221,12 @@ char c;         /* Incoming character */
 /* Process net/rom serial line I/O */
 void
 nrs_recv(interface)
-struct interface *interface;
+struct iface *interface;
 {
 	char c;
 	struct mbuf *bp;
 	int16 dev;
 	int16 asy_recv();
-	int ax_recv() ;
 
 	dev = interface->dev;
 	/* Process any pending input */
@@ -239,16 +242,17 @@ struct interface *interface;
 }
 
 /* donrstat:  display status of active net/rom serial interfaces */
-donrstat(argc,argv)
+donrstat(argc,argv,p)
 int argc ;
 char *argv[] ;
+void *p;
 {
 	register struct nrs *np ;
 	register int i ;
 
 	printf("Interface  SndQ  RcvB  NumReceived  CSumErrors\n") ;
 
-	for (i = 0, np = nrs ; i < ASY_MAX ; i++, np++)
+	for (i = 0, np = Nrs ; i < ASY_MAX ; i++, np++)
 		if (np->iface != NULLIF)
 			printf(" %8s   %3d  %4d   %10lu  %10lu\n",
 					np->iface->name, np->sndcnt, np->rcnt,

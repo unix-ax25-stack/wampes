@@ -1,18 +1,18 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.5 1990/04/12 17:51:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.6 1990/08/23 17:34:16 deyke Exp $ */
 
 /* User calls to TCP */
 
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "global.h"
 #include "timer.h"
 #include "mbuf.h"
 #include "netuser.h"
+#include "socket.h"
 #include "internet.h"
 #include "tcp.h"
-
-extern void free();
 
 int16 tcp_window = DEF_WND;
 
@@ -33,7 +33,7 @@ char *user;             /* User linkage area */
 	void send_syn();
 
 	if(lsocket == NULLSOCK){
-		net_error = INVALID;
+		Net_error = INVALID;
 		return NULLTCB;
 	}
 	conn.local.address = lsocket->address;
@@ -47,11 +47,11 @@ char *user;             /* User linkage area */
 	}
 	if((tcb = lookup_tcb(&conn)) == NULLTCB){
 		if((tcb = create_tcb(&conn)) == NULLTCB){
-			net_error = NO_SPACE;
+			Net_error = NO_MEM;
 			return NULLTCB;
 		}
 	} else if(tcb->state != LISTEN){
-		net_error = CON_EXISTS;
+		Net_error = CON_EXISTS;
 		return NULLTCB;
 	}
 	tcb->user = user;
@@ -91,22 +91,22 @@ struct mbuf *bp;
 
 	if(tcb == NULLTCB || bp == NULLBUF){
 		free_p(bp);
-		net_error = INVALID;
+		Net_error = INVALID;
 		return -1;
 	}
-	cnt = len_mbuf(bp);
+	cnt = len_p(bp);
 #ifdef  TIGHT
 	/* If this would overfill our send queue, reject it entirely */
 	if(tcb->sndcnt + cnt > tcb->window){
 		free_p(bp);
-		net_error = WOULDBLK;
+		Net_error = WOULDBLK;
 		return -1;
 	}
 #endif
 	switch(tcb->state){
 	case CLOSED:
 		free_p(bp);
-		net_error = NO_CONN;
+		Net_error = NO_CONN;
 		return -1;
 	case LISTEN:    /* Change state from passive to active */
 		tcb->flags |= ACTIVE;
@@ -126,7 +126,7 @@ struct mbuf *bp;
 	case LAST_ACK:
 	case TIME_WAIT:
 		free_p(bp);
-		net_error = CON_CLOS;
+		Net_error = CON_CLOS;
 		return -1;
 	}
 	return cnt;
@@ -140,12 +140,12 @@ struct tcb *tcb;
   int  cnt;
 
   if (!tcb) {
-    net_error = INVALID;
+    Net_error = INVALID;
     return (-1);
   }
   switch (tcb->state) {
   case CLOSED:
-    net_error = NO_CONN;
+    Net_error = NO_CONN;
     return (-1);
   case LISTEN:
   case SYN_SENT:
@@ -159,7 +159,7 @@ struct tcb *tcb;
   case CLOSING:
   case LAST_ACK:
   case TIME_WAIT:
-    net_error = CON_CLOS;
+    Net_error = CON_CLOS;
     return (-1);
   }
   return (-1);
@@ -175,7 +175,7 @@ struct mbuf **bp;
 int16 cnt;
 {
 	if(tcb == NULLTCB || bp == (struct mbuf **)NULL){
-		net_error = INVALID;
+		Net_error = INVALID;
 		return -1;
 	}
 	/* cnt == 0 means "I want it all" */
@@ -192,7 +192,7 @@ int16 cnt;
 			tcb->rcvq = NULLBUF;
 		} else {
 			if((*bp = alloc_mbuf(cnt)) == NULLBUF){
-				net_error = NO_SPACE;
+				Net_error = NO_MEM;
 				return -1;
 			}
 			pullup(&tcb->rcvq,(*bp)->data,cnt);
@@ -220,7 +220,7 @@ int16 cnt;
 		case FINWAIT1:
 		case FINWAIT2:
 			*bp = NULLBUF;
-			net_error = WOULDBLK;
+			Net_error = WOULDBLK;
 			return -1;
 		case CLOSED:
 		case CLOSE_WAIT:
@@ -242,7 +242,7 @@ close_tcp(tcb)
 register struct tcb *tcb;
 {
 	if(tcb == NULLTCB){
-		net_error = INVALID;
+		Net_error = INVALID;
 		return -1;
 	}
 	switch(tcb->state){
@@ -268,7 +268,7 @@ register struct tcb *tcb;
 	case CLOSING:
 	case LAST_ACK:
 	case TIME_WAIT:
-		net_error = CON_CLOS;
+		Net_error = CON_CLOS;
 		return -1;
 	}
 	return -1;      /* "Can't happen" */
@@ -285,7 +285,7 @@ register struct tcb *tcb;
 	struct reseq *rp,*rp1;
 
 	if(tcb == NULLTCB){
-		net_error = INVALID;
+		Net_error = INVALID;
 		return -1;
 	}
 	unlink_tcb(tcb);
@@ -304,7 +304,7 @@ register struct tcb *tcb;
 }
 /* Do printf on a tcp connection */
 /*VARARGS*/
-tprintf(tcb,message,arg1,arg2,arg3)
+Xprintf(tcb,message,arg1,arg2,arg3)
 struct tcb *tcb;
 char *message,*arg1,*arg2,*arg3;
 {
@@ -381,13 +381,13 @@ static struct tcp_port_table {
 } tcp_port_table[] = {
   "*",           0,
   "convers",     3600,
-  "discard",     DISCARD_PORT,  /* ARPA discard protocol */
-  "echo",        ECHO_PORT,     /* ARPA echo protocol */
-  "finger",      FINGER_PORT,   /* ARPA finger protocol */
-  "ftp",         FTP_PORT,      /* ARPA file transfer protocol (cmd) */
-  "ftp-data",    FTPD_PORT,     /* ARPA file transfer protocol (data) */
-  "smtp",        SMTP_PORT,     /* ARPA simple mail transfer protocol */
-  "telnet",      TELNET_PORT,   /* ARPA virtual terminal protocol */
+  "discard",     IPPORT_DISCARD,/* ARPA discard protocol */
+  "echo",        IPPORT_ECHO,   /* ARPA echo protocol */
+  "finger",      IPPORT_FINGER, /* ARPA finger protocol */
+  "ftp",         IPPORT_FTP,    /* ARPA file transfer protocol (cmd) */
+  "ftp-data",    IPPORT_FTPD,   /* ARPA file transfer protocol (data) */
+  "smtp",        IPPORT_SMTP,   /* ARPA simple mail transfer protocol */
+  "telnet",      IPPORT_TELNET, /* ARPA virtual terminal protocol */
 #if 0
   "domain",         53,         /* ARPA domain nameserver */
   "portmap",       111,         /* map RPC program numbers to ports */

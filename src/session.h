@@ -1,3 +1,7 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.2 1990/08/23 17:33:59 deyke Exp $ */
+
+#ifndef NULLSESSION
+
 extern int mode;
 #define CMD_MODE        1       /* Command mode */
 #define CONV_MODE       2       /* Converse mode */
@@ -19,9 +23,7 @@ struct session {
 #ifdef  AX25
 		struct axcb *ax25;
 #endif
-#ifdef  _FINGER
 		struct finger *finger;
-#endif
 #ifdef  NETROM
 		struct circuit *netrom;
 #endif
@@ -36,6 +38,18 @@ struct session {
 extern unsigned nsessions;
 extern struct session *sessions;
 extern struct session *current;
-struct session *newsession();
+
+/* session.c */
+int dosession __ARGS((int argc, char *argv [], void *p));
+int go __ARGS((int argc,char *argv[],void *p));
+int doclose __ARGS((int argc, char *argv [], void *p));
+int doreset __ARGS((int argc, char *argv [], void *p));
+int dokick __ARGS((int argc, char *argv [], void *p));
+struct session *newsession __ARGS((void));
+int freesession __ARGS((struct session *s));
+int dorecord __ARGS((int argc, char *argv [], void *p));
+int doupload __ARGS((int argc, char *argv [], void *p));
 
 extern int16 lport;
+
+#endif  /* NULLSESSION */

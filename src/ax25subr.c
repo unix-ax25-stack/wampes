@@ -1,5 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.2 1990/02/12 11:55:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.3 1990/08/23 17:32:32 deyke Exp $ */
 
+#include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
 #include "timer.h"
@@ -30,7 +31,7 @@ char *call;
 	 * Then compute length of callsign field and make sure
 	 * it isn't excessive
 	 */
-	dp = index(call,'-');
+	dp = strchr(call,'-');
 	if(dp == NULLCHAR)
 		csize = strlen(call);
 	else
@@ -80,38 +81,38 @@ int cnt;        /* Number of callsigns in array */
 	out[-1] |= E;
 }
 
-addreq(a, b)
-register struct ax25_addr *a, *b;
+int
+addreq(pa, pb)
+struct ax25_addr *pa, *pb;
 {
-#ifdef hp9000s300
-  return (*((long *) a) == *((long *) b) &&
-	  (((long *) a)[1] & 0xffff1e00) == (((long *) b)[1] & 0xffff1e00));
-#else
-  if (*((char *) a)++ != *((char *) b)++) return 0;
-  if (*((char *) a)++ != *((char *) b)++) return 0;
-  if (*((char *) a)++ != *((char *) b)++) return 0;
-  if (*((char *) a)++ != *((char *) b)++) return 0;
-  if (*((char *) a)++ != *((char *) b)++) return 0;
-  if (*((char *) a)++ != *((char *) b)++) return 0;
-  return (*((char *) a) & SSID) == (*((char *) b) & SSID);
-#endif
+
+  register char  *a = (char *) pa;
+  register char  *b = (char *) pb;
+
+  if (*a++ != *b++) return 0;
+  if (*a++ != *b++) return 0;
+  if (*a++ != *b++) return 0;
+  if (*a++ != *b++) return 0;
+  if (*a++ != *b++) return 0;
+  if (*a++ != *b++) return 0;
+  return (*a & SSID) == (*b & SSID);
 }
 
+void
 addrcp(to, from)
-register struct ax25_addr *to, *from;
+struct ax25_addr *to, *from;
 {
-#ifdef hp9000s300
-  *((long *) to)++ = *((long *) from)++;
-  *((short *) to)++ = *((short *) from)++;
-#else
-  *((char *) to)++ = *((char *) from)++;
-  *((char *) to)++ = *((char *) from)++;
-  *((char *) to)++ = *((char *) from)++;
-  *((char *) to)++ = *((char *) from)++;
-  *((char *) to)++ = *((char *) from)++;
-  *((char *) to)++ = *((char *) from)++;
-#endif
-  *((char *) to) = (*((char *) from) & SSID) | 0x60;
+
+  register char  *t = (char *) to;
+  register char  *f = (char *) from;
+
+  *t++ = *f++;
+  *t++ = *f++;
+  *t++ = *f++;
+  *t++ = *f++;
+  *t++ = *f++;
+  *t++ = *f++;
+  *t = (*f & SSID) | 0x60;
 }
 
 /* Convert encoded AX.25 address to printable string */
@@ -138,33 +139,37 @@ struct ax25_addr *addr;
  * "KA9Q-0 [via N4HY-0,N2DSY-2]"
  * Designed for use by ARP - arg is a char string
  */
+char *
 psax25(e,addr)
-register char *e;
-register char *addr;
+char *e;
+char *addr;
 {
 	int i;
 	struct ax25_addr axaddr;
 	char tmp[16];
 	char *getaxaddr();
+	char *cp;
 
-	e[0] = '\0';    /* Give strcat a staritng point */
+	cp = e;
+	*cp = '\0';
 	for(i=0;;i++){
 		/* Create local copy in host-format structure */
 		addr = getaxaddr(&axaddr,addr);
 
 		/* Create ASCII representation and append to output */
 		pax25(tmp,&axaddr);
-		strcat(e,tmp);
+		strcat(cp,tmp);
 
 		if(axaddr.ssid & E)
 			break;
 		if(i == 0)
-			strcat(e," via ");
+			strcat(cp," via ");
 		else
-			strcat(e,",");
+			strcat(cp,",");
 		/* Not really necessary, but speeds up subsequent strcats */
-		e += strlen(e);
+		cp += strlen(cp);
 	}
+	return e;
 }
 char *
 getaxaddr(ap,cp)
@@ -211,11 +216,11 @@ struct mbuf *data;
 	hdr->dest.ssid &= ~E;   /* Dest E-bit is always off */
 	/* Encode command/response in C bits */
 	switch(hdr->cmdrsp){
-	case COMMAND:
+	case LAPB_COMMAND:
 		hdr->dest.ssid |= C;
 		hdr->source.ssid &= ~C;
 		break;
-	case RESPONSE:
+	case LAPB_RESPONSE:
 		hdr->dest.ssid &= ~C;
 		hdr->source.ssid |= C;
 		break;
@@ -298,11 +303,11 @@ struct mbuf **bpp;
 
 	/* Process C bits to get command/response indication */
 	if((hdr->source.ssid & C) == (hdr->dest.ssid & C))
-		hdr->cmdrsp = UNKNOWN;
+		hdr->cmdrsp = LAPB_UNKNOWN;
 	else if(hdr->source.ssid & C)
-		hdr->cmdrsp = RESPONSE;
+		hdr->cmdrsp = LAPB_RESPONSE;
 	else
-		hdr->cmdrsp = COMMAND;
+		hdr->cmdrsp = LAPB_COMMAND;
 
 	hdr->ndigis = 0;
 	if(hdr->source.ssid & E)

@@ -1,10 +1,12 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.2 1990/08/23 17:32:41 deyke Exp $ */
+
 #include <sys/types.h>
 
 #include <ctype.h>
-#include <memory.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#ifdef hpux
+#if (defined(hpux)||defined(__hpux))
 #include <netinet/in.h>
 #include <netdb.h>
 #endif
@@ -37,7 +39,7 @@ int  *addrlen;
     return addr;
   }
 
-#ifdef hpux
+#if (defined(hpux)||defined(__hpux))
 
   {
 

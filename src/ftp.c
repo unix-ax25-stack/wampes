@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.2 1990/08/23 17:32:50 deyke Exp $ */
+
 /* Stuff common to both the FTP server and client */
 #include <stdio.h>
 #include "global.h"
