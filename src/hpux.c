@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.28 1992/10/05 17:29:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.29 1992/10/14 17:00:36 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -91,15 +91,19 @@ void ioinit()
 {
 
   int i;
+#ifndef LINUX
   struct rlimit rlp;
+#endif
 
 #define fixdir(name, mode) \
 	{ mkdir((name), (mode)); chmod((name), (mode)); }
 
+#ifndef LINUX
   getrlimit(RLIMIT_NOFILE, &rlp);
   rlp.rlim_cur = FD_SETSIZE;
   if (rlp.rlim_max < rlp.rlim_cur) rlp.rlim_max = rlp.rlim_cur;
   setrlimit(RLIMIT_NOFILE, &rlp);
+#endif
 
   fixdir("/tcp", 0755);
   fixdir("/tcp/sockets", 0755);
