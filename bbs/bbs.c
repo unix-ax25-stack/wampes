@@ -1,17 +1,19 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.73 1989/07/10 22:27:25 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.0 1989/08/21 23:55:26 dk5sg Exp $";
 
 #include <sys/types.h>
 
 #include <ctype.h>
 #include <fcntl.h>
+#include <memory.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
+#include <termio.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -36,19 +38,12 @@ extern void free();
 #define DEBUGDIR    "/tmp/bbs"
 #define INFOFILE    "/usr/local/lib/station.data"
 #define MYDESC      "[Gaertringen JN48KP DK5SG-BBS %s OP:DK5SG]"
-#define NARGS       20
 #define WRKDIR      "/users/bbs"
 
 #define SECONDES    (1L)
 #define MINUTES     (60L*SECONDES)
 #define HOURS       (60L*MINUTES)
 #define DAYS        (24L*HOURS)
-
-#define LEN_BID     12
-#define LEN_SUBJECT 80
-#define LEN_TO      8
-#define LEN_AT      8
-#define LEN_FROM    8
 
 struct revision {
   char  number[16];
@@ -57,6 +52,12 @@ struct revision {
   char  author[16];
   char  state[16];
 } revision;
+
+#define LEN_BID     12
+#define LEN_SUBJECT 80
+#define LEN_TO      8
+#define LEN_AT      8
+#define LEN_FROM    8
 
 struct index {
   long  size;
@@ -94,19 +95,31 @@ struct mail {
   struct strlist *tail;
 };
 
-static char  *arg[NARGS];
+extern struct cmdtable {
+  char  *name;
+  void (*fnc)();
+  int  argc;
+  int  level;
+} cmdtable[];
+
+static int  level;
+#define USER 0
+#define MBOX 1
+#define ROOT 2
+
 static char  *myhostname;
 static char  loginname[80];
 static char  mydesc[80];
+static char  prompt[1024] = "bbs> ";
 static int  debug;
+static int  doforward;
 static int  errors;
 static int  fdlock = -1;
 static int  findex;
-static int  hostmode;
 static int  locked;
-static int  superuser;
 static struct seq seq;
 static struct utsname utsname;
+volatile static int stopped;
 
 /*---------------------------------------------------------------------------*/
 
@@ -151,11 +164,34 @@ register char  *s;
 /*---------------------------------------------------------------------------*/
 
 static int  strcasecmp(s, t)
-register char  *s, *t;
+char  *s, *t;
 {
-  for (; tolower(uchar(*s)) == tolower(uchar(*t)); s++, t++)
+  int  d;
+
+  for (; ; ) {
+    if (d = tolower(uchar(*s)) - tolower(uchar(*t))) return d;
     if (!*s) return 0;
-  return tolower(uchar(*s)) - tolower(uchar(*t));
+    s++;
+    t++;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int  strcasencmp(s, t, n)
+char  *s, *t;
+int  n;
+{
+  int  d;
+
+  for (; ; ) {
+    if (n <= 0) return 0;
+    if (d = tolower(uchar(*s)) - tolower(uchar(*t))) return d;
+    if (!*s) return 0;
+    s++;
+    t++;
+    n--;
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -173,7 +209,7 @@ register char  *s;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *strpos(str, pat)
+static char  *strcasepos(str, pat)
 char  *str, *pat;
 {
   register char  *s, *p;
@@ -181,8 +217,8 @@ char  *str, *pat;
   for (; ; str++)
     for (s = str, p = pat; ; ) {
       if (!*p) return str;
-      if (!*s) return (char *) 0;
-      if (*s++ != *p++) break;
+      if (!*s) return 0;
+      if (tolower(uchar(*s++)) != tolower(uchar(*p++))) break;
     }
 }
 
@@ -201,6 +237,12 @@ char  *s;
     *p = '\0';
     lastchr = chr;
     chr = getchar();
+    if (stopped) {
+      alarm(0);
+      clearerr(stdin);
+      *s = '\0';
+      return s;
+    }
     if (ferror(stdin) || feof(stdin)) {
       alarm(0);
       return NULL;
@@ -315,7 +357,8 @@ static void put_seq()
   char  fname[80];
 
   sprintf(fname, "seq/seq.%s", loginname);
-  if (!(fp = fopen(fname, "w")) || fprintf(fp, "%d %d\n", seq.forw, seq.list) < 0) halt();
+  if (!(fp = fopen(fname, "w")) ||
+      fprintf(fp, "%d %d\n", seq.forw, seq.list) < 0) halt();
   fclose(fp);
 }
 
@@ -352,26 +395,6 @@ char  *host;
   }
   for (p = hostlist; p; p = p->next)
     if (calleq(p->str, host)) return 1;
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int  check_abort()
-{
-
-  char  buf[1024];
-  int  rmask;
-  static struct timeval timeout;
-
-  rmask = 1;
-  if (select(1, &rmask, (int *) 0, (int *) 0, &timeout) == 1) {
-    if (!getstring(buf)) exit(1);
-    if (*buf == 'A' || *buf == 'a') {
-      puts("*** Aborted by User ***");
-      return 1;
-    }
-  }
   return 0;
 }
 
@@ -442,34 +465,15 @@ static int  nextmesg()
 
 /*---------------------------------------------------------------------------*/
 
-static int  numbmesg()
-{
-
-  int  n;
-  struct index index;
-
-  n = 0;
-  if (lseek(findex, 0l, 0)) halt();
-  while (read(findex, (char *) & index, sizeof(struct index )) == sizeof(struct index ))
-    if (index.mesg) n++;
-  return n;
-}
-
-/*---------------------------------------------------------------------------*/
-
 static int  read_allowed(index)
 struct index *index;
 {
-  return superuser || index->type != 'P' || calleq(index->from, loginname) || calleq(index->to, loginname);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void unknown_command()
-{
-  errors++;
-  if (hostmode && errors >= 3) kill(0, 1);
-  printf("Unknown command '%s'.  Type ? for help.\n", arg[0]);
+  if (level == ROOT) return 1;
+  if (!index->to[1]) return 0;
+  if (calleq(index->from, loginname)) return 1;
+  if (calleq(index->to, loginname)) return 1;
+  if (index->type != 'P') return 1;
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -726,6 +730,20 @@ char  *addr;
 
 /*---------------------------------------------------------------------------*/
 
+static void free_mail(mail)
+struct mail *mail;
+{
+  struct strlist *p;
+
+  while (p = mail->head) {
+    mail->head = p->next;
+    free((char *) p);
+  }
+  free((char *) mail);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void route_mail(mail)
 struct mail *mail;
 {
@@ -789,12 +807,10 @@ struct mail *mail;
   for (p = mail->head; p; p = p->next) {
     s = p->str;
     if (!strcmp(s, ".")) *s = '\0';
-    while (cp = strchr(s, '\004'))   while (cp[0] = cp[1]) cp++;
-    while (cp = strchr(s, '\032'))   while (cp[0] = cp[1]) cp++;
-    while (cp = strpos(s, "/EX"))    while (cp[0] = cp[3]) cp++;
-    while (cp = strpos(s, "/ex"))    while (cp[0] = cp[3]) cp++;
-    while (cp = strpos(s, "***END")) while (cp[0] = cp[6]) cp++;
-    while (cp = strpos(s, "***end")) while (cp[0] = cp[6]) cp++;
+    while (cp = strchr(s, '\004'))       while (cp[0] = cp[1]) cp++;
+    while (cp = strchr(s, '\032'))       while (cp[0] = cp[1]) cp++;
+    while (cp = strcasepos(s, "/ex"))    while (cp[0] = cp[3]) cp++;
+    while (cp = strcasepos(s, "***end")) while (cp[0] = cp[6]) cp++;
   }
 
   /* Call delivery agents */
@@ -807,11 +823,7 @@ struct mail *mail;
 
   /* Free mail */
 
-  while (p = mail->head) {
-    mail->head = p->next;
-    free((char *) p);
-  }
-  free((char *) mail);
+  free_mail(mail);
 
 }
 
@@ -892,7 +904,411 @@ char  *host;
 
 /*---------------------------------------------------------------------------*/
 
-static void s_cmd()
+static void delete_command(argc, argv)
+int  argc;
+char  **argv;
+{
+
+  int  found;
+  int  i;
+  int  mesg;
+  struct index index;
+
+  for (i = 1; i < argc; i++) {
+    found = 0;
+    if ((mesg = atoi(argv[i])) > 0) {
+      if (lseek(findex, 0l, 0)) halt();
+      while (read(findex, (char *) & index, sizeof(struct index )) == sizeof(struct index ))
+	if (index.mesg == mesg) {
+	  found = 1;
+	  if (level == ROOT                 ||
+	      calleq(index.from, loginname) ||
+	      calleq(index.to, loginname)) {
+	    if (unlink(filename(mesg))) halt();
+	    index.mesg = 0;
+	    if (lseek(findex, (long) (-sizeof(struct index )), 1) < 0) halt();
+	    if (write(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+	    printf("Message %d deleted.\n", mesg);
+	  } else
+	    printf("Message %d not deleted:  Permission denied.\n", mesg);
+	  break;
+	}
+    }
+    if (!found) printf("No such message: '%s'.\n", argv[i]);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void disconnect_command(argc, argv)
+int  argc;
+char  **argv;
+{
+  puts("Disconnecting...");
+  kill(0, 1);
+  exit(0);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void f_command(argc, argv)
+int  argc;
+char  **argv;
+{
+
+  FILE * fp;
+  char  buf[1024];
+  int  c;
+  int  do_not_exit;
+  struct index index;
+  struct tm *tm;
+
+  do_not_exit = doforward;
+  if (lseek(findex, 0l, 0)) halt();
+  while (read(findex, (char *) &index, sizeof(struct index )) == sizeof(struct index )) {
+    if ((index.status == '$' && index.mesg > seq.forw ||
+	 index.status != '$' && index.status != 'F' && index.mesg && can_forward(index.at)) &&
+	!host_in_header(filename(index.mesg), loginname)) {
+      do_not_exit = 1;
+      printf("S%c %s%s%s < %s%s%s\n", index.type, index.to, *index.at ? " @ " : "", index.at, index.from, *index.bid ? " $" : "", index.bid);
+      if (!getstring(buf)) exit(1);
+      switch (*buf) {
+      case 'O':
+      case 'o':
+	puts(index.subject);
+	tm = gmtime(&index.date);
+	printf("R:%02d%02d%02d/%02d%02dz @%-6s %s\n",
+	       tm->tm_year % 100, tm->tm_mon + 1, tm->tm_mday,
+	       tm->tm_hour, tm->tm_min, myhostname, mydesc);
+	if (!(fp = fopen(filename(index.mesg), "r"))) halt();
+	while ((c = getc(fp)) != EOF) putchar(c);
+	fclose(fp);
+	puts("\032");
+	wait_for_prompt();
+	if (index.status == 'N' || index.status == 'Y') {
+	  index.status = 'F';
+	  if (lseek(findex, (long) (-sizeof(struct index )), 1) < 0) halt();
+	  if (write(findex, (char *) &index, sizeof(struct index )) != sizeof(struct index )) halt();
+	}
+	break;
+      case 'N':
+      case 'n':
+	wait_for_prompt();
+	break;
+      default:
+	exit(1);
+      }
+    }
+    if (seq.forw < index.mesg) {
+      seq.forw = index.mesg;
+      put_seq();
+    }
+  }
+  if (do_not_exit)
+    putchar('F');
+  else
+    exit(0);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void help_command(argc, argv)
+int  argc;
+char  **argv;
+{
+
+  FILE * fp;
+  char  line[1024];
+  int  i;
+  int  len;
+  int  state;
+  struct cmdtable *cmdp;
+
+  if (argc < 2) {
+    puts("Commands may be abbreviated.  Commands are:");
+    for (i = 0, cmdp = cmdtable; cmdp->name; cmdp++)
+      if (level >= cmdp->level)
+	printf((i++ % 6) < 5 ? "%-13s" : "%s\n", cmdp->name);
+    if (i % 6) putchar('\n');
+    return;
+  }
+  if (!(fp = fopen("help", "r"))) {
+    puts("Sorry, cannot open help file.");
+    return;
+  }
+  if (!strcasecmp(argv[1], "all")) {
+    while (!stopped && fgets(line, sizeof(line), fp))
+      if (*line != '^') fputs(line, stdout);
+  } else {
+    state = 0;
+    len = strlen(argv[1]);
+    while (!stopped && fgets(line, sizeof(line), fp)) {
+      if (state == 0 && *line == '^' && !strcasencmp(line + 1, argv[1], len))
+	state = 1;
+      if (state == 1 && *line != '^')
+	state = 2;
+      if (state == 2) {
+	if (*line == '^') break;
+	fputs(line, stdout);
+      }
+    }
+    if (!stopped && state < 2)
+      printf("Sorry, there is no help available for '%s'.\n", argv[1]);
+  }
+  fclose(fp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void info_command(argc, argv)
+int  argc;
+char  **argv;
+{
+
+  FILE * fp;
+  int  c;
+
+  if (!(fp = fopen(INFOFILE, "r"))) {
+    puts("Sorry, cannot open info file.");
+    return;
+  }
+  while (!stopped && (c = getc(fp)) != EOF) putchar(c);
+  fclose(fp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+#define nextarg(name)                                      \
+  if (++i >= argc) {                                       \
+    errors++;                                              \
+    printf("The %s option requires an argument.\n", name); \
+    return;                                                \
+  }
+
+static void list_command(argc, argv)
+int  argc;
+char  **argv;
+{
+
+  char  *at = 0;
+  char  *bid = 0;
+  char  *from = 0;
+  char  *subject = 0;
+  char  *to = 0;
+  int  count = 99999;
+  int  found = 0;
+  int  i;
+  int  len;
+  int  max = 99999;
+  int  min = 1;
+  int  update_seq = 0;
+  struct index index;
+
+  for (i = 1; i < argc; i++) {
+    len = strlen(strlwc(argv[i]));
+    if (!strcmp("$", argv[i]) || !strncmp("bid", argv[i], len)) {
+      nextarg("bid");
+      bid = strupc(argv[i]);
+    } else if (!strcmp("<", argv[i]) || !strncmp("from", argv[i], len)) {
+      nextarg("from");
+      from = strupc(argv[i]);
+    } else if (!strcmp(">", argv[i]) || !strncmp("to", argv[i], len)) {
+      nextarg("to");
+      to = strupc(argv[i]);
+    } else if (!strcmp("@", argv[i]) || !strncmp("at", argv[i], len)) {
+      nextarg("at");
+      at = strupc(argv[i]);
+    } else if (!strncmp("count", argv[i], len)) {
+      nextarg("count");
+      count = atoi(argv[i]);
+    } else if (!strncmp("new", argv[i], len)) {
+      min = seq.list + 1;
+      update_seq = 1;
+    } else if (!strncmp("max", argv[i], len)) {
+      nextarg("max");
+      max = atoi(argv[i]);
+    } else if (!strncmp("min", argv[i], len)) {
+      nextarg("min");
+      min = atoi(argv[i]);
+    } else if (!strncmp("subject", argv[i], len)) {
+      nextarg("subject");
+      subject = argv[i];
+    } else {
+      to = strupc(argv[i]);
+    }
+  }
+  if (lseek(findex, (long) (-sizeof(struct index )), 2) >= 0) {
+    for (; ; ) {
+      if (stopped) return;
+      if (read(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+      if (index.mesg && index.mesg < min) break;
+      if (index.mesg                                   &&
+	  index.mesg <= max                            &&
+	  read_allowed(&index)                         &&
+	  (!bid      || !strcmp(index.bid, bid))       &&
+	  (!from     || !strcmp(index.from, from))     &&
+	  (!to       || !strcmp(index.to, to))         &&
+	  (!at       || !strcmp(index.at, at))         &&
+	  (!subject  || strcasepos(index.subject, subject))) {
+	if (!found) {
+	  puts(" Msg#  Size To      @ BBS     From     Date    Subject");
+	  found = 1;
+	}
+	printf("%5d %5ld %-8s%c%-8s %-8s %-7.7s %.32s\n",
+	       index.mesg,
+	       index.size,
+	       index.to,
+	       *index.at ? '@' : ' ',
+	       index.at,
+	       index.from,
+	       timestr(index.date),
+	       index.subject);
+	if (update_seq && seq.list < index.mesg) {
+	  seq.list = index.mesg;
+	  put_seq();
+	}
+	if (--count <= 0) break;
+      }
+      if (lseek(findex, -2l * sizeof(struct index ), 1) < 0) break;
+    }
+  }
+  if (!found)
+    puts(update_seq ?
+	 "No new messages since last LIST NEW command." :
+	 "No matching message found.");
+}
+
+#undef nextarg
+
+/*---------------------------------------------------------------------------*/
+
+static void mybbs_command(argc, argv)
+int  argc;
+char  **argv;
+{
+
+  char  line[1024];
+  struct mail *mail;
+
+  if (!callvalid(strupc(argv[1]))) {
+    printf("Invalid call '%s'.\n", argv[1]);
+    return;
+  }
+  mail = (struct mail *) calloc(1, sizeof(struct mail ));
+  strcpy(mail->from, loginname);
+  strcpy(mail->to, "m@thebox");
+  sprintf(line, "%s %ld", argv[1], time((long *) 0));
+  strcpy(mail->subject, line);
+  sprintf(line, "de %s @ %s", loginname, myhostname);
+  append_line(mail, line);
+  append_line(mail, "");
+  append_line(mail, "");
+  append_line(mail, "");
+  append_line(mail, "");
+  append_line(mail, "");
+  route_mail(mail);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void prompt_command(argc, argv)
+int  argc;
+char  **argv;
+{
+  strcpy(prompt, argv[1]);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void quit_command(argc, argv)
+int  argc;
+char  **argv;
+{
+  puts("BBS terminated.");
+  exit(0);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void read_command(argc, argv)
+int  argc;
+char  **argv;
+{
+
+  FILE * fp;
+  char  *p;
+  char  buf[1024];
+  char  path[1024];
+  int  found;
+  int  i;
+  int  inheader;
+  int  mesg;
+  struct index index;
+
+  for (i = 1; i < argc; i++) {
+    found = 0;
+    if ((mesg = atoi(argv[i])) > 0) {
+      if (lseek(findex, 0l, 0)) halt();
+      while (read(findex, (char *) & index, sizeof(struct index )) == sizeof(struct index ))
+	if (index.mesg == mesg && read_allowed(&index)) {
+	  found = 1;
+	  if (!(fp = fopen(filename(index.mesg), "r"))) halt();
+	  printf("Msg# %d Type:%c Stat:%c To: %s%s%s From: %s Date: %s\n",
+		 index.mesg,
+		 index.type,
+		 index.status,
+		 index.to,
+		 *index.at ? " @" : "",
+		 index.at,
+		 index.from,
+		 timestr(index.date));
+	  if (*index.subject) printf("Subject: %s\n", index.subject);
+	  if (*index.bid) printf("Bulletin ID: %s\n", index.bid);
+	  *path = '\0';
+	  inheader = 1;
+	  while (fgets(buf, sizeof(buf), fp)) {
+	    if (stopped) {
+	      fclose(fp);
+	      return;
+	    }
+	    if (inheader) {
+	      if (p = get_host_from_header(buf)) {
+		strcat(path, *path ? "!" : "Path: ");
+		strcat(path, p);
+		continue;
+	      }
+	      if (*path) puts(path);
+	      inheader = 0;
+	    }
+	    fputs(buf, stdout);
+	  }
+	  putchar('\n');
+	  fclose(fp);
+	  if (index.status == 'N' && (index.type != 'P' || calleq(index.to, loginname))) {
+	    index.status = 'Y';
+	    if (lseek(findex, (long) (-sizeof(struct index )), 1) < 0) halt();
+	    if (write(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+	  }
+	  break;
+	}
+    }
+    if (!found) printf("No such message: '%s'.\n", argv[i]);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+#define nextarg(name)                                      \
+  if (++i >= argc) {                                       \
+    errors++;                                              \
+    printf("The %s option requires an argument.\n", name); \
+    free_mail(mail);                                       \
+    return;                                                \
+  }
+
+static void send_command(argc, argv)
+int  argc;
+char  **argv;
 {
 
   char  *p;
@@ -901,53 +1317,73 @@ static void s_cmd()
   char  path[1024];
   int  check_header = 1;
   int  i;
+  int  lifetime = 0;
   struct mail *mail;
 
-  if (strlen(arg[0]) > 2) {
-    unknown_command();
-    return;
-  }
   mail = (struct mail *) calloc(1, sizeof(struct mail ));
   *at = *path = '\0';
-  if (*arg[1]) strcpy(mail->to, arg[1]);
-  for (i = 2; i < NARGS; i++)
-    switch (*arg[i]) {
-    case '@':
-      strcpy(at, arg[i][1] ? arg[i] + 1 : arg[++i]);
-      break;
-    case '<':
-      strcpy(mail->from, arg[i][1] ? arg[i] + 1 : arg[++i]);
-      break;
-    case '$':
-      strcpy(mail->bid, arg[i][1] ? arg[i] + 1 : arg[++i]);
-      break;
+  for (i = 1; i < argc; i++)
+    if (!strcmp("#", argv[i])) {
+      nextarg("#");
+      lifetime = atoi(argv[i]);
     }
-  if (p = strchr(mail->to, '@')) {
-    *p++ = '\0';
-    strcpy(at, p);
+    else if (!strcmp("$", argv[i])) {
+      nextarg("$");
+      strcpy(mail->bid, argv[i]);
+    }
+    else if (!strcmp("<", argv[i])) {
+      nextarg("<");
+      strcpy(mail->from, argv[i]);
+    }
+    else if (!strcmp(">", argv[i])) {
+      nextarg(">");
+      strcpy(mail->to, argv[i]);
+    }
+    else if (!strcmp("@", argv[i])) {
+      nextarg("@");
+      strcpy(at, argv[i]);
+    } else {
+      strcpy(mail->to, argv[i]);
+    }
+  if (!*mail->to) {
+    errors++;
+    puts("No recipient specified.");
+    free_mail(mail);
+    return;
   }
-  if (p = strchr(at, '<')) {
-    *p++ = '\0';
-    strcpy(mail->from, p);
+  if (level == USER && !mail->to[1]) {
+    errors++;
+    puts("Invalid recipient specified.");
+    free_mail(mail);
+    return;
   }
-  if (p = strchr(mail->from, '$')) {
-    *p++ = '\0';
-    strcpy(mail->bid, p);
+  if (*at) {
+    strcat(mail->to, "@");
+    strcat(mail->to, at);
   }
+  if (!*mail->from || level < MBOX) strcpy(mail->from, loginname);
   if (*mail->bid) {
     mail->bid[LEN_BID] = '\0';
     strupc(mail->bid);
     if (!msg_uniq(mail->bid, mail->mid)) {
       puts("No");
-      free((char *) mail);
+      free_mail(mail);
       return;
     }
   }
-  puts(hostmode ? "OK" : "Enter subject:");
+  puts((level == MBOX) ? "OK" : "Enter subject:");
   if (!getstring(mail->subject)) exit(1);
-  if (!hostmode) puts("Enter message: (terminate with ^Z or /EX or ***END)");
+  if (stopped) {
+    free_mail(mail);
+    return;
+  }
+  if (level != MBOX) puts("Enter message: (terminate with ^Z or /EX or ***END)");
   for (; ; ) {
     if (!getstring(line)) exit(1);
+    if (stopped) {
+      free_mail(mail);
+      return;
+    }
     if (*line == '\032') break;
     if (!strncmp(line, "/EX", 3)) break;
     if (!strncmp(line, "/ex", 3)) break;
@@ -963,103 +1399,72 @@ static void s_cmd()
     }
     if (strchr(line, '\032')) break;
   }
-  if (!*mail->to) strcpy(mail->to, "alle");
-  if (*at) {
-    strcat(mail->to, "@");
-    strcat(mail->to, at);
-  }
-  if (!*mail->from || !hostmode && !superuser) strcpy(mail->from, loginname);
   if (*path) {
     strcpy(line, mail->from);
     sprintf(mail->from, "%s!%s", path, line);
   }
-  if (!hostmode) /*!!!!!!!!!! Print Ack !!!!!!!!!!!!!!!*/ ;
+  if (level != MBOX) printf("Sending message to %s.\n", mail->to);
   route_mail(mail);
+}
+
+#undef nextarg
+
+/*---------------------------------------------------------------------------*/
+
+static void sid_command(argc, argv)
+int  argc;
+char  **argv;
+{
+  /*** ignore System IDentifiers (SIDs) for now ***/
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void rmail()
+static void status_command(argc, argv)
+int  argc;
+char  **argv;
 {
 
-  char  line[1024];
-  int  state = 0;
-  struct mail *mail;
+  int  active = 0;
+  int  highest = 0;
+  int  listed = seq.list;
+  int  new = 0;
+  int  readable = 0;
+  struct index index;
 
-  mail = (struct mail *) calloc(1, sizeof(struct mail ));
-  strcpy(mail->to, "alle@alle");
-  if (scanf("%*s%s", mail->from) != 1) halt();
-  if (!getstring(line)) halt();
-  while (getstring(line))
-    switch (state) {
-    case 0:
-      get_header_value("Subject:", line, mail->subject);
-      get_header_value("Bulletin-ID:", line, mail->bid);
-      get_header_value("Message-ID:", line, mail->mid);
-      if (*line) continue;
-      state = 1;
-    case 1:
-      if (!*line) continue;
-      state = 2;
-    case 2:
-      append_line(mail, line);
-    }
-  route_mail(mail);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void rnews()
-{
-
-  char  line[1024];
-  int  n;
-  int  state = 0;
-  struct mail *mail;
-
-  while (fgets(line, sizeof(line), stdin)) {
-    mail = (struct mail *) calloc(1, sizeof(struct mail ));
-    strcpy(mail->to, "alle@alle");
-    if (strncmp(line, "#! rnews ", 9)) halt();
-    n = atoi(line + 9);
-    while (n > 0) {
-      if (!fgets(line, n < sizeof(line) ? n + 1 : (int) sizeof(line), stdin)) halt();
-      n -= strlen(line);
-      strtrim(line);
-      switch (state) {
-      case 0:
-	get_header_value("Path:", line, mail->from);
-	get_header_value("Subject:", line, mail->subject);
-	get_header_value("Bulletin-ID:", line, mail->bid);
-	get_header_value("Message-ID:", line, mail->mid);
-	if (*line) continue;
-	state = 1;
-      case 1:
-	if (!*line) continue;
-	state = 2;
-      case 2:
-	append_line(mail, line);
+  printf("DK5SG-BBS  Revision: %s %s\n", revision.number, revision.date);
+  if (lseek(findex, 0l, 0)) halt();
+  while (read(findex, (char *) & index, sizeof(struct index )) == sizeof(struct index ))
+    if (index.mesg) {
+      active++;
+      highest = index.mesg;
+      if (read_allowed(&index)) {
+	readable++;
+	if (index.mesg > listed) new++;
       }
     }
-    route_mail(mail);
-  }
+  printf("%5d highest message number\n", highest);
+  printf("%5d active messages\n", active);
+  printf("%5d readable messages\n", readable);
+  printf("%5d last message listed\n", listed);
+  printf("%5d new messages\n", new);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void b_cmd()
+static void unknown_command(argc, argv)
+int  argc;
+char  **argv;
 {
-  if (arg[0][1]) {
-    unknown_command();
-    return;
-  }
-  puts("BBS mode terminated.");
-  exit(0);
+  errors++;
+  printf("Unknown command '%s'.  Type ? for help.\n", *argv);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void c_cmd()
+static void xcrunch_command(argc, argv)
+int  argc;
+char  **argv;
 {
 
   char  *tempfile = "index.tmp";
@@ -1069,10 +1474,6 @@ static void c_cmd()
   struct index index;
   struct stat statbuf;
 
-  if (arg[0][1] || !superuser) {
-    unknown_command();
-    return;
-  }
   keepdate = time((long *) 0) - 90 * DAYS;
   if ((f = open(tempfile, O_WRONLY | O_CREAT | O_EXCL, 0644)) < 0) halt();
   if (lseek(findex, 0l, 0)) halt();
@@ -1099,469 +1500,9 @@ static void c_cmd()
 
 /*---------------------------------------------------------------------------*/
 
-static void f_cmd(do_not_exit)
-int  do_not_exit;
-{
-
-  FILE * fp;
-  char  buf[1024];
-  int  c;
-  struct index index;
-  struct tm *tm;
-
-  if (strcmp(arg[0], "f>") || !hostmode) {
-    unknown_command();
-    return;
-  }
-  if (lseek(findex, 0l, 0)) halt();
-  while (read(findex, (char *) &index, sizeof(struct index )) == sizeof(struct index )) {
-    if ((index.status == '$' && index.mesg > seq.forw ||
-	 index.status != '$' && index.status != 'F' && index.mesg && can_forward(index.at)) &&
-	!host_in_header(filename(index.mesg), loginname)) {
-      do_not_exit = 1;
-      printf("S%c %s%s%s < %s%s%s\n", index.type, index.to, *index.at ? " @ " : "", index.at, index.from, *index.bid ? " $" : "", index.bid);
-      if (!getstring(buf)) exit(1);
-      switch (*strlwc(buf)) {
-      case 'o':
-	puts(index.subject);
-	tm = gmtime(&index.date);
-	printf("R:%02d%02d%02d/%02d%02dz @%-6s %s\n",
-	       tm->tm_year % 100, tm->tm_mon + 1, tm->tm_mday,
-	       tm->tm_hour, tm->tm_min, myhostname, mydesc);
-	if (!(fp = fopen(filename(index.mesg), "r"))) halt();
-	while ((c = getc(fp)) != EOF) putchar(c);
-	fclose(fp);
-	puts("\032");
-	wait_for_prompt();
-	if (index.status == 'N' || index.status == 'Y') {
-	  index.status = 'F';
-	  if (lseek(findex, (long) (-sizeof(struct index )), 1) < 0) halt();
-	  if (write(findex, (char *) &index, sizeof(struct index )) != sizeof(struct index )) halt();
-	}
-	break;
-      case 'n':
-	wait_for_prompt();
-	break;
-      default:
-	exit(1);
-      }
-    }
-    if (seq.forw < index.mesg) {
-      seq.forw = index.mesg;
-      put_seq();
-    }
-  }
-  if (do_not_exit)
-    putchar('F');
-  else
-    exit(0);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void h_cmd()
-{
-  putchar('\n');
-  switch (arg[0][1] ? arg[0][1] : *arg[1]) {
-  case '?':
-    puts("? - Display help.");
-    putchar('\n');
-    puts("? [cmd]");
-    break;
-  case 'a':
-    puts("A - Abort current activity.");
-    break;
-  case 'b':
-    puts("B - Bye, terminate BBS mode.");
-    break;
-  case 'h':
-    puts("H - Display help.");
-    putchar('\n');
-    puts("H [cmd]");
-    break;
-  case 'i':
-    puts("I - Display information about the system.");
-    break;
-  case 'k':
-    puts("K - Kill messages.");
-    putchar('\n');
-    puts("K msg ...");
-    puts("KM");
-    break;
-  case 'l':
-    puts("L - List message headers.");
-    putchar('\n');
-    puts("L         [first [last]]");
-    puts("L< from   [first [last]]");
-    puts("L> to     [first [last]]");
-    puts("L@ at     [first [last]]");
-    puts("LB        [first [last]]");
-    puts("LL count  [first [last]]");
-    puts("LM        [first [last]]");
-    puts("LN        [first [last]]");
-    puts("LS substr [first [last]]");
-    break;
-  case 'm':
-    puts("M - Set MYBBS.");
-    putchar('\n');
-    puts("M call");
-    break;
-  case 'q':
-    puts("Q - Quit, terminate BBS mode.");
-    break;
-  case 'r':
-    puts("R - Read messages.");
-    putchar('\n');
-    puts("R msg ...");
-    puts("RM");
-    puts("RN");
-    break;
-  case 's':
-    puts("S - Send a message.");
-    putchar('\n');
-    puts("S  to [@ at] [< from] [$bid]");
-    puts("SB to [@ at] [< from] [$bid]");
-    puts("SP to [@ at] [< from] [$bid]");
-    break;
-  case 'v':
-    puts("V - Display BBS version and status.");
-    break;
-  default:
-    puts("Command summary:");
-    putchar('\n');
-    puts("? - Display help.");
-    puts("A - Abort current activity.");
-    puts("B - Bye, terminate BBS mode.");
-    puts("H - Display help.");
-    puts("I - Display information about the system.");
-    puts("K - Kill messages.");
-    puts("L - List message headers.");
-    puts("M - Set MYBBS.");
-    puts("Q - Quit, terminate BBS mode.");
-    puts("R - Read messages.");
-    puts("S - Send a message.");
-    puts("V - Display BBS version and status.");
-    putchar('\n');
-    puts("Try ? cmd for more help about cmd.");
-    break;
-  }
-  putchar('\n');
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void host_cmd()
-{
-  if (!hostmode) unknown_command();
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void i_cmd()
-{
-
-  FILE * fp;
-  int  c;
-
-  if (arg[0][1]) {
-    unknown_command();
-    return;
-  }
-  if (!(fp = fopen(INFOFILE, "r"))) halt();
-  while ((c = getc(fp)) != EOF) {
-    putchar(c);
-    if (c == '\n' && check_abort()) break;
-  }
-  fclose(fp);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void do_kill(index)
-struct index *index;
-{
-  int  mesg;
-
-  if (superuser || calleq(index->from, loginname) || calleq(index->to, loginname)) {
-    if (unlink(filename(mesg = index->mesg))) halt();
-    index->mesg = 0;
-    if (lseek(findex, (long) (-sizeof(struct index )), 1) < 0) halt();
-    if (write(findex, (char *) index, sizeof(struct index )) != sizeof(struct index )) halt();
-    printf("*** Msg # %d - Killed\n", mesg);
-  } else
-    printf("You are not authorized to kill Msg # %d\n", index->mesg);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void k_cmd()
-{
-
-  int  found;
-  int  i;
-  int  mesg;
-  struct index index;
-
-  if (!strcmp(arg[0], "km")) {
-    found = 0;
-    if (lseek(findex, 0l, 0)) halt();
-    while (read(findex, (char *) & index, sizeof(struct index )) == sizeof(struct index ))
-      if (index.mesg && calleq(index.to, loginname) && (index.status == 'Y' || index.status == 'F')) {
-	do_kill(&index);
-	found = 1;
-      }
-    if (!found) puts("No matching message found.");
-    return;
-  }
-
-  if (arg[0][1]) {
-    unknown_command();
-    return;
-  }
-  for (i = 1; i < NARGS && *arg[i]; i++) {
-    found = 0;
-    if ((mesg = atoi(arg[i])) > 0) {
-      if (lseek(findex, 0l, 0)) halt();
-      while (read(findex, (char *) & index, sizeof(struct index )) == sizeof(struct index ))
-	if (index.mesg == mesg) {
-	  do_kill(&index);
-	  found = 1;
-	  break;
-	}
-    }
-    if (!found) printf("No such message: '%s'.\n", arg[i]);
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void l_cmd()
-{
-
-  char  *to, *at, *from, *sub;
-  char  buf[1024];
-  int  found, update_seq, status, type;
-  int  i;
-  int  min, max, num;
-  int  tmp;
-  struct index index;
-
-  to = at = from = sub = NULL;
-  found = update_seq = status = type = 0;
-  min = 1;
-  max = num = 32767;
-  i = 1;
-  switch (arg[0][1]) {
-  case '\0':
-    min = seq.list + 1;
-    update_seq = !*arg[1];
-    break;
-  case '<':
-    from = arg[i++];
-    break;
-  case '>':
-    to = arg[i++];
-    break;
-  case '@':
-    at = arg[i++];
-    break;
-  case 'b':
-    type = 'B';
-    break;
-  case 'l':
-    num = atoi(arg[i++]);
-    break;
-  case 'n':
-    status = 'N';
-  case 'm':
-    to = loginname;
-    break;
-  case 's':
-    sub = arg[i++];
-    break;
-  default:
-    unknown_command();
-    return;
-  }
-  if (tmp = atoi(arg[i++])) min = tmp;
-  if (tmp = atoi(arg[i++])) max = tmp;
-  if (min > max) {
-    tmp = max;
-    max = min;
-    min = tmp;
-  }
-  if (lseek(findex, (long) (-sizeof(struct index )), 2) >= 0) {
-    for (; ; ) {
-      if (check_abort()) return;
-      if (read(findex, (char *) &index, sizeof(struct index )) != sizeof(struct index )) halt();
-      if (index.mesg >= min && index.mesg <= max  &&
-	  read_allowed(&index)                    &&
-	  (superuser || index.to[1])              &&
-	  (!type     || type == index.type)       &&
-	  (!status   || status == index.status)   &&
-	  (!from     || calleq(from, index.from)) &&
-	  (!to       || calleq(to, index.to))     &&
-	  (!at       || calleq(at, index.at))     &&
-	  (!sub      || strpos(strlwc(strcpy(buf, index.subject)), sub))) {
-	if (!found) {
-	  puts(" Msg#  Size To      @ BBS     From     Date    Subject");
-	  found = 1;
-	}
-	printf("%5d %5ld %-8s%c%-8s %-8s %-7.7s %.32s\n", index.mesg, index.size, index.to, *index.at ? '@' : ' ', index.at, index.from, timestr(index.date), index.subject);
-	if (update_seq && seq.list < index.mesg) {
-	  seq.list = index.mesg;
-	  put_seq();
-	}
-	if (--num <= 0) break;
-      }
-      if (lseek(findex, -2l * sizeof(struct index ), 1) < 0) break;
-    }
-  }
-  if (!found) puts(update_seq ? "No new messages since last L command." : "No matching message found.");
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void m_cmd()
-{
-
-  char  line[1024];
-  struct mail *mail;
-
-  if (arg[0][1]) {
-    unknown_command();
-    return;
-  }
-  if (!callvalid(strupc(arg[1]))) {
-    printf("Invalid call '%s'.\n", arg[1]);
-    return;
-  }
-  mail = (struct mail *) calloc(1, sizeof(struct mail ));
-  strcpy(mail->from, loginname);
-  strcpy(mail->to, "m@thebox");
-  sprintf(line, "%s %ld", arg[1], time((long *) 0));
-  strcpy(mail->subject, line);
-  sprintf(line, "de %s @ %s", loginname, myhostname);
-  append_line(mail, line);
-  append_line(mail, "");
-  append_line(mail, "");
-  append_line(mail, "");
-  append_line(mail, "");
-  append_line(mail, "");
-  route_mail(mail);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int  do_read(index)
-struct index *index;
-{
-
-  FILE * fp;
-  char  *p;
-  char  buf[1024];
-  char  path[1024];
-  int  inheader;
-
-  if (!(fp = fopen(filename(index->mesg), "r"))) halt();
-  printf("Msg# %d Type:%c Stat:%c To: %s%s%s From: %s Date: %s\n",
-	 index->mesg,
-	 index->type,
-	 index->status,
-	 index->to,
-	 *index->at ? " @" : "",
-	 index->at,
-	 index->from,
-	 timestr(index->date));
-  if (*index->subject) printf("Subject: %s\n", index->subject);
-  if (*index->bid) printf("Bulletin ID: %s\n", index->bid);
-  *path = '\0';
-  inheader = 1;
-  while (fgets(buf, sizeof(buf), fp)) {
-    if (check_abort()) {
-      fclose(fp);
-      return 0;
-    }
-    if (inheader) {
-      if (p = get_host_from_header(buf)) {
-	strcat(path, *path ? "!" : "Path: ");
-	strcat(path, p);
-	continue;
-      }
-      if (*path) puts(path);
-      inheader = 0;
-    }
-    fputs(buf, stdout);
-  }
-  putchar('\n');
-  fclose(fp);
-  if (index->status == 'N' && (index->type != 'P' || calleq(index->to, loginname))) {
-    index->status = 'Y';
-    if (lseek(findex, (long) (-sizeof(struct index )), 1) < 0) halt();
-    if (write(findex, (char *) index, sizeof(struct index )) != sizeof(struct index )) halt();
-  }
-  return 1;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void r_cmd()
-{
-
-  int  found;
-  int  i;
-  int  mesg;
-  struct index index;
-
-  if (!strcmp(arg[0], "rm") || !strcmp(arg[0], "rn")) {
-    found = 0;
-    if (lseek(findex, 0l, 0)) halt();
-    while (read(findex, (char *) & index, sizeof(struct index )) == sizeof(struct index ))
-      if (index.mesg && calleq(index.to, loginname) && (arg[0][1] == 'm' || index.status == 'N')) {
-	if (!do_read(&index)) return;
-	found = 1;
-      }
-    if (!found) puts("No matching message found.");
-    return;
-  }
-
-  if (arg[0][1]) {
-    unknown_command();
-    return;
-  }
-  for (i = 1; i < NARGS && *arg[i]; i++) {
-    found = 0;
-    if ((mesg = atoi(arg[i])) > 0) {
-      if (lseek(findex, 0l, 0)) halt();
-      while (read(findex, (char *) & index, sizeof(struct index )) == sizeof(struct index ))
-	if (index.mesg == mesg && read_allowed(&index)) {
-	  if (!do_read(&index)) return;
-	  found = 1;
-	  break;
-	}
-    }
-    if (!found) printf("No such message: '%s'.\n", arg[i]);
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void v_cmd()
-{
-  if (arg[0][1]) {
-    unknown_command();
-    return;
-  }
-  printf("DK5SG-BBS %s %s\n", revision.number, revision.date);
-  printf("Active: %d   Next: %d\n", numbmesg(), lastmesg() + 1);
-}
-
-/*---------------------------------------------------------------------------*/
-
-#include <memory.h>
-#include <termio.h>
-
-static void z_cmd()
+static void xscreen_command(argc, argv)
+int  argc;
+char  **argv;
 {
 
   FILE * fp = 0;
@@ -1576,11 +1517,6 @@ static void z_cmd()
   struct stat statbuf;
   struct termio curr_termio, prev_termio;
   unsigned int  indexarraysize;
-
-  if (arg[0][1] || !superuser) {
-    unknown_command();
-    return;
-  }
 
   if (fstat(findex, &statbuf)) halt();
   indexarraysize = statbuf.st_size;
@@ -1756,66 +1692,228 @@ static void connect_bbs()
 
 /*---------------------------------------------------------------------------*/
 
-static void bbs(doforward)
-int  doforward;
+static struct cmdtable cmdtable[] = {
+
+  "?",          help_command,           0,      USER,
+  "[",          sid_command,            0,      MBOX,
+  "bye",        quit_command,           0,      USER,
+  "delete",     delete_command,         2,      USER,
+  "disconnect", disconnect_command,     0,      USER,
+  "erase",      delete_command,         2,      USER,
+  "exit",       quit_command,           0,      USER,
+  "f",          f_command,              2,      MBOX,
+  "help",       help_command,           0,      USER,
+  "info",       info_command,           0,      USER,
+  "kill",       delete_command,         2,      USER,
+  "list",       list_command,           2,      USER,
+  "mybbs",      mybbs_command,          2,      USER,
+  "print",      read_command,           2,      USER,
+  "prompt",     prompt_command,         2,      USER,
+  "quit",       quit_command,           0,      USER,
+  "read",       read_command,           2,      USER,
+  "sb",         send_command,           2,      MBOX,
+  "send",       send_command,           2,      USER,
+  "sp",         send_command,           2,      MBOX,
+  "status",     status_command,         0,      USER,
+  "type",       read_command,           2,      USER,
+  "version",    status_command,         0,      USER,
+  "xcrunch",    xcrunch_command,        0,      ROOT,
+  "xscreen",    xscreen_command,        0,      ROOT,
+
+  (char *) 0,   unknown_command,        0,      USER
+};
+
+/*---------------------------------------------------------------------------*/
+
+static void parse_command_line(line)
+char  *line;
 {
 
-  char  line[1024];
-  char  quote;
-  int  i;
-  register char  *p;
+  char  *argv[256];
+  char  *delim = "<>@$#[";
+  char  *f;
+  char  *t;
+  char  buf[2048];
+  int  argc;
+  int  len;
+  int  quote;
+  struct cmdtable *cmdp;
 
+  argc = 0;
+  memset((char *) argv, 0, sizeof(argv));
+  for (f = line, t = buf; ; ) {
+    while (isspace(uchar(*f))) f++;
+    if (!*f) break;
+    argv[argc++] = t;
+    if (*f == '"' || *f == '\'') {
+      quote = *f++;
+      while (*f && *f != quote) *t++ = *f++;
+      if (*f) f++;
+    } else if (strchr(delim, *f)) {
+      *t++ = *f++;
+    } else {
+      while (*f && !isspace(uchar(*f)) && !strchr(delim, *f)) *t++ = *f++;
+    }
+    *t++ = '\0';
+  }
+  if (!argc) return;
+  if (!(len = strlen(*argv))) return;
+  for (cmdp = cmdtable; ; cmdp++)
+    if (!cmdp->name ||
+	level >= cmdp->level && !strcasencmp(cmdp->name, *argv, len)) {
+      if (argc >= cmdp->argc)
+	(*cmdp->fnc)(argc, argv);
+      else {
+	errors++;
+	printf("The %s command requires more arguments.\n", cmdp->name);
+      }
+      break;
+    }
+  if (stopped) {
+    puts("\n*** Interrupt ***");
+    stopped = 0;
+  }
+  if (level == MBOX && errors >= 3) exit(1);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void bbs()
+{
+
+  FILE * fp;
+  char  *p;
+  char  line[1024];
+
+  if (level != MBOX)
+    printf("DK5SG-BBS  Revision: %s   Type ? for help.\n", revision.number);
+  p = getenv("HOME");
+  if (p || *p) {
+    sprintf(line, "%s/.bbsrc", p);
+    if (fp = fopen(line, "r")) {
+      while (fgets(line, sizeof(line), fp)) parse_command_line(line);
+      fclose(fp);
+    }
+  }
   if (doforward) {
     connect_bbs();
     wait_for_prompt();
   }
-  if (!hostmode)
-    printf("[DK5SG-%s-H$]\n", revision.number);
-  else
-    printf("[THEBOX-1.5H-$]\n");
+  if (level == MBOX) printf("[THEBOX-1.5H-$]\n");
   if (doforward) wait_for_prompt();
   for (; ; ) {
     if (doforward)
       strcpy(line, "f>");
     else {
-      if (hostmode)
-	puts(">");
-      else
-	printf("%s de %s-BBS \007 >\n", loginname, myhostname);
+      printf("%s", (level == MBOX) ? ">\n" : prompt);
       if (!getstring(line)) exit(1);
     }
-    for (p = strlwc(line), i = 0; i < NARGS; i++) {
-      quote = '\0';
-      while (isspace(uchar(*p))) p++;
-      if (*p == '"' || *p == '\'') quote = *p++;
-      arg[i] = p;
-      if (quote) {
-	if (!(p = strchr(p, quote))) p = "";
-      } else
-	while (*p && !isspace(uchar(*p))) p++;
-      if (*p) *p++ = '\0';
-    }
-    switch (*arg[0]) {
-    case '\0':                    break;
-    case '?':  h_cmd();           break;
-    case '[':  host_cmd();        break;
-    case 'a':                     break;
-    case 'b':  b_cmd();           break;
-    case 'c':  c_cmd();           break;
-    case 'f':  f_cmd(doforward);  break;
-    case 'h':  h_cmd();           break;
-    case 'i':  i_cmd();           break;
-    case 'k':  k_cmd();           break;
-    case 'l':  l_cmd();           break;
-    case 'm':  m_cmd();           break;
-    case 'q':  b_cmd();           break;
-    case 'r':  r_cmd();           break;
-    case 's':  s_cmd();           break;
-    case 'v':  v_cmd();           break;
-    case 'z':  z_cmd();           break;
-    default:   unknown_command(); break;
-    }
+    parse_command_line(line);
     doforward = 0;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void interrupt_handler(sig, code, scp)
+int  sig, code;
+struct sigcontext *scp;
+{
+  stopped = 1;
+  scp->sc_syscall_action = SIG_RETURN;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void alarm_handler(sig, code, scp)
+int  sig, code;
+struct sigcontext *scp;
+{
+  puts("\n*** Timeout ***");
+  exit(1);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void trap_signal(sig, handler)
+int  sig;
+void (*handler)();
+{
+  struct sigvec vec;
+
+  sigvector(sig, (struct sigvec *) 0, &vec);
+  if (vec.sv_handler != SIG_IGN) {
+    vec.sv_mask = vec.sv_flags = 0;
+    vec.sv_handler = handler;
+    sigvector(sig, &vec, (struct sigvec *) 0);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void rmail()
+{
+
+  char  line[1024];
+  int  state = 0;
+  struct mail *mail;
+
+  mail = (struct mail *) calloc(1, sizeof(struct mail ));
+  strcpy(mail->to, "alle@alle");
+  if (scanf("%*s%s", mail->from) != 1) halt();
+  if (!getstring(line)) halt();
+  while (getstring(line))
+    switch (state) {
+    case 0:
+      get_header_value("Subject:", line, mail->subject);
+      get_header_value("Bulletin-ID:", line, mail->bid);
+      get_header_value("Message-ID:", line, mail->mid);
+      if (*line) continue;
+      state = 1;
+    case 1:
+      if (!*line) continue;
+      state = 2;
+    case 2:
+      append_line(mail, line);
+    }
+  route_mail(mail);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void rnews()
+{
+
+  char  line[1024];
+  int  n;
+  int  state = 0;
+  struct mail *mail;
+
+  while (fgets(line, sizeof(line), stdin)) {
+    mail = (struct mail *) calloc(1, sizeof(struct mail ));
+    strcpy(mail->to, "alle@alle");
+    if (strncmp(line, "#! rnews ", 9)) halt();
+    n = atoi(line + 9);
+    while (n > 0) {
+      if (!fgets(line, n < sizeof(line) ? n + 1 : (int) sizeof(line), stdin)) halt();
+      n -= strlen(line);
+      strtrim(line);
+      switch (state) {
+      case 0:
+	get_header_value("Path:", line, mail->from);
+	get_header_value("Subject:", line, mail->subject);
+	get_header_value("Bulletin-ID:", line, mail->bid);
+	get_header_value("Message-ID:", line, mail->mid);
+	if (*line) continue;
+	state = 1;
+      case 1:
+	if (!*line) continue;
+	state = 2;
+      case 2:
+	append_line(mail, line);
+      }
+    }
+    route_mail(mail);
   }
 }
 
@@ -1833,15 +1931,21 @@ char  **argv;
   char  *cp;
   char  *dir = WRKDIR;
   int  c;
-  int  doforward = 0;
   int  err_flag = 0;
   int  mode = BBS;
 
   sscanf(rcsid, "%*s %*s %*s %s %s %s %s %s",
-		revision.number, revision.date, revision.time,
-		revision.author, revision.state);
-  superuser = (getuid() == 0 && getgid() == 1);
+		revision.number,
+		revision.date,
+		revision.time,
+		revision.author,
+		revision.state);
+  if (getuid() == 0 && getgid() == 1) level = ROOT;
   umask(022);
+  trap_signal(SIGINT,  interrupt_handler);
+  trap_signal(SIGQUIT, interrupt_handler);
+  trap_signal(SIGTERM, interrupt_handler);
+  trap_signal(SIGALRM, alarm_handler);
   if (uname(&utsname)) halt();
   myhostname = utsname.nodename;
   sprintf(mydesc, MYDESC, revision.number);
@@ -1855,12 +1959,12 @@ char  **argv;
       dir = DEBUGDIR;
       break;
     case 'f':
-      if (!superuser) {
-	puts("Permission denied");
+      if (level < ROOT) {
+	puts("The 'f' option is for Store&Forward use only.");
 	exit(1);
       }
       strlwc(strcpy(loginname, optarg));
-      hostmode = 1;
+      level = MBOX;
       mode = BBS;
       doforward = 1;
       break;
@@ -1881,13 +1985,13 @@ char  **argv;
   }
   mkdir(dir, 0755);
   if (chdir(dir)) halt();
-  if (connect_addr(loginname)) hostmode = 1;
+  if (connect_addr(loginname)) level = MBOX;
   if ((findex = open("index", O_RDWR | O_CREAT, 0644)) < 0) halt();
   mkdir("seq", 0755);
   get_seq();
   switch (mode) {
   case BBS:
-    bbs(doforward);
+    bbs();
     break;
   case RMAIL:
     rmail();
