@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.24 1993/09/10 16:05:55 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.25 1993/09/17 09:33:06 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -11,7 +11,13 @@ TARGETS    = bbs findpath killdup sfstat
 all:;   @if [ $(OS) = HP-UX ] ; then \
 		make -i \
 		'CC=c89' \
-		'CFLAGS=-O -s -I../lib' \
+		'CFLAGS=-O -s -D_HPUX_SOURCE -I../lib' \
+		'LIBS=../lib/libutil.a' \
+		_all; \
+	elif [ $(OS) = AIX ] ; then \
+		make -i \
+		'CC=cc' \
+		'CFLAGS=-O -s -D_ALL_SOURCE -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all; \
 	elif [ $(OS) = Linux ] ; then \

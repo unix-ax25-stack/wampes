@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.45 1993/07/17 20:33:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.46 1993/09/17 09:32:34 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -10,6 +10,9 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/wait.h>
+#ifdef _AIX
+#include <sys/select.h>
+#endif
 #ifdef ULTRIX_RISC
 #include <sys/signal.h>
 #endif

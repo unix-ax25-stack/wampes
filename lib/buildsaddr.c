@@ -1,6 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.12 1993/06/10 09:46:32 deyke Exp $ */
-
-#define _HPUX_SOURCE
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.13 1993/09/17 09:33:12 deyke Exp $ */
 
 #include <sys/types.h>
 

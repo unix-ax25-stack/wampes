@@ -1,8 +1,6 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.25 1993/06/21 21:47:39 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.26 1993/09/17 09:32:54 deyke Exp $";
 #endif
-
-#define _HPUX_SOURCE
 
 #ifndef linux
 #define FD_SETSIZE 32
@@ -20,6 +18,10 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <sys/time.h>
 #include <termios.h>
 #include <unistd.h>
+
+#ifdef _AIX
+#include <sys/select.h>
+#endif
 
 #ifdef __hpux
 #define SEL_ARG(x) ((int *) (x))

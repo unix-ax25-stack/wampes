@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.18 1993/09/10 16:05:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.19 1993/09/17 09:32:36 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -53,6 +53,14 @@ struct env {
 #elif __hp9000s800
 struct env {
 	long    i_dont_know;
+	long    sp;
+};
+#define getstackptr(ep) ((ep)->sp)
+#elif _AIX
+struct env {
+	long    i_dont_know_0;
+	long    i_dont_know_1;
+	long    i_dont_know_2;
 	long    sp;
 };
 #define getstackptr(ep) ((ep)->sp)

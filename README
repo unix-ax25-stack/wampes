@@ -1,4 +1,4 @@
-wampes-930910.tar.Z  (compressed) and wampes-930910.tar.gz (gzipped) are
+wampes-930917.tar.Z  (compressed) and wampes-930917.tar.gz (gzipped) are
 tar archives of WAMPES,  which is a NET/NOS  port to various  flavors of
 Unix.
 
@@ -12,8 +12,10 @@ WAMPES currently supports the following configurations:
 |               | HP9000/700      |                                           |
 |               | HP9000/800      |                                           |
 +---------------+-----------------+-------------------------------------------+
-| SunOS 4.1.2   | sparc           | Dieter Deyke <deyke@fc.hp.com>            |
-| SunOS 5.2     | sparc           |                                           |
+| SunOS 4.1.2   | SPARC           | Dieter Deyke <deyke@fc.hp.com>            |
+| SunOS 5.2     | SPARC           |                                           |
++---------------+-----------------+-------------------------------------------+
+| AIX 3.2       | RS/6000         | Dieter Deyke <deyke@fc.hp.com>            |
 +---------------+-----------------+-------------------------------------------+
 | 386BSD 0.1.34 | 386             | Dieter Deyke <deyke@fc.hp.com>            |
 +---------------+-----------------+-------------------------------------------+
@@ -38,7 +40,7 @@ it.  After unpacking please read the file  /tcp/doc/intro.txt.  For RISC
 iX you have to copy *.R to  /usr/lib.  Now  type  "make  -i" to  compile
 everything.
 
-wampes-930910.tar.Z    and    wampes-930910.tar.gz    should   go   into
+wampes-930917.tar.Z    and    wampes-930917.tar.gz    should   go   into
 /hamradio/packet/tcpip/wampes on UCSD.EDU.
 
 73,

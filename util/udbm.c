@@ -1,12 +1,10 @@
 /* User Data Base Manager */
 
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.24 1993/09/10 16:05:50 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.25 1993/09/17 09:32:56 deyke Exp $";
 #endif
 
 #define DEBUG           0
-
-#define _HPUX_SOURCE
 
 #include <sys/types.h>
 

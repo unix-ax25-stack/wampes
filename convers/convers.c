@@ -1,8 +1,6 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.12 1993/06/30 11:50:59 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.13 1993/09/17 09:33:01 deyke Exp $";
 #endif
-
-#define _HPUX_SOURCE
 
 #include <sys/types.h>
 
@@ -16,6 +14,10 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <sys/time.h>
 #include <termios.h>
 #include <unistd.h>
+
+#ifdef _AIX
+#include <sys/select.h>
+#endif
 
 #ifdef __hpux
 #define SEL_ARG(x) ((int *) (x))

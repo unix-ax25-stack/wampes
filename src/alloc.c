@@ -1,12 +1,22 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.18 1993/05/17 13:44:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.19 1993/09/17 09:32:29 deyke Exp $ */
 
 /* memory allocation routines
  */
+
+#define malloc  Xmalloc
+#define free    Xfree
+#define realloc Xrealloc
+#define calloc  Xcalloc
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#undef malloc
+#undef free
+#undef realloc
+#undef calloc
 
 #ifndef PURIFY
 

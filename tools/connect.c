@@ -1,8 +1,6 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.9 1993/03/05 20:15:43 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.10 1993/09/17 09:32:47 deyke Exp $";
 #endif
-
-#define _HPUX_SOURCE
 
 #define FD_SETSIZE      32
 

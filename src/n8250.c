@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.33 1993/09/10 16:05:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.34 1993/09/17 09:32:38 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #if defined(__hpux) \
+ || defined(_AIX) \
  || defined(linux) \
  || defined(__386BSD__) \
  || defined(__bsdi__) \

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.15 1993/09/10 16:05:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.16 1993/09/17 09:32:37 deyke Exp $ */
 
 /* Mail Delivery Agent for returned Mails */
 
@@ -29,7 +29,7 @@ void mail_return(struct mailjob *jp)
   fopen("/dev/null", "r+");
   fopen("/dev/null", "r+");
   if (fpi = fopen(jp->dfile, "r")) {
-#if defined(__386BSD__) || defined(__bsdi__)
+#if defined(_AIX) || defined(__386BSD__) || defined(__bsdi__)
     sprintf(line, "/usr/sbin/sendmail -oi -oem -f '<>' %s", jp->from);
 #else
     sprintf(line, "/usr/lib/sendmail -oi -oem -f '<>' %s", jp->from);

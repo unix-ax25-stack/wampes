@@ -1,8 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.13 1993/07/11 15:04:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.14 1993/09/17 09:32:55 deyke Exp $ */
 
 /* Net Update Server */
-
-#define _HPUX_SOURCE
 
 #include <sys/types.h>
 
@@ -14,6 +12,10 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
+
+#ifdef _AIX
+#include <sys/select.h>
+#endif
 
 #include "netupd.h"
 

@@ -1,8 +1,6 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.53 1993/09/10 16:05:44 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.54 1993/09/17 09:33:01 deyke Exp $";
 #endif
-
-#define _HPUX_SOURCE
 
 #include <sys/types.h>
 
@@ -21,7 +19,12 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <unistd.h>
 #include <utmp.h>
 
+#ifdef _AIX
+#include <sys/select.h>
+#endif
+
 #if defined(__hpux) \
+ || defined(_AIX) \
  || defined(linux) \
  || defined(__386BSD__) \
  || defined(__bsdi__) \
@@ -1205,7 +1208,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.53 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.54 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
