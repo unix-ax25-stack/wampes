@@ -1,35 +1,37 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.1 1991/04/16 11:43:33 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.2 1991/05/07 12:28:49 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
-CFLAGS     = -Os
-LDFLAGS    = -N
+CFLAGS     = -O -s -N
 SHELL      = /bin/sh
 
 .IGNORE:
 
-all:    udbm netupdc netupds bridge path cnet
+all:    udbm netupdc netupds bridge path cnet vitals
 
 udbm:   udbm.c
-	$(CC) $(CFLAGS) udbm.c $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) udbm.c -o $@
 
 netupdc: netupdc.c $(BUILDSADDR)
-	$(CC) $(CFLAGS) netupdc.c $(BUILDSADDR) $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) netupdc.c $(BUILDSADDR) -o $@
 	chmod 700 $@
 
 netupds: netupds.c
-	$(CC) $(CFLAGS) netupds.c $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) netupds.c -o $@
 	chmod 700 $@ genupd
 
 bridge: bridge.c $(BUILDSADDR)
-	$(CC) $(CFLAGS) bridge.c $(BUILDSADDR) $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) bridge.c $(BUILDSADDR) -o $@
 	chmod 700 $@
 
 path:   path.c
-	$(CC) $(CFLAGS) path.c $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) path.c -o $@
 
 cnet:   cnet.c $(BUILDSADDR)
-	$(CC) $(CFLAGS) cnet.c $(BUILDSADDR) $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) cnet.c $(BUILDSADDR) -o $@
 	chmod go-rwx cnet*
+
+vitals: vitals.c
+	$(CC) $(CFLAGS) vitals.c -o $@
 
 install: \
 	/usr/local/etc/udbm \
@@ -50,7 +52,7 @@ install: \
 	chmod 700 $@
 
 clean:
-	rm -f udbm netupdc netupds bridge path cnet *.o
+	rm -f udbm netupdc netupds bridge path cnet vitals *.o
 
 .SUFFIXES: .c,v
 
