@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25dump.c,v 1.3 1990/09/11 13:44:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25dump.c,v 1.4 1990/10/22 11:37:29 deyke Exp $ */
 
 #include <stdio.h>
 #include "global.h"
@@ -104,6 +104,9 @@ int check;      /* Not used */
 				break;
 			case PID_TEXNET:
 				fprintf(fp," pid=TEXNET\n");
+				break;
+			case PID_FLEXNET:
+				fprintf(fp," pid=FLEXNET\n");
 				break;
 			case PID_NO_L3:
 				fprintf(fp," pid=Text\n");

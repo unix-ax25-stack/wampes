@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.15 1990/10/12 19:26:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.16 1990/10/22 11:38:29 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -11,17 +11,13 @@
 #include "mbuf.h"
 #include "timer.h"
 #include "iface.h"
+#include "hpux.h"
 #include "arp.h"
 #include "ip.h"
 #include "ax25.h"
 #include "axproto.h"
 #include "netrom.h"
 #include "cmdparse.h"
-
-extern int  Digipeat;
-extern long  currtime;
-
-struct circuit; /* announce struct circuit */
 
 static struct node *nodeptr __ARGS((struct ax25_addr *call, int create));
 static void ax25_state_upcall __ARGS((struct ax25_cb *cp, int oldstate, int newstate));

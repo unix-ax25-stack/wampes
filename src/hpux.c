@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.13 1990/10/12 19:25:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.14 1990/10/22 11:37:54 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -32,6 +32,8 @@ struct asy {
   int  fd;              /* File descriptor */
   int  speed;           /* Line speed */
   char  *ipc_socket;    /* Host:port of ipc destination */
+  long  rxchar;         /* Received characters */
+  long  txchar;         /* Transmitted characters */
 };
 
 int  Nasy;
@@ -318,6 +320,7 @@ int  cnt;
     asy_open(dev);
     return 0;
   }
+  ap->rxchar += cnt;
   return cnt;
 }
 
@@ -334,8 +337,27 @@ struct mbuf *bp;
 
   ap = Asy + dev;
   while (cnt = pullup(&bp, buf, sizeof(buf)))
-    if (ap->fd > 0 || !asy_open(dev))
+    if (ap->fd > 0 || !asy_open(dev)) {
+      ap->txchar += cnt;
       if (dowrite(ap->fd, buf, (unsigned) cnt) < 0) asy_open(dev);
+    }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+int  doasystat(argc, argv, p)
+int  argc;
+char  *argv[];
+void *p;
+{
+  register struct asy *asyp;
+
+  for (asyp = Asy; asyp < &Asy[Nasy]; asyp++) {
+    tprintf("%s:\n", asyp->iface->name);
+    tprintf(" RX: chr %lu\n", asyp->rxchar);
+    if (tprintf(" TX: chr %lu\n", asyp->txchar) == EOF) break;
+  }
   return 0;
 }
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.4 1990/10/12 19:25:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.5 1990/10/22 11:37:51 deyke Exp $ */
 
 /* FTP Server state machine - see RFC 959 */
 
@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <ctype.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 #ifdef  __TURBOC__

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.3 1990/10/12 19:25:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.4 1990/10/22 11:37:40 deyke Exp $ */
 
 /* Stuff heavily dependent on the configuration info in config.h */
 
@@ -147,7 +147,7 @@ struct cmds Cmds[] = {
 	"arp",          doarp,          0, 0, NULLCHAR,
 #endif
 #ifdef  ASY
-/*      "asystat",      doasystat,      0, 0, NULLCHAR, */
+	"asystat",      doasystat,      0, 0, NULLCHAR,
 #endif
 #ifdef  AX25
 	"ax25",         doax25,         0, 0, NULLCHAR,
@@ -167,7 +167,7 @@ struct cmds Cmds[] = {
 #ifndef AMIGA
 /*      "dir",          dodir,          512, 0, NULLCHAR, /* note sequence */
 #endif
-/*      "delete",       dodelete,       0, 2, "delete <file>", */
+	"delete",       dodelete,       0, 2, "delete <file>",
 /*      "detach",       dodetach,       0, 2, "detach <interface>", */
 /*      "domain",       dodomain,       0, 0, NULLCHAR, */
 #ifdef  DRSI
@@ -207,11 +207,10 @@ struct cmds Cmds[] = {
 /*      "mbox",         dombox,         0, 0, NULLCHAR, */
 #endif
 	"mem",          domem,          0, 0, NULLCHAR,
-	"mail_daemon",  mail_daemon,    0, 0, NULLCHAR,
 #ifdef  AX25
 	"mode",         domode,         0, 2, "mode <interface>",
 #endif
-/*      "mkdir",        domkd,          0, 2, "mkdir <directory>", */
+	"mkdir",        domkd,          0, 2, "mkdir <directory>",
 /*      "more",         domore,         512, 2, "more <filename>", */
 #ifdef  NETROM
 	"netrom",       donetrom,       0, 0, NULLCHAR,
@@ -227,12 +226,12 @@ struct cmds Cmds[] = {
 #endif
 	"record",       dorecord,       0, 0, NULLCHAR,
 	"remote",       doremote,       0, 3, "remote [-p port] [-k key] [-a kickaddr] <address> exit|reset|kick",
-/*      "rename",       dorename,       0, 3, "rename <oldfile> <newfile>", */
+	"rename",       dorename,       0, 3, "rename <oldfile> <newfile>",
 	"reset",        doreset,        0, 0, NULLCHAR,
 #ifdef  RIP
 	"rip",          dorip,          0, 0, NULLCHAR,
 #endif
-/*      "rmdir",        dormd,          0, 2, "rmdir <directory>", */
+	"rmdir",        dormd,          0, 2, "rmdir <directory>",
 	"route",        doroute,        0, 0, NULLCHAR,
 	"rtprio",       dortprio,       0, 0, NULLCHAR,
 	"status",       dostatus,       0, 0, NULLCHAR,
@@ -243,7 +242,7 @@ struct cmds Cmds[] = {
 #if     !defined(AMIGA)
 	"shell",        doshell,        0, 0, NULLCHAR,
 #endif
-/*      "smtp",         dosmtp,         0, 0, NULLCHAR, */
+	"smtp",         dosmtp,         0, 0, NULLCHAR,
 /*      "socket",       dosock,         0, 0, NULLCHAR, */
 	"source",       dosource,       0, 2, "source <filename>",
 #ifdef  SERVERS

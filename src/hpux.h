@@ -1,9 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.h,v 1.5 1990/10/12 19:25:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.h,v 1.6 1990/10/22 11:37:56 deyke Exp $ */
 
 #ifndef HPUX_INCLUDED
 #define HPUX_INCLUDED
-
-#include <stdio.h>
 
 #include "global.h"
 
@@ -44,7 +42,6 @@ int asy_send __ARGS((int dev, struct mbuf *bp));
 void check_time __ARGS((void));
 int system __ARGS((const char *cmdline));
 int _system __ARGS((char *cmdline));
-FILE *dir __ARGS((char *path, int full));
 int eihalt __ARGS((void));
 
 #endif  /* HPUX_INCLUDED */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.4 1990/10/12 19:26:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.5 1990/10/22 11:39:00 deyke Exp $ */
 
 #include <stdio.h>
 #include "global.h"
@@ -28,7 +28,7 @@ int Refuse_echo = 0;
 int Tn_cr_mode = 0;    /* if true turn <cr> to <cr-nul> */
 
 #ifdef  DEBUG
-char *t_options[] = {
+char *T_options[] = {
 	"Transmit Binary",
 	"Echo",
 	"",
@@ -378,7 +378,7 @@ void *p;
 static void
 willopt(tn,opt)
 struct telnet *tn;
-char opt;
+int opt;
 {
 	int ack;
 	void answer();
@@ -386,7 +386,7 @@ char opt;
 #ifdef  DEBUG
 	printf("recv: will ");
 	if(uchar(opt) <= NOPTIONS)
-		printf("%s\n",t_options[opt]);
+		printf("%s\n",T_options[opt]);
 	else
 		printf("%u\n",opt);
 #endif
@@ -416,14 +416,14 @@ char opt;
 static void
 wontopt(tn,opt)
 struct telnet *tn;
-char opt;
+int opt;
 {
 	void answer();
 
 #ifdef  DEBUG
 	printf("recv: wont ");
 	if(uchar(opt) <= NOPTIONS)
-		printf("%s\n",t_options[uchar(opt)]);
+		printf("%s\n",T_options[uchar(opt)]);
 	else
 		printf("%u\n",uchar(opt));
 #endif
@@ -439,7 +439,7 @@ char opt;
 static void
 doopt(tn,opt)
 struct telnet *tn;
-char opt;
+int opt;
 {
 	void answer();
 	int ack;
@@ -447,7 +447,7 @@ char opt;
 #ifdef  DEBUG
 	printf("recv: do ");
 	if(uchar(opt) <= NOPTIONS)
-		printf("%s\n",t_options[uchar(opt)]);
+		printf("%s\n",T_options[uchar(opt)]);
 	else
 		printf("%u\n",uchar(opt));
 #endif
@@ -467,14 +467,14 @@ char opt;
 static void
 dontopt(tn,opt)
 struct telnet *tn;
-char opt;
+int opt;
 {
 	void answer();
 
 #ifdef  DEBUG
 	printf("recv: dont ");
 	if(uchar(opt) <= NOPTIONS)
-		printf("%s\n",t_options[uchar(opt)]);
+		printf("%s\n",T_options[uchar(opt)]);
 	else
 		printf("%u\n",uchar(opt));
 #endif
@@ -512,7 +512,7 @@ int r1,r2;
 		break;
 	}
 	if(r2 <= 6)
-		printf("%s\n",t_options[r2]);
+		printf("%s\n",T_options[r2]);
 	else
 		printf("%u\n",r2);
 #endif

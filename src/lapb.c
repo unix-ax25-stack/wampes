@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.12 1990/10/12 19:25:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.13 1990/10/22 11:37:33 deyke Exp $ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -248,7 +248,9 @@ struct mbuf *bp;
   }
   if (ifp) {
     if (ifp->forw) ifp = ifp->forw;
+    ifp->rawsndcnt++;
     (*ifp->raw)(ifp, bp);
+    ifp->lastsent = Clock;
   } else
     free_p(bp);
 }

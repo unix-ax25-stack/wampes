@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.6 1990/10/12 19:25:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.7 1990/10/22 11:37:27 deyke Exp $ */
 
 /* Low level AX.25 frame processing - address header */
 
@@ -59,6 +59,7 @@ struct mbuf *data;      /* Data field (follows PID) */
 {
 	struct mbuf *abp,*cbp,*htonax25();
 	struct ax25 addr;
+	int rval;
 
 	/* Allocate mbuf for control and PID fields, and fill in */
 	if((cbp = pushdown(data,2)) == NULLBUF){
@@ -76,10 +77,16 @@ struct mbuf *data;      /* Data field (follows PID) */
 	/* This shouldn't be necessary because redirection has already been
 	 * done at the IP router layer, but just to be safe...
 	 */
-	if(iface->forw != NULLIF)
-		return (*iface->forw->raw)(iface->forw,abp);
-	else
-		return (*iface->raw)(iface,abp);
+	if(iface->forw != NULLIF){
+		iface->forw->rawsndcnt++;
+		rval = (*iface->forw->raw)(iface->forw,abp);
+		iface->forw->lastsent = Clock;
+	} else {
+		iface->rawsndcnt++;
+		rval = (*iface->raw)(iface,abp);
+		iface->lastsent = Clock;
+	}
+	return rval;
 }
 
 /*---------------------------------------------------------------------------*/

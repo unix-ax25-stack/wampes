@@ -1,6 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.4 1990/10/12 19:26:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.5 1990/10/22 11:38:19 deyke Exp $ */
 
-/* Mailer Daemon, checks for outbound mail and starts mail delivery agents */
+/* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
 #include <sys/types.h>
 
@@ -15,12 +15,111 @@
 #include "timer.h"
 #include "hpux.h"
 #include "mail.h"
+#include "cmdparse.h"
+#include "commands.h"
 
-static struct mailsys *systems;
-static struct timer timer;
+static int  Maxclients = 10;
+static struct mailsys *Systems;
+static struct timer Mail_timer;
 
+static int domail_maxcli __ARGS((int argc, char *argv [], void *p));
+static int domail_list __ARGS((int argc, char *argv [], void *p));
+static int domail_timer __ARGS((int argc, char *argv [], void *p));
+static int domail_kick __ARGS((int argc, char *argv [], void *p));
 static void strtrim __ARGS((char *s));
 static void read_configuration __ARGS((void));
+static void mail_tick __ARGS((char *sysname));
+
+/*---------------------------------------------------------------------------*/
+
+static struct mailers Mailers[] = {
+	"bbs",          mail_bbs,
+	"smtp",         mail_smtp,
+	NULLCHAR
+};
+
+/*---------------------------------------------------------------------------*/
+
+static struct cmds Mail_cmds[] = {
+/*      "gateway",      dogateway,      0,      0,      NULLCHAR,           */
+/*      "mode",         setsmtpmode,    0,      0,      NULLCHAR,           */
+	"kick",         domail_kick,    0,      0,      NULLCHAR,
+/*      "kill",         dosmtpkill,     0,      2,      "kill <jobnumber>", */
+	"list",         domail_list,    0,      0,      NULLCHAR,
+	"maxclients",   domail_maxcli,  0,      0,      NULLCHAR,
+	"timer",        domail_timer,   0,      0,      NULLCHAR,
+#ifdef SMTPTRACE
+/*      "trace",        dosmtptrace,    0,      0,      NULLCHAR,           */
+#endif
+	NULLCHAR,
+};
+
+int  dosmtp(argc, argv, p)
+int  argc;
+char  *argv[];
+void *p;
+{
+  read_configuration();
+  return subcmd(Mail_cmds, argc, argv, p);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int domail_maxcli(argc, argv, p)
+int  argc;
+char  *argv[];
+void *p;
+{
+  return setint(&Maxclients, "Max clients", argc, argv);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int  domail_list(argc, argv, p)
+int  argc;
+char  *argv[];
+void *p;
+{
+  struct mailsys *sp;
+
+  tprintf("System     Mailer  Transport\n");
+  for (sp = Systems; sp; sp = sp->next)
+    tprintf("%-10s %-7s %-10s\n", sp->sysname, sp->mailer->name, sp->protocol);
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Set outbound spool scan interval */
+
+static int  domail_timer(argc, argv, p)
+int  argc;
+char  *argv[];
+void *p;
+{
+  if (argc < 2) {
+    tprintf("%lu/%lu\n",
+	    read_timer(&Mail_timer) * MSPTICK / 1000,
+	    dur_timer(&Mail_timer) * MSPTICK / 1000);
+    return 0;
+  }
+  Mail_timer.func = (void (*)()) mail_tick;
+  Mail_timer.arg = 0;
+  set_timer(&Mail_timer, atol(argv[1]) * 1000l);
+  start_timer(&Mail_timer);
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int  domail_kick(argc, argv, p)
+int  argc;
+char  *argv[];
+void *p;
+{
+  mail_tick((argc < 2) ? NULLCHAR : argv[1]);
+  return 0;
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -43,17 +142,17 @@ static void read_configuration()
   char  *sysname, *mailername, *protocol, *address;
   char  line[1024];
   static long  lastmtime;
+  struct mailers *mailer;
   struct mailsys *sp;
   struct stat statbuf;
-  void (*mailer) __ARGS((struct mailsys *));
 
-  for (sp = systems; sp; sp = sp->next)
+  for (sp = Systems; sp; sp = sp->next)
     if (sp->jobs) return;
   if (stat(CONFFILE, &statbuf)) return;
   if (lastmtime == statbuf.st_mtime || statbuf.st_mtime > currtime - 5) return;
   if (!(fp = fopen(CONFFILE, "r"))) return;
-  while (sp = systems) {
-    systems = systems->next;
+  while (sp = Systems) {
+    Systems = Systems->next;
     free(sp->sysname);
     free(sp->protocol);
     free(sp->address);
@@ -65,19 +164,16 @@ static void read_configuration()
     if (!(protocol = strtok(NULLCHAR, ":"))) continue;
     if (!(address = strtok(NULLCHAR, ":"))) continue;
     strtrim(address);
-    if (!strcmp(mailername, "bbs"))
-      mailer = mail_bbs;
-    else if (!strcmp(mailername, "smtp"))
-      mailer = mail_smtp;
-    else
-      continue;
+    for (mailer = Mailers; mailer->name; mailer++)
+      if (!strcmp(mailer->name, mailername)) break;
+    if (!mailer->name) continue;
     sp = (struct mailsys *) calloc(1, sizeof (struct mailsys ));
     sp->sysname = strdup(sysname);
     sp->mailer = mailer;
     sp->protocol = strdup(protocol);
     sp->address = strdup(address);
-    sp->next = systems;
-    systems = sp;
+    sp->next = Systems;
+    Systems = sp;
   }
   fclose(fp);
   lastmtime = statbuf.st_mtime;
@@ -85,10 +181,8 @@ static void read_configuration()
 
 /*---------------------------------------------------------------------------*/
 
-int  mail_daemon(argc, argv, argp)
-int  argc;
-char  *argv[];
-void *argp;
+static void mail_tick(sysname)
+char  *sysname;
 {
 
   DIR * dirp;
@@ -97,6 +191,7 @@ void *argp;
   char  spooldir[80];
   char  tmp1[1024];
   char  tmp2[1024];
+  int  clients;
   int  cnt;
   struct dirent *dp;
   struct mailjob mj, *jp, *tail;
@@ -108,14 +203,13 @@ void *argp;
     char  name[16];
   } *filelist, *p, *q;
 
-  timer.func = (void (*)()) mail_daemon;
-  timer.arg = NULLCHAR;
-  set_timer(&timer, POLLTIME * 1000l);
-  start_timer(&timer);
-
+  start_timer(&Mail_timer);
   read_configuration();
 
-  for (sp = systems; sp; sp = sp->next) {
+  for (clients = 0, sp = Systems; sp; sp = sp->next)
+    if (sp->jobs) clients++;
+  for (sp = Systems; sp && clients < Maxclients; sp = sp->next) {
+    if (sysname && !strcmp(sp->sysname, sysname)) sp->nexttime = 0;
     if (sp->jobs || sp->nexttime > currtime) continue;
     sprintf(spooldir, "%s/%s", SPOOLDIR, sp->sysname);
     if (!(dirp = opendir(spooldir))) continue;
@@ -190,7 +284,10 @@ void *argp;
 	tail = jp;
       }
     }
-    if (sp->jobs) (*sp->mailer)(sp);
+    if (sp->jobs) {
+      clients++;
+      (*sp->mailer->func)(sp);
+    }
   }
 }
 

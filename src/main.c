@@ -1,9 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.8 1990/10/12 19:26:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.9 1990/10/22 11:38:23 deyke Exp $ */
 
 /* Main network program - provides both client and server functions */
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 #ifdef  __TURBOC__
 #include <io.h>
 #include <conio.h>
@@ -34,6 +35,9 @@
 #include "commands.h"
 #include "hpux.h"
 
+extern int errno;
+extern char *sys_errlist[];
+
 extern struct cmds Cmds[],Startcmds[],Stopcmds[],Attab[];
 
 #ifndef MSDOS                   /* PC uses F-10 key always */
@@ -48,8 +52,9 @@ char Prompt[] = "%s> ";
 char Nospace[] = "No space!!\n";        /* Generic malloc fail message */
 static FILE *Logfp;
 int32 resolve();
-int16 Lport = 1001;
+int16 Lport = 1024;
 
+int
 main(argc,argv)
 int argc;
 char *argv[];
@@ -68,19 +73,14 @@ char *argv[];
 	ioinit();
 	netrom_initialize();
 	remote_net_initialize();
-#if     (defined(UNIX) || defined(AMIGA) || defined(MAC))
-#else
-	chktasker();
-#endif
-#ifdef  MSDOS
-	tprintf("KA9Q Internet Protocol Package, v%s DS = %x\n",Version,
-		getds());
-#else
-	tprintf("KA9Q Internet Protocol Package, v%s\n",Version);
-#endif
 
-	tprintf("Copyright 1988 by Phil Karn, KA9Q\n");
-	Sessions = (struct session *)calloc(Nsessions,sizeof(struct session));
+	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
+	tprintf("\n");
+	tprintf("WAMPES version %s\n","901019");
+	tprintf("(c) Copyright 1990 by Dieter Deyke, DK5SG\n");
+	tprintf("(c) Copyright 1990 by Phil Karn, KA9Q\n");
+	tprintf("\n");
+
 	if(argc > 1){
 		/* Read startup file named on command line */
 		fp = fopen(argv[1],"r");
@@ -169,8 +169,6 @@ char *argv[];
 #endif
 	}
 }
-/* Standard commands called from main */
-
 /* Enter command mode */
 int
 cmdmode()
@@ -183,15 +181,43 @@ cmdmode()
 	}
 	return 0;
 }
+/* Standard commands called from main */
+int
+dodelete(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	int i;
+
+	for(i=1;i < argc; i++){
+		if(unlink(argv[i]) == -1){
+			tprintf("Can't delete %s: %s\n",
+			 argv[i],sys_errlist[errno]);
+		}
+	}
+	return 0;
+}
+int
+dorename(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	if(rename(argv[1],argv[2]) == -1)
+		tprintf("Can't rename: %s\n",sys_errlist[errno]);
+	return 0;
+}
+int
 doexit(argc,argv,p)
 int argc;
 char *argv[];
 void *p;
 {
-	if(Logfp != NULLFILE)
-		fclose(Logfp);
+	reset_all();
 	iostop();
 	exit(0);
+	return 0;       /* To satisfy lint */
 }
 int
 dohostname(argc,argv,p)
@@ -214,9 +240,8 @@ int argc;
 char *argv[];
 void *p;
 {
-	char *strncpy();
+	static char *logname;
 
-	static char logname[256];
 	if(argc < 2){
 		if(Logfp)
 			tprintf("Logging to %s\n",logname);
@@ -227,10 +252,12 @@ void *p;
 	if(Logfp){
 		fclose(Logfp);
 		Logfp = NULLFILE;
+		free(logname);
+		logname = NULLCHAR;
 	}
 	if(strcmp(argv[1],"stop") != 0){
-		strncpy(logname,argv[1],sizeof(logname));
-		Logfp = fopen(logname,"a+");
+		logname = strdup(argv[1]);
+		Logfp = fopen(logname,APPEND_TEXT);
 	}
 	return 0;
 }
@@ -247,6 +274,7 @@ void *p;
 	return subcmd(Attab,argc,argv,p);
 }
 /* Manipulate I/O device parameters */
+int
 doparam(argc,argv,p)
 int argc;
 char *argv[];
@@ -439,6 +467,15 @@ void *p;
 		return 1;
 	}
 	send_udp(&lsock,&fsock,0,0,bp,0,0,0);
+	return 0;
+}
+/* No-op command */
+int
+donothing(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
 	return 0;
 }
 
