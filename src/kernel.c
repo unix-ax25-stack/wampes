@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.22 1994/10/09 08:22:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.23 1995/03/24 13:00:04 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -212,7 +212,7 @@ int freeargs)           /* If set, free arg list on parg1 at termination */
 	alloca(i);
 #endif
 #elif defined sun
-#if _JBLEN == 9
+#if _JBLEN == 9 || _JBLEN == 58
 	if (!setjmp(jmpenv)) {
 	  jmpenv[2] = (int) newstackptr;
 	  longjmp(jmpenv, 1);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.18 1994/10/09 08:22:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.19 1995/03/24 13:00:01 deyke Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q
@@ -17,6 +17,8 @@
 #include "commands.h"
 #include "netuser.h"
 #include "dirutil.h"
+
+#include "seek.h"
 
 static void ftpparse(char *line, int len);
 static int doftpcd(int argc, char *argv [], void *p);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/lockfile.c,v 1.1 1994/02/22 13:23:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/lockfile.c,v 1.2 1995/03/24 13:00:32 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -8,6 +8,8 @@
 #ifdef ibm032
 #include <sys/fcntl.h>
 #endif
+
+#include "seek.h"
 
 /*---------------------------------------------------------------------------*/
 

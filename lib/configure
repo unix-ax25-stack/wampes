@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.17 1995/03/13 13:32:26 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.18 1995/03/24 13:00:31 deyke Exp $
 
 case "`uname -sr`" in
 HP-UX*)
@@ -122,6 +122,7 @@ findprog SENDMAIL_PROG /usr/sbin/sendmail /usr/lib/sendmail
 echo
 
 checksymbol HAS_ADJTIME "main(){adjtime(0,0);}"
+checksymbol HAS_STRERROR "main(){strerror(0);}"
 
 echo
 echo "#endif"

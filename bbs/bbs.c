@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.85 1995/03/13 13:32:20 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.86 1995/03/24 13:00:13 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -32,10 +32,6 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 
 typedef int pid_t;
 
-#define SEEK_SET L_SET
-#define SEEK_CUR L_INCR
-#define SEEK_END L_XTND
-
 #define dirent direct
 
 #else
@@ -54,6 +50,7 @@ extern int optind;
 #include "callvalid.h"
 #include "configure.h"
 #include "lockfile.h"
+#include "seek.h"
 #include "seteugid.h"
 #include "strdup.h"
 

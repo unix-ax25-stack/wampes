@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.27 1995/03/13 13:32:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.28 1995/03/24 13:00:05 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -133,7 +133,7 @@ struct env {
 };
 #define getstackptr(ep) ((ep)->jb_sp)
 #elif defined sun
-#if _JBLEN == 9
+#if _JBLEN == 9 || _JBLEN == 58
 struct env {
 	long    onsstack;
 	long    sigmask;

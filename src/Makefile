@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.79 1995/03/13 13:32:16 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.80 1995/03/24 13:00:06 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -9,6 +9,7 @@ EXTHDRS       = ../lib/bbs.h \
 		../lib/calc_crc.h \
 		../lib/callvalid.h \
 		../lib/configure.h \
+		../lib/seek.h \
 		../lib/seteugid.h
 
 HDRS          = arp.h \
@@ -493,10 +494,10 @@ ftp.o: global.h mbuf.h netuser.h timer.h tcp.h iface.h proc.h internet.h ip.h \
 	ftp.h session.h hardware.h telnet.h ax25.h
 ftpcli.o: global.h mbuf.h session.h proc.h timer.h hardware.h telnet.h tcp.h \
 	iface.h internet.h ip.h netuser.h ax25.h cmdparse.h socket.h icmp.h \
-	ftp.h commands.h dirutil.h
-ftpserv.o: ../lib/seteugid.h global.h mbuf.h socket.h proc.h timer.h \
-	netuser.h tcp.h iface.h internet.h ip.h dirutil.h login.h ftp.h \
-	ftpserv.h
+	ftp.h commands.h dirutil.h ../lib/seek.h
+ftpserv.o: ../lib/seek.h ../lib/seteugid.h global.h mbuf.h socket.h proc.h \
+	timer.h netuser.h tcp.h iface.h internet.h ip.h dirutil.h login.h \
+	ftp.h ftpserv.h
 hpux.o: ../lib/configure.h global.h iface.h mbuf.h proc.h timer.h files.h \
 	hardware.h login.h commands.h main.h hpux.h
 icmp.o: global.h mbuf.h iface.h proc.h timer.h ip.h internet.h icmp.h \
@@ -535,9 +536,9 @@ ksubr.o: global.h proc.h mbuf.h timer.h commands.h
 lapb.o: global.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h ip.h internet.h
 lapbtime.o: global.h mbuf.h ax25.h iface.h proc.h timer.h lapb.h
 lcsum.o: global.h ip.h mbuf.h iface.h proc.h timer.h internet.h
-login.o: ../lib/callvalid.h ../lib/configure.h global.h mbuf.h timer.h hpux.h \
-	telnet.h tcp.h iface.h proc.h internet.h ip.h netuser.h cmdparse.h \
-	commands.h login.h
+login.o: ../lib/callvalid.h ../lib/configure.h ../lib/seek.h global.h mbuf.h \
+	timer.h hpux.h telnet.h tcp.h iface.h proc.h internet.h ip.h \
+	netuser.h cmdparse.h commands.h login.h
 mail_bbs.o: ../lib/bbs.h ../lib/configure.h global.h mbuf.h timer.h \
 	transport.h mail.h
 mail_daemn.o: ../lib/configure.h global.h timer.h mail.h cmdparse.h \

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.56 1995/03/13 13:32:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.57 1995/03/24 13:00:05 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -19,7 +19,6 @@
 #ifdef ibm032
 #include <sgtty.h>
 #include <sys/file.h>
-#define SEEK_CUR L_INCR
 #else
 #include <termios.h>
 #endif
@@ -39,6 +38,7 @@ extern struct utmp *getutent();
 
 #include "callvalid.h"
 #include "configure.h"
+#include "seek.h"
 
 #include "global.h"
 #include "mbuf.h"

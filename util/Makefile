@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.56 1995/03/13 13:32:25 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.57 1995/03/24 13:00:27 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -197,6 +197,6 @@ md5drivr.o: ../lib/md5.h
 netupds.o: ../lib/buildsaddr.h ../lib/calc_crc.h ../lib/configure.h \
 	../lib/lockfile.h ../lib/md5.h ../lib/strdup.h ../lib/strmatch.h
 path.o: ../lib/strdup.h
-pop2d.o: ../lib/configure.h ../lib/lockfile.h
+pop2d.o: ../lib/configure.h ../lib/lockfile.h ../lib/seek.h
 pop3d.o: ../lib/configure.h ../lib/lockfile.h
 udbm.o: ../lib/bbs.h ../lib/configure.h ../lib/calc_crc.h ../lib/callvalid.h

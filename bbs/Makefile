@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.44 1995/03/13 13:32:21 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.45 1995/03/24 13:00:16 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -134,8 +134,8 @@ clean:; @rm -f *.o $(TARGETS) *~
 depend:; @mkmf -f $(MAKEFILE)
 ###
 bbs.o: ../lib/bbs.h ../lib/configure.h ../lib/buildsaddr.h ../lib/callvalid.h \
-	../lib/lockfile.h ../lib/seteugid.h ../lib/strdup.h
+	../lib/lockfile.h ../lib/seek.h ../lib/seteugid.h ../lib/strdup.h
 findpath.o: ../lib/bbs.h ../lib/configure.h ../lib/calc_crc.h \
-	../lib/callvalid.h
-killdup.o: ../lib/bbs.h ../lib/configure.h ../lib/md5.h
+	../lib/callvalid.h ../lib/seek.h
+killdup.o: ../lib/bbs.h ../lib/configure.h ../lib/md5.h ../lib/seek.h
 sfstat.o: ../lib/bbs.h ../lib/configure.h
