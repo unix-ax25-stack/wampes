@@ -1,12 +1,13 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.5 1989/08/27 17:42:57 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.6 1989/08/27 23:16:43 dk5sg Exp $";
 
 #include <sys/types.h>
 
 #include <ctype.h>
 #include <fcntl.h>
 #include <memory.h>
+#include <pwd.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
@@ -29,7 +30,6 @@ extern long  time();
 extern struct sockaddr *build_sockaddr();
 extern unsigned long  alarm();
 extern unsigned long  sleep();
-extern unsigned short  getgid();
 extern unsigned short  getuid();
 extern void _exit();
 extern void exit();
@@ -73,9 +73,13 @@ struct index {
   char  deleted;
 };
 
-struct seq {
-  int  forw;
-  int  list;
+struct user {
+  char  *name;
+  int  uid;
+  int  gid;
+  char  *dir;
+  char  *shell;
+  int  seq;
 };
 
 struct strlist {
@@ -107,7 +111,6 @@ static int  level;
 #define ROOT 2
 
 static char  *myhostname;
-static char  loginname[80];
 static char  mydesc[80];
 static char  prompt[1024] = "bbs> ";
 static int  debug;
@@ -116,7 +119,7 @@ static int  errors;
 static int  fdlock = -1;
 static int  findex;
 static int  locked;
-static struct seq seq;
+static struct user user;
 static struct utsname utsname;
 volatile static int stopped;
 
@@ -207,6 +210,14 @@ char  *str, *pat;
       if (!*s) return 0;
       if (tolower(uchar(*s++)) != tolower(uchar(*p++))) break;
     }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static char  *strsave(s)
+char  *s;
+{
+  return strcpy(malloc((unsigned) (strlen(s) + 1)), s);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -322,30 +333,15 @@ int  mesg;
 
 /*---------------------------------------------------------------------------*/
 
-static void get_seq()
-{
-
-  FILE * fp;
-  char  fname[80];
-
-  sprintf(fname, "seq/seq.%s", loginname);
-  if (fp = fopen(fname, "r")) {
-    fscanf(fp, "%d %d", &seq.forw, &seq.list);
-    fclose(fp);
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-
 static void put_seq()
 {
 
   FILE * fp;
   char  fname[80];
 
-  sprintf(fname, "seq/seq.%s", loginname);
-  if (!(fp = fopen(fname, "w")) ||
-      fprintf(fp, "%d %d\n", seq.forw, seq.list) < 0) halt();
+  if (debug) return;
+  sprintf(fname, "%s/.bbsseq", user.dir);
+  if (!(fp = fopen(fname, "w")) || fprintf(fp, "%d\n", user.seq) < 0) halt();
   fclose(fp);
 }
 
@@ -706,7 +702,7 @@ static void route_mail(mail)
 struct mail *mail;
 {
 
-#define BidSeqFile "seq/seq.bid"
+#define BidSeqFile "seqbid"
 #define MidSuffix  "@bbs.net"
 
   FILE * fp;
@@ -873,8 +869,8 @@ char  **argv;
   for (i = 1; i < argc; i++)
     if ((mesg = atoi(argv[i])) > 0 && get_index(mesg, &index) && !index.deleted)
       if (level == ROOT                 ||
-	  calleq(index.from, loginname) ||
-	  calleq(index.to, loginname)) {
+	  calleq(index.from, user.name) ||
+	  calleq(index.to, user.name)) {
 	if (unlink(filename(mesg))) halt();
 	index.deleted = 1;
 	if (lseek(findex, (long) (-sizeof(struct index )), 1) < 0) halt();
@@ -915,8 +911,8 @@ char  **argv;
   if (lseek(findex, 0l, 0)) halt();
   while (read(findex, (char *) &index, sizeof(struct index )) == sizeof(struct index )) {
     if (!index.deleted        &&
-	index.mesg > seq.forw &&
-	!host_in_header(filename(index.mesg), loginname)) {
+	index.mesg > user.seq &&
+	!host_in_header(filename(index.mesg), user.name)) {
       do_not_exit = 1;
       printf("S %s%s%s < %s%s%s\n", index.to, *index.at ? " @ " : "", index.at, index.from, *index.bid ? " $" : "", index.bid);
       if (!getstring(buf)) exit(1);
@@ -942,8 +938,8 @@ char  **argv;
 	exit(1);
       }
     }
-    if (seq.forw < index.mesg) {
-      seq.forw = index.mesg;
+    if (user.seq < index.mesg) {
+      user.seq = index.mesg;
       put_seq();
     }
   }
@@ -1065,8 +1061,8 @@ char  **argv;
       nextarg("COUNT");
       count = atoi(argv[i]);
     } else if (!strncmp("new", argv[i], len)) {
-      min = seq.list + 1;
-      update_seq = (argc == 2);
+      min = user.seq + 1;
+      update_seq = (argc == 2 && level == USER);
     } else if (!strncmp("max", argv[i], len)) {
       nextarg("MAX");
       max = atoi(argv[i]);
@@ -1105,8 +1101,8 @@ char  **argv;
 	       index.from,
 	       timestr(index.date),
 	       index.subject);
-	if (update_seq && seq.list < index.mesg) {
-	  seq.list = index.mesg;
+	if (update_seq && user.seq < index.mesg) {
+	  user.seq = index.mesg;
 	  put_seq();
 	}
 	if (--count <= 0) break;
@@ -1137,11 +1133,11 @@ char  **argv;
     return;
   }
   mail = (struct mail *) calloc(1, sizeof(struct mail ));
-  strcpy(mail->from, loginname);
+  strcpy(mail->from, user.name);
   strcpy(mail->to, "m@thebox");
   sprintf(line, "%s %ld", argv[1], time((long *) 0));
   strcpy(mail->subject, line);
-  sprintf(line, "de %s @ %s", loginname, myhostname);
+  sprintf(line, "de %s @ %s", user.name, myhostname);
   append_line(mail, line);
   append_line(mail, "");
   append_line(mail, "");
@@ -1289,7 +1285,7 @@ char  **argv;
     strcat(mail->to, "@");
     strcat(mail->to, at);
   }
-  if (!*mail->from || level < MBOX) strcpy(mail->from, loginname);
+  if (!*mail->from || level < MBOX) strcpy(mail->from, user.name);
   if (*mail->bid) {
     mail->bid[LEN_BID] = '\0';
     strupc(mail->bid);
@@ -1355,7 +1351,7 @@ char  **argv;
 
   int  active = 0;
   int  highest = 0;
-  int  listed = seq.list;
+  int  listed = user.seq;
   int  n;
   int  new = 0;
   int  readable = 0;
@@ -1616,7 +1612,7 @@ static void connect_bbs()
   int  fd;
   struct sockaddr *addr;
 
-  if (!(address = connect_addr(loginname))) exit(1);
+  if (!(address = connect_addr(user.name))) exit(1);
   if (!(addr = build_sockaddr("unix:/tcp/sockets/netcmd", &addrlen))) exit(1);
   if ((fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) exit(1);
   if (connect(fd, addr, addrlen)) exit(1);
@@ -1717,18 +1713,14 @@ static void bbs()
 {
 
   FILE * fp;
-  char  *p;
   char  line[1024];
 
   if (level != MBOX)
     printf("DK5SG-BBS  Revision: %s   Type ? for help.\n", revision.number);
-  p = getenv("HOME");
-  if (p || *p) {
-    sprintf(line, "%s/.bbsrc", p);
-    if (fp = fopen(line, "r")) {
-      while (fgets(line, sizeof(line), fp)) parse_command_line(line);
-      fclose(fp);
-    }
+  sprintf(line, "%s/.bbsrc", user.dir);
+  if (fp = fopen(line, "r")) {
+    while (fgets(line, sizeof(line), fp)) parse_command_line(line);
+    fclose(fp);
   }
   if (doforward) {
     connect_bbs();
@@ -1867,11 +1859,20 @@ char  **argv;
 #define RMAIL 1
 #define RNEWS 2
 
-  char  *cp;
+  FILE * fp;
   char  *dir = WRKDIR;
+  char  *sysname;
+  char  fname[80];
   int  c;
   int  err_flag = 0;
   int  mode = BBS;
+  struct passwd *pw;
+
+  trap_signal(SIGINT,  interrupt_handler);
+  trap_signal(SIGQUIT, interrupt_handler);
+  trap_signal(SIGTERM, interrupt_handler);
+  trap_signal(SIGALRM, alarm_handler);
+  umask(022);
 
   sscanf(rcsid, "%*s %*s %*s %s %s %s %s %s",
 		revision.number,
@@ -1879,18 +1880,8 @@ char  **argv;
 		revision.time,
 		revision.author,
 		revision.state);
-  if (getuid() == 0 && getgid() == 1) level = ROOT;
-  umask(022);
-  trap_signal(SIGINT,  interrupt_handler);
-  trap_signal(SIGQUIT, interrupt_handler);
-  trap_signal(SIGTERM, interrupt_handler);
-  trap_signal(SIGALRM, alarm_handler);
-  if (uname(&utsname)) halt();
-  myhostname = utsname.nodename;
   sprintf(mydesc, MYDESC, revision.number);
-  cp = getenv("LOGNAME");
-  if (!cp || !*cp) halt();
-  strlwc(strcpy(loginname, cp));
+
   while ((c = getopt(argc, argv, "df:mn")) != EOF)
     switch (c) {
     case 'd':
@@ -1898,12 +1889,11 @@ char  **argv;
       dir = DEBUGDIR;
       break;
     case 'f':
-      if (level < ROOT) {
+      if (getuid()) {
 	puts("The 'f' option is for Store&Forward use only.");
 	exit(1);
       }
-      strlwc(strcpy(loginname, optarg));
-      level = MBOX;
+      sysname = optarg;
       mode = BBS;
       doforward = 1;
       break;
@@ -1922,14 +1912,43 @@ char  **argv;
     puts("usage: bbs [-d] [-f system|-m|-n]");
     exit(1);
   }
+
   if (chdir(dir)) {
     mkdir(dir, 0755);
     if (chdir(dir)) halt();
-    if (mkdir("seq", 0755)) halt();
   }
-  if (connect_addr(loginname)) level = MBOX;
+
+  if (uname(&utsname)) halt();
+  myhostname = utsname.nodename;
+
+  pw = doforward ? getpwnam(sysname) : getpwuid(getuid());
+  if (!pw) halt();
+  user.name = strsave(pw->pw_name);
+  user.uid = pw->pw_uid;
+  user.gid = pw->pw_gid;
+  user.dir = strsave(pw->pw_dir);
+  user.shell = strsave(pw->pw_shell);
+  endpwent();
+  sprintf(fname, "%s/.bbsseq", user.dir);
+  if (fp = fopen(fname, "r")) {
+    fscanf(fp, "%d", &user.seq);
+    fclose(fp);
+  } else {
+    int  f, l;
+    sprintf(fname, "seq/seq.%s", user.name);
+    if (fp = fopen(fname, "r")) {
+      fscanf(fp, "%d %d", &f, &l);
+      fclose(fp);
+      user.seq = connect_addr(user.name) ? f : l;
+      put_seq();
+      unlink(fname);
+    }
+  }
+  if (!user.uid) level = ROOT;
+  if (connect_addr(user.name)) level = MBOX;
+
   if ((findex = open("index", O_RDWR | O_CREAT, 0644)) < 0) halt();
-  get_seq();
+
   switch (mode) {
   case BBS:
     bbs();
