@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.25 1992/01/08 13:45:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.26 1992/01/12 18:40:14 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -17,6 +17,7 @@
 #include "lapb.h"
 #include "netrom.h"
 #include "cmdparse.h"
+#include "trace.h"
 
 static int  nr_maxdest     =   400;     /* not used */
 static int  nr_minqual     =     0;     /* not used */
@@ -147,11 +148,6 @@ struct node {
   int force_broadcast;
   struct ax25_cb *crosslink;
   struct node *prev, *next;
-};
-
-/* NET/ROM broadcast address: "NODES-0" in shifted ascii */
-char Nr_nodebc[AXALEN] = {
-	'N'<<1, 'O'<<1, 'D'<<1, 'E'<<1, 'S'<<1, ' '<<1, '0'<<1
 };
 
 struct ax25_cb *netrom_server_axcb;
@@ -701,8 +697,11 @@ struct node *fromneighbor;
 	uchar(bp->data[15]) == NRPROTO_IP &&
 	uchar(bp->data[16]) == NRPROTO_IP &&
 	Nr_iface) {
+      Nr_iface->rawrecvcnt++;
+      Nr_iface->lastrecv = secclock();
       arp_add(get32(bp->data + 32), ARP_NETROM, bp->data, 0);
       pullup(&bp, NULLCHAR, 20);
+      dump(Nr_iface, IF_TRACE_IN, Nr_iface->type, bp);
       ip_route(Nr_iface, bp, 0);
       return;
     }
@@ -766,26 +765,29 @@ struct mbuf *data;
 
 /*---------------------------------------------------------------------------*/
 
-int  nr_send(bp, iface, gateway, prec, del, tput, rel)
+int nr_send(bp, iface, gateway, prec, del, tput, rel)
 struct mbuf *bp;
 struct iface *iface;
 int32 gateway;
-int  prec;
-int  del;
-int  tput;
-int  rel;
+int prec;
+int del;
+int tput;
+int rel;
 {
 
   struct arp_tab *arp;
   struct mbuf *nbp;
 
+  dump(iface, IF_TRACE_OUT, iface->type, bp);
+  iface->rawsndcnt++;
+  iface->lastsent = secclock();
   if (!(arp = arp_lookup(ARP_NETROM, gateway))) {
     free_p(bp);
-    return 0;
+    return (-1);
   }
   if (!(nbp = pushdown(bp, 5))) {
     free_p(bp);
-    return 0;
+    return (-1);
   }
   bp = nbp;
   bp->data[0] = NRPROTO_IP;
@@ -793,6 +795,8 @@ int  rel;
   bp->data[2] = 0;
   bp->data[3] = 0;
   bp->data[4] = 0;
+  if (iface->trace & IF_TRACE_RAW)
+    raw_dump(iface, -1, bp);
   send_l3_packet(Mycall, arp->hw_addr, nr_ttlinit, bp);
   return 0;
 }
@@ -863,7 +867,7 @@ struct circuit *pc;
 {
   int32 tmp;
 
-  tmp = pc->srtt + 2 * pc->mdev;
+  tmp = pc->srtt + 4 * pc->mdev;
   if (tmp < 500) tmp = 500;
   set_timer(&pc->timer_t1, tmp);
 }
@@ -1133,7 +1137,7 @@ static struct circuit *create_circuit()
   pc->remoteid = -1;
   pc->cwind = 1;
   pc->srtt = 500L * nr_ttimeout;
-  pc->mdev = pc->srtt / 2;
+  pc->mdev = pc->srtt / 4;
   reset_t1(pc);
   pc->timer_t1.func = (void (*) __ARGS((void *))) l4_t1_timeout;
   pc->timer_t1.arg = pc;

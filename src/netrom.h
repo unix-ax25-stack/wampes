@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.12 1991/05/09 07:38:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.13 1992/01/12 18:40:16 deyke Exp $ */
 
 #ifndef _NETROM_H
 #define _NETROM_H
@@ -112,8 +112,6 @@ struct circuit {
 				 */
   struct circuit *next;         /* Linked-list pointer */
 };
-
-extern char Nr_nodebc[AXALEN];
 
 /* In netrom.c: */
 int isnetrom __ARGS((char *call));

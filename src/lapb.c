@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.19 1992/01/08 13:45:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.20 1992/01/12 18:40:08 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -126,7 +126,7 @@ struct ax25_cb *cp;
 {
   int32 tmp;
 
-  tmp = cp->srtt + 2 * cp->mdev;
+  tmp = cp->srtt + 4 * cp->mdev;
   if (tmp < 500) tmp = 500;
   set_timer(&cp->timer_t1, tmp);
 }
@@ -506,7 +506,7 @@ int  reverse;
   }
 
   cp->srtt = (ax_t1init * (1 + 2 * (cp->hdr.ndigis - cp->hdr.nextdigi))) / 2;
-  cp->mdev = cp->srtt / 2;
+  cp->mdev = cp->srtt / 4;
   reset_t1(cp);
 }
 
@@ -1108,32 +1108,49 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-static int  doroutestat(argc, argv, p)
-int  argc;
-char  *argv[];
+static int doroutestat(argc, argv, p)
+int argc;
+char *argv[];
 void *p;
 {
 
-  int  count[ASY_MAX], total;
-  int  i, dev;
-  struct ax_route *rp, *dp;
-  struct iface *ifp, *ifptable[ASY_MAX];
+#define NIFACES 128
+
+  struct ifptable_t {
+    struct iface *ifp;
+    int count;
+  };
+
+  int dev;
+  int i;
+  int total;
+  struct ax_route *dp;
+  struct ax_route *rp;
+  struct iface *ifp;
+  struct ifptable_t ifptable[NIFACES];
 
   memset(ifptable, 0, sizeof(ifptable));
-  memset(count, 0, sizeof(count));
-  for (ifp = Ifaces; ifp; ifp = ifp->next)
-    if (ifp->output == ax_output) ifptable[ifp->dev] = ifp;
+  for (dev = 0, ifp = Ifaces; ifp; dev++, ifp = ifp->next)
+    ifptable[dev].ifp = ifp;
   for (i = 0; i < AXROUTESIZE; i++)
     for (rp = Ax_routes[i]; rp; rp = rp->next) {
       for (dp = rp; dp->digi; dp = dp->digi) ;
-      if (dp->ifp) count[dp->ifp->dev]++;
+      if (dp->ifp)
+	for (dev = 0; dev < NIFACES; dev++)
+	  if (ifptable[dev].ifp == dp->ifp) {
+	    ifptable[dev].count++;
+	    break;
+	  }
     }
   puts("Interface  Count");
   total = 0;
-  for (dev = 0; dev < ASY_MAX && ifptable[dev]; dev++) {
-    if (ifptable[dev] == axroute_default_ifp || count[dev])
-      printf("%c %-7s  %5d\n", ifptable[dev] == axroute_default_ifp ? '*' : ' ', ifptable[dev]->name, count[dev]);
-    total += count[dev];
+  for (dev = 0; dev < NIFACES; dev++) {
+    if (ifptable[dev].count || ifptable[dev].ifp == axroute_default_ifp)
+      printf("%c %-7s  %5d\n",
+	     ifptable[dev].ifp == axroute_default_ifp ? '*' : ' ',
+	     ifptable[dev].ifp->name,
+	     ifptable[dev].count);
+    total += ifptable[dev].count;
   }
   puts("---------  -----");
   printf("  total    %5d\n", total);

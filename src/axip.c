@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.5 1992/01/08 13:45:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.6 1992/01/12 18:39:55 deyke Exp $ */
 
 #include "global.h"
 
@@ -90,7 +90,7 @@ struct iface *iface;
 struct mbuf *data;
 {
 
-  char **mpp;
+  char (*mpp)[AXALEN];
   char *dest;
   char *p;
   char buf[MAX_FRAME];
@@ -138,7 +138,7 @@ struct mbuf *data;
   }
 
   multicast = 0;
-  for (mpp = Axmulti; *mpp; mpp++) {
+  for (mpp = Ax25multi; (*mpp)[0]; mpp++) {
     if (addreq(dest, *mpp)) {
       multicast = 1;
       break;

@@ -403,7 +403,7 @@ misc.o: global.h socket.h mbuf.h proc.h timer.h
 netlog.o: global.h
 netrom.o: global.h config.h netuser.h mbuf.h timer.h iface.h proc.h arp.h \
 	ip.h internet.h ax25.h lapb.h netrom.h session.h hardware.h telnet.h \
-	cmdparse.h login.h
+	cmdparse.h trace.h login.h
 netuser.o: global.h netuser.h
 nrdump.o: global.h mbuf.h timer.h ax25.h iface.h proc.h netrom.h session.h \
 	hardware.h telnet.h trace.h

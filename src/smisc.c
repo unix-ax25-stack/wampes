@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.6 1991/02/24 20:17:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.7 1992/01/12 18:40:35 deyke Exp $ */
 
 /* Miscellaneous Internet servers: discard, echo and remote
  * Copyright 1991 Phil Karn, KA9Q
@@ -72,7 +72,7 @@ void *p;
 		sock.port = IPPORT_REMOTE;
 	else
 		sock.port = atoi(argv[1]);
-	open_udp(&sock,uremote);
+	remote_up = open_udp(&sock,uremote);
 	return 0;
 }
 

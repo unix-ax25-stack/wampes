@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.15 1992/01/08 13:45:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.16 1992/01/12 18:39:57 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -99,7 +99,7 @@ struct arp_type Arp_type[NHWTYPES] = {
 	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_EETHER */
 
 #ifdef  AX25
-	AXALEN, PID_IP, PID_ARP, 10, Ax25_bdcst, pax25, setcall,
+	AXALEN, PID_IP, PID_ARP, 10, Ax25multi[0], pax25, setcall,
 #else
 	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_AX25 */
 #endif
@@ -129,15 +129,6 @@ struct axlink Axlink[] = {
 #endif
 	PID_NO_L3,      axnl3,
 	0,              NULL,
-};
-
-/* List of AX.25 multicast addresses */
-char *Axmulti[] = {
-	Ax25_bdcst,
-#ifdef  NETROM
-	Nr_nodebc,
-#endif
-	NULLCHAR,
 };
 #endif
 

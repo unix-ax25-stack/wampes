@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.12 1991/07/16 17:55:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.13 1992/01/12 18:40:01 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -676,14 +676,15 @@ char  *pass;
 
   char  *username = ftp->username;
   struct passwd *pw;
+#ifdef SPASSWD
+  struct spwd *sw;
+#endif
 
 #ifdef RESTRICTED       /* because of no setresuid/gid */
   username = "ftp";
 #endif
 
 #ifdef SPASSWD
-  struct spwd *sw;
-
  if ((pw = getpasswdentry(username, 0)) &&
      (sw = getspwdentry(username)) &&
      (!*sw->sp_pwdp || !strcmp(pw->pw_name, "ftp")))

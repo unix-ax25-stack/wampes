@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.6 1991/07/16 17:54:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.7 1992/01/12 18:39:54 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -83,10 +83,10 @@ void axroute_savefile()
 static int valid_call(call)
 char *call;
 {
-  char **mpp;
+  char (*mpp)[AXALEN];
 
   if (!*call || ismyax25addr(call)) return 0;
-  for (mpp = Axmulti; *mpp; mpp++)
+  for (mpp = Ax25multi; (*mpp)[0]; mpp++)
     if (addreq(call, *mpp)) return 0;
   return 1;
 }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.7 1991/04/25 18:26:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.8 1992/01/12 18:39:53 deyke Exp $ */
 
 #ifndef _AX25_H
 #define _AX25_H
@@ -27,11 +27,12 @@
 #define REPEATED        0x80    /* Has-been-repeated bit in repeater field */
 #define E               0x01    /* Address extension bit */
 #define C               0x80    /* Command/response designation */
+
 /* Our AX.25 address */
 extern char Mycall[AXALEN];
 
-/* AX.25 broadcast address: "QST   -0" in shifted ASCII */
-extern char Ax25_bdcst[AXALEN];
+/* List of AX.25 multicast addresses, e.g., "QST   -0" in shifted ASCII */
+extern char Ax25multi[][AXALEN];
 
 extern int Digipeat;
 
@@ -90,9 +91,6 @@ struct axlink {
 	 struct mbuf *,int));
 };
 extern struct axlink Axlink[];
-
-/* List of AX.25 multicast addresses */
-extern char *Axmulti[];
 
 /* Codes for the open_ax call */
 #define AX_PASSIVE      0       /* not implemented */

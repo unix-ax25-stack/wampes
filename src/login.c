@@ -1,11 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.17 1992/01/08 13:45:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.18 1992/01/12 18:40:11 deyke Exp $ */
 
 #include <sys/types.h>
 
 #include <stdio.h>      /* must be before pwd.h */
 
 #include <ctype.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <pwd.h>
 #include <signal.h>
@@ -28,6 +27,7 @@
 
 #define MASTERPREFIX        "/dev/pty"
 #define SLAVEPREFIX         "/dev/tty"
+#define NUMPTY              256
 
 #define PASSWDFILE          "/etc/passwd"
 #define PWLOCKFILE          "/etc/ptmp"
@@ -64,7 +64,7 @@ struct login_cb {
   char  option[NOPTIONS+1];     /* telnet options */
 };
 
-static char  pty_inuse[256];
+static int32 pty_locktime[NUMPTY];
 
 static int find_pty __ARGS((int *numptr, char *slave));
 static void restore_pty __ARGS((char *id));
@@ -80,26 +80,25 @@ static void excp_handler __ARGS((struct login_cb *tp));
 
 /*---------------------------------------------------------------------------*/
 
-static int  find_pty(numptr, slave)
-int  *numptr;
-char  *slave;
+static int find_pty(numptr, slave)
+int *numptr;
+char *slave;
 {
 
-  char  master[80];
-  int  fd, num;
+  char master[80];
+  int fd, num;
 
-  for (num = 0; ; num++)
-    if (!pty_inuse[num]) {
+  for (num = 0; num < NUMPTY; num++)
+    if (pty_locktime[num] < secclock()) {
+      pty_locktime[num] = secclock() + 60;
       pty_name(master, MASTERPREFIX, num);
       if ((fd = open(master, O_RDWR | O_NDELAY, 0600)) >= 0) {
-	/* pty_inuse[num] = 1; ***** DON'T LOCK PTYS -- TESTING ***** */
 	*numptr = num;
 	pty_name(slave, SLAVEPREFIX, num);
 	return fd;
       }
-      if (errno != EBUSY) return (-1);
-      /* pty_inuse[num] = 1; ***** DON'T LOCK PTYS -- TESTING ***** */
     }
+  return (-1);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -450,7 +449,7 @@ struct login_cb *tp;
     off_excp(tp->pty);
     close(tp->pty);
     restore_pty(tp->id);
-    pty_inuse[tp->num] = 0;
+    pty_locktime[tp->num] = 0;
     write_log(tp->pty, (char *) 0, -1);
   }
   if (tp->pid > 0) {

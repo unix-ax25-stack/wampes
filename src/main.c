@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.25 1992/01/08 13:45:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.26 1992/01/12 18:40:13 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -7,6 +7,7 @@
  *
  * Copyright 1991 Phil Karn, KA9Q
  */
+#include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -281,7 +282,6 @@ void *p;
 	if(argc < 2)
 		tprintf("%s\n",Hostname);
 	else {
-#if 0
 		struct iface *ifp;
 		char *name;
 
@@ -290,14 +290,21 @@ void *p;
 				tprintf("Interface address not resolved\n");
 				return 1;
 			} else {
-				/* free(argv[1]); */
-				argv[1] = name;
+				if(Hostname != NULLCHAR)
+					free(Hostname);
+				Hostname = strdup(name);
+
+				/* remove trailing dot */
+				if ( Hostname[strlen(Hostname)] == '.' ) {
+					Hostname[strlen(Hostname)] = '\0';
+				}
+				tprintf("Hostname set to %s\n", name );
 			}
+		} else {
+			if(Hostname != NULLCHAR)
+				free(Hostname);
+			Hostname = strdup(argv[1]);
 		}
-#endif
-		if(Hostname != NULLCHAR)
-			free(Hostname);
-		Hostname = strdup(argv[1]);
 	}
 	return 0;
 }

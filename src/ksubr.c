@@ -1,9 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.3 1992/01/08 13:45:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.4 1992/01/12 18:40:07 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
  * Copyright 1991 Phil Karn, KA9Q
  */
+#include <sys/types.h>
 #include <stdio.h>
 #include <time.h>
 /* #include <dos.h> */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.11 1991/12/04 18:25:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.12 1992/01/12 18:39:53 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -23,9 +23,22 @@ static int axsend __ARGS((struct iface *iface,char *dest,char *source,
 	int cmdrsp,int ctl,struct mbuf *data));
 static int axroute_hash __ARGS((char *call));
 
-/* AX.25 broadcast address: "QST-0" in shifted ascii */
-char Ax25_bdcst[AXALEN] = {
-	'Q'<<1, 'S'<<1, 'T'<<1, ' '<<1, ' '<<1, ' '<<1, '0'<<1,
+/* List of AX.25 multicast addresses in network format (shifted ascii).
+ * Only the first entry is used for transmission, but an incoming
+ * packet with any one of these destination addresses is recognized
+ * as a multicast.
+ */
+char Ax25multi[][AXALEN] = {
+	'Q'<<1, 'S'<<1, 'T'<<1, ' '<<1, ' '<<1, ' '<<1, '0'<<1, /* QST */
+/*      'M'<<1, 'A'<<1, 'I'<<1, 'L'<<1, ' '<<1, ' '<<1, '0'<<1, /* MAIL */
+	'N'<<1, 'O'<<1, 'D'<<1, 'E'<<1, 'S'<<1, ' '<<1, '0'<<1, /* NODES */
+/*      'I'<<1, 'D'<<1, ' '<<1, ' '<<1, ' '<<1, ' '<<1, '0'<<1, /* ID */
+/*      'O'<<1, 'P'<<1, 'E'<<1, 'N'<<1, ' '<<1, ' '<<1, '0'<<1, /* OPEN */
+/*      'C'<<1, 'Q'<<1, ' '<<1, ' '<<1, ' '<<1, ' '<<1, '0'<<1, /* CQ */
+/*      'B'<<1, 'E'<<1, 'A'<<1, 'C'<<1, 'O'<<1, 'N'<<1, '0'<<1, /* BEACON */
+/*      'R'<<1, 'M'<<1, 'N'<<1, 'C'<<1, ' '<<1, ' '<<1, '0'<<1, /* RMNC */
+/*      'A'<<1, 'L'<<1, 'L'<<1, ' '<<1, ' '<<1, ' '<<1, '0'<<1, /* ALL */
+	'\0',
 };
 char Mycall[AXALEN];
 struct ax_route *Ax_routes[AXROUTESIZE];
@@ -149,7 +162,7 @@ struct mbuf *bp;
 	struct mbuf *hbp;
 	char control;
 	struct ax25 hdr;
-	char **mpp;
+	char (*mpp)[AXALEN];
 	int mcast;
 
 	/* Pull header off packet and convert to host structure */
@@ -200,7 +213,7 @@ struct mbuf *bp;
 	 * a multicast.
 	 */
 	mcast = 0;
-	for(mpp = Axmulti;*mpp != NULLCHAR;mpp++){
+	for(mpp = Ax25multi;(*mpp)[0];mpp++){
 		if(addreq(hdr.dest,*mpp)){
 			mcast = 1;
 			break;
@@ -297,7 +310,7 @@ struct ax25 *hdr;
 int  perm;
 {
 
-  char  **mpp;
+  char (*mpp)[AXALEN];
   char  *call;
   char  *calls[MAXDIGIS+1];
   int  i;
@@ -308,13 +321,13 @@ int  perm;
 
   call = hdr->source;
   if (!*call || addreq(call, iface->hwaddr)) return;
-  for (mpp = Axmulti; *mpp; mpp++)
+  for (mpp = Ax25multi; (*mpp)[0]; mpp++)
     if (addreq(call, *mpp)) return;
   calls[ncalls++] = call;
   for (i = 0; i < hdr->nextdigi; i++) {
     call = hdr->digis[i];
     if (!*call || addreq(call, iface->hwaddr)) return;
-    for (mpp = Axmulti; *mpp; mpp++)
+    for (mpp = Ax25multi; (*mpp)[0]; mpp++)
       if (addreq(call, *mpp)) return;
     for (j = 0; j < ncalls; j++)
       if (addreq(call, calls[j])) return;
