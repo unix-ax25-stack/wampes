@@ -1,4 +1,4 @@
-/* @(#) $Id: ethertap.c,v 1.6 2002/06/19 12:19:41 dl9sau Exp $ */
+/* @(#) $Id: ethertap.c,v 1.7 2002/06/30 02:57:16 dl9sau Exp $ */
 
 /* the ethertap device. now with TUN/TAP support (by dl9sau) */
 
@@ -305,7 +305,7 @@ int ethertap_attach(int argc, char *argv[], void *p)
   if ((skfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
     perror("socket()");
     close(fd);
-    return;
+    return -1;
   }
 
   memset(&ifr, 0, sizeof(ifr));
@@ -321,9 +321,15 @@ int ethertap_attach(int argc, char *argv[], void *p)
 
   strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
   ifr.ifr_name[IFNAMSIZ-1] = 0;
-  if (ioctl(skfd, SIOCGIFHWADDR, &ifr) < 0)
+  if (ioctl(skfd, SIOCGIFHWADDR, &ifr) < 0) {
     perror("SIOCGIFHWADDR");
-  else
+    hwaddr[0] = 0xfe;
+    hwaddr[1] = 0xfd;
+    hwaddr[2] = 0x0;
+    hwaddr[3] = 0x0;
+    hwaddr[4] = 0x0;
+    hwaddr[5] = 0x0;
+  } else
     memcpy(hwaddr, ifr.ifr_hwaddr.sa_data, 6);
 
   if (argc > 2) {
