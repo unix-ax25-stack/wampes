@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.102 1999/02/11 19:26:49 deyke Exp $
+# @(#) $Id: Makefile,v 1.103 1999/06/20 19:03:51 deyke Exp $
 
 DEST          = /tcp
 
@@ -401,7 +401,7 @@ crc.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h crc.h \
 devparam.o: global.h ../lib/configure.h ../lib/strdup.h devparam.h
 dirutil.o: global.h ../lib/configure.h ../lib/strdup.h hpux.h dirutil.h \
 	commands.h
-domain.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
+domain.o: ../lib/configure.h global.h ../lib/strdup.h mbuf.h iface.h proc.h \
 	timer.h socket.h tcp.h internet.h ip.h netuser.h udp.h cmdparse.h \
 	domain.h
 domhdr.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h domain.h proc.h \

@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Id: tcpmake,v 1.39 1999/04/25 16:56:42 deyke Exp $
+# @(#) $Id: tcpmake,v 1.40 1999/06/20 19:03:52 deyke Exp $
 
 #------------------------------------------------------------------------------
 
@@ -85,7 +85,6 @@ for dir in \
 			esac
 		fi
 	done
-	trimfiles
 done
 
 for manual in bbs bridge netupd smack wampes; do
@@ -138,10 +137,11 @@ groff -p -t -mgm -Tascii < ~/tcp/doc/bbs.mm | sed 's/.//g' | awk '
 	{
 		print
 	}
-' | trim -s | expand > $file
+' | trim -s > $file
 check_file $file
 
 cd ~/tcp
+trimfiles
 make
 make distrib
 mk make

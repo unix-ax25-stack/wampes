@@ -1,4 +1,4 @@
-# @(#) $Id: configure,v 1.34 1999/06/20 17:47:45 deyke Exp $
+# @(#) $Id: configure,v 1.35 1999/06/20 19:03:49 deyke Exp $
 
 CC='cc'
 CFLAGS='-O -I../lib'
@@ -274,7 +274,8 @@ checksymbol()
 
 	findprog CTLINND_PROG \
 		/usr/local/news/bin/ctlinnd \
-		/usr/lib/news/bin/ctlinnd
+		/usr/lib/news/bin/ctlinnd \
+		/usr/bin/ctlinnd
 
 	findprog GZIP_PROG \
 		/usr/bin/gzip \

@@ -1,4 +1,4 @@
-/* @(#) $Id: krnlif.c,v 1.7 1999/06/20 17:47:46 deyke Exp $ */
+/* @(#) $Id: krnlif.c,v 1.8 1999/06/20 19:03:51 deyke Exp $ */
 
 #if defined linux
 
@@ -61,7 +61,9 @@
 
 #include <sys/types.h>
 
+#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 91)
 #include <sys/socket.h>
+#endif
 
 #include <linux/socket.h>
 #include <sys/ioctl.h>

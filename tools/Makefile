@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.41 1999/01/27 18:46:54 deyke Exp $
+# @(#) $Id: Makefile,v 1.42 1999/06/20 19:03:52 deyke Exp $
 
 TARGETS    = \
 	     check_seteugid \
@@ -66,3 +66,4 @@ clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 ###
 check_seteugid.o: ../lib/seteugid.h
 connect.o: ../lib/configure.h
+makeiprt.o: ../lib/configure.h
