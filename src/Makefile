@@ -132,6 +132,7 @@ OBJS          = alloc.o \
 		netlog.o \
 		netrom.o \
 		netuser.o \
+		ni.o \
 		nrdump.o \
 		nrs.o \
 		pathname.o \
@@ -233,6 +234,7 @@ SRCS          = alloc.c \
 		netlog.c \
 		netrom.c \
 		netuser.c \
+		ni.c \
 		nrdump.c \
 		nrs.c \
 		pathname.c \
@@ -415,6 +417,7 @@ netrom.o: global.h config.h netuser.h mbuf.h timer.h iface.h proc.h arp.h \
 	ip.h internet.h ax25.h lapb.h netrom.h session.h hardware.h telnet.h \
 	cmdparse.h trace.h login.h
 netuser.o: global.h netuser.h
+ni.o: global.h mbuf.h iface.h proc.h timer.h netuser.h trace.h hpux.h
 nrdump.o: global.h mbuf.h timer.h ax25.h iface.h proc.h netrom.h session.h \
 	hardware.h telnet.h trace.h
 nrs.o: global.h mbuf.h iface.h proc.h timer.h pktdrvr.h ax25.h nrs.h asy.h \

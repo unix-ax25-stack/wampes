@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.12 1992/05/14 13:20:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.13 1992/08/02 07:34:02 deyke Exp $ */
 
 /* Internet Telnet client
  * Copyright 1991 Phil Karn, KA9Q
@@ -27,8 +27,6 @@ static void wontopt __ARGS((struct telnet *tn, int opt));
 static void doopt __ARGS((struct telnet *tn, int opt));
 static void dontopt __ARGS((struct telnet *tn, int opt));
 static void answer __ARGS((struct telnet *tn, int r1, int r2));
-
-#define CTLZ    26
 
 int Refuse_echo = 0;
 int Tn_cr_mode = 0;    /* if true turn <cr> to <cr-nul> */

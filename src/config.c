@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.22 1992/07/24 20:00:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.23 1992/08/02 07:33:50 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -315,6 +315,8 @@ struct cmds Attab[] = {
 #endif
 	"ipip", ipip_attach, 0, 5,
 	"attach ipip <label> ip|udp <dest> <port>",
+	"ni", ni_attach, 0, 3,
+	"attach ni <label> <dest> [mask]",
 	NULLCHAR,
 };
 
