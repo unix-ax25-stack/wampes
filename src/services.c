@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.7 1994/05/06 17:16:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.8 1994/05/08 11:00:14 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -24,8 +24,8 @@ static struct port_table tcp_port_table[] = {
   "ftp-data",    IPPORT_FTPD,   /* ARPA file transfer protocol (data) */
   "netupds",     4715,
   "nntp",        IPPORT_NNTP,
-  "pop2",        IPPORT_POP,    /* Post Office Prot. v2 */
-  "pop3",        110,           /* Post Office Prot. v3 */
+  "pop2",        IPPORT_POP2,   /* Post Office Prot. v2 */
+  "pop3",        IPPORT_POP3,   /* Post Office Prot. v3 */
   "smtp",        IPPORT_SMTP,   /* ARPA simple mail transfer protocol */
   "telnet",      IPPORT_TELNET, /* ARPA virtual terminal protocol */
   "ttylink",     IPPORT_TTYLINK,

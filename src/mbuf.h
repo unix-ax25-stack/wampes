@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.h,v 1.9 1993/05/17 13:45:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.h,v 1.10 1994/05/08 11:00:13 deyke Exp $ */
 
 #ifndef _MBUF_H
 #define _MBUF_H
@@ -16,11 +16,11 @@ extern long Pushalloc;          /* Calls to pushdown that call malloc() */
 struct mbuf {
 	struct mbuf *next;      /* Links mbufs belonging to single packets */
 	struct mbuf *anext;     /* Links packets on queues */
-	uint16 size;            /* Size of associated data buffer */
 	int refcnt;             /* Reference count */
 	struct mbuf *dup;       /* Pointer to duplicated mbuf */
 	char *data;             /* Active working pointers */
 	uint16 cnt;
+	uint16 size;            /* Size of associated data buffer */
 };
 #define NULLBUF (struct mbuf *)0
 #define NULLBUFP (struct mbuf **)0

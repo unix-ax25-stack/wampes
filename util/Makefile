@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.50 1994/05/05 11:18:18 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.51 1994/05/08 11:00:23 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -9,7 +9,7 @@ MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 SLIBS      =
 
-TARGETS    = cnet md5 mkhostdb netupdc netupds path pop2d qth udbm
+TARGETS    = cnet md5 mkhostdb netupdc netupds path pop2d pop3d qth udbm
 
 all:;   chmod 755 genupd
 	@case "`uname -sr`" in \
@@ -127,6 +127,11 @@ pop2d:  pop2d.o $(LIBS)
 	@sleep 1
 	$(LD) $(LDFLAGS) pop2d.o $(LIBS) $(SLIBS) -o $@
 
+pop3d:  pop3d.o $(LIBS)
+	$(RMTARGET)
+	@sleep 1
+	$(LD) $(LDFLAGS) pop3d.o $(LIBS) $(SLIBS) -o $@
+
 qth:    qth.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
@@ -145,6 +150,7 @@ install: \
 	netupds \
 	/usr/local/bin/path \
 	pop2d \
+	pop3d \
 	/usr/local/bin/qth \
 	/usr/local/etc/udbm
 
@@ -188,4 +194,5 @@ netupdc.o: ../lib/buildsaddr.h ../lib/configure.h netupd.h ../lib/strdup.h
 netupds.o: ../lib/configure.h netupd.h
 path.o: ../lib/strdup.h
 pop2d.o: ../lib/configure.h ../lib/lockfile.h
+pop3d.o: ../lib/configure.h ../lib/lockfile.h
 udbm.o: ../lib/bbs.h ../lib/configure.h ../lib/calc_crc.h ../lib/callvalid.h

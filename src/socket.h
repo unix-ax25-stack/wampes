@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.16 1994/05/06 17:16:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.17 1994/05/08 11:00:15 deyke Exp $ */
 
 #ifndef _SOCKET_H
 #define _SOCKET_H
@@ -35,7 +35,8 @@
 #define IPPORT_MTP      57      /* Secondary telnet protocol */
 #define IPPORT_FINGER   79      /* Finger port */
 #define IPPORT_TTYLINK  87      /* Chat port */
-#define IPPORT_POP      109     /* pop2 port */
+#define IPPORT_POP2     109     /* pop2 port */
+#define IPPORT_POP3     110     /* pop3 port */
 #define IPPORT_NNTP     119     /* Netnews port */
 #define IPPORT_LOGIN    513     /* BSD rlogin port */
 #define IPPORT_TERM     5000    /* Serial interface server port */

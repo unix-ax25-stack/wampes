@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.3 1994/05/05 11:17:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.4 1994/05/08 11:00:14 deyke Exp $ */
 
 /* Simple Network Time Protocol (SNTP) (see RFC1361) */
 
@@ -23,6 +23,7 @@ int adjtime(const struct timeval *delta, struct timeval *olddelta);
 #include "session.h"
 
 #define NTP_MIN_PACKET_SIZE 48
+#define NTP_PACKET_SIZE 60
 
 #define NTP_MAXSTRATUM 15
 
@@ -174,24 +175,30 @@ static void putsigned64(double d, unsigned long *buf)
 
 static struct mbuf *htonntp(const struct pkt *pkt)
 {
-	unsigned long buf[15];
 
-	buf[0] = htonl(((pkt->leap      & 0x03) << 30) |
-		       ((pkt->version   & 0x07) << 27) |
-		       ((pkt->mode      & 0x07) << 24) |
-		       ((pkt->stratum   & 0xff) << 16) |
-		       ((pkt->poll      & 0xff) <<  8) |
-			(pkt->precision & 0xff));
-	putsigned32(pkt->rootdelay, buf + 1);
-	putsigned32(pkt->rootdispersion, buf + 2);
-	buf[3] = htonl(pkt->refid);
-	putsigned64(pkt->reftime, buf + 4);
-	putsigned64(pkt->org, buf + 6);
-	putsigned64(pkt->rec, buf + 8);
-	putsigned64(pkt->xmt, buf + 10);
-	buf[12] = htonl(pkt->keyid);
-	memcpy((char *) (buf + 13), pkt->check, sizeof(pkt->check));
-	return qdata((char *) buf, sizeof(buf));
+	struct mbuf *bp;
+	unsigned long *p;
+
+	if (bp = ambufw(NTP_PACKET_SIZE)) {
+		bp->cnt = NTP_PACKET_SIZE;
+		p = (unsigned long *) bp->data;
+		*p++ = htonl(((pkt->leap      & 0x03) << 30) |
+			     ((pkt->version   & 0x07) << 27) |
+			     ((pkt->mode      & 0x07) << 24) |
+			     ((pkt->stratum   & 0xff) << 16) |
+			     ((pkt->poll      & 0xff) <<  8) |
+			      (pkt->precision & 0xff));
+		putsigned32(pkt->rootdelay, p++);
+		putsigned32(pkt->rootdispersion, p++);
+		*p++ = htonl(pkt->refid);
+		putsigned64(pkt->reftime, p); p += 2;
+		putsigned64(pkt->org, p); p += 2;
+		putsigned64(pkt->rec, p); p += 2;
+		putsigned64(pkt->xmt, p); p += 2;
+		*p++ = htonl(pkt->keyid);
+		memcpy((char *) p, pkt->check, sizeof(pkt->check));
+	}
+	return bp;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -293,7 +300,7 @@ static void sntp_server(struct iface *iface, struct udp_cb *ucb, int cnt)
 	pkt.rootdispersion = 0.0;
 	pkt.refid = ('U' << 24) | ('N' << 16) | ('I' << 8) | 'X';
 	pkt.reftime = rec;
-	if (!pkt.org) pkt.org = pkt.xmt;
+	pkt.org = pkt.xmt;
 	pkt.rec = rec;
 	pkt.keyid = 0;
 	memset(pkt.check, 0, sizeof(pkt.check));
@@ -340,7 +347,6 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 	double now;
 	double rec;
 	double xmt;
-	int update_clock;
 	struct mbuf *bp;
 	struct peer *peer;
 	struct pkt pkt;
@@ -376,15 +382,10 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 	if (Ntrace)
 		printf("Delay = %.3f  Offset = %.3f\n", peer->delay, peer->offset);
 
-	if (peer->delay >= peer->mindelay) {
-		peer->mindelay = (peer->mindelay * 15.0 + peer->delay) / 16.0;
-		update_clock = 0;
-	} else {
-		peer->mindelay = peer->delay;
-		update_clock = 1;
-	}
-	if (pkt.rec >= pkt.org && pkt.xmt <= rec && !update_clock)
+	peer->mindelay = (peer->mindelay * 15.0 + peer->delay) / 16.0;
+	if (pkt.rec >= pkt.org && pkt.xmt <= rec && peer->delay >= peer->mindelay)
 		return;
+	peer->mindelay = peer->delay;
 
 	if (peer->offset > -Step_threshold && peer->offset < Step_threshold) {
 		tv.tv_sec = peer->offset;
@@ -421,9 +422,14 @@ static void sntp_client_send(void *arg)
 	peer = arg;
 	start_timer(&peer->timer);
 	memset((char *) & pkt, 0, sizeof(pkt));
+	pkt.leap = 3;
 	pkt.version = 1;
 	pkt.mode = 3;
-	pkt.org = pkt.xmt = peer->xmt = sys_clock();
+	pkt.poll = 6;
+	pkt.precision = -6;
+	pkt.rootdelay = 1.0;
+	pkt.rootdispersion = 1.0;
+	pkt.xmt = peer->xmt = sys_clock();
 	if (bp = htonntp(&pkt)) {
 		send_udp(&peer->ucb->socket, &peer->fsocket, DELAY, 0, bp, 0, 0, 0);
 		peer->sent++;

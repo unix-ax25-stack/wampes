@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.18 1994/02/07 12:39:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.19 1994/05/08 11:00:15 deyke Exp $ */
 
 /* User calls to TCP
  * Copyright 1991 Phil Karn, KA9Q
@@ -414,8 +414,10 @@ uint16 n;
 		return "telnet";
 	case IPPORT_SMTP:
 		return "smtp";
-	case IPPORT_POP:
-		return "pop";
+	case IPPORT_POP2:
+		return "pop2";
+	case IPPORT_POP3:
+		return "pop3";
 	default:
 		sprintf(buf,"%u",n);
 		return buf;
