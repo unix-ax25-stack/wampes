@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.36 1994/02/19 17:50:19 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.37 1994/02/22 13:22:34 deyke Exp $
 
 CFLAGS     = -I../lib
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
@@ -124,7 +124,7 @@ clean:; rm -f *.o $(TARGETS) *~
 depend:; @mkmf
 ###
 bbs.o: ../lib/bbs.h ../lib/configure.h ../lib/buildsaddr.h ../lib/callvalid.h \
-	../lib/seteugid.h ../lib/strdup.h
+	../lib/lockfile.h ../lib/seteugid.h ../lib/strdup.h
 findpath.o: ../lib/bbs.h ../lib/configure.h ../lib/calc_crc.h \
 	../lib/callvalid.h
 killdup.o: ../lib/bbs.h ../lib/configure.h ../lib/md5.h

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/qth.c,v 1.11 1993/10/13 22:31:24 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/qth.c,v 1.12 1994/02/22 13:22:50 deyke Exp $";
 #endif
 
 /* qth: qth, locator, distance, and course computations */
@@ -211,7 +211,7 @@ static int get_int(const char *s, int lower, int upper)
 {
   int i;
 
-  if (!sscanf(s, "%d", &i)) usage();
+  if (!sscanf((char *) s, "%d", &i)) usage();
   if (i < lower || i > upper) usage();
   return i;
 }

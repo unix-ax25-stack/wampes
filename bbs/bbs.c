@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.73 1994/02/07 12:38:44 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.74 1994/02/22 13:22:35 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -49,6 +49,7 @@ extern int optind;
 #include "buildsaddr.h"
 #include "callvalid.h"
 #include "configure.h"
+#include "lockfile.h"
 #include "seteugid.h"
 #include "strdup.h"
 
@@ -114,7 +115,6 @@ static int debug;
 static int doforward;
 static int errors;
 static int fdindex;
-static int fdlock = -1;
 static int fdseq;
 static int level;
 static int mode = BBS;
@@ -142,8 +142,6 @@ static char *getfilename(int mesg);
 static void get_seq(void);
 static void put_seq(void);
 static void wait_for_prompt(void);
-static void lock(void);
-static void unlock(void);
 static int get_index(int n, struct index *index);
 static int read_allowed(const struct index *index);
 static char *get_user_from_path(char *path);
@@ -508,7 +506,6 @@ static void get_seq(void)
 
   char buf[16];
   char fname[1024];
-  struct flock flk;
 
   if (mode != BBS) return;
   sprintf(fname, "%s/%s", user.dir, SEQFILE);
@@ -516,16 +513,7 @@ static void get_seq(void)
   fdseq = open(fname, O_RDWR | O_CREAT, 0644);
   seteugid(0, 0);
   if (fdseq < 0) halt();
-#ifdef ibm032
-  if (flock(fdseq, LOCK_EX | LOCK_NB) == -1)
-#else
-  flk.l_type = F_WRLCK;
-  flk.l_whence = SEEK_SET;
-  flk.l_start = 0;
-  flk.l_len = 0;
-  if (fcntl(fdseq, F_SETLK, &flk) == -1)
-#endif
-  {
+  if (lock_fd(fdseq, 1)) {
     puts("Sorry, you are already running another BBS.\n");
     exit(1);
   }
@@ -559,43 +547,6 @@ static void wait_for_prompt(void)
     if (!getstring(buf)) exit(1);
     l = strlen(buf);
   } while (!l || buf[l-1] != '>');
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void lock(void)
-{
-  struct flock flk;
-
-  if (fdlock < 0) {
-    if ((fdlock = open(LOCKFILE, O_RDWR | O_CREAT, 0644)) < 0) halt();
-  }
-#ifdef ibm032
-  if (flock(fdlock, LOCK_EX) == -1) halt();
-#else
-  flk.l_type = F_WRLCK;
-  flk.l_whence = SEEK_SET;
-  flk.l_start = 0;
-  flk.l_len = 0;
-  if (fcntl(fdlock, F_SETLKW, &flk) == -1) halt();
-#endif
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void unlock(void)
-{
-  struct flock flk;
-
-#ifdef ibm032
-  if (flock(fdlock, LOCK_UN) == -1) halt();
-#else
-  flk.l_type = F_UNLCK;
-  flk.l_whence = SEEK_SET;
-  flk.l_start = 0;
-  flk.l_len = 0;
-  if (fcntl(fdlock, F_SETLK, &flk) == -1) halt();
-#endif
 }
 
 /*---------------------------------------------------------------------------*/
@@ -700,12 +651,13 @@ static void send_to_bbs(struct mail *mail)
   FILE *fp;
   datum datum_bid;
   datum datum_offset;
+  int fdlock;
   long offset;
   struct index index;
   struct strlist *p;
 
   if (!*mail->subject) return;
-  lock();
+  if ((fdlock = lock_file(LOCKFILE, 0)) < 0) halt();
   if (msg_uniq(mail->bid, mail->mid)) {
     if (lseek(fdindex, -sizeof(struct index), SEEK_END) < 0)
       index.mesg = 1;
@@ -756,7 +708,7 @@ static void send_to_bbs(struct mail *mail)
       put_seq();
     }
   }
-  unlock();
+  close(fdlock);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -987,10 +939,11 @@ static void route_mail(struct mail *mail)
 
 #define MidSuffix "@bbs.net"
 
-  FILE *fp;
   char *cp;
   char *tohost;
   char *touser;
+  char buf[16];
+  int fdbid;
   int n;
   struct strlist *p;
 
@@ -1024,16 +977,13 @@ static void route_mail(struct mail *mail)
     mail->bid[strlen(mail->bid)-strlen(MidSuffix)] = 0;
   }
   if (!*mail->bid) {
-    n = 0;
-    lock();
-    if (fp = fopen(BIDFILE, "r")) {
-      fscanf(fp, "%d", &n);
-      fclose(fp);
-    }
+    if ((fdbid = lock_file(BIDFILE, 0)) < 0) halt();
+    n = (read(fdbid, buf, sizeof(buf)) >= 2) ? atoi(buf) : 0;
     n++;
-    if (!(fp = fopen(BIDFILE, "w")) || fprintf(fp, "%d\n", n) < 0) halt();
-    fclose(fp);
-    unlock();
+    sprintf(buf, "%d\n", n);
+    if (lseek(fdbid, 0L, SEEK_SET)) halt();
+    if (write(fdbid, buf, strlen(buf)) != strlen(buf)) halt();
+    close(fdbid);
     sprintf(mail->bid, "%012d", n);
     strncpy(mail->bid, myhostname, strlen(myhostname));
   }
@@ -1798,6 +1748,7 @@ static void send_command(int argc, char **argv)
   char line[1024];
   char path[1024];
   int check_header = 1;
+  int fdlock;
   int i;
   int unique;
   struct mail *mail;
@@ -1844,9 +1795,9 @@ static void send_command(int argc, char **argv)
   if (*mail->bid) {
     mail->bid[LEN_BID] = 0;
     strupc(mail->bid);
-    lock();
+    if ((fdlock = lock_file(LOCKFILE, 0)) < 0) halt();
     unique = msg_uniq(mail->bid, mail->mid);
-    unlock();
+    close(fdlock);
     if (!unique) {
       puts("No");
       free_mail(mail);
@@ -2525,7 +2476,7 @@ int main(int argc, char **argv)
 
   umask(022);
 
-  sscanf(rcsid, "%*s %*s %*s %s %s %s %s %s",
+  sscanf((char *) rcsid, "%*s %*s %*s %s %s %s %s %s",
 		revision.number,
 		revision.date,
 		revision.time,
