@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.54 1988/10/08 16:06:42 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.55 1988/10/08 17:11:58 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -30,7 +30,7 @@ extern void free();
 
 #define DEBUGDIR    "/tmp/bbs"
 #define INFOFILE    "/usr/local/lib/station.data"
-#define MYDESC      "[WAMPES BBS Gaertringen, jn48kp]"
+#define MYDESC      "[DK5SG BBS Gaertringen, jn48kp]"
 #define NARGS       20
 #define WRKDIR      "/users/bbs"
 
@@ -39,6 +39,14 @@ extern void free();
 #define LEN_TO      8
 #define LEN_AT      8
 #define LEN_FROM    8
+
+struct revision {
+  char  number[16];
+  char  date[16];
+  char  time[16];
+  char  author[16];
+  char  state[16];
+} revision;
 
 struct index {
   long  size;
@@ -589,7 +597,8 @@ struct mail *mail;
       _exit(1);
     case 0:
       if (!(fp = popen("/usr/bin/rnews", "w"))) _exit(1);
-      fprintf(fp, "Relay-Version: DK5SG BBS $Revision: 1.54 $; site %s\n", myhostname);
+      fprintf(fp, "Relay-Version: DK5SG BBS version %s %s; site %s.ampr.org\n",
+		  revision.number, revision.date, myhostname);
       fromhost = get_host_from_path(mail->from);
       fprintf(fp, "From: %s@%s%s\n", get_user_from_path(mail->from), fromhost, strchr(fromhost, '.') ? "" : ".ampr.org");
       mst = mail->date - 7 * 60 * 60;
@@ -610,7 +619,8 @@ struct mail *mail;
 	fprintf(fp, "Newsgroups: %s.test\n", myhostname);
       else
 	fprintf(fp, "Newsgroups: dnet.ham\n");
-      fprintf(fp, "Posting-Version: DK5SG BBS $Revision: 1.54 $; site %s.ampr.org\n", myhostname);
+      fprintf(fp, "Posting-Version: DK5SG BBS version %s %s; site %s.ampr.org\n",
+		  revision.number, revision.date, myhostname);
       putc('\n', fp);
       for (p = mail->head; p; p = p->next) {
 	fputs(p->str, fp);
@@ -1483,22 +1493,12 @@ static void r_cmd()
 
 static void v_cmd()
 {
-
-  char  *cp;
-  static char  date[] = "$Date: 1988/10/08 16:06:42 $";
-  static char  revision[] = "$Revision: 1.54 $";
-
   if (arg[0][1]) {
     unknown_command();
     return;
   }
-  if (cp = strchr(revision + 1, '$')) *cp = '\0';
-  if (cp = strchr(date + 1, '$')) *cp = '\0';
-  puts("DK5SG BBS");
-  puts(revision + 1);
-  puts(date + 1);
-  printf("Active Mesgs: %d\n", numbmesg());
-  printf("Next Mesg No: %d\n", lastmesg() + 1);
+  printf("DK5SG BBS %s %s\n", revision.number, revision.date);
+  printf("Active: %d   Next: %d\n", numbmesg(), lastmesg() + 1);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1511,7 +1511,7 @@ static void bbs()
   int  i;
   register char  *p;
 
-  puts("[MBL-$]");
+  printf("[DK5SG-%s-H$]\n", revision.number);
   for (; ; ) {
     if (hostmode)
       puts(">");
@@ -1567,6 +1567,9 @@ char  **argv;
   int  err_flag = 0;
   int  mode = BBS;
 
+  sscanf(rcsid, "%*s %*s %*s %s %s %s %s %s",
+		revision.number, revision.date, revision.time,
+		revision.author, revision.state);
   superuser = (getuid() == 0 && getgid() == 1);
   umask(022);
   if (uname(&utsname)) halt();
