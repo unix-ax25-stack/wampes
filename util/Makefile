@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.28 1993/06/21 21:47:39 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.29 1993/06/23 06:09:51 deyke Exp $
 
 CFLAGS     = -I../lib
 OS         = "`uname -s`"
@@ -16,7 +16,7 @@ all:;   chmod 755 genupd
 	elif [ $(OS) = Linux ] ; then \
 		make -i \
 		'CC=gcc' \
-		'CFLAGS=-O6 -s -N -I../lib' \
+		'CFLAGS=-O6 -s -I../lib' \
 		'LIBS=../lib/libutil.a -ldbm' \
 		_all; \
 	elif [ $(OS) = 386BSD ] ; then \

@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.58 1993/06/21 21:47:31 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.59 1993/06/23 06:09:58 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -1387,6 +1387,7 @@ static void f_command(int argc, char **argv)
   char subject[1024];
   char tmp1[1024];
   char tmp2[1024];
+  char tmp3[1024];
   char to[1024];
   char xfile[1024];
   int do_not_exit;
@@ -1418,24 +1419,30 @@ static void f_command(int argc, char **argv)
     for (; p = filelist; filelist = p->next, free(p)) {
       sprintf(cfile, "/usr/spool/uucp/%s/%s", user.name, p->name);
       if (!(fp = fopen(cfile, "r"))) continue;
-      *dfile = *xfile = 0;
+      *dfile = *xfile = *to = 0;
       while (fgets(line, sizeof(line), fp)) {
+	if (*line == 'E' && sscanf(line, "%*s %*s %*s %*s %*s %s %*s %*s %*s %s %s", tmp1, tmp2, tmp3) == 3 && *tmp1 == 'D' && !strcmp(tmp2, "rmail")) {
+	  sprintf(dfile, "/usr/spool/uucp/%s/%s", user.name, tmp1);
+	  sprintf(to, "%s!%s", user.name, tmp3);
+	  strtrim(to);
+	}
 	if (*line == 'S' && sscanf(line, "%*s %*s %s %*s %*s %s", tmp1, tmp2) == 2 && *tmp1 == 'D')
 	  sprintf(dfile, "/usr/spool/uucp/%s/%s", user.name, tmp2);
 	if (*line == 'S' && sscanf(line, "%*s %*s %s %*s %*s %s", tmp1, tmp2) == 2 && *tmp1 == 'X')
 	  sprintf(xfile, "/usr/spool/uucp/%s/%s", user.name, tmp2);
       }
       fclose(fp);
-      if (!*dfile || !*xfile) continue;
-      if (!(fp = fopen(xfile, "r"))) continue;
-      *to = 0;
-      while (fgets(line, sizeof(line), fp))
-	if (!strncmp(line, "C rmail ", 8)) {
-	  sprintf(to, "%s!%s", user.name, line + 8);
-	  strtrim(to);
-	  break;
-	}
-      fclose(fp);
+      if (!*dfile) continue;
+      if (*xfile) {
+	if (!(fp = fopen(xfile, "r"))) continue;
+	while (fgets(line, sizeof(line), fp))
+	  if (!strncmp(line, "C rmail ", 8)) {
+	    sprintf(to, "%s!%s", user.name, line + 8);
+	    strtrim(to);
+	    break;
+	  }
+	fclose(fp);
+      }
       if (!*to) continue;
       if (!(fp = fopen(dfile, "r"))) continue;
       *from = *subject = *bid = 0;
@@ -1472,7 +1479,7 @@ static void f_command(int argc, char **argv)
       forward_message(&index, dfile, 1);
       if (unlink(cfile)) halt();
       if (unlink(dfile)) halt();
-      if (unlink(xfile)) halt();
+      if (*xfile && unlink(xfile)) halt();
       do_not_exit = 1;
     }
   }
