@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dl1sbl-1,v 1.38 1999/02/11 19:26:34 deyke Exp $
+# @(#) $Id: net.rc.dl1sbl-1,v 1.39 1999/04/21 19:56:49 deyke Exp $
 
 hostname     dl1sbl-1
 ax25 mycall  dl1sbl-1
@@ -9,6 +9,7 @@ attach axip                     # ax.25 over host ip
 attach ipip                     # ip over host ip
 attach ipip ipudp udp 20004     # ip over host udp
 attach netrom                   # ip over netrom
+attach ni ni dl1sbl             # ip to host ip
 
 ax25 route add axip default
 
@@ -32,6 +33,7 @@ route add  dh8saw-1.ampr.org    ipip     15.138.72.40
 route add  dj3eg-1.ampr.org     ipip     15.136.160.150
 route add  dk0hu-u.ampr.org     ipip     15.138.33.250
 route add  dk0hu.ampr.org       ipip     15.138.33.250
+route add  dl1sbl.ampr.org      ni
 route add  dl4sas-1.ampr.org    ipip     15.136.157.138
 route add  dl4sel-1.ampr.org    ipip     15.136.162.7
 route add  dl4sel.ampr.org      ipip     15.138.33.250
@@ -57,8 +59,6 @@ start domain
 start echo
 start ftp
 start sntp
-start tcpgate convers unix:/tcp/sockets/convers
-start tcpgate finger
 start time
 
 source /tcp/net.rc.local

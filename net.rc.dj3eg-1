@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dj3eg-1,v 1.36 1999/02/11 19:26:34 deyke Exp $
+# @(#) $Id: net.rc.dj3eg-1,v 1.37 1999/04/21 19:56:49 deyke Exp $
 
 hostname     dj3eg-1
 ax25 mycall  dj3eg-1
@@ -11,21 +11,22 @@ attach netrom                   # ip over netrom
 
 ax25 route add axip default
 
-axip route add dl1sbl-1 15.136.125.16           # hpbblba.bbn.hp.com
+axip route add dl1sbl-1 15.136.120.113  # twister.bbn.hp.com
 
-route add  44.130.0.0/16        ipip     15.136.125.16
-route add  44.143.0.0/16        ipip     15.136.125.16
-route add  db0sao-u.ampr.org    ipip     15.136.125.16
-route add  db0sao.ampr.org      ipip     15.136.125.16
-route add  df3du-1.ampr.org     ipip     15.136.125.16
-route add  df9sr-1.ampr.org     ipip     15.136.125.16
-route add  dh8saw-1.ampr.org    ipip     15.136.125.16
-route add  dk0hu-u.ampr.org     ipip     15.136.125.16
-route add  dk0hu.ampr.org       ipip     15.136.125.16
-route add  dl1sbl-1.ampr.org    ipip     15.136.125.16
-route add  dl4sas-1.ampr.org    ipip     15.136.125.16
-route add  dl4sel-1.ampr.org    ipip     15.136.125.16
-route add  dl4sel.ampr.org      ipip     15.136.125.16
+route add  44.130.0.0/16        ipip     15.136.120.113
+route add  44.143.0.0/16        ipip     15.136.120.113
+route add  db0sao-u.ampr.org    ipip     15.136.120.113
+route add  db0sao.ampr.org      ipip     15.136.120.113
+route add  df3du-1.ampr.org     ipip     15.136.120.113
+route add  df9sr-1.ampr.org     ipip     15.136.120.113
+route add  dh8saw-1.ampr.org    ipip     15.136.120.113
+route add  dk0hu-u.ampr.org     ipip     15.136.120.113
+route add  dk0hu.ampr.org       ipip     15.136.120.113
+route add  dl1sbl-1.ampr.org    ipip     15.136.120.113
+route add  dl1sbl.ampr.org      ipip     15.136.120.113
+route add  dl4sas-1.ampr.org    ipip     15.136.120.113
+route add  dl4sel-1.ampr.org    ipip     15.136.120.113
+route add  dl4sel.ampr.org      ipip     15.136.120.113
 
 source /tcp/netrom_links
 

@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dl4sel,v 1.32 1999/02/11 19:26:34 deyke Exp $
+# @(#) $Id: net.rc.dl4sel,v 1.33 1999/04/21 19:56:49 deyke Exp $
 
 hostname     dl4sel
 ax25 mycall  dl4sel
@@ -32,6 +32,7 @@ route add  dj3eg-1.ampr.org     tnc0     dk0hu.ampr.org
 route add  dk0hu-u.ampr.org     tnc0     dk0hu.ampr.org
 route add  dk0hu.ampr.org       tnc0
 route add  dl1sbl-1.ampr.org    tnc0     dk0hu.ampr.org
+route add  dl1sbl.ampr.org      tnc0     dk0hu.ampr.org
 route add  dl4sas-1.ampr.org    tnc0     dk0hu.ampr.org
 route add  dl4sel-1.ampr.org    tnc0     dk0hu.ampr.org
 

@@ -1,9 +1,9 @@
-# @(#) $Id: ip_routes,v 1.57 1999/02/11 19:26:34 deyke Exp $
+# @(#) $Id: ip_routes,v 1.58 1999/04/21 19:56:49 deyke Exp $
 
 #Host           Destination     Bits    Iface   Metric  Gateway         Private
 #------------------------------------------------------------------------------
 
-dk5sg           0               0       ipip       200  15.136.125.16
+dk5sg           0               0       ipip       200  15.136.120.113
 dk5sg           44.130.12.0     24      ipudp      200  15.254.48.2
 dk5sg           dk5sg-u         32      ni           2
 
@@ -13,25 +13,26 @@ dl1sbl-1        df9sr-1         32      ipip        20  15.136.35.218
 dl1sbl-1        dh8saw-1        32      ipip        20  15.138.72.40
 dl1sbl-1        dj3eg-1         32      ipip        20  15.136.160.150
 dl1sbl-1        dk0hu           32      ipip        20  15.138.33.250
+dl1sbl-1        dl1sbl          32      ni           2
 dl1sbl-1        dl4sas-1        32      ipip        20  15.136.157.138
 dl1sbl-1        dl4sel-1        32      ipip        20  15.136.162.7
 
 dk0hu           db0sao          32      ipip        20  192.1.1.1
 dk0hu           dk0hu-u         32      ni           2
-dk0hu           dl1sbl-1        32      ipip        20  15.136.125.16
+dk0hu           dl1sbl-1        32      ipip        20  15.136.120.113
 dk0hu           dl4sel          32      tnc0      2000
 
-df3du-1         dl1sbl-1        32      ipip        20  15.136.125.16
+df3du-1         dl1sbl-1        32      ipip        20  15.136.120.113
 
-df9sr-1         dl1sbl-1        32      ipip        20  15.136.125.16
+df9sr-1         dl1sbl-1        32      ipip        20  15.136.120.113
 
-dh8saw-1        dl1sbl-1        32      ipip        20  15.136.125.16
+dh8saw-1        dl1sbl-1        32      ipip        20  15.136.120.113
 
-dj3eg-1         dl1sbl-1        32      ipip        20  15.136.125.16
+dj3eg-1         dl1sbl-1        32      ipip        20  15.136.120.113
 
-dl4sas-1        dl1sbl-1        32      ipip        20  15.136.125.16
+dl4sas-1        dl1sbl-1        32      ipip        20  15.136.120.113
 
-dl4sel-1        dl1sbl-1        32      ipip        20  15.136.125.16
+dl4sel-1        dl1sbl-1        32      ipip        20  15.136.120.113
 
 db0sao          db0sao-u        32      ni           2
 db0sao          dk0hu           32      ipip        20  192.1.1.2

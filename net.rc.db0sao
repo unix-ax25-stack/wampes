@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.db0sao,v 1.63 1999/02/11 19:26:34 deyke Exp $
+# @(#) $Id: net.rc.db0sao,v 1.64 1999/04/21 19:56:49 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -50,6 +50,7 @@ route add  dj3eg-1.ampr.org     ipip     192.1.1.2
 route add  dk0hu-u.ampr.org     ipip     192.1.1.2
 route add  dk0hu.ampr.org       ipip     192.1.1.2
 route add  dl1sbl-1.ampr.org    ipip     192.1.1.2
+route add  dl1sbl.ampr.org      ipip     192.1.1.2
 route add  dl4sas-1.ampr.org    ipip     192.1.1.2
 route add  dl4sel-1.ampr.org    ipip     192.1.1.2
 route add  dl4sel.ampr.org      ipip     192.1.1.2
@@ -99,7 +100,7 @@ ax25 jumpstart db0ais    on
 ax25 jumpstart db0ndr    on
 ax25 jumpstart db0pic    on
 ax25 jumpstart db0pic-7  on
-ax25 jumpstart db0rbs    on
+# ax25 jumpstart db0rbs    on DB0RBS is FlexNet, must be OFF
 ax25 jumpstart db0sdx    on
 
 smtp timer 300
