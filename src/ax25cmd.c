@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25cmd.c,v 1.18 2002/01/12 15:55:53 dl9sau Exp $ */
+/* @(#) $Id: ax25cmd.c,v 1.19 2002/09/18 18:56:07 dl9sau Exp $ */
 
 /* AX25 control commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -612,7 +612,8 @@ void *p)
 
   axroute_add(iface, &hdr1, perm);
 #ifdef	AX25_VJCOMP
-  axrp = ax_routeptr(hdr.dest, 0);
+  axrp = ax_routeptr(hdr.dest, 1);
+			    // ^ dl9sau bugfix: 1, not 0
   axrp->vjcomp = vj;
 #endif
   return 0;

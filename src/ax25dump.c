@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25dump.c,v 1.15 2002/01/12 15:55:53 dl9sau Exp $ */
+/* @(#) $Id: ax25dump.c,v 1.16 2002/09/18 18:56:06 dl9sau Exp $ */
 
 /* AX25 header tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -27,6 +27,7 @@ int check       /* Not used */
 	int unsegmented;
 	struct ax25 hdr;
 	uint8 *hp;
+	char *is_dama;
 
 	fprintf(fp,"AX25: ");
 	/* Extract the address header */
@@ -71,6 +72,7 @@ int check       /* Not used */
 	/* Dump sequence numbers */
 	if((type & 0x3) != U)   /* I or S frame? */
 		fprintf(fp," NR=%d",(control>>5)&7);
+	is_dama = (!(hdr.source[ALEN] & 0x20) ? " [DAMA]\n" : "\n");
 	if(type == I || type == UI){
 		if(type == I)
 			fprintf(fp," NS=%d",(control>>1)&7);
@@ -88,48 +90,48 @@ int check       /* Not used */
 
 			switch(pid){
 			case PID_SEGMENT:
-				putc('\n',fp);
+				fputs(is_dama, fp);
 				break;  /* Already displayed */
 			case PID_ARP:
-				fprintf(fp," pid=ARP\n");
+				fprintf(fp," pid=ARP%s", is_dama);
 				arp_dump(fp,bpp);
 				break;
 			case PID_NETROM:
-				fprintf(fp," pid=NET/ROM\n");
+				fprintf(fp," pid=NET/ROM%s", is_dama);
 				/* Don't verify checksums unless unsegmented */
 				netrom_dump(fp,bpp,unsegmented);
 				break;
 			case PID_IP:
-				fprintf(fp," pid=IP\n");
+				fprintf(fp," pid=IP%s", is_dama);
 				/* Don't verify checksums unless unsegmented */
 				ip_dump(fp,bpp,unsegmented);
 				break;
 #ifdef  AX25_VJCOMP
                         case PID_VJUNCOMP:
-				fprintf(fp," pid=VJ\n");
+				fprintf(fp," pid=VJ%s", is_dama);
 				/* Don't verify checksums */
 				ip_dump(fp,bpp,0);
 				break;
                         case PID_VJCOMP:
-                                fprintf(fp," pid=VJC\n");
+                                fprintf(fp," pid=VJC%s", is_dama);
                                 /*sl_dump(fp,bpp,0);*/
                                 break;
 #endif
 			case PID_X25:
-				fprintf(fp," pid=X.25\n");
+				fprintf(fp," pid=X.25%s", is_dama);
 				break;
 			case PID_TEXNET:
-				fprintf(fp," pid=TEXNET\n");
+				fprintf(fp," pid=TEXNET%s", is_dama);
 				break;
 			case PID_FLEXNET:
-				fprintf(fp," pid=FLEXNET\n");
+				fprintf(fp," pid=FLEXNET%s", is_dama);
 				flexnet_dump(fp,bpp);
 				break;
 			case PID_NO_L3:
-				fprintf(fp," pid=Text\n");
+				fprintf(fp," pid=Text%s", is_dama);
 				break;
 			default:
-				fprintf(fp," pid=0x%x\n",pid);
+				fprintf(fp," pid=0x%x%s",pid, is_dama);
 			}
 		}
 	} else if(type == FRMR && pullup(bpp,frmr,3) == 3){
@@ -144,7 +146,7 @@ int check       /* Not used */
 			fprintf(fp," Too-long I-field");
 		if(frmr[2] & Z)
 			fprintf(fp," Invalid seq number");
-		putc('\n',fp);
+		fputs(is_dama, fp);
 	} else
 		putc('\n',fp);
 
