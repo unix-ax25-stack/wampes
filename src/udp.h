@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.h,v 1.9 1994/10/06 16:15:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.h,v 1.10 1995/12/20 09:46:59 deyke Exp $ */
 
 #ifndef _UDP_H
 #define _UDP_H
@@ -60,7 +60,6 @@ struct udp_cb {
 	int user;               /* User link */
 };
 extern struct udp_cb *Udps;     /* Hash table for UDP structures */
-#define NULLUDP (struct udp_cb *)0
 
 /* UDP primitives */
 
@@ -70,9 +69,9 @@ struct udp_cb *open_udp(struct socket *lsocket,
 	void (*r_upcall)(struct iface *iface,struct udp_cb *,int));
 int recv_udp(struct udp_cb *up,struct socket *fsocket,struct mbuf **bp);
 int send_udp(struct socket *lsocket,struct socket *fsocket,char tos,
-	char ttl,struct mbuf *data,uint16 length,uint16 id,char df);
-void udp_input(struct iface *iface,struct ip *ip,struct mbuf *bp,
-	int rxbroadcast);
+	char ttl,struct mbuf **data,uint16 length,uint16 id,char df);
+void udp_input(struct iface *iface,struct ip *ip,struct mbuf **bp,
+	int rxbroadcast,int32 said);
 void udp_garbage(int drastic);
 
 #ifdef HOPCHECK
@@ -87,20 +86,8 @@ void hop_icmp(struct udp_cb *ucb, int32 icsource, int32 ipdest,
 int st_udp(struct udp_cb *udp,int n);
 
 /* In udphdr.c: */
-struct mbuf *htonudp(struct udp *udp,struct mbuf *data,struct pseudo_header *ph);
+void htonudp(struct udp *udp,struct mbuf **data,struct pseudo_header *ph);
 int ntohudp(struct udp *udp,struct mbuf **bpp);
 uint16 udpcksum(struct mbuf *bp);
-
-/* In udpsocket.c: */
-int so_udp(struct usock *up,int protocol);
-int so_udp_bind(struct usock *up);
-int so_udp_conn(struct usock *up);
-int so_udp_recv(struct usock *up,struct mbuf **bpp,char *from,
-	int *fromlen);
-int so_udp_send(struct usock *up,struct mbuf *bp,char *to);
-int so_udp_qlen(struct usock *up,int rtx);
-int so_udp_shut(struct usock *up,int how);
-int so_udp_close(struct usock *up);
-int so_udp_stat(struct usock *up);
 
 #endif  /* _UDP_H */

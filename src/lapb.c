@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.33 1995/03/13 13:32:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.34 1995/12/20 09:46:48 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -12,24 +12,24 @@
 #include "lapb.h"
 #include "ip.h"
 
-static void handleit(struct ax25_cb *axp,int pid,struct mbuf *bp);
-static void procdata(struct ax25_cb *axp,struct mbuf *bp);
+static void handleit(struct ax25_cb *axp,int pid,struct mbuf **bp);
+static void procdata(struct ax25_cb *axp,struct mbuf **bp);
 static int ackours(struct ax25_cb *axp,uint16 n,int rex_all);
 static void clr_ex(struct ax25_cb *axp);
 static void enq_resp(struct ax25_cb *axp);
 static void inv_rex(struct ax25_cb *axp);
-static void resequence(struct ax25_cb *axp,struct mbuf *bp,int ns,int pf,int poll);
+static void resequence(struct ax25_cb *axp,struct mbuf **bpp,int ns,int pf,int poll);
 
 /* Process incoming frames */
 int
 lapb_input(
 struct iface *iface,
 struct ax25 *hdr,
-struct mbuf *bp)                /* Rest of frame, starting with ctl */
-{
+struct mbuf **bpp               /* Rest of frame, starting with ctl */
+){
 
 	struct ax25_cb *axp;    /* Link control structure */
-	int cmdrsp = hdr->cmdrsp;       /* Command/response flag */
+	enum lapb_cmdrsp cmdrsp = hdr->cmdrsp;  /* Command/response flag */
 	int control;
 	int class;              /* General class (I/S/U) of frame */
 	uint16 type;            /* Specific type (I/RR/RNR/etc) of frame */
@@ -42,14 +42,14 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 	int digipeat;
 	int32 bugfix;
 
-	if(bp == NULLBUF                   ){
-		free_p(bp);
+	if(bpp == NULL || *bpp == NULL){
+		free_p(bpp);
 		return -1;
 	}
 
 	/* Extract the various parts of the control field for easy use */
-	if((control = PULLCHAR(&bp)) == -1){
-		free_p(bp);     /* Probably not necessary */
+	if((control = PULLCHAR(bpp)) == -1){
+		free_p(bpp);    /* Probably not necessary */
 		return -1;
 	}
 	type = ftype(control);
@@ -64,9 +64,11 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 		case LAPB_RESPONSE:
 			final = YES;
 			break;
+		default:
+			break;
 		}
 	}
-	digipeat = (ismyax25addr(hdr->dest) == NULLIF);
+	digipeat = (ismyax25addr(hdr->dest) == NULL);
 	/* Extract sequence numbers, if present */
 	switch(class){
 	case I:
@@ -78,11 +80,11 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 	}
 
 	if(digipeat){
-		struct ax25_cb *axlast = NULLAX25;
+		struct ax25_cb *axlast = NULL;
 		for(axp = Ax25_cb; axp; axlast = axp,axp = axp->next)
 			if(addreq(hdr->source,axp->hdr.dest) &&
 			    addreq(hdr->dest,axp->hdr.source)){
-				if(axlast != NULLAX25){
+				if(axlast != NULL){
 					axlast->next = axp->next;
 					axp->next = Ax25_cb;
 					Ax25_cb = axp;
@@ -91,13 +93,13 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 			}
 	} else
 		axp = find_ax25(hdr->source);
-	if(axp == NULLAX25){
-		axp = cr_ax25(" ");
+	if(axp == NULL){
+		axp = cr_ax25((uint8 *) " ");
 		build_path(axp,iface,hdr,1);
 		if(digipeat){
-			axp->peer = cr_ax25(" ");
+			axp->peer = cr_ax25((uint8 *) " ");
 			axp->peer->peer = axp;
-			build_path(axp->peer,NULLIF,hdr,0);
+			build_path(axp->peer,NULL,hdr,0);
 		}
 	}
 
@@ -130,7 +132,7 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 					break;
 				case LAPB_SETUP:
 					if(axp->peer->routing_changes < 3){
-						build_path(axp->peer,NULLIF,hdr,0);
+						build_path(axp->peer,NULL,hdr,0);
 						sendctl(axp->peer,LAPB_COMMAND,SABM|PF);
 						start_timer(&axp->peer->t1);
 					}
@@ -150,13 +152,15 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 			break;
 		}
 		if(axp->state == LAPB_DISCONNECTED &&
-		   (axp->peer == NULLAX25 || axp->peer->state == LAPB_DISCONNECTED)){
-			if(axp->peer != NULLAX25)
+		   (axp->peer == NULL || axp->peer->state == LAPB_DISCONNECTED)){
+			if(axp->peer != NULL)
 				del_ax25(axp->peer);
 			del_ax25(axp);
-			free_p(bp);
+			free_p(bpp);
 			return 0;
 		}
+		break;
+	case LAPB_LISTEN:
 		break;
 	case LAPB_SETUP:
 		switch(type){
@@ -185,7 +189,7 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 			stop_timer(&axp->t1);
 			axp->reason = LB_DM;
 			lapbstate(axp,LAPB_DISCONNECTED);
-			free_p(bp);
+			free_p(bpp);
 			return 0;
 		default:        /* All other frames ignored */
 			break;
@@ -203,7 +207,7 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 		case DM:
 			stop_timer(&axp->t1);
 			lapbstate(axp,LAPB_DISCONNECTED);
-			free_p(bp);
+			free_p(bpp);
 			return 0;
 		default:        /* Respond with DM only to command polls */
 			if(poll)
@@ -220,8 +224,7 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 			stop_timer(&axp->t1);
 			start_timer(&axp->t3);
 			for(tmp = 0; tmp < 8; tmp++){
-				free_p(axp->reseq[tmp].bp);
-				axp->reseq[tmp].bp = NULLBUF;
+				free_p(&axp->reseq[tmp].bp);
 			}
 			axp->unack = axp->vr = axp->vs = 0;
 			lapbstate(axp,LAPB_CONNECTED); /* Purge queues */
@@ -233,12 +236,12 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 			stop_timer(&axp->t3);
 			axp->reason = LB_NORMAL;
 			lapbstate(axp,LAPB_DISCONNECTED);
-			free_p(bp);
+			free_p(bpp);
 			return 0;
 		case DM:
 			axp->reason = LB_DM;
 			lapbstate(axp,LAPB_DISCONNECTED);
-			free_p(bp);
+			free_p(bpp);
 			return 0;
 		case UA:
 			axp->flags.remotebusy = NO;
@@ -283,8 +286,7 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 			break;
 		case I:
 			ackours(axp,nr,0); /** == -1) */
-			resequence(axp,bp,ns,pf,poll);
-			bp = NULLBUF;
+			resequence(axp,bpp,ns,pf,poll);
 			break;
 		default:        /* All others ignored */
 			break;
@@ -298,8 +300,7 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 			stop_timer(&axp->t1);
 			start_timer(&axp->t3);
 			for(tmp = 0; tmp < 8; tmp++){
-				free_p(axp->reseq[tmp].bp);
-				axp->reseq[tmp].bp = NULLBUF;
+				free_p(&axp->reseq[tmp].bp);
 			}
 			axp->unack = axp->vr = axp->vs = 0;
 			lapbstate(axp,LAPB_CONNECTED); /* Purge queues */
@@ -312,12 +313,12 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 			/* axp->response = DM; */
 			axp->reason = LB_NORMAL;
 			lapbstate(axp,LAPB_DISCONNECTED);
-			free_p(bp);
+			free_p(bpp);
 			return 0;
 		case DM:
 			axp->reason = LB_DM;
 			lapbstate(axp,LAPB_DISCONNECTED);
-			free_p(bp);
+			free_p(bpp);
 			return 0;
 		case UA:
 			axp->flags.remotebusy = NO;
@@ -398,15 +399,14 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 			 */
 			if(!run_timer(&axp->t1))
 				start_timer(&axp->t1);
-			resequence(axp,bp,ns,pf,poll);
-			bp = NULLBUF;
+			resequence(axp,bpp,ns,pf,poll);
 			break;
 		default:
 			break;          /* Ignored */
 		}
 		break;
 	}
-	free_p(bp);     /* In case anything's left */
+	free_p(bpp);    /* In case anything's left */
 
 	/* See if we can send some data, perhaps piggybacking an ack.
 	 * If successful, lapb_output will clear axp->response.
@@ -433,8 +433,8 @@ static int
 ackours(
 struct ax25_cb *axp,
 uint16 n,
-int rex_all)
-{
+int rex_all
+){
 	struct mbuf *bp;
 	int acked = 0;  /* Count of frames acked by this ACK */
 	uint16 oldest;  /* Seq number of oldest unacked I-frame */
@@ -449,11 +449,11 @@ int rex_all)
 	 */
 	oldest = (axp->vs - axp->unack) & MMASK;
 	while(axp->unack != 0 && oldest != n){
-		if((bp = dequeue(&axp->txq)) == NULLBUF){
+		if((bp = dequeue(&axp->txq)) == NULL){
 			/* Acking unsent frame */
 			return -1;
 		}
-		free_p(bp);
+		free_p(&bp);
 		axp->unack--;
 		acked++;
 		if(axp->flags.rtt_run && axp->rtt_seq == oldest){
@@ -498,7 +498,7 @@ int rex_all)
 		 * may be queued
 		 */
 		tmp = (axp->maxframe - len_q(axp->txq)) * axp->paclen;
-		if(axp->t_upcall != NULLVFP && tmp > 0)
+		if(axp->t_upcall != NULL && tmp > 0)
 			(*axp->t_upcall)(axp,(int)tmp);
 		if(axp->peer && axp->peer->flags.rnrsent && !busy(axp->peer))
 			sendctl(axp->peer,LAPB_RESPONSE,RR);
@@ -553,7 +553,7 @@ struct ax25_cb *axp)
 int
 sendctl(
 struct ax25_cb *axp,
-int cmdrsp,
+enum lapb_cmdrsp cmdrsp,
 int cmd)
 {
 	switch(cmd & ~PF){
@@ -568,7 +568,7 @@ int cmd)
 	}
 	if((ftype((char)cmd) & 0x3) == S)       /* Insert V(R) if S frame */
 		cmd |= (axp->vr << 5);
-	return sendframe(axp,cmdrsp,cmd,NULLBUF);
+	return sendframe(axp,cmdrsp,cmd,NULL);
 }
 /* Start data transmission on link, if possible
  * Return number of frames sent
@@ -583,7 +583,7 @@ register struct ax25_cb *axp)
 	int sent = 0;
 	int i;
 
-	if(axp == NULLAX25
+	if(axp == NULL
 	 || (axp->state != LAPB_RECOVERY && axp->state != LAPB_CONNECTED)
 	 || axp->flags.remotebusy)
 		return 0;
@@ -591,7 +591,7 @@ register struct ax25_cb *axp)
 	/* Dig into the send queue for the first unsent frame */
 	bp = axp->txq;
 	for(i = 0; i < axp->unack; i++){
-		if(bp == NULLBUF)
+		if(bp == NULL)
 			break;  /* Nothing to do */
 		bp = bp->anext;
 	}
@@ -599,13 +599,13 @@ register struct ax25_cb *axp)
 	 * number of unacknowledged frames reaches the maxframe limit,
 	 * or when there are no more frames to send
 	 */
-	while(bp != NULLBUF && axp->unack < axp->maxframe){
+	while(bp != NULL && axp->unack < axp->maxframe){
 		control = I | (axp->vs++ << 1) | (axp->vr << 5);
 		axp->vs &= MMASK;
 		dup_p(&tbp,bp,0,len_p(bp));
-		if(tbp == NULLBUF)
+		if(tbp == NULL)
 			return sent;    /* Probably out of memory */
-		sendframe(axp,LAPB_COMMAND,control,tbp);
+		sendframe(axp,LAPB_COMMAND,control,&tbp);
 		axp->unack++;
 		/* We're implicitly acking any data he's sent, so stop any
 		 * delayed ack
@@ -626,13 +626,44 @@ register struct ax25_cb *axp)
 	}
 	return sent;
 }
+/* General purpose AX.25 frame output */
+int
+sendframe(
+struct ax25_cb *axp,
+enum lapb_cmdrsp cmdrsp,
+int ctl,
+struct mbuf **bpp
+){
+	struct iface *ifp;
+	struct mbuf *bp;
+
+	if(bpp == NULL){
+		bp = NULL;
+		bpp = &bp;
+	}
+	pushdown(bpp,NULL,1);
+	(*bpp)->data[0] = ctl;
+	if ((ctl & 3) != U)
+		stop_timer(&axp->t2);
+	axp->hdr.cmdrsp = cmdrsp;
+	htonax25(&axp->hdr,bpp);
+	if ((ifp = axp->iface)) {
+		if (ifp->forw)
+			ifp = ifp->forw;
+		logsrc(ifp,ifp->hwaddr);
+		logdest(ifp,axp->hdr.nextdigi != axp->hdr.ndigis ? axp->hdr.digis[axp->hdr.nextdigi] : axp->hdr.dest);
+		return (*ifp->raw)(ifp,bpp);
+	}
+	free_p(bpp);
+	return -1;
+}
 /* Set new link state */
 void
 lapbstate(
 struct ax25_cb *axp,
-int s)
-{
-	int oldstate;
+enum lapb_state s
+){
+	enum lapb_state oldstate;
 
 	oldstate = axp->state;
 	axp->state = s;
@@ -644,62 +675,63 @@ int s)
 		free_q(&axp->txq);
 		if (axp->peer)
 			disc_ax25(axp->peer);
-		if (axp->s_upcall == NULLVFP &&
+		if (axp->s_upcall == NULL &&
 		    (!axp->peer || axp->peer->state == LAPB_DISCONNECTED)) {
-			if (axp->peer != NULLAX25)
+			if (axp->peer != NULL)
 				del_ax25(axp->peer);
 			del_ax25(axp);
 			return;
 		}
 	}
 	/* Don't bother the client unless the state is really changing */
-	if(oldstate != s && axp->s_upcall != NULLVFP)
+	if(oldstate != s && axp->s_upcall != NULL)
 		(*axp->s_upcall)(axp,oldstate,s);
 }
 /* Resequence a valid incoming I frame */
 static void
 resequence(
 struct ax25_cb *axp,
-struct mbuf *bp,
+struct mbuf **bpp,
 int ns,
 int pf,
 int poll)
 {
 
-	char *p;
 	int cnt;
 	int old_vr;
 	int rejcond;
 	int sum;
 	int tmp;
 	struct axreseq *rp;
+	struct mbuf *bp;
 	struct mbuf *tp;
+	uint8 *p;
 
-	if(bp == NULLBUF)
+	if(bpp == NULL || *bpp == NULL)
 		return;
 
 	rp = &axp->reseq[ns];
-	if(ns != ((axp->vr - 1) & MMASK) && rp->bp == NULLBUF){
-		for(sum = 0,tp = bp;tp;tp = tp->next)
+	if(ns != ((axp->vr - 1) & MMASK) && rp->bp == NULL){
+		for(sum = 0,tp = *bpp;tp;tp = tp->next)
 			for(p = tp->data,cnt = tp->cnt;cnt > 0;cnt--)
 				sum += *p++ & 0xff;
 		if(ns == axp->vr || sum != rp->sum){
 			rp->sum = sum;
-			rp->bp = bp;
-			bp = NULLBUF;
+			rp->bp = *bpp;
+			*bpp = NULL;
 		}
 	}
-	if(bp != NULLBUF)
-		free_p(bp);
+	if(*bpp != NULL)
+		free_p(bpp);
 
 	old_vr = axp->vr;
-	while(axp->reseq[axp->vr].bp != NULLBUF){
+	while(axp->reseq[axp->vr].bp != NULL){
 		axp->vr = (axp->vr + 1) & MMASK;
 		axp->flags.rejsent = NO;
 	}
 	rejcond = 0;
 	for(tmp = (axp->vr + 1) & MMASK;tmp != old_vr;tmp = (tmp + 1) & MMASK)
-		if(axp->reseq[tmp].bp != NULLBUF){
+		if(axp->reseq[tmp].bp != NULL){
 			rejcond = 1;
 			break;
 		}
@@ -715,13 +747,13 @@ int poll)
 			start_timer(&axp->t2);
 	}
 
-	while((bp = axp->reseq[old_vr].bp) != NULLBUF){
-		axp->reseq[old_vr].bp = NULLBUF;
+	while((bp = axp->reseq[old_vr].bp) != NULL){
+		axp->reseq[old_vr].bp = NULL;
 		old_vr = (old_vr + 1) & MMASK;
 		if(axp->peer)
-			send_ax25(axp->peer,bp,-1);
+			send_ax25(axp->peer,&bp,-1);
 		else
-			procdata(axp,bp);
+			procdata(axp,&bp);
 	}
 }
 
@@ -729,51 +761,52 @@ int poll)
 static void
 procdata(
 struct ax25_cb *axp,
-struct mbuf *bp)
-{
+struct mbuf **bpp
+){
 	int pid;
 	int seq;
 
 	/* Extract level 3 PID */
-	if((pid = PULLCHAR(&bp)) == -1)
+	if((pid = PULLCHAR(bpp)) == -1)
 		return; /* No PID */
 
 	if(axp->segremain != 0){
 		/* Reassembly in progress; continue */
-		seq = PULLCHAR(&bp);
+		seq = PULLCHAR(bpp);
 		if(pid == PID_SEGMENT
 		 && (seq & SEG_REM) == axp->segremain - 1){
 			/* Correct, in-order segment */
-			append(&axp->rxasm,bp);
+			append(&axp->rxasm,bpp);
 			if((axp->segremain = (seq & SEG_REM)) == 0){
 				/* Done; kick it upstairs */
-				bp = axp->rxasm;
-				axp->rxasm = NULLBUF;
-				pid = PULLCHAR(&bp);
-				handleit(axp,pid,bp);
+				*bpp = axp->rxasm;
+				axp->rxasm = NULL;
+				pid = PULLCHAR(bpp);
+				handleit(axp,pid,bpp);
 			}
 		} else {
 			/* Error! */
-			free_p(axp->rxasm);
-			axp->rxasm = NULLBUF;
+			free_p(&axp->rxasm);
+			axp->rxasm = NULL;
 			axp->segremain = 0;
-			free_p(bp);
+			free_p(bpp);
 		}
 	} else {
 		/* No reassembly in progress */
 		if(pid == PID_SEGMENT){
 			/* Start reassembly */
-			seq = PULLCHAR(&bp);
+			seq = PULLCHAR(bpp);
 			if(!(seq & SEG_FIRST)){
-				free_p(bp);     /* not first seg - error! */
+				free_p(bpp);    /* not first seg - error! */
 			} else {
 				/* Put first segment on list */
 				axp->segremain = seq & SEG_REM;
-				axp->rxasm = bp;
+				axp->rxasm = (*bpp);
+				*bpp = NULL;
 			}
 		} else {
 			/* Normal frame; send upstairs */
-			handleit(axp,pid,bp);
+			handleit(axp,pid,bpp);
 		}
 	}
 }
@@ -782,10 +815,10 @@ struct mbuf *bp)
  */
 struct mbuf *
 segmenter(
-struct mbuf *bp,        /* Complete packet */
-uint16 ssize)           /* Max size of frame segments */
-{
-	struct mbuf *result = NULLBUF;
+struct mbuf **bpp,      /* Complete packet */
+uint16 ssize            /* Max size of frame segments */
+){
+	struct mbuf *result = NULL;
 	struct mbuf *bptmp;
 	uint16 len,offset;
 	int segments;
@@ -793,29 +826,31 @@ uint16 ssize)           /* Max size of frame segments */
 	/* See if packet is too small to segment. Note 1-byte grace factor
 	 * so the PID will not cause segmentation of a 256-byte IP datagram.
 	 */
-	len = len_p(bp);
-	if(len <= ssize+1)
-		return bp;      /* Too small to segment */
-
+	len = len_p(*bpp);
+	if(len <= ssize+1){
+		result = *bpp;
+		*bpp = NULL;
+		return result;  /* Too small to segment */
+	}
 	ssize -= 2;             /* ssize now equal to data portion size */
 	segments = 1 + (len - 1) / ssize;       /* # segments  */
 	offset = 0;
 
 	while(segments != 0){
-		offset += dup_p(&bptmp,bp,offset,ssize);
-		if(bptmp == NULLBUF){
+		offset += dup_p(&bptmp,*bpp,offset,ssize);
+		if(bptmp == NULL){
 			free_q(&result);
 			break;
 		}
 		/* Make room for segmentation header */
-		bptmp = pushdown(bptmp,2);
+		pushdown(&bptmp,NULL,2);
 		bptmp->data[0] = PID_SEGMENT;
 		bptmp->data[1] = --segments;
 		if(offset == ssize)
 			bptmp->data[1] |= SEG_FIRST;
-		enqueue(&result,bptmp);
+		enqueue(&result,&bptmp);
 	}
-	free_p(bp);
+	free_p(bpp);
 	return result;
 }
 
@@ -823,8 +858,8 @@ static void
 handleit(
 struct ax25_cb *axp,
 int pid,
-struct mbuf *bp)
-{
+struct mbuf **bpp
+){
 	struct axlink *ipp;
 
 	for(ipp = Axlink;ipp->funct != NULL;ipp++){
@@ -832,9 +867,9 @@ struct mbuf *bp)
 			break;
 	}
 	if(ipp->funct != NULL)
-		(*ipp->funct)(axp->iface,axp,axp->hdr.dest,axp->hdr.source,bp,0);
+		(*ipp->funct)(axp->iface,axp,axp->hdr.dest,axp->hdr.source,bpp,0);
 	else
-		free_p(bp);
+		free_p(bpp);
 }
 
 int
@@ -896,3 +931,22 @@ int reverse)
 	axp->mdev = (T1init * (1 + 2 * (axp->hdr.ndigis - axp->hdr.nextdigi)) + 2) / 4;
 	set_timer(&axp->t1, 4 * axp->mdev);
 }
+/* Handle ordinary incoming data (no network protocol) */
+void
+axnl3(
+struct iface *iface,
+struct ax25_cb *axp,
+uint8 *src,
+uint8 *dest,
+struct mbuf **bpp,
+int mcast
+){
+	if(axp == NULL){
+		free_p(bpp);
+	} else {
+		append(&axp->rxq,bpp);
+		if(axp->r_upcall != NULL)
+			(*axp->r_upcall)(axp,len_p(axp->rxq));
+	}
+}
+

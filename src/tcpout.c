@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.13 1994/10/09 08:23:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.14 1995/12/20 09:46:56 deyke Exp $ */
 
 /* TCP output segment processing
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,10 +13,10 @@
 
 static double mybackoff(int n)
 {
-  double b;
+	double b;
 
-  for (b = 1.0; n > 0; b *= 1.25, n--) ;
-  return b;
+	for (b = 1.0; n > 0; b *= 1.25, n--) ;
+	return b;
 }
 
 /* Send a segment on the specified connection. One gets sent only
@@ -26,9 +26,7 @@ void
 tcp_output(
 register struct tcb *tcb)
 {
-	struct pseudo_header ph;/* Pseudo-header for checksum calcs */
-	struct mbuf *hbp,*dbp;  /* Header and data buffer pointers */
-	uint16 hsize;           /* Size of header */
+	struct mbuf *dbp;       /* Header and data buffer pointers */
 	struct tcp seg;         /* Local working copy of header */
 	uint16 ssize;           /* Size of current segment being sent,
 				 * including SYN and FIN flags */
@@ -38,15 +36,18 @@ register struct tcb *tcb)
 				 * in the pipe but not yet acked */
 	int32 rto;              /* Retransmit timeout setting */
 
-	if(tcb == NULLTCB)
+	if(tcb == NULL)
 		return;
 
 	switch(tcb->state){
 	case TCP_LISTEN:
 	case TCP_CLOSED:
 		return; /* Don't send anything */
+	default:
+		break;
 	}
 	for(;;){
+		memset(&seg,0,sizeof(seg));
 		/* Compute data already in flight */
 		sent = tcb->snd.ptr - tcb->snd.una;
 
@@ -91,6 +92,13 @@ register struct tcb *tcb)
 			else
 				ssize = 0;      /* Don't send anything */
 		}
+		/* If we're forced to send an ack while retransmitting,
+		 * don't send any data. This will let us use the current
+		 * sequence number, which may be necessary for the
+		 * ack to be accepted by the receiver
+		 */
+		if(tcb->flags.force && tcb->snd.ptr != tcb->snd.nxt)
+			ssize = 0;
 		if(ssize == 0 && !tcb->flags.force)
 			break;          /* No need to send anything */
 
@@ -105,17 +113,8 @@ register struct tcb *tcb)
 		 * made. This allows this routine to be called from a
 		 * retransmission timeout with force=1.
 		 */
-		seg.flags.urg = 0; /* Not used in this implementation */
-		seg.flags.rst = 0;
 		seg.flags.ack = 1; /* Every state except TCP_SYN_SENT */
-		seg.flags.syn = 0; /* syn/fin/psh set later if needed */
-		seg.flags.fin = 0;
-		seg.flags.psh = 0;
 		seg.flags.congest = tcb->flags.congest;
-
-		hsize = TCPLEN; /* Except when SYN being sent */
-		seg.mss = 0;
-		seg.optlen = 0;
 
 		if(tcb->state == TCP_SYN_SENT)
 			seg.flags.ack = 0; /* Haven't seen anything yet */
@@ -125,15 +124,28 @@ register struct tcb *tcb)
 			/* Send SYN */
 			seg.flags.syn = 1;
 			dsize--;        /* SYN isn't really in snd queue */
-			/* Also send MSS */
+			/* Also send MSS, wscale and tstamp (if OK) */
 			seg.mss = Tcp_mss;
-			seg.optlen = 0;
-			hsize = TCPLEN + MSS_LENGTH;
+			seg.flags.mss = 1;
+			seg.wsopt = DEF_WSCALE;
+			seg.flags.wscale = 1;
+			if(Tcp_tstamps){
+				seg.flags.tstamp = 1;
+				seg.tsval = msclock();
+			}
 		}
-		seg.seq = tcb->snd.ptr;
-		seg.ack = tcb->rcv.nxt;
-		seg.wnd = (uint16) tcb->rcv.wnd;
-		seg.up = 0;
+		/* If there's no data, use snd.nxt rather than snd.ptr to
+		 * ensure ack acceptance in case we were retransmitting
+		 */
+		if(ssize == 0)
+			seg.seq = tcb->snd.nxt;
+		else
+			seg.seq = tcb->snd.ptr;
+		tcb->last_ack_sent = seg.ack = tcb->rcv.nxt;
+		if(seg.flags.syn || !tcb->flags.ws_ok)
+			seg.wnd = (uint16) tcb->rcv.wnd;
+		else
+			seg.wnd = (uint16) (tcb->rcv.wnd >> tcb->rcv.wind_scale);
 
 		/* Now try to extract some data from the send queue. Since
 		 * SYN and FIN occupy sequence space and are reflected in
@@ -182,17 +194,15 @@ register struct tcb *tcb)
 		if(seq_gt(tcb->snd.ptr,tcb->snd.nxt))
 			tcb->snd.nxt = tcb->snd.ptr;
 
-		/* Fill in fields of pseudo IP header */
-		ph.source = tcb->conn.local.address;
-		ph.dest = tcb->conn.remote.address;
-		ph.protocol = TCP_PTCL;
-		ph.length = hsize + dsize;
-
-		/* Generate TCP header, compute checksum, and link in data */
-		if((hbp = htontcp(&seg,dbp,&ph)) == NULLBUF){
-			free_p(dbp);
-			return;
+		if(tcb->flags.ts_ok && seg.flags.ack){
+			seg.flags.tstamp = 1;
+			seg.tsval = msclock();
+			seg.tsecr = tcb->ts_recent;
 		}
+		/* Generate TCP header, compute checksum, and link in data */
+		htontcp(&seg,&dbp,tcb->conn.local.address,
+		 tcb->conn.remote.address);
+
 		/* If we're sending some data or flags, start retransmission
 		 * and round trip timers if they aren't already running.
 		 */
@@ -204,7 +214,7 @@ register struct tcb *tcb)
 				start_timer(&tcb->timer);
 
 			/* If round trip timer isn't running, start it */
-			if(!tcb->flags.rtt_run){
+			if(tcb->flags.ts_ok || !tcb->flags.rtt_run){
 				tcb->flags.rtt_run = 1;
 				tcb->rtt_time = msclock();
 				tcb->rttseq = tcb->snd.ptr;
@@ -217,6 +227,6 @@ register struct tcb *tcb)
 			tcpOutSegs++;
 
 		ip_send(tcb->conn.local.address,tcb->conn.remote.address,
-		 TCP_PTCL,tcb->tos,0,hbp,ph.length,0,0);
+		 TCP_PTCL,tcb->tos,0,&dbp,len_p(dbp),0,0);
 	}
 }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25hdr.c,v 1.7 1994/10/06 16:15:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25hdr.c,v 1.8 1995/12/20 09:46:39 deyke Exp $ */
 
 /* AX25 header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -8,28 +8,28 @@
 #include "ax25.h"
 
 /* Convert a host-format AX.25 header into a mbuf ready for transmission */
-struct mbuf *
+void
 htonax25(
-register struct ax25 *hdr,
-struct mbuf *bp)
-{
-	register char *cp;
+struct ax25 *hdr,
+struct mbuf **bpp
+){
+	register uint8 *cp;
 	register uint16 i;
 
-	if(hdr == (struct ax25 *)NULL || hdr->ndigis > MAXDIGIS)
-		return NULLBUF;
+	if(hdr == (struct ax25 *)NULL || hdr->ndigis > MAXDIGIS || bpp == NULL)
+		return;
 
 #if 0   /* For later use */
 
 	/* Compress Flexnet header */
 	if (hdr->qso_num != -1) {
-		char *idest;
+		uint8 *idest;
 		if (hdr->ndigis && hdr->nextdigi != hdr->ndigis)
 			idest = hdr->digis[hdr->nextdigi];
 		else
 			idest = hdr->dest;
-		bp = pushdown(bp, 7);
-		cp = bp->data;
+		pushdown(bpp, NULL, 7);
+		cp = (*bpp)->data;
 		cp[0] = hdr->qso_num >> 6;
 		cp[1] = (hdr->qso_num << 2) | ((hdr->cmdrsp == LAPB_COMMAND) << 1) | 1;
 		cp[2] = ((idest[0] - 0x40) << 1) | (((idest[1] - 0x40) >> 5) & 0x03);
@@ -37,17 +37,17 @@ struct mbuf *bp)
 		cp[4] = ((idest[2] - 0x40) << 5) | (((idest[3] - 0x40) >> 1) & 0x3f);
 		cp[5] = ((idest[4] - 0x40) << 1) | (((idest[5] - 0x40) >> 5) & 0x03);
 		cp[6] = ((idest[5] - 0x40) << 3) | (((idest[6]       ) >> 1) & 0x0f);
-		return bp;
+		return;
 	}
 
 #endif
 
 	/* Allocate space for return buffer */
 	i = AXALEN * (2 + hdr->ndigis);
-	bp = pushdown(bp,i);
+	pushdown(bpp,NULL,i);
 
 	/* Now convert */
-	cp = bp->data;          /* cp -> dest field */
+	cp = (*bpp)->data;              /* cp -> dest field */
 
 	/* Generate destination field */
 	memcpy(cp,hdr->dest,AXALEN);
@@ -68,7 +68,7 @@ struct mbuf *bp)
 	/* Set E bit on source address if no digis */
 	if(hdr->ndigis == 0){
 		cp[ALEN] |= E;
-		return bp;
+		return;
 	} else
 		cp[ALEN] &= ~E;
 
@@ -87,7 +87,6 @@ struct mbuf *bp)
 			cp[ALEN] &= ~REPEATED;
 		cp += AXALEN;           /* cp -> next digi field */
 	}
-	return bp;
 }
 /* Convert a network-format AX.25 header into a host format structure
  * Return -1 if error, number of addresses if OK
@@ -95,9 +94,9 @@ struct mbuf *bp)
 int
 ntohax25(
 register struct ax25 *hdr,      /* Output structure */
-struct mbuf **bpp)
-{
-	register char *axp;
+struct mbuf **bpp
+){
+	register uint8 *axp;
 
 	if(pullup(bpp,hdr->dest,AXALEN) < AXALEN)
 		return -1;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.11 1994/10/06 16:15:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.12 1995/12/20 09:46:43 deyke Exp $ */
 
 /* System-dependent definitions of various files, spool directories, etc */
 #include <stdio.h>
@@ -6,7 +6,6 @@
 #include "global.h"
 #include "netuser.h"
 #include "files.h"
-/* #include "md5.h" */
 
 #ifdef  MSDOS
 char System[] = "MSDOS";

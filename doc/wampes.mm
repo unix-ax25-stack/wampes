@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 951119" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 951220" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 951119
+Version 951220
 .S
 .SP 2
 .S 15
@@ -1862,16 +1862,22 @@ TCP control block with the rtt in milliseconds.
 This command is useful to speed up recovery from a series of lost packets
 since it provides a manual bypass around the
 normal backoff retransmission timing mechanisms.
-.H 3 "tcp status" " [\fItcb_addr\fP]"
+.H 3 "tcp status" " [\fItcb_addr\fP [\fIfImilliseconds\fP]]"
 Without arguments, display several TCP-level statistics, plus a summary of
 all existing TCP connections, including TCP control block address,
 send and receive queue sizes, local and remote sockets, and connection state.
 If \fItcb_addr\fP is specified, a more detailed dump of the specified
 TCP control block is generated, including send and receive sequence numbers
 and timer information.
+If \fIfImilliseconds\fP is specified,
+the dump is repeated every \fImilliseconds\fP,
+until any keyboard input is made.
 .H 3 "tcp syndata" " [on|off]"
 Display or set the TCP SYN+data piggybacking flag.
 Some TCP implementations cannot handle SYN+data together.
+The default is \fBoff\fP.
+.H 3 "tcp timestamps" " [on|off]"
+Display or set the TCP timestamps flag.
 The default is \fBoff\fP.
 .H 3 "tcp trace" " [on|off]"
 Display or set the TCP trace flag.
@@ -1885,6 +1891,10 @@ for more information.
 .H 2 "telnet" " \fIhostid\fP [\fIport\fP]"
 Create a Telnet session to the specified host and enter converse mode.
 If \fIport\fP is given that port is used. Default port is 23.
+.H 2 "topt" " [on|off]"
+Display or set the flag controlling the display of client Telnet's
+option processing.
+The default is \fBoff\fP.
 .H 2 "trace" " [\fIinterface\fP [\fIflags\fP|subcommand [\fItracefile\fP]]]"
 Control packet tracing by the interface drivers.
 Specific bits in \fIflags\fP enable tracing of the various interfaces

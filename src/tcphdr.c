@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcphdr.c,v 1.7 1994/10/06 16:15:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcphdr.c,v 1.8 1995/12/20 09:46:55 deyke Exp $ */
 
 /* TCP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -10,26 +10,35 @@
 #include "internet.h"
 
 /* Convert TCP header in host format into mbuf ready for transmission,
- * link in data (if any). If ph != NULL, compute checksum, otherwise
- * take checksum from tcph->checksum
+ * link in data (if any).
+ *
+ * If checksum field is zero, recompute it, otherwise take the value
+ * in the host header.
  */
-struct mbuf *
+void
 htontcp(
-register struct tcp *tcph,
-struct mbuf *bp,
-struct pseudo_header *ph)
-{
+struct tcp *tcph,
+struct mbuf **bpp,      /* Data in, packet out */
+int32 ipsrc,            /* For computing header checksum */
+int32 ipdest
+){
 	uint16 hdrlen;
-	register char *cp;
+	register uint8 *cp;
 
-	hdrlen =  TCPLEN;
-	if(tcph->optlen > 0 && tcph->optlen <= TCP_MAXOPT){
-		hdrlen += tcph->optlen;
-	} else if(tcph->mss != 0){
+	if(bpp == NULL)
+		return;
+	hdrlen = TCPLEN;
+	if(tcph->flags.mss)
 		hdrlen += MSS_LENGTH;
-	}
-	bp = pushdown(bp,hdrlen);
-	cp = bp->data;
+	if(tcph->flags.tstamp)
+		hdrlen += TSTAMP_LENGTH;
+	if(tcph->flags.wscale)
+		hdrlen += WSCALE_LENGTH;
+
+	hdrlen = (hdrlen + 3) & 0xfc;   /* Round up to multiple of 4 */
+	pushdown(bpp,NULL,hdrlen);
+	cp = (*bpp)->data;
+	memset(cp,0,hdrlen);
 	cp = put16(cp,tcph->source);
 	cp = put16(cp,tcph->dest);
 	cp = put32(cp,tcph->seq);
@@ -52,42 +61,49 @@ struct pseudo_header *ph)
 		*cp |= 1;
 	cp++;
 	cp = put16(cp,tcph->wnd);
-	if(ph == NULLHEADER){
-		/* Use user-supplied checksum */
-		cp = put16(cp,tcph->checksum);
-	} else {
-		/* Zero out checksum field for later recalculation */
-		*cp++ = 0;
-		*cp++ = 0;
-	}
+	cp = put16(cp,tcph->checksum);
 	cp = put16(cp,tcph->up);
 
 	/* Write options, if any */
-	if(hdrlen > TCPLEN){
-		if(tcph->optlen > 0)
-			memcpy(cp,tcph->options,tcph->optlen);
-		else if(tcph->mss != 0){
-			*cp++ = MSS_KIND;
-			*cp++ = MSS_LENGTH;
-			cp = put16(cp,tcph->mss);
-		}
+	if(tcph->flags.mss){
+		*cp++ = MSS_KIND;
+		*cp++ = MSS_LENGTH;
+		cp = put16(cp,tcph->mss);
 	}
-	/* Recompute checksum, if requested */
-	if(ph != NULLHEADER)
-		put16(&bp->data[16],cksum(ph,bp,ph->length));
+	if(tcph->flags.tstamp){
+		*cp++ = TSTAMP_KIND;
+		*cp++ = TSTAMP_LENGTH;
+		cp = put32(cp,tcph->tsval);
+		cp = put32(cp,tcph->tsecr);
+	}
+	if(tcph->flags.wscale){
+		*cp++ = WSCALE_KIND;
+		*cp++ = WSCALE_LENGTH;
+		*cp++ = tcph->wsopt;
+	}
+	if(tcph->checksum == 0){
+		/* Recompute header checksum */
+		struct pseudo_header ph;
 
-	return bp;
+		ph.source = ipsrc;
+		ph.dest = ipdest;
+		ph.protocol = TCP_PTCL;
+		ph.length = len_p(*bpp);
+		put16(&(*bpp)->data[16],cksum(&ph,*bpp,ph.length));
+	}
 }
 /* Pull TCP header off mbuf */
 int
 ntohtcp(
-register struct tcp *tcph,
-struct mbuf **bpp)
-{
+struct tcp *tcph,
+struct mbuf **bpp
+){
 	int hdrlen,i,optlen,kind;
 	register int flags;
-	char hdrbuf[TCPLEN],*cp;
+	uint8 hdrbuf[TCPLEN],*cp;
+	uint8 options[TCP_MAXOPT];
 
+	memset(tcph,0,sizeof(struct tcp));
 	i = pullup(bpp,hdrbuf,TCPLEN);
 	/* Note that the results will be garbage if the header is too short.
 	 * We don't check for this because returned ICMP messages will be
@@ -99,54 +115,62 @@ struct mbuf **bpp)
 	tcph->ack = get32(&hdrbuf[8]);
 	hdrlen = (hdrbuf[12] & 0xf0) >> 2;
 	flags = hdrbuf[13];
-	tcph->flags.congest = flags & 64;
-	tcph->flags.urg = flags & 32;
-	tcph->flags.ack = flags & 16;
-	tcph->flags.psh = flags & 8;
-	tcph->flags.rst = flags & 4;
-	tcph->flags.syn = flags & 2;
-	tcph->flags.fin = flags & 1;
+	tcph->flags.congest = (flags & 64) ? 1 : 0;
+	tcph->flags.urg = (flags & 32) ? 1 : 0;
+	tcph->flags.ack = (flags & 16) ? 1 : 0;
+	tcph->flags.psh = (flags & 8) ? 1 : 0;
+	tcph->flags.rst = (flags & 4) ? 1 : 0;
+	tcph->flags.syn = (flags & 2) ? 1 : 0;
+	tcph->flags.fin = (flags & 1) ? 1 : 0;
 	tcph->wnd = get16(&hdrbuf[14]);
 	tcph->checksum = get16(&hdrbuf[16]);
 	tcph->up = get16(&hdrbuf[18]);
-	tcph->mss = 0;
-	tcph->optlen = hdrlen - TCPLEN;
+	optlen = hdrlen - TCPLEN;
 
-	/* Check for option field. Only space for one is allowed, but
-	 * since there's only one TCP option (MSS) this isn't a problem
-	 */
+	/* Check for option field */
 	if(i < TCPLEN || hdrlen < TCPLEN)
 		return -1;      /* Header smaller than legal minimum */
-	if(tcph->optlen == 0)
+	if(optlen == 0)
 		return (int)hdrlen;     /* No options, all done */
 
-	if(tcph->optlen > len_p(*bpp)){
+	if(optlen > len_p(*bpp)){
 		/* Remainder too short for options length specified */
 		return -1;
 	}
-	pullup(bpp,tcph->options,tcph->optlen); /* "Can't fail" */
+	pullup(bpp,options,optlen);     /* "Can't fail" */
 	/* Process options */
-	for(cp=tcph->options,i=tcph->optlen; i > 0;){
+	for(cp=options,i=optlen; i > 0;){
 		kind = *cp++;
+		i--;
 		/* Process single-byte options */
 		switch(kind){
 		case EOL_KIND:
-			i--;
-			cp++;
 			return (int)hdrlen;     /* End of options list */
 		case NOOP_KIND:
-			i--;
-			cp++;
 			continue;       /* Go look for next option */
 		}
 		/* All other options have a length field */
-		optlen = uchar(*cp++);
+		optlen = *cp++;
 
 		/* Process valid multi-byte options */
 		switch(kind){
 		case MSS_KIND:
 			if(optlen == MSS_LENGTH){
 				tcph->mss = get16(cp);
+				tcph->flags.mss = 1;
+			}
+			break;
+		case WSCALE_KIND:
+			if(optlen == WSCALE_LENGTH){
+				tcph->wsopt = *cp;
+				tcph->flags.wscale = 1;
+			}
+			break;
+		case TSTAMP_KIND:
+			if(optlen == TSTAMP_LENGTH){
+				tcph->tsval = get32(cp);
+				tcph->tsecr = get32(cp+4);
+				tcph->flags.tstamp = 1;
 			}
 			break;
 		}

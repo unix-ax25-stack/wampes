@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.19 1994/10/09 08:22:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.20 1995/12/20 09:46:42 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -8,8 +8,6 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
 
 #include "global.h"
@@ -74,7 +72,7 @@ static int32 in_addr_arpa(char *name);
 static struct mbuf *domain_server(struct mbuf *bp);
 static void domain_server_udp(struct iface *iface, struct udp_cb *up, int cnt);
 static void domain_server_tcp_recv(struct tcb *tcb, int32 cnt);
-static void domain_server_tcp_state(struct tcb *tcb, int old, int new);
+static void domain_server_tcp_state(struct tcb *tcb, enum tcp_state old, enum tcp_state new);
 static int docacheflush(int argc, char *argv[], void *p);
 static int docachelist(int argc, char *argv[], void *p);
 static int docache(int argc, char *argv[], void *p);
@@ -88,16 +86,16 @@ static int dousegethostby(int argc, char *argv[], void *p);
 
 static struct cmds Dcmds[] = {
 	"query",        dodnsquery,     0, 2, "domain query <name|addr>",
-	"trace",        dodnstrace,     0, 0, NULLCHAR,
-	"cache",        docache,        0, 0, NULLCHAR,
-	"usegethostby", dousegethostby, 0, 0, NULLCHAR,
-	NULLCHAR,
+	"trace",        dodnstrace,     0, 0, NULL,
+	"cache",        docache,        0, 0, NULL,
+	"usegethostby", dousegethostby, 0, 0, NULL,
+	NULL,
 };
 
 static struct cmds Dcachecmds[] = {
-	"list",         docachelist,    0, 0, NULLCHAR,
-	"flush",        docacheflush,   0, 0, NULLCHAR,
-	NULLCHAR,
+	"list",         docachelist,    0, 0, NULL,
+	"flush",        docacheflush,   0, 0, NULL,
+	NULL,
 };
 
 int
@@ -127,12 +125,12 @@ void *p)
   struct cache *cp;
 
   for (cp = Cache; cp; cp = cp->next)
-    printf("%-25.25s %u.%u.%u.%u\n",
+    printf("%-25.25s %ld.%ld.%ld.%ld\n",
 	   cp->name,
-	   uchar(cp->addr >> 24),
-	   uchar(cp->addr >> 16),
-	   uchar(cp->addr >>  8),
-	   uchar(cp->addr      ));
+	   (cp->addr >> 24) & 0xff,
+	   (cp->addr >> 16) & 0xff,
+	   (cp->addr >>  8) & 0xff,
+	   (cp->addr      ) & 0xff);
   return 0;
 }
 
@@ -174,11 +172,11 @@ void *p)
     if (!(addr = resolve(argv[1])))
       printf(Badhost, argv[1]);
     else
-      printf("%u.%u.%u.%u\n",
-	     uchar(addr >> 24),
-	     uchar(addr >> 16),
-	     uchar(addr >>  8),
-	     uchar(addr      ));
+      printf("%ld.%ld.%ld.%ld\n",
+	     (addr >> 24) & 0xff,
+	     (addr >> 16) & 0xff,
+	     (addr >>  8) & 0xff,
+	     (addr      ) & 0xff);
   }
   return 0;
 }
@@ -218,7 +216,7 @@ const char *s)
   int c;
 
   if (s)
-    while ((c = uchar(*s++)))
+    while ((c = (*s++ & 0xff)))
       if (c != '[' && c != ']' && !isdigit(c) && c != '.') return 0;
   return 1;
 }
@@ -260,7 +258,7 @@ char *name)
 
   if (isaddr(name)) return aton(name);
 
-  if (Nextcacheflushtime <= secclock()) docacheflush(0, (char **) 0, (void *) 0);
+  if (Nextcacheflushtime <= secclock()) docacheflush(0, 0, 0);
 
   strlwc(names[0], name);
   p = names[0] + strlen(names[0]) - 1;
@@ -292,7 +290,7 @@ char *name)
       dname.dsize = strlen(names[i]) + 1;
       daddr = dbm_fetch(Dbhostaddr, dname);
       if (daddr.dptr) {
-	memcpy((char *) &addr, daddr.dptr, sizeof(addr));
+	memcpy(&addr, daddr.dptr, sizeof(addr));
 	add_to_cache(names[i], addr);
 	return addr;
       }
@@ -325,7 +323,7 @@ int shorten)
 
   if (!addr) return "*";
 
-  if (Nextcacheflushtime <= secclock()) docacheflush(0, (char **) 0, (void *) 0);
+  if (Nextcacheflushtime <= secclock()) docacheflush(0, 0, 0);
 
   for (prev = 0, curr = Cache; curr; prev = curr, curr = curr->next)
     if (curr->addr == addr) {
@@ -338,7 +336,7 @@ int shorten)
     }
 
   if (Dbhostname || (Dbhostname = dbm_open(DBHOSTNAME, O_RDONLY, 0644))) {
-    daddr.dptr = (char *) & addr;
+    daddr.dptr = (char *) &addr;
     daddr.dsize = sizeof(addr);
     dname = dbm_fetch(Dbhostname, daddr);
     if (dname.dptr) {
@@ -349,7 +347,7 @@ int shorten)
 
   if (Usegethostby) {
     in_addr.s_addr = htonl(addr);
-    hp = gethostbyaddr((char *) & in_addr, sizeof(in_addr), AF_INET);
+    hp = gethostbyaddr((char *) &in_addr, sizeof(in_addr), AF_INET);
     if (hp) {
       strlwc(buf, hp->h_name);
       add_to_cache(buf, addr);
@@ -358,11 +356,11 @@ int shorten)
   }
 
   sprintf(buf,
-	  "%u.%u.%u.%u",
-	  uchar(addr >> 24),
-	  uchar(addr >> 16),
-	  uchar(addr >>  8),
-	  uchar(addr      ));
+	  "%ld.%ld.%ld.%ld",
+	  (addr >> 24) & 0xff,
+	  (addr >> 16) & 0xff,
+	  (addr >>  8) & 0xff,
+	  (addr      ) & 0xff);
   add_to_cache(buf, addr);
   return Cache->name;
 }
@@ -395,7 +393,7 @@ register struct rr *rrlp)
 {
 	register struct rr *rrp;
 
-	while((rrp = rrlp) != NULLRR){
+	while((rrp = rrlp) != NULL){
 		rrlp = rrlp->next;
 
 		free(rrp->comment);
@@ -426,7 +424,7 @@ register struct rr *rrlp)
 				break;
 			}
 		}
-		free((char *)rrp);
+		free(rrp);
 	}
 }
 
@@ -511,10 +509,10 @@ struct rr *rrp)
 {
 	char * stuff;
 
-	if(fp == NULLFILE || rrp == NULLRR)
+	if(fp == NULL || rrp == NULL)
 		return;
 
-	if(rrp->name == NULLCHAR && rrp->comment != NULLCHAR){
+	if(rrp->name == NULL && rrp->comment != NULL){
 		fprintf(fp,"%s",rrp->comment);
 		return;
 	}
@@ -538,11 +536,11 @@ struct rr *rrp)
 	}
 	switch(rrp->type){
 	case TYPE_A:
-		fprintf(fp,"\t%u.%u.%u.%u\n",
-			uchar(rrp->rdata.addr >> 24),
-			uchar(rrp->rdata.addr >> 16),
-			uchar(rrp->rdata.addr >>  8),
-			uchar(rrp->rdata.addr      ));
+		fprintf(fp,"\t%ld.%ld.%ld.%ld\n",
+			(rrp->rdata.addr >> 24) & 0xff,
+			(rrp->rdata.addr >> 16) & 0xff,
+			(rrp->rdata.addr >>  8) & 0xff,
+			(rrp->rdata.addr      ) & 0xff);
 		break;
 	case TYPE_CNAME:
 	case TYPE_MB:
@@ -595,21 +593,21 @@ struct dhdr *dhp)
 	 dhp->qr,dhp->opcode,dhp->aa,dhp->tc,dhp->rd,
 	 dhp->ra,dhp->rcode);
 	printf("%u questions:\n",dhp->qdcount);
-	for(rrp = dhp->questions; rrp != NULLRR; rrp = rrp->next){
+	for(rrp = dhp->questions; rrp != NULL; rrp = rrp->next){
 		stuff = dtype(rrp->type);
 		printf("%s type %s class %u\n",rrp->name,
 		 stuff,rrp->class);
 	}
 	printf("%u answers:\n",dhp->ancount);
-	for(rrp = dhp->answers; rrp != NULLRR; rrp = rrp->next){
+	for(rrp = dhp->answers; rrp != NULL; rrp = rrp->next){
 		put_rr(stdout,rrp);
 	}
 	printf("%u authority:\n",dhp->nscount);
-	for(rrp = dhp->authority; rrp != NULLRR; rrp = rrp->next){
+	for(rrp = dhp->authority; rrp != NULL; rrp = rrp->next){
 		put_rr(stdout,rrp);
 	}
 	printf("%u additional:\n",dhp->arcount);
-	for(rrp = dhp->additional; rrp != NULLRR; rrp = rrp->next){
+	for(rrp = dhp->additional; rrp != NULL; rrp = rrp->next){
 		put_rr(stdout,rrp);
 	}
 	fflush(stdout);
@@ -697,11 +695,11 @@ struct mbuf *bp)
       if (qp->class == CLASS_IN &&
 	  qp->type == TYPE_PTR &&
 	  (addr = resolve(qp->rdata.name))) {
-	sprintf(buffer, "%u.%u.%u.%u.in-addr.arpa.",
-		uchar(addr      ),
-		uchar(addr >>  8),
-		uchar(addr >> 16),
-		uchar(addr >> 24));
+	sprintf(buffer, "%ld.%ld.%ld.%ld.in-addr.arpa.",
+		(addr      ) & 0xff,
+		(addr >>  8) & 0xff,
+		(addr >> 16) & 0xff,
+		(addr >> 24) & 0xff);
 	rrp = make_rr(RR_NONE, buffer, CLASS_IN, TYPE_PTR, 86400, strlen(qp->rdata.name) + 1, qp->rdata.name);
 	rrp->next = dhp->questions;
 	dhp->questions = rrp;
@@ -767,7 +765,7 @@ int cnt)
 
   recv_udp(up, &fsocket, &bp);
   bp = domain_server(bp);
-  if (bp) send_udp(&up->socket, &fsocket, 0, 0, bp, 0, 0, 0);
+  if (bp) send_udp(&up->socket, &fsocket, 0, 0, &bp, 0, 0, 0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -781,41 +779,43 @@ static void domain_server_tcp_recv(struct tcb *tcb, int32 cnt)
 
   if (recv_tcp(tcb, &bp, cnt) <= 0) return;
   rcvqptr = (struct mbuf **) &tcb->user;
-  append(rcvqptr, bp);
+  append(rcvqptr, &bp);
   if (len_p(*rcvqptr) < 2) return;
   len = (int) pull16(rcvqptr);
   if (len_p(*rcvqptr) < len) {
-    *rcvqptr = pushdown(*rcvqptr, 2);
+    pushdown(rcvqptr, NULL, 2);
     put16((*rcvqptr)->data, len);
     return;
   }
   dup_p(&bp, *rcvqptr, 0, len);
-  pullup(rcvqptr, NULLCHAR, len);
+  pullup(rcvqptr, NULL, len);
   bp = domain_server(bp);
   if (!bp) return;
   len = len_p(bp);
-  bp = pushdown(bp, 2);
+  pushdown(&bp, NULL, 2);
   put16(bp->data, len);
-  send_tcp(tcb, bp);
+  send_tcp(tcb, &bp);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void domain_server_tcp_state(struct tcb *tcb, int old, int new)
+static void domain_server_tcp_state(struct tcb *tcb, enum tcp_state old, enum tcp_state new)
 {
   switch (new) {
   case TCP_ESTABLISHED:
     tcb->user = 0;
-    log(tcb, "open %s", tcp_port_name(tcb->conn.local.port));
+    logmsg(tcb, "open %s", tcp_port_name(tcb->conn.local.port));
     break;
   case TCP_CLOSE_WAIT:
     close_tcp(tcb);
     break;
   case TCP_CLOSED:
-    free_p((struct mbuf *) tcb->user);
-    log(tcb, "close %s", tcp_port_name(tcb->conn.local.port));
+    free_p((struct mbuf **) &tcb->user);
+    logmsg(tcb, "close %s", tcp_port_name(tcb->conn.local.port));
     del_tcp(tcb);
     if (tcb == Domain_tcb) Domain_tcb = 0;
+    break;
+  default:
     break;
   }
 }
@@ -855,7 +855,7 @@ void *p)
   lsocket.address = INADDR_ANY;
   lsocket.port = (argc < 2) ? IPPORT_DOMAIN : tcp_port_number(argv[1]);
   if (Domain_tcb) close_tcp(Domain_tcb);
-  Domain_tcb = open_tcp(&lsocket, NULLSOCK, TCP_SERVER, 0, domain_server_tcp_recv, NULLVFP, domain_server_tcp_state, 0, 0);
+  Domain_tcb = open_tcp(&lsocket, NULL, TCP_SERVER, 0, domain_server_tcp_recv, NULL, domain_server_tcp_state, 0, 0);
 
   return 0;
 }

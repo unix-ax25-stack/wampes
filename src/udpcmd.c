@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.9 1994/10/06 16:15:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.10 1995/12/20 09:46:58 deyke Exp $ */
 
 /* UDP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -15,8 +15,8 @@
 static int doudpstat(int argc,char *argv[],void *p);
 
 static struct cmds Udpcmds[] = {
-	"status",       doudpstat,      0, 0,   NULLCHAR,
-	NULLCHAR,
+	"status",       doudpstat,      0, 0,   NULL,
+	NULL,
 };
 int
 doudp(
@@ -34,7 +34,7 @@ int n)
 	if(n == 0)
 		printf("    &UCB Rcv-Q  Local socket\n");
 
-	return printf("%8lx%6u  %s\n",ptol(udp),udp->rcvcnt,pinet_udp(&udp->socket));
+	return printf("%p%6u  %s\n",udp,udp->rcvcnt,pinet_udp(&udp->socket));
 }
 
 /* Dump UDP statistics and control blocks */
@@ -61,7 +61,7 @@ void *p)
     }
 
 	printf("    &UCB Rcv-Q  Local socket\n");
-	for(udp = Udps;udp != NULLUDP; udp = udp->next){
+	for(udp = Udps;udp != NULL; udp = udp->next){
 		if(st_udp(udp,1) == EOF)
 			return 0;
 	}

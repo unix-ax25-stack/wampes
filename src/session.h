@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.9 1993/05/17 13:45:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.10 1995/12/20 09:46:53 deyke Exp $ */
 
 #ifndef _SESSION_H
 #define _SESSION_H
@@ -29,15 +29,18 @@ extern int Mode;
 #define CMD_MODE        1       /* Command mode */
 #define CONV_MODE       2       /* Converse mode */
 
+enum session_type {
+	NO_SESSION,
+	TELNET,
+	FTP,
+	AX25TNC,
+	FINGER,
+	NRSESSION
+};
+
 /* Session control structure; only one entry is used at a time */
 struct session {
-	int type;
-#define FREE    0
-#define TELNET  1
-#define FTP     2
-#define AX25TNC 3
-#define FINGER  4
-#define NRSESSION 5
+	enum session_type type;
 	char *name;     /* Name of remote host */
 	union {
 		struct ftp *ftp;
@@ -57,14 +60,13 @@ struct session {
 	FILE *upload;           /* Send file */
 	char *ufile;            /* Upload file name */
 };
-#define NULLSESSION     (struct session *)0
 
 extern unsigned Nsessions;              /* Maximum number of sessions */
 extern struct session *Sessions;        /* Session descriptors themselves */
 extern struct session *Current;         /* Always points to current session */
 
 /* In session.c: */
-void freesession(struct session *s);
+void freesession(struct session *sp);
 struct session *newsession(void);
 int dosession(int argc, char *argv[], void *p);
 int go(int argc,char *argv[],void *p);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpdump.c,v 1.7 1994/10/06 16:15:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpdump.c,v 1.8 1995/12/20 09:46:59 deyke Exp $ */
 
 /* UDP packet tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -25,7 +25,7 @@ int check)              /* If 0, bypass checksum verify */
 	struct pseudo_header ph;
 	uint16 csum;
 
-	if(bpp == NULLBUFP || *bpp == NULLBUF)
+	if(bpp == NULL || *bpp == NULL)
 		return;
 
 	fprintf(fp,"UDP:");

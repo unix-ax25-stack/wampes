@@ -1,40 +1,48 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.h,v 1.1 1993/12/29 16:32:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.h,v 1.2 1995/12/20 09:46:44 deyke Exp $ */
 
 #ifndef _FTPSERV_H
 #define _FTPSERV_H
 
+#include <stdio.h>
+
+#ifndef _FTP_H
+#include "ftp.h"
+#endif
+
 /* FTP commands */
-#define USER_CMD        0
-#define ACCT_CMD        1
-#define PASS_CMD        2
-#define TYPE_CMD        3
-#define LIST_CMD        4
-#define CWD_CMD         5
-#define DELE_CMD        6
-#define NAME_CMD        7
-#define QUIT_CMD        8
-#define RETR_CMD        9
-#define STOR_CMD        10
-#define PORT_CMD        11
-#define NLST_CMD        12
-#define PWD_CMD         13
-#define XPWD_CMD        14
-#define MKD_CMD         15
-#define XMKD_CMD        16
-#define XRMD_CMD        17
-#define RMD_CMD         18
-#define STRU_CMD        19
-#define MODE_CMD        20
-#define SYST_CMD        21
-#define XMD5_CMD        22
-#define APPE_CMD        23
-#define CDUP_CMD        24
-#define HELP_CMD        25
-#define MDTM_CMD        26
-#define NOOP_CMD        27
-#define REST_CMD        28
-#define SIZE_CMD        29
-#define XCUP_CMD        30
-#define XCWD_CMD        31
+enum ftp_cmd {
+	USER_CMD,
+	ACCT_CMD,
+	PASS_CMD,
+	TYPE_CMD,
+	LIST_CMD,
+	CWD_CMD,
+	DELE_CMD,
+	NAME_CMD,
+	QUIT_CMD,
+	RETR_CMD,
+	STOR_CMD,
+	PORT_CMD,
+	NLST_CMD,
+	PWD_CMD,
+	XPWD_CMD,
+	MKD_CMD,
+	XMKD_CMD,
+	XRMD_CMD,
+	RMD_CMD,
+	STRU_CMD,
+	MODE_CMD,
+	SYST_CMD,
+	XMD5_CMD,
+	APPE_CMD,
+	CDUP_CMD,
+	HELP_CMD,
+	MDTM_CMD,
+	NOOP_CMD,
+	REST_CMD,
+	SIZE_CMD,
+	XCUP_CMD,
+	XCWD_CMD
+};
 
 #endif  /* _FTPSERV_H */

@@ -1,9 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.16 1995/05/13 18:46:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.17 1995/12/20 09:46:49 deyke Exp $ */
 
 #ifndef _MAIL_H
 #define _MAIL_H
 
+#ifndef _GLOBAL_H
 #include "global.h"
+#endif
 
 #define CONFFILE   "/tcp/mail.conf"
 #define RETRYTIME  (60L*60)

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.h,v 1.9 1995/05/13 18:46:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.h,v 1.10 1995/12/20 09:46:52 deyke Exp $ */
 
 #ifndef _NRS_H
 #define _NRS_H
@@ -33,17 +33,17 @@
 
 /* net/rom serial protocol control structure */
 struct nrs {
-	char state;             /* Receiver State control flag */
+	uint8 state;            /* Receiver State control flag */
 	unsigned char csum;     /* Accumulating checksum */
 	struct mbuf *rbp;       /* Head of mbuf chain being filled */
 	struct mbuf *rbp1;      /* Pointer to mbuf currently being written */
-	char *rcp;              /* Write pointer */
+	uint8 *rcp;             /* Write pointer */
 	uint16 rcnt;            /* Length of mbuf chain */
 	struct mbuf *tbp;       /* Transmit mbuf being sent */
 	long errors;            /* Checksum errors detected */
 	long packets ;          /* Number of packets received successfully */
 	struct iface *iface ;   /* Associated interface structure */
-	int (*send)(int,struct mbuf *);/* Routine to send mbufs */
+	int (*send)(int,struct mbuf **);/* Routine to send mbufs */
 	int (*get)(int,char *,int);/* Routine to fetch input chars */
 };
 
@@ -51,7 +51,7 @@ extern struct nrs Nrs[];
 /* In nrs.c: */
 int nrs_free(struct iface *ifp);
 int nrs_init(struct iface *ifp);
-int nrs_raw(struct iface *iface,struct mbuf *bp);
+int nrs_raw(struct iface *iface,struct mbuf **bpp);
 void nrs_recv(struct iface *iface);
 
 #endif  /* _NRS_H */

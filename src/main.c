@@ -1,14 +1,13 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.52 1995/01/04 10:07:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.53 1995/12/20 09:46:50 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
  *  keyboard processing
  *  generic user commands
  *
- * Copyright 1993 Phil Karn, KA9Q
+ * Copyright 1986-1995 Phil Karn, KA9Q
  */
 #include <sys/types.h>
-#include <string.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <time.h>
@@ -36,18 +35,15 @@
 #include "tty.h"
 #include "session.h"
 #include "hardware.h"
-/* #include "usock.h" */
 #include "socket.h"
 #include "cmdparse.h"
 #include "commands.h"
 #include "daemon.h"
 #include "devparam.h"
-/* #include "domain.h" */
 #include "files.h"
 #include "main.h"
 #include "remote.h"
 #include "trace.h"
-/* #include "display.h" */
 #include "hpux.h"
 #include "netuser.h"
 #include "remote_net.h"
@@ -68,12 +64,12 @@ int main_exit = FALSE;                  /* from main program (flag) */
 int Debug;
 int Mode;
 uint16 Lport = 1024;
+int stop_repeat;
 
 char Prompt[] = "%s> ";
 static FILE *Logfp;
 time_t StartTime;                       /* time that NOS was started */
 static int Verbose;
-static int stop_repeat;
 
 static void process_char(int c);
 
@@ -92,9 +88,9 @@ char *argv[])
 #endif
 
 #if defined linux || defined ibm032
-	setbuffer(stdout,NULLCHAR,8192);
+	setbuffer(stdout,NULL,8192);
 #else
-	setvbuf(stdout,NULLCHAR,_IOFBF,8192);
+	setvbuf(stdout,NULL,_IOFBF,8192);
 #endif
 	time(&StartTime);
 	Hostname = strdup("net");
@@ -122,19 +118,19 @@ char *argv[])
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
 	printf("\n================ %s ================\n", Version);
 	printf("(c) Copyright 1990-1995 by Dieter Deyke, DK5SG / N0PRA\n");
-	printf("(c) Copyright 1986-1993 by Phil Karn, KA9Q\n");
+	printf("(c) Copyright 1986-1995 by Phil Karn, KA9Q\n");
 	printf("\n");
 	/* Start background Daemons */
 #ifndef SINGLE_THREADED
 	for(tp=Daemons;;tp++){
-		if(tp->name == NULLCHAR)
+		if(tp->name == NULL)
 			break;
-		newproc(tp->name,tp->stksize,tp->fp,0,NULLCHAR,NULL,0);
+		newproc(tp->name,tp->stksize,tp->fp,0,NULL,NULL,0);
 	}
 #endif
 	if(optind < argc){
 		/* Read startup file named on command line */
-		if((fp = fopen(argv[optind],READ_TEXT)) == NULLFILE){
+		if((fp = fopen(argv[optind],READ_TEXT)) == NULL){
 			printf("Can't read config file %s: ",argv[optind]);
 			fflush(stdout);
 			perror("");
@@ -142,10 +138,10 @@ char *argv[])
 	} else {
 		fp = fopen(Startup,READ_TEXT);
 	}
-	if(fp != NULLFILE){
-		while(fgets(cmdbuf,sizeof(cmdbuf),fp) != NULLCHAR){
+	if(fp != NULL){
+		while(fgets(cmdbuf,sizeof(cmdbuf),fp) != NULL){
 			rip(cmdbuf);
-			if(Cmdline != NULLCHAR)
+			if(Cmdline != NULL)
 				free(Cmdline);
 			Cmdline = strdup(cmdbuf);
 			if(Verbose)
@@ -161,7 +157,7 @@ char *argv[])
 
 	while(!main_exit){
 #ifndef SINGLE_THREADED
-		pwait(NULL);
+		kwait(NULL);
 #else
 		timerproc(0,0,0);
 		network(0,0,0);
@@ -180,14 +176,14 @@ char *argv[])
 		axroute_savefile();
 		route_savefile();
 		for(i=0;i<100;i++)
-			pwait(NULL);    /* Allow tasks to complete */
+			kwait(NULL);    /* Allow tasks to complete */
 		shuttrace();
 		strcpy(tbuf,ctime(&StopTime));
 		rip(tbuf);
-		log(NULLTCB,"NOS was stopped at %s", tbuf);
+		logmsg(NULL,"NOS was stopped at %s", tbuf);
 		if(Logfp){
 			fclose(Logfp);
-			Logfp = NULLFILE;
+			Logfp = NULL;
 		}
 		iostop();
 	}
@@ -227,7 +223,7 @@ int c)
 		cmdparse(Cmds, ttybuf, NULL);
 		break;
 	case CONV_MODE:
-		if (Current->parse != NULLVFP)
+		if (Current->parse != NULL)
 			(*Current->parse)(ttybuf, cnt);
 		break;
 	}
@@ -248,7 +244,7 @@ void *v2)
 
 	stop_repeat = 1;
 	n = read(0, p = buf, sizeof(buf));
-	if (n <= 0) dobye(0, (char **) 0, (void *) 0);
+	if (n <= 0) dobye(0, 0, 0);
 	while (--n >= 0) {
 		process_char(*p++ & 0xff);
 		while (Fkey_ptr && *Fkey_ptr)
@@ -295,11 +291,11 @@ void *p)
 		interval = 1000;
 	}
 	stop_repeat = 0;
-	while(1){
+	while(!stop_repeat){
 		printf("\033[H\033[J\033H\033J");       /* Clear screen */
 		ret = subcmd(Cmds,argc,argv,p);
 		fflush(stdout);
-		if(stop_repeat || ret != 0 || Xpause(interval) == -1)
+		if(ret != 0 || ppause(interval) == -1)
 			break;
 	}
 	return 0;
@@ -355,12 +351,12 @@ void *p)
 		struct iface *ifp;
 		char *name;
 
-		if((ifp = if_lookup(argv[1])) != NULLIF){
-			if((name = resolve_a(ifp->addr, FALSE)) == NULLCHAR){
+		if((ifp = if_lookup(argv[1])) != NULL){
+			if((name = resolve_a(ifp->addr, FALSE)) == NULL){
 				printf("Interface address not resolved\n");
 				return 1;
 			} else {
-				if(Hostname != NULLCHAR)
+				if(Hostname != NULL)
 					free(Hostname);
 				Hostname = strdup(name);
 
@@ -371,7 +367,7 @@ void *p)
 				printf("Hostname set to %s\n", name );
 			}
 		} else {
-			if(Hostname != NULLCHAR)
+			if(Hostname != NULL)
 				free(Hostname);
 			Hostname = strdup(argv[1]);
 		}
@@ -395,20 +391,20 @@ void *p)
 		return 0;
 	}
 	if(Logfp){
-		log(NULLTCB,"NOS log closed","");
+		logmsg(NULL,"NOS log closed","");
 		fclose(Logfp);
-		Logfp = NULLFILE;
+		Logfp = NULL;
 		free(logname);
-		logname = NULLCHAR;
+		logname = NULL;
 	}
 	if(strcmp(argv[1],"stop") != 0){
 		logname = strdup(argv[1]);
 		Logfp = fopen(logname,APPEND_TEXT);
 		strcpy(tbuf,ctime(&StartTime));
 		rip(tbuf);
-		log(NULLTCB,"NOS was started at %s", tbuf);
+		logmsg(NULL,"NOS was started at %s", tbuf);
 #ifdef MSDOS
-		log(NULLTCB,"NOS load information: CS=0x%04x DS=0x%04x", _CS, _DS);
+		logmsg(NULL,"NOS load information: CS=0x%04x DS=0x%04x", _CS, _DS);
 #endif
 	}
 	return 0;
@@ -436,7 +432,7 @@ void *p)
 	int param;
 	int32 val;
 
-	if((ifp = if_lookup(argv[1])) == NULLIF){
+	if((ifp = if_lookup(argv[1])) == NULL){
 		printf("Interface \"%s\" unknown\n",argv[1]);
 		return 1;
 	}
@@ -475,11 +471,11 @@ void *p)
  * Tue Jan 31 00:00:00 1987 44.64.0.7:1003 open FTP
  */
 void
-log(void *tcb, const char *fmt, const char *arg)
+logmsg(void *tcb, const char *fmt, const char *arg)
 {
 	char *cp;
 
-	if (Logfp == NULLFILE)
+	if (Logfp == NULL)
 		return;
 	cp = ctime((long *) &Secclock);
 	rip(cp);
@@ -519,7 +515,7 @@ void *p)
 	struct mbuf *bp;
 	int c;
 	uint16 port,len;
-	char *key = NULLCHAR;
+	char *key = NULL;
 	int klen = 0;
 	int32 addr = 0;
 	char *cmd,*host;
@@ -568,7 +564,7 @@ void *p)
 	if(addr != 0)
 		len += sizeof(int32);
 
-	if(key != NULLCHAR)
+	if(key != NULL)
 		len += klen;
 
 	bp = alloc_mbuf(len);
@@ -577,15 +573,15 @@ void *p)
 	switch(cmd[0]){
 	case 'r':
 		bp->data[0] = SYS_RESET;
-		if(key != NULLCHAR) {
-			strncpy(&bp->data[1],key,klen);
+		if(key != NULL) {
+			strncpy((char *) (&bp->data[1]),key,klen);
 			bp->cnt += klen;
 		}
 		break;
 	case 'e':
 		bp->data[0] = SYS_EXIT;
-		if(key != NULLCHAR) {
-			strncpy(&bp->data[1],key,klen);
+		if(key != NULL) {
+			strncpy((char *) (&bp->data[1]),key,klen);
 			bp->cnt += klen;
 		}
 		break;
@@ -598,10 +594,10 @@ void *p)
 		break;
 	default:
 		printf("Unknown command %s\n",cmd);
-		free_p(bp);
+		free_p(&bp);
 		return 1;
 	}
-	send_udp(&lsock,&fsock,0,0,bp,0,0,0);
+	send_udp(&lsock,&fsock,0,0,&bp,0,0,0);
 	return 0;
 }
 /* No-op command */

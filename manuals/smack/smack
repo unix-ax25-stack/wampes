@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/smack/smack,v 1.2 1995/11/12 12:29:11 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/smack/smack,v 1.3 1995/12/20 09:47:16 deyke Exp $
 .nr Ej 0 \" No new page for all headers
 .H 1 "Introduction"
 .P
@@ -53,8 +53,6 @@ with checksum and one without:
 +------+------+------+------+-----+------+------+
 
 KISS data frame (without checksum)
-
-.\"
 
 +------+------+------+------+----
 | FEND | 0x80 | DATA | DATA | ...

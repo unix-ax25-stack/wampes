@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iphdr.c,v 1.8 1994/10/09 08:22:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iphdr.c,v 1.9 1995/12/20 09:46:46 deyke Exp $ */
 
 /* IP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -12,21 +12,23 @@
  * If cflag != 0, take checksum from structure,
  * otherwise compute it automatically.
  */
-struct mbuf *
+void
 htonip(
-register struct ip *ip,
-struct mbuf *bp,
-int cflag)
-{
+struct ip *ip,
+struct mbuf **bpp,
+int cflag
+){
 	uint16 hdr_len;
-	register char *cp;
+	register uint8 *cp;
 	uint16 fl_offs;
 
+	if(bpp == NULL)
+		return;
 	hdr_len = IPLEN + ip->optlen;
 	if(hdr_len > IPLEN + IP_MAXOPT)
 		hdr_len = IPLEN + IP_MAXOPT;
-	bp = pushdown(bp,hdr_len);
-	cp = bp->data;
+	pushdown(bpp,NULL,hdr_len);
+	cp = (*bpp)->data;
 
 	*cp++ = (ip->version << 4) | (hdr_len >> 2);
 	*cp++ = ip->tos;
@@ -58,19 +60,17 @@ int cflag)
 
 	/* If requested, recompute checksum and insert into header */
 	if(!cflag)
-		put16(&bp->data[10],cksum(NULLHEADER,bp,hdr_len));
-
-	return bp;
+		put16(&(*bpp)->data[10],cksum(NULL,*bpp,hdr_len));
 }
 /* Extract an IP header from mbuf */
 int
 ntohip(
-register struct ip *ip,
-struct mbuf **bpp)
-{
+struct ip *ip,
+struct mbuf **bpp
+){
 	int ihl;
 	uint16 fl_offs;
-	char ipbuf[IPLEN];
+	uint8 ipbuf[IPLEN];
 
 	if(pullup(bpp,ipbuf,IPLEN) != IPLEN)
 		return -1;
@@ -105,8 +105,8 @@ struct mbuf **bpp)
 /* Perform end-around-carry adjustment */
 uint16
 eac(
-register int32 sum)     /* Carries in high order 16 bits */
-{
+int32 sum       /* Carries in high order 16 bits */
+){
 	register uint16 csum;
 
 	while((csum = (uint16) (sum >> 16)) != 0)
@@ -117,38 +117,38 @@ register int32 sum)     /* Carries in high order 16 bits */
 uint16
 cksum(
 struct pseudo_header *ph,
-register struct mbuf *m,
-uint16 len)
-{
+struct mbuf *m,
+uint16 len
+){
 	register uint16 cnt, total;
 	register int32 sum, csum;
-	register char *up;
+	register uint8 *up;
 	uint16 csum1;
 	int swap = 0;
 
 	sum = 0l;
 
 	/* Sum pseudo-header, if present */
-	if(ph != NULLHEADER){
+	if(ph != NULL){
 		sum = hiword(ph->source);
 		sum += loword(ph->source);
 		sum += hiword(ph->dest);
 		sum += loword(ph->dest);
-		sum += uchar(ph->protocol);
+		sum += ph->protocol;
 		sum += ph->length;
 	}
 	/* Now do each mbuf on the chain */
-	for(total = 0; m != NULLBUF && total < len; m = m->next) {
+	for(total = 0; m != NULL && total < len; m = m->next) {
 		cnt = min(m->cnt, len - total);
-		up = (char *)m->data;
+		up = m->data;
 		csum = 0;
 
 		if(((long)up) & 1){
 			/* Handle odd leading byte */
 			if(swap)
-				csum = uchar(*up++);
+				csum = *up++;
 			else
-				csum = (uint16)(uchar(*up++) << 8);
+				csum = (uint16)(*up++ << 8);
 			cnt--;
 			swap = !swap;
 		}
@@ -165,9 +165,9 @@ uint16 len)
 		/* Handle odd trailing byte */
 		if(cnt & 1){
 			if(swap)
-				csum += uchar(up[--cnt]);
+				csum += up[--cnt];
 			else
-				csum += (uint16)(uchar(up[--cnt]) << 8);
+				csum += (uint16)(up[--cnt] << 8);
 			swap = !swap;
 		}
 		sum += csum;

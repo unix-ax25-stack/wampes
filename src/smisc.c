@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.13 1994/10/10 13:16:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.14 1995/12/20 09:46:54 deyke Exp $ */
 
 /* Miscellaneous Internet servers: discard, echo and remote
  * Copyright 1991 Phil Karn, KA9Q
@@ -24,7 +24,7 @@ static void disc_server(struct tcb *tcb, int32 cnt);
 static void echo_server(struct tcb *tcb, int32 cnt);
 static void uremote(struct iface *iface, struct udp_cb *up, int cnt);
 static int chkrpass(struct mbuf *bp);
-static void misc_state(struct tcb *tcb, int old, int new);
+static void misc_state(struct tcb *tcb, enum tcp_state old, enum tcp_state new);
 
 /* Start TCP discard server */
 int
@@ -40,7 +40,7 @@ void *p)
 		lsocket.port = IPPORT_DISCARD;
 	else
 		lsocket.port = tcp_port_number(argv[1]);
-	disc_tcb = open_tcp(&lsocket,NULLSOCK,TCP_SERVER,0,disc_server,NULLVFP,misc_state,0,0);
+	disc_tcb = open_tcp(&lsocket,NULL,TCP_SERVER,0,disc_server,NULL,misc_state,0,0);
 	return 0;
 }
 /* TCP discard server */
@@ -52,7 +52,7 @@ int32 cnt)
 	struct mbuf *bp;
 
 	if (recv_tcp(tcb, &bp, 0) > 0)
-		free_p(bp);
+		free_p(&bp);
 }
 /* Stop TCP discard server */
 int
@@ -61,7 +61,7 @@ int argc,
 char *argv[],
 void *p)
 {
-	if(disc_tcb != NULLTCB)
+	if(disc_tcb != NULL)
 		close_tcp(disc_tcb);
 	return 0;
 }
@@ -79,7 +79,7 @@ void *p)
 		lsocket.port = IPPORT_ECHO;
 	else
 		lsocket.port = tcp_port_number(argv[1]);
-	echo_tcb = open_tcp(&lsocket,NULLSOCK,TCP_SERVER,0,echo_server,echo_server,misc_state,0,0);
+	echo_tcb = open_tcp(&lsocket,NULL,TCP_SERVER,0,echo_server,echo_server,misc_state,0,0);
 	return 0;
 }
 /* TCP echo server
@@ -98,7 +98,7 @@ int32 cnt)
 		acnt = tcb->rcvcnt;
 	if (acnt > 0) {
 		if (recv_tcp(tcb, &bp, acnt) > 0)
-			send_tcp(tcb, bp);
+			send_tcp(tcb, &bp);
 	}
 }
 /* Stop TCP echo server */
@@ -108,7 +108,7 @@ int argc,
 char *argv[],
 void *p)
 {
-	if(echo_tcb != NULLTCB)
+	if(echo_tcb != NULL)
 		close_tcp(echo_tcb);
 	return 0;
 }
@@ -144,11 +144,11 @@ int cnt)
 
 	recv_udp(up,&fsock,&bp);
 	command = PULLCHAR(&bp);
-	switch(uchar(command)){
+	switch(command & 0xff){
 #ifdef  MSDOS   /* Only present on PCs running MSDOS */
 	case SYS_RESET:
 		i = chkrpass(bp);
-		log(Rem,"%s - Remote reset %s",
+		logmsg(Rem,"%s - Remote reset %s",
 		 pinet_udp((struct sockaddr *)&fsock),
 		 i == 0 ? "PASSWORD FAIL" : "" );
 		if(i != 0){
@@ -159,10 +159,10 @@ int cnt)
 #endif
 	case SYS_EXIT:
 		if(chkrpass(bp) == 0){
-			log(NULLTCB,"%s - Remote exit PASSWORD FAIL",
+			logmsg(NULL,"%s - Remote exit PASSWORD FAIL",
 			 pinet_udp(&fsock));
 		} else {
-			log(NULLTCB,"%s - Remote exit PASSWORD OK",
+			logmsg(NULL,"%s - Remote exit PASSWORD OK",
 			 pinet_udp(&fsock));
 			main_exit = 1;
 		}
@@ -176,7 +176,7 @@ int cnt)
 		/*** smtptick((void *)addr); ***/
 		break;
 	}
-	free_p(bp);
+	free_p(&bp);
 }
 /* Check remote password */
 static int
@@ -215,23 +215,25 @@ void *p)
 static void
 misc_state(
 register struct tcb *tcb,
-int old,int new)
+enum tcp_state old,enum tcp_state new)
 {
 	switch(new){
 	case TCP_ESTABLISHED:
-		log(tcb,"open %s",tcp_port_name(tcb->conn.local.port));
+		logmsg(tcb,"open %s",tcp_port_name(tcb->conn.local.port));
 		break;
 	case TCP_CLOSE_WAIT:
 		close_tcp(tcb);
 		break;
 	case TCP_CLOSED:
-		log(tcb,"close %s",tcp_port_name(tcb->conn.local.port));
+		logmsg(tcb,"close %s",tcp_port_name(tcb->conn.local.port));
 		del_tcp(tcb);
 		/* Clean up if server is being shut down */
 		if(tcb == disc_tcb)
-			disc_tcb = NULLTCB;
+			disc_tcb = NULL;
 		else if(tcb == echo_tcb)
-			echo_tcb = NULLTCB;
+			echo_tcb = NULL;
+		break;
+	default:
 		break;
 	}
 }

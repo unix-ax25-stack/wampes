@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.24 1995/10/25 15:57:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.25 1995/12/20 09:46:47 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -6,7 +6,6 @@
 #if     defined(PROCLOG) || defined(PROCTRACE)
 #include <stdio.h>
 #endif
-/* #include <dos.h> */
 #ifndef ibm032
 #include <setjmp.h>
 #endif
@@ -32,12 +31,6 @@ EXTERN_C void setstack(uint16 *);
 EXTERN_C void setstack(void);
 #endif
 
-#define DISABLE()
-#define RESTORE()
-#define giveup()        exit(0)
-#define istate()        (1)
-#define restore(x)
-
 uint16 *newstackptr;
 
 #ifdef  PROCLOG
@@ -51,11 +44,12 @@ struct proc *Waittab[PHASH];    /* Waiting process list */
 struct proc *Susptab;           /* Suspended processes */
 static struct mbuf *Killq;
 struct ksig Ksig;
+int Kdebug;             /* Control display of current task on screen */
 
 static void addproc(struct proc *entry);
 static void delproc(struct proc *entry);
 
-static void psig(void *event,int n);
+static void ksig(void *event,int n);
 static int procsigs(void);
 
 #ifdef _AIX
@@ -87,8 +81,7 @@ static void aix_longjmp(jmp_buf jmpenv, int val)
  * Note that standard I/O is NOT set up here.
  */
 struct proc *
-mainproc(
-char *name)
+mainproc(char *name)
 {
 	register struct proc *pp;
 
@@ -103,7 +96,7 @@ char *name)
 	init_psetup(pp);
 #endif
 	/* Make current */
-	pp->state = READY;
+	pp->flags.suspend = pp->flags.waiting = 0;
 	Curproc = pp;
 
 #ifdef  PROCLOG
@@ -112,11 +105,11 @@ char *name)
 #endif
 	return pp;
 }
+#ifndef SINGLE_THREADED
 /* Create a new, ready process and return pointer to descriptor.
  * The general registers are not initialized, but optional args are pushed
  * on the stack so they can be seen by a C function.
  */
-#pragma OPTIMIZE OFF
 struct proc *
 newproc(
 char *name,             /* Arbitrary user-assigned name string */
@@ -126,11 +119,10 @@ void (*pc)(int,void *,void *),
 int iarg,               /* Integer argument (argc) */
 void *parg1,            /* Generic pointer argument #1 (argv) */
 void *parg2,            /* Generic pointer argument #2 (session ptr) */
-int freeargs)           /* If set, free arg list on parg1 at termination */
-{
+int freeargs            /* If set, free arg list on parg1 at termination */
+){
 	static struct proc *pp;
 	static void (*func)(int,void *,void *);
-	jmp_buf jmpenv;
 	int i;
 
 	if(Stkchk)
@@ -150,8 +142,8 @@ int freeargs)           /* If set, free arg list on parg1 at termination */
 	pp->stksize = stksize;
 	if((pp->stack = (uint16 *)malloc(sizeof(uint16)*stksize)) == NULL){
 		free(pp->name);
-		free((char *)pp);
-		return NULLPROC;
+		free(pp);
+		return NULL;
 	}
 	/* Initialize stack for high-water check */
 	for(i=0;i<stksize;i++)
@@ -162,8 +154,7 @@ int freeargs)           /* If set, free arg list on parg1 at termination */
 	psetup(pp,iarg,parg1,parg2,pc);
 #endif
 
-	if(freeargs)
-		pp->flags |= P_FREEARGS;
+	pp->flags.freeargs = freeargs;
 	pp->iarg = iarg;
 	pp->parg1 = parg1;
 	pp->parg2 = parg2;
@@ -174,7 +165,7 @@ int freeargs)           /* If set, free arg list on parg1 at termination */
 	pp->output = fdup(stdout);
 #endif
 
-	pp->state = READY;
+	pp->flags.suspend = pp->flags.waiting = 0;
 
 	if (setjmp(Curproc->env))
 		return pp;
@@ -189,43 +180,64 @@ int freeargs)           /* If set, free arg list on parg1 at termination */
 	newstackptr = pp->stack + (pp->stksize - 128);
 #endif
 #if defined _AIX
-	if (!setjmp(jmpenv)) {
-	  jmpenv[3] = (int) newstackptr;
-	  longjmp(jmpenv, 1);
+	{
+	  jmp_buf jmpenv;
+	  if (!setjmp(jmpenv)) {
+	    jmpenv[3] = (int) newstackptr;
+	    longjmp(jmpenv, 1);
+	  }
 	}
 #elif defined __sgi
-	if (!setjmp(jmpenv)) {
-	  jmpenv[JB_SP] = (int) newstackptr;
-	  longjmp(jmpenv, 1);
+	{
+	  jmp_buf jmpenv;
+	  if (!setjmp(jmpenv)) {
+	    jmpenv[JB_SP] = (int) newstackptr;
+	    longjmp(jmpenv, 1);
+	  }
 	}
 #elif defined sun
 #if _JBLEN == 9 || _JBLEN == 58
-	if (!setjmp(jmpenv)) {
-	  jmpenv[2] = (int) newstackptr;
-	  longjmp(jmpenv, 1);
+	{
+	  jmp_buf jmpenv;
+	  if (!setjmp(jmpenv)) {
+	    jmpenv[2] = (int) newstackptr;
+	    longjmp(jmpenv, 1);
+	  }
 	}
 #elif _JBLEN == 12
-	if (!setjmp(jmpenv)) {
-	  jmpenv[1] = (int) newstackptr;
-	  longjmp(jmpenv, 1);
+	{
+	  jmp_buf jmpenv;
+	  if (!setjmp(jmpenv)) {
+	    jmpenv[1] = (int) newstackptr;
+	    longjmp(jmpenv, 1);
+	  }
 	}
 #else
 #error error: unknown jmp_buf size
 #endif
 #elif defined ULTRIX_RISC
-	if (!setjmp(jmpenv)) {
-	  jmpenv[32] = (int) newstackptr;
-	  longjmp(jmpenv, 1);
+	{
+	  jmp_buf jmpenv;
+	  if (!setjmp(jmpenv)) {
+	    jmpenv[32] = (int) newstackptr;
+	    longjmp(jmpenv, 1);
+	  }
 	}
 #elif defined macII
-	if (!setjmp(jmpenv)) {
-	  jmpenv[12] = (int) newstackptr;
-	  longjmp(jmpenv, 1);
+	{
+	  jmp_buf jmpenv;
+	  if (!setjmp(jmpenv)) {
+	    jmpenv[12] = (int) newstackptr;
+	    longjmp(jmpenv, 1);
+	  }
 	}
 #elif defined ibm032
-	if (!setjmp(jmpenv)) {
-	  jmpenv[0] = (int) newstackptr;
-	  longjmp(jmpenv, 1);
+	{
+	  jmp_buf jmpenv;
+	  if (!setjmp(jmpenv)) {
+	    jmpenv[0] = (int) newstackptr;
+	    longjmp(jmpenv, 1);
+	  }
 	}
 #elif defined RISCiX
 	setstack(newstackptr);
@@ -236,19 +248,18 @@ int freeargs)           /* If set, free arg list on parg1 at termination */
 	killself();
 	return 0;
 }
-#pragma OPTIMIZE ON
+#endif
 
 /* Free resources allocated to specified process. If a process wants to kill
  * itself, the reaper is called to do the dirty work. This avoids some
  * messy situations that would otherwise occur, like freeing your own stack.
  */
 void
-killproc(
-register struct proc *pp)
+killproc(struct proc *pp)
 {
 	char **argv;
 
-	if(pp == NULLPROC)
+	if(pp == NULL)
 		return;
 	/* Don't check the stack here! Will cause infinite recursion if
 	 * called from a stack error
@@ -264,20 +275,20 @@ register struct proc *pp)
 	stop_timer(&pp->alarm);
 
 	/* Alert everyone waiting for this proc to die */
-	Xpsignal(pp,0);
+	ksignal(pp,0);
 
 	/* Remove from appropriate table */
 	delproc(pp);
 
 #ifdef  PROCLOG
-	fprintf(proclog,"id %lx name %s stack %u/%u\n",ptol(pp),
+	fprintf(proclog,"id %p name %s stack %u/%u\n",pp,
 		pp->name,stkutil(pp),pp->stksize);
 	fclose(proclog);
 	proclog = fopen("proclog",APPEND_TEXT);
 	proctrace = fopen("proctrace",APPEND_TEXT);
 #endif
 	/* Free allocated memory resources */
-	if(pp->flags & P_FREEARGS){
+	if(pp->flags.freeargs){
 		argv = (char **) pp->parg1;
 		while(pp->iarg-- != 0)
 			free(*argv++);
@@ -285,7 +296,7 @@ register struct proc *pp)
 	}
 	free(pp->name);
 	free(pp->stack);
-	free((char *)pp);
+	free(pp);
 }
 /* Terminate current process by sending a request to the killer process.
  * Automatically called when a process function returns. Does not return.
@@ -293,32 +304,28 @@ register struct proc *pp)
 void
 killself(void)
 {
-	register struct mbuf *bp;
+	struct mbuf *bp = NULL;
 
-	bp = pushdown(NULLBUF,sizeof(Curproc));
-	memcpy(bp->data,(char *)&Curproc,sizeof(Curproc));
-	enqueue(&Killq,bp);
+	pushdown(&bp,&Curproc,sizeof(Curproc));
+	enqueue(&Killq,&bp);
 
 	/* "Wait for me; I will be merciful and quick." */
 	for(;;)
-		pwait(NULL);
+		kwait(NULL);
 }
 /* Process used by processes that want to kill themselves */
 void
-killer(
-int i,
-void *v1,
-void *v2)
+killer(int i,void *v1,void *v2)
 {
 	struct proc *pp;
 	struct mbuf *bp;
 
 	for(;;){
-		while(Killq == NULLBUF)
-			pwait(&Killq);
+		while(Killq == NULL)
+			kwait(&Killq);
 		bp = dequeue(&Killq);
-		pullup(&bp,(char *)&pp,sizeof(pp));
-		free_p(bp);
+		pullup(&bp,&pp,sizeof(pp));
+		free_p(&bp);
 		if(pp != Curproc)       /* We're immortal */
 			killproc(pp);
 	}
@@ -326,52 +333,48 @@ void *v2)
 
 /* Inhibit a process from running */
 void
-suspend(
-struct proc *pp)
+suspend(struct proc *pp)
 {
-	if(pp == NULLPROC)
+	if(pp == NULL)
 		return;
 	if(pp != Curproc)
 		delproc(pp);    /* Running process isn't on any list */
-	pp->state |= SUSPEND;
+	pp->flags.suspend = 1;
 	if(pp != Curproc)
-		addproc(pp);    /* pwait will do it for us */
+		addproc(pp);    /* kwait will do it for us */
 	else
-		pwait(NULL);
+		kwait(NULL);
 }
 /* Restart suspended process */
 void
-resume(
-struct proc *pp)
+resume(struct proc *pp)
 {
-	if(pp == NULLPROC)
+	if(pp == NULL)
 		return;
 	delproc(pp);    /* Can't be Curproc! */
-	pp->state &= ~SUSPEND;
+	pp->flags.suspend = 0;
 	addproc(pp);
 }
 
 /* Wakeup waiting process, regardless of event it's waiting for. The process
- * will see a return value of "val" from its pwait() call. Must not be
+ * will see a return value of "val" from its kwait() call. Must not be
  * called from an interrupt handler.
  */
 void
-alert(
-struct proc *pp,
-int val)
+alert(struct proc *pp,int val)
 {
-	if(pp == NULLPROC)
+	if(pp == NULL)
 		return;
 #ifdef  notdef
-	if((pp->state & WAITING) == 0)
+	if(pp->flags.waiting == 0)
 		return;
 #endif
 #ifdef  PROCTRACE
-	log(-1,"alert(%lx,%u) [%s]",ptol(pp),val,pp->name);
+	logmsg(-1,"alert(%p,%u) [%s]",pp,val,pp->name);
 #endif
 	if(pp != Curproc)
 		delproc(pp);
-	pp->state &= ~WAITING;
+	pp->flags.waiting = 0;
 	pp->retval = val;
 	pp->event = NULL;
 	if(pp != Curproc)
@@ -386,16 +389,14 @@ int val)
  * Pwait() returns 0 if the event was signaled; otherwise it returns the
  * arg in an alert() call. Pwait must not be called from interrupt level.
  *
- * Before waiting and after giving up the CPU, pwait() processes the signal
+ * Before waiting and after giving up the CPU, kwait() processes the signal
  * queue containing events signaled when interrupts were off. This means
  * the process queues are no longer modified by interrupt handlers,
  * so it is no longer necessary to run with interrupts disabled here. This
  * greatly improves interrupt latencies.
  */
-#pragma OPTIMIZE OFF
 int
-pwait(
-void *event)
+kwait(void *event)
 {
 	register struct proc *oldproc;
 	int tmp;
@@ -406,11 +407,11 @@ void *event)
 		stktrace();
 	}
 #endif
-	Ksig.pwaits++;
+	Ksig.kwaits++;
 #if 0
 	if(intcontext() == 1){
 		/* Pwait must not be called from interrupt context */
-		Ksig.pwaitints++;
+		Ksig.kwaitints++;
 		return 0;
 	}
 	/* Enable interrupts, after saving the current state.
@@ -429,7 +430,7 @@ void *event)
 	if(event != NULL){
 		/* Post a wait for the specified event */
 		Curproc->event = event;
-		Curproc->state = WAITING;
+		Curproc->flags.waiting = 1;
 		addproc(Curproc);       /* Put us on the wait list */
 	}
 	/* If the signal queue contains a signal for the event that we're
@@ -438,10 +439,12 @@ void *event)
 	procsigs();
 	if(event == NULL){
 		/* We remain runnable */
-		if(Rdytab == NULLPROC){
+		if(Rdytab == NULL){
 			/* Nothing else is ready, so just return */
-			Ksig.pwaitnops++;
+			Ksig.kwaitnops++;
+#if 0
 			restore(i_state);
+#endif
 			return 0;
 		}
 		addproc(Curproc); /* Put us on the end of the ready list */
@@ -449,13 +452,18 @@ void *event)
 	/* Look for a ready process and run it. If there are none,
 	 * loop or halt until an interrupt makes something ready.
 	 */
-	while(Rdytab == NULLPROC){
+	while(Rdytab == NULL){
 		/* Give system back to upper-level multitasker, if any.
 		 * Note that this function enables interrupts internally
 		 * to prevent deadlock, but it restores our state
 		 * before returning.
 		 */
+
+#if 0
 		giveup();
+#else
+		exit(0);
+#endif
 		/* Process signals that occurred during the giveup() */
 		procsigs();
 	}
@@ -475,21 +483,23 @@ void *event)
 	 */
 #ifdef  PROCTRACE
 	if(strcmp(oldproc->name,Curproc->name) != 0){
-		log(-1,"-> %s(%d)",Curproc->name,!!(Curproc->flags & P_ISTATE));
+		logmsg(-1,"-> %s(%d)",Curproc->name,Curproc->flags.istate);
 	}
 #endif
 #if 0
 	/* Save old state */
-	oldproc->flags &= ~P_ISTATE;
+	oldproc->flags.istate = 0;
 	if(i_state)
-		oldproc->flags |= P_ISTATE;
+		oldproc->flags.istate = 1;
 #endif
 	if(setjmp(oldproc->env) == 0){
 		/* We're still running in the old task; load new task context.
 		 * The interrupt state is restored here in case longjmp
 		 * doesn't do it (e.g., systems other than Turbo-C).
 		 */
-		restore(Curproc->flags & P_ISTATE);
+#if 0
+		restore(Curproc->flags.istate);
+#endif
 		longjmp(Curproc->env,1);
 	}
 	/* At this point, we're running in the newly dispatched task */
@@ -500,40 +510,42 @@ void *event)
 	 * DOES restore the interrupt state saved at the time of the setjmp().
 	 * This is the case with Turbo-C's setjmp/longjmp.
 	 */
-	restore(Curproc->flags & P_ISTATE);
+#if 0
+	restore(Curproc->flags.istate);
+#endif
 
 	/* If an exception signal was sent and we're prepared, take it */
-	if((Curproc->flags & P_SSET) && tmp == Curproc->signo)
+	if((Curproc->flags.sset) && tmp == Curproc->signo)
 		longjmp(Curproc->sig,1);
 
 	/* Otherwise return normally to the new task */
 	return tmp;
 }
-#pragma OPTIMIZE ON
 
 void
-Xpsignal(
-void *event,
-int n)
+ksignal(void *event,int n)
 {
+#if 0
 	static void *lastevent;
 
 	if(istate()){
-		/* Interrupts are on, just call psig directly after
+#endif
+		/* Interrupts are on, just call ksig directly after
 		 * processing the previously queued signals
 		 */
 		procsigs();
-		psig(event,n);
+		ksig(event,n);
+#if 0
 		return;
 	}
 	/* Interrupts are off, so quickly queue event */
-	Ksig.psigsqueued++;
+	Ksig.ksigsqueued++;
 
 	/* Ignore duplicate signals to protect against a mad device driver
 	 * overflowing the signal queue
 	 */
 	if(event == lastevent && Ksig.nentries != 0){
-		Ksig.dupsigs++;
+		Ksig.duksigs++;
 		return;
 	}
 	if(Ksig.nentries == SIGQSIZE){
@@ -546,23 +558,31 @@ int n)
 	if(++Ksig.wp >= &Ksig.entry[SIGQSIZE])
 		Ksig.wp = Ksig.entry;
 	Ksig.nentries++;
+#endif
 }
 static int
 procsigs(void)
 {
 	int cnt = 0;
 	int tmp;
+#if 0
+	int i_state;
+#endif
 
 	for(;;){
 		/* Atomic read and decrement of entry count */
-		DISABLE();
+#if 0
+		i_state = dirps();
+#endif
 		tmp = Ksig.nentries;
 		if(tmp != 0)
 			Ksig.nentries--;
-		RESTORE();
+#if 0
+		restore(i_state);
+#endif
 		if(tmp == 0)
 			break;
-		psig(Ksig.rp->event,Ksig.rp->n);
+		ksig(Ksig.rp->event,Ksig.rp->n);
 		if(++Ksig.rp >= &Ksig.entry[SIGQSIZE])
 			Ksig.rp = Ksig.entry;
 		cnt++;
@@ -572,28 +592,28 @@ procsigs(void)
 	return cnt;
 }
 /* Make ready the first 'n' processes waiting for a given event. The ready
- * processes will see a return value of 0 from pwait().  Note that they don't
+ * processes will see a return value of 0 from kwait().  Note that they don't
  * actually get control until we explicitly give up the CPU ourselves through
- * a pwait(). psig is now called from pwait, which is never called at
+ * a kwait(). ksig is now called from pwait, which is never called at
  * interrupt time, so it is no longer necessary to protect the proc queues
  * against interrupts. This also helps interrupt latencies considerably.
  */
 static void
-psig(
+ksig(
 void *event,    /* Event to signal */
-int n)          /* Max number of processes to wake up */
-{
+int n           /* Max number of processes to wake up */
+){
 	register struct proc *pp;
 	struct proc *pnext;
 	unsigned int hashval;
 	int cnt = 0;
 
-	Ksig.psigs++;
+	Ksig.ksigs++;
 	if(Stkchk)
 		chkstk();
 
 	if(event == NULL){
-		Ksig.psignops++;
+		Ksig.ksignops++;
 		return;         /* Null events are invalid */
 	}
 	/* n == 0 means "signal everybody waiting for this event" */
@@ -601,15 +621,15 @@ int n)          /* Max number of processes to wake up */
 		n = 65535;
 
 	hashval = phash(event);
-	for(pp = Waittab[hashval];n != 0 && pp != NULLPROC;pp = pnext){
+	for(pp = Waittab[hashval];n != 0 && pp != NULL;pp = pnext){
 		pnext = pp->next;
 		if(pp->event == event){
 #ifdef  PROCTRACE
-				log(-1,"psignal(%lx,%u) wake %lx [%s]",ptol(event),n,
-				 ptol(pp),pp->name);
+				logmsg(-1,"ksignal(%p,%u) wake %p [%s]",event,n,
+				 pp,pp->name);
 #endif
 			delproc(pp);
-			pp->state &= ~WAITING;
+			pp->flags.waiting = 0;
 			pp->retval = 0;
 			pp->event = NULL;
 			addproc(pp);
@@ -617,15 +637,15 @@ int n)          /* Max number of processes to wake up */
 			cnt++;
 		}
 	}
-	for(pp = Susptab;n != 0 && pp != NULLPROC;pp = pnext){
+	for(pp = Susptab;n != 0 && pp != NULL;pp = pnext){
 		pnext = pp->next;
 		if(pp->event == event){
 #ifdef  PROCTRACE
-				log(-1,"psignal(%lx,%u) wake %lx [%s]",ptol(event),n,
-				 ptol(pp),pp->name);
+				logmsg(-1,"ksignal(%p,%u) wake %p [%s]",event,n,
+				 pp,pp->name);
 #endif /* PROCTRACE */
 			delproc(pp);
-			pp->state &= ~WAITING;
+			pp->flags.waiting = 0;
 			pp->event = 0;
 			pp->retval = 0;
 			addproc(pp);
@@ -634,78 +654,64 @@ int n)          /* Max number of processes to wake up */
 		}
 	}
 	if(cnt == 0)
-		Ksig.psignops++;
+		Ksig.ksignops++;
 	else
-		Ksig.psigwakes += cnt;
+		Ksig.ksigwakes += cnt;
 }
 
 /* Rename a process */
 void
-chname(
-struct proc *pp,
-char *newname)
+chname(struct proc *pp,char *newname)
 {
 	free(pp->name);
 	pp->name = strdup(newname);
 }
 /* Remove a process entry from the appropriate table */
 static void
-delproc(
-register struct proc *entry)    /* Pointer to entry */
+delproc(struct proc *entry)     /* Pointer to entry */
 {
-	if(entry == NULLPROC)
+	if(entry == NULL)
 		return;
 
-	if(entry->next != NULLPROC)
+	if(entry->next != NULL)
 		entry->next->prev = entry->prev;
-	if(entry->prev != NULLPROC){
+	if(entry->prev != NULL){
 		entry->prev->next = entry->next;
 	} else {
-		switch(entry->state){
-		case READY:
-			Rdytab = entry->next;
-			break;
-		case WAITING:
-			Waittab[phash(entry->event)] = entry->next;
-			break;
-		case SUSPEND:
-		case SUSPEND|WAITING:
+		if(entry->flags.suspend){
 			Susptab = entry->next;
-			break;
+		} else if(entry->flags.waiting){
+			Waittab[phash(entry->event)] = entry->next;
+		} else {        /* Ready */
+			Rdytab = entry->next;
 		}
 	}
 }
 /* Append proc entry to end of appropriate list */
 static void
-addproc(
-register struct proc *entry)    /* Pointer to entry */
+addproc(struct proc *entry)     /* Pointer to entry */
 {
 	register struct proc *pp;
-	struct proc **head = 0;
+	struct proc **head;
 
-	if(entry == NULLPROC)
+	if(entry == NULL)
 		return;
 
-	switch(entry->state){
-	case READY:
-		head = &Rdytab;
-		break;
-	case WAITING:
-		head = &Waittab[phash(entry->event)];
-		break;
-	case SUSPEND:
-	case SUSPEND|WAITING:
+	if(entry->flags.suspend){
 		head = &Susptab;
-		break;
+	} else if(entry->flags.waiting){
+		head = &Waittab[phash(entry->event)];
+	} else {        /* Ready */
+		head = &Rdytab;
 	}
-	entry->next = NULLPROC;
-	if(*head == NULLPROC){
+	entry->next = NULL;
+	if(*head == NULL){
 		/* Empty list, stick at beginning */
-		entry->prev = NULLPROC;
+		entry->prev = NULL;
 		*head = entry;
 	} else {
 		/* Find last entry on list */
-		for(pp = *head;pp->next != NULLPROC;pp = pp->next)
+		for(pp = *head;pp->next != NULL;pp = pp->next)
 			;
 		pp->next = entry;
 		entry->prev = pp;

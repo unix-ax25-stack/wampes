@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.c,v 1.8 1994/10/06 16:15:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.c,v 1.9 1995/12/20 09:46:59 deyke Exp $ */
 
 /* Internet User Data Protocol (UDP)
  * Copyright 1991 Phil Karn, KA9Q
@@ -35,10 +35,10 @@ void (*r_upcall)(struct iface *,struct udp_cb *,int))
 {
 	register struct udp_cb *up;
 
-	if((up = lookup_udp(lsocket)) != NULLUDP){
+	if((up = lookup_udp(lsocket)) != NULL){
 		/* Already exists */
 		Net_error = CON_EXISTS;
-		return NULLUDP;
+		return NULL;
 	}
 	up = (struct udp_cb *)callocw(1,sizeof (struct udp_cb));
 	up->socket.address = lsocket->address;
@@ -57,19 +57,21 @@ struct socket *lsocket,         /* Source socket */
 struct socket *fsocket,         /* Destination socket */
 char tos,                       /* Type-of-service for IP */
 char ttl,                       /* Time-to-live for IP */
-struct mbuf *bp,                /* Data field, if any */
+struct mbuf **bpp,              /* Data field, if any */
 uint16 length,                  /* Length of data field */
 uint16 id,                      /* Optional ID field for IP */
-char df)                        /* Don't Fragment flag for IP */
-{
+char df                         /* Don't Fragment flag for IP */
+){
 	struct pseudo_header ph;
 	struct udp udp;
 	int32 laddr;
 
-	if(length != 0 && bp != NULLBUF)
-		trim_mbuf(&bp,length);
+	if(bpp == NULL)
+		return -1;
+	if(length != 0 && *bpp != NULL)
+		trim_mbuf(bpp,length);
 	else
-		length = len_p(bp);
+		length = len_p(*bpp);
 
 	length += UDPHDR;
 
@@ -87,9 +89,9 @@ char df)                        /* Don't Fragment flag for IP */
 	ph.dest = fsocket->address;
 	ph.protocol = UDP_PTCL;
 
-	bp = htonudp(&udp,bp,&ph);
+	htonudp(&udp,bpp,&ph);
 	udpOutDatagrams++;
-	ip_send(laddr,fsocket->address,UDP_PTCL,tos,ttl,bp,length,id,df);
+	ip_send(laddr,fsocket->address,UDP_PTCL,tos,ttl,bpp,length,id,df);
 	return (int)length;
 }
 /* Accept a waiting datagram, if available. Returns length of datagram */
@@ -103,7 +105,7 @@ struct mbuf **bp)               /* Place to stash data packet */
 	struct mbuf *buf;
 	uint16 length;
 
-	if(up == NULLUDP){
+	if(up == NULL){
 		Net_error = NO_CONN;
 		return -1;
 	}
@@ -115,19 +117,19 @@ struct mbuf **bp)               /* Place to stash data packet */
 	up->rcvcnt--;
 
 	/* Strip socket header */
-	pullup(&buf,(char *)&sp,sizeof(struct socket));
+	pullup(&buf,&sp,sizeof(struct socket));
 
 	/* Fill in the user's foreign socket structure, if given */
-	if(fsocket != NULLSOCK){
+	if(fsocket != NULL){
 		fsocket->address = sp.address;
 		fsocket->port = sp.port;
 	}
 	/* Hand data to user */
 	length = len_p(buf);
-	if(bp != NULLBUFP)
+	if(bp != NULL)
 		*bp = buf;
 	else
-		free_p(buf);
+		free_p(&buf);
 	return (int)length;
 }
 /* Delete a UDP control block */
@@ -137,13 +139,13 @@ struct udp_cb *conn)
 {
 	struct mbuf *bp;
 	register struct udp_cb *up;
-	struct udp_cb *udplast = NULLUDP;
+	struct udp_cb *udplast = NULL;
 
-	for(up = Udps;up != NULLUDP;udplast = up,up = up->next){
+	for(up = Udps;up != NULL;udplast = up,up = up->next){
 		if(up == conn)
 			break;
 	}
-	if(up == NULLUDP){
+	if(up == NULL){
 		/* Either conn was NULL or not found on list */
 		Net_error = INVALID;
 		return -1;
@@ -152,16 +154,16 @@ struct udp_cb *conn)
 	while(up->rcvcnt != 0){
 		bp = up->rcvq;
 		up->rcvq = up->rcvq->anext;
-		free_p(bp);
+		free_p(&bp);
 		up->rcvcnt--;
 	}
 	/* Remove from list */
-	if(udplast != NULLUDP)
+	if(udplast != NULL)
 		udplast->next = up->next;
 	else
 		Udps = up->next;        /* was first on list */
 
-	free((char *)up);
+	free(up);
 	return 0;
 }
 /* Process an incoming UDP datagram */
@@ -169,9 +171,10 @@ void
 udp_input(
 struct iface *iface,    /* Input interface */
 struct ip *ip,          /* IP header */
-struct mbuf *bp,        /* UDP header and data */
-int rxbroadcast)        /* The only protocol that accepts 'em */
-{
+struct mbuf **bpp,      /* UDP header and data */
+int rxbroadcast,        /* The only protocol that accepts 'em */
+int32 said
+){
 	struct pseudo_header ph;
 	struct udp udp;
 	struct udp_cb *up;
@@ -179,7 +182,7 @@ int rxbroadcast)        /* The only protocol that accepts 'em */
 	struct socket fsocket;
 	uint16 length;
 
-	if(bp == NULLBUF)
+	if(bpp == NULL || *bpp == NULL)
 		return;
 
 	/* Create pseudo-header and verify checksum */
@@ -193,18 +196,18 @@ int rxbroadcast)        /* The only protocol that accepts 'em */
 	 * allows us to bypass cksum() if the checksum field was not
 	 * set by the sender.
 	 */
-	udp.checksum = udpcksum(bp);
-	if(udp.checksum != 0 && cksum(&ph,bp,length) != 0){
+	udp.checksum = udpcksum(*bpp);
+	if(udp.checksum != 0 && cksum(&ph,*bpp,length) != 0){
 		/* Checksum non-zero, and wrong */
 		udpInErrors++;
-		free_p(bp);
+		free_p(bpp);
 		return;
 	}
 	/* Extract UDP header in host order */
-	if(ntohudp(&udp,&bp) != 0){
+	if(ntohudp(&udp,bpp) != 0){
 		/* Truncated header */
 		udpInErrors++;
-		free_p(bp);
+		free_p(bpp);
 		return;
 	}
 	/* If this was a broadcast packet, pretend it was sent to us */
@@ -215,31 +218,31 @@ int rxbroadcast)        /* The only protocol that accepts 'em */
 
 	lsocket.port = udp.dest;
 	/* See if there's somebody around to read it */
-	if((up = lookup_udp(&lsocket)) == NULLUDP){
+	if((up = lookup_udp(&lsocket)) == NULL){
 		/* Nope, return an ICMP message */
 		if(!rxbroadcast){
-			bp = htonudp(&udp,bp,&ph);
-			icmp_output(ip,bp,ICMP_DEST_UNREACH,ICMP_PORT_UNREACH,NULL);
+			htonudp(&udp,bpp,&ph);
+			icmp_output(ip,*bpp,ICMP_DEST_UNREACH,ICMP_PORT_UNREACH,NULL);
 		}
 		udpNoPorts++;
-		free_p(bp);
+		free_p(bpp);
 		return;
 	}
-	/* Create space for the foreign socket info */
-	bp = pushdown(bp,sizeof(fsocket));
+	/* Prepend the foreign socket info */
+	memset(&fsocket,0,sizeof(fsocket));
 	fsocket.address = ip->source;
 	fsocket.port = udp.source;
-	memcpy(&bp->data[0],(char *)&fsocket,sizeof(fsocket));
+	pushdown(bpp,&fsocket,sizeof(fsocket));
 
 	/* Queue it */
-	enqueue(&up->rcvq,bp);
+	enqueue(&up->rcvq,bpp);
 	up->rcvcnt++;
 	udpInDatagrams++;
 	if(up->r_upcall)
 		(*up->r_upcall)(iface,up,up->rcvcnt);
 }
 /* Look up UDP socket.
- * Return control block pointer or NULLUDP if nonexistant
+ * Return control block pointer or NULL if nonexistant
  * As side effect, move control block to top of list to speed future
  * searches.
  */
@@ -248,13 +251,13 @@ lookup_udp(
 struct socket *socket)
 {
 	register struct udp_cb *up;
-	struct udp_cb *uplast = NULLUDP;
+	struct udp_cb *uplast = NULL;
 
-	for(up = Udps;up != NULLUDP;uplast = up,up = up->next){
+	for(up = Udps;up != NULL;uplast = up,up = up->next){
 		if(socket->port == up->socket.port
 		 && (socket->address == up->socket.address
 		 || up->socket.address == INADDR_ANY)){
-			if(uplast != NULLUDP){
+			if(uplast != NULL){
 				/* Move to top of list */
 				uplast->next = up->next;
 				up->next = Udps;
@@ -263,7 +266,7 @@ struct socket *socket)
 			return up;
 		}
 	}
-	return NULLUDP;
+	return NULL;
 }
 
 /* Attempt to reclaim unused space in UDP receive queues */
@@ -273,7 +276,7 @@ int red)
 {
 	register struct udp_cb *udp;
 
-	for(udp = Udps;udp != NULLUDP; udp = udp->next){
+	for(udp = Udps;udp != NULL; udp = udp->next){
 		mbuf_crunch(&udp->rcvq);
 	}
 }

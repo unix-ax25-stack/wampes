@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.29 1995/05/13 18:46:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.30 1995/12/20 09:46:38 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -15,9 +15,9 @@
 #define NO_FIX_MALLOC
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+
+#include "global.h"
 
 #ifndef PURIFY
 
@@ -26,7 +26,6 @@
 #undef realloc
 #undef calloc
 
-#include "global.h"
 #include "mbuf.h"
 #include "cmdparse.h"
 
@@ -77,12 +76,12 @@ static int domerge(int argc,char *argv[],void *p);
 static int dosizes(int argc,char *argv[],void *p);
 
 struct cmds Memcmds[] = {
-	{ "debug",      domdebug,       0, 0, NULLCHAR },
-	{ "freelist",   dofreelist,     0, 0, NULLCHAR },
-	{ "merge",      domerge,        0, 0, NULLCHAR },
-	{ "sizes",      dosizes,        0, 0, NULLCHAR },
-	{ "status",     dostat,         0, 0, NULLCHAR },
-	{ NULLCHAR }
+	{ "debug",      domdebug,       0, 0, NULL },
+	{ "freelist",   dofreelist,     0, 0, NULL },
+	{ "merge",      domerge,        0, 0, NULL },
+	{ "sizes",      dosizes,        0, 0, NULL },
+	{ "status",     dostat,         0, 0, NULL },
+	{ NULL,         NULL,           0, 0, NULL }
 };
 
 /*---------------------------------------------------------------------------*/
@@ -169,7 +168,7 @@ unsigned nb)
   }
   if (!(p = getblock(n))) return 0;
   Sizes[n]++;
-  if (Memdebug) memset((char *) p, USEDPATTERN, Blocksize[n]);
+  if (Memdebug) memset(p, USEDPATTERN, Blocksize[n]);
   p->n = n;
   p->inuse = 1;
   Allocs++;
@@ -209,7 +208,7 @@ void *blk)
     return;
   }
   if (Memdebug)
-    memset((char *) p, FREEPATTERN, Blocksize[n]);
+    memset(p, FREEPATTERN, Blocksize[n]);
   Frees++;
   Inuse -= Blocksize[n];
   if (Memmerge) {
@@ -345,8 +344,8 @@ void *envp)
 		Allocs,Frees,Allocs-Frees,Memfail,Invalid);
 	printf("splits %lu merges %lu (diff %lu)\n",
 		Splits,Merges,Splits-Merges);
-	printf("pushdown calls %lu pushdown calls to malloc %lu\n",
-		Pushdowns,Pushalloc);
+	printf("\n");
+	mbufstat();
 	return 0;
 }
 
@@ -406,6 +405,7 @@ void *p)
 		 Blocksize[n],Sizes[n],Blocksize[n+1],Sizes[n+1],
 		 Blocksize[n+2],Sizes[n+2],Blocksize[n+3],Sizes[n+3]);
 	}
+	mbufsizes();
 	return 0;
 }
 

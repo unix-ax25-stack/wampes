@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.11 1994/10/09 08:23:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.12 1995/12/20 09:46:57 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -30,12 +30,12 @@ static void tnserv_send_upcall(struct tcb *tcb, int32 cnt)
 
   if (tcb->user &&
       (bp = login_read((struct login_cb *) tcb->user, space_tcp(tcb))))
-    send_tcp(tcb, bp);
+    send_tcp(tcb, &bp);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void tnserv_state_upcall(struct tcb *tcb, int old, int new)
+static void tnserv_state_upcall(struct tcb *tcb, enum tcp_state old, enum tcp_state new)
 {
   switch (new) {
 #ifdef QUICKSTART
@@ -47,7 +47,7 @@ static void tnserv_state_upcall(struct tcb *tcb, int old, int new)
     if (!tcb->user)
       close_tcp(tcb);
     else
-      log(tcb, "open TELNET", "");
+      logmsg(tcb, "open TELNET", "");
     break;
   case TCP_CLOSE_WAIT:
     close_tcp(tcb);
@@ -55,10 +55,12 @@ static void tnserv_state_upcall(struct tcb *tcb, int old, int new)
   case TCP_CLOSED:
     if (tcb->user) {
       login_close((struct login_cb *) tcb->user);
-      log(tcb, "close TELNET", "");
+      logmsg(tcb, "close TELNET", "");
     }
     del_tcp(tcb);
-    if (tcb == tcb_server) tcb_server = NULLTCB;
+    if (tcb == tcb_server) tcb_server = NULL;
+    break;
+  default:
     break;
   }
 }
@@ -80,8 +82,7 @@ int telnet1(int argc, char *argv[], void *p)
   if (tcb_server) close_tcp(tcb_server);
   lsocket.address = INADDR_ANY;
   lsocket.port = (argc < 2) ? IPPORT_TELNET : tcp_port_number(argv[1]);
-  tcb_server = open_tcp(&lsocket, NULLSOCK, TCP_SERVER, 0, tnserv_recv_upcall,
+  tcb_server = open_tcp(&lsocket, NULL, TCP_SERVER, 0, tnserv_recv_upcall,
 			tnserv_send_upcall, tnserv_state_upcall, 0, 0);
   return 0;
 }
-

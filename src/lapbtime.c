@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapbtime.c,v 1.6 1995/03/13 13:32:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapbtime.c,v 1.7 1995/12/20 09:46:48 deyke Exp $ */
 
 /* LAPB (AX25) timer recovery routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -70,6 +70,8 @@ void *p)
 			lapbstate(axp,LAPB_RECOVERY);
 		}
 		break;
+	default:
+		break;
 	}
 }
 
@@ -89,6 +91,8 @@ void *p)
 		tx_enq(axp);
 		lapbstate(axp,LAPB_RECOVERY);
 		break;
+	default:
+		break;
 	}
 }
 /* Transmit query */
@@ -105,13 +109,13 @@ register struct ax25_cb *axp)
 	 * chances are that the I frame got lost anyway.
 	 * This is an option in LAPB, but not in the official AX.25.
 	 */
-	if(axp->txq != NULLBUF
+	if(axp->txq != NULL
 	 && (len_p(axp->txq) < axp->pthresh || axp->proto == V1)){
 		/* Retransmit oldest unacked I-frame */
 		dup_p(&bp,axp->txq,0,len_p(axp->txq));
 		ctl = PF | I | (((axp->vs - axp->unack) & MMASK) << 1)
 		 | (axp->vr << 5);
-		sendframe(axp,LAPB_COMMAND,ctl,bp);
+		sendframe(axp,LAPB_COMMAND,ctl,&bp);
 	} else {
 		ctl = busy(axp)                      ? RNR|PF : RR|PF;
 		sendctl(axp,LAPB_COMMAND,ctl);

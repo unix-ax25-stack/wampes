@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.21 1994/10/09 08:23:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.22 1995/12/20 09:46:56 deyke Exp $ */
 
 /* User calls to TCP
  * Copyright 1991 Phil Karn, KA9Q
@@ -27,7 +27,7 @@ void (*r_upcall)(struct tcb *,int32),
 			/* Function to call when data arrives */
 void (*t_upcall)(struct tcb *,int32),
 			/* Function to call when ok to send more data */
-void (*s_upcall)(struct tcb *,int,int),
+void (*s_upcall)(struct tcb *,enum tcp_state,enum tcp_state),
 			/* Function to call when connection state changes */
 int tos,
 int user)               /* User linkage area */
@@ -35,13 +35,13 @@ int user)               /* User linkage area */
 	struct connection conn;
 	register struct tcb *tcb;
 
-	if(lsocket == NULLSOCK){
+	if(lsocket == NULL){
 		Net_error = INVALID;
-		return NULLTCB;
+		return NULL;
 	}
 	conn.local.address = lsocket->address;
 	conn.local.port = lsocket->port;
-	if(fsocket != NULLSOCK){
+	if(fsocket != NULL){
 		conn.remote.address = fsocket->address;
 		conn.remote.port = fsocket->port;
 	} else {
@@ -50,14 +50,14 @@ int user)               /* User linkage area */
 	}
 	if(mode == TCP_ACTIVE)
 		conn.local.address = locaddr(conn.remote.address);
-	if((tcb = lookup_tcb(&conn)) == NULLTCB){
-		if((tcb = create_tcb(&conn)) == NULLTCB){
+	if((tcb = lookup_tcb(&conn)) == NULL){
+		if((tcb = create_tcb(&conn)) == NULL){
 			Net_error = NO_MEM;
-			return NULLTCB;
+			return NULL;
 		}
 	} else if(tcb->state != TCP_LISTEN){
 		Net_error = CON_EXISTS;
-		return NULLTCB;
+		return NULL;
 	}
 	tcb->user = user;
 	if(window != 0)
@@ -73,13 +73,13 @@ int user)               /* User linkage area */
 	case TCP_SERVER:
 		tcb->flags.clone = 1;
 	case TCP_PASSIVE:       /* Note fall-thru */
-		setstate(tcb,TCP_LISTEN);
+		settcpstate(tcb,TCP_LISTEN);
 		break;
 	case TCP_ACTIVE:
 		/* Send SYN, go into TCP_SYN_SENT state */
 		tcb->flags.active = 1;
 		send_syn(tcb);
-		setstate(tcb,TCP_SYN_SENT);
+		settcpstate(tcb,TCP_SYN_SENT);
 		tcp_output(tcb);
 		break;
 	}
@@ -89,37 +89,37 @@ int user)               /* User linkage area */
 long
 send_tcp(
 register struct tcb *tcb,
-struct mbuf *bp)
+struct mbuf **bpp)
 {
 	int32 cnt;
 
-	if(tcb == NULLTCB || bp == NULLBUF){
-		free_p(bp);
+	if(tcb == NULL || bpp == NULL || *bpp == NULL){
+		free_p(bpp);
 		Net_error = INVALID;
 		return -1;
 	}
-	cnt = len_p(bp);
+	cnt = len_p(*bpp);
 	switch(tcb->state){
 	case TCP_CLOSED:
-		free_p(bp);
+		free_p(bpp);
 		Net_error = NO_CONN;
 		return -1;
 	case TCP_LISTEN:
 		if(tcb->conn.remote.address == 0 && tcb->conn.remote.port == 0){
 			/* Save data for later */
-			append(&tcb->sndq,bp);
+			append(&tcb->sndq,bpp);
 			tcb->sndcnt += cnt;
 			break;
 		}
 		/* Change state from passive to active */
 		tcb->flags.active = 1;
 		send_syn(tcb);
-		setstate(tcb,TCP_SYN_SENT);     /* Note fall-thru */
+		settcpstate(tcb,TCP_SYN_SENT);  /* Note fall-thru */
 	case TCP_SYN_SENT:
 	case TCP_SYN_RECEIVED:
 	case TCP_ESTABLISHED:
 	case TCP_CLOSE_WAIT:
-		append(&tcb->sndq,bp);
+		append(&tcb->sndq,bpp);
 		tcb->sndcnt += cnt;
 		tcp_output(tcb);
 		break;
@@ -128,7 +128,7 @@ struct mbuf *bp)
 	case TCP_CLOSING:
 	case TCP_LAST_ACK:
 	case TCP_TIME_WAIT:
-		free_p(bp);
+		free_p(bpp);
 		Net_error = CON_CLOS;
 		return -1;
 	}
@@ -138,34 +138,34 @@ struct mbuf *bp)
 /*---------------------------------------------------------------------------*/
 
 int space_tcp(
-struct tcb *tcb)
-{
-  int cnt;
+struct tcb *tcb
+){
+	int cnt;
 
-  if (!tcb) {
-    Net_error = INVALID;
-    return (-1);
-  }
-  switch (tcb->state) {
-  case TCP_CLOSED:
-    Net_error = NO_CONN;
-    return (-1);
-  case TCP_LISTEN:
-  case TCP_SYN_SENT:
-  case TCP_SYN_RECEIVED:
-  case TCP_ESTABLISHED:
-  case TCP_CLOSE_WAIT:
-    cnt = (int) (tcb->window - tcb->sndcnt);
-    return (cnt > 0) ? cnt : 0;
-  case TCP_FINWAIT1:
-  case TCP_FINWAIT2:
-  case TCP_CLOSING:
-  case TCP_LAST_ACK:
-  case TCP_TIME_WAIT:
-    Net_error = CON_CLOS;
-    return (-1);
-  }
-  return (-1);
+	if (!tcb) {
+		Net_error = INVALID;
+		return -1;
+	}
+	switch (tcb->state) {
+	case TCP_CLOSED:
+		Net_error = NO_CONN;
+		return -1;
+	case TCP_LISTEN:
+	case TCP_SYN_SENT:
+	case TCP_SYN_RECEIVED:
+	case TCP_ESTABLISHED:
+	case TCP_CLOSE_WAIT:
+		cnt = (int) (tcb->window - tcb->sndcnt);
+		return (cnt > 0) ? cnt : 0;
+	case TCP_FINWAIT1:
+	case TCP_FINWAIT2:
+	case TCP_CLOSING:
+	case TCP_LAST_ACK:
+	case TCP_TIME_WAIT:
+		Net_error = CON_CLOS;
+		return -1;
+	}
+	return -1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -177,7 +177,7 @@ register struct tcb *tcb,
 struct mbuf **bpp,
 int32 cnt)
 {
-	if(tcb == NULLTCB || bpp == (struct mbuf **)NULL){
+	if(tcb == NULL || bpp == (struct mbuf **)NULL){
 		Net_error = INVALID;
 		return -1;
 	}
@@ -201,7 +201,7 @@ int32 cnt)
 		case TCP_CLOSING:
 		case TCP_LAST_ACK:
 		case TCP_TIME_WAIT:
-			*bpp = NULLBUF;
+			*bpp = NULL;
 			return 0;
 		}
 	}
@@ -212,7 +212,7 @@ int32 cnt)
 	if(tcb->rcvcnt <= cnt){
 		cnt = tcb->rcvcnt;
 		*bpp = tcb->rcvq;
-		tcb->rcvq = NULLBUF;
+		tcb->rcvq = NULL;
 	} else {
 		*bpp = ambufw((uint16) cnt);
 		pullup(&tcb->rcvq,(*bpp)->data,(uint16) cnt);
@@ -220,8 +220,8 @@ int32 cnt)
 	}
 	tcb->rcvcnt -= cnt;
 	tcb->rcv.wnd += cnt;
-	/* Do a window update if it was closed */
-	if(cnt == tcb->rcv.wnd){
+	/* Do a window update if it was less than one packet and now it's more */
+	if(tcb->rcv.wnd > tcb->mss && tcb->rcv.wnd - cnt < tcb->mss){
 		tcb->flags.force = 1;
 		tcp_output(tcb);
 	}
@@ -235,7 +235,7 @@ int
 close_tcp(
 register struct tcb *tcb)
 {
-	if(tcb == NULLTCB){
+	if(tcb == NULL){
 		Net_error = INVALID;
 		return -1;
 	}
@@ -250,13 +250,13 @@ register struct tcb *tcb)
 	case TCP_ESTABLISHED:
 		tcb->sndcnt++;
 		tcb->snd.nxt++;
-		setstate(tcb,TCP_FINWAIT1);
+		settcpstate(tcb,TCP_FINWAIT1);
 		tcp_output(tcb);
 		return 0;
 	case TCP_CLOSE_WAIT:
 		tcb->sndcnt++;
 		tcb->snd.nxt++;
-		setstate(tcb,TCP_LAST_ACK);
+		settcpstate(tcb,TCP_LAST_ACK);
 		tcp_output(tcb);
 		return 0;
 	case TCP_FINWAIT1:
@@ -278,32 +278,32 @@ del_tcp(
 struct tcb *conn)
 {
 	register struct tcb *tcb;
-	struct tcb *tcblast = NULLTCB;
+	struct tcb *tcblast = NULL;
 	struct reseq *rp,*rp1;
 
 	/* Remove from list */
-	for(tcb=Tcbs;tcb != NULLTCB;tcblast = tcb,tcb = tcb->next)
+	for(tcb=Tcbs;tcb != NULL;tcblast = tcb,tcb = tcb->next)
 		if(tcb == conn)
 			break;
-	if(tcb == NULLTCB){
+	if(tcb == NULL){
 		Net_error = INVALID;
 		return -1;      /* conn was NULL, or not on list */
 	}
-	if(tcblast != NULLTCB)
+	if(tcblast != NULL)
 		tcblast->next = tcb->next;
 	else
 		Tcbs = tcb->next;       /* was first on list */
 
 	stop_timer(&tcb->timer);
-	for(rp = tcb->reseq;rp != NULLRESEQ;rp = rp1){
+	for(rp = tcb->reseq;rp != NULL;rp = rp1){
 		rp1 = rp->next;
-		free_p(rp->bp);
-		free((char *)rp);
+		free_p(&rp->bp);
+		free(rp);
 	}
-	tcb->reseq = NULLRESEQ;
-	free_p(tcb->rcvq);
-	free_p(tcb->sndq);
-	free((char *)tcb);
+	tcb->reseq = NULL;
+	free_p(&tcb->rcvq);
+	free_p(&tcb->sndq);
+	free(tcb);
 	return 0;
 }
 /* Return 1 if arg is a valid TCB, 0 otherwise */
@@ -313,9 +313,9 @@ struct tcb *tcb)
 {
 	register struct tcb *tcb1;
 
-	if(tcb == NULLTCB)
+	if(tcb == NULL)
 		return 0;       /* Null pointer can't be valid */
-	for(tcb1=Tcbs;tcb1 != NULLTCB;tcb1 = tcb1->next){
+	for(tcb1=Tcbs;tcb1 != NULL;tcb1 = tcb1->next){
 		if(tcb1 == tcb)
 			return 1;
 	}
@@ -329,6 +329,7 @@ register struct tcb *tcb)
 	if(!tcpval(tcb))
 		return -1;
 	tcb->flags.force = 1;   /* Send ACK even if no data */
+	tcb->backoff = 0;
 	tcp_timeout(tcb);
 	return 0;
 }
@@ -340,7 +341,7 @@ int32 addr)
 	register struct tcb *tcb;
 	int cnt = 0;
 
-	for(tcb=Tcbs;tcb != NULLTCB;tcb = tcb->next){
+	for(tcb=Tcbs;tcb != NULL;tcb = tcb->next){
 		if(tcb->conn.remote.address == addr){
 			kick_tcp(tcb);
 			cnt++;
@@ -355,7 +356,7 @@ reset_all(void)
 #if 0
 	register struct tcb *tcb,*tcbnext;
 
-	for(tcb=Tcbs;tcb != NULLTCB;tcb = tcbnext){
+	for(tcb=Tcbs;tcb != NULL;tcb = tcbnext){
 		tcbnext = tcb->next;
 		reset_tcp(tcb);
 	}
@@ -363,7 +364,7 @@ reset_all(void)
 	while(Tcbs)
 		reset_tcp(Tcbs);
 #endif
-	pwait(NULL);    /* Let the RSTs go forth */
+	kwait(NULL);    /* Let the RSTs go forth */
 }
 void
 reset_tcp(
@@ -372,14 +373,14 @@ register struct tcb *tcb)
 	struct tcp fakeseg;
 	struct ip fakeip;
 
-	if(tcb == NULLTCB)
+	if(tcb == NULL)
 		return;
 	if(tcb->state != TCP_LISTEN){
 		/* Compose a fake segment with just enough info to generate the
 		 * correct RST reply
 		 */
-		memset((char *)&fakeseg,0,sizeof(fakeseg));
-		memset((char *)&fakeip,0,sizeof(fakeip));
+		memset(&fakeseg,0,sizeof(fakeseg));
+		memset(&fakeip,0,sizeof(fakeip));
 		fakeseg.dest = tcb->conn.local.port;
 		fakeseg.source = tcb->conn.remote.port;
 		fakeseg.flags.ack = 1;

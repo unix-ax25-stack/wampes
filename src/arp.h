@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.11 1994/10/06 16:15:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.12 1995/12/20 09:46:39 deyke Exp $ */
 
 #ifndef _ARP_H
 #define _ARP_H
@@ -33,21 +33,24 @@
 #define MAXHWALEN       20      /* Maximum length of a hardware address */
 
 /* ARP opcodes */
-#define ARP_REQUEST     1
-#define ARP_REPLY       2
-#define REVARP_REQUEST  3
-#define REVARP_REPLY    4
-
+enum arp_opcode {
+	ARP_REQUEST=1,
+	ARP_REPLY,
+	REVARP_REQUEST,
+	REVARP_REPLY
+};
 /* Hardware types */
-#define ARP_NETROM      0       /* Fake for NET/ROM (never actually sent) */
-#define ARP_ETHER       1       /* Assigned to 10 megabit Ethernet */
-#define ARP_EETHER      2       /* Assigned to experimental Ethernet */
-#define ARP_AX25        3       /* Assigned to AX.25 Level 2 */
-#define ARP_PRONET      4       /* Assigned to PROnet token ring */
-#define ARP_CHAOS       5       /* Assigned to Chaosnet */
-#define ARP_IEEE802     6       /* Who uses this? */
-#define ARP_ARCNET      7
-#define ARP_APPLETALK   8
+enum arp_hwtype {
+	ARP_NETROM=0,   /* Fake for NET/ROM (never actually sent) */
+	ARP_ETHER,      /* Assigned to 10 megabit Ethernet */
+	ARP_EETHER,     /* Assigned to experimental Ethernet */
+	ARP_AX25,       /* Assigned to AX.25 Level 2 */
+	ARP_PRONET,     /* Assigned to PROnet token ring */
+	ARP_CHAOS,      /* Assigned to Chaosnet */
+	ARP_IEEE802,    /* Who uses this? */
+	ARP_ARCNET,
+	ARP_APPLETALK
+};
 extern char *Arptypes[];        /* Type fields in ASCII, defined in arpcmd */
 #define NHWTYPES 9
 
@@ -56,44 +59,45 @@ struct arp_type {
 	uint16 hwalen;          /* Hardware length */
 	uint16 iptype;          /* Hardware type field for IP */
 	uint16 arptype;         /* Hardware type field for ARP */
-	uint16 pendtime;                /* # secs to wait pending response */
-	char *bdcst;            /* Hardware broadcast address */
-	char *(*format)(char *,char *);
+	uint16 pendtime;        /* # secs to wait pending response */
+	uint8 *bdcst;           /* Hardware broadcast address */
+	char *(*format)(char *,uint8 *);
 				/* Function that formats addresses */
-	int (*scan)(char *,char *);
+	int (*scan)(uint8 *,char *);
 				/* Reverse of format */
 };
 extern struct arp_type Arp_type[];
-#define NULLATYPE       (struct arp_type *)0
 
 /* Format of an ARP request or reply packet. From p. 3 */
 struct arp {
-	uint16 hardware;                        /* Hardware type */
-	uint16 protocol;                        /* Protocol type */
-	char hwalen;                    /* Hardware address length, bytes */
-	char pralen;                    /* Length of protocol address */
-	uint16 opcode;                  /* ARP opcode (request/reply) */
-	char shwaddr[MAXHWALEN];        /* Sender hardware address field */
+	enum arp_hwtype hardware;       /* Hardware type */
+	uint16 protocol;                /* Protocol type */
+	uint8 hwalen;                   /* Hardware address length, bytes */
+	uint8 pralen;                   /* Length of protocol address */
+	enum arp_opcode opcode;         /* ARP opcode (request/reply) */
+	uint8 shwaddr[MAXHWALEN];       /* Sender hardware address field */
 	int32 sprotaddr;                /* Sender Protocol address field */
-	char thwaddr[MAXHWALEN];        /* Target hardware address field */
+	uint8 thwaddr[MAXHWALEN];       /* Target hardware address field */
 	int32 tprotaddr;                /* Target protocol address field */
+};
+
+enum arp_state {
+	ARP_PENDING,    /* Incomplete */
+	ARP_VALID       /* Complete */
 };
 
 /* Format of ARP table */
 struct arp_tab {
-	struct arp_tab *next;   /* Doubly-linked list pointers */
+	struct arp_tab *next;           /* Doubly-linked list pointers */
 	struct arp_tab *prev;
-	struct timer timer;     /* Time until aging this entry */
-	struct mbuf *pending;   /* Queue of datagrams awaiting resolution */
-	int32 ip_addr;          /* IP Address, host order */
-	uint16 hardware;                /* Hardware type */
-	char state;             /* (In)complete */
-#define ARP_PENDING     0
-#define ARP_VALID       1
-	char pub;               /* Respond to requests for this entry? */
-	char *hw_addr;          /* Hardware address */
+	struct timer timer;             /* Time until aging this entry */
+	struct mbuf *pending;           /* Queue of datagrams awaiting resolution */
+	int32 ip_addr;                  /* IP Address, host order */
+	enum arp_hwtype hardware;       /* Hardware type */
+	enum arp_state state;
+	uint8 *hw_addr;         /* Hardware address */
+	unsigned int pub:1;     /* Respond to requests for this entry? */
 };
-#define NULLARP (struct arp_tab *)0
 extern struct arp_tab *Arp_tab[];
 
 struct arp_stat {
@@ -108,16 +112,16 @@ struct arp_stat {
 extern struct arp_stat Arp_stat;
 
 /* In arp.c: */
-struct arp_tab *arp_add(int32 ipaddr,uint16 hardware,char *hw_addr,
+struct arp_tab *arp_add(int32 ipaddr,enum arp_hwtype hardware,uint8 *hw_addr,
 	int pub);
 void arp_drop(void *p);
 int arp_init(unsigned int hwtype,int hwalen,int iptype,int arptype,
-	int pendtime,char *bdcst,char *(*format)(char *,char *),
-	int  (*scan)(char *,char *) );
-void arp_input(struct iface *iface,struct mbuf *bp);
-struct arp_tab *arp_lookup(uint16 hardware,int32 ipaddr);
-char *res_arp(struct iface *iface,uint16 hardware,int32 target,struct mbuf *bp);
-struct arp_tab *revarp_lookup(uint16 hardware,char *hw_addr);
+	int pendtime,uint8 *bdcst,char *(*format)(char *,uint8 *),
+	int  (*scan)(uint8 *,char *) );
+void arp_input(struct iface *iface,struct mbuf **bpp);
+struct arp_tab *arp_lookup(enum arp_hwtype hardware,int32 ipaddr);
+uint8 *res_arp(struct iface *iface,enum arp_hwtype hardware,int32 target,struct mbuf **bpp);
+struct arp_tab *revarp_lookup(enum arp_hwtype hardware,uint8 *hw_addr);
 
 /* In arphdr.c: */
 struct mbuf *htonarp(struct arp *arp);

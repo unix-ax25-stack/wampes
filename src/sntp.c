@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.11 1995/03/20 08:51:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.12 1995/12/20 09:46:54 deyke Exp $ */
 
 /* Simple Network Time Protocol (SNTP) (see RFC1361) */
 
@@ -6,7 +6,6 @@
 
 #include <netinet/in.h>
 #include <stdio.h>
-#include <string.h>
 #include <sys/time.h>
 
 #include "global.h"
@@ -281,7 +280,7 @@ static struct mbuf *htonntp(const struct pkt *pkt)
 		*p++ = htonl(pkt->xmt.i);
 		*p++ = htonl(pkt->xmt.f);
 		*p++ = htonl(pkt->keyid);
-		memcpy((char *) p, pkt->check, sizeof(pkt->check));
+		memcpy(p, pkt->check, sizeof(pkt->check));
 	}
 	return bp;
 }
@@ -296,10 +295,9 @@ static int ntohntp(struct pkt *pkt, struct mbuf **bpp)
 	unsigned long buf[12];
 	unsigned long w;
 
-	n = pullup(bpp, (char *) buf, NTP_MIN_PACKET_SIZE);
-	free_p(*bpp);
-	*bpp = NULLBUF;
-	if (n < NTP_MIN_PACKET_SIZE) return (-1);
+	n = pullup(bpp, buf, NTP_MIN_PACKET_SIZE);
+	free_p(bpp);
+	if (n < NTP_MIN_PACKET_SIZE) return -1;
 	p = buf;
 	w = ntohl(*p++);
 	pkt->leap = (unsigned char) ((w >> 30) & 0x03);
@@ -373,7 +371,7 @@ static struct fp sys_clock(void)
 	struct fp fp;
 	struct timeval tv;
 
-	if (gettimeofday(&tv, (struct timezone *) 0)) return Zero;
+	if (gettimeofday(&tv, 0)) return Zero;
 	fp.i = TIMEBIAS + tv.tv_sec;
 	fp.f = (unsigned long) (USEC2F * tv.tv_usec);
 	return fp;
@@ -413,7 +411,7 @@ static void sntp_server(struct iface *iface, struct udp_cb *ucb, int cnt)
 	memset(pkt.check, 0, sizeof(pkt.check));
 	pkt.xmt = sys_clock();
 	if ((bp = htonntp(&pkt))) {
-		send_udp(&ucb->socket, &fsocket, DELAY, 0, bp, 0, 0, 0);
+		send_udp(&ucb->socket, &fsocket, DELAY, 0, &bp, 0, 0, 0);
 		if (Ntrace) {
 			printf("sent: ");
 			dumpntp(&pkt);
@@ -505,7 +503,7 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 #if HAS_ADJTIME || defined __hpux
 		tv.tv_sec = peer->offset.i;
 		tv.tv_usec = (long) (peer->offset.f / USEC2F);
-		if (!adjtime(&tv, (struct timeval *) 0)) {
+		if (!adjtime(&tv, 0)) {
 			peer->adjts++;
 			if (Ntrace) printf("Clock adjusted\n");
 		} else {
@@ -514,11 +512,11 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 #endif
 		return;
 	}
-	if (gettimeofday(&tv, (struct timezone *) 0)) return;
+	if (gettimeofday(&tv, 0)) return;
 	now = fpadd(sys_clock(), peer->offset);
 	tv.tv_sec = now.i - TIMEBIAS;
 	tv.tv_usec = (long) (now.f / USEC2F);
-	if (!settimeofday(&tv, (struct timezone *) 0)) {
+	if (!settimeofday(&tv, 0)) {
 		peer->steps++;
 		if (Ntrace) printf("Clock stepped\n");
 	} else {
@@ -537,7 +535,7 @@ static void sntp_client_send(void *arg)
 
 	peer = (struct peer *) arg;
 	start_timer(&peer->timer);
-	memset((char *) & pkt, 0, sizeof(pkt));
+	memset(&pkt, 0, sizeof(pkt));
 	pkt.leap = LEAP_NOTINSYNC;
 	pkt.version = 1;
 	pkt.mode = MODE_CLIENT;
@@ -547,7 +545,7 @@ static void sntp_client_send(void *arg)
 	pkt.rootdispersion = One;
 	pkt.xmt = peer->xmt = sys_clock();
 	if ((bp = htonntp(&pkt))) {
-		send_udp(&peer->ucb->socket, &peer->fsocket, DELAY, 0, bp, 0, 0, 0);
+		send_udp(&peer->ucb->socket, &peer->fsocket, DELAY, 0, &bp, 0, 0, 0);
 		peer->sent++;
 		if (Ntrace) {
 			printf("sent: ");
@@ -786,15 +784,15 @@ static int dosntpsys(int argc, char **argv, void *p)
 
 	static struct cmds sntpsyscmds[] = {
 
-		"leap", dosntpsysleap, 0, 0, NULLCHAR,
-		"precision", dosntpsysprecision, 0, 0, NULLCHAR,
-		"refid", dosntpsysrefid, 0, 0, NULLCHAR,
-		"reftime", dosntpsysreftime, 0, 0, NULLCHAR,
-		"rootdelay", dosntpsysrootdelay, 0, 0, NULLCHAR,
-		"rootdispersion", dosntpsysrootdispersion, 0, 0, NULLCHAR,
-		"stratum", dosntpsysstratum, 0, 0, NULLCHAR,
+		"leap", dosntpsysleap, 0, 0, NULL,
+		"precision", dosntpsysprecision, 0, 0, NULL,
+		"refid", dosntpsysrefid, 0, 0, NULL,
+		"reftime", dosntpsysreftime, 0, 0, NULL,
+		"rootdelay", dosntpsysrootdelay, 0, 0, NULL,
+		"rootdispersion", dosntpsysrootdispersion, 0, 0, NULL,
+		"stratum", dosntpsysstratum, 0, 0, NULL,
 
-		NULLCHAR, NULLFP, 0, 0, NULLCHAR
+		NULL, NULL, 0, 0, NULL
 	};
 
 	int i;
@@ -823,14 +821,13 @@ int dosntp(int argc, char **argv, void *p)
 
 		"add", dosntpadd, 0, 2, "sntp add <server> [<interval>]",
 		"drop", dosntpdrop, 0, 2, "sntp drop <server>",
-		"status", dosntpstat, 0, 0, NULLCHAR,
-		"step_threshold", dosntpstep_threshold, 0, 0, NULLCHAR,
-		"sys", dosntpsys, 0, 0, NULLCHAR,
-		"trace", dosntptrace, 0, 0, NULLCHAR,
+		"status", dosntpstat, 0, 0, NULL,
+		"step_threshold", dosntpstep_threshold, 0, 0, NULL,
+		"sys", dosntpsys, 0, 0, NULL,
+		"trace", dosntptrace, 0, 0, NULL,
 
-		NULLCHAR, NULLFP, 0, 0, NULLCHAR
+		NULL, NULL, 0, 0, NULL
 	};
 
 	return subcmd(sntpcmds, argc, argv, p);
 }
-

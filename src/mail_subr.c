@@ -1,7 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_subr.c,v 1.7 1994/09/05 12:47:16 deyke Exp $ */
-
-#include <stdlib.h>
-#include <string.h>
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_subr.c,v 1.8 1995/12/20 09:46:50 deyke Exp $ */
 
 #include "timer.h"
 #include "mail.h"
@@ -42,4 +39,3 @@ void mailer_failed(struct mailsys *sp)
   sp->state = MS_FAILURE;
   sp->nexttime = secclock() + RETRYTIME;
 }
-

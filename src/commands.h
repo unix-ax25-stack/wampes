@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.25 1994/10/21 11:54:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.26 1995/12/20 09:46:41 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -88,7 +88,6 @@ int hs_attach(int argc,char *argv[],void *p);
 
 /* In icmpcmd.c: */
 int doicmp(int argc,char *argv[],void *p);
-int doping(int argc,char *argv[],void *p);
 
 /* In iface.c: */
 int doifconfig(int argc,char *argv[],void *p);
@@ -97,6 +96,12 @@ int dodetach(int argc,char *argv[],void *p);
 /* In ipcmd.c: */
 int doip(int argc,char *argv[],void *p);
 int doroute(int argc,char *argv[],void *p);
+
+/* In ipsec.c: */
+int dosec(int argc,char *argv[],void *p);
+
+/* In ksp.c: */
+int doksp(int argc,char *argv[],void *p);
 
 /* In ksubr.c: */
 int ps(int argc,char *argv[],void *p);
@@ -121,6 +126,8 @@ int doescape(int argc,char *argv[],void *p);
 int doremote(int argc,char *argv[],void *p);
 int doboot(int argc,char *argv[],void *p);
 int dorepeat(int argc,char *argv[],void *p);
+int dodebug(int argc,char *argv[],void *p);
+int dowipe(int argc,char *argv[],void *p);
 
 /* In mailbox.c: */
 int dombox(int argc,char *argv[],void *p);
@@ -145,6 +152,9 @@ int pk_attach(int argc,char *argv[],void *p);
 /* In pi.c: */
 int pi_attach(int argc,char *argv[],void *p);
 int dopistat(int argc,char *argv[],void *p);
+
+/* In ping.c: */
+int doping(int argc,char *argv[],void *p);
 
 /* in popcli.c */
 int dopop(int argc,char *argv[],void *p);
@@ -174,6 +184,9 @@ int doripreq(int argc,char *argv[],void *p);
 int doripstat(int argc,char *argv[],void *p);
 int doripstop(int argc,char *argv[],void *p);
 int doriptrace(int argc,char *argv[],void *p);
+
+/* In sb.c: */
+int dosound(int argc,char *argv[],void *p);
 
 /* In scc.c: */
 int scc_attach(int argc,char *argv[],void *p);

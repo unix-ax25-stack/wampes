@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.20 1994/10/09 08:22:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.21 1995/12/20 09:46:50 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -31,7 +31,7 @@ unsigned nmsgs,unsigned n)
 {
 	static char buf[16];
 
-	if(n < nmsgs && msgs[n] != NULLCHAR)
+	if(n < nmsgs && msgs[n] != NULL)
 		return msgs[n];
 	sprintf(buf,"%u",n);
 	return buf;
@@ -78,12 +78,13 @@ char c)
  */
 int
 readhex(
-char *out,char *in,
+uint8 *out,
+char *in,
 int size)
 {
 	int c,count;
 
-	if(in == NULLCHAR)
+	if(in == NULL)
 		return 0;
 	for(count=0;count < size;count++){
 		while(*in == ' ' || *in == '\t')
@@ -115,25 +116,39 @@ register char *s)
 /* Count the occurrances of 'c' in a buffer */
 int
 memcnt(
-char *buf,
-char c,
+uint8 *buf,
+uint8 c,
 int size)
 {
 	int cnt = 0;
-	char *icp;
+	uint8 *icp;
 
 	while(size != 0){
-		if((icp = (char *) memchr(buf,c,size)) == NULLCHAR)
+		int change;
+
+		if((icp = (uint8 *) memchr(buf,c,size)) == NULL)
 			break;  /* No more found */
 		/* Advance the start of the next search to right after
 		 * this character
 		 */
-		buf += (icp - buf + 1);
-		size -= (icp - buf + 1);
+		change = (int) (icp - buf + 1);
+		buf += change;
+		size -= change;
 		cnt++;
 	}
 	return cnt;
 }
+/* XOR block 'b' into block 'a' */
+void
+memxor(
+uint8 *a,
+uint8 *b,
+unsigned int n)
+{
+	while(n-- != 0)
+		*a++ ^= *b++;
+}
+
 #if 0
 /* Copy a string to a malloc'ed buffer. Turbo C has this one in its
  * library, but it doesn't call mallocw() and can therefore return NULL.
@@ -146,8 +161,8 @@ const char *s)
 	register char *out;
 	register int len;
 
-	if(s == NULLCHAR)
-		return NULLCHAR;
+	if(s == NULL)
+		return NULL;
 	len = strlen(s);
 	out = mallocw(len+1);
 	/* This is probably a tad faster than strcpy, since we know the len */
@@ -177,7 +192,7 @@ int strnicmp(
 char *a,char *b,
 size_t n)
 {
-	char a1,b1;
+	char a1=0,b1=0;
 
 	while(n-- != 0 && (a1 = *a++) != '\0' && (b1 = *b++) != '\0'){
 		if(a1 == b1)
@@ -209,25 +224,25 @@ char *s2)       /* Delimiter string */
 	register char *cp;
 	char *tmp;
 
-	if(s2 == NULLCHAR)
-		return NULLCHAR;        /* Must give delimiter string */
+	if(s2 == NULL)
+		return NULL;    /* Must give delimiter string */
 
-	if(s1 != NULLCHAR)
+	if(s1 != NULL)
 		next = s1;              /* First call */
 
-	if(next == NULLCHAR)
-		return NULLCHAR;        /* No more */
+	if(next == NULL)
+		return NULL;    /* No more */
 
 	/* Find beginning of this token */
 	for(cp = next;*cp != '\0' && isdelim(*cp,s2);cp++)
 		;
 
 	if(*cp == '\0')
-		return NULLCHAR;        /* Trailing delimiters, no token */
+		return NULL;    /* Trailing delimiters, no token */
 
 	/* Save the beginning of this token, and find its end */
 	tmp = cp;
-	next = NULLCHAR;        /* In case we don't find another delim */
+	next = NULL;    /* In case we don't find another delim */
 	for(;*cp != '\0';cp++){
 		if(isdelim(*cp,s2)){
 			*cp = '\0';
@@ -257,21 +272,21 @@ register char *delim)
  */
 #ifndef MSDOS
 /* Put a long in host order into a char array in network order */
-char *
+uint8 *
 put32(
-register char *cp,
+register uint8 *cp,
 int32 x)
 {
-	*cp++ = (char) (x >> 24);
-	*cp++ = (char) (x >> 16);
-	*cp++ = (char) (x >>  8);
-	*cp++ = (char) (x      );
+	*cp++ = (uint8) (x >> 24);
+	*cp++ = (uint8) (x >> 16);
+	*cp++ = (uint8) (x >>  8);
+	*cp++ = (uint8) (x      );
 	return cp;
 }
 /* Put a short in host order into a char array in network order */
-char *
+uint8 *
 put16(
-register char *cp,
+register uint8 *cp,
 uint16 x)
 {
 	*cp++ = x >> 8;
@@ -281,35 +296,35 @@ uint16 x)
 }
 uint16
 get16(
-register char *cp)
+register uint8 *cp)
 {
 	register uint16 x;
 
-	x = uchar(*cp++);
+	x = *cp++;
 	x <<= 8;
-	x |= uchar(*cp);
+	x |= *cp;
 	return x;
 }
 /* Machine-independent, alignment insensitive network-to-host long conversion */
 int32
 get32(
-register char *cp)
+register uint8 *cp)
 {
 	int32 rval;
 
-	rval = uchar(*cp++);
+	rval = *cp++;
 	rval <<= 8;
-	rval |= uchar(*cp++);
+	rval |= *cp++;
 	rval <<= 8;
-	rval |= uchar(*cp++);
+	rval |= *cp++;
 	rval <<= 8;
-	rval |= uchar(*cp);
+	rval |= *cp;
 
 	return rval;
 }
 /* Compute int(log2(x)) */
 int
-log2(
+ilog2(
 register uint16 x)
 {
 	register int n = 16;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25dump.c,v 1.10 1994/10/21 11:54:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25dump.c,v 1.11 1995/12/20 09:46:39 deyke Exp $ */
 
 /* AX25 header tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -26,7 +26,7 @@ int check)      /* Not used */
 	uint16 type;
 	int unsegmented;
 	struct ax25 hdr;
-	char *hp;
+	uint8 *hp;
 
 	fprintf(fp,"AX25: ");
 	/* Extract the address header */
@@ -177,11 +177,11 @@ struct iface *iface,
 struct mbuf *bp)
 {
 	struct mbuf *bpp;
-	char dest[AXALEN];
+	uint8 dest[AXALEN];
 
 	/* Duplicate the destination address */
 	if(dup_p(&bpp,bp,0,AXALEN) != AXALEN){
-		free_p(bpp);
+		free_p(&bpp);
 		return 0;
 	}
 	if(pullup(&bpp,dest,AXALEN) < AXALEN)

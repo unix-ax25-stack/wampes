@@ -83,8 +83,6 @@ with checksum and one without:
 
 KISS data frame (without checksum)
 
-.\"
-
 +------+------+------+------+----
 | FEND | 0x80 | DATA | DATA | ...
 +------+------+------+------+----

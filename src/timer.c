@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.17 1994/10/09 08:23:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.18 1995/12/20 09:46:57 deyke Exp $ */
 
 /* General purpose software timer facilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -39,19 +39,19 @@ void *v1,void *v2)
 
 		fflush(stdout); /* And flush out stdout too */
 
-		gettimeofday(&tv, (struct timezone *) 0);
+		gettimeofday(&tv, 0);
 		Secclock = tv.tv_sec;
 		Msclock = 1000 * Secclock + tv.tv_usec / 1000;
 
 		while((t = Timers) && (bugfix = t->expiration - Msclock) <= 0) {
 			if ((Timers = t->next))
-				Timers->prev = NULLTIMER;
+				Timers->prev = NULL;
 			t->state = TIMER_EXPIRE;
 			if(t->func)
 				(*t->func)(t->arg);
 		}
 #ifndef SINGLE_THREADED
-		pwait(NULL);    /* Let them run before handling more ticks */
+		kwait(NULL);    /* Let them run before handling more ticks */
 #else
 		return;
 #endif
@@ -63,10 +63,10 @@ start_timer(
 struct timer *t)
 {
 	register struct timer *tnext;
-	struct timer *tprev = NULLTIMER;
+	struct timer *tprev = NULL;
 	int32 bugfix;
 
-	if(t == NULLTIMER)
+	if(t == NULL)
 		return;
 	if(t->state == TIMER_RUN)
 		stop_timer(t);
@@ -80,7 +80,7 @@ struct timer *t)
 	 * of subtraction and comparison with zero rather than direct
 	 * comparison of expiration times.
 	 */
-	for(tnext = Timers;tnext != NULLTIMER;tprev=tnext,tnext = tnext->next){
+	for(tnext = Timers;tnext != NULL;tprev=tnext,tnext = tnext->next){
 		if((bugfix = tnext->expiration - t->expiration) >= 0)
 			break;
 	}
@@ -88,7 +88,7 @@ struct timer *t)
 	 * before us, and tnext points to the entry just after us. Either or
 	 * both may be null.
 	 */
-	if((t->prev = tprev) == NULLTIMER)
+	if((t->prev = tprev) == NULL)
 		Timers = t;             /* Put at beginning */
 	else
 		tprev->next = t;
@@ -102,7 +102,7 @@ stop_timer(
 struct timer *timer)
 {
 
-	if(timer == NULLTIMER || timer->state != TIMER_RUN)
+	if(timer == NULL || timer->state != TIMER_RUN)
 		return;
 
 	if(timer->prev)
@@ -122,7 +122,7 @@ struct timer *t)
 {
 	int32 remaining;
 
-	if(t == NULLTIMER || t->state != TIMER_RUN)
+	if(t == NULL || t->state != TIMER_RUN)
 		return 0;
 
 	if((remaining = t->expiration - Msclock) <= 0)
@@ -142,20 +142,20 @@ next_timer_event(void)
  * Normally returns 0; returns -1 if aborted by alarm.
  */
 int
-Xpause(
+ppause(
 int32 ms)
 {
 	int val = 0;
 
-	if(Curproc == NULLPROC || ms <= 0)
+	if(Curproc == NULL || ms <= 0)
 		return 0;
-	Xalarm(ms);
+	kalarm(ms);
 	/* The actual event doesn't matter, since we'll be alerted */
 	while(Curproc->alarm.state == TIMER_RUN){
-		if((val = pwait(Curproc)) != 0)
+		if((val = kwait(Curproc)) != 0)
 			break;
 	}
-	Xalarm(0L); /* Make sure it's stopped, in case we were killed */
+	kalarm(0L); /* Make sure it's stopped, in case we were killed */
 	return (val == EALARM) ? 0 : -1;
 }
 static void
@@ -166,10 +166,10 @@ void *x)
 }
 /* Send signal to current process after specified number of milliseconds */
 void
-Xalarm(
+kalarm(
 int32 ms)
 {
-	if(Curproc != NULLPROC){
+	if(Curproc != NULL){
 		set_timer(&Curproc->alarm,ms);
 		Curproc->alarm.func = t_alarm;
 		Curproc->alarm.arg = (char *)Curproc;

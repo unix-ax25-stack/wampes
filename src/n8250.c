@@ -1,11 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.38 1994/10/06 16:15:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.39 1995/12/20 09:46:51 deyke Exp $ */
 
 #include <sys/types.h>
 
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <stdio.h>
-#include <string.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <unistd.h>
@@ -146,7 +145,7 @@ asy_up(struct asy *ap)
 
 	if (ap->addr && ap->vec) {      /* Hide TCP connections in here */
 		struct sockaddr_in addr;
-		memset((char *) &addr, 0, sizeof(addr));
+		memset(&addr, 0, sizeof(addr));
 		addr.sin_family = AF_INET;
 		addr.sin_addr.s_addr = htonl((unsigned long) ap->addr);
 		addr.sin_port = htons((unsigned short) ap->vec);
@@ -170,7 +169,7 @@ asy_up(struct asy *ap)
 		{
 #ifdef ibm032
 			struct sgttyb sgttyb;
-			memset((char *) &sgttyb, 0, sizeof(sgttyb));
+			memset(&sgttyb, 0, sizeof(sgttyb));
 			sgttyb.sg_ispeed = speed_table[sp].flags;
 			sgttyb.sg_ospeed = speed_table[sp].flags;
 			sgttyb.sg_flags = RAW | ANYP | LPASS8 | LNOHANG;
@@ -178,7 +177,7 @@ asy_up(struct asy *ap)
 				goto Fail;
 #else
 			struct termios termios;
-			memset((char *) &termios, 0, sizeof(termios));
+			memset(&termios, 0, sizeof(termios));
 			termios.c_iflag = IGNBRK | IGNPAR;
 			termios.c_cflag = CS8 | CREAD | CLOCAL;
 			if (cfsetispeed(&termios, speed_table[sp].flags))
@@ -253,10 +252,10 @@ struct iface *ifp)
 
 	ap = &Asy[ifp->dev];
 
-	if(ap->iface == NULLIF)
+	if(ap->iface == NULL)
 		return -1;      /* Not allocated */
 	asy_down(ap);
-	ap->iface = NULLIF;
+	ap->iface = NULL;
 	return 0;
 }
 
@@ -275,7 +274,7 @@ long bps)
 	if(bps <= 0 || dev >= ASY_MAX)
 		return -1;
 	asyp = &Asy[dev];
-	if(asyp->iface == NULLIF)
+	if(asyp->iface == NULL)
 		return -1;
 
 	if(bps == 0)
@@ -344,7 +343,7 @@ int cnt)
 	struct asy *ap;
 
 	ap = &Asy[dev];
-	if(ap->iface == NULLIF)
+	if(ap->iface == NULL)
 		return 0;
 	cnt = read(ap->fd,buf,cnt);
 	ap->rxints++;
@@ -372,13 +371,13 @@ void *p)
 
 	if(argc < 2){
 		for(asyp = Asy;asyp < &Asy[ASY_MAX];asyp++){
-			if(asyp->iface != NULLIF)
+			if(asyp->iface != NULL)
 				pasy(asyp);
 		}
 		return 0;
 	}
 	for(i=1;i<argc;i++){
-		if((ifp = if_lookup(argv[i])) == NULLIF){
+		if((ifp = if_lookup(argv[i])) == NULL){
 			printf("Interface %s unknown\n",argv[i]);
 			continue;
 		}
@@ -428,13 +427,13 @@ struct asy *asyp)
 {
 	int n;
 
-	if (asyp->sndq != NULLBUF) {
+	if (asyp->sndq != NULL) {
 #ifdef MAXIOV
 		struct iovec iov[MAXIOV];
 		struct mbuf *bp;
 		n = 0;
 		for (bp = asyp->sndq; bp && n < MAXIOV; bp = bp->next) {
-			iov[n].iov_base = bp->data;
+			iov[n].iov_base = (char *) bp->data;
 			iov[n].iov_len = bp->cnt;
 			n++;
 		}
@@ -451,7 +450,7 @@ struct asy *asyp)
 		while (n > 0) {
 			if (n >= asyp->sndq->cnt) {
 				n -= asyp->sndq->cnt;
-				asyp->sndq = free_mbuf(asyp->sndq);
+				asyp->sndq = free_mbuf(&asyp->sndq);
 			} else {
 				asyp->sndq->data += n;
 				asyp->sndq->cnt -= n;
@@ -459,7 +458,7 @@ struct asy *asyp)
 			}
 		}
 	}
-	if (asyp->sndq == NULLBUF)
+	if (asyp->sndq == NULL)
 		off_write(asyp->fd);
 }
 
@@ -469,20 +468,20 @@ struct asy *asyp)
 int
 asy_send(
 int dev,
-struct mbuf *bp)
+struct mbuf **bpp)
 {
 	struct asy *asyp;
 
 	if(dev < 0 || dev >= ASY_MAX){
-		free_p(bp);
+		free_p(bpp);
 		return -1;
 	}
 	asyp = &Asy[dev];
 
-	if(asyp->iface == NULLIF || asyp->fd < 0)
-		free_p(bp);
+	if(asyp->iface == NULL || asyp->fd < 0)
+		free_p(bpp);
 	else {
-		append(&asyp->sndq, bp);
+		append(&asyp->sndq, bpp);
 		on_write(asyp->fd, (void (*)(void *)) asy_tx, asyp);
 	}
 	return 0;

@@ -1,16 +1,17 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.16 1994/10/09 08:22:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.17 1995/12/20 09:46:45 deyke Exp $ */
 
 /* Internet Control Message Protocol (ICMP)
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <sys/types.h>
-#include <sys/time.h>
 #include <stdio.h>
+#include <sys/time.h>
 #include "global.h"
 #include "mbuf.h"
 #include "iface.h"
 #include "ip.h"
 #include "icmp.h"
+#include "ping.h"
 #include "netuser.h"
 
 struct mib_entry Icmp_mib[] = {
@@ -48,11 +49,11 @@ void
 icmp_input(
 struct iface *iface,    /* Incoming interface (ignored) */
 struct ip *ip,          /* Pointer to decoded IP header structure */
-struct mbuf *bp,        /* Pointer to ICMP message */
-int rxbroadcast)
-{
+struct mbuf **bpp,      /* Pointer to ICMP message */
+int rxbroadcast,
+int32 said
+){
 	struct icmplink *ipp;
-	struct mbuf *tbp;
 	struct icmp icmp;       /* ICMP header */
 	struct ip oip;          /* Offending datagram header */
 	uint16 type;            /* Type of ICMP message */
@@ -62,28 +63,29 @@ int rxbroadcast)
 	if(rxbroadcast){
 		/* Broadcast ICMP packets are to be IGNORED !! */
 		icmpInErrors++;
-		free_p(bp);
+		free_p(bpp);
 		return;
 	}
 	length = ip->length - IPLEN - ip->optlen;
-	if(cksum(NULLHEADER,bp,length) != 0){
+	if(cksum(NULL,*bpp,length) != 0){
 		/* Bad ICMP checksum; discard */
 		icmpInErrors++;
-		free_p(bp);
+		free_p(bpp);
 		return;
 	}
-	ntohicmp(&icmp,&bp);
+	ntohicmp(&icmp,bpp);
 
 	/* Process the message. Some messages are passed up to the protocol
 	 * module for handling, others are handled here.
 	 */
 	type = icmp.type;
 
-	switch(uchar(type)){
+	switch(type){
 	case ICMP_TIME_EXCEED:  /* Time-to-live Exceeded */
 	case ICMP_DEST_UNREACH: /* Destination Unreachable */
 	case ICMP_QUENCH:       /* Source Quench */
-		switch(uchar(type)){
+	case ICMP_IPSP:         /* Bad security packet */
+		switch(type){
 		case ICMP_TIME_EXCEED:  /* Time-to-live Exceeded */
 			icmpInTimeExcds++;
 			break;
@@ -94,22 +96,25 @@ int rxbroadcast)
 			icmpInSrcQuenchs++;
 			break;
 		}
-		ntohip(&oip,&bp);       /* Extract offending IP header */
+		ntohip(&oip,bpp);       /* Extract offending IP header */
 		if(Icmp_trace){
 			printf("ICMP from %s:",inet_ntoa(ip->source));
 			printf(" dest %s %s",inet_ntoa(oip.dest),
-			 smsg(Icmptypes,ICMP_TYPES,uchar(type)));
-			switch(uchar(type)){
+			 smsg(Icmptypes,ICMP_TYPES,type));
+			switch(type){
 			case ICMP_TIME_EXCEED:
 				printf(" %s\n",
-				 smsg(Exceed,NEXCEED,uchar(icmp.code)));
+				 smsg(Exceed,NEXCEED,icmp.code));
 				break;
 			case ICMP_DEST_UNREACH:
 				printf(" %s\n",
-				 smsg(Unreach,NUNREACH,uchar(icmp.code)));
+				 smsg(Unreach,NUNREACH,icmp.code));
+				break;
+			case ICMP_IPSP:
+				printf(" %s\n",smsg(Said_icmp,NIPSP,icmp.code));
 				break;
 			default:
-				printf(" %u\n",uchar(icmp.code));
+				printf(" %u\n",icmp.code);
 				break;
 			}
 		}
@@ -118,7 +123,7 @@ int rxbroadcast)
 				break;
 		if(ipp->funct != NULL){
 			(*ipp->funct)(ip->source,oip.source,oip.dest,icmp.type,
-			 icmp.code,&bp);
+			 icmp.code,bpp);
 		}
 		break;
 	case ICMP_ECHO:         /* Echo Request */
@@ -127,10 +132,7 @@ int rxbroadcast)
 		 */
 		icmpInEchos++;
 		icmp.type = ICMP_ECHO_REPLY;
-		if((tbp = htonicmp(&icmp,bp)) == NULLBUF){
-			free_p(bp);
-			return;
-		}
+		htonicmp(&icmp,bpp);
 		icmpOutEchoReps++;
 #if 1
 		{
@@ -138,25 +140,21 @@ int rxbroadcast)
 		ip->source = ip->dest;
 		ip->dest = tmp;
 		ip->ttl = (char) ipDefaultTTL;
-		bp = tbp;
-		if((tbp = htonip(ip,bp,IP_CS_NEW)) == NULLBUF){
-			free_p(bp);
-			return;
-		}
+		htonip(ip,bpp,IP_CS_NEW);
 		icmpOutMsgs++;
-		net_route(NULLIF,tbp);
+		net_route(NULL,bpp);
 		}
 #else
-		ip_send(ip->dest,ip->source,ICMP_PTCL,ip->tos,0,tbp,length,0,0);
+		ip_send(ip->dest,ip->source,ICMP_PTCL,ip->tos,0,bpp,length,0,0);
 #endif
 		return;
 	case ICMP_REDIRECT:     /* Redirect */
 		icmpInRedirects++;
-		ntohip(&oip,&bp);       /* Extract offending IP header */
+		ntohip(&oip,bpp);       /* Extract offending IP header */
 		if(Icmp_trace){
 			printf("ICMP from %s:",inet_ntoa(ip->source));
 			printf(" dest %s %s",inet_ntoa(oip.dest),
-			 smsg(Icmptypes,ICMP_TYPES,uchar(type)));
+			 smsg(Icmptypes,ICMP_TYPES,type));
 			printf(" new gateway %s\n",inet_ntoa(icmp.args.address));
 		}
 		break;
@@ -165,42 +163,33 @@ int rxbroadcast)
 		break;
 	case ICMP_ECHO_REPLY:   /* Echo Reply */
 		icmpInEchoReps++;
-		echo_proc(ip->source,ip->dest,&icmp,bp);
-		bp = NULLBUF;   /* so it won't get freed */
+		echo_proc(ip->source,ip->dest,&icmp,bpp);
 		break;
 	case ICMP_TIMESTAMP:    /* Timestamp */
 		icmpInTimestamps++;
 		{
 		int32 tmp;
-		char buf[12];
+		uint8 buf[12];
 		struct timeval tv;
-		if(pullup(&bp,buf,sizeof(buf)) != sizeof(buf)){
-			free_p(bp);
+		if(pullup(bpp,buf,sizeof(buf)) != sizeof(buf)){
+			free_p(bpp);
 			return;
 		}
-		gettimeofday(&tv,(struct timezone *) 0);
+		gettimeofday(&tv,0);
 		tmp = (tv.tv_sec % 86400) * 1000 + tv.tv_usec / 1000;
 		put32(&buf[4],tmp);     /* Receive Timestamp */
 		put32(&buf[8],tmp);     /* Transmit Timestamp */
-		bp = pushdown(bp,sizeof(buf));
-		memcpy(bp->data,buf,sizeof(buf));
+		pushdown(bpp,buf,sizeof(buf));
 		icmp.type = ICMP_TIME_REPLY;
-		if((tbp = htonicmp(&icmp,bp)) == NULLBUF){
-			free_p(bp);
-			return;
-		}
+		htonicmp(&icmp,bpp);
 		icmpOutTimestampReps++;
 		tmp = ip->source;
 		ip->source = ip->dest;
 		ip->dest = tmp;
 		ip->ttl = (char) ipDefaultTTL;
-		bp = tbp;
-		if((tbp = htonip(ip,bp,IP_CS_NEW)) == NULLBUF){
-			free_p(bp);
-			return;
-		}
+		htonip(ip,bpp,IP_CS_NEW);
 		icmpOutMsgs++;
-		net_route(NULLIF,tbp);
+		net_route(NULL,bpp);
 		return;
 		}
 	case ICMP_TIME_REPLY:   /* Timestamp Reply */
@@ -211,7 +200,7 @@ int rxbroadcast)
 	case ICMP_INFO_REPLY:   /* Information Reply */
 		break;
 	}
-	free_p(bp);
+	free_p(bpp);
 }
 /* Return an ICMP response to the sender of a datagram.
  * Unlike most routines, the callER frees the mbuf.
@@ -219,22 +208,23 @@ int rxbroadcast)
 int
 icmp_output(
 struct ip *ip,          /* Header of offending datagram */
-struct mbuf *data,      /* Data portion of datagram */
-char type,char code,    /* Codes to send */
-union icmp_args *args)
-{
-	struct mbuf *bp = NULLBUF;
+struct mbuf *data,      /* Data portion of datagram - FREED BY CALLER */
+uint8 type,             /* Codes to send */
+uint8 code,
+union icmp_args *args
+){
+	struct mbuf *bp;
 	struct icmp icmp;       /* ICMP protocol header */
 	uint16 dlen;            /* Length of data portion of offending pkt */
 	uint16 length;          /* Total length of reply */
 
-	if(ip == NULLIP)
+	if(ip == NULL)
 		return -1;
-	if(uchar(ip->protocol) == ICMP_PTCL){
+	if(ip->protocol == ICMP_PTCL){
 		/* Peek at type field of ICMP header to see if it's safe to
 		 * return an ICMP message
 		 */
-		switch(uchar(data->data[0])){
+		switch(data->data[0]){
 		case ICMP_ECHO_REPLY:
 		case ICMP_ECHO:
 		case ICMP_TIMESTAMP:
@@ -255,19 +245,15 @@ union icmp_args *args)
 	dlen = min(8,len_p(data));
 	length = dlen + ICMPLEN + IPLEN + ip->optlen;
 	/* Take excerpt from data portion */
-	if(data != NULLBUF && dup_p(&bp,data,0,dlen) == 0)
+	if(data != NULL && dup_p(&bp,data,0,dlen) == 0)
 		return -1;      /* The caller will free data */
 
 	/* Recreate and tack on offending IP header */
-	if((data = htonip(ip,bp,IP_CS_NEW)) == NULLBUF){
-		free_p(bp);
-		icmpOutErrors++;
-		return -1;
-	}
+	htonip(ip,&bp,IP_CS_NEW);
 	icmp.type = type;
 	icmp.code = code;
 	icmp.args.unused = 0;
-	switch(uchar(icmp.type)){
+	switch(icmp.type){
 	case ICMP_PARAM_PROB:
 		icmpOutParmProbs++;
 		icmp.args.pointer = args->pointer;
@@ -314,9 +300,6 @@ union icmp_args *args)
 	}
 	icmpOutMsgs++;
 	/* Now stick on the ICMP header */
-	if((bp = htonicmp(&icmp,data)) == NULLBUF){
-		free_p(data);
-		return -1;
-	}
-	return ip_send(INADDR_ANY,ip->source,ICMP_PTCL,ip->tos,0,bp,length,0,0);
+	htonicmp(&icmp,&bp);
+	return ip_send(INADDR_ANY,ip->source,ICMP_PTCL,ip->tos,0,&bp,length,0,0);
 }

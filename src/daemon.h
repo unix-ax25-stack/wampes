@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/daemon.h,v 1.3 1993/05/17 13:44:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/daemon.h,v 1.4 1995/12/20 09:46:42 deyke Exp $ */
 
 #ifndef _DAEMON_H
 #define _DAEMON_H
@@ -8,7 +8,6 @@ struct daemon {
 	unsigned stksize;
 	void (*fp)(int,void *,void *);
 };
-#define NULLDAEMON ((struct daemon *)0)
 extern struct daemon Daemons[];
 
 /* In alloc.c: */
@@ -21,6 +20,9 @@ void display(int,void *,void *);
 
 /* In kernel.c: */
 void killer(int,void*,void*);
+
+/* In random.c: */
+void rand_init(int,void*,void*);
 
 /* In timer.c: */
 void timerproc(int,void*,void*);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.14 1994/10/09 08:22:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.15 1995/12/20 09:46:41 deyke Exp $ */
 
 /* Parse command line, set up command arguments Unix-style, and call function.
  * Note: argument is modified (delimiters are overwritten with nulls)
@@ -13,7 +13,6 @@
  */
 #include <ctype.h>
 #include <stdio.h>
-#include <string.h>
 #include "global.h"
 #include "proc.h"
 #include "cmdparse.h"
@@ -39,7 +38,7 @@ static struct boolcmd Boolcmds[] = {
 	"0",            0,
 	"clear",        0,
 	"disable",      0,
-	NULLCHAR
+	NULL
 };
 
 static int print_help(struct cmds *cmdp);
@@ -102,7 +101,7 @@ char *line)
 				*cp++ = (char) num;
 				break;
 			case '\0':
-				return NULLCHAR;
+				return NULL;
 			default:
 				*cp++ = *(line - 1);
 				break;
@@ -133,7 +132,7 @@ void *p)
 	rip(line);
 
 	for(argc = 0;argc < NARG;argc++)
-		argv[argc] = NULLCHAR;
+		argv[argc] = NULL;
 
 	for(argc = 0;argc < NARG;){
 		register int qflag = FALSE;
@@ -155,7 +154,7 @@ void *p)
 
 		if(qflag){
 			/* Find terminating delimiter */
-			if((line = stringparse(line)) == NULLCHAR){
+			if((line = stringparse(line)) == NULL){
 				return -1;
 			}
 		} else {
@@ -175,12 +174,12 @@ void *p)
 	}
 	if (argv[0][0] == '?') return print_help(cmds);
 	/* Look up command in table; prefix matches are OK */
-	for(cmdp = cmds;cmdp->name != NULLCHAR;cmdp++){
+	for(cmdp = cmds;cmdp->name != NULL;cmdp++){
 		if(strncmp(argv[0],cmdp->name,strlen(argv[0])) == 0)
 			break;
 	}
-	if(cmdp->name == NULLCHAR) {
-		if(cmdp->argc_errmsg != NULLCHAR)
+	if(cmdp->name == NULL) {
+		if(cmdp->argc_errmsg != NULL)
 			printf("%s\n",cmdp->argc_errmsg);
 		return -1;
 	}
@@ -190,11 +189,12 @@ void *p)
 		printf("Usage: %s\n",cmdp->argc_errmsg);
 		return -1;
 	}
-	if(cmdp->func == NULLFP)
+	if(cmdp->func == NULL)
 		return 0;
 	if(cmdp->stksize == 0){
 		return (*cmdp->func)(argc,argv,p);
 	} else {
+#ifndef SINGLE_THREADED
 		/* Make private copy of argv and args,
 		 * spawn off subprocess and return.
 		 */
@@ -203,6 +203,7 @@ void *p)
 			pargv[i] = strdup(argv[i]);
 		newproc(cmdp->name,cmdp->stksize,
 		(void (*)(int,void *,void *))cmdp->func,argc,pargv,p,1);
+#endif
 		return 0;
 	}
 }
@@ -232,7 +233,7 @@ void *p)
 	}
 	argc--;
 	argv++;
-	for(cmdp = tab;cmdp->name != NULLCHAR;cmdp++){
+	for(cmdp = tab;cmdp->name != NULL;cmdp++){
 		if(strncmp(argv[0],cmdp->name,strlen(argv[0])) == 0){
 			found = 1;
 			break;
@@ -244,19 +245,21 @@ void *p)
 		return -1;
 	}
 	if(argc < cmdp->argcmin){
-		if(cmdp->argc_errmsg != NULLCHAR)
+		if(cmdp->argc_errmsg != NULL)
 			printf("Usage: %s\n",cmdp->argc_errmsg);
 		return -1;
 	}
 	if(cmdp->stksize == 0){
 		return (*cmdp->func)(argc,argv,p);
 	} else {
+#ifndef SINGLE_THREADED
 		/* Make private copy of argv and args */
 		pargv = (char **)callocw(argc,sizeof(char *));
 		for(i=0;i<argc;i++)
 			pargv[i] = strdup(argv[i]);
 		newproc(cmdp->name,cmdp->stksize,
 		 (void (*)(int,void *,void *))cmdp->func,argc,pargv,p,1);
+#endif
 		return(0);
 	}
 }
@@ -287,16 +290,15 @@ char *argv[])
 		printf("%s: %s\n",label,*var ? "on":"off");
 		return 0;
 	}
-	for(bc = Boolcmds;bc->str != NULLCHAR;bc++){
+	for(bc = Boolcmds;bc->str != NULL;bc++){
 		if(stricmp(argv[1],bc->str) == 0){
 			*var = bc->val;
 			return 0;
 		}
 	}
 	printf("Valid options:");
-	for(bc = Boolcmds;bc->str != NULLCHAR;bc++)
-		if(printf(" %s",bc->str) == EOF)
-			return 1;
+	for(bc = Boolcmds;bc->str != NULL;bc++)
+		printf(" %s",bc->str);
 	printf("\n");
 	return 1;
 }

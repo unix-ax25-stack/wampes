@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ripcmd.c,v 1.5 1994/10/06 16:15:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ripcmd.c,v 1.6 1995/12/20 09:46:53 deyke Exp $ */
 
 /* RIP-related user commands
  *   Al Broscious, N3FCT
@@ -23,13 +23,13 @@ struct cmds Ripcmds[] = {
 		"rip add <dest> <interval> [<flags>]",
 	"drop",         doripdrop,      0,      2,
 		"rip drop <dest>",
-	"merge",        doripmerge,     0,      0,      NULLCHAR,
+	"merge",        doripmerge,     0,      0,      NULL,
 	"refuse",       doaddrefuse,    0,      2,
 		"rip refuse <gateway>",
-	"request",      doripreq,       0,      2,      NULLCHAR,
-	"status",       doripstat,      0,      0,      NULLCHAR,
-	"trace",        doriptrace,     0,      0,      NULLCHAR,
-	NULLCHAR,
+	"request",      doripreq,       0,      2,      NULL,
+	"status",       doripstat,      0,      0,      NULL,
+	"trace",        doriptrace,     0,      0,      NULL,
+	NULL,
 };
 
 int
@@ -48,12 +48,15 @@ int argc,
 char *argv[],
 void *p)
 {
-	char flags = 0;
+	int split = 1;
+	int us = 0;
 
 	if(argc > 3)
-		flags = atoi(argv[3]);
+		split = atoi(argv[3]);
+	if(argc > 4)
+		us = atoi(argv[4]);
 
-	return rip_add(resolve(argv[1]),atol(argv[2]),flags);
+	return rip_add(resolve(argv[1]),atol(argv[2]),split,us);
 }
 
 /* Add an entry to the RIP refuse list */
@@ -102,7 +105,7 @@ char *argv[],
 void *p)
 {
 	del_udp(Rip_cb);
-	Rip_cb = NULLUDP;
+	Rip_cb = NULL;
 	return 0;
 }
 int
@@ -132,21 +135,18 @@ void *p)
 	printf("RIP: sent %lu rcvd %lu reqst %lu resp %lu unk %lu refused %lu\n",
 	 Rip_stat.output, Rip_stat.rcvd, Rip_stat.request, Rip_stat.response,
 	 Rip_stat.unknown,Rip_stat.refusals);
-	if(Rip_list != NULLRL){
+	if(Rip_list != NULL){
 		printf("Active RIP output interfaces:\n");
 		printf("Dest Addr       Interval Split\n");
-		for(rl=Rip_list; rl != NULLRL; rl = rl->next){
-			if(printf("%-16s%-9lu%-6u\n",
-			 inet_ntoa(rl->dest),rl->interval,
-			 !!(rl->flags&RIP_SPLIT)) == EOF)
-				break;
+		for(rl=Rip_list; rl != NULL; rl = rl->next){
+			printf("%-16s%-9lu%-6u\n",inet_ntoa(rl->dest),
+			 rl->interval,rl->flags.rip_split);
 		}
 	}
-	if(Rip_refuse != NULLREF){
+	if(Rip_refuse != NULL){
 		printf("Refusing announcements from gateways:\n");
-		for(rfl=Rip_refuse; rfl != NULLREF;rfl = rfl->next){
-			if(printf("%s\n",inet_ntoa(rfl->target)) == EOF)
-				break;
+		for(rfl=Rip_refuse; rfl != NULL;rfl = rfl->next){
+			printf("%s\n",inet_ntoa(rfl->target));
 		}
 	}
 	return 0;

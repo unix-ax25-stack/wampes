@@ -1,11 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.16 1994/10/06 16:15:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.17 1995/12/20 09:46:49 deyke Exp $ */
 
 /* SMTP Mail Delivery Agent */
 
 #include <ctype.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
 #include "global.h"
@@ -145,7 +143,7 @@ static void mail_smtp_recv_upcall(struct transport_cb *tp, int cnt)
 static void mail_smtp_send_upcall(struct transport_cb *tp, int cnt)
 {
 
-  char *p;
+  uint8 *p;
   int c;
   struct mbuf *bp;
   struct mesg *mp;
@@ -160,7 +158,7 @@ static void mail_smtp_send_upcall(struct transport_cb *tp, int cnt)
   if ((bp->cnt = p - bp->data))
     transport_send(tp, bp);
   else
-    free_p(bp);
+    free_p(&bp);
   if (c == EOF) {
     fclose(mp->fp);
     mp->fp = 0;
@@ -205,4 +203,3 @@ void mail_smtp(struct mailsys *sp)
     free(mp);
   }
 }
-

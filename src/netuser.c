@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.11 1994/10/06 16:15:32 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.12 1995/12/20 09:46:51 deyke Exp $ */
 
 /* Miscellaneous integer and IP address format conversion subroutines
  * Copyright 1991 Phil Karn, KA9Q
@@ -23,7 +23,7 @@ register char *s)
 	register int i;
 
 	n = 0;
-	if(s == NULLCHAR)
+	if(s == NULL)
 		return 0;
 	for(i=24;i>=0;i -= 8){
 		/* Skip any leading stuff (e.g., spaces, '[') */
@@ -32,7 +32,7 @@ register char *s)
 		if(*s == '\0')
 			break;
 		n |= (int32)atoi(s) << i;
-		if((s = strchr(s,'.')) == NULLCHAR)
+		if((s = strchr(s,'.')) == NULL)
 			break;
 		s++;
 	}

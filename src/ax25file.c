@@ -1,7 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.15 1994/10/10 13:16:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.16 1995/12/20 09:46:39 deyke Exp $ */
 
 #include <stdio.h>
-#include <string.h>
 
 #include "global.h"
 #include "timer.h"
@@ -14,17 +13,17 @@
 #define AXROUTE_SAVETIME        (10L*60L*1000L)
 
 struct axroute_saverecord_0 {
-  char call[AXALEN];
+  uint8 call[AXALEN];
   char pad1;
-  char digi[AXALEN];
+  uint8 digi[AXALEN];
   char pad2;
   short dev;
   long time;
 };
 
 struct axroute_saverecord_1 {
-  char call[AXALEN];
-  char digi[AXALEN];
+  uint8 call[AXALEN];
+  uint8 digi[AXALEN];
   long time;
 /*char ifname[]; */
 };
@@ -67,13 +66,12 @@ void axroute_savefile(void)
     for (lp = 0, rp = Ax_routes[i]; rp; )
       if (rp->perm || rp->jumpstart ||
 	  rp->time + AXROUTE_HOLDTIME >= secclock()) {
+	memset(&buf, 0, sizeof(buf));
 	addrcp(buf.call, rp->target);
 	if (rp->digi)
 	  addrcp(buf.digi, rp->digi->target);
-	else
-	  *buf.digi = '\0';
 	buf.time = rp->time;
-	fwrite((char *) & buf, sizeof(buf), 1, fp);
+	fwrite((char *) &buf, sizeof(buf), 1, fp);
 	if (rp->ifp)
 	  fwrite(rp->ifp->name, strlen(rp->ifp->name) + 1, 1, fp);
 	else
@@ -119,10 +117,10 @@ void axroute_loadfile(void)
       struct iface *ifp, *ifptable[128];
 
       ungetc(version, fp);
-      memset((char *) ifptable, 0, sizeof(ifptable));
+      memset(ifptable, 0, sizeof(ifptable));
       for (ifp = Ifaces; ifp; ifp = ifp->next)
 	if (ifp->output == ax_output) ifptable[ifp->dev] = ifp;
-      while (fread((char *) & buf, sizeof(buf), 1, fp)) {
+      while (fread((char *) &buf, sizeof(buf), 1, fp)) {
 	if (buf.time + AXROUTE_HOLDTIME < secclock()) continue;
 	if (!valid_remote_call(buf.call)) continue;
 	rp = ax_routeptr(buf.call, 1);
@@ -142,7 +140,7 @@ void axroute_loadfile(void)
       struct axroute_saverecord_1 buf;
       struct iface *ifp;
 
-      while (fread((char *) & buf, sizeof(buf), 1, fp)) {
+      while (fread((char *) &buf, sizeof(buf), 1, fp)) {
 	cp = ifname;
 	do {
 	  if ((c = getc(fp)) == EOF) {
@@ -167,4 +165,3 @@ void axroute_loadfile(void)
 
   fclose(fp);
 }
-

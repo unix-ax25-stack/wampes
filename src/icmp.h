@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.h,v 1.9 1994/10/06 16:15:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.h,v 1.10 1995/12/20 09:46:45 deyke Exp $ */
 
 #ifndef _ICMP_H
 #define _ICMP_H
@@ -21,14 +21,6 @@
 
 #ifndef _IP_H
 #include "ip.h"
-#endif
-
-#ifndef _SESSION_H
-#include "session.h"
-#endif
-
-#ifndef _TIMER_H
-#include "timer.h"
 #endif
 
 /* SNMP MIB variables, used for statistics and control. See RFC 1066 */
@@ -77,12 +69,13 @@ extern struct mib_entry Icmp_mib[];
 #define ICMP_INFO_REPLY         16      /* Information Reply */
 #define ICMP_ADDR_MASK          17      /* Address mask request */
 #define ICMP_ADDR_MASK_REPLY    18      /* Address mask reply */
-#define ICMP_TYPES              19
+#define ICMP_IPSP               19      /* Problem with secured packet */
+#define ICMP_TYPES              20
 
 union icmp_args {
 	uint16 mtu;
 	int32 unused;
-	unsigned char pointer;
+	uint8 pointer;
 	int32 address;
 	struct {
 		uint16 id;
@@ -92,12 +85,11 @@ union icmp_args {
 
 /* Internal format of an ICMP header (checksum is missing) */
 struct icmp {
-	char type;
-	char code;
+	uint8 type;
+	uint8 code;
 	union icmp_args args;
 };
 #define ICMPLEN         8       /* Length of ICMP header on the net */
-#define NULLICMP        (union icmp_args *)0
 
 /* Destination Unreachable codes */
 #define ICMP_NET_UNREACH        0       /* Net unreachable */
@@ -123,39 +115,32 @@ struct icmp {
 
 #define NREDIRECT       3
 
-extern int Icmp_trace;
+/* Bad security packet codes */
+#define ICMP_IPSP_SPI_UNKNOWN   0
+#define ICMP_IPSP_AUTH_FAIL     1
+#define ICMP_IPSP_DECRYPT_FAIL  2
+#define NIPSP                   3
 
-struct ping {
-	struct ping *next;      /* Linked list pointers */
-	struct ping *prev;
-	int32 target;           /* Starting target IP address */
-	int32 sent;             /* Total number of pings sent */
-	int32 srtt;             /* Smoothed round trip time */
-	int32 mdev;             /* Mean deviation */
-	int32 responses;        /* Total number of responses */
-	struct timer timer;     /* Ping interval timer */
-	uint16 len;             /* Length of data portion of ping */
-};
+extern int Icmp_trace;
+extern int Icmp_echo;
+
 /* ICMP messages, decoded */
-extern char *Icmptypes[],*Unreach[],*Exceed[],*Redirect[];
+extern char *Icmptypes[],*Unreach[],*Exceed[],*Redirect[],*Said_icmp[];
 
 struct icmplink {
-	char proto;
-	void (*funct)(int32,int32,int32,char,char,struct mbuf **);
+	uint8 proto;
+	void (*funct)(int32,int32,int32,uint8,uint8,struct mbuf **);
 };
 extern struct icmplink Icmplink[];
 
 /* In icmp.c: */
-void icmp_input(struct iface *iface,struct ip *ip,struct mbuf *bp,
-	int rxbroadcast);
-int icmp_output(struct ip *ip,struct mbuf *data,char type,char code,
+void icmp_input(struct iface *iface,struct ip *ip,struct mbuf **bp,
+	int rxbroadcast,int32 said);
+int icmp_output(struct ip *ip,struct mbuf *data,uint8 type,uint8 code,
 	union icmp_args *args);
 
-/* In icmpcmd.c: */
-void echo_proc(int32 source,int32 dest,struct icmp *icmp,struct mbuf *bp);
-
 /* In icmphdr.c: */
-struct mbuf *htonicmp(struct icmp *icmp,struct mbuf *data);
+void htonicmp(struct icmp *icmp,struct mbuf **data);
 int ntohicmp(struct icmp *icmp,struct mbuf **bpp);
 
 #endif  /* _ICMP_H */

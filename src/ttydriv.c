@@ -1,10 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.25 1994/10/25 10:22:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.26 1995/12/20 09:46:58 deyke Exp $ */
 
 /* TTY input line editing
  */
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include "global.h"
 #include "tty.h"

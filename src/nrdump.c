@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrdump.c,v 1.3 1994/10/06 16:15:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrdump.c,v 1.4 1995/12/20 09:46:52 deyke Exp $ */
 
 /* NET/ROM header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -18,15 +18,15 @@ FILE *fp,
 struct mbuf **bpp,
 int check)
 {
-	char src[AXALEN],dest[AXALEN];
+	uint8 src[AXALEN],dest[AXALEN];
 	char tmp[AXBUF];
-	char thdr[NR4MINHDR];
+	uint8 thdr[NR4MINHDR];
 	register i;
 
-	if(bpp == NULLBUFP || *bpp == NULLBUF)
+	if(bpp == NULL || *bpp == NULL)
 		return;
 	/* See if it is a routing broadcast */
-	if(uchar(*(*bpp)->data) == NR3NODESIG) {
+	if((*(*bpp)->data) == NR3NODESIG) {
 		(void)PULLCHAR(bpp);            /* Signature */
 		pullup(bpp,tmp,ALEN);
 		tmp[ALEN] = '\0';
@@ -41,7 +41,7 @@ int check)
 			pullup(bpp,src,AXALEN);
 			fprintf(fp,"    %12s",pax25(tmp,src));
 			tmp[0] = PULLCHAR(bpp);
-			fprintf(fp,"    %3u\n",uchar(tmp[0]));
+			fprintf(fp,"    %3u\n",(tmp[0]));
 		}
 		return;
 	}
@@ -65,10 +65,10 @@ int check)
 		}
 		else
 			fprintf(fp,"         protocol family %x, proto %x",
-			 uchar(thdr[0]), uchar(thdr[1])) ;
+			 thdr[0], thdr[1]) ;
 		break ;
 	case NR4OPCONRQ:        /* Connect request */
-		fprintf(fp,"         conn rqst: ckt %d/%d",uchar(thdr[0]),uchar(thdr[1]));
+		fprintf(fp,"         conn rqst: ckt %d/%d",(thdr[0]),(thdr[1]));
 		i = PULLCHAR(bpp);
 		fprintf(fp," wnd %d",i);
 		pullup(bpp,src,AXALEN);
@@ -78,30 +78,28 @@ int check)
 		break;
 	case NR4OPCONAK:        /* Connect acknowledgement */
 		fprintf(fp,"         conn ack: ur ckt %d/%d my ckt %d/%d",
-		 uchar(thdr[0]), uchar(thdr[1]), uchar(thdr[2]),
-		 uchar(thdr[3]));
+		 thdr[0], thdr[1], thdr[2],thdr[3]);
 		i = PULLCHAR(bpp);
 		fprintf(fp," wnd %d",i);
 		break;
 	case NR4OPDISRQ:        /* Disconnect request */
 		fprintf(fp,"         disc: ckt %d/%d",
-		 uchar(thdr[0]),uchar(thdr[1]));
+		 thdr[0],thdr[1]);
 		break;
 	case NR4OPDISAK:        /* Disconnect acknowledgement */
 		fprintf(fp,"         disc ack: ckt %d/%d",
-		 uchar(thdr[0]),uchar(thdr[1]));
+		 thdr[0],thdr[1]);
 		break;
 	case NR4OPINFO: /* Information (data) */
 		fprintf(fp,"         info: ckt %d/%d",
-		 uchar(thdr[0]),uchar(thdr[1]));
+		 thdr[0],thdr[1]);
 		fprintf(fp," txseq %d rxseq %d",
-		 uchar(thdr[2]), uchar(thdr[3]));
+		 thdr[2],thdr[3]);
 		break;
 	case NR4OPACK:  /* Information acknowledgement */
 		fprintf(fp,"         info ack: ckt %d/%d",
-		 uchar(thdr[0]),uchar(thdr[1]));
-		fprintf(fp," txseq %d rxseq %d",
-		 uchar(thdr[2]), uchar(thdr[3]));
+		 thdr[0],thdr[1]);
+		fprintf(fp," txseq %d rxseq %d",thdr[2],thdr[3]);
 		break;
 	default:
 		fprintf(fp,"         unknown transport type %d",

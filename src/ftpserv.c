@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.32 1995/03/24 13:00:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.33 1995/12/20 09:46:44 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -30,9 +30,9 @@
 #include "ftpserv.h"
 
 static void Xprintf(struct tcb *tcb, char *message, char *arg1, char *arg2, char *arg3);
-static void ftpscs(struct tcb *tcb, int old, int new);
+static void ftpscs(struct tcb *tcb, enum tcp_state old, enum tcp_state new);
 static void ftpscr(struct tcb *tcb, int32 cnt);
-static void ftpsds(struct tcb *tcb, int old, int new);
+static void ftpsds(struct tcb *tcb, enum tcp_state old, enum tcp_state new);
 static char *errmsg(const char *filename);
 static void ftpcommand(struct ftp *ftp);
 static int pport(struct socket *sock, char *arg);
@@ -73,7 +73,7 @@ static char *commands[] = {
 	"size",
 	"xcup",
 	"xcwd",
-	NULLCHAR
+	NULL
 };
 
 /* Response messages */
@@ -107,23 +107,24 @@ static void Xprintf(struct tcb *tcb,char *message,char *arg1,char *arg2,char *ar
 {
 	struct mbuf *bp;
 
-	if(tcb == NULLTCB)
+	if(tcb == NULL)
 		return;
 
 	bp = alloc_mbuf(256);
-	sprintf(bp->data,message,arg1,arg2,arg3);
-	bp->cnt = strlen(bp->data);
-	send_tcp(tcb,bp);
+	sprintf((char *) bp->data,message,arg1,arg2,arg3);
+	bp->cnt = strlen((char *) bp->data);
+	send_tcp(tcb,&bp);
 }
 /* Start up FTP service */
-int ftpstart(
+int
+ftpstart(
 int argc,
 char *argv[],
 void *p)
 {
 	struct socket lsocket;
 
-	if(ftp_tcb != NULLTCB)
+	if(ftp_tcb != NULL)
 		close_tcp(ftp_tcb);
 	lsocket.address = INADDR_ANY;
 	if(argc < 2)
@@ -131,20 +132,20 @@ void *p)
 	else
 		lsocket.port = tcp_port_number(argv[1]);
 
-	ftp_tcb = open_tcp(&lsocket,NULLSOCK,TCP_SERVER,0,ftpscr,NULLVFP,ftpscs,0,0);
+	ftp_tcb = open_tcp(&lsocket,NULL,TCP_SERVER,0,ftpscr,NULL,ftpscs,0,0);
 	return 0;
 }
 /* Shut down FTP server */
 int ftp0(int argc,char *argv[],void *p)
 {
-	if(ftp_tcb != NULLTCB)
+	if(ftp_tcb != NULL)
 		close_tcp(ftp_tcb);
 	return 0;
 }
 /* FTP Server Control channel State change upcall handler */
 static
 void
-ftpscs(struct tcb *tcb,int old,int new)
+ftpscs(struct tcb *tcb,enum tcp_state old,enum tcp_state new)
 {
 	struct ftp *ftp;
 	char *cp,*cp1;
@@ -160,7 +161,7 @@ ftpscs(struct tcb *tcb,int old,int new)
 #else
 	case TCP_ESTABLISHED:
 #endif
-		if((ftp = ftp_create(LINELEN)) == NULLFTP){
+		if((ftp = ftp_create(LINELEN)) == NULL){
 			/* No space, kill connection */
 			close_tcp(tcb);
 			return;
@@ -173,9 +174,9 @@ ftpscs(struct tcb *tcb,int old,int new)
 		ftp->port.port = IPPORT_FTPD;
 
 		/* Note current directory */
-		log(tcb,"open FTP","");
+		logmsg(tcb,"open FTP","");
 		cp = ctime((long *) &Secclock);
-		if((cp1 = strchr(cp,'\n')) != NULLCHAR)
+		if((cp1 = strchr(cp,'\n')) != NULL)
 			*cp1 = '\0';
 		Xprintf(ftp->control,banner,Hostname,Version,cp);
 		break;
@@ -183,13 +184,15 @@ ftpscs(struct tcb *tcb,int old,int new)
 		close_tcp(tcb);
 		break;
 	case TCP_CLOSED:
-		log(tcb,"close FTP","");
-		if((ftp = (struct ftp *)tcb->user) != NULLFTP)
+		logmsg(tcb,"close FTP","");
+		if((ftp = (struct ftp *)tcb->user) != NULL)
 			ftp_delete(ftp);
 		/* Check if server is being shut down */
 		if(tcb == ftp_tcb)
-			ftp_tcb = NULLTCB;
+			ftp_tcb = NULL;
 		del_tcp(tcb);
+		break;
+	default:
 		break;
 	}
 }
@@ -203,7 +206,7 @@ ftpscr(struct tcb *tcb,int32 cnt)
 	int c;
 	struct mbuf *bp;
 
-	if((ftp = (struct ftp *)tcb->user) == NULLFTP){
+	if((ftp = (struct ftp *)tcb->user) == NULL){
 		/* Unknown connection, just kill it */
 		close_tcp(tcb);
 		return;
@@ -240,11 +243,11 @@ ftpscr(struct tcb *tcb,int32 cnt)
 
 /* FTP server data channel connection state change upcall handler */
 static void
-ftpsds(struct tcb *tcb,int old,int new)
+ftpsds(struct tcb *tcb,enum tcp_state old,enum tcp_state new)
 {
 	register struct ftp *ftp;
 
-	if((ftp = (struct ftp *)tcb->user) == NULLFTP){
+	if((ftp = (struct ftp *)tcb->user) == NULL){
 		/* Unknown connection. Kill it */
 		del_tcp(tcb);
 	} else if((old == TCP_FINWAIT1 || old == TCP_CLOSING) && ftp->state == SENDING_STATE){
@@ -259,7 +262,7 @@ ftpsds(struct tcb *tcb,int old,int new)
 		close_tcp(tcb);
 		if(ftp->fp != stdout)
 			fclose(ftp->fp);
-		ftp->fp = NULLFILE;
+		ftp->fp = NULL;
 		ftp->state = COMMAND_STATE;
 		Xprintf(ftp->control,rxok,"","","");
 		/* Kick command parser if something is waiting */
@@ -270,9 +273,9 @@ ftpsds(struct tcb *tcb,int old,int new)
 			/* Data connection was reset, complain about it */
 			Xprintf(ftp->control,noconn,"","","");
 			/* And clean up */
-			if(ftp->fp != NULLFILE && ftp->fp != stdout)
+			if(ftp->fp != NULL && ftp->fp != stdout)
 				fclose(ftp->fp);
-			ftp->fp = NULLFILE;
+			ftp->fp = NULL;
 			ftp->state = COMMAND_STATE;
 			/* Kick command parser if something is waiting */
 			if(ftp->control->rcvcnt != 0)
@@ -280,7 +283,7 @@ ftpsds(struct tcb *tcb,int old,int new)
 		}
 		/* Clear only if another transfer hasn't already started */
 		if(ftp->data == tcb)
-			ftp->data = NULLTCB;
+			ftp->data = NULL;
 		del_tcp(tcb);
 	}
 }
@@ -327,15 +330,15 @@ ftpcommand(struct ftp *ftp)
 	for(cp = cmd;*cp != ' ' && *cp != '\0';cp++)
 		*cp = Xtolower(*cp);
 	/* Find command in table; if not present, return syntax error */
-	for(cmdp = commands;*cmdp != NULLCHAR;cmdp++)
+	for(cmdp = commands;*cmdp != NULL;cmdp++)
 		if(strncmp(*cmdp,cmd,strlen(*cmdp)) == 0)
 			break;
-	if(*cmdp == NULLCHAR){
+	if(*cmdp == NULL){
 		Xprintf(ftp->control,badcmd,"","","");
 		return;
 	}
 	/* Allow only USER, PASS and QUIT before logging in */
-	if(ftp->cd == NULLCHAR || ftp->root == NULLCHAR){
+	if(ftp->cd == NULL || ftp->root == NULL){
 		switch(cmdp-commands){
 		case USER_CMD:
 		case PASS_CMD:
@@ -360,7 +363,7 @@ ftpcommand(struct ftp *ftp)
 		Xprintf(ftp->control,givepass,"","","");
 		break;
 	case TYPE_CMD:
-		log(ftp->control,"TYPE %s",arg);
+		logmsg(ftp->control,"TYPE %s",arg);
 		switch(arg[0]){
 		case 'A':
 		case 'a':       /* Ascii */
@@ -392,7 +395,7 @@ ftpcommand(struct ftp *ftp)
 		}
 		break;
 	case QUIT_CMD:
-		log(ftp->control,"QUIT","");
+		logmsg(ftp->control,"QUIT","");
 		Xprintf(ftp->control,bye,"","","");
 		close_tcp(ftp->control);
 		break;
@@ -402,7 +405,7 @@ ftpcommand(struct ftp *ftp)
 		rest = ftp->rest;
 		ftp->rest = 0;
 		file = pathname(ftp->cd,arg);
-		log(ftp->control,"RETR %s",file);
+		logmsg(ftp->control,"RETR %s",file);
 		AsUser(result = stat(physname, &statbuf));
 		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
@@ -415,7 +418,7 @@ ftpcommand(struct ftp *ftp)
 			return;
 		}
 		AsUser(ftp->fp = fopen(physname,"r"));
-		if(ftp->fp == NULLFILE ||
+		if(ftp->fp == NULL ||
 		   (rest && fseek(ftp->fp,rest,SEEK_SET))){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
@@ -425,7 +428,7 @@ ftpcommand(struct ftp *ftp)
 			Xprintf(ftp->control,sending,"RETR",arg,"");
 			if (ftp->data) ftp->data->user = 0;
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
-			 0,NULLVFP,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
+			 0,NULL,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
 		}
 		free(file);
 		break;
@@ -435,9 +438,9 @@ ftpcommand(struct ftp *ftp)
 		rest = ftp->rest;
 		ftp->rest = 0;
 		file = pathname(ftp->cd,arg);
-		log(ftp->control,"STOR %s",file);
+		logmsg(ftp->control,"STOR %s",file);
 		AsUser(ftp->fp = fopen(physname,"w"));
-		if(ftp->fp == NULLFILE ||
+		if(ftp->fp == NULL ||
 		   (rest && fseek(ftp->fp,rest,SEEK_SET))){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
@@ -447,7 +450,7 @@ ftpcommand(struct ftp *ftp)
 			Xprintf(ftp->control,sending,"STOR",arg,"");
 			if (ftp->data) ftp->data->user = 0;
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
-			 0,ftpdr,NULLVFP,ftpsds,ftp->control->tos,(int)ftp);
+			 0,ftpdr,NULL,ftpsds,ftp->control->tos,(int)ftp);
 		}
 		free(file);
 		break;
@@ -456,9 +459,9 @@ ftpcommand(struct ftp *ftp)
 		tcp_output(ftp->control);
 		ftp->rest = 0;
 		file = pathname(ftp->cd,arg);
-		log(ftp->control,"APPE %s",file);
+		logmsg(ftp->control,"APPE %s",file);
 		AsUser(ftp->fp = fopen(physname,"a"));
-		if(ftp->fp == NULLFILE){
+		if(ftp->fp == NULL){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
 			dport.address = INADDR_ANY;
@@ -467,7 +470,7 @@ ftpcommand(struct ftp *ftp)
 			Xprintf(ftp->control,sending,"APPE",arg,"");
 			if (ftp->data) ftp->data->user = 0;
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
-			 0,ftpdr,NULLVFP,ftpsds,ftp->control->tos,(int)ftp);
+			 0,ftpdr,NULL,ftpsds,ftp->control->tos,(int)ftp);
 		}
 		free(file);
 		break;
@@ -482,9 +485,9 @@ ftpcommand(struct ftp *ftp)
 		/* Disk operation; return ACK now */
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
-		log(ftp->control,"LIST %s",file);
+		logmsg(ftp->control,"LIST %s",file);
 		AsUser(ftp->fp = dir(physname,1));
-		if(ftp->fp == NULLFILE){
+		if(ftp->fp == NULL){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
 			dport.address = INADDR_ANY;
@@ -493,7 +496,7 @@ ftpcommand(struct ftp *ftp)
 			Xprintf(ftp->control,sending,"LIST",file,"");
 			if (ftp->data) ftp->data->user = 0;
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
-			 0,NULLVFP,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
+			 0,NULL,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
 		}
 		free(file);
 		break;
@@ -501,9 +504,9 @@ ftpcommand(struct ftp *ftp)
 		/* Disk operation; return ACK now */
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
-		log(ftp->control,"NLST %s",file);
+		logmsg(ftp->control,"NLST %s",file);
 		AsUser(ftp->fp = dir(physname,0));
-		if(ftp->fp == NULLFILE){
+		if(ftp->fp == NULL){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
 			dport.address = INADDR_ANY;
@@ -512,7 +515,7 @@ ftpcommand(struct ftp *ftp)
 			Xprintf(ftp->control,sending,"NLST",file,"");
 			if (ftp->data) ftp->data->user = 0;
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
-			 0,NULLVFP,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
+			 0,NULL,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
 		}
 		free(file);
 		break;
@@ -525,7 +528,7 @@ ftpcommand(struct ftp *ftp)
 		if(cmdp-commands == XCUP_CMD || cmdp-commands == CDUP_CMD)
 			arg = "..";
 		file = pathname(ftp->cd,arg);
-		log(ftp->control,"CWD  %s",file);
+		logmsg(ftp->control,"CWD  %s",file);
 		AsUser(result = chdir(physname));
 		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
@@ -539,18 +542,18 @@ ftpcommand(struct ftp *ftp)
 		break;
 	case XPWD_CMD:
 	case PWD_CMD:
-		log(ftp->control,"PWD","");
+		logmsg(ftp->control,"PWD","");
 		Xprintf(ftp->control,pwdmsg,ftp->cd,"","");
 		break;
 	case ACCT_CMD:
-		log(ftp->control,"ACCT","");
+		logmsg(ftp->control,"ACCT","");
 		Xprintf(ftp->control,unimp,"","","");
 		break;
 	case DELE_CMD:
 		/* Disk operation; return ACK now */
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
-		log(ftp->control,"DELE %s",file);
+		logmsg(ftp->control,"DELE %s",file);
 		AsUser(result = remove(physname));
 		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
@@ -568,7 +571,7 @@ ftpcommand(struct ftp *ftp)
 		/* Disk operation; return ACK now */
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
-		log(ftp->control,"MKD %s",file);
+		logmsg(ftp->control,"MKD %s",file);
 		AsUser(result = mkdir(physname,0755));
 		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
@@ -582,7 +585,7 @@ ftpcommand(struct ftp *ftp)
 		/* Disk operation; return ACK now */
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
-		log(ftp->control,"RMD %s",file);
+		logmsg(ftp->control,"RMD %s",file);
 		AsUser(result = rmdir(physname));
 		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
@@ -592,21 +595,21 @@ ftpcommand(struct ftp *ftp)
 		free(file);
 		break;
 	case STRU_CMD:
-		log(ftp->control,"STRU %s",arg);
+		logmsg(ftp->control,"STRU %s",arg);
 		if(Xtolower(arg[0]) != 'f')
 			Xprintf(ftp->control,unsupp,"","","");
 		else
 			Xprintf(ftp->control,okay,"","","");
 		break;
 	case MODE_CMD:
-		log(ftp->control,"MODE %s",arg);
+		logmsg(ftp->control,"MODE %s",arg);
 		if(Xtolower(arg[0]) != 's')
 			Xprintf(ftp->control,unsupp,"","","");
 		else
 			Xprintf(ftp->control,okay,"","","");
 		break;
 	case SYST_CMD:
-		log(ftp->control,"SYST","");
+		logmsg(ftp->control,"SYST","");
 		Xprintf(ftp->control,"215 UNIX Type: L8\r\n","","","");
 		break;
 	case HELP_CMD:
@@ -631,7 +634,7 @@ ftpcommand(struct ftp *ftp)
 		/* Disk operation; return ACK now */
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
-		log(ftp->control,"MDTM %s",file);
+		logmsg(ftp->control,"MDTM %s",file);
 		AsUser(result = stat(physname, &statbuf));
 		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
@@ -652,19 +655,19 @@ ftpcommand(struct ftp *ftp)
 		free(file);
 		break;
 	case NOOP_CMD:
-		log(ftp->control,"NOOP","");
+		logmsg(ftp->control,"NOOP","");
 		Xprintf(ftp->control,"200 NOOP command successful.\r\n","","","");
 		break;
 	case REST_CMD:
 		ftp->rest = atoi(arg);
-		log(ftp->control,"REST %s",arg);
+		logmsg(ftp->control,"REST %s",arg);
 		Xprintf(ftp->control,"350 Restarting at %s. Send STORE or RETRIEVE to initiate transfer.\r\n",arg,"","");
 		break;
 	case SIZE_CMD:
 		/* Disk operation; return ACK now */
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
-		log(ftp->control,"SIZE %s",file);
+		logmsg(ftp->control,"SIZE %s",file);
 		AsUser(result = stat(physname, &statbuf));
 		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
@@ -690,13 +693,13 @@ pport(struct socket *sock,char *arg)
 	n = 0;
 	for(i=0;i<4;i++){
 		n = atoi(arg) + (n << 8);
-		if((arg = strchr(arg,',')) == NULLCHAR)
+		if((arg = strchr(arg,',')) == NULL)
 			return -1;
 		arg++;
 	}
 	sock->address = n;
 	n = atoi(arg);
-	if((arg = strchr(arg,',')) == NULLCHAR)
+	if((arg = strchr(arg,',')) == NULL)
 		return -1;
 	arg++;
 	n = atoi(arg) + (n << 8);
@@ -746,7 +749,7 @@ char *pass)
   if (ftp->root) free(ftp->root);
   ftp->root = strdup(strcmp(pw->pw_name, "ftp") ? "" : pw->pw_dir);
   Xprintf(ftp->control, logged, pw->pw_name, "", "");
-  log(ftp->control, "%s logged in", pw->pw_name);
+  logmsg(ftp->control, "%s logged in", pw->pw_name);
   return;
 
 Fail:
@@ -773,4 +776,3 @@ static int user_denied(const char *username)
   }
   return 0;
 }
-

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axheard.c,v 1.2 1994/10/06 16:15:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axheard.c,v 1.3 1995/12/20 09:46:40 deyke Exp $ */
 
 /* AX25 link callsign monitoring. Also contains beginnings of
  * an automatic link quality monitoring scheme (incomplete)
@@ -12,9 +12,9 @@
 #include "ip.h"
 #include "timer.h"
 
-static struct lq *al_create(struct iface *ifp,char *addr);
-static struct ld *ad_lookup(struct iface *ifp,char *addr,int sort);
-static struct ld *ad_create(struct iface *ifp,char *addr);
+static struct lq *al_create(struct iface *ifp,uint8 *addr);
+static struct ld *ad_lookup(struct iface *ifp,uint8 *addr,int sort);
+static struct ld *ad_create(struct iface *ifp,uint8 *addr);
 struct lq *Lq;
 struct ld *Ld;
 
@@ -25,13 +25,13 @@ genrpt(
 struct iface *ifp)
 {
 	struct mbuf *bp;
-	register char *cp;
+	register uint8 *cp;
 	int i;
 	struct lq *lp;
 	int maxentries,nentries;
 
 	maxentries = (Paclen - LQHDR) / LQENTRY;
-	if((bp = alloc_mbuf(Paclen)) == NULLBUF)
+	if((bp = alloc_mbuf(Paclen)) == NULL)
 		return;
 	cp = bp->data;
 	nentries = 0;
@@ -47,13 +47,13 @@ struct iface *ifp)
 	nentries++;
 
 	/* Now add entries from table */
-	for(lp = lq;lp != NULLLQ;lp = lp->next){
+	for(lp = lq;lp != NULL;lp = lp->next){
 		cp = putlqentry(cp,&lp->addr,lp->currxcnt);
 		if(++nentries >= MAXENTRIES){
 			/* Flush */
 			bp->cnt = nentries*LQENTRY + LQHDR;
 			ax_output(ifp,Ax25multi[0],ifp->hwaddr,PID_LQ,bp);
-			if((bp = alloc_mbuf(Paclen)) == NULLBUF)
+			if((bp = alloc_mbuf(Paclen)) == NULL)
 				return;
 			cp = bp->data;
 		}
@@ -62,7 +62,7 @@ struct iface *ifp)
 		bp->cnt = nentries*LQENTRY + LQHDR;
 		ax_output(ifp,Ax25multi[0],ifp->hwaddr,LQPID,bp);
 	} else {
-		free_p(bp);
+		free_p(&bp);
 	}
 }
 
@@ -79,9 +79,9 @@ struct mbuf **bpp)
 /* Put a header on a link quality packet.
  * Return pointer to buffer immediately following header
  */
-char *
+uint8 *
 putlqhdr(
-register char *cp,
+register uint8 *cp,
 uint16 version,
 int32 ip_addr)
 {
@@ -102,10 +102,10 @@ struct mbuf **bpp)
 /* Put an entry on a link quality packet
  * Return pointer to buffer immediately following header
  */
-char *
+uint8 *
 putlqentry(
-char *cp,
-char *addr,
+uint8 *cp,
+uint8 *addr,
 int32 count)
 {
 	memcpy(cp,addr,AXALEN);
@@ -118,12 +118,12 @@ int32 count)
 void
 logsrc(
 struct iface *ifp,
-char *addr)
+uint8 *addr)
 {
 	register struct lq *lp;
 
-	if((lp = al_lookup(ifp,addr,1)) == NULLLQ
-	 && (lp = al_create(ifp,addr)) == NULLLQ)
+	if((lp = al_lookup(ifp,addr,1)) == NULL
+	 && (lp = al_create(ifp,addr)) == NULL)
 		return;
 	lp->currxcnt++;
 	lp->time = secclock();
@@ -132,12 +132,12 @@ char *addr)
 void
 logdest(
 struct iface *ifp,
-char *addr)
+uint8 *addr)
 {
 	register struct ld *lp;
 
-	if((lp = ad_lookup(ifp,addr,1)) == NULLLD
-	 && (lp = ad_create(ifp,addr)) == NULLLD)
+	if((lp = ad_lookup(ifp,addr,1)) == NULL
+	 && (lp = ad_create(ifp,addr)) == NULL)
 		return;
 	lp->currxcnt++;
 	lp->time = secclock();
@@ -146,15 +146,15 @@ char *addr)
 struct lq *
 al_lookup(
 struct iface *ifp,
-char *addr,
+uint8 *addr,
 int sort)
 {
 	register struct lq *lp;
-	struct lq *lplast = NULLLQ;
+	struct lq *lplast = NULL;
 
-	for(lp = Lq;lp != NULLLQ;lplast = lp,lp = lp->next){
+	for(lp = Lq;lp != NULL;lplast = lp,lp = lp->next){
 		if(addreq(lp->addr,addr) && lp->iface == ifp){
-			if(sort && lplast != NULLLQ){
+			if(sort && lplast != NULL){
 				/* Move entry to top of list */
 				lplast->next = lp->next;
 				lp->next = Lq;
@@ -163,13 +163,13 @@ int sort)
 			return lp;
 		}
 	}
-	return NULLLQ;
+	return NULL;
 }
 /* Create a new entry in the source database */
 static struct lq *
 al_create(
 struct iface *ifp,
-char *addr)
+uint8 *addr)
 {
 	register struct lq *lp;
 
@@ -185,15 +185,15 @@ char *addr)
 static struct ld *
 ad_lookup(
 struct iface *ifp,
-char *addr,
+uint8 *addr,
 int sort)
 {
 	register struct ld *lp;
-	struct ld *lplast = NULLLD;
+	struct ld *lplast = NULL;
 
-	for(lp = Ld;lp != NULLLD;lplast = lp,lp = lp->next){
+	for(lp = Ld;lp != NULL;lplast = lp,lp = lp->next){
 		if(lp->iface == ifp && addreq(lp->addr,addr)){
-			if(sort && lplast != NULLLD){
+			if(sort && lplast != NULL){
 				/* Move entry to top of list */
 				lplast->next = lp->next;
 				lp->next = Ld;
@@ -202,13 +202,13 @@ int sort)
 			return lp;
 		}
 	}
-	return NULLLD;
+	return NULL;
 }
 /* Create a new entry in the destination database */
 static struct ld *
 ad_create(
 struct iface *ifp,
-char *addr)
+uint8 *addr)
 {
 	register struct ld *lp;
 

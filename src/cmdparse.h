@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.h,v 1.10 1994/10/06 16:15:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.h,v 1.11 1995/12/20 09:46:41 deyke Exp $ */
 
 #ifndef _CMDPARSE_H
 #define _CMDPARSE_H
@@ -13,10 +13,6 @@ struct cmds {
 	int  argcmin;           /* Minimum number of args */
 	char *argc_errmsg;      /* Message to print if insufficient args */
 };
-
-#ifndef NULLCHAR
-#define NULLCHAR        (char *)0
-#endif
 
 /* In cmdparse.c: */
 int cmdparse(struct cmds cmds[],char *line,void *p);

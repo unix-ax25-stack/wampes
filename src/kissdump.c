@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kissdump.c,v 1.8 1994/10/06 16:15:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kissdump.c,v 1.9 1995/12/20 09:46:47 deyke Exp $ */
 
 /* Tracing routines for KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -83,6 +83,6 @@ struct mbuf *bp)
 		return 0;
 	dup_p(&bpp,bp,1,AXALEN);
 	i = ax_forus(iface,bpp);
-	free_p(bpp);
+	free_p(&bpp);
 	return i;
 }

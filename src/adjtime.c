@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/adjtime.c,v 1.5 1994/12/11 17:00:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/adjtime.c,v 1.6 1995/12/20 09:46:38 deyke Exp $ */
 
 #include "configure.h"
 
@@ -52,7 +52,7 @@ int adjtime(
  *  removed and recreated)
  */
   if ((mqid = msgget(KEY, 0)) == -1)
-    return (-1);
+    return -1;
 
   msgp->msgb.mtype = CLIENT;
   msgp->msgb.tv = *delta;
@@ -69,13 +69,13 @@ int adjtime(
 
   if (msgsnd(mqid, &msgp->msgp, MSGSIZE, 0) == -1) {
     sigsetmask(mask);
-    return (-1);
+    return -1;
   }
 
   if (olddelta) {
     if (msgrcv(mqid, &msgp->msgp, MSGSIZE, SERVER, 0) == -1) {
       sigsetmask(mask);
-      return (-1);
+      return -1;
     }
 
     *olddelta = msgp->msgb.tv;
@@ -86,4 +86,3 @@ int adjtime(
 }
 
 #endif
-

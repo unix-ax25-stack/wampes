@@ -1,10 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.19 1995/03/24 13:00:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.20 1995/12/20 09:46:56 deyke Exp $ */
 
 /* Internet Telnet client
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <stdio.h>
-#include <string.h>
 #include "global.h"
 #include "mbuf.h"
 #include "socket.h"
@@ -15,13 +14,15 @@
 #include "tcp.h"
 #include "tty.h"
 #include "commands.h"
+#include "internet.h"
 #include "netuser.h"
+#include "cmdparse.h"
 
 static void unix_send_tel(char *buf, int n);
 static void send_tel(char *buf, int n);
 static void tel_input(struct telnet *tn, struct mbuf *bp);
 static void tn_tx(struct tcb *tcb, int32 cnt);
-static void t_state(struct tcb *tcb, int old, int new);
+static void t_state(struct tcb *tcb, enum tcp_state old, enum tcp_state new);
 static void free_telnet(struct telnet *tn);
 static void willopt(struct telnet *tn, int opt);
 static void wontopt(struct telnet *tn, int opt);
@@ -31,8 +32,8 @@ static void answer(struct telnet *tn, int r1, int r2);
 
 int Refuse_echo = 0;
 int Tn_cr_mode = 0;    /* if true turn <cr> to <cr-nul> */
+int Topt = 0;
 
-#ifdef  DEBUG
 char *T_options[] = {
 	"Transmit Binary",
 	"Echo",
@@ -42,8 +43,16 @@ char *T_options[] = {
 	"Status",
 	"Timing Mark"
 };
-#endif
 
+int
+dotopt(
+int argc,
+char *argv[],
+void *p)
+{
+	setbool(&Topt,"Telnet option tracing",argc,argv);
+	return 0;
+}
 /* Execute user telnet command */
 int
 dotelnet(
@@ -68,11 +77,11 @@ void *p)
 		fsocket.port = tcp_port_number(argv[2]);
 
 	/* Allocate a session descriptor */
-	if((s = newsession()) == NULLSESSION){
+	if((s = newsession()) == NULL){
 		printf("Too many sessions\n");
 		return 1;
 	}
-	if((s->name = (char *) malloc((unsigned)strlen(argv[1])+1)) != NULLCHAR)
+	if((s->name = (char *) malloc((unsigned)strlen(argv[1])+1)) != NULL)
 		strcpy(s->name,argv[1]);
 	s->type = TELNET;
 	if ((Refuse_echo == 0) && (Tn_cr_mode != 0)) {
@@ -83,9 +92,9 @@ void *p)
 	Current = s;
 
 	/* Create and initialize a Telnet protocol descriptor */
-	if((tn = (struct telnet *)calloc(1,sizeof(struct telnet))) == NULLTN){
+	if((tn = (struct telnet *)calloc(1,sizeof(struct telnet))) == NULL){
 		printf(Nospace);
-		s->type = FREE;
+		s->type = NO_SESSION;
 		return 1;
 	}
 	tn->session = s;        /* Upward pointer */
@@ -121,16 +130,18 @@ send_tel(
 char *buf,
 int n)
 {
-	if(Current == NULLSESSION || Current->cb.telnet == NULLTN
-	 || Current->cb.telnet->tcb == NULLTCB)
+	struct mbuf *bp;
+	if(Current == NULL || Current->cb.telnet == NULL
+	 || Current->cb.telnet->tcb == NULL)
 		return;
-	send_tcp(Current->cb.telnet->tcb,qdata(buf,n));
+	bp = qdata(buf,n);
+	send_tcp(Current->cb.telnet->tcb,&bp);
 	/* If we're doing our own echoing and recording is enabled, record it */
 	if(n >= 2 && buf[n-2] == '\r' && buf[n-1] == '\n') {
 	  buf[n-2] = '\n';
 	  n--;
 	}
-	if(!Current->cb.telnet->remote[TN_ECHO] && Current->record != NULLFILE)
+	if(!Current->cb.telnet->remote[TN_ECHO] && Current->record != NULL)
 		fwrite(buf,1,n,Current->record);
 }
 
@@ -146,14 +157,14 @@ struct mbuf *bp)
 	record = tn->session->record;
 	/* Optimization for very common special case -- no special chars */
 	if(tn->state == TS_DATA){
-		while(bp != NULLBUF && memchr(bp->data,IAC,bp->cnt) == NULLCHAR){
+		while(bp != NULL && memchr(bp->data,IAC,bp->cnt) == NULL){
 			while(bp->cnt-- != 0){
 				c = *bp->data++;
 				putchar(c);
-				if(record != NULLFILE && c != '\r')
+				if(record != NULL && c != '\r')
 					putc(c,record);
 			}
-			bp = free_mbuf(bp);
+			bp = free_mbuf(&bp);
 		}
 	}
 	while((c = PULLCHAR(&bp)) != -1){
@@ -165,7 +176,7 @@ struct mbuf *bp)
 				if(!tn->remote[TN_TRANSMIT_BINARY])
 					c &= 0x7f;
 				putchar(c);
-				if(record != NULLFILE && c != '\r')
+				if(record != NULL && c != '\r')
 					putc(c,record);
 			}
 			break;
@@ -193,19 +204,19 @@ struct mbuf *bp)
 			}
 			break;
 		case TS_WILL:
-			willopt(tn,c);
+			willopt(tn,c & 0xff);
 			tn->state = TS_DATA;
 			break;
 		case TS_WONT:
-			wontopt(tn,c);
+			wontopt(tn,c & 0xff);
 			tn->state = TS_DATA;
 			break;
 		case TS_DO:
-			doopt(tn,c);
+			doopt(tn,c & 0xff);
 			tn->state = TS_DATA;
 			break;
 		case TS_DONT:
-			dontopt(tn,c);
+			dontopt(tn,c & 0xff);
 			tn->state = TS_DATA;
 			break;
 		}
@@ -222,19 +233,19 @@ int32 cnt)
 	struct telnet *tn;
 	FILE *record;
 
-	if((tn = (struct telnet *)tcb->user) == NULLTN){
+	if((tn = (struct telnet *)tcb->user) == NULL){
 		/* Unknown connection; ignore it */
 		return;
 	}
 	/* Hold output if we're not the current session */
-	if(Mode != CONV_MODE || Current == NULLSESSION
+	if(Mode != CONV_MODE || Current == NULL
 	 || Current->type != TELNET || Current->cb.telnet != tn)
 		return;
 
 	if(recv_tcp(tcb,&bp,cnt) > 0)
 		tel_input(tn,bp);
 
-	if((record = tn->session->record) != NULLFILE)
+	if((record = tn->session->record) != NULL)
 		fflush(record);
 }
 /* Handle transmit upcalls. Used only for file uploading */
@@ -248,24 +259,24 @@ int32 cnt)
 	struct mbuf *bp;
 	int size;
 
-	if((tn = (struct telnet *)tcb->user) == NULLTN
-	 || (s = tn->session) == NULLSESSION
-	 || s->upload == NULLFILE)
+	if((tn = (struct telnet *)tcb->user) == NULL
+	 || (s = tn->session) == NULL
+	 || s->upload == NULL)
 		return;
-	if((bp = alloc_mbuf((uint16) cnt)) == NULLBUF)
+	if((bp = alloc_mbuf((uint16) cnt)) == NULL)
 		return;
 	if((size = fread(bp->data,1,(unsigned) cnt,s->upload)) > 0){
 		bp->cnt = (uint16)size;
-		send_tcp(tcb,bp);
+		send_tcp(tcb,&bp);
 	} else {
-		free_p(bp);
+		free_p(&bp);
 	}
 	if(size != cnt){
 		/* Error or end-of-file */
 		fclose(s->upload);
-		s->upload = NULLFILE;
+		s->upload = NULL;
 		free(s->ufile);
-		s->ufile = NULLCHAR;
+		s->ufile = NULL;
 	}
 }
 
@@ -273,7 +284,7 @@ int32 cnt)
 static void
 t_state(
 register struct tcb *tcb,
-int old,int new)
+enum tcp_state old,enum tcp_state new)
 {
 	struct telnet *tn;
 	char notify = 0;
@@ -283,7 +294,7 @@ int old,int new)
 	 */
 	tn = (struct telnet *)tcb->user;
 
-	if(Current != NULLSESSION && Current->type == TELNET && Current->cb.telnet == tn)
+	if(Current != NULL && Current->type == TELNET && Current->cb.telnet == tn)
 	{
 		notify = 1;
 		cooked();       /* prettify things... -- hyc */
@@ -297,7 +308,7 @@ int old,int new)
 		break;
 	case TCP_CLOSED:    /* court adjourned */
 		if(notify){
-			printf("%s (%s",Tcpstates[new],Tcpreasons[tcb->reason]);
+			printf("%s (%s",Tcpstates[new],Tcpreasons[tcb->reason & 0xff]);
 			if(tcb->reason == NETWORK){
 				switch(tcb->type){
 				case ICMP_DEST_UNREACH:
@@ -312,7 +323,7 @@ int old,int new)
 			cmdmode();
 		}
 		del_tcp(tcb);
-		if(tn != NULLTN)
+		if(tn != NULL)
 			free_telnet(tn);
 		break;
 	default:
@@ -326,11 +337,11 @@ static void
 free_telnet(
 struct telnet *tn)
 {
-	if(tn->session != NULLSESSION)
+	if(tn->session != NULL)
 		freesession(tn->session);
 
-	if(tn != NULLTN)
-		free((char *)tn);
+	if(tn != NULL)
+		free(tn);
 }
 
 int
@@ -387,21 +398,20 @@ int opt)
 {
 	int ack;
 
-#ifdef  DEBUG
-	printf("recv: will ");
-	if(uchar(opt) <= NOPTIONS)
-		printf("%s\n",T_options[opt]);
-	else
-		printf("%u\n",opt);
-#endif
-
-	switch(uchar(opt)){
+	if(Topt){
+		printf("recv: will ");
+		if(opt <= NOPTIONS)
+			printf("%s\n",T_options[opt]);
+		else
+			printf("%u\n",opt);
+	}
+	switch(opt){
 	case TN_TRANSMIT_BINARY:
 	case TN_ECHO:
 	case TN_SUPPRESS_GA:
-		if(tn->remote[uchar(opt)] == 1)
+		if(tn->remote[opt] == 1)
 			return;         /* Already set, ignore to prevent loop */
-		if(uchar(opt) == TN_ECHO){
+		if(opt == TN_ECHO){
 			if(Refuse_echo){
 				/* User doesn't want to accept */
 				ack = DONT;
@@ -409,7 +419,7 @@ int opt)
 			} else
 				raw();          /* Put tty into raw mode */
 		}
-		tn->remote[uchar(opt)] = 1;
+		tn->remote[opt] = 1;
 		ack = DO;
 		break;
 	default:
@@ -422,18 +432,18 @@ wontopt(
 struct telnet *tn,
 int opt)
 {
-#ifdef  DEBUG
-	printf("recv: wont ");
-	if(uchar(opt) <= NOPTIONS)
-		printf("%s\n",T_options[uchar(opt)]);
-	else
-		printf("%u\n",uchar(opt));
-#endif
-	if(uchar(opt) <= NOPTIONS){
-		if(tn->remote[uchar(opt)] == 0)
+	if(Topt){
+		printf("recv: wont ");
+		if(opt <= NOPTIONS)
+			printf("%s\n",T_options[opt]);
+		else
+			printf("%u\n",opt);
+	}
+	if(opt <= NOPTIONS){
+		if(tn->remote[opt] == 0)
 			return;         /* Already clear, ignore to prevent loop */
-		tn->remote[uchar(opt)] = 0;
-		if(uchar(opt) == TN_ECHO)
+		tn->remote[opt] = 0;
+		if(opt == TN_ECHO)
 			cooked();       /* Put tty into cooked mode */
 	}
 	answer(tn,DONT,opt);    /* Must always accept */
@@ -445,21 +455,20 @@ int opt)
 {
 	int ack;
 
-#ifdef  DEBUG
-	printf("recv: do ");
-	if(uchar(opt) <= NOPTIONS)
-		printf("%s\n",T_options[uchar(opt)]);
-	else
-		printf("%u\n",uchar(opt));
-#endif
-	switch(uchar(opt)){
-#ifdef  FUTURE  /* Use when local options are implemented */
-		if(tn->local[uchar(opt)] == 1)
+	if(Topt){
+		printf("recv: do ");
+		if(opt <= NOPTIONS)
+			printf("%s\n",T_options[opt]);
+		else
+			printf("%u\n",opt);
+	}
+	switch(opt){
+	case TN_SUPPRESS_GA:
+		if(tn->local[opt] == 1)
 			return;         /* Already set, ignore to prevent loop */
-		tn->local[uchar(opt)] = 1;
+		tn->local[opt] = 1;
 		ack = WILL;
 		break;
-#endif
 	default:
 		ack = WONT;     /* Don't know what it is */
 	}
@@ -470,19 +479,19 @@ dontopt(
 struct telnet *tn,
 int opt)
 {
-#ifdef  DEBUG
-	printf("recv: dont ");
-	if(uchar(opt) <= NOPTIONS)
-		printf("%s\n",T_options[uchar(opt)]);
-	else
-		printf("%u\n",uchar(opt));
-#endif
-	if(uchar(opt) <= NOPTIONS){
-		if(tn->local[uchar(opt)] == 0){
+	if(Topt){
+		printf("recv: dont ");
+		if(opt <= NOPTIONS)
+			printf("%s\n",T_options[opt]);
+		else
+			printf("%u\n",opt);
+	}
+	if(opt <= NOPTIONS){
+		if(tn->local[opt] == 0){
 			/* Already clear, ignore to prevent loop */
 			return;
 		}
-		tn->local[uchar(opt)] = 0;
+		tn->local[opt] = 0;
 	}
 	answer(tn,WONT,opt);
 }
@@ -495,30 +504,29 @@ int r1,int r2)
 	struct mbuf *bp;
 	char s[3];
 
-#ifdef  DEBUG
-	switch(r1){
-	case WILL:
-		printf("sent: will ");
-		break;
-	case WONT:
-		printf("sent: wont ");
-		break;
-	case DO:
-		printf("sent: do ");
-		break;
-	case DONT:
-		printf("sent: dont ");
-		break;
+	if(Topt){
+		switch(r1){
+		case WILL:
+			printf("sent: will ");
+			break;
+		case WONT:
+			printf("sent: wont ");
+			break;
+		case DO:
+			printf("sent: do ");
+			break;
+		case DONT:
+			printf("sent: dont ");
+			break;
+		}
+		if(r2 <= NOPTIONS)
+			printf("%s\n",T_options[r2]);
+		else
+			printf("%u\n",r2);
 	}
-	if(r2 <= 6)
-		printf("%s\n",T_options[r2]);
-	else
-		printf("%u\n",r2);
-#endif
-
 	s[0] = IAC;
 	s[1] = r1;
 	s[2] = r2;
 	bp = qdata(s,(uint16)3);
-	send_tcp(tn->tcb,bp);
+	send_tcp(tn->tcb,&bp);
 }

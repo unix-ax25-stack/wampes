@@ -1,7 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.17 1994/10/09 08:23:02 deyke Exp $ */
-
-#include <stdlib.h>
-#include <string.h>
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.18 1995/12/20 09:46:58 deyke Exp $ */
 
 #include "global.h"
 #include "netuser.h"
@@ -25,7 +22,7 @@ static void transport_send_upcall_netrom(struct circuit *cp, int cnt);
 static void transport_send_upcall_tcp(struct tcb *cp, int32 cnt);
 static void transport_state_upcall_ax25(struct ax25_cb *cp, int oldstate, int newstate);
 static void transport_state_upcall_netrom(struct circuit *cp, int oldstate, int newstate);
-static void transport_state_upcall_tcp(struct tcb *cp, int oldstate, int newstate);
+static void transport_state_upcall_tcp(struct tcb *cp, enum tcp_state oldstate, enum tcp_state newstate);
 static struct ax25_cb *transport_open_ax25(const char *address, struct transport_cb *tp);
 static struct circuit *transport_open_netrom(const char *address, struct transport_cb *tp);
 static struct tcb *transport_open_tcp(const char *address, struct transport_cb *tp);
@@ -70,7 +67,7 @@ static int convert_eol(struct mbuf **bpp, enum e_transporteol mode, int *last_ch
       }
       *last_chr = chr;
     }
-    bp = free_mbuf(bp);
+    bp = free_mbuf(&bp);
   }
   cnt = p - buf;
   *bpp = qdata(buf, cnt);
@@ -143,7 +140,7 @@ static void transport_state_upcall_netrom(struct circuit *cp, int oldstate, int 
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_state_upcall_tcp(struct tcb *cp, int oldstate, int newstate)
+static void transport_state_upcall_tcp(struct tcb *cp, enum tcp_state oldstate, enum tcp_state newstate)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   switch (newstate) {
@@ -152,6 +149,8 @@ static void transport_state_upcall_tcp(struct tcb *cp, int oldstate, int newstat
     break;
   case TCP_CLOSED:
     if (tp->s_upcall) (*tp->s_upcall)(tp);
+    break;
+  default:
     break;
   }
 }
@@ -168,7 +167,7 @@ static struct ax25_cb *transport_open_ax25(const char *address, struct transport
   struct ax25 hdr;
 
   argc = 0;
-  for (s = strtok(strcpy(tmp, address), delim); s; s = strtok(NULLCHAR, delim))
+  for (s = strtok(strcpy(tmp, address), delim); s; s = strtok(NULL, delim))
     argv[argc++] = s;
   if (ax25args_to_hdr(argc, argv, &hdr)) return 0;
   return open_ax25(&hdr, AX_ACTIVE, transport_recv_upcall_ax25, transport_send_upcall_ax25, transport_state_upcall_ax25, (char *) tp);
@@ -180,13 +179,13 @@ static struct circuit *transport_open_netrom(const char *address, struct transpo
 {
 
   char *ascii_node, *ascii_user;
-  char node[AXALEN], user[AXALEN];
+  uint8 node[AXALEN], user[AXALEN];
   char tmp[1024];
 
   strcpy(tmp, address);
   if (!(ascii_node = strtok(tmp, delim)) || setcall(node, ascii_node))
     return 0;
-  if (!(ascii_user = strtok(NULLCHAR, delim)) || setcall(user, ascii_user))
+  if (!(ascii_user = strtok(NULL, delim)) || setcall(user, ascii_user))
     addrcp(user, Mycall);
   return open_nr(node, user, 0, transport_recv_upcall_netrom, transport_send_upcall_netrom, transport_state_upcall_netrom, (char *) tp);
 }
@@ -200,7 +199,7 @@ static struct tcb *transport_open_tcp(const char *address, struct transport_cb *
   struct socket fsocket, lsocket;
 
   if (!(host = strtok(strcpy(tmp, address), delim))) return 0;
-  if (!(port = strtok(NULLCHAR, delim))) return 0;
+  if (!(port = strtok(NULL, delim))) return 0;
   if (!(fsocket.address = resolve(host))) return 0;
   if (!(fsocket.port = tcp_port_number(port))) return 0;
   lsocket.address = INADDR_ANY;
@@ -271,13 +270,13 @@ int transport_send(struct transport_cb *tp, struct mbuf *bp)
     convert_eol(&bp, tp->send_mode, &tp->send_char);
   switch (tp->type) {
   case TP_AX25:
-    return send_ax25(tp->cb.axp, bp, PID_NO_L3);
+    return send_ax25(tp->cb.axp, &bp, PID_NO_L3);
   case TP_NETROM:
     return send_nr(tp->cb.nrp, bp);
   case TP_TCP:
-    return send_tcp(tp->cb.tcp, bp);
+    return send_tcp(tp->cb.tcp, &bp);
   }
-  return (-1);
+  return -1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -292,7 +291,7 @@ int transport_send_space(struct transport_cb *tp)
   case TP_TCP:
     return space_tcp(tp->cb.tcp);
   }
-  return (-1);
+  return -1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -315,7 +314,7 @@ int transport_close(struct transport_cb *tp)
   case TP_TCP:
     return close_tcp(tp->cb.tcp);
   }
-  return (-1);
+  return -1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -337,4 +336,3 @@ int transport_del(struct transport_cb *tp)
   free(tp);
   return 0;
 }
-

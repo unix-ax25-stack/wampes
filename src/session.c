@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.17 1994/10/09 08:22:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.18 1995/12/20 09:46:53 deyke Exp $ */
 
 /* NOS User Session control
  * Copyright 1991 Phil Karn, KA9Q
@@ -32,8 +32,8 @@ static char Badsess[] = "Invalid session\n";
 static struct session *sessptr(char *cp);
 
 /* Convert a character string containing a decimal session index number
- * into a pointer. If the arg is NULLCHAR, use the current default session.
- * If the index is out of range or unused, return NULLSESSION.
+ * into a pointer. If the arg is NULL, use the current default session.
+ * If the index is out of range or unused, return NULL.
  */
 static struct session *
 sessptr(
@@ -42,17 +42,17 @@ char *cp)
 	register struct session *sp;
 	unsigned int i;
 
-	if(cp == NULLCHAR){
+	if(cp == NULL){
 		sp = Current;
 	} else {
 		i = (unsigned)atoi(cp);
 		if(i >= Nsessions)
-			sp = NULLSESSION;
+			sp = NULL;
 		else
 			sp = &Sessions[i];
 	}
-	if(sp == NULLSESSION || sp->type == FREE)
-		sp = NULLSESSION;
+	if(sp == NULL || sp->type == NO_SESSION)
+		sp = NULL;
 
 	return sp;
 }
@@ -69,7 +69,7 @@ void *p)
 	sp = (struct session *)p;
 
 	if(argc > 1){
-		if((Current = sessptr(argv[1])) != NULLSESSION){
+		if((Current = sessptr(argv[1])) != NULL){
 			go(0,NULL,sp);
 		} else
 			printf("Session %s not active\n",argv[1]);
@@ -130,9 +130,9 @@ void *p)
 		default:
 			continue;
 		}
-		if(sp->rfile != NULLCHAR)
+		if(sp->rfile != NULL)
 			printf("    Record: %s ",sp->rfile);
-		if(sp->ufile != NULLCHAR)
+		if(sp->ufile != NULL)
 			printf("    Upload: %s",sp->ufile);
 		printf("\n");
 	}
@@ -145,7 +145,7 @@ int argc,
 char *argv[],
 void *p)
 {
-	if(Current == NULLSESSION || Current->type == FREE)
+	if(Current == NULL || Current->type == NO_SESSION)
 		return 0;
 	Mode = CONV_MODE;
 	switch(Current->type){
@@ -170,6 +170,8 @@ void *p)
 		nrclient_recv_upcall(Current->cb.netrom,0);
 		break;
 #endif
+	default:
+		break;
 	}
 	return 0;
 }
@@ -181,7 +183,7 @@ void *p)
 {
 	struct session *sp;
 
-	if((sp = sessptr(argc > 1 ? argv[1] : NULLCHAR)) == NULLSESSION){
+	if((sp = sessptr(argc > 1 ? argv[1] : NULL)) == NULL){
 		printf(Badsess);
 		return -1;
 	}
@@ -205,6 +207,8 @@ void *p)
 		close_nr(sp->cb.netrom);
 		break;
 #endif
+	default:
+		break;
 	}
 	return 0;
 }
@@ -216,7 +220,7 @@ void *p)
 {
 	struct session *sp;
 
-	if((sp = sessptr(argc > 1 ? argv[1] : NULLCHAR)) == NULLSESSION){
+	if((sp = sessptr(argc > 1 ? argv[1] : NULL)) == NULL){
 		printf(Badsess);
 		return -1;
 	}
@@ -225,9 +229,9 @@ void *p)
 		reset_tcp(sp->cb.telnet->tcb);
 		break;
 	case FTP:
-		if(sp->cb.ftp->data != NULLTCB){
+		if(sp->cb.ftp->data != NULL){
 			reset_tcp(sp->cb.ftp->data);
-			sp->cb.ftp->data = NULLTCB;
+			sp->cb.ftp->data = NULL;
 		}
 		reset_tcp(sp->cb.ftp->control);
 		break;
@@ -244,6 +248,8 @@ void *p)
 		reset_nr(sp->cb.netrom);
 		break;
 #endif
+	default:
+		break;
 	}
 	return 0;
 }
@@ -255,7 +261,7 @@ void *p)
 {
 	struct session *sp;
 
-	if((sp = sessptr(argc > 1 ? argv[1] : NULLCHAR)) == NULLSESSION){
+	if((sp = sessptr(argc > 1 ? argv[1] : NULL)) == NULL){
 		printf(Badsess);
 		return -1;
 	}
@@ -272,7 +278,7 @@ void *p)
 			printf(Notval);
 			return 1;
 		}
-		if(sp->cb.ftp->data != NULLTCB)
+		if(sp->cb.ftp->data != NULL)
 			kick_tcp(sp->cb.ftp->data);
 		break;
 #ifdef  AX25
@@ -297,6 +303,8 @@ void *p)
 		}
 		break;
 #endif
+	default:
+		break;
 	}
 	return 0;
 }
@@ -306,40 +314,40 @@ newsession(void)
 	register int i;
 
 	for(i=0;i<Nsessions;i++)
-		if(Sessions[i].type == FREE)
+		if(Sessions[i].type == NO_SESSION)
 			return &Sessions[i];
-	return NULLSESSION;
+	return NULL;
 }
 void
 freesession(
 struct session *sp)
 {
-	if(sp == NULLSESSION)
+	if(sp == NULL)
 		return;
-	if(sp->record != NULLFILE){
+	if(sp->record != NULL){
 		fclose(sp->record);
-		sp->record = NULLFILE;
+		sp->record = NULL;
 	}
-	if(sp->rfile != NULLCHAR){
+	if(sp->rfile != NULL){
 		free(sp->rfile);
-		sp->rfile = NULLCHAR;
+		sp->rfile = NULL;
 	}
-	if(sp->upload != NULLFILE){
+	if(sp->upload != NULL){
 		fclose(sp->upload);
-		sp->upload = NULLFILE;
+		sp->upload = NULL;
 	}
-	if(sp->ufile != NULLCHAR){
+	if(sp->ufile != NULL){
 		free(sp->ufile);
-		sp->ufile = NULLCHAR;
+		sp->ufile = NULL;
 	}
-	if(sp->name != NULLCHAR){
+	if(sp->name != NULL){
 		free(sp->name);
-		sp->name = NULLCHAR;
+		sp->name = NULL;
 	}
-	sp->type = FREE;
-	memset((char *) sp, 0, sizeof(struct session));
+	sp->type = NO_SESSION;
+	memset(sp, 0, sizeof(struct session));
 	if(sp == Current)
-		Current = NULLSESSION;
+		Current = NULL;
 }
 /* Control session recording */
 int
@@ -348,27 +356,27 @@ int argc,
 char *argv[],
 void *p)
 {
-	if(Current == NULLSESSION){
+	if(Current == NULL){
 		printf("No current session\n");
 		return 1;
 	}
 	if(argc > 1){
-		if(Current->rfile != NULLCHAR){
+		if(Current->rfile != NULL){
 			fclose(Current->record);
 			free(Current->rfile);
-			Current->record = NULLFILE;
-			Current->rfile = NULLCHAR;
+			Current->record = NULL;
+			Current->rfile = NULL;
 		}
 		/* Open new record file, unless file name is "off", which means
 		 * disable recording
 		 */
 		if(strcmp(argv[1],"off") != 0
-		 && (Current->record = fopen(argv[1],"a")) != NULLFILE){
+		 && (Current->record = fopen(argv[1],"a")) != NULL){
 			Current->rfile = (char *) malloc((unsigned)strlen(argv[1])+1);
 			strcpy(Current->rfile,argv[1]);
 		}
 	}
-	if(Current->rfile != NULLCHAR)
+	if(Current->rfile != NULL)
 		printf("Recording into %s\n",Current->rfile);
 	else
 		printf("Recording off\n");
@@ -385,7 +393,7 @@ void *p)
 	struct ax25_cb *axp;
 	struct circuit *cb;
 
-	if(Current == NULLSESSION){
+	if(Current == NULL){
 		printf("No current session\n");
 		return 1;
 	}
@@ -397,19 +405,21 @@ void *p)
 		case FINGER:
 			printf("Uploading on FINGER session not supported\n");
 			return 1;
+		default:
+			break;
 		}
 		/* Abort upload */
-		if(Current->upload != NULLFILE){
+		if(Current->upload != NULL){
 			fclose(Current->upload);
-			Current->upload = NULLFILE;
+			Current->upload = NULL;
 		}
-		if(Current->ufile != NULLCHAR){
+		if(Current->ufile != NULL){
 			free(Current->ufile);
-			Current->ufile = NULLCHAR;
+			Current->ufile = NULL;
 		}
 		if(strcmp(argv[1],"stop") != 0){
 			/* Open upload file */
-			if((Current->upload = fopen(argv[1],"r")) == NULLFILE){
+			if((Current->upload = fopen(argv[1],"r")) == NULL){
 				printf("Can't read %s\n",argv[1]);
 				return 1;
 			}
@@ -434,10 +444,12 @@ void *p)
 				if(tcb->snd.wnd > tcb->sndcnt)
 					(*tcb->t_upcall)(tcb,tcb->snd.wnd - tcb->sndcnt);
 				break;
+			default:
+				break;
 			}
 		}
 	}
-	if(Current->ufile != NULLCHAR)
+	if(Current->ufile != NULL)
 		printf("Uploading %s\n",Current->ufile);
 	else
 		printf("Uploading off\n");

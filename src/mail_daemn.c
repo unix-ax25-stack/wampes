@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.23 1995/05/09 21:12:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.24 1995/12/20 09:46:49 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -6,8 +6,6 @@
 
 #include <ctype.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 
 #ifdef ibm032
@@ -47,17 +45,17 @@ static const struct mailers Mailers[] = {
 /*---------------------------------------------------------------------------*/
 
 static struct cmds Mail_cmds[] = {
-/*      "gateway",      dogateway,      0,      0,      NULLCHAR,           */
-/*      "mode",         setsmtpmode,    0,      0,      NULLCHAR,           */
-	"kick",         domail_kick,    0,      0,      NULLCHAR,
+/*      "gateway",      dogateway,      0,      0,      NULL,           */
+/*      "mode",         setsmtpmode,    0,      0,      NULL,           */
+	"kick",         domail_kick,    0,      0,      NULL,
 /*      "kill",         dosmtpkill,     0,      2,      "kill <jobnumber>", */
-	"list",         domail_list,    0,      0,      NULLCHAR,
-	"maxclients",   domail_maxcli,  0,      0,      NULLCHAR,
-	"timer",        domail_timer,   0,      0,      NULLCHAR,
+	"list",         domail_list,    0,      0,      NULL,
+	"maxclients",   domail_maxcli,  0,      0,      NULL,
+	"timer",        domail_timer,   0,      0,      NULL,
 #ifdef SMTPTRACE
-/*      "trace",        dosmtptrace,    0,      0,      NULLCHAR,           */
+/*      "trace",        dosmtptrace,    0,      0,      NULL,           */
 #endif
-	NULLCHAR,
+	NULL,
 };
 
 int dosmtp(int argc, char *argv[], void *p)
@@ -135,7 +133,7 @@ static int domail_timer(int argc, char *argv[], void *p)
 
 static int domail_kick(int argc, char *argv[], void *p)
 {
-  mail_tick((argc < 2) ? NULLCHAR : argv[1]);
+  mail_tick((argc < 2) ? NULL : argv[1]);
   return 0;
 }
 
@@ -179,9 +177,9 @@ static void read_configuration(void)
   while (fgets(line, sizeof(line), fp)) {
     if ((cp = strchr(line, '#'))) *cp = 0;
     if (!(sysname = strtok(line, ":"))) continue;
-    if (!(mailername = strtok(NULLCHAR, ":"))) continue;
-    if (!(protocol = strtok(NULLCHAR, ":"))) continue;
-    if (!(address = strtok(NULLCHAR, ":"))) continue;
+    if (!(mailername = strtok(NULL, ":"))) continue;
+    if (!(protocol = strtok(NULL, ":"))) continue;
+    if (!(address = strtok(NULL, ":"))) continue;
     strtrim(address);
     for (mailer = Mailers; mailer->name; mailer++)
       if (!strcmp(mailer->name, mailername)) break;
@@ -258,7 +256,7 @@ static void mail_tick(char *sysname)
     closedir(dirp);
     tail = 0;
     for (; (p = filelist); filelist = p->next, free(p)) {
-      memset((char *) &mj, 0, sizeof(mj));
+      memset(&mj, 0, sizeof(mj));
       sprintf(mj.cfile, "%s/%s", spooldir, p->name);
       if (!(fp = fopen(mj.cfile, "r"))) continue;
       while (fgets(line, sizeof(line), fp)) {
@@ -321,4 +319,3 @@ static void mail_tick(char *sysname)
     }
   }
 }
-

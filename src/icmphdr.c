@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmphdr.c,v 1.5 1994/10/06 16:15:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmphdr.c,v 1.6 1995/12/20 09:46:45 deyke Exp $ */
 
 /* ICMP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -10,16 +10,16 @@
 #include "icmp.h"
 
 /* Generate ICMP header in network byte order, link data, compute checksum */
-struct mbuf *
+void
 htonicmp(
 struct icmp *icmp,
-struct mbuf *bp)
-{
-	register char *cp;
+struct mbuf **bpp
+){
+	register uint8 *cp;
 	uint16 checksum;
 
-	bp = pushdown(bp,ICMPLEN);
-	cp = bp->data;
+	pushdown(bpp,NULL,ICMPLEN);
+	cp = (*bpp)->data;
 
 	*cp++ = icmp->type;
 	*cp++ = icmp->code;
@@ -55,11 +55,9 @@ struct mbuf *bp)
 		break;
 	}
 	/* Compute checksum, and stash result */
-	checksum = cksum(NULLHEADER,bp,len_p(bp));
-	cp = &bp->data[2];
+	checksum = cksum(NULL,*bpp,len_p(*bpp));
+	cp = &(*bpp)->data[2];
 	cp = put16(cp,checksum);
-
-	return bp;
 }
 /* Pull off ICMP header */
 int
@@ -67,7 +65,7 @@ ntohicmp(
 struct icmp *icmp,
 struct mbuf **bpp)
 {
-	char icmpbuf[8];
+	uint8 icmpbuf[8];
 
 	if(icmp == (struct icmp *)NULL)
 		return -1;

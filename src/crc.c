@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/crc.c,v 1.6 1994/10/06 16:15:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/crc.c,v 1.7 1995/12/20 09:46:41 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -12,7 +12,7 @@ void append_crc_16(
 struct mbuf *bp)
 {
 
-  char *p;
+  uint8 *p;
   int crc = 0;
   int n;
   struct mbuf *last_bp;
@@ -36,7 +36,7 @@ int check_crc_16(
 struct mbuf *head)
 {
 
-  char *p;
+  uint8 *p;
   int cnt = 0;
   int crc = 0;
   int n;
@@ -47,12 +47,11 @@ struct mbuf *head)
     for (p = bp->data, n = bp->cnt; n; n--)
       crc = (crc >> 8) ^ Crc_16_table[(crc ^ *p++) & 0xff];
   }
-  if (crc || cnt < 3) return (-1);
+  if (crc || cnt < 3) return -1;
   cnt -= 2;
   for (bp = head; bp->cnt < cnt; bp = bp->next) cnt -= bp->cnt;
   bp->cnt = cnt;
-  free_p(bp->next);
-  bp->next = 0;
+  free_p(&bp->next);
   return 0;
 }
 
@@ -99,7 +98,7 @@ void append_crc_rmnc(
 struct mbuf *bp)
 {
 
-  char *p;
+  uint8 *p;
   int crc = 0xffff;
   int n;
   struct mbuf *last_bp;
@@ -123,7 +122,7 @@ int check_crc_rmnc(
 struct mbuf *head)
 {
 
-  char *p;
+  uint8 *p;
   int cnt = 0;
   int crc = 0xffff;
   int n;
@@ -134,12 +133,11 @@ struct mbuf *head)
     for (p = bp->data, n = bp->cnt; n; n--)
       crc = (crc << 8) ^ Crc_rmnc_table[((crc >> 8) ^ *p++) & 0xff];
   }
-  if ((crc & 0xffff) != 0x7070 || cnt < 3) return (-1);
+  if ((crc & 0xffff) != 0x7070 || cnt < 3) return -1;
   cnt -= 2;
   for (bp = head; bp->cnt < cnt; bp = bp->next) cnt -= bp->cnt;
   bp->cnt = cnt;
-  free_p(bp->next);
-  bp->next = 0;
+  free_p(&bp->next);
   return 0;
 }
 
@@ -186,7 +184,7 @@ void append_crc_ccitt(
 struct mbuf *bp)
 {
 
-  char *p;
+  uint8 *p;
   int crc = 0xffff;
   int n;
   struct mbuf *last_bp;
@@ -217,4 +215,3 @@ int cnt)
     crc = (crc >> 8) ^ Crc_ccitt_table[(crc ^ *buf++) & 0xff];
   return (crc & 0xffff) == 0xf0b8;
 }
-

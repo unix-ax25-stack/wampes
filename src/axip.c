@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.20 1994/10/06 16:15:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.21 1995/12/20 09:46:40 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -13,8 +13,6 @@
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -42,48 +40,48 @@ struct edv_t {
 };
 
 struct axip_route {
-  char call[AXALEN];
+  uint8 call[AXALEN];
   int32 dest;
   struct axip_route *next;
 };
 
 static struct axip_route *Axip_routes;
 
-static int axip_raw(struct iface *ifp, struct mbuf *data);
+static int axip_raw(struct iface *ifp, struct mbuf **bpp);
 static void axip_recv(void *argp);
-static void axip_route_add(char *call, int32 dest);
+static void axip_route_add(uint8 *call, int32 dest);
 static int doaxiproute(int argc, char *argv[], void *p);
 static int doaxiprouteadd(int argc, char *argv[], void *p);
 static int doaxiproutedrop(int argc, char *argv[], void *p);
 
 /*---------------------------------------------------------------------------*/
 
-static int axip_raw(struct iface *ifp, struct mbuf *data)
+static int axip_raw(struct iface *ifp, struct mbuf **bpp)
 {
 
-  char (*mpp)[AXALEN];
-  char *dest;
-  char *p;
-  char buf[MAX_FRAME];
   int l;
   int multicast;
   struct axip_route *rp;
   struct edv_t *edv;
   struct sockaddr_in addr;
+  uint8 buf[MAX_FRAME];
+  uint8 (*mpp)[AXALEN];
+  uint8 *dest;
+  uint8 *p;
 
-  dump(ifp, IF_TRACE_OUT, data);
+  dump(ifp, IF_TRACE_OUT, *bpp);
   ifp->rawsndcnt++;
   ifp->lastsent = secclock();
 
-  append_crc_ccitt(data);
+  append_crc_ccitt(*bpp);
 
   if (ifp->trace & IF_TRACE_RAW)
-    raw_dump(ifp, -1, data);
+    raw_dump(ifp, -1, *bpp);
 
-  l = pullup(&data, buf, sizeof(buf));
-  if (l <= 0 || data) {
-    free_p(data);
-    return (-1);
+  l = pullup(bpp, buf, sizeof(buf));
+  if (l <= 0 || *bpp) {
+    free_p(bpp);
+    return -1;
   }
 
   edv = (struct edv_t *) ifp->edv;
@@ -111,7 +109,7 @@ static int axip_raw(struct iface *ifp, struct mbuf *data)
       addr.sin_family = AF_INET;
       addr.sin_addr.s_addr = htonl(rp->dest);
       addr.sin_port = htons(edv->port);
-      sendto(edv->fd, buf, l, 0, (struct sockaddr *) & addr, sizeof(addr));
+      sendto(edv->fd, (char *) buf, l, 0, (struct sockaddr *) &addr, sizeof(addr));
     }
 
   return l;
@@ -122,22 +120,23 @@ static int axip_raw(struct iface *ifp, struct mbuf *data)
 static void axip_recv(void *argp)
 {
 
-  char *bufptr;
-  char *p;
-  char *src;
-  char buf[MAX_FRAME];
   int addrlen;
   int hdr_len;
   int l;
   struct edv_t *edv;
   struct iface *ifp;
   struct ip *ipptr;
+  struct mbuf *bp;
   struct sockaddr_in addr;
+  uint8 buf[MAX_FRAME];
+  uint8 *bufptr;
+  uint8 *p;
+  uint8 *src;
 
   ifp = (struct iface *) argp;
   edv = (struct edv_t *) ifp->edv;
   addrlen = sizeof(addr);
-  l = recvfrom(edv->fd, bufptr = buf, sizeof(buf), 0, (struct sockaddr *) & addr, &addrlen);
+  l = recvfrom(edv->fd, (char *) (bufptr = buf), sizeof(buf), 0, (struct sockaddr *) &addr, &addrlen);
   if (edv->type == USE_IP) {
     if (l <= sizeof(struct ip )) goto Fail;
     ipptr = (struct ip *) bufptr;
@@ -147,7 +146,7 @@ static void axip_recv(void *argp)
   }
   if (l <= 2) goto Fail;
 
-  if (!check_crc_ccitt(bufptr, l)) goto Fail;
+  if (!check_crc_ccitt((char *) bufptr, l)) goto Fail;
   l -= 2;
 
   p = src = bufptr + AXALEN;
@@ -160,7 +159,8 @@ static void axip_recv(void *argp)
   }
   axip_route_add(src, ntohl(addr.sin_addr.s_addr));
 
-  net_route(ifp, qdata(bufptr, l));
+  bp = qdata(bufptr, l);
+  net_route(ifp, &bp);
   return;
 
 Fail:
@@ -182,9 +182,9 @@ int axip_attach(int argc, char *argv[], void *p)
 
   if (argc >= 2) ifname = argv[1];
 
-  if (if_lookup(ifname) != NULLIF) {
+  if (if_lookup(ifname) != NULL) {
     printf("Interface %s already exists\n", ifname);
-    return (-1);
+    return -1;
   }
 
   if (argc >= 3)
@@ -199,7 +199,7 @@ int axip_attach(int argc, char *argv[], void *p)
       break;
     default:
       printf("Type must be IP or UDP\n");
-      return (-1);
+      return -1;
     }
 
   if (argc >= 4) port = atoi(argv[3]);
@@ -210,18 +210,18 @@ int axip_attach(int argc, char *argv[], void *p)
     fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (fd < 0) {
     printf("cannot create socket: %s\n", strerror(errno));
-    return (-1);
+    return -1;
   }
 
   if (type == USE_UDP) {
-    memset((char *) &addr, 0, sizeof(addr));
+    memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(port);
     if (bind(fd, (struct sockaddr *) &addr, sizeof(addr))) {
       printf("cannot bind address: %s\n", strerror(errno));
       close(fd);
-      return (-1);
+      return -1;
     }
   }
 
@@ -230,7 +230,7 @@ int axip_attach(int argc, char *argv[], void *p)
   ifp->addr = Ip_addr;
   ifp->broadcast = 0xffffffffL;
   ifp->netmask = 0xffffffffL;
-  ifp->hwaddr = (char *) mallocw(AXALEN);
+  ifp->hwaddr = (uint8 *) mallocw(AXALEN);
   addrcp(ifp->hwaddr, Mycall);
   ifp->mtu = 256;
   ifp->crccontrol = CRC_CCITT;
@@ -253,7 +253,7 @@ int axip_attach(int argc, char *argv[], void *p)
 
 /*---------------------------------------------------------------------------*/
 
-static void axip_route_add(char *call, int32 dest)
+static void axip_route_add(uint8 *call, int32 dest)
 {
   struct axip_route *rp;
 
@@ -270,8 +270,8 @@ static void axip_route_add(char *call, int32 dest)
 /*---------------------------------------------------------------------------*/
 
 static struct cmds Axipcmds[] = {
-  "route",  doaxiproute, 0, 0, NULLCHAR,
-  NULLCHAR, NULLFP,      0, 0, NULLCHAR
+  "route",  doaxiproute, 0, 0, NULL,
+  NULL,     NULL,      0, 0, NULL
 };
 
 int doaxip(int argc, char *argv[], void *p)
@@ -284,7 +284,7 @@ int doaxip(int argc, char *argv[], void *p)
 static struct cmds Axiproutecmds[] = {
   "add",    doaxiprouteadd,  0, 3, "axip route add <call> <host>",
   "drop",   doaxiproutedrop, 0, 2, "axip route drop <call>",
-  NULLCHAR, NULLFP,          0, 0, NULLCHAR
+  NULL,     NULL,          0, 0, NULL
 };
 
 static int doaxiproute(int argc, char *argv[], void *p)
@@ -307,7 +307,7 @@ static int doaxiproute(int argc, char *argv[], void *p)
 static int doaxiprouteadd(int argc, char *argv[], void *p)
 {
 
-  char call[AXALEN];
+  uint8 call[AXALEN];
   int32 dest;
 
   if (setcall(call, argv[1])) {
@@ -327,7 +327,7 @@ static int doaxiprouteadd(int argc, char *argv[], void *p)
 static int doaxiproutedrop(int argc, char *argv[], void *p)
 {
 
-  char call[AXALEN];
+  uint8 call[AXALEN];
   struct axip_route *rp, *pp;
 
   if (setcall(call, argv[1])) {
@@ -345,4 +345,3 @@ static int doaxiproutedrop(int argc, char *argv[], void *p)
     }
   return 0;
 }
-

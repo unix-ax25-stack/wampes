@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.14 1994/10/09 08:22:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.15 1995/12/20 09:46:55 deyke Exp $ */
 
 /* TCP control and status routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -14,6 +14,9 @@
 #include "commands.h"
 #include "socket.h"
 #include "session.h"
+#include "main.h"
+
+int Tcp_tstamps = 1;
 
 static int doirtt(int argc,char *argv[],void *p);
 static int domss(int argc,char *argv[],void *p);
@@ -24,20 +27,23 @@ static int dotcpstat(int argc,char *argv[],void *p);
 static int dotcptr(int argc,char *argv[],void *p);
 static int dowindow(int argc,char *argv[],void *p);
 static int dosyndata(int argc,char *argv[],void *p);
+static int dotimestamps(int argc,char *argv[],void *p);
 static int tstat(void);
+static void tcprepstat(int interval,void *p1,void *p2);
 
 /* TCP subcommand table */
 static struct cmds Tcpcmds[] = {
-	"irtt",         doirtt,         0, 0,   NULLCHAR,
+	"irtt",         doirtt,         0, 0,   NULL,
 	"kick",         dotcpkick,      0, 2,   "tcp kick <tcb>",
-	"mss",          domss,          0, 0,   NULLCHAR,
+	"mss",          domss,          0, 0,   NULL,
 	"reset",        dotcpreset,     0, 2,   "tcp reset <tcb>",
 	"rtt",          dortt,          0, 3,   "tcp rtt <tcb> <val>",
-	"status",       dotcpstat,      0, 0,   NULLCHAR,
-	"syndata",      dosyndata,      0, 0,   NULLCHAR,
-	"trace",        dotcptr,        0, 0,   NULLCHAR,
-	"window",       dowindow,       0, 0,   NULLCHAR,
-	NULLCHAR,
+	"status",       dotcpstat,      0, 0,   "tcp stat <tcb> [<interval>]",
+	"syndata",      dosyndata,      0, 0,   NULL,
+	"timestamps",   dotimestamps,   0, 0,   NULL,
+	"trace",        dotcptr,        0, 0,   NULL,
+	"window",       dowindow,       0, 0,   NULL,
+	NULL,
 };
 int
 dotcp(
@@ -54,6 +60,14 @@ char *argv[],
 void *p)
 {
 	return setbool(&Tcp_trace,"TCP state tracing",argc,argv);
+}
+static int
+dotimestamps(
+int argc,
+char *argv[],
+void *p)
+{
+	return setbool(&Tcp_tstamps,"TCP timestamps",argc,argv);
 }
 
 /* Eliminate a TCP connection */
@@ -96,10 +110,9 @@ void *p)
 	if(argc < 2){
 		for(tp = Tcp_rtt;tp;tp=tp->next){
 			if(tp->addr != 0){
-				if(printf("%s: srtt %lu mdev %lu\n",
+				printf("%s: srtt %lu mdev %lu\n",
 				 inet_ntoa(tp->addr),
-				 tp->srtt,tp->mdev) == EOF)
-					break;
+				 tp->srtt,tp->mdev);
 			}
 		}
 	}
@@ -178,19 +191,45 @@ char *argv[],
 void *p)
 {
 	register struct tcb *tcb;
+	int32 interval = 0;
 
 	if(argc < 2){
 		tstat();
 		return 0;
 	}
+	if(argc > 2)
+		interval = atol(argv[2]);
 
 	tcb = (struct tcb *)ltop(htol(argv[1]));
 	if(!tcpval(tcb)){
 		printf(Notval);
 		return 1;
 	}
-	st_tcp(tcb);
+	if(interval == 0){
+		st_tcp(tcb);
+		return 0;
+	}
+#ifndef SINGLE_THREADED
+	newproc("rep tcp stat",16000,tcprepstat,(int)interval,(void *)tcb,NULL,0);
+#endif
 	return 0;
+}
+
+static void
+tcprepstat(
+int interval,
+void *p1,
+void *p2)
+{
+	struct tcb *tcb = (struct tcb *)p1;
+
+	stop_repeat = 0;
+	while(!stop_repeat){
+		printf("\033[H\033[J\033H\033J");       /* Clear screen */
+		st_tcp(tcb);
+		if(tcb->state == TCP_CLOSED || ppause(interval) == -1)
+			break;
+	}
 }
 
 /* Dump TCP stats and summary of all TCBs
@@ -206,7 +245,7 @@ tstat(void)
 
     if(!Shortstatus){
 	for(j=i=1;i<=NUMTCPMIB;i++){
-		if(Tcp_mib[i].name == NULLCHAR)
+		if(Tcp_mib[i].name == NULL)
 			continue;
 		printf("(%2u)%-20s%10lu",i,Tcp_mib[i].name,
 		 Tcp_mib[i].value.integer);
@@ -220,15 +259,14 @@ tstat(void)
     }
 
 	printf("    &TCB Rcv-Q Snd-Q  Local socket           Remote socket          State\n");
-	for(tcb=Tcbs;tcb != NULLTCB;tcb = tcb->next){
-		printf("%8lx%6lu%6lu  ",ptol(tcb),tcb->rcvcnt,tcb->sndcnt);
+	for(tcb=Tcbs;tcb != NULL;tcb = tcb->next){
+		printf("%p%6lu%6lu  ",tcb,tcb->rcvcnt,tcb->sndcnt);
 		printf("%-22.22s ",pinet_tcp(&tcb->conn.local));
 		printf("%-22.22s ",pinet_tcp(&tcb->conn.remote));
 		printf("%-s",Tcpstates[tcb->state]);
 		if(tcb->state == TCP_LISTEN && tcb->flags.clone)
 			printf(" (S)");
-		if(printf("\n") == EOF)
-			return 0;
+		printf("\n");
 	}
 	return 0;
 }
@@ -239,12 +277,13 @@ struct tcb *tcb)
 {
 	int32 sent,recvd;
 
-	if(tcb == NULLTCB)
+	if(tcb == NULL)
 		return;
 	/* Compute total data sent and received; take out SYN and FIN */
 	sent = tcb->snd.una - tcb->iss; /* Acknowledged data only */
 	recvd = tcb->rcv.nxt - tcb->irs;
 	switch(tcb->state){
+	case TCP_CLOSED:
 	case TCP_LISTEN:
 	case TCP_SYN_SENT:      /* Nothing received or acked yet */
 		sent = recvd = 0;
@@ -295,7 +334,7 @@ struct tcb *tcb)
 		printf(" Retry");
 	printf("\n");
 
-	printf("Timer        Count  Duration  Last RTT      SRTT      mdev\n");
+	printf("Timer        Count  Duration  Last RTT      SRTT      Mdev   Method\n");
 	switch(tcb->timer.state){
 	case TIMER_STOP:
 		printf("stopped");
@@ -307,17 +346,16 @@ struct tcb *tcb)
 		printf("expired");
 		break;
 	}
-	printf(" %10lu%10lu%10lu%10lu%10lu\n",(long)read_timer(&tcb->timer),
+	printf(" %10lu%10lu%10lu%10lu%10lu",(long)read_timer(&tcb->timer),
 	 (long)dur_timer(&tcb->timer),tcb->rtt,tcb->srtt,tcb->mdev);
+	printf("   %s\n",tcb->flags.ts_ok ? "timestamps":"standard");
 
 	if(tcb->reseq != (struct reseq *)NULL){
 		register struct reseq *rp;
 
 		printf("Reassembly queue:\n");
 		for(rp = tcb->reseq;rp != (struct reseq *)NULL; rp = rp->next){
-			if(printf("  seq x%lx %u bytes\n",
-			 rp->seg.seq,rp->length) == EOF)
-				return;
+			printf("  seq x%lx %u bytes\n",rp->seg.seq,rp->length);
 		}
 	}
 }

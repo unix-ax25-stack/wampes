@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.15 1994/10/06 16:15:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.16 1995/12/20 09:46:40 deyke Exp $ */
 
 #ifndef _AX25_H
 #define _AX25_H
@@ -31,41 +31,41 @@ extern char Ax25_eol[];
 #define C               0x80    /* Command/response designation */
 
 /* Our AX.25 address */
-extern char Mycall[AXALEN];
+extern uint8 Mycall[AXALEN];
 
 /* List of AX.25 multicast addresses, e.g., "QST   -0" in shifted ASCII */
-extern char Ax25multi[][AXALEN];
+extern uint8 Ax25multi[][AXALEN];
 
 extern int Digipeat;
 extern int Ax25mbox;
 
-/* Internal representation of an AX.25 header */
-struct ax25 {
-	char dest[AXALEN];              /* Destination address */
-	char source[AXALEN];            /* Source address */
-	char digis[MAXDIGIS][AXALEN];   /* Digi string */
-	int ndigis;                     /* Number of digipeaters */
-	int nextdigi;                   /* Index to next digi in chain */
-	int cmdrsp;                     /* Command/response */
-	int qso_num;                    /* QSO number or -1 */
+enum lapb_cmdrsp {
+	LAPB_UNKNOWN,
+	LAPB_COMMAND,
+	LAPB_RESPONSE
 };
 
-/* C-bit stuff */
-#define LAPB_UNKNOWN            0
-#define LAPB_COMMAND            1
-#define LAPB_RESPONSE           2
+/* Internal representation of an AX.25 header */
+struct ax25 {
+	uint8 dest[AXALEN];             /* Destination address */
+	uint8 source[AXALEN];           /* Source address */
+	uint8 digis[MAXDIGIS][AXALEN];  /* Digi string */
+	int ndigis;                     /* Number of digipeaters */
+	int nextdigi;                   /* Index to next digi in chain */
+	enum lapb_cmdrsp cmdrsp;        /* Command/response */
+	int qso_num;                    /* QSO number or -1 */
+};
 
 /* AX.25 routing table entry */
 struct ax_route {
 	struct ax_route *next;          /* Linked list pointer */
-	char target[AXALEN];
+	uint8 target[AXALEN];
 	struct ax_route *digi;
 	struct iface *ifp;
 	int perm;
 	int jumpstart;
 	long time;
 };
-#define NULLAXR ((struct ax_route *)0)
 
 #define AXROUTESIZE     499
 extern struct ax_route *Ax_routes[];
@@ -84,9 +84,6 @@ extern struct iface *Axroute_default_ifp;
 #define PID_NETROM      0xcf    /* NET/ROM */
 #define PID_NO_L3       0xf0    /* No level 3 protocol */
 
-#define SEG_FIRST       0x80    /* First segment of a sequence */
-#define SEG_REM         0x7f    /* Mask for # segments remaining */
-
 /* Link quality report packet header, internal format */
 struct lqhdr;
 /* Link quality entry, internal format */
@@ -97,7 +94,7 @@ struct lqentry;
  */
 struct lq {
 	struct lq *next;
-	char addr[AXALEN];      /* Hardware address of station heard */
+	uint8 addr[AXALEN];     /* Hardware address of station heard */
 	struct iface *iface;    /* Interface address was heard on */
 	int32 time;             /* Time station was last heard */
 	int32 currxcnt; /* Current # of packets heard from this station */
@@ -117,89 +114,52 @@ struct lq {
 			 */
 #endif
 };
-#define NULLLQ  (struct lq *)0
 
 extern struct lq *Lq;   /* Link quality record headers */
 
 /* Structure used to keep track of monitored destination addresses */
 struct ld {
 	struct ld *next;        /* Linked list pointers */
-	char addr[AXALEN];/* Hardware address of destination overheard */
+	uint8 addr[AXALEN];/* Hardware address of destination overheard */
 	struct iface *iface;    /* Interface address was heard on */
 	int32 time;             /* Time station was last mentioned */
 	int32 currxcnt; /* Current # of packets destined to this station */
 };
-#define NULLLD  (struct ld *)0
 
 extern struct ld *Ld;   /* Destination address record headers */
 
-/* Linkage to network protocols atop ax25 */
-struct axlink {
-	int pid;
-	void (*funct)(struct iface *,struct ax25_cb *,char *, char *,
-	 struct mbuf *,int);
-};
-extern struct axlink Axlink[];
-
-/* Codes for the open_ax25 call */
-#define AX_PASSIVE      0
-#define AX_ACTIVE       1
-#define AX_SERVER       2       /* Passive, clone on opening */
-
 /* In ax25.c: */
-void ax_recv(struct iface *,struct mbuf *);
-int axui_send(struct mbuf *bp,struct iface *iface,int32 gateway,int tos);
-int axi_send(struct mbuf *bp,struct iface *iface,int32 gateway,int tos);
-int ax_output(struct iface *iface,char *dest,char *source,uint16 pid,
-	struct mbuf *data);
-int sendframe(struct ax25_cb *axp,int cmdrsp,int ctl,struct mbuf *data);
-void axnl3(struct iface *iface,struct ax25_cb *axp,char *src,
-	char *dest,struct mbuf *bp,int mcast);
-int valid_remote_call(const char *call);
-struct ax_route *ax_routeptr(const char *call, int create);
+void ax_recv(struct iface *,struct mbuf **);
+int axui_send(struct mbuf **bp,struct iface *iface,int32 gateway,uint8 tos);
+int axi_send(struct mbuf **bp,struct iface *iface,int32 gateway,uint8 tos);
+int ax_output(struct iface *iface,uint8 *dest,uint8 *source,uint16 pid,
+	struct mbuf **data);
+int axsend(struct iface *iface,uint8 *dest,uint8 *source,
+	enum lapb_cmdrsp cmdrsp,int ctl,struct mbuf **data);
+int valid_remote_call(const uint8 *call);
+struct ax_route *ax_routeptr(const uint8 *call, int create);
 void axroute_add(struct iface *iface, struct ax25 *hdr, int perm);
 void axroute(struct ax25 *hdr, struct iface **ifpp);
 
-/* In ax25cmd.c: */
-void st_ax25(struct ax25_cb *axp);
-
 /* In axhdr.c: */
-struct mbuf *htonax25(struct ax25 *hdr,struct mbuf *data);
+void htonax25(struct ax25 *hdr,struct mbuf **data);
 int ntohax25(struct ax25 *hdr,struct mbuf **bpp);
 
 /* In axlink.c: */
 void getlqentry(struct lqentry *ep,struct mbuf **bpp);
 void getlqhdr(struct lqhdr *hp,struct mbuf **bpp);
-void logsrc(struct iface *iface,char *addr);
-void logdest(struct iface *iface,char *addr);
-char *putlqentry(char *cp,char *addr,int32 count);
+void logsrc(struct iface *iface,uint8 *addr);
+void logdest(struct iface *iface,uint8 *addr);
+char *putlqentry(char *cp,uint8 *addr,int32 count);
 char *putlqhdr(char *cp,uint16 version,int32 ip_addr);
-struct lq *al_lookup(struct iface *ifp,char *addr,int sort);
-
-/* In ax25user.c: */
-int ax25val(struct ax25_cb *axp);
-int disc_ax25(struct ax25_cb *axp);
-int kick_ax25(struct ax25_cb *axp);
-struct ax25_cb *open_ax25(struct ax25 *,
-	int,
-	void (*)(struct ax25_cb *,int),
-	void (*)(struct ax25_cb *,int),
-	void (*)(struct ax25_cb *,int,int),
-	char *user);
-struct mbuf *recv_ax25(struct ax25_cb *axp,uint16 cnt);
-int reset_ax25(struct ax25_cb *axp);
-int send_ax25(struct ax25_cb *axp,struct mbuf *bp,int pid);
-int space_ax25(struct ax25_cb *axp);
+struct lq *al_lookup(struct iface *ifp,uint8 *addr,int sort);
 
 /* In ax25subr.c: */
-int addreq(const char *a,const char *b);
-struct ax25_cb *cr_ax25(char *addr);
-void del_ax25(struct ax25_cb *axp);
-struct ax25_cb *find_ax25(char *);
-char *pax25(char *e,char *addr);
-int setcall(char *out,char *call);
-struct iface *ismyax25addr(const char *addr);
-void addrcp(char *to,const char *from);
+int addreq(const uint8 *a,const uint8 *b);
+char *pax25(char *e,uint8 *addr);
+int setcall(uint8 *out,char *call);
+struct iface *ismyax25addr(const uint8 *addr);
+void addrcp(uint8 *to,const uint8 *from);
 int ax25args_to_hdr(int argc,char *argv[],struct ax25 *hdr);
 char *ax25hdr_to_string(struct ax25 *hdr);
 

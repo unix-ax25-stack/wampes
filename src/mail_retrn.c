@@ -1,11 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.20 1994/09/05 12:47:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.21 1995/12/20 09:46:49 deyke Exp $ */
 
 /* Mail Delivery Agent for returned Mails */
 
 #include <sys/types.h>
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <sys/time.h>
 #include <unistd.h>
 
@@ -55,4 +54,3 @@ void mail_return(struct mailjob *jp)
   if (*jp->xfile) unlink(jp->xfile);
   exit(0);
 }
-

@@ -1,6 +1,5 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/devparam.c,v 1.4 1994/10/06 16:15:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/devparam.c,v 1.5 1995/12/20 09:46:42 deyke Exp $ */
 
-#include <string.h>
 #include <ctype.h>
 #include "global.h"
 #include "devparam.h"
@@ -31,7 +30,7 @@ static struct param Parms[] = {
 	PARAM_UP,       "Up",
 	PARAM_BLIND,    "Blind",
 	PARAM_RETURN,   "Return",
-	-1,             NULLCHAR,
+	-1,             NULL,
 };
 
 /* Convert a packet radio interface control token into a number
@@ -69,6 +68,6 @@ int n)
 			return sp->name;
 		sp++;
 	}
-	return NULLCHAR;
+	return NULL;
 }
 

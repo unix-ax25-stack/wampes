@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.18 1993/05/17 13:45:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.19 1995/12/20 09:46:51 deyke Exp $ */
 
 #ifndef _NETROM_H
 #define _NETROM_H
@@ -65,8 +65,8 @@ struct circuit {
   int remoteindex;              /* Remote circuit index */
   int remoteid;                 /* Remote circuit ID */
   int outbound;                 /* Circuit was created by local request */
-  char node[AXALEN];            /* Call of peer node */
-  char cuser[AXALEN];           /* Call of user */
+  uint8 node[AXALEN];           /* Call of peer node */
+  uint8 cuser[AXALEN];          /* Call of user */
   int state;                    /* Connection state */
 #define NR4STDISC       0                       /* disconnected */
 #define NR4STCPEND      1                       /* connection pending */
@@ -116,10 +116,10 @@ struct circuit {
 extern char *Nr4states[];
 
 /* In netrom.c: */
-int nr_send(struct mbuf *bp, struct iface *iface, int32 gateway, int tos);
-void nr3_input(const char *src, struct mbuf *bp);
+int nr_send(struct mbuf **bpp, struct iface *iface, int32 gateway, uint8 tos);
+void nr3_input(const uint8 *src, struct mbuf *bp);
 char *nr_addr2str(struct circuit *pc);
-struct circuit *open_nr(char *node, char *cuser, int window, void (*r_upcall)(struct circuit *p, int cnt), void (*t_upcall)(struct circuit *p, int cnt), void (*s_upcall)(struct circuit *p, int oldstate, int newstate), char *user);
+struct circuit *open_nr(uint8 *node, uint8 *cuser, int window, void (*r_upcall)(struct circuit *p, int cnt), void (*t_upcall)(struct circuit *p, int cnt), void (*s_upcall)(struct circuit *p, int oldstate, int newstate), char *user);
 int send_nr(struct circuit *pc, struct mbuf *bp);
 int space_nr(struct circuit *pc);
 int recv_nr(struct circuit *pc, struct mbuf **bpp, int cnt);

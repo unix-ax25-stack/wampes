@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.18 1994/10/06 16:15:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.19 1995/12/20 09:46:55 deyke Exp $ */
 
 #ifndef _SOCKET_H
 #define _SOCKET_H
@@ -47,6 +47,7 @@
 #define IPPORT_BOOTPS   67
 #define IPPORT_BOOTPC   68
 #define IPPORT_NTP      123     /* Network Time Protocol */
+#define IPPORT_PHOTURIS 468     /* Photuris Key management */
 #define IPPORT_RIP      520
 #define IPPORT_REMOTE   1234    /* Pulled out of the air */
 #define IPPORT_BSR      5000    /* BSR X10 interface server port (UDP) */
@@ -63,16 +64,15 @@
 #define SOCK_RAW        2
 #define SOCK_SEQPACKET  3
 
+#undef  EWOULDBLOCK
 #define EWOULDBLOCK     100
 #define ENOTCONN        101
 #define ESOCKTNOSUPPORT 102
 #define EAFNOSUPPORT    103
 #define EISCONN         104
 #define EOPNOTSUPP      105
-#endif
 #define EALARM          106
 #define EABORT          107
-#if 0
 #undef  EINTR
 #define EINTR           108
 #define ECONNREFUSED    109
@@ -86,17 +86,17 @@ extern char *Sock_errlist[];
 /* In socket.c: */
 extern int Axi_sock;    /* Socket listening to AX25 (there can be only one) */
 
-int accept(int s,char *peername,int *peernamelen);
-int bind(int s,char *name,int namelen);
+int accept(int s,struct sockaddr *peername,int *peernamelen);
+int bind(int s,struct sockaddr *name,int namelen);
 int close_s(int s);
-int connect(int s,char *peername,int peernamelen);
+int connect(int s,struct sockaddr *peername,int peernamelen);
 char *eolseq(int s);
 void freesock(struct proc *pp);
-int getpeername(int s,char *peername,int *peernamelen);
-int getsockname(int s,char *name,int *namelen);
+int getpeername(int s,struct sockaddr *peername,int *peernamelen);
+int getsockname(int s,struct sockaddr *name,int *namelen);
 int listen(int s,int backlog);
-int recv_mbuf(int s,struct mbuf **bpp,int flags,char *from,int *fromlen);
-int send_mbuf(int s,struct mbuf *bp,int flags,char *to,int tolen);
+int recv_mbuf(int s,struct mbuf **bpp,int flags,struct sockaddr *from,int *fromlen);
+int send_mbuf(int s,struct mbuf **bp,int flags,struct sockaddr *to,int tolen);
 int settos(int s,int tos);
 int shutdown(int s,int how);
 int socket(int af,int type,int protocol);
@@ -109,10 +109,10 @@ int socketpair(int af,int type,int protocol,int sv[]);
 
 /* In sockuser.c: */
 void flushsocks(void);
-int recv(int s,char *buf,int len,int flags);
-int recvfrom(int s,char *buf,int len,int flags,char *from,int *fromlen);
-int send(int s,char *buf,int len,int flags);
-int sendto(int s,char *buf,int len,int flags,char *to,int tolen);
+int recv(int s,void *buf,int len,int flags);
+int recvfrom(int s,void *buf,int len,int flags,struct sockaddr *from,int *fromlen);
+int send(int s,void *buf,int len,int flags);
+int sendto(int s,void *buf,int len,int flags,struct sockaddr *to,int tolen);
 
 /* In file sockutil.c: */
 char *psocket(void *p);

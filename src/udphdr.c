@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udphdr.c,v 1.7 1994/10/09 08:23:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udphdr.c,v 1.8 1995/12/20 09:46:59 deyke Exp $ */
 
 /* UDP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -10,18 +10,18 @@
 #include "udp.h"
 
 /* Convert UDP header in internal format to an mbuf in external format */
-struct mbuf *
+void
 htonudp(
 struct udp *udp,
-struct mbuf *bp,
-struct pseudo_header *ph)
-{
-	register char *cp;
+struct mbuf **bpp,
+struct pseudo_header *ph
+){
+	register uint8 *cp;
 	uint16 checksum;
 
 	/* Allocate UDP protocol header and fill it in */
-	bp = pushdown(bp,UDPHDR);
-	cp = bp->data;
+	pushdown(bpp,NULL,UDPHDR);
+	cp = (*bpp)->data;
 	cp = put16(cp,udp->source);     /* Source port */
 	cp = put16(cp,udp->dest);       /* Destination port */
 	cp = put16(cp,udp->length);     /* Length */
@@ -32,18 +32,17 @@ struct pseudo_header *ph)
 	 * the spec requires us to change zeros into ones to distinguish an
 	 * all-zero checksum from no checksum at all
 	 */
-	if((checksum = cksum(ph,bp,ph->length)) == 0)
+	if((checksum = cksum(ph,*bpp,ph->length)) == 0)
 		checksum = 0xffff;
 	put16(cp,checksum);
-	return bp;
 }
 /* Convert UDP header in mbuf to internal structure */
 int
 ntohudp(
 struct udp *udp,
-struct mbuf **bpp)
-{
-	char udpbuf[UDPHDR];
+struct mbuf **bpp
+){
+	uint8 udpbuf[UDPHDR];
 
 	if(pullup(bpp,udpbuf,UDPHDR) != UDPHDR)
 		return -1;
@@ -58,12 +57,12 @@ struct mbuf **bpp)
  */
 uint16
 udpcksum(
-struct mbuf *bp)
-{
+struct mbuf *bp
+){
 	struct mbuf *dup;
 
 	if(dup_p(&dup,bp,6,2) != 2)
 		return 0;
-	return pull16(&dup);
+	return (uint16) pull16(&dup);
 }
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.h,v 1.8 1994/10/30 21:27:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.h,v 1.9 1995/12/20 09:46:57 deyke Exp $ */
 
 #ifndef _TELNET_H
 #define _TELNET_H
@@ -45,7 +45,6 @@ struct telnet {
 
 	struct session *session;        /* Pointer to session structure */
 };
-#define NULLTN  (struct telnet *)0
 extern int Refuse_echo;
 extern int Tn_cr_mode;
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.28 1995/03/24 13:00:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.29 1995/12/20 09:46:48 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -10,10 +10,8 @@
 #endif
 #include <stdio.h>
 #include <time.h>
-/* #include <dos.h> */
 #include "global.h"
 #include "proc.h"
-/* #include "pc.h" */
 #include "commands.h"
 
 #if 0
@@ -34,7 +32,7 @@ struct env {
 	unsigned        si;
 	unsigned        ds;
 };
-#define getstackptr(ep) (ptol(MK_FP((ep)->ss, (ep)->sp)))
+#define getstackptr(ep) (MK_FP((ep)->ss, (ep)->sp))
 #elif defined __hp9000s300
 struct env {
 	long    pc;
@@ -373,24 +371,24 @@ void *p)
 	printf("Uptime %s",tformat(secclock()-StartTime));
 	printf("\n");
 
-	printf("psigs %lu queued %lu hiwat %u woken %lu nops %lu dups %lu\n",Ksig.psigs,
-	 Ksig.psigsqueued,Ksig.maxentries,Ksig.psigwakes,Ksig.psignops,Ksig.dupsigs);
+	printf("ksigs %lu queued %lu hiwat %u woken %lu nops %lu dups %lu\n",Ksig.ksigs,
+	 Ksig.ksigsqueued,Ksig.maxentries,Ksig.ksigwakes,Ksig.ksignops,Ksig.duksigs);
 	Ksig.maxentries = 0;
-	printf("pwaits %lu nops %lu from int %lu\n",
-	 Ksig.pwaits,Ksig.pwaitnops,Ksig.pwaitints);
+	printf("kwaits %lu nops %lu from int %lu\n",
+	 Ksig.kwaits,Ksig.kwaitnops,Ksig.kwaitints);
 	printf("PID       SP        stksize   maxstk    event     fl  in  out  name\n");
 
-	for(pp = Susptab;pp != NULLPROC;pp = pp->next)
+	for(pp = Susptab;pp != NULL;pp = pp->next)
 		pproc(pp);
 
 	for(i=0;i<PHASH;i++)
-		for(pp = Waittab[i];pp != NULLPROC;pp = pp->next)
+		for(pp = Waittab[i];pp != NULL;pp = pp->next)
 			pproc(pp);
 
-	for(pp = Rdytab;pp != NULLPROC;pp = pp->next)
+	for(pp = Rdytab;pp != NULL;pp = pp->next)
 		pproc(pp);
 
-	if(Curproc != NULLPROC)
+	if(Curproc != NULL)
 		pproc(Curproc);
 
 	return 0;
@@ -402,12 +400,12 @@ struct proc *pp)
 	register struct env *ep;
 
 	ep = (struct env *)&pp->env;
-	printf("%08lx  %08lx  %7u   %6u    %08lx  %c%c%c %3d %3d  %s\n",
-	 ptol(pp),getstackptr(ep),pp->stksize,stkutil(pp),
-	 ptol(pp->event),
-	 (pp->flags & P_ISTATE) ? 'I' : ' ',
-	 (pp->state & WAITING) ? 'W' : ' ',
-	 (pp->state & SUSPEND) ? 'S' : ' ',
+	printf("%p  %08lx  %7u   %6u    %p  %c%c%c %3d %3d  %s\n",
+	 pp,getstackptr(ep),pp->stksize,stkutil(pp),
+	 pp->event,
+	 pp->flags.istate ? 'I' : ' ',
+	 pp->flags.waiting ? 'W' : ' ',
+	 pp->flags.suspend ? 'S' : ' ',
 	 (int)pp->input,(int)pp->output,pp->name);
 }
 static int
@@ -455,8 +453,8 @@ chkstk(void)
 	stop = sbase + Curproc->stksize;
 	if(sp < sbase || sp >= stop){
 		printf("Stack violation, process %s\n",Curproc->name);
-		printf("SP = %lx, legal stack range [%lx,%lx)\n",
-		ptol(sp),ptol(sbase),ptol(stop));
+		printf("SP = %p, legal stack range [%p,%p)\n",
+		sp,sbase,stop);
 		fflush(stdout);
 		killself();
 	}

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.h,v 1.6 1994/10/09 08:22:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.h,v 1.7 1995/12/20 09:46:43 deyke Exp $ */
 
 /*
  *
@@ -20,11 +20,9 @@ struct finger {
 	struct session  *session;       /* pointer to finger session */
 	char            *user;          /* name of user to finger */
 };
-#define NULLFING        (struct finger *) 0
 
 extern char             *fingersuf,     /* see files.c */
 			*fingerpath;
 
 /* In finger.c: */
 void fingcli_rcv(struct tcb *tcb, int32 cnt);
-

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.8 1995/03/13 13:32:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.9 1995/12/20 09:46:39 deyke Exp $ */
 
 /* AX25 control commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -14,10 +14,8 @@
 #include "lapb.h"
 #include "cmdparse.h"
 #include "socket.h"
-/* #include "mailbox.h" */
 #include "session.h"
 #include "tty.h"
-/* #include "nr4.h" */
 #include "commands.h"
 
 static int axdest(struct iface *ifp);
@@ -67,28 +65,28 @@ char *Axreasons[] = {
 };
 
 static struct cmds Axcmds[] = {
-	"blimit",       doblimit,       0, 0, NULLCHAR,
-	"destlist",     doaxdest,       0, 0, NULLCHAR,
-	"digipeat",     dodigipeat,     0, 0, NULLCHAR,
-	"flush",        doaxflush,      0, 0, NULLCHAR,
-	"heard",        doaxheard,      0, 0, NULLCHAR,
+	"blimit",       doblimit,       0, 0, NULL,
+	"destlist",     doaxdest,       0, 0, NULL,
+	"digipeat",     dodigipeat,     0, 0, NULL,
+	"flush",        doaxflush,      0, 0, NULL,
+	"heard",        doaxheard,      0, 0, NULL,
 	"jumpstart",    dojumpstart,    0, 2, "ax25 jumpstart <call> [ON|OFF]",
 	"kick",         doaxkick,       0, 2, "ax25 kick <axcb>",
-	"maxframe",     domaxframe,     0, 0, NULLCHAR,
-	"mycall",       domycall,       0, 0, NULLCHAR,
-	"paclen",       dopaclen,       0, 0, NULLCHAR,
-	"pthresh",      dopthresh,      0, 0, NULLCHAR,
+	"maxframe",     domaxframe,     0, 0, NULL,
+	"mycall",       domycall,       0, 0, NULL,
+	"paclen",       dopaclen,       0, 0, NULL,
+	"pthresh",      dopthresh,      0, 0, NULL,
 	"reset",        doaxreset,      0, 2, "ax25 reset <axcb>",
-	"retry",        don2,           0, 0, NULLCHAR,
-	"route",        doaxroute,      0, 0, NULLCHAR,
-	"status",       doaxstat,       0, 0, NULLCHAR,
-	"t1",           dot1,           0, 0, NULLCHAR,
-	"t2",           dot2,           0, 0, NULLCHAR,
-	"t3",           dot3,           0, 0, NULLCHAR,
-	"t4",           dot4,           0, 0, NULLCHAR,
-	"version",      doversion,      0, 0, NULLCHAR,
-	"window",       doaxwindow,     0, 0, NULLCHAR,
-	NULLCHAR,
+	"retry",        don2,           0, 0, NULL,
+	"route",        doaxroute,      0, 0, NULL,
+	"status",       doaxstat,       0, 0, NULL,
+	"t1",           dot1,           0, 0, NULL,
+	"t2",           dot2,           0, 0, NULL,
+	"t3",           dot3,           0, 0, NULL,
+	"t4",           dot4,           0, 0, NULL,
+	"version",      doversion,      0, 0, NULL,
+	"window",       doaxwindow,     0, 0, NULL,
+	NULL,
 };
 /* Multiplexer for top-level ax25 command */
 int
@@ -109,7 +107,7 @@ void *p)
 	struct iface *ifp;
 
 	if(argc > 1){
-		if((ifp = if_lookup(argv[1])) == NULLIF){
+		if((ifp = if_lookup(argv[1])) == NULL){
 			printf("Interface %s unknown\n",argv[1]);
 			return 1;
 		}
@@ -120,7 +118,7 @@ void *p)
 		axheard(ifp);
 		return 0;
 	}
-	for(ifp = Ifaces;ifp != NULLIF;ifp = ifp->next){
+	for(ifp = Ifaces;ifp != NULL;ifp = ifp->next){
 		if(ifp->output != ax_output)
 			continue;       /* Not an ax.25 interface */
 		if(axheard(ifp) == EOF)
@@ -135,16 +133,15 @@ struct iface *ifp)
 	struct lq *lp;
 	char tmp[AXBUF];
 
-	if(ifp->hwaddr == NULLCHAR)
+	if(ifp->hwaddr == NULL)
 		return 0;
 	printf("%s:\n",ifp->name);
 	printf("Station   Last heard           Pkts\n");
-	for(lp = Lq;lp != NULLLQ;lp = lp->next){
+	for(lp = Lq;lp != NULL;lp = lp->next){
 		if(lp->iface != ifp)
 			continue;
-		if(printf("%-10s%-17s%8lu\n",pax25(tmp,lp->addr),
-		 tformat(secclock() - lp->time),lp->currxcnt) == EOF)
-			return EOF;
+		printf("%-10s%-17s%8lu\n",pax25(tmp,lp->addr),
+		 tformat(secclock() - lp->time),lp->currxcnt);
 	}
 	return 0;
 }
@@ -157,7 +154,7 @@ void *p)
 	struct iface *ifp;
 
 	if(argc > 1){
-		if((ifp = if_lookup(argv[1])) == NULLIF){
+		if((ifp = if_lookup(argv[1])) == NULL){
 			printf("Interface %s unknown\n",argv[1]);
 			return 1;
 		}
@@ -168,7 +165,7 @@ void *p)
 		axdest(ifp);
 		return 0;
 	}
-	for(ifp = Ifaces;ifp != NULLIF;ifp = ifp->next){
+	for(ifp = Ifaces;ifp != NULL;ifp = ifp->next){
 		if(ifp->output != ax_output)
 			continue;       /* Not an ax.25 interface */
 		if(axdest(ifp) == EOF)
@@ -184,11 +181,11 @@ struct iface *ifp)
 	struct lq *lq;
 	char tmp[AXBUF];
 
-	if(ifp->hwaddr == NULLCHAR)
+	if(ifp->hwaddr == NULL)
 		return 0;
 	printf("%s:\n",ifp->name);
 	printf("Station   Last ref         Last heard           Pkts\n");
-	for(lp = Ld;lp != NULLLD;lp = lp->next){
+	for(lp = Ld;lp != NULL;lp = lp->next){
 		if(lp->iface != ifp)
 			continue;
 
@@ -198,13 +195,12 @@ struct iface *ifp)
 		if(addreq(lp->addr,ifp->hwaddr)){
 			/* Special case; it's our address */
 			printf("%-17s",tformat(secclock() - ifp->lastsent));
-		} else if((lq = al_lookup(ifp,lp->addr,0)) == NULLLQ){
+		} else if((lq = al_lookup(ifp,lp->addr,0)) == NULL){
 			printf("%-17s","");
 		} else {
 			printf("%-17s",tformat(secclock() - lq->time));
 		}
-		if(printf("%8lu\n",lp->currxcnt) == EOF)
-			return EOF;
+		printf("%8lu\n",lp->currxcnt);
 	}
 	return 0;
 }
@@ -216,7 +212,7 @@ void *p)
 {
 	struct iface *ifp;
 
-	for(ifp = Ifaces;ifp != NULLIF;ifp = ifp->next){
+	for(ifp = Ifaces;ifp != NULL;ifp = ifp->next){
 		if(ifp->output != ax_output)
 			continue;       /* Not an ax.25 interface */
 		axflush(ifp);
@@ -231,16 +227,16 @@ struct iface *ifp)
 	struct ld *ld,*ld1;
 
 	ifp->rawsndcnt = 0;
-	for(lp = Lq;lp != NULLLQ;lp = lp1){
+	for(lp = Lq;lp != NULL;lp = lp1){
 		lp1 = lp->next;
-		free((char *)lp);
+		free(lp);
 	}
-	Lq = NULLLQ;
-	for(ld = Ld;ld != NULLLD;ld = ld1){
+	Lq = NULL;
+	for(ld = Ld;ld != NULL;ld = ld1){
 		ld1 = ld->next;
-		free((char *)ld);
+		free(ld);
 	}
-	Ld = NULLLD;
+	Ld = NULL;
 }
 
 static int
@@ -271,19 +267,18 @@ void *p)
 
 	if(argc < 2){
 		printf("   &AXCB Rcv-Q Unack  Rt  Srtt  State          Remote\n");
-		for(axp = Ax25_cb;axp != NULLAX25; axp = axp->next){
-			if(printf("%8lx %5u%c%3u/%u%c %2d%6lu  %-13s  %s\n",
-				ptol(axp),
-				len_p(axp->rxq),
-				axp->flags.rnrsent ? '*' : ' ',
-				axp->unack,
-				axp->maxframe,
-				axp->flags.remotebusy ? '*' : ' ',
-				axp->retries,
-				axp->srt,
-				Ax25states[axp->state],
-				ax25hdr_to_string(&axp->hdr)) == EOF)
-					return 0;
+		for(axp = Ax25_cb;axp != NULL; axp = axp->next){
+			printf("%p %5u%c%3u/%u%c %2d%6lu  %-13s  %s\n",
+			 axp,
+			 len_p(axp->rxq),
+			 axp->flags.rnrsent ? '*' : ' ',
+			 axp->unack,
+			 axp->maxframe,
+			 axp->flags.remotebusy ? '*' : ' ',
+			 axp->retries,
+			 axp->srt,
+			 Ax25states[axp->state],
+			 ax25hdr_to_string(&axp->hdr));
 		}
 		if (Axserver_enabled)
 			printf("                                Listening      *\n");
@@ -304,11 +299,11 @@ register struct ax25_cb *axp)
 {
 	char tmp[AXBUF];
 
-	if(axp == NULLAX25)
+	if(axp == NULL)
 		return;
 	printf("    &AXB Remote   RB V(S) V(R) Unack P Retry State\n");
 
-	printf("%8lx %-9s%c%c",ptol(axp),pax25(tmp,axp->hdr.dest),
+	printf("%p %-9s%c%c",axp,pax25(tmp,axp->hdr.dest),
 	 axp->flags.rejsent ? 'R' : ' ',
 	 axp->flags.remotebusy ? 'B' : ' ');
 	printf(" %4d %4d",axp->vs,axp->vr);
@@ -375,7 +370,13 @@ int argc,
 char *argv[],
 void *p)
 {
-	return setintrc(&Axversion,"AX25 version",argc,argv,1,2);
+	int i;
+	int r;
+
+	i = (int) Axversion;
+	r = setintrc(&i,"AX25 version",argc,argv,1,2);
+	Axversion = (enum lapb_version) i;
+	return r;
 }
 
 static int
@@ -493,10 +494,10 @@ void *p)
   static struct cmds routecmds[] = {
 
     "add",  dorouteadd,  0, 3, "ax25 route add [permanent] <interface> default|<path>",
-    "list", doroutelist, 0, 0, NULLCHAR,
-    "stat", doroutestat, 0, 0, NULLCHAR,
+    "list", doroutelist, 0, 0, NULL,
+    "stat", doroutestat, 0, 0, NULL,
 
-    NULLCHAR, NULLFP,    0, 0, NULLCHAR
+    NULL,   NULL,        0, 0, NULL
   };
 
   axroute_loadfile();
@@ -548,6 +549,7 @@ void *p)
   if (ax25args_to_hdr(argc, argv, &hdr))
     return 1;
 
+  memset(&hdr1, 0, sizeof(struct ax25));
   hdr1.nextdigi = hdr1.ndigis = hdr.ndigis;
   addrcp(hdr1.source, hdr.dest);
   for (i = 0, j = hdr.ndigis - 1; j >= 0; i++, j--)
@@ -604,7 +606,7 @@ char *argv[],
 void *p)
 {
 
-  char call[AXALEN];
+  uint8 call[AXALEN];
   int i;
   struct ax_route *rp;
 
@@ -646,7 +648,7 @@ void *p)
   struct iface *ifp;
   struct ifptable_t ifptable[NIFACES];
 
-  memset((char *) ifptable, 0, sizeof(ifptable));
+  memset(ifptable, 0, sizeof(ifptable));
   for (dev = 0, ifp = Ifaces; ifp; dev++, ifp = ifp->next)
     ifptable[dev].ifp = ifp;
   for (i = 0; i < AXROUTESIZE; i++)
@@ -683,7 +685,7 @@ void *p)
 
 	char *cp;
 	char buf[32];
-	char tmp[AXBUF];
+	uint8 tmp[AXBUF];
 	struct ax_route *axr;
 
 	if(setcall(tmp,argv[1]) == -1)

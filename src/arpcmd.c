@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.13 1994/10/06 16:15:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.14 1995/12/20 09:46:38 deyke Exp $ */
 
 /* ARP commands
  * Copyright 1991, Phil Karn, KA9Q
@@ -28,12 +28,12 @@ static struct cmds Arpcmds[] = {
 	"arp drop <hostid> ether|ax25|netrom|arcnet",
 
 	"flush", doarpflush, 0, 0,
-	NULLCHAR,
+	NULL,
 
 	"publish", doarpadd, 0, 4,
 	"arp publish <hostid> ether|ax25|netrom|arcnet <ether addr|callsign>",
 
-	NULLCHAR,
+	NULL,
 };
 char *Arptypes[] = {
 	"NET/ROM",
@@ -65,9 +65,9 @@ int argc,
 char *argv[],
 void *p)
 {
-	uint16 hardware;
+	enum arp_hwtype hardware;
 	int32 addr;
-	char *hwaddr;
+	uint8 *hwaddr;
 	struct arp_tab *ap;
 	struct arp_type *at;
 	int pub = 0;
@@ -107,16 +107,16 @@ void *p)
 		return -1;
 	}
 	/* If an entry already exists, clear it */
-	if((ap = arp_lookup(hardware,addr)) != NULLARP)
+	if((ap = arp_lookup(hardware,addr)) != NULL)
 		arp_drop(ap);
 
 	at = &Arp_type[hardware];
-	if(at->scan == NULLFP){
+	if(at->scan == NULL){
 		printf("Attach device first\n");
 		return 1;
 	}
 	/* Allocate buffer for hardware address and fill with remaining args */
-	hwaddr = (char *) mallocw(at->hwalen);
+	hwaddr = (uint8 *) mallocw(at->hwalen);
 	/* Destination address */
 	(*at->scan)(hwaddr,argv[3]);
 	ap = arp_add(addr,hardware,hwaddr,pub); /* Put in table */
@@ -132,7 +132,7 @@ int argc,
 char *argv[],
 void *p)
 {
-	uint16 hardware;
+	enum arp_hwtype hardware;
 	int32 addr;
 	struct arp_tab *ap;
 
@@ -157,7 +157,7 @@ void *p)
 			hardware = ARP_ARCNET;
 			break;
 		default:
-			hardware = 0;
+			hardware = (enum arp_hwtype) 0;
 			break;
 		}
 		break;
@@ -165,10 +165,10 @@ void *p)
 		hardware = ARP_APPLETALK;
 		break;
 	default:
-		hardware = 0;
+		hardware = (enum arp_hwtype) 0;
 		break;
 	}
-	if((ap = arp_lookup(hardware,addr)) == NULLARP)
+	if((ap = arp_lookup(hardware,addr)) == NULL)
 		return -1;
 	arp_drop(ap);
 	return 0;
@@ -185,7 +185,7 @@ void *p)
 	int i;
 
 	for(i=0;i<HASHMOD;i++){
-		for(ap = Arp_tab[i];ap != NULLARP;ap = aptmp){
+		for(ap = Arp_tab[i];ap != NULL;ap = aptmp){
 			aptmp = ap->next;
 			if(dur_timer(&ap->timer) != 0)
 				arp_drop(ap);
@@ -229,9 +229,7 @@ dumparp(void)
 			}
 			if(ap->pub)
 				printf(" (published)");
-			if(printf("\n") == EOF)
-				return;
+			printf("\n");
 		}
 	}
-	return;
 }

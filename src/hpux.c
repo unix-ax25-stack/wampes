@@ -1,12 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.54 1995/02/07 10:27:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.55 1995/12/20 09:46:44 deyke Exp $ */
 
 #include <sys/types.h>
 
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/wait.h>
@@ -147,7 +145,7 @@ void ioinit(void)
     curr_termios.c_cc[VTIME] = 0;
     tcsetattr(0, TCSANOW, &curr_termios);
 #endif
-    on_read(0, (void (*)(void *)) keyboard, (void *) 0);
+    on_read(0, (void (*)(void *)) keyboard, 0);
   } else {
 #ifdef macII
     fclose(stdin);
@@ -186,7 +184,7 @@ void ioinit(void)
   {
     /* Init times */
     struct timeval tv;
-    gettimeofday(&tv, (struct timezone *) 0);
+    gettimeofday(&tv, 0);
     Secclock = tv.tv_sec;
     Msclock = 1000 * Secclock + tv.tv_usec / 1000;
   }
@@ -266,10 +264,10 @@ int system(const char *cmdline)
   if (!cmdline) return 1;
   switch (pid = dofork()) {
   case -1:
-    return (-1);
+    return -1;
   case 0:
     for (i = 3; i < FD_SETSIZE; i++) close(i);
-    execl("/bin/sh", "sh", "-c", cmdline, (char *) 0);
+    execl("/bin/sh", "sh", "-c", cmdline, 0);
     exit(1);
   default:
     signal(SIGINT,  SIG_IGN);
@@ -400,14 +398,14 @@ static void check_files_changed(void)
   if (stat("/tcp/net", &statbuf)) return;
   if (!net_time) net_time = statbuf.st_mtime;
   if (net_time != statbuf.st_mtime && statbuf.st_mtime < secclock() - 3600) {
-    log((void *) 0, "%s has changed", "/tcp/net");
+    logmsg(0, "%s has changed", "/tcp/net");
     main_exit = 1;
   }
 
   if (stat(Startup, &statbuf)) return;
   if (!rc_time) rc_time = statbuf.st_mtime;
   if (rc_time != statbuf.st_mtime && statbuf.st_mtime < secclock() - 3600) {
-    log((void *) 0, "%s has changed", Startup);
+    logmsg(0, "%s has changed", Startup);
     main_exit = 1;
   }
 
@@ -444,4 +442,3 @@ void eihalt(void)
       if (writefnc[n] && FD_ISSET(n, &actwrite)) (*writefnc[n])(writearg[n]);
     }
 }
-

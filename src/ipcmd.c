@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.12 1994/10/06 16:15:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.13 1995/12/20 09:46:46 deyke Exp $ */
 
 /* IP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -28,11 +28,11 @@ static int dottl(int argc,char *argv[],void *p);
 static int dumproute(struct route *rp);
 
 static struct cmds Ipcmds[] = {
-	"address",      doipaddr,       0,      0, NULLCHAR,
-	"rtimer",       dortimer,       0,      0, NULLCHAR,
-	"status",       doipstat,       0,      0, NULLCHAR,
-	"ttl",          dottl,          0,      0, NULLCHAR,
-	NULLCHAR,
+	"address",      doipaddr,       0,      0, NULL,
+	"rtimer",       dortimer,       0,      0, NULL,
+	"status",       doipstat,       0,      0, NULL,
+	"ttl",          dottl,          0,      0, NULL,
+	NULL,
 };
 /* "route" subcommands */
 static struct cmds Rtcmds[] = {
@@ -46,12 +46,12 @@ static struct cmds Rtcmds[] = {
 	"route drop <dest addr>[/<bits>]",
 
 	"flush",        doflush,        0,      0,
-	NULLCHAR,
+	NULL,
 
 	"lookup",       dolook,         0,      2,
 	"route lookup <dest addr>",
 
-	NULLCHAR,
+	NULL,
 };
 
 int
@@ -119,13 +119,13 @@ void *p)
 
 	for(bits=31;bits>=0;bits--){
 		for(i=0;i<HASHMOD;i++){
-			for(rp = Routes[bits][i];rp != NULLROUTE;rp = rp->next){
+			for(rp = Routes[bits][i];rp != NULL;rp = rp->next){
 				if(dumproute(rp) == EOF)
 					return 0;
 			}
 		}
 	}
-	if(R_default.iface != NULLIF)
+	if(R_default.iface != NULL)
 		dumproute(&R_default);
 
 	return 0;
@@ -158,7 +158,7 @@ void *p)
 		 * a length field, (e.g., 128.96/16) get it;
 		 * otherwise assume a full 32-bit address
 		 */
-		if((bitp = strchr(argv[1],'/')) != NULLCHAR){
+		if((bitp = strchr(argv[1],'/')) != NULL){
 			/* Terminate address token for resolve() call */
 			*bitp++ = '\0';
 			bits = atoi(bitp);
@@ -170,7 +170,7 @@ void *p)
 			return 1;
 		}
 	}
-	if((ifp = if_lookup(argv[2])) == NULLIF){
+	if((ifp = if_lookup(argv[2])) == NULL){
 		printf("Interface \"%s\" unknown\n",argv[2]);
 		return 1;
 	}
@@ -187,7 +187,7 @@ void *p)
 	else
 		metric = 1;
 
-	if(rt_add(dest,bits,gateway,ifp,metric,0,private) == NULLROUTE)
+	if(rt_add(dest,bits,gateway,ifp,metric,0,private) == NULL)
 		printf("Can't add route\n");
 	return 0;
 }
@@ -211,7 +211,7 @@ void *p)
 		/* If IP address is followed by an optional slash and length field,
 		 * (e.g., 128.96/16) get it; otherwise assume a full 32-bit address
 		 */
-		if((bitp = strchr(argv[1],'/')) != NULLCHAR){
+		if((bitp = strchr(argv[1],'/')) != NULL){
 			/* Terminate address token for resolve() call */
 			*bitp++ = '\0';
 			bits = atoi(bitp);
@@ -241,7 +241,7 @@ void *p)
 	}
 	for(i=0;i<HASHMOD;i++){
 		for(j=0;j<32;j++){
-			for(rp = Routes[j][i];rp != NULLROUTE;rp = rptmp){
+			for(rp = Routes[j][i];rp != NULL;rp = rptmp){
 				rptmp = rp->next;
 				if(rp->timer.state == TIMER_RUN){
 					rt_drop(rp->target,rp->bits);
@@ -271,7 +271,7 @@ register struct route *rp)
 		cp = "";
 	printf("%-18.18s ",cp);
 	printf("%-7lu",rp->metric);
-	printf("%c ",(rp->flags & RTPRIVATE) ? 'P' : ' ');
+	printf("%c ",rp->flags.rtprivate ? 'P' : ' ');
 	printf("%7lu ",
 	 read_timer(&rp->timer) / 1000L);
 	return printf("%lu\n",rp->uses);
@@ -291,7 +291,7 @@ void *p)
 		printf("Host %s unknown\n",argv[1]);
 		return 1;
 	}
-	if((rp = rt_lookup(addr)) == NULLROUTE){
+	if((rp = rt_lookup(addr)) == NULL){
 		printf("Host %s (%s) unreachable\n",argv[1],inet_ntoa(addr));
 		return 1;
 	}
@@ -323,19 +323,17 @@ void *p)
 	 Rtlookups,Rtchits,
 	 Rtlookups != 0 ? (Rtchits*100 + Rtlookups/2)/Rtlookups: 0);
 
-	if(Reasmq != NULLREASM)
+	if(Reasmq != NULL)
 		printf("Reassembly fragments:\n");
-	for(rp = Reasmq;rp != NULLREASM;rp = rp->next){
+	for(rp = Reasmq;rp != NULL;rp = rp->next){
 		printf("src %s",inet_ntoa(rp->source));
 		printf(" dest %s",inet_ntoa(rp->dest));
-		if(printf(" id %u pctl %u time %lu len %u\n",
-		 rp->id,uchar(rp->protocol),read_timer(&rp->timer),
-		 rp->length) == EOF)
-			break;
-		for(fp = rp->fraglist;fp != NULLFRAG;fp = fp->next){
-			if(printf(" offset %u last %u\n",fp->offset,
-			fp->last) == EOF)
-				break;
+		printf(" id %u pctl %u time %lu len %u\n",
+		 rp->id,rp->protocol,read_timer(&rp->timer),
+		 rp->length);
+		for(fp = rp->fraglist;fp != NULL;fp = fp->next){
+			printf(" offset %u last %u\n",fp->offset,
+			fp->last);
 		}
 	}
 	return 0;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpmsg.c,v 1.5 1992/01/08 13:45:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpmsg.c,v 1.6 1995/12/20 09:46:45 deyke Exp $ */
 
 /* ICMP message type tables
  * Copyright 1991 Phil Karn, KA9Q
@@ -9,22 +9,25 @@
 /* ICMP message types */
 char *Icmptypes[] = {
 	"Echo Reply",
-	NULLCHAR,
-	NULLCHAR,
+	NULL,
+	NULL,
 	"Unreachable",
 	"Source Quench",
 	"Redirect",
-	NULLCHAR,
-	NULLCHAR,
+	NULL,
+	NULL,
 	"Echo Request",
-	NULLCHAR,
-	NULLCHAR,
+	NULL,
+	NULL,
 	"Time Exceeded",
 	"Parameter Problem",
 	"Timestamp",
 	"Timestamp Reply",
 	"Information Request",
-	"Information Reply"
+	"Information Reply",
+	"Address mask request",
+	"Address mask reply",
+	"Security Association"
 };
 
 /* ICMP unreachable messages */
@@ -56,5 +59,11 @@ char *Redirect[] = {
 	"Host",
 	"TOS & Network",
 	"TOS & Host"
+};
+/* Bad SAID messages */
+char *Said_icmp[] = {
+	"Unknown SAID",
+	"Authentication failed",
+	"Decryption failed"
 };
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.15 1994/10/06 16:15:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.16 1995/12/20 09:46:56 deyke Exp $ */
 
 /* Low level TCP routines:
  *  control block management
@@ -48,7 +48,7 @@ int Tcp_trace;                  /* State change tracing flag */
 int Tcp_syndata;
 struct tcp_rtt *Tcp_rtt;
 struct mib_entry Tcp_mib[] = {
-	NULLCHAR,               0,
+	NULL,           0,
 	"tcpRtoAlgorithm",      4,      /* Van Jacobsen's algorithm */
 	"tcpRtoMin",            0,      /* No lower bound */
 	"tcpRtoMax",            MAXINT32,       /* No upper bound */
@@ -61,13 +61,13 @@ struct mib_entry Tcp_mib[] = {
 	"tcpInSegs",            0,
 	"tcpOutSegs",           0,
 	"tcpRetransSegs",       0,
-	NULLCHAR,               0,      /* Connection state goes here */
+	NULL,           0,      /* Connection state goes here */
 	"tcpInErrs",            0,
 	"tcpOutRsts",           0,
 };
 
 /* Look up TCP connection
- * Return TCB pointer or NULLTCB if nonexistant.
+ * Return TCB pointer or NULL if nonexistant.
  * Also move the entry to the top of the list to speed future searches.
  */
 struct tcb *
@@ -75,15 +75,15 @@ lookup_tcb(
 register struct connection *conn)
 {
 	register struct tcb *tcb;
-	struct tcb *tcblast = NULLTCB;
+	struct tcb *tcblast = NULL;
 
-	for(tcb=Tcbs;tcb != NULLTCB;tcblast = tcb,tcb = tcb->next){
+	for(tcb=Tcbs;tcb != NULL;tcblast = tcb,tcb = tcb->next){
 		/* Yet another structure compatibility hack */
 		if(conn->remote.port == tcb->conn.remote.port
 		 && conn->local.port == tcb->conn.local.port
 		 && conn->remote.address == tcb->conn.remote.address
 		 && conn->local.address == tcb->conn.local.address){
-			if(tcblast != NULLTCB){
+			if(tcblast != NULL){
 				/* Move to top of list */
 				tcblast->next = tcb->next;
 				tcb->next = Tcbs;
@@ -93,7 +93,7 @@ register struct connection *conn)
 		}
 
 	}
-	return NULLTCB;
+	return NULL;
 }
 
 /* Create a TCB, return pointer. Return pointer if TCB already exists. */
@@ -104,7 +104,7 @@ struct connection *conn)
 	register struct tcb *tcb;
 	struct tcp_rtt *tp;
 
-	if((tcb = lookup_tcb(conn)) != NULLTCB)
+	if((tcb = lookup_tcb(conn)) != NULL)
 		return tcb;
 	tcb = (struct tcb *)callocw(1,sizeof (struct tcb));
 	ASSIGN(tcb->conn,*conn);
@@ -112,7 +112,7 @@ struct connection *conn)
 	tcb->state = TCP_CLOSED;
 	tcb->cwind = tcb->mss = Tcp_mss;
 	tcb->ssthresh = 65535;
-	if((tp = rtt_get(tcb->conn.remote.address)) != NULLRTT){
+	if((tp = rtt_get(tcb->conn.remote.address)) != NULL){
 		tcb->srtt = tp->srtt;
 		tcb->mdev = tp->mdev;
 	} else {
@@ -137,20 +137,20 @@ int reason)
 	struct reseq *rp1;
 	register struct reseq *rp;
 
-	if(tcb == NULLTCB)
+	if(tcb == NULL)
 		return;
 
 	stop_timer(&tcb->timer);
 	tcb->reason = reason;
 
 	/* Flush reassembly queue; nothing more can arrive */
-	for(rp = tcb->reseq;rp != NULLRESEQ;rp = rp1){
+	for(rp = tcb->reseq;rp != NULL;rp = rp1){
 		rp1 = rp->next;
-		free_p(rp->bp);
-		free((char *)rp);
+		free_p(&rp->bp);
+		free(rp);
 	}
-	tcb->reseq = NULLRESEQ;
-	setstate(tcb,TCP_CLOSED);
+	tcb->reseq = NULL;
+	settcpstate(tcb,TCP_CLOSED);
 }
 
 /* Sequence number comparisons
@@ -202,16 +202,16 @@ register int32 x,register int32 y)
 }
 
 void
-setstate(
+settcpstate(
 register struct tcb *tcb,
-register int newstate)
+enum tcp_state newstate)
 {
-	register char oldstate;
+	enum tcp_state oldstate;
 
 	oldstate = tcb->state;
 	tcb->state = newstate;
 	if(Tcp_trace)
-		printf("TCB %lx %s -> %s\n",ptol(tcb),
+		printf("TCB %p %s -> %s\n",tcb,
 		 Tcpstates[oldstate],Tcpstates[newstate]);
 
 	/* Update MIB variables */
@@ -234,6 +234,8 @@ register int newstate)
 		case TCP_LISTEN:
 			tcpAttemptFails++;
 			break;
+		default:
+			break;
 		}
 		break;
 	case TCP_ESTABLISHED:
@@ -243,8 +245,12 @@ register int newstate)
 		case TCP_LISTEN:
 			tcpEstabResets++;
 			break;
+		default:
+			break;
 		}
 		tcpCurrEstab--;
+		break;
+	default:
 		break;
 	}
 	if(newstate == TCP_ESTABLISHED || newstate == TCP_CLOSE_WAIT)
@@ -259,6 +265,8 @@ register int newstate)
 		/* Notify the user that he can begin sending data */
 		if(tcb->t_upcall && tcb->window > tcb->sndcnt)
 			(*tcb->t_upcall)(tcb,tcb->window - tcb->sndcnt);
+		break;
+	default:
 		break;
 	}
 }
@@ -309,7 +317,7 @@ int32 addr)
 	register struct tcp_rtt *pp;
 
 	if(addr == 0)
-		return NULLRTT;
+		return NULL;
 	for (pp = 0, tp = Tcp_rtt; tp; pp = tp, tp = tp->next)
 		if (tp->addr == addr) {
 			if (pp) {
@@ -319,7 +327,7 @@ int32 addr)
 			}
 			return tp;
 		}
-	return NULLRTT;
+	return NULL;
 }
 
 /* TCP garbage collection - called by storage allocator when free space
@@ -334,19 +342,19 @@ int red)
 	register struct tcb *tcb;
 	struct reseq *rp,*rp1;
 
-	for(tcb = Tcbs;tcb != NULLTCB;tcb = tcb->next){
+	for(tcb = Tcbs;tcb != NULL;tcb = tcb->next){
 		mbuf_crunch(&tcb->rcvq);
 		mbuf_crunch(&tcb->sndq);
-		for(rp = tcb->reseq;rp != NULLRESEQ;rp = rp1){
+		for(rp = tcb->reseq;rp != NULL;rp = rp1){
 			rp1 = rp->next;
 			if(red){
-				free_p(rp->bp);
-				free((char *)rp);
+				free_p(&rp->bp);
+				free(rp);
 			} else {
 				mbuf_crunch(&rp->bp);
 			}
 		}
 		if(red)
-			tcb->reseq = NULLRESEQ;
+			tcb->reseq = NULL;
 	}
 }

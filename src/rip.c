@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.12 1994/10/09 08:22:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.13 1995/12/20 09:46:53 deyke Exp $ */
 
 /* This file contains code to implement the Routing Information Protocol (RIP)
  * and is derived from 4.2BSD code. Mike Karels of Berkeley has stated on
@@ -34,8 +34,8 @@ struct rip_refuse *Rip_refuse;
 static void rip_rx(struct iface *iface,struct udp_cb *sock,int cnt);
 static void proc_rip(struct iface *iface,int32 gateway,
 	struct rip_route *ep,int32 ttl);
-static char *putheader(char *cp,char command,char version);
-static char *putentry(char *cp,uint16 fam,int32 target,int32 metric);
+static uint8 *putheader(uint8 *cp,enum ripcmd command,uint8 version);
+static uint8 *putentry(uint8 *cp,uint16 fam,int32 target,int32 metric);
 static void rip_shout(void *p);
 static void send_routes(int32 dest,uint16 port,int split,int trig,
 	int us);
@@ -49,7 +49,7 @@ void *p)
 
 	rl = (struct rip_list *)p;
 	stop_timer(&rl->rip_time);
-	send_routes(rl->dest,RIP_PORT,rl->flags&RIP_SPLIT,0,rl->flags&RIP_US);
+	send_routes(rl->dest,RIP_PORT,rl->flags.rip_split,0,rl->flags.rip_us);
 	set_timer(&rl->rip_time,rl->interval*1000L);
 	start_timer(&rl->rip_time);
 }
@@ -63,7 +63,7 @@ int split,              /* Do split horizon? */
 int trig,               /* Send only triggered updates? */
 int us)                 /* Include our address in update */
 {
-	char *cp;
+	uint8 *cp;
 	int i,bits,numroutes,maxroutes;
 	uint16 pktsize;
 	struct mbuf *bp;
@@ -71,7 +71,7 @@ int us)                 /* Include our address in update */
 	struct socket lsock,fsock;
 	struct iface *iface;
 
-	if((rp = rt_lookup(dest)) == NULLROUTE)
+	if((rp = rt_lookup(dest)) == NULL)
 		return; /* No route exists, can't do it */
 	iface = rp->iface;
 
@@ -86,7 +86,7 @@ int us)                 /* Include our address in update */
 	fsock.port = port;
 
 	/* Allocate space for a full size RIP packet and generate header */
-	if((bp = alloc_mbuf(pktsize)) == NULLBUF)
+	if((bp = alloc_mbuf(pktsize)) == NULL)
 		return;
 	numroutes = 0;
 	cp = putheader(bp->data,RIPCMD_RESPONSE,RIPVERSION);
@@ -97,8 +97,8 @@ int us)                 /* Include our address in update */
 		numroutes++;
 	}
 	/* Emit default route, if appropriate */
-	if(R_default.iface != NULLIF && !(R_default.flags & RTPRIVATE)
-	 && (!trig || (R_default.flags & RTTRIG))){
+	if(R_default.iface != NULL && !R_default.flags.rtprivate
+	 && (!trig || R_default.flags.rttrig)){
 		if(!split || iface != R_default.iface){
 			cp = putentry(cp,RIP_IPFAM,0,R_default.metric);
 			numroutes++;
@@ -109,17 +109,17 @@ int us)                 /* Include our address in update */
 	}
 	for(bits=0;bits<32;bits++){
 		for(i=0;i<HASHMOD;i++){
-			for(rp = Routes[bits][i];rp != NULLROUTE;rp=rp->next){
-				if((rp->flags & RTPRIVATE)
-				 || (trig && !(rp->flags & RTTRIG)))
+			for(rp = Routes[bits][i];rp != NULL;rp=rp->next){
+				if(rp->flags.rtprivate
+				 || (trig && !rp->flags.rttrig))
 					continue;
 
 				if(numroutes >= maxroutes){
 					/* Packet full, flush and make another */
 					bp->cnt = RIPHEADER + numroutes * RIPROUTE;
-					send_udp(&lsock,&fsock,0,0,bp,bp->cnt,0,0);
+					send_udp(&lsock,&fsock,0,0,&bp,bp->cnt,0,0);
 					Rip_stat.output++;
-					if((bp = alloc_mbuf(pktsize)) == NULLBUF)
+					if((bp = alloc_mbuf(pktsize)) == NULL)
 						return;
 					numroutes = 0;
 					cp = putheader(bp->data,RIPCMD_RESPONSE,RIPVERSION);
@@ -136,10 +136,10 @@ int us)                 /* Include our address in update */
 	}
 	if(numroutes != 0){
 		bp->cnt = RIPHEADER + numroutes * RIPROUTE;
-		send_udp(&lsock,&fsock,0,0,bp,bp->cnt,0,0);
+		send_udp(&lsock,&fsock,0,0,&bp,bp->cnt,0,0);
 		Rip_stat.output++;
 	} else {
-		free_p(bp);
+		free_p(&bp);
 	}
 }
 /* Add an entry to the rip broadcast list */
@@ -147,26 +147,27 @@ int
 rip_add(
 int32 dest,
 int32 interval,
-char flags)
+int split,
+int us)
 {
 	register struct rip_list *rl;
 	struct route *rp;
 
-	if((rp = rt_lookup(dest)) == NULLROUTE){
+	if((rp = rt_lookup(dest)) == NULL){
 		printf("%s is unreachable\n",inet_ntoa(dest));
 		return 1;
 	}
-	for(rl = Rip_list; rl != NULLRL; rl = rl->next)
+	for(rl = Rip_list; rl != NULL; rl = rl->next)
 		if(rl->dest == dest)
 			break;
 
-	if(rl == NULLRL){
+	if(rl == NULL){
 		/* get a chunk of memory for the rip interface descriptor */
 		rl = (struct rip_list *)callocw(1,sizeof(struct rip_list));
 
 		/* tack this record on as the first in the list */
 		rl->next = Rip_list;
-		if(rl->next != NULLRL)
+		if(rl->next != NULL)
 			rl->next->prev = rl;
 		Rip_list = rl;
 		rl->dest = dest;
@@ -174,7 +175,8 @@ char flags)
 	/* and the interface ptr, tick interval and flags */
 	rl->iface = rp->iface;
 	rl->interval = interval;
-	rl->flags = flags;
+	rl->flags.rip_split = split;
+	rl->flags.rip_us = us;
 
 	/* set up the timer stuff */
 	rl->rip_time.func = rip_shout;
@@ -193,7 +195,7 @@ int32 gateway)
 {
 	register struct rip_refuse *rl;
 
-	for(rl = Rip_refuse; rl != NULLREF; rl = rl->next)
+	for(rl = Rip_refuse; rl != NULL; rl = rl->next)
 		if(rl->target == gateway)
 			return 0;       /* Already in table */
 
@@ -202,7 +204,7 @@ int32 gateway)
 
 	/* tack this record on as the first in the list */
 	rl->next = Rip_refuse;
-	if(rl->next != NULLREF)
+	if(rl->next != NULL)
 		rl->next->prev = rl;
 	Rip_refuse = rl;
 
@@ -218,27 +220,27 @@ int32   dest)
 {
 	register struct rip_list *rl;
 
-	for(rl = Rip_list; rl != NULLRL; rl = rl->next)
+	for(rl = Rip_list; rl != NULL; rl = rl->next)
 		if(rl->dest == dest)
 			break;
 
 	/* leave if we didn't find it */
-	if(rl == NULLRL)
+	if(rl == NULL)
 		return 0;
 
 	/* stop the timer */
 	stop_timer(&rl->rip_time);
 
 	/* Unlink from list */
-	if(rl->next != NULLRL)
+	if(rl->next != NULL)
 		rl->next->prev = rl->prev;
-	if(rl->prev != NULLRL)
+	if(rl->prev != NULL)
 		rl->prev->next = rl->next;
 	else
 		Rip_list = rl->next;
 
 	/* and deallocate the descriptor memory */
-	free((char *)rl);
+	free(rl);
 	return 0;
 }
 
@@ -249,24 +251,24 @@ int32 gateway)
 {
 	register struct rip_refuse *rl;
 
-	for(rl = Rip_refuse; rl != NULLREF; rl = rl->next)
+	for(rl = Rip_refuse; rl != NULL; rl = rl->next)
 		if(rl->target == gateway)
 			break;
 
 	/* leave if we didn't find it */
-	if(rl == NULLREF)
+	if(rl == NULL)
 		return 0;
 
 	/* Unlink from list */
-	if(rl->next != NULLREF)
+	if(rl->next != NULL)
 		rl->next->prev = rl->prev;
-	if(rl->prev != NULLREF)
+	if(rl->prev != NULL)
 		rl->prev->next = rl->next;
 	else
 		Rip_refuse = rl->next;
 
 	/* and deallocate the structure memory */
-	free((char *)rl);
+	free(rl);
 	return 0;
 }
 
@@ -278,15 +280,15 @@ rip_trigger(void)
 	int bits,i;
 	struct route *rp;
 
-	for(rl=Rip_list;rl != NULLRL;rl = rl->next){
-		send_routes(rl->dest,RIP_PORT,(rl->flags & RIP_SPLIT),1,0);
+	for(rl=Rip_list;rl != NULL;rl = rl->next){
+		send_routes(rl->dest,RIP_PORT,rl->flags.rip_split,1,0);
 	}
 	/* Clear the trigger list */
-	R_default.flags &= ~RTTRIG;
+	R_default.flags.rttrig = 0;
 	for(bits=0;bits<32;bits++){
 		for(i=0;i<HASHMOD;i++){
-			for(rp = Routes[bits][i];rp != NULLROUTE;rp = rp->next){
-				rp->flags &= ~RTTRIG;
+			for(rp = Routes[bits][i];rp != NULL;rp = rp->next){
+				rp->flags.rttrig = 0;
 			}
 		}
 	}
@@ -301,7 +303,7 @@ rip_init(void)
 	lsock.address = INADDR_ANY;
 	lsock.port = RIP_PORT;
 
-	if(Rip_cb == NULLUDP)
+	if(Rip_cb == NULL)
 		Rip_cb = open_udp(&lsock,rip_rx);
 
 	return 0;
@@ -316,7 +318,7 @@ int cnt)
 {
 	struct mbuf *bp;
 	struct socket fsock;
-	int cmd;
+	enum ripcmd cmd;
 	register struct rip_refuse *rfl;
 	struct rip_route entry;
 	struct route *rp;
@@ -332,20 +334,20 @@ int cnt)
 	/* check the gateway of this packet against the rip_refuse list and
 	 * discard it if a match is found
 	 */
-	for(rfl=Rip_refuse;rfl != NULLREF;rfl = rfl->next){
+	for(rfl=Rip_refuse;rfl != NULL;rfl = rfl->next){
 		if(fsock.address == rfl->target){
 			Rip_stat.refusals++;
 			if(Rip_trace > 1)
 				printf("RIP refused from %s\n",
 				 inet_ntoa(fsock.address));
-			free_p(bp);
+			free_p(&bp);
 			return;
 		 }
 	}
-	cmd = PULLCHAR(&bp);
+	cmd = (enum ripcmd) PULLCHAR(&bp);
 	/* Check the version of the frame */
 	if(PULLCHAR(&bp) != RIPVERSION){
-		free_p(bp);
+		free_p(&bp);
 		Rip_stat.version++;
 		return;
 	}
@@ -360,7 +362,7 @@ int cnt)
 		 * use default
 		 */
 		ttl = RIP_TTL;
-		for(rl=Rip_list; rl != NULLRL; rl = rl->next){
+		for(rl=Rip_list; rl != NULL; rl = rl->next){
 			if(rl->iface == iface){
 				ttl = rl->interval * 4;
 				break;
@@ -375,10 +377,10 @@ int cnt)
 		 * our existing route is not through the interface we
 		 * got this update on, add him as a host specific entry
 		 */
-		if((rp = rt_blookup(fsock.address,32)) != NULLROUTE){
+		if((rp = rt_blookup(fsock.address,32)) != NULL){
 			/* Host-specific route already exists, refresh it */
 			start_timer(&rp->timer);
-		} else if((rp = rt_lookup(fsock.address)) == NULLROUTE
+		} else if((rp = rt_lookup(fsock.address)) == NULL
 		 || rp->iface != iface){
 			entry.addr_fam = RIP_IPFAM;
 			entry.target = fsock.address;
@@ -412,7 +414,7 @@ int cnt)
 		Rip_stat.unknown++;
 		break;
 	} /* switch */
-	free_p(bp);
+	free_p(&bp);
 }
 /* Apply a set of heuristics for determining the number of significant bits
  * (i.e., the address mask) in the target address. Needed since RIP doesn't
@@ -490,7 +492,7 @@ int32 ttl)
 	bits = nbits(ep->target);
 
 	/* Don't ever add a route to myself through somebody! */
-	if(bits == 32 && ismyaddr(ep->target) != NULLIF){
+	if(bits == 32 && ismyaddr(ep->target) != NULL){
 		if(Rip_trace > 1){
 			printf("route to self: %s %ld\n",
 			 inet_ntoa(ep->target),ep->metric);
@@ -501,14 +503,14 @@ int32 ttl)
 	rp = rt_blookup(ep->target,bits);
 
 	/* Don't touch private routes */
-	if(rp != NULLROUTE && (rp->flags & RTPRIVATE))
+	if(rp != NULL && rp->flags.rtprivate)
 		return;
 
 	/* Don't touch permanent routes */
-	if(rp != NULLROUTE && rp->iface != NULLIF && !run_timer(&rp->timer))
+	if(rp != NULL && rp->iface != NULL && !run_timer(&rp->timer))
 		return;
 
-	if(rp == NULLROUTE){
+	if(rp == NULL){
 		if(ep->metric < RIP_INFINITY){
 			/* New route; add it and trigger an update */
 			add++;
@@ -565,7 +567,7 @@ int32 ttl)
 		if(Rip_trace){
 			printf("route drop [%s]/%u",
 			 inet_ntoa(ep->target),bits);
-			if(rp != NULLROUTE)
+			if(rp != NULL)
 				printf(" %s %s %lu",rp->iface->name,
 				 inet_ntoa(rp->gateway),rp->metric);
 			printf("\n");
@@ -585,7 +587,7 @@ int32 ttl)
 	}
 	/* If the route changed, mark it for a triggered update */
 	if(trigger){
-		rp->flags |= RTTRIG;
+		rp->flags.rttrig = 1;
 	}
 }
 /* Send a RIP request packet to the specified destination */
@@ -596,7 +598,7 @@ uint16 replyport)
 {
 	struct mbuf *bp;
 	struct socket lsock,fsock;
-	char *cp;
+	uint8 *cp;
 
 	lsock.address = INADDR_ANY;
 	lsock.port = replyport;
@@ -611,13 +613,13 @@ uint16 replyport)
 	fsock.port = RIP_PORT;
 
 	/* Send out one RIP Request packet as a broadcast to 'dest'  */
-	if((bp = alloc_mbuf(RIPHEADER + RIPROUTE)) == NULLBUF)
+	if((bp = alloc_mbuf(RIPHEADER + RIPROUTE)) == NULL)
 		return -1;
 
 	cp = putheader(bp->data,RIPCMD_REQUEST,RIPVERSION);
 	cp = putentry(cp,0,0L,RIP_INFINITY);
 	bp->cnt = RIPHEADER + RIPROUTE;
-	send_udp(&lsock, &fsock,0,0,bp,bp->cnt,0,0);
+	send_udp(&lsock, &fsock,0,0,&bp,bp->cnt,0,0);
 	Rip_stat.output++;
 	return 0;
 }
@@ -635,11 +637,11 @@ struct mbuf **bpp)
 }
 
 /* Write the header of a RIP packet */
-static char *
+static uint8 *
 putheader(
-register char *cp,
-char command,
-char version)
+register uint8 *cp,
+enum ripcmd command,
+uint8 version)
 {
 	*cp++ = command;
 	*cp++ = version;
@@ -647,9 +649,9 @@ char version)
 }
 
 /* Write a single entry into a rip packet */
-static char *
+static uint8 *
 putentry(
-register char *cp,
+register uint8 *cp,
 uint16 fam,
 int32 target,
 int32 metric)
@@ -681,7 +683,7 @@ void *s)
 		rp->timer.arg = (void *)rp;
 		start_timer(&rp->timer);
 		/* Route changed; mark it for triggered update */
-		rp->flags |= RTTRIG;
+		rp->flags.rttrig = 1;
 		rip_trigger();
 	} else {
 		rt_drop(rp->target,rp->bits);

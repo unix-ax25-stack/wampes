@@ -486,7 +486,7 @@
 44.130.11.102   DG4OBJ  # Axel, Arnum; Amiga-1200
 #
 #44.130.12.x    Oldenburg/Emden
-# --- lokale Adresskoordination: DL1BJL
+# lokale Adresskoordination: DL1BJL
 44.130.12.1     DC1BI   # Guido Leister, 2903 Bad Zwischenahn
 44.130.12.2     DG9BAE  # Thorsten, 2905 Edewecht
 44.130.12.3     DG7BBO  # Norbert, 2903 Petersfehn II
@@ -504,7 +504,7 @@
 44.130.12.32    DL6BAG  # Siebold, Norden; JNOS
 44.130.12.33    DL8BCZ  # Uwe Ebbenga, 26721 Emden; JNOS
 44.130.12.34    DG4SCV-U        # Rolf Rose, Emden; WAMPES
-44.130.12.35    SYS2.DL1BJL     # Matthias Wermann, Emden; JNOS
+44.130.12.35    SYS2.DL1BJL     # Matthias Wermann, Emden; Wampes
 44.130.12.36    SYS2.DB0FHO     # ; CONVERS-Server; ***
 44.130.12.37    SYS3.DB0FHO     # ; User-Terminal
 44.130.12.38    DG9BIG  # Daniela Gand, Emden
@@ -524,25 +524,26 @@
 44.130.12.53    DG8BAH  # Kai Siebels, Westoverledingen; JNOS
 44.130.12.54    DC1BE   # Dirk Wahrheit, Papenburg; JNOS
 44.130.12.55    DL1BAH  # Karl Heinz Schirmer, Norden; JNOS
-44.130.12.56    DL8BCJ  # Horst, 26757 Borkum
-44.130.12.57    DL1BJL-U        # ; Linux
-44.130.12.58    DL1BJL-W        # ; Wampes
-44.130.12.59    DL1BJL-T        # ; TNOS
+44.130.12.56    DL8BCJ  # Horst Will, 26757 Borkum
+44.130.12.57    DL1BJL-U        # Matthias, Emden; Linux
+44.130.12.58    DL1BJL-W        # Matthias, Emden; Wampes
+44.130.12.59    DL1BJL-T        # Matthias, Emden; TNOS
 44.130.12.60    DB0FHO-W        # ; Wampes
 44.130.12.61    DB0FHO-L        # ; Linux
-44.130.12.62    NNTP.DB0FHO     # NNTP-Server; Linux
+44.130.12.62    NNTP.DB0FHO     # ; NNTP-Server, Linux
 44.130.12.63    DG2BDB  # Stefan Fischer, Norden; WNOS
-44.130.12.64    DD8BA   # Steven Sporkmann, Holdorf
+44.130.12.64    DD8BA   # Steven Sporkmann, Holdorf; NOS
 44.130.12.65    DC3BW   # Juergen Rinas, Sande; Linux
 44.130.12.66    DL1BFE  # Gregor Ulsamer, Emden; JNOS
-44.130.12.67    DG2BAT  # Bodo Huelsebusch, 26409 Burhafe
+44.130.12.67    DG2BAT  # Bodo Huelsebusch, 260409 Burhafe; WNOS
 44.130.12.68    DL5BCT-J        # Peter Cornelius, 26409 Wittmund; JNOS
-44.130.12.69    DL5BCT-W        # ; WNOS
-44.130.12.70    DB0TNC  # WPRG Knoten/BBS (exp), 26409 Wittmund; NOS
-44.130.12.71    DK0TNC  # Clubstn WPRG, 26409 Wittmund; WNOS
-44.130.12.72    DF0WT   # Humboldt Schule, Wittmund; NOS
-44.130.12.73    DL4BCL  # Tim Weyland, 26409 Wittmund; WNOS
+44.130.12.69    DL5BCT-W        # Peter Cornelius, 26409 Wittmund; WNOS
+44.130.12.70    DB0TNC  # Exp.-Knoten/BBS der //WPRG, 26409 Wittmund; WNOS
+44.130.12.71    DK0TNC  # Clubstation der //WPRG, 26409 Wittmund; WNOS
+44.130.12.72    DF0WT   # Schulstation der Humboldt-Schule, Wittmund; WNOS
+44.130.12.73    DL4BCL  # Tim Weyland, 26409 Wittmund-Willen; WNOS
 44.130.12.74    DL4BCK  # Heiko Cassens, 26409 Wittmund; WNOS
+44.130.12.75    DG3BFL  # Thomas Brants, Woquard; WNOS
 #
 #44.130.13.x    Hildesheim
 # --- lokale Adresskoordination: DC5ON
@@ -1261,7 +1262,9 @@
 44.130.20.26    DL2KDF  # Peter Verhuelsdonk, 5100 Aachen
 44.130.20.27    DL2KTJ  # Thomas Jansen, 41844 Wegberg
 44.130.20.28    DG1KND  # Detlef Neudecker, 52477 Alsdorf
+44.130.20.29    DG4KCY  # Hassan Sawaf, 52076 Aachen
 44.130.20.30    DK3KO   # Wilhelm Golz, 5100 Aachen
+44.130.20.31    DG3KJK  # Jan Kunkis, 52076 Aachen
 44.130.20.35    DF2JH   # Jochen, Aachen
 44.130.20.39    DH9KAE-1 # Detlef Brunkel, 52531 Uebach-Palenberg; Linux Router
 44.130.20.40    DH9KAE  # ; Linux, NS
@@ -2113,6 +2116,7 @@
 44.130.36.13      DD6VD         # Michael
 44.130.36.14      PC.DC7CH      # Juergen , Berlin
 44.130.36.15      dd6uts        # Thomas , Berlin
+44.130.36.16      dl7vtl        # Joe , Berlin
 44.130.36.18      DL7UFO-2      # Sven , 10409 Berlin
 44.130.36.20      DC7FO         # Uli, 1000 Berlin
 44.130.36.21      DC7FO-1       #
@@ -2142,9 +2146,9 @@
 44.130.36.80      DL7UEA        # Bernd, Berlin
 44.130.36.81      DL9SAU-1      # Thommas Osterried, Berlin
 44.130.36.82      DL9SAU-A      # Thommas Osterried, Berlin
-44.130.36.83      DL7ARX        # Gerhard Petzold , 12279 Berlin-Marienfelde ; PC
+44.130.36.83      DL7ARX        # Gerhard Petzold, 12279 Berlin-Marienfelde; PC
 44.130.36.84      DD6RG         # Joachim Henschke, 12249 Berlin
-44.130.36.85      DL7ARX-1      # Gerhard Petzold , Berlin-Marienfelde ; Amiga
+44.130.36.85      DL7ARX-1      # Gerhard Petzold, Berlin-Marienfelde; Amiga
 44.130.36.95      DD5AA         # Alain, Berlin-Wedding ;NNTP, SMTP, POP-Server
 44.130.36.97      DL7NW         # Siegbert Langer, Berlin
 # 44.130.36.100                 # reserviert fuer TCP/IP Digi Berlin
@@ -5352,85 +5356,74 @@
 # Attribute [P] - Plannung, [A] - aktiv, [G] - Gateway, [N] - abgeschaltet.
 # -----------------------------------------------------------------------
 #
-#44.143.1.xxx   WIEN
-#
-44.143.1.1      OE1YSS   # Irmela Gagern, 1200 Wien, Pasettistr. 72/6/24
-44.143.1.2      OE1JTB   # Alexander Tschapka, 1210 Wien,
-			 # Florisdorfer Hauptstr. 14
-44.143.1.3      OE1TKW   # Helmut Klein, 1160 Wien, Nauseag.24/26
-44.143.1.4      OE1WRS   # Werner Roedl, 1110 Wien, Sedlitzkyg. 43/1/14
-44.143.1.5      OE1ACC   # Alexander Czernin-Morzin, 1090 Wien,
-			 # Schul-Strassnitzki Gasse 5,
-			 # 72047.1712@compuserve.com
-44.143.1.6               #
-44.143.1.7      OE1MMA   # Markus Melcher, 1030 Wien, WeissgeberlÑnde 22/12
-44.143.1.8      SP7MUD   # Adam Merwart, 1140 Wien
-44.143.1.9      OE1SMC   # Hans Mayer, 1238 Wien, Am Hasensprung 6-8
-			 # mayer@ping.at
-44.143.1.10     OE1RZB   # Robert Zak, 1210 Wien, Koloniestr. 2-10/10/2
-44.143.1.11     TER.OE1XXB # Amateurfunkklub Alterlaa, 1230 Wien, Helmut
-44.143.1.12     OE1JMU   # Juergen Mauch, 1130 Wien, Dvorakg. 40A/1/3
-44.143.1.13     OE1HMC   # Heinz Moser, 1160 Wien, Veronikag. 5/26
-44.143.1.14     OE1ATU   # Andreas Tobolka, 1160 Wien, Koppstr. 4/6
-44.143.1.15     OE1DHK   # Hannes Defner, Wien
-44.143.1.16     OE6GOD   # Gerald Moritz, 1160 Wien, Possingergasse, OE1GOD
-44.143.1.17     OE1DSS   # Gerd Soritz, 1050 Wien, Schoenbrunnerstr.94/1/12
-44.143.1.18     OE1WHU   # Wolfgang, Wien, JN88fh
-44.143.1.19     OE1MSB   # Michael Steiner, 1140 Wien, Hlavacekweg 14
-44.143.1.20     OE1HZA   # Helmut Zemann, 1160 Wien, Ottakringerstr. 242/5/11
-44.143.1.21     OE1WWL   # Wolfgang Wagner, 1180 Wien, Abt-Karl-Gasse 22/2/6
-			 # emzr.911@ofis.unisys.com
-44.143.1.22     OE1EJA   # Ernst Fojt, 1200 Wien, Stromstr. 18-20/2/2
-44.143.1.23     OE1MKC   # Manfred Kîrner, 1140 Wien, Serravagasse 15/3
-44.143.1.24     OE1GOU   # Gerald Forthuber, 1050 Wien, Spengergasse 12/19
-44.143.1.25     OE1YXU   # Gertrude Forthuber, 1050 Wien, Spengergasse 12/14
-44.143.1.26     OE1FHS   # Florian HÑrtlehner, 1140 Wien
-44.143.1.27     OE1HHC   # Harald Huber, 1190 Wien, Peter Altenberggasse 19
-44.143.1.28     OE1CMS   # Christine Mayer, 1238 Wien, Am Hasensprung 6-8
-44.143.1.29     SEC.OE1WWL # Wolfgang Wagner
-44.143.1.30     TER.OE1WWL #
-44.143.1.31     OE1BHS   # Heinz Bergmann, 1230 Wien,
-			 # Breitenfurterstr. 491/12
-44.143.1.32     OE1JHB   # Johann Hackinger, 1020 Wien, Castelletzgasse 16/26
-44.143.1.33     OE1LZC   # Leopold Zyka, 1020 Wien, Praterstr. 49/13
-# 1200 bit/s Knoten
-44.143.1.100    OE1XRR   # [P] Irmela Gagern
-44.143.1.101    OE1XXB   # [P] Amateurfunkklub Alterlaa, 1230 Wien, Helmut
-44.143.1.102    SEC.OE1XXB # [P] Amateurfunkklub Alterlaa, 1230 Wien, Helmut
-44.143.1.103    OE1XXU   # [P] Amateurfunkklub Alterlaa, 1230 Wien, Juergen
-44.143.1.104    SEC.OE1XXU # [P] Amateurfunkklub Alterlaa, 1230 Wien, Juergen
-44.143.1.105    OE1XAB   # [P] Mailbox, Wien
-44.143.1.106    OE1XAR   # [A] Testknoten, Wien
-44.143.1.107    OE1XLR   # [P] Knoten Laaerberg, 1100 Wien
-44.143.1.108    OE1XTU   # [P] Radioklub der TU Wien
-44.143.1.111    OE1XYA   # [P] Amateurfunkklub X, 1238 Wien,
-			 # Am Hasensprung 6-8
-44.143.1.144    OE1KDA   # Koordinator Oesterreich
-			 # Krzysztof Dabrowski, 1230 Wien, Othellog.1/3/2
-44.143.1.145    VERDI.OE1KDA # [A] Testknoten X1J
-44.143.1.146    TER.OE1KDA #
-44.143.1.200    OE1XBR   # [P] Robert Zak, 1210 Wien
-44.143.1.206    SEC.OE1XAR # [P] Testknoten, Wien
-# 9600 bit/s Knoten
-44.143.17.105   9K6.OE1XAB # [P] Mailbox, Wien
-44.143.17.106   9K6.OE1XAR # [P] Testknoten, Wien
-44.143.17.107   9K6.OE1XLR # [P] Knoten Laaberg, Wien
-44.143.17.108   OE1XTU     # [P] Radioklub der TU Wien
-# Schnelle Knoten
-44.143.33.6     VENUS.OE1KIB # Klaus Kudielka, 1180 Wien, Peter Jordanstr. 165
-44.143.33.108   OE1XTU     # [P] Radioklub der TU Wien
-# Subnetz OE1HMC 44.143.177.0/28
-44.143.177.1    SEC.OE1HMC # Netz-"Master",
-44.143.177.2    NEWS.OE1HMC # nntp server
-44.143.177.3    NET.OE1HMC # Host moser@moser.co.at: 192.164.66.50
-44.143.177.10   GW.OE1HMC  # Gateway 192.164.66.50, Zugang Åber 44.143.1.13
-			   # (OE1HMC-5)
-# Subnetz OE1KIB (Token Ring) 44.143.241.0/28
-44.143.241.1    MARS.OE1KIB # Gateway (JNOS)
-44.143.241.2    SATURN.OE1KIB # Klaus Kudielka, 1180 Wien,
-			   # Peter Jordanstr. 165
-44.143.241.4    VENUS.OE1KIB # Server (UNIX)
-# -----------------------------------------------------------------------
+# Benutzte IP Adressen in Wien, [A] Aktiv; [P] Planung
+#------------------------------------------------------------------------
+# Host          Call
+#------------------------------------------------------------------------
+44.143.1.1      OE1YSS        # Irmela Gagern, 1200 Wien, Pasettistr. 72/6/24
+44.143.1.2      OE1JTB        # Alexander Tschapka, 1210 Wien, Florisdorfer Hauptstr. 14
+44.143.1.3      OE1TKW        # Helmut Klein, 1160 Wien, Nauseag.24/26
+44.143.1.4      OE1WRS        # Werner Roedl, 1110 Wien, Sedlitzkyg. 43/1/14
+44.143.1.5      OE1ACC        # Alexander Czernin-Morzin, 1090 Wien, Schul-Strassnitzki Gasse 5,
+44.143.1.6      VENUS.OE1KIB  # Klaus Kudielka, 1180 Wien, Peter Jordanstr. 165
+44.143.1.7      OE1MMA        # [A] Markus Melcher, 1030 Wien, WeissgeberlÑnde 22/12
+44.143.1.8      SP7MUD        # Adam Merwart, 1210 Wien, Kummergasse 3/2/25
+44.143.1.9      OE1SMC        # Hans Mayer, 1238 Wien, Am Hasensprung 6-8,
+44.143.1.10     OE1RZB        # Robert Zak, 1210 Wien, Koloniestr. 2-10/10/2
+44.143.1.11     TER.OE1XXB    # Amateurfunkklub Alterlaa, 1230 Wien, Helmut
+44.143.1.12     OE1JMU        # Juergen Mauch, 1130 Wien, Dvorakg. 40A/1/3
+44.143.1.13     OE1HMC        # [A] Heinz Moser, 1160 Wien, Veronikag. 5/26
+44.143.1.14     OE1ATU        # Andreas Tobolka, 1160 Wien, Koppstr. 4/6
+44.143.1.15     OE1DHK        # [A] Hannes Defner, Wien
+44.143.1.16     OE6GOD        # Gerald Moritz, 1160 Wien, Possingergasse, OE1GOD
+44.143.1.17     OE1DSS        # Gerd Soritz, 1050 Wien, Schoenbrunnerstr.94/1/12
+44.143.1.18     OE1WHU        # Wolfgang, Wien, JN88fh
+44.143.1.19     OE1MSB        # [A] Michael Steiner, 1140 Wien, Hlavacekweg 14
+44.143.1.20     OE1HZA        # [A] Helmut Zemann, 1160 Wien, Ottakringerstr. 242/5/11
+44.143.1.21     OE1WWL        # Wolfgang Wagner, 1180 Wien, Abt-Karl-Gasse 22/2/6,
+44.143.1.22     OE1EJA        # Ernst Fojt, 1200 Wien, Stromstr. 18-20/2/2
+44.143.1.23     OE1MKC        # Manfred Kîrner, 1140 Wien, Serravagasse 15/3
+44.143.1.24     OE1GOU        # [A] Gerald Forthuber, 1050 Wien, Spengergasse 12/19
+44.143.1.25     OE1YXU        # [A] Gertrude Forthuber, 1050 Wien, Spengergasse 12/14
+44.143.1.26     OE1FHS        # Florian HÑrtlehner, 1140 Wien
+44.143.1.27     OE1HHC        # Harald Huber, 1190 Wien, Peter Altenberggasse 19
+44.143.1.28     OE1CMS        # Christine Mayer, 1238 Wien, Am Hasensprung 6-8
+44.143.1.29     SEC.OE1WWL    # Wolfgang Wagner
+44.143.1.30     TER.OE1WWL    #
+44.143.1.31     OE1BHS        # Heinz Bergmann, 1230 Wien, Breitenfurterstr. 491/12
+44.143.1.32     OE1JHB        # Johann Hackinger, 1020 Wien, Castelletzgasse 16/26
+44.143.1.33     OE1LZC        # Leopold Zyka, 1020 Wien, Praterstr. 49/13
+44.143.1.100    OE1XRR        # [P] Irmela Gagern
+44.143.1.101    OE1XXB        # [P] Amateurfunkklub Alterlaa, 1230 Wien, Helmut
+44.143.1.102    SEC.OE1XXB    # [P]
+44.143.1.103    OE1XXU        # [P] Amateurfunkklub Alterlaa, 1230 Wien, Juergen
+44.143.1.104    SEC.OE1XXU    # [P]
+44.143.1.105    OE1XAB        # [P] Mailbox, 1100 Wien
+44.143.1.106    OE1XAR        # [A] Testknoten, 1160 Wien
+44.143.1.107    OE1XLR        # [P] Knoten Laaerberg, 1100 Wien
+44.143.1.108    OE1XTU        # [P] Radioklub der TU Wien
+44.143.1.111    OE1XYA        # [P] Amateurfunkklub X, 1238 Wien, Am Hasensprung 6-8
+44.143.1.144    OE1KDA        # Krzysztof Dabrowski, 1230 Wien, Othellog.1/3/2
+44.143.1.145    VERDI.OE1KDA  # [A] Testknoten X1J4 (AX: OE1KDA-11)
+44.143.1.146    TER.OE1KDA    #
+44.143.1.200    OE1XBR        # [P] Robert Zak, 1210 Wien
+44.143.1.206    SEC.OE1XAR    # [P] Testknoten, 1160 Wien
+44.143.17.105   9K6.OE1XAB    # [P] Mailbox, 1100 Wien
+44.143.17.106   9K6.OE1XAR    # [P] Testknoten, Wien
+44.143.17.107   9K6.OE1XLR    # [P] Knoten Laaberg, 1100 Wien
+44.143.17.108   OE1XTU        # [P] Radioklub der TU Wien
+44.143.33.6     OE1KIB        # Klaus Kudielka, 1180 Wien, Peter Jordanstr. 165
+44.143.33.108   OE1XTU        # [P] Radioklub der TU Wien
+44.143.177.1    OE1XIR        # [A] Knoten WIEN mit DNS (AX: OE1XIR-15)
+44.143.177.2    OE1XIR-N      # [P] News server
+44.143.177.3    OE1XIR-C      # [P] Convers server
+44.143.177.4    GW.OE1XIR     # [P] Gateway
+44.143.177.10   GW.OE1HMC     # [A] Gateway und DNS
+44.143.177.11   SEC.OE1HMC    # [A]
+44.143.177.12   OE1DMW        # [A] Erhard Schramm, 1070 Wien, Neustiftgasse 25/1/6
+44.143.193.1    OE1XNC        # [P] OeVSV Landesverband Wien, 1060 Wien, Eisvogelgasse 4
+44.143.241.1    MARS.OE1KIB   # Subnetz OE1KIB (Token Ring) 44.143.241.0/28
+44.143.241.2    SATURN.OE1KIB #
 #
 #44.143.2.xxx   SALZBURG
 #
@@ -6737,7 +6730,7 @@
 ###
 # TCP/IP Hosts for Luxembourg 44.161.x.x
 # Coordinator: LX1BZ
-# Date: Mai 5, 1995
+# Date: November 22, 1995
 ###
 44.161.0.0   lx          lx.ampr.org
 #
@@ -6754,7 +6747,6 @@
 44.161.1.11  lx2jl       lx2jl.ampr.org       # Jean-Luc, 1618 Luxembourg
 44.161.1.12  lx1kt       lx1kt.ampr.org       # Guy, 1924 Luxembourg
 44.161.1.100 lx0ist      lx0ist.ampr.org      # Tcp/Ip-Digi, Luxembourg
-44.161.1.101 lx0ist-1    lx0ist-1.ampr.org    # Internet-Gateway, Luxembourg
 #
 44.161.2.1   lx1ar       lx1ar.ampr.org       # Alfred, 2172 Luxembourg
 44.161.2.2   lx1gh       lx1gh.ampr.org       # Georges, 2410 Luxembourg
@@ -6798,6 +6790,9 @@
 44.161.5.2   lx1gv       lx1gv.ampr.org       # Guy, 5402 Assel
 44.161.5.3   lx1gv-1     lx1gv-1.ampr.org     # Guy, 5402 Assel
 44.161.5.4   lx1wb       lx1wb.ampr.org       # Kathy, 5254 Sandweiler
+44.161.5.5   lx2ar       lx2ar.ampr.org       # Angelo, 5816 Hesperange
+44.161.5.6   lx1sf       lx1sf.ampr.org       # Fernand, 5353 Oetrange
+44.161.5.7   lx1hw       lx1hw.ampr.org       # Hubert, 5351 Oetrange
 #
 44.161.6.1   lx1si       lx1si.ampr.org       # Marcel, 6979 Rameldange
 44.161.6.2   lx1se       lx1se.ampr.org       # Francois, 6160 Bourglinster
@@ -6807,6 +6802,7 @@
 44.161.6.6   lx1jh       lx1jh.ampr.org       # Jean-Marie, 6869 Wecker
 44.161.6.7   lx2ec       lx2ec.ampr.org       # Edward, 6133 Junglinster
 44.161.6.8   lx2ec-m     lx2ec-m.ampr.org     # Edward, 6133 Junglinster
+44.161.6.9   lx2mp       lx2mp.ampr.org       # Sandro, 6633 Wasserbillig
 #
 44.161.7.1   lx1jc       lx1jc.ampr.org       # Jean, 7206 Steinsel
 44.161.7.2   lx1pl       lx1pl.ampr.org       # Paul, 7381 Bofferdange

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.h,v 1.4 1993/05/17 13:44:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.h,v 1.5 1995/12/20 09:46:42 deyke Exp $ */
 
 #ifndef _DOMAIN_H
 #define _DOMAIN_H
@@ -49,7 +49,6 @@ struct dserver {
 	int32 queries;          /* Query packets sent to this server */
 	int32 responses;        /* Response packets received from this server */
 };
-#define NULLDOM (struct dserver *)0
 extern struct dserver *Dlist;
 extern int Dsocket;             /* Socket to use for domain queries */
 
@@ -62,17 +61,17 @@ extern int Dsocket;             /* Socket to use for domain queries */
 /* Header for all domain messages */
 struct dhdr {
 	uint16 id;              /* Identification */
-	char qr;                /* Query/Response */
+	uint8 qr;               /* Query/Response */
 #define QUERY           0
 #define RESPONSE        1
-	char opcode;
+	uint8 opcode;
 #define SQUERY          0       /* Standard query */
 #define IQUERY          1       /* Inverse query */
-	char aa;                /* Authoratative answer */
-	char tc;                /* Truncation */
-	char rd;                /* Recursion desired */
-	char ra;                /* Recursion available */
-	char rcode;             /* Response code */
+	uint8 aa;               /* Authoratative answer */
+	uint8 tc;               /* Truncation */
+	uint8 rd;               /* Recursion desired */
+	uint8 ra;               /* Recursion available */
+	uint8 rcode;            /* Response code */
 #define NO_ERROR        0
 #define FORMAT_ERROR    1
 #define SERVER_FAIL     2
@@ -112,7 +111,7 @@ struct soa {
 struct rr {
 	struct rr *last;
 	struct rr *next;
-	char source;
+	uint8 source;
 #define RR_NONE         0
 #define RR_FILE         1       /* from file */
 #define RR_QUESTION     4       /* from server reply */
@@ -140,8 +139,6 @@ struct rr {
 		char *data;             /* for anything else */
 	} rdata;
 };
-#define NULLRR  (struct rr *)0
-
 extern struct proc *Dfile_updater;
 
 /* In domain.c */

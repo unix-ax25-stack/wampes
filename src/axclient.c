@@ -1,7 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.15 1994/09/05 12:47:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.16 1995/12/20 09:46:40 deyke Exp $ */
 
 #include <stdio.h>
-#include <string.h>
 
 #include "global.h"
 #include "config.h"
@@ -15,10 +14,13 @@
 
 static void axclient_parse(char *buf, int n)
 {
+  struct mbuf *bp;
+
   if (!(Current && Current->type == AX25TNC && Current->cb.ax25)) return;
   if (n >= 1 && buf[n-1] == '\n') n--;
   if (!n) return;
-  send_ax25(Current->cb.ax25, qdata(buf, n), PID_NO_L3);
+  bp = qdata(buf, n);
+  send_ax25(Current->cb.ax25, &bp, PID_NO_L3);
   if (Current->record) {
     if (buf[n-1] == '\r') buf[n-1] = '\n';
     fwrite(buf, 1, n, Current->record);
@@ -30,7 +32,7 @@ static void axclient_parse(char *buf, int n)
 void axclient_send_upcall(struct ax25_cb *cp, int cnt)
 {
 
-  char *p;
+  uint8 *p;
   int chr;
   struct mbuf *bp;
   struct session *s;
@@ -45,9 +47,9 @@ void axclient_send_upcall(struct ax25_cb *cp, int cnt)
     cnt--;
   }
   if ((bp->cnt = p - bp->data))
-    send_ax25(cp, bp, PID_NO_L3);
+    send_ax25(cp, &bp, PID_NO_L3);
   else
-    free_p(bp);
+    free_p(&bp);
   if (cnt) {
     fclose(s->upload);
     s->upload = 0;
@@ -109,8 +111,8 @@ doconnect(int argc, char *argv[], void *p)
   }
   Current = s;
   s->type = AX25TNC;
-  s->name = NULLCHAR;
-  s->cb.ax25 = NULLAX25;
+  s->name = NULL;
+  s->cb.ax25 = NULL;
   s->parse = axclient_parse;
   if (!(s->cb.ax25 = open_ax25(&hdr, AX_ACTIVE, axclient_recv_upcall, axclient_send_upcall, axclient_state_upcall, (char *) s))) {
     freesession(s);
@@ -120,4 +122,3 @@ doconnect(int argc, char *argv[], void *p)
   go(argc, argv, p);
   return 0;
 }
-

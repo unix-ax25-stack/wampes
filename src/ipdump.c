@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.9 1994/10/06 16:15:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.10 1995/12/20 09:46:46 deyke Exp $ */
 
 /* IP header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -12,85 +12,84 @@
 #include "trace.h"
 #include "netuser.h"
 
+void ipldump(FILE *fp,struct ip *ip,struct mbuf **bpp,int check);
+
 void
 ip_dump(
 FILE *fp,
 struct mbuf **bpp,
-int check)
-{
+int check
+){
 	struct ip ip;
 	uint16 ip_len;
-	uint16 length;
 	uint16 csum;
 
-	if(bpp == NULLBUFP || *bpp == NULLBUF)
+	if(bpp == NULL || *bpp == NULL)
 		return;
 
-	fprintf(fp,"IP:");
 	/* Sneak peek at IP header and find length */
 	ip_len = ((*bpp)->data[0] & 0xf) << 2;
 	if(ip_len < IPLEN){
-		fprintf(fp," bad header\n");
+		fprintf(fp,"IP: bad header\n");
 		return;
 	}
-	if(check)
-		csum = cksum(NULLHEADER,*bpp,ip_len);
-	else
-		csum = 0;
+	if(check && (csum = cksum(NULL,*bpp,ip_len)) != 0)
+		fprintf(fp,"IP: CHECKSUM ERROR (%u)",csum);
 
 	ntohip(&ip,bpp);        /* Can't fail, we've already checked ihl */
+	ipldump(fp,&ip,bpp,check);
+}
+void
+ipip_dump(
+FILE *fp,
+struct mbuf **bpp,
+int32 source,
+int32 dest,
+int check
+){
+	ip_dump(fp,bpp,check);
+}
+void
+ipldump(
+FILE *fp,
+struct ip *ip,
+struct mbuf **bpp,
+int check)
+{
+	uint16 length;
+	int i;
 
 	/* Trim data segment if necessary. */
-	length = ip.length - ip_len;    /* Length of data portion */
+	length = ip->length - (IPLEN + ip->optlen);     /* Length of data portion */
 	trim_mbuf(bpp,length);
-	fprintf(fp," len %u",ip.length);
-	fprintf(fp," %s",inet_ntoa(ip.source));
+	fprintf(fp,"IP: len %u",ip->length);
+	fprintf(fp," %s",inet_ntoa(ip->source));
 	fprintf(fp,"->%s ihl %u ttl %u",
-		inet_ntoa(ip.dest),ip_len,uchar(ip.ttl));
-	if(ip.tos != 0)
-		fprintf(fp," tos %u",uchar(ip.tos));
-	if(ip.offset != 0 || ip.flags.mf)
-		fprintf(fp," id %u offs %u",ip.id,ip.offset);
-	if(ip.flags.df)
+		inet_ntoa(ip->dest),IPLEN + ip->optlen,ip->ttl);
+	if(ip->tos != 0)
+		fprintf(fp," tos %u",ip->tos);
+	if(ip->offset != 0 || ip->flags.mf)
+		fprintf(fp," id %u offs %u",ip->id,ip->offset);
+	if(ip->flags.df)
 		fprintf(fp," DF");
-	if(ip.flags.mf){
+	if(ip->flags.mf){
 		fprintf(fp," MF");
 		check = 0;      /* Bypass host-level checksum verify */
 	}
-	if(ip.flags.congest){
+	if(ip->flags.congest){
 		fprintf(fp," CE");
 	}
-	if(csum != 0)
-		fprintf(fp," CHECKSUM ERROR (%u)",csum);
-
-	if(ip.offset != 0){
+	if(ip->offset != 0){
 		putc('\n',fp);
 		return;
 	}
-	switch(uchar(ip.protocol)){
-	case IP4_PTCL:
-	case IP_PTCL:
-		fprintf(fp," prot IP\n");
-		ip_dump(fp,bpp,check);
-		break;
-	case TCP_PTCL:
-		fprintf(fp," prot TCP\n");
-		tcp_dump(fp,bpp,ip.source,ip.dest,check);
-		break;
-	case UDP_PTCL:
-		fprintf(fp," prot UDP\n");
-		udp_dump(fp,bpp,ip.source,ip.dest,check);
-		break;
-	case ICMP_PTCL:
-		fprintf(fp," prot ICMP\n");
-		icmp_dump(fp,bpp,ip.source,ip.dest,check);
-		break;
-	case AX25_PTCL:
-		fprintf(fp," prot AX25\n");
-		ax25_dump(fp,bpp,check);
-		break;
-	default:
-		fprintf(fp," prot %u\n",uchar(ip.protocol));
-		break;
+	for(i=0;Iplink[i].proto != 0;i++){
+		if(Iplink[i].proto == ip->protocol){
+			fprintf(fp," prot %s\n",Iplink[i].name);
+			(*Iplink[i].dump)(fp,bpp,ip->source,ip->dest,check);
+			return;
+		}
 	}
+	fprintf(fp," prot %u\n",ip->protocol);
 }
+

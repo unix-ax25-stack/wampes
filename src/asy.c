@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.12 1994/10/09 08:22:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.13 1995/12/20 09:46:39 deyke Exp $ */
 
 /* Generic serial line interface routines
  * Copyright 1992 Phil Karn, KA9Q
@@ -16,7 +16,6 @@
 #include "nrs.h"
 #include "pktdrvr.h"
 #include "slip.h"
-/* #include "ppp.h" */
 #include "commands.h"
 
 static int asy_detach(struct iface *ifp);
@@ -58,17 +57,17 @@ void *p)
 	int irq;
 	int chain;
 
-	if(if_lookup(argv[4]) != NULLIF){
+	if(if_lookup(argv[4]) != NULL){
 		printf("Interface %s already exists\n",argv[4]);
 		return -1;
 	}
-	if(setencap(NULLIF,argv[3]) == -1){
+	if(setencap(NULL,argv[3]) == -1){
 		printf("Unknown encapsulation %s\n",argv[3]);
 		return -1;
 	}
 	/* Find unused asy control block */
 	for(dev=0;dev < ASY_MAX;dev++){
-		if(Asy[dev].iface == NULLIF)
+		if(Asy[dev].iface == NULL)
 			break;
 	}
 	if(dev >= ASY_MAX){
@@ -90,9 +89,9 @@ void *p)
 	setencap(ifp,argv[3]);
 
 	/* Look for the interface mode in the table */
-	for(ap = Asymode;ap->name != NULLCHAR;ap++){
+	for(ap = Asymode;ap->name != NULL;ap++){
 		if(stricmp(argv[3],ap->name) == 0){
-			trigchar = uchar(ap->trigchar);
+			trigchar = ap->trigchar;
 			if((*ap->init)(ifp) != 0){
 				printf("%s: mode %s Init failed\n",
 				 ifp->name,argv[3]);
@@ -102,7 +101,7 @@ void *p)
 			break;
 		}
 	}
-	if(ap->name == NULLCHAR){
+	if(ap->name == NULL){
 		printf("Mode %s unknown for interface %s\n",argv[3],argv[4]);
 		if_detach(ifp);
 		return -1;
@@ -113,9 +112,9 @@ void *p)
 
 	cts = rlsd = 0;
 	if(argc > 8){
-		if(strchr(argv[8],'c') != NULLCHAR)
+		if(strchr(argv[8],'c') != NULL)
 			cts = 1;
-		if(strchr(argv[8],'r') != NULLCHAR)
+		if(strchr(argv[8],'r') != NULL)
 			rlsd = 1;
 	}
 	if(strchr(argv[2],'c') != NULL)
@@ -138,15 +137,15 @@ struct iface *ifp)
 {
 	struct asymode *ap;
 
-	if(ifp == NULLIF)
+	if(ifp == NULL)
 		return -1;
 	asy_stop(ifp);
 
 	/* Call mode-dependent routine */
-	for(ap = Asymode;ap->name != NULLCHAR;ap++){
-		if(ifp->iftype != NULLIFT
+	for(ap = Asymode;ap->name != NULL;ap++){
+		if(ifp->iftype != NULL
 		 && stricmp(ifp->iftype->name,ap->name) == 0
-		 && ap->free != NULLFP){
+		 && ap->free != NULL){
 			(*ap->free)(ifp);
 		}
 	}

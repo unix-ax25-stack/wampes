@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arphdr.c,v 1.6 1994/10/09 08:22:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arphdr.c,v 1.7 1995/12/20 09:46:38 deyke Exp $ */
 
 /* ARP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,14 +13,12 @@ htonarp(
 register struct arp *arp)
 {
 	struct mbuf *bp;
-	register char *buf;
+	register uint8 *buf;
 
 	if(arp == (struct arp *)NULL)
-		return NULLBUF;
+		return NULL;
 
-	if((bp = alloc_mbuf(ARPLEN + 2 * uchar(arp->hwalen))) == NULLBUF)
-		return NULLBUF;
-
+	bp = ambufw(ARPLEN + 2 * arp->hwalen);
 	buf = bp->data;
 
 	buf = put16(buf,arp->hardware);
@@ -28,10 +26,10 @@ register struct arp *arp)
 	*buf++ = arp->hwalen;
 	*buf++ = arp->pralen;
 	buf = put16(buf,arp->opcode);
-	memcpy(buf,arp->shwaddr,(uint16)uchar(arp->hwalen));
+	memcpy(buf,arp->shwaddr,(uint16)arp->hwalen);
 	buf += arp->hwalen;
 	buf = put32(buf,arp->sprotaddr);
-	memcpy(buf,arp->thwaddr,(uint16)uchar(arp->hwalen));
+	memcpy(buf,arp->thwaddr,(uint16)arp->hwalen);
 	buf += arp->hwalen;
 	buf = put32(buf,arp->tprotaddr);
 
@@ -41,25 +39,24 @@ register struct arp *arp)
 /* Convert an incoming ARP packet into a host-format structure */
 int
 ntoharp(
-register struct arp *arp,
-struct mbuf **bpp)
-{
-	if(arp == (struct arp *)NULL || bpp == NULLBUFP)
+struct arp *arp,
+struct mbuf **bpp
+){
+	if(arp == (struct arp *)NULL || bpp == NULL)
 		return -1;
 
-	arp->hardware = (uint16) pull16(bpp);
+	arp->hardware = (enum arp_hwtype) pull16(bpp);
 	arp->protocol = (uint16) pull16(bpp);
 	arp->hwalen = PULLCHAR(bpp);
 	arp->pralen = PULLCHAR(bpp);
-	arp->opcode = (uint16) pull16(bpp);
-	pullup(bpp,arp->shwaddr,(uint16)uchar(arp->hwalen));
+	arp->opcode = (enum arp_opcode) pull16(bpp);
+	pullup(bpp,arp->shwaddr,(uint16)arp->hwalen);
 	arp->sprotaddr = pull32(bpp);
-	pullup(bpp,arp->thwaddr,(uint16)uchar(arp->hwalen));
+	pullup(bpp,arp->thwaddr,(uint16)arp->hwalen);
 	arp->tprotaddr = pull32(bpp);
 
 	/* Get rid of anything left over */
-	free_p(*bpp);
-	*bpp = NULLBUF;
+	free_p(bpp);
 	return 0;
 }
 

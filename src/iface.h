@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.22 1994/10/06 16:15:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.23 1995/12/20 09:46:45 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -21,19 +21,20 @@
  * are initialized in config.c with all of the information necessary
  * to attach a device.
  */
+struct iface;   /* Defined later */
 struct iftype {
 	char *name;             /* Name of encapsulation technique */
-	int (*send)(struct mbuf *,struct iface *,int32,int);
+	int (*send)(struct mbuf **,struct iface *,int32,uint8);
 				/* Routine to send an IP datagram */
-	int (*output)(struct iface *,char *,char *,uint16,struct mbuf *);
+	int (*output)(struct iface *,uint8 *,uint8 *,uint16,struct mbuf **);
 				/* Routine to send link packet */
-	char *(*format)(char *,char *);
+	char *(*format)(char *,uint8 *);
 				/* Function that formats addresses */
-	int (*scan)(char *,char *);
+	int (*scan)(uint8 *,char *);
 				/* Reverse of format */
 	int type;               /* Type field for network process */
 	int hwalen;             /* Length of hardware address, if any */
-	void (*rcvf)(struct iface *,struct mbuf *);
+	void (*rcvf)(struct iface *,struct mbuf **);
 				/* Function that handles incoming packets */
 	int (*addrtest)(struct iface *,struct mbuf *);
 				/* Function that tests incoming addresses */
@@ -44,7 +45,6 @@ struct iftype {
 	int (*dstat)(struct iface *);
 				/* Function to display dialer status */
 };
-#define NULLIFT (struct iftype *)0
 extern struct iftype Iftypes[];
 
 /* Interface control structure */
@@ -91,7 +91,7 @@ struct iface {
 	int (*iostatus)(struct iface *,int cmd,int32 val);
 				/* Call before detaching */
 	int (*stop)(struct iface *);
-	char *hwaddr;           /* Device hardware address, if any */
+	uint8 *hwaddr;          /* Device hardware address, if any */
 
 	/* Encapsulation dependent */
 	void *edv;              /* Pointer to protocol extension block, if any */
@@ -99,16 +99,16 @@ struct iface {
 	struct iftype *iftype;  /* Pointer to appropriate iftype entry */
 
 				/* Routine to send an IP datagram */
-	int (*send)(struct mbuf *,struct iface *,int32,int);
+	int (*send)(struct mbuf **,struct iface *,int32,uint8);
 			/* Encapsulate any link packet */
-	int (*output)(struct iface *,char *,char *,uint16,struct mbuf *);
+	int (*output)(struct iface *,uint8 *,uint8 *,uint16,struct mbuf **);
 			/* Send raw packet */
-	int (*raw)(struct iface *,struct mbuf *);
+	int (*raw)(struct iface *,struct mbuf **);
 			/* Display status */
 	void (*show)(struct iface *);
 
-	int (*discard)(struct iface *,struct mbuf *);
-	int (*echo)(struct iface *,struct mbuf *);
+	int (*discard)(struct iface *,struct mbuf **);
+	int (*echo)(struct iface *,struct mbuf **);
 
 	/* Counters */
 	int32 ipsndcnt;         /* IP datagrams sent */
@@ -130,7 +130,6 @@ struct iface {
 	uint16 flags;           /* Configuration flags */
 #define NO_RT_ADD       1       /* Don't call rt_add in ip_route */
 };
-#define NULLIF  (struct iface *)0
 extern struct iface *Ifaces;    /* Head of interface list */
 extern struct iface  Loopback;  /* Optional loopback interface */
 extern struct iface  Encap;     /* IP-in-IP pseudo interface */
@@ -140,32 +139,26 @@ extern struct iface  Encap;     /* IP-in-IP pseudo interface */
 #define qhdr Xqhdr      /* Resolve name conflict */
 #endif
 struct qhdr {
-	char tos;
+	uint8 tos;
 	int32 gateway;
 };
-/* List of link-level receive functions, initialized in config.c */
-struct rfunc {
-	int class;
-	void (*rcvf)(struct iface *,struct mbuf *);
-};
-extern struct rfunc Rfunc[];
 
 extern char Noipaddr[];
 extern struct mbuf *Hopper;
 
 /* In iface.c: */
-int bitbucket(struct iface *ifp,struct mbuf *bp);
+int bitbucket(struct iface *ifp,struct mbuf **bp);
 int if_detach(struct iface *ifp);
 struct iface *if_lookup(char *name);
 char *if_name(struct iface *ifp,char *comment);
 void if_tx(int dev,void *arg1,void *unused);
 struct iface *ismyaddr(int32 addr);
 void network(int i,void *v1,void *v2);
-int nu_send(struct mbuf *bp,struct iface *ifp,int32 gateway,int tos);
-int nu_output(struct iface *,char *,char *,uint16,struct mbuf *);
+int nu_send(struct mbuf **bpp,struct iface *ifp,int32 gateway,uint8 tos);
+int nu_output(struct iface *,uint8 *,uint8 *,uint16,struct mbuf **);
 int setencap(struct iface *ifp,char *mode);
 
 /* In config.c: */
-int net_route(struct iface *ifp,struct mbuf *bp);
+int net_route(struct iface *ifp,struct mbuf **bpp);
 
 #endif  /* _IFACE_H */

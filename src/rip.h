@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.h,v 1.6 1994/10/06 16:15:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.h,v 1.7 1995/12/20 09:46:53 deyke Exp $ */
 
 #ifndef _RIP_H
 #define _RIP_H
@@ -36,9 +36,11 @@
 #define RIP_PORT        520
 
 /* RIP Packet Types */
-#define RIPCMD_REQUEST          1       /* want info */
-#define RIPCMD_RESPONSE         2       /* responding to request */
-#define RIPCMD_MAX              3
+enum ripcmd {
+	RIPCMD_REQUEST=1,       /* want info */
+	RIPCMD_RESPONSE,        /* responding to request */
+	RIPCMD_MAX
+};
 
 #define HOPCNT_INFINITY         16      /* per Xerox NS */
 #define MAXRIPROUTES            25      /* maximum # routes per RIP pkt */
@@ -62,11 +64,11 @@ struct rip_list {
 	struct iface *iface;
 
 	/* described below with the mask defs */
-	char    flags;
-#define RIP_SPLIT 0x1   /* Do split horizon processing */
-#define RIP_US  0x2     /* Include ourselves in the list */
+	struct {
+		unsigned int rip_split:1; /* Do split horizon processing */
+		unsigned int rip_us:1;  /* Include ourselves in the list */
+	} flags;
 };
-#define NULLRL  (struct rip_list *)0
 
 /* Host format of a single entry in a RIP response packet */
 struct rip_route {
@@ -96,13 +98,12 @@ struct rip_refuse {
 	struct rip_refuse *next;
 	int32   target;
 };
-#define NULLREF (struct rip_refuse *)0
 
 /* RIP primitives */
 int rip_init(void);
 void rt_timeout(void *s);
 void rip_trigger(void);
-int rip_add(int32 dest,int32 interval,char flags);
+int rip_add(int32 dest,int32 interval,int split,int us);
 int riprefadd(int32 gateway);
 int riprefdrop(int32 gateway);
 int ripreq(int32 dest,uint16 replyport);

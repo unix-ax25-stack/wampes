@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.c,v 1.6 1994/10/09 08:22:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.c,v 1.7 1995/12/20 09:46:54 deyke Exp $ */
 
 /*
  * Routines to compress and uncompress tcp packets (for transmission
@@ -40,9 +40,6 @@
  *                      status display
  */
 
-/* #include <mem.h> */
-#include <stdlib.h>
-#include <string.h>
 #include "global.h"
 #include "mbuf.h"
 #include "internet.h"
@@ -50,7 +47,7 @@
 #include "tcp.h"
 #include "slhc.h"
 
-static char *encode(char *cp,uint16 n);
+static uint8 *encode(uint8 *cp,uint16 n);
 static long decode(struct mbuf **bpp);
 
 /* Initialize compression data structure
@@ -98,22 +95,22 @@ void
 slhc_free(
 struct slcompress *comp)
 {
-	if ( comp == NULLSLCOMPR )
+	if ( comp == NULL )
 		return;
 
-	if ( comp->rstate != NULLSLSTATE )
+	if ( comp->rstate != NULL )
 		free( comp->rstate );
 
-	if ( comp->tstate != NULLSLSTATE )
+	if ( comp->tstate != NULL )
 		free( comp->tstate );
 
 	free( comp );
 }
 
 /* Encode a number */
-static char *
+static uint8 *
 encode(
-register char *cp,
+register uint8 *cp,
 uint16 n)
 {
 	if(n >= 256 || n == 0){
@@ -149,18 +146,25 @@ int compress_cid)
 	register struct cstate *ocs = &(comp->tstate[comp->xmit_oldest]);
 	register struct cstate *lcs = ocs;
 	register struct cstate *cs = lcs->next;
-	register uint16 hlen;
+	register uint16 hlen,iplen;
 	register struct tcp *oth;
 	register unsigned long deltaS, deltaA;
 	register uint16 changes = 0;
-	char new_seq[16];
-	register char *cp = new_seq;
-	struct mbuf *bp;
+	uint8 new_seq[16];
+	register uint8 *cp = new_seq;
 	struct tcp th;
 	struct ip iph;
+	struct mbuf *copy;
 
-	/* Extract IP header */
-	hlen = ntohip(&iph,bpp);
+	/* Copy TCP/IP header, allowing for worst-case options in both
+	 * Using dup_p seemed to result in unexplained
+	 * memory leaks -- but only some of the time. Must find out why.
+	 */
+/*      dup_p(&copy,*bpp,0,IPLEN+IP_MAXOPT+TCPLEN+TCP_MAXOPT); */
+	copy = copy_p(*bpp,IPLEN+IP_MAXOPT+TCPLEN+TCP_MAXOPT);
+
+	/* Peek at IP header */
+	iplen = hlen = ntohip(&iph,&copy);
 
 	/* Bail if this packet isn't TCP, or is an IP fragment */
 	if(iph.protocol != TCP_PTCL || iph.offset != 0 || iph.flags.mf){
@@ -169,20 +173,20 @@ int compress_cid)
 			comp->sls_o_nontcp++;
 		else
 			comp->sls_o_tcp++;
-		*bpp = htonip(&iph,*bpp,IP_CS_OLD);
+		free_p(&copy);
 		return SL_TYPE_IP;
 	}
 	/* Extract TCP header */
-	hlen += ntohtcp(&th,bpp);
+	hlen += ntohtcp(&th,&copy);
+	free_p(&copy);  /* Done with copy */
 
 	/*  Bail if the TCP packet isn't `compressible' (i.e., ACK isn't set or
-	 *  some other control bit is set).
+	 *  some other control bit is set, or has options).
 	 */
-	if(th.flags.syn || th.flags.fin || th.flags.rst || !th.flags.ack){
+	if(th.flags.syn || th.flags.fin || th.flags.rst || !th.flags.ack
+	 || th.flags.mss || th.flags.wscale || th.flags.tstamp){
 		/* TCP connection stuff; send as regular IP */
 		comp->sls_o_tcp++;
-		*bpp = htontcp(&th,*bpp,NULLHEADER);
-		*bpp = htonip(&iph,*bpp,IP_CS_OLD);
 		return SL_TYPE_IP;
 	}
 	/*
@@ -261,9 +265,7 @@ found:
 	 || iph.tos != cs->cs_ip.tos
 	 || iph.flags.df != cs->cs_ip.flags.df
 	 || iph.ttl != cs->cs_ip.ttl
-	 || th.optlen != cs->cs_tcp.optlen
-	 || (iph.optlen > 0 && memcmp(iph.options,cs->cs_ip.options,iph.optlen) != 0)
-	 || (th.optlen > 0 && memcmp(th.options,cs->cs_tcp.options,th.optlen) != 0)){
+	 || (iph.optlen > 0 && memcmp(iph.options,cs->cs_ip.options,iph.optlen) != 0)){
 		goto uncompressed;
 	}
 	/*
@@ -353,15 +355,16 @@ found:
 	 * So, (cp - new_seq) + 4 bytes of header are needed.
 	 */
 	deltaS = cp - new_seq;
+	pullup(bpp,NULL,hlen);          /* Strip TCP/IP headers */
 	if(compress_cid == 0 || comp->xmit_current != cs->this){
-		bp = *bpp = pushdown(*bpp,(uint16) (deltaS + 4));
-		cp = bp->data;
+		pushdown(bpp,NULL,(uint16) (deltaS + 4));
+		cp = (*bpp)->data;
 		*cp++ = changes | NEW_C;
 		*cp++ = cs->this;
 		comp->xmit_current = cs->this;
 	} else {
-		bp = *bpp = pushdown(*bpp,(uint16) (deltaS + 3));
-		cp = bp->data;
+		pushdown(bpp,NULL,(uint16) (deltaS + 3));
+		cp = (*bpp)->data;
 		*cp++ = changes;
 	}
 	cp = put16(cp,(uint16)deltaA);  /* Write TCP checksum */
@@ -379,8 +382,8 @@ uncompressed:
 	ASSIGN(cs->cs_tcp,th);
 	comp->xmit_current = cs->this;
 	comp->sls_o_uncompressed++;
-	*bpp = htontcp(&th,*bpp,NULLHEADER);
-	*bpp = htonip(&iph,*bpp,IP_CS_OLD);
+	pullup(bpp,NULL,iplen); /* Strip old IP header */
+	htonip(&iph,bpp,IP_CS_OLD);     /* replace with new one */
 	return SL_TYPE_UNCOMPRESSED_TCP;
 }
 
@@ -395,6 +398,10 @@ struct mbuf **bpp)
 	register struct cstate *cs;
 	int len;
 
+	if(bpp == NULL){
+		comp->sls_i_error++;
+		return 0;
+	}
 	/* We've got a compressed packet; read the change byte */
 	comp->sls_i_compressed++;
 	if(len_p(*bpp) < 3){
@@ -485,8 +492,8 @@ struct mbuf **bpp)
 	len = len_p(*bpp) + IPLEN + TCPLEN + cs->cs_ip.optlen;
 	cs->cs_ip.length = len;
 
-	*bpp = htontcp(thp,*bpp,NULLHEADER);
-	*bpp = htonip(&cs->cs_ip,*bpp,IP_CS_NEW);
+	htontcp(thp,bpp,0,0);
+	htonip(&cs->cs_ip,bpp,IP_CS_NEW);
 	return len;
 bad:
 	comp->sls_i_error++;
@@ -505,6 +512,11 @@ struct mbuf **bpp)
 	uint16 hdrlen;
 	int slot;
 
+	if(bpp == NULL){
+		comp->sls_i_error++;
+		return slhc_toss(comp);
+	}
+
 	/* Sneak a peek at the IP header's IHL field to find its length */
 	hdrlen = ((*bpp)->data[0] & 0xf) << 2;
 	if(hdrlen < IPLEN){
@@ -521,7 +533,7 @@ struct mbuf **bpp)
 		return slhc_toss(comp);
 	}
 	/* Verify conn ID */
-	slot = uchar(iph.protocol);
+	slot = iph.protocol;
 	if(slot > comp->rslot_limit){
 		/* Out of range */
 		comp->sls_i_error++;
@@ -533,11 +545,11 @@ struct mbuf **bpp)
 	 * Neither header checksum is recalculated
 	 */
 	ntohtcp(&th,bpp);
-	*bpp = htontcp(&th,*bpp,NULLHEADER);
-	*bpp = htonip(&iph,*bpp,IP_CS_OLD);
+	htontcp(&th,bpp,0,0);
+	htonip(&iph,bpp,IP_CS_OLD);
 
 	/* Checksum IP header (now that protocol field is TCP again) */
-	if(cksum(NULLHEADER,*bpp,hdrlen) != 0){
+	if(cksum(NULL,*bpp,hdrlen) != 0){
 		/* Bad IP header checksum; discard */
 		comp->sls_i_error++;
 		return slhc_toss(comp);
@@ -557,7 +569,7 @@ int
 slhc_toss(
 struct slcompress *comp)
 {
-	if ( comp == NULLSLCOMPR )
+	if ( comp == NULL )
 		return 0;
 
 	comp->flags |= SLF_TOSS;
@@ -568,7 +580,7 @@ void
 slhc_i_status(
 struct slcompress *comp)
 {
-	if (comp != NULLSLCOMPR) {
+	if (comp != NULL) {
 		printf("\t%10ld Cmp,"
 			" %10ld Uncmp,"
 			" %10ld Bad, "
@@ -584,7 +596,7 @@ void
 slhc_o_status(
 struct slcompress *comp)
 {
-	if (comp != NULLSLCOMPR) {
+	if (comp != NULL) {
 		printf("\t%10ld Cmp,"
 			" %10ld Uncmp,"
 			" %10ld AsIs,"

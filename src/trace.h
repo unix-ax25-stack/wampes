@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.h,v 1.11 1994/10/21 11:54:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.h,v 1.12 1995/12/20 09:46:58 deyke Exp $ */
 
 #ifndef _TRACE_H
 #define _TRACE_H
@@ -60,6 +60,7 @@ int ether_forus(struct iface *iface,struct mbuf *bp);
 void icmp_dump(FILE *fp,struct mbuf **bpp,int32 source,int32 dest,int check);
 
 /* In ipdump.c: */
+void ipip_dump(FILE *fp,struct mbuf **bpp,int32 source,int32 dest,int check);
 void ip_dump(FILE *fp,struct mbuf **bpp,int check);
 
 /* In kissdump.c: */
@@ -74,6 +75,10 @@ void ppp_dump(FILE *fp,struct mbuf **bpp,int check);
 
 /* In ripdump.c: */
 void rip_dump(FILE *fp,struct mbuf **bpp);
+
+/* In secdump.c: */
+void esp_dump(FILE *fp,struct mbuf **bpp,int32 source,int32 dest,int check);
+void ah_dump(FILE *fp,struct mbuf **bpp,int32 source,int32 dest,int check);
 
 /* In slcompdump.c: */
 void sl_dump(FILE *fp,struct mbuf **bpp,int check);

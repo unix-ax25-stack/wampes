@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.26 1994/10/06 16:15:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.27 1995/12/20 09:46:52 deyke Exp $ */
 
 #include "global.h"
 
@@ -6,8 +6,6 @@
 
 #include <ctype.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -89,7 +87,7 @@ static int command_switcher(struct controlblock *cp, const char *name, const str
 
   namelen = strlen(name);
   for (; ; ) {
-    if (!tableptr->name) return (-1);
+    if (!tableptr->name) return -1;
     if (!strncmp(tableptr->name, name, namelen)) return (*tableptr->fnc)(cp);
     tableptr++;
   }
@@ -120,7 +118,7 @@ static void transport_try_send(struct controlblock *cp)
   if (!(bp = alloc_mbuf(cnt))) return;
   cnt = read(cp->fd, bp->data, (unsigned) cnt);
   if (cnt <= 0) {
-    free_p(bp);
+    free_p(&bp);
     off_read(cp->fd);
     transport_close(cp->tp);
     return;
@@ -184,10 +182,10 @@ static int connect_command(struct controlblock *cp)
 {
   char *protocol, *address;
 
-  protocol = getarg((char *) 0, 0);
-  address = getarg((char *) 0, 1);
+  protocol = getarg(0, 0);
+  address = getarg(0, 1);
   cp->tp = transport_open(protocol, address, transport_recv_upcall, transport_send_upcall, transport_state_upcall, (char *) cp);
-  if (!cp->tp) return (-1);
+  if (!cp->tp) return -1;
   if (!cp->binary) {
     cp->tp->recv_mode = EOL_LF;
     cp->tp->send_mode = (!strcmp(protocol, "tcp")) ? EOL_CRLF : EOL_CR;
@@ -205,7 +203,7 @@ static int console_command(struct controlblock *cp)
   if (fkbd >= 0 || (isatty(0) && isatty(1))) {
     sprintf(buf, "*** %s busy\n", Hostname);
     write(cp->fd, buf, strlen(buf));
-    return (-1);
+    return -1;
   }
   fflush(stdin);
   fflush(stdout);
@@ -214,9 +212,9 @@ static int console_command(struct controlblock *cp)
   dup2(cp->fd, 1);
   dup2(cp->fd, 2);
   fkbd = 0;
-  on_read(fkbd, (void (*)(void *)) keyboard, (void *) 0);
+  on_read(fkbd, (void (*)(void *)) keyboard, 0);
   printf(Prompt, Hostname);
-  return (-1);
+  return -1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -283,7 +281,7 @@ struct iface *ifp;
     off_read(fkbd);
     fkbd = -1;
     for (ifp = Ifaces; ifp; ifp = ifp->next)
-      if (ifp->trfp == NULLFILE || ifp->trfp == stdout)
+      if (ifp->trfp == NULL || ifp->trfp == stdout)
     ifp->trace = 0;
   }
   return 0;
@@ -300,7 +298,7 @@ void remote_net_initialize(void)
 #else
     "*:4718",
 #endif
-    (char *) 0
+    0
   };
 
   int addrlen, i;
@@ -320,7 +318,7 @@ void remote_net_initialize(void)
 	  break;
 	}
 	if (!bind(flisten_net, addr, addrlen) && !listen(flisten_net, SOMAXCONN)) {
-	  on_read(flisten_net, accept_connection_net, (void *) 0);
+	  on_read(flisten_net, accept_connection_net, 0);
 	} else {
 	  close(flisten_net);
 	  flisten_net = -1;
@@ -329,4 +327,3 @@ void remote_net_initialize(void)
     }
   }
 }
-

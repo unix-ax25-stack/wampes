@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.59 1995/07/01 11:15:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.60 1995/12/20 09:46:49 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -8,8 +8,6 @@
 #include <fcntl.h>
 #include <pwd.h>
 #include <signal.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <time.h>
@@ -176,7 +174,7 @@ static int find_pty(char *ptyname)
     if (num == lastnum) break;
   }
 
-  return (-1);
+  return -1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -231,7 +229,6 @@ static char *find_user_name(const char *name)
 struct passwd *getpasswdentry(const char *name, int create)
 {
 
-  char cmdbuf[1024];
   char homedirparent[80];
   char homedir[80];
   FILE *fp;
@@ -284,8 +281,11 @@ struct passwd *getpasswdentry(const char *name, int create)
 
 #if defined __386BSD__ || defined __bsdi__ || defined __FreeBSD__
 
-  sprintf(cmdbuf, "chpass -a '%s::%d:%d::0:0::%s:%s' >/dev/null 2>&1", name, uid, Gid, homedir, Shell);
-  system(cmdbuf);
+  {
+    char cmdbuf[1024];
+    sprintf(cmdbuf, "chpass -a '%s::%d:%d::0:0::%s:%s' >/dev/null 2>&1", name, uid, Gid, homedir, Shell);
+    system(cmdbuf);
+  }
 
 #else
 
@@ -548,7 +548,7 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
     dup(0);
     chmod(tp->ptyname, 0622);
 #ifdef TIOCSCTTY
-    ioctl(0, TIOCSCTTY, (char *) 0);
+    ioctl(0, TIOCSCTTY, 0);
 #endif
     {
 #ifdef ibm032
@@ -568,7 +568,7 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
       ioctl(0, TIOCSETP, &sgttyb);
 #else
       struct termios termios;
-      memset((char *) &termios, 0, sizeof(termios));
+      memset(&termios, 0, sizeof(termios));
       termios.c_iflag = ICRNL | IXOFF;
       termios.c_oflag = OPOST | ONLCR;
 #ifdef TAB3
@@ -730,7 +730,7 @@ struct mbuf *login_read(struct login_cb *tp, int cnt)
 
 void login_write(struct login_cb *tp, struct mbuf *bp)
 {
-  append(&tp->sndq, bp);
+  append(&tp->sndq, &bp);
   on_write(tp->pty, (void (*)(void *)) write_pty, tp);
   if (tp->linelen) write_pty(tp);
 }
@@ -828,18 +828,17 @@ int dologin(int argc, char *argv[], void *p)
 {
 
   static struct cmds Logincmds[] = {
-    "auto",         dologinauto,        0, 0, NULLCHAR,
-    "create",       dologincreate,      0, 0, NULLCHAR,
-    "defaultuser",  dologindefaultuser, 0, 0, NULLCHAR,
-    "gid",          dologingid,         0, 0, NULLCHAR,
-    "homedir",      dologinhomedir,     0, 0, NULLCHAR,
-    "logfiledir",   dologinlogfiledir,  0, 0, NULLCHAR,
-    "maxuid",       dologinmaxuid,      0, 0, NULLCHAR,
-    "minuid",       dologinminuid,      0, 0, NULLCHAR,
-    "shell",        dologinshell,       0, 0, NULLCHAR,
-    NULLCHAR
+    "auto",         dologinauto,        0, 0, NULL,
+    "create",       dologincreate,      0, 0, NULL,
+    "defaultuser",  dologindefaultuser, 0, 0, NULL,
+    "gid",          dologingid,         0, 0, NULL,
+    "homedir",      dologinhomedir,     0, 0, NULL,
+    "logfiledir",   dologinlogfiledir,  0, 0, NULL,
+    "maxuid",       dologinmaxuid,      0, 0, NULL,
+    "minuid",       dologinminuid,      0, 0, NULL,
+    "shell",        dologinshell,       0, 0, NULL,
+    NULL
   };
 
   return subcmd(Logincmds, argc, argv, p);
 }
-

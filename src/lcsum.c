@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lcsum.c,v 1.8 1994/10/06 16:15:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lcsum.c,v 1.9 1995/12/20 09:46:49 deyke Exp $ */
 
 /*
  * Word aligned linear buffer checksum routine.  Called from mbuf checksum
@@ -29,4 +29,3 @@ register uint16 len)
 #endif
 	return result;
 }
-

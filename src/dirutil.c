@@ -1,10 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.16 1994/10/06 16:15:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.17 1995/12/20 09:46:42 deyke Exp $ */
 
 #include <sys/types.h>
 
 #include <errno.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include "global.h"
@@ -26,14 +25,14 @@ int full)
 	int fd[2];
 
 	if(!*LS_PROG)
-		return NULLFILE;
+		return NULL;
 	if(pipe(fd))
-		return NULLFILE;
+		return NULL;
 	switch(dofork()) {
 	case -1:
 		close(fd[0]);
 		close(fd[1]);
-		return NULLFILE;
+		return NULL;
 	case 0:
 		close(fd[0]);
 		dup2(fd[1],1);
@@ -43,7 +42,7 @@ int full)
 		      "ls",
 		      full ? "-Al" : "-A",
 		      path,
-		      (char *) 0);
+		      0);
 		exit(1);
 	default:
 		close(fd[1]);

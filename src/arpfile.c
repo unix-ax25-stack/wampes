@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.12 1994/10/10 13:16:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.13 1995/12/20 09:46:38 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -7,26 +7,33 @@
 #include "arp.h"
 #include "main.h"
 
-#define ARP_FILE_VERSION   2
+#define ARP_FILE_VERSION   3
 #define ARP_SAVETIME       (10L*60L*1000L)
 
 struct arp_saverecord_0 {
-  int32 ip_addr;        /* IP address, host order */
-  uint16 hardware;      /* Hardware type */
-  uint16 hwalen;        /* Length of hardware address */
-  char pub;             /* Publish this entry? */
+  int32 ip_addr;                /* IP address, host order */
+  uint16 hardware;              /* Hardware type */
+  uint16 hwalen;                /* Length of hardware address */
+  char pub;                     /* Publish this entry? */
 };
 
 struct arp_saverecord_1 {
-  int32 ip_addr;        /* IP address, host order */
-  unsigned char hardware;/* Hardware type */
-  char pub;             /* Publish this entry? */
+  int32 ip_addr;                /* IP address, host order */
+  unsigned char hardware;       /* Hardware type */
+  char pub;                     /* Publish this entry? */
 };
 
 struct arp_saverecord_2 {
-  int32 ip_addr;        /* IP address, host order */
-  unsigned char hardware;/* Hardware type */
-  char pub;             /* Publish this entry? */
+  int32 ip_addr;                /* IP address, host order */
+  unsigned char hardware;       /* Hardware type */
+  char pub;                     /* Publish this entry? */
+  int32 expires;
+};
+
+struct arp_saverecord_3 {
+  int32 ip_addr;                /* IP address, host order */
+  enum arp_hwtype hardware;     /* Hardware type */
+  char pub;                     /* Publish this entry? */
   int32 expires;
 };
 
@@ -41,7 +48,7 @@ void arp_savefile(void)
   FILE * fp;
   int i;
   static struct timer timer;
-  struct arp_saverecord_2 buf;
+  struct arp_saverecord_3 buf;
   struct arp_tab *p;
 
   if (Debug) return;
@@ -67,6 +74,7 @@ void arp_savefile(void)
   for (i = 0; i < HASHMOD; i++)
     for (p = Arp_tab[i]; p; p = p->next)
       if (p->hw_addr && p->state == ARP_VALID && run_timer(&p->timer)) {
+	memset(&buf, 0, sizeof(buf));
 	buf.ip_addr = p->ip_addr;
 	buf.hardware = p->hardware;
 	buf.pub = p->pub;
@@ -83,11 +91,11 @@ void arp_savefile(void)
 void arp_loadfile(void)
 {
 
-  FILE * fp;
-  char hw_addr[MAXHWALEN];
+  FILE *fp;
   int32 ttl;
   static int done;
   struct arp_tab *p;
+  uint8 hw_addr[MAXHWALEN];
 
   if (done) return;
   done = 1;
@@ -99,7 +107,7 @@ void arp_loadfile(void)
       while (fread((char *) &buf, sizeof(buf), 1, fp) &&
 	     buf.hardware < NHWTYPES &&
 	     fread(hw_addr, buf.hwalen, 1, fp))
-	arp_add(buf.ip_addr, buf.hardware, hw_addr, buf.pub);
+	arp_add(buf.ip_addr, (enum arp_hwtype) buf.hardware, hw_addr, buf.pub);
     }
     break;
   case 1:
@@ -108,12 +116,25 @@ void arp_loadfile(void)
       while (fread((char *) &buf, sizeof(buf), 1, fp) &&
 	     buf.hardware < NHWTYPES &&
 	     fread(hw_addr, Arp_type[buf.hardware].hwalen, 1, fp))
-	arp_add(buf.ip_addr, buf.hardware, hw_addr, buf.pub);
+	arp_add(buf.ip_addr, (enum arp_hwtype) buf.hardware, hw_addr, buf.pub);
     }
     break;
   case 2:
     {
       struct arp_saverecord_2 buf;
+      while (fread((char *) &buf, sizeof(buf), 1, fp) &&
+	     buf.hardware < NHWTYPES &&
+	     fread(hw_addr, Arp_type[buf.hardware].hwalen, 1, fp))
+	if ((ttl = buf.expires - secclock()) > 0 &&
+	    (p = arp_add(buf.ip_addr, (enum arp_hwtype) buf.hardware, hw_addr, buf.pub))) {
+	  set_timer(&p->timer, ttl * 1000);
+	  start_timer(&p->timer);
+	}
+    }
+    break;
+  case 3:
+    {
+      struct arp_saverecord_3 buf;
       while (fread((char *) &buf, sizeof(buf), 1, fp) &&
 	     buf.hardware < NHWTYPES &&
 	     fread(hw_addr, Arp_type[buf.hardware].hwalen, 1, fp))
@@ -127,4 +148,3 @@ void arp_loadfile(void)
   }
   fclose(fp);
 }
-

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.8 1994/12/11 17:00:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.9 1995/12/20 09:46:52 deyke Exp $ */
 
 #ifdef __hpux
 
@@ -19,8 +19,6 @@
 #include <net/route.h>
 #include <netinet/in.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
@@ -45,11 +43,12 @@ struct ni_packet {
 
 /*---------------------------------------------------------------------------*/
 
-static int ni_send(struct mbuf *data, struct iface *ifp, int32 gateway, int tos)
+static int ni_send(struct mbuf **bpp, struct iface *ifp, int32 gateway, uint8 tos)
 {
 
   int l;
   struct edv_t *edv;
+  struct mbuf *data = *bpp;
   struct ni_packet ni_packet;
 
   dump(ifp, IF_TRACE_OUT, data);
@@ -59,10 +58,11 @@ static int ni_send(struct mbuf *data, struct iface *ifp, int32 gateway, int tos)
   if (ifp->trace & IF_TRACE_RAW)
     raw_dump(ifp, -1, data);
 
+  memset(&ni_packet, 0, sizeof(struct ni_packet));
   l = pullup(&data, ni_packet.data, sizeof(ni_packet.data));
   if (l <= 0 || data) {
-    free_p(data);
-    return (-1);
+    free_p(&data);
+    return -1;
   }
 
   edv = (struct edv_t *) ifp->edv;
@@ -82,6 +82,7 @@ static void ni_recv(void *argp)
   int l;
   struct edv_t *edv;
   struct iface *ifp;
+  struct mbuf *bp;
   struct ni_packet ni_packet;
 
   ifp = (struct iface *) argp;
@@ -89,7 +90,8 @@ static void ni_recv(void *argp)
   l = read(edv->fd, &ni_packet, sizeof(ni_packet)) - sizeof(ni_packet.addr);
   if (l <= 0) goto Fail;
 
-  net_route(ifp, qdata(ni_packet.data, l));
+  bp = qdata(ni_packet.data, l);
+  net_route(ifp, &bp);
   return;
 
 Fail:
@@ -116,67 +118,68 @@ int ni_attach(int argc, char *argv[], void *p)
 
   ifname = argv[1];
 
-  if (if_lookup(ifname) != NULLIF) {
+  if (if_lookup(ifname) != NULL) {
     printf("Interface %s already exists\n", ifname);
-    return (-1);
+    return -1;
   }
 
   if (!(dest = resolve(argv[2]))) {
     printf(Badhost, argv[2]);
-    return (-1);
+    return -1;
   }
 
   mask = 0xff000000;
   if (argc >= 4 && !(mask = resolve(argv[3]))) {
     printf(Badhost, argv[3]);
-    return (-1);
+    return -1;
   }
 
   if ((fd = open("/dev/ni", O_RDWR)) < 0) {
     printf("/dev/ni: %s\n", strerror(errno));
-    return (-1);
+    return -1;
   }
 
   if (ioctl(fd, NIOCGUNIT, &unit_number)) {
     printf("NIOCGUNIT: %s\n", strerror(errno));
     close(fd);
-    return (-1);
+    return -1;
   }
 
   arg = AF_INET;
   if (ioctl(fd, NIOCBIND, &arg)) {
     printf("NIOCBIND: %s\n", strerror(errno));
     close(fd);
-    return (-1);
+    return -1;
   }
 
   arg = NI_MTU;
   if (ioctl(fd, NIOCSMTU, &arg)) {
     printf("NIOCSMTU: %s\n", strerror(errno));
     close(fd);
-    return (-1);
+    return -1;
   }
 
   arg = NI_MQL;
   if (ioctl(fd, NIOCSQLEN, &arg)) {
     printf("NIOCSQLEN: %s\n", strerror(errno));
     close(fd);
-    return (-1);
+    return -1;
   }
 
   arg = IFF_UP | IFF_POINTOPOINT;
   if (ioctl(fd, NIOCSFLAGS, &arg)) {
     printf("NIOCSFLAGS: %s\n", strerror(errno));
     close(fd);
-    return (-1);
+    return -1;
   }
 
   if ((sock_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
     printf("socket: %s\n", strerror(errno));
     close(fd);
-    return (-1);
+    return -1;
   }
 
+  memset(&ifreq, 0, sizeof(struct ifreq));
   sprintf(ifreq.ifr_name, "ni%d", unit_number);
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
@@ -187,7 +190,7 @@ int ni_attach(int argc, char *argv[], void *p)
     printf("SIOCSIFADDR: %s\n", strerror(errno));
     close(fd);
     close(sock_fd);
-    return (-1);
+    return -1;
   }
 
   addr.sin_addr.s_addr = htonl(Ip_addr);
@@ -196,7 +199,7 @@ int ni_attach(int argc, char *argv[], void *p)
     printf("SIOCSIFDSTADDR: %s\n", strerror(errno));
     close(fd);
     close(sock_fd);
-    return (-1);
+    return -1;
   }
 
   addr.sin_addr.s_addr = htonl(mask);
@@ -205,7 +208,7 @@ int ni_attach(int argc, char *argv[], void *p)
     printf("SIOCSIFNETMASK: %s\n", strerror(errno));
     close(fd);
     close(sock_fd);
-    return (-1);
+    return -1;
   }
 
   addr.sin_addr.s_addr = htonl(dest & mask);
@@ -239,4 +242,3 @@ int ni_attach(int argc, char *argv[], void *p)
 }
 
 #endif
-

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pathname.c,v 1.6 1994/10/06 16:15:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pathname.c,v 1.7 1995/12/20 09:46:52 deyke Exp $ */
 
 /* Convert relative to absolute pathnames
  * Copyright 1991 Phil Karn, KA9Q
@@ -25,14 +25,14 @@ char *path)     /* Pathname argument */
 	int tflag = 0;
 #endif
 
-	if(cd == NULLCHAR || path == NULLCHAR)
-		return NULLCHAR;
+	if(cd == NULL || path == NULL)
+		return NULL;
 
 #ifdef  MSDOS
 	/* If path has any backslashes, make a local copy with them
 	 * translated into forward slashes
 	 */
-	if(strchr(path,'\\') != NULLCHAR){
+	if(strchr(path,'\\') != NULL){
 		tflag = 1;
 		cp = tbuf = mallocw(strlen(path));
 		while((c = *path++) != '\0'){
@@ -98,7 +98,7 @@ register char *path)
 		 */
 		if(strcmp(path,"..") == 0 || strncmp(path,"../",3) == 0){
 			/* Hop up a level */
-			if((cp = strrchr(buf,'/')) == NULLCHAR)
+			if((cp = strrchr(buf,'/')) == NULL)
 				cp = buf;       /* Don't back up beyond root */
 			*cp = '\0';             /* In case there's another .. */
 			path += 2;              /* Skip ".." */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.h,v 1.7 1993/05/17 13:45:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.h,v 1.8 1995/12/20 09:46:57 deyke Exp $ */
 
 #ifndef _TIMER_H
 #define _TIMER_H
@@ -32,7 +32,6 @@ struct timer {
 #define TIMER_RUN       1
 #define TIMER_EXPIRE    2
 };
-#define NULLTIMER       (struct timer *)0
 #ifndef EALARM
 #define EALARM          106
 #endif
@@ -41,8 +40,8 @@ struct timer {
 #define run_timer(t)    ((t)->state == TIMER_RUN)
 
 /* In timer.c: */
-void Xalarm(int32 ms);
-int Xpause(int32 ms);
+void kalarm(int32 ms);
+int ppause(int32 ms);
 int32 read_timer(struct timer *t);
 #define set_timer(t,x)  ((t)->duration = (x))
 void start_timer(struct timer *t);

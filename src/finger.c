@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.11 1994/10/09 08:22:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.12 1995/12/20 09:46:43 deyke Exp $ */
 
 /*
  *
@@ -24,14 +24,12 @@
 #include "telnet.h"
 #include "iface.h"
 #include "ax25.h"
-/* #include "lapb.h" */
 #include "finger.h"
 #include "session.h"
-/* #include "nr4.h" */
 
 static struct finger *alloc_finger(void);
 static int free_finger(struct finger *finger);
-static void f_state(struct tcb *tcb, int old, int new);
+static void f_state(struct tcb *tcb, enum tcp_state old, enum tcp_state new);
 
 /*
  *
@@ -68,7 +66,7 @@ void *p)
  *      finger @host                    # finger host (give system status)
  *
  */
-	if ((finger = alloc_finger()) == NULLFING)
+	if ((finger = alloc_finger()) == NULL)
 		return(1);
 
 	if ((host = strrchr(argv[1], '@')) == NULL) {
@@ -106,7 +104,7 @@ void *p)
 	fsocket.port = FINGER_PORT;             /* use finger wnp */
 
 	/* Allocate a session descriptor */
-	if ((s = newsession()) == NULLSESSION){
+	if ((s = newsession()) == NULL){
 		printf("Too many sessions\n");
 		free_finger(finger);
 		return 1;
@@ -117,7 +115,7 @@ void *p)
 
 	if (!host)                              /* if no host specified */
 		host = Hostname;                /* use local host name */
-	if ((s->name = (char *) malloc(strlen(host)+1)) != NULLCHAR)
+	if ((s->name = (char *) malloc(strlen(host)+1)) != NULL)
 		strcpy(s->name, host);
 
 	s->type = FINGER;
@@ -139,10 +137,10 @@ alloc_finger(void)
 {
 	struct finger *tmp;
 
-	if ((tmp = (struct finger *) malloc(sizeof(struct finger))) == NULLFING)
-		return(NULLFING);
-	tmp->session = NULLSESSION;
-	tmp->user = (char *) NULL;
+	if ((tmp = (struct finger *) malloc(sizeof(struct finger))) == NULL)
+		return(NULL);
+	tmp->session = NULL;
+	tmp->user = NULL;
 	return(tmp);
 }
 
@@ -153,10 +151,10 @@ static int
 free_finger(
 struct finger *finger)
 {
-	if (finger != NULLFING) {
-		if (finger->session != NULLSESSION)
+	if (finger != NULL) {
+		if (finger->session != NULL)
 			freesession(finger->session);
-		if (finger->user != (char *) NULL)
+		if (finger->user != NULL)
 			free(finger->user);
 		free(finger);
 	}
@@ -170,15 +168,15 @@ register struct tcb *tcb,
 int32 cnt)
 {
 	struct mbuf *bp;
-	char *buf;
+	uint8 *buf;
 
 	/* Make sure it's a valid finger session */
-	if ((struct finger *) tcb->user == NULLFING) {
+	if ((struct finger *) tcb->user == NULL) {
 		return;
 	}
 
 	/* Hold output if we're not the current session */
-	if (Mode != CONV_MODE || Current == NULLSESSION
+	if (Mode != CONV_MODE || Current == NULL
 		|| Current->type != FINGER)
 		return;
 
@@ -190,7 +188,7 @@ int32 cnt)
 	 */
 
 	if (recv_tcp(tcb, &bp, cnt) > 0)
-		while (bp != NULLBUF) {
+		while (bp != NULL) {
 			buf = bp->data;
 			while(bp->cnt--) {
 				switch(*buf) {
@@ -207,7 +205,7 @@ int32 cnt)
 				}
 				buf++;
 			}
-			bp = free_mbuf(bp);
+			bp = free_mbuf(&bp);
 		}
 }
 
@@ -215,8 +213,8 @@ int32 cnt)
 static void
 f_state(
 register struct tcb *tcb,
-int old,        /* old state */
-int new)        /* new state */
+enum tcp_state old,     /* old state */
+enum tcp_state new)     /* new state */
 {
 	struct finger *finger;
 	char notify = 0;
@@ -224,7 +222,7 @@ int new)        /* new state */
 
 	finger = (struct finger *)tcb->user;
 
-	if(Current != NULLSESSION && Current->type == FINGER)
+	if(Current != NULL && Current->type == FINGER)
 		notify = 1;
 
 	switch(new){
@@ -237,7 +235,7 @@ int new)        /* new state */
 
 	case TCP_CLOSED:    /* finish up */
 		if(notify) {
-			printf("%s (%s", Tcpstates[new], Tcpreasons[tcb->reason]);
+			printf("%s (%s", Tcpstates[new], Tcpreasons[tcb->reason & 0xff]);
 			if (tcb->reason == NETWORK){
 				switch(tcb->type){
 				case ICMP_DEST_UNREACH:
@@ -251,7 +249,7 @@ int new)        /* new state */
 			printf(")\n");
 			cmdmode();
 		}
-		if(finger != NULLFING)
+		if(finger != NULL)
 			free_finger(finger);
 		del_tcp(tcb);
 		break;
@@ -261,7 +259,7 @@ int new)        /* new state */
 		}
 		printf("[%s]\n", Current->name);
 		bp = qdata(finger->user, (uint16) strlen(finger->user));
-		send_tcp(tcb, bp);
+		send_tcp(tcb, &bp);
 		break;
 
 	default:

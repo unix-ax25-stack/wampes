@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.h,v 1.9 1993/05/17 13:45:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.h,v 1.10 1995/12/20 09:46:52 deyke Exp $ */
 
 #ifndef _NETUSER_H
 #define _NETUSER_H
@@ -39,7 +39,6 @@ struct socket {
 	int32 address;          /* IP address */
 	uint16 port;            /* port number */
 };
-#define NULLSOCK        (struct socket *)0
 
 /* Connection structure (two sockets) */
 struct connection {

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcptimer.c,v 1.6 1994/10/06 16:15:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcptimer.c,v 1.7 1995/12/20 09:46:56 deyke Exp $ */
 
 /* TCP timeout routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -17,9 +17,10 @@ tcp_timeout(
 void *p)
 {
 	register struct tcb *tcb;
+	int32 ptrsave;
 
 	tcb = (struct tcb *) p;
-	if(tcb == NULLTCB)
+	if(tcb == NULL)
 		return;
 
 	/* Make sure the timer has stopped (we might have been kicked) */
@@ -37,13 +38,16 @@ void *p)
 			close_self(tcb,TIMEOUT);
 			return;
 		}
-		tcb->snd.ptr = tcb->snd.una;
 		/* Reduce slowstart threshold to half current window */
 		tcb->ssthresh = tcb->cwind / 2;
 		tcb->ssthresh = max(tcb->ssthresh,tcb->mss);
 		/* Shrink congestion window to 1 packet */
 		tcb->cwind = tcb->mss;
+		/* Retransmit just the oldest unacked packet */
+		ptrsave = tcb->snd.ptr;
+		tcb->snd.ptr = tcb->snd.una;
 		tcp_output(tcb);
+		tcb->snd.ptr = ptrsave;
 	}
 }
 /* Backoff function - the subject of much research */

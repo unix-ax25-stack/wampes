@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.16 1994/10/09 08:22:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.17 1995/12/20 09:46:54 deyke Exp $ */
 
 /* SLIP (Serial Line IP) encapsulation and control routines.
  * Copyright 1991 Phil Karn
@@ -20,8 +20,8 @@
 #include "trace.h"
 #include "pktdrvr.h"
 
-static struct mbuf *slip_decode(struct slip *sp,char c);
-static struct mbuf *slip_encode(struct mbuf *bp);
+static struct mbuf *slip_decode(struct slip *sp,uint8 c);
+static struct mbuf *slip_encode(struct mbuf **bpp);
 
 /* Slip level control structure */
 struct slip Slip[SLIP_MAX];
@@ -38,7 +38,7 @@ struct iface *ifp)
 
 	for(xdev = 0;xdev < SLIP_MAX;xdev++){
 		sp = &Slip[xdev];
-		if(sp->iface == NULLIF)
+		if(sp->iface == NULL)
 			break;
 	}
 	if(xdev >= SLIP_MAX) {
@@ -73,84 +73,84 @@ struct iface *ifp)
 	struct slip *sp;
 
 	sp = &Slip[ifp->xdev];
-	if(sp->slcomp != NULLSLCOMPR){
+	if(sp->slcomp != NULL){
 		slhc_free(sp->slcomp);
-		sp->slcomp = NULLSLCOMPR;
+		sp->slcomp = NULL;
 	}
-	sp->iface = NULLIF;
+	sp->iface = NULL;
 	return 0;
 }
 /* Send routine for point-to-point slip, no VJ header compression */
 int
 slip_send(
-struct mbuf *bp,        /* Buffer to send */
+struct mbuf **bpp,      /* Buffer to send */
 struct iface *iface,    /* Pointer to interface control block */
 int32 gateway,          /* Ignored (SLIP is point-to-point) */
-int tos)
-{
-	if(iface == NULLIF){
-		free_p(bp);
+uint8 tos
+){
+	if(iface == NULL){
+		free_p(bpp);
 		return -1;
 	}
-	return (*iface->raw)(iface,bp);
+	return (*iface->raw)(iface,bpp);
 }
 /* Send routine for point-to-point slip, with VJ header compression */
 int
 vjslip_send(
-struct mbuf *bp,        /* Buffer to send */
+struct mbuf **bpp,      /* Buffer to send */
 struct iface *iface,    /* Pointer to interface control block */
 int32 gateway,          /* Ignored (SLIP is point-to-point) */
-int tos)
-{
+uint8 tos
+){
 	register struct slip *sp;
 	int type;
 
-	if(iface == NULLIF){
-		free_p(bp);
+	if(iface == NULL){
+		free_p(bpp);
 		return -1;
 	}
 	sp = &Slip[iface->xdev];
 	/* Attempt IP/ICP header compression */
-	type = slhc_compress(sp->slcomp,&bp,TRUE);
-	bp->data[0] |= type;
-	return (*iface->raw)(iface,bp);
+	type = slhc_compress(sp->slcomp,bpp,TRUE);
+	(*bpp)->data[0] |= type;
+	return (*iface->raw)(iface,bpp);
 }
 /* Send a raw slip frame */
 int
 slip_raw(
 struct iface *iface,
-struct mbuf *bp)
-{
+struct mbuf **bpp
+){
 	struct mbuf *bp1;
 
-	dump(iface,IF_TRACE_OUT,bp);
+	dump(iface,IF_TRACE_OUT,*bpp);
 	iface->rawsndcnt++;
 	iface->lastsent = secclock();
-	if((bp1 = slip_encode(bp)) == NULLBUF){
+	if((bp1 = slip_encode(bpp)) == NULL){
 		return -1;
 	}
 	if (iface->trace & IF_TRACE_RAW)
 		raw_dump(iface,-1,bp1);
-	return Slip[iface->xdev].send(iface->dev,bp1);
+	return Slip[iface->xdev].send(iface->dev,&bp1);
 }
 /* Encode a packet in SLIP format */
 static
 struct mbuf *
 slip_encode(
-struct mbuf *bp)
+struct mbuf **bpp)
 {
 	struct mbuf *lbp;       /* Mbuf containing line-ready packet */
-	register char *cp;
+	register uint8 *cp;
 	int c;
 
 	/* Allocate output mbuf that's twice as long as the packet.
 	 * This is a worst-case guess (consider a packet full of FR_ENDs!)
 	 */
-	lbp = alloc_mbuf((uint16)(2*len_p(bp) + 2));
-	if(lbp == NULLBUF){
+	lbp = alloc_mbuf((uint16)(2*len_p(*bpp) + 2));
+	if(lbp == NULL){
 		/* No space; drop */
-		free_p(bp);
-		return NULLBUF;
+		free_p(bpp);
+		return NULL;
 	}
 	cp = lbp->data;
 
@@ -158,7 +158,7 @@ struct mbuf *bp)
 	*cp++ = FR_END;
 
 	/* Copy input to output, escaping special characters */
-	while((c = PULLCHAR(&bp)) != -1){
+	while((c = PULLCHAR(bpp)) != -1){
 		switch(c){
 		case FR_ESC:
 			*cp++ = FR_ESC;
@@ -177,35 +177,35 @@ struct mbuf *bp)
 	return lbp;
 }
 /* Process incoming bytes in SLIP format
- * When a buffer is complete, return it; otherwise NULLBUF
+ * When a buffer is complete, return it; otherwise NULL
  */
 static
 struct mbuf *
 slip_decode(
 register struct slip *sp,
-char c)         /* Incoming character */
+uint8 c)                /* Incoming character */
 {
 	struct mbuf *bp;
 
-	switch(uchar(c)){
+	switch(c){
 	case FR_END:
 		bp = sp->rbp_head;
-		sp->rbp_head = NULLBUF;
+		sp->rbp_head = NULL;
 		if(sp->escaped){
 			/* Treat this as an abort - discard frame */
-			free_p(bp);
-			bp = NULLBUF;
+			free_p(&bp);
+			bp = NULL;
 		}
 		sp->escaped &= ~SLIP_FLAG;
-		return bp;      /* Will be NULLBUF if empty frame */
+		return bp;      /* Will be NULL if empty frame */
 	case FR_ESC:
 		sp->escaped |= SLIP_FLAG;
-		return NULLBUF;
+		return NULL;
 	}
 	if(sp->escaped & SLIP_FLAG){
 		/* Translate 2-char escape sequence back to original char */
 		sp->escaped &= ~SLIP_FLAG;
-		switch(uchar(c)){
+		switch(c){
 		case T_FR_ESC:
 			c = FR_ESC;
 			break;
@@ -220,18 +220,18 @@ char c)         /* Incoming character */
 	/* We reach here with a character for the buffer;
 	 * make sure there's space for it
 	 */
-	if(sp->rbp_head == NULLBUF){
+	if(sp->rbp_head == NULL){
 		/* Allocate first mbuf for new packet */
-		if((sp->rbp_tail = sp->rbp_head = alloc_mbuf(SLIP_ALLOC)) == NULLBUF)
-			return NULLBUF; /* No memory, drop */
+		if((sp->rbp_tail = sp->rbp_head = alloc_mbuf(SLIP_ALLOC)) == NULL)
+			return NULL; /* No memory, drop */
 		sp->rcp = sp->rbp_head->data;
 	} else if(sp->rbp_tail->cnt == SLIP_ALLOC){
 		/* Current mbuf is full; link in another */
-		if((sp->rbp_tail->next = alloc_mbuf(SLIP_ALLOC)) == NULLBUF){
+		if((sp->rbp_tail->next = alloc_mbuf(SLIP_ALLOC)) == NULL){
 			/* No memory, drop whole thing */
-			free_p(sp->rbp_head);
-			sp->rbp_head = NULLBUF;
-			return NULLBUF;
+			free_p(&sp->rbp_head);
+			sp->rbp_head = NULL;
+			return NULL;
 		}
 		sp->rbp_tail = sp->rbp_tail->next;
 		sp->rcp = sp->rbp_tail->data;
@@ -241,7 +241,7 @@ char c)         /* Incoming character */
 	 */
 	*sp->rcp++ = c;
 	sp->rbp_tail->cnt++;
-	return NULLBUF;
+	return NULL;
 }
 
 /* Process SLIP line input */
@@ -262,7 +262,7 @@ struct iface *iface)
 
 	cnt = (*sp->get)(cdev,cp=buf,sizeof(buf));
 	while(--cnt >= 0){
-		if((bp = slip_decode(sp,*cp++)) == NULLBUF)
+		if((bp = slip_decode(sp,*cp++ & 0xff)) == NULL)
 			continue;       /* More to come */
 
 		if (sp->iface->trace & IF_TRACE_RAW)
@@ -271,30 +271,30 @@ struct iface *iface)
 	if(sp->slcomp){
 		if ((c = bp->data[0]) & SL_TYPE_COMPRESSED_TCP) {
 			if ( slhc_uncompress(sp->slcomp, &bp) <= 0 ) {
-				free_p(bp);
+				free_p(&bp);
 				sp->errors++;
 				continue;
 			}
 		} else if (c >= SL_TYPE_UNCOMPRESSED_TCP) {
 			bp->data[0] &= 0x4f;
 			if ( slhc_remember(sp->slcomp, &bp) <= 0 ) {
-				free_p(bp);
+				free_p(&bp);
 				sp->errors++;
 				continue;
 			}
 		}
 	}
-		net_route( sp->iface, bp);
+		net_route( sp->iface, &bp);
 		/* Especially on slow machines, serial I/O can be quite
 		 * compute intensive, so release the machine before we
 		 * do the next packet.  This will allow this packet to
 		 * go on toward its ultimate destination. [Karn]
 		 */
-		pwait(NULL);
+		kwait(NULL);
 	}
 #if 0
 	if(sp->iface->rxproc == Curproc)
-		sp->iface->rxproc = NULLPROC;
+		sp->iface->rxproc = NULL;
 #endif
 }
 

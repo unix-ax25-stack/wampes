@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.15 1994/10/21 11:54:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.16 1995/12/20 09:46:56 deyke Exp $ */
 
 #ifndef _TCP_H
 #define _TCP_H
@@ -39,6 +39,7 @@
 #define MSL2    30      /* Guess at two maximum-segment lifetimes */
 #define MIN_RTO 500L    /* Minimum timeout, milliseconds */
 #define TCP_HDR_PAD     70      /* mbuf size to preallocate for headers */
+#define DEF_WSCALE      0       /* Our window scale option */
 
 #define geniss()        ((int32)msclock() << 12) /* Increment clock at 4 MB/sec */
 
@@ -64,26 +65,34 @@ struct tcp {
 	int32 seq;      /* Sequence number */
 	int32 ack;      /* Acknowledgment number */
 	uint16 wnd;                     /* Receiver flow control window */
-	uint16 checksum;                        /* Checksum */
+	uint16 checksum;                /* Checksum */
 	uint16 up;                      /* Urgent pointer */
 	uint16 mss;                     /* Optional max seg size */
+	uint8 wsopt;                    /* Optional window scale factor */
+	uint32 tsval;                   /* Outbound timestamp */
+	uint32 tsecr;                   /* Timestamp echo field */
 	struct {
-		char congest;   /* Echoed IP congestion experienced bit */
-		char urg;
-		char ack;
-		char psh;
-		char rst;
-		char syn;
-		char fin;
+		unsigned int congest:1; /* Echoed IP congestion experienced bit */
+		unsigned int urg:1;
+		unsigned int ack:1;
+		unsigned int psh:1;
+		unsigned int rst:1;
+		unsigned int syn:1;
+		unsigned int fin:1;
+		unsigned int mss:1;     /* MSS option present */
+		unsigned int wscale:1;  /* Window scale option present */
+		unsigned int tstamp:1;  /* Timestamp option present */
 	} flags;
-	char optlen;                    /* Length of options field, bytes */
-	char options[TCP_MAXOPT];       /* Options field */
 };
 /* TCP options */
 #define EOL_KIND        0
 #define NOOP_KIND       1
 #define MSS_KIND        2
 #define MSS_LENGTH      4
+#define WSCALE_KIND     3
+#define WSCALE_LENGTH   3
+#define TSTAMP_KIND     8
+#define TSTAMP_LENGTH   10
 
 /* Resequencing queue entry */
 struct reseq {
@@ -93,7 +102,20 @@ struct reseq {
 	uint16 length;          /* data length */
 	char tos;               /* Type of service */
 };
-#define NULLRESEQ       (struct reseq *)0
+/* These numbers match those defined in the MIB for TCP connection state */
+enum tcp_state {
+	TCP_CLOSED=1,
+	TCP_LISTEN,
+	TCP_SYN_SENT,
+	TCP_SYN_RECEIVED,
+	TCP_ESTABLISHED,
+	TCP_FINWAIT1,
+	TCP_FINWAIT2,
+	TCP_CLOSE_WAIT,
+	TCP_LAST_ACK,
+	TCP_CLOSING,
+	TCP_TIME_WAIT
+};
 
 /* TCP connection control block */
 struct tcb {
@@ -101,20 +123,7 @@ struct tcb {
 
 	struct connection conn;
 
-	char state;     /* Connection state */
-
-/* These numbers match those defined in the MIB for TCP connection state */
-#define TCP_CLOSED              1
-#define TCP_LISTEN              2
-#define TCP_SYN_SENT            3
-#define TCP_SYN_RECEIVED        4
-#define TCP_ESTABLISHED         5
-#define TCP_FINWAIT1            6
-#define TCP_FINWAIT2            7
-#define TCP_CLOSE_WAIT          8
-#define TCP_LAST_ACK            9
-#define TCP_CLOSING             10
-#define TCP_TIME_WAIT           11
+	enum tcp_state state;   /* Connection state */
 
 	char reason;            /* Reason for closing */
 #define NORMAL          0       /* Normal close */
@@ -123,8 +132,8 @@ struct tcb {
 #define NETWORK         3       /* Network problem (ICMP message) */
 
 /* If reason == NETWORK, the ICMP type and code values are stored here */
-	char type;
-	char code;
+	uint8 type;
+	uint8 code;
 
 	/* Send sequence variables */
 	struct {
@@ -135,6 +144,7 @@ struct tcb {
 		int32 wl2;      /* Ack number used for last window update */
 		int32 wnd;      /* Other end's offered receive window */
 		uint16 up;      /* Send urgent pointer */
+		uint8 wind_scale;/* Send window scale */
 	} snd;
 	int32 iss;              /* Initial send sequence number */
 	int32 resent;           /* Count of bytes retransmitted */
@@ -147,7 +157,11 @@ struct tcb {
 		int32 nxt;      /* Incoming sequence number expected next */
 		int32 wnd;      /* Our offered receive window */
 		uint16 up;      /* Receive urgent pointer */
+		uint8 wind_scale;/* Recv window scale */
 	} rcv;
+	int32 last_ack_sent;    /* Last ack sent for timestamp purposes */
+	int32 ts_recent;        /* Most recent incoming timestamp */
+
 	int32 irs;              /* Initial receive sequence number */
 	int32 rerecv;           /* Count of duplicate bytes received */
 	int32 mss;              /* Maximum segment size */
@@ -159,16 +173,18 @@ struct tcb {
 		/* Call when "significant" amount of data arrives */
 	void (*t_upcall)(struct tcb *tcb,int32 cnt);
 		/* Call when ok to send more data */
-	void (*s_upcall)(struct tcb *tcb,int old,int new);
+	void (*s_upcall)(struct tcb *tcb,enum tcp_state old,enum tcp_state new);
 		/* Call when connection state changes */
-	struct {                /* Control flags */
-		char force;     /* We owe the other end an ACK or window update */
-		char clone;     /* Server-type TCB, cloned on incoming SYN */
-		char retran;    /* A retransmission has occurred */
-		char active;    /* TCB created with an active open */
-		char synack;    /* Our SYN has been acked */
-		char rtt_run;   /* We're timing a segment */
-		char congest;   /* Copy of last IP congest bit received */
+	struct {        /* Control flags */
+		unsigned int force:1;   /* We owe the other end an ACK or window update */
+		unsigned int clone:1;   /* Server-type TCB, cloned on incoming SYN */
+		unsigned int retran:1;  /* A retransmission has occurred */
+		unsigned int active:1;  /* TCB created with an active open */
+		unsigned int synack:1;  /* Our SYN has been acked */
+		unsigned int rtt_run:1; /* We're timing a segment */
+		unsigned int congest:1; /* Copy of last IP congest bit received */
+		unsigned int ts_ok:1;   /* We're using timestamps */
+		unsigned int ws_ok:1;   /* We're using window scaling */
 	} flags;
 	char tos;               /* Type of service (for IP) */
 	int backoff;            /* Backoff interval */
@@ -201,7 +217,6 @@ struct tcb {
 	int32 lastrx;           /* Time of last received data */
 	int32 rxbw;             /* Estimate of receive bandwidth */
 };
-#define NULLTCB (struct tcb *)0
 /* TCP round-trip time cache */
 struct tcp_rtt {
 	int32 addr;             /* Destination IP address */
@@ -209,7 +224,6 @@ struct tcp_rtt {
 	int32 mdev;             /* Most recent mean deviation */
 	struct tcp_rtt *next;   /* Linked-list pointer */
 };
-#define NULLRTT (struct tcp_rtt *)0
 extern struct tcp_rtt *Tcp_rtt;
 extern int (*Kicklist[])();
 
@@ -244,6 +258,7 @@ extern char *Tcpstates[];
 extern char *Tcpreasons[];
 
 /* In tcpcmd.c: */
+extern int Tcp_tstamps;
 extern int32 Tcp_irtt;
 extern uint16 Tcp_limit;
 extern uint16 Tcp_mss;
@@ -254,17 +269,17 @@ extern uint16 Tcp_window;
 void st_tcp(struct tcb *tcb);
 
 /* In tcphdr.c: */
-struct mbuf *htontcp(struct tcp *tcph,struct mbuf *data,
-	struct pseudo_header *ph);
+void htontcp(struct tcp *tcph,struct mbuf **data,
+	int32 ipsrc,int32 ipdest);
 int ntohtcp(struct tcp *tcph,struct mbuf **bpp);
 
 /* In tcpin.c: */
 void reset(struct ip *ip,struct tcp *seg);
 void send_syn(struct tcb *tcb);
-void tcp_input(struct iface *iface,struct ip *ip,struct mbuf *bp,
-	int rxbroadcast);
+void tcp_input(struct iface *iface,struct ip *ip,struct mbuf **bpp,
+	int rxbroadcast,int32 said);
 void tcp_icmp(int32 icsource,int32 source,int32 dest,
-	char type,char code,struct mbuf **bpp);
+	uint8 type,uint8 code,struct mbuf **bpp);
 
 /* In tcpsubr.c: */
 void close_self(struct tcb *tcb,int reason);
@@ -277,9 +292,7 @@ int seq_gt(int32 x,int32 y);
 int seq_le(int32 x,int32 y);
 int seq_lt(int32 x,int32 y);
 int seq_within(int32 x,int32 low,int32 high);
-#undef setstate
-#define setstate set_state /* setstate is used in Linux and BSD */
-void setstate(struct tcb *tcb,int newstate);
+void settcpstate(struct tcb *tcb,enum tcp_state newstate);
 void tcp_garbage(int red);
 
 /* In tcpout.c: */
@@ -298,28 +311,14 @@ struct tcb *open_tcp(struct socket *lsocket,struct socket *fsocket,
 	int mode,uint16 window,
 	void (*r_upcall)(struct tcb *tcb,int32 cnt),
 	void (*t_upcall)(struct tcb *tcb,int32 cnt),
-	void (*s_upcall)(struct tcb *tcb,int old,int new),
+	void (*s_upcall)(struct tcb *tcb,enum tcp_state old,enum tcp_state new),
 	int tos,int user);
 int32 recv_tcp(struct tcb *tcb,struct mbuf **bpp,int32 cnt);
 void reset_all(void);
 void reset_tcp(struct tcb *tcb);
-long send_tcp(struct tcb *tcb,struct mbuf *bp);
+long send_tcp(struct tcb *tcb,struct mbuf **bpp);
 int space_tcp(struct tcb *tcb);
 char *tcp_port(uint16 n);
 int tcpval(struct tcb *tcb);
-
-/* In tcpsocket.c: */
-int so_tcp(struct usock *up,int protocol);
-int so_tcp_listen(struct usock *up,int backlog);
-int so_tcp_conn(struct usock *up);
-int so_tcp_recv(struct usock *up,struct mbuf **bpp,char *from,
-	int *fromlen);
-int so_tcp_send(struct usock *up,struct mbuf *bp,char *to);
-int so_tcp_qlen(struct usock *up,int rtx);
-int so_tcp_kick(struct usock *up);
-int so_tcp_shut(struct usock *up,int how);
-int so_tcp_close(struct usock *up);
-char *tcpstate(struct usock *up);
-int so_tcp_stat(struct usock *up);
 
 #endif  /* _TCP_H */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhcdump.c,v 1.3 1994/10/06 16:15:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhcdump.c,v 1.4 1995/12/20 09:46:54 deyke Exp $ */
 
 #include <stdio.h>
 #include "global.h"
@@ -14,7 +14,7 @@ static uint16
 decodeint(
 struct mbuf **bpp)
 {
-	char tmpbuf[2];
+	uint8 tmpbuf[2];
 
 	pullup(bpp,tmpbuf,1);
 	if (tmpbuf[0] == 0)
@@ -32,18 +32,18 @@ FILE *fp,
 struct mbuf **bpp,
 int unused)
 {
-	char changes;
-	char tmpbuf[2];
+	uint8 changes;
+	uint8 tmpbuf[2];
 
-	if(bpp == NULLBUFP || *bpp == NULLBUF)
+	if(bpp == NULL || *bpp == NULL)
 		return;
 
 	/* Dump compressed TCP/IP header */
 	changes = pullchar(bpp);
-	fprintf(fp,"\tchanges: 0x%02x",uchar(changes));
+	fprintf(fp,"\tchanges: 0x%02x",changes);
 	if (changes & NEW_C) {
 		pullup(bpp,tmpbuf,1);
-		fprintf(fp,"   connection: 0x%02x",uchar(tmpbuf[0]));
+		fprintf(fp,"   connection: 0x%02x",tmpbuf[0]);
 	}
 	pullup(bpp,tmpbuf,2);
 	fprintf(fp,"   TCP checksum: 0x%04x",get16(tmpbuf));
@@ -101,17 +101,17 @@ int unused)
 		fprintf(fp,"serial line VJ Uncompressed TCP: len %3u\n",
 			len = len_p(bp));
 		/* Get our own copy so we can mess with the data */
-		if ( (tbp = copy_p(bp, len)) == NULLBUF )
+		if ( (tbp = copy_p(bp, len)) == NULL )
 			return;
 
 		fprintf(fp,"\tconnection ID = %d\n",
-			uchar(tbp->data[9]));   /* FIX THIS! */
+			tbp->data[9]);  /* FIX THIS! */
 		/* Restore the bytes used with Uncompressed TCP */
 		tbp->data[0] &= 0x4f;           /* FIX THIS! */
 		tbp->data[9] = TCP_PTCL;        /* FIX THIS! */
 		/* Dump contents as a regular IP packet */
 		ip_dump(fp,&tbp,1);
-		free_p(tbp);
+		free_p(&tbp);
 	} else {
 		fprintf(fp,"serial line IP: len: %3u\n",len_p(*bpp));
 		ip_dump(fp,bpp,1);

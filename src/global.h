@@ -1,7 +1,31 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.36 1995/03/13 13:32:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.37 1995/12/20 09:46:44 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
+
+#ifdef ibm032
+#include <stddef.h>
+typedef int pid_t;
+#endif
+
+#include <stdlib.h>
+#include <string.h>
+
+#if defined sun
+
+#define memcmp(s1, s2, n) \
+	memcmp((char *) (s1), (char *) (s2), n)
+
+#define memcpy(s1, s2, n) \
+	memcpy((char *) (s1), (char *) (s2), n)
+
+#define memchr(s, c, n) \
+	memchr((char *) s, c, n)
+
+#define memset(s, c, n) \
+	memset((char *) (s), c, n)
+
+#endif
 
 /* Global definitions used by every source file.
  * Some may be compiler dependent.
@@ -79,11 +103,12 @@
  * but it doesn't matter if they're signed or unsigned.
  */
 typedef long int32;             /* 32-bit signed integer */
+typedef unsigned long uint32;   /* 32-bit unsigned integer */
 typedef unsigned short uint16;  /* 16-bit unsigned integer */
 typedef unsigned char byte_t;   /*  8-bit unsigned integer */
-#define uchar(x) ((unsigned char)(x))
-#define MAXINT16 65535          /* Largest 16-bit integer */
-#define MAXINT32 4294967295UL   /* Largest 32-bit integer */
+typedef unsigned char uint8;    /* 8-bit unsigned integer */
+#define MAXINT16 0xffff         /* Largest 16-bit integer */
+#define MAXINT32 0x7fffffff     /* Largest 32-bit integer */
 #define NBBY    8               /* 8 bits/byte */
 
 #define HASHMOD 7               /* Modulus used by hash_ip() function */
@@ -99,11 +124,11 @@ typedef unsigned char byte_t;   /*  8-bit unsigned integer */
  * memory model definitions are on; this avoids having to change them when
  * porting to 68K environments.
  */
-#if     !defined(__TINY__) && !defined(__SMALL__) && !defined(__MEDIUM__)
+#if     !defined(__TINY__) && !defined(__SMALL__) && !defined(__MEDIUM__) && !defined(__GNUC__)
 #define LARGEDATA       1
 #endif
 
-#if     !defined(__TINY__) && !defined(__SMALL__) && !defined(__COMPACT__)
+#if     !defined(__TINY__) && !defined(__SMALL__) && !defined(__COMPACT__) && !defined(__GNUC__)
 #define LARGECODE       1
 #endif
 
@@ -121,13 +146,6 @@ typedef unsigned char byte_t;   /*  8-bit unsigned integer */
 /* General purpose NULL pointer */
 #define NULL 0
 #endif
-#define NULLCHAR (char *)0      /* Null character pointer */
-#define NULLCHARP (char **)0    /* Null character pointer pointer */
-#define NULLINT (int *)0        /* Null integer pointer */
-#define NULLFP 0                /* Null pointer to function returning int */
-#define NULLVFP 0               /* Null pointer to function returning void */
-#define NULLVIFP (INTERRUPT (*)())0
-#define NULLFILE (FILE *)0      /* Null file pointer */
 
 /* standard boolean constants */
 #define FALSE 0
@@ -196,20 +214,23 @@ typedef unsigned char byte_t;   /*  8-bit unsigned integer */
 int availmem(void);
 void *callocw(unsigned nelem,unsigned size);
 int dirps(void);
+#define FREE(p)         {free(p); p = NULL;}
+void getrand(unsigned char *buf,int len);
 int htob(char c);
 int htoi(char *);
-int readhex(char *,char *,int);
+int readhex(uint8 *,char *,int);
 long htol(char *);
 char *inbuf(uint16 port,char *buf,uint16 cnt);
 uint16 hash_ip(int32 addr);
 int istate(void);
-void log(void *tcb,const char *fmt,const char *arg);
-int log2(uint16 x);
+void logmsg(void *tcb,const char *fmt,const char *arg);
+int ilog2(uint16 x);
 #define ltop(x) ((void *) (x))
 void *mallocw(unsigned nb);
-int memcnt(char *buf,char c,int size);
+int memcnt(uint8 *buf,uint8 c,int size);
+void memxor(uint8 *,uint8 *,unsigned int);
 char *outbuf(uint16 port,char *buf,uint16 cnt);
-#define ptol(x) ((long) (x))
+int32 rdclock(void);
 void restore(int);
 void rip(char *);
 char *smsg(char *msgs[],unsigned nmsgs,unsigned n);
@@ -217,17 +238,8 @@ void stktrace(void);
 #if 0
 char *strdup(const char *);
 #endif
+int urandom(unsigned int n);
 int wildmat(char *s,char *p,char **argv);
-
-#ifdef ibm032
-#include <stddef.h>
-typedef int pid_t;
-#endif
-
-#include <stdlib.h>
-#ifndef ibm032
-#include <string.h>
-#endif
 
 int stricmp(char *s1, char *s2);
 int strnicmp(char *s1, char *s2, size_t maxlen);
@@ -284,7 +296,7 @@ extern char Badhost[];
 extern char Nospace[];
 extern char Notval[];
 extern char *Hostname;
-extern char Version[];
+extern char *Version;
 extern char Whitespace[];
 
 /* Your system's end-of-line convention */

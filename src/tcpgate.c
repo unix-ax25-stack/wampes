@@ -1,12 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.13 1994/10/09 08:22:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.14 1995/12/20 09:46:55 deyke Exp $ */
 
 #include "global.h"
 
 #include <sys/types.h>
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -39,13 +37,13 @@ static void tcp_send(struct tcb *tcb)
   if (!(bp = alloc_mbuf(cnt))) return;
   cnt = read(tcb->user, bp->data, (unsigned) cnt);
   if (cnt <= 0) {
-    free_p(bp);
+    free_p(&bp);
     off_read(tcb->user);
     close_tcp(tcb);
     return;
   }
   bp->cnt = cnt;
-  send_tcp(tcb, bp);
+  send_tcp(tcb, &bp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -60,7 +58,7 @@ static void tcp_receive(struct tcb *tcb, int32 cnt)
     recv_tcp(tcb, &bp, 0);
     while ((cnt = pullup(&bp, buffer, sizeof(buffer))) > 0)
       if (write(tcb->user, buffer, (unsigned) cnt) != cnt) {
-	free_p(bp);
+	free_p(&bp);
 	close_tcp(tcb);
 	return;
       }
@@ -76,7 +74,7 @@ static void tcp_ready(struct tcb *tcb, int32 cnt)
 
 /*---------------------------------------------------------------------------*/
 
-static void tcp_state(struct tcb *tcb, int old, int new)
+static void tcp_state(struct tcb *tcb, enum tcp_state old, enum tcp_state new)
 {
 
   int addrlen;
@@ -89,7 +87,7 @@ static void tcp_state(struct tcb *tcb, int old, int new)
 #else
   case TCP_ESTABLISHED:
 #endif
-    log(tcb, "open %s", tcp_port_name(tcb->conn.local.port));
+    logmsg(tcb, "open %s", tcp_port_name(tcb->conn.local.port));
     for (dp = dests; dp && dp->port != tcb->conn.local.port; dp = dp->next) ;
     if (!dp ||
 	!(addr = build_sockaddr(dp->name, &addrlen)) ||
@@ -105,11 +103,13 @@ static void tcp_state(struct tcb *tcb, int old, int new)
     return;
   case TCP_CLOSED:
     if (tcb->user > 0) {
-      log(tcb, "close %s", tcp_port_name(tcb->conn.local.port));
+      logmsg(tcb, "close %s", tcp_port_name(tcb->conn.local.port));
       off_read(tcb->user);
       close(tcb->user);
     }
     del_tcp(tcb);
+    break;
+  default:
     break;
   }
 }
@@ -140,7 +140,6 @@ int tcpgate1(int argc, char *argv[], void *p)
   }
   if (dp->name) free(dp->name);
   dp->name = strdup(name);
-  open_tcp(&lsocket, NULLSOCK, TCP_SERVER, 0, tcp_receive, tcp_ready, tcp_state, 0, 0);
+  open_tcp(&lsocket, NULL, TCP_SERVER, 0, tcp_receive, tcp_ready, tcp_state, 0, 0);
   return 0;
 }
-

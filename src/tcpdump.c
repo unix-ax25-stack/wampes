@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpdump.c,v 1.8 1994/10/06 16:15:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpdump.c,v 1.9 1995/12/20 09:46:55 deyke Exp $ */
 
 /* TCP header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -36,7 +36,7 @@ int check)              /* 0 if checksum test is to be bypassed */
 	uint16 csum;
 	uint16 dlen;
 
-	if(bpp == NULLBUFP || *bpp == NULLBUF)
+	if(bpp == NULL || *bpp == NULL)
 		return;
 
 	/* Verify checksum */
@@ -70,8 +70,12 @@ int check)              /* 0 if checksum test is to be bypassed */
 	if(seg.flags.urg)
 		fprintf(fp," UP x%x",seg.up);
 	/* Print options, if any */
-	if(seg.mss != 0)
+	if(seg.flags.mss)
 		fprintf(fp," MSS %u",seg.mss);
+	if(seg.flags.wscale)
+		fprintf(fp," WSCALE %u",seg.wsopt);
+	if(seg.flags.tstamp)
+		fprintf(fp," TSTAMP %lu TSECHO %lu",seg.tsval,seg.tsecr);
 	if((dlen = len_p(*bpp)) != 0)
 		fprintf(fp," Data %u",dlen);
 	if(check && csum != 0)

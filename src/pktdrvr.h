@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pktdrvr.h,v 1.7 1993/05/17 13:45:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pktdrvr.h,v 1.8 1995/12/20 09:46:52 deyke Exp $ */
 
 #ifndef _PKTDRVR_H
 #define _PKTDRVR_H
@@ -82,8 +82,8 @@
 
 typedef union {
 	struct {
-		unsigned char lo;
-		unsigned char hi;
+		uint8 lo;
+		uint8 hi;
 	} byte;
 	unsigned short word;
 } ureg;
@@ -97,16 +97,16 @@ struct pktdrvr {
 	short handle2;
 	short handle3;
 	struct mbuf *buffer;    /* Currently allocated rx buffer */
-	struct mbuf *rcvq;      /* Receive queue */
 	struct iface *iface;
 };
 
 extern struct pktdrvr Pktdrvr[];
 
 /* In pktdrvr.c: */
-char *pkint(int dev,unsigned short cx, unsigned short ax);
+uint8 *pkint(int dev,unsigned short cx, unsigned short ax);
 void pk_tx(int dev,void *arg1,void *unused);
-int pk_send(struct mbuf *bp,struct iface *iface,int32 gateway,int tos);
+int pk_send(struct mbuf **bpp,struct iface *iface,int32 gateway,uint8 tos);
+extern char Pkt_sig[];
 
 /* In pkvec.asm: */
 INTERRUPT pkvec0(void);

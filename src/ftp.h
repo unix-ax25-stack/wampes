@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.h,v 1.9 1994/10/09 08:22:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.h,v 1.10 1995/12/20 09:46:44 deyke Exp $ */
 
 #ifndef _FTP_H
 #define _FTP_H
@@ -6,9 +6,11 @@
 #include <stdio.h>
 
 /* Definitions common to both FTP servers and clients */
-#define ASCII_TYPE      0
-#define IMAGE_TYPE      1
-#define LOGICAL_TYPE    2
+enum ftp_type {
+	ASCII_TYPE,
+	IMAGE_TYPE,
+	LOGICAL_TYPE
+};
 
 struct ftp {
 	struct ftp *prev;       /* Linked list pointers */
@@ -38,8 +40,6 @@ struct ftp {
 	int gid;                /* Group ID */
 	struct session *session;
 };
-
-#define NULLFTP (struct ftp *)0
 
 /* In ftp.c: */
 void ftpdr(struct tcb *tcb, int32 cnt);

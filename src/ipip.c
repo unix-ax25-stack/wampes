@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.15 1994/10/06 16:15:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.16 1995/12/20 09:46:46 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -13,8 +13,6 @@
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -29,7 +27,7 @@
 #include "cmdparse.h"
 #include "hpux.h"
 
-struct route *rt_add(int32 target, unsigned int bits, int32 gateway, struct iface *iface, int32 metric, int32 ttl, char private);
+struct route *rt_add(int32 target, unsigned int bits, int32 gateway, struct iface *iface, int32 metric, int32 ttl, uint8 private);
 
 #define MAX_FRAME       2048
 
@@ -43,7 +41,7 @@ struct edv_t {
 
 /*---------------------------------------------------------------------------*/
 
-static int ipip_send(struct mbuf *data, struct iface *ifp, int32 gateway, int tos)
+static int ipip_send(struct mbuf **bpp, struct iface *ifp, int32 gateway, uint8 tos)
 {
 
   char buf[MAX_FRAME];
@@ -51,17 +49,17 @@ static int ipip_send(struct mbuf *data, struct iface *ifp, int32 gateway, int to
   struct edv_t *edv;
   struct sockaddr_in addr;
 
-  dump(ifp, IF_TRACE_OUT, data);
+  dump(ifp, IF_TRACE_OUT, *bpp);
   ifp->rawsndcnt++;
   ifp->lastsent = secclock();
 
   if (ifp->trace & IF_TRACE_RAW)
-    raw_dump(ifp, -1, data);
+    raw_dump(ifp, -1, *bpp);
 
-  l = pullup(&data, buf, sizeof(buf));
-  if (l <= 0 || data) {
-    free_p(data);
-    return (-1);
+  l = pullup(bpp, buf, sizeof(buf));
+  if (l <= 0 || *bpp) {
+    free_p(bpp);
+    return -1;
   }
 
   edv = (struct edv_t *) ifp->edv;
@@ -70,7 +68,7 @@ static int ipip_send(struct mbuf *data, struct iface *ifp, int32 gateway, int to
   addr.sin_addr.s_addr = htonl(gateway);
   addr.sin_port = htons(edv->port);
 
-  sendto(edv->fd, buf, l, 0, (struct sockaddr *) & addr, sizeof(addr));
+  sendto(edv->fd, buf, l, 0, (struct sockaddr *) &addr, sizeof(addr));
 
   return l;
 }
@@ -80,8 +78,6 @@ static int ipip_send(struct mbuf *data, struct iface *ifp, int32 gateway, int to
 static void ipip_receive(void *argp)
 {
 
-  char *bufptr;
-  char buf[MAX_FRAME];
   int addrlen;
   int hdr_len;
   int l;
@@ -89,12 +85,15 @@ static void ipip_receive(void *argp)
   struct edv_t *edv;
   struct iface *ifp;
   struct ip *ipptr;
+  struct mbuf *bp;
   struct sockaddr_in addr;
+  uint8 buf[MAX_FRAME];
+  uint8 *bufptr;
 
   ifp = (struct iface *) argp;
   edv = (struct edv_t *) ifp->edv;
   addrlen = sizeof(addr);
-  l = recvfrom(edv->fd, bufptr = buf, sizeof(buf), 0, (struct sockaddr *) & addr, &addrlen);
+  l = recvfrom(edv->fd, (char *) (bufptr = buf), sizeof(buf), 0, (struct sockaddr *) & addr, &addrlen);
   if (edv->type == USE_IP) {
     if (l <= sizeof(struct ip )) goto Fail;
     ipptr = (struct ip *) bufptr;
@@ -104,10 +103,11 @@ static void ipip_receive(void *argp)
   }
   if (l <= 0) goto Fail;
 
-  if ((ipaddr = get32(bufptr + 12)) && ismyaddr(ipaddr) == NULLIF)
+  if ((ipaddr = get32(bufptr + 12)) && ismyaddr(ipaddr) == NULL)
     rt_add(ipaddr, 32, (int32) ntohl(addr.sin_addr.s_addr), ifp, 1L, 0x7fffffff / 1000, 0);
 
-  net_route(ifp, qdata(bufptr, l));
+  bp = qdata(bufptr, l);
+  net_route(ifp, &bp);
   return;
 
 Fail:
@@ -129,9 +129,9 @@ int ipip_attach(int argc, char *argv[], void *p)
 
   if (argc >= 2) ifname = argv[1];
 
-  if (if_lookup(ifname) != NULLIF) {
+  if (if_lookup(ifname) != NULL) {
     printf("Interface %s already exists\n", ifname);
-    return (-1);
+    return -1;
   }
 
   if (argc >= 3)
@@ -146,7 +146,7 @@ int ipip_attach(int argc, char *argv[], void *p)
       break;
     default:
       printf("Type must be IP or UDP\n");
-      return (-1);
+      return -1;
     }
 
   if (argc >= 4) port = atoi(argv[3]);
@@ -157,18 +157,18 @@ int ipip_attach(int argc, char *argv[], void *p)
     fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (fd < 0) {
     printf("cannot create socket: %s\n", strerror(errno));
-    return (-1);
+    return -1;
   }
 
   if (type == USE_UDP) {
-    memset((char *) &addr, 0, sizeof(addr));
+    memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(port);
     if (bind(fd, (struct sockaddr *) &addr, sizeof(addr))) {
       printf("cannot bind address: %s\n", strerror(errno));
       close(fd);
-      return (-1);
+      return -1;
     }
   }
 
@@ -195,4 +195,3 @@ int ipip_attach(int argc, char *argv[], void *p)
 
   return 0;
 }
-

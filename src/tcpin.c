@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.13 1994/10/09 08:22:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.14 1995/12/20 09:46:55 deyke Exp $ */
 
 /* Process incoming TCP segments. Page number references are to ARPA RFC-793,
  * the TCP specification.
@@ -16,10 +16,10 @@
 #include "ip.h"
 
 static void update(struct tcb *tcb,struct tcp *seg,uint16 length);
-static void proc_syn(struct tcb *tcb,char tos,struct tcp *seg);
-static void add_reseq(struct tcb *tcb,char tos,struct tcp *seg,
-	struct mbuf *bp,uint16 length);
-static void get_reseq(struct tcb *tcb,char *tos,struct tcp *seq,
+static void proc_syn(struct tcb *tcb,uint8 tos,struct tcp *seg);
+static void add_reseq(struct tcb *tcb,uint8 tos,struct tcp *seg,
+	struct mbuf **bp,uint16 length);
+static void get_reseq(struct tcb *tcb,uint8 *tos,struct tcp *seq,
 	struct mbuf **bp,uint16 *length);
 static int trim(struct tcb *tcb,struct tcp *seg,struct mbuf **bpp,
 	uint16 *length);
@@ -32,9 +32,10 @@ void
 tcp_input(
 struct iface *iface,    /* Incoming interface (ignored) */
 struct ip *ip,          /* IP header */
-struct mbuf *bp,        /* Data field, if any */
-int rxbroadcast)        /* Incoming broadcast - discard if true */
-{
+struct mbuf **bpp,      /* Data field, if any */
+int rxbroadcast,        /* Incoming broadcast - discard if true */
+int32 said              /* Authenticated packet */
+){
 	struct tcb *ntcb;
 	register struct tcb *tcb;       /* TCP Protocol control block */
 	struct tcp seg;                 /* Local copy of segment header */
@@ -44,7 +45,7 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 	uint16 length;
 	int32 t;
 
-	if(bp == NULLBUF)
+	if(bpp == NULL || *bpp == NULL)
 		return;
 
 	tcpInSegs++;
@@ -52,7 +53,7 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 		/* Any TCP packet arriving as a broadcast is
 		 * to be completely IGNORED!!
 		 */
-		free_p(bp);
+		free_p(bpp);
 		return;
 	}
 	length = ip->length - IPLEN - ip->optlen;
@@ -60,16 +61,16 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 	ph.dest = ip->dest;
 	ph.protocol = ip->protocol;
 	ph.length = length;
-	if(cksum(&ph,bp,length) != 0){
+	if(cksum(&ph,*bpp,length) != 0){
 		/* Checksum failed, ignore segment completely */
 		tcpInErrs++;
-		free_p(bp);
+		free_p(bpp);
 		return;
 	}
 	/* Form local copy of TCP header in host byte order */
-	if((hdrlen = ntohtcp(&seg,&bp)) < 0){
+	if((hdrlen = ntohtcp(&seg,bpp)) < 0){
 		/* TCP header is too small */
-		free_p(bp);
+		free_p(bpp);
 		return;
 	}
 	length -= hdrlen;
@@ -80,10 +81,10 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 	conn.remote.address = ip->source;
 	conn.remote.port = seg.source;
 
-	if((tcb = lookup_tcb(&conn)) == NULLTCB){
+	if((tcb = lookup_tcb(&conn)) == NULL){
 		/* If this segment doesn't carry a SYN, reject it */
 		if(!seg.flags.syn){
-			free_p(bp);
+			free_p(bpp);
 			reset(ip,&seg);
 			return;
 		}
@@ -92,12 +93,12 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 		 */
 		conn.remote.address = 0;
 		conn.remote.port = 0;
-		if((tcb = lookup_tcb(&conn)) == NULLTCB){
+		if((tcb = lookup_tcb(&conn)) == NULL){
 			/* Nope, try unspecified local address too */
 			conn.local.address = 0;
-			if((tcb = lookup_tcb(&conn)) == NULLTCB){
+			if((tcb = lookup_tcb(&conn)) == NULL){
 				/* No LISTENs, so reject */
-				free_p(bp);
+				free_p(bpp);
 				reset(ip,&seg);
 				return;
 			}
@@ -121,16 +122,16 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 	/* Do unsynchronized-state processing (p. 65-68) */
 	switch(tcb->state){
 	case TCP_CLOSED:
-		free_p(bp);
+		free_p(bpp);
 		reset(ip,&seg);
 		return;
 	case TCP_LISTEN:
 		if(seg.flags.rst){
-			free_p(bp);
+			free_p(bpp);
 			return;
 		}
 		if(seg.flags.ack){
-			free_p(bp);
+			free_p(bpp);
 			reset(ip,&seg);
 			return;
 		}
@@ -139,19 +140,19 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 			/* page 66 */
 			proc_syn(tcb,ip->tos,&seg);
 			send_syn(tcb);
-			setstate(tcb,TCP_SYN_RECEIVED);
+			settcpstate(tcb,TCP_SYN_RECEIVED);
 			if(length != 0 || seg.flags.fin) {
 				/* Continue processing if there's more */
 				break;
 			}
 			tcp_output(tcb);
 		}
-		free_p(bp);     /* Unlikely to get here directly */
+		free_p(bpp);    /* Unlikely to get here directly */
 		return;
 	case TCP_SYN_SENT:
 		if(seg.flags.ack){
 			if(!seq_within(seg.ack,tcb->iss+1,tcb->snd.nxt)){
-				free_p(bp);
+				free_p(bpp);
 				reset(ip,&seg);
 				return;
 			}
@@ -163,14 +164,14 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 				 */
 				close_self(tcb,RESET);
 			}
-			free_p(bp);
+			free_p(bpp);
 			return;
 		}
 		/* (Security check skipped here) */
 #ifdef  PREC_CHECK      /* Turned off for compatibility with BSD */
 		/* Check incoming precedence; it must match if there's an ACK */
 		if(seg.flags.ack && PREC(ip->tos) != PREC(tcb->tos)){
-			free_p(bp);
+			free_p(bpp);
 			reset(ip,&seg);
 			return;
 		}
@@ -182,26 +183,28 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 				 * wouldn't have been valid.
 				 */
 				update(tcb,&seg,length);
-				setstate(tcb,TCP_ESTABLISHED);
+				settcpstate(tcb,TCP_ESTABLISHED);
 			} else {
-				setstate(tcb,TCP_SYN_RECEIVED);
+				settcpstate(tcb,TCP_SYN_RECEIVED);
 			}
 			if(length != 0 || seg.flags.fin) {
 				break;          /* Continue processing if there's more */
 			}
 			tcp_output(tcb);
 		} else {
-			free_p(bp);     /* Ignore if neither SYN or RST is set */
+			free_p(bpp);    /* Ignore if neither SYN or RST is set */
 		}
 		return;
+	default:
+		break;
 	}
 	/* We reach this point directly in any synchronized state. Note that
 	 * if we fell through from LISTEN or SYN_SENT processing because of a
 	 * data-bearing SYN, window trimming and sequence testing "cannot fail".
+	 *
+	 * Begin by trimming segment to fit receive window.
 	 */
-
-	/* Trim segment to fit receive window. */
-	if(trim(tcb,&seg,&bp,&length) == -1){
+	if(trim(tcb,&seg,bpp,&length) == -1){
 		/* Segment is unacceptable */
 		if(!seg.flags.rst){     /* NEVER answer RSTs */
 			/* In SYN_RECEIVED state, answer a retransmitted SYN
@@ -216,24 +219,24 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 	}
 	/* If segment isn't the next one expected, and there's data
 	 * or flags associated with it, put it on the resequencing
-	 * queue, ACK it and return.
-	 *
-	 * Processing the ACK in an out-of-sequence segment without
-	 * flags or data should be safe, however.
+	 * queue and remind ourselves to ACK it. Then strip off
+	 * the SYN/data/FIN and continue to process the ACK (or RST)
 	 */
 	if(seg.seq != tcb->rcv.nxt
 	 && (length != 0 || seg.flags.syn || seg.flags.fin)){
-		add_reseq(tcb,ip->tos,&seg,bp,length);
-		tcb->flags.force = 1;
-		tcp_output(tcb);
-		return;
+		add_reseq(tcb,ip->tos,&seg,bpp,length);
+		if(seg.flags.ack && !seg.flags.rst)
+			tcb->flags.force = 1;
+		seg.flags.syn = seg.flags.fin = 0;
+		length = 0;
 	}
 	/* This loop first processes the current segment, and then
 	 * repeats if it can process the resequencing queue.
 	 */
 	for(;;){
-		/* We reach this point with an acceptable segment; all data and flags
-		 * are in the window, and the starting sequence number equals rcv.nxt
+		/* We reach this point with an acceptable segment; data and flags
+		 * (if any) are in the window, and if there's data, syn or fin,
+		 * the starting sequence number equals rcv.nxt
 		 * (p. 70)
 		 */
 		if(seg.flags.rst){
@@ -242,31 +245,35 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 				/* Go back to listen state only if this was
 				 * not a cloned or active server TCB
 				 */
-				setstate(tcb,TCP_LISTEN);
+				settcpstate(tcb,TCP_LISTEN);
 			} else {
 				close_self(tcb,RESET);
 			}
-			free_p(bp);
+			free_p(bpp);
 			return;
 		}
 		/* (Security check skipped here) p. 71 */
 #ifdef  PREC_CHECK
 		/* Check for precedence mismatch */
 		if(PREC(ip->tos) != PREC(tcb->tos)){
-			free_p(bp);
+			free_p(bpp);
 			reset(ip,&seg);
 			return;
 		}
 #endif
 		/* Check for erroneous extra SYN */
 		if(seg.flags.syn){
-			free_p(bp);
+			free_p(bpp);
 			reset(ip,&seg);
 			return;
 		}
+		/* Update timestamp field */
+		if(seg.flags.tstamp
+		 && seq_within(tcb->last_ack_sent,seg.seq,seg.seq+length))
+			tcb->ts_recent = seg.tsval;
 		/* Check ack field p. 72 */
 		if(!seg.flags.ack){
-			free_p(bp);     /* All segments after synchronization must have ACK */
+			free_p(bpp);    /* All segments after synchronization must have ACK */
 			return;
 		}
 		/* Process ACK */
@@ -274,32 +281,30 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 		case TCP_SYN_RECEIVED:
 			if(seq_within(seg.ack,tcb->snd.una+1,tcb->snd.nxt)){
 				update(tcb,&seg,length);
-				setstate(tcb,TCP_ESTABLISHED);
+				settcpstate(tcb,TCP_ESTABLISHED);
 			} else {
-				free_p(bp);
+				free_p(bpp);
 				reset(ip,&seg);
 				return;
 			}
 			break;
 		case TCP_ESTABLISHED:
 		case TCP_CLOSE_WAIT:
+		case TCP_FINWAIT2:
 			update(tcb,&seg,length);
 			break;
 		case TCP_FINWAIT1:      /* p. 73 */
 			update(tcb,&seg,length);
 			if(tcb->sndcnt == 0){
 				/* Our FIN is acknowledged */
-				setstate(tcb,TCP_FINWAIT2);
+				settcpstate(tcb,TCP_FINWAIT2);
 			}
-			break;
-		case TCP_FINWAIT2:
-			update(tcb,&seg,length);
 			break;
 		case TCP_CLOSING:
 			update(tcb,&seg,length);
 			if(tcb->sndcnt == 0){
 				/* Our FIN is acknowledged */
-				setstate(tcb,TCP_TIME_WAIT);
+				settcpstate(tcb,TCP_TIME_WAIT);
 				set_timer(&tcb->timer,MSL2*1000L);
 				start_timer(&tcb->timer);
 			}
@@ -314,6 +319,8 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 			break;
 		case TCP_TIME_WAIT:
 			start_timer(&tcb->timer);
+			break;
+		default:
 			break;
 		}
 
@@ -332,7 +339,7 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 					tcb->rxbw = 1000L*length / (t - tcb->lastrx);
 					tcb->lastrx = t;
 				}
-				append(&tcb->rcvq,bp);
+				append(&tcb->rcvq,bpp);
 				tcb->rcvcnt += length;
 				tcb->rcv.nxt += length;
 				tcb->rcv.wnd -= length;
@@ -343,7 +350,7 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 				break;
 			default:
 				/* Ignore segment text */
-				free_p(bp);
+				free_p(bpp);
 				break;
 			}
 		}
@@ -355,22 +362,22 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 			case TCP_SYN_RECEIVED:
 			case TCP_ESTABLISHED:
 				tcb->rcv.nxt++;
-				setstate(tcb,TCP_CLOSE_WAIT);
+				settcpstate(tcb,TCP_CLOSE_WAIT);
 				break;
 			case TCP_FINWAIT1:
 				tcb->rcv.nxt++;
 				if(tcb->sndcnt == 0){
 					/* Our FIN has been acked; bypass TCP_CLOSING state */
-					setstate(tcb,TCP_TIME_WAIT);
+					settcpstate(tcb,TCP_TIME_WAIT);
 					set_timer(&tcb->timer,MSL2*1000L);
 					start_timer(&tcb->timer);
 				} else {
-					setstate(tcb,TCP_CLOSING);
+					settcpstate(tcb,TCP_CLOSING);
 				}
 				break;
 			case TCP_FINWAIT2:
 				tcb->rcv.nxt++;
-				setstate(tcb,TCP_TIME_WAIT);
+				settcpstate(tcb,TCP_TIME_WAIT);
 				set_timer(&tcb->timer,MSL2*1000L);
 				start_timer(&tcb->timer);
 				break;
@@ -381,6 +388,8 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 			case TCP_TIME_WAIT:     /* p 76 */
 				start_timer(&tcb->timer);
 				break;
+			default:
+				break;
 			}
 			/* Call the client again so he can see EOF */
 			if(tcb->r_upcall)
@@ -389,9 +398,9 @@ int rxbroadcast)        /* Incoming broadcast - discard if true */
 		/* Scan the resequencing queue, looking for a segment we can handle,
 		 * and freeing all those that are now obsolete.
 		 */
-		while(tcb->reseq != NULLRESEQ && seq_ge(tcb->rcv.nxt,tcb->reseq->seg.seq)){
-			get_reseq(tcb,&ip->tos,&seg,&bp,&length);
-			if(trim(tcb,&seg,&bp,&length) == 0)
+		while(tcb->reseq != NULL && seq_ge(tcb->rcv.nxt,tcb->reseq->seg.seq)){
+			get_reseq(tcb,&ip->tos,&seg,bpp,&length);
+			if(trim(tcb,&seg,bpp,&length) == 0)
 				goto gotone;
 			/* Segment is an old one; trim has freed it */
 		}
@@ -407,9 +416,10 @@ tcp_icmp(
 int32 icsource,                 /* Sender of ICMP message (not used) */
 int32 source,                   /* Original IP datagram source (i.e. us) */
 int32 dest,                     /* Original IP datagram dest (i.e., them) */
-char type,char code,            /* ICMP error codes */
-struct mbuf **bpp)              /* First 8 bytes of TCP header */
-{
+uint8 type,                     /* ICMP error codes */
+uint8 code,
+struct mbuf **bpp               /* First 8 bytes of TCP header */
+){
 	struct tcp seg;
 	struct connection conn;
 	register struct tcb *tcb;
@@ -423,7 +433,7 @@ struct mbuf **bpp)              /* First 8 bytes of TCP header */
 	conn.remote.port = seg.dest;
 	conn.local.address = source;
 	conn.remote.address = dest;
-	if((tcb = lookup_tcb(&conn)) == NULLTCB)
+	if((tcb = lookup_tcb(&conn)) == NULL)
 		return; /* Unknown connection, ignore */
 
 	/* Verify that the sequence number in the returned segment corresponds
@@ -436,7 +446,7 @@ struct mbuf **bpp)              /* First 8 bytes of TCP header */
 	/* Destination Unreachable and Time Exceeded messages never kill a
 	 * connection; the info is merely saved for future reference.
 	 */
-	switch(uchar(type)){
+	switch(type){
 	case ICMP_DEST_UNREACH:
 	case ICMP_TIME_EXCEED:
 		tcb->type = type;
@@ -464,17 +474,10 @@ struct ip *ip,                  /* Offending IP header */
 register struct tcp *seg)       /* Offending TCP header */
 {
 	struct mbuf *hbp;
-	struct pseudo_header ph;
 	uint16 tmp;
 
 	if(seg->flags.rst)
 		return; /* Never send an RST in response to an RST */
-
-	/* Compose the RST IP pseudo-header, swapping addresses */
-	ph.source = ip->dest;
-	ph.dest = ip->source;
-	ph.protocol = TCP_PTCL;
-	ph.length = TCPLEN;
 
 	/* Swap port numbers */
 	tmp = seg->source;
@@ -505,14 +508,18 @@ register struct tcp *seg)       /* Offending TCP header */
 	seg->flags.rst = 1;
 	seg->flags.syn = 0;
 	seg->flags.fin = 0;
+	seg->flags.mss = 0;
+	seg->flags.wscale = 0;
+	seg->flags.tstamp = 0;
 	seg->wnd = 0;
 	seg->up = 0;
-	seg->mss = 0;
-	seg->optlen = 0;
-	if((hbp = htontcp(seg,NULLBUF,&ph)) == NULLBUF)
-		return;
+	seg->checksum = 0;      /* force recomputation */
+
+	hbp = ambufw(TCP_HDR_PAD);      /* Prealloc room for headers */
+	hbp->data += TCP_HDR_PAD;
+	htontcp(seg,&hbp,ip->dest,ip->source);
 	/* Ship it out (note swap of addresses) */
-	ip_send(ip->dest,ip->source,TCP_PTCL,ip->tos,0,hbp,ph.length,0,0);
+	ip_send(ip->dest,ip->source,TCP_PTCL,ip->tos,0,&hbp,len_p(hbp),0,0);
 	tcpOutRsts++;
 }
 
@@ -527,6 +534,9 @@ uint16 length)
 {
 	int32 acked;
 	int winupd = 0;
+	int32 swind;    /* Incoming window, scaled (non-SYN only) */
+	long rtt;       /* measured round trip time */
+	int32 abserr;   /* abs(rtt - srtt) */
 
 	acked = 0;
 	if(seq_gt(seg->ack,tcb->snd.nxt)){
@@ -540,7 +550,11 @@ uint16 length)
 	 */
 	if(seq_gt(seg->seq,tcb->snd.wl1) || ((seg->seq == tcb->snd.wl1)
 	 && seq_ge(seg->ack,tcb->snd.wl2))){
-		if(seg->wnd > tcb->snd.wnd){
+		if(seg->flags.syn || !tcb->flags.ws_ok)
+			swind = seg->wnd;
+		else
+			swind = seg->wnd << tcb->snd.wind_scale;
+		if(swind > tcb->snd.wnd){
 			winupd = 1;     /* Don't count as duplicate ack */
 
 			/* If the window had been closed, crank back the send
@@ -551,7 +565,7 @@ uint16 length)
 				tcb->snd.ptr = tcb->snd.una;
 		}
 		/* Remember for next time */
-		tcb->snd.wnd = seg->wnd;
+		tcb->snd.wnd = swind;
 		tcb->snd.wl1 = seg->seq;
 		tcb->snd.wl2 = seg->ack;
 	}
@@ -646,32 +660,36 @@ uint16 length)
 	tcb->cwind = max(tcb->cwind,tcb->mss);
 
 	/* Round trip time estimation */
-	if(tcb->flags.rtt_run && seq_ge(seg->ack,tcb->rttseq)){
+	rtt = -1;       /* Init to invalid value */
+	if(tcb->flags.ts_ok && seg->flags.tstamp){
+		/* Determine RTT from timestamp echo */
+		rtt = msclock() - seg->tsecr;
+	} else if(tcb->flags.rtt_run && seq_ge(seg->ack,tcb->rttseq)){
+		/* use standard round trip timing */
 		/* A timed sequence number has been acked */
 		tcb->flags.rtt_run = 0;
 		if(!(tcb->flags.retran)){
-			int32 rtt;      /* measured round trip time */
-			int32 abserr;   /* abs(rtt - srtt) */
-
 			/* This packet was sent only once and now
 			 * it's been acked, so process the round trip time
 			 */
 			rtt = msclock() - tcb->rtt_time;
-			tcb->rtt = rtt; /* Save for display */
-
-			abserr = (rtt > tcb->srtt) ? rtt - tcb->srtt : tcb->srtt - rtt;
-			/* Run SRTT and MDEV integrators, with rounding */
-			tcb->srtt = ((AGAIN-1)*tcb->srtt + rtt + (AGAIN/2)) >> LAGAIN;
-			tcb->mdev = ((DGAIN-1)*tcb->mdev + abserr + (DGAIN/2)) >> LDGAIN;
-
-			rtt_add(tcb->conn.remote.address,rtt);
-			/* Reset the backoff level */
-			tcb->backoff = 0;
-
-			/* Update our tx throughput estimate */
-			if(rtt != 0)    /* Avoid division by zero */
-				tcb->txbw = 1000*(seg->ack - tcb->rttack)/rtt;
 		}
+	}
+	if(rtt >= 0){
+		tcb->rtt = rtt; /* Save for display */
+
+		abserr = (rtt > tcb->srtt) ? rtt - tcb->srtt : tcb->srtt - rtt;
+		/* Run SRTT and MDEV integrators, with rounding */
+		tcb->srtt = ((AGAIN-1)*tcb->srtt + rtt + (AGAIN/2)) >> LAGAIN;
+		tcb->mdev = ((DGAIN-1)*tcb->mdev + abserr + (DGAIN/2)) >> LDGAIN;
+
+		rtt_add(tcb->conn.remote.address,rtt);
+		/* Reset the backoff level */
+		tcb->backoff = 0;
+
+		/* Update our tx throughput estimate */
+		if(rtt != 0)    /* Avoid division by zero */
+			tcb->txbw = 1000*(seg->ack - tcb->rttack)/rtt;
 	}
 	tcb->sndcnt -= acked;   /* Update virtual byte count on snd queue */
 	tcb->snd.una = seg->ack;
@@ -686,7 +704,7 @@ uint16 length)
 	 * pullup won't be able to remove it from the queue, but that
 	 * causes no harm.
 	 */
-	pullup(&tcb->sndq,NULLCHAR,(uint16)acked);
+	pullup(&tcb->sndq,NULL,(uint16)acked);
 
 	/* Stop retransmission timer, but restart it if there is still
 	 * unacknowledged data.
@@ -733,7 +751,7 @@ int32 seq)
 static void
 proc_syn(
 register struct tcb *tcb,
-char tos,
+uint8 tos,
 struct tcp *seg)
 {
 	uint16 mtu;
@@ -751,19 +769,31 @@ struct tcp *seg)
 		tcb->tos = tos;
 	tcb->rcv.nxt = seg->seq + 1;    /* p 68 */
 	tcb->snd.wl1 = tcb->irs = seg->seq;
-	tcb->snd.wnd = seg->wnd;
-	if(seg->mss != 0)
+	tcb->snd.wnd = seg->wnd;        /* Never scaled in a SYN */
+	if(seg->flags.mss)
 		tcb->mss = seg->mss;
+	if(seg->flags.wscale){
+		tcb->snd.wind_scale = seg->wsopt;
+		tcb->rcv.wind_scale = DEF_WSCALE;
+		tcb->flags.ws_ok = 1;
+	}
+	if(seg->flags.tstamp && Tcp_tstamps){
+		tcb->flags.ts_ok = 1;
+		tcb->ts_recent = seg->tsval;
+	}
 	/* Check the MTU of the interface we'll use to reach this guy
 	 * and lower the MSS so that unnecessary fragmentation won't occur
 	 */
 	if((mtu = ip_mtu(tcb->conn.remote.address)) != 0){
 		/* Allow space for the TCP and IP headers */
-		mtu -= TCPLEN + IPLEN;
+		if(tcb->flags.ts_ok)
+			mtu -= (TSTAMP_LENGTH + TCPLEN + IPLEN + 3) & ~3;
+		else
+			mtu -= TCPLEN + IPLEN;
 		tcb->cwind = tcb->mss = min(mtu,tcb->mss);
 	}
 	/* See if there's round-trip time experience */
-	if((tp = rtt_get(tcb->conn.remote.address)) != NULLRTT){
+	if((tp = rtt_get(tcb->conn.remote.address)) != NULL){
 		tcb->srtt = tp->srtt;
 		tcb->mdev = tp->mdev;
 	}
@@ -785,27 +815,28 @@ register struct tcb *tcb)
 static void
 add_reseq(
 struct tcb *tcb,
-char tos,
+uint8 tos,
 struct tcp *seg,
-struct mbuf *bp,
-uint16 length)
-{
+struct mbuf **bpp,
+uint16 length
+){
 	register struct reseq *rp,*rp1;
 
 	/* Allocate reassembly descriptor */
-	if((rp = (struct reseq *)malloc(sizeof (struct reseq))) == NULLRESEQ){
+	if((rp = (struct reseq *)malloc(sizeof (struct reseq))) == NULL){
 		/* No space, toss on floor */
-		free_p(bp);
+		free_p(bpp);
 		return;
 	}
 	ASSIGN(rp->seg,*seg);
 	rp->tos = tos;
-	rp->bp = bp;
+	rp->bp = (*bpp);
+	*bpp = NULL;
 	rp->length = length;
 
 	/* Place on reassembly list sorting by starting seq number */
 	rp1 = tcb->reseq;
-	if(rp1 == NULLRESEQ || seq_lt(seg->seq,rp1->seg.seq)){
+	if(rp1 == NULL || seq_lt(seg->seq,rp1->seg.seq)){
 		/* Either the list is empty, or we're less than all other
 		 * entries; insert at beginning.
 		 */
@@ -814,7 +845,7 @@ uint16 length)
 	} else {
 		/* Find the last entry less than us */
 		for(;;){
-			if(rp1->next == NULLRESEQ || seq_lt(seg->seq,rp1->next->seg.seq)){
+			if(rp1->next == NULL || seq_lt(seg->seq,rp1->next->seg.seq)){
 				/* We belong just after this one */
 				rp->next = rp1->next;
 				rp1->next = rp;
@@ -829,14 +860,14 @@ uint16 length)
 static void
 get_reseq(
 register struct tcb *tcb,
-char *tos,
+uint8 *tos,
 struct tcp *seg,
 struct mbuf **bp,
-uint16 *length)
-{
+uint16 *length
+){
 	register struct reseq *rp;
 
-	if((rp = tcb->reseq) == NULLRESEQ)
+	if((rp = tcb->reseq) == NULL)
 		return;
 
 	tcb->reseq = rp->next;
@@ -845,7 +876,7 @@ uint16 *length)
 	ASSIGN(*seg,rp->seg);
 	*bp = rp->bp;
 	*length = rp->length;
-	free((char *)rp);
+	free(rp);
 }
 
 /* Trim segment to fit window. Return 0 if OK, -1 if segment is
@@ -856,8 +887,8 @@ trim(
 register struct tcb *tcb,
 register struct tcp *seg,
 struct mbuf **bpp,
-uint16 *length)
-{
+uint16 *length
+){
 	long dupcnt,excess;
 	uint16 len;             /* Segment length including flags */
 	char accept = 0;
@@ -868,15 +899,17 @@ uint16 *length)
 	if(seg->flags.fin)
 		len++;
 
-	/* Acceptability tests */
+	/* Segment acceptability tests */
 	if(tcb->rcv.wnd == 0){
-		/* Only in-order, zero-length segments are acceptable when
-		 * our window is closed.
+		/* If our window is closed, then the other end is
+		 * probably probing us. If so, they might send us acks
+		 * with seg.seq > rcv.nxt. Be sure to accept these
 		 */
-		if(seg->seq == tcb->rcv.nxt && len == 0){
-			return 0;       /* Acceptable, no trimming needed */
-		}
-	} else {
+		if(len == 0 && seq_within(seg->seq,tcb->rcv.nxt,tcb->rcv.nxt+tcb->window))
+			return 0;
+		return -1;      /* reject all others */
+	}
+	if(tcb->rcv.wnd > 0){
 		/* Some part of the segment must be in the window */
 		if(in_window(tcb,seg->seq)){
 			accept++;       /* Beginning is */
@@ -888,8 +921,8 @@ uint16 *length)
 		}
 	}
 	if(!accept){
-		tcb->rerecv += len;     /* Assume all of it was a duplicate */
-		free_p(*bpp);
+		tcb->rerecv += len;
+		free_p(bpp);
 		return -1;
 	}
 	if((dupcnt = tcb->rcv.nxt - seg->seq) > 0){
@@ -902,7 +935,7 @@ uint16 *length)
 			dupcnt--;
 		}
 		if(dupcnt > 0){
-			pullup(bpp,NULLCHAR,(uint16)dupcnt);
+			pullup(bpp,NULL,(uint16)dupcnt);
 			seg->seq += dupcnt;
 			*length -= (uint16) dupcnt;
 		}

@@ -1,11 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.h,v 1.7 1993/05/17 13:45:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.h,v 1.8 1995/12/20 09:46:54 deyke Exp $ */
 
 #ifndef _SLHC_H
 #define _SLHC_H
 /*
  * Definitions for tcp compression routines.
  *
- * sHeader: slhc.h,v 1.3 93/05/06 10:10:53 karn Exp $
+ *  Header: c:/internet/src/RCS/slhc.h 1.4 1994/01/02 09:54:16 karn Exp $
  *
  * Copyright (c) 1989 Regents of the University of California.
  * All rights reserved.
@@ -141,7 +141,6 @@ struct cstate {
 	struct ip cs_ip;        /* ip/tcp hdr from most recent packet */
 	struct tcp cs_tcp;
 };
-#define NULLSLSTATE     (struct cstate *)0
 
 /*
  * all the state data for one serial line (we need one of these per line).
@@ -172,7 +171,6 @@ struct slcompress {
 	int32 sls_i_error;      /* inbound error packets */
 	int32 sls_i_tossed;     /* inbound packets tossed because of error */
 };
-#define NULLSLCOMPR     (struct slcompress *)0
 
 /* In slhc.c: */
 struct slcompress *slhc_init(int rslots, int tslots);

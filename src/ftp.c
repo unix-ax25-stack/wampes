@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.10 1994/10/09 08:22:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.11 1995/12/20 09:46:44 deyke Exp $ */
 
 /* Stuff common to both the FTP server and client */
 #include <stdio.h>
@@ -35,15 +35,15 @@ int32 cnt)
 		}
 		return;
 	}
-	while(bp != NULLBUF){
+	while(bp != NULL){
 		if(bp->cnt != 0)
 			fwrite(bp->data,1,(unsigned)bp->cnt,ftp->fp);
-		bp = free_mbuf(bp);
+		bp = free_mbuf(&bp);
 	}
 
 	if(ftp->fp != stdout && ferror(ftp->fp)){ /* write error (dsk full?) */
 		fclose(ftp->fp);
-		ftp->fp = NULLFILE;
+		ftp->fp = NULL;
 		close_self(tcb,RESET);
 	}
 }
@@ -55,7 +55,7 @@ int32 cnt)
 {
 	struct ftp *ftp;
 	struct mbuf *bp;
-	register char *cp;
+	register uint8 *cp;
 	register int c;
 	int eof_flag;
 
@@ -64,7 +64,7 @@ int32 cnt)
 		close_tcp(tcb);
 		return;
 	}
-	if((bp = alloc_mbuf((uint16) cnt)) == NULLBUF){
+	if((bp = alloc_mbuf((uint16) cnt)) == NULL){
 		/* Hard to know what to do here */
 		return;
 	}
@@ -91,14 +91,14 @@ int32 cnt)
 		}
 	}
 	if(bp->cnt != 0)
-		send_tcp(tcb,bp);
+		send_tcp(tcb,&bp);
 	else
-		free_p(bp);
+		free_p(&bp);
 
 	if(eof_flag){   /* EOF seen */
 		if(ftp->fp != stdout)
 			fclose(ftp->fp);
-		ftp->fp = NULLFILE;
+		ftp->fp = NULL;
 		close_tcp(tcb);
 	}
 }
@@ -109,13 +109,13 @@ unsigned bufsize)
 {
 	register struct ftp *ftp;
 
-	if((ftp = (struct ftp *)calloc(1,sizeof (struct ftp))) == NULLFTP)
-		return NULLFTP;
-	if(bufsize != 0 && (ftp->buf = (char *) malloc(bufsize)) == NULLCHAR){
+	if((ftp = (struct ftp *)calloc(1,sizeof (struct ftp))) == NULL)
+		return NULL;
+	if(bufsize != 0 && (ftp->buf = (char *) malloc(bufsize)) == NULL){
 		printf("called by ftp_create\n");
 		ftp_delete(ftp);
 		printf("called by ftp_create\n");
-		return NULLFTP;
+		return NULL;
 	}
 	ftp->state = COMMAND_STATE;
 	ftp->type = ASCII_TYPE; /* Default transfer type */
@@ -126,20 +126,19 @@ void
 ftp_delete(
 register struct ftp *ftp)
 {
-	if(ftp->fp != NULLFILE && ftp->fp != stdout)
+	if(ftp->fp != NULL && ftp->fp != stdout)
 		fclose(ftp->fp);
-	if(ftp->data != NULLTCB)
+	if(ftp->data != NULL)
 		del_tcp(ftp->data);
-	if(ftp->username != NULLCHAR)
+	if(ftp->username != NULL)
 		free(ftp->username);
-	if(ftp->root != NULLCHAR)
+	if(ftp->root != NULL)
 		free(ftp->root);
-	if(ftp->buf != NULLCHAR)
+	if(ftp->buf != NULL)
 		free(ftp->buf);
-	if(ftp->cd != NULLCHAR)
+	if(ftp->cd != NULL)
 		free(ftp->cd);
-	if(ftp->session != NULLSESSION)
+	if(ftp->session != NULL)
 		freesession(ftp->session);
-	free((char *)ftp);
+	free(ftp);
 }
-

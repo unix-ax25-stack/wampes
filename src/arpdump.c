@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpdump.c,v 1.6 1994/10/06 16:15:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpdump.c,v 1.7 1995/12/20 09:46:38 deyke Exp $ */
 
 /* ARP packet tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -20,7 +20,7 @@ struct mbuf **bpp)
 	int is_ip = 0;
 	char tmp[25];
 
-	if(bpp == NULLBUFP || *bpp == NULLBUF)
+	if(bpp == NULL || *bpp == NULL)
 		return;
 	fprintf(fp,"ARP: len %d",len_p(*bpp));
 	if(ntoharp(&arp,bpp) == -1){
@@ -30,7 +30,7 @@ struct mbuf **bpp)
 	if(arp.hardware < NHWTYPES)
 		at = &Arp_type[arp.hardware];
 	else
-		at = NULLATYPE;
+		at = NULL;
 
 	/* Print hardware type in Ascii if known, numerically if not */
 	fprintf(fp," hwtype %s",smsg(Arptypes,NHWTYPES,arp.hardware));
@@ -38,11 +38,11 @@ struct mbuf **bpp)
 	/* Print hardware length only if unknown type, or if it doesn't match
 	 * the length in the known types table
 	 */
-	if(at == NULLATYPE || arp.hwalen != at->hwalen)
+	if(at == NULL || arp.hwalen != at->hwalen)
 		fprintf(fp," hwlen %u",arp.hwalen);
 
 	/* Check for most common case -- upper level protocol is IP */
-	if(at != NULLATYPE && arp.protocol == at->iptype){
+	if(at != NULL && arp.protocol == at->iptype){
 		fprintf(fp," prot IP");
 		is_ip = 1;
 	} else {

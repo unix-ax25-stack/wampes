@@ -4,7 +4,7 @@
 </HEAD>
 <BODY>
 <H1>WAMPES Reference Manual</H1>
-Version 951119
+Version 951220
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
@@ -77,9 +77,10 @@ deyke@fc.hp.com
 <LI><A HREF="#H4.53">stop</A>
 <LI><A HREF="#H4.54">tcp</A>
 <LI><A HREF="#H4.55">telnet</A>
-<LI><A HREF="#H4.56">trace</A>
-<LI><A HREF="#H4.57">udp</A>
-<LI><A HREF="#H4.58">upload</A>
+<LI><A HREF="#H4.56">topt</A>
+<LI><A HREF="#H4.57">trace</A>
+<LI><A HREF="#H4.58">udp</A>
+<LI><A HREF="#H4.59">upload</A>
 </OL>
 <LI><A HREF="#H5.">FTP Subcommands</A>
 <OL>
@@ -1889,21 +1890,27 @@ TCP control block with the rtt in milliseconds.
 This command is useful to speed up recovery from a series of lost packets
 since it provides a manual bypass around the
 normal backoff retransmission timing mechanisms.
-<H4><A NAME="H4.54.7">4.54.7 tcp status [<I>tcb_addr</I>]</A></H4>
+<H4><A NAME="H4.54.7">4.54.7 tcp status [<I>tcb_addr</I> [<I>fImilliseconds</I>]]</A></H4>
 Without arguments, display several TCP-level statistics, plus a summary of
 all existing TCP connections, including TCP control block address,
 send and receive queue sizes, local and remote sockets, and connection state.
 If <I>tcb_addr</I> is specified, a more detailed dump of the specified
 TCP control block is generated, including send and receive sequence numbers
 and timer information.
+If <I>fImilliseconds</I> is specified,
+the dump is repeated every <I>milliseconds</I>,
+until any keyboard input is made.
 <H4><A NAME="H4.54.8">4.54.8 tcp syndata [on|off]</A></H4>
 Display or set the TCP SYN+data piggybacking flag.
 Some TCP implementations cannot handle SYN+data together.
 The default is <B>off</B>.
-<H4><A NAME="H4.54.9">4.54.9 tcp trace [on|off]</A></H4>
+<H4><A NAME="H4.54.9">4.54.9 tcp timestamps [on|off]</A></H4>
+Display or set the TCP timestamps flag.
+The default is <B>off</B>.
+<H4><A NAME="H4.54.10">4.54.10 tcp trace [on|off]</A></H4>
 Display or set the TCP trace flag.
 The default is <B>off</B>.
-<H4><A NAME="H4.54.10">4.54.10 tcp window [<I>size</I>]</A></H4>
+<H4><A NAME="H4.54.11">4.54.11 tcp window [<I>size</I>]</A></H4>
 Display or set the default receive window size in bytes to be used by TCP
 when creating new connections. Existing connections are unaffected.
 The default is 2048 bytes.
@@ -1912,12 +1919,16 @@ for more information.
 <H3><A NAME="H4.55">4.55 telnet <I>hostid</I> [<I>port</I>]</A></H3>
 Create a Telnet session to the specified host and enter converse mode.
 If <I>port</I> is given that port is used. Default port is 23.
-<H3><A NAME="H4.56">4.56 trace [<I>interface</I> [<I>flags</I>|subcommand [<I>tracefile</I>]]]</A></H3>
+<H3><A NAME="H4.56">4.56 topt [on|off]</A></H3>
+Display or set the flag controlling the display of client Telnet's
+option processing.
+The default is <B>off</B>.
+<H3><A NAME="H4.57">4.57 trace [<I>interface</I> [<I>flags</I>|subcommand [<I>tracefile</I>]]]</A></H3>
 Control packet tracing by the interface drivers.
 Specific bits in <I>flags</I> enable tracing of the various interfaces
 and control the amount of information produced.
 Tracing is controlled on a per-interface basis.
-Without arguments, <A HREF="#H4.56"><B>trace</B></A> displays a list of all defined interfaces
+Without arguments, <A HREF="#H4.57"><B>trace</B></A> displays a list of all defined interfaces
 and their tracing status.
 Output can be limited to a single interface by specifying it,
 and the control flags can be changed by specifying them as well.
@@ -1971,12 +1982,12 @@ subcommands may be given:
 <DD>Enable raw packet dumps
 </DL>
 If <I>tracefile</I> is not specified, tracing will be to the console.
-<H3><A NAME="H4.57">4.57 udp <I>subcommand</I></A></H3>
+<H3><A NAME="H4.58">4.58 udp <I>subcommand</I></A></H3>
 These commands control the User Datagram Protocol (UDP) service.
-<H4><A NAME="H4.57.1">4.57.1 udp status</A></H4>
+<H4><A NAME="H4.58.1">4.58.1 udp status</A></H4>
 Display several UDP-level statistics, plus a summary of
 all existing UDP control blocks.
-<H3><A NAME="H4.58">4.58 upload [stop|<I>filename</I>]</A></H3>
+<H3><A NAME="H4.59">4.59 upload [stop|<I>filename</I>]</A></H3>
 Open <I>filename</I> and send it on the current session as though it were
 typed on the terminal.
 The command <B>upload stop</B> stops uploading and closes the file.

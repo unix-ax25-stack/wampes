@@ -1,8 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.10 1994/10/09 08:22:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.11 1995/12/20 09:46:53 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "global.h"
 #include "socket.h"
@@ -22,6 +21,7 @@ static struct port_table tcp_port_table[] = {
   { "finger",   IPPORT_FINGER },        /* ARPA finger protocol */
   { "ftp",      IPPORT_FTP },           /* ARPA file transfer protocol (cmd) */
   { "ftp-data", IPPORT_FTPD },          /* ARPA file transfer protocol (data) */
+  { "http",     80 },                   /* World Wide Web HTTP */
   { "netupds",  4715 },
   { "nntp",     IPPORT_NNTP },
   { "pop2",     IPPORT_POP2 },          /* Post Office Prot. v2 */
@@ -92,7 +92,7 @@ static int port_number(struct port_table *table, char *name)
 {
   int len;
 
-  if (!isdigit(uchar(*name))) {
+  if (!isdigit(*name & 0xff)) {
     len = strlen(name);
     for (; table->name; table++)
       if (!strncmp(name, table->name, len)) return table->port;
@@ -135,4 +135,3 @@ char *pinet_udp(struct socket *s)
   sprintf(p, "%s:%s", inet_ntoa(s->address), udp_port_name(s->port));
   return p;
 }
-

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.17 1995/03/13 13:32:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.18 1995/12/20 09:46:39 deyke Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -26,7 +26,7 @@ int   Pthresh = 64;             /* Send polls for packets larger than this */
 int   T1init = 5000;            /* Retransmission timeout, ms */
 int   T2init = 300;             /* Acknowledgement delay timeout, ms */
 int   T4init = 60000;           /* Busy timeout, ms */
-int   Axversion = V2;           /* Protocol version */
+enum lapb_version Axversion = V2; /* Protocol version */
 int32 Blimit = 16;              /* Retransmission backoff limit */
 
 static int Nextid = 1;          /* Next control block ID */
@@ -34,15 +34,15 @@ static int Nextid = 1;          /* Next control block ID */
 /* Look up entry in connection table */
 struct ax25_cb *
 find_ax25(
-register char *addr)
+register uint8 *addr)
 {
 	register struct ax25_cb *axp;
-	struct ax25_cb *axlast = NULLAX25;
+	struct ax25_cb *axlast = NULL;
 
 	/* Search list */
-	for(axp = Ax25_cb; axp != NULLAX25; axlast=axp,axp = axp->next){
-		if(axp->peer == NULLAX25 && addreq(axp->hdr.dest,addr)){
-			if(axlast != NULLAX25){
+	for(axp = Ax25_cb; axp != NULL; axlast=axp,axp = axp->next){
+		if(axp->peer == NULL && addreq(axp->hdr.dest,addr)){
+			if(axlast != NULL){
 				/* Move entry to top of list to speed
 				 * future searches
 				 */
@@ -53,7 +53,7 @@ register char *addr)
 			return axp;
 		}
 	}
-	return NULLAX25;
+	return NULL;
 }
 
 /* Remove entry from connection table */
@@ -63,17 +63,17 @@ struct ax25_cb *conn)
 {
 	int i;
 	register struct ax25_cb *axp;
-	struct ax25_cb *axlast = NULLAX25;
+	struct ax25_cb *axlast = NULL;
 
-	for(axp = Ax25_cb; axp != NULLAX25; axlast=axp,axp = axp->next){
+	for(axp = Ax25_cb; axp != NULL; axlast=axp,axp = axp->next){
 		if(axp == conn)
 			break;
 	}
-	if(axp == NULLAX25)
+	if(axp == NULL)
 		return; /* Not found */
 
 	/* Remove from list */
-	if(axlast != NULLAX25)
+	if(axlast != NULL)
 		axlast->next = axp->next;
 	else
 		Ax25_cb = axp->next;
@@ -86,11 +86,11 @@ struct ax25_cb *conn)
 
 	/* Free allocated resources */
 	for (i = 0; i < 8; i++)
-		free_p(axp->reseq[i].bp);
+		free_p(&axp->reseq[i].bp);
 	free_q(&axp->txq);
 	free_q(&axp->rxasm);
 	free_q(&axp->rxq);
-	free((char *)axp);
+	free(axp);
 }
 
 /* Create an ax25 control block. Allocate a new structure, if necessary,
@@ -99,14 +99,14 @@ struct ax25_cb *conn)
  */
 struct ax25_cb *
 cr_ax25(
-char *addr)
+uint8 *addr)
 {
 	register struct ax25_cb *axp;
 
-	if(addr == NULLCHAR)
-		return NULLAX25;
+	if(addr == NULL)
+		return NULL;
 
-	if((axp = find_ax25(addr)) == NULLAX25){
+	if((axp = find_ax25(addr)) == NULL){
 		/* Not already in table; create an entry
 		 * and insert it at the head of the chain
 		 */
@@ -160,7 +160,7 @@ char *addr)
  */
 int
 setcall(
-char *out,
+uint8 *out,
 char *call)
 {
 	int csize;
@@ -169,7 +169,7 @@ char *call)
 	register char *dp;
 	char c;
 
-	if(out == NULLCHAR || call == NULLCHAR || *call == '\0')
+	if(out == NULL || call == NULL || *call == '\0')
 		return -1;
 
 	/* Find dash, if any, separating callsign from ssid
@@ -177,14 +177,14 @@ char *call)
 	 * it isn't excessive
 	 */
 	dp = strchr(call,'-');
-	if(dp == NULLCHAR)
+	if(dp == NULL)
 		csize = strlen(call);
 	else
 		csize = dp - call;
 	if(csize > ALEN)
 		return -1;
 	/* Now find and convert ssid, if any */
-	if(dp != NULLCHAR){
+	if(dp != NULL){
 		dp++;   /* skip dash */
 		ssid = atoi(dp);
 		if(ssid > 15)
@@ -208,8 +208,8 @@ char *call)
 }
 int
 addreq(
-const char *a,
-const char *b)
+const uint8 *a,
+const uint8 *b)
 {
 	if (*a++ != *b++) return 0;
 	if (*a++ != *b++) return 0;
@@ -220,11 +220,11 @@ const char *b)
 	return (*a & SSID) == (*b & SSID);
 }
 /* Return iface pointer if 'addr' belongs to one of our interfaces,
- * NULLIF otherwise.
+ * NULL otherwise.
  */
 struct iface *
 ismyax25addr(
-const char *addr)
+const uint8 *addr)
 {
 	register struct iface *ifp;
 
@@ -235,8 +235,8 @@ const char *addr)
 }
 void
 addrcp(
-char *to,
-const char *from)
+uint8 *to,
+const uint8 *from)
 {
 	*to++ = *from++;
 	*to++ = *from++;
@@ -250,7 +250,7 @@ const char *from)
 char *
 pax25(
 char *e,
-char *addr)
+uint8 *addr)
 {
 	register int i;
 	char c;
@@ -280,9 +280,9 @@ register int control)
 	if((control & 1) == 0)  /* An I-frame is an I-frame... */
 		return I;
 	if(control & 2)         /* U-frames use all except P/F bit for type */
-		return (uint16)(uchar(control) & ~PF);
+		return (uint16)(control & ~PF);
 	else                    /* S-frames use low order 4 bits for type */
-		return (uint16)(uchar(control) & 0xf);
+		return (uint16)(control & 0xf);
 }
 
 int

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25user.c,v 1.5 1994/10/06 16:15:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25user.c,v 1.6 1995/12/20 09:46:39 deyke Exp $ */
 
 /* User interface subroutines for AX.25
  * Copyright 1991 Phil Karn, KA9Q
@@ -25,14 +25,14 @@ char *user)             /* User linkage area */
 	struct ax25_cb *axp;
 
 	axp = find_ax25(hdr->dest);
-	if(axp && axp->s_upcall != NULLVFP && s_upcall != NULLVFP)
-		return NULLAX25;        /* Only one to a customer */
-	if(axp == NULLAX25){
-		if((axp = cr_ax25(hdr->dest)) == NULLAX25)
-			return NULLAX25;
-		build_path(axp,NULLIF,hdr,0);
+	if(axp && axp->s_upcall != NULL && s_upcall != NULL)
+		return NULL;    /* Only one to a customer */
+	if(axp == NULL){
+		if((axp = cr_ax25(hdr->dest)) == NULL)
+			return NULL;
+		build_path(axp,NULL,hdr,0);
 	}
-	if(s_upcall != NULLVFP){
+	if(s_upcall != NULL){
 		axp->r_upcall = r_upcall;
 		axp->t_upcall = t_upcall;
 		axp->s_upcall = s_upcall;
@@ -65,6 +65,9 @@ char *user)             /* User linkage area */
 		est_link(axp);
 		lapbstate(axp,LAPB_SETUP);
 		break;
+#else
+	default:
+		break;
 #endif
 	}
 	return axp;
@@ -81,19 +84,19 @@ char *user)             /* User linkage area */
 int
 send_ax25(
 struct ax25_cb *axp,
-struct mbuf *bp,
-int pid)
-{
+struct mbuf **bpp,
+int pid
+){
 	struct mbuf *bp1;
 	uint16 offset,len,size;
 
-	if(axp == NULLAX25 || bp == NULLBUF || axp->flags.closed){
-		free_p(bp);
+	if(axp == NULL || bpp == NULL || *bpp == NULL || axp->flags.closed){
+		free_p(bpp);
 		return -1;
 	}
 	if(pid != -1){
 		offset = 0;
-		len = len_p(bp);
+		len = len_p(*bpp);
 		/* It is important that all the pushdowns be done before
 		 * any part of the original packet is freed.
 		 * Otherwise the pushdown might erroneously overwrite
@@ -101,16 +104,16 @@ int pid)
 		 */
 		while(len != 0){
 			size = min(len,axp->paclen);
-			dup_p(&bp1,bp,offset,size);
+			dup_p(&bp1,*bpp,offset,size);
 			len -= size;
 			offset += size;
-			bp1 = pushdown(bp1,1);
+			pushdown(&bp1,NULL,1);
 			bp1->data[0] = pid;
-			enqueue(&axp->txq,bp1);
+			enqueue(&axp->txq,&bp1);
 		}
-		free_p(bp);
+		free_p(bpp);
 	} else {
-		enqueue(&axp->txq,bp);
+		enqueue(&axp->txq,bpp);
 	}
 	return lapb_output(axp);
 }
@@ -123,13 +126,13 @@ uint16 cnt)
 {
 	struct mbuf *bp;
 
-	if(axp->rxq == NULLBUF)
-		return NULLBUF;
+	if(axp->rxq == NULL)
+		return NULL;
 
 	if(cnt == 0){
 		/* This means we want it all */
 		bp = axp->rxq;
-		axp->rxq = NULLBUF;
+		axp->rxq = NULL;
 	} else {
 		bp = ambufw(cnt);
 		bp->cnt = pullup(&axp->rxq,bp->data,cnt);
@@ -146,7 +149,7 @@ int
 disc_ax25(
 struct ax25_cb *axp)
 {
-	if(axp == NULLAX25)
+	if(axp == NULL)
 		return -1;
 	switch(axp->state){
 	case LAPB_DISCONNECTED:
@@ -182,9 +185,9 @@ struct ax25_cb *axp)
 {
 	register struct ax25_cb *axp1;
 
-	if(axp == NULLAX25)
+	if(axp == NULL)
 		return 0;       /* Null pointer can't be valid */
-	for(axp1 = Ax25_cb;axp1 != NULLAX25; axp1 = axp1->next)
+	for(axp1 = Ax25_cb;axp1 != NULL; axp1 = axp1->next)
 		if(axp1 == axp)
 			return 1;
 	return 0;
@@ -208,7 +211,7 @@ struct ax25_cb *axp)
 {
 	void (*upcall)(struct ax25_cb *,int,int);
 
-	if(axp == NULLAX25)
+	if(axp == NULL)
 		return -1;
 	upcall = axp->s_upcall;
 	lapbstate(axp,LAPB_DISCONNECTED);
@@ -226,7 +229,7 @@ struct ax25_cb *axp)
 {
 	int cnt;
 
-	if(axp == NULLAX25)
+	if(axp == NULL)
 		return -1;
 	if((axp->state == LAPB_SETUP || axp->state == LAPB_CONNECTED ||
 	    axp->state == LAPB_RECOVERY) && !axp->flags.closed) {
