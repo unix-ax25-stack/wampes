@@ -1,4 +1,6 @@
-# @(#) $Id: net.rc.dh6sae,v 1.9 1999/10/08 03:33:27 deyke Exp $
+# @(#) $Id: net.rc.dh6sae,v 1.10 1999/11/22 22:39:52 deyke Exp $
+
+domain usegethostby on
 
 hostname     dh6sae
 ax25 mycall  dh6sae
@@ -25,7 +27,6 @@ route add  db0aau.ampr.org      pk232
 arp add db0aau ax25 db0aau
 # arp add db0id  ax25 db0id
 
-domain usegethostby on
 echo refuse
 escape 
 icmp trace on

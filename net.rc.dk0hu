@@ -1,4 +1,6 @@
-# @(#) $Id: net.rc.dk0hu,v 1.59 1999/10/08 03:33:28 deyke Exp $
+# @(#) $Id: net.rc.dk0hu,v 1.60 1999/11/22 22:39:52 deyke Exp $
+
+domain usegethostby on
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -51,7 +53,6 @@ netrom broadcast axip nodes
 flexnet link add db0sao
 flexnet link add dl1sbl-1
 
-domain usegethostby on
 echo refuse
 icmp trace on
 ip rtimer 300
