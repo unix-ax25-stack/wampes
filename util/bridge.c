@@ -1,8 +1,12 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.3 1990/03/19 11:02:08 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.4 1990/08/14 10:08:26 deyke Exp $";
+
+#define _HPUX_SOURCE
 
 #include <sys/types.h>
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <time.h>
 
@@ -26,10 +30,7 @@ static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampe
 
 #define uchar(c)        ((unsigned char) (c))
 
-extern char  *calloc();
 extern struct sockaddr *build_sockaddr();
-extern void exit();
-extern void free();
 
 struct conn {
   struct conn *prev, *next;
@@ -88,7 +89,7 @@ struct conn *p;
   if (p->prev) p->prev->next = p->next;
   if (p->next) p->next->prev = p->prev;
   if (p == connections) connections = p->next;
-  free((char *) p);
+  free(p);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -123,7 +124,7 @@ struct conn *p;
   ap = p->buf + 1 + AXALEN;
   i = 0;
   for (; ; ) {
-    if (i >= 10) return;
+    if (i >= 9) return;
     call[i] = ap;
     sent[i] = ap[6] & REPEATED;
     i++;
