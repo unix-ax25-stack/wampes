@@ -1,4 +1,6 @@
-# @(#) $Id: net.rc.dl4sel,v 1.35 1999/10/08 03:33:29 deyke Exp $
+# @(#) $Id: net.rc.dl4sel,v 1.36 1999/11/23 02:07:14 deyke Exp $
+
+domain usegethostby on
 
 hostname     dl4sel
 ax25 mycall  dl4sel

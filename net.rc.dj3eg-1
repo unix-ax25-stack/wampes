@@ -1,4 +1,6 @@
-# @(#) $Id: net.rc.dj3eg-1,v 1.40 1999/10/08 03:33:28 deyke Exp $
+# @(#) $Id: net.rc.dj3eg-1,v 1.41 1999/11/23 02:07:14 deyke Exp $
+
+domain usegethostby on
 
 hostname     dj3eg-1
 ax25 mycall  dj3eg-1

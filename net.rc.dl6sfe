@@ -1,4 +1,6 @@
-# @(#) $Id: net.rc.dl6sfe,v 1.9 1999/10/08 03:33:29 deyke Exp $
+# @(#) $Id: net.rc.dl6sfe,v 1.10 1999/11/23 02:07:14 deyke Exp $
+
+domain usegethostby on
 
 hostname     dl6sfe
 ax25 mycall  dl6sfe
