@@ -1,6 +1,6 @@
 /* User Data Base Manager */
 
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.8 1989/10/15 19:41:37 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.9 1990/08/07 10:52:57 deyke Exp $";
 
 #include <ctype.h>
 #include <fcntl.h>
@@ -596,7 +596,7 @@ main()
   fixusers();
   if (!errors) fixpasswd();
   if (!errors) fixaliases();
-  if (!errors) system("exec /usr/lib/sendmail -bi >/dev/null 2>&1");
+  if (!errors) system("exec /usr/bin/newaliases >/dev/null 2>&1");
   return 0;
 }
 
