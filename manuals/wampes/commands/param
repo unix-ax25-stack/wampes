@@ -1,0 +1,10 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/param,v 1.1 1994/07/12 16:32:26 deyke Exp $
+.H 2 "param" " \fIinterface\fP [\fIparam\fP ...]"
+Invoke a device-specific control routine. On a KISS TNC
+interface, this sends control packets to the TNC. Data bytes are
+treated as decimal. For example, \fBparam ax0 1 255\fP will set the keyup
+timer (type field = 1) on the KISS TNC configured as ax0 to 2.55 seconds
+(255 x .01 sec). On a SLIP interface, the \fBparam\fP command allows the baud
+rate to be read (without arguments) or set. The implementation of this
+command for the various interface drivers is incomplete and subject to
+change. MORE TO BE WRITTEN.

@@ -1,0 +1,23 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/smtp,v 1.1 1994/07/12 16:32:27 deyke Exp $
+.H 2 "smtp" " \fIsubcommand\fP"
+These commands control the Simple Message Transport Protocol service
+(and all other mail delivery clients).
+.H 3 "smtp kick" " [\fIdestination\fP]"
+Run through the outgoing mail queue and attempt to deliver any pending mail.
+If \fIdestination\fP is specified try only to deliver mail to this system.
+This command allows the user to "kick" the mail system manually.
+Normally, this command is periodically invoked by a timer
+whenever \fBWAMPES\fP is running (see \fBsmtp timer\fP). MORE TO BE WRITTEN.
+.H 3 "smtp list"
+List the current jobs. MORE TO BE WRITTEN.
+.H 3 "smtp maxclients" " [\fIcount\fP]"
+Display or set the maximum number of simultaneous outgoing mail sessions
+that will be allowed. The default is 10, reduce it if network congestion
+is a problem.
+.H 3 "smtp timer" " [\fIseconds\fP]"
+Display or set the interval between scans of the outbound
+mail queue. For example, \fBsmtp timer 600\fP will cause the system to check
+for outgoing mail every 10 minutes and attempt to deliver anything it finds,
+subject of course to the \fBsmtp maxclients\fP limit. Setting a value of zero
+disables
+queue scanning altogether, note that this is the default!

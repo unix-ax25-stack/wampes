@@ -1,0 +1,5 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/upload,v 1.1 1994/07/12 16:32:27 deyke Exp $
+.H 2 "upload" " [\fIfilename\fP]"
+Open \fIfilename\fP and send it on the current session as though it were
+typed on the terminal. If \fIfilename\fP is not specified the current status
+is displayed.

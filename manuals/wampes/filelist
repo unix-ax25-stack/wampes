@@ -1,0 +1,5 @@
+frontpage
+commands/[0-9a-z]*
+ftp-commands/[0-9a-z]*
+setting-paclen
+contents

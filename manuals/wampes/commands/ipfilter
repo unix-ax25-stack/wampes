@@ -1,0 +1,7 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ipfilter,v 1.1 1994/07/12 16:32:25 deyke Exp $
+.H 2 "ipfilter" " [\fIsubcommand\fP]"
+TO BE WRITTEN.
+.H 3 "ipfilter add" " \fIaddr\fP[/\fIbits\fP]"
+TO BE WRITTEN.
+.H 3 "ipfilter drop" " \fIaddr\fP[/\fIbits\fP]"
+TO BE WRITTEN.

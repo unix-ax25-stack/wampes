@@ -1,0 +1,29 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/frontpage,v 1.1 1994/07/12 16:31:57 deyke Exp $
+.SA 1 \" right justified
+.ds Ci 0 0 0 0 0 0 0 \" table of contents indent list
+.ds HF 3 3 3 3 3 3 3 \" all headers bold
+.nr Cl 7 \" save all headers for table of contents
+.nr Ej 1 \" level 1 headers on new page
+.nr Hb 7 \" break after all headers
+.nr Hs 7 \" empty line after all headers
+.nr Hy 1 \" hyphenation on
+. \"
+. \" .TL
+. \" WAMPES Reference Manual
+. \" .AF
+. \" .AU "Dieter Deyke, DK5SG/N0PRA"
+. \" .MT 4
+. \" .MT 4
+.PH ""
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940712"
+. \" .PF "^^-\\\\nP-^^"
+.SP 20
+.ce
+\fBWAMPES Reference Manual\fP
+.ce
+Version 940712
+.SP 2
+.ce
+Dieter Deyke, DK5SG/N0PRA
+.ce
+deyke@fc.hp.com

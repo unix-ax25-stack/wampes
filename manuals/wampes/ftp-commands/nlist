@@ -1,0 +1,6 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/ftp-commands/nlist,v 1.1 1994/07/12 16:32:33 deyke Exp $
+.H 2 "nlist" " [\fIremote-directory\fP [\fIlocal-file\fP]]"
+Write an abbreviated listing of \fIremote-directory\fP to standard output or optionally to
+\fIlocal-file\fP.
+If neither \fIremote-directory\fP nor \fIlocal-file\fP is specified,
+list the remote working directory to standard output.

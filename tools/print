@@ -1,0 +1,11 @@
+#! /bin/ksh
+
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/print,v 1.1 1994/07/12 16:31:57 deyke Exp $
+
+if [[ -n "$1" ]] ; then
+	files="$*"
+else
+	files="$(< filelist)"
+fi
+
+cat $files | tbl -TX | nroff -mm | col

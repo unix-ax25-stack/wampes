@@ -1,0 +1,3 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/ftp-commands/modtime,v 1.1 1994/07/12 16:32:33 deyke Exp $
+.H 2 "modtime" " \fIremote-file\fP"
+Show the last modification time of \fIremote-file\fP.

@@ -1,0 +1,26 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ps,v 1.1 1994/07/12 16:32:26 deyke Exp $
+.H 2 "ps"
+Display all current processes in the system. The fields are as follows:
+.P
+\fBPID\fP - Process ID (the address of the process control block).
+.P
+\fBSP\fP - The current value of the process stack pointer.
+.P
+\fBstksize\fP - The size of the stack allocated to the process.
+.P
+\fBmaxstk\fP - The apparent peak stack utilization of this process. This is
+done in a somewhat heuristic fashion, so the numbers should be treated
+as approximate. If this number reaches or exceeds the stksize figure,
+the system is almost certain to crash,
+and \fBWAMPES\fP should be recompiled
+to give the process a larger allocation when it is started.
+.P
+\fBevent\fP - The event this task is waiting for, if it is not runnable.
+.P
+\fBfl\fP - Process status flags. There are two:
+W (Waiting for event) and S (suspended - not currently used).
+The W flag indicates that the process is waiting for an event, the \fBevent\fP
+column will be non-zero. Note that although there may be several
+runnable processes at any time (shown in the \fBps\fP listing as those
+without the W flag and with zero event fields) only one
+process is actually running at any one instant.

@@ -1,0 +1,7 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/log,v 1.1 1994/07/12 16:32:25 deyke Exp $
+.H 2 "log" " [stop|\fIfilename\fP]"
+Display the current log filename or set the filename for logging
+server sessions. If \fBstop\fP is given as the argument,
+logging is terminated (the servers themselves are unaffected).
+If a file name is given as an argument, server session log
+entries will be appended to it.

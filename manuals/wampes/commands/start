@@ -1,0 +1,27 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/start,v 1.1 1994/07/12 16:32:27 deyke Exp $
+.H 2 "start" " \fIserver\fP"
+Start the specified server, allowing remote connection requests.
+.H 3 "start ax25"
+TO BE WRITTEN.
+.H 3 "start discard"
+TO BE WRITTEN.
+.H 3 "start domain"
+TO BE WRITTEN.
+.H 3 "start echo"
+TO BE WRITTEN.
+.H 3 "start ftp"
+TO BE WRITTEN.
+.H 3 "start tcpgate"
+TO BE WRITTEN.
+.H 3 "start netrom"
+TO BE WRITTEN.
+.H 3 "start rip"
+TO BE WRITTEN.
+.H 3 "start sntp"
+TO BE WRITTEN.
+.H 3 "start telnet"
+TO BE WRITTEN.
+.H 3 "start time"
+TO BE WRITTEN.
+.H 3 "start remote"
+TO BE WRITTEN.

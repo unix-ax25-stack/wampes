@@ -1,0 +1,7 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ftp,v 1.1 1994/07/12 16:32:25 deyke Exp $
+.H 2 "ftp" " \fIhostid\fP"
+Open a FTP control channel to the specified remote host and
+enter converse mode on the new session. Responses from the
+remote server are displayed directly on the screen. See the
+\fBFTP Subcommands\fP chapter for descriptions of the commands available
+in a FTP session.

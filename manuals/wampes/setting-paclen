@@ -1,0 +1,261 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/setting-paclen,v 1.1 1994/07/12 16:31:57 deyke Exp $
+.H 1 "Setting Paclen, Maxframe, MTU, MSS and Window"
+Many \fBWAMPES\fP users are confused by these parameters and do not know how to
+set them properly. This chapter will first review these parameters and
+then discuss how to choose values for them. Special emphasis is given to
+avoiding interoperability problems that may appear when communicating
+with non-\fBWAMPES\fP implementations of AX.25.
+.H 2 "AX.25 Parameters"
+.H 3 "Paclen"
+Paclen limits the size of the data field in an AX.25 I-frame. This
+value does NOT include the AX.25 protocol header (source,
+destination and digipeater addresses).
+.P
+Since unconnected-mode (datagram) AX.25 uses UI frames, this parameter
+has no effect in unconnected mode.
+.P
+The default value of \fBpaclen\fP is 256 bytes.
+.H 3 "Maxframe"
+This parameter controls the number of I-frames that \fBWAMPES\fP may send
+on an AX.25 connection before it must stop and wait for an acknowledgement.
+Since the AX.25/LAPB sequence number field is 3 bits wide, this number
+cannot be larger than 7.
+.P
+Since unconnected-mode (datagram) AX.25 uses UI frames that do not have
+sequence numbers, this parameter does NOT apply to unconnected
+mode.
+.P
+The default value of \fBmaxframe\fP in \fBWAMPES\fP is 7 frames.
+.H 2 "IP and TCP Parameters"
+.H 3 "MTU"
+The MTU (Maximum Transmission Unit) is an interface parameter that
+limits the size of the largest IP
+datagram that it may handle. IP datagrams routed to
+an interface that are larger than its MTU are each split into two or more
+\fIfragments\fP.
+Each fragment has its own IP header and is handled by the network
+as if it were a distinct IP datagram, but when it arrives at
+the destination it is held by the IP layer until all of the other fragments
+belonging to the original datagram have arrived. Then they are reassembled
+back into the complete, original IP datagram.
+The minimum acceptable interface MTU is 28
+bytes: 20 bytes for the IP (fragment) header, plus 8 bytes of data.
+.P
+There is no default MTU in \fBWAMPES\fP, it must be explicitly specified for
+each interface as part of the \fBattach\fP command.
+.H 3 "MSS"
+MSS (Maximum Segment Size) is a TCP-level parameter that limits the
+amount of data that the remote TCP will send in a single TCP
+packet. MSS values are exchanged in the SYN (connection request)
+packets that open a TCP connection. In the \fBWAMPES\fP implementation of TCP,
+the MSS actually used by TCP is further reduced in order to avoid
+fragmentation at the local IP interface. That is, the local TCP asks IP
+for the MTU of the interface that will be used to reach the
+destination. It then subtracts 40 from the MTU value to allow for the
+overhead of the TCP and IP headers. If the result is less than the MSS
+received from the remote TCP, it is used instead.
+.P
+The default value of \fBMSS\fP is 512 bytes.
+.H 3 "Window"
+This is a TCP-level parameter that controls how much data the local TCP
+will allow the remote TCP to send before it must stop and wait for an
+acknowledgement. The actual window value used by TCP when deciding how
+much more data to send is referred to as the \fIeffective window\fP.
+This is the smaller of two values: the window advertised by the remote
+TCP minus the unacknowledged data in flight, and the \fIcongestion
+window\fP, an automatically computed time-varying estimate of how much
+data the network can handle.
+.P
+The default value of \fBWindow\fP is 2048 bytes.
+.H 2 "Discussion"
+.H 3 "IP Fragmentation vs AX.25 Segmentation"
+IP-level fragmentation often makes it possible to interconnect two
+dissimilar networks, but it is best avoided whenever possible.
+One reason is that when a single IP fragment is lost, all other fragments
+belonging to the same datagram are effectively also lost and
+the entire datagram must be retransmitted by the source.
+Even without loss, fragments require the allocation of temporary buffer
+memory at the destination, and it is never easy
+to decide how long to wait for missing fragments before
+giving up and discarding those that have already arrived.
+A reassembly timer controls this process.
+In \fBWAMPES\fP it is (re)initialized with the \fBip rtimer\fP parameter
+(default 30 seconds) whenever progress is made in reassembling a datagram
+(i.e., a new fragment is received).
+It is not necessary that all of the fragments belonging to a datagram
+arrive within a single timeout interval, only that the interval between
+fragments be less than the timeout.
+.P
+Most subnetworks that carry IP have MTUs of 576 bytes or more, so
+interconnecting them with subnetworks having smaller values can result in
+considerable fragmentation. For this reason, IP implementors working with
+links or subnets having unusually small packet size limits are encouraged
+to use
+\fItransparent fragmentation\fP,
+that is, to devise schemes to break up large IP
+datagrams into a sequence of link or subnet frames that are immediately
+reassembled on the other end of the link or subnet into the original, whole IP
+datagram without the use of IP-level fragmentation. Such a
+scheme is provided in AX.25 Version 2.1. It can break
+a large IP or NET/ROM datagram into a series of \fBpaclen\fP-sized
+AX.25 segments (not to be confused with TCP segments),
+one per AX.25 I-frame, for transmission and reassemble them into
+a single datagram at the other end of the link before handing it up to the
+IP or NET/ROM module. Unfortunately, the segmentation procedure is a new
+feature in AX.25 and is not yet widely implemented,
+in fact, \fBWAMPES\fP and \fBNOS\fP are so far
+the only known implementations. This creates some interoperability problems
+between \fBWAMPES\fP and non-\fBWAMPES\fP nodes, in particular, standard
+NET/ROM nodes being used to carry IP datagrams. This problem is discussed
+further in the section on setting the MTU.
+.H 3 "Setting Paclen"
+The more data you put into an AX.25 I frame, the smaller the AX.25
+headers are in relation to the total frame size. In other words, by
+increasing \fBpaclen\fP, you lower the AX.25 protocol overhead. Also, large
+data packets reduce the overhead of keying up a transmitter, and this
+can be an important factor with higher speed modems. On the other hand,
+large frames make bigger targets for noise and interference. Each link
+has an optimum value of \fBpaclen\fP that is best discovered by experiment.
+.P
+Another thing to remember when setting \fBpaclen\fP is that the AX.25 version
+2.0 specification limits it to 256 bytes. Although \fBWAMPES\fP can handle
+much larger values, some other AX.25 implementations (including
+digipeaters) cannot and this
+may cause interoperability problems. Even \fBWAMPES\fP may have trouble with
+certain KISS TNCs because of fixed-size buffers. The original KISS TNC
+code for the TNC-2 by K3MC can handle frames limited in size only by
+the RAM in the TNC, but some other KISS TNCs cannot.
+.P
+One of the drawbacks of AX.25 is that there is no way for one station to tell
+another how large a packet it is willing to accept. This requires the
+stations sharing a channel to agree beforehand on a maximum packet size.
+TCP is different, as we shall see.
+.H 3 "Setting Maxframe"
+For best performance on a half-duplex radio channel, \fBmaxframe\fP should
+always be set to 1. The reasons are explained in the paper \fILink Level
+Protocols Revisited\fP by Brian Lloyd and Phil Karn, which appeared in the
+proceedings of the ARRL 5th Computer Networking Conference in 1986.
+.H 3 "Setting MTU"
+TCP/IP header overhead considerations similar to those of the AX.25 layer
+when setting \fBpaclen\fP apply when choosing an MTU. However, certain
+subnetwork types have well-established MTUs, and
+these should
+always be used unless you know what you're doing: 1500 bytes for Ethernet,
+and 508 bytes for ARCNET.
+The MTU for PPP is automatically negotiated, and defaults to 1500.
+Other subnet types, including SLIP and AX.25, are
+not as well standardized.
+.P
+SLIP has no official MTU, but the most common
+implementation (for BSD UNIX) uses an MTU of 1006 bytes. Although
+\fBWAMPES\fP has no hard wired limit on the size of a received SLIP frame,
+this is not true for other systems.
+Interoperability problems may therefore result if larger MTUs are used in
+\fBWAMPES\fP.
+.P
+Choosing an MTU for an AX.25 interface is more complex. When the interface
+operates in datagram (UI-frame) mode, the \fBpaclen\fP parameter does not
+apply. The MTU effectively becomes the \fBpaclen\fP of the link. However,
+as mentioned earlier, large packets sent on AX.25 \fIconnections\fP are
+automatically segmented into I-frames no larger than \fBpaclen\fP bytes.
+Unfortunately, as also mentioned earlier, \fBWAMPES\fP and \fBNOS\fP are so far the only known
+implementations of the new AX.25 segmentation procedure. This is fine as long
+as all of the NET/ROM nodes along a path are running \fBWAMPES\fP, but since the main
+reason \fBWAMPES\fP supports NET/ROM is to allow use of existing NET/ROM networks,
+this is unlikely.
+.P
+So it is usually important to avoid AX.25 segmentation when running IP over
+NET/ROM. The way to do this is to make sure that packets larger
+than \fBpaclen\fP are never handed to AX.25. A NET/ROM transport header is
+5 bytes long and a NET/ROM network header takes 15 bytes, so 20 bytes must
+be added to the size of an IP datagram when figuring the size of the AX.25
+I-frame data field. If \fBpaclen\fP is 256, this leaves 236 bytes for the IP
+datagram. This is the default MTU of the \fBnetrom\fP pseudo-interface, so
+as long as \fBpaclen\fP is at least 256 bytes, AX.25 segmentation can't
+happen. But if smaller values of \fBpaclen\fP are used, the \fBnetrom\fP MTU
+must also be reduced with the \fBifconfig\fP command.
+.P
+On the other hand, if you're running IP directly on top of AX.25, chances
+are all of the nodes are running \fBWAMPES\fP and support AX.25 segmentation.
+In this case there is no reason not to use a larger MTU and let
+AX.25 segmentation do its thing. If you choose
+an MTU on the order of 1000-1500 bytes, you can largely avoid IP-level
+fragmentation and reduce TCP/IP-level header overhead on file transfers
+to a very low level.
+And you are still free to pick whatever \fBpaclen\fP value is
+appropriate for the link.
+.H 3 "Setting MSS"
+The setting of this TCP-level parameter is somewhat less critical than the
+IP and AX.25 level parameters already discussed, mainly because it is
+automatically lowered according to the MTU of the local interface when a
+connection is created. Although this is, strictly speaking, a protocol
+layering violation (TCP is not supposed to have any knowledge of the
+workings of lower layers) this technique does work well in practice.
+However, it can be fooled, for example, if a routing change occurs after the
+connection has been opened and the new local interface has a smaller MTU
+than the previous one, IP fragmentation may occur in the local system.
+.P
+The only drawback to setting a large MSS is that it might cause avoidable
+fragmentation at some other point within the network path if it includes a
+"bottleneck" subnet with an MTU smaller than that of the local interface.
+(Unfortunately, there is presently no way to know when this is the case.
+There is ongoing work within the Internet Engineering Task Force on a "MTU
+Discovery" procedure to determine the largest datagram that may be sent over
+a given path without fragmentation, but it is not yet complete.)
+Also, since the MSS you specify is sent to the remote system, and not all
+other TCPs do the MSS-lowering procedure yet, this might cause the remote
+system to generate IP fragments unnecessarily.
+.P
+On the other hand, a too-small MSS can result in a considerable performance
+loss, especially when operating over fast LANs and networks that can handle
+larger packets. So the best value for MSS is probably 40 less than the
+largest MTU on your system, with the 40-byte margin allowing for the TCP and
+IP headers. For example, if you have a SLIP interface with a 1006 byte MTU
+and an Ethernet interface with a 1500 byte MTU, set MSS to 1460 bytes. This
+allows you to receive maximum-sized Ethernet packets, assuming the path to
+your system does not have any bottleneck subnets with smaller MTUs.
+.H 3 "Setting Window"
+A sliding window protocol like TCP cannot transfer more than one window's
+worth of data per round trip time interval. So this TCP-level parameter
+controls the ability of the remote TCP to keep a long "pipe" full. That is,
+when operating over a path with many hops, offering a large TCP window will
+help keep all those hops busy when you're receiving data. On the other hand,
+offering too large a window can congest the network if it cannot buffer all
+that data. Fortunately, new algorithms for dynamic controlling the
+effective TCP flow control window have been developed over the past few
+years and are now widely deployed.
+\fBWAMPES\fP includes them, and you can watch them
+in action with the \fBtcp status\fP \fItcb_addr\fP command.
+Look at the \fBcwind\fP (congestion window) value.
+.P
+In most cases it is safe to set the TCP window to a small integer
+multiple of the MSS, (eg. 4 times), or larger if necessary to fully utilize a
+high bandwidth*delay product path. One thing to keep in mind, however, is
+that advertising a certain TCP window value declares that the system has
+that much buffer space available for incoming data.
+\fBWAMPES\fP does not actually preallocate this space,
+it keeps it in a common pool and may well "overbook" it,
+exploiting the fact that many TCP connections are idle for long periods
+and gambling that most applications will read incoming data from an active
+connection as soon as it arrives, thereby quickly freeing the buffer memory.
+However, it is possible to run \fBWAMPES\fP out of memory if excessive TCP window
+sizes are advertised and either the applications go to sleep indefinitely
+(eg. suspended Telnet sessions) or a lot of out-of-sequence data arrives.
+It is wise to keep an eye on the amount of available memory and to decrease
+the TCP window size (or limit the number of simultaneous connections) if it
+gets too low.
+.P
+Depending on the channel access method and link level protocol, the use
+of a window setting that exceeds the MSS may cause an increase in channel
+collisions. In particular, collisions between data packets and returning
+acknowledgments during a bulk file transfer
+may become common. Although this is, strictly speaking,
+not TCP's fault, it is possible to work around the problem at the TCP level
+by decreasing the window so that the protocol operates in stop-and-wait mode.
+This is done by making the window value equal to the MSS.
+.H 2 "Summary"
+In most cases, the default values provided by \fBWAMPES\fP for each of these
+parameters
+will work correctly and give reasonable performance. Only in special
+circumstances such as operation over a very poor link or experimentation
+with high speed modems should it be necessary to change them.

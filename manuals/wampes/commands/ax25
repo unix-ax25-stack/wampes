@@ -1,0 +1,126 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ax25,v 1.1 1994/07/12 16:32:24 deyke Exp $
+.H 2 "ax25" " \fIsubcommand\fP"
+These commands control the AX.25 service.
+.H 3 "ax25 blimit" " [\fIlimit\fP]"
+Display or set the AX.25 retransmission backoff limit. Normally each
+successive AX.25 retransmission is delayed by a factor of 1.25 compared to
+the previous interval, this is called \fBexponential backoff\fP.
+When the number of retries reaches the \fBblimit\fP setting the backoff
+is held at its current value, and not increased anymore.
+Note that this is applicable only to actual AX.25 connections, UI frames
+will never be retransmitted by the AX.25 layer.
+The default is 16.
+.H 3 "ax25 destlist" " [\fIinterface\fP]"
+Display the destination list, i.e. the addressed-to stations. Next to the
+time of the last transmission to that station the time that station replied
+(if heard) is displayed. This gives a good reference to see if a station
+is reachable and responding.
+If \fIinterface\fP is given, only the list for that interface is displayed.
+.H 3 "ax25 digipeat" " [0|1|2]"
+Display or set the digipeat mode. The default is 2. MORE TO BE WRITTEN.
+.H 3 "ax25 flush"
+Clear the AX.25 "heard" list (see \fBax25 heard\fP).
+.H 3 "ax25 heard" " [\fIinterface\fP]"
+Display the AX.25 "heard" list. For each interface that is configured to
+use AX.25, a list of all ax25_addresses heard through that interface is
+shown, along with a count of the number of packets heard from each station
+and the interval, in hr:min:sec format, since each station was last heard.
+The local station always appears first in the listing, the packet count
+actually reflects the number of packets transmitted. This entry is always
+present even if no packets have been sent. If \fIinterface\fP is given, only
+the list for that interface is displayed.
+.H 3 "ax25 jumpstart" " \fIax25_addr\fP [on|off]"
+The default is \fBoff\fP.
+MORE TO BE WRITTEN.
+.H 3 "ax25 kick" " \fIaxcb_addr\fP"
+Force a retransmission on the specified AX.25 control block.
+The control block address can be found with the \fBax25 status\fP command.
+.H 3 "ax25 maxframe" " [\fIcount\fP]"
+Display or set the maximum number of frames that will be allowed to remain
+unacknowledged at one time on AX.25 connections. This number cannot
+be greater than 7.
+Note that the maximum outstanding frame count only works with
+virtual connections, UI frames are not affected.
+The default is 7 frames.
+.H 3 "ax25 mycall" " [\fIax25_addr\fP]"
+Display or set the default local AX.25 address. The standard format is used,
+(eg. KA9Q-0 or WB6RQN-5).
+This command must be given before any \fBattach\fP commands
+using AX.25 mode are given.
+.H 3 "ax25 paclen" " [\fIsize\fP]"
+Limit the size of I-fields on new AX.25 connections. If IP
+datagrams or fragments larger than this are transmitted, they will be
+transparently fragmented at the AX.25 level, sent as a series of I
+frames, and reassembled back into a complete IP datagram or fragment at
+the other end of the link. To have any effect on IP datagrams,
+this parameter should be less than or equal to
+the MTU of the associated interface.
+The default is 256 bytes.
+.H 3 "ax25 pthresh" " [\fIsize\fP]"
+Display or set the poll threshold to be used for new AX.25 Version 2
+connections. The poll threshold controls retransmission behavior as
+follows. If the oldest unacknowledged I-frame size is less than the poll
+threshold, it will be sent with the poll (P) bit set if a timeout occurs.
+If the oldest unacked I-frame size is equal to or greater than the
+threshold, then a RR or RNR frame, as appropriate, with the poll bit set
+will be sent if a timeout occurs.
+.P
+The idea behind the poll threshold is that the extra time needed to send a
+"small" I-frame instead of a supervisory frame when polling after a timeout
+is small, and since there's a good chance the I-frame will have to be sent
+anyway (i.e., if it were lost previously) then you might as well send it as
+the poll. But if the I-frame is large, send a supervisory (RR/RNR) poll
+instead to determine first if retransmitting the oldest unacknowledged
+I-frame is necessary, the timeout might have been caused by a lost
+acknowledgement. This is obviously a tradeoff, so experiment with the
+poll threshold setting. The default is 64 bytes.
+.H 3 "ax25 reset" " \fIaxcb_addr\fP"
+Delete the AX.25 connection control block at the specified address.
+The control block address can be found with the \fBax25 status\fP command.
+.H 3 "ax25 retry" " [\fIcount\fP]"
+Limit the number of successive unsuccessful transmission attempts on
+new AX.25 connections. If this limit is exceeded, then the connection
+is abandoned and all queued data is deleted.
+A \fIcount\fP of 0 allows unlimited transmission attempts.
+The default is 10 tries.
+.H 3 "ax25 route" " [stat]"
+Display the AX.25 routing table that
+specifies the interface and digipeaters to be used in reaching a given station.
+MORE TO BE WRITTEN.
+.H 4 "ax25 route add" " [permanent] \fIinterface\fP default|\fIpath\fP"
+Add an entry to the AX.25 routing table. An automatic \fBax25 route add\fP
+is executed if digipeaters are specified in an AX.25 \fBconnect\fP
+command, or if a connection is received from a remote station via
+digipeaters. Such automatic routing table entries won't override locally
+created entries, however. MORE TO BE WRITTEN.
+.H 4 "ax25 route list" " [\fIax25_addr\fP ...]"
+TO BE WRITTEN.
+.H 3 "ax25 status" " [\fIaxcb_addr\fP]"
+Without an argument, display a one-line summary of each AX.25 control block.
+If the address of a particular control block is specified, the contents of
+that control block are dumped in more detail. Note that the send queue units
+are frames, while the receive queue units are bytes.
+.H 3 "ax25 t1" " [\fImilliseconds\fP]"
+Display or set the AX.25 retransmission timer.
+The default is 5000 milliseconds (5 seconds). MORE TO BE WRITTEN.
+.H 3 "ax25 t3" " [\fImilliseconds\fP]"
+Display or set the AX.25 idle "keep alive" timer.
+The default is 900000 milliseconds (15 minutes).
+.H 3 "ax25 t4" " [\fImilliseconds\fP]"
+The default is 60000 milliseconds (1 minute).
+MORE TO BE WRITTEN.
+.H 3 "ax25 version" " [1|2]"
+Display or set the version of the AX.25 protocol to attempt to use on
+new connections. The default is 2 (the version
+that does use the poll/final bits).
+.H 3 "ax25 window" " [\fIsize\fP]"
+Set the number of bytes that can be pending on an AX.25 receive queue
+beyond which I frames will be answered with RNR (Receiver Not Ready)
+responses. This presently applies only to suspended interactive AX.25
+sessions, since incoming I-frames containing network (IP, NET/ROM) packets
+are always processed immediately and are not placed on the receive queue.
+However, when an AX.25 connection carries both interactive
+and network packet traffic, an RNR generated because of
+backlogged interactive traffic will also stop network
+packet traffic from being sent.
+The default is 2048 bytes.

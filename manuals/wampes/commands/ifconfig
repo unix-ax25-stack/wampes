@@ -1,0 +1,50 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ifconfig,v 1.1 1994/07/12 16:32:25 deyke Exp $
+.H 2 "ifconfig" " [\fIinterface\fP [[\fIsubcommand\fP \fIparameter\fP] ...]"
+Without arguments display the status of all interfaces.
+When only \fIinterface\fP is given, the status of this interface is displayed.
+Multiple subcommand/parameter pairs can be put on one line.
+.H 3 "ifconfig \fIinterface\fP broadcast" " \fIaddr\fP"
+Set the broadcast address of \fIinterface\fP to \fIaddr\fP.
+This is related to the \fBnetmask\fP sub-command.
+See also the \fBarp\fP command.
+.H 3 "ifconfig \fIinterface\fP encapsulation" " \fIencapsulation\fP"
+Set the encapsulation for \fIinterface\fP to \fIencapsulation\fP.
+\fIEncapsulation\fP may be one of
+\fBnone\fP,
+\fBax25ui\fP,
+\fBax25i\fP,
+\fBkissui\fP,
+\fBkissi\fP,
+\fBslip\fP,
+\fBvjslip\fP,
+\fBnetrom\fP,
+or
+\fBnrs\fP.
+.H 3 "ifconfig \fIinterface\fP forward" " \fIinterface-2\fP"
+When a forward is defined, all output for \fIinterface\fP is redirected to
+\fIinterface-2\fP. To remove the forward, set \fIinterface-2\fP to \fIinterface\fP.
+.H 3 "ifconfig \fIinterface\fP ipaddress" " \fIaddr\fP"
+Set the IP address to \fIaddr\fP for this interface. This might be necessary
+when a system acts as a gateway.
+See also the \fBhostname\fP and \fBip address\fP commands.
+.H 3 "ifconfig \fIinterface\fP linkaddress" " \fIhardware-dependent\fP"
+Set the hardware dependent address for this interface. For
+AX.25 this can be the callsign, for ethernet an ethernet
+address.
+.H 3 "ifconfig \fIinterface\fP mtu" " \fIparameter\fP"
+Set the maximum transfer unit to \fIparameter\fP octeds (bytes).
+See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
+for more information.
+.H 3 "ifconfig \fIinterface\fP netmask" " \fIaddress\fP"
+Set the sub-net mask for this interface.
+The \fIaddress\fP takes the form of an IP address
+with 1's in the network and subnet parts of the address,
+and 0's in the host part of the address.
+Sample: ifconfig ec0 netmask 0xffffff00 for a class C network (24 bits).
+This is related to the \fBbroadcast\fP sub-command.
+See also the \fBroute\fP command.
+.H 3 "ifconfig \fIinterface\fP rxbuf" " \fIsize\fP"
+Set the receive buffer size.
+This value is currently not used by \fBWAMPES\fP.
+.H 3 "ifconfig \fIinterface\fP txqlen" " \fIsize\fP"
+TO BE WRITTEN.

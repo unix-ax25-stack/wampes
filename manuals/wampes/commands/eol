@@ -1,0 +1,10 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/eol,v 1.1 1994/07/12 16:32:25 deyke Exp $
+.H 2 "eol" " [standard|null]"
+Display or set Telnet's end-of-line behavior when in remote echo mode.
+In \fBstandard\fP mode, each key is sent as-is.
+In \fBnull\fP mode, carriage returns are translated to line feeds.
+This command is not necessary with all UNIX systems,
+use it only when you find that a particular system responds to line feeds
+but not carriage returns.
+Only SunOS release 3.2 seems to exhibit this behavior, later releases are fixed.
+The default is \fBstandard\fP.

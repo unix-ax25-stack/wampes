@@ -1,0 +1,10 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/ftp-commands/abort,v 1.1 1994/07/12 16:32:33 deyke Exp $
+.H 2 "abort"
+Aborts a file transfer operation in progress.
+When receiving a file, \fBabort\fP simply resets the data connection.
+The next incoming data packet will generate a TCP RST (reset) in response
+which will clear the remote server.
+When sending a file, \fBabort\fP sends a premature end-of-file.
+Note that in both cases \fBabort\fP will leave a partial copy of the file on
+the destination machine, which must be removed manually if it is
+unwanted. \fBAbort\fP is valid only when a transfer is in progress.

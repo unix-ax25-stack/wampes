@@ -1,0 +1,9 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/axip,v 1.1 1994/07/12 16:32:24 deyke Exp $
+.H 2 "axip" " \fIsubcommand\fP"
+TO BE WRITTEN.
+.H 3 "axip route"
+TO BE WRITTEN.
+.H 4 "axip route add" " \fIax25_addr\fP \fIhostid\fP"
+TO BE WRITTEN.
+.H 4 "axip route drop" " \fIax25_addr\fP"
+TO BE WRITTEN.

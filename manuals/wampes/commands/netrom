@@ -1,0 +1,21 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/netrom,v 1.1 1994/07/12 16:32:26 deyke Exp $
+.H 2 "netrom" " \fIsubcommand\fP"
+These commands control the NET/ROM service.
+.H 3 "netrom broadcast" " [\fIinterface\fP \fIax25_addr\fP \fIdigipeater\fP ...]"
+TO BE WRITTEN.
+.H 3 "netrom connect" " \fInode\fP [\fIuser\fP]"
+TO BE WRITTEN.
+.H 3 "netrom ident" " [\fIident\fP]"
+TO BE WRITTEN.
+.H 3 "netrom kick" " \fInrcb_addr\fP"
+TO BE WRITTEN.
+.H 3 "netrom links" " [\fInode\fP [\fInode2\fP \fIquality\fP [permanent]]]"
+TO BE WRITTEN.
+.H 3 "netrom nodes" " [\fInode\fP]"
+TO BE WRITTEN.
+.H 3 "netrom parms" " [\fIparm#\fP [\fIvalue\fP ...]]"
+TO BE WRITTEN.
+.H 3 "netrom reset" " \fInrcb_addr\fP"
+TO BE WRITTEN.
+.H 3 "netrom status" " [\fInrcb_addr\fP]"
+TO BE WRITTEN.

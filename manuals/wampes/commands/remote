@@ -1,0 +1,34 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/remote,v 1.1 1994/07/12 16:32:26 deyke Exp $
+.H 2 "remote" " [-p \fIport\fP] [-k \fIkey\fP] [-a \fIkickaddr\fP] \fIhostid\fP exit|reset|kick"
+Send a UDP packet to the specified host commanding it
+to exit the \fBWAMPES\fP or \fBNOS\fP program, reset the processor,
+or force a retransmission on TCP connections. For this
+command to be accepted, the remote system must be running the \fBremote\fP
+server and the port number specified in the \fBremote\fP command must match
+the port number given when the server was started on the remote system.
+If the port numbers do not match, or if the remote server is not running
+on the target system, the command packet is ignored. Even if the
+command is accepted there is no acknowledgement.
+.P
+The \fBkick\fP command forces a retransmission timeout on all
+TCP connections that the remote node may have with the local node.
+If the \fB-a\fP option is used, connections to the specified host are
+kicked instead. No key is required for the \fBkick\fP subcommand.
+.P
+The \fBexit\fP subcommand is mainly useful for
+restarting the \fBWAMPES\fP program on a remote
+unattended system after a configuration file has been updated. The
+remote system should invoke the \fBWAMPES\fP program automatically upon booting,
+preferably from \fB/etc/inittab\fP.
+For example:
+.DS I
+.ft CW
+net :23456:respawn:env TZ=MST7MDT /tcp/net
+.ft P
+.DE
+.H 3 "remote -s" " \fIkey\fP"
+The \fBexit\fP and \fBreset\fP subcommands of \fBremote\fP require a password.
+The password is set
+on a given system with the \fB-s\fP option, and it is specified in a command
+to a remote system with the \fB-k\fP option. If no password is set with the
+\fB-s\fP option, then the \fBexit\fP and \fBreset\fP subcommands are disabled.

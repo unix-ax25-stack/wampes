@@ -1,0 +1,6 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/fkey,v 1.1 1994/07/12 16:32:25 deyke Exp $
+.H 2 "fkey" " \fIkey#\fP \fItext\fP"
+Set the value for a programmable key on the keyboard.
+Control characters have to be prefixed by CONTROL V.
+\fIText\fP has to be enclosed in double quotes if it
+contains white space.

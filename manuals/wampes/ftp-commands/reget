@@ -1,0 +1,8 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/ftp-commands/reget,v 1.1 1994/07/12 16:32:34 deyke Exp $
+.H 2 "reget" " \fIremote-file\fP [\fIlocal-file\fP]"
+\fBreget\fP acts like \fBget\fP, except that if \fIlocal-file\fP exists and is
+smaller than \fIremote-file\fP, \fIlocal-file\fP is presumed to be a
+partially transferred copy of \fIremote-file\fP and the transfer is
+continued from the apparent point of failure. This command is
+useful when transferring very large files over networks that tend
+to drop connections.

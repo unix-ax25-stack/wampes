@@ -1,0 +1,34 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/echo,v 1.1 1994/07/12 16:32:25 deyke Exp $
+.H 2 "echo" " [accept|refuse]"
+Display or set the flag controlling client Telnet's response to
+a remote WILL ECHO offer.
+The default is \fBaccept\fP.
+.P
+The Telnet presentation protocol specifies that in the absence
+of a negotiated agreement to the contrary, neither end echoes
+data received from the other. In this mode, a Telnet client
+session echoes keyboard input locally and nothing is actually
+sent until a carriage return is typed. Local line editing is
+also performed: backspace deletes the last character typed,
+while control-U deletes the entire line.
+.P
+When communicating from keyboard to keyboard the standard local
+echo mode is used, so the setting of this parameter has no
+effect. However, many timesharing systems (eg. UNIX) prefer to
+do their own echoing of typed input. (This makes screen editors
+work right, among other things). Such systems send a Telnet
+WILL ECHO offer immediately upon receiving an incoming Telnet
+connection request. If \fBecho accept\fP is in effect, a client
+Telnet session will automatically return a DO ECHO response. In
+this mode, local echoing and editing is turned off and each key
+stroke is sent immediately (subject to the Nagle tinygram
+algorithm in TCP). While this mode is just fine across an
+Ethernet, it is clearly inefficient and painful across slow
+paths like packet radio channels. Specifying \fBecho refuse\fP
+causes an incoming WILL ECHO offer to be answered with a DONT
+ECHO, the client Telnet session remains in the local echo mode.
+Sessions already in the remote echo mode are unaffected. (Note:
+Berkeley UNIX has a bug in that it will still echo input even
+after the client has refused the WILL ECHO offer. To get around
+this problem, enter the \fBstty -echo\fP command to the shell once
+you have logged in.)

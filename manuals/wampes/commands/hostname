@@ -1,0 +1,11 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/hostname,v 1.1 1994/07/12 16:32:25 deyke Exp $
+.H 2 "hostname" " [\fIhostname\fP]"
+Display or set the local host's name. By convention this should
+be the same as the host's primary domain name. This string is
+used only in the greeting messages of the various network
+servers, and in the command line prompt.
+Note that \fBhostname\fP does NOT set the system's IP address.
+.P
+If \fIhostname\fP is the same as the name of an interface,
+\fIhostname\fP will be substituted by the canonical host name
+which corresponds to the IP address of that interface.

@@ -1,0 +1,34 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/memory,v 1.1 1994/07/12 16:32:26 deyke Exp $
+.H 2 "memory" " \fIsubcommand\fP"
+These commands control memory allocation.
+.H 3 "memory debug" " [on|off]"
+The default is \fBoff\fP.
+MORE TO BE WRITTEN.
+.H 3 "memory freelist"
+Display the storage allocator free list. MORE TO BE WRITTEN.
+.H 3 "memory merge" " [on|off]"
+The default is \fBoff\fP.
+TO BE WRITTEN.
+.H 3 "memory sizes"
+Display a histogram of storage allocator request sizes. Each histogram
+bin is a binary order of magnitude (i.e., a factor of 2).
+.H 3 "memory status"
+Display a summary of storage allocator statistics. The first line
+shows the total size of the heap, the amount of heap
+memory available in bytes and as a percentage of the total heap size,
+and the number of sbrk() system calls used to increase the heap size.
+.P
+The second line shows the total number of calls to allocate and free blocks
+of memory, the difference of these two values (i.e., the number of allocated
+blocks outstanding), the number of allocation requests that were denied
+due to lack of memory, and the number of calls to free() that attempted to
+free garbage
+(eg. by freeing the same block twice or freeing a garbled pointer).
+.P
+The third line shows the total number of splits
+(breaking a big heap block into two small blocks)
+and merges
+(combining two adjacent small blocks into one big block),
+and the difference of these two values.
+.P
+The fourth line shows the number of calls to pushdown, and the number of calls to pushdown which resulted in a call to malloc.

@@ -1,0 +1,79 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/route,v 1.1 1994/07/12 16:32:27 deyke Exp $
+.H 2 "route"
+With no arguments, \fBroute\fP displays the IP routing table.
+.H 3 "route add" " \fIhostid\fP[/\fIbits\fP]|default \fIinterface\fP [\fIgateway_hostid\fP [\fImetric\fP]]"
+This command adds an entry to the routing table. It requires at least two
+more arguments, the \fIhostid\fP of the destination and the name of
+the \fIinterface\fP to which its packets should be sent. If the destination is
+not local, the gateway's hostid should also be specified. (If the interface
+is a point-to-point link, then \fIgateway_hostid\fP may be omitted even if the
+target is non-local because this field is only used to determine the
+gateway's link level address, if any. If the destination is directly
+reachable, \fIgateway_hostid\fP is also unnecessary since the destination
+address is used to determine the link address).
+.P
+The optional /\fIbits\fP suffix to the destination \fIhostid\fP specifies how
+many leading bits in \fIhostid\fP are to be considered significant in
+routing comparisons. If not specified, 32 bits (i.e., full significance) is
+assumed. With this option, a single routing table entry may refer to
+many hosts all sharing a common bit string prefix in their IP addresses.
+For example, ARPA Class A, B and C networks would use suffixes of /8,
+/16 and /24 respectively. The command
+.DS I
+.ft CW
+route add 44/8 sl0 44.64.0.2
+.ft P
+.DE
+causes any IP addresses beginning with "44" in the first 8 bits to be
+routed to 44.64.0.2, the remaining 24 bits are "don't-cares".
+.P
+When an IP address to be routed matches more than one entry in the routing
+table, the entry with the largest \fIbits\fP parameter (i.e., the "best" match)
+is used. This allows individual hosts or blocks of hosts to be exceptions
+to a more general rule for a larger block of hosts.
+.P
+The special destination \fBdefault\fP is used to route datagrams to
+addresses not matched by any other entry
+in the routing table, it is equivalent to specifying a
+/\fIbits\fP suffix of /0 to any destination \fIhostid\fP.
+Care must be taken with
+default entries since two nodes with default entries pointing at each
+other will route packets to unknown addresses back and forth in a loop
+until their time-to-live (TTL) fields expire. (Routing loops for
+specific addresses can also be created, but this is less likely to occur
+accidentally).
+.P
+There are two built-in interfaces: \fBloopback\fP and \fBencap\fP.
+\fBLoopback\fP is for internal purposes only. \fBEncap\fP is an IP
+encapsulator interface. It is used to encapsulate a complete IP datagram
+into an IP datagram so that it gets "piggy-backed".
+.P
+Here are some examples of the \fBroute\fP command:
+.DS I
+.ft CW
+# Route datagrams to IP address 44.0.0.3 to SLIP line #0.
+# No gateway is needed because SLIP is point-to point.
+route add 44.0.0.3 sl0
+
+# Route all default traffic to the gateway on the local Ethernet
+# with IP address 44.0.0.1
+route add default ec0 44.0.0.1
+
+# The local Ethernet has an ARPA Class-C address assignment.
+# Route all IP addresses beginning with 192.4.8 to it
+route add 192.4.8/24 ec0
+
+# The station with IP address 44.0.0.10 is on the local AX.25 channel
+route add 44.0.0.10 ax0
+.ft P
+.DE
+.H 3 "route addprivate" " \fIhostid\fP[/\fIbits\fP]|default \fIinterface\fP [\fIgateway_hostid\fP [\fImetric\fP]]"
+This command is identical to \fBroute add\fP except that it also marks the new
+entry as private, it will never be included in outgoing RIP updates.
+.H 3 "route drop" " \fIhostid\fP"
+\fBroute drop\fP deletes an entry from the table. If a packet arrives for the
+deleted address and a \fBdefault\fP route is in effect, it will be used.
+.H 3 "route flush"
+TO BE WRITTEN.
+.H 3 "route lookup" " \fIhostid\fP"
+TO BE WRITTEN.

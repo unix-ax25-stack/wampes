@@ -1,0 +1,5 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/1cr,v 1.1 1994/07/12 16:32:24 deyke Exp $
+.H 2 "<cr>"
+Entering a carriage return (empty line) while in command mode
+puts you in converse mode with the current session. If there is
+no current session, \fBWAMPES\fP remains in command mode.

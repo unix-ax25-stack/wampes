@@ -1,0 +1,7 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/session,v 1.1 1994/07/12 16:32:27 deyke Exp $
+.H 2 "session" " [\fIsession#\fP]"
+Without arguments, display the list of current sessions, including
+session number, remote TCP or AX.25 address and the address of the TCP or
+AX.25 control block. An asterisk (*) is shown next to the current
+session. Entering a session number as an argument to the \fBsession\fP
+command will put you in converse mode with that session.

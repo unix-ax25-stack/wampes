@@ -1,0 +1,10 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/ftp-commands/dir,v 1.1 1994/07/12 16:32:33 deyke Exp $
+.H 2 "dir" " [\fIremote-directory\fP [\fIlocal-file\fP]]"
+Write a listing of \fIremote-directory\fP to standard output or optionally to
+\fIlocal-file\fP.
+The listing includes any system-dependent information that the server chooses
+to include.
+For example, most UNIX systems produce output from the command
+\fBls -l\fP (see also \fBnlist\fP).
+If neither \fIremote-directory\fP nor \fIlocal-file\fP is specified,
+list the remote working directory to standard output.

@@ -1,0 +1,116 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/sntp,v 1.1 1994/07/12 16:32:27 deyke Exp $
+.H 2 "sntp" " \fIsubcommand\fP"
+TO BE WRITTEN.
+.H 3 "sntp add" " \fIhostid\fP [\fIinterval\fP]"
+Add \fIhostid\fP to the list of sntp servers.
+\fIinterval\fP specifies the poll interval in seconds (default 3333).
+.H 3 "sntp drop" " \fIhostid\fP"
+Remove \fIhostid\fP from the list of sntp servers.
+.H 3 "sntp status"
+List the currently configured sntp servers, along with
+statistics on how many polls and replies have been exchanged
+with each one, response times, etc.
+.H 3 "sntp step_threshold" " [\fIstep_threshold\fP]"
+Display or set the step threshold (measured in seconds). If the
+required time adjustment is below the step threshold, the
+adjtime() system call will be used to slow down or to accelerate
+the clock, otherwise the clock will be stepped using
+settimeofday().
+The default is 1 second.
+.H 3 "sntp sys"
+Display the sntp server configuration.
+.H 4 "sntp sys leap" " [\fIleap\fP]"
+Display or set the sntp server leap indicator. This is a
+two-bit code warning of an impending leap second to be
+inserted/deleted in the last minute of the current day, coded as
+follows:
+.DS
+.TS
+center box tab(;) ;
+cB | cB
+l | l.
+Value;Meaning
+_
+0;no warning
+1;last minute has 61 seconds
+2;last minute has 59 seconds)
+3;alarm condition (clock not synchronized)
+.TE
+.DE
+The default is 0.
+.H 4 "sntp sys precision" " [\fIprecision\fP]"
+Display or set the sntp server precision. This is an eight-bit
+signed integer indicating the precision of the local clock, in
+seconds to the nearest power of two. The values that normally
+appear in this field range from -6 for mains-frequency clocks to
+-18 for microsecond clocks found in some workstations.
+The default is -10.
+.H 4 "sntp sys refid" " [\fIrefid\fP]"
+Display or set the sntp server reference identifier. This is
+identifying the particular reference clock. In the case of
+stratum 0 (unspecified) or stratum 1 (primary reference), this
+is a string of up to 4 characters. While not enumerated as part
+of the NTP specification, the following are representative ASCII
+identifiers:
+.DS
+.TS
+center box tab(;) ;
+cB | cB | cB
+l | l | l.
+Stratum;Code;Meaning
+_
+0;ascii;generic time service other than NTP, such as
+;;ACTS (Automated Computer Time Service),
+;;TIME (UDP/Time Protocol),
+;;TSP (TSP UNIX time protocol),
+;;DTSS (Digital Time Synchronization Service), etc.
+1;ATOM;calibrated atomic clock
+1;VLF;VLF radio (OMEGA, etc.)
+1;callsign;Generic radio
+1;LORC;LORAN-C radionavigation system
+1;GOES;Geostationary Operational Environmental Satellite
+1;GPS;Global Positioning Service
+2;address;secondary reference (four-octet Internet address
+;;of the NTP server)
+.TE
+.DE
+The default is UNIX.
+.H 4 "sntp sys reftime"
+Display the sntp server reference time.
+.H 4 "sntp sys rootdelay" " [\fIrootdelay\fP]"
+Display or set the sntp server root delay. This is a floating
+point number indicating the total roundtrip delay to the primary
+reference source, in seconds. Note that this variable can take
+on both positive and negative values, depending on the relative
+time and frequency errors. The values that normally appear in
+this field range from negative values of a few milliseconds to
+positive values of several hundred milliseconds.
+The default is 0.
+.H 4 "sntp sys rootdispersion" " [\fIrootdispersion\fP]"
+Display or set the sntp server root dispersion. This is a
+floating point number indicating the maximum error relative to
+the primary reference source, in seconds. The values that
+normally appear in this field range from zero to several hundred
+milliseconds.
+The default is 0.
+.H 4 "sntp sys stratum" " [\fIstratum\fP]"
+Display or set the sntp server stratum. This is a eight-bit
+integer indicating the stratum level of the local clock, with
+values defined as follows:
+.DS
+.TS
+center box tab(;) ;
+cB | cB
+l | l.
+Stratum;Meaning
+_
+0;unspecified or unavailable
+1;primary reference (e.g., radio clock)
+2-15;secondary reference (via NTP or SNTP)
+16-255;reserved
+.TE
+.DE
+The default is 1.
+.H 3 "sntp trace" " [on|off]"
+Enable or disable sntp tracing.
+The default is \fBoff\fP.

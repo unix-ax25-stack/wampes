@@ -1,0 +1,38 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/0intro,v 1.1 1994/07/12 16:32:24 deyke Exp $
+.H 1 "Commands"
+This section describes the commands recognized in command mode, or
+within a startup file such as \fBnet.rc\fP. These are given in the following
+notation:
+.DS
+\fBcommand\fP
+\fBcommand\fP \fIparameter\fP
+\fBcommand subcommand\fP \fIparameter\fP
+\fBcommand\fP [\fIoptional_parameter\fP]
+\fBcommand a|b\fP
+.DE
+Many commands take subcommands or parameters, which may be optional or
+required. In general, if a required subcommand or parameter is omitted,
+an error message will summarize the available subcommands or required
+parameters. (Giving a '?' in place of the subcommand will also
+generate the message. This is useful when the command word alone is a
+valid command.) If a command takes an optional value parameter, issuing
+the command without the parameter generally displays the current value
+of the variable. (Exceptions to this rule are noted in the individual
+command descriptions.)
+.P
+Two or more parameters separated by vertical bar(s) denote a choice
+between the specified values. Optional parameters are shown enclosed in
+[brackets], and a parameter shown as \fIparameter\fP should be
+replaced with an actual value or string. For example, the notation
+\fIhostid\fP denotes an actual host or gateway, which may be specified in
+one of two ways: as a numeric IP address in dotted decimal notation
+(eg. 44.0.0.1), or as a symbolic name listed in the file domain.txt.
+.P
+All commands and many subcommands may be abbreviated. You only need
+type enough of a command's name to distinguish it from others that begin
+with the same series of letters. Parameters, however, must be typed in
+full.
+.P
+FTP subcommands (eg. put, get, dir, etc) are recognized only in
+converse mode with the appropriate FTP session, they are not recognized
+in command mode. (See the \fBFTP Subcommands\fP chapter.)

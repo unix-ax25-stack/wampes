@@ -1,0 +1,22 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/domain,v 1.1 1994/07/12 16:32:24 deyke Exp $
+.H 2 "domain" " \fIsubcommand\fP"
+These commands control the Domain Name Service.
+.H 3 "domain cache list"
+Show the current contents of the in-memory cache for resource
+records.
+.H 3 "domain cache flush"
+Clear the in-memory cache for resource records.
+This command is executed automatically every 24 hours to
+remove old cache entries.
+.H 3 "domain query" " \fIname|addr\fP"
+Attempt to map a host name to an IP address or vice versa
+using the built-in domain name server.
+.H 3 "domain trace" " [on|off]"
+Display or set the flag controlling the tracing of domain name server
+requests and responses.
+The default is \fBoff\fP.
+.H 3 "domain usegethostby" " [on|off]"
+Enable or disable the use of the UNIX functions gethostbyname()
+and gethostbyaddr().
+The default is \fBoff\fP.
+MORE TO BE WRITTEN.

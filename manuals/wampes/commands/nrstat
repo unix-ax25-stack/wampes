@@ -1,0 +1,3 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/nrstat,v 1.1 1994/07/12 16:32:26 deyke Exp $
+.H 2 "nrstat"
+Displays the netrom interface statistics.

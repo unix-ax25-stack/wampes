@@ -1,0 +1,21 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ping,v 1.1 1994/07/12 16:32:26 deyke Exp $
+.H 2 "ping"
+TO BE WRITTEN.
+.H 3 "ping clear"
+TO BE WRITTEN.
+.H 3 "ping \fIhostid\fP" " [\fIpacketsize\fP [\fIinterval\fP]]"
+Ping (send ICMP ECHO_REQUEST packets to) the specified host.
+ECHO_REQUEST datagrams have an IP and ICMP header,
+followed by a \fBstruct timeval\fP,
+and an arbitrary number of pad bytes used to fill out the packet.
+Default datagram length is 64 bytes,
+but this can be changed by specifying \fIpacketsize\fP.
+The minimum value allowed for \fIpacketsize\fP is 8 bytes.
+If \fIpacketsize\fP is smaller than 16 bytes,
+there is not enough room for timing information.
+In this case the round-trip times are not displayed.
+.P
+If \fIinterval\fP is specified, pings will be repeated indefinitely
+at the specified interval (in seconds),
+otherwise a single, "one shot" ping is done.
+Responses to one-shot pings appear asynchronously on the command screen.

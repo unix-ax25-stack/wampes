@@ -1,0 +1,30 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/arp,v 1.1 1994/07/12 16:32:24 deyke Exp $
+.H 2 "arp"
+Display the Address Resolution Protocol table that maps IP addresses
+to their subnet (link) addresses on subnetworks capable of broadcasting.
+For each IP address entry the subnet type (eg. \fBax25\fP, \fBnetrom\fP), link
+address and time to expiration is shown. If the link address is currently
+unknown, the number of IP datagrams awaiting resolution is also shown.
+.H 3 "arp add" " \fIhostid\fP ax25|netrom \fIlink_addr\fP"
+Add a permanent entry to the table. It will not time out as
+will an automatically created entry, but must be removed with the
+\fBarp drop\fP command.
+.H 3 "arp drop" " \fIhostid\fP ax25|netrom"
+Remove the specified entry from the ARP table.
+.H 3 "arp flush"
+Drop all automatically created entries in the ARP table, permanent
+entries are not affected.
+.H 3 "arp publish" " \fIhostid\fP ax25|netrom \fIlink_addr\fP"
+The \fBarp publish\fP command is similar to the \fBarp add\fP command,
+but the system will also respond to any ARP request it sees on the network
+that seeks the specified address.
+This is commonly referred to as "proxy arp",
+and is considered a fairly dangerous tool.
+The basic idea is that if you have two machines,
+one of which is on the air with a TNC,
+and the second one of which is connected to the first with a slip link,
+you might want the first machine to publish it's own AX.25 address
+as the right answer for arp queries addressing the second machine.
+This way, the rest of the world doesn't know the second machine
+isn't really on the air.
+(Use this feature with great care.)

@@ -1,0 +1,71 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/login,v 1.1 1994/07/12 16:32:25 deyke Exp $
+.H 2 "login"
+TO BE WRITTEN.
+.H 3 "login auto" " [on|off]"
+Enable or disable automatic login of users. If automatic login
+is enabled the user name is derived from the incoming AX.25
+call, the NET/ROM user name, or the IP host name. If automatic
+login is disabled the user has to supply the user name at the
+login: prompt.
+The default is \fBon\fP.
+.H 3 "login create" " [on|off]"
+Enable or disable automatic creation of user accounts (entries
+in the system passwd file and home directories) if automatic
+login is enabled.
+The default is \fBon\fP.
+.H 3 "login defaultuser" " [\fIusername\fP]"
+Display or set the user name to be used for login if the
+incoming AX.25 call, the NET/ROM user name, or the IP host name
+cannot be mapped to a valid user name. If \fIusername\fP is set to
+"" this mapping is disabled.
+The default is guest.
+.H 3 "login gid" " [\fIgid\fP]"
+Display or set the group id to be used when creating new user
+accounts (see \fBlogin create\fP).
+The default is 400.
+.H 3 "login homedir" " [\fIhomedir\fP]"
+Display or set the base directory to be used for user home
+directories when creating new user accounts (see
+\fBlogin create\fP).
+.P
+To avoid huge directories the actual home directory is created
+in a subdirectory:
+.DS I
+\fIhomedir\fP/\fIfirst 3 characters of user name\fP.../\fIuser name\fP
+.DE
+Example:
+.P
+If \fBlogin homedir\fP is set to /home/radio the home directory for
+n0pra will be:
+.DS I
+/home/radio/n0p.../n0pra
+.DE
+The default is HOME_DIR/funk.
+.P
+HOME_DIR is defined in /tcp/lib/configure.h and has a value of
+.DS I
+/home
+/u
+/users
+/usr/people
+.DE
+depending on the system configuration.
+.H 3 "login logfiledir" " [\fIlogfiledir\fP]"
+Display or set the directory to be used for user log files. If
+set to "" no logging is done.
+The default is "".
+.H 3 "login maxuid" " [\fImaxuid\fP]"
+Display or set the maximum user id to be used when creating new
+user accounts (see \fBlogin create\fP).
+\fImaxuid\fP must be between 1 and 32000.
+The default is 32000.
+.H 3 "login minuid" " [\fIminuid\fP]"
+Display or set the minimum user id to be used when creating new
+user accounts (see \fBlogin create\fP).
+\fIminuid\fP must be between 1 and 32000.
+The default is 400.
+.H 3 "login shell" " [\fIshell\fP]"
+Display or set the login shell to be used when creating new user
+accounts (see \fBlogin create\fP). If set to "" the system will
+choose its own default shell.
+The default is "".

@@ -1,0 +1,55 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/tcp,v 1.1 1994/07/12 16:32:27 deyke Exp $
+.H 2 "tcp" " \fIsubcommand\fP"
+These commands control the Transmission Control Protocol service.
+.H 3 "tcp irtt" " [\fImilliseconds\fP]"
+Display or set the initial round trip time estimate, in milliseconds, to be
+used for new TCP connections until they can measure and adapt to the
+actual value. The default is 5000 milliseconds (5 seconds).
+Increasing this when operating
+over slow channels will avoid the flurry of retransmissions that would
+otherwise occur as the smoothed estimate settles down at the correct
+value. Note that this command should be given before servers are started in
+order for it to have effect on incoming connections.
+.P
+TCP also keeps a cache of measured round trip times and mean
+deviations (MDEV) for current and recent destinations. Whenever a new
+TCP connection is opened, the system first looks in this cache. If the
+destination is found, the cached IRTT and MDEV values are used. If not,
+the default IRTT value mentioned above is used, along with a MDEV of 0.
+This feature is fully automatic, and it can improve performance greatly
+when a series of connections are opened and closed to a given destination
+(eg. a series of FTP file transfers or directory listings).
+.H 3 "tcp kick" " \fItcb_addr\fP"
+If there is unacknowledged
+data on the send queue of the specified TCB, this command forces
+an immediate retransmission.
+.H 3 "tcp mss" " [\fIsize\fP]"
+Display or set the TCP Maximum Segment Size in bytes that will be sent on all
+outgoing TCP connect request (SYN segments). This tells the remote end the
+size of the largest segment (packet) it may send. Changing MSS affects
+only future connections, existing connections are unaffected.
+The default is 512 bytes.
+.H 3 "tcp reset" " \fItcb_addr\fP"
+Deletes the TCP control block at the specified address.
+.H 3 "tcp rtt" " \fItcb_addr\fP \fImilliseconds\fP"
+Replaces the automatically computed round trip time in the specified TCB
+with the rtt in milliseconds. This command is useful to speed up
+recovery from a series of lost packets since it provides a manual bypass
+around the normal backoff retransmission timing mechanisms.
+.H 3 "tcp status" " [\fItcb_addr\fP]"
+Without arguments, displays several TCP-level statistics, plus a summary of
+all existing TCP connections, including TCB address, send and receive queue
+sizes, local and remote sockets, and connection state. If \fItcb_addr\fP is
+specified, a more detailed dump of the specified TCB is generated, including
+send and receive sequence numbers and timer information.
+.H 3 "tcp syndata" " [on|off]"
+Display or set the tcp syn+data pigybacking flag. Some tcp systems cannot
+handle syn+data together.
+The default is \fBoff\fP.
+.H 3 "tcp trace" " [on|off]"
+Display or set the tcp trace flag.
+The default is \fBoff\fP.
+.H 3 "tcp window" " [\fIsize\fP]"
+Display or set the default receive window size in bytes to be used by TCP
+when creating new connections. Existing connections are unaffected.
+The default is 2048 bytes.

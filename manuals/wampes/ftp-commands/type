@@ -1,0 +1,19 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/ftp-commands/type,v 1.1 1994/07/12 16:32:34 deyke Exp $
+.H 2 "type" " [a|b|i|l \fIbytesize\fP]"
+Set the FTP file transfer type to either ASCII (type \fBa\fP), or
+BINARY/IMAGE (type \fBb\fP or \fBi\fP).
+The default type is ASCII.
+In ASCII mode, files are sent as varying length lines of text
+separated by cr/lf sequences.
+In BINARY/IMAGE mode, files are sent exactly as they appear in the file system.
+ASCII mode should be used whenever transferring text
+between dissimilar systems (e.g., UNIX and MS-DOS) because of their
+different end-of-line and/or end-of-file conventions.
+When exchanging text files between machines of the same type,
+either mode will work, but BINARY/IMAGE mode is usually faster.
+Naturally, when exchanging raw binary files (executables, compressed archives,
+etc) BINARY/IMAGE mode must be used.
+Type \fBl\fP (logical byte size) is used when exchanging binary files
+with remote servers having oddball word sizes (e.g., DECSYSTEM-10s and 20s).
+Locally it works exactly like BINARY/IMAGE, except that it notifies the
+remote system how large the byte size is. \fIbytesize\fP is typically 8.

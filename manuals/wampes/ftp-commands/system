@@ -1,0 +1,3 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/ftp-commands/system,v 1.1 1994/07/12 16:32:34 deyke Exp $
+.H 2 "system"
+Show the type of operating system running on the remote machine.

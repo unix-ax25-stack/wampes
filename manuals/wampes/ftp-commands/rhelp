@@ -1,0 +1,4 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/ftp-commands/rhelp,v 1.1 1994/07/12 16:32:34 deyke Exp $
+.H 2 "rhelp" " [\fIcommand-name\fP]"
+Request help from the server host. If \fIcommand-name\fP is specified,
+supply it to the server.

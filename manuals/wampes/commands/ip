@@ -1,0 +1,19 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ip,v 1.1 1994/07/12 16:32:25 deyke Exp $
+.H 2 "ip" " \fIsubcommand\fP"
+These commands control the Internet Protocol service.
+.H 3 "ip address" " [\fIhostid\fP]"
+Display or set the default local IP address. This command must be given before
+an \fBattach\fP command if it is to be used as the default IP address for
+the interface.
+.H 3 "ip rtimer" " [\fIseconds\fP]"
+Display or set the IP reassembly timeout. The default is 30 seconds.
+.H 3 "ip status"
+Display Internet Protocol (IP) statistics, such as total packet counts
+and error counters of various types.
+.H 3 "ip ttl" " [\fIhops\fP]"
+Display or set the default time-to-live value placed in each outgoing IP
+datagram. This limits the number of switch hops the datagram will be allowed to
+take. The idea is to bound the lifetime of the packet should it become caught
+in a routing loop, so make the value slightly larger than the number of
+hops across the network you expect to transit packets.
+The default is 255 hops.

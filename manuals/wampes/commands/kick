@@ -1,0 +1,7 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/kick,v 1.1 1994/07/12 16:32:25 deyke Exp $
+.H 2 "kick" " [\fIsession#\fP]"
+Kick all sockets associated with a session.
+If no argument is given, kick the current session.
+Performs the same function as the \fBax25 kick\fP,
+\fBnetrom kick\fP, and \fBtcp kick\fP commands,
+but is easier to type.

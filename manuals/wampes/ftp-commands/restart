@@ -1,0 +1,4 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/ftp-commands/restart,v 1.1 1994/07/12 16:32:34 deyke Exp $
+.H 2 "restart" " \fIoffset\fP"
+Restart the immediately following \fBget\fP or \fBput\fP
+at the indicated \fIoffset\fP.
