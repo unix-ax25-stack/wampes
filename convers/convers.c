@@ -1,4 +1,6 @@
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.8 1991/11/22 16:17:01 deyke Exp $";
+#ifndef __lint
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.9 1992/09/01 16:46:11 deyke Exp $";
+#endif
 
 #define _HPUX_SOURCE
 
@@ -9,8 +11,8 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <termio.h>
-#include <time.h>
+#include <sys/time.h>
+#include <termios.h>
 #include <unistd.h>
 
 #if defined(__TURBOC__) || defined(__STDC__)
@@ -25,7 +27,7 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 extern char *optarg;
 extern int optind;
 
-static struct termio prev_termio;
+static struct termios prev_termios;
 
 static void stop __ARGS((char *arg));
 
@@ -35,7 +37,7 @@ static void stop(arg)
 char *arg;
 {
   if (*arg) perror(arg);
-  ioctl(0, TCSETA, &prev_termio);
+  tcsetattr(0, TCSANOW, &prev_termios);
   exit(0);
 }
 
@@ -67,17 +69,17 @@ char **argv;
   int outcnt = 0;
   int size;
   struct sockaddr *addr;
-  struct termio curr_termio;
+  struct termios curr_termios;
 
   signal(SIGPIPE, SIG_IGN);
 
-  if (ioctl(0, TCGETA, &prev_termio)) stop(*argv);
-  if (ioctl(0, TCGETA, &curr_termio)) stop(*argv);
-  echo = curr_termio.c_lflag & ECHO;
-  curr_termio.c_lflag = 0;
-  curr_termio.c_cc[VMIN] = 1;
-  curr_termio.c_cc[VTIME] = 0;
-  if (ioctl(0, TCSETA, &curr_termio)) stop(*argv);
+  if (tcgetattr(0, &prev_termios)) stop(*argv);
+  curr_termios = prev_termios;
+  echo = curr_termios.c_lflag & ECHO;
+  curr_termios.c_lflag = 0;
+  curr_termios.c_cc[VMIN] = 1;
+  curr_termios.c_cc[VTIME] = 0;
+  if (tcsetattr(0, TCSANOW, &curr_termios)) stop(*argv);
 
   while ((ch = getopt(argc, argv, "c:s:")) != EOF)
     switch (ch) {
@@ -113,12 +115,12 @@ char **argv;
 	for (i = 0; i < size; i++) {
 	  c = buffer[i];
 	  if (c == '\r') c = '\n';
-	  if (c == prev_termio.c_cc[VERASE]) {
+	  if (c == prev_termios.c_cc[VERASE]) {
 	    if (incnt) {
 	      incnt--;
 	      if (echo && write(1, "\b \b", 3) < 0) stop(*argv);
 	    }
-	  } else if (c == prev_termio.c_cc[VKILL]) {
+	  } else if (c == prev_termios.c_cc[VKILL]) {
 	    for (; incnt; incnt--)
 	      if (echo && write(1, "\b \b", 3) < 0) stop(*argv);
 	  } else if (echo && c == 18) {
@@ -131,9 +133,9 @@ char **argv;
 	  if (c == '\n' || incnt == sizeof(inbuf) - 1) {
 	    if (*inbuf == '!') {
 	      inbuf[incnt] = '\0';
-	      if (ioctl(0, TCSETA, &prev_termio)) stop(*argv);
+	      if (tcsetattr(0, TCSANOW, &prev_termios)) stop(*argv);
 	      system(inbuf + 1);
-	      if (ioctl(0, TCSETA, &curr_termio)) stop(*argv);
+	      if (tcsetattr(0, TCSANOW, &curr_termios)) stop(*argv);
 	      if (write(1, "!\n", 2) < 0) stop(*argv);
 	    } else {
 	      if (write(3, inbuf, incnt) < 0) stop(*argv);
