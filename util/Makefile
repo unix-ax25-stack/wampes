@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.5 1991/06/18 17:13:18 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.6 1991/09/17 22:16:31 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 CFLAGS     = -O -s
@@ -15,7 +15,6 @@ bridge: bridge.c $(BUILDSADDR)
 cnet:   cnet.c $(BUILDSADDR)
 	@mv $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
 	$(CC) $(CFLAGS) cnet.c $(BUILDSADDR) -o $@
-	chmod go-rwx cnet*
 
 netupdc: netupdc.c $(BUILDSADDR)
 	@mv $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
@@ -55,7 +54,6 @@ install: \
 /usr/local/bin/cnet: cnet
 	@mv $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
 	cp cnet $@ ; exit 0
-	chmod 700 $@ ; exit 0
 
 /usr/local/bin/path: path
 	@mv $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0

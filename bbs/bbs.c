@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.25 1991/07/23 19:55:15 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.26 1991/09/17 22:13:21 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -1950,7 +1950,7 @@ static void connect_bbs(void)
   struct sockaddr *addr;
 
   if (!(address = connect_addr(user.name))) exit(1);
-  if (!(addr = build_sockaddr("unix:/tcp/sockets/netcmd", &addrlen))) exit(1);
+  if (!(addr = build_sockaddr("unix:/tcp/.sockets/netcmd", &addrlen))) exit(1);
   if ((fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) exit(1);
   if (connect(fd, addr, addrlen)) exit(1);
   if (fd != 0) dup2(fd, 0);

@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.7 1990/12/07 10:44:04 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.8 1991/09/17 22:16:32 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -129,7 +129,7 @@ char  **argv;
   struct sockaddr *addr;
   struct termio curr_termio;
 
-  server = (argc < 2) ? "unix:/tcp/sockets/netkbd" : argv[1];
+  server = (argc < 2) ? "unix:/tcp/.sockets/netkbd" : argv[1];
   if (!(addr = build_sockaddr(server, &addrlen))) {
     fprintf(stderr, "%s: Cannot build address from \"%s\"\n", *argv, server);
     exit(1);
