@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.6 1989/01/15 19:55:46 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.7 1989/05/03 20:14:27 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -19,7 +19,7 @@ static struct termio prev_termio;
 
 /*---------------------------------------------------------------------------*/
 
-static int  sigpipe_handler(sig, code, scp)
+static void sigpipe_handler(sig, code, scp)
 int  sig, code;
 struct sigcontext *scp;
 {

@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.11 1989/01/29 08:28:29 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.12 1989/05/03 20:14:36 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -86,7 +86,7 @@ static struct utsname utsname;
 
 /*---------------------------------------------------------------------------*/
 
-static int  sigpipe_handler(sig, code, scp)
+static void sigpipe_handler(sig, code, scp)
 int  sig, code;
 struct sigcontext *scp;
 {
@@ -696,7 +696,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.11 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.12 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
@@ -857,7 +857,6 @@ struct connection *cp;
 
   char  *host;
   char  *name;
-  char  buffer[2048];
   int  newchannel;
   int  oldchannel;
   register struct connection *p;
@@ -926,7 +925,6 @@ struct connection *cp;
   char  *arg;
   char  buffer[2048];
   int  arglen;
-  register struct connection *p;
   struct cmdtable *cmdp;
 
   clear_locks();
@@ -996,7 +994,6 @@ char  **argv;
   };
 
   char  buffer[2048];
-  char  c;
   int  addrlen;
   int  flisten[_NFILE], flistenmask[_NFILE];
   int  i;
