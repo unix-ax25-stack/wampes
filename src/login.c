@@ -1,4 +1,4 @@
-/* @(#) $Id: login.c,v 1.65 1996/09/09 22:14:49 deyke Exp $ */
+/* @(#) $Id: login.c,v 1.66 1997/06/25 19:07:25 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -52,7 +52,14 @@ EXTERN_C char *ptsname(int fildes);
 #define PASSWDFILE          "/etc/passwd"
 #define PWLOCKFILE1         "/etc/ptmp"
 #define PWLOCKFILE2         "/etc/passwd.tmp"
+
+#if defined __hpux
 #define SPASSWDFILE         "/.secure/etc/passwd"
+#elif defined linux
+#define SPASSWDFILE         "/etc/shadow"
+#else
+#define SPASSWDFILE         ""
+#endif
 
 #define MAXUID              32000
 
@@ -289,13 +296,15 @@ struct passwd *getpasswdentry(const char *name, int create)
 
 #else
 
-#ifdef __hpux
-  if (!stat(SPASSWDFILE, &statbuf) && (fp = fopen(SPASSWDFILE, "a"))) {
+  if (*SPASSWDFILE && !stat(SPASSWDFILE, &statbuf) && (fp = fopen(SPASSWDFILE, "a"))) {
+#if defined __hpux
     fprintf(fp, "%s::%d:0\n", name, uid);
+#elif defined linux
+    fprintf(fp, "%s::%d:0:10000::::\n", name, uid);
+#endif
     fclose(fp);
     secured = 1;
   }
-#endif
   if (!(fp = fopen(PASSWDFILE, "a"))) {
     remove(PWLOCKFILE2);
     remove(PWLOCKFILE1);
@@ -304,7 +313,7 @@ struct passwd *getpasswdentry(const char *name, int create)
   fprintf(fp,
 	  "%s:%s:%d:%d:Amateur %s:%s:%s\n",
 	  name,
-	  secured ? "*" : "",
+	  secured ? "x" : "",
 	  uid,
 	  Gid,
 	  name,

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: netupds.c,v 1.41 1997/03/17 19:38:37 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: netupds.c,v 1.42 1997/06/25 19:09:03 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -22,6 +22,9 @@ static const char rcsid[] = "@(#) $Id: netupds.c,v 1.41 1997/03/17 19:38:37 deyk
 #ifdef _AIX
 #include <sys/select.h>
 #endif
+
+extern char *optarg;
+extern int optind;
 
 #include "buildsaddr.h"
 #include "calc_crc.h"
@@ -1108,36 +1111,63 @@ static void doserver(int argc, char **argv)
 
   char buf[1024];
   char client[1024];
+  char *notify = "root";
+  int chr;
+  int errflag;
   int fdpipe[2];
   int flags = 0;
   int i;
   int version;
 
-  if (!*MAIL_PROG)
+  errflag = 0;
+  while ((chr = getopt(argc, argv, "n:")) != EOF) {
+    switch (chr) {
+    case 'n':
+      notify = optarg;
+      break;
+    case '?':
+      errflag = 1;
+      break;
+    }
+  }
+  if (errflag || optind < argc) {
+    fprintf(stderr, "Usage: %s [-n user]\n", *argv);
     exit(1);
-  if ((fdinp = dup(0)) < 3)
+  }
+
+  if (!*MAIL_PROG) {
     exit(1);
-  if ((fdout = dup(1)) < 3)
+  }
+  if ((fdinp = dup(0)) < 3) {
     exit(1);
-  if (pipe(fdpipe))
+  }
+  if ((fdout = dup(1)) < 3) {
     exit(1);
+  }
+  if (pipe(fdpipe)) {
+    exit(1);
+  }
   switch (fork()) {
   case -1:
     exit(1);
   case 0:
-    for (i = 0; i < FD_SETSIZE; i++)
-      if (i != fdpipe[0])
+    for (i = 0; i < FD_SETSIZE; i++) {
+      if (i != fdpipe[0]) {
 	close(i);
+      }
+    }
     dup(fdpipe[0]);
     open("/dev/null", O_RDWR, 0666);
     open("/dev/null", O_RDWR, 0666);
     close(fdpipe[0]);
-    execl(MAIL_PROG, MAIL_PROG, "-s", "Net Update Log", "root", 0);
+    execl(MAIL_PROG, MAIL_PROG, "-s", "Net Update Log", notify, 0);
     exit(1);
   default:
-    for (i = 0; i < FD_SETSIZE; i++)
-      if (i != fdinp && i != fdout && i != fdlock && i != fdpipe[1])
+    for (i = 0; i < FD_SETSIZE; i++) {
+      if (i != fdinp && i != fdout && i != fdlock && i != fdpipe[1]) {
 	close(i);
+      }
+    }
     open("/dev/null", O_RDWR, 0666);
     dup(fdpipe[1]);
     dup(fdpipe[1]);
@@ -1153,8 +1183,9 @@ static void doserver(int argc, char **argv)
 	 client,
 	 version,
 	 (flags & USE_GZIP) ? "GZIP" : "COMPRESS");
-  if ((flags & USE_GZIP) && !*GZIP_PROG)
+  if ((flags & USE_GZIP) && !*GZIP_PROG) {
     usererr("gzip not available - shutting down");
+  }
   strcpy(buf, MIRRORDIR);
   strcat(buf, "/");
   strcat(buf, client);
@@ -1162,8 +1193,9 @@ static void doserver(int argc, char **argv)
     mkdir(MASTERDIR, 0755);
     mkdir(MIRRORDIR, 0755);
     mkdir(buf, 0755);
-    if (chdir(buf))
+    if (chdir(buf)) {
       syscallerr(buf);
+    }
   }
   switch (version) {
   case 1:
@@ -1183,36 +1215,33 @@ static void doclient(int argc, char **argv)
   char buf[1024];
   char *client;
   char *cp;
-  char *server;
+  char *server = DEFAULTSERVER;
   int addrlen;
-  int do_make;
+  int chr;
+  int do_make = 1;
+  int errflag;
   int flags;
   struct sockaddr *addr;
   struct stat statbuf;
 
-  argc--;
-  argv++;
-
-  if (argc > 0 && !strcmp(*argv, "-m")) {
-    do_make = 0;
-    argc--;
-    argv++;
-  } else {
-    do_make = 1;
+  errflag = 0;
+  while ((chr = getopt(argc, argv, "m")) != EOF) {
+    switch (chr) {
+    case 'm':
+      do_make = 0;
+      break;
+    case '?':
+      errflag = 1;
+      break;
+    }
   }
 
-  if (argc > 0) {
-    server = *argv;
-    argc--;
-    argv++;
-  } else {
-    server = DEFAULTSERVER;
+  if (optind < argc) {
+    server = argv[optind++];
   }
 
-  if (argc > 0) {
-    client = *argv;
-    argc--;
-    argv++;
+  if (optind < argc) {
+    client = argv[optind++];
   } else {
     if (gethostname(buf, sizeof(buf))) {
       syscallerr("gethostname");
@@ -1223,25 +1252,36 @@ static void doclient(int argc, char **argv)
     client = strdup(buf);
   }
 
-  if (chdir(MASTERDIR))
+  if (errflag || optind < argc) {
+    fprintf(stderr, "Usage: %s [-m] [server [client] ]\n", *argv);
+    exit(1);
+  }
+
+  if (chdir(MASTERDIR)) {
     syscallerr(MASTERDIR);
+  }
 #if DEBUG
   mkdir("/tmp/testdir", 0755);
-  if (chdir("/tmp/testdir"))
+  if (chdir("/tmp/testdir")) {
     syscallerr("/tmp/testdir");
+  }
 #endif
 
   flags = VERSION << 8;
-  if (*GZIP_PROG)
+  if (*GZIP_PROG) {
     flags |= USE_GZIP;
+  }
 
-  if (!(addr = build_sockaddr(NETCMD, &addrlen)))
+  if (!(addr = build_sockaddr(NETCMD, &addrlen))) {
     usererr("build_sockaddr: Failed");
+  }
   fdinp = fdout = socket(addr->sa_family, SOCK_STREAM, 0);
-  if (fdinp < 0)
+  if (fdinp < 0) {
     syscallerr("socket");
-  if (connect(fdinp, addr, addrlen))
+  }
+  if (connect(fdinp, addr, addrlen)) {
     syscallerr("connect");
+  }
 
   sprintf(buf, "binary\nconnect tcp %s netupds\n", server);
   writebuf(buf, strlen(buf));
@@ -1280,8 +1320,9 @@ int main(int argc, char **argv)
 
   setbuf(stdout, 0);
 
-  if (getuid())
+  if (getuid()) {
     usererr("Permission denied");
+  }
 
   alarm(TIMEOUT);
   umask(UMASK);
@@ -1303,14 +1344,16 @@ int main(int argc, char **argv)
 	"/usr/local/etc");
   putenv("LD_LIBRARY_PATH=/opt/SUNWspro/lib");
   putenv("SHELL=/bin/sh");
-  if (!getenv("TZ"))
+  if (!getenv("TZ")) {
     putenv("TZ=MEZ-1MESZ");
+  }
 
   if (argc > 0) {
-    if ((progname = strrchr(argv[0], '/')))
+    if ((progname = strrchr(argv[0], '/'))) {
       progname++;
-    else
+    } else {
       progname = argv[0];
+    }
     if (!strcmp(progname, "netupds")) {
 #if !DEBUG
       mkdir(LOCKDIR, 0755);

@@ -1,4 +1,13 @@
-@(#) $Id: ChangeLog,v 1.33 1997/06/09 16:59:59 deyke Exp $
+@(#) $Id: ChangeLog,v 1.34 1997/06/25 19:07:02 deyke Exp $
+
+970625 Dieter Deyke <deyke@fc.hp.com>
+
+	Added new option -n to netupds to specify notification mail
+	destination
+
+	Added support for shadow passwd file for linux
+
+	Updated domain.txt and hosts
 
 970609 Dieter Deyke <deyke@fc.hp.com>
 

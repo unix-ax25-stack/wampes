@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^Net Update Reference Manual^-\\\\nP-^Version 970609" \" Page footer
+.PF "^Net Update Reference Manual^-\\\\nP-^Version 970625" \" Page footer
 .\"
 .S 30
 .ce
 \fBNet Update Reference Manual\fP
 .ce
-Version 970609
+Version 970625
 .S
 .SP 2
 .S 15
@@ -28,25 +28,6 @@ Dieter Deyke, DK5SG/N0PRA
 deyke@fc.hp.com
 .S
 .nr Ej 0 \" No new page for all headers
-.H 1 "Prerequisites"
-.AL
-.LI
-You need at least netupds/netupdc version 1.21 or higher
-on both client and server machine before you can start.
-Use
-.DS I
-.ft CW
-what /tcp/util/netupd?
-.ft P
-.DE
-or
-.DS I
-.ft CW
-ident /tcp/util/netupd?
-.ft P
-.DE
-to verify.
-.LE
 .H 1 "Server"
 .AL
 .LI
@@ -73,6 +54,12 @@ Add the following line to /etc/inetd.conf:
 .DS I
 .ft CW
 netupds stream tcp nowait root /tcp/util/netupds netupds
+.ft P
+.DE
+If you want notification mail to go to some user other than \fBroot\fP, use:
+.DS I
+.ft CW
+netupds stream tcp nowait root /tcp/util/netupds netupds -n \fIuser\fP
 .ft P
 .DE
 .LI
@@ -140,7 +127,7 @@ returned by the UNIX hostname command).
 If \fIserver\fP is not specified, it defaults to "db0sao".
 .LI
 If you wish you can execute netupdc automatically from cron
-by putting the command from 3.2 into your crontab.
+by putting the command from 2.2 into your crontab.
 Example crontab entry:
 .DS I
 .ft CW
