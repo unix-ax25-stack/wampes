@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.13 1989/09/23 22:45:54 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.14 1989/11/18 09:29:10 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -2010,7 +2010,7 @@ static void bbs()
     connect_bbs();
     wait_for_prompt();
   }
-  if (level == MBOX) printf("[THEBOX-1.5l-$]\n");
+  if (level == MBOX) printf("[THEBOX-1.6-$]\n");
   if (doforward) wait_for_prompt();
   for (; ; ) {
     if (doforward)
