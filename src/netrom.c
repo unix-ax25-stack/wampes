@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.37 1993/03/11 15:01:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.38 1993/05/14 17:03:42 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -1056,7 +1056,7 @@ struct mbuf *bp;
   if (!bp || bp->cnt < 5) goto discard;
 
   if ((bp->data[4] & NR4OPCODE) == NR4OPCONRQ) {
-    if (bp->cnt != 20) goto discard;
+    if (bp->cnt < 20) goto discard;
     for (pc = circuits; pc; pc = pc->next)
       if (pc->remoteindex == uchar(bp->data[0]) &&
 	  pc->remoteid == uchar(bp->data[1]) &&

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.36 1993/04/15 13:12:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.37 1993/05/14 17:03:41 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -485,7 +485,7 @@ void *upcall_arg;
   tp->logfp = fopen_logfile(user, protocol);
   if (!(tp->pid = dofork())) {
     pw = getpasswdentry(find_user_name(user), 1);
-    if (!pw || pw->pw_passwd[0]) pw = getpasswdentry(DEFAULTUSER, 0);
+    if (!pw) pw = getpasswdentry(DEFAULTUSER, 0);
     for (i = 0; i < FD_SETSIZE; i++) close(i);
     setsid();
     open(slave, O_RDWR, 0666);
@@ -514,7 +514,7 @@ void *upcall_arg;
     cfsetispeed(&termios, B1200);
     cfsetospeed(&termios, B1200);
     tcsetattr(0, TCSANOW, &termios);
-    if (!pw || pw->pw_passwd[0]) exit(1);
+    if (!pw) exit(1);
 #ifdef LOGIN_PROCESS
     memset(&utmpbuf, 0, sizeof(utmpbuf));
     strcpy(utmpbuf.ut_user, "LOGIN");

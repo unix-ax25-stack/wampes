@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.17 1993/03/11 15:01:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.18 1993/05/14 17:03:39 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -673,9 +673,7 @@ char *arg;
 
 #include <pwd.h>
 
-#ifdef SPASSWD
-#include <shadow.h>
-#endif
+char *crypt();
 
 /* Attempt to log in the user whose name is in ftp->username and password
  * in pass
@@ -683,47 +681,36 @@ char *arg;
 
 static void ftplogin(ftp, pass)
 struct ftp *ftp;
-char  *pass;
+char *pass;
 {
-
-  char  *username = ftp->username;
   struct passwd *pw;
-#ifdef SPASSWD
-  struct spwd *sw;
-#endif
 
-#ifdef RESTRICTED       /* because of no setresuid/gid */
-  username = "ftp";
-#endif
+  pw = getpasswdentry(ftp->username, 0);
+  if (!pw) goto Fail;
+  if (pw->pw_passwd[0] &&
+      strcmp(pw->pw_name, "ftp") &&
+      strcmp(crypt(pass, pw->pw_passwd), pw->pw_passwd)) goto Fail;
+  ftp->uid = pw->pw_uid;
+  ftp->gid = pw->pw_gid;
+  if (ftp->cd) free(ftp->cd);
+  ftp->cd = strdup(pw->pw_dir);
+  if (ftp->path) free(ftp->path);
+  ftp->path = strdup(strcmp(pw->pw_name, "ftp") ? "/" : pw->pw_dir);
+  Xprintf(ftp->control, logged, pw->pw_name, "", "");
+  log(ftp->control, "%s logged in", pw->pw_name);
+  return;
 
-#ifdef SPASSWD
- if ((pw = getpasswdentry(username, 0)) &&
-     (sw = getspwdentry(username)) &&
-     (!*sw->sp_pwdp || !strcmp(pw->pw_name, "ftp")))
-#else
-  if ((pw = getpasswdentry(username, 0)) &&
-      (!*pw->pw_passwd || !strcmp(pw->pw_name, "ftp")))
-#endif
-  {
-    ftp->uid = pw->pw_uid;
-    ftp->gid = pw->pw_gid;
-    if (ftp->cd) free(ftp->cd);
-    ftp->cd = strdup(pw->pw_dir);
-    if (ftp->path) free(ftp->path);
-    ftp->path = strdup(strcmp(pw->pw_name, "ftp") ? "/" : pw->pw_dir);
-    Xprintf(ftp->control, logged, pw->pw_name, "", "");
-    log(ftp->control, "%s logged in", pw->pw_name);
-  } else
-    Xprintf(ftp->control, noperm, username, "", "");
+Fail:
+  Xprintf(ftp->control, noperm, ftp->username, "", "");
 }
 
 /*---------------------------------------------------------------------------*/
 
 /* Return 1 if the file operation is allowed, 0 otherwise */
 
-static int  permcheck(ftp, file)
+static int permcheck(ftp, file)
 struct ftp *ftp;
-char  *file;
+char *file;
 {
   if (file == NULLCHAR || ftp->path == NULLCHAR) return 0;
 
