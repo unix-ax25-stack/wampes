@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.7 1991/05/09 07:38:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.8 1991/06/10 19:32:10 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -16,6 +16,7 @@
 #include "rip.h"
 #include "trace.h"
 #include "pktdrvr.h"
+/* #include "bootp.h" */
 
 struct route *Routes[32][HASHMOD];      /* Routing table */
 struct route R_default = {              /* Default route entry */
@@ -65,9 +66,9 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 	char rel;
 	int16 opt_len;          /* Length of current option */
 	char *opt;              /* -> beginning of current option */
-	char *ptr;              /* -> pointer field in source route fields */
 	struct mbuf *tbp;
 	int ckgood = 1;
+	int pointer;            /* Relative pointer index for sroute/rroute */
 
 	if(i_iface != NULLIF){
 		ipInReceives++; /* Not locally generated */
@@ -138,36 +139,65 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 			 */
 			if(ismyaddr(ip.dest) == NULLIF)
 				break;  /* Skip to next option */
-			if(uchar(opt[2]) >= opt_len)
-				break;  /* Route exhausted; it's for us */
-
-			/* Put address for next hop into destination field,
-			 * put our address into the route field, and bump
-			 * the pointer
-			 */
-			ptr = opt + uchar(opt[2]) - 1;
-			ip.dest = get32(ptr);
-			put32(ptr,locaddr(ip.dest));
-			opt[2] += 4;
-			ckgood = 0;
-			break;
-		case IP_RROUTE: /* Record route */
-			if(uchar(opt[2]) > opt_len-3){
-				/* Route area exhausted; kick back an error */
+			if(opt_len < 3){
+				/* Option is too short to be a legal sroute.
+				 * Send an ICMP message and drop it.
+				 */
 				if(!rxbroadcast){
 					union icmp_args icmp_args;
 
 					icmp_args.pointer = IPLEN + opt - ip.options;
 					icmp_output(&ip,bp,ICMP_PARAM_PROB,0,&icmp_args);
 				}
-				if(uchar(opt[2]) != opt_len + 1){
+				free_p(bp);
+				return -1;
+			}
+			pointer = uchar(opt[2]);
+			if(pointer + 4 > opt_len)
+				break;  /* Route exhausted; it's for us */
+
+			/* Put address for next hop into destination field,
+			 * put our address into the route field, and bump
+			 * the pointer. We've already ensured enough space.
+			 */
+			ip.dest = get32(&opt[pointer]);
+			put32(&opt[pointer],locaddr(ip.dest));
+			opt[2] += 4;
+			ckgood = 0;
+			break;
+		case IP_RROUTE: /* Record route */
+			if(opt_len < 3){
+				/* Option is too short to be a legal rroute.
+				 * Send an ICMP message and drop it.
+				 */
+				if(!rxbroadcast){
+					union icmp_args icmp_args;
+
+					icmp_args.pointer = IPLEN + opt - ip.options;
+					icmp_output(&ip,bp,ICMP_PARAM_PROB,0,&icmp_args);
+				}
+				free_p(bp);
+				return -1;
+			}
+			pointer = uchar(opt[2]);
+			if(pointer + 4 > opt_len){
+				/* Route area exhausted; send an ICMP msg */
+				if(!rxbroadcast){
+					union icmp_args icmp_args;
+
+					icmp_args.pointer = IPLEN + opt - ip.options;
+					icmp_output(&ip,bp,ICMP_PARAM_PROB,0,&icmp_args);
+				}
+				/* Also drop if odd-sized */
+				if(pointer != opt_len){
 					free_p(bp);
 					return -1;
 				}
 			} else {
-				/* Add our address to the route */
-				ptr = opt + uchar(opt[2]) - 1;
-				ptr = put32(ptr,locaddr(ip.dest));
+				/* Add our address to the route.
+				 * We've already ensured there's enough space.
+				 */
+				put32(&opt[pointer],locaddr(ip.dest));
 				opt[2] += 4;
 				ckgood = 0;
 			}
@@ -177,7 +207,8 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 no_opt:
 
 	/* See if it's a broadcast or addressed to us, and kick it upstairs */
-	if(ismyaddr(ip.dest) != NULLIF || rxbroadcast){
+	if(ismyaddr(ip.dest) != NULLIF || rxbroadcast /* ||
+		(WantBootp && bootp_validPacket(&ip, &bp)) */ ){
 #ifdef  GWONLY
 	/* We're only a gateway, we have no host level protocols */
 		if(!rxbroadcast)

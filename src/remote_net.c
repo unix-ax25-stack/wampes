@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.8 1991/06/01 22:18:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.9 1991/06/10 19:32:30 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -266,6 +266,7 @@ void remote_net_initialize()
   };
 
   int  addrlen, i;
+  int  arg;
   struct sockaddr *addr;
 
   for (i = 0; socketnames[i]; i++) {
@@ -276,7 +277,8 @@ void remote_net_initialize()
 	  if (!Debug) unlink(addr->sa_data);
 	  break;
 	case AF_INET:
-	  setsockopt(flisten, SOL_SOCKET, SO_REUSEADDR, (char *) 0, 0);
+	  arg = 1;
+	  setsockopt(flisten, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
 	  break;
 	}
 	if (!bind(flisten, addr, addrlen) && !listen(flisten, SOMAXCONN)) {
