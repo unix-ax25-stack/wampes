@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.4 1990/02/27 11:05:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.5 1990/04/12 17:51:58 deyke Exp $ */
 
 /* User calls to TCP */
 
@@ -347,6 +347,25 @@ register struct tcb *tcb;
 		return -1;
 	tcp_timeout((char *)tcb);
 	return 0;
+}
+/* Kick all TCP connections to specified address; return number kicked */
+int
+kick(addr)
+int32 addr;
+{
+	register int i;
+	register struct tcb *tcb;
+	int cnt = 0;
+
+	for(i=0;i<NTCB;i++){
+		for(tcb=tcbs[i];tcb != NULLTCB;tcb = tcb->next){
+			if(tcb->conn.remote.address == addr){
+				kick_tcp(tcb);
+				cnt++;
+			}
+		}
+	}
+	return cnt;
 }
 reset_tcp(tcb)
 register struct tcb *tcb;

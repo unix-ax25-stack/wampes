@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.4 1990/03/19 12:33:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.5 1990/04/12 17:51:54 deyke Exp $ */
 
 /* Main network program - provides both client and server functions */
 
@@ -6,6 +6,7 @@
 unsigned restricted_dev=1000;
 extern char *startup;   /* File to read startup commands from */
 #include <stdio.h>
+#include <string.h>
 #include "config.h"
 #include "global.h"
 #include "mbuf.h"
@@ -228,7 +229,7 @@ static struct cmds cmds[] = {
 	"pwd",          docd,           0, NULLCHAR,    NULLCHAR,
 #endif
 	"record",       dorecord,       0, NULLCHAR,    NULLCHAR,
-	"remote",       doremote,       4, "remote <address> <port> <command>",
+	"remote",       doremote,       3, "remote [-p port] [-k key] [-a kickaddr] <address> exit|reset|kick",
 							NULLCHAR,
 	"reset",        doreset,        0, NULLCHAR,    NULLCHAR,
 	"route",        doroute,        0, NULLCHAR,    NULLCHAR,
@@ -1072,27 +1073,97 @@ char *argv[];
 	return 0;
 }
 #endif  /* MSDOS */
-static
+/* Generate system command packet. Synopsis:
+ * remote [-p port#] [-k key] [-a hostname] <hostname> reset|exit|kickme
+ */
+static int
 doremote(argc,argv)
 int argc;
 char *argv[];
 {
 	struct socket fsock,lsock;
 	struct mbuf *bp;
+	int c;
+	int16 port,len;
+	char *key = NULLCHAR;
+	int klen;
+	int32 addr = 0;
+	char *cmd,*host;
 
-	lsock.address = ip_addr;
-	fsock.address = resolve(argv[1]);
-	lsock.port = fsock.port = atoi(argv[2]);
-	bp = alloc_mbuf(1);
-	if(strcmp(argv[3],"reset") == 0){
-		*bp->data = SYS_RESET;
-	} else if(strcmp(argv[3],"exit") == 0){
-		*bp->data = SYS_EXIT;
-	} else {
-		printf("Unknown command %s\n",argv[3]);
+	port = IPPORT_REMOTE;   /* Set default */
+	optind = 1;             /* reinit getopt() */
+	while((c = getopt(argc,argv,"a:p:k:s:")) != EOF){
+		switch(c){
+		case 'a':
+			if (!(addr = resolve(optarg))) {
+				printf("Host %s unknown\n",optarg);
+				return 1;
+			}
+			break;
+		case 'p':
+			port = atoi(optarg);
+			break;
+		case 'k':
+			key = optarg;
+			klen = strlen(key);
+			break;
+		case 's':
+			Rempass = strdup(optarg);
+			return 0;       /* Only set local password */
+		}
+	}
+	if(optind > argc - 2){
+		printf("Insufficient args\n");
 		return 1;
 	}
+	host = argv[optind++];
+	cmd = argv[optind];
+
+	if (!(fsock.address = resolve(host))) {
+		printf("Host %s unknown\n",host);
+		return 1;
+	}
+	lsock.address = ip_addr;
+	lsock.port = fsock.port = port;
+
+	len = 1;
+	/* Did the user include a password or kickme target? */
+	if(addr != 0)
+		len += sizeof(int32);
+
+	if(key != NULLCHAR)
+		len += klen;
+
+	bp = alloc_mbuf(len);
 	bp->cnt = 1;
+
+	switch(cmd[0]){
+	case 'r':
+		bp->data[0] = SYS_RESET;
+		if(key != NULLCHAR) {
+			strncpy(&bp->data[1],key,klen);
+			bp->cnt += klen;
+		}
+		break;
+	case 'e':
+		bp->data[0] = SYS_EXIT;
+		if(key != NULLCHAR) {
+			strncpy(&bp->data[1],key,klen);
+			bp->cnt += klen;
+		}
+		break;
+	case 'k':
+		bp->data[0] = KICK_ME;
+		if(addr != 0) {
+			put32(&bp->data[1],addr);
+			bp->cnt += sizeof(int32);
+		}
+		break;
+	default:
+		printf("Unknown command %s\n",cmd);
+		free_p(bp);
+		return 1;
+	}
 	send_udp(&lsock,&fsock,0,0,bp,0,0,0);
 	return 0;
 }

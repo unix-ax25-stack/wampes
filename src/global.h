@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.2 1990/04/12 17:51:51 deyke Exp $ */
+
 /* Global definitions used by every source file.
  * Some may be compiler dependent.
  */
@@ -123,4 +125,8 @@ char *index(),*rindex(),*malloc(),*calloc(),*ctime(),*tmpnam();
 #define free(p)         ((char *) (p))[-1] |= 1;
 #endif
 #endif
+
+/* Externals used by getopt */
+extern int optind;
+extern char *optarg;
 

@@ -1,7 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.2 1990/04/05 11:14:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.3 1990/04/12 17:51:53 deyke Exp $ */
 
 /* ICMP-related user commands */
 #include <stdio.h>
+#include <time.h>
 #include "global.h"
 #include "icmp.h"
 #include "mbuf.h"
@@ -9,7 +10,6 @@
 #include "internet.h"
 #include "timer.h"
 #include "ping.h"
-#include "hpux.h"
 
 int
 doicmpstat()
@@ -82,10 +82,14 @@ char *argv[];
 		printf("Host %s unknown\n",argv[1]);
 		return 1;
 	}
-	if(argc > 2)
+	if(argc > 2) {
 		len = atoi(argv[2]);
-	else
-		len = 0;
+		if (len < ICMPLEN) {
+			printf("packet size too small, minimum size is %d bytes\n", ICMPLEN);
+			return 1;
+		}
+	} else
+		len = 64;
 	/* See if dest is already in table */
 	hval = hash_ping(dest);
 	for(pp = ping[hval]; pp != NULLPING; pp = pp->next){
@@ -97,7 +101,7 @@ char *argv[];
 		/* Inter-ping time is specified; set up timer structure */
 		if(pp == NULLPING)
 			pp = add_ping(dest);
-		pp->timer.start = atoi(argv[3]) * (1000.0 / MSPTICK);
+		set_timer(&pp->timer, atoi(argv[3]) * 1000l);
 		pp->timer.func = ptimeout;
 		pp->timer.arg = (char *)pp;
 		pp->target = dest;
@@ -128,22 +132,27 @@ pingem(target,seq,id,len)
 int32 target;   /* Site to be pinged */
 int16 seq;      /* ICMP Echo Request sequence number */
 int16 id;       /* ICMP Echo Request ID */
-int16 len;      /* Length of optional data field */
+int16 len;      /* Length of data field */
 {
 	struct mbuf *data;
 	struct mbuf *bp,*htonicmp();
 	struct icmp icmp;
 	extern struct icmp_stats icmp_stats;
+	int i;
+	struct timeval tv;
+	struct timezone tz;
 
-	if((data = alloc_mbuf((int16)(len+sizeof(currtime)))) == NULLBUF)
+	if ((data = alloc_mbuf(len)) == NULLBUF)
 		return -1;
-	data->cnt = len+sizeof(currtime);
-	/* Set optional data field, if any, to all 55's */
-	if(len != 0)
-		memset(data->data+sizeof(currtime),0x55,len);
-
+	for (i = ICMPLEN; i < len; i++)
+		data->data[i] = i;
+	data->data += ICMPLEN;
+	data->cnt = len - ICMPLEN;
 	/* Insert timestamp and build ICMP header */
-	memcpy(data->data,(char *)&currtime,sizeof(currtime));
+	if (len >= ICMPLEN + sizeof(struct timeval)) {
+		gettimeofday(&tv, &tz);
+		memcpy(data->data, (char *) &tv, sizeof(struct timeval));
+	}
 	icmp_stats.output[ECHO]++;
 	icmp.type = ECHO;
 	icmp.code = 0;
@@ -153,7 +162,7 @@ int16 len;      /* Length of optional data field */
 		free_p(data);
 		return 0;
 	}
-	return ip_send(ip_addr,target,ICMP_PTCL,0,0,bp,len_mbuf(bp),0,0);
+	return ip_send(ip_addr,target,ICMP_PTCL,0,0,bp,len,0,0);
 }
 
 /* Called with incoming Echo Reply packet */
@@ -166,31 +175,40 @@ struct mbuf *bp;
 	register struct ping *pp;
 	int16 hval,hash_ping();
 	char *inet_ntoa();
-	int32 timestamp,rtt,abserr;
+	int32 rtt,abserr;
+	struct timeval tv,timestamp;
+	struct timezone tz;
 
 	/* Get stamp */
 	if(pullup(&bp,(char *)&timestamp,sizeof(timestamp))
 	 != sizeof(timestamp)){
 		/* The timestamp is missing! */
-		free_p(bp);     /* Probably not necessary */
-		return;
+		rtt = -1;
+	} else {
+		gettimeofday(&tv, &tz);
+		rtt = (tv.tv_sec  - timestamp.tv_sec ) * 1000 +
+		      (tv.tv_usec - timestamp.tv_usec) / 1000;
 	}
 	free_p(bp);
 
-	rtt = (currtime - timestamp) * 1000l;
 	hval = hash_ping(source);
 	for(pp = ping[hval]; pp != NULLPING; pp = pp->next)
 		if(pp->target == source)
 			break;
 	if(pp == NULLPING || icmp->args.echo.id != REPEAT){
-		printf("%s: echo reply id %u seq %u, %lu ms\n",
-		 inet_ntoa(source),
-		 icmp->args.echo.id,icmp->args.echo.seq,
-		 (long)rtt);
-		 fflush(stdout);
+		printf(
+		  (rtt == -1) ?
+		    "%s: echo reply id %u seq %u\n" :
+		    "%s: echo reply id %u seq %u, %lu ms\n",
+		  inet_ntoa(source),
+		  icmp->args.echo.id,icmp->args.echo.seq,
+		  (long)rtt);
+		fflush(stdout);
 	} else {
 		/* Repeated poll, just keep stats */
 		pp->responses++;
+		if (rtt == -1)
+			return;
 		if(pp->responses == 1){
 			/* First response, base entire SRTT on it */
 			pp->srtt = rtt;

@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.2 1990/04/12 17:51:57 deyke Exp $ */
+
 /* Miscellaneous servers */
 #include <stdio.h>
 #include "global.h"
@@ -8,6 +10,8 @@
 #include "remote.h"
 
 extern long currtime;
+
+char *Rempass = " ";    /* Remote access password */
 
 static struct tcb *disc_tcb,*echo_tcb;
 static struct socket remsock;
@@ -53,7 +57,7 @@ char *argv[];
 
 	remsock.address = ip_addr;
 	if(argc < 2)
-		remsock.port = REMOTE_PORT;
+		remsock.port = IPPORT_REMOTE;
 	else
 		remsock.port = atoi(argv[1]);
 	open_udp(&remsock,uremote);
@@ -154,16 +158,17 @@ char old,new;
 	}
 }
 /* Process remote exit/reset command */
-void
+static void
 uremote(sock,cnt)
 struct socket *sock;
 int16 cnt;
 {
 	struct mbuf *bp;
 	struct socket fsock;
+	int i;
 	char command,*cp;
-	long t;
 	extern FILE *logfp;
+	int32 addr;
 
 	cp = ctime(&currtime);
 	rip(cp);
@@ -171,26 +176,58 @@ int16 cnt;
 	recv_udp(sock,&fsock,&bp);
 	command = pullchar(&bp);
 	switch(uchar(command)){
-#if     (defined(UNIX) | defined(MSDOS))
+#ifdef  MSDOS   /* Only present on PCs running MSDOS */
 	case SYS_RESET:
-		if(logfp != NULLFILE){
-			fprintf(logfp,"%s %s - REMOTE RESET\n",
-				cp,psocket(&fsock));
-			fflush(logfp);
-			/*** fclose(logfp); ***/
+		i = chkrpass(&bp);
+		log(Rem,"%s - Remote reset %s",
+		 psocket((struct sockaddr *)&fsock),
+		 i == 0 ? "PASSWORD FAIL" : "" );
+		if(i != 0){
+			iostop();
+			sysreset();     /* No return */
 		}
-		/*** sysreset(); ***/
-		break;  /* Not necessary */
+		break;
 #endif
 	case SYS_EXIT:
+		i = chkrpass(&bp);
 		if(logfp != NULLFILE){
-			fprintf(logfp,"%s %s - REMOTE EXIT\n",
-				cp,psocket(&fsock));
+			fprintf(logfp,"%s %s - Remote exit %s\n",
+				cp,psocket(&fsock),
+				i == 0 ? "PASSWORD FAIL" : "" );
 			fflush(logfp);
-			/*** fclose(logfp); ***/
 		}
-		/*** iostop(); ***/
-		/*** exit(0); ***/
+		if(i != 0){
+			iostop();
+			exit(0);
+		}
+		break;
+	case KICK_ME:
+		if(len_mbuf(bp) >= sizeof(int32))
+			addr = pull32(&bp);
+		else
+			addr = fsock.address;
+		kick(addr);
+		/*** smtptick((void *)addr); ***/
 		break;
 	}
+	free_p(bp);
+}
+/* Check remote password */
+static int
+chkrpass(bpp)
+struct mbuf **bpp;
+{
+	char *lbuf;
+	int16 len;
+	int rval = 0;
+
+	len = len_mbuf(*bpp);
+	if(strlen(Rempass) == len) {
+		lbuf = malloc(len);
+		pullup(bpp,lbuf,len);
+		if(strncmp(Rempass,lbuf,len) == 0)
+			rval = 1;
+		free(lbuf);
+	}
+	return rval;
 }
