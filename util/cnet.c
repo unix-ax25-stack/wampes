@@ -1,4 +1,4 @@
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.9 1991/10/03 11:07:30 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.10 1991/10/10 17:27:23 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -188,9 +188,9 @@ char  **argv;
     exit(1);
   }
 
-  initscr();
+  setupterm(0, 1, 0);
   if (!strcmp(cursor_up, "\033A")) ansiterminal = 0;
-  endwin();
+  resetterm();
 
   open_terminal();
   arg = 1;
