@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.3 1988/10/02 16:33:06 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.4 1988/10/04 20:52:46 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -649,7 +649,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.3 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.4 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
@@ -989,7 +989,7 @@ char  **argv;
     for (cp = connections; cp; cp = cp->next) {
 
       if (rmask & cp->fmask)
-	if ((size = read(cp->fd, buffer, sizeof(buffer))) < 0)
+	if ((size = read(cp->fd, buffer, sizeof(buffer))) <= 0)
 	  bye_command(cp);
 	else {
 	  cp->received += size;
