@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.12 1993/02/28 17:40:33 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.13 1993/03/02 12:50:47 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -18,7 +18,7 @@ param tnc1 13   1   # rxdelay
 
 # tnc2: db0id (23cm)
 
-attach asy 0 0 kissui tnc2 0 256 9600
+attach asy 0 0 kissi tnc2 0 256 9600
 param tnc2  1  20   # txdelay
 param tnc2  2 255   # persistence
 param tnc2  3   1   # slottime
@@ -59,6 +59,7 @@ route add  df1tl-u          tnc1     df1tl
 route add  dk0hu            ipip     192.1.1.2
 route add  df1tl            tnc1
 route add  db0sao-u         ni
+route add  44.142.52/23     tnc2     db0id
 route add  44.130/16        tnc2     db0id
 
 arp add db0id ax25 db0id
@@ -95,10 +96,12 @@ start tcpgate smtp
 start telnet
 
 ax25 jumpstart db0aaa    on
+ax25 jumpstart db0aaa-4  on
 ax25 jumpstart db0cz     on
 ax25 jumpstart db0gv     on
 ax25 jumpstart db0lx-1   on
 ax25 jumpstart db0pic    on
+ax25 jumpstart db0pic-7  on
 ax25 jumpstart db0rot-15 on
 ax25 jumpstart db0sdx    on
 

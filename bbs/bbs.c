@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.43 1993/02/28 17:41:54 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.44 1993/03/02 12:51:31 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -1263,7 +1263,7 @@ static void forward_message(const struct index *index, const char *filename, int
   switch (tolower(uchar(*buf))) {
   case 'o':
     puts(*index->subject ? index->subject : "no subject");
-    sleep(60); /* Bugfix for TheBox 1.9 */
+    sleep(5); /* Bugfix for TheBox 1.9 */
     if (!strcmp(index->to, "E") || !strcmp(index->to, "M"))
       putchar('\n');
     else {
@@ -1282,7 +1282,7 @@ static void forward_message(const struct index *index, const char *filename, int
       while ((c = getc(fp)) != EOF) putchar(c);
       fclose(fp);
     }
-    sleep(60); /* Bugfix for TheBox 1.9 */
+    sleep(5); /* Bugfix for TheBox 1.9 */
     puts("\032");
     wait_for_prompt();
     break;
