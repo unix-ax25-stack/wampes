@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.4 1991/05/21 19:09:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.5 1992/01/22 11:12:38 deyke Exp $ */
 
 /* This file contains code to implement the Routing Information Protocol (RIP)
  * and is derived from 4.2BSD code. Mike Karels of Berkeley has stated on
@@ -33,11 +33,12 @@ struct rip_refuse *Rip_refuse;
 
 static void rip_rx __ARGS((struct iface *iface,struct udp_cb *sock,int cnt));
 static void proc_rip __ARGS((struct iface *iface,int32 gateway,
-	struct rip_route *ep));
+	struct rip_route *ep,int32 ttl));
 static char *putheader __ARGS((char *cp,int command,int version));
 static char *putentry __ARGS((char *cp,int fam,int32 target,int32 metric));
 static void rip_shout __ARGS((void *p));
-static void send_routes __ARGS((int32 dest,int port,int split,int trig));
+static void send_routes __ARGS((int32 dest,int port,int split,int trig,
+	int us));
 
 /* Send RIP CMD_RESPONSE packet(s) to the specified rip_list entry */
 static void
@@ -48,18 +49,19 @@ void *p;
 
 	rl = (struct rip_list *)p;
 	stop_timer(&rl->rip_time);
-	send_routes(rl->dest,RIP_PORT,(rl->flags & RIP_SPLIT),0);
+	send_routes(rl->dest,RIP_PORT,rl->flags&RIP_SPLIT,0,rl->flags&RIP_US);
 	set_timer(&rl->rip_time,rl->interval*1000L);
 	start_timer(&rl->rip_time);
 }
 
 /* Send the routing table. */
 static void
-send_routes(dest,port,split,trig)
+send_routes(dest,port,split,trig,us)
 int32 dest;             /* IP destination address to send to */
 int16 port;
 int split;              /* Do split horizon? */
 int trig;               /* Send only triggered updates? */
+int us;                 /* Include our address in update */
 {
 	char *cp;
 	int i,bits,numroutes,maxroutes;
@@ -89,6 +91,11 @@ int trig;               /* Send only triggered updates? */
 	numroutes = 0;
 	cp = putheader(bp->data,RIPCMD_RESPONSE,RIPVERSION);
 
+	/* Emit route to ourselves, if requested */
+	if(us){
+		cp = putentry(cp,RIP_IPFAM,iface->addr,0);
+		numroutes++;
+	}
 	/* Emit default route, if appropriate */
 	if(R_default.iface != NULLIF && !(R_default.flags & RTPRIVATE)
 	 && (!trig || (R_default.flags & RTTRIG))){
@@ -145,35 +152,35 @@ char flags;
 	register struct rip_list *rl;
 	struct route *rp;
 
-	for(rl = Rip_list; rl != NULLRL; rl = rl->next)
-		if(rl->dest == dest)
-			return 0;
-
 	if((rp = rt_lookup(dest)) == NULLROUTE){
 		tprintf("%s is unreachable\n",inet_ntoa(dest));
 		return 1;
 	}
-	/* get a chunk of memory for the rip interface descriptor */
-	rl = (struct rip_list *)callocw(1,sizeof(struct rip_list));
+	for(rl = Rip_list; rl != NULLRL; rl = rl->next)
+		if(rl->dest == dest)
+			break;
 
-	/* tack this record on as the first in the list */
-	rl->next = Rip_list;
-	if(rl->next != NULLRL)
-		rl->next->prev = rl;
-	Rip_list = rl;
+	if(rl == NULLRL){
+		/* get a chunk of memory for the rip interface descriptor */
+		rl = (struct rip_list *)callocw(1,sizeof(struct rip_list));
 
-	rl->dest = dest;
-
+		/* tack this record on as the first in the list */
+		rl->next = Rip_list;
+		if(rl->next != NULLRL)
+			rl->next->prev = rl;
+		Rip_list = rl;
+		rl->dest = dest;
+	}
 	/* and the interface ptr, tick interval and flags */
 	rl->iface = rp->iface;
 	rl->interval = interval;
 	rl->flags = flags;
 
-	/* and set up the timer stuff */
-	set_timer(&rl->rip_time,interval*1000L);
+	/* set up the timer stuff */
 	rl->rip_time.func = rip_shout;
 	rl->rip_time.arg = rl;
-	start_timer(&rl->rip_time);
+	/* This will initialize the timer and do an immediate broadcast */
+	rip_shout(rl);
 	return 0;
 }
 
@@ -272,7 +279,7 @@ rip_trigger()
 	struct route *rp;
 
 	for(rl=Rip_list;rl != NULLRL;rl = rl->next){
-		send_routes(rl->dest,RIP_PORT,(rl->flags & RIP_SPLIT),1);
+		send_routes(rl->dest,RIP_PORT,(rl->flags & RIP_SPLIT),1,0);
 	}
 	/* Clear the trigger list */
 	R_default.flags &= ~RTTRIG;
@@ -313,6 +320,8 @@ int cnt;
 	register struct rip_refuse *rfl;
 	struct rip_route entry;
 	struct route *rp;
+	struct rip_list *rl;
+	int32 ttl;
 
 	/* receive the RIP packet */
 	recv_udp(sock,&fsock,&bp);
@@ -346,10 +355,21 @@ int cnt;
 			printf("RIPCMD_RESPONSE from %s \n",inet_ntoa(fsock.address));
 
 		Rip_stat.response++;
+		/* See if this interface is on our broadcast list; if so,
+		 * use its interval to calculate entry lifetimes. Otherwise,
+		 * use default
+		 */
+		ttl = RIP_TTL;
+		for(rl=Rip_list; rl != NULLRL; rl = rl->next){
+			if(rl->iface == iface){
+				ttl = rl->interval * 4;
+				break;
+			}
+		}
 		(void)pull16(&bp);      /* remove one word of padding */
 		while(len_p(bp) >= RIPROUTE){
 			pullentry(&entry,&bp);
-			proc_rip(iface,fsock.address,&entry);
+			proc_rip(iface,fsock.address,&entry,ttl);
 		}
 		/* If we can't reach the sender of this update, or if
 		 * our existing route is not through the interface we
@@ -363,7 +383,7 @@ int cnt;
 			entry.addr_fam = RIP_IPFAM;
 			entry.target = fsock.address;
 			entry.metric = 0; /* will get incremented to 1 */
-			proc_rip(iface,fsock.address,&entry);
+			proc_rip(iface,fsock.address,&entry,ttl);
 		}
 		if(Rip_merge)
 			rt_merge(Rip_trace);
@@ -381,9 +401,9 @@ int cnt;
 		 * complete implementation that checks for non-global requests
 		 */
 		if(fsock.port == RIP_PORT)
-			send_routes(fsock.address,fsock.port,1,0);
+			send_routes(fsock.address,fsock.port,1,0,1);
 		else
-			send_routes(fsock.address,fsock.port,0,0);
+			send_routes(fsock.address,fsock.port,0,0,1);
 		break;
 	default:
 		if(Rip_trace > 1)
@@ -447,15 +467,14 @@ int32 target;
 }
 /* Remove and process a RIP response entry from a packet */
 static void
-proc_rip(iface,gateway,ep)
+proc_rip(iface,gateway,ep,ttl)
 struct iface *iface;
 int32 gateway;
 register struct rip_route *ep;
+int32 ttl;
 {
-	int32 interval;
 	unsigned int bits;
 	register struct route *rp;
-	struct rip_list *rl;
 	int add = 0;    /* action flags */
 	int drop = 0;
 	int trigger = 0;
@@ -505,6 +524,7 @@ register struct rip_route *ep;
 		/* This is the gateway for the entry we already have;
 		 * restart the timer
 		 */
+		set_timer(&rp->timer,ttl*1000L);
 		start_timer(&rp->timer);
 		if(rp->metric != ep->metric){
 			/* Metric has changed. Update it and trigger an
@@ -554,13 +574,6 @@ register struct rip_route *ep;
 	}
 	if(add){
 		/* Add a new entry */
-		interval = RIP_TTL;
-		for(rl=Rip_list; rl != NULLRL; rl = rl->next){
-			if(rl->iface == iface){
-				interval = rl->interval * 4;
-				break;
-			}
-		}
 		if(Rip_trace > 0){
 			printf("route add [%s]/%u %s",inet_ntoa(ep->target),
 			 bits,iface->name);
@@ -568,7 +581,7 @@ register struct rip_route *ep;
 			 (int)ep->metric);
 		}
 		rp = rt_add(ep->target,(unsigned) bits,gateway,iface,
-		 (int) ep->metric,interval,0);
+		 (int) ep->metric,ttl,0);
 	}
 	/* If the route changed, mark it for a triggered update */
 	if(trigger){
@@ -660,9 +673,7 @@ void *s;
 	stop_timer(&rp->timer);
 	if(rp->metric < RIP_INFINITY){
 		rp->metric = RIP_INFINITY;
-#if 0
 		if(dur_timer(&rp->timer) == 0)
-#endif
 			set_timer(&rp->timer,RIP_TTL*1000L);
 		/* wait 2/3 of timeout before garbage collect */
 		set_timer(&rp->timer,dur_timer(&rp->timer)*2/3);

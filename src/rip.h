@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.h,v 1.2 1991/02/24 20:17:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.h,v 1.3 1992/01/22 11:12:39 deyke Exp $ */
 
 #ifndef _RIP_H
 #define _RIP_H
@@ -63,7 +63,8 @@ struct rip_list {
 
 	/* described below with the mask defs */
 	char    flags;
-#define RIP_SPLIT 0x1
+#define RIP_SPLIT 0x1   /* Do split horizon processing */
+#define RIP_US  0x2     /* Include ourselves in the list */
 };
 #define NULLRL  (struct rip_list *)0
 
