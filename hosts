@@ -462,8 +462,8 @@
 44.130.12.5     DH1BBB  # Guenter, Krummhoern
 44.130.12.12    DG9BCY  # Harald Wieland, Wilhelmshaven
 44.130.12.24    DG4SCV-2        # Rolf Rose, Emden; JNOS
-44.130.12.25    DL1BJL  # Matthias Wermann, 2970 Emden; JNOS
-44.130.12.26    DB0FHO  # Fachhochschule Ostfriesland, 2970 Emden; JNOS ***
+44.130.12.25    DL1BJL  # Matthias Wermann, 2970 Emden; Wampes
+44.130.12.26    DB0FHO  # Fachhochschule Ostfriesland, 2970 Emden; TNOS ***
 44.130.12.27    DG7OAC  # Michael, 2970 Emden
 44.130.12.28    DD2BU   # Willi Gerdes, Emden
 44.130.12.29    DG4BCJ  # Joachim Pinkernelle, 2970 Emden; JNOS
@@ -472,7 +472,7 @@
 44.130.12.32    DL6BAG  # Siebold, Norden; JNOS
 44.130.12.33    DL8BCZ  # Uwe Ebbenga, 26721 Emden; JNOS
 44.130.12.34    DG4SCV-U        # Rolf Rose, Emden; WAMPES
-44.130.12.35    SYS2.DL1BJL     # Matthias Wermann, Emden; JNOS
+44.130.12.35    SYS2.DL1BJL     # Matthias Wermann, Emden; Wampes
 44.130.12.36    SYS2.DB0FHO     # ; CONVERS-Server; ***
 44.130.12.37    SYS3.DB0FHO     # ; User-Terminal
 44.130.12.38    DG9BIG  # Daniela Gand, Emden
@@ -494,7 +494,12 @@
 44.130.12.54    DC1BE   # Dirk Wahrheit, Papenburg; JNOS
 44.130.12.55    DL1BAH  # Karl Heinz Schirmer, Norden; JNOS
 44.130.12.56    DL8BCJ  # Horst, 26757 Borkum
-44.130.12.62    nntp.db0fho
+44.130.12.57    DL1BJL-U        # Matthias, Emden; Linux
+44.130.12.58    DL1BJL-W        # Matthias, Emden; Wampes
+44.130.12.59    DL1BJL-T        # Matthias, Emden; TNOS
+44.130.12.60    DB0FHO-W        # ; Wampes
+44.130.12.61    DB0FHO-L        # ; Linux
+44.130.12.62    NNTP.DB0FHO     # ; NNTP-Server, Linux
 #
 #44.130.13.x    Hildesheim
 # lokale Adresskoordination: DC5ON
@@ -2512,6 +2517,7 @@
 44.130.176.58   DG6UAX  # Thomas Ruhmann, 75177 Pforzheim
 44.130.176.59   DG4SGE  # Michael, Reutlingen
 44.130.176.60   DG9SGA  # Didi, Leinfelden-Echterdingen
+44.130.176.62   DG1SAR  # Ortwin, Stuttgart Feuerbach
 44.130.176.72   DL6SFA-1 # Markus Redstatt
 44.130.176.73   DL6SFB  # Juergen, Tuebingen
 44.130.176.74   DL6SFB-U        #
@@ -6318,8 +6324,10 @@
 ###
 # TCP/IP Hosts for Luxembourg 44.161.x.x
 # Coordinator: LX1BZ
-# Date: February 26, 1995
+# Date: Mai 5, 1995
 ###
+44.161.0.0   lx          lx.ampr.org
+#
 44.161.1.1   lx1jb       lx1jb.ampr.org       # Jean, 1232 Howald
 44.161.1.2   lx1jb-1     lx1jb-1.ampr.org     # Jean, 1232 Howald
 44.161.1.3   lx1sk       lx1sk.ampr.org       # John, 1461 Luxembourg
@@ -6330,6 +6338,8 @@
 44.161.1.8   lx1hm       lx1hm.ampr.org       # Marcel, 1718 Hamm
 44.161.1.9   lx9ai       lx9ai.ampr.org       # IST, 1359 Luxembourg
 44.161.1.10  lx9ai-1     lx9ai-1.ampr.org     # IST, 1359 Luxembourg
+44.161.1.11  lx2jl       lx2jl.ampr.org       # Jean-Luc, 1618 Luxembourg
+44.161.1.12  lx1kt       lx1kt.ampr.org       # Guy, 1924 Luxembourg
 44.161.1.100 lx0ist      lx0ist.ampr.org      # Tcp/Ip-Digi, Luxembourg
 44.161.1.101 lx0ist-1    lx0ist-1.ampr.org    # Internet-Gateway, Luxembourg
 #
@@ -6366,6 +6376,10 @@
 44.161.4.13  lx1em-1     lx1em-1.ampr.org     # Marc, 4393 Pontpierre
 44.161.4.14  lx1bi       lx1bi.ampr.org       # Roger, 4442 Soleuvre
 44.161.4.15  lx1to       lx1to.ampr.org       # Theo, 4750 Petange
+44.161.4.16  lx2rr       lx2rr.ampr.org       # Alain, 4405 Soleuvre
+44.161.4.17  lx1nw       linux.lx1nw.ampr.org # Michel, 4482 Soleuvre
+44.161.4.18  lx1nw       shack.lx1nw.ampr.org # Michel, 4482 Soleuvre
+44.161.4.19  lx2dx       lx2dx.ampr.org       # Jean-Claude, 4962 Clemency
 #
 44.161.5.1   lx1db       lx1db.ampr.org       # Willy, 5254 Sandweiler
 44.161.5.2   lx1gv       lx1gv.ampr.org       # Guy, 5402 Assel
@@ -6377,6 +6391,9 @@
 44.161.6.3   lx1kq       lx1kq.ampr.org       # Mich, 6170 Godbrange
 44.161.6.4   lx2df       lx2df.ampr.org       # Freddy, 6160 Bourglinster
 44.161.6.5   lx1ht       lx1ht.ampr.org       # Ted, 6165 Ernster
+44.161.6.6   lx1jh       lx1jh.ampr.org       # Jean-Marie, 6869 Wecker
+44.161.6.7   lx2ec       lx2ec.ampr.org       # Edward, 6133 Junglinster
+44.161.6.8   lx2ec-m     lx2ec-m.ampr.org     # Edward, 6133 Junglinster
 #
 44.161.7.1   lx1jc       lx1jc.ampr.org       # Jean, 7206 Steinsel
 44.161.7.2   lx1pl       lx1pl.ampr.org       # Paul, 7381 Bofferdange
