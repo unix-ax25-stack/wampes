@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.27 1995/12/20 09:46:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.28 1995/12/30 15:05:47 deyke Exp $ */
 
 #include "global.h"
 
@@ -282,7 +282,7 @@ struct iface *ifp;
     fkbd = -1;
     for (ifp = Ifaces; ifp; ifp = ifp->next)
       if (ifp->trfp == NULL || ifp->trfp == stdout)
-    ifp->trace = 0;
+	ifp->trace = 0;
   }
   return 0;
 }

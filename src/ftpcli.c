@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.20 1995/12/20 09:46:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.21 1995/12/30 15:05:43 deyke Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q
@@ -449,6 +449,8 @@ static int doabort(int argc, char *argv[], void *p)
 		del_tcp(ftp->data);
 		ftp->data = NULL;
 		printf("Get aborted\n");
+		break;
+	default:
 		break;
 	}
 	ftp->state = COMMAND_STATE;

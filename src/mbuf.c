@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.15 1995/12/21 13:50:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.16 1995/12/30 15:05:46 deyke Exp $ */
 
 /* mbuf (message buffer) primitives
  * Copyright 1991 Phil Karn, KA9Q
@@ -129,6 +129,7 @@ free_mbuf(struct mbuf **bpp)
 	if(--bp->refcnt <= 0){
 		Freembufs++;
 
+#ifndef PURIFY
 		switch(bp->size){
 		case SMALL_MBUF:
 			bp->anext = Mbufcache[0];
@@ -146,6 +147,9 @@ free_mbuf(struct mbuf **bpp)
 			free(bp);
 			break;
 		}
+#else
+		free(bp);
+#endif
 	}
 	return bpnext;
 }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.49 1995/12/26 11:18:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.50 1995/12/30 15:05:46 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -229,8 +229,6 @@ static void link_manager_initialize(void)
 /****************************** Routing Manager ******************************/
 /*---------------------------------------------------------------------------*/
 
-#define NRRTDESTLEN     21              /* length of destination entry in */
-					/* nodes broadcast */
 #define PERMANENT       0x7fffffff      /* Max long integer */
 
 struct link {

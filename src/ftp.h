@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.h,v 1.10 1995/12/20 09:46:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.h,v 1.11 1995/12/30 15:05:44 deyke Exp $ */
 
 #ifndef _FTP_H
 #define _FTP_H
@@ -12,13 +12,19 @@ enum ftp_type {
 	LOGICAL_TYPE
 };
 
+enum ftp_state {
+	COMMAND_STATE,          /* Awaiting user command */
+	SENDING_STATE,          /* Sending data to user */
+	RECEIVING_STATE         /* Storing data from user */
+};
+
 struct ftp {
 	struct ftp *prev;       /* Linked list pointers */
 	struct ftp *next;
 
 	struct tcb *control;    /* TCP control connection */
 	struct tcb *data;       /* Data connection */
-	char type;              /* Transfer type */
+	enum ftp_type type;     /* Transfer type */
 	int logbsize;           /* Logical byte size for logical type */
 
 	FILE *fp;               /* File descriptor being transferred */
@@ -29,10 +35,7 @@ struct ftp {
 				/* (See FILES.H for definitions) */
 	char *cd;               /* Current directory name */
 
-	char state;
-#define COMMAND_STATE   0       /* Awaiting user command */
-#define SENDING_STATE   1       /* Sending data to user */
-#define RECEIVING_STATE 2       /* Storing data from user */
+	enum ftp_state state;
 	char *buf;              /* Input command buffer */
 	char cnt;               /* Length of input buffer */
 	int rest;               /* Restart location */

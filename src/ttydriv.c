@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.26 1995/12/20 09:46:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.27 1995/12/30 15:05:49 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -300,9 +300,9 @@ int ttydriv(int chr, char **buf)
 	static int rptr, wptr;
 
 	char *p;
+	enum e_keyaction keyaction;
 	int cnt;
 	int i;
-	int keyaction;
 
 	if (Rawmode) {
 		*linebuf = chr;

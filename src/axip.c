@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.22 1995/12/26 11:18:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.23 1995/12/30 15:05:42 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -138,7 +138,7 @@ static void axip_recv(void *argp)
   addrlen = sizeof(addr);
   l = recvfrom(edv->fd, (char *) (bufptr = buf), sizeof(buf), 0, (struct sockaddr *) &addr, &addrlen);
   if (edv->type == USE_IP) {
-    if (l <= sizeof(struct ip )) goto Fail;
+    if (l <= sizeof(struct ip)) goto Fail;
     ipptr = (struct ip *) bufptr;
     hdr_len = 4 * ipptr->ip_hl;
     bufptr += hdr_len;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.16 1995/12/20 09:46:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.17 1995/12/30 15:05:45 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -93,9 +93,9 @@ static void ipip_receive(void *argp)
   ifp = (struct iface *) argp;
   edv = (struct edv_t *) ifp->edv;
   addrlen = sizeof(addr);
-  l = recvfrom(edv->fd, (char *) (bufptr = buf), sizeof(buf), 0, (struct sockaddr *) & addr, &addrlen);
+  l = recvfrom(edv->fd, (char *) (bufptr = buf), sizeof(buf), 0, (struct sockaddr *) &addr, &addrlen);
   if (edv->type == USE_IP) {
-    if (l <= sizeof(struct ip )) goto Fail;
+    if (l <= sizeof(struct ip)) goto Fail;
     ipptr = (struct ip *) bufptr;
     hdr_len = 4 * ipptr->ip_hl;
     bufptr += hdr_len;
