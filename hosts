@@ -623,6 +623,11 @@
 44.130.12.85    DG1BAZ-L        # Stefan Frank, Emden; Linux
 44.130.12.86    DL1UL   # Dietmar W. Krebber, 26723 Emden;
 44.130.12.87    DG2BDB-U        # Stefan Fischer, Norden; Linux
+44.130.12.88    DG4BBZ  # Carsten Hoffmann, 26386 Wilhelmshaven; Linux
+44.130.12.89    DG2KB   # Uwe Richard, 26386 Wilhelmshaven; JNOS
+44.130.12.90    DG4BCL  # Sven Jagemann, 26384 Wilhelmshaven; JNOS
+44.130.12.91    DG9BJC  # Matthias Schalk, 26386 Wilhelmshaven; JNOS
+44.130.12.92    DG9BHD  # Claus Michaelis, 26386 Wilhelmshaven; JNOS
 #
 #44.130.13.x    Hildesheim
 # --- lokale Adresskoordination: DC5ON
@@ -3447,23 +3452,26 @@
 44.130.82.38    dg0cdb-4
 44.130.82.39    dg0cdb-5
 44.130.82.40    dl8mug
+44.130.82.41    db7kg
+44.130.82.42    dg1kwa
+44.130.82.43    dl6mra
 44.130.82.100   db0oca
 44.130.82.101   db0oca-u
 44.130.82.102   db0oca-t
 44.130.82.103   db0oca-d
 44.130.82.222   dl6mpg-u
+#  44.130.83.xx
+#  Lokaler Adresskoordinator : DL6MPG
 #
-#44.130.83.x    Dessau
-44.130.83.1     DG1HRG  # Guido, Woerlitz
-44.130.83.2     DL1HQH  # Joerg, Dessau
-44.130.83.3     DG1HSI  # Frank, Dessau
-44.130.83.4     DG1HVL  # Hans Vogl, 06842 Dessau
-44.130.83.5     DG1HSI-1        #
-44.130.83.6     DL1HQH-10       #
-44.130.83.7     DL1HQH-1        #
-44.130.83.8     DL1HQH-2        #
-44.130.83.9     DG1HSI-2        #
-44.130.83.10    DG1HSI-10       #
+44.130.83.1    dg1hrg
+44.130.83.2    dl1hqh
+44.130.83.3    dg1hsi
+44.130.83.4    dg1hvl
+44.130.83.5    dg1hsi-1
+44.130.83.6    dl1hqh-10
+44.130.83.7    dl1hqh-1
+44.130.83.8    dl1hqh-2
+44.130.83.9    dg1hsi-2
 #
 #44.130.87.x    Weissenfels
 44.130.87.9     DG1HQO  # Sven Werner, Weissenfels
