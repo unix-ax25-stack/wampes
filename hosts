@@ -531,7 +531,7 @@
 44.130.12.59    DL1BJL-T        # Matthias, Emden; TNOS
 44.130.12.60    DB0FHO-W        # ; Wampes
 44.130.12.61    DB0FHO-L        # ; Linux
-44.130.12.62    NNTP.DB0FHO     # ; NNTP-Server, Linux
+44.130.12.62    NNTP.DB0FHO     # ; NNTP-Server, Linux ***
 44.130.12.63    DG2BDB  # Stefan Fischer, Norden; WNOS
 44.130.12.64    DD8BA   # Steven Sporkmann, Holdorf; NOS
 44.130.12.65    DC3BW   # Juergen Rinas, Sande; Linux
@@ -546,6 +546,8 @@
 44.130.12.74    DL4BCK  # Heiko Cassens, 26409 Wittmund; WNOS
 44.130.12.75    DG3BFL  # Thomas Brants, Woquard; WNOS
 44.130.12.76    DD8BA-2 # Steven Sporkmann, Holdorf; WNOS
+44.130.12.77    DL1BIZ  # Dieter Koeppen, Emden; JNOS
+44.130.12.78    DC6BV   # Reinhardt Schucht, Norden;
 #
 #44.130.13.x    Hildesheim
 # --- lokale Adresskoordination: DC5ON
@@ -1341,7 +1343,7 @@
 44.130.20.131   DD3KC   # Petra Schwarz, Huertgenwald
 44.130.20.200   DL1EDB  # Chris Schlaeger, 5100 Aachen; Atari ST
 #
-#44.130.21.x    Bonn/Euskirchen
+# 44.130.21.0   Bonn/Euskirchen
 # Lokaler Koordinator: DG1KJD  Router/NS: dg1kjd-svr v. db0me
 44.130.21.1     DL4KW   # Rolf Willerscheid, 5350 Euskirchen
 44.130.21.2     DG4KS-1 # Andreas Kempf, 5350 Euskirchen
@@ -1361,7 +1363,6 @@
 44.130.21.18    DJ4KG   # Guenter Hillmann, 5300 Bonn 2
 44.130.21.19    DJ4KG-1 #
 44.130.21.21    DJ5BV   # Gerd Parzonka, 5305 Alfter
-44.130.21.22    DH0KAI  # Wolfgang Stolte, 5210 Troisdorf 18
 44.130.21.23    DG4KP   # Dieter, Alfter
 44.130.21.24    DL8EBV  #
 44.130.21.25    DL0RK   # DK5KS
@@ -1417,6 +1418,7 @@
 44.130.21.92    DG3KCR-D        #
 44.130.21.93    DG3KCR-A        #
 44.130.21.94    DG3KCR-L        #
+44.130.21.95    DL1KR   # Bernd
 44.130.21.111   DG2KMN  # Michael
 44.130.21.128   DB0NET-8        # Euskirchen TCP/IP Switch; ***, ARP via DB0NET RMNC
 44.130.21.134   DC7OP   # Andreas, Mechernich
@@ -1895,11 +1897,11 @@
 44.130.28.30    DL8ZAD  # Juergen, 35789 Weilmuenster nr Wetzlar
 44.130.28.58    DF0WS   # ClubStn F58, 35396 Giessen-Wieseck
 #
-# KA_HOSTS BEGIN [960302]
+# KA_HOSTS BEGIN [960309]
 # Hier die Karlsruher IP-Adressen:
 #
-44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc1ik@db0lj-1.ampr.org,
-#                       # dc1ik@db0lj.#rpl.deu.eu,
+44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc1ik@db0sao.ampr.org,
+#                       # dc1ik@db0sao.#bw.deu.eu,
 #                       # erb@inss1.etec.uni-karlsruhe.de
 #
 44.130.29.1  db0rot-w   # JN48ft *** Mailbox Rotensol 76332 Bad Herrenalb
@@ -2029,7 +2031,7 @@
 44.130.29.132 db0sel-l  # JN48iv Digi Pforzheim       75179 Pforzheim
 44.130.29.133 db0sel-r  # JN48iv Digi Pforzheim       75179 Pforzheim
 44.130.29.134 dg2iav    # JN49EA Michael Steinel      76185 Karlsruhe
-44.130.29.135 dg2gtn    # Thomas Naeger
+44.130.29.135 dg2gtn-2  # Thomas Naeger
 44.130.29.136 dg2gtn-w  # Thomas Naeger
 44.130.29.137 dc1iap    # Peter Lambeck
 44.130.29.138 dc1iap-w  # Peter Lambeck
@@ -2041,6 +2043,7 @@
 44.130.29.144 dc1iap-s  # Peter Lambeck
 44.130.29.145 dh9iam    # Michael Lambeck
 44.130.29.146 dh9iam-w  # Michael Lambeck
+44.130.29.147 dj1pi     # Richard                     76744 Woerth
 #
 # KA_HOSTS END
 #
@@ -2129,14 +2132,14 @@
 44.130.36.6       DL7APE        # Thomas Leng , 13355 Berlin
 44.130.36.7       DL7APN        # Christian, 1000 Berlin-Schoeneberg
 44.130.36.8       DL7VDX        # Ron , Berlin
-44.130.36.9       dd6umw        # Willfried , Berlin
+44.130.36.9       DD6UMW        # Willfried , Berlin
 44.130.36.10      DL7SV         # Joachim, 1000 Berlin; Mac
 44.130.36.11      DC7FB         # Ralf, Berlin-Rudow
 44.130.36.12      DC7FB-1       #
 44.130.36.13      DD6VD         # Michael
 44.130.36.14      PC.DC7CH      # Juergen , Berlin
-44.130.36.15      dd6uts        # Thomas , Berlin
-44.130.36.16      dl7vtl        # Joe , Berlin
+44.130.36.15      DD6UTS        # Thomas , Berlin
+44.130.36.16      DL7VTL        # Joe , Berlin
 44.130.36.18      DL7UFO-2      # Sven , 10409 Berlin
 44.130.36.20      DC7FO         # Uli, 1000 Berlin
 44.130.36.21      DC7FO-1       #
@@ -2144,9 +2147,9 @@
 44.130.36.23      DC7FO-3       #
 44.130.36.24      DC7FO-4       #
 44.130.36.25      DC7FO-5       #
-44.130.36.26      dl4ybg        # Mark , Berlin
-44.130.36.27      dl4ybg-1      #
-44.130.36.28      dl4ybg-2      #
+44.130.36.26      DL4YBG        # Mark , Berlin
+44.130.36.27      DL4YBG-1      #
+44.130.36.28      DL4YBG-2      #
 44.130.36.30      DL7UWO        # Manfred
 44.130.36.32      DF1GX         # Claus-Peter Schulz, Berlin
 44.130.36.33      ST.DF1GX      #
@@ -2157,18 +2160,23 @@
 44.130.36.41      DK7IN-1       # Rolf, 1000 Berlin 65; AT486
 44.130.36.42      DK7IN-2       # Rolf, 1000 Berlin 65; XT
 44.130.36.43      DK7IN         # Rolf, 1000 Berlin 65; AT386
-44.130.36.50      DL7UAZ        # Andre' Zwadlo, Berlin-Koepenick
-44.130.36.51      DL7UAZ-1      #
+44.130.36.44      DL9SAU        # Thomas Osterried, Berlin; AT486 WAMPES
+44.130.36.45      WAMPES.DL9SAU #
+44.130.36.50      DL7UAZ        # Andre' Zwadlo, Berlin-Koepenick;486DX WAMPES
+44.130.36.51      DL7UAZ-u      # Andre' Zwadlo, Berlin-Koepenick;486DX Linux
 44.130.36.52      DL7AMN        # Edgar Vennmanns, 10779 Berlin
 44.130.36.55      DD6RI         # Christian
+44.130.36.56      dl7vwh-1      # Wolfgang , Berlin
+44.130.36.57      dl7vwh-2      #
 44.130.36.60      DL7ARO        # Marco; (WAMPES)
 44.130.36.65      DB5QO         # Dieter, Berlin 46
 44.130.36.66      DD5MP         # Antonio, Berlin
 44.130.36.70      DD6OA-7       # Bodo, Berlin-Buckow
 44.130.36.75      DL7VFX        # Thomas Kroeger, Berlin
+44.130.36.79      DL7AMW        # Hans-Peter, Berlin-Wilmersdorf
 44.130.36.80      DL7UEA        # Bernd, Berlin
-44.130.36.81      DL9SAU-1      # Thommas Osterried, Berlin
-44.130.36.82      DL9SAU-A      # Thommas Osterried, Berlin
+44.130.36.81      DL9SAU-1      # Thomas Osterried, Berlin
+44.130.36.82      DL9SAU-A      # Thomas Osterried, Berlin
 44.130.36.83      DL7ARX        # Gerhard Petzold, 12279 Berlin-Marienfelde; PC
 44.130.36.84      DD6RG         # Joachim Henschke, 12249 Berlin
 44.130.36.85      DL7ARX-1      # Gerhard Petzold, Berlin-Marienfelde; Amiga

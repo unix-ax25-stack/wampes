@@ -1,8 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strdup.c,v 1.7 1996/02/13 15:31:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strdup.c,v 1.8 1996/03/14 17:07:07 deyke Exp $ */
 
 #include "configure.h"
 
-#if !HAS_STRDUP
+#if !HAS_STRDUP || defined _AIX
 
 #include <stdlib.h>
 #include <string.h>

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.60 1996/02/13 15:30:58 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.61 1996/03/14 17:07:02 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -16,7 +16,7 @@ all:;   @case "`uname -sr`" in \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=c89' \
 		'CFLAGS=-O -D_HPUX_SOURCE -I../lib' \
-		'SLIBS=-lcurses -lndbm' \
+		'SLIBS=-lc -lcurses -lndbm' \
 		_all;; \
 	AIX*) \
 		$(MAKE) -i -f $(MAKEFILE) \

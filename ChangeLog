@@ -1,4 +1,14 @@
-@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ChangeLog,v 1.5 1996/03/03 09:40:27 deyke Exp $
+@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ChangeLog,v 1.6 1996/03/14 17:06:00 deyke Exp $
+
+960314 Dieter Deyke (deyke@fc.hp.com)
+
+	Fixed strdup/free interaction problem on AIX
+
+	Fixed curses problem in cnet on HP-UX 10.10
+
+	Fixed free memory read in bbs.c when changing an existing alias
+
+	Updated domain.txt and hosts
 
 960303 Dieter Deyke (deyke@fc.hp.com)
 
