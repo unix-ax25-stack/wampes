@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.8 1993/03/04 23:13:08 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.9 1993/03/05 20:15:43 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -138,7 +138,7 @@ int main(int argc, char **argv)
   }
   remove(PIDFILE);
 
-  while ((ch = getopt(argc, argv, "ac:f:")) != EOF)
+  while ((ch = getopt(argc, argv, "ac:f:k")) != EOF)
     switch (ch) {
     case 'a':
       all = 1;
@@ -151,6 +151,8 @@ int main(int argc, char **argv)
       fail = atoi(optarg);
       if (fail < 0 || fail > 100) errflag = 1;
       break;
+    case 'k':
+      exit(0);
     case '?':
       errflag = 1;
       break;

@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.45 1993/03/04 23:12:04 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.46 1993/03/05 20:15:36 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -134,7 +134,7 @@ static struct mail *alloc_mail(void);
 static void free_mail(struct mail *mail);
 static void route_mail(struct mail *mail);
 static void append_line(struct mail *mail, char *line);
-static int get_header_value(const char *name, char *line, char *value);
+static int get_header_value(const char *name, int do822, char *line, char *value);
 static char *get_host_from_header(const char *line);
 static int host_in_header(char *fname, char *host);
 static void delete_command(int argc, char **argv);
@@ -1085,7 +1085,7 @@ static void append_line(struct mail *mail, char *line)
 
 /*---------------------------------------------------------------------------*/
 
-static int get_header_value(const char *name, char *line, char *value)
+static int get_header_value(const char *name, int do822, char *line, char *value)
 {
 
   char *p1, *p2;
@@ -1094,15 +1094,16 @@ static int get_header_value(const char *name, char *line, char *value)
   while (*name)
     if (tolower(uchar(*name++)) != tolower(uchar(*line++))) return 0;
 
-  for (comment = 0, p1 = line; c = *p1; p1++) {
-    if (c == '(') comment++;
-    if (comment) *p1 = ' ';
-    if (comment && c == ')') comment--;
-  }
-
-  while ((p1 = strchr(line, '<')) && (p2 = strrchr(p1, '>'))) {
-    *p2 = 0;
-    line = p1 + 1;
+  if (do822) {
+    for (comment = 0, p1 = line; c = *p1; p1++) {
+      if (c == '(') comment++;
+      if (comment) *p1 = ' ';
+      if (comment && c == ')') comment--;
+    }
+    while ((p1 = strchr(line, '<')) && (p2 = strrchr(p1, '>'))) {
+      *p2 = 0;
+      line = p1 + 1;
+    }
   }
 
   while (isspace(uchar(*line))) line++;
@@ -2426,15 +2427,15 @@ static void recv_from_mail_or_news(void)
 	if (*line) {
 	  if (from_priority < 1 && !strncmp(line, "From ", 5) && sscanf(line, "From %s", mail->from) == 1)
 	    from_priority = 1;
-	  if (from_priority < 2 && get_header_value("Path:", line, mail->from))
+	  if (from_priority < 2 && get_header_value("Path:", 1, line, mail->from))
 	    from_priority = 2;
-	  if (from_priority < 3 && get_header_value("From:", line, mail->from))
+	  if (from_priority < 3 && get_header_value("From:", 1, line, mail->from))
 	    from_priority = 3;
-	  get_header_value("Newsgroups:", line, mail->to);
-	  get_header_value("Subject:", line, mail->subject);
-	  get_header_value("Message-ID:", line, mail->mid);
-	  get_header_value("Distribution:", line, distr);
-	  get_header_value("Bulletin-ID:", line, mail->bid);
+	  get_header_value("Newsgroups:", 1, line, mail->to);
+	  get_header_value("Subject:", 0, line, mail->subject);
+	  get_header_value("Message-ID:", 1, line, mail->mid);
+	  get_header_value("Distribution:", 1, line, distr);
+	  get_header_value("Bulletin-ID:", 1, line, mail->bid);
 	} else
 	  state = 1;
 	break;
