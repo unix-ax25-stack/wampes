@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/rip,v 1.6 1994/08/21 10:17:31 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/rip,v 1.7 1994/11/13 21:48:41 deyke Exp $
 .H 2 "rip" " \fIsubcommand\fP"
 These commands control the Routing Information Protocol (RIP) service.
 .H 3 "rip accept" " \fIhostid\fP"
@@ -61,8 +61,8 @@ relative metrics of the entries are ignored.
 The default is \fBoff\fP.
 .H 3 "rip refuse" " \fIhostid\fP"
 Refuse to accept RIP updates from the specified host by adding the
-host to the RIP filter table. It may be later removed with the \fBrip
-accept\fP command.
+host to the RIP filter table. It may be later removed with the
+\fBrip accept\fP command.
 .H 3 "rip request" " \fIhostid\fP"
 Send a RIP Request packet to the specified host, causing it to reply
 with a RIP Response packet containing its routing table.

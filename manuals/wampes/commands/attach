@@ -1,5 +1,5 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/attach,v 1.9 1994/09/11 18:36:52 deyke Exp $
-.H 2 "attach" " \fItype\fP [\fItype specific options\fP]
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/attach,v 1.10 1994/11/13 21:48:40 deyke Exp $
+.H 2 "attach" " \fItype\fP [\fItype specific options\fP]"
 Configure and attach an interface to the system.
 The details are highly interface type dependent.
 .H 3 "attach asy 0" " 0 \fIencapsulation\fP \fIname\fP 0 \fImtu\fP \fIspeed\fP"

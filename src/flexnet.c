@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.5 1994/11/08 14:26:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.6 1994/11/13 21:48:31 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -782,8 +782,10 @@ static int send_query_packet(int type, const struct querypkt *qp, const char *ca
 	sprintf(cp, "%5d", qp->qsonum);
 	cp += 5;
 	for (i = 0; i < qp->numcalls; i++) {
-		if (cp - bp->data > LENROUT - 11)
+		if (cp - bp->data > LENROUT - 11) {
+			free_p(bp);
 			return (-1);
+		}
 		if (i > 0)
 			*cp++ = ' ';
 		strcpy(cp, qp->bufs[i]);

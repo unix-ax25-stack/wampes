@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.15 1994/09/05 12:47:35 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.16 1994/11/13 21:48:36 deyke Exp $
 
 save_file()
 {
@@ -9,7 +9,7 @@ save_file()
 
 check_file()
 {
-	if cmp -s $1.old $1 ; then
+	if cmp -s $1.old $1; then
 		mv $1.old $1
 	else
 		rm $1.old
@@ -18,7 +18,7 @@ check_file()
 
 date=$(date +%y%m%d)
 
-if [[ -x /bin/hp9000s700 ]] && /bin/hp9000s700 ; then
+if [[ -x /bin/hp9000s700 ]] && /bin/hp9000s700; then
 	export CCOPTS='-z +ESlit'
 fi
 
@@ -42,8 +42,8 @@ ksh < configure > configure.h
 
 cd ~/tcp/src
 
-for file in *.[ch] ; do
-	if [[ -f $file ]] ; then
+for file in *.[ch]; do
+	if [[ -f $file ]]; then
 		case $(grep -F -c '@(#) $Header' $file) in
 		0)
 			save_file $file
@@ -69,7 +69,7 @@ check_file $file
 
 cd ~/tcp/manuals
 
-for manual in * ; do
+for manual in *; do
 	cd ~/tcp/manuals/$manual
 
 	file=frontpage
@@ -98,8 +98,8 @@ for dir in \
 	~/tcp/util \
 	; do
 	cd $dir
-	for file in Makefile* ; do
-		if [[ -f $file ]] ; then
+	for file in Makefile*; do
+		if [[ -f $file ]]; then
 			save_file $file
 			make -f $file depend
 			check_file $file
@@ -119,5 +119,15 @@ jnosdiff -w
 
 cd ~/tcp/tools
 make
+
+cd ~/tcp/doc
+for manual in *.mm; do
+	manual=${manual%.mm}
+	file=$manual.html
+	save_file $file
+	grep -F '@(#) $Header' < $file.old > $file
+	mm2html $manual.mm >> $file
+	check_file $file
+done
 
 echo '***** tcpmake complete *****'

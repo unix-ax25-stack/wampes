@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.24 1994/11/09 13:47:15 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.25 1994/11/13 21:48:37 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
@@ -19,13 +19,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 941109" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 941113" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 941109
+Version 941113
 .S
 .SP 2
 .S 15
@@ -338,7 +338,7 @@ displayed its value.
 The third line shows transmit (TX) statistics, including the total
 number of write system calls and transmitted characters.
 .LE
-.H 2 "attach" " \fItype\fP [\fItype specific options\fP]
+.H 2 "attach" " \fItype\fP [\fItype specific options\fP]"
 Configure and attach an interface to the system.
 The details are highly interface type dependent.
 .H 3 "attach asy 0" " 0 \fIencapsulation\fP \fIname\fP 0 \fImtu\fP \fIspeed\fP"
@@ -1438,8 +1438,8 @@ relative metrics of the entries are ignored.
 The default is \fBoff\fP.
 .H 3 "rip refuse" " \fIhostid\fP"
 Refuse to accept RIP updates from the specified host by adding the
-host to the RIP filter table. It may be later removed with the \fBrip
-accept\fP command.
+host to the RIP filter table. It may be later removed with the
+\fBrip accept\fP command.
 .H 3 "rip request" " \fIhostid\fP"
 Send a RIP Request packet to the specified host, causing it to reply
 with a RIP Response packet containing its routing table.
@@ -2099,8 +2099,8 @@ will allow the remote TCP to send before it must stop and wait for an
 acknowledgement. The actual window value used by TCP when deciding how
 much more data to send is referred to as the \fIeffective window\fP.
 This is the smaller of two values: the window advertised by the remote
-TCP minus the unacknowledged data in flight, and the \fIcongestion
-window\fP, an automatically computed time-varying estimate of how much
+TCP minus the unacknowledged data in flight, and the \fIcongestion window\fP,
+an automatically computed time-varying estimate of how much
 data the network can handle.
 .P
 The default value of \fBWindow\fP is 2048 bytes.
@@ -2169,8 +2169,9 @@ stations sharing a channel to agree beforehand on a maximum packet size.
 TCP is different, as we shall see.
 .H 3 "Setting Maxframe"
 For best performance on a half-duplex radio channel, \fBmaxframe\fP should
-always be set to 1. The reasons are explained in the paper \fILink Level
-Protocols Revisited\fP by Brian Lloyd and Phil Karn, which appeared in the
+always be set to 1. The reasons are explained in the paper
+\fILink Level Protocols Revisited\fP by Brian Lloyd and Phil Karn,
+which appeared in the
 proceedings of the ARRL 5th Computer Networking Conference in 1986.
 .H 3 "Setting MTU"
 TCP/IP header overhead considerations similar to those of the AX.25 layer

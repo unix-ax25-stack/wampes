@@ -1,3 +1,4 @@
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/smack.mm,v 1.2 1994/11/13 21:48:37 deyke Exp $
 .\" -*- Text -*-
 .\"
 .\" File: smack.ms   (nroff source, ms package)

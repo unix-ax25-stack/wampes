@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/setting-paclen,v 1.4 1994/08/24 11:27:14 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/setting-paclen,v 1.5 1994/11/13 21:48:42 deyke Exp $
 .nr Cl 7 \" Max level of header for table of contents
 .H 1 "Setting Paclen, Maxframe, MTU, MSS and Window"
 Many \fBWAMPES\fP users are confused by these parameters and do not know how to
@@ -63,8 +63,8 @@ will allow the remote TCP to send before it must stop and wait for an
 acknowledgement. The actual window value used by TCP when deciding how
 much more data to send is referred to as the \fIeffective window\fP.
 This is the smaller of two values: the window advertised by the remote
-TCP minus the unacknowledged data in flight, and the \fIcongestion
-window\fP, an automatically computed time-varying estimate of how much
+TCP minus the unacknowledged data in flight, and the \fIcongestion window\fP,
+an automatically computed time-varying estimate of how much
 data the network can handle.
 .P
 The default value of \fBWindow\fP is 2048 bytes.
@@ -133,8 +133,9 @@ stations sharing a channel to agree beforehand on a maximum packet size.
 TCP is different, as we shall see.
 .H 3 "Setting Maxframe"
 For best performance on a half-duplex radio channel, \fBmaxframe\fP should
-always be set to 1. The reasons are explained in the paper \fILink Level
-Protocols Revisited\fP by Brian Lloyd and Phil Karn, which appeared in the
+always be set to 1. The reasons are explained in the paper
+\fILink Level Protocols Revisited\fP by Brian Lloyd and Phil Karn,
+which appeared in the
 proceedings of the ARRL 5th Computer Networking Conference in 1986.
 .H 3 "Setting MTU"
 TCP/IP header overhead considerations similar to those of the AX.25 layer
