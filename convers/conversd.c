@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.49 1993/08/01 18:07:21 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.50 1993/08/02 10:25:39 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -1204,7 +1204,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.49 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.50 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1409,6 +1409,7 @@ static void h_user_command(struct link *lp)
     up->u_seq = seq;
     if (hp == &my) {
       if (debug >= 2) printf("*** Got info about my own user: rejected.\n");
+      clear_locks();
       if (++up->u_seq < currtime) up->u_seq = currtime;
       sprintf(buffer, "/\377\200USER %s %s %ld %d %d %s\n", name, host, up->u_seq, newchannel, up->u_channel, up->u_note);
       send_string(lp, buffer);
