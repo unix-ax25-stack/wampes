@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.34 1993/09/17 09:32:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.35 1993/09/22 16:44:54 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -10,14 +10,14 @@
 #include <termios.h>
 #include <unistd.h>
 
-#if defined(__hpux) \
- || defined(_AIX) \
- || defined(linux) \
- || defined(__386BSD__) \
- || defined(__bsdi__) \
- || defined(sun) \
- || defined(ULTRIX_RISC) \
- || defined(macII)
+#if defined __hpux \
+ || defined _AIX \
+ || defined linux \
+ || defined __386BSD__ \
+ || defined __bsdi__ \
+ || defined sun \
+ || defined ULTRIX_RISC \
+ || defined macII
 #include <sys/uio.h>
 #ifndef MAXIOV
 #define MAXIOV          16

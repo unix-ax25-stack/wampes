@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.16 1993/09/19 16:21:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.17 1993/09/22 16:44:51 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -16,10 +16,10 @@
 #include "daemon.h"
 #include "hardware.h"
 
-#if defined(__hpux) || defined(ULTRIX_RISC) || defined(macII)
+#if defined __hpux || defined ULTRIX_RISC || defined macII
 #define setjmp          _setjmp
 #define longjmp         _longjmp
-#elif defined(_AIX)
+#elif defined _AIX
 #define setjmp          _setjmp
 #define longjmp         aix_longjmp
 #endif
@@ -185,12 +185,12 @@ int freeargs;           /* If set, free arg list on parg1 at termination */
 #else
 	newstackptr = pp->stack + (pp->stksize - 128);
 #endif
-#ifdef _AIX
+#if defined _AIX
 	if (!setjmp(jmpenv)) {
 	  jmpenv[3] = (int) newstackptr;
 	  longjmp(jmpenv, 1);
 	}
-#elif sun
+#elif defined sun
 #if _JBLEN == 9
 	if (!setjmp(jmpenv)) {
 	  jmpenv[2] = (int) newstackptr;
@@ -204,17 +204,17 @@ int freeargs;           /* If set, free arg list on parg1 at termination */
 #else
 #error error: unknown jmp_buf size
 #endif
-#elif ULTRIX_RISC
+#elif defined ULTRIX_RISC
 	if (!setjmp(jmpenv)) {
 	  jmpenv[32] = (int) newstackptr;
 	  longjmp(jmpenv, 1);
 	}
-#elif macII
+#elif defined macII
 	if (!setjmp(jmpenv)) {
 	  jmpenv[12] = (int) newstackptr;
 	  longjmp(jmpenv, 1);
 	}
-#elif RISCiX
+#elif defined RISCiX
 	setstack(newstackptr);
 #else
 	setstack();

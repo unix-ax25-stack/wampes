@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.5 1991/06/04 11:33:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.6 1993/09/22 16:44:49 deyke Exp $ */
 
 /* Stuff common to both the FTP server and client */
 #include <stdio.h>
@@ -28,7 +28,6 @@ int cnt;
 	/* This will likely also generate an ACK with window rotation */
 	recv_tcp(tcb,&bp,cnt);
 
-#if (defined(UNIX) || defined(MAC) || defined(AMIGA) || defined(ATARI_ST))
 	if(ftp->type == ASCII_TYPE){
 		while((c = PULLCHAR(&bp)) != -1){
 			if(c != '\r')
@@ -36,7 +35,6 @@ int cnt;
 		}
 		return;
 	}
-#endif
 	while(bp != NULLBUF){
 		if(bp->cnt != 0)
 			fwrite(bp->data,1,(unsigned)bp->cnt,ftp->fp);
@@ -82,22 +80,11 @@ int cnt;
 				eof_flag=1;
 				break;
 			}
-#if (defined(CPM) || defined(MSDOS))
-			/* ^Z is CP/M's text EOF marker, and it is sometimes used
-			 * by MS-DOS editors too
-			 */
-			if(c == CTLZ){
-				eof_flag = 1;
-				break;
-			}
-#endif
-#if (defined(UNIX) || defined(MAC) || defined(AMIGA) || defined(ATARI_ST))
 			if(c == '\n'){
 				*cp++ = '\r';
 				bp->cnt++;
 				cnt--;
 			}
-#endif
 			*cp++ = c;
 			bp->cnt++;
 			cnt--;

@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.63 1993/09/17 09:33:06 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.64 1993/09/22 16:45:07 deyke Exp $";
 
 #include <sys/types.h>
 
@@ -235,7 +235,7 @@ static void errorstop(int line)
 
 /*---------------------------------------------------------------------------*/
 
-#if defined(_SC_OPEN_MAX) && !(defined(__386BSD__) || defined(__bsdi__))
+#if defined _SC_OPEN_MAX && !(defined __386BSD__ || defined __bsdi__)
 #define open_max()      sysconf(_SC_OPEN_MAX)
 #else
 #define open_max()      (1024)
@@ -843,7 +843,7 @@ static void send_to_mail(struct mail *mail)
     case -1:
       _exit(1);
     case 0:
-#if defined(_AIX) || defined(__386BSD__) || defined(__bsdi__)
+#if defined _AIX || defined __386BSD__ || defined __bsdi__
       sprintf(command, "/usr/sbin/sendmail -oi -oem -f %s %s", mail->from, mail->to);
 #else
       sprintf(command, "/usr/lib/sendmail -oi -oem -f %s %s", mail->from, mail->to);

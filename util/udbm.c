@@ -1,7 +1,7 @@
 /* User Data Base Manager */
 
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.25 1993/09/17 09:32:56 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.26 1993/09/22 16:45:23 deyke Exp $";
 #endif
 
 #define DEBUG           0
@@ -49,7 +49,7 @@ static char indexfile[] = "/users/bbs/index";
 static char passfile[]  = "/etc/passwd";
 static char passtemp[]  = "/etc/ptmp";
 static char spassfile[] = "/.secure/etc/passwd";
-#if defined(__386BSD__) || defined(__bsdi__)
+#if defined __386BSD__ || defined __bsdi__
 static char aliasfile[] = "/etc/aliases";
 static char aliastemp[] = "/etc/aliases.tmp";
 #else
@@ -568,7 +568,7 @@ static int fixusers(void)
 static void fixpasswd(void)
 {
 
-#if !(defined(__386BSD__) || defined(__bsdi__))
+#if !(defined __386BSD__ || defined __bsdi__)
 
   FILE * fp;
   int secured = 0;

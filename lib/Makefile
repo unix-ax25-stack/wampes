@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.9 1993/09/17 09:33:12 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.10 1993/09/22 16:45:31 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -20,7 +20,7 @@ all:;   @if [ $(OS) = HP-UX ] ; then \
 	elif [ $(OS) = AIX ] ; then \
 		make -i \
 		'CC=cc' \
-		'CFLAGS=-O -D_ALL_SOURCE' \
+		'CFLAGS=-O -qchars=signed -D_ALL_SOURCE' \
 		'RANLIB=:' \
 		_all; \
 	elif [ $(OS) = Linux ] ; then \

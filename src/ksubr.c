@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.19 1993/09/17 09:32:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.20 1993/09/22 16:44:52 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -33,7 +33,7 @@ struct env {
 	unsigned        ds;
 };
 #define getstackptr(ep) (ptol(MK_FP((ep)->ss, (ep)->sp)))
-#elif __hp9000s300
+#elif defined __hp9000s300
 struct env {
 	long    pc;
 	long    d2;
@@ -50,13 +50,13 @@ struct env {
 	long    a7;
 };
 #define getstackptr(ep) ((ep)->a7)
-#elif __hp9000s800
+#elif defined __hp9000s800
 struct env {
 	long    i_dont_know;
 	long    sp;
 };
 #define getstackptr(ep) ((ep)->sp)
-#elif _AIX
+#elif defined _AIX
 struct env {
 	long    i_dont_know_0;
 	long    i_dont_know_1;
@@ -64,7 +64,7 @@ struct env {
 	long    sp;
 };
 #define getstackptr(ep) ((ep)->sp)
-#elif sun
+#elif defined sun
 #if _JBLEN == 9
 struct env {
 	long    onsstack;
@@ -87,7 +87,7 @@ struct env {
 #else
 #error error: unknown jmp_buf size
 #endif
-#elif ULTRIX_RISC
+#elif defined ULTRIX_RISC
 struct env {
 	long    on;
 	long    sig;
@@ -168,7 +168,7 @@ struct env {
 	long    nbjregs;
 };
 #define getstackptr(ep) ((ep)->sp)
-#elif linux
+#elif defined linux
 struct env {
 	long    ebx;
 	long    esi;
@@ -178,7 +178,7 @@ struct env {
 	long    epc;
 };
 #define getstackptr(ep) ((ep)->esp)
-#elif __386BSD__
+#elif defined __386BSD__
 struct env {
 	long    unknown0;
 	long    unknown1;
@@ -192,7 +192,7 @@ struct env {
 	long    unknown9;
 };
 #define getstackptr(ep) ((ep)->esp)
-#elif __bsdi__
+#elif defined __bsdi__
 struct env {
 	long    unknown0;
 	long    unknown1;
@@ -206,7 +206,7 @@ struct env {
 	long    unknown9;
 };
 #define getstackptr(ep) ((ep)->esp)
-#elif macII
+#elif defined macII
 struct env {
 	long    d2;
 	long    d3;
