@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.6 1990/10/29 13:12:01 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.7 1990/12/07 10:44:04 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -56,11 +56,13 @@ static void terminate()
 {
   long  arg;
 
+  close(SOCK_OUT_FDES);
   arg = 0;
   ioctl(TERM_OUT_FDES, FIOSNBIO, &arg);
+  for (; term_queue; term_queue = term_queue->next)
+    write(TERM_OUT_FDES, term_queue->data, term_queue->cnt);
+  write(TERM_OUT_FDES, "\033&s0A", 5);  /* disable XmitFnctn */
   ioctl(TERM_INP_FDES, TCSETA, &prev_termio);
-  puts("\033&s0A");     /* disable XmitFnctn */
-  fflush(stdout);
   exit(0);
 }
 
@@ -147,6 +149,7 @@ char  **argv;
     exit(1);
   }
 
+  write(TERM_OUT_FDES, "\033&s1A", 5);  /* enable XmitFnctn */
   arg = 1;
   ioctl(TERM_OUT_FDES, FIOSNBIO, &arg);
   ioctl(TERM_INP_FDES, TCGETA, &prev_termio);
@@ -155,9 +158,6 @@ char  **argv;
   curr_termio.c_cc[VMIN] = 1;
   curr_termio.c_cc[VTIME] = 0;
   ioctl(TERM_INP_FDES, TCSETA, &curr_termio);
-
-  puts("\033&s1A");     /* enable XmitFnctn */
-  fflush(stdout);
 
   for (; ; ) {
     rmask = SOCK_INP_MASK | TERM_INP_MASK;
