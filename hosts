@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.33 1994/06/03 08:40:07 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.34 1994/06/27 10:03:26 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -1148,7 +1148,7 @@
 44.130.144.1    DB0NOS  # TCP/IP Server, Oerlinghausen; ***
 44.130.144.10   ROUTER.DB0NOS   # IP Router, Oerlinghausen; ***
 44.130.144.16   DL3YEN  # Wolfgang Beckmann, 4800 Bielefeld 13; AT
-44.130.144.17   SYS2.DL3YEN     #
+44.130.144.17   KR4PH
 44.130.144.18   DL8KD   # Roland Werner, 4811 Oerlinghausen; Amiga
 44.130.144.19   SYS2.DL8KD      #
 44.130.144.20   DG6YGD  # Dirk Wacker, 4930 Detmold
@@ -1168,7 +1168,9 @@
 44.130.144.34   SYS2.DG8YAY     #
 44.130.144.35   DL5YDE-7        # Ernst Luehr, 4815 Schloss-Holte-Stukenbrock
 44.130.144.36   DG4YDB  # Michael, Bielefeld
+44.130.144.37   DG7YHV  # Juergen, Oelde
 44.130.144.38   DG6YGF  # Erhard Golling, Bielefeld; Amiga
+44.130.144.40   DL3YEO  # Herko, Bielefeld
 44.130.144.56   DK3RC   # Horst Brueggemann, 4930 Detmold
 44.130.144.57   DK3RC-1 # Horst Brueggemann, Bielstein
 44.130.144.58   DL0JW   # Clubstn N58, 4811 Oerlinghausen
@@ -4211,8 +4213,9 @@
 44.143.3.6      OE3IGW   # Alois, JN79ma
 44.143.3.7      OE3FAS   # Franz
 44.143.3.8      OE3KEU   # Karl, Brunn am Gebirge
-44.143.3.9
-44.143.3.10
+44.143.3.9      OE3HGB   # Heinz, 3512 Mautern/Donau, Kerner von Marilaunstr. 13
+44.143.3.10     OE3GFS   # Gerhard, 2332 Hennersdorf, Raimundstr. 6
+44.143.3.11     OE3TAN   # Anton Neu, 3321 Ardagger, Stefanshart 34
 44.143.3.31     OE3GMW   # Gottfried Motowidlo, 2351 Wiener Neudorf
 # 1200 bit/s Knoten
 44.143.3.100    OE3XAC   # Klubstation d. Amateurfunkklub Schwechat
