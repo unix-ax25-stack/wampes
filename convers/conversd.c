@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.43 1993/07/11 07:41:13 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.44 1993/07/14 10:51:48 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -190,7 +190,6 @@ static void who_command(struct link *lp);
 static void h_cmsg_command(struct link *lp);
 static void h_host_command(struct link *lp);
 static void h_invi_command(struct link *lp);
-static void h_udat_command(struct link *lp);
 static void h_umsg_command(struct link *lp);
 static void h_user_command(struct link *lp);
 static void process_input(struct link *lp);
@@ -921,7 +920,7 @@ static void close_link(struct link *lp)
 
   for (upp = &users; up = *upp; )
     if (up->u_link == lp) {
-      up->u_seq++;
+      if (up->u_seq) up->u_seq++;
       up->u_oldchannel = up->u_channel;
       up->u_channel = -1;
       clear_locks();
@@ -1186,7 +1185,7 @@ static void name_command(struct link *lp)
   if (lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.43 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.44 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1339,37 +1338,6 @@ static void h_invi_command(struct link *lp)
 
 /*---------------------------------------------------------------------------*/
 
-static void h_udat_command(struct link *lp)
-{
-
-  char *cp;
-  char *host;
-  char *name;
-  char *note;
-  struct host *hp;
-  struct user *up;
-
-  name = getarg(NULLCHAR, 0);
-  host = getarg(NULLCHAR, 0);
-  if (!*host) return;
-  hp = hostptr(host);
-  if (hp == &my) return;
-  up = userptr(name, hp);
-  note = getarg(NULLCHAR, 1);
-  for (cp = note; isdigit(*cp & 0xff); cp++) ;
-  if (!*cp || isspace(*cp & 0xff))
-    for (note = cp; isspace(*note & 0xff); note++) ;
-  if (!*note) note = NO_NOTE;
-  if (!strcmp(up->u_note, note)) return;
-  up->u_oldchannel = up->u_channel;
-  free(up->u_note);
-  up->u_note = strdup(note);
-  up->u_link = hp->h_link = lp;
-  send_user_change_msg(up);
-}
-
-/*---------------------------------------------------------------------------*/
-
 static void h_umsg_command(struct link *lp)
 {
 
@@ -1485,7 +1453,6 @@ static void process_input(struct link *lp)
 
     "\377\200cmsg",     h_cmsg_command,
     "\377\200invi",     h_invi_command,
-    "\377\200udat",     h_udat_command,
     "\377\200umsg",     h_umsg_command,
     "\377\200user",     h_user_command,
 
