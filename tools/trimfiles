@@ -1,0 +1,19 @@
+#! /bin/csh -f
+
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.1 1992/08/13 19:00:53 deyke Exp $
+
+set tmp = tmp$$
+if (! -e .trimtime) touch 0101000070 .trimtime
+foreach i (`find *.[ch] Makefile notes -type f -newer .trimtime -perm -0600 -print`)
+  echo -n $i ''
+  trim -s $i > $tmp
+  if ( { cmp -s $i $tmp } ) then
+    rm -f $tmp
+    echo no change
+  else
+    mv $tmp $i
+    echo done
+  endif
+end
+sleep 2
+: > .trimtime
