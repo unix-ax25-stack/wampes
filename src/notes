@@ -1,7 +1,5 @@
 -------------------------------------------------------------------------------
 
-- do not place a lock for inbound mail
-
 - create bbs routing tables
 
 - sync mail_smtp.c with bbs.c

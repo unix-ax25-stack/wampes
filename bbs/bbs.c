@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.95 1995/06/10 17:23:35 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.96 1995/06/20 15:57:45 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -66,6 +66,7 @@ extern int optind;
 #define WRKDIR          SPOOL_DIR "/bbs"
 
 #define BIDLOCKFILE     LOCKDIR "/bbs.bid"
+#define FWDLOCKFILE     LOCKDIR "/bbs.fwd."     /* Append name of host */
 #define INDEXFILE       WRKDIR "/index"
 #define SENDLOCKFILE    LOCKDIR "/bbs.snd"
 
@@ -160,7 +161,6 @@ struct user {
   int gid;
   char *dir;
   char *shell;
-  int seq;
 };
 
 static struct user user;
@@ -185,7 +185,6 @@ static int did_forward;
 static int do_forward;
 static int errors;
 static int fdindex;
-static int fdseq;
 static int level;
 static int packetcluster;
 static volatile int stopped;
@@ -643,36 +642,38 @@ static char *getfilename(int mesg)
 
 /*---------------------------------------------------------------------------*/
 
-static void get_seq(void)
+static int get_seq(void)
 {
 
-  char buf[16];
   char fname[1024];
+  FILE *fp;
+  int seq;
 
-  sprintf(fname, "%s/%s", user.dir, SEQFILE);
-  seteugid(user.uid, user.gid);
-  fdseq = open(fname, O_RDWR | O_CREAT, 0644);
-  seteugid(0, 0);
-  if (fdseq < 0) halt();
-  if (lock_fd(fdseq, 1)) {
-    puts("Sorry, you are already running another BBS.\n");
-    exit(1);
+  seq = 0;
+  sprintf(fname, "%s/" SEQFILE, user.dir);
+  if ((fp = fopen(fname, "r"))) {
+    fscanf(fp, "%d", &seq);
+    fclose(fp);
   }
-  if (read(fdseq, buf, sizeof(buf)) >= 2) user.seq = atoi(buf);
+  return seq;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void put_seq(void)
+static void put_seq(int seq)
 {
 
-  char buf[16];
-  int n;
+  char fname[1024];
+  FILE *fp;
 
-  sprintf(buf, "%d\n", user.seq);
-  n = strlen(buf);
-  if (lseek(fdseq, 0L, SEEK_SET)) halt();
-  if (write(fdseq, buf, n) != n) halt();
+  sprintf(fname, "%s/" SEQFILE, user.dir);
+  seteugid(user.uid, user.gid);
+  fp = fopen(fname, "w");
+  seteugid(0, 0);
+  if (!fp)
+    halt();
+  fprintf(fp, "%d\n", seq);
+  fclose(fp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1291,6 +1292,28 @@ static void disconnect_command(int argc, char **argv)
 
 /*---------------------------------------------------------------------------*/
 
+static int lock_forward(void)
+{
+
+  char fname[1024];
+  static int fdlockfwd = -1;
+
+  if (fdlockfwd < 0) {
+    sprintf(fname, FWDLOCKFILE "%s", user.name);
+    fdlockfwd = open(fname, O_RDWR | O_CREAT, 0644);
+    if (fdlockfwd < 0)
+      halt();
+    if (lock_fd(fdlockfwd, 1)) {
+      close(fdlockfwd);
+      fdlockfwd = -1;
+      return 0;
+    }
+  }
+  return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static struct mail *read_mail_or_news_file(const char *filename, enum e_type src)
 {
 
@@ -1652,13 +1675,15 @@ static void f_command(int argc, char **argv)
   int did_any_forward;
 
   did_any_forward = 0;
-  for (;;) {
-    did_forward = 0;
-    forward_mail();
-    forward_news();
-    if (!did_forward)
-      break;
-    did_any_forward = 1;
+  if (lock_forward()) {
+    for (;;) {
+      did_forward = 0;
+      forward_mail();
+      forward_news();
+      if (!did_forward)
+	break;
+      did_any_forward = 1;
+    }
   }
   if (!do_forward && !did_any_forward)
     exit(0);
@@ -1704,6 +1729,7 @@ static void list_command(int argc, char **argv)
   int i;
   int max = 999999;
   int min = 1;
+  int seq = -1;
   int update_seq = 0;
   size_t len;
   struct index index;
@@ -1727,7 +1753,9 @@ static void list_command(int argc, char **argv)
       nextarg("COUNT");
       count = atoi(argv[i]);
     } else if (!strncmp("new", argv[i], len)) {
-      min = user.seq + 1;
+      if (seq == -1)
+	seq = get_seq();
+      min = seq + 1;
       update_seq = (argc == 2 && level == USER);
     } else if (!strncmp("max", argv[i], len)) {
       nextarg("MAX");
@@ -1770,9 +1798,9 @@ static void list_command(int argc, char **argv)
 	       tm->tm_mon + 1,
 	       tm->tm_mday,
 	       index.subject);
-	if (update_seq && user.seq < index.mesg) {
-	  user.seq = index.mesg;
-	  put_seq();
+	if (update_seq && seq < index.mesg) {
+	  seq = index.mesg;
+	  put_seq(seq);
 	}
 	if (--count <= 0) break;
       }
@@ -2134,11 +2162,13 @@ static void status_command(int argc, char **argv)
   int newmsg = 0;
   int n;
   int readable = 0;
+  int seq;
   struct index *pi, index[1000];
 
   printf("DK5SG-BBS  Revision: %s %s\n", revision.number, revision.date);
   if (lseek(fdindex, 0L, SEEK_SET))
     halt();
+  seq = get_seq();
   for (;;) {
     n = read(fdindex, pi = index, 1000 * SIZEINDEX) / SIZEINDEX;
     if (n < 1)
@@ -2151,7 +2181,7 @@ static void status_command(int argc, char **argv)
 	active++;
 	if (read_allowed(pi)) {
 	  readable++;
-	  if (pi->mesg > user.seq)
+	  if (pi->mesg > seq)
 	    newmsg++;
 	}
       }
@@ -2161,7 +2191,7 @@ static void status_command(int argc, char **argv)
   printf("%6d  Active messages\n", active);
   printf("%6d  Readable messages\n", readable);
   printf("%6d  Deleted messages\n", deleted);
-  printf("%6d  Last message listed\n", user.seq);
+  printf("%6d  Last message listed\n", seq);
   printf("%6d  New messages\n", newmsg);
 }
 
@@ -2560,7 +2590,10 @@ int main(int argc, char **argv)
   if (!getenv("TZ"))
     putenv("TZ=MEZ-1MESZ");
 
-  get_seq();
+  if (do_forward && !lock_forward()) {
+    printf("Sorry, already forwarding to %s.\n", user.name);
+    exit(1);
+  }
 
   if ((fdindex = open(INDEXFILE, O_RDWR | O_CREAT, 0644)) < 0) halt();
 

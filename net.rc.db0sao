@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.56 1995/05/31 19:20:13 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.57 1995/06/20 15:57:35 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -97,14 +97,12 @@ start telnet
 start time
 
 ax25 jumpstart db0ais    on
-ax25 jumpstart db0cz     on
 ax25 jumpstart db0lx-1   on
 ax25 jumpstart db0ndr    on
 ax25 jumpstart db0pic    on
 ax25 jumpstart db0pic-7  on
 ax25 jumpstart db0rbs    on
 ax25 jumpstart db0sdx    on
-ax25 jumpstart db0ulm-8  on
 
 smtp timer 300
 
