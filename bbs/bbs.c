@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.82 1994/11/09 13:47:12 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.83 1994/11/30 17:04:48 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -1768,10 +1768,13 @@ static void send_command(int argc, char **argv)
   char path[1024];
   int check_header = 1;
   int fdlock;
+  int got_control_z;
   int i;
   int unique;
   struct mail *mail;
 
+  if ((got_control_z = !strcmp(argv[argc - 1], "\032")))
+    argc--;
   mail = alloc_mail();
   *at = *path = 0;
   for (i = 1; i < argc; i++)
@@ -1790,8 +1793,13 @@ static void send_command(int argc, char **argv)
     } else if (!strcmp("@", argv[i])) {
       nextarg("@");
       strcpy(at, argv[i]);
-    } else {
+    } else if (!*mail->to) {
       strcpy(mail->to, argv[i]);
+    } else if (!*mail->subject) {
+      strcpy(mail->subject, argv[i]);
+    } else {
+      strcat(mail->subject, " ");
+      strcat(mail->subject, argv[i]);
     }
   if (!*mail->to) {
     errors++;
@@ -1818,16 +1826,18 @@ static void send_command(int argc, char **argv)
     unique = msg_uniq(mail->bid, mail->mid);
     close(fdlock);
     if (!unique) {
-      puts("No");
+      if (!got_control_z) puts("No");
       free_mail(mail);
       return;
     }
   }
-  puts((level == MBOX) ? "OK" : "Enter subject:");
-  if (!getstring(mail->subject)) exit(1);
-  if (stopped) {
-    free_mail(mail);
-    return;
+  if (!got_control_z) {
+    puts((level == MBOX) ? "OK" : "Enter subject:");
+    if (!getstring(mail->subject)) exit(1);
+    if (stopped) {
+      free_mail(mail);
+      return;
+    }
   }
   strtrim(mail->subject);
   if (!*mail->subject && level != MBOX) {
@@ -1836,27 +1846,29 @@ static void send_command(int argc, char **argv)
     free_mail(mail);
     return;
   }
-  if (packetcluster || level != MBOX)
-    puts("Enter message: (terminate with ^Z or ***END)");
-  for (; ; ) {
-    if (!getstring(line)) exit(1);
-    if (stopped) {
-      free_mail(mail);
-      return;
-    }
-    if (*line == '\032') break;
-    if (!Strncasecmp(line, "***end", 6)) break;
-    if (!(check_header && line[0] == ' ' && line[1] == '[')) {
-      append_line(mail, line);
-      if (check_header) {
-	if ((p = get_host_from_header(line))) {
-	  if (*path) strcat(path, "!");
-	  strcat(path, p);
-	} else if (*path)
-	  check_header = 0;
+  if (!got_control_z) {
+    if (packetcluster || level != MBOX)
+      puts("Enter message: (terminate with ^Z or ***END)");
+    for (; ; ) {
+      if (!getstring(line)) exit(1);
+      if (stopped) {
+	free_mail(mail);
+	return;
       }
+      if (*line == '\032') break;
+      if (!Strncasecmp(line, "***end", 6)) break;
+      if (!(check_header && line[0] == ' ' && line[1] == '[')) {
+	append_line(mail, line);
+	if (check_header) {
+	  if ((p = get_host_from_header(line))) {
+	    if (*path) strcat(path, "!");
+	    strcat(path, p);
+	  } else if (*path)
+	    check_header = 0;
+	}
+      }
+      if (strchr(line, '\032')) break;
     }
-    if (strchr(line, '\032')) break;
   }
   if (*path) {
     strcpy(line, mail->from);

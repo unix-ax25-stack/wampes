@@ -1,13 +1,13 @@
 -------------------------------------------------------------------------------
 
-- delete peer only after 2nd poll timeout
+- flexnet: delete peer only after 2nd poll timeout
 
 - TCP with closed windows: spinning
 
 - muss die pty beim login erst geflushed werden?
 
-- Der from teil  kann nur !  enthalten,  dann  steht  der s&f.  ==> wenn
-  from == !  ist irgendein substitute einsetzen !!!
+- Mail:  Der from teil kann nur !  enthalten, dann steht der s&f.  ==>
+  wenn from == !  ist irgendein substitute einsetzen !!!
 
 - manchmal wird eine ganze Serie I Frames wiederholt
 
@@ -36,6 +36,22 @@
 - Getrenntes Terminal fuer den Control screen mit der Moeglichkeit
   permanent zu monitoren auf welcher connection neue Daten angekommen
   sind.
+
+-------------------------------------------------------------------------------
+
+wampes manual:
+
+- command line quoting
+
+- special characters in strings
+
+- ftp reget only for binary transfers
+
+- arp add: talk about automatic entries
+
+- route add: talk about automatic entries
+
+- make all TRACE descriptions the same
 
 -------------------------------------------------------------------------------
 
