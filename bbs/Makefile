@@ -1,3 +1,5 @@
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.2 1991/07/28 07:37:52 deyke Exp $
+
 BUILDSADDR = ../src/buildsaddr.o
 CFLAGS     = -Aa -O -s
 SHELL      = /bin/sh
@@ -7,22 +9,30 @@ SHELL      = /bin/sh
 all:    bbs findpath killdup sfstat
 
 bbs:    bbs.c bbs.h $(BUILDSADDR)
+	@mv $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
 	$(CC) $(CFLAGS) bbs.c $(BUILDSADDR) -o $@
 
 findpath: findpath.c bbs.h
+	@mv $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
 	$(CC) $(CFLAGS) findpath.c -o $@
 
 killdup: killdup.c bbs.h
+	@mv $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
 	$(CC) $(CFLAGS) killdup.c -o $@
 
 sfstat: sfstat.c bbs.h
+	@mv $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
 	$(CC) $(CFLAGS) sfstat.c -o $@
 
-install: /usr/local/bin/bbs findpath killdup sfstat
+install: /usr/local/bin/bbs findpath killdup /usr/local/bin/sfstat
 
 /usr/local/bin/bbs: bbs
-	cp bbs /usr/local/bin/bbs.tmp
-	cd /usr/local/bin; chmod 4555 bbs.tmp; mv -f bbs bbs.old.$$$$; mv -f bbs.tmp bbs; rm -f BBS; ln -f bbs BBS; rm -f bbs.old.*
+	cp bbs /usr/local/bin/bbs.tmp ; exit 0
+	cd /usr/local/bin; chmod 4555 bbs.tmp; mv -f bbs bbs.old.$$$$; mv -f bbs.tmp bbs; rm -f BBS; ln -f bbs BBS; rm -f bbs.old.*; exit 0
+
+/usr/local/bin/sfstat: sfstat
+	@mv $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
+	cp sfstat $@ ; exit 0
 
 clean:
 	rm -f *.o bbs findpath killdup sfstat
