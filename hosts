@@ -1180,7 +1180,6 @@
 44.130.20.25    db3kw-4 #
 44.130.20.26    dl2kdf  # Peter Verhuelsdonk, 5100 Aachen
 44.130.20.30    dk3ko   # Wilhelm Golz, 5100 Aachen
-44.130.20.32    dg5kx   # Martin Freiss, 5100 Aachen
 44.130.20.35    at.df2jh        # Jochen, Aachen
 44.130.20.36    lap.df2jh       #
 44.130.20.39    dh9kae-1 # Linux Router         ; Detlef Brunkel
@@ -1193,7 +1192,7 @@
 44.130.20.48    dg1kbn  # Juergen Jaeger, 5100 Aachen
 44.130.20.49    dg2ksa  # Stephan, Aachen
 44.130.20.50    db0pra   # TCP/IP Server Aachen  ***
-44.130.20.51    db0pra-R # Router + IP-GATEWAY
+44.130.20.51    db0pra-gate # Router + IP-GATEWAY
 44.130.20.55    dj9zl   # Juergen Meissburger; AT
 44.130.20.56    dj9zl-2 # Juergen Meissburger; DS5000
 44.130.20.57    dl1klr  # Leonhard Radermacher, 5170 Juelich
@@ -1217,7 +1216,7 @@
 44.130.20.78    db0bm   # Netzknoten Juelich; ***, AX25: DB0BM-8 via DB0BM
 44.130.20.79    dk0hj   # Fachhochschule, 5170 Juelich
 44.130.20.81    dj0ju   # Henrik Olsen, 5138 Heinsberg Karken
-44.130.20.83    db1pd   # Manfred Jost, 5100 Aachen
+44.130.20.83    dh0kai  # Manfred Jost, 5100 Aachen
 44.130.20.84    dl5kce  # Axel Pfaff, Eschweiler
 44.130.20.88    db0mon  # Digi Monschau (DL8YQ); AX25 DB0MON-10
 44.130.20.89    db0mon-gate     # Digi Monschau, IP Gateway
@@ -1275,6 +1274,11 @@
 44.130.21.21    DJ5BV   # Gerd Parzonka, 5305 Alfter
 44.130.21.22    DH0KAI  # Wolfgang Stolte, 5210 Troisdorf 18
 44.130.21.23    DG4KP   # Dieter, Alfter
+44.130.21.24    DL8EBV  #
+44.130.21.25    DL0RK   # DK5KS
+44.130.21.26    DH9KL   #
+44.130.21.27    DD0KT   #
+44.130.21.28    DF4KO   #
 44.130.21.29    DG3OC   # Fritz Tegtmeier, Linz
 44.130.21.30    DD0KP   # Heiner Juers, Troisdorf
 44.130.21.31    DD8KO   # Klaus Jasper, Wachtberg
@@ -1302,6 +1306,11 @@
 44.130.21.53    DK8JN   # Hubert Dedden, 5220 Waldbroel
 44.130.21.54    DL1KRD  # Rainer Dahnke, 53343 Wachtberg
 44.130.21.55    DL6DBH  # Meinolf, nr Bonn
+44.130.21.56    DG1KJD-1        # Jens David, Euskirchen
+44.130.21.57    DG1KJD-2        # Jens David, Euskirchen
+44.130.21.58    DG1KJD-3        # Jens David, Euskirchen
+44.130.21.59    DG1KJD  # Jens David, Euskirchen
+44.130.21.60    DG1KJD-SVR      # Jens David, Euskirchen, SERVER
 44.130.21.61    DL3KMS  # Martin, Bonn Bad Godesberg
 44.130.21.62    DC5KC   # Hans-Peter Walber, 5370 Kall
 44.130.21.63    DL8SH   # Dieter, 5204 Lohmar
@@ -1728,7 +1737,7 @@
 44.130.28.30    DL8ZAD  # Juergen, 35789 Weilmuenster nr Wetzlar
 44.130.28.58    DF0WS   # ClubStn F58, 35396 Giessen-Wieseck
 #
-44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc6iq@db0sao
+44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc1ik@db0sao
 #
 44.130.29.1  db0rot-w   # JN48ft *** Mailbox Rotensol 76332 Bad Herrenalb
 44.130.29.2  dg9bad-7   #        Thomas Waehner       89171 Illerkirchberg
@@ -1904,10 +1913,18 @@
 44.130.32.128   DJ8IM   # Henk
 #
 #44.130.33.x    Saarland
+#lokale Adresskoordination: dl4vap
 44.130.33.1     DF3VI   # Patrick, 6650 Homburg
 44.130.33.2     DL4VCN  # George Nashan, 66424 Homburg (ex DC1VL)
 44.130.33.3     DL4VAP  # Marcus Meier, 66578 Schiffweiler
-44.130.33.4     DL4VAP-U        #
+44.130.33.4     DL4VAP-U
+44.130.33.5     DL4VAP-2
+44.130.33.6     DD1VZ   # Peter , Kleinblittersdorf/Saar
+44.130.33.10    DG6VB   # Thomas , Ludweiler
+44.130.33.11    DG6VB-2
+44.130.33.12    DG6VB-3
+44.130.33.15    DK3XT   # Bernd, Dettenheim (Loc. JN49FE)
+44.130.33.42    DG8VD   # Christoph, Blieskastel (Loc. JN39PF)
 #
 44.130.34.1     DB0NWS  # ; ***
 44.130.34.2     DD4PN   # Volker, 5248 Mittelhof
@@ -3079,54 +3096,64 @@
 #
 #44.130.90.x    Dresden
 # lokale Adresskoordination: DG1RTF
-44.130.90.1     DG0DU   # Thomas Rudolph, O-8023 Dresden (ex Y37JL)
+44.130.90.1     DG0DU   # Thomas Rudolph, 01127 Dresden
 44.130.90.2     DG1RTF  # Thomas Fichte, 01157 Dresden
 44.130.90.3     DD0VS   # Harald Fritsche, 01809 Heidenau
-44.130.90.4     DG0DI   # Dirk Guenther, O-8040 Dresden
-44.130.90.5     DL0TUD  # Club-Stn S07 TU, Dresden
-44.130.90.6     DL1DSD  # Joerg Fruehauf, O-8029 Dresden
-44.130.90.7     DG0NF   # Helge Tefs
+44.130.90.4     DG0DI   # Dirk, Guenther, 01189 Dresden
+44.130.90.5     DL0TUD  # Club-Stn TU Dresden S07
+44.130.90.6     DL1DSD  # Joerg Frueauf, 01157 Dresden
+44.130.90.7     DG0NF   # Helge Tefs, Heimat-QTH: 17438 Wolgast
 44.130.90.8     DG0DC   # Torsten Wolf, 01640 Coswig
-44.130.90.9     DL1DTM  # Ulf Riechen, O-8045 Dresden
+44.130.90.9     DL1DTM  # Ulf Riechen, 01237 Dresden
 44.130.90.10    DG2DWL  # Hartmut Siegel, 01169 Dresden
 44.130.90.11    DL3BZN  # Guido Vattrodt, O-8020 Dresden
-44.130.90.12    DG2VQ   # Steffen Koehler, O-8029 Dresden
-44.130.90.13    DG0JY   # Kai Zscheile, O-8019 Dresden
+44.130.90.12    DG2VQ   # Steffen Koehler, 01157 Dresden
+44.130.90.13    DG0JY   # Kai Zscheile, 09224 Gruena
 44.130.90.14    DG2DRA  # Heiko, O-2601 Obergurig
-44.130.90.15    DG1VS   # Karsten Schmidt, O-8010 Dresden
+44.130.90.15    DG1VS   # Karsten Schmidt
 44.130.90.16    DG0VP   # Joerg Genscher, 01277 Dresden
-44.130.90.17    DL1DQI  # Olf Zimmerhackl, O-8020 Dresden
+44.130.90.17    DL1DQI  # Olaf Zimmerhackl, O-8020 Dresden
 44.130.90.18    DL1DSX  # Andreas Westfeld, 01277 Dresden
 44.130.90.19    DL6DUG  # Roland Gentsch, 01069 Dresden
 44.130.90.20    DH1AKY  # Jens Wagner, 01307 Dresden
-44.130.90.21    DG0MD   # Falk Winter, O-8019 Dresden
-44.130.90.22    DG1RTF-U        # Thomas Fichte; UNIX
+44.130.90.21    DG0MD   # Falk Winter, 01307 Dresden
+44.130.90.22    DG1RTF-U        # Thomas Fichte UNIX
 44.130.90.23    DL1DWW  # Ronald Konschak, 01069 Dresden
-44.130.90.24    DG2VG   # Gunar Scholz, 01309 Dresden
-44.130.90.25    DL3BZN-U        # Guido Vattrotd; UNIX
+44.130.90.24    DG2VG   # Gunar Scholz 01309 Dresden
+44.130.90.25    DL3BZN-U        # Guido Vattrotd UNIX
 44.130.90.26    DG0LGK  # Harald Junghans, 04107 Leipzig
-44.130.90.27    DG2VQ-U # Steffen Koehler; UNIX
+44.130.90.27    DG2VQ-U # Steffen Koehler UNIX
 44.130.90.28    DD0VU   # Jens Knoepfchen, 01738 Klingenberg
-44.130.90.29    DL1DSD-U        # Joerg Fruehauf; UNIX
-44.130.90.30    DG1VX   # Andreas Minner, Dresden
-44.130.90.31    DD0VX   # Eckhard Stephan, 01704 Freital
-44.130.90.32    DG0NF-H # Helge Tefs; Palmtop
-44.130.90.33    DG0VF   # Ralf Stieber, 01445 Radebeul
-44.130.90.34    DD0VU-U # Jens Knoepfchen; UNIX
+44.130.90.29    DL1DSD-U        # Joerg Fruehauf UNIX
+44.130.90.30    DG1VX   # Adreas Minner, 01099 Dresden
+44.130.90.31    DD0VX   # Eckhard Stephan, 01705 Freital
+44.130.90.32    DG0NF-H # Helge Tefs PALMTOP
+44.130.90.33    DL9DRA  # Ralf Stieber, 01445 Radebeul
+44.130.90.34    DD0VU-U # Jens Knoepfchen UNIX
 44.130.90.35    DL2DRI  # Roland Pelz, 01809 Heidenau
-44.130.90.36    DG1VD   #
+44.130.90.36    DG1VD   # Volkmar Hofmann, 01454 Radeburg
 44.130.90.37    DH0DZ   # Dieter Wachsmuth, 01237 Dresden
 44.130.90.38    DG1OA   # Falko Ziller, 01738 Colmnitz
 44.130.90.39    DG0EL   # Mirko Taschenber, 09634 Siebenlehn
 44.130.90.40    DG0KB   # Udo Lies, 01099 Dresden
-44.130.90.41    DG0DC-U # Joerg Wolf; Unix
-44.130.90.42    DG0VP-U # ; Unix
+44.130.90.41    DG0DC-U # Joerg Wolf UNIX
+44.130.90.42    DG0VP-U # Joerg Genscher UNIX
 44.130.90.43    DG2VM   # Andre Weinhold, 01097 Dresden
-44.130.90.44    DL2DVT  # Wolfgang Kobitzki
-44.130.90.45    DL2VIC  # Andreas Peschl, 01609 Groeditz
-44.130.90.46    DL2DQF  # Fritz Kulig, 01099 Dresden
-44.130.90.100   DB0TUD  # WAMPES-Mailbox S07, Dresden
-44.130.90.101   DB0TUD-U        # ; UNIX
+44.130.90.44    DL2DVT  # Wolfgang Kobitzki, 01239 Dresden
+44.130.90.45    DL2VIC  # Andreas Peschel, 01609 Groeditz
+44.130.90.46    DL2DQF  # Fritz Krulis, 01099 Dresden
+44.130.90.47    DG1HTK  # Dirk Haenelt, 01237 Dresden
+44.130.90.48    DL2NUM  # Matthias Lemke, O-8020 Dresden
+44.130.90.49    DL6MUG  # Hendrik Wagener, 01157 Dresden
+44.130.90.50    DG1RTF-G        # Thomas Fichte, UNIX
+44.130.90.51    DL2VEA  # Guenther Horn, 01900 Grossroehrsdorf
+44.130.90.52    DG1VY   # Juergen Boettcher, 01159 Dresden
+44.130.90.53    DD0VU-H # Jens Knoepfchen
+44.130.90.54    DL0HTW  # Klubstation HTW Dresden
+44.130.90.55    DG3VT   # Michael Mueller, 01127 Dresden
+44.130.90.56    DG3VT-U # Michael Mueller, UNIX
+44.130.90.100   DB0TUD  # WAMPES Digi Dresden, Betreiber: S07
+44.130.90.101   DB0TUD-U        # UNIX, MB Dresden
 #
 #44.130.91.x    Zwickau
 44.130.91.1     DL4VAR  # Henry Rix, 08066 Zwickau
@@ -5085,6 +5112,7 @@
 44.143.1.5      OE1ACC   # Alexander Czernin-Morzin, 1090 Wien,
 			 # Schul-Strassnitzki Gasse 5,
 			 # 72047.1712@compuserve.com
+44.143.1.6               #
 44.143.1.7      OE1MMA   # Markus Melcher, 1030 Wien, WeissgeberlÑnde 22/12
 44.143.1.8      SP7MUD   # Adam Merwart, 1140 Wien
 44.143.1.9      OE1SMC   # Hans Mayer, 1238 Wien, Am Hasensprung 6-8
@@ -5111,8 +5139,10 @@
 44.143.1.28     OE1CMS   # Christine Mayer, 1238 Wien, Am Hasensprung 6-8
 44.143.1.29     SEC.OE1WWL # Wolfgang Wagner
 44.143.1.30     TER.OE1WWL #
-44.143.1.31     OE1BHS   # Heinz Bergmann, Wien
+44.143.1.31     OE1BHS   # Heinz Bergmann, 1230 Wien,
+			 # Breitenfurterstr. 491/12
 44.143.1.32     OE1JHB   # Johann Hackinger, 1020 Wien, Castelletzgasse 16/26
+44.143.1.33     OE1LZC   # Leopold Zyka, 1020 Wien, Praterstr. 49/13
 # 1200 bit/s Knoten
 44.143.1.100    OE1XRR   # [P] Irmela Gagern
 44.143.1.101    OE1XXB   # [P] Amateurfunkklub Alterlaa, 1230 Wien, Helmut
@@ -5126,7 +5156,8 @@
 44.143.1.111    OE1XYA   # [P] Amateurfunkklub X, 1238 Wien,
 			 # Am Hasensprung 6-8
 44.143.1.144    OE1KDA   # Koordinator Oesterreich
-44.143.1.145    SEC.OE1KDA # Krzysztof Dabrowski, 1230 Wien, Othellog.1/3/2
+			 # Krzysztof Dabrowski, 1230 Wien, Othellog.1/3/2
+44.143.1.145    VERDI.OE1KDA # [A] Testknoten X1J
 44.143.1.146    TER.OE1KDA #
 44.143.1.200    OE1XBR   # [P] Robert Zak, 1210 Wien
 44.143.1.206    SEC.OE1XAR # [P] Testknoten, Wien
@@ -5134,15 +5165,17 @@
 44.143.17.105   9K6.OE1XAB # [P] Mailbox, Wien
 44.143.17.106   9K6.OE1XAR # [P] Testknoten, Wien
 44.143.17.107   9K6.OE1XLR # [P] Knoten Laaberg, Wien
-44.143.17.108   9K6.OE1XTU # [P] Radioklub der TU Wien
+44.143.17.108   OE1XTU     # [P] Radioklub der TU Wien
 # Schnelle Knoten
-44.143.33.6     56K.OE1KIB # Klaus Kudielka, 1180 Wien, Peter Jordanstr. 165
-44.143.33.108   56K.OE1XTU # [P] Radioklub der TU Wien
-# Subnetz OE1HMC 44.143.177.0
+44.143.33.6     VENUS.OE1KIB # Klaus Kudielka, 1180 Wien, Peter Jordanstr. 165
+44.143.33.108   OE1XTU     # [P] Radioklub der TU Wien
+# Subnetz OE1HMC 44.143.177.0/28
 44.143.177.1    SEC.OE1HMC # Netz-"Master",
 44.143.177.2    NEWS.OE1HMC # nntp server
 44.143.177.3    NET.OE1HMC # Host moser@moser.co.at: 192.164.66.50
-# Subnetz OE1KIB (Token Ring) 44.143.241.0
+44.143.177.10   GW.OE1HMC  # Gateway 192.164.66.50, Zugang Åber 44.143.1.13
+			   # (OE1HMC-5)
+# Subnetz OE1KIB (Token Ring) 44.143.241.0/28
 44.143.241.1    MARS.OE1KIB # Gateway (JNOS)
 44.143.241.2    SATURN.OE1KIB # Klaus Kudielka, 1180 Wien,
 			   # Peter Jordanstr. 165
@@ -5162,6 +5195,7 @@
 44.143.2.9      OE2HHN   # Herbert Heitzmann, 5580 Tamsweg, Taurachweg 150
 44.143.2.10     OE2TBM   # Herbert SchÅtz, 5023 Salzburg,
 			 # Schillinghoferstr. 27, ADL 201
+44.143.2.11     OE2DON   # Richard Maier, 5020 Salzburg, Erzabt Klotzstr. 21
 # 1200 bit/s Knoten
 44.143.2.100
 # 9600 bit/s Knoten [P]
@@ -5249,10 +5283,9 @@
 44.143.5.6     SEC.OE5ROL # Fritz Rockenbauer, 4810 Gmunden,
 			# Bahnhofstr. 29A/11
 44.143.5.7     OE5AON   # Erich Floh, 4020 Linz, Boschweg 1a
-44.143.5.8     OE5ODO   # Martin Werner, Linz, Strahembergerstr. 66/6/38
-			# 4020 Linz, JN78DH
-44.143.5.9     OE5HHN   # Herbert Anton Heitzmann, DÅrnauerstr. 94/74
-			# 4840 Vîklabruck, BBS OE5XZL
+44.143.5.8     OE5ODO   # Martin Werner, 4020 Linz, Strahembergerstr. 66/6/38
+			# JN78DH
+44.143.5.9              #
 44.143.5.10    OE5JKL   # Karl Jaeger, 4210 Gallneukirchen,
 			# Hanriederstrasse 5
 44.143.5.11    OE5GWN   # Gerhard Winsberger, 5122 Ach, (DJ0MGW)
@@ -5312,7 +5345,8 @@
 44.143.6.20    OE6JWD   # Klaus Dieter Wolf, Graz, JN77rb
 44.143.6.21    OE6KQG   # Reinhard Kreiner, Weinberggasse 9,
 			# 8230 Hartberg
-44.143.6.28    OE6MKD   # RenÇ Mayrhold, 6805 Kapfenberg, Johann Fuxstrasse 7
+44.143.6.22    OE6DNG   # Gerald Fodor, 8442 Kitzeck, Gauitsch 44
+44.143.6.28    OE6MKD   # RenÇ Mayrhold, 8605 Kapfenberg, Johann Fuxstrasse 7
 			# JN77pl
 44.143.6.66    OE6IWG   # Walter Steinwender, 8605 Kapfenberg,
 			# Hugo v. Hoffmansthalw. 3/4, JN77pk
@@ -5371,16 +5405,12 @@
 44.143.9.2     OE9WLJ   # Wilfried Haeusle, 6800 Tosters, Egelseestrasse 13
 44.143.9.3     OE9DGV   # Guntram Summer, 6845 Hohenems, Hochquellenstr. 20 A
 44.143.9.4     OE9LAJ   # Alexander List, 6824 Schlins, Dafens. 4
-44.143.9.5     U.OE9WLJ # Wilfried Haeusle UNIX,
 44.143.9.6     OE9LKI   # Kurt Lampert, 6841 Maeder, Torkelweg 8a
-44.143.9.7     U.OE9LKI # Kurt Lampert, UNIX
 44.143.9.27    OE9HHV   # Hubert HÑmerle, 6850 Dornbirn, Im Horn 27
 44.143.9.55    OE9GWV   # Guntram Wagner, 6710 Nenzing,
 			# Anderas Gassnerstr. 11, JN47ue
 44.143.9.72    OE9MKV   # Mario Kienspergher, Juxweg 6, 6800 Feldkirch-
 			# Altenstadt, BBS OE9XPI, Digi OE9XFR-2
-44.143.9.73    OE9FKI   # Franz Kienspergher, Juxweg 6, 6800 Feldkirch-
-			# Altenstadt
 # 1200 bit/s Knoten
 44.143.9.100   W.OE9XFR # [A] WAMPES-Knoten Feldkirch (Wampes)
 44.143.9.101   OE9XFR   # [A] WAMPES-Knoten Feldkirch (Unix)
@@ -5388,8 +5418,15 @@
 44.143.25.xx
 # Schnelle Knoten [P]
 44.143.41.xx
-# Subnetz OE9MKV 44.143.73.0
+# Subnetz OE9WLJ 44.143.57.0/28
+44.143.57.1    NET.OE9WLJ #
+# Subnetz OE9MKV 44.143.73.0/28
 44.143.73.1    VANESSA.OE9MKV #
+44.143.73.2    OE9FKI   # Franz Kienspergher, Juxweg 6, 6800 Feldkirch-
+			# Altenstadt
+
+# Subnetz OE9LKI 44.143.105.0/28
+44.143.105.1   NET.OE9LKI #
 #HOSTS.NET FOR BELGIUM
 #
 # 44.144 Eric Langhendries ON7LE Belgium
