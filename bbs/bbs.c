@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.62 1989/02/02 11:17:57 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.63 1989/02/26 19:07:49 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -1491,6 +1491,154 @@ static void v_cmd()
 
 /*---------------------------------------------------------------------------*/
 
+#include <memory.h>
+#include <termio.h>
+
+static void z_cmd()
+{
+
+  FILE * fp = 0;
+  char  buf[1024];
+  int  cmd;
+  int  indexarrayentries;
+  int  lines = 0;
+  int  maxlines;
+  int  mesg;
+  struct index *indexarray;
+  struct index *pi;
+  struct stat statbuf;
+  struct termio curr_termio, prev_termio;
+  unsigned int  indexarraysize;
+
+  if (arg[0][1] || !superuser) {
+    unknown_command();
+    return;
+  }
+
+  if (fstat(findex, &statbuf)) halt();
+  indexarraysize = statbuf.st_size;
+  indexarrayentries = indexarraysize / sizeof(struct index );
+  if (!indexarrayentries) halt();
+  if (!(indexarray = (struct index *) malloc(indexarraysize))) halt();
+  if (lseek(findex, 0l, 0)) halt();
+  if (read(findex, (char *) indexarray, indexarraysize) != indexarraysize) halt();
+
+  ioctl(0, TCGETA, &prev_termio);
+  memcpy(&curr_termio, &prev_termio, sizeof(struct termio ));
+  curr_termio.c_iflag = BRKINT | ICRNL | IXON | IXANY | IXOFF;
+  curr_termio.c_lflag = 0;
+  curr_termio.c_cc[VMIN] = 1;
+  curr_termio.c_cc[VTIME] = 0;
+  ioctl(0, TCSETA, &curr_termio);
+  if (!(maxlines = atoi(getenv("LINES")))) maxlines = 24;
+
+  pi = indexarray;
+  cmd = '\b';
+  for (; ; ) {
+    lines = 0;
+    while (!cmd) cmd = getchar();
+    switch (cmd) {
+    case '\b':
+      if (pi > indexarray) pi--;
+      while (!pi->mesg && pi > indexarray) pi--;
+      while (!pi->mesg && pi < indexarray + (indexarrayentries - 1)) pi++;
+      cmd = 'r';
+      break;
+    case 'k':
+      if (unlink(filename(pi->mesg))) halt();
+      pi->mesg = 0;
+      if (lseek(findex, (long) ((pi - indexarray) * sizeof(struct index )), 0) < 0) halt();
+      if (write(findex, (char *) pi, sizeof(struct index )) != sizeof(struct index )) halt();
+    case '\n':
+      if (pi < indexarray + (indexarrayentries - 1)) pi++;
+      while (!pi->mesg && pi < indexarray + (indexarrayentries - 1)) pi++;
+      while (!pi->mesg && pi > indexarray) pi--;
+    case 'r':
+      if (fp) {
+	fclose(fp);
+	fp = 0;
+      }
+      if (!(fp = fopen(filename(pi->mesg), "r"))) halt();
+      printf("\033&a0y0C\033JMsg# %d Type:%c Stat:%c To: %s%s%s From: %s Date: %s\n", pi->mesg, pi->type, pi->status, pi->to, *pi->at ? " @" : "", pi->at, pi->from, timestr(pi->date));
+      lines++;
+      if (*pi->subject) {
+	printf("Subject: %s\n", pi->subject);
+	lines++;
+      }
+      if (*pi->bid) {
+	printf("Bulletin ID: %s\n", pi->bid);
+	lines++;
+      }
+      putchar('\n');
+      lines++;
+    case ' ':
+      if (fp) {
+	while (lines < maxlines - 1 && fgets(buf, sizeof(buf), fp)) {
+	  fputs(buf, stdout);
+	  lines++;
+	}
+	if (feof(fp)) {
+	  fclose(fp);
+	  fp = 0;
+	}
+	cmd = 0;
+      } else
+	cmd = '\n';
+      break;
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      for (mesg = 0; isdigit(cmd); cmd = getchar())
+	mesg = 10 * mesg + cmd - '0';
+      pi = indexarray;
+      while (mesg > pi->mesg && pi < indexarray + (indexarrayentries - 1)) pi++;
+      while (!pi->mesg && pi > indexarray) pi--;
+      cmd = 'r';
+      break;
+    case 'v':
+      sprintf(buf, "vi %s", filename(pi->mesg));
+      ioctl(0, TCSETA, &prev_termio);
+      system(buf);
+      ioctl(0, TCSETA, &curr_termio);
+      cmd = 'r';
+      break;
+    case 'q':
+      ioctl(0, TCSETA, &prev_termio);
+      exit(0);
+      break;
+    case '?':
+      puts("----------------------------------- Commands ----------------------------------");
+      puts("<number>   show numbered entry");
+      puts("?          print command summary");
+      puts("BACKSPACE  show previous entry");
+      puts("RETURN     show next entry");
+      puts("SPACE      show next screenful");
+      puts("k          delete current entry");
+      puts("q          quit BBS");
+      puts("r          redisplay current entry");
+      puts("v          edit current entry");
+      printf("\nPress any key to continue ");
+      getchar();
+      cmd = 'r';
+      break;
+    default:
+      putchar('\007');
+      fflush(stdout);
+      cmd = 0;
+      break;
+    }
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void bbs()
 {
 
@@ -1534,6 +1682,7 @@ static void bbs()
     case 'r':  r_cmd();           break;
     case 's':  s_cmd();           break;
     case 'v':  v_cmd();           break;
+    case 'z':  z_cmd();           break;
     default:   unknown_command(); break;
     }
   }
