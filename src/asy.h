@@ -1,4 +1,4 @@
-/* @(#) $Id: asy.h,v 1.19 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: asy.h,v 1.20 1999/01/27 18:45:40 deyke Exp $ */
 
 #ifndef _ASY_H
 #define _ASY_H
@@ -35,16 +35,5 @@ int asy_stop(struct iface *ifp);
 int get_rlsd_asy(int dev, int new_rlsd);
 int get_asy(int dev,uint8 *buf,int cnt);
 void fp_stop(void);
-
-/* In asyvec.asm: */
-INTERRUPT asy0vec(void);
-INTERRUPT asy1vec(void);
-INTERRUPT asy2vec(void);
-INTERRUPT asy3vec(void);
-INTERRUPT asy4vec(void);
-INTERRUPT asy5vec(void);
-
-/* In fourport.asm: */
-INTERRUPT fp0vec(void);
 
 #endif  /* _ASY_H */

@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.35 1999/01/24 22:25:18 deyke Exp $
+# @(#) $Id: Makefile,v 1.36 1999/01/27 18:47:17 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -24,7 +24,6 @@ _all:   $(LIBRARY)
 
 $(LIBRARY): $(OBJS)
 	@echo "Loading $@ ..."
-	@sleep 1
 	@ar cru $@ $(OBJS)
 	@ranlib $@ >/dev/null 2>&1
 

@@ -1,4 +1,4 @@
-/* @(#) $Id: intro.txt,v 1.13 1996/08/12 18:53:24 deyke Exp $ */
+/* @(#) $Id: intro.txt,v 1.14 1999/01/27 18:47:03 deyke Exp $ */
 
 This file gives some info about setting up WAMPES for the first time.
 Don't expect something perfect, it was just a quick hack to help people
@@ -47,14 +47,6 @@ net-program too, 'bye' leaves only cnet.
 
 Shows an ax25 path to a host.
 
-/tcp/util/pop2d
-
-The pop2 daemon.
-
-/tcp/util/pop3d
-
-The pop3 daemon.
-
 /tcp/util/netupd[c,s]
 
 Netupdate-Client+Server.  Allows WAMPES clients to get new revisions of
@@ -73,7 +65,7 @@ It searches /usr/local/lib/users and builds an alias database, also it
 puts users' fullnames in /etc/passwd.  Only use it if you know what
 you're doing...
 
-/usr/local/etc/mkhostdb (copied from /tcp/util/mkhostdb)
+/tcp/util/mkhostdb
 
 Generates the domain databases /tcp/hostaddr.???  and /tcp/hostname.???
 from /tcp/domain.txt, /tcp/domain.local, and /tcp/hosts.
@@ -196,8 +188,6 @@ start tcpgate 3600 unix:/tcp/sockets/convers
 start tcpgate smtp
 # Fingerd:
 start tcpgate finger
-# pop2-daemon:
-start tcpgate pop2
 # NNTP daemon:
 start tcpgate nntp
 #

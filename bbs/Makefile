@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.58 1999/01/24 22:24:50 deyke Exp $
+# @(#) $Id: Makefile,v 1.59 1999/01/27 18:46:52 deyke Exp $
 
 TARGETS    = bbs
 
@@ -9,7 +9,6 @@ _all:   $(TARGETS)
 
 bbs:    bbs.o $(LIBS)
 	$(RMTARGET)
-	@sleep 1
 	$(LD) $(LDFLAGS) bbs.o $(LIBS) $(SLIBS) -o $@
 
 _install: /usr/local/bin/bbs /usr/local/lib/bbs.help

@@ -1,4 +1,4 @@
-/* @(#) $Id: arp.c,v 1.19 1997/01/13 18:18:37 deyke Exp $ */
+/* @(#) $Id: arp.c,v 1.20 1999/01/27 18:45:40 deyke Exp $ */
 
 /* Address Resolution Protocol (ARP) functions. Sits between IP and
  * Level 2, mapping IP to Level 2 addresses for all outgoing datagrams.
@@ -8,12 +8,14 @@
 #include "mbuf.h"
 #include "timer.h"
 #include "iface.h"
-#include "enet.h"
 #include "ax25.h"
 #include "icmp.h"
 #include "ip.h"
 #include "arp.h"
 #include "icmp.h"
+
+/* Ethernet type fields */
+#define REVARP_TYPE     0x8035  /* Type field for reverse ARP */
 
 static void arp_output(struct iface *iface,enum arp_hwtype hardware,int32 target);
 

@@ -1,4 +1,4 @@
-/* @(#) $Id: netuser.h,v 1.13 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: netuser.h,v 1.14 1999/01/27 18:45:40 deyke Exp $ */
 
 #ifndef _NETUSER_H
 #define _NETUSER_H
@@ -8,8 +8,6 @@
 #ifndef _GLOBAL_H
 #include "global.h"
 #endif
-
-#define NCONN   20              /* Maximum number of open network connections */
 
 extern int32 Ip_addr;   /* Our IP address */
 extern int Net_error;   /* Error return code */

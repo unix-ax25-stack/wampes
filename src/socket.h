@@ -1,4 +1,4 @@
-/* @(#) $Id: socket.h,v 1.23 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: socket.h,v 1.24 1999/01/27 18:45:40 deyke Exp $ */
 
 #ifndef _SOCKET_H
 #define _SOCKET_H
@@ -51,73 +51,5 @@
 #define IPPORT_RIP      520
 #define IPPORT_REMOTE   1234    /* Pulled out of the air */
 #define IPPORT_BSR      5000    /* BSR X10 interface server port (UDP) */
-
-#if 0
-#define AF_INET         0
-#define AF_AX25         1
-#define AF_NETROM       2
-#define AF_LOCAL        3
-#define NAF             4
-
-#define SOCK_STREAM     0
-#define SOCK_DGRAM      1
-#define SOCK_RAW        2
-#define SOCK_SEQPACKET  3
-
-#undef  EWOULDBLOCK
-#define EWOULDBLOCK     100
-#define ENOTCONN        101
-#define ESOCKTNOSUPPORT 102
-#define EAFNOSUPPORT    103
-#define EISCONN         104
-#define EOPNOTSUPP      105
-#define EALARM          106
-#define EABORT          107
-#undef  EINTR
-#define EINTR           108
-#define ECONNREFUSED    109
-#define EMSGSIZE        110
-#define EADDRINUSE      111
-#define EMIN            100
-#define EMAX            112
-
-extern char *Sock_errlist[];
-
-/* In socket.c: */
-extern int Axi_sock;    /* Socket listening to AX25 (there can be only one) */
-
-int accept(int s,struct sockaddr *peername,int *peernamelen);
-int bind(int s,struct sockaddr *name,int namelen);
-int close_s(int s);
-int connect(int s,struct sockaddr *peername,int peernamelen);
-char *eolseq(int s);
-void freesock(struct proc *pp);
-int getpeername(int s,struct sockaddr *peername,int *peernamelen);
-int getsockname(int s,struct sockaddr *name,int *namelen);
-int listen(int s,int backlog);
-int recv_mbuf(int s,struct mbuf **bpp,int flags,struct sockaddr *from,int *fromlen);
-int send_mbuf(int s,struct mbuf **bp,int flags,struct sockaddr *to,int tolen);
-int settos(int s,int tos);
-int shutdown(int s,int how);
-int socket(int af,int type,int protocol);
-void sockinit(void);
-int sockkick(int s);
-int socklen(int s,int rtx);
-struct proc *sockowner(int s,struct proc *newowner);
-int usesock(int s);
-int socketpair(int af,int type,int protocol,int sv[]);
-
-/* In sockuser.c: */
-void flushsocks(void);
-int recv(int s,void *buf,int len,int flags);
-int recvfrom(int s,void *buf,int len,int flags,struct sockaddr *from,int *fromlen);
-int send(int s,const void *buf,int len,int flags);
-int sendto(int s,void *buf,int len,int flags,struct sockaddr *to,int tolen);
-
-/* In file sockutil.c: */
-char *psocket(void *p);
-char *sockerr(int s);
-char *sockstate(int s);
-#endif
 
 #endif  /* _SOCKET_H */

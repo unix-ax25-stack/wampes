@@ -1,4 +1,4 @@
-/* @(#) $Id: tcpsubr.c,v 1.21 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: tcpsubr.c,v 1.22 1999/01/27 18:45:40 deyke Exp $ */
 
 /* Low level TCP routines:
  *  control block management
@@ -107,7 +107,7 @@ struct connection *conn)
 	if((tcb = lookup_tcb(conn)) != NULL)
 		return tcb;
 	tcb = (struct tcb *)callocw(1,sizeof (struct tcb));
-	ASSIGN(tcb->conn,*conn);
+	tcb->conn = *conn;
 
 	tcb->state = TCP_CLOSED;
 	tcb->cwind = tcb->mss = Tcp_mss;

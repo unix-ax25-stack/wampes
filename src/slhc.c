@@ -1,4 +1,4 @@
-/* @(#) $Id: slhc.c,v 1.10 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: slhc.c,v 1.11 1999/01/27 18:45:40 deyke Exp $ */
 
 /*
  * Routines to compress and uncompress tcp packets (for transmission
@@ -346,8 +346,8 @@ found:
 	 * state with this packet's header.
 	 */
 	deltaA = th.checksum;
-	ASSIGN(cs->cs_ip,iph);
-	ASSIGN(cs->cs_tcp,th);
+	cs->cs_ip = iph;
+	cs->cs_tcp = th;
 	/* We want to use the original packet as our compressed packet.
 	 * (cp - new_seq) is the number of bytes we need for compressed
 	 * sequence numbers.  In addition we need one byte for the change
@@ -378,8 +378,8 @@ found:
 	 */
 uncompressed:
 	iph.protocol = cs->this;
-	ASSIGN(cs->cs_ip,iph);
-	ASSIGN(cs->cs_tcp,th);
+	cs->cs_ip = iph;
+	cs->cs_tcp = th;
 	comp->xmit_current = cs->this;
 	comp->sls_o_uncompressed++;
 	pullup(bpp,NULL,iplen); /* Strip old IP header */
@@ -559,8 +559,8 @@ struct mbuf **bpp)
 	cs = &comp->rstate[slot];
 	comp->flags &=~ SLF_TOSS;
 
-	ASSIGN(cs->cs_ip,iph);
-	ASSIGN(cs->cs_tcp,th);
+	cs->cs_ip = iph;
+	cs->cs_tcp = th;
 	comp->sls_i_uncompressed++;
 	return len;
 }

@@ -1,6 +1,7 @@
-# @(#) $Id: Makefile,v 1.37 1999/01/24 22:23:07 deyke Exp $
+# @(#) $Id: Makefile,v 1.38 1999/01/27 18:45:24 deyke Exp $
 
 OBSOLETE   = /usr/local/bin/sfstat \
+	     /usr/local/etc/mkhostdb \
 	     bbs/bbs.h \
 	     bbs/findpath* \
 	     bbs/help* \
@@ -8,7 +9,9 @@ OBSOLETE   = /usr/local/bin/sfstat \
 	     bbs/sfstat* \
 	     doc/bbs.2.gif \
 	     lib/bbs.h \
+	     src/bootp.h \
 	     src/cc \
+	     src/enet.h \
 	     src/linux_include/stdlib.h \
 	     src/mail_bbs.* \
 	     users \

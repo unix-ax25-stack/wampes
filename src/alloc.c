@@ -1,4 +1,4 @@
-/* @(#) $Id: alloc.c,v 1.35 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: alloc.c,v 1.36 1999/01/27 18:45:40 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -81,7 +81,7 @@ static int dofreelist(int argc,char *argv[],void *p);
 static int domerge(int argc,char *argv[],void *p);
 static int dosizes(int argc,char *argv[],void *p);
 
-struct cmds Memcmds[] = {
+static struct cmds Memcmds[] = {
 	{ "debug",      domdebug,       0, 0, NULL },
 	{ "freelist",   dofreelist,     0, 0, NULL },
 	{ "merge",      domerge,        0, 0, NULL },
@@ -311,20 +311,6 @@ unsigned nelem, /* Number of elements */
 unsigned size   /* Size of each element */
 ){
   return calloc(nelem, size);
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* Return 0 if at least Memthresh memory is available. Return 1 if
- * less than Memthresh but more than Memthresh/2 is available; i.e.,
- * if a yellow garbage collection should be performed. Return 2 if
- * less than Memthresh/2 is available, i.e., a red collection should
- * be performed.
- */
-int
-availmem(void)
-{
-		return 0;       /* We're clearly OK */
 }
 
 /*---------------------------------------------------------------------------*/

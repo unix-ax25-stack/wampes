@@ -1,4 +1,4 @@
-/* @(#) $Id: commands.h,v 1.31 1996/10/08 20:00:52 deyke Exp $ */
+/* @(#) $Id: commands.h,v 1.32 1999/01/27 18:45:40 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -24,12 +24,6 @@ int doax25(int argc,char *argv[],void *p);
 int doaxheard(int argc,char *argv[],void *p);
 int doaxdest(int argc,char *argv[],void *p);
 int doconnect(int argc,char *argv[],void *p);
-
-/* In bootp.c */
-int dobootp(int argc,char *argv[],void *p);
-
-/* In bootpd.c */
-int bootpdcmd(int argc,char *argv[],void *p);
 
 /* In dialer.c: */
 int dodialer(int argc,char *argv[],void *p);

@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.44 1999/01/24 22:23:20 deyke Exp $
+# @(#) $Id: Makefile,v 1.45 1999/01/27 18:45:37 deyke Exp $
 
 TARGETS    = convers conversd
 
@@ -9,12 +9,10 @@ _all:   $(TARGETS)
 
 convers: convers.o $(LIBS)
 	$(RMTARGET)
-	@sleep 1
 	$(LD) $(LDFLAGS) convers.o $(LIBS) $(SLIBS) -o $@
 
 conversd: conversd.o $(LIBS)
 	$(RMTARGET)
-	@sleep 1
 	$(LD) $(LDFLAGS) conversd.o $(LIBS) $(SLIBS) -o $@
 
 _install: /usr/local/bin/convers /tcp/conversd

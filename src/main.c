@@ -1,4 +1,4 @@
-/* @(#) $Id: main.c,v 1.64 1999/01/05 22:48:12 deyke Exp $ */
+/* @(#) $Id: main.c,v 1.65 1999/01/27 18:45:40 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -28,7 +28,6 @@
 #include "udp.h"
 #include "ax25.h"
 #include "kiss.h"
-#include "enet.h"
 #include "netrom.h"
 #include "ftp.h"
 #include "telnet.h"

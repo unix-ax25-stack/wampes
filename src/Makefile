@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.99 1999/01/24 22:23:24 deyke Exp $
+# @(#) $Id: Makefile,v 1.100 1999/01/27 18:45:40 deyke Exp $
 
 DEST          = /tcp
 
@@ -17,7 +17,6 @@ HDRS          = arp.h \
 		ax25.h \
 		ax25mail.h \
 		axclient.h \
-		bootp.h \
 		cmdparse.h \
 		commands.h \
 		config.h \
@@ -26,7 +25,6 @@ HDRS          = arp.h \
 		devparam.h \
 		dirutil.h \
 		domain.h \
-		enet.h \
 		files.h \
 		finger.h \
 		flexnet.h \
@@ -353,9 +351,9 @@ $(DEST)/$(PROGRAM): $(PROGRAM)
 adjtime.o: ../lib/configure.h
 alloc.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h cmdparse.h
 arp.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h iface.h \
-	proc.h enet.h ax25.h icmp.h internet.h ip.h arp.h
-arpcmd.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h enet.h \
-	iface.h proc.h ax25.h arp.h netuser.h cmdparse.h commands.h
+	proc.h ax25.h icmp.h internet.h ip.h arp.h
+arpcmd.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h ax25.h \
+	iface.h proc.h arp.h netuser.h cmdparse.h commands.h
 arpdump.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h arp.h iface.h \
 	proc.h timer.h netuser.h trace.h
 arpfile.o: global.h ../lib/configure.h ../lib/strdup.h timer.h arp.h mbuf.h \
@@ -395,9 +393,9 @@ cmdparse.o: ../lib/strtoul.h ../lib/configure.h global.h ../lib/strdup.h \
 	proc.h mbuf.h timer.h cmdparse.h
 config.o: ../lib/configure.h global.h ../lib/strdup.h config.h mbuf.h timer.h \
 	proc.h iface.h ip.h internet.h tcp.h netuser.h udp.h lapb.h ax25.h \
-	enet.h kiss.h nrs.h netrom.h session.h hardware.h telnet.h pktdrvr.h \
-	slip.h slhc.h arp.h icmp.h cmdparse.h commands.h ax25mail.h tipmail.h \
-	daemon.h bootp.h socket.h asy.h trace.h flexnet.h
+	kiss.h nrs.h netrom.h session.h hardware.h telnet.h pktdrvr.h slip.h \
+	slhc.h arp.h icmp.h cmdparse.h commands.h ax25mail.h tipmail.h \
+	daemon.h socket.h asy.h trace.h flexnet.h
 crc.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h crc.h \
 	../lib/calc_crc.h
 devparam.o: global.h ../lib/configure.h ../lib/strdup.h devparam.h
@@ -408,7 +406,7 @@ domain.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
 	domain.h
 domhdr.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h domain.h proc.h \
 	timer.h
-files.o: global.h ../lib/configure.h ../lib/strdup.h netuser.h files.h
+files.o: files.h
 finger.o: config.h global.h ../lib/configure.h ../lib/strdup.h mbuf.h \
 	socket.h proc.h timer.h internet.h icmp.h iface.h ip.h netuser.h \
 	tcp.h ftp.h session.h hardware.h telnet.h ax25.h finger.h
@@ -438,8 +436,8 @@ icmphdr.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h internet.h ip.h \
 	iface.h proc.h timer.h icmp.h
 icmpmsg.o: global.h ../lib/configure.h ../lib/strdup.h
 iface.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h proc.h timer.h \
-	iface.h ip.h internet.h icmp.h netuser.h ax25.h enet.h cmdparse.h \
-	commands.h trace.h
+	iface.h ip.h internet.h icmp.h netuser.h ax25.h cmdparse.h commands.h \
+	trace.h
 ip.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h internet.h \
 	netuser.h iface.h proc.h ip.h icmp.h
 ipcmd.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h internet.h \
@@ -457,7 +455,7 @@ ipip.o: global.h ../lib/configure.h ../lib/strdup.h ../lib/strerror.h mbuf.h \
 	cmdparse.h hpux.h
 iproute.o: config.h global.h ../lib/configure.h ../lib/strdup.h mbuf.h \
 	iface.h proc.h timer.h internet.h ip.h tcp.h netuser.h icmp.h rip.h \
-	udp.h trace.h bootp.h socket.h ipfilter.h
+	udp.h trace.h ipfilter.h
 kernel.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h proc.h timer.h \
 	socket.h daemon.h hardware.h
 kiss.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
@@ -487,7 +485,7 @@ mail_smtp.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h transport.h \
 mail_subr.o: timer.h global.h ../lib/configure.h ../lib/strdup.h mail.h
 main.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h proc.h \
 	iface.h arp.h ip.h internet.h tcp.h netuser.h udp.h ax25.h kiss.h \
-	enet.h netrom.h session.h hardware.h telnet.h ftp.h tty.h socket.h \
+	netrom.h session.h hardware.h telnet.h ftp.h tty.h socket.h \
 	cmdparse.h commands.h daemon.h devparam.h files.h main.h remote.h \
 	trace.h hpux.h remote_net.h
 mbuf.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h proc.h timer.h

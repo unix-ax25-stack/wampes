@@ -1,4 +1,4 @@
-/* @(#) $Id: iface.c,v 1.29 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: iface.c,v 1.30 1999/01/27 18:45:40 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -12,7 +12,6 @@
 #include "icmp.h"
 #include "netuser.h"
 #include "ax25.h"
-#include "enet.h"
 #include "cmdparse.h"
 #include "commands.h"
 #include "trace.h"

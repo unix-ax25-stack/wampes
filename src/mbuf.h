@@ -1,4 +1,4 @@
-/* @(#) $Id: mbuf.h,v 1.16 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: mbuf.h,v 1.17 1999/01/27 18:45:40 deyke Exp $ */
 
 #ifndef _MBUF_H
 #define _MBUF_H
@@ -66,7 +66,5 @@ void mbuf_crunch(struct mbuf **bpp);
 void mbufsizes(void);
 void mbufstat(void);
 void mbuf_garbage(int red);
-
-#define AUDIT(bp)       audit(bp,__FILE__,__LINE__)
 
 #endif  /* _MBUF_H */

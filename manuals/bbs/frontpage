@@ -1,12 +1,12 @@
-.\" @(#) $Id: frontpage,v 1.86 1999/01/24 22:26:17 deyke Exp $ -*- Mode: Nroff -*-
+.\" @(#) $Id: frontpage,v 1.87 1999/01/27 18:48:19 deyke Exp $ -*- Mode: Nroff -*-
 .\"
-.PF "^BBS Reference Manual^-\\\\nP-^Version 990124" \" Page footer
+.PF "^BBS Reference Manual^-\\\\nP-^Version 990127" \" Page footer
 .\"
 .S 30
 .ce
 \fBBBS Reference Manual\fP
 .ce
-Version 990124
+Version 990127
 .S
 .SP 2
 .S 15

@@ -1,4 +1,4 @@
-/* @(#) $Id: iproute.c,v 1.36 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: iproute.c,v 1.37 1999/01/27 18:45:40 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -17,7 +17,6 @@
 #include "icmp.h"
 #include "rip.h"
 #include "trace.h"
-#include "bootp.h"
 #ifdef  IPSEC
 #include "ipsec.h"
 #endif
@@ -106,10 +105,6 @@ int rxbroadcast         /* True if packet had link broadcast address */
 
 	if(i_iface != NULL && !(i_iface->flags & NO_RT_ADD) && ismyaddr(ip.source) == NULL)
 		rt_add(ip.source, 32, 0L, i_iface, 1L, 0x7fffffff / 1000, 0);
-
-	/* If we're running low on memory, return a source quench */
-	if(!rxbroadcast && availmem() != 0)
-		icmp_output(&ip,*bpp,ICMP_QUENCH,0,NULL);
 
 	/* Process options, if any. Also compute length of secondary IP
 	 * header in case fragmentation is needed later
@@ -221,8 +216,7 @@ int rxbroadcast         /* True if packet had link broadcast address */
 no_opt:
 
 	/* See if it's a broadcast or addressed to us, and kick it upstairs */
-	if(ismyaddr(ip.dest) != NULL || rxbroadcast ||
-		(WantBootp && bootp_validPacket(&ip, *bpp))){
+	if(ismyaddr(ip.dest) != NULL || rxbroadcast){
 #ifdef  GWONLY
 	/* We're only a gateway, we have no host level protocols */
 		if(!rxbroadcast)

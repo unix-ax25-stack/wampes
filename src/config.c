@@ -1,4 +1,4 @@
-/* @(#) $Id: config.c,v 1.52 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: config.c,v 1.53 1999/01/27 18:45:40 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -30,7 +30,6 @@
 #endif
 #include "lapb.h"
 #include "ax25.h"
-#include "enet.h"
 #include "kiss.h"
 #include "nrs.h"
 #include "netrom.h"
@@ -44,7 +43,7 @@
 #include "ax25mail.h"
 #include "tipmail.h"
 #include "daemon.h"
-#include "bootp.h"
+#include "socket.h"
 #include "asy.h"
 #include "trace.h"
 #include "session.h"
@@ -76,11 +75,6 @@ struct mbuf *Hopper;            /* Queue of incoming packets */
 unsigned Nsessions = NSESSIONS;
 int Shortstatus;
 
-/* Free memory threshold, below which things start to happen to conserve
- * memory, like garbage collection, source quenching and refusing connects
- */
-int32 Memthresh = MTHRESH;
-
 /* Command lookup and branch tables */
 struct cmds Cmds[] = {
 	/* The "go" command must be first */
@@ -100,10 +94,6 @@ struct cmds Cmds[] = {
 #ifdef  AX25
 	{ "ax25",         doax25,         0, 0, NULL },
 	{ "axip",         doaxip,         0, 0, NULL },
-#endif
-#ifdef  BOOTP
-	{ "bootp",        dobootp,        0, 0, NULL },
-	{ "bootpd",       bootpdcmd,      0, 0, NULL },
 #endif
 	{ "bye",          dobye,          0, 0, NULL },
 /* This one is out of alpabetical order to allow abbreviation to "c" */
@@ -685,24 +675,6 @@ struct daemon Daemons[] = {
 	{ NULL,       0,      NULL }
 };
 
-#if     0
-void (*Listusers)(FILE *) = listusers;
-#else
-void (*Listusers)(FILE *) = NULL;
-#endif  /* MAILBOX */
-
-#ifndef BOOTP
-int WantBootp = 0;
-
-int
-bootp_validPacket(
-struct ip *ip,
-struct mbuf *bp)
-{
-	return 0;
-}
-#endif  /* BOOTP */
-
 /* Packet tracing stuff */
 #ifdef  TRACE
 #include "trace.h"
@@ -820,15 +792,6 @@ void *s)
 	struct route *stale = (struct route *)s;
 
 	rt_drop(stale->target,stale->bits);
-}
-#endif
-
-/* Stubs for demand dialer */
-#ifndef DIALER
-void
-dialer_kick(
-struct asy *asyp)
-{
 }
 #endif
 

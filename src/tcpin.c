@@ -1,4 +1,4 @@
-/* @(#) $Id: tcpin.c,v 1.18 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: tcpin.c,v 1.19 1999/01/27 18:45:40 deyke Exp $ */
 
 /* Process incoming TCP segments. Page number references are to ARPA RFC-793,
  * the TCP specification.
@@ -106,7 +106,7 @@ int32 said              /* Authenticated packet */
 		/* We've found an server listen socket, so clone the TCB */
 		if(tcb->flags.clone){
 			ntcb = (struct tcb *)mallocw(sizeof (struct tcb));
-			ASSIGN(*ntcb,*tcb);
+			*ntcb = *tcb;
 			tcb = ntcb;
 			tcb->timer.arg = tcb;
 			/* Put on list */
@@ -829,7 +829,7 @@ uint length
 		free_p(bpp);
 		return;
 	}
-	ASSIGN(rp->seg,*seg);
+	rp->seg = *seg;
 	rp->tos = tos;
 	rp->bp = (*bpp);
 	*bpp = NULL;
@@ -874,7 +874,7 @@ uint *length
 	tcb->reseq = rp->next;
 
 	*tos = rp->tos;
-	ASSIGN(*seg,rp->seg);
+	*seg = rp->seg;
 	*bp = rp->bp;
 	*length = rp->length;
 	free(rp);

@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.3 1999/01/24 22:25:14 deyke Exp $
+# @(#) $Id: Makefile,v 1.4 1999/01/27 18:47:13 deyke Exp $
 
 LIBRARY       = libnext.a
 
@@ -13,7 +13,6 @@ _all:   $(LIBRARY)
 
 $(LIBRARY): $(OBJS)
 	@echo "Loading $@ ..."
-	@sleep 1
 	@ar cru $@ $(OBJS)
 	@ranlib $@ >/dev/null 2>&1
 

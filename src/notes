@@ -6,8 +6,6 @@
 
 - add hold-down and delayed updates to flexnet
 
-- write a BID generator for use with tin (bbs -b)
-
 -------------------------------------------------------------------------------
 
 kiss byte

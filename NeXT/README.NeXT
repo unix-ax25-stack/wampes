@@ -46,12 +46,8 @@ convers/conversd seem to be clear.
 
 not yet testet:
 --------------
-bbs und netupds, bridge as well as pop2d, pop3d
+bbs, netupds, and bridge
 but i expect no problems.
-
-if pop2d/pop3d can't get access to passwords, i suggest
-nidump passwd . > /etc/passwd
-for updating passwd from the netinfo database.
 
 udbm may not work properly (missing putpwent()), but makes no sense as long as
 netinfo service is not supported.

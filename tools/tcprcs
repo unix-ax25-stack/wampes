@@ -1,6 +1,6 @@
 #! /usr/bin/perl -w
 
-# @(#) $Id: tcprcs,v 1.4 1999/01/24 22:24:52 deyke Exp $
+# @(#) $Id: tcprcs,v 1.5 1999/01/27 18:46:54 deyke Exp $
 
 require 5.003;
 
@@ -31,6 +31,7 @@ sub mkdir_p {
 	-d $dir and return;
 	mkdir($dir, 0750) and return;
 	mkdir_p(dirname($dir));
+	-d $dir and return;
 	mkdir($dir, 0750) or die("mkdir(\"$dir\"): $!\n");
 }
 

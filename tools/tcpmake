@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Id: tcpmake,v 1.36 1999/01/24 22:24:52 deyke Exp $
+# @(#) $Id: tcpmake,v 1.37 1999/01/27 18:46:54 deyke Exp $
 
 #------------------------------------------------------------------------------
 
@@ -32,6 +32,9 @@ if [[ -x /bin/hp9000s700 ]] && /bin/hp9000s700; then
 fi
 
 date=$(date +%y%m%d)
+
+cd ~/tcp/lib; make
+cd ~/tcp/tools; make
 
 cd ~/tcp
 file=README
@@ -102,8 +105,6 @@ for manual in bbs bridge netupd smack wampes; do
 
 done
 
-cd ~/tcp/lib; make
-cd ~/tcp/tools; make
 cd ~/tcp/doc
 for file in *.gif; do
 	save_file $file

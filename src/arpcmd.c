@@ -1,4 +1,4 @@
-/* @(#) $Id: arpcmd.c,v 1.18 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: arpcmd.c,v 1.19 1999/01/27 18:45:40 deyke Exp $ */
 
 /* ARP commands
  * Copyright 1991, Phil Karn, KA9Q
@@ -8,7 +8,6 @@
 #include "global.h"
 #include "mbuf.h"
 #include "timer.h"
-#include "enet.h"
 #include "ax25.h"
 #include "arp.h"
 #include "netuser.h"

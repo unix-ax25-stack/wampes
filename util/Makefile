@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.71 1999/01/24 22:25:10 deyke Exp $
+# @(#) $Id: Makefile,v 1.72 1999/01/27 18:47:10 deyke Exp $
 
 TARGETS    = bridge cnet md5 mkhostdb netupdc netupds path qth udbm
 
@@ -9,22 +9,18 @@ _all:   $(TARGETS)
 
 bridge: bridge.o $(LIBS)
 	$(RMTARGET)
-	@sleep 1
 	$(LD) $(LDFLAGS) bridge.o $(LIBS) $(SLIBS) -o $@
 
 cnet:   cnet.o $(LIBS)
 	$(RMTARGET)
-	@sleep 1
 	$(LD) $(LDFLAGS) cnet.o $(LIBS) $(SLIBS) -o $@
 
 md5:    md5drivr.o $(LIBS)
 	$(RMTARGET)
-	@sleep 1
 	$(LD) $(LDFLAGS) md5drivr.o $(LIBS) $(SLIBS) -o $@
 
 mkhostdb: mkhostdb.o $(LIBS)
 	$(RMTARGET)
-	@sleep 1
 	$(LD) $(LDFLAGS) mkhostdb.o $(LIBS) $(SLIBS) -o $@
 
 netupdc: netupds
@@ -33,22 +29,18 @@ netupdc: netupds
 
 netupds: netupds.o $(LIBS)
 	$(RMTARGET)
-	@sleep 1
 	$(LD) $(LDFLAGS) netupds.o $(LIBS) $(SLIBS) -o $@
 
 path:   path.o $(LIBS)
 	$(RMTARGET)
-	@sleep 1
 	$(LD) $(LDFLAGS) path.o $(LIBS) $(SLIBS) -o $@
 
 qth:    qth.o $(LIBS)
 	$(RMTARGET)
-	@sleep 1
 	$(LD) $(LDFLAGS) qth.o $(LIBS) $(SLIBS) -lm -o $@
 
 udbm:   udbm.o $(LIBS)
 	$(RMTARGET)
-	@sleep 1
 	$(LD) $(LDFLAGS) udbm.o $(LIBS) $(SLIBS) -o $@
 
 _install: \
@@ -59,7 +51,6 @@ _install: \
 	/usr/local/bin/md5 \
 	/usr/local/bin/path \
 	/usr/local/bin/qth \
-	/usr/local/etc/mkhostdb \
 	/usr/local/etc/udbm
 
 /usr/local/bin/cnet: cnet
@@ -68,11 +59,6 @@ _install: \
 	cp $? $@
 
 /usr/local/bin/md5: md5
-	$(MKDIR)
-	$(RMTARGET)
-	cp $? $@
-
-/usr/local/etc/mkhostdb: mkhostdb
 	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
