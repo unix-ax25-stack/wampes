@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.27 1992/04/07 10:16:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.28 1992/04/15 18:53:12 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -1161,6 +1161,7 @@ struct mbuf *bp;
 
   int  nakrcvd;
   struct circuit *pc;
+  struct mbuf *p;
 
   if (!bp || bp->cnt < 5) goto discard;
 
@@ -1274,31 +1275,33 @@ struct mbuf *bp;
       set_timer(&pc->timer_t2, nr_tackdelay);
       start_timer(&pc->timer_t2);
       if (uchar(bp->data[2] - pc->recv_state) < pc->window) {
-	struct mbuf *curr, *prev;
-	for (curr = pc->reseq; curr && curr->data[2] != bp->data[2]; curr = curr->anext) ;
-	if (!curr) {
+	if (!pc->reseq || (bp->data[2] - pc->reseq->data[2]) & 0x80) {
 	  bp->anext = pc->reseq;
 	  pc->reseq = bp;
 	  bp = NULLBUF;
-search_again:
-	  for (prev = 0, curr = pc->reseq; curr; prev = curr, curr = curr->anext)
-	    if (uchar(curr->data[2]) == pc->recv_state) {
-	      if (prev)
-		prev->anext = curr->anext;
-	      else
-		pc->reseq = curr->anext;
-	      curr->anext = NULLBUF;
-	      pullup(&curr, NULLCHAR, 5);
-	      if (curr) {
-		pc->rcvcnt += len_p(curr);
-		append(&pc->rcvq, curr);
-	      }
-	      pc->recv_state = uchar(pc->recv_state + 1);
-	      pc->naksent = 0;
-	      goto search_again;
-	    }
-	  if (pc->r_upcall && pc->rcvcnt) (*pc->r_upcall)(pc, pc->rcvcnt);
+	} else {
+	  for (p = pc->reseq;
+	       p->next && (p->data[2] - bp->data[2] - 1) & 0x80;
+	       p = p->anext) ;
+	  if (p->data[2] != bp->data[2]) {
+	    bp->anext = p->anext;
+	    p->anext = bp;
+	    bp = NULLBUF;
+	  }
 	}
+	while (pc->reseq && !uchar(pc->reseq->data[2] - pc->recv_state)) {
+	  p = pc->reseq;
+	  pc->reseq = p->anext;
+	  p->anext = NULLBUF;
+	  pc->recv_state = uchar(pc->recv_state + 1);
+	  pullup(&p, NULLCHAR, 5);
+	  if (p) {
+	    pc->rcvcnt += len_p(p);
+	    append(&pc->rcvq, p);
+	  }
+	  pc->naksent = 0;
+	}
+	if (pc->r_upcall && pc->rcvcnt) (*pc->r_upcall)(pc, pc->rcvcnt);
       }
     }
     if (nakrcvd && pc->unack) {
