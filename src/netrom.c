@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.4 1990/02/12 11:55:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.5 1990/02/14 16:17:41 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
@@ -435,7 +435,8 @@ static void calculate_all()
     neighbor->tmp_quality = pl->info->quality;
     calculate_node(neighbor);
     for (pn = nodes; pn; pn = pn->next)
-      if (pn->quality < pn->tmp_quality) {
+      if (pn->quality < pn->tmp_quality ||
+	  pn->quality == pn->tmp_quality && neighbor == pn->old_neighbor) {
 	pn->quality = pn->tmp_quality;
 	pn->neighbor = neighbor;
       }
@@ -447,8 +448,10 @@ static void calculate_all()
 
   start_broadcast_timer = 0;
   for (pn = nodes; pn; pn = pn->next) {
-    if (pn->neighbor != pn->old_neighbor ||
-	((int) pn->quality) != ((int) pn->old_quality)) pn->force_broadcast = 1;
+    if (pn != mynode &&
+	(pn->neighbor != pn->old_neighbor ||
+	((int) pn->quality) != ((int) pn->old_quality)))
+      pn->force_broadcast = 1;
     if (pn->force_broadcast) start_broadcast_timer = 1;
   }
   if (start_broadcast_timer) {
