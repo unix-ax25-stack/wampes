@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.37 1992/09/25 20:07:36 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.38 1992/11/06 12:04:11 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -41,8 +41,7 @@ extern int optind;
 #define ROOT        2
 
 #define BBS         0
-#define RMAIL       1
-#define RNEWS       2
+#define MAILorNEWS  1
 
 struct revision {
   char number[16];
@@ -87,7 +86,6 @@ struct dir_entry {
 
 static char *MYHOSTNAME;
 static char *myhostname;
-static char mydesc[80];
 static char prompt[1024] = "bbs> ";
 static int debug;
 static int doforward;
@@ -112,6 +110,7 @@ static char *strtrim(char *s);
 static const char *strcasepos(const char *str, const char *pat);
 static char *getstring(char *s);
 static char *timestr(long gmt);
+static char *rfc822_date(long gmt);
 static int callvalid(const char *call);
 static void make_parent_directories(const char *filename);
 static char *getfilename(int mesg);
@@ -135,7 +134,7 @@ static struct mail *alloc_mail(void);
 static void free_mail(struct mail *mail);
 static void route_mail(struct mail *mail);
 static void append_line(struct mail *mail, char *line);
-static void get_header_value(const char *name, char *line, char *value);
+static int get_header_value(const char *name, char *line, char *value);
 static char *get_host_from_header(const char *line);
 static int host_in_header(char *fname, char *host);
 static int mail_pending(void);
@@ -166,8 +165,7 @@ static void bbs(void);
 static void interrupt_handler(int sig);
 static void alarm_handler(int sig);
 static void trap_signal(int sig, void (*handler)());
-static void rmail(void);
-static void rnews(void);
+static void recv_from_mail_or_news(void);
 int main(int argc, char **argv);
 
 /*---------------------------------------------------------------------------*/
@@ -279,7 +277,7 @@ static char *strtrim(char *s)
 
   for (p = s; *p; p++) ;
   while (--p >= s && isspace(uchar(*p))) ;
-  p[1] = '\0';
+  p[1] = 0;
   return s;
 }
 
@@ -308,13 +306,13 @@ static char *getstring(char *s)
   fflush(stdout);
   alarm(1 * HOURS);
   for (p = s; ; ) {
-    *p = '\0';
+    *p = 0;
     lastchr = chr;
     chr = getchar();
     if (stopped) {
       alarm(0);
       clearerr(stdin);
-      *s = '\0';
+      *s = 0;
       return s;
     }
     if (ferror(stdin) || feof(stdin)) {
@@ -325,7 +323,7 @@ static char *getstring(char *s)
     case EOF:
       alarm(0);
       return (p == s) ? 0 : s;
-    case '\0':
+    case 0:
       break;
     case '\r':
       alarm(0);
@@ -356,6 +354,26 @@ static char *timestr(long gmt)
 	       tm->tm_year % 100,
 	       tm->tm_hour,
 	       tm->tm_min);
+  return buf;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static char *rfc822_date(long gmt)
+{
+
+  static char buf[32];
+  struct tm *tm;
+
+  tm = gmtime(&gmt);
+  sprintf(buf, "%.3s, %d %.3s %02d %02d:%02d:%02d GMT",
+	  "SunMonTueWedThuFriSat" + 3 * tm->tm_wday,
+	  tm->tm_mday,
+	  "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
+	  tm->tm_year % 100,
+	  tm->tm_hour,
+	  tm->tm_min,
+	  tm->tm_sec);
   return buf;
 }
 
@@ -572,7 +590,7 @@ static char *get_host_from_path(char *path)
   strcpy(tmp, path);
   cp = strrchr(tmp, '!');
   if (!cp) return myhostname;
-  *cp = '\0';
+  *cp = 0;
   cp = strrchr(tmp, '!');
   return cp ? (cp + 1) : tmp;
 }
@@ -695,15 +713,15 @@ static void send_to_bbs(struct mail *mail)
     index.lifetime_l = (mail->lifetime + 1);
     strcpy(index.bid, mail->bid);
     strncpy(index.subject, mail->subject, LEN_SUBJECT);
-    index.subject[LEN_SUBJECT] = '\0';
+    index.subject[LEN_SUBJECT] = 0;
     strncpy(index.to, get_user_from_path(mail->to), LEN_TO);
-    index.to[LEN_TO] = '\0';
+    index.to[LEN_TO] = 0;
     strupc(index.to);
     strncpy(index.at, get_host_from_path(mail->to), LEN_AT);
-    index.at[LEN_AT] = '\0';
+    index.at[LEN_AT] = 0;
     strupc(index.at);
     strncpy(index.from, get_user_from_path(mail->from), LEN_FROM);
-    index.from[LEN_FROM] = '\0';
+    index.from[LEN_FROM] = 0;
     strupc(index.from);
     index.deleted = 0;
     index.size = 0;
@@ -757,9 +775,12 @@ static void send_to_mail(struct mail *mail)
       if (!(fp = popen(command, "w"))) _exit(1);
       fprintf(fp, "From: %s\n", mail->from);
       fprintf(fp, "To: %s\n", mail->to);
+      fprintf(fp, "Date: %s\n", rfc822_date(mail->date));
       if (*mail->subject) fprintf(fp, "Subject: %s\n", mail->subject);
-      fprintf(fp, "Bulletin-ID: <%s>\n", mail->bid);
       fprintf(fp, "Message-ID: <%s>\n", mail->mid);
+      if (mail->lifetime != -1)
+	fprintf(fp, "Expires: %s\n", rfc822_date(mail->date + DAYS * mail->lifetime));
+      fprintf(fp, "Bulletin-ID: <%s>\n", mail->bid);
       putc('\n', fp);
       for (p = mail->head; p; p = p->next) {
 	fputs(p->str, fp);
@@ -782,11 +803,10 @@ static void send_to_news(struct mail *mail)
 
   FILE *fp;
   char *fromhost;
+  char *pp;
   int fd;
   int i;
-  long mst;
   struct strlist *p;
-  struct tm *tm;
 
   if (!*mail->subject) return;
   if ((fd = open("/usr/bin/rnews", O_RDONLY)) < 0) return;
@@ -807,36 +827,31 @@ static void send_to_news(struct mail *mail)
       _exit(1);
     case 0:
       if (!(fp = popen("/usr/bin/rnews", "w"))) _exit(1);
-      fprintf(fp, "Relay-Version: DK5SG-BBS version %s %s; site %s.ampr.org\n",
-		  revision.number, revision.date, myhostname);
       fromhost = get_host_from_path(mail->from);
       fprintf(fp, "From: %s@%s%s\n", get_user_from_path(mail->from), fromhost, strchr(fromhost, '.') ? "" : ".ampr.org");
-      mst = mail->date - 7 * HOURS;
-      tm = gmtime(&mst);
-      fprintf(fp, "Date: %.3s, %d %.3s %02d %02d:%02d:%02d MST\n",
-	      "SunMonTueWedThuFriSat" + 3 * tm->tm_wday,
-	      tm->tm_mday,
-	      "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
-	      tm->tm_year % 100,
-	      tm->tm_hour,
-	      tm->tm_min,
-	      tm->tm_sec);
-      fprintf(fp, "Subject: %s\n", mail->subject);
-      fprintf(fp, "Bulletin-ID: <%s>\n", mail->bid);
-      fprintf(fp, "Message-ID: <%s>\n", mail->mid);
-      fprintf(fp, "Path: %s\n", mail->from);
+      fprintf(fp, "Date: %s\n", rfc822_date(mail->date));
       if (debug)
 	fprintf(fp, "Newsgroups: %s.test\n", myhostname);
       else
-	fprintf(fp, "Newsgroups: dnet.ham\n");
-      fprintf(fp, "Posting-Version: DK5SG-BBS version %s %s; site %s.ampr.org\n",
-		  revision.number, revision.date, myhostname);
+	fprintf(fp, "Newsgroups: ampr.bbs.%s\n", get_user_from_path(mail->to));
+      fprintf(fp, "Subject: %s\n", mail->subject);
+      fprintf(fp, "Message-ID: <%s>\n", mail->mid);
+      i = strlen(myhostname);
+      if (!strncmp(mail->from, myhostname, i) && mail->from[i] == '!')
+	pp = mail->from + i + 1;
+      else
+	pp = mail->from;
+      fprintf(fp, "Path: %s\n", pp);
+      if (mail->lifetime != -1)
+	fprintf(fp, "Expires: %s\n", rfc822_date(mail->date + DAYS * mail->lifetime));
+      fprintf(fp, "Distribution: %s\n", get_host_from_path(mail->to));
+      fprintf(fp, "Bulletin-ID: <%s>\n", mail->bid);
       putc('\n', fp);
       p = mail->head;
       while (p && p->str[0] == 'R' && p->str[1] == ':') p = p->next;
       if (p && p->str[0] == 'd' && p->str[1] == 'e' && p->str[2] == ' ')
 	p = p->next;
-      while (p && p->str[0] == '\0') p = p->next;
+      while (p && p->str[0] == 0) p = p->next;
       while (p) {
 	fputs(p->str, fp);
 	putc('\n', fp);
@@ -875,19 +890,19 @@ static void fix_address(char *addr)
     }
 
   while ((p1 = strchr(addr, '@')) && (p2 = strchr(p1, ':'))) {
-    *p1 = *p2 = '\0';
+    *p1 = *p2 = 0;
     sprintf(tmp, "%s%s!%s", addr, p1 + 1, p2 + 1);
     strcpy(addr, tmp);
   }
 
   while (p2 = strrchr(addr, '@')) {
-    *p2 = '\0';
+    *p2 = 0;
     p1 = p2;
     while (p1 > addr && *p1 != '!') p1--;
     if (p1 == addr)
       sprintf(tmp, "%s!%s", p2 + 1, addr);
     else {
-      *p1 = '\0';
+      *p1 = 0;
       sprintf(tmp, "%s!%s!%s", addr, p2 + 1, p1 + 1);
     }
     strcpy(addr, tmp);
@@ -965,7 +980,7 @@ static void route_mail(struct mail *mail)
 
   if (!*mail->bid && (cp = strchr(mail->mid, '@')) && !strcmp(cp, MidSuffix)) {
     strcpy(mail->bid, mail->mid);
-    mail->bid[strlen(mail->bid)-strlen(MidSuffix)] = '\0';
+    mail->bid[strlen(mail->bid)-strlen(MidSuffix)] = 0;
   }
   if (!*mail->bid) {
     n = 0;
@@ -981,7 +996,7 @@ static void route_mail(struct mail *mail)
     sprintf(mail->bid, "%012d", n);
     strncpy(mail->bid, myhostname, strlen(myhostname));
   }
-  mail->bid[LEN_BID] = '\0';
+  mail->bid[LEN_BID] = 0;
   strupc(mail->bid);
 
   /* Set mid */
@@ -995,7 +1010,7 @@ static void route_mail(struct mail *mail)
 
   for (p = mail->head; p; p = p->next) {
     s = p->str;
-    if (*s == '.' && !s[1]) *s = '\0';
+    if (*s == '.' && !s[1]) *s = 0;
     while (cp = strchr(s, '\004')) while (cp[0] = cp[1]) cp++;
     while (cp = strchr(s, '\032')) while (cp[0] = cp[1]) cp++;
     if (!Strncasecmp(s, "***end", 6)) *s = ' ';
@@ -1039,18 +1054,19 @@ static void append_line(struct mail *mail, char *line)
 
 /*---------------------------------------------------------------------------*/
 
-static void get_header_value(const char *name, char *line, char *value)
+static int get_header_value(const char *name, char *line, char *value)
 {
   char *p1, *p2;
 
   while (*name)
-    if (tolower(uchar(*name++)) != tolower(uchar(*line++))) return;
+    if (tolower(uchar(*name++)) != tolower(uchar(*line++))) return 0;
   while (isspace(uchar(*line))) line++;
   while ((p1 = strchr(line, '<')) && (p2 = strrchr(p1, '>'))) {
-    *p2 = '\0';
+    *p2 = 0;
     line = p1 + 1;
   }
   strcpy(value, line);
+  return 1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1065,7 +1081,7 @@ static char *get_host_from_header(const char *line)
     p++;
     while (*p == ':' || isspace(uchar(*p))) p++;
     for (q = p; isalnum(uchar(*q)); q++) ;
-    *q = '\0';
+    *q = 0;
     return p;
   }
   return 0;
@@ -1260,14 +1276,14 @@ static void f_command(int argc, char **argv)
 	  putchar('\n');
 	else {
 	  tm = gmtime(&index.date);
-	  printf("R:%02d%02d%02d/%02d%02dz @%-6s %s\n",
+	  printf("R:%02d%02d%02d/%02d%02dz @:%s.%s\n",
 		 tm->tm_year % 100,
 		 tm->tm_mon + 1,
 		 tm->tm_mday,
 		 tm->tm_hour,
 		 tm->tm_min,
 		 MYHOSTNAME,
-		 mydesc);
+		 MYDOMAIN);
 	  if (!(fp = fopen(getfilename(index.mesg), "r"))) halt();
 	  while ((c = getc(fp)) != EOF) putchar(c);
 	  fclose(fp);
@@ -1516,7 +1532,7 @@ static void read_command(int argc, char **argv)
 	     timestr(index.date));
       if (*index.subject) printf("Subject: %s\n", index.subject);
       if (*index.bid) printf("Bulletin ID: %s\n", index.bid);
-      *path = '\0';
+      *path = 0;
       inheader = 1;
       while (fgets(buf, sizeof(buf), fp)) {
 	if (stopped) {
@@ -1638,7 +1654,7 @@ static void send_command(int argc, char **argv)
   struct mail *mail;
 
   mail = alloc_mail();
-  *at = *path = '\0';
+  *at = *path = 0;
   for (i = 1; i < argc; i++)
     if (!strcmp("#", argv[i])) {
       nextarg("#");
@@ -1677,7 +1693,7 @@ static void send_command(int argc, char **argv)
   strlwc(mail->to);
   if (!*mail->from || level < MBOX) strcpy(mail->from, user.name);
   if (*mail->bid) {
-    mail->bid[LEN_BID] = '\0';
+    mail->bid[LEN_BID] = 0;
     strupc(mail->bid);
     if (!msg_uniq(mail->bid, mail->mid)) {
       puts("No");
@@ -1749,7 +1765,7 @@ static void shell_command(int argc, char **argv)
     setuid(user.uid);
     for (i = sysconf(_SC_OPEN_MAX) - 1; i >= 3; i--) close(i);
     chdir(user.cwd);
-    *command = '\0';
+    *command = 0;
     for (i = 1; i < argc; i++) {
       if (i > 1) strcat(command, " ");
       strcat(command, argv[i]);
@@ -1908,7 +1924,7 @@ static void xscreen_command(int argc, char **argv)
   tcsetattr(0, TCSANOW, &curr_termios);
   if (!(maxlines = atoi(getenv("LINES")))) maxlines = 24;
 
-  *from = *to = *at = *subject = '\0';
+  *from = *to = *at = *subject = 0;
   pi = indexarray;
   cmd = '\b';
   for (; ; ) {
@@ -1994,7 +2010,7 @@ static void xscreen_command(int argc, char **argv)
       break;
 
     case '<':
-      *from = *to = *at = *subject = '\0';
+      *from = *to = *at = *subject = 0;
       tcsetattr(0, TCSANOW, &prev_termios);
       printf("\nFROM field: ");
       gets(from);
@@ -2004,7 +2020,7 @@ static void xscreen_command(int argc, char **argv)
       break;
 
     case '>':
-      *from = *to = *at = *subject = '\0';
+      *from = *to = *at = *subject = 0;
       tcsetattr(0, TCSANOW, &prev_termios);
       printf("\nTO field: ");
       gets(to);
@@ -2014,7 +2030,7 @@ static void xscreen_command(int argc, char **argv)
       break;
 
     case '@':
-      *from = *to = *at = *subject = '\0';
+      *from = *to = *at = *subject = 0;
       tcsetattr(0, TCSANOW, &prev_termios);
       printf("\nAT field: ");
       gets(at);
@@ -2024,7 +2040,7 @@ static void xscreen_command(int argc, char **argv)
       break;
 
     case 's':
-      *from = *to = *at = *subject = '\0';
+      *from = *to = *at = *subject = 0;
       tcsetattr(0, TCSANOW, &prev_termios);
       printf("\nSUBJECT substring: ");
       gets(subject);
@@ -2092,7 +2108,7 @@ static char *connect_addr(char *host)
     while (fgets(line, sizeof(line), fp)) {
       for (p = line; isspace(uchar(*p)); p++) ;
       for (h = p; *p && !isspace(uchar(*p)); p++) ;
-      if (*p) *p++ = '\0';
+      if (*p) *p++ = 0;
       if (!strcmp(h, host)) {
 	addr = strtrim(p);
 	break;
@@ -2157,7 +2173,7 @@ static void parse_command_line(char *line)
     } else {
       while (*f && !isspace(uchar(*f)) && !strchr(delim, *f)) *t++ = *f++;
     }
-    *t++ = '\0';
+    *t++ = 0;
   }
   if (!argc) return;
   if (!(len = strlen(*argv))) return;
@@ -2258,70 +2274,64 @@ static void trap_signal(int sig, void (*handler)(int))
 
 /*---------------------------------------------------------------------------*/
 
-static void rmail(void)
+static void recv_from_mail_or_news(void)
 {
 
+  char *cp;
+  char distr[1024];
   char line[1024];
-  int state = 0;
-  struct mail *mail;
-
-  mail = alloc_mail();
-  strcpy(mail->to, "alle");
-  if (scanf("%*s%s", mail->from) != 1) halt();
-  if (!getstring(line)) halt();
-  while (getstring(line))
-    switch (state) {
-    case 0:
-      get_header_value("Newsgroups:",  line, mail->to);
-      get_header_value("Subject:",     line, mail->subject);
-      get_header_value("Bulletin-ID:", line, mail->bid);
-      get_header_value("Message-ID:",  line, mail->mid);
-      if (*line) continue;
-      state = 1;
-    case 1:
-      if (!*line) continue;
-      state = 2;
-    case 2:
-      append_line(mail, line);
-    }
-  route_mail(mail);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void rnews(void)
-{
-
-  char line[1024];
+  int from_priority;
   int n;
-  int state = 0;
+  int state;
   struct mail *mail;
 
   while (fgets(line, sizeof(line), stdin)) {
     mail = alloc_mail();
-    strcpy(mail->to, "alle@alle");
-    if (strncmp(line, "#! rnews ", 9)) halt();
-    n = atoi(line + 9);
-    while (n > 0) {
-      if (!fgets(line, (n < sizeof(line)) ? (n + 1) : (int) sizeof(line), stdin)) halt();
-      n -= strlen(line);
-      strtrim(line);
+    *mail->to = 0;
+    *distr = 0;
+    from_priority = 0;
+    state = 0;
+    n = strncmp(line, "#! rnews ", 9) ? 0x7fffffff : atoi(line + 9);
+    for (; ; ) {
       switch (state) {
       case 0:
-	get_header_value("Path:", line, mail->from);
-	get_header_value("Subject:", line, mail->subject);
-	get_header_value("Bulletin-ID:", line, mail->bid);
-	get_header_value("Message-ID:", line, mail->mid);
-	if (*line) continue;
-	state = 1;
+	if (*line) {
+	  if (from_priority < 1 && !strncmp(line, "From ", 5) && sscanf(line, "From %s", mail->from) == 1)
+	    from_priority = 1;
+	  if (from_priority < 2 && get_header_value("Path:", line, mail->from))
+	    from_priority = 2;
+	  if (from_priority < 3 && get_header_value("From:", line, mail->from))
+	    from_priority = 3;
+	  get_header_value("Newsgroups:", line, mail->to);
+	  get_header_value("Subject:", line, mail->subject);
+	  get_header_value("Message-ID:", line, mail->mid);
+	  get_header_value("Distribution:", line, distr);
+	  get_header_value("Bulletin-ID:", line, mail->bid);
+	} else
+	  state = 1;
+	break;
       case 1:
-	if (!*line) continue;
+	if (!*line) break;
 	state = 2;
       case 2:
 	append_line(mail, line);
       }
+      if (n <= 0 || !fgets(line, sizeof(line), stdin)) break;
+      n -= strlen(line);
+      strtrim(line);
     }
-    route_mail(mail);
+    if (*mail->to && from_priority && state == 2) {
+      if (!strncmp(mail->to, "ampr.bbs.", 9)) strcpy(mail->to, mail->to + 9);
+      if (cp = strchr(mail->to, ',')) *cp = 0;
+      if (cp = strrchr(mail->to, '.')) strcpy(mail->to, cp + 1);
+      if (cp = strchr(distr, ',')) *cp = 0;
+      if (cp = strrchr(distr, '.')) strcpy(distr, cp + 1);
+      if (*distr) {
+	strcat(mail->to, "@");
+	strcat(mail->to, distr);
+      }
+      route_mail(mail);
+    }
   }
 }
 
@@ -2351,9 +2361,8 @@ int main(int argc, char **argv)
 		revision.time,
 		revision.author,
 		revision.state);
-  sprintf(mydesc, MYDESC, revision.number);
 
-  while ((c = getopt(argc, argv, "df:mnpw:")) != EOF)
+  while ((c = getopt(argc, argv, "df:mpw:")) != EOF)
     switch (c) {
     case 'd':
       debug = 1;
@@ -2369,10 +2378,7 @@ int main(int argc, char **argv)
       doforward = 1;
       break;
     case 'm':
-      mode = RMAIL;
-      break;
-    case 'n':
-      mode = RNEWS;
+      mode = MAILorNEWS;
       break;
     case 'p':
       packetcluster = 1;
@@ -2386,7 +2392,7 @@ int main(int argc, char **argv)
     }
   if (optind < argc) err_flag = 1;
   if (err_flag) {
-    puts("usage: bbs [-d] [-w seconds] [-f system|-m|-n]");
+    puts("usage: bbs [-d] [-w seconds] [-f system|-m]");
     exit(1);
   }
 
@@ -2439,11 +2445,8 @@ int main(int argc, char **argv)
   case BBS:
     bbs();
     break;
-  case RMAIL:
-    rmail();
-    break;
-  case RNEWS:
-    rnews();
+  case MAILorNEWS:
+    recv_from_mail_or_news();
     break;
   }
   return 0;

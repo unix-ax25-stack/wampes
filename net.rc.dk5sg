@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.3 1992/10/27 10:51:38 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.4 1992/11/06 12:03:37 deyke Exp $
 
 hostname     dk5sg
 ax25 mycall  dk5sg
@@ -6,6 +6,7 @@ ip address   dk5sg
 netrom ident "#fc"
 
 attach axip                     # ax.25 over host ip
+attach axip axudp udp 25071     # ax.25 over host udp
 attach ipip                     # ip over host ip
 attach netrom                   # ip over netrom
 attach ni ni dk5sg-u            # ip to host ip

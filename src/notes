@@ -1,5 +1,15 @@
 ===============================================================================
 
+dann ist es kein Bug, aber trotzdem unschoen. In meinem /etc/profile
+pruefe ich auf Anzahl der Felder in /etc/passwd und finde es unschoen
+wenn die variert. Das duerfte auch einige andere scripts die von einer
+festen Anzahl Felder in /etc/passwd ausgehen stoeren. Mir waere es daher
+lieb das z. Bsp. ueber net.rc konfigurieren zu koennen.
+Ist das mit der Default-Shell auch bei sun/dec/at&t/.. so oder nur bei
+hp-ux?
+
+===============================================================================
+
 Hallo Dieter,
 was haelst Du denn vom 'reget' Command bei FTP?
 (bzw. REST-Command)
