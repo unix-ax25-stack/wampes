@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.h,v 1.8 1993/05/17 13:44:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.h,v 1.9 1994/10/06 16:15:25 deyke Exp $ */
 
 #ifndef _ICMP_H
 #define _ICMP_H
@@ -79,20 +79,22 @@ extern struct mib_entry Icmp_mib[];
 #define ICMP_ADDR_MASK_REPLY    18      /* Address mask reply */
 #define ICMP_TYPES              19
 
+union icmp_args {
+	uint16 mtu;
+	int32 unused;
+	unsigned char pointer;
+	int32 address;
+	struct {
+		uint16 id;
+		uint16 seq;
+	} echo;
+};
+
 /* Internal format of an ICMP header (checksum is missing) */
 struct icmp {
 	char type;
 	char code;
-	union icmp_args {
-		uint16 mtu;
-		int32 unused;
-		unsigned char pointer;
-		int32 address;
-		struct {
-			uint16 id;
-			uint16 seq;
-		} echo;
-	} args;
+	union icmp_args args;
 };
 #define ICMPLEN         8       /* Length of ICMP header on the net */
 #define NULLICMP        (union icmp_args *)0
@@ -139,14 +141,14 @@ extern char *Icmptypes[],*Unreach[],*Exceed[],*Redirect[];
 
 struct icmplink {
 	char proto;
-	void (*funct)(int32,int32,int32,int ,int ,struct mbuf **);
+	void (*funct)(int32,int32,int32,char,char,struct mbuf **);
 };
 extern struct icmplink Icmplink[];
 
 /* In icmp.c: */
 void icmp_input(struct iface *iface,struct ip *ip,struct mbuf *bp,
 	int rxbroadcast);
-int icmp_output(struct ip *ip,struct mbuf *data,int  type,int  code,
+int icmp_output(struct ip *ip,struct mbuf *data,char type,char code,
 	union icmp_args *args);
 
 /* In icmpcmd.c: */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ripcmd.c,v 1.4 1993/05/17 13:45:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ripcmd.c,v 1.5 1994/10/06 16:15:34 deyke Exp $ */
 
 /* RIP-related user commands
  *   Al Broscious, N3FCT
@@ -33,20 +33,20 @@ struct cmds Ripcmds[] = {
 };
 
 int
-dorip(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dorip(
+int argc,
+char *argv[],
+void *p)
 {
 	return subcmd(Ripcmds,argc,argv,p);
 }
 
 /* Add an entry to the RIP output list */
 int
-doripadd(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doripadd(
+int argc,
+char *argv[],
+void *p)
 {
 	char flags = 0;
 
@@ -58,58 +58,58 @@ void *p;
 
 /* Add an entry to the RIP refuse list */
 int
-doaddrefuse(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doaddrefuse(
+int argc,
+char *argv[],
+void *p)
 {
 	return riprefadd(resolve(argv[1]));
 }
 
 /* Drop an entry from the RIP output list */
 int
-doripdrop(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doripdrop(
+int argc,
+char *argv[],
+void *p)
 {
 	return rip_drop(resolve(argv[1]));
 }
 
 /* Drop an entry from the RIP refuse list */
 int
-dodroprefuse(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dodroprefuse(
+int argc,
+char *argv[],
+void *p)
 {
 	return riprefdrop(resolve(argv[1]));
 }
 
 /* Initialize the RIP listener */
 int
-doripinit(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doripinit(
+int argc,
+char *argv[],
+void *p)
 {
 	return rip_init();
 }
 int
-doripstop(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doripstop(
+int argc,
+char *argv[],
+void *p)
 {
 	del_udp(Rip_cb);
 	Rip_cb = NULLUDP;
 	return 0;
 }
 int
-doripreq(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doripreq(
+int argc,
+char *argv[],
+void *p)
 {
 	uint16 replyport;
 
@@ -121,10 +121,10 @@ void *p;
 }
 /* Dump RIP statistics */
 int
-doripstat(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doripstat(
+int argc,
+char *argv[],
+void *p)
 {
 	struct rip_list *rl;
 	struct rip_refuse *rfl;
@@ -153,18 +153,18 @@ void *p;
 }
 
 int
-doriptrace(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doriptrace(
+int argc,
+char *argv[],
+void *p)
 {
 	return setshort(&Rip_trace,"RIP tracing",argc,argv);
 }
 int
-doripmerge(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doripmerge(
+int argc,
+char *argv[],
+void *p)
 {
 	return setbool(&Rip_merge,"RIP merging",argc,argv);
 }

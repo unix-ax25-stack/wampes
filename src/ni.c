@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.6 1994/09/05 12:47:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.7 1994/10/06 16:15:33 deyke Exp $ */
 
 #ifdef __hpux
 
@@ -61,7 +61,7 @@ static int ni_send(struct mbuf *data, struct iface *ifp, int32 gateway, int tos)
     return (-1);
   }
 
-  edv = ifp->edv;
+  edv = (struct edv_t *) ifp->edv;
 
   ni_packet.addr.sa_family = AF_INET;
 
@@ -80,8 +80,8 @@ static void ni_recv(void *argp)
   struct iface *ifp;
   struct ni_packet ni_packet;
 
-  ifp = argp;
-  edv = ifp->edv;
+  ifp = (struct iface *) argp;
+  edv = (struct edv_t *) ifp->edv;
   l = read(edv->fd, &ni_packet, sizeof(ni_packet)) - sizeof(ni_packet.addr);
   if (l <= 0) goto Fail;
 
@@ -213,7 +213,7 @@ int ni_attach(int argc, char *argv[], void *p)
 
   close(sock_fd);
 
-  ifp = callocw(1, sizeof(*ifp));
+  ifp = (struct iface *) callocw(1, sizeof(struct iface));
   ifp->name = strdup(ifname);
   ifp->addr = Ip_addr;
   ifp->broadcast = 0xffffffffL;
@@ -221,7 +221,7 @@ int ni_attach(int argc, char *argv[], void *p)
   ifp->mtu = NI_MTU;
   setencap(ifp, "None");
 
-  edv = malloc(sizeof(*edv));
+  edv = (struct edv_t *) malloc(sizeof(struct edv_t));
   edv->fd = fd;
   ifp->edv = edv;
 

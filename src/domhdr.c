@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domhdr.c,v 1.7 1994/02/07 12:38:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domhdr.c,v 1.8 1994/10/06 16:15:23 deyke Exp $ */
 
 /* Domain header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -20,9 +20,9 @@ static char *putq(char *buffer, char *cp, const struct rr *rrp);
 static char *putrr(char *buffer, char *cp, const struct rr *rrp);
 
 int
-ntohdomain(dhdr,bpp)
-register struct dhdr *dhdr;
-struct mbuf **bpp;
+ntohdomain(
+register struct dhdr *dhdr,
+struct mbuf **bpp)
 {
 	uint16 tmp,len;
 	register uint16 i;
@@ -30,9 +30,9 @@ struct mbuf **bpp;
 	struct rr **rrpp;
 
 	len = len_p(*bpp);
-	msg = mallocw(len);
+	msg = (char *) mallocw(len);
 	pullup(bpp,msg,len);
-	memset((char *)dhdr,0,sizeof(*dhdr));
+	memset((char *)dhdr,0,sizeof(struct dhdr));
 
 	dhdr->id = get16(&msg[0]);
 	tmp = get16(&msg[2]);
@@ -107,17 +107,17 @@ struct mbuf **bpp;
 	return 0;
 }
 static char *
-getq(rrpp,msg,cp)
-struct rr **rrpp;
-char *msg;
-char *cp;
+getq(
+struct rr **rrpp,
+char *msg,
+char *cp)
 {
 	register struct rr *rrp;
 	int len;
 	char *name;
 
 	*rrpp = rrp = (struct rr *)callocw(1,sizeof(struct rr));
-	name = mallocw(512);
+	name = (char *) mallocw(512);
 	len = dn_expand(msg,NULLCHAR,cp,name,512);
 	if(len == -1){
 		free(name);
@@ -136,17 +136,17 @@ char *cp;
 }
 /* Read a resource record from a domain message into a host structure */
 static char *
-ntohrr(rrpp,msg,cp)
-struct rr **rrpp; /* Where to allocate resource record structure */
-char *msg;      /* Pointer to beginning of domain message */
-char *cp;       /* Pointer to start of encoded RR record */
+ntohrr(
+struct rr **rrpp, /* Where to allocate resource record structure */
+char *msg,      /* Pointer to beginning of domain message */
+char *cp)       /* Pointer to start of encoded RR record */
 {
 	register struct rr *rrp;
 	int len;
 	char *name;
 
 	*rrpp = rrp = (struct rr *)callocw(1,sizeof(struct rr));
-	name = mallocw(512);
+	name = (char *) mallocw(512);
 	if((len = dn_expand(msg,NULLCHAR,cp,name,512)) == -1){
 		free(name);
 		return NULLCHAR;
@@ -187,13 +187,13 @@ char *cp;       /* Pointer to start of encoded RR record */
 		break;
 	case TYPE_HINFO:
 		len = *cp++ & 0xff;
-		rrp->rdata.hinfo.cpu = mallocw(len+1);
+		rrp->rdata.hinfo.cpu = (char *) mallocw(len+1);
 		memcpy( rrp->rdata.hinfo.cpu, cp, len );
 		rrp->rdata.hinfo.cpu[len] = '\0';
 		cp += len;
 
 		len = *cp++ & 0xff;
-		rrp->rdata.hinfo.os = mallocw(len+1);
+		rrp->rdata.hinfo.os = (char *) mallocw(len+1);
 		memcpy( rrp->rdata.hinfo.os, cp, len );
 		rrp->rdata.hinfo.os[len] = '\0';
 		cp += len;
@@ -242,7 +242,7 @@ char *cp;       /* Pointer to start of encoded RR record */
 		break;
 	case TYPE_TXT:
 		len = *cp++ & 0xff;
-		rrp->rdata.name = mallocw(len+1);
+		rrp->rdata.name = (char *) mallocw(len+1);
 		memcpy(rrp->rdata.name,cp,len);
 		rrp->rdata.data[len] = '\0';
 		cp += rrp->rdlength;
@@ -258,12 +258,12 @@ char *cp;       /* Pointer to start of encoded RR record */
 
 /* Convert a compressed domain name to the human-readable form */
 static int
-dn_expand(msg,eom,compressed,full,fullen)
-char *msg;              /* Complete domain message */
-char *eom;
-char *compressed;       /* Pointer to compressed name */
-char *full;             /* Pointer to result buffer */
-int fullen;             /* Length of same */
+dn_expand(
+char *msg,              /* Complete domain message */
+char *eom,
+char *compressed,       /* Pointer to compressed name */
+char *full,             /* Pointer to result buffer */
+int fullen)             /* Length of same */
 {
 	unsigned int slen;      /* Length of current segment */
 	register char *cp;
@@ -315,9 +315,9 @@ static struct compress_table {
 
 /*---------------------------------------------------------------------------*/
 
-static char *putstring(cp, str)
-char *cp;
-const char *str;
+static char *putstring(
+char *cp,
+const char *str)
 {
   char *cp1;
 
@@ -330,10 +330,10 @@ const char *str;
 
 /*---------------------------------------------------------------------------*/
 
-static char *putname(buffer, cp, name)
-char *buffer;
-char *cp;
-const char *name;
+static char *putname(
+char *buffer,
+char *cp,
+const char *name)
 {
 
   const char *cp1;
@@ -356,10 +356,10 @@ const char *name;
 
 /*---------------------------------------------------------------------------*/
 
-static char *putq(buffer, cp, rrp)
-char *buffer;
-char *cp;
-const struct rr *rrp;
+static char *putq(
+char *buffer,
+char *cp,
+const struct rr *rrp)
 {
   for (; rrp; rrp = rrp->next) {
     cp = putname(buffer, cp, rrp->name);
@@ -371,10 +371,10 @@ const struct rr *rrp;
 
 /*---------------------------------------------------------------------------*/
 
-static char *putrr(buffer, cp, rrp)
-char *buffer;
-char *cp;
-const struct rr *rrp;
+static char *putrr(
+char *buffer,
+char *cp,
+const struct rr *rrp)
 {
   char *cp1;
 
@@ -426,8 +426,8 @@ const struct rr *rrp;
 
 /*---------------------------------------------------------------------------*/
 
-struct mbuf *htondomain(dhp)
-const struct dhdr *dhp;
+struct mbuf *htondomain(
+const struct dhdr *dhp)
 {
 
   char *cp;

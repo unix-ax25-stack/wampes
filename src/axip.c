@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.19 1994/08/05 10:35:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.20 1994/10/06 16:15:21 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -86,7 +86,7 @@ static int axip_raw(struct iface *ifp, struct mbuf *data)
     return (-1);
   }
 
-  edv = ifp->edv;
+  edv = (struct edv_t *) ifp->edv;
 
   dest = buf;
   p = dest + AXALEN;
@@ -134,8 +134,8 @@ static void axip_recv(void *argp)
   struct ip *ipptr;
   struct sockaddr_in addr;
 
-  ifp = argp;
-  edv = ifp->edv;
+  ifp = (struct iface *) argp;
+  edv = (struct edv_t *) ifp->edv;
   addrlen = sizeof(addr);
   l = recvfrom(edv->fd, bufptr = buf, sizeof(buf), 0, (struct sockaddr *) & addr, &addrlen);
   if (edv->type == USE_IP) {
@@ -225,18 +225,18 @@ int axip_attach(int argc, char *argv[], void *p)
     }
   }
 
-  ifp = callocw(1, sizeof(*ifp));
+  ifp = (struct iface *) callocw(1, sizeof(struct iface));
   ifp->name = strdup(ifname);
   ifp->addr = Ip_addr;
   ifp->broadcast = 0xffffffffL;
   ifp->netmask = 0xffffffffL;
-  ifp->hwaddr = mallocw(AXALEN);
+  ifp->hwaddr = (char *) mallocw(AXALEN);
   addrcp(ifp->hwaddr, Mycall);
   ifp->mtu = 256;
   ifp->crccontrol = CRC_CCITT;
   setencap(ifp, "AX25UI");
 
-  edv = (struct edv_t *) malloc(sizeof(*edv));
+  edv = (struct edv_t *) malloc(sizeof(struct edv_t));
   edv->type = type;
   edv->port = port;
   edv->fd = fd;
@@ -259,7 +259,7 @@ static void axip_route_add(char *call, int32 dest)
 
   for (rp = Axip_routes; rp && !addreq(rp->call, call); rp = rp->next) ;
   if (!rp) {
-    rp = (struct axip_route *) malloc(sizeof(*rp));
+    rp = (struct axip_route *) malloc(sizeof(struct axip_route));
     addrcp(rp->call, call);
     rp->next = Axip_routes;
     Axip_routes = rp;

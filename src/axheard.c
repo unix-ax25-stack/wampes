@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axheard.c,v 1.1 1993/06/20 07:31:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axheard.c,v 1.2 1994/10/06 16:15:21 deyke Exp $ */
 
 /* AX25 link callsign monitoring. Also contains beginnings of
  * an automatic link quality monitoring scheme (incomplete)
@@ -21,8 +21,8 @@ struct ld *Ld;
 #ifdef  notdef
 /* Send link quality reports to interface */
 void
-genrpt(ifp)
-struct iface *ifp;
+genrpt(
+struct iface *ifp)
 {
 	struct mbuf *bp;
 	register char *cp;
@@ -68,9 +68,9 @@ struct iface *ifp;
 
 /* Pull the header off a link quality packet */
 void
-getlqhdr(hp,bpp)
-struct lqhdr *hp;
-struct mbuf **bpp;
+getlqhdr(
+struct lqhdr *hp,
+struct mbuf **bpp)
 {
 	hp->version = pull16(bpp);
 	hp->ip_addr = pull32(bpp);
@@ -80,10 +80,10 @@ struct mbuf **bpp;
  * Return pointer to buffer immediately following header
  */
 char *
-putlqhdr(cp,version,ip_addr)
-register char *cp;
-uint16 version;
-int32 ip_addr;
+putlqhdr(
+register char *cp,
+uint16 version,
+int32 ip_addr)
 {
 	cp = put16(cp,version);
 	return put32(cp,ip_addr);
@@ -91,9 +91,9 @@ int32 ip_addr;
 
 /* Pull an entry off a link quality packet */
 void
-getlqentry(ep,bpp)
-struct lqentry *ep;
-struct mbuf **bpp;
+getlqentry(
+struct lqentry *ep,
+struct mbuf **bpp)
 {
 	pullup(bpp,ep->addr,AXALEN);
 	ep->count = pull32(bpp);
@@ -103,10 +103,10 @@ struct mbuf **bpp;
  * Return pointer to buffer immediately following header
  */
 char *
-putlqentry(cp,addr,count)
-char *cp;
-char *addr;
-int32 count;
+putlqentry(
+char *cp,
+char *addr,
+int32 count)
 {
 	memcpy(cp,addr,AXALEN);
 	cp += AXALEN;
@@ -116,9 +116,9 @@ int32 count;
 
 /* Log the source address of an incoming packet */
 void
-logsrc(ifp,addr)
-struct iface *ifp;
-char *addr;
+logsrc(
+struct iface *ifp,
+char *addr)
 {
 	register struct lq *lp;
 
@@ -130,9 +130,9 @@ char *addr;
 }
 /* Log the destination address of an incoming packet */
 void
-logdest(ifp,addr)
-struct iface *ifp;
-char *addr;
+logdest(
+struct iface *ifp,
+char *addr)
 {
 	register struct ld *lp;
 
@@ -144,10 +144,10 @@ char *addr;
 }
 /* Look up an entry in the source data base */
 struct lq *
-al_lookup(ifp,addr,sort)
-struct iface *ifp;
-char *addr;
-int sort;
+al_lookup(
+struct iface *ifp,
+char *addr,
+int sort)
 {
 	register struct lq *lp;
 	struct lq *lplast = NULLLQ;
@@ -167,9 +167,9 @@ int sort;
 }
 /* Create a new entry in the source database */
 static struct lq *
-al_create(ifp,addr)
-struct iface *ifp;
-char *addr;
+al_create(
+struct iface *ifp,
+char *addr)
 {
 	register struct lq *lp;
 
@@ -183,10 +183,10 @@ char *addr;
 }
 /* Look up an entry in the destination database */
 static struct ld *
-ad_lookup(ifp,addr,sort)
-struct iface *ifp;
-char *addr;
-int sort;
+ad_lookup(
+struct iface *ifp,
+char *addr,
+int sort)
 {
 	register struct ld *lp;
 	struct ld *lplast = NULLLD;
@@ -206,9 +206,9 @@ int sort;
 }
 /* Create a new entry in the destination database */
 static struct ld *
-ad_create(ifp,addr)
-struct iface *ifp;
-char *addr;
+ad_create(
+struct iface *ifp,
+char *addr)
 {
 	register struct ld *lp;
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.h,v 1.5 1993/05/17 13:45:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.h,v 1.6 1994/10/06 16:15:34 deyke Exp $ */
 
 #ifndef _RIP_H
 #define _RIP_H
@@ -102,10 +102,10 @@ struct rip_refuse {
 int rip_init(void);
 void rt_timeout(void *s);
 void rip_trigger(void);
-int rip_add(int32 dest,int32 interval,int  flags);
+int rip_add(int32 dest,int32 interval,char flags);
 int riprefadd(int32 gateway);
 int riprefdrop(int32 gateway);
-int ripreq(int32 dest,int    replyport);
+int ripreq(int32 dest,uint16 replyport);
 int rip_drop(int32 dest);
 int nbits(int32 target);
 void pullentry(struct rip_route *ep,struct mbuf **bpp);

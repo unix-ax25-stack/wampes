@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.14 1993/05/17 13:45:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.15 1994/10/06 16:15:35 deyke Exp $ */
 
 /* SLIP (Serial Line IP) encapsulation and control routines.
  * Copyright 1991 Phil Karn
@@ -20,15 +20,15 @@
 #include "trace.h"
 #include "pktdrvr.h"
 
-static struct mbuf *slip_decode(struct slip *sp,int  c);
+static struct mbuf *slip_decode(struct slip *sp,char c);
 static struct mbuf *slip_encode(struct mbuf *bp);
 
 /* Slip level control structure */
 struct slip Slip[SLIP_MAX];
 
 int
-slip_init(ifp)
-struct iface *ifp;
+slip_init(
+struct iface *ifp)
 {
 	int xdev;
 	struct slip *sp;
@@ -65,8 +65,8 @@ struct iface *ifp;
 	return 0;
 }
 int
-slip_free(ifp)
-struct iface *ifp;
+slip_free(
+struct iface *ifp)
 {
 	struct slip *sp;
 
@@ -80,11 +80,11 @@ struct iface *ifp;
 }
 /* Send routine for point-to-point slip, no VJ header compression */
 int
-slip_send(bp,iface,gateway,tos)
-struct mbuf *bp;        /* Buffer to send */
-struct iface *iface;    /* Pointer to interface control block */
-int32 gateway;          /* Ignored (SLIP is point-to-point) */
-int tos;
+slip_send(
+struct mbuf *bp,        /* Buffer to send */
+struct iface *iface,    /* Pointer to interface control block */
+int32 gateway,          /* Ignored (SLIP is point-to-point) */
+int tos)
 {
 	if(iface == NULLIF){
 		free_p(bp);
@@ -94,11 +94,11 @@ int tos;
 }
 /* Send routine for point-to-point slip, with VJ header compression */
 int
-vjslip_send(bp,iface,gateway,tos)
-struct mbuf *bp;        /* Buffer to send */
-struct iface *iface;    /* Pointer to interface control block */
-int32 gateway;          /* Ignored (SLIP is point-to-point) */
-int tos;
+vjslip_send(
+struct mbuf *bp,        /* Buffer to send */
+struct iface *iface,    /* Pointer to interface control block */
+int32 gateway,          /* Ignored (SLIP is point-to-point) */
+int tos)
 {
 	register struct slip *sp;
 	int type;
@@ -115,9 +115,9 @@ int tos;
 }
 /* Send a raw slip frame */
 int
-slip_raw(iface,bp)
-struct iface *iface;
-struct mbuf *bp;
+slip_raw(
+struct iface *iface,
+struct mbuf *bp)
 {
 	struct mbuf *bp1;
 
@@ -134,8 +134,8 @@ struct mbuf *bp;
 /* Encode a packet in SLIP format */
 static
 struct mbuf *
-slip_encode(bp)
-struct mbuf *bp;
+slip_encode(
+struct mbuf *bp)
 {
 	struct mbuf *lbp;       /* Mbuf containing line-ready packet */
 	register char *cp;
@@ -179,9 +179,9 @@ struct mbuf *bp;
  */
 static
 struct mbuf *
-slip_decode(sp,c)
-register struct slip *sp;
-char c;         /* Incoming character */
+slip_decode(
+register struct slip *sp,
+char c)         /* Incoming character */
 {
 	struct mbuf *bp;
 
@@ -244,8 +244,8 @@ char c;         /* Incoming character */
 
 /* Process SLIP line input */
 void
-slip_rx(iface)
-struct iface *iface;
+slip_rx(
+struct iface *iface)
 {
 	int c;
 	struct mbuf *bp;
@@ -298,8 +298,8 @@ struct iface *iface;
 
 /* Show serial line status */
 void
-slip_status(iface)
-struct iface *iface;
+slip_status(
+struct iface *iface)
 {
 	struct slip *sp;
 

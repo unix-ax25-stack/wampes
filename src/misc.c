@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.18 1994/09/05 12:47:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.19 1994/10/06 16:15:31 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -11,23 +11,23 @@
 
 char Whitespace[] = " \t\r\n";
 
-int Xtolower(c)
-int c;
+int Xtolower(
+int c)
 {
 	return (c >= 'A' && c <= 'Z') ? (c - 'A' + 'a') : c;
 }
 
-int Xtoupper(c)
-int c;
+int Xtoupper(
+int c)
 {
 	return (c >= 'a' && c <= 'z') ? (c - 'a' + 'A') : c;
 }
 
 /* Select from an array of strings, or return ascii number if out of range */
 char *
-smsg(msgs,nmsgs,n)
-char *msgs[];
-unsigned nmsgs,n;
+smsg(
+char *msgs[],
+unsigned nmsgs,unsigned n)
 {
 	static char buf[16];
 
@@ -39,8 +39,8 @@ unsigned nmsgs,n;
 
 /* Convert hex-ascii to integer */
 int
-htoi(s)
-char *s;
+htoi(
+char *s)
 {
 	int i = 0;
 	char c;
@@ -61,8 +61,8 @@ char *s;
 }
 /* Convert single hex-ascii character to binary */
 int
-htob(c)
-char c;
+htob(
+char c)
 {
 	if('0' <= c && c <= '9')
 		return c - '0';
@@ -77,9 +77,9 @@ char c;
  * output buffer. Return number of bytes converted
  */
 int
-readhex(out,in,size)
-char *out,*in;
-int size;
+readhex(
+char *out,char *in,
+int size)
 {
 	int c,count;
 
@@ -101,8 +101,8 @@ int size;
 }
 /* replace terminating end of line marker(s) with null */
 void
-rip(s)
-register char *s;
+rip(
+register char *s)
 {
 	register char *cp = s;
 
@@ -114,16 +114,16 @@ register char *s;
 }
 /* Count the occurrances of 'c' in a buffer */
 int
-memcnt(buf,c,size)
-char *buf;
-char c;
-int size;
+memcnt(
+char *buf,
+char c,
+int size)
 {
 	int cnt = 0;
 	char *icp;
 
 	while(size != 0){
-		if((icp = memchr(buf,c,size)) == NULLCHAR)
+		if((icp = (char *) memchr(buf,c,size)) == NULLCHAR)
 			break;  /* No more found */
 		/* Advance the start of the next search to right after
 		 * this character
@@ -140,8 +140,8 @@ int size;
  * NOS uses of strdup() generally don't check for NULL, so they need this one.
  */
 char *
-strdup(s)
-const char *s;
+strdup(
+const char *s)
 {
 	register char *out;
 	register int len;
@@ -161,8 +161,8 @@ const char *s;
 
 /* Case-insensitive string comparison */
 
-int stricmp(s1,s2)
-char *s1,*s2;
+int stricmp(
+char *s1,char *s2)
 {
 	while(Xtolower(*s1) == Xtolower(*s2)){
 		if(!*s1)
@@ -173,9 +173,9 @@ char *s1,*s2;
 	return Xtolower(*s1) - Xtolower(*s2);
 }
 
-int strnicmp(a,b,n)
-char *a,*b;
-size_t n;
+int strnicmp(
+char *a,char *b,
+size_t n)
 {
 	char a1,b1;
 
@@ -196,12 +196,12 @@ size_t n;
 
 #ifdef  AZTEC
 char *
-strtok(s1,s2)
-char *s1;       /* Source string (first call) or NULL */
+strtok(
+char *s1,       /* Source string (first call) or NULL */
 #ifdef  __STDC__        /* Ugly kludge for aztec's declaration */
-const char *s2; /* Delimiter string */
+const char *s2) /* Delimiter string */
 #else
-char *s2;       /* Delimiter string */
+char *s2)       /* Delimiter string */
 #endif
 {
 	static int isdelim();
@@ -238,9 +238,9 @@ char *s2;       /* Delimiter string */
 	return tmp;
 }
 static int
-isdelim(c,delim)
-char c;
-register char *delim;
+isdelim(
+char c,
+register char *delim)
 {
 	char d;
 
@@ -258,9 +258,9 @@ register char *delim;
 #ifndef MSDOS
 /* Put a long in host order into a char array in network order */
 char *
-put32(cp,x)
-register char *cp;
-int32 x;
+put32(
+register char *cp,
+int32 x)
 {
 	*cp++ = x >> 24;
 	*cp++ = x >> 16;
@@ -270,9 +270,9 @@ int32 x;
 }
 /* Put a short in host order into a char array in network order */
 char *
-put16(cp,x)
-register char *cp;
-uint16 x;
+put16(
+register char *cp,
+uint16 x)
 {
 	*cp++ = x >> 8;
 	*cp++ = x;
@@ -280,8 +280,8 @@ uint16 x;
 	return cp;
 }
 uint16
-get16(cp)
-register char *cp;
+get16(
+register char *cp)
 {
 	register uint16 x;
 
@@ -292,8 +292,8 @@ register char *cp;
 }
 /* Machine-independent, alignment insensitive network-to-host long conversion */
 int32
-get32(cp)
-register char *cp;
+get32(
+register char *cp)
 {
 	int32 rval;
 
@@ -309,8 +309,8 @@ register char *cp;
 }
 /* Compute int(log2(x)) */
 int
-log2(x)
-register uint16 x;
+log2(
+register uint16 x)
 {
 	register int n = 16;
 	for(;n != 0;n--){

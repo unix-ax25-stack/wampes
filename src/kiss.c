@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.14 1994/09/11 18:34:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.15 1994/10/06 16:15:28 deyke Exp $ */
 
 /* Routines for AX.25 encapsulation in KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -16,8 +16,8 @@
 
 /* Set up a SLIP link to use AX.25 */
 int
-kiss_init(ifp)
-struct iface *ifp;
+kiss_init(
+struct iface *ifp)
 {
 	int xdev;
 	struct slip *sp;
@@ -37,7 +37,7 @@ struct iface *ifp;
 	ifp->show = slip_status;
 
 	if(ifp->hwaddr == NULLCHAR)
-		ifp->hwaddr = mallocw(AXALEN);
+		ifp->hwaddr = (char *) mallocw(AXALEN);
 	memcpy(ifp->hwaddr,Mycall,AXALEN);
 	ifp->xdev = xdev;
 	ifp->crccontrol = CRC_TEST_16;
@@ -56,8 +56,8 @@ struct iface *ifp;
 	return 0;
 }
 int
-kiss_free(ifp)
-struct iface *ifp;
+kiss_free(
+struct iface *ifp)
 {
 	if(Slip[ifp->xdev].iface == ifp)
 		Slip[ifp->xdev].iface = NULLIF;
@@ -65,9 +65,9 @@ struct iface *ifp;
 }
 /* Send raw data packet on KISS TNC */
 int
-kiss_raw(iface,bp)
-struct iface *iface;
-struct mbuf *bp;
+kiss_raw(
+struct iface *iface,
+struct mbuf *bp)
 {
 	/* Put type field for KISS TNC on front */
 	bp = pushdown(bp,1);
@@ -93,9 +93,9 @@ struct mbuf *bp;
 
 /* Process incoming KISS TNC frame */
 void
-kiss_recv(iface,bp)
-struct iface *iface;
-struct mbuf *bp;
+kiss_recv(
+struct iface *iface,
+struct mbuf *bp)
 {
 	char kisstype;
 
@@ -126,11 +126,11 @@ struct mbuf *bp;
 }
 /* Perform device control on KISS TNC by sending control messages */
 int32
-kiss_ioctl(iface,cmd,set,val)
-struct iface *iface;
-int cmd;
-int set;
-int32 val;
+kiss_ioctl(
+struct iface *iface,
+int cmd,
+int set,
+int32 val)
 {
 	struct mbuf *hbp;
 	char *cp;

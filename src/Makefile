@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.71 1994/07/22 13:17:39 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.72 1994/10/06 16:15:18 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -37,6 +37,7 @@ HDRS          = arp.h \
 		iface.h \
 		internet.h \
 		ip.h \
+		ipfilter.h \
 		kiss.h \
 		lapb.h \
 		login.h \
@@ -510,7 +511,7 @@ ipip.o: global.h mbuf.h iface.h proc.h timer.h internet.h netuser.h socket.h \
 	trace.h pktdrvr.h cmdparse.h hpux.h
 iproute.o: global.h mbuf.h iface.h proc.h timer.h internet.h ip.h tcp.h \
 	netuser.h icmp.h session.h hardware.h telnet.h ax25.h rip.h udp.h \
-	trace.h pktdrvr.h bootp.h socket.h
+	trace.h pktdrvr.h bootp.h socket.h ipfilter.h
 kernel.o: global.h mbuf.h proc.h timer.h socket.h daemon.h hardware.h
 kiss.o: global.h mbuf.h iface.h proc.h timer.h kiss.h devparam.h slip.h \
 	slhc.h ip.h internet.h tcp.h netuser.h asy.h ax25.h pktdrvr.h crc.h

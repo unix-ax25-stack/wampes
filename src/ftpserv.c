@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.29 1994/10/02 17:55:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.30 1994/10/06 16:15:24 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -116,10 +116,10 @@ static void Xprintf(struct tcb *tcb,char *message,char *arg1,char *arg2,char *ar
 	send_tcp(tcb,bp);
 }
 /* Start up FTP service */
-int ftpstart(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+int ftpstart(
+int argc,
+char *argv[],
+void *p)
 {
 	struct socket lsocket;
 
@@ -173,7 +173,7 @@ ftpscs(struct tcb *tcb,int old,int new)
 		ftp->port.port = IPPORT_FTPD;
 
 		/* Note current directory */
-		log(tcb,"open FTP");
+		log(tcb,"open FTP","");
 		cp = ctime((long *) &Secclock);
 		if((cp1 = strchr(cp,'\n')) != NULLCHAR)
 			*cp1 = '\0';
@@ -183,7 +183,7 @@ ftpscs(struct tcb *tcb,int old,int new)
 		close_tcp(tcb);
 		break;
 	case TCP_CLOSED:
-		log(tcb,"close FTP");
+		log(tcb,"close FTP","");
 		if((ftp = (struct ftp *)tcb->user) != NULLFTP)
 			ftp_delete(ftp);
 		/* Check if server is being shut down */
@@ -722,9 +722,9 @@ char *crypt();
  * in pass
  */
 
-static void ftplogin(ftp,pass)
-struct ftp *ftp;
-char *pass;
+static void ftplogin(
+struct ftp *ftp,
+char *pass)
 {
 
   char salt[3];
@@ -739,8 +739,8 @@ char *pass;
   if (pw->pw_passwd[0] &&
       strcmp(pw->pw_name, "ftp") &&
       strcmp(crypt(pass, salt), pw->pw_passwd)) goto Fail;
-  ftp->uid = pw->pw_uid;
-  ftp->gid = pw->pw_gid;
+  ftp->uid = (int) pw->pw_uid;
+  ftp->gid = (int) pw->pw_gid;
   if (ftp->cd) free(ftp->cd);
   ftp->cd = strdup(strcmp(pw->pw_name, "ftp") ? pw->pw_dir : "/");
   if (ftp->root) free(ftp->root);

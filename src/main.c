@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.48 1994/09/05 12:47:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.49 1994/10/06 16:15:31 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -76,9 +76,9 @@ static int stop_repeat;
 static void process_char(int c);
 
 int
-main(argc,argv)
-int argc;
-char *argv[];
+main(
+int argc,
+char *argv[])
 {
 	FILE *fp;
 	struct daemon *tp;
@@ -166,10 +166,11 @@ char *argv[];
 #endif
 		eihalt();
 	}
+	return 0;
 }
 /* Enter command mode */
 int
-cmdmode()
+cmdmode(void)
 {
 	if(Mode != CMD_MODE){
 		Mode = CMD_MODE;
@@ -180,8 +181,8 @@ cmdmode()
 }
 /* Process keyboard characters */
 static void
-process_char(c)
-int c;
+process_char(
+int c)
 {
 
 	char *ttybuf;
@@ -209,10 +210,10 @@ int c;
 }
 /* Keyboard input process */
 void
-keyboard(i,v1,v2)
-int i;
-void *v1;
-void *v2;
+keyboard(
+int i,
+void *v1,
+void *v2)
 {
 
 	char *p;
@@ -229,10 +230,10 @@ void *v2;
 	}
 }
 int
-dofkey(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dofkey(
+int argc,
+char *argv[],
+void *p)
 {
 	int n;
 
@@ -250,10 +251,10 @@ void *p;
 }
 /* Standard commands called from main */
 int
-dorepeat(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dorepeat(
+int argc,
+char *argv[],
+void *p)
 {
 	int32 interval;
 	int ret;
@@ -278,10 +279,10 @@ void *p;
 	return 0;
 }
 int
-dodelete(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dodelete(
+int argc,
+char *argv[],
+void *p)
 {
 	int i;
 
@@ -295,10 +296,10 @@ void *p;
 	return 0;
 }
 int
-dorename(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dorename(
+int argc,
+char *argv[],
+void *p)
 {
 	if(rename(argv[1],argv[2]) == -1){
 		printf("Can't rename %s: ", argv[1]);
@@ -308,10 +309,10 @@ void *p;
 	return 0;
 }
 int
-doexit(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doexit(
+int argc,
+char *argv[],
+void *p)
 {
 	time_t StopTime;
 	char tbuf[32];
@@ -331,10 +332,10 @@ void *p;
 	return 0;       /* To satisfy lint */
 }
 int
-dohostname(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dohostname(
+int argc,
+char *argv[],
+void *p)
 {
 	if(argc < 2)
 		printf("%s\n",Hostname);
@@ -366,10 +367,10 @@ void *p;
 	return 0;
 }
 int
-dolog(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dolog(
+int argc,
+char *argv[],
+void *p)
 {
 	static char *logname;
 	char tbuf[32];
@@ -382,7 +383,7 @@ void *p;
 		return 0;
 	}
 	if(Logfp){
-		log(NULLTCB,"NOS log closed");
+		log(NULLTCB,"NOS log closed","");
 		fclose(Logfp);
 		Logfp = NULLFILE;
 		free(logname);
@@ -405,19 +406,19 @@ void *p;
  * Syntax: attach <hw type> <I/O address> <vector> <mode> <label> <bufsize> [<speed>]
  */
 int
-doattach(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doattach(
+int argc,
+char *argv[],
+void *p)
 {
 	return subcmd(Attab,argc,argv,p);
 }
 /* Manipulate I/O device parameters */
 int
-doparam(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doparam(
+int argc,
+char *argv[],
+void *p)
 {
 	register struct iface *ifp;
 	int param;
@@ -461,40 +462,30 @@ void *p;
 /* Log messages of the form
  * Tue Jan 31 00:00:00 1987 44.64.0.7:1003 open FTP
  */
-/*VARARGS2*/
 void
-log(tcb,fmt,arg1,arg2,arg3,arg4)
-struct tcb *tcb;
-char *fmt;
-int32 arg1,arg2,arg3,arg4;
+log(void *tcb, const char *fmt, const char *arg)
 {
 	char *cp;
 
-	if(Logfp == NULLFILE)
+	if (Logfp == NULLFILE)
 		return;
 	cp = ctime((long *) &Secclock);
 	rip(cp);
-    if (tcb)
-	fprintf(Logfp,"%s %s - ",cp,pinet_tcp(&tcb->conn.remote));
-    else
-	fprintf(Logfp,"%s - ",cp);
-	fprintf(Logfp,fmt,arg1,arg2,arg3,arg4);
-	fprintf(Logfp,"\n");
+	if (tcb)
+		fprintf(Logfp, "%s %s - ", cp, pinet_tcp(&((struct tcb *)tcb)->conn.remote));
+	else
+		fprintf(Logfp, "%s - ", cp);
+	fprintf(Logfp, fmt, arg);
+	fprintf(Logfp, "\n");
 	fflush(Logfp);
-#if     (defined(MSDOS) || defined(ATARI_ST))
-	/* MS-DOS doesn't really flush files until they're closed */
-	fd = fileno(Logfp);
-	if((fd = dup(fd)) != -1)
-		close(fd);
-#endif
 }
 
 #ifndef MSDOS
 int
-doescape(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doescape(
+int argc,
+char *argv[],
+void *p)
 {
 	if(argc < 2)
 		printf("0x%x\n",Escape);
@@ -507,10 +498,10 @@ void *p;
  * remote [-p port#] [-k key] [-a hostname] <hostname> reset|exit|kickme
  */
 int
-doremote(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doremote(
+int argc,
+char *argv[],
+void *p)
 {
 	struct socket fsock,lsock;
 	struct mbuf *bp;
@@ -603,20 +594,20 @@ void *p;
 }
 /* No-op command */
 int
-donothing(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+donothing(
+int argc,
+char *argv[],
+void *p)
 {
 	return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-int dosource(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+int dosource(
+int argc,
+char *argv[],
+void *p)
 {
 
   FILE *fp;

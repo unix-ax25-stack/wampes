@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.12 1994/09/05 12:47:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.13 1994/10/06 16:15:19 deyke Exp $ */
 
 /* ARP commands
  * Copyright 1991, Phil Karn, KA9Q
@@ -48,10 +48,10 @@ char *Arptypes[] = {
 };
 
 int
-doarp(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doarp(
+int argc,
+char *argv[],
+void *p)
 {
 	if(argc < 2){
 		dumparp();
@@ -60,10 +60,10 @@ void *p;
 	return subcmd(Arpcmds,argc,argv,p);
 }
 static int
-doarpadd(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doarpadd(
+int argc,
+char *argv[],
+void *p)
 {
 	uint16 hardware;
 	int32 addr;
@@ -116,7 +116,7 @@ void *p;
 		return 1;
 	}
 	/* Allocate buffer for hardware address and fill with remaining args */
-	hwaddr = mallocw(at->hwalen);
+	hwaddr = (char *) mallocw(at->hwalen);
 	/* Destination address */
 	(*at->scan)(hwaddr,argv[3]);
 	ap = arp_add(addr,hardware,hwaddr,pub); /* Put in table */
@@ -127,10 +127,10 @@ void *p;
 }
 /* Remove an ARP entry */
 static int
-doarpdrop(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doarpdrop(
+int argc,
+char *argv[],
+void *p)
 {
 	uint16 hardware;
 	int32 addr;
@@ -175,10 +175,10 @@ void *p;
 }
 /* Flush all automatic entries in the arp cache */
 static int
-doarpflush(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doarpflush(
+int argc,
+char *argv[],
+void *p)
 {
 	register struct arp_tab *ap;
 	struct arp_tab *aptmp;
@@ -196,7 +196,7 @@ void *p;
 
 /* Dump ARP table */
 static void
-dumparp()
+dumparp(void)
 {
 	register int i;
 	register struct arp_tab *ap;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfilter.c,v 1.3 1994/04/13 09:51:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfilter.c,v 1.4 1994/10/06 16:15:27 deyke Exp $ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -69,7 +69,7 @@ doipfilteradd(int argc, char *argv[], void *p)
 		if (ptr->addr == addr && ptr->bits == bits)
 			return 0;
 
-	ptr = (struct ipfilter_t *) malloc(sizeof(*ptr));
+	ptr = (struct ipfilter_t *) malloc(sizeof(struct ipfilter_t));
 	ptr->addr = addr;
 	ptr->mask = mask;
 	ptr->bits = bits;

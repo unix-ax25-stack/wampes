@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.38 1994/08/29 09:05:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.39 1994/10/06 16:15:22 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -693,9 +693,9 @@ void (*Listusers)(FILE *network) = NULL;
 int WantBootp = 0;
 
 int
-bootp_validPacket(ip,bpp)
-struct ip *ip;
-struct mbuf **bpp;
+bootp_validPacket(
+struct ip *ip,
+struct mbuf **bpp)
 {
 	return 0;
 }
@@ -709,33 +709,33 @@ struct mbuf **bpp;
 
 /* Stub for packet dump function */
 void
-dump(iface,direction,type,bp)
-struct iface *iface;
-int direction;
-unsigned type;
-struct mbuf *bp;
+dump(
+struct iface *iface,
+int direction,
+unsigned type,
+struct mbuf *bp)
 {
 }
 void
-raw_dump(iface,direction,bp)
-struct iface *iface;
-int direction;
-struct mbuf *bp;
+raw_dump(
+struct iface *iface,
+int direction,
+struct mbuf *bp)
 {
 }
 #endif  /* TRACE */
 
 #ifndef TRACEBACK
 void
-stktrace()
+stktrace(void)
 {
 }
 #endif
 
 #ifndef LZW
 void
-lzwfree(up)
-struct usock *up;
+lzwfree(
+struct usock *up)
 {
 }
 #endif
@@ -743,13 +743,13 @@ struct usock *up;
 #ifdef  AX25
 /* Hooks for passing incoming AX.25 data frames to network protocols */
 static void
-axip(iface,axp,src,dest,bp,mcast)
-struct iface *iface;
-struct ax25_cb *axp;
-char *src;
-char *dest;
-struct mbuf *bp;
-int mcast;
+axip(
+struct iface *iface,
+struct ax25_cb *axp,
+char *src,
+char *dest,
+struct mbuf *bp,
+int mcast)
 {
 	int32 ipaddr;
 	struct arp_tab *ap;
@@ -773,26 +773,26 @@ int mcast;
 }
 
 static void
-axarp(iface,axp,src,dest,bp,mcast)
-struct iface *iface;
-struct ax25_cb *axp;
-char *src;
-char *dest;
-struct mbuf *bp;
-int mcast;
+axarp(
+struct iface *iface,
+struct ax25_cb *axp,
+char *src,
+char *dest,
+struct mbuf *bp,
+int mcast)
 {
 	(void)arp_input(iface,bp);
 }
 
 #ifdef  NETROM
 static void
-axnr(iface,axp,src,dest,bp,mcast)
-struct iface *iface;
-struct ax25_cb *axp;
-char *src;
-char *dest;
-struct mbuf *bp;
-int mcast;
+axnr(
+struct iface *iface,
+struct ax25_cb *axp,
+char *src,
+char *dest,
+struct mbuf *bp,
+int mcast)
 {
 	nr3_input(src,bp);
 }
@@ -803,8 +803,8 @@ int mcast;
 #ifndef RIP
 /* Stub for routing timeout when RIP is not configured -- just remove entry */
 void
-rt_timeout(s)
-void *s;
+rt_timeout(
+void *s)
 {
 	struct route *stale = (struct route *)s;
 
@@ -815,8 +815,8 @@ void *s;
 /* Stubs for demand dialer */
 #ifndef DIALER
 void
-dialer_kick(asyp)
-struct asy *asyp;
+dialer_kick(
+struct asy *asyp)
 {
 }
 #endif
@@ -824,41 +824,41 @@ struct asy *asyp;
 /* Stubs for Van Jacobsen header compression */
 #if !defined(VJCOMPRESS) && defined(ASY)
 struct slcompress *
-slhc_init(rslots,tslots)
-int rslots;
-int tslots;
+slhc_init(
+int rslots,
+int tslots)
 {
 	return NULLSLCOMPR;
 }
 int
-slhc_compress(comp, bpp, compress_cid)
-struct slcompress *comp;
-struct mbuf **bpp;
-int compress_cid;
+slhc_compress(
+struct slcompress *comp,
+struct mbuf **bpp,
+int compress_cid)
 {
 	return SL_TYPE_IP;
 }
 int
-slhc_uncompress(comp, bpp)
-struct slcompress *comp;
-struct mbuf **bpp;
+slhc_uncompress(
+struct slcompress *comp,
+struct mbuf **bpp)
 {
 	return -1;      /* Can't decompress */
 }
 void
-shlc_i_status(comp)
-struct slcompress *comp;
+shlc_i_status(
+struct slcompress *comp)
 {
 }
 void
-shlc_o_status(comp)
-struct slcompress *comp;
+shlc_o_status(
+struct slcompress *comp)
 {
 }
 int
-slhc_remember(comp, bpp)
-struct slcompress *comp;
-struct mbuf **bpp;
+slhc_remember(
+struct slcompress *comp,
+struct mbuf **bpp)
 {
 	return -1;
 }
@@ -866,28 +866,28 @@ struct mbuf **bpp;
 
 #ifdef  SERVERS
 static int
-dostart(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dostart(
+int argc,
+char *argv[],
+void *p)
 {
 	return subcmd(Startcmds,argc,argv,p);
 }
 static int
-dostop(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dostop(
+int argc,
+char *argv[],
+void *p)
 {
 	return subcmd(Stopcmds,argc,argv,p);
 }
 #endif  /* SERVERS */
 
 static int
-dostatus(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dostatus(
+int argc,
+char *argv[],
+void *p)
 {
   char *my_argv[3];
 

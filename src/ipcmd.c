@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.11 1993/05/17 13:44:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.12 1994/10/06 16:15:27 deyke Exp $ */
 
 /* IP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -55,18 +55,18 @@ static struct cmds Rtcmds[] = {
 };
 
 int
-doip(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doip(
+int argc,
+char *argv[],
+void *p)
 {
 	return subcmd(Ipcmds,argc,argv,p);
 }
 static int
-doipaddr(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doipaddr(
+int argc,
+char *argv[],
+void *p)
 {
 	int32 n;
 
@@ -80,28 +80,28 @@ void *p;
 	return 0;
 }
 static int
-dortimer(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dortimer(
+int argc,
+char *argv[],
+void *p)
 {
 	return setlong(&ipReasmTimeout,"IP reasm timeout (sec)",argc,argv);
 }
 static int
-dottl(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dottl(
+int argc,
+char *argv[],
+void *p)
 {
 	return setlong(&ipDefaultTTL,"IP Time-to-live",argc,argv);
 }
 
 /* Display and/or manipulate routing table */
 int
-doroute(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doroute(
+int argc,
+char *argv[],
+void *p)
 {
 	register int i,bits;
 	register struct route *rp;
@@ -134,10 +134,10 @@ void *p;
  * E.g., "add 1.2.3.4 ax0 5.6.7.8 3"
  */
 static int
-doadd(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doadd(
+int argc,
+char *argv[],
+void *p)
 {
 	struct iface *ifp;
 	int32 dest,gateway;
@@ -195,10 +195,10 @@ void *p;
  * E.g., "drop 128.96/16
  */
 static int
-dodrop(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dodrop(
+int argc,
+char *argv[],
+void *p)
 {
 	char *bitp;
 	unsigned bits;
@@ -227,10 +227,10 @@ void *p;
 }
 /* Force a timeout on all temporary routes */
 static int
-doflush(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doflush(
+int argc,
+char *argv[],
+void *p)
 {
 	register struct route *rp;
 	struct route *rptmp;
@@ -253,8 +253,8 @@ void *p;
 }
 /* Dump a routing table entry */
 static int
-dumproute(rp)
-register struct route *rp;
+dumproute(
+register struct route *rp)
 {
 	char *cp;
 
@@ -278,10 +278,10 @@ register struct route *rp;
 }
 
 static int
-dolook(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dolook(
+int argc,
+char *argv[],
+void *p)
 {
 	struct route *rp;
 	int32 addr;
@@ -300,10 +300,10 @@ void *p;
 }
 
 static int
-doipstat(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doipstat(
+int argc,
+char *argv[],
+void *p)
 {
 	register struct reasm *rp;
 	register struct frag *fp;

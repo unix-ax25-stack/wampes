@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.12 1994/09/19 17:08:14 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.13 1994/10/06 16:15:42 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -37,7 +37,7 @@ struct route {
   const struct iface *iface;
   long gateway;
   int metric;
-  int private;
+  int priv;
   struct route *next;
 };
 
@@ -46,7 +46,7 @@ struct link {
   const struct iface *iface;
   long gateway;
   int metric;
-  int private;
+  int priv;
   struct link *next;
 };
 
@@ -102,7 +102,7 @@ static void add_to_cache(const char *name, long addr)
 {
   struct cache *cp;
 
-  cp = (struct cache *) malloc(sizeof(*cp) + strlen(name));
+  cp = (struct cache *) malloc(sizeof(struct cache) + strlen(name));
   strcpy(cp->name, name);
   cp->addr = addr;
   cp->next = Cache;
@@ -234,7 +234,7 @@ static const struct iface *get_iface(const char *name)
 
   for (ip = Ifaces; ip && strcmp(ip->name, name); ip = ip->next) ;
   if (!ip) {
-    ip = (struct iface *) malloc(sizeof(*ip) + strlen(name));
+    ip = (struct iface *) malloc(sizeof(struct iface) + strlen(name));
     strcpy(ip->name, name);
     ip->next = Ifaces;
     Ifaces = ip;
@@ -256,13 +256,13 @@ static int is_in(long dest1, int bits1, long dest2, int bits2)
 
 /*---------------------------------------------------------------------------*/
 
-static void add_route(struct node *np, long dest, int bits, const struct iface *iface, long gateway, int metric, int private)
+static void add_route(struct node *np, long dest, int bits, const struct iface *iface, long gateway, int metric, int priv)
 {
   struct route *rp;
 
   for (rp = np->routes; rp && (dest != rp->dest || bits != rp->bits); rp = rp->next) ;
   if (!rp) {
-    rp = (struct route *) calloc(1, sizeof(*rp));
+    rp = (struct route *) calloc(1, sizeof(struct route));
     rp->next = np->routes;
     np->routes = rp;
     rp->metric = metric + 1;
@@ -278,7 +278,7 @@ static void add_route(struct node *np, long dest, int bits, const struct iface *
     rp->iface = iface;
     rp->gateway = gateway;
     rp->metric = metric;
-    rp->private = private;
+    rp->priv = priv;
     np->changed = 1;
   }
 }
@@ -291,7 +291,7 @@ static struct node *get_node(long addr)
 
   for (np = Nodes; np && np->addr != addr; np = np->next) ;
   if (!np) {
-    np = (struct node *) calloc(1, sizeof(*np));
+    np = (struct node *) calloc(1, sizeof(struct node));
     np->name = resolve_a(addr);
     np->addr = addr;
     np->next = Nodes;
@@ -312,7 +312,7 @@ static void read_routes(void)
   char hoststr[1024];
   char ifacestr[1024];
   char line[1024];
-  char privatestr[1024];
+  char privstr[1024];
   int bits;
   int linnum;
   int metric;
@@ -329,8 +329,8 @@ static void read_routes(void)
     linnum++;
     if (*line == '\n' || *line == '#') continue;
     strcpy(gatewaystr, "0");
-    *privatestr = 0;
-    if (sscanf(line, "%s %s %d %s %d %s %s", hoststr, deststr, &bits, ifacestr, &metric, gatewaystr, privatestr) < 5 || bits < 0 || bits > 32 || metric <= 0) {
+    *privstr = 0;
+    if (sscanf(line, "%s %s %d %s %d %s %s", hoststr, deststr, &bits, ifacestr, &metric, gatewaystr, privstr) < 5 || bits < 0 || bits > 32 || metric <= 0) {
       fprintf(stderr, "ip_routes: syntax error in line %d\n", linnum);
       exit(1);
     }
@@ -341,7 +341,7 @@ static void read_routes(void)
       dest = 0;
     gateway = resolve(gatewaystr);
     if (bits == 32 && !gateway) gateway = dest;
-    add_route(np, dest, bits, get_iface(ifacestr), gateway, metric, *privatestr);
+    add_route(np, dest, bits, get_iface(ifacestr), gateway, metric, *privstr);
   }
 }
 
@@ -361,12 +361,12 @@ static void create_links(void)
       if (rp->bits == 32 && rp->dest != np->addr) {
 	for (nnp = Nodes; nnp && nnp->addr != rp->dest; nnp = nnp->next) ;
 	if (nnp) {
-	  lp = (struct link *) malloc(sizeof(*lp));
+	  lp = (struct link *) malloc(sizeof(struct link));
 	  lp->node = nnp;
 	  lp->iface = rp->iface;
 	  lp->gateway = rp->gateway;
 	  lp->metric = rp->metric;
-	  lp->private = rp->private;
+	  lp->priv = rp->priv;
 	  lp->next = np->links;
 	  np->links = lp;
 	}
@@ -403,9 +403,9 @@ static void propagate_routes(void)
       np->changed = 0;
       for (lp = np->links; lp; lp = lp->next)
 	for (rp = lp->node->routes; rp; rp = rp->next)
-	  if (!rp->private)
+	  if (!rp->priv)
 	    add_route(np, rp->dest, rp->bits, lp->iface, lp->gateway,
-		      lp->metric + rp->metric, lp->private);
+		      lp->metric + rp->metric, lp->priv);
       if (np->changed) changed = 1;
     }
   } while (changed);
@@ -484,7 +484,7 @@ static void print_links(void)
   printf("\nLINKS:\n\n");
   for (np = Nodes; np; np = np->next) {
     for (lp = np->links; lp; lp = lp->next)
-      printf("%-20s %-20s %-8s %-20s %5d %c\n", np->name, lp->node->name, lp->iface->name, resolve_a(lp->gateway), lp->metric, lp->private ? 'P' : ' ');
+      printf("%-20s %-20s %-8s %-20s %5d %c\n", np->name, lp->node->name, lp->iface->name, resolve_a(lp->gateway), lp->metric, lp->priv ? 'P' : ' ');
   }
 }
 
@@ -512,7 +512,7 @@ static void print_routes(void)
 	  gateway = "";
 	else
 	  gateway = resolve_a(rp->gateway);
-	printf("%-20s %-20s %-8s %-20s %5d %c\n", np->name, dest, rp->iface->name, gateway, rp->metric, rp->private ? 'P' : ' ');
+	printf("%-20s %-20s %-8s %-20s %5d %c\n", np->name, dest, rp->iface->name, gateway, rp->metric, rp->priv ? 'P' : ' ');
       }
     }
     printf("\n");
@@ -552,7 +552,7 @@ static void make_route_files(void)
 	  gateway = "";
 	else
 	  gateway = resolve_a(rp->gateway);
-	fprintf(fp, "route add%c %-20s %-8s %-20s\n", rp->private ? 'p' : ' ', dest, rp->iface->name, gateway);
+	fprintf(fp, "route add%c %-20s %-8s %-20s\n", rp->priv ? 'p' : ' ', dest, rp->iface->name, gateway);
       }
     }
     pclose(fp);

@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.79 1994/09/19 17:07:25 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.80 1994/10/06 16:15:40 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -75,8 +75,8 @@ struct revision {
 
 struct user {
   char *name;
-  uid_t uid;
-  gid_t gid;
+  int uid;
+  int gid;
   char *dir;
   char *shell;
   char *cwd;
@@ -914,7 +914,7 @@ static struct mail *alloc_mail(void)
 {
   struct mail *mail;
 
-  mail = (struct mail *) calloc(1, sizeof(*mail));
+  mail = (struct mail *) calloc(1, sizeof(struct mail));
   mail->lifetime = -1;
   return mail;
 }
@@ -1031,7 +1031,7 @@ static void append_line(struct mail *mail, const char *line)
 {
   struct strlist *p;
 
-  p = (struct strlist *) malloc(sizeof(*p) + strlen(line));
+  p = (struct strlist *) malloc(sizeof(struct strlist) + strlen(line));
   p->next = 0;
   strcpy(p->str, line);
   if (!mail->head)
@@ -1165,7 +1165,7 @@ static void dir_command(int argc, char **argv)
       if (read_allowed(pi))
 	for (prev = 0, curr = head; ; ) {
 	  if (!curr) {
-	    curr = (struct dir_entry *) malloc(sizeof(*curr));
+	    curr = (struct dir_entry *) malloc(sizeof(struct dir_entry));
 	    curr->left = curr->right = 0;
 	    curr->count = 1;
 	    strcpy(curr->to, pi->to);
@@ -1310,7 +1310,7 @@ static void f_command(int argc, char **argv)
   if ((dirp = opendir(dirname))) {
     for (dp = readdir(dirp); dp; dp = readdir(dirp)) {
       if (*dp->d_name != 'C') continue;
-      p = (struct filelist *) malloc(sizeof(*p));
+      p = (struct filelist *) malloc(sizeof(struct filelist));
       strcpy(p->name, dp->d_name);
       if (!filelist || strcmp(p->name, filelist->name) < 0) {
 	p->next = filelist;
@@ -1917,7 +1917,7 @@ static void status_command(int argc, char **argv)
   int deleted = 0;
   int highest = 0;
   int n;
-  int new = 0;
+  int newmsg = 0;
   int readable = 0;
   long validdate;
   struct index *pi, index[1000];
@@ -1937,7 +1937,7 @@ static void status_command(int argc, char **argv)
 	active++;
 	if (read_allowed(pi)) {
 	  readable++;
-	  if (pi->mesg > user.seq) new++;
+	  if (pi->mesg > user.seq) newmsg++;
 	}
       }
     }
@@ -1950,7 +1950,7 @@ static void status_command(int argc, char **argv)
     printf("%6d  Messages may be crunched\n", crunchok);
   }
   printf("%6d  Last message listed\n", user.seq);
-  printf("%6d  New messages\n", new);
+  printf("%6d  New messages\n", newmsg);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -2045,7 +2045,7 @@ static void xscreen_command(int argc, char **argv)
   unsigned int indexarraysize;
 
   if (fstat(fdindex, &statbuf)) halt();
-  indexarraysize = statbuf.st_size;
+  indexarraysize = (int) statbuf.st_size;
   indexarrayentries = indexarraysize / sizeof(struct index);
   if (!indexarrayentries) return;
   if (!(indexarray = (struct index *) malloc(indexarraysize))) halt();
@@ -2542,8 +2542,8 @@ int main(int argc, char **argv)
   pw = doforward ? getpwnam(sysname) : getpwuid(getuid());
   if (!pw) halt();
   user.name = strdup(pw->pw_name);
-  user.uid = pw->pw_uid;
-  user.gid = pw->pw_gid;
+  user.uid = (int) pw->pw_uid;
+  user.gid = (int) pw->pw_gid;
   user.dir = strdup(pw->pw_dir);
   user.shell = strdup(pw->pw_shell);
   endpwent();

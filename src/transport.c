@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.15 1994/04/13 09:51:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.16 1994/10/06 16:15:38 deyke Exp $ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -16,7 +16,7 @@
 
 static const char delim[] = " \t\r\n";
 
-static int convert_eol(struct mbuf **bpp, int mode, int *last_chr);
+static int convert_eol(struct mbuf **bpp, enum e_transporteol mode, int *last_chr);
 static void transport_recv_upcall_ax25(struct ax25_cb *cp, int cnt);
 static void transport_recv_upcall_netrom(struct circuit *cp, int cnt);
 static void transport_recv_upcall_tcp(struct tcb *cp, int cnt);
@@ -32,7 +32,7 @@ static struct tcb *transport_open_tcp(const char *address, struct transport_cb *
 
 /*---------------------------------------------------------------------------*/
 
-static int convert_eol(struct mbuf **bpp, int mode, int *last_chr)
+static int convert_eol(struct mbuf **bpp, enum e_transporteol mode, int *last_chr)
 {
 
   char buf[10240], *p;
@@ -51,6 +51,7 @@ static int convert_eol(struct mbuf **bpp, int mode, int *last_chr)
 	  break;
       case '\r':
 	switch (mode) {
+	case EOL_NONE:
 	case EOL_CR:
 	  *p++ = '\r';
 	  break;
@@ -213,26 +214,25 @@ struct transport_cb *transport_open(const char *protocol, const char *address, v
 {
   struct transport_cb *tp;
 
-  tp = (struct transport_cb *) calloc(1, sizeof(*tp));
+  tp = (struct transport_cb *) calloc(1, sizeof(struct transport_cb));
   tp->r_upcall = r_upcall;
   tp->t_upcall = t_upcall;
   tp->s_upcall = s_upcall;
   tp->user = user;
-  tp->timer.func = (void (*)()) transport_close;
+  tp->timer.func = (void (*)(void *)) transport_close;
   tp->timer.arg = tp;
   Net_error = INVALID;
   if (!strcmp(protocol, "ax25")) {
     tp->type = TP_AX25;
-    tp->cp = transport_open_ax25(address, tp);
+    if ((tp->cb.axp = transport_open_ax25(address, tp))) return tp;
   } else if (!strcmp(protocol, "netrom")) {
     tp->type = TP_NETROM;
-    tp->cp = transport_open_netrom(address, tp);
+    if ((tp->cb.nrp = transport_open_netrom(address, tp))) return tp;
   } else if (!strcmp(protocol, "tcp")) {
     tp->type = TP_TCP;
-    tp->cp = transport_open_tcp(address, tp);
+    if ((tp->cb.tcp = transport_open_tcp(address, tp))) return tp;
   } else
     Net_error = NOPROTO;
-  if (tp->cp) return tp;
   free(tp);
   return 0;
 }
@@ -246,14 +246,14 @@ int transport_recv(struct transport_cb *tp, struct mbuf **bpp, int cnt)
   if dur_timer(&tp->timer) start_timer(&tp->timer);
   switch (tp->type) {
   case TP_AX25:
-    *bpp = recv_ax25(tp->cp, cnt);
+    *bpp = recv_ax25(tp->cb.axp, cnt);
     result = len_p(*bpp);
     break;
   case TP_NETROM:
-    result = recv_nr(tp->cp, bpp, cnt);
+    result = recv_nr(tp->cb.nrp, bpp, cnt);
     break;
   case TP_TCP:
-    result = recv_tcp(tp->cp, bpp, cnt);
+    result = recv_tcp(tp->cb.tcp, bpp, cnt);
     break;
   default:
     result = -1;
@@ -271,11 +271,11 @@ int transport_send(struct transport_cb *tp, struct mbuf *bp)
     convert_eol(&bp, tp->send_mode, &tp->send_char);
   switch (tp->type) {
   case TP_AX25:
-    return send_ax25(tp->cp, bp, PID_NO_L3);
+    return send_ax25(tp->cb.axp, bp, PID_NO_L3);
   case TP_NETROM:
-    return send_nr(tp->cp, bp);
+    return send_nr(tp->cb.nrp, bp);
   case TP_TCP:
-    return send_tcp(tp->cp, bp);
+    return send_tcp(tp->cb.tcp, bp);
   }
   return (-1);
 }
@@ -286,11 +286,11 @@ int transport_send_space(struct transport_cb *tp)
 {
   switch (tp->type) {
   case TP_AX25:
-    return space_ax25(tp->cp);
+    return space_ax25(tp->cb.axp);
   case TP_NETROM:
-    return space_nr(tp->cp);
+    return space_nr(tp->cb.nrp);
   case TP_TCP:
-    return space_tcp(tp->cp);
+    return space_tcp(tp->cb.tcp);
   }
   return (-1);
 }
@@ -309,11 +309,11 @@ int transport_close(struct transport_cb *tp)
 {
   switch (tp->type) {
   case TP_AX25:
-    return disc_ax25(tp->cp);
+    return disc_ax25(tp->cb.axp);
   case TP_NETROM:
-    return close_nr(tp->cp);
+    return close_nr(tp->cb.nrp);
   case TP_TCP:
-    return close_tcp(tp->cp);
+    return close_tcp(tp->cb.tcp);
   }
   return (-1);
 }
@@ -324,13 +324,13 @@ int transport_del(struct transport_cb *tp)
 {
   switch (tp->type) {
   case TP_AX25:
-    del_ax25(tp->cp);
+    del_ax25(tp->cb.axp);
     break;
   case TP_NETROM:
-    del_nr(tp->cp);
+    del_nr(tp->cb.nrp);
     break;
   case TP_TCP:
-    del_tcp(tp->cp);
+    del_tcp(tp->cb.tcp);
     break;
   }
   stop_timer(&tp->timer);

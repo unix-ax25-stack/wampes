@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.h,v 1.9 1993/05/17 13:45:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.h,v 1.10 1994/10/06 16:15:39 deyke Exp $ */
 
 #ifndef _TRANSPORT_H
 #define _TRANSPORT_H
@@ -15,17 +15,26 @@
 #include "timer.h"
 #endif
 
-#define EOL_NONE        0       /* No EOL conversion (binary) */
-#define EOL_CR          1       /* EOL is "\r" */
-#define EOL_LF          2       /* EOL is "\n" */
-#define EOL_CRLF        3       /* EOL is "\r\n" */
+enum e_transporteol {
+  EOL_NONE,                     /* No EOL conversion (binary) */
+  EOL_CR,                       /* EOL is "\r" */
+  EOL_LF,                       /* EOL is "\n" */
+  EOL_CRLF                      /* EOL is "\r\n" */
+};
+
+enum e_transporttype {
+  TP_AX25,
+  TP_NETROM,
+  TP_TCP
+};
 
 struct transport_cb {
-  int type;                     /* Connection type */
-#define TP_AX25         1
-#define TP_NETROM       2
-#define TP_TCP          3
-  void *cp;                     /* Pointer to connection control block */
+  enum e_transporttype type;    /* Connection type */
+  union {                       /* Pointer to connection control block */
+    struct ax25_cb *axp;
+    struct circuit *nrp;
+    struct tcb *tcp;
+  } cb;
   void (*r_upcall)(struct transport_cb *tp, int cnt);
 				/* Called when data arrives */
   void (*t_upcall)(struct transport_cb *tp, int cnt);
@@ -36,9 +45,9 @@ struct transport_cb {
 				 * application control block
 				 */
   struct timer timer;           /* No activity timer */
-  int recv_mode;                /* Recv EOL mode */
+  enum e_transporteol recv_mode;/* Recv EOL mode */
   int recv_char;                /* Last char received */
-  int send_mode;                /* Send EOL mode */
+  enum e_transporteol send_mode;/* Send EOL mode */
   int send_char;                /* Last char sent */
 };
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.13 1994/02/28 11:55:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.14 1994/10/06 16:15:21 deyke Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -30,8 +30,8 @@ int32 Blimit = 16;              /* Retransmission backoff limit */
 
 /* Look up entry in connection table */
 struct ax25_cb *
-find_ax25(addr)
-register char *addr;
+find_ax25(
+register char *addr)
 {
 	register struct ax25_cb *axp;
 	struct ax25_cb *axlast = NULLAX25;
@@ -55,8 +55,8 @@ register char *addr;
 
 /* Remove entry from connection table */
 void
-del_ax25(conn)
-struct ax25_cb *conn;
+del_ax25(
+struct ax25_cb *conn)
 {
 	int i;
 	register struct ax25_cb *axp;
@@ -94,8 +94,8 @@ struct ax25_cb *conn;
  * is still responsible for filling in the reply address
  */
 struct ax25_cb *
-cr_ax25(addr)
-char *addr;
+cr_ax25(
+char *addr)
 {
 	register struct ax25_cb *axp;
 
@@ -149,9 +149,9 @@ char *addr;
  *   Return -1 on error, 0 if OK
  */
 int
-setcall(out,call)
-char *out;
-char *call;
+setcall(
+char *out,
+char *call)
 {
 	int csize;
 	unsigned ssid;
@@ -197,9 +197,9 @@ char *call;
 	return 0;
 }
 int
-addreq(a,b)
-const char *a;
-const char *b;
+addreq(
+const char *a,
+const char *b)
 {
 	if (*a++ != *b++) return 0;
 	if (*a++ != *b++) return 0;
@@ -213,8 +213,8 @@ const char *b;
  * NULLIF otherwise.
  */
 struct iface *
-ismyax25addr(addr)
-const char *addr;
+ismyax25addr(
+const char *addr)
 {
 	register struct iface *ifp;
 
@@ -224,9 +224,9 @@ const char *addr;
 	return ifp;
 }
 void
-addrcp(to,from)
-char *to;
-const char *from;
+addrcp(
+char *to,
+const char *from)
 {
 	*to++ = *from++;
 	*to++ = *from++;
@@ -238,9 +238,9 @@ const char *from;
 }
 /* Convert encoded AX.25 address to printable string */
 char *
-pax25(e,addr)
-char *e;
-char *addr;
+pax25(
+char *e,
+char *addr)
 {
 	register int i;
 	char c;
@@ -264,8 +264,8 @@ char *addr;
  * poll/final bit after determining the general class (I/S/U) of the frame
  */
 uint16
-ftype(control)
-register int control;
+ftype(
+register int control)
 {
 	if((control & 1) == 0)  /* An I-frame is an I-frame... */
 		return I;
@@ -276,10 +276,10 @@ register int control;
 }
 
 int
-ax25args_to_hdr(argc,argv,hdr)
-int argc;
-char *argv[];
-struct ax25 *hdr;
+ax25args_to_hdr(
+int argc,
+char *argv[],
+struct ax25 *hdr)
 {
   hdr->ndigis = hdr->nextdigi = 0;
   if (argc < 1) {
@@ -308,8 +308,8 @@ struct ax25 *hdr;
 }
 
 char *
-ax25hdr_to_string(hdr)
-struct ax25 *hdr;
+ax25hdr_to_string(
+struct ax25 *hdr)
 {
 
   char *p;

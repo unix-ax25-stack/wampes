@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.20 1994/05/15 16:54:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.21 1994/10/06 16:15:28 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -31,9 +31,9 @@
 #endif
 
 #ifdef RISCiX
-void setstack(uint16 *);
+EXTERN_C void setstack(uint16 *);
 #else
-void setstack(void);
+EXTERN_C void setstack(void);
 #endif
 
 #define DISABLE()
@@ -91,8 +91,8 @@ static void aix_longjmp(jmp_buf jmpenv, int val)
  * Note that standard I/O is NOT set up here.
  */
 struct proc *
-mainproc(name)
-char *name;
+mainproc(
+char *name)
 {
 	register struct proc *pp;
 
@@ -122,17 +122,18 @@ char *name;
  */
 #pragma OPTIMIZE OFF
 struct proc *
-newproc(name,stksize,pc,iarg,parg1,parg2,freeargs)
-char *name;             /* Arbitrary user-assigned name string */
-unsigned int stksize;   /* Stack size in words to allocate */
-void (*pc)();           /* Initial execution address */
-int iarg;               /* Integer argument (argc) */
-void *parg1;            /* Generic pointer argument #1 (argv) */
-void *parg2;            /* Generic pointer argument #2 (session ptr) */
-int freeargs;           /* If set, free arg list on parg1 at termination */
+newproc(
+char *name,             /* Arbitrary user-assigned name string */
+unsigned int stksize,   /* Stack size in words to allocate */
+void (*pc)(int,void *,void *),
+			/* Initial execution address */
+int iarg,               /* Integer argument (argc) */
+void *parg1,            /* Generic pointer argument #1 (argv) */
+void *parg2,            /* Generic pointer argument #2 (session ptr) */
+int freeargs)           /* If set, free arg list on parg1 at termination */
 {
 	static struct proc *pp;
-	static void (*func)();
+	static void (*func)(int,void *,void *);
 	jmp_buf jmpenv;
 	int i;
 #ifdef __sgi
@@ -255,8 +256,8 @@ int freeargs;           /* If set, free arg list on parg1 at termination */
  * messy situations that would otherwise occur, like freeing your own stack.
  */
 void
-killproc(pp)
-register struct proc *pp;
+killproc(
+register struct proc *pp)
 {
 	char **argv;
 
@@ -290,7 +291,7 @@ register struct proc *pp;
 #endif
 	/* Free allocated memory resources */
 	if(pp->flags & P_FREEARGS){
-		argv = pp->parg1;
+		argv = (char **) pp->parg1;
 		while(pp->iarg-- != 0)
 			free(*argv++);
 		free(pp->parg1);
@@ -303,7 +304,7 @@ register struct proc *pp;
  * Automatically called when a process function returns. Does not return.
  */
 void
-killself()
+killself(void)
 {
 	register struct mbuf *bp;
 
@@ -317,10 +318,10 @@ killself()
 }
 /* Process used by processes that want to kill themselves */
 void
-killer(i,v1,v2)
-int i;
-void *v1;
-void *v2;
+killer(
+int i,
+void *v1,
+void *v2)
 {
 	struct proc *pp;
 	struct mbuf *bp;
@@ -338,8 +339,8 @@ void *v2;
 
 /* Inhibit a process from running */
 void
-suspend(pp)
-struct proc *pp;
+suspend(
+struct proc *pp)
 {
 	if(pp == NULLPROC)
 		return;
@@ -353,8 +354,8 @@ struct proc *pp;
 }
 /* Restart suspended process */
 void
-resume(pp)
-struct proc *pp;
+resume(
+struct proc *pp)
 {
 	if(pp == NULLPROC)
 		return;
@@ -368,9 +369,9 @@ struct proc *pp;
  * called from an interrupt handler.
  */
 void
-alert(pp,val)
-struct proc *pp;
-int val;
+alert(
+struct proc *pp,
+int val)
 {
 	if(pp == NULLPROC)
 		return;
@@ -406,8 +407,8 @@ int val;
  */
 #pragma OPTIMIZE OFF
 int
-pwait(event)
-void *event;
+pwait(
+void *event)
 {
 	register struct proc *oldproc;
 	int tmp;
@@ -524,9 +525,9 @@ void *event;
 #pragma OPTIMIZE ON
 
 void
-Xpsignal(event,n)
-void *event;
-int n;
+Xpsignal(
+void *event,
+int n)
 {
 	static void *lastevent;
 
@@ -560,7 +561,7 @@ int n;
 	Ksig.nentries++;
 }
 static int
-procsigs()
+procsigs(void)
 {
 	int cnt = 0;
 	int tmp;
@@ -591,9 +592,9 @@ procsigs()
  * against interrupts. This also helps interrupt latencies considerably.
  */
 static void
-psig(event,n)
-void *event;    /* Event to signal */
-int n;          /* Max number of processes to wake up */
+psig(
+void *event,    /* Event to signal */
+int n)          /* Max number of processes to wake up */
 {
 	register struct proc *pp;
 	struct proc *pnext;
@@ -653,17 +654,17 @@ int n;          /* Max number of processes to wake up */
 
 /* Rename a process */
 void
-chname(pp,newname)
-struct proc *pp;
-char *newname;
+chname(
+struct proc *pp,
+char *newname)
 {
 	free(pp->name);
 	pp->name = strdup(newname);
 }
 /* Remove a process entry from the appropriate table */
 static void
-delproc(entry)
-register struct proc *entry;    /* Pointer to entry */
+delproc(
+register struct proc *entry)    /* Pointer to entry */
 {
 	if(entry == NULLPROC)
 		return;
@@ -689,8 +690,8 @@ register struct proc *entry;    /* Pointer to entry */
 }
 /* Append proc entry to end of appropriate list */
 static void
-addproc(entry)
-register struct proc *entry;    /* Pointer to entry */
+addproc(
+register struct proc *entry)    /* Pointer to entry */
 {
 	register struct proc *pp;
 	struct proc **head;

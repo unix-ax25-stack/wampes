@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.8 1994/10/02 17:55:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.9 1994/10/06 16:15:24 deyke Exp $ */
 
 /* Stuff common to both the FTP server and client */
 #include <stdio.h>
@@ -12,9 +12,9 @@
 
 /* FTP Data channel Receive upcall handler */
 void
-ftpdr(tcb,cnt)
-struct tcb *tcb;
-int cnt;
+ftpdr(
+struct tcb *tcb,
+int cnt)
 {
 	register struct ftp *ftp;
 	struct mbuf *bp;
@@ -49,9 +49,9 @@ int cnt;
 }
 /* FTP Data channel Transmit upcall handler */
 void
-ftpdt(tcb,cnt)
-struct tcb *tcb;
-int cnt;
+ftpdt(
+struct tcb *tcb,
+int cnt)
 {
 	struct ftp *ftp;
 	struct mbuf *bp;
@@ -104,14 +104,14 @@ int cnt;
 }
 /* Allocate an FTP control block */
 struct ftp *
-ftp_create(bufsize)
-unsigned bufsize;
+ftp_create(
+unsigned bufsize)
 {
 	register struct ftp *ftp;
 
 	if((ftp = (struct ftp *)calloc(1,sizeof (struct ftp))) == NULLFTP)
 		return NULLFTP;
-	if(bufsize != 0 && (ftp->buf = malloc(bufsize)) == NULLCHAR){
+	if(bufsize != 0 && (ftp->buf = (char *) malloc(bufsize)) == NULLCHAR){
 		printf("called by ftp_create\n");
 		ftp_delete(ftp);
 		printf("called by ftp_create\n");
@@ -123,8 +123,8 @@ unsigned bufsize;
 }
 /* Free resources, delete control block */
 void
-ftp_delete(ftp)
-register struct ftp *ftp;
+ftp_delete(
+register struct ftp *ftp)
 {
 	if(ftp->fp != NULLFILE && ftp->fp != stdout)
 		fclose(ftp->fp);

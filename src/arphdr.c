@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arphdr.c,v 1.4 1993/05/17 13:44:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arphdr.c,v 1.5 1994/10/06 16:15:19 deyke Exp $ */
 
 /* ARP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -9,8 +9,8 @@
 
 /* Copy a host format arp structure into mbuf for transmission */
 struct mbuf *
-htonarp(arp)
-register struct arp *arp;
+htonarp(
+register struct arp *arp)
 {
 	struct mbuf *bp;
 	register char *buf;
@@ -40,9 +40,9 @@ register struct arp *arp;
 }
 /* Convert an incoming ARP packet into a host-format structure */
 int
-ntoharp(arp,bpp)
-register struct arp *arp;
-struct mbuf **bpp;
+ntoharp(
+register struct arp *arp,
+struct mbuf **bpp)
 {
 	if(arp == (struct arp *)NULL || bpp == NULLBUFP)
 		return -1;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.20 1994/09/19 17:08:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.21 1994/10/06 16:15:30 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -125,7 +125,7 @@ static int domail_timer(int argc, char *argv[], void *p)
 	    dur_timer(&Mail_timer) / 1000);
     return 0;
   }
-  Mail_timer.func = (void (*)()) mail_tick;
+  Mail_timer.func = (void (*)(void *)) mail_tick;
   Mail_timer.arg = 0;
   set_timer(&Mail_timer, atol(argv[1]) * 1000L);
   start_timer(&Mail_timer);
@@ -187,7 +187,7 @@ static void read_configuration(void)
     for (mailer = Mailers; mailer->name; mailer++)
       if (!strcmp(mailer->name, mailername)) break;
     if (!mailer->name) continue;
-    sp = (struct mailsys *) calloc(1, sizeof(*sp));
+    sp = (struct mailsys *) calloc(1, sizeof(struct mailsys));
     sp->sysname = strdup(sysname);
     sp->mailer = mailer;
     sp->protocol = strdup(protocol);
@@ -196,7 +196,7 @@ static void read_configuration(void)
     Systems = sp;
   }
   fclose(fp);
-  lastmtime = statbuf.st_mtime;
+  lastmtime = (int) statbuf.st_mtime;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -239,7 +239,7 @@ static void mail_tick(char *sysname)
     cnt = 0;
     for (dp = readdir(dirp); dp; dp = readdir(dirp)) {
       if (*dp->d_name != 'C') continue;
-      p = (struct filelist *) malloc(sizeof(*p));
+      p = (struct filelist *) malloc(sizeof(struct filelist));
       strcpy(p->name, dp->d_name);
       if (!filelist || strcmp(p->name, filelist->name) < 0) {
 	p->next = filelist;
@@ -306,7 +306,7 @@ static void mail_tick(char *sysname)
 	sprintf(mj.return_reason, "520 %s... Cannot connect for %ld days\n", sp->sysname, RETURNTIME / (60L*60*24));
 	mail_return(&mj);
       } else {
-	jp = (struct mailjob *) malloc(sizeof(*jp));
+	jp = (struct mailjob *) malloc(sizeof(struct mailjob));
 	*jp = mj;
 	if (!sp->jobs)
 	  sp->jobs = jp;

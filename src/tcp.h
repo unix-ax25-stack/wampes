@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.13 1993/05/17 13:45:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.14 1994/10/06 16:15:36 deyke Exp $ */
 
 #ifndef _TCP_H
 #define _TCP_H
@@ -264,7 +264,7 @@ void send_syn(struct tcb *tcb);
 void tcp_input(struct iface *iface,struct ip *ip,struct mbuf *bp,
 	int rxbroadcast);
 void tcp_icmp(int32 icsource,int32 source,int32 dest,
-	int  type,int  code,struct mbuf **bpp);
+	char type,char code,struct mbuf **bpp);
 
 /* In tcpsubr.c: */
 void close_self(struct tcb *tcb,int reason);
@@ -294,7 +294,7 @@ int del_tcp(struct tcb *tcb);
 int kick(int32 addr);
 int kick_tcp(struct tcb *tcb);
 struct tcb *open_tcp(struct socket *lsocket,struct socket *fsocket,
-	int mode,int    window,
+	int mode,uint16 window,
 	void (*r_upcall)(struct tcb *tcb,int32 cnt),
 	void (*t_upcall)(struct tcb *tcb,int32 cnt),
 	void (*s_upcall)(struct tcb *tcb,int old,int new),
@@ -304,7 +304,7 @@ void reset_all(void);
 void reset_tcp(struct tcb *tcb);
 long send_tcp(struct tcb *tcb,struct mbuf *bp);
 int space_tcp(struct tcb *tcb);
-char *tcp_port(int    n);
+char *tcp_port(uint16 n);
 int tcpval(struct tcb *tcb);
 
 /* In tcpsocket.c: */

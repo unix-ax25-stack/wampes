@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.34 1994/09/05 12:47:29 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.35 1994/10/06 16:15:47 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -18,6 +18,10 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#ifdef __cplusplus
+extern "C" int putpwent(const struct passwd *p, FILE *f);
+#endif
 
 #include "bbs.h"
 #include "calc_crc.h"
@@ -107,7 +111,7 @@ static void *allocate(size_t size)
 	errno = ENOMEM;
 	terminate("allocate()");
       }
-      if ((freespace = malloc(allocsize)) != NULL) {
+      if ((freespace = (char *) malloc(allocsize)) != NULL) {
 	freesize = allocsize;
 	heapsize += allocsize;
 	break;
@@ -143,7 +147,7 @@ static const char *strsave(const char *s)
        p = p->next)
     ;
   if (!p) {
-    p = allocate(sizeof(struct strings *) + strlen(s) + 1);
+    p = (struct strings *) allocate(sizeof(struct strings *) + strlen(s) + 1);
     strcpy(p->s, s);
     p->next = strings[hash];
     strings[hash] = p;
@@ -263,7 +267,7 @@ static struct user *getup(const char *call, int create)
        up = up->next)
     ;
   if (create && !up) {
-    up = allocate(sizeof(*up));
+    up = (struct user *) allocate(sizeof(struct user));
     *up = null_user;
     up->call = strsave(call);
     up->next = users[hash];
@@ -278,12 +282,12 @@ static FILE *fopenexcl(const char *path)
 {
 
   FILE * fp;
-  int fd, try;
+  int fd, cnt;
 
-  for (try = 1; ; try++) {
+  for (cnt = 1; ; cnt++) {
     if ((fd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0644)) >= 0) break;
-    if (try >= 10) terminate(path);
-    sleep(try);
+    if (cnt >= 10) terminate(path);
+    sleep(cnt);
   }
   lockfile = path;
   fp = fdopen(fd, "w");

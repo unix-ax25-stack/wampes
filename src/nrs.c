@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.12 1993/05/17 13:45:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.13 1994/10/06 16:15:33 deyke Exp $ */
 
 /* This module implements the serial line framing method used by
  * net/rom nodes.  This allows the net/rom software to talk to
@@ -19,14 +19,14 @@
 #include "commands.h"
 
 static struct mbuf *nrs_encode(struct mbuf *bp);
-static struct mbuf *nrs_decode(int dev,int  c);
+static struct mbuf *nrs_decode(int dev,char c);
 
 /* control structures, sort of overlayed on async control blocks */
 struct nrs Nrs[ASY_MAX];
 
 int
-nrs_init(ifp)
-struct iface *ifp;
+nrs_init(
+struct iface *ifp)
 {
 	int xdev;
 	struct nrs *np;
@@ -46,7 +46,7 @@ struct iface *ifp;
 	ifp->ioctl = asy_ioctl;
 	ifp->raw = nrs_raw;
 
-	ifp->hwaddr = mallocw(AXALEN);
+	ifp->hwaddr = (char *) mallocw(AXALEN);
 	memcpy(ifp->hwaddr,Mycall,AXALEN);
 	ifp->xdev = xdev;
 	np->iface = ifp;
@@ -62,8 +62,8 @@ struct iface *ifp;
 	return 0;
 }
 int
-nrs_free(ifp)
-struct iface *ifp;
+nrs_free(
+struct iface *ifp)
 {
 	if(Nrs[ifp->xdev].iface == ifp)
 		Nrs[ifp->xdev].iface = NULLIF;
@@ -71,9 +71,9 @@ struct iface *ifp;
 }
 /* Send a raw net/rom serial frame */
 int
-nrs_raw(iface,bp)
-struct iface *iface;
-struct mbuf *bp;
+nrs_raw(
+struct iface *iface,
+struct mbuf *bp)
 {
 	struct mbuf *bp1;
 
@@ -90,8 +90,8 @@ struct mbuf *bp;
 
 /* Encode a packet in net/rom serial format */
 static struct mbuf *
-nrs_encode(bp)
-struct mbuf *bp;
+nrs_encode(
+struct mbuf *bp)
 {
 	struct mbuf *lbp;       /* Mbuf containing line-ready packet */
 	register char *cp;
@@ -137,9 +137,9 @@ struct mbuf *bp;
  * When a buffer is complete, return it; otherwise NULLBUF
  */
 static struct mbuf *
-nrs_decode(dev,c)
-int dev;        /* net/rom unit number */
-char c;         /* Incoming character */
+nrs_decode(
+int dev,        /* net/rom unit number */
+char c)         /* Incoming character */
 {
 	struct mbuf *bp;
 	register struct nrs *sp;
@@ -222,8 +222,8 @@ char c;         /* Incoming character */
 
 /* Process net/rom serial line I/O */
 void
-nrs_recv(iface)
-struct iface *iface;
+nrs_recv(
+struct iface *iface)
 {
 
 	char *cp,buf[4096];
@@ -247,10 +247,10 @@ struct iface *iface;
 }
 /* donrstat:  display status of active net/rom serial interfaces */
 int
-donrstat(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+donrstat(
+int argc,
+char *argv[],
+void *p)
 {
 	register struct nrs *np;
 	register int i;

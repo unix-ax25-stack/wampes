@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.14 1994/09/05 12:47:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.15 1994/10/06 16:15:27 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -28,6 +28,8 @@
 #include "pktdrvr.h"
 #include "cmdparse.h"
 #include "hpux.h"
+
+struct route *rt_add(int32 target, unsigned int bits, int32 gateway, struct iface *iface, int32 metric, int32 ttl, char private);
 
 #define MAX_FRAME       2048
 
@@ -62,7 +64,7 @@ static int ipip_send(struct mbuf *data, struct iface *ifp, int32 gateway, int to
     return (-1);
   }
 
-  edv = ifp->edv;
+  edv = (struct edv_t *) ifp->edv;
 
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = htonl(gateway);
@@ -89,8 +91,8 @@ static void ipip_receive(void *argp)
   struct ip *ipptr;
   struct sockaddr_in addr;
 
-  ifp = argp;
-  edv = ifp->edv;
+  ifp = (struct iface *) argp;
+  edv = (struct edv_t *) ifp->edv;
   addrlen = sizeof(addr);
   l = recvfrom(edv->fd, bufptr = buf, sizeof(buf), 0, (struct sockaddr *) & addr, &addrlen);
   if (edv->type == USE_IP) {
@@ -170,7 +172,7 @@ int ipip_attach(int argc, char *argv[], void *p)
     }
   }
 
-  ifp = callocw(1, sizeof(*ifp));
+  ifp = (struct iface *) callocw(1, sizeof(struct iface));
   ifp->name = strdup(ifname);
   ifp->addr = Ip_addr;
   ifp->broadcast = 0xffffffffL;
@@ -179,7 +181,7 @@ int ipip_attach(int argc, char *argv[], void *p)
   ifp->flags = NO_RT_ADD;
   setencap(ifp, "None");
 
-  edv = (struct edv_t *) malloc(sizeof(*edv));
+  edv = (struct edv_t *) malloc(sizeof(struct edv_t));
   edv->type = type;
   edv->port = port;
   edv->fd = fd;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.8 1994/07/13 15:48:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.9 1994/10/06 16:15:27 deyke Exp $ */
 
 /* IP header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,10 +13,10 @@
 #include "netuser.h"
 
 void
-ip_dump(fp,bpp,check)
-FILE *fp;
-struct mbuf **bpp;
-int check;
+ip_dump(
+FILE *fp,
+struct mbuf **bpp,
+int check)
 {
 	struct ip ip;
 	uint16 ip_len;

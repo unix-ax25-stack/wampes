@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.63 1994/10/02 17:55:26 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.64 1994/10/06 16:15:16 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -200,20 +200,20 @@ static void dummy(void)
 static int is_string_unique(const char *string)
 {
 
-  struct string {
-    struct string *s_next;
+  struct string_t {
+    struct string_t *s_next;
     long s_time;
     unsigned char s_digest[16];
   };
 
   MD5_CTX mdContext;
   int i;
-  static struct string *strings[256];
-  static struct string *stringstail[256];
-  struct string *sp;
+  static struct string_t *strings[256];
+  static struct string_t *stringstail[256];
+  struct string_t *sp;
 
   MD5Init(&mdContext);
-  MD5Update(&mdContext, string, strlen(string));
+  MD5Update(&mdContext, (unsigned char *) string, strlen(string));
   MD5Final(&mdContext);
   i = mdContext.digest[0] & 0xff;
 
@@ -226,7 +226,7 @@ static int is_string_unique(const char *string)
     if (!memcmp((char *) sp->s_digest, (char *) mdContext.digest, sizeof(mdContext.digest)))
       return 0;
 
-  sp = (struct string *) malloc(sizeof(*sp));
+  sp = (struct string_t *) malloc(sizeof(struct string_t));
   sp->s_next = 0;
   sp->s_time = currtime;
   memcpy((char *) sp->s_digest, (char *) mdContext.digest, sizeof(mdContext.digest));
@@ -276,7 +276,7 @@ static struct host *hostptr(const char *name)
     hp = *hpp;
     if (!hp || (r = strcmp(hp->h_name, name)) >= 0) {
       if (!hp || r) {
-	hp = (struct host *) calloc(1, sizeof(*hp));
+	hp = (struct host *) calloc(1, sizeof(struct host));
 	hp->h_name = strdup((char *) name);
 	hp->h_next = *hpp;
 	*hpp = hp;
@@ -291,7 +291,7 @@ static struct host *hostptr(const char *name)
 static struct user *userptr(const char *name, struct host *hp)
 {
 
-  int r;
+  int r = 0;
   struct user **upp;
   struct user *up;
 
@@ -301,7 +301,7 @@ static struct user *userptr(const char *name, struct host *hp)
 	(r = strcmp(up->u_name, name)) > 0 ||
 	(!r && (r = strcmp(up->u_host->h_name, hp->h_name)) >= 0)) {
       if (!up || r) {
-	up = (struct user *) calloc(1, sizeof(*up));
+	up = (struct user *) calloc(1, sizeof(struct user));
 	up->u_name = strdup((char *) name);
 	up->u_host = hp;
 	up->u_channel = up->u_oldchannel = -1;
@@ -351,7 +351,7 @@ static void send_string(struct link *lp, const char *string)
   if (!*string) return;
   if (debug) trace(1, lp, string);
   len = strlen(string);
-  mp = (struct mbuf *) malloc(sizeof(*mp) + len);
+  mp = (struct mbuf *) malloc(sizeof(struct mbuf) + len);
   mp->m_next = 0;
   memcpy(mp->m_data = (char *) (mp + 1), string, mp->m_cnt = len);
   if (lp->l_sndq) {
@@ -359,7 +359,7 @@ static void send_string(struct link *lp, const char *string)
     p->m_next = mp;
   } else {
     lp->l_sndq = mp;
-    writefnc[lp->l_fd] = (void (*)()) link_send;
+    writefnc[lp->l_fd] = (void (*)(void *)) link_send;
     writearg[lp->l_fd] = lp;
     FD_SET(lp->l_fd, &chkwrite);
   }
@@ -541,12 +541,12 @@ static void accept_connect_request(const int *flistenptr)
     close(fd);
     return;
   }
-  lp = (struct link *) calloc(1, sizeof(*lp));
+  lp = (struct link *) calloc(1, sizeof(struct link));
   lp->l_fd = fd;
   lp->l_stime = lp->l_mtime = currtime;
   lp->l_next = links;
   links = lp;
-  readfnc[fd] = (void (*)()) link_recv;
+  readfnc[fd] = (void (*)(void *)) link_recv;
   readarg[fd] = lp;
   FD_SET(fd, &chkread);
   if (maxfd < fd) maxfd = fd;
@@ -778,12 +778,12 @@ static void connect_peers(void)
       close(fd);
       continue;
     }
-    lp = pp->p_link = (struct link *) calloc(1, sizeof(*lp));
+    lp = pp->p_link = (struct link *) calloc(1, sizeof(struct link));
     lp->l_fd = fd;
     lp->l_stime = lp->l_mtime = currtime;
     lp->l_next = links;
     links = lp;
-    readfnc[fd] = (void (*)()) link_recv;
+    readfnc[fd] = (void (*)(void *)) link_recv;
     readarg[fd] = lp;
     FD_SET(fd, &chkread);
     if (maxfd < fd) maxfd = fd;
@@ -1116,7 +1116,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.63 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.64 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1456,7 +1456,7 @@ static void read_configuration(void)
       }
       sock_name = getarg(NULLCHAR, 0);
       if (*sock_name) {
-	pp = (struct peer *) calloc(1, sizeof(*pp));
+	pp = (struct peer *) calloc(1, sizeof(struct peer));
 	pp->p_socket = strdup(sock_name);
 	pp->p_command = strdup(getarg(NULLCHAR, 1));
 	pp->p_stime = currtime;
@@ -1662,7 +1662,7 @@ int main(int argc, char **argv)
 	close(sp->s_fd);
 	sp->s_fd = -1;
       } else {
-	readfnc[sp->s_fd] = (void (*)()) accept_connect_request;
+	readfnc[sp->s_fd] = (void (*)(void *)) accept_connect_request;
 	readarg[sp->s_fd] = &sp->s_fd;
 	FD_SET(sp->s_fd, &chkread);
 	if (maxfd < sp->s_fd) maxfd = sp->s_fd;

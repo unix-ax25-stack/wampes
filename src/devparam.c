@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/devparam.c,v 1.3 1992/01/08 13:45:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/devparam.c,v 1.4 1994/10/06 16:15:23 deyke Exp $ */
 
 #include <string.h>
 #include <ctype.h>
@@ -38,8 +38,8 @@ static struct param Parms[] = {
  * Used by the various ioctl routines and by KISS TNC commands
  */
 int
-devparam(s)
-char *s;
+devparam(
+char *s)
 {
 	int len;
 	struct param *sp;
@@ -58,8 +58,8 @@ char *s;
 }
 
 char *
-parmname(n)
-int n;
+parmname(
+int n)
 {
 	struct param *sp;
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.10 1994/09/05 12:47:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.11 1994/10/06 16:15:19 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -46,7 +46,7 @@ void arp_savefile(void)
   switch (timer.state) {
   case TIMER_STOP:
     if (!Debug) {
-      timer.func = (void (*)()) arp_savefile;
+      timer.func = (void (*)(void *)) arp_savefile;
       timer.arg = 0;
       set_timer(&timer, ARP_SAVETIME);
       start_timer(&timer);

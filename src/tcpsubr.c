@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.14 1994/04/13 09:51:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.15 1994/10/06 16:15:37 deyke Exp $ */
 
 /* Low level TCP routines:
  *  control block management
@@ -71,8 +71,8 @@ struct mib_entry Tcp_mib[] = {
  * Also move the entry to the top of the list to speed future searches.
  */
 struct tcb *
-lookup_tcb(conn)
-register struct connection *conn;
+lookup_tcb(
+register struct connection *conn)
 {
 	register struct tcb *tcb;
 	struct tcb *tcblast = NULLTCB;
@@ -98,8 +98,8 @@ register struct connection *conn;
 
 /* Create a TCB, return pointer. Return pointer if TCB already exists. */
 struct tcb *
-create_tcb(conn)
-struct connection *conn;
+create_tcb(
+struct connection *conn)
 {
 	register struct tcb *tcb;
 	struct tcp_rtt *tp;
@@ -130,9 +130,9 @@ struct connection *conn;
 
 /* Close our TCB */
 void
-close_self(tcb,reason)
-register struct tcb *tcb;
-int reason;
+close_self(
+register struct tcb *tcb,
+int reason)
 {
 	struct reseq *rp1;
 	register struct reseq *rp;
@@ -158,8 +158,8 @@ int reason;
  * false otherwise
  */
 int
-seq_within(x,low,high)
-register int32 x,low,high;
+seq_within(
+register int32 x,register int32 low,register int32 high)
 {
 	if(low <= high){
 		if(low <= x && x <= high)
@@ -171,40 +171,40 @@ register int32 x,low,high;
 	return 0;
 }
 int
-seq_lt(x,y)
-register int32 x,y;
+seq_lt(
+register int32 x,register int32 y)
 {
 	int32 bugfix;
 	return (long)(bugfix=x-y) < 0;
 }
 #ifdef  notdef
 int
-seq_le(x,y)
-register int32 x,y;
+seq_le(
+register int32 x,register int32 y)
 {
 	int32 bugfix;
 	return (long)(bugfix=x-y) <= 0;
 }
 #endif  /* notdef */
 int
-seq_gt(x,y)
-register int32 x,y;
+seq_gt(
+register int32 x,register int32 y)
 {
 	int32 bugfix;
 	return (long)(bugfix=x-y) > 0;
 }
 int
-seq_ge(x,y)
-register int32 x,y;
+seq_ge(
+register int32 x,register int32 y)
 {
 	int32 bugfix;
 	return (long)(bugfix=x-y) >= 0;
 }
 
 void
-setstate(tcb,newstate)
-register struct tcb *tcb;
-register int newstate;
+setstate(
+register struct tcb *tcb,
+register int newstate)
 {
 	register char oldstate;
 
@@ -270,9 +270,9 @@ register int newstate;
  * its round trip estimate.
  */
 void
-rtt_add(addr,rtt)
-int32 addr;             /* Destination IP address */
-int32 rtt;
+rtt_add(
+int32 addr,             /* Destination IP address */
+int32 rtt)
 {
 	register struct tcp_rtt *tp;
 	register struct tcp_rtt *pp;
@@ -294,7 +294,7 @@ int32 rtt;
 		tp->mdev = ((DGAIN-1)*tp->mdev + abserr + (DGAIN/2)) >> LDGAIN;
 		return;
 	    }
-	tp = (struct tcp_rtt *) malloc(sizeof(*tp));
+	tp = (struct tcp_rtt *) malloc(sizeof(struct tcp_rtt));
 	tp->addr = addr;
 	tp->srtt = rtt;
 	tp->mdev = 0;
@@ -302,8 +302,8 @@ int32 rtt;
 	Tcp_rtt = tp;
 }
 struct tcp_rtt *
-rtt_get(addr)
-int32 addr;
+rtt_get(
+int32 addr)
 {
 	register struct tcp_rtt *tp;
 	register struct tcp_rtt *pp;
@@ -328,8 +328,8 @@ int32 addr;
  * also crunched.
  */
 void
-tcp_garbage(red)
-int red;
+tcp_garbage(
+int red)
 {
 	register struct tcb *tcb;
 	struct reseq *rp,*rp1;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.19 1994/05/08 11:00:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.20 1994/10/06 16:15:37 deyke Exp $ */
 
 /* User calls to TCP
  * Copyright 1991 Phil Karn, KA9Q
@@ -18,16 +18,19 @@
 uint16 Tcp_window = DEF_WND;
 
 struct tcb *
-open_tcp(lsocket,fsocket,mode,window,r_upcall,t_upcall,s_upcall,tos,user)
-struct socket *lsocket; /* Local socket */
-struct socket *fsocket; /* Remote socket */
-int mode;               /* Active/passive/server */
-uint16 window;          /* Receive window (and send buffer) sizes */
-void (*r_upcall)();     /* Function to call when data arrives */
-void (*t_upcall)();     /* Function to call when ok to send more data */
-void (*s_upcall)();     /* Function to call when connection state changes */
-int tos;
-int user;               /* User linkage area */
+open_tcp(
+struct socket *lsocket, /* Local socket */
+struct socket *fsocket, /* Remote socket */
+int mode,               /* Active/passive/server */
+uint16 window,          /* Receive window (and send buffer) sizes */
+void (*r_upcall)(struct tcb *,int32),
+			/* Function to call when data arrives */
+void (*t_upcall)(struct tcb *,int32),
+			/* Function to call when ok to send more data */
+void (*s_upcall)(struct tcb *,int,int),
+			/* Function to call when connection state changes */
+int tos,
+int user)               /* User linkage area */
 {
 	struct connection conn;
 	register struct tcb *tcb;
@@ -84,9 +87,9 @@ int user;               /* User linkage area */
 }
 /* User send routine */
 long
-send_tcp(tcb,bp)
-register struct tcb *tcb;
-struct mbuf *bp;
+send_tcp(
+register struct tcb *tcb,
+struct mbuf *bp)
 {
 	int32 cnt;
 
@@ -134,8 +137,8 @@ struct mbuf *bp;
 
 /*---------------------------------------------------------------------------*/
 
-int space_tcp(tcb)
-struct tcb *tcb;
+int space_tcp(
+struct tcb *tcb)
 {
   int cnt;
 
@@ -169,10 +172,10 @@ struct tcb *tcb;
 
 /* User receive routine */
 int32
-recv_tcp(tcb,bpp,cnt)
-register struct tcb *tcb;
-struct mbuf **bpp;
-int32 cnt;
+recv_tcp(
+register struct tcb *tcb,
+struct mbuf **bpp,
+int32 cnt)
 {
 	if(tcb == NULLTCB || bpp == (struct mbuf **)NULL){
 		Net_error = INVALID;
@@ -229,8 +232,8 @@ int32 cnt;
  * indefinitely.
  */
 int
-close_tcp(tcb)
-register struct tcb *tcb;
+close_tcp(
+register struct tcb *tcb)
 {
 	if(tcb == NULLTCB){
 		Net_error = INVALID;
@@ -271,8 +274,8 @@ register struct tcb *tcb;
  * user only in response to a state change upcall to TCP_CLOSED state.
  */
 int
-del_tcp(conn)
-struct tcb *conn;
+del_tcp(
+struct tcb *conn)
 {
 	register struct tcb *tcb;
 	struct tcb *tcblast = NULLTCB;
@@ -305,8 +308,8 @@ struct tcb *conn;
 }
 /* Return 1 if arg is a valid TCB, 0 otherwise */
 int
-tcpval(tcb)
-struct tcb *tcb;
+tcpval(
+struct tcb *tcb)
 {
 	register struct tcb *tcb1;
 
@@ -320,8 +323,8 @@ struct tcb *tcb;
 }
 /* Kick a particular TCP connection */
 int
-kick_tcp(tcb)
-register struct tcb *tcb;
+kick_tcp(
+register struct tcb *tcb)
 {
 	if(!tcpval(tcb))
 		return -1;
@@ -331,8 +334,8 @@ register struct tcb *tcb;
 }
 /* Kick all TCP connections to specified address; return number kicked */
 int
-kick(addr)
-int32 addr;
+kick(
+int32 addr)
 {
 	register struct tcb *tcb;
 	int cnt = 0;
@@ -347,7 +350,7 @@ int32 addr;
 }
 /* Clear all TCP connections */
 void
-reset_all()
+reset_all(void)
 {
 #if 0
 	register struct tcb *tcb,*tcbnext;
@@ -363,8 +366,8 @@ reset_all()
 	pwait(NULL);    /* Let the RSTs go forth */
 }
 void
-reset_tcp(tcb)
-register struct tcb *tcb;
+reset_tcp(
+register struct tcb *tcb)
 {
 	struct tcp fakeseg;
 	struct ip fakeip;
@@ -396,8 +399,8 @@ register struct tcb *tcb;
  * the decimal number if unknown.
  */
 char *
-tcp_port(n)
-uint16 n;
+tcp_port(
+uint16 n)
 {
 	static char buf[32];
 

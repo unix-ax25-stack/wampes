@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.9 1993/05/17 13:44:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.10 1994/10/06 16:15:24 deyke Exp $ */
 
 /*
  *
@@ -40,10 +40,10 @@ static void f_state(struct tcb *tcb, int old, int new);
  */
 
 int
-dofinger(argc,argv,p)
-int     argc;
-char    *argv[];
-void *p;
+dofinger(
+int     argc,
+char    *argv[],
+void *p)
 {
 	struct session  *s;
 	struct tcb      *tcb;
@@ -73,7 +73,7 @@ void *p;
 
 	if ((host = strrchr(argv[1], '@')) == NULL) {
 		fsocket.address = Loopback.addr;/* no host, use local */
-		if ((finger->user = malloc(strlen(argv[1]) + 3)) == NULL) {
+		if ((finger->user = (char *) malloc(strlen(argv[1]) + 3)) == NULL) {
 			free_finger(finger);
 			return(1);
 		}
@@ -95,7 +95,7 @@ void *p;
 			free_finger(finger);
 			return(1);
 		}
-		if ((finger->user = malloc(strlen(argv[1])+3))==NULL) {
+		if ((finger->user = (char *) malloc(strlen(argv[1])+3))==NULL) {
 			free_finger(finger);
 			return 1;
 		}
@@ -117,14 +117,14 @@ void *p;
 
 	if (!host)                              /* if no host specified */
 		host = Hostname;                /* use local host name */
-	if ((s->name = malloc(strlen(host)+1)) != NULLCHAR)
+	if ((s->name = (char *) malloc(strlen(host)+1)) != NULLCHAR)
 		strcpy(s->name, host);
 
 	s->type = FINGER;
 	s->parse = 0;
 
 	tcb = open_tcp(&lsocket, &fsocket, TCP_ACTIVE, 0,
-	 fingcli_rcv, (void (*)()) 0, f_state, 0, (int) finger);
+	 fingcli_rcv, 0, f_state, 0, (int) finger);
 
 	finger->tcb = tcb;
 	go(argc, argv, p);
@@ -135,7 +135,7 @@ void *p;
  *      Allocate a finger structure for the new session
  */
 static struct finger *
-alloc_finger()
+alloc_finger(void)
 {
 	struct finger *tmp;
 
@@ -150,8 +150,8 @@ alloc_finger()
  *      Free a finger structure
  */
 static int
-free_finger(finger)
-struct finger *finger;
+free_finger(
+struct finger *finger)
 {
 	if (finger != NULLFING) {
 		if (finger->session != NULLSESSION)
@@ -165,9 +165,9 @@ struct finger *finger;
 
 /* Finger receiver upcall routine */
 void
-fingcli_rcv(tcb, cnt)
-register struct tcb     *tcb;
-uint16                  cnt;
+fingcli_rcv(
+register struct tcb     *tcb,
+int                     cnt)
 {
 	struct mbuf     *bp;
 	char            *buf;
@@ -213,10 +213,10 @@ uint16                  cnt;
 
 /* State change upcall routine */
 static void
-f_state(tcb,old,new)
-register struct tcb     *tcb;
-char                    old,            /* old state */
-			new;            /* new state */
+f_state(
+register struct tcb     *tcb,
+int                     old,            /* old state */
+int                     new)            /* new state */
 {
 	struct finger   *finger;
 	char            notify = 0;

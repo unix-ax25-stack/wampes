@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.10 1992/07/24 20:00:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.11 1994/10/06 16:15:32 deyke Exp $ */
 
 /* Miscellaneous integer and IP address format conversion subroutines
  * Copyright 1991 Phil Karn, KA9Q
@@ -15,8 +15,8 @@ int Net_error;
  * binary IP address
  */
 int32
-aton(s)
-register char *s;
+aton(
+register char *s)
 {
 	int32 n;
 
@@ -42,15 +42,15 @@ register char *s;
  * string, e.g., 255.255.255.255\0
  */
 char *
-inet_ntoa(a)
-int32 a;
+inet_ntoa(
+int32 a)
 {
 	return resolve_a(a,0);
 }
 /* Convert hex-ascii string to long integer */
 long
-htol(s)
-char *s;
+htol(
+char *s)
 {
 	long ret;
 	char c;
@@ -71,8 +71,8 @@ char *s;
 	return ret;
 }
 char *
-pinet(s)
-struct socket *s;
+pinet(
+struct socket *s)
 {
 	static char buf[30];
 

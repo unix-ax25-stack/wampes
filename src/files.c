@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.10 1993/01/29 06:48:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.11 1994/10/06 16:15:24 deyke Exp $ */
 
 /* System-dependent definitions of various files, spool directories, etc */
 #include <stdio.h>
@@ -117,8 +117,8 @@ static char *rootdir = "";
  * once, at startup time
  */
 void
-initroot(root)
-char *root;
+initroot(
+char *root)
 {
 	rootdir = strdup( root );
 
@@ -145,15 +145,15 @@ char *root;
  * buffer, then remove repeated occurrences of the separator char
  */
 char *
-rootdircat(filename)
-char *filename;
+rootdircat(
+char *filename)
 {
 	char *out = filename;
 
 	if ( strlen(rootdir) > 0 ) {
 		char *separator = SEPARATOR;
 
-		out = mallocw( strlen(rootdir)
+		out = (char *) mallocw( strlen(rootdir)
 				+ strlen(separator)
 				+ strlen(filename) + 1);
 

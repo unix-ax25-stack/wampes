@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.13 1994/09/05 12:47:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.14 1994/10/06 16:15:27 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -45,7 +45,7 @@ void route_savefile(void)
   switch (timer.state) {
   case TIMER_STOP:
     if (!Debug) {
-      timer.func = (void (*)()) route_savefile;
+      timer.func = (void (*)(void *)) route_savefile;
       timer.arg = 0;
       set_timer(&timer, ROUTE_SAVETIME);
       start_timer(&timer);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.16 1993/05/17 13:45:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.17 1994/10/06 16:15:38 deyke Exp $ */
 
 /* Internet Telnet client
  * Copyright 1991 Phil Karn, KA9Q
@@ -45,10 +45,10 @@ char *T_options[] = {
 
 /* Execute user telnet command */
 int
-dotelnet(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dotelnet(
+int argc,
+char *argv[],
+void *p)
 {
 	struct session *s;
 	struct telnet *tn;
@@ -71,7 +71,7 @@ void *p;
 		printf("Too many sessions\n");
 		return 1;
 	}
-	if((s->name = malloc((unsigned)strlen(argv[1])+1)) != NULLCHAR)
+	if((s->name = (char *) malloc((unsigned)strlen(argv[1])+1)) != NULLCHAR)
 		strcpy(s->name,argv[1]);
 	s->type = TELNET;
 	if ((Refuse_echo == 0) && (Tn_cr_mode != 0)) {
@@ -101,9 +101,9 @@ void *p;
 
 /* Process typed characters */
 static void
-unix_send_tel(buf,n)
-char *buf;
-int n;
+unix_send_tel(
+char *buf,
+int n)
 {
 	int i;
 
@@ -116,9 +116,9 @@ int n;
 	send_tel(buf,n);
 }
 static void
-send_tel(buf,n)
-char *buf;
-int n;
+send_tel(
+char *buf,
+int n)
 {
 	if(Current == NULLSESSION || Current->cb.telnet == NULLTN
 	 || Current->cb.telnet->tcb == NULLTCB)
@@ -135,9 +135,9 @@ int n;
 
 /* Process incoming TELNET characters */
 static void
-tel_input(tn,bp)
-register struct telnet *tn;
-struct mbuf *bp;
+tel_input(
+register struct telnet *tn,
+struct mbuf *bp)
 {
 	int c;
 	FILE *record;
@@ -213,9 +213,9 @@ struct mbuf *bp;
 
 /* Telnet receiver upcall routine */
 void
-rcv_char(tcb,cnt)
-register struct tcb *tcb;
-int cnt;
+rcv_char(
+register struct tcb *tcb,
+int cnt)
 {
 	struct mbuf *bp;
 	struct telnet *tn;
@@ -238,9 +238,9 @@ int cnt;
 }
 /* Handle transmit upcalls. Used only for file uploading */
 static void
-tn_tx(tcb,cnt)
-struct tcb *tcb;
-uint16 cnt;
+tn_tx(
+struct tcb *tcb,
+int cnt)
 {
 	struct telnet *tn;
 	struct session *s;
@@ -270,9 +270,9 @@ uint16 cnt;
 
 /* State change upcall routine */
 static void
-t_state(tcb,old,new)
-register struct tcb *tcb;
-char old,new;
+t_state(
+register struct tcb *tcb,
+int old,int new)
 {
 	struct telnet *tn;
 	char notify = 0;
@@ -322,8 +322,8 @@ char old,new;
 }
 /* Delete telnet structure */
 static void
-free_telnet(tn)
-struct telnet *tn;
+free_telnet(
+struct telnet *tn)
 {
 	if(tn->session != NULLSESSION)
 		freesession(tn->session);
@@ -333,10 +333,10 @@ struct telnet *tn;
 }
 
 int
-doecho(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doecho(
+int argc,
+char *argv[],
+void *p)
 {
 	if(argc < 2){
 		if(Refuse_echo)
@@ -355,10 +355,10 @@ void *p;
 }
 /* set for unix end of line for remote echo mode telnet */
 int
-doeol(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doeol(
+int argc,
+char *argv[],
+void *p)
 {
 	if(argc < 2){
 		if(Tn_cr_mode)
@@ -380,9 +380,9 @@ void *p;
 
 /* The guts of the actual Telnet protocol: negotiating options */
 static void
-willopt(tn,opt)
-struct telnet *tn;
-int opt;
+willopt(
+struct telnet *tn,
+int opt)
 {
 	int ack;
 
@@ -417,9 +417,9 @@ int opt;
 	answer(tn,ack,opt);
 }
 static void
-wontopt(tn,opt)
-struct telnet *tn;
-int opt;
+wontopt(
+struct telnet *tn,
+int opt)
 {
 #ifdef  DEBUG
 	printf("recv: wont ");
@@ -438,9 +438,9 @@ int opt;
 	answer(tn,DONT,opt);    /* Must always accept */
 }
 static void
-doopt(tn,opt)
-struct telnet *tn;
-int opt;
+doopt(
+struct telnet *tn,
+int opt)
 {
 	int ack;
 
@@ -465,9 +465,9 @@ int opt;
 	answer(tn,ack,opt);
 }
 static void
-dontopt(tn,opt)
-struct telnet *tn;
-int opt;
+dontopt(
+struct telnet *tn,
+int opt)
 {
 #ifdef  DEBUG
 	printf("recv: dont ");
@@ -487,9 +487,9 @@ int opt;
 }
 static
 void
-answer(tn,r1,r2)
-struct telnet *tn;
-int r1,r2;
+answer(
+struct telnet *tn,
+int r1,int r2)
 {
 	struct mbuf *bp;
 	char s[3];

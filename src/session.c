@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.15 1993/05/17 13:45:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.16 1994/10/06 16:15:34 deyke Exp $ */
 
 /* NOS User Session control
  * Copyright 1991 Phil Karn, KA9Q
@@ -36,8 +36,8 @@ static struct session *sessptr(char *cp);
  * If the index is out of range or unused, return NULLSESSION.
  */
 static struct session *
-sessptr(cp)
-char *cp;
+sessptr(
+char *cp)
 {
 	register struct session *sp;
 	unsigned int i;
@@ -59,10 +59,10 @@ char *cp;
 
 /* Select and display sessions */
 int
-dosession(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dosession(
+int argc,
+char *argv[],
+void *p)
 {
 	struct session *sp;
 
@@ -140,10 +140,10 @@ void *p;
 }
 /* Enter conversational mode with current session */
 int
-go(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+go(
+int argc,
+char *argv[],
+void *p)
 {
 	if(Current == NULLSESSION || Current->type == FREE)
 		return 0;
@@ -174,10 +174,10 @@ void *p;
 	return 0;
 }
 int
-doclose(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doclose(
+int argc,
+char *argv[],
+void *p)
 {
 	struct session *sp;
 
@@ -209,10 +209,10 @@ void *p;
 	return 0;
 }
 int
-doreset(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doreset(
+int argc,
+char *argv[],
+void *p)
 {
 	struct session *sp;
 
@@ -248,10 +248,10 @@ void *p;
 	return 0;
 }
 int
-dokick(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dokick(
+int argc,
+char *argv[],
+void *p)
 {
 	struct session *sp;
 
@@ -301,7 +301,7 @@ void *p;
 	return 0;
 }
 struct session *
-newsession()
+newsession(void)
 {
 	register int i;
 
@@ -311,8 +311,8 @@ newsession()
 	return NULLSESSION;
 }
 void
-freesession(sp)
-struct session *sp;
+freesession(
+struct session *sp)
 {
 	if(sp == NULLSESSION)
 		return;
@@ -343,10 +343,10 @@ struct session *sp;
 }
 /* Control session recording */
 int
-dorecord(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dorecord(
+int argc,
+char *argv[],
+void *p)
 {
 	if(Current == NULLSESSION){
 		printf("No current session\n");
@@ -364,7 +364,7 @@ void *p;
 		 */
 		if(strcmp(argv[1],"off") != 0
 		 && (Current->record = fopen(argv[1],"a")) != NULLFILE){
-			Current->rfile = malloc((unsigned)strlen(argv[1])+1);
+			Current->rfile = (char *) malloc((unsigned)strlen(argv[1])+1);
 			strcpy(Current->rfile,argv[1]);
 		}
 	}
@@ -376,10 +376,10 @@ void *p;
 }
 /* Control file transmission */
 int
-doupload(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doupload(
+int argc,
+char *argv[],
+void *p)
 {
 	struct tcb *tcb;
 	struct ax25_cb *axp;
@@ -413,7 +413,7 @@ void *p;
 				printf("Can't read %s\n",argv[1]);
 				return 1;
 			}
-			Current->ufile = malloc((unsigned)strlen(argv[1])+1);
+			Current->ufile = (char *) malloc((unsigned)strlen(argv[1])+1);
 			strcpy(Current->ufile,argv[1]);
 			/* All set, kick transmit upcall to get things rolling */
 			switch(Current->type){

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.9 1993/05/17 13:45:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.10 1994/10/06 16:15:38 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -43,11 +43,11 @@ static void tnserv_state_upcall(struct tcb *tcb, int old, int new)
 #else
   case TCP_ESTABLISHED:
 #endif
-    tcb->user = (int) login_open(pinet_tcp(&tcb->conn.remote), "TELNET", (void (*)()) tnserv_send_upcall, (void (*)()) close_tcp, tcb);
+    tcb->user = (int) login_open(pinet_tcp(&tcb->conn.remote), "TELNET", (void (*)(void *)) tnserv_send_upcall, (void (*)(void *)) close_tcp, tcb);
     if (!tcb->user)
       close_tcp(tcb);
     else
-      log(tcb, "open TELNET");
+      log(tcb, "open TELNET", "");
     break;
   case TCP_CLOSE_WAIT:
     close_tcp(tcb);
@@ -55,7 +55,7 @@ static void tnserv_state_upcall(struct tcb *tcb, int old, int new)
   case TCP_CLOSED:
     if (tcb->user) {
       login_close((struct login_cb *) tcb->user);
-      log(tcb, "close TELNET");
+      log(tcb, "close TELNET", "");
     }
     del_tcp(tcb);
     if (tcb == tcb_server) tcb_server = NULLTCB;

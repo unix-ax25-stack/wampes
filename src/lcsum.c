@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lcsum.c,v 1.7 1993/05/17 13:45:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lcsum.c,v 1.8 1994/10/06 16:15:29 deyke Exp $ */
 
 /*
  * Word aligned linear buffer checksum routine.  Called from mbuf checksum
@@ -13,9 +13,9 @@
 #include "ip.h"
 
 uint16
-lcsum(wp,len)
-register uint16 *wp;
-register uint16 len;
+lcsum(
+register uint16 *wp,
+register uint16 len)
 {
 	register int32 sum = 0;
 	uint16 result;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.42 1994/09/05 12:47:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.43 1994/10/06 16:15:32 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -156,8 +156,8 @@ static struct node *nodeptr(const char *call, int create)
 
   for (pn = nodes; pn && !addreq(call, pn->call); pn = pn->next) ;
   if (!pn && create) {
-    pn = (struct node *) calloc(1, sizeof(*pn));
-    pn->call = malloc(AXALEN);
+    pn = (struct node *) calloc(1, sizeof(struct node));
+    pn->call = (char *) malloc(AXALEN);
     addrcp(pn->call, call);
     memset(pn->ident, ' ', IDENTLEN);
     pn->hopcnt = INFINITY;
@@ -268,9 +268,9 @@ static struct linkinfo *linkinfoptr(struct node *node1, struct node *node2)
 
   for (pl = node1->links; pl; pl = pl->next)
     if (pl->node == node2) return pl->info;
-  pi = (struct linkinfo *) calloc(1, sizeof(*pi));
+  pi = (struct linkinfo *) calloc(1, sizeof(struct linkinfo));
   pi->source = INFINITY;
-  pl = (struct link *) calloc(1, sizeof(*pl));
+  pl = (struct link *) calloc(1, sizeof(struct link));
   pl->node = node2;
   pl->info = pi;
   if (node1->links) {
@@ -278,7 +278,7 @@ static struct linkinfo *linkinfoptr(struct node *node1, struct node *node2)
     node1->links->prev = pl;
   }
   node1->links = pl;
-  pl = (struct link *) calloc(1, sizeof(*pl));
+  pl = (struct link *) calloc(1, sizeof(struct link));
   pl->node = node1;
   pl->info = pi;
   if (node2->links) {
@@ -717,7 +717,7 @@ void nr3_input(const char *src, struct mbuf *bp)
 
 static void routing_manager_initialize(void)
 {
-  broadcast_timer.func = (void (*)()) send_broadcast;
+  broadcast_timer.func = (void (*)(void *)) send_broadcast;
   set_timer(&broadcast_timer, 10 * 1000L);
   start_timer(&broadcast_timer);
 }
@@ -988,7 +988,7 @@ static struct circuit *create_circuit(void)
   static int nextid;
   struct circuit *pc;
 
-  pc = (struct circuit *) calloc(1, sizeof(*pc));
+  pc = (struct circuit *) calloc(1, sizeof(struct circuit));
   nextid++;
   pc->localindex = uchar(nextid >> 8);
   pc->localid = uchar(nextid);
@@ -998,11 +998,11 @@ static struct circuit *create_circuit(void)
   pc->cwind = 1;
   pc->mdev = (1000L * nr_ttimeout + 2) / 4;
   reset_t1(pc);
-  pc->timer_t1.func = (void (*)()) l4_t1_timeout;
+  pc->timer_t1.func = (void (*)(void *)) l4_t1_timeout;
   pc->timer_t1.arg = pc;
-  pc->timer_t3.func = (void (*)()) l4_t3_timeout;
+  pc->timer_t3.func = (void (*)(void *)) l4_t3_timeout;
   pc->timer_t3.arg = pc;
-  pc->timer_t4.func = (void (*)()) l4_t4_timeout;
+  pc->timer_t4.func = (void (*)(void *)) l4_t4_timeout;
   pc->timer_t4.arg = pc;
   pc->next = circuits;
   return circuits = pc;
@@ -1428,7 +1428,7 @@ static void nrserv_state_upcall(struct circuit *pc, int oldstate, int newstate)
 {
   switch (newstate) {
   case NR4STCON:
-    pc->user = (char *) login_open(nr_addr2str(pc), "NETROM", (void (*)()) nrserv_send_upcall, (void (*)()) close_nr, pc);
+    pc->user = (char *) login_open(nr_addr2str(pc), "NETROM", (void (*)(void *)) nrserv_send_upcall, (void (*)(void *)) close_nr, pc);
     if (!pc->user) close_nr(pc);
     break;
   case NR4STDISC:
@@ -1600,12 +1600,12 @@ int nr_attach(int argc, char *argv[], void *p)
     printf("Interface %s already exists\n", ifname);
     return (-1);
   }
-  Nr_iface = callocw(1, sizeof(*Nr_iface));
+  Nr_iface = (struct iface *) callocw(1, sizeof(struct iface));
   Nr_iface->addr = Ip_addr;
   Nr_iface->broadcast = 0xffffffffL;
   Nr_iface->netmask = 0xffffffffL;
   Nr_iface->name = strdup(ifname);
-  Nr_iface->hwaddr = mallocw(AXALEN);
+  Nr_iface->hwaddr = (char *) mallocw(AXALEN);
   memcpy(Nr_iface->hwaddr, Mycall, AXALEN);
   Nr_iface->mtu = NR4MAXINFO;
   setencap(Nr_iface, "NETROM");
@@ -1627,7 +1627,7 @@ static int dobroadcast(int argc, char *argv[], void *p)
     return 0;
   }
 
-  bp = (struct broadcast *) calloc(1, sizeof(*bp));
+  bp = (struct broadcast *) calloc(1, sizeof(struct broadcast));
   if (!(bp->iface = if_lookup(argv[1]))) {
     printf("Interface \"%s\" unknown\n", argv[1]);
     free(bp);

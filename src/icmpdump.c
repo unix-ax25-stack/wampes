@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpdump.c,v 1.5 1993/05/17 13:44:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpdump.c,v 1.6 1994/10/06 16:15:26 deyke Exp $ */
 
 /* ICMP header tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -14,11 +14,11 @@
 
 /* Dump an ICMP header */
 void
-icmp_dump(fp,bpp,source,dest,check)
-FILE *fp;
-struct mbuf **bpp;
-int32 source,dest;
-int check;              /* If 0, bypass checksum verify */
+icmp_dump(
+FILE *fp,
+struct mbuf **bpp,
+int32 source,int32 dest,
+int check)              /* If 0, bypass checksum verify */
 {
 	struct icmp icmp;
 	uint16 csum;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.11 1993/06/13 18:36:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.12 1994/10/06 16:15:37 deyke Exp $ */
 
 /* TCP output segment processing
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,8 +13,8 @@
 
 static double mybackoff(int n);
 
-static double mybackoff(n)
-int n;
+static double mybackoff(
+int n)
 {
   double b;
 
@@ -26,8 +26,8 @@ int n;
  * if there is data to be sent or if "force" is non zero
  */
 void
-tcp_output(tcb)
-register struct tcb *tcb;
+tcp_output(
+register struct tcb *tcb)
 {
 	struct pseudo_header ph;/* Pseudo-header for checksum calcs */
 	struct mbuf *hbp,*dbp;  /* Header and data buffer pointers */

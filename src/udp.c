@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.c,v 1.7 1993/05/17 13:45:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.c,v 1.8 1994/10/06 16:15:39 deyke Exp $ */
 
 /* Internet User Data Protocol (UDP)
  * Copyright 1991 Phil Karn, KA9Q
@@ -29,9 +29,9 @@ struct udp_cb *Udps;
  * incoming datagrams.
  */
 struct udp_cb *
-open_udp(lsocket,r_upcall)
-struct socket *lsocket;
-void (*r_upcall)();
+open_udp(
+struct socket *lsocket,
+void (*r_upcall)(struct iface *,struct udp_cb *,int))
 {
 	register struct udp_cb *up;
 
@@ -52,15 +52,15 @@ void (*r_upcall)();
 
 /* Send a UDP datagram */
 int
-send_udp(lsocket,fsocket,tos,ttl,bp,length,id,df)
-struct socket *lsocket;         /* Source socket */
-struct socket *fsocket;         /* Destination socket */
-char tos;                       /* Type-of-service for IP */
-char ttl;                       /* Time-to-live for IP */
-struct mbuf *bp;                /* Data field, if any */
-uint16 length;                  /* Length of data field */
-uint16 id;                      /* Optional ID field for IP */
-char df;                        /* Don't Fragment flag for IP */
+send_udp(
+struct socket *lsocket,         /* Source socket */
+struct socket *fsocket,         /* Destination socket */
+char tos,                       /* Type-of-service for IP */
+char ttl,                       /* Time-to-live for IP */
+struct mbuf *bp,                /* Data field, if any */
+uint16 length,                  /* Length of data field */
+uint16 id,                      /* Optional ID field for IP */
+char df)                        /* Don't Fragment flag for IP */
 {
 	struct pseudo_header ph;
 	struct udp udp;
@@ -94,10 +94,10 @@ char df;                        /* Don't Fragment flag for IP */
 }
 /* Accept a waiting datagram, if available. Returns length of datagram */
 int
-recv_udp(up,fsocket,bp)
-register struct udp_cb *up;
-struct socket *fsocket;         /* Place to stash incoming socket */
-struct mbuf **bp;               /* Place to stash data packet */
+recv_udp(
+register struct udp_cb *up,
+struct socket *fsocket,         /* Place to stash incoming socket */
+struct mbuf **bp)               /* Place to stash data packet */
 {
 	struct socket sp;
 	struct mbuf *buf;
@@ -132,8 +132,8 @@ struct mbuf **bp;               /* Place to stash data packet */
 }
 /* Delete a UDP control block */
 int
-del_udp(conn)
-struct udp_cb *conn;
+del_udp(
+struct udp_cb *conn)
 {
 	struct mbuf *bp;
 	register struct udp_cb *up;
@@ -166,11 +166,11 @@ struct udp_cb *conn;
 }
 /* Process an incoming UDP datagram */
 void
-udp_input(iface,ip,bp,rxbroadcast)
-struct iface *iface;    /* Input interface */
-struct ip *ip;          /* IP header */
-struct mbuf *bp;        /* UDP header and data */
-int rxbroadcast;        /* The only protocol that accepts 'em */
+udp_input(
+struct iface *iface,    /* Input interface */
+struct ip *ip,          /* IP header */
+struct mbuf *bp,        /* UDP header and data */
+int rxbroadcast)        /* The only protocol that accepts 'em */
 {
 	struct pseudo_header ph;
 	struct udp udp;
@@ -244,8 +244,8 @@ int rxbroadcast;        /* The only protocol that accepts 'em */
  * searches.
  */
 static struct udp_cb *
-lookup_udp(socket)
-struct socket *socket;
+lookup_udp(
+struct socket *socket)
 {
 	register struct udp_cb *up;
 	struct udp_cb *uplast = NULLUDP;
@@ -268,8 +268,8 @@ struct socket *socket;
 
 /* Attempt to reclaim unused space in UDP receive queues */
 void
-udp_garbage(red)
-int red;
+udp_garbage(
+int red)
 {
 	register struct udp_cb *udp;
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpdump.c,v 1.6 1993/05/17 13:45:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpdump.c,v 1.7 1994/10/06 16:15:39 deyke Exp $ */
 
 /* UDP packet tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -15,11 +15,11 @@
 
 /* Dump a UDP header */
 void
-udp_dump(fp,bpp,source,dest,check)
-FILE *fp;
-struct mbuf **bpp;
-int32 source,dest;
-int check;              /* If 0, bypass checksum verify */
+udp_dump(
+FILE *fp,
+struct mbuf **bpp,
+int32 source,int32 dest,
+int check)              /* If 0, bypass checksum verify */
 {
 	struct udp udp;
 	struct pseudo_header ph;

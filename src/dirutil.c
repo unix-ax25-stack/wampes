@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.15 1994/04/19 16:32:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.16 1994/10/06 16:15:23 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -19,9 +19,9 @@
  * of names.
  */
 FILE *
-dir(path,full)
-char *path;
-int full;
+dir(
+char *path,
+int full)
 {
 	int fd[2];
 
@@ -53,10 +53,10 @@ int full;
 
 /* Create directory */
 int
-domkd(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+domkd(
+int argc,
+char *argv[],
+void *p)
 {
 	char buf[1024];
 
@@ -68,10 +68,10 @@ void *p;
 }
 /* Remove directory */
 int
-dormd(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dormd(
+int argc,
+char *argv[],
+void *p)
 {
 	char buf[1024];
 

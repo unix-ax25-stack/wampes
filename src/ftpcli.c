@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.16 1994/07/12 16:29:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.17 1994/10/06 16:15:24 deyke Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q
@@ -32,7 +32,7 @@ static int donlst(int argc, char *argv [], void *p);
 static int doput(int argc, char *argv [], void *p);
 static int doappend(int argc, char *argv [], void *p);
 static int doabort(int argc, char *argv [], void *p);
-static int ftpsetup(struct ftp *ftp, void (*recv )(), void (*send )(), void (*state )());
+static int ftpsetup(struct ftp *ftp, void (*recv)(struct tcb *,int), void (*send)(struct tcb *,int), void (*state)(struct tcb *,int,int));
 static void ftpccs(struct tcb *tcb, int old, int new);
 static void ftpcds(struct tcb *tcb, int old, int new);
 static int sndftpmsg(struct ftp *ftp, char *fmt, char *arg);
@@ -119,7 +119,7 @@ int doftp(int argc, char *argv[], void *p)
 		return 1;
 	}
 	Current = s;
-	if((s->name = malloc((unsigned)strlen(argv[1])+1)) != NULLCHAR)
+	if((s->name = (char *) malloc((unsigned)strlen(argv[1])+1)) != NULLCHAR)
 		strcpy(s->name,argv[1]);
 	s->type = FTP;
 	s->parse = ftpparse;
@@ -438,7 +438,7 @@ static int doabort(int argc, char *argv[], void *p)
 	return 0;
 }
 
-static int ftpsetup(struct ftp *ftp, void (*recv)(), void (*send)(), void (*state)())
+static int ftpsetup(struct ftp *ftp, void (*recv)(struct tcb *,int), void (*send)(struct tcb *,int), void (*state)(struct tcb *,int,int))
 {
 
 	struct mbuf *bp;

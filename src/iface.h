@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.21 1994/02/07 12:38:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.22 1994/10/06 16:15:26 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -25,7 +25,7 @@ struct iftype {
 	char *name;             /* Name of encapsulation technique */
 	int (*send)(struct mbuf *,struct iface *,int32,int);
 				/* Routine to send an IP datagram */
-	int (*output)(struct iface *,char *,char *,int   ,struct mbuf *);
+	int (*output)(struct iface *,char *,char *,uint16,struct mbuf *);
 				/* Routine to send link packet */
 	char *(*format)(char *,char *);
 				/* Function that formats addresses */
@@ -101,7 +101,7 @@ struct iface {
 				/* Routine to send an IP datagram */
 	int (*send)(struct mbuf *,struct iface *,int32,int);
 			/* Encapsulate any link packet */
-	int (*output)(struct iface *,char *,char *,int   ,struct mbuf *);
+	int (*output)(struct iface *,char *,char *,uint16,struct mbuf *);
 			/* Send raw packet */
 	int (*raw)(struct iface *,struct mbuf *);
 			/* Display status */
@@ -162,7 +162,7 @@ void if_tx(int dev,void *arg1,void *unused);
 struct iface *ismyaddr(int32 addr);
 void network(int i,void *v1,void *v2);
 int nu_send(struct mbuf *bp,struct iface *ifp,int32 gateway,int tos);
-int nu_output(struct iface *,char *,char *,int   ,struct mbuf *);
+int nu_output(struct iface *,char *,char *,uint16,struct mbuf *);
 int setencap(struct iface *ifp,char *mode);
 
 /* In config.c: */

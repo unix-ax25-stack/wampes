@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/crc.c,v 1.5 1994/01/14 21:27:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/crc.c,v 1.6 1994/10/06 16:15:22 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -8,8 +8,8 @@
 
 /*---------------------------------------------------------------------------*/
 
-void append_crc_16(bp)
-struct mbuf *bp;
+void append_crc_16(
+struct mbuf *bp)
 {
 
   char *p;
@@ -32,8 +32,8 @@ struct mbuf *bp;
 
 /*---------------------------------------------------------------------------*/
 
-int check_crc_16(head)
-struct mbuf *head;
+int check_crc_16(
+struct mbuf *head)
 {
 
   char *p;
@@ -95,8 +95,8 @@ static const int Crc_rmnc_table[] = {
 
 /*---------------------------------------------------------------------------*/
 
-void append_crc_rmnc(bp)
-struct mbuf *bp;
+void append_crc_rmnc(
+struct mbuf *bp)
 {
 
   char *p;
@@ -119,8 +119,8 @@ struct mbuf *bp;
 
 /*---------------------------------------------------------------------------*/
 
-int check_crc_rmnc(head)
-struct mbuf *head;
+int check_crc_rmnc(
+struct mbuf *head)
 {
 
   char *p;
@@ -182,8 +182,8 @@ static const int Crc_ccitt_table[] = {
 
 /*---------------------------------------------------------------------------*/
 
-void append_crc_ccitt(bp)
-struct mbuf *bp;
+void append_crc_ccitt(
+struct mbuf *bp)
 {
 
   char *p;
@@ -207,9 +207,9 @@ struct mbuf *bp;
 
 /*---------------------------------------------------------------------------*/
 
-int check_crc_ccitt(buf, cnt)
-const char *buf;
-int cnt;
+int check_crc_ccitt(
+const char *buf,
+int cnt)
 {
   int crc = 0xffff;
 

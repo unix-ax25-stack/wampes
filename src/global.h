@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.31 1994/02/07 12:38:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.32 1994/10/06 16:15:25 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -9,6 +9,20 @@
  * This file depends only on internal macros or those defined on the
  * command line, so it may be safely included first.
  */
+
+/* Resolve C++ name conflicts */
+
+#ifdef __cplusplus
+#define EXTERN_C        extern "C"
+#define class           class_
+#define new             new_
+#define private         private_
+#define signed
+#define this            this_
+#define volatile
+#else
+#define EXTERN_C
+#endif
 
 /*
  * Definitions for byte order, according to byte significance from low
@@ -96,13 +110,13 @@ typedef unsigned char byte_t;   /*  8-bit unsigned integer */
 /* Define null object pointer in case stdio.h isn't included */
 #ifndef NULL
 /* General purpose NULL pointer */
-#define NULL (void *)0
+#define NULL 0
 #endif
 #define NULLCHAR (char *)0      /* Null character pointer */
 #define NULLCHARP (char **)0    /* Null character pointer pointer */
 #define NULLINT (int *)0        /* Null integer pointer */
-#define NULLFP   (int (*)())0   /* Null pointer to function returning int */
-#define NULLVFP  (void (*)())0  /* Null pointer to function returning void */
+#define NULLFP 0                /* Null pointer to function returning int */
+#define NULLVFP 0               /* Null pointer to function returning void */
 #define NULLVIFP (INTERRUPT (*)())0
 #define NULLFILE (FILE *)0      /* Null file pointer */
 
@@ -174,18 +188,18 @@ int availmem(void);
 void *callocw(unsigned nelem,unsigned size);
 int dirps(void);
 int getopt();
-int htob(int  c);
+int htob(char c);
 int htoi(char *);
 int readhex(char *,char *,int);
 long htol(char *);
 char *inbuf(uint16 port,char *buf,uint16 cnt);
 uint16 hash_ip(int32 addr);
 int istate(void);
-void log();
-int log2(int    x);
+void log(void *tcb,const char *fmt,const char *arg);
+int log2(uint16 x);
 #define ltop(x) ((void *) (x))
 void *mallocw(unsigned nb);
-int memcnt(char *buf,int  c,int size);
+int memcnt(char *buf,char c,int size);
 char *outbuf(uint16 port,char *buf,uint16 cnt);
 #define ptol(x) ((long) (x))
 void restore(int);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.c,v 1.4 1993/05/17 13:45:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.c,v 1.5 1994/10/06 16:15:35 deyke Exp $ */
 
 /*
  * Routines to compress and uncompress tcp packets (for transmission
@@ -50,30 +50,30 @@
 #include "tcp.h"
 #include "slhc.h"
 
-static char *encode(char *cp,int    n);
+static char *encode(char *cp,uint16 n);
 static long decode(struct mbuf **bpp);
 
 /* Initialize compression data structure
  *      slots must be in range 0 to 255 (zero meaning no compression)
  */
 struct slcompress *
-slhc_init(rslots,tslots)
-int rslots;
-int tslots;
+slhc_init(
+int rslots,
+int tslots)
 {
 	register uint16 i;
 	register struct cstate *ts;
 	struct slcompress *comp;
 
-	comp = callocw( 1, sizeof(struct slcompress) );
+	comp = (struct slcompress *) callocw( 1, sizeof(struct slcompress) );
 
 	if ( rslots > 0  &&  rslots < 256 ) {
-		comp->rstate = callocw( rslots, sizeof(struct cstate) );
+		comp->rstate = (struct cstate *) callocw( rslots, sizeof(struct cstate) );
 		comp->rslot_limit = rslots - 1;
 	}
 
 	if ( tslots > 0  &&  tslots < 256 ) {
-		comp->tstate = callocw( tslots, sizeof(struct cstate) );
+		comp->tstate = (struct cstate *) callocw( tslots, sizeof(struct cstate) );
 		comp->tslot_limit = tslots - 1;
 	}
 
@@ -95,8 +95,8 @@ int tslots;
 
 /* Free a compression data structure */
 void
-slhc_free(comp)
-struct slcompress *comp;
+slhc_free(
+struct slcompress *comp)
 {
 	if ( comp == NULLSLCOMPR )
 		return;
@@ -112,9 +112,9 @@ struct slcompress *comp;
 
 /* Encode a number */
 static char *
-encode(cp,n)
-register char *cp;
-uint16 n;
+encode(
+register char *cp,
+uint16 n)
 {
 	if(n >= 256 || n == 0){
 		*cp++ = 0;
@@ -127,8 +127,8 @@ uint16 n;
 
 /* Decode a number */
 static long
-decode(bpp)
-struct mbuf **bpp;
+decode(
+struct mbuf **bpp)
 {
 	register int x;
 
@@ -141,10 +141,10 @@ struct mbuf **bpp;
 }
 
 int
-slhc_compress(comp, bpp, compress_cid)
-struct slcompress *comp;
-struct mbuf **bpp;
-int compress_cid;
+slhc_compress(
+struct slcompress *comp,
+struct mbuf **bpp,
+int compress_cid)
 {
 	register struct cstate *ocs = &(comp->tstate[comp->xmit_oldest]);
 	register struct cstate *lcs = ocs;
@@ -385,9 +385,9 @@ uncompressed:
 }
 
 int
-slhc_uncompress(comp, bpp)
-struct slcompress *comp;
-struct mbuf **bpp;
+slhc_uncompress(
+struct slcompress *comp,
+struct mbuf **bpp)
 {
 	register int changes;
 	long x;
@@ -494,9 +494,9 @@ bad:
 }
 
 int
-slhc_remember(comp, bpp)
-struct slcompress *comp;
-struct mbuf **bpp;
+slhc_remember(
+struct slcompress *comp,
+struct mbuf **bpp)
 {
 	register struct cstate *cs;
 	struct ip iph;
@@ -554,8 +554,8 @@ struct mbuf **bpp;
 }
 
 int
-slhc_toss(comp)
-struct slcompress *comp;
+slhc_toss(
+struct slcompress *comp)
 {
 	if ( comp == NULLSLCOMPR )
 		return 0;
@@ -565,8 +565,8 @@ struct slcompress *comp;
 }
 
 void
-slhc_i_status(comp)
-struct slcompress *comp;
+slhc_i_status(
+struct slcompress *comp)
 {
 	if (comp != NULLSLCOMPR) {
 		printf("\t%10ld Cmp,"
@@ -581,8 +581,8 @@ struct slcompress *comp;
 }
 
 void
-slhc_o_status(comp)
-struct slcompress *comp;
+slhc_o_status(
+struct slcompress *comp)
 {
 	if (comp != NULLSLCOMPR) {
 		printf("\t%10ld Cmp,"

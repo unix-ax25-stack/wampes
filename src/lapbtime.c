@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapbtime.c,v 1.4 1993/05/17 13:45:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapbtime.c,v 1.5 1994/10/06 16:15:29 deyke Exp $ */
 
 /* LAPB (AX25) timer recovery routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,8 +13,8 @@ static void tx_enq(struct ax25_cb *axp);
 
 /* Called whenever timer T1 expires */
 void
-recover(p)
-void *p;
+recover(
+void *p)
 {
 	register struct ax25_cb *axp = (struct ax25_cb *)p;
 
@@ -75,8 +75,8 @@ void *p;
 
 /* Send a poll (S-frame command with the poll bit set) */
 void
-pollthem(p)
-void *p;
+pollthem(
+void *p)
 {
 	register struct ax25_cb *axp;
 
@@ -93,8 +93,8 @@ void *p;
 }
 /* Transmit query */
 static void
-tx_enq(axp)
-register struct ax25_cb *axp;
+tx_enq(
+register struct ax25_cb *axp)
 {
 	char ctl;
 	struct mbuf *bp;

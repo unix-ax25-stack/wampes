@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25hdr.c,v 1.6 1993/05/17 13:44:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25hdr.c,v 1.7 1994/10/06 16:15:21 deyke Exp $ */
 
 /* AX25 header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -9,9 +9,9 @@
 
 /* Convert a host-format AX.25 header into a mbuf ready for transmission */
 struct mbuf *
-htonax25(hdr,bp)
-register struct ax25 *hdr;
-struct mbuf *bp;
+htonax25(
+register struct ax25 *hdr,
+struct mbuf *bp)
 {
 	register char *cp;
 	register uint16 i;
@@ -93,9 +93,9 @@ struct mbuf *bp;
  * Return -1 if error, number of addresses if OK
  */
 int
-ntohax25(hdr,bpp)
-register struct ax25 *hdr;      /* Output structure */
-struct mbuf **bpp;
+ntohax25(
+register struct ax25 *hdr,      /* Output structure */
+struct mbuf **bpp)
 {
 	register char *axp;
 

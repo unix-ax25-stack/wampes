@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpdump.c,v 1.5 1991/03/28 19:38:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpdump.c,v 1.6 1994/10/06 16:15:19 deyke Exp $ */
 
 /* ARP packet tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -11,9 +11,9 @@
 #include "trace.h"
 
 void
-arp_dump(fp,bpp)
-FILE *fp;
-struct mbuf **bpp;
+arp_dump(
+FILE *fp,
+struct mbuf **bpp)
 {
 	struct arp arp;
 	struct arp_type *at;

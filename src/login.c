@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.54 1994/09/05 12:47:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.55 1994/10/06 16:15:30 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -49,6 +49,8 @@ extern struct utmp *getutent();
 #include "commands.h"
 #include "login.h"
 
+EXTERN_C char *ptsname(int fildes);
+
 #define PASSWDFILE          "/etc/passwd"
 #define SPASSWDFILE         "/.secure/etc/passwd"
 #define PWLOCKFILE          "/etc/ptmp"
@@ -98,7 +100,6 @@ static int find_pty(char *ptyname)
 {
 
   char *n;
-  char *ptsname();
   char master[80];
   int fd;
   int num;
@@ -509,7 +510,7 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
   struct passwd *pw;
   struct utmp utmpbuf;
 
-  tp = (struct login_cb *) calloc(1, sizeof(*tp));
+  tp = (struct login_cb *) calloc(1, sizeof(struct login_cb));
   if (!tp) return 0;
   tp->telnet = !strcmp(protocol, "TELNET");
   if ((tp->pty = find_pty(tp->ptyname)) < 0) {
@@ -610,7 +611,7 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
     execve(argv[0], argv, &env);
     exit(1);
   }
-  on_death(tp->pid, (void (*)()) death_handler, tp);
+  on_death((int) tp->pid, (void (*)(void *)) death_handler, tp);
   return tp;
 }
 
@@ -626,7 +627,7 @@ void login_close(struct login_cb *tp)
   if (tp->pty > 0) {
     off_read(tp->pty);
     off_write(tp->pty);
-    off_death(tp->pid);
+    off_death((int) tp->pid);
     chown(tp->ptyname, 0, 0);
     chmod(tp->ptyname, 0666);
 #ifdef linux
@@ -717,7 +718,7 @@ struct mbuf *login_read(struct login_cb *tp, int cnt)
 void login_write(struct login_cb *tp, struct mbuf *bp)
 {
   append(&tp->sndq, bp);
-  on_write(tp->pty, (void (*)()) write_pty, tp);
+  on_write(tp->pty, (void (*)(void *)) write_pty, tp);
   if (tp->linelen) write_pty(tp);
 }
 

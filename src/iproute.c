@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.27 1994/07/13 15:48:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.28 1994/10/06 16:15:28 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -18,6 +18,7 @@
 #include "trace.h"
 #include "pktdrvr.h"
 #include "bootp.h"
+#include "ipfilter.h"
 
 struct route *Routes[32][HASHMOD];      /* Routing table */
 struct route R_default = {              /* Default route entry */
@@ -35,7 +36,7 @@ static int q_pkt(struct iface *iface,int32 gateway,struct ip *ip,
 
 /* Initialize modulo lookup table used by hash_ip() in pcgen.asm */
 void
-ipinit()
+ipinit(void)
 {
 #if 0
 	int i;
@@ -53,10 +54,10 @@ ipinit()
  * IP destination address.
  */
 int
-ip_route(i_iface,bp,rxbroadcast)
-struct iface *i_iface;  /* Input interface */
-struct mbuf *bp;        /* Input packet */
-int rxbroadcast;        /* True if packet had link broadcast address */
+ip_route(
+struct iface *i_iface,  /* Input interface */
+struct mbuf *bp,        /* Input packet */
+int rxbroadcast)        /* True if packet had link broadcast address */
 {
 	struct ip ip;                   /* IP header being processed */
 	uint16 ip_len;                  /* IP header length */
@@ -361,9 +362,9 @@ no_opt:
 }
 /* Direct IP input routine for packets without link-level header */
 void
-ip_proc(iface,bp)
-struct iface *iface;
-struct mbuf *bp;
+ip_proc(
+struct iface *iface,
+struct mbuf *bp)
 {
 	ip_route(iface,bp,0);
 }
@@ -375,12 +376,12 @@ struct mbuf *bp;
  * A layer violation, yes, but a useful one...
  */
 static int
-q_pkt(iface,gateway,ip,bp,ckgood)
-struct iface *iface;
-int32 gateway;
-struct ip *ip;
-struct mbuf *bp;
-int ckgood;
+q_pkt(
+struct iface *iface,
+int32 gateway,
+struct ip *ip,
+struct mbuf *bp,
+int ckgood)
 {
 	struct mbuf *tbp,*tlast;
 	struct tcp tcp;
@@ -463,11 +464,11 @@ int ckgood;
 	return 0;
 }
 int
-ip_encap(bp,iface,gateway,tos)
-struct mbuf *bp;
-struct iface *iface;
-int32 gateway;
-int tos;
+ip_encap(
+struct mbuf *bp,
+struct iface *iface,
+int32 gateway,
+int tos)
 {
 	struct ip ip;
 
@@ -494,14 +495,14 @@ int tos;
 }
 /* Add an entry to the IP routing table. Returns 0 on success, -1 on failure */
 struct route *
-rt_add(target,bits,gateway,iface,metric,ttl,private)
-int32 target;           /* Target IP address prefix */
-unsigned int bits;      /* Size of target address prefix in bits (0-32) */
-int32 gateway;          /* Optional gateway to be reached via interface */
-struct iface *iface;    /* Interface to which packet is to be routed */
-int32 metric;           /* Metric for this route entry */
-int32 ttl;              /* Lifetime of this route entry in sec */
-char private;           /* Inhibit advertising this entry ? */
+rt_add(
+int32 target,           /* Target IP address prefix */
+unsigned int bits,      /* Size of target address prefix in bits (0-32) */
+int32 gateway,          /* Optional gateway to be reached via interface */
+struct iface *iface,    /* Interface to which packet is to be routed */
+int32 metric,           /* Metric for this route entry */
+int32 ttl,              /* Lifetime of this route entry in sec */
+char private)           /* Inhibit advertising this entry ? */
 {
 	struct route *rp,**hp;
 	struct route *rptmp;
@@ -596,9 +597,9 @@ char private;           /* Inhibit advertising this entry ? */
  * if entry was not in table.
  */
 int
-rt_drop(target,bits)
-int32 target;
-unsigned int bits;
+rt_drop(
+int32 target,
+unsigned int bits)
 {
 	register struct route *rp;
 	int i;
@@ -644,8 +645,8 @@ unsigned int bits;
 
 /* Compute hash function on IP address */
 uint16
-hash_ip(addr)
-register int32 addr;
+hash_ip(
+register int32 addr)
 {
 	register uint16 ret;
 
@@ -659,8 +660,8 @@ register int32 addr;
  * reach that destination. This is used by TCP to avoid local fragmentation
  */
 uint16
-ip_mtu(addr)
-int32 addr;
+ip_mtu(
+int32 addr)
 {
 	register struct route *rp;
 	struct iface *iface;
@@ -680,8 +681,8 @@ int32 addr;
  * to the destination, pick the first non-loopback address.
  */
 int32
-locaddr(addr)
-int32 addr;
+locaddr(
+int32 addr)
 {
 	register struct route *rp;
 	struct iface *ifp;
@@ -723,8 +724,8 @@ int32 addr;
  * if default route not set, return NULLROUTE
  */
 struct route *
-rt_lookup(target)
-int32 target;
+rt_lookup(
+int32 target)
 {
 	register struct route *rp;
 	int bits;
@@ -765,9 +766,9 @@ int32 target;
 }
 /* Search routing table for entry with specific width */
 struct route *
-rt_blookup(target,bits)
-int32 target;
-unsigned int bits;
+rt_blookup(
+int32 target,
+unsigned int bits)
 {
 	register struct route *rp;
 
@@ -795,8 +796,8 @@ unsigned int bits;
  * the more specific entry, since it is redundant.
  */
 void
-rt_merge(trace)
-int trace;
+rt_merge(
+int trace)
 {
 	int bits,i,j;
 	struct route *rp,*rpnext,*rp1;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.10 1993/05/17 13:44:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.11 1994/10/06 16:15:26 deyke Exp $ */
 
 /* Upper half of IP, consisting of send/receive primitives, including
  * fragment reassembly, for higher level protocols.
@@ -21,7 +21,7 @@ static void free_reasm(struct reasm *rp);
 static void freefrag(struct frag *fp);
 static struct reasm *lookup_reasm(struct ip *ip);
 static struct reasm *creat_reasm(struct ip *ip);
-static struct frag *newfrag(int    offset,int    last,struct mbuf *bp);
+static struct frag *newfrag(uint16 offset,uint16 last,struct mbuf *bp);
 void ttldec(struct iface *ifp);
 
 struct mib_entry Ip_mib[20] = {
@@ -58,16 +58,16 @@ static struct raw_ip *Raw_ip;
  * RFC 791
  */
 int
-ip_send(source,dest,protocol,tos,ttl,bp,length,id,df)
-int32 source;                   /* source address */
-int32 dest;                     /* Destination address */
-char protocol;                  /* Protocol */
-char tos;                       /* Type of service */
-char ttl;                       /* Time-to-live */
-struct mbuf *bp;                /* Data portion of datagram */
-uint16 length;                  /* Optional length of data portion */
-uint16 id;                      /* Optional identification */
-char df;                        /* Don't-fragment flag */
+ip_send(
+int32 source,                   /* source address */
+int32 dest,                     /* Destination address */
+char protocol,                  /* Protocol */
+char tos,                       /* Type of service */
+char ttl,                       /* Time-to-live */
+struct mbuf *bp,                /* Data portion of datagram */
+uint16 length,                  /* Optional length of data portion */
+uint16 id,                      /* Optional identification */
+char df)                        /* Don't-fragment flag */
 {
 	struct mbuf *tbp;
 	struct ip ip;                   /* IP header */
@@ -119,11 +119,11 @@ char df;                        /* Don't-fragment flag */
  * to the proper transport module
  */
 void
-ip_recv(iface,ip,bp,rxbroadcast)
-struct iface *iface;    /* Incoming interface */
-struct ip *ip;          /* Extracted IP header */
-struct mbuf *bp;        /* Data portion */
-int rxbroadcast;        /* True if received on subnet broadcast address */
+ip_recv(
+struct iface *iface,    /* Incoming interface */
+struct ip *ip,          /* Extracted IP header */
+struct mbuf *bp,        /* Data portion */
+int rxbroadcast)        /* True if received on subnet broadcast address */
 {
 	/* Function to call with completed datagram */
 	register struct raw_ip *rp;
@@ -178,11 +178,11 @@ int rxbroadcast;        /* True if received on subnet broadcast address */
 }
 /* Handle IP packets encapsulated inside IP */
 void
-ipip_recv(iface,ip,bp,rxbroadcast)
-struct iface *iface;    /* Incoming interface */
-struct ip *ip;          /* Extracted IP header */
-struct mbuf *bp;        /* Data portion */
-int rxbroadcast;        /* True if received on subnet broadcast address */
+ipip_recv(
+struct iface *iface,    /* Incoming interface */
+struct ip *ip,          /* Extracted IP header */
+struct mbuf *bp,        /* Data portion */
+int rxbroadcast)        /* True if received on subnet broadcast address */
 {
 	net_route(&Encap,bp);
 }
@@ -193,9 +193,9 @@ int rxbroadcast;        /* True if received on subnet broadcast address */
  */
 static
 struct mbuf *
-fraghandle(ip,bp)
-struct ip *ip;          /* IP header, host byte order */
-struct mbuf *bp;        /* The fragment itself */
+fraghandle(
+struct ip *ip,          /* IP header, host byte order */
+struct mbuf *bp)        /* The fragment itself */
 {
 	register struct reasm *rp; /* Pointer to reassembly descriptor */
 	struct frag *lastfrag,*nextfrag,*tfp;
@@ -339,9 +339,9 @@ struct mbuf *bp;        /* The fragment itself */
 }
 /* Arrange for receipt of raw IP datagrams */
 struct raw_ip *
-raw_ip(protocol,r_upcall)
-int protocol;
-void (*r_upcall)();
+raw_ip(
+int protocol,
+void (*r_upcall)(struct raw_ip *))
 {
 	register struct raw_ip *rp;
 
@@ -354,8 +354,8 @@ void (*r_upcall)();
 }
 /* Free a raw IP descriptor */
 void
-del_ip(rpp)
-struct raw_ip *rpp;
+del_ip(
+struct raw_ip *rpp)
 {
 	struct raw_ip *rplast = NULLRIP;
 	register struct raw_ip *rp;
@@ -378,8 +378,8 @@ struct raw_ip *rpp;
 }
 
 static struct reasm *
-lookup_reasm(ip)
-struct ip *ip;
+lookup_reasm(
+struct ip *ip)
 {
 	register struct reasm *rp;
 	struct reasm *rplast = NULLREASM;
@@ -403,8 +403,8 @@ struct ip *ip;
  * put at head of reassembly list
  */
 static struct reasm *
-creat_reasm(ip)
-register struct ip *ip;
+creat_reasm(
+register struct ip *ip)
 {
 	register struct reasm *rp;
 
@@ -425,8 +425,8 @@ register struct ip *ip;
 
 /* Free all resources associated with a reassembly descriptor */
 static void
-free_reasm(r)
-struct reasm *r;
+free_reasm(
+struct reasm *r)
 {
 	register struct reasm *rp;
 	struct reasm *rplast = NULLREASM;
@@ -456,8 +456,8 @@ struct reasm *r;
 
 /* Handle reassembly timeouts by deleting all reassembly resources */
 static void
-ip_timeout(arg)
-void *arg;
+ip_timeout(
+void *arg)
 {
 	register struct reasm *rp;
 
@@ -467,9 +467,9 @@ void *arg;
 }
 /* Create a fragment */
 static struct frag *
-newfrag(offset,last,bp)
-uint16 offset,last;
-struct mbuf *bp;
+newfrag(
+uint16 offset,uint16 last,
+struct mbuf *bp)
 {
 	struct frag *fp;
 
@@ -485,8 +485,8 @@ struct mbuf *bp;
 }
 /* Delete a fragment, return next one on queue */
 static void
-freefrag(fp)
-struct frag *fp;
+freefrag(
+struct frag *fp)
 {
 	free_p(fp->buf);
 	free((char *)fp);

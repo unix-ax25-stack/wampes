@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.17 1994/09/05 12:47:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.18 1994/10/06 16:15:23 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -101,28 +101,28 @@ static struct cmds Dcachecmds[] = {
 };
 
 int
-dodomain(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dodomain(
+int argc,
+char *argv[],
+void *p)
 {
 	return subcmd(Dcmds,argc,argv,p);
 }
 
 static int
-docache(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+docache(
+int argc,
+char *argv[],
+void *p)
 {
 	return subcmd(Dcachecmds,argc,argv,p);
 }
 
 static int
-docachelist(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+docachelist(
+int argc,
+char *argv[],
+void *p)
 {
   struct cache *cp;
 
@@ -137,10 +137,10 @@ void *p;
 }
 
 static int
-docacheflush(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+docacheflush(
+int argc,
+char *argv[],
+void *p)
 {
   struct cache *cp;
 
@@ -161,10 +161,10 @@ void *p;
 }
 
 static int
-dodnsquery(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dodnsquery(
+int argc,
+char *argv[],
+void *p)
 {
   int32 addr;
 
@@ -184,36 +184,36 @@ void *p;
 }
 
 static int
-dodnstrace(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dodnstrace(
+int argc,
+char *argv[],
+void *p)
 {
 	return setbool(&Dtrace,"server trace",argc,argv);
 }
 
 static int
-dousegethostby(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dousegethostby(
+int argc,
+char *argv[],
+void *p)
 {
   return setbool(&Usegethostby, "Using gethostby", argc, argv);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void strlwc(to, from)
-char *to;
-const char *from;
+static void strlwc(
+char *to,
+const char *from)
 {
   while ((*to++ = Xtolower(*from++))) ;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int isaddr(s)
-const char *s;
+static int isaddr(
+const char *s)
 {
   int c;
 
@@ -225,15 +225,15 @@ const char *s;
 
 /*---------------------------------------------------------------------------*/
 
-static void add_to_cache(name, addr)
-const char *name;
-int32 addr;
+static void add_to_cache(
+const char *name,
+int32 addr)
 {
   struct cache *cp;
 
   for (cp = Cache; cp; cp = cp->next)
     if (cp->addr == addr && !strcmp(cp->name, name)) return;
-  cp = (struct cache *) malloc(sizeof(*cp) + strlen(name));
+  cp = (struct cache *) malloc(sizeof(struct cache) + strlen(name));
   strcpy(cp->name, name);
   cp->addr = addr;
   cp->next = Cache;
@@ -242,8 +242,8 @@ int32 addr;
 
 /*---------------------------------------------------------------------------*/
 
-int32 resolve(name)
-char *name;
+int32 resolve(
+char *name)
 {
 
   char *p;
@@ -310,9 +310,9 @@ char *name;
 
 /*---------------------------------------------------------------------------*/
 
-char *resolve_a(addr, shorten)
-int32 addr;
-int shorten;
+char *resolve_a(
+int32 addr,
+int shorten)
 {
 
   char buf[1024];
@@ -374,8 +374,8 @@ int shorten;
  **/
 
 static char *
-dtype(value)
-int value;
+dtype(
+int value)
 {
 	static char buf[10];
 
@@ -390,8 +390,8 @@ int value;
 
 /* Free (list of) resource records */
 void
-free_rr(rrlp)
-register struct rr *rrlp;
+free_rr(
+register struct rr *rrlp)
 {
 	register struct rr *rrp;
 
@@ -433,14 +433,14 @@ register struct rr *rrlp;
 /*---------------------------------------------------------------------------*/
 
 static struct rr *
-make_rr(source,dname,dclass,dtype,ttl,rdl,data)
-int source;
-char *dname;
-uint16 dclass;
-uint16 dtype;
-int32 ttl;
-uint16 rdl;
-void *data;
+make_rr(
+int source,
+char *dname,
+int dclass,
+int dtype,
+int32 ttl,
+int rdl,
+void *data)
 {
 	register struct rr *newrr;
 
@@ -505,9 +505,9 @@ void *data;
 
 /* Print a resource record */
 static void
-put_rr(fp,rrp)
-FILE *fp;
-struct rr *rrp;
+put_rr(
+FILE *fp,
+struct rr *rrp)
 {
 	char * stuff;
 
@@ -584,8 +584,8 @@ struct rr *rrp;
  **/
 
 static void
-dumpdomain(dhp)
-struct dhdr *dhp;
+dumpdomain(
+struct dhdr *dhp)
 {
 	struct rr *rrp;
 	char * stuff;
@@ -617,8 +617,8 @@ struct dhdr *dhp;
 
 /*---------------------------------------------------------------------------*/
 
-static int32 in_addr_arpa(name)
-char *name;
+static int32 in_addr_arpa(
+char *name)
 {
   int32 addr;
 
@@ -631,8 +631,8 @@ char *name;
 
 /*---------------------------------------------------------------------------*/
 
-static struct mbuf *domain_server(bp)
-struct mbuf *bp;
+static struct mbuf *domain_server(
+struct mbuf *bp)
 {
 
   char *cp;
@@ -642,7 +642,7 @@ struct mbuf *bp;
   struct rr *qp;
   struct rr *rrp;
 
-  dhp = (struct dhdr *) malloc(sizeof(*dhp));
+  dhp = (struct dhdr *) malloc(sizeof(struct dhdr));
   if (ntohdomain(dhp, &bp)) goto Done;
   if (Dtrace) {
     printf("recv: ");
@@ -729,7 +729,7 @@ struct mbuf *bp;
     struct mbuf *bp1;
 
     dup_p(&bp1, bp, 0, 9999);
-    dhp1 = malloc(sizeof(*dhp1));
+    dhp1 = (struct dhdr *) malloc(sizeof(struct dhdr));
     if (ntohdomain(dhp1, &bp1)) {
       printf("ntohdomain failed!\n");
     } else {
@@ -756,10 +756,10 @@ Done:
 
 /*---------------------------------------------------------------------------*/
 
-static void domain_server_udp(iface, up, cnt)
-struct iface *iface;
-struct udp_cb *up;
-int cnt;
+static void domain_server_udp(
+struct iface *iface,
+struct udp_cb *up,
+int cnt)
 {
 
   struct mbuf *bp;
@@ -772,9 +772,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void domain_server_tcp_recv(tcb, cnt)
-struct tcb *tcb;
-int cnt;
+static void domain_server_tcp_recv(struct tcb *tcb, int cnt)
 {
 
   int len;
@@ -803,9 +801,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void domain_server_tcp_state(tcb, old, new)
-struct tcb *tcb;
-int old, new;
+static void domain_server_tcp_state(struct tcb *tcb, int old, int new)
 {
   switch (new) {
   case TCP_ESTABLISHED:
@@ -826,10 +822,10 @@ int old, new;
 
 /*---------------------------------------------------------------------------*/
 
-int domain0(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+int domain0(
+int argc,
+char *argv[],
+void *p)
 {
   if (Domain_ucb) {
     del_udp(Domain_ucb);
@@ -844,10 +840,10 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-int domain1(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+int domain1(
+int argc,
+char *argv[],
+void *p)
 {
   struct socket lsocket;
 

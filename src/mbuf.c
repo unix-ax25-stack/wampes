@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.12 1993/05/17 13:45:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.13 1994/10/06 16:15:31 deyke Exp $ */
 
 /* mbuf (message buffer) primitives
  * Copyright 1991 Phil Karn, KA9Q
@@ -16,8 +16,8 @@ long Pushalloc;                 /* Calls to pushalloc() that call malloc */
  * interrupt buffer pool.
  */
 struct mbuf *
-alloc_mbuf(size)
-register uint16 size;
+alloc_mbuf(
+register uint16 size)
 {
 	register struct mbuf *bp;
 
@@ -33,8 +33,8 @@ register uint16 size;
 }
 /* Allocate mbuf, waiting if memory is unavailable */
 struct mbuf *
-ambufw(size)
-uint16 size;
+ambufw(
+uint16 size)
 {
 	register struct mbuf *bp;
 
@@ -53,8 +53,8 @@ uint16 size;
  * Return pointer to next mbuf in packet chain
  */
 struct mbuf *
-free_mbuf(bp)
-register struct mbuf *bp;
+free_mbuf(
+register struct mbuf *bp)
 {
 	struct mbuf *bpnext;
 	struct mbuf *bptmp;
@@ -79,8 +79,8 @@ register struct mbuf *bp;
  * if any
  */
 struct mbuf *
-free_p(bp)
-register struct mbuf *bp;
+free_p(
+register struct mbuf *bp)
 {
 	register struct mbuf *abp;
 
@@ -93,8 +93,8 @@ register struct mbuf *bp;
 }
 /* Free entire queue of packets (of mbufs) */
 void
-free_q(q)
-struct mbuf **q;
+free_q(
+struct mbuf **q)
 {
 	register struct mbuf *bp;
 
@@ -104,8 +104,8 @@ struct mbuf **q;
 
 /* Count up the total number of bytes in a packet */
 uint16
-len_p(bp)
-register struct mbuf *bp;
+len_p(
+register struct mbuf *bp)
 {
 	register uint16 cnt = 0;
 
@@ -117,8 +117,8 @@ register struct mbuf *bp;
 }
 /* Count up the number of packets in a queue */
 uint16
-len_q(bp)
-register struct mbuf *bp;
+len_q(
+register struct mbuf *bp)
 {
 	register uint16 cnt;
 
@@ -128,9 +128,9 @@ register struct mbuf *bp;
 }
 /* Trim mbuf to specified length by lopping off end */
 void
-trim_mbuf(bpp,length)
-struct mbuf **bpp;
-uint16 length;
+trim_mbuf(
+struct mbuf **bpp,
+uint16 length)
 {
 	register uint16 tot = 0;
 	register struct mbuf *bp;
@@ -169,11 +169,11 @@ uint16 length;
  * number of bytes actually duplicated.
  */
 uint16
-dup_p(hp,bp,offset,cnt)
-struct mbuf **hp;
-register struct mbuf *bp;
-register uint16 offset;
-register uint16 cnt;
+dup_p(
+struct mbuf **hp,
+register struct mbuf *bp,
+register uint16 offset,
+register uint16 cnt)
 {
 	register struct mbuf *cp;
 	uint16 tot;
@@ -223,9 +223,9 @@ register uint16 cnt;
 }
 /* Copy first 'cnt' bytes of packet into a new, single mbuf */
 struct mbuf *
-copy_p(bp,cnt)
-register struct mbuf *bp;
-register uint16 cnt;
+copy_p(
+register struct mbuf *bp,
+register uint16 cnt)
 {
 	register struct mbuf *cp;
 	register char *wp;
@@ -248,10 +248,10 @@ register uint16 cnt;
  * bytes actually pulled off
  */
 uint16
-pullup(bph,buf,cnt)
-struct mbuf **bph;
-char *buf;
-uint16 cnt;
+pullup(
+struct mbuf **bph,
+char *buf,
+uint16 cnt)
 {
 	register struct mbuf *bp;
 	uint16 n,tot;
@@ -292,11 +292,11 @@ uint16 cnt;
  * bytes. Return actual number of bytes copied
  */
 uint16
-extract(bp,offset,buf,len)
-struct mbuf *bp;
-uint16 offset;
-char *buf;
-uint16 len;
+extract(
+struct mbuf *bp,
+uint16 offset,
+char *buf,
+uint16 len)
 {
 	uint16 copied = 0;
 	uint16 n;
@@ -320,9 +320,9 @@ uint16 len;
 }
 /* Append mbuf to end of mbuf chain */
 void
-append(bph,bp)
-struct mbuf **bph;
-struct mbuf *bp;
+append(
+struct mbuf **bph,
+struct mbuf *bp)
 {
 	register struct mbuf *p;
 
@@ -345,9 +345,9 @@ struct mbuf *bp;
  * This operation is the logical inverse of pullup(), hence the name.
  */
 struct mbuf *
-pushdown(bp,size)
-register struct mbuf *bp;
-uint16 size;
+pushdown(
+register struct mbuf *bp,
+uint16 size)
 {
 	register struct mbuf *nbp;
 
@@ -372,9 +372,9 @@ uint16 size;
 }
 /* Append packet to end of packet queue */
 void
-enqueue(q,bp)
-struct mbuf **q;
-struct mbuf *bp;
+enqueue(
+struct mbuf **q,
+struct mbuf *bp)
 {
 	register struct mbuf *p;
 
@@ -392,8 +392,8 @@ struct mbuf *bp;
 }
 /* Unlink a packet from the head of the queue */
 struct mbuf *
-dequeue(q)
-register struct mbuf **q;
+dequeue(
+register struct mbuf **q)
 {
 	register struct mbuf *bp;
 
@@ -408,9 +408,9 @@ register struct mbuf **q;
 
 /* Copy user data into an mbuf */
 struct mbuf *
-qdata(data,cnt)
-char *data;
-uint16 cnt;
+qdata(
+char *data,
+uint16 cnt)
 {
 	register struct mbuf *bp;
 
@@ -421,10 +421,10 @@ uint16 cnt;
 }
 /* Copy mbuf data into user buffer */
 uint16
-dqdata(bp,buf,cnt)
-struct mbuf *bp;
-char *buf;
-unsigned cnt;
+dqdata(
+struct mbuf *bp,
+char *buf,
+unsigned cnt)
 {
 	uint16 tot;
 	unsigned n;
@@ -449,8 +449,8 @@ unsigned cnt;
  * return.
  */
 int32
-pull32(bpp)
-struct mbuf **bpp;
+pull32(
+struct mbuf **bpp)
 {
 	char buf[4];
 
@@ -464,8 +464,8 @@ struct mbuf **bpp;
  * Return -1 on error
  */
 long
-pull16(bpp)
-struct mbuf **bpp;
+pull16(
+struct mbuf **bpp)
 {
 	char buf[2];
 
@@ -476,8 +476,8 @@ struct mbuf **bpp;
 }
 /* Pull single character from mbuf */
 int
-pullchar(bpp)
-struct mbuf **bpp;
+pullchar(
+struct mbuf **bpp)
 {
 	char c;
 
@@ -486,9 +486,9 @@ struct mbuf **bpp;
 	return (int)uchar(c);
 }
 int
-write_p(fp,bp)
-FILE *fp;
-struct mbuf *bp;
+write_p(
+FILE *fp,
+struct mbuf *bp)
 {
 	while(bp != NULLBUF){
 		if(fwrite(bp->data,1,bp->cnt,fp) != bp->cnt)
@@ -508,8 +508,8 @@ struct mbuf *bp;
  * short supply.
  */
 void
-mbuf_crunch(bpp)
-struct mbuf **bpp;
+mbuf_crunch(
+struct mbuf **bpp)
 {
 	register struct mbuf *bp = *bpp;
 	struct mbuf *nbp;

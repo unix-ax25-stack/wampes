@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.14 1993/05/17 13:45:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.15 1994/10/06 16:15:29 deyke Exp $ */
 
 #ifndef _LAPB_H
 #define _LAPB_H
@@ -48,6 +48,12 @@
 #define Y       4       /* Too-long I-field */
 #define Z       8       /* Invalid sequence number */
 
+/* Receive resequence buffer */
+struct axreseq {
+	struct mbuf *bp;
+	int sum;
+};
+
 /* Per-connection link control block
  * These are created and destroyed dynamically,
  * and are indexed through a hash table.
@@ -59,10 +65,7 @@ struct ax25_cb {
 	struct iface *iface;            /* Interface */
 
 	struct mbuf *txq;               /* Transmit queue */
-	struct axreseq {                /* Receive resequence buffer */
-		struct mbuf *bp;
-		int sum;
-	} reseq[8];
+	struct axreseq reseq[8];        /* Receive resequence buffer */
 	struct mbuf *rxasm;             /* Receive reassembly buffer */
 	struct mbuf *rxq;               /* Receive queue */
 
@@ -136,7 +139,7 @@ void est_link(struct ax25_cb *axp);
 void lapbstate(struct ax25_cb *axp,int s);
 int lapb_input(struct iface *iface,struct ax25 *hdr,struct mbuf *bp);
 int lapb_output(struct ax25_cb *axp);
-struct mbuf *segmenter(struct mbuf *bp,int    ssize);
+struct mbuf *segmenter(struct mbuf *bp,uint16 ssize);
 int sendctl(struct ax25_cb *axp,int cmdrsp,int cmd);
 int busy(struct ax25_cb *cp);
 void build_path(struct ax25_cb *cp,struct iface *ifp,struct ax25 *hdr,int reverse);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmphdr.c,v 1.4 1993/05/17 13:44:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmphdr.c,v 1.5 1994/10/06 16:15:26 deyke Exp $ */
 
 /* ICMP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -11,9 +11,9 @@
 
 /* Generate ICMP header in network byte order, link data, compute checksum */
 struct mbuf *
-htonicmp(icmp,bp)
-struct icmp *icmp;
-struct mbuf *bp;
+htonicmp(
+struct icmp *icmp,
+struct mbuf *bp)
 {
 	register char *cp;
 	uint16 checksum;
@@ -63,9 +63,9 @@ struct mbuf *bp;
 }
 /* Pull off ICMP header */
 int
-ntohicmp(icmp,bpp)
-struct icmp *icmp;
-struct mbuf **bpp;
+ntohicmp(
+struct icmp *icmp,
+struct mbuf **bpp)
 {
 	char icmpbuf[8];
 

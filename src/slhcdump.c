@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhcdump.c,v 1.2 1993/05/17 13:45:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhcdump.c,v 1.3 1994/10/06 16:15:35 deyke Exp $ */
 
 #include <stdio.h>
 #include "global.h"
@@ -11,8 +11,8 @@
 static uint16 decodeint(struct mbuf **bpp);
 
 static uint16
-decodeint(bpp)
-struct mbuf **bpp;
+decodeint(
+struct mbuf **bpp)
 {
 	char tmpbuf[2];
 
@@ -27,10 +27,10 @@ struct mbuf **bpp;
 }
 
 void
-vjcomp_dump(fp,bpp,unused)
-FILE *fp;
-struct mbuf **bpp;
-int unused;
+vjcomp_dump(
+FILE *fp,
+struct mbuf **bpp,
+int unused)
 {
 	char changes;
 	char tmpbuf[2];
@@ -82,10 +82,10 @@ int unused;
 
 /* dump serial line IP packet; may have Van Jacobson TCP header compression */
 void
-sl_dump(fp,bpp,unused)
-FILE *fp;
-struct mbuf **bpp;
-int unused;
+sl_dump(
+FILE *fp,
+struct mbuf **bpp,
+int unused)
 {
 	struct mbuf *bp, *tbp;
 	unsigned char c;

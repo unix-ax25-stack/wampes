@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iphdr.c,v 1.6 1993/05/17 13:45:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iphdr.c,v 1.7 1994/10/06 16:15:27 deyke Exp $ */
 
 /* IP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,10 +13,10 @@
  * otherwise compute it automatically.
  */
 struct mbuf *
-htonip(ip,bp,cflag)
-register struct ip *ip;
-struct mbuf *bp;
-int cflag;
+htonip(
+register struct ip *ip,
+struct mbuf *bp,
+int cflag)
 {
 	uint16 hdr_len;
 	register char *cp;
@@ -64,9 +64,9 @@ int cflag;
 }
 /* Extract an IP header from mbuf */
 int
-ntohip(ip,bpp)
-register struct ip *ip;
-struct mbuf **bpp;
+ntohip(
+register struct ip *ip,
+struct mbuf **bpp)
 {
 	int ihl;
 	uint16 fl_offs;
@@ -104,8 +104,8 @@ struct mbuf **bpp;
 }
 /* Perform end-around-carry adjustment */
 uint16
-eac(sum)
-register int32 sum;     /* Carries in high order 16 bits */
+eac(
+register int32 sum)     /* Carries in high order 16 bits */
 {
 	register uint16 csum;
 
@@ -115,10 +115,10 @@ register int32 sum;     /* Carries in high order 16 bits */
 }
 /* Checksum a mbuf chain, with optional pseudo-header */
 uint16
-cksum(ph,m,len)
-struct pseudo_header *ph;
-register struct mbuf *m;
-uint16 len;
+cksum(
+struct pseudo_header *ph,
+register struct mbuf *m,
+uint16 len)
 {
 	register uint16 cnt, total;
 	register int32 sum, csum;

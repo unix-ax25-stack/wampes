@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25dump.c,v 1.8 1993/05/17 13:44:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25dump.c,v 1.9 1994/10/06 16:15:20 deyke Exp $ */
 
 /* AX25 header tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -11,14 +11,14 @@
 #include "trace.h"
 #include "socket.h"
 
-static char *decode_type(int    type);
+static char *decode_type(uint16 type);
 
 /* Dump an AX.25 packet header */
 void
-ax25_dump(fp,bpp,check)
-FILE *fp;
-struct mbuf **bpp;
-int check;      /* Not used */
+ax25_dump(
+FILE *fp,
+struct mbuf **bpp,
+int check)      /* Not used */
 {
 	char tmp[AXBUF];
 	char frmr[3];
@@ -138,8 +138,8 @@ int check;      /* Not used */
 
 }
 static char *
-decode_type(type)
-uint16 type;
+decode_type(
+uint16 type)
 {
 	switch(type){
 	case I:
@@ -171,9 +171,9 @@ uint16 type;
  * this checks only the ultimate destination, not the digipeater field
  */
 int
-ax_forus(iface,bp)
-struct iface *iface;
-struct mbuf *bp;
+ax_forus(
+struct iface *iface,
+struct mbuf *bp)
 {
 	struct mbuf *bpp;
 	char dest[AXALEN];

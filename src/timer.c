@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.15 1994/09/05 12:47:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.16 1994/10/06 16:15:38 deyke Exp $ */
 
 /* General purpose software timer facilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -27,9 +27,9 @@ static void t_alarm(void *x);
 
 /* Process that handles clock ticks */
 void
-timerproc(i,v1,v2)
-int i;
-void *v1,*v2;
+timerproc(
+int i,
+void *v1,void *v2)
 {
 	register struct timer *t;
 	int32 bugfix;
@@ -59,8 +59,8 @@ void *v1,*v2;
 }
 /* Start a timer */
 void
-start_timer(t)
-struct timer *t;
+start_timer(
+struct timer *t)
 {
 	register struct timer *tnext;
 	struct timer *tprev = NULLTIMER;
@@ -98,8 +98,8 @@ struct timer *t;
 }
 /* Stop a timer */
 void
-stop_timer(timer)
-struct timer *timer;
+stop_timer(
+struct timer *timer)
 {
 
 	if(timer == NULLTIMER || timer->state != TIMER_RUN)
@@ -117,8 +117,8 @@ struct timer *timer;
 }
 /* Return milliseconds remaining on this timer */
 int32
-read_timer(t)
-struct timer *t;
+read_timer(
+struct timer *t)
 {
 	int32 remaining;
 
@@ -131,7 +131,7 @@ struct timer *t;
 		return remaining;
 }
 int32
-next_timer_event()
+next_timer_event(void)
 {
 	if (Timers)
 		return read_timer(Timers);
@@ -142,8 +142,8 @@ next_timer_event()
  * Normally returns 0; returns -1 if aborted by alarm.
  */
 int
-Xpause(ms)
-int32 ms;
+Xpause(
+int32 ms)
 {
 	int val = 0;
 
@@ -159,15 +159,15 @@ int32 ms;
 	return (val == EALARM) ? 0 : -1;
 }
 static void
-t_alarm(x)
-void *x;
+t_alarm(
+void *x)
 {
 	alert((struct proc *)x,EALARM);
 }
 /* Send signal to current process after specified number of milliseconds */
 void
-Xalarm(ms)
-int32 ms;
+Xalarm(
+int32 ms)
 {
 	if(Curproc != NULLPROC){
 		set_timer(&Curproc->alarm,ms);
@@ -178,8 +178,8 @@ int32 ms;
 }
 /* Convert time count in seconds to printable days:hr:min:sec format */
 char *
-tformat(t)
-int32 t;
+tformat(
+int32 t)
 {
 	static char buf[17],*cp;
 	unsigned int days,hrs,mins,secs;

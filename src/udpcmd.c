@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.8 1993/05/17 13:45:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.9 1994/10/06 16:15:39 deyke Exp $ */
 
 /* UDP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -19,17 +19,17 @@ static struct cmds Udpcmds[] = {
 	NULLCHAR,
 };
 int
-doudp(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doudp(
+int argc,
+char *argv[],
+void *p)
 {
 	return subcmd(Udpcmds,argc,argv,p);
 }
 int
-st_udp(udp,n)
-struct udp_cb *udp;
-int n;
+st_udp(
+struct udp_cb *udp,
+int n)
 {
 	if(n == 0)
 		printf("    &UCB Rcv-Q  Local socket\n");
@@ -39,10 +39,10 @@ int n;
 
 /* Dump UDP statistics and control blocks */
 static int
-doudpstat(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doudpstat(
+int argc,
+char *argv[],
+void *p)
 {
 	register struct udp_cb *udp;
 	register int i;

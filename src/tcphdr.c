@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcphdr.c,v 1.6 1993/06/27 07:50:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcphdr.c,v 1.7 1994/10/06 16:15:36 deyke Exp $ */
 
 /* TCP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -14,10 +14,10 @@
  * take checksum from tcph->checksum
  */
 struct mbuf *
-htontcp(tcph,bp,ph)
-register struct tcp *tcph;
-struct mbuf *bp;
-struct pseudo_header *ph;
+htontcp(
+register struct tcp *tcph,
+struct mbuf *bp,
+struct pseudo_header *ph)
 {
 	uint16 hdrlen;
 	register char *cp;
@@ -80,9 +80,9 @@ struct pseudo_header *ph;
 }
 /* Pull TCP header off mbuf */
 int
-ntohtcp(tcph,bpp)
-register struct tcp *tcph;
-struct mbuf **bpp;
+ntohtcp(
+register struct tcp *tcph,
+struct mbuf **bpp)
 {
 	int hdrlen,i,optlen,kind;
 	register int flags;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.15 1994/05/15 16:54:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.16 1994/10/06 16:15:26 deyke Exp $ */
 
 /* ICMP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -46,19 +46,19 @@ int Icmp_trace;
 static int Icmp_echo = 1;
 
 int
-doicmp(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doicmp(
+int argc,
+char *argv[],
+void *p)
 {
 	return subcmd(Icmpcmds,argc,argv,p);
 }
 
 static int
-doicmpstat(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doicmpstat(
+int argc,
+char *argv[],
+void *p)
 {
 	register int i;
 	int lim;
@@ -76,28 +76,28 @@ void *p;
 	return 0;
 }
 static int
-doicmptr(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doicmptr(
+int argc,
+char *argv[],
+void *p)
 {
 	return setbool(&Icmp_trace,"ICMP tracing",argc,argv);
 }
 static int
-doicmpec(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doicmpec(
+int argc,
+char *argv[],
+void *p)
 {
 	return setbool(&Icmp_echo,"ICMP echo response accept",argc,argv);
 }
 
 /* Send ICMP Echo Request packets */
 int
-doping(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doping(
+int argc,
+char *argv[],
+void *p)
 {
 	int32 dest;
 	struct ping *pp1;
@@ -170,8 +170,8 @@ void *p;
 
 /* Called by ping timeout */
 static void
-ptimeout(p)
-void *p;
+ptimeout(
+void *p)
 {
 	register struct ping *pp;
 
@@ -181,11 +181,11 @@ void *p;
 	start_timer(&pp->timer);
 }
 void
-echo_proc(source,dest,icmp,bp)
-int32 source;
-int32 dest;
-struct icmp *icmp;
-struct mbuf *bp;
+echo_proc(
+int32 source,
+int32 dest,
+struct icmp *icmp,
+struct mbuf *bp)
 {
 	register struct ping *pp;
 	uint16 hval;
@@ -235,11 +235,11 @@ struct mbuf *bp;
 }
 /* Send ICMP Echo Request packet */
 static int
-pingem(target,seq,id,len)
-int32 target;   /* Site to be pinged */
-uint16 seq;     /* ICMP Echo Request sequence number */
-uint16 id;      /* ICMP Echo Request ID */
-uint16 len;     /* Length of data field */
+pingem(
+int32 target,   /* Site to be pinged */
+int seq,        /* ICMP Echo Request sequence number */
+int id,         /* ICMP Echo Request ID */
+int len)        /* Length of data field */
 {
 	struct mbuf *data;
 	struct mbuf *bp;
@@ -271,8 +271,8 @@ uint16 len;     /* Length of data field */
 	return ip_send(INADDR_ANY,target,ICMP_PTCL,0,0,bp,len,0,0);
 }
 static uint16
-hash_ping(dest)
-int32 dest;
+hash_ping(
+int32 dest)
 {
 	uint16 hval;
 
@@ -282,8 +282,8 @@ int32 dest;
 /* Add entry to ping table */
 static
 struct ping *
-add_ping(dest)
-int32 dest;
+add_ping(
+int32 dest)
 {
 	struct ping *pp;
 	uint16 hval;
@@ -302,8 +302,8 @@ int32 dest;
 }
 /* Delete entry from ping table */
 static void
-del_ping(pp)
-struct ping *pp;
+del_ping(
+struct ping *pp)
 {
 	uint16 hval;
 

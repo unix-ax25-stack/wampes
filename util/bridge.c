@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.12 1994/06/16 13:14:38 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.13 1994/10/06 16:15:42 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -89,7 +89,7 @@ static void create_connection(int flisten)
   addrlen = 0;
   fd = accept(flisten, &addr, &addrlen);
   if (fd >= 0) {
-    p = (struct connection *) calloc(1, sizeof(*p));
+    p = (struct connection *) calloc(1, sizeof(struct connection));
     p->fd = fd;
     FD_SET(fd, &chkread);
     if (maxfd < fd) maxfd = fd;

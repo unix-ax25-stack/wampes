@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.10 1993/05/17 13:45:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.11 1994/10/06 16:15:34 deyke Exp $ */
 
 /* This file contains code to implement the Routing Information Protocol (RIP)
  * and is derived from 4.2BSD code. Mike Karels of Berkeley has stated on
@@ -34,16 +34,16 @@ struct rip_refuse *Rip_refuse;
 static void rip_rx(struct iface *iface,struct udp_cb *sock,int cnt);
 static void proc_rip(struct iface *iface,int32 gateway,
 	struct rip_route *ep,int32 ttl);
-static char *putheader(char *cp,int  command,int  version);
-static char *putentry(char *cp,int    fam,int32 target,int32 metric);
+static char *putheader(char *cp,char command,char version);
+static char *putentry(char *cp,uint16 fam,int32 target,int32 metric);
 static void rip_shout(void *p);
-static void send_routes(int32 dest,int    port,int split,int trig,
+static void send_routes(int32 dest,uint16 port,int split,int trig,
 	int us);
 
 /* Send RIP CMD_RESPONSE packet(s) to the specified rip_list entry */
 static void
-rip_shout(p)
-void *p;
+rip_shout(
+void *p)
 {
 	register struct rip_list *rl;
 
@@ -56,12 +56,12 @@ void *p;
 
 /* Send the routing table. */
 static void
-send_routes(dest,port,split,trig,us)
-int32 dest;             /* IP destination address to send to */
-uint16 port;
-int split;              /* Do split horizon? */
-int trig;               /* Send only triggered updates? */
-int us;                 /* Include our address in update */
+send_routes(
+int32 dest,             /* IP destination address to send to */
+uint16 port,
+int split,              /* Do split horizon? */
+int trig,               /* Send only triggered updates? */
+int us)                 /* Include our address in update */
 {
 	char *cp;
 	int i,bits,numroutes,maxroutes;
@@ -144,10 +144,10 @@ int us;                 /* Include our address in update */
 }
 /* Add an entry to the rip broadcast list */
 int
-rip_add(dest,interval,flags)
-int32 dest;
-int32 interval;
-char flags;
+rip_add(
+int32 dest,
+int32 interval,
+char flags)
 {
 	register struct rip_list *rl;
 	struct route *rp;
@@ -188,8 +188,8 @@ char flags;
  * advertisements
 */
 int
-riprefadd(gateway)
-int32 gateway;
+riprefadd(
+int32 gateway)
 {
 	register struct rip_refuse *rl;
 
@@ -213,8 +213,8 @@ int32 gateway;
 
 /* drop a RIP target */
 int
-rip_drop(dest)
-int32   dest;
+rip_drop(
+int32   dest)
 {
 	register struct rip_list *rl;
 
@@ -244,8 +244,8 @@ int32   dest;
 
 /* drop a RIP-refuse target from the rip_refuse list */
 int
-riprefdrop(gateway)
-int32 gateway;
+riprefdrop(
+int32 gateway)
 {
 	register struct rip_refuse *rl;
 
@@ -272,7 +272,7 @@ int32 gateway;
 
 /* function to output a RIP CMD_RESPONSE packet for the rip_trigger list */
 void
-rip_trigger()
+rip_trigger(void)
 {
 	register struct rip_list *rl;
 	int bits,i;
@@ -294,7 +294,7 @@ rip_trigger()
 
 /* Start RIP agent listening at local RIP UDP port */
 int
-rip_init()
+rip_init(void)
 {
 	struct socket lsock;
 
@@ -309,10 +309,10 @@ rip_init()
 
 /* Process RIP input received from 'interface'. */
 static void
-rip_rx(iface,sock,cnt)
-struct iface *iface;
-struct udp_cb *sock;
-int cnt;
+rip_rx(
+struct iface *iface,
+struct udp_cb *sock,
+int cnt)
 {
 	struct mbuf *bp;
 	struct socket fsock;
@@ -419,8 +419,8 @@ int cnt;
  * include the address mask for each entry.
  */
 int
-nbits(target)
-int32 target;
+nbits(
+int32 target)
 {
 	int bits;
 
@@ -467,11 +467,11 @@ int32 target;
 }
 /* Remove and process a RIP response entry from a packet */
 static void
-proc_rip(iface,gateway,ep,ttl)
-struct iface *iface;
-int32 gateway;
-register struct rip_route *ep;
-int32 ttl;
+proc_rip(
+struct iface *iface,
+int32 gateway,
+register struct rip_route *ep,
+int32 ttl)
 {
 	unsigned int bits;
 	register struct route *rp;
@@ -590,9 +590,9 @@ int32 ttl;
 }
 /* Send a RIP request packet to the specified destination */
 int
-ripreq(dest,replyport)
-int32 dest;
-uint16 replyport;
+ripreq(
+int32 dest,
+uint16 replyport)
 {
 	struct mbuf *bp;
 	struct socket lsock,fsock;
@@ -622,9 +622,9 @@ uint16 replyport;
 	return 0;
 }
 void
-pullentry(ep,bpp)
-register struct rip_route *ep;
-struct mbuf **bpp;
+pullentry(
+register struct rip_route *ep,
+struct mbuf **bpp)
 {
 	ep->addr_fam = pull16(bpp);
 	(void)pull16(bpp);
@@ -636,10 +636,10 @@ struct mbuf **bpp;
 
 /* Write the header of a RIP packet */
 static char *
-putheader(cp,command,version)
-register char *cp;
-char command;
-char version;
+putheader(
+register char *cp,
+char command,
+char version)
 {
 	*cp++ = command;
 	*cp++ = version;
@@ -648,11 +648,11 @@ char version;
 
 /* Write a single entry into a rip packet */
 static char *
-putentry(cp,fam,target,metric)
-register char *cp;
-uint16 fam;
-int32 target;
-int32 metric;
+putentry(
+register char *cp,
+uint16 fam,
+int32 target,
+int32 metric)
 {
 	cp = put16(cp,fam);
 	cp = put16(cp,0);
@@ -665,8 +665,8 @@ int32 metric;
  * then delete it. Otherwise mark for deletion and restart timer.
  */
 void
-rt_timeout(s)
-void *s;
+rt_timeout(
+void *s)
 {
 	register struct route *rp = (struct route *)s;
 

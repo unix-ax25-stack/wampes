@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.11 1994/04/13 09:51:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.12 1994/10/06 16:15:36 deyke Exp $ */
 
 #include "global.h"
 
@@ -71,7 +71,7 @@ static void tcp_receive(struct tcb *tcb, int cnt)
 
 static void tcp_ready(struct tcb *tcb, int cnt)
 {
-  if (tcb->user > 0) on_read(tcb->user, (void (*)()) tcp_send, tcb);
+  if (tcb->user > 0) on_read(tcb->user, (void (*)(void *)) tcp_send, tcb);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -98,7 +98,7 @@ static void tcp_state(struct tcb *tcb, int old, int new)
       close_tcp(tcb);
       return;
     }
-    on_read(tcb->user, (void (*)()) tcp_send, tcb);
+    on_read(tcb->user, (void (*)(void *)) tcp_send, tcb);
     return;
   case TCP_CLOSE_WAIT:
     close_tcp(tcb);
@@ -132,7 +132,7 @@ int tcpgate1(int argc, char *argv[], void *p)
     name = argv[2];
   for (dp = dests; dp && dp->port != lsocket.port; dp = dp->next) ;
   if (!dp) {
-    dp = (struct dest *) malloc(sizeof(*dp));
+    dp = (struct dest *) malloc(sizeof(struct dest));
     dp->port = lsocket.port;
     dp->name = 0;
     dp->next = dests;

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.13 1994/09/05 12:47:32 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.14 1994/10/06 16:15:42 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -180,7 +180,7 @@ int main(int argc, char **argv)
   setsid();
 
   if ((fp = fopen(PIDFILE, "w"))) {
-    putw(getpid(), fp);
+    putw((int) getpid(), fp);
     fclose(fp);
   }
 

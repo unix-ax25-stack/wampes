@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.51 1994/09/05 12:47:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.52 1994/10/06 16:15:25 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -149,7 +149,7 @@ void ioinit(void)
     curr_termios.c_cc[VTIME] = 0;
     tcsetattr(0, TCSANOW, &curr_termios);
 #endif
-    on_read(0, (void (*)()) keyboard, (void *) 0);
+    on_read(0, (void (*)(void *)) keyboard, (void *) 0);
   } else {
 #ifdef macII
     fclose(stdin);
@@ -170,7 +170,7 @@ void ioinit(void)
   umask(022);
   signal(SIGPIPE, SIG_IGN);
   if (!Debug) {
-    signal(SIGALRM, (void (*)()) abort);
+    signal(SIGALRM, (void (*)(int)) abort);
     alarm(TIMEOUT);
     nice(-39);
   }
@@ -262,6 +262,7 @@ int system(const char *cmdline)
 
   int i;
   int status;
+  pid_t p;
   pid_t pid;
 
   if (!cmdline) return 1;
@@ -276,9 +277,9 @@ int system(const char *cmdline)
     signal(SIGINT,  SIG_IGN);
     signal(SIGQUIT, SIG_IGN);
     for (; ; ) {
-      i = wait(&status);
-      if (i == pid) break;
-      if (i > 0) child_dead(i);
+      p = wait(&status);
+      if (p == pid) break;
+      if (p > 0) child_dead(p);
     }
     signal(SIGINT,  SIG_DFL);
     signal(SIGQUIT, SIG_DFL);
@@ -362,7 +363,7 @@ void on_death(int pid, void (*fnc)(void *), void *arg)
       p->arg = arg;
       return;
     }
-  p = (struct proc_t *) malloc(sizeof(*p));
+  p = (struct proc_t *) malloc(sizeof(struct proc_t));
   p->pid = pid;
   p->fnc = fnc;
   p->arg = arg;

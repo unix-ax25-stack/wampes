@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.12 1994/09/05 12:47:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.13 1994/10/06 16:15:36 deyke Exp $ */
 
 /* TCP control and status routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -40,28 +40,28 @@ static struct cmds Tcpcmds[] = {
 	NULLCHAR,
 };
 int
-dotcp(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dotcp(
+int argc,
+char *argv[],
+void *p)
 {
 	return subcmd(Tcpcmds,argc,argv,p);
 }
 static int
-dotcptr(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dotcptr(
+int argc,
+char *argv[],
+void *p)
 {
 	return setbool(&Tcp_trace,"TCP state tracing",argc,argv);
 }
 
 /* Eliminate a TCP connection */
 static int
-dotcpreset(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dotcpreset(
+int argc,
+char *argv[],
+void *p)
 {
 	register struct tcb *tcb;
 
@@ -76,10 +76,10 @@ void *p;
 
 /* Set initial round trip time for new connections */
 static int
-doirtt(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doirtt(
+int argc,
+char *argv[],
+void *p)
 {
 	struct tcp_rtt *tp;
 
@@ -108,10 +108,10 @@ void *p;
 
 /* Set smoothed round trip time for specified TCB */
 static int
-dortt(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dortt(
+int argc,
+char *argv[],
+void *p)
 {
 	register struct tcb *tcb;
 
@@ -126,10 +126,10 @@ void *p;
 
 /* Force a retransmission */
 static int
-dotcpkick(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dotcpkick(
+int argc,
+char *argv[],
+void *p)
 {
 	register struct tcb *tcb;
 
@@ -143,39 +143,39 @@ void *p;
 
 /* Set default maximum segment size */
 static int
-domss(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+domss(
+int argc,
+char *argv[],
+void *p)
 {
 	return setshort(&Tcp_mss,"TCP MSS",argc,argv);
 }
 
 /* Set default window size */
 static int
-dowindow(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dowindow(
+int argc,
+char *argv[],
+void *p)
 {
 	return setshort(&Tcp_window,"TCP window",argc,argv);
 }
 
 static int
-dosyndata(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dosyndata(
+int argc,
+char *argv[],
+void *p)
 {
 	return setbool(&Tcp_syndata,"TCP syn+data piggybacking",argc,argv);
 }
 
 /* Display status of TCBs */
 static int
-dotcpstat(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dotcpstat(
+int argc,
+char *argv[],
+void *p)
 {
 	register struct tcb *tcb;
 
@@ -198,7 +198,7 @@ void *p;
  *     1234     0     0  xxx.xxx.xxx.xxx:xxxxx  xxx.xxx.xxx.xxx:xxxxx  Established
  */
 static int
-tstat()
+tstat(void)
 {
 	register int i;
 	register struct tcb *tcb;
@@ -234,8 +234,8 @@ tstat()
 }
 /* Dump a TCP control block in detail */
 void
-st_tcp(tcb)
-struct tcb *tcb;
+st_tcp(
+struct tcb *tcb)
 {
 	int32 sent,recvd;
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.14 1993/06/20 07:30:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.15 1994/10/06 16:15:20 deyke Exp $ */
 
 #ifndef _AX25_H
 #define _AX25_H
@@ -150,7 +150,7 @@ extern struct axlink Axlink[];
 void ax_recv(struct iface *,struct mbuf *);
 int axui_send(struct mbuf *bp,struct iface *iface,int32 gateway,int tos);
 int axi_send(struct mbuf *bp,struct iface *iface,int32 gateway,int tos);
-int ax_output(struct iface *iface,char *dest,char *source,int    pid,
+int ax_output(struct iface *iface,char *dest,char *source,uint16 pid,
 	struct mbuf *data);
 int sendframe(struct ax25_cb *axp,int cmdrsp,int ctl,struct mbuf *data);
 void axnl3(struct iface *iface,struct ax25_cb *axp,char *src,
@@ -173,7 +173,7 @@ void getlqhdr(struct lqhdr *hp,struct mbuf **bpp);
 void logsrc(struct iface *iface,char *addr);
 void logdest(struct iface *iface,char *addr);
 char *putlqentry(char *cp,char *addr,int32 count);
-char *putlqhdr(char *cp,int    version,int32 ip_addr);
+char *putlqhdr(char *cp,uint16 version,int32 ip_addr);
 struct lq *al_lookup(struct iface *ifp,char *addr,int sort);
 
 /* In ax25user.c: */
@@ -186,7 +186,7 @@ struct ax25_cb *open_ax25(struct ax25 *,
 	void (*)(struct ax25_cb *,int),
 	void (*)(struct ax25_cb *,int,int),
 	char *user);
-struct mbuf *recv_ax25(struct ax25_cb *axp,int    cnt);
+struct mbuf *recv_ax25(struct ax25_cb *axp,uint16 cnt);
 int reset_ax25(struct ax25_cb *axp);
 int send_ax25(struct ax25_cb *axp,struct mbuf *bp,int pid);
 int space_ax25(struct ax25_cb *axp);

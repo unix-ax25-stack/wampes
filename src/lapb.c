@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.30 1994/09/05 12:47:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.31 1994/10/06 16:15:29 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -14,7 +14,7 @@
 
 static void handleit(struct ax25_cb *axp,int pid,struct mbuf *bp);
 static void procdata(struct ax25_cb *axp,struct mbuf *bp);
-static int ackours(struct ax25_cb *axp,int    n,int rex_all);
+static int ackours(struct ax25_cb *axp,uint16 n,int rex_all);
 static void clr_ex(struct ax25_cb *axp);
 static void enq_resp(struct ax25_cb *axp);
 static void inv_rex(struct ax25_cb *axp);
@@ -22,10 +22,10 @@ static void resequence(struct ax25_cb *axp,struct mbuf *bp,int ns,int pf,int pol
 
 /* Process incoming frames */
 int
-lapb_input(iface,hdr,bp)
-struct iface *iface;
-struct ax25 *hdr;
-struct mbuf *bp;                /* Rest of frame, starting with ctl */
+lapb_input(
+struct iface *iface,
+struct ax25 *hdr,
+struct mbuf *bp)                /* Rest of frame, starting with ctl */
 {
 
 	struct ax25_cb *axp;    /* Link control structure */
@@ -430,10 +430,10 @@ struct mbuf *bp;                /* Rest of frame, starting with ctl */
  * Return -1 to cause a frame reject if number is bad, 0 otherwise
  */
 static int
-ackours(axp,n,rex_all)
-struct ax25_cb *axp;
-uint16 n;
-int rex_all;
+ackours(
+struct ax25_cb *axp,
+uint16 n,
+int rex_all)
 {
 	struct mbuf *bp;
 	int acked = 0;  /* Count of frames acked by this ACK */
@@ -508,8 +508,8 @@ int rex_all;
 
 /* Establish data link */
 void
-est_link(axp)
-struct ax25_cb *axp;
+est_link(
+struct ax25_cb *axp)
 {
 	clr_ex(axp);
 	axp->retries = 0;
@@ -519,8 +519,8 @@ struct ax25_cb *axp;
 }
 /* Clear exception conditions */
 static void
-clr_ex(axp)
-struct ax25_cb *axp;
+clr_ex(
+struct ax25_cb *axp)
 {
 	axp->flags.remotebusy = NO;
 	stop_timer(&axp->t4);
@@ -530,8 +530,8 @@ struct ax25_cb *axp;
 }
 /* Enquiry response */
 static void
-enq_resp(axp)
-struct ax25_cb *axp;
+enq_resp(
+struct ax25_cb *axp)
 {
 	char ctl;
 
@@ -542,8 +542,8 @@ struct ax25_cb *axp;
 }
 /* Invoke retransmission */
 static void
-inv_rex(axp)
-struct ax25_cb *axp;
+inv_rex(
+struct ax25_cb *axp)
 {
 	axp->vs -= axp->unack;
 	axp->vs &= MMASK;
@@ -551,10 +551,10 @@ struct ax25_cb *axp;
 }
 /* Send S or U frame to currently connected station */
 int
-sendctl(axp,cmdrsp,cmd)
-struct ax25_cb *axp;
-int cmdrsp;
-int cmd;
+sendctl(
+struct ax25_cb *axp,
+int cmdrsp,
+int cmd)
 {
 	switch(cmd & ~PF){
 	case RR:
@@ -574,8 +574,8 @@ int cmd;
  * Return number of frames sent
  */
 int
-lapb_output(axp)
-register struct ax25_cb *axp;
+lapb_output(
+register struct ax25_cb *axp)
 {
 	register struct mbuf *bp;
 	struct mbuf *tbp;
@@ -628,9 +628,9 @@ register struct ax25_cb *axp;
 }
 /* Set new link state */
 void
-lapbstate(axp,s)
-struct ax25_cb *axp;
-int s;
+lapbstate(
+struct ax25_cb *axp,
+int s)
 {
 	int oldstate;
 
@@ -657,12 +657,12 @@ int s;
 }
 /* Resequence a valid incoming I frame */
 static void
-resequence(axp,bp,ns,pf,poll)
-struct ax25_cb *axp;
-struct mbuf *bp;
-int ns;
-int pf;
-int poll;
+resequence(
+struct ax25_cb *axp,
+struct mbuf *bp,
+int ns,
+int pf,
+int poll)
 {
 
 	char *p;
@@ -726,9 +726,9 @@ int poll;
 
 /* Process a valid incoming I frame */
 static void
-procdata(axp,bp)
-struct ax25_cb *axp;
-struct mbuf *bp;
+procdata(
+struct ax25_cb *axp,
+struct mbuf *bp)
 {
 	int pid;
 	int seq;
@@ -780,9 +780,9 @@ struct mbuf *bp;
  * original packet if small enough
  */
 struct mbuf *
-segmenter(bp,ssize)
-struct mbuf *bp;        /* Complete packet */
-uint16 ssize;           /* Max size of frame segments */
+segmenter(
+struct mbuf *bp,        /* Complete packet */
+uint16 ssize)           /* Max size of frame segments */
 {
 	struct mbuf *result = NULLBUF;
 	struct mbuf *bptmp;
@@ -819,10 +819,10 @@ uint16 ssize;           /* Max size of frame segments */
 }
 
 static void
-handleit(axp,pid,bp)
-struct ax25_cb *axp;
-int pid;
-struct mbuf *bp;
+handleit(
+struct ax25_cb *axp,
+int pid,
+struct mbuf *bp)
 {
 	struct axlink *ipp;
 
@@ -837,19 +837,19 @@ struct mbuf *bp;
 }
 
 int
-busy(axp)
-struct ax25_cb *axp;
+busy(
+struct ax25_cb *axp)
 {
 	return axp->peer ? space_ax25(axp->peer) <= 0 :
 			   len_p(axp->rxq) >= axp->window;
 }
 
 void
-build_path(axp,ifp,hdr,reverse)
-struct ax25_cb *axp;
-struct iface *ifp;
-struct ax25 *hdr;
-int reverse;
+build_path(
+struct ax25_cb *axp,
+struct iface *ifp,
+struct ax25 *hdr,
+int reverse)
 {
 	int i;
 

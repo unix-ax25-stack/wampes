@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.10 1993/05/17 13:44:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.11 1994/10/06 16:15:19 deyke Exp $ */
 
 /* Generic serial line interface routines
  * Copyright 1992 Phil Karn, KA9Q
@@ -44,10 +44,10 @@ static int asy_detach(struct iface *ifp);
  *              'r' for rlsd (cd) detection
  */
 int
-asy_attach(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+asy_attach(
+int argc,
+char *argv[],
+void *p)
 {
 	register struct iface *ifp;
 	int dev;
@@ -134,8 +134,8 @@ void *p;
 }
 
 static int
-asy_detach(ifp)
-struct iface *ifp;
+asy_detach(
+struct iface *ifp)
 {
 	struct asymode *ap;
 

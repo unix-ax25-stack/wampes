@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.25 1994/09/05 12:47:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.26 1994/10/06 16:15:33 deyke Exp $ */
 
 #include "global.h"
 
@@ -151,7 +151,7 @@ static void transport_send_upcall(struct transport_cb *tp, int cnt)
   struct controlblock *cp;
 
   cp = (struct controlblock *) tp->user;
-  on_read(cp->fd, (void (*)()) transport_try_send, cp);
+  on_read(cp->fd, (void (*)(void *)) transport_try_send, cp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -192,7 +192,7 @@ static int connect_command(struct controlblock *cp)
     cp->tp->recv_mode = EOL_LF;
     cp->tp->send_mode = (!strcmp(protocol, "tcp")) ? EOL_CRLF : EOL_CR;
   }
-  on_read(cp->fd, (void (*)()) transport_try_send, cp);
+  on_read(cp->fd, (void (*)(void *)) transport_try_send, cp);
   return 0;
 }
 
@@ -214,7 +214,7 @@ static int console_command(struct controlblock *cp)
   dup2(cp->fd, 1);
   dup2(cp->fd, 2);
   fkbd = 0;
-  on_read(fkbd, (void (*)()) keyboard, (void *) 0);
+  on_read(fkbd, (void (*)(void *)) keyboard, (void *) 0);
   printf(Prompt, Hostname);
   return (-1);
 }
@@ -225,11 +225,11 @@ static void command_receive(struct controlblock *cp)
 {
 
   static const struct cmdtable command_table[] = {
-    "ascii",   ascii_command,
-    "binary",  binary_command,
-    "connect", connect_command,
-    "console", console_command,
-    0,         0
+    { "ascii",   ascii_command },
+    { "binary",  binary_command },
+    { "connect", connect_command },
+    { "console", console_command },
+    { 0,         0 }
   };
 
   char c;
@@ -261,13 +261,13 @@ static void accept_connection_net(void *p)
 
   addrlen = sizeof(addr);
   if ((fd = accept(flisten_net, &addr, &addrlen)) < 0) return;
-  cp = (struct controlblock *) calloc(1, sizeof(*cp));
+  cp = (struct controlblock *) calloc(1, sizeof(struct controlblock));
   if (!cp) {
     close(fd);
     return;
   }
   cp->fd = fd;
-  on_read(cp->fd, (void (*)()) command_receive, cp);
+  on_read(cp->fd, (void (*)(void *)) command_receive, cp);
 }
 
 /*---------------------------------------------------------------------------*/

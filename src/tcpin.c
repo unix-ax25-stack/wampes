@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.11 1993/05/17 13:45:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.12 1994/10/06 16:15:37 deyke Exp $ */
 
 /* Process incoming TCP segments. Page number references are to ARPA RFC-793,
  * the TCP specification.
@@ -15,10 +15,10 @@
 #include "iface.h"
 #include "ip.h"
 
-static void update(struct tcb *tcb,struct tcp *seg,int    length);
-static void proc_syn(struct tcb *tcb,int  tos,struct tcp *seg);
-static void add_reseq(struct tcb *tcb,int  tos,struct tcp *seg,
-	struct mbuf *bp,int    length);
+static void update(struct tcb *tcb,struct tcp *seg,uint16 length);
+static void proc_syn(struct tcb *tcb,char tos,struct tcp *seg);
+static void add_reseq(struct tcb *tcb,char tos,struct tcp *seg,
+	struct mbuf *bp,uint16 length);
 static void get_reseq(struct tcb *tcb,char *tos,struct tcp *seq,
 	struct mbuf **bp,uint16 *length);
 static int trim(struct tcb *tcb,struct tcp *seg,struct mbuf **bpp,
@@ -29,11 +29,11 @@ static int in_window(struct tcb *tcb,int32 seq);
  * along with a mbuf chain pointing to the TCP header.
  */
 void
-tcp_input(iface,ip,bp,rxbroadcast)
-struct iface *iface;    /* Incoming interface (ignored) */
-struct ip *ip;          /* IP header */
-struct mbuf *bp;        /* Data field, if any */
-int rxbroadcast;        /* Incoming broadcast - discard if true */
+tcp_input(
+struct iface *iface,    /* Incoming interface (ignored) */
+struct ip *ip,          /* IP header */
+struct mbuf *bp,        /* Data field, if any */
+int rxbroadcast)        /* Incoming broadcast - discard if true */
 {
 	struct tcb *ntcb;
 	register struct tcb *tcb;       /* TCP Protocol control block */
@@ -403,12 +403,12 @@ gotone: ;
 
 /* Process an incoming ICMP response */
 void
-tcp_icmp(icsource,source,dest,type,code,bpp)
-int32 icsource;                 /* Sender of ICMP message (not used) */
-int32 source;                   /* Original IP datagram source (i.e. us) */
-int32 dest;                     /* Original IP datagram dest (i.e., them) */
-char type,code;                 /* ICMP error codes */
-struct mbuf **bpp;              /* First 8 bytes of TCP header */
+tcp_icmp(
+int32 icsource,                 /* Sender of ICMP message (not used) */
+int32 source,                   /* Original IP datagram source (i.e. us) */
+int32 dest,                     /* Original IP datagram dest (i.e., them) */
+char type,char code,            /* ICMP error codes */
+struct mbuf **bpp)              /* First 8 bytes of TCP header */
 {
 	struct tcp seg;
 	struct connection conn;
@@ -459,9 +459,9 @@ struct mbuf **bpp;              /* First 8 bytes of TCP header */
  * The RST reply is composed in place on the input segment
  */
 void
-reset(ip,seg)
-struct ip *ip;                  /* Offending IP header */
-register struct tcp *seg;       /* Offending TCP header */
+reset(
+struct ip *ip,                  /* Offending IP header */
+register struct tcp *seg)       /* Offending TCP header */
 {
 	struct mbuf *hbp;
 	struct pseudo_header ph;
@@ -520,10 +520,10 @@ register struct tcp *seg;       /* Offending TCP header */
  * From page 72.
  */
 static void
-update(tcb,seg,length)
-register struct tcb *tcb;
-register struct tcp *seg;
-uint16 length;
+update(
+register struct tcb *tcb,
+register struct tcp *seg,
+uint16 length)
 {
 	int32 acked;
 	int winupd = 0;
@@ -722,19 +722,19 @@ uint16 length;
  */
 static
 int
-in_window(tcb,seq)
-struct tcb *tcb;
-int32 seq;
+in_window(
+struct tcb *tcb,
+int32 seq)
 {
 	return seq_within(seq,tcb->rcv.nxt,(int32)(tcb->rcv.nxt+tcb->rcv.wnd-1));
 }
 
 /* Process an incoming SYN */
 static void
-proc_syn(tcb,tos,seg)
-register struct tcb *tcb;
-char tos;
-struct tcp *seg;
+proc_syn(
+register struct tcb *tcb,
+char tos,
+struct tcp *seg)
 {
 	uint16 mtu;
 	struct tcp_rtt *tp;
@@ -771,8 +771,8 @@ struct tcp *seg;
 
 /* Generate an initial sequence number and put a SYN on the send queue */
 void
-send_syn(tcb)
-register struct tcb *tcb;
+send_syn(
+register struct tcb *tcb)
 {
 	tcb->iss = geniss();
 	tcb->rttseq = tcb->snd.wl2 = tcb->snd.una = tcb->iss;
@@ -783,12 +783,12 @@ register struct tcb *tcb;
 
 /* Add an entry to the resequencing queue in the proper place */
 static void
-add_reseq(tcb,tos,seg,bp,length)
-struct tcb *tcb;
-char tos;
-struct tcp *seg;
-struct mbuf *bp;
-uint16 length;
+add_reseq(
+struct tcb *tcb,
+char tos,
+struct tcp *seg,
+struct mbuf *bp,
+uint16 length)
 {
 	register struct reseq *rp,*rp1;
 
@@ -827,12 +827,12 @@ uint16 length;
 
 /* Fetch the first entry off the resequencing queue */
 static void
-get_reseq(tcb,tos,seg,bp,length)
-register struct tcb *tcb;
-char *tos;
-struct tcp *seg;
-struct mbuf **bp;
-uint16 *length;
+get_reseq(
+register struct tcb *tcb,
+char *tos,
+struct tcp *seg,
+struct mbuf **bp,
+uint16 *length)
 {
 	register struct reseq *rp;
 
@@ -852,11 +852,11 @@ uint16 *length;
  * unacceptable.
  */
 static int
-trim(tcb,seg,bpp,length)
-register struct tcb *tcb;
-register struct tcp *seg;
-struct mbuf **bpp;
-uint16 *length;
+trim(
+register struct tcb *tcb,
+register struct tcp *seg,
+struct mbuf **bpp,
+uint16 *length)
 {
 	long dupcnt,excess;
 	uint16 len;             /* Segment length including flags */

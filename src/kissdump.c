@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kissdump.c,v 1.7 1992/11/29 17:37:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kissdump.c,v 1.8 1994/10/06 16:15:28 deyke Exp $ */
 
 /* Tracing routines for KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -12,10 +12,10 @@
 #include "crc.h"
 
 void
-ki_dump(fp,bpp,check)
-FILE *fp;
-struct mbuf **bpp;
-int check;
+ki_dump(
+FILE *fp,
+struct mbuf **bpp,
+int check)
 {
 	int type;
 	int val;
@@ -72,9 +72,9 @@ int check;
 }
 
 int
-ki_forus(iface,bp)
-struct iface *iface;
-struct mbuf *bp;
+ki_forus(
+struct iface *iface,
+struct mbuf *bp)
 {
 	struct mbuf *bpp;
 	int i;

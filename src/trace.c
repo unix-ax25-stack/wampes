@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.16 1994/02/07 12:39:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.17 1994/10/06 16:15:38 deyke Exp $ */
 
 /* Packet tracing - top level and generic routines, including hex/ascii
  * Copyright 1991 Phil Karn, KA9Q
@@ -21,8 +21,8 @@
 #include "timer.h"
 
 static void ascii_dump(FILE *fp,struct mbuf **bpp);
-static void ctohex(char *buf,int    c);
-static void fmtline(FILE *fp,int    addr,char *buf,int    len);
+static void ctohex(char *buf,uint16 c);
+static void fmtline(FILE *fp,uint16 addr,char *buf,uint16 len);
 void hex_dump(FILE *fp,struct mbuf **bpp);
 static void showtrace(struct iface *ifp);
 
@@ -49,10 +49,10 @@ struct tracecmd Tracecmd[] = {
 };
 
 void
-dump(ifp,direction,bp)
-register struct iface *ifp;
-int direction;
-struct mbuf *bp;
+dump(
+register struct iface *ifp,
+int direction,
+struct mbuf *bp)
 {
 	struct mbuf *tbp;
 	uint16 size;
@@ -113,10 +113,10 @@ struct mbuf *bp;
 
 /* Dump packet bytes, no interpretation */
 void
-raw_dump(ifp,direction,bp)
-struct iface *ifp;
-int direction;
-struct mbuf *bp;
+raw_dump(
+struct iface *ifp,
+int direction,
+struct mbuf *bp)
 {
 	struct mbuf *tbp;
 	FILE *fp;
@@ -136,9 +136,9 @@ struct mbuf *bp;
 
 /* Dump an mbuf in hex */
 void
-hex_dump(fp,bpp)
-FILE *fp;
-register struct mbuf **bpp;
+hex_dump(
+FILE *fp,
+register struct mbuf **bpp)
 {
 	uint16 n;
 	uint16 address;
@@ -155,9 +155,9 @@ register struct mbuf **bpp;
 }
 /* Dump an mbuf in ascii */
 static void
-ascii_dump(fp,bpp)
-FILE *fp;
-register struct mbuf **bpp;
+ascii_dump(
+FILE *fp,
+register struct mbuf **bpp)
 {
 	int c;
 	register uint16 tot;
@@ -181,11 +181,11 @@ register struct mbuf **bpp;
  * 0000: 30 31 32 33 34 35 36 37 38 39 3a 3b 3c 3d 3e 3f  0123456789:;<=>?
  */
 static void
-fmtline(fp,addr,buf,len)
-FILE *fp;
-uint16 addr;
-char *buf;
-uint16 len;
+fmtline(
+FILE *fp,
+uint16 addr,
+char *buf,
+uint16 len)
 {
 	char line[80];
 	register char *aptr,*cptr;
@@ -207,9 +207,9 @@ uint16 len;
 }
 /* Convert byte to two ascii-hex characters */
 static void
-ctohex(buf,c)
-register char *buf;
-register uint16 c;
+ctohex(
+register char *buf,
+register uint16 c)
 {
 	static char hex[] = "0123456789abcdef";
 
@@ -219,10 +219,10 @@ register uint16 c;
 
 /* Modify or displace interface trace flags */
 int
-dotrace(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dotrace(
+int argc,
+char *argv[],
+void *p)
 {
 	struct iface *ifp;
 	struct tracecmd *tp;
@@ -266,8 +266,8 @@ void *p;
 }
 /* Display the trace flags for a particular interface */
 static void
-showtrace(ifp)
-register struct iface *ifp;
+showtrace(
+register struct iface *ifp)
 {
 	if(ifp == NULLIF)
 		return;
@@ -298,7 +298,7 @@ register struct iface *ifp;
 
 /* shut down all trace files */
 void
-shuttrace()
+shuttrace(void)
 {
 	struct iface *ifp;
 

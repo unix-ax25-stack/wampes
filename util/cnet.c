@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.29 1994/05/05 11:18:19 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.30 1994/10/06 16:15:45 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -138,7 +138,7 @@ static void recvq(int fd, struct mbuf **qp)
 
   n = read(fd, buf, sizeof(buf));
   if (n <= 0) terminate();
-  bp = (struct mbuf *) malloc(sizeof(*bp) + n);
+  bp = (struct mbuf *) malloc(sizeof(struct mbuf) + n);
   if (!bp) terminate();
   bp->next = 0;
   bp->cnt = n;
@@ -198,10 +198,10 @@ int main(int argc, char **argv)
 #endif
 
   signal(SIGPIPE, SIG_IGN);
-  signal(SIGINT,  (void (*)()) terminate);
-  signal(SIGQUIT, (void (*)()) terminate);
-  signal(SIGTERM, (void (*)()) terminate);
-  signal(SIGHUP,  (void (*)()) terminate);
+  signal(SIGINT,  (void (*)(int)) terminate);
+  signal(SIGQUIT, (void (*)(int)) terminate);
+  signal(SIGTERM, (void (*)(int)) terminate);
+  signal(SIGHUP,  (void (*)(int)) terminate);
 
 #ifdef ibm032
   ioctl(fdin, TIOCGETP, &prev_sgttyb);

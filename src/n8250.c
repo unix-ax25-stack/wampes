@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.37 1994/09/11 18:34:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.38 1994/10/06 16:15:31 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -123,8 +123,8 @@ static struct {
 /*---------------------------------------------------------------------------*/
 
 static int
-find_speed(speed)
-long speed;
+find_speed(
+long speed)
 {
 	int i;
 
@@ -190,7 +190,7 @@ asy_up(struct asy *ap)
 #endif
 		}
 	}
-	on_read(ap->fd, (void (*)()) ap->iface->rxproc, ap->iface);
+	on_read(ap->fd, (void (*)(void *)) ap->iface->rxproc, ap->iface);
 	return 0;
 
 Fail:
@@ -220,17 +220,17 @@ static int asy_down(struct asy *ap)
 
 /* Initialize asynch port "dev" */
 int
-asy_init(dev,ifp,base,irq,bufsize,trigchar,speed,cts,rlsd,chain)
-int dev;
-struct iface *ifp;
-int base;
-int irq;
-uint16 bufsize;
-int trigchar;
-long speed;
-int cts;                /* Use CTS flow control */
-int rlsd;               /* Use Received Line Signal Detect (aka CD) */
-int chain;              /* Chain interrupts */
+asy_init(
+int dev,
+struct iface *ifp,
+int base,
+int irq,
+uint16 bufsize,
+int trigchar,
+long speed,
+int cts,                /* Use CTS flow control */
+int rlsd,               /* Use Received Line Signal Detect (aka CD) */
+int chain)              /* Chain interrupts */
 {
 	register struct asy *ap;
 
@@ -246,8 +246,8 @@ int chain;              /* Chain interrupts */
 /*---------------------------------------------------------------------------*/
 
 int
-asy_stop(ifp)
-struct iface *ifp;
+asy_stop(
+struct iface *ifp)
 {
 	register struct asy *ap;
 
@@ -264,9 +264,9 @@ struct iface *ifp;
 
 /* Set asynch line speed */
 int
-asy_speed(dev,bps)
-int dev;
-long bps;
+asy_speed(
+int dev,
+long bps)
 {
 
 	struct asy *asyp;
@@ -312,11 +312,11 @@ long bps;
 
 /* Asynchronous line I/O control */
 int32
-asy_ioctl(ifp,cmd,set,val)
-struct iface *ifp;
-int cmd;
-int set;
-int32 val;
+asy_ioctl(
+struct iface *ifp,
+int cmd,
+int set,
+int32 val)
 {
 	struct asy *ap = &Asy[ifp->dev];
 
@@ -336,10 +336,10 @@ int32 val;
 /*---------------------------------------------------------------------------*/
 
 int
-get_asy(dev,buf,cnt)
-int dev;
-char *buf;
-int cnt;
+get_asy(
+int dev,
+char *buf,
+int cnt)
 {
 	struct asy *ap;
 
@@ -361,10 +361,10 @@ int cnt;
 /*---------------------------------------------------------------------------*/
 
 int
-doasystat(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doasystat(
+int argc,
+char *argv[],
+void *p)
 {
 	register struct asy *asyp;
 	struct iface *ifp;
@@ -398,8 +398,8 @@ void *p;
 /*---------------------------------------------------------------------------*/
 
 static void
-pasy(asyp)
-struct asy *asyp;
+pasy(
+struct asy *asyp)
 {
 
 	printf("%s:",asyp->iface->name);
@@ -423,8 +423,8 @@ struct asy *asyp;
 
 /* Serial transmit process, common to all protocols */
 static void
-asy_tx(asyp)
-struct asy *asyp;
+asy_tx(
+struct asy *asyp)
 {
 	int n;
 
@@ -467,9 +467,9 @@ struct asy *asyp;
 
 /* Send a message on the specified serial line */
 int
-asy_send(dev,bp)
-int dev;
-struct mbuf *bp;
+asy_send(
+int dev,
+struct mbuf *bp)
 {
 	struct asy *asyp;
 
@@ -483,7 +483,7 @@ struct mbuf *bp;
 		free_p(bp);
 	else {
 		append(&asyp->sndq, bp);
-		on_write(asyp->fd, (void (*)()) asy_tx, asyp);
+		on_write(asyp->fd, (void (*)(void *)) asy_tx, asyp);
 	}
 	return 0;
 }

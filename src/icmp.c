@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.14 1994/05/15 16:54:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.15 1994/10/06 16:15:25 deyke Exp $ */
 
 /* Internet Control Message Protocol (ICMP)
  * Copyright 1991 Phil Karn, KA9Q
@@ -45,11 +45,11 @@ struct mib_entry Icmp_mib[] = {
 
 /* Process an incoming ICMP packet */
 void
-icmp_input(iface,ip,bp,rxbroadcast)
-struct iface *iface;    /* Incoming interface (ignored) */
-struct ip *ip;          /* Pointer to decoded IP header structure */
-struct mbuf *bp;        /* Pointer to ICMP message */
-int rxbroadcast;
+icmp_input(
+struct iface *iface,    /* Incoming interface (ignored) */
+struct ip *ip,          /* Pointer to decoded IP header structure */
+struct mbuf *bp,        /* Pointer to ICMP message */
+int rxbroadcast)
 {
 	struct icmplink *ipp;
 	struct mbuf *tbp;
@@ -217,11 +217,11 @@ int rxbroadcast;
  * Unlike most routines, the callER frees the mbuf.
  */
 int
-icmp_output(ip,data,type,code,args)
-struct ip *ip;          /* Header of offending datagram */
-struct mbuf *data;      /* Data portion of datagram */
-char type,code;         /* Codes to send */
-union icmp_args *args;
+icmp_output(
+struct ip *ip,          /* Header of offending datagram */
+struct mbuf *data,      /* Data portion of datagram */
+char type,char code,    /* Codes to send */
+union icmp_args *args)
 {
 	struct mbuf *bp = NULLBUF;
 	struct icmp icmp;       /* ICMP protocol header */

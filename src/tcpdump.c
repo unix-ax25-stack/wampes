@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpdump.c,v 1.7 1994/09/05 12:47:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpdump.c,v 1.8 1994/10/06 16:15:36 deyke Exp $ */
 
 /* TCP header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -25,11 +25,11 @@ static char *Tcpflags[] = {
 
 /* Dump a TCP segment header. Assumed to be in network byte order */
 void
-tcp_dump(fp,bpp,source,dest,check)
-FILE *fp;
-struct mbuf **bpp;
-int32 source,dest;      /* IP source and dest addresses */
-int check;              /* 0 if checksum test is to be bypassed */
+tcp_dump(
+FILE *fp,
+struct mbuf **bpp,
+int32 source,int32 dest,/* IP source and dest addresses */
+int check)              /* 0 if checksum test is to be bypassed */
 {
 	struct tcp seg;
 	struct pseudo_header ph;

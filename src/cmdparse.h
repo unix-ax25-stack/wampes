@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.h,v 1.9 1993/05/17 13:44:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.h,v 1.10 1994/10/06 16:15:22 deyke Exp $ */
 
 #ifndef _CMDPARSE_H
 #define _CMDPARSE_H
@@ -22,7 +22,7 @@ struct cmds {
 int cmdparse(struct cmds cmds[],char *line,void *p);
 int subcmd(struct cmds tab[],int argc,char *argv[],void *p);
 int setbool(int *var,char *label,int argc,char *argv[]);
-int bit16cmd(uint16 *bits, int    mask, char *label, int argc, char *argv[]);
+int bit16cmd(uint16 *bits, uint16 mask, char *label, int argc, char *argv[]);
 int setint(int *var,char *label,int argc,char *argv[]);
 int setlong(int32 *var,char *label,int argc,char *argv[]);
 int setshort(unsigned short *var,char *label,int argc,char *argv[]);

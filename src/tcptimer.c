@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcptimer.c,v 1.5 1993/01/29 06:48:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcptimer.c,v 1.6 1994/10/06 16:15:37 deyke Exp $ */
 
 /* TCP timeout routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,12 +13,12 @@
 
 /* Timer timeout */
 void
-tcp_timeout(p)
-void *p;
+tcp_timeout(
+void *p)
 {
 	register struct tcb *tcb;
 
-	tcb = p;
+	tcb = (struct tcb *) p;
 	if(tcb == NULLTCB)
 		return;
 
@@ -48,8 +48,8 @@ void *p;
 }
 /* Backoff function - the subject of much research */
 int32
-backoff(n)
-int n;
+backoff(
+int n)
 {
 	if(n > 31)
 		n = 31; /* Prevent truncation to zero */

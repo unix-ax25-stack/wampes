@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.25 1994/09/05 12:47:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.26 1994/10/06 16:15:18 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -154,8 +154,8 @@ static struct block *getblock(int n)
 
 /* Allocate block of 'nb' bytes */
 void *
-malloc(nb)
-unsigned nb;
+malloc(
+unsigned nb)
 {
 
   int n;
@@ -187,8 +187,8 @@ unsigned nb;
 
 /* Put memory block back on heap */
 void
-free(blk)
-void *blk;
+free(
+void *blk)
 {
 
   int n;
@@ -218,15 +218,15 @@ void *blk;
 
 /* Move existing block to new area */
 void *
-realloc(area,size)
-void *area;
-unsigned size;
+realloc(
+void *area,
+unsigned size)
 {
 
   int n;
   struct block *tp;
   unsigned osize;
-  void *new;
+  void *newp;
 
   if (!area)
     return malloc(size);
@@ -236,7 +236,7 @@ unsigned size;
     return 0;
   }
 
-  tp = area;
+  tp = (struct block *) area;
   tp--;
   n = tp->next - (struct block *) Freetable;
   if (n < MIN_N || n > MAX_N) {
@@ -244,28 +244,28 @@ unsigned size;
     Invalid++;
     return malloc(size);
   }
-  if ((new = malloc(size))) {
+  if ((newp = malloc(size))) {
     osize = Blocksize[n] - sizeof(struct block *);
-    memcpy(new, area, osize < size ? osize : size);
+    memcpy(newp, area, osize < size ? osize : size);
     free(area);
   }
-  return new;
+  return newp;
 }
 
 /*---------------------------------------------------------------------------*/
 
 /* Allocate block of cleared memory */
 void *
-calloc(nelem,size)
-unsigned nelem; /* Number of elements */
-unsigned size;  /* Size of each element */
+calloc(
+unsigned nelem, /* Number of elements */
+unsigned size)  /* Size of each element */
 {
 
 	register unsigned i;
 	register char *cp;
 
 	i = nelem * size;
-	if((cp = malloc(i)) != NULL)
+	if((cp = (char *) malloc(i)) != NULL)
 		memset(cp,0,i);
 	return cp;
 }
@@ -275,8 +275,8 @@ unsigned size;  /* Size of each element */
 /*---------------------------------------------------------------------------*/
 
 void *
-mallocw(nb)
-unsigned nb;
+mallocw(
+unsigned nb)
 {
   return malloc(nb);
 }
@@ -284,9 +284,9 @@ unsigned nb;
 /*---------------------------------------------------------------------------*/
 
 void *
-callocw(nelem,size)
-unsigned nelem; /* Number of elements */
-unsigned size;  /* Size of each element */
+callocw(
+unsigned nelem, /* Number of elements */
+unsigned size)  /* Size of each element */
 {
   return calloc(nelem, size);
 }
@@ -300,7 +300,7 @@ unsigned size;  /* Size of each element */
  * be performed.
  */
 int
-availmem()
+availmem(void)
 {
 		return 0;       /* We're clearly OK */
 }
@@ -311,10 +311,10 @@ availmem()
 
 /* Print heap stats */
 static int
-dostat(argc,argv,envp)
-int argc;
-char *argv[];
-void *envp;
+dostat(
+int argc,
+char *argv[],
+void *envp)
 {
 	printf("heap size %lu avail %lu (%lu%%) morecores %lu\n",
 	 Heapsize,Heapsize-Inuse,100L*(Heapsize-Inuse)/Heapsize,
@@ -332,10 +332,10 @@ void *envp;
 
 /* Print heap free list */
 static int
-dofreelist(argc,argv,envp)
-int argc;
-char *argv[];
-void *envp;
+dofreelist(
+int argc,
+char *argv[],
+void *envp)
 {
 
 	int n;
@@ -361,10 +361,10 @@ void *envp;
 /*---------------------------------------------------------------------------*/
 
 static int
-domerge(argc,argv,envp)
-int argc;
-char *argv[];
-void *envp;
+domerge(
+int argc,
+char *argv[],
+void *envp)
 {
 
 	int n;
@@ -390,10 +390,10 @@ void *envp;
 /*---------------------------------------------------------------------------*/
 
 static int
-dosizes(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dosizes(
+int argc,
+char *argv[],
+void *p)
 {
 	int n;
 
@@ -410,10 +410,10 @@ void *p;
 /*---------------------------------------------------------------------------*/
 
 int
-domem(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+domem(
+int argc,
+char *argv[],
+void *p)
 {
 #ifndef PURIFY
 	return subcmd(Memcmds,argc,argv,p);
@@ -427,10 +427,10 @@ void *p;
 #ifndef PURIFY
 
 static int
-domdebug(argc,argv,ptr)
-int argc;
-char *argv[];
-void *ptr;
+domdebug(
+int argc,
+char *argv[],
+void *ptr)
 {
 	setbool(&Memdebug,"Heap debugging",argc,argv);
 	return 0;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.7 1994/09/05 12:47:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.8 1994/10/06 16:15:35 deyke Exp $ */
 
 /* Simple Network Time Protocol (SNTP) (see RFC1361) */
 
@@ -20,6 +20,10 @@
 #include "session.h"
 
 #include "configure.h"
+
+#if defined __hpux
+int adjtime(struct timeval *delta, struct timeval *olddelta);
+#endif
 
 #define NTP_MIN_PACKET_SIZE     48
 #define NTP_PACKET_SIZE         60
@@ -449,6 +453,7 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 
 	double pdelay;
 	double poffset;
+	struct fp abs_offset;
 	struct fp now;
 	struct fp rec;
 	struct fp xmt;
@@ -495,7 +500,8 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 	    pdelay >= peer->mindelay) return;
 	peer->mindelay = pdelay;
 
-	if (fpabs(peer->offset).i < Step_threshold) {
+	abs_offset = fpabs(peer->offset);
+	if (abs_offset.i < Step_threshold) {
 #if HAS_ADJTIME || defined __hpux
 		tv.tv_sec = peer->offset.i;
 		tv.tv_usec = peer->offset.f / USEC2F;
@@ -529,7 +535,7 @@ static void sntp_client_send(void *arg)
 	struct peer *peer;
 	struct pkt pkt;
 
-	peer = arg;
+	peer = (struct peer *) arg;
 	start_timer(&peer->timer);
 	memset((char *) & pkt, 0, sizeof(pkt));
 	pkt.leap = LEAP_NOTINSYNC;
@@ -568,7 +574,7 @@ static int dosntpadd(int argc, char **argv, void *p)
 	if (interval <= 0) interval = 3333;
 	lsocket.address = INADDR_ANY;
 	lsocket.port = Lport++;
-	peer = (struct peer *) calloc(1, sizeof(*peer));
+	peer = (struct peer *) calloc(1, sizeof(struct peer));
 	if (!peer) {
 		printf(Nospace);
 		return 1;

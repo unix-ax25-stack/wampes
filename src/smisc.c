@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.10 1994/09/11 18:34:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.11 1994/10/06 16:15:35 deyke Exp $ */
 
 /* Miscellaneous Internet servers: discard, echo and remote
  * Copyright 1991 Phil Karn, KA9Q
@@ -27,10 +27,10 @@ static void misc_state(struct tcb *tcb, int old, int new);
 
 /* Start TCP discard server */
 int
-dis1(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dis1(
+int argc,
+char *argv[],
+void *p)
 {
 	struct socket lsocket;
 
@@ -44,9 +44,9 @@ void *p;
 }
 /* TCP discard server */
 static void
-disc_server(tcb,cnt)
-struct tcb *tcb;
-int cnt;
+disc_server(
+struct tcb *tcb,
+int cnt)
 {
 	struct mbuf *bp;
 
@@ -55,10 +55,10 @@ int cnt;
 }
 /* Stop TCP discard server */
 int
-dis0(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dis0(
+int argc,
+char *argv[],
+void *p)
 {
 	if(disc_tcb != NULLTCB)
 		close_tcp(disc_tcb);
@@ -66,10 +66,10 @@ void *p;
 }
 /* Start TCP echo server */
 int
-echo1(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+echo1(
+int argc,
+char *argv[],
+void *p)
 {
 	struct socket lsocket;
 
@@ -85,9 +85,9 @@ void *p;
  * Copies only as much will fit on the transmit queue
  */
 static void
-echo_server(tcb,cnt)
-struct tcb *tcb;
-int cnt;
+echo_server(
+struct tcb *tcb,
+int cnt)
 {
 	struct mbuf *bp;
 	int acnt;
@@ -102,10 +102,10 @@ int cnt;
 }
 /* Stop TCP echo server */
 int
-echo0(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+echo0(
+int argc,
+char *argv[],
+void *p)
 {
 	if(echo_tcb != NULLTCB)
 		close_tcp(echo_tcb);
@@ -113,10 +113,10 @@ void *p;
 }
 /* Start UDP remote server */
 int
-rem1(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+rem1(
+int argc,
+char *argv[],
+void *p)
 {
 	struct socket sock;
 
@@ -130,15 +130,14 @@ void *p;
 }
 /* Process remote command */
 static void
-uremote(iface,up,cnt)
-struct iface *iface;
-struct udp_cb *up;
-int cnt;
+uremote(
+struct iface *iface,
+struct udp_cb *up,
+int cnt)
 {
 
 	struct mbuf *bp;
 	struct socket fsock;
-	int i;
 	char command;
 	int32 addr;
 
@@ -158,11 +157,12 @@ int cnt;
 		break;
 #endif
 	case SYS_EXIT:
-		i = chkrpass(bp);
-		log(NULLTCB,"%s - Remote exit %s",
-		 pinet_udp(&fsock),
-		 i == 0 ? "PASSWORD FAIL" : "" );
-		if(i != 0){
+		if(chkrpass(bp) == 0){
+			log(NULLTCB,"%s - Remote exit PASSWORD FAIL",
+			 pinet_udp(&fsock));
+		} else {
+			log(NULLTCB,"%s - Remote exit PASSWORD OK",
+			 pinet_udp(&fsock));
 			iostop();
 			exit(0);
 		}
@@ -180,8 +180,8 @@ int cnt;
 }
 /* Check remote password */
 static int
-chkrpass(bp)
-struct mbuf *bp;
+chkrpass(
+struct mbuf *bp)
 {
 	char *lbuf;
 	uint16 len;
@@ -190,7 +190,7 @@ struct mbuf *bp;
 	len = len_p(bp);
 	if(Rempass == 0 || *Rempass == 0 || strlen(Rempass) != len)
 		return rval;
-	lbuf = mallocw(len);
+	lbuf = (char *) mallocw(len);
 	pullup(&bp,lbuf,len);
 	if(strncmp(Rempass,lbuf,len) == 0)
 		rval = 1;
@@ -199,10 +199,10 @@ struct mbuf *bp;
 }
 /* Stop UDP remote exit/reboot server */
 int
-rem0(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+rem0(
+int argc,
+char *argv[],
+void *p)
 {
 	if(remote_up){
 		del_udp(remote_up);
@@ -213,9 +213,9 @@ void *p;
 
 /* Log connection state changes; also respond to remote closes */
 static void
-misc_state(tcb,old,new)
-register struct tcb *tcb;
-char old,new;
+misc_state(
+register struct tcb *tcb,
+int old,int new)
 {
 	switch(new){
 	case TCP_ESTABLISHED:

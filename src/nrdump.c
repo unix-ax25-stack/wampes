@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrdump.c,v 1.2 1991/02/24 20:17:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrdump.c,v 1.3 1994/10/06 16:15:33 deyke Exp $ */
 
 /* NET/ROM header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,10 +13,10 @@
 
 /* Display NET/ROM network and transport headers */
 void
-netrom_dump(fp,bpp,check)
-FILE *fp;
-struct mbuf **bpp;
-int check;
+netrom_dump(
+FILE *fp,
+struct mbuf **bpp,
+int check)
 {
 	char src[AXALEN],dest[AXALEN];
 	char tmp[AXBUF];

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.5 1994/09/05 12:47:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.6 1994/10/06 16:15:20 deyke Exp $ */
 
 /* AX25 control commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -90,19 +90,19 @@ static struct cmds Axcmds[] = {
 };
 /* Multiplexer for top-level ax25 command */
 int
-doax25(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doax25(
+int argc,
+char *argv[],
+void *p)
 {
 	return subcmd(Axcmds,argc,argv,p);
 }
 
 int
-doaxheard(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doaxheard(
+int argc,
+char *argv[],
+void *p)
 {
 	struct iface *ifp;
 
@@ -127,8 +127,8 @@ void *p;
 	return 0;
 }
 static int
-axheard(ifp)
-struct iface *ifp;
+axheard(
+struct iface *ifp)
 {
 	struct lq *lp;
 	char tmp[AXBUF];
@@ -147,10 +147,10 @@ struct iface *ifp;
 	return 0;
 }
 int
-doaxdest(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doaxdest(
+int argc,
+char *argv[],
+void *p)
 {
 	struct iface *ifp;
 
@@ -175,8 +175,8 @@ void *p;
 	return 0;
 }
 static int
-axdest(ifp)
-struct iface *ifp;
+axdest(
+struct iface *ifp)
 {
 	struct ld *lp;
 	struct lq *lq;
@@ -207,10 +207,10 @@ struct iface *ifp;
 	return 0;
 }
 static int
-doaxflush(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doaxflush(
+int argc,
+char *argv[],
+void *p)
 {
 	struct iface *ifp;
 
@@ -222,8 +222,8 @@ void *p;
 	return 0;
 }
 static void
-axflush(ifp)
-struct iface *ifp;
+axflush(
+struct iface *ifp)
 {
 	struct lq *lp,*lp1;
 	struct ld *ld,*ld1;
@@ -242,10 +242,10 @@ struct iface *ifp;
 }
 
 static int
-doaxreset(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doaxreset(
+int argc,
+char *argv[],
+void *p)
 {
 	struct ax25_cb *axp;
 
@@ -260,10 +260,10 @@ void *p;
 
 /* Display AX.25 link level control blocks */
 static int
-doaxstat(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doaxstat(
+int argc,
+char *argv[],
+void *p)
 {
 	register struct ax25_cb *axp;
 
@@ -297,8 +297,8 @@ void *p;
 }
 /* Dump one control block */
 void
-st_ax25(axp)
-register struct ax25_cb *axp;
+st_ax25(
+register struct ax25_cb *axp)
 {
 	char tmp[AXBUF];
 
@@ -333,10 +333,10 @@ register struct ax25_cb *axp;
 
 /* Display or change our AX.25 address */
 static int
-domycall(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+domycall(
+int argc,
+char *argv[],
+void *p)
 {
 	char tmp[AXBUF];
 
@@ -351,75 +351,75 @@ void *p;
 
 /* Control AX.25 digipeating */
 static int
-dodigipeat(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dodigipeat(
+int argc,
+char *argv[],
+void *p)
 {
 	return setintrc(&Digipeat,"Digipeat",argc,argv,0,2);
 }
 /* Set limit on retransmission backoff */
 static int
-doblimit(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doblimit(
+int argc,
+char *argv[],
+void *p)
 {
 	return setint(&Blimit,"blimit",argc,argv);
 }
 static int
-doversion(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doversion(
+int argc,
+char *argv[],
+void *p)
 {
 	return setintrc(&Axversion,"AX25 version",argc,argv,1,2);
 }
 
 static int
-dot1(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dot1(
+int argc,
+char *argv[],
+void *p)
 {
 	return setintrc(&T1init,"T1 (ms)",argc,argv,1,0x7fffffff);
 }
 
 /* Set idle timer */
 static int
-dot3(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dot3(
+int argc,
+char *argv[],
+void *p)
 {
 	return setintrc(&T3init,"Idle poll timer (ms)",argc,argv,0,0x7fffffff);
 }
 
 /* Set busy timer */
 static int
-dot4(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dot4(
+int argc,
+char *argv[],
+void *p)
 {
 	return setintrc(&T4init,"Busy timer (ms)",argc,argv,1,0x7fffffff);
 }
 
 /* Set retry limit count */
 static int
-don2(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+don2(
+int argc,
+char *argv[],
+void *p)
 {
 	return setintrc(&N2,"Retry limit",argc,argv,0,MAXINT16);
 }
 /* Force a retransmission */
 static int
-doaxkick(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doaxkick(
+int argc,
+char *argv[],
+void *p)
 {
 	struct ax25_cb *axp;
 
@@ -433,39 +433,39 @@ void *p;
 }
 /* Set maximum number of frames that will be allowed in flight */
 static int
-domaxframe(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+domaxframe(
+int argc,
+char *argv[],
+void *p)
 {
 	return setintrc(&Maxframe,"Window size (frames)",argc,argv,1,7);
 }
 
 /* Set maximum length of I-frame data field */
 static int
-dopaclen(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dopaclen(
+int argc,
+char *argv[],
+void *p)
 {
 	return setintrc(&Paclen,"Max frame length (bytes)",argc,argv,1,MAXINT16);
 }
 /* Set size of I-frame above which polls will be sent after a timeout */
 static int
-dopthresh(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dopthresh(
+int argc,
+char *argv[],
+void *p)
 {
 	return setintrc(&Pthresh,"Poll threshold (bytes)",argc,argv,0,MAXINT16);
 }
 
 /* Set high water mark on receive queue that triggers RNR */
 static int
-doaxwindow(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doaxwindow(
+int argc,
+char *argv[],
+void *p)
 {
 	return setintrc(&Axwindow,"AX25 receive window (bytes)",argc,argv,1,MAXINT16);
 }
@@ -473,10 +473,10 @@ void *p;
 
 /* Display and modify AX.25 routing table */
 static int
-doaxroute(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doaxroute(
+int argc,
+char *argv[],
+void *p)
 {
 
   static struct cmds routecmds[] = {
@@ -495,10 +495,10 @@ void *p;
 }
 
 static int
-dorouteadd(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+dorouteadd(
+int argc,
+char *argv[],
+void *p)
 {
 
   int i, j, perm;
@@ -547,8 +547,8 @@ void *p;
 }
 
 static void
-doroutelistentry(rp)
-struct ax_route *rp;
+doroutelistentry(
+struct ax_route *rp)
 {
 
 	char *cp;
@@ -587,10 +587,10 @@ struct ax_route *rp;
 }
 
 static int
-doroutelist(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doroutelist(
+int argc,
+char *argv[],
+void *p)
 {
 
   char call[AXALEN];
@@ -614,10 +614,10 @@ void *p;
 }
 
 static int
-doroutestat(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doroutestat(
+int argc,
+char *argv[],
+void *p)
 {
 
 #define NIFACES 128
@@ -664,10 +664,10 @@ void *p;
   return 0;
 }
 static int
-dojumpstart(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+dojumpstart(
+int argc,
+char *argv[],
+void *p)
 {
 
 	char *cp;

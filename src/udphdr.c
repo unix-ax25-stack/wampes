@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udphdr.c,v 1.5 1993/05/17 13:45:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udphdr.c,v 1.6 1994/10/06 16:15:39 deyke Exp $ */
 
 /* UDP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -11,10 +11,10 @@
 
 /* Convert UDP header in internal format to an mbuf in external format */
 struct mbuf *
-htonudp(udp,bp,ph)
-struct udp *udp;
-struct mbuf *bp;
-struct pseudo_header *ph;
+htonudp(
+struct udp *udp,
+struct mbuf *bp,
+struct pseudo_header *ph)
 {
 	register char *cp;
 	uint16 checksum;
@@ -39,9 +39,9 @@ struct pseudo_header *ph;
 }
 /* Convert UDP header in mbuf to internal structure */
 int
-ntohudp(udp,bpp)
-struct udp *udp;
-struct mbuf **bpp;
+ntohudp(
+struct udp *udp,
+struct mbuf **bpp)
 {
 	char udpbuf[UDPHDR];
 
@@ -57,8 +57,8 @@ struct mbuf **bpp;
  * disturbing the header
  */
 uint16
-udpcksum(bp)
-struct mbuf *bp;
+udpcksum(
+struct mbuf *bp)
 {
 	struct mbuf *dup;
 

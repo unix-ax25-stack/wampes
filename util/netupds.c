@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.16 1993/10/31 07:26:23 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.17 1994/10/06 16:15:46 deyke Exp $";
 #endif
 
 /* Net Update Server */
@@ -171,7 +171,7 @@ int main(void)
   system(buf);
 
   if (stat(filename, &statbuf)) pexit(filename);
-  filesize = statbuf.st_size;
+  filesize = (int) statbuf.st_size;
 
   printf("File size = %i\n", filesize);
   fflush(stdout);

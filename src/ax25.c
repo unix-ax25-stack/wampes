@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.22 1994/09/05 12:47:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.23 1994/10/06 16:15:20 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -53,22 +53,22 @@ struct iface *Axroute_default_ifp;
 int Digipeat = 2;       /* Controls digipeating */
 
 int
-axi_send(bp,iface,gateway,tos)
-struct mbuf *bp;
-struct iface *iface;
-int32 gateway;
-int tos;
+axi_send(
+struct mbuf *bp,
+struct iface *iface,
+int32 gateway,
+int tos)
 {
 	return axui_send(bp,iface,gateway,tos);
 }
 
 /* Send IP datagrams across an AX.25 link */
 int
-axui_send(bp,iface,gateway,tos)
-struct mbuf *bp;
-struct iface *iface;
-int32 gateway;
-int tos;
+axui_send(
+struct mbuf *bp,
+struct iface *iface,
+int32 gateway,
+int tos)
 {
 	struct mbuf *tbp;
 	char *hw_addr;
@@ -121,12 +121,12 @@ int tos;
  * since ARP also uses it.
  */
 int
-ax_output(iface,dest,source,pid,bp)
-struct iface *iface;    /* Interface to use; overrides routing table */
-char *dest;             /* Destination AX.25 address (7 bytes, shifted) */
-char *source;           /* Source AX.25 address (7 bytes, shifted) */
-uint16 pid;             /* Protocol ID */
-struct mbuf *bp;        /* Data field (follows PID) */
+ax_output(
+struct iface *iface,    /* Interface to use; overrides routing table */
+char *dest,             /* Destination AX.25 address (7 bytes, shifted) */
+char *source,           /* Source AX.25 address (7 bytes, shifted) */
+uint16 pid,             /* Protocol ID */
+struct mbuf *bp)        /* Data field (follows PID) */
 {
 	/* Prepend pid to data */
 	bp = pushdown(bp,1);
@@ -135,13 +135,13 @@ struct mbuf *bp;        /* Data field (follows PID) */
 }
 /* Common subroutine for sendframe() and ax_output() */
 static int
-axsend(iface,dest,source,cmdrsp,ctl,bp)
-struct iface *iface;    /* Interface to use; overrides routing table */
-char *dest;             /* Destination AX.25 address (7 bytes, shifted) */
-char *source;           /* Source AX.25 address (7 bytes, shifted) */
-int cmdrsp;             /* Command/response indication */
-int ctl;                /* Control field */
-struct mbuf *bp;        /* Data field (includes PID) */
+axsend(
+struct iface *iface,    /* Interface to use; overrides routing table */
+char *dest,             /* Destination AX.25 address (7 bytes, shifted) */
+char *source,           /* Source AX.25 address (7 bytes, shifted) */
+int cmdrsp,             /* Command/response indication */
+int ctl,                /* Control field */
+struct mbuf *bp)        /* Data field (includes PID) */
 {
 	struct ax25 addr;
 	struct iface *ifp;
@@ -194,9 +194,9 @@ struct mbuf *bp;        /* Data field (includes PID) */
  * us or to QST-0, kick it upstairs depending on the protocol ID.
  */
 void
-ax_recv(iface,bp)
-struct iface *iface;
-struct mbuf *bp;
+ax_recv(
+struct iface *iface,
+struct mbuf *bp)
 {
 	struct mbuf *hbp;
 	char control;
@@ -339,11 +339,11 @@ struct mbuf *bp;
 }
 /* General purpose AX.25 frame output */
 int
-sendframe(axp,cmdrsp,ctl,data)
-struct ax25_cb *axp;
-int cmdrsp;
-int ctl;
-struct mbuf *data;
+sendframe(
+struct ax25_cb *axp,
+int cmdrsp,
+int ctl,
+struct mbuf *data)
 {
 	struct mbuf *bp;
 	struct iface *ifp;
@@ -367,8 +367,8 @@ struct mbuf *data;
 }
 
 int
-valid_remote_call(call)
-const char *call;
+valid_remote_call(
+const char *call)
 {
 	char (*mpp)[AXALEN];
 
@@ -381,8 +381,8 @@ const char *call;
 }
 
 static int
-axroute_hash(call)
-const char *call;
+axroute_hash(
+const char *call)
 {
 	int hashval;
 
@@ -397,9 +397,9 @@ const char *call;
 }
 
 struct ax_route *
-ax_routeptr(call, create)
-const char *call;
-int create;
+ax_routeptr(
+const char *call,
+int create)
 {
 
 	struct ax_route **tp;
@@ -409,7 +409,7 @@ int create;
 	for (rp = *tp; rp && !addreq(rp->target, call); rp = rp->next)
 		;
 	if (!rp && create) {
-		rp = (struct ax_route *) calloc(1, sizeof(*rp));
+		rp = (struct ax_route *) calloc(1, sizeof(struct ax_route));
 		addrcp(rp->target, call);
 		rp->next = *tp;
 		*tp = rp;
@@ -418,10 +418,10 @@ int create;
 }
 
 void
-axroute_add(iface, hdr, perm)
-struct iface *iface;
-struct ax25 *hdr;
-int perm;
+axroute_add(
+struct iface *iface,
+struct ax25 *hdr,
+int perm)
 {
 
 	char *call;
@@ -465,9 +465,9 @@ int perm;
 }
 
 void
-axroute(hdr, ifpp)
-struct ax25 *hdr;
-struct iface **ifpp;
+axroute(
+struct ax25 *hdr,
+struct iface **ifpp)
 {
 
 	char *idest;
@@ -522,13 +522,13 @@ struct iface **ifpp;
 
 /* Handle ordinary incoming data (no network protocol) */
 void
-axnl3(iface,axp,src,dest,bp,mcast)
-struct iface *iface;
-struct ax25_cb *axp;
-char *src;
-char *dest;
-struct mbuf *bp;
-int mcast;
+axnl3(
+struct iface *iface,
+struct ax25_cb *axp,
+char *src,
+char *dest,
+struct mbuf *bp,
+int mcast)
 {
 	if(axp == NULLAX25){
 		free_p(bp);

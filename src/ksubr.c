@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.24 1994/09/05 12:47:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.25 1994/10/06 16:15:28 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -322,7 +322,7 @@ static int stkutil(struct proc *pp);
 static void pproc(struct proc *pp);
 
 void
-kinit()
+kinit(void)
 {
 #if 0
 	int i;
@@ -346,10 +346,10 @@ kinit()
  * than not having it showing up at all.
  */
 int
-ps(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+ps(
+int argc,
+char *argv[],
+void *p)
 {
 	register struct proc *pp;
 	int i;
@@ -382,8 +382,8 @@ void *p;
 	return 0;
 }
 static void
-pproc(pp)
-struct proc *pp;
+pproc(
+struct proc *pp)
 {
 	register struct env *ep;
 
@@ -397,8 +397,8 @@ struct proc *pp;
 	 (int)pp->input,(int)pp->output,pp->name);
 }
 static int
-stkutil(pp)
-struct proc *pp;
+stkutil(
+struct proc *pp)
 {
 	unsigned i;
 	register uint16 *sp;
@@ -419,7 +419,7 @@ struct proc *pp;
  * also check that no one has dereferenced a null pointer
  */
 void
-chkstk()
+chkstk(void)
 {
 	uint16 *sbase;
 	uint16 *stop;
@@ -455,8 +455,8 @@ chkstk()
 #endif
 }
 unsigned
-phash(event)
-void *event;
+phash(
+void *event)
 {
 	register unsigned x;
 

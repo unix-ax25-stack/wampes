@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.11 1994/09/05 12:47:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.12 1994/10/06 16:15:21 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -46,7 +46,7 @@ void axserv_open(struct ax25_cb *axp, int cnt)
 
   if (Axserver_enabled) {
     pax25(callsign, axp->hdr.dest);
-    axp->user = (char *) login_open(callsign, "AX25", (void (*)()) axserv_send_upcall, (void (*)()) disc_ax25, axp);
+    axp->user = (char *) login_open(callsign, "AX25", (void (*)(void *)) axserv_send_upcall, (void (*)(void *)) disc_ax25, axp);
   }
   if (axp->user) {
     free_q(&axp->rxq);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ripdump.c,v 1.3 1993/05/17 13:45:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ripdump.c,v 1.4 1994/10/06 16:15:34 deyke Exp $ */
 
 /* RIP packet tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -11,9 +11,9 @@
 #include "trace.h"
 
 void
-rip_dump(fp,bpp)
-FILE *fp;
-struct mbuf **bpp;
+rip_dump(
+FILE *fp,
+struct mbuf **bpp)
 {
 	struct rip_route entry;
 	int i;

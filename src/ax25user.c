@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25user.c,v 1.4 1993/05/17 13:44:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25user.c,v 1.5 1994/10/06 16:15:21 deyke Exp $ */
 
 /* User interface subroutines for AX.25
  * Copyright 1991 Phil Karn, KA9Q
@@ -14,13 +14,13 @@
 
 /* Open an AX.25 connection */
 struct ax25_cb *
-open_ax25(hdr,mode,r_upcall,t_upcall,s_upcall,user)
-struct ax25 *hdr;
-int mode;               /* active/passive/server */
-void (*r_upcall)(struct ax25_cb *,int);        /* Receiver upcall handler */
-void (*t_upcall)(struct ax25_cb *,int);        /* Transmitter upcall handler */
-void (*s_upcall)(struct ax25_cb *,int,int);    /* State-change upcall handler */
-char *user;             /* User linkage area */
+open_ax25(
+struct ax25 *hdr,
+int mode,               /* active/passive/server */
+void (*r_upcall)(struct ax25_cb *,int),        /* Receiver upcall handler */
+void (*t_upcall)(struct ax25_cb *,int),        /* Transmitter upcall handler */
+void (*s_upcall)(struct ax25_cb *,int,int),    /* State-change upcall handler */
+char *user)             /* User linkage area */
 {
 	struct ax25_cb *axp;
 
@@ -79,10 +79,10 @@ char *user;             /* User linkage area */
  * through directly even if it is very large.
  */
 int
-send_ax25(axp,bp,pid)
-struct ax25_cb *axp;
-struct mbuf *bp;
-int pid;
+send_ax25(
+struct ax25_cb *axp,
+struct mbuf *bp,
+int pid)
 {
 	struct mbuf *bp1;
 	uint16 offset,len,size;
@@ -117,9 +117,9 @@ int pid;
 
 /* Receive incoming data on an AX.25 connection */
 struct mbuf *
-recv_ax25(axp,cnt)
-struct ax25_cb *axp;
-uint16 cnt;
+recv_ax25(
+struct ax25_cb *axp,
+uint16 cnt)
 {
 	struct mbuf *bp;
 
@@ -143,8 +143,8 @@ uint16 cnt;
 
 /* Close an AX.25 connection */
 int
-disc_ax25(axp)
-struct ax25_cb *axp;
+disc_ax25(
+struct ax25_cb *axp)
 {
 	if(axp == NULLAX25)
 		return -1;
@@ -177,8 +177,8 @@ struct ax25_cb *axp;
 
 /* Verify that axp points to a valid ax25 control block */
 int
-ax25val(axp)
-struct ax25_cb *axp;
+ax25val(
+struct ax25_cb *axp)
 {
 	register struct ax25_cb *axp1;
 
@@ -192,8 +192,8 @@ struct ax25_cb *axp;
 
 /* Force a retransmission */
 int
-kick_ax25(axp)
-struct ax25_cb *axp;
+kick_ax25(
+struct ax25_cb *axp)
 {
 	if(!ax25val(axp))
 		return -1;
@@ -203,10 +203,10 @@ struct ax25_cb *axp;
 
 /* Abruptly terminate an AX.25 connection */
 int
-reset_ax25(axp)
-struct ax25_cb *axp;
+reset_ax25(
+struct ax25_cb *axp)
 {
-	void (*upcall)();
+	void (*upcall)(struct ax25_cb *,int,int);
 
 	if(axp == NULLAX25)
 		return -1;
@@ -221,8 +221,8 @@ struct ax25_cb *axp;
 }
 
 int
-space_ax25(axp)
-struct ax25_cb *axp;
+space_ax25(
+struct ax25_cb *axp)
 {
 	int cnt;
 

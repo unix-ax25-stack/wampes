@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.h,v 1.10 1994/05/08 11:00:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.h,v 1.11 1994/10/06 16:15:31 deyke Exp $ */
 
 #ifndef _MBUF_H
 #define _MBUF_H
@@ -30,16 +30,16 @@ struct mbuf {
  ((*bpp)->cnt--,(unsigned char)*(*bpp)->data++) : pullchar(bpp))
 
 /* In mbuf.c: */
-struct mbuf *alloc_mbuf(int    size);
+struct mbuf *alloc_mbuf(uint16 size);
 struct mbuf *free_mbuf(struct mbuf *bp);
 
-struct mbuf *ambufw(int    size);
-struct mbuf *copy_p(struct mbuf *bp,int    cnt);
-uint16 dup_p(struct mbuf **hp,struct mbuf *bp,int    offset,int    cnt);
-uint16 extract(struct mbuf *bp,int    offset,char *buf,int    len);
+struct mbuf *ambufw(uint16 size);
+struct mbuf *copy_p(struct mbuf *bp,uint16 cnt);
+uint16 dup_p(struct mbuf **hp,struct mbuf *bp,uint16 offset,uint16 cnt);
+uint16 extract(struct mbuf *bp,uint16 offset,char *buf,uint16 len);
 struct mbuf *free_p(struct mbuf *bp);
 uint16 len_p(struct mbuf *bp);
-void trim_mbuf(struct mbuf **bpp,int    length);
+void trim_mbuf(struct mbuf **bpp,uint16 length);
 int write_p(FILE *fp,struct mbuf *bp);
 
 struct mbuf *dequeue(struct mbuf **q);
@@ -47,12 +47,12 @@ void enqueue(struct mbuf **q,struct mbuf *bp);
 void free_q(struct mbuf **q);
 uint16 len_q(struct mbuf *bp);
 
-struct mbuf *qdata(char *data,int    cnt);
+struct mbuf *qdata(char *data,uint16 cnt);
 uint16 dqdata(struct mbuf *bp,char *buf,unsigned cnt);
 
 void append(struct mbuf **bph,struct mbuf *bp);
-struct mbuf *pushdown(struct mbuf *bp,int    size);
-uint16 pullup(struct mbuf **bph,char *buf,int    cnt);
+struct mbuf *pushdown(struct mbuf *bp,uint16 size);
+uint16 pullup(struct mbuf **bph,char *buf,uint16 cnt);
 
 int pullchar(struct mbuf **bpp);       /* returns -1 if nothing */
 long pull16(struct mbuf **bpp); /* returns -1 if nothing */
@@ -60,7 +60,7 @@ int32 pull32(struct mbuf **bpp);        /* returns  0 if nothing */
 
 uint16 get16(char *cp);
 int32 get32(char *cp);
-char *put16(char *cp,int    x);
+char *put16(char *cp,uint16 x);
 char *put32(char *cp,int32 x);
 
 void iqstat(void);

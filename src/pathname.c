@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pathname.c,v 1.5 1993/05/17 13:45:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pathname.c,v 1.6 1994/10/06 16:15:33 deyke Exp $ */
 
 /* Convert relative to absolute pathnames
  * Copyright 1991 Phil Karn, KA9Q
@@ -14,9 +14,9 @@ static void crunch(char *buf,char *path);
  * the caller must free
  */
 char *
-pathname(cd,path)
-char *cd;       /* Current working directory */
-char *path;     /* Pathname argument */
+pathname(
+char *cd,       /* Current working directory */
+char *path)     /* Pathname argument */
 {
 	register char *buf;
 #ifdef  MSDOS
@@ -53,7 +53,7 @@ char *path;     /* Pathname argument */
 		path++;
 
 	/* Allocate and initialize output buffer; user must free */
-	buf = mallocw((unsigned)strlen(cd) + strlen(path) + 10);        /* fudge factor */
+	buf = (char *) mallocw((unsigned)strlen(cd) + strlen(path) + 10);        /* fudge factor */
 	buf[0] = '\0';
 
 	/* Interpret path relative to cd only if it doesn't begin with "/" */
@@ -78,9 +78,9 @@ char *path;     /* Pathname argument */
  * the existing buffer
  */
 static void
-crunch(buf,path)
-char *buf;
-register char *path;
+crunch(
+char *buf,
+register char *path)
 {
 	register char *cp;
 

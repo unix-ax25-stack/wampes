@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/md5drivr.c,v 1.2 1993/10/13 22:31:23 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/md5drivr.c,v 1.3 1994/10/06 16:15:46 deyke Exp $";
 #endif
 
 /*
@@ -35,8 +35,7 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
    Order is from low-order byte to high-order byte of digest.
    Each byte is printed with high-order hexadecimal digit first.
  */
-static void MDPrint (mdContext)
-MD5_CTX *mdContext;
+static void MDPrint(MD5_CTX *mdContext)
 {
   int i;
 
@@ -97,14 +96,13 @@ static void MDTimeTrial ()
    Prints out message digest, a space, the string (in quotes) and a
    carriage return.
  */
-static void MDString (inString)
-char *inString;
+static void MDString(char *inString)
 {
   MD5_CTX mdContext;
   unsigned int len = strlen (inString);
 
   MD5Init (&mdContext);
-  MD5Update (&mdContext, inString, len);
+  MD5Update (&mdContext, (unsigned char *) inString, len);
   MD5Final (&mdContext);
   MDPrint (&mdContext);
   printf (" \"%s\"\n", inString);
@@ -114,8 +112,7 @@ char *inString;
    Prints out message digest, a space, the file name, and a carriage
    return.
  */
-static void MDFile (filename)
-char *filename;
+static void MDFile(char *filename)
 {
   FILE *inFile = fopen (filename, "rb");
   MD5_CTX mdContext;
@@ -139,7 +136,7 @@ char *filename;
 /* Writes the message digest of the data from stdin onto stdout,
    followed by a carriage return.
  */
-static void MDFilter ()
+static void MDFilter(void)
 {
   MD5_CTX mdContext;
   int bytes;
@@ -155,7 +152,7 @@ static void MDFilter ()
 
 /* Runs a standard suite of test data.
  */
-static void MDTestSuite ()
+static void MDTestSuite(void)
 {
   printf ("MD5 test suite results:\n");
   MDString ("");
@@ -172,9 +169,7 @@ static void MDTestSuite ()
   MDFile ("foo");
 }
 
-int main (argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
   int i;
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.12 1993/06/27 07:50:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.13 1994/10/06 16:15:22 deyke Exp $ */
 
 /* Parse command line, set up command arguments Unix-style, and call function.
  * Note: argument is modified (delimiters are overwritten with nulls)
@@ -46,8 +46,8 @@ static int print_help(struct cmds *cmdp);
 static char *stringparse(char *line);
 
 static char *
-stringparse(line)
-char *line;
+stringparse(
+char *line)
 {
 	register char *cp = line;
 	unsigned long num;
@@ -119,10 +119,10 @@ char *line;
 }
 
 int
-cmdparse(cmds,line,p)
-struct cmds cmds[];
-register char *line;
-void *p;
+cmdparse(
+struct cmds cmds[],
+register char *line,
+void *p)
 {
 	struct cmds *cmdp;
 	char *argv[NARG];
@@ -202,18 +202,18 @@ void *p;
 		for(i=0;i<argc;i++)
 			pargv[i] = strdup(argv[i]);
 		newproc(cmdp->name,cmdp->stksize,
-		(void (*)())cmdp->func,argc,pargv,p,1);
+		(void (*)(int,void *,void *))cmdp->func,argc,pargv,p,1);
 		return 0;
 	}
 }
 
 /* Call a subcommand based on the first token in an already-parsed line */
 int
-subcmd(tab,argc,argv,p)
-struct cmds tab[];
-int argc;
-char *argv[];
-void *p;
+subcmd(
+struct cmds tab[],
+int argc,
+char *argv[],
+void *p)
 {
 	register struct cmds *cmdp;
 	char **pargv;
@@ -256,15 +256,15 @@ void *p;
 		for(i=0;i<argc;i++)
 			pargv[i] = strdup(argv[i]);
 		newproc(cmdp->name,cmdp->stksize,
-		 (void (*)())cmdp->func,argc,pargv,p,1);
+		 (void (*)(int,void *,void *))cmdp->func,argc,pargv,p,1);
 		return(0);
 	}
 }
 
-static int print_help(cmdp)
-register struct cmds *cmdp;
+static int print_help(
+register struct cmds *cmdp)
 {
-	register int  i;
+	int i;
 
 	for (i = 0; cmdp->name; cmdp++, i++)
 		printf((i % 5) < 4 ? "%-16s" : "%s\n", cmdp->name);
@@ -275,11 +275,11 @@ register struct cmds *cmdp;
 
 /* Subroutine for setting and displaying boolean flags */
 int
-setbool(var,label,argc,argv)
-int *var;
-char *label;
-int argc;
-char *argv[];
+setbool(
+int *var,
+char *label,
+int argc,
+char *argv[])
 {
 	struct boolcmd *bc;
 
@@ -303,12 +303,12 @@ char *argv[];
 
 /* Subroutine for setting and displaying bit values */
 int
-bit16cmd(bits,mask,label,argc,argv)
-uint16 *bits;
-uint16 mask;
-char *label;
-int argc;
-char *argv[];
+bit16cmd(
+uint16 *bits,
+uint16 mask,
+char *label,
+int argc,
+char *argv[])
 {
 	int doing = (*bits & mask);
 	int result = setbool( &doing, label, argc, argv );
@@ -324,11 +324,11 @@ char *argv[];
 
 /* Subroutine for setting and displaying long variables */
 int
-setlong(var,label,argc,argv)
-int32 *var;
-char *label;
-int argc;
-char *argv[];
+setlong(
+int32 *var,
+char *label,
+int argc,
+char *argv[])
 {
 	if(argc < 2)
 		printf("%s: %ld\n",label,*var);
@@ -339,11 +339,11 @@ char *argv[];
 }
 /* Subroutine for setting and displaying short variables */
 int
-setshort(var,label,argc,argv)
-unsigned short *var;
-char *label;
-int argc;
-char *argv[];
+setshort(
+unsigned short *var,
+char *label,
+int argc,
+char *argv[])
 {
 	if(argc < 2)
 		printf("%s: %u\n",label,*var);
@@ -354,11 +354,11 @@ char *argv[];
 }
 /* Subroutine for setting and displaying integer variables */
 int
-setint(var,label,argc,argv)
-int *var;
-char *label;
-int argc;
-char *argv[];
+setint(
+int *var,
+char *label,
+int argc,
+char *argv[])
 {
 	if(argc < 2)
 		printf("%s: %d\n",label,*var);
@@ -370,11 +370,11 @@ char *argv[];
 
 /* Subroutine for setting and displaying unsigned integer variables */
 int
-setuns(var,label,argc,argv)
-unsigned *var;
-char *label;
-int argc;
-char *argv[];
+setuns(
+unsigned *var,
+char *label,
+int argc,
+char *argv[])
 {
 	if(argc < 2)
 		printf("%s: %u\n",label,*var);
@@ -386,18 +386,18 @@ char *argv[];
 
 /* Subroutine for setting and displaying int variables (with range check) */
 
-int setintrc(var, label, argc, argv, minval, maxval)
-int *var;
-char *label;
-int argc;
-char *argv[];
-int minval;
-int maxval;
+int setintrc(
+int *var,
+char *label,
+int argc,
+char *argv[],
+int minval,
+int maxval)
 {
   if (argc < 2)
     printf("%s: %d\n", label, *var);
   else {
-    int  tmp = atoi(argv[1]);
+    int tmp = atoi(argv[1]);
     if (tmp < minval || tmp > maxval) {
       printf("%s must be %d..%d\n", label, minval, maxval);
       return 1;
