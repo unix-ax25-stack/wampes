@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.24 1994/01/03 14:33:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.25 1994/01/21 11:10:58 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -14,6 +14,8 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include "seteugid.h"
 
 #include "global.h"
 #include "mbuf.h"
@@ -296,33 +298,14 @@ static char *errmsg(const char *filename)
 
 /*---------------------------------------------------------------------------*/
 
-#ifdef __hpux
-
 #define AsUser(stmt)    if (!permcheck(ftp,file)) {                \
 			  Xprintf(ftp->control,noperm,file,"",""); \
 			  free(file);                              \
 			  return;                                  \
 			}                                          \
-			setresgid(ftp->gid,ftp->gid,0);            \
-			setresuid(ftp->uid,ftp->uid,0);            \
+			seteugid(ftp->uid,ftp->gid);               \
 			stmt;                                      \
-			setresuid(0,0,0);                          \
-			setresgid(0,0,0)
-
-#else
-
-#define AsUser(stmt)    if (!permcheck(ftp,file)) {                \
-			  Xprintf(ftp->control,noperm,file,"",""); \
-			  free(file);                              \
-			  return;                                  \
-			}                                          \
-			setregid(0,ftp->gid);                      \
-			setreuid(0,ftp->uid);                      \
-			stmt;                                      \
-			setreuid(0,0);                             \
-			setregid(0,0)
-
-#endif
+			seteugid(0,0);
 
 /* Parse and execute ftp commands */
 static

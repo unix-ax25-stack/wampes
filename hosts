@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.12 1994/01/17 14:52:41 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.13 1994/01/21 11:10:46 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -2315,14 +2315,12 @@
 #
 #       HOT NEWS * HOT NEWS * HOT NEWS * HOT NEWS * HOT NEWS *
 #
-#       ********* Het support BBS komt in Januari te vervallen ******
-#       NET/NOS support BBS     015-153101 (1200/2400 baud)
-#                               015-153102 (9600 baud (v32)
+#       ********* Het support BBS is vervallen ******
 #
 #       HOT NEWS * HOT NEWS * HOT NEWS * HOT NEWS * HOT NEWS *
 #
 #
-# revision 09 jan 1994
+# revision 16 jan 1994
 #
 44.137.0.0      PA_ZH1net
 44.137.0.1      bbs.pa0gri      bbs     #  bbs  144.675 + 432.675
@@ -2530,6 +2528,10 @@
 44.137.0.207  pe1pda          # gerard
 44.137.0.208  pa3fan          # rob
 44.137.0.209  sys3.pa3bwe     # antoon
+44.137.0.210    sys2.pb0ajk # hans
+44.137.0.211    sys3.pb0ajk # hans
+44.137.0.212    pa3euo          # petra
+44.137.0.213    pa3eup          # detlef
 44.137.1.1      net.pa0gri      net     # TCP/IP net server and IP switch
 44.137.1.2      devel.pa0gri    # gerard
 44.137.1.3      fridley.pa0gri  # gvdg
@@ -3373,7 +3375,7 @@
 44.137.44.27    pa3cgh          # pieter_jan
 44.137.44.28    pa3eko          # jan
 44.137.44.29    pa3ead          # piet
-44.137.44.30    pe1mdm          # tjeerd
+44.137.44.30    pb0als          ## tjeerd
 44.137.44.31    pe1lps          # berto
 44.137.44.32    pe1cgy          # roel
 44.137.44.33    pe1afj          # peter
@@ -3514,8 +3516,8 @@
 44.137.48.70    pe1oqx          # piet
 44.137.48.71    pe0rki          # fred
 44.137.48.72    pe1mho          # pete
+44.137.48.55  pa3fwn      # pieter-tjerk
 44.137.48.56  pa3glt          # gerard
-#
 44.137.49.0     PA_OVnet2
 44.137.49.1     pi4vrn          # henk
 44.137.49.2     pe0rtm          # henk

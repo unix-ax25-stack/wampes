@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.70 1994/01/15 15:49:59 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.71 1994/01/21 11:11:22 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -30,6 +30,7 @@ extern int optind;
 #include "buildsaddr.h"
 #include "callvalid.h"
 #include "configure.h"
+#include "seteugid.h"
 #include "strdup.h"
 
 #define SECONDS     (1L)
@@ -491,19 +492,9 @@ static void get_seq(void)
 
   if (mode != BBS) return;
   sprintf(fname, "%s/%s", user.dir, SEQFILE);
-#ifdef __hpux
-  setresgid(user.gid, user.gid, 0);
-  setresuid(user.uid, user.uid, 0);
+  seteugid(user.uid, user.gid);
   fdseq = open(fname, O_RDWR | O_CREAT, 0644);
-  setresuid(0, 0, 0);
-  setresgid(0, 0, 0);
-#else
-  setregid(0, user.gid);
-  setreuid(0, user.uid);
-  fdseq = open(fname, O_RDWR | O_CREAT, 0644);
-  setreuid(0, 0);
-  setregid(0, 0);
-#endif
+  seteugid(0, 0);
   if (fdseq < 0) halt();
   flk.l_type = F_WRLCK;
   flk.l_whence = SEEK_SET;

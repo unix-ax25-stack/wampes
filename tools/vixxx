@@ -1,18 +1,24 @@
 #! /bin/sh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/vixxx,v 1.4 1993/06/10 09:44:16 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/vixxx,v 1.5 1994/01/21 11:11:18 deyke Exp $
 
 tmp=/tmp/tmp$$
 sed <xxx >$tmp -e "
   / Error code .* (ignored)/d
+  / change in ANSI C; /d
   / done$/d
   / is up to date/d
   / no change$/d
-  /^chmod: can/d
-  /^cp: cannot create/d
-  /^ln: .* are identical/d
-  /^mv: /d
-  /^rm: .* not removed.  Permission denied/d
+  / warning: initializer does not fit: /d
+  / warning: macro replacement within a character constant/d
+  /This value will be ignored/d
+  /^Permission denied/d
+  /^The error code from the last failed command is /d
+  /^chmod[: ]/d
+  /^cp[: ]/d
+  /^ln[: ]/d
+  /^mv[: ]/d
+  /^rm[: ]/d
 "
 vi $tmp
 rm -f $tmp

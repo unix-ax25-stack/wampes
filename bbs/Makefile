@@ -1,7 +1,6 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.33 1994/01/16 17:12:29 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.34 1994/01/21 11:11:22 deyke Exp $
 
 CFLAGS     = -I../lib
-LD         = $(CC)
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
 OS         = "`uname -s`"
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
@@ -49,8 +48,7 @@ all:;   @if [ $(OS) = HP-UX ] ; then \
 			make -i \
 			'CC=cc' \
 			'CFLAGS=-O -s -I../lib' \
-			'LD=/usr/ucb/cc' \
-			'LIBS=../lib/libutil.a' \
+			'LIBS=../lib/libutil.a -lsocket -lnsl' \
 			_all; \
 		fi) \
 	elif [ $(OS) = ULTRIX ] ; then \
@@ -80,7 +78,7 @@ _all:   $(TARGETS)
 bbs:    bbs.o
 	$(RMTARGET)
 	@sleep 1
-	$(LD) $(CFLAGS) $? $(LIBS) -o $@
+	$(CC) $(CFLAGS) $? $(LIBS) -o $@
 
 findpath: findpath.o
 	$(RMTARGET)
@@ -122,7 +120,7 @@ clean:; rm -f *.o $(TARGETS) *~
 depend:; @mkmf
 ###
 bbs.o: ../lib/bbs.h ../lib/configure.h ../lib/buildsaddr.h ../lib/callvalid.h \
-	../lib/strdup.h
+	../lib/seteugid.h ../lib/strdup.h
 findpath.o: ../lib/bbs.h ../lib/configure.h ../lib/calc_crc.h \
 	../lib/callvalid.h
 killdup.o: ../lib/bbs.h ../lib/configure.h ../lib/md5.h

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.59 1994/01/14 21:27:52 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.60 1994/01/21 11:10:53 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -8,7 +8,8 @@ EXTHDRS       = ../lib/bbs.h \
 		../lib/buildsaddr.h \
 		../lib/calc_crc.h \
 		../lib/callvalid.h \
-		../lib/configure.h
+		../lib/configure.h \
+		../lib/seteugid.h
 
 HDRS          = arp.h \
 		asy.h \
@@ -322,8 +323,7 @@ all:;   chmod 755 cc
 			make -i \
 			'CC=cc' \
 			'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
-			'LD=/usr/ucb/cc' \
-			'LIBS=../lib/libutil.a' \
+			'LIBS=../lib/libutil.a -lsocket -lnsl' \
 			_all; \
 		fi) \
 	elif [ $(OS) = ULTRIX ] ; then \
@@ -382,7 +382,7 @@ setsp.o: setsp.c
 $(PROGRAM):     $(OBJS)
 		@echo "Linking $(PROGRAM) ..."
 		$(RMTARGET)
-		@$(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM)
+		@$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM)
 
 clean:;         @rm -f $(OBJS) *.o core *~
 
@@ -462,8 +462,9 @@ ftp.o: global.h mbuf.h netuser.h timer.h tcp.h iface.h proc.h internet.h ip.h \
 ftpcli.o: global.h mbuf.h session.h proc.h timer.h hardware.h telnet.h ax25.h \
 	iface.h cmdparse.h socket.h icmp.h internet.h ip.h tcp.h netuser.h \
 	ftp.h commands.h dirutil.h
-ftpserv.o: global.h mbuf.h socket.h proc.h timer.h netuser.h tcp.h iface.h \
-	internet.h ip.h dirutil.h login.h ftp.h ftpserv.h
+ftpserv.o: ../lib/seteugid.h global.h mbuf.h socket.h proc.h timer.h \
+	netuser.h tcp.h iface.h internet.h ip.h dirutil.h login.h ftp.h \
+	ftpserv.h
 hpux.o: ../lib/configure.h global.h iface.h mbuf.h proc.h timer.h files.h \
 	hardware.h login.h commands.h main.h hpux.h
 icmp.o: global.h mbuf.h iface.h proc.h timer.h ip.h internet.h icmp.h \
