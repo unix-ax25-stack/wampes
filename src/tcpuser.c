@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.3 1990/02/05 09:42:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.4 1990/02/27 11:05:33 deyke Exp $ */
 
 /* User calls to TCP */
 
@@ -137,6 +137,8 @@ struct mbuf *bp;
 int  space_tcp(tcb)
 struct tcb *tcb;
 {
+  int  cnt;
+
   if (!tcb) {
     net_error = INVALID;
     return (-1);
@@ -150,7 +152,8 @@ struct tcb *tcb;
   case SYN_RECEIVED:
   case ESTABLISHED:
   case CLOSE_WAIT:
-    return tcb->window - tcb->sndcnt;
+    cnt = tcb->window - tcb->sndcnt;
+    return (cnt > 0) ? cnt : 0;
   case FINWAIT1:
   case FINWAIT2:
   case CLOSING:

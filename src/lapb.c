@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.4 1990/02/22 12:42:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.5 1990/02/27 11:07:37 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
@@ -364,7 +364,7 @@ int  fill_sndq;
   struct mbuf *bp;
 
   stop_timer(&cp->timer_t5);
-  while (cp->unack < ax_maxframe) {
+  while (cp->unack < cp->cwind) {
     if (cp->state != CONNECTED || cp->remote_busy) return;
     if (fill_sndq && cp->t_upcall) {
       cnt = space_ax(cp);
@@ -447,6 +447,7 @@ static void t1_timeout(cp)
 struct axcb *cp;
 {
   inc_t1(cp);
+  cp->cwind = 1;
   if (++cp->retry > ax_retry) cp->reason = TIMEOUT;
   switch (cp->state) {
   case DISCONNECTED:
@@ -518,6 +519,33 @@ static void t5_timeout(cp)
 struct axcb *cp;
 {
   try_send(cp, 1);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static struct axcb *create_axcb(prototype)
+struct axcb *prototype;
+{
+  register struct axcb *cp;
+
+  if (prototype) {
+    cp = (struct axcb *) malloc(sizeof(struct axcb ));
+    *cp = *prototype;
+  } else
+    cp = (struct axcb *) calloc(1, sizeof(struct axcb ));
+  cp->cwind = 1;
+  cp->timer_t1.func = t1_timeout;
+  cp->timer_t1.arg = (char *) cp;
+  cp->timer_t2.func = t2_timeout;
+  cp->timer_t2.arg = (char *) cp;
+  cp->timer_t3.func = t3_timeout;
+  cp->timer_t3.arg = (char *) cp;
+  cp->timer_t4.func = t4_timeout;
+  cp->timer_t4.arg = (char *) cp;
+  cp->timer_t5.func = t5_timeout;
+  cp->timer_t5.arg = (char *) cp;
+  cp->next = axcb_head;
+  return axcb_head = cp;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -615,6 +643,7 @@ int  reverse;
   else
     ndigi = cp->pathlen / AXALEN - 2;
   cp->srtt = 500l * ax_t1init * (1 + 2 * ndigi);
+  cp->mdev = cp->srtt / 2;
   reset_t1(cp);
 }
 
@@ -718,42 +747,17 @@ struct mbuf *bp;
   for (cp = axcb_head; cp; cp = cp->next)
     if (addreq(axptr(bp->data + AXALEN), axptr(cp->path)) && addreq(axptr(bp->data), axptr(cp->path + AXALEN))) break;
   if (!cp) {
-    cp = (struct axcb *) calloc(1, sizeof(struct axcb ));
-    if (for_me) {
-      if (netrom_server_axcb && isnetrom(axptr(bp->data + AXALEN)))
-	*cp = *netrom_server_axcb;
-      else if (axcb_server)
-	*cp = *axcb_server;
-    }
+    if (for_me && netrom_server_axcb && isnetrom(axptr(bp->data + AXALEN)))
+      cp = create_axcb(netrom_server_axcb);
+    else if (for_me && axcb_server)
+      cp = create_axcb(axcb_server);
+    else
+      cp = create_axcb(NULLAXCB);
     build_path(cp, ifp, bp->data, 1);
-    cp->timer_t1.func = t1_timeout;
-    cp->timer_t1.arg = (char *) cp;
-    cp->timer_t2.func = t2_timeout;
-    cp->timer_t2.arg = (char *) cp;
-    cp->timer_t3.func = t3_timeout;
-    cp->timer_t3.arg = (char *) cp;
-    cp->timer_t4.func = t4_timeout;
-    cp->timer_t4.arg = (char *) cp;
-    cp->timer_t5.func = t5_timeout;
-    cp->timer_t5.arg = (char *) cp;
-    cp->next = axcb_head;
-    axcb_head = cp;
     if (!for_me) {
-      cp->peer = cpp = (struct axcb *) calloc(1, sizeof(struct axcb ));
-      build_path(cpp, NULLIF, bp->data, 0);
-      cpp->timer_t1.func = t1_timeout;
-      cpp->timer_t1.arg = (char *) cpp;
-      cpp->timer_t2.func = t2_timeout;
-      cpp->timer_t2.arg = (char *) cpp;
-      cpp->timer_t3.func = t3_timeout;
-      cpp->timer_t3.arg = (char *) cpp;
-      cpp->timer_t4.func = t4_timeout;
-      cpp->timer_t4.arg = (char *) cpp;
-      cpp->timer_t5.func = t5_timeout;
-      cpp->timer_t5.arg = (char *) cpp;
-      cpp->next = axcb_head;
-      axcb_head = cpp;
+      cp->peer = cpp = create_axcb(NULLAXCB);
       cpp->peer = cp;
+      build_path(cpp, NULLIF, bp->data, 0);
     } else
       cpp = NULLAXCB;
   } else
@@ -871,6 +875,10 @@ struct mbuf *bp;
 	    cp->srtt = ((AGAIN - 1) * cp->srtt + rtt) / AGAIN;
 	    cp->mdev = ((DGAIN - 1) * cp->mdev + abserr) / DGAIN;
 	    reset_t1(cp);
+	    if (cp->cwind < ax_maxframe) {
+	      cp->cwind++;
+	      cp->mdev += 1250;
+	    }
 	  }
 	}
 	while (((cp->vs - nr) & 7) < cp->unack) {
@@ -925,6 +933,7 @@ struct mbuf *bp;
 	  stop_timer(&cp->timer_t1);
 	  cp->timer_t4.start = ax_t4init;
 	  start_timer(&cp->timer_t4);
+	  cp->cwind = 1;
 	} else {
 	  cp->remote_busy = 0;
 	  stop_timer(&cp->timer_t4);
@@ -937,6 +946,7 @@ struct mbuf *bp;
 	    dup_p(&bp1, cp->resndq, 0, MAXINT16);
 	    send_packet(cp, I, CMD, bp1);
 	    cp->vs = old_vs;
+	    cp->cwind = 1;
 	  } else if (cp->unack && cmdrsp == FINAL) {
 	    struct mbuf *bp1, *qp;
 	    cp->vs = (cp->vs - cp->unack) & 7;
@@ -1086,7 +1096,6 @@ static int  dopthresh(argc, argv)
 int  argc;
 char  *argv[];
 {
-
   if (argc < 2)
     printf("Pthresh %d\n", ax_pthresh);
   else
@@ -1321,11 +1330,12 @@ char  *argv[];
   if (argc < 2) {
     printf("   &AXCB Rcv-Q Unack  Rt  Srtt  State          Remote socket\n");
     for (cp = axcb_head; cp; cp = cp->next)
-      printf("%8lx %5u%c%5u%c %2d %5.1f  %-13s  %s\n",
+      printf("%8lx %5u%c%3u/%u%c %2d %5.1f  %-13s  %s\n",
 	     (long) cp,
 	     cp->rcvcnt,
 	     cp->rnrsent ? '*' : ' ',
 	     cp->unack,
+	     cp->cwind,
 	     cp->remote_busy ? '*' : ' ',
 	     cp->retry,
 	     cp->srtt / 1000.0,
@@ -1354,6 +1364,7 @@ char  *argv[];
       printf("Remote_busy:  %ld sec\n", currtime - cp->remote_busy);
     else
       printf("Remote_busy:  No\n");
+    printf("CWind:        %d\n", cp->cwind);
     printf("Retry:        %d\n", cp->retry);
     printf("Srtt:         %ld ms\n", cp->srtt);
     printf("Mean dev:     %ld ms\n", cp->mdev);
@@ -1566,27 +1577,15 @@ char  *user;
 	net_error = CON_EXISTS;
 	return NULLAXCB;
       }
-    if (!(cp = (struct axcb *) calloc(1, sizeof(struct axcb )))) {
+    if (!(cp = create_axcb(NULLAXCB))) {
       net_error = NO_SPACE;
       return NULLAXCB;
     }
     build_path(cp, NULLIF, path, 0);
-    cp->timer_t1.func = t1_timeout;
-    cp->timer_t1.arg = (char *) cp;
-    cp->timer_t2.func = t2_timeout;
-    cp->timer_t2.arg = (char *) cp;
-    cp->timer_t3.func = t3_timeout;
-    cp->timer_t3.arg = (char *) cp;
-    cp->timer_t4.func = t4_timeout;
-    cp->timer_t4.arg = (char *) cp;
-    cp->timer_t5.func = t5_timeout;
-    cp->timer_t5.arg = (char *) cp;
     cp->r_upcall = r_upcall;
     cp->t_upcall = t_upcall;
     cp->s_upcall = s_upcall;
     cp->user = user;
-    cp->next = axcb_head;
-    axcb_head = cp;
     setaxstate(cp, CONNECTING);
     return cp;
   case AX25_SERVER:
@@ -1649,6 +1648,8 @@ struct mbuf *bp;
 int  space_ax(cp)
 struct axcb *cp;
 {
+  int  cnt;
+
   if (!cp) {
     net_error = INVALID;
     return (-1);
@@ -1659,8 +1660,10 @@ struct axcb *cp;
     return (-1);
   case CONNECTING:
   case CONNECTED:
-    if (!cp->closed)
-      return (ax_maxframe - cp->unack) * ax_paclen - len_mbuf(cp->sndq);
+    if (!cp->closed) {
+      cnt = (cp->cwind - cp->unack) * ax_paclen - len_mbuf(cp->sndq);
+      return (cnt > 0) ? cnt : 0;
+    }
   case DISCONNECTING:
     net_error = CON_CLOS;
     return (-1);

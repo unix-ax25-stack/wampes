@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.6 1990/02/22 12:42:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.7 1990/02/27 11:09:18 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
@@ -764,7 +764,7 @@ static char  *nrreasons[] = {
   "Network"
 };
 
-static int  nextid, server_enabled;
+static int  server_enabled;
 static struct circuit *circuits;
 
 /*---------------------------------------------------------------------------*/
@@ -914,7 +914,7 @@ int  fill_sndq;
   struct mbuf *bp;
 
   stop_timer(&pc->timer_t5);
-  while (pc->unack < pc->window) {
+  while (pc->unack < pc->cwind) {
     if (pc->state != CONNECTED || pc->remote_busy) return;
     if (fill_sndq && pc->t_upcall) {
       cnt = space_nr(pc);
@@ -984,6 +984,7 @@ struct circuit *pc;
   struct mbuf *bp, *qp;
 
   inc_t1(pc);
+  pc->cwind = 1;
   if (++pc->retry > nr_tretry) pc->reason = TIMEOUT;
   switch (pc->state) {
   case DISCONNECTED:
@@ -1051,6 +1052,38 @@ struct circuit *pc;
 
 /*---------------------------------------------------------------------------*/
 
+static struct circuit *create_circuit()
+{
+
+  register struct circuit *pc;
+  static int  nextid;
+
+  pc = (struct circuit *) calloc(1, sizeof(struct circuit ));
+  nextid++;
+  pc->localindex = uchar(nextid >> 8);
+  pc->localid = uchar(nextid);
+  pc->remoteindex = -1;
+  pc->remoteid = -1;
+  pc->cwind = 1;
+  pc->srtt = 500l * nr_ttimeout;
+  pc->mdev = pc->srtt / 2;
+  reset_t1(pc);
+  pc->timer_t1.func = l4_t1_timeout;
+  pc->timer_t1.arg = (char *) pc;
+  pc->timer_t2.func = l4_t2_timeout;
+  pc->timer_t2.arg = (char *) pc;
+  pc->timer_t3.func = l4_t3_timeout;
+  pc->timer_t3.arg = (char *) pc;
+  pc->timer_t4.func = l4_t4_timeout;
+  pc->timer_t4.arg = (char *) pc;
+  pc->timer_t5.func = l4_t5_timeout;
+  pc->timer_t5.arg = (char *) pc;
+  pc->next = circuits;
+  return circuits = pc;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void circuit_manager(bp)
 struct mbuf *bp;
 {
@@ -1070,33 +1103,15 @@ struct mbuf *bp;
 	  addreq(&pc->orguser, axptr(bp->data + 6)) &&
 	  addreq(&pc->orgnode, axptr(bp->data + 13))) break;
     if (!pc) {
-      pc = (struct circuit *) calloc(1, sizeof(struct circuit ));
-      nextid++;
-      pc->localindex = uchar(nextid >> 8);
-      pc->localid = uchar(nextid);
+      pc = create_circuit();
       pc->remoteindex = uchar(bp->data[0]);
       pc->remoteid = uchar(bp->data[1]);
       addrcp(&pc->node, axptr(bp->data + 13));
       addrcp(&pc->orguser, axptr(bp->data + 6));
       addrcp(&pc->orgnode, axptr(bp->data + 13));
-      pc->srtt = nr_ttimeout * 1000l / 2;
-      pc->mdev = nr_ttimeout * 1000l / 4;
-      reset_t1(pc);
-      pc->timer_t1.func = l4_t1_timeout;
-      pc->timer_t1.arg = (char *) pc;
-      pc->timer_t2.func = l4_t2_timeout;
-      pc->timer_t2.arg = (char *) pc;
-      pc->timer_t3.func = l4_t3_timeout;
-      pc->timer_t3.arg = (char *) pc;
-      pc->timer_t4.func = l4_t4_timeout;
-      pc->timer_t4.arg = (char *) pc;
-      pc->timer_t5.func = l4_t5_timeout;
-      pc->timer_t5.arg = (char *) pc;
       pc->r_upcall = nrserv_recv_upcall;
       pc->t_upcall = nrserv_send_upcall;
       pc->s_upcall = nrserv_state_upcall;
-      pc->next = circuits;
-      circuits = pc;
     }
   } else
     for (pc = circuits; ; pc = pc->next) {
@@ -1163,6 +1178,7 @@ struct mbuf *bp;
       stop_timer(&pc->timer_t1);
       set_timer(&pc->timer_t4, nr_tbsydelay * 1000l);
       start_timer(&pc->timer_t4);
+      pc->cwind = 1;
     } else {
       pc->remote_busy = 0;
       stop_timer(&pc->timer_t4);
@@ -1176,6 +1192,10 @@ struct mbuf *bp;
 	pc->srtt = ((AGAIN - 1) * pc->srtt + rtt) / AGAIN;
 	pc->mdev = ((DGAIN - 1) * pc->mdev + abserr) / DGAIN;
 	reset_t1(pc);
+	if (pc->cwind < pc->window && !pc->remote_busy) {
+	  pc->cwind++;
+	  pc->mdev += 2500;
+	}
       }
       while (uchar(pc->send_state - bp->data[3]) < pc->unack) {
 	pc->resndq = free_p(pc->resndq);
@@ -1226,6 +1246,7 @@ search_again:
       dup_p(&bp1, pc->resndq, 0, NR4MAXINFO);
       send_l4_packet(pc, NR4OPINFO, bp1);
       pc->send_state = old_send_state;
+      pc->cwind = 1;
     }
     try_send(pc, 1);
     if (pc->closed && !pc->sndq && !pc->unack)
@@ -1257,39 +1278,19 @@ char  *user;
   }
   if (!orguser) orguser = &mycall;
   if (!window) window = nr_twindow;
-  if (!(pc = (struct circuit *) calloc(1, sizeof(struct circuit )))) {
+  if (!(pc = create_circuit())) {
     net_error = NO_SPACE;
     return 0;
   }
-  nextid++;
-  pc->localindex = uchar(nextid >> 8);
-  pc->localid = uchar(nextid);
-  pc->remoteindex = -1;
-  pc->remoteid = -1;
   pc->outbound = 1;
   addrcp(&pc->node, node);
   addrcp(&pc->orguser, orguser);
   addrcp(&pc->orgnode, &mycall);
   pc->window = window;
-  pc->srtt = nr_ttimeout * 1000l / 2;
-  pc->mdev = nr_ttimeout * 1000l / 4;
-  reset_t1(pc);
-  pc->timer_t1.func = l4_t1_timeout;
-  pc->timer_t1.arg = (char *) pc;
-  pc->timer_t2.func = l4_t2_timeout;
-  pc->timer_t2.arg = (char *) pc;
-  pc->timer_t3.func = l4_t3_timeout;
-  pc->timer_t3.arg = (char *) pc;
-  pc->timer_t4.func = l4_t4_timeout;
-  pc->timer_t4.arg = (char *) pc;
-  pc->timer_t5.func = l4_t5_timeout;
-  pc->timer_t5.arg = (char *) pc;
   pc->r_upcall = r_upcall;
   pc->t_upcall = t_upcall;
   pc->s_upcall = s_upcall;
   pc->user = user;
-  pc->next = circuits;
-  circuits = pc;
   set_circuit_state(pc, CONNECTING);
   return pc;
 }
@@ -1335,6 +1336,8 @@ struct mbuf *bp;
 int  space_nr(pc)
 struct circuit *pc;
 {
+  int  cnt;
+
   if (!pc) {
     net_error = INVALID;
     return (-1);
@@ -1345,8 +1348,10 @@ struct circuit *pc;
     return (-1);
   case CONNECTING:
   case CONNECTED:
-    if (!pc->closed)
-      return (pc->window - pc->unack) * NR4MAXINFO - len_mbuf(pc->sndq);
+    if (!pc->closed) {
+      cnt = (pc->cwind - pc->unack) * NR4MAXINFO - len_mbuf(pc->sndq);
+      return (cnt > 0) ? cnt : 0;
+    }
   case DISCONNECTING:
     net_error = CON_CLOS;
     return (-1);
@@ -1544,8 +1549,8 @@ char  *buf;
 int16 n;
 {
   if (!(current && current->type == NRSESSION && current->cb.netrom)) return (-1);
-  if (buf[n-1] == '\n') n--;
-  if (n <= 0) return (-1);
+  if (n >= 1 && buf[n-1] == '\n') n--;
+  if (!n) return (-1);
   return send_nr(current->cb.netrom, qdata(buf, n));
 }
 
@@ -1913,11 +1918,12 @@ char  *argv[];
     printf("bdcsts rcvd %d bdcsts sent %d\n", routes_stat.rcvd, routes_stat.sent);
     printf("   &NRCB Rcv-Q Unack  Rt  Srtt  State          Remote socket\n");
     for (pc = circuits; pc; pc = pc->next)
-      printf("%8lx %5u%c%5u%c %2d %5.1f  %-13s  %s\n",
+      printf("%8lx %5u%c%3u/%u%c %2d %5.1f  %-13s  %s\n",
 	     (long) pc,
 	     pc->rcvcnt,
 	     pc->chokesent ? '*' : ' ',
 	     pc->unack,
+	     pc->cwind,
 	     pc->remote_busy ? '*' : ' ',
 	     pc->retry,
 	     pc->srtt / 1000.0,
@@ -1945,6 +1951,7 @@ char  *argv[];
       printf("Remote_busy:  %ld sec\n", currtime - pc->remote_busy);
     else
       printf("Remote_busy:  No\n");
+    printf("CWind:        %d\n", pc->cwind);
     printf("Retry:        %d\n", pc->retry);
     printf("Srtt:         %ld ms\n", pc->srtt);
     printf("Mean dev:     %ld ms\n", pc->mdev);
