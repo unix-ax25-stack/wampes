@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.5 1990/03/19 12:33:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.6 1990/03/29 12:15:48 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -297,7 +297,7 @@ struct login_cb *tp;
 {
 
   char  *p;
-  char  buf[260];
+  char  buf[256];
   char  chr;
   int  cnt;
   int  lastchr;
@@ -313,7 +313,7 @@ struct login_cb *tp;
 	  tp->linelen = 0;
 	  break;
 	}
-	if (++tp->linelen >= 255) {
+	if (++tp->linelen >= 250) {
 	  *p++ = '\n';
 	  tp->linelen = 0;
 	  break;
@@ -524,5 +524,6 @@ struct mbuf *bp;
 {
   append(&tp->sndq, bp);
   setmask(chkwrite, tp->pty);
+  if (tp->linelen) write_pty(tp);
 }
 
