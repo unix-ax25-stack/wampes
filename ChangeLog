@@ -1,4 +1,9 @@
-@(#) $Id: ChangeLog,v 1.67 1999/11/27 17:18:56 deyke Exp $
+@(#) $Id: ChangeLog,v 1.68 1999/11/28 17:07:51 deyke Exp $
+
+991128 Dieter Deyke <deyke@hotpop.com>
+
+	make distrib now creates the uncompressed tar file
+	 "wampes-latest.tar" which can be used for rsync updates
 
 991127 Dieter Deyke <deyke@hotpop.com>
 
