@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.17 1993/06/06 08:23:26 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.18 1993/06/07 06:30:48 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -74,7 +74,7 @@ source /tcp/netrom_links
 
 echo refuse
 icmp trace on
-ip rtimer 100
+ip rtimer 300
 ip ttl 30
 log /tcp/net.log
 tcp irtt 60000

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.12 1993/03/30 17:23:18 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.13 1993/06/07 06:30:49 deyke Exp $
 
 hostname     dk5sg
 ax25 mycall  dk5sg
@@ -27,7 +27,7 @@ source /tcp/netrom_links
 domain usegethostby on
 echo accept
 icmp trace on
-ip rtimer 100
+ip rtimer 300
 ip ttl 30
 log /tcp/net.log
 tcp irtt 60000

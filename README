@@ -1,25 +1,33 @@
-wampes-930606.tar.Z  is a compressed  tar archive of WAMPES,  which is a
-NET/NOS  port to HP-UX.  It currently  supports HP 9000 series 300, 400,
-700, and 800 computers, running HP-UX 08.xx or HP-UX 09.xx.
+wampes-930607.tar.Z  (compressed) and wampes-930607.tar.gz (gzipped) are
+tar archives of WAMPES,  which is a NET/NOS port to HP-UX.  It currently
+supports HP 9000 series 300, 400, 700, and 800 computers,  running HP-UX
+08.xx or HP-UX 09.xx.
 
-I also ported the  software to SunOS 4.1.2 and to 386BSD  0.1.34, and it
-compiles  there,  but I do not  have  enough  time to  really  test  it.
-Feedback is welcome.
+I ported  WAMPES to SunOS  4.1.2 and to 386BSD  0.1.34,  and it compiles
+there, but I do not have  enough  time to really  test it.  Feedback  is
+welcome.
 
-WAMPES was also ported to Linux running on a 386 by Olaf Erb, dc1ik.  He
-also ported it to ULTRIX 4.2A on a  Decstation  5000 with gcc 2.3.3, but
-it wasn't tested  properly, too.  Comments and questions about the Linux
-and     Ultrix     port    of    WAMPES     please    to    Olaf    Erb,
+WAMPES was ported to Linux running on a 386 by Olaf Erb, dc1ik.  He also
+ported it to ULTRIX  4.2A on a  Decstation  5000 with gcc  2.3.3, but it
+wasn't tested properly, too.  Comments and questions about the Linux and
+Ultrix      port     of     WAMPES      please     to     Olaf      Erb,
 <erb@insu1.etec.uni-karlsruhe.de>.
 
 To unpack this archive you should  create the  directory  /tcp and cd to
 it.  After unpacking please read the file /tcp/doc/intro.txt.
 
-wampes-930606.tar.Z     and    all    followups     should    go    into
-/hamradio/packet/tcpip/wampes on UCSD.EDU.
+wampes-930607.tar.Z,  wampes-930607.tar.gz,  and all followups should go
+into /hamradio/packet/tcpip/wampes on UCSD.EDU.
 
 73,
 Dieter Deyke, DK5SG / N0PRA, <deyke@fc.hp.com>
+
+-------------------------------------------------------------------------------
+
+From: Paul Traina <pst@cisco.com>
+
+The A/UX 3.0 port is fully  functional  now.  This is a  straight-across
+port with no operational changes.
 
 -------------------------------------------------------------------------------
 
@@ -48,4 +56,4 @@ Internet:       uk1o@ibm3090.rz.uni-karlsruhe.de or
 		s_schroeter@irav1.ira.uka.de
 
 For  questions  related  to  Wampes in  general  please  mail to  Dieter
-although i would really try to answer such a question too.
+although I would really try to answer such a question too.

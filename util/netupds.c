@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.11 1993/05/17 13:47:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.12 1993/06/07 06:33:14 deyke Exp $ */
 
 /* Net Update Server */
 
@@ -15,8 +15,11 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include "netupd.h"
+
 static void pexit(const char *s);
 static void doread(int fd, char *buf, size_t cnt);
+static void read_string(int fd, char *buf, int bufsize);
 static void dowrite(int fd, const char *buf, size_t cnt);
 
 /*---------------------------------------------------------------------------*/
@@ -49,6 +52,30 @@ static void doread(int fd, char *buf, size_t cnt)
 
 /*---------------------------------------------------------------------------*/
 
+static void read_string(int fd, char *buf, int bufsize)
+{
+  int i;
+
+  for (i = 0; ; i++) {
+    if (i >= bufsize) {
+      printf("String too long\n");
+      exit(1);
+    }
+    doread(fd, buf + i, 1);
+    if (!buf[i]) break;
+    if (!isalnum(buf[i] & 0xff) && buf[i] != '-') {
+      printf("Bad character in string\n");
+      exit(1);
+    }
+  }
+  if (!*buf) {
+    printf("Null string received\n");
+    exit(1);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void dowrite(int fd, const char *buf, size_t cnt)
 {
 
@@ -75,6 +102,7 @@ int main(void)
   int fdpipe[2];
   int fdsocket;
   int filesize;
+  int flags = 0;
   int i;
   int net_filesize;
   int net_i;
@@ -112,31 +140,29 @@ int main(void)
     close(fdpipe[1]);
   }
 
-  for (i = 0; ; i++) {
-    if (i >= sizeof(client)) {
-      printf("Client name too long\n");
-      exit(1);
-    }
-    doread(fdsocket, client + i, 1);
-    if (!client[i]) break;
-    if (!isalnum(client[i] & 0xff) && client[i] != '-') {
-      printf("Bad char in client name\n");
-      exit(1);
-    }
+  read_string(fdsocket, client, sizeof(client));
+  if (isdigit(*client & 0xff)) {
+    flags = atoi(client);
+    read_string(fdsocket, client, sizeof(client));
   }
-  if (!*client) {
-    printf("Null client name\n");
-    exit(1);
-  }
-
   printf("Client = %s\n", client);
-  fflush(stdout);
+  printf("Flags =");
+  printf((flags & USE_PATCH) ? " PATCH" : " EX");
+  printf((flags & USE_GZIP)  ? " GZIP"  : " COMPRESS");
+  printf((flags & USE_MD5)   ? " MD5"   : " VITALS");
+  printf("\n");
 
   sprintf(buf, "/users/funk/dk5sg/tcp.%s", client);
   if (chdir(buf)) pexit(buf);
 
   tmpnam(filename);
-  sprintf(buf, "/users/funk/dk5sg/tcp/util/genupd %s | compress > %s", client, filename);
+  sprintf(buf,
+	  "/users/funk/dk5sg/tcp/util/genupd %s %s %s | %s > %s",
+	  client,
+	  (flags & USE_PATCH) ? "patch"   : "ex",
+	  (flags & USE_MD5)   ? "md5"     : "vitals",
+	  (flags & USE_GZIP)  ? "gzip -9" : "compress",
+	  filename);
   system(buf);
 
   if (stat(filename, &statbuf)) pexit(filename);
@@ -152,8 +178,8 @@ int main(void)
   if (fdfile < 0) pexit(filename);
   while (filesize > 0) {
     i = filesize < sizeof(buf) ? filesize : sizeof(buf);
-    doread(fdfile, buf, (unsigned) i);
-    dowrite(fdsocket, buf, (unsigned) i);
+    doread(fdfile, buf, i);
+    dowrite(fdsocket, buf, i);
     filesize -= i;
   }
   if (close(fdfile)) pexit("close");
@@ -165,7 +191,10 @@ int main(void)
   fflush(stdout);
 
   if (!i) {
-    sprintf(buf, "uncompress < %s | sh", filename);
+    sprintf(buf,
+	    "%s < %s | sh",
+	    (flags & USE_GZIP) ? "gzip -d" : "uncompress",
+	    filename);
     system(buf);
   }
 

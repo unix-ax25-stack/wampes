@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.16 1993/06/06 08:23:27 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.17 1993/06/07 06:30:49 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -53,6 +53,7 @@ route add  dj0ze-1          ipip     15.137.23.135
 route add  dh8saw-1         ipip     15.138.72.40
 route add  dg9yev-1         ipip     15.137.23.159
 route add  dg9sbl-1         ipip     15.137.34.8
+route addp dd2fx            tnc0
 route add  44.142.52/23     ipip     192.1.1.1
 route add  44.130/16        ipip     192.1.1.1
 
@@ -67,7 +68,7 @@ source /tcp/netrom_links
 domain usegethostby on
 echo refuse
 icmp trace on
-ip rtimer 100
+ip rtimer 300
 ip ttl 30
 log /tcp/net.log
 tcp irtt 60000

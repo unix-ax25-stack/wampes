@@ -7,6 +7,10 @@ Ich aendere halt das getpasswd(??, 1) immer in eine 0 um, damit dies nicht
 vorkommt, das eine Mal hatte ich es vergessen, was dann halt zu der Panne
 fuehrte :-(
 
+-------------------------------------------------------------------------------
+
+- mheard (an- und abschaltbar)
+
 - Der from teil  kann nur !  enthalten,  dann  steht  der s&f.  ==> wenn
   from == !  ist irgendein substitute einsetzen !!!
 

@@ -1,4 +1,4 @@
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.9 1993/06/06 08:23:34 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.10 1993/06/07 06:33:14 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -51,20 +51,6 @@ static void doroutelistentry(struct axroute_tab *rp);
 static int doroutelist(int argc, char *argv[]);
 static int doroutestat(void);
 static void hash_performance(void);
-
-/*---------------------------------------------------------------------------*/
-
-#ifdef ULTRIX_RISC
-
-static char *strdup(const char *s)
-{
-  char *p;
-
-  if (p = malloc(strlen(s) + 1)) strcpy(p, s);
-  return p;
-}
-
-#endif
 
 /*---------------------------------------------------------------------------*/
 

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sas-1,v 1.7 1993/03/30 17:23:19 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sas-1,v 1.8 1993/06/07 06:30:50 deyke Exp $
 
 hostname     dl4sas-1
 ax25 mycall  dl4sas-1
@@ -22,7 +22,7 @@ source /tcp/netrom_links
 
 echo accept
 icmp trace on
-ip rtimer 100
+ip rtimer 300
 ip ttl 30
 log /tcp/net.log
 tcp irtt 60000
