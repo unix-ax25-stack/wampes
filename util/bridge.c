@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.2 1990/03/19 09:55:59 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.3 1990/03/19 11:02:08 deyke Exp $";
 
 #include <sys/types.h>
 
@@ -139,7 +139,7 @@ struct conn *p;
   multicast = (addreq(dest, ax25_bdcst) || addreq(dest, nr_bdcst));
   for (p1 = connections; p1; p1 = p1next) {
     p1next = p1->next;
-    if (p1 != p && (multicast || !*p->call || addreq(dest, p1->call))) {
+    if (p1 != p && (multicast || !*p1->call || addreq(dest, p1->call))) {
       if (write(p1->fd, p->buf, p->cnt) <= 0) close_conn(p1);
     }
   }
