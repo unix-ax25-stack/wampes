@@ -1,0 +1,344 @@
+From dg1rtf@db0brb Mon Apr  5 06:08 MDT 1993
+Received: from db0sao.ampr.org by mdddhd.fc.hp.com with SMTP
+	(1.37.109.4/15.5+IOS 3.22) id AA10018; Mon, 5 Apr 93 06:08:46 -0600
+Return-Path: <dg1rtf@db0brb>
+Received: by db0sao; Mon, 5 Apr 93 14:06:02 +0200
+From: db0sao!db0gv!db0eam!db0brb!dg1rtf
+Received: by db0sao; Mon, 5 Apr 93 14:06:01 +0200
+To: dk5sg@db0brb
+Date: Mon, 5 Apr 93 12:06:00 GMT
+Subject: Diverses
+Message-Id: <DB0SAO097091@bbs.net>
+Bulletin-Id: <DB0SAO097091>
+Status: RO
+
+R:930404/1712z 49487@DB0ROT.BW.DEU.EU [RotBOX Bad Herrenalb OP:dl5uy]
+R:930403/0605z @DB0GV.HES.DEU.EU [Maintal-Frank4t JO40KD 438.025 SYSOP: DF5FF]
+R:930403/0540z @DB0FP.#BAY.DEU.EU [Schweinfurt,JO50CB,TheBox 1.9,OP:DG3NAE]
+R:930403/0559z @DB0DNI [DB0DNI.DEU.EU SZ/WF, TheBox 1.8 OP: DG2AY]
+R:930403/0511z @DK0MNL.DEU.EU [HF><SHF Routing, OP:DK8AT]
+R:930401/2336z @DB0BRB.DEU.EU [Brandenburg,TheBox 1.9,SYSOP:DL1RNQ]
+epasst. Das heisst:
+
+1. Es gibt ein BBS- Kommando TRANSFER  - Bulletins koennen in eine andere 
+   Rubrik verfrachtet werden.
+
+2. Es besteht die Moeglichkeit bestimmte Rubriken/bbs zu sperren.
+   a) es ist kein Einspielen moeglich
+   b) Rubriken/bbs (at) -Felder werden nicht geworwarded.
+
+3. Das bbs schickt alle Bulletins, deren Filename auf ".z" enden durch gzip
+
+4. Beim Loeschen wird die Rubrik nach "B" geaendert. Fuer "richtiges"
+   Loeschen habe ich das DELETE-Kommando DESTROY genannt und solche 
+   Operationen der root ueberlassen.
+
+5. Es wird ein Aliasfile ausgewertet. Damit enstehen nicht Hunderttausend
+   Rubriken.
+
+
+Es gibt weiter:
+* ein Programm zur Lifetimeauswertung: "life"
+* ein    "     um ganze Rubriken in andere zu schicken oder komplett zu
+  loeschen:  "transfer"
+* "bbscompress" was alle Files, die laenger als 20 Tage in der Box sind
+  komprimiert
+* Userpassword-Routinen.  Das war noetig, da bei uns jemand staendig einen
+  Call-Missbrauch macht.
+
+Dann haben wir eine BAYCOM-Box als Forward-Partner und damit die
+wunderschoensten Probleme, zumindest was Usermails angehen.
+Das Ding wollte am Beginn der Uebertragung unbedingt einen THEBOX-Prompt.
+Nach dem wir den geliefert hatte, kam auf den SEND-Befehl das OK und das S&F
+lief. Solange der Empfaenger ein User war ging das jetzt, ging das aber an
+eine Rubrik (z.B.: wampes@db0sao) dann antwortete das BAYCOM mit "NO".
+Wampes war der Meinung, es ist eine Usermail und ... die uucp-queue war
+verstopft. Ich hatte leider keine Zeit mehr das auszuprobieren. Aber ich
+habe an solche "mails" einen BID rangehangen. Ich denke das geht.
+
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/misc/mails,v 1.1 1999/04/24 16:10:19 deyke Exp $ */
+
+/* BBS Mail Delivery Agent */
+
+#include <sys/types.h>
+
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <unistd.h>
+
+#include "global.h"
+#include "mbuf.h"
+#include "transport.h"
+#include "mail.h"
+
+#define MYDOMAIN        "DEU.EU"
+#define BIDFILE         "/users/bbs/seqbid"
+
+struct mesg {
+  int  state;
+#define BBS_OPEN_STATE    0
+#define BBS_COMMAND_STATE 1
+#define BBS_SUBJECT_STATE 2
+#define BBS_SEND_STATE    3
+#define BBS_UNLK_STATE    4
+#define BBS_QUIT_STATE    5
+  char  buf[1024];
+  int  cnt;
+  FILE * fp;
+  struct mailsys *sp;
+  struct transport_cb *tp;
+};
+
+int wait=0;
+
+static char *Mydomainname;
+static char *myhostname;
+
+static int callvalid(const char *call);
+static char *set_bid(void);
+static void mail_bbs_transaction __ARGS((struct mesg *mp));
+static void mail_bbs_recv_upcall __ARGS((struct transport_cb *tp, int cnt));
+static void mail_bbs_send_upcall __ARGS((struct transport_cb *tp, int cnt));
+static void mail_bbs_state_upcall __ARGS((struct transport_cb *tp));
+
+/*---------------------------------------------------------------------------*/
+static int callvalid(const char *call)
+{
+  int d, l;
+
+  l = strlen(call);
+  if (l < 3 || l > 6) return 0;
+  if (isdigit(uchar(call[0])) && isdigit(uchar(call[1]))) return 0;
+  if (!(isdigit(uchar(call[1])) || isdigit(uchar(call[2])))) return 0;
+  if (!isalpha(uchar(call[l-1]))) return 0;
+  d = 0;
+  for (; *call; call++) {
+    if (!isalnum(uchar(*call))) return 0;
+    if (isdigit(uchar(*call))) d++;
+  }
+  if (d < 1 || d > 2) return 0;
+  return 1;
+}
+/*---------------------------------------------------------------------------*/
+
+static char *set_bid(void)
+{
+  int n;
+  char buff[1024];
+  char *bid;
+  FILE *bfp;
+
+  n = 0;
+  if (bfp = fopen(BIDFILE, "r")) {
+    fscanf(bfp, "%d", &n);
+    fclose(bfp);
+  }
+  n++;
+  if (!(bfp = fopen(BIDFILE, "w")) || fprintf(bfp, "%d\n", n) < 0) exit(0);
+  fclose(bfp);
+  if (gethostname(buff,sizeof(buff))) strcpy(buff,"ERROR");
+  myhostname=strdup(buff);
+  sprintf(bid, "%012d", n);
+  strncpy(bid, myhostname, strlen(myhostname));
+  
+  return bid;
+}  
+/*---------------------------------------------------------------------------*/
+
+static void mail_bbs_transaction(mp)
+struct mesg *mp;
+{
+
+  char *p;
+  char tmp[1024];
+  struct mailjob *jp;
+  struct stat statbuf;
+  struct tm *tm;
+
+  jp = mp->sp->jobs;
+  switch (mp->state) {
+  case BBS_OPEN_STATE:
+    if (mp->buf[mp->cnt-1] == '>') {
+      if (!wait)
+      {
+        sprintf(tmp,"[THEBOX-1.6-$]\n");
+        transport_send(mp->tp, qdata(tmp, strlen(tmp)));
+        wait=1;
+        mp->buf[mp->cnt-1] = '*';
+      }
+      if (mp->buf[mp->cnt-1] == '>') {
+nextjob:
+        wait=0;
+        mp->state = BBS_COMMAND_STATE;
+          sprintf(tmp,
+                "S %s @ %s < %s",
+                get_user_from_path(jp->to),
+                get_host_from_path(jp->to),
+                get_user_from_path(jp->from));
+        if (callvalid(get_user_from_path(jp->to)))      
+          sprintf(tmp,"%s\n",tmp);
+        else
+          sprintf(tmp,"%s $%s\n",tmp,set_bid());                                  
+        transport_send(mp->tp, qdata(tmp, strlen(tmp)));
+      }  
+    }
+    break;
+  case BBS_COMMAND_STATE:
+    mp->state = BBS_SUBJECT_STATE;
+    sprintf(tmp, "%s\n", *jp->subject ? jp->subject : "no subject");
+    transport_send(mp->tp, qdata(tmp, strlen(tmp)));
+#ifdef  notdef 
+    break;
+  case BBS_SUBJECT_STATE:
+#endif 
+    if (!stat(jp->cfile, &statbuf) && (mp->fp = fopen(jp->dfile, "r"))) {
+      mp->state = BBS_SEND_STATE;
+      while (fgets(tmp, sizeof(tmp), mp->fp) && *tmp != '\n') ;
+      if (!Mydomainname) {
+        sprintf(tmp, "%s.%s", Hostname, MYDOMAIN);
+        for (p = tmp; *p; p++) *p = toupper(*p & 0xff);
+        Mydomainname = strdup(tmp);
+      }
+      tm = gmtime(&statbuf.st_mtime);
+      sprintf(tmp,
+              "R:%02d%02d%02d/%02d%02dz @:%s\n",
+              tm->tm_year % 100,
+              tm->tm_mon + 1,
+              tm->tm_mday,
+              tm->tm_hour,
+              tm->tm_min,
+              Mydomainname);
+      transport_send(mp->tp, qdata(tmp, strlen(tmp)));
+    } else {
+      mp->state = BBS_QUIT_STATE;
+      transport_close(mp->tp);
+    }
+    break;
+  case BBS_SEND_STATE:
+    break;
+  case BBS_UNLK_STATE:
+    if (mp->buf[mp->cnt-1] == '>') {
+      unlink(jp->cfile);
+      unlink(jp->dfile);
+      unlink(jp->xfile);
+      mp->sp->jobs = jp->next;
+      free(jp);
+      if (jp = mp->sp->jobs) goto nextjob;
+      mp->state = BBS_QUIT_STATE;
+      transport_close(mp->tp);
+      wait=0;
+    }
+    break;
+  case BBS_QUIT_STATE:
+    break;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void mail_bbs_recv_upcall(tp, cnt)
+struct transport_cb *tp;
+int  cnt;
+{
+
+  int  c;
+  struct mbuf *bp;
+  struct mesg *mp;
+
+  mp = (struct mesg *) tp->user;
+  mp->sp->state = MS_TALKING;
+  transport_recv(tp, &bp, 0);
+  while ((c = PULLCHAR(&bp)) != -1)
+    if (c == '\n') {
+      mp->buf[mp->cnt] = '\0';
+      mail_bbs_transaction(mp);
+      mp->cnt = 0;
+    }
+    else if (mp->cnt < sizeof(mp->buf) - 1)
+      mp->buf[mp->cnt++] = c;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void mail_bbs_send_upcall(tp, cnt)
+struct transport_cb *tp;
+int  cnt;
+{
+
+  char  *p;
+  int  c;
+  struct mbuf *bp;
+  struct mesg *mp;
+
+  mp = (struct mesg *) tp->user;
+  if (mp->state != BBS_SEND_STATE || cnt <= 0) return;
+  if (!(bp = alloc_mbuf(cnt))) return;
+  p = bp->data;
+  while (p - bp->data < cnt && (c = getc(mp->fp)) != EOF)
+    if (c && c != '\004' && c != '\032') *p++ = c;
+  if (bp->cnt = p - bp->data)
+    transport_send(tp, bp);
+  else
+    free_p(bp);
+  if (c == EOF) {
+    fclose(mp->fp);
+    mp->fp = 0;
+    transport_send(mp->tp, qdata("\032\n", 2));
+    mp->state = BBS_UNLK_STATE;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void mail_bbs_state_upcall(tp)
+struct transport_cb *tp;
+{
+  struct mesg *mp;
+
+  if (mp = (struct mesg *) tp->user) {
+    if (mp->fp) fclose(mp->fp);
+    if (!mp->sp->jobs)
+      mp->sp->state = MS_SUCCESS;
+    else
+      mailer_failed(mp->sp);
+    free(mp);
+  }
+  transport_del(tp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void mail_bbs(sp)
+struct mailsys *sp;
+{
+  struct mesg *mp;
+
+  mp = calloc(1, sizeof(*mp));
+  mp->sp = sp;
+  if (mp->tp = transport_open(sp->protocol, sp->address, mail_bbs_recv_upcall, mail_bbs_send_upcall, mail_bbs_state_upcall, (char *) mp)) {
+    mp->tp->recv_mode = EOL_LF;
+    mp->tp->send_mode = strcmp(sp->protocol, "tcp") ? EOL_CR : EOL_CRLF;
+    transport_set_timeout(mp->tp, 3600);
+  } else {
+    mailer_failed(sp);
+    free(mp);
+  }
+}
+
+
+
+
+Solltet Ihr Interesse an den anderen Quellen haben, schreibt eine mail an:
+dl3bzn@db0tud oder vattrodt@freia.inf.tu-dresden.de
+
+Ich melde mich  demaechst direkt.
+73
+****************************************************************
+*  Thomas     DG1RTF@DB0TUD      tf2@irz301.inf.tu-dresden.de  *
+****************************************************************
+
+

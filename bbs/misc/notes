@@ -1,0 +1,855 @@
+-------------------------------------------------------------------------------
+
+	       Traffic of SV1IW BBS for all available ports.
+
+		  Number of connections per day and hour.
+
+		   For the period from 28-01 to 03-02.
+
+Da 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 Totl
+28  1  1  1  1  1  1  9  5  .  3  5 11  7  7  5 16  4  5  1  1  1  4  3  .   93
+29  1  1  1  1  1  1  5  7  4  9 14 11  7  7  4  6  7  8 11  9 12  6  5  .  138
+30  1  1  1  3  1  1  5 10  6  5  5  5 10  9  7  9  4  2  4 17  9  1  1  4  121
+31  1  1  1  1  1  2  7  5  1  7  6  5  2  4  4  9  6  4  4 12  4  7  6  3  103
+01  2  1  1  1  1  1  9  6  4  5  5  3  7  6  2  4  5  6  4  4  3 15  3  1   99
+02  2  2  1  1  1  1  .  7  8  4 11  8 14 13  6  5  9  6  7  8  6 15  8  2  145
+03  1  1  1  1  2  1  1 11 15 14  6 11  7  8  5  5  2 10  5 14  5  6  4  1  137
+-- -- -- --  -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ----
+Tt     8     9     8    51     47    54    54    54    41    65    54    11
+    9     7     8    36    38    52    54    33    37    36    40    30     836
+
+  Total time of connections        :   6089 minutes, (101 H 29 min.)
+  Time on local console            :    129 minutes.
+  Total time on HF 10/15/20m       :   2508 minutes.
+  Total time on VHF 144.650        :   3451 minutes.
+  Mean time per connection         :      7 min/connection.
+  Mean time per user               :     84 min/user
+  Number of messages killed        :    118
+  Number of messages read          :    422
+  Number of users                  :     72
+  Number of LOG lines              :   4854
+
+	   Number of messages Forwarded per day and hour.
+
+Da 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 Totl
+28  .  .  .  .  .  .  5  1  8 56  . 17  8  1  .  7  5  6  .  .  .  8  .  .  122
+29  1  .  .  .  .  .  .  9  8 28  7  4 24 23  8  . 11  7 30 36 18  1  .  .  215
+30  .  .  .  .  .  . 12 19  6 49  9 27 11 12  .  .  1  . 30 13 10  .  .  1  200
+31  6  .  .  .  .  . 27 16 32 31 43  7 23 10  2  .  . 10  2 54 55 49 6  .  430
+01  .  .  .  .  .  . 24  5  1  .  1  .  4  .  .  .  1  3  3  1  . 42  .  .   85
+02  .  .  .  .  .  .  .  1  1 50 10 66 23 18  6  2  4  .  3 15 33 39 40 12  323
+03  .  .  .  .  .  .  . 12 10 11 10  7 43 17 11  .  .  .  .  1  .  5 15  2  144
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ----
+Tt     0     0     0    63   225   128    81     9    26   120   144    15
+    7     0     0    68    66    80   136    27    22    68   116   118    1519
+
+  Number of forwarded messages                :      877
+  Number of messages received from forward    :      357
+  Number of messages received from reverse    :      285
+  Number of messages refused                  :      191
+
+	  :         Received      :         Send          : Efficiency
+    BBS   :   NbMess  :   Size    :   NbMess  :   Size    :  Bits/s
+----------+-----------+-----------+-----------+-----------+-----------
+  4X1RU   :       35  :    36521  :      145  :   223826  :     133
+  EA4BS   :        0  :        0  :        9  :    14486  :      28
+  F6FBB   :        3  :     3089  :        3  :     2935  :      12
+  GB7LDI  :      107  :   178144  :       76  :    97234  :      61
+  HB9GL   :         5  :     5172  :       13  :    13060  :      70
+  I1HUH   :        0  :        0  :       10  :     6821  :      25
+  I5SGG   :       40  :     3957  :       33  :     6966  :      16
+  PA0SCH  :      170  :   307852  :       44  :    36497  :      60
+  RK3KP   :        7  :    11558  :       21  :    29389  :      34
+  SM5BKI  :        0  :        0  :        1  :        59  :       3
+  SV1AIZ  :      ð 12  :      801  :      127  :    51327  :      54
+  SV1ML   :      240  :   268407  :      230   :   409016  :     199
+  SV2DXC  :       10  :     3493  :      110  :   163288  :      35
+  SV7QI   :        0  :       0  :       27  :    39370  :      42
+  SV8RV   :        5  :     9523  :        0  :        0  :       4
+  VS6UF   :        3  :     2512  :       28  :    24993  :      10
+
+-------------------------------------------------------------------------------
+
+Von dg7sas:
+
+DAS ist ein  Argument.  A propos  mehr  koennen:  Wie waere es mit einem
+Alias-Begehl,  mit dem man - das waere  wichtig:  - GANZE  Befehlszeilen
+umwandeln koennte?
+
+-------------------------------------------------------------------------------
+
+Von dl5ue:
+
+			     Da man damit endlich eindeutig zitieren kann,
+waere es gut, wenn es ein einfaches Kommando wie 'bid <mesg#>' gaebe, mit
+der man schnell die BID rausfinden kann, ohne das Ding nochmal zu lesen.
+
+Bei read faende ich es nett, wenn man zu jeder Message angeben koennte,
+welche Zeilen man lesen moechte, z.B.
+read 815 line 10- 4711 line 16-29 747 line -11
+Das waere besonders praktisch, wenn man nur mal 'anlesen' moechte oder der
+Connect mitten im Lesen kaputtgegeangen ist, man also nur das Fehlende noch
+mal lesen moechte.
+
+-------------------------------------------------------------------------------
+
+Von dl9sau:
+
+Was  haelst  Du von der  Verwendung  von  "Wildcards";  d.h.  "l *" fuer
+ALLES, "l tnc*" fuer tnc, tnc1, tnc2, tnc2c, tnc3d,..?
+
+Bei ln  waere  es  toll,  wenn  man  durch  eine  Option  eine  insofern
+umgekehrte  Ausgabe  erhalten  koennte,  dass die aelteste  Message oben
+steht, die neueste unten..
+
+Manchmal   wuenschte  ich  mir,  die   MailBox-Headers   der   Bulletins
+mitzulesen.  Wie waere es mit einer Option fuer read?
+
+Wer  sich  bei  "send"  mal  vertippt   hat,  kann  daran   nichts  mehr
+manipulieren.  Wenn "user != db0..", dann waere eine Environment wie bei
+mailx -mit Editor und Interrupt  (letzteres beugt einem laestigen killen
+fehlerbehafteter Mails vor)- erstrebenswert.
+
+Ach ja.  Bei manchen langen  Bulletins oder welchen, wo ich nicht weiss,
+was sie beinhalten, waere ich froh, wenn ich als Option angeben koennte,
+dass bestimmte  Messages durch einen Pager gepipet  werden  koennen.  (r
+1234p 12378 98765p)
+
+Hmmm,  vielleicht  waere auch bei einer  Message,  die ich  auslese, die
+nochmalige  Angabe von Seiten-  und  Wort-Zahl  fuer den  Benutzer  sehr
+interessant..
+
+-------------------------------------------------------------------------------
+
+Von dl9sau:
+
+Dass man am Read  Kommando  noch etwas machen  koennte,  denke ich auch.
+Leider ist es einfacher  "gefaellt mir nicht" zu sagen als eine konkrete
+Verbesserung  anzuregen.  So weiss ich nicht, was es ist bzw wie man die
+Leserei  bequemer  machen  koennte.  Doch ich  hantiere in letzter  Zeit
+immer haeufiger mit Monsern wie [vereinfacht]
+
+echo l n | bbs2 ; adjust -jm1 | sort | adjust -j | tee file
+
+Im File  kommt  dann ein "r " vor jede  Zeile,  alles  wird  durch  bbs2
+gepipet  und der  Output, na klar:  der kommt nach  "bbs-msg",  denn man
+will ja  sicherstellen,  dass ein "Retry count exceeded" nicht die ganze
+Muehe umsonst macht..
+
+Ganz nebenbei:  Haben sich mal 200 Messages  angestaut, faellt es bei "l
+n" schwer,  beurteilen  zu  koennen, ob ein paar der  "ersten,  die hier
+ankommen",   lesenswert   sind  oder  nicht,  denn  sie   koennten   ein
+interessanter Teil irgendwelcher  Diskussionen sein, die irgendwo weiter
+unten -sprich "alt"- angefangen haben.
+
+      -> Man sollte  -vielleicht  mit l new rev- sagen koennen, dass man
+	 die aelteren zuerst und die neuesten zulezt haben moechte..
+
+Viel Abhilfe zu diesem Problem gibt es nicht,  zumindest sehe ich keine.
+Doch die Moeglichkeit,
+
+ -  Messages "anlesen" zu koennen, wie Jan schon beschrieb
+
+ - bei read gleich noch ein Output File angeben zu koennen
+
+wuerde die ganze Sache schon ziemlich erleichtern..
+
+Hmm, Gedanken-Blitz.  [Vorsicht, ist unausgereift!]
+
+   Wie waere es denn,  wenn man sich bei "list new" in einer  "hoeheren"
+bbs Ebene  befinden  wuerde  (oder diese durch "list new read"  aufrufen
+koennte),  die  einem  dann  die  ersten  24  Header   auflistet,   dann
+Zahlengruppen  erwartet  (ohne read davor), jene  Messages  ausliest und
+durch "cont" o.ae.  mit den naechsten 24 Headern  fortfaehrt,  bei denen
+sich  das  Spiel  wiederholt?  --  Hierbei  haette  man  erheblich  mehr
+Uebersicht  gewonnen und man wuerde mit einer  ausgekluegelten  Software
+sprechen, und nicht mehr nur mit einem  Programm,  welches  Header zeigt
+und auf Befehl gewuenschte Messages aus den zugehoerigen Files saugt..
+
+-------------------------------------------------------------------------------
+
+Von dl5ue:
+
+hmm, Thommy's Vorschlag mit dem 'umgekehrten' Listen (d.h. die aelteste
+Nachricht zuerst) finde ich auch gut. Bis jetzt muss diese Arbeit naemlich
+immer mein Editor machen :-). Koennte das bei L N nicht sogar default sein?
+Bei allen anderen waere es sinnvoller so wie bisher.
+
+-------------------------------------------------------------------------------
+
+Von dl9sau:
+
+   Ein  bbs-Kommando  namens  history  waere  genial, um mich ueber bbs'
+Evolution  informieren  zu  koennen.  Falls der Befehl  "history"  nicht
+zusagt, koennte man dies auch in "version long" unterbringen..
+
+-------------------------------------------------------------------------------
+
+- mehrere Empfaenger
+
+- volle Adressangabe auch mit mailx
+
+===============================================================================
+
+From dk5sg Sun Mar 19 19:40 MEZ 1989
+Received: by db0sao; Sun, 19 Mar 89 19:40:26 mez
+Date: Sun, 19 Mar 89 19:40:26 mez
+From: Dieter Deyke <dk5sg>
+Return-Path: <dk5sg>
+To: dg3sbj
+Subject: Re:  Betr.:Mailer-Daemon
+Status: R
+
+Tut mir  leid,  Georg,  aber ich muss  zugeben,  dass Du  einen  grossen
+Schwachpunkt  in meinem System  gefunden hast (grummel,  grummel).  Mein
+System  lernt  nur  diejenigen  BBSes  kennen,  von  denen es  Bulletins
+bekommt, also nicht-private Meldungen.  Bekommt es eine private Message,
+so  stellt  es diese  zwar  richtig  zu, aber es  "vergisst",  sich  den
+Rueckweg zu merken.  Ich kann da jetzt so auf die  Schnelle  auch nichts
+daran  aendern.  Bitte  schreibe  Deinen  Brief  nochmal,  und  gebe als
+Adresse
+
+  db0gv!pa3rys!pe1lmq
+
+an.  Dies  sendet  die  Message  zu db0gv und sagt  diesem,  es solle an
+pe1lmq@pa3rys  weiterleiten.  Wichtig  ist, dass die  Adresse am Stueck,
+also ohne Leerzeichen, geschrieben wird.
+
+Ich werde natuerlich  nachdenken, wie ich das selbst richtig hinbekomme,
+aber ich habe im Moment sehr wenig Zeit.
+
+Viele 73, Dieter
+
+===============================================================================
+
+>
+SP DL5DK @DB0AX.DB0BQ.DK0MAV <DB8GM #42
+OK, go ahead
+qsl from db8gm
+R:890116/1922z 7560@db0ie [Linkenheim,JN49ec,UNIX-BBS]
+Danke Dieter fuer Deine Nachricht!
+Werde mich mal um besagten Adapter
+kuemmern. Mal sehen ob es dann bei mir
+
+===============================================================================
+
+#include <stdio.h>
+
+#define halt abort()
+
+extern void exit();
+
+static int  check_to_addr(to)
+char  *to;
+{
+  int  status;
+
+  fflush(stdout);
+  switch (fork()) {
+  case -1:
+    halt;
+  case 0:
+    execl("/usr/lib/sendmail", "sendmail", "-bv", to, 0);
+    exit(1);
+  default:
+    wait(&status);
+    return !status;
+  }
+}
+
+main()
+{
+  char  to[1024];
+
+  for (; ; ) {
+    printf("Enter a address: ");
+    gets(to);
+    if (check_to_addr(to))
+      printf("ok\n");
+    else
+      printf("NOT ok\n");
+  }
+}
+
+===============================================================================
+
+From db0aaa!db0aaa Sun Aug 28 09:28 MES 1988
+Received: by db0sao; Sun, 28 Aug 88 09:28:18 mes
+Date: Sun, 28 Aug 88 09:28:18 mes
+From: db0aaa!db0aaa
+Return-Path: <db0aaa!db0aaa>
+To: db0sao
+Subject: NEUER FUZZI IN " DER BOX "
+Bulletin-Id: <DB0SAO004057>
+Message-Id: <DB0SAO004057@bbs.net>
+Status: RO
+
+R:280888/0717  @DB0AAA [Tuebingen JN48MN OP: DJ7KA]
+
+Lifetime-Verwaltung
+-------------------
+
+Die Lifetime-Verwaltung funktioniert folgendermassen:
+
+Jeder Nachricht, die nicht an ein Rufzeichen geht, wird eine Lebenszeit
+(in Tagen) mitgegeben. Das geschieht in altgewohnter Weise bei der Eingabe
+des SEND-Befehles, z.B. so:
+
+     SEND ALLE # 12
+
+Danach erfolgt interaktiv die Titelvergabe.
+Dieses bedeutet, dass diese Meldung an ALLE nach 12 Tagen wieder geloescht
+wird, und zwar automatisch durch DIE BOX.
+
+Die Lifetimes, die vom Sysop festgelegt werden sind sogenannte Maximal-
+Lifetimes, d.h. kein Benutzer kann seiner Nachricht eine groessere Lifetime
+als die vom Sysop fuer diese Rubrik festgelegte Lifetime mitgeben.
+Diese Maximal-Lifetime wird beim DIR-Kommando mit angegeben, das sieht dann
+etwas so aus:
+
+DF3AV de DK0MAV>DIR
+
+Info-Files:
+ALLE.......10  ALL.......10  TNC2.....200
+
+Die Zahl nach dem Rubriken-Namen gibt die Maximal-Lifetime in Tagen fuer
+diese Rubrik an.
+
+Wird beim SEND-Befehl ueberhaupt keine Lifetime mit eingegeben, so wird auto-
+matisch die Haelfte der Maximal-Lifetime vergeben.
+
+Ueberschreitet die eingegebene Lifetime die Maximal-Lifetime fuer diese
+Rubrik, so wird automatisch die Maximal-Lifetime eingesetzt.
+
+Das Minimum der Lifetimes ist auf einen Tag festgelegt.
+
+Beispiel: Ein Sysop legt fuer die Rubrik ALLE eine Lifetime von 10 Tagen fest.
+	  Ein Benutzer sendet:
+
+	  S ALLE # 122             Diese Nachricht bekommt 10 Tage Lifetime
+	  S ALLE                   Diese Nachricht bekommt  5 Tage Lifetime
+	  S ALLE # 0               Diese Nachricht bekommt  1 Tag  Lifetime
+	  S Alle # 8               Diese Nachricht bekommt  8 Tage Lifetime
+
+Lediglich der Sysop kann nachtraeglich noch Lifetimes veraendern, hier
+betraegt das Maximum jedoch 999 Tage, egal wie hoch die festgelegte
+Maximal-Lifetime ist.
+Zusaetzlich zu dem Minimum von einem Tag kann der Sysop auch die Lifetime
+NULL (0) vergeben, die bedeutet, dass diese Nachricht unbegrenzt lange
+in der Mailbox stehen kann.
+
+Lifetimes werden (in der Version 1.4) noch nicht geforwarded.
+
+Nachrichten, die an Rufzeichen gerichtet sind, haben (bisher) noch keine
+Lifetime, sie werden geloescht, wenn der Sysop dies tut.
+
+===============================================================================
+
+From db0cz!db0cz Wed Oct  5 00:47 MEZ 1988
+Received: by db0sao; Wed, 5 Oct 88 00:46:54 mez
+Date: Wed, 5 Oct 88 00:46:54 mez
+From: db0cz!db0cz
+Return-Path: <db0cz!db0cz>
+To: dk5sg
+Subject: BBS STANDARDS ...
+Bulletin-Id: <DB0SAO004523>
+Message-Id: <DB0SAO004523@bbs.net>
+Status: RO
+
+R:041088/2310  @DB0CZ  [Brigachtal JN48FA TheBox 1.5 OP:DG3SAJ]
+TO: DF3AV@DK0MAV
+CC: DK5SG@DB0SAO DL5UY@DB0IE
+
+Hallo Reinhard,
+habe mir heute im QRL die neusten BBS Versionen besorgt.
+- WA7MBL 5.12
+- W0RLI 8.04
+- W0RLI CBBS 4.6
+Keine Panik, DieBox bleibt installiert, hi ...
+Habe aus allen Dok's die wichtigen Neuerungen in Bezug auf S&F
+zusammengestellt.
+Ich bin der Meinung, dass wir uns bei unseren Entwicklungen so weit als
+moeglich und sinnvoll an diese Dinge anlehnen sollten. Sonst haben wir
+frueher oder spaeter ein Problem im internationalen S&F.
+Das Thema Lifetime gibt es bei den anderen anscheinend noch nicht, d.h.
+das ist eine Chance fuer uns, den diesbezueglichen Standard zu setzen.
+Dazu waere es aber auch wichtig, DieBox endlich mit englischem Sysop
+Manual an den Rest der Welt geben zu koennen ...
+
+Anbei also das Neuste zu:
+
+- Hierarchical Routing Designators.
+- System IDentifiers (SIDs)
+- Rules for SMTP to MailBox message transfer.
+- White Pages (Directory System for Packet Radio)
+
+73 HJ
+
+-------------------------------------------------------------------------------
+
+   Hierarchical Routing Designators.
+
+   A system that supports hierarchical routing will identifies
+   itself with the "H" feature letter in it's SID.
+
+   A hierarchical routing designator is composed of any number
+   of fields delimited by dot ("."). The fields are in the order
+   more to less specific from left to right (see examples below).
+
+   A hierarchical routing designator may contain up to 31 charactors
+   beyond the initial (six character maximum) traditional designator,
+   including the dot delimiters. There is no explicit limit on
+   the number of fields.
+
+   Examples:
+
+   w0rli.norcal.usa
+   ja2xxx.32.j2net.jpn.asia
+   amsat
+   md.usa
+   95060.ca.usa
+
+   How does compatiblity with existing systems work?
+
+   When a system that handles hierarchical designators receives
+   a message from a system that does not handle them there is no
+   problem. Things work as they always have.
+
+   When a system that handles hierarchical designators sends
+   a message to a system that does not handle them, it sends
+   the leftmost field of the designator as the "@ BBS" field.
+
+   How does forwarding work?
+
+   For each message, each field of the hierarchical designator becomes
+   a candidate key for routing the message. They leftmost field of
+   the hierarchical designator that matches an entry in any routing
+   list is used to forward the message. For example:
+
+   ja2xxx.32.j2net.jpn.asia
+
+   If ja2xxx is in my route list, I route to him directly.
+   If 32 is in my route list, I use that route.
+   If j2net is in my route list, then I use it.
+   If jpn is in my route list, then I use it.
+   If asia is in my route list, then I use it.
+
+   Stations outside asia would all have asia in their route list,
+   routing their traffic to some nearby HF gateway which can route
+   to asia. The HF station that routes to Japan would route using
+   the jpn part of the designator. Inside Japan, the gateway station
+   would route toward the JA2 districts using the j2net part of
+   the designator. Inside JA2, stations would route toward the
+   correct region using the 32 part of the designator. Inside
+   the 32 region, stations would route directly to ja2xxx using
+   the first part of the designator.
+
+   One useful way to think about hierarchical designators is to
+   think of the "." as meaning "is within" . Thus the designator
+   w0rli.norcal.usa means "w0rli, who is in norcal, which is in usa".
+
+-------------------------------------------------------------------------------
+
+	   System IDentifiers (SIDs)
+
+The initial exchange between "smart" BBS systems uses what is called
+an "SID", short for System IDentifier. All future work on BBS systems
+should adopt this standard. It will help to remove a GREAT deal of
+confusion as to which systems have what features, and how one should
+interface to them. In the longer future, perhaps all this junk can be
+done away with, and the computers can talk to each other in a more
+natural way.
+
+     The system identifier is structured:
+
+     "[f1-f2-f3]"
+
+The dashes delimit the end of the first field and the start of the last.
+There might be only one dash, if f2 is void. f2 may contain dashes.
+
+f1, f2, and f3 may not contain "[" or "]".
+
+f1 is the author identification. It may not contain a dash.
+Normally it will contain a few characters from the authors callsign.
+
+f2 is author specific data.
+It may contain anything the author wishes, for example software version.
+It may contain dashes.
+
+f3 is the supported feature set. It may not contain a dash.
+It contains a string of non-numeric characters, one for each negotiable
+feature supported. Each character may also have trailing digits, giving
+the revision of that feature. If there is no trailing digit, the
+feature revision is revision zero.
+
+Defined features are:
+
+C - Supports "forwarding" of date and time.
+H - Supports hierarchical routing.
+P - Supports "uplink of route table", i.e. PF command.
+W - Is a white pages server.
+Y - Supports YAPP binary protocol.
+$ - Supports BID. MUST BE LAST CHARACTER IN f3 (downward compatibility).
+
+The existance of the system ID implies that the system supports
+reverse forwarding and OK/NO message rejection.
+
+Some examples of existing standard system identifiers:
+
+[RLI-5.12-$]          - w0rli version 5.12, supports BID
+[RLI-6.10-C$]         - w0rli version 6.08, supports Clock, BID
+[RLI-$]               - CBBS flavor.
+[CBBS-4.5-$]          - ve3gyq release of the rli/gyq cbbs.
+[MBL-$]               - wa7mbl version not given, supports BID
+[MBL-RLI3.2J2.5-$]    - jr1ede unix port of rli/gyq cbbs version 3.2
+[CMU-1-W]             - wd6cmu BBS and WP server.
+[4RE-01-M$]           - aa4re V1, supports MID and BID.
+
+There is some older code still running that requires special case handling.
+In these cases there is no f3 or feature letters.
+
+Rule: OK/NO message rejection is required, and BID is supported.
+
+[MBL320]           - "old" wa7mbl systems.
+[MBL=RLI]          - ja0isk port of rli/gyq cbbs for NEC 9800
+
+	The connect rules:
+
+Send the SID as first line at connect.
+Answer the SID (when seen as a command) with a short command prompt.
+
+	The forwarding rules:
+
+If you do not see an SID at connect, use the old style fowarding.
+This handles the case of Xerox 820 systems, for example.
+
+If you do see an SID at connect, answer with your SID.
+Use whatever features are appropriate.
+
+Special case: MBL3 or MBL= seen at connect.
+Reply with [MBL-xxx], where xxx is anything you like.
+Continue with reverse forwarding and OK/NO message rejection.
+
+	  The message entry command:
+
+Sx TO [@ BBS] [< FROM] [$BID]
+
+The $ is not part of the MID (or BID), but identifies the field.
+There is no space between the $ and the BID.
+
+	  OK/NO message rejection.
+
+Instead of sending the "S" command and Title, send only the "S" command.
+The remote system will reply with either OK or NO, possibly followed by
+some text. If the resonse is NO, it will be followed by a prompt. If the
+response is OK, then go ahead and forward the message. Usually, NO will
+only be seen if you attempt to forward a message with MID already known
+to the recieving system. It may also be seen in the case of full disk, or
+any other reason the system does not want the message. Possiblities under
+discusion range from "I do not handle NTS traffic." to "I do not know that
+user, nor any route to reach him."
+
+-------------------------------------------------------------------------------
+
+	    Rules for SMTP to MailBox message transfer.
+
+  The directory \spool\rqueue\ is searched for files with extension WRK.
+  Each WRK file contains information used to construct the MailBox
+  message header. For each WRK file, there is an associaated TXT file
+  which contains the message text.
+
+  The first record is the source of the message. It's form is:
+
+  "From: "callsign["@"callsign]
+
+  The MailBox FROM field is taken from the first (or only) callsign.
+
+  The second record is the destination for the Message. It's form is:
+
+  "To: "tonode["%"atnode]"@"hostnode
+
+  tonode, atnode, and hostnode are truncated to six characters.
+
+  The MailBox TO field is taken from tonode.
+  The MailBox AT field is taken from atnode, if it exists.
+
+  The MailBox message title is taken from the RFC-822 header in
+  the TXT file.
+
+	    Rules for MailBox to SMTP message transfer.
+
+  For each message going to smtp, a WRK and TXT file are created in the
+  directory \spool\mqueue. The TXT file contains an RFC-822 message header,
+  and the message text.
+
+  The WRK file has 3 lines:
+
+  desig
+  from"@"bbs
+  fwdadr
+
+  desig  is taken from the first field of the FWD.MB entry.
+  from   is taken from the message FROM field.
+  bbs    is taken from the message AT field.
+	 if the AT field is blank, the host callsign is used.
+  fwdadr is taken from the second field of the FWD.MB entry.
+
+-------------------------------------------------------------------------------
+
+R:870406/0038  @:W6PW San Francisco #:2992 O:WD6CMU S:870406/0040
+R:870407/0036  @:WD6CMU Richmond CA #:3028 O:WD6CMU F:145.09/223.58
+
+WP stands for "white pages" and is a directory system for packet radio
+mailboxes.  It allows remote query and updating of a database that lists
+the users of RLI-compatible mailboxes and their home bbs.  To use the
+program, a message is sent to "WP" at WD6CMU.  The message can have several
+lines (a single message can contain several queries/updates), but each line
+must have one of the following formats:
+
+     <callsign> QTH?
+     <callsign> QTH <mailbox>
+     DE <callsign> @ <mailbox>
+
+The first form is a query and will return the home bbs of the person with
+the given callsign.  The second form adds or changes the entry for the given
+callsign, storing his home mailbox with his callsign.  The third form
+provides a return address for the requested information.  If the message
+does not contain a line of the third form, the WP program will try to get
+the return address from the forwarding headers.  This will work as long as
+the mailboxes in the forward path use the NK6K format for forwarding headers.
+
+Replies will be sent to the originating station at the mailbox specified
+as described above.  The reply will be generated a few minutes after the
+message is received at WD6CMU.  Currently, the WP program is run every 15
+minutes, so that is the maximum wait for a reply.  Of course, queries sent
+from other mailboxes will have to make their way through the forwarding
+system, as will the reply.
+
+For example, suppose you wanted to find out where KE6AD was located?  You
+would send a message to WP like this:
+
+Msg# TR  Size  To    From   @ BBS  Date/Time   Title
+2005 PN    11 WP     WD6CMU        0319/1207 A query
+ke6ad qth?
+
+Notice that case is insignificant within the message.  If the station was not
+on file, WP would send you a reply that looked like this:
+
+Msg# TR  Size  To    From   @ BBS  Date/Time   Title
+2006 PN    74 WD6CMU WP            0319/1207 Reply to WP query
+KE6AD no record, sorry.
+73 DE WP @ WD6CMU
+
+If you happened to know that KE6AD was at N7EQN, you could tell WP that.
+Let's say you also wanted to look up N7EQN.  The message would look
+like this:
+
+Msg# TR  Size  To    From   @ BBS  Date/Time   Title
+2007 PN    27 WP     WD6CMU        0319/1208 ke6ad qth n7eqn
+ke6ad qth n7eqn
+n7eqn qth?
+
+The reply from WP would be:
+
+Msg# TR  Size  To    From   @ BBS  Date/Time   Title
+2008 PN    85 WD6CMU WP            0319/1208 Reply to WP query
+KE6AD QTH N7EQN QSL TNX
+N7EQN QTH N7EQN Redwood City, CA (SKYWARN)
+73 DE WP @ WD6CMU
+
+The database is in a growing state so it may not contain the callsign
+you're interested in.  If you wish to add an entry, please make sure that
+the information is accurate.
+
+===============================================================================
+
+BBS & Forward Standards
+
+Hallo Hans-Juergen und Dieter,
+
+ich habe hier auch gleich den neuen [...] Kram eingebaut  und bis
+jetzt keine Probleme  beim Suff gehabt,  weder mit DB0LX noch mit
+DB0GV  und schon  garnicht  mit DB0SAO;  alle diese  Boxen  haben
+meiner Beobachtung  nach das [DL5UY-1.1-H$]  akzeptiert  und BIDs
+gesandt.   Nur bei DB0GV gab es einmal  eine Serie von Mails ohne
+BID aber auch ohne @-Feld die hier hereinkamen.   Soweit ich aber
+weiss,  laesst  JENE BOX zwar die Bid weg aber nicht  das @-Feld,
+wenn  sie  [...]   nicht   erkannt   hat  ?!?   Wie  auch  immer,
+normalerweise  klappts  mit dem neuen [...].  Es gibt also keinen
+Grund, das [...] wieder rueckgaengig  zu machen, man koennte  nur
+der  Empfehlung  entsprechend   bei  den  alten  BBSen  noch  das
+bisherige   [MBL-$]   senden.    Muss   man  halt  je  nach  call
+beruecksichtigen.   Wenn  ichs recht  ueberlege,  dann kann ich's
+schnell  einbauen...   Ich habe  hier auch  hierarchical  Routing
+eingebaut,  und zwar Sende- und Empfangsmaessig,  Dieter hat wohl
+bis jetzt nur den Empfangsweg drin.
+
+Mal  sehen,  wie  lange  es bei  DER BOX dauert.   Aber  bei  der
+Datenstruktur dort sehe ich Schwarz... Ich bin nur froh, dass ich
+nicht  DIE BOX auf unix portiert  habe, sondern  dem Dieter  sein
+Programm aufgebohrt...
+
+Hier mal kurz zur Erlaeuterung das verwendete Prinzip:
+
+Der Header einer Nachricht (z.B.  #3488) mit BID und @-Feld sieht
+folgendermassen aus:
+
+>From g8vhf  9-Oct-88  7:02:44 utc [592383764]
+To: antennen
+Subject: HF MOBILE ANTENNA: PROBLEMS!
+Status: R
+Message Index: 3488
+Received from: db0gv
+Bulletin Id: 3737_GB7NWP
+Forward to: alle
+Forwarded to: db0lx+ db0sao-
+Lifetime: 42
+<<< hier kommt dann der Nachrichtentext >>>
+
+Das ist im MAIL Format,  wobei die Zeilen  nach Status  fuer MAIL
+nur Kommantar  darstellen.   Message  Index ist die Nummer  fuers
+Indexfile, bei Forward to koennen mehrere Hierarchische  Forwards
+stehen. Bei Forward to stehen die BBS mit denen bis jetzt forward
+versucht  wurde; + bedeutet erfolgreich  geforwarded,  - bedeutet
+Nachricht wurde abgelehnt.
+
+Jede Rubrik (to-feld)  ist eine Datei, aus dieser  Datei wird mit
+einem  Indexprogramm  die Indexdatei  upgedated  in der dann  die
+wichtigsten  Information nochmal drinstehen, also z.B.  To, FROM,
+AT,  BID  und eine  Bitmap,  welche  BBSs  die Msg noch  bekommen
+muessen. Ausserdem stehen der Byte offset in der Datei auf Header
+und Text und der Dateiname drin:
+
+Header @7533, Text @7818, Size=1574, FwdFlags = 13, File = /user/bbs/msg/antennen
+
+Der Dateiname steht deshalb drin, weil die Dateien in verschieden
+Direktories  sein  koennen,  z.B.   User-Nachrichten   stehen  im
+Direktory /usr/mail.
+
+Beim  Empfang  einer  Message  wird  natuerlich  auch gleich  der
+Indexeintrag erzeugt; das Indexprogramm braucht man nur, wenn man
+an der Textdatei manipuliert hat.
+
+Bei jedem forward wird dann sowohl das Bit in der Indexdatei fuer
+das jeweilige BBS geloescht  als auch im Text unter Forwarded to:
+ein weiterer  Eintrag  gemacht.   Damit die Datei deswegen  nicht
+laenger   werden   muss   sind   ausreichend   Leerzeichen   dort
+freigehalten.   Beim Lesen  einer privaten  Nachricht  durch  den
+Empfaenger  wird der Status auf R gesetzt und im Indefile aus dem
+R ein  P gemacht,  dann  kann  der  Absender  erkennen,  ob seine
+Nachricht gelesen wurde.
+
+Jedem BBS wird ein Bit zugeordnet, wenn dieses BBS connected ist,
+werden alle MSGs, die dieses Bit noch gesetzt  haben geforwarded.
+In einer Steuerdatei  stehen fuer die einzelnen  @-Felder bitmaps
+drin z.B.  11111111111111111111111111111111  fuer ALL, 00100 fuer
+DB0GV und alle BBSs die ich ueber DB0GV erreiche. Die FwdFlags im
+Indexfile werden gebildet aus der oder-Verknuepfung der Bits, die
+sich Aufgrund  der Forward to Zeile ergeben abzueglich  der Bits,
+die sich aus der Forwarded to Zeile ergeben und abzueglich  aller
+Bits,  die  sich  Aufgrund  der  Untersuchung  der R:-Zeilen  der
+Nachricht  ergeben;  dadurch  wird  ein  loopen  verhindert   und
+ausserdem die QRG entlastet, da ein Forward zu einem BBS, das die
+Nachricht schon hatte nicht erst versucht wird!
+
+Da  alle  relevanten  Informationen  in  den  Nachrichten  selbst
+stehen, kann ich jederzeit die Indexdatei neu Erzeugen, z.B. wenn
+sie zerstoert  wurde  (noch  nie vorgekommen...)  oder  wenn  ich
+Erweiterungen am Indexdatensatz  vornehme (kommt dauernd vor...).
+Hier der derzeitige Indexrecord:
+
+union index2 {
+/*char filler [256];            /* leave room for future expansion,
+				   no need for this any more, bcs
+				   indexfile can be generated anew
+				   from data in messages */
+  struct {
+    long  size;                 /* length of text portion in bytes */
+    long  date;                 /* date of reception in unix format */
+    int  messno;                /* message number */
+    char  file[32];             /* filename where msg is stored */
+    long  ofshdr;               /* byte offset to header in file */
+    long  ofstxt;               /* byte offset to text start */
+    char  bid[13];              /* bulletin id */
+    char  subject[81];          /* subject of message */
+    char  to[9];                /* to field from msg */
+    char  at[32];               /* at field, support hirarchical addr */
+    char  from[9];
+    char  type;                 /* type of message */
+    long  fwdflags;             /* flag bits for forwarding */
+    int  lifetime;              /* lifetime of msg in days
+				   0=no lifetime */
+    long  ofsfwd;               /* byte offset to forward line */
+    char  posted[7];            /* ascii string when msg had been
+				   posted, taken from R: fields */
+  } msg;
+};
+
+/* Type of Message definitions */
+/* P = Private, will be shown only to owners, will be deleted after forward */
+/* B = Bulletin, will be set to F after forward */
+/* $ = Bulletin, will be forwarded and kept */
+/* F = Forwarded, forwarded B type message */
+/* D = Deleted, deleted message */
+/* H = Hold, message will not be forwarded until enabled by sysop */
+/* I = Invalid, message is invalid due to discrepancies with the index file */
+/* R = Private Message which has been read by recipient */
+/* X = Message which has timed out */
+/* other types are currently not defined */
+
+Hier die Steuerdatei fuers @-Feld (umgebrochen, normalerweise pro
+Zeile nur ein Eintrag mit Bits und Call):
+
+2 dl5uy  4 db0gv 8 db0lx  16 db0sao  32 db0ie 16 db0cz 63 alle 63
+all 63 eu 59 bw 63 dl 3 ka 4 dk0mav 4 lx0pac  16 db0aaa 4 db0cl 4
+dk0mwx 4 db0iu 4 db0lj 4 db0bq 4 db0aha 16 hb9ac 16 hb9pd 4 db0iz
+4 db0hb 4 db0kg 4 db0agm 4 on1ced
+
+Falls Dieter Interesse  hat, kann ich ihm mal die Sources rueber-
+schicken,  ob man pro MSG eine Datei hat oder pro Rubrik eine ist
+eigentlich  unerheblich,   im  Indexfile  steht  ja  sowieso  der
+Dateiname drin.  Bei mir ist eine Datei pro Rubrik, da ja hier in
+UNIX jede Datei mindestens  1024 Byte Platz kostet und viele MSGS
+kuerzer sind; statistisch gibt es einen Verschnitt von 512 Bytes,
+das sind bei 3500 MSGs immerhim schon 1,7 Megabyte ! (Bei PCs mit
+grossen Platten braucht jede Datei mehrere Kilobytes !)
+
+Wir sprachen  ja auch schon  ueber  eine Version  fuer  PCs, dort
+braucht man halt ein multitasking  Betriebssystem,  das sowas wie
+Pseudo-Teletypes   unterstuetzt.   Muss   mal   im   QRL   unsere
+Concurrent-Dos Spezialisten fragen ob's damit vielleicht geht...
+
+73 Reinhard
+
+===============================================================================
+
+From db5sq Fri Feb 24 21:36 MEZ 1989
+Received: by db0sao; Fri, 24 Feb 89 21:36:32 mez
+Date: Fri, 24 Feb 89 21:36:32 mez
+From: Wolfgang Hertkorn <db5sq>
+Return-Path: <db5sq>
+To: dk5sg
+Subject: vorschlag
+Status: R
+
+hallo dieter
+ich habe mir mal ein paar gedanken gemacht zum thema direktes filezustellen
+von nachrichten bestimmter rubriken.wie waere es wenn ich mich zum beispiel
+fuer die rubrik  ibm   interessieren  wuerde und ich bei jedem connect mit
+mailx darauf aufmerksam gemacht werde dass etwas da ist das mich interessiert
+und mir so direkt zugestellt wird
+wuerde mich freuen wenn du zurueckschreiben wuerdest   wenn diese neue sache
+aber zu viel arbeit macht dann bitte vergessen was ich geschrieben habe
+danke                wolfgang
+
+Alle  (oder  auch  nur  ausgewaehlte)   Aenderungen  des  BBS  per  mail
+zuzustellen macht sicherlich viel Aufwand und erzeugt viele Daten.  Aber
+man  koennte  vielleicht  einen neuen BBS Befehl  erfinden,  mit dem man
+einfach  herausbekommt,  was sich in jeder  Rubrik getan hat.  Ich werde
+mir diesen  Vorschlag mal merken, aber in der  naechsten  Zeit werde ich
+sicherlich nicht dazu kommen, ihn auch zu verwirklichen.
+
+73, Dieter
+
+===============================================================================
+

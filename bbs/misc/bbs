@@ -1,0 +1,1101 @@
+Nachrichten: L - Liste    R - Read (Lese)      S - Sende     K - Kill (Loesche)
+Files:       W - Welche   D - Download v. BBS  U - Upload zum BBS
+Sonstige:    B - Beenden  G - GateWay          H - Hilfe
+             P - Weg fuer Rufzeichen           N - Eingabe/Aendern Ihres Namen
+             I - Informationen ueber BBS       J - Gehoerte Rufzeichen
+             X - Kurzes / Langes Menue         T - Rufe Sysop (Uli)
+
+BBS wartet auf Ihr Kommando Dieter, DK5SG  >
+d bbs.doc
+
+
+- - - Commands that control the system:
+
+  B - Bye, log out of the MailBox.
+      Forced if no response to a menu in 4 minutes.
+
+  G - Activate the GateWay.
+
+  H - Display the help text.
+
+  I - Display information about the system.
+
+  J - Display the calls of stations recently heard or connected.
+
+  N - Change/Enter your name
+        Argument - First name (12 character limit)
+      Allows you to enter your name into the User file.
+
+  P - Show path.
+        Argument - Callsign.
+      Shows last connect path for Callsign.
+
+  T - Talk to Sysop. Dings the bell on the local terminal.
+      Gives up after one minute, or input from the TNC.
+
+  X - Toggle between the short and long form of the menu.
+
+- - - Commands that apply to messages:
+
+  K - Kill a Message.
+        Qualifier:
+          T - Used to kill traffic after it is taken.
+        Argument - Message number.
+
+  L - List message headers.
+        Qualifier:
+          None - List all messages entered since you last logged in.
+          A - ARRL bulletins only.
+          B - General interest bulletins.
+          L - List the last N messages.
+          M - List messages addressed to you only.
+          T - List NTS traffic only.
+          > - List messages TO call given as argument.
+          < - List messages FROM call given as argument.
+          @ - List messages @ call given as argument.
+        Argument - Number of the oldest message to list.
+                   For LL, the number of messages to list.
+                   For L@, L<, and L>, the call.
+
+  R - Read a message.
+        Qualifier:
+          None - Read one message.
+          M - Read ALL messages addressed to you.
+        Argument - Message number to read.
+
+  S - Send a message.
+        Qualifier:
+          None - A general message.
+          B - A bulletin.
+          P - A private message.
+          T - traffic for the NTS.
+        Argument - Call of addressee.
+
+      The form: "S call1 @ call2" is also supported.
+      call1 is the addressee, call2 is the bbs to forward
+      the message to. Example: SP K1KSY @ W0RLI
+
+- - - Commands that apply to file transfers:
+
+      The MailBox expects standard filenames:
+      8 character maximum name, 3 character maximum extension.
+      Examples: DOC.TNC   HFCALLS.HRD   CALLS.HRD
+
+
+  D - Download a file FROM the MailBox.
+        Argument - Name of file to transmit.
+
+  U - Upload a file TO the MailBox.
+        Argument - Name the file will have.
+        Terminate the file with ^Z (CTL-Z).
+        You may also terminate the file with /EX as the beginning of any line.
+
+  W - What files are available.
+        Qualifier:
+          N - List only new files since last login.
+        Argument - If present, filespec to list.
+
+- - - Commands on the GateWay menu:
+
+  B - Bye, log out of the MailBox.
+
+  C - Attempt a connection.
+      Argument: Call of station to connect to, may include digipeater
+                routing, for example: C N1CB via KD2S-1,WA1TLN-1
+
+  J - Display the calls of stations recently heard or connected.
+
+  U - Call CQ. Whatever you transmit will be transmitted through
+      the other TNC in UNPROTOCOL mode.
+
+  R - Return to the MailBox (Discontinue GateWay operation).
+DK5SG  de DJ7KA  BBS >
+d mailbox.txt
+
+Die Mailbox ist im Moment im Testbetrieb.
+Einige Befehle gehen noch nicht.
+Das wird aber im Laufe der Zeit behoben.
+
+Bitte laden Sie erst mal BBS.DOC oder BBSD.DOC auf Disk oder Drucker.
+Dann haben Sie die Mailbox-Beschreibung schwarz auf weiss.
+Schalten Sie dann bitte mit " X " auf das kurze Menue um.
+Dadurch wird die Frequenz nicht unnoetig belegt.
+Unnoetige Spielereien mit der Mailbox wird sicher andere Benutzer auf
+der QRG nicht gerade begeistern.
+Wenn Sie interessante Beitreage haben, so laden Sie diese bitte
+in die Mailbox mit Info an DJ7KA.
+
+73 de Uli DJ7KA.
+
+
+
+Forwarding Considerations to Non-W0RLI Systems
+
+A number of groups are developing BBS systems which will  forward
+to  W0RLI  systems  and accept forwarding from  them.  There  are
+several  things  that they have to do to  maintain  compatibility
+with Hank's "protocol".
+
+First, to accept forwarding from a W0RLI system a system must use
+the prompt of a > followed by a <cr> (in this section the  "<cr>"
+means a carriage return).   This tells the W0RLI system that it's
+reached  another  system which will accept forwarding.   It  will
+then send the S command line with the destination call,  the call
+of  the  destination MailBox,  and the call  of  the  originating
+station, as:
+
+     S AJ9X @ W3IWI < WB2RVX
+
+This  will be followed by a <cr>,  then followed (without waiting
+for  anything else) by the title of the message,  followed  by  a
+<cr>.  The sender will then pause and wait for 2 <cr> characters,
+then  send the text of the message without waiting for  anything.
+It  will send a CONTROL Z at the end of the message and then wait
+for another > followed by a <cr>.  If there's more mail to go out
+it will repeat the process.  Otherwise it will simply disconnect.
+
+Obviously,  the  receiver has to process this.   It must use  the
+same  "S" command to send mail and be able to parse the S line to
+extract the correct calls.   Note that the @ BBS call need not be
+present.   It must handle the title being sent next, and the text
+of the message being ended with a CONTROL Z.
+
+The  sending station has to do things the same way.   It  has  to
+send the S command,  followed by the destination call.  The @ and
+< calls can be omitted if not necessary.   It has to send a title
+line, then text ended with a CONTROL Z.
+
+This  shows  both  sides  of  the  forwarding  process.   To  the
+receiving  station,  it  looks exactly like a user is  sending  a
+message.   The  sending station expects the receiving station  to
+look just like a MailBox does to a normal user.
+
+There  are  several  alternatives  to  implementing  this.   Some
+systems  have  been  set up to trap the call  of  the  connecting
+station at the connect and look it up in a table of BBS stations.
+If   found,   they  go into a  special  "mail-receiving"  routine
+which  performs  these functions.    The only drawback to this is
+that if the  SYSOP trys to connect manually he may get into   the
+special  routine  and  no  be  able to use the normal   functions
+of  that system.
+
+
+
+
+Hallo Dieter,
+Ich schicke Dir mal den Auszug fuer S + F aus dem Handbuch.
+Daran erkennst Du sicher die Moeglichkeiten der BBS.
+Wenn weitere Fragen sind nur zu und gefragt.
+73 de Uli
+
+=========================================================================
+
+           The Forwarding File  (unchanged from W0RLI 10.2)
+
+
+     Automatic forwarding of messages to other MailBox systems.
+
+     The file FWD.TNC contains information that drives the
+automatic forwarding of messages. If the file does not exist,
+no forwarding is done. The file contains four kinds of information:
+
+"F" or "G" lists are lists of stations for whom you should forward mail.
+They are grouped by the call of the MailBox to which their mail
+should be forwarded. The header of each list looks like:
+
+Columns     Data
+  1         "F" or "G"
+  2         TNC identifier. "A" = TNC on COMM port, "B" = PRINTER port.
+  3-4       Hour to activate forwarding to this station.
+  5-6       Hour to de-activate forwading to this station.
+  7-end     The text to send to the TNC to do the connet.
+
+A "G" list is the same as an "F" list, except the MailBox will 
+add "< FROM" when it sends the message. This is only compatible with
+target MailBoxes running version 10.0 and above.
+Forwarding will occur at the minute given in CONFIG.TNC, on those
+hours given in FWD.TNC.
+
+The "U" list is a list of your local users. These are the stations
+that wish to receive mail at your MailBox.
+
+"I" lists contain only the header line. These items trigger the
+inquiry of adjacent MailBoxes for their local user list.
+
+"P" lists are commands to be sent to the TNC. The character after
+the P is which TNC (PA or PB). The list is terminated with
+"*** EOF". One of these lists might preceed each "F" list to
+set the TNC parameters to be used for the forward attempt.
+There should be a "P" list at the end of the FWD.TNC file to
+reset TNC parameters back to default.
+
+In this release the "I" and "U" lists are not used. They are here
+for future enhancement: the automatic construction of "F" lists
+by downloading the FWD.TNC files from the remote MailBoxes.
+
+The following is an example of FWD.TNC for W0RLI:
+
+(Forward to K1BC every hour)
+FA0023C K1BC VIA KD2S-1 <Function, TNC ID, Time, MailBox and path>
+W1XR             <Call of station whose mail should be forwarded>
+N1AWX
+K1BC
+*** EOF          <Marks the end of list>
+PB               <Set TNC params for K7PYK connection>
+FRACK 6
+MAXFRAME 2
+*** EOF
+(Forward to K7PYK only from 1200 to 0259 GMT)
+GB1202C K7PYK     <The next MailBox to forward to>
+K7PYK
+W7KB
+*** EOF
+(Inquire K1BC's FWD.TNC only between 0300 and 0359 GMT)
+IA0303C K1BC VIA KD2S-1 <MailBox to inquire users from>
+IB1200C K7PYK           <Another MailBox to inquire users from>
+PB                      <Set TNC params back to normal>
+FRACK 4
+MAXFRAME 4
+*** EOF
+U                       <Start of list of local users>
+W0RLI
+WB2OSZ
+K1OJH
+*** EOF
+
+
+     There is no limit to the number of lists or the number of
+calls in each list. Your MailBox will do the connect and send the 
+messge onward. It will either delete it or mark it with 'F' status
+depending on the setting of the YES/NO (Kill on forward) flag in
+CONFIG.TNC. Auto forwarding is attempted each hour at the minute
+specified in CONFIG.TNC, or when you use the "X" menu item.
+
+     The special call "*" (a single *) can be used to force the
+forwarding of all mail not addressed to the system owner. This
+could be used by someone who would like to run this software, but
+would not like to maintain an active MailBox. They would get all
+their own mail locally, but any mail deposited onto their system
+would be automatically forwarded.
+
+     The forwarding of messages counts on the remote MailBox
+behaving correctly. It must have a menu with '>' at the end
+of the last line. The command for sending messages must have the
+form "Sx call". It must prompt for message title, and then prompt
+for message text. Message text is terminated by ^Z.
+
+
+
+
+
+PA
+DWAIT 40
+FRAC 10
+RETRY 15
+*** EOF
+GA2306C dg3saj-2 via dk5sg,df5tc,df2oo
+dg3saj
+df2oo
+*** EOF
+PA
+DWAIT 40
+FRAC 10
+RETRY 15
+*** EOF
+GA2306C dg3saj-2 via dk5sg,dk5tb,df2oo
+dg3saj
+df2oo
+*** EOF
+PA
+DWAIT 40
+FRAC 10
+RETRY 15
+*** EOF
+GA2317C DK5SG
+DK5SG
+DK3SI
+DL5TT
+*** EOF
+PA
+DWAIT 16
+FRAC 6
+*** EOF
+
+
+
+
+BBS Bedienungsanleitung Teil 1/3
+
+************************************************
+****                                        ****
+****  Schalten Sie bitte Ihren Drucker ein  ****
+****                                        ****
+************************************************
+
+BBS Hilfe  (WA7MBL> Version 3.12 , Stand 2.2.87)
+------------------------------------------------
+
+Dieses BBS verfuegt ueber viele maechtige Befehle. Um diese richtig
+anwenden zu koennen ist es wichtig, dass Sie diese Anleitung bei sich
+auf Papier haben und jederzeit nachlesen koennen, was ein bestimmter
+BBS Befehl genau macht.
+Es traegt keinesfalls zur Frequenzoptimierung bei, wenn Sie sich immer
+wieder dieses Hilfsmenue aus dem BBS abrufen !
+
+Generell sollten Sie immer Ihren Drucker mitlaufen lassen, wenn Sie
+mit dem BBS Verbindung aufnehmen. So haben Sie immer alles gleich
+schwarz auf weiss zum Nachlesen und brauchen nicht die selbe Information
+oefter als ein mal abzurufen !
+Wenn Sie entsprechend ausgeruestet sind koennen Sie alles auch auf
+Diskette mitschreiben. Das gibt Ihnen die Moeglichkeit spaeter
+nur das zu drucken, was Sie auch wirklich auf Papier haben wollen.
+
+
+Wie nimmt man mit dem BBS Verbindung auf ?
+
+Ganz einfach, man connected es, entweder auf 2m oder auf 70cm.
+Wenn Sie es auf 2m connecten, so werden dadurch die hochgelegenen
+Digipeater DB0YT und DJ3EN-1 nicht gestoert !
+
+Wenn das BBS gerade belegt ist, so erhalten Sie einen DM Frame, bzw. "busy" .
+Sobald das BBS wieder fuer einen neuen Benutzer frei ist, sendet es auf
+beiden Frequenzen jeweils 2 UI Frames aus.
+In diesem UI Frame teilt das BBS mit, fuer wen neue Nachrichten gespeichert
+sind. Sobald Sie diese Frames sehen, koennen Sie einen erneuten Connect
+Versuch starten.
+
+Wenn das BBS Ihren Connect Request akzeptiert, so sendet es das Anfangs-
+Menue an Sie.
+Am Ende dieser Aussendung erscheint der BBS Prompt, der etwa so aussieht:
+
+IHRCALL (Ihrname) de DJ7KA-BBS DATUM / ZEIT >
+
+Immer wenn Sie diese Zeile auf Ihrem Bildschirm sehen, wartet das BBS
+auf ein neues Kommando von Ihnen.
+Geben Sie immer nur ein Kommando ein und warten Sie auf die Antwort des
+BBS und den naechsten Prompt. Auch wenn zuerst scheinbar nichts passiert,
+eine Antwort kommt immer. Mehrfaches Senden eines Kommandos bringt
+Ihnen ueberhaupt nichts. Im Gegenteil, das BBS wird nur unnoetig belastet
+und loesst hoechstens einen Disconnect aus !
+
+Wenn es allerdings laenger als 4 Minuten auf ein Kommando warten muss, nimmt
+es an, dass die Verbindung zu Ihnen zusammengebrochen ist. In diesem
+Fall wird ein DISC Frame an Sie ausgesendet. Wenn Dieser nicht innerhalb
+von 30 Sekunden von Ihrem TNC bestaetigt wird, bricht das BBS die
+Verbindung mit Ihnen ganz ab und sendet anschliessend wieder seine UI Frames
+aus um auf den naechsten Benutzer zu warten.
+
+Zum HAM-SPIRIT gehoert es uebrigens auch, dass Sie die Frequenz zuerst
+eine Weile beobachten (MONITOR ON) bevor Sie versuchen das BBS zu
+connecten !
+Es macht weder Sinn, noch Freunde, wenn die Frequenz in diesem Moment
+stark belastet ist und Sie nun noch zusaetzlich ein BBS connecten.
+
+Die BBS Parameter sind zwar sehr defensiv eingestellt, d.h. Digipeater
+und normale Stationen haben auf alle Faelle vorang, bevor das BBS
+sendet, Zur Verschlechterung aller laufenden QSO's traegt es aber
+garantiert bei. Dies gilt vor allem, wenn lange Digipeaterketten im
+Spiel sind.
+
+Das BBS steht Ihnen dafuer ja rund um die Uhr zur Verfuegung.
+
+Files, die groesser als 3 Kbyte sind, sollten Sie daher im Interesse
+aller nur in der Zeit zwischen 23:00 h und 6:00 h MEZ abrufen.
+Dies gilt vor allem bei Betrieb ueber die weit hoerbaren Digipeater
+DB0YT  und  DJ3EN-1  !!!
+
+Das ist die beste Gelegenheit sich in der Packet Radio Gemeinde
+einen guten Ruf zu verschaffen.
+
+*** Ende Teil 1/3 ***
+Herunterladen des naechsten Teils mit
+D BBSD-2.DOC
+
+BBS Bedienungsanleitung Teil 2/3                        Stand 2.2.87
+
+Befehls Liste in alphabetischer Reihenfolge
+-------------------------------------------
+
+
+Das "B" Kommando:                                BYE
+
+Syntax: B
+
+Es beendet Ihre Verbindung mit dem BBS.
+Geben Sie einfach "B" ein und das BBS sendet einen Disconnect Frame zu
+Ihnen zurueck.
+
+
+Das "D" Kommando:                                DOWNLOAD
+
+Syntax: D (filename) <line#> <line#>
+
+filename = Ein gueltiger MS-DOS oder PC-DOS Filename.
+           Dieser Parameter ist immer erforderlich.
+           Er besteht aus 1 bis 8 Zeichen fuer den Namen und
+           0 bis 3 Zeichen Erweiterung nach dem Punkt.
+           z.B.  D BBSD-1.DOC
+                 D T1
+                 D T2.C
+                 D NORDLINK.INF
+           Wenn sich das file in einem Subdirectory (Unterverzeichniss)
+           befindet, so muss dieser Subdirectoryname noch voran gestellt
+           werden. Dieser kann von 1 bis 8 Zeichen lang sein.
+           z.B.  D /PROGRAMM/TINA.PAS
+                 D /NORDLINK/NORDLINK.INF
+
+           Ohne weiteren Parameter wird auf alle Faelle das gesamte File
+           ausgegeben.
+           Wenn Sie nur einen Teil des File sehen wollen, so geben Sie
+           bitte ein oder zwei des folgenden Parameters zusaetzlich ein.
+
+line#    = Linenumber (Zeilennummer)
+
+           - Wenn Sie nur eine Zeilennummer angeben, so werden von dem
+             gewuenschten File nur soviel Zeilen ausgegeben, wie Sie
+             hier angegeben haben.
+
+             z.B.  D /PROGRAMM/TINA.PAS 14
+                   Aus dem Subdirectory "PROGRAMM" werden von dem File
+                   "TINA.PAS" die ersten 14 Zeilen ausgegeben.
+
+           - Wenn Sie auch eine zweite Zeilennummer angeben, so werden von dem
+             gewuenschten File diejnigen Zeilen ausgegeben, die zwischen
+             Ihrer ersten und Ihrer zweiten angegebenen Zeilennummer
+             liegen.
+
+             z.B.  D /PROGRAMM/TINA.PAS 25 123
+                   Aus dem Subdirectory "PROGRAMM" werden von dem File
+                   "TINA.PAS" die Zeilen 25 bis einschl. 123 ausgegeben.
+
+             Wenn Sie also bereits ein File zum Teil heruntergeladen
+             haben und irgenwann Ihr Link zum BBS zusammenbrach, haben
+             Sie mit dieser Kommandoform die ideale Moeglichkeit, sich
+             den Rest zu holen, ohne das ganze File erneut abrufen
+             zu muessen.
+
+Wieviel Bytes jedes File enthaelt, sehen Sie mit dem "W" Kommando.
+In welcher Sprache es geschrieben ist, wie alt es ist, und was es enthaelt,
+sehen Sie zusaetzlich in den entsprechenden ".DIR" Files.
+Z.B.  D TNC2.DIR
+
+Wenn Sie die Ausgabe eines Files oder einer Nachricht stoppen moechten,
+so senden Sie bitte waehrend der Uebetragung einfach ein "A" , wie
+ABBRUCH !
+In diesem Fall wird nur noch der Teil des Files uebertragen, der sich
+noch im Buffer des TNC befindet. Anschliessend erscheint die Meldung
+"*** Aborted by User ***" und der normale BBS Prompt, der Sie auffordert,
+ein neues Kommando einzugeben.
+
+Achtung: Nachrichten oder Bulletins, die Sie mit dem "L" Kommando aufge-
+listet haben, koennen auch nur mit dem "R" Kommando abgerufen werden.
+
+
+Das "?" Kommando:                                HILFE
+
+Syntax: ?(Buchstabe)
+
+Dieses Kommando gibt diese kurze Hilfe aus.
+Wenn Sie eine genaue Erklaerung zu einem speziellen Kommando haben moechten,
+so geben Sie bitte das Fragezeichen und direkt folgend den Buchstaben des
+gewuenschten Kommandos ein.
+
+Z.B.   ?D
+       Zeigt Ihnen eine genaue Beschreibung des "DOWNLOAD" Kommandos .
+
+Geben Sie "H" ein um eine Kommandouebersicht zu bekommen.
+
+Geben Sie "D BBSD-1.DOC" ein, um die komplette Mailbox Bedienungsanleitung
+zu erhalten. (Sie lesen sie gerade!)
+
+
+Das "I" Kommando:                                INFORMATION
+
+Syntax: I
+
+Dieses Kommando gibt alle wissenswerte Information allgemeiner Art
+ueber dieses BBS aus, Hardware, Software, QTH, etc.
+
+
+Das "J" Kommando:                                GEHOERTE STATIONEN
+
+Syntax: J(TNC-Port)
+
+Dieses Kommando gibt eine Liste der 20 zuletzt gehoerten Stationen aus.
+Diese Liste ist getrennt in 3 Gruppen.
+
+TNC-Port = Angabe, welches der beiden an das BBS angeschlossenen TNC's
+           gemeint ist.
+           - A  = TNC A , 433.675 Mhz , Regional               ---> "JA"
+           - B  = TNC B , 144.675 Mhz , Lokal                  ---> "JB"
+           - K  = Beide TNC's, allerdings nur die Stationen,
+                  die mit dem BBS verbunden (connected) waren. ---> "JK"
+
+
+Das "K" Kommando:                                KILL (Loesche)
+
+Syntax: K <MSG#> <MSG#> <MSG#> <MSG#> <MSG#>
+
+Dieses Kommando loescht die angegebene(n) Nachricht(en).
+Es koennen bis zu fuenf Nachrichten Nummern <MSG#> auf einmal angegeben
+werden. Bitte jeweils mit einem Leerzeichen (Blank) dazwischen !
+
+Syntax: KM
+
+Dieses Kommando (Kill mine) loescht alle Nachrichten, die an Sie adressiert
+sind und bereits von Ihnen gelesen wurden.
+Noch nicht gelesene Nachrichten an Sie, werden mit diesem Kommando nicht
+geloescht.
+
+
+Allgemeines:
+
+- Sie koennen nur Nachrichten loeschen, die entweder an Sie adressiert
+  sind oder von Ihnen selbst abgesandt wurden !
+
+- Wenn Sie eine Nachricht aus Versehen geloescht haben und diese wieder
+  lesen moechten, so senden Sie bitte eine Nachricht an den Sysop und
+  teilen ihm die entsprechende Nummer mit. Er stellt sie Ihnen dann
+  bei naechster Gelegenheit wieder zur Verfuegung.
+  Geloeschte Nachrichten werden allerdings nach einer Woche entgueltig
+  dem grossen Biteimer uebergeben.
+
+- Files koennen vom Benutzer nicht geloescht werden. Dieses kann aus
+  Sicherheitsgruenden nur der Sysop. Sollten Sie ein File falsch oder
+  irrtuemlich ins BBS hochgeladen haben (UPLOAD), so teilen Sie das dem
+  Sysop bitte in einer entsprechenden Nachricht mit.
+
+
+Das "L" Kommando:                                LISTE
+
+Syntax: L (Nummer-1) (Nummer-2)             Liste
+
+        Dieses Kommando listet gespeicherte Nachrichten.
+        sofern kein weiteren Parameter angegeben werden, werden alle
+        Nachrichten gelistet, die neu sind, seit Sie das "L" Kommando
+        das letzte mal benutzt haben. Dies ist auch der Fall, wenn
+        Sie inzwischen oefters das BBS connected haben.
+
+        Es sollte stets vernuenftig benutzt werden, um eine
+        unnoetige Frequenzbelastung zu vermeiden !
+        Es ist fuer keinen Benutzer interssant immer alle gespeicherten
+        Nachrichten aufzulisten. Aus diesem Grunde wurde das "L" Kommando
+        um zahlreiche Variationen erweitert, die Sie moeglichst auch
+        entsprechend benutzen sollten.
+
+        z.B.   L 2130
+
+               Listet alle Nachrichten, ab 2130 bis zur Neusten.
+
+        z.B.   L 2130 2204
+
+               Listet alle Nachrichten, von 2130 bis 2204.
+
+        Die beiden Parameter (Nummer-1) und (Nummer-2) haben auch bei
+        allen nachfolgenden Variationen des "L" Kommandos die entsprechend
+        gleiche Wirkung.
+
+Syntax: LA (Nummer-1) (Nummer-2)            Liste ARRL Letters
+
+        Dieses Kommando gibt eine Liste der gespeicherten ARRL Letters aus.
+
+        z.B.   LA 2130
+
+               Listet alle ARRL Letters von 2130 bis zum Neusten.
+
+        z.B.   LA 2130 2204
+
+               Listet alle ARRL Letters von 2130 bis 2204.
+
+
+Syntax: LB (Nummer-1) (Nummer-2)            Liste Bulletins
+
+        Dieses Kommando gibt eine Liste der gespeicherten Bulletins aus.
+        Siehe auch "SB" Kommando (Sende Bulletin).
+
+        z.B.   LB 2130
+
+               Listet alle Bulletins von 2130 bis zum Neusten.
+
+        z.B.   LB 2130 2204
+
+               Listet alle Bulletins von 2130 bis 2204.
+
+Syntax: LM (Nummer-1) (Nummer-2)            Liste Meine
+
+        Dieses Kommando gibt eine Liste aller an Sie adressierten
+        Nachrichten aus, gelesene und noch ungelesene.
+
+        z.B.   LM
+
+               Listet alle Nachrichten an Sie.
+
+        z.B.   LM 2130
+
+               Listet alle Nachrichten an Sie von 2130 bis zur Neusten.
+
+        z.B.   LB 2130 2204
+
+               Listet alle Nachrichten an Sie von 2130 bis 2204.
+
+Syntax: LN (Nummer-1) (Nummer-2)            Liste Neue (meine)
+
+        Dieses Kommando gibt eine Liste aller an Sie adressierten
+        Nachrichten aus, jedoch nur die neuen und ungelesenen.
+
+        z.B.   LN
+
+               Listet alle ungelesenen neue Nachrichten an Sie.
+
+        z.B.   LM 2130
+
+               Listet alle ungelesenen neue Nachrichten an Sie
+               von 2130 bis zur Neusten.
+
+        z.B.   LB 2130 2204
+
+               Listet alle ungelesenen neue Nachrichten an Sie
+               von 2130 bis 2204.
+
+Syntax: LL (Anzahl)                         Liste Letzte Anzahl
+
+        Dieses Kommando gibt eine Liste der letzten (Anzahl) von
+        allen gespeicherte Nachrichten aus.
+
+        z.B.   LL 15
+
+               Listet die letzten 15 gespeicherten Nachrichten und Bulletins.
+
+Syntax: LT (Nummer-1) (Nummer-2)            Liste NTS Traffic
+
+        Dieses Kommando gibt eine Liste der NTS Nachrichten aus.
+        (Third Party Traffic)
+        Nur in den USA gebraeuchlich, wird in diesem System nicht verwendet.
+
+Syntax: L> (CALL) (Nummer-1) (Nummer-2)     Liste alle an CALL
+
+        Dieses Kommando gibt eine Liste der Nachrichten fuer ein
+        bestimmtes CALL aus.
+
+        z.B.   L> DF2OO
+
+               Listet alle Nachrichten an DF2OO
+
+        z.B.   L> DF2OO 2130
+
+               Listet alle Nachrichten an DF2OO
+               von 2130 bis zur Neusten.
+
+        z.B.   L> DF2OO 2130 2204
+
+               Listet alle Nachrichten an DF2OO
+               von 2130 bis 2204.
+
+Syntax: L< (CALL) (Nummer-1) (Nummer-2)     Liste alle an CALL
+
+        Dieses Kommando gibt eine Liste der Nachrichten von einem
+        bestimmten CALL aus.
+
+        z.B.   L< DF2OO
+
+               Listet alle Nachrichten von DF2OO
+
+        z.B.   L< DF2OO 2130
+
+               Listet alle Nachrichten von DF2OO
+               von 2130 bis zur Neusten.
+
+        z.B.   L< DF2OO 2130 2204
+
+               Listet alle Nachrichten von DF2OO
+               von 2130 bis 2204.
+
+Syntax: L@ (BBS)  (Nummer-1) (Nummer-2)     Liste via BBS
+
+        Dieses Kommando gibt eine Liste der Nachrichten aus, die
+        an ein bestimmtes BBS weitergeleitet werden sollen oder
+        bereits sind.
+        (Gesendet mit Kommando "S CALL @ BBS")
+
+        z.B.   L@ HB9SDB
+
+               Listet alle Nachrichten via HB9SDB
+
+        z.B.   L@ HB9SDB 2130
+
+               Listet alle Nachrichten via HB9SDB
+               von 2130 bis zur Neusten.
+
+        z.B.   L@ HB9SDB 2130 2204
+
+               Listet alle Nachrichten via HB9SDB
+               von 2130 bis 2204.
+
+Allgemeines:
+
+Sie koennen generell nur Nachrichten listen und lesen die
+ - fuer Sie selbst sind
+ - von Ihnen an andere gesendet wurden
+ - Alle anderen Nachrichten nur, wenn Sie mit "S" (also nicht "SP", privat)
+   gespeichert wurden !
+
+Bulletins, gesendet mit "SB", kann jeder listen und lesen.
+Diese sollten moeglichst an das Call "ALLE" adressiert werden.
+ARRL Letters koennen ebenfalls von allen gelistet und gelesen werden.
+
+Das BBS merkt sich, bei welcher aktiven Nachrichten Nummer Sie das
+letzte mal das "L" Kommando ausgefuehrt haben. Daraus resultiert
+bei Ihrem Logon die Information welche Nachrichten Nummern
+moeglicherweise fuer Sie neu sein koennten, vorausgesetzt Sie sind
+berechtigt diese zu lesen.
+
+Wenn Sie also bei irgend einer Form des "L" Kommandos keine Liste
+erhalten oder grosse Spruenge in der Nummerierung zu sehen sind, so
+bedeutet das nur, dass entsprechende Nachrichten entweder bereits
+geloescht sind oder von Ihnen nicht Abgerufen werden koennen.
+
+In letzterem Fall sind wir aber trotzdem im Einklang mit den
+Lizenzbestimmungen, da solche Nachrichten ja trotzdem von jedermann
+mitgelesen werden koennen, sobald sie vom richtigen Empfaenger oder
+Absender abgerufen werden. Es wird damit wirkungsvoll eine noch groessere
+Frequenzbelastung durch mehrfaches, unnoetiges (!), abrufen fremder
+und damit fuer Sie uninteressanter Nachrichten vermieden.
+
+*** Ende Teil 2/3 ***
+Herunterladen des letzten Teils mit
+D BBSD-3.DOC
+
+BBS Bedienungsanleitung Teil 3/3                         Stand 2.2.87
+
+Das "N" Kommando:                                NAME
+
+Syntax: N (VORNAME)
+
+Dieses Kommando erlaubt es Ihnen sich dem BBS persoenlich vorzustellen ...
+Geben Sie bitte Ihren Vornamen ein, er darf bis zu 12 Zeichen lang sein.
+Sie koennen Ihren Namen mit diesem Kommando jederzeit aendern aber
+eigentlich behaelt man seinen Vornamen fuer das Leben ...
+
+Daraufhin erscheint Ihr Name immer im BBS Prompt (Sende Aufforderung).
+
+Ihr Name wird im BBS zusammen mit anderen Daten gespeichert:
+
+ - Vorname    <-- Geben Sie mit dem "N" Kommando ein
+ - Call       <-- Wird aus der Frame Adresse entnommen
+ - SSID       <-- Wird aus der Frame Adresse entnommen
+ - Datum/Zeit <-- Datum der letzten Verbindung mit dem BBS
+ - TNC-Port   <-- TNC ueber welches die letzte Verbindung mit dem BBS lief
+ - Pfad       <-- Link ueber welchen die letzte Verbindung mit dem BBS lief
+ - LMSG       <-- Letzte Nachrichten Nummer bei letztem "L" Kommando
+ - Status     <-- Ihr aktueller persoenlicher Status
+   - Remote Sysop <-- Hat mehr (gefaehrliche) Privilegien
+   - BBS          <-- Handelt sich um ein W0RLI kompatibles BBS
+   - Experte      <-- Bekommt kurzen Prompt
+   - Ausschluss   <-- Erhaelt sofort Disconnect Frame !
+                      (Muss hoffentlich nie angewendet werden)
+
+
+Das "P" Kommando:                                Pfad
+
+Syntax: P <CALL>
+
+Dieses Kommando zeigt Ihnen den Pfad, auf welchem das angegebene CALL
+zuletzt mit dem BBS verbunden war.
+
+
+Das "R" Kommando:                                READ
+
+Syntax: R <MSG#> <MSG#> <MSG#> <MSG#> <MSG#> <MSG#>
+
+Dieses Kommando erlaubt es Ihnen Nachrichten, Bulletins und ARRL Letters
+zu lesen.
+Als Parameter koennen 1 bis 6 Nachrichten Nummern eingegeben werden. Die
+gewuenschten Nachrichten werden dann nacheinander ausgegeben.
+
+  Z.B.  R 2104 2154 2378
+
+Syntax: RM                                       READ Mine (Lese Meine)
+
+Dieses Kommando erlaubt es Ihnen alle Nachrichten zu lesen, die an Sie
+adressiert sind.
+Es werden alle fuer Sie gespeicherten Nachrichten ausgegeben, gleichgueltig
+ob diese bereits von Ihnen gelesen wurden oder nicht.
+
+Syntax: RN                                       READ New  (Lese Meine Neu )
+
+Dieses Kommando erlaubt es Ihnen alle Nachrichten zu lesen, die an Sie
+adressiert sind.
+Es werden alle fuer Sie gespeicherten Nachrichten ausgegeben, die Sie
+noch nicht gelesen haben.
+
+Allgemeines:
+Mit dem "R" Kommando koennen Sie nur Nachrichten lesen, jedoch keine
+Files ausgeben. Hierfuer ist das "D" Kommando vorgesehen.
+
+Wenn Sie die Ausgabe eines Files oder einer Nachricht stoppen moechten,
+so senden Sie bitte waehrend der Uebetragung einfach ein "A" , wie
+ABBRUCH !
+In diesem Fall wird nur noch der Teil des Files uebertragen, der sich
+noch im Buffer des TNC befindet. Anschliessend erscheint die Meldung
+"*** Aborted by User ***" und der normale BBS Prompt, der Sie auffordert,
+ein neues Kommando einzugeben.
+
+
+Das "S" Kommando:                                SENDE
+
+Syntax: S<TYPE> CALL @ BBS
+
+Dieses Kommando erlaubt es Ihnen eine Nachricht oder ein Bulletin zu
+senden.
+Als Parameter koennen 1 bis 6 Nachrichten Nummern eingegeben werden. Die
+gewuenschten Nachrichten werden dann nacheinander ausgegeben.
+
+<TYPE>  = Diese Angabe ist nicht unbedingt erforderlich. In diesem Fall
+          kann Ihre Nachricht von jedem anderen Benutzer gelesen werden,
+          gleichgueltig, an wen Sie sie adressiert haben.
+
+          - B  = Bulletin
+                 Diese Nachricht kann von allen gelesen werden. Sie sollte
+                 daher auch an "ALLE" adressiert werden.
+                 Z.B.   SB ALLE
+
+          - P  = Privat
+                 Diese Nachricht kann nur von Ihnen oder dem Empfaenger
+                 gelesen werden.
+                 Z.B.   SP DF2OO
+
+          - T  = NTS Traffic (Third Party Traffic)
+                 Diese Moeglichkeit wird z.Zt. nur in den USA benutzt.
+
+CALL    = Das Rufzeichen des Empfaengers. Wenn dieses Rufzeichen in der
+          Store and Forward Liste des BBS eingetragen ist, so wird diese
+          Nachricht automatisch zum entsprechenden Ziel-BBS uebertragen.
+          Im Zweifelsfalle fragen Sie den Sysop oder benutzen Sie die
+          folgende Option.
+
+@ BBS   = Im BBS
+          Es muss sich jedoch um ein BBS handeln, zu dem eine automatische
+          Store and Forward Verbindung besteht.
+          Z.B.   SP DD6CV @ DL0FFM
+
+
+Allgemeines:
+
+Solange eine Nachricht vom Empfaenger noch nicht gelesen wurde, steht
+im Status Feld noch das Kennzeichen "N" .
+Wurde eine Nachricht vom Empfaenger gelesen, so steht im Status Feld
+das Kennzeichen "Y" .
+Wurde die Nachricht per Store and Forward zum gewuenschten Ziel-BBS
+weitergeleitet oder war das Rufzeichen des Empfaengers in der S+F Liste
+des BBS und wurde ebenfalls zum entsprechenden Ziel-BBS weitergeleitet,
+so steht im Status Feld das Kennzeichen "F".
+
+Da in Zukunft Bulletins automatisch per S+F an andere BBS's verteilt
+werden, ist es sinnvoll, dass Sie Ihren eigenen Text mit Ihrem
+Rufzeichen und dem Rufzeichen Ihres Heimat-BBS unterschreiben.
+z.B.  vy 73 de DF2OO, Thomas, @ DJ7KA
+
+Das erlaubt es dann jedem, der auf Ihr Bulletin antworten will, seine
+Frage oder Antwort an Sie per S+F zum richtigen Ziel-BBS abzusenden,
+selbst wenn er in Hamburg sitzt.
+
+Dieses Status Feld wird bei der Ausgabe der Nachrichten Header mit dem
+"L" Kommando angezeigt.
+
+Files koennen nicht mit diesem Kommando gelesen werden. Hierzu steht
+dem Benutzer das "D" Kommando zur Verfuegung.
+
+
+Das "T" Kommando:                                TALK to Sysop
+
+Syntax: T
+
+Wenn Sie dieses Kommando eingeben, so wird der Sysop gerufen.
+Wenn er innerhalb einer Minute erreichbar sein sollte, so meldet er
+sich innerhalb dieser Zeit direkt bei Ihnen.
+
+Sollte er im Moment nicht erreichbar sein, so werden Sie nach einer
+Minute wieder den BBS Prompt sehen und koennen ein neues Kommando
+eingeben.
+In diesem Falle koennten Sie ihm dann eine Nachricht im BBS hinterlassen.
+Verwenden Sie das Kommando "SP DJ7KA" . Er wird Ihre Frage dann sobald
+wie moeglich beantworten.
+
+
+Das "U" Kommando:                                UPLOAD
+
+Syntax: U (filename)
+
+filename = Ein gueltiger MS-DOS oder PC-DOS Filename.
+           Dieser Parameter ist immer erforderlich.
+           Er besteht aus 1 bis 8 Zeichen fuer den Namen und
+           0 bis 3 Zeichen Erweiterung nach dem Punkt.
+           z.B.  U USER.DOC
+                 U T1
+                 U T2.C
+                 U TNC2IC45.TIP
+           Wenn sich das file in einem Subdirectory (Unterverzeichniss)
+           befinden soll, so muss dieser Subdirectoryname noch voran gestellt
+           werden. Dieser kann von 1 bis 8 Zeichen lang sein.
+           z.B.  U /PROGRAMM/TINANEU.PAS
+                 U /NORDLINK/NORDLINK.TXT
+
+Wenn Sie das komplette File uebertragen haben, so benden Sie diesen Vorgang
+Durch Senden  von "/EX" oder CTRL-Z am Anfang einer neuen Zeile.
+
+Wieviel Bytes jedes File enthaelt, sehen Sie anschliessend mit dem "W" Kommando.
+In welcher Sprache es geschrieben ist, wie alt es ist, und was es enthaelt,
+sollte in das entsprechende ".DIR" File eingetragen werden. Damit dies
+veranlasst wird, lassen Sie dem Sysop bitte eine kleine Nachricht zukommen,
+mit "SP DJ7KA" .
+
+Dieses neue File erhaelt dann auch einen genauen "Zeitstempel" im BBS.
+D.h. jeder Benutzer wird bei seiner naechsten BBS Verbindung dieses File
+aufgeliestet bekommen, sobald er das "WN" (Was ist Neu) Kommando benutzt.
+
+Achtung: Nachrichten oder Bulletins, koennen Sie nur mit dem "S" Kommando
+         zum BBS senden.
+
+
+Das "V" Kommando:                                VERSION
+
+Syntax: V
+
+Dieses Kommando zeigt Ihnen folgendes an:
+
+ - Versions Nummer der BBS Software
+ - Copyright Info zur BBS Software
+ - Anzahl der momentan aktiven Nachrichten
+ - Die Nummer, die die naechste Nachricht erhalten wird
+
+
+Das "W" Kommando:                                WAS
+
+Syntax: W
+
+Diese Kommando zeigt Ihnen alle Files im Hauptdirectory an.
+
+Sie sehen auch die entsprechende Groesse von jedem File und am Ende
+noch eine Angabe, wieviel Platz auf der Festplatte noch frei ist, um
+eventuell weitere Binaerfiles aufzunehmen.
+
+Da unter diesem Hauptdirectory auch Unterverzeichnisse, so gennante
+Subdirectories, angezeigt werden,
+werden Sie bei Aufruf dieses Kommandos z.B. auch solche
+Eintraege sehen:   "TNC2    <DIR>"
+Das bedeutet, dass ein Subdirectory mit dem Namen "TNC2" existiert.
+Sie koennen dessen Inhalt dann folgendermassen anzeigen lassen:
+"W /TNC2"
+Besser ist es jedoch, wenn Sie sich die Beschreibung der Files in diesem
+Subdirectory folgendermassen ausgeben lassen:
+"D TNC2.DIR
+
+Sie erhalten dann beispielsweise folgende Liste:
+
+Filename     S  Bytes Datum        Info-Text
+------------ -  ----- ----------   -----------------------------------------
+FULLDUPL.TXT E   3352 08-01-1987 - TNC-2 problems with fullduplex digipeater
+IC2E-TNC.TIP D    815 23-03-1986 - IC-2E an TAPR TNC-2 anschliessen
+KPC-2400.001 E    841 11-07-1986 - KPC-2400 (TAPR TNC-2 Clone)
+
+
+Syntax: WN
+
+Diese Kommando zeigt Ihnen alle neuen Files im Hauptdirectory an, die
+seit Ihrer letzten BBS Verbindung neu hinzu kamen !
+
+Sie sehen auch die entsprechende Groesse von jedem File und am Ende
+noch eine Angabe, wieviel Platz auf der Festplatte noch frei ist, um
+eventuell weitere Files aufzunehmen.
+
+Genauso koennten Sie sich die neuen Files in einem der Subdirectories
+anzeigen lassen.
+z.B.  WN /TNC2
+
+Zeigt Ihnen alle neuen Files im Subdirectory "TNC2" an, die seit Ihrer
+letzten Verbindung mit dem BBS hinzu kamen.
+
+
+Allgemeines:
+Wenn vom Sysop neue Files ins BBS geladen werden, so werden diese
+zuerst im Hauptdirectory und gleichzeitig im entsprechenden
+Subdirectory bereitgestellt. Ausserdem wird das entsprechende .DIR File
+entsprechend erneuert.
+Nache ca. einer Woche wird dieses neue File dann nur noch im entsprechenden
+Subdirectory vorhanden sein.
+Dies verhindert, dass das Hauptdirectory zu gross und unuebersichtlich
+wird.
+Wenn Sie bei Eingabe von "WN" nur ein oder mehrere .DIR Files sehen,
+so rufen Sie dieses .DIR File ab, um zu sehen, was in diesem Subdirectory
+zu diesem entsprechenden Thema neues hinzu gekommen ist.
+
+
+Das "X" Kommando:                                EXPERT
+
+Syntax: X
+
+Dieses Kommando aendert Ihren persoenlichen Status im BBS zwischen
+Experte oder Nichtexperte.
+
+Als Experte erhalten Sie immer nur die verkuertzten Menues, d.h. Die
+BBS Ausgabe geht geht schneller und die Frequenz wird weniger belastet !
+
+Als Nichtexperte erhalten Sie immer die langen und ausfuehrlicheren Menues.
+
+Dieser Status wird fuer Sie persoenlich im BBS gespeichert und bleibt
+so lange erhalten, bis Sie ihn wieder aendern, was Sie jederzeit nach
+belieben tun koennen.
+
+Siehe hierzu auch das "N" Kommando.
+
+
+Das "Y" Kommando:                                YAPP
+
+Syntax: Y
+
+Dieses Kommando ruft das YAPP Binaer Uebertragungsprogramm auf.
+
+YAPP = Yet Another Packet Program   by Jeff Jacobsen, WA7MBL
+
+YAPP ist ein Terminal Programm, das speziell auf die Packet Radio
+Beduerfnisse bei der Verwendung mit einem TNC abgestimmt ist.
+Es ist zur Zeit nur fuer PC/MS-DOS Rechner verfuegbar.
+Gegen Einsendung eines frankierten und adressierten Rueckumschlages,
+welcher eine PC-DOS Diskette enthaelt ist es als FREEWARE gratis
+vom Sysop erhaeltlich.
+
+Syntax: YW                                       YAPP WAS
+
+Dieses Kommando zeigt Ihnen, was im Subdirectory fuer Binaer Files
+alles gespeichert ist.
+Sie sehen auch die entsprechende Groesse von jedem File und am Ende
+noch eine Angabe, wieviel Platz auf der Festplatte noch frei ist, um
+eventuell weitere Binaerfiles aufzunehmen.
+
+Syntax: YN                                       YAPP NEU
+
+Dieses Kommando zeigt Ihnen, was im Subdirectory fuer Binaer Files
+alles neu hinzugekommen ist, seit Sie das letzte mal mit dem
+BBS verbunden waren.
+Sie sehen auch die entsprechende Groesse von jedem File und am Ende
+noch eine Angabe, wieviel Platz auf der Festplatte noch frei ist, um
+eventuell weitere Binaerfiles aufzunehmen.
+
+Syntax: YU                                       YAPP UPLOAD
+
+Dieses Kommando startet den Binaer File UPLOAD zum BBS.
+
+Syntax: YD                                       YAPP DOWNLOAD
+
+Dieses Kommando startet den Binaer File DOWNLOAD vom BBS.
+
+Beachten Sie bitte die entsprechenden Bestimmungen der DBP.
+
+Syntax: YH                                       YAPP HELP
+
+Dieses Kommando zeigt Ihnen detailiertere Hilfe zum YAPP Program und
+dessen Benutzung in Verbindung mit dem BBS.
+
+----------- Ende der BBS Bedienungsanleitung -----------------------------------
+
+        vy 73 de DJ7KA, Uli

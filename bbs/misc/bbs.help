@@ -1,0 +1,391 @@
+Help Check
+----------
+
+Der Befehl Check erlaubt es, die Neueintraege in Info-Files nach
+Datum sortiert anzuzeigen.
+
+Ohne Argument zeigt CHECK alle Neueintraege nach dem letzten
+Login-Datum an. Ist kein Neueintrag an diesem Datum vorhanden, so wird
+der letzte Neueintrag ausgegeben.
+
+Beispiel:
+
+C               : Zeigt die Neueintraege nach dem letzten Login
+C 10            : Zeigt die letzten 10 Neueintraege unter Info-Files
+C 2-            : Zeigt Neueintraege beginnend mit dem Vorletzten
+C -5            : Zeigt die letzten 5 Neueintraege
+C 3-7           : Zeigt den 3., 4., 5., 6. und 7. Neueintrag
+C < DK0MAV      : Zeigt alle Eintraege, die von DK0MAV verfasst wurden
+C 2-30 < DK0MAV : Zeigt alle Eintraege aus dem Bereich 2-30 die von
+		  DK0MAV verfasst wurden.
+
+Die max. Anzahl von Zeilen, die bei Check auf einmal ausgegeben werden, ist
+auf 50 beschraenkt.
+Gibt man z.B. ein:
+
+  CHECK 1-99
+
+so erhaelt man als Ausgabe genau so viele Eintraege, als haette man
+eingegeben:
+
+  CHECK 1-50
+
+Diese Beschraenkung soll der Kanalentlastung dienen. Ist man an weiteren
+Ausgaben interessiert, so kann man z.B. als folgenden Befehl eingeben:
+
+  CHECK 50-
+
+und man erhaelt die folgenden 50 Eintraege.
+
+###############################################################################
+
+Help Dir
+--------
+
+Der Befehl 'Dir' zeigt ein Verzeichnis der in der Mailbox vorhandenen
+Nachrichten.  Die Nachrichten sind unterteilt in 'User-Files' und
+'Info-Files'.
+
+Wird DIR ohne Argument eingegeben, so werden nur die Info-Files angezeigt.
+Um alle Files angezeigt zu bekommen, ist DIR ALL einzugeben.
+Sind nur die User-Files erwuenscht, reicht DIR USER als Eingabe.
+
+###############################################################################
+
+Help Erase
+----------
+
+Der Befehl 'Erase' dient zum Loeschen von Nachrichten.
+Grundsaetzlich koennen  n u r  Nachrichten geloescht werden,
+die an das eigene Call gerichtet sind oder die man selbst geschrieben hat.
+Um die Nachrichten-Nummern zu erhalten, sollte man vorher den Befehl 'List'
+benutzt haben.
+
+E           : Loescht alle Nachrichten an das eigene Call
+E DF3AV     : Loescht alle Nachrichten, die man an DF3AV geschrieben hat
+E DF3AV 4   : Loescht Nachricht Nr.4, die man an DF3AV geschrieben hat
+E DF3AV 4-  : Loescht ab Nachricht Nr.4 alle MSG's an DF3AV
+E DF3AV -3  : Loescht alle MSG's an DF3AV bis einschl. Nr.3
+E DF3AV 3-5 : Loescht MSG's 3 bis 5
+
+###############################################################################
+
+HELP FORWARD
+------------
+
+Dieser Befehl ermoeglicht es, schon gespeicherte Nachrichten,
+die von einem selbst geschrieben, oder an einen selbst gerichtet
+sind, an eine andere Mailbox forwarden zu lassen.
+
+Dieser Befehl bewirkt einzig und allein einen Eintrag in die
+Forwarding-Liste der Mailbox. Ist der Zeitpunkt zum forwarden an
+die jeweilige Mailbox gekommen, so wird die auf diese Weise eingetragene
+Nachricht mit uebermittelt.
+Es hat keinen Sinn, ein und die gleiche Nachricht an mehrere Mailboxen
+forwarden zu lassen, lediglich der erste Eintrag gilt.
+
+Wurde die Nachricht bereits mit einem '@' Bezeichner eingespielt
+(z.B. S DF3AV @ DB0CL) so sind weitere Versuche, diese Nachricht
+erneut forwarden zu lassen, wirkungslos.
+
+FORWARD kann nur auf User-Nachrichten angewendet werden.
+
+Syntax: FORWARD CALL A-B @ ZIELMAILBOX
+
+z.B.
+	F DF3AV @ DB0CL         : traegt alle Nachrichten fuer DF3AV
+				  in die S&F - Liste ein
+	F DF3AV 1-3 @ DB0CL     : traegt die Nachrichten 1-3 fuer DF3AV
+				  in die S&F - Liste ein
+
+usw ...
+
+Eintraege in der S&F-Liste koennen mit der Option +E wieder geloescht werden.
+
+z.B.
+	F DF3AV @ DB0CL +E      : loescht alle Nachrichten an DF3AV
+				  aus der S&F - Liste
+	F DF3AV 1-3 @ DB0CL +E  : loescht die Nachrichten 1-3 an DF3AV
+				  aus der S&F - Liste.
+
+Die Eintraege in der S&F-Liste koennen auch angezeigt werden, dabei gilt
+das schon oben gesagte bezgl. der Zugriffbeschraenkung. ei der Anzeige
+wird die Option +L benutzt. Der @-Bezeichner ist wirkungslos und kann
+weggelassen werden.
+
+z.B.
+	F DF3AV +L              : listet alle Nachrichten an DF3AV
+				  aus der S&F - Liste
+	F DF3AV 1-3 +L          : listet die Nachrichten 1-3 an DF3AV
+				  aus der S&F - Liste
+
+###############################################################################
+
+Help List
+---------
+
+Mit dem Befehl 'List' erhaelt man naehere Informationen zu einer Gruppe von
+Nachrichten, ohne diese erst auslesen zu muessen.
+
+Auf den Befehl  'L DL1BHO <CR>'  erscheint z.B. folgende Liste:
+
+Nr Call   Datum    Zeit   Bytes  Titel
+
+ 1 DL8BBO 26.10.86 17:25    123  HALLO REINER
+ 2 DL8SS  27.10.86 08:55   1240  BESUCH
+ 3 DF3AV  27.10.86 12:33   1750  TESTFILE
+
+Anhand dieser Liste ist es dann leichter moeglich, gezielt mit z.B.
+'R DL1BHO 1' die Meldung Nr.1 zu lesen oder mit 'E DL1BHO 2' die Meldung Nr.2
+zu loeschen.
+
+LIST kann auch mit einem Argument benutzt werden, das funktioniert
+folgendermassen:
+
+L            : Zeigt alle Nachrichten an das eigene Call
+L DL1BHO     : Zeigt alle Nachrichten an DL1BHO
+L DL1BHO 4   : Zeigt Nachricht Nr.4 an DL1BHO
+L DL1BHO 4-  : Zeigt ab Nachricht Nr.4 alle MSG's an DL1BHO
+L DL1BHO -3  : Zeigt alle MSG's an DL1BHO bis einschl. Nr.3
+L DL1BHO 3-5 : Zeigt MSG's 3 bis 5 an DL1BHO
+
+###############################################################################
+
+Help Mods
+---------
+
+Die meisten Transceiver sind vom Hersteller fuer Amtor-ARQ-Betrieb nicht
+vorgesehen. Deshalb sind leichte Modifikationen an den Geraeten notwendig,
+die durch den Befehl  'Mods'  ausgelesen werden koennen.
+Der Befehl 'M <CR>' gibt eine Liste der verfuegbaren Modifikationen aus,
+der Befehl 'M TS930 <CR>' gibt z.B. die Modifikationen fuer den KENWOOD
+TS930
+
+###############################################################################
+
+HELP MYBBS
+----------
+
+Mit diesem Befehl kann man der Mailbox ein Rufzeichen mitteilen,
+an das Informationen automatisch geforwarded werden sollen.
+Meist gibt man hier die naechste erreichbare Mailbox ein.
+
+Syntax:
+	M <CR>   : das Call wird interaktiv angefordert
+		   und anschliessend gespeichert.
+
+	M DK0MAV : das Call DK0MAV wird sofort gespeichert.
+
+Werden Nachrichten unter dem eigenen Call abgelegt, so werden sie
+automatisch in die Store & Forward-Liste eingetragen und in der
+darauf folgenden Nacht an das per MYBBS gespeicherte Rufzeichen
+geforwarded. Das funktioniert jedoch nur, wenn das per MYBBS gespeicherte
+Rufzeichen ein Mailbox ist, die Store & Forward nach WA7MBL unterhaelt.
+(Das sind z.B. fast alle in DL vertretenen Mailboxen)
+
+Beispiel:
+
+OM Erwin wohnt in Kassel. Seine naechste erreichbare Mailbox, die
+Store & Forward unterstuetzt, ist DB0KG in Goettingen.
+
+OM Erwin ist jedoch jetzt bei DK0MAV eingeloggt. Gibt er dort nun den
+Befehl MYBBS DB0KG, so werden alle in DK0MAV an OM Erwin eingespielten
+Nachrichten automatisch an DB0KG geschickt, ohne das OM Erwin noch einen
+Finger krumm machen muss.
+
+OM Erwin kann natuerlich trotzdem weiterhin auch seine Nachrichten in DK0MAV
+lesen.
+
+Erst nach einmaliger Benutzung des MYBBS-Befehls wird die Aufforderung
+beim Login zur Benutzung dieses Befehls unterdrueckt, daher
+sollte man den Befehl auch benutzen, wenn die lokale Mailbox DK0MAV
+
+###############################################################################
+
+Help Name
+---------
+
+Mit diesem Kommando kann der eigene Name der Mailbox mitgeteilt
+werden.
+
+Erst nach einmaliger Benutzung des NAME-Befehls wird die Aufforderung
+beim Login zur Benutzung dieses Befehls unterdrueckt.
+
+Syntax:
+	N <CR>   : der Name wird interaktiv angefordert
+		   und anschliessend gespeichert.
+
+	N Erwin  : der Name Erwin wird sofort gespeichert.
+
+Die Laenge des eingegebenen Namens ist auf max. 15 Zeichen beschraenkt.
+
+###############################################################################
+
+Help Quit
+---------
+
+Der Befehl Quit dient dem Verbindungsabbruch. Zum schnelleren Verlassen der
+Box kann man auch einfach 'disconnecten'.
+
+###############################################################################
+
+Help Read
+---------
+
+Der Befehl 'Read' dient zum Auslesen von Nachrichten.
+Zusaetzlich kann ein Bereich angegeben werden.
+Die Nachrichten-Nummern erhaelt man mit dem Befehl 'List'.
+
+Beispiele:
+
+R                  : Auslesen aller Eintraege an das eigene Call
+R DF3AV            : Auslesen aller Eintraege fuer DF3AV
+R ALLE 3           : Auslesen der Eintrag Nr.3 fuer ALLE
+R DF3AV -3         : Auslesen der Eintraege 1 bis 3 fuer DF3AV
+R TNC2 4-          : Auslesen ab Eintrag Nr.4 bis zum FileEnde fuer TNC2
+R DF3AV 2-4        : Auslesen der Eintraege 2 bis 4 fuer DF3AV
+R DF3AV $ 1000     : Auslesen aller Eintraege an DF3AV, beginnend 1000 Bytes
+		     hinter dem Anfang des ersten Eintrages.
+R DF3AV 2-3 $ 1500 : Auslesen der Eintraege 2-3 an DF3AV, beginnend 1500 Bytes
+		     hinter dem Anfang des zweiten Eintrages.
+R DF3AV 2- $ 1700  : Auslesen aller Eintraege an DF3AV, beginnend 1700 Bytes
+		     hinter dem Anfang des zweiten Eintrages.
+
+Ist in einem Info-File mehr als ein Eintrag vorhanden, so
+genuegt es nicht, nur READ FILENAME (z.B. READ DLNEWS) einzugeben.
+Vielmehr muss jetzt die wirklich gewuenschte Nachricht naeher
+spezifiziert werden.
+
+###############################################################################
+
+HELP SPEAK
+----------
+
+Das Kommando SPEAK dient zum Umschalten der Mailbox in eine andere Sprache.
+
+SPEAK        ohne Argument oder mit falschem Argument gibt eine Liste der
+	     verfuegbaren Sprach-Kennzeichner aus.
+
+SPEAK (KEN)  KEN ist eine Sprachbezeichner und ist an die Prefix-Vergabe
+	     der einzelenen Laender angelehnt. (z.B. SPEAK DL)
+	     Dieser Kennzeichner ist maximal 3 Zeichen lang.
+
+Nach erfolgreichem Umschalten meldet sich die Mailbox in der neuen Sprache.
+
+###############################################################################
+
+Help BELL
+---------
+
+BELL klingelt nach dem Operator. Ist er nicht anwesend,
+so erscheint eine entsprechende Message.
+
+###############################################################################
+
+HELP TRANSFER
+-------------
+
+Der Befehl TRANSFER dient zum umkopieren von Nachrichten.
+
+Syntax:  Transfer Call Nr > ZielCall
+
+also z.B. Transfer DF3AV 1 > DL1BHO
+
+Die Eingabe des '>' ist unbedingt erforderlich!
+
+TRANSFER ist nur dann anwendbar, wenn Quelle und Ziel Files gleichen
+Typs sind, d.h. man kann aus User-Nachrichten keine Infos machen und
+umgekehrt, es ist also nur moeglich, Infos auf Infos und User-Files auf
+User-Files zu transferieren.
+
+Beim Transfer von Infos wird die Quelle geloescht, nicht jedoch beim
+Transfer von User-Files.
+
+Damit ist es moeglich geworden, mehreren Benutzern ein und die
+selbe Nachricht zu schreiben, ohne sie erneut einspielen zu muessen.
+Soll die Nachricht an einige der Benutzer dann auch noch geforwarded
+werden, so ist dafuer der FORWARD-Befehl zu benutzen. (HELP FORWARD)
+
+###############################################################################
+
+Help Usage
+----------
+
+Der Befehl 'Usage' dient zur Ausgabe eines Logbuch-Auszuges
+oder zur Ausgabe von benutzerinformationen.
+
+Bei Eingabe von 'U' wird das Packet-Log ausgegeben, bei Eingabe
+von 'U A' das Amtor-Log.
+
+Es werden lediglich die letzten Verbindungen ausgegeben.
+
+Packet Log:
+Die Zahl nach 'UTC' gibt den Kanal an, auf dem die Verbindung
+stattfand, die darauf folgende Zahl zeigt die Anzanhl der aus
+der Box gelesenen Zeichen.
+
+Amtorlog:
+Der letzte Eintrag im Amtor-Log ist die Uebertragungsqualitaet.
+Fragezeichen anstelle der Endzeit deuten an, dass diese Verbindung
+noch andauert.
+
+Gibt man als Parameter ein gueltiges Rufzeichen ein (z.B. U DL1BHO)
+so wird nach diesem Rufzeichen in der Liste der bisher connecteten
+Stationen gesucht. Wird es darin gefunden, werden die unter diesem
+Rufzeichen gespeicherten Informationen ausgegeben. Ansonsten erfolgt
+eine entsprechende Nachricht ueber die Nichtauffindung des Calls.
+
+###############################################################################
+
+Help-Info:
+----------
+
+Folgende Befehle sind moeglich:
+Help, Dir, Read, Send, Check, List, Erase, Usage, Mybbs, Name, Quit.
+
+Es reicht aus, nur den ersten Buchstaben eines Befehls einzugeben.
+
+Help     : Ausgabe dieser Hilfe-Infos
+	   Mit zus. Angabe eines Befehls wird dieser genauer erklaert
+	   z.B. 'H R'
+
+Dir      : Ausgabe einer Liste der in der Mailbox vorhandenen Meldungen
+
+Read     : Lesen von Nachrichten. Eine Bereichsangabe ist moeglich
+	   z.B. 'R DF3AV 2-5'
+
+Send     : Senden und Abspeichern einer Nachricht, beenden mit * * * END
+	   z.B. 'S DF3AV Betreff'.
+
+Check    : Zeigt die letzten Neueintraege in die Info-Files
+	   z.B. 'C 10'
+
+List     : Listen von Nachrichten mit Datum, Absender und Laenge der
+	   Nachricht  z.B. 'L DF3AV 3-5'
+
+Erase    : Nachrichten loeschen. Es koennen nur die Nachrichten geloescht
+	   werden, die man selbst geschrieben hat oder die an das eigene
+	   Call gerichtet sind
+	   z.B. 'E DF3AV 7-9'
+
+Usage    : Zeigt einen Logbuch-Auszug
+
+Mybbs    : Erfassung eines BBS fuer automatisches S&F (HELP MYBBS)
+
+Name     : Eingabe des eigenen Namens, z.B. Name Erwin
+
+Transfer : Transferieren von Nachrichten, z.B. T DF3AV 1 > DL1BHO
+
+Forward  : Forwarden von Nachrichten, z.B. F DF3AV 1 @ DB0CL
+
+Bell     : Ruft den Sysop
+
+Quit     : Verbindungsabbruch. Man kann auch einfach Disconnecten.
+
+Genauere Informationen ueber einzelne Befehle erhaelt man mit
+der Eingabe von HELP und dem Befehlsnamen, also z.B.: HELP CHECK
+
+Die Abarbeitung eines Befehls kann zu  j e d e r  Zeit durch Eingabe eines
+neuen Befehls abgebrochen werden!!! Der Abbruch verzoegert sich jedoch u.U.
+durch die Zwischenspeicherung in den NET/ROM-Knoten.
+

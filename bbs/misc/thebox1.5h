@@ -1,0 +1,317 @@
+Anbei ist die Verion 1.5h (Beta-Test) auf der Diskette.
+
+Sie ist eine Vorstufe zur Version 1.6 und wird nicht offiziell
+verteilt! Sie kann aber ohne Bedenken eingesetzt werden, eventuell
+tauchen noch kleine Ungereimtheiten auf, fÅr deren Meldung an
+mich ich sehr dankbar bin.
+
+Folgendes wurde verÑndert:
+
+Beim Check-Kommando kann man nun sagen: 'C < D',
+dabei werden alle Nachrichten angezeigt, die von Verfassern geschrieben
+wurden, deren Rufzeichen mit einem D anfÑngt.
+Es sind auch Konstrukte denkbar wie 'C < DF1' usw.
+
+Die Datei CONFIG.BOX wurde erweitert.
+Hier das Beispiel von DK0MAV:
+
+1
+1
+1
+1
+1
+1
+1
+1
+2
+1
+1
+1
+1
+1
+1
+1
+1
+1
+D:\USER\
+D:\INFO\
+C:\MB\MBSYS\
+ALLE
+8
+20
+9600
+UTC        Time-ID of the computer-clock (three characters)
+z          Time-ID for the S&F-Headers (one character)
+500        remaining Disk-Space, before DISK-FULL occurs
+2000       remaining BULLIDs after WASHUP has done it's work
+DF3AV-15   Sysop-Call (nine charcters)
+0          Users files only readable by the user? (0 = OFF, 1 = ON)
+1          Backup during Erase (0 = OFF, 1 = ON)
+0          Inhibit Header-Insertation during S&F (0 = OFF, 1 = ON)
+1          Lifetime-Flag (0=LT as it come, 1=LT g.e. Lifetime.box. 2=LT Lifetime.box)
+1          Auto-Boot after Programm-Termination
+0          difference between UTC and local in minutes
+1          active MYBBS-Forwarding (0 = Off, 1 = On)
+121        Standard Attribut
+120        Attribut der Anzeige der connecteten Stationen
+003        Attribut fuer die Header im Monitor
+000        not used
+000        not used
+000        not used
+000        not used
+000        not used
+
+Das Datum-Uhrzeit-Format in den S&F Headern ist den internationalen
+Gepflogenheiten angepasst worden. Weiterhin kann die Bezeichnung der Zeit
+(UTC = z, Local = l) eingesetzt werden. (Time-ID for S&F Headers)
+
+Die Zeilen wurden jetzt mit Kommentar versehen.
+Dazu ein paar kleine Anmerkungen, der Rest sollte selbsterklÑrend sein:
+
+Das Sysop-Call muss nun angegeben werden. Dieses findet im Moment nur
+dann einen Niederschlag, wenn an der Console der Terminalmodus eingeschaltet
+wird, auf dem Kanal niemand connected ist und ein TNC2 verwendet wird.
+Sodann wird dieses Rufzeichen auf diesem Kanal eingesetzt, der Sysop kann also
+von der Box aus unter seinem eigenen Rufzeichen auch QSO's fahren.
+Nach dem Disconnect oder einer BUSY-Meldung ist hier wieder das Kanal
+vom Kanal 0 des jeweiligen TNC eingesetzt worden.
+
+User Nachrichten kînnen nun gegen Lesen fremder Benutzer geschÅtzt werden.
+Dieses ist in DL nicht mit der DV-AFuG vereinbar, wird jedoch im Ausland oft
+eingesetzt, daher ist es abschaltbar gemacht worden.
+Diese Mîglichkeit wurde daher kaum ausgetestet, eventuelle Fehlermeldungen
+bitte an mich!
+
+DieBox kann nun auch ein Backup von gelîschten Files machen.
+Die gelîschten Dateien des aktuellen Tages findet man in der Rubrik 'B',
+die des vorhergehenden Tages findet man in der Rubrik 'C'.
+Aus diesen Rubriken heraus kann Åberall hin zurÅck-transferiert werden.
+LÑnger als einen kompletten Tag plus der aktuelle Tag werden die gelîschten
+Nachrichten nicht gespeichert.
+Das Backup beim Lîschen kann in CONFIG.BOX abgeschaltet werden.
+
+FÅr reine S&F-Boxen kann man nun auf das EinfÅgen des eigenen Nachrichten-
+Headers verzichten.
+
+Die Bedeutung der Lifetime-Eingabe kann fÅr die eigene Mailbox entscheidend
+beeinflusst werden:
+Gibt man in der entsprechenden Zeile in CONFIG.BOX eine 0 ein, so wird
+die Eingabe einer Lifetime behandelt, wie bisher.
+Eine 1 bedeutet, da· die in LIFETIME.BOX vorgegebene Maximal-Lifetime
+nicht Åberschritten werden kann.
+Eine 2 bedeutet, da· die in LIFETIME.BOX vorgegebene Maximal-Lifetime
+in jedem Falle verwendet wird.
+Achtung: Bei S&F wird IMMER die eingebene Lifetime geforwarded, d.h.
+jeder Sysop entscheidet hier nur Åber die Lifetime in der EIGENEN Mailbox,
+nicht Åber die Lifetime, die der Nachricht mitgegeben wurde.
+
+Es ist nunmehr mîglich, das DieBox bei AusfÑllen durch Resynchronisation
+erneut den kompletten Rechner bootet. Damit DieBox dann auch tatsÑchlich sich
+selbst wieder hochfÑhrt, mÅssen die entsprechenden Kommandos in der Datei
+AUTOEXEC.BAT gegeben werden.
+
+Alle Eingaben unter MYBBS werden nunmehr geforwarded.
+Dazu finden EintrÑge in die Datei 'M' statt in deren Titel das MYBBS und
+eine Zeitinformation enthalten ist. Diese Zeitinformation wird intern als
+UTC vorausgesetzt und dient zur VerhÅtung von Schleifenbildung durch
+die Eingabe verschiedener MYBBS. Sollte die Uhr im Mailboxrechner nicht
+in UTC laufen, so muss der Unterschied zwischen der Zeit im Rechner und
+der UTC Zeit in Minuten in CONFIG.BOX angegeben werden.
+Bezieht sich die Local-Time im Rechner auf einen Standort îstlich von
+Greenwich, so muss diese Differenz mit einem Minuszeichen versehen werden,
+ansonsten mu· diese Differenz positiv eingegeben werden.
+Will ein Benutzer in mehreren Mailboxen MYBBSs hinterlegen, so ist bei
+allen Mailboxen, die an dem Forwarding von MYBBS-Informationen teil-
+nehmen immer nur die zeitlich zuletzt eingegebene Mailbox das MYBBS des
+betreffenden Benutzers.
+Es reicht nunmehr fÅr den Benutzer aus, einmal im Netz sein MYBBS einzugeben
+oder zu Ñndern, es wird automatisch an alle ihm bekannten oder unbekannten
+Mailboxen vom Typ DieBox weitergeleitet und ausgewertet, wenn der Sysop
+einer jeden Mailbox in CONFIG.BOX die Teilnahme an diesem System
+freigegeben hat. Tut er dies nicht, so wird seine Mailbox keine auf ihrem
+Rechner gemachten MYBBS-Informationen aussenden und auch keine von anderen
+eingehenden Mailboxinformationen fÅr sich selbst auswerten.
+Die eingehenden MYBBS-Informationen werden jedoch weiterhin geforwarded.
+Wichtig fuer das Funktionieren des Systems ist, da· alle Mailboxsysops
+den Bezeichner THEBOX in die *.SFW Files ihrer Nachbarboxen eintragen denn
+die MYBBS Informationen werden an M @ THEBOX versendet!
+Die EintrÑge fÅr die ein Byte langen Filenamen werden nun auch in SHOW.LST
+eingetragen und sind somit fÅr den privilegierten Benutzer sichtbar. Weiterhin
+erhalten sie dabei eine Lifetime!
+Wurde ein Eintrag unter 'M' an alle Mailboxen geforwarded, so wird er
+sofort danach gelîscht. Konnte es innerhalb der Lifetime fÅr 'M' nicht
+geschafft werden, der Eintrag an alle Mailboxen zu forwarden, so
+fliegt dieser Eintrag per Lifetime raus.
+
+Das zunÑchst zu CONFIG.BOX
+
+Zwei neue Befehle wurden den Sysops zur VerfÅgung gestellt:
+
+RESET:
+      Loggt sofort ALLE benutzer aus und bootet den Rechner.
+      Damit DieBox sich erneut selbst installiert, ist unbedingt
+      die dafÅr notwendige Kommandofolge in der Datei AUTOEXEC.BAT
+      einzugeben.
+
+SENDBIN: (Kurz: SENDB)
+      Mit diesem Befehl ist es mîglich, BinÑrfiles in der Box abzulegen.
+      Dabei wird das Format verwendet, das Turbo-Packet im AutobinÑr-Modus
+      verwendet, z.B.
+
+      Remote-Sysop: SENDB BOX.EXE
+	    DieBox: Bitte den Titel eingeben fÅr BOX.EXE
+
+      (Remote-Sysop startet jetzt bei Turbo-Packet mit CTRL-S den
+       Autobinaer-Modus fÅr das zu Åbertragende File, der Rest geht
+       vollautomatisch)
+
+      Turbo-Packet: #BIN#20123
+	    DieBox: #OK#
+
+      (Jetzt findet die öbertragung statt, nach 20123 Åbertragenen Zeichen
+       meldet sich DieBox wieder:)
+
+	    DieBox: #OK#32145
+		    SYSOP-CALL de MailboxCall>
+
+      Die Zahl nach dem zweiten #OK# von DieBox ist eine Checksummr.
+      Turbo-Packet in einer spÑteren Version generiert ebenfalls eine Check-
+      summe, die beiden sollten tunlichst uebereinstimmen.
+
+      Bei der öbertragung werden die Daten in einer temporÑren Datei abgelegt.
+      Erst nach Ausgabe der Checksumme durch DieBox wird die temporÑre Datei
+      auf die Datei mit dem gewÅnschten Dateinamen kopiert.
+
+Durch diese beiden Befehle ist nun das automatische Hochladen von neuer
+Software zu der laufenden Mailbox mîglich geworden, indem man per SENDBIN
+die neue Datei BOX.EXE ÅbertrÑgt und anschliessend einen RESET ausfÅhrt.
+
+Wichtig ist dabei jedoch die Konfiguration des Rechners. Wer in dieser Sache
+ungeÅbt ist, mîge das Hochladen zu einem Termin vornehmen, zu dem er ohne
+weiteres an die Box kann, falls DieBox nach dem Reset nicht richtig hochkommt.
+
+Bisher hat es nur in einem Fall beim RESET Probleme gegeben, mîglicherweise
+lag das jedoch an einem Fehler eines TNCs. Auch ein zweimaliges Durchstarten
+nach RESET ist beobachtet worden, dies lag an zufÑllig an den TNC gesendeten
+Zeichen beim RESET. Treten bei jemandem beim RESET Probleme auf, bitte ich
+um RÅckmeldung mit Angabe der verwendeten Hardware sowie des BIOS des Rechners.
+Da gibts dermassen viele Unterschiede, ich will jedoch versuchen, in diesem
+Punkte auch mîglichst vielen gerecht zu werden.
+
+Beim Starten von DieBox wurde bisher immer der Y-Parameter des jeweiligen
+TNCs auf die Anzahl der installierten KanÑle pro TNC gesetzt.
+DIESE IST JETZT NICHT MEHR DER FALL!
+Dagen kann nun einem jeden TNC beim Start der Box und beim Herunterfahren
+der Box eine Reihe von Kommandos gegeben werden.
+Diese Kommandos stehen in den Dateien START?.BOX und STOP?.BOX.
+Anstelle des ? ist eine Zahl einzusetzen in AbhÑngigkeit der Installation
+in BOXINIT.TXT. So sind START1.BOX und STOP1.BOX fÅr den ersten in BOXINIT.TXT
+installierten TNC zustÑndig. START2:BOX und STOP2.BOX analog dazu fÅr den
+zweiten usw....
+Jede Zeile in diesen Dateien wird als Kommando an den TNC gesendet!
+Diese Dateien mÅssen im gleicher Verzeichnis stehen wie BOX.EXE selbst.
+
+Die Store & Forward (S&F) Verwaltung innerhalb der Box wurde vollkommen um-
+strukturiert und dabei erheblich verschnellert.
+Dabei hat jedoch LOG.SFW eine neue Record-Struktur verpasst bekommen.
+Bei der Installation von DieBox von vor Version 1.5e ist unbedingt LOG.SFW
+auf 0 Bytes zu bringen.
+Man sollte eventuell mit einem Texteditor alle EintrÑge lîschen und sie
+dann mit dem FORWARD-Befehl der neuen Software neu eintragen.
+FÅr jeden Eintrag der zu forwarden ist, gibts nun auch nur noch einen Eintrag
+in LOG.SFW.
+Mit einer weiteren Umgestaltung von LOG.SFW muss gerechnet werden, da das
+hierarchische Forwarding eine weitere énderung der Record-Struktur bewirken
+wird.
+
+Ist ein Benutzer eingeloggt und schreibt eine Nachricht, die geforwarded werden
+muss, so wird diese Nachricht solange NICHT geforwarded, wie dieser Benutzer
+noch eingeloggt ist. Dadurch wird dem Benutzer nicht die Mîglichkeit genommen
+seine Nachricht nocheinmal zu lîschen, ehe sie per S&F bereits abgeschickt
+wurde.
+
+Die AusfÅhrbarkeit von DOS-KOMMANDOS wurde erweitert. Bisher konnte man
+automatisch nur eine Datei DOS.EXE oder DOS.COM ausfÅhren lassen.
+Nun geht das mit jeder Datei ??????.EXE oder ??????.COM, sie muss allerdings
+noch in den Speicher passen! Der Dateiname vor dem .EXE oder .COM darf
+allerdings nicht lÑnger als 6 Zeichen sein, kein gÅltiges Rufzeichen
+darstellen und nicht gerade KILL, WASHUP, LOCK, UNLOCK, ALL oder NULL heissen.
+
+DieBox unterstÅtzt nun schon hierarchisches S&F!
+
+Das EXPORT-Kommando ist komplett umstrukturiert worden.
+War es vorher ein Protokollmedium, so ist es jetzt zu einem Befehl geworden,
+der genau spezifizierte Parameter benîtigt.
+Mit EXPORT exportierte Dateien kînnen mit Import sofort wieder Importiert
+werden.
+
+Syntax: EXport Filename (Von-Bis) Zielfile
+z.B.    EX ALLE 30-40 ALLE.TXT
+
+Obiges Beispiel exportiert die EintrÑge ALLE 30-40 in die Datei ALLE.TXT
+in dem Verzeichnis wo BOX.EXE steht.
+
+Achtung: Ist beim IMPORT die BULLID schon vorhanden, wird der Eintrag
+zwar importiert, jedoch NICHT abgespeichert!
+
+Bei S&F mit NICHT DieBox Mailboxen wird als Sendbefehl bei Infos nunmehr
+SB, bei Usernachrichten SP verwendet. Weiterhin wird der Dateiname
+bei diesen Mailboxen auf 6 Zeichen verkÅrzt. (leider!)
+
+Nachrichtennamen, die genau sechs Zeichen lang sind, werden automatisch
+expandiert.
+Dabei wird nach einem Namen grî·er als sechs Zeichen LÑnge gesucht,
+dessen erste 6 Zeichen identisch mit dem 6 Zeichen lange Filenamen
+sind. Wird ein solcher Name gefunden, wird die Nachricht unter diesem
+neuen Namen abgelegt.
+
+Die Datei SF-LISTE.SFW hat sich geÑndert.
+Die EintrÑge fÅr die Stundenateile sind nun nicht mehr durch zwei
+Zahlen bestimmt, sondern durch die Position bestimmter Buchstaben
+im mittleren Feld dieser Datei.
+
+Das mittlere Feld bestand bisher aus 48 'X', die jeweils paarweise
+durch Zahlen, die die jeweilige Stunde des Forwardings darstellten,
+ersetzt wurden.
+Nunmehr ist das mittlere Feld auf 24 Spalten zusammengeschrumpft.
+Die Position des jeweiligen Zeichens vom linken Rand des Feldes bestimmt
+nunmehr die Stunde des Forwardings. Dabei beginnt die ZÑhlung bei 0, d.h
+steht in der ersten Spalte des mittleren Feldes ein bestimmtes Zeichen
+so beginnt zur Stunde Null und dem passenden Minuteneintrag Store-
+und Forward zu der angegeben Station.
+Es gibt drei verschiedene Zeichen mit unterschiedlichen Bedeutungen fÅr
+das Forwarding. Das 'X' bedeutet wie bisher, das kein S&F zu dieser
+Zeit angestossen wird.
+Wird als S&F Zeichen in SF-LISTE.SFW ein 'A' angegeben, werden wie bisher
+alle Nachrichten geforwarded und auch Reverse-Forwarding angestossen.
+Wird dort ein 'U' eingesetzt, so werden lediglich persînliche Nachrichten
+geforwarded und kein Reverse-Forwarding angestossen.
+Ein 'P' bedeutet, da· in jedem Falle zu dem angegebenen Zeitpunkt die
+gewÅnschte Station angerufen wird, egal, ob Nachrichten fÅr diese
+Mailbox vorliegen oder nicht.
+Auszugsweise hier ein paar Zeilen aus SF-LISTE.SFW:
+
+DK0MAV AAAAAAAAAAAAAAAAAAAAAAAA 001020304050
+DB0GV  PAAAAAXXXXXXXXXXXXXAAAAA 011121314151
+DB0KG  AAAAAAAAAAAAAAUUUUUUAAAA 011222324252
+
+In der ersten Zeile wird zu DK0MAV rund um die Uhr bei Bedarf
+S&F gemacht (wie bisher)
+In der zweiten Zeile wird DB0GV in der Stunde '00' sechs mal
+in zehminÅtigem Abstand angerufen, egal, ob Nachrichten vorliegen oder
+nicht.
+Danach folgen ein paar Stunden S&F wie bisher, sodann ein paar Stunden
+Pause. Gegend Abend wird das bisherige S&F wieder mit DB0GV aufgenommen.
+In der dritten Zeile werden in den Abendstunden nur Benutzernachrichten
+zu DB0KG geschickt, in der restlichen Zeit wie bisher alle Nachrichten.
+
+So, das wars, BOX.EXE ist bei all diesen Erweiterungen rund 20 K kleiner
+geworden und belegt auch nicht mehr soviel Hauptspeicher bei gleicher
+Kanalanzahl.
+Das Ganze ist mit einer mittleren Beschleunigung des Programmablaufes um
+ca 20-30% gegenÅber der Version 1.5c einhergegangen.
+
+Ich wÅnsche euch allen viel freude mit der Box.
+
+73s Reinhard, DF3AV
+

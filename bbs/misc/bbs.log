@@ -1,0 +1,84 @@
+[MBL-$]
+>
+check 10
+
+
+  Nr Call     File     Nr.  Datum   @MBX   Bytes  Titel
+
+   1 DG8FZ  > TAUCHER....3 14.06.88 ALLE    1178  TAUCHENDE FUNKAMATEURE
+   2 DG8FZ  > TAUCHER....2 14.06.88 DB0AAA  1092  TAUCHENDE FUNKAMATEURE
+   3 DG8FZ  > TAUCHER....1 14.06.88 DB0AAA   744  POST AUS DEM HOHEN NORDEN:
+   4 EA3OG  > ALL.......41 14.06.88 EU      1296  NEED.. INFO ON TCM 3105
+   5 OZ5BBS > BBS.......28 14.06.88 EU      5385  OZ-MAP.688 UPDATED 12.06.88
+   6 DG5YAL > RTTY.......2 14.06.88 ALLE    1061  6802 BZW. AMTOR-10A-ERFAHRUN
+   7 G8CTX  > TNC2.......8 14.06.88 EU      2645  TINY-2 PROBLEMS UPDATE
+   8 DD7EZ  > ALLE......69 14.06.88 ALLE    2443  VORTRAG UEBER KONTESTTECHNIK
+   9 DG9YAG > ALLE......68 14.06.88 ALLE     622  PR-TREFFEN AUF DER HAM-RADIO
+  10 DB0CZ  > RPW5YI.....1 14.06.88 ALL    10387  W5YI REPORT 10/11 (ENGL.)
+
+>
+dir
+
+Info-Files:
+22       23CM     64ER     68000    AFU-TE   AKTUEL   ALL      ALL-DA   
+ALLE     AMIGA    AMSAT    AMTOR    ANTENN   APPLE    ARRL     AT-130   
+ATARI    BAKEN    BBS      BIETE    C-128    C-78     C120     C128     
+C5200    C64      CONTES   CPC      CPM      CRC      DARC     DG7GFBOX 
+DIEBST   DIGI     DIGICO   DIGICOM  DIPLOM   DLR      DXNEWS   ERWEITER 
+FAX      FFR      FIELDDAY FIRAC    FLOHMA   FO-12    FUJI     FUNK     
+GEDANK   GESTOH   HILFE    HUMOR    IARU     IBM      IC720    ICOMS    
+IPARC    JUNI     KAM      KENWOOD  KEPLER   KONTESTE KW-BAKEN LAPM     
+LINK     LINKTRX  MC6800   MEINUN   MEINUNG  MESS     MICROT   MURPHY   
+NBPRG    NEED     NETROM   NETZE    NONSEN   NORDLI   OSCAR    PCT      
+PK1      PK232    PR-KW    PR-YU    PRGRUP   PRIMUS   PRINY2   QRV      
+RADIO-TV RELAIS   RMNC     ROEHRE   RPL      RPW5YI   RTTY     SAT      
+SAT-TV   SEND     SINCLAIR SOFTWA   SOLAR    SPECTR   SUCHE    SYSOP    
+TAUCHER  TAUSCH   TCPIP    TERMIN   TERMINE  THENET   TNC2     TNC220   
+TOUS     UOSAT    V24      VERSCH   VFDB     VHFDX    VIREN    WAMPES   
+
+
+>
+list taucher 1-3
+
+Nr Call   Datum    Zeit   Bytes  Titel
+
+  1 DG8FZ  14.06.88 17:11    744  POST AUS DEM HOHEN NORDEN:
+  2 DG8FZ  14.06.88 17:17   1092  TAUCHENDE FUNKAMATEURE
+  3 DG8FZ  14.06.88 23:13   1178  TAUCHENDE FUNKAMATEURE
+
+>
+mybbs
+
+Bitte das Rufzeichen Ihrer lokalen Mailbox eingeben
+>> db0sao
+
+Ihre lokale Mailbox ist als DB0SAO gespeichert
+alle Nachrichten an Sie werden dorthin automatisch geforwarded
+
+>
+read taucher 1
+
+
+PACKET-ACCESS  FROM DG8FZ  14.06.88 17:11 MEZ    744 Bytes
+POST AUS DEM HOHEN NORDEN:
+*** Bulletin-ID: 146801DB0AAA ***
+
+
+
+hallo leute: ich habe heute folgende mail bekommen:
+R:130688/2335  @ DB0GV [RMPRG Maintal JO40KD OP:DF5FF (438.025 MHz)]
+R:130688/2300  @DK0MAV [NORD><LINK PEINE, JO52CI]
+R:120688/2201  @ DB0OQ [Kiel, JO54AH / TheBox / F:438.025 ]
+
+Hallo Karl !
+Ja... gibt es hier in Kiel. Da waeren DL9lAP Juergen (Tauchgruppe Kiel) DG5LN (k
+ein Verein taucht selten) und meine Wenigkeit DF6LT Torsten (DUC Kiel). Wir 3 ke
+nnen uns auch und unternehmen ab und zu mal was. So ich hoffe das landet alles h
+eil bei DB0GV muss ja eigentlich wenn S+F was taucht hi.
+73 de Torsten  (DF6LT @ DB0OQ)
+
+"
+55 73 de dg8fz
+
+
+>

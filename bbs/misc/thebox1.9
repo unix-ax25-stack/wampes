@@ -1,0 +1,103 @@
+From dk5sg!db0sao!db0gv!db0sif!db0eam!dk0mav!df8ay Tue Nov 17 07:13:40 1992
+From: df8ay@dk0mav.ampr.org
+Date: Tue, 17 Nov 92 05:44:40 GMT
+Newsgroups: ampr.bbs.diebox
+Subject: 1.9:Neu fuer User
+Message-ID: <16B215DK0MAV@bbs.net>
+Path: dk5sg!db0sao!db0gv!db0sif!db0eam!dk0mav!df8ay
+Distribution: alle
+Bulletin-ID: <16B215DK0MAV>
+
+Moin moin,
+
+neues fuer User in der aktuellen Boxversion 1.9:
+(Verteilt auf/ab der INTERRADIO ï92)
+
+- der Forward-Befehl ist nun auch fuer User auf Info-Files verfuegbar.
+  Wird nun mit dem Forward-Befehl die Destination (das Ziel) eines
+  Files veraendert, wird das nun auch boxintern aktualisiert, wenn es
+  sich um eine allgemeine Destination handelt und das File nur lokal
+  eingespielt war.
+
+- Infofiles koennen nun auch nach Userfiles transferiert werden,
+  das Infofile bleibt dabei erhalten.
+
+- User duerfen nun kein Transfer mehr innerhalb derselben Rubrik
+  durchfuehren. Eine entsprechende Fehlermeldung wird ausgegeben.
+
+- bei Transfer ohne Stichwortangabe duerfen maximal 50, bei Erase
+  maximal 200 Files angegeben werden.
+
+- neuer Befehl MSG <Call> Text
+  bzw.         MSG <Channel> Text
+
+  MSG kann mit M abgekuerzt werden, fuer den MYBBS-Befehl muss mindestens
+  MY eingegeben werden.
+
+  dient zum  Uebermittlung von einzeiligen Nachrichten an einen eingeloggten
+  User. In der Ausgabe wird der Kanal, auf dem User eingeloggt ist, in Klammern
+  mit angegeben.
+  Sollte der User gerade mit Filetransfer busy sein, wird die Nachricht
+  zwischengespeichert und ans Ende angefuegt.
+
+  Beispiele:
+
+  Eingabe:                     Ausgabe:
+  MSG OE9HLH Hallo Harald      Msg de DL1MCX (4): Hallo Harald
+  MSG 12 Hallo Harald          Msg de DL1MCX (4): Hallo Harald
+
+- BID-orientierte Befehle 
+  Wuenscht man beim Check-Befehl die Angabe der Bulletin-ID anstelle des
+  Datums, kann man das durch Einfuegen von $ erreichen, z.B. c $, c 30 $,
+  c $ < DL1MCX, c 1-500 $.
+  Mit Hilfe dieses Befehls ist es auch moeglich, nach Bulletin-IDs zu suchen,
+  z.B. c 100 $ < OE9XPI sucht die letzten 100 Files die OE9XPI enthalten,
+  auch in der BID.
+
+  Ein Lesen, Transferieren, Loeschen und einer Info ist ebenfalls
+  mit Hilfe der BID moeglich.
+  Beispiel: E $21345492OE9XPI
+            T $34043492OE9XPI > suche
+
+- Usage-Befehl erweitert:
+  Mit U U koennen nur die eingeloggten USER, mit U M nur die
+  Mailboxen ausgegeben werden.
+
+- D I (DIR INFO) bedeutet nun, dass anstelle der Lifetime die Anzahl der
+  Files in den jeweiligen Rubriken ausgegeben wird.
+
+- Auslesen von Files ab bestimmten Bytecount:
+  der Offset, ab dem das File ausgegeben werden soll, muss nun mit
+  "&" angegeben werden (frueher $), z.B. "R IBM 472 &5000".
+
+- Auslesen von neuen Files mit Stichwortsuche:
+
+  R Rubrik + < Stichwort
+  L Rubrik + < Stichwort
+
+  liest bzw. listet die Files seit dem letzten Login unter Beruecksichtigung
+  des Stichwortes.
+
+- UNERASE ist wieder verfuegbar. Versehentlich geloeschte Mails koennen
+  selbst wieder hergestellt werden. UNERASE transferiert alle Files aus
+  dem Loesch-Pool in das eigene Userverzeichnis zurueck.
+  Dies funktioniert jedoch nur!!!!, solange man sich nicht ausgeloggt hat.
+
+- Automatisches Mitprotokollieren beim Lesen der User - Mail.
+  Werden Usermails gelesen, wird dies am Ende des Textes mit
+  Call, Datum und Uhrzeit vermerkt.
+
+- neuer Befehl FIND <Boxcall>
+  Beispiel:
+  (Fi)nd DB0EAM
+  Ausgabe:
+
+  Call       : DB0EAM
+  Path       : DB0EAM.DEU.EU
+  Quality:   1 via DB0EAM
+  Quality:  25 via Y71G
+  Quality:  15 via DB0AGM
+
+73 Lutz DF8AY @ DK0MAV
+
+

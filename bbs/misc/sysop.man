@@ -1,0 +1,951 @@
+verwiesen. Wer Lust hat, einmal eine ausfuehrliche Anleitung zu schreiben,
+moege das tun, ich bin auch dran interessiert.
+
+DIE BOX ist vollkommen von aussen konfigurierbar.
+
+Grundsaetzlich wird zwischen drei Bereichen unterschieden, die DIE BOX ver-
+waltet:
+
+ Der BOOT-Bereich
+ Der SYSTEM-Bereich
+ Der USER-Bereich
+ Der INFO-Bereich
+
+
+Jeder Bereich entspricht einem Unterverzeichnis auf einer MS-DOS-Platte.
+(MS-DOS-Platte = Diskette oder Hard-Disk)
+
+Dabei koennen BOOT- und SYSTEM-Bereich zusammengelegt werden,
+USER und INFO-Bereich muessen getrennt bleiben.
+
+
+
+1. Der BOOT-Bereich:
+--------------------
+
+In diesem Unterverzeichnis muessen mindestens folgende Dateien vorhanden
+sein:
+
+ BOX.EXE               das Mailboxprogramm selbst
+ BOX.MSK               Bildschirm-Maske beim Programmstart
+ BOXINIT.TXT           Konfigurationsfile fuer die einzelnen TNCs
+ BOX.MSG               Konfigurationsfile fuer die Texte in der Box
+ SF-LISTE.SFW          File fuer S&F
+ PWLIST.TXT            File mit der Password-Tabelle
+
+Alle diese Files werden beim Programmstart auf dem Unterverzeichnis er-
+wartet, von dem aus DIE BOX gestartet wird. Im weiteren Verlauf des Pro-
+grammes wird dieses Unterverzeichnis nicht mehr angesprochen.
+(Ausnahme: Bei Betaetigung der Taste CTRL-U trifft dies nicht zu)
+
+
+
+1.1 BOX.EXE
+
+    ist das Codefile der Mailbox. Aufruf: BOX
+
+    Vor dem Programmstart muessen die TNCs eingeschaltet worden sein.
+    DIE BOX leert anschliessend alle Puffer der seriellen Schnittstelle(n)
+    und schaltet die TNCs um in den HOST-MODE.
+
+    Das Programm wird durch Eingabe von ALT-X wieder abgebrochen.
+    In jedem Falle sollte der Programmaustritt so gestaltet werden, da die
+    TNCs dabei wieder in den Terminal-Modus geschaltet werden.
+    Zusaetzlich wird bei jedem TNC ein Y0 ausgeloest, sowie der Monitor
+    abgeschaltet. Bei erneutem Start von DIE BOX bleibt der Monitor abge-
+    schaltet.
+
+    Wird DIE BOX ordnungsgemaess verlassen, so kann sie ohne Reset an den
+    TNCs neu gestartet werden, ansonsten sind die TNCs zunaechst zu resetten.
+
+    Der Bildschirmaufbau der Box ist dreigeteilt:
+
+    Oben : Vorschreiben und Systemausgaben
+    Mitte: Empfangen und Boxbetrieb
+    Unten: Kanal-Monitoring
+
+    In der obersten Zeile ist die Anzahl der an den TNC gesendeten
+    Frames angegeben (SF) die Anzahl der im TNC-Puffer vorgehalteten
+    Frames (TF) und die Anzahl der Versuche, die im TNC-Puffer
+    befindlichen Frames auszusenden (TR).
+
+    Es koennen alle TNCs zum Monitoren des Kanals herangezogen werden,
+    es ist nur die Frage, inwieweit das sinnvoll ist.
+    Beim Monitoring wird jedem Header in eckigen Klammern eine Zahl
+    vorangestellt, die die Schnittstelle bezeichnet, von der dieses
+    Frame gelesen wurde.
+
+    Die einzelnen Kanaele sind mittels der Funktionstasten F1-F8 sowie
+    F10 fuer den Monitorkanal umschaltbar.
+
+    Mit SHIFT-F9 wird der Drucker, mit CTRL-F9 die Datei PROTO.TXT im
+    SYSTEM-Bereich als Protokoll-Medium dazu geschaltet. Mit gleicher
+    Taste wird das Protokollmedium wieder abgeschaltet (Toggle-Switch).
+    Das jeweilige Medium wird in der obersten Zeile durch einen Buch-
+    Staben angezeigt. (F = File, P = Printer).
+    Protokolliert werden alle Ausgaben im mittleren Bildschirmbereich,
+    auf dem Monitor-Kanal im unteren Bildschirmbereich.
+    Es wird immer nur vom gerade sichtbaren Bildschirm protokolliert.
+
+    ACHTUNG: ES IST DARAUF ZU ACHTEN, DASS DAS PROTOKOLLMEDIUM WIRKLICH
+    VORHANDEN IST (DRUCKER) BZW. AUSREICHEND PLATTENKAPAZITAET
+    VORHANDEN IST (FILE).
+
+    Mit F9 (ohne Shift oder CTRL) wird der Bildschirm abgeschaltet.
+    Er kann mit dem Druecken einer der Funktionstasten F1-F10 wieder
+    aktiviert werden.
+
+    CTRL-Y erzeugt ein CR ohne das dabei ein Frame ausgesendet wird.
+
+    CTRL-'_' schaltet die Mailbox-Funktion auf dem gerade sichtbaren
+    Kanal ein und aus. Der jeweilige Zustand wird in der obersten
+    Bildschirmzeile durch 'MAILBOX' oder 'TERMINAL' angezeigt.
+    Bei Umschaltung von MAILBOX auf TERMINAL werden alle momentanen
+    Mailboxfunktionen abgebrochen. (Lesen/Schreiben) Noch offene Files
+    in die per SEND-Befehl gerade geschrieben wird, werden geschlossen
+    und abgespeichert.
+
+    Mit CTRL-U wird die Liste SF-LISTE.SFW vom Boot-Laufwerk sowie
+    die User-Informationen vom SYSTEM-Bereich geladen.
+    Des weiteren wird die Datei BOX.MSG aus dem BOOT-Bereich geladen.
+
+    Mit CTRL-R werden die Listen LOG.SFW und SHOW.LST im SYSTEM-Bereich
+    von den nicht mehr benoetigten Eintraegen befreit. Die alten Dateien
+    werden unter dem gleichen Filenamen jedoch mit der Extension .BAK
+    vorgehalten.
+
+    Mit CTRL-T kann man auf dem Monitorkanal (F9/F10 druecken) in den System-
+    Modus gelangen, der in der ersten Zeile auch durch das Wort 'System'
+    angezeigt wird.
+    Der System-Modus ist NUR auf dem Monitor-Kanal moeglich!
+    Im System-Modus sind Texteingaben auf eine Laenge von 254 Zeichen
+    beschraenkt. (ca. ein Frame)
+    In diesem Modus ist man quasi als privilegierter Benutzer in der eigenen
+    Mailbox eingeloggt und kann alle Dinge tun, die auch eine privilegierter
+    Benutzer von aussen tun kann. Ein Log-Eintrag erfolgt dabei nicht.
+    Im System-Modus werde alle Monitorausgaben 'verschluckt', also nicht
+    zur Anzeige gebracht. Dafuer steht dem Sysop dann der gesamte Monitor-
+    Bildschirm zur Textausgabe zur Verfuegung.
+    Verlassen kann man diesen Modus durch erneutes Druecken von CTRL-T.
+    Im System-Modus koennen Textausgaben mit der Leertaste (Space)
+    angehalten und wieder angestossen werden (Toggle-Switch).
+
+    Mit CTRL-X koennen gerade offene Files die gelesen oder geschrieben
+    werden (SEND/READ) geschlossen werden. Das Lesen auf diesem Kanal ist
+    somit beendet, ebenso das Schreiben. (Das File wird noch abgespeichert)
+    So kann man ellenlange Ausgaben leicht abbrechen.
+
+    Nach DISCONNECT auf jedem Kanal wird automatisch die Mailbox-
+    Funktion wieder eingeschaltet. Das passiert jedoch NUR, wenn dabei
+    auch ein LOGOFF stattfindet, also z.B. nicht bei LINK-FAILURE beim
+    Verbindungsaufbau.
+    Weiterhin wird das Rufzeichen eines jeden Kanals minuetlich neu pro-
+    grammiert, nicht jedoch, wenn der jeweilige Kanal connected ist oder
+    die Mailboxfunktion abgeschaltet ist.
+
+    Mit den Tasten CursorUp und CursorDown kann die untere Status-Zeile
+    verschoben werden, dabei werden auch versteckte Texte wieder sichtbar.
+
+    Mit ESC leitet man eine Kommandoeingabe an den TNC ein.
+    Das ESC muss an der ersten Stelle im Vorschreibpuffer stehen.
+    Wird es dort wieder geloescht, so gilt die Eingabe als Texteingabe.
+    Kommandoeingaben sind nicht im System-Modus moeglich.
+
+    Eingaben koennen auf den Kanaelen 1-8 nur bei ausgeschalteter
+    Mailbox erfolgen. Kommandos an den TNC sind auf allen Kanaelen nur
+    im Terminalmodus moeglich.
+
+    DIE BOX erwartet im SYSTEM-Bereich die beiden Dateien USER.IDX und
+    USER.DAT. Hier werden die Benutzerinformationen verwaltet. Sind diese
+    Dateien nicht vorhanden, so sind sie mit dem Utility ORIGINATE
+    (Aufruf ORIGINATE \SYSTEMPATH\USER.IDX bzw USER.DAT) mit 0 KB
+    (also leer) anzulegen. DIE BOX geht davon aus, dass diese Dateien
+    vorhanden sein muessen und bricht den Start ab, wenn sie diese Dateien
+    nicht finden kann.
+    Die Anzahl der Benutzer ist in dieser Version auf 1500 begrenzt.
+
+
+1.2 BOX.MSK
+
+    ist die Maske, die waehrend des Programmstarts angezeigt wird,
+    sie hat keine weitere Funktion.
+
+
+1.3 BOXINIT.TXT
+
+    ist die Datei, die dem Programm beim Start mitteilt,
+    wieviele TNCs angeschlossen sind, und wie diese konfiguriert
+    sind.
+    Beispiel-Dateien fuer ein, zwei,drei und vier TNC's sind angeben.
+    Wichtig dabei ist, dass bei Mehr-TNC-Betrieb zuerst immer die
+    Monitorkanaele initialisiert werden muessen, und zwar soviel
+    Monitorkanaele, wie TNC's angeschlossen sind.
+
+    Es muessen nicht alle Kanaele eines angeschlossenen TNCs benutzt
+    werden, immer jedoch der Monitorkanal.
+
+    Wird die Kanal-Nummer eines TNC-Kanals mit -1 Initialisiert, so
+    wird dieser Kanal nicht beruecksichtigt. Es sind in jedem
+    Falle immer 8 Kanaele zu initialisieren. Steht nur ein TNC mit
+    4 Kanaelen zur Verfuegung, so sind die restlichen Kanaele also
+    mit -1 zu initialisieren, damit DIE BOX die Kanaele als
+    ungueltig erkennt. (Beispiel: Siehe BOXINIT1.TXT)
+
+    Es koennen insgesamt (also ueber alle TNCs) nur 8 Kanaele plus
+    die jeweiligen Monitorkanaele initialisiert werden.
+
+    Die angegebenen MAXFRAME-Parameter koennen nach Belieben veraendert
+    werden, sollten aber mit den im jeweiligen TNC eingestellten
+    O-Parametern uebereinstimmen.
+
+    Bei Verwendung von TNC1 ist darauf zu achten, dass das CALL auf
+    Kanal 0 des jeweiligen TNC's exakt mit dem CALL (incl. SSID) aller
+    anderen Kanaele uebereinstimmt. Bei Verwendung von TNC2 koennen
+    beliebige Rufzeichen eingesetzt werden. Dabei ist auf dem Kanal 0
+    ein unbenutztes Rufzeichen (z.B. TE0ST) zu benutzen.
+
+    Ist ein Kanal als STORE & FORWARD - Kanal deklariert, so haben
+    auf diesem Kanal nur privilegierte Stationen sowie Mailboxen, an
+    die selbst auch geforwarded wird, Zugriff.
+
+    Das Fileformat von BOXINIT.TXT sollte so eingehalten werden, wie
+    angegeben, dann koennen dabei keine Fehler auftreten.
+
+
+1.4 BOX.MSG
+
+    enthaelt alle Texte die in der Mailbox ausgegeben werden.
+    DIE BOX kann so also auch leicht anderssprachig umgeruestet
+    werden.
+    Die ersten sechs Zeilen von BOX.MSG enthalten jedoch zunaechst
+    noch weitere Konfigurations Information:
+
+     Zeile 1: Unterverzeichnisname des USER-Bereiches
+     Zeile 2:          "            "  INFO-    "
+     Zeile 3:          "            "  SYSTEM-  "
+     Zeile 4: STORE & FORWARD Adressat
+     Zeile 5: User Timeout in Minuten
+     Zeile 6: STORE & FOWARD Timeout in Minuten
+     Zeile 7: Baudrate der TNCs (0 = 4800 Baud, 1 = 9600 Baud)
+     Zeile 8: Bezeichnung der Uhrzeit (z.B. UTC) die ersten drei
+              Buchstaben sind gueltig.
+
+    Wird beim SEND-Befehl kein @-Bezeichner eingegeben, so wird
+    der STORE & FORWARD Adressat dafuer eingesetzt.
+
+    Fuer die Timeout-Zeiten sind nur ganze Zahlen zugelassen.
+
+    Der Store & Forward - Timeout ist wirksam, wenn eine Mailbox eingeloggt
+    ist (in SF-Liste.SFW aufgefuehrt) oder ein normaler Benutzer gerade
+    ein Nachricht per SEND-Befehl eingibt.
+
+    Maximale Zeilenlaenge (incl. dem CR/LF am Ende) in der Datei
+    ist 80 Zeichen. Wird sie ueberschritten, wird fuer nichts garantiert.
+
+    In Zeile 35 kann ein Begruessungstext beim Login eingegeben werden.
+
+    Es ist darauf zu achten, dass die Zeilenlaenge von 80 Zeichen auch
+    nicht durch Spaces am Ende der Zeilen ueberschritten wird.
+
+
+1.5 SF-LISTE.SFW
+
+    enthaelt Informationen ueber die STORE & FORWARD Zeiten.
+
+    Ein Eintrag besteht aus 70 Zeichen (incl CR/LF am Ende).
+    Im ersten Feld (von links nach rechts) steht das Mailboxcall der
+    Mailbox, an die geforwarded werden soll. Dieses Call ist immer ohne
+    SSID anzugeben. Das folgende Feld enthaelt die Stunden in denen
+    zu dieser Mailbox STORE & FORWARD initiiert werden soll, im darauf
+    folgenden Feld die entsprechenden Minuten. Es sind pro Mailbox
+    maximal 24 Stunden-Eintraege und 10 Minuten-Eintrage moeglich.
+
+    Das gegebene Format der Zeile darf auf keinen Fall veraendert werden.
+
+    Zeiten, zu denen nicht geforwarded wird, werden mit XX ausgeschlossen.
+
+    Bei der Auswahl der Zeiten des STORE & FORWARD ist darauf zu achten,
+    dass nicht zu zwei gleichen Zeiten STORE & FORWARD angestossen wird.
+    Ist dies der Fall, so wird nur die erste Station beruecksichtigt.
+
+    Die ersten 10 Zeilen (also die ersten 700 Zeichen) in der Datei
+    SF-LISTE.SFW werden beim Programmstart in den Speicher geladen.
+    Aenderungen in dieser Datei sind daher entweder nach Programmstart
+    wirksam, oder nach Eingabe von CTRL-U.
+
+    Mailboxen, die in dieser Datei aufgefuehrt sind, haben Zugriff auf dem
+    privilegierten Kanal und werden auch bei S&F unterstuetzt. Alle anderen
+    Rufzeichen werden per S&F nicht unterstuetzt. Will also eine hier nicht
+    eingetragene Mailbox S&F zu der eigenen Mailbox machen, so wird dieses
+    nicht funktionieren.
+
+    STORE & FOWARD kann auch auf den nicht STORE & FORWARD Kanaelen
+    ausgefuehrt werden.
+
+    Wird anstatt eines gueltigen Mailbox-Rufzeichens das Wort WASHUP
+    (in Grossbuchstaben) eingetragen und mit einer Zeit versehen, so
+    wird zu diesem Zeitpunkt die Funktion der CTRL-R-Taste ausgefuehrt (s.o.).
+    Es wird darauf hingewiesen, dass WASHUP nur dann wirksam wird, wenn auf
+    keinem der 8 Kanaele STORE & FORWARD aktiviert wurde.
+
+1.6 PWLIST.TXT
+
+    enthaelt 1620 Zeichen beliebiger Wahl, sie dienen zur Auswahl
+    des Passwortes. Diese Zeichen sollten moeglichst mit einem
+    Zufallsgenerator erzeugt werden.
+    Ist die Datei nicht vorhanden, geht die Passwort-Abfrage
+    stets negativ aus.
+
+    Das Passwort ist stets 4 Zeichen lang und errechnet sich auf der
+    beim Login ausgegeben Datum/Uhrzeit und der Tabelle, die in
+    PWLIST.TXT gespeichert ist nach folgendem Schema:
+
+    Man addiert auf den Minutenanteil des Logindatums den Tag des
+    Logindatums drauf. Wird dabei diese Summe groesser als 60,
+    so zieht man 60 ab.
+    Dieses Ergebnis wird mit 27 multipliziert.
+    Darauf addiert man dann den Stundenanteil des Logindatums.
+
+    Die so ermittelte Zahl gibt den Offset vom Fileanfang der Datei
+    PWLIST.TXT . Die jetzt folgenden 4 Zeichen in der Datei PWLIST.TXT
+    ergeben das Passwort.
+
+    Wird eine Station als privilegiert erkannt, so bekommt sie das
+    normale Login, bis auf die Kommandozeile. An dieser Stelle hat die
+    Passworteingabe zu erfolgen. Ist das Passwort falsch, so wird
+    ohne weiteren Kommentar disconnected.
+
+    Privilegierte Stationen haben die Moeglichkeit, auch Eintraege zu
+    loeschen, die nicht von ihnen geschrieben wurden oder an sie
+    gerichtet sind. Des weiteren gibt es erweiterte Befehle fuer
+    privilegierte Benutzer:
+
+    EXPORT   : Auslagern von Informationen. Funktioniert vom Prinzip her genau
+               so wie das Betaetigen von CTRL-F9, allerdings muss bei EXPORT
+               Filename mit angegeben werden. z.B. EXPORT DATEI.TXT
+               EXPORT wird beendet durch Eingabe von EXPORT ohne Argument.
+
+    IMPORT   : IMPORT wurde dazu geschaffen um mit einem Texteditor bearbeitete
+               Texte in die Mailbox zu integrieren.
+               Syntax: IMPORT DATEI.TXT
+               Import bewirkt eine Eingabe-Umlenkung der Tastatur aus der
+               Datei (in diesem Beispiel) DATEI.TXT.
+               Die erste Zeile der Textdatei (hier DATEI.TXT) muss demnach ein
+               gueltiger Mailboxbefehl sein. (Um Texte einzulagern, muss es
+               sinnigerweise der Sendbefehl sein).
+               Ein Beispiel fuer eine solche Textdatei:
+
+               S DF3AV TEST
+               Testtext zur Veranschaulichung von IMPORT
+               *** end
+
+               Wird diese Datei IMPORTiert, so speichert sie unter DF3AV
+               den angegebenen Text ab.
+               Import ist solange aktiv, bis entweder ein Fehler aufgetreten
+               ist, oder die Import-Datei zuende gelesen wurde.
+
+
+    READFILE : Lesen einer Datei direkt von der Platte. Es koennen alle
+               Dateien gelesen werden, die auf einem gueltigen Laufwerk stehen.
+               Dabei sind die Zeichen '\', '.' und ':' ebenfalls zum Filenamen
+               zugehoerig. Filenamenlaenge ist auf 50 Zeichen beschraenkt.
+
+               Syntax: READFILE (Laufwerksbezeichner:\)Filename.EXTENSION
+
+    SENDFILE : s.o. jedoch schreiben der Dateien.
+
+               Syntax: SENDFILE (Laufwerksbezeichner:\)Filename.EXTENSION
+
+    RESTART  : Gleiche Wirkung wie Eingabe von CTRL-U an der Tastatur.
+
+               Syntax: RESTART
+
+    SENDTNC  : Senden eines TNC-Kommandos auf dem jeweiligen Kanal.
+               Zugelassene Kanaele sind die Kanaele 0-8. Die Antwort
+               des TNC wird NICHT zurueckuebertragen. Alle TNC-Kommandos
+               sind moeglich, drum: VORSICHT, VORHER UEBERLEGEN !
+               Die Monitorkanaele der maximal 4 TNCs haben die Nummern
+               10, 20, 30 und 40, wobei 10 dem TNC an der Schnittstelle
+               COM1 zugeordnet ist, 20 dem TNC an COM2 usw.
+
+               Syntax: SENDTNC KANALNUMMER(0-8,10,20,30,40) TNC-KOMMANDO
+
+    SETUSR   : Mit diesem Kommando kann man einzelnen Benutzern der Mailbox
+               einen neuen Status geben. Damit koennen Benutzer gesperrt oder
+               auch privilegiert werden.
+
+               Syntax: SETUSR Call MBCall Status
+
+               Call..... Rufzeichen der Station, deren Status veraendert
+                         werden soll.
+               MBCall... Rufzeichen der Mailbox, die fuer Call als MYBBS
+                         gelten soll. Wird hier das Rufzeichen von Kanal0 des
+                         eigenen TNCs verwendet, werden die Nachrichten an
+                         Call nicht geforwarded.
+               Status... Hier kann eine Zahl von 0 bis 2 stehen, dabei bedeutet:
+                         0 : Normaler Benutzer
+                         1 : privilegierter Benutzer
+                         2 : gesperrter Benutzer
+
+    READFILE und SENDFILE sind in erster Linie dazu gedacht, die
+    Systemfiles der Box (z.B. SF-LISTE.SFW, SHOW.LST etc) zu bearbeiten.
+    Bei READFILE werden maximal nur die ersten 4000 Zeichen der angege-
+    benen Datei gelesen.
+    Bei SENDFILE wird sich auf den ASCII Zeichensatz unterhalb 127 beschraenkt.
+    Ausserdem sind keine Zeichen unterhalb ' ' gueltig, bis auf CR.
+
+    IMPORT und EXPORT sind nur von der Konsole aus benutzbar.
+
+    Privilegierte Benutzer koennen ihr Privileg NUR beim Einloggen auf
+    dem STORE & FORWARD Kanal nutzen. Beim Einloggen auf einem der anderen
+    Kanaele werde privilegierte Stationen wie normale Stationen behandelt,
+    d.h. es wird auch kein Passwort abgefragt.
+
+    Privilegiert sind diejenigen Stationen, deren Status mit dem
+    Kommando SETUSR auf 1 gesetzt wird.
+
+    Tritt waehrend des Betriebes mit einer privilegierten Station ein
+    Link-reset auf diesem Kanal auf, so ist ab diesem Zeitpunkt das
+    Privileg geloescht.
+
+
+
+2.  Der SYSTEM-Bereich
+----------------------
+
+    Der SYSTEM-Bereich ist ein Unterverzeichnis auf einer MS-DOS-Platte
+    der lediglich zur internen Verwaltung der Mailbox dient.
+    In diesem Unterverzeichnis muessen folgende Dateien vorhanden sein:
+
+     *.HLP              Alle HELP-Texte der Mailbox
+     HELP.PR            Erstes HELP-Menue der Mailbox.
+     SHOW.LST           Die Datei die bei CHECK ausgegeben wird
+     LOG.SFW            Die Datei die die noch zu forwardenden Eintraege haelt
+     PACK.LOG           Das Logbuch
+     USER.IDX           Index-Datei zur Benutzerverwaltung
+     USER.DAT           Daten-Datei zur Benutzerverwaltung
+     BULLID.TXT         Datei der Bulletin-IDs
+     *.SFW              Dateien zum STORE & FORWARD
+     *.FOR              Dateien zum STORE & FORWARD
+
+
+2.1  *.HLP
+
+     Anstatt des '*' ist der jeweilige Kommando-Name zu setzen.
+     In diesen Dateien stehe die Texte, die durch HELP + Befehlsname
+     ausgegeben werden. Die Dateien muessen unbedingt vorhanden sein!
+
+2.2  HELP.PR
+     enthaelt den Text, der bei Eingabe von nur HELP ausgegeben wird.
+     Die Datei muss unbedingt vorhanden sein.
+
+
+2.3  SHOW.LST
+     ist die Datei, die bei Eingabe von CHECK ausgegeben wird.
+     Jeder Eintrag ist genau 80 Zeichen lang (incl. '!' + CR/LF).
+     Geloeschte Eintraege sind in der ersten Spalte mit einem '*'
+     gekennzeichnet.
+     Diese Datei kann mittels einer Textverarbeitung veraendert werden,
+     es ist jedoch darauf zu achten, dass die Satzlaenge von 80 Zeichen
+     bei jedem Eintrag erhalten bleibt.
+     Diese Datei wird bei Eingabe von CHECK rueckwaerts ausgegeben, d.h. der
+     letzte Eintrag erscheint zuerst.
+     SHOW.LST muss unbedingt vorhanden sein, sie muss zur Not mit
+     dem Utility ORIGINAT mit 0KB angelegt werden.
+
+2.4  LOG.SFW
+     ist die Datei, in der die Eintraege stehen, die geforwarded werden
+     muessen, oder schon geforwarded wurden.
+     Ein Eintrag besteht aus 115 Zeichen (incl. '!' + CR/LF) und enthaelt:
+
+      - Das Rufzeichen der Zielmailbox
+      - Das Rufzeichen des Files, was zu forwarden ist
+      - Die Eintragsnummer in diesem File
+      - Den Absender dieser Nachricht
+      - Den Titel der Nachricht
+      - Die Bulletin-ID dieser Nachricht (falls vorhanden)
+      - Der Adressat bei STORE & FORWARD
+
+     Das Format der einzelnen Zeilen ist unbedingt einzuhalten!
+
+     USER-Files werden nach dem Forwarden automatisch geloescht.
+
+     Bedeutung des Zeichens in der ersten Spalte:
+
+       '*'    Eintrag wurde geforwarded
+       '$'    Eintrag wurde noch vor dem Forwarden geloescht
+       '@'    Eintrag wurde nach dem Forwarden geloescht (Nur USER-Files)
+       '!'    Eintrag konnte nach dem Forwarden nicht geloescht werden
+       ' '    Eintrag muss noch geforwarded werden
+       '-'    Eintrag wurde bei S&F nicht mehr gefunden
+
+     Will man einen Eintrag gezielt forwarden lassen, so kann man in dieser
+     Datei eine Zeile nach obigem Format erzeugen, die dem Forward-Wunsch
+     gerecht wird. (Texteditor)
+     ACHTUNG: DIESER EINTRAG MUSS AUCH WIRKLICH MIT EINEM FILE KORRESPONDIEREN!
+
+     Auch diese Datei muss unbedingt vorhanden sein! Falls nicht
+     nimmt man ORIGINAT zur Hilfe.
+
+2.5  PACK.LOG
+     ist das Logbuch des Systems und wird automatisch verwaltet.
+     Es ist jedoch eine Datei, die mittels Texteditor angesehen
+     und editiert werden kann. Vorsicht: Keine Eintraege loeschen
+     wenn noch Stationen eingeloggt sind! (Nur bei Multitasking-Betrieb)
+     Auch hier muss die Datei vorhanden sein, legt man sie im Systembereich mit
+     SENDFILE an.
+
+2.6  USER.IDX/USER.DAT
+     sind Dateien zur Benutzerverwaltung. Sie muessen unbedingt vorhanden
+     sein, ansonsten koennen sie mittels ORIGINAT mit 0KB angelegt
+     werden. Dies sind die einzigen Dateien der Mailbox, die nicht mit einem
+     Texteditor angesehen oder editiert werden koennen.
+     Sie werden beim Programmstart automatisch oder bei Eningabe von CTRL-U
+     geladen.
+
+2.7  BULLID.TXT
+     ist die Datei, die die Bulletin-Identifier enthaelt.
+     Jeder Eintrag ist 19 Zeichen lang (incl. CR/LF). Geloeschte
+     Eintraege sind mit einem '*' markiert und koennen per Texteditor
+     herausgenommen werden. Allerdings sollten auch geloeschte Eintraege
+     ungefaehr 2-3 Monate in diesem File belassen werden.
+
+
+2.8  *.SFW
+     Anstatt des '*' ist ein Rufzeichen einer Mailbox einzusetzen, an die
+     geforwarded wird. (z.B. DB0GV.SFW)
+     Ist diese Datei nicht vorhanden, wird an diese Mailbox nicht geforwarded,
+     trotz Eintrages in die Datei SF-LISTE.SFW.
+     Jeder Eintrag in *.SFW besteht aus 9 Zeichen und wird ohne CRLF
+     hintereinander (also alles in einer Zeile) abgelegt.
+
+     Die Eintraege sind Calls von Mailboxen, die nicht unmittelbar erreichbar
+     sind, sondern nur ueber eine weitere Mailbox. z.B.
+
+     in der Datei DB0GV.SFW steht z.B.
+
+     DL0FFM   *H33     DG5NAX   HB9F     DB0CZ    *TEST
+
+     d.h. an DB0GV werden auch die Eintraege geforwarded, die eigentlich
+     DG5NAX, HB9F, DL0FFM oder DB0CZ erreichen sollen.
+
+     Die mit '*' gekennzeichneten Eintraege zeigen an, welche FILENAMEN nicht
+     an DB0GV geforwarded werden sollen. Dies sind z.B. H33 und TEST.
+     Also, alle Eintraege die in der Box unter H33 oder TEST eingespielt
+     werden, werden nicht an DB0GV geforwarded.
+
+2.9  *.FOR
+
+     Anstatt des '*' ist ein Mailboxrufzeichen einzusetzen. (z.B. DB0GV.FOR)
+     Hier steht die Art und Weise des Verbindungsaufbaus bei S&F drin.
+     Jeder Eintrag besteht aus 70 Zeichen (incl. CR/LF) wobei das letzte
+     Zeichen der Zeile (also vor dem CR/LF) ein '!' ist.
+
+     Bedeutung der Eintraege:
+
+     In der ersten Zeile hat nur eine Zahl zu stehen (1 bis 8) die den Kanal
+     identifiziert, auf dem STORE & FOWARD zu dieser Station angestossen
+     werden soll. (Die Kanalnummern beziehen sich auf die in der Mailbox
+     verwendeten Kanaele, nicht auf die in den TNCs verwendeten)
+
+     In der zweiten Zeile stehen die Anzahl der logischen Schritte zum
+     Verbindungsaufbau erforderlich sind. Wird kein NET/ROM beim
+     Verbindungsaufbau benutzt, so muss hier eine 1 stehen.
+
+     In den nachfolgenden Zeilen stehen genau diese Schritte, die den
+     Verbindungsaufbau ausmachen. Die erste Zeile dieser Schritte ist immer
+     ein Kommando an den eigenen TNC, alle weiteren Schritte sind Befehle
+     an NET/ROM-Knoten.
+
+     Es ist darauf zu achten, dass auch wirklich soviele Zeilen folgen, wie
+     Schritte in der 2. Zeile angegeben sind.
+     Ab Zeile 3 darf kein Kommentar mehr mit angegeben werden.
+     Beispielsweise sieht die Datei DB0GV.FOR bei DK0MAV folgendermassen aus:
+
+     4                       Kanal der Box                              !
+     4                       Anzahl logischer Schritte bei S&F          !
+     C DB0FD-7                                                          !
+     C DL0RI                                                            !
+     C DK0XX-15                                                         !
+     C DB0GV                                                            !
+
+     Beachtenswert ist vielleicht der letzte Schritt: Einzig und allein hier
+     waere eine SSID der Zielmailbox anzugeben. Intern wird in der Mailbox-
+     Software immer ohne SSID bei MAILBOX-Calls gearbeitet.
+
+     Alle Eintraege in dieses File muessen in Grossbuchstaben erfolgen!
+
+
+
+3.   Der USER-Bereich
+---------------------
+
+     In diesem Unterverzeichnis stehen alle Nachrichten, die an Benutzer
+     der Mailbox geschrieben werden. Alle Nachrichten beginnen mit dem
+     Rufzeichen des Adressaten und enden mit '.AMT'. (z.B. DF3AV.AMT)
+     Gibt es mehrere Nachrichten fuer einen Benutzer, so werden diese
+     alle in seiner Datei zusammen gefasst.
+
+     Jede Nachricht wird mit einem Header versehen, der z.B. folgenden Aufbau
+     hat:
+
+
+     ^YPACKET-ACCESS  FROM CALL   21.11.87 19:27 UTC    415 Bytes
+     TITEL
+     ABSENDERVERMERK
+     BULLID
+     LEERZEILE
+
+
+     Die Zeilen TITEL, ABSENDERVERMERK und BULLID koennen auch Leerzeilen
+     sein, die 1. Zeile (die mit dem CTRL-Y) hat immer die gleiche Laenge.
+     Der ersten Zeile ist in jedem Falle ein CR/LF vorangestellt.
+
+     Der eigentliche Text darf immer erst bei Nach der Zeile LEERZEILE
+     beginnen. Die Texte koennen nach Belieben editiert werden, jedoch muss
+     in jedem Falle der Bytecount auf's Byte genau stimmen, ansonsten wird
+     fuer nichts garantiert.
+
+
+
+3.0  der INFO-Bereich
+---------------------
+
+     Hier werden alle Nachrichten abgelegt, deren Name kein Rufzeichen ist.
+     Es gilt sinngemaess das unter Punkt 2.0 gesagte.
+
+
+
+
+
+Allgemeines:
+------------
+
+Die Verwaltung der Benutzer-Daten in den Dateien USER.IDX und USER.DAT ist
+zunaechst auf 1500 Benutzer festgelegt, kann aber leicht erweitert werden.
+
+Bei Verwendung von Diskettenlaufwerken ist darauf zu achten, dass bei
+MS-DOS maximal 112 Eintraege in's Directory passen. (Nicht so bei Festplatten)
+Da beim SEND- und ERASE-Kommando temporaere Dateien erzeugt werden, ist stets
+darauf zu achten, dass im Directory stets noch Platz fuer mindestens 8 Dateien
+bleibt. Erst in spaeteren Versionen werden Schutzmechanismen enthalten sein,
+die dieses ueberwachen.
+
+Bei Programmausstieg aus dem Programm DIE BOX ist zu beachten, dass keine
+Station mehr eingeloggt ist. Ansonsten bleiben die Logeintraege dieser
+Stationen weiterhin mit einem Fragezeichen versehen.
+
+Nochmals sei auf die Brisanz des ERASE-Befehls verwiesen. An der Console
+(wenn man nach CTRL-T einen Befehl eingibt) ist man in jedem Falle
+privilegiert, auch wenn jemand eingeloggt ist. Gibt man z.B. ein:
+              E ALLE <ENTER>
+so wird das File ALLE unwiederbringlich geloescht. Das loeschen ist ein
+Umkopiervorgang, woraus ersichtlich wird, das auch ein Zurueckholen der Datei
+aus dem Directory nicht zu machen ist.
+
+
+
+STORE & FORWARD
+---------------
+
+Bei STORE & FORWARD wird auch das Regions-Konzept unterstuetzt.
+Man definiert eine Region, indem man ihr einen Namen gibt, und diesen
+Namen in alle die '*.SFW'-Listen eintraegt, die zu der entsprechenden
+Region gehoeren sollen.
+Wird z.B. die Region NORDLINK auf die beiden Mailboxen DK0MAV
+und DB0KG bezogen.
+So muss in den Dateien DK0MAV.SFW und DB0KG.SFW jeweils das NORDLINK
+eingetragen werden.
+Regionsnamen koennen bis zu acht Zeichen lang sein.
+
+
+Noch eine kleine Ablaufbeschreibung einer STORE & FORWARD - Verbindung:
+
+Jede Minute wird von der Mailbox der bei der Initialisierung mit der
+Datei SF-LISTE.SFW geladene Speicherbereich abgegrast, um herauszufinden,
+ob eine der STORE & FORWARD - Zeiten mit der augenblicklichen Zeit
+uebereinstimmt. Ist dies der Fall, so merkt sich die Mailbox das Call der
+Station, an die dieser Vorgang in Gang gesetzt werden soll.
+
+Anschliessend wird die Datei LOG.SFW nach Eintraegen fuer diese Station
+durchsucht. Wird dort ein Eintrag gefunden, so bildet DIE BOX aus dem
+Call der Zielmailbox einen Dateinamen, indem sie an das Rufzeichen der
+Zielmailbox ein '.FOR' anhaengt. Diese Datei wird nun in dem SYSTEM-Bereich
+gesucht. Ist sie nicht vorhanden, wird der Vorgang abgebrochen.
+Ansonsten wird diese Datei im Lesezugriff geoeffnet und der Box-Kanal
+festgestellt, in dem die Verbindung stattfinden soll. Das kann jeder
+Kanal ausser dem Kanal 0 (Monitor-Kanal) sein.
+
+Jetzt wird in diesem Kanal intern ein Flag gesetzt, das anzeigt, dass hier
+STORE & FORWARD stattfinden soll.
+DIE BOX wartet nun solange, bis dieser Kanal disconnectet ist und durchforstet
+erneut die Datei mit der Endung '.FOR' um die Anzahl der logischen Schritte
+zum Verbindungsaufbau festzustellen. Desgleichen wird sofort der erste
+Schritt aus der Datei geholt und als Kommando an den TNC gesendet, der sich
+hinter dem logischen Box-Kanal verbirgt (Wird in der Datei BOXINIT.TXT
+abgelegt).
+
+Auf dieses Kommando an den TNC kommt in irgendeiner Weise eine Antwort
+des TNC's. Enthaelt diese Antwort auch den Text: 'CONNECTED TO' so wird
+mit dem naechsten Befehl in der '.FOR' Datei fortgefahren, ansonsten wird
+der Vorgang mit einem Disconnect-Befehl an den TNC abgebrochen.
+
+Sind noch weitere Befehle in der '.FOR' Datei gespeichert, so werden
+diese an den TNC als Text gesendet (das sind dann ja die NET/ROM Befehle).
+Nach dem letzten Befehl nimmt DIE BOX an, mit der Zielmailbox verbunden
+zu sein und erwartet ein '>' gefolgt von einem CR.
+
+Trifft sie waehrend dieser Wartephase auf ein '[' (eckige Klammer auf), so
+antwortet sie nach dem '>' und dem CR mit einem [MBL-$], um der
+Zielmailbox anzuzeigen, dass dieser Modus unterstuetzt wird.
+Daraufhin wird erneut auf ein '>' und CR gewartet.
+
+Danach beginnt die Eingabe des 1. Befehls an die Zielmailbox.
+Sind keine Nachrichten zum Forwarden mehr vorhanden, so wird als
+letzter Befehl ein 'F>' an die Zielmailbox gesendet, um die Forwarding-
+Richtung umzukehren. Hat die Zielmailbox keine Nachricht, so sollte mit
+einem Disconnect geantwortet werden. Ansonsten uebertraegt die Zielmailbox
+Ihre Nachrichten nach dem gleichen Schema und sendet, wenn auch dort keine
+Nachrichten mehr vorliegen, ebenfalls ein 'F>'. Das geht solange, bis beide
+Mailboxen keine Nachrichten mehr fuereinander vorliegen haben.
+Danach erfolgt Trennung durch Disconnect.
+
+(Die WA7MBL-Software kennt die erneute Richtungsumkehr nicht, dies war jedoch
+dort auch nicht erforderlich, da WA7MBL kein Multiconnect programmiert hatte.
+Hier jedoch koennen durchaus schon wieder Nachrichten fuer die gerade ange-
+schlossene Mailbox eintreffen, denn waehrend des Forwardings koennen andere
+Benutzer weiterhin in der Box wuehlen, oder auch STORE & FORWARD mit weiteren
+Mailboxen abgewickelt werden).
+
+Nach jedem Erhalt des '>' mit CR und vorausgegangenem SEND-Befehl markiert
+DIE BOX im File LOG.SFW im SYSTEM-Bereich den entsprechenden Eintrag.
+Handelt es sich dabei um ein USER-File, so wird dieses zusaetzlich geloescht.
+Die Markierungen in der Datei LOG.SFW sind ja bereits beschrieben worden.
+
+Alle Eintraege im INFO-Bereich werde automatisch an den Regionsmerker
+geforwarded, der in der Datei BOX.MSG in der 3. Zeile angegeben ist,
+es sei denn, sie sind @ eigene Mailbox adressiert.
+
+
+
+
+Resumee
+-------
+
+Andree, DC3AV, Sysop @ DB0KG ueberarbeitet diese Anleitung gruendlichst,
+ich denke seine Version wird ausfhrlicher sein, als ich das hier in der Kuerze
+darstellen konnte. Demnaechst wird diese neue version durch's S&F-Netz
+verschickt werden.
+
+Ich moechte an dieser Stelle betonen, dass DIE BOX jederzeit und ueberall
+FREI KOPIERBAR ist.
+
+
+73's viel Spass und wenig graue Haare bei der Anwendung wuenscht
+
+DF3AV, Reinhard in Peine.
+
+
+
+Anhang A
+
+  Updates zwischen Version 1.0 und 1.1
+  ------------------------------------
+
+  Die Unterschiede zwischen V1.0 und V1.1 liegen in der Hauptsache im
+  Sysop-Interface. Dieses war etwas spaerlich ausgefallen, da als Ent-
+  wicklungssystem ein Multitasking-Rechner zur Verfuegung steht.
+  Viele Sysop-Aufgaben konnten so mit einer anderen Task erledigt werden,
+  waehrend der Mailboxbetrieb ungestoert blieb.
+  Im Wesentlichen betreffen die Aenderungen folgende Punkte:
+
+    -  Zuschalten des Protokollmediums (Drucker/File)
+
+    -  Schnellere Bildschirmausgaben
+
+    -  verschiebbare Statuszeile auf den Nicht-Monitor-Kanaelen
+
+    -  Verbesserung des Sysop-Interfaces (Einzuschalten durch CTRL-T
+       auf dem Monitor-Kanal)
+
+    -  Ausschalten des Monitors sowie Y0 auf allen TNCs beim Verlassen
+       des Programms
+
+    -  Programmausstieg nun mit ALT-X anstatt ALT-177
+
+    -  Neuer Befehl fuer privilegierte Stationen: SETUSR
+
+
+  Unterschiede zwischen Version 1.1 und 1.1a
+  ------------------------------------------
+
+    -  Ein Fehler in der CTRL-Z Bearbeitung wurde korrigiert.
+       Wurde am File-Ende beim Speichern mehr als ein CTRL-Z eingegeben,
+       so traten Formatfehler in der zu speichernden Datei auf, u.U.
+       erhaengte sich das ganze System.
+       Sollte so ein File wieder geloescht werden, erhaengte sich das
+       System mit Sicherheit.
+
+    -  Als BullID sind nun mehr alle Zeichen einzugeben, die groesser
+       als Space (#32) und kleiner als Delete (#127) sind. Tritt ein Zeichen
+       ausserhalb dieses Bereiches auf, so wird die BullID an dieser
+       Stelle beendet.
+
+    -  Die Datei SEMAPHOR.TXT ist vorerst nicht mehr erforderlich und kann
+       geloescht werden. (C:\MB\MBSYS\SEMAPHOR.TXT)
+
+    -  Die Bearbeitung des Bildschirms im direkten Video-RAM-Zugriff
+       kann abgeschaltet werden (mit F9). Dies ist sinnvoll, wenn in einer
+       Multitasking-Umgebung (z.B. DeskView) DIE BOX im Hintergrund laeuft,
+       und dabei nicht im Video-RAM des Vordergrund-Prozesses schreiben soll.
+       Den Bildschirm schaltet man mit einer der Funktionstasten (F1-F10)
+       wieder ein.
+
+    -  Das Kommando Y4 bzw Y8 zu Beginn des Programmstarts wird NICHT mehr
+       an den TNC gesendet. Die Kanaele muessen vom Sysop entsprechend
+       seiner individuellen Konfiguration vorgegeben werden.
+
+    -  Eine Hostmode-Synchronisation wurde integriert, sie wird nur bei
+       einem Fehler im Hostmodeprotokoll aktiv. Achtung: Dabei koennen
+       u.U. Zeichen verloren gehen.
+
+    -  Im Logbuch wird nun auch die Menge der ausgegeben Zeichen an den
+       Benutzer gespeichert.
+
+    -  Ein neues Logauswerteprogram ist nun dabei.
+
+    -  Bei CHECK wird die S&F Mailbox mit ausgegeben
+
+    -  Beim SEND-Befehl wird zusaetzlich immer die Mailbox mit angegeben,
+       an die die Nachricht geforwarded wird. (Nur falls erforderlich).
+
+
+Unterschiede zwischen Version 1.1a und 1.2
+------------------------------------------
+
+Bei der Version 1.2 sind mehrere neue Befehle hinzugekommen.
+und zwar:
+
+    FORWARD, TRANSFER, IMPORT und EXPORT
+
+Die Beschreibung der einzelnen Befehle kann man den jeweiligen HELP-
+Texten entnehmen.
+Die Zugriffsbeschraenkungen bein FORWARD und TRANSFER entsprechen denen wie
+bei ERASE, auch der privilegierte Zugriff entspricht dem privilegierten
+Zugriff bei ERASE.
+
+Der Y-Parameter eines jeden TNC stellt sich ab sofort automatisch.
+Voraussetzung dabei ist eine linear aufsteigende Reihenfolge der TNC-Kanal-
+Nummern in Boxinit.txt (Wie auch in den Beispieldateien angegeben)
+
+Die Resynchronisation wurde noch verbessert.
+
+Es wurden kleine Aenderungen im Aufbau der Nachrichten gemacht:
+Wird eine Nachricht von einer Station eingespielt, die nicht Mailbox ist,
+so wird zu Begin der Nachricht ein CR/LF eingebaut. Diese Aenderung
+ist kompatibel zu allen anderen Versionen.
+
+Der Aufbau der Dateien LOG.SFW, SHOW.LST und BULLID.TXT ist veraendert
+worden.
+Da diese Dateien eine feste Struktur aufweisen (Satzlaenge bei SHOW.LST
+ist 80 Zeichen, bei LOG.SFW 115 Zeichen und bei BULLID.TXT 19 Zeichen)
+und diese einzelnen Datensaetze oft mit Spaces aufhoeren, gab es Schwierig-
+keiten mit einigen Texteditoren (z.B. TURBO-PASCAL), die die letzten Spaces
+einer Zeile loeschen. Nunmehr ist das letzte Zeichen eines jeden Datensatzes
+ein '!', womit einzig und allein das Satzende gekennzeichnet wird.
+Nach dem '!' muss noch CR/LF folgen. '!' und CR/LF gehoeren noch zum Datensatz
+werden jedoch vom Programm nicht weiter geprueft. Wichtig ist lediglich,
+das die Satzlaenge immer stimmt.
+
+Die Version 1.2 ist nun fehlertoleranter gegenueber Strukturfehlern in den
+Datendateien sowie in den Dateien zur Steuerung von DIE BOX.
+Mittlerweile sind an allen Dateien bis zu 128 CTRL-Z's am FileEnde
+zugelassen. DIE BOX allerdings beendet keines der Files von sich aus
+mit CTRL-Z, findet aber das FileEnde korrekt.
+Bei Dateien im Info- und USER-Bereich, die mit .AMT enden wird, falls
+ein Fehler in der DateiStruktur entdeckt wird in Zeile 2 des Bildschirms
+die Fehlermeldung 'Integrity-Error File: (Fielname)' ausgegeben.
+Wird an dieses File ein Eintrag angehaengt oder ein Eintrag geloescht,
+so wird dieser Fehler wieder behoben.
+ACHTUNG! TRITT DER FEHLER NICHT AM ENDE DES FILES AUF, SO WIRD DIESES FILE
+NACH SEND ODER ERASE AN DER STELLE BEENDET, WO DER FEHLER AUFTRAT. DIE LISTEN
+SHOW.LST UND LOG.SFW WERDEN NICHT (!) ENTSPRECHEND GE'UPDATET'.
+Es ist allerdings sehr selten, dass der Fehler nicht am Ende einer Datei zu
+finden ist. Solche Fehler treten meist nur durch unsachgemaesse Behandlung der
+Dateien mit einem Texteditor auf.
+Wird eine Datei von einem Texteditor zurueckgeschrieben, der auch ein CTRTL-Z
+anhaengt, so tritt ebenfalls ein Integrity-Error auf, der allerdings am Ende
+der Datei zu finden ist und sich selbst nach ERASE oder SEND wieder behebt.
+
+Der Befehl VERSION ist dazugekommen.
+Version ist nicht weiter dokumentiert oder in einer Liste aufgefuehrt.
+Version gibt die Versionsnummer sowie die bisherige Laufzeit in
+Zehntelsekunden aus.
+
+
+Bei Store & Forward werden Dateien, die zum S&F-Zeitpunkt nicht gefunden
+werden konnten, mit einem '-' markiert. Danach bricht S&F ab und faehrt
+mit dem naechsten File zum naechsten S&F - Zeitpunkt fort.
+
+
+Die automatische BULLID-Vergabe generiert nun eine andere BULLID,
+sie ist folgendermassen strukturiert:
+
+          01380ADK0MAV
+          ! !!! !
+          ! !!! +----------- Rufzeichen der eigenen Mailbox (max. 6 Zeichen)
+          ! !!+------------- laufende Nummer in HEX (2 Zeichen)
+          ! !!               beginnt jeden Tag neu bei 01
+          ! !+-------------- letzte Zahl des Jahres, z.B. 8 steht fuer 1988
+          ! !                (1 Zeichen)
+          ! +--------------- Monat in HEX (1 Zeichen)
+          +----------------- Tag in dezimal (2 Zeichen)
+
+Die vorhergehende automatisch generierte BullID wird an erster Stelle
+in der datei BULLID.TXT gespeichert.
+
+
+
+Anhang B
+
+  Was ist wenn ....
+
+  Mittlerweile sind einige Rueckmeldungen gekommen, was Fehler im Ablauf
+  von DIE BOX betrifft. Oftmals sind es einfache Installationsfehler, die
+  ich hier mitteilen moechte:
+
+  Fehler:  DIE BOX steckt fest, nachdem ein Benutzer den Befehl ERASE
+           eingegeben hat, passiert aber auch nach anderen Befehlen, wenn
+           viele Benutzer eingeloggt sind:
+
+  Loesung: Moeglicherweise ist der Parameter FILES in der CONFIG.SYS zu
+           niedrig gewaehlt. Fuer den Betrieb mit DIE BOX sollte FILES=20
+           gewaehlt werden.
+
+  Fehler : Der TNC resynchronisiert. (erst ab Version 1.1a, vorher
+           meldete er sich nur mit falscher Kanalnummer)
+
+  Loesung: Resynchronisation deutet immer darauf hin, das etwas mit der
+           RS232 Verbindung zwischen TNC und Rechner nicht in Ordnung ist,
+           es koennen aber auch ungluecklich gewaehlte Zustaende im ROM-BIOS
+           des jeweiligen Rechners die Ursache sein. So wird z.B. bei den
+           meisten Tastaturtreibern fuer DOS bei Eingabe von einem ' und
+           des Buchstabens S eine Klingel ausgeloest. Diese Klingel wird
+           vom Prozessor erzeugt. Damit diese Klingel auch wie eine Klingel
+           klingt, werden waehrend der Dauer des Tones saemtliche Interrupts
+           abgeschaltet, mit der Folge, das Zeichen auf der RS232 Leitung
+           verloren gehen koennen und somit Resynchronisation erfolgen muss.
+           Als sehr langsam hat sich auch der Tastaturtreiber KEYB, der bei
+           DOS 3.3 dabei ist, gezeigt. Es sollte moeglichst ein anderer
+           Tastaturtreiber verwendet werden, manchmal kann man auch noch das
+           gute alte KEYBGR verwenden.
+           Bei Resynchronisationsfehlern sollte zunaechst einmal versucht
+           werden, die TNCs mit nur 4800 Baud zu betreiben.
+           Auch waren oft schon TNC2Cs mit 2,45 MHz Takt die Ursache. Nach
+           dem Umbau auf 4,9 MHz lief es dann auch.
+           Weiterhin sind die RS232 Treiber in den TNCs eine Ursache.
+           Die als RS232 Treiber eingesetzten LM324 in den EURO-TNCs und
+           original TAPR-TNC2s sowie MFJs sollte man tunlichst sofort gegen
+           TL084 (pinkompatibel und wesentlich bessere Slew-Rate) tausc
+
+
