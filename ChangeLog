@@ -1,4 +1,8 @@
-@(#) $Id: ChangeLog,v 1.68 1999/11/28 17:07:51 deyke Exp $
+@(#) $Id: ChangeLog,v 1.69 1999/12/02 02:13:52 deyke Exp $
+
+991201 Dieter Deyke <deyke@hotpop.com>
+
+	Added cvspserver to list of known tcp services
 
 991128 Dieter Deyke <deyke@hotpop.com>
 

@@ -1,4 +1,4 @@
-/* @(#) $Id: services.c,v 1.15 1999/11/27 17:19:00 deyke Exp $ */
+/* @(#) $Id: services.c,v 1.16 1999/12/02 02:13:57 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -14,7 +14,8 @@ struct port_table {
 
 static struct port_table tcp_port_table[] = {
   { "*",        0 },
-  { "convers",  3600 },
+  { "convers",  3600 },                 /* convers */
+  { "cvspserver", 2401 },               /* CVS client/server operations */
   { "discard",  IPPORT_DISCARD },       /* ARPA discard protocol */
   { "domain",   IPPORT_DOMAIN },        /* ARPA domain nameserver */
   { "echo",     IPPORT_ECHO },          /* ARPA echo protocol */
@@ -23,11 +24,11 @@ static struct port_table tcp_port_table[] = {
   { "ftp-data", IPPORT_FTPD },          /* ARPA file transfer protocol (data) */
   { "http",     80 },                   /* World Wide Web HTTP */
   { "imap",     143 },                  /* Internet Message Access Protocol */
-  { "netupds",  4715 },
-  { "nntp",     IPPORT_NNTP },
+  { "netupds",  4715 },                 /* netupds */
+  { "nntp",     IPPORT_NNTP },          /* USENET News Transfer Protocol */
   { "pop2",     IPPORT_POP2 },          /* Post Office Prot. v2 */
   { "pop3",     IPPORT_POP3 },          /* Post Office Prot. v3 */
-  { "rsync",    873 },
+  { "rsync",    873 },                  /* rsync */
   { "smtp",     IPPORT_SMTP },          /* ARPA simple mail transfer protocol */
   { "telnet",   IPPORT_TELNET },        /* ARPA virtual terminal protocol */
   { "ttylink",  IPPORT_TTYLINK },
