@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.3 1993/05/17 13:44:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.4 1993/06/20 07:30:05 deyke Exp $ */
 
 /* AX25 control commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -20,6 +20,10 @@
 /* #include "nr4.h" */
 #include "commands.h"
 
+static int axdest(struct iface *ifp);
+static int axheard(struct iface *ifp);
+static void axflush(struct iface *ifp);
+static int doaxflush(int argc,char *argv[],void *p);
 static int doaxkick(int argc,char *argv[],void *p);
 static int doaxreset(int argc,char *argv[],void *p);
 static int doaxroute(int argc,char *argv[],void *p);
@@ -63,7 +67,10 @@ char *Axreasons[] = {
 
 static struct cmds Axcmds[] = {
 	"blimit",       doblimit,       0, 0, NULLCHAR,
+	"destlist",     doaxdest,       0, 0, NULLCHAR,
 	"digipeat",     dodigipeat,     0, 0, NULLCHAR,
+	"flush",        doaxflush,      0, 0, NULLCHAR,
+	"heard",        doaxheard,      0, 0, NULLCHAR,
 	"jumpstart",    dojumpstart,    0, 2, "ax25 jumpstart <call> [ON|OFF]",
 	"kick",         doaxkick,       0, 2, "ax25 kick <axcb>",
 	"maxframe",     domaxframe,     0, 0, NULLCHAR,
@@ -89,6 +96,149 @@ char *argv[];
 void *p;
 {
 	return subcmd(Axcmds,argc,argv,p);
+}
+
+int
+doaxheard(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	struct iface *ifp;
+
+	if(argc > 1){
+		if((ifp = if_lookup(argv[1])) == NULLIF){
+			printf("Interface %s unknown\n",argv[1]);
+			return 1;
+		}
+		if(ifp->output != ax_output){
+			printf("Interface %s not AX.25\n",argv[1]);
+			return 1;
+		}
+		axheard(ifp);
+		return 0;
+	}
+	for(ifp = Ifaces;ifp != NULLIF;ifp = ifp->next){
+		if(ifp->output != ax_output)
+			continue;       /* Not an ax.25 interface */
+		if(axheard(ifp) == EOF)
+			break;
+	}
+	return 0;
+}
+static int
+axheard(ifp)
+struct iface *ifp;
+{
+	struct lq *lp;
+	char tmp[AXBUF];
+
+	if(ifp->hwaddr == NULLCHAR)
+		return 0;
+	printf("%s:\n",ifp->name);
+	printf("Station   Last heard           Pkts\n");
+	for(lp = Lq;lp != NULLLQ;lp = lp->next){
+		if(lp->iface != ifp)
+			continue;
+		if(printf("%-10s%-17s%8lu\n",pax25(tmp,lp->addr),
+		 tformat(secclock() - lp->time),lp->currxcnt) == EOF)
+			return EOF;
+	}
+	return 0;
+}
+int
+doaxdest(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	struct iface *ifp;
+
+	if(argc > 1){
+		if((ifp = if_lookup(argv[1])) == NULLIF){
+			printf("Interface %s unknown\n",argv[1]);
+			return 1;
+		}
+		if(ifp->output != ax_output){
+			printf("Interface %s not AX.25\n",argv[1]);
+			return 1;
+		}
+		axdest(ifp);
+		return 0;
+	}
+	for(ifp = Ifaces;ifp != NULLIF;ifp = ifp->next){
+		if(ifp->output != ax_output)
+			continue;       /* Not an ax.25 interface */
+		if(axdest(ifp) == EOF)
+			break;
+	}
+	return 0;
+}
+static int
+axdest(ifp)
+struct iface *ifp;
+{
+	struct ld *lp;
+	struct lq *lq;
+	char tmp[AXBUF];
+
+	if(ifp->hwaddr == NULLCHAR)
+		return 0;
+	printf("%s:\n",ifp->name);
+	printf("Station   Last ref         Last heard           Pkts\n");
+	for(lp = Ld;lp != NULLLD;lp = lp->next){
+		if(lp->iface != ifp)
+			continue;
+
+		printf("%-10s%-17s",
+		 pax25(tmp,lp->addr),tformat(secclock() - lp->time));
+
+		if(addreq(lp->addr,ifp->hwaddr)){
+			/* Special case; it's our address */
+			printf("%-17s",tformat(secclock() - ifp->lastsent));
+		} else if((lq = al_lookup(ifp,lp->addr,0)) == NULLLQ){
+			printf("%-17s","");
+		} else {
+			printf("%-17s",tformat(secclock() - lq->time));
+		}
+		if(printf("%8lu\n",lp->currxcnt) == EOF)
+			return EOF;
+	}
+	return 0;
+}
+static int
+doaxflush(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	struct iface *ifp;
+
+	for(ifp = Ifaces;ifp != NULLIF;ifp = ifp->next){
+		if(ifp->output != ax_output)
+			continue;       /* Not an ax.25 interface */
+		axflush(ifp);
+	}
+	return 0;
+}
+static void
+axflush(ifp)
+struct iface *ifp;
+{
+	struct lq *lp,*lp1;
+	struct ld *ld,*ld1;
+
+	ifp->rawsndcnt = 0;
+	for(lp = Lq;lp != NULLLQ;lp = lp1){
+		lp1 = lp->next;
+		free((char *)lp);
+	}
+	Lq = NULLLQ;
+	for(ld = Ld;ld != NULLLD;ld = ld1){
+		ld1 = ld->next;
+		free((char *)ld);
+	}
+	Ld = NULLLD;
 }
 
 static
@@ -411,7 +561,7 @@ struct ax_route *rp;
 	struct iface *ifp;
 	struct tm *tm;
 
-	tm = gmtime(&rp->time);
+	tm = localtime(&rp->time);
 	pax25(cp = buf, rp->target);
 	perm = rp->perm;
 	jumpstart = rp->jumpstart;
@@ -425,9 +575,11 @@ struct ax_route *rp;
 			cp++;
 		pax25(cp, rp_stack[i]->target);
 	}
-	printf("%2d-%.3s  %-9s  %c%c %s\n",
+	printf("%2d-%.3s  %02d:%02d  %-9s  %c%c %s\n",
 	       tm->tm_mday,
 	       "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
+	       tm->tm_hour,
+	       tm->tm_min,
 	       ifp ? ifp->name : "???",
 	       perm ? 'P' : ' ',
 	       jumpstart ? 'J' : ' ',
@@ -445,7 +597,7 @@ void *p;
   int i;
   struct ax_route *rp;
 
-  puts("Date    Interface  PJ Path");
+  puts("Date    Time   Interface  PJ Path");
   if(argc < 2) {
     for (i = 0; i < AXROUTESIZE; i++)
       for (rp = Ax_routes[i]; rp; rp = rp->next) doroutelistentry(rp);

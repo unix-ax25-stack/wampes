@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.13 1993/05/17 13:44:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.14 1993/06/20 07:30:04 deyke Exp $ */
 
 #ifndef _AX25_H
 #define _AX25_H
@@ -87,6 +87,52 @@ extern struct iface *Axroute_default_ifp;
 #define SEG_FIRST       0x80    /* First segment of a sequence */
 #define SEG_REM         0x7f    /* Mask for # segments remaining */
 
+/* Link quality report packet header, internal format */
+struct lqhdr;
+/* Link quality entry, internal format */
+struct lqentry;
+
+/* Link quality database record format
+ * Currently used only by AX.25 interfaces
+ */
+struct lq {
+	struct lq *next;
+	char addr[AXALEN];      /* Hardware address of station heard */
+	struct iface *iface;    /* Interface address was heard on */
+	int32 time;             /* Time station was last heard */
+	int32 currxcnt; /* Current # of packets heard from this station */
+
+#ifdef  notdef          /* Not yet implemented */
+	/* # of packets heard from this station as of his last update */
+	int32 lastrxcnt;
+
+	/* # packets reported as transmitted by station as of his last update */
+	int32 lasttxcnt;
+
+	uint16 hisqual; /* Fraction (0-1000) of station's packets heard
+			 * as of last update
+			 */
+	uint16 myqual;  /* Fraction (0-1000) of our packets heard by station
+			 * as of last update
+			 */
+#endif
+};
+#define NULLLQ  (struct lq *)0
+
+extern struct lq *Lq;   /* Link quality record headers */
+
+/* Structure used to keep track of monitored destination addresses */
+struct ld {
+	struct ld *next;        /* Linked list pointers */
+	char addr[AXALEN];/* Hardware address of destination overheard */
+	struct iface *iface;    /* Interface address was heard on */
+	int32 time;             /* Time station was last mentioned */
+	int32 currxcnt; /* Current # of packets destined to this station */
+};
+#define NULLLD  (struct ld *)0
+
+extern struct ld *Ld;   /* Destination address record headers */
+
 /* Linkage to network protocols atop ax25 */
 struct axlink {
 	int pid;
@@ -120,6 +166,15 @@ void st_ax25(struct ax25_cb *axp);
 /* In axhdr.c: */
 struct mbuf *htonax25(struct ax25 *hdr,struct mbuf *data);
 int ntohax25(struct ax25 *hdr,struct mbuf **bpp);
+
+/* In axlink.c: */
+void getlqentry(struct lqentry *ep,struct mbuf **bpp);
+void getlqhdr(struct lqhdr *hp,struct mbuf **bpp);
+void logsrc(struct iface *iface,char *addr);
+void logdest(struct iface *iface,char *addr);
+char *putlqentry(char *cp,char *addr,int32 count);
+char *putlqhdr(char *cp,int    version,int32 ip_addr);
+struct lq *al_lookup(struct iface *ifp,char *addr,int sort);
 
 /* In ax25user.c: */
 int ax25val(struct ax25_cb *axp);

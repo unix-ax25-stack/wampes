@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.18 1993/06/13 18:36:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.19 1993/06/20 07:30:04 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -142,9 +142,10 @@ int ctl;                /* Control field */
 struct mbuf *bp;        /* Data field (includes PID) */
 {
 	struct ax25 addr;
+	struct iface *ifp;
+	char *idest;
 	int rval;
 	struct mbuf *data;
-	struct iface *ifp;
 
 	/* If the source addr is unspecified, use the interface address */
 	if(source[0] == '\0')
@@ -155,8 +156,13 @@ struct mbuf *bp;        /* Data field (includes PID) */
 	memcpy(addr.source,source,AXALEN);
 	addr.ndigis = 0;
 	axroute(&addr, &ifp);
-
 	addr.cmdrsp = cmdrsp;
+
+	if(addr.ndigis != 0 && addr.nextdigi != addr.ndigis){
+		idest = addr.digis[addr.nextdigi];
+	} else {
+		idest = dest;
+	}
 
 	/* Allocate mbuf for control field, and fill in */
 	bp = pushdown(bp,1);
@@ -170,16 +176,12 @@ struct mbuf *bp;        /* Data field (includes PID) */
 	 * done at the IP router layer, but just to be safe...
 	 */
 	if(iface->forw != NULLIF){
-#if 0
 		logsrc(iface->forw,iface->forw->hwaddr);
 		logdest(iface->forw,idest);
-#endif
 		rval = (*iface->forw->raw)(iface->forw,data);
 	} else {
-#if 0
 		logsrc(iface,iface->hwaddr);
 		logdest(iface,idest);
-#endif
 		rval = (*iface->raw)(iface,data);
 	}
 	return rval;
@@ -208,7 +210,6 @@ struct mbuf *bp;
 		free_p(bp);
 		return;
 	}
-#if 0
 	/* If there were digis in this packet and at least one has
 	 * been passed, then the last passed digi is the immediate source.
 	 * Otherwise it is the original source.
@@ -217,7 +218,6 @@ struct mbuf *bp;
 		isrc = hdr.digis[hdr.nextdigi-1];
 	else
 		isrc = hdr.source;
-#endif
 
 	/* If there are digis in this packet and not all have been passed,
 	 * then the immediate destination is the next digi. Otherwise it
@@ -228,7 +228,6 @@ struct mbuf *bp;
 	else
 		idest = hdr.dest;
 
-#if 0
 	/* Don't log our own packets if we overhear them, as they're
 	 * already logged by axsend() and by the digipeater code.
 	 */
@@ -236,7 +235,6 @@ struct mbuf *bp;
 		logsrc(iface,isrc);
 		logdest(iface,idest);
 	}
-#endif
 	/* Examine immediate destination for a multicast address */
 	mcast = 0;
 	for(mpp = Ax25multi;(*mpp)[0] != '\0';mpp++){
@@ -282,6 +280,8 @@ struct mbuf *bp;
 				if((hbp = htonax25(&hdr,bp)) != NULLBUF){
 					bp = hbp;
 					if (ifp) {
+						logsrc(ifp,ifp->hwaddr);
+						logdest(ifp,hdr.nextdigi != hdr.ndigis ? hdr.digis[hdr.nextdigi] : hdr.dest);
 						(*ifp->raw)(ifp, bp);
 						bp = NULLBUF;
 					}
@@ -356,6 +356,8 @@ struct mbuf *data;
 	if (ifp = axp->iface) {
 		if (ifp->forw)
 			ifp = ifp->forw;
+		logsrc(ifp,ifp->hwaddr);
+		logdest(ifp,axp->hdr.nextdigi != axp->hdr.ndigis ? axp->hdr.digis[axp->hdr.nextdigi] : axp->hdr.dest);
 		return (*ifp->raw)(ifp,data);
 	}
 	free_p(data);
@@ -398,18 +400,19 @@ const char *call;
 int create;
 {
 
-  struct ax_route **tp;
-  struct ax_route *rp;
+	struct ax_route **tp;
+	struct ax_route *rp;
 
-  tp = Ax_routes + (axroute_hash(call) % AXROUTESIZE);
-  for (rp = *tp; rp && !addreq(rp->target, call); rp = rp->next) ;
-  if (!rp && create) {
-    rp = calloc(1, sizeof(*rp));
-    addrcp(rp->target, call);
-    rp->next = *tp;
-    *tp = rp;
-  }
-  return rp;
+	tp = Ax_routes + (axroute_hash(call) % AXROUTESIZE);
+	for (rp = *tp; rp && !addreq(rp->target, call); rp = rp->next)
+		;
+	if (!rp && create) {
+		rp = calloc(1, sizeof(*rp));
+		addrcp(rp->target, call);
+		rp->next = *tp;
+		*tp = rp;
+	}
+	return rp;
 }
 
 void
@@ -419,41 +422,44 @@ struct ax25 *hdr;
 int perm;
 {
 
-  char *call;
-  char *calls[MAXDIGIS+1];
-  int i;
-  int j;
-  int ncalls = 0;
-  struct ax_route *lastnode = 0;
-  struct ax_route *rp;
+	char *call;
+	char *calls[MAXDIGIS+1];
+	int i;
+	int j;
+	int ncalls = 0;
+	struct ax_route *lastnode = 0;
+	struct ax_route *rp;
 
-  call = hdr->source;
-  if (!valid_remote_call(call)) return;
-  calls[ncalls++] = call;
-  for (i = 0; i < hdr->nextdigi; i++) {
-    call = hdr->digis[i];
-    if (!valid_remote_call(call)) return;
-    for (j = 0; j < ncalls; j++)
-      if (addreq(call, calls[j])) return;
-    calls[ncalls++] = call;
-  }
+	call = hdr->source;
+	if (!valid_remote_call(call))
+		return;
+	calls[ncalls++] = call;
+	for (i = 0; i < hdr->nextdigi; i++) {
+		call = hdr->digis[i];
+		if (!valid_remote_call(call))
+			return;
+		for (j = 0; j < ncalls; j++)
+			if (addreq(call, calls[j]))
+				return;
+		calls[ncalls++] = call;
+	}
 
-  for (i = ncalls - 1; i >= 0; i--) {
-    rp = ax_routeptr(calls[i], 1);
-    if (perm || !rp->perm) {
-      if (lastnode) {
-	rp->digi = lastnode;
-	rp->ifp = 0;
-      } else {
-	rp->digi = 0;
-	rp->ifp = iface;
-      }
-      rp->perm = perm;
-    }
-    rp->time = secclock();
-    lastnode = rp;
-  }
-  axroute_savefile();
+	for (i = ncalls - 1; i >= 0; i--) {
+		rp = ax_routeptr(calls[i], 1);
+		if (perm || !rp->perm) {
+			if (lastnode) {
+				rp->digi = lastnode;
+				rp->ifp = 0;
+			} else {
+				rp->digi = 0;
+				rp->ifp = iface;
+			}
+			rp->perm = perm;
+		}
+		rp->time = secclock();
+		lastnode = rp;
+	}
+	axroute_savefile();
 }
 
 void
@@ -462,52 +468,56 @@ struct ax25 *hdr;
 struct iface **ifpp;
 {
 
-  char *idest;
-  int d;
-  int i;
-  struct ax_route *rp;
-  struct iface *ifp;
+	char *idest;
+	int d;
+	int i;
+	struct ax_route *rp;
+	struct iface *ifp;
 
-  /*** Find my last address ***/
+	/*** Find my last address ***/
 
-  hdr->nextdigi = 0;
-  for (i = hdr->ndigis - 1; i >= 0; i--)
-    if (ismyax25addr(hdr->digis[i])) {
-      hdr->nextdigi = i + 1;
-      break;
-    }
+	hdr->nextdigi = 0;
+	for (i = hdr->ndigis - 1; i >= 0; i--)
+		if (ismyax25addr(hdr->digis[i])) {
+			hdr->nextdigi = i + 1;
+			break;
+		}
 
-  /*** Remove all digipeaters before me ***/
+	/*** Remove all digipeaters before me ***/
 
-  d = hdr->nextdigi - 1;
-  if (d > 0) {
-    for (i = d; i < hdr->ndigis; i++) addrcp(hdr->digis[i-d], hdr->digis[i]);
-    hdr->ndigis -= d;
-    hdr->nextdigi = 1;
-  }
+	d = hdr->nextdigi - 1;
+	if (d > 0) {
+		for (i = d; i < hdr->ndigis; i++)
+			addrcp(hdr->digis[i-d], hdr->digis[i]);
+		hdr->ndigis -= d;
+		hdr->nextdigi = 1;
+	}
 
-  /*** Add necessary digipeaters and find interface ***/
+	/*** Add necessary digipeaters and find interface ***/
 
-  ifp = 0;
-  idest = hdr->nextdigi < hdr->ndigis ? hdr->digis[hdr->nextdigi] : hdr->dest;
-  for (rp = ax_routeptr(idest, 0); rp; rp = rp->digi) {
-    if (rp->digi && hdr->ndigis < MAXDIGIS) {
-      for (i = hdr->ndigis - 1; i >= hdr->nextdigi; i--)
-	addrcp(hdr->digis[i+1], hdr->digis[i]);
-      hdr->ndigis++;
-      addrcp(hdr->digis[hdr->nextdigi], rp->digi->target);
-    }
-    ifp = rp->ifp;
-  }
-  if (!ifp) ifp = Axroute_default_ifp;
-  if (ifp && ifp->forw) ifp = ifp->forw;
-  *ifpp = ifp;
+	ifp = 0;
+	idest = hdr->nextdigi < hdr->ndigis ? hdr->digis[hdr->nextdigi] : hdr->dest;
+	for (rp = ax_routeptr(idest, 0); rp; rp = rp->digi) {
+		if (rp->digi && hdr->ndigis < MAXDIGIS) {
+			for (i = hdr->ndigis - 1; i >= hdr->nextdigi; i--)
+				addrcp(hdr->digis[i+1], hdr->digis[i]);
+			hdr->ndigis++;
+			addrcp(hdr->digis[hdr->nextdigi], rp->digi->target);
+		}
+		ifp = rp->ifp;
+	}
+	if (!ifp)
+		ifp = Axroute_default_ifp;
+	if (ifp && ifp->forw)
+		ifp = ifp->forw;
+	*ifpp = ifp;
 
-  /*** Replace my address with hwaddr of interface ***/
+	/*** Replace my address with hwaddr of interface ***/
 
-  if (ifp)
-    addrcp(hdr->nextdigi ? hdr->digis[0] : hdr->source, ifp->hwaddr);
+	if (ifp)
+		addrcp(hdr->nextdigi ? hdr->digis[0] : hdr->source, ifp->hwaddr);
 }
+
 /* Handle ordinary incoming data (no network protocol) */
 void
 axnl3(iface,axp,src,dest,bp,mcast)

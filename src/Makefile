@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.42 1993/06/17 07:27:29 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.43 1993/06/20 07:30:03 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -80,6 +80,7 @@ OBJS          = alloc.o \
 		ax25subr.o \
 		ax25user.o \
 		axclient.o \
+		axheard.o \
 		axip.o \
 		axserver.o \
 		cmdparse.o \
@@ -183,6 +184,7 @@ SRCS          = alloc.c \
 		ax25subr.c \
 		ax25user.c \
 		axclient.c \
+		axheard.c \
 		axip.c \
 		axserver.c \
 		cmdparse.c \
@@ -406,6 +408,7 @@ ax25subr.o: global.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h
 ax25user.o: global.h mbuf.h timer.h iface.h proc.h lapb.h ax25.h
 axclient.o: global.h config.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h \
 	session.h hardware.h telnet.h
+axheard.o: global.h mbuf.h iface.h proc.h timer.h ax25.h ip.h internet.h
 axip.o: global.h mbuf.h iface.h proc.h timer.h internet.h netuser.h ax25.h \
 	socket.h trace.h pktdrvr.h cmdparse.h hpux.h crc.h
 axserver.o: global.h mbuf.h ax25.h iface.h proc.h timer.h lapb.h login.h

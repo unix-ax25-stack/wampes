@@ -1,4 +1,4 @@
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.11 1993/06/10 09:44:07 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.12 1993/06/20 07:32:05 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -250,7 +250,7 @@ static void doroutelistentry(struct axroute_tab *rp)
   struct iface *ifp = 0;
   struct tm *tm;
 
-  tm = gmtime(&rp->time);
+  tm = localtime(&rp->time);
   cp = pax25(buf, rp->call);
   for (n = 0; rp; rp = rp->digi) {
     rp_stack[++n] = rp;
@@ -261,9 +261,11 @@ static void doroutelistentry(struct axroute_tab *rp)
     while (*cp) cp++;
     pax25(cp, rp_stack[i]->call);
   }
-  printf("%2d-%.3s  %-9s  %s\n",
+  printf("%2d-%.3s  %02d:%02d  %-9s  %s\n",
 	 tm->tm_mday,
 	 "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
+	 tm->tm_hour,
+	 tm->tm_min,
 	 ifp ? ifp->name : "???",
 	 buf);
 }
@@ -277,7 +279,7 @@ static int doroutelist(int argc, char *argv[])
   int i;
   struct axroute_tab *rp;
 
-  puts("Date    Interface  Path");
+  puts("Date    Time   Interface  Path");
   if (argc < 2) {
     for (i = 0; i < AXROUTESIZE; i++)
       for (rp = axroute_tab[i]; rp; rp = rp->next) doroutelistentry(rp);
