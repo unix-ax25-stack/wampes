@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.41 1993/06/10 09:43:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.42 1993/06/10 14:53:01 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -122,9 +122,15 @@ void ioinit(void)
     tcsetattr(0, TCSANOW, &curr_termios);
     on_read(0, (void (*)()) keyboard, (void *) 0);
   } else {
+#ifdef macII
     fclose(stdin);
     fclose(stdout);
     fclose(stderr);
+#else
+    close(0);
+    close(1);
+    close(2);
+#endif
     for (i = 3; i < FD_SETSIZE; i++) close(i);
 
     setsid();
