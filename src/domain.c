@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.6 1992/11/17 10:35:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.7 1992/11/27 07:37:30 deyke Exp $ */
 
 #include "global.h"
 
@@ -33,6 +33,11 @@ struct cache {
   char name[1];
 };
 
+struct compress_table {
+  const char *name;
+  int offset;
+};
+
 static int Dtrace = FALSE;
 static char *Dtypes[] = {
 	"",
@@ -60,6 +65,7 @@ static DBM *Dbhostname;
 static int Usegethostby;
 static int32 Nextcacheflushtime;
 static struct cache *Cache;
+static struct compress_table Compress_table[128];
 static struct udp_cb *Domain_up;
 
 static void strlwc __ARGS((char *to, const char *from));
@@ -70,9 +76,10 @@ static struct rr *make_rr __ARGS((int source, char *dname, int dclass, int dtype
 static void put_rr __ARGS((FILE *fp, struct rr *rrp));
 static void dumpdomain __ARGS((struct dhdr *dhp));
 static int32 in_addr_arpa __ARGS((char *name));
-static char *putname __ARGS((char *cp, const char *name));
-static char *putq __ARGS((char *cp, const struct rr *rrp));
-static char *putrr __ARGS((char *cp, const struct rr *rrp));
+static char *putstring __ARGS((char *cp, const char *str));
+static char *putname __ARGS((char *buffer, char *cp, const char *name));
+static char *putq __ARGS((char *buffer, char *cp, const struct rr *rrp));
+static char *putrr __ARGS((char *buffer, char *cp, const struct rr *rrp));
 static void domain_server __ARGS((struct iface *iface, struct udp_cb *up, int cnt));
 static int docacheflush __ARGS((int argc, char *argv [], void *p));
 static int docachelist __ARGS((int argc, char *argv [], void *p));
@@ -432,7 +439,7 @@ struct rr *rrp;
 	case TYPE_PTR:
 	case TYPE_TXT:
 		/* These are all printable text strings */
-		fprintf(fp,"\t%s\n",rrp->rdata.data);
+		fprintf(fp,"\t%s\n",rrp->rdata.name);
 		break;
 	case TYPE_HINFO:
 		fprintf(fp,"\t%s\t%s\n",
@@ -511,15 +518,39 @@ char *name;
 
 /*---------------------------------------------------------------------------*/
 
-static char *putname(cp, name)
+static char *putstring(cp, str)
+char *cp;
+const char *str;
+{
+  char *cp1;
+
+  cp1 = cp;
+  cp++;
+  while (*str) *cp++ = *str++;
+  *cp1 = cp - cp1 - 1;
+  return cp;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static char *putname(buffer, cp, name)
+char *buffer;
 char *cp;
 const char *name;
 {
+
   const char *cp1;
+  int i;
 
   for (; ; ) {
+    for (i = 0; Compress_table[i].name; i++)
+      if (!strcmp(Compress_table[i].name, name))
+	return put16(cp, 0xc000 | Compress_table[i].offset);
     for (cp1 = name; *cp1 && *cp1 != '.'; cp1++) ;
     if (!(*cp++ = cp1 - name)) break;
+    Compress_table[i].name = name;
+    Compress_table[i].offset = cp - buffer - 1;
+    Compress_table[i+1].name = 0;
     while (name < cp1) *cp++ = *name++;
     if (*name) name++;
   }
@@ -528,12 +559,13 @@ const char *name;
 
 /*---------------------------------------------------------------------------*/
 
-static char *putq(cp, rrp)
+static char *putq(buffer, cp, rrp)
+char *buffer;
 char *cp;
 const struct rr *rrp;
 {
   for (; rrp; rrp = rrp->next) {
-    cp = putname(cp, rrp->name);
+    cp = putname(buffer, cp, rrp->name);
     cp = put16(cp, rrp->type);
     cp = put16(cp, rrp->class);
   }
@@ -542,16 +574,15 @@ const struct rr *rrp;
 
 /*---------------------------------------------------------------------------*/
 
-static char *putrr(cp, rrp)
+static char *putrr(buffer, cp, rrp)
+char *buffer;
 char *cp;
 const struct rr *rrp;
 {
-
   char *cp1;
-  int len;
 
   for (; rrp; rrp = rrp->next) {
-    cp = putname(cp, rrp->name);
+    cp = putname(buffer, cp, rrp->name);
     cp = put16(cp, rrp->type);
     cp = put16(cp, rrp->class);
     cp1 = put32(cp, rrp->ttl);
@@ -566,25 +597,19 @@ const struct rr *rrp;
     case TYPE_MR:
     case TYPE_NS:
     case TYPE_PTR:
-      cp = putname(cp, rrp->rdata.name);
+      cp = putname(buffer, cp, rrp->rdata.name);
       break;
     case TYPE_HINFO:
-      len = strlen(rrp->rdata.hinfo.cpu);
-      *cp++ = len;
-      memcpy(cp, rrp->rdata.hinfo.cpu, len);
-      cp += len;
-      len = strlen(rrp->rdata.hinfo.os);
-      *cp++ = len;
-      memcpy(cp, rrp->rdata.hinfo.os, len);
-      cp += len;
+      cp = putstring(cp, rrp->rdata.hinfo.cpu);
+      cp = putstring(cp, rrp->rdata.hinfo.os);
       break;
     case TYPE_MX:
       cp = put16(cp, rrp->rdata.mx.pref);
-      cp = putname(cp, rrp->rdata.mx.exch);
+      cp = putname(buffer, cp, rrp->rdata.mx.exch);
       break;
     case TYPE_SOA:
-      cp = putname(cp, rrp->rdata.soa.mname);
-      cp = putname(cp, rrp->rdata.soa.rname);
+      cp = putname(buffer, cp, rrp->rdata.soa.mname);
+      cp = putname(buffer, cp, rrp->rdata.soa.rname);
       cp = put32(cp, rrp->rdata.soa.serial);
       cp = put32(cp, rrp->rdata.soa.refresh);
       cp = put32(cp, rrp->rdata.soa.retry);
@@ -592,8 +617,7 @@ const struct rr *rrp;
       cp = put32(cp, rrp->rdata.soa.minimum);
       break;
     case TYPE_TXT:
-      memcpy(cp, rrp->rdata.data, rrp->rdlength);
-      cp += (int) rrp->rdlength;
+      cp = putstring(cp, rrp->rdata.name);
       break;
     default:
       break;
@@ -612,6 +636,7 @@ int cnt;
 {
 
   char *cp;
+  char buffer[256];
   int tmp;
   int32 addr;
   struct dhdr *dhp;
@@ -632,10 +657,11 @@ int cnt;
   dhp->aa = 0;
   dhp->tc = 0;
   dhp->ra = 0;
-  if (!dhp->opcode) {
+  switch (dhp->opcode) {
+  case SQUERY:
     dhp->rcode = NO_ERROR;
     for (qp = dhp->questions; qp; qp = qp->next) {
-      if (qp->class == CLASS_IN &&
+      if ((qp->class == CLASS_IN || qp->class == CLASS_ANY) &&
 	  (qp->type == TYPE_A || qp->type == TYPE_ANY) &&
 	  (addr = resolve(qp->name))) {
 	rrp = make_rr(RR_NONE, qp->name, CLASS_IN, TYPE_A, 86400, sizeof(addr), &addr);
@@ -643,22 +669,62 @@ int cnt;
 	dhp->answers = rrp;
 	dhp->ancount++;
       }
-      if (qp->class == CLASS_IN &&
+      if ((qp->class == CLASS_IN || qp->class == CLASS_ANY) &&
 	  (qp->type == TYPE_PTR || qp->type == TYPE_ANY) &&
 	  (addr = in_addr_arpa(qp->name)) &&
 	  !isaddr(cp = resolve_a(addr, 0))) {
-	rrp = make_rr(RR_NONE, qp->name, CLASS_IN, TYPE_PTR, 86400, strlen(cp) + 2, cp);
+	strcpy(buffer, cp);
+	if (buffer[strlen(buffer)-1] != '.') strcat(buffer, ".");
+	rrp = make_rr(RR_NONE, qp->name, CLASS_IN, TYPE_PTR, 86400, strlen(buffer) + 1, buffer);
 	rrp->next = dhp->answers;
 	dhp->answers = rrp;
 	dhp->ancount++;
       }
     }
-  } else
+    break;
+  case IQUERY:
+    dhp->rcode = NO_ERROR;
+    for (qp = dhp->answers; qp; qp = qp->next) {
+      if (qp->class == CLASS_IN &&
+	  qp->type == TYPE_A &&
+	  !isaddr(cp = resolve_a(qp->rdata.addr, 0))) {
+	strcpy(buffer, cp);
+	if (buffer[strlen(buffer)-1] != '.') strcat(buffer, ".");
+	rrp = make_rr(RR_NONE, buffer, CLASS_IN, TYPE_A, 86400, sizeof(qp->rdata.addr), &qp->rdata.addr);
+	rrp->next = dhp->questions;
+	dhp->questions = rrp;
+	dhp->qdcount++;
+	free(qp->name);
+	qp->name = strdup(rrp->name);
+	qp->ttl = rrp->ttl;
+      }
+      if (qp->class == CLASS_IN &&
+	  qp->type == TYPE_PTR &&
+	  (addr = resolve(qp->rdata.name))) {
+	sprintf(buffer, "%u.%u.%u.%u.in-addr.arpa.",
+		uchar(addr      ),
+		uchar(addr >>  8),
+		uchar(addr >> 16),
+		uchar(addr >> 24));
+	rrp = make_rr(RR_NONE, buffer, CLASS_IN, TYPE_PTR, 86400, strlen(qp->rdata.name) + 1, qp->rdata.name);
+	rrp->next = dhp->questions;
+	dhp->questions = rrp;
+	dhp->qdcount++;
+	free(qp->name);
+	qp->name = strdup(rrp->name);
+	qp->ttl = rrp->ttl;
+      }
+    }
+    break;
+  default:
     dhp->rcode = NOT_IMPL;
+    break;
+  }
   if (Dtrace) {
     printf("sent: ");
     dumpdomain(dhp);
   }
+  Compress_table[0].name = 0;
   bp = alloc_mbuf(512);
   cp = bp->data;
   cp = put16(cp, dhp->id);
@@ -675,11 +741,35 @@ int cnt;
   cp = put16(cp, dhp->ancount);
   cp = put16(cp, dhp->nscount);
   cp = put16(cp, dhp->arcount);
-  cp = putq(cp, dhp->questions);
-  cp = putrr(cp, dhp->answers);
-  cp = putrr(cp, dhp->authority);
-  cp = putrr(cp, dhp->additional);
+  cp = putq(bp->data, cp, dhp->questions);
+  cp = putrr(bp->data, cp, dhp->answers);
+  cp = putrr(bp->data, cp, dhp->authority);
+  cp = putrr(bp->data, cp, dhp->additional);
   bp->cnt = cp - bp->data;
+
+#if 0
+  {
+
+    struct dhdr *dhp1;
+    struct mbuf *bp1;
+
+    bp1 = copy_p(bp, 9999);
+    dhp1 = malloc(sizeof(*dhp1));
+    if (ntohdomain(dhp1, &bp1)) {
+      printf("ntohdomain failed!\n");
+    } else {
+      printf("check: ");
+      dumpdomain(dhp1);
+    }
+    free_rr(dhp1->questions);
+    free_rr(dhp1->answers);
+    free_rr(dhp1->authority);
+    free_rr(dhp1->additional);
+    free(dhp1);
+
+  }
+#endif
+
   send_udp(&up->socket, &fsock, 0, 0, bp, 0, 0, 0);
 
 Done:

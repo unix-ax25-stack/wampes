@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domhdr.c,v 1.1 1992/11/16 10:24:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domhdr.c,v 1.2 1992/11/27 07:37:31 deyke Exp $ */
 
 /* Domain header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -179,13 +179,13 @@ char *cp;       /* Pointer to start of encoded RR record */
 		cp += len;
 		break;
 	case TYPE_HINFO:
-		len = *cp++;
+		len = *cp++ & 0xff;
 		rrp->rdata.hinfo.cpu = mallocw(len+1);
 		memcpy( rrp->rdata.hinfo.cpu, cp, len );
 		rrp->rdata.hinfo.cpu[len] = '\0';
 		cp += len;
 
-		len = *cp++;
+		len = *cp++ & 0xff;
 		rrp->rdata.hinfo.os = mallocw(len+1);
 		memcpy( rrp->rdata.hinfo.os, cp, len );
 		rrp->rdata.hinfo.os[len] = '\0';
@@ -234,9 +234,10 @@ char *cp;       /* Pointer to start of encoded RR record */
 		cp += 4;
 		break;
 	case TYPE_TXT:
-		/* Just stash */
-		rrp->rdata.data = mallocw(rrp->rdlength);
-		memcpy(rrp->rdata.data,cp,rrp->rdlength);
+		len = *cp++ & 0xff;
+		rrp->rdata.name = mallocw(len+1);
+		memcpy( rrp->rdata.name, cp, len );
+		rrp->rdata.data[len] = '\0';
 		cp += rrp->rdlength;
 		break;
 	default:

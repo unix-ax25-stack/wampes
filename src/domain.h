@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.h,v 1.1 1992/11/16 10:24:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.h,v 1.2 1992/11/27 07:37:31 deyke Exp $ */
 
 #ifndef _DOMAIN_H
 #define _DOMAIN_H
@@ -36,6 +36,7 @@
 #define TYPE_ANY        255     /* Matches any type */
 
 #define CLASS_IN        1       /* The ARPA Internet */
+#define CLASS_ANY       255     /* Matches any class */
 
 struct dserver {
 	struct dserver *prev;   /* Linked list pointers */
@@ -65,7 +66,8 @@ struct dhdr {
 #define QUERY           0
 #define RESPONSE        1
 	char opcode;
-#define IQUERY          1
+#define SQUERY          0       /* Standard query */
+#define IQUERY          1       /* Inverse query */
 	char aa;                /* Authoratative answer */
 	char tc;                /* Truncation */
 	char rd;                /* Recursion desired */
