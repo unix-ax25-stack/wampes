@@ -1,17 +1,74 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/attach,v 1.2 1994/07/18 09:15:48 deyke Exp $
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/attach,v 1.3 1994/07/22 13:18:39 deyke Exp $
 .H 2 "attach" " \fItype\fP [\fItype specific options\fP]
-TO BE WRITTEN.
+Configure and attach an interface to the system.
+The details are highly interface type dependent.
 .H 3 "attach asy 0" " 0 \fIencapsulation\fP \fIname\fP 0 \fImtu\fP \fIspeed\fP"
-TO BE WRITTEN.
+Configure and attach an asynchronous communications port to the system.
+See the \fBifconfig encapsulation\fP command for the list of
+available encapsulations.
+\fIname\fP specifies the name of the interface,
+and is also used to open the interface device file in the directory \fB/dev\fP.
+\fImtu\fP is the Maximum Transmission Unit size, in bytes.
+Datagrams larger than this limit will be fragmented at the IP layer
+into smaller pieces.
+For AX.25 UI frames, this limits the size of the information field.
+For AX.25 I frames, however, the \fBax25 paclen\fP parameter is also relevant.
+If the datagram or fragment is still larger than \fBpaclen\fP,
+it is also fragmented at the AX.25 level (as opposed to the IP level) before
+transmission.
+See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
+for more information.
+\fIspeed\fP is the transmission speed in bits per second (eg. 9600).
 .H 3 "attach asy \fIip-addr\fP" " \fIport\fP \fIencapsulation\fP \fIname\fP 0 \fImtu\fP \fIspeed\fP"
-TO BE WRITTEN.
+Configure and attach a UNIX host TCP connection based port to the system.
+This is very similar to the asynchronous communications port described above,
+but instead of talking directly to a hardware device file, this interface type
+will open a UNIX host TCP connection to \fIip-addr\fP and \fIport\fP.
+The primary use of this interface type is to talk to some TNC which is
+connected to the system via the LAN.
+\fIip-addr\fP is the destination IP address.
+It has to be specified as one hexadecimal number.
+For example, 127.0.0.1 has to be given as 7f000001.
+\fIport\fP is the destination TCP port address.
+See the \fBifconfig encapsulation\fP command for the list of
+available encapsulations.
+\fIname\fP specifies the name of the interface.
+\fImtu\fP is the Maximum Transmission Unit size, in bytes.
+Datagrams larger than this limit will be fragmented at the IP layer
+into smaller pieces.
+For AX.25 UI frames, this limits the size of the information field.
+For AX.25 I frames, however, the \fBax25 paclen\fP parameter is also relevant.
+If the datagram or fragment is still larger than \fBpaclen\fP,
+it is also fragmented at the AX.25 level (as opposed to the IP level) before
+transmission.
+See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
+for more information.
+\fIspeed\fP must be specified, but is ignored.
 .H 3 "attach axip" " [\fIname\fP [ip|udp [\fIport\fP]]]"
-TO BE WRITTEN.
+This creates an AX.25 frame encapsulator for transmission
+of AX.25 frames over the UNIX host's networking system.
+The interface will be named \fIname\fP,
+or \fBaxip\fP if \fIname\fP is not specified.
+The default encapsulation will use IP protocol 93,
+but it is possible to use UDP instead.
+If \fIport\fP is specified that IP protocol number or UDP port number
+will be used instead of 93.
+See also RFC1226 and the \fBaxip\fP command.
 .H 3 "attach ipip" " [\fIname\fP [ip|udp [\fIport\fP]]]"
-TO BE WRITTEN.
+This creates an IP frame encapsulator for transmission
+of IP frames over the UNIX host's networking system.
+The interface will be named \fIname\fP,
+or \fBipip\fP if \fIname\fP is not specified.
+The default encapsulation will use IP protocol 4,
+but it is possible to use UDP instead.
+If \fIport\fP is specified that IP protocol number or UDP port number
+will be used instead of 4.
 .H 3 "attach netrom"
-TO BE WRITTEN.
+This creates an IP frame encapsulator for transmission
+of IP frames over the NET/ROM transport.
+The interface will be named
+\fBnetrom\fP.
 .H 3 "attach ni" " \fIname\fP \fIip-addr\fP [\fInetmask\fP]"
 Currently \fBattach ni\fP is available on HP-UX systems only.
 .P
-TO BE WRITTEN.
+MORE TO BE WRITTEN.

@@ -1,11 +1,91 @@
-#! /bin/csh -f
+#! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.12 1994/05/02 16:52:49 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.13 1994/07/22 13:18:05 deyke Exp $
 
-set nonomatch
-tcpremove
-sh < ~/tcp/lib/configure > ~/tcp/lib/configure.h
-foreach dir ( \
+save_file()
+{
+	cp -p $1 $1.old
+}
+
+check_file()
+{
+	if cmp -s $1.old $1 ; then
+		mv $1.old $1
+	else
+		rm $1.old
+	fi
+}
+
+date=$(date +%y%m%d)
+
+if [[ -x /bin/hp9000s700 ]] && /bin/hp9000s700 ; then
+	export CCOPTS='-z +ESlit'
+fi
+
+cd ~/tcp
+
+file=README
+save_file $file
+sed "s/wampes-....../wampes-$date/g" < $file.old > $file
+check_file $file
+
+file=hosts
+save_file $file
+grep -F '@(#) $Header' < $file.old > $file
+echo '#' >> $file
+cat hostfiles/* >> $file
+check_file $file
+
+cd ~/tcp/lib
+
+ksh < configure > configure.h
+
+cd ~/tcp/src
+
+for file in *.[ch] ; do
+	if [[ -f $file ]] ; then
+		case $(grep -F -c '@(#) $Header' $file) in
+		0)
+			save_file $file
+			echo '/* @(#) $Header\c' > $file
+			echo '$ */\n' >> $file
+			cat $file.old >> $file
+			check_file $file
+			echo RCS header inserted in $file
+			;;
+		1)
+			;;
+		*)
+			echo $file has too many RCS headers
+			;;
+		esac
+	fi
+done
+
+file=version.c
+save_file $file
+sed "s/WAMPES-....../WAMPES-$date/g" < $file.old > $file
+check_file $file
+
+cd ~/tcp/manuals
+
+for manual in * ; do
+	cd ~/tcp/manuals/$manual
+
+	file=frontpage
+	save_file $file
+	sed "s/Version ....../Version $date/g" < $file.old > $file
+	check_file $file
+
+	file=../../doc/$manual.mm
+	save_file $file
+	grep -F '@(#) $Header' < $file.old > $file
+	cat $(< filelist) | grep -v '@(#) $Header' >> $file
+	check_file $file
+
+done
+
+for dir in \
 	~/tcp \
 	~/tcp/aos \
 	~/tcp/bbs \
@@ -15,24 +95,28 @@ foreach dir ( \
 	~/tcp/lib \
 	~/tcp/src \
 	~/tcp/tools \
-	~/tcp/util )
+	~/tcp/util \
+	; do
 	cd $dir
-	foreach m (Makefile*)
-		if (-f $m) then
-			cp -p $m $m.old
-			make -f $m depend
-			if ( { cmp -s $m $m.old } ) then
-				rm $m
-				mv $m.old $m
-			else
-				rm $m.old
-			endif
-		endif
-	end
+	for file in Makefile* ; do
+		if [[ -f $file ]] ; then
+			save_file $file
+			make -f $file depend
+			check_file $file
+		fi
+	done
 	trimfiles
-end
-cd ~/tcp/src
-makeall |& tee xxx
+done
+
 cd ~/tcp
 make
 mk make
+
+cd ~/tcp/src
+make lint tags
+tcpdiff
+
+cd ~/tcp/tools
+make
+
+echo '***** tcpmake complete *****'

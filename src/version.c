@@ -1,8 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/version.c,v 1.212 1994/07/18 09:15:32 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/version.c,v 1.213 1994/07/22 13:17:53 deyke Exp $ */
 
 #ifndef __lint
-static char id[] = "@(#)WAMPES-940718";
+static char id[] = "@(#)WAMPES-940722";
 #endif
 
 /* version control information */
-char Version[] = "WAMPES-940718";
+char Version[] = "WAMPES-940722";

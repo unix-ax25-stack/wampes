@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sas-1,v 1.21 1994/07/18 09:15:14 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sas-1,v 1.22 1994/07/22 13:17:35 deyke Exp $
 
 hostname     dl4sas-1
 ax25 mycall  dl4sas-1
@@ -6,8 +6,7 @@ ip address   dl4sas-1
 netrom ident "#boeb3"
 
 attach axip                     # ax.25 over host ip
-attach ipip                     # ip over host ip (ip proto  4)
-attach ipip ipip94 ip 94        # ip over host ip (ip proto 94)
+attach ipip                     # ip over host ip
 attach netrom                   # ip over netrom
 
 ax25 route add axip default

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.51 1994/05/08 11:00:23 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.52 1994/07/22 13:18:10 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -184,7 +184,7 @@ install: \
 	$(RMTARGET)
 	cp $? $@
 
-clean:; rm -f *.o $(TARGETS) *~
+clean:; @rm -f *.o $(TARGETS) *~
 
 depend:; @mkmf -f $(MAKEFILE)
 ###

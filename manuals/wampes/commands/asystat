@@ -1,20 +1,22 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/asystat,v 1.1 1994/07/12 16:32:24 deyke Exp $
-.H 2 "asystat"
-Display statistics on attached asynchronous communications
-interfaces, if any. The display for each port consists of three
-lines.
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/asystat,v 1.2 1994/07/22 13:18:39 deyke Exp $
+.H 2 "asystat" " [\fIinterface\fP ...]"
+Display statistics on the specified or all
+attached asynchronous communications interfaces.
+The display for each interface consists of three lines.
 .P
-The first line gives the port label and the speed in
+The first line shows the interface name and the speed in
 bits per second.
 .P
 The second line shows receiver (RX) event
 counts: the total number of read system calls, received
-characters, and the receiver high water mark. The high water
+characters, and the receiver high water mark. The receiver high water
 mark is the maximum number of characters ever read from the
 device during a single system call. This is useful for
 monitoring system interrupt latency margins as it shows how
 close the port hardware has come to overflowing due to the
 inability of the CPU to respond in time.
+The high water mark will be reset to 0 after \fBasystat\fP has
+displayed its value.
 .P
 The third line shows transmit (TX) statistics, including the total
 number of write system calls and transmitted characters.

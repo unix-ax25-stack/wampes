@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.20 1994/05/05 11:18:29 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.21 1994/07/22 13:18:20 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -103,11 +103,10 @@ $(LIBRARY): $(OBJS)
 	@sleep 1
 	@ar cru $@ $(OBJS)
 	@$(RANLIB) $@
-	@echo "done"
 
 install:;
 
-clean:; rm -f *.o *.a *~
+clean:; @rm -f *.o *.a *~
 
 depend:; @mkmf -f $(MAKEFILE)
 ###

@@ -356,7 +356,7 @@ original source code for those TNCs was not made available, running KISS on
 these TNCs requires the installation of nonstandard ROMs. Two ROMs are
 available for the TNC-2. One contains "dedicated" KISS TNC code; the TNC
 operates only in the KISS mode. The "download" version contains standard
-N2WX firmware with a bootstrap loader overlay. When the TNC is turned on 
+N2WX firmware with a bootstrap loader overlay. When the TNC is turned on
 or reset, it executes the loader. The loader will accept a memory image in
 Intel Hex format, or it can be told to execute the standard N2WX firmware
 through the "H"\** command.  The download version is handy for

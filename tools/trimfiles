@@ -1,40 +1,49 @@
-#! /bin/sh
+#! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.10 1994/02/28 11:55:51 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.11 1994/07/22 13:18:05 deyke Exp $
+
+save_file()
+{
+	cp -p $1 $1.old
+}
+
+check_file()
+{
+	if cmp -s $1.old $1 ; then
+		mv $1.old $1
+	else
+		rm $1.old
+	fi
+}
 
 PATH=/usr/5bin:$PATH
-tmp=tmp$$
-if [ ! -f .trimtime ] ; then
-  touch 0101000070 .trimtime
+
+if [[ ! -f .trimtime ]] ; then
+	touch 0101000070 .trimtime
 fi
-for i in `find * -prune -type f '(' \
-	-name '*.c'             -o \
-	-name '*.conf'          -o \
-	-name '*.h'             -o \
-	-name 'Makefile'        -o \
-	-name 'Makefile.pure'   -o \
-	-name 'README'          -o \
-	-name 'configure'       -o \
-	-name 'doc'             -o \
-	-name 'fixnetrc'        -o \
-	-name 'genupd'          -o \
-	-name 'hosts'           -o \
-	-name 'intro.txt'       -o \
-	-name 'ip_routes'       -o \
-	-name 'net.rc*'         -o \
-	-name 'netrom_links'    -o \
-	-name 'notes'           -o \
-	-name 'smack.ms'           \
-	')' -newer .trimtime -print`
-do
-  echo "$i \c"
-  trim -s $i > $tmp
-  if cmp -s $i $tmp ; then
-    rm -f $tmp
-    echo no change
-  else
-    mv $tmp $i
-    echo done
-  fi
+
+for file in $(find * -prune -type f \( \
+	-name '*.c' -o \
+	-name '*.conf' -o \
+	-name '*.h' -o \
+	-name '*.mm' -o \
+	-name '*.ms' -o \
+	-name 'Makefile' -o \
+	-name 'Makefile.pure' -o \
+	-name 'README' -o \
+	-name 'configure' -o \
+	-name 'doc' -o \
+	-name 'fixnetrc' -o \
+	-name 'genupd' -o \
+	-name 'hosts' -o \
+	-name 'intro.txt' -o \
+	-name 'ip_routes' -o \
+	-name 'net.rc*' -o \
+	-name 'netrom_links' -o \
+	-name 'notes' \
+	\) -newer .trimtime -print) ; do
+	save_file $file
+	trim -s < $file.old > $file
+	check_file $file
 done
 echo x > .trimtime

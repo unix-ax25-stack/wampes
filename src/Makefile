@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.70 1994/05/11 10:46:29 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.71 1994/07/22 13:17:39 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -401,9 +401,9 @@ $(PROGRAM):     $(OBJS) $(LIBS)
 		$(RMTARGET)
 		@$(LD) $(LDFLAGS) $(OBJS) $(LIBS) $(SLIBS) -o $(PROGRAM)
 
-clean:;         @rm -f $(OBJS) *.o core *~
+clean:;         @rm -f *.o *~
 
-clobber:;       @rm -f $(OBJS) $(PROGRAM) *.o core tags *~
+clobber:        clean; @rm -f $(PROGRAM) lint tags
 
 depend:;        @mkmf -f $(MAKEFILE)
 
@@ -413,7 +413,7 @@ index:;         @ctags -wx $(HDRS) $(SRCS)
 
 install:        $(DEST)/$(PROGRAM)
 
-lint:;          @lih $(SRCS)
+lint:           $(HDRS) $(SRCS); @lih $(SRCS) > lint
 
 print:;         @$(PRINT) $(HDRS) $(SRCS)
 

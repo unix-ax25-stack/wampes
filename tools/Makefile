@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.20 1994/06/16 13:14:38 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.21 1994/07/22 13:18:02 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -16,7 +16,8 @@ TARGETS    = \
 	     filter \
 	     makeiprt \
 	     mp \
-	     nos-cb
+	     nos-cb \
+	     s2m
 
 all:;   @case "`uname -sr`" in \
 	HP-UX*) \
@@ -140,9 +141,14 @@ nos-cb: nos-cb.o $(LIBS)
 	@sleep 1
 	$(LD) $(LDFLAGS) nos-cb.o $(LIBS) $(SLIBS) -o $@
 
+s2m:    s2m.o $(LIBS)
+	$(RMTARGET)
+	@sleep 1
+	$(LD) $(LDFLAGS) s2m.o $(LIBS) $(SLIBS) -o $@
+
 install:;
 
-clean:; rm -f *.o $(TARGETS) *~
+clean:; @rm -f *.o $(TARGETS) *~
 
 depend:; @mkmf -f $(MAKEFILE)
 ###

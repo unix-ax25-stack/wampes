@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.n0pra,v 1.10 1994/07/18 09:15:14 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.n0pra,v 1.11 1994/07/22 13:17:35 deyke Exp $
 
 hostname     n0pra
 ax25 mycall  n0pra
@@ -6,8 +6,7 @@ ip address   n0pra
 netrom ident "#fc1"
 
 attach axip                     # ax.25 over host ip
-attach ipip                     # ip over host ip (ip proto  4)
-attach ipip ipip94 ip 94        # ip over host ip (ip proto 94)
+attach ipip                     # ip over host ip
 attach netrom                   # ip over netrom
 attach ni ni n0pra-u            # ip to host ip
 

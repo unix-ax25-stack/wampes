@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/aos/Makefile,v 1.4 1994/05/05 11:18:48 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/aos/Makefile,v 1.5 1994/07/22 13:18:15 deyke Exp $
 
 LIBRARY       = libaos.a
 
@@ -55,7 +55,7 @@ $(LIBRARY): $(OBJS)
 
 install:;
 
-clean:; rm -f *.o $(LIBRARY) *~
+clean:; @rm -f *.o $(LIBRARY) *~
 
 depend:; @mkmf -f $(MAKEFILE)
 ###

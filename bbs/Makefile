@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.40 1994/05/05 11:18:25 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.41 1994/07/22 13:17:57 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -124,7 +124,7 @@ install: /usr/local/bin/bbs findpath killdup /usr/local/bin/sfstat /usr/local/li
 	$(RMTARGET)
 	cp $? $@
 
-clean:; rm -f *.o $(TARGETS) *~
+clean:; @rm -f *.o $(TARGETS) *~
 
 depend:; @mkmf -f $(MAKEFILE)
 ###
