@@ -1,9 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/proc.h,v 1.5 1992/08/24 10:09:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/proc.h,v 1.6 1992/09/01 16:52:58 deyke Exp $ */
 
 #ifndef _PROC_H
 #define _PROC_H
 
 #include <setjmp.h>
+#include <stdio.h>
 
 #ifndef _MBUF_H
 #include "mbuf.h"

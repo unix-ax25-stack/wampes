@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.8 1992/06/01 10:34:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.9 1992/09/01 16:52:57 deyke Exp $ */
 
 /* This module implements the serial line framing method used by
  * net/rom nodes.  This allows the net/rom software to talk to
@@ -242,7 +242,10 @@ struct iface *iface;
 			continue;
 		net_route(np->iface,bp);
 	}
-
+#if 0
+	if(np->iface->rxproc == Curproc)
+		np->iface->rxproc = NULLPROC;
+#endif
 }
 /* donrstat:  display status of active net/rom serial interfaces */
 int

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.9 1992/08/24 10:09:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.10 1992/09/01 16:52:51 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -56,6 +56,20 @@ struct env {
 };
 #define getstackptr(ep) ((ep)->sp)
 #else
+#ifdef sun
+struct env {
+	long    onsstack;
+	long    sigmask;
+	long    sp;
+	long    pc;
+	long    npc;
+	long    psr;
+	long    g1;
+	long    o0;
+	long    wbcnt;
+};
+#define getstackptr(ep) ((ep)->sp)
+#else
 #if defined(ISC) || defined (LINUX)
 struct env {
 	long    esp;
@@ -79,17 +93,27 @@ struct env {
 #endif
 #endif
 #endif
+#endif
 
 static int stkutil __ARGS((struct proc *pp));
+static void pproc __ARGS((struct proc *pp));
 
 void
 kinit()
 {
 #if 0
+	int i;
+
+	/* Initialize interrupt stack for high-water-mark checking */
+	for(i=0;i<512;i++)
+		Intstk[i] = STACKPAT;
+
 	/* Remember location 0 pattern to detect null pointer derefs */
 	oldNull = *(unsigned short *)NULL;
 #endif
 
+	/* Initialize signal queue */
+	Ksig.wp = Ksig.rp = Ksig.entry;
 }
 /* Print process table info
  * Since things can change while ps is running, the ready proceses are
@@ -105,7 +129,6 @@ char *argv[];
 void *p;
 {
 	register struct proc *pp;
-	register struct env *ep;
 	int i;
 
 	extern time_t StartTime;
@@ -113,58 +136,42 @@ void *p;
 	printf("Uptime %s",tformat(secclock()-StartTime));
 	printf("\n");
 
+	printf("psigs %lu queued %lu hiwat %u woken %lu nops %lu dups %u\n",Ksig.psigs,
+	 Ksig.psigsqueued,Ksig.maxentries,Ksig.psigwakes,Ksig.psignops,Ksig.dupsigs);
+	Ksig.maxentries = 0;
+	printf("pwaits %lu nops %lu from int %lu\n",
+	 Ksig.pwaits,Ksig.pwaitnops,Ksig.pwaitints);
 	printf("PID       SP        stksize   maxstk    event     fl  in  out  name\n");
 
-	for(pp = Susptab;pp != NULLPROC;pp = pp->next){
-		ep = (struct env *)&pp->env;
-		if(printf("%08lx  %08lx  %-10u%-10u%08lx  %c%c%c %3d %3d  %s\n",
-		 ptol(pp),
-		 getstackptr(ep),
-		 pp->stksize,
-		 stkutil(pp),
-		 ptol(pp->event),
-		 (pp->flags & P_ISTATE) ? 'I' : ' ',
-		 (pp->state & WAITING) ? 'W' : ' ',
-		 (pp->state & SUSPEND) ? 'S' : ' ',
-		 pp->input, pp->output,
-		 pp->name) == EOF)
-			return 0;
-	}
-	for(i=0;i<PHASH;i++){
-		for(pp = Waittab[i];pp != NULLPROC;pp = pp->next){
-			ep = (struct env *)&pp->env;
-			if(printf("%08lx  %08lx  %-10u%-10u%08lx  %c%c%c %3d %3d  %s\n",
-			 ptol(pp),getstackptr(ep),pp->stksize,stkutil(pp),
-			 ptol(pp->event),
-			 (pp->flags & P_ISTATE) ? 'I' : ' ',
-			 (pp->state & WAITING) ? 'W' : ' ',
-			 (pp->state & SUSPEND) ? 'S' : ' ',
-			 pp->input,pp->output,
-			 pp->name) == EOF)
-				return 0;
-		}
-	}
-	for(pp = Rdytab;pp != NULLPROC;pp = pp->next){
-		ep = (struct env *)&pp->env;
-		if(printf("%08lx  %08lx  %-10u%-10u          %c%c%c %3d %3d  %s\n",
-		 ptol(pp),getstackptr(ep),pp->stksize,stkutil(pp),
-		 (pp->flags & P_ISTATE) ? 'I' : ' ',
-		 (pp->state & WAITING) ? 'W' : ' ',
-		 (pp->state & SUSPEND) ? 'S' : ' ',
-		 pp->input,pp->output,
-		 pp->name) == EOF)
-			return 0;
-	}
-	if(Curproc != NULLPROC){
-		ep = (struct env *)&Curproc->env;
-		printf("%08lx  %08lx  %-10u%-10u          %c   %3d %3d  %s\n",
-		 ptol(Curproc),getstackptr(ep),Curproc->stksize,
-		 stkutil(Curproc),
-		 (Curproc->flags & P_ISTATE) ? 'I' : ' ',
-		 Curproc->input,Curproc->output,
-		 Curproc->name);
-	}
+	for(pp = Susptab;pp != NULLPROC;pp = pp->next)
+		pproc(pp);
+
+	for(i=0;i<PHASH;i++)
+		for(pp = Waittab[i];pp != NULLPROC;pp = pp->next)
+			pproc(pp);
+
+	for(pp = Rdytab;pp != NULLPROC;pp = pp->next)
+		pproc(pp);
+
+	if(Curproc != NULLPROC)
+		pproc(Curproc);
+
 	return 0;
+}
+static void
+pproc(pp)
+struct proc *pp;
+{
+	register struct env *ep;
+
+	ep = (struct env *)&pp->env;
+	printf("%08lx  %08lx  %7u   %6u    %08lx  %c%c%c %3d %3d  %s\n",
+	 ptol(pp),getstackptr(ep),pp->stksize,stkutil(pp),
+	 ptol(pp->event),
+	 (pp->flags & P_ISTATE) ? 'I' : ' ',
+	 (pp->state & WAITING) ? 'W' : ' ',
+	 (pp->state & SUSPEND) ? 'S' : ' ',
+	 pp->input,pp->output,pp->name);
 }
 static int
 stkutil(pp)

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.12 1992/08/24 10:09:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.13 1992/09/01 16:52:58 deyke Exp $ */
 
 #include "global.h"
 
@@ -20,19 +20,19 @@
 #include "buildsaddr.h"
 
 struct controlblock {
-  int  fd;                              /* Socket descriptor */
-  char  buffer[1024];                   /* Input buffer */
-  int  bufcnt;                          /* Number of bytes in buffer */
+  int fd;                               /* Socket descriptor */
+  char buffer[1024];                    /* Input buffer */
+  int bufcnt;                           /* Number of bytes in buffer */
   struct transport_cb *tp;              /* Transport handle */
-  int  binary;                          /* Transfer is binary (no EOL conv) */
+  int binary;                           /* Transfer is binary (no EOL conv) */
 };
 
 struct cmdtable {
-  char  *name;                          /* Command name (lower case) */
-  int  (*fnc) __ARGS((struct controlblock *cp)); /* Command function */
+  char *name;                           /* Command name (lower case) */
+  int (*fnc) __ARGS((struct controlblock *cp)); /* Command function */
 };
 
-static int  flisten = -1;
+static int flisten = -1;
 
 static char *getarg __ARGS((char *line, int all));
 static int command_switcher __ARGS((struct controlblock *cp, char *name, struct cmdtable *tableptr));
@@ -49,14 +49,14 @@ static void accept_connection __ARGS((void *p));
 
 /*---------------------------------------------------------------------------*/
 
-static char  *getarg(line, all)
-char  *line;
-int  all;
+static char *getarg(line, all)
+char *line;
+int all;
 {
 
-  char  *arg;
-  int  c, quote;
-  static char  *p;
+  char *arg;
+  int c, quote;
+  static char *p;
 
   if (line) p = line;
   while (isspace(uchar(*p))) p++;
@@ -77,12 +77,12 @@ int  all;
 
 /*---------------------------------------------------------------------------*/
 
-static int  command_switcher(cp, name, tableptr)
+static int command_switcher(cp, name, tableptr)
 struct controlblock *cp;
-char  *name;
+char *name;
 struct cmdtable *tableptr;
 {
-  int  namelen;
+  int namelen;
 
   namelen = strlen(name);
   for (; ; ) {
@@ -108,7 +108,7 @@ static void transport_try_send(cp)
 struct controlblock *cp;
 {
 
-  int  cnt;
+  int cnt;
   struct mbuf *bp;
 
   cnt = transport_send_space(cp->tp);
@@ -135,7 +135,7 @@ struct transport_cb *tp;
 int16 cnt;
 {
 
-  char  buffer[1024];
+  char buffer[1024];
   struct controlblock *cp;
   struct mbuf *bp;
 
@@ -168,7 +168,7 @@ struct transport_cb *tp;
 
 /*---------------------------------------------------------------------------*/
 
-static int  ascii_command(cp)
+static int ascii_command(cp)
 struct controlblock *cp;
 {
   cp->binary = 0;
@@ -177,7 +177,7 @@ struct controlblock *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static int  binary_command(cp)
+static int binary_command(cp)
 struct controlblock *cp;
 {
   cp->binary = 1;
@@ -186,10 +186,10 @@ struct controlblock *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static int  connect_command(cp)
+static int connect_command(cp)
 struct controlblock *cp;
 {
-  char  *protocol, *address;
+  char *protocol, *address;
 
   protocol = getarg((char *) 0, 0);
   address = getarg((char *) 0, 1);
@@ -216,7 +216,7 @@ struct controlblock *cp;
     0,         0
   };
 
-  char  c;
+  char c;
 
   if (read(cp->fd, &c, 1) <= 0) {
     delete_controlblock(cp);
@@ -239,8 +239,8 @@ static void accept_connection(p)
 void *p;
 {
 
-  int  addrlen;
-  int  fd;
+  int addrlen;
+  int fd;
   struct controlblock *cp;
   struct sockaddr addr;
 
@@ -260,8 +260,8 @@ void *p;
 void remote_net_initialize()
 {
 
-  static char  *socketnames[] = {
-#if (defined(hpux)||defined(__hpux)||defined(LINUX))
+  static char *socketnames[] = {
+#if defined(__hpux) || defined(sun) || defined(LINUX)
     "unix:/tcp/.sockets/netcmd",
 #else
     "*:4718",
@@ -269,8 +269,8 @@ void remote_net_initialize()
     (char *) 0
   };
 
-  int  addrlen, i;
-  int  arg;
+  int addrlen, i;
+  int arg;
   struct sockaddr *addr;
 
   for (i = 0; socketnames[i]; i++) {

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.11 1992/06/01 10:34:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.12 1992/09/01 16:53:03 deyke Exp $ */
 
 /* Packet tracing - top level and generic routines, including hex/ascii
  * Copyright 1991 Phil Karn, KA9Q
@@ -198,7 +198,6 @@ int16 len;
 		c = *buf++;
 		ctohex(aptr,(int16)uchar(c));
 		aptr += 3;
-		c &= 0x7f;
 		*cptr++ = isprint(uchar(c)) ? c : '.';
 	}
 	*cptr++ = '\n';

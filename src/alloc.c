@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.13 1992/06/01 10:34:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.14 1992/09/01 16:52:40 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -185,9 +185,10 @@ unsigned size;  /* Size of each element */
 {
 
 	register unsigned i;
-	register void *cp;
+	register char *cp;
 
-	if ((cp = malloc(i = nelem * size)) != NULL)
+	i = nelem * size;
+	if((cp = malloc(i)) != NULL)
 		memset(cp,0,i);
 	return cp;
 }

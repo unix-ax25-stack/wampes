@@ -1,11 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.22 1992/08/24 10:09:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.23 1992/09/01 16:52:55 deyke Exp $ */
 
 #include <sys/types.h>
 
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
-#include <termio.h>
+#include <termios.h>
 #include <unistd.h>
 
 #if defined(ISC) || defined(SCO)
@@ -21,10 +21,14 @@
 #endif
 
 #ifdef LINUX
-#define FIONBIO O_NONBLOCK
+#define FIOSNBIO        O_NONBLOCK
 #endif
 
-#if defined(sun)
+#ifndef FIOSNBIO
+#define FIOSNBIO        FIONBIO
+#endif
+
+#ifdef sun
 #include <sys/filio.h>
 #endif
 
@@ -151,7 +155,7 @@ int rlsd;               /* Use Received Line Signal Detect (aka CD) */
 	char filename[80];
 	int sp;
 	long arg;
-	struct termio termio;
+	struct termios termios;
 
 	ap = &Asy[dev];
 	strcpy(filename, "/dev/");
@@ -160,17 +164,14 @@ int rlsd;               /* Use Received Line Signal Detect (aka CD) */
 	ap->iface = ifp;
 	sp = find_speed(speed);
 	ap->speed = speed_table[sp].speed;
-	termio.c_iflag = IGNBRK | IGNPAR;
-	termio.c_oflag = 0;
-	termio.c_cflag = speed_table[sp].flags | CS8 | CREAD | CLOCAL;
-	termio.c_lflag = 0;
-	termio.c_line = 0;
-	termio.c_cc[VMIN] = 0;
-	termio.c_cc[VTIME] = 0;
-	if (ioctl(ap->fd, TCSETA, &termio) == -1) goto Fail;
-	if (ioctl(ap->fd, TCFLSH, 2) == -1) goto Fail;
+	memset((char *) &termios, 0, sizeof(termios));
+	termios.c_iflag = IGNBRK | IGNPAR;
+	termios.c_cflag = CS8 | CREAD | CLOCAL;
+	if (cfsetispeed(&termios, speed_table[sp].flags)) goto Fail;
+	if (cfsetospeed(&termios, speed_table[sp].flags)) goto Fail;
+	if (tcsetattr(ap->fd, TCSANOW, &termios)) goto Fail;
 	arg = 1;
-	ioctl(ap->fd, FIONBIO, &arg);
+	ioctl(ap->fd, FIOSNBIO, &arg);
 	on_read(ap->fd, (void (*)()) ifp->rxproc, ifp);
 	return 0;
 
@@ -213,7 +214,7 @@ long bps;
 
 	struct asy *asyp;
 	int sp;
-	struct termio termio;
+	struct termios termios;
 
 	if(bps <= 0 || dev >= ASY_MAX)
 		return -1;
@@ -224,10 +225,13 @@ long bps;
 	if(bps == 0)
 		return -1;
 	sp = find_speed(bps);
-	if (ioctl(asyp->fd, TCGETA, &termio))
+	if (tcgetattr(asyp->fd, &termios))
 		return -1;
-	termio.c_cflag = (termio.c_cflag & ~CBAUD) | speed_table[sp].flags;
-	if (ioctl(asyp->fd, TCSETA, &termio))
+	if (cfsetispeed(&termios, speed_table[sp].flags))
+		return -1;
+	if (cfsetospeed(&termios, speed_table[sp].flags))
+		return -1;
+	if (tcsetattr(asyp->fd, TCSANOW, &termios))
 		return -1;
 	asyp->speed = speed_table[sp].speed;
 	return 0;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.6 1992/08/24 10:09:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.7 1992/09/01 16:52:53 deyke Exp $ */
 
 /* Mail Delivery Agent for returned Mails */
 
@@ -19,13 +19,11 @@ void mail_return(jp)
 struct mailjob *jp;
 {
 
-  FILE * fpi, *fpo;
-  char  line[1024];
-  int  i;
+  FILE *fpi, *fpo;
+  char line[1024];
+  int i;
 
-  fflush(stdout);
-  if (fork()) return;
-  rtprio_off();
+  if (dofork()) return;
   for (i = 0; i < _NFILE; i++) close(i);
   setpgrp();
   fopen("/dev/null", "r+");

@@ -1,14 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/setsp.c,v 1.2 1992/08/24 10:09:42 deyke Exp $ */
-
-#ifdef LINUX
-	.file   "setsp.s"
-	.globl  _setstack
-_setstack:
-	movl    %esp, %ebp
-	movl    _newstackptr, %esp
-	jmp     *(%ebp)
-	.align  4
-#endif
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/setsp.c,v 1.3 1992/09/01 16:53:00 deyke Exp $ */
 
 #ifdef __hp9000s300
 	text
@@ -77,4 +67,14 @@ setstack:
 	jmp     *(%ebp)
 	.def    setstack;       .val    .;      .scl    -1;     .endef
 	.data
+#endif
+
+#ifdef LINUX
+	.file   "setsp.s"
+	.globl  _setstack
+_setstack:
+	movl    %esp, %ebp
+	movl    _newstackptr, %esp
+	jmp     *(%ebp)
+	.align  4
 #endif

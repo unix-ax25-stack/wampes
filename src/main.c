@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.31 1992/08/21 16:42:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.32 1992/09/01 16:52:54 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -51,9 +51,6 @@
 #include "netuser.h"
 #include "remote_net.h"
 
-extern int errno;
-extern char *sys_errlist[];
-
 extern struct cmds Cmds[],Startcmds[],Stopcmds[],Attab[];
 
 #ifndef MSDOS                   /* PC uses F-10 key always */
@@ -79,12 +76,14 @@ main(argc,argv)
 int argc;
 char *argv[];
 {
-	static char linebuf[BUFSIZ];    /* keep it off the stack */
+	char *intmp;
 	FILE *fp;
 	struct daemon *tp;
 	int c;
+	char cmdbuf[256];
 
 	time(&StartTime);
+	Hostname = strdup("net");
 
 	Debug = (argc >= 2);
 
@@ -117,32 +116,31 @@ char *argv[];
 
 	if(optind < argc){
 		/* Read startup file named on command line */
-		if((fp = fopen(argv[optind],READ_TEXT)) == NULLFILE)
-			printf("Can't read config file %s: %s\n",
-			 argv[optind],sys_errlist[errno]);
+		if((fp = fopen(argv[optind],READ_TEXT)) == NULLFILE){
+			printf("Can't read config file %s: ",argv[optind]);
+			fflush(stdout);
+			perror("");
+		}
 	} else {
 		fp = fopen(Startup,READ_TEXT);
 	}
 	if(fp != NULLFILE){
-		while(fgets(linebuf,BUFSIZ,fp) != NULLCHAR){
-			char intmp[BUFSIZ];
-			strcpy(intmp,linebuf);
+		while(fgets(cmdbuf,sizeof(cmdbuf),fp) != NULLCHAR){
+			intmp = strdup(cmdbuf);
 			if(Verbose)
 				printf("%s",intmp);
-			if(cmdparse(Cmds,linebuf,NULL) != 0){
+			if(cmdparse(Cmds,cmdbuf,NULL) != 0){
 				printf("input line: %s",intmp);
 			}
+			free(intmp);
 		}
 		fclose(fp);
 	}
 	Mode = CONV_MODE;
 	cmdmode();
 
-	/* Main commutator loop */
 	for(;;){
 		pwait(NULL);
-
-		/* Wait until interrupt, then do it all over again */
 		eihalt();
 	}
 }
@@ -235,8 +233,9 @@ void *p;
 
 	for(i=1;i < argc; i++){
 		if(unlink(argv[i]) == -1){
-			printf("Can't delete %s: %s\n",
-			 argv[i],sys_errlist[errno]);
+			printf("Can't delete %s: ",argv[i]);
+			fflush(stdout);
+			perror("");
 		}
 	}
 	return 0;
@@ -247,8 +246,11 @@ int argc;
 char *argv[];
 void *p;
 {
-	if(rename(argv[1],argv[2]) == -1)
-		printf("Can't rename: %s\n",sys_errlist[errno]);
+	if(rename(argv[1],argv[2]) == -1){
+		printf("Can't rename %s: ", argv[1]);
+		fflush(stdout);
+		perror("");
+	}
 	return 0;
 }
 int
@@ -364,7 +366,7 @@ char *argv[];
 void *p;
 {
 	register struct iface *ifp;
-	int param,set;
+	int param;
 	int32 val;
 
 	if((ifp = if_lookup(argv[1])) == NULLIF){
@@ -383,24 +385,22 @@ void *p;
 		}
 		return 0;
 	}
-	param = devparam(argv[2]);
-	if(param == -1){
+	if((param = devparam(argv[2])) == -1){
 		printf("Unknown parameter %s\n",argv[2]);
 		return 1;
 	}
 	if(argc < 4){
-		set = FALSE;
-		val = 0L;
-	} else {
-		set = TRUE;
-		val = atol(argv[3]);
+		/* Read specific parameter */
+		val = (*ifp->ioctl)(ifp,param,FALSE,0L);
+		if(val == -1){
+			printf("Parameter %s not supported\n",argv[2]);
+		} else {
+			printf("%s: %ld\n",parmname(param),val);
+		}
+		return 0;
 	}
-	val = (*ifp->ioctl)(ifp,param,set,val);
-	if(val == -1){
-		printf("Parameter %s not supported\n",argv[2]);
-	} else {
-		printf("%s: %ld\n",parmname(param),val);
-	}
+	/* Set parameter */
+	(*ifp->ioctl)(ifp,param,TRUE,atol(argv[3]));
 	return 0;
 }
 
@@ -589,21 +589,23 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-int  dosource(argc, argv, p)
-int  argc;
-char  *argv[];
+int dosource(argc, argv, p)
+int argc;
+char *argv[];
 void *p;
 {
 
-  FILE * fp;
-  char  linebuf[BUFSIZ];
+  FILE *fp;
+  char cmdbuf[1024];
 
-  if (!(fp = fopen(argv[1], "r"))) {
-    printf("cannot open %s\n", argv[1]);
+  if (!(fp = fopen(argv[1], READ_TEXT))) {
+    printf("Can't open %s: ", argv[1]);
+    fflush(stdout);
+    perror("");
     return 1;
   }
-  while (fgets(linebuf, BUFSIZ, fp))
-    cmdparse(Cmds, linebuf, NULL);
+  while (fgets(cmdbuf, sizeof(cmdbuf), fp))
+    cmdparse(Cmds, cmdbuf, NULL);
   fclose(fp);
   Mode = CMD_MODE;
   cooked();

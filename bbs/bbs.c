@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.34 1992/04/07 10:24:24 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.35 1992/09/01 16:54:55 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -18,15 +18,18 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
-#include <sys/utsname.h>
+#include <sys/time.h>
 #include <sys/wait.h>
-#include <termio.h>
-#include <time.h>
+#include <termios.h>
 #include <unistd.h>
 
 extern char *optarg;
 extern char *sys_errlist[];
 extern int optind;
+
+#ifdef sun
+#define sigvector sigvec
+#endif
 
 #define __ARGS(x) x
 
@@ -86,8 +89,6 @@ struct dir_entry {
   int count;
   char to[LEN_TO+1];
 };
-
-struct utsname utsname;
 
 static char *MYHOSTNAME;
 static char *myhostname;
@@ -240,7 +241,7 @@ static char *strupc(char *s)
 {
   char *p;
 
-  for (p = s; *p = _toupper(uchar(*p)); p++) ;
+  for (p = s; *p = toupper(uchar(*p)); p++) ;
   return s;
 }
 
@@ -250,7 +251,7 @@ static char *strlwc(char *s)
 {
   char *p;
 
-  for (p = s; *p = _tolower(uchar(*p)); p++) ;
+  for (p = s; *p = tolower(uchar(*p)); p++) ;
   return s;
 }
 
@@ -258,18 +259,18 @@ static char *strlwc(char *s)
 
 static int Strcasecmp(const char *s1, const char *s2)
 {
-  while (_tolower(uchar(*s1)) == _tolower(uchar(*s2++)))
+  while (tolower(uchar(*s1)) == tolower(uchar(*s2++)))
     if (!*s1++) return 0;
-  return _tolower(uchar(*s1)) - _tolower(uchar(s2[-1]));
+  return tolower(uchar(*s1)) - tolower(uchar(s2[-1]));
 }
 
 /*---------------------------------------------------------------------------*/
 
 static int Strncasecmp(const char *s1, const char *s2, int n)
 {
-  while (--n >= 0 && _tolower(uchar(*s1)) == _tolower(uchar(*s2++)))
+  while (--n >= 0 && tolower(uchar(*s1)) == tolower(uchar(*s2++)))
     if (!*s1++) return 0;
-  return n < 0 ? 0 : _tolower(uchar(*s1)) - _tolower(uchar(s2[-1]));
+  return n < 0 ? 0 : tolower(uchar(*s1)) - tolower(uchar(s2[-1]));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -294,7 +295,7 @@ static const char *strcasepos(const char *str, const char *pat)
     for (s = str, p = pat; ; ) {
       if (!*p) return str;
       if (!*s) return 0;
-      if (_tolower(uchar(*s++)) != _tolower(uchar(*p++))) break;
+      if (tolower(uchar(*s++)) != tolower(uchar(*p++))) break;
     }
 }
 
@@ -425,11 +426,19 @@ static void get_seq(void)
 
   if (mode != BBS) return;
   sprintf(fname, "%s/%s", user.dir, SEQFILE);
-  setresgid(user.gid, user.gid, 1);
+#ifdef __hpux
+  setresgid(user.gid, user.gid, 0);
   setresuid(user.uid, user.uid, 0);
   fdseq = open(fname, O_RDWR | O_CREAT, 0644);
   setresuid(0, 0, 0);
-  setresgid(1, 1, 1);
+  setresgid(0, 0, 0);
+#else
+  setregid(0, user.gid);
+  setreuid(0, user.uid);
+  fdseq = open(fname, O_RDWR | O_CREAT, 0644);
+  setreuid(0, 0);
+  setregid(0, 0);
+#endif
   if (fdseq < 0) halt();
   if (lockf(fdseq, F_TLOCK, 0)) {
     puts("Sorry, you are already running another BBS.\n");
@@ -447,7 +456,8 @@ static void put_seq(void)
   int n;
 
   if (mode != BBS || debug) return;
-  if ((n = sprintf(buf, "%d\n", user.seq)) < 2) halt();
+  sprintf(buf, "%d\n", user.seq);
+  n = strlen(buf);
   if (lseek(fdseq, 0L, SEEK_SET)) halt();
   if (write(fdseq, buf, n) != n) halt();
 }
@@ -717,8 +727,8 @@ static void send_to_mail(struct mail *mail)
   case -1:
     halt();
   case 0:
-    setresgid(1, 1, 1);
-    setresuid(0, 0, 0);
+    setgid(0);
+    setuid(0);
     for (i = 0; i < _NFILE; i++) close(i);
     setpgrp();
     fopen("/dev/null", "r+");
@@ -770,8 +780,8 @@ static void send_to_news(struct mail *mail)
   case -1:
     halt();
   case 0:
-    setresgid(1, 1, 1);
-    setresuid(0, 0, 0);
+    setgid(0);
+    setuid(0);
     for (i = 0; i < _NFILE; i++) close(i);
     setpgrp();
     fopen("/dev/null", "r+");
@@ -1019,7 +1029,7 @@ static void get_header_value(const char *name, char *line, char *value)
   char *p1, *p2;
 
   while (*name)
-    if (_tolower(uchar(*name++)) != _tolower(uchar(*line++))) return;
+    if (tolower(uchar(*name++)) != tolower(uchar(*line++))) return;
   while (isspace(uchar(*line))) line++;
   while ((p1 = strchr(line, '<')) && (p2 = strrchr(p1, '>'))) {
     *p2 = '\0';
@@ -1228,7 +1238,7 @@ static void f_command(int argc, char **argv)
 	       *index.bid ? " $" : "",
 	       index.bid);
       if (!getstring(buf)) exit(1);
-      switch (_tolower(uchar(*buf))) {
+      switch (tolower(uchar(*buf))) {
       case 'o':
 	puts(*index.subject ? index.subject : "no subject");
 	if (!strcmp(index.to, "E") || !strcmp(index.to, "M"))
@@ -1720,8 +1730,8 @@ static void shell_command(int argc, char **argv)
     puts("Sorry, cannot fork.");
     break;
   case 0:
-    setresgid(user.gid, user.gid, user.gid);
-    setresuid(user.uid, user.uid, user.uid);
+    setgid(user.gid);
+    setuid(user.uid);
     for (i = 3; i < _NFILE; i++) close(i);
     chdir(user.cwd);
     *command = '\0';
@@ -1863,7 +1873,7 @@ static void xscreen_command(int argc, char **argv)
   struct index *indexarray;
   struct index *pi;
   struct stat statbuf;
-  struct termio curr_termio, prev_termio;
+  struct termios curr_termios, prev_termios;
   unsigned int indexarraysize;
 
   if (fstat(fdindex, &statbuf)) halt();
@@ -1874,13 +1884,13 @@ static void xscreen_command(int argc, char **argv)
   if (lseek(fdindex, 0L, SEEK_SET)) halt();
   if (read(fdindex, indexarray, indexarraysize) != indexarraysize) halt();
 
-  ioctl(0, TCGETA, &prev_termio);
-  curr_termio = prev_termio;
-  curr_termio.c_iflag = BRKINT | ICRNL | IXON | IXANY | IXOFF;
-  curr_termio.c_lflag = 0;
-  curr_termio.c_cc[VMIN] = 1;
-  curr_termio.c_cc[VTIME] = 0;
-  ioctl(0, TCSETA, &curr_termio);
+  tcgetattr(0, &prev_termios);
+  curr_termios = prev_termios;
+  curr_termios.c_iflag = BRKINT | ICRNL | IXON | IXANY | IXOFF;
+  curr_termios.c_lflag = 0;
+  curr_termios.c_cc[VMIN] = 1;
+  curr_termios.c_cc[VTIME] = 0;
+  tcsetattr(0, TCSANOW, &curr_termios);
   if (!(maxlines = atoi(getenv("LINES")))) maxlines = 24;
 
   *from = *to = *at = *subject = '\0';
@@ -1956,11 +1966,11 @@ static void xscreen_command(int argc, char **argv)
     case '7':
     case '8':
     case '9':
-      ioctl(0, TCSETA, &prev_termio);
+      tcsetattr(0, TCSANOW, &prev_termios);
       printf("\nMessage number: %c", cmd);
       *buf = cmd;
       gets(buf + 1);
-      ioctl(0, TCSETA, &curr_termio);
+      tcsetattr(0, TCSANOW, &curr_termios);
       mesg = atoi(buf);
       pi = indexarray;
       while ((mesg > pi->mesg || Invalid) && pi < indexarray + (indexarrayentries - 1)) pi++;
@@ -1970,53 +1980,53 @@ static void xscreen_command(int argc, char **argv)
 
     case '<':
       *from = *to = *at = *subject = '\0';
-      ioctl(0, TCSETA, &prev_termio);
+      tcsetattr(0, TCSANOW, &prev_termios);
       printf("\nFROM field: ");
       gets(from);
-      ioctl(0, TCSETA, &curr_termio);
+      tcsetattr(0, TCSANOW, &curr_termios);
       strupc(from);
       cmd = Invalid ? '\n' : 'r';
       break;
 
     case '>':
       *from = *to = *at = *subject = '\0';
-      ioctl(0, TCSETA, &prev_termio);
+      tcsetattr(0, TCSANOW, &prev_termios);
       printf("\nTO field: ");
       gets(to);
-      ioctl(0, TCSETA, &curr_termio);
+      tcsetattr(0, TCSANOW, &curr_termios);
       strupc(to);
       cmd = Invalid ? '\n' : 'r';
       break;
 
     case '@':
       *from = *to = *at = *subject = '\0';
-      ioctl(0, TCSETA, &prev_termio);
+      tcsetattr(0, TCSANOW, &prev_termios);
       printf("\nAT field: ");
       gets(at);
-      ioctl(0, TCSETA, &curr_termio);
+      tcsetattr(0, TCSANOW, &curr_termios);
       strupc(at);
       cmd = Invalid ? '\n' : 'r';
       break;
 
     case 's':
       *from = *to = *at = *subject = '\0';
-      ioctl(0, TCSETA, &prev_termio);
+      tcsetattr(0, TCSANOW, &prev_termios);
       printf("\nSUBJECT substring: ");
       gets(subject);
-      ioctl(0, TCSETA, &curr_termio);
+      tcsetattr(0, TCSANOW, &curr_termios);
       cmd = Invalid ? '\n' : 'r';
       break;
 
     case 'v':
       sprintf(buf, "vi %s", getfilename(pi->mesg));
-      ioctl(0, TCSETA, &prev_termio);
+      tcsetattr(0, TCSANOW, &prev_termios);
       system(buf);
-      ioctl(0, TCSETA, &curr_termio);
+      tcsetattr(0, TCSANOW, &curr_termios);
       cmd = 'r';
       break;
 
     case 'q':
-      ioctl(0, TCSETA, &prev_termio);
+      tcsetattr(0, TCSANOW, &prev_termios);
       free(indexarray);
       return;
 
@@ -2118,7 +2128,7 @@ static void parse_command_line(char *line)
   const struct cmdtable *cmdp;
 
   argc = 0;
-  memset(argv, 0, sizeof(argv));
+  memset((char *) argv, 0, sizeof(argv));
   for (f = line, t = buf; ; ) {
     while (isspace(uchar(*f))) f++;
     if (!*f) break;
@@ -2194,7 +2204,9 @@ static void bbs(void)
 static void interrupt_handler(int sig, int code, struct sigcontext *scp)
 {
   stopped = 1;
+#ifdef __hpux
   scp->sc_syscall_action = SIG_RETURN;
+#endif
 }
 
 /*---------------------------------------------------------------------------*/
@@ -2214,6 +2226,9 @@ static void trap_signal(int sig, void (*handler)())
   sigvector(sig, (struct sigvec *) 0, &vec);
   if (vec.sv_handler != SIG_IGN) {
     vec.sv_mask = vec.sv_flags = 0;
+#ifdef sun
+    vec.sv_flags = SV_INTERRUPT;
+#endif
     vec.sv_handler = handler;
     sigvector(sig, &vec, (struct sigvec *) 0);
   }
@@ -2293,6 +2308,7 @@ static void rnews(void)
 int main(int argc, char **argv)
 {
 
+  char *cp;
   char *dir = WRKDIR;
   char *sysname;
   char buf[1024];
@@ -2351,16 +2367,19 @@ int main(int argc, char **argv)
     puts("usage: bbs [-d] [-w seconds] [-f system|-m|-n]");
     exit(1);
   }
-  user.cwd = getcwd((char *) 0, 256);
+
+  if (!getcwd(buf, sizeof(buf))) halt();
+  user.cwd = strdup(buf);
+
   if (chdir(dir)) {
     mkdir(dir, 0755);
     if (chdir(dir)) halt();
   }
 
-  if (uname(&utsname)) halt();
-  myhostname = utsname.nodename;
-  MYHOSTNAME = strdup(myhostname);
-  strupc(MYHOSTNAME);
+  if (gethostname(buf, sizeof(buf))) halt();
+  if (cp = strchr(buf, '.')) *cp = 0;
+  myhostname = strdup(buf);
+  MYHOSTNAME = strdup(strupc(buf));
 
   pw = doforward ? getpwnam(sysname) : getpwuid(getuid());
   if (!pw) halt();

@@ -1,9 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.23 1992/08/26 17:28:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.24 1992/09/01 16:52:48 deyke Exp $ */
 
 #define FD_SETSIZE 64
 
 #include <sys/types.h>
 
+#include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +12,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/wait.h>
-#include <termio.h>
+#include <termios.h>
 #include <unistd.h>
 
 #ifdef __hpux
@@ -30,6 +31,15 @@
 
 #define TIMEOUT 120
 
+struct proc_t {
+  int pid;
+  void (*fnc) __ARGS((void *));
+  void *arg;
+  struct proc_t *next;
+};
+
+static struct proc_t *procs;
+
 static struct fd_set chkread;
 static struct fd_set actread;
 static void (*readfnc[FD_SETSIZE]) __ARGS((void *));
@@ -40,46 +50,36 @@ static struct fd_set actwrite;
 static void (*writefnc[FD_SETSIZE]) __ARGS((void *));
 static void *writearg[FD_SETSIZE];
 
-static struct fd_set chkexcp;
-static struct fd_set actexcp;
-static void (*excpfnc[FD_SETSIZE]) __ARGS((void *));
-static void *excparg[FD_SETSIZE];
-
 static int maxfd = -1;
 
 static int local_kbd;
 
-static struct termio curr_termio;
-static struct termio prev_termio;
+static struct termios curr_termios;
+static struct termios prev_termios;
 
 static void check_files_changed __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
 
-/*ARGSUSED*/
-static void sigpipe_handler(sig, code, scp)
-int sig;
-int code;
-struct sigcontext *scp;
+int dofork()
 {
-}
+  int pid;
 
-/*---------------------------------------------------------------------------*/
-
-void rtprio_off()
-{
+  fflush(stdout);
+  if (!(pid = fork())) {
 #ifdef __hpux
-  rtprio(0, RTPRIO_RTOFF);
+    rtprio(0, RTPRIO_RTOFF);
 #endif
+    signal(SIGPIPE, SIG_DFL);
+  }
+  return pid;
 }
 
 /*---------------------------------------------------------------------------*/
 
 void ioinit()
 {
-
   int i;
-  struct sigvec vec;
 
 #define fixdir(name, mode) \
 	{ mkdir((name), (mode)); chmod((name), (mode)); }
@@ -90,13 +90,13 @@ void ioinit()
   fixdir("/tcp/logs", 0700);
 
   if (local_kbd = isatty(0)) {
-    ioctl(0, TCGETA, &prev_termio);
-    curr_termio = prev_termio;
-    curr_termio.c_iflag = BRKINT | ICRNL | IXON | IXANY | IXOFF;
-    curr_termio.c_lflag = 0;
-    curr_termio.c_cc[VMIN] = 0;
-    curr_termio.c_cc[VTIME] = 0;
-    ioctl(0, TCSETA, &curr_termio);
+    tcgetattr(0, &prev_termios);
+    curr_termios = prev_termios;
+    curr_termios.c_iflag = BRKINT | ICRNL | IXON | IXANY | IXOFF;
+    curr_termios.c_lflag = 0;
+    curr_termios.c_cc[VMIN] = 0;
+    curr_termios.c_cc[VTIME] = 0;
+    tcsetattr(0, TCSANOW, &curr_termios);
     on_read(0, (void (*)()) keyboard, (void *) 0);
   } else {
     for (i = 0; i < FD_SETSIZE; i++) close(i);
@@ -106,16 +106,15 @@ void ioinit()
     fopen("/dev/null", "r+");
     remote_kbd_initialize();
   }
-  vec.sv_mask = vec.sv_flags = 0;
-  vec.sv_handler = sigpipe_handler;
-  sigvector(SIGPIPE, &vec, (struct sigvec *) 0);
-  vec.sv_handler = (void (*)()) abort;
-  sigvector(SIGALRM, &vec, (struct sigvec *) 0);
-  if (!Debug) alarm(TIMEOUT);
   umask(022);
+  signal(SIGPIPE, SIG_IGN);
+  if (!Debug) {
+    signal(SIGALRM, (void (*)()) abort);
+    alarm(TIMEOUT);
 #ifdef __hpux
-  if (!Debug) rtprio(0, 127);
+    rtprio(0, 127);
 #endif
+  }
   if (!getenv("HOME"))
     putenv("HOME=/users/root");
   if (!getenv("LOGNAME"))
@@ -145,7 +144,7 @@ void iostop()
 {
   register struct iface *ifp;
 
-  if (local_kbd) ioctl(0, TCSETA, &prev_termio);
+  if (local_kbd) tcsetattr(0, TCSANOW, &prev_termios);
   for (ifp = Ifaces; ifp; ifp = ifp->next)
     if (ifp->stop) (*ifp->stop)(ifp);
 }
@@ -160,8 +159,7 @@ const char *cmdline;
   long oldmask;
 
   if (!cmdline) return 1;
-  fflush(stdout);
-  switch (pid = fork()) {
+  switch (pid = dofork()) {
   case -1:
     return (-1);
   case 0:
@@ -170,7 +168,7 @@ const char *cmdline;
     exit(1);
   default:
     oldmask = sigsetmask(-1);
-    while (wait(&status) != pid) ;
+    while (waitpid(pid, &status, 0) == -1 && errno == EINTR) ;
     sigsetmask(oldmask);
     return status;
   }
@@ -226,9 +224,7 @@ int fd;
   FD_CLR(fd, &actread);
   if (fd == maxfd)
     for (; maxfd >= 0; maxfd--)
-      if (FD_ISSET(maxfd, &chkread)  ||
-	  FD_ISSET(maxfd, &chkwrite) ||
-	  FD_ISSET(maxfd, &chkexcp)) break;
+      if (FD_ISSET(maxfd, &chkread) || FD_ISSET(maxfd, &chkwrite)) break;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -256,39 +252,75 @@ int fd;
   FD_CLR(fd, &actwrite);
   if (fd == maxfd)
     for (; maxfd >= 0; maxfd--)
-      if (FD_ISSET(maxfd, &chkread)  ||
-	  FD_ISSET(maxfd, &chkwrite) ||
-	  FD_ISSET(maxfd, &chkexcp)) break;
+      if (FD_ISSET(maxfd, &chkread) || FD_ISSET(maxfd, &chkwrite)) break;
 }
 
 /*---------------------------------------------------------------------------*/
 
-void on_excp(fd, fnc, arg)
-int fd;
+void on_death(pid, fnc, arg)
+int pid;
 void (*fnc) __ARGS((void *));
 void *arg;
 {
-  excpfnc[fd] = fnc;
-  excparg[fd] = arg;
-  FD_SET(fd, &chkexcp);
-  FD_CLR(fd, &actexcp);
-  if (maxfd < fd) maxfd = fd;
+  struct proc_t *p;
+
+  for (p = procs; p; p = p->next)
+    if (p->pid == pid) {
+      p->fnc = fnc;
+      p->arg = arg;
+      return;
+    }
+  p = malloc(sizeof(*p));
+  p->pid = pid;
+  p->fnc = fnc;
+  p->arg = arg;
+  p->next = procs;
+  procs = p;
 }
 
 /*---------------------------------------------------------------------------*/
 
-void off_excp(fd)
-int fd;
+void off_death(pid)
+int pid;
 {
-  excpfnc[fd] = 0;
-  excparg[fd] = 0;
-  FD_CLR(fd, &chkexcp);
-  FD_CLR(fd, &actexcp);
-  if (fd == maxfd)
-    for (; maxfd >= 0; maxfd--)
-      if (FD_ISSET(maxfd, &chkread)  ||
-	  FD_ISSET(maxfd, &chkwrite) ||
-	  FD_ISSET(maxfd, &chkexcp)) break;
+  struct proc_t *prev, *curr;
+
+  for (prev = 0, curr = procs; curr; prev = curr, curr = curr->next)
+    if (curr->pid == pid) {
+      if (prev)
+	prev->next = curr->next;
+      else
+	procs = curr->next;
+      free(curr);
+      return;
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void dowait(void)
+{
+
+  int pid;
+  int status;
+  struct proc_t *prev, *curr;
+  void (*fnc) __ARGS((void *));
+  void *arg;
+
+  while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+    for (prev = 0, curr = procs; curr; prev = curr, curr = curr->next)
+      if (curr->pid == pid) {
+	fnc = curr->fnc;
+	arg = curr->arg;
+	if (prev)
+	  prev->next = curr->next;
+	else
+	  procs = curr->next;
+	free(curr);
+	if (fnc) (*fnc)(arg);
+	break;
+      }
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -322,16 +354,14 @@ void eihalt()
 {
 
   int n;
-  int status;
   int32 nte;
   struct timeval timeout;
 
   check_files_changed();
-  wait3(&status, WNOHANG, (int *) 0);
+  dowait();
   if (!Debug) alarm(TIMEOUT);
   actread  = chkread;
   actwrite = chkwrite;
-  actexcp  = chkexcp;
   timeout.tv_sec = 0;
   if (Hopper)
     timeout.tv_usec = 0;
@@ -340,15 +370,13 @@ void eihalt()
     if (nte > 999) nte = 999;
     timeout.tv_usec = 1000 * nte;
   }
-  if (select(maxfd + 1, (int *) &actread, (int *) &actwrite, (int *) &actexcp, &timeout) < 1) {
+  if (select(maxfd + 1, (int *) &actread, (int *) &actwrite, (int *) 0, &timeout) < 1) {
     FD_ZERO(&actread);
     actwrite = actread;
-    actexcp  = actread;
   } else
     for (n = maxfd; n >= 0; n--) {
       if (readfnc [n] && FD_ISSET(n, &actread )) (*readfnc [n])(readarg [n]);
       if (writefnc[n] && FD_ISSET(n, &actwrite)) (*writefnc[n])(writearg[n]);
-      if (excpfnc [n] && FD_ISSET(n, &actexcp )) (*excpfnc [n])(excparg [n]);
     }
 }
 

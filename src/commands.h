@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.15 1992/08/11 21:32:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.16 1992/09/01 16:52:44 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -105,6 +105,7 @@ int dolog __ARGS((int argc,char *argv[],void *p));
 int dohelp __ARGS((int argc,char *argv[],void *p));
 int doattach __ARGS((int argc,char *argv[],void *p));
 int doparam __ARGS((int argc,char *argv[],void *p));
+int dopage __ARGS((int argc,char *argv[],void *p));
 int domode __ARGS((int argc,char *argv[],void *p));
 int donothing __ARGS((int argc,char *argv[],void *p));
 int donrstat __ARGS((int argc,char *argv[],void *p));

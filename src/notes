@@ -1,5 +1,30 @@
 ===============================================================================
 
+general:
+========
+
+===============================================================================
+
+convers:
+========
+
+- Auf Aenderungen von /tcp/conversd  und  /tcp/convers.conf  automatisch
+  reagieren (so wie /tcp/hosts)
+
+- Moeglichkeit, /who nur fuer 1 Kanal zu machen
+
+- Moeglichkeit, /who aus einem Shell Script heraus zu machen
+
+- /invite kann fuer lange Zeit  blockieren,  wenn die Queue der pty voll
+  ist
+
+- alphanumerische Kanaele
+
+- Daraus  ergibt  sich der  Wunsch,  auf  mehreren  Kanaelen  hoeren  zu
+  koennen, um so an einer zweiten Runde teilzunehmen ...
+
+===============================================================================
+
 Hallo Dieter,
 was haelst Du denn vom 'reget' Command bei FTP?
 (bzw. REST-Command)

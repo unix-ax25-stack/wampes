@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.14 1992/08/26 17:29:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.15 1992/09/01 16:53:04 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -19,7 +19,7 @@
 char *Fkey_table[NUM_FKEY];
 char *Fkey_ptr;
 
-static int Ansiterminal;
+static int Ansiterminal = 1;
 static int Rawmode;
 
 static void printchr __ARGS((int chr));
@@ -30,7 +30,7 @@ static void clreol __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
 
-int  raw()
+int raw()
 {
   Rawmode = 1;
   return 0;
@@ -38,7 +38,7 @@ int  raw()
 
 /*---------------------------------------------------------------------------*/
 
-int  cooked()
+int cooked()
 {
   Rawmode = 0;
   return 0;
@@ -47,7 +47,7 @@ int  cooked()
 /*---------------------------------------------------------------------------*/
 
 static void printchr(chr)
-int  chr;
+int chr;
 {
   chr &= 0xff;
   if (chr < 32) {
@@ -75,7 +75,7 @@ int  chr;
 /*---------------------------------------------------------------------------*/
 
 static void backchr(chr)
-int  chr;
+int chr;
 {
   putchar('\b');
   chr &= 0x7f;
@@ -86,7 +86,7 @@ int  chr;
 /*---------------------------------------------------------------------------*/
 
 static void delchr(chr)
-int  chr;
+int chr;
 {
   putchar('\033');
   if (Ansiterminal) putchar('[');
@@ -102,9 +102,9 @@ int  chr;
 /*---------------------------------------------------------------------------*/
 
 static void inschr(chr)
-int  chr;
+int chr;
 {
-  int  c;
+  int c;
 
   if (Ansiterminal) {
     c = chr & 0x7f;
@@ -136,22 +136,22 @@ static void clreol()
  * also stashes a pointer to the character(s) in the "buf" argument.
  */
 
-int  ttydriv(chr, buf)
-int  chr;
-char  **buf;
+int ttydriv(chr, buf)
+int chr;
+char **buf;
 {
 
-  static char  linebuf[LINESIZE];
-  static char  *end = linebuf;
-  static char  *pos = linebuf;
-  static char  *recall_buffer[RECALLSIZE+1];
-  static int  Escape_save;
-  static int  ansikey;
-  static int  esc, quote;
-  static int  rptr, wptr;
+  static char linebuf[LINESIZE];
+  static char *end = linebuf;
+  static char *pos = linebuf;
+  static char *recall_buffer[RECALLSIZE+1];
+  static int Escape_save;
+  static int ansikey;
+  static int esc, quote;
+  static int rptr, wptr;
 
-  char  *p, *f, *t;
-  int  cnt;
+  char *p, *f, *t;
+  int cnt;
 
   if (Rawmode) {
     *linebuf = chr;
@@ -286,7 +286,8 @@ char  **buf;
     case '\r': /* return */
     case 20:   /* control T, transmit line */
       *end = '\0';
-      if (*linebuf && strcmp(linebuf, recall_buffer[PREV(wptr)])) {
+      if (*linebuf && (!recall_buffer[PREV(wptr)] ||
+		       strcmp(linebuf, recall_buffer[PREV(wptr)]))) {
 	recall_buffer[wptr] = strcpy(malloc(end - linebuf + 1), linebuf);
 	wptr = NEXT(wptr);
 	if (recall_buffer[wptr]) {

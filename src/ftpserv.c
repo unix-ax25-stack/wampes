@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.14 1992/08/24 10:09:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.15 1992/09/01 16:52:47 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -323,20 +323,22 @@ char  *filename;
 
 /*---------------------------------------------------------------------------*/
 
-#ifdef LINUX
-#define setresuid       setreuid
-#define setresgid       setregid
-#define switch2user()   setresuid(0, ftp->uid); \
-			setresgid(0, ftp->gid)
-#define switchback()    setresuid(0, 0); \
-			setresgid(0, 0)
-#else
+#ifdef __hpux
 
 #define switch2user()   setresuid(ftp->uid, ftp->uid, 0); \
 			setresgid(ftp->gid, ftp->gid, 0)
 
 #define switchback()    setresuid(0, 0, 0); \
 			setresgid(0, 0, 0)
+
+#else
+
+#define switch2user()   setreuid(0, ftp->uid); \
+			setregid(0, ftp->gid)
+
+#define switchback()    setreuid(0, 0); \
+			setregid(0, 0)
+
 #endif
 
 #define checkperm()     if (!permcheck(ftp, file)) {                   \

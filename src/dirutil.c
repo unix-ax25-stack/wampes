@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.11 1992/08/24 10:09:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.12 1992/09/01 16:52:45 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -31,13 +31,12 @@ int full;
 
 	if(pipe(fd))
 		return NULLFILE;
-	switch(fork()) {
+	switch(dofork()) {
 	case -1:
 		close(fd[0]);
 		close(fd[1]);
 		return NULLFILE;
 	case 0:
-		rtprio_off();
 		close(fd[0]);
 		dup2(fd[1],1);
 		dup2(fd[1],2);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.10 1992/05/14 13:20:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.11 1992/09/01 16:53:01 deyke Exp $ */
 
 #ifndef _SOCKET_H
 #define _SOCKET_H
@@ -54,40 +54,31 @@
 #define AF_AX25         1
 #define AF_NETROM       2
 #define AF_LOCAL        3
+#define NAF             4
 
 #define SOCK_STREAM     0
 #define SOCK_DGRAM      1
 #define SOCK_RAW        2
 #define SOCK_SEQPACKET  3
 
-/* Socket flag values - controls newline mapping */
-#define SOCK_BINARY     0       /* socket in raw (binary) mode */
-#define SOCK_ASCII      1       /* socket in cooked (newline mapping) mode */
-#define SOCK_QUERY      2       /* Return setting without change */
-
-#define EMFILE  1
-#define EBADF   2
-#define EINVAL  3
-#define ESOCKTNOSUPPORT 4
-#define EAFNOSUPPORT    5
-#define EOPNOTSUPP      6
-#define EFAULT          7
-#define ENOTCONN        8
-#define ECONNREFUSED    9
-#define EAFNOSUPP       10
-#define EISCONN         11
-#define EWOULDBLOCK     12
-#define EINTR           13
-#define EADDRINUSE      14
-#define ENOMEM          15
-#define EMSGSIZE        16
-
+#define EWOULDBLOCK     36
+#define ENOTCONN        37
+#define ESOCKTNOSUPPORT 38
+#define EAFNOSUPPORT    39
+#define EISCONN         40
+#define EOPNOTSUPP      41
 #endif
-
-#define EALARM          17
-#define EABORT          18
-
+#define EALARM          42
+#define EABORT          43
 #if 0
+#undef  EINTR
+#define EINTR           44
+#define ECONNREFUSED    45
+#define EMSGSIZE        46
+#define EADDRINUSE      47
+#define EMAX            47
+
+extern char *Sock_errlist[];
 
 /* In socket.c: */
 extern int Axi_sock;    /* Socket listening to AX25 (there can be only one) */
@@ -96,13 +87,14 @@ int accept __ARGS((int s,char *peername,int *peernamelen));
 int bind __ARGS((int s,char *name,int namelen));
 int close_s __ARGS((int s));
 int connect __ARGS((int s,char *peername,int peernamelen));
+char *eolseq __ARGS((int s));
 void freesock __ARGS((struct proc *pp));
 int getpeername __ARGS((int s,char *peername,int *peernamelen));
 int getsockname __ARGS((int s,char *name,int *namelen));
 int listen __ARGS((int s,int backlog));
 int recv_mbuf __ARGS((int s,struct mbuf **bpp,int flags,char *from,int *fromlen));
 int send_mbuf __ARGS((int s,struct mbuf *bp,int flags,char *to,int tolen));
-int setflush __ARGS((int s,int c));
+int settos __ARGS((int s,int tos));
 int shutdown __ARGS((int s,int how));
 int socket __ARGS((int af,int type,int protocol));
 void sockinit __ARGS((void));
@@ -114,24 +106,10 @@ int socketpair __ARGS((int af,int type,int protocol,int sv[]));
 
 /* In sockuser.c: */
 void flushsocks __ARGS((void));
-int keywait __ARGS((char *prompt,int flush));
 int recv __ARGS((int s,char *buf,int len,int flags));
-int recvchar __ARGS((int s));
 int recvfrom __ARGS((int s,char *buf,int len,int flags,char *from,int *fromlen));
-int recvline __ARGS((int s,char *buf,unsigned len));
-int rrecvchar __ARGS((int s));
 int send __ARGS((int s,char *buf,int len,int flags));
 int sendto __ARGS((int s,char *buf,int len,int flags,char *to,int tolen));
-int seteol __ARGS((int s,char *seq));
-int sockmode __ARGS((int s,int mode));
-void tflush __ARGS((void));
-int tputc __ARGS((char c));
-int tputs __ARGS((char *s));
-int usflush __ARGS((int s));
-int usprintf __ARGS((int s,char *fmt,...));
-int usputc __ARGS((int s,char c));
-int usputs __ARGS((int s,char *x));
-int usvprintf __ARGS((int s,char *fmt, va_list args));
 
 /* In file sockutil.c: */
 char *psocket __ARGS((void *p));

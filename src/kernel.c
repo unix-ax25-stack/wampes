@@ -1,9 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.5 1992/06/08 12:59:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.6 1992/09/01 16:52:51 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
  */
-
 #if     defined(PROCLOG) || defined(PROCTRACE)
 #include <stdio.h>
 #endif
@@ -17,18 +16,21 @@
 #include "daemon.h"
 #include "hardware.h"
 
-#ifdef __hpux
+#if defined(__hpux) || defined(sun)
 #define setjmp          _setjmp
 #define longjmp         _longjmp
 #endif
 
 extern void setstack __ARGS((void));
 
-#define dirps()         (0)
+#define DISABLE()
+#define RESTORE()
 #define giveup()        exit(0)
-#define istate()        (0)
+#define istate()        (1)
 #define kbint()
 #define restore(x)
+
+int16 *newstackptr;
 
 #ifdef  PROCLOG
 FILE *proclog;
@@ -45,7 +47,7 @@ struct ksig Ksig;
 static void addproc __ARGS((struct proc *entry));
 static void delproc __ARGS((struct proc *entry));
 
-static void _psignal __ARGS((void *event,int n));
+static void psig __ARGS((void *event,int n));
 static int procsigs __ARGS((void));
 
 /* Create a process descriptor for the main function. Must be actually
@@ -81,8 +83,6 @@ char *name;
 	return pp;
 }
 
-int16 *newstackptr;
-
 /* Create a new, ready process and return pointer to descriptor.
  * The general registers are not initialized, but optional args are pushed
  * on the stack so they can be seen by a C function.
@@ -98,8 +98,9 @@ void *parg1;            /* Generic pointer argument #1 (argv) */
 void *parg2;            /* Generic pointer argument #2 (session ptr) */
 int freeargs;           /* If set, free arg list on parg1 at termination */
 {
-	static void (*func)();
 	static struct proc *pp;
+	static void (*func)();
+	jmp_buf jmpenv;
 	int i;
 
 	if(Stkchk)
@@ -157,7 +158,14 @@ int freeargs;           /* If set, free arg list on parg1 at termination */
 #else
 	newstackptr = pp->stack + pp->stksize;
 #endif
+#ifdef sun
+	if (!setjmp(jmpenv)) {
+	  jmpenv[2] = (int) newstackptr;
+	  longjmp(jmpenv, 1);
+	}
+#else
 	setstack();
+#endif
 	(*func)(pp->iarg, pp->parg1, pp->parg2);
 	killself();
 	return 0;
@@ -292,7 +300,7 @@ int val;
 		return;
 #endif
 #ifdef  PROCTRACE
-	printf("alert(%lx,%u) [%s]\n",ptol(pp),val,pp->name);
+	log(-1,"alert(%lx,%u) [%s]",ptol(pp),val,pp->name);
 #endif
 	if(pp != Curproc)
 		delproc(pp);
@@ -311,9 +319,11 @@ int val;
  * Pwait() returns 0 if the event was signaled; otherwise it returns the
  * arg in an alert() call. Pwait must not be called from interrupt level.
  *
- * Note that pwait can run with interrupts enabled even though it examines
- * a few global variables that can be modified by psignal at interrupt time.
- * These *seem* safe.
+ * Before waiting and after giving up the CPU, pwait() processes the signal
+ * queue containing events signaled when interrupts were off. This means
+ * the process queues are no longer modified by interrupt handlers,
+ * so it is no longer necessary to run with interrupts disabled here. This
+ * greatly improves interrupt latencies.
  */
 #pragma OPTIMIZE OFF
 int
@@ -322,25 +332,52 @@ void *event;
 {
 	register struct proc *oldproc;
 	int tmp;
+#if 0
+	int i_state;
 
-	if(Curproc != NULLPROC){        /* If process isn't terminating */
-		if(Stkchk)
-			chkstk();
+	if(!istate()){
+		stktrace();
+	}
+#endif
+	Ksig.pwaits++;
+#if 0
+	if(intcontext() == 1){
+		/* Pwait must not be called from interrupt context */
+		Ksig.pwaitints++;
+		return 0;
+	}
+	/* Enable interrupts, after saving the current state.
+	 * This minimizes interrupt latency since we may have a lot
+	 * of work to do. This seems safe, since care has been taken
+	 * here to ensure that signals from interrupt level are not lost, e.g.,
+	 * if we're waiting on an event, we post it before we scan the
+	 * signal queue.
+	 */
+	i_state = istate();
+	enable();
+#endif
+	if(Stkchk)
+		chkstk();
 
-		if(event == NULL){
-			/* Special case; just give up the processor.
-			 *
-			 * Optimization: if nothing else is ready, just return.
-			 */
-			if(Rdytab == NULLPROC){
-				return 0;
-			}
-		} else {
-			/* Post a wait for the specified event */
-			Curproc->event = event;
-			Curproc->state = WAITING;
-		}
+	if(event != NULL){
+		/* Post a wait for the specified event */
+		Curproc->event = event;
+		Curproc->state = WAITING;
 		addproc(Curproc);       /* Put us on the wait list */
+	}
+	/* If the signal queue contains a signal for the event that we're
+	 * waiting for, this will wake us back up
+	 */
+	procsigs();
+	if(event == NULL){
+		/* We remain runnable */
+		if(Rdytab == NULLPROC){
+			/* Nothing else is ready, so just return */
+			Ksig.pwaitnops++;
+			restore(i_state);
+			return 0;
+		}
+		addproc(Curproc); /* Put us on the end of the ready list */
 	}
 	/* Look for a ready process and run it. If there are none,
 	 * loop or halt until an interrupt makes something ready.
@@ -353,6 +390,8 @@ void *event;
 		 */
 		kbint();        /***/
 		giveup();
+		/* Process signals that occurred during the giveup() */
+		procsigs();
 	}
 	/* Remove first entry from ready list */
 	oldproc = Curproc;
@@ -362,8 +401,7 @@ void *event;
 	/* Now do the context switch.
 	 * This technique was inspired by Rob, PE1CHL, and is a bit tricky.
 	 *
-	 * If the old process has gone away, simply load the new process's
-	 * environment. Otherwise, save the current process's state. Then if
+	 * First save the current process's state. Then if
 	 * this is still the old process, load the new environment. Since the
 	 * new task will "think" it's returning from the setjmp() with a return
 	 * value of 1, the comparison with 0 will bypass the longjmp(), which
@@ -371,13 +409,16 @@ void *event;
 	 */
 #ifdef  PROCTRACE
 	if(strcmp(oldproc->name,Curproc->name) != 0){
-		printf("-> %s(%d)\n",Curproc->name,!!(Curproc->flags & P_ISTATE));
+		log(-1,"-> %s(%d)",Curproc->name,!!(Curproc->flags & P_ISTATE));
 	}
 #endif
-	/* Note use of comma operator to save old interrupt state only if
-	 * oldproc is non-null
-	 */
-	if(oldproc == NULLPROC || setjmp(oldproc->env) == 0){
+#if 0
+	/* Save old state */
+	oldproc->flags &= ~P_ISTATE;
+	if(i_state)
+		oldproc->flags |= P_ISTATE;
+#endif
+	if(setjmp(oldproc->env) == 0){
 		/* We're still running in the old task; load new task context.
 		 * The interrupt state is restored here in case longjmp
 		 * doesn't do it (e.g., systems other than Turbo-C).
@@ -394,46 +435,112 @@ void *event;
 	 * This is the case with Turbo-C's setjmp/longjmp.
 	 */
 	restore(Curproc->flags & P_ISTATE);
+
+	/* If an exception signal was sent and we're prepared, take it */
+	if((Curproc->flags & P_SSET) && tmp == Curproc->signo)
+		longjmp(Curproc->sig,1);
+
+	/* Otherwise return normally to the new task */
 	return tmp;
 }
 #pragma OPTIMIZE ON
 
+void
+psignal(event,n)
+void *event;
+int n;
+{
+	static void *lastevent;
+
+	if(istate()){
+		/* Interrupts are on, just call psig directly after
+		 * processing the previously queued signals
+		 */
+		procsigs();
+		psig(event,n);
+		return;
+	}
+	/* Interrupts are off, so quickly queue event */
+	Ksig.psigsqueued++;
+
+	/* Ignore duplicate signals to protect against a mad device driver
+	 * overflowing the signal queue
+	 */
+	if(event == lastevent && Ksig.nentries != 0){
+		Ksig.dupsigs++;
+		return;
+	}
+	if(Ksig.nentries == SIGQSIZE){
+		/* It's hard to handle this gracefully */
+		Ksig.lostsigs++;
+		return;
+	}
+	lastevent = Ksig.wp->event = event;
+	Ksig.wp->n = n;
+	if(++Ksig.wp >= &Ksig.entry[SIGQSIZE])
+		Ksig.wp = Ksig.entry;
+	Ksig.nentries++;
+}
+static int
+procsigs()
+{
+	int cnt = 0;
+	int tmp;
+
+	for(;;){
+		/* Atomic read and decrement of entry count */
+		DISABLE();
+		tmp = Ksig.nentries;
+		if(tmp != 0)
+			Ksig.nentries--;
+		RESTORE();
+		if(tmp == 0)
+			break;
+		psig(Ksig.rp->event,Ksig.rp->n);
+		if(++Ksig.rp >= &Ksig.entry[SIGQSIZE])
+			Ksig.rp = Ksig.entry;
+		cnt++;
+	}
+	if(cnt > Ksig.maxentries)
+		Ksig.maxentries = cnt;  /* Record high water mark */
+	return cnt;
+}
 /* Make ready the first 'n' processes waiting for a given event. The ready
  * processes will see a return value of 0 from pwait().  Note that they don't
  * actually get control until we explicitly give up the CPU ourselves through
- * a pwait(). Psignal may be called from interrupt level.
+ * a pwait(). psig is now called from pwait, which is never called at
+ * interrupt time, so it is no longer necessary to protect the proc queues
+ * against interrupts. This also helps interrupt latencies considerably.
  */
-void
-psignal(event,n)
+static void
+psig(event,n)
 void *event;    /* Event to signal */
 int n;          /* Max number of processes to wake up */
 {
 	register struct proc *pp;
 	struct proc *pnext;
-	int i_state;
 	unsigned int hashval;
+	int cnt = 0;
 
+	Ksig.psigs++;
 	if(Stkchk)
 		chkstk();
 
-	if(event == NULL)
-		return;                 /* Null events are invalid */
-
-	/* n = 0 means "signal everybody waiting for this event" */
+	if(event == NULL){
+		Ksig.psignops++;
+		return;         /* Null events are invalid */
+	}
+	/* n == 0 means "signal everybody waiting for this event" */
 	if(n == 0)
 		n = 65535;
 
 	hashval = phash(event);
-	i_state = dirps();
 	for(pp = Waittab[hashval];n != 0 && pp != NULLPROC;pp = pnext){
 		pnext = pp->next;
 		if(pp->event == event){
 #ifdef  PROCTRACE
-			if(i_state){
-				printf("psignal(%lx,%u) wake %lx [%s]\n",ptol(event),n,
+				log(-1,"psignal(%lx,%u) wake %lx [%s]",ptol(event),n,
 				 ptol(pp),pp->name);
-				fflush(stdout);
-			}
 #endif
 			delproc(pp);
 			pp->state &= ~WAITING;
@@ -441,17 +548,15 @@ int n;          /* Max number of processes to wake up */
 			pp->event = NULL;
 			addproc(pp);
 			n--;
+			cnt++;
 		}
 	}
 	for(pp = Susptab;n != 0 && pp != NULLPROC;pp = pnext){
 		pnext = pp->next;
 		if(pp->event == event){
 #ifdef  PROCTRACE
-			if(i_state){
-				printf("psignal(%lx,%u) wake %lx [%s]\n",ptol(event),n,
+				log(-1,"psignal(%lx,%u) wake %lx [%s]",ptol(event),n,
 				 ptol(pp),pp->name);
-				fflush(stdout);
-			}
 #endif /* PROCTRACE */
 			delproc(pp);
 			pp->state &= ~WAITING;
@@ -459,10 +564,13 @@ int n;          /* Max number of processes to wake up */
 			pp->retval = 0;
 			addproc(pp);
 			n--;
+			cnt++;
 		}
 	}
-	restore(i_state);
-	return;
+	if(cnt == 0)
+		Ksig.psignops++;
+	else
+		Ksig.psigwakes += cnt;
 }
 
 /* Rename a process */
@@ -479,12 +587,9 @@ static void
 delproc(entry)
 register struct proc *entry;    /* Pointer to entry */
 {
-	int i_state;
-
 	if(entry == NULLPROC)
 		return;
 
-	i_state = dirps();
 	if(entry->next != NULLPROC)
 		entry->next->prev = entry->prev;
 	if(entry->prev != NULLPROC){
@@ -503,7 +608,6 @@ register struct proc *entry;    /* Pointer to entry */
 			break;
 		}
 	}
-	restore(i_state);
 }
 /* Append proc entry to end of appropriate list */
 static void
@@ -512,7 +616,6 @@ register struct proc *entry;    /* Pointer to entry */
 {
 	register struct proc *pp;
 	struct proc **head;
-	int i_state;
 
 	if(entry == NULLPROC)
 		return;
@@ -530,7 +633,6 @@ register struct proc *entry;    /* Pointer to entry */
 		break;
 	}
 	entry->next = NULLPROC;
-	i_state = dirps();
 	if(*head == NULLPROC){
 		/* Empty list, stick at beginning */
 		entry->prev = NULLPROC;
@@ -542,5 +644,4 @@ register struct proc *entry;    /* Pointer to entry */
 		pp->next = entry;
 		entry->prev = pp;
 	}
-	restore(i_state);
 }
