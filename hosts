@@ -11,9 +11,9 @@
 #           Routing-Knotenrechner sind mit *** gekennzeichnet
 # -----------------------------------------------------------------------
 #
-#44.130.0.x Hamburg
-#local coordination dk3uz
-#last update 961229
+# 44.130.0.x    Hamburg
+# local coordination dk3uz
+# last update 970125
 #
 44.130.0.1      dl2vo   dl2vo.ampr.org
 44.130.0.2      dl2vo-1 dl2vo-1.ampr.org
@@ -58,6 +58,7 @@
 44.130.0.44     df4hr   df4hr.ampr.org
 44.130.0.45     dl5hcd  dl5hcd.ampr.org
 44.130.0.46     dl6hbo  dl6hbo.ampr.org
+44.130.0.47     dc6xs-b dc6xs-b.ampr.org
 44.130.0.48     dl8hbg  dl8hbg.ampr.org
 44.130.0.49     dl1hcs  dl1hcs.ampr.org
 44.130.0.51     dh1had  dh1had.ampr.org
@@ -217,7 +218,7 @@
 #
 # 44.130.2.x    Hamburg South
 # local coordination dk3uz
-# 961111
+# 970125
 44.130.2.1      dg1hg   dg1hg.ampr.org
 44.130.2.2      dg5ht   dg5ht.ampr.org
 44.130.2.3      dc3hc   dc3hc.ampr.org
@@ -232,7 +233,6 @@
 44.130.2.16     dl6xj   dl6xj.ampr.org
 44.130.2.24     dl4had  dl4had.ampr.org
 44.130.2.25     dl4had-a        dl4had-a.ampr.org
-44.130.2.29     df9lm   df9lm.ampr.org
 44.130.2.32     dl0hwl  dl0hwl.ampr.org
 44.130.2.33     dh3hao  dh3hao.ampr.org
 44.130.2.34     dk9he-wl        dk9he-wl.ampr.org
@@ -251,11 +251,10 @@
 44.130.2.100    db0hhs  db0hhs.ampr.org
 44.130.2.101    db0hhs-test     db0hhs-test.ampr.org
 44.130.2.102    db0hhs-wampes   db0hhs-wampes.ampr.org
-44.130.2.129    df9lm-svr       df9lm-svr.ampr.org
 #
 # 44.130.2.192/26 Lueneburg
 # local coordination dj4kw
-# 960920
+# 970105
 44.130.2.200    db0agi  db0agi.ampr.org
 44.130.2.201    db0agm  db0agm.ampr.org
 44.130.2.202    db0agm-u        db0agm-u.ampr.org
@@ -280,10 +279,9 @@
 44.130.2.222    dl4hn   dl4hn.ampr.org
 44.130.2.223    dl5xm   dl5xm.ampr.org
 44.130.2.224    dg7xd   dg7xd.ampr.org
-44.130.2.225    dg6xu-s dg6xu-s.ampr.org
 44.130.2.226    dk2he-2 dk2he-2.ampr.org
-44.130.2.227    dg6xu   dg6xu.ampr.org
-44.130.2.228    dg6xu-w dg6xu-w.ampr.org
+44.130.2.227    dg6xu-s dg6xu-s.ampr.org
+44.130.2.228    dg6xu   dg6xu.ampr.org
 44.130.2.229    dg2hak  dg2hak.ampr.org
 44.130.2.230    dg2hak-2        dg2hak-2.ampr.org
 44.130.2.254    dk0iu   dk0iu.ampr.org
@@ -369,17 +367,18 @@
 44.130.7.14     df0se   df0se.ampr.org. # Clubstation OV Bad Segeberg  M14   JO53EW
 44.130.7.129    db0seg  db0seg.ampr.org.        # FÅlldigi Schieren bei Bad Segeberg, JO53EW
 #
-# 44.130.8.x    Region Osnabrueck
-# --- lokale Adresskoordination: DG9BFO
+# 44.130.8.x    Region 8 Osnabrueck
+#
+# - lokale Adresskoordination: DG9BFO "Dieter Oder" 49593 Bersenbrueck
 #
 44.130.8.1      DL1BFF   # Michael, 4500 Osnabrueck
 44.130.8.2      DL2BCR   # Hartmut, 4500 Osnabrueck
 44.130.8.3      DL4MFM   # Mario, Fietz, D - 49126 Wallenhorst
-44.130.8.4      DC1BF    # Bettina, 4512 Wallenhorst
+44.130.8.4      DC1BF    # Bettina,Fietz,D - 4512 Wallenhorst
 44.130.8.5      DB2BI    # Torsten, 4550 Bramsche
 44.130.8.6      DB9BJ    # Lars Naber, 48531 Nordhorn
 44.130.8.7      DG8BBF   # Wolfgang, Neuenkirchen
-44.130.8.8      DL0QW    # Mario Fietz, D - 49126 Wallenhorst
+44.130.8.8      DL0QW    # Mario Fietz, QW - USER - GROUP
 44.130.8.9      DJ5BA    # Jochen Bredemeyer, Diepholz
 44.130.8.10     DG8BBT   # Harald, 4550 Bramsche 3
 44.130.8.11     DL1BKE   # Joerg Reuter, 49716 Meppen
@@ -394,18 +393,19 @@
 44.130.8.22     DL6BAT   # Ralf Schlueter, 49716 Meppen; AT286
 44.130.8.23     DL6BBH   # Ansgar, Lathen/Emsland
 44.130.8.24     DG9BJA   # Ludger, Holdorf
+44.130.8.25     DG9BJA-1 # Ludger, Holdorf
 44.130.8.26     DG3BES   # Heiko, Wetschen; WNOS
 44.130.8.30     DG9BFO   # Dieter Oder, 49593 Bersenbrueck; linuX
-44.130.8.31     DG9BFO-1 # linuX
-44.130.8.32     DG9BFO-2 # Wnos/LinuX
-44.130.8.40     DG9BHW-SVR # Sebastian Lemke, Quakenbrueck
-44.130.8.41     DG9BHW   # Sebastian Lemke, Quakenbrueck
-44.130.8.50     DK7BW    # Herman 49835 witmarschen lohne
+44.130.8.31     DG9BFO-1 # Dieter Oder, 49593 Bersenbrueck; linuX
+44.130.8.32     DG9BFO-2 # Dieter Oder, 49593 Bersenbrueck; LinuX
+44.130.8.40     DG9BHW-SVR # Sebastian Lemke, Quakenbrueck; Wnos
+44.130.8.41     DG9BHW   # Sebastian Lemke, Quakenbrueck; Wnos
+44.130.8.50     DK7BW    # Herman 49835 Witmarschen lohne
 44.130.8.55     DL5DBM   # Anwar, Kettenkamp
 44.130.8.56     DL5DBM-2 # Anwar, Kettenkamp
-44.130.8.69     DB0NON-SVR # ;arp db0non-10 /jo32nk / Wampes
+44.130.8.69     DB0NON-SVR # ;arp db0non-10 /jo32nk / Wampes (DL1BKU)
 44.130.8.73     DL0NY    # Club Stn I33, 4460 Nordhorn
-44.130.8.88     DB0NON   # ;arp db0non-10 /jo32nk / LinuX
+44.130.8.88     DB0NON   # ;arp db0non-10 /jo32nk / LinuX (DL1BKU)
 44.130.8.100    DB0SM    # geplanter IP-Router, 49716 Meppen
 #
 #44.130.9.x     Braunschweig, lokale Koordination DF2AU
@@ -1340,7 +1340,7 @@
 44.130.20.2     ST.DG2KK        # Walter Doerr; Atari
 44.130.20.4     DL4YDP  # Joe, Aachen
 44.130.20.5     DL4KBS  # Tobias Dingwerth, 52070 Aachen
-44.130.20.6     DG9KBU  # Uli Berens, 52074 Aachen
+44.130.20.6     DH9BU   # Uli Berens, 52074 Aachen
 44.130.20.7     DF2WF   # Frans-Josef Plum, 52064 Aachen
 44.130.20.8     DD7WH   # Maria-Theresia Plum, 52064 Aachen
 44.130.20.9     DH8PAC  # Monika Plum, 52064 Aachen
@@ -1373,7 +1373,7 @@
 44.130.20.36    DL3KSB  # Bernd Schulz, 52070 Aachen
 44.130.20.37    DH9KAE-3  # Detlef Brunkel, 52531 Uebach-Palenberg
 44.130.20.38    DH9KAE-2  # WNOS Test Rechner
-44.130.20.39    DH9KAE-1  # Linux Wampes Router
+44.130.20.39    DH9KAE-1  # Linux - Gateway zum Lap-Net
 44.130.20.40    DH9KAE  # Linux Server mit IP-Gateway + DNS
 44.130.20.41    DJ0AAL  # Jeronimo Diaz, 5120 Herzogenrath 3
 44.130.20.42    DG6KBB  # Karl de Jong, 5132 Uebach-Palenberg
@@ -2466,19 +2466,22 @@
 44.130.44.9     DH0VF   # Jan, Wittlich
 44.130.44.10    DF8SK   # Peter, Konz
 44.130.44.11    DB0DAU  # Digi Daun/Eifel
-44.130.44.12    DJ7HQ   # ?
+44.130.44.12    DJ7HQ   # Horst van Geldern, 54329 Konz
 44.130.44.13    DH5VS   # Michael Steck, 54295 Trier
 44.130.44.14    DH6VL   # Harald Lehnart, 54329 Konz
 44.130.44.15    DC0WI   # Karl-Heinz, 54344 Kenn
 44.130.44.16    DG3FDM  # Jan Morawek, ????? Trier
+44.130.44.17    DJ0MED  # Jean-Pierre Cariou, 54295 Trier
+44.130.44.18    DA2DP   # Denis Plaza, 54296 Trier
+44.130.44.19    DK5WR   # Wilfried Hamm, 54292 Trier
 44.130.44.20    DF7PO   # Winfried Schubert, 54295 Trier
 44.130.44.88    DB2VM-1 # Andreas, Trier
-44.130.44.99    DD8PZ   # Jochen,
-44.130.44.100   DB2VM-2 #
+44.130.44.99    DD8PZ   # Jochen van Geldern, 54329 Konz,
+44.130.44.100   DB2VM-2 # Andreas, Trier
 44.130.44.127   DF9WM   # Christoph Bungard, Germersheim
-44.130.44.200   DB0GH-6  # TCP/IP Server Trier
-44.130.44.201   DB0GH-SVR  #
-44.130.44.202   DL0BBS  #
+44.130.44.200   DB0GH-6 # TCP/IP Server 54290 Trier
+44.130.44.201   DB0GH-SVR # TCP/IP Server 54290 Trier (Router)
+44.130.44.202   DL0BBS  # Clubstation der Berufbildenden Schule G & T Trier
 #44.130.44.255  Broadcast Region44
 #
 #44.130.48.x    Stuttgart
@@ -5635,45 +5638,181 @@
 #         10-15 reserved for future use by hb9h, A.R.T.
 #---------------------------------------------------------------------------
 #
-#  IP-Adressen Raum Wien,  44.143.16/24
+44.143.16.1     OE1XIR             # [A] IBM Klub, 1020 Wien, (ARP: OE1XIR-15)
+44.143.16.10    GW.OE1HMC          # Heinz Moser, 1160 Wien,
+44.143.16.100   OE3KLU             # Karl Lichtenecker, 2320 Schwechat,
+44.143.16.11    SEC.OE1HMC         # Heinz Moser, 1160 Wien,
+44.143.16.12    TER.OE1HMC         #
+44.143.16.13    OE1HMC             #
+44.143.16.14    OE1DMW             # Erhard Schramm, 1070 Wien,
+44.143.16.144   OE1KDA             # Krzysztof Dabrowski, 1230 Wien,
+44.143.16.145   VERDI.OE1KDA       #
+44.143.16.146   TER.OE1KDA         #
+44.143.16.15    SEC.OE1DMW         # Erhard Schramm, 1070 Wien,
+44.143.16.16    OE1MSB             # Michael Steiner, 1140 Wien,
+44.143.16.17    SEC.OE1MSB         #
+44.143.16.18    SP7MUD             # Adam Merwart, 1210 Wien,
+44.143.16.19    OE1MMA             # Markus Melcher, 1030 Wien,
+44.143.16.2     OE1XIB             # [A] IBM Klub, (ARP: OE1XIB-15)
+44.143.16.20    OE3GFS             # Gerhard, 2332 Hennersdorf,
+44.143.16.200   SAT.OE3GFS         #
+44.143.16.21    OE1SMC             # Hans Mayer, 1238 Wien,
+44.143.16.22    OE1CMS             # Christine Mayer, 1238 Wien,
+44.143.16.23    OE1XYA             # [P] Amateurfunkklub X, 1238 Wien,
+44.143.16.24    OE1GOU             # Gerald Forthuber, 1050 Wien,
+44.143.16.25    OE1YXU             # Gertrude Forthuber, 1050 Wien,
+44.143.16.26    OE1WWL             # Wolfgang Wagner, 1180 Wien,
+44.143.16.27    SEC.OE1WWL         #
+44.143.16.28    TER.OE1WWL         #
+44.143.16.30    OE1GWW             # GÅnter,
+44.143.16.32    OE3DNA             # Andy, Amstetten,
+44.143.16.33    OE3PHA             # Peter Hofmann, 1090 Wien,
+44.143.16.34    OE1WCA             # Werner Casset, 1110 Wien,
+44.143.16.35    OE3UGW             # Paul Ergens, Gerasdorf-Kapellerfeld,
+44.143.16.36    OE1JEB             # Jan, (SM5BZ)
+44.143.16.37    OE1HHC             # Harald Huber, 1190 Wien,
+44.143.16.38    OE1FWU             # Friedrich A. V. Wendl, 1120 Wien,
+44.143.16.39    OE1AZS             # Andreas Schmid-Zartner, 1140 Wien,
+44.143.16.40    OE1TKW             # Helmut Klein, 1160 Wien,
+44.143.16.41    OE1RMB             # Michael, Wien,
+44.143.16.42    OE3DZW             # Dietmar Zlabinger, 3861 Eggern,
+44.143.16.43    OE1DGG             # Guenther Dilsky, Wien,
+44.143.16.44    OE1PPA             # Philippe, Wien,
+44.143.16.45    OE1GOB             #
+44.143.16.46    OE1MEB             #
+44.143.16.47    OE4CFC             # Christian Fock, 7162 Tadten,
+44.143.16.48    OE1HZA             # Helmut Zemann, 1160 Wien,
+44.143.16.49    SEC.OE1HZA         #
+44.143.16.5     OE3XIR             # Sat Gate, TCP/IP, (ARP: OE3XIR-15)
+44.143.16.50    OE1RZB             # Robert Zak, 1210 Wien,
+44.143.18.1     OE1XAR             # [A] Testknoten, 1160 Wien,
+44.143.18.14    OE1ATU             # Andreas Tobolka, 1160 Wien,
+44.143.18.2     SEC.OE1XAR         # [P] Testknoten, 1160 Wien,
+44.143.18.3     9K6.OE1XAR         #
+44.143.19.1     OE1XNC             # [P] OeVSV Landesverband Wien,
+44.143.20.1     OE1XLR             # [P] Knoten Laaerberg, 1100 Wien,
+44.143.22.1     OE1XTU             # [A] Radioklub der TU Wien,
+44.143.22.65    VENUS.OE1KIB       # Klaus Kudielka, 1180 Wien,
+44.143.22.66    SATURN.OE1KIB      #
+44.143.22.67    MERKUR.OE1KIB      #
+44.143.22.68    BOSON.OE1NKW       # Andras Kalmar, 1030 Wien,
+44.143.22.69    LEPTON.OE1NKW      #
+44.143.22.70    MESON.OE1NKW       #
+44.143.22.71    56K.OE1TKW         # Helmut Klein, 1160 Wien,
+44.143.23.1     OE1XRR             # [P] Irmela Gagern,
+44.143.23.10    OE1YSS             # Irmela Gagern, 1200 Wien,
+44.143.33.1     OE2XHN             # [P] HTBL-Salzburg,
+44.143.33.10    OE2PBP             # Peter, Salzburg,
+44.143.33.11    SEC.OE2PBP         #
+44.143.33.12    OE2IWM             # Josef Wimmer, 5400 Hallein,
+44.143.33.13    OE2TBM             # Herbert SchÅtz, 5023 Salzburg,
+44.143.33.14    OE2DON             # Richard Maier, 5020 Salzburg,
+44.143.33.15    OE2HEM             # Hermann Eckel, 5431 Kuchl,
+44.143.33.16    OE2EHP             # Helga Eckel, 5431 Kuchl,
+44.143.33.17    OE2IWM             # Josef Wimmer, 5400 Hallein,
+44.143.33.18    OE2MAL             # Markus, 5020 Salzburg,
+44.143.33.19    OE2HHN             # Herbert Heitzmann, 5580 Tamsweg,
+44.143.33.20    OE2WPO             # Werner Posselt, 5411 Oberalm,
+44.143.33.21    OE2CEN             # Claus Bleichinger, 5162 Obertrum,
+44.143.33.22    OE2MSN             # Martin Scharfetter, 5020 Salzburg,
+44.143.33.23    OE2LJP             # Josef Lipop, 5020 Salzburg,
+44.143.33.24    OE2IJL             # Eberhard Illmer, 5400 Hallein,
+44.143.33.25    OE2RKO             # Kurt Baumgartinger, 5020 Salzburg,
+44.143.48.1     OE3XSR             # [A] Waldviertler Amateurradioklub,
+44.143.48.10    SEC.OE3DZW         # Dietmar Zlabinger, 3861 Eggern,
+44.143.48.11    OE3DBB             #
+44.143.48.12    OE3XYW             #
+44.143.48.13    OE3DSB             # Gerald, Eisgarn,
+44.143.48.14    OE5PON             # Andreas Pointner,
+44.143.48.15    OE3IGW             # Alois Gabler, 3874 Litschau,
+44.143.48.16    OE3FRU             # Franz Rodinger, 3871 Alt Nagelberg,
+44.143.48.17    OE3GWU             # Hartwig Weninger, 3973 Karlstift,
+44.143.48.18    OK1DWJ             # Ales, C.Budiejovice,
+44.143.48.19    OE3GOS             # D.I. Gerhard Koppensteiner, 3902 Vitis,
+44.143.48.2     BBS.OE3XSR         # [A] Waldviertler Amateurradioklub,
+44.143.48.3     NODE.OE3XSR        # [A]
+44.143.48.4     WAMPES.OE3XSR      # [A]
+44.143.48.5     CLX.OE3XSR         # [A]
+44.143.50.1     OE3XNR             # [A] Knoten Nebelstein, OeVSV-L3
+44.143.51.1     OE3XZR             # [P] Waldviertler Amateur Radio, Club,
+44.143.64.1     OE3XKR             # [A] Knoten, Schwechat (NOD.OE3XKR)
+44.143.65.1     OE3XAC             # [P] Amateurfunkklub Schwechat,
+44.143.67.1     OE3XLR             # [P] Knoten Muckenkogel,(ARP: OE3XLR-5)
+44.143.67.10    OE3YSS             # Irmela Gagern, , (ARP: OE3YSS-6)
+44.143.67.11    OE3WLS             # Wolfgang Levin, 2000 Stockerau,
+44.143.67.12    OE3HGB             # Heinz, 3512 Mautern/Donau,
+44.143.67.13    SEC.OE3HGB         #
+44.143.67.14    OE3JBB             # Josef Braun, 3650 Pîggstall,
+44.143.67.2     SEC.OE3XLR         # [P] Knoten Muckenkogel,(ARP: OE3XLR-6)
+44.143.67.3     SEC.OE1XRR         # [P] Versuche unter OE1XRR/3
+44.143.69.1     OE3XPR             # [A] OE3XPR-11, (ARP: OE3XPR-9)
+44.143.69.10    OE3RPU             # Rudolf Pfeffer, 2872 Mˆnichkirchen,
+44.143.69.11    OE6JAD             # Johann Auerbaeck, 8241 Dechantskirchen,
+44.143.69.2     BCM.OE3XPR         # [A] OE3XPR-11, (ARP: OE3XPR-8)
+44.143.69.3     TNOS.OE3XPR        # [A]
+44.143.70.1     OE3XDU             # [P] Klubstation,  Seibersdorf,
+44.143.70.10    OE4HZA             # Helmut Zemann, OE1HZA
+44.143.70.11    SEC.OE4HZA         #
+44.143.70.2     SEC.OE3XDU         # [P] Klubstation, Seibersdorf,
+44.143.99.1     OE5XUR             # [GA] JKULINZ, gate: 140.78.4.35
+44.143.99.11    OE5ODO             # Martin Werner, 4020 Linz,
+44.143.99.12    OE5SFO             # Franz Staudinger, 4040 Linz,
+44.143.99.13    OE5CG              # Josef Schwaiger, 4910 Ried,
+44.143.99.14    OE5WEL             # Hermann Wiesinger, 4174 Niederwaldkirchen
+44.143.99.15    OE5HDN             # Heinz-Dieter Huber, 4020 Linz,
+44.143.99.16    OE5LEN             # Harald Landvoigt, 4060 Leonding,
+44.143.99.17    OE5OHO             # Oliver Huber, 4020 Linz,
+44.143.99.18    OE5BKL             # Alois Haderer, 4020 Linz,
+44.143.99.19    OE5PSM             # Peter Scheer, 4040 Linz,
+44.143.99.2     OE5AON             # Erich Floh, 4020 Linz,
+44.143.99.20    SEC.OE5PSM         # Peter Scheer, 4040 Linz,
+44.143.99.22    OE5FJL             # Josef Falzeder, 4696 Ohlsdorf/Gmunden,
+44.143.99.24    OE5BBM             # Siegfried Brunnbauer, 4490 St. Florian,
+44.143.99.25    OE5EOI             # Edwin Olinowetz, 5310 Mondsee,
+44.143.99.26    OE5FFN             # Arno, Linz,
+44.143.99.27    OE5BYL             # Johann Bachl, 4910 Ried im Innkreis,
+44.143.99.29    OE5GJN             # Gerald Jungbauer, 4040 Linz,
+44.143.99.30    OE5FOL             # Hans Prader, 4552 Wartberg,
+44.143.99.32    OE5RLO             # Martin Reinsprecht, 4060 Leonding,
+44.143.144.1    OE6XHR             #
+44.143.144.10   OE6OWG             # Walter,
+44.143.144.11   OE6LID             # Gerhard Lichtenegger, 8160 Weiz,
+44.143.144.14   OE6PTG             # Thomas Pienn, 8793 Trofaiach,
+44.143.146.11   OE6RHT             # Reinhard Hoellrigl, 8045 Graz,
+44.143.146.12   OE6DLD             # Gerry Peklar, 8010 Graz,
+44.143.146.13   OE6BUD             # Ulrich BrÑndle, 8121 Deutsch-Feistritz
+44.143.146.14   OE6ISD             # Dieter Sabathi, 8020 Graz,
+44.143.146.15   OE6PWD             # Walter Pflanzl, 8020 Graz,
+44.143.146.16   OE6DUG             # Edgar Neukirchner, 8010 Graz,
+44.143.146.17   OE6UBG             # Brani Wusser, 8053 Graz,
+44.143.146.19   OE6MMA             # Markus Melcher, Hartberg,
+44.143.146.43   OE6DGG             # Guenther Dilsky, 8280 Fuerstenfeld,
+44.143.152.1    OE6XWR             # [P] Kapfenberg-Rennfeld, JN77qj
+44.143.152.10   OE6MKD             # RenÇ Mayrhold, 8605 Kapfenberg,
+44.143.152.11   OE6IWG             # Walter Steinwender, 8605 Kapfenberg,
+44.143.152.12   OE6YNE             # Ingrid Steinwender, 8605 Kapfenberg,
+44.143.152.13   OE6NCE             # Christian Nimmrichter, 8641 Marein/Mzt,
+44.143.152.14   OE6RKE             # Robert Kiendl, 8530 Deutschlandsberg,
+44.143.181.1    OE7XIR             # [P] Helmut Kupsa,
+44.143.181.11   OE7FTJ             # Wolf Dieter Hoeller, 6020 Innsbruck,
+44.143.181.12   SEC.OE7FTJ         #
+44.143.182.11   OE7RHT             # Reinhard Hoellrigl, 6500 Landeck,
+44.143.193.11   OE7BHT             # Hermann Bacher, 9900 Lienz,
+44.143.193.12   OE7JTK             # Josef Schett, 9900 Lienz,
+44.143.216.19   OE8TGK             # Alexander Kînig, 9201 Krumpendorf,
+44.143.225.1    W.OE9XFR           # [A] WAMPES-Knoten, Feldkirch,
+44.143.225.10   OE9MKV             #
+44.143.225.11   VANESSA.OE9MKV     #
+44.143.225.12   OE9FKI             # Franz Kienspergher, 6800 Feldkirch
+44.143.225.14   OE9WAV             # Werner Antonietti, 6773 Vandans,
+44.143.225.16   OE9WLJ             # Wilfried Haeusle, 6800 Tosters,
+44.143.225.17   NET.OE9WLJ         #
+44.143.225.2    OE9XFR             # [A] WAMPES-Knoten, Feldkirch,
+44.143.225.20   OE9LKI             # Kurt Lampert, 6841 Maeder,
+44.143.225.21   NET.OE9LKI         #
+__________________________________ #_______________________________________
 #
-#------------------------------------------------------
-44.143.16.1    oe1xir        # IBM - Club Wien
-44.143.16.10   gw.oe1hmc     #
-44.143.16.100  oe3klu        # Karl, Schwechat bei Wien
-44.143.16.11   sec.oe1hmc    #
-44.143.16.12   ter.oe1hmc    #
-44.143.16.13   oe1hmc        # Heinz, Wien
-44.143.16.14   oe1dmw        # Erhard, Wien
-44.143.16.144  oe1kda        # Krzysztof, Koordinator OE
-44.143.16.145  verdi.oe1kda  #
-44.143.16.146  ter.oe1kda    #
-44.143.16.15   sec.oe1dmw    #
-44.143.16.16   oe1msb        # Michael, Wien
-44.143.16.17   sec.oe1msb    #
-44.143.16.18   sp7mud        # Adam
-44.143.16.19   oe1mma        # Markus, Wien
-44.143.16.20   oe3gfs        # Gerhard, Hennersdorf
-44.143.16.200  sat.oe3gfs    #
-44.143.16.21   oe1smc        # Hans, Wien
-44.143.16.22   oe1cms        # Christine, Wien
-44.143.16.23   oe1xya        # Amateurfunkclub Wien 10
-44.143.16.24   oe1gou        # Gerald, Wien
-44.143.16.25   oe1yxu        # Gertrud, Wien
-44.143.16.26   oe1wwl        # Walter, Wien
-44.143.16.27   sec.oe1wwl    #
-44.143.16.28   ter.oe1wwl    #
-44.143.16.30   oe1gww        # GÅnter
-44.143.16.31   oe3gmw        # Gottfried, Wr. Neudorf
-44.143.16.32   oe3dna        # Andy, Amstetten
-44.143.16.33   oe3pha        # Peter, Wien
-44.143.16.34   oe1wca        # Werner, Wien
-44.143.16.35   oe3ugw        # Paul, Kapellerfeld
-44.143.16.36   oe1jeb        # Jan
-44.143.16.37   oe1hhc        # Harald, Wien
-44.143.16.38   oe1fwu        # Friedrich, Wien
-44.143.16.39   oe1azs        #
-44.143.16.9    oe1xtu        # Clubstation der TU-Wien
+# Vy 73 de Krzysztof OE1KDA @ OE1XAB
 #
 # 44.143.xxx.xxx * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                            in OESTERREICH
