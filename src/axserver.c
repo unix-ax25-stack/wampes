@@ -1,4 +1,4 @@
-/* @(#) $Id: axserver.c,v 1.18 2002/01/23 22:43:28 dl9sau Exp $ */
+/* @(#) $Id: axserver.c,v 1.19 2002/02/05 12:00:34 dl9sau Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -16,8 +16,8 @@ void axserv_recv_upcall_discard(struct ax25_cb *axp, int cnt)
 {
   struct mbuf *bp;
 
-      bp = recv_ax25(axp, 0);
-      free_p(&bp);
+  bp = recv_ax25(axp, 0);
+  free_p(&bp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -66,7 +66,14 @@ void axserv_open(struct ax25_cb *axp, int cnt)
     axp->t_upcall = axserv_send_upcall;
     axp->s_upcall = axserv_state_upcall;
   } else
+#ifdef	notdef
     disc_ax25(axp);
+#else
+    // dl9sau: don't disconnect. the client may deceide to do it. this
+    // keeps the session open for transports with other PIDs
+    axp->r_upcall = axserv_recv_upcall_discard;
+#endif
+    
 }
 
 /*---------------------------------------------------------------------------*/

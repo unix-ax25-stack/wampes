@@ -1,4 +1,10 @@
-Version @(#) $Id: ChangeLog.patches,v 1.5 2002/01/23 22:43:27 dl9sau Exp $
+Version @(#) $Id: ChangeLog.patches,v 1.6 2002/02/05 12:00:34 dl9sau Exp $
+
+020205 Thomas Osterried <dl9sau>
+
+	added "axp->r_upcall = axserv_recv_upcall_discard;" instead of
+	"disc_ax25(axp);" to axserver.c, in order not to disc the ax25
+	layer while transports with other PIDs are open
 
 020123 Thomas Osterried <dl9sau>
 
