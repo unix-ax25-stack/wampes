@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.2 1990/03/05 11:48:22 deyke Exp $ */
+
 /* Miscellaneous format conversion subroutines */
 
 #include <sys/types.h>
@@ -71,12 +73,13 @@ static void read_hosttable()
   char  line[1024], addr[1024], name[1024];
   int32 n;
   register char  *p;
-  static long  laststat, lastmtime;
+  static long  lastmtime;
+  static long  nextchecktime;
   struct hosttable *hp;
   struct stat statbuf;
 
-  if (laststat == currtime / 60) return;
-  laststat = currtime / 60;
+  if (nextchecktime > currtime) return;
+  nextchecktime = currtime + 60;
   if (stat(hosts, &statbuf)) return;
   if (lastmtime == statbuf.st_mtime || statbuf.st_mtime > currtime - 5) return;
   lastmtime = statbuf.st_mtime;
