@@ -1,4 +1,4 @@
-/* @(#) $Id: nrdump.c,v 1.7 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: nrdump.c,v 1.8 2002/06/14 01:23:22 dl9sau Exp $ */
 
 /* NET/ROM header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -41,7 +41,10 @@ int check)
 			pullup(bpp,src,AXALEN);
 			fprintf(fp,"    %12s",pax25(tmp,src));
 			tmp[0] = PULLCHAR(bpp);
-			fprintf(fp,"    %3u\n",(tmp[0]));
+			fprintf(fp,"    %3u\n", (tmp[0]) & 0xff);
+                        //                              ^ fix dl9sau: showed
+			// the address of &tmp, not the byte of tmp[0] (quality
+			// of the announced node)
 		}
 		return;
 	}

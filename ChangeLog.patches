@@ -1,4 +1,10 @@
-Version @(#) $Id: ChangeLog.patches,v 1.7 2002/05/27 03:17:00 dl9sau Exp $
+Version @(#) $Id: ChangeLog.patches,v 1.8 2002/06/14 01:23:22 dl9sau Exp $
+
+020614 Thomas Osterried <dl9sau>
+
+	- fix in nrdump.c:
+	  trace for announced netrom broadcasts should show quality
+	  (linux / GCC problem?). instead the address of &tmp was shown.
 
 020527 Thomas Osterried <dl9sau>
 
