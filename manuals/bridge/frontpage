@@ -1,0 +1,17 @@
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/bridge/frontpage,v 1.1 1996/02/08 11:59:03 deyke Exp $
+.\"
+.PF "^Bridge Reference Manual^-\\\\nP-^Version 960208" \" Page footer
+.\"
+.S 30
+.ce
+\fBBridge Reference Manual\fP
+.ce
+Version 960208
+.S
+.SP 2
+.S 15
+.ce
+Dieter Deyke, DK5SG/N0PRA
+.ce
+deyke@fc.hp.com
+.S

@@ -1,0 +1,68 @@
+<HTML>
+<HEAD>
+<TITLE>Bridge Reference Manual</TITLE>
+</HEAD>
+<BODY>
+<H1>Bridge Reference Manual</H1>
+Version 960208
+<BR>
+<P>
+Dieter Deyke, DK5SG/N0PRA
+<BR>
+deyke@fc.hp.com
+<BR>
+<HR><H2>Table of Contents</H2>
+<OL>
+<LI><A HREF="#H1.">The bridge utility</A>
+</OL>
+<HR><H2><A NAME="H1.">1. The bridge utility</A></H2>
+Usage: /tcp/util/bridge [-a] [-f <I>failures</I>]
+<P>
+<B>bridge</B> allows multiple <B>net</B> programs to communicate with each other.
+<P>
+One common problem for packet users is only having one AX.25 callsign
+while using WAMPES. You have to run another copy of the <B>net</B> program
+if you want a second callsign for connects. Many people achieve this by
+using a tty/pty pair to connect one <B>net</B> to another, which isn't a very
+nice method.
+<P>
+An easier solution is <B>bridge</B>.
+<P>
+<B>bridge</B> listens on a host tcp socket, and relays received packets like
+a digipeater.
+<P>
+<B>bridge</B> may be started with the following, optional switches:
+<P>
+The <B>-a</B> switch relays received packets to all connections, even back to
+the connection a packet was received from. This is useful for
+for certain forms of input stress testing.
+<P>
+The <B>-f</B> <I>failures</I> switch (0 &lt;= <I>failures</I> &lt;= 100) specifies
+the percentage of packets dropped by <B>bridge</B>.
+This is useful to test retry behavior.
+The default is 0 (no packets are dropped).
+<P>
+<B>bridge</B> doesn't run in the background by itself, so don't forget to add
+an '&amp;' if you start it somewhere in your system startup files.
+<P>
+Once <B>bridge</B> is running the interface in <B>net</B> is attached with this
+command:
+<P>
+<PRE>
+# open 127.0.0.1, port 4713 where bridge is listening:
+attach asy 7f000001 4713 kissui br0 0 256 19200
+#
+</PRE>
+<P>
+The interface is named <B>br0</B> here, but you can choose any name you like.
+<P>
+You can use the same attach command for multiple <B>net</B> programs. Don't
+forget to start each <B>net</B> with
+<P>
+<PRE>
+net -g net.rc.<I>xxx</I>
+</PRE>
+<P>
+to prevent unlinking of the unix domain sockets, and using a different net.rc.
+</BODY>
+</HTML>
