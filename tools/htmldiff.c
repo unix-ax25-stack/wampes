@@ -1,4 +1,4 @@
-/* @(#) $Id: htmldiff.c,v 1.1 1999/06/23 04:13:27 deyke Exp $ */
+/* @(#) $Id: htmldiff.c,v 1.2 1999/08/25 01:06:01 deyke Exp $ */
 
 /*
    Dieter Deyke
@@ -342,7 +342,7 @@ static void diff_regions(void)
   } else {
     write_region_as_words(&deleted, delfile);
     write_region_as_words(&added, addfile);
-    sprintf(line, "gdiff -U 50000 %s %s > %s", delfile, addfile, diffile);
+    sprintf(line, "gdiff -U 50000 \"%s\" \"%s\" > \"%s\"", delfile, addfile, diffile);
     system(line);
     print_diff_of_regions(diffile, 1);
     print_diff_of_regions(diffile, 0);
@@ -464,7 +464,7 @@ int main(int argc, char **argv)
   tmpnam(addfile);
   tmpnam(diffile);
 #endif
-  sprintf(line, "gdiff -t -U %d %s %s %s", context, diffoptions, oldfile, newfile);
+  sprintf(line, "gdiff -t -U %d %s \"%s\" \"%s\"", context, diffoptions, oldfile, newfile);
   fpdiff = popen(line, "r");
   if (!fpdiff) {
     syscallerr(line);
