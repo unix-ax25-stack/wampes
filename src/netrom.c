@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.26 1992/01/12 18:40:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.27 1992/04/07 10:16:01 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -1260,7 +1260,7 @@ struct mbuf *bp;
 	pc->mdev = ((DGAIN - 1) * pc->mdev + abserr + (DGAIN / 2)) / DGAIN;
 	reset_t1(pc);
 	if (pc->cwind < pc->window && !pc->remote_busy) {
-	  pc->mdev += ((pc->srtt / pc->cwind) / 2);
+	  pc->mdev += ((pc->srtt / pc->cwind + 2) / 4);
 	  pc->cwind++;
 	}
       }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.20 1992/01/12 18:40:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.21 1992/04/07 10:15:54 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -723,7 +723,7 @@ struct mbuf *bp;
 	    cp->mdev = ((DGAIN - 1) * cp->mdev + abserr + (DGAIN / 2)) / DGAIN;
 	    reset_t1(cp);
 	    if (cp->cwind < ax_maxframe) {
-	      cp->mdev += ((cp->srtt / cp->cwind) / 2);
+	      cp->mdev += ((cp->srtt / cp->cwind + 2) / 4);
 	      cp->cwind++;
 	    }
 	  }
