@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.19 1992/10/05 17:29:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.20 1992/11/20 10:07:07 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -773,9 +773,10 @@ int trace;
 			for(rp = Routes[bits-1][i];rp != NULLROUTE;rp = rpnext){
 				rpnext = rp->next;
 				for(j=bits-1;j >= 0;j--){
-					if((rp1 = rt_blookup(rp->target,j)) != NULLROUTE
-					 && rp1->iface == rp->iface
-					 && rp1->gateway == rp->gateway){
+					if((rp1 = rt_blookup(rp->target,j)) != NULLROUTE){
+						if(rp1->iface != rp->iface
+						 || rp1->gateway != rp->gateway)
+							 goto Next;
 						if(trace > 1)
 							printf("merge %s %d\n",
 							 inet_ntoa(rp->target),
@@ -784,6 +785,7 @@ int trace;
 						break;
 					}
 				}
+Next:                           ;
 			}
 		}
 	}

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.2 1992/11/19 13:16:25 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.3 1992/11/20 10:06:53 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -375,27 +375,27 @@ static void merge_routes(void)
 {
 
   struct node *np;
+  struct route *curr;
   struct route *prev;
-  struct route *rp1;
   struct route *rp;
 
-  for (np = nodes; np; np = np->next)
+  for (np = nodes; np; np = np->next) {
 Retry:
-    for (prev = 0, rp = np->routes; rp; prev = rp, rp = rp->next) {
-      for (rp1 = rp->next; rp1; rp1 = rp1->next)
-	if (is_in(rp->dest, rp->bits, rp1->dest, rp1->bits)) {
-	  if (rp->iface != rp1->iface || rp->gateway != rp1->gateway)
-	    goto Nomatch;
+    for (prev = 0, curr = np->routes; curr; prev = curr, curr = curr->next) {
+      for (rp = curr->next; rp; rp = rp->next) {
+	if (is_in(curr->dest, curr->bits, rp->dest, rp->bits)) {
+	  if (curr->iface != rp->iface || curr->gateway != rp->gateway)
+	    break;
 	  if (prev)
-	    prev->next = rp->next;
+	    prev->next = curr->next;
 	  else
-	    np->routes = rp->next;
-	  free(rp);
+	    np->routes = curr->next;
+	  free(curr);
 	  goto Retry;
 	}
-Nomatch:
-      ;
+      }
     }
+  }
 }
 
 /*---------------------------------------------------------------------------*/
