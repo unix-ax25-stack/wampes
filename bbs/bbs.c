@@ -1,6 +1,4 @@
-#ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.65 1993/10/13 22:31:06 deyke Exp $";
-#endif
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.66 1993/11/06 17:00:08 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -879,13 +877,12 @@ static void send_to_news(struct mail *mail)
   FILE *fp;
   char *fromhost;
   char *pp;
-  int fd;
   int i;
   struct strlist *p;
 
   if (!*mail->subject) return;
-  if ((fd = open("/usr/bin/rnews", O_RDONLY)) < 0) return;
-  close(fd);
+
+  if (!*RNEWS_PROG) return;
   switch (fork()) {
   case -1:
     halt();
@@ -901,7 +898,7 @@ static void send_to_news(struct mail *mail)
     case -1:
       _exit(1);
     case 0:
-      if (!(fp = popen("/usr/bin/rnews", "w"))) _exit(1);
+      if (!(fp = popen(RNEWS_PROG, "w"))) _exit(1);
       fromhost = get_host_from_path(mail->from);
       fprintf(fp, "From: %s@%s%s\n", get_user_from_path(mail->from), fromhost, strchr(fromhost, '.') ? "" : ".ampr.org");
       fprintf(fp, "Date: %s\n", rfc822_date(mail->date));

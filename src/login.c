@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.48 1993/10/31 07:25:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.49 1993/11/06 16:59:41 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -293,6 +293,7 @@ struct passwd *getpasswdentry(const char *name, int create)
 
   /* Create home directory */
 
+  mkdir(Homedir, 0755);
   mkdir(homedirparent, 0755);
   mkdir(homedir, 0755);
   chown(homedir, uid, Gid);
