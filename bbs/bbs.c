@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.2 1989/08/23 23:15:18 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.3 1989/08/23 23:53:47 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -1765,10 +1765,6 @@ char  *line;
       }
       break;
     }
-  if (stopped) {
-    puts("\n*** Interrupt ***");
-    stopped = 0;
-  }
   if (level == MBOX && errors >= 3) exit(1);
 }
 
@@ -1806,6 +1802,10 @@ static void bbs()
     }
     parse_command_line(line);
     doforward = 0;
+    if (stopped) {
+      puts("\n*** Interrupt ***");
+      stopped = 0;
+    }
   }
 }
 
