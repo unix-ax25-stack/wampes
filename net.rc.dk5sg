@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.38 1995/04/21 12:35:42 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.39 1995/05/31 19:20:14 deyke Exp $
 
 hostname     dk5sg
 ax25 mycall  dk5sg
@@ -28,8 +28,6 @@ route add  dk0hu-u.ampr.org     ipip     15.136.120.111
 route add  dk0hu.ampr.org       ipip     15.136.120.111
 route add  dk5sg-u.ampr.org     ni
 route add  dl1sbl-1.ampr.org    ipip     15.136.120.111
-route add  dl2sel-1.ampr.org    ipip     15.136.120.111
-route add  dl2sel.ampr.org      ipip     15.136.120.111
 route add  dl4sas-1.ampr.org    ipip     15.136.120.111
 route add  dl4sel-1.ampr.org    ipip     15.136.120.111
 route add  dl4sel.ampr.org      ipip     15.136.120.111

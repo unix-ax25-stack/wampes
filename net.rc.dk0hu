@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.50 1995/03/07 16:41:08 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.51 1995/05/31 19:20:14 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -39,13 +39,10 @@ route add  dk0hu-u.ampr.org     ni
 route add  dk5sg-u.ampr.org     ipip     15.136.120.111
 route add  dk5sg.ampr.org       ipip     15.136.120.111
 route add  dl1sbl-1.ampr.org    ipip     15.136.120.111
-route add  dl2sel-1.ampr.org    ipip     15.136.120.111
-route add  dl2sel.ampr.org      tnc0
 route add  dl4sas-1.ampr.org    ipip     15.136.120.111
 route add  dl4sel-1.ampr.org    ipip     15.136.120.111
 route add  dl4sel.ampr.org      tnc0
 
-arp add dl2sel ax25 dl2sel
 arp add dl4sel ax25 dl4sel
 
 source /tcp/netrom_links
