@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.9 1991/06/18 17:27:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.10 1991/10/03 11:05:13 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -50,12 +50,13 @@ void
 rip(s)
 register char *s;
 {
-	register char *cp;
+	register char *cp = s;
 
-	if((cp = strchr(s,'\n')) != NULLCHAR)
-		*cp = '\0';
-	if((cp = strchr(s,'\r')) != NULLCHAR)
-		*cp = '\0';
+	while (*cp)
+		cp++;
+	while (--cp >= s && (*cp == '\r' || *cp == '\n'))
+		;
+	cp[1] = '\0';
 }
 
 #if !(defined(hpux)||defined(__hpux))

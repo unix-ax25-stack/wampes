@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.21 1991/06/04 11:34:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.22 1991/10/03 11:05:12 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -56,7 +56,7 @@ extern char *sys_errlist[];
 extern struct cmds Cmds[],Startcmds[],Stopcmds[],Attab[];
 
 #ifndef MSDOS                   /* PC uses F-10 key always */
-static char Escape = 0x1d;      /* default escape character is ^] */
+char Escape = 0x1d;             /* default escape character is ^] */
 #endif
 
 int Debug;
@@ -146,6 +146,35 @@ cmdmode()
 	}
 	return 0;
 }
+/* Process keyboard characters */
+static void
+process_char(c)
+int c;
+{
+
+	char *ttybuf;
+	int cnt;
+
+	if (c == Escape && Escape != 0) {
+		ttydriv('\r', &ttybuf);
+		Mode = CONV_MODE;
+		cmdmode();
+		return;
+	}
+	if ((cnt = ttydriv(c, &ttybuf)) == 0)
+		return;
+	switch (Mode) {
+	case CMD_MODE:
+		cmdparse(Cmds, ttybuf, NULL);
+		break;
+	case CONV_MODE:
+		if (Current->parse != NULLVFP)
+			(*Current->parse)(ttybuf, cnt);
+		break;
+	}
+	if (Mode == CMD_MODE)
+		tprintf(Prompt, Hostname);
+}
 /* Keyboard input process */
 void
 keyboard(v)
@@ -153,36 +182,34 @@ void *v;
 {
 
 	char *p;
-	char *ttybuf;
 	char buf[1024];
-	int c;
-	int cnt;
 	int n;
 
 	n = read(0, p = buf, sizeof(buf));
 	if (n <= 0) dobye(0, (char **) 0, (void * ) 0);
 	while (--n >= 0) {
-		c = uchar(*p++);
-		if (c == Escape && Escape != 0) {
-			ttydriv('\r', &ttybuf);
-			Mode = CONV_MODE;
-			cmdmode();
-			continue;
-		}
-		if ((cnt = ttydriv(c, &ttybuf)) == 0)
-			continue;
-		switch (Mode) {
-		case CMD_MODE:
-			cmdparse(Cmds, ttybuf, NULL);
-			break;
-		case CONV_MODE:
-			if (Current->parse != NULLVFP)
-				(*Current->parse)(ttybuf, cnt);
-			break;
-		}
-		if (Mode == CMD_MODE)
-			tprintf(Prompt, Hostname);
+		process_char(uchar(*p++));
+		while (Fkey_ptr && *Fkey_ptr)
+			process_char(uchar(*Fkey_ptr++));
 	}
+}
+int
+dofkey(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	int n;
+
+	n = atoi(argv[1]) - 1;
+	if (n < 0 || n >= NUM_FKEY) {
+		tprintf("key# must be 1..%d\n", NUM_FKEY);
+		return 1;
+	}
+	if (Fkey_table[n])
+		free(Fkey_table[n]);
+	Fkey_table[n] = strdup(argv[2]);
+	return 0;
 }
 /* Standard commands called from main */
 int

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.12 1991/07/17 14:58:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.13 1991/10/03 11:04:58 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -269,6 +269,7 @@ struct cmds Cmds[] = {
 #endif
 	"exit",         doexit,         0, 0, NULLCHAR,
 	"finger",       dofinger,       1024, 2, "finger name@host",
+	"fkey",         dofkey,         0, 3, "fkey <key#> <text>",
 	"ftp",          doftp,          2048, 2, "ftp <address>",
 #ifdef HAPN
 	"hapnstat",     dohapnstat,     0, 0, NULLCHAR,

@@ -1,16 +1,19 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.8 1991/09/17 22:16:32 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.9 1991/10/03 11:07:30 deyke Exp $";
 
 #define _HPUX_SOURCE
 
 #include <sys/types.h>
 
+#include <curses.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <term.h>
 #include <termio.h>
 #include <time.h>
+#include <unistd.h>
 
 #if defined(__STDC__)
 #define __ARGS(x)       x
@@ -18,13 +21,7 @@ static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampe
 #define __ARGS(x)       ()
 #endif
 
-extern int  close __ARGS((int));
-extern int  ioctl __ARGS((int, int, ...));
-extern int  read __ARGS((int, char *, unsigned int));
-extern int  select __ARGS((int, int *, int *, int *, struct timeval *));
-extern int  write __ARGS((int, char *, unsigned int));
-
-extern struct sockaddr *build_sockaddr __ARGS((char *name, int *addrlen));
+#include "buildsaddr.h"
 
 #define TERM_INP_FDES   0
 #define TERM_INP_MASK   1
@@ -42,13 +39,55 @@ struct mbuf {
   char  *data;
 };
 
+static int ansiterminal = 1;
 static struct mbuf *sock_queue;
 static struct mbuf *term_queue;
 static struct termio prev_termio;
 
+static void open_terminal __ARGS((void));
+static void close_terminal __ARGS((void));
 static void terminate __ARGS((void));
 static void recvq __ARGS((int fd, struct mbuf **qp));
 static void sendq __ARGS((int fd, struct mbuf **qp));
+int main __ARGS((int argc, char **argv));
+
+/*---------------------------------------------------------------------------*/
+
+static void open_terminal()
+{
+  if (ansiterminal) {
+    fputs("\033=", stdout);                     /* keypad application mode */
+  } else {
+    fputs("\033Z", stdout);                     /* display fncts off       */
+    fputs("\033&k1I", stdout);                  /* enable ascii 8 bits     */
+    fputs("\033&s1A", stdout);                  /* enable xmitfnctn        */
+    fputs("\033&jB", stdout);                   /* enable user keys        */
+    fputs("\033&j@", stdout);                   /* remove key labels       */
+    fputs("\033&jS", stdout);                   /* lock keys               */
+    fputs("\033&f0a1k0d2L\033p", stdout);       /* key1 = ESC p            */
+    fputs("\033&f0a2k0d2L\033q", stdout);       /* key2 = ESC q            */
+    fputs("\033&f0a3k0d2L\033r", stdout);       /* key3 = ESC r            */
+    fputs("\033&f0a4k0d2L\033s", stdout);       /* key4 = ESC s            */
+    fputs("\033&f0a5k0d2L\033t", stdout);       /* key5 = ESC t            */
+    fputs("\033&f0a6k0d2L\033u", stdout);       /* key6 = ESC u            */
+    fputs("\033&f0a7k0d2L\033v", stdout);       /* key7 = ESC v            */
+    fputs("\033&f0a8k0d2L\033w", stdout);       /* key8 = ESC w            */
+  }
+  fflush(stdout);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void close_terminal()
+{
+  if (ansiterminal) {
+    fputs("\033>", stdout);                     /* keypad numeric mode */
+  } else {
+    fputs("\033&s0A", stdout);                  /* disable xmitfnctn */
+    fputs("\033&jR", stdout);                   /* release keys */
+  }
+  fflush(stdout);
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -61,7 +100,7 @@ static void terminate()
   ioctl(TERM_OUT_FDES, FIOSNBIO, &arg);
   for (; term_queue; term_queue = term_queue->next)
     write(TERM_OUT_FDES, term_queue->data, term_queue->cnt);
-  write(TERM_OUT_FDES, "\033&s0A", 5);  /* disable XmitFnctn */
+  close_terminal();
   ioctl(TERM_INP_FDES, TCSETA, &prev_termio);
   exit(0);
 }
@@ -149,7 +188,11 @@ char  **argv;
     exit(1);
   }
 
-  write(TERM_OUT_FDES, "\033&s1A", 5);  /* enable XmitFnctn */
+  initscr();
+  if (!strcmp(cursor_up, "\033A")) ansiterminal = 0;
+  endwin();
+
+  open_terminal();
   arg = 1;
   ioctl(TERM_OUT_FDES, FIOSNBIO, &arg);
   ioctl(TERM_INP_FDES, TCGETA, &prev_termio);

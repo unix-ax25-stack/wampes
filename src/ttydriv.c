@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.9 1991/05/29 12:02:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.10 1991/10/03 11:05:25 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -15,6 +15,9 @@
 
 #define NEXT(i)      (((i) + 1) & RECALLSIZE)
 #define PREV(i)      (((i) - 1) & RECALLSIZE)
+
+char *Fkey_table[NUM_FKEY];
+char *Fkey_ptr;
 
 static int  ansimode;
 static int  rawmode;
@@ -132,6 +135,8 @@ char  **buf;
   static char  *end = linebuf;
   static char  *pos = linebuf;
   static char  *recall_buffer[RECALLSIZE+1];
+  static int  Escape_save;
+  static int  ansikey;
   static int  esc, quote;
   static int  rptr, wptr;
 
@@ -149,6 +154,7 @@ char  **buf;
   if (quote) {
     delchr(quote);
     quote = 0;
+    Escape = Escape_save;
     if (pos == end) {
       *end++ = chr;
       printchr(*pos++);
@@ -157,6 +163,99 @@ char  **buf;
       *pos++ = chr;
       end++;
       inschr(chr);
+    }
+  } else if (ansikey) {
+    ansikey = 0;
+    switch (chr) {
+
+    case 'A': /* up arrow */
+      if (recall_buffer[PREV(rptr)]) {
+	if (end > linebuf) {
+	  while (pos > linebuf) backchr(*--pos);
+	  putchar('\033');
+	  putchar('K');
+	}
+	rptr = PREV(rptr);
+	strcpy(linebuf, recall_buffer[rptr]);
+	for (pos = linebuf; *pos; pos++) printchr(*pos);
+	end = pos;
+      } else
+	putchar(7);
+      break;
+
+    case 'B': /* down arrow */
+      if (recall_buffer[rptr] && recall_buffer[NEXT(rptr)]) {
+	if (end > linebuf) {
+	  while (pos > linebuf) backchr(*--pos);
+	  putchar('\033');
+	  putchar('K');
+	}
+	rptr = NEXT(rptr);
+	strcpy(linebuf, recall_buffer[rptr]);
+	for (pos = linebuf; *pos; pos++) printchr(*pos);
+	end = pos;
+      } else
+	putchar(7);
+      break;
+
+    case 'C': /* cursor right */
+      if (pos - linebuf >= LINEMAX)
+	putchar(7);
+      else {
+	if (pos == end) *end++ = ' ';
+	printchr(*pos++);
+      }
+      break;
+
+    case 'D': /* cursor left */
+      if (pos > linebuf) backchr(*--pos);
+      break;
+
+    case 'P': /* ansi function key 1 */
+      Fkey_ptr = Fkey_table[0];
+      break;
+
+    case 'Q': /* ansi function key 2 */
+      Fkey_ptr = Fkey_table[1];
+      break;
+
+    case 'R': /* ansi function key 3 */
+      Fkey_ptr = Fkey_table[2];
+      break;
+
+    case 'S': /* ansi function key 4 */
+      Fkey_ptr = Fkey_table[3];
+      break;
+
+    case 'T': /* ansi function key 5 */
+    case 'w': /* ansi function key 5 */
+      Fkey_ptr = Fkey_table[4];
+      break;
+
+    case 'U': /* ansi function key 6 */
+    case 'x': /* ansi function key 6 */
+      Fkey_ptr = Fkey_table[5];
+      break;
+
+    case 'V': /* ansi function key 7 */
+    case 'y': /* ansi function key 7 */
+      Fkey_ptr = Fkey_table[6];
+      break;
+
+    case 'W': /* ansi function key 8 */
+    case 'm': /* ansi function key 8 */
+      Fkey_ptr = Fkey_table[7];
+      break;
+
+    case 'X': /* ansi function key 9 */
+    case 't': /* ansi function key 9 */
+      Fkey_ptr = Fkey_table[8];
+      break;
+
+    case 'u': /* ansi function key 10 */
+      Fkey_ptr = Fkey_table[9];
+      break;
+
     }
   } else if (!esc) {
     switch (chr) {
@@ -186,6 +285,7 @@ char  **buf;
       if (chr != 20) {
 	*end++ = '\r';
 	*end++ = '\n';
+	*end   = '\0';
 	putchar('\n');
       }
       cnt = end - linebuf;
@@ -213,6 +313,8 @@ char  **buf;
       if (end - linebuf >= LINEMAX)
 	putchar(7);
       else {
+	Escape_save = Escape;
+	Escape = 0;
 	quote = '^';
 	if (pos == end)
 	  printchr(quote);
@@ -332,6 +434,10 @@ char  **buf;
       }
       break;
 
+    case 'O': /* ansi arrow or function key */
+      ansimode = ansikey = 1;
+      break;
+
     case 'P': /* delete char */
       if (pos < end) {
 	delchr(*pos);
@@ -341,8 +447,18 @@ char  **buf;
       break;
 
     case '[': /* ansi escape sequence */
-      esc = 1;
-      ansimode = 1;
+      esc = ansimode = 1;
+      break;
+
+    case 'p': /* hp function key 1 */
+    case 'q': /* hp function key 2 */
+    case 'r': /* hp function key 3 */
+    case 's': /* hp function key 4 */
+    case 't': /* hp function key 5 */
+    case 'u': /* hp function key 6 */
+    case 'v': /* hp function key 7 */
+    case 'w': /* hp function key 8 */
+      Fkey_ptr = Fkey_table[chr - 'p'];
       break;
 
     default:

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.2 1991/09/17 22:21:32 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.3 1991/10/03 11:04:56 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -171,18 +171,18 @@ void *argp;
 
   fromlen = sizeof(from);
   l = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *) & from, &fromlen);
-  if (l <= sizeof(struct ip )) return;
+  if (l <= sizeof(struct ip )) goto fail;
   ipptr = (struct ip *) buf;
   hdr_len = 4 * ipptr->ip_hl;
   bufptr = buf + hdr_len;
   l -= hdr_len;
-  if (l <= 2) return;
+  if (l <= 2) goto fail;
 
   fcs = 0xffff;
   p = bufptr;
   for (cnt = l; cnt > 0; cnt--)
     fcs = (fcs >> 8) ^ fcstab[(fcs ^ *p++) & 0xff];
-  if (fcs != 0xf0b8) return;
+  if (fcs != 0xf0b8) goto fail;
   l -= 2;
 
   p = src = bufptr + AXALEN;
@@ -196,6 +196,10 @@ void *argp;
   axip_route_add(src, &from);
 
   net_route(Axip_iface, Axip_iface->type, qdata(bufptr, l));
+  return;
+
+fail:
+  Axip_iface->crcerrors++;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -225,6 +229,7 @@ void *p;
   Axip_iface->mtu = 256;
   setencap(Axip_iface, "AX25");
   Axip_iface->raw = axip_raw;
+  Axip_iface->sendcrc = 1;
   on_read(sock, axip_recv, (void * ) 0);
   Axip_iface->next = Ifaces;
   Ifaces = Axip_iface;
