@@ -1,8 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strmatch.c,v 1.2 1990/08/23 17:34:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strmatch.c,v 1.3 1990/10/12 12:46:39 deyke Exp $ */
 
-int  strmatch(s, p)
-register unsigned char  *s;
-register unsigned char  *p;
+#include "global.h"
 
 /*
  *
@@ -22,54 +20,46 @@ register unsigned char  *p;
  *
  */
 
+int  strmatch(s, p)
+char  *s, *p;
 {
-
-  int  flag;
-  int  notflag;
-  unsigned char  *x;
-  unsigned char  c1;
-  unsigned char  c2;
+  int  c, c1, c2, match, reverse;
 
   for (; ; )
     switch (*p) {
     case 0:
       return !*s;
     case '?':
-      if (!*s) return 0;
-      s++;
+      if (!*s++) return 0;
       p++;
       break;
     case '*':
       if (!*++p) return 1;
       for (; ; ) {
 	if (strmatch(s, p)) return 1;
-	if (!*s) return 0;
-	s++;
+	if (!*s++) return 0;
       }
     case '[':
-      if (!*s) return 0;
-      p++;
-      if (notflag = (*p == '!')) p++;
-      if (!*p) return 0;
-      for (x = p + 1; *x != ']'; x++) if (!*x) return 0;
-      flag = 0;
+      if (!(c = uchar(*s++))) return 0;
+      if (reverse = (*++p == '!')) p++;
+      match = 0;
       do {
-	flag |= ((c1 = *p++) == *s);
+	if (!(c1 = uchar(*p++))) return 0;
+	match |= (c1 == c);
 	if (*p == '-' && p[1] != ']') {
 	  p++;
-	  c2 = *p++;
-	  flag |= (c1 <= c2) ? (*s >= c1 && *s <= c2) : (*s >= c2 && *s <= c1);
+	  if (!(c2 = uchar(*p++))) return 0;
+	  match |= (c1 <= c2) ? (c >= c1 && c <= c2) : (c >= c2 && c <= c1);
 	}
       } while (*p != ']');
-      if (flag == notflag) return 0;
-      s++;
+      if (match == reverse) return 0;
       p++;
       break;
     case '\\':
-      if (!*++p || *s++ != *p++) return 0;
-      break;
+      if (!*++p) return 0;
     default:
       if (*s++ != *p++) return 0;
       break;
     }
 }
+
