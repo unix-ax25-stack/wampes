@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.32 1991/12/27 13:12:34 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.33 1992/01/19 09:07:16 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -926,7 +926,7 @@ static void route_mail(struct mail *mail)
 
   strtrim(mail->subject);
   if ((cp = get_host_from_header(mail->subject)) && callvalid(cp)) goto Done;
-  if (level == MBOX) {
+  if (level == MBOX && !packetcluster) {
     cp = get_user_from_path(mail->to);
     if (!cp) goto Done;
     if (strlen(cp) > 1) {
