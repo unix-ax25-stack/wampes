@@ -1,11 +1,11 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ip_routes,v 1.5 1992/11/06 12:03:35 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ip_routes,v 1.6 1992/11/09 16:31:26 deyke Exp $
 
 #host           destination     bits    iface   gateway                 private
 #------------------------------------------------------------------------------
 
 hpcsos          44              9       none
-hpcsos          44.130.29       24      none
-hpcsos          44.130.41       24      none
+#hpcsos         44.130.29       24      none
+#hpcsos         44.130.41       24      none
 hpcsos          dk5sg           32      none
 
 dk5sg           15              8       ni      0                       p

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.5 1992/11/06 12:03:36 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.6 1992/11/09 16:31:27 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -17,9 +17,7 @@ param tnc0 12   0   # echo
 param tnc0 13   1   # rxdelay
 
 attach axip                     # ax.25 over host ip
-attach axip axudp udp 25071     # ax.25 over host udp
 attach ipip                     # ip over host ip
-attach ipip ipudp udp 25072     # ip over host udp
 attach netrom                   # ip over netrom
 
 ax25 route add axip default
@@ -36,8 +34,6 @@ axip route add dl3sel-1 15.3.152.66             # hpbbmop6.bbn.hp.com
 axip route add dl4sas-1 15.136.216.69           # hpbid1ge.bbn.hp.com
 axip route add dl4sel-1 15.136.136.223          # isoit041.bbn.hp.com
 
-route add  44.130.41/24     ipip     15.15.80.34
-route add  44.130.29/24     ipip     15.15.80.34
 route add  44/9             ipip     15.15.80.34
 route add  dl1sbl-u         tnc0     dl1sbl
 route add  dk5sg-u          ipip     15.15.80.34
@@ -63,7 +59,6 @@ source /tcp/netrom_links
 
 # netrom broadcast tnc0  nodes
 # netrom broadcast axip  nodes
-# netrom broadcast axudp nodes
 
 domain useserver on
 echo refuse

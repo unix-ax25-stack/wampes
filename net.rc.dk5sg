@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.4 1992/11/06 12:03:37 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.5 1992/11/09 16:31:27 deyke Exp $
 
 hostname     dk5sg
 ax25 mycall  dk5sg
@@ -16,8 +16,6 @@ ax25 route add axip default
 axip route add dk0hu 15.136.56.6 # hp0hu.bbn.hp.com
 
 route add  44/9             ipip     15.255.240.16
-route add  44.130.29/24     ipip     15.255.240.16
-route add  44.130.41/24     ipip     15.255.240.16
 route add  default          ipip     15.136.56.6
 route add  dk5sg-u          ni
 route addp 15/8             ni
