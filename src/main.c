@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.2 1990/01/29 09:37:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.3 1990/03/12 14:39:07 deyke Exp $ */
 
 /* Main network program - provides both client and server functions */
 
@@ -430,7 +430,6 @@ cmdmode()
 	}
 	return 0;
 }
-static
 doexit()
 {
 	if(logfp != NULLFILE)

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.3 1990/03/09 15:41:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.4 1990/03/12 14:39:05 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -234,30 +234,34 @@ struct login_cb *tp;
   char  buf[260];
   char  chr;
   int  cnt;
+  int  lastchr;
 
   if (!tp->sndq) {
     clrmask(chkwrite, tp->pty);
     return;
   }
-  for (p = buf; pullup(&tp->sndq, &chr, 1); tp->lastchr = chr) {
+  p = buf;
+  while (pullup(&tp->sndq, &chr, 1)) {
+    lastchr = tp->lastchr;
+    tp->lastchr = chr;
     if (!tp->telnet || do_telnet(tp, uchar(chr))) {
-      if (tp->lastchr != '\r' || chr != '\0' && chr != '\n') {
+      if (lastchr != '\r' || chr != '\0' && chr != '\n') {
 	*p++ = chr;
-	if (chr == '\r' || chr == '\n')
+	if (chr == '\r' || chr == '\n') {
 	  tp->linelen = 0;
-	else if (++tp->linelen >= 255) {
+	  break;
+	}
+	if (++tp->linelen >= 255) {
 	  *p++ = '\n';
 	  tp->linelen = 0;
-	}
-	if (!tp->linelen) {
-	  cnt = p - buf;
-	  write(tp->pty, buf, (unsigned) cnt);
-	  write_log(tp->pty, buf, cnt);
-	  tp->lastchr = chr;
-	  return;
+	  break;
 	}
       }
     }
+  }
+  if (cnt = p - buf) {
+    write(tp->pty, buf, (unsigned) cnt);
+    write_log(tp->pty, buf, cnt);
   }
 }
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.6 1990/03/09 15:41:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.7 1990/03/12 14:39:03 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -432,7 +432,7 @@ static void check_program_changed()
   if (stat("/tcp/net", &statbuf)) return;
   if (!lastmtime) lastmtime = statbuf.st_mtime;
   if (lastmtime != statbuf.st_mtime &&
-      statbuf.st_mtime < currtime - 3600) exit(1);
+      statbuf.st_mtime < currtime - 3600) doexit();
 }
 
 /*---------------------------------------------------------------------------*/
