@@ -1,8 +1,8 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.24 1991/06/17 13:23:39 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.25 1991/07/23 19:55:15 deyke Exp $";
 
-#define _HPUX_SOURCE 1
+#define _HPUX_SOURCE
 
 #include <sys/types.h>
 
@@ -23,29 +23,14 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <time.h>
 #include <unistd.h>
 
-extern char  *optarg;
-extern char  *sys_errlist[];
-extern int  getopt(int argc, char **argv, char *optstring);
-extern int  ioctl(int fildes, int request, ...);
-extern int  lockf(int fildes, int function, long size);
-extern int  optind;
-extern int  putenv(char *string);
-extern int  setpgrp(void);
-extern int  setresgid(int rgid, int egid, int sgid);
-extern int  setresuid(int ruid, int euid, int suid);
-extern int  sigvector(int sig, struct sigvec *vec, struct sigvec *ovec);
-extern long  sigsetmask(long mask);
-extern struct sockaddr *build_sockaddr(char *name, int *addrlen);
+extern char *optarg;
+extern char *sys_errlist[];
+extern int optind;
 
-#define BIDFILE     "seqbid"
-#define DEBUGDIR    "/tmp/bbs"
-#define HELPFILE    "help"
-#define INDEXFILE   "index"
-#define INFOFILE    "/usr/local/lib/station.data"
-#define MYDESC      "[Boeblingen JN48MQ DK5SG-BBS %s OP:DL1SBL]"
-#define RCFILE      ".bbsrc"
-#define SEQFILE     ".bbsseq"
-#define WRKDIR      "/users/bbs"
+#define __ARGS(x) x
+
+#include "../src/buildsaddr.h"
+#include "bbs.h"
 
 #define SECONDS     (1L)
 #define MINUTES     (60L*SECONDS)
@@ -60,12 +45,6 @@ extern struct sockaddr *build_sockaddr(char *name, int *addrlen);
 #define RMAIL       1
 #define RNEWS       2
 
-#define LEN_BID     12
-#define LEN_SUBJECT 80
-#define LEN_TO      8
-#define LEN_AT      8
-#define LEN_FROM    8
-
 struct revision {
   char  number[16];
   char  date[16];
@@ -73,20 +52,6 @@ struct revision {
   char  author[16];
   char  state[16];
 } revision;
-
-struct index {
-  long  size;
-  long  date;
-  int  mesg;
-  char  bid[LEN_BID+1];
-  char  lifetime_h;
-  char  subject[LEN_SUBJECT+1];
-  char  lifetime_l;
-  char  to[LEN_TO+1];
-  char  at[LEN_AT+1];
-  char  from[LEN_FROM+1];
-  char  deleted;
-};
 
 struct user {
   char  *name;
@@ -138,18 +103,19 @@ static int  mode = BBS;
 static struct user user;
 static volatile int stopped;
 
+/* In bbs.c: */
 static void errorstop(int line);
 static char *strupc(char *s);
 static char *strlwc(char *s);
-static int strcasecmp(const char *s1, const char *s2);
-static int strncasecmp(const char *s1, const char *s2, int n);
+static int Strcasecmp(const char *s1, const char *s2);
+static int Strncasecmp(const char *s1, const char *s2, int n);
 static char *strtrim(char *s);
 static const char *strcasepos(const char *str, const char *pat);
 static char *getstring(char *s);
 static char *timestr(long gmt);
 static int callvalid(const char *call);
-static char *dirname(int mesg);
-static char *filename(int mesg);
+static void make_parent_directories(const char *filename);
+static char *getfilename(int mesg);
 static void get_seq(void);
 static void put_seq(void);
 static void wait_for_prompt(void);
@@ -284,7 +250,7 @@ static char  *strlwc(char *s)
 
 /*---------------------------------------------------------------------------*/
 
-static int  strcasecmp(const char *s1, const char *s2)
+static int  Strcasecmp(const char *s1, const char *s2)
 {
   while (_tolower(uchar(*s1)) == _tolower(uchar(*s2++)))
     if (!*s1++) return 0;
@@ -293,7 +259,7 @@ static int  strcasecmp(const char *s1, const char *s2)
 
 /*---------------------------------------------------------------------------*/
 
-static int  strncasecmp(const char *s1, const char *s2, int n)
+static int  Strncasecmp(const char *s1, const char *s2, int n)
 {
   while (--n >= 0 && _tolower(uchar(*s1)) == _tolower(uchar(*s2++)))
     if (!*s1++) return 0;
@@ -410,25 +376,36 @@ static int  callvalid(const char *call)
 
 /*---------------------------------------------------------------------------*/
 
-#define calleq(c1, c2) (!strcasecmp((c1), (c2)))
+#define calleq(c1, c2) (!Strcasecmp((c1), (c2)))
 
 /*---------------------------------------------------------------------------*/
 
-static char  *dirname(int mesg)
+static void make_parent_directories(const char *filename)
 {
-  static char  buf[4];
+  char *p, dirname[1024];
 
-  sprintf(buf, "%03d", mesg / 100);
-  return buf;
+  strcpy(dirname, filename);
+  p = strrchr(dirname, '/');
+  if (!p) halt();
+  *p = 0;
+  if (!mkdir(dirname, 0755)) return;
+  if (errno != ENOENT) halt();
+  make_parent_directories(dirname);
+  if (mkdir(dirname, 0755)) halt();
 }
 
 /*---------------------------------------------------------------------------*/
 
-static char  *filename(int mesg)
+static char *getfilename(int mesg)
 {
-  static char  buf[8];
+  static char buf[12];
 
-  sprintf(buf, "%03d/%02d", mesg / 100, mesg % 100);
+  sprintf(buf,
+	  "%02x/%02x/%02x/%02x",
+	  (mesg >> 24) & 0xff,
+	  (mesg >> 16) & 0xff,
+	  (mesg >>  8) & 0xff,
+	  (mesg      ) & 0xff);
   return buf;
 }
 
@@ -622,9 +599,9 @@ static void send_to_bbs(struct mail *mail)
     strupc(index.from);
     index.deleted = 0;
     index.size = 0;
-    if (!(fp = fopen(filename(index.mesg), "w"))) {
-      mkdir(dirname(index.mesg), 0755);
-      if (!(fp = fopen(filename(index.mesg), "w"))) halt();
+    if (!(fp = fopen(getfilename(index.mesg), "w"))) {
+      make_parent_directories(getfilename(index.mesg));
+      if (!(fp = fopen(getfilename(index.mesg), "w"))) halt();
     }
     if (strcmp(index.to, "E") && strcmp(index.to, "M"))
       for (p = mail->head; p; p = p->next) {
@@ -895,7 +872,7 @@ static void route_mail(struct mail *mail)
     if (*s == '.' && !s[1]) *s = '\0';
     while (cp = strchr(s, '\004')) while (cp[0] = cp[1]) cp++;
     while (cp = strchr(s, '\032')) while (cp[0] = cp[1]) cp++;
-    if (!strncasecmp(s, "***end", 6)) *s = ' ';
+    if (!Strncasecmp(s, "***end", 6)) *s = ' ';
   }
 
   /* Call delivery agents */
@@ -1000,7 +977,7 @@ static void delete_command(int argc, char **argv)
       if (level == ROOT                 ||
 	  calleq(index.from, user.name) ||
 	  calleq(index.to, user.name)) {
-	if (unlink(filename(mesg))) halt();
+	if (unlink(getfilename(mesg))) halt();
 	index.deleted = 1;
 	if (lseek(fdindex, (long) (-sizeof(struct index )), 1) < 0) halt();
 	if (write(fdindex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
@@ -1099,7 +1076,7 @@ static void f_command(int argc, char **argv)
     if (!index.deleted                &&
 	index.mesg > user.seq         &&
 	!calleq(index.at, myhostname) &&
-	!host_in_header(filename(index.mesg), user.name)) {
+	!host_in_header(getfilename(index.mesg), user.name)) {
       do_not_exit = 1;
       lifetime = ((index.lifetime_h << 8) & 0xff00) + (index.lifetime_l & 0xff) - 1;
       if (lifetime != -1)
@@ -1135,7 +1112,7 @@ static void f_command(int argc, char **argv)
 		 tm->tm_min,
 		 MYHOSTNAME,
 		 mydesc);
-	  if (!(fp = fopen(filename(index.mesg), "r"))) halt();
+	  if (!(fp = fopen(getfilename(index.mesg), "r"))) halt();
 	  while ((c = getc(fp)) != EOF) putchar(c);
 	  fclose(fp);
 	}
@@ -1183,14 +1160,14 @@ static void help_command(int argc, char **argv)
     puts("Sorry, cannot open help file.");
     return;
   }
-  if (!strcasecmp(argv[1], "all")) {
+  if (!Strcasecmp(argv[1], "all")) {
     while (!stopped && fgets(line, sizeof(line), fp))
       if (*line != '^') fputs(line, stdout);
   } else {
     state = 0;
     while (!stopped && fgets(line, sizeof(line), fp)) {
       strtrim(line);
-      if (state == 0 && *line == '^' && !strcasecmp(line + 1, argv[1]))
+      if (state == 0 && *line == '^' && !Strcasecmp(line + 1, argv[1]))
 	state = 1;
       if (state == 1 && *line != '^')
 	state = 2;
@@ -1373,7 +1350,7 @@ static void read_command(int argc, char **argv)
 
   for (i = 1; i < argc; i++)
     if ((mesg = atoi(argv[i])) > 0 && get_index(mesg, &index) && read_allowed(&index)) {
-      if (!(fp = fopen(filename(mesg), "r"))) halt();
+      if (!(fp = fopen(getfilename(mesg), "r"))) halt();
       printf("Msg# %d   To: %s%s%s   From: %s   Date: %s\n",
 	     index.mesg,
 	     index.to,
@@ -1426,7 +1403,7 @@ static void reply_command(int argc, char **argv)
   mesg = all = 0;
   mesgstr = 0;
   for (i = 1; i < argc; i++)
-    if (!strcasecmp(argv[i], "all"))
+    if (!Strcasecmp(argv[i], "all"))
       all = 1;
     else
       mesg = atoi(mesgstr = argv[i]);
@@ -1448,7 +1425,7 @@ static void reply_command(int argc, char **argv)
     }
   } else {
     strcpy(mail->to, index.from);
-    if (!(fp = fopen(filename(mesg), "r"))) halt();
+    if (!(fp = fopen(getfilename(mesg), "r"))) halt();
     for (host = 0; fgets(line, sizeof(line), fp); host = p)
       if (!(p = get_host_from_header(line))) break;
     fclose(fp);
@@ -1460,7 +1437,7 @@ static void reply_command(int argc, char **argv)
   strlwc(mail->to);
   for (p = index.subject; ; ) {
     while (isspace(uchar(*p))) p++;
-    if (strncasecmp(p, "Re:", 3)) break;
+    if (Strncasecmp(p, "Re:", 3)) break;
     p += 3;
   }
   sprintf(mail->subject, "Re:  %s", p);
@@ -1474,7 +1451,7 @@ static void reply_command(int argc, char **argv)
       return;
     }
     if (*line == '\032') break;
-    if (!strncasecmp(line, "***end", 6)) break;
+    if (!Strncasecmp(line, "***end", 6)) break;
     append_line(mail, line);
     if (strchr(line, '\032')) break;
   }
@@ -1566,7 +1543,7 @@ static void send_command(int argc, char **argv)
       return;
     }
     if (*line == '\032') break;
-    if (!strncasecmp(line, "***end", 6)) break;
+    if (!Strncasecmp(line, "***end", 6)) break;
     append_line(mail, line);
     if (check_header) {
       if (p = get_host_from_header(line)) {
@@ -1784,7 +1761,7 @@ static void xscreen_command(int argc, char **argv)
       break;
 
     case 'k':
-      if (unlink(filename(pi->mesg))) halt();
+      if (unlink(getfilename(pi->mesg))) halt();
       pi->deleted = 1;
       if (lseek(fdindex, (long) ((pi - indexarray) * sizeof(struct index )), 0) < 0) halt();
       if (write(fdindex, (char *) pi, sizeof(struct index )) != sizeof(struct index )) halt();
@@ -1801,7 +1778,7 @@ static void xscreen_command(int argc, char **argv)
 	fclose(fp);
 	fp = 0;
       }
-      if (!(fp = fopen(filename(pi->mesg), "r"))) halt();
+      if (!(fp = fopen(getfilename(pi->mesg), "r"))) halt();
       printf("\033&a0y0C\033JMsg# %d   To: %s%s%s   From: %s   Date: %s\n", pi->mesg, pi->to, *pi->at ? " @" : "", pi->at, pi->from, timestr(pi->date));
       lines++;
       if (*pi->subject) {
@@ -1892,7 +1869,7 @@ static void xscreen_command(int argc, char **argv)
       break;
 
     case 'v':
-      sprintf(buf, "vi %s", filename(pi->mesg));
+      sprintf(buf, "vi %s", getfilename(pi->mesg));
       ioctl(0, TCSETA, &prev_termio);
       system(buf);
       ioctl(0, TCSETA, &curr_termio);
@@ -1947,7 +1924,7 @@ static char  *connect_addr(char *host)
   static char  line[1024];
 
   addr = 0;
-  if (fp = fopen("config", "r")) {
+  if (fp = fopen(CONFIGFILE, "r")) {
     while (fgets(line, sizeof(line), fp)) {
       for (p = line; isspace(uchar(*p)); p++) ;
       for (h = p; *p && !isspace(uchar(*p)); p++) ;
@@ -2022,7 +1999,7 @@ static void parse_command_line(char *line)
   if (!(len = strlen(*argv))) return;
   for (cmdp = cmdtable; ; cmdp++)
     if (!cmdp->name ||
-	level >= cmdp->level && !strncasecmp(cmdp->name, *argv, len)) {
+	level >= cmdp->level && !Strncasecmp(cmdp->name, *argv, len)) {
       if (argc >= cmdp->argc)
 	(*cmdp->fnc)(argc, argv);
       else {
