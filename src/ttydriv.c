@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.16 1993/03/30 17:24:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.17 1993/04/02 14:26:19 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -44,7 +44,8 @@
 #define KA_REDISPLAY   24       /* Redisplay line */
 #define KA_RETURN      25       /* Return line to caller */
 #define KA_RIGHT       26       /* Go right one character */
-#define KA_TRANSMIT    27       /* Return line to caller (without CR/LF) */
+#define KA_SEARCH      27       /* Search line */
+#define KA_TRANSMIT    28       /* Return line to caller (without CR/LF) */
 
 struct keytable {
 	const char str[8];
@@ -66,7 +67,7 @@ static struct keytable Keytable[] = {
 	"\015",         TT_UNKNOWN,     KA_RETURN,
 	"\016",         TT_UNKNOWN,     KA_NEXT,
 	"\020",         TT_UNKNOWN,     KA_PREV,
-	"\022",         TT_UNKNOWN,     KA_REDISPLAY,
+	"\022",         TT_UNKNOWN,     KA_SEARCH,
 	"\024",         TT_UNKNOWN,     KA_TRANSMIT,
 	"\025",         TT_UNKNOWN,     KA_CLEAR,
 	"\026",         TT_UNKNOWN,     KA_QUOTE,
@@ -480,25 +481,43 @@ char **buf;
 	case KA_RETURN:
 	case KA_TRANSMIT:
 		*end = 0;
-		if (*linebuf &&
-		    (!recall_buffer[PREV(wptr)] ||
-		     strcmp(linebuf, recall_buffer[PREV(wptr)]))) {
-			recall_buffer[wptr] = strcpy(malloc(end - linebuf + 1), linebuf);
-			wptr = NEXT(wptr);
-			if (recall_buffer[wptr]) {
-				free(recall_buffer[wptr]);
-				recall_buffer[wptr] = 0;
+		if (*linebuf == '\022') {
+			rptr = wptr;
+			while (recall_buffer[PREV(rptr)] &&
+			       !strstr(recall_buffer[PREV(rptr)], linebuf + 1))
+				rptr = PREV(rptr);
+			if (recall_buffer[PREV(rptr)]) {
+				while (pos > linebuf) backchr(*--pos);
+				clreol();
+				rptr = PREV(rptr);
+				strcpy(linebuf, recall_buffer[rptr]);
+				for (pos = linebuf; *pos; pos++) printchr(*pos);
+				end = pos;
+			} else {
+				putchar(7);
+				rptr = wptr;
 			}
+		} else {
+			if (*linebuf &&
+			    (!recall_buffer[PREV(wptr)] ||
+			     strcmp(linebuf, recall_buffer[PREV(wptr)]))) {
+				recall_buffer[wptr] = strdup(linebuf);
+				wptr = NEXT(wptr);
+				if (recall_buffer[wptr]) {
+					free(recall_buffer[wptr]);
+					recall_buffer[wptr] = 0;
+				}
+			}
+			rptr = wptr;
+			if (keyaction != KA_TRANSMIT) {
+				*end++ = '\r';
+				*end++ = '\n';
+				*end   = 0;
+				putchar('\n');
+			}
+			cnt = end - linebuf;
+			pos = end = linebuf;
 		}
-		rptr = wptr;
-		if (keyaction != KA_TRANSMIT) {
-			*end++ = '\r';
-			*end++ = '\n';
-			*end   = 0;
-			putchar('\n');
-		}
-		cnt = end - linebuf;
-		pos = end = linebuf;
 		break;
 
 	case KA_RIGHT:
@@ -508,6 +527,16 @@ char **buf;
 			if (pos == end) *end++ = ' ';
 			printchr(*pos++);
 		}
+		break;
+
+	case KA_SEARCH:
+		while (pos > linebuf) backchr(*--pos);
+		if (end > pos) {
+			end = pos;
+			clreol();
+		}
+		*end++ = '\022';
+		printchr(*pos++);
 		break;
 
 	}

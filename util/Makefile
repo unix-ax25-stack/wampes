@@ -1,7 +1,6 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.17 1993/03/30 17:25:27 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.18 1993/04/02 14:26:40 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
-CFLAGS     = -O -s
 SHELL      = /bin/sh
 
 TARGETS    = cnet mkhostdb netupdc netupds path pop2d udbm vitals
@@ -10,7 +9,7 @@ all:
 	@if [ `uname -s` = Linux ] ; then \
 	  make -i 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' $(TARGETS); \
 	else \
-	  make -i $(TARGETS); \
+	  make -i 'CC=cc' 'CFLAGS=-O -s' $(TARGETS); \
 	fi
 
 cnet:   cnet.c $(BUILDSADDR)

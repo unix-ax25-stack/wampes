@@ -1,20 +1,19 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.9 1993/03/30 17:24:18 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.10 1993/04/02 14:26:32 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
-CFLAGS     = -O -s
 SHELL      = /bin/sh
 
 TARGETS    = bbs findpath killdup sfstat
 
 all:
-	@if [ `uname -n` = mdddhd -o `uname -n` = deyke2 ] ; then \
-	  make -i 'CFLAGS=-Aa -g' $(TARGETS); \
-	elif [ `uname -s` = SunOS ] ; then \
+	@if [ `uname -s` = SunOS ] ; then \
 	  make -i 'CC=acc' 'CFLAGS=-O -s' $(TARGETS); \
 	elif [ `uname -s` = Linux ] ; then \
 	  make -i 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' $(TARGETS); \
+	elif [ `uname -s` = 386BSD ] ; then \
+	  make -i 'CC=cc' 'CFLAGS=-O -s' $(TARGETS); \
 	else \
-	  make -i $(TARGETS); \
+	  make -i 'CC=c89' 'CFLAGS=-O -s' $(TARGETS); \
 	fi
 
 bbs:    bbs.c bbs.h $(BUILDSADDR)

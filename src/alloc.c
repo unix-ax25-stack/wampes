@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.16 1993/03/30 17:23:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.17 1993/04/02 14:26:08 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -34,12 +34,12 @@ static unsigned long Heapsize;
 static unsigned long Inuse;
 static unsigned long Morecores;
 
-static void giveup __ARGS((char *mesg));
+static void giveup __ARGS((const char *mesg));
 
 /*---------------------------------------------------------------------------*/
 
 static void giveup(mesg)
-char *mesg;
+const char *mesg;
 {
   fprintf(stderr, mesg);
   abort();
@@ -95,14 +95,6 @@ unsigned size;
 
 /*---------------------------------------------------------------------------*/
 
-void *_malloc(size)
-unsigned int size;
-{
-  return malloc(size);
-}
-
-/*---------------------------------------------------------------------------*/
-
 /* Put memory block back on heap */
 void
 free(pp)
@@ -134,14 +126,6 @@ void *pp;
     p->next = tp->next;
     tp->next = p;
   }
-}
-
-/*---------------------------------------------------------------------------*/
-
-void _free(pp)
-void *pp;
-{
-  free(pp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -178,15 +162,6 @@ unsigned size;
 
 /*---------------------------------------------------------------------------*/
 
-void *_realloc(p, size)
-void *p;
-unsigned int size;
-{
-  return realloc(p, size);
-}
-
-/*---------------------------------------------------------------------------*/
-
 /* Allocate block of cleared memory */
 void *
 calloc(nelem,size)
@@ -201,14 +176,6 @@ unsigned size;  /* Size of each element */
 	if((cp = malloc(i)) != NULL)
 		memset(cp,0,i);
 	return cp;
-}
-
-/*---------------------------------------------------------------------------*/
-
-void *_calloc(nelem, elsize)
-unsigned int nelem, elsize;
-{
-  return calloc(nelem, elsize);
 }
 
 #endif

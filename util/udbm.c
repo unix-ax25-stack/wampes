@@ -1,7 +1,7 @@
 /* User Data Base Manager */
 
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.18 1993/03/30 17:25:28 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.19 1993/04/02 14:26:41 deyke Exp $";
 #endif
 
 #define DEBUG           0
@@ -606,8 +606,13 @@ static void fixpasswd()
 	    "%s:%s%s%s:%d:%d:%s:%s:%s\n",
 	    pp->pw_name,
 	    pp->pw_passwd,
+#ifndef LINUX
 	    *pp->pw_age ? "," : "",
 	    pp->pw_age,
+#else
+	    "",
+	    "",
+#endif
 	    pp->pw_uid,
 	    pp->pw_gid,
 	    pp->pw_gecos,

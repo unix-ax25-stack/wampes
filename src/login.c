@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.33 1993/03/30 17:24:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.34 1993/04/02 14:26:13 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -200,6 +200,7 @@ int create;
 
   FILE *fp;
   char bitmap[MAXUID+1];
+  char cmdbuf[1024];
   char homedir[80];
   char homedirparent[80];
   int fd;
@@ -235,16 +236,17 @@ int create;
 
   sprintf(homedirparent, "%s/%.3s...", HOMEDIRPARENTPARENT, name);
   sprintf(homedir, "%s/%s", homedirparent, name);
+#ifdef __386BSD__
+  sprintf(cmdbuf, "chpass -a '%s::%d:%d::0:0::%s:' >/dev/null 2>&1", name, uid, GID, homedir);
+  system(cmdbuf);
+#else
   if (!(fp = fopen(PASSWDFILE, "a"))) {
     unlink(PWLOCKFILE);
     return 0;
   }
-#ifndef LINUX
-  fprintf(fp, "%s:,./:%d:%d::%s:\n", name, uid, GID, homedir);
-#else
   fprintf(fp, "%s::%d:%d::%s:\n", name, uid, GID, homedir);
-#endif
   fclose(fp);
+#endif
   pw = getpwuid(uid);
   unlink(PWLOCKFILE);
 
@@ -502,7 +504,7 @@ void *upcall_arg;
     pututline(&utmpbuf);
     endutent();
 #endif
-#ifdef sun
+#if defined sun || defined __386BSD__
     execle("/usr/bin/login", "login", "-h", protocol, pw->pw_name, (char *) 0, &env);
 #else
     execle("/bin/login", "login", pw->pw_name, (char *) 0, &env);
@@ -520,11 +522,19 @@ struct login_cb *tp;
 {
 
 #ifndef UTMP_FILE
+#ifdef _PATH_UTMP
+#define UTMP_FILE       _PATH_UTMP
+#else
 #define UTMP_FILE       "/etc/utmp"
+#endif
 #endif
 
 #ifndef WTMP_FILE
+#ifdef _PATH_WTMP
+#define WTMP_FILE       _PATH_WTMP
+#else
 #define WTMP_FILE       "/var/adm/wtmp"
+#endif
 #endif
 
   char slave[80];

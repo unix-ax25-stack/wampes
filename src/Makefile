@@ -1,8 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.33 1993/03/30 17:23:56 deyke Exp $
-
-DEFINES       = -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024
-
-CFLAGS        = $(OPTIMIZE) $(DEFINES)
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.34 1993/04/02 14:26:07 deyke Exp $
 
 DEST          = /tcp
 
@@ -282,15 +278,15 @@ SRCS          = alloc.c \
 
 all_test:
 		@if [ `uname -n` = mdddhd -o `uname -n` = deyke2 ] ; then \
-		  make -i 'OPTIMIZE=-Aa -g' all; \
+		  make -i 'CC=c89' 'CFLAGS=-g -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024' all; \
 		elif [ `uname -s` = SunOS ] ; then \
-		  make -i 'CC=acc' 'OPTIMIZE=-O -s' all; \
+		  make -i 'CC=acc' 'CFLAGS=-O -s -DUNIX -DFD_SETSIZE=1024' all; \
 		elif [ `uname -s` = Linux ] ; then \
-		  make -i 'CC=gcc' 'CFLAGS=-O6 -I./linux_include -DUNIX -DLINUX' all; \
+		  make -i 'CC=gcc' 'CFLAGS=-O6 -DUNIX -DLINUX -I./linux_include' all; \
 		elif [ `uname -s` = ULTRIX ] ; then \
 		  make -i 'CC=gcc' 'CFLAGS=-O6 -DUNIX -DULTRIX_RISC -DFD_SETSIZE=64' all; \
 		else \
-		  make -i 'OPTIMIZE=-O -s' all; \
+		  make -i 'CC=cc' 'CFLAGS=-O -s -DUNIX -DFD_SETSIZE=1024' all; \
 		fi
 
 all:            $(PROGRAM)
