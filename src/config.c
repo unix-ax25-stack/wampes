@@ -1,4 +1,4 @@
-/* @(#) $Id: config.c,v 1.48 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: config.c,v 1.49 1996/08/20 18:07:34 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -340,8 +340,8 @@ struct cmds Attab[] = {
 	"attach ni <label> <dest> [mask]",
 #endif
 #ifdef __FreeBSD__
-	"tun", tun_attach, 0, 2,
-	"attach tun <label>",
+	"tun", tun_attach, 0, 3,
+	"attach tun <label> <mtu>",
 #endif
 
 	NULL,

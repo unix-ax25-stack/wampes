@@ -1,4 +1,10 @@
-@(#) $Id: ChangeLog,v 1.17 1996/08/19 16:29:54 deyke Exp $
+@(#) $Id: ChangeLog,v 1.18 1996/08/20 18:07:17 deyke Exp $
+
+960820 Dieter Deyke <deyke@fc.hp.com>
+
+	Fixed configure script for bash, and for BSD based systems
+
+	Updated IP tunnel for FreeBSD (developed by dc1ik)
 
 960819 Dieter Deyke <deyke@fc.hp.com>
 

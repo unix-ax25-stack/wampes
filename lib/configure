@@ -1,7 +1,4 @@
-# @(#) $Id: configure,v 1.26 1996/08/19 16:32:18 deyke Exp $
-
-PATH=/usr/5bin:$PATH
-export PATH
+# @(#) $Id: configure,v 1.27 1996/08/20 18:09:24 deyke Exp $
 
 case "`uname -sr`" in
 HP-UX*)
@@ -211,7 +208,8 @@ checksymbol HAS_STRTOUL \
 	"main(){strtoul(0,0,0);}"
 
 checksymbol HAS_UINT \
-	"#include <sys/types.h>\nmain(){uint f;return f;}"
+	"#include <sys/types.h>
+	 main(){uint f;return f;}"
 
 echo
 echo "#endif"

@@ -1,4 +1,4 @@
-/* @(#) $Id: tun.c,v 1.3 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: tun.c,v 1.4 1996/08/20 18:07:34 deyke Exp $ */
 
 /*
    Interface to FreeBSD's tun device - Olaf Erb, dc1ik 960728
@@ -38,7 +38,6 @@
 
 #define MAX_FRAME       2048
 #define MAX_TUN         256
-#define TUN_MTU         256
 
 struct edv_t {
   int fd;
@@ -99,7 +98,6 @@ static void tun_recv(void *argp)
 
   ifp = (struct iface *) argp;
   edv = (struct edv_t *) ifp->edv;
-  /* l = read(edv->fd, &tun_packet, sizeof(tun_packet)) - sizeof(tun_packet.addr);  */
   l = read(edv->fd, &tun_packet, sizeof(tun_packet));
   if (l <= 0)
     goto Fail;
@@ -169,6 +167,7 @@ int tun_attach(int argc, char *argv[], void *p)
   int fd;
   int sock_fd;
   int s;
+  int ifmtu;
   int unit_number;
   int32 dest;
   int32 mask;
@@ -177,9 +176,11 @@ int tun_attach(int argc, char *argv[], void *p)
   struct ifreq ifreq;
   struct rtentry rtentry;
   struct sockaddr_in addr;
+  struct tuninfo info;
   unsigned unit, enoentcount = 0;
 
   ifnamew = argv[1];
+  ifmtu = atoi(argv[2]);
 
   if (if_lookup(ifnamew) != NULL) {
     printf("Interface %s already exists\n", ifnamew);
@@ -237,6 +238,12 @@ int tun_attach(int argc, char *argv[], void *p)
     return -1;
   }
 
+  info.type = 0x6;      /* Ethernet */
+  info.mtu = ifmtu;
+  info.baudrate = 0;
+  if (ioctl(fd, TUNSIFINFO, &info) < 0)
+    perror("TUNSIFINFO");
+
   IfDevName = devname + 5;
   if (GetIfIndex(IfDevName) < 0) {
     fprintf(stderr, "can't find ifindex.\n");
@@ -251,7 +258,7 @@ int tun_attach(int argc, char *argv[], void *p)
   ifp->addr = Ip_addr;
   ifp->broadcast = 0xffffffffUL;
   ifp->netmask = 0xffffffffUL;
-  ifp->mtu = TUN_MTU;
+  ifp->mtu = ifmtu;
   setencap(ifp, "None");
 
   edv = (struct edv_t *) malloc(sizeof(struct edv_t));
