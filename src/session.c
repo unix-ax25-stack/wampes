@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.11 1992/05/14 13:20:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.12 1992/08/19 13:20:37 deyke Exp $ */
 
 /* NOS User Session control
  * Copyright 1991 Phil Karn, KA9Q
@@ -337,7 +337,7 @@ struct session *sp;
 		sp->name = NULLCHAR;
 	}
 	sp->type = FREE;
-	memset(sp, 0, sizeof(struct session));
+	memset((char *) sp, 0, sizeof(struct session));
 	if(sp == Current)
 		Current = NULLSESSION;
 }

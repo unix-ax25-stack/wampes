@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.10 1992/08/11 21:32:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.11 1992/08/19 13:20:23 deyke Exp $ */
 
 #include "global.h"
 
@@ -295,7 +295,7 @@ void *p;
   }
 
   if (type == USE_UDP) {
-    memset(&addr, 0, sizeof(addr));
+    memset((char *) &addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(port);

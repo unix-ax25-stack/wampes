@@ -1,12 +1,12 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.4 1991/04/12 18:35:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.5 1992/08/19 13:20:33 deyke Exp $ */
 
 /* Mail Delivery Agent for returned Mails */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/rtprio.h>
 #include <unistd.h>
 
+#include "hpux.h"
 #include "mail.h"
 
 /*---------------------------------------------------------------------------*/
@@ -21,7 +21,7 @@ struct mailjob *jp;
 
   fflush(stdout);
   if (fork()) return;
-  rtprio(0, RTPRIO_RTOFF);
+  rtprio_off();
   for (i = 0; i < _NFILE; i++) close(i);
   setpgrp();
   fopen("/dev/null", "r+");

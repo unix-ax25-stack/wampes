@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.18 1992/01/12 18:40:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.19 1992/08/19 13:20:32 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ptyio.h>
-#include <sys/rtprio.h>
 #include <sys/stat.h>
 #include <termio.h>
 #include <time.h>
@@ -393,7 +392,7 @@ void  *upcall_arg;
   ioctl(tp->pty, TIOCTRAP, &i);
   write_log_header(tp->pty, user, protocol);
   if (!(tp->pid = fork())) {
-    rtprio(0, RTPRIO_RTOFF);
+    rtprio_off();
     pw = getpasswdentry(user, 1);
     if (!pw || pw->pw_passwd[0]) pw = getpasswdentry("", 0);
     for (i = 0; i < _NFILE; i++) close(i);

@@ -1,10 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.11 1992/05/14 13:20:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.12 1992/08/19 13:20:28 deyke Exp $ */
 
 /* ICMP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <stdio.h>
-#include <time.h>
+#include <sys/time.h>
 #include "global.h"
 #include "icmp.h"
 #include "ip.h"
@@ -258,7 +258,7 @@ int16 len;      /* Length of data field */
 	/* Insert timestamp and build ICMP header */
 	if (len >= ICMPLEN + sizeof(struct timeval)) {
 		gettimeofday(&tv, &tz);
-		memcpy(data->data, &tv, sizeof(struct timeval));
+		memcpy(data->data, (char *) &tv, sizeof(struct timeval));
 	}
 	icmpOutEchos++;
 	icmpOutMsgs++;

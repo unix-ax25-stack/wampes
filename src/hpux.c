@@ -1,4 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.21 1991/10/11 18:56:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.22 1992/08/19 13:20:27 deyke Exp $ */
+
+#define FD_SETSIZE 64
 
 #include <sys/types.h>
 
@@ -6,12 +8,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/rtprio.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/wait.h>
 #include <termio.h>
-#include <time.h>
 #include <unistd.h>
+
+#ifdef __hpux
+#include <sys/rtprio.h>
+#endif
 
 #include "global.h"
 #include "iface.h"
@@ -25,24 +30,24 @@
 
 #define TIMEOUT 120
 
-static int  chkread[2];
-static int  actread[2];
-static void (*readfnc[_NFILE]) __ARGS((void *));
-static void *readarg[_NFILE];
+static struct fd_set chkread;
+static struct fd_set actread;
+static void (*readfnc[FD_SETSIZE]) __ARGS((void *));
+static void *readarg[FD_SETSIZE];
 
-static int  chkwrite[2];
-static int  actwrite[2];
-static void (*writefnc[_NFILE]) __ARGS((void *));
-static void *writearg[_NFILE];
+static struct fd_set chkwrite;
+static struct fd_set actwrite;
+static void (*writefnc[FD_SETSIZE]) __ARGS((void *));
+static void *writearg[FD_SETSIZE];
 
-static int  chkexcp[2];
-static int  actexcp[2];
-static void (*excpfnc[_NFILE]) __ARGS((void *));
-static void *excparg[_NFILE];
+static struct fd_set chkexcp;
+static struct fd_set actexcp;
+static void (*excpfnc[FD_SETSIZE]) __ARGS((void *));
+static void *excparg[FD_SETSIZE];
 
-static int  nfds = -1;
+static int maxfd = -1;
 
-static int  local_kbd;
+static int local_kbd;
 
 static struct termio curr_termio;
 static struct termio prev_termio;
@@ -51,12 +56,21 @@ static void check_files_changed __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
 
+/*ARGSUSED*/
 static void sigpipe_handler(sig, code, scp)
-int  sig;
-int  code;
+int sig;
+int code;
 struct sigcontext *scp;
 {
-  scp->sc_syscall_action = SIG_RETURN;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void rtprio_off()
+{
+#ifdef __hpux
+  rtprio(0, RTPRIO_RTOFF);
+#endif
 }
 
 /*---------------------------------------------------------------------------*/
@@ -86,7 +100,7 @@ void ioinit()
     printf("\033&s1A");   /* enable XmitFnctn */
     on_read(0, (void (*)()) keyboard, (void *) 0);
   } else {
-    for (i = 0; i < _NFILE; i++) close(i);
+    for (i = 0; i < FD_SETSIZE; i++) close(i);
     setpgrp();
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");
@@ -100,7 +114,9 @@ void ioinit()
   sigvector(SIGALRM, &vec, (struct sigvec *) 0);
   if (!Debug) alarm(TIMEOUT);
   umask(022);
+#ifdef __hpux
   if (!Debug) rtprio(0, 127);
+#endif
   if (!getenv("HOME"))
     putenv("HOME=/users/root");
   if (!getenv("LOGNAME"))
@@ -140,12 +156,12 @@ void iostop()
 
 /*---------------------------------------------------------------------------*/
 
-int  system(cmdline)
+int system(cmdline)
 const char *cmdline;
 {
 
-  int  i, pid, status;
-  long  oldmask;
+  int i, pid, status;
+  long oldmask;
 
   if (!cmdline) return 1;
   fflush(stdout);
@@ -153,7 +169,7 @@ const char *cmdline;
   case -1:
     return (-1);
   case 0:
-    for (i = 3; i < _NFILE; i++) close(i);
+    for (i = 3; i < FD_SETSIZE; i++) close(i);
     execl("/bin/sh", "sh", "-c", cmdline, (char *) 0);
     exit(1);
   default:
@@ -166,20 +182,20 @@ const char *cmdline;
 
 /*---------------------------------------------------------------------------*/
 
-int  _system(cmdline)
-char  *cmdline;
+int _system(cmdline)
+char *cmdline;
 {
   return system(cmdline);
 }
 
 /*---------------------------------------------------------------------------*/
 
-int  doshell(argc, argv, p)
-int  argc;
-char  *argv[];
+int doshell(argc, argv, p)
+int argc;
+char *argv[];
 void *p;
 {
-  char  buf[2048];
+  char buf[2048];
 
   *buf = '\0';
   while (--argc > 0) {
@@ -191,86 +207,92 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-#define setmask(mask, fd) ((mask)[(fd)>>5] |=  (1 << ((fd) & 31)))
-#define clrmask(mask, fd) ((mask)[(fd)>>5] &= ~(1 << ((fd) & 31)))
-#define maskset(mask, fd) ((mask)[(fd)>>5] &   (1 << ((fd) & 31)))
-
-/*---------------------------------------------------------------------------*/
-
 void on_read(fd, fnc, arg)
-int  fd;
+int fd;
 void (*fnc) __ARGS((void *));
 void *arg;
 {
   readfnc[fd] = fnc;
   readarg[fd] = arg;
-  setmask(chkread, fd);
-  clrmask(actread, fd);
-  nfds = -1;
+  FD_SET(fd, &chkread);
+  FD_CLR(fd, &actread);
+  if (maxfd < fd) maxfd = fd;
 }
 
 /*---------------------------------------------------------------------------*/
 
 void off_read(fd)
-int  fd;
+int fd;
 {
   readfnc[fd] = 0;
   readarg[fd] = 0;
-  clrmask(chkread, fd);
-  clrmask(actread, fd);
-  nfds = -1;
+  FD_CLR(fd, &chkread);
+  FD_CLR(fd, &actread);
+  if (fd == maxfd)
+    for (; maxfd >= 0; maxfd--)
+      if (FD_ISSET(maxfd, &chkread)  ||
+	  FD_ISSET(maxfd, &chkwrite) ||
+	  FD_ISSET(maxfd, &chkexcp)) break;
 }
 
 /*---------------------------------------------------------------------------*/
 
 void on_write(fd, fnc, arg)
-int  fd;
+int fd;
 void (*fnc) __ARGS((void *));
 void *arg;
 {
   writefnc[fd] = fnc;
   writearg[fd] = arg;
-  setmask(chkwrite, fd);
-  clrmask(actwrite, fd);
-  nfds = -1;
+  FD_SET(fd, &chkwrite);
+  FD_CLR(fd, &actwrite);
+  if (maxfd < fd) maxfd = fd;
 }
 
 /*---------------------------------------------------------------------------*/
 
 void off_write(fd)
-int  fd;
+int fd;
 {
   writefnc[fd] = 0;
   writearg[fd] = 0;
-  clrmask(chkwrite, fd);
-  clrmask(actwrite, fd);
-  nfds = -1;
+  FD_CLR(fd, &chkwrite);
+  FD_CLR(fd, &actwrite);
+  if (fd == maxfd)
+    for (; maxfd >= 0; maxfd--)
+      if (FD_ISSET(maxfd, &chkread)  ||
+	  FD_ISSET(maxfd, &chkwrite) ||
+	  FD_ISSET(maxfd, &chkexcp)) break;
 }
 
 /*---------------------------------------------------------------------------*/
 
 void on_excp(fd, fnc, arg)
-int  fd;
+int fd;
 void (*fnc) __ARGS((void *));
 void *arg;
 {
   excpfnc[fd] = fnc;
   excparg[fd] = arg;
-  setmask(chkexcp, fd);
-  clrmask(actexcp, fd);
-  nfds = -1;
+  FD_SET(fd, &chkexcp);
+  FD_CLR(fd, &actexcp);
+  if (maxfd < fd) maxfd = fd;
 }
 
 /*---------------------------------------------------------------------------*/
 
 void off_excp(fd)
-int  fd;
+int fd;
 {
   excpfnc[fd] = 0;
   excparg[fd] = 0;
-  clrmask(chkexcp, fd);
-  clrmask(actexcp, fd);
-  nfds = -1;
+  FD_CLR(fd, &chkexcp);
+  FD_CLR(fd, &actexcp);
+  if (fd == maxfd)
+    for (; maxfd >= 0; maxfd--)
+      if (FD_ISSET(maxfd, &chkread)  ||
+	  FD_ISSET(maxfd, &chkwrite) ||
+	  FD_ISSET(maxfd, &chkexcp)) break;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -278,8 +300,8 @@ int  fd;
 static void check_files_changed()
 {
 
-  int  changed = 0;
-  static long  nexttime, net_time, rc_time;
+  int changed = 0;
+  static long nexttime, net_time, rc_time;
   struct stat statbuf;
 
   if (Debug || nexttime > secclock()) return;
@@ -303,35 +325,17 @@ static void check_files_changed()
 void eihalt()
 {
 
-  int  n;
-  int  status;
+  int n;
+  int status;
   int32 nte;
-  register unsigned int  i;
   struct timeval timeout;
 
   check_files_changed();
   wait3(&status, WNOHANG, (int *) 0);
   if (!Debug) alarm(TIMEOUT);
-  if (nfds < 0) {
-    if (i = chkread[1] | chkwrite[1] | chkexcp[1])
-      nfds = 32;
-    else {
-      i = chkread[0] | chkwrite[0] | chkexcp[0];
-      nfds = 0;
-    }
-    for (n = 16; n; n >>= 1)
-      if (i & ((-1) << n)) {
-	nfds += n;
-	i >>= n;
-      }
-    if (i) nfds++;
-  }
-  actread [0] = chkread [0];
-  actread [1] = chkread [1];
-  actwrite[0] = chkwrite[0];
-  actwrite[1] = chkwrite[1];
-  actexcp [0] = chkexcp [0];
-  actexcp [1] = chkexcp [1];
+  actread  = chkread;
+  actwrite = chkwrite;
+  actexcp  = chkexcp;
   timeout.tv_sec = 0;
   if (Hopper)
     timeout.tv_usec = 0;
@@ -340,15 +344,15 @@ void eihalt()
     if (nte > 999) nte = 999;
     timeout.tv_usec = 1000 * nte;
   }
-  if (select(nfds, actread, actwrite, actexcp, &timeout) < 1) {
-    actread [0] = actread [1] = 0;
-    actwrite[0] = actwrite[1] = 0;
-    actexcp [0] = actexcp [1] = 0;
+  if (select(maxfd + 1, (int *) &actread, (int *) &actwrite, (int *) &actexcp, &timeout) < 1) {
+    FD_ZERO(&actread);
+    actwrite = actread;
+    actexcp  = actread;
   } else
-    for (n = nfds - 1; n >= 0; n--) {
-      if (readfnc [n] && maskset(actread , n)) (*readfnc [n])(readarg [n]);
-      if (writefnc[n] && maskset(actwrite, n)) (*writefnc[n])(writearg[n]);
-      if (excpfnc [n] && maskset(actexcp , n)) (*excpfnc [n])(excparg [n]);
+    for (n = maxfd; n >= 0; n--) {
+      if (readfnc [n] && FD_ISSET(n, &actread )) (*readfnc [n])(readarg [n]);
+      if (writefnc[n] && FD_ISSET(n, &actwrite)) (*writefnc[n])(writearg[n]);
+      if (excpfnc [n] && FD_ISSET(n, &actexcp )) (*excpfnc [n])(excparg [n]);
     }
 }
 

@@ -1,10 +1,10 @@
-ANSI          =
 ANSI          = -Aa -D_HPUX_SOURCE
+ANSI          =
 
 DEFINES       = -DUNIX
 
-CFLAGS        = $(ANSI) $(DEFINES) -O
 CFLAGS        = $(ANSI) $(DEFINES) -g
+CFLAGS        = $(ANSI) $(DEFINES) -O
 
 DEST          = /tcp
 
@@ -344,7 +344,7 @@ config.o: global.h config.h mbuf.h timer.h proc.h iface.h ip.h internet.h \
 	asy.h trace.h
 crc.o: global.h mbuf.h crc.h
 devparam.o: global.h devparam.h
-dirutil.o: global.h dirutil.h commands.h
+dirutil.o: global.h hpux.h dirutil.h commands.h
 domain.o: global.h timer.h netuser.h cmdparse.h
 files.o: global.h netuser.h files.h
 finger.o: config.h global.h mbuf.h timer.h internet.h icmp.h iface.h proc.h \
@@ -397,7 +397,7 @@ login.o: global.h mbuf.h timer.h hpux.h telnet.h session.h proc.h hardware.h \
 	ax25.h iface.h login.h
 mail_bbs.o: global.h mbuf.h transport.h timer.h mail.h
 mail_daemn.o: global.h timer.h mail.h cmdparse.h commands.h
-mail_retrn.o: mail.h global.h
+mail_retrn.o: hpux.h global.h mail.h
 mail_smtp.o: global.h mbuf.h transport.h timer.h mail.h
 mail_subr.o: timer.h global.h mail.h
 main.o: global.h mbuf.h timer.h proc.h iface.h ip.h internet.h tcp.h \
@@ -408,7 +408,7 @@ mbuf.o: global.h mbuf.h proc.h timer.h
 misc.o: global.h socket.h mbuf.h proc.h timer.h
 n8250.o: global.h mbuf.h proc.h timer.h iface.h n8250.h asy.h devparam.h \
 	hpux.h
-netlog.o: global.h
+netlog.o: global.h hpux.h
 netrom.o: global.h config.h netuser.h mbuf.h timer.h iface.h proc.h arp.h \
 	ip.h internet.h ax25.h lapb.h netrom.h session.h hardware.h telnet.h \
 	cmdparse.h trace.h login.h

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.7 1992/06/08 12:59:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.8 1992/08/19 13:20:31 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -85,8 +85,10 @@ static int stkutil __ARGS((struct proc *pp));
 void
 kinit()
 {
+#if 0
 	/* Remember location 0 pattern to detect null pointer derefs */
 	oldNull = *(unsigned short *)NULL;
+#endif
 
 }
 /* Print process table info
@@ -214,11 +216,13 @@ chkstk()
 		fflush(stdout);
 		killself();
 	}
+#if 0
 	if(*(unsigned short *)NULL != oldNull){
 		printf("WARNING: Location 0 smashed, process %s\n",Curproc->name);
 		*(unsigned short *)NULL = oldNull;
 		fflush(stdout);
 	}
+#endif
 }
 unsigned
 phash(event)

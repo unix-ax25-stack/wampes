@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.6 1992/05/14 13:19:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.7 1992/08/19 13:20:24 deyke Exp $ */
 
 /* Parse command line, set up command arguments Unix-style, and call function.
  * Note: argument is modified (delimiters are overwritten with nulls)
@@ -74,19 +74,12 @@ char *line;
 			case 'f':
 				*cp++ = '\f';
 				break;
-#if defined(__STDC__)
 			case 'a':
-				*cp++ = '\a';
+				*cp++ = '\007';
 				break;
-#endif
 			case '\\':
 				*cp++ = '\\';
 				break;
-#if defined(__STDC__)
-			case '\?':
-				*cp++ = '\?';
-				break;
-#endif
 			case '\'':
 				*cp++ = '\'';
 				break;

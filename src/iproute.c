@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.16 1992/08/11 21:32:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.17 1992/08/19 13:20:30 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -499,7 +499,10 @@ char private;           /* Inhibit advertising this entry ? */
 		return NULLROUTE;       /* Don't accept routes to ourselves */
 
 	/* Mask off don't-care bits of target */
-	target &= ~0L << (32-bits);
+	if(bits)
+		target &= ~0L << (32-bits);
+	else
+		target = 0L;
 
 	/* Encapsulated routes must specify gateway, and it can't be
 	 *  ourselves
@@ -585,7 +588,10 @@ unsigned int bits;
 		bits = 32;
 
 	/* Mask off target according to width */
-	target &= ~0L << (32-bits);
+	if(bits)
+		target &= ~0L << (32-bits);
+	else
+		target = 0L;
 
 	/* Search appropriate chain for existing entry */
 	for(rp = Routes[bits-1][hash_ip(target)];rp != NULLROUTE;rp = rp->next){
@@ -739,7 +745,10 @@ unsigned int bits;
 			return NULLROUTE;
 	}
 	/* Mask off target according to width */
-	target &= ~0L << (32-bits);
+	if(bits)
+		target &= ~0L << (32-bits);
+	else
+		target = 0L;
 
 	for(rp = Routes[bits-1][hash_ip(target)];rp != NULLROUTE;rp = rp->next){
 		if(rp->target == target){

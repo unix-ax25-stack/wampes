@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.23 1992/07/24 20:00:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.24 1992/08/19 13:20:31 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -1132,7 +1132,7 @@ void *p;
   struct iface *ifp;
   struct ifptable_t ifptable[NIFACES];
 
-  memset(ifptable, 0, sizeof(ifptable));
+  memset((char *) ifptable, 0, sizeof(ifptable));
   for (dev = 0, ifp = Ifaces; ifp; dev++, ifp = ifp->next)
     ifptable[dev].ifp = ifp;
   for (i = 0; i < AXROUTESIZE; i++)
@@ -1148,7 +1148,8 @@ void *p;
   puts("Interface  Count");
   total = 0;
   for (dev = 0; dev < NIFACES; dev++) {
-    if (ifptable[dev].count || ifptable[dev].ifp == axroute_default_ifp)
+    if (ifptable[dev].count ||
+	axroute_default_ifp && axroute_default_ifp == ifptable[dev].ifp)
       printf("%c %-7s  %5d\n",
 	     ifptable[dev].ifp == axroute_default_ifp ? '*' : ' ',
 	     ifptable[dev].ifp->name,

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.10 1992/05/14 13:20:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.11 1992/08/19 13:20:33 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -260,7 +260,7 @@ char  *sysname;
     closedir(dirp);
     tail = 0;
     for (; p = filelist; filelist = p->next, free(p)) {
-      memset(&mj, 0, sizeof(mj));
+      memset((char *) &mj, 0, sizeof(mj));
       sprintf(mj.cfile, "%s/%s", spooldir, p->name);
       if (!(fp = fopen(mj.cfile, "r"))) continue;
       while (fgets(line, sizeof(line), fp)) {

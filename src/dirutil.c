@@ -1,14 +1,14 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.9 1992/05/14 13:19:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.10 1992/08/19 13:20:26 deyke Exp $ */
 
 #include <sys/types.h>
 
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/rtprio.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include "global.h"
+#include "hpux.h"
 #include "dirutil.h"
 #include "commands.h"
 
@@ -33,7 +33,7 @@ int full;
 		close(fd[1]);
 		return NULLFILE;
 	case 0:
-		rtprio(0,RTPRIO_RTOFF);
+		rtprio_off();
 		close(fd[0]);
 		dup2(fd[1],1);
 		dup2(fd[1],2);

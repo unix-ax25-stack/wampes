@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.7 1992/01/12 18:39:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.8 1992/08/19 13:20:22 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -114,7 +114,7 @@ void axroute_loadfile()
       struct iface *ifp, *ifptable[128];
 
       ungetc(version, fp);
-      memset(ifptable, 0, sizeof(ifptable));
+      memset((char *) ifptable, 0, sizeof(ifptable));
       for (ifp = Ifaces; ifp; ifp = ifp->next)
 	if (ifp->output == ax_output) ifptable[ifp->dev] = ifp;
       while (fread((char *) & buf, sizeof(buf), 1, fp)) {

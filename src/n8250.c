@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.20 1992/08/11 21:32:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.21 1992/08/19 13:20:34 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -18,7 +18,10 @@
 #ifdef SCO
 #include <sys/vty.h>
 #endif
-#define FIOSNBIO        FIONBIO
+#endif
+
+#if defined(sun)
+#include <sys/filio.h>
 #endif
 
 #include "global.h"
@@ -163,7 +166,7 @@ int rlsd;               /* Use Received Line Signal Detect (aka CD) */
 	if (ioctl(ap->fd, TCSETA, &termio) == -1) goto Fail;
 	if (ioctl(ap->fd, TCFLSH, 2) == -1) goto Fail;
 	arg = 1;
-	ioctl(ap->fd, FIOSNBIO, &arg);  /*** will fail on pty master side ***/
+	ioctl(ap->fd, FIONBIO, &arg);
 	on_read(ap->fd, (void (*)()) ifp->rxproc, ifp);
 	return 0;
 

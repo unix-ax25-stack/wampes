@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.5 1992/08/11 21:32:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/buildsaddr.c,v 1.6 1992/08/19 13:20:24 deyke Exp $ */
 
 #include "global.h"
 
@@ -31,7 +31,7 @@ int  *addrlen;
   char  *serv_name;
   char  buf[1024];
 
-  memset(&addr, 0, sizeof(addr));
+  memset((char *) &addr, 0, sizeof(addr));
   *addrlen = 0;
 
   host_name = strcpy(buf, name);

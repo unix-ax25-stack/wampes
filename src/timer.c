@@ -1,10 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.9 1991/10/25 15:01:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.10 1992/08/19 13:20:39 deyke Exp $ */
 
 /* General purpose software timer facilities
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <stdio.h>
-#include <time.h>
+#include <sys/time.h>
 #include "global.h"
 #include "timer.h"
 #include "proc.h"
