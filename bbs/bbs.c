@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.7 1989/08/30 22:52:42 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.8 1989/08/31 19:42:52 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -26,6 +26,7 @@ extern char  *sys_errlist[];
 extern int  errno;
 extern int  optind;
 extern long  lseek();
+extern long  sigsetmask();
 extern long  time();
 extern struct sockaddr *build_sockaddr();
 extern unsigned long  alarm();
@@ -1225,7 +1226,85 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
-#define nextarg(name)                                      \
+static void reply_command(argc, argv)
+int  argc;
+char  **argv;
+{
+
+  FILE * fp;
+  char  *host;
+  char  *mesgstr;
+  char  *p;
+  char  line[1024];
+  int  all;
+  int  i;
+  int  mesg;
+  struct index index;
+  struct mail *mail;
+
+  mesg = all = 0;
+  mesgstr = 0;
+  for (i = 1; i < argc; i++)
+    if (!strcasecmp(argv[i], "all"))
+      all = 1;
+    else
+      mesg = atoi(mesgstr = argv[i]);
+  if (!mesgstr) {
+    puts("No message number specified.");
+    return;
+  }
+  if (mesg < 1 || !get_index(mesg, &index) || !read_allowed(&index)) {
+    printf("No such message: '%s'.\n", mesgstr);
+    return;
+  }
+  mail = (struct mail *) calloc(1, sizeof(struct mail ));
+  strcpy(mail->from, user.name);
+  if (all) {
+    strcpy(mail->to, index.to);
+    if (*index.at) {
+      strcat(mail->to, "@");
+      strcat(mail->to, index.at);
+    }
+  } else {
+    strcpy(mail->to, index.from);
+    if (!(fp = fopen(filename(mesg), "r"))) halt();
+    for (host = 0; fgets(line, sizeof(line), fp); host = p)
+      if (!(p = get_host_from_header(line))) break;
+    fclose(fp);
+    if (host) {
+      strcat(mail->to, "@");
+      strcat(mail->to, host);
+    }
+  }
+  strlwc(mail->to);
+  for (p = index.subject; ; ) {
+    while (isspace(uchar(*p))) p++;
+    if (strncasecmp(p, "Re:", 3)) break;
+    p += 3;
+  }
+  sprintf(mail->subject, "Re:  %s", p);
+  printf("To: %s\n", mail->to);
+  printf("Subject: %s\n", mail->subject);
+  puts("Enter message: (terminate with ^Z or /EX or ***END)");
+  for (; ; ) {
+    if (!getstring(line)) exit(1);
+    if (stopped) {
+      free_mail(mail);
+      return;
+    }
+    if (*line == '\032') break;
+    if (!strncasecmp(line, "***end", 6)) break;
+    if (!strncasecmp(line, "/ex", 3)) break;
+    append_line(mail, line);
+    if (strchr(line, '\032')) break;
+  }
+  printf("Sending message to %s.\n", mail->to);
+  route_mail(mail);
+}
+
+/*---------------------------------------------------------------------------*/
+
+#define nextarg(name)     \
   if (++i >= argc) {      \
     errors++;             \
     printf(errstr, name); \
@@ -1285,6 +1364,7 @@ char  **argv;
     strcat(mail->to, "@");
     strcat(mail->to, at);
   }
+  strlwc(mail->to);
   if (!*mail->from || level < MBOX) strcpy(mail->from, user.name);
   if (*mail->bid) {
     mail->bid[LEN_BID] = '\0';
@@ -1330,6 +1410,49 @@ char  **argv;
 }
 
 #undef nextarg
+
+/*---------------------------------------------------------------------------*/
+
+static void shell_command(argc, argv)
+int  argc;
+char  **argv;
+{
+
+  char  command[2048];
+  int  i;
+  int  oldstopped;
+  int  pid;
+  int  status;
+  long  oldmask;
+
+  switch (pid = fork()) {
+  case -1:
+    puts("Sorry, cannot fork.");
+    break;
+  case 0:
+    setgid(user.gid);
+    setuid(user.uid);
+    for (i = 3; i < _NFILE; i++) close(i);
+    *command = '\0';
+    for (i = 1; i < argc; i++) {
+      if (i > 1) strcat(command, " ");
+      strcat(command, argv[i]);
+    }
+    if (*command)
+      execl(user.shell, user.shell, "-c", command, (char *) 0);
+    else
+      execl(user.shell, user.shell, (char *) 0);
+    _exit(127);
+    break;
+  default:
+    oldmask = sigsetmask(-1);
+    oldstopped = stopped;
+    while (waitpid(pid, &status, 0) != pid) ;
+    sigsetmask(oldmask);
+    stopped = oldstopped;
+    break;
+  }
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -1619,6 +1742,7 @@ static void connect_bbs()
 
 static struct cmdtable cmdtable[] = {
 
+  "!",          shell_command,          0,      USER,
   "?",          help_command,           0,      USER,
   "BYE",        quit_command,           0,      USER,
   "DELETE",     delete_command,         2,      USER,
@@ -1635,8 +1759,11 @@ static struct cmdtable cmdtable[] = {
   "PROMPT",     prompt_command,         2,      USER,
   "QUIT",       quit_command,           0,      USER,
   "READ",       read_command,           2,      USER,
+  "REPLY",      reply_command,          2,      USER,
+  "RESPOND",    reply_command,          2,      USER,
   "SB",         send_command,           2,      MBOX,
   "SEND",       send_command,           2,      USER,
+  "SHELL",      shell_command,          0,      USER,
   "SP",         send_command,           2,      MBOX,
   "STATUS",     status_command,         0,      USER,
   "TYPE",       read_command,           2,      USER,
