@@ -1258,9 +1258,9 @@
 44.130.20.200   dl1edb  # Chris Schlaeger, 5100 Aachen; Atari ST
 #
 #44.130.21.x    Bonn/Euskirchen
+# Lokaler Koordinator: DG1KJD  Router/NS: dg1kjd-svr v. db0me
 44.130.21.1     DL4KW   # Rolf Willerscheid, 5350 Euskirchen
 44.130.21.2     DG4KS-1 # Andreas Kempf, 5350 Euskirchen
-44.130.21.3     DD0KX   # Wolfgang Schmitz, 5350 Euskirchen
 44.130.21.4     DC8TS   # Reinhard Schulze, 5350 Euskirchen
 44.130.21.5     DL4KW-1 # Rolf Willerscheid
 44.130.21.6     DD8KY-1 # Clemens Becher, 5300 Bonn
@@ -1273,11 +1273,9 @@
 44.130.21.13    DB5EP   # Thomas Schmidt, 5632 Wermelskirchen
 44.130.21.14    DB5EP-1 # , 5300 Bonn 1
 44.130.21.15    DL5KBY  # Wolfgang Sluyterman, 5357 Swisttal
-44.130.21.16    DL2KCQ  # Walter
 44.130.21.17    DH8KAI  # Stefan Muelhens, 5350 Euskirchen
 44.130.21.18    DJ4KG   # Guenter Hillmann, 5300 Bonn 2
 44.130.21.19    DJ4KG-1 #
-44.130.21.20    DF2KM   # Monika
 44.130.21.21    DJ5BV   # Gerd Parzonka, 5305 Alfter
 44.130.21.22    DH0KAI  # Wolfgang Stolte, 5210 Troisdorf 18
 44.130.21.23    DG4KP   # Dieter, Alfter
@@ -1323,6 +1321,7 @@
 44.130.21.63    DL8SH   # Dieter, 5204 Lohmar
 44.130.21.64    DB0GHH  # Digi Bonn, JO30MS (Gustav-Heinemann-Haus)
 44.130.21.65    DL3KBJ  # Rainer, Bonn
+44.130.21.66    DJ0IA   # Steve Takacs 53773 Hennef-Lichtenberg
 44.130.21.70    DL6KBG  # Oliver Goldenstein, 5308 Rheinbach-Niederdrees
 44.130.21.71    DL1KIM  # Ingo Maurischat, 5300 Bonn 1
 44.130.21.72    DB5KW   # Marcel Arndt, 5308 Rheinbach
@@ -1335,7 +1334,6 @@
 44.130.21.94    DG3KCR-L        #
 44.130.21.111   DG2KMN  # Michael
 44.130.21.128   DB0NET-8        # Euskirchen TCP/IP Switch; ***, ARP via DB0NET RMNC
-44.130.21.130   DD8KV   # Andreas, Koenigswinter
 44.130.21.134   DC7OP   # Andreas, Mechernich
 44.130.21.135   DC7OP-2 #
 44.130.21.136   DL8KAX  # Juergen
@@ -3059,7 +3057,7 @@
 #44.130.88.x    Leipzig
 # lokale Adresskoordination: DL9WUM
 44.130.88.1     DL8WPM  # Henry Luedemann, O-7010 Leipzig; AT (ex Y22PM)
-44.130.88.2     DL8WIZ  # Micha, Leipzig (ex Y49FM)
+44.130.88.2     DL8WIZ  # Micha, Leipzig (ex Y49FM) ax25: DL8WIZ-2
 44.130.88.3     DL9WIZ  # Ron, Leipzig (ex Y49GM)
 44.130.88.4     DL3LST  # Rainer Streubel, Leipzig
 44.130.88.5     DL3LSM-2        # Mario Illgen
@@ -3076,7 +3074,7 @@
 44.130.88.19    DL5YYM  # Guenter Dornblut, 04179 Leipzig
 44.130.88.20    DG0LDK  # Wolfgang Winter, 04357 Leipzig
 44.130.88.21    DG0LGJ  # Torsten, Rosswein
-44.130.88.22    DG0LGF  # Axel Maercker, Leipzig  ax25: DG0LGF-15
+44.130.88.22    DG0LGF  # Axel Maercker, Leipzig  ax25: DG0LGF-14
 44.130.88.23    DG0LGA  # Raoul Brosch, Markkleeberg
 44.130.88.24    DG0LHW  # Mike Wittenbecher, 04315 Leipzig
 44.130.88.25    DL8LWH  # Hendrik Wendschuch, Leipzig
@@ -3087,7 +3085,7 @@
 44.130.88.30    DG0LGA-OS2  # AX25: DG0LGA-2
 44.130.88.31    DG0LSK  # Klaus Schollmeyer, 04299 Leipzig
 44.130.88.32    DG0LJS  # Achim Schulze, 04209 Leipzig
-#
+44.130.88.33    DG0LDK-U # UniX-System  ax25: DG0LDK-1
 44.130.88.34    DG2LWH-2 # ax25: DG2LWH-2
 44.130.88.35    DL1LRK  # Uwe Kasubek, Delitzsch
 44.130.88.36    DG0LEH  # Edgar Hornig, 04277 Leipzig
