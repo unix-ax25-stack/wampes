@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25hdr.c,v 1.4 1993/04/20 09:27:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25hdr.c,v 1.5 1993/04/26 14:47:16 deyke Exp $ */
 
 /* AX25 header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -18,6 +18,29 @@ struct mbuf *bp;
 
 	if(hdr == (struct ax25 *)NULL || hdr->ndigis > MAXDIGIS)
 		return NULLBUF;
+
+#if 0   /* For later use */
+
+	/* Compress Flexnet header */
+	if (hdr->qso_num != -1) {
+		char *idest;
+		if (hdr->ndigis && hdr->nextdigi != hdr->ndigis)
+			idest = hdr->digis[hdr->nextdigi];
+		else
+			idest = hdr->dest;
+		bp = pushdown(bp, 7);
+		cp = bp->data;
+		cp[0] = hdr->qso_num >> 6;
+		cp[1] = (hdr->qso_num << 2) | ((hdr->cmdrsp == LAPB_COMMAND) << 1) | 1;
+		cp[2] = ((idest[0] - 0x40) << 1) | (((idest[1] - 0x40) >> 5) & 0x03);
+		cp[3] = ((idest[1] - 0x40) << 3) | (((idest[2] - 0x40) >> 3) & 0x0f);
+		cp[4] = ((idest[2] - 0x40) << 5) | (((idest[3] - 0x40) >> 1) & 0x3f);
+		cp[5] = ((idest[4] - 0x40) << 1) | (((idest[5] - 0x40) >> 5) & 0x03);
+		cp[6] = ((idest[5] - 0x40) << 3) | (((idest[6]       ) >> 1) & 0x0f);
+		return bp;
+	}
+
+#endif
 
 	/* Allocate space for return buffer */
 	i = AXALEN * (2 + hdr->ndigis);
