@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.9 1991/05/24 12:10:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.10 1991/12/04 18:26:00 deyke Exp $ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -212,18 +212,27 @@ struct transport_cb *tp;
 /*---------------------------------------------------------------------------*/
 
 static struct circuit *transport_open_netrom(address, tp)
-char  *address;
+char *address;
 struct transport_cb *tp;
 {
-  char  node[AXALEN];
 
-  if (setcall(node, address)) return 0;
+  char *ascii_node, *ascii_user;
+  char node[AXALEN], user[AXALEN];
+  char tmp[1024];
+
+  strcpy(tmp, address);
+  if (!(ascii_node = strtok(tmp, " \t\r\n")) ||
+      setcall(node, ascii_node))
+    return 0;
+  if (!(ascii_user = strtok(NULLCHAR, " \t\r\n")) ||
+      setcall(user, ascii_user))
+    addrcp(user, Mycall);
   tp->recv = (int (*)()) recv_nr;
   tp->send = (int (*)()) send_nr;
   tp->send_space = (int (*)()) space_nr;
   tp->close = (int (*)()) close_nr;
   tp->del = (int (*)()) del_nr;
-  return open_nr(node, Mycall, 0, transport_recv_upcall_netrom, transport_send_upcall_netrom, transport_state_upcall_netrom, (char *) tp);
+  return open_nr(node, user, 0, transport_recv_upcall_netrom, transport_send_upcall_netrom, transport_state_upcall_netrom, (char *) tp);
 }
 
 /*---------------------------------------------------------------------------*/

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.8 1991/06/18 17:26:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.9 1991/12/04 18:25:40 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -67,6 +67,7 @@ struct iface Loopback = {
 	NULL,           /* supv         */
 	0,              /* sendcrc      */
 	0,              /* crcerrors    */
+	0,              /* ax25errors   */
 	NULL,           /* extension    */
 	NULLFP,         /* (*discard)   */
 	NULLFP,         /* (*echo)      */
@@ -107,6 +108,7 @@ struct iface Encap = {
 	NULL,           /* supv         */
 	0,              /* sendcrc      */
 	0,              /* crcerrors    */
+	0,              /* ax25errors   */
 	NULL,           /* extension    */
 	NULLFP,         /* (*discard)   */
 	NULLFP,         /* (*echo)      */
@@ -349,6 +351,8 @@ register struct iface *ifp;
 	 ifp->iprecvcnt,ifp->rawrecvcnt,tformat(secclock() - ifp->lastrecv));
 	tprintf("           CRC %s errors %lu\n",
 	 ifp->sendcrc ? "enabled" : "disabled", ifp->crcerrors);
+	tprintf("           bad ax25 headers %lu\n",
+	 ifp->ax25errors);
 	tprintf("\n");
 }
 

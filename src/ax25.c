@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.10 1991/04/25 18:26:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.11 1991/12/04 18:25:28 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -155,6 +155,7 @@ struct mbuf *bp;
 	/* Pull header off packet and convert to host structure */
 	if(ntohax25(&hdr,&bp) < 0){
 		/* Something wrong with the header */
+		iface->ax25errors++;
 		free_p(bp);
 		return;
 	}

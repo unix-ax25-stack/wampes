@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.8 1991/06/18 17:27:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.9 1991/12/04 18:25:41 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -75,6 +75,7 @@ struct iface {
 	struct proc *supv;      /* Supervisory process, if any */
 	int sendcrc;            /* Send CRC if true (KISS only) */
 	int32 crcerrors;        /* Packets received with CRC errors (KISS only) */
+	int32 ax25errors;       /* Packets received with bad ax25 header */
 
 	void *extension;        /* Pointer to protocol extension block, if any */
 
