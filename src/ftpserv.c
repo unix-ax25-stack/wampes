@@ -1,4 +1,4 @@
-/* @(#) $Id: ftpserv.c,v 1.36 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ftpserv.c,v 1.37 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -191,7 +191,7 @@ ftpscs(struct tcb *tcb,enum tcp_state old,enum tcp_state new)
 		/* Check if server is being shut down */
 		if(tcb == ftp_tcb)
 			ftp_tcb = NULL;
-		del_tcp(tcb);
+		del_tcp(&tcb);
 		break;
 	default:
 		break;
@@ -203,7 +203,7 @@ static
 void
 ftpscr(struct tcb *tcb,int32 cnt)
 {
-	register struct ftp *ftp;
+	struct ftp *ftp;
 	int c;
 	struct mbuf *bp;
 
@@ -246,11 +246,11 @@ ftpscr(struct tcb *tcb,int32 cnt)
 static void
 ftpsds(struct tcb *tcb,enum tcp_state old,enum tcp_state new)
 {
-	register struct ftp *ftp;
+	struct ftp *ftp;
 
 	if((ftp = (struct ftp *)tcb->user) == NULL){
 		/* Unknown connection. Kill it */
-		del_tcp(tcb);
+		del_tcp(&tcb);
 	} else if((old == TCP_FINWAIT1 || old == TCP_CLOSING) && ftp->state == SENDING_STATE){
 		/* We've received an ack of our FIN while sending; we're done */
 		ftp->state = COMMAND_STATE;
@@ -285,7 +285,7 @@ ftpsds(struct tcb *tcb,enum tcp_state old,enum tcp_state new)
 		/* Clear only if another transfer hasn't already started */
 		if(ftp->data == tcb)
 			ftp->data = NULL;
-		del_tcp(tcb);
+		del_tcp(&tcb);
 	}
 }
 

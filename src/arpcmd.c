@@ -1,4 +1,4 @@
-/* @(#) $Id: arpcmd.c,v 1.16 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: arpcmd.c,v 1.17 1996/08/19 16:30:14 deyke Exp $ */
 
 /* ARP commands
  * Copyright 1991, Phil Karn, KA9Q
@@ -180,7 +180,7 @@ int argc,
 char *argv[],
 void *p)
 {
-	register struct arp_tab *ap;
+	struct arp_tab *ap;
 	struct arp_tab *aptmp;
 	int i;
 
@@ -198,8 +198,8 @@ void *p)
 static void
 dumparp(void)
 {
-	register int i;
-	register struct arp_tab *ap;
+	int i;
+	struct arp_tab *ap;
 	char e[128];
 
 	arp_loadfile();

@@ -1,4 +1,4 @@
-/* @(#) $Id: udpdump.c,v 1.10 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: udpdump.c,v 1.11 1996/08/19 16:30:14 deyke Exp $ */
 
 /* UDP packet tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -23,7 +23,7 @@ int check)              /* If 0, bypass checksum verify */
 {
 	struct udp udp;
 	struct pseudo_header ph;
-	uint16 csum;
+	uint csum;
 
 	if(bpp == NULL || *bpp == NULL)
 		return;

@@ -1,4 +1,4 @@
-/* @(#) $Id: domain.h,v 1.8 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: domain.h,v 1.9 1996/08/19 16:30:14 deyke Exp $ */
 
 #ifndef _DOMAIN_H
 #define _DOMAIN_H
@@ -60,7 +60,7 @@ extern int Dsocket;             /* Socket to use for domain queries */
 
 /* Header for all domain messages */
 struct dhdr {
-	uint16 id;              /* Identification */
+	uint id;                /* Identification */
 	uint8 qr;               /* Query/Response */
 #define QUERY           0
 #define RESPONSE        1
@@ -78,10 +78,10 @@ struct dhdr {
 #define NAME_ERROR      3
 #define NOT_IMPL        4
 #define REFUSED         5
-	uint16 qdcount;         /* Question count */
-	uint16 ancount;         /* Answer count */
-	uint16 nscount;         /* Authority (name server) count */
-	uint16 arcount;         /* Additional record count */
+	uint qdcount;           /* Question count */
+	uint ancount;           /* Answer count */
+	uint nscount;           /* Authority (name server) count */
+	uint arcount;           /* Additional record count */
 	struct rr *questions;   /* List of questions */
 	struct rr *answers;     /* List of answers */
 	struct rr *authority;   /* List of name servers */
@@ -89,7 +89,7 @@ struct dhdr {
 };
 
 struct mx {
-	uint16 pref;
+	uint pref;
 	char *exch;
 };
 
@@ -125,11 +125,11 @@ struct rr {
 	char *name;             /* Domain name, ascii form */
 	int32 ttl;              /* Time-to-live */
 #define TTL_MISSING     0x80000000UL
-	uint16 class;           /* IN, etc */
+	uint class;             /* IN, etc */
 #define CLASS_MISSING   0
-	uint16 type;            /* A, MX, etc */
+	uint type;              /* A, MX, etc */
 #define TYPE_MISSING    0
-	uint16 rdlength;                /* Length of data field */
+	uint rdlength;          /* Length of data field */
 	union {
 		int32 addr;             /* Used for type == A */
 		struct soa soa;         /* Used for type == SOA */
@@ -143,9 +143,9 @@ extern struct proc *Dfile_updater;
 
 /* In domain.c */
 int add_nameserver(int32 address);
-void free_rr(struct rr *rrlp);
+void free_rr(struct rr **rrlp);
 struct rr *inverse_a(int32 ip_address);
-struct rr *resolve_rr(char *dname,uint16 dtype);
+struct rr *resolve_rr(char *dname,uint dtype);
 char *resolve_a(int32 ip_address, int shorten);
 struct rr *resolve_mailb(char *name);
 

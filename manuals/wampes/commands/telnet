@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/telnet,v 1.3 1996/08/11 18:17:44 deyke Exp $
+.\" @(#) $Id: telnet,v 1.4 1996/08/19 16:32:32 deyke Exp $
 .H 2 "telnet" " \fIhostid\fP [\fIport\fP]"
 Create a Telnet session to the specified host and enter converse mode.
 If \fIport\fP is given that port is used. Default port is 23.

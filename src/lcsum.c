@@ -1,4 +1,4 @@
-/* @(#) $Id: lcsum.c,v 1.11 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: lcsum.c,v 1.12 1996/08/19 16:30:14 deyke Exp $ */
 
 /*
  * Word aligned linear buffer checksum routine.  Called from mbuf checksum
@@ -12,10 +12,10 @@
 #include "global.h"
 #include "ip.h"
 
-uint16
+uint
 lcsum(
 register uint16 *wp,
-register uint16 len)
+register uint len)
 {
 	register int32 sum = 0;
 	uint16 result;

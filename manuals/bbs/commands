@@ -1,12 +1,15 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/bbs/commands,v 1.3 1996/08/11 18:18:20 deyke Exp $
+.\" @(#) $Id: commands,v 1.4 1996/08/19 16:33:34 deyke Exp $
 .nr Cl 2 \" Max level of header for table of contents
 .H 1 "Start"
 .nr Ej 0 \" From now on do not start a new page for any header level
 To start the BBS you must type 'bbs' after you have connected to the
 system.
-If your home directory contains the file '.bbsrc' it's contents will be
-executed automatically. This allows the customization of the
-\fBPROMPT\fP text, or the automatic execution of (for example)
+If the sysop has created the file '/tcp/bbsrc' it's contents it will be
+executed first.
+Then, if your home directory contains the file '.bbsrc',
+it's contents will be executed next.
+This allows the customization of the \fBPROMPT\fP text,
+or the automatic execution of (for example)
 \fBALIAS\fP, \fBSUBSCRIBE\fP, or \fBDIR\fP commands.
 .H 1 "Command Input"
 A command consists of a command name and optional arguments. Commands
@@ -43,6 +46,7 @@ BYE~"QUIT"
 CHECK~"DIR"
 ERASE~"DELETE"
 EXIT~"QUIT"
+INFO~"SHELL 'cat /usr/local/lib/station.data'"
 KILL~"DELETE"
 MAIL~"SHELL mailx"
 MORE~"PIPE more"
@@ -105,9 +109,6 @@ T;To:
 .TE
 .P
 The default for \fIflags\fP is "DFS".
-.H 2 "INFO"
-The \fBINFO\fP command prints the contents of the file
-"/usr/local/lib/station.data", which may contain station information.
 .H 2 "LIST" " [\fIpattern ...\fP]"
 The \fBLIST\fP command with no arguments lists all unread articles in
 the current group. If the current group does not contain any unread
@@ -190,6 +191,10 @@ is specified with the shell command, only this command will be executed,
 and the BBS will be re-started when the command has completed. If the
 Unix command contain spaces, it must be enclosed in either single or
 double quotes.
+.H 2 "SOURCE" " \fIfilename\fP"
+The \fBSOURCE\fP command executes BBS commands from \fIfilename\fP.
+\fBSOURCE\fP commands can be nested, but if nested too deeply the BBS
+may run out of file descriptors.
 .H 2 "SUBSCRIBE" " [\fIpattern ...\fP]"
 The \fBSUBSCRIBE\fP command with no arguments subscribes to the current
 group. If \fBSUBSCRIBE\fP is followed by one or more patterns it

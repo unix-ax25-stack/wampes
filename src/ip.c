@@ -1,5 +1,6 @@
-/* @(#) $Id: ip.c,v 1.15 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ip.c,v 1.16 1996/08/19 16:30:14 deyke Exp $ */
 
+#undef SIM
 /* Upper half of IP, consisting of send/receive primitives, including
  * fragment reassembly, for higher level protocols.
  * Not needed when running as a standalone gateway.
@@ -11,7 +12,6 @@
 #include "internet.h"
 #include "netuser.h"
 #include "iface.h"
-#include "pktdrvr.h"
 #include "ip.h"
 #include "icmp.h"
 
@@ -21,7 +21,7 @@ static void free_reasm(struct reasm *rp);
 static void freefrag(struct frag *fp);
 static struct reasm *lookup_reasm(struct ip *ip);
 static struct reasm *creat_reasm(struct ip *ip);
-static struct frag *newfrag(uint16 offset,uint16 last,struct mbuf **bpp);
+static struct frag *newfrag(uint offset,uint last,struct mbuf **bpp);
 void ttldec(struct iface *ifp);
 
 struct mib_entry Ip_mib[20] = {
@@ -48,7 +48,7 @@ struct mib_entry Ip_mib[20] = {
 };
 
 struct reasm *Reasmq;
-uint16 Id_cntr = 0;     /* Datagram serial number */
+uint Id_cntr = 0;       /* Datagram serial number */
 static struct raw_ip *Raw_ip;
 int Ip_trace = 0;
 
@@ -67,8 +67,8 @@ char protocol,                  /* Protocol */
 char tos,                       /* Type of service */
 char ttl,                       /* Time-to-live */
 struct mbuf **bpp,              /* Data portion of datagram */
-uint16 length,                  /* Optional length of data portion */
-uint16 id,                      /* Optional identification */
+uint length,                    /* Optional length of data portion */
+uint id,                        /* Optional identification */
 char df                         /* Don't-fragment flag */
 ){
 	struct ip ip;                   /* IP header */
@@ -105,7 +105,11 @@ char df                         /* Don't-fragment flag */
 		/* Pretend it has been sent by the loopback interface before
 		 * it appears in the receive queue
 		 */
+#ifdef  SIM
+		net_sim(bpp);
+#else
 		net_route(&Loopback,bpp);
+#endif
 		Loopback.ipsndcnt++;
 		Loopback.rawsndcnt++;
 		Loopback.lastsent = secclock();
@@ -126,10 +130,10 @@ int rxbroadcast,        /* True if received on subnet broadcast address */
 int32 spi               /* Security association, if any */
 ){
 	/* Function to call with completed datagram */
-	register struct raw_ip *rp;
+	struct raw_ip *rp;
 	struct mbuf *bp1;
 	int rxcnt = 0;
-	register struct iplink *ipp;
+	struct iplink *ipp;
 
 	/* If we have a complete packet, call the next layer
 	 * to handle the result. Note that fraghandle passes back
@@ -201,11 +205,11 @@ fraghandle(
 struct ip *ip,          /* IP header, host byte order */
 struct mbuf **bpp       /* The fragment itself */
 ){
-	register struct reasm *rp; /* Pointer to reassembly descriptor */
+	struct reasm *rp; /* Pointer to reassembly descriptor */
 	struct frag *lastfrag,*nextfrag,*tfp;
 	struct mbuf *tbp;
-	uint16 i;
-	uint16 last;            /* Index of first byte beyond fragment */
+	uint i;
+	uint last;              /* Index of first byte beyond fragment */
 
 	last = ip->offset + ip->length - (IPLEN + ip->optlen);
 
@@ -347,11 +351,9 @@ struct mbuf **bpp       /* The fragment itself */
 }
 /* Arrange for receipt of raw IP datagrams */
 struct raw_ip *
-raw_ip(
-int protocol,
-void (*r_upcall)(struct raw_ip *)
-){
-	register struct raw_ip *rp;
+raw_ip(int protocol,void (*r_upcall)(struct raw_ip *))
+{
+	struct raw_ip *rp;
 
 	rp = (struct raw_ip *)callocw(1,sizeof(struct raw_ip));
 	rp->protocol = protocol;
@@ -362,11 +364,10 @@ void (*r_upcall)(struct raw_ip *)
 }
 /* Free a raw IP descriptor */
 void
-del_ip(
-struct raw_ip *rpp
-){
+del_ip(struct raw_ip *rpp)
+{
 	struct raw_ip *rplast = NULL;
-	register struct raw_ip *rp;
+	struct raw_ip *rp;
 
 	/* Do sanity check on arg */
 	for(rp = Raw_ip;rp != NULL;rplast=rp,rp = rp->next)
@@ -386,10 +387,9 @@ struct raw_ip *rpp
 }
 
 static struct reasm *
-lookup_reasm(
-struct ip *ip
-){
-	register struct reasm *rp;
+lookup_reasm(struct ip *ip)
+{
+	struct reasm *rp;
 	struct reasm *rplast = NULL;
 
 	for(rp = Reasmq;rp != NULL;rplast=rp,rp = rp->next){
@@ -411,10 +411,9 @@ struct ip *ip
  * put at head of reassembly list
  */
 static struct reasm *
-creat_reasm(
-struct ip *ip
-){
-	register struct reasm *rp;
+creat_reasm(struct ip *ip)
+{
+	struct reasm *rp;
 
 	if((rp = (struct reasm *)calloc(1,sizeof(struct reasm))) == NULL)
 		return rp;      /* No space for descriptor */
@@ -433,12 +432,11 @@ struct ip *ip
 
 /* Free all resources associated with a reassembly descriptor */
 static void
-free_reasm(
-struct reasm *r
-){
-	register struct reasm *rp;
+free_reasm(struct reasm *r)
+{
+	struct reasm *rp;
 	struct reasm *rplast = NULL;
-	register struct frag *fp;
+	struct frag *fp;
 
 	for(rp = Reasmq;rp != NULL;rplast = rp,rp=rp->next)
 		if(r == rp)
@@ -464,17 +462,16 @@ struct reasm *r
 
 /* Handle reassembly timeouts by deleting all reassembly resources */
 static void
-ip_timeout(
-void *arg
-){
+ip_timeout(void *arg)
+{
 	free_reasm((struct reasm *)arg);
 	ipReasmFails++;
 }
 /* Create a fragment */
 static struct frag *
 newfrag(
-uint16 offset,
-uint16 last,
+uint offset,
+uint last,
 struct mbuf **bpp
 ){
 	struct frag *fp;
@@ -492,9 +489,8 @@ struct mbuf **bpp
 }
 /* Delete a fragment, return next one on queue */
 static void
-freefrag(
-struct frag *fp
-){
+freefrag(struct frag *fp)
+{
 	free_p(&fp->buf);
 	free(fp);
 }

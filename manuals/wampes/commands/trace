@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/trace,v 1.7 1996/08/11 18:17:44 deyke Exp $
+.\" @(#) $Id: trace,v 1.8 1996/08/19 16:32:32 deyke Exp $
 .H 2 "trace" " [\fIinterface\fP [\fIflags\fP|subcommand [\fItracefile\fP]]]"
 Control packet tracing by the interface drivers.
 Specific bits in \fIflags\fP enable tracing of the various interfaces

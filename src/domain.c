@@ -1,4 +1,4 @@
-/* @(#) $Id: domain.c,v 1.23 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: domain.c,v 1.24 1996/08/19 16:30:14 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -389,15 +389,19 @@ int value)
 /* Free (list of) resource records */
 void
 free_rr(
-register struct rr *rrlp)
+struct rr **rrlp)
 {
-	register struct rr *rrp;
+	struct rr *rrp;
+	struct rr *rrnext;
 
-	while((rrp = rrlp) != NULL){
-		rrlp = rrlp->next;
+	if(rrlp == NULL || (rrp = *rrlp) == NULL)
+		return;
+	*rrlp = NULL;
+	for(;rrp != NULL;rrp = rrnext){
+		rrnext = rrp->next;
 
-		free(rrp->comment);
-		free(rrp->name);
+		FREE(rrp->comment);
+		FREE(rrp->name);
 		if(rrp->rdlength > 0){
 			switch(rrp->type){
 			case TYPE_A:
@@ -409,22 +413,22 @@ register struct rr *rrlp)
 			case TYPE_NS:
 			case TYPE_PTR:
 			case TYPE_TXT:
-				free(rrp->rdata.name);
+				FREE(rrp->rdata.name);
 				break;
 			case TYPE_HINFO:
-				free(rrp->rdata.hinfo.cpu);
-				free(rrp->rdata.hinfo.os);
+				FREE(rrp->rdata.hinfo.cpu);
+				FREE(rrp->rdata.hinfo.os);
 				break;
 			case TYPE_MX:
-				free(rrp->rdata.mx.exch);
+				FREE(rrp->rdata.mx.exch);
 				break;
 			case TYPE_SOA:
-				free(rrp->rdata.soa.mname);
-				free(rrp->rdata.soa.rname);
+				FREE(rrp->rdata.soa.mname);
+				FREE(rrp->rdata.soa.rname);
 				break;
 			}
 		}
-		free(rrp);
+		FREE(rrp);
 	}
 }
 
@@ -440,7 +444,7 @@ int32 ttl,
 int rdl,
 void *data)
 {
-	register struct rr *newrr;
+	struct rr *newrr;
 
 	newrr = (struct rr *)callocw(1,sizeof(struct rr));
 	newrr->source = source;
@@ -454,7 +458,7 @@ void *data)
 	switch(d_type){
 	case TYPE_A:
 	  {
-		register int32 *ap = (int32 *)data;
+		int32 *ap = (int32 *)data;
 		newrr->rdata.addr = *ap;
 		break;
 	  }
@@ -471,21 +475,21 @@ void *data)
 	  }
 	case TYPE_HINFO:
 	  {
-		register struct hinfo *hinfop = (struct hinfo *)data;
+		struct hinfo *hinfop = (struct hinfo *)data;
 		newrr->rdata.hinfo.cpu = strdup(hinfop->cpu);
 		newrr->rdata.hinfo.os = strdup(hinfop->os);
 		break;
 	  }
 	case TYPE_MX:
 	  {
-		register struct mx *mxp = (struct mx *)data;
+		struct mx *mxp = (struct mx *)data;
 		newrr->rdata.mx.pref = mxp->pref;
 		newrr->rdata.mx.exch = strdup(mxp->exch);
 		break;
 	  }
 	case TYPE_SOA:
 	  {
-		register struct soa *soap = (struct soa *)data;
+		struct soa *soap = (struct soa *)data;
 		newrr->rdata.soa.mname =        strdup(soap->mname);
 		newrr->rdata.soa.rname =        strdup(soap->rname);
 		newrr->rdata.soa.serial =       soap->serial;
@@ -734,20 +738,20 @@ struct mbuf *bp)
       printf("check: ");
       dumpdomain(dhp1);
     }
-    free_rr(dhp1->questions);
-    free_rr(dhp1->answers);
-    free_rr(dhp1->authority);
-    free_rr(dhp1->additional);
+    free_rr(&dhp1->questions);
+    free_rr(&dhp1->answers);
+    free_rr(&dhp1->authority);
+    free_rr(&dhp1->additional);
     free(dhp1);
 
   }
 #endif
 
 Done:
-  free_rr(dhp->questions);
-  free_rr(dhp->answers);
-  free_rr(dhp->authority);
-  free_rr(dhp->additional);
+  free_rr(&dhp->questions);
+  free_rr(&dhp->answers);
+  free_rr(&dhp->authority);
+  free_rr(&dhp->additional);
   free(dhp);
   return bp;
 }
@@ -812,7 +816,7 @@ static void domain_server_tcp_state(struct tcb *tcb, enum tcp_state old, enum tc
   case TCP_CLOSED:
     free_p((struct mbuf **) &tcb->user);
     logmsg(tcb, "close %s", tcp_port_name(tcb->conn.local.port));
-    del_tcp(tcb);
+    del_tcp(&tcb);
     if (tcb == Domain_tcb) Domain_tcb = 0;
     break;
   default:
@@ -828,7 +832,7 @@ char *argv[],
 void *p)
 {
   if (Domain_ucb) {
-    del_udp(Domain_ucb);
+    del_udp(&Domain_ucb);
     Domain_ucb = 0;
   }
   if (Domain_tcb) {
@@ -849,7 +853,7 @@ void *p)
 
   lsocket.address = INADDR_ANY;
   lsocket.port = (argc < 2) ? IPPORT_DOMAIN : udp_port_number(argv[1]);
-  if (Domain_ucb) del_udp(Domain_ucb);
+  if (Domain_ucb) del_udp(&Domain_ucb);
   Domain_ucb = open_udp(&lsocket, domain_server_udp);
 
   lsocket.address = INADDR_ANY;

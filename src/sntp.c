@@ -1,4 +1,4 @@
-/* @(#) $Id: sntp.c,v 1.14 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: sntp.c,v 1.15 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Simple Network Time Protocol (SNTP) (see RFC1361) */
 
@@ -424,7 +424,7 @@ static void sntp_server(struct iface *iface, struct udp_cb *ucb, int cnt)
 int sntp0(int argc, char **argv, void *p)
 {
 	if (Server_ucb) {
-		del_udp(Server_ucb);
+		del_udp(&Server_ucb);
 		Server_ucb = 0;
 	}
 	return 0;
@@ -621,7 +621,7 @@ static int dosntpdrop(int argc, char **argv, void *p)
 	for (pp = &Peers; (peer = *pp); pp = &peer->next)
 		if (peer->fsocket.address == addr) {
 			*pp = peer->next;
-			del_udp(peer->ucb);
+			del_udp(&peer->ucb);
 			stop_timer(&peer->timer);
 			free(peer);
 			break;

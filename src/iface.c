@@ -1,4 +1,4 @@
-/* @(#) $Id: iface.c,v 1.26 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: iface.c,v 1.27 1996/08/19 16:30:14 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,7 +13,6 @@
 #include "netuser.h"
 #include "ax25.h"
 #include "enet.h"
-#include "pktdrvr.h"
 #include "cmdparse.h"
 #include "commands.h"
 #include "trace.h"
@@ -145,10 +144,7 @@ struct cmds Ifcmds[] = {
  * and sends them to the device's send routine.
  */
 void
-if_tx(
-int dev,
-void *arg1,
-void *unused)
+if_tx(int dev,void *arg1,void *unused)
 {
 	struct mbuf *bp;        /* Buffer to send */
 	struct iface *iface;    /* Pointer to interface control block */
@@ -183,10 +179,7 @@ void *unused)
 }
 /* Process packets in the Hopper */
 void
-network(
-int i,
-void *v1,
-void *v2)
+network(int i,void *v1,void *v2)
 {
 	struct mbuf *bp;
 	struct iftype *ift;
@@ -220,6 +213,7 @@ loop:
 		(*ift->rcvf)(ifp,&bp);
 	else
 		free_p(&bp);    /* Nowhere to send it */
+
 	/* Let everything else run - this keeps the system from wedging
 	 * when we're hit by a big burst of packets
 	 */
@@ -233,10 +227,10 @@ loop:
  * returns 0 if OK
  */
 int
-net_route(
-struct iface *ifp,
-struct mbuf **bpp)
+net_route(struct iface *ifp,struct mbuf **bpp)
 {
+	if(bpp == NULL || *bpp == NULL)
+		return 0;       /* bogus */
 	pushdown(bpp,&ifp,sizeof(ifp));
 	enqueue(&Hopper,bpp);
 	return 0;
@@ -244,31 +238,19 @@ struct mbuf **bpp)
 
 /* Null send and output routines for interfaces without link level protocols */
 int
-nu_send(
-struct mbuf **bpp,
-struct iface *ifp,
-int32 gateway,
-uint8 tos)
+nu_send(struct mbuf **bpp,struct iface *ifp,int32 gateway,uint8 tos)
 {
 	return (*ifp->raw)(ifp,bpp);
 }
 int
-nu_output(
-struct iface *ifp,
-uint8 *dest,
-uint8 *src,
-uint16 type,
-struct mbuf **bpp)
+nu_output(struct iface *ifp,uint8 *dest,uint8 *src,uint type,struct mbuf **bpp)
 {
 	return (*ifp->raw)(ifp,bpp);
 }
 
 /* Set interface parameters */
 int
-doifconfig(
-int argc,
-char *argv[],
-void *p)
+doifconfig(int argc,char *argv[],void *p)
 {
 	struct iface *ifp;
 	int i;
@@ -301,10 +283,7 @@ void *p)
 
 /* Set interface IP address */
 static int
-ifipaddr(
-int argc,
-char *argv[],
-void *p)
+ifipaddr(int argc,char *argv[],void *p)
 {
 	struct iface *ifp = (struct iface *) p;
 
@@ -314,10 +293,7 @@ void *p)
 
 /* Set link (hardware) address */
 static int
-iflinkadr(
-int argc,
-char *argv[],
-void *p)
+iflinkadr(int argc,char *argv[],void *p)
 {
 	struct iface *ifp = (struct iface *) p;
 
@@ -336,10 +312,7 @@ void *p)
  * by installing a private entry in the routing table.
  */
 static int
-ifbroad(
-int argc,
-char *argv[],
-void *p)
+ifbroad(int argc,char *argv[],void *p)
 {
 	struct iface *ifp = (struct iface *) p;
 	struct route *rp;
@@ -356,10 +329,7 @@ void *p)
  * a routing entry.
  */
 static int
-ifnetmsk(
-int argc,
-char *argv[],
-void *p)
+ifnetmsk(int argc,char *argv[],void *p)
 {
 	struct iface *ifp = (struct iface *) p;
 	struct route *rp;
@@ -376,10 +346,7 @@ void *p)
 
 /* Command to set interface encapsulation mode */
 static int
-ifencap(
-int argc,
-char *argv[],
-void *p)
+ifencap(int argc,char *argv[],void *p)
 {
 	struct iface *ifp = (struct iface *) p;
 
@@ -391,9 +358,7 @@ void *p)
 }
 /* Function to set encapsulation mode */
 int
-setencap(
-struct iface *ifp,
-char *mode)
+setencap(struct iface *ifp,char *mode)
 {
 	struct iftype *ift;
 
@@ -412,20 +377,14 @@ char *mode)
 }
 /* Set interface receive buffer size */
 static int
-ifrxbuf(
-int argc,
-char *argv[],
-void *p)
+ifrxbuf(int argc,char *argv[],void *p)
 {
 	return 0;       /* To be written */
 }
 
 /* Set interface Maximum Transmission Unit */
 static int
-ifmtu(
-int argc,
-char *argv[],
-void *p)
+ifmtu(int argc,char *argv[],void *p)
 {
 	struct iface *ifp = (struct iface *) p;
 
@@ -435,10 +394,7 @@ void *p)
 
 /* Set interface forwarding */
 static int
-ifforw(
-int argc,
-char *argv[],
-void *p)
+ifforw(int argc,char *argv[],void *p)
 {
 	struct iface *ifp = (struct iface *) p;
 
@@ -450,8 +406,7 @@ void *p)
 
 /* Display the parameters for a specified interface */
 static void
-showiface(
-register struct iface *ifp)
+showiface(struct iface *ifp)
 {
 	char tmp[25];
 
@@ -489,8 +444,7 @@ register struct iface *ifp)
 }
 /* Detach a specified interface */
 int
-if_detach(
-register struct iface *ifp)
+if_detach(struct iface *ifp)
 {
 	struct iface *iftmp;
 #if 0
@@ -525,9 +479,9 @@ register struct iface *ifp)
 	if(ifp->stop != NULL)
 		(*ifp->stop)(ifp);
 
-	killproc(ifp->rxproc);
-	killproc(ifp->txproc);
-	killproc(ifp->supv);
+	killproc(&ifp->rxproc);
+	killproc(&ifp->txproc);
+	killproc(&ifp->supv);
 #endif
 
 	/* Free allocated memory associated with this interface */
@@ -553,10 +507,7 @@ register struct iface *ifp)
 	return 0;
 }
 static int
-iftxqlen(
-int argc,
-char *argv[],
-void *p)
+iftxqlen(int argc,char *argv[],void *p)
 {
 	struct iface *ifp = (struct iface *) p;
 
@@ -568,10 +519,9 @@ void *p)
  * or NULL if it doesn't exist
  */
 struct iface *
-if_lookup(
-char *name)
+if_lookup(char *name)
 {
-	register struct iface *ifp;
+	struct iface *ifp;
 
 	for(ifp = Ifaces; ifp != NULL; ifp = ifp->next)
 		if(strcmp(ifp->name,name) == 0)
@@ -585,10 +535,9 @@ char *name)
  * has to be routed.
  */
 struct iface *
-ismyaddr(
-int32 addr)
+ismyaddr(int32 addr)
 {
-	register struct iface *ifp;
+	struct iface *ifp;
 
 	if(addr == INADDR_ANY)
 		return &Loopback;
@@ -602,8 +551,7 @@ int32 addr)
  * from the most significant bit.
  */
 static int
-mask2width(
-int32 mask)
+mask2width(int32 mask)
 {
 	int width,i;
 
@@ -618,9 +566,7 @@ int32 mask)
 
 /* return buffer with name + comment */
 char *
-if_name(
-struct iface *ifp,
-char *comment)
+if_name(struct iface *ifp,char *comment)
 {
 	char *result;
 
@@ -632,9 +578,7 @@ char *comment)
 
 /* Raw output routine that tosses all packets. Used by dialer, tip, etc */
 int
-bitbucket(
-struct iface *ifp,
-struct mbuf **bpp)
+bitbucket(struct iface *ifp,struct mbuf **bpp)
 {
 	free_p(bpp);
 	return 0;

@@ -1,3 +1,3 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/delete,v 1.3 1996/08/11 18:17:44 deyke Exp $
+.\" @(#) $Id: delete,v 1.4 1996/08/19 16:32:32 deyke Exp $
 .H 2 "delete" " \fIfilename\fP ..."
 Remove the specified files from the file system.

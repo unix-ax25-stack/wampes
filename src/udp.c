@@ -1,4 +1,4 @@
-/* @(#) $Id: udp.c,v 1.11 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: udp.c,v 1.12 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Internet User Data Protocol (UDP)
  * Copyright 1991 Phil Karn, KA9Q
@@ -58,8 +58,8 @@ struct socket *fsocket,         /* Destination socket */
 char tos,                       /* Type-of-service for IP */
 char ttl,                       /* Time-to-live for IP */
 struct mbuf **bpp,              /* Data field, if any */
-uint16 length,                  /* Length of data field */
-uint16 id,                      /* Optional ID field for IP */
+uint length,                    /* Length of data field */
+uint id,                        /* Optional ID field for IP */
 char df                         /* Don't Fragment flag for IP */
 ){
 	struct pseudo_header ph;
@@ -103,7 +103,7 @@ struct mbuf **bp)               /* Place to stash data packet */
 {
 	struct socket sp;
 	struct mbuf *buf;
-	uint16 length;
+	uint length;
 
 	if(up == NULL){
 		Net_error = NO_CONN;
@@ -134,15 +134,14 @@ struct mbuf **bp)               /* Place to stash data packet */
 }
 /* Delete a UDP control block */
 int
-del_udp(
-struct udp_cb *conn)
+del_udp(struct udp_cb **conn)
 {
 	struct mbuf *bp;
-	register struct udp_cb *up;
+	struct udp_cb *up;
 	struct udp_cb *udplast = NULL;
 
 	for(up = Udps;up != NULL;udplast = up,up = up->next){
-		if(up == conn)
+		if(up == *conn)
 			break;
 	}
 	if(up == NULL){
@@ -150,6 +149,7 @@ struct udp_cb *conn)
 		Net_error = INVALID;
 		return -1;
 	}
+	*conn = NULL;
 	/* Get rid of any pending packets */
 	while(up->rcvcnt != 0){
 		bp = up->rcvq;
@@ -180,7 +180,7 @@ int32 said
 	struct udp_cb *up;
 	struct socket lsocket;
 	struct socket fsocket;
-	uint16 length;
+	uint length;
 
 	if(bpp == NULL || *bpp == NULL)
 		return;
@@ -247,10 +247,9 @@ int32 said
  * searches.
  */
 static struct udp_cb *
-lookup_udp(
-struct socket *socket)
+lookup_udp(struct socket *socket)
 {
-	register struct udp_cb *up;
+	struct udp_cb *up;
 	struct udp_cb *uplast = NULL;
 
 	for(up = Udps;up != NULL;uplast = up,up = up->next){

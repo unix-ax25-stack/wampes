@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Id: tcpmake,v 1.33 1996/08/12 18:52:58 deyke Exp $
+# @(#) $Id: tcpmake,v 1.34 1996/08/19 16:31:45 deyke Exp $
 
 save_file()
 {
@@ -84,12 +84,12 @@ for dir in \
 				echo '$ */\n' >> $file
 				cat $file.old >> $file
 				check_file $file
-				echo RCS header inserted in $file
+				echo RCS Id inserted in $file
 				;;
 			1)
 				;;
 			*)
-				echo $file has too many RCS headers
+				echo $file has too many RCS Ids
 				;;
 			esac
 		fi

@@ -1,4 +1,4 @@
-/* @(#) $Id: icmpcmd.c,v 1.19 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: icmpcmd.c,v 1.20 1996/08/19 16:30:14 deyke Exp $ */
 
 /* ICMP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -34,8 +34,8 @@ int
 doicmp(
 int argc,
 char *argv[],
-void *p)
-{
+void *p
+){
 	return subcmd(Icmpcmds,argc,argv,p);
 }
 
@@ -43,9 +43,9 @@ static int
 doicmpstat(
 int argc,
 char *argv[],
-void *p)
-{
-	register int i;
+void *p
+){
+	int i;
 	int lim;
 
 	/* Note that the ICMP variables are shown in column order, because
@@ -64,15 +64,15 @@ static int
 doicmptr(
 int argc,
 char *argv[],
-void *p)
-{
+void *p
+){
 	return setbool(&Icmp_trace,"ICMP tracing",argc,argv);
 }
 static int
 doicmpec(
 int argc,
 char *argv[],
-void *p)
-{
+void *p
+){
 	return setbool(&Icmp_echo,"ICMP echo response accept",argc,argv);
 }

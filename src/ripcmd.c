@@ -1,4 +1,4 @@
-/* @(#) $Id: ripcmd.c,v 1.8 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ripcmd.c,v 1.9 1996/08/19 16:30:14 deyke Exp $ */
 
 /* RIP-related user commands
  *   Al Broscious, N3FCT
@@ -104,8 +104,7 @@ int argc,
 char *argv[],
 void *p)
 {
-	del_udp(Rip_cb);
-	Rip_cb = NULL;
+	del_udp(&Rip_cb);
 	return 0;
 }
 int
@@ -114,12 +113,9 @@ int argc,
 char *argv[],
 void *p)
 {
-	uint16 replyport;
+	uint replyport;
 
-	if(argc > 2)
-		replyport = atoi(argv[2]);
-	else
-		replyport = RIP_PORT;
+	replyport = (argc > 2) ? atoi(argv[2]) : RIP_PORT;
 	return ripreq(resolve(argv[1]),replyport);
 }
 /* Dump RIP statistics */
@@ -158,7 +154,7 @@ int argc,
 char *argv[],
 void *p)
 {
-	return setshort(&Rip_trace,"RIP tracing",argc,argv);
+	return setint((int *) &Rip_trace,"RIP tracing",argc,argv);
 }
 int
 doripmerge(

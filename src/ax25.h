@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25.h,v 1.19 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ax25.h,v 1.20 1996/08/19 16:30:14 deyke Exp $ */
 
 #ifndef _AX25_H
 #define _AX25_H
@@ -107,10 +107,10 @@ struct lq {
 	/* # packets reported as transmitted by station as of his last update */
 	int32 lasttxcnt;
 
-	uint16 hisqual; /* Fraction (0-1000) of station's packets heard
+	uint hisqual;   /* Fraction (0-1000) of station's packets heard
 			 * as of last update
 			 */
-	uint16 myqual;  /* Fraction (0-1000) of our packets heard by station
+	uint myqual;    /* Fraction (0-1000) of our packets heard by station
 			 * as of last update
 			 */
 #endif
@@ -133,7 +133,7 @@ extern struct ld *Ld;   /* Destination address record headers */
 void ax_recv(struct iface *,struct mbuf **);
 int axui_send(struct mbuf **bp,struct iface *iface,int32 gateway,uint8 tos);
 int axi_send(struct mbuf **bp,struct iface *iface,int32 gateway,uint8 tos);
-int ax_output(struct iface *iface,uint8 *dest,uint8 *source,uint16 pid,
+int ax_output(struct iface *iface,uint8 *dest,uint8 *source,uint pid,
 	struct mbuf **data);
 int axsend(struct iface *iface,uint8 *dest,uint8 *source,
 	enum lapb_cmdrsp cmdrsp,int ctl,struct mbuf **data);
@@ -152,7 +152,7 @@ void getlqhdr(struct lqhdr *hp,struct mbuf **bpp);
 void logsrc(struct iface *iface,uint8 *addr);
 void logdest(struct iface *iface,uint8 *addr);
 char *putlqentry(char *cp,uint8 *addr,int32 count);
-char *putlqhdr(char *cp,uint16 version,int32 ip_addr);
+char *putlqhdr(char *cp,uint version,int32 ip_addr);
 struct lq *al_lookup(struct iface *ifp,uint8 *addr,int sort);
 
 /* In ax25subr.c: */

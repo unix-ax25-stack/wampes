@@ -1,4 +1,4 @@
-/* @(#) $Id: lapb.c,v 1.40 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: lapb.c,v 1.41 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -14,7 +14,7 @@
 
 static void handleit(struct ax25_cb *axp,int pid,struct mbuf **bp);
 static void procdata(struct ax25_cb *axp,struct mbuf **bp);
-static int ackours(struct ax25_cb *axp,uint16 n,int rex_all);
+static int ackours(struct ax25_cb *axp,uint n,int rex_all);
 static void clr_ex(struct ax25_cb *axp);
 static void enq_resp(struct ax25_cb *axp);
 static void inv_rex(struct ax25_cb *axp);
@@ -32,13 +32,13 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	enum lapb_cmdrsp cmdrsp = hdr->cmdrsp;  /* Command/response flag */
 	int control;
 	int class;              /* General class (I/S/U) of frame */
-	uint16 type;            /* Specific type (I/RR/RNR/etc) of frame */
+	uint type;              /* Specific type (I/RR/RNR/etc) of frame */
 	char pf;                /* extracted poll/final bit */
 	char poll = 0;
 	char final = 0;
-	uint16 nr = 0;          /* ACK number of incoming frame */
-	uint16 ns = 0;          /* Seq number of incoming frame */
-	uint16 tmp;
+	uint nr = 0;            /* ACK number of incoming frame */
+	uint ns = 0;            /* Seq number of incoming frame */
+	uint tmp;
 	int digipeat;
 	int32 bugfix;
 
@@ -439,12 +439,12 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 static int
 ackours(
 struct ax25_cb *axp,
-uint16 n,
+uint n,
 int rex_all
 ){
 	struct mbuf *bp;
 	int acked = 0;  /* Count of frames acked by this ACK */
-	uint16 oldest;  /* Seq number of oldest unacked I-frame */
+	uint oldest;    /* Seq number of oldest unacked I-frame */
 	int32 rtt,abserr;
 	int32 tmp;
 
@@ -515,8 +515,7 @@ int rex_all
 
 /* Establish data link */
 void
-est_link(
-struct ax25_cb *axp)
+est_link(struct ax25_cb *axp)
 {
 	clr_ex(axp);
 	axp->retries = 0;
@@ -526,8 +525,7 @@ struct ax25_cb *axp)
 }
 /* Clear exception conditions */
 static void
-clr_ex(
-struct ax25_cb *axp)
+clr_ex(struct ax25_cb *axp)
 {
 	axp->flags.remotebusy = NO;
 	stop_timer(&axp->t4);
@@ -537,8 +535,7 @@ struct ax25_cb *axp)
 }
 /* Enquiry response */
 static void
-enq_resp(
-struct ax25_cb *axp)
+enq_resp(struct ax25_cb *axp)
 {
 	char ctl;
 
@@ -549,8 +546,7 @@ struct ax25_cb *axp)
 }
 /* Invoke retransmission */
 static void
-inv_rex(
-struct ax25_cb *axp)
+inv_rex(struct ax25_cb *axp)
 {
 	axp->vs -= axp->unack;
 	axp->vs &= MMASK;
@@ -561,8 +557,8 @@ int
 sendctl(
 struct ax25_cb *axp,
 enum lapb_cmdrsp cmdrsp,
-int cmd)
-{
+int cmd
+){
 	switch(cmd & ~PF){
 	case RR:
 	case REJ:
@@ -581,10 +577,9 @@ int cmd)
  * Return number of frames sent
  */
 int
-lapb_output(
-register struct ax25_cb *axp)
+lapb_output(struct ax25_cb *axp)
 {
-	register struct mbuf *bp;
+	struct mbuf *bp;
 	struct mbuf *tbp;
 	char control;
 	int sent = 0;
@@ -825,11 +820,11 @@ struct mbuf **bpp
 struct mbuf *
 segmenter(
 struct mbuf **bpp,      /* Complete packet */
-uint16 ssize            /* Max size of frame segments */
+uint ssize              /* Max size of frame segments */
 ){
 	struct mbuf *result = NULL;
 	struct mbuf *bptmp;
-	uint16 len,offset;
+	uint len,offset;
 	int segments;
 
 	/* See if packet is too small to segment. Note 1-byte grace factor
@@ -893,7 +888,7 @@ void
 ax_t2_timeout(
 void *p)
 {
-	register struct ax25_cb *axp;
+	struct ax25_cb *axp;
 	int i;
 
 	axp = (struct ax25_cb *)p;
@@ -913,7 +908,7 @@ void
 ax_t5_timeout(
 void *p)
 {
-	register struct ax25_cb *axp;
+	struct ax25_cb *axp;
 
 	axp = (struct ax25_cb *)p;
 	if(axp->state == LAPB_CONNECTED || axp->state == LAPB_RECOVERY){

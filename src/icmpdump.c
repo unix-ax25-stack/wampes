@@ -1,4 +1,4 @@
-/* @(#) $Id: icmpdump.c,v 1.9 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: icmpdump.c,v 1.10 1996/08/19 16:30:14 deyke Exp $ */
 
 /* ICMP header tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -21,7 +21,7 @@ int32 source,int32 dest,
 int check)              /* If 0, bypass checksum verify */
 {
 	struct icmp icmp;
-	uint16 csum;
+	uint csum;
 
 	if(bpp == NULL || *bpp == NULL)
 		return;

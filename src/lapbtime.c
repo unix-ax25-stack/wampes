@@ -1,4 +1,4 @@
-/* @(#) $Id: lapbtime.c,v 1.9 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: lapbtime.c,v 1.10 1996/08/19 16:30:14 deyke Exp $ */
 
 /* LAPB (AX25) timer recovery routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,10 +13,9 @@ static void tx_enq(struct ax25_cb *axp);
 
 /* Called whenever timer T1 expires */
 void
-recover(
-void *p)
+recover(void *p)
 {
-	register struct ax25_cb *axp = (struct ax25_cb *)p;
+	struct ax25_cb *axp = (struct ax25_cb *)p;
 
 	axp->flags.retrans = 1;
 	axp->retries++;
@@ -77,10 +76,9 @@ void *p)
 
 /* Send a poll (S-frame command with the poll bit set) */
 void
-pollthem(
-void *p)
+pollthem(void *p)
 {
-	register struct ax25_cb *axp;
+	struct ax25_cb *axp;
 
 	axp = (struct ax25_cb *)p;
 	if(axp->proto == V1)
@@ -97,8 +95,7 @@ void *p)
 }
 /* Transmit query */
 static void
-tx_enq(
-register struct ax25_cb *axp)
+tx_enq(struct ax25_cb *axp)
 {
 	char ctl;
 	struct mbuf *bp;

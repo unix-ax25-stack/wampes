@@ -1,4 +1,3 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/Attic/netupd.mm,v 1.91 1996/08/12 18:53:24 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
@@ -12,15 +11,14 @@
 .nr Hb 7 \" Break after all headers
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/Attic/netupd.mm,v 1.91 1996/08/12 18:53:24 deyke Exp $
 .\"
-.PF "^Net Update Reference Manual^-\\\\nP-^Version 960812" \" Page footer
+.PF "^Net Update Reference Manual^-\\\\nP-^Version 960819" \" Page footer
 .\"
 .S 30
 .ce
 \fBNet Update Reference Manual\fP
 .ce
-Version 960812
+Version 960819
 .S
 .SP 2
 .S 15
@@ -29,7 +27,6 @@ Dieter Deyke, DK5SG/N0PRA
 .ce
 deyke@fc.hp.com
 .S
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/Attic/netupd.mm,v 1.91 1996/08/12 18:53:24 deyke Exp $
 .nr Ej 0 \" No new page for all headers
 .H 1 "Prerequisites"
 .AL
@@ -138,5 +135,4 @@ Example crontab entry:
 .ft P
 .DE
 .LE
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/Attic/netupd.mm,v 1.91 1996/08/12 18:53:24 deyke Exp $
 .TC 1 1 7 0

@@ -1,4 +1,4 @@
-/* @(#) $Id: session.h,v 1.12 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: session.h,v 1.13 1996/08/19 16:30:14 deyke Exp $ */
 
 #ifndef _SESSION_H
 #define _SESSION_H
@@ -79,6 +79,6 @@ int doupload(int argc, char *argv[], void *p);
 /* In main.c: */
 int cmdmode(void);
 
-extern uint16 Lport;
+extern uint Lport;
 
 #endif  /* _SESSION_H */

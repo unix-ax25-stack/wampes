@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Id: bbs.c,v 3.5 1996/08/12 18:52:55 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: bbs.c,v 3.6 1996/08/19 16:31:43 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -58,12 +58,12 @@ extern int optind;
 #define NEWSGROUPSPREFIXLENGTH  9               /* strlen(NEWSGROUPSPREFIX) */
 
 #define BBSCONFIGFILE   "/tcp/bbs.conf"
-#define BBSRCFILE       ".bbsrc"
+#define BBSRCFILE       "/tcp/bbsrc"
 #define HELPFILE        "/usr/local/lib/bbs.help"
-#define INFOFILE        "/usr/local/lib/station.data"
 #define LOCKDIR         "/tcp/locks"
 #define MAILCONFIGFILE  "/tcp/mail.conf"
 #define NEWSRCFILE      ".newsrc.bbs"
+#define USERRCFILE      ".bbsrc"
 
 #define BIDLOCKFILE     LOCKDIR "/bbs.bid"
 #define FWDLOCKFILE     LOCKDIR "/bbs.fwd."     /* Append name of host */
@@ -191,6 +191,8 @@ static int maxage = 7;
 static int output_only;
 static int packetcluster;
 static volatile int stopped;
+
+static void parse_command_line(const char *line, int add_argc, const char **add_argv, int recursion_level);
 
 /*---------------------------------------------------------------------------*/
 
@@ -2104,27 +2106,12 @@ static void headers_command(int argc, const char **argv)
 
 /*---------------------------------------------------------------------------*/
 
-static void info_command(int argc, const char **argv)
-{
-
-  FILE *fp;
-  int c;
-
-  if (!(fp = fopen(INFOFILE, "r"))) {
-    puts("Sorry, cannot open info file.");
-    return;
-  }
-  while (!stopped && (c = getc(fp)) != EOF) putchar(c);
-  fclose(fp);
-}
-
-/*---------------------------------------------------------------------------*/
-
 static void list_command(int argc, const char **argv)
 {
 
   char from[1024];
   char pattern[1024];
+  double d;
   int changed;
   int found;
   int i;
@@ -2137,7 +2124,14 @@ static void list_command(int argc, const char **argv)
   unreads_only = (argc < 2);
   changed = 0;
   found = 0;
-  timeout = time(0) - maxage * DAYS;
+  d = time(0) - maxage * (double) DAYS;
+  if (d < 0.0) {
+    timeout = 0L;
+  } else if (d > 0x7fffffffL) {
+    timeout = 0x7fffffffL;
+  } else {
+    timeout = (int) (d + 0.5);
+  }
   while (!stopped) {
     if (!set_position(unreads_only))
       break;
@@ -2629,6 +2623,27 @@ static void sid_command(int argc, const char **argv)
 
 /*---------------------------------------------------------------------------*/
 
+static void source_command(int argc, const char **argv)
+{
+
+  char line[1024];
+  FILE *fp;
+
+  seteugid(user.uid, user.gid);
+  fp = fopen(argv[1], "r");
+  seteugid(0, 0);
+  if (!fp) {
+    perror(argv[1]);
+    return;
+  }
+  while (fgets(line, sizeof(line), fp)) {
+    parse_command_line(line, 0, 0, 0);
+  }
+  fclose(fp);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void subscribe_command(int argc, const char **argv)
 {
 
@@ -2730,7 +2745,6 @@ static const struct cmdtable cmdtable[] = {
   { "GROUP",            group_command,          1,      2,      USER },
   { "HELP",             help_command,           1,      2,      USER },
   { "HEADERS",          headers_command,        1,      2,      USER },
-  { "INFO",             info_command,           1,      1,      USER },
   { "LIST",             list_command,           1,      99999,  USER },
   { "MARK",             mark_command,           1,      99999,  USER },
   { "MAXAGE",           maxage_command,         1,      2,      USER },
@@ -2743,6 +2757,7 @@ static const struct cmdtable cmdtable[] = {
   { "RELOAD",           reload_command,         1,      1,      USER },
   { "SEND",             send_command,           2,      99999,  USER },
   { "SHELL",            shell_command,          1,      2,      USER },
+  { "SOURCE",           source_command,         2,      2,      USER },
   { "SUBSCRIBE",        subscribe_command,      1,      99999,  USER },
   { "UNMARK",           mark_command,           1,      99999,  USER },
   { "UNSUBSCRIBE",      subscribe_command,      1,      99999,  USER },
@@ -2758,20 +2773,35 @@ static const struct cmdtable cmdtable[] = {
 static void help_command(int argc, const char **argv)
 {
 
-  FILE *fp;
   char line[1024];
+  const struct alias *aliasp;
+  const struct cmdtable *cmdp;
+  FILE *fp;
   int i;
   int state;
-  const struct cmdtable *cmdp;
 
   if (argc < 2) {
     puts("Commands may be abbreviated.  Commands are:");
-    for (i = 0, cmdp = cmdtable; cmdp->name; cmdp++)
-      if (level >= cmdp->level)
+    for (i = 0, cmdp = cmdtable; cmdp->name; cmdp++) {
+      if (level >= cmdp->level) {
 	printf((i++ % 6) < 5 ? "%-13s" : "%s\n", cmdp->name);
-    if (i % 6) putchar('\n');
+      }
+    }
+    if (i % 6) {
+      putchar('\n');
+    }
+    if (aliases) {
+      puts("Currently defined aliases:");
+      for (i = 0, aliasp = aliases; aliasp; aliasp = aliasp->next) {
+	printf((i++ % 6) < 5 ? "%-13s" : "%s\n", aliasp->name);
+      }
+      if (i % 6) {
+	putchar('\n');
+      }
+    }
     return;
   }
+
   if (!(fp = fopen(HELPFILE, "r"))) {
     puts("Sorry, cannot open help file.");
     return;
@@ -2872,8 +2902,6 @@ static void connect_bbs(void)
 }
 
 /*---------------------------------------------------------------------------*/
-
-static void parse_command_line(const char *line, int add_argc, const char **add_argv, int recursion_level);
 
 static void execute_command(int argc, const char **argv, int recursion_level)
 {
@@ -3147,14 +3175,23 @@ static void bbs(void)
   change_alias("!", "SHELL");
   change_alias("|", "PIPE");
 
+  change_alias("INFO", "SHELL 'cat /usr/local/lib/station.data'");
   change_alias("MAIL", "SHELL mailx");
   change_alias("MORE", "PIPE more");
   change_alias("NEWNEWS", "RELOAD; DIR");
   change_alias("SKIPGROUP", "MARK *; LIST");
 
-  sprintf(line, "%s/%s", user.dir, BBSRCFILE);
+  if (level != MBOX && (fp = fopen(BBSRCFILE, "r"))) {
+    while (fgets(line, sizeof(line), fp)) {
+      parse_command_line(line, 0, 0, 0);
+    }
+    fclose(fp);
+  }
+  sprintf(line, "%s/%s", user.dir, USERRCFILE);
   if ((fp = fopen(line, "r"))) {
-    while (fgets(line, sizeof(line), fp)) parse_command_line(line, 0, 0, 0);
+    while (fgets(line, sizeof(line), fp)) {
+      parse_command_line(line, 0, 0, 0);
+    }
     fclose(fp);
   }
   if (do_forward) {

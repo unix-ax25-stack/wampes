@@ -1,4 +1,4 @@
-/* @(#) $Id: ipip.c,v 1.21 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ipip.c,v 1.22 1996/08/19 16:30:14 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -25,7 +25,6 @@
 #include "netuser.h"
 #include "socket.h"
 #include "trace.h"
-#include "pktdrvr.h"
 #include "cmdparse.h"
 #include "hpux.h"
 

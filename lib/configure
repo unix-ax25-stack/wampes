@@ -1,10 +1,13 @@
-# @(#) $Id: configure,v 1.25 1996/08/12 18:53:41 deyke Exp $
+# @(#) $Id: configure,v 1.26 1996/08/19 16:32:18 deyke Exp $
+
+PATH=/usr/5bin:$PATH
+export PATH
 
 case "`uname -sr`" in
 HP-UX*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=c89;;
+	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc='c89 -D_HPUX_SOURCE';;
 AIX*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-L; cc=cc;;
+	isdir=-d; isexec=-x; isfile=-f; islink=-L; cc='cc -D_ALL_SOURCE';;
 IRIX*)
 	isdir=-d; isexec=-x; isfile=-f; islink=-L; cc=cc;;
 Linux*)
@@ -20,9 +23,9 @@ SunOS\ 4.*)
 SunOS\ 5.*)
 	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=cc;;
 ULTRIX*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=gcc;;
+	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc='gcc -DULTRIX_RISC';;
 A/UX*)
-	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=gcc;;
+	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc='gcc -D_POSIX_SOURCE';;
 RISC\ iX*)
 	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=/tcp/cc;;
 AOS*)
@@ -206,6 +209,9 @@ checksymbol HAS_STRERROR \
 
 checksymbol HAS_STRTOUL \
 	"main(){strtoul(0,0,0);}"
+
+checksymbol HAS_UINT \
+	"#include <sys/types.h>\nmain(){uint f;return f;}"
 
 echo
 echo "#endif"

@@ -1,4 +1,4 @@
-/* @(#) $Id: ping.c,v 1.4 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ping.c,v 1.5 1996/08/19 16:30:14 deyke Exp $ */
 
 /* ICMP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -27,7 +27,7 @@
 struct ping *ping[PMOD];
 
 static void ptimeout(void *p);
-static uint16 hash_ping(int32 dest);
+static uint hash_ping(int32 dest);
 static struct ping *add_ping(int32 dest);
 static void del_ping(struct ping *pp);
 
@@ -41,9 +41,9 @@ void *p)
 	int32 dest;
 	struct ping *pp1;
 	struct ping *pp;
-	uint16 hval;
+	uint hval;
 	int i;
-	uint16 len;
+	uint len;
 
 	if(argc < 2){
 		printf("Host                Sent    Rcvd   %%   Srtt   Mdev  Length  Interval\n");
@@ -100,7 +100,7 @@ void *p)
 		pp->target = dest;
 		pp->len = len;
 		start_timer(&pp->timer);
-		pingem(dest,(uint16)pp->sent++,REPEAT,len);
+		pingem(dest,(uint)pp->sent++,REPEAT,len);
 	} else
 		pingem(dest,0,ONESHOT,len);
 
@@ -114,8 +114,8 @@ int32 dest,
 struct icmp *icmp,
 struct mbuf **bpp
 ){
-	register struct ping *pp;
-	uint16 hval;
+	struct ping *pp;
+	uint hval;
 	int32 rtt,abserr;
 	struct timeval tv,timestamp;
 
@@ -165,9 +165,9 @@ struct mbuf **bpp
 int
 pingem(
 int32 target,   /* Site to be pinged */
-uint16 seq,     /* ICMP Echo Request sequence number */
-uint16 id,      /* ICMP Echo Request ID */
-uint16 len      /* Length of optional data field */
+uint seq,       /* ICMP Echo Request sequence number */
+uint id,        /* ICMP Echo Request ID */
+uint len        /* Length of optional data field */
 ){
 	struct mbuf *data;
 	struct icmp icmp;
@@ -200,18 +200,18 @@ static void
 ptimeout(
 void *p)
 {
-	register struct ping *pp;
+	struct ping *pp;
 
 	/* Send another ping */
 	pp = (struct ping *)p;
-	pingem(pp->target,(uint16)pp->sent++,REPEAT,pp->len);
+	pingem(pp->target,(uint)pp->sent++,REPEAT,pp->len);
 	start_timer(&pp->timer);
 }
-static uint16
+static uint
 hash_ping(
 int32 dest)
 {
-	uint16 hval;
+	uint hval;
 
 	hval = (hiword(dest) ^ loword(dest)) % PMOD;
 	return hval;
@@ -223,7 +223,7 @@ add_ping(
 int32 dest)
 {
 	struct ping *pp;
-	uint16 hval;
+	uint hval;
 
 	pp = (struct ping *)calloc(1,sizeof(struct ping));
 	if(pp == NULL)
@@ -242,7 +242,7 @@ static void
 del_ping(
 struct ping *pp)
 {
-	uint16 hval;
+	uint hval;
 
 	stop_timer(&pp->timer);
 

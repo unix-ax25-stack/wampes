@@ -1,4 +1,4 @@
-/* @(#) $Id: transport.c,v 1.21 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: transport.c,v 1.22 1996/08/19 16:30:14 deyke Exp $ */
 
 #include "global.h"
 #include "netuser.h"
@@ -67,7 +67,7 @@ static int convert_eol(struct mbuf **bpp, enum e_transporteol mode, int *last_ch
       }
       *last_chr = chr;
     }
-    bp = free_mbuf(&bp);
+    free_mbuf(&bp);
   }
   cnt = p - buf;
   *bpp = qdata(buf, cnt);
@@ -329,7 +329,7 @@ int transport_del(struct transport_cb *tp)
     del_nr(tp->cb.nrp);
     break;
   case TP_TCP:
-    del_tcp(tp->cb.tcp);
+    del_tcp(&tp->cb.tcp);
     break;
   }
   stop_timer(&tp->timer);

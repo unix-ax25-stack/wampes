@@ -1,4 +1,4 @@
-/* @(#) $Id: udphdr.c,v 1.10 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: udphdr.c,v 1.11 1996/08/19 16:30:14 deyke Exp $ */
 
 /* UDP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -17,7 +17,7 @@ struct mbuf **bpp,
 struct pseudo_header *ph
 ){
 	register uint8 *cp;
-	uint16 checksum;
+	uint checksum;
 
 	/* Allocate UDP protocol header and fill it in */
 	pushdown(bpp,NULL,UDPHDR);
@@ -55,7 +55,7 @@ struct mbuf **bpp
 /* Extract UDP checksum value from a network-format header without
  * disturbing the header
  */
-uint16
+uint
 udpcksum(
 struct mbuf *bp
 ){
@@ -63,6 +63,6 @@ struct mbuf *bp
 
 	if(dup_p(&dup,bp,6,2) != 2)
 		return 0;
-	return (uint16) pull16(&dup);
+	return (uint) pull16(&dup);
 }
 

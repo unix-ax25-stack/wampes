@@ -1,6 +1,5 @@
 addr
 arp
-ax25
 axcb
 axip
 datagram
@@ -8,7 +7,6 @@ datagrams
 deyke
 digipeater
 digipeaters
-DK5SG
 eg
 ftp
 hostid
@@ -18,7 +16,6 @@ ifconfig
 interoperability
 ip
 ipfilter
-KA9Q
 MSS
 MTU
 Nagle
@@ -42,4 +39,3 @@ TNC
 UDP
 UI
 WAMPES
-WB6RQN

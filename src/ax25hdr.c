@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25hdr.c,v 1.10 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ax25hdr.c,v 1.11 1996/08/19 16:30:14 deyke Exp $ */
 
 /* AX25 header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,8 +13,8 @@ htonax25(
 struct ax25 *hdr,
 struct mbuf **bpp
 ){
-	register uint8 *cp;
-	register uint16 i;
+	uint8 *cp;
+	uint i;
 
 	if(hdr == (struct ax25 *)NULL || hdr->ndigis > MAXDIGIS || bpp == NULL)
 		return;
@@ -93,10 +93,10 @@ struct mbuf **bpp
  */
 int
 ntohax25(
-register struct ax25 *hdr,      /* Output structure */
+struct ax25 *hdr,       /* Output structure */
 struct mbuf **bpp
 ){
-	register uint8 *axp;
+	uint8 *axp;
 
 	if(pullup(bpp,hdr->dest,AXALEN) < AXALEN)
 		return -1;

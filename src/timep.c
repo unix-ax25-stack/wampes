@@ -1,4 +1,4 @@
-/* @(#) $Id: timep.c,v 1.6 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: timep.c,v 1.7 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Time Protocol (see RFC868) */
 
@@ -35,7 +35,7 @@ static void time_server(struct iface *iface, struct udp_cb *ucb, int cnt)
 int time0(int argc, char **argv, void *p)
 {
 	if (Time_server_ucb) {
-		del_udp(Time_server_ucb);
+		del_udp(&Time_server_ucb);
 		Time_server_ucb = 0;
 	}
 	return 0;

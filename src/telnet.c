@@ -1,4 +1,4 @@
-/* @(#) $Id: telnet.c,v 1.23 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: telnet.c,v 1.24 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Internet Telnet client
  * Copyright 1991 Phil Karn, KA9Q
@@ -148,7 +148,7 @@ int n)
 /* Process incoming TELNET characters */
 static void
 tel_input(
-register struct telnet *tn,
+struct telnet *tn,
 struct mbuf *bp)
 {
 	int c;
@@ -164,7 +164,7 @@ struct mbuf *bp)
 				if(record != NULL && c != '\r')
 					putc(c,record);
 			}
-			bp = free_mbuf(&bp);
+			free_mbuf(&bp);
 		}
 	}
 	while((c = PULLCHAR(&bp)) != -1){
@@ -226,7 +226,7 @@ struct mbuf *bp)
 /* Telnet receiver upcall routine */
 void
 rcv_char(
-register struct tcb *tcb,
+struct tcb *tcb,
 int32 cnt)
 {
 	struct mbuf *bp;
@@ -283,7 +283,7 @@ int32 cnt)
 /* State change upcall routine */
 static void
 t_state(
-register struct tcb *tcb,
+struct tcb *tcb,
 enum tcp_state old,enum tcp_state new)
 {
 	struct telnet *tn;
@@ -322,7 +322,7 @@ enum tcp_state old,enum tcp_state new)
 			printf(")\n");
 			cmdmode();
 		}
-		del_tcp(tcb);
+		del_tcp(&tcb);
 		if(tn != NULL)
 			free_telnet(tn);
 		break;

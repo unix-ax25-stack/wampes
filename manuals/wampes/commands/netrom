@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/netrom,v 1.7 1996/08/11 18:17:44 deyke Exp $
+.\" @(#) $Id: netrom,v 1.8 1996/08/19 16:32:32 deyke Exp $
 .H 2 "netrom" " \fIsubcommand\fP"
 These commands control the NET/ROM service.
 .H 3 "netrom broadcast" " [\fIinterface\fP \fIax25_addr\fP [\fIdigipeater\fP ...]]"

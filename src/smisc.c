@@ -1,4 +1,4 @@
-/* @(#) $Id: smisc.c,v 1.17 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: smisc.c,v 1.18 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Miscellaneous Internet servers: discard, echo and remote
  * Copyright 1991 Phil Karn, KA9Q
@@ -205,7 +205,7 @@ char *argv[],
 void *p)
 {
 	if(remote_up){
-		del_udp(remote_up);
+		del_udp(&remote_up);
 		remote_up = 0;
 	}
 	return 0;
@@ -214,7 +214,7 @@ void *p)
 /* Log connection state changes; also respond to remote closes */
 static void
 misc_state(
-register struct tcb *tcb,
+struct tcb *tcb,
 enum tcp_state old,enum tcp_state new)
 {
 	switch(new){
@@ -226,7 +226,7 @@ enum tcp_state old,enum tcp_state new)
 		break;
 	case TCP_CLOSED:
 		logmsg(tcb,"close %s",tcp_port_name(tcb->conn.local.port));
-		del_tcp(tcb);
+		del_tcp(&tcb);
 		/* Clean up if server is being shut down */
 		if(tcb == disc_tcb)
 			disc_tcb = NULL;

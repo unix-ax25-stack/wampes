@@ -1,4 +1,4 @@
-/* @(#) $Id: icmp.c,v 1.19 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: icmp.c,v 1.20 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Internet Control Message Protocol (ICMP)
  * Copyright 1991 Phil Karn, KA9Q
@@ -56,8 +56,8 @@ int32 said
 	struct icmplink *ipp;
 	struct icmp icmp;       /* ICMP header */
 	struct ip oip;          /* Offending datagram header */
-	uint16 type;            /* Type of ICMP message */
-	uint16 length;
+	uint type;              /* Type of ICMP message */
+	uint length;
 
 	icmpInMsgs++;
 	if(rxbroadcast){
@@ -215,8 +215,8 @@ union icmp_args *args
 ){
 	struct mbuf *bp;
 	struct icmp icmp;       /* ICMP protocol header */
-	uint16 dlen;            /* Length of data portion of offending pkt */
-	uint16 length;          /* Total length of reply */
+	uint dlen;              /* Length of data portion of offending pkt */
+	uint length;            /* Total length of reply */
 
 	if(ip == NULL)
 		return -1;

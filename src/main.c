@@ -1,11 +1,11 @@
-/* @(#) $Id: main.c,v 1.59 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: main.c,v 1.60 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
  *  keyboard processing
  *  generic user commands
  *
- * Copyright 1986-1995 Phil Karn, KA9Q
+ * Copyright 1986-1996 Phil Karn, KA9Q
  */
 #include <sys/types.h>
 #include <unistd.h>
@@ -63,7 +63,7 @@ int main_exit = FALSE;                  /* from main program (flag) */
 
 int Debug;
 int Mode;
-uint16 Lport = 1024;
+uint Lport = 1024;
 int stop_repeat;
 
 char Prompt[] = "%s> ";
@@ -74,9 +74,7 @@ static int Verbose;
 static void process_char(int c);
 
 int
-main(
-int argc,
-char *argv[])
+main(int argc,char *argv[])
 {
 	FILE *fp;
 	struct daemon *tp;
@@ -109,7 +107,6 @@ char *argv[])
 		}
 	}
 	kinit();
-	ipinit();
 	ioinit();
 	netrom_initialize();
 	remote_net_initialize();
@@ -118,7 +115,7 @@ char *argv[])
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
 	printf("\n================ %s ================\n", Version);
 	printf("(c) Copyright 1990-1996 by Dieter Deyke, DK5SG / N0PRA\n");
-	printf("(c) Copyright 1986-1995 by Phil Karn, KA9Q\n");
+	printf("(c) Copyright 1986-1996 by Phil Karn, KA9Q\n");
 	printf("\n");
 	/* Start background Daemons */
 #ifndef SINGLE_THREADED
@@ -274,8 +271,8 @@ int
 dorepeat(
 int argc,
 char *argv[],
-void *p)
-{
+void *p
+){
 	int32 interval;
 	int ret;
 
@@ -302,8 +299,8 @@ int
 dodelete(
 int argc,
 char *argv[],
-void *p)
-{
+void *p
+){
 	int i;
 
 	for(i=1;i < argc; i++){
@@ -319,8 +316,8 @@ int
 dorename(
 int argc,
 char *argv[],
-void *p)
-{
+void *p
+){
 	if(rename(argv[1],argv[2]) == -1){
 		printf("Can't rename %s: ", argv[1]);
 		fflush(stdout);
@@ -332,8 +329,8 @@ int
 doexit(
 int argc,
 char *argv[],
-void *p)
-{
+void *p
+){
 	main_exit = TRUE;       /* let everyone know we're out of here */
 	return 0;       /* To satisfy lint */
 }
@@ -341,8 +338,8 @@ int
 dohostname(
 int argc,
 char *argv[],
-void *p)
-{
+void *p
+){
 	if(argc < 2)
 		printf("%s\n",Hostname);
 	else {
@@ -376,8 +373,8 @@ int
 dolog(
 int argc,
 char *argv[],
-void *p)
-{
+void *p
+){
 	static char *log_name;
 	char tbuf[32];
 
@@ -401,9 +398,6 @@ void *p)
 		strcpy(tbuf,ctime(&StartTime));
 		rip(tbuf);
 		logmsg(NULL,"NOS was started at %s", tbuf);
-#ifdef MSDOS
-		logmsg(NULL,"NOS load information: CS=0x%04x DS=0x%04x", _CS, _DS);
-#endif
 	}
 	return 0;
 }
@@ -415,8 +409,8 @@ int
 doattach(
 int argc,
 char *argv[],
-void *p)
-{
+void *p
+){
 	return subcmd(Attab,argc,argv,p);
 }
 /* Manipulate I/O device parameters */
@@ -424,9 +418,9 @@ int
 doparam(
 int argc,
 char *argv[],
-void *p)
-{
-	register struct iface *ifp;
+void *p
+){
+	struct iface *ifp;
 	int param;
 	int32 val;
 
@@ -491,8 +485,8 @@ int
 doescape(
 int argc,
 char *argv[],
-void *p)
-{
+void *p
+){
 	if(argc < 2)
 		printf("0x%x\n",Escape);
 	else
@@ -603,8 +597,8 @@ int
 donothing(
 int argc,
 char *argv[],
-void *p)
-{
+void *p
+){
 	return 0;
 }
 

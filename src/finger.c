@@ -1,4 +1,4 @@
-/* @(#) $Id: finger.c,v 1.15 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: finger.c,v 1.16 1996/08/19 16:30:14 deyke Exp $ */
 
 /*
  *
@@ -165,7 +165,7 @@ struct finger *finger)
 /* Finger receiver upcall routine */
 void
 fingcli_rcv(
-register struct tcb *tcb,
+struct tcb *tcb,
 int32 cnt)
 {
 	struct mbuf *bp;
@@ -206,14 +206,14 @@ int32 cnt)
 				}
 				buf++;
 			}
-			bp = free_mbuf(&bp);
+			free_mbuf(&bp);
 		}
 }
 
 /* State change upcall routine */
 static void
 f_state(
-register struct tcb *tcb,
+struct tcb *tcb,
 enum tcp_state old,     /* old state */
 enum tcp_state new)     /* new state */
 {
@@ -252,7 +252,7 @@ enum tcp_state new)     /* new state */
 		}
 		if(finger != NULL)
 			free_finger(finger);
-		del_tcp(tcb);
+		del_tcp(&tcb);
 		break;
 	case TCP_ESTABLISHED:
 		if (notify) {

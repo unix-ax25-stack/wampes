@@ -1,4 +1,4 @@
-/* @(#) $Id: commands.h,v 1.29 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: commands.h,v 1.30 1996/08/19 16:30:14 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -128,6 +128,7 @@ int doboot(int argc,char *argv[],void *p);
 int dorepeat(int argc,char *argv[],void *p);
 int dodebug(int argc,char *argv[],void *p);
 int dowipe(int argc,char *argv[],void *p);
+int doreboot(int argc,char *argv[],void *p);
 
 /* In mailbox.c: */
 int dombox(int argc,char *argv[],void *p);
@@ -201,6 +202,9 @@ int dokick(int argc,char *argv[],void *p);
 int dorecord(int argc,char *argv[],void *p);
 int dosfsize(int argc,char *argv[],void *p);
 int doupload(int argc,char *argv[],void *p);
+
+/* In sim.c: */
+int dosim(int argc,char *argv[],void *p);
 
 /* In smisc.c: */
 int dis1(int argc,char *argv[],void *p);

@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/param,v 1.4 1996/08/11 18:17:44 deyke Exp $
+.\" @(#) $Id: param,v 1.5 1996/08/19 16:32:32 deyke Exp $
 .H 2 "param" " \fIinterface\fP [\fIname\fP|\fInumber\fP [\fIvalue\fP]]"
 Invoke a device-specific control routine.
 The following parameter names are recognized by the \fBparam\fP command,

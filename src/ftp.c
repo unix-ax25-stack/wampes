@@ -1,4 +1,4 @@
-/* @(#) $Id: ftp.c,v 1.13 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ftp.c,v 1.14 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Stuff common to both the FTP server and client */
 #include <stdio.h>
@@ -38,7 +38,7 @@ int32 cnt)
 	while(bp != NULL){
 		if(bp->cnt != 0)
 			fwrite(bp->data,1,(unsigned)bp->cnt,ftp->fp);
-		bp = free_mbuf(&bp);
+		free_mbuf(&bp);
 	}
 
 	if(ftp->fp != stdout && ferror(ftp->fp)){ /* write error (dsk full?) */
@@ -129,7 +129,7 @@ register struct ftp *ftp)
 	if(ftp->fp != NULL && ftp->fp != stdout)
 		fclose(ftp->fp);
 	if(ftp->data != NULL)
-		del_tcp(ftp->data);
+		del_tcp(&ftp->data);
 	if(ftp->username != NULL)
 		free(ftp->username);
 	if(ftp->root != NULL)

@@ -1,4 +1,4 @@
-/* @(#) $Id: tcphdr.c,v 1.10 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: tcphdr.c,v 1.11 1996/08/19 16:30:14 deyke Exp $ */
 
 /* TCP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -22,8 +22,8 @@ struct mbuf **bpp,      /* Data in, packet out */
 int32 ipsrc,            /* For computing header checksum */
 int32 ipdest
 ){
-	uint16 hdrlen;
-	register uint8 *cp;
+	uint hdrlen;
+	uint8 *cp;
 
 	if(bpp == NULL)
 		return;
@@ -99,7 +99,7 @@ struct tcp *tcph,
 struct mbuf **bpp
 ){
 	int hdrlen,i,optlen,kind;
-	register int flags;
+	int flags;
 	uint8 hdrbuf[TCPLEN],*cp;
 	uint8 options[TCP_MAXOPT];
 

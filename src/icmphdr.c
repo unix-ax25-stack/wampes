@@ -1,4 +1,4 @@
-/* @(#) $Id: icmphdr.c,v 1.8 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: icmphdr.c,v 1.9 1996/08/19 16:30:14 deyke Exp $ */
 
 /* ICMP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -15,8 +15,8 @@ htonicmp(
 struct icmp *icmp,
 struct mbuf **bpp
 ){
-	register uint8 *cp;
-	uint16 checksum;
+	uint8 *cp;
+	uint checksum;
 
 	pushdown(bpp,NULL,ICMPLEN);
 	cp = (*bpp)->data;
@@ -63,8 +63,8 @@ struct mbuf **bpp
 int
 ntohicmp(
 struct icmp *icmp,
-struct mbuf **bpp)
-{
+struct mbuf **bpp
+){
 	uint8 icmpbuf[8];
 
 	if(icmp == (struct icmp *)NULL)

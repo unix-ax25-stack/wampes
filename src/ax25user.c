@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25user.c,v 1.11 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ax25user.c,v 1.12 1996/08/19 16:30:14 deyke Exp $ */
 
 /* User interface subroutines for AX.25
  * Copyright 1991 Phil Karn, KA9Q
@@ -89,7 +89,7 @@ struct mbuf **bpp,
 int pid
 ){
 	struct mbuf *bp1;
-	uint16 offset,len,size;
+	uint offset,len,size;
 
 	if(axp == NULL || bpp == NULL || *bpp == NULL || axp->flags.closed){
 		free_p(bpp);
@@ -123,7 +123,7 @@ int pid
 struct mbuf *
 recv_ax25(
 struct ax25_cb *axp,
-uint16 cnt)
+uint cnt)
 {
 	struct mbuf *bp;
 
@@ -184,7 +184,7 @@ int
 ax25val(
 struct ax25_cb *axp)
 {
-	register struct ax25_cb *axp1;
+	struct ax25_cb *axp1;
 
 	if(axp == NULL)
 		return 0;       /* Null pointer can't be valid */

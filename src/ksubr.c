@@ -1,4 +1,4 @@
-/* @(#) $Id: ksubr.c,v 1.33 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ksubr.c,v 1.34 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -19,22 +19,7 @@
 static oldNull;
 #endif
 
-#ifdef __TURBOC__
-/* Template for contents of jmp_buf in Turbo C */
-struct env {
-	unsigned        sp;
-	unsigned        ss;
-	unsigned        flag;
-	unsigned        cs;
-	unsigned        ip;
-	unsigned        bp;
-	unsigned        di;
-	unsigned        es;
-	unsigned        si;
-	unsigned        ds;
-};
-#define getstackptr(ep) (MK_FP((ep)->ss, (ep)->sp))
-#elif defined __hp9000s300
+#if defined __hp9000s300
 struct env {
 	long    pc;
 	long    d2;
@@ -337,17 +322,6 @@ static void pproc(struct proc *pp);
 void
 kinit(void)
 {
-#if 0
-	int i;
-
-	/* Initialize interrupt stack for high-water-mark checking */
-	for(i=0;i<Stktop-Intstk;i++)
-		Intstk[i] = STACKPAT;
-
-	/* Remember location 0 pattern to detect null pointer derefs */
-	oldNull = *(unsigned short *)NULL;
-#endif
-
 	/* Initialize signal queue */
 	Ksig.wp = Ksig.rp = Ksig.entry;
 }
@@ -364,11 +338,10 @@ int argc,
 char *argv[],
 void *p)
 {
-	register struct proc *pp;
+	struct proc *pp;
 	int i;
 
-	printf("Uptime %s",tformat(secclock()-StartTime));
-	printf("\n");
+	printf("Uptime %s\n",tformat(secclock()-StartTime));
 
 	printf("ksigs %lu queued %lu hiwat %u woken %lu nops %lu dups %lu\n",Ksig.ksigs,
 	 Ksig.ksigsqueued,Ksig.maxentries,Ksig.ksigwakes,Ksig.ksignops,Ksig.duksigs);
@@ -396,7 +369,7 @@ static void
 pproc(
 struct proc *pp)
 {
-	register struct env *ep;
+	struct env *ep;
 
 	ep = (struct env *)&pp->env;
 	printf("%08lx  %08lx  %7u   %6u    %08lx  %c%c%c %3d %3d  %s\n",
@@ -412,7 +385,7 @@ stkutil(
 struct proc *pp)
 {
 	unsigned i;
-	register uint16 *sp;
+	uint16 *sp;
 
 	if(pp->stksize == 0)
 		return 0;       /* Main task -- too hard to check */
@@ -425,61 +398,12 @@ struct proc *pp)
 		i--;
 	return i;
 }
-
-/* Verify that stack pointer for current process is within legal limits;
- * also check that no one has dereferenced a null pointer
- */
-void
-chkstk(void)
-{
-	uint16 *sbase;
-	uint16 *stop;
-	uint16 *sp;
-
-#ifdef __TURBOC__
-	sp = MK_FP(_SS,_SP);
-	if(_SS == _DS){
-		/* Probably in interrupt context */
-		return;
-	}
-#else
-	sp = (uint16 *) &sp;
-#endif
-	sbase = Curproc->stack;
-	if(sbase == NULL)
-		return; /* Main task -- too hard to check */
-
-	stop = sbase + Curproc->stksize;
-	if(sp < sbase || sp >= stop){
-		printf("Stack violation, process %s\n",Curproc->name);
-		printf("SP = %08lx, legal stack range [%08lx,%08lx)\n",
-		(long)sp,(long)sbase,(long)stop);
-		fflush(stdout);
-		killself();
-	}
-#if 0
-	if(*(unsigned short *)NULL != oldNull){
-		printf("WARNING: Location 0 smashed, process %s\n",Curproc->name);
-		*(unsigned short *)NULL = oldNull;
-		fflush(stdout);
-	}
-#endif
-}
 unsigned
 phash(
 void *event)
 {
-	register unsigned x;
-
-	/* Fold the two halves of the pointer */
-#ifdef __TURBOC__
-	x = FP_SEG(event) ^ FP_OFF(event);
-#else
-	x = (((int) event >> 16) ^ (int) event) & 0xffff;
-#endif
-
 	/* If PHASH is a power of two, this will simply mask off the
 	 * higher order bits
 	 */
-	return x % PHASH;
+	return (int)event % PHASH;
 }

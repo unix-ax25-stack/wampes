@@ -1,4 +1,4 @@
-/* @(#) $Id: kernel.c,v 1.28 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: kernel.c,v 1.29 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -37,7 +37,7 @@ uint16 *newstackptr;
 FILE *proclog;
 FILE *proctrace;
 #endif
-int Stkchk = 0;
+
 struct proc *Curproc;           /* Currently running process */
 struct proc *Rdytab;            /* Processes ready to run (not including curproc) */
 struct proc *Waittab[PHASH];    /* Waiting process list */
@@ -83,7 +83,7 @@ static void aix_longjmp(jmp_buf jmpenv, int val)
 struct proc *
 mainproc(char *name)
 {
-	register struct proc *pp;
+	struct proc *pp;
 
 	/* Create process descriptor */
 	pp = (struct proc *)callocw(1,sizeof(struct proc));
@@ -124,9 +124,6 @@ int freeargs            /* If set, free arg list on parg1 at termination */
 	static struct proc *pp;
 	static void (*func)(int,void *,void *);
 	int i;
-
-	if(Stkchk)
-		chkstk();
 
 	/* Create process descriptor */
 	pp = (struct proc *)callocw(1,sizeof(struct proc));
@@ -255,15 +252,15 @@ int freeargs            /* If set, free arg list on parg1 at termination */
  * messy situations that would otherwise occur, like freeing your own stack.
  */
 void
-killproc(struct proc *pp)
+killproc(struct proc **ppp)
 {
 	char **argv;
+	struct proc *pp;
 
-	if(pp == NULL)
+	if(ppp == NULL || (pp = *ppp) == NULL)
 		return;
-	/* Don't check the stack here! Will cause infinite recursion if
-	 * called from a stack error
-	 */
+
+	*ppp = NULL;
 	if(pp == Curproc)
 		killself();     /* Doesn't return */
 #if 0
@@ -281,7 +278,7 @@ killproc(struct proc *pp)
 	delproc(pp);
 
 #ifdef  PROCLOG
-	fprintf(proclog,"id %08lx name %s stack %u/%u\n",(long)pp,
+	fprintf(proclog,"id %p name %s stack %u/%u\n",pp,
 		pp->name,stkutil(pp),pp->stksize);
 	fclose(proclog);
 	proclog = fopen("proclog",APPEND_TEXT);
@@ -297,6 +294,7 @@ killproc(struct proc *pp)
 	free(pp->name);
 	free(pp->stack);
 	free(pp);
+	*ppp = NULL;
 }
 /* Terminate current process by sending a request to the killer process.
  * Automatically called when a process function returns. Does not return.
@@ -327,7 +325,7 @@ killer(int i,void *v1,void *v2)
 		pullup(&bp,&pp,sizeof(pp));
 		free_p(&bp);
 		if(pp != Curproc)       /* We're immortal */
-			killproc(pp);
+			killproc(&pp);
 	}
 }
 
@@ -370,7 +368,7 @@ alert(struct proc *pp,int val)
 		return;
 #endif
 #ifdef  PROCTRACE
-	logmsg(-1,"alert(%08lx,%u) [%s]",(long)pp,val,pp->name);
+	logmsg(-1,"alert(%p,%u) [%s]",pp,val,pp->name);
 #endif
 	if(pp != Curproc)
 		delproc(pp);
@@ -386,8 +384,8 @@ alert(struct proc *pp,int val)
  * somebody else run for a while". It can also mean that the present process
  * is terminating; in this case the wait never returns.
  *
- * Pwait() returns 0 if the event was signaled; otherwise it returns the
- * arg in an alert() call. Pwait must not be called from interrupt level.
+ * Kwait() returns 0 if the event was signaled; otherwise it returns the
+ * arg in an alert() call. Kwait must not be called from interrupt level.
  *
  * Before waiting and after giving up the CPU, kwait() processes the signal
  * queue containing events signaled when interrupts were off. This means
@@ -398,7 +396,7 @@ alert(struct proc *pp,int val)
 int
 kwait(void *event)
 {
-	register struct proc *oldproc;
+	struct proc *oldproc;
 	int tmp;
 #if 0
 	int i_state;
@@ -408,12 +406,8 @@ kwait(void *event)
 	}
 #endif
 	Ksig.kwaits++;
+
 #if 0
-	if(intcontext() == 1){
-		/* Pwait must not be called from interrupt context */
-		Ksig.kwaitints++;
-		return 0;
-	}
 	/* Enable interrupts, after saving the current state.
 	 * This minimizes interrupt latency since we may have a lot
 	 * of work to do. This seems safe, since care has been taken
@@ -424,8 +418,6 @@ kwait(void *event)
 	i_state = istate();
 	enable();
 #endif
-	if(Stkchk)
-		chkstk();
 
 	if(event != NULL){
 		/* Post a wait for the specified event */
@@ -572,7 +564,7 @@ procsigs(void)
 	for(;;){
 		/* Atomic read and decrement of entry count */
 #if 0
-		i_state = dirps();
+		i_state = disable();
 #endif
 		tmp = Ksig.nentries;
 		if(tmp != 0)
@@ -603,14 +595,12 @@ ksig(
 void *event,    /* Event to signal */
 int n           /* Max number of processes to wake up */
 ){
-	register struct proc *pp;
+	struct proc *pp;
 	struct proc *pnext;
 	unsigned int hashval;
 	int cnt = 0;
 
 	Ksig.ksigs++;
-	if(Stkchk)
-		chkstk();
 
 	if(event == NULL){
 		Ksig.ksignops++;
@@ -625,8 +615,8 @@ int n           /* Max number of processes to wake up */
 		pnext = pp->next;
 		if(pp->event == event){
 #ifdef  PROCTRACE
-				logmsg(-1,"ksignal(%08lx,%u) wake %08lx [%s]",(long)event,n,
-				 (long)pp,pp->name);
+				logmsg(-1,"ksignal(%p,%u) wake %p [%s]",event,n,
+				 pp,pp->name);
 #endif
 			delproc(pp);
 			pp->flags.waiting = 0;
@@ -641,8 +631,8 @@ int n           /* Max number of processes to wake up */
 		pnext = pp->next;
 		if(pp->event == event){
 #ifdef  PROCTRACE
-				logmsg(-1,"ksignal(%08lx,%u) wake %08lx [%s]",(long)event,n,
-				 (long)pp,pp->name);
+				logmsg(-1,"ksignal(%p,%u) wake %p [%s]",event,n,
+				 pp,pp->name);
 #endif /* PROCTRACE */
 			delproc(pp);
 			pp->flags.waiting = 0;
@@ -691,7 +681,7 @@ delproc(struct proc *entry)     /* Pointer to entry */
 static void
 addproc(struct proc *entry)     /* Pointer to entry */
 {
-	register struct proc *pp;
+	struct proc *pp;
 	struct proc **head;
 
 	if(entry == NULL)

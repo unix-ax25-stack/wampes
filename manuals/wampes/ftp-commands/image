@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/ftp-commands/image,v 1.3 1996/08/11 18:18:08 deyke Exp $
+.\" @(#) $Id: image,v 1.4 1996/08/19 16:33:14 deyke Exp $
 .H 2 "image"
 Set the file transfer type to BINARY/IMAGE.
 See also the \fBtype\fP command.

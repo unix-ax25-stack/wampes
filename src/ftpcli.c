@@ -1,4 +1,4 @@
-/* @(#) $Id: ftpcli.c,v 1.23 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ftpcli.c,v 1.24 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q
@@ -446,7 +446,7 @@ static int doabort(int argc, char *argv[], void *p)
 		 * generate a RST on the next data packet which will
 		 * abort the sender
 		 */
-		del_tcp(ftp->data);
+		del_tcp(&ftp->data);
 		ftp->data = NULL;
 		printf("Get aborted\n");
 		break;
@@ -509,7 +509,7 @@ void ftpccr(struct tcb *tcb, int32 cnt)
 	if(recv_tcp(tcb,&bp,cnt) > 0){
 		while(bp != NULL){
 			fwrite(bp->data,1,(unsigned)bp->cnt,stdout);
-			bp = free_mbuf(&bp);
+			free_mbuf(&bp);
 		}
 	}
 }
@@ -552,7 +552,7 @@ static void ftpccs(struct tcb *tcb, enum tcp_state old, enum tcp_state new)
 			printf(")\n");
 			cmdmode();
 		}
-		del_tcp(tcb);
+		del_tcp(&tcb);
 		if(ftp != NULL)
 			ftp_delete(ftp);
 		break;
@@ -604,7 +604,7 @@ static void ftpcds(struct tcb *tcb, enum tcp_state old, enum tcp_state new)
 		break;
 	case TCP_CLOSED:
 		ftp->data = NULL;
-		del_tcp(tcb);
+		del_tcp(&tcb);
 		break;
 	default:
 		break;

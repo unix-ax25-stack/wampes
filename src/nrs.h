@@ -1,4 +1,4 @@
-/* @(#) $Id: nrs.h,v 1.13 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: nrs.h,v 1.14 1996/08/19 16:30:14 deyke Exp $ */
 
 #ifndef _NRS_H
 #define _NRS_H
@@ -18,7 +18,7 @@
 #define NRS_MAX 16              /* Maximum number of Nrs channels */
 
 /* SLIP definitions */
-#define NRS_ALLOC       480     /* Receiver allocation increment */
+#define NRS_ALLOC       220     /* Receiver allocation increment: MED_MBUF */
 
 #define STX     0x02            /* frame start */
 #define ETX 0x03                /* frame end */
@@ -38,7 +38,7 @@ struct nrs {
 	struct mbuf *rbp;       /* Head of mbuf chain being filled */
 	struct mbuf *rbp1;      /* Pointer to mbuf currently being written */
 	uint8 *rcp;             /* Write pointer */
-	uint16 rcnt;            /* Length of mbuf chain */
+	uint rcnt;              /* Length of mbuf chain */
 	struct mbuf *tbp;       /* Transmit mbuf being sent */
 	long errors;            /* Checksum errors detected */
 	long packets ;          /* Number of packets received successfully */

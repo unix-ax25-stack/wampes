@@ -1,4 +1,4 @@
-/* @(#) $Id: misc.c,v 1.23 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: misc.c,v 1.24 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -25,9 +25,7 @@ int c)
 
 /* Select from an array of strings, or return ascii number if out of range */
 char *
-smsg(
-char *msgs[],
-unsigned nmsgs,unsigned n)
+smsg(char *msgs[],unsigned nmsgs,unsigned n)
 {
 	static char buf[16];
 
@@ -39,8 +37,7 @@ unsigned nmsgs,unsigned n)
 
 /* Convert hex-ascii to integer */
 int
-htoi(
-char *s)
+htoi(char *s)
 {
 	int i = 0;
 	char c;
@@ -61,8 +58,7 @@ char *s)
 }
 /* Convert single hex-ascii character to binary */
 int
-htob(
-char c)
+htob(char c)
 {
 	if('0' <= c && c <= '9')
 		return c - '0';
@@ -77,10 +73,7 @@ char c)
  * output buffer. Return number of bytes converted
  */
 int
-readhex(
-uint8 *out,
-char *in,
-int size)
+readhex(uint8 *out,char *in,int size)
 {
 	int c,count;
 
@@ -102,10 +95,9 @@ int size)
 }
 /* replace terminating end of line marker(s) with null */
 void
-rip(
-register char *s)
+rip(char *s)
 {
-	register char *cp = s;
+	char *cp = s;
 
 	while (*cp)
 		cp++;
@@ -115,10 +107,7 @@ register char *s)
 }
 /* Count the occurrances of 'c' in a buffer */
 int
-memcnt(
-uint8 *buf,
-uint8 c,
-int size)
+memcnt(const uint8 *buf,uint8 c,int size)
 {
 	int cnt = 0;
 	uint8 *icp;
@@ -140,10 +129,7 @@ int size)
 }
 /* XOR block 'b' into block 'a' */
 void
-memxor(
-uint8 *a,
-uint8 *b,
-unsigned int n)
+memxor(uint8 *a,uint8 *b,unsigned int n)
 {
 	while(n-- != 0)
 		*a++ ^= *b++;
@@ -155,11 +141,10 @@ unsigned int n)
  * NOS uses of strdup() generally don't check for NULL, so they need this one.
  */
 char *
-strdup(
-const char *s)
+strdup(const char *s)
 {
-	register char *out;
-	register int len;
+	char *out;
+	int len;
 
 	if(s == NULL)
 		return NULL;
@@ -176,8 +161,7 @@ const char *s)
 
 /* Case-insensitive string comparison */
 
-int stricmp(
-char *s1,char *s2)
+int stricmp(char *s1,char *s2)
 {
 	while(Xtolower(*s1) == Xtolower(*s2)){
 		if(!*s1)
@@ -188,9 +172,7 @@ char *s1,char *s2)
 	return Xtolower(*s1) - Xtolower(*s2);
 }
 
-int strnicmp(
-char *a,char *b,
-size_t n)
+int strnicmp(char *a,char *b,size_t n)
 {
 	char a1=0,b1=0;
 
@@ -221,7 +203,7 @@ char *s2)       /* Delimiter string */
 {
 	static int isdelim();
 	static char *next;
-	register char *cp;
+	char *cp;
 	char *tmp;
 
 	if(s2 == NULL)
@@ -253,9 +235,7 @@ char *s2)       /* Delimiter string */
 	return tmp;
 }
 static int
-isdelim(
-char c,
-register char *delim)
+isdelim(char c,char *delim)
 {
 	char d;
 
@@ -270,12 +250,10 @@ register char *delim)
 /* Host-network conversion routines, replaced on the x86 with
  * assembler code in pcgen.asm
  */
-#ifndef MSDOS
+
 /* Put a long in host order into a char array in network order */
 uint8 *
-put32(
-register uint8 *cp,
-int32 x)
+put32(uint8 *cp,int32 x)
 {
 	*cp++ = (uint8) (x >> 24);
 	*cp++ = (uint8) (x >> 16);
@@ -285,30 +263,24 @@ int32 x)
 }
 /* Put a short in host order into a char array in network order */
 uint8 *
-put16(
-register uint8 *cp,
-uint16 x)
+put16(uint8 *cp,uint x)
 {
 	*cp++ = x >> 8;
 	*cp++ = x;
 
 	return cp;
 }
-uint16
-get16(
-register uint8 *cp)
+uint
+get16(uint8 *cp)
 {
-	register uint16 x;
+	uint x;
 
 	x = *cp++;
-	x <<= 8;
-	x |= *cp;
-	return x;
+	return (x << 8) | *cp;
 }
 /* Machine-independent, alignment insensitive network-to-host long conversion */
 int32
-get32(
-register uint8 *cp)
+get32(uint8 *cp)
 {
 	int32 rval;
 
@@ -324,10 +296,9 @@ register uint8 *cp)
 }
 /* Compute int(log2(x)) */
 int
-ilog2(
-register uint16 x)
+ilog2(uint x)
 {
-	register int n = 16;
+	int n = 16;
 	for(;n != 0;n--){
 		if(x & 0x8000)
 			break;
@@ -336,6 +307,4 @@ register uint16 x)
 	n--;
 	return n;
 }
-
-#endif
 

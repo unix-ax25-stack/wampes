@@ -1,4 +1,4 @@
-/* @(#) $Id: tnserv.c,v 1.15 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: tnserv.c,v 1.16 1996/08/19 16:30:14 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -58,7 +58,7 @@ static void tnserv_state_upcall(struct tcb *tcb, enum tcp_state old, enum tcp_st
       login_close((struct login_cb *) tcb->user);
       logmsg(tcb, "close TELNET", "");
     }
-    del_tcp(tcb);
+    del_tcp(&tcb);
     if (tcb == tcb_server) tcb_server = NULL;
     break;
   default:

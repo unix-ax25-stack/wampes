@@ -1,4 +1,3 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/bbs.mm,v 1.52 1996/08/12 18:53:24 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
@@ -12,15 +11,14 @@
 .nr Hb 7 \" Break after all headers
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/bbs.mm,v 1.52 1996/08/12 18:53:24 deyke Exp $
 .\"
-.PF "^BBS Reference Manual^-\\\\nP-^Version 960812" \" Page footer
+.PF "^BBS Reference Manual^-\\\\nP-^Version 960819" \" Page footer
 .\"
 .S 30
 .ce
 \fBBBS Reference Manual\fP
 .ce
-Version 960812
+Version 960819
 .S
 .SP 2
 .S 15
@@ -29,15 +27,17 @@ Dieter Deyke, DK5SG/N0PRA
 .ce
 deyke@fc.hp.com
 .S
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/bbs.mm,v 1.52 1996/08/12 18:53:24 deyke Exp $
 .nr Cl 2 \" Max level of header for table of contents
 .H 1 "Start"
 .nr Ej 0 \" From now on do not start a new page for any header level
 To start the BBS you must type 'bbs' after you have connected to the
 system.
-If your home directory contains the file '.bbsrc' it's contents will be
-executed automatically. This allows the customization of the
-\fBPROMPT\fP text, or the automatic execution of (for example)
+If the sysop has created the file '/tcp/bbsrc' it's contents it will be
+executed first.
+Then, if your home directory contains the file '.bbsrc',
+it's contents will be executed next.
+This allows the customization of the \fBPROMPT\fP text,
+or the automatic execution of (for example)
 \fBALIAS\fP, \fBSUBSCRIBE\fP, or \fBDIR\fP commands.
 .H 1 "Command Input"
 A command consists of a command name and optional arguments. Commands
@@ -74,6 +74,7 @@ BYE~"QUIT"
 CHECK~"DIR"
 ERASE~"DELETE"
 EXIT~"QUIT"
+INFO~"SHELL 'cat /usr/local/lib/station.data'"
 KILL~"DELETE"
 MAIL~"SHELL mailx"
 MORE~"PIPE more"
@@ -136,9 +137,6 @@ T;To:
 .TE
 .P
 The default for \fIflags\fP is "DFS".
-.H 2 "INFO"
-The \fBINFO\fP command prints the contents of the file
-"/usr/local/lib/station.data", which may contain station information.
 .H 2 "LIST" " [\fIpattern ...\fP]"
 The \fBLIST\fP command with no arguments lists all unread articles in
 the current group. If the current group does not contain any unread
@@ -221,6 +219,10 @@ is specified with the shell command, only this command will be executed,
 and the BBS will be re-started when the command has completed. If the
 Unix command contain spaces, it must be enclosed in either single or
 double quotes.
+.H 2 "SOURCE" " \fIfilename\fP"
+The \fBSOURCE\fP command executes BBS commands from \fIfilename\fP.
+\fBSOURCE\fP commands can be nested, but if nested too deeply the BBS
+may run out of file descriptors.
 .H 2 "SUBSCRIBE" " [\fIpattern ...\fP]"
 The \fBSUBSCRIBE\fP command with no arguments subscribes to the current
 group. If \fBSUBSCRIBE\fP is followed by one or more patterns it
@@ -277,7 +279,6 @@ l l.
 -\fInumber\fP;All articles from the lowest possible number to \fInumber\fP.
 \fInumber\fP-\fInumber\fP;All articles from the \fInumber\fP to \fInumber\fP.
 .TE
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/bbs.mm,v 1.52 1996/08/12 18:53:24 deyke Exp $
 .H 1 "S&F data flow"
 .PS
 reset
@@ -329,5 +330,4 @@ arrow from MAILSPOOL \
 	to 1/3 of the way between BBSOUT.sw and BBSOUT.nw \
 	chop circlerad chop 0
 .PE
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/bbs.mm,v 1.52 1996/08/12 18:53:24 deyke Exp $
 .TC 1 1 7 0

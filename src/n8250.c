@@ -1,4 +1,4 @@
-/* @(#) $Id: n8250.c,v 1.44 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: n8250.c,v 1.45 1996/08/19 16:30:14 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -228,7 +228,7 @@ int dev,
 struct iface *ifp,
 int base,
 int irq,
-uint16 bufsize,
+uint bufsize,
 int trigchar,
 long speed,
 int cts,                /* Use CTS flow control */
@@ -450,7 +450,7 @@ struct asy *asyp)
 		while (n > 0) {
 			if (n >= asyp->sndq->cnt) {
 				n -= asyp->sndq->cnt;
-				asyp->sndq = free_mbuf(&asyp->sndq);
+				free_mbuf(&asyp->sndq);
 			} else {
 				asyp->sndq->data += n;
 				asyp->sndq->cnt -= n;

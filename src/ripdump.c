@@ -1,4 +1,4 @@
-/* @(#) $Id: ripdump.c,v 1.7 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ripdump.c,v 1.8 1996/08/19 16:30:14 deyke Exp $ */
 
 /* RIP packet tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -18,7 +18,7 @@ struct mbuf **bpp)
 	struct rip_route entry;
 	int i;
 	int cmd,version;
-	uint16 len;
+	uint len;
 
 	fprintf(fp,"RIP: ");
 	cmd = PULLCHAR(bpp);

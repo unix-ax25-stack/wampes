@@ -1,4 +1,4 @@
-/* @(#) $Id: tcptimer.c,v 1.9 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: tcptimer.c,v 1.10 1996/08/19 16:30:14 deyke Exp $ */
 
 /* TCP timeout routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,10 +13,9 @@
 
 /* Timer timeout */
 void
-tcp_timeout(
-void *p)
+tcp_timeout(void *p)
 {
-	register struct tcb *tcb;
+	struct tcb *tcb;
 	int32 ptrsave;
 
 	tcb = (struct tcb *) p;
@@ -52,8 +51,7 @@ void *p)
 }
 /* Backoff function - the subject of much research */
 int32
-backoff(
-int n)
+backoff(int n)
 {
 	if(n > 31)
 		n = 31; /* Prevent truncation to zero */

@@ -1,4 +1,4 @@
-/* @(#) $Id: internet.h,v 1.10 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: internet.h,v 1.11 1996/08/19 16:30:14 deyke Exp $ */
 
 #ifndef _INTERNET_H
 #define _INTERNET_H
@@ -57,7 +57,7 @@ struct pseudo_header {
 	int32 source;           /* IP source */
 	int32 dest;             /* IP destination */
 	char protocol;          /* Protocol */
-	uint16 length;          /* Data field length */
+	uint length;            /* Data field length */
 };
 
 /* Format of a MIB entry for statistics gathering */

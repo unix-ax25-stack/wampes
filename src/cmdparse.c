@@ -1,4 +1,4 @@
-/* @(#) $Id: cmdparse.c,v 1.18 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: cmdparse.c,v 1.19 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Parse command line, set up command arguments Unix-style, and call function.
  * Note: argument is modified (delimiters are overwritten with nulls)
@@ -51,7 +51,7 @@ static char *
 stringparse(
 char *line)
 {
-	register char *cp = line;
+	char *cp = line;
 	unsigned long num;
 
 	while ( *line != '\0' && *line != '\"' ) {
@@ -123,9 +123,9 @@ char *line)
 int
 cmdparse(
 struct cmds cmds[],
-register char *line,
-void *p)
-{
+ char *line,
+void *p
+){
 	struct cmds *cmdp;
 	char *argv[NARG];
 	char **pargv;
@@ -138,7 +138,7 @@ void *p)
 		argv[argc] = NULL;
 
 	for(argc = 0;argc < NARG;){
-		register int qflag = FALSE;
+		int qflag = FALSE;
 
 		/* Skip leading white space */
 		while(isspace(*line & 0xff))
@@ -219,7 +219,7 @@ int argc,
 char *argv[],
 void *p)
 {
-	register struct cmds *cmdp;
+	struct cmds *cmdp;
 	char **pargv;
 	int found = 0;
 	int i;
@@ -268,7 +268,7 @@ void *p)
 }
 
 static int print_help(
-register struct cmds *cmdp)
+struct cmds *cmdp)
 {
 	int i;
 
@@ -302,15 +302,16 @@ char *argv[])
 	printf("Valid options:");
 	for(bc = Boolcmds;bc->str != NULL;bc++)
 		printf(" %s",bc->str);
+
 	printf("\n");
 	return 1;
 }
 
 /* Subroutine for setting and displaying bit values */
 int
-bit16cmd(
-uint16 *bits,
-uint16 mask,
+bitcmd(
+uint *bits,
+uint mask,
 char *label,
 int argc,
 char *argv[])

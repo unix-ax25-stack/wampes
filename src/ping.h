@@ -1,4 +1,4 @@
-/* @(#) $Id: ping.h,v 1.3 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ping.h,v 1.4 1996/08/19 16:30:14 deyke Exp $ */
 
 #ifndef _PING_H
 #define _PING_H
@@ -24,12 +24,12 @@ struct ping {
 	int32 mdev;             /* Mean deviation */
 	int32 responses;        /* Total number of responses */
 	struct timer timer;     /* Ping interval timer */
-	uint16 len;             /* Length of data portion of ping */
+	uint len;               /* Length of data portion of ping */
 };
 
 /* In ping.c: */
 void echo_proc(int32 source,int32 dest,struct icmp *icmp,struct mbuf **bpp);
-int pingem(int32 target,uint16 seq,uint16 id,uint16 len);
+int pingem(int32 target,uint seq,uint id,uint len);
 
 #endif /* _PING_H */
 

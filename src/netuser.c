@@ -1,4 +1,4 @@
-/* @(#) $Id: netuser.c,v 1.14 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: netuser.c,v 1.15 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Miscellaneous integer and IP address format conversion subroutines
  * Copyright 1991 Phil Karn, KA9Q
@@ -15,12 +15,11 @@ int Net_error;
  * binary IP address
  */
 int32
-aton(
-register char *s)
+aton(char *s)
 {
 	int32 n;
 
-	register int i;
+	int i;
 
 	n = 0;
 	if(s == NULL)
@@ -42,15 +41,13 @@ register char *s)
  * string, e.g., 255.255.255.255\0
  */
 char *
-inet_ntoa(
-int32 a)
+inet_ntoa(int32 a)
 {
 	return resolve_a(a,0);
 }
 /* Convert hex-ascii string to long integer */
 long
-htol(
-char *s)
+htol(char *s)
 {
 	long ret;
 	char c;
@@ -71,12 +68,10 @@ char *s)
 	return ret;
 }
 char *
-pinet(
-struct socket *s)
+pinet(struct socket *s)
 {
 	static char buf[30];
 
 	sprintf(buf,"%s:%u",inet_ntoa(s->address),s->port);
 	return buf;
 }
-

@@ -1,4 +1,4 @@
-/* @(#) $Id: tcpuser.c,v 1.24 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: tcpuser.c,v 1.25 1996/08/19 16:30:14 deyke Exp $ */
 
 /* User calls to TCP
  * Copyright 1991 Phil Karn, KA9Q
@@ -15,14 +15,14 @@
 #include "icmp.h"
 #include "proc.h"
 
-uint16 Tcp_window = DEF_WND;
+uint Tcp_window = DEF_WND;
 
 struct tcb *
 open_tcp(
 struct socket *lsocket, /* Local socket */
 struct socket *fsocket, /* Remote socket */
 int mode,               /* Active/passive/server */
-uint16 window,          /* Receive window (and send buffer) sizes */
+uint window,            /* Receive window (and send buffer) sizes */
 void (*r_upcall)(struct tcb *,int32),
 			/* Function to call when data arrives */
 void (*t_upcall)(struct tcb *,int32),
@@ -30,10 +30,10 @@ void (*t_upcall)(struct tcb *,int32),
 void (*s_upcall)(struct tcb *,enum tcp_state,enum tcp_state),
 			/* Function to call when connection state changes */
 int tos,
-int user)               /* User linkage area */
-{
+int user                /* User linkage area */
+){
 	struct connection conn;
-	register struct tcb *tcb;
+	struct tcb *tcb;
 
 	if(lsocket == NULL){
 		Net_error = INVALID;
@@ -88,9 +88,9 @@ int user)               /* User linkage area */
 /* User send routine */
 long
 send_tcp(
-register struct tcb *tcb,
-struct mbuf **bpp)
-{
+struct tcb *tcb,
+struct mbuf **bpp
+){
 	int32 cnt;
 
 	if(tcb == NULL || bpp == NULL || *bpp == NULL){
@@ -173,10 +173,10 @@ struct tcb *tcb
 /* User receive routine */
 int32
 recv_tcp(
-register struct tcb *tcb,
+struct tcb *tcb,
 struct mbuf **bpp,
-int32 cnt)
-{
+int32 cnt
+){
 	if(tcb == NULL || bpp == (struct mbuf **)NULL){
 		Net_error = INVALID;
 		return -1;
@@ -214,9 +214,9 @@ int32 cnt)
 		*bpp = tcb->rcvq;
 		tcb->rcvq = NULL;
 	} else {
-		*bpp = ambufw((uint16) cnt);
-		pullup(&tcb->rcvq,(*bpp)->data,(uint16) cnt);
-		(*bpp)->cnt = (uint16) cnt;
+		*bpp = ambufw((uint) cnt);
+		pullup(&tcb->rcvq,(*bpp)->data,(uint) cnt);
+		(*bpp)->cnt = (uint) cnt;
 	}
 	tcb->rcvcnt -= cnt;
 	tcb->rcv.wnd += cnt;
@@ -225,15 +225,14 @@ int32 cnt)
 		tcb->flags.force = 1;
 		tcp_output(tcb);
 	}
-	return (int)cnt;
+	return cnt;
 }
 /* This really means "I have no more data to send". It only closes the
  * connection in one direction, and we can continue to receive data
  * indefinitely.
  */
 int
-close_tcp(
-register struct tcb *tcb)
+close_tcp(struct tcb *tcb)
 {
 	if(tcb == NULL){
 		Net_error = INVALID;
@@ -274,21 +273,21 @@ register struct tcb *tcb)
  * user only in response to a state change upcall to TCP_CLOSED state.
  */
 int
-del_tcp(
-struct tcb *conn)
+del_tcp(struct tcb **conn)
 {
-	register struct tcb *tcb;
+	struct tcb *tcb;
 	struct tcb *tcblast = NULL;
 	struct reseq *rp,*rp1;
 
 	/* Remove from list */
 	for(tcb=Tcbs;tcb != NULL;tcblast = tcb,tcb = tcb->next)
-		if(tcb == conn)
+		if(tcb == *conn)
 			break;
 	if(tcb == NULL){
 		Net_error = INVALID;
 		return -1;      /* conn was NULL, or not on list */
 	}
+	*conn = NULL;
 	if(tcblast != NULL)
 		tcblast->next = tcb->next;
 	else
@@ -311,7 +310,7 @@ int
 tcpval(
 struct tcb *tcb)
 {
-	register struct tcb *tcb1;
+	struct tcb *tcb1;
 
 	if(tcb == NULL)
 		return 0;       /* Null pointer can't be valid */
@@ -323,8 +322,7 @@ struct tcb *tcb)
 }
 /* Kick a particular TCP connection */
 int
-kick_tcp(
-register struct tcb *tcb)
+kick_tcp(struct tcb *tcb)
 {
 	if(!tcpval(tcb))
 		return -1;
@@ -335,10 +333,9 @@ register struct tcb *tcb)
 }
 /* Kick all TCP connections to specified address; return number kicked */
 int
-kick(
-int32 addr)
+kick(int32 addr)
 {
-	register struct tcb *tcb;
+	struct tcb *tcb;
 	int cnt = 0;
 
 	for(tcb=Tcbs;tcb != NULL;tcb = tcb->next){
@@ -354,7 +351,7 @@ void
 reset_all(void)
 {
 #if 0
-	register struct tcb *tcb,*tcbnext;
+	struct tcb *tcb,*tcbnext;
 
 	for(tcb=Tcbs;tcb != NULL;tcb = tcbnext){
 		tcbnext = tcb->next;
@@ -367,8 +364,7 @@ reset_all(void)
 	kwait(NULL);    /* Let the RSTs go forth */
 }
 void
-reset_tcp(
-register struct tcb *tcb)
+reset_tcp(struct tcb *tcb)
 {
 	struct tcp fakeseg;
 	struct ip fakeip;
@@ -400,8 +396,7 @@ register struct tcb *tcb)
  * the decimal number if unknown.
  */
 char *
-tcp_port(
-uint16 n)
+tcp_port(uint n)
 {
 	static char buf[32];
 

@@ -1,4 +1,4 @@
-/* @(#) $Id: netuser.h,v 1.12 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: netuser.h,v 1.13 1996/08/19 16:30:14 deyke Exp $ */
 
 #ifndef _NETUSER_H
 #define _NETUSER_H
@@ -34,10 +34,12 @@ extern char Inet_eol[];
 #define INADDR_ANY      0x0L
 #endif
 
+#define NET_HDR_PAD     70      /* mbuf size to preallocate for headers */
+
 /* Socket structure */
 struct socket {
 	int32 address;          /* IP address */
-	uint16 port;            /* port number */
+	uint port;              /* port number */
 };
 
 /* Connection structure (two sockets) */

@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25.c,v 1.30 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ax25.c,v 1.31 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -125,7 +125,7 @@ ax_output(
 struct iface *iface,    /* Interface to use; overrides routing table */
 uint8 *dest,            /* Destination AX.25 address (7 bytes, shifted) */
 uint8 *source,          /* Source AX.25 address (7 bytes, shifted) */
-uint16 pid,             /* Protocol ID */
+uint pid,               /* Protocol ID */
 struct mbuf **bpp       /* Data field (follows PID) */
 ){
 	/* Prepend pid to data */

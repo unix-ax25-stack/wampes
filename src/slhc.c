@@ -1,4 +1,4 @@
-/* @(#) $Id: slhc.c,v 1.9 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: slhc.c,v 1.10 1996/08/19 16:30:14 deyke Exp $ */
 
 /*
  * Routines to compress and uncompress tcp packets (for transmission
@@ -47,7 +47,7 @@
 #include "tcp.h"
 #include "slhc.h"
 
-static uint8 *encode(uint8 *cp,uint16 n);
+static uint8 *encode(uint8 *cp,uint n);
 static long decode(struct mbuf **bpp);
 
 /* Initialize compression data structure
@@ -58,8 +58,8 @@ slhc_init(
 int rslots,
 int tslots)
 {
-	register uint16 i;
-	register struct cstate *ts;
+	uint i;
+	struct cstate *ts;
 	struct slcompress *comp;
 
 	comp = (struct slcompress *) callocw( 1, sizeof(struct slcompress) );
@@ -110,8 +110,8 @@ struct slcompress *comp)
 /* Encode a number */
 static uint8 *
 encode(
-register uint8 *cp,
-uint16 n)
+uint8 *cp,
+uint n)
 {
 	if(n >= 256 || n == 0){
 		*cp++ = 0;
@@ -127,7 +127,7 @@ static long
 decode(
 struct mbuf **bpp)
 {
-	register int x;
+	int x;
 
 	x = PULLCHAR(bpp);
 	if(x == 0){
@@ -143,15 +143,15 @@ struct slcompress *comp,
 struct mbuf **bpp,
 int compress_cid)
 {
-	register struct cstate *ocs = &(comp->tstate[comp->xmit_oldest]);
-	register struct cstate *lcs = ocs;
-	register struct cstate *cs = lcs->next;
-	register uint16 hlen,iplen;
-	register struct tcp *oth;
-	register unsigned long deltaS, deltaA;
-	register uint16 changes = 0;
+	struct cstate *ocs = &(comp->tstate[comp->xmit_oldest]);
+	struct cstate *lcs = ocs;
+	struct cstate *cs = lcs->next;
+	uint hlen,iplen;
+	struct tcp *oth;
+	unsigned long deltaS, deltaA;
+	uint changes = 0;
 	uint8 new_seq[16];
-	register uint8 *cp = new_seq;
+	uint8 *cp = new_seq;
 	struct tcp th;
 	struct ip iph;
 	struct mbuf *copy;
@@ -276,7 +276,7 @@ found:
 	 */
 	if(th.flags.urg){
 		deltaS = th.up;
-		cp = encode(cp,(uint16) deltaS);
+		cp = encode(cp,(uint)deltaS);
 		changes |= NEW_U;
 	} else if(th.up != oth->up){
 		/* argh! URG not set but urp changed -- a sensible
@@ -286,19 +286,19 @@ found:
 		goto uncompressed;
 	}
 	if((deltaS = th.wnd - oth->wnd) != 0){
-		cp = encode(cp,(uint16) deltaS);
+		cp = encode(cp,(uint)deltaS);
 		changes |= NEW_W;
 	}
 	if((deltaA = th.ack - oth->ack) != 0L){
 		if(deltaA > 0x0000ffff)
 			goto uncompressed;
-		cp = encode(cp,(uint16) deltaA);
+		cp = encode(cp,(uint)deltaA);
 		changes |= NEW_A;
 	}
 	if((deltaS = th.seq - oth->seq) != 0L){
 		if(deltaS > 0x0000ffff)
 			goto uncompressed;
-		cp = encode(cp,(uint16) deltaS);
+		cp = encode(cp,(uint)deltaS);
 		changes |= NEW_S;
 	}
 
@@ -337,7 +337,7 @@ found:
 	}
 	deltaS = iph.id - cs->cs_ip.id;
 	if(deltaS != 1){
-		cp = encode(cp,(uint16) deltaS);
+		cp = encode(cp,(uint)deltaS);
 		changes |= NEW_I;
 	}
 	if(th.flags.psh)
@@ -357,18 +357,18 @@ found:
 	deltaS = cp - new_seq;
 	pullup(bpp,NULL,hlen);          /* Strip TCP/IP headers */
 	if(compress_cid == 0 || comp->xmit_current != cs->this){
-		pushdown(bpp,NULL,(uint16) (deltaS + 4));
+		pushdown(bpp,NULL,(uint)(deltaS + 4));
 		cp = (*bpp)->data;
 		*cp++ = changes | NEW_C;
 		*cp++ = cs->this;
 		comp->xmit_current = cs->this;
 	} else {
-		pushdown(bpp,NULL,(uint16) (deltaS + 3));
+		pushdown(bpp,NULL,(uint)(deltaS + 3));
 		cp = (*bpp)->data;
 		*cp++ = changes;
 	}
-	cp = put16(cp,(uint16)deltaA);  /* Write TCP checksum */
-	memcpy(cp,new_seq,(unsigned) deltaS); /* Write list of deltas */
+	cp = put16(cp,(uint)deltaA);    /* Write TCP checksum */
+	memcpy(cp,new_seq,(uint)deltaS);        /* Write list of deltas */
 	comp->sls_o_compressed++;
 	return SL_TYPE_COMPRESSED_TCP;
 
@@ -392,10 +392,10 @@ slhc_uncompress(
 struct slcompress *comp,
 struct mbuf **bpp)
 {
-	register int changes;
+	int changes;
 	long x;
-	register struct tcp *thp;
-	register struct cstate *cs;
+	struct tcp *thp;
+	struct cstate *cs;
 	int len;
 
 	if(bpp == NULL){
@@ -433,14 +433,14 @@ struct mbuf **bpp)
 
 	if((x = pull16(bpp)) == -1)     /* Read the TCP checksum */
 		goto bad;
-	thp->checksum = (uint16) x;
+	thp->checksum = (uint)x;
 
 	thp->flags.psh = (changes & TCP_PUSH_BIT) ? 1 : 0;
 
 	switch(changes & SPECIALS_MASK){
 	case SPECIAL_I:         /* Echoed terminal traffic */
 		{
-		register uint16 i;
+		uint i;
 		i = cs->cs_ip.length;
 		i -= (cs->cs_ip.optlen + IPLEN + TCPLEN);
 		thp->ack += i;
@@ -457,13 +457,13 @@ struct mbuf **bpp)
 			thp->flags.urg = 1;
 			if((x = decode(bpp)) == -1)
 				goto bad;
-			thp->up = (uint16) x;
+			thp->up = (uint)x;
 		} else
 			thp->flags.urg = 0;
 		if(changes & NEW_W){
 			if((x = decode(bpp)) == -1)
 				goto bad;
-			thp->wnd += (uint16) x;
+			thp->wnd += (uint)x;
 		}
 		if(changes & NEW_A){
 			if((x = decode(bpp)) == -1)
@@ -480,7 +480,7 @@ struct mbuf **bpp)
 	if(changes & NEW_I){
 		if((x = decode(bpp)) == -1)
 			goto bad;
-		cs->cs_ip.id += (uint16) x;
+		cs->cs_ip.id += (uint)x;
 	} else
 		cs->cs_ip.id++;
 
@@ -505,11 +505,11 @@ slhc_remember(
 struct slcompress *comp,
 struct mbuf **bpp)
 {
-	register struct cstate *cs;
+	struct cstate *cs;
 	struct ip iph;
 	struct tcp th;
-	uint16 len;
-	uint16 hdrlen;
+	uint len;
+	uint hdrlen;
 	int slot;
 
 	if(bpp == NULL){

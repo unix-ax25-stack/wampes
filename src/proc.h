@@ -1,4 +1,4 @@
-/* @(#) $Id: proc.h,v 1.12 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: proc.h,v 1.13 1996/08/19 16:30:14 deyke Exp $ */
 
 #ifndef _PROC_H
 #define _PROC_H
@@ -48,7 +48,6 @@ extern struct proc *Waittab[];  /* Head of wait list */
 extern struct proc *Rdytab;     /* Head of ready list */
 extern struct proc *Curproc;    /* Currently running process */
 extern struct proc *Susptab;    /* Suspended processes */
-extern int Stkchk;              /* Stack checking flag */
 extern int Kdebug;              /* Control display of current task on screen */
 
 struct sigentry {
@@ -87,7 +86,7 @@ extern struct ksig Ksig;
 /* In  kernel.c: */
 void alert(struct proc *pp,int val);
 void chname(struct proc *pp,char *newname);
-void killproc(struct proc *pp);
+void killproc(struct proc **ppp);
 void killself(void);
 struct proc *mainproc(char *name);
 struct proc *newproc(char *name,unsigned int stksize,
@@ -105,14 +104,8 @@ void kinit(void);
 unsigned phash(void *event);
 void psetup(struct proc *pp,int iarg,void *parg1,void *parg2,
 	void ((*pc)(int,void *,void *)) );
-#ifdef  AMIGA
-void init_psetup(struct proc *pp);
-#endif
 
 /* Stack background fill value for high water mark checking */
 #define STACKPAT        0x55aa
-
-/* Value stashed in location 0 to detect null pointer dereferences */
-#define NULLPAT         0xdead
 
 #endif  /* _PROC_H */

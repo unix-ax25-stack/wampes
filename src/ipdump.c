@@ -1,4 +1,4 @@
-/* @(#) $Id: ipdump.c,v 1.12 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ipdump.c,v 1.13 1996/08/19 16:30:14 deyke Exp $ */
 
 /* IP header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -21,8 +21,8 @@ struct mbuf **bpp,
 int check
 ){
 	struct ip ip;
-	uint16 ip_len;
-	uint16 csum;
+	uint ip_len;
+	uint csum;
 
 	if(bpp == NULL || *bpp == NULL)
 		return;
@@ -56,7 +56,7 @@ struct ip *ip,
 struct mbuf **bpp,
 int check)
 {
-	uint16 length;
+	uint length;
 	int i;
 
 	/* Trim data segment if necessary. */

@@ -1,4 +1,4 @@
-/* @(#) $Id: kiss.c,v 1.19 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: kiss.c,v 1.20 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Routines for AX.25 encapsulation in KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -16,9 +16,8 @@
 
 /* Set up a SLIP link to use AX.25 */
 int
-kiss_init(
-struct iface *ifp
-){
+kiss_init(struct iface *ifp)
+{
 	int xdev;
 	struct slip *sp;
 #if 0
@@ -58,9 +57,8 @@ struct iface *ifp
 	return 0;
 }
 int
-kiss_free(
-struct iface *ifp
-){
+kiss_free(struct iface *ifp)
+{
 	if(Slip[ifp->xdev].iface == ifp)
 		Slip[ifp->xdev].iface = NULL;
 	return 0;

@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/setting-paclen,v 1.6 1996/08/11 18:18:04 deyke Exp $
+.\" @(#) $Id: setting-paclen,v 1.7 1996/08/19 16:33:09 deyke Exp $
 .nr Cl 7 \" Max level of header for table of contents
 .H 1 "Setting Paclen, Maxframe, MTU, MSS and Window"
 Many \fBWAMPES\fP users are confused by these parameters and do not know how to

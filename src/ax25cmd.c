@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25cmd.c,v 1.14 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ax25cmd.c,v 1.15 1996/08/19 16:30:14 deyke Exp $ */
 
 /* AX25 control commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -267,7 +267,7 @@ int argc,
 char *argv[],
 void *p)
 {
-	register struct ax25_cb *axp;
+	struct ax25_cb *axp;
 
 	if(argc < 2){
 		printf("   &AXCB Rcv-Q Unack  Rt  Srtt  State          Remote\n");
@@ -299,7 +299,7 @@ void *p)
 /* Dump one control block */
 void
 st_ax25(
-register struct ax25_cb *axp)
+struct ax25_cb *axp)
 {
 	char tmp[AXBUF];
 

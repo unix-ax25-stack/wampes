@@ -1,4 +1,4 @@
-/* @(#) $Id: ttydriv.c,v 1.29 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ttydriv.c,v 1.30 1996/08/19 16:30:14 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -18,7 +18,7 @@ enum e_ttytype {
 };
 
 enum e_keyaction {
-  KA_NONE,              /* Use key literally */
+  KA_SELF_INSERT,       /* Insert key literally */
   KA_FK1,               /* Function key 1 */
   KA_FK2,               /* Function key 2 */
   KA_FK3,               /* Function key 3 */
@@ -72,6 +72,7 @@ static const struct keytable Keytable[] = {
 	{ "\015",       TT_UNKNOWN,     KA_RETURN },
 	{ "\016",       TT_UNKNOWN,     KA_NEXT },
 	{ "\020",       TT_UNKNOWN,     KA_PREV },
+	{ "\021",       TT_UNKNOWN,     KA_QUOTE },
 	{ "\022",       TT_UNKNOWN,     KA_SEARCH },
 	{ "\024",       TT_UNKNOWN,     KA_TRANSMIT },
 	{ "\025",       TT_UNKNOWN,     KA_DEL_LINE },
@@ -164,7 +165,7 @@ static const struct keytable Keytable[] = {
 	{ "\033w",      TT_HP,          KA_FK8 },
 	{ "\177",       TT_UNKNOWN,     KA_DEL_PREV_CHAR },
 
-	{ "",           TT_UNKNOWN,     KA_NONE }
+	{ "",           TT_UNKNOWN,     KA_SELF_INSERT }
 
 };
 
@@ -314,7 +315,7 @@ int ttydriv(int chr, char **buf)
 
 	cnt = 0;
 	keybuf[keycnt++] = chr;
-	keyaction = KA_NONE;
+	keyaction = KA_SELF_INSERT;
 	if (!quote) {
 		for (i = 0; Keytable[i].str[0]; i++) {
 			if (Keytable[i].str[0] == *keybuf &&
@@ -337,7 +338,7 @@ int ttydriv(int chr, char **buf)
 
 	switch (keyaction) {
 
-	case KA_NONE:
+	case KA_SELF_INSERT:
 		for (i = 0; i < keycnt; i++) {
 			if (end - linebuf >= LINEMAX)
 				putchar(7);

@@ -1,4 +1,4 @@
-/* @(#) $Id: alloc.c,v 1.33 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: alloc.c,v 1.34 1996/08/19 16:30:14 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -146,8 +146,7 @@ static struct block *getblock(int n)
 
 /* Allocate block of 'nb' bytes */
 void *
-malloc(
-unsigned nb)
+malloc(unsigned nb)
 {
 
   int n;
@@ -180,8 +179,7 @@ unsigned nb)
 
 /* Put memory block back on heap */
 void
-free(
-void *blk)
+free(void *blk)
 {
 
   int n;
@@ -230,9 +228,7 @@ void *blk)
 
 /* Move existing block to new area */
 void *
-realloc(
-void *area,
-unsigned size)
+realloc(void *area,unsigned size)
 {
 
   int n;
@@ -279,11 +275,11 @@ unsigned size)
 void *
 calloc(
 unsigned nelem, /* Number of elements */
-unsigned size)  /* Size of each element */
-{
+unsigned size   /* Size of each element */
+){
 
-	register unsigned i;
-	register char *cp;
+	unsigned i;
+	char *cp;
 
 	i = nelem * size;
 	if((cp = (char *) malloc(i)) != NULL)
@@ -296,8 +292,7 @@ unsigned size)  /* Size of each element */
 /*---------------------------------------------------------------------------*/
 
 void *
-mallocw(
-unsigned nb)
+mallocw(unsigned nb)
 {
   return malloc(nb);
 }
@@ -307,8 +302,8 @@ unsigned nb)
 void *
 callocw(
 unsigned nelem, /* Number of elements */
-unsigned size)  /* Size of each element */
-{
+unsigned size   /* Size of each element */
+){
   return calloc(nelem, size);
 }
 
@@ -335,8 +330,8 @@ static int
 dostat(
 int argc,
 char *argv[],
-void *envp)
-{
+void *envp
+){
 	printf("heap size %lu avail %lu (%lu%%) morecores %lu\n",
 	 Heapsize,Heapsize-Inuse,100L*(Heapsize-Inuse)/Heapsize,
 	 Morecores);
@@ -356,8 +351,8 @@ static int
 dofreelist(
 int argc,
 char *argv[],
-void *envp)
-{
+void *envp
+){
 
 	int n;
 	struct block *p;
@@ -396,8 +391,8 @@ static int
 dosizes(
 int argc,
 char *argv[],
-void *p)
-{
+void *p
+){
 	int n;
 
 	for(n=MIN_N;n<=MAX_N;n += 4){
@@ -417,8 +412,8 @@ int
 domem(
 int argc,
 char *argv[],
-void *p)
-{
+void *p
+){
 #ifndef PURIFY
 	return subcmd(Memcmds,argc,argv,p);
 #else
@@ -434,8 +429,8 @@ static int
 domdebug(
 int argc,
 char *argv[],
-void *ptr)
-{
+void *ptr
+){
 	setbool(&Memdebug,"Heap debugging",argc,argv);
 	return 0;
 }

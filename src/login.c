@@ -1,4 +1,4 @@
-/* @(#) $Id: login.c,v 1.63 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: login.c,v 1.64 1996/08/19 16:30:14 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -679,7 +679,7 @@ void login_close(struct login_cb *tp)
 
 /*---------------------------------------------------------------------------*/
 
-#define ASIZE 480
+#define ASIZE 220       /* MED_MBUF */
 
 #define add_to_mbuf(chr) \
 { \

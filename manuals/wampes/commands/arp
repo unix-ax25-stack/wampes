@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/arp,v 1.6 1996/08/11 18:17:44 deyke Exp $
+.\" @(#) $Id: arp,v 1.7 1996/08/19 16:32:32 deyke Exp $
 .H 2 "arp" " [\fIsubcommand\fP]"
 Without an argument,
 display the Address Resolution Protocol table that maps IP addresses

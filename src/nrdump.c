@@ -1,4 +1,4 @@
-/* @(#) $Id: nrdump.c,v 1.6 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: nrdump.c,v 1.7 1996/08/19 16:30:14 deyke Exp $ */
 
 /* NET/ROM header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -21,7 +21,7 @@ int check)
 	uint8 src[AXALEN],dest[AXALEN];
 	char tmp[AXBUF];
 	uint8 thdr[NR4MINHDR];
-	register i;
+	int i;
 
 	if(bpp == NULL || *bpp == NULL)
 		return;

@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/the-net-program,v 1.4 1996/08/11 18:18:04 deyke Exp $
+.\" @(#) $Id: the-net-program,v 1.5 1996/08/19 16:33:09 deyke Exp $
 .nr Cl 2 \" Max level of header for table of contents
 .H 1 "The /tcp/net Program"
 The executable file \fB/tcp/net\fP

@@ -1,4 +1,4 @@
-/* @(#) $Id: icmp.h,v 1.12 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: icmp.h,v 1.13 1996/08/19 16:30:14 deyke Exp $ */
 
 #ifndef _ICMP_H
 #define _ICMP_H
@@ -73,13 +73,13 @@ extern struct mib_entry Icmp_mib[];
 #define ICMP_TYPES              20
 
 union icmp_args {
-	uint16 mtu;
+	uint mtu;
 	int32 unused;
 	uint8 pointer;
 	int32 address;
 	struct {
-		uint16 id;
-		uint16 seq;
+		uint id;
+		uint seq;
 	} echo;
 };
 

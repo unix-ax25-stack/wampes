@@ -1,4 +1,4 @@
-/* @(#) $Id: ipcmd.c,v 1.15 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ipcmd.c,v 1.16 1996/08/19 16:30:14 deyke Exp $ */
 
 /* IP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -25,12 +25,14 @@ static int doipstat(int argc,char *argv[],void *p);
 static int dolook(int argc,char *argv[],void *p);
 static int dortimer(int argc,char *argv[],void *p);
 static int dottl(int argc,char *argv[],void *p);
+static int doiptrace(int argc,char *argv[],void *p);
 static int dumproute(struct route *rp);
 
 static struct cmds Ipcmds[] = {
 	"address",      doipaddr,       0,      0, NULL,
 	"rtimer",       dortimer,       0,      0, NULL,
 	"status",       doipstat,       0,      0, NULL,
+	"trace",        doiptrace,      0,      0, NULL,
 	"ttl",          dottl,          0,      0, NULL,
 	NULL,
 };
@@ -62,6 +64,15 @@ void *p)
 {
 	return subcmd(Ipcmds,argc,argv,p);
 }
+static int
+doiptrace(
+int argc,
+char *argv[],
+void *p)
+{
+	return setbool(&Ip_trace,"IP rx tracing",argc,argv);
+}
+
 static int
 doipaddr(
 int argc,
@@ -103,8 +114,8 @@ int argc,
 char *argv[],
 void *p)
 {
-	register int i,bits;
-	register struct route *rp;
+	int i,bits;
+	struct route *rp;
 
 	route_loadfile();
 	if(argc >= 2)
@@ -232,7 +243,7 @@ int argc,
 char *argv[],
 void *p)
 {
-	register struct route *rp;
+	struct route *rp;
 	struct route *rptmp;
 	int i,j;
 
@@ -253,8 +264,7 @@ void *p)
 }
 /* Dump a routing table entry */
 static int
-dumproute(
-register struct route *rp)
+dumproute(struct route *rp)
 {
 	char *cp;
 
@@ -305,8 +315,8 @@ int argc,
 char *argv[],
 void *p)
 {
-	register struct reasm *rp;
-	register struct frag *fp;
+	struct reasm *rp;
+	struct frag *fp;
 	int i;
 
 	for(i=1;i<=NUMIPMIB;i++){

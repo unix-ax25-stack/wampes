@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25dump.c,v 1.13 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ax25dump.c,v 1.14 1996/08/19 16:30:14 deyke Exp $ */
 
 /* AX25 header tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -11,19 +11,19 @@
 #include "trace.h"
 #include "socket.h"
 
-static char *decode_type(uint16 type);
+static char *decode_type(uint type);
 
 /* Dump an AX.25 packet header */
 void
 ax25_dump(
 FILE *fp,
 struct mbuf **bpp,
-int check)      /* Not used */
-{
+int check       /* Not used */
+){
 	char tmp[AXBUF];
 	char frmr[3];
 	int control,pid,seg;
-	uint16 type;
+	uint type;
 	int unsegmented;
 	struct ax25 hdr;
 	uint8 *hp;
@@ -139,8 +139,7 @@ int check)      /* Not used */
 
 }
 static char *
-decode_type(
-uint16 type)
+decode_type(uint type)
 {
 	switch(type){
 	case I:
@@ -174,8 +173,8 @@ uint16 type)
 int
 ax_forus(
 struct iface *iface,
-struct mbuf *bp)
-{
+struct mbuf *bp
+){
 	struct mbuf *bpp;
 	uint8 dest[AXALEN];
 

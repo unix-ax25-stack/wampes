@@ -1,4 +1,4 @@
-/* @(#) $Id: global.h,v 1.40 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: global.h,v 1.41 1996/08/19 16:30:14 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -71,7 +71,7 @@ typedef int pid_t;
 
 #endif
 
-#if     !defined(AMIGA) && (defined(LATTICE) || defined(MAC) || defined(__TURBOC__))
+#if     !defined(AMIGA) && (defined(MAC) || defined(MSDOS))
 /* These compilers require special open modes when reading binary files.
  *
  * "The single most brilliant design decision in all of UNIX was the
@@ -98,11 +98,20 @@ typedef int pid_t;
 
 #endif
 
+#include <sys/types.h>
+
+#ifndef _CONFIGURE_H
+#include "configure.h"
+#endif
+
 /* These two lines assume that your compiler's longs are 32 bits and
  * shorts are 16 bits. It is already assumed that chars are 8 bits,
  * but it doesn't matter if they're signed or unsigned.
  */
 typedef long int32;             /* 32-bit signed integer */
+#if !HAS_UINT
+typedef unsigned int uint;      /* 16 or 32-bit unsigned integer */
+#endif
 typedef unsigned long uint32;   /* 32-bit unsigned integer */
 typedef unsigned short uint16;  /* 16-bit unsigned integer */
 typedef unsigned char byte_t;   /*  8-bit unsigned integer */
@@ -220,16 +229,16 @@ int htob(char c);
 int htoi(char *);
 int readhex(uint8 *,char *,int);
 long htol(char *);
-char *inbuf(uint16 port,char *buf,uint16 cnt);
-uint16 hash_ip(int32 addr);
+char *inbuf(uint port,char *buf,uint cnt);
+uint hash_ip(int32 addr);
 int istate(void);
 void logmsg(void *tcb,const char *fmt,const char *arg);
-int ilog2(uint16 x);
+int ilog2(uint x);
 #define ltop(x) ((void *) (x))
 void *mallocw(unsigned nb);
-int memcnt(uint8 *buf,uint8 c,int size);
+int memcnt(const uint8 *buf,uint8 c,int size);
 void memxor(uint8 *,uint8 *,unsigned int);
-char *outbuf(uint16 port,char *buf,uint16 cnt);
+char *outbuf(uint port,char *buf,uint cnt);
 int32 rdclock(void);
 void restore(int);
 void rip(char *);

@@ -1,4 +1,4 @@
-/* @(#) $Id: tcpsubr.c,v 1.19 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: tcpsubr.c,v 1.20 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Low level TCP routines:
  *  control block management
@@ -42,7 +42,7 @@ char *Tcpreasons[] = {
 	"ICMP"          /* Not actually used */
 };
 struct tcb *Tcbs;               /* Head of control block list */
-uint16 Tcp_mss = DEF_MSS;       /* Maximum segment size to be sent with SYN */
+uint Tcp_mss = DEF_MSS;         /* Maximum segment size to be sent with SYN */
 int32 Tcp_irtt = DEF_RTT;       /* Initial guess at round trip time */
 int Tcp_trace;                  /* State change tracing flag */
 int Tcp_syndata;
@@ -72,9 +72,9 @@ struct mib_entry Tcp_mib[] = {
  */
 struct tcb *
 lookup_tcb(
-register struct connection *conn)
+struct connection *conn)
 {
-	register struct tcb *tcb;
+	struct tcb *tcb;
 	struct tcb *tcblast = NULL;
 
 	for(tcb=Tcbs;tcb != NULL;tcblast = tcb,tcb = tcb->next){
@@ -101,7 +101,7 @@ struct tcb *
 create_tcb(
 struct connection *conn)
 {
-	register struct tcb *tcb;
+	struct tcb *tcb;
 	struct tcp_rtt *tp;
 
 	if((tcb = lookup_tcb(conn)) != NULL)
@@ -131,11 +131,11 @@ struct connection *conn)
 /* Close our TCB */
 void
 close_self(
-register struct tcb *tcb,
+struct tcb *tcb,
 int reason)
 {
 	struct reseq *rp1;
-	register struct reseq *rp;
+	struct reseq *rp;
 
 	if(tcb == NULL)
 		return;
@@ -159,7 +159,7 @@ int reason)
  */
 int
 seq_within(
-register int32 x,register int32 low,register int32 high)
+int32 x,int32 low,int32 high)
 {
 	if(low <= high){
 		if(low <= x && x <= high)
@@ -172,7 +172,7 @@ register int32 x,register int32 low,register int32 high)
 }
 int
 seq_lt(
-register int32 x,register int32 y)
+int32 x,int32 y)
 {
 	int32 bugfix;
 	return (long)(bugfix=x-y) < 0;
@@ -180,7 +180,7 @@ register int32 x,register int32 y)
 #ifdef  notdef
 int
 seq_le(
-register int32 x,register int32 y)
+int32 x,int32 y)
 {
 	int32 bugfix;
 	return (long)(bugfix=x-y) <= 0;
@@ -188,14 +188,14 @@ register int32 x,register int32 y)
 #endif  /* notdef */
 int
 seq_gt(
-register int32 x,register int32 y)
+int32 x,int32 y)
 {
 	int32 bugfix;
 	return (long)(bugfix=x-y) > 0;
 }
 int
 seq_ge(
-register int32 x,register int32 y)
+int32 x,int32 y)
 {
 	int32 bugfix;
 	return (long)(bugfix=x-y) >= 0;
@@ -203,7 +203,7 @@ register int32 x,register int32 y)
 
 void
 settcpstate(
-register struct tcb *tcb,
+struct tcb *tcb,
 enum tcp_state newstate)
 {
 	enum tcp_state oldstate;
@@ -282,8 +282,8 @@ rtt_add(
 int32 addr,             /* Destination IP address */
 int32 rtt)
 {
-	register struct tcp_rtt *tp;
-	register struct tcp_rtt *pp;
+	struct tcp_rtt *tp;
+	struct tcp_rtt *pp;
 	int32 abserr;
 
 	if(addr == 0)
@@ -313,8 +313,8 @@ struct tcp_rtt *
 rtt_get(
 int32 addr)
 {
-	register struct tcp_rtt *tp;
-	register struct tcp_rtt *pp;
+	struct tcp_rtt *tp;
+	struct tcp_rtt *pp;
 
 	if(addr == 0)
 		return NULL;
@@ -339,7 +339,7 @@ void
 tcp_garbage(
 int red)
 {
-	register struct tcb *tcb;
+	struct tcb *tcb;
 	struct reseq *rp,*rp1;
 
 	for(tcb = Tcbs;tcb != NULL;tcb = tcb->next){

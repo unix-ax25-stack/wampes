@@ -1,4 +1,4 @@
-/* @(#) $Id: axheard.c,v 1.5 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: axheard.c,v 1.6 1996/08/19 16:30:14 deyke Exp $ */
 
 /* AX25 link callsign monitoring. Also contains beginnings of
  * an automatic link quality monitoring scheme (incomplete)
@@ -25,7 +25,7 @@ genrpt(
 struct iface *ifp)
 {
 	struct mbuf *bp;
-	register uint8 *cp;
+	uint8 *cp;
 	int i;
 	struct lq *lp;
 	int maxentries,nentries;
@@ -81,7 +81,7 @@ struct mbuf **bpp)
  */
 uint8 *
 putlqhdr(
-register uint8 *cp,
+uint8 *cp,
 uint16 version,
 int32 ip_addr)
 {
@@ -120,7 +120,7 @@ logsrc(
 struct iface *ifp,
 uint8 *addr)
 {
-	register struct lq *lp;
+	struct lq *lp;
 
 	if((lp = al_lookup(ifp,addr,1)) == NULL
 	 && (lp = al_create(ifp,addr)) == NULL)
@@ -134,7 +134,7 @@ logdest(
 struct iface *ifp,
 uint8 *addr)
 {
-	register struct ld *lp;
+	struct ld *lp;
 
 	if((lp = ad_lookup(ifp,addr,1)) == NULL
 	 && (lp = ad_create(ifp,addr)) == NULL)
@@ -149,7 +149,7 @@ struct iface *ifp,
 uint8 *addr,
 int sort)
 {
-	register struct lq *lp;
+	struct lq *lp;
 	struct lq *lplast = NULL;
 
 	for(lp = Lq;lp != NULL;lplast = lp,lp = lp->next){
@@ -171,7 +171,7 @@ al_create(
 struct iface *ifp,
 uint8 *addr)
 {
-	register struct lq *lp;
+	struct lq *lp;
 
 	lp = (struct lq *)callocw(1,sizeof(struct lq));
 	memcpy(lp->addr,addr,AXALEN);
@@ -188,7 +188,7 @@ struct iface *ifp,
 uint8 *addr,
 int sort)
 {
-	register struct ld *lp;
+	struct ld *lp;
 	struct ld *lplast = NULL;
 
 	for(lp = Ld;lp != NULL;lplast = lp,lp = lp->next){
@@ -210,7 +210,7 @@ ad_create(
 struct iface *ifp,
 uint8 *addr)
 {
-	register struct ld *lp;
+	struct ld *lp;
 
 	lp = (struct ld *)callocw(1,sizeof(struct ld));
 	memcpy(lp->addr,addr,AXALEN);

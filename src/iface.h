@@ -1,4 +1,4 @@
-/* @(#) $Id: iface.h,v 1.25 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: iface.h,v 1.26 1996/08/19 16:30:14 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -26,7 +26,7 @@ struct iftype {
 	char *name;             /* Name of encapsulation technique */
 	int (*send)(struct mbuf **,struct iface *,int32,uint8);
 				/* Routine to send an IP datagram */
-	int (*output)(struct iface *,uint8 *,uint8 *,uint16,struct mbuf **);
+	int (*output)(struct iface *,uint8 *,uint8 *,uint,struct mbuf **);
 				/* Routine to send link packet */
 	char *(*format)(char *,uint8 *);
 				/* Function that formats addresses */
@@ -56,9 +56,9 @@ struct iface {
 	int32 broadcast;        /* Broadcast address */
 	int32 netmask;          /* Network mask */
 
-	uint16 mtu;             /* Maximum transmission unit size */
+	uint mtu;               /* Maximum transmission unit size */
 
-	uint16 trace;           /* Trace flags */
+	uint trace;             /* Trace flags */
 #define IF_TRACE_OUT    0x01    /* Output packets */
 #define IF_TRACE_IN     0x10    /* Packets to me except broadcast */
 #define IF_TRACE_ASCII  0x100   /* Dump packets in ascii */
@@ -101,7 +101,7 @@ struct iface {
 				/* Routine to send an IP datagram */
 	int (*send)(struct mbuf **,struct iface *,int32,uint8);
 			/* Encapsulate any link packet */
-	int (*output)(struct iface *,uint8 *,uint8 *,uint16,struct mbuf **);
+	int (*output)(struct iface *,uint8 *,uint8 *,uint,struct mbuf **);
 			/* Send raw packet */
 	int (*raw)(struct iface *,struct mbuf **);
 			/* Display status */
@@ -127,7 +127,7 @@ struct iface {
 #define CRC_CCITT       5       /* Send CRC_CCITT packets */
 	int32 crcerrors;        /* Packets received with CRC errors */
 	int32 ax25errors;       /* Packets received with bad ax25 header */
-	uint16 flags;           /* Configuration flags */
+	uint flags;             /* Configuration flags */
 #define NO_RT_ADD       1       /* Don't call rt_add in ip_route */
 };
 extern struct iface *Ifaces;    /* Head of interface list */
@@ -155,7 +155,7 @@ void if_tx(int dev,void *arg1,void *unused);
 struct iface *ismyaddr(int32 addr);
 void network(int i,void *v1,void *v2);
 int nu_send(struct mbuf **bpp,struct iface *ifp,int32 gateway,uint8 tos);
-int nu_output(struct iface *,uint8 *,uint8 *,uint16,struct mbuf **);
+int nu_output(struct iface *,uint8 *,uint8 *,uint,struct mbuf **);
 int setencap(struct iface *ifp,char *mode);
 
 /* In config.c: */

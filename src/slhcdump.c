@@ -1,4 +1,4 @@
-/* @(#) $Id: slhcdump.c,v 1.6 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: slhcdump.c,v 1.7 1996/08/19 16:30:14 deyke Exp $ */
 
 #include <stdio.h>
 #include "global.h"
@@ -8,9 +8,9 @@
 #include "slhc.h"
 #include "trace.h"
 
-static uint16 decodeint(struct mbuf **bpp);
+static uint decodeint(struct mbuf **bpp);
 
-static uint16
+static uint
 decodeint(
 struct mbuf **bpp)
 {

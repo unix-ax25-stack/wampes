@@ -1,4 +1,4 @@
-/* @(#) $Id: tcpdump.c,v 1.11 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: tcpdump.c,v 1.12 1996/08/19 16:30:14 deyke Exp $ */
 
 /* TCP header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -33,8 +33,8 @@ int check)              /* 0 if checksum test is to be bypassed */
 {
 	struct tcp seg;
 	struct pseudo_header ph;
-	uint16 csum;
-	uint16 dlen;
+	uint csum;
+	uint dlen;
 
 	if(bpp == NULL || *bpp == NULL)
 		return;

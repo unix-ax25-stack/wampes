@@ -1,4 +1,4 @@
-/* @(#) $Id: tcpin.c,v 1.17 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: tcpin.c,v 1.18 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Process incoming TCP segments. Page number references are to ARPA RFC-793,
  * the TCP specification.
@@ -15,14 +15,14 @@
 #include "iface.h"
 #include "ip.h"
 
-static void update(struct tcb *tcb,struct tcp *seg,uint16 length);
+static void update(struct tcb *tcb,struct tcp *seg,uint length);
 static void proc_syn(struct tcb *tcb,uint8 tos,struct tcp *seg);
 static void add_reseq(struct tcb *tcb,uint8 tos,struct tcp *seg,
-	struct mbuf **bp,uint16 length);
+	struct mbuf **bp,uint length);
 static void get_reseq(struct tcb *tcb,uint8 *tos,struct tcp *seq,
-	struct mbuf **bp,uint16 *length);
+	struct mbuf **bp,uint *length);
 static int trim(struct tcb *tcb,struct tcp *seg,struct mbuf **bpp,
-	uint16 *length);
+	uint *length);
 static int in_window(struct tcb *tcb,int32 seq);
 
 /* This function is called from IP with the IP header in machine byte order,
@@ -37,12 +37,12 @@ int rxbroadcast,        /* Incoming broadcast - discard if true */
 int32 said              /* Authenticated packet */
 ){
 	struct tcb *ntcb;
-	register struct tcb *tcb;       /* TCP Protocol control block */
+	struct tcb *tcb;        /* TCP Protocol control block */
 	struct tcp seg;                 /* Local copy of segment header */
 	struct connection conn;         /* Local copy of addresses */
 	struct pseudo_header ph;        /* Pseudo-header for checksumming */
 	int hdrlen;                     /* Length of TCP header */
-	uint16 length;
+	uint length;
 	int32 t;
 
 	if(bpp == NULL || *bpp == NULL)
@@ -333,12 +333,12 @@ int32 said              /* Authenticated packet */
 			case TCP_ESTABLISHED:
 			case TCP_FINWAIT1:
 			case TCP_FINWAIT2:
-				/* Place on receive queue */
+				/* Update performance figures */
 				t = msclock();
-				if(t > tcb->lastrx){
-					tcb->rxbw = 1000L*length / (t - tcb->lastrx);
-					tcb->lastrx = t;
-				}
+				tcb->inrate = (7*tcb->inrate + t - tcb->lastrx)/8;
+				tcb->lastrx = t;
+				tcb->inlen = (7*tcb->inlen + length)/8;
+				/* Place on receive queue */
 				append(&tcb->rcvq,bpp);
 				tcb->rcvcnt += length;
 				tcb->rcv.nxt += length;
@@ -422,7 +422,7 @@ struct mbuf **bpp               /* First 8 bytes of TCP header */
 ){
 	struct tcp seg;
 	struct connection conn;
-	register struct tcb *tcb;
+	struct tcb *tcb;
 
 	/* Extract the socket info from the returned TCP header fragment
 	 * Note that since this is a datagram we sent, the source fields
@@ -471,10 +471,10 @@ struct mbuf **bpp               /* First 8 bytes of TCP header */
 void
 reset(
 struct ip *ip,                  /* Offending IP header */
-register struct tcp *seg)       /* Offending TCP header */
-{
+struct tcp *seg /* Offending TCP header */
+){
 	struct mbuf *hbp;
-	uint16 tmp;
+	uint tmp;
 
 	if(seg->flags.rst)
 		return; /* Never send an RST in response to an RST */
@@ -515,8 +515,8 @@ register struct tcp *seg)       /* Offending TCP header */
 	seg->up = 0;
 	seg->checksum = 0;      /* force recomputation */
 
-	hbp = ambufw(TCP_HDR_PAD);      /* Prealloc room for headers */
-	hbp->data += TCP_HDR_PAD;
+	hbp = ambufw(NET_HDR_PAD);      /* Prealloc room for headers */
+	hbp->data += NET_HDR_PAD;
 	htontcp(seg,&hbp,ip->dest,ip->source);
 	/* Ship it out (note swap of addresses) */
 	ip_send(ip->dest,ip->source,TCP_PTCL,ip->tos,0,&hbp,len_p(hbp),0,0);
@@ -528,11 +528,11 @@ register struct tcp *seg)       /* Offending TCP header */
  */
 static void
 update(
-register struct tcb *tcb,
-register struct tcp *seg,
-uint16 length)
-{
-	int32 acked;
+struct tcb *tcb,
+struct tcp *seg,
+uint length
+){
+	int32 acked,t;
 	int winupd = 0;
 	int32 swind;    /* Incoming window, scaled (non-SYN only) */
 	long rtt;       /* measured round trip time */
@@ -688,8 +688,10 @@ uint16 length)
 		tcb->backoff = 0;
 
 		/* Update our tx throughput estimate */
-		if(rtt != 0)    /* Avoid division by zero */
-			tcb->txbw = 1000*(seg->ack - tcb->rttack)/rtt;
+		t = msclock();
+		tcb->outlen = (7*tcb->outlen + seg->ack - tcb->rttack)/8;
+		tcb->outrate = (7*tcb->outrate + t - tcb->lastack)/8;
+		tcb->lastack = t;
 	}
 	tcb->sndcnt -= acked;   /* Update virtual byte count on snd queue */
 	tcb->snd.una = seg->ack;
@@ -704,7 +706,7 @@ uint16 length)
 	 * pullup won't be able to remove it from the queue, but that
 	 * causes no harm.
 	 */
-	pullup(&tcb->sndq,NULL,(uint16)acked);
+	pullup(&tcb->sndq,NULL,(uint)acked);
 
 	/* Stop retransmission timer, but restart it if there is still
 	 * unacknowledged data.
@@ -742,19 +744,19 @@ static
 int
 in_window(
 struct tcb *tcb,
-int32 seq)
-{
+int32 seq
+){
 	return seq_within(seq,tcb->rcv.nxt,(int32)(tcb->rcv.nxt+tcb->rcv.wnd-1));
 }
 
 /* Process an incoming SYN */
 static void
 proc_syn(
-register struct tcb *tcb,
+struct tcb *tcb,
 uint8 tos,
-struct tcp *seg)
-{
-	uint16 mtu;
+struct tcp *seg
+){
+	uint mtu;
 	struct tcp_rtt *tp;
 
 	tcb->flags.force = 1;   /* Always send a response */
@@ -772,7 +774,7 @@ struct tcp *seg)
 	tcb->snd.wnd = seg->wnd;        /* Never scaled in a SYN */
 	if(seg->flags.mss)
 		tcb->mss = seg->mss;
-	if(seg->flags.wscale && Tcp_wscale){
+	if(seg->flags.wscale){
 		tcb->snd.wind_scale = seg->wsopt;
 		tcb->rcv.wind_scale = DEF_WSCALE;
 		tcb->flags.ws_ok = 1;
@@ -801,8 +803,7 @@ struct tcp *seg)
 
 /* Generate an initial sequence number and put a SYN on the send queue */
 void
-send_syn(
-register struct tcb *tcb)
+send_syn(struct tcb *tcb)
 {
 	tcb->iss = geniss();
 	tcb->rttseq = tcb->snd.wl2 = tcb->snd.una = tcb->iss;
@@ -818,9 +819,9 @@ struct tcb *tcb,
 uint8 tos,
 struct tcp *seg,
 struct mbuf **bpp,
-uint16 length
+uint length
 ){
-	register struct reseq *rp,*rp1;
+	struct reseq *rp,*rp1;
 
 	/* Allocate reassembly descriptor */
 	if((rp = (struct reseq *)malloc(sizeof (struct reseq))) == NULL){
@@ -859,13 +860,13 @@ uint16 length
 /* Fetch the first entry off the resequencing queue */
 static void
 get_reseq(
-register struct tcb *tcb,
+struct tcb *tcb,
 uint8 *tos,
 struct tcp *seg,
 struct mbuf **bp,
-uint16 *length
+uint *length
 ){
-	register struct reseq *rp;
+	struct reseq *rp;
 
 	if((rp = tcb->reseq) == NULL)
 		return;
@@ -884,13 +885,13 @@ uint16 *length
  */
 static int
 trim(
-register struct tcb *tcb,
-register struct tcp *seg,
+struct tcb *tcb,
+struct tcp *seg,
 struct mbuf **bpp,
-uint16 *length
+uint *length
 ){
 	long dupcnt,excess;
-	uint16 len;             /* Segment length including flags */
+	uint len;               /* Segment length including flags */
 	char accept = 0;
 
 	len = *length;
@@ -935,15 +936,15 @@ uint16 *length
 			dupcnt--;
 		}
 		if(dupcnt > 0){
-			pullup(bpp,NULL,(uint16)dupcnt);
+			pullup(bpp,NULL,(uint)dupcnt);
 			seg->seq += dupcnt;
-			*length -= (uint16) dupcnt;
+			*length -= (uint) dupcnt;
 		}
 	}
 	if((excess = seg->seq + *length - (tcb->rcv.nxt + tcb->rcv.wnd)) > 0){
 		tcb->rerecv += excess;
 		/* Trim right edge */
-		*length -= (uint16) excess;
+		*length -= (uint) excess;
 		trim_mbuf(bpp,*length);
 		seg->flags.fin = 0;     /* FIN follows last data byte */
 	}

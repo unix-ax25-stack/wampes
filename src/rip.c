@@ -1,4 +1,4 @@
-/* @(#) $Id: rip.c,v 1.15 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: rip.c,v 1.16 1996/08/19 16:30:14 deyke Exp $ */
 
 /* This file contains code to implement the Routing Information Protocol (RIP)
  * and is derived from 4.2BSD code. Mike Karels of Berkeley has stated on
@@ -24,7 +24,7 @@
 #include "arp.h"
 
 struct rip_stat Rip_stat;
-uint16 Rip_trace;
+uint Rip_trace;
 int Rip_merge;
 struct rip_list *Rip_list;
 struct udp_cb *Rip_cb;
@@ -35,9 +35,9 @@ static void rip_rx(struct iface *iface,struct udp_cb *sock,int cnt);
 static void proc_rip(struct iface *iface,int32 gateway,
 	struct rip_route *ep,int32 ttl);
 static uint8 *putheader(uint8 *cp,enum ripcmd command,uint8 version);
-static uint8 *putentry(uint8 *cp,uint16 fam,int32 target,int32 metric);
+static uint8 *putentry(uint8 *cp,uint fam,int32 target,int32 metric);
 static void rip_shout(void *p);
-static void send_routes(int32 dest,uint16 port,int split,int trig,
+static void send_routes(int32 dest,uint port,int split,int trig,
 	int us);
 
 /* Send RIP CMD_RESPONSE packet(s) to the specified rip_list entry */
@@ -45,7 +45,7 @@ static void
 rip_shout(
 void *p)
 {
-	register struct rip_list *rl;
+	struct rip_list *rl;
 
 	rl = (struct rip_list *)p;
 	stop_timer(&rl->rip_time);
@@ -58,14 +58,14 @@ void *p)
 static void
 send_routes(
 int32 dest,             /* IP destination address to send to */
-uint16 port,
+uint port,
 int split,              /* Do split horizon? */
 int trig,               /* Send only triggered updates? */
 int us)                 /* Include our address in update */
 {
 	uint8 *cp;
 	int i,bits,numroutes,maxroutes;
-	uint16 pktsize;
+	uint pktsize;
 	struct mbuf *bp;
 	struct route *rp;
 	struct socket lsock,fsock;
@@ -150,7 +150,7 @@ int32 interval,
 int split,
 int us)
 {
-	register struct rip_list *rl;
+	struct rip_list *rl;
 	struct route *rp;
 
 	if((rp = rt_lookup(dest)) == NULL){
@@ -193,7 +193,7 @@ int
 riprefadd(
 int32 gateway)
 {
-	register struct rip_refuse *rl;
+	struct rip_refuse *rl;
 
 	for(rl = Rip_refuse; rl != NULL; rl = rl->next)
 		if(rl->target == gateway)
@@ -218,7 +218,7 @@ int
 rip_drop(
 int32   dest)
 {
-	register struct rip_list *rl;
+	struct rip_list *rl;
 
 	for(rl = Rip_list; rl != NULL; rl = rl->next)
 		if(rl->dest == dest)
@@ -249,7 +249,7 @@ int
 riprefdrop(
 int32 gateway)
 {
-	register struct rip_refuse *rl;
+	struct rip_refuse *rl;
 
 	for(rl = Rip_refuse; rl != NULL; rl = rl->next)
 		if(rl->target == gateway)
@@ -276,7 +276,7 @@ int32 gateway)
 void
 rip_trigger(void)
 {
-	register struct rip_list *rl;
+	struct rip_list *rl;
 	int bits,i;
 	struct route *rp;
 
@@ -319,7 +319,7 @@ int cnt)
 	struct mbuf *bp;
 	struct socket fsock;
 	enum ripcmd cmd;
-	register struct rip_refuse *rfl;
+	struct rip_refuse *rfl;
 	struct rip_route entry;
 	struct route *rp;
 	struct rip_list *rl;
@@ -472,11 +472,11 @@ static void
 proc_rip(
 struct iface *iface,
 int32 gateway,
-register struct rip_route *ep,
+struct rip_route *ep,
 int32 ttl)
 {
 	unsigned int bits;
-	register struct route *rp;
+	struct route *rp;
 	int add = 0;    /* action flags */
 	int drop = 0;
 	int trigger = 0;
@@ -594,7 +594,7 @@ int32 ttl)
 int
 ripreq(
 int32 dest,
-uint16 replyport)
+uint replyport)
 {
 	struct mbuf *bp;
 	struct socket lsock,fsock;
@@ -625,10 +625,10 @@ uint16 replyport)
 }
 void
 pullentry(
-register struct rip_route *ep,
+struct rip_route *ep,
 struct mbuf **bpp)
 {
-	ep->addr_fam = (uint16) pull16(bpp);
+	ep->addr_fam = (uint) pull16(bpp);
 	(void)pull16(bpp);
 	ep->target = pull32(bpp);
 	(void)pull32(bpp);
@@ -639,7 +639,7 @@ struct mbuf **bpp)
 /* Write the header of a RIP packet */
 static uint8 *
 putheader(
-register uint8 *cp,
+uint8 *cp,
 enum ripcmd command,
 uint8 version)
 {
@@ -651,8 +651,8 @@ uint8 version)
 /* Write a single entry into a rip packet */
 static uint8 *
 putentry(
-register uint8 *cp,
-uint16 fam,
+uint8 *cp,
+uint fam,
 int32 target,
 int32 metric)
 {
@@ -670,7 +670,7 @@ void
 rt_timeout(
 void *s)
 {
-	register struct route *rp = (struct route *)s;
+	struct route *rp = (struct route *)s;
 
 	stop_timer(&rp->timer);
 	if(rp->metric < RIP_INFINITY){

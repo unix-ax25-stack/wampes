@@ -1,4 +1,4 @@
-/* @(#) $Id: trace.c,v 1.20 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: trace.c,v 1.21 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Packet tracing - top level and generic routines, including hex/ascii
  * Copyright 1991 Phil Karn, KA9Q
@@ -14,15 +14,14 @@
 #include <stdarg.h>
 #include "mbuf.h"
 #include "iface.h"
-#include "pktdrvr.h"
 #include "commands.h"
 #include "trace.h"
 #include "session.h"
 #include "timer.h"
 
 static void ascii_dump(FILE *fp,struct mbuf **bpp);
-static void ctohex(char *buf,uint16 c);
-static void fmtline(FILE *fp,uint16 addr,uint8 *buf,uint16 len);
+static void ctohex(char *buf,uint c);
+static void fmtline(FILE *fp,uint addr,uint8 *buf,uint len);
 void hex_dump(FILE *fp,struct mbuf **bpp);
 static void showtrace(struct iface *ifp);
 
@@ -55,7 +54,7 @@ int direction,
 struct mbuf *bp
 ){
 	struct mbuf *tbp;
-	uint16 size;
+	uint size;
 	time_t timer;
 	char *cp;
 	struct iftype *ift;
@@ -138,10 +137,10 @@ struct mbuf *bp)
 void
 hex_dump(
 FILE *fp,
-register struct mbuf **bpp)
+struct mbuf **bpp)
 {
-	uint16 n;
-	uint16 address;
+	uint n;
+	uint address;
 	uint8 buf[16];
 
 	if(bpp == NULL || *bpp == NULL || fp == NULL)
@@ -157,10 +156,10 @@ register struct mbuf **bpp)
 static void
 ascii_dump(
 FILE *fp,
-register struct mbuf **bpp)
+struct mbuf **bpp)
 {
 	int c;
-	register uint16 tot;
+	uint tot;
 
 	if(bpp == NULL || *bpp == NULL || fp == NULL)
 		return;
@@ -183,22 +182,22 @@ register struct mbuf **bpp)
 static void
 fmtline(
 FILE *fp,
-uint16 addr,
+uint addr,
 uint8 *buf,
-uint16 len)
+uint len)
 {
 	char line[80];
 	char *aptr,*cptr;
 	uint8 c;
 
 	memset(line,' ',sizeof(line));
-	ctohex(line,(uint16)hibyte(addr));
-	ctohex(line+2,(uint16)lobyte(addr));
+	ctohex(line,(uint)hibyte(addr));
+	ctohex(line+2,(uint)lobyte(addr));
 	aptr = &line[6];
 	cptr = &line[55];
 	while(len-- != 0){
 		c = *buf++;
-		ctohex(aptr,(uint16)c);
+		ctohex(aptr,(uint)c);
 		aptr += 3;
 		*cptr++ = isprint(c) ? c : '.';
 	}
@@ -208,8 +207,8 @@ uint16 len)
 /* Convert byte to two ascii-hex characters */
 static void
 ctohex(
-register char *buf,
-register uint16 c)
+char *buf,
+uint c)
 {
 	static char hex[] = "0123456789abcdef";
 
@@ -266,8 +265,7 @@ void *p)
 }
 /* Display the trace flags for a particular interface */
 static void
-showtrace(
-register struct iface *ifp)
+showtrace(struct iface *ifp)
 {
 	if(ifp == NULL)
 		return;

@@ -1,4 +1,4 @@
-/* @(#) $Id: ip.h,v 1.18 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ip.h,v 1.19 1996/08/19 16:30:14 deyke Exp $ */
 
 #ifndef _IP_H
 #define _IP_H
@@ -60,10 +60,10 @@ extern struct mib_entry Ip_mib[];
 struct ip {
 	int32 source;           /* Source address */
 	int32 dest;             /* Destination address */
-	uint16 length;          /* Total length */
-	uint16 id;              /* Identification */
-	uint16 offset;          /* Fragment offset in bytes */
-	uint16 checksum;                /* Header checksum */
+	uint length;            /* Total length */
+	uint id;                /* Identification */
+	uint offset;            /* Fragment offset in bytes */
+	uint checksum;          /* Header checksum */
 
 	struct {
 		unsigned int congest:1; /* Congestion experienced bit (exp) */
@@ -127,17 +127,17 @@ struct rt_cache {
 extern int32 Rtlookups; /* Count of calls to rt_lookup() */
 extern int32 Rtchits;           /* Count of cache hits in rt_lookup() */
 
-extern uint16 Id_cntr;          /* Datagram serial number */
+extern uint Id_cntr;            /* Datagram serial number */
 
 /* Reassembly descriptor */
 struct reasm {
 	struct reasm *next;     /* Linked list pointer */
 	struct timer timer;     /* Reassembly timeout timer */
 	struct frag *fraglist;  /* Head of data fragment chain */
-	uint16 length;          /* Entire datagram length, if known */
+	uint length;            /* Entire datagram length, if known */
 	int32 source;           /* src/dest/id/protocol uniquely describe a datagram */
 	int32 dest;
-	uint16 id;
+	uint id;
 	char protocol;
 };
 
@@ -146,8 +146,8 @@ struct frag {
 	struct frag *prev;      /* Previous fragment on list */
 	struct frag *next;      /* Next fragment */
 	struct mbuf *buf;       /* Actual fragment data */
-	uint16 offset;          /* Starting offset of fragment */
-	uint16 last;            /* Ending offset of fragment */
+	uint offset;            /* Starting offset of fragment */
+	uint last;              /* Ending offset of fragment */
 };
 
 extern struct reasm *Reasmq;    /* The list of reassembly descriptors */
@@ -183,7 +183,7 @@ void ip_recv(struct iface *iface,struct ip *ip,struct mbuf **bpp,
 void ipip_recv(struct iface *iface,struct ip *ip,struct mbuf **bp,
 	int rxbroadcast,int32 said);
 int ip_send(int32 source,int32 dest,char protocol,char tos,char ttl,
-	struct mbuf **bpp,uint16 length,uint16 id,char df);
+	struct mbuf **bpp,uint length,uint id,char df);
 struct raw_ip *raw_ip(int protocol,void (*r_upcall)(struct raw_ip *) );
 void del_ip(struct raw_ip *rrp);
 void rquench(struct iface *ifp,int drop);
@@ -193,7 +193,7 @@ void dumpip(struct iface *iface,struct ip *ip,struct mbuf *bp,int32 spi);
 
 /* In iproute.c: */
 void ipinit(void);
-uint16 ip_mtu(int32 addr);
+uint ip_mtu(int32 addr);
 void encap_tx(int dev,void *arg1,void *unused);
 int ip_encap(struct mbuf **bpp,struct iface *iface,int32 gateway,uint8 tos);
 void ip_proc(struct iface *iface,struct mbuf **bpp);
@@ -207,13 +207,13 @@ struct route *rt_lookup(int32 target);
 struct route *rt_blookup(int32 target,unsigned int bits);
 
 /* In iphdr.c: */
-uint16 cksum(struct pseudo_header *ph,struct mbuf *m,uint16 len);
-uint16 eac(int32 sum);
+uint cksum(struct pseudo_header *ph,struct mbuf *m,uint len);
+uint eac(int32 sum);
 void htonip(struct ip *ip,struct mbuf **data,int cflag);
 int ntohip(struct ip *ip,struct mbuf **bpp);
 
 /* In either lcsum.c or pcgen.asm: */
-uint16 lcsum(uint16 *wp,uint16 len);
+uint lcsum(uint16 *wp,uint len);
 
 /* In sim.c: */
 void net_sim(struct mbuf *bp);

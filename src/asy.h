@@ -1,4 +1,4 @@
-/* @(#) $Id: asy.h,v 1.18 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: asy.h,v 1.19 1996/08/19 16:30:14 deyke Exp $ */
 
 #ifndef _ASY_H
 #define _ASY_H
@@ -27,7 +27,7 @@ extern struct asymode Asymode[];
 
 /* In n8250.c: */
 int asy_init(int dev,struct iface *ifp,int base,int irq,
-	uint16 bufsize,int trigchar,long speed,int cts,int rlsd,int chain);
+	uint bufsize,int trigchar,long speed,int cts,int rlsd,int chain);
 int32 asy_ioctl(struct iface *ifp,int cmd,int set,int32 val);
 int asy_speed(int dev,long bps);
 int asy_send(int dev,struct mbuf **bpp);

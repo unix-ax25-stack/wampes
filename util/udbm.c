@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: udbm.c,v 1.46 1996/08/12 18:53:33 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: udbm.c,v 1.47 1996/08/19 16:32:09 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -348,6 +348,9 @@ static void parse_mybbs_messages(void)
       }
       if (!strncmp(line, "Subject: ", 9)) {
 	sscanf(line, "Subject: %s %d", mybbs, &timestamp);
+	if ((cp = strchr(mybbs, '.'))) {
+	  *cp = 0;
+	}
 	if (!callvalid(mybbs))
 	  *mybbs = 0;
       }

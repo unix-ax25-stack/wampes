@@ -1,4 +1,4 @@
-/* @(#) $Id: asy.c,v 1.15 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: asy.c,v 1.16 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Generic serial line interface routines
  * Copyright 1992 Phil Karn, KA9Q
@@ -14,7 +14,6 @@
 #include "ax25.h"
 #include "kiss.h"
 #include "nrs.h"
-#include "pktdrvr.h"
 #include "slip.h"
 #include "commands.h"
 
@@ -121,8 +120,8 @@ void *p)
 		chain = 1;
 	else
 		chain = 0;
-	asy_init(dev,ifp,base,irq,(uint16)atol(argv[5]),
-		trigchar,atol(argv[7]),cts,rlsd,chain);
+	asy_init(dev,ifp,base,irq,(uint)atol(argv[5]),
+		trigchar,(uint)atol(argv[7]),cts,rlsd,chain);
 #if 0
 	cp = if_name(ifp," tx");
 	ifp->txproc = newproc(cp,768,if_tx,0,ifp,NULL,0);

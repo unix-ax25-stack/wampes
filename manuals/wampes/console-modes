@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/console-modes,v 1.3 1996/08/11 18:18:04 deyke Exp $
+.\" @(#) $Id: console-modes,v 1.4 1996/08/19 16:33:09 deyke Exp $
 .nr Cl 7 \" Max level of header for table of contents
 .H 1 "Console modes"
 The console may be in one of two modes: \fBcommand mode\fP or
@@ -94,11 +94,12 @@ Delete from cursor to end of line.
 .LI DeleteLine
 Delete entire line.
 .SP
+.LI Control-Q
 .LI Control-V
 Escape next character. Editing characters
 can be entered in a command line or in
-a search string if preceded by a Control-V.
-Control-V removes the
+a search string if preceded by a Control-Q or Control-V.
+Control-Q and Control-V removes the
 next character's editing features (if any).
 .SP
 .LI Control-L

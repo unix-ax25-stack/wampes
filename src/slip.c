@@ -1,4 +1,4 @@
-/* @(#) $Id: slip.c,v 1.20 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: slip.c,v 1.21 1996/08/19 16:30:14 deyke Exp $ */
 
 /* SLIP (Serial Line IP) encapsulation and control routines.
  * Copyright 1991 Phil Karn
@@ -136,8 +136,7 @@ struct mbuf **bpp
 /* Encode a packet in SLIP format */
 static
 struct mbuf *
-slip_encode(
-struct mbuf **bpp)
+slip_encode(struct mbuf **bpp)
 {
 	struct mbuf *lbp;       /* Mbuf containing line-ready packet */
 	register uint8 *cp;
@@ -146,7 +145,7 @@ struct mbuf **bpp)
 	/* Allocate output mbuf that's twice as long as the packet.
 	 * This is a worst-case guess (consider a packet full of FR_ENDs!)
 	 */
-	lbp = alloc_mbuf((uint16)(2*len_p(*bpp) + 2));
+	lbp = alloc_mbuf(2*len_p(*bpp) + 2);
 	if(lbp == NULL){
 		/* No space; drop */
 		free_p(bpp);

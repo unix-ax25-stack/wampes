@@ -1,4 +1,4 @@
-/* @(#) $Id: domhdr.c,v 1.11 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: domhdr.c,v 1.12 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Domain header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -20,12 +20,10 @@ static uint8 *putq(uint8 *buffer, uint8 *cp, const struct rr *rrp);
 static uint8 *putrr(uint8 *buffer, uint8 *cp, const struct rr *rrp);
 
 int
-ntohdomain(
-register struct dhdr *dhdr,
-struct mbuf **bpp)
+ntohdomain(struct dhdr *dhdr,struct mbuf **bpp)
 {
-	uint16 tmp,len;
-	register uint16 i;
+	uint tmp,len;
+	uint i;
 	uint8 *msg,*cp;
 	struct rr **rrpp;
 
@@ -107,12 +105,9 @@ struct mbuf **bpp)
 	return 0;
 }
 static uint8 *
-getq(
-struct rr **rrpp,
-uint8 *msg,
-uint8 *cp)
+getq(struct rr **rrpp,uint8 *msg,uint8 *cp)
 {
-	register struct rr *rrp;
+	struct rr *rrp;
 	int len;
 	char *name;
 
@@ -141,7 +136,7 @@ struct rr **rrpp, /* Where to allocate resource record structure */
 uint8 *msg,     /* Pointer to beginning of domain message */
 uint8 *cp)      /* Pointer to start of encoded RR record */
 {
-	register struct rr *rrp;
+	struct rr *rrp;
 	int len;
 	char *name;
 
@@ -266,7 +261,7 @@ char *full,             /* Pointer to result buffer */
 int fullen)             /* Length of same */
 {
 	unsigned int slen;      /* Length of current segment */
-	register uint8 *cp;
+	uint8 *cp;
 	int clen = 0;   /* Total length of compressed name */
 	int indirect = 0;       /* Set if indirection encountered */
 	int nseg = 0;           /* Total number of segments in name */

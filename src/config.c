@@ -1,4 +1,4 @@
-/* @(#) $Id: config.c,v 1.47 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: config.c,v 1.48 1996/08/19 16:30:14 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -17,6 +17,10 @@
 #include "proc.h"
 #include "iface.h"
 #include "ip.h"
+#ifdef  IPSEC
+#include "ipsec.h"
+#include "photuris.h"
+#endif
 #include "tcp.h"
 #include "udp.h"
 #ifdef  ARCNET
@@ -41,19 +45,18 @@
 #include "bootp.h"
 #include "asy.h"
 #include "trace.h"
-#ifdef  QTSO
-#include "qtso.h"
+#include "session.h"
+#ifdef  SPPP
+#include "sppp.h"
 #endif
-#ifdef  CDMA_DM
-#include "dm.h"
+#ifdef  KSP
+#include "ksp.h"
 #endif
-#ifdef  DMLITE
-#include "dmlite.h"
-#include "rlp.h"
+#ifdef  SOUND
+#include "sb.h"
 #endif
 #include "flexnet.h"
 
-int dotest(int argc,char *argv[],void *p);      /**/
 static int dostart(int argc,char *argv[],void *p);
 static int dostop(int argc,char *argv[],void *p);
 static int dostatus(int argc,char *argv[],void *p);
@@ -80,14 +83,9 @@ int32 Memthresh = MTHRESH;
 struct cmds Cmds[] = {
 	/* The "go" command must be first */
 	"",             go,             0, 0, NULL,
-#ifndef AMIGA
 	"!",            doshell,        0, 0, NULL,
-#endif
-#ifdef  AMIGA
-	"amiga",        doamiga,        0, 0, NULL,
-#endif
 #if     (defined(MAC) && defined(APPLETALK))
-	"applestat",    doatstat,       0,      0, NULL,
+	"applestat",    doatstat,       0, 0, NULL,
 #endif
 #if     (defined(AX25) || defined(ETHER) || defined(APPLETALK))
 	"arp",          doarp,          0, 0, NULL,
@@ -126,12 +124,6 @@ struct cmds Cmds[] = {
 #ifndef AMIGA
 /*      "dir",          dodir,          0, 0, NULL,    note sequence */
 #endif
-#ifdef  CDMA_DM
-	"dm",           dodm,           0, 0, NULL,
-#endif
-#ifdef  DMLITE
-	"dmlite",       dodml,          0, 0, NULL,
-#endif
 	"domain",       dodomain,       0, 0, NULL,
 #ifdef  DRSI
 	"drsistat",     dodrstat,       0, 0, NULL,
@@ -145,9 +137,6 @@ struct cmds Cmds[] = {
 	"escape",       doescape,       0, 0, NULL,
 #endif
 	"exit",         doexit,         0, 0, NULL,
-#ifdef  QFAX
-	"fax",          dofax,          4096, 2, "fax <server>",
-#endif
 /*      "files",        dofiles,        0, 0, NULL, */
 	"finger",       dofinger,       0, 2, "finger name@host",
 	"fkey",         dofkey,         0, 3, "fkey <key#> <text>",
@@ -167,11 +156,11 @@ struct cmds Cmds[] = {
 	"icmp",         doicmp,         0, 0, NULL,
 	"ifconfig",     doifconfig,     0, 0, NULL,
 	"ip",           doip,           0, 0, NULL,
-	"ipfilter",     doipfilter,     0, 0, NULL,
-#if defined(MSDOS) && !defined(CPU386)
-	"isat",         doisat,         0, 0, NULL,
-#endif
 	"kick",         dokick,         0, 0, NULL,
+#ifdef  KSP
+	"ksp",          doksp,          0, 0, NULL,
+#endif
+	"ipfilter",     doipfilter,     0, 0, NULL,
 	"log",          dolog,          0, 0, NULL,
 	"login",        dologin,        0, 0, NULL,
 #ifdef  LTERM
@@ -211,9 +200,6 @@ struct cmds Cmds[] = {
 #if     !defined(UNIX) && !defined(AMIGA)
 	"pwd",          docd,           0, 0, NULL,
 #endif
-#ifdef  QTSO
-	"qtso",         doqtso,         0, 0, NULL,
-#endif
 	"record",       dorecord,       0, 0, NULL,
 	"remote",       doremote,       0, 3, "remote [-p port] [-k key] [-a kickaddr] <address> exit|reset|kick",
 	"rename",       dorename,       0, 3, "rename <oldfile> <newfile>",
@@ -226,18 +212,24 @@ struct cmds Cmds[] = {
 	"route",        doroute,        0, 0, NULL,
 	"status",       dostatus,       0, 0, NULL,
 	"session",      dosession,      0, 0, NULL,
+#ifdef  IPSEC
+	"secure",       dosec,          0, 0, "secure [[add|delete] <host>]",
+#endif
 /*      "scrollback",   dosfsize,       0, 0, NULL, */
 #ifdef  SCC
 	"sccstat",      dosccstat,      0, 0, NULL,
 #endif
-#if     !defined(AMIGA)
 	"shell",        doshell,        0, 0, NULL,
-#endif
 #if     defined(SMTP)
 	"smtp",         dosmtp,         0, 0, NULL,
 #endif
 	"sntp",         dosntp,         0, 0, NULL,
 /*      "socket",       dosock,         0, 0, NULL, */
+#ifdef  SOUND
+	"sound",        dosound,        0, 2,
+		"sound attach|detach|listen ...",
+
+#endif
 	"source",       dosource,       0, 2, "source <filename>",
 #ifdef  SERVERS
 	"start",        dostart,        0, 2, "start <servername>",
@@ -248,7 +240,7 @@ struct cmds Cmds[] = {
 #ifdef  notdef
 	"test",         dotest,         1024, 0, NULL,
 #endif
-/*      "tip",          dotip,          256, 2, "tip <iface", */
+/*      "tip",          dotip,          256, 2, "tip <iface>", */
 	"topt",         dotopt,         0, 0, NULL,
 #ifdef  TRACE
 	"trace",        dotrace,        0, 0, NULL,
@@ -256,9 +248,7 @@ struct cmds Cmds[] = {
 	"udp",          doudp,          0, 0, NULL,
 	"upload",       doupload,       0, 0, NULL,
 /*      "view",         doview,         0, 2, "view <filename>", */
-#ifdef  MSDOS
-	"watch",        doswatch,       0, 0, NULL,
-#endif
+/*      "wipe",         dowipe,         0, 0, NULL, */
 /*      "?",            dohelp,         0, 0, NULL, */
 	NULL,   NULL,           0, 0,
 		"Unknown command; type \"?\" for list",
@@ -280,10 +270,6 @@ struct cmds Attab[] = {
 	"pc100", pc_attach, 0, 8,
 	"attach pc100 <address> <vector> ax25ui|ax25i <label> <buffers>\
  <mtu> <speed> [ip_addra] [ip_addrb]",
-#endif
-#ifdef  CDMA_DM
-	"dm", dm_attach, 0, 8,
-	"attach dm <address> <vector> <rxdrq> <txdrq> <label> <rxbuf> <mtu> <speed>",
 #endif
 #ifdef  DRSI
 	/* DRSI PCPA card in low speed mode */
@@ -324,12 +310,6 @@ struct cmds Attab[] = {
 	"packet", pk_attach, 0, 4,
 	"attach packet <int#> <label> <buffers> <mtu> [ip_addr]",
 #endif
-#ifdef  QTSO
-	/* CDMA QTSO data interface */
-	"qtso", qtso_attach, 0, 2,
-	"attach qtso <label> <com_port_label> [<com_port_label> ...]",
-#endif
-
 #ifdef  HS
 	/* Special high speed driver for DRSI PCPA or Eagle cards */
 	"hs", hs_attach, 0, 7,
@@ -344,6 +324,10 @@ struct cmds Attab[] = {
 #endif
 #ifdef  ASY
 /*      "4port",fp_attach, 0, 3, "attach 4port <base> <irq>", */
+#endif
+#ifdef  KSP
+	"ksp", ksp_attach, 0, 5,
+	"attach ksp <base> <irq> <label> <mtu>",
 #endif
 #ifdef  AX25
 	"axip", axip_attach, 0, 1,
@@ -369,13 +353,9 @@ static struct cmds Startcmds[] = {
 #if     defined(AX25) && defined(MAILBOX)
 	"ax25",         ax25start,      0, 0, NULL,
 #endif
-/*      "bsr",          bsr1,           256, 2, "start bsr <interface> [<port>]", */
 	"discard",      dis1,           0, 0, NULL,
 	"domain",       domain1,        0, 0, NULL,
 	"echo",         echo1,          0, 0, NULL,
-#ifdef  QFAX
-	"fax",          fax1,           256, 0, NULL,
-#endif
 /*      "finger",       finstart,       256, 0, NULL, */
 	"ftp",          ftpstart,       0, 0, NULL,
 	"tcpgate",      tcpgate1,       0, 2, "start tcpgate <tcp port> [<host:service>]",
@@ -397,9 +377,8 @@ static struct cmds Startcmds[] = {
 	"time",         time1,          0, 0, NULL,
 /*      "tip",          tipstart,       256, 2, "start tip <interface>", */
 #endif
-/*      "term",         term1,          256, 0, NULL, */
 /*      "ttylink",      ttylstart,      256, 0, NULL, */
-	"remote",       rem1,           0, 0, NULL,
+	"remote",       rem1,           0,   0, NULL,
 	NULL,
 };
 
@@ -407,13 +386,9 @@ static struct cmds Stopcmds[] = {
 #if     defined(AX25) && defined(MAILBOX)
 	"ax25",         ax250,          0, 0, NULL,
 #endif
-/*      "bsr",          bsr0,           0, 0, NULL, */
 	"discard",      dis0,           0, 0, NULL,
 	"domain",       domain0,        0, 0, NULL,
 	"echo",         echo0,          0, 0, NULL,
-#if     defined(QFAX)
-	"fax",          fax0,           0, 0, NULL,
-#endif
 /*      "finger",       fin0,           0, 0, NULL, */
 	"ftp",          ftp0,           0, 0, NULL,
 #if     defined(NETROM) && defined(MAILBOX)
@@ -434,7 +409,6 @@ static struct cmds Stopcmds[] = {
 	"time",         time0,          0, 0, NULL,
 /*      "tip",          tip0,           0, 2, "stop tip <interface>", */
 #endif
-/*      "term",         term0,          0, 0, NULL, */
 /*      "ttylink",      ttyl0,          0, 0, NULL, */
 	"remote",       rem0,           0, 0, NULL,
 	NULL,
@@ -693,10 +667,15 @@ struct asymode Asymode[] = {
 /* daemons to be run at startup time */
 struct daemon Daemons[] = {
 	"killer",       1024,   killer,
-/*      "gcollect",     256,    gcollect,       */
+/*      "gcollect",     256,    gcollect, */
 	"timer",        16000,  timerproc,
 	"network",      16000,  network,
-/*      "keyboard",     250,    keyboard,       */
+/*      "keyboard",     250,    keyboard, */
+/*      "random init",  650,    rand_init, */
+#ifdef  PHOTURIS
+	"keygen",       2048,   gendh,
+	"key mgmt",     2048,   phot_proc,
+#endif
 	NULL,       0,      NULL
 };
 

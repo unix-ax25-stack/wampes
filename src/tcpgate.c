@@ -1,4 +1,4 @@
-/* @(#) $Id: tcpgate.c,v 1.16 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: tcpgate.c,v 1.17 1996/08/19 16:30:14 deyke Exp $ */
 
 #include "global.h"
 
@@ -107,7 +107,7 @@ static void tcp_state(struct tcb *tcb, enum tcp_state old, enum tcp_state new)
       off_read(tcb->user);
       close(tcb->user);
     }
-    del_tcp(tcb);
+    del_tcp(&tcb);
     break;
   default:
     break;

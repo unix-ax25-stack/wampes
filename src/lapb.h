@@ -1,4 +1,4 @@
-/* @(#) $Id: lapb.h,v 1.24 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: lapb.h,v 1.25 1996/08/19 16:30:14 deyke Exp $ */
 
 #ifndef _LAPB_H
 #define _LAPB_H
@@ -108,10 +108,10 @@ struct ax25_cb {
 	uint8 vr;                       /* Our receive state variable */
 	uint8 unack;                    /* Number of unacked frames */
 	int maxframe;                   /* Transmit flow control level, frames */
-	uint16 paclen;                  /* Maximum outbound packet size, bytes */
-	uint16 window;                  /* Local flow control limit, bytes */
+	uint paclen;                    /* Maximum outbound packet size, bytes */
+	uint window;                    /* Local flow control limit, bytes */
 	enum lapb_version proto;        /* Protocol version */
-	uint16 pthresh;                 /* Poll threshold, bytes */
+	uint pthresh;                   /* Poll threshold, bytes */
 	unsigned retries;               /* Retry counter */
 	unsigned n2;                    /* Retry limit */
 	enum lapb_state state;          /* Link state */
@@ -181,7 +181,7 @@ struct ax25_cb *open_ax25(struct ax25 *,
 	void (*)(struct ax25_cb *,int),
 	void (*)(struct ax25_cb *,enum lapb_state,enum lapb_state),
 	char *user);
-struct mbuf *recv_ax25(struct ax25_cb *axp,uint16 cnt);
+struct mbuf *recv_ax25(struct ax25_cb *axp,uint cnt);
 int reset_ax25(struct ax25_cb *axp);
 int send_ax25(struct ax25_cb *axp,struct mbuf **bp,int pid);
 int space_ax25(struct ax25_cb *axp);
@@ -191,7 +191,7 @@ void est_link(struct ax25_cb *axp);
 void lapbstate(struct ax25_cb *axp,enum lapb_state s);
 int lapb_input(struct iface *iface,struct ax25 *hdr,struct mbuf **bp);
 int lapb_output(struct ax25_cb *axp);
-struct mbuf *segmenter(struct mbuf **bp,uint16 ssize);
+struct mbuf *segmenter(struct mbuf **bp,uint ssize);
 int sendctl(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int cmd);
 int sendframe(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int ctl,struct mbuf **data);
 void axnl3(struct iface *iface,struct ax25_cb *axp,uint8 *src,
@@ -206,7 +206,7 @@ void pollthem(void *p);
 void recover(void *p);
 
 /* In ax25subr.c: */
-uint16 ftype(int control);
+uint ftype(uint control);
 void lapb_garbage(int drastic);
 
 /* In axserver.c: */

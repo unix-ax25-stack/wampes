@@ -1,4 +1,4 @@
-/* @(#) $Id: slip.h,v 1.17 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: slip.h,v 1.18 1996/08/19 16:30:14 deyke Exp $ */
 
 #ifndef _SLIP_H
 #define _SLIP_H
@@ -18,7 +18,11 @@
 #define SLIP_MAX 16             /* Maximum number of slip channels */
 
 /* SLIP definitions */
-#define SLIP_ALLOC      480     /* Receiver allocation increment */
+
+/* Receiver allocation increment
+ * Make this match the medium mbuf size in mbuf.h for best performance
+ */
+#define SLIP_ALLOC      220     /* MED_MBUF */
 
 #define FR_END          0300    /* Frame End */
 #define FR_ESC          0333    /* Frame Escape */
@@ -34,9 +38,9 @@ struct slip {
 	struct mbuf *rbp_head;  /* Head of mbuf chain being filled */
 	struct mbuf *rbp_tail;  /* Pointer to mbuf currently being written */
 	uint8 *rcp;             /* Write pointer */
-	uint16 rcnt;            /* Length of mbuf chain */
+	uint rcnt;              /* Length of mbuf chain */
 	struct mbuf *tbp;       /* Transmit mbuf being sent */
-	uint16 errors;          /* Receiver input errors */
+	uint errors;            /* Receiver input errors */
 	int type;               /* Protocol of input */
 	int (*send)(int,struct mbuf **);        /* send mbufs to device */
 	int (*get)(int,uint8 *,int);    /* fetch input chars from device */

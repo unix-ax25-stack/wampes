@@ -1,12 +1,12 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/netupd/Attic/frontpage,v 1.91 1996/08/12 18:54:44 deyke Exp $
+.\" @(#) $Id: frontpage,v 1.92 1996/08/19 16:33:30 deyke Exp $
 .\"
-.PF "^Net Update Reference Manual^-\\\\nP-^Version 960812" \" Page footer
+.PF "^Net Update Reference Manual^-\\\\nP-^Version 960819" \" Page footer
 .\"
 .S 30
 .ce
 \fBNet Update Reference Manual\fP
 .ce
-Version 960812
+Version 960819
 .S
 .SP 2
 .S 15

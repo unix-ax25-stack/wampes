@@ -1,10 +1,11 @@
-/* @(#) $Id: iproute.c,v 1.35 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: iproute.c,v 1.36 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
  *
  * Copyright 1991 Phil Karn, KA9Q
  */
+#include "config.h"
 #include "global.h"
 #include "mbuf.h"
 #include "iface.h"
@@ -16,8 +17,10 @@
 #include "icmp.h"
 #include "rip.h"
 #include "trace.h"
-#include "pktdrvr.h"
 #include "bootp.h"
+#ifdef  IPSEC
+#include "ipsec.h"
+#endif
 #include "ipfilter.h"
 
 struct route *Routes[32][HASHMOD];      /* Routing table */
@@ -34,18 +37,6 @@ int32 Rtchits;
 static int q_pkt(struct iface *iface,int32 gateway,struct ip *ip,
 	struct mbuf **bpp,int ckgood);
 
-/* Initialize modulo lookup table used by hash_ip() in pcgen.asm */
-void
-ipinit(void)
-{
-#if 0
-	int i;
-
-	for(i=0;i<256;i++)
-		Hashtab[i] = i % HASHMOD;
-#endif
-}
-
 /* Route an IP datagram. This is the "hopper" through which all IP datagrams,
  * coming or going, must pass.
  *
@@ -60,15 +51,15 @@ struct mbuf **bpp,      /* Input packet */
 int rxbroadcast         /* True if packet had link broadcast address */
 ){
 	struct ip ip;                   /* IP header being processed */
-	uint16 ip_len;                  /* IP header length */
-	uint16 length;                  /* Length of data portion */
+	uint ip_len;                    /* IP header length */
+	uint length;                    /* Length of data portion */
 	int32 gateway;                  /* Gateway IP address */
-	register struct route *rp;      /* Route table entry */
+	struct route *rp;       /* Route table entry */
 	struct iface *iface;            /* Output interface, possibly forwarded */
-	uint16 offset;                  /* Starting offset of current datagram */
-	uint16 mf_flag;                 /* Original datagram MF flag */
+	uint offset;                    /* Starting offset of current datagram */
+	uint mf_flag;                   /* Original datagram MF flag */
 	int strict = 0;                 /* Strict source routing flag */
-	uint16 opt_len = 0;     /* Length of current option */
+	uint opt_len = 0;       /* Length of current option */
 	uint8 *opt;             /* -> beginning of current option */
 	int i;
 	int ckgood = IP_CS_OLD; /* Has good checksum without modification */
@@ -125,7 +116,6 @@ int rxbroadcast         /* True if packet had link broadcast address */
 	 */
 	strict = 0;
 	for(i=0;i<ip.optlen;i += opt_len){
-
 		/* First check for the two special 1-byte options */
 		switch(ip.options[i] & OPT_NUMBER){
 		case IP_EOL:
@@ -298,6 +288,12 @@ no_opt:
 		ipOutNoRoutes++;
 		return -1;
 	}
+#ifdef  IPSEC
+	if(sec_output(iface,&ip,bpp) != 0){
+		/* We inserted a security header, recompute hdr checksum */
+		ckgood = IP_CS_NEW;     /* Recompute IP checksum */
+	}
+#endif
 	if(ip.length <= iface->mtu){
 		/* Datagram smaller than interface MTU; put header
 		 * back on and send normally.
@@ -320,7 +316,7 @@ no_opt:
 	mf_flag = ip.flags.mf;          /* Save original MF flag */
 	length = ip.length - ip_len;    /* Length of data portion */
 	while(length != 0){             /* As long as there's data left */
-		uint16 fragsize;                /* Size of this fragment's data */
+		uint fragsize;          /* Size of this fragment's data */
 		struct mbuf *f_data;    /* Data portion of fragment */
 
 		/* After the first fragment, should remove those
@@ -585,7 +581,7 @@ rt_drop(
 int32 target,
 unsigned int bits
 ){
-	register struct route *rp;
+	struct route *rp;
 	int i;
 
 	for(i=0;i<HASHMOD;i++)
@@ -628,26 +624,26 @@ unsigned int bits
 #if 1
 
 /* Compute hash function on IP address */
-uint16
+uint
 hash_ip(
 int32 addr
 ){
-	register uint16 ret;
+	uint ret;
 
 	ret = hiword(addr);
 	ret ^= loword(addr);
-	return (uint16)(ret % HASHMOD);
+	return ret % HASHMOD;
 }
 #endif
 #ifndef GWONLY
 /* Given an IP address, return the MTU of the local interface used to
  * reach that destination. This is used by TCP to avoid local fragmentation
  */
-uint16
+uint
 ip_mtu(
 int32 addr
 ){
-	register struct route *rp;
+	struct route *rp;
 	struct iface *iface;
 
 	rp = rt_lookup(addr);
@@ -658,10 +654,17 @@ int32 addr
 		return ip_mtu(rp->gateway) - IPLEN;     /* no options? */
 	}
 	iface = rp->iface;
+#ifdef  IPSEC
+	if(iface->forw != NULL)
+		return iface->forw->mtu - sec_overhead(addr);
+	else
+		return iface->mtu - sec_overhead(addr);
+#else
 	if(iface->forw != NULL)
 		return iface->forw->mtu;
 	else
 		return iface->mtu;
+#endif
 }
 /* Given a destination address, return the IP address of the local
  * interface that will be used to reach it. If there is no route
@@ -671,7 +674,7 @@ int32
 locaddr(
 int32 addr)
 {
-	register struct route *rp;
+	struct route *rp;
 	struct iface *ifp;
 
 	if(ismyaddr(addr) != NULL)
@@ -714,7 +717,7 @@ struct route *
 rt_lookup(
 int32 target)
 {
-	register struct route *rp;
+	struct route *rp;
 	int bits;
 	int32 tsave;
 	int32 mask;
@@ -756,7 +759,7 @@ rt_blookup(
 int32 target,
 unsigned int bits)
 {
-	register struct route *rp;
+	struct route *rp;
 
 	if(bits == 0){
 		if(R_default.iface != NULL)

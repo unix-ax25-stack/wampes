@@ -1,4 +1,4 @@
-/* @(#) $Id: timer.c,v 1.21 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: timer.c,v 1.22 1996/08/19 16:30:14 deyke Exp $ */
 
 /* General purpose software timer facilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -27,9 +27,7 @@ static void t_alarm(void *x);
 
 /* Process that handles clock ticks */
 void
-timerproc(
-int i,
-void *v1,void *v2)
+timerproc(int i,void *v1,void *v2)
 {
 	register struct timer *t;
 	int32 bugfix;
@@ -47,8 +45,9 @@ void *v1,void *v2)
 			if ((Timers = t->next))
 				Timers->prev = NULL;
 			t->state = TIMER_EXPIRE;
-			if(t->func)
+			if(t->func){
 				(*t->func)(t->arg);
+			}
 		}
 #ifndef SINGLE_THREADED
 		kwait(NULL);    /* Let them run before handling more ticks */
@@ -59,8 +58,7 @@ void *v1,void *v2)
 }
 /* Start a timer */
 void
-start_timer(
-struct timer *t)
+start_timer(struct timer *t)
 {
 	register struct timer *tnext;
 	struct timer *tprev = NULL;
@@ -98,8 +96,7 @@ struct timer *t)
 }
 /* Stop a timer */
 void
-stop_timer(
-struct timer *timer)
+stop_timer(struct timer *timer)
 {
 
 	if(timer == NULL || timer->state != TIMER_RUN)
@@ -117,15 +114,14 @@ struct timer *timer)
 }
 /* Return milliseconds remaining on this timer */
 int32
-read_timer(
-struct timer *t)
+read_timer(struct timer *t)
 {
 	int32 remaining;
 
 	if(t == NULL || t->state != TIMER_RUN)
 		return 0;
-
-	if((remaining = t->expiration - Msclock) <= 0)
+	remaining = t->expiration - Msclock;
+	if(remaining <= 0)
 		return 0;       /* Already expired */
 	else
 		return remaining;
@@ -142,8 +138,7 @@ next_timer_event(void)
  * Normally returns 0; returns -1 if aborted by alarm.
  */
 int
-ppause(
-int32 ms)
+ppause(int32 ms)
 {
 	int val = 0;
 
@@ -159,15 +154,13 @@ int32 ms)
 	return (val == EALARM) ? 0 : -1;
 }
 static void
-t_alarm(
-void *x)
+t_alarm(void *x)
 {
 	alert((struct proc *)x,EALARM);
 }
 /* Send signal to current process after specified number of milliseconds */
 void
-kalarm(
-int32 ms)
+kalarm(int32 ms)
 {
 	if(Curproc != NULL){
 		set_timer(&Curproc->alarm,ms);
@@ -178,8 +171,7 @@ int32 ms)
 }
 /* Convert time count in seconds to printable days:hr:min:sec format */
 char *
-tformat(
-int32 t)
+tformat(int32 t)
 {
 	static char buf[17],*cp;
 	unsigned int days,hrs,mins,secs;

@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25subr.c,v 1.23 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ax25subr.c,v 1.24 1996/08/19 16:30:14 deyke Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -35,10 +35,9 @@ static int Nextid = 1;          /* Next control block ID */
 
 /* Look up entry in connection table */
 struct ax25_cb *
-find_ax25(
-register uint8 *addr)
+find_ax25(uint8 *addr)
 {
-	register struct ax25_cb *axp;
+	struct ax25_cb *axp;
 	struct ax25_cb *axlast = NULL;
 
 	/* Search list */
@@ -60,11 +59,10 @@ register uint8 *addr)
 
 /* Remove entry from connection table */
 void
-del_ax25(
-struct ax25_cb *conn)
+del_ax25(struct ax25_cb *conn)
 {
 	int i;
-	register struct ax25_cb *axp;
+	struct ax25_cb *axp;
 	struct ax25_cb *axlast = NULL;
 
 	for(axp = Ax25_cb; axp != NULL; axlast=axp,axp = axp->next){
@@ -101,10 +99,9 @@ struct ax25_cb *conn)
  * is still responsible for filling in the reply address
  */
 struct ax25_cb *
-cr_ax25(
-uint8 *addr)
+cr_ax25(uint8 *addr)
 {
-	register struct ax25_cb *axp;
+	struct ax25_cb *axp;
 
 	if(addr == NULL)
 		return NULL;
@@ -166,15 +163,11 @@ uint8 *addr)
  *   Return -1 on error, 0 if OK
  */
 int
-setcall(
-uint8 *out,
-char *call)
+setcall(uint8 *out,char *call)
 {
-	int csize;
+	int i,csize;
 	unsigned ssid;
-	register int i;
-	register char *dp;
-	char c;
+	char *dp,c;
 
 	if(out == NULL || call == NULL || *call == '\0')
 		return -1;
@@ -214,9 +207,7 @@ char *call)
 	return 0;
 }
 int
-addreq(
-const uint8 *a,
-const uint8 *b)
+addreq(const uint8 *a,const uint8 *b)
 {
 	if (*a++ != *b++) return 0;
 	if (*a++ != *b++) return 0;
@@ -233,7 +224,7 @@ struct iface *
 ismyax25addr(
 const uint8 *addr)
 {
-	register struct iface *ifp;
+	struct iface *ifp;
 
 	for (ifp = Ifaces; ifp; ifp = ifp->next)
 		if (ifp->output == ax_output && addreq(ifp->hwaddr,addr))
@@ -255,13 +246,10 @@ const uint8 *from)
 }
 /* Convert encoded AX.25 address to printable string */
 char *
-pax25(
-char *e,
-uint8 *addr)
+pax25(char *e,uint8 *addr)
 {
-	register int i;
-	char c;
-	char *cp;
+	int i;
+	char c,*cp;
 
 	cp = e;
 	for(i=ALEN;i != 0;i--){
@@ -280,16 +268,15 @@ uint8 *addr)
  * This is done by masking out any sequence numbers and the
  * poll/final bit after determining the general class (I/S/U) of the frame
  */
-uint16
-ftype(
-register int control)
+uint
+ftype(uint control)
 {
 	if((control & 1) == 0)  /* An I-frame is an I-frame... */
 		return I;
 	if(control & 2)         /* U-frames use all except P/F bit for type */
-		return (uint16)(control & ~PF);
+		return control & ~PF;
 	else                    /* S-frames use low order 4 bits for type */
-		return (uint16)(control & 0xf);
+		return control & 0xf;
 }
 
 int

@@ -1,4 +1,4 @@
-/* @(#) $Id: tcpout.c,v 1.18 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: tcpout.c,v 1.19 1996/08/19 16:30:14 deyke Exp $ */
 
 /* TCP output segment processing
  * Copyright 1991 Phil Karn, KA9Q
@@ -23,14 +23,13 @@ static double mybackoff(int n)
  * if there is data to be sent or if "force" is non zero
  */
 void
-tcp_output(
-register struct tcb *tcb)
+tcp_output(struct tcb *tcb)
 {
 	struct mbuf *dbp;       /* Header and data buffer pointers */
 	struct tcp seg;         /* Local working copy of header */
-	uint16 ssize;           /* Size of current segment being sent,
+	uint ssize;             /* Size of current segment being sent,
 				 * including SYN and FIN flags */
-	uint16 dsize;           /* Size of segment less SYN and FIN */
+	uint dsize;             /* Size of segment less SYN and FIN */
 	int32 usable;           /* Usable window */
 	int32 sent;             /* Sequence count (incl SYN/FIN) already
 				 * in the pipe but not yet acked */
@@ -68,8 +67,8 @@ register struct tcb *tcb)
 		 * smallest of the usable window, the mss, or the amount
 		 * we have on hand. (I don't like optimistic windows)
 		 */
-		ssize = (uint16) (min(tcb->sndcnt - sent,usable));
-		ssize = (uint16) (min(ssize,tcb->mss));
+		ssize = (uint) min(tcb->sndcnt - sent,usable);
+		ssize = (uint) min(ssize,tcb->mss);
 
 		/* Now we decide if we actually want to send it.
 		 * Apply John Nagle's "single outstanding segment" rule.
@@ -130,10 +129,8 @@ register struct tcb *tcb)
 			/* Also send MSS, wscale and tstamp (if OK) */
 			seg.mss = Tcp_mss;
 			seg.flags.mss = 1;
-			if(Tcp_wscale){
-				seg.wsopt = DEF_WSCALE;
-				seg.flags.wscale = 1;
-			}
+			seg.wsopt = DEF_WSCALE;
+			seg.flags.wscale = 1;
 			if(Tcp_tstamps){
 				seg.flags.tstamp = 1;
 				seg.tsval = msclock();
@@ -148,17 +145,17 @@ register struct tcb *tcb)
 			seg.seq = tcb->snd.ptr;
 		tcb->last_ack_sent = seg.ack = tcb->rcv.nxt;
 		if(seg.flags.syn || !tcb->flags.ws_ok)
-			seg.wnd = (uint16) tcb->rcv.wnd;
+			seg.wnd = (uint) tcb->rcv.wnd;
 		else
-			seg.wnd = (uint16) (tcb->rcv.wnd >> tcb->rcv.wind_scale);
+			seg.wnd = (uint) (tcb->rcv.wnd >> tcb->rcv.wind_scale);
 
 		/* Now try to extract some data from the send queue. Since
 		 * SYN and FIN occupy sequence space and are reflected in
 		 * sndcnt but don't actually sit in the send queue, extract
 		 * will return one less than dsize if a FIN needs to be sent.
 		 */
-		dbp = ambufw(TCP_HDR_PAD+dsize);
-		dbp->data += TCP_HDR_PAD;       /* Allow room for other hdrs */
+		dbp = ambufw(NET_HDR_PAD+dsize);
+		dbp->data += NET_HDR_PAD;       /* Allow room for other hdrs */
 		if(dsize != 0){
 			int32 offset;
 
@@ -169,7 +166,7 @@ register struct tcb *tcb)
 			if(!tcb->flags.synack && sent != 0)
 				offset--;
 
-			dbp->cnt = extract(tcb->sndq,(uint16)offset,dbp->data,dsize);
+			dbp->cnt = extract(tcb->sndq,(uint)offset,dbp->data,dsize);
 			if(dbp->cnt != dsize){
 				/* We ran past the end of the send queue;
 				 * send a FIN
