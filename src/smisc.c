@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.12 1994/10/09 08:22:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.13 1994/10/10 13:16:45 deyke Exp $ */
 
 /* Miscellaneous Internet servers: discard, echo and remote
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,6 +13,7 @@
 #include "udp.h"
 #include "commands.h"
 #include "hardware.h"
+#include "main.h"
 
 char *Rempass;          /* Remote access password */
 
@@ -163,8 +164,7 @@ int cnt)
 		} else {
 			log(NULLTCB,"%s - Remote exit PASSWORD OK",
 			 pinet_udp(&fsock));
-			iostop();
-			exit(0);
+			main_exit = 1;
 		}
 		break;
 	case KICK_ME:

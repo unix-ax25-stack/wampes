@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.44 1994/10/09 08:22:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.45 1994/10/10 13:16:41 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -41,13 +41,13 @@ static int nr_callcheck   =     0;      /* not used */
 static int nr_beacon      =     0;      /* not used */
 static int nr_cq          =     0;      /* not used */
 
-static struct parms {
+static const struct parms {
   char *text;
   int *valptr;
   int minval;
   int maxval;
 } parms[] = {
-  { "",                                               (int *) 0,       0,          0 },
+  { "",                                               0,               0,          0 },
   { " 1 Maximum destination list entries           ", &nr_maxdest,     1,        400 },
   { " 2 Worst quality for auto-updates             ", &nr_minqual,     0,        255 },
   { " 3 Channel 0 (HDLC) quality                   ", &nr_hfqual,      0,        255 },
@@ -77,6 +77,10 @@ static struct parms {
 };
 
 #define NPARMS 26
+
+static const char L3RTT[] = {
+  'L'<<1, '3'<<1, 'R'<<1, 'T'<<1, 'T'<<1, ' '<<1, 0<<1
+};
 
 struct link;
 
@@ -631,6 +635,13 @@ static void route_packet(struct mbuf *bp, struct node *fromneighbor)
   ttl = uchar(bp->data[2*AXALEN]);
   if (--ttl <= 0) goto discard;
   bp->data[2*AXALEN] = ttl;
+
+  if (addreq(bp->data + AXALEN, L3RTT)) {
+    if ((bp->data[AXALEN*2+5] & NR4OPCODE) != NR4OPINFO) goto discard;
+    if (memcmp("L3RTT:", bp->data + AXALEN * 2 + 6, 6)) goto discard;
+    send_packet_to_neighbor(bp, fromneighbor);
+    return;
+  }
 
   pn = nodeptr(bp->data + AXALEN, 1);
   if (!pn->neighbor) {

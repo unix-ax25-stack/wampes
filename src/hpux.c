@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.52 1994/10/06 16:15:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.53 1994/10/10 13:16:35 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -403,14 +403,14 @@ static void check_files_changed(void)
   if (!net_time) net_time = statbuf.st_mtime;
   if (net_time != statbuf.st_mtime && statbuf.st_mtime < secclock() - 3600) {
     log((void *) 0, "%s has changed", "/tcp/net");
-    doexit(0, (char **) 0, (void *) 0);
+    main_exit = 1;
   }
 
   if (stat(Startup, &statbuf)) return;
   if (!rc_time) rc_time = statbuf.st_mtime;
   if (rc_time != statbuf.st_mtime && statbuf.st_mtime < secclock() - 3600) {
     log((void *) 0, "%s has changed", Startup);
-    doexit(0, (char **) 0, (void *) 0);
+    main_exit = 1;
   }
 
 }

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.72 1994/10/06 16:15:18 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.73 1994/10/10 13:16:28 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -437,7 +437,7 @@ arp.o: global.h mbuf.h timer.h iface.h proc.h enet.h ax25.h icmp.h internet.h \
 arpcmd.o: global.h mbuf.h timer.h enet.h iface.h proc.h ax25.h arp.h \
 	netuser.h cmdparse.h commands.h
 arpdump.o: global.h mbuf.h arp.h iface.h proc.h timer.h netuser.h trace.h
-arpfile.o: global.h timer.h arp.h mbuf.h iface.h proc.h
+arpfile.o: global.h timer.h arp.h mbuf.h iface.h proc.h main.h
 arphdr.o: global.h mbuf.h arp.h iface.h proc.h timer.h
 asy.o: global.h proc.h mbuf.h timer.h iface.h netuser.h slhc.h ip.h \
 	internet.h tcp.h n8250.h asy.h ax25.h kiss.h nrs.h pktdrvr.h slip.h \
@@ -449,7 +449,7 @@ ax25cmd.o: global.h mbuf.h timer.h proc.h iface.h ax25.h lapb.h cmdparse.h \
 	socket.h session.h hardware.h telnet.h tty.h commands.h
 ax25dump.o: global.h mbuf.h ax25.h iface.h proc.h timer.h lapb.h trace.h \
 	socket.h
-ax25file.o: global.h timer.h iface.h mbuf.h proc.h ax25.h
+ax25file.o: global.h timer.h iface.h mbuf.h proc.h ax25.h main.h
 ax25hdr.o: global.h mbuf.h ax25.h iface.h proc.h timer.h
 ax25subr.o: global.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h
 ax25user.o: global.h mbuf.h timer.h iface.h proc.h lapb.h ax25.h
@@ -504,7 +504,7 @@ ipcmd.o: global.h mbuf.h internet.h timer.h netuser.h iface.h proc.h ip.h \
 	cmdparse.h commands.h rip.h udp.h
 ipdump.o: global.h mbuf.h internet.h iface.h proc.h timer.h ip.h trace.h \
 	netuser.h
-ipfile.o: global.h timer.h iface.h mbuf.h proc.h ip.h internet.h
+ipfile.o: global.h timer.h iface.h mbuf.h proc.h ip.h internet.h main.h
 ipfilter.o: global.h netuser.h cmdparse.h
 iphdr.o: global.h mbuf.h ip.h iface.h proc.h timer.h internet.h
 ipip.o: global.h mbuf.h iface.h proc.h timer.h internet.h netuser.h socket.h \
@@ -531,7 +531,7 @@ mail_daemn.o: ../lib/configure.h global.h timer.h mail.h cmdparse.h \
 mail_retrn.o: ../lib/configure.h hpux.h global.h mail.h
 mail_smtp.o: global.h mbuf.h transport.h timer.h mail.h
 mail_subr.o: timer.h global.h mail.h
-main.o: global.h mbuf.h timer.h proc.h iface.h ip.h internet.h tcp.h \
+main.o: global.h mbuf.h timer.h proc.h iface.h arp.h ip.h internet.h tcp.h \
 	netuser.h udp.h ax25.h kiss.h enet.h netrom.h session.h hardware.h \
 	telnet.h ftp.h tty.h socket.h cmdparse.h commands.h daemon.h \
 	devparam.h files.h main.h remote.h trace.h hpux.h remote_net.h
@@ -569,7 +569,7 @@ slhcdump.o: global.h mbuf.h internet.h ip.h iface.h proc.h timer.h slhc.h \
 slip.o: global.h mbuf.h iface.h proc.h timer.h ip.h internet.h slhc.h tcp.h \
 	netuser.h asy.h slip.h trace.h pktdrvr.h
 smisc.o: global.h mbuf.h socket.h proc.h timer.h remote.h tcp.h iface.h \
-	internet.h ip.h netuser.h udp.h commands.h hardware.h
+	internet.h ip.h netuser.h udp.h commands.h hardware.h main.h
 sntp.o: global.h mbuf.h iface.h proc.h timer.h socket.h udp.h internet.h ip.h \
 	netuser.h cmdparse.h session.h hardware.h telnet.h ax25.h \
 	../lib/configure.h

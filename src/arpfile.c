@@ -1,10 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.11 1994/10/06 16:15:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.12 1994/10/10 13:16:29 deyke Exp $ */
 
 #include <stdio.h>
 
 #include "global.h"
 #include "timer.h"
 #include "arp.h"
+#include "main.h"
 
 #define ARP_FILE_VERSION   2
 #define ARP_SAVETIME       (10L*60L*1000L)
@@ -43,20 +44,23 @@ void arp_savefile(void)
   struct arp_saverecord_2 buf;
   struct arp_tab *p;
 
-  switch (timer.state) {
-  case TIMER_STOP:
-    if (!Debug) {
+  if (Debug) return;
+  if (!main_exit) {
+    switch (timer.state) {
+    case TIMER_STOP:
       timer.func = (void (*)(void *)) arp_savefile;
       timer.arg = 0;
       set_timer(&timer, ARP_SAVETIME);
       start_timer(&timer);
+      return;
+    case TIMER_RUN:
+      return;
+    case TIMER_EXPIRE:
+      timer.state = TIMER_STOP;
+      break;
     }
-    return;
-  case TIMER_RUN:
-    return;
-  case TIMER_EXPIRE:
-    timer.state = TIMER_STOP;
-    break;
+  } else {
+    if (timer.state != TIMER_RUN) return;
   }
   if (!(fp = fopen(arp_tmpfilename, "w"))) return;
   putc(ARP_FILE_VERSION, fp);

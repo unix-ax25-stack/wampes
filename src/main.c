@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.49 1994/10/06 16:15:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.50 1994/10/10 13:16:40 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -23,6 +23,7 @@
 #include "timer.h"
 #include "proc.h"
 #include "iface.h"
+#include "arp.h"
 #include "ip.h"
 #include "tcp.h"
 #include "udp.h"
@@ -62,6 +63,7 @@ char *Hostname;
 char Nospace[] = "No space!!\n";        /* Generic malloc fail message */
 struct proc *Cmdpp;
 char *Cmdline;                          /* Copy of most recent command line */
+int main_exit = FALSE;                  /* from main program (flag) */
 
 int Debug;
 int Mode;
@@ -157,7 +159,7 @@ char *argv[])
 	Mode = CONV_MODE;
 	cmdmode();
 
-	for(;;){
+	while(!main_exit){
 #ifndef SINGLE_THREADED
 		pwait(NULL);
 #else
@@ -166,6 +168,30 @@ char *argv[])
 #endif
 		eihalt();
 	}
+
+	{
+		int i;
+		time_t StopTime;
+		char tbuf[32];
+
+		time(&StopTime);
+		reset_all();
+		arp_savefile();
+		axroute_savefile();
+		route_savefile();
+		for(i=0;i<100;i++)
+			pwait(NULL);    /* Allow tasks to complete */
+		shuttrace();
+		strcpy(tbuf,ctime(&StopTime));
+		rip(tbuf);
+		log(NULLTCB,"NOS was stopped at %s", tbuf);
+		if(Logfp){
+			fclose(Logfp);
+			Logfp = NULLFILE;
+		}
+		iostop();
+	}
+
 	return 0;
 }
 /* Enter command mode */
@@ -314,21 +340,7 @@ int argc,
 char *argv[],
 void *p)
 {
-	time_t StopTime;
-	char tbuf[32];
-
-	time(&StopTime);
-	reset_all();
-	shuttrace();
-	strcpy(tbuf,ctime(&StopTime));
-	rip(tbuf);
-	log(NULLTCB,"NOS was stopped at %s", tbuf);
-	if(Logfp){
-		fclose(Logfp);
-		Logfp = NULLFILE;
-	}
-	iostop();
-	exit(0);
+	main_exit = TRUE;       /* let everyone know we're out of here */
 	return 0;       /* To satisfy lint */
 }
 int
