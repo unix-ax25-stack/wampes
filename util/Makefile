@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.22 1993/05/17 13:47:17 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.23 1993/05/18 10:54:15 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 OS         = "`uname -s`"
@@ -15,7 +15,7 @@ all:
 	elif [ $(OS) = Linux ] ; then \
 	  make -i 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' _all; \
 	elif [ $(OS) = ULTRIX ] ; then \
-	  make -i 'CC=cc' 'CFLAGS=-DULTRIX_RISC' _all; \
+	  make -i 'CC=gcc' 'CFLAGS=-DULTRIX_RISC' _all; \
 	else \
 	  make -i 'CC=cc' 'CFLAGS=-O -s' _all; \
 	fi

@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.52 1993/05/17 13:47:34 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.53 1993/05/18 10:53:49 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -2459,7 +2459,7 @@ static void trap_signal(int sig, void (*handler)(int))
 #ifdef LINUX
   signal(sig, handler);
 #else
-#if defined(sun) || defined(__386BSD__)
+#if defined(sun) || defined(__386BSD__) || defined(ULTRIX_RISC)
 #define sigvector sigvec
 #endif
   struct sigvec vec;

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.37 1993/05/17 13:44:42 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.38 1993/05/18 10:53:56 deyke Exp $
 
 DEST          = /tcp
 
@@ -305,7 +305,7 @@ setsp.o:        setsp.c
 		  cc -c setsp.s; \
 		  rm -f setsp.s; \
 		elif [ $(OS) = ULTRIX ] ; then \
-		  cc -c setsp.c; \
+		  /bin/cc -c setsp.c; \
 		elif [ $(OS) = "RISC iX" ] ; then \
 		  $(CC) -E -DRISCiX $< > setsp.s; \
 		  cc -c setsp.s; \
