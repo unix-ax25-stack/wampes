@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dk0hu,v 1.60 1999/11/22 22:39:52 deyke Exp $
+# @(#) $Id: net.rc.dk0hu,v 1.61 1999/11/27 17:18:56 deyke Exp $
 
 domain usegethostby on
 
@@ -68,6 +68,7 @@ start echo
 start sntp
 start tcpgate convers unix:/tcp/sockets/convers
 start tcpgate nntp
+start tcpgate rsync
 start tcpgate smtp
 start time
 

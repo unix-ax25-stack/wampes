@@ -1,4 +1,4 @@
-/* @(#) $Id: services.c,v 1.14 1998/12/06 17:23:27 deyke Exp $ */
+/* @(#) $Id: services.c,v 1.15 1999/11/27 17:19:00 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -27,6 +27,7 @@ static struct port_table tcp_port_table[] = {
   { "nntp",     IPPORT_NNTP },
   { "pop2",     IPPORT_POP2 },          /* Post Office Prot. v2 */
   { "pop3",     IPPORT_POP3 },          /* Post Office Prot. v3 */
+  { "rsync",    873 },
   { "smtp",     IPPORT_SMTP },          /* ARPA simple mail transfer protocol */
   { "telnet",   IPPORT_TELNET },        /* ARPA virtual terminal protocol */
   { "ttylink",  IPPORT_TTYLINK },

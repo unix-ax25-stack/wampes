@@ -1,4 +1,8 @@
-@(#) $Id: ChangeLog,v 1.66 1999/11/22 22:31:04 deyke Exp $
+@(#) $Id: ChangeLog,v 1.67 1999/11/27 17:18:56 deyke Exp $
+
+991127 Dieter Deyke <deyke@hotpop.com>
+
+	Added rsync to list of known tcp services
 
 991122 Dieter Deyke <deyke@hotpop.com>
 

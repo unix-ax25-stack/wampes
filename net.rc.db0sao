@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.db0sao,v 1.68 1999/11/22 22:39:52 deyke Exp $
+# @(#) $Id: net.rc.db0sao,v 1.69 1999/11/27 17:18:56 deyke Exp $
 
 domain usegethostby on
 
@@ -90,6 +90,7 @@ start tcpgate netupds
 start tcpgate nntp
 start tcpgate pop2
 start tcpgate pop3
+start tcpgate rsync
 start tcpgate smtp
 start telnet
 start time
