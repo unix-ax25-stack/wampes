@@ -3,6 +3,7 @@ check_seteugid
 connect
 connect2
 filter
+htmldiff
 import
 makeiprt
 mm2html

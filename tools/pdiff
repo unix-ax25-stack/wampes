@@ -1,7 +1,5 @@
 #! /usr/bin/perl -w
 
-# @(#) $Id: pdiff,v 1.3 1999/06/20 19:03:52 deyke Exp $
-
 # Dieter Deyke
 # November 26, 1997
 # Copyright (c) 1997-1999 CoCreate Software GmbH. All Rights Reserved.
@@ -281,11 +279,26 @@ sub pdiff {
 	print($fh "<html>\n");
 	print($fh "<head>\n");
 	print($fh "<script>\n");
+	print($fh "var viewed=new Array();\n");
 	print($fh "var last=-1;\n");
+	print($fh "function start() {\n");
+	print($fh "\tfor (i=0;i<document.images.length;i++) {\n");
+	print($fh "\t\tviewed[i]=\"g.gif\";\n");
+	print($fh "\t}\n");
+	print($fh "\tfix();\n");
+	print($fh "}\n");
+	print($fh "function fix() {\n");
+	print($fh "\tfor (i=0;i<document.images.length;i++) {\n");
+	print($fh "\t\tdocument.images[i].src=viewed[i];\n");
+	print($fh "\t}\n");
+	print($fh "\tsetTimeout(\"fix()\",1000);\n");
+	print($fh "}\n");
 	print($fh "function f(i,t) {\n");
 	print($fh "\tif (last!=-1) {\n");
+	print($fh "\t\tviewed[last]=\"i.gif\";\n");
 	print($fh "\t\tdocument.images[last].src=\"i.gif\";\n");
 	print($fh "\t}\n");
+	print($fh "\tviewed[i]=\"l.gif\";\n");
 	print($fh "\tdocument.images[i].src=\"l.gif\";\n");
 	print($fh "\tlast=i;\n");
 	print($fh "\ttop.frames[1].location.href=t+'.html';\n");
@@ -293,7 +306,7 @@ sub pdiff {
 	print($fh "}\n");
 	print($fh "</script>\n");
 	print($fh "</head>\n");
-	print($fh "<body>\n");
+	print($fh "<body onLoad=\"start()\">\n");
 	foreach $file (parse_pdiff_args()) {
 		$master_file = "$dir/tmp.tmp";
 		system("cvs -q update -p $file > $master_file");
@@ -306,7 +319,7 @@ sub pdiff {
 		}
 		next if !cmpfiles($playpen_file, $master_file);
 		mkdir_p("$dir/" . dirname($file));
-		system("~/WorkManager/tools/htmldiff @options $master_file $playpen_file > $dir/$file.html");
+		system("htmldiff @options $master_file $playpen_file > $dir/$file.html");
 		print($fh "<a href=\"javascript:f($cnt,'$file')\"><img border=\"0\" src=\"g.gif\">$file</a><br>\n");
 		$cnt++;
 	}
