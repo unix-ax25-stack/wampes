@@ -1,0 +1,286 @@
+#! /usr/bin/perl -w
+
+# @(#) $Id: pdiff,v 1.1 1999/04/24 17:01:42 deyke Exp $
+
+# Dieter Deyke
+# November 26, 1997
+# Copyright (c) 1997-1999 CoCreate Software GmbH. All Rights Reserved.
+# Company Confidential
+
+require 5.003;
+
+use Cwd;
+use FileHandle;
+
+use strict;
+
+use vars '@options';
+
+#------------------------------------------------------------------------------
+
+# Create file containing binary data
+
+sub writefile {
+
+	my ($filename, @values) = @_;
+
+	my ($buffer);
+	my ($n);
+	my ($fh);
+
+	$fh = FileHandle->new();
+	$fh->open(">$filename") or die("$filename: $!\n");
+	binmode($fh);
+	$buffer = pack('c*', @values);
+	$n = length($buffer);
+	syswrite($fh, $buffer, $n) == $n or die("syswrite(\"$filename\"): $!\n");
+	$fh->close();
+}
+
+#------------------------------------------------------------------------------
+
+# Return dirname of path
+
+sub dirname {
+	my ($dir) = @_;
+	$dir =~ s![/\\][^/\\]*$!! or return '.';
+	$dir or return '/';
+	return $dir;
+}
+
+#------------------------------------------------------------------------------
+
+# Create a directory and its parents if they do not exist already
+
+sub mkdir_p {
+	my ($dir) = @_;
+	-d $dir and return;
+	mkdir($dir, 0750) and return;
+	mkdir_p(dirname($dir));
+	-d $dir and return;
+	mkdir($dir, 0750) or die("mkdir(\"$dir\"): $!\n");
+}
+
+#------------------------------------------------------------------------------
+
+# Find tmp directory
+
+sub find_tmp_dir {
+
+	my ($dir);
+
+	$dir = ($^O eq 'MSWin32') ? $ENV{'TEMP'} : "$ENV{'HOME'}/tmp";
+	mkdir_p($dir);
+	return $dir;
+}
+
+#------------------------------------------------------------------------------
+
+# Parse arguments
+
+sub parse_pdiff_args {
+
+	my ($cwd);
+	my ($fh);
+	my ($file);
+	my ($line);
+	my (@files);
+
+	@options = ();
+	while (@ARGV and $ARGV[0] =~ m!^-!) {
+		push(@options, shift(@ARGV));
+	}
+	if (@ARGV) {
+		@files = @ARGV;
+	} else {
+		$fh = FileHandle->new();
+		$fh->open('cvs -q -n update |') or die();
+		while (defined($line = <$fh>)) {
+			push(@files, $2) if $line =~ m!^(A|R|M|C) (.*)\n!;
+		}
+		$fh->close();
+	}
+	die("No files specified!\n") unless @files;
+	($cwd = getcwd()) =~ y!\\!/!;
+	foreach $file (@files) {
+		$file =~ y!\\!/!;
+		$file =~ s!^$cwd/!!i;
+	}
+	return (sort(@files));
+}
+
+#------------------------------------------------------------------------------
+
+# Compare two files, returning:
+#
+# 0 --> Files are identical.
+# 1 --> Files are not identical.
+# 2 --> One or both files inaccessible.
+
+sub cmpfiles {
+
+	my ($file1, $file2) = @_;
+
+	my ($buffer1, $n1);
+	my ($buffer2, $n2);
+	my ($retval);
+
+	-e $file1 or return 2;
+	$n1 = -s _;
+	-e $file2 or return 2;
+	$n2 = -s _;
+	$n1 == $n2 or return 1;
+	open(FILE1, $file1) or return 2;
+	binmode(FILE1);
+	open(FILE2, $file2) or close(FILE1), return 2;
+	binmode(FILE2);
+	$retval = 0;
+	$buffer1 = $buffer2 = '';
+	while ($n1 = sysread(FILE1, $buffer1, 8192)) {
+		$n2 = sysread(FILE2, $buffer2, $n1);
+		($n1 != $n2 or $buffer1 ne $buffer2) and $retval = 1, last;
+	}
+	close(FILE1);
+	close(FILE2);
+	return $retval;
+}
+
+#------------------------------------------------------------------------------
+
+sub pdiff {
+
+	my ($cnt) = 0;
+	my ($dir) = '';
+	my ($fh);
+	my ($file);
+	my ($i);
+	my ($master_file);
+	my ($null) = ($^O eq 'MSWin32') ? 'NUL' : '/dev/null';
+	my ($playpen_file);
+
+	# Create output directory
+
+	$dir = find_tmp_dir() . "/pdiff";
+	mkdir_p($dir);
+
+	# Create images
+
+	writefile("$dir/g.gif", 71,73,70,56,57,97,20,0,22,0,194,0,0,255,255,
+		  255,204,255,255,153,153,153,51,51,51,0,0,0,0,0,0,0,0,0,0,0,0,
+		  33,254,78,84,104,105,115,32,97,114,116,32,105,115,32,105,110,
+		  32,116,104,101,32,112,117,98,108,105,99,32,100,111,109,97,
+		  105,110,46,32,75,101,118,105,110,32,72,117,103,104,101,115,
+		  44,32,107,101,118,105,110,104,64,101,105,116,46,99,111,109,
+		  44,32,83,101,112,116,101,109,98,101,114,32,49,57,57,53,0,33,
+		  249,4,1,0,0,1,0,44,0,0,0,0,20,0,22,0,0,3,80,56,186,188,241,
+		  48,12,64,171,157,35,190,105,59,207,17,215,85,34,184,141,215,
+		  5,137,40,49,184,240,137,82,68,109,19,242,76,9,188,128,75,58,
+		  75,239,199,10,2,124,57,227,145,168,172,32,129,205,101,210,
+		  248,44,6,171,81,41,180,137,141,118,185,76,47,113,208,43,155,
+		  121,175,200,109,205,254,37,0,0,59);
+
+	writefile("$dir/i.gif", 71,73,70,56,57,97,20,0,22,0,194,0,0,255,255,
+		  255,204,255,255,153,153,153,102,204,255,51,51,51,0,0,0,0,0,0,
+		  0,0,0,33,254,78,84,104,105,115,32,97,114,116,32,105,115,32,
+		  105,110,32,116,104,101,32,112,117,98,108,105,99,32,100,111,
+		  109,97,105,110,46,32,75,101,118,105,110,32,72,117,103,104,
+		  101,115,44,32,107,101,118,105,110,104,64,101,105,116,46,99,
+		  111,109,44,32,83,101,112,116,101,109,98,101,114,32,49,57,57,
+		  53,0,33,249,4,1,0,0,1,0,44,0,0,0,0,20,0,22,0,0,3,127,72,186,
+		  188,241,48,16,64,171,157,36,190,105,59,207,17,215,85,34,184,
+		  141,215,5,137,104,65,184,240,137,82,69,109,23,114,37,236,130,
+		  206,227,18,221,203,70,232,1,126,50,129,75,48,24,8,94,198,35,
+		  240,67,104,90,7,10,128,86,121,82,50,181,86,229,107,88,155,40,
+		  155,128,235,192,213,112,73,213,214,2,239,103,150,195,149,55,
+		  162,86,1,207,110,167,127,69,77,79,114,90,82,57,132,68,81,135,
+		  65,134,71,60,142,127,57,145,148,140,10,115,152,152,47,17,121,
+		  157,121,15,9,0,59);
+
+	writefile("$dir/l.gif", 71,73,70,56,57,97,20,0,22,0,194,0,0,255,255,
+		  255,255,51,51,204,255,255,153,153,153,102,0,0,51,51,51,0,0,0,
+		  0,0,0,33,254,78,84,104,105,115,32,97,114,116,32,105,115,32,
+		  105,110,32,116,104,101,32,112,117,98,108,105,99,32,100,111,
+		  109,97,105,110,46,32,75,101,118,105,110,32,72,117,103,104,
+		  101,115,44,32,107,101,118,105,110,104,64,101,105,116,46,99,
+		  111,109,44,32,83,101,112,116,101,109,98,101,114,32,49,57,57,
+		  53,0,33,249,4,1,0,0,2,0,44,0,0,0,0,20,0,22,0,0,3,108,88,186,
+		  188,242,80,20,64,171,157,37,190,105,59,207,17,215,85,34,184,
+		  141,215,5,137,168,81,184,240,137,82,70,109,27,242,76,13,252,
+		  128,75,58,75,239,199,178,16,2,29,95,174,115,68,86,148,64,84,
+		  211,9,128,78,166,129,172,54,187,35,2,176,219,109,213,11,14,7,
+		  8,227,19,97,205,94,107,209,233,232,168,9,143,23,43,199,186,
+		  125,182,78,122,131,66,68,5,61,132,133,60,47,17,55,138,139,63,
+		  9,0,59);
+
+	# Create index page
+
+	$fh = FileHandle->new();
+	$fh->open(">$dir/index.html") or die("$dir/index.html: $!\n");
+	print($fh "<html>\n");
+	print($fh "<head>\n");
+	print($fh "<title>pdiff output</title>\n");
+	print($fh "</head>\n");
+	print($fh "<frameset cols=\"20%,80%\">\n");
+	print($fh "<frame name=\"left\" src=\"left.html\">\n");
+	print($fh "<frame name=\"right\" src=\"right.html\">\n");
+	print($fh "</frameset>\n");
+	print($fh "</html>\n");
+	$fh->close() or die("close(): $!\n");
+
+	# Create left page
+
+	$fh = FileHandle->new();
+	$fh->open(">$dir/left.html") or die("$dir/left.html: $!\n");
+	print($fh "<html>\n");
+	print($fh "<head>\n");
+	print($fh "<script>\n");
+	print($fh "var last=-1;\n");
+	print($fh "function f(i,t) {\n");
+	print($fh "\tif (last!=-1) {\n");
+	print($fh "\t\tdocument.images[last].src=\"i.gif\";\n");
+	print($fh "\t}\n");
+	print($fh "\tdocument.images[i].src=\"l.gif\";\n");
+	print($fh "\tlast=i;\n");
+	print($fh "\ttop.frames[1].location.href=t+'.html';\n");
+	print($fh "\ttop.frames[1].focus();\n");
+	print($fh "}\n");
+	print($fh "</script>\n");
+	print($fh "</head>\n");
+	print($fh "<body>\n");
+	foreach $file (parse_pdiff_args()) {
+		$master_file = "$dir/tmp.tmp";
+		system("cvs -q update -p $file > $master_file");
+		$master_file = $null unless -f $master_file;
+		$playpen_file = -f $file ? $file : $null;
+		next if !cmpfiles($playpen_file, $master_file);
+		mkdir_p("$dir/" . dirname($file));
+		system("~/WorkManager/tools/htmldiff @options $master_file $playpen_file > $dir/$file.html");
+		print($fh "<a href=\"javascript:f($cnt,'$file')\"><img border=\"0\" src=\"g.gif\">$file</a><br>\n");
+		$cnt++;
+	}
+	print($fh "</body>\n");
+	print($fh "</html>\n");
+	$fh->close() or die("close(): $!\n");
+
+	# Create an empty right page
+
+	$fh = FileHandle->new();
+	$fh->open(">$dir/right.html") or die("$dir/right.html: $!\n");
+	print($fh "<html>\n");
+	print($fh "<body bgcolor=\"#404040\">\n");
+	print($fh "</body>\n");
+	print($fh "</html>\n");
+	$fh->close() or die("close(): $!\n");
+
+	# Start browser if on PC
+
+	if ($^O eq 'MSWin32') {
+		system("start $dir/index.html");
+	} else {
+		print("Output location: $dir/index.html\n");
+	}
+}
+
+#------------------------------------------------------------------------------
+
+pdiff();
