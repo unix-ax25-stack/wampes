@@ -1,4 +1,4 @@
-.\" @(#) $Id: hostname,v 1.6 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: hostname,v 1.7 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "hostname" " [\fIhostname\fP]"
 Display or set the local host's name. By convention this should
 be the same as the host's primary domain name. This string is

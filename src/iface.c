@@ -1,4 +1,4 @@
-/* @(#) $Id: iface.c,v 1.27 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: iface.c,v 1.28 1998/03/09 17:42:56 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -28,6 +28,7 @@ static int ifmtu(int argc,char *argv[],void *p);
 static int ifforw(int argc,char *argv[],void *p);
 static int ifencap(int argc,char *argv[],void *p);
 static int iftxqlen(int argc,char *argv[],void *p);
+static int ifautoroute(int argc,char *argv[],void *p);
 
 /* Interface list header */
 struct iface *Ifaces = &Loopback;
@@ -126,6 +127,7 @@ struct iface Encap = {
 char Noipaddr[] = "IP address field missing, and ip address not set\n";
 
 struct cmds Ifcmds[] = {
+	"autoroute",            ifautoroute,    0,      2,      NULL,
 	"broadcast",            ifbroad,        0,      2,      NULL,
 	"encapsulation",        ifencap,        0,      2,      NULL,
 	"forward",              ifforw,         0,      2,      NULL,
@@ -305,6 +307,24 @@ iflinkadr(int argc,char *argv[],void *p)
 		free(ifp->hwaddr);
 	ifp->hwaddr = (uint8 *) mallocw(ifp->iftype->hwalen);
 	(*ifp->iftype->scan)(ifp->hwaddr,argv[1]);
+	return 0;
+}
+
+/* Enable/disable the automatic learning of routes through this interface.
+ */
+static int
+ifautoroute(int argc,char *argv[],void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+	int enabled;
+
+	enabled = !(ifp->flags & NO_RT_ADD);
+	setbool(&enabled, "IP automatic route learning", argc, argv);
+	if (enabled) {
+		ifp->flags &= ~NO_RT_ADD;
+	} else {
+		ifp->flags |= NO_RT_ADD;
+	}
 	return 0;
 }
 

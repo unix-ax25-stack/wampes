@@ -1,4 +1,4 @@
-.\" @(#) $Id: 1cr,v 1.4 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: 1cr,v 1.5 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "<cr>"
 Entering a carriage return (empty line) while in command mode
 puts you in converse mode with the current session. If there is

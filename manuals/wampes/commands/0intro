@@ -1,4 +1,4 @@
-.\" @(#) $Id: 0intro,v 1.7 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: 0intro,v 1.8 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .nr Cl 2 \" Max level of header for table of contents
 .H 1 "Commands"
 This section describes the commands recognized in command mode, or

@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.32 1996/08/12 18:50:57 deyke Exp $
+# @(#) $Id: Makefile,v 1.33 1998/03/09 17:42:18 deyke Exp $
 
 MAKEFILE   = Makefile
 MKDIR      = @if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi
@@ -20,6 +20,7 @@ all:;   @-rm -f $(OBSOLETE)
 	-chmod 755 cc
 	-cd lib;     $(MAKE) -i -f $(MAKEFILE) all install
 	-cd aos;     $(MAKE) -i -f $(MAKEFILE) all install
+	-cd NeXT;    $(MAKE) -i -f $(MAKEFILE) all install
 	-cd src;     $(MAKE) -i -f $(MAKEFILE) all install
 	-cd convers; $(MAKE) -i -f $(MAKEFILE) all install
 	-cd util;    $(MAKE) -i -f $(MAKEFILE) all install
@@ -37,31 +38,33 @@ all:;   @-rm -f $(OBSOLETE)
 distrib:
 	@version=`awk -F- '/.#.WAMPES-/ {print substr($$2,1,6)}' < src/version.c`; \
 	sources=`find \
-		aos/Makefile \
-		aos/*.[ch] \
-		bbs/bbs.help \
-		bbs/Makefile \
-		bbs/*.[ch] \
-		cc \
+		*.R \
 		ChangeLog \
-		convers/Makefile \
+		Makefile \
+		NeXT/*.[ch] \
+		NeXT/Makefile \
+		README \
+		aos/*.[ch] \
+		aos/Makefile \
+		bbs/*.[ch] \
+		bbs/Makefile \
+		bbs/bbs.help \
+		cc \
 		convers/*.[ch] \
+		convers/Makefile \
 		doc/?*.* \
 		domain.txt \
 		examples/?*.* \
 		hosts \
-		lib/configure \
-		lib/Makefile \
 		lib/*.[ch] \
-		Makefile \
-		README \
+		lib/Makefile \
+		lib/configure \
+		src/*.[ch] \
+		src/Makefile \
 		src/cc \
 		src/linux_include/*/*.h \
-		src/Makefile \
-		src/*.[ch] \
-		util/Makefile \
 		util/*.[ch] \
-		*.R \
+		util/Makefile \
 		! -name configure.h -print`; \
 	tar cvf - $$sources | gzip -9 -v > wampes-$$version.tar.gz; \
 	cp README wampes-$$version.txt

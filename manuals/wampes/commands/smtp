@@ -1,4 +1,4 @@
-.\" @(#) $Id: smtp,v 1.5 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: smtp,v 1.6 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "smtp" " \fIsubcommand\fP"
 These commands control the Simple Message Transport Protocol (SMTP) service
 (and all other mail delivery clients).

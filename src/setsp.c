@@ -1,4 +1,4 @@
-/* @(#) $Id: setsp.c,v 1.14 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: setsp.c,v 1.15 1998/03/09 17:42:56 deyke Exp $ */
 
 #ifndef __lint
 
@@ -121,6 +121,22 @@ _setstack:
 _setstack:
 	mov     r13,r0
 	movs    r15,r14
+#endif
+
+#ifdef __NeXT__
+	.file   "setsp.s"
+	.globl  _setstack
+_setstack:
+#ifdef __mc68000__
+	movel   sp@,a0
+	movel   _newstackptr,sp
+	jmp     a0@
+#else
+	movl    %esp, %ebp
+	movl    _newstackptr, %esp
+	jmp     *(%ebp)
+#endif
+	.align  4
 #endif
 
 #endif

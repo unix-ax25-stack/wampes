@@ -1,4 +1,4 @@
-.\" @(#) $Id: fkey,v 1.6 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: fkey,v 1.7 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "fkey" " \fIkey#\fP \fItext\fP"
 Set the value for a programmable key on the keyboard.
 To enter a control character from the keyboard it has

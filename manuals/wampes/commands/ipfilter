@@ -1,4 +1,4 @@
-.\" @(#) $Id: ipfilter,v 1.6 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: ipfilter,v 1.7 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "ipfilter" " [\fIsubcommand\fP]"
 Without an argument, display the IP filter table,
 which allows or denies IP packets to be received from or sent to a destination.

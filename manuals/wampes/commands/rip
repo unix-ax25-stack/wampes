@@ -1,4 +1,4 @@
-.\" @(#) $Id: rip,v 1.9 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: rip,v 1.10 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "rip" " \fIsubcommand\fP"
 These commands control the Routing Information Protocol (RIP) service.
 .H 3 "rip accept" " \fIhostid\fP"

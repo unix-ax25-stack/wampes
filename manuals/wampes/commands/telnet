@@ -1,4 +1,4 @@
-.\" @(#) $Id: telnet,v 1.4 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: telnet,v 1.5 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "telnet" " \fIhostid\fP [\fIport\fP]"
 Create a Telnet session to the specified host and enter converse mode.
 If \fIport\fP is given that port is used. Default port is 23.

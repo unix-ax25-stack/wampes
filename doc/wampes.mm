@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 971229" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 980309" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 971229
+Version 980309
 .S
 .SP 2
 .S 15
@@ -822,6 +822,8 @@ The default is \fBoff\fP.
 Without arguments display the status of all interfaces.
 When only \fIinterface\fP is given, the status of that interface is displayed.
 Multiple subcommand/parameter pairs can be put on one line.
+.H 3 "ifconfig \fIinterface\fP autoroute" " \fBon\fP|\fBoff\fP"
+Enable or disable the automatic learning of routes through this interface.
 .H 3 "ifconfig \fIinterface\fP broadcast" " \fIhostid\fP"
 Set the broadcast address of \fIinterface\fP to \fIhostid\fP.
 This is related to the \fBnetmask\fP subcommand.

@@ -1,4 +1,4 @@
-.\" @(#) $Id: flexnet,v 1.4 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: flexnet,v 1.5 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "flexnet" " \fIsubcommand\fP"
 These commands control the FLEXNET service.
 .H 3 "flexnet dest" " [\fIax25_addr\fP]"

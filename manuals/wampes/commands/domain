@@ -1,4 +1,4 @@
-.\" @(#) $Id: domain,v 1.7 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: domain,v 1.8 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "domain" " \fIsubcommand\fP"
 These commands control the Domain Name Service (DNS).
 .H 3 "domain cache list"

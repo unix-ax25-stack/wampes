@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: conversd.c,v 2.78 1996/09/09 22:14:38 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: conversd.c,v 2.79 1998/03/09 17:42:49 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -156,11 +156,11 @@ struct peer {
   struct peer *p_next;          /* Linked list pointer */
 };
 
-static struct fd_set chkread;
+static TYPE_FD_SET chkread;
 static void (*readfnc[FD_SETSIZE])(void *);
 static void *readarg[FD_SETSIZE];
 
-static struct fd_set chkwrite;
+static TYPE_FD_SET chkwrite;
 static void (*writefnc[FD_SETSIZE])(void *);
 static void *writearg[FD_SETSIZE];
 
@@ -1433,7 +1433,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.78 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.79 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(0, ONE_TOKEN, KEEP_CASE));
@@ -2058,8 +2058,10 @@ int main(int argc, char **argv)
     {"*:3600", 0},
   };
 
-  char buffer[256];
+  TYPE_FD_SET actread;
+  TYPE_FD_SET actwrite;
   char *cp;
+  char buffer[256];
   int addrlen;
   int arg;
   int chr;
@@ -2067,8 +2069,6 @@ int main(int argc, char **argv)
   int i;
   int nlisteners = 0;
   int status;
-  struct fd_set actread;
-  struct fd_set actwrite;
   struct listeners *sp;
   struct peer *pp;
   struct sockaddr *addr;
@@ -2083,7 +2083,7 @@ int main(int argc, char **argv)
     *cp = 0;
   strchg(&my.h_name, buffer);
   strcpy(buffer, "W-");
-  if ((cp = strchr("$Revision: 2.78 $", ' ')))
+  if ((cp = strchr("$Revision: 2.79 $", ' ')))
     strcat(buffer, cp + 1);
   if ((cp = strchr(buffer, ' ')))
     *cp = 0;

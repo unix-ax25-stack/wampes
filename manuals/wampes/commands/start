@@ -1,4 +1,4 @@
-.\" @(#) $Id: start,v 1.7 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: start,v 1.8 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "start" " \fIserver\fP [\fIarguments\fP]"
 Start the specified server, allowing remote connection requests.
 .H 3 "start ax25"

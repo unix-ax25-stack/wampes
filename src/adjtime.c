@@ -1,4 +1,4 @@
-/* @(#) $Id: adjtime.c,v 1.10 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: adjtime.c,v 1.11 1998/03/09 17:42:56 deyke Exp $ */
 
 #include "configure.h"
 
@@ -87,6 +87,8 @@ int adjtime(
 
 #else
 
-struct prevent_empty_file_message;
+void adjtime_prevent_empty_file_message(void)
+{
+}
 
 #endif

@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.36 1997/12/30 01:53:09 deyke Exp $
+# @(#) $Id: Makefile,v 1.37 1998/03/09 17:45:30 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -103,7 +103,7 @@ all:;   @case "`uname -sr`" in \
 		_all;; \
 	AOS*) \
 		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=/usr/local/bin/gcc' \
+		'CC=gcc' \
 		'CFLAGS=-O2 -Dibm6153 -I../lib' \
 		'LIBS=../aos/libaos.a ../lib/libutil.a' \
 		'SLIBS=' \
@@ -174,4 +174,5 @@ clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 depend:; @mkmf -f $(MAKEFILE)
 ###
 check_seteugid.o: ../lib/seteugid.h
+connect.o: ../lib/configure.h
 hs.o: ../lib/buildsaddr.h

@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.9 1996/08/12 18:53:54 deyke Exp $
+# @(#) $Id: Makefile,v 1.10 1998/03/09 17:46:44 deyke Exp $
 
 LIBRARY       = libaos.a
 
@@ -39,9 +39,11 @@ all:;   @case "`uname -sr`" in \
 		:;; \
 	AOS*) \
 		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=/usr/local/bin/gcc' \
+		'CC=gcc' \
 		'CFLAGS=-O2' \
 		_all;; \
+	NeXT*) \
+		:;; \
 	*) \
 		echo System `uname -sr` is not supported;; \
 	esac

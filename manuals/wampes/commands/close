@@ -1,4 +1,4 @@
-.\" @(#) $Id: close,v 1.5 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: close,v 1.6 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "close" " [\fIsession#\fP]"
 Close the specified session, without an argument, close the
 current session. On an AX.25 session this command initiates a

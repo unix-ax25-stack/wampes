@@ -1,4 +1,4 @@
-/* @(#) $Id: hpux.c,v 1.60 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: hpux.c,v 1.61 1998/03/09 17:42:56 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -59,13 +59,13 @@ struct proc_t {
 
 static struct proc_t *procs;
 
-static struct fd_set chkread;
-static struct fd_set actread;
+static TYPE_FD_SET chkread;
+static TYPE_FD_SET actread;
 static void (*readfnc[FD_SETSIZE])(void *);
 static void *readarg[FD_SETSIZE];
 
-static struct fd_set chkwrite;
-static struct fd_set actwrite;
+static TYPE_FD_SET chkwrite;
+static TYPE_FD_SET actwrite;
 static void (*writefnc[FD_SETSIZE])(void *);
 static void *writearg[FD_SETSIZE];
 

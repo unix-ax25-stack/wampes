@@ -1,4 +1,4 @@
-.\" @(#) $Id: escape,v 1.6 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: escape,v 1.7 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "escape" " [\fIcharacter\fP]"
 Display or set the current command-mode escape character.
 To enter a control character from the keyboard it has

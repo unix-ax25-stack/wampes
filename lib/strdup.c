@@ -1,4 +1,4 @@
-/* @(#) $Id: strdup.c,v 1.10 1996/08/12 18:53:41 deyke Exp $ */
+/* @(#) $Id: strdup.c,v 1.11 1998/03/09 17:46:26 deyke Exp $ */
 
 #include "configure.h"
 
@@ -19,6 +19,8 @@ char *strdup(const char *s)
 
 #else
 
-struct prevent_empty_file_message;
+void strdup_prevent_empty_file_message(void)
+{
+}
 
 #endif

@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^Net Update Reference Manual^-\\\\nP-^Version 971229" \" Page footer
+.PF "^Net Update Reference Manual^-\\\\nP-^Version 980309" \" Page footer
 .\"
 .S 30
 .ce
 \fBNet Update Reference Manual\fP
 .ce
-Version 971229
+Version 980309
 .S
 .SP 2
 .S 15
@@ -31,9 +31,9 @@ deyke@fc.hp.com
 .H 1 "Server"
 .AL
 .LI
-The following external UNIX programs (supporting the specified options)
-have to be installed in either
-/bin, /usr/bin, /usr/local/bin, or /usr/contrib/bin:
+The following external UNIX programs (supporting the specified
+options) have to be installed in either /bin, /usr/bin,
+/usr/local/bin, or /usr/contrib/bin:
 .BL
 .LI
 diff -n
@@ -53,15 +53,19 @@ netupds 4715/tcp
 Add the following line to /etc/inetd.conf:
 .DS I
 .ft CW
-netupds stream tcp nowait root /tcp/util/netupds netupds
+netupds stream tcp nowait root /tcp/util/netupds netupds [-s \fIsourcedir\fP] [-n \fIuser\fP]
 .ft P
 .DE
-If you want notification mail to go to some user other than \fBroot\fP, use:
-.DS I
-.ft CW
-netupds stream tcp nowait root /tcp/util/netupds netupds -n \fIuser\fP
-.ft P
-.DE
+Options:
+.P
+.VL 20 2
+.LI "\fB-s\fP \fIsourcedir\fP"
+Serve files from directory \fIsourcedir\fP. If not specified files
+will be served from directory \fB/tcp\fP.
+.LI "\fB-n\fP \fIuser\fP"
+Send notification mail to \fIuser\fP. If not specified mail will be
+send to \fBroot\fP.
+.LE
 .LI
 Reconfigure inetd using the following UNIX command:
 .DS I
@@ -87,9 +91,9 @@ start tcpgate netupds
 .H 1 "Client"
 .AL
 .LI
-The following external UNIX programs (supporting the specified options)
-have to be installed in either
-/bin, /usr/bin, /usr/local/bin, or /usr/contrib/bin:
+The following external UNIX programs (supporting the specified
+options) have to be installed in either /bin, /usr/bin,
+/usr/local/bin, or /usr/contrib/bin:
 .BL
 .LI
 gzip -d
@@ -100,35 +104,35 @@ compress -d
 Execute the following UNIX command:
 .DS I
 .ft CW
-/tcp/util/netupdc \fIserver\fP \fIclient\fP
+/tcp/util/netupdc [-s \fIsourcedir\fP] [-w \fIwampesdir\fP] [-u] [-m] \fIserver\fP \fIclient\fP
 .ft P
 .DE
-or
-.DS I
-.ft CW
-/tcp/util/netupdc -m \fIserver\fP \fIclient\fP
-.ft P
-.DE
-where \fIserver\fP is the hostname of the server,
-and \fIclient\fP is the hostname of the client.
-Please note that \fIclient\fP may only consist of
-letters, digits, and the '-' character.
-.SP
-Without using option \fB-m\fP this will
-update all sources in your /tcp directory,
-and then call \fBmake\fP to build new \fBWAMPES\fP executables.
-If option \fB-m\fP is used only the update portion will be done,
-the \fBmake\fP portion will be skipped.
-.SP
-If \fIclient\fP is not specified, it defaults to the first part
-(up to the first '.' character) of the client hostname (as
-returned by the UNIX hostname command).
-.SP
-If \fIserver\fP is not specified, it defaults to "db0sao".
+Options:
+.VL 20 2
+.LI "\fB-s\fP \fIsourcedir\fP"
+Update files in directory \fIsourcedir\fP. If not specified files will
+be updated in directory \fB/tcp\fP.
+.LI "\fB-w\fP \fIwampesdir\fP"
+Directory where \fBWAMPES\fP is installed. If not specified
+\fBWAMPES\fP is expected in directory \fB/tcp\fP. Not used when
+option \fB-u\fP is specified.
+.LI \fB-u\fP
+Use \fBUnix\fP networking to connect to \fIserver\fP. If not specified
+\fBWAMPES\fP will be used to connect to \fIserver\fP.
+.LI \fB-m\fP
+Do \fBnot\fP start the \fBmake\fP program after the update.
+.LI \fIserver\fP
+Hostname of the net update server. If not specified this defaults to
+\fBdb0sao\fP.
+.LI \fIclient\fP
+Hostname of this client. If not specified this defaults to the first
+part (up to the first '.' character) of the client hostname (as
+returned by the UNIX hostname command). Please note that \fIclient\fP
+may only consist of letters, digits, and the '-' character.
+.LE
 .LI
-If you wish you can execute netupdc automatically from cron
-by putting the command from 2.2 into your crontab.
-Example crontab entry:
+If you wish you can execute netupdc automatically from cron by putting
+the command from 2.2 into your crontab. Example crontab entry:
 .DS I
 .ft CW
 0 8 * * * exec /tcp/util/netupdc db0sao dk5sg

@@ -1,4 +1,4 @@
-.\" @(#) $Id: console-modes,v 1.4 1996/08/19 16:33:09 deyke Exp $
+.\" @(#) $Id: console-modes,v 1.5 1998/03/09 17:47:55 deyke Exp $ -*- Mode: Nroff -*-
 .nr Cl 7 \" Max level of header for table of contents
 .H 1 "Console modes"
 The console may be in one of two modes: \fBcommand mode\fP or

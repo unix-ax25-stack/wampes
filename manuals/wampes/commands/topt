@@ -1,4 +1,4 @@
-.\" @(#) $Id: topt,v 1.3 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: topt,v 1.4 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "topt" " [on|off]"
 Display or set the flag controlling the display of client Telnet's
 option processing.

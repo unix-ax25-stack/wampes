@@ -1,4 +1,4 @@
-.\" @(#) $Id: finger,v 1.6 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: finger,v 1.7 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "finger" " [\fIuser\fP]@\fIhostid\fP"
 Issue a network finger request for user \fIuser\fP at host \fIhostid\fP. If only
 \fB@\fP\fIhostid\fP is given, all users on that host are identified.

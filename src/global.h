@@ -1,4 +1,4 @@
-/* @(#) $Id: global.h,v 1.41 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: global.h,v 1.42 1998/03/09 17:42:56 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -59,11 +59,12 @@ typedef int pid_t;
 #define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
 #define PDP_ENDIAN      3412    /* LSB first in word, MSW first in long */
 
-#if ( defined linux && !defined __mc68000__ ) || \
-      defined ULTRIX_RISC                     || \
-      defined __386BSD__                      || \
-      defined __bsdi__                        || \
-      defined __FreeBSD__
+#if ( defined linux       || \
+      defined ULTRIX_RISC || \
+      defined __386BSD__  || \
+      defined __bsdi__    || \
+      defined __FreeBSD__ || \
+      defined __NeXT__    ) && !defined __mc68000__
 #define BYTE_ORDER      LITTLE_ENDIAN
 #else
 #define BYTE_ORDER      BIG_ENDIAN

@@ -4,7 +4,7 @@
 </HEAD>
 <BODY>
 <H1>Net Update Reference Manual</H1>
-Version 971229
+Version 980309
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
@@ -18,9 +18,9 @@ deyke@fc.hp.com
 </OL>
 <HR><H2><A NAME="H1.">1. Server</A></H2>
 <OL>
-<LI>The following external UNIX programs (supporting the specified options)
-have to be installed in either
-/bin, /usr/bin, /usr/local/bin, or /usr/contrib/bin:
+<LI>The following external UNIX programs (supporting the specified
+options) have to be installed in either /bin, /usr/bin,
+/usr/local/bin, or /usr/contrib/bin:
 <UL>
 <LI>diff -n
 <LI>gzip -9
@@ -32,12 +32,18 @@ netupds 4715/tcp
 </PRE>
 <LI>Add the following line to /etc/inetd.conf:
 <PRE>
-netupds stream tcp nowait root /tcp/util/netupds netupds
+netupds stream tcp nowait root /tcp/util/netupds netupds [-s <I>sourcedir</I>] [-n <I>user</I>]
 </PRE>
-If you want notification mail to go to some user other than <B>root</B>, use:
-<PRE>
-netupds stream tcp nowait root /tcp/util/netupds netupds -n <I>user</I>
-</PRE>
+Options:
+<P>
+<DL>
+<DT><B>-s</B> <I>sourcedir</I>
+<DD>Serve files from directory <I>sourcedir</I>. If not specified files
+will be served from directory <B>/tcp</B>.
+<DT><B>-n</B> <I>user</I>
+<DD>Send notification mail to <I>user</I>. If not specified mail will be
+send to <B>root</B>.
+</DL>
 <LI>Reconfigure inetd using the following UNIX command:
 <PRE>
 inetd -c
@@ -53,40 +59,42 @@ start tcpgate netupds
 </OL>
 <HR><H2><A NAME="H2.">2. Client</A></H2>
 <OL>
-<LI>The following external UNIX programs (supporting the specified options)
-have to be installed in either
-/bin, /usr/bin, /usr/local/bin, or /usr/contrib/bin:
+<LI>The following external UNIX programs (supporting the specified
+options) have to be installed in either /bin, /usr/bin,
+/usr/local/bin, or /usr/contrib/bin:
 <UL>
 <LI>gzip -d
 <LI>compress -d
 </UL>
 <LI>Execute the following UNIX command:
 <PRE>
-/tcp/util/netupdc <I>server</I> <I>client</I>
+/tcp/util/netupdc [-s <I>sourcedir</I>] [-w <I>wampesdir</I>] [-u] [-m] <I>server</I> <I>client</I>
 </PRE>
-or
-<PRE>
-/tcp/util/netupdc -m <I>server</I> <I>client</I>
-</PRE>
-where <I>server</I> is the hostname of the server,
-and <I>client</I> is the hostname of the client.
-Please note that <I>client</I> may only consist of
-letters, digits, and the '-' character.
-<P>
-Without using option <B>-m</B> this will
-update all sources in your /tcp directory,
-and then call <B>make</B> to build new <B>WAMPES</B> executables.
-If option <B>-m</B> is used only the update portion will be done,
-the <B>make</B> portion will be skipped.
-<P>
-If <I>client</I> is not specified, it defaults to the first part
-(up to the first '.' character) of the client hostname (as
-returned by the UNIX hostname command).
-<P>
-If <I>server</I> is not specified, it defaults to &quot;db0sao&quot;.
-<LI>If you wish you can execute netupdc automatically from cron
-by putting the command from 2.2 into your crontab.
-Example crontab entry:
+Options:
+<DL>
+<DT><B>-s</B> <I>sourcedir</I>
+<DD>Update files in directory <I>sourcedir</I>. If not specified files will
+be updated in directory <B>/tcp</B>.
+<DT><B>-w</B> <I>wampesdir</I>
+<DD>Directory where <B>WAMPES</B> is installed. If not specified
+<B>WAMPES</B> is expected in directory <B>/tcp</B>. Not used when
+option <B>-u</B> is specified.
+<DT><B>-u</B>
+<DD>Use <B>Unix</B> networking to connect to <I>server</I>. If not specified
+<B>WAMPES</B> will be used to connect to <I>server</I>.
+<DT><B>-m</B>
+<DD>Do <B>not</B> start the <B>make</B> program after the update.
+<DT><I>server</I>
+<DD>Hostname of the net update server. If not specified this defaults to
+<B>db0sao</B>.
+<DT><I>client</I>
+<DD>Hostname of this client. If not specified this defaults to the first
+part (up to the first '.' character) of the client hostname (as
+returned by the UNIX hostname command). Please note that <I>client</I>
+may only consist of letters, digits, and the '-' character.
+</DL>
+<LI>If you wish you can execute netupdc automatically from cron by putting
+the command from 2.2 into your crontab. Example crontab entry:
 <PRE>
 0 8 * * * exec /tcp/util/netupdc db0sao dk5sg
 </PRE>

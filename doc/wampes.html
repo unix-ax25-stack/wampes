@@ -4,7 +4,7 @@
 </HEAD>
 <BODY>
 <H1>WAMPES Reference Manual</H1>
-Version 971229
+Version 980309
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
@@ -918,11 +918,13 @@ The default is <B>off</B>.
 Without arguments display the status of all interfaces.
 When only <I>interface</I> is given, the status of that interface is displayed.
 Multiple subcommand/parameter pairs can be put on one line.
-<H4><A NAME="H4.25.1">4.25.1 ifconfig <I>interface</I> broadcast <I>hostid</I></A></H4>
+<H4><A NAME="H4.25.1">4.25.1 ifconfig <I>interface</I> autoroute <B>on</B>|<B>off</B></A></H4>
+Enable or disable the automatic learning of routes through this interface.
+<H4><A NAME="H4.25.2">4.25.2 ifconfig <I>interface</I> broadcast <I>hostid</I></A></H4>
 Set the broadcast address of <I>interface</I> to <I>hostid</I>.
 This is related to the <B>netmask</B> subcommand.
 See also the <A HREF="#H4.4"><B>arp</B></A> command.
-<H4><A NAME="H4.25.2">4.25.2 ifconfig <I>interface</I> encapsulation <I>encapsulation</I></A></H4>
+<H4><A NAME="H4.25.3">4.25.3 ifconfig <I>interface</I> encapsulation <I>encapsulation</I></A></H4>
 Set the encapsulation for <I>interface</I> to <I>encapsulation</I>.
 <I>Encapsulation</I> may be one of:
 <DL>
@@ -963,22 +965,22 @@ that uses <B>ax25i</B> or <B>kissi</B> encapsulation).
 </UL>
 The setting of the IP type-of-service field may be ignored
 by using the <A HREF="#H4.7.6"><B>ax25 ignoretos</B></A> command.
-<H4><A NAME="H4.25.3">4.25.3 ifconfig <I>interface</I> forward <I>interface2</I></A></H4>
+<H4><A NAME="H4.25.4">4.25.4 ifconfig <I>interface</I> forward <I>interface2</I></A></H4>
 When a forward is defined, all output for <I>interface</I> is redirected to
 <I>interface2</I>. To remove the forward, set <I>interface2</I> to <I>interface</I>.
-<H4><A NAME="H4.25.4">4.25.4 ifconfig <I>interface</I> ipaddress <I>hostid</I></A></H4>
+<H4><A NAME="H4.25.5">4.25.5 ifconfig <I>interface</I> ipaddress <I>hostid</I></A></H4>
 Set the IP address to <I>hostid</I> for this interface. This might be necessary
 when a system acts as a gateway.
 See also the <A HREF="#H4.26.1"><B>ip address</B></A> command.
-<H4><A NAME="H4.25.5">4.25.5 ifconfig <I>interface</I> linkaddress <I>hardware-dependent</I></A></H4>
+<H4><A NAME="H4.25.6">4.25.6 ifconfig <I>interface</I> linkaddress <I>hardware-dependent</I></A></H4>
 Set the hardware dependent address for this interface. For
 AX.25 this can be the callsign, for ethernet an ethernet
 address.
-<H4><A NAME="H4.25.6">4.25.6 ifconfig <I>interface</I> mtu <I>parameter</I></A></H4>
+<H4><A NAME="H4.25.7">4.25.7 ifconfig <I>interface</I> mtu <I>parameter</I></A></H4>
 Set the maximum transfer unit to <I>parameter</I> octeds (bytes).
 See the <A HREF="#H6."><B>Setting Paclen, Maxframe, MTU, MSS and Window</B></A> chapter
 for more information.
-<H4><A NAME="H4.25.7">4.25.7 ifconfig <I>interface</I> netmask <I>address</I></A></H4>
+<H4><A NAME="H4.25.8">4.25.8 ifconfig <I>interface</I> netmask <I>address</I></A></H4>
 Set the subnet mask for this interface.
 The <I>address</I> takes the form of an IP address
 with 1's in the network and subnet parts of the address,
@@ -990,10 +992,10 @@ ifconfig ec0 netmask 0xffffff00
 for a class C network (24 bits).
 This is related to the <B>broadcast</B> subcommand.
 See also the <A HREF="#H4.45"><B>route</B></A> command.
-<H4><A NAME="H4.25.8">4.25.8 ifconfig <I>interface</I> rxbuf <I>size</I></A></H4>
+<H4><A NAME="H4.25.9">4.25.9 ifconfig <I>interface</I> rxbuf <I>size</I></A></H4>
 Set the receive buffer size.
 This value is currently not used by <B>WAMPES</B>.
-<H4><A NAME="H4.25.9">4.25.9 ifconfig <I>interface</I> txqlen <I>size</I></A></H4>
+<H4><A NAME="H4.25.10">4.25.10 ifconfig <I>interface</I> txqlen <I>size</I></A></H4>
 Set the transmit queue limit
 (maximum number of packets waiting in the transmit queue).
 If set to 0 the transmit queue is unlimited.

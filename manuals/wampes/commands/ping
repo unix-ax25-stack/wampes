@@ -1,4 +1,4 @@
-.\" @(#) $Id: ping,v 1.6 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: ping,v 1.7 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "ping" " [\fIsubcommand\fP]"
 Without an argument,
 display the Ping table,

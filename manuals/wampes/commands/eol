@@ -1,4 +1,4 @@
-.\" @(#) $Id: eol,v 1.4 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: eol,v 1.5 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "eol" " [standard|null]"
 Display or set Telnet's end-of-line behavior when in remote echo mode.
 In \fBstandard\fP mode, each key is sent as-is.

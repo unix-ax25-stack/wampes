@@ -1,4 +1,4 @@
-.\" @(#) $Id: memory,v 1.9 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: memory,v 1.10 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "memory" " \fIsubcommand\fP"
 These commands control memory allocation.
 .H 3 "memory debug" " [on|off]"

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: connect.c,v 1.20 1996/08/12 18:52:58 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: connect.c,v 1.21 1998/03/09 17:45:30 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -28,6 +28,8 @@ static const char rcsid[] = "@(#) $Id: connect.c,v 1.20 1996/08/12 18:52:58 deyk
 
 extern char *optarg;
 extern int optind;
+
+#include "configure.h"
 
 #define MAXCHANNELS     9                       /* Max number of connections */
 #define PIDFILE         "/tmp/connect.pid"
@@ -71,7 +73,7 @@ static const uint8 nr_bdcst[] = {
 static int all;
 static int channels = 2;
 static struct connection connections[MAXCHANNELS];
-static struct fd_set chkread;
+static TYPE_FD_SET chkread;
 
 /*---------------------------------------------------------------------------*/
 
@@ -132,16 +134,16 @@ static void route_packet(struct connection *p)
 int main(int argc, char **argv)
 {
 
-  char tmp[1024];
-  char *cp;
   FILE *fp;
+  TYPE_FD_SET actread;
+  char *cp;
+  char tmp[1024];
   int ch;
   int errflag = 0;
   int fail = 0;
   int i;
   int n;
   struct connection *p;
-  struct fd_set actread;
   struct timeval timeout;
 
   if ((fp = fopen(PIDFILE, "r"))) {

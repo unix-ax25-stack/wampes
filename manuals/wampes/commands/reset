@@ -1,4 +1,4 @@
-.\" @(#) $Id: reset,v 1.5 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: reset,v 1.6 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "reset" " [\fIsession#\fP]"
 Reset the specified session, if no argument is given, reset the current
 session. This command should be used with caution since it does not

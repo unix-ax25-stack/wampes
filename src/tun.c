@@ -1,4 +1,4 @@
-/* @(#) $Id: tun.c,v 1.4 1996/08/20 18:07:34 deyke Exp $ */
+/* @(#) $Id: tun.c,v 1.5 1998/03/09 17:42:56 deyke Exp $ */
 
 /*
    Interface to FreeBSD's tun device - Olaf Erb, dc1ik 960728
@@ -276,6 +276,8 @@ int tun_attach(int argc, char *argv[], void *p)
 
 #else
 
-struct prevent_empty_file_message;
+void tun_prevent_empty_file_message(void)
+{
+}
 
 #endif

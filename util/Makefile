@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.65 1996/08/12 18:53:33 deyke Exp $
+# @(#) $Id: Makefile,v 1.66 1998/03/09 17:46:14 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -94,10 +94,17 @@ all:;   @case "`uname -sr`" in \
 		_all;; \
 	AOS*) \
 		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=/usr/local/bin/gcc' \
+		'CC=gcc' \
 		'CFLAGS=-O2 -Dibm6153 -I../lib' \
 		'LIBS=../aos/libaos.a ../lib/libutil.a' \
 		'SLIBS=-lcurses -ltermcap' \
+		_all;; \
+	NeXT*) \
+		$(MAKE) -i -f $(MAKEFILE) \
+		'CC=gcc -posix' \
+		'CFLAGS=-O -D_POSIX_SOURCE -I../lib' \
+		'LIBS=../NeXT/libnext.a ../lib/libutil.a' \
+		'SLIBS=-lcurses -ltermcap -ldbm' \
 		_all;; \
 	*) \
 		echo System `uname -sr` is not supported;; \
@@ -206,8 +213,8 @@ clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 
 depend:; @mkmf -f $(MAKEFILE)
 ###
-bridge.o: ../lib/buildsaddr.h
-cnet.o: ../lib/buildsaddr.h
+bridge.o: ../lib/buildsaddr.h ../lib/configure.h
+cnet.o: ../lib/buildsaddr.h ../lib/configure.h
 md5drivr.o: ../lib/md5.h
 netupds.o: ../lib/buildsaddr.h ../lib/calc_crc.h ../lib/configure.h \
 	../lib/lockfile.h ../lib/md5.h ../lib/strdup.h ../lib/strmatch.h

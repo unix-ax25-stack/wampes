@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: convers.c,v 1.23 1996/10/28 22:46:37 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: convers.c,v 1.24 1998/03/09 17:42:49 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -32,6 +32,7 @@ static const char rcsid[] = "@(#) $Id: convers.c,v 1.23 1996/10/28 22:46:37 deyk
 #endif
 
 #include "buildsaddr.h"
+#include "configure.h"
 
 extern char *optarg;
 extern int optind;
@@ -389,8 +390,9 @@ static void dooutput(void)
 int main(int argc, char **argv)
 {
 
-  char buffer[2048];
+  TYPE_FD_SET rmask;
   char *note = 0;
+  char buffer[2048];
   const char *server = "unix:/tcp/sockets/convers";
   int addrlen;
   int channel = 0;
@@ -402,7 +404,6 @@ int main(int argc, char **argv)
   int dousers = 0;
   int dowho = 0;
   int errflag = 0;
-  struct fd_set rmask;
   struct sockaddr *addr = 0;
 
   progname = *argv;

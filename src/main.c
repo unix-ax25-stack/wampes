@@ -1,4 +1,4 @@
-/* @(#) $Id: main.c,v 1.62 1997/04/14 22:08:25 deyke Exp $ */
+/* @(#) $Id: main.c,v 1.63 1998/03/09 17:42:56 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -114,7 +114,7 @@ main(int argc,char *argv[])
 
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
 	printf("\n================ %s ================\n", Version);
-	printf("(c) Copyright 1990-1997 by Dieter Deyke, DK5SG / N0PRA\n");
+	printf("(c) Copyright 1990-1998 by Dieter Deyke, DK5SG / N0PRA\n");
 	printf("(c) Copyright 1986-1996 by Phil Karn, KA9Q\n");
 	printf("\n");
 	/* Start background Daemons */

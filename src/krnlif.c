@@ -1,4 +1,4 @@
-/* @(#) $Id: krnlif.c,v 1.2 1996/10/09 18:13:06 deyke Exp $ */
+/* @(#) $Id: krnlif.c,v 1.3 1998/03/09 17:42:56 deyke Exp $ */
 
 #ifdef linux
 
@@ -437,6 +437,8 @@ int krnlif_attach(int argc, char *argv[], void *p)
 
 #else
 
-struct prevent_empty_file_message;
+void krnlif_prevent_empty_file_message(void)
+{
+}
 
 #endif

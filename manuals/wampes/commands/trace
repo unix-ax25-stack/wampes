@@ -1,4 +1,4 @@
-.\" @(#) $Id: trace,v 1.8 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: trace,v 1.9 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "trace" " [\fIinterface\fP [\fIflags\fP|subcommand [\fItracefile\fP]]]"
 Control packet tracing by the interface drivers.
 Specific bits in \fIflags\fP enable tracing of the various interfaces

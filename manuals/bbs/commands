@@ -1,4 +1,4 @@
-.\" @(#) $Id: commands,v 1.4 1996/08/19 16:33:34 deyke Exp $
+.\" @(#) $Id: commands,v 1.5 1998/03/09 17:48:41 deyke Exp $ -*- Mode: Nroff -*-
 .nr Cl 2 \" Max level of header for table of contents
 .H 1 "Start"
 .nr Ej 0 \" From now on do not start a new page for any header level

@@ -1,4 +1,4 @@
-# @(#) $Id: configure,v 1.27 1996/08/20 18:09:24 deyke Exp $
+# @(#) $Id: configure,v 1.28 1998/03/09 17:46:26 deyke Exp $
 
 case "`uname -sr`" in
 HP-UX*)
@@ -27,6 +27,8 @@ RISC\ iX*)
 	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=/tcp/cc;;
 AOS*)
 	isdir=-d; isexec=-x; isfile=-f; islink=-L; cc=/usr/local/bin/gcc;;
+NeXT*)
+	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=cc;;
 *)
 	echo System `uname -sr` is not supported >&2
 	exit 1;;
@@ -210,6 +212,21 @@ checksymbol HAS_STRTOUL \
 checksymbol HAS_UINT \
 	"#include <sys/types.h>
 	 main(){uint f;return f;}"
+
+echo
+
+echo "
+#include <sys/types.h>
+#ifdef _AIX
+#include <sys/select.h>
+#endif
+main(){fd_set f;}
+" >$tmp.c
+if $cc $tmp.c -o $tmp >/dev/null 2>&1; then
+	echo "#define TYPE_FD_SET fd_set"
+else
+	echo "#define TYPE_FD_SET struct fd_set"
+fi
 
 echo
 echo "#endif"

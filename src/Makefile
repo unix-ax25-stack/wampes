@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.94 1996/10/08 20:00:52 deyke Exp $
+# @(#) $Id: Makefile,v 1.95 1998/03/09 17:42:56 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -379,10 +379,17 @@ all:;   chmod 755 cc
 		_all;; \
 	AOS*) \
 		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=/usr/local/bin/gcc' \
+		'CC=gcc' \
 		'CFLAGS=-O2 -DUNIX -Dibm6153 -I../lib' \
 		'LIBS=../aos/libaos.a ../lib/libutil.a' \
 		'LDFLAGS=-g' \
+		_all;; \
+	NeXT*) \
+		$(MAKE) -i -f $(MAKEFILE) \
+		'CC=gcc -posix' \
+		'CFLAGS=-O -DUNIX -D_POSIX_SOURCE -DPURIFY -DFD_SETSIZE=256 -I../lib' \
+		'LIBS=../NeXT/libnext.a ../lib/libutil.a' \
+		'SLIBS=-ldbm' \
 		_all;; \
 	*) \
 		echo System `uname -sr` is not supported;; \
@@ -418,6 +425,8 @@ setsp.o: setsp.c
 		$(CC) -E -DRISCiX $< > setsp.s; cc -c setsp.s;; \
 	AOS*) \
 		$(CC) $(CFLAGS) -c setsp.c;; \
+	NeXT*) \
+		gcc -E $< | grep -v '^#' > setsp.s; as setsp.s -o $@;; \
 	*) \
 		echo System `uname -sr` is not supported;; \
 	esac

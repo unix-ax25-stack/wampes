@@ -1,4 +1,4 @@
-.\" @(#) $Id: sf_pic,v 1.4 1996/08/19 16:33:34 deyke Exp $
+.\" @(#) $Id: sf_pic,v 1.5 1998/03/09 17:48:41 deyke Exp $ -*- Mode: Nroff -*-
 .H 1 "S&F data flow"
 .PS
 reset

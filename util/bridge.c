@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: bridge.c,v 1.18 1996/08/12 18:53:33 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: bridge.c,v 1.19 1998/03/09 17:46:14 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -41,6 +41,7 @@ extern char *optarg;
 extern int optind;
 
 #include "buildsaddr.h"
+#include "configure.h"
 
 /* SLIP constants */
 
@@ -81,10 +82,10 @@ static const uint8 nr_bdcst[] = {
   'N' << 1, 'O' << 1, 'D' << 1, 'E' << 1, 'S' << 1, ' ' << 1, ('0' << 1) | E
 };
 
+static TYPE_FD_SET chkread;
 static int all;
 static int maxfd = -1;
 static struct connection *connections;
-static struct fd_set chkread;
 
 /*---------------------------------------------------------------------------*/
 
@@ -193,6 +194,7 @@ static void route_packet(struct connection *p)
 int main(int argc, char **argv)
 {
 
+  TYPE_FD_SET actread;
   char buf[1024];
   int addrlen;
   int arg;
@@ -203,7 +205,6 @@ int main(int argc, char **argv)
   int i;
   int n;
   struct connection *p;
-  struct fd_set actread;
   struct sockaddr *addr;
 
   while ((ch = getopt(argc, argv, "af:")) != EOF)

@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.31 1996/08/12 18:53:41 deyke Exp $
+# @(#) $Id: Makefile,v 1.32 1998/03/09 17:46:26 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -105,8 +105,13 @@ all:;   if [ -x /bin/bash ]; then \
 		_all;; \
 	AOS*) \
 		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=/usr/local/bin/gcc' \
+		'CC=gcc' \
 		'CFLAGS=-O2' \
+		_all;; \
+	NeXT*) \
+		$(MAKE) -i -f $(MAKEFILE) \
+		'CC=gcc' \
+		'CFLAGS=-O -D_POSIX_SOURCE' \
 		_all;; \
 	*) \
 		echo System `uname -sr` is not supported;; \

@@ -1,4 +1,4 @@
-wampes-971229.tar.gz is a gzipped tar archive of WAMPES, a NET/NOS port
+wampes-980309.tar.gz is a gzipped tar archive of WAMPES, a NET/NOS port
 to various flavors of Unix.
 
 WAMPES currently supports the following configurations:
@@ -40,20 +40,23 @@ WAMPES currently supports the following configurations:
 |               |                 |   <uk1o@rz.uni-karlsruhe.de> or           |
 |               |                 |   <felix@snake.pond.sub.org>              |
 +---------------+-----------------+-------------------------------------------+
+| NeXT MACH     | mc68000, ?:386  | Thomas Osterried                          |
+| NeXTStep3.3   |                 |   <thomas@x-berg.in-berlin.de>            |
++---------------+-----------------+-------------------------------------------+
 
 To unpack this archive you have to:
 
 	su
 	mkdir /tcp
 	cd /tcp
-	gzip -d < wampes-971229.tar.gz | tar xvf -
+	gzip -d < wampes-980309.tar.gz | tar xvf -
 
 After unpacking please read the file /tcp/doc/intro.txt.  For FreeBSD
 2.1 and later, "GNU make (gmake)" must be used instead of /usr/bin/make.
 For RISC iX you have to copy *.R to /usr/lib.  Now type "make -i" to
 compile and install everything.
 
-wampes-971229.tar.gz can be found in
+wampes-980309.tar.gz can be found in
 	ftp://ftp.ucsd.edu/hamradio/packet/tcpip/incoming/
 or
 	ftp://ftp.ucsd.edu/hamradio/packet/tcpip/wampes/

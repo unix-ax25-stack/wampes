@@ -1,4 +1,4 @@
-/* @(#) $Id: ftp.h,v 1.14 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ftp.h,v 1.15 1998/03/09 17:42:56 deyke Exp $ */
 
 #ifndef _FTP_H
 #define _FTP_H
@@ -49,7 +49,7 @@ struct ftp {
 
 	enum ftp_state state;
 	char *buf;              /* Input command buffer */
-	char cnt;               /* Length of input buffer */
+	int cnt;                /* Length of input buffer */
 	int rest;               /* Restart location */
 	int uid;                /* User ID */
 	int gid;                /* Group ID */

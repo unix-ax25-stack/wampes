@@ -1,4 +1,4 @@
-.\" @(#) $Id: udp,v 1.5 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: udp,v 1.6 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "udp" " \fIsubcommand\fP"
 These commands control the User Datagram Protocol (UDP) service.
 .H 3 "udp status"

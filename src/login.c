@@ -1,4 +1,4 @@
-/* @(#) $Id: login.c,v 1.66 1997/06/25 19:07:25 deyke Exp $ */
+/* @(#) $Id: login.c,v 1.67 1998/03/09 17:42:56 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -95,7 +95,14 @@ static char Homedir[80] = HOME_DIR "/funk";
 static char Logfiledir[80];
 static char Shell[80];
 static int Auto = 1;
+#ifdef __NeXT__
+/* NeXTstep uses netinfo rather than passwd. Until i've learned how to
+ * implement this, i don't want wampes to create accounts automatically
+ * by default.  - 980206 dl9sau */
+static int Create = 0;
+#else
 static int Create = 1;
+#endif
 static int Gid = 400;
 static int Maxuid = MAXUID;
 static int Minuid = 400;
@@ -169,7 +176,7 @@ static int find_pty(char *ptyname)
 #if defined ULTRIX_RISC
       fcntl(fd, F_SETFL, FIONBIO); /* O_NONBLOCK does not work! */
 #endif
-#if defined macII || defined ibm032
+#if defined macII || defined ibm032 || defined __NeXT__
       /* this extra fcntl is necessary for an unknown reason, since the
 	 flag is already set... perhaps there is a race somewhere? */
       fcntl(fd, F_SETFL, O_NONBLOCK | fcntl(fd, F_GETFL, 0));
@@ -320,7 +327,7 @@ struct passwd *getpasswdentry(const char *name, int create)
 	  homedir,
 	  Shell);
   fclose(fp);
-#ifdef ibm032
+#if defined ibm032 || defined __NeXT__
   system("/etc/mkpasswd " PASSWDFILE);
 #endif
 
@@ -601,12 +608,16 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
 #ifdef LOGIN_PROCESS
     memset(&utmpbuf, 0, sizeof(utmpbuf));
     strcpy(utmpbuf.ut_name, "LOGIN");
+#ifndef __NeXT__
     strcpy(utmpbuf.ut_id, tp->ptyname + strlen(tp->ptyname) - 2);
+#endif
     strcpy(utmpbuf.ut_line, tp->ptyname + 5);
+#ifndef __NeXT__
     utmpbuf.ut_pid = getpid();
     utmpbuf.ut_type = LOGIN_PROCESS;
+#endif
     utmpbuf.ut_time = secclock();
-#ifdef __hpux
+#if defined __hpux || defined __NeXT__
     strncpy(utmpbuf.ut_host, protocol, sizeof(utmpbuf.ut_host));
 #endif
     pututline(&utmpbuf);
@@ -621,7 +632,7 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
     argv[argc++] = "/bin/remlogin";
     argv[argc++] = "-h";
     argv[argc++] = (char *) protocol;
-#elif defined linux || defined ibm032
+#elif defined linux || defined ibm032 || defined __NeXT__
     argv[argc++] = "/bin/login";
     argv[argc++] = "-h";
     argv[argc++] = (char *) protocol;

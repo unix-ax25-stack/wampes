@@ -1,4 +1,4 @@
-.\" @(#) $Id: ps,v 1.5 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: ps,v 1.6 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "ps"
 Display all current processes in the system. The fields are as follows:
 .VL 20 2

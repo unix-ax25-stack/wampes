@@ -1,4 +1,4 @@
-/* @(#) $Id: strtoul.c,v 1.8 1996/08/12 18:53:41 deyke Exp $ */
+/* @(#) $Id: strtoul.c,v 1.9 1998/03/09 17:46:26 deyke Exp $ */
 
 #include "configure.h"
 
@@ -115,6 +115,8 @@ strtoul(const char *nptr,
 
 #else
 
-struct prevent_empty_file_message;
+void strtoul_prevent_empty_file_message(void)
+{
+}
 
 #endif

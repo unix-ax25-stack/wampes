@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: cnet.c,v 1.41 1996/08/12 18:53:33 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: cnet.c,v 1.42 1998/03/09 17:46:14 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -51,6 +51,7 @@ char *tgetstr();
 #endif
 
 #include "buildsaddr.h"
+#include "configure.h"
 
 struct mbuf {
   struct mbuf *next;
@@ -191,20 +192,20 @@ static void sendq(int fd, struct mbuf **qp)
 int main(int argc, char **argv)
 {
 
-  char area[1024];
-  char bp[1024];
-  char cmdbuf[1024];
+  TYPE_FD_SET rmask;
+  TYPE_FD_SET wmask;
   char *areaptr;
   char *cmdptr = 0;
   char *progname = "cnet";
   char *server = "unix:/tcp/.sockets/netcmd";
   char *termstr;
   char *upstr;
+  char area[1024];
+  char bp[1024];
+  char cmdbuf[1024];
   int addrlen;
   int flags;
   int n;
-  struct fd_set rmask;
-  struct fd_set wmask;
   struct sockaddr *addr;
 
 #ifdef ibm032

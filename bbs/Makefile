@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.54 1996/08/12 18:52:55 deyke Exp $
+# @(#) $Id: Makefile,v 1.55 1998/03/09 17:45:26 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -83,9 +83,15 @@ all:;   @case "`uname -sr`" in \
 		_all;; \
 	AOS*) \
 		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=/usr/local/bin/gcc' \
+		'CC=gcc' \
 		'CFLAGS=-O2 -I../lib' \
 		'LIBS=../aos/libaos.a ../lib/libutil.a' \
+		_all;; \
+	NeXT*) \
+		$(MAKE) -i -f $(MAKEFILE) \
+		'CC=gcc -posix' \
+		'CFLAGS=-O -D_POSIX_SOURCE -I../lib' \
+		'LIBS=../NeXT/libnext.a ../lib/libutil.a' \
 		_all;; \
 	*) \
 		echo System `uname -sr` is not supported;; \

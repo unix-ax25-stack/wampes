@@ -1,4 +1,4 @@
-.\" @(#) $Id: attach,v 1.14 1996/10/08 20:03:09 deyke Exp $
+.\" @(#) $Id: attach,v 1.15 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "attach" " \fItype\fP [\fItype specific options\fP]"
 Configure and attach an interface to the system.
 The details are highly interface type dependent.

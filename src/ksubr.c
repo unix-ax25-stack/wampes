@@ -1,4 +1,4 @@
-/* @(#) $Id: ksubr.c,v 1.34 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: ksubr.c,v 1.35 1998/03/09 17:42:56 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -309,6 +309,16 @@ struct env {
 	unsigned        resv4;
 };
 #define getstackptr(ep) ((ep)->r1)
+#elif defined __NeXT__
+struct env {
+	long    ebx;
+	long    esi;
+	long    edi;
+	long    ebp;
+	long    esp;
+	long    epc;
+};
+#define getstackptr(ep) ((ep)->esp)
 #else
 struct env {
 	long    dummy;

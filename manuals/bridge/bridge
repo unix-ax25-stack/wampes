@@ -1,4 +1,4 @@
-.\" @(#) $Id: bridge,v 1.4 1996/08/19 16:33:36 deyke Exp $
+.\" @(#) $Id: bridge,v 1.5 1998/03/09 17:48:45 deyke Exp $ -*- Mode: Nroff -*-
 .nr Ej 0 \" No new page for all headers
 .H 1 "The bridge utility"
 Usage: /tcp/util/bridge [-a] [-f \fIfailures\fP]

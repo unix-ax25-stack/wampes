@@ -1,4 +1,4 @@
-.\" @(#) $Id: source,v 1.4 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: source,v 1.5 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "source" " \fIfilename\fP"
 Read subsequent commands from \fIfilename\fP until EOF, then resume reading
 commands from the previous stream. This can be used to keep routing statements

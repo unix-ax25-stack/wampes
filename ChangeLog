@@ -1,4 +1,18 @@
-@(#) $Id: ChangeLog,v 1.39 1997/12/30 01:50:55 deyke Exp $
+@(#) $Id: ChangeLog,v 1.40 1998/03/09 17:42:18 deyke Exp $
+
+980309 Dieter Deyke <deyke@fc.hp.com>
+
+	Added support for NeXT
+
+	Added new command "ifconfig <interface> autoroute <on|off>"
+
+	Added new options -s, -w, and -u to netupdc
+
+	Added new option -s to netupds
+
+	Used "fd_set" instead of "struct fd_set" where possible
+
+	Updated domain.txt
 
 971229 Dieter Deyke <deyke@fc.hp.com>
 
@@ -169,7 +183,7 @@
 
 960620 Dieter Deyke <deyke@fc.hp.com>
 
-	Added new option '-c <cmd>' to cnet.  This allows cnet to
+	Added new option '-c <cmd>' to cnet. This allows cnet to
 	execute any non-interactive WAMPES command even while another
 	cnet is used interactively
 
@@ -219,7 +233,7 @@
 
 960303 Dieter Deyke <deyke@fc.hp.com>
 
-	Changed AX.25 T5 timer handling.  The timer is now reset when
+	Changed AX.25 T5 timer handling. The timer is now reset when
 	sending I frames to support unidirectional data transfers
 
 	Fixed seg vio in cnet occurring if TERM was not set, or was not

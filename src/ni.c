@@ -1,4 +1,4 @@
-/* @(#) $Id: ni.c,v 1.15 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ni.c,v 1.16 1998/03/09 17:42:56 deyke Exp $ */
 
 #ifdef __hpux
 
@@ -244,6 +244,8 @@ int ni_attach(int argc, char *argv[], void *p)
 
 #else
 
-struct prevent_empty_file_message;
+void ni_prevent_empty_file_message(void)
+{
+}
 
 #endif
