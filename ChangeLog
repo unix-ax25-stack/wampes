@@ -1,4 +1,11 @@
-@(#) $Id: ChangeLog,v 1.69 1999/12/02 02:13:52 deyke Exp $
+@(#) $Id: ChangeLog,v 1.70 1999/12/15 04:05:43 deyke Exp $
+
+991214 Dieter Deyke <deyke@hotpop.com>
+
+	Calling exit(1) instead of abort() if requesting too much memory
+	in malloc()
+
+	Limited ping packet size to 32767 bytes to prevent malloc panic
 
 991201 Dieter Deyke <deyke@hotpop.com>
 

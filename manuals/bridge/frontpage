@@ -1,12 +1,12 @@
-.\" @(#) $Id: frontpage,v 1.70 1999/12/02 02:13:56 deyke Exp $ -*- Mode: Nroff -*-
+.\" @(#) $Id: frontpage,v 1.71 1999/12/15 04:05:46 deyke Exp $ -*- Mode: Nroff -*-
 .\"
-.PF "^Bridge Reference Manual^-\\\\nP-^Version 991201" \" Page footer
+.PF "^Bridge Reference Manual^-\\\\nP-^Version 991214" \" Page footer
 .\"
 .S 30
 .ce
 \fBBridge Reference Manual\fP
 .ce
-Version 991201
+Version 991214
 .S
 .SP 2
 .S 15

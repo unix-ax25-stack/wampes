@@ -1,4 +1,4 @@
-/* @(#) $Id: alloc.c,v 1.37 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: alloc.c,v 1.38 1999/12/15 04:05:47 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -169,7 +169,7 @@ malloc(unsigned nb)
   if (n < MIN_N) n = MIN_N;
   if (n > MAX_N) {
     fprintf(stderr, "malloc: size too large\n");
-    abort();
+    exit(1);
   }
   if (!(p = getblock(n))) return 0;
   Sizes[n]++;

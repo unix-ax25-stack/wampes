@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^Net Update Reference Manual^-\\\\nP-^Version 991201" \" Page footer
+.PF "^Net Update Reference Manual^-\\\\nP-^Version 991214" \" Page footer
 .\"
 .S 30
 .ce
 \fBNet Update Reference Manual\fP
 .ce
-Version 991201
+Version 991214
 .S
 .SP 2
 .S 15

@@ -1,4 +1,4 @@
-/* @(#) $Id: ping.c,v 1.5 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: ping.c,v 1.6 1999/12/15 04:05:48 deyke Exp $ */
 
 /* ICMP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -79,6 +79,9 @@ void *p)
 		len = atoi(argv[2]);
 		if (len < ICMPLEN) {
 			printf("packet size too small, minimum size is %d bytes\n", ICMPLEN);
+			return 1;
+		} else if (len > 32767) {
+			printf("packet size too large, maximum size is %d bytes\n", 32767);
 			return 1;
 		}
 	} else
@@ -256,4 +259,3 @@ struct ping *pp)
 	}
 	free(pp);
 }
-
