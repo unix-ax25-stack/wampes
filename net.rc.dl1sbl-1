@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dl1sbl-1,v 1.40 1999/04/25 16:56:36 deyke Exp $
+# @(#) $Id: net.rc.dl1sbl-1,v 1.41 1999/05/15 20:15:28 deyke Exp $
 
 hostname     dl1sbl-1
 ax25 mycall  dl1sbl-1
@@ -14,13 +14,13 @@ attach ni ni dl1sbl             # ip to host ip
 ax25 route add axip default
 
 axip route add db0fho   db0fho
-axip route add df3du-1  15.138.80.94            # hpbidmp2.bbn.hp.com
-axip route add df9sr-1  15.136.35.218           # bmdjw.bbn.hp.com
-axip route add dh8saw-1 15.138.72.40            # hpbbis90.bbn.hp.com
-axip route add dj3eg-1  15.136.160.150          # hpbmosm0.bbn.hp.com
-axip route add dk0hu    15.138.33.250           # hp0hu.bbn.hp.com
-axip route add dl4sas-1 15.136.157.138          # hpbid1gf.bbn.hp.com
-axip route add dl4sel-1 15.136.162.7            # hpbbis45.bbn.hp.com
+axip route add df3du-1  15.138.80.94
+axip route add df9sr-1  15.136.35.218
+axip route add dh8saw-1 15.138.72.40
+axip route add dj3eg-1  15.140.114.148
+axip route add dk0hu    15.138.33.250
+axip route add dl4sas-1 15.136.157.138
+axip route add dl4sel-1 15.136.162.7
 
 route add  44.130.0.0/16        ipip     15.138.33.250        1 0
 route add  44.130.12.0/24       ipudp    15.254.48.2          1 0
@@ -30,7 +30,7 @@ route add  db0sao.ampr.org      ipip     15.138.33.250        1 2147483
 route add  df3du-1.ampr.org     ipip     15.138.80.94         1 2147483
 route add  df9sr-1.ampr.org     ipip     15.136.35.218        1 2147483
 route add  dh8saw-1.ampr.org    ipip     15.138.72.40         1 2147483
-route add  dj3eg-1.ampr.org     ipip     15.136.160.150       1 2147483
+route add  dj3eg-1.ampr.org     ipip     15.140.114.148       1 2147483
 route add  dk0hu-u.ampr.org     ipip     15.138.33.250        1 2147483
 route add  dk0hu.ampr.org       ipip     15.138.33.250        1 2147483
 route add  dl1sbl.ampr.org      ni       0                    1 2147483

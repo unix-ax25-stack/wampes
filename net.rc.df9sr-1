@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.df9sr-1,v 1.24 1999/04/25 16:56:35 deyke Exp $
+# @(#) $Id: net.rc.df9sr-1,v 1.25 1999/05/15 20:15:28 deyke Exp $
 
 hostname     df9sr-1
 ax25 mycall  df9sr-1
@@ -11,7 +11,7 @@ attach netrom                   # ip over netrom
 
 ax25 route add axip default
 
-axip route add dl1sbl-1 15.136.120.113  # twister.bbn.hp.com
+axip route add dl1sbl-1 15.136.120.113
 
 route add  44.130.0.0/16        ipip     15.136.120.113       1 0
 route add  44.143.0.0/16        ipip     15.136.120.113       1 0

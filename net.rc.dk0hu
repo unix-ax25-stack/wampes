@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dk0hu,v 1.57 1999/04/25 16:56:36 deyke Exp $
+# @(#) $Id: net.rc.dk0hu,v 1.58 1999/05/15 20:15:28 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -23,8 +23,8 @@ attach ni ni dk0hu-u            # ip to host ip
 
 ax25 route add axip default
 
-axip route add db0sao   192.1.1.1       # db0sao
-axip route add dl1sbl-1 15.136.120.113  # twister.bbn.hp.com
+axip route add db0sao   192.1.1.1
+axip route add dl1sbl-1 15.136.120.113
 
 route add  44.130.0.0/16        ipip     192.1.1.1            1 0
 route add  44.130.12.0/24       ipip     15.136.120.113       1 0

@@ -1,6 +1,6 @@
 #! /usr/bin/perl -w
 
-# @(#) $Id: pdiff,v 1.1 1999/04/24 17:01:42 deyke Exp $
+# @(#) $Id: pdiff,v 1.2 1999/05/15 20:16:06 deyke Exp $
 
 # Dieter Deyke
 # November 26, 1997
@@ -147,6 +147,53 @@ sub cmpfiles {
 
 #------------------------------------------------------------------------------
 
+# Trim one file
+
+sub trimfile {
+
+	my ($filename) = @_;
+
+	my ($blank_lines_skipped) = -1;
+	my ($current_year) = (localtime(time()))[5] + 1900;
+	my ($line);
+	my ($tmpfilename) = "$filename.tmp";
+
+	open(SRC, $filename) or die("$filename: $!\n");
+	open(DST,">$tmpfilename") or die("$tmpfilename: $!\n");
+	while (defined($line = <SRC>)) {
+		# Fix copyright dates
+		$line =~ s!(copyright.*19[89]\d)\s*-\s*\d\d\d\d!"$1-$current_year"!ei;
+		# Remove trailing whitespace
+		$line =~ s!\s+$!!;
+		# Expand tabs
+		while ($line =~ s!^([^\t]*)(\t+)!$1 . (' ' x (length($2) * 8 - (length($1) % 8)))!e) {
+		}
+		# Unexpand leading spaces
+		$line =~ s!^( +)!("\t" x ((length($1) / 8))) . (' ' x ((length($1) % 8)))!e;
+		# Remove casts of function return values to void
+		$line =~ s!^(\s*)\(\s*void\s*\)\s*!$1!;
+		# Output line
+		if ($line ne '') {
+			print(DST "\n") if $blank_lines_skipped == 1;
+			print(DST "$line\n");
+			$blank_lines_skipped = 0;
+		} else {
+			$blank_lines_skipped = 1 if $blank_lines_skipped == 0;
+		}
+	}
+	close(SRC);
+	close(DST);
+	if (cmpfiles($tmpfilename, $filename)) {
+		unlink($filename) or die("$filename: $!\n");
+		rename($tmpfilename, $filename) or die("rename(\"$tmpfilename\", \"$filename\"): $!\n");
+		chmod(0750, $filename) or die("chmod(0750, \"$filename\"): $!\n");
+	} else {
+		unlink($tmpfilename) or die("$tmpfilename: $!\n");
+	}
+}
+
+#------------------------------------------------------------------------------
+
 sub pdiff {
 
 	my ($cnt) = 0;
@@ -251,7 +298,12 @@ sub pdiff {
 		$master_file = "$dir/tmp.tmp";
 		system("cvs -q update -p $file > $master_file");
 		$master_file = $null unless -f $master_file;
-		$playpen_file = -f $file ? $file : $null;
+		if (-f $file) {
+			$playpen_file = $file;
+			trimfile($playpen_file) if -T $playpen_file;
+		} else {
+			$playpen_file = $null;
+		}
 		next if !cmpfiles($playpen_file, $master_file);
 		mkdir_p("$dir/" . dirname($file));
 		system("~/WorkManager/tools/htmldiff @options $master_file $playpen_file > $dir/$file.html");

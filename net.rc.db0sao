@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.db0sao,v 1.65 1999/04/25 16:56:35 deyke Exp $
+# @(#) $Id: net.rc.db0sao,v 1.66 1999/05/15 20:15:27 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -37,7 +37,7 @@ ax25 route add permanent tnc1 default
 # ax25 route add permanent tnc2 db0id
 # ax25 route add permanent tnc2 db0rot db0id
 
-axip route add dk0hu 192.1.1.2
+axip route add dk0hu    192.1.1.2
 
 route add  44.130.0.0/16        tnc1     0                    1 0
 route add  44.130.12.0/24       ipip     192.1.1.2            1 0

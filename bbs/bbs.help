@@ -1,9 +1,9 @@
-                    BBS Reference Manual
+		    BBS Reference Manual
 
-                       Version 990425
+		       Version 990515
 
-                 Dieter Deyke, DK5SG/N0PRA
-                      deyke@fc.hp.com
+		 Dieter Deyke, DK5SG/N0PRA
+		      deyke@fc.hp.com
 
 ^Start
 
@@ -347,13 +347,13 @@ patterns is:
 *       Matches any string, including the null string.
 ?       Matches any single character.
 [...]   Matches any one of the enclosed characters.
-        A pair of characters separated by - matches any
-        character lexically between the pair, inclusive.
-        The NOT operator ! can be specified immediately
-        following the left bracket to match any single
-        character not enclosed in the brackets.
+	A pair of characters separated by - matches any
+	character lexically between the pair, inclusive.
+	The NOT operator ! can be specified immediately
+	following the left bracket to match any single
+	character not enclosed in the brackets.
 \       Removes any special meaning of the following character.
-        Any other character matches itself.
+	Any other character matches itself.
 
 All pattern matches are case insensitive.
 
@@ -375,30 +375,29 @@ number-number   All articles from the number to number.
 
 S&F data flow
 
-                        other news
-                         systems                 udbm
-                             |
-                             |
-                             |
-                             |
+			other news
+			 systems                 udbm
+			     |
+			     |
+			     |
+			     |
 incoming-----     bulletins     ------news------       -----outgoing
 BBS traffic      bbs         inn       spool        bbs     BBS traffic
-                             |
-                             |
-                             |
-                             |
-                  personalail to
-                    mail news gw
-                             |
-                             |
-                             |
-                             |
+			     |
+			     |
+			     |
+			     |
+		  personalail to
+		    mail news gw
+			     |
+			     |
+			     |
+			     |
 incoming-----       ------      ------mail------       -----outgoing
 SMTP traffic     net       sendmail    spool        net     SMTP traffic
-                             |
-                             |
-                             |
-                             |
-                        other mail
-                         systems
-
+			     |
+			     |
+			     |
+			     |
+			other mail
+			 systems
