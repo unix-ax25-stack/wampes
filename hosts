@@ -1260,7 +1260,7 @@
 44.130.20.26    DL2KDF  # Peter Verhuelsdonk, 5100 Aachen
 44.130.20.30    DK3KO   # Wilhelm Golz, 5100 Aachen
 44.130.20.35    DF2JH   # Jochen, Aachen
-44.130.20.39    DH9KAE-1        # Detlef Brunkel, 52531 Uebach-Palenberg; Linux Router
+44.130.20.39    DH9KAE-1 # Detlef Brunkel, 52531 Uebach-Palenberg; Linux Router
 44.130.20.40    DH9KAE  # ; Linux, NS
 44.130.20.41    DJ0AAL  # Jeronimo Diaz, 5120 Herzogenrath 3
 44.130.20.42    DG6KBB  # Karl de Jong, 5132 Uebach-Palenberg
@@ -2107,11 +2107,13 @@
 44.130.36.6       DL7APE        # Thomas Leng , 13355 Berlin
 44.130.36.7       DL7APN        # Christian, 1000 Berlin-Schoeneberg
 44.130.36.8       DL7VDX        # Ron , Berlin
+44.130.36.9       dd6umw        # Willfried , Berlin
 44.130.36.10      DL7SV         # Joachim, 1000 Berlin; Mac
 44.130.36.11      DC7FB         # Ralf, Berlin-Rudow
 44.130.36.12      DC7FB-1       #
 44.130.36.13      DD6VD         # Michael
 44.130.36.14      PC.DC7CH      # Juergen , Berlin
+44.130.36.15      dd6uts        # Thomas , Berlin
 44.130.36.18      DL7UFO-2      # Sven , 10409 Berlin
 44.130.36.20      DC7FO         # Uli, 1000 Berlin
 44.130.36.21      DC7FO-1       #

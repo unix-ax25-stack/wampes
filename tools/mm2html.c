@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.9 1995/06/23 15:05:32 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.10 1995/10/23 16:05:23 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -609,13 +609,12 @@ static void dot_TS(int argc, char **argv)
       default:
 	break;
       }
-      printf("</TD>");
       if (cp)
 	l = cp + 1;
       else
 	l = "";
     }
-    puts("</TR>");
+    puts("");
     if (row + 1 < MAXROW && columns[row + 1][0].exists)
       row++;
   }

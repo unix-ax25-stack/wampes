@@ -4,7 +4,7 @@
 </HEAD>
 <BODY>
 <H1>WAMPES Reference Manual</H1>
-Version 951014
+Version 951023
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
@@ -1271,33 +1271,33 @@ Display or set NET/ROM parameters.
 The following parameters are available:
 <P>
 <TABLE BORDER>
-<TR><TD ALIGN="center"><B>Parm</B></TD><TD ALIGN="center"><B>Description</B></TD><TD ALIGN="center"><B>Min</B></TD><TD ALIGN="center"><B>Max</B></TD><TD ALIGN="center"><B>Dflt</B></TD><TD ALIGN="center"><B>Used</B></TD></TR>
-<TR><TD ALIGN="right">1</TD><TD ALIGN="left">Maximum destination list entries</TD><TD ALIGN="right">1</TD><TD ALIGN="right">400</TD><TD ALIGN="right">400</TD><TD ALIGN="left">No</TD></TR>
-<TR><TD ALIGN="right">2</TD><TD ALIGN="left">Worst quality for auto-updates</TD><TD ALIGN="right">0</TD><TD ALIGN="right">255</TD><TD ALIGN="right">0</TD><TD ALIGN="left">No</TD></TR>
-<TR><TD ALIGN="right">3</TD><TD ALIGN="left">Channel 0 (HDLC) quality</TD><TD ALIGN="right">0</TD><TD ALIGN="right">255</TD><TD ALIGN="right">192</TD><TD ALIGN="left">Yes</TD></TR>
-<TR><TD ALIGN="right">4</TD><TD ALIGN="left">Channel 1 (RS232) quality</TD><TD ALIGN="right">0</TD><TD ALIGN="right">255</TD><TD ALIGN="right">255</TD><TD ALIGN="left">No</TD></TR>
-<TR><TD ALIGN="right">5</TD><TD ALIGN="left">Obsolescence count initializer (0=off)</TD><TD ALIGN="right">0</TD><TD ALIGN="right">255</TD><TD ALIGN="right">3</TD><TD ALIGN="left">Yes</TD></TR>
-<TR><TD ALIGN="right">6</TD><TD ALIGN="left">Obsolescence count min to be broadcast</TD><TD ALIGN="right">0</TD><TD ALIGN="right">255</TD><TD ALIGN="right">0</TD><TD ALIGN="left">No</TD></TR>
-<TR><TD ALIGN="right">7</TD><TD ALIGN="left">Auto-update broadcast interval (sec, 0=off)</TD><TD ALIGN="right">0</TD><TD ALIGN="right">65535</TD><TD ALIGN="right">1800</TD><TD ALIGN="left">Yes</TD></TR>
-<TR><TD ALIGN="right">8</TD><TD ALIGN="left">Network 'time-to-live' initializer</TD><TD ALIGN="right">1</TD><TD ALIGN="right">255</TD><TD ALIGN="right">16</TD><TD ALIGN="left">Yes</TD></TR>
-<TR><TD ALIGN="right">9</TD><TD ALIGN="left">Transport timeout (sec)</TD><TD ALIGN="right">5</TD><TD ALIGN="right">600</TD><TD ALIGN="right">60</TD><TD ALIGN="left">Yes</TD></TR>
-<TR><TD ALIGN="right">10</TD><TD ALIGN="left">Transport maximum tries</TD><TD ALIGN="right">1</TD><TD ALIGN="right">127</TD><TD ALIGN="right">5</TD><TD ALIGN="left">Yes</TD></TR>
-<TR><TD ALIGN="right">11</TD><TD ALIGN="left">Transport acknowledge delay (ms)</TD><TD ALIGN="right">1</TD><TD ALIGN="right">60000</TD><TD ALIGN="right">1</TD><TD ALIGN="left">No</TD></TR>
-<TR><TD ALIGN="right">12</TD><TD ALIGN="left">Transport busy delay (sec)</TD><TD ALIGN="right">1</TD><TD ALIGN="right">1000</TD><TD ALIGN="right">180</TD><TD ALIGN="left">Yes</TD></TR>
-<TR><TD ALIGN="right">13</TD><TD ALIGN="left">Transport requested window size (frames)</TD><TD ALIGN="right">1</TD><TD ALIGN="right">127</TD><TD ALIGN="right">8</TD><TD ALIGN="left">Yes</TD></TR>
-<TR><TD ALIGN="right">14</TD><TD ALIGN="left">Congestion control threshold (frames)</TD><TD ALIGN="right">1</TD><TD ALIGN="right">127</TD><TD ALIGN="right">8</TD><TD ALIGN="left">Yes</TD></TR>
-<TR><TD ALIGN="right">15</TD><TD ALIGN="left">No-activity timeout (sec, 0=off)</TD><TD ALIGN="right">0</TD><TD ALIGN="right">65535</TD><TD ALIGN="right">1800</TD><TD ALIGN="left">Yes</TD></TR>
-<TR><TD ALIGN="right">16</TD><TD ALIGN="left">Persistance</TD><TD ALIGN="right">0</TD><TD ALIGN="right">255</TD><TD ALIGN="right">64</TD><TD ALIGN="left">No</TD></TR>
-<TR><TD ALIGN="right">17</TD><TD ALIGN="left">Slot time (10msec increments)</TD><TD ALIGN="right">0</TD><TD ALIGN="right">127</TD><TD ALIGN="right">10</TD><TD ALIGN="left">No</TD></TR>
-<TR><TD ALIGN="right">18</TD><TD ALIGN="left">Link T1 timeout 'FRACK' (ms)</TD><TD ALIGN="right">1</TD><TD ALIGN="right">MAXINT</TD><TD ALIGN="right">5000</TD><TD ALIGN="left">Yes</TD></TR>
-<TR><TD ALIGN="right">19</TD><TD ALIGN="left">Link TX window size 'MAXFRAME' (frames)</TD><TD ALIGN="right">1</TD><TD ALIGN="right">7</TD><TD ALIGN="right">7</TD><TD ALIGN="left">Yes</TD></TR>
-<TR><TD ALIGN="right">20</TD><TD ALIGN="left">Link maximum tries (0=forever)</TD><TD ALIGN="right">0</TD><TD ALIGN="right">127</TD><TD ALIGN="right">10</TD><TD ALIGN="left">Yes</TD></TR>
-<TR><TD ALIGN="right">21</TD><TD ALIGN="left">Link T2 timeout (ms)</TD><TD ALIGN="right">1</TD><TD ALIGN="right">MAXINT</TD><TD ALIGN="right">1</TD><TD ALIGN="left">Yes</TD></TR>
-<TR><TD ALIGN="right">22</TD><TD ALIGN="left">Link T3 timeout (ms)</TD><TD ALIGN="right">0</TD><TD ALIGN="right">MAXINT</TD><TD ALIGN="right">900000</TD><TD ALIGN="left">Yes</TD></TR>
-<TR><TD ALIGN="right">23</TD><TD ALIGN="left">AX.25 digipeating (0=off 1=dumb 2=s&amp;f)</TD><TD ALIGN="right">0</TD><TD ALIGN="right">2</TD><TD ALIGN="right">2</TD><TD ALIGN="left">Yes</TD></TR>
-<TR><TD ALIGN="right">24</TD><TD ALIGN="left">Validate callsigns (0=off 1=on)</TD><TD ALIGN="right">0</TD><TD ALIGN="right">1</TD><TD ALIGN="right">0</TD><TD ALIGN="left">No</TD></TR>
-<TR><TD ALIGN="right">25</TD><TD ALIGN="left">Station ID beacons (0=off 1=after 2=every)</TD><TD ALIGN="right">0</TD><TD ALIGN="right">2</TD><TD ALIGN="right">0</TD><TD ALIGN="left">No</TD></TR>
-<TR><TD ALIGN="right">26</TD><TD ALIGN="left">CQ UI frames (0=off 1=on)</TD><TD ALIGN="right">0</TD><TD ALIGN="right">1</TD><TD ALIGN="right">0</TD><TD ALIGN="left">No</TD></TR>
+<TR><TD ALIGN="center"><B>Parm</B><TD ALIGN="center"><B>Description</B><TD ALIGN="center"><B>Min</B><TD ALIGN="center"><B>Max</B><TD ALIGN="center"><B>Dflt</B><TD ALIGN="center"><B>Used</B>
+<TR><TD ALIGN="right">1<TD ALIGN="left">Maximum destination list entries<TD ALIGN="right">1<TD ALIGN="right">400<TD ALIGN="right">400<TD ALIGN="left">No
+<TR><TD ALIGN="right">2<TD ALIGN="left">Worst quality for auto-updates<TD ALIGN="right">0<TD ALIGN="right">255<TD ALIGN="right">0<TD ALIGN="left">No
+<TR><TD ALIGN="right">3<TD ALIGN="left">Channel 0 (HDLC) quality<TD ALIGN="right">0<TD ALIGN="right">255<TD ALIGN="right">192<TD ALIGN="left">Yes
+<TR><TD ALIGN="right">4<TD ALIGN="left">Channel 1 (RS232) quality<TD ALIGN="right">0<TD ALIGN="right">255<TD ALIGN="right">255<TD ALIGN="left">No
+<TR><TD ALIGN="right">5<TD ALIGN="left">Obsolescence count initializer (0=off)<TD ALIGN="right">0<TD ALIGN="right">255<TD ALIGN="right">3<TD ALIGN="left">Yes
+<TR><TD ALIGN="right">6<TD ALIGN="left">Obsolescence count min to be broadcast<TD ALIGN="right">0<TD ALIGN="right">255<TD ALIGN="right">0<TD ALIGN="left">No
+<TR><TD ALIGN="right">7<TD ALIGN="left">Auto-update broadcast interval (sec, 0=off)<TD ALIGN="right">0<TD ALIGN="right">65535<TD ALIGN="right">1800<TD ALIGN="left">Yes
+<TR><TD ALIGN="right">8<TD ALIGN="left">Network 'time-to-live' initializer<TD ALIGN="right">1<TD ALIGN="right">255<TD ALIGN="right">16<TD ALIGN="left">Yes
+<TR><TD ALIGN="right">9<TD ALIGN="left">Transport timeout (sec)<TD ALIGN="right">5<TD ALIGN="right">600<TD ALIGN="right">60<TD ALIGN="left">Yes
+<TR><TD ALIGN="right">10<TD ALIGN="left">Transport maximum tries<TD ALIGN="right">1<TD ALIGN="right">127<TD ALIGN="right">5<TD ALIGN="left">Yes
+<TR><TD ALIGN="right">11<TD ALIGN="left">Transport acknowledge delay (ms)<TD ALIGN="right">1<TD ALIGN="right">60000<TD ALIGN="right">1<TD ALIGN="left">No
+<TR><TD ALIGN="right">12<TD ALIGN="left">Transport busy delay (sec)<TD ALIGN="right">1<TD ALIGN="right">1000<TD ALIGN="right">180<TD ALIGN="left">Yes
+<TR><TD ALIGN="right">13<TD ALIGN="left">Transport requested window size (frames)<TD ALIGN="right">1<TD ALIGN="right">127<TD ALIGN="right">8<TD ALIGN="left">Yes
+<TR><TD ALIGN="right">14<TD ALIGN="left">Congestion control threshold (frames)<TD ALIGN="right">1<TD ALIGN="right">127<TD ALIGN="right">8<TD ALIGN="left">Yes
+<TR><TD ALIGN="right">15<TD ALIGN="left">No-activity timeout (sec, 0=off)<TD ALIGN="right">0<TD ALIGN="right">65535<TD ALIGN="right">1800<TD ALIGN="left">Yes
+<TR><TD ALIGN="right">16<TD ALIGN="left">Persistance<TD ALIGN="right">0<TD ALIGN="right">255<TD ALIGN="right">64<TD ALIGN="left">No
+<TR><TD ALIGN="right">17<TD ALIGN="left">Slot time (10msec increments)<TD ALIGN="right">0<TD ALIGN="right">127<TD ALIGN="right">10<TD ALIGN="left">No
+<TR><TD ALIGN="right">18<TD ALIGN="left">Link T1 timeout 'FRACK' (ms)<TD ALIGN="right">1<TD ALIGN="right">MAXINT<TD ALIGN="right">5000<TD ALIGN="left">Yes
+<TR><TD ALIGN="right">19<TD ALIGN="left">Link TX window size 'MAXFRAME' (frames)<TD ALIGN="right">1<TD ALIGN="right">7<TD ALIGN="right">7<TD ALIGN="left">Yes
+<TR><TD ALIGN="right">20<TD ALIGN="left">Link maximum tries (0=forever)<TD ALIGN="right">0<TD ALIGN="right">127<TD ALIGN="right">10<TD ALIGN="left">Yes
+<TR><TD ALIGN="right">21<TD ALIGN="left">Link T2 timeout (ms)<TD ALIGN="right">1<TD ALIGN="right">MAXINT<TD ALIGN="right">1<TD ALIGN="left">Yes
+<TR><TD ALIGN="right">22<TD ALIGN="left">Link T3 timeout (ms)<TD ALIGN="right">0<TD ALIGN="right">MAXINT<TD ALIGN="right">900000<TD ALIGN="left">Yes
+<TR><TD ALIGN="right">23<TD ALIGN="left">AX.25 digipeating (0=off 1=dumb 2=s&amp;f)<TD ALIGN="right">0<TD ALIGN="right">2<TD ALIGN="right">2<TD ALIGN="left">Yes
+<TR><TD ALIGN="right">24<TD ALIGN="left">Validate callsigns (0=off 1=on)<TD ALIGN="right">0<TD ALIGN="right">1<TD ALIGN="right">0<TD ALIGN="left">No
+<TR><TD ALIGN="right">25<TD ALIGN="left">Station ID beacons (0=off 1=after 2=every)<TD ALIGN="right">0<TD ALIGN="right">2<TD ALIGN="right">0<TD ALIGN="left">No
+<TR><TD ALIGN="right">26<TD ALIGN="left">CQ UI frames (0=off 1=on)<TD ALIGN="right">0<TD ALIGN="right">1<TD ALIGN="right">0<TD ALIGN="left">No
 </TABLE>
 <H4><A NAME="H4.33.8">4.33.8 netrom reset <I>nrcb_addr</I></A></H4>
 Delete the NET/ROM control block at the specified address.
@@ -1314,28 +1314,28 @@ The following parameter names are recognized by the <A HREF="#H4.35">param</A> c
 but not all are supported by each device type.
 Most commands deal only with half-duplex packet radio interfaces.
 <TABLE BORDER>
-<TR><TD ALIGN="center"><B>Name</B></TD><TD ALIGN="center"><B>Number</B></TD><TD ALIGN="center"><B>Meaning</B></TD></TR>
-<TR><TD ALIGN="left">Data</TD><TD ALIGN="right">0</TD><TD ALIGN="left">&nbsp;</TD></TR>
-<TR><TD ALIGN="left">TxDelay</TD><TD ALIGN="right">1</TD><TD ALIGN="left">Transmit keyup delay</TD></TR>
-<TR><TD ALIGN="left">Persist</TD><TD ALIGN="right">2</TD><TD ALIGN="left">P-persistence</TD></TR>
-<TR><TD ALIGN="left">SlotTime</TD><TD ALIGN="right">3</TD><TD ALIGN="left">Persistence slot time</TD></TR>
-<TR><TD ALIGN="left">TxTail</TD><TD ALIGN="right">4</TD><TD ALIGN="left">Transmit done holdup delay</TD></TR>
-<TR><TD ALIGN="left">FullDup</TD><TD ALIGN="right">5</TD><TD ALIGN="left">Enable/disable full duplex</TD></TR>
-<TR><TD ALIGN="left">Hardware</TD><TD ALIGN="right">6</TD><TD ALIGN="left">Hardware specific command</TD></TR>
-<TR><TD ALIGN="left">TxMute</TD><TD ALIGN="right">7</TD><TD ALIGN="left">Experimental transmit mute command</TD></TR>
-<TR><TD ALIGN="left">DTR</TD><TD ALIGN="right">8</TD><TD ALIGN="left">Control Data Terminal Ready (DTR) signal to modem</TD></TR>
-<TR><TD ALIGN="left">RTS</TD><TD ALIGN="right">9</TD><TD ALIGN="left">Control Request to Send (RTS) signal to modem</TD></TR>
-<TR><TD ALIGN="left">Speed</TD><TD ALIGN="right">10</TD><TD ALIGN="left">Line speed</TD></TR>
-<TR><TD ALIGN="left">EndDelay</TD><TD ALIGN="right">11</TD><TD ALIGN="left">&nbsp;</TD></TR>
-<TR><TD ALIGN="left">Group</TD><TD ALIGN="right">12</TD><TD ALIGN="left">&nbsp;</TD></TR>
-<TR><TD ALIGN="left">Idle</TD><TD ALIGN="right">13</TD><TD ALIGN="left">&nbsp;</TD></TR>
-<TR><TD ALIGN="left">Min</TD><TD ALIGN="right">14</TD><TD ALIGN="left">&nbsp;</TD></TR>
-<TR><TD ALIGN="left">MaxKey</TD><TD ALIGN="right">15</TD><TD ALIGN="left">&nbsp;</TD></TR>
-<TR><TD ALIGN="left">Wait</TD><TD ALIGN="right">16</TD><TD ALIGN="left">&nbsp;</TD></TR>
-<TR><TD ALIGN="left">Down</TD><TD ALIGN="right">129</TD><TD ALIGN="left">Drop modem control lines</TD></TR>
-<TR><TD ALIGN="left">Up</TD><TD ALIGN="right">130</TD><TD ALIGN="left">Raise modem control lines</TD></TR>
-<TR><TD ALIGN="left">Blind</TD><TD ALIGN="right">131</TD><TD ALIGN="left">&nbsp;</TD></TR>
-<TR><TD ALIGN="left">Return</TD><TD ALIGN="right">255</TD><TD ALIGN="left">Return a KISS TNC to command mode</TD></TR>
+<TR><TD ALIGN="center"><B>Name</B><TD ALIGN="center"><B>Number</B><TD ALIGN="center"><B>Meaning</B>
+<TR><TD ALIGN="left">Data<TD ALIGN="right">0<TD ALIGN="left">&nbsp;
+<TR><TD ALIGN="left">TxDelay<TD ALIGN="right">1<TD ALIGN="left">Transmit keyup delay
+<TR><TD ALIGN="left">Persist<TD ALIGN="right">2<TD ALIGN="left">P-persistence
+<TR><TD ALIGN="left">SlotTime<TD ALIGN="right">3<TD ALIGN="left">Persistence slot time
+<TR><TD ALIGN="left">TxTail<TD ALIGN="right">4<TD ALIGN="left">Transmit done holdup delay
+<TR><TD ALIGN="left">FullDup<TD ALIGN="right">5<TD ALIGN="left">Enable/disable full duplex
+<TR><TD ALIGN="left">Hardware<TD ALIGN="right">6<TD ALIGN="left">Hardware specific command
+<TR><TD ALIGN="left">TxMute<TD ALIGN="right">7<TD ALIGN="left">Experimental transmit mute command
+<TR><TD ALIGN="left">DTR<TD ALIGN="right">8<TD ALIGN="left">Control Data Terminal Ready (DTR) signal to modem
+<TR><TD ALIGN="left">RTS<TD ALIGN="right">9<TD ALIGN="left">Control Request to Send (RTS) signal to modem
+<TR><TD ALIGN="left">Speed<TD ALIGN="right">10<TD ALIGN="left">Line speed
+<TR><TD ALIGN="left">EndDelay<TD ALIGN="right">11<TD ALIGN="left">&nbsp;
+<TR><TD ALIGN="left">Group<TD ALIGN="right">12<TD ALIGN="left">&nbsp;
+<TR><TD ALIGN="left">Idle<TD ALIGN="right">13<TD ALIGN="left">&nbsp;
+<TR><TD ALIGN="left">Min<TD ALIGN="right">14<TD ALIGN="left">&nbsp;
+<TR><TD ALIGN="left">MaxKey<TD ALIGN="right">15<TD ALIGN="left">&nbsp;
+<TR><TD ALIGN="left">Wait<TD ALIGN="right">16<TD ALIGN="left">&nbsp;
+<TR><TD ALIGN="left">Down<TD ALIGN="right">129<TD ALIGN="left">Drop modem control lines
+<TR><TD ALIGN="left">Up<TD ALIGN="right">130<TD ALIGN="left">Raise modem control lines
+<TR><TD ALIGN="left">Blind<TD ALIGN="right">131<TD ALIGN="left">&nbsp;
+<TR><TD ALIGN="left">Return<TD ALIGN="right">255<TD ALIGN="left">Return a KISS TNC to command mode
 </TABLE>
 <P>
 Depending on the interface type, some parameters can be read back by
@@ -1520,9 +1520,9 @@ by the entry in question must also match the target addresses of the
 less specific entry and the two entries must have the same interface
 and gateway fields. For example, if the routing table contains
 <TABLE>
-<TR><TD ALIGN="left"><B>Dest</B></TD><TD ALIGN="left"><B>Len</B></TD><TD ALIGN="left"><B>Interface</B></TD><TD ALIGN="left"><B>Gateway</B></TD><TD ALIGN="left"><B>Metric</B></TD><TD ALIGN="left"><B>P</B></TD><TD ALIGN="left"><B>Timer</B></TD><TD ALIGN="left"><B>Use</B></TD></TR>
-<TR><TD ALIGN="left">1.2.3.4</TD><TD ALIGN="left">32</TD><TD ALIGN="left">ethernet0</TD><TD ALIGN="left">128.96.1.2</TD><TD ALIGN="left">1</TD><TD ALIGN="left">0</TD><TD ALIGN="left">0</TD><TD ALIGN="left">0</TD></TR>
-<TR><TD ALIGN="left">1.2.3</TD><TD ALIGN="left">24</TD><TD ALIGN="left">ethernet0</TD><TD ALIGN="left">128.96.1.2</TD><TD ALIGN="left">1</TD><TD ALIGN="left">0</TD><TD ALIGN="left">0</TD><TD ALIGN="left">0</TD></TR>
+<TR><TD ALIGN="left"><B>Dest</B><TD ALIGN="left"><B>Len</B><TD ALIGN="left"><B>Interface</B><TD ALIGN="left"><B>Gateway</B><TD ALIGN="left"><B>Metric</B><TD ALIGN="left"><B>P</B><TD ALIGN="left"><B>Timer</B><TD ALIGN="left"><B>Use</B>
+<TR><TD ALIGN="left">1.2.3.4<TD ALIGN="left">32<TD ALIGN="left">ethernet0<TD ALIGN="left">128.96.1.2<TD ALIGN="left">1<TD ALIGN="left">0<TD ALIGN="left">0<TD ALIGN="left">0
+<TR><TD ALIGN="left">1.2.3<TD ALIGN="left">24<TD ALIGN="left">ethernet0<TD ALIGN="left">128.96.1.2<TD ALIGN="left">1<TD ALIGN="left">0<TD ALIGN="left">0<TD ALIGN="left">0
 </TABLE>
 <P>
 then the first entry would be deleted as redundant since packets sent to
@@ -1719,20 +1719,20 @@ is a string of up to 4 characters. While not enumerated as part
 of the NTP specification, the following are representative ASCII
 identifiers:
 <TABLE BORDER>
-<TR><TD ALIGN="center"><B>Stratum</B></TD><TD ALIGN="center"><B>Code</B></TD><TD ALIGN="center"><B>Meaning</B></TD></TR>
-<TR><TD ALIGN="left">0</TD><TD ALIGN="left">ascii</TD><TD ALIGN="left">generic time service other than NTP, such as</TD></TR>
-<TR><TD ALIGN="left">&nbsp;</TD><TD ALIGN="left">&nbsp;</TD><TD ALIGN="left">ACTS (Automated Computer Time Service),</TD></TR>
-<TR><TD ALIGN="left">&nbsp;</TD><TD ALIGN="left">&nbsp;</TD><TD ALIGN="left">TIME (UDP/Time Protocol),</TD></TR>
-<TR><TD ALIGN="left">&nbsp;</TD><TD ALIGN="left">&nbsp;</TD><TD ALIGN="left">TSP (TSP UNIX time protocol),</TD></TR>
-<TR><TD ALIGN="left">&nbsp;</TD><TD ALIGN="left">&nbsp;</TD><TD ALIGN="left">DTSS (Digital Time Synchronization Service), etc.</TD></TR>
-<TR><TD ALIGN="left">1</TD><TD ALIGN="left">ATOM</TD><TD ALIGN="left">calibrated atomic clock</TD></TR>
-<TR><TD ALIGN="left">1</TD><TD ALIGN="left">VLF</TD><TD ALIGN="left">VLF radio (OMEGA, etc.)</TD></TR>
-<TR><TD ALIGN="left">1</TD><TD ALIGN="left">callsign</TD><TD ALIGN="left">Generic radio</TD></TR>
-<TR><TD ALIGN="left">1</TD><TD ALIGN="left">LORC</TD><TD ALIGN="left">LORAN-C radionavigation system</TD></TR>
-<TR><TD ALIGN="left">1</TD><TD ALIGN="left">GOES</TD><TD ALIGN="left">Geostationary Operational Environmental Satellite</TD></TR>
-<TR><TD ALIGN="left">1</TD><TD ALIGN="left">GPS</TD><TD ALIGN="left">Global Positioning Service</TD></TR>
-<TR><TD ALIGN="left">2</TD><TD ALIGN="left">address</TD><TD ALIGN="left">secondary reference (four-octet Internet address</TD></TR>
-<TR><TD ALIGN="left">&nbsp;</TD><TD ALIGN="left">&nbsp;</TD><TD ALIGN="left">of the NTP server)</TD></TR>
+<TR><TD ALIGN="center"><B>Stratum</B><TD ALIGN="center"><B>Code</B><TD ALIGN="center"><B>Meaning</B>
+<TR><TD ALIGN="left">0<TD ALIGN="left">ascii<TD ALIGN="left">generic time service other than NTP, such as
+<TR><TD ALIGN="left">&nbsp;<TD ALIGN="left">&nbsp;<TD ALIGN="left">ACTS (Automated Computer Time Service),
+<TR><TD ALIGN="left">&nbsp;<TD ALIGN="left">&nbsp;<TD ALIGN="left">TIME (UDP/Time Protocol),
+<TR><TD ALIGN="left">&nbsp;<TD ALIGN="left">&nbsp;<TD ALIGN="left">TSP (TSP UNIX time protocol),
+<TR><TD ALIGN="left">&nbsp;<TD ALIGN="left">&nbsp;<TD ALIGN="left">DTSS (Digital Time Synchronization Service), etc.
+<TR><TD ALIGN="left">1<TD ALIGN="left">ATOM<TD ALIGN="left">calibrated atomic clock
+<TR><TD ALIGN="left">1<TD ALIGN="left">VLF<TD ALIGN="left">VLF radio (OMEGA, etc.)
+<TR><TD ALIGN="left">1<TD ALIGN="left">callsign<TD ALIGN="left">Generic radio
+<TR><TD ALIGN="left">1<TD ALIGN="left">LORC<TD ALIGN="left">LORAN-C radionavigation system
+<TR><TD ALIGN="left">1<TD ALIGN="left">GOES<TD ALIGN="left">Geostationary Operational Environmental Satellite
+<TR><TD ALIGN="left">1<TD ALIGN="left">GPS<TD ALIGN="left">Global Positioning Service
+<TR><TD ALIGN="left">2<TD ALIGN="left">address<TD ALIGN="left">secondary reference (four-octet Internet address
+<TR><TD ALIGN="left">&nbsp;<TD ALIGN="left">&nbsp;<TD ALIGN="left">of the NTP server)
 </TABLE>
 <P>
 The default is UNIX.

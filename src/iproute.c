@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.31 1995/10/14 16:41:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.32 1995/10/23 16:05:10 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -520,6 +520,10 @@ char private)           /* Inhibit advertising this entry ? */
 
 	if(bits == 32 && ismyaddr(target))
 		return NULLROUTE;       /* Don't accept routes to ourselves */
+
+	if(ttl && !ipfilter(target))
+		return NULLROUTE;       /* Don't accept temporary routes to
+					   disallowed targets */
 
 	/* Mask off don't-care bits of target */
 	if(bits)

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.40 1995/10/14 16:42:00 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.41 1995/10/23 16:05:30 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -301,7 +301,7 @@ static void parse_mybbs_messages(void)
   struct stat statbuf;
   struct user *up;
 
-  if (!*NEWS_DIR)
+  if (!*NEWS_DIR || !*CTLINND_PROG)
     return;
   batchfile = NEWS_DIR "/out.going/udbm";
   workfile = NEWS_DIR "/out.going/udbm.bbs";
