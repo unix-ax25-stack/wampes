@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.h,v 1.6 1992/01/08 13:45:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.h,v 1.7 1992/05/28 13:50:39 deyke Exp $ */
 
 #ifndef _TRACE_H
 #define _TRACE_H
@@ -38,6 +38,7 @@ void dump __ARGS((struct iface *ifp,int direction,unsigned type,struct mbuf *bp)
 void raw_dump __ARGS((struct iface *ifp,int direction, struct mbuf *bp));
 void trace_log __ARGS((struct iface *ifp,char *fmt, ...));
 void shuttrace __ARGS ((void));
+int tprintf __ARGS((struct iface *ifp,char *fmt,...));
 
 /* In arcdump.c: */
 void arc_dump __ARGS((FILE *fp,struct mbuf **bpp,int check));

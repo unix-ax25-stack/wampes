@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.8 1992/01/08 13:45:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.9 1992/05/28 13:50:17 deyke Exp $ */
 
 #ifndef _IP_H
 #define _IP_H
@@ -170,6 +170,9 @@ struct iplink {
 };
 extern struct iplink Iplink[];
 
+/* List of TCP port numbers to be given priority queuing */
+extern int Tcp_interact[];
+
 /* In ip.c: */
 void ip_garbage __ARGS((int drastic));
 void ip_recv __ARGS((struct iface *iface,struct ip *ip,struct mbuf *bp,
@@ -184,8 +187,10 @@ void del_ip __ARGS((struct raw_ip *rrp));
 /* In iproute.c: */
 void ipinit __ARGS((void));
 int16 ip_mtu __ARGS((int32 addr));
+void encap_tx __ARGS((int dev,void *arg1,void *unused));
 int ip_encap __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,
 	int prec,int del,int tput,int rel));
+void ip_proc __ARGS((struct iface *iface,struct mbuf *bp));
 int ip_route __ARGS((struct iface *i_iface,struct mbuf *bp,int rxbroadcast));
 int32 locaddr __ARGS((int32 addr));
 void rt_merge __ARGS((int trace));
@@ -201,11 +206,22 @@ int16 eac __ARGS((int32 sum));
 struct mbuf *htonip __ARGS((struct ip *ip,struct mbuf *data,int cflag));
 int ntohip __ARGS((struct ip *ip,struct mbuf **bpp));
 
+/* In either lcsum.c or pcgen.asm: */
+int16 lcsum __ARGS((int16 *wp,int len));
+
+/* In ipsocket.c: */
+int so_ip_sock __ARGS((struct usock *up,int protocol));
+int so_ip_conn __ARGS((struct usock *up));
+int so_ip_recv __ARGS((struct usock *up,struct mbuf **bpp,char *from,
+	int *fromlen));
+int so_ip_send __ARGS((struct usock *up,struct mbuf *bp,char *to));
+int so_ip_qlen __ARGS((struct usock *up,int rtx));
+int so_ip_close __ARGS((struct usock *up));
+int checkipaddr __ARGS((char *name,int namelen));
+char *ippsocket __ARGS((struct sockaddr *p));
+
 /* In ipfile.c: */
 void route_savefile __ARGS((void));
 void route_loadfile __ARGS((void));
-
-/* In either lcsum.c or pcgen.asm: */
-int16 lcsum __ARGS((int16 *wp,int len));
 
 #endif /* _IP_H */

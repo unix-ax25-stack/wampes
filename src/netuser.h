@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.h,v 1.7 1991/05/09 07:38:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.h,v 1.8 1992/05/28 13:50:26 deyke Exp $ */
 
 #ifndef _NETUSER_H
 #define _NETUSER_H
@@ -13,6 +13,8 @@
 
 extern int32 Ip_addr;   /* Our IP address */
 extern int Net_error;   /* Error return code */
+extern char Inet_eol[];
+
 #define NONE            0       /* No error */
 #define CON_EXISTS      1       /* Connection already exists */
 #define NO_CONN         2       /* Connection does not exist */
@@ -21,8 +23,6 @@ extern int Net_error;   /* Error return code */
 #define WOULDBLK        5       /* Would block */
 #define NOPROTO         6       /* Protocol or mode not supported */
 #define INVALID         7       /* Invalid arguments */
-
-#define INET_EOL        "\r\n"  /* Standard Internet end-of-line sequence */
 
 /* Codes for the tcp_open call */
 #define TCP_PASSIVE     0

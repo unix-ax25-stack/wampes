@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.7 1992/01/08 13:45:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.8 1992/05/28 13:50:34 deyke Exp $ */
 
 #ifndef _TCP_H
 #define _TCP_H
@@ -38,6 +38,7 @@
 #define DEF_RTT 5000    /* Initial guess at round trip time (5 sec) */
 #define MSL2    30      /* Guess at two maximum-segment lifetimes */
 #define MIN_RTO 500L    /* Minimum timeout, milliseconds */
+#define TCP_HDR_PAD     70      /* mbuf size to preallocate for headers */
 
 #define geniss()        ((int32)msclock() << 12) /* Increment clock at 4 MB/sec */
 
@@ -294,5 +295,19 @@ int send_tcp __ARGS((struct tcb *tcb,struct mbuf *bp));
 int space_tcp __ARGS((struct tcb *tcb));
 char *tcp_port __ARGS((int n));
 int tcpval __ARGS((struct tcb *tcb));
+
+/* In tcpsocket.c: */
+int so_tcp __ARGS((struct usock *up,int protocol));
+int so_tcp_listen __ARGS((struct usock *up,int backlog));
+int so_tcp_conn __ARGS((struct usock *up));
+int so_tcp_recv __ARGS((struct usock *up,struct mbuf **bpp,char *from,
+	int *fromlen));
+int so_tcp_send __ARGS((struct usock *up,struct mbuf *bp,char *to));
+int so_tcp_qlen __ARGS((struct usock *up,int rtx));
+int so_tcp_kick __ARGS((struct usock *up));
+int so_tcp_shut __ARGS((struct usock *up,int how));
+int so_tcp_close __ARGS((struct usock *up));
+char *tcpstate __ARGS((struct usock *up));
+int so_tcp_stat __ARGS((struct usock *up));
 
 #endif  /* _TCP_H */

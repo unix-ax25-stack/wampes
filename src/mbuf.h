@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.h,v 1.5 1992/01/08 13:45:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.h,v 1.6 1992/05/28 13:50:23 deyke Exp $ */
 
 #ifndef _MBUF_H
 #define _MBUF_H
@@ -8,6 +8,9 @@
 #ifndef _GLOBAL_H
 #include "global.h"
 #endif
+
+extern long Pushdowns;          /* Total calls to pushdown() */
+extern long Pushalloc;          /* Calls to pushdown that call malloc() */
 
 /* Basic message buffer structure */
 struct mbuf {

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.h,v 1.5 1991/05/09 07:39:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.h,v 1.6 1992/05/28 13:50:41 deyke Exp $ */
 
 #ifndef _UDP_H
 #define _UDP_H
@@ -90,5 +90,17 @@ int st_udp __ARGS((struct udp_cb *udp,int n));
 struct mbuf *htonudp __ARGS((struct udp *udp,struct mbuf *data,struct pseudo_header *ph));
 int ntohudp __ARGS((struct udp *udp,struct mbuf **bpp));
 int16 udpcksum __ARGS((struct mbuf *bp));
+
+/* In udpsocket.c: */
+int so_udp __ARGS((struct usock *up,int protocol));
+int so_udp_bind __ARGS((struct usock *up));
+int so_udp_conn __ARGS((struct usock *up));
+int so_udp_recv __ARGS((struct usock *up,struct mbuf **bpp,char *from,
+	int *fromlen));
+int so_udp_send __ARGS((struct usock *up,struct mbuf *bp,char *to));
+int so_udp_qlen __ARGS((struct usock *up,int rtx));
+int so_udp_shut __ARGS((struct usock *up,int how));
+int so_udp_close __ARGS((struct usock *up));
+int so_udp_stat __ARGS((struct usock *up));
 
 #endif  /* _UDP_H */

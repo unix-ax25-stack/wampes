@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pktdrvr.h,v 1.3 1991/05/09 07:38:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pktdrvr.h,v 1.4 1992/05/28 13:50:27 deyke Exp $ */
 
 #ifndef _PKTDRVR_H
 #define _PKTDRVR_H
@@ -32,7 +32,8 @@
 #define CL_SLFP         15
 #define CL_NETROM       16
 #define CL_PPP          17
-#define NCLASS          18
+#define CL_QTSO         18
+#define NCLASS          19
 
 #ifdef  MSDOS
 
@@ -108,6 +109,7 @@ INTERRUPT pkint __ARGS((unsigned short bp, unsigned short di,
      unsigned short dx, unsigned short cx, unsigned short bx,
      unsigned short ax, unsigned short ip, unsigned short cs,
      unsigned short flags, int dev));
+void pk_tx __ARGS((int dev,void *arg1,void *unused));
 int pk_send __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,
 	int prec,int del,int tput,int rel));
 

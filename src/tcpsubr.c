@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.9 1991/05/24 12:10:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.10 1992/05/28 13:50:37 deyke Exp $ */
 
 /* Low level TCP routines:
  *  control block management
@@ -38,8 +38,8 @@ char *Tcpstates[] = {
 char *Tcpreasons[] = {
 	"Normal",
 	"Reset/Refused",
-	"Timeout",
-	"ICMP"
+	"Timeout",      /* Not actually used */
+	"ICMP"          /* Not actually used */
 };
 struct tcb *Tcbs;               /* Head of control block list */
 int16 Tcp_mss = DEF_MSS;        /* Maximum segment size to be sent with SYN */

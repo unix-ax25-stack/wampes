@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.11 1992/05/14 13:20:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.12 1992/05/28 13:50:16 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -65,7 +65,7 @@ struct iface {
 	struct iface *forw;     /* Forwarding interface for output, if rx only */
 
 	void (*rxproc) __ARGS((struct iface *)); /* Receiver process, if any */
-	struct proc *txproc;    /* Transmitter process, if any */
+	struct proc *txproc;    /* IP send process */
 	struct proc *supv;      /* Supervisory process, if any */
 
 	/* Device dependent */
@@ -84,7 +84,7 @@ struct iface {
 	int xdev;               /* Associated Slip or Nrs channel, if any */
 	struct iftype *iftype;  /* Pointer to appropriate iftype entry */
 
-			/* Encapsulate an IP datagram */
+				/* Routine to send an IP datagram */
 	int (*send) __ARGS((struct mbuf *,struct iface *,int32,int,int,int,int));
 			/* Encapsulate any link packet */
 	int (*output) __ARGS((struct iface *,char *,char *,int,struct mbuf *));
@@ -113,11 +113,24 @@ extern struct iface *Ifaces;    /* Head of interface list */
 extern struct iface  Loopback;  /* Optional loopback interface */
 extern struct iface  Encap;     /* IP-in-IP pseudo interface */
 
+/* Header put on front of each packet sent to an interface */
+struct qhdr {
+	char tos;
+	int32 gateway;
+};
+/* List of link-level receive functions, initialized in config.c */
+struct rfunc {
+	int class;
+	void (*rcvf) __ARGS((struct iface *,struct mbuf *));
+};
+extern struct rfunc Rfunc[];
+
 /* Header put on front of each packet in input queue */
 struct phdr {
 	struct iface *iface;
 	unsigned short type;    /* Use pktdrvr "class" values */
 };
+
 extern char Noipaddr[];
 extern struct mbuf *Hopper;
 
@@ -128,6 +141,8 @@ int if_detach __ARGS((struct iface *ifp));
 int setencap __ARGS((struct iface *ifp,char *mode));
 char *if_name __ARGS((struct iface *ifp,char *comment));
 int bitbucket __ARGS((struct iface *ifp,struct mbuf *bp));
+void if_tx __ARGS((int dev,void *arg1,void *unused));
+void network __ARGS((int i,void *v1,void *v2));
 
 /* In config.c: */
 int net_route __ARGS((struct iface *ifp,int type,struct mbuf *bp));

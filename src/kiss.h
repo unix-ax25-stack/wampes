@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.h,v 1.5 1991/04/12 18:35:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.h,v 1.6 1992/05/28 13:50:19 deyke Exp $ */
 
 #ifndef _KISS_H
 #define _KISS_H
@@ -12,8 +12,10 @@
 #endif
 
 /* In kiss.c: */
+int kiss_free __ARGS((struct iface *ifp));
 int kiss_raw __ARGS((struct iface *iface,struct mbuf *data));
 void kiss_recv __ARGS((struct iface *iface,struct mbuf *bp));
+int kiss_init __ARGS((struct iface *ifp,int vj));
 int32 kiss_ioctl __ARGS((struct iface *iface,int cmd,int set,int32 val));
 void kiss_recv __ARGS((struct iface *iface,struct mbuf *bp));
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.h,v 1.7 1992/01/08 13:44:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.h,v 1.8 1992/05/28 13:50:05 deyke Exp $ */
 
 #ifndef _ASY_H
 #define _ASY_H
@@ -17,6 +17,14 @@
 
 #define ASY_MAX 16
 
+struct asymode {
+	char *name;
+	char trigchar;
+	int (*init) __ARGS((struct iface *,int));
+	int (*free) __ARGS((struct iface *));
+};
+extern struct asymode Asymode[];
+
 /* In 8250.c: */
 int asy_init __ARGS((int dev,struct iface *ifp,char *arg1,char *arg2,
 	int bufsize,int trigchar,int monitor,long speed));
@@ -27,11 +35,15 @@ int asy_stop __ARGS((struct iface *ifp));
 int get_rlsd_asy __ARGS((int dev, int new_rlsd));
 int get_asy __ARGS((int dev,char *buf,int cnt));
 
+/* In dialer.c: */
+void dialer_kick __ARGS((struct asy *asyp));
+
 /* In asyvec.asm: */
 INTERRUPT asy0vec __ARGS((void));
 INTERRUPT asy1vec __ARGS((void));
 INTERRUPT asy2vec __ARGS((void));
 INTERRUPT asy3vec __ARGS((void));
 INTERRUPT asy4vec __ARGS((void));
+INTERRUPT asy5vec __ARGS((void));
 
 #endif  /* _ASY_H */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.11 1992/05/14 13:19:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.12 1992/05/28 13:50:01 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include "global.h"
+#include "mbuf.h"
 
 #define DEBUG           1
 
@@ -222,22 +223,33 @@ unsigned int  nelem, elsize;
 
 /*---------------------------------------------------------------------------*/
 
-unsigned long  availmem()
+/* Return 0 if at least Memthresh memory is available. Return 1 if
+ * less than Memthresh but more than Memthresh/2 is available; i.e.,
+ * if a yellow garbage collection should be performed. Return 2 if
+ * less than Memthresh/2 is available, i.e., a red collection should
+ * be performed.
+ */
+int
+availmem()
 {
-  return 0x7fffffff;
+		return 0;       /* We're clearly OK */
 }
 
 /*---------------------------------------------------------------------------*/
 
-int  domem(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
+/* Print heap stats */
+int domem(argc,argv,envp)
+int argc;
+char *argv[];
+void *envp;
 {
-  printf("heap size %lu avail %lu (%lu%%) morecores %lu\n",
-   Heapsize, Heapsize - Inuse, 100L * (Heapsize - Inuse) / Heapsize, Morecores);
-  printf("allocs %lu frees %lu (diff %lu) alloc fails %lu invalid frees %lu\n",
-   Allocs, Frees, Allocs - Frees, Memfail, Invalid);
-  return 0;
+	printf("heap size %lu avail %lu (%lu%%) morecores %lu\n",
+	 Heapsize,Heapsize-Inuse,100L*(Heapsize-Inuse)/Heapsize,
+	 Morecores);
+	printf("allocs %lu frees %lu (diff %lu) alloc fails %lu invalid frees %lu\n",
+		Allocs,Frees,Allocs-Frees,Memfail,Invalid);
+	printf("pushdown calls %lu pushdown calls to malloc %lu\n",
+		Pushdowns,Pushalloc);
+	return 0;
 }
 

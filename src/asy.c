@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.6 1992/05/14 13:19:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.7 1992/05/28 13:50:05 deyke Exp $ */
 
 /* Generic serial line interface routines
  * Copyright 1992 Phil Karn, KA9Q
@@ -10,7 +10,7 @@
 #include "iface.h"
 #include "netuser.h"
 #include "slhc.h"
-#include "8250.h"
+#include "n8250.h"
 #include "asy.h"
 #include "ax25.h"
 #include "kiss.h"

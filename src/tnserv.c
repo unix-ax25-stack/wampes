@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.7 1991/04/17 19:48:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.8 1992/05/28 13:50:38 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -6,6 +6,7 @@
 #include "netuser.h"
 #include "tcp.h"
 #include "login.h"
+#include "tipmail.h"
 
 static struct tcb *tcb_server;
 

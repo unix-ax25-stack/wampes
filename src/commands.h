@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.11 1992/05/26 10:08:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.12 1992/05/28 13:50:10 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -115,12 +115,10 @@ int doboot __ARGS((int argc,char *argv[],void *p));
 
 /* In mailbox.c: */
 int dombox __ARGS((int argc,char *argv[],void *p));
-int ax250 __ARGS((int argc,char *argv[],void *p));
-int ax25start __ARGS((int argc,char *argv[],void *p));
-int nr40 __ARGS((int argc,char *argv[],void *p));
-int nr4start __ARGS((int argc,char *argv[],void *p));
-int telnet0 __ARGS((int argc,char *argv[],void *p));
-int telnet1 __ARGS((int argc,char *argv[],void *p));
+
+/* In more.c: */
+int domore __ARGS((int argc,char *argv[],void *p));
+void more __ARGS((int,void *,void *));
 
 /* In nntpcli.c: */
 int donntp __ARGS((int argc,char *argv[],void *p));

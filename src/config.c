@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.18 1992/05/26 10:08:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.19 1992/05/28 13:50:10 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -40,9 +40,9 @@
 #include "cmdparse.h"
 #include "commands.h"
 /* #include "mailbox.h" */
-/* #include "ax25mail.h" */
+#include "ax25mail.h"
 /* #include "nr4mail.h" */
-/* #include "tipmail.h" */
+#include "tipmail.h"
 #include "daemon.h"
 #include "bootp.h"
 #include "asy.h"

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.7 1991/05/09 07:38:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.8 1992/05/28 13:50:35 deyke Exp $ */
 
 /* Process incoming TCP segments. Page number references are to ARPA RFC-793,
  * the TCP specification.
@@ -166,12 +166,14 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 			return;
 		}
 		/* (Security check skipped here) */
+#ifdef  PREC_CHECK      /* Turned off for compatibility with BSD */
 		/* Check incoming precedence; it must match if there's an ACK */
 		if(seg.flags.ack && PREC(ip->tos) != PREC(tcb->tos)){
 			free_p(bp);
 			reset(ip,&seg);
 			return;
 		}
+#endif
 		if(seg.flags.syn){
 			proc_syn(tcb,ip->tos,&seg);
 			if(seg.flags.ack){
@@ -247,8 +249,16 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 			return;
 		}
 		/* (Security check skipped here) p. 71 */
-		/* Check for precedence mismatch or erroneous extra SYN */
-		if(PREC(ip->tos) != PREC(tcb->tos) || seg.flags.syn){
+#ifdef  PREC_CHECK
+		/* Check for precedence mismatch */
+		if(PREC(ip->tos) != PREC(tcb->tos)){
+			free_p(bp);
+			reset(ip,&seg);
+			return;
+		}
+#endif
+		/* Check for erroneous extra SYN */
+		if(seg.flags.syn){
 			free_p(bp);
 			reset(ip,&seg);
 			return;

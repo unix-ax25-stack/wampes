@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.6 1992/01/08 13:45:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.7 1992/05/28 13:50:36 deyke Exp $ */
 
 /* TCP output segment processing
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,8 +13,8 @@
 
 static double mybackoff __ARGS((int n));
 
-static double  mybackoff(n)
-int  n;
+static double mybackoff(n)
+int n;
 {
   double  b;
 
@@ -168,6 +168,14 @@ register struct tcb *tcb;
 		} else {
 			dbp = NULLBUF;
 		}
+		/* Allocate enough space for headers to avoid lots of
+		 * little calls to malloc by pushdown()
+		 */
+		hbp = ambufw(TCP_HDR_PAD);
+		hbp->data += TCP_HDR_PAD;
+		hbp->next = dbp;
+		dbp = hbp;
+
 		/* If the entire send queue will now be in the pipe, set the
 		 * push flag
 		 */

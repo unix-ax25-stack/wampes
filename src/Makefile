@@ -10,10 +10,10 @@ DEST          = /tcp
 
 EXTHDRS       =
 
-HDRS          = 8250.h \
-		arp.h \
+HDRS          = arp.h \
 		asy.h \
 		ax25.h \
+		ax25mail.h \
 		axclient.h \
 		bootp.h \
 		buildsaddr.h \
@@ -41,6 +41,7 @@ HDRS          = 8250.h \
 		mail.h \
 		main.h \
 		mbuf.h \
+		n8250.h \
 		netrom.h \
 		netuser.h \
 		nrs.h \
@@ -56,6 +57,7 @@ HDRS          = 8250.h \
 		tcp.h \
 		telnet.h \
 		timer.h \
+		tipmail.h \
 		trace.h \
 		transport.h \
 		tty.h \
@@ -69,8 +71,7 @@ LIBS          =
 
 MAKEFILE      = Makefile
 
-OBJS          = 8250.o \
-		alloc.o \
+OBJS          = alloc.o \
 		arp.o \
 		arpcmd.o \
 		arpdump.o \
@@ -127,6 +128,7 @@ OBJS          = 8250.o \
 		main.o \
 		mbuf.o \
 		misc.o \
+		n8250.o \
 		netlog.o \
 		netrom.o \
 		netuser.o \
@@ -170,8 +172,7 @@ PROGRAM       = net
 
 SHELL         = /bin/sh
 
-SRCS          = 8250.c \
-		alloc.c \
+SRCS          = alloc.c \
 		arp.c \
 		arpcmd.c \
 		arpdump.c \
@@ -228,6 +229,7 @@ SRCS          = 8250.c \
 		main.c \
 		mbuf.c \
 		misc.c \
+		n8250.c \
 		netlog.c \
 		netrom.c \
 		netuser.c \
@@ -309,8 +311,7 @@ $(DEST)/$(PROGRAM): $(PROGRAM)
 		$(CC) $(CFLAGS) -c $<
 
 ###
-8250.o: global.h mbuf.h proc.h timer.h iface.h 8250.h asy.h devparam.h hpux.h
-alloc.o: global.h
+alloc.o: global.h mbuf.h
 arp.o: global.h mbuf.h timer.h iface.h proc.h enet.h ax25.h icmp.h internet.h \
 	ip.h session.h hardware.h telnet.h arp.h
 arpcmd.o: global.h mbuf.h timer.h enet.h iface.h proc.h ax25.h arp.h \
@@ -319,7 +320,7 @@ arpdump.o: global.h mbuf.h arp.h iface.h proc.h timer.h netuser.h trace.h
 arpfile.o: global.h timer.h arp.h mbuf.h iface.h proc.h
 arphdr.o: global.h mbuf.h arp.h iface.h proc.h timer.h
 asy.o: global.h config.h proc.h mbuf.h timer.h iface.h netuser.h slhc.h ip.h \
-	internet.h tcp.h 8250.h asy.h ax25.h kiss.h nrs.h pktdrvr.h slip.h \
+	internet.h tcp.h n8250.h asy.h ax25.h kiss.h nrs.h pktdrvr.h slip.h \
 	commands.h
 ax25.o: global.h mbuf.h iface.h proc.h timer.h arp.h slip.h slhc.h ip.h \
 	internet.h tcp.h netuser.h ax25.h lapb.h netrom.h session.h \
@@ -341,7 +342,8 @@ cmdparse.o: global.h proc.h mbuf.h timer.h cmdparse.h
 config.o: global.h config.h mbuf.h timer.h proc.h iface.h ip.h internet.h \
 	tcp.h netuser.h udp.h lapb.h ax25.h enet.h kiss.h nrs.h netrom.h \
 	session.h hardware.h telnet.h pktdrvr.h slip.h slhc.h arp.h icmp.h \
-	cmdparse.h commands.h daemon.h bootp.h socket.h asy.h trace.h
+	cmdparse.h commands.h ax25mail.h tipmail.h daemon.h bootp.h socket.h \
+	asy.h trace.h
 crc.o: global.h mbuf.h crc.h
 devparam.o: global.h devparam.h
 dirutil.o: global.h dirutil.h commands.h
@@ -406,6 +408,8 @@ main.o: global.h mbuf.h timer.h proc.h iface.h ip.h internet.h tcp.h \
 	devparam.h files.h main.h remote.h trace.h hpux.h remote_net.h
 mbuf.o: global.h mbuf.h proc.h timer.h
 misc.o: global.h socket.h mbuf.h proc.h timer.h
+n8250.o: global.h mbuf.h proc.h timer.h iface.h n8250.h asy.h devparam.h \
+	hpux.h
 netlog.o: global.h
 netrom.o: global.h config.h netuser.h mbuf.h timer.h iface.h proc.h arp.h \
 	ip.h internet.h ax25.h lapb.h netrom.h session.h hardware.h telnet.h \
@@ -457,7 +461,7 @@ telnet.o: global.h mbuf.h socket.h proc.h timer.h telnet.h session.h \
 timer.o: global.h timer.h proc.h mbuf.h commands.h daemon.h hardware.h \
 	socket.h
 tnserv.o: global.h mbuf.h socket.h proc.h timer.h netuser.h tcp.h iface.h \
-	internet.h ip.h login.h
+	internet.h ip.h login.h tipmail.h
 trace.o: global.h mbuf.h iface.h proc.h timer.h pktdrvr.h commands.h trace.h
 transport.o: global.h netuser.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h \
 	netrom.h session.h hardware.h telnet.h tcp.h internet.h ip.h \

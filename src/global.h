@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.15 1992/05/14 13:20:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.16 1992/05/28 13:50:14 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -28,7 +28,7 @@
  * choice of a SINGLE character as the end-of-line indicator" -- M. O'Dell
  *
  * "Whoever picked the end-of-line conventions for MS-DOS and the Macintosh
- * should be shot!" -- P. Karn's corollary to O'Dells' declaration
+ * should be shot!" -- P. Karn's corollary to O'Dell's declaration
  */
 #define READ_BINARY     "rb"
 #define WRITE_BINARY    "wb"
@@ -124,7 +124,7 @@ typedef unsigned char byte_t;   /*  8-bit unsigned integer */
 #define lonibble(x)     ((x) & 0xf)
 
 /* Various low-level and miscellaneous functions */
-unsigned long availmem __ARGS((void));
+int availmem __ARGS((void));
 void *callocw __ARGS((unsigned nelem,unsigned size));
 int dirps __ARGS((void));
 int getopt();
@@ -215,15 +215,11 @@ extern char *Tmpdir;
 
 extern void (*Gcollect[])();
 
+struct asy;
 struct ax25_cb;
-struct dirsort;
 struct iface;
-struct ip;
-struct mbx;
 struct mbuf;
-struct nr4cb;
-struct session;
-struct slip;
+struct usock;
 
 extern int Debug;
 extern int Shortstatus;

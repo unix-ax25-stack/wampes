@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.8 1992/01/08 13:45:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.9 1992/05/28 13:50:23 deyke Exp $ */
 
 /* mbuf (message buffer) primitives
  * Copyright 1991 Phil Karn, KA9Q
@@ -7,6 +7,9 @@
 #include "global.h"
 #include "mbuf.h"
 #include "proc.h"
+
+long Pushdowns;                 /* Total calls to pushdown() */
+long Pushalloc;                 /* Calls to pushalloc() that call malloc */
 
 /* Allocate mbuf with associated buffer of 'size' bytes. If interrupts
  * are enabled, use the regular heap. If they're off, use the special
@@ -316,6 +319,7 @@ int16 size;
 {
 	register struct mbuf *nbp;
 
+	Pushdowns++;
 	/* Check that bp is real, that it hasn't been duplicated, and
 	 * that it itself isn't a duplicate before checking to see if
 	 * there's enough space at its front.
@@ -330,6 +334,7 @@ int16 size;
 		nbp->next = bp;
 		nbp->cnt = size;
 		bp = nbp;
+		Pushalloc++;
 	}
 	return bp;
 }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.11 1992/01/08 13:45:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.12 1992/05/28 13:50:18 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -112,7 +112,7 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 	trim_mbuf(&bp,length);
 
 	/* If we're running low on memory, return a source quench */
-	if(!rxbroadcast && availmem() < Memthresh)
+	if(!rxbroadcast && availmem() != 0)
 		icmp_output(&ip,bp,ICMP_QUENCH,0,NULLICMP);
 
 	/* Process options, if any. Also compute length of secondary IP

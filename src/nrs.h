@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.h,v 1.5 1991/04/12 18:35:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.h,v 1.6 1992/05/28 13:50:27 deyke Exp $ */
 
 #ifndef _NRS_H
 #define _NRS_H
@@ -49,6 +49,8 @@ struct nrs {
 
 extern struct nrs Nrs[];
 /* In nrs.c: */
+int nrs_free __ARGS((struct iface *ifp));
+int nrs_init __ARGS((struct iface *ifp,int vj));
 int nrs_raw __ARGS((struct iface *iface,struct mbuf *bp));
 void nrs_recv __ARGS((struct iface *iface));
 
