@@ -1,4 +1,4 @@
-/* @(#) $Id: krnlif.c,v 1.13 2002/10/19 12:19:59 dl9sau Exp $ */
+/* @(#) $Id: krnlif.c,v 1.14 2002/10/19 18:43:29 dl9sau Exp $ */
 
 #if defined linux
 
@@ -118,6 +118,7 @@
 /* kernel interface control block */
 struct krnlif {
 	struct iface *iface;
+	char *name;		/* real hardware name of interface label */
 
 	int fd;                 /* File descriptor */
 
@@ -157,12 +158,12 @@ static int krnlif_up(struct krnlif *ki)
 #else
 	if ((ki->fd = socket(PF_PACKET, SOCK_RAW, ki->proto)) < 0) {
 #endif
-		printf("error in krnlif_up: socket() for %s failed. this should never happen\n", ki->iface->name);
+		printf("error in krnlif_up: socket() for %s failed. this should never happen\n", ki->name);
 		goto Fail;
 	}
-	strcpy(ifr.ifr_name, ki->iface->name);
+	strcpy(ifr.ifr_name, ki->name);
 	if (ioctl(ki->fd, SIOCGIFFLAGS, &ifr) < 0) {
-		printf("error in krnlif_up: ioctl(SIOCGIFFLAGS) for %s failed. this should never happen\n", ki->iface->name);
+		printf("error in krnlif_up: ioctl(SIOCGIFFLAGS) for %s failed. this should never happen\n", ki->name);
 		goto Fail;
 	}
 	ki->oldflags = ifr.ifr_flags;
@@ -172,7 +173,7 @@ static int krnlif_up(struct krnlif *ki)
 	if (ioctl(ki->fd, SIOCSIFFLAGS, &ifr) < 0)
                 goto Fail;
 #ifdef	USE_OBSOLETE_SOCK_PACKET
-        strcpy(sa.sa_data, ki->iface->name);
+        strcpy(sa.sa_data, ki->name);
         sa.sa_family = AF_INET;
         if (bind(ki->fd, &sa, sizeof(struct sockaddr)) < 0)
                 goto Fail;
@@ -182,7 +183,7 @@ static int krnlif_up(struct krnlif *ki)
 	sll.sll_protocol = ki->proto;
 	sll.sll_family = AF_PACKET;
 	if (bind(ki->fd, (struct sockaddr *) &sll, sizeof(sll)) < 0) {
-		printf("error in krnlif_up: bind() for %s failed. this should never happen.\ndebug: Error %s (%i)\n", ki->iface->name, strerror(errno), errno);
+		printf("error in krnlif_up: bind() for %s failed. this should never happen.\ndebug: Error %s (%i)\n", ki->name, strerror(errno), errno);
 		goto Fail;
 	}
 	memset(&mr, 0, sizeof(&mr));
@@ -192,7 +193,7 @@ static int krnlif_up(struct krnlif *ki)
 	}
 	if (setsockopt(ki->fd, SOL_PACKET, PACKET_ADD_MEMBERSHIP, (char *) &mr, sizeof(mr)) < 0) {
 		perror("PACKET_ADD_MEMBERSHIP");
-		printf("error in krnlif_up: setsockopt(SOL_PACKET, PACKET_ADD_MEMBERSHIP) for %s (%d) failed: %s (%i). this should never happen\n", ki->iface->name, ki->ifindex, strerror(errno), errno);
+		printf("error in krnlif_up: setsockopt(SOL_PACKET, PACKET_ADD_MEMBERSHIP) for %s (%d) failed: %s (%i). this should never happen\n", ki->name, ki->ifindex, strerror(errno), errno);
 			goto Fail;
 	}
 	fcntl(ki->fd, F_SETFL, fcntl(ki->fd, F_GETFL, 0) | O_NONBLOCK);
@@ -221,7 +222,7 @@ static int krnlif_down(struct krnlif *ki)
 	off_read(ki->fd);
 	off_write(ki->fd);
 	free_q(&ki->sndq);
-	strcpy(ifr.ifr_name, ki->iface->name);
+	strcpy(ifr.ifr_name, ki->name);
 	ifr.ifr_flags = ki->oldflags;
 	ioctl(ki->fd, SIOCSIFFLAGS, &ifr);
 	close(ki->fd);
@@ -269,7 +270,7 @@ static void krnlif_tx(struct krnlif *ki)
 			break;
 	}
 #ifdef	USE_OBSOLETE_SOCK_PACKET
-	strncpy(to.sa_data, ki->iface->name, sizeof(to.sa_data));
+	strncpy(to.sa_data, ki->name, sizeof(to.sa_data));
 	i = sendto(ki->fd, buf, cnt, 0, &to, sizeof(to));
 #else
 	/* puh.. thanks to sockaddr_ll, the socket knows about the iface,
@@ -420,7 +421,7 @@ static void krnlif_rx(struct iface *iface)
 	if (i <= 0) {
 		free_mbuf(&bp);
 		if (i < 0 || errno != EWOULDBLOCK) {
-			printf("warning: read %d bytes from %s, cause %s (%i)\n", i, ki->iface->name, strerror(errno), errno);
+			printf("warning: read %d bytes from %s, cause %s (%i)\n", i, ki->name, strerror(errno), errno);
 			krnlif_down(ki);
 		}
 		return;
@@ -448,6 +449,8 @@ static void krnlif_status(struct iface *iface)
 	printf("           Received:    Packets %8ld Chars %8ld\n"
 	       "           Transmitted: Packets %8ld Chars %8ld\n",
 	       ki->rxpkts, ki->rxchar, ki->txpkts, ki->txchar);
+	if (ki->name != ki->iface->name)
+		printf("           %s is an alias for %s\n", ki->iface->name, ki->name);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -497,6 +500,22 @@ int krnlif_attach(int argc, char *argv[], void *p)
 		printf("Interface %s already exists\n",argv[1]);
 		return -1;
 	}
+	if (argc > 2 && if_lookup(argv[2]) != NULL) {
+		printf("Interface %s already exists\n",argv[2]);
+		return -1;
+	}
+	for (dev=0; (dev < KRNLIF_MAX) && (KrnlIf[dev].iface); dev++) {
+		if (!KrnlIf[dev].name)
+			continue; // just 2b sure
+		// no check against word "nopromisc" - nobody will ever label
+		// his interface "nopromisc"
+		if (!strcmp(KrnlIf[dev].name, argv[1]) ||
+			(argc > 2 && !strcmp(KrnlIf[dev].name, argv[2]))) {
+			printf("Interface %s already exists\n", KrnlIf[dev].name);
+			return -1;
+		}
+	}
+
 	/*
 	 * get parameters of the interface
 	 */
@@ -599,7 +618,17 @@ int krnlif_attach(int argc, char *argv[], void *p)
 	ki->ifindex = ifr_h.ifr_ifindex;
 #endif
 	ki->proto = htons(ETH_P_AX25);
-	ki->promisc = !((argc >= 3) && !strcmp(argv[2], "nopromisc"));;
+	ki->name = ki->iface->name;
+	ki->promisc = 1;
+	if (argc >= 3) {
+	  if (!strcmp(argv[2], "nopromisc"))
+		ki->promisc = 0;
+	  else {
+	  	ki->iface->name = strdup(argv[2]);
+		if (argc >= 4 && !strcmp(argv[3], "nopromisc"))
+			ki->promisc = 0;
+	  }
+	}
 
 	/* Link in the interface */
 	ifp->next = Ifaces;

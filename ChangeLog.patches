@@ -1,9 +1,13 @@
-Version @(#) $Id: ChangeLog.patches,v 1.13 2002/10/19 12:16:36 dl9sau Exp $
+Version @(#) $Id: ChangeLog.patches,v 1.14 2002/10/19 18:43:29 dl9sau Exp $
 
 021019 Thomas Osterried <dl9sau>
 
-	- krnlif.c: bugfix. sent only one packet even if several packets were
-	    in queue.
+	- krnlif.c
+		- bugfix. sent only one packet even if several packets were
+	    	  in queue.
+		- interface labeling. now:
+		    attach kernel <iface> [label] [nopromisc]
+		  also changed config.c for this
 
 020920 Thomas Osterried <dl9sau>
 
