@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.7 1991/04/25 18:26:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.8 1991/05/24 12:09:40 deyke Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q
@@ -73,7 +73,7 @@ void *p;
 	struct tcb *tcb;
 	struct socket lsocket,fsocket;
 
-	lsocket.address = Ip_addr;
+	lsocket.address = INADDR_ANY;
 	lsocket.port = Lport++;
 	if((fsocket.address = resolve(argv[1])) == 0){
 		tprintf(Badhost,argv[1]);
@@ -451,7 +451,7 @@ void (*state)();
 	struct socket lsocket;
 	struct mbuf *bp;
 
-	lsocket.address = Ip_addr;
+	lsocket.address = INADDR_ANY;
 	lsocket.port = Lport++;
 
 	/* Compose and send PORT a,a,a,a,p,p message */

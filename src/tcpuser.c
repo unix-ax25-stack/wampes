@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.11 1991/05/09 07:39:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.12 1991/05/24 12:10:23 deyke Exp $ */
 
 /* User calls to TCP
  * Copyright 1991 Phil Karn, KA9Q
@@ -45,6 +45,8 @@ int user;               /* User linkage area */
 		conn.remote.address = 0;
 		conn.remote.port = 0;
 	}
+	if(mode == TCP_ACTIVE)
+		conn.local.address = locaddr(conn.remote.address);
 	if((tcb = lookup_tcb(&conn)) == NULLTCB){
 		if((tcb = create_tcb(&conn)) == NULLTCB){
 			Net_error = NO_MEM;

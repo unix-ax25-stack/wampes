@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.9 1991/05/17 17:06:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.10 1991/05/24 12:09:41 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -447,7 +447,7 @@ register struct ftp *ftp;
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
 			log(ftp->control,"RETR %s",file);
-			dport.address = Ip_addr;
+			dport.address = INADDR_ANY;
 			dport.port = IPPORT_FTPD;
 			ftp->state = SENDING_STATE;
 			Xprintf(ftp->control,sending,"RETR",arg,"");
@@ -472,7 +472,7 @@ register struct ftp *ftp;
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
 			log(ftp->control,"STOR %s",file);
-			dport.address = Ip_addr;
+			dport.address = INADDR_ANY;
 			dport.port = IPPORT_FTPD;
 			ftp->state = RECEIVING_STATE;
 			Xprintf(ftp->control,sending,"STOR",arg,"");
@@ -500,7 +500,7 @@ register struct ftp *ftp;
 		if(ftp->fp == NULLFILE){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
-			dport.address = Ip_addr;
+			dport.address = INADDR_ANY;
 			dport.port = IPPORT_FTPD;
 			ftp->state = SENDING_STATE;
 			Xprintf(ftp->control,sending,"LIST",file,"");
@@ -520,7 +520,7 @@ register struct ftp *ftp;
 		if(ftp->fp == NULLFILE){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
-			dport.address = Ip_addr;
+			dport.address = INADDR_ANY;
 			dport.port = IPPORT_FTPD;
 			ftp->state = SENDING_STATE;
 			Xprintf(ftp->control,sending,"NLST",file,"");

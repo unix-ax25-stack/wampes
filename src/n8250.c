@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.7 1991/05/21 19:08:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.8 1991/05/24 12:09:15 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -8,6 +8,16 @@
 #include <sys/socket.h>
 #include <termio.h>
 #include <unistd.h>
+
+#ifdef ISC
+#include <sys/tty.h>
+#include <sys/stream.h>
+#include <sys/ptem.h>
+#include <sys/pty.h>
+
+#define FIOSNBIO        FIONBIO
+
+#endif /* ISC */
 
 #include "global.h"
 #include "mbuf.h"
@@ -169,7 +179,7 @@ int dev;
   return 0;
 
 Fail:
-  if (ap->fd >= 0) close(ap->fd);
+  if (ap->fd > 0) close(ap->fd);
   ap->fd = -1;
   return (-1);
 }
@@ -282,20 +292,23 @@ int dev;
 char *buf;
 int cnt;
 {
-  struct asy *ap;
+	struct asy *ap;
 
-  ap = Asy + dev;
-  if (ap->fd <= 0 && asy_open(dev) < 0) return 0;
-  if (!maskset(actread, ap->fd)) return 0;
-  cnt = read(ap->fd, buf, (unsigned) cnt);
-  ap->rxints++;
-  if (cnt <= 0) {
-    asy_stop(ap->iface);
-    return 0;
-  }
-  ap->rxchar += cnt;
-  if (ap->rxhiwat < cnt) ap->rxhiwat = cnt;
-  return cnt;
+	ap = Asy + dev;
+	if (ap->fd <= 0 && asy_open(dev))
+		return 0;
+	if (!maskset(actread, ap->fd))
+		return 0;
+	cnt = read(ap->fd, buf, (unsigned) cnt);
+	ap->rxints++;
+	if (cnt <= 0) {
+		asy_stop(ap->iface);
+		return 0;
+	}
+	ap->rxchar += cnt;
+	if (ap->rxhiwat < cnt)
+		ap->rxhiwat = cnt;
+	return cnt;
 }
 
 /*---------------------------------------------------------------------------*/

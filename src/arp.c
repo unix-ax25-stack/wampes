@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.7 1991/03/28 19:38:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.8 1991/05/24 12:09:18 deyke Exp $ */
 
 /* Address Resolution Protocol (ARP) functions. Sits between IP and
  * Level 2, mapping IP to Level 2 addresses for all outgoing datagrams.
@@ -74,6 +74,7 @@ struct mbuf *bp;
 	struct arp_tab *ap;
 	struct arp_type *at;
 	int i;
+	struct route *rp;
 
 	Arp_stat.recv++;
 	if(ntoharp(&arp,&bp) == -1)     /* Convert into host format */
@@ -144,12 +145,12 @@ struct mbuf *bp;
 		}
 	} else if(arp.opcode == ARP_REQUEST
 	 && (ap = arp_lookup(arp.hardware,arp.tprotaddr)) != NULLARP
-	 && ap->pub){
+	 && (ap->pub || (rp = rt_lookup(arp.tprotaddr)) && rp->iface != iface)){
 		/* Otherwise, respond if the guy he's looking for is
-		 * published in our table.
+		 * published in our table or on a different interface.
 		 */
 		memcpy(arp.thwaddr,arp.shwaddr,(int16)uchar(arp.hwalen));
-		memcpy(arp.shwaddr,ap->hw_addr,at->hwalen);
+		memcpy(arp.shwaddr,ap->pub?ap->hw_addr:iface->hwaddr,at->hwalen);
 		arp.tprotaddr = arp.sprotaddr;
 		arp.sprotaddr = ap->ip_addr;
 		arp.opcode = ARP_REPLY;

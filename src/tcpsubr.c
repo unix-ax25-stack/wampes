@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.8 1991/05/09 07:39:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.9 1991/05/24 12:10:21 deyke Exp $ */
 
 /* Low level TCP routines:
  *  control block management
@@ -174,27 +174,31 @@ int
 seq_lt(x,y)
 register int32 x,y;
 {
-	return (long)(x-y) < 0;
+	int32 bugfix;
+	return (long)(bugfix=x-y) < 0;
 }
 #ifdef  notdef
 int
 seq_le(x,y)
 register int32 x,y;
 {
-	return (long)(x-y) <= 0;
+	int32 bugfix;
+	return (long)(bugfix=x-y) <= 0;
 }
 #endif  /* notdef */
 int
 seq_gt(x,y)
 register int32 x,y;
 {
-	return (long)(x-y) > 0;
+	int32 bugfix;
+	return (long)(bugfix=x-y) > 0;
 }
 int
 seq_ge(x,y)
 register int32 x,y;
 {
-	return (long)(x-y) >= 0;
+	int32 bugfix;
+	return (long)(bugfix=x-y) >= 0;
 }
 
 void

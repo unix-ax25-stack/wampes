@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.6 1991/05/21 19:09:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.7 1991/05/24 12:10:25 deyke Exp $ */
 
 /* General purpose software timer facilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -24,7 +24,7 @@ void
 timerproc()
 {
 	register struct timer *t;
-	int32 remaining;
+	int32 bugfix;
 	struct timeval tv;
 	struct timezone tz;
 
@@ -32,7 +32,7 @@ timerproc()
 	Secclock = tv.tv_sec;
 	Msclock = 1000 * Secclock + tv.tv_usec / 1000;
 
-	while((t = Timers) && (remaining = t->expiration - Msclock) <= 0) {
+	while((t = Timers) && (bugfix = t->expiration - Msclock) <= 0) {
 		if (Timers = t->next)
 			Timers->prev = NULLTIMER;
 		t->state = TIMER_EXPIRE;
@@ -47,7 +47,7 @@ struct timer *t;
 {
 	register struct timer *tnext;
 	struct timer *tprev = NULLTIMER;
-	int32 diff;
+	int32 bugfix;
 
 	if(t == NULLTIMER)
 		return;
@@ -64,7 +64,7 @@ struct timer *t;
 	 * comparison of expiration times.
 	 */
 	for(tnext = Timers;tnext != NULLTIMER;tprev=tnext,tnext = tnext->next){
-		if((diff = tnext->expiration - t->expiration) >= 0)
+		if((bugfix = tnext->expiration - t->expiration) >= 0)
 			break;
 	}
 	/* At this point, tprev points to the entry that should go right

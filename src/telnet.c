@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.9 1991/05/09 07:39:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.10 1991/05/24 12:10:24 deyke Exp $ */
 
 /* Internet Telnet client
  * Copyright 1991 Phil Karn, KA9Q
@@ -57,7 +57,7 @@ void *p;
 	struct tcb *tcb;
 	struct socket lsocket,fsocket;
 
-	lsocket.address = Ip_addr;
+	lsocket.address = INADDR_ANY;
 	lsocket.port = Lport++;
 	if((fsocket.address = resolve(argv[1])) == 0){
 		printf(Badhost,argv[1]);

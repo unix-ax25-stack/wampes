@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.8 1991/04/25 18:27:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.9 1991/05/24 12:10:28 deyke Exp $ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -240,7 +240,7 @@ struct transport_cb *tp;
   if (!(port = strtok(NULLCHAR, " \t\r\n"))) return 0;
   if (!(fsocket.address = resolve(host))) return 0;
   if (!(fsocket.port = tcp_port_number(port))) return 0;
-  lsocket.address = Ip_addr;
+  lsocket.address = INADDR_ANY;
   lsocket.port = Lport++;
   tp->recv = (int (*)()) recv_tcp;
   tp->send = (int (*)()) send_tcp;
