@@ -1,4 +1,4 @@
-/* @(#) $Id: config.c,v 1.50 1996/10/08 20:00:52 deyke Exp $ */
+/* @(#) $Id: config.c,v 1.51 1998/03/23 17:11:05 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -8,6 +8,8 @@
  *
  * Copyright 1991 Phil Karn, KA9Q
  */
+
+#include "configure.h"
 
 #include <stdio.h>
 #include "global.h"
@@ -335,7 +337,7 @@ struct cmds Attab[] = {
 #endif
 	"ipip", ipip_attach, 0, 1,
 	"attach ipip [<label> [ip|udp [protocol|port]]]",
-#ifdef __hpux
+#if HAS_NI
 	"ni", ni_attach, 0, 3,
 	"attach ni <label> <dest> [mask]",
 #endif

@@ -1,6 +1,8 @@
-/* @(#) $Id: ni.c,v 1.16 1998/03/09 17:42:56 deyke Exp $ */
+/* @(#) $Id: ni.c,v 1.17 1998/03/23 17:11:05 deyke Exp $ */
 
-#ifdef __hpux
+#include "configure.h"
+
+#if HAS_NI
 
 #include "global.h"
 #undef  hiword

@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.95 1998/03/09 17:42:56 deyke Exp $
+# @(#) $Id: Makefile,v 1.96 1998/03/23 17:11:05 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -513,7 +513,7 @@ axserver.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h ax25.h iface.h \
 	proc.h timer.h lapb.h login.h
 cmdparse.o: ../lib/strtoul.h ../lib/configure.h global.h ../lib/strdup.h \
 	proc.h mbuf.h timer.h cmdparse.h
-config.o: global.h ../lib/configure.h ../lib/strdup.h config.h mbuf.h timer.h \
+config.o: ../lib/configure.h global.h ../lib/strdup.h config.h mbuf.h timer.h \
 	proc.h iface.h ip.h internet.h tcp.h netuser.h udp.h lapb.h ax25.h \
 	enet.h kiss.h nrs.h netrom.h session.h hardware.h telnet.h pktdrvr.h \
 	slip.h slhc.h arp.h icmp.h cmdparse.h commands.h ax25mail.h tipmail.h \
@@ -620,7 +620,7 @@ netrom.o: global.h ../lib/configure.h ../lib/strdup.h config.h netuser.h \
 	netrom.h session.h hardware.h telnet.h tcp.h cmdparse.h trace.h \
 	login.h
 netuser.o: global.h ../lib/configure.h ../lib/strdup.h netuser.h
-ni.o: global.h ../lib/configure.h ../lib/strdup.h ../lib/strerror.h mbuf.h \
+ni.o: ../lib/configure.h global.h ../lib/strdup.h ../lib/strerror.h mbuf.h \
 	iface.h proc.h timer.h netuser.h trace.h hpux.h
 nrdump.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h ax25.h \
 	iface.h proc.h netrom.h session.h hardware.h telnet.h tcp.h \

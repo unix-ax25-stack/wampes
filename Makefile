@@ -1,7 +1,6 @@
-# @(#) $Id: Makefile,v 1.34 1998/03/09 20:15:16 deyke Exp $
+# @(#) $Id: Makefile,v 1.35 1998/03/23 17:10:41 deyke Exp $
 
 MAKEFILE   = Makefile
-MKDIR      = @if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi
 
 OBSOLETE   = bbs/bbs.h \
 	     bbs/findpath* \

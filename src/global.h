@@ -1,4 +1,4 @@
-/* @(#) $Id: global.h,v 1.42 1998/03/09 17:42:56 deyke Exp $ */
+/* @(#) $Id: global.h,v 1.43 1998/03/23 17:11:05 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -109,7 +109,9 @@ typedef int pid_t;
  * shorts are 16 bits. It is already assumed that chars are 8 bits,
  * but it doesn't matter if they're signed or unsigned.
  */
+#if !HAS_INT32
 typedef long int32;             /* 32-bit signed integer */
+#endif
 #if !HAS_UINT
 typedef unsigned int uint;      /* 16 or 32-bit unsigned integer */
 #endif

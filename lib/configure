@@ -1,4 +1,4 @@
-# @(#) $Id: configure,v 1.28 1998/03/09 17:46:26 deyke Exp $
+# @(#) $Id: configure,v 1.29 1998/03/23 17:12:58 deyke Exp $
 
 case "`uname -sr`" in
 HP-UX*)
@@ -199,6 +199,15 @@ echo
 
 checksymbol HAS_ADJTIME \
 	"main(){adjtime(0,0);}"
+
+checksymbol HAS_INT32 \
+	"#include <sys/types.h>
+	 main(){int32 f;return f;}"
+
+checksymbol HAS_NI \
+	"#include <net/if_ni.h>
+	 struct ni_desc x;
+	 main(){return 0;}"
 
 checksymbol HAS_STRDUP \
 	"main(){strdup(0);}"

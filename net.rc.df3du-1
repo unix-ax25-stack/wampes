@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.df3du-1,v 1.27 1996/08/12 18:50:57 deyke Exp $
+# @(#) $Id: net.rc.df3du-1,v 1.28 1998/03/23 17:10:41 deyke Exp $
 
 hostname     df3du-1
 ax25 mycall  df3du-1
@@ -11,23 +11,23 @@ attach netrom                   # ip over netrom
 
 ax25 route add axip default
 
-axip route add dl1sbl-1 15.136.120.111          # hpbblb.bbn.hp.com
+axip route add dl1sbl-1 15.136.125.16           # hpbblba.bbn.hp.com
 
-route add  44.130.0.0/16        ipip     15.136.120.111
-route add  44.143.0.0/16        ipip     15.136.120.111
-route add  db0sao-u.ampr.org    ipip     15.136.120.111
-route add  db0sao.ampr.org      ipip     15.136.120.111
-route add  df9sr-1.ampr.org     ipip     15.136.120.111
-route add  dh8saw-1.ampr.org    ipip     15.136.120.111
-route add  dj3eg-1.ampr.org     ipip     15.136.120.111
-route add  dk0hu-u.ampr.org     ipip     15.136.120.111
-route add  dk0hu.ampr.org       ipip     15.136.120.111
-route add  dk5sg-u.ampr.org     ipip     15.136.120.111
-route add  dk5sg.ampr.org       ipip     15.136.120.111
-route add  dl1sbl-1.ampr.org    ipip     15.136.120.111
-route add  dl4sas-1.ampr.org    ipip     15.136.120.111
-route add  dl4sel-1.ampr.org    ipip     15.136.120.111
-route add  dl4sel.ampr.org      ipip     15.136.120.111
+route add  44.130.0.0/16        ipip     15.136.125.16
+route add  44.143.0.0/16        ipip     15.136.125.16
+route add  db0sao-u.ampr.org    ipip     15.136.125.16
+route add  db0sao.ampr.org      ipip     15.136.125.16
+route add  df9sr-1.ampr.org     ipip     15.136.125.16
+route add  dh8saw-1.ampr.org    ipip     15.136.125.16
+route add  dj3eg-1.ampr.org     ipip     15.136.125.16
+route add  dk0hu-u.ampr.org     ipip     15.136.125.16
+route add  dk0hu.ampr.org       ipip     15.136.125.16
+route add  dk5sg-u.ampr.org     ipip     15.136.125.16
+route add  dk5sg.ampr.org       ipip     15.136.125.16
+route add  dl1sbl-1.ampr.org    ipip     15.136.125.16
+route add  dl4sas-1.ampr.org    ipip     15.136.125.16
+route add  dl4sel-1.ampr.org    ipip     15.136.125.16
+route add  dl4sel.ampr.org      ipip     15.136.125.16
 
 source /tcp/netrom_links
 
