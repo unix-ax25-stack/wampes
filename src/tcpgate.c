@@ -1,4 +1,4 @@
-/* @(#) $Id: tcpgate.c,v 1.17 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: tcpgate.c,v 1.18 1997/08/04 16:06:42 deyke Exp $ */
 
 #include "global.h"
 
@@ -82,11 +82,7 @@ static void tcp_state(struct tcb *tcb, enum tcp_state old, enum tcp_state new)
   struct sockaddr *addr = 0;
 
   switch (new) {
-#ifdef QUICKSTART
-  case TCP_SYN_RECEIVED:
-#else
   case TCP_ESTABLISHED:
-#endif
     logmsg(tcb, "open %s", tcp_port_name(tcb->conn.local.port));
     for (dp = dests; dp && dp->port != tcb->conn.local.port; dp = dp->next) ;
     if (!dp ||

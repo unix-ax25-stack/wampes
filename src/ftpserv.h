@@ -1,4 +1,4 @@
-/* @(#) $Id: ftpserv.h,v 1.4 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ftpserv.h,v 1.5 1997/08/04 16:06:42 deyke Exp $ */
 
 #ifndef _FTPSERV_H
 #define _FTPSERV_H
@@ -18,7 +18,6 @@ enum ftp_cmd {
 	LIST_CMD,
 	CWD_CMD,
 	DELE_CMD,
-	NAME_CMD,
 	QUIT_CMD,
 	RETR_CMD,
 	STOR_CMD,
@@ -34,6 +33,7 @@ enum ftp_cmd {
 	MODE_CMD,
 	SYST_CMD,
 	XMD5_CMD,
+	XCWD_CMD,
 	APPE_CMD,
 	CDUP_CMD,
 	HELP_CMD,
@@ -41,8 +41,7 @@ enum ftp_cmd {
 	NOOP_CMD,
 	REST_CMD,
 	SIZE_CMD,
-	XCUP_CMD,
-	XCWD_CMD
+	XCUP_CMD
 };
 
 #endif  /* _FTPSERV_H */

@@ -1,10 +1,10 @@
-/* @(#) $Id: ftpserv.c,v 1.38 1996/09/09 22:14:49 deyke Exp $ */
+/* @(#) $Id: ftpserv.c,v 1.39 1997/08/04 16:06:42 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
  */
 
-#define LINELEN         128     /* Length of command buffer */
+#define LINELEN         1024    /* Length of command buffer */
 
 #include <sys/types.h>
 
@@ -49,7 +49,6 @@ static char *commands[] = {
 	"list",
 	"cwd",
 	"dele",
-	"name",
 	"quit",
 	"retr",
 	"stor",
@@ -65,6 +64,7 @@ static char *commands[] = {
 	"mode",
 	"syst",
 	"xmd5",
+	"xcwd",
 	"appe",
 	"cdup",
 	"help",
@@ -73,13 +73,12 @@ static char *commands[] = {
 	"rest",
 	"size",
 	"xcup",
-	"xcwd",
 	NULL
 };
 
 /* Response messages */
 static char banner[] = "220 %s FTP version %s ready at %s\r\n";
-static char badcmd[] = "500 Unknown command\r\n";
+static char badcmd[] = "500 Unknown command '%s'\r\n";
 static char unsupp[] = "500 Unsupported command or option\r\n";
 static char givepass[] = "331 Enter PASS command\r\n";
 static char logged[] = "230 User \"%s\" logged in\r\n";
@@ -118,10 +117,7 @@ static void Xprintf(struct tcb *tcb,char *message,char *arg1,char *arg2,char *ar
 }
 /* Start up FTP service */
 int
-ftpstart(
-int argc,
-char *argv[],
-void *p)
+ftpstart(int argc,char *argv[],void *p)
 {
 	struct socket lsocket;
 
@@ -136,13 +132,6 @@ void *p)
 	ftp_tcb = open_tcp(&lsocket,NULL,TCP_SERVER,0,ftpscr,NULL,ftpscs,0,0);
 	return 0;
 }
-/* Shut down FTP server */
-int ftp0(int argc,char *argv[],void *p)
-{
-	if(ftp_tcb != NULL)
-		close_tcp(ftp_tcb);
-	return 0;
-}
 /* FTP Server Control channel State change upcall handler */
 static
 void
@@ -152,16 +141,7 @@ ftpscs(struct tcb *tcb,enum tcp_state old,enum tcp_state new)
 	char *cp,*cp1;
 
 	switch(new){
-/* Setting QUICKSTART piggybacks the server's banner on the SYN/ACK segment;
- * leaving it unset waits for the three-way handshake to complete before
- * sending the banner. Piggybacking unfortunately breaks some old TCPs,
- * so its use is not (yet) recommended.
-*/
-#ifdef  QUICKSTART
-	case TCP_SYN_RECEIVED:
-#else
 	case TCP_ESTABLISHED:
-#endif
 		if((ftp = ftp_create(LINELEN)) == NULL){
 			/* No space, kill connection */
 			close_tcp(tcb);
@@ -312,30 +292,30 @@ static
 void
 ftpcommand(struct ftp *ftp)
 {
-	char *cmd,*arg,*cp,**cmdp,*file;
+	char *buf,*arg,*cp,**cmdp,*file;
 	struct socket dport;
 	int rest;
 	int result;
 	struct stat statbuf;
 	char physname[1024];
 
-	cmd = ftp->buf;
 	if(ftp->cnt == 0){
 		/* Can't be a legal FTP command */
 		Xprintf(ftp->control,badcmd,"","","");
 		return;
 	}
-	cmd = ftp->buf;
+	buf = ftp->buf;
 
 	/* Translate first word to lower case */
-	for(cp = cmd;*cp != ' ' && *cp != '\0';cp++)
+	for(cp = buf;*cp != ' ' && *cp != '\0';cp++)
 		*cp = Xtolower(*cp);
 	/* Find command in table; if not present, return syntax error */
 	for(cmdp = commands;*cmdp != NULL;cmdp++)
-		if(strncmp(*cmdp,cmd,strlen(*cmdp)) == 0)
+		if(strncmp(*cmdp,buf,strlen(*cmdp)) == 0)
 			break;
 	if(*cmdp == NULL){
-		Xprintf(ftp->control,badcmd,"","","");
+		logmsg(ftp->control,"%s",buf);
+		Xprintf(ftp->control,badcmd,buf,"","");
 		return;
 	}
 	/* Allow only USER, PASS and QUIT before logging in */
@@ -346,17 +326,19 @@ ftpcommand(struct ftp *ftp)
 		case QUIT_CMD:
 			break;
 		default:
+			logmsg(ftp->control,"%s",buf);
 			Xprintf(ftp->control,notlog,"","","");
 			return;
 		}
 	}
-	arg = &cmd[strlen(*cmdp)];
+	arg = &buf[strlen(*cmdp)];
 	while(*arg == ' ')
 		arg++;
 
 	/* Execute specific command */
 	switch(cmdp-commands){
 	case USER_CMD:
+		logmsg(ftp->control,"USER %s",arg);
 		if(!strcmp(arg, "anonymous"))
 			arg = "ftp";
 		free(ftp->username);
@@ -410,12 +392,12 @@ ftpcommand(struct ftp *ftp)
 		AsUser(result = stat(physname, &statbuf));
 		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
-			free(file);
+			FREE(file);
 			return;
 		}
 		if(!S_ISREG(statbuf.st_mode)){
 			Xprintf(ftp->control,"550 %s: not a plain file.\r\n",file,"","");
-			free(file);
+			FREE(file);
 			return;
 		}
 		AsUser(ftp->fp = fopen(physname,"r"));
@@ -431,7 +413,7 @@ ftpcommand(struct ftp *ftp)
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
 			 0,NULL,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
 		}
-		free(file);
+		FREE(file);
 		break;
 	case STOR_CMD:
 		/* Disk operation; return ACK now */
@@ -453,7 +435,7 @@ ftpcommand(struct ftp *ftp)
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
 			 0,ftpdr,NULL,ftpsds,ftp->control->tos,(int)ftp);
 		}
-		free(file);
+		FREE(file);
 		break;
 	case APPE_CMD:
 		/* Disk operation; return ACK now */
@@ -473,9 +455,10 @@ ftpcommand(struct ftp *ftp)
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
 			 0,ftpdr,NULL,ftpsds,ftp->control->tos,(int)ftp);
 		}
-		free(file);
+		FREE(file);
 		break;
 	case PORT_CMD:
+		logmsg(ftp->control,"PORT %s",arg);
 		if(pport(&ftp->port,arg) == -1){
 			Xprintf(ftp->control,badport,"","","");
 		} else {
@@ -499,7 +482,7 @@ ftpcommand(struct ftp *ftp)
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
 			 0,NULL,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
 		}
-		free(file);
+		FREE(file);
 		break;
 	case NLST_CMD:
 		/* Disk operation; return ACK now */
@@ -518,7 +501,7 @@ ftpcommand(struct ftp *ftp)
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
 			 0,NULL,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
 		}
-		free(file);
+		FREE(file);
 		break;
 	case XCWD_CMD:
 	case CWD_CMD:
@@ -533,7 +516,7 @@ ftpcommand(struct ftp *ftp)
 		AsUser(result = chdir(physname));
 		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
-			free(file);
+			FREE(file);
 		} else {
 			chdir("/");
 			Xprintf(ftp->control,pwdmsg,file,"","");
@@ -561,9 +544,10 @@ ftpcommand(struct ftp *ftp)
 		} else {
 			Xprintf(ftp->control,deleok,"","","");
 		}
-		free(file);
+		FREE(file);
 		break;
 	case PASS_CMD:
+		logmsg(ftp->control,"PASS %s",arg);
 		tcp_output(ftp->control);       /* Send the ack now */
 		ftplogin(ftp,arg);
 		break;
@@ -579,7 +563,7 @@ ftpcommand(struct ftp *ftp)
 		} else {
 			Xprintf(ftp->control,mkdok,"","","");
 		}
-		free(file);
+		FREE(file);
 		break;
 	case XRMD_CMD:
 	case RMD_CMD:
@@ -593,7 +577,7 @@ ftpcommand(struct ftp *ftp)
 		} else {
 			Xprintf(ftp->control,deleok,"","","");
 		}
-		free(file);
+		FREE(file);
 		break;
 	case STRU_CMD:
 		logmsg(ftp->control,"STRU %s",arg);
@@ -614,6 +598,7 @@ ftpcommand(struct ftp *ftp)
 		Xprintf(ftp->control,"215 UNIX Type: L8\r\n","","","");
 		break;
 	case HELP_CMD:
+		logmsg(ftp->control,"HELP","");
 		{
 		char line[80];
 		int i;
@@ -653,7 +638,7 @@ ftpcommand(struct ftp *ftp)
 				ptm->tm_sec);
 			Xprintf(ftp->control,"213 %s\r\n",mdtmstr,"","");
 		}
-		free(file);
+		FREE(file);
 		break;
 	case NOOP_CMD:
 		logmsg(ftp->control,"NOOP","");
@@ -677,12 +662,22 @@ ftpcommand(struct ftp *ftp)
 			sprintf(sizestr,"%ld",statbuf.st_size);
 			Xprintf(ftp->control,"213 %s\r\n",sizestr,"","");
 		}
-		free(file);
+		FREE(file);
 		break;
 	default:
+		logmsg(ftp->control,"%s",buf);
 		Xprintf(ftp->control,unimp,"","","");
 		break;
 	}
+}
+
+/* Shut down FTP server */
+int
+ftp0(int argc,char *argv[],void *p)
+{
+	if(ftp_tcb != NULL)
+		close_tcp(ftp_tcb);
+	return 0;
 }
 static
 int

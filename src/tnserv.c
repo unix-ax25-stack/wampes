@@ -1,4 +1,4 @@
-/* @(#) $Id: tnserv.c,v 1.16 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: tnserv.c,v 1.17 1997/08/04 16:06:42 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -39,11 +39,7 @@ static void tnserv_send_upcall(struct tcb *tcb, int32 cnt)
 static void tnserv_state_upcall(struct tcb *tcb, enum tcp_state old, enum tcp_state new)
 {
   switch (new) {
-#ifdef QUICKSTART
-  case TCP_SYN_RECEIVED:
-#else
   case TCP_ESTABLISHED:
-#endif
     tcb->user = (int) login_open(pinet_tcp(&tcb->conn.remote), "TELNET", (void (*)(void *)) tnserv_send_upcall, (void (*)(void *)) close_tcp, tcb);
     if (!tcb->user)
       close_tcp(tcb);
