@@ -138,7 +138,6 @@ OBJS          = 8250.o \
 		services.o \
 		session.o \
 		setsp.o \
-		setsp.o \
 		slip.o \
 		smisc.o \
 		stime.o \
@@ -239,7 +238,6 @@ SRCS          = 8250.c \
 		services.c \
 		session.c \
 		setsp.c \
-		setsp.s \
 		slip.c \
 		smisc.c \
 		stime.c \
@@ -271,6 +269,7 @@ all:            $(PROGRAM)
 setsp.o:        setsp.c
 		-$(CC) -E $(CFLAGS) $< > setsp.s
 		-as setsp.s
+		-rm -f setsp.s
 
 $(PROGRAM):     $(OBJS) $(LIBS)
 		@echo "Linking $(PROGRAM) ..."

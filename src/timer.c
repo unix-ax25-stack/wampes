@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.8 1991/10/11 18:56:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.9 1991/10/25 15:01:27 deyke Exp $ */
 
 /* General purpose software timer facilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -22,6 +22,8 @@ int32 Secclock;
  * i.e., the first timer to expire is always at the head of the list.
  */
 static struct timer *Timers;
+
+static void t_alarm __ARGS((void *x));
 
 /* Process that handles clock ticks */
 void
@@ -132,6 +134,44 @@ next_timer_event()
 		return read_timer(Timers);
 	else
 		return 0x7fffffff;
+}
+/* Delay process for specified number of milliseconds.
+ * Normally returns 0; returns -1 if aborted by alarm.
+ */
+int
+Xpause(ms)
+int32 ms;
+{
+	int val;
+
+	if(Curproc == NULLPROC || ms <= 0)
+		return 0;
+	Xalarm(ms);
+	/* The actual event doesn't matter, since we'll be alerted */
+	while(Curproc->alarm.state == TIMER_RUN){
+		if((val = pwait(Curproc)) != 0)
+			break;
+	}
+	Xalarm(0L); /* Make sure it's stopped, in case we were killed */
+	return (val == EALARM) ? 0 : -1;
+}
+static void
+t_alarm(x)
+void *x;
+{
+	alert((struct proc *)x,EALARM);
+}
+/* Send signal to current process after specified number of milliseconds */
+void
+Xalarm(ms)
+int32 ms;
+{
+	if(Curproc != NULLPROC){
+		set_timer(&Curproc->alarm,ms);
+		Curproc->alarm.func = t_alarm;
+		Curproc->alarm.arg = (char *)Curproc;
+		start_timer(&Curproc->alarm);
+	}
 }
 /* Convert time count in seconds to printable days:hr:min:sec format */
 char *

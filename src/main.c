@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.23 1991/10/11 18:56:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.24 1991/10/25 15:01:11 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -69,6 +69,8 @@ struct proc *Cmdpp;
 static FILE *Logfp;
 int16 Lport = 1024;
 static int Verbose;
+
+static void process_char __ARGS((int c));
 
 int
 main(argc,argv)

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.7 1991/07/16 17:55:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.8 1991/10/25 15:01:22 deyke Exp $ */
 
 #ifndef _SOCKET_H
 #define _SOCKET_H
@@ -83,10 +83,15 @@
 #define EADDRINUSE      14
 #define ENOMEM          15
 #define EMSGSIZE        16
+
+#endif
+
 #define EALARM          17
 #define EABORT          18
 
 extern int32 Ip_addr;
+
+#if 0
 
 /* In socket.c: */
 extern int Axi_sock;    /* Socket listening to AX25 (there can be only one) */

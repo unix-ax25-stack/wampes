@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.23 1991/06/04 11:34:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.24 1991/10/25 15:01:13 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -76,6 +76,8 @@ static struct parms {
 
 #define NPARMS 26
 
+struct link;
+
 static struct node *nodeptr __ARGS((char *call, int create));
 static void ax25_state_upcall __ARGS((struct ax25_cb *cp, int oldstate, int newstate));
 static void ax25_recv_upcall __ARGS((struct ax25_cb *cp, int cnt));
@@ -83,8 +85,10 @@ static void send_packet_to_neighbor __ARGS((struct mbuf *data, struct node *pn))
 static void send_broadcast_packet __ARGS((struct mbuf *data));
 static void link_manager_initialize __ARGS((void));
 static struct linkinfo *linkinfoptr __ARGS((struct node *node1, struct node *node2));
-static int update_link __ARGS((struct node *node1, struct node *node2, int level, int quality));
-static void calculate_node __ARGS((struct node *pn));
+static int update_link __ARGS((struct node *node1, struct node *node2, int source, int quality));
+static int link_valid __ARGS((struct node *pn, struct link *pl));
+static void calculate_hopcnts __ARGS((struct node *pn));
+static void calculate_qualities __ARGS((struct node *pn));
 static void calculate_all __ARGS((void));
 static void broadcast_recv __ARGS((struct mbuf *bp, struct node *pn));
 static struct mbuf *alloc_broadcast_packet __ARGS((void));
@@ -113,6 +117,7 @@ static void nrclient_state_upcall __ARGS((struct circuit *pc, int oldstate, int 
 static int donconnect __ARGS((int argc, char *argv [], void *p));
 static int dobroadcast __ARGS((int argc, char *argv [], void *p));
 static int doident __ARGS((int argc, char *argv [], void *p));
+static int donkick __ARGS((int argc, char *argv [], void *p));
 static int dolinks __ARGS((int argc, char *argv [], void *p));
 static int donodes __ARGS((int argc, char *argv [], void *p));
 static int doparms __ARGS((int argc, char *argv [], void *p));
@@ -124,7 +129,7 @@ static int donstatus __ARGS((int argc, char *argv [], void *p));
 /*---------------------------------------------------------------------------*/
 
 #define IDENTLEN     6
-#define MAXLEVEL   256
+#define INFINITY   999
 
 struct broadcast {
   struct ax25 hdr;
@@ -133,13 +138,13 @@ struct broadcast {
 };
 
 struct node {
-  char  *call;
-  char  ident[IDENTLEN];
-  int  level;
+  char *call;
+  char ident[IDENTLEN];
+  int hopcnt;
   struct link *links;
   struct node *neighbor, *old_neighbor;
-  double  quality, old_quality, tmp_quality;
-  int  force_broadcast;
+  double quality, old_quality, tmp_quality;
+  int force_broadcast;
   struct ax25_cb *crosslink;
   struct node *prev, *next;
 };
@@ -164,11 +169,11 @@ int  create;
 
   for (pn = nodes; pn && !addreq(call, pn->call); pn = pn->next) ;
   if (!pn && create) {
-    pn = (struct node *) calloc(1, sizeof(struct node ));
+    pn = calloc(1, sizeof(*pn));
     pn->call = malloc(AXALEN);
     addrcp(pn->call, call);
     memset(pn->ident, ' ', IDENTLEN);
-    pn->level = MAXLEVEL;
+    pn->hopcnt = INFINITY;
     if (nodes) {
       pn->next = nodes;
       nodes->prev = pn;
@@ -312,7 +317,7 @@ struct link {
 };
 
 struct linkinfo {
-  int  level;
+  int  source;
   int  quality;
   long  time;
 };
@@ -345,9 +350,9 @@ struct node *node1, *node2;
 
   for (pl = node1->links; pl; pl = pl->next)
     if (pl->node == node2) return pl->info;
-  pi = (struct linkinfo *) calloc(1, sizeof(struct linkinfo ));
-  pi->level = MAXLEVEL;
-  pl = (struct link *) calloc(1, sizeof(struct link ));
+  pi = calloc(1, sizeof(*pi));
+  pi->source = INFINITY;
+  pl = calloc(1, sizeof(*pl));
   pl->node = node2;
   pl->info = pi;
   if (node1->links) {
@@ -355,7 +360,7 @@ struct node *node1, *node2;
     node1->links->prev = pl;
   }
   node1->links = pl;
-  pl = (struct link *) calloc(1, sizeof(struct link ));
+  pl = calloc(1, sizeof(*pl));
   pl->node = node1;
   pl->info = pi;
   if (node2->links) {
@@ -368,21 +373,21 @@ struct node *node1, *node2;
 
 /*---------------------------------------------------------------------------*/
 
-static int  update_link(node1, node2, level, quality)
+static int  update_link(node1, node2, source, quality)
 struct node *node1, *node2;
-int  level, quality;
+int  source, quality;
 {
 
   int  ret;
   struct linkinfo *pi;
 
   if (node1 == node2) return 0;
-  if (level > node1->level + 1 || level > node2->level + 1) return 0;
+  if (source > node1->hopcnt + 1 || source > node2->hopcnt + 1) return 0;
   pi = linkinfoptr(node1, node2);
-  if (pi->level < level || pi->time == PERMANENT) return 0;
+  if (source > pi->source || pi->time == PERMANENT) return 0;
   ret = 0;
-  if (pi->level != level) {
-    pi->level = level;
+  if (pi->source != source) {
+    pi->source = source;
     ret = 1;
   }
   if (quality > 255) quality = 255;
@@ -391,31 +396,55 @@ int  level, quality;
     ret = 1;
   }
   pi->time = secclock();
-  if (node1->level > level) {
-    node1->level = level;
-    ret = 1;
-  }
-  if (node2->level > level) {
-    node2->level = level;
-    ret = 1;
-  }
   return ret;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void calculate_node(pn)
+static int link_valid(pn, pl)
+struct node *pn;
+struct link *pl;
+{
+  if (pl->info->time == PERMANENT) return 1;
+  if (nr_obsinit && nr_bdcstint) {
+    if (pl->info->time + nr_obsinit * nr_bdcstint < secclock()) return 0;
+  }
+  if (pl->info->source > pn->hopcnt + 1) return 0;
+  if (pl->info->source > pl->node->hopcnt + 1) return 0;
+  return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void calculate_hopcnts(pn)
 struct node *pn;
 {
 
-  double  quality;
+  int hopcnt;
+  struct link *pl;
+
+  hopcnt = pn->hopcnt + 1;
+  for (pl = pn->links; pl; pl = pl->next)
+    if (link_valid(pn, pl) && pl->node->hopcnt > hopcnt) {
+      pl->node->hopcnt = hopcnt;
+      calculate_hopcnts(pl->node);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void calculate_qualities(pn)
+struct node *pn;
+{
+
+  double quality;
   struct link *pl;
 
   for (pl = pn->links; pl; pl = pl->next) {
     quality = pn->tmp_quality * pl->info->quality / 256.0;
     if (pl->node->tmp_quality < quality) {
       pl->node->tmp_quality = quality;
-      calculate_node(pl->node);
+      calculate_qualities(pl->node);
     }
   }
 }
@@ -425,56 +454,51 @@ struct node *pn;
 static void calculate_all()
 {
 
-  int  start_broadcast_timer;
-  long  timelimit;
+  int start_broadcast_timer;
   struct link *pl1, *plnext;
   struct link *pl;
   struct node *neighbor;
   struct node *pn1, *pnnext;
   struct node *pn;
 
-  /*** remove obsolete links ***/
-
-  if (nr_obsinit && nr_bdcstint)
-    timelimit = secclock() - nr_obsinit * nr_bdcstint;
-  else
-    timelimit = 0;
-  for (pn = nodes; pn; pn = pn->next)
-    for (pl = pn->links; pl; pl = plnext) {
-      plnext = pl->next;
-      if (pl->info->time < timelimit ||
-	  pl->info->time != PERMANENT && pl->info->level > pn->level + 1) {
-	if (pl->prev) pl->prev->next = pl->next;
-	if (pl->next) pl->next->prev = pl->prev;
-	if (pl == pn->links) pn->links = pl->next;
-	pn1 = pl->node;
-	for (pl1 = pn1->links; pl1->node != pn; pl1 = pl1->next) ;
-	if (pl1->prev) pl1->prev->next = pl1->next;
-	if (pl1->next) pl1->next->prev = pl1->prev;
-	if (pl1 == pn1->links) pn1->links = pl1->next;
-	free(pl->info);
-	free(pl1);
-	free(pl);
-      }
-    }
-
-  /*** fix node levels ***/
+  /*** preset hopcnt, neighbor, and quality ***/
 
   for (pn = nodes; pn; pn = pn->next) {
-    pn->level = MAXLEVEL;
-    for (pl = pn->links; pl; pl = pl->next)
-      if (pn->level > pl->info->level) pn->level = pl->info->level;
-  }
-  mynode->level = 0;
-
-  /*** preset neighbor and quality ***/
-
-  for (pn = nodes; pn; pn = pn->next) {
+    pn->hopcnt = INFINITY;
     pn->old_neighbor = pn->neighbor;
     pn->neighbor = 0;
     pn->old_quality = pn->quality;
     pn->quality = 0.0;
   }
+  mynode->hopcnt = 0;
+
+  /*** calculate new hopcnts ***/
+
+  calculate_hopcnts(mynode);
+
+  /*** remove invalid links ***/
+
+  for (pn = nodes; pn; pn = pn->next)
+    for (pl = pn->links; pl; pl = plnext) {
+      plnext = pl->next;
+      if (!link_valid(pn, pl)) {
+	if (pl->prev)
+	  pl->prev->next = pl->next;
+	else
+	  pn->links = pl->next;
+	if (pl->next) pl->next->prev = pl->prev;
+	pn1 = pl->node;
+	for (pl1 = pn1->links; pl1->node != pn; pl1 = pl1->next) ;
+	if (pl1->prev)
+	  pl1->prev->next = pl1->next;
+	else
+	  pn1->links = pl1->next;
+	if (pl1->next) pl1->next->prev = pl1->prev;
+	free(pl->info);
+	free(pl1);
+	free(pl);
+      }
+    }
 
   /*** calculate new neighbor and quality values ***/
 
@@ -483,7 +507,7 @@ static void calculate_all()
     mynode->tmp_quality = 256.0;
     neighbor = pl->node;
     neighbor->tmp_quality = pl->info->quality;
-    calculate_node(neighbor);
+    calculate_qualities(neighbor);
     for (pn = nodes; pn; pn = pn->next)
       if (pn->quality < pn->tmp_quality ||
 	  pn->quality == pn->tmp_quality && neighbor == pn->old_neighbor) {
@@ -516,9 +540,11 @@ static void calculate_all()
   for (pn = nodes; pn; pn = pnnext) {
     pnnext = pn->next;
     if (pn != mynode && !pn->links && !pn->crosslink && !pn->force_broadcast) {
-      if (pn->prev) pn->prev->next = pn->next;
+      if (pn->prev)
+	pn->prev->next = pn->next;
+      else
+	nodes = pn->next;
       if (pn->next) pn->next->prev = pn->prev;
-      if (pn == nodes) nodes = pn->next;
       free(pn->call);
       free(pn);
     }
@@ -605,19 +631,20 @@ static void send_broadcast()
 {
 
   char  *p;
-  int  level, nextlevel;
+  int  hopcnt, nexthopcnt;
   struct mbuf *bp;
   struct node *pn;
 
   set_timer(&broadcast_timer, nr_bdcstint * 1000L);
   start_timer(&broadcast_timer);
+  calculate_all();
   if (!broadcasts) return;
   bp = alloc_broadcast_packet();
-  for (level = 1; level <= MAXLEVEL; level = nextlevel) {
-    nextlevel = MAXLEVEL + 1;
+  for (hopcnt = 1; hopcnt <= INFINITY; hopcnt = nexthopcnt) {
+    nexthopcnt = INFINITY + 1;
     for (pn = nodes; pn; pn = pn->next)
-      if (pn->level >= level && (((int) pn->quality) || pn->force_broadcast))
-	if (pn->level == level) {
+      if (pn->hopcnt >= hopcnt && (((int) pn->quality) || pn->force_broadcast))
+	if (pn->hopcnt == hopcnt) {
 	  pn->force_broadcast = 0;
 	  if (!bp) bp = alloc_broadcast_packet();
 	  p = bp->data + bp->cnt;
@@ -633,8 +660,8 @@ static void send_broadcast()
 	    routes_stat.sent++;
 	    bp = NULLBUF;
 	  }
-	} else if (pn->level < nextlevel)
-	  nextlevel = pn->level;
+	} else if (pn->hopcnt < nexthopcnt)
+	  nexthopcnt = pn->hopcnt;
   }
   if (bp) {
     send_broadcast_packet(bp);
@@ -1096,7 +1123,7 @@ static struct circuit *create_circuit()
   static int  nextid;
   struct circuit *pc;
 
-  pc = (struct circuit *) calloc(1, sizeof(struct circuit ));
+  pc = calloc(1, sizeof(*pc));
   nextid++;
   pc->localindex = uchar(nextid >> 8);
   pc->localid = uchar(nextid);
@@ -1755,7 +1782,7 @@ void *p;
     tprintf("netrom interface already attached\n");
     return -1;
   }
-  Nr_iface = (struct iface *) callocw(1, sizeof(struct iface ));
+  Nr_iface = callocw(1, sizeof(*Nr_iface));
   Nr_iface->addr = Ip_addr;
   Nr_iface->name = strdup("netrom");
   Nr_iface->hwaddr = mallocw(AXALEN);
@@ -1796,7 +1823,7 @@ void *p;
     return 0;
   }
 
-  bp = (struct broadcast *) calloc(1, sizeof(struct broadcast ));
+  bp = calloc(1, sizeof(*bp));
   if (!(bp->iface = if_lookup(argv[1]))) {
     printf("Interface \"%s\" unknown\n", argv[1]);
     free(bp);
@@ -1908,9 +1935,9 @@ void *p;
 	for (pl = pn2->links; pl; pl = pl->next) {
 	  pax25(buf2, pl->node->call);
 	  if (pl->info->time != PERMANENT)
-	    printf("%-9s  %-9s  %5i  %7i  %4i\n", buf1, buf2, pl->info->level, pl->info->quality, secclock() - pl->info->time);
+	    printf("%-9s  %-9s  %5i  %7i  %4i\n", buf1, buf2, pl->info->source, pl->info->quality, secclock() - pl->info->time);
 	  else
-	    printf("%-9s  %-9s  %5i  %7i\n", buf1, buf2, pl->info->level, pl->info->quality);
+	    printf("%-9s  %-9s  %5i  %7i\n", buf1, buf2, pl->info->source, pl->info->quality);
 	}
       }
     return 0;
@@ -1928,10 +1955,6 @@ void *p;
   pn2 = nodeptr(call, 1);
   if (pn1 == pn2) {
     printf("Both calls are identical\n");
-    return 1;
-  }
-  if (pn1->level == MAXLEVEL && pn2->level == MAXLEVEL) {
-    printf("Both nodes are unreachable\n");
     return 1;
   }
 
@@ -1953,7 +1976,7 @@ void *p;
 
   pi = linkinfoptr(pn1, pn2);
   pi->quality = quality;
-  pi->level = min(pn1->level, pn2->level) + 1;
+  pi->source = 1;
   pi->time = timestamp;
   calculate_all();
   return 0;
@@ -1989,7 +2012,7 @@ void *p;
 	pax25(buf2, pn->neighbor->call);
       else
 	*buf2 = '\0';
-      printf("%-9s  %-6.6s  %-9s  %5i  %7i\n", buf1, pn->ident, buf2, pn->level, (int) pn->quality);
+      printf("%-9s  %-6.6s  %-9s  %5i  %7i\n", buf1, pn->ident, buf2, pn->hopcnt, (int) pn->quality);
     }
   return 0;
 }

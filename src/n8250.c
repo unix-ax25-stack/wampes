@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.10 1991/09/24 05:52:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.11 1991/10/25 15:00:45 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -97,6 +97,18 @@ static struct {
 #endif
 #ifdef B38400
 	38400, B38400,
+#endif
+#ifdef B57600
+	57600, B57600,
+#endif
+#ifdef B115200
+	115200, B115200,
+#endif
+#ifdef B230400
+	230400, B230400,
+#endif
+#ifdef B460800
+	460800, B460800,
 #endif
 	-1, 0
 };
