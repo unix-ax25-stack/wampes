@@ -1,4 +1,13 @@
-@(#) $Id: ChangeLog,v 1.42 1998/04/16 01:53:25 deyke Exp $
+@(#) $Id: ChangeLog,v 1.43 1998/04/24 19:24:02 deyke Exp $
+
+980424 Dieter Deyke <deyke@fc.hp.com>
+
+	Added switch -h to cnet to support HP terminals, removed
+	dependency on curses library
+
+	Added debug code to netupds.c
+
+	Updated domain.txt
 
 980415 Dieter Deyke <deyke@fc.hp.com>
 

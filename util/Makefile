@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.66 1998/03/09 17:46:14 deyke Exp $
+# @(#) $Id: Makefile,v 1.67 1998/04/24 19:26:39 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -16,95 +16,88 @@ all:;   @case "`uname -sr`" in \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=c89' \
 		'CFLAGS=-O -D_HPUX_SOURCE -I../lib' \
-		'SLIBS=-lc -lcurses -lndbm' \
+		'SLIBS=-lndbm' \
 		_all;; \
 	AIX*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -qchars=signed -D_ALL_SOURCE -I../lib' \
-		'SLIBS=-lcurses' \
 		_all;; \
 	IRIX*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -signed -I../lib' \
-		'SLIBS=-lcurses' \
 		_all;; \
 	Linux*) \
 		if [ -r /lib/libc.so.5 ]; then \
 			$(MAKE) -i -f $(MAKEFILE) \
 			'CC=gcc' \
 			'CFLAGS=-O -I../lib' \
-			'SLIBS=-lncurses -lgdbm' \
+			'SLIBS=-lgdbm' \
 			_all; \
 		else \
 			$(MAKE) -i -f $(MAKEFILE) \
 			'CC=gcc' \
 			'CFLAGS=-O -I../lib' \
-			'SLIBS=-lcurses -ltermcap -ldbm' \
+			'SLIBS=-ldbm' \
 			_all; \
 		fi;; \
 	386BSD*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -I../lib' \
-		'SLIBS=-lcurses -ltermcap' \
 		_all;; \
 	FreeBSD*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -I../lib' \
-		'SLIBS=-lcurses -ltermcap -lcrypt' \
+		'SLIBS=-lcrypt' \
 		_all;; \
 	BSD/386*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -I../lib' \
-		'SLIBS=-lcurses -ltermcap' \
 		_all;; \
 	SunOS\ 4.*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=acc' \
 		'CFLAGS=-O -I../lib' \
-		'SLIBS=-lcurses -ltermcap' \
 		_all;; \
 	SunOS\ 5.*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -v -I../lib' \
-		'SLIBS=-lcurses -lsocket -lnsl' \
+		'SLIBS=-lsocket -lnsl' \
 		_all;; \
 	ULTRIX*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O6 -DULTRIX_RISC -I../lib' \
-		'SLIBS=-lcurses -ltermcap -ldbm' \
+		'SLIBS=-ldbm' \
 		_all;; \
 	A/UX*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=gcc -fpcc-struct-return' \
 		'CFLAGS=-O -D_POSIX_SOURCE -I../lib' \
-		'SLIBS=-lcurses -ltermcap -ldbm -lposix' \
+		'SLIBS=-ldbm -lposix' \
 		_all;; \
 	RISC\ iX*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=/tcp/cc' \
 		'CFLAGS=-DRISCiX -I../lib' \
-		'SLIBS=-lcurses -ltermcap' \
 		_all;; \
 	AOS*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O2 -Dibm6153 -I../lib' \
 		'LIBS=../aos/libaos.a ../lib/libutil.a' \
-		'SLIBS=-lcurses -ltermcap' \
 		_all;; \
 	NeXT*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=gcc -posix' \
 		'CFLAGS=-O -D_POSIX_SOURCE -I../lib' \
 		'LIBS=../NeXT/libnext.a ../lib/libutil.a' \
-		'SLIBS=-lcurses -ltermcap -ldbm' \
+		'SLIBS=-ldbm' \
 		_all;; \
 	*) \
 		echo System `uname -sr` is not supported;; \

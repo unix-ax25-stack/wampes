@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 980415" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 980424" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 980415
+Version 980424
 .S
 .SP 2
 .S 15

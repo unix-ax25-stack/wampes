@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: cnet.c,v 1.42 1998/03/09 17:46:14 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: cnet.c,v 1.43 1998/04/24 19:26:39 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -30,6 +30,9 @@ static const char rcsid[] = "@(#) $Id: cnet.c,v 1.42 1998/03/09 17:46:14 deyke E
 #include <termios.h>
 #endif
 
+extern char *optarg;
+extern int optind;
+
 #ifndef MAXIOV
 #if defined IOV_MAX
 #define MAXIOV          IOV_MAX
@@ -41,8 +44,6 @@ static const char rcsid[] = "@(#) $Id: cnet.c,v 1.42 1998/03/09 17:46:14 deyke E
 #ifndef O_NONBLOCK
 #define O_NONBLOCK      O_NDELAY
 #endif
-
-char *tgetstr();
 
 #if defined __hpux && !defined _FD_SET
 #define SEL_ARG(x) ((int *) (x))
@@ -59,7 +60,7 @@ struct mbuf {
   char *data;
 };
 
-static int Ansiterminal = 1;
+static int HP_terminal;
 static int fdin = 0;
 static int fdout = 1;
 static int fdsock = -1;
@@ -78,8 +79,7 @@ static struct termios prev_termios;
 
 static void open_terminal(void)
 {
-#ifndef ibm6153
-  if (!Ansiterminal) {
+  if (HP_terminal) {
     fputs("\033Z", stdout);                     /* display fncts off       */
     fputs("\033&k1I", stdout);                  /* enable ascii 8 bits     */
     fputs("\033&s1A", stdout);                  /* enable xmitfnctn        */
@@ -96,20 +96,17 @@ static void open_terminal(void)
     fputs("\033&f0a8k0d2L\033w", stdout);       /* key8 = ESC w            */
     fflush(stdout);
   }
-#endif
 }
 
 /*---------------------------------------------------------------------------*/
 
 static void close_terminal(void)
 {
-#ifndef ibm6153
-  if (!Ansiterminal) {
+  if (HP_terminal) {
     fputs("\033&s0A", stdout);                  /* disable xmitfnctn */
     fputs("\033&jR", stdout);                   /* release keys */
     fflush(stdout);
   }
-#endif
 }
 
 /*---------------------------------------------------------------------------*/
@@ -118,8 +115,9 @@ static void terminate(void)
 {
   close(fdsock);
   fcntl(fdout, F_SETFL, fcntl(fdout, F_GETFL, 0) & ~O_NONBLOCK);
-  for (; term_queue; term_queue = term_queue->next)
+  for (; term_queue; term_queue = term_queue->next) {
     write(fdout, term_queue->data, term_queue->cnt);
+  }
   close_terminal();
 #ifdef ibm032
   ioctl(fdin, TIOCSETP, &prev_sgttyb);
@@ -141,9 +139,13 @@ static void recvq(int fd, struct mbuf **qp)
   struct mbuf *bp, *tp;
 
   n = read(fd, buf, sizeof(buf));
-  if (n <= 0) terminate();
+  if (n <= 0) {
+    terminate();
+  }
   bp = (struct mbuf *) malloc(sizeof(struct mbuf) + n);
-  if (!bp) terminate();
+  if (!bp) {
+    terminate();
+  }
   bp->next = 0;
   bp->cnt = n;
   bp->data = (char *) (bp + 1);
@@ -151,8 +153,9 @@ static void recvq(int fd, struct mbuf **qp)
   if (*qp) {
     for (tp = *qp; tp->next; tp = tp->next) ;
     tp->next = bp;
-  } else
+  } else {
     *qp = bp;
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -171,8 +174,9 @@ static void sendq(int fd, struct mbuf **qp)
     n++;
   }
   n = writev(fd, iov, n);
-  if (n <= 0)
+  if (n <= 0) {
     terminate();
+  }
   while (n > 0) {
     bp = *qp;
     if (n >= bp->cnt) {
@@ -194,16 +198,13 @@ int main(int argc, char **argv)
 
   TYPE_FD_SET rmask;
   TYPE_FD_SET wmask;
-  char *areaptr;
   char *cmdptr = 0;
   char *progname = "cnet";
   char *server = "unix:/tcp/.sockets/netcmd";
-  char *termstr;
-  char *upstr;
-  char area[1024];
-  char bp[1024];
   char cmdbuf[1024];
   int addrlen;
+  int chr;
+  int errflag;
   int flags;
   int n;
   struct sockaddr *addr;
@@ -222,24 +223,28 @@ int main(int argc, char **argv)
 
   if (argc >= 1) {
     progname = *argv;
-    argc--;
-    argv++;
   }
 
-  if (argc >= 1 && !strcmp(*argv, "-c")) {
-    if (argc < 2) {
-      fprintf(stderr, "Option requires an argument -- c\n");
-      exit(1);
+  errflag = 0;
+  while ((chr = getopt(argc, argv, "c:h")) != EOF) {
+    switch (chr) {
+    case 'c':
+      cmdptr = optarg;
+      break;
+    case 'h':
+      HP_terminal = 1;
+      break;
+    case '?':
+      errflag = 1;
+      break;
     }
-    cmdptr = argv[1];
-    argc -= 2;
-    argv += 2;
   }
-
-  if (argc >= 1) {
-    server = *argv;
-    argc--;
-    argv++;
+  if (optind < argc) {
+    server = argv[optind++];
+  }
+  if (errflag || optind < argc) {
+    fprintf(stderr, "Usage: %s [-c command] [-h] [server]\n", progname);
+    exit(1);
   }
 
   if (!(addr = build_sockaddr(server, &addrlen))) {
@@ -280,21 +285,11 @@ int main(int argc, char **argv)
   tcgetattr(fdin, &prev_termios);
 #endif
 
-  termstr = getenv("TERM");
-  if (termstr && tgetent(bp, termstr) == 1) {
-    areaptr = area;
-    upstr = tgetstr("up", &areaptr);
-    if (upstr && strcmp(upstr, "\033[A")) {
-      Ansiterminal = 0;
-    }
-  }
-
-#ifndef ibm6153
-  if (Ansiterminal)
-    write(fdsock, "\033[D", 3);
-  else
+  if (HP_terminal) {
     write(fdsock, "\033D", 2);
-#endif
+  } else {
+    write(fdsock, "\033[D", 3);
+  }
   if ((flags = fcntl(fdsock, F_GETFL, 0)) == -1 ||
       fcntl(fdsock, F_SETFL, flags | O_NONBLOCK) == -1) {
     perror("fcntl");
@@ -332,18 +327,30 @@ int main(int argc, char **argv)
     terminate();
   }
 
-  for (; ; ) {
+  for (;;) {
     FD_ZERO(&rmask);
     FD_SET(fdin, &rmask);
     FD_SET(fdsock, &rmask);
     FD_ZERO(&wmask);
-    if (sock_queue) FD_SET(fdsock, &wmask);
-    if (term_queue) FD_SET(fdout,  &wmask);
+    if (sock_queue) {
+      FD_SET(fdsock, &wmask);
+    }
+    if (term_queue) {
+      FD_SET(fdout, &wmask);
+    }
     if (select(fdsock + 1, SEL_ARG(&rmask), SEL_ARG(&wmask), 0, 0) > 0) {
-      if (FD_ISSET(fdsock, &rmask)) recvq(fdsock, &term_queue);
-      if (FD_ISSET(fdin,   &rmask)) recvq(fdin,   &sock_queue);
-      if (FD_ISSET(fdsock, &wmask)) sendq(fdsock, &sock_queue);
-      if (FD_ISSET(fdout,  &wmask)) sendq(fdout,  &term_queue);
+      if (FD_ISSET(fdsock, &rmask)) {
+	recvq(fdsock, &term_queue);
+      }
+      if (FD_ISSET(fdin, &rmask)) {
+	recvq(fdin, &sock_queue);
+      }
+      if (FD_ISSET(fdsock, &wmask)) {
+	sendq(fdsock, &sock_queue);
+      }
+      if (FD_ISSET(fdout, &wmask)) {
+	sendq(fdout, &term_queue);
+      }
     }
   }
 }

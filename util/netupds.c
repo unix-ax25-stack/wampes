@@ -1,8 +1,10 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: netupds.c,v 1.46 1998/04/16 01:55:41 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: netupds.c,v 1.47 1998/04/24 19:26:39 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
+
+#define DEBUG   0
 
 #include <sys/types.h>
 
@@ -156,6 +158,36 @@ static char *exclude_table[] =
 
   0
 };
+
+/*---------------------------------------------------------------------------*/
+
+#if DEBUG
+
+static char *digest_to_hex(const char *digest)
+{
+
+  int i;
+  static char buffer[2 * DIGESTSIZE + 1];
+
+  for (i = 0; i < DIGESTSIZE; i++) {
+    sprintf(buffer + 2 * i, "%x%x", (digest[i] >> 4) & 0xf, digest[i] & 0xf);
+  }
+  return buffer;
+}
+
+static void dump_file(const struct s_file *p)
+{
+  printf("File name:     %s\n", p->name);
+  printf("Master mode:   %6o\n", p->master.mode);
+  printf("Mirror mode:   %6o\n", p->mirror.mode);
+  printf("Client mode:   %6o\n", p->client.mode);
+  printf("Master digest: %s\n", digest_to_hex(p->master.digest));
+  printf("Mirror digest: %s\n", digest_to_hex(p->mirror.digest));
+  printf("Client digest: %s\n", digest_to_hex(p->client.digest));
+  printf("\n");
+}
+
+#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -812,6 +844,9 @@ static void send_update(struct s_file *p, enum e_action action, int flags, const
   struct stat statbuf;
   unsigned short filemode;
 
+#if DEBUG
+  dump_file(p);
+#endif
   filemode = (action == ACT_DELETE) ? p->client.mode : p->master.mode;
   opcode = ((int) filemode >> 12) & 0xf;
   opcode |= action << 4;
@@ -1232,6 +1267,9 @@ static void server_version_1(int flags)
       }
       break;
     default:
+#if DEBUG
+      dump_file(p);
+#endif
       protoerr();
     }
 
