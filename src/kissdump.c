@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kissdump.c,v 1.4 1991/05/17 17:06:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kissdump.c,v 1.5 1992/10/16 17:57:16 deyke Exp $ */
 
 /* Tracing routines for KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -21,14 +21,22 @@ int check;
 	int val;
 
 	fprintf(fp,"KISS: ");
-	if(*bpp && (*(*bpp)->data & 0x80))
-		if(check_crc(*bpp)){
-			fprintf(fp," bad CRC!\n");
+	if(*bpp && (*(*bpp)->data & 0x80)){
+		if(check_crc_16(*bpp)){
+			fprintf(fp," bad crc-16!\n");
 			return;
 		}else{
-			fprintf(fp,"CRC ");
+			fprintf(fp,"crc-16 ");
 		}
-	type = PULLCHAR(bpp) & 0x7f;
+	}else if(*bpp && (*(*bpp)->data & 0x20)){
+		if(check_crc_rmnc(*bpp)){
+			fprintf(fp," bad crc-rmnc!\n");
+			return;
+		}else{
+			fprintf(fp,"crc-rmnc ");
+		}
+	}
+	type = PULLCHAR(bpp) & 0x5f;
 	if(type == PARAM_DATA){
 		fprintf(fp,"Data\n");
 		ax25_dump(fp,bpp,check);

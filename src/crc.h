@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/crc.h,v 1.1 1991/04/25 18:28:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/crc.h,v 1.2 1992/10/16 17:57:11 deyke Exp $ */
 
 #ifndef _CRC_H
 #define _CRC_H
@@ -12,7 +12,11 @@
 #endif
 
 /* In crc.c: */
-void append_crc __ARGS((struct mbuf *bp));
-int check_crc __ARGS((struct mbuf *head));
+void append_crc_16 __ARGS((struct mbuf *bp));
+int check_crc_16 __ARGS((struct mbuf *head));
+void append_crc_rmnc __ARGS((struct mbuf *bp));
+int check_crc_rmnc __ARGS((struct mbuf *head));
+void append_fcs __ARGS((struct mbuf *bp));
+int check_fcs __ARGS((const char *buf, int cnt));
 
 #endif  /* _CRC_H */

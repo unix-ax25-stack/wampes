@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.15 1992/08/11 21:32:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.16 1992/10/16 17:57:14 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -109,9 +109,12 @@ struct iface {
 	int32 lastrecv;         /* Clock time of last receive */
 
 	int crccontrol;         /* CRC send control */
-#define CRC_TEST        0       /* Send a single CRC packet, then switch OFF */
-#define CRC_OFF         1       /* Don't send CRC packets */
-#define CRC_ON          2       /* Send CRC packets */
+#define CRC_OFF         0       /* Don't send CRC packets */
+#define CRC_TEST_16     1       /* Send a single CRC_16 packet, then switch CRC_RMNC */
+#define CRC_TEST_RMNC   2       /* Send a single CRC_RMNC packet, then switch CRC_OFF */
+#define CRC_16          3       /* Send CRC_16 packets */
+#define CRC_RMNC        4       /* Send CRC_RMNC packets */
+#define CRC_FCS         5       /* Send CRC_FCS packets */
 	int32 crcerrors;        /* Packets received with CRC errors */
 	int32 ax25errors;       /* Packets received with bad ax25 header */
 };

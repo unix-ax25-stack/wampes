@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.10 1992/07/24 20:00:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.11 1992/10/16 17:57:16 deyke Exp $ */
 
 /* Routines for AX.25 encapsulation in KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -42,6 +42,7 @@ int vj; /* Unused */
 		ifp->hwaddr = mallocw(AXALEN);
 	memcpy(ifp->hwaddr,Mycall,AXALEN);
 	ifp->xdev = xdev;
+	ifp->crccontrol = CRC_TEST_16;
 
 	sp->iface = ifp;
 	sp->send = asy_send;
@@ -73,11 +74,19 @@ struct mbuf *bp;
 	/* Put type field for KISS TNC on front */
 	bp = pushdown(bp,1);
 	bp->data[0] = PARAM_DATA;
-	if(iface->crccontrol != CRC_OFF){
+	switch (iface->crccontrol){
+	case CRC_TEST_16:
+		iface->crccontrol = CRC_TEST_RMNC;
+	case CRC_16:
 		bp->data[0] |= 0x80;
-		append_crc(bp);
-		if(iface->crccontrol == CRC_TEST)
-			iface->crccontrol = CRC_OFF;
+		append_crc_16(bp);
+		break;
+	case CRC_TEST_RMNC:
+		iface->crccontrol = CRC_OFF;
+	case CRC_RMNC:
+		bp->data[0] |= 0x20;
+		append_crc_rmnc(bp);
+		break;
 	}
 	/* slip_raw also increments sndrawcnt */
 	slip_raw(iface,bp);
@@ -93,12 +102,20 @@ struct mbuf *bp;
 	char kisstype;
 
 	if(bp && (*bp->data & 0x80)){
-		if(check_crc(bp)){
+		if(check_crc_16(bp)){
 			iface->crcerrors++;
 			free_p(bp);
 			return;
 		}
-		iface->crccontrol = CRC_ON;
+		iface->crccontrol = CRC_16;
+	}
+	if(bp && (*bp->data & 0x20)){
+		if(check_crc_rmnc(bp)){
+			iface->crcerrors++;
+			free_p(bp);
+			return;
+		}
+		iface->crccontrol = CRC_RMNC;
 	}
 	kisstype = PULLCHAR(&bp);
 	switch(kisstype & 0xf){

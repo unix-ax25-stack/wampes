@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.13 1992/07/24 20:00:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.14 1992/10/16 17:57:14 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -67,7 +67,7 @@ struct iface Loopback = {
 	0,              /* rawrcvcnt    */
 	0,              /* lastsent     */
 	0,              /* lastrecv     */
-	CRC_TEST,       /* crccontrol   */
+	0,              /* crccontrol   */
 	0,              /* crcerrors    */
 	0,              /* ax25errors   */
 };
@@ -107,7 +107,7 @@ struct iface Encap = {
 	0,              /* rawrcvcnt    */
 	0,              /* lastsent     */
 	0,              /* lastrecv     */
-	CRC_TEST,       /* crccontrol   */
+	0,              /* crccontrol   */
 	0,              /* crcerrors    */
 	0,              /* ax25errors   */
 };
@@ -421,8 +421,16 @@ register struct iface *ifp;
 		len_q(ifp->outq));
 	printf("           recv: ip %lu tot %lu idle %s\n",
 	 ifp->iprecvcnt,ifp->rawrecvcnt,tformat(secclock() - ifp->lastrecv));
-	printf("           crc %s crc errors %lu bad ax25 headers %lu\n",
-	 ifp->crccontrol == CRC_ON ? "enabled" : "disabled",ifp->crcerrors,ifp->ax25errors);
+	switch (ifp->crccontrol){
+	default:            printf("           crc disabled");     break;
+	case CRC_TEST_16:   printf("           crc-16 test");      break;
+	case CRC_TEST_RMNC: printf("           crc-rmnc test");    break;
+	case CRC_16:        printf("           crc-16 enabled");   break;
+	case CRC_RMNC:      printf("           crc-rmnc enabled"); break;
+	case CRC_FCS:       printf("           crc-fcs enabled");  break;
+	}
+	printf(" crc errors %lu bad ax25 headers %lu\n",
+	 ifp->crcerrors,ifp->ax25errors);
 }
 
 /* Detach a specified interface */

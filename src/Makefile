@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.25 1992/10/05 17:29:13 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.26 1992/10/16 17:57:06 deyke Exp $
 
 DEFINES       = -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024
 
@@ -348,7 +348,7 @@ ax25subr.o: global.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h
 axclient.o: global.h config.h netuser.h mbuf.h timer.h ax25.h iface.h proc.h \
 	lapb.h session.h hardware.h telnet.h
 axip.o: global.h mbuf.h iface.h proc.h timer.h internet.h netuser.h ax25.h \
-	socket.h trace.h pktdrvr.h cmdparse.h hpux.h
+	socket.h trace.h pktdrvr.h cmdparse.h hpux.h crc.h
 axserver.o: global.h timer.h ax25.h mbuf.h iface.h proc.h lapb.h login.h
 buildsaddr.o: global.h
 cmdparse.o: global.h proc.h mbuf.h timer.h cmdparse.h
