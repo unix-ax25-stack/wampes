@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.23 1993/12/30 08:25:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.24 1994/01/03 14:33:59 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -780,19 +780,18 @@ static int user_denied(const char *username)
 {
 
   FILE *fp;
-  char buf[1024];
-  int denied = 0;
+  char buf[80];
 
   if (fp = fopen("/etc/ftpusers", "r")) {
     while (fgets(buf, sizeof(buf), fp)) {
       rip(buf);
       if (!strcmp(buf, username)) {
-	denied = 1;
-	break;
+	fclose(fp);
+	return 1;
       }
     }
     fclose(fp);
   }
-  return denied;
+  return 0;
 }
 

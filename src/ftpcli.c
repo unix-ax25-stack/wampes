@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.14 1993/12/30 08:25:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.15 1994/01/03 14:33:59 deyke Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q
@@ -641,15 +641,27 @@ static int doftpquit(int argc, char *argv[], void *p)
 static int doftpquote(int argc, char *argv[], void *p)
 {
 
-	char buf[2048];
 	int i;
+	int len;
+	struct mbuf *bp;
 
-	*buf = 0;
-	for (i = 1; i < argc; i++) {
-		if (*buf) strcat(buf, " ");
-		strcat(buf, argv[i]);
+	len = 3;
+	for (i = 1; i < argc; i++)
+		len += strlen(argv[i]) + 1;
+	if ((bp = alloc_mbuf(len)) == NULLBUF) {
+		printf(Nospace);
+		return 1;
 	}
-	return sndftpmsg(Current->cb.ftp, "%s\r\n", buf);
+	*bp->data = 0;
+	for (i = 1; i < argc; i++) {
+		if (i > 1)
+			strcat(bp->data, " ");
+		strcat(bp->data, argv[i]);
+	}
+	strcat(bp->data, "\r\n");
+	bp->cnt = strlen(bp->data);
+	send_tcp(Current->cb.ftp->control, bp);
+	return 0;
 }
 
 static int doftprestart(int argc, char *argv[], void *p)
