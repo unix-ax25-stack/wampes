@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/netrom,v 1.5 1994/10/30 21:27:12 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/netrom,v 1.6 1995/03/13 13:32:28 deyke Exp $
 .H 2 "netrom" " \fIsubcommand\fP"
 These commands control the NET/ROM service.
 .H 3 "netrom broadcast" " [\fIinterface\fP \fIax25_addr\fP [\fIdigipeater\fP ...]]"
@@ -127,7 +127,7 @@ _
 18;Link T1 timeout 'FRACK' (ms);1;MAXINT;5000;Yes
 19;Link TX window size 'MAXFRAME' (frames);1;7;7;Yes
 20;Link maximum tries (0=forever);0;127;10;Yes
-21;Link T2 timeout (ms);1;MAXINT;1;No
+21;Link T2 timeout (ms);1;MAXINT;1;Yes
 22;Link T3 timeout (ms);0;MAXINT;900000;Yes
 23;AX.25 digipeating (0=off 1=dumb 2=s&f);0;2;2;Yes
 24;Validate callsigns (0=off 1=on);0;1;0;No

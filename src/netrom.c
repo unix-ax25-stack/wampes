@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.46 1995/01/30 14:15:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.47 1995/03/13 13:32:17 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -36,7 +36,6 @@ static int nr_tnoackbuf   =     8;
 static int nr_timeout     =  1800;
 static int nr_persistance =    64;      /* not used */
 static int nr_slottime    =    10;      /* not used */
-static int nr_t2init      =     1;      /* not used */
 static int nr_callcheck   =     0;      /* not used */
 static int nr_beacon      =     0;      /* not used */
 static int nr_cq          =     0;      /* not used */
@@ -68,7 +67,7 @@ static const struct parms {
   { "18 Link T1 timeout 'FRACK' (ms)               ", &T1init,         1, 0x7fffffff },
   { "19 Link TX window size 'MAXFRAME' (frames)    ", &Maxframe,       1,          7 },
   { "20 Link maximum tries (0=forever)             ", &N2,             0,        127 },
-  { "21 Link T2 timeout (ms)                       ", &nr_t2init,      1, 0x7fffffff },
+  { "21 Link T2 timeout (ms)                       ", &T2init,         1, 0x7fffffff },
   { "22 Link T3 timeout (ms)                       ", &T3init,         0, 0x7fffffff },
   { "23 AX.25 digipeating  (0=off 1=dumb 2=s&f)    ", &Digipeat,       0,          2 },
   { "24 Validate callsigns (0=off 1=on)            ", &nr_callcheck,   0,          1 },

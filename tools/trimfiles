@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.14 1994/12/15 11:28:03 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.15 1995/03/13 13:32:23 deyke Exp $
 
 save_file()
 {
@@ -9,7 +9,7 @@ save_file()
 
 check_file()
 {
-	if cmp -s $1.old $1 ; then
+	if cmp -s $1.old $1; then
 		mv $1.old $1
 	else
 		rm $1.old
@@ -18,29 +18,30 @@ check_file()
 
 PATH=/usr/5bin:$PATH
 
-if [[ ! -f .trimtime ]] ; then
+if [[ ! -f .trimtime ]]; then
 	touch 0101000070 .trimtime
 fi
 
 for file in $(find * -prune -type f \( \
-	-name '*.c' -o \
-	-name '*.conf' -o \
-	-name '*.h' -o \
-	-name '*.html' -o \
-	-name '*.mm' -o \
-	-name '*.ms' -o \
-	-name 'Makefile' -o \
-	-name 'README' -o \
 	-name 'configure' -o \
 	-name 'doc' -o \
 	-name 'fixnetrc' -o \
 	-name 'hosts' -o \
+	-name 'hosts.[0-9][0-9][0-9]' -o \
 	-name 'intro.txt' -o \
 	-name 'ip_routes' -o \
-	-name 'net.rc*' -o \
+	-name 'Makefile' -o \
 	-name 'netrom_links' -o \
-	-name 'notes' \
-	\) -newer .trimtime -print) ; do
+	-name 'net.rc*' -o \
+	-name 'notes' -o \
+	-name 'README' -o \
+	-name '*.conf' -o \
+	-name '*.c' -o \
+	-name '*.html' -o \
+	-name '*.h' -o \
+	-name '*.mm' -o \
+	-name '*.ms' \
+	\) -newer .trimtime -print); do
 	save_file $file
 	trim -s < $file.old > $file
 	check_file $file

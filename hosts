@@ -1712,124 +1712,128 @@
 44.130.28.30    DL8ZAD  # Juergen, 35789 Weilmuenster nr Wetzlar
 44.130.28.58    DF0WS   # ClubStn F58, 35396 Giessen-Wieseck
 #
-# lokale Adresskoordination ...29.x : DC6IQ
-44.130.29.1     DB0ROT-W        # Mailbox Rotensol, 76332 Bad Herrenalb; *** UNIX
-44.130.29.2     DG9BAD-7        # Thomas Waehner, 89171 Illerkirchberg
-44.130.29.3     DC6IQ-W # Fred Baumgarten, 76297 Stutensee
-44.130.29.4     DJ0VL   # Jean Thilges, 76227 Karlsruhe
-44.130.29.5     DB0ROT  # Reinhard Meyer, 76332 Bad Herrenalb
-44.130.29.6     DK6II   # Erich H. Franke, 75203 Koenigsbach-Stein
-44.130.29.7     DB6IS   # Hinrich Bernas, 76139 Karlsruhe
-44.130.29.8     DF0UK   # ClubStn Universitaet, 76131 Karlsruhe
-44.130.29.9     DF0UK-U #
-44.130.29.10    DC6IQ   # Fred Baumgarten, 76297 Stutensee
-44.130.29.11    DC6IQ-N #
-44.130.29.12    DL5YCY  # Volker Baumgarte, 76227 Karlsruhe
-44.130.29.13    DL5YCY-1        #
-44.130.29.14    DL5UY-1 # Reinhard Meyer, 76332 Bad Herrenalb
-44.130.29.15    DL5UY-2 #
-44.130.29.16    DL5UY-3 #
-44.130.29.17    DL5UY-4 #
-44.130.29.18    DL5UY-5 #
-44.130.29.19    DL5UY-6 #
-44.130.29.20    DL5UY-7 #
-44.130.29.21    DL5UY-8 #
-44.130.29.22    DL5UY-9 #
-44.130.29.23    DL5UY-10        #
-44.130.29.24    DC2IR   # Norbert Mehl, 76131 Karlsruhe
-44.130.29.25    DC1IK-1 # Olaf Erb, 76131 Karlsruhe
-44.130.29.26    DC1IK-7 #
-44.130.29.27    DA2DR   # Dave Rettke, 76646 Bruchsal
-44.130.29.28    DG2GAZ  # Gerd Haenssler, 76227 Karlsruhe
-44.130.29.29    DF3IAR  # Andreas Gross, 76133 Karsruhe
-44.130.29.30    DH8IAG  # Manfred Guenzl, 76199 Karlsruhe
-44.130.29.31    DB4UT   # Bernd Hollerbach, 76131 Karlsruhe
-44.130.29.32    DL6KCU  # Klaus Baerwald, 76275 Ettlingen
-44.130.29.33    DD3UH   # Dieter Schlaier, 76689 Karlsdorf
-44.130.29.34    DD3UC   # Christoph W. Rieger, 76131 Karlsruhe
-44.130.29.35    DJ4UL   # Herbert
-44.130.29.36    DL6IU   # Klaus Heimannsfeld, 76131 Karlsruhe
-44.130.29.37    DL6IU-1 #
-44.130.29.38    DH1IAR-1        # Peter Herttrich, 76131 Karlsruhe
-44.130.29.39    DC3TS-1 # Wolfgang Hein, 75334 Straubenhardt
-44.130.29.40    DC3TS   #
-44.130.29.41    DF3IAR-U        # Andreas Gross, 76133 Karlsruhe; UNIX
-44.130.29.42    DB4UT-1 # Bernd Hollerbach, 76131 Karlsruhe
-44.130.29.43    DC1IK-2 # Olaf Erb, 76131 Karlsruhe
-44.130.29.44    DC1IK-3 #
-44.130.29.45    DJ0VL-OS9       # Jean Thilges, 76227 Karlsruhe
-44.130.29.46    DJ0VL-PC        #
-44.130.29.47    DF3IAR-L        # Andreas Gros, 76133 Karlsruhe
-44.130.29.48    DH2PAF  # Wolfgang Tremmel, 76131 Karlsruhe
-44.130.29.49    DH2PAF-U        #
-44.130.29.50    DC6IQ-P # Fred Baumgarten, 76297 Stutensee
-44.130.29.51    DC1IK-L # Olaf Erb, 76131 Karlsruhe
-44.130.29.52    DC1IK-W #
-44.130.29.53    DC6IQ-S # Fred Baumgarten, 76297 Stutensee
-44.130.29.54    DC6IQ-V #
-44.130.29.55    DG5IAI  # Carsten Klaus, 76131 Karlsruhe
-44.130.29.56    DG5IAI-U        #
-44.130.29.57    DC6IQ-H # Fred Baumgarten, 76297 Stutensee
-44.130.29.58    DC6IQ-G #
-44.130.29.59    DC6IQ-J #
-44.130.29.60    DH4IAL  # Axel
-44.130.29.61    DH4IAL-XT       #
-44.130.29.62    DL5YCY-W        # Volker Baumgarte, 76227 Karlsruhe
-44.130.29.63    DL5YCY-K        #
-44.130.29.64    DB2GL   # Gerald Lang, 76131 Karlsruhe
-44.130.29.65    DG2GL-U #
-44.130.29.66    DD2IH   # Heinz Zerbes, 76131 Karlsruhe
-44.130.29.67    DD2IH-U #
-44.130.29.68    DD2IH-N #
-44.130.29.69    DD3UC-I # Christoph W. Rieger, 76131 Karlsruhe
-44.130.29.70    DF4IAA  # Andreas Arnold, 76131 Karlsruhe
-44.130.29.71    DF4IAA-U        #
-44.130.29.72    DF4IAA-L        #
-44.130.29.73    DF4IAA-P        #
-44.130.29.74    DL5BCT  # Peter Cornelius, 76227 Karlsruhe
-44.130.29.75    DL5BCT-1        #
-44.130.29.76    DC1IK-I # Olaf Erb, 76131 Karlsruhe
-44.130.29.77    DG1SEK-1        # Frieder Loeffler, 71706 Markgroeningen
-44.130.29.78    DG1SEK-2        #
-44.130.29.79    DG1SEK-3        #
-44.130.29.80    DG3UAL  # Gerd Flaig, 76227 Karlsruhe
-44.130.29.81    DG3UAL-W        #
-44.130.29.82    DD2IH-V # Heinz Zerbes, 76131 Karlsruhe
-44.130.29.83    DD2IH-W #
-44.130.29.84    DG8SEV-K        # Stephan Block, 70569 Stuttgart
-44.130.29.85    DG1SEK-R        # Frieder Loeffler, 71706 Markgroeningen
-44.130.29.86    DL3IT   # Thomas Wischnack, 76135 Karlsruhe
-44.130.29.87    DL3IT-U #
-44.130.29.88    DG1IE   # Gunnar Bernstein, 76199 Karlsruhe
-44.130.29.89    DH8IAG-W        # Manfred Guenzl, 76199 Karlsruhe
-44.130.29.90    DH8IAG-1        #
-44.130.29.91    DG1GWY  # Werner Guenzl, 78713 Schramberg
-44.130.29.92    DG1GWY-W        #
-44.130.29.93    DF3IAR-S        # Andreas Gross, 76133 Karlsruhe
-44.130.29.94    DH5IAG  # Peter Boegler, 76131 Karlsruhe
-44.130.29.95    DG1IE-U # Gunnar Bernstein, 76199 Karlsruhe
-44.130.29.96    DG1IAN  # Sascha Schlindwein, 76137 Karlsruhe
-44.130.29.97    DG4IAL  # Axel Hartmann, 76133 Karlsruhe
-44.130.29.98    DG4IAL-1        #
-44.130.29.99    DB4UT-U # Bernd Hollerbach, 76131 Karlsruhe
-44.130.29.100   DB4UT-W #
-44.130.29.101   DL5IAE  # Steffen Engmann, 76829 Landau
-44.130.29.102   DL5IAE-W        #
-44.130.29.103   DL3IT-N # Thomas Wischnack, 76135 Karlsruhe
-44.130.29.104   DL3IT-W #
-44.130.29.105   DG1IE-2 # Gunnar Bernstein, 76199 Karlsruhe
-44.130.29.106   DH4IAD  # Ralf Burkart, 76744 Woerth
-44.130.29.107   DH4IAD-W        #
-44.130.29.108   DG3UAJ  # Joerg Kliewer, 76185 Karlsruhe
-44.130.29.109   DG3UAJ-W        #
-44.130.29.110   DG1IAN-W        # Sascha Schlindwein, 76137 Karlsruhe
-44.130.29.111   DG3IAE  # Dirk Schwaderer, 76187 Karlsruhe
-44.130.29.112   DG4SCV-L        # Rolf Rose, 76297 Stutensee
-44.130.29.113   DL6SEF-L        # Verena Rose, 76297 Stutensee
-44.130.29.114   DG4SCV-V        #
-44.130.29.115   DL6SEF-V        #
-44.130.29.116   DG4UAH  # Erwin Hug, 76187 Karlsruhe
-44.130.29.117   DG4UAH-W        #
+44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc6iq@db0sao
+#
+44.130.29.1  db0rot-w   # JN48ft *** Mailbox Rotensol 76332 Bad Herrenalb
+44.130.29.2  dg9bad-7   #        Thomas Waehner       89171 Illerkirchberg
+44.130.29.3  dc6iq-w    # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.4  dj0vl      # JN48fx Jean Thilges         76227 Karlsruhe
+44.130.29.5  db0rot     # JN48fw Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.6  dk6ii      #        Erich H. Franke      75203 Koenigsbach-Stein
+44.130.29.7  db6is      # JN49fb Hinrich Bernas       76139 Karlsruhe
+44.130.29.8  df0uk      # JN49ea Univers. Karlsruhe   76131 Karlsruhe; ClbSt
+44.130.29.9  df0uk-u    # JN49ea Univers. Karlsruhe   76131 Karlsruhe; ClbSt
+44.130.29.10 dc6iq      # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.11 dc6iq-n    # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.12 dl5ycy     # JN48fx Volker Baumgarte     76227 Karlsruhe
+44.130.29.13 dl5ycy-1   # JN48fx Volker Baumgarte     76227 Karlsruhe
+44.130.29.14 dl5uy-1    # JN48ft Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.15 dl5uy-2    # JN48ft Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.16 dl5uy-3    # JN48ft Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.17 dl5uy-4    # JN48ft Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.18 dl5uy-5    # JN48ft Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.19 dl5uy-6    # JN48ft Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.20 dl5uy-7    # JN48ft Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.21 dl5uy-8    # JN48ft Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.22 dl5uy-9    # JN48ft Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.23 dl5uy-10   # JN48ft Reinhard Meyer       76332 Bad Herrenalb
+44.130.29.24 dc2ir      # JN49ea Norbert Mehl         76131 Karlsruhe
+44.130.29.25 dc1ik-1    # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.26 dc1ik-7    # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.27 da2dr      #        Dave Rettke          76646 Bruchsal
+44.130.29.28 dg2gaz     # JN48fx Gerd Haenssler       76227 Karlsruhe
+44.130.29.29 df3iar     # JN49ea Andreas Gross        76133 Karlsruhe
+44.130.29.30 dh8iag     #        Manfred Guenzl       76199 Karlsruhe
+44.130.29.31 db4ut      # JN49ea Bernd Hollerbach     76131 Karlsruhe
+44.130.29.32 dl6kcu     # JN48fw Klaus Baerwald       76275 Ettlingen
+44.130.29.33 dd3uh      #        Dieter Schlaier      76689 Karlsdorf
+44.130.29.34 dd3uc      # JN49ea Christoph W. Rieger  76131 Karlsruhe
+44.130.29.35 dj4ul      #        Herbert
+44.130.29.36 dl6iu      # JN49ea Klaus Heimannsfeld   76131 Karlsruhe
+44.130.29.37 dl6iu-1    # JN49ea Klaus Heimannsfeld   76131 Karlsruhe
+44.130.29.38 dh1iar-1   # JN49ea Peter Herttrich      76131 Karlsruhe
+44.130.29.39 dc3ts-1    # JN48fw Wolfgang Heim        75334 Straubenhardt
+44.130.29.40 dc3ts      # JN48fw Wolfgang Heim        75334 Straubenhardt
+44.130.29.41 df3iar-u   # JN49ea Andreas Gross        76133 Karlsruhe
+44.130.29.42 db4ut-1    # JN49ea Bernd Hollerbach     76131 Karlsruhe
+44.130.29.43 dc1ik-2    # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.44 dc1ik-3    # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.45 dj0vl-os9  # JN48fx Jean Thilges         76227 Karlsruhe
+44.130.29.46 dj0vl-pc   # JN48fx Jean Thilges         76227 Karlsruhe
+44.130.29.47 df3iar-l   # JN49ea Andreas Gross        76133 Karlsruhe
+44.130.29.48 dh2paf     # JN49fa Wolfgang Tremmel     76131 Karlsruhe
+44.130.29.49 dh2paf-u   # JN49fa Wolfgang Tremmel     76131 Karlsruhe
+44.130.29.50 dc6iq-p    # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.51 dc1ik-l    # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.52 dc1ik-w    # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.53 dc6iq-s    # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.54 dc6iq-v    # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.55 dg5iai     # JN49ea Carsten Klaus        76131 Karlsruhe
+44.130.29.56 dg5iai-u   # JN49ea Carsten Klaus        76131 Karlsruhe
+44.130.29.57 dc6iq-h    # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.58 dc6iq-g    # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.59 dc6iq-j    # JN49fb Fred Baumgarten      76297 Stutensee
+44.130.29.60 dh4ial     #        Axel
+44.130.29.61 dh4ial-xt  #        Axel
+44.130.29.62 dl5ycy-w   # JN48fx Volker Baumgarte     76227 Karlsruhe
+44.130.29.63 dl5ycy-k   # JN48fx Volker Baumgarte     76227 Karlsurhe
+44.130.29.64 db2gl      # JN49fa Gerald Lang          76131 Karlsruhe
+44.130.29.65 db2gl-u    # JN49fa Gerald Lang          76131 Karlsruhe
+44.130.29.66 dd2ih      # JN49ea Heinz Zerbes         76131 Karlsruhe
+44.130.29.67 dd2ih-u    # JN49ea Heinz Zerbes         76131 Karlsruhe
+44.130.29.68 dd2ih-n    # JN49ea Heinz Zerbes         76131 Karlsruhe
+44.130.29.69 dd3uc-i    # JN49ea Christoph W. Rieger  76131 Karlsruhe
+44.130.29.70 df4iaa     # JN49ea Andreas Arnold       76131 Karlsruhe
+44.130.29.71 df4iaa-u   # JN49ea Andreas Arnold       76131 Karlsruhe
+44.130.29.72 df4iaa-l   # JN49ea Andreas Arnold       76131 Karlsruhe
+44.130.29.73 df4iaa-p   # JN49ea Andreas Arnold       76131 Karlsruhe
+44.130.29.74 dl5bct     # JN48fx Peter Cornelius      76227 Karlsruhe
+44.130.29.75 dl5bct-1   # JN48fx Peter Cornelius      76227 Karlsruhe
+44.130.29.76 dc1ik-i    # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.77 dg1sek-1   # JN48mv Frieder Loeffler     71706 Markgroeningen
+44.130.29.78 dg1sek-2   # JN48mv Frieder Loeffler     71706 Markgroeningen
+44.130.29.79 dg1sek-3   # JN48mv Frieder Loeffler     71706 Markgroeningen
+44.130.29.80 dg3ual     # JN48fx Gerd Flaig           76227 Karlsruhe
+44.130.29.81 dg3ual-w   # JN48fx Gerd Flaig           76227 Karlsruhe
+44.130.29.82 dd2ih-v    # JN49ea Heinz Zerbes         76131 Karlsruhe
+44.130.29.83 dd2ih-w    # JN49ea Heinz Zerbes         76131 Karlsruhe
+44.130.29.84 dg8sev-k   # JN48nr Stephan Block        70569 Stuttgart
+44.130.29.85 dg1sek-r   # JN48mv Frieder Loeffler     71706 Markgroeningen
+44.130.29.86 dl3it      # JN49ea Thomas Wischnack     76135 Karlsruhe
+44.130.29.87 dl3it-u    # JN49ea Thomas Wischnack     76135 Karlsruhe
+44.130.29.88 dg1ie      # JN48ex Gunnar Bernstein     76199 Karlsruhe
+44.130.29.89 dh8iag-w   #        Manfred Guenzl       76199 Karlsruhe
+44.130.29.90 dh8iag-1   #        Manfred Guenzl       76199 Karlsruhe
+44.130.29.91 dg1gwy     #        Werner Guenzl        78713 Schramberg
+44.130.29.92 dg1gwy-w   #        Werner Guenzl        78713 Schramberg
+44.130.29.93 df3iar-s   # JN49ea Andreas Gross        76133 Karlsruhe
+44.130.29.94 dh5iag     # JN49ea Peter Boegler        76131 Karlsruhe
+44.130.29.95 dg1ie-u    # JN48ex Gunnar Bernstein     76199 Karlsruhe
+44.130.29.96 dg1ian     # JN48ex Sascha Schlindwein   76137 Karlsruhe
+44.130.29.97 dg4ial     # JN49ea Axel Hartmann        76133 Karlsruhe
+44.130.29.98 dg4ial-1   # JN49ea Axel Hartmann        76133 Karlsruhe
+44.130.29.99  db4ut-u   # JN49ea Bernd Hollerbach     76131 Karlsruhe
+44.130.29.100 db4ut-w   # JN49ea Bernd Hollerbach     76131 Karlsruhe
+44.130.29.101 dl5iae    # JN49be Steffen Engmann      76829 Landau
+44.130.29.102 dl5iae-w  # JN49be Steffen Engmann      76829 Landau
+44.130.29.103 dl3it-n   # JN49ea Thomas Wischnack     76135 Karlsruhe
+44.130.29.104 dl3it-w   # JN49ea Thomas Wischnack     76135 Karlsruhe
+44.130.29.105 dg1ie-2   # JN48ex Gunnar Bernstein     76199 Karlsruhe
+44.130.29.106 dh4iad    # JN49da Ralf Burkart         76744 Woerth
+44.130.29.107 dh4iad-w  # JN49da Ralf Burkart         76744 Woerth
+44.130.29.108 dg3uaj    #        Joerg Kliewer        76185 Karlsruhe
+44.130.29.109 dg3uaj-w  #        Joerg Kliewer        76185 Karlsruhe
+44.130.29.110 dg1ian-w  # JN48ex Sascha Schlindwein   76137 Karlsruhe
+44.130.29.111 dg3iae    # JN49ea Dirk Schwaderer      76187 Karlsruhe
+44.130.29.112 dg4scv-l  # JN49fb Rolf Rose            76297 Stutensee
+44.130.29.113 dl6sef-l  # JN49fb Verena Rose          76297 Stutensee
+44.130.29.114 dg4scv-v  # JN49fb Rolf Rose            76297 Stutensee
+44.130.29.115 dl6sef-v  # JN49fb Verena Rose          76297 Stutensee
+44.130.29.116 dg4uah    # JN49ea Erwin Hug            76187 Karlsruhe
+44.130.29.117 dg4uah-w  # JN49ea Erwin Hug            76187 Karlsruhe
+44.130.29.118 dg3iar    # JN48ex Peter Kunz           76135 Karlsruhe
+44.130.29.119 dg3iar-w  # JN48ex Peter Kunz           76135 Karlsruhe
+44.130.29.120 df7tc     # JN49ea Dirk Canzler         76185 Karlsruhe
 #
 #44.130.30.x    Nordhessen
 # lokale Adresskoordination: DG1ZX-A
@@ -4906,6 +4910,10 @@
 44.143.1.21     OE1WWL   # Wolfgang Wagner, 1180 Wien, Abt-Karl-Gasse 22/2/6
 			 # emzr.911@ofis.unisys.com
 44.143.1.22     OE1EJA   # Ernst Fojt, 1200 Wien, Stromstr. 18-20/2/2
+44.143.1.23     OE1MKC   # Manfred Kîrner, 1140 Wien, Serravagasse 15/3
+44.143.1.24     OE1GOU   # Gerald Forthuber, 1050 Wien, Spengergasse 12/19
+44.143.1.25     OE1YXU   # Gertrude Forthuber, 1050 Wien, Spengergasse 12/14
+44.143.1.26     OE1FHS   # Florian HÑrtlehner, 1140 Wien
 # 1200 bit/s Knoten
 44.143.1.100    OE1XRR   # Irmela Gagern
 44.143.1.101    OE1XXB   # Amateurfunkklub Alterlaa, 1230 Wien, Helmut
@@ -4980,6 +4988,7 @@
 44.143.3.15     OE3PHA   # Peter Hofmann, 1090 Wien, Hîrlgasse 18/14
 44.143.3.16     OE3BLA   # Brunold Loidl, 3400 Klosterneuburg,
 			 # Alleestr.9a
+44.143.3.17     OE3MGB   # Michael,
 44.143.3.31     OE3GMW   # Gottfried Motowidlo, 2351 Wiener Neudorf,
 			 # Reisenbauerring 7/2/18
 # 1200 bit/s Knoten
@@ -5001,6 +5010,7 @@
 44.143.4.2      OE4TEA   # Walter Enz, 7121 Weiden am See, Neubaugasse 43
 44.143.4.3      OE4HZA   # Helmut Zemann, OE1HZA
 44.143.4.4      OE4JHW   # JÅrgen, Neufeld/Leitha, JN87eu
+44.143.4.5      OE4JSW   # Hermann
 # 1200 bit/s Knoten
 44.143.4.100
 # 9600 bit/s Knoten
@@ -5039,11 +5049,14 @@
 44.143.5.20    OE5PSO   # Peter Stockenreiter, Billrothstrasse 36,
 			# 4600 Wels
 44.143.5.21    OE5WWL   # Wolfgang Wagner, 4910 Ried im Innkreis, Sennstrasse 13
-44.143.5.22    OE5FJL   # Josef Falzeder, 9161 Maria Rain, Angersbichl 29
+44.143.5.22    OE5FJL   # Josef Falzeder, 4696 Ohlsdorf/Gmunden, Hauptstr. 2
 44.143.5.23    OE5RHO   # Roland Haider, 4060 Leonding, Weesestrasse 10
 44.143.5.24    OE5BBM   # Siegfried Brunnbauer, 4490 St. Florian,
 			# Bachgasse 18
 44.143.5.25    OE5EOI   # Edwin Olinowetz, 5310 Mondsee, Keuschen 181
+44.143.5.26    OE5FFN   # Arno, Linz
+44.143.5.27    OE5BYL   # Johann Bachl, 4910 Ried/Innkreis, Rosenweg 6
+44.143.5.28    OE5DWN   # Daniel,
 # 1200 bit/s Knoten
 44.143.5.100   OE5XUR   # JKULINZ, Linz, Oper. OE5LEN, packet-internet
 			# gateway: 140.78.4.35 hamgate.edvz.uni-linz.ac.at
@@ -5076,6 +5089,10 @@
 44.143.6.18    OE6PTG   # Tom
 44.143.6.19    OE6HLD   # Herbert Rienessel, 8055 Graz, Staudenweg 7
 44.143.6.20    OE6JWD   # Klaus Dieter Wolf, Graz, JN77rb
+44.143.6.21    OE6KQG   # Reinhard Kreiner, Weinberggasse 9,
+			# 8230 Hartberg
+44.143.6.28    OE6MKD   # RenÇ Mayrhold, 6805 Kapfenberg, Johann Fuxstrasse 7
+			# JN77pl
 44.143.6.66    OE6IWG   # Walter Steinwender, 8605 Kapfenberg,
 			# Hugo v. Hoffmansthalw. 3/4, JN77pk
 44.143.6.67    OE6YNE   # Ingrid Steinwender, 8605 Kapfenberg, JN77pk
@@ -5093,6 +5110,9 @@
 44.143.7.3     OE7HNT   # Georg Sassermann, 6471 Arzl, Hauptsr. 88
 44.143.7.4     OE7KKT   # Karsten, Innsbruck
 44.143.7.5     OE7DGJ   # Gerald, Innsbruck
+44.143.7.6     OE7BHT   # Hermann Bacher, 9900 Lienz, Peggetzstr. 15
+44.143.7.7     OE7JTK   # Josef Schett, 9900 Lienz, Probst-
+			# Weingartnerstrasse 1
 44.143.7.10    OE7TKT   # Thomas Kuschel, Winkelweg 13, 6064 Rum
 44.143.7.11    SEC.OE6RHT # Reinhard
 # 1200 bit/s Knoten
@@ -5112,6 +5132,7 @@
 			# Markus-Pernhartstr. 13/3, JN66wl
 44.143.8.4     OE8DJK   # Bernd Stroj, 9220 Velden, Aicherstr. 6
 44.143.8.5     OE8AGK   # Alexander, Klagenfurt
+44.143.8.6     OE8CIQ   # Chris,
 44.143.8.15    OE8DHK   # Hannes Defner, 9802 Spittal/Drau, Pf. 88
 44.143.8.19    OE8TGK   # Alexander Kînig, 9201 Krumpendorf, Blumenweg 15,
 			# JN76cb

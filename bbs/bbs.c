@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.84 1994/12/02 21:36:16 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.85 1995/03/13 13:32:20 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -258,7 +258,9 @@ static void errorstop(int line)
 
 /*---------------------------------------------------------------------------*/
 
-#if defined _SC_OPEN_MAX && !(defined __386BSD__ || defined __bsdi__)
+#if defined _SC_OPEN_MAX && !(defined __386BSD__ || \
+			      defined __bsdi__   || \
+			      defined __FreeBSD__)
 #define open_max()      ((int) sysconf(_SC_OPEN_MAX))
 #else
 #define open_max()      (1024)

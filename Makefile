@@ -1,18 +1,18 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.22 1994/12/15 11:27:08 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.23 1995/03/13 13:32:10 deyke Exp $
 
 MAKEFILE   = Makefile
-MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
+MKDIR      = @if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi
 
 all:;   @-rm -f bbs/bbs.h src/linux_include/stdlib.h util/genupd
 	-chmod 755 cc
-	-cd lib;     make -i -f $(MAKEFILE) all install
-	-cd aos;     make -i -f $(MAKEFILE) all install
-	-cd src;     make -i -f $(MAKEFILE) all install
-	-cd convers; make -i -f $(MAKEFILE) all install
-	-cd util;    make -i -f $(MAKEFILE) all install
-	-cd bbs;     make -i -f $(MAKEFILE) all install
-	-            make -i -f $(MAKEFILE) /tcp/hostaddr.pag
-	-if [ -f users ]; then make -i -f $(MAKEFILE) /usr/local/lib/users; fi
+	-cd lib;     $(MAKE) -i -f $(MAKEFILE) all install
+	-cd aos;     $(MAKE) -i -f $(MAKEFILE) all install
+	-cd src;     $(MAKE) -i -f $(MAKEFILE) all install
+	-cd convers; $(MAKE) -i -f $(MAKEFILE) all install
+	-cd util;    $(MAKE) -i -f $(MAKEFILE) all install
+	-cd bbs;     $(MAKE) -i -f $(MAKEFILE) all install
+	-            $(MAKE) -i -f $(MAKEFILE) /tcp/hostaddr.pag
+	-if [ -f users ]; then $(MAKE) -i -f $(MAKEFILE) /usr/local/lib/users; fi
 
 /tcp/hostaddr.pag: /tcp/hosts /tcp/domain.txt /usr/local/etc/mkhostdb
 	rm -f /tcp/hostaddr.* /tcp/hostname.*

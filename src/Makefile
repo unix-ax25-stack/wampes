@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.78 1994/12/11 17:00:37 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.79 1995/03/13 13:32:16 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -291,72 +291,78 @@ SRCS          = adjtime.c \
 
 # SYSHDRS       =
 
-RMTARGET      = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
+RMTARGET      = @if [ -f $@ ]; then rm -f $@ || mv -f $@ $@~; fi
 
 all:;   chmod 755 cc
 	@case "`uname -sr`" in \
 	HP-UX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=c89' \
 		'CFLAGS=-O -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024 -I../lib' \
 		'SLIBS=-lndbm' \
 		_all;; \
 	AIX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -qchars=signed -DUNIX -D_ALL_SOURCE -DFD_SETSIZE=1024 -I../lib' \
 		_all;; \
 	IRIX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -signed -DUNIX -DFD_SETSIZE=1024 -I../lib' \
 		_all;; \
 	Linux*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O6 -DUNIX -I./linux_include -I../lib' \
 		'SLIBS=-ldbm' \
 		_all;; \
 	386BSD*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
 		_all;; \
+	FreeBSD*) \
+		$(MAKE) -i -f $(MAKEFILE) \
+		'CC=cc' \
+		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
+		'SLIBS=-lcrypt' \
+		_all;; \
 	BSD/386*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
 		_all;; \
 	SunOS\ 4.*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=acc' \
 		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
 		_all;; \
 	SunOS\ 5.*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
 		'SLIBS=-lsocket -lnsl' \
 		_all;; \
 	ULTRIX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O6 -DUNIX -DULTRIX_RISC -DFD_SETSIZE=64 -I../lib' \
 		'SLIBS=-ldbm' \
 		_all;; \
 	A/UX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=gcc -fpcc-struct-return' \
 		'CFLAGS=-O -DUNIX -D_POSIX_SOURCE -I../lib' \
 		'SLIBS=-ldbm -lposix' \
 		_all;; \
 	RISC\ iX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=/tcp/src/cc' \
 		'CFLAGS=-DUNIX -DRISCiX -I../lib' \
 		_all;; \
 	AOS*) \
-		/usr/local/bin/make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=/usr/local/bin/gcc' \
 		'CFLAGS=-O2 -DUNIX -Dibm6153 -I../lib' \
 		'LIBS=../aos/libaos.a ../lib/libutil.a' \
@@ -379,6 +385,8 @@ setsp.o: setsp.c
 	Linux*) \
 		$(CC) -E $< > setsp.s; cc -c setsp.s;; \
 	386BSD*) \
+		$(CC) -E $< > setsp.s; cc -c setsp.s;; \
+	FreeBSD*) \
 		$(CC) -E $< > setsp.s; cc -c setsp.s;; \
 	BSD/386*) \
 		cpp $< > setsp.s; cc -c setsp.s;; \

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/setsp.c,v 1.9 1993/09/10 16:05:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/setsp.c,v 1.10 1995/03/13 13:32:18 deyke Exp $ */
 
 #ifndef __lint
 
@@ -66,6 +66,16 @@ _setstack:
 #endif
 
 #ifdef __386BSD__
+	.file   "setsp.s"
+	.globl  _setstack
+_setstack:
+	movl    %esp, %ebp
+	movl    _newstackptr, %esp
+	jmp     *(%ebp)
+	.align  4
+#endif
+
+#ifdef __FreeBSD__
 	.file   "setsp.s"
 	.globl  _setstack
 _setstack:

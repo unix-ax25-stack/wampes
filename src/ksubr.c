@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.26 1994/10/09 08:22:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.27 1995/03/13 13:32:15 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -247,6 +247,20 @@ struct env {
 };
 #define getstackptr(ep) ((ep)->esp)
 #elif defined __386BSD__
+struct env {
+	long    unknown0;
+	long    unknown1;
+	long    esp;
+	long    unknown3;
+	long    unknown4;
+	long    unknown5;
+	long    unknown6;
+	long    unknown7;
+	long    unknown8;
+	long    unknown9;
+};
+#define getstackptr(ep) ((ep)->esp)
+#elif defined __FreeBSD__
 struct env {
 	long    unknown0;
 	long    unknown1;

@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/fixnetrc,v 1.5 1994/08/31 11:40:07 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/fixnetrc,v 1.6 1995/03/13 13:32:21 deyke Exp $
 
 empty=/tmp/tmp$$
 
@@ -10,9 +10,9 @@ echo ' ' > $empty
 
 makeiprt || exit 1
 
-for i in net.rc.* ; do
+for i in net.rc.*; do
 	file=${i#net.rc.}
-	if [[ -f /tmp/iprt.$file ]] ; then
+	if [[ -f /tmp/iprt.$file ]]; then
 		ex - net.rc.$file <<EOF
 		%g/^route add/d
 		r $empty

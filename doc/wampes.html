@@ -4,7 +4,7 @@
 </HEAD>
 <BODY>
 <H1>WAMPES Reference Manual</H1>
-Version 950307
+Version 950313
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
@@ -644,17 +644,20 @@ that control block are shown in more detail.
 <H4><A NAME="H4.7.16">4.7.16 ax25 t1 [<I>milliseconds</I>]</A></H4>
 Display or set the AX.25 retransmission timer.
 The default is 5000 milliseconds (5 seconds). MORE TO BE WRITTEN.
-<H4><A NAME="H4.7.17">4.7.17 ax25 t3 [<I>milliseconds</I>]</A></H4>
+<H4><A NAME="H4.7.17">4.7.17 ax25 t2 [<I>milliseconds</I>]</A></H4>
+The default is 300 milliseconds.
+MORE TO BE WRITTEN.
+<H4><A NAME="H4.7.18">4.7.18 ax25 t3 [<I>milliseconds</I>]</A></H4>
 Display or set the AX.25 &quot;keep alive&quot; timer.
 The default is 900000 milliseconds (15 minutes).
-<H4><A NAME="H4.7.18">4.7.18 ax25 t4 [<I>milliseconds</I>]</A></H4>
+<H4><A NAME="H4.7.19">4.7.19 ax25 t4 [<I>milliseconds</I>]</A></H4>
 The default is 60000 milliseconds (1 minute).
 MORE TO BE WRITTEN.
-<H4><A NAME="H4.7.19">4.7.19 ax25 version [1|2]</A></H4>
+<H4><A NAME="H4.7.20">4.7.20 ax25 version [1|2]</A></H4>
 Display or set the version of the AX.25 protocol to attempt to use on
 new connections. The default is 2 (the version
 that uses the poll/final bits).
-<H4><A NAME="H4.7.20">4.7.20 ax25 window [<I>size</I>]</A></H4>
+<H4><A NAME="H4.7.21">4.7.21 ax25 window [<I>size</I>]</A></H4>
 Set the number of bytes that can be pending on an AX.25 receive queue
 beyond which I frames will be answered with RNR (Receiver Not Ready)
 responses. This presently applies only to suspended interactive AX.25
@@ -1293,7 +1296,7 @@ The following parameters are available:
        |  18 | Link T1 timeout 'FRACK' (ms)                |   1 | MAXINT |   5000 | Yes  |
        |  19 | Link TX window size 'MAXFRAME' (frames)     |   1 |      7 |      7 | Yes  |
        |  20 | Link maximum tries (0=forever)              |   0 |    127 |     10 | Yes  |
-       |  21 | Link T2 timeout (ms)                        |   1 | MAXINT |      1 | No   |
+       |  21 | Link T2 timeout (ms)                        |   1 | MAXINT |      1 | Yes  |
        |  22 | Link T3 timeout (ms)                        |   0 | MAXINT | 900000 | Yes  |
        |  23 | AX.25 digipeating (0=off 1=dumb 2=s&amp;f)      |   0 |      2 |      2 | Yes  |
        |  24 | Validate callsigns (0=off 1=on)             |   0 |      1 |      0 | No   |

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.17 1994/10/21 11:54:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.18 1995/03/13 13:32:16 deyke Exp $ */
 
 #ifndef _LAPB_H
 #define _LAPB_H
@@ -86,7 +86,7 @@ struct ax25_cb {
 #define LB_DM           1               /* Received DM from other end */
 #define LB_TIMEOUT      2               /* Excessive retries */
 
-	char response;                  /* Response owed to other end */
+/*      char response;                  /* Response owed to other end */
 	char vs;                        /* Our send state variable */
 	char vr;                        /* Our receive state variable */
 	char unack;                     /* Number of unacked frames */
@@ -107,6 +107,7 @@ struct ax25_cb {
 #define LAPB_CONNECTED          5
 #define LAPB_RECOVERY           6
 	struct timer t1;                /* Retry timer */
+	struct timer t2;                /* Acknowledgement delay timer */
 	struct timer t3;                /* Keep-alive poll timer */
 	struct timer t4;                /* Busy timer */
 	int32 rtt_time;                 /* Stored clock values for RTT, ms */
@@ -133,6 +134,7 @@ extern int   T3init;
 extern int    N2,Maxframe,Paclen,Pthresh,Axwindow,Axversion;
 
 extern int T1init;                      /* Retransmission timeout */
+extern int T2init;                      /* Acknowledgement delay timeout */
 extern int T4init;                      /* Busy timeout */
 extern int Axserver_enabled;
 
@@ -144,6 +146,7 @@ int lapb_output(struct ax25_cb *axp);
 struct mbuf *segmenter(struct mbuf *bp,uint16 ssize);
 int sendctl(struct ax25_cb *axp,int cmdrsp,int cmd);
 int busy(struct ax25_cb *cp);
+void ax_t2_timeout(void *p);
 void build_path(struct ax25_cb *cp,struct iface *ifp,struct ax25 *hdr,int reverse);
 
 /* In lapbtimer.c: */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.32 1994/10/09 08:22:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.33 1995/03/13 13:32:15 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -309,7 +309,7 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 			sendctl(axp,LAPB_RESPONSE,DM|pf);
 			stop_timer(&axp->t1);
 			stop_timer(&axp->t3);
-			axp->response = DM;
+			/* axp->response = DM; */
 			axp->reason = LB_NORMAL;
 			lapbstate(axp,LAPB_DISCONNECTED);
 			free_p(bp);
@@ -412,10 +412,10 @@ struct mbuf *bp)                /* Rest of frame, starting with ctl */
 	 * If successful, lapb_output will clear axp->response.
 	 */
 	lapb_output(axp);
-	if(axp->response != 0){
-		sendctl(axp,LAPB_RESPONSE,axp->response);
-		axp->response = 0;
-	}
+	/* if(axp->response != 0){ */
+	/*      sendctl(axp,LAPB_RESPONSE,axp->response); */
+	/*      axp->response = 0; */
+	/* } */
 	if((axp->state == LAPB_RECOVERY || axp->state == LAPB_CONNECTED) &&
 	   ((axp->flags.closed && !axp->txq) ||
 	    (axp->flags.remotebusy && (bugfix = msclock() - axp->flags.remotebusy) > 900000L))){
@@ -525,7 +525,7 @@ struct ax25_cb *axp)
 	axp->flags.remotebusy = NO;
 	stop_timer(&axp->t4);
 	axp->flags.rejsent = NO;
-	axp->response = 0;
+	/* axp->response = 0; */
 	stop_timer(&axp->t3);
 }
 /* Enquiry response */
@@ -537,7 +537,7 @@ struct ax25_cb *axp)
 
 	ctl = busy(axp) ? RNR|PF : RR|PF;
 	sendctl(axp,LAPB_RESPONSE,ctl);
-	axp->response = 0;
+	/* axp->response = 0; */
 	/* stop_timer(&axp->t3); */
 }
 /* Invoke retransmission */
@@ -610,7 +610,7 @@ register struct ax25_cb *axp)
 		/* We're implicitly acking any data he's sent, so stop any
 		 * delayed ack
 		 */
-		axp->response = 0;
+		/* axp->response = 0; */
 		if(!run_timer(&axp->t1)){
 			stop_timer(&axp->t3);
 			start_timer(&axp->t1);
@@ -638,6 +638,7 @@ int s)
 	axp->state = s;
 	if(s == LAPB_DISCONNECTED){
 		stop_timer(&axp->t1);
+		stop_timer(&axp->t2);
 		stop_timer(&axp->t3);
 		stop_timer(&axp->t4);
 		free_q(&axp->txq);
@@ -707,11 +708,11 @@ int poll)
 		axp->flags.rejsent = YES;
 		sendctl(axp,LAPB_RESPONSE,REJ|pf);
 	} else {
-		tmp = busy(axp) ? RNR : RR;
-		if(poll)
+		if(poll){
+			tmp = busy(axp) ? RNR : RR;
 			sendctl(axp,LAPB_RESPONSE,tmp|pf);
-		else
-			axp->response = tmp;
+		} else
+			start_timer(&axp->t2);
 	}
 
 	while((bp = axp->reseq[old_vr].bp) != NULLBUF){
@@ -842,6 +843,26 @@ struct ax25_cb *axp)
 {
 	return axp->peer ? space_ax25(axp->peer) <= 0 :
 			   len_p(axp->rxq) >= axp->window;
+}
+
+void
+ax_t2_timeout(
+void *p)
+{
+	register struct ax25_cb *axp;
+	int i;
+
+	axp = (struct ax25_cb *)p;
+	if (!axp->flags.rejsent) {
+		for (i = 0; i < 8; i++) {
+			if (axp->reseq[i].bp) {
+				axp->flags.rejsent = YES;
+				sendctl(axp, LAPB_RESPONSE, REJ);
+				return;
+			}
+		}
+	}
+	sendctl(axp, LAPB_RESPONSE, busy(axp) ? RNR : RR);
 }
 
 void

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.23 1995/01/16 13:20:18 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.24 1995/03/13 13:32:26 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -16,14 +16,14 @@ OBJS          = buildsaddr.o \
 
 RANLIB        = ranlib
 
-all:;   if [ -x /bin/bash ] ; then \
+all:;   if [ -x /bin/bash ]; then \
 		/bin/bash < configure > configure.tmp; \
-	elif [ -x /bin/ksh ] ; then \
+	elif [ -x /bin/ksh ]; then \
 		/bin/ksh < configure > configure.tmp; \
 	else \
 		/bin/sh < configure > configure.tmp; \
 	fi
-	if cmp -s configure.tmp configure.h ; then \
+	if cmp -s configure.tmp configure.h; then \
 		rm -f configure.tmp; \
 	else \
 		rm -f configure.h; \
@@ -31,67 +31,72 @@ all:;   if [ -x /bin/bash ] ; then \
 	fi
 	@case "`uname -sr`" in \
 	HP-UX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=c89' \
 		'CFLAGS=-O -D_HPUX_SOURCE' \
 		'RANLIB=:' \
 		_all;; \
 	AIX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -qchars=signed -D_ALL_SOURCE' \
 		'RANLIB=:' \
 		_all;; \
 	IRIX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -signed' \
 		'RANLIB=:' \
 		_all;; \
 	Linux*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O' \
 		_all;; \
 	386BSD*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
+		'CC=cc' \
+		'CFLAGS=-O' \
+		_all;; \
+	FreeBSD*) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O' \
 		_all;; \
 	BSD/386*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O' \
 		_all;; \
 	SunOS\ 4.*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=acc' \
 		'CFLAGS=-O' \
 		_all;; \
 	SunOS\ 5.*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O' \
 		'RANLIB=:' \
 		_all;; \
 	ULTRIX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O6 -DULTRIX_RISC' \
 		_all;; \
 	A/UX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=gcc -fpcc-struct-return' \
 		'CFLAGS=-O -D_POSIX_SOURCE' \
 		'RANLIB=:' \
 		_all;; \
 	RISC\ iX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=/tcp/cc' \
 		'CFLAGS=-DRISCiX' \
 		_all;; \
 	AOS*) \
-		/usr/local/bin/make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=/usr/local/bin/gcc' \
 		'CFLAGS=-O2' \
 		_all;; \

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.7 1994/10/09 08:22:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.8 1995/03/13 13:32:12 deyke Exp $ */
 
 /* AX25 control commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -37,6 +37,7 @@ static int don2(int argc,char *argv[],void *p);
 static int dopaclen(int argc,char *argv[],void *p);
 static int dopthresh(int argc,char *argv[],void *p);
 static int dot1(int argc,char *argv[],void *p);
+static int dot2(int argc,char *argv[],void *p);
 static int dot3(int argc,char *argv[],void *p);
 static int dot4(int argc,char *argv[],void *p);
 static int doversion(int argc,char *argv[],void *p);
@@ -82,6 +83,7 @@ static struct cmds Axcmds[] = {
 	"route",        doaxroute,      0, 0, NULLCHAR,
 	"status",       doaxstat,       0, 0, NULLCHAR,
 	"t1",           dot1,           0, 0, NULLCHAR,
+	"t2",           dot2,           0, 0, NULLCHAR,
 	"t3",           dot3,           0, 0, NULLCHAR,
 	"t4",           dot4,           0, 0, NULLCHAR,
 	"version",      doversion,      0, 0, NULLCHAR,
@@ -383,6 +385,15 @@ char *argv[],
 void *p)
 {
 	return setintrc(&T1init,"T1 (ms)",argc,argv,1,0x7fffffff);
+}
+
+static int
+dot2(
+int argc,
+char *argv[],
+void *p)
+{
+	return setintrc(&T2init,"T2 (ms)",argc,argv,1,0x7fffffff);
 }
 
 /* Set idle timer */

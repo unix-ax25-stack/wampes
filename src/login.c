@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.55 1994/10/06 16:15:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.56 1995/03/13 13:32:16 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -24,7 +24,7 @@
 #include <termios.h>
 #endif
 
-#if defined __386BSD__ || defined __bsdi__
+#if defined __386BSD__ || defined __bsdi__ || defined __FreeBSD__
 #include <sys/ioctl.h>
 #endif
 
@@ -271,7 +271,7 @@ struct passwd *getpasswdentry(const char *name, int create)
   sprintf(homedirparent, "%s/%.3s...", Homedir, name);
   sprintf(homedir, "%s/%s", homedirparent, name);
 
-#if defined __386BSD__ || defined __bsdi__
+#if defined __386BSD__ || defined __bsdi__ || defined __FreeBSD__
 
   sprintf(cmdbuf, "chpass -a '%s::%d:%d::0:0::%s:%s' >/dev/null 2>&1", name, uid, Gid, homedir, Shell);
   system(cmdbuf);
@@ -591,7 +591,7 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
     endutent();
 #endif
     argc = 0;
-#if defined sun || defined __386BSD__ || defined __bsdi__
+#if defined sun || defined __386BSD__ || defined __bsdi__ || defined __FreeBSD__
     argv[argc++] = "/usr/bin/login";
     argv[argc++] = "-h";
     argv[argc++] = (char *) protocol;

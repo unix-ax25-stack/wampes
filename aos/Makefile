@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/aos/Makefile,v 1.5 1994/07/22 13:18:15 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/aos/Makefile,v 1.6 1995/03/13 13:32:27 deyke Exp $
 
 LIBRARY       = libaos.a
 
@@ -23,6 +23,8 @@ all:;   @case "`uname -sr`" in \
 		:;; \
 	386BSD*) \
 		:;; \
+	FreeBSD*) \
+		:;; \
 	BSD/386*) \
 		:;; \
 	SunOS\ 4.*) \
@@ -36,7 +38,7 @@ all:;   @case "`uname -sr`" in \
 	RISC\ iX*) \
 		:;; \
 	AOS*) \
-		/usr/local/bin/make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=/usr/local/bin/gcc' \
 		'CFLAGS=-O2' \
 		_all;; \

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.16 1994/10/21 11:54:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.17 1995/03/13 13:32:12 deyke Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -24,6 +24,7 @@ int   Axwindow = 2048;          /* 2K incoming text before RNR'ing */
 int   Paclen = 256;             /* 256-byte I fields */
 int   Pthresh = 64;             /* Send polls for packets larger than this */
 int   T1init = 5000;            /* Retransmission timeout, ms */
+int   T2init = 300;             /* Acknowledgement delay timeout, ms */
 int   T4init = 60000;           /* Busy timeout, ms */
 int   Axversion = V2;           /* Protocol version */
 int32 Blimit = 16;              /* Retransmission backoff limit */
@@ -79,6 +80,7 @@ struct ax25_cb *conn)
 
 	/* Timers should already be stopped, but just in case... */
 	stop_timer(&axp->t1);
+	stop_timer(&axp->t2);
 	stop_timer(&axp->t3);
 	stop_timer(&axp->t4);
 
@@ -126,6 +128,10 @@ char *addr)
 #endif
 	axp->t1.func = recover;
 	axp->t1.arg = axp;
+
+	set_timer(&axp->t2,T2init);
+	axp->t2.func = ax_t2_timeout;
+	axp->t2.arg = axp;
 
 	set_timer(&axp->t3,T3init);
 	axp->t3.func = pollthem;

@@ -18,13 +18,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 950307" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 950313" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 950307
+Version 950313
 .S
 .SP 2
 .S 15
@@ -552,6 +552,9 @@ that control block are shown in more detail.
 .H 3 "ax25 t1" " [\fImilliseconds\fP]"
 Display or set the AX.25 retransmission timer.
 The default is 5000 milliseconds (5 seconds). MORE TO BE WRITTEN.
+.H 3 "ax25 t2" " [\fImilliseconds\fP]"
+The default is 300 milliseconds.
+MORE TO BE WRITTEN.
 .H 3 "ax25 t3" " [\fImilliseconds\fP]"
 Display or set the AX.25 "keep alive" timer.
 The default is 900000 milliseconds (15 minutes).
@@ -1230,7 +1233,7 @@ _
 18;Link T1 timeout 'FRACK' (ms);1;MAXINT;5000;Yes
 19;Link TX window size 'MAXFRAME' (frames);1;7;7;Yes
 20;Link maximum tries (0=forever);0;127;10;Yes
-21;Link T2 timeout (ms);1;MAXINT;1;No
+21;Link T2 timeout (ms);1;MAXINT;1;Yes
 22;Link T3 timeout (ms);0;MAXINT;900000;Yes
 23;AX.25 digipeating (0=off 1=dumb 2=s&f);0;2;2;Yes
 24;Validate callsigns (0=off 1=on);0;1;0;No

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapbtime.c,v 1.5 1994/10/06 16:15:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapbtime.c,v 1.6 1995/03/13 13:32:15 deyke Exp $ */
 
 /* LAPB (AX25) timer recovery routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -116,7 +116,7 @@ register struct ax25_cb *axp)
 		ctl = busy(axp)                      ? RNR|PF : RR|PF;
 		sendctl(axp,LAPB_COMMAND,ctl);
 	}
-	axp->response = 0;
+	/* axp->response = 0; */
 	stop_timer(&axp->t3);
 	start_timer(&axp->t1);
 }

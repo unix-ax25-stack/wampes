@@ -1,4 +1,4 @@
-wampes-950307.tar.gz is a gzipped tar archive of WAMPES, a NET/NOS port
+wampes-950313.tar.gz is a gzipped tar archive of WAMPES, a NET/NOS port
 to various flavors of Unix.
 
 WAMPES currently supports the following configurations:
@@ -24,6 +24,9 @@ WAMPES currently supports the following configurations:
 +---------------+-----------------+-------------------------------------------+
 | NetBSD 0.8a   | 386             | Dieter Deyke <deyke@fc.hp.com>            |
 +---------------+-----------------+-------------------------------------------+
+| FreeBSD 2.1   | 386             | Paul Traina <pst@shockwave.com>           |
+| (use gmake)   |                 |                                           |
++---------------+-----------------+-------------------------------------------+
 | BSDI 1.0      | 386             | J.R. Westmoreland <jr@upl.com>            |
 +---------------+-----------------+-------------------------------------------+
 | Linux         | 386             | Olaf Erb <erb@insu1.etec.uni-karlsruhe.de>|
@@ -31,7 +34,7 @@ WAMPES currently supports the following configurations:
 | ULTRIX 4.2A   | Decstation 5000 | Olaf Erb <erb@insu1.etec.uni-karlsruhe.de>|
 |   gcc 2.3.3   |                 |                                           |
 +---------------+-----------------+-------------------------------------------+
-| A/UX 3.0      | ?               | Paul Traina <pst@cisco.com>               |
+| A/UX 3.0      | ?               | Paul Traina <pst@shockwave.com>           |
 +---------------+-----------------+-------------------------------------------+
 | RISC iX       | Acorn R260      | Felix Schroeter                           |
 |               |                 |   <uk1o@ibm3090.rz.uni-karlsruhe.de or>   |
@@ -43,13 +46,13 @@ To unpack this archive you have to:
 	su
 	mkdir /tcp
 	cd /tcp
-	gzip -d < wampes-950307.tar.gz | tar xvf -
+	gzip -d < wampes-950313.tar.gz | tar xvf -
 
 After unpacking please read the file /tcp/doc/intro.txt.  For RISC iX
 you have to copy *.R to /usr/lib.  Now type "make -i" to compile and
 install everything.
 
-wampes-950307.tar.gz can be found in
+wampes-950313.tar.gz can be found in
 	ftp://ftp.ucsd.edu/hamradio/packet/tcpip/incoming/
 or
 	ftp://ftp.ucsd.edu/hamradio/packet/tcpip/wampes/

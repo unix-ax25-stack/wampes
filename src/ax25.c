@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.24 1994/10/09 08:22:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.25 1995/03/13 13:32:12 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -350,6 +350,8 @@ struct mbuf *data)
 
 	bp = pushdown(data,1);
 	bp->data[0] = ctl;
+	if ((ctl & 3) != U)
+		stop_timer(&axp->t2);
 	axp->hdr.cmdrsp = cmdrsp;
 	if((data = htonax25(&axp->hdr,bp)) == NULLBUF){
 		free_p(bp);

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.16 1994/12/15 11:28:12 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.17 1995/03/13 13:32:26 deyke Exp $
 
 case "`uname -sr`" in
 HP-UX*)
@@ -10,6 +10,8 @@ IRIX*)
 Linux*)
 	isdir=-d; isexec=-x; isfile=-f; islink=-L; cc=gcc;;
 386BSD*)
+	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=cc;;
+FreeBSD*)
 	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=cc;;
 BSD/386*)
 	isdir=-d; isexec=-x; isfile=-f; islink=-h; cc=cc;;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.35 1994/10/30 21:26:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.36 1995/03/13 13:32:14 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -35,7 +35,11 @@
 #define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
 #define PDP_ENDIAN      3412    /* LSB first in word, MSW first in long */
 
-#if defined linux || defined ULTRIX_RISC || defined __386BSD__ || defined __bsdi__
+#if defined linux       || \
+    defined ULTRIX_RISC || \
+    defined __386BSD__  || \
+    defined __bsdi__    || \
+    defined __FreeBSD__
 #define BYTE_ORDER      LITTLE_ENDIAN
 #else
 #define BYTE_ORDER      BIG_ENDIAN

@@ -1,11 +1,11 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.25 1994/11/13 21:48:35 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.26 1995/03/13 13:32:21 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
 LDFLAGS    = $(CFLAGS) -s
 LIBS       = ../lib/libutil.a
 MAKEFILE   = Makefile
-RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
+RMTARGET   = @if [ -f $@ ]; then rm -f $@ || mv -f $@ $@~; fi
 SLIBS      =
 
 TARGETS    = \
@@ -20,73 +20,79 @@ TARGETS    = \
 
 all:;   @case "`uname -sr`" in \
 	HP-UX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=c89' \
 		'CFLAGS=-O -D_HPUX_SOURCE -I../lib' \
 		'SLIBS=-lndbm' \
 		_all;; \
 	AIX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -qchars=signed -D_ALL_SOURCE -I../lib' \
 		'SLIBS=' \
 		_all;; \
 	IRIX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -signed -I../lib' \
 		'SLIBS=' \
 		_all;; \
 	Linux*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O -I../lib' \
 		'SLIBS=-ldbm' \
 		_all;; \
 	386BSD*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
+		'CC=cc' \
+		'CFLAGS=-O -I../lib' \
+		'SLIBS=' \
+		_all;; \
+	FreeBSD*) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -I../lib' \
 		'SLIBS=' \
 		_all;; \
 	BSD/386*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -I../lib' \
 		'SLIBS=' \
 		_all;; \
 	SunOS\ 4.*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=acc' \
 		'CFLAGS=-O -I../lib' \
 		'SLIBS=' \
 		_all;; \
 	SunOS\ 5.*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -I../lib' \
 		'SLIBS=-lsocket -lnsl' \
 		_all;; \
 	ULTRIX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O6 -DULTRIX_RISC -I../lib' \
 		'SLIBS=-ldbm' \
 		_all;; \
 	A/UX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=gcc -fpcc-struct-return' \
 		'CFLAGS=-O -D_POSIX_SOURCE -I../lib' \
 		'SLIBS=-ldbm -lposix' \
 		_all;; \
 	RISC\ iX*) \
-		make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=/tcp/cc' \
 		'CFLAGS=-DRISCiX -I../lib' \
 		'SLIBS=' \
 		_all;; \
 	AOS*) \
-		/usr/local/bin/make -i -f $(MAKEFILE) \
+		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=/usr/local/bin/gcc' \
 		'CFLAGS=-O2 -Dibm6153 -I../lib' \
 		'LIBS=../aos/libaos.a ../lib/libutil.a' \

@@ -1,8 +1,8 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Attic/tcpcheckin,v 1.1 1994/09/26 15:48:28 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Attic/tcpcheckin,v 1.2 1995/03/13 13:32:22 deyke Exp $
 
-for dir in $(find ~/tcp -type d -name RCS -print) ; do
+for dir in $(find ~/tcp -type d -name RCS -print); do
 	cd $dir/..
 	pwd
 	ci -l -q RCS/*,v < /dev/null

@@ -1,8 +1,8 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/print,v 1.3 1994/08/21 10:17:00 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/print,v 1.4 1995/03/13 13:32:22 deyke Exp $
 
-if [[ -n "$1" ]] ; then
+if [[ -n "$1" ]]; then
 	files="setup $*"
 else
 	files="$(< filelist)"
