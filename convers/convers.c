@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.4 1988/09/09 22:17:38 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.5 1988/09/12 20:20:52 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -73,6 +73,16 @@ unsigned  nbyte;
 
 /*---------------------------------------------------------------------------*/
 
+static int  sigpipe_handler(sig, code, scp)
+int  sig;
+int  code;
+struct sigcontext *scp;
+{
+  scp->sc_syscall_action = SIG_RETURN;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void stop(arg)
 register char  *arg;
 {
@@ -105,9 +115,12 @@ char  **argv;
   int  size;
   static struct sockaddr_in addr;
   struct hostent *hp;
+  struct sigvec vec;
   struct termio curr_termio;
 
-  signal(SIGPIPE, SIG_IGN);
+  vec.sv_mask = vec.sv_flags = 0;
+  vec.sv_handler = sigpipe_handler;
+  sigvector(SIGPIPE, &vec, (struct sigvec *) 0);
 
   if (ioctl(0, TCGETA, &prev_termio)) stop(*argv);
   if (ioctl(0, TCGETA, &curr_termio)) stop(*argv);
