@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.28 1993/10/14 14:00:23 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.29 1994/01/14 21:28:18 deyke Exp $
 
 CFLAGS     = -I../lib
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
@@ -101,5 +101,5 @@ clean:; rm -f *.o $(TARGETS) *~
 depend:; @mkmf
 ###
 convers.o: ../lib/buildsaddr.h
-conversd.o: ../lib/buildsaddr.h ../lib/configure.h ../lib/strdup.h \
-	../lib/md5.h
+conversd.o: ../lib/buildsaddr.h ../lib/configure.h ../lib/md5.h \
+	../lib/strdup.h

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.31 1994/01/09 16:19:57 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.32 1994/01/14 21:28:11 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -12,7 +12,7 @@ all:;   @if [ $(OS) = HP-UX ] ; then \
 		make -i \
 		'CC=c89' \
 		'CFLAGS=-O -s -D_HPUX_SOURCE -I../lib' \
-		'LIBS=../lib/libutil.a' \
+		'LIBS=../lib/libutil.a -lndbm' \
 		_all; \
 	elif [ $(OS) = AIX ] ; then \
 		make -i \
@@ -24,7 +24,7 @@ all:;   @if [ $(OS) = HP-UX ] ; then \
 		make -i \
 		'CC=gcc' \
 		'CFLAGS=-O -s -I../lib' \
-		'LIBS=../lib/libutil.a' \
+		'LIBS=../lib/libutil.a -ldbm' \
 		_all; \
 	elif [ $(OS) = 386BSD ] ; then \
 		make -i \
@@ -57,13 +57,13 @@ all:;   @if [ $(OS) = HP-UX ] ; then \
 		make -i \
 		'CC=gcc' \
 		'CFLAGS=-O6 -s -DULTRIX_RISC -I../lib' \
-		'LIBS=../lib/libutil.a' \
+		'LIBS=../lib/libutil.a -ldbm' \
 		_all; \
 	elif [ $(OS) = A/UX ] ; then \
 		make -i \
 		'CC=gcc -fpcc-struct-return' \
 		'CFLAGS=-O -s -D_POSIX_SOURCE -I../lib' \
-		'LIBS=../lib/libutil.a -lposix' \
+		'LIBS=../lib/libutil.a -ldbm -lposix' \
 		_all; \
 	elif [ $(OS) = "RISC iX" ] ; then \
 		make -i \
@@ -123,6 +123,7 @@ depend:; @mkmf
 ###
 bbs.o: ../lib/bbs.h ../lib/configure.h ../lib/buildsaddr.h ../lib/callvalid.h \
 	../lib/strdup.h
-findpath.o: ../lib/bbs.h ../lib/configure.h ../lib/callvalid.h
-killdup.o: ../lib/bbs.h ../lib/configure.h
+findpath.o: ../lib/bbs.h ../lib/configure.h ../lib/calc_crc.h \
+	../lib/callvalid.h
+killdup.o: ../lib/bbs.h ../lib/configure.h ../lib/calc_crc.h
 sfstat.o: ../lib/bbs.h ../lib/configure.h

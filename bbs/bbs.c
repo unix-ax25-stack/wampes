@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.68 1994/01/09 16:19:57 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.69 1994/01/14 21:28:11 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -10,6 +10,7 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <ndbm.h>
 #include <pwd.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -127,8 +128,6 @@ static int get_index(int n, struct index *index);
 static int read_allowed(const struct index *index);
 static char *get_user_from_path(char *path);
 static char *get_host_from_path(char *path);
-static int calc_crc(const char *str);
-static int hash_bid(const char *bid, int store);
 static int msg_uniq(const char *bid, const char *mid);
 static void send_to_bbs(struct mail *mail);
 static void send_to_mail(struct mail *mail);
@@ -553,7 +552,7 @@ static void lock(void)
   struct flock flk;
 
   if (fdlock < 0) {
-    if ((fdlock = open("lock", O_RDWR | O_CREAT, 0644)) < 0) halt();
+    if ((fdlock = open(LOCKFILE, O_RDWR | O_CREAT, 0644)) < 0) halt();
   }
   flk.l_type = F_WRLCK;
   flk.l_whence = SEEK_SET;
@@ -646,97 +645,26 @@ static char *get_host_from_path(char *path)
 
 /*---------------------------------------------------------------------------*/
 
-/* Calculate crc16 for a null terminated string (used for hashing) */
-
-static int calc_crc(const char *str)
-{
-
-  static const int crc_table[] = {
-    0x0000, 0xc0c1, 0xc181, 0x0140, 0xc301, 0x03c0, 0x0280, 0xc241,
-    0xc601, 0x06c0, 0x0780, 0xc741, 0x0500, 0xc5c1, 0xc481, 0x0440,
-    0xcc01, 0x0cc0, 0x0d80, 0xcd41, 0x0f00, 0xcfc1, 0xce81, 0x0e40,
-    0x0a00, 0xcac1, 0xcb81, 0x0b40, 0xc901, 0x09c0, 0x0880, 0xc841,
-    0xd801, 0x18c0, 0x1980, 0xd941, 0x1b00, 0xdbc1, 0xda81, 0x1a40,
-    0x1e00, 0xdec1, 0xdf81, 0x1f40, 0xdd01, 0x1dc0, 0x1c80, 0xdc41,
-    0x1400, 0xd4c1, 0xd581, 0x1540, 0xd701, 0x17c0, 0x1680, 0xd641,
-    0xd201, 0x12c0, 0x1380, 0xd341, 0x1100, 0xd1c1, 0xd081, 0x1040,
-    0xf001, 0x30c0, 0x3180, 0xf141, 0x3300, 0xf3c1, 0xf281, 0x3240,
-    0x3600, 0xf6c1, 0xf781, 0x3740, 0xf501, 0x35c0, 0x3480, 0xf441,
-    0x3c00, 0xfcc1, 0xfd81, 0x3d40, 0xff01, 0x3fc0, 0x3e80, 0xfe41,
-    0xfa01, 0x3ac0, 0x3b80, 0xfb41, 0x3900, 0xf9c1, 0xf881, 0x3840,
-    0x2800, 0xe8c1, 0xe981, 0x2940, 0xeb01, 0x2bc0, 0x2a80, 0xea41,
-    0xee01, 0x2ec0, 0x2f80, 0xef41, 0x2d00, 0xedc1, 0xec81, 0x2c40,
-    0xe401, 0x24c0, 0x2580, 0xe541, 0x2700, 0xe7c1, 0xe681, 0x2640,
-    0x2200, 0xe2c1, 0xe381, 0x2340, 0xe101, 0x21c0, 0x2080, 0xe041,
-    0xa001, 0x60c0, 0x6180, 0xa141, 0x6300, 0xa3c1, 0xa281, 0x6240,
-    0x6600, 0xa6c1, 0xa781, 0x6740, 0xa501, 0x65c0, 0x6480, 0xa441,
-    0x6c00, 0xacc1, 0xad81, 0x6d40, 0xaf01, 0x6fc0, 0x6e80, 0xae41,
-    0xaa01, 0x6ac0, 0x6b80, 0xab41, 0x6900, 0xa9c1, 0xa881, 0x6840,
-    0x7800, 0xb8c1, 0xb981, 0x7940, 0xbb01, 0x7bc0, 0x7a80, 0xba41,
-    0xbe01, 0x7ec0, 0x7f80, 0xbf41, 0x7d00, 0xbdc1, 0xbc81, 0x7c40,
-    0xb401, 0x74c0, 0x7580, 0xb541, 0x7700, 0xb7c1, 0xb681, 0x7640,
-    0x7200, 0xb2c1, 0xb381, 0x7340, 0xb101, 0x71c0, 0x7080, 0xb041,
-    0x5000, 0x90c1, 0x9181, 0x5140, 0x9301, 0x53c0, 0x5280, 0x9241,
-    0x9601, 0x56c0, 0x5780, 0x9741, 0x5500, 0x95c1, 0x9481, 0x5440,
-    0x9c01, 0x5cc0, 0x5d80, 0x9d41, 0x5f00, 0x9fc1, 0x9e81, 0x5e40,
-    0x5a00, 0x9ac1, 0x9b81, 0x5b40, 0x9901, 0x59c0, 0x5880, 0x9841,
-    0x8801, 0x48c0, 0x4980, 0x8941, 0x4b00, 0x8bc1, 0x8a81, 0x4a40,
-    0x4e00, 0x8ec1, 0x8f81, 0x4f40, 0x8d01, 0x4dc0, 0x4c80, 0x8c41,
-    0x4400, 0x84c1, 0x8581, 0x4540, 0x8701, 0x47c0, 0x4680, 0x8641,
-    0x8201, 0x42c0, 0x4380, 0x8341, 0x4100, 0x81c1, 0x8081, 0x4040
-  };
-
-  int crc;
-
-  crc = 0;
-  while (*str)
-    crc = ((crc >> 8) & 0xff) ^ crc_table[(crc ^ *str++) & 0xff];
-  return crc;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int hash_bid(const char *bid, int store)
-{
-
-#define HASH_SIZE 4001
-
-  int hash_index;
-  static struct strlist *hash_table[HASH_SIZE];
-  struct strlist *p;
-
-  hash_index = (calc_crc(bid) & 0x7fff) % HASH_SIZE;
-  for (p = hash_table[hash_index]; p && strcmp(bid, p->str); p = p->next) ;
-  if (!p && store) {
-    p = malloc(sizeof(*p) + strlen(bid));
-    strcpy(p->str, bid);
-    p->next = hash_table[hash_index];
-    hash_table[hash_index] = p;
-  }
-  return (p != 0);
-}
-
-/*---------------------------------------------------------------------------*/
-
 static int msg_uniq(const char *bid, const char *mid)
 {
 
-  int n;
-  long validdate;
-  static long startpos;
-  struct index *pi;
-  struct index index_array[1000];
+  DBM * bid_db;
+  datum datum_bid;
+  datum datum_offset;
+  long offset;
+  struct index index;
 
-  validdate = time((long *) 0) - 90 * DAYS;
-  if (lseek(fdindex, startpos, SEEK_SET) != startpos) halt();
-  for (; ; ) {
-    n = read(fdindex, index_array, sizeof(index_array)) / sizeof(struct index);
-    if (n <= 0) break;
-    for (pi = index_array; n; pi++, n--)
-      if (pi->date >= validdate) hash_bid(pi->bid, 1);
-  }
-  startpos = lseek(fdindex, 0L, SEEK_CUR);
-  return !hash_bid(bid, 0);
+  datum_bid.dptr = (char *) bid;
+  datum_bid.dsize = strlen(bid);
+  if (!(bid_db = dbm_open(BID_DB, O_RDWR | O_CREAT, 0644))) halt();
+  datum_offset = dbm_fetch(bid_db, datum_bid);
+  dbm_close(bid_db);
+  if (!datum_offset.dptr) return 1;
+  memcpy((char *) &offset, datum_offset.dptr, sizeof(offset));
+  if (lseek(fdindex, offset, SEEK_SET) != offset) halt();
+  if (read(fdindex, &index, sizeof(struct index )) != sizeof(struct index )) halt();
+  if (strcmp(index.bid, bid)) halt();
+  return index.date < time((long *) 0) - 90 * DAYS;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -744,7 +672,11 @@ static int msg_uniq(const char *bid, const char *mid)
 static void send_to_bbs(struct mail *mail)
 {
 
+  DBM *bid_db;
   FILE *fp;
+  datum datum_bid;
+  datum datum_offset;
+  long offset;
   struct index index;
   struct strlist *p;
 
@@ -785,7 +717,15 @@ static void send_to_bbs(struct mail *mail)
 	index.size += (strlen(p->str) + 1);
       }
     fclose(fp);
-    if (lseek(fdindex, 0L, SEEK_END) < 0) halt();
+    offset = lseek(fdindex, 0L, SEEK_END);
+    if (offset < 0) halt();
+    if (!(bid_db = dbm_open(BID_DB, O_RDWR | O_CREAT, 0644))) halt();
+    datum_bid.dptr = index.bid;
+    datum_bid.dsize = strlen(index.bid);
+    datum_offset.dptr = (char *) &offset;
+    datum_offset.dsize = sizeof(offset);
+    if (dbm_store(bid_db, datum_bid, datum_offset, DBM_REPLACE) < 0) halt();
+    dbm_close(bid_db);
     if (write(fdindex, &index, sizeof(struct index)) != sizeof(struct index)) halt();
     if (index.mesg == user.seq + 1) {
       user.seq = index.mesg;
@@ -1822,6 +1762,7 @@ static void send_command(int argc, char **argv)
   char path[1024];
   int check_header = 1;
   int i;
+  int unique;
   struct mail *mail;
 
   mail = alloc_mail();
@@ -1866,7 +1807,10 @@ static void send_command(int argc, char **argv)
   if (*mail->bid) {
     mail->bid[LEN_BID] = 0;
     strupc(mail->bid);
-    if (!msg_uniq(mail->bid, mail->mid)) {
+    lock();
+    unique = msg_uniq(mail->bid, mail->mid);
+    unlock();
+    if (!unique) {
       puts("No");
       free_mail(mail);
       return;
@@ -2023,28 +1967,47 @@ static void unknown_command(int argc, char **argv)
 static void xcrunch_command(int argc, char **argv)
 {
 
-  char *tempfile = "index.tmp";
+#define TEMP_BID_DB     BID_DB ".tmp"
+#define TEMP_INDEXFILE  INDEXFILE ".tmp"
+
+  DBM * bid_db;
+  datum datum_bid;
+  datum datum_offset;
   int f;
   int wflag;
+  long offset;
   long validdate;
   struct index index;
 
   validdate = time((long *) 0) - 90 * DAYS;
-  if ((f = open(tempfile, O_WRONLY | O_CREAT | O_EXCL, 0644)) < 0) halt();
+  if ((f = open(TEMP_INDEXFILE, O_WRONLY | O_CREAT | O_EXCL, 0644)) < 0) halt();
   if (lseek(fdindex, 0L, SEEK_SET)) halt();
+  if (!(bid_db = dbm_open(TEMP_BID_DB, O_RDWR | O_CREAT, 0644))) halt();
+  offset = 0;
   wflag = 0;
   while (read(fdindex, &index, sizeof(struct index)) == sizeof(struct index)) {
     wflag = 1;
     if (!index.deleted || *index.bid && index.date >= validdate) {
       if (write(f, &index, sizeof(struct index)) != sizeof(struct index)) halt();
       wflag = 0;
+      if (*index.bid && index.date >= validdate) {
+	datum_bid.dptr = index.bid;
+	datum_bid.dsize = strlen(index.bid);
+	datum_offset.dptr = (char *) &offset;
+	datum_offset.dsize = sizeof(offset);
+	if (dbm_store(bid_db, datum_bid, datum_offset, DBM_REPLACE) < 0) halt();
+      }
+      offset += sizeof(struct index);
     }
   }
   if (wflag)
     if (write(f, &index, sizeof(struct index)) != sizeof(struct index)) halt();
   if (close(f)) halt();
+  dbm_close(bid_db);
   if (close(fdindex)) halt();
-  if (rename(tempfile, INDEXFILE)) halt();
+  if (rename(TEMP_INDEXFILE, INDEXFILE)) halt();
+  if (rename(TEMP_BID_DB ".dir", BID_DB ".dir")) halt();
+  if (rename(TEMP_BID_DB ".pag", BID_DB ".pag")) halt();
   exit(0);
 }
 

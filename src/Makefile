@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.58 1994/01/09 16:19:41 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.59 1994/01/14 21:27:52 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -6,6 +6,7 @@ DEST          = /tcp
 
 EXTHDRS       = ../lib/bbs.h \
 		../lib/buildsaddr.h \
+		../lib/calc_crc.h \
 		../lib/callvalid.h \
 		../lib/configure.h
 
@@ -446,7 +447,7 @@ config.o: global.h config.h mbuf.h timer.h proc.h iface.h ip.h internet.h \
 	session.h hardware.h telnet.h pktdrvr.h slip.h slhc.h arp.h icmp.h \
 	cmdparse.h commands.h ax25mail.h tipmail.h daemon.h bootp.h socket.h \
 	asy.h trace.h
-crc.o: global.h mbuf.h crc.h
+crc.o: global.h mbuf.h crc.h ../lib/calc_crc.h
 devparam.o: global.h devparam.h
 dirutil.o: global.h hpux.h dirutil.h commands.h
 domain.o: global.h mbuf.h iface.h proc.h timer.h socket.h tcp.h internet.h \

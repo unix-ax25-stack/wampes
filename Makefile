@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.16 1993/11/22 14:45:22 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.17 1994/01/14 21:27:44 deyke Exp $
 
 PATH       = /opt/SUNWspro/bin:/usr/lang:/bin:/usr/bin:/usr/ccs/bin:/usr/ucb:/usr/contrib/bin:/usr/local/bin:/usr/local/etc
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
@@ -22,7 +22,7 @@ _all:   /tcp/hostaddr.pag
 
 /usr/local/lib/users: users
 	$(MKDIR)
-	cp users /usr/local/lib && udbm
+	cp $? $@ && udbm
 
 clean:;
 

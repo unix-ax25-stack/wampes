@@ -1,8 +1,9 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.13 1994/01/09 16:20:12 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.14 1994/01/14 21:29:51 deyke Exp $
 
 LIBRARY       = libutil.a
 
 OBJS          = buildsaddr.o \
+		calc_crc.o \
 		callvalid.o \
 		md5.o \
 		strdup.o \
@@ -96,6 +97,7 @@ clean:; rm -f *.o $(LIBRARY) *~
 depend:; @mkmf
 ###
 buildsaddr.o: buildsaddr.h
+calc_crc.o: calc_crc.h
 callvalid.o: callvalid.h
 md5.o: md5.h
 strdup.o: strdup.h
