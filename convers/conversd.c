@@ -1,4 +1,6 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.16 1991/06/05 16:31:39 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.17 1991/06/17 14:13:37 deyke Exp $";
+
+#define _HPUX_SOURCE
 
 #include <sys/types.h>
 
@@ -6,21 +8,25 @@ static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampe
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
 #include <time.h>
+#include <unistd.h>
 #include <utmp.h>
 
-extern char  *calloc();
-extern char  *malloc();
-extern long  time();
-extern struct sockaddr *build_sockaddr();
 extern struct utmp *getutent();
 extern void endutent();
-extern void exit();
-extern void free();
+
+#ifdef __STDC__
+#define __ARGS(x)       x
+#else
+#define __ARGS(x)       ()
+#endif
+
+#include "../src/buildsaddr.h"
 
 #define MAXCHANNEL 32767
 
@@ -74,11 +80,46 @@ struct permlink {
 
 #define NULLPERMLINK  ((struct permlink *) 0)
 
+struct utsname utsname;
+
 static char  *myhostname;
 static long  currtime;
 static struct connection *connections;
 static struct permlink *permlinks;
-static struct utsname utsname;
+
+static void sigpipe_handler __ARGS((int sig, int code, struct sigcontext *scp));
+static void appendstring __ARGS((struct mbuf **bpp, char *string));
+static int queuelength __ARGS((struct mbuf *bp));
+static void freequeue __ARGS((struct mbuf **bpp));
+static void free_connection __ARGS((struct connection *cp));
+static void free_closed_connections __ARGS((void));
+static char *getarg __ARGS((char *line, int all));
+static char *formatline __ARGS((char *prefix, char *text));
+static char *timestring __ARGS((long gmt));
+static struct connection *alloc_connection __ARGS((int fd));
+static void accept_connect_request __ARGS((int flisten));
+static void clear_locks __ARGS((void));
+static void send_user_change_msg __ARGS((char *name, char *host, int oldchannel, int newchannel));
+static void send_msg_to_user __ARGS((char *fromname, char *toname, char *text));
+static void send_msg_to_channel __ARGS((char *fromname, int channel, char *text));
+static void send_invite_msg __ARGS((char *fromname, char *toname, int channel));
+static void update_permlinks __ARGS((char *name, struct connection *cp));
+static void connect_permlinks __ARGS((void));
+static void bye_command __ARGS((struct connection *cp));
+static void channel_command __ARGS((struct connection *cp));
+static void help_command __ARGS((struct connection *cp));
+static void invite_command __ARGS((struct connection *cp));
+static void links_command __ARGS((struct connection *cp));
+static void msg_command __ARGS((struct connection *cp));
+static void name_command __ARGS((struct connection *cp));
+static void who_command __ARGS((struct connection *cp));
+static void h_cmsg_command __ARGS((struct connection *cp));
+static void h_host_command __ARGS((struct connection *cp));
+static void h_invi_command __ARGS((struct connection *cp));
+static void h_umsg_command __ARGS((struct connection *cp));
+static void h_user_command __ARGS((struct connection *cp));
+static void process_input __ARGS((struct connection *cp));
+static void read_configuration __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
 
@@ -699,7 +740,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.16 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.17 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
@@ -1020,7 +1061,7 @@ char  **argv;
   vec.sv_mask = vec.sv_flags = 0;
   vec.sv_handler = sigpipe_handler;
   sigvector(SIGPIPE, &vec, (struct sigvec *) 0);
-  putenv("TZ=MEZ-1MESZ");
+  if (!getenv("TZ")) putenv("TZ=MEZ-1MESZ");
   uname(&utsname);
   myhostname = utsname.nodename;
   time(&currtime);
