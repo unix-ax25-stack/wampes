@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/the-net-program,v 1.1 1994/08/05 10:44:08 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/the-net-program,v 1.2 1994/08/21 10:17:15 deyke Exp $
 .nr Cl 2 \" Max level of header for table of contents
 .H 1 "The /tcp/net Program"
 The executable file \fB/tcp/net\fP
@@ -54,6 +54,8 @@ be specified. This file is then opened and read instead
 of \fB/tcp/net.rc\fP.
 .H 2 "Environment variables"
 The following environment variables are read by \fBWAMPES\fP:
-.H 3 "TZ"
+.VL 20 2
+.LI \fBTZ\fP
 The TZ variable should be set to the local timezone. Default is TZ=MEZ-1MESZ.
 This is used in various time stamps.
+.LE

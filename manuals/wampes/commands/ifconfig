@@ -1,10 +1,10 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ifconfig,v 1.5 1994/08/05 10:36:25 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ifconfig,v 1.6 1994/08/21 10:17:30 deyke Exp $
 .H 2 "ifconfig" " [\fIinterface\fP [[\fIsubcommand\fP \fIparameter\fP] ...]"
 Without arguments display the status of all interfaces.
 When only \fIinterface\fP is given, the status of that interface is displayed.
 Multiple subcommand/parameter pairs can be put on one line.
-.H 3 "ifconfig \fIinterface\fP broadcast" " \fIaddress\fP"
-Set the broadcast address of \fIinterface\fP to \fIaddress\fP.
+.H 3 "ifconfig \fIinterface\fP broadcast" " \fIhostid\fP"
+Set the broadcast address of \fIinterface\fP to \fIhostid\fP.
 This is related to the \fBnetmask\fP subcommand.
 See also the \fBarp\fP command.
 .H 3 "ifconfig \fIinterface\fP encapsulation" " \fIencapsulation\fP"
@@ -53,8 +53,8 @@ that uses \fBax25i\fP or \fBkissi\fP encapsulation).
 .H 3 "ifconfig \fIinterface\fP forward" " \fIinterface2\fP"
 When a forward is defined, all output for \fIinterface\fP is redirected to
 \fIinterface2\fP. To remove the forward, set \fIinterface2\fP to \fIinterface\fP.
-.H 3 "ifconfig \fIinterface\fP ipaddress" " \fIaddress\fP"
-Set the IP address to \fIaddress\fP for this interface. This might be necessary
+.H 3 "ifconfig \fIinterface\fP ipaddress" " \fIhostid\fP"
+Set the IP address to \fIhostid\fP for this interface. This might be necessary
 when a system acts as a gateway.
 See also the \fBhostname\fP and \fBip address\fP commands.
 .H 3 "ifconfig \fIinterface\fP linkaddress" " \fIhardware-dependent\fP"

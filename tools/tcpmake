@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.13 1994/07/22 13:18:05 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.14 1994/08/21 10:17:01 deyke Exp $
 
 save_file()
 {
@@ -114,7 +114,8 @@ mk make
 
 cd ~/tcp/src
 make lint tags
-tcpdiff
+nosdiff
+jnosdiff
 
 cd ~/tcp/tools
 make

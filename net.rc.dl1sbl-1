@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.22 1994/07/25 11:00:04 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.23 1994/08/21 10:16:52 deyke Exp $
 
 hostname     dl1sbl-1
 ax25 mycall  dl1sbl-1
@@ -13,16 +13,8 @@ ax25 route add axip default
 
 axip route add dk0hu 15.138.33.250
 
-route add  44.130.0.0/16        ipip     15.138.33.250
-route add  44.142.52.0/23       ipip     15.138.33.250
-route add  44.143.0.0/16        ipip     15.138.33.250
-route add  db0id-u.ampr.org     ipip     15.138.33.250
-route add  db0id.ampr.org       ipip     15.138.33.250
-route add  db0mws.ampr.org      ipip     15.138.33.250
 route add  db0sao-u.ampr.org    ipip     15.138.33.250
 route add  db0sao.ampr.org      ipip     15.138.33.250
-route add  db0uni.ampr.org      ipip     15.138.33.250
-route add  dd2fx.ampr.org       ipip     15.138.33.250
 route add  df1tl-1.ampr.org     ipip     15.138.33.250
 route add  df1tl-u.ampr.org     ipip     15.138.33.250
 route add  df3du-1.ampr.org     ipip     15.138.33.250

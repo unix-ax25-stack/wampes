@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.4 1994/08/05 10:44:20 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.5 1994/08/21 10:19:06 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
@@ -20,13 +20,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940805" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940821" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 940805
+Version 940821
 .S
 .SP 2
 .S 15
@@ -98,9 +98,11 @@ be specified. This file is then opened and read instead
 of \fB/tcp/net.rc\fP.
 .H 2 "Environment variables"
 The following environment variables are read by \fBWAMPES\fP:
-.H 3 "TZ"
+.VL 20 2
+.LI \fBTZ\fP
 The TZ variable should be set to the local timezone. Default is TZ=MEZ-1MESZ.
 This is used in various time stamps.
+.LE
 .nr Cl 7 \" Max level of header for table of contents
 .H 1 "Console modes"
 The console may be in one of two modes: \fBcommand mode\fP or
@@ -262,7 +264,7 @@ between the specified values. Optional parameters are shown enclosed in
 replaced with an actual value or string. For example, the notation
 \fIhostid\fP denotes an actual host or gateway, which may be specified in
 one of two ways: as a numeric IP address in dotted decimal notation
-(eg. 44.0.0.1), or as a symbolic name listed in the file domain.txt.
+(eg. 44.0.0.1), or as a symbolic name stored in the domain name database.
 .P
 All commands and many subcommands may be abbreviated. You only need
 type enough of a command's name to distinguish it from others that begin
@@ -287,9 +289,10 @@ Display a brief summary of top-level commands.
 Without an argument,
 display the Address Resolution Protocol table that maps IP addresses
 to their subnet (link) addresses.
-For each IP address entry the subnet type (eg. \fBax25\fP, \fBnetrom\fP), link
-address and time to expiration is shown. If the link address is currently
-unknown, the number of IP datagrams awaiting resolution is also shown.
+For each IP address entry the subnet type (eg. \fBax25\fP, \fBnetrom\fP),
+link address, and time to expiration is shown.
+If the link address is currently unknown,
+the number of IP datagrams awaiting resolution is also shown.
 .H 3 "arp add" " \fIhostid\fP ax25|netrom \fIlink_addr\fP"
 Add a permanent entry to the ARP table. It will not time out as
 will an automatically created entry, but must be removed with the
@@ -408,7 +411,6 @@ The interface will be named
 \fBnetrom\fP.
 .H 3 "attach ni" " \fIname\fP \fIip-addr\fP [\fInetmask\fP]"
 Currently \fBattach ni\fP is available on HP-UX systems only.
-.P
 MORE TO BE WRITTEN.
 .H 2 "ax25" " \fIsubcommand\fP"
 These commands control the AX.25 service.
@@ -417,7 +419,7 @@ Display or set the AX.25 retransmission backoff limit. Normally each
 successive AX.25 retransmission is delayed by a factor of 1.25 compared to
 the previous interval, this is called \fBexponential backoff\fP.
 When the number of retries reaches the \fBblimit\fP setting the backoff
-is held at its current value, and not increased anymore.
+is held at its current value, and is not increased anymore.
 Note that this is applicable only to actual AX.25 connections, UI frames
 will never be retransmitted by the AX.25 layer.
 The default is 16.
@@ -494,7 +496,7 @@ Delete the AX.25 control block at the specified address.
 The control block address can be found with the \fBax25 status\fP command.
 .H 3 "ax25 retry" " [\fIcount\fP]"
 Limit the number of successive unsuccessful transmission attempts on
-new AX.25 connections. If this limit is exceeded, then the connection
+new AX.25 connections. If this limit is exceeded, the connection
 is abandoned and all queued data is deleted.
 A \fIcount\fP of 0 allows unlimited transmission attempts.
 The default is 10 tries.
@@ -513,7 +515,7 @@ TO BE WRITTEN.
 .H 3 "ax25 status" " [\fIaxcb_addr\fP]"
 Without an argument, display a one-line summary of each AX.25 control block.
 If the address of a particular control block is specified, the contents of
-that control block are dumped in more detail.
+that control block are shown in more detail.
 .H 3 "ax25 t1" " [\fImilliseconds\fP]"
 Display or set the AX.25 retransmission timer.
 The default is 5000 milliseconds (5 seconds). MORE TO BE WRITTEN.
@@ -536,7 +538,7 @@ are always processed immediately and are not placed on the receive queue.
 However, when an AX.25 connection carries both interactive
 and network packet traffic, an RNR generated because of
 backlogged interactive traffic will also stop network
-packet traffic from being sent.
+packet traffic.
 The default is 2048 bytes.
 .H 2 "axip" " \fIsubcommand\fP"
 TO BE WRITTEN.
@@ -571,7 +573,7 @@ standard format is used, in that each packet holds one line of
 text, terminated by a carriage return. A single AX.25
 connection may be used for terminal-to-terminal, IP and NET/ROM
 traffic, with the three types of data being automatically separated
-by their AX.25 Level 3 Protocol IDs.
+by their AX.25 Protocol IDs.
 .H 2 "delete" " \fIfilename\fP ..."
 Remove the specified files from the file system.
 .H 2 "disconnect" " [\fIsession#\fP]"
@@ -593,7 +595,8 @@ Display or set the flag controlling the tracing of domain name server
 requests and responses.
 The default is \fBoff\fP.
 .H 3 "domain usegethostby" " [on|off]"
-Enable or disable the use of the UNIX functions gethostbyname
+Display or set the flag controlling
+the use of the UNIX functions gethostbyname
 and gethostbyaddr.
 The default is \fBoff\fP.
 MORE TO BE WRITTEN.
@@ -654,16 +657,17 @@ To enter a control character from the keyboard it has
 to be prefixed by Control-V.
 \fIText\fP has to be enclosed in double quotes if it
 contains white space.
-.H 2 "ftp" " \fIhostid\fP"
-Open a FTP control channel to the specified remote host and
-enter converse mode on the new session. Responses from the
-remote server are displayed directly on the screen. See the
-\fBFTP Subcommands\fP chapter for descriptions of the commands available
-in a FTP session.
+.H 2 "ftp" " \fIhostid\fP [\fIport\fP]"
+Open a FTP control channel to the specified remote host
+and enter converse mode on the new session.
+If \fIport\fP is given that port is used. Default port is 21.
+Responses from the remote server are displayed directly on the screen.
+See the \fBFTP Subcommands\fP chapter for descriptions of the commands
+available in a FTP session.
 .H 2 "hostname" " [\fIhostname\fP]"
 Display or set the local host's name. By convention this should
 be the same as the host's primary domain name. This string is
-used only in greeting messages of various network
+used in greeting messages of various network
 servers, and in the command line prompt.
 Note that \fBhostname\fP does NOT set the system's IP address.
 .P
@@ -690,8 +694,8 @@ The default is \fBoff\fP.
 Without arguments display the status of all interfaces.
 When only \fIinterface\fP is given, the status of that interface is displayed.
 Multiple subcommand/parameter pairs can be put on one line.
-.H 3 "ifconfig \fIinterface\fP broadcast" " \fIaddress\fP"
-Set the broadcast address of \fIinterface\fP to \fIaddress\fP.
+.H 3 "ifconfig \fIinterface\fP broadcast" " \fIhostid\fP"
+Set the broadcast address of \fIinterface\fP to \fIhostid\fP.
 This is related to the \fBnetmask\fP subcommand.
 See also the \fBarp\fP command.
 .H 3 "ifconfig \fIinterface\fP encapsulation" " \fIencapsulation\fP"
@@ -740,8 +744,8 @@ that uses \fBax25i\fP or \fBkissi\fP encapsulation).
 .H 3 "ifconfig \fIinterface\fP forward" " \fIinterface2\fP"
 When a forward is defined, all output for \fIinterface\fP is redirected to
 \fIinterface2\fP. To remove the forward, set \fIinterface2\fP to \fIinterface\fP.
-.H 3 "ifconfig \fIinterface\fP ipaddress" " \fIaddress\fP"
-Set the IP address to \fIaddress\fP for this interface. This might be necessary
+.H 3 "ifconfig \fIinterface\fP ipaddress" " \fIhostid\fP"
+Set the IP address to \fIhostid\fP for this interface. This might be necessary
 when a system acts as a gateway.
 See also the \fBhostname\fP and \fBip address\fP commands.
 .H 3 "ifconfig \fIinterface\fP linkaddress" " \fIhardware-dependent\fP"
@@ -816,7 +820,7 @@ allowed, the remaining 24 bits are "don't-cares".
 .H 3 "ipfilter drop" " \fIhostid\fP[/\fIbits\fP]"
 Remove the specified entry from the IP filter table.
 .H 2 "kick" " [\fIsession#\fP]"
-Kick all sockets associated with a session.
+Kick all control blocks associated with a session.
 If no argument is given, kick the current session.
 Performs the same function as the \fBax25 kick\fP,
 \fBnetrom kick\fP, and \fBtcp kick\fP commands,
@@ -830,14 +834,16 @@ entries will be appended to it.
 .H 2 "login" " \fIsubcommand\fP"
 TO BE WRITTEN.
 .H 3 "login auto" " [on|off]"
-Enable or disable automatic login of users. If automatic login
+Display or set the flag controlling
+the automatic login of users. If automatic login
 is enabled the user name is derived from the incoming AX.25
 call, the NET/ROM user name, or the IP host name. If automatic
 login is disabled the user has to supply the user name at the
 login: prompt.
 The default is \fBon\fP.
 .H 3 "login create" " [on|off]"
-Enable or disable automatic creation of user accounts (entries
+Display or set the flag controlling
+the automatic creation of user accounts (entries
 in the system passwd file and home directories) if automatic
 login is enabled.
 The default is \fBon\fP.
@@ -905,7 +911,8 @@ The default is "".
 .H 2 "memory" " \fIsubcommand\fP"
 These commands control memory allocation.
 .H 3 "memory debug" " [on|off]"
-Enable or disable heap debugging. If heap debugging is turned on, all
+Display or set the flag controlling
+heap debugging. If heap debugging is turned on, all
 memory blocks returned by malloc will be filled with the value 0xdd, and
 all memory blocks freed will be filled with the value 0xbb. This makes
 it easier to track uninitialized and freed memory reads.
@@ -914,7 +921,8 @@ The default is \fBoff\fP.
 Display the number of all currently free memory blocks. Different block
 sizes (rounded up to the next power of two) are counted separately.
 .H 3 "memory merge" " [on|off]"
-Enable or disable the attempt to merge adjacent free memory blocks into
+Display or set the flag controlling
+the attempt to merge adjacent free memory blocks into
 bigger blocks. Since merging is CPU intensive in the current
 implementation, and since the probability is high that a merged block
 will have to be split again soon, this option is currently not
@@ -953,29 +961,146 @@ and the number of calls to pushdown which resulted in a call to malloc.
 Create the specified directory.
 .H 2 "netrom" " \fIsubcommand\fP"
 These commands control the NET/ROM service.
-.H 3 "netrom broadcast" " [\fIinterface\fP \fIax25_addr\fP \fIdigipeater\fP ...]"
-TO BE WRITTEN.
+.H 3 "netrom broadcast" " [\fIinterface\fP \fIax25_addr\fP [\fIdigipeater\fP ...]]"
+Without an argument,
+display the NET/ROM broadcast table,
+which lists all interfaces and destination addresses
+to be used if the auto-update broadcast interval timer fires
+(see \fBnetrom parms 7\fP).
+If \fIinterface\fP and \fIax25_addr\fP (and optional \fIdigipeater\fPs)
+are specified, add a new entry to the table.
+The usual destination address for NET/ROM broadcasts is NODES.
+Note that there is currently no way to delete an entry from the table
+(short of restarting \fBWAMPES\fP).
+Example:
+.DS I
+.ft CW
+netrom broadcast tnc0 NODES
+.ft P
+.DE
 .H 3 "netrom connect" " \fInode\fP [\fIuser\fP]"
-TO BE WRITTEN.
+Initiate a NETROM session to the specified NET/ROM \fInode\fP.
+If \fIuser\fP is not specified, the value of \fBax25 mycall\fP
+will be used as user identification.
+The de-facto presentation standard format is used,
+in that each packet holds one line of
+text, terminated by a carriage return.
 .H 3 "netrom ident" " [\fIident\fP]"
-TO BE WRITTEN.
+Display or set the NET/ROM \fBident\fP (also sometimes called "alias").
+The \fBident\fP is only used in outgoing broadcasts,
+it is NOT possible to connect \fBWAMPES\fP
+using the \fBident\fP as destination address.
 .H 3 "netrom kick" " \fInrcb_addr\fP"
 If there is unacknowledged data on the send queue of the specified NET/ROM
 control block, this command forces an immediate retransmission.
 The control block address can be found with the \fBnetrom status\fP command.
 .H 3 "netrom links" " [\fInode\fP [\fInode2\fP \fIquality\fP [permanent]]]"
-TO BE WRITTEN.
+Display or change the NET/ROM links table,
+which controls the NET/ROM routing.
+A link is the direct connection of two nodes,
+without any intermediate nodes.
+Without arguments, all known links are shown.
+If \fInode\fP is given,
+all known links originating from \fInode\fP are shown.
+The fields are as follows:
+.VL 20 2
+.LI \fBFrom\fP
+The name of the originating node for this link.
+.LI \fBTo\fP
+The name of the destination node for this link.
+.LI \fBLevel\fP
+The level (confidence in the correctness of information) of this link.
+Levels are coded as follows:
+.VL 10 2 1
+.LI \fB1\fP
+information created locally
+.LI \fB2\fP
+information reported by neighbor
+.LI \fB3\fP
+information reported by neighbor of neighbor
+.LE
+.LI \fBQuality\fP
+The quality of this link.
+.LI \fBAge\fP
+The age (seconds since last update) of this link.
+If this field is empty, the link is marked \fBpermanent\fP.
+.LE
+.P
+If \fInode\fP, \fInode2\fP, and \fIquality\fP are given,
+a link between \fInode\fP and \fInode2\fP with quality \fIquality\fP
+is put into the table, and also marked \fBpermanent\fP if so specified.
 .H 3 "netrom nodes" " [\fInode\fP]"
-TO BE WRITTEN.
-.H 3 "netrom parms" " [\fIparm#\fP [\fIvalue\fP ...]]"
-TO BE WRITTEN.
+Display information about the specified or all known NET/ROM nodes.
+The fields are as follows:
+.VL 20 2
+.LI \fBNode\fP
+The official name of this node.
+.LI \fBIdent\fP
+The ident (alias) of this node.
+.LI \fBNeighbor\fP
+The neighbor used to reach this node.
+.LI \fBLevel\fP
+The level (confidence in the correctness of information) of this node.
+Levels are coded as follows:
+.VL 10 2 1
+.LI \fB0\fP
+myself
+.LI \fB1\fP
+neighbor
+.LI \fB2\fP
+neighbor of neighbor
+.LI \fB3\fP
+reported by neighbor of neighbor
+.LI \fB999\fP
+unreachable
+.LE
+.LI \fBQuality\fP
+The quality of the path to this node.
+.LE
+.H 3 "netrom parms" " [\fIparm#\fP [\fIvalue\fP]]"
+Display or set NET/ROM parameters.
+The following parameters are available:
+.P
+.TS
+center box tab(;) ;
+cB | cB | cB | cB | cB | cB
+r | l | r | r | r | l.
+Parm;Description;Min;Max;Dflt;Used
+_
+1;Maximum destination list entries;1;400;400;No
+2;Worst quality for auto-updates;0;255;0;No
+3;Channel 0 (HDLC) quality;0;255;192;Yes
+4;Channel 1 (RS232) quality;0;255;255;No
+5;Obsolescence count initializer (0=off);0;255;3;Yes
+6;Obsolescence count min to be broadcast;0;255;0;No
+7;Auto-update broadcast interval (sec, 0=off);0;65535;1800;Yes
+8;Network 'time-to-live' initializer;1;255;16;Yes
+9;Transport timeout (sec);5;600;60;Yes
+10;Transport maximum tries;1;127;5;Yes
+11;Transport acknowledge delay (ms);1;60000;1;No
+12;Transport busy delay (sec);1;1000;180;Yes
+13;Transport requested window size (frames);1;127;8;Yes
+14;Congestion control threshold (frames);1;127;8;Yes
+15;No-activity timeout (sec, 0=off);0;65535;1800;Yes
+16;Persistance;0;255;64;No
+17;Slot time (10msec increments);0;127;10;No
+18;Link T1 timeout 'FRACK' (ms);1;MAXINT;5000;Yes
+19;Link TX window size 'MAXFRAME' (frames);1;7;7;Yes
+20;Link maximum tries (0=forever);0;127;10;Yes
+21;Link T2 timeout (ms);1;MAXINT;1;No
+22;Link T3 timeout (ms);0;MAXINT;900000;Yes
+23;AX.25 digipeating (0=off 1=dumb 2=s&f);0;2;2;Yes
+24;Validate callsigns (0=off 1=on);0;1;0;No
+25;Station ID beacons (0=off 1=after 2=every);0;2;0;No
+26;CQ UI frames (0=off 1=on);0;1;0;No
+.TE
 .H 3 "netrom reset" " \fInrcb_addr\fP"
 Delete the NET/ROM control block at the specified address.
 The control block address can be found with the \fBnetrom status\fP command.
 .H 3 "netrom status" " [\fInrcb_addr\fP]"
 Without an argument, display a one-line summary of each NET/ROM control block.
 If the address of a particular control block is specified, the contents of
-that control block are dumped in more detail.
+that control block are shown in more detail.
 .H 2 "nrstat"
 Display statistics on all attached NET/ROM serial interfaces.
 .H 2 "param" " \fIinterface\fP [\fIname\fP|\fInumber\fP [\fIvalue\fP]]"
@@ -1097,11 +1222,13 @@ Send a UDP packet to the specified host commanding it
 to exit the \fBWAMPES\fP or \fBNOS\fP program, reset the processor,
 or force a retransmission on TCP connections. For this
 command to be accepted, the remote system must be running the \fBremote\fP
-server and the port number specified in the \fBremote\fP command must match
-the port number given when the server was started on the remote system.
+server, and the port number used by the local \fBremote\fP command must match
+the port number used by the remote server.
 If the port numbers do not match, or if the remote server is not running
 on the target system, the command packet is ignored. Even if the
 command is accepted there is no acknowledgement.
+.P
+If the \fB-p\fP option is not specified, port 1234 will be used.
 .P
 The \fBkick\fP command forces a retransmission timeout on all
 TCP connections that the remote node may have with the local node.
@@ -1121,10 +1248,10 @@ net :23456:respawn:env TZ=MST7MDT /tcp/net
 .DE
 .H 3 "remote -s" " \fIkey\fP"
 The \fBexit\fP and \fBreset\fP subcommands of \fBremote\fP require a password.
-The password is set
-on a given system with the \fB-s\fP option, and it is specified in a command
-to a remote system with the \fB-k\fP option. If no password is set with the
-\fB-s\fP option, then the \fBexit\fP and \fBreset\fP subcommands are disabled.
+The password is set on the server with the \fB-s\fP option,
+and it is specified to the client with the \fB-k\fP option.
+If no password is set with the \fB-s\fP option,
+then the \fBexit\fP and \fBreset\fP subcommands are disabled.
 .H 2 "rename" " \fIoldfilename\fP \fInewfilename\fP"
 Rename \fIoldfilename\fP to \fInewfilename\fP.
 .H 2 "repeat" " \fImilliseconds\fP \fIcommand\fP [\fIarguments\fP ...]"
@@ -1132,11 +1259,11 @@ TO BE WRITTEN.
 .H 2 "reset" " [\fIsession#\fP]"
 Reset the specified session, if no argument is given, reset the current
 session. This command should be used with caution since it does not
-reliably inform the remote end that the connection no longer exists. (In
+reliably inform the remote end that the connection no longer exists. In
 TCP a reset (RST) message will be automatically generated should the remote
 TCP send anything after a local \fBreset\fP has been done. In AX.25 the DM
 message performs a similar role. Both are used to get rid of a lingering
-half-open connection after a remote system has crashed.)
+half-open connection after a remote system has crashed.
 .H 2 "rip" " \fIsubcommand\fP"
 These commands control the Routing Information Protocol (RIP) service.
 .H 3 "rip accept" " \fIhostid\fP"
@@ -1162,14 +1289,14 @@ Note that for RIP packets to be sent properly to a broadcast address, there
 must exist correct IP routing and ARP table entries that will first steer
 the broadcast to the correct interface and then place the correct link-level
 broadcast address in the link-level destination field. If a standard IP
-broadcast address convention is used (eg. 44.255.255.255)
+broadcast address convention is used (eg. 44.255.255.255),
 then chances are you already have the necessary IP routing table entry, but
 unusual subnet or cluster-addressed networks may require special attention.
 However, an \fBarp add\fP command will be required to translate this address to
 the appropriate link level broadcast address. For example:
 .DS I
 .ft CW
-arp add 44.255.255.255 ax25 qst-0
+arp add 44.255.255.255 ax25 QST-0
 .ft P
 .DE
 for an AX.25 packet radio channel.
@@ -1229,12 +1356,12 @@ but must be removed with the \fBroute drop\fP command.
 \fBroute add\fP requires at least two more arguments,
 the \fIhostid\fP of the destination and the name of
 the \fIinterface\fP to which its packets should be sent. If the destination is
-not local, the gateway's hostid should also be specified. (If the interface
+not local, the gateway's hostid should also be specified. If the interface
 is a point-to-point link, then \fIgateway_hostid\fP may be omitted even if the
 target is non-local because this field is only used to determine the
 gateway's link level address, if any. If the destination is directly
 reachable, \fIgateway_hostid\fP is also unnecessary since the destination
-address is used to determine the link address).
+address is used to determine the link address.
 .P
 The optional /\fIbits\fP suffix to the destination \fIhostid\fP specifies how
 many leading bits in \fIhostid\fP are to be considered significant in
@@ -1249,7 +1376,7 @@ route add 44/8 sl0 44.64.0.2
 .ft P
 .DE
 causes any IP addresses beginning with "44" in the first 8 bits to be
-routed to 44.64.0.2, the remaining 24 bits are "don't-cares".
+routed via sl0 to 44.64.0.2, the remaining 24 bits are "don't-cares".
 .P
 When an IP address to be routed matches more than one entry in the IP routing
 table, the entry with the largest \fIbits\fP parameter (i.e., the "best" match)
@@ -1263,9 +1390,9 @@ in the IP routing table, it is equivalent to specifying a
 Care must be taken with
 default entries since two nodes with default entries pointing at each
 other will route packets to unknown addresses back and forth in a loop
-until their time-to-live (TTL) fields expire. (Routing loops for
+until their time-to-live (TTL) fields expire. Routing loops for
 specific addresses can also be created, but this is less likely to occur
-accidentally).
+accidentally.
 .P
 There are two built-in interfaces: \fBloopback\fP and \fBencap\fP.
 \fBLoopback\fP is for internal purposes only. \fBEncap\fP is an IP
@@ -1282,9 +1409,8 @@ route add 44.0.0.3 sl0
 .DE
 .DS I
 .ft CW
-# Route all default traffic to the gateway on the local Ethernet
-# with IP address 44.0.0.1.
-route add default ec0 44.0.0.1
+# The station with IP address 44.0.0.10 is on the local AX.25 channel.
+route add 44.0.0.10 ax0
 .ft P
 .DE
 .DS I
@@ -1296,8 +1422,9 @@ route add 192.4.8/24 ec0
 .DE
 .DS I
 .ft CW
-# The station with IP address 44.0.0.10 is on the local AX.25 channel.
-route add 44.0.0.10 ax0
+# Route all default traffic to the gateway on the local Ethernet
+# with IP address 192.4.8.1.
+route add default ec0 192.4.8.1
 .ft P
 .DE
 .H 3 "route addprivate" " \fIhostid\fP[/\fIbits\fP]|default \fIinterface\fP [\fIgateway_hostid\fP [\fImetric\fP]]"
@@ -1452,7 +1579,8 @@ reserved
 .LE 1
 The default is 1.
 .H 3 "sntp trace" " [on|off]"
-Enable or disable sntp tracing.
+Display or set the flag controlling
+sntp tracing.
 The default is \fBoff\fP.
 .H 2 "source" " \fIfilename\fP"
 Read subsequent commands from \fIfilename\fP until EOF, then resume reading
@@ -1480,7 +1608,8 @@ Start the TCP FTP server.
 The default \fIport\fP is 21.
 MORE TO BE WRITTEN.
 .H 3 "start tcpgate" " \fIport\fP [\fIhost\fP[:\fIservice\fP]]"
-TO BE WRITTEN.
+Start a \fBWAMPES\fP TCP to UNIX TCP gateway.
+MORE TO BE WRITTEN.
 .H 3 "start netrom"
 Start the NET/ROM Login server.
 MORE TO BE WRITTEN.

@@ -1,11 +1,12 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/arp,v 1.4 1994/08/05 10:36:22 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/arp,v 1.5 1994/08/21 10:17:29 deyke Exp $
 .H 2 "arp" " [\fIsubcommand\fP]"
 Without an argument,
 display the Address Resolution Protocol table that maps IP addresses
 to their subnet (link) addresses.
-For each IP address entry the subnet type (eg. \fBax25\fP, \fBnetrom\fP), link
-address and time to expiration is shown. If the link address is currently
-unknown, the number of IP datagrams awaiting resolution is also shown.
+For each IP address entry the subnet type (eg. \fBax25\fP, \fBnetrom\fP),
+link address, and time to expiration is shown.
+If the link address is currently unknown,
+the number of IP datagrams awaiting resolution is also shown.
 .H 3 "arp add" " \fIhostid\fP ax25|netrom \fIlink_addr\fP"
 Add a permanent entry to the ARP table. It will not time out as
 will an automatically created entry, but must be removed with the

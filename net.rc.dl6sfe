@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl6sfe,v 1.5 1994/06/03 08:40:10 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl6sfe,v 1.6 1994/08/21 10:16:52 deyke Exp $
 
 hostname     dl6sfe
 ax25 mycall  dl6sfe
@@ -8,13 +8,13 @@ ip address   dl6sfe
 # tnc1: 70 cm (db0aau)
 
 attach asy 0 0 kissi ttyS3 0 256 19200
-param ttyS3  1   9   # txdelay
-param ttyS3  2  31   # persistence
-param ttyS3  3  30   # slottime
-param ttyS3  4   3   # txtail
-param ttyS3  5   0   # full duplex
-param ttyS3 12   0   # echo
-param ttyS3 13   1   # rxdelay
+param ttyS3 TxDelay    9
+param ttyS3 Persist   31
+param ttyS3 SlotTime  30
+param ttyS3 TxTail     3
+param ttyS3 FullDup    0
+param ttyS3 12         0 # Echo
+param ttyS3 13         1 # RxDelay
 
 # attach slip interface (for communication with inetd)
 
@@ -24,9 +24,9 @@ attach netrom                   # ip over netrom
 
 ax25 route add permanent ttyS3 default
 
-route add  default              ttyS3    db0id
+# route add  default              ttyS3    db0id
 
-arp add db0id ax25 db0id
+# arp add db0id ax25 db0id
 
 source /tcp/netrom_links
 

@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/rip,v 1.5 1994/08/05 10:36:29 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/rip,v 1.6 1994/08/21 10:17:31 deyke Exp $
 .H 2 "rip" " \fIsubcommand\fP"
 These commands control the Routing Information Protocol (RIP) service.
 .H 3 "rip accept" " \fIhostid\fP"
@@ -24,14 +24,14 @@ Note that for RIP packets to be sent properly to a broadcast address, there
 must exist correct IP routing and ARP table entries that will first steer
 the broadcast to the correct interface and then place the correct link-level
 broadcast address in the link-level destination field. If a standard IP
-broadcast address convention is used (eg. 44.255.255.255)
+broadcast address convention is used (eg. 44.255.255.255),
 then chances are you already have the necessary IP routing table entry, but
 unusual subnet or cluster-addressed networks may require special attention.
 However, an \fBarp add\fP command will be required to translate this address to
 the appropriate link level broadcast address. For example:
 .DS I
 .ft CW
-arp add 44.255.255.255 ax25 qst-0
+arp add 44.255.255.255 ax25 QST-0
 .ft P
 .DE
 for an AX.25 packet radio channel.

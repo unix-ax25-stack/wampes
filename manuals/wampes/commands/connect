@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/connect,v 1.2 1994/07/27 09:47:53 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/connect,v 1.3 1994/08/21 10:17:30 deyke Exp $
 .H 2 "connect" " \fIax25_addr\fP [\fIdigipeater\fP ...]"
 Initiate a "vanilla" AX.25 session to the specified \fIax25_addr\fP.
 Up to 8 optional digipeaters may be given, note that the word
@@ -9,4 +9,4 @@ standard format is used, in that each packet holds one line of
 text, terminated by a carriage return. A single AX.25
 connection may be used for terminal-to-terminal, IP and NET/ROM
 traffic, with the three types of data being automatically separated
-by their AX.25 Level 3 Protocol IDs.
+by their AX.25 Protocol IDs.

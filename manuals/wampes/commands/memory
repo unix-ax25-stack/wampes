@@ -1,8 +1,9 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/memory,v 1.4 1994/08/05 10:36:27 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/memory,v 1.5 1994/08/21 10:17:31 deyke Exp $
 .H 2 "memory" " \fIsubcommand\fP"
 These commands control memory allocation.
 .H 3 "memory debug" " [on|off]"
-Enable or disable heap debugging. If heap debugging is turned on, all
+Display or set the flag controlling
+heap debugging. If heap debugging is turned on, all
 memory blocks returned by malloc will be filled with the value 0xdd, and
 all memory blocks freed will be filled with the value 0xbb. This makes
 it easier to track uninitialized and freed memory reads.
@@ -11,7 +12,8 @@ The default is \fBoff\fP.
 Display the number of all currently free memory blocks. Different block
 sizes (rounded up to the next power of two) are counted separately.
 .H 3 "memory merge" " [on|off]"
-Enable or disable the attempt to merge adjacent free memory blocks into
+Display or set the flag controlling
+the attempt to merge adjacent free memory blocks into
 bigger blocks. Since merging is CPU intensive in the current
 implementation, and since the probability is high that a merged block
 will have to be split again soon, this option is currently not

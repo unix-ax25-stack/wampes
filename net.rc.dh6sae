@@ -1,17 +1,17 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dh6sae,v 1.5 1994/05/08 11:00:03 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dh6sae,v 1.6 1994/08/21 10:16:51 deyke Exp $
 
 hostname     dh6sae
 ax25 mycall  dh6sae
 ip address   dh6sae
 
 attach asy 0 0 kissi pk232 0 256 9600
-param pk232  1  28   # txdelay
-param pk232  2  31   # persistence
-param pk232  3  30   # slottime
-param pk232  4   3   # txtail
-param pk232  5   0   # full duplex
-param pk232 12   0   # echo
-param pk232 13   1   # rxdelay
+param pk232 TxDelay   28
+param pk232 Persist   31
+param pk232 SlotTime  30
+param pk232 TxTail     3
+param pk232 FullDup    0
+param pk232 12         0 # Echo
+param pk232 13         1 # RxDelay
 
 attach netrom                   # ip over netrom
 
@@ -19,11 +19,11 @@ ax25 route add permanent pk232 db0aau
 ax25 route add permanent pk232 default
 
 route add  db0aau.ampr.org      pk232
-route add  db0id.ampr.org       pk232
-route add  44/8                 pk232    db0id.ampr.org
+# route add  db0id.ampr.org       pk232
+# route add  44/8                 pk232    db0id.ampr.org
 
 arp add db0aau ax25 db0aau
-arp add db0id  ax25 db0id
+# arp add db0id  ax25 db0id
 
 source /tcp/netrom_links
 

@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/attach,v 1.6 1994/08/05 10:36:22 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/attach,v 1.7 1994/08/21 10:17:29 deyke Exp $
 .H 2 "attach" " \fItype\fP [\fItype specific options\fP]
 Configure and attach an interface to the system.
 The details are highly interface type dependent.
@@ -70,5 +70,4 @@ The interface will be named
 \fBnetrom\fP.
 .H 3 "attach ni" " \fIname\fP \fIip-addr\fP [\fInetmask\fP]"
 Currently \fBattach ni\fP is available on HP-UX systems only.
-.P
 MORE TO BE WRITTEN.

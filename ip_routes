@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ip_routes,v 1.37 1994/07/25 11:00:02 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ip_routes,v 1.38 1994/08/21 10:16:50 deyke Exp $
 
 #Host           Destination     Bits    Iface   Metric  Gateway         Private
 #------------------------------------------------------------------------------
@@ -34,22 +34,22 @@ dl2sel-1        dk0hu           32      ipip        20  15.138.33.250
 dl4sas-1        dk0hu           32      ipip        20  15.138.33.250
 dl4sel-1        dk0hu           32      ipip        20  15.138.33.250
 
-db0sao          db0id           32      tnc2      2000
+# db0sao          db0id           32      tnc2      2000
 db0sao          db0sao-u        32      ni           2
 db0sao          df1tl-1         32      tnc1      2000
 db0sao          dk0hu           32      ipip        20  192.1.1.2
 
-db0id           44.130          16      tnc1      2000
-db0id           44.130.56       24      tnc0      2000  db0mws
-db0id           44.142.52       23      tnc5      2000  hb9w
-db0id           44.143          16      tnc0      2000  db0mws
-db0id           db0id-u         32      ni           2
-db0id           db0mws          32      tnc0      2000
-db0id           db0sao          32      tnc3      2000
-db0id           db0uni          32      tnc0      2000
-db0id           dd2fx           32      tnc1      2000
+# db0id           44.130          16      tnc1      2000
+# db0id           44.130.56       24      tnc0      2000  db0mws
+# db0id           44.142.52       23      tnc5      2000  hb9w
+# db0id           44.143          16      tnc0      2000  db0mws
+# db0id           db0id-u         32      ni           2
+# db0id           db0mws          32      tnc0      2000
+# db0id           db0sao          32      tnc3      2000
+# db0id           db0uni          32      tnc0      2000
+# db0id           dd2fx           32      tnc1      2000
 
-dd2fx           db0id           32      tnc1      2000
+# dd2fx           db0id           32      tnc1      2000
 
 dl2sel          dk0hu           32      tnc0      2000
 

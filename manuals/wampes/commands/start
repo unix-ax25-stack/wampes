@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/start,v 1.3 1994/07/27 09:48:00 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/start,v 1.4 1994/08/21 10:17:32 deyke Exp $
 .H 2 "start" " \fIserver\fP [\fIarguments\fP]"
 Start the specified server, allowing remote connection requests.
 .H 3 "start ax25"
@@ -21,7 +21,8 @@ Start the TCP FTP server.
 The default \fIport\fP is 21.
 MORE TO BE WRITTEN.
 .H 3 "start tcpgate" " \fIport\fP [\fIhost\fP[:\fIservice\fP]]"
-TO BE WRITTEN.
+Start a \fBWAMPES\fP TCP to UNIX TCP gateway.
+MORE TO BE WRITTEN.
 .H 3 "start netrom"
 Start the NET/ROM Login server.
 MORE TO BE WRITTEN.

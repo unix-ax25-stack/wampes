@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ax25,v 1.4 1994/08/05 10:36:22 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ax25,v 1.5 1994/08/21 10:17:29 deyke Exp $
 .H 2 "ax25" " \fIsubcommand\fP"
 These commands control the AX.25 service.
 .H 3 "ax25 blimit" " [\fIlimit\fP]"
@@ -6,7 +6,7 @@ Display or set the AX.25 retransmission backoff limit. Normally each
 successive AX.25 retransmission is delayed by a factor of 1.25 compared to
 the previous interval, this is called \fBexponential backoff\fP.
 When the number of retries reaches the \fBblimit\fP setting the backoff
-is held at its current value, and not increased anymore.
+is held at its current value, and is not increased anymore.
 Note that this is applicable only to actual AX.25 connections, UI frames
 will never be retransmitted by the AX.25 layer.
 The default is 16.
@@ -83,7 +83,7 @@ Delete the AX.25 control block at the specified address.
 The control block address can be found with the \fBax25 status\fP command.
 .H 3 "ax25 retry" " [\fIcount\fP]"
 Limit the number of successive unsuccessful transmission attempts on
-new AX.25 connections. If this limit is exceeded, then the connection
+new AX.25 connections. If this limit is exceeded, the connection
 is abandoned and all queued data is deleted.
 A \fIcount\fP of 0 allows unlimited transmission attempts.
 The default is 10 tries.
@@ -102,7 +102,7 @@ TO BE WRITTEN.
 .H 3 "ax25 status" " [\fIaxcb_addr\fP]"
 Without an argument, display a one-line summary of each AX.25 control block.
 If the address of a particular control block is specified, the contents of
-that control block are dumped in more detail.
+that control block are shown in more detail.
 .H 3 "ax25 t1" " [\fImilliseconds\fP]"
 Display or set the AX.25 retransmission timer.
 The default is 5000 milliseconds (5 seconds). MORE TO BE WRITTEN.
@@ -125,5 +125,5 @@ are always processed immediately and are not placed on the receive queue.
 However, when an AX.25 connection carries both interactive
 and network packet traffic, an RNR generated because of
 backlogged interactive traffic will also stop network
-packet traffic from being sent.
+packet traffic.
 The default is 2048 bytes.

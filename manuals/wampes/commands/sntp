@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/sntp,v 1.4 1994/08/05 10:36:30 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/sntp,v 1.5 1994/08/21 10:17:32 deyke Exp $
 .H 2 "sntp" " \fIsubcommand\fP"
 TO BE WRITTEN.
 .H 3 "sntp add" " \fIhostid\fP [\fIinterval\fP]"
@@ -105,5 +105,6 @@ reserved
 .LE 1
 The default is 1.
 .H 3 "sntp trace" " [on|off]"
-Enable or disable sntp tracing.
+Display or set the flag controlling
+sntp tracing.
 The default is \fBoff\fP.

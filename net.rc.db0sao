@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.44 1994/07/25 11:00:02 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.45 1994/08/21 10:16:50 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -8,24 +8,24 @@ netrom ident gaert
 # tnc1: user access (70cm)
 
 attach asy 0 0 kissi tnc1 0 256 9600
-param tnc1  1  40   # txdelay
-param tnc1  2  31   # persistence
-param tnc1  3  30   # slottime
-param tnc1  4   3   # txtail
-param tnc1  5   0   # full duplex
-param tnc1 12   0   # echo
-param tnc1 13   1   # rxdelay
+param tnc1 TxDelay   40
+param tnc1 Persist   31
+param tnc1 SlotTime  30
+param tnc1 TxTail     3
+param tnc1 FullDup    0
+param tnc1 12         0 # Echo
+param tnc1 13         1 # RxDelay
 
 # tnc2: db0id (23cm)
 
 attach asy 0 0 kissi tnc2 0 256 9600
-param tnc2  1  20   # txdelay
-param tnc2  2 255   # persistence
-param tnc2  3   1   # slottime
-param tnc2  4   3   # txtail
-param tnc2  5   0   # full duplex
-param tnc2 12   0   # echo
-param tnc2 13   1   # rxdelay
+param tnc2 TxDelay   20
+param tnc2 Persist  255
+param tnc2 SlotTime   1
+param tnc2 TxTail     3
+param tnc2 FullDup    0
+param tnc2 12         0 # Echo
+param tnc2 13         1 # RxDelay
 
 attach axip                     # ax.25 over host ip
 attach ipip                     # ip over host ip
@@ -35,20 +35,12 @@ attach ni ni db0sao-u           # ip to host ip
 ax25 route add permanent axip dk0hu
 ax25 route add permanent tnc1 default
 ax25 route add permanent tnc1 df1tl
-ax25 route add permanent tnc2 db0id
-ax25 route add permanent tnc2 db0rot db0id
+# ax25 route add permanent tnc2 db0id
+# ax25 route add permanent tnc2 db0rot db0id
 
 axip route add dk0hu 192.1.1.2
 
-route add  44.130.0.0/16        tnc2     db0id.ampr.org
-route add  44.142.52.0/23       tnc2     db0id.ampr.org
-route add  44.143.0.0/16        tnc2     db0id.ampr.org
-route add  db0id-u.ampr.org     tnc2     db0id.ampr.org
-route add  db0id.ampr.org       tnc2
-route add  db0mws.ampr.org      tnc2     db0id.ampr.org
 route add  db0sao-u.ampr.org    ni
-route add  db0uni.ampr.org      tnc2     db0id.ampr.org
-route add  dd2fx.ampr.org       tnc2     db0id.ampr.org
 route add  df1tl-1.ampr.org     tnc1
 route add  df1tl-u.ampr.org     tnc1     df1tl-1.ampr.org
 route add  df3du-1.ampr.org     ipip     192.1.1.2
@@ -66,7 +58,7 @@ route add  dl4sas-1.ampr.org    ipip     192.1.1.2
 route add  dl4sel-1.ampr.org    ipip     192.1.1.2
 route add  dl4sel.ampr.org      ipip     192.1.1.2
 
-arp add db0id   ax25 db0id
+# arp add db0id   ax25 db0id
 arp add df1tl-1 ax25 df1tl
 
 source /tcp/netrom_links

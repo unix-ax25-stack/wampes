@@ -30,3 +30,33 @@
 
 - Mailer: Alle Message Delimiter entfernen
 
+-------------------------------------------------------------------------------
+
+- A block of size  MAX_N has no buddy, it can not be  combined  with any
+  other block.
+
+- A block of size < MAX_N will have a buddy.
+
+- We keep a table of addresses of all blocks of size MAX_N.  This allows
+  us to "normalize" the address of a block, and to calculate the address
+  of its buddy. ===== BETTER SOLUTION REQUIRED =====
+
+	pbuddy = (p - base) ^ size;
+
+- For every  block with size less than MAX_N we can tell if the block is
+  free or not.  A free  block does  contain a pointer  to an other  free
+  block, or a NULL  pointer.  The pointer  will never  point to the free
+  table.  A used block  does  contain a pointer  that will  point to the
+  free table.  An alternative  would be to store n in used blocks.  n is
+  a small integer in the range MIN_N..MAX_N  (typically 3..20), so n can
+  easily be distinguished from a pointer.
+
+- If we free a block,  and its buddy is free too, then those two  blocks
+  will be  recombined.  To unlink the buddy  from the free list  without
+  searching the free list has to be doubly linked.
+
+- Therefore,  we need two  pointers in each free  block, and we need one
+  pointer (or a size) in each allocated block.
+
+-------------------------------------------------------------------------------
+

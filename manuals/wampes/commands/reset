@@ -1,9 +1,9 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/reset,v 1.2 1994/07/27 09:47:58 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/reset,v 1.3 1994/08/21 10:17:31 deyke Exp $
 .H 2 "reset" " [\fIsession#\fP]"
 Reset the specified session, if no argument is given, reset the current
 session. This command should be used with caution since it does not
-reliably inform the remote end that the connection no longer exists. (In
+reliably inform the remote end that the connection no longer exists. In
 TCP a reset (RST) message will be automatically generated should the remote
 TCP send anything after a local \fBreset\fP has been done. In AX.25 the DM
 message performs a similar role. Both are used to get rid of a lingering
-half-open connection after a remote system has crashed.)
+half-open connection after a remote system has crashed.

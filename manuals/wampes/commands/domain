@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/domain,v 1.3 1994/08/05 10:36:23 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/domain,v 1.4 1994/08/21 10:17:30 deyke Exp $
 .H 2 "domain" " \fIsubcommand\fP"
 These commands control the Domain Name Service.
 .H 3 "domain cache list"
@@ -16,7 +16,8 @@ Display or set the flag controlling the tracing of domain name server
 requests and responses.
 The default is \fBoff\fP.
 .H 3 "domain usegethostby" " [on|off]"
-Enable or disable the use of the UNIX functions gethostbyname
+Display or set the flag controlling
+the use of the UNIX functions gethostbyname
 and gethostbyaddr.
 The default is \fBoff\fP.
 MORE TO BE WRITTEN.

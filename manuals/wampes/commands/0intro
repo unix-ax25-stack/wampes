@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/0intro,v 1.3 1994/08/05 10:36:21 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/0intro,v 1.4 1994/08/21 10:17:29 deyke Exp $
 .nr Cl 2 \" Max level of header for table of contents
 .H 1 "Commands"
 This section describes the commands recognized in command mode, or
@@ -27,7 +27,7 @@ between the specified values. Optional parameters are shown enclosed in
 replaced with an actual value or string. For example, the notation
 \fIhostid\fP denotes an actual host or gateway, which may be specified in
 one of two ways: as a numeric IP address in dotted decimal notation
-(eg. 44.0.0.1), or as a symbolic name listed in the file domain.txt.
+(eg. 44.0.0.1), or as a symbolic name stored in the domain name database.
 .P
 All commands and many subcommands may be abbreviated. You only need
 type enough of a command's name to distinguish it from others that begin

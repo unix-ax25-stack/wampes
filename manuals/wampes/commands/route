@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/route,v 1.5 1994/08/05 10:36:29 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/route,v 1.6 1994/08/21 10:17:32 deyke Exp $
 .H 2 "route" " [\fIsubcommand\fP]"
 Without an argument, display the IP routing table.
 .H 3 "route add" " \fIhostid\fP[/\fIbits\fP]|default \fIinterface\fP [\fIgateway_hostid\fP [\fImetric\fP]]"
@@ -8,12 +8,12 @@ but must be removed with the \fBroute drop\fP command.
 \fBroute add\fP requires at least two more arguments,
 the \fIhostid\fP of the destination and the name of
 the \fIinterface\fP to which its packets should be sent. If the destination is
-not local, the gateway's hostid should also be specified. (If the interface
+not local, the gateway's hostid should also be specified. If the interface
 is a point-to-point link, then \fIgateway_hostid\fP may be omitted even if the
 target is non-local because this field is only used to determine the
 gateway's link level address, if any. If the destination is directly
 reachable, \fIgateway_hostid\fP is also unnecessary since the destination
-address is used to determine the link address).
+address is used to determine the link address.
 .P
 The optional /\fIbits\fP suffix to the destination \fIhostid\fP specifies how
 many leading bits in \fIhostid\fP are to be considered significant in
@@ -28,7 +28,7 @@ route add 44/8 sl0 44.64.0.2
 .ft P
 .DE
 causes any IP addresses beginning with "44" in the first 8 bits to be
-routed to 44.64.0.2, the remaining 24 bits are "don't-cares".
+routed via sl0 to 44.64.0.2, the remaining 24 bits are "don't-cares".
 .P
 When an IP address to be routed matches more than one entry in the IP routing
 table, the entry with the largest \fIbits\fP parameter (i.e., the "best" match)
@@ -42,9 +42,9 @@ in the IP routing table, it is equivalent to specifying a
 Care must be taken with
 default entries since two nodes with default entries pointing at each
 other will route packets to unknown addresses back and forth in a loop
-until their time-to-live (TTL) fields expire. (Routing loops for
+until their time-to-live (TTL) fields expire. Routing loops for
 specific addresses can also be created, but this is less likely to occur
-accidentally).
+accidentally.
 .P
 There are two built-in interfaces: \fBloopback\fP and \fBencap\fP.
 \fBLoopback\fP is for internal purposes only. \fBEncap\fP is an IP
@@ -61,9 +61,8 @@ route add 44.0.0.3 sl0
 .DE
 .DS I
 .ft CW
-# Route all default traffic to the gateway on the local Ethernet
-# with IP address 44.0.0.1.
-route add default ec0 44.0.0.1
+# The station with IP address 44.0.0.10 is on the local AX.25 channel.
+route add 44.0.0.10 ax0
 .ft P
 .DE
 .DS I
@@ -75,8 +74,9 @@ route add 192.4.8/24 ec0
 .DE
 .DS I
 .ft CW
-# The station with IP address 44.0.0.10 is on the local AX.25 channel.
-route add 44.0.0.10 ax0
+# Route all default traffic to the gateway on the local Ethernet
+# with IP address 192.4.8.1.
+route add default ec0 192.4.8.1
 .ft P
 .DE
 .H 3 "route addprivate" " \fIhostid\fP[/\fIbits\fP]|default \fIinterface\fP [\fIgateway_hostid\fP [\fImetric\fP]]"

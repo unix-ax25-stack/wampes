@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.40 1994/07/25 11:00:04 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.41 1994/08/21 10:16:51 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -8,13 +8,13 @@ netrom ident "#boeb"
 # tnc0: 2 m
 
 attach asy 0 0 kissi tnc0 0 256 9600
-param tnc0  1  30   # txdelay
-param tnc0  2  31   # persistence
-param tnc0  3  30   # slottime
-param tnc0  4   3   # txtail
-param tnc0  5   0   # full duplex
-param tnc0 12   0   # echo
-param tnc0 13   1   # rxdelay
+param tnc0 TxDelay   30
+param tnc0 Persist   31
+param tnc0 SlotTime  30
+param tnc0 TxTail     3
+param tnc0 FullDup    0
+param tnc0 12         0 # Echo
+param tnc0 13         1 # RxDelay
 
 attach axip                     # ax.25 over host ip
 attach ipip                     # ip over host ip
@@ -34,16 +34,8 @@ axip route add dl2sel-1 15.136.175.24           # hpcsmus.bbn.hp.com
 axip route add dl4sas-1 15.136.216.106          # hpbid1gf.bbn.hp.com
 axip route add dl4sel-1 15.136.136.223          # isoit041.bbn.hp.com
 
-route add  44.130.0.0/16        ipip     192.1.1.1
-route add  44.142.52.0/23       ipip     192.1.1.1
-route add  44.143.0.0/16        ipip     192.1.1.1
-route add  db0id-u.ampr.org     ipip     192.1.1.1
-route add  db0id.ampr.org       ipip     192.1.1.1
-route add  db0mws.ampr.org      ipip     192.1.1.1
 route add  db0sao-u.ampr.org    ipip     192.1.1.1
 route add  db0sao.ampr.org      ipip     192.1.1.1
-route add  db0uni.ampr.org      ipip     192.1.1.1
-route add  dd2fx.ampr.org       ipip     192.1.1.1
 route add  df1tl-1.ampr.org     ipip     192.1.1.1
 route add  df1tl-u.ampr.org     ipip     192.1.1.1
 route add  df3du-1.ampr.org     ipip     15.138.80.94
