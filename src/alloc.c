@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.23 1994/02/07 12:38:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.24 1994/02/10 08:37:55 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -58,26 +58,29 @@ static unsigned long Inuse;
 static unsigned long Morecores;
 static int Memdebug;
 static unsigned long Sizes[33];
+static int Memmerge;
 static unsigned long Splits;
-static unsigned long Recombinations;
+static unsigned long Merges;
 
 #define FREEPATTERN     0xbb
 #define USEDPATTERN     0xdd
 
 static int domdebug(int argc,char *argv[],void *ptr);
 static int dostat(int argc,char *argv[],void *p);
+static int dofreelist(int argc,char *argv[],void *p);
+static int domerge(int argc,char *argv[],void *p);
 static int dosizes(int argc,char *argv[],void *p);
 
 struct cmds Memcmds[] = {
 	"debug",        domdebug,       0, 0, NULLCHAR,
+	"freelist",     dofreelist,     0, 0, NULLCHAR,
+	"merge",        domerge,        0, 0, NULLCHAR,
 	"sizes",        dosizes,        0, 0, NULLCHAR,
 	"status",       dostat,         0, 0, NULLCHAR,
 	NULLCHAR,
 };
 
 /*---------------------------------------------------------------------------*/
-
-#ifdef RECOMBINE
 
 static void putblock(struct block *p, int n)
 {
@@ -88,9 +91,9 @@ static void putblock(struct block *p, int n)
   struct block *pp;
 
 Retry:
-  if (n == MAX_N) {
-    p->next = Freetable[MAX_N];
-    Freetable[MAX_N] = p;
+  if (!Memmerge || n == MAX_N) {
+    p->next = Freetable[n];
+    Freetable[n] = p;
     return;
   }
   pp = (struct block *) (((char *) p) - Blocksize[n]);
@@ -98,7 +101,7 @@ Retry:
   for (cpp = Freetable + n; ; cpp = &cp->next) {
     cp = *cpp;
     if (cp == pp || cp == np) {
-      Recombinations++;
+      Merges++;
       *cpp = cp->next;
 #if 0
       putblock(cp == pp ? pp : p, n + 1);
@@ -116,8 +119,6 @@ Retry:
     }
   }
 }
-
-#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -141,13 +142,7 @@ static struct block *getblock(int n)
     a -= sizeof(struct block *);
     p = (struct block *) a;
   } else if (p = getblock(n + 1)) {
-#ifdef RECOMBINE
     putblock((struct block *) (Blocksize[n] + (char *) p), n);
-#else
-    struct block *q = (struct block *) (Blocksize[n] + (char *) p);
-    q->next = Freetable[n];
-    Freetable[n] = q;
-#endif
     Splits++;
   } else {
     return 0;
@@ -215,12 +210,7 @@ void *blk;
     if (Memdebug) memset((char *) p, FREEPATTERN, Blocksize[n]);
     Frees++;
     Inuse -= Blocksize[n];
-#ifdef RECOMBINE
     putblock(p, n);
-#else
-    p->next = Freetable[n];
-    Freetable[n] = p;
-#endif
   }
 }
 
@@ -331,18 +321,73 @@ void *envp;
 	 Morecores);
 	printf("allocs %lu frees %lu (diff %lu) alloc fails %lu invalid frees %lu\n",
 		Allocs,Frees,Allocs-Frees,Memfail,Invalid);
-	printf("splits %lu recombinations %lu (diff %lu)\n",
-		Splits,Recombinations,Splits-Recombinations);
+	printf("splits %lu merges %lu (diff %lu)\n",
+		Splits,Merges,Splits-Merges);
 	printf("pushdown calls %lu pushdown calls to malloc %lu\n",
 		Pushdowns,Pushalloc);
 	return 0;
 }
 
-#endif
+/*---------------------------------------------------------------------------*/
+
+/* Print heap free list */
+static int
+dofreelist(argc,argv,envp)
+int argc;
+char *argv[];
+void *envp;
+{
+
+	int n;
+	struct block *p;
+	unsigned long l;
+	unsigned long len[33];
+
+	for(n=MIN_N;n<=32;n++){
+		l = 0;
+		for(p=Freetable[n];p;p=p->next)
+			l++;
+		len[n] = l;
+	}
+
+	for(n=MIN_N;n<=MAX_N;n += 4){
+		printf("N=%6u:%10lu|N=%6u:%10lu|N=%6u:%10lu|N=%6u:%10lu\n",
+		 Blocksize[n],len[n],Blocksize[n+1],len[n+1],
+		 Blocksize[n+2],len[n+2],Blocksize[n+3],len[n+3]);
+	}
+	return 0;
+}
 
 /*---------------------------------------------------------------------------*/
 
-#ifndef PURIFY
+static int
+domerge(argc,argv,envp)
+int argc;
+char *argv[];
+void *envp;
+{
+
+	int n;
+	int prev;
+	struct block *p;
+	struct block *pnext;
+
+	prev = Memmerge;
+	setbool(&Memmerge, "Heap merging", argc, argv);
+	if (Memmerge && !prev)
+		for (n = MAX_N - 1; n >= MIN_N; n--) {
+			p = Freetable[n];
+			Freetable[n] = 0;
+			while (p) {
+				pnext = p->next;
+				putblock(p, n);
+				p = pnext;
+			}
+		}
+	return 0;
+}
+
+/*---------------------------------------------------------------------------*/
 
 static int
 dosizes(argc,argv,p)
@@ -353,7 +398,7 @@ void *p;
 	int n;
 
 	for(n=MIN_N;n<=MAX_N;n += 4){
-		printf("N=%6u:%7ld| N=%6u:%7ld| N=%6u:%7ld| N=%6u:%7ld\n",
+		printf("N=%6u:%10lu|N=%6u:%10lu|N=%6u:%10lu|N=%6u:%10lu\n",
 		 Blocksize[n],Sizes[n],Blocksize[n+1],Sizes[n+1],
 		 Blocksize[n+2],Sizes[n+2],Blocksize[n+3],Sizes[n+3]);
 	}

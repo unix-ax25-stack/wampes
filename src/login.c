@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.51 1994/02/07 12:38:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.52 1994/02/10 08:38:01 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -274,11 +274,12 @@ struct passwd *getpasswdentry(const char *name, int create)
     return 0;
   }
   fprintf(fp,
-	  "%s:%s:%d:%d:Amateur &:%s:%s\n",
+	  "%s:%s:%d:%d:Amateur %s:%s:%s\n",
 	  name,
 	  secured ? "*" : "",
 	  uid,
 	  Gid,
+	  name,
 	  homedir,
 	  Shell);
   fclose(fp);
