@@ -1,6 +1,8 @@
-@(#) $Id: ChangeLog,v 1.70 1999/12/15 04:05:43 deyke Exp $
+@(#) $Id: ChangeLog,v 1.71 1999/12/17 04:38:13 deyke Exp $
 
-991214 Dieter Deyke <deyke@hotpop.com>
+991216 Dieter Deyke <deyke@hotpop.com>
+
+	Fixed bug in IP fragment reassembly
 
 	Calling exit(1) instead of abort() if requesting too much memory
 	in malloc()
