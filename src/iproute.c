@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.25 1994/01/21 11:11:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.26 1994/03/30 11:20:37 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -805,6 +805,8 @@ int trace;
 		for(i = 0;i<HASHMOD;i++){
 			for(rp = Routes[bits-1][i];rp != NULLROUTE;rp = rpnext){
 				rpnext = rp->next;
+				if(!run_timer(&rp->timer))
+					continue;
 				for(j=bits-1;j >= 0;j--){
 					if((rp1 = rt_blookup(rp->target,j)) != NULLROUTE){
 						if(rp1->iface != rp->iface

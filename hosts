@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.21 1994/03/21 09:24:05 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.22 1994/03/30 11:19:35 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -4619,7 +4619,7 @@
 #
 #                             H O S T S . N E T
 #
-#  March 12th , 1994 .
+#  March 27th , 1994 .
 #
 # 44.151        Pierre-Francois MONET  f5bqp  (FRANCE)
 #
@@ -4652,7 +4652,7 @@
 44.151.13.7     f5me f5me.ampr.org
 44.151.13.8     f1hgh f1hgh.ampr.org
 
-44.151.17.1     f5rke f5rke.ampr.org
+44.151.17.1     f1rke f1rke.ampr.org
 
 44.151.20.1     f5npb-1 f5npb-1.ampr.org
 
@@ -4782,6 +4782,8 @@
 44.151.57.6     f3qw f3qw.ampr.org
 44.151.57.7     f1dro f1dro.ampr.org
 44.151.57.8     f6kat f6kat.ampr.org
+44.151.57.9     f6djw f6djw.ampr.org
+44.151.57.10    f6cha f6cha.ampr.org
 
 44.151.59.1     f3cf f3cf.ampr.org
 44.151.59.2     f6btx f6btx.ampr.org
@@ -4854,8 +4856,10 @@
 44.151.67.14    f1tfm f1tfm.ampr.org
 44.151.67.15    f5pkf f5pkf.ampr.org
 44.151.67.16    f1jfr f1jfr.ampr.org
+44.151.67.17    f1sca-3 f1sca-3.ampr.org
 
 44.151.68.1     f1aan f1aan.ampr.org
+44.151.68.2     f5sny f5sny.ampr.org
 
 44.151.69.1     f5pql f5pql.ampr.org
 44.151.69.2     f2ly f2ly.ampr.org
