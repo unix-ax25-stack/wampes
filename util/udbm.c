@@ -1,32 +1,150 @@
 /* User Data Base Manager */
 
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.9 1990/08/07 10:52:57 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.10 1991/04/16 13:17:07 deyke Exp $";
+
+#define DEBUG           0
+
+#define _HPUX_SOURCE    1
+
+#include <sys/types.h>
 
 #include <ctype.h>
+#include <errno.h>
 #include <fcntl.h>
-#include <memory.h>
-#include <pwd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <sys/utsname.h>
+#include <sys/stat.h>
 
-struct user {
-  char  call[8];
-  char  name[80];
-  char  street[80];
-  char  city[80];
-  char  qth[8];
-  char  phone[80];
-  char  mail[80];
-  int  alias;
-  struct user *next;
+#ifdef __TURBOC__
+
+#include <alloc.h>
+#include <dos.h>
+#include <io.h>
+
+struct utsname {
+  char  nodename[16];
 };
 
-#define NUM_USERS 2003
+struct passwd {
+  char  *pw_name;
+  char  *pw_gecos;
+};
 
-static int  errors;
+#else
+
+#include <pwd.h>
+#include <sys/utsname.h>
+#include <unistd.h>
+
+#endif
+
+#if (defined(__STDC__) || defined(__TURBOC__))
+#define __ARGS(x)       x
+#else
+#define __ARGS(x)       ()
+#endif
+
+struct user {
+  struct user *next;
+  const char *call;
+  const char *name;
+  const char *street;
+  const char *city;
+  const char *qth;
+  const char *phone;
+  const char *mail;
+  char alias;
+};
+
+#define NUM_USERS 2503
+
+#if DEBUG
+static char usersfile[] = "users";
+static char userstemp[] = "users.tmp";
+static char indexfile[] = "index";
+static char passfile[]  = "passwd";
+static char passtemp[]  = "ptmp";
+static char aliasfile[] = "aliases";
+static char aliastemp[] = "aliases.tmp";
+#else
+static char usersfile[] = "/usr/local/lib/users";
+static char userstemp[] = "/usr/local/lib/users.tmp";
+static char indexfile[] = "/users/bbs/index";
+static char passfile[]  = "/etc/passwd";
+static char passtemp[]  = "/etc/ptmp";
+static char aliasfile[] = "/usr/lib/aliases";
+static char aliastemp[] = "/usr/lib/aliases.tmp";
+#endif
+
+static const char *lockfile;
+static const char *null_string = "";
+static long  heapsize;
 static struct user *users[NUM_USERS];
-static struct utsname utsname;
+static struct user null_user;
+static struct utsname uts_name;
+
+int uname __ARGS((struct utsname *name));
+struct passwd *getpwent __ARGS((void));
+void endpwent __ARGS((void));
+int putpwent __ARGS((struct passwd *p, FILE *f));
+static void terminate __ARGS((const char *s));
+static void *allocate __ARGS((size_t size));
+static int calc_crc __ARGS((const char *str));
+static const char *strsave __ARGS((const char *s));
+static char *strlwc __ARGS((char *s));
+static char *rmspaces __ARGS((char *s));
+static char *strtrim __ARGS((char *s));
+static int is_call __ARGS((const char *s));
+static int is_qth __ARGS((const char *s));
+static int is_phone __ARGS((const char *s));
+static int is_mail __ARGS((const char *s));
+static int join __ARGS((const char **s1, const char **s2));
+static struct user *getup __ARGS((const char *call, int create));
+static FILE *fopenexcl __ARGS((const char *path));
+static void output_line __ARGS((const struct user *up, FILE *fp));
+static int fixusers __ARGS((void));
+static void fixpasswd __ARGS((void));
+static void fixaliases __ARGS((void));
+int main __ARGS((void));
+
+/*---------------------------------------------------------------------------*/
+
+#ifdef __TURBOC__
+
+unsigned  _stklen = 10240;
+
+int  uname(struct utsname *name)
+{
+  strcpy(name->nodename, "db0sao");
+  return 0;
+}
+
+struct passwd *getpwent(void)
+{
+  return NULL;
+}
+
+void endpwent(void)
+{
+}
+
+int  putpwent(struct passwd *p, FILE *f)
+{
+  return 0;
+}
+
+#endif
+
+/*---------------------------------------------------------------------------*/
+
+static void terminate(s)
+const char *s;
+{
+  perror(s);
+  if (lockfile) unlink(lockfile);
+  exit(1);
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -34,23 +152,33 @@ static struct utsname utsname;
 
 /*---------------------------------------------------------------------------*/
 
-char  *malloc(size)
-unsigned int  size;
+static void *allocate(size)
+size_t size;
 {
 
-#define ALLOCSIZE (64*1024)
-
-  char  *p, *sbrk();
   static char  *freespace;
-  static int  freesize;
+  static size_t allocsize = 64*1024-2;
+  static size_t freesize;
+  void * p;
 
   if (size & 1) size++;
   if (size > freesize) {
-    if (size > ALLOCSIZE) return 0;
-    p = sbrk(ALLOCSIZE);
-    if ((int) p == -1) return 0;
-    freespace = p;
-    freesize = ALLOCSIZE;
+    for (; ; ) {
+#ifdef __TURBOC__
+      fprintf(stderr, "size = %u coreleft = %lu allocsize = %u\n",
+	      size, coreleft(), allocsize);
+#endif
+      if (size > allocsize) {
+	errno = ENOMEM;
+	terminate("allocate()");
+      }
+      if ((freespace = malloc(allocsize)) != NULL) {
+	freesize = allocsize;
+	heapsize += allocsize;
+	break;
+      }
+      allocsize >>= 1;
+    }
   }
   p = freespace;
   freespace += size;
@@ -60,32 +188,13 @@ unsigned int  size;
 
 /*---------------------------------------------------------------------------*/
 
-/*ARGSUSED*/
-void free(p)
-char  *p;
-{
-}
-
-/*---------------------------------------------------------------------------*/
-
-char  *calloc(nelem, elsize)
-unsigned int  nelem, elsize;
-{
-  unsigned int  size;
-
-  size = nelem * elsize;
-  return memset(malloc(size), 0, (int) size);
-}
-
-/*---------------------------------------------------------------------------*/
-
 /* Calculate crc16 for a null terminated string (used for hashing) */
 
-static unsigned short  calc_crc(str)
-char  *str;
+static int  calc_crc(str)
+const char *str;
 {
 
-  static unsigned short  crc_table[] = {
+  static const int crc_table[] = {
     0x0000, 0xc0c1, 0xc181, 0x0140, 0xc301, 0x03c0, 0x0280, 0xc241,
     0xc601, 0x06c0, 0x0780, 0xc741, 0x0500, 0xc5c1, 0xc481, 0x0440,
     0xcc01, 0x0cc0, 0x0d80, 0xcd41, 0x0f00, 0xcfc1, 0xce81, 0x0e40,
@@ -120,11 +229,43 @@ char  *str;
     0x8201, 0x42c0, 0x4380, 0x8341, 0x4100, 0x81c1, 0x8081, 0x4040
   };
 
-  unsigned short  crc = 0;
+  int  crc;
 
+  crc = 0;
   while (*str)
-    crc = (crc >> 8) ^ crc_table[uchar(crc ^ *str++)];
+    crc = ((crc >> 8) & 0xff) ^ crc_table[(crc ^ *str++) & 0xff];
   return crc;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static const char *strsave(s)
+const char *s;
+{
+
+#define NUM_STRINGS 4999
+
+  struct strings {
+    struct strings *next;
+    char  s[1];
+  };
+
+  int  hash;
+  static struct strings *strings[NUM_STRINGS];
+  struct strings *p;
+
+  if (!*s) return null_string;
+  for (p = strings[hash = ((calc_crc(s) & 0x7fff) % NUM_STRINGS)];
+       p && strcmp(s, p->s);
+       p = p->next)
+    ;
+  if (!p) {
+    p = allocate(sizeof(struct strings *) + strlen(s) + 1);
+    strcpy(p->s, s);
+    p->next = strings[hash];
+    strings[hash] = p;
+  }
+  return p->s;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -132,9 +273,9 @@ char  *str;
 static char  *strlwc(s)
 char  *s;
 {
-  char *p;
+  char  *p;
 
-  for (p = s; *p = tolower(uchar(*p)); p++) ;
+  for (p = s; (*p = tolower(uchar(*p))) != 0; p++) ;
   return s;
 }
 
@@ -166,23 +307,8 @@ char  *s;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *strpos(str, pat)
-char  *str, *pat;
-{
-  char  *s, *p;
-
-  for (; ; str++)
-    for (s = str, p = pat; ; ) {
-      if (!*p) return str;
-      if (!*s) return 0;
-      if (*s++ != *p++) break;
-    }
-}
-
-/*---------------------------------------------------------------------------*/
-
 static int  is_call(s)
-char  *s;
+const char *s;
 {
   int  d, l;
 
@@ -199,28 +325,26 @@ char  *s;
 /*---------------------------------------------------------------------------*/
 
 static int  is_qth(s)
-char  *s;
+const char *s;
 {
-  char  buf[8];
-
   switch (strlen(s)) {
   case 5:
-    strlwc(strcpy(buf, s));
-    if (buf[0] >= 'a' && buf[0] <= 'z' &&
-	buf[1] >= 'a' && buf[1] <= 'z' &&
-	buf[2] >= '0' && buf[2] <= '8' &&
-	buf[3] >= '0' && buf[3] <= '9' &&
-	buf[4] >= 'a' && buf[4] <= 'j' &&
-	buf[4] != 'i') return 1;
+    if ((s[0] >= 'A' && s[0] <= 'Z' || s[0] >= 'a' && s[0] <= 'z') &&
+	(s[1] >= 'A' && s[1] <= 'Z' || s[1] >= 'a' && s[1] <= 'z') &&
+	(s[2] >= '0' && s[2] <= '8'                              ) &&
+	(s[3] >= '0' && s[3] <= '9'                              ) &&
+	(s[4] >= 'A' && s[4] <= 'J' || s[4] >= 'a' && s[4] <= 'j') &&
+	 s[4] != 'I' && s[4] != 'i')
+      return 1;
     break;
   case 6:
-    strlwc(strcpy(buf, s));
-    if (buf[0] >= 'a' && buf[0] <= 'r' &&
-	buf[1] >= 'a' && buf[1] <= 'r' &&
-	buf[2] >= '0' && buf[2] <= '9' &&
-	buf[3] >= '0' && buf[3] <= '9' &&
-	buf[4] >= 'a' && buf[4] <= 'x' &&
-	buf[5] >= 'a' && buf[5] <= 'x') return 1;
+    if ((s[0] >= 'A' && s[0] <= 'R' || s[0] >= 'a' && s[0] <= 'r') &&
+	(s[1] >= 'A' && s[1] <= 'R' || s[1] >= 'a' && s[1] <= 'r') &&
+	(s[2] >= '0' && s[2] <= '9'                              ) &&
+	(s[3] >= '0' && s[3] <= '9'                              ) &&
+	(s[4] >= 'A' && s[4] <= 'X' || s[4] >= 'a' && s[4] <= 'x') &&
+	(s[5] >= 'A' && s[5] <= 'X' || s[5] >= 'a' && s[5] <= 'x'))
+      return 1;
     break;
   }
   return 0;
@@ -229,7 +353,7 @@ char  *s;
 /*---------------------------------------------------------------------------*/
 
 static int  is_phone(s)
-char  *s;
+const char *s;
 {
   int  slash;
 
@@ -244,38 +368,23 @@ char  *s;
 /*---------------------------------------------------------------------------*/
 
 static int  is_mail(s)
-char  *s;
+const char *s;
 {
-  return (int) (strchr(s, '@') != (char *) 0);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void clear_user(up)
-struct user *up;
-{
-  *up->call = '\0';
-  *up->name = '\0';
-  *up->street = '\0';
-  *up->city = '\0';
-  *up->qth = '\0';
-  *up->phone = '\0';
-  *up->mail = '\0';
-  up->alias = 0;
-  up->next = 0;
+  return (int) (strchr(s, '@') != NULL);
 }
 
 /*---------------------------------------------------------------------------*/
 
 static int  join(s1, s2)
-char  *s1, *s2;
+const char **s1, **s2;
 {
-  if (strpos(s2, s1)) {
-    strcpy(s1, s2);
+  if (s1 == s2) return 0;
+  if (*s1 == null_string || strstr(*s2, *s1)) {
+    *s1 = *s2;
     return 0;
   }
-  if (strpos(s1, s2)) {
-    strcpy(s2, s1);
+  if (*s2 == null_string || strstr(*s1, *s2)) {
+    *s2 = *s1;
     return 0;
   }
   return 1;
@@ -284,18 +393,21 @@ char  *s1, *s2;
 /*---------------------------------------------------------------------------*/
 
 static struct user *getup(call, create)
-char  *call;
+const char *call;
 int  create;
 {
 
   int  hash;
   struct user *up;
 
-  for (up = users[hash = calc_crc(call) % NUM_USERS]; up && strcmp(call, up->call); up = up->next) ;
+  for (up = users[hash = ((calc_crc(call) & 0x7fff) % NUM_USERS)];
+       up && strcmp(call, up->call);
+       up = up->next)
+    ;
   if (create && !up) {
-    up = (struct user *) malloc(sizeof(struct user ));
-    clear_user(up);
-    strcpy(up->call, call);
+    up = allocate(sizeof(*up));
+    *up = null_user;
+    up->call = strsave(call);
     up->next = users[hash];
     users[hash] = up;
   }
@@ -305,24 +417,27 @@ int  create;
 /*---------------------------------------------------------------------------*/
 
 static FILE *fopenexcl(path)
-char  *path;
+const char *path;
 {
 
-  int  fd;
-  unsigned long  try, sleep();
+  FILE * fp;
+  int  fd, try;
 
   for (try = 1; ; try++) {
-    if ((fd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0444)) >= 0) break;
-    if (try == 10) return 0;
+    if ((fd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0644)) >= 0) break;
+    if (try >= 10) terminate(path);
     sleep(try);
   }
-  return fdopen(fd, "w");
+  lockfile = path;
+  fp = fdopen(fd, "w");
+  if (!fp) terminate(path);
+  return fp;
 }
 
 /*---------------------------------------------------------------------------*/
 
 static void output_line(up, fp)
-struct user *up;
+const struct user *up;
 FILE *fp;
 {
 
@@ -335,8 +450,9 @@ FILE *fp;
     for (f = (s); *f; *t++ = *f++) ; \
   }
 
-  char  line[1024];
-  char  *f, *t;
+  char line[1024];
+  const char *f;
+  char *t;
 
   t = line;
   *t = '\0';
@@ -354,7 +470,7 @@ FILE *fp;
 
 /*---------------------------------------------------------------------------*/
 
-static void fixusers()
+static int  fixusers()
 {
 
 #define NF 20
@@ -370,35 +486,27 @@ static void fixusers()
     long  date;
     int  mesg;
     char  bid[LEN_BID+1];
-    char  pad1;
+    char  lifetime_h;
     char  subject[LEN_SUBJECT+1];
-    char  pad2;
+    char  lifetime_l;
     char  to[LEN_TO+1];
     char  at[LEN_AT+1];
     char  from[LEN_FROM+1];
     char  deleted;
   };
 
-  static char  tempfile[] = "/usr/local/lib/users.tmp";
-  static char  usersfile[] = "/usr/local/lib/users";
-
-  FILE * fpi, *fpo;
+  FILE *fpi, *fpo;
   char  *f, *t;
   char  *field[NF];
   char  line[1024], orig_line[1024], mybbs[1024];
-  int  fd, i, nf, timestamp;
+  int  errors = 0;
+  int  i, nf, timestamp;
   struct index index;
   struct user *up;
   struct user user;
 
-  if (!(fpi = fopen(usersfile, "r"))) {
-    errors++;
-    return;
-  }
-  if (!(fpo = fopenexcl(tempfile))) {
-    errors++;
-    return;
-  }
+  if (!(fpi = fopen(usersfile, "r"))) terminate(usersfile);
+  fpo = fopenexcl(userstemp);
   while (fgets(line, sizeof(line), fpi)) {
     for (f = line; *f; f++)
       if (isspace(uchar(*f))) *f = ' ';
@@ -407,10 +515,10 @@ static void fixusers()
     if (t > line && t[-1] == ' ') t--;
     *t = '\0';
     strcpy(orig_line, line);
-    memset((char *) f, 0, sizeof(f));
-    clear_user(&user);
-    nf = 0;
     f = line;
+    memset(field, 0 , sizeof(field));
+    nf = 0;
+    user = null_user;
     for (; ; ) {
       while (*f && (*f == ' ' || *f == ',')) f++;
       if (!*f) break;
@@ -426,19 +534,19 @@ static void fixusers()
     for (i = 0; i < NF; i++)
       if (field[i]) {
 	if (!*user.call && is_call(field[i])) {
-	  strlwc(strcpy(user.call, field[i]));
+	  user.call = strsave(strlwc(field[i]));
 	  field[i] = NULL;
 	  nf--;
 	} else if (!*user.qth && is_qth(field[i])) {
-	  strlwc(strcpy(user.qth, field[i]));
+	  user.qth = strsave(strlwc(field[i]));
 	  field[i] = NULL;
 	  nf--;
 	} else if (!*user.phone && is_phone(field[i])) {
-	  strcpy(user.phone, field[i]);
+	  user.phone = strsave(field[i]);
 	  field[i] = NULL;
 	  nf--;
 	} else if (!*user.mail && is_mail(field[i])) {
-	  strlwc(rmspaces(strcpy(user.mail, field[i])));
+	  user.mail = strsave(strlwc(rmspaces(field[i])));
 	  field[i] = NULL;
 	  nf--;
 	}
@@ -446,7 +554,7 @@ static void fixusers()
     if (nf)
       for (i = 0; i < NF; i++)
 	if (field[i]) {
-	  strcpy(user.name, field[i]);
+	  user.name = strsave(field[i]);
 	  field[i] = NULL;
 	  nf--;
 	  break;
@@ -454,7 +562,7 @@ static void fixusers()
     if (nf >= 2)
       for (i = 0; i < NF; i++)
 	if (field[i]) {
-	  strcpy(user.street, field[i]);
+	  user.street = strsave(field[i]);
 	  field[i] = NULL;
 	  nf--;
 	  break;
@@ -462,7 +570,7 @@ static void fixusers()
     if (nf)
       for (i = 0; i < NF; i++)
 	if (field[i]) {
-	  strcpy(user.city, field[i]);
+	  user.city = strsave(field[i]);
 	  field[i] = NULL;
 	  nf--;
 	  break;
@@ -480,12 +588,12 @@ static void fixusers()
       continue;
     }
     up = getup(user.call, 1);
-    if (join(up->name, user.name)     |
-	join(up->street, user.street) |
-	join(up->city, user.city)     |
-	join(up->qth, user.qth)       |
-	join(up->phone, user.phone)   |
-	join(up->mail, user.mail)) {
+    if (join(&up->name, &user.name)     |
+	join(&up->street, &user.street) |
+	join(&up->city, &user.city)     |
+	join(&up->qth, &user.qth)       |
+	join(&up->phone, &user.phone)   |
+	join(&up->mail, &user.mail)) {
       errors++;
       fprintf(stderr, "***** Join failed *****\n%s\n\n", orig_line);
       output_line(&user, fpo);
@@ -493,28 +601,38 @@ static void fixusers()
   }
   fclose(fpi);
 
-  if ((fd = open("/users/bbs/index", O_RDONLY, 0644)) >= 0) {
-    while (read(fd, (char *) & index, sizeof(struct index )) == sizeof(struct index ))
-      if (!strcmp(index.to, "M")                                 &&
+  if ((fpi = fopen(indexfile, "r")) != NULL) {
+    while (fread((char *) &index, sizeof(index), 1, fpi))
+      if (index.to[0] == 'M' && index.to[1] == '\0'              &&
 	  !strcmp(index.at, "THEBOX")                            &&
 	  is_call(index.from)                                    &&
 	  sscanf(index.subject, "%s %d", mybbs, &timestamp) == 2 &&
 	  is_call(mybbs)) {
 	up = getup(strlwc(index.from), 1);
-	strcpy(up->mail, "@");
-	strcat(up->mail, strlwc(mybbs));
+	*line = '@';
+	strcpy(line+1, strlwc(mybbs));
+	up->mail = strsave(line);
       }
-    close(fd);
+    fclose(fpi);
   }
 
-  up = getup(utsname.nodename, 1);
-  sprintf(up->mail, "@%s", up->call);
+  if (is_call(uts_name.nodename)) {
+    up = getup(uts_name.nodename, 1);
+    *line = '@';
+    strcpy(line+1, up->call);
+    up->mail = strsave(line);
+  }
 
   for (i = 0; i < NUM_USERS; i++)
     for (up = users[i]; up; up = up->next) output_line(up, fpo);
   fclose(fpo);
 
-  rename(tempfile, usersfile);
+#ifdef __TURBOC__
+  unlink(usersfile);
+#endif
+  if (rename(userstemp, usersfile)) terminate(usersfile);
+  lockfile = NULL;
+  return errors;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -522,24 +640,23 @@ static void fixusers()
 static void fixpasswd()
 {
 
-  static char  passfile[] = "/etc/passwd";
-  static char  tempfile[] = "/etc/ptmp";
-
   FILE * fp;
   struct passwd *pp;
   struct user *up;
 
-  if (!(fp = fopenexcl(tempfile))) {
-    errors++;
-    return;
-  }
-  while (pp = getpwent()) {
-    if (up = getup(pp->pw_name, 0)) pp->pw_gecos = up->name;
+  fp = fopenexcl(passtemp);
+  while ((pp = getpwent()) != NULL) {
+    if (is_call(pp->pw_name) && (up = getup(pp->pw_name, 0)) != NULL)
+      pp->pw_gecos = (char *) up->name;
     putpwent(pp, fp);
   }
   endpwent();
   fclose(fp);
-  rename(tempfile, passfile);
+#ifdef __TURBOC__
+  unlink(passfile);
+#endif
+  if (rename(passtemp, passfile)) terminate(passfile);
+  lockfile = NULL;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -547,32 +664,23 @@ static void fixpasswd()
 static void fixaliases()
 {
 
-  static char  aliasfile[] = "/usr/lib/aliases";
-  static char  tempfile[] = "/usr/lib/aliases.tmp";
-
   FILE * fpi, *fpo;
   char  *p;
   char  line[1024];
   int  i;
   struct user *up;
 
-  if (!(fpi = fopen(aliasfile, "r"))) {
-    errors++;
-    return;
-  }
-  if (!(fpo = fopenexcl(tempfile))) {
-    errors++;
-    return;
-  }
+  if (!(fpi = fopen(aliasfile, "r"))) terminate(aliasfile);
+  fpo = fopenexcl(aliastemp);
   while (fgets(line, sizeof(line), fpi)) {
     if (!strncmp(line, "# Generated", 11)) break;
     fputs(line, fpo);
     if (isspace(uchar(*line))) continue;
-    if (p = strchr(line, '#')) *p = '\0';
+    if ((p = strchr(line, '#')) != NULL) *p = '\0';
     if (!(p = strchr(line, ':'))) continue;
     while (--p >= line && isspace(uchar(*p))) ;
     p[1] = '\0';
-    if (up = getup(line, 0)) up->alias = 1;
+    if ((up = getup(line, 0)) != NULL) up->alias = 1;
   }
   fclose(fpi);
   fputs("# Generated aliases\n", fpo);
@@ -584,19 +692,42 @@ static void fixaliases()
 	else
 	  fprintf(fpo, "%s\t\t: %s\n", up->call, up->mail);
   fclose(fpo);
-  rename(tempfile, aliasfile);
+#ifdef __TURBOC__
+  unlink(aliasfile);
+#endif
+  if (rename(aliastemp, aliasfile)) terminate(aliasfile);
+  lockfile = NULL;
 }
 
 /*---------------------------------------------------------------------------*/
 
-main()
+int  main()
 {
+
+  null_user.next = 0;
+  null_user.call = null_string;
+  null_user.name = null_string;
+  null_user.street = null_string;
+  null_user.city = null_string;
+  null_user.qth = null_string;
+  null_user.phone = null_string;
+  null_user.mail = null_string;
+  null_user.alias = 0;
+
   umask(022);
-  uname(&utsname);
-  fixusers();
-  if (!errors) fixpasswd();
-  if (!errors) fixaliases();
-  if (!errors) system("exec /usr/bin/newaliases >/dev/null 2>&1");
+  uname(&uts_name);
+  if (!fixusers()) {
+    fixpasswd();
+    fixaliases();
+#if (!DEBUG && !defined(__TURBOC__))
+    system("exec /usr/bin/newaliases >/dev/null 2>&1");
+#endif
+  }
+
+#if DEBUG
+  fprintf(stderr, "Total heap size = %ld Bytes\n", heapsize);
+#endif
+
   return 0;
 }
 
