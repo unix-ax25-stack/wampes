@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Id: bbs.c,v 3.8 1996/09/09 22:16:59 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: bbs.c,v 3.9 1996/11/24 17:27:24 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -676,11 +676,13 @@ static void split_address(const char *addr, char *userpart, char *hostpart)
   char *cp;
   const char *from;
 
-  for (cp = buf, from = addr; *from; from++)
-    if (*from == '%')
+  for (cp = buf, from = addr; *from; from++) {
+    if (*from == '%') {
       *cp++ = '@';
-    else
+    } else {
       *cp++ = Xtolower(*from & 0xff);
+    }
+  }
   *cp = 0;
 
   translate_bangs(buf);
@@ -693,16 +695,23 @@ static void split_address(const char *addr, char *userpart, char *hostpart)
     *cp = 0;
     strcpy(hostpart, cp + 1);
     cp = strchr(hostpart, '@');
-    if (cp)
+    if (cp) {
       *cp = 0;
+    }
   }
 
-  if (!*userpart || !strcmp(userpart, "mailer-daemon"))
+  if (!*userpart || !strcmp(userpart, "mailer-daemon")) {
     strcpy(userpart, myhostname);
-  if ((cp = strchr(hostpart, '.')))
+  }
+  if (!strcmp(userpart, "deyke")) {
+    strcpy(userpart, "dk5sg");
+  }
+  if ((cp = strchr(hostpart, '.'))) {
     *cp = 0;
-  if (!*hostpart)
+  }
+  if (!*hostpart) {
     strcpy(hostpart, myhostname);
+  }
 }
 
 /*---------------------------------------------------------------------------*/

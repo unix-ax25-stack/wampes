@@ -1,6 +1,6 @@
-/* @(#) $Id: version.c,v 1.335 1996/10/28 22:46:44 deyke Exp $ */
+/* @(#) $Id: version.c,v 1.336 1996/11/24 17:26:18 deyke Exp $ */
 
-static char id[] = "@(#)WAMPES-961028";
+static char id[] = "@(#)WAMPES-961124";
 
 /* version control information */
 char *Version = id + 4;

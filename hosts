@@ -10,10 +10,10 @@
 # Spalte 3: Kommentar: Name des/r Betreiber/s/in, Ort. Verlaessliche TCP/IP-
 #           Routing-Knotenrechner sind mit *** gekennzeichnet
 # -----------------------------------------------------------------------
-#44.130.0.x     Hamburg
-#local coordination dk3uz
-#last update 960911
 #
+# 44.130.0.x Hamburg
+# local coordination dk3uz
+# last update 961111
 44.130.0.1      dl2vo   dl2vo.ampr.org
 44.130.0.2      dl2vo-1 dl2vo-1.ampr.org
 44.130.0.3      dk5xa   dk5xa.ampr.org
@@ -121,8 +121,8 @@
 44.130.0.122    dk3hg-1 dk3hg-1.ampr.org
 44.130.0.123    dg4ham-6        dg4ham-6.ampr.org
 44.130.0.124    dg4hx   dg4hx.ampr.org
-44.130.0.125    dc1hi   dc1hi.ampr.org
-44.130.0.126    dg4hx-host      dg4hx-host.ampr.org
+44.130.0.125    dg4hx-wampes    dg4hx-wampes.ampr.org
+44.130.0.126    dc1hi   dc1hi.ampr.org
 44.130.0.127    dl1hdw  dl1hdw.ampr.org
 44.130.0.130    dd0xp   dd0xp.ampr.org
 44.130.0.131    dd6xl   dd6xl.ampr.org
@@ -159,7 +159,7 @@
 44.130.0.183    dl7laz-2        dl7laz-2.ampr.org
 44.130.0.200    db0sef  db0sef.ampr.org
 44.130.0.202    dg5ht-1 dg5ht-1.ampr.org
-44.130.0.203    dl8xas-host     dl8xas-host.ampr.org
+44.130.0.203    dl8xas-wampes   dl8xas-wampes.ampr.org
 44.130.0.207    df7hi-2 df7hi-2.ampr.org
 44.130.0.211    dh1had-2        dh1had-2.ampr.org
 44.130.0.218    dg8xt-2 dg8xt-2.ampr.org
@@ -173,9 +173,9 @@
 44.130.0.252    hhtest2 hhtest2.ampr.org
 44.130.0.253    hhtest3 hhtest3.ampr.org
 #
-#44.130.1.x     Hamburg North
-#local coordination dk3uz
-#last update 960911
+# 44.130.1.x Hamburg North
+# local coordination dk3uz
+# last update 961025
 44.130.1.1      df2lh   df2lh.ampr.org
 44.130.1.2      dl1haz  dl1haz.ampr.org
 44.130.1.3      dk9hs   dk9hs.ampr.org
@@ -195,6 +195,7 @@
 44.130.1.18     dg6bdo-3        dg6bdo-3.ampr.org
 44.130.1.19     df9hu   df9hu.ampr.org
 44.130.1.20     dd0ld   dd0ld.ampr.org
+44.130.1.21     dl1hbn  dl1hbn.ampr.org
 44.130.1.22     dg2lbi  dg2lbi.ampr.org
 44.130.1.25     dg5lan  dg5lan.ampr.org
 44.130.1.28     dl8xi   dl8xi.ampr.org
@@ -210,16 +211,16 @@
 44.130.1.198    dg6lac-svr      dg6lac-svr.ampr.org
 44.130.1.199    dl2xap-2        dl2xap-2.ampr.org
 #
-#44.130.2.x     Hamburg South
-#local coordination dk3uz
-#last update 960911
+# 44.130.2.x    Hamburg South
+# local coordination dk3uz
+# 961111
 44.130.2.1      dg1hg   dg1hg.ampr.org
 44.130.2.2      dg5ht   dg5ht.ampr.org
 44.130.2.3      dc3hc   dc3hc.ampr.org
 44.130.2.4      dl8xas-tst      dl8xas-tst.ampr.org
 44.130.2.5      dg4hx-9k6       dg4hx-9k6.ampr.org
 44.130.2.6      dl3haq  dl3haq.ampr.org
-44.130.2.7      dg1hg-svr       dg1hg-svr.ampr.org
+44.130.2.7      dg1hg-wampes    dg1hg-wampes.ampr.org
 44.130.2.10     dg5ht-svr       dg5ht-svr.ampr.org
 44.130.2.11     dc4xc-2 dc4xc-2.ampr.org
 44.130.2.12     dg2yek-1        dg2yek-1.ampr.org
@@ -240,25 +241,23 @@
 #44.130.2.47    # reserved for E33
 44.130.2.51     pe1iua-dc       pe1iua-dc.ampr.org
 44.130.2.58     dg8xc   dg8xc.ampr.org
-44.130.2.96     db0hhs-net      db0hhs-net.ampr.org
 44.130.2.97     dg8hd-eth       dg8hd-eth.ampr.org
 44.130.2.98     dg8hd   dg8hd.ampr.org
 44.130.2.99     dg8hd-host      dg8hd-host.ampr.org
 44.130.2.100    db0hhs  db0hhs.ampr.org
-44.130.2.101    db0hhs-eth      db0hhs-eth.ampr.org
-44.130.2.102    db0hhs-wmp      db0hhs-wmp.ampr.org
-44.130.2.103    db0hhs-bdc      db0hhs-bdc.ampr.org
+44.130.2.101    db0hhs-test     db0hhs-test.ampr.org
+44.130.2.102    db0hhs-wampes   db0hhs-wampes.ampr.org
 44.130.2.129    df9lm-svr       df9lm-svr.ampr.org
 #
-#44.130.2.192/26        Lueneburg
-#local coordination dj4kw
-#last update 960808
+# 44.130.2.192/26 Lueneburg
+# local coordination dj4kw
+# 960920
 44.130.2.200    db0agi  db0agi.ampr.org
 44.130.2.201    db0agm  db0agm.ampr.org
 44.130.2.202    db0agm-u        db0agm-u.ampr.org
 44.130.2.203    db0agm-s        db0agm-s.ampr.org
-44.130.2.204    db0agm-5        db0agm-5.ampr.org
-44.130.2.205    dl5xc-1 dl5xc-1.ampr.org
+44.130.2.204    dj4kw   dj4kw.ampr.org
+44.130.2.205    db0agm-5        db0agm-5.ampr.org
 44.130.2.206    dk9gg   dk9gg.ampr.org
 44.130.2.208    dj4kw-dos       dj4kw-dos.ampr.org
 44.130.2.209    dj4kw-isc       dj4kw-isc.ampr.org
@@ -277,10 +276,10 @@
 44.130.2.222    dl4hn   dl4hn.ampr.org
 44.130.2.223    dl5xm   dl5xm.ampr.org
 44.130.2.224    dg7xd   dg7xd.ampr.org
-44.130.2.225    dg6xu   dg6xu.ampr.org
+44.130.2.225    dg6xu-s dg6xu-s.ampr.org
 44.130.2.226    dk2he-2 dk2he-2.ampr.org
-44.130.2.227    dg6xu-1 dg6xu-1.ampr.org
-44.130.2.228    dg6xu-2 dg6xu-2.ampr.org
+44.130.2.227    dg6xu   dg6xu.ampr.org
+44.130.2.228    dg6xu-w dg6xu-w.ampr.org
 44.130.2.229    dg2hak  dg2hak.ampr.org
 44.130.2.230    dg2hak-2        dg2hak-2.ampr.org
 44.130.2.254    dk0iu   dk0iu.ampr.org
@@ -663,29 +662,41 @@
 44.130.13.200   DB0WAR  # Digi, Alfeld; 9600Bd
 44.130.13.201   DB0WAR-1        # Digi; 1200Bd
 #
+#IP-Adressen  Grossraum   Goettingen (Suedniedersachsen)    Stand: 14.11.1996
+#============================================================================
 #44.130.14.x    Goettingen
 # --- lokale Adresskoordination: DL8OCK
 44.130.14.1     DL2LK   # Wilfried Ahlborn, 37079 Goettingen
 44.130.14.2     DL4AL   # Ute Ahlborn, 37079 Goettingen
-44.130.14.3     DL8OCK  # Oliver Grellert, 37077 Goettingen (ex DH8AAG)
-44.130.14.4     DL8AAU  # Alex Kurpiers, 37081 Goettingen
-44.130.14.5     SERVER.DL8OCK   #
-44.130.14.6     DC3AV   # Andree Utermoehlen, 37075 Goettingen
+44.130.14.3     DL8OCK  # Oliver Grellert, 37133 Friedland
+44.130.14.4     DL8AAU  # Alexander Kurpiers, 37081 Goettingen
+44.130.14.5     SERVER.DL8OCK   # Oliver Grellert, 37133 Friedland
+44.130.14.6     DC3AV   # Andre Utermoehlen, 37079 Goettingen
 44.130.14.7     DG3AAF  # Andreas Kiehl, 37083 Goettingen
 44.130.14.8     DL1AAU  # Wolfgang Kuehn, 37120 Bovenden
 44.130.14.9     DL1WT   # Guenther Fraebel, 37083 Goettingen
-44.130.14.10    DL0ALK  # ALK Club-Stn, 37075 Goettingen
 44.130.14.11    DG5ABO  # Kai Baaske, 37170 Uslar
 44.130.14.12    DG3AAX  # Dirk Fischer, 37170 Uslar
+44.130.14.13    DG9ACF  # Michael Ahlborn, 37079 Goettingen
+44.130.14.15    SERVER.DL2LK    # Wilfried Ahlborn, 37079 Goettingen
+44.130.14.16    PC1.DL2LK       # Wilfried Ahlborn, 37079 Goettingen
+44.130.14.17    PC2.DL2LK       # Wilfried Ahlborn, 37079 Goettingen
 44.130.14.20    DB0KG   # PBBS, 37079 Goettingen
-44.130.14.25    DL1AAZ  # Andre, 37170 Uslar
-44.130.14.26    DL1AAZ-1        #
-44.130.14.27    DF0US   # Club-Stn H34, 37170 Uslar
-44.130.14.28    LAPTOP.DL1AAZ   #
-44.130.14.29    PC.DL1AAZ       #
-44.130.14.30    DK0AUG  # Amateurfunkgruppe Universitaet Goettingen
-44.130.14.40    DL0RSW  # Personn-Realschule Weende, 37075 Goettingen
-44.130.14.100   DB0SMG  # Sprachmailbox, 37085 Goettingen
+44.130.14.25    DL1AAZ  # Andre Fischer, 37170 Uslar
+44.130.14.26    DL1AAZ-1        # Andre Fischer, 37170 Uslar
+44.130.14.27    DF0US   # Clubstn Solling, H34, 37170 Uslar
+44.130.14.28    LAPTOP.DL1AAZ   # Andre Fischer, 37170 Uslar
+44.130.14.29    PC.DL1AAZ       # Andre Fischer, 37170 Uslar
+44.130.14.30    DK0AUG  # Clubstn Amateurfunkgruppe Uni, 37079 Goettingen
+44.130.14.40    DL0RSW  # Clubstn Personn-Realschule Weende,37075 Goettingen
+44.130.14.50    DK0EME  # Clubstn Emil-Mehle, 37075 Goettingen
+44.130.14.51    DL1AAA  # Thomas Mehle, 37085 Goettingen
+44.130.14.52    DD1AC   # Michael Mehle, 37085 Goettingen
+44.130.14.53    DL3ABP  # Christiane Mehle, 37085 Goettingen
+44.130.14.88    DG2FER  # Mirko, Goettingen
+44.130.14.89    DG2FER-U        # Mirko, Goettingen-Weidenhausen
+44.130.14.100   DB0SMB  # Sprachmailbox Goettingen, 37085 Goettingen
+44.130.14.200   DB0TVG  # ATV-Relais Goettingen, 37079 Goettingen-Hetjersh.
 #
 #44.130.15.x    Meschede
 # --- lokale Adress-Koordination: DJ5RK
@@ -2231,7 +2242,7 @@
 44.130.35.14    DD4KO   # Olaf Jung, 5270 Gummersbach
 44.130.35.15    DG2KHE  # Hagen Erdmann, 5270 Gummersbach
 #
-# Benutzte IP Adressen in Berlin  ( 16.06.1996 )
+# Benutzte IP Adressen in Berlin  ( 08.11.1996 )
 # -------------------------------------------------------------------
 #   Host          Call
 # -------------------------------------------------------------------
@@ -2268,6 +2279,7 @@
 44.130.36.28      DL4YBG-2      #
 44.130.36.29      dl7avj        # Herbert
 44.130.36.30      DL7UWO        # Manfred
+44.130.36.31      dh7adr        # Andreas, Berlin
 44.130.36.32      DF1GX         # Claus-Peter Schulz, Berlin
 44.130.36.33      ST.DF1GX      #
 44.130.36.34      PC.DF1GX      #
@@ -2306,12 +2318,6 @@
 # 44.130.36.101                 # reserviert fuer TCP/IP Digi Berlin
 44.130.36.110     dl7vwh-5      # Wolfgang , Berlin
 44.130.36.111     DL7UAW        # Andy
-44.130.36.200     DL7AUC        # Pat, 1000 Berlin
-44.130.36.201     DL7AUC-1      #
-44.130.36.202     DL7AUC-2      #
-44.130.36.203     DL7AUC-3      #
-44.130.36.204     DL7AUC-4      #
-44.130.36.205     DL7AUC-5      #
 44.130.36.210     DL7UAE        # Thomas, Berlin
 #
 #44.130.40.x    Mainz
@@ -2561,7 +2567,7 @@
 44.130.48.103   DL2SAE-1        # Axel Wankmueller, Leonberg
 44.130.48.104   GW.DG9SCI       # Bernd
 44.130.48.105   DG4SCV  # Rolf Rose, 7250 Leonberg
-44.130.48.106   DD2FX   # Rolf Surauf, 75433 Maulbronn-Schmie; *** UNIX
+44.130.48.106   DD2FX   # Michaela Surauf, 75433 Maulbronn-Schmie; *** UNIX
 44.130.48.107   DD2FX-IDEFIX    # ; *** Unix, Firewall
 44.130.48.108   DD2FX-GUTEMINE
 44.130.48.109   DL8SDE  # Marco Munk, 7300 Esslingen; Atari 1040ST
@@ -2606,7 +2612,7 @@
 44.130.48.148   DC4TP-1 # Erich; AT
 44.130.48.149   DD8FN   # Karl-Hermann Diehl, 7147 Hochdorf
 44.130.48.150   DL2SEL  # Peter Jonczyk, 7042 Aidlingen
-44.130.48.151   DD2FX-OBELIX    # Rolf Surauf, 75433 Maulbronn-Schmie; Unix, Router
+44.130.48.151   DD2FX-OBELIX    # Michaela Surauf, 75433 Maulbronn-Schmie; Unix, Router
 44.130.48.152   DL4TJ   # Werner R. Katz, 7045 Nufringen
 44.130.48.153   DL3SDW  # Oliver Durm, 7141 Murr
 44.130.48.154   DL1SEM  # Markus Mohl, 7000 Stuttgart 50
@@ -3400,41 +3406,52 @@
 #
 # Stand: 10/96
 #
-#44.130.82.x    Magdeburg
-# --- lokale Adresskoordination: DL6MPG
-44.130.82.1     DG0CAD  # Gerald Mews, O-3300 Schoenebeck; AT386SX
-44.130.82.2     DL9MGG  # Torsten Baecker, Schoenebeck (ex Y56GG)
-44.130.82.3     DL6MPG  # Uwe, Oschersleben (ex Y55PG)
-44.130.82.4     DG6MUE  # Jens Muenster, Magdeburg
-44.130.82.5     DG6MJA  # Hergo Pape, Magdeburg
-44.130.82.6     DG6MUE-1        # Jens Muenster, Magdeburg
-44.130.82.7     DG6MJA-1        # Hergo Pape, Magdeburg
-44.130.82.8     DL8MMR  # Mario Roeber, 39126 Magdeburg
-44.130.82.9     DL6CIB  # Olaf Fischer, Magdeburg
-44.130.82.10    DB0MGE-10       # Mailbox, Magdeburg (ex Y71G)
-44.130.82.11    DB0MGE  #
-44.130.82.12    DL6CPF  # Rene, Osterwieck
-44.130.82.13    DL8MOG  # Manfred, Magdeburg
-44.130.82.14    DL6CIA  # Mario Borstel, Magdeburg
-44.130.82.15    DL6CGT  # Holger Laub, Glindenberg
-44.130.82.16    DL6CIB-1        # Olaf Fischer, Magdeburg
-44.130.82.17    DG0CBO-1        # Peter Fischer, Magdeburg
-44.130.82.18    DG0CBO  #
-44.130.82.19    DG6MJA-2        #
-44.130.82.20    DG6MJA-3        #
-44.130.82.21    DG0CAD-U        #
-44.130.82.22    DL6CIB-2        #
-44.130.82.23    DL6CIB-3        #
-44.130.82.24    DL8MMR-1        #
-44.130.82.25    DG6MMT  # Matthias Weingart, Magdeburg
-44.130.82.26    DG6MMT-1        #
-44.130.82.27    DG0CFL  # Karsten Dierks, Magdeburg
-44.130.82.28    DL6MKG  # Burkhard Schroeder, 39218 Schoenebeck
-44.130.82.29    DG0CDB  # Henri Schultze, Magdeburg
-44.130.82.30    DL8MSG  # Bernd, Magdeburg
-44.130.82.31    DL6CPF-U        #
-44.130.82.35    DG2ACG  # Uwe, Magdeburg
-44.130.82.100   DB0OCA          # ; Huy, nr Halberstadt (DL6MPG)
+# 44.130.82.xx  - Raum Magdeburg
+# Lokale Adresskoordination Raum Magdeburg : DL6MPG
+#
+44.130.82.1     dg0cad
+44.130.82.2     dl9mgg
+44.130.82.3     dl6mpg
+44.130.82.4     dg6mue
+44.130.82.6     dg6mue-1
+44.130.82.5     dg6mja
+44.130.82.7     dg6mja-1
+44.130.82.8     dl8mmr
+44.130.82.9     dl6cibold
+44.130.82.10    db0mge-10
+44.130.82.11    db0mge
+44.130.82.12    dl6cpf
+44.130.82.13    dl8mog
+44.130.82.14    dl6cia
+44.130.82.15    dl6cgt
+44.130.82.16    dl6cib
+44.130.82.17    dg0cbo-1
+44.130.82.19    dg6mja-2
+44.130.82.20    dg6mja-3
+44.130.82.21    dg0cad-u
+44.130.82.22    dl6cib-2
+44.130.82.23    dl6cib-3
+44.130.82.24    dl8mmr-1
+44.130.82.25    dg6mmt
+44.130.82.26    dg6mmt-1
+44.130.82.27    dg0cfl
+44.130.82.28    dl6mkg
+44.130.82.29    dg0cdb
+44.130.82.30    dg6mmt-2
+44.130.82.31    dl6cpf-u
+44.130.82.32    dg0cdb-net
+44.130.82.33    dg0cdb-0
+44.130.82.35    dg0cdb-1
+44.130.82.36    dg0cdb-2
+44.130.82.37    dg0cdb-3
+44.130.82.38    dg0cdb-4
+44.130.82.39    dg0cdb-5
+44.130.82.40    dl8mug
+44.130.82.100   db0oca
+44.130.82.101   db0oca-u
+44.130.82.102   db0oca-t
+44.130.82.103   db0oca-d
+44.130.82.222   dl6mpg-u
 #
 #44.130.83.x    Dessau
 44.130.83.1     DG1HRG  # Guido, Woerlitz
@@ -3481,7 +3498,7 @@
 44.130.88.37    DL2LQA  # Jo Hoppe, 04229 Leipzig
 44.130.88.38    DB5RB   # Raoul Brosch, Markkleeberg
 44.130.88.39    DC6HB   # Holger Baumgaertner, 04157 Leipzig
-44.130.88.40    DC6HB-2 #
+44.130.88.40    DC6HB-2 # (intern, plip)
 44.130.88.41    DB5RB-2 #
 44.130.88.42    DF8MM   # Uwe Kasubek, Delitzsch
 44.130.88.43    DL1DRZ  # Wilfried Reil, 04157 Leipzig
@@ -3496,21 +3513,21 @@
 44.130.88.52    DG2LVS  # Volker Smok, 04207 Leipzig
 44.130.88.53    DH1WP   # Wolfgang Pruess, Leipzig
 44.130.88.54    DL5ZD   # Tom Bolle, Leipzig
-44.130.88.55    DD3ML-U #
+44.130.88.55    DD3ML-U # Linux
 44.130.88.56    DL3AWB  # Jens Buchta, 04610 Wintersdorf
 44.130.88.57    DH0LQH  # Wolf-Dieter Graewe, 04610 Wintersdorf
 44.130.88.77    DC5PA   # Philipp Ahlner, 04209 Leipzig
 44.130.88.88    DC6HB-A #
-#
-44.130.88.100   DB0LPZ-SVR  # UniX/Linux (ax25 DB0LPZ-10)
-44.130.88.101   DB0LPZ-U    # INN
-#
+44.130.88.100   DB0LPZ-SVR  # Wampes, ax25 DB0LPZ-10
+44.130.88.101   DB0LPZ-U    # Linux
+44.130.88.110   DD3ML-SVR   # Wampes
+44.130.88.200   DC6HB-SVR   # Wampes
+44.130.88.201   DC6HB-U     # Linux
 44.130.88.222   DG0LGF-A    # ax25 DG0LGF-13
 #
-##
+# END
 #
-# Stand per 13.Sep.96
-#
+# Stand per 31.Okt.96
 #
 #44.130.89.x    Chemnitz
 44.130.89.1     Y28PN   # Uwe Huebner, O-9052 Chemnitz; UNIX/NOS
@@ -3602,16 +3619,16 @@
 44.130.90.64    DL1DSL          # Winfried Voitus, Dresden
 44.130.90.65    DL2NUM-U        # Matthias, Unix
 44.130.90.67    DG0DT           # Wolfgang Beranek, 01326 Dresden
-44.130.90.68    DH0DW           # Maik, 01612 Nuenchritz
+44.130.90.68    DH0DW           # Maik Toepfer, 01612 Nuenchritz
 44.130.90.69    DG1VS-L         # Karsten Schmidt, LINUX
 44.130.90.70    DG1VS-W         # Karsten Schmidt, WAMPES
+44.130.90.71    WIN.DH0DW       # Maik Toepfer, Windows
 #----------------------------------------------------------------------------
 44.130.90.100   DB0TUD          # WAMPES Digi Dresden, Betreiber: S07
 44.130.90.101   DB0TUD-U        # UNIX, MB Dresden
 44.130.90.102   SMB.DB0TUD      # Sprach-MBox Dresden
 44.130.90.103   ATV.DB0TUD      # ATV-Relais Dresden
-#
-#-------------------------------------------------------------------------
+44.130.90.104   CLX.DB0TUD      # DX-Cluster Dresden
 #
 # 44.130.91.x      Zwickau und Zwickau-Land, Stand: 18.09.96
 # PLZ 08000-08099

@@ -1,4 +1,11 @@
-@(#) $Id: ChangeLog,v 1.24 1996/10/28 22:46:12 deyke Exp $
+@(#) $Id: ChangeLog,v 1.25 1996/11/24 17:25:57 deyke Exp $
+
+961124 Dieter Deyke <deyke@fc.hp.com>
+
+	Added special code to bbs.c to translate my unix user name to my
+	call sign
+
+	Updated domain.txt and hosts
 
 961028 Dieter Deyke <deyke@fc.hp.com>
 

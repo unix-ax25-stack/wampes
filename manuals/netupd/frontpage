@@ -1,12 +1,12 @@
-.\" @(#) $Id: frontpage,v 1.99 1996/10/28 22:50:36 deyke Exp $
+.\" @(#) $Id: frontpage,v 1.100 1996/11/24 17:28:50 deyke Exp $
 .\"
-.PF "^Net Update Reference Manual^-\\\\nP-^Version 961028" \" Page footer
+.PF "^Net Update Reference Manual^-\\\\nP-^Version 961124" \" Page footer
 .\"
 .S 30
 .ce
 \fBNet Update Reference Manual\fP
 .ce
-Version 961028
+Version 961124
 .S
 .SP 2
 .S 15
