@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.h,v 1.7 1993/12/29 16:32:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.h,v 1.8 1994/10/02 17:55:30 deyke Exp $ */
 
 #ifndef _FTP_H
 #define _FTP_H
@@ -22,8 +22,8 @@ struct ftp {
 	FILE *fp;               /* File descriptor being transferred */
 	struct socket port;     /* Remote port for data connection */
 	char *username;         /* Arg to USER command */
-	char *path;             /* Allowable path prefix */
-	char perms;             /* Permission flag bits */
+	char *root;             /* Root directory name */
+/*      char perms;             /* Permission flag bits */
 				/* (See FILES.H for definitions) */
 	char *cd;               /* Current directory name */
 

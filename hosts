@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.41 1994/09/26 15:46:50 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.42 1994/10/02 17:55:24 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -999,6 +999,8 @@
 44.130.145.144  DL4DAC  # Thomas, Bochum
 #
 #44.130.146.x   Essen 2
+44.130.146.100  DB0RES          # Digi,BBS,Newsgate Rees , JO31ES (DD9QP)
+44.130.146.101  DB0RES-SVR      # FTP-server DB0RES      , JO31ES (DD9QP)
 #
 #44.130.19.x    Koeln/Duesseldorf
 # lokale Adresskoordination: DG8JT

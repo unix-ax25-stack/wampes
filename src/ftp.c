@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.7 1993/12/29 16:32:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.8 1994/10/02 17:55:30 deyke Exp $ */
 
 /* Stuff common to both the FTP server and client */
 #include <stdio.h>
@@ -132,8 +132,8 @@ register struct ftp *ftp;
 		del_tcp(ftp->data);
 	if(ftp->username != NULLCHAR)
 		free(ftp->username);
-	if(ftp->path != NULLCHAR)
-		free(ftp->path);
+	if(ftp->root != NULLCHAR)
+		free(ftp->root);
 	if(ftp->buf != NULLCHAR)
 		free(ftp->buf);
 	if(ftp->cd != NULLCHAR)

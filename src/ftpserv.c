@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.28 1994/09/19 17:07:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.29 1994/10/02 17:55:30 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -36,7 +36,6 @@ static char *errmsg(const char *filename);
 static void ftpcommand(struct ftp *ftp);
 static int pport(struct socket *sock, char *arg);
 static void ftplogin(struct ftp *ftp, char *pass);
-static int permcheck(struct ftp *ftp, char *file);
 static int user_denied(const char *username);
 
 /* Command table */
@@ -298,11 +297,8 @@ static char *errmsg(const char *filename)
 
 /*---------------------------------------------------------------------------*/
 
-#define AsUser(stmt)    if (!permcheck(ftp,file)) {                \
-			  Xprintf(ftp->control,noperm,file,"",""); \
-			  free(file);                              \
-			  return;                                  \
-			}                                          \
+#define AsUser(stmt)    strcpy(physname, ftp->root);               \
+			strcat(physname, file);                    \
 			seteugid(ftp->uid,ftp->gid);               \
 			stmt;                                      \
 			seteugid(0,0);
@@ -317,6 +313,7 @@ ftpcommand(struct ftp *ftp)
 	int rest;
 	int result;
 	struct stat statbuf;
+	char physname[1024];
 
 	cmd = ftp->buf;
 	if(ftp->cnt == 0){
@@ -338,7 +335,7 @@ ftpcommand(struct ftp *ftp)
 		return;
 	}
 	/* Allow only USER, PASS and QUIT before logging in */
-	if(ftp->cd == NULLCHAR || ftp->path == NULLCHAR){
+	if(ftp->cd == NULLCHAR || ftp->root == NULLCHAR){
 		switch(cmdp-commands){
 		case USER_CMD:
 		case PASS_CMD:
@@ -406,7 +403,18 @@ ftpcommand(struct ftp *ftp)
 		ftp->rest = 0;
 		file = pathname(ftp->cd,arg);
 		log(ftp->control,"RETR %s",file);
-		AsUser(ftp->fp = fopen(file,"r"));
+		AsUser(result = stat(physname, &statbuf));
+		if(result){
+			Xprintf(ftp->control,errmsg(file),"","","");
+			free(file);
+			return;
+		}
+		if(!S_ISREG(statbuf.st_mode)){
+			Xprintf(ftp->control,"550 %s: not a plain file.\r\n",file,"","");
+			free(file);
+			return;
+		}
+		AsUser(ftp->fp = fopen(physname,"r"));
 		if(ftp->fp == NULLFILE ||
 		   (rest && fseek(ftp->fp,rest,SEEK_SET))){
 			Xprintf(ftp->control,errmsg(file),"","","");
@@ -428,7 +436,7 @@ ftpcommand(struct ftp *ftp)
 		ftp->rest = 0;
 		file = pathname(ftp->cd,arg);
 		log(ftp->control,"STOR %s",file);
-		AsUser(ftp->fp = fopen(file,"w"));
+		AsUser(ftp->fp = fopen(physname,"w"));
 		if(ftp->fp == NULLFILE ||
 		   (rest && fseek(ftp->fp,rest,SEEK_SET))){
 			Xprintf(ftp->control,errmsg(file),"","","");
@@ -449,7 +457,7 @@ ftpcommand(struct ftp *ftp)
 		ftp->rest = 0;
 		file = pathname(ftp->cd,arg);
 		log(ftp->control,"APPE %s",file);
-		AsUser(ftp->fp = fopen(file,"a"));
+		AsUser(ftp->fp = fopen(physname,"a"));
 		if(ftp->fp == NULLFILE){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
@@ -475,7 +483,7 @@ ftpcommand(struct ftp *ftp)
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
 		log(ftp->control,"LIST %s",file);
-		AsUser(ftp->fp = dir(file,1));
+		AsUser(ftp->fp = dir(physname,1));
 		if(ftp->fp == NULLFILE){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
@@ -494,7 +502,7 @@ ftpcommand(struct ftp *ftp)
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
 		log(ftp->control,"NLST %s",file);
-		AsUser(ftp->fp = dir(file,0));
+		AsUser(ftp->fp = dir(physname,0));
 		if(ftp->fp == NULLFILE){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
@@ -518,7 +526,7 @@ ftpcommand(struct ftp *ftp)
 			arg = "..";
 		file = pathname(ftp->cd,arg);
 		log(ftp->control,"CWD  %s",file);
-		AsUser(result = chdir(file));
+		AsUser(result = chdir(physname));
 		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
 			free(file);
@@ -543,7 +551,7 @@ ftpcommand(struct ftp *ftp)
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
 		log(ftp->control,"DELE %s",file);
-		AsUser(result = remove(file));
+		AsUser(result = remove(physname));
 		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
@@ -561,7 +569,7 @@ ftpcommand(struct ftp *ftp)
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
 		log(ftp->control,"MKD %s",file);
-		AsUser(result = mkdir(file,0755));
+		AsUser(result = mkdir(physname,0755));
 		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
@@ -575,7 +583,7 @@ ftpcommand(struct ftp *ftp)
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
 		log(ftp->control,"RMD %s",file);
-		AsUser(result = rmdir(file));
+		AsUser(result = rmdir(physname));
 		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
@@ -624,7 +632,7 @@ ftpcommand(struct ftp *ftp)
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
 		log(ftp->control,"MDTM %s",file);
-		AsUser(result = stat(file, &statbuf));
+		AsUser(result = stat(physname, &statbuf));
 		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
@@ -657,15 +665,12 @@ ftpcommand(struct ftp *ftp)
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
 		log(ftp->control,"SIZE %s",file);
-		AsUser(ftp->fp = fopen(file,"r"));
-		if(ftp->fp == NULLFILE){
+		AsUser(result = stat(physname, &statbuf));
+		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
 			char sizestr[80];
-			fseek(ftp->fp,0,SEEK_END);
-			sprintf(sizestr,"%ld",ftell(ftp->fp));
-			fclose(ftp->fp);
-			ftp->fp = 0;
+			sprintf(sizestr,"%ld",statbuf.st_size);
 			Xprintf(ftp->control,"213 %s\r\n",sizestr,"","");
 		}
 		free(file);
@@ -737,29 +742,15 @@ char *pass;
   ftp->uid = pw->pw_uid;
   ftp->gid = pw->pw_gid;
   if (ftp->cd) free(ftp->cd);
-  ftp->cd = strdup(pw->pw_dir);
-  if (ftp->path) free(ftp->path);
-  ftp->path = strdup(strcmp(pw->pw_name, "ftp") ? "/" : pw->pw_dir);
+  ftp->cd = strdup(strcmp(pw->pw_name, "ftp") ? pw->pw_dir : "/");
+  if (ftp->root) free(ftp->root);
+  ftp->root = strdup(strcmp(pw->pw_name, "ftp") ? "" : pw->pw_dir);
   Xprintf(ftp->control, logged, pw->pw_name, "", "");
   log(ftp->control, "%s logged in", pw->pw_name);
   return;
 
 Fail:
   Xprintf(ftp->control, noperm, ftp->username, "", "");
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* Return 1 if the file operation is allowed, 0 otherwise */
-
-static int permcheck(struct ftp *ftp,char *file)
-{
-  if (file == NULLCHAR || ftp->path == NULLCHAR) return 0;
-
-  /* The target file must be under the user's allowed search path */
-
-  if (strncmp(file, ftp->path, strlen(ftp->path))) return 0;
-  return 1;
 }
 
 /*---------------------------------------------------------------------------*/

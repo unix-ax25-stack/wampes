@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.62 1994/09/19 17:07:32 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.63 1994/10/02 17:55:26 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -961,6 +961,16 @@ static void invite_command(struct link *lp)
 
 /*---------------------------------------------------------------------------*/
 
+static void kick_command(struct link *lp)
+{
+  struct peer *pp;
+
+  for (pp = peers; pp; pp = pp->p_next)
+    if (pp->p_retrytime > currtime) pp->p_retrytime = currtime;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void links_command(struct link *lp)
 {
 
@@ -1106,7 +1116,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.62 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.63 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1366,6 +1376,7 @@ static void process_input(struct link *lp)
     { "help",           help_command },
     { "hosts",          hosts_command },
     { "invite",         invite_command },
+    { "kick",           kick_command },
     { "links",          links_command },
     { "msg",            msg_command },
     { "note",           note_command },
