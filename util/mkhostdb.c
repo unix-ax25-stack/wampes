@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.2 1992/11/12 15:21:05 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.3 1992/11/30 13:56:44 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -28,11 +28,13 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 
 static DBM *Dbhostaddr;
 static DBM *Dbhostname;
+static char origin[1024];
 
 static int aton __ARGS((const char *name, long *addrptr));
 static char *ntoa __ARGS((long addr));
 static void store_in_db __ARGS((const char *name, const char *addrstr));
 static void fix_line __ARGS((char *line));
+static char *fix_name __ARGS((const char *name));
 static void read_hosts_file __ARGS((const char *filename));
 static void read_domain_file __ARGS((const char *filename));
 static void qaddr __ARGS((const char *name));
@@ -126,6 +128,26 @@ char *line;
 
 /*---------------------------------------------------------------------------*/
 
+static char *fix_name(name)
+const char *name;
+{
+
+  int len;
+  static char fullname[1024];
+
+  if (!strcmp(name, "@"))
+    strcpy(fullname, origin);
+  else if (!*name || name[strlen(name)-1] == '.')
+    strcpy(fullname, name);
+  else
+    sprintf(fullname, "%s.%s", name, origin);
+  len = strlen(fullname);
+  if (len && fullname[len-1] == '.') fullname[len-1] = 0;
+  return fullname;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void read_hosts_file(filename)
 const char *filename;
 {
@@ -158,14 +180,11 @@ const char *filename;
 
   FILE * fp;
   char *p;
-  char fullname[1024];
   char line[1024];
   char name[1024];
-  char origin[1024];
   const char * delim = " \t\n";
   datum daddr;
   datum dname;
-  int len;
   long addr;
 
   strcpy(origin, LOCALDOMAIN);
@@ -197,17 +216,7 @@ const char *filename;
 
     if (!(p = strtok((char *) 0, delim))) continue;
 
-    if (!strcmp(name, "@"))
-      strcpy(fullname, origin);
-    else if (name[strlen(name)-1] == '.')
-      strcpy(fullname, name);
-    else
-      sprintf(fullname, "%s.%s", name, origin);
-
-    len = strlen(fullname);
-    if (len && fullname[len-1] == '.') fullname[len-1] = 0;
-
-    store_in_db(fullname, p);
+    store_in_db(fix_name(name), p);
 
   }
   fclose(fp);
@@ -241,27 +250,16 @@ const char *filename;
 
     if (!(p = strtok((char *) 0, delim))) continue;
 
-    len = strlen(p);
-    if (len && p[len-1] == '.') p[len-1] = 0;
-
-    dname.dptr = p;
-    dname.dsize = strlen(p) + 1;
+    dname.dptr = fix_name(p);
+    dname.dsize = strlen(dname.dptr) + 1;
     daddr = dbm_fetch(Dbhostaddr, dname);
     if (!daddr.dptr) {
-      fprintf(stderr, "no such key: %s\n", p);
+      fprintf(stderr, "no such key: %s\n", dname.dptr);
       continue;
     }
     memcpy(&addr, daddr.dptr, sizeof(addr));
 
-    if (!strcmp(name, "@"))
-      strcpy(fullname, origin);
-    else
-      strcpy(fullname, name);
-
-    len = strlen(fullname);
-    if (len && fullname[len-1] == '.') fullname[len-1] = 0;
-
-    store_in_db(fullname, ntoa(addr));
+    store_in_db(fix_name(name), ntoa(addr));
 
   }
   fclose(fp);
