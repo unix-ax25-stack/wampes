@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.11 1991/10/08 12:54:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.12 1992/03/30 09:16:51 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -26,6 +26,7 @@ static void printchr __ARGS((int chr));
 static void backchr __ARGS((int chr));
 static void delchr __ARGS((int chr));
 static void inschr __ARGS((int chr));
+static void clreol __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
 
@@ -120,6 +121,15 @@ int  chr;
 
 /*---------------------------------------------------------------------------*/
 
+static void clreol()
+{
+  putchar('\033');
+  if (ansimode) putchar('[');
+  putchar('K');
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* Accept characters from the incoming tty, buffer and process them
  * (if in cooked mode) or just pass them directly (if in raw mode).
  * Returns the number of characters available for use; if non-zero,
@@ -172,8 +182,7 @@ char  **buf;
       if (recall_buffer[PREV(rptr)]) {
 	if (end > linebuf) {
 	  while (pos > linebuf) backchr(*--pos);
-	  putchar('\033');
-	  putchar('K');
+	  clreol();
 	}
 	rptr = PREV(rptr);
 	strcpy(linebuf, recall_buffer[rptr]);
@@ -187,8 +196,7 @@ char  **buf;
       if (recall_buffer[rptr] && recall_buffer[NEXT(rptr)]) {
 	if (end > linebuf) {
 	  while (pos > linebuf) backchr(*--pos);
-	  putchar('\033');
-	  putchar('K');
+	  clreol();
 	}
 	rptr = NEXT(rptr);
 	strcpy(linebuf, recall_buffer[rptr]);
@@ -304,9 +312,7 @@ char  **buf;
       if (end > linebuf) {
 	while (pos > linebuf) backchr(*--pos);
 	end = linebuf;
-	putchar('\033');
-	if (ansimode) putchar('[');
-	putchar('K');
+	clreol();
       }
       break;
 
@@ -371,9 +377,7 @@ char  **buf;
       if (recall_buffer[PREV(rptr)]) {
 	if (end > linebuf) {
 	  while (pos > linebuf) backchr(*--pos);
-	  putchar('\033');
-	  if (ansimode) putchar('[');
-	  putchar('K');
+	  clreol();
 	}
 	rptr = PREV(rptr);
 	strcpy(linebuf, recall_buffer[rptr]);
@@ -388,9 +392,7 @@ char  **buf;
       if (recall_buffer[rptr] && recall_buffer[NEXT(rptr)]) {
 	if (end > linebuf) {
 	  while (pos > linebuf) backchr(*--pos);
-	  putchar('\033');
-	  if (ansimode) putchar('[');
-	  putchar('K');
+	  clreol();
 	}
 	rptr = NEXT(rptr);
 	strcpy(linebuf, recall_buffer[rptr]);
@@ -429,9 +431,7 @@ char  **buf;
     case 'K': /* clear line */
       if (end > pos) {
 	end = pos;
-	putchar('\033');
-	if (ansimode) putchar('[');
-	putchar('K');
+	clreol();
       }
       break;
 
