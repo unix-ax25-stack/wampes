@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.8 1989/01/22 08:24:40 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.9 1989/01/28 11:26:07 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -308,6 +308,15 @@ int  flisten;
 
 /*---------------------------------------------------------------------------*/
 
+static void clear_locks()
+{
+  register struct connection *p;
+
+  for (p = connections; p; p = p->next) p->locked = 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void send_user_change_msg(name, host, oldchannel, newchannel)
 char  *name, *host;
 int  oldchannel, newchannel;
@@ -359,8 +368,11 @@ char  *fromname, *toname, *text;
 	}
       } else {
 	if (!p->locked) {
-	  sprintf(buffer, "<*%s*>:", fromname);
-	  appendstring(&p->obuf, formatline(buffer, text));
+	  if (strcmp(fromname, "conversd")) {
+	    sprintf(buffer, "<*%s*>:", fromname);
+	    appendstring(&p->obuf, formatline(buffer, text));
+	  } else
+	    appendstring(&p->obuf, text);
 	  p->locked = 1;
 	}
       }
@@ -403,6 +415,8 @@ int  channel;
 
   static char  invitetext[] = "\n\007\007*** Message from %s at %s ...\nPlease join convers channel %d.\n\007\007\n";
 
+  static char  responsetext[] = "*** Invitation sent to %s @ %s.\n";
+
   char  buffer[2048];
   int  fd;
   struct connection *p;
@@ -411,10 +425,18 @@ int  channel;
 
   for (p = connections; p; p = p->next)
     if (p->type == CT_USER && !strcmp(p->name, toname)) {
-      if (p->channel == channel) return;
+      if (p->channel == channel) {
+	clear_locks();
+	sprintf(buffer, "*** User %s is already on this channel.\n", toname);
+	send_msg_to_user("conversd", fromname, buffer);
+	return;
+      }
       if (!p->via && !p->locked) {
 	sprintf(buffer, invitetext, fromname, timestring(currtime), channel);
 	appendstring(&p->obuf, buffer);
+	clear_locks();
+	sprintf(buffer, responsetext, toname, myhostname);
+	send_msg_to_user("conversd", fromname, buffer);
 	return;
       }
       if (p->via && !p->via->locked) {
@@ -434,6 +456,9 @@ int  channel;
       write(fd, buffer, (unsigned) strlen(buffer));
       close(fd);
       endutent();
+      clear_locks();
+      sprintf(buffer, responsetext, toname, myhostname);
+      send_msg_to_user("conversd", fromname, buffer);
       return;
     }
   endutent();
@@ -502,7 +527,7 @@ static void connect_permlinks()
 static void bye_command(cp)
 struct connection *cp;
 {
-  register struct connection *p, *q;
+  register struct connection *p;
 
   switch (cp->type) {
   case CT_UNKNOWN:
@@ -510,7 +535,7 @@ struct connection *cp;
     break;
   case CT_USER:
     cp->type = CT_CLOSED;
-    for (q = connections; q; q = q->next) q->locked = 0;
+    clear_locks();
     send_user_change_msg(cp->name, cp->host, cp->channel, -1);
     break;
   case CT_HOST:
@@ -519,7 +544,7 @@ struct connection *cp;
     for (p = connections; p; p = p->next)
       if (p->via == cp) {
 	p->type = CT_CLOSED;
-	for (q = connections; q; q = q->next) q->locked = 0;
+	clear_locks();
 	send_user_change_msg(p->name, p->host, p->channel, -1);
       }
     break;
@@ -639,11 +664,21 @@ struct connection *cp;
 static void msg_command(cp)
 struct connection *cp;
 {
+
   char  *toname, *text;
+  char  buffer[2048];
+  register struct connection *p;
 
   toname = getarg(0, 0);
   text = getarg(0, 1);
-  if (*text) send_msg_to_user(cp->name, toname, text);
+  if (!*text) return;
+  for (p = connections; p; p = p->next)
+    if (p->type == CT_USER && !strcmp(p->name, toname)) break;
+  if (!p) {
+    sprintf(buffer, "*** No such user: %s.\n", toname);
+    appendstring(&cp->obuf, buffer);
+  } else
+    send_msg_to_user(cp->name, toname, text);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -659,7 +694,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.8 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.9 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
@@ -693,7 +728,7 @@ struct connection *cp;
 
   if (quick) {
     appendstring(&cp->obuf, "Channel Users\n");
-    for (p = connections; p; p = p->next) p->locked = 0;
+    clear_locks();
     do {
       channel = -1;
       for (p = connections; p; p = p->next)
@@ -892,7 +927,7 @@ struct connection *cp;
   register struct connection *p;
   struct cmdtable *cmdp;
 
-  for (p = connections; p; p = p->next) p->locked = 0;
+  clear_locks();
   cp->locked = 1;
 
   if (*cp->ibuf == '/') {
