@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.12 1993/01/29 06:48:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.13 1993/05/17 13:45:08 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -17,17 +17,17 @@
 #include "cmdparse.h"
 #include "commands.h"
 
-static int  Maxclients = 10;
+static int Maxclients = 10;
 static struct mailsys *Systems;
 static struct timer Mail_timer;
 
-static int domail_maxcli __ARGS((int argc, char *argv [], void *p));
-static int domail_list __ARGS((int argc, char *argv [], void *p));
-static int domail_timer __ARGS((int argc, char *argv [], void *p));
-static int domail_kick __ARGS((int argc, char *argv [], void *p));
-static void strtrim __ARGS((char *s));
-static void read_configuration __ARGS((void));
-static void mail_tick __ARGS((char *sysname));
+static int domail_maxcli(int argc, char *argv[], void *p);
+static int domail_list(int argc, char *argv[], void *p);
+static int domail_timer(int argc, char *argv[], void *p);
+static int domail_kick(int argc, char *argv[], void *p);
+static void strtrim(char *s);
+static void read_configuration(void);
+static void mail_tick(char *sysname);
 
 /*---------------------------------------------------------------------------*/
 
@@ -53,10 +53,7 @@ static struct cmds Mail_cmds[] = {
 	NULLCHAR,
 };
 
-int  dosmtp(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
+int dosmtp(int argc, char *argv[], void *p)
 {
   read_configuration();
   return subcmd(Mail_cmds, argc, argv, p);
@@ -64,24 +61,18 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-static int domail_maxcli(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
+static int domail_maxcli(int argc, char *argv[], void *p)
 {
   return setint(&Maxclients, "Max clients", argc, argv);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int  domail_list(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
+static int domail_list(int argc, char *argv[], void *p)
 {
 
-  char  *state;
-  char  waittime[16];
+  char *state;
+  char waittime[16];
   struct mailsys *sp;
 
   printf("System     Mailer  Transport  State    Wait time\n");
@@ -115,10 +106,7 @@ void *p;
 
 /* Set outbound spool scan interval */
 
-static int  domail_timer(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
+static int domail_timer(int argc, char *argv[], void *p)
 {
   if (argc < 2) {
     printf("%lu/%lu\n",
@@ -135,10 +123,7 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-static int  domail_kick(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
+static int domail_kick(int argc, char *argv[], void *p)
 {
   mail_tick((argc < 2) ? NULLCHAR : argv[1]);
   return 0;
@@ -146,10 +131,9 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-static void strtrim(s)
-char  *s;
+static void strtrim(char *s)
 {
-  char  *p = s;
+  char *p = s;
 
   while (*p) p++;
   while (--p >= s && isspace(uchar(*p))) ;
@@ -158,13 +142,13 @@ char  *s;
 
 /*---------------------------------------------------------------------------*/
 
-static void read_configuration()
+static void read_configuration(void)
 {
 
-  FILE * fp;
-  char  *sysname, *mailername, *protocol, *address;
-  char  line[1024];
-  static long  lastmtime;
+  FILE *fp;
+  char *sysname, *mailername, *protocol, *address;
+  char line[1024];
+  static long lastmtime;
   struct mailers *mailer;
   struct mailsys *sp;
   struct stat statbuf;
@@ -204,18 +188,17 @@ static void read_configuration()
 
 /*---------------------------------------------------------------------------*/
 
-static void mail_tick(sysname)
-char  *sysname;
+static void mail_tick(char *sysname)
 {
 
-  DIR * dirp;
-  FILE * fp;
-  char  line[1024];
-  char  spooldir[80];
-  char  tmp1[1024];
-  char  tmp2[1024];
-  int  clients;
-  int  cnt;
+  DIR *dirp;
+  FILE *fp;
+  char line[1024];
+  char spooldir[80];
+  char tmp1[1024];
+  char tmp2[1024];
+  int clients;
+  int cnt;
   struct dirent *dp;
   struct mailjob mj, *jp, *tail;
   struct mailsys *sp;
@@ -223,7 +206,7 @@ char  *sysname;
 
   struct filelist {
     struct filelist *next;
-    char  name[16];
+    char name[16];
   } *filelist, *p, *q;
 
   start_timer(&Mail_timer);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.c,v 1.6 1992/06/01 10:34:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.c,v 1.7 1993/05/17 13:45:26 deyke Exp $ */
 
 /* Internet User Data Protocol (UDP)
  * Copyright 1991 Phil Karn, KA9Q
@@ -12,7 +12,7 @@
 #include "internet.h"
 #include "icmp.h"
 
-static struct udp_cb *lookup_udp __ARGS((struct socket *socket));
+static struct udp_cb *lookup_udp(struct socket *socket);
 
 struct mib_entry Udp_mib[] = {
 	"",                     0,
@@ -58,8 +58,8 @@ struct socket *fsocket;         /* Destination socket */
 char tos;                       /* Type-of-service for IP */
 char ttl;                       /* Time-to-live for IP */
 struct mbuf *bp;                /* Data field, if any */
-int16 length;                   /* Length of data field */
-int16 id;                       /* Optional ID field for IP */
+uint16 length;                  /* Length of data field */
+uint16 id;                      /* Optional ID field for IP */
 char df;                        /* Don't Fragment flag for IP */
 {
 	struct pseudo_header ph;
@@ -101,7 +101,7 @@ struct mbuf **bp;               /* Place to stash data packet */
 {
 	struct socket sp;
 	struct mbuf *buf;
-	int16 length;
+	uint16 length;
 
 	if(up == NULLUDP){
 		Net_error = NO_CONN;
@@ -177,7 +177,7 @@ int rxbroadcast;        /* The only protocol that accepts 'em */
 	struct udp_cb *up;
 	struct socket lsocket;
 	struct socket fsocket;
-	int16 length;
+	uint16 length;
 
 	if(bp == NULLBUF)
 		return;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.10 1993/03/30 17:25:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.11 1993/05/17 13:47:19 deyke Exp $ */
 
 /* Net Update Server */
 
@@ -15,21 +15,13 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#ifdef __STDC__
-#define __ARGS(x)       x
-#else
-#define __ARGS(x)       ()
-#define const
-#endif
-
-static void pexit __ARGS((const char *s));
-static void doread __ARGS((int fd, char *buf, size_t cnt));
-static void dowrite __ARGS((int fd, const char *buf, size_t cnt));
+static void pexit(const char *s);
+static void doread(int fd, char *buf, size_t cnt);
+static void dowrite(int fd, const char *buf, size_t cnt);
 
 /*---------------------------------------------------------------------------*/
 
-static void pexit(s)
-const char *s;
+static void pexit(const char *s)
 {
   perror(s);
   exit(1);
@@ -37,10 +29,7 @@ const char *s;
 
 /*---------------------------------------------------------------------------*/
 
-static void doread(fd, buf, cnt)
-int fd;
-char *buf;
-size_t cnt;
+static void doread(int fd, char *buf, size_t cnt)
 {
 
   char *p = buf;
@@ -60,10 +49,7 @@ size_t cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void dowrite(fd, buf, cnt)
-int fd;
-const char *buf;
-size_t cnt;
+static void dowrite(int fd, const char *buf, size_t cnt)
 {
 
   const char * p = buf;
@@ -79,7 +65,7 @@ size_t cnt;
 
 /*---------------------------------------------------------------------------*/
 
-int main()
+int main(void)
 {
 
   char buf[1024];

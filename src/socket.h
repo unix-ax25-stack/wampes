@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.13 1993/02/23 21:34:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.14 1993/05/17 13:45:18 deyke Exp $ */
 
 #ifndef _SOCKET_H
 #define _SOCKET_H
@@ -7,9 +7,7 @@
 #include "global.h"
 #endif
 
-#ifdef  ANSIPROTO
 #include <stdarg.h>
-#endif
 
 #ifndef _MBUF_H
 #include "mbuf.h"
@@ -62,64 +60,65 @@
 #define SOCK_RAW        2
 #define SOCK_SEQPACKET  3
 
-#define EWOULDBLOCK     36
-#define ENOTCONN        37
-#define ESOCKTNOSUPPORT 38
-#define EAFNOSUPPORT    39
-#define EISCONN         40
-#define EOPNOTSUPP      41
+#define EWOULDBLOCK     100
+#define ENOTCONN        101
+#define ESOCKTNOSUPPORT 102
+#define EAFNOSUPPORT    103
+#define EISCONN         104
+#define EOPNOTSUPP      105
 #endif
-#define EALARM          42
-#define EABORT          43
+#define EALARM          106
+#define EABORT          107
 #if 0
 #undef  EINTR
-#define EINTR           44
-#define ECONNREFUSED    45
-#define EMSGSIZE        46
-#define EADDRINUSE      47
-#define EMAX            47
+#define EINTR           108
+#define ECONNREFUSED    109
+#define EMSGSIZE        110
+#define EADDRINUSE      111
+#define EMIN            100
+#define EMAX            112
 
 extern char *Sock_errlist[];
 
 /* In socket.c: */
 extern int Axi_sock;    /* Socket listening to AX25 (there can be only one) */
 
-int accept __ARGS((int s,char *peername,int *peernamelen));
-int bind __ARGS((int s,char *name,int namelen));
-int close_s __ARGS((int s));
-int connect __ARGS((int s,char *peername,int peernamelen));
-char *eolseq __ARGS((int s));
-void freesock __ARGS((struct proc *pp));
-int getpeername __ARGS((int s,char *peername,int *peernamelen));
-int getsockname __ARGS((int s,char *name,int *namelen));
-int listen __ARGS((int s,int backlog));
-int recv_mbuf __ARGS((int s,struct mbuf **bpp,int flags,char *from,int *fromlen));
-int send_mbuf __ARGS((int s,struct mbuf *bp,int flags,char *to,int tolen));
-int settos __ARGS((int s,int tos));
-int shutdown __ARGS((int s,int how));
-int socket __ARGS((int af,int type,int protocol));
-void sockinit __ARGS((void));
-int sockkick __ARGS((int s));
-int socklen __ARGS((int s,int rtx));
-struct proc *sockowner __ARGS((int s,struct proc *newowner));
-int usesock __ARGS((int s));
-int socketpair __ARGS((int af,int type,int protocol,int sv[]));
+int accept(int s,char *peername,int *peernamelen);
+int bind(int s,char *name,int namelen);
+int close_s(int s);
+int connect(int s,char *peername,int peernamelen);
+char *eolseq(int s);
+void freesock(struct proc *pp);
+int getpeername(int s,char *peername,int *peernamelen);
+int getsockname(int s,char *name,int *namelen);
+int listen(int s,int backlog);
+int recv_mbuf(int s,struct mbuf **bpp,int flags,char *from,int *fromlen);
+int send_mbuf(int s,struct mbuf *bp,int flags,char *to,int tolen);
+int settos(int s,int tos);
+int shutdown(int s,int how);
+int socket(int af,int type,int protocol);
+void sockinit(void);
+int sockkick(int s);
+int socklen(int s,int rtx);
+struct proc *sockowner(int s,struct proc *newowner);
+int usesock(int s);
+int socketpair(int af,int type,int protocol,int sv[]);
 
 /* In sockuser.c: */
-void flushsocks __ARGS((void));
-int recv __ARGS((int s,char *buf,int len,int flags));
-int recvfrom __ARGS((int s,char *buf,int len,int flags,char *from,int *fromlen));
-int send __ARGS((int s,char *buf,int len,int flags));
-int sendto __ARGS((int s,char *buf,int len,int flags,char *to,int tolen));
+void flushsocks(void);
+int recv(int s,char *buf,int len,int flags);
+int recvfrom(int s,char *buf,int len,int flags,char *from,int *fromlen);
+int send(int s,char *buf,int len,int flags);
+int sendto(int s,char *buf,int len,int flags,char *to,int tolen);
 
 /* In file sockutil.c: */
-char *psocket __ARGS((void *p));
-char *sockerr __ARGS((int s));
-char *sockstate __ARGS((int s));
+char *psocket(void *p);
+char *sockerr(int s);
+char *sockstate(int s);
 #endif
 
 /* In file tcpsock.c: */
-int start_tcp __ARGS((int   port,char *name,void (*task)(),int stack));
-int stop_tcp __ARGS((int   port));
+int start_tcp(int    port,char *name,void (*task)(),int stack);
+int stop_tcp(int    port);
 
 #endif  /* _SOCKET_H */

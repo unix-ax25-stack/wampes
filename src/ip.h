@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.12 1993/02/23 21:34:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.13 1993/05/17 13:44:59 deyke Exp $ */
 
 #ifndef _IP_H
 #define _IP_H
@@ -60,10 +60,10 @@ extern struct mib_entry Ip_mib[];
 struct ip {
 	int32 source;           /* Source address */
 	int32 dest;             /* Destination address */
-	int16 length;           /* Total length */
-	int16 id;               /* Identification */
-	int16 offset;           /* Fragment offset in bytes */
-	int16 checksum;         /* Header checksum */
+	uint16 length;          /* Total length */
+	uint16 id;              /* Identification */
+	uint16 offset;          /* Fragment offset in bytes */
+	uint16 checksum;                /* Header checksum */
 
 	struct {
 		char congest;   /* Congestion experienced bit (exp) */
@@ -134,10 +134,10 @@ struct reasm {
 	struct reasm *next;     /* Linked list pointer */
 	struct timer timer;     /* Reassembly timeout timer */
 	struct frag *fraglist;  /* Head of data fragment chain */
-	int16 length;           /* Entire datagram length, if known */
+	uint16 length;          /* Entire datagram length, if known */
 	int32 source;           /* src/dest/id/protocol uniquely describe a datagram */
 	int32 dest;
-	int16 id;
+	uint16 id;
 	char protocol;
 };
 #define NULLREASM       (struct reasm *)0
@@ -147,8 +147,8 @@ struct frag {
 	struct frag *prev;      /* Previous fragment on list */
 	struct frag *next;      /* Next fragment */
 	struct mbuf *buf;       /* Actual fragment data */
-	int16 offset;           /* Starting offset of fragment */
-	int16 last;             /* Ending offset of fragment */
+	uint16 offset;          /* Starting offset of fragment */
+	uint16 last;            /* Ending offset of fragment */
 };
 #define NULLFRAG        (struct frag *)0
 
@@ -159,7 +159,7 @@ struct raw_ip {
 	struct raw_ip *next;    /* Linked list pointer */
 
 	struct mbuf *rcvq;      /* receive queue */
-	void (*r_upcall) __ARGS((struct raw_ip *));
+	void (*r_upcall)(struct raw_ip *);
 	int protocol;           /* Protocol */
 	int user;               /* User linkage */
 };
@@ -168,7 +168,7 @@ struct raw_ip {
 /* Transport protocol link table */
 struct iplink {
 	char proto;
-	void (*funct) __ARGS((struct iface *,struct ip *,struct mbuf *,int));
+	void (*funct)(struct iface *,struct ip *,struct mbuf *,int);
 };
 extern struct iplink Iplink[];
 
@@ -176,54 +176,54 @@ extern struct iplink Iplink[];
 extern int Tcp_interact[];
 
 /* In ip.c: */
-void ip_garbage __ARGS((int drastic));
-void ip_recv __ARGS((struct iface *iface,struct ip *ip,struct mbuf *bp,
-	int rxbroadcast));
-void ipip_recv __ARGS((struct iface *iface,struct ip *ip,struct mbuf *bp,
-	int rxbroadcast));
-int ip_send __ARGS((int32 source,int32 dest,int  protocol,int  tos,int  ttl,
-	struct mbuf *bp,int   length,int   id,int  df));
-struct raw_ip *raw_ip __ARGS((int protocol,void (*r_upcall) __ARGS((struct raw_ip *)) ));
-void del_ip __ARGS((struct raw_ip *rrp));
-void rquench __ARGS((struct iface *ifp,int drop));
+void ip_garbage(int drastic);
+void ip_recv(struct iface *iface,struct ip *ip,struct mbuf *bp,
+	int rxbroadcast);
+void ipip_recv(struct iface *iface,struct ip *ip,struct mbuf *bp,
+	int rxbroadcast);
+int ip_send(int32 source,int32 dest,int  protocol,int  tos,int  ttl,
+	struct mbuf *bp,int    length,int    id,int  df);
+struct raw_ip *raw_ip(int protocol,void (*r_upcall)(struct raw_ip *) );
+void del_ip(struct raw_ip *rrp);
+void rquench(struct iface *ifp,int drop);
 
 /* In iproute.c: */
-void ipinit __ARGS((void));
-int16 ip_mtu __ARGS((int32 addr));
-void encap_tx __ARGS((int dev,void *arg1,void *unused));
-int ip_encap __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,int tos));
-void ip_proc __ARGS((struct iface *iface,struct mbuf *bp));
-int ip_route __ARGS((struct iface *i_iface,struct mbuf *bp,int rxbroadcast));
-int32 locaddr __ARGS((int32 addr));
-void rt_merge __ARGS((int trace));
-struct route *rt_add __ARGS((int32 target,unsigned int bits,int32 gateway,
-	struct iface *iface,int32 metric,int32 ttl,int  private));
-int rt_drop __ARGS((int32 target,unsigned int bits));
-struct route *rt_lookup __ARGS((int32 target));
-struct route *rt_blookup __ARGS((int32 target,unsigned int bits));
+void ipinit(void);
+uint16 ip_mtu(int32 addr);
+void encap_tx(int dev,void *arg1,void *unused);
+int ip_encap(struct mbuf *bp,struct iface *iface,int32 gateway,int tos);
+void ip_proc(struct iface *iface,struct mbuf *bp);
+int ip_route(struct iface *i_iface,struct mbuf *bp,int rxbroadcast);
+int32 locaddr(int32 addr);
+void rt_merge(int trace);
+struct route *rt_add(int32 target,unsigned int bits,int32 gateway,
+	struct iface *iface,int32 metric,int32 ttl,int  private);
+int rt_drop(int32 target,unsigned int bits);
+struct route *rt_lookup(int32 target);
+struct route *rt_blookup(int32 target,unsigned int bits);
 
 /* In iphdr.c: */
-int16 cksum __ARGS((struct pseudo_header *ph,struct mbuf *m,int   len));
-int16 eac __ARGS((int32 sum));
-struct mbuf *htonip __ARGS((struct ip *ip,struct mbuf *data,int cflag));
-int ntohip __ARGS((struct ip *ip,struct mbuf **bpp));
+uint16 cksum(struct pseudo_header *ph,struct mbuf *m,int    len);
+uint16 eac(int32 sum);
+struct mbuf *htonip(struct ip *ip,struct mbuf *data,int cflag);
+int ntohip(struct ip *ip,struct mbuf **bpp);
 
 /* In either lcsum.c or pcgen.asm: */
-int16 lcsum __ARGS((int16 *wp,int   len));
+uint16 lcsum(uint16 *wp,int    len);
 
 /* In ipsocket.c: */
-int so_ip_sock __ARGS((struct usock *up,int protocol));
-int so_ip_conn __ARGS((struct usock *up));
-int so_ip_recv __ARGS((struct usock *up,struct mbuf **bpp,char *from,
-	int *fromlen));
-int so_ip_send __ARGS((struct usock *up,struct mbuf *bp,char *to));
-int so_ip_qlen __ARGS((struct usock *up,int rtx));
-int so_ip_close __ARGS((struct usock *up));
-int checkipaddr __ARGS((char *name,int namelen));
-char *ippsocket __ARGS((struct sockaddr *p));
+int so_ip_sock(struct usock *up,int protocol);
+int so_ip_conn(struct usock *up);
+int so_ip_recv(struct usock *up,struct mbuf **bpp,char *from,
+	int *fromlen);
+int so_ip_send(struct usock *up,struct mbuf *bp,char *to);
+int so_ip_qlen(struct usock *up,int rtx);
+int so_ip_close(struct usock *up);
+int checkipaddr(char *name,int namelen);
+char *ippsocket(struct sockaddr *p);
 
 /* In ipfile.c: */
-void route_savefile __ARGS((void));
-void route_loadfile __ARGS((void));
+void route_savefile(void);
+void route_loadfile(void);
 
 #endif /* _IP_H */

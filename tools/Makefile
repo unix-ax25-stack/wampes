@@ -1,10 +1,10 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.10 1993/05/10 11:22:58 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.11 1993/05/17 13:46:45 deyke Exp $
 
 CC         = c89
 CFLAGS     = -O -s
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
-TARGETS    = connect connect2 filter nos-cb
+TARGETS    = connect connect2 filter mp nos-cb
 
 all:
 	make -i _all
@@ -22,6 +22,10 @@ connect2: connect2.c
 filter: filter.c
 	$(RMTARGET)
 	$(CC) $(CFLAGS) filter.c -o $@
+
+mp:     mp.c
+	$(RMTARGET)
+	$(CC) $(CFLAGS) mp.c -o $@
 
 nos-cb: nos-cb.c
 	$(RMTARGET)

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.19 1993/04/11 07:06:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.20 1993/05/17 13:45:25 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -174,11 +174,11 @@ char *Fkey_table[NUM_FKEY];
 static int Ansiterminal = 1;
 static int Rawmode;
 
-static void printchr __ARGS((int chr));
-static void backchr __ARGS((int chr));
-static void delchr __ARGS((int chr));
-static void inschr __ARGS((int chr));
-static void clreol __ARGS((void));
+static void printchr(int chr);
+static void backchr(int chr);
+static void delchr(int chr);
+static void inschr(int chr);
+static void clreol(void);
 
 /*---------------------------------------------------------------------------*/
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.8 1991/06/04 11:34:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.9 1993/05/17 13:45:08 deyke Exp $ */
 
 /* SMTP Mail Delivery Agent */
 
@@ -13,7 +13,7 @@
 #include "mail.h"
 
 struct mesg {
-  int  state;
+  int state;
 #define SMTP_OPEN_STATE 0
 #define SMTP_HELO_STATE 1
 #define SMTP_MAIL_STATE 2
@@ -22,25 +22,24 @@ struct mesg {
 #define SMTP_SEND_STATE 5
 #define SMTP_UNLK_STATE 6
 #define SMTP_QUIT_STATE 7
-  char  buf[1024];
-  int  cnt;
+  char buf[1024];
+  int cnt;
   FILE * fp;
   struct mailsys *sp;
   struct transport_cb *tp;
 };
 
-static void mail_smtp_transaction __ARGS((struct mesg *mp));
-static void mail_smtp_recv_upcall __ARGS((struct transport_cb *tp, int cnt));
-static void mail_smtp_send_upcall __ARGS((struct transport_cb *tp, int cnt));
-static void mail_smtp_state_upcall __ARGS((struct transport_cb *tp));
+static void mail_smtp_transaction(struct mesg *mp);
+static void mail_smtp_recv_upcall(struct transport_cb *tp, int cnt);
+static void mail_smtp_send_upcall(struct transport_cb *tp, int cnt);
+static void mail_smtp_state_upcall(struct transport_cb *tp);
 
 /*---------------------------------------------------------------------------*/
 
-static void mail_smtp_transaction(mp)
-struct mesg *mp;
+static void mail_smtp_transaction(struct mesg *mp)
 {
 
-  char  tmp[1024];
+  char tmp[1024];
   struct mailjob *jp;
 
   jp = mp->sp->jobs;
@@ -112,12 +111,10 @@ nextjob:
 
 /*---------------------------------------------------------------------------*/
 
-static void mail_smtp_recv_upcall(tp, cnt)
-struct transport_cb *tp;
-int  cnt;
+static void mail_smtp_recv_upcall(struct transport_cb *tp, int cnt)
 {
 
-  int  c;
+  int c;
   struct mbuf *bp;
   struct mesg *mp;
 
@@ -136,13 +133,11 @@ int  cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void mail_smtp_send_upcall(tp, cnt)
-struct transport_cb *tp;
-int  cnt;
+static void mail_smtp_send_upcall(struct transport_cb *tp, int cnt)
 {
 
-  char  *p;
-  int  c;
+  char *p;
+  int c;
   struct mbuf *bp;
   struct mesg *mp;
 
@@ -166,8 +161,7 @@ int  cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void mail_smtp_state_upcall(tp)
-struct transport_cb *tp;
+static void mail_smtp_state_upcall(struct transport_cb *tp)
 {
   struct mesg *mp;
 
@@ -184,8 +178,7 @@ struct transport_cb *tp;
 
 /*---------------------------------------------------------------------------*/
 
-void mail_smtp(sp)
-struct mailsys *sp;
+void mail_smtp(struct mailsys *sp)
 {
   struct mesg *mp;
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.32 1993/03/30 17:23:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.33 1993/05/17 13:44:49 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -57,18 +57,18 @@
 #endif
 /* #include "dialer.h" */
 
-int dotest __ARGS((int argc,char *argv[],void *p));     /**/
-static int dostart __ARGS((int argc,char *argv[],void *p));
-static int dostop __ARGS((int argc,char *argv[],void *p));
-static int dostatus __ARGS((int argc,char *argv[],void *p));
+int dotest(int argc,char *argv[],void *p);      /**/
+static int dostart(int argc,char *argv[],void *p);
+static int dostop(int argc,char *argv[],void *p);
+static int dostatus(int argc,char *argv[],void *p);
 
 #ifdef  AX25
-static void axip __ARGS((struct iface *iface,struct ax25_cb *axp,char *src,
-	char *dest,struct mbuf *bp,int mcast));
-static void axarp __ARGS((struct iface *iface,struct ax25_cb *axp,char *src,
-	char *dest,struct mbuf *bp,int mcast));
-static void axnr __ARGS((struct iface *iface,struct ax25_cb *axp,char *src,
-	char *dest,struct mbuf *bp,int mcast));
+static void axip(struct iface *iface,struct ax25_cb *axp,char *src,
+	char *dest,struct mbuf *bp,int mcast);
+static void axarp(struct iface *iface,struct ax25_cb *axp,char *src,
+	char *dest,struct mbuf *bp,int mcast);
+static void axnr(struct iface *iface,struct ax25_cb *axp,char *src,
+	char *dest,struct mbuf *bp,int mcast);
 #endif  /* AX25 */
 
 struct mbuf *Hopper;            /* Queue of incoming packets */
@@ -428,6 +428,7 @@ struct iplink Iplink[] = {
 	UDP_PTCL,       udp_input,
 	ICMP_PTCL,      icmp_input,
 	IP_PTCL,        ipip_recv,
+	IP4_PTCL,       ipip_recv,
 	0,              0
 };
 
@@ -642,9 +643,9 @@ struct daemon Daemons[] = {
 };
 
 #if     0
-void (*Listusers) __ARGS((FILE *network)) = listusers;
+void (*Listusers)(FILE *network) = listusers;
 #else
-void (*Listusers) __ARGS((FILE *network)) = NULL;
+void (*Listusers)(FILE *network) = NULL;
 #endif  /* MAILBOX */
 
 #ifndef BOOTP

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhcdump.c,v 1.1 1992/08/24 10:12:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhcdump.c,v 1.2 1993/05/17 13:45:17 deyke Exp $ */
 
 #include <stdio.h>
 #include "global.h"
@@ -8,9 +8,9 @@
 #include "slhc.h"
 #include "trace.h"
 
-static int16 decodeint __ARGS((struct mbuf **bpp));
+static uint16 decodeint(struct mbuf **bpp);
 
-static int16
+static uint16
 decodeint(bpp)
 struct mbuf **bpp;
 {

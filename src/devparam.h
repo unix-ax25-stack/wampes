@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/devparam.h,v 1.3 1992/01/08 13:45:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/devparam.h,v 1.4 1993/05/17 13:44:51 deyke Exp $ */
 
 #ifndef _DEVPARAM_H
 #define _DEVPARAM_H
@@ -31,8 +31,8 @@
 #define PARAM_RETURN    0xff
 
 /* In devparam.c: */
-int devparam __ARGS((char *s));
-char *parmname __ARGS((int n));
+int devparam(char *s);
+char *parmname(int n);
 
 #endif  /* _DEVPARAM_H */
 

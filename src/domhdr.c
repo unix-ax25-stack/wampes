@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domhdr.c,v 1.5 1993/04/06 13:13:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domhdr.c,v 1.6 1993/05/17 13:44:52 deyke Exp $ */
 
 /* Domain header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -9,23 +9,23 @@
 
 #define dn_expand Xdn_expand    /* Resolve name conflict with libc */
 
-static int dn_expand __ARGS((char *msg,char *eom,char *compressed,char *full,
-	int fullen));
-static char *getq __ARGS((struct rr **rrpp,char *msg,char *cp));
-static char *ntohrr __ARGS((struct rr **rrpp,char *msg,char *cp));
+static int dn_expand(char *msg,char *eom,char *compressed,char *full,
+	int fullen);
+static char *getq(struct rr **rrpp,char *msg,char *cp);
+static char *ntohrr(struct rr **rrpp,char *msg,char *cp);
 
-static char *putstring __ARGS((char *cp, const char *str));
-static char *putname __ARGS((char *buffer, char *cp, const char *name));
-static char *putq __ARGS((char *buffer, char *cp, const struct rr *rrp));
-static char *putrr __ARGS((char *buffer, char *cp, const struct rr *rrp));
+static char *putstring(char *cp, const char *str);
+static char *putname(char *buffer, char *cp, const char *name);
+static char *putq(char *buffer, char *cp, const struct rr *rrp);
+static char *putrr(char *buffer, char *cp, const struct rr *rrp);
 
 int
 ntohdomain(dhdr,bpp)
 register struct dhdr *dhdr;
 struct mbuf **bpp;
 {
-	int16 tmp,len;
-	register int16 i;
+	uint16 tmp,len;
+	register uint16 i;
 	char *msg,*cp;
 	struct rr **rrpp;
 

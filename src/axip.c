@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.14 1993/03/30 17:23:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.15 1993/05/17 13:44:47 deyke Exp $ */
 
 #include "global.h"
 
@@ -47,18 +47,16 @@ struct axip_route {
 
 static struct axip_route *Axip_routes;
 
-static int axip_raw __ARGS((struct iface *ifp, struct mbuf *data));
-static void axip_recv __ARGS((void *argp));
-static void axip_route_add __ARGS((char *call, int32 dest));
-static int doaxiproute __ARGS((int argc, char *argv [], void *p));
-static int doaxiprouteadd __ARGS((int argc, char *argv [], void *p));
-static int doaxiproutedrop __ARGS((int argc, char *argv [], void *p));
+static int axip_raw(struct iface *ifp, struct mbuf *data);
+static void axip_recv(void *argp);
+static void axip_route_add(char *call, int32 dest);
+static int doaxiproute(int argc, char *argv[], void *p);
+static int doaxiprouteadd(int argc, char *argv[], void *p);
+static int doaxiproutedrop(int argc, char *argv[], void *p);
 
 /*---------------------------------------------------------------------------*/
 
-static int axip_raw(ifp, data)
-struct iface *ifp;
-struct mbuf *data;
+static int axip_raw(struct iface *ifp, struct mbuf *data)
 {
 
   char (*mpp)[AXALEN];
@@ -119,8 +117,7 @@ struct mbuf *data;
 
 /*---------------------------------------------------------------------------*/
 
-static void axip_recv(argp)
-void *argp;
+static void axip_recv(void *argp)
 {
 
   char *bufptr;
@@ -170,10 +167,7 @@ Fail:
 
 /*---------------------------------------------------------------------------*/
 
-int axip_attach(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+int axip_attach(int argc, char *argv[], void *p)
 {
 
   char *ifname = "axip";
@@ -255,9 +249,7 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-static void axip_route_add(call, dest)
-char *call;
-int32 dest;
+static void axip_route_add(char *call, int32 dest)
 {
   struct axip_route *rp;
 
@@ -278,10 +270,7 @@ static struct cmds Axipcmds[] = {
   NULLCHAR, NULLFP,      0, 0, NULLCHAR
 };
 
-int doaxip(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+int doaxip(int argc, char *argv[], void *p)
 {
   return subcmd(Axipcmds, argc, argv, p);
 }
@@ -294,10 +283,7 @@ static struct cmds Axiproutecmds[] = {
   NULLCHAR, NULLFP,          0, 0, NULLCHAR
 };
 
-static int doaxiproute(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+static int doaxiproute(int argc, char *argv[], void *p)
 {
 
   char buf[AXBUF];
@@ -314,10 +300,7 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-static int doaxiprouteadd(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+static int doaxiprouteadd(int argc, char *argv[], void *p)
 {
 
   char call[AXALEN];
@@ -337,10 +320,7 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-static int doaxiproutedrop(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+static int doaxiproutedrop(int argc, char *argv[], void *p)
 {
 
   char call[AXALEN];

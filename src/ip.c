@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.9 1993/02/23 21:34:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.10 1993/05/17 13:44:58 deyke Exp $ */
 
 /* Upper half of IP, consisting of send/receive primitives, including
  * fragment reassembly, for higher level protocols.
@@ -15,14 +15,14 @@
 #include "ip.h"
 #include "icmp.h"
 
-static struct mbuf *fraghandle __ARGS((struct ip *ip,struct mbuf *bp));
-static void ip_timeout __ARGS((void *arg));
-static void free_reasm __ARGS((struct reasm *rp));
-static void freefrag __ARGS((struct frag *fp));
-static struct reasm *lookup_reasm __ARGS((struct ip *ip));
-static struct reasm *creat_reasm __ARGS((struct ip *ip));
-static struct frag *newfrag __ARGS((int   offset,int   last,struct mbuf *bp));
-void ttldec __ARGS((struct iface *ifp));
+static struct mbuf *fraghandle(struct ip *ip,struct mbuf *bp);
+static void ip_timeout(void *arg);
+static void free_reasm(struct reasm *rp);
+static void freefrag(struct frag *fp);
+static struct reasm *lookup_reasm(struct ip *ip);
+static struct reasm *creat_reasm(struct ip *ip);
+static struct frag *newfrag(int    offset,int    last,struct mbuf *bp);
+void ttldec(struct iface *ifp);
 
 struct mib_entry Ip_mib[20] = {
 	"",                     0,
@@ -65,13 +65,13 @@ char protocol;                  /* Protocol */
 char tos;                       /* Type of service */
 char ttl;                       /* Time-to-live */
 struct mbuf *bp;                /* Data portion of datagram */
-int16 length;                   /* Optional length of data portion */
-int16 id;                       /* Optional identification */
+uint16 length;                  /* Optional length of data portion */
+uint16 id;                      /* Optional identification */
 char df;                        /* Don't-fragment flag */
 {
 	struct mbuf *tbp;
 	struct ip ip;                   /* IP header */
-	static int16 id_cntr = 0;       /* Datagram serial number */
+	static uint16 id_cntr = 0;      /* Datagram serial number */
 
 	ipOutRequests++;
 
@@ -200,8 +200,8 @@ struct mbuf *bp;        /* The fragment itself */
 	register struct reasm *rp; /* Pointer to reassembly descriptor */
 	struct frag *lastfrag,*nextfrag,*tfp;
 	struct mbuf *tbp;
-	int16 i;
-	int16 last;             /* Index of first byte beyond fragment */
+	uint16 i;
+	uint16 last;            /* Index of first byte beyond fragment */
 
 	last = ip->offset + ip->length - (IPLEN + ip->optlen);
 
@@ -468,7 +468,7 @@ void *arg;
 /* Create a fragment */
 static struct frag *
 newfrag(offset,last,bp)
-int16 offset,last;
+uint16 offset,last;
 struct mbuf *bp;
 {
 	struct frag *fp;

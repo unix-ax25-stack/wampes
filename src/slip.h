@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.h,v 1.11 1993/01/29 06:48:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.h,v 1.12 1993/05/17 13:45:18 deyke Exp $ */
 
 #ifndef _SLIP_H
 #define _SLIP_H
@@ -34,25 +34,25 @@ struct slip {
 	struct mbuf *rbp_head;  /* Head of mbuf chain being filled */
 	struct mbuf *rbp_tail;  /* Pointer to mbuf currently being written */
 	char *rcp;              /* Write pointer */
-	int16 rcnt;             /* Length of mbuf chain */
+	uint16 rcnt;            /* Length of mbuf chain */
 	struct mbuf *tbp;       /* Transmit mbuf being sent */
-	int16 errors;           /* Receiver input errors */
+	uint16 errors;          /* Receiver input errors */
 	int type;               /* Protocol of input */
-	int (*send) __ARGS((int,struct mbuf *));        /* send mbufs to device */
-	int (*get) __ARGS((int,char *,int));            /* fetch input chars from device */
+	int (*send)(int,struct mbuf *); /* send mbufs to device */
+	int (*get)(int,char *,int);     /* fetch input chars from device */
 	struct slcompress *slcomp;      /* TCP header compression table */
 };
 
 /* In slip.c: */
 extern struct slip Slip[];
 
-void asytxdone __ARGS((int dev));
-int slip_free __ARGS((struct iface *ifp));
-int slip_init __ARGS((struct iface *ifp));
-int slip_raw __ARGS((struct iface *iface,struct mbuf *data));
-void slip_rx __ARGS((struct iface *iface));
-int slip_send __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,int tos));
-int vjslip_send __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,int tos));
-void slip_status __ARGS((struct iface *iface));
+void asytxdone(int dev);
+int slip_free(struct iface *ifp);
+int slip_init(struct iface *ifp);
+int slip_raw(struct iface *iface,struct mbuf *data);
+void slip_rx(struct iface *iface);
+int slip_send(struct mbuf *bp,struct iface *iface,int32 gateway,int tos);
+int vjslip_send(struct mbuf *bp,struct iface *iface,int32 gateway,int tos);
+void slip_status(struct iface *iface);
 
 #endif  /* _SLIP_H */

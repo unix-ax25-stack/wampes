@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.9 1993/03/04 23:11:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.10 1993/05/17 13:44:48 deyke Exp $ */
 
 /* Parse command line, set up command arguments Unix-style, and call function.
  * Note: argument is modified (delimiters are overwritten with nulls)
@@ -42,8 +42,8 @@ static struct boolcmd Boolcmds[] = {
 	NULLCHAR
 };
 
-static int print_help __ARGS((struct cmds *cmdp));
-static char *stringparse __ARGS((char *line));
+static int print_help(struct cmds *cmdp);
+static char *stringparse(char *line);
 
 static char *
 stringparse(line)
@@ -304,8 +304,8 @@ char *argv[];
 /* Subroutine for setting and displaying bit values */
 int
 bit16cmd(bits,mask,label,argc,argv)
-int16 *bits;
-int16 mask;
+uint16 *bits;
+uint16 mask;
 char *label;
 int argc;
 char *argv[];

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.16 1993/02/23 21:34:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.17 1993/05/17 13:44:45 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -21,8 +21,8 @@
 #include <ctype.h>
 #include "lapb.h"
 
-static int axsend __ARGS((struct iface *iface,char *dest,char *source,
-	int cmdrsp,int ctl,struct mbuf *data));
+static int axsend(struct iface *iface,char *dest,char *source,
+	int cmdrsp,int ctl,struct mbuf *data);
 
 /* List of AX.25 multicast addresses in network format (shifted ascii).
  * Only the first entry is used for transmission, but an incoming
@@ -123,7 +123,7 @@ ax_output(iface,dest,source,pid,bp)
 struct iface *iface;    /* Interface to use; overrides routing table */
 char *dest;             /* Destination AX.25 address (7 bytes, shifted) */
 char *source;           /* Source AX.25 address (7 bytes, shifted) */
-int16 pid;              /* Protocol ID */
+uint16 pid;             /* Protocol ID */
 struct mbuf *bp;        /* Data field (follows PID) */
 {
 	/* Prepend pid to data */

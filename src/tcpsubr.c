@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.12 1993/01/29 06:48:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.13 1993/05/17 13:45:21 deyke Exp $ */
 
 /* Low level TCP routines:
  *  control block management
@@ -42,7 +42,7 @@ char *Tcpreasons[] = {
 	"ICMP"          /* Not actually used */
 };
 struct tcb *Tcbs;               /* Head of control block list */
-int16 Tcp_mss = DEF_MSS;        /* Maximum segment size to be sent with SYN */
+uint16 Tcp_mss = DEF_MSS;       /* Maximum segment size to be sent with SYN */
 int32 Tcp_irtt = DEF_RTT;       /* Initial guess at round trip time */
 int Tcp_trace;                  /* State change tracing flag */
 int Tcp_syndata;

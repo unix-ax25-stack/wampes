@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.7 1992/01/12 18:40:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.8 1993/05/17 13:45:18 deyke Exp $ */
 
 /* Miscellaneous Internet servers: discard, echo and remote
  * Copyright 1991 Phil Karn, KA9Q
@@ -19,12 +19,12 @@ char *Rempass = " ";    /* Remote access password */
 static struct tcb *disc_tcb,*echo_tcb;
 static struct udp_cb *remote_up;
 
-static void disc_recv __ARGS((struct tcb *tcb, int cnt));
-static void echo_recv __ARGS((struct tcb *tcb, int cnt));
-static void echo_trans __ARGS((struct tcb *tcb, int cnt));
-static void misc_state __ARGS((struct tcb *tcb, int old, int new));
-static void uremote __ARGS((struct iface *iface, struct udp_cb *up, int cnt));
-static int chkrpass __ARGS((struct mbuf *bp));
+static void disc_recv(struct tcb *tcb, int cnt);
+static void echo_recv(struct tcb *tcb, int cnt);
+static void echo_trans(struct tcb *tcb, int cnt);
+static void misc_state(struct tcb *tcb, int old, int new);
+static void uremote(struct iface *iface, struct udp_cb *up, int cnt);
+static int chkrpass(struct mbuf *bp);
 
 /* Start up TCP discard server */
 dis1(argc,argv,p)
@@ -111,7 +111,7 @@ static
 void
 disc_recv(tcb,cnt)
 struct tcb *tcb;
-int16 cnt;
+uint16 cnt;
 {
 	struct mbuf *bp;
 
@@ -149,7 +149,7 @@ static
 void
 echo_trans(tcb,cnt)
 struct tcb *tcb;
-int16 cnt;
+uint16 cnt;
 {
 	struct mbuf *bp;
 
@@ -241,7 +241,7 @@ chkrpass(bp)
 struct mbuf *bp;
 {
 	char *lbuf;
-	int16 len;
+	uint16 len;
 	int rval = 0;
 
 	len = len_p(bp);

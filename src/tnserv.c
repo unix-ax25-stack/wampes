@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.8 1992/05/28 13:50:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.9 1993/05/17 13:45:22 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -12,9 +12,7 @@ static struct tcb *tcb_server;
 
 /*---------------------------------------------------------------------------*/
 
-static void tnserv_recv_upcall(tcb, cnt)
-struct tcb *tcb;
-int  cnt;
+static void tnserv_recv_upcall(struct tcb *tcb, int cnt)
 {
   struct mbuf *bp;
 
@@ -26,9 +24,7 @@ int  cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void tnserv_send_upcall(tcb, cnt)
-struct tcb *tcb;
-int  cnt;
+static void tnserv_send_upcall(struct tcb *tcb, int cnt)
 {
   struct mbuf *bp;
 
@@ -39,12 +35,10 @@ int  cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void tnserv_state_upcall(tcb, old, new)
-struct tcb *tcb;
-int  old, new;
+static void tnserv_state_upcall(struct tcb *tcb, int old, int new)
 {
   switch (new) {
-#ifdef  QUICKSTART
+#ifdef QUICKSTART
   case TCP_SYN_RECEIVED:
 #else
   case TCP_ESTABLISHED:
@@ -71,10 +65,7 @@ int  old, new;
 
 /*---------------------------------------------------------------------------*/
 
-int  telnet0(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
+int telnet0(int argc, char *argv[], void *p)
 {
   if (tcb_server) close_tcp(tcb_server);
   return 0;
@@ -82,10 +73,7 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-int  telnet1(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
+int telnet1(int argc, char *argv[], void *p)
 {
   struct socket lsocket;
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.37 1993/05/14 17:03:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.38 1993/05/17 13:45:07 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -59,9 +59,9 @@ struct login_cb {
   char outbuf[256];             /* pty write buffer */
   char *outptr;                 /* pty write buffer pointer */
   int outcnt;                   /* pty write buffer count */
-  void (*readfnc) __ARGS((void *fncarg));
+  void (*readfnc)(void *fncarg);
 				/* func to call if pty is readable */
-  void (*closefnc) __ARGS((void *fncarg));
+  void (*closefnc)(void *fncarg);
 				/* func to call if pty gets closed */
   void *fncarg;                 /* argument for readfnc and closefnc */
   FILE *logfp;                  /* log file pointer */
@@ -73,15 +73,15 @@ struct login_cb {
 
 static int32 pty_locktime[NUMPTY];
 
-static int find_pty __ARGS((int *numptr, char *slave));
-static void restore_pty __ARGS((const char *id));
-static int callvalid __ARGS((const char *call));
-static char *find_user_name __ARGS((const char *name));
-static void write_log __ARGS((struct login_cb *tp, const char *buf, int cnt));
-static FILE *fopen_logfile __ARGS((const char *user, const char *protocol));
-static int do_telnet __ARGS((struct login_cb *tp, int chr));
-static void write_pty __ARGS((struct login_cb *tp));
-static void death_handler __ARGS((struct login_cb *tp));
+static int find_pty(int *numptr, char *slave);
+static void restore_pty(const char *id);
+static int callvalid(const char *call);
+static char *find_user_name(const char *name);
+static void write_log(struct login_cb *tp, const char *buf, int cnt);
+static FILE *fopen_logfile(const char *user, const char *protocol);
+static int do_telnet(struct login_cb *tp, int chr);
+static void write_pty(struct login_cb *tp);
+static void death_handler(struct login_cb *tp);
 
 /*---------------------------------------------------------------------------*/
 
@@ -90,9 +90,7 @@ static void death_handler __ARGS((struct login_cb *tp));
 
 /*---------------------------------------------------------------------------*/
 
-static int find_pty(numptr, slave)
-int *numptr;
-char *slave;
+static int find_pty(int *numptr, char *slave)
 {
 
   char master[80];
@@ -117,8 +115,7 @@ char *slave;
 
 /*---------------------------------------------------------------------------*/
 
-static void restore_pty(id)
-const char *id;
+static void restore_pty(const char *id)
 {
   char filename[80];
 
@@ -132,7 +129,7 @@ const char *id;
 
 /*---------------------------------------------------------------------------*/
 
-void fixutmpfile()
+void fixutmpfile(void)
 {
 
 #ifdef USER_PROCESS
@@ -159,8 +156,7 @@ void fixutmpfile()
 
 /*---------------------------------------------------------------------------*/
 
-static int callvalid(call)
-const char *call;
+static int callvalid(const char *call)
 {
   int d, l;
 
@@ -180,8 +176,7 @@ const char *call;
 
 /*---------------------------------------------------------------------------*/
 
-static char *find_user_name(name)
-const char *name;
+static char *find_user_name(const char *name)
 {
 
   char *cp;
@@ -198,9 +193,7 @@ const char *name;
 
 /*---------------------------------------------------------------------------*/
 
-struct passwd *getpasswdentry(name, create)
-const char *name;
-int create;
+struct passwd *getpasswdentry(const char *name, int create)
 {
 
   FILE *fp;
@@ -280,10 +273,7 @@ int create;
 
 /*---------------------------------------------------------------------------*/
 
-static void write_log(tp, buf, cnt)
-struct login_cb *tp;
-const char *buf;
-int cnt;
+static void write_log(struct login_cb *tp, const char *buf, int cnt)
 {
   int chr;
 
@@ -304,9 +294,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static FILE *fopen_logfile(user, protocol)
-const char *user;
-const char *protocol;
+static FILE *fopen_logfile(const char *user, const char *protocol)
 {
 
   FILE *fp;
@@ -334,9 +322,7 @@ const char *protocol;
 
 /*---------------------------------------------------------------------------*/
 
-static int do_telnet(tp, chr)
-struct login_cb *tp;
-int chr;
+static int do_telnet(struct login_cb *tp, int chr)
 {
   struct termios termios;
 
@@ -400,8 +386,7 @@ int chr;
 
 /*---------------------------------------------------------------------------*/
 
-static void write_pty(tp)
-struct login_cb *tp;
+static void write_pty(struct login_cb *tp)
 {
 
   char *p;
@@ -444,8 +429,7 @@ struct login_cb *tp;
 
 /*---------------------------------------------------------------------------*/
 
-static void death_handler(tp)
-struct login_cb *tp;
+static void death_handler(struct login_cb *tp)
 {
   off_read(tp->pty);
   off_write(tp->pty);
@@ -454,12 +438,7 @@ struct login_cb *tp;
 
 /*---------------------------------------------------------------------------*/
 
-struct login_cb *login_open(user, protocol, read_upcall, close_upcall, upcall_arg)
-const char *user;
-const char *protocol;
-void (*read_upcall) __ARGS((void *arg));
-void (*close_upcall) __ARGS((void *arg));
-void *upcall_arg;
+struct login_cb *login_open(const char *user, const char *protocol, void (*read_upcall)(void *arg), void (*close_upcall)(void *arg), void *upcall_arg)
 {
 
   char *env = 0;
@@ -540,8 +519,7 @@ void *upcall_arg;
 
 /*---------------------------------------------------------------------------*/
 
-void login_close(tp)
-struct login_cb *tp;
+void login_close(struct login_cb *tp)
 {
 
 #ifndef UTMP_FILE
@@ -621,9 +599,7 @@ struct login_cb *tp;
 
 /*---------------------------------------------------------------------------*/
 
-struct mbuf *login_read(tp, cnt)
-struct login_cb *tp;
-int cnt;
+struct mbuf *login_read(struct login_cb *tp, int cnt)
 {
 
   int chr;
@@ -660,9 +636,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-void login_write(tp, bp)
-struct login_cb *tp;
-struct mbuf *bp;
+void login_write(struct login_cb *tp, struct mbuf *bp)
 {
   append(&tp->sndq, bp);
   on_write(tp->pty, (void (*)()) write_pty, tp);

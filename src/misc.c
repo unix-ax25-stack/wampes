@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.15 1993/03/11 15:01:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.16 1993/05/17 13:45:10 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -272,18 +272,18 @@ int32 x;
 char *
 put16(cp,x)
 register char *cp;
-int16 x;
+uint16 x;
 {
 	*cp++ = x >> 8;
 	*cp++ = x;
 
 	return cp;
 }
-int16
+uint16
 get16(cp)
 register char *cp;
 {
-	register int16 x;
+	register uint16 x;
 
 	x = uchar(*cp++);
 	x <<= 8;
@@ -310,7 +310,7 @@ register char *cp;
 /* Compute int(log2(x)) */
 int
 log2(x)
-register int16 x;
+register uint16 x;
 {
 	register int n = 16;
 	for(;n != 0;n--){

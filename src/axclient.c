@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.12 1993/02/23 21:34:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.13 1993/05/17 13:44:47 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -11,14 +11,12 @@
 #include "lapb.h"
 #include "session.h"
 
-static void axclient_parse __ARGS((char *buf, int n));
-static void axclient_state_upcall __ARGS((struct ax25_cb *cp, int oldstate, int newstate));
+static void axclient_parse(char *buf, int n);
+static void axclient_state_upcall(struct ax25_cb *cp, int oldstate, int newstate);
 
 /*---------------------------------------------------------------------------*/
 
-static void axclient_parse(buf, n)
-char *buf;
-int n;
+static void axclient_parse(char *buf, int n)
 {
   if (!(Current && Current->type == AX25TNC && Current->cb.ax25)) return;
   if (n >= 1 && buf[n-1] == '\n') n--;
@@ -32,9 +30,7 @@ int n;
 
 /*---------------------------------------------------------------------------*/
 
-void axclient_send_upcall(cp, cnt)
-struct ax25_cb *cp;
-int cnt;
+void axclient_send_upcall(struct ax25_cb *cp, int cnt)
 {
 
   char *p;
@@ -65,9 +61,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-void axclient_recv_upcall(cp, cnt)
-struct ax25_cb *cp;
-int cnt;
+void axclient_recv_upcall(struct ax25_cb *cp, int cnt)
 {
 
   int c;
@@ -84,9 +78,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void axclient_state_upcall(cp, oldstate, newstate)
-struct ax25_cb *cp;
-int oldstate, newstate;
+static void axclient_state_upcall(struct ax25_cb *cp, int oldstate, int newstate)
 {
   int notify;
 
@@ -105,10 +97,7 @@ int oldstate, newstate;
 
 /* Initiate interactive AX.25 connect to remote station */
 int
-doconnect(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+doconnect(int argc, char *argv[], void *p)
 {
 
   struct ax25 hdr;

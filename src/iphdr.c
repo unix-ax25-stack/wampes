@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iphdr.c,v 1.5 1992/05/14 13:20:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iphdr.c,v 1.6 1993/05/17 13:45:00 deyke Exp $ */
 
 /* IP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -18,9 +18,9 @@ register struct ip *ip;
 struct mbuf *bp;
 int cflag;
 {
-	int16 hdr_len;
+	uint16 hdr_len;
 	register char *cp;
-	int16 fl_offs;
+	uint16 fl_offs;
 
 	hdr_len = IPLEN + ip->optlen;
 	if(hdr_len > IPLEN + IP_MAXOPT)
@@ -69,7 +69,7 @@ register struct ip *ip;
 struct mbuf **bpp;
 {
 	int ihl;
-	int16 fl_offs;
+	uint16 fl_offs;
 	char ipbuf[IPLEN];
 
 	if(pullup(bpp,ipbuf,IPLEN) != IPLEN)
@@ -103,27 +103,27 @@ struct mbuf **bpp;
 	return ihl;
 }
 /* Perform end-around-carry adjustment */
-int16
+uint16
 eac(sum)
 register int32 sum;     /* Carries in high order 16 bits */
 {
-	register int16 csum;
+	register uint16 csum;
 
 	while((csum = sum >> 16) != 0)
 		sum = csum + (sum & 0xffffL);
-	return (int16) (sum & 0xffffl); /* Chops to 16 bits */
+	return (uint16) (sum & 0xffffl);        /* Chops to 16 bits */
 }
 /* Checksum a mbuf chain, with optional pseudo-header */
-int16
+uint16
 cksum(ph,m,len)
 struct pseudo_header *ph;
 register struct mbuf *m;
-int16 len;
+uint16 len;
 {
-	register int16 cnt, total;
+	register uint16 cnt, total;
 	register int32 sum, csum;
 	register char *up;
-	int16 csum1;
+	uint16 csum1;
 	int swap = 0;
 
 	sum = 0l;
@@ -148,7 +148,7 @@ int16 len;
 			if(swap)
 				csum = uchar(*up++);
 			else
-				csum = (int16)(uchar(*up++) << 8);
+				csum = (uint16)(uchar(*up++) << 8);
 			cnt--;
 			swap = !swap;
 		}
@@ -157,7 +157,7 @@ int16 len;
 			 * the work. At this point, up is guaranteed to be on
 			 * a short boundary
 			 */
-			csum1 = lcsum((unsigned short *)up, (int16)(cnt >> 1));
+			csum1 = lcsum((unsigned short *)up, (uint16)(cnt >> 1));
 			if(swap)
 				csum1 = (csum1 << 8) | (csum1 >> 8);
 			csum += csum1;
@@ -167,13 +167,13 @@ int16 len;
 			if(swap)
 				csum += uchar(up[--cnt]);
 			else
-				csum += (int16)(uchar(up[--cnt]) << 8);
+				csum += (uint16)(uchar(up[--cnt]) << 8);
 			swap = !swap;
 		}
 		sum += csum;
 		total += m->cnt;
 	}
 	/* Do final end-around carry, complement and return */
-	return (int16)(~eac(sum) & 0xffff);
+	return (uint16)(~eac(sum) & 0xffff);
 }
 

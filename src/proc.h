@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/proc.h,v 1.8 1992/10/05 17:29:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/proc.h,v 1.9 1993/05/17 13:45:14 deyke Exp $ */
 
 #ifndef _PROC_H
 #define _PROC_H
@@ -35,7 +35,7 @@ struct proc {
 #define WAITING 1
 #define SUSPEND 2
 	void *event;            /* Wait event */
-	int16 *stack;           /* Process stack */
+	uint16 *stack;          /* Process stack */
 	unsigned stksize;       /* Size of same */
 	char *name;             /* Arbitrary user-assigned name */
 	int retval;             /* Return value from next pwait() */
@@ -87,28 +87,28 @@ extern struct ksig Ksig;
 	Curproc->signo = (val),setjmp(Curproc->sig))
 
 /* In  kernel.c: */
-void alert __ARGS((struct proc *pp,int val));
-void chname __ARGS((struct proc *pp,char *newname));
-void killproc __ARGS((struct proc *pp));
-void killself __ARGS((void));
-struct proc *mainproc __ARGS((char *name));
-struct proc *newproc __ARGS((char *name,unsigned int stksize,
-	void (*pc) __ARGS((int,void *,void *)),
-	int iarg,void *parg1,void *parg2,int freeargs));
-void Xpsignal __ARGS((void *event,int n));
-int pwait __ARGS((void *event));
-void resume __ARGS((struct proc *pp));
-int setsig __ARGS((int val));
-void suspend __ARGS((struct proc *pp));
+void alert(struct proc *pp,int val);
+void chname(struct proc *pp,char *newname);
+void killproc(struct proc *pp);
+void killself(void);
+struct proc *mainproc(char *name);
+struct proc *newproc(char *name,unsigned int stksize,
+	void (*pc)(int,void *,void *),
+	int iarg,void *parg1,void *parg2,int freeargs);
+void Xpsignal(void *event,int n);
+int pwait(void *event);
+void resume(struct proc *pp);
+int setsig(int val);
+void suspend(struct proc *pp);
 
 /* In ksubr.c: */
-void chkstk __ARGS((void));
-void kinit __ARGS((void));
-unsigned phash __ARGS((void *event));
-void psetup __ARGS((struct proc *pp,int iarg,void *parg1,void *parg2,
-	void  __ARGS(((*pc) __ARGS((int,void *,void *)) )) ));
+void chkstk(void);
+void kinit(void);
+unsigned phash(void *event);
+void psetup(struct proc *pp,int iarg,void *parg1,void *parg2,
+	void ((*pc)(int,void *,void *)) );
 #ifdef  AMIGA
-void init_psetup __ARGS((struct proc *pp));
+void init_psetup(struct proc *pp);
 #endif
 
 /* Stack background fill value for high water mark checking */

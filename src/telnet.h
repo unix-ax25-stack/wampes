@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.h,v 1.5 1991/05/09 07:39:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.h,v 1.6 1993/05/17 13:45:21 deyke Exp $ */
 
 #ifndef _TELNET_H
 #define _TELNET_H
@@ -46,6 +46,6 @@ extern int Refuse_echo;
 extern int Tn_cr_mode;
 
 /* In telnet.c: */
-void rcv_char __ARGS((struct tcb *tcb, int cnt));
+void rcv_char(struct tcb *tcb, int cnt);
 
 #endif  /* _TELNET_H */

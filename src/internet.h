@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/internet.h,v 1.6 1992/05/14 13:20:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/internet.h,v 1.7 1993/05/17 13:44:58 deyke Exp $ */
 
 #ifndef _INTERNET_H
 #define _INTERNET_H
@@ -13,10 +13,11 @@
 
 /* IP protocol field values */
 #define ICMP_PTCL       1       /* Internet Control Message Protocol */
+#define IP4_PTCL        4       /* IP inside IP */
 #define TCP_PTCL        6       /* Transmission Control Protocol */
 #define UDP_PTCL        17      /* User Datagram Protocol */
 #define AX25_PTCL       93      /* AX.25 inside IP according to RFC-1226 */
-#define IP_PTCL         94      /* IP inside IP */
+#define IP_PTCL         94      /* JI's IP inside IP */
 
 #define MAXTTL          255     /* Maximum possible IP time-to-live value */
 
@@ -54,7 +55,7 @@ struct pseudo_header {
 	int32 source;           /* IP source */
 	int32 dest;             /* IP destination */
 	char protocol;          /* Protocol */
-	int16 length;           /* Data field length */
+	uint16 length;          /* Data field length */
 };
 #define NULLHEADER      (struct pseudo_header *)0
 

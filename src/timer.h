@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.h,v 1.6 1991/10/25 15:01:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.h,v 1.7 1993/05/17 13:45:22 deyke Exp $ */
 
 #ifndef _TIMER_H
 #define _TIMER_H
@@ -25,7 +25,7 @@ struct timer {
 	struct timer *prev;
 	int32 duration;         /* Duration of timer, in ms */
 	int32 expiration;       /* Clock time at expiration */
-	void (*func) __ARGS((void *));  /* Function to call at expiration */
+	void (*func)(void *);   /* Function to call at expiration */
 	void *arg;              /* Arg to pass function */
 	char state;             /* Timer state */
 #define TIMER_STOP      0
@@ -33,19 +33,22 @@ struct timer {
 #define TIMER_EXPIRE    2
 };
 #define NULLTIMER       (struct timer *)0
+#ifndef EALARM
+#define EALARM          106
+#endif
 /* Useful user macros that hide the timer structure internals */
 #define dur_timer(t)    ((t)->duration)
 #define run_timer(t)    ((t)->state == TIMER_RUN)
 
 /* In timer.c: */
-void Xalarm __ARGS((int32 ms));
-int Xpause __ARGS((int32 ms));
-int32 read_timer __ARGS((struct timer *t));
+void Xalarm(int32 ms);
+int Xpause(int32 ms);
+int32 read_timer(struct timer *t);
 #define set_timer(t,x)  ((t)->duration = (x))
-void start_timer __ARGS((struct timer *t));
-void stop_timer __ARGS((struct timer *timer));
-int32 next_timer_event __ARGS((void));
-char *tformat __ARGS((int32 t));
+void start_timer(struct timer *t);
+void stop_timer(struct timer *timer);
+int32 next_timer_event(void);
+char *tformat(int32 t);
 
 extern int32 Msclock;
 extern int32 Secclock;

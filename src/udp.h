@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.h,v 1.7 1993/02/23 21:34:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.h,v 1.8 1993/05/17 13:45:26 deyke Exp $ */
 
 #ifndef _UDP_H
 #define _UDP_H
@@ -39,10 +39,10 @@ extern struct mib_entry Udp_mib[];
 
 /* Structure of a UDP protocol header */
 struct udp {
-	int16 source;   /* Source port */
-	int16 dest;     /* Destination port */
-	int16 length;   /* Length of header and data */
-	int16 checksum; /* Checksum over pseudo-header, header and data */
+	uint16 source;  /* Source port */
+	uint16 dest;    /* Destination port */
+	uint16 length;  /* Length of header and data */
+	uint16 checksum;        /* Checksum over pseudo-header, header and data */
 };
 #define UDPHDR  8       /* Length of UDP header */
 
@@ -53,7 +53,7 @@ struct udp {
 struct udp_cb {
 	struct udp_cb *next;
 	struct socket socket;   /* Local port accepting datagrams */
-	void (*r_upcall) __ARGS((struct iface *iface,struct udp_cb *,int));
+	void (*r_upcall)(struct iface *iface,struct udp_cb *,int);
 				/* Function to call when one arrives */
 	struct mbuf *rcvq;      /* Queue of pending datagrams */
 	int rcvcnt;             /* Count of pending datagrams */
@@ -65,42 +65,42 @@ extern struct udp_cb *Udps;     /* Hash table for UDP structures */
 /* UDP primitives */
 
 /* In udp.c: */
-int del_udp __ARGS((struct udp_cb *up));
-struct udp_cb *open_udp __ARGS((struct socket *lsocket,
-	void (*r_upcall) __ARGS((struct iface *iface,struct udp_cb *,int))));
-int recv_udp __ARGS((struct udp_cb *up,struct socket *fsocket,struct mbuf **bp));
-int send_udp __ARGS((struct socket *lsocket,struct socket *fsocket,int  tos,
-	int  ttl,struct mbuf *data,int   length,int   id,int  df));
-void udp_input __ARGS((struct iface *iface,struct ip *ip,struct mbuf *bp,
-	int rxbroadcast));
-void udp_garbage __ARGS((int drastic));
+int del_udp(struct udp_cb *up);
+struct udp_cb *open_udp(struct socket *lsocket,
+	void (*r_upcall)(struct iface *iface,struct udp_cb *,int));
+int recv_udp(struct udp_cb *up,struct socket *fsocket,struct mbuf **bp);
+int send_udp(struct socket *lsocket,struct socket *fsocket,int  tos,
+	int  ttl,struct mbuf *data,int    length,int    id,int  df);
+void udp_input(struct iface *iface,struct ip *ip,struct mbuf *bp,
+	int rxbroadcast);
+void udp_garbage(int drastic);
 
 #ifdef HOPCHECK
-void udp_icmp __ARGS((int32 icsource, int32 ipsource,int32 ipdest,
-	int  ictype,int  iccode,struct mbuf **bpp));
+void udp_icmp(int32 icsource, int32 ipsource,int32 ipdest,
+	int  ictype,int  iccode,struct mbuf **bpp);
 /* In hop.c: */
-void hop_icmp __ARGS((struct udp_cb *ucb, int32 icsource, int32 ipdest,
-	int   udpdest, int  ictype, int  iccode));
+void hop_icmp(struct udp_cb *ucb, int32 icsource, int32 ipdest,
+	int    udpdest, int  ictype, int  iccode);
 #endif
 
 /* In udpcmd.c: */
-int st_udp __ARGS((struct udp_cb *udp,int n));
+int st_udp(struct udp_cb *udp,int n);
 
 /* In udphdr.c: */
-struct mbuf *htonudp __ARGS((struct udp *udp,struct mbuf *data,struct pseudo_header *ph));
-int ntohudp __ARGS((struct udp *udp,struct mbuf **bpp));
-int16 udpcksum __ARGS((struct mbuf *bp));
+struct mbuf *htonudp(struct udp *udp,struct mbuf *data,struct pseudo_header *ph);
+int ntohudp(struct udp *udp,struct mbuf **bpp);
+uint16 udpcksum(struct mbuf *bp);
 
 /* In udpsocket.c: */
-int so_udp __ARGS((struct usock *up,int protocol));
-int so_udp_bind __ARGS((struct usock *up));
-int so_udp_conn __ARGS((struct usock *up));
-int so_udp_recv __ARGS((struct usock *up,struct mbuf **bpp,char *from,
-	int *fromlen));
-int so_udp_send __ARGS((struct usock *up,struct mbuf *bp,char *to));
-int so_udp_qlen __ARGS((struct usock *up,int rtx));
-int so_udp_shut __ARGS((struct usock *up,int how));
-int so_udp_close __ARGS((struct usock *up));
-int so_udp_stat __ARGS((struct usock *up));
+int so_udp(struct usock *up,int protocol);
+int so_udp_bind(struct usock *up);
+int so_udp_conn(struct usock *up);
+int so_udp_recv(struct usock *up,struct mbuf **bpp,char *from,
+	int *fromlen);
+int so_udp_send(struct usock *up,struct mbuf *bp,char *to);
+int so_udp_qlen(struct usock *up,int rtx);
+int so_udp_shut(struct usock *up,int how);
+int so_udp_close(struct usock *up);
+int so_udp_stat(struct usock *up);
 
 #endif  /* _UDP_H */

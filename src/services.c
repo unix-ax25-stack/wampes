@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.4 1992/05/26 10:09:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.5 1993/05/17 13:45:15 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -9,8 +9,8 @@
 #include "netuser.h"
 
 struct port_table {
-  char  *name;
-  int  port;
+  char *name;
+  int port;
 };
 
 static struct port_table tcp_port_table[] = {
@@ -42,19 +42,19 @@ static struct port_table udp_port_table[] = {
   NULLCHAR
 };
 
-static char *nextstr __ARGS((void));
-static char *port_name __ARGS((struct port_table *table, int port));
-static int port_number __ARGS((struct port_table *table, char *name));
+static char *nextstr(void);
+static char *port_name(struct port_table *table, int port);
+static int port_number(struct port_table *table, char *name);
 
 /*---------------------------------------------------------------------------*/
 
-static char  *nextstr()
+static char *nextstr(void)
 {
 
 #define NUMSTR  16
 
-  static char  strstore[NUMSTR][128];
-  static int  strindex;
+  static char strstore[NUMSTR][128];
+  static int strindex;
 
   strindex++;
   if (strindex >= NUMSTR) strindex = 0;
@@ -63,11 +63,9 @@ static char  *nextstr()
 
 /*---------------------------------------------------------------------------*/
 
-static char  *port_name(table, port)
-struct port_table *table;
-int  port;
+static char *port_name(struct port_table *table, int port)
 {
-  char  *p;
+  char *p;
 
   for (; table->name; table++)
     if (port == table->port) return table->name;
@@ -78,27 +76,23 @@ int  port;
 
 /*---------------------------------------------------------------------------*/
 
-char  *tcp_port_name(port)
-int  port;
+char *tcp_port_name(int port)
 {
   return port_name(tcp_port_table, port);
 }
 
 /*---------------------------------------------------------------------------*/
 
-char  *udp_port_name(port)
-int  port;
+char *udp_port_name(int port)
 {
   return port_name(udp_port_table, port);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int  port_number(table, name)
-struct port_table *table;
-char  *name;
+static int port_number(struct port_table *table, char *name)
 {
-  int  len;
+  int len;
 
   if (!isdigit(uchar(*name))) {
     len = strlen(name);
@@ -110,26 +104,23 @@ char  *name;
 
 /*---------------------------------------------------------------------------*/
 
-int  tcp_port_number(name)
-char  *name;
+int tcp_port_number(char *name)
 {
   return port_number(tcp_port_table, name);
 }
 
 /*---------------------------------------------------------------------------*/
 
-int  udp_port_number(name)
-char  *name;
+int udp_port_number(char *name)
 {
   return port_number(udp_port_table, name);
 }
 
 /*---------------------------------------------------------------------------*/
 
-char  *pinet_tcp(s)
-struct socket *s;
+char *pinet_tcp(struct socket *s)
 {
-  char  *p;
+  char *p;
 
   p = nextstr();
   sprintf(p, "%s:%s", inet_ntoa(s->address), tcp_port_name(s->port));
@@ -138,10 +129,9 @@ struct socket *s;
 
 /*---------------------------------------------------------------------------*/
 
-char  *pinet_udp(s)
-struct socket *s;
+char *pinet_udp(struct socket *s)
 {
-  char  *p;
+  char *p;
 
   p = nextstr();
   sprintf(p, "%s:%s", inet_ntoa(s->address), udp_port_name(s->port));

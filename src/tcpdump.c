@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpdump.c,v 1.5 1991/05/09 07:38:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpdump.c,v 1.6 1993/05/17 13:45:19 deyke Exp $ */
 
 /* TCP header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -33,8 +33,8 @@ int check;              /* 0 if checksum test is to be bypassed */
 {
 	struct tcp seg;
 	struct pseudo_header ph;
-	int16 csum;
-	int16 dlen;
+	uint16 csum;
+	uint16 dlen;
 
 	if(bpp == NULLBUFP || *bpp == NULLBUF)
 		return;

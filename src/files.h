@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.h,v 1.5 1993/01/29 06:48:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.h,v 1.6 1993/05/17 13:44:53 deyke Exp $ */
 
 #ifndef _FILES_H
 #define _FILES_H
@@ -37,11 +37,11 @@ extern char *Signature;         /* Mail signature file directory */
 extern char *Forwardfile;       /* Mail forwarding file */
 extern char *Historyfile;       /* Message ID history file */
 
-void initroot __ARGS((char *root));
-char *rootdircat __ARGS((char *filename));
-int userlogin __ARGS((char *name,char *pass,char **path,int len,int *pwdignore));
-char *userlookup __ARGS((char *username, char **password, char **directory,
-			int *permission, int32 *ip_address));
-void usercvt __ARGS((void));
+void initroot(char *root);
+char *rootdircat(char *filename);
+int userlogin(char *name,char *pass,char **path,int len,int *pwdignore);
+char *userlookup(char *username, char **password, char **directory,
+			int *permission, int32 *ip_address);
+void usercvt(void);
 
 #endif  /* _FILES_H */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.6 1991/07/16 17:55:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.7 1993/05/17 13:44:59 deyke Exp $ */
 
 /* IP header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -19,9 +19,9 @@ struct mbuf **bpp;
 int check;
 {
 	struct ip ip;
-	int16 ip_len;
-	int16 length;
-	int16 csum;
+	uint16 ip_len;
+	uint16 length;
+	uint16 csum;
 
 	if(bpp == NULLBUFP || *bpp == NULLBUF)
 		return;

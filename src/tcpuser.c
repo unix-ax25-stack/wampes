@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.15 1993/01/29 06:48:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.16 1993/05/17 13:45:21 deyke Exp $ */
 
 /* User calls to TCP
  * Copyright 1991 Phil Karn, KA9Q
@@ -15,14 +15,14 @@
 #include "icmp.h"
 #include "proc.h"
 
-int16 Tcp_window = DEF_WND;
+uint16 Tcp_window = DEF_WND;
 
 struct tcb *
 open_tcp(lsocket,fsocket,mode,window,r_upcall,t_upcall,s_upcall,tos,user)
 struct socket *lsocket; /* Local socket */
 struct socket *fsocket; /* Remote socket */
 int mode;               /* Active/passive/server */
-int16 window;           /* Receive window (and send buffer) sizes */
+uint16 window;          /* Receive window (and send buffer) sizes */
 void (*r_upcall)();     /* Function to call when data arrives */
 void (*t_upcall)();     /* Function to call when ok to send more data */
 void (*s_upcall)();     /* Function to call when connection state changes */
@@ -392,7 +392,7 @@ register struct tcb *tcb;
  */
 char *
 tcp_port(n)
-int16 n;
+uint16 n;
 {
 	static char buf[32];
 

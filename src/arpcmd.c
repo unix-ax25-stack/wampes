@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.10 1993/03/11 15:01:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.11 1993/05/17 13:44:43 deyke Exp $ */
 
 /* ARP commands
  * Copyright 1991, Phil Karn, KA9Q
@@ -15,10 +15,10 @@
 #include "cmdparse.h"
 #include "commands.h"
 
-static int doarpadd __ARGS((int argc,char *argv[],void *p));
-static int doarpdrop __ARGS((int argc,char *argv[],void *p));
-static int doarpflush __ARGS((int argc,char *argv[],void *p));
-static void dumparp __ARGS((void));
+static int doarpadd(int argc,char *argv[],void *p);
+static int doarpdrop(int argc,char *argv[],void *p);
+static int doarpflush(int argc,char *argv[],void *p);
+static void dumparp(void);
 
 static struct cmds Arpcmds[] = {
 	"add", doarpadd, 0, 4,
@@ -65,7 +65,7 @@ int argc;
 char *argv[];
 void *p;
 {
-	int16 hardware;
+	uint16 hardware;
 	int32 addr;
 	char *hwaddr;
 	struct arp_tab *ap;
@@ -132,7 +132,7 @@ int argc;
 char *argv[];
 void *p;
 {
-	int16 hardware;
+	uint16 hardware;
 	int32 addr;
 	struct arp_tab *ap;
 

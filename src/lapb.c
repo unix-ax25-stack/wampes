@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.28 1993/03/04 23:11:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.29 1993/05/17 13:45:05 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -12,13 +12,13 @@
 #include "lapb.h"
 #include "ip.h"
 
-static void handleit __ARGS((struct ax25_cb *axp,int pid,struct mbuf *bp));
-static void procdata __ARGS((struct ax25_cb *axp,struct mbuf *bp));
-static int ackours __ARGS((struct ax25_cb *axp,int   n,int rex_all));
-static void clr_ex __ARGS((struct ax25_cb *axp));
-static void enq_resp __ARGS((struct ax25_cb *axp));
-static void inv_rex __ARGS((struct ax25_cb *axp));
-static void resequence __ARGS((struct ax25_cb *axp,struct mbuf *bp,int ns,int pf,int poll));
+static void handleit(struct ax25_cb *axp,int pid,struct mbuf *bp);
+static void procdata(struct ax25_cb *axp,struct mbuf *bp);
+static int ackours(struct ax25_cb *axp,int    n,int rex_all);
+static void clr_ex(struct ax25_cb *axp);
+static void enq_resp(struct ax25_cb *axp);
+static void inv_rex(struct ax25_cb *axp);
+static void resequence(struct ax25_cb *axp,struct mbuf *bp,int ns,int pf,int poll);
 
 /* Process incoming frames */
 int
@@ -32,13 +32,13 @@ struct mbuf *bp;                /* Rest of frame, starting with ctl */
 	int cmdrsp = hdr->cmdrsp;       /* Command/response flag */
 	int control;
 	int class;              /* General class (I/S/U) of frame */
-	int16 type;             /* Specific type (I/RR/RNR/etc) of frame */
+	uint16 type;            /* Specific type (I/RR/RNR/etc) of frame */
 	char pf;                /* extracted poll/final bit */
 	char poll = 0;
 	char final = 0;
-	int16 nr;               /* ACK number of incoming frame */
-	int16 ns;               /* Seq number of incoming frame */
-	int16 tmp;
+	uint16 nr;              /* ACK number of incoming frame */
+	uint16 ns;              /* Seq number of incoming frame */
+	uint16 tmp;
 	int digipeat;
 	int32 bugfix;
 
@@ -432,12 +432,12 @@ struct mbuf *bp;                /* Rest of frame, starting with ctl */
 static int
 ackours(axp,n,rex_all)
 struct ax25_cb *axp;
-int16 n;
+uint16 n;
 int rex_all;
 {
 	struct mbuf *bp;
 	int acked = 0;  /* Count of frames acked by this ACK */
-	int16 oldest;   /* Seq number of oldest unacked I-frame */
+	uint16 oldest;  /* Seq number of oldest unacked I-frame */
 	int32 rtt,abserr;
 	int32 tmp;
 
@@ -782,11 +782,11 @@ struct mbuf *bp;
 struct mbuf *
 segmenter(bp,ssize)
 struct mbuf *bp;        /* Complete packet */
-int16 ssize;            /* Max size of frame segments */
+uint16 ssize;           /* Max size of frame segments */
 {
 	struct mbuf *result = NULLBUF;
 	struct mbuf *bptmp;
-	int16 len,offset;
+	uint16 len,offset;
 	int segments;
 
 	/* See if packet is too small to segment. Note 1-byte grace factor

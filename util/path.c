@@ -1,4 +1,4 @@
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.7 1993/03/30 17:25:28 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.8 1993/05/17 13:47:19 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -7,13 +7,6 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
-#ifdef __STDC__
-#define __ARGS(x)       x
-#else
-#define __ARGS(x)       ()
-#define const
-#endif
 
 #define NULLCHAR        ((char *) 0)
 
@@ -48,21 +41,20 @@ static char axroutefile[] = "/tcp/axroute_data";
 static struct axroute_tab *axroute_tab[AXROUTESIZE];
 static struct iface *Ifaces;
 
-static int axroute_hash __ARGS((char *call));
-static struct axroute_tab *axroute_tabptr __ARGS((char *call, int create));
-static struct iface *ifaceptr __ARGS((char *name));
-static void axroute_loadfile __ARGS((void));
-static void doroutelistentry __ARGS((struct axroute_tab *rp));
-static int doroutelist __ARGS((int argc, char *argv []));
-static int doroutestat __ARGS((void));
-static void hash_performance __ARGS((void));
+static int axroute_hash(char *call);
+static struct axroute_tab *axroute_tabptr(char *call, int create);
+static struct iface *ifaceptr(char *name);
+static void axroute_loadfile(void);
+static void doroutelistentry(struct axroute_tab *rp);
+static int doroutelist(int argc, char *argv[]);
+static int doroutestat(void);
+static void hash_performance(void);
 
 /*---------------------------------------------------------------------------*/
 
 #ifdef ULTRIX_RISC
 
-static char *strdup(s)
-const char *s;
+static char *strdup(const char *s)
 {
   char *p;
 
@@ -75,12 +67,10 @@ const char *s;
 /*---------------------------------------------------------------------------*/
 
 /* Convert encoded AX.25 address to printable string */
-char *
-pax25(e,addr)
-char *e;
-char *addr;
+
+char *pax25(char *e, char *addr)
 {
-	register int i;
+	int i;
 	char c;
 	char *cp;
 
@@ -105,15 +95,13 @@ char *addr;
  *   Address extension bit is left clear
  *   Return -1 on error, 0 if OK
  */
-int
-setcall(out,call)
-char *out;
-char *call;
+
+int setcall(char *out, char *call)
 {
 	int csize;
 	unsigned ssid;
-	register int i;
-	register char *dp;
+	int i;
+	char *dp;
 	char c;
 
 	if(out == NULLCHAR || call == NULLCHAR || *call == '\0'){
@@ -156,9 +144,7 @@ char *call;
 
 /*---------------------------------------------------------------------------*/
 
-int
-addreq(a,b)
-register char *a,*b;
+int addreq(char *a, char *b)
 {
 	if (*a++ != *b++) return 0;
 	if (*a++ != *b++) return 0;
@@ -171,9 +157,7 @@ register char *a,*b;
 
 /*---------------------------------------------------------------------------*/
 
-void
-addrcp(to,from)
-register char *to,*from;
+void addrcp(char *to, char *from)
 {
 	*to++ = *from++;
 	*to++ = *from++;
@@ -186,8 +170,7 @@ register char *to,*from;
 
 /*---------------------------------------------------------------------------*/
 
-static int axroute_hash(call)
-char *call;
+static int axroute_hash(char *call)
 {
   long hashval;
 
@@ -203,9 +186,7 @@ char *call;
 
 /*---------------------------------------------------------------------------*/
 
-static struct axroute_tab *axroute_tabptr(call, create)
-char *call;
-int create;
+static struct axroute_tab *axroute_tabptr(char *call, int create)
 {
 
   int hashval;
@@ -224,8 +205,7 @@ int create;
 
 /*---------------------------------------------------------------------------*/
 
-static struct iface *ifaceptr(name)
-char *name;
+static struct iface *ifaceptr(char *name)
 {
   struct iface *ifp;
 
@@ -243,7 +223,7 @@ char *name;
 
 /*---------------------------------------------------------------------------*/
 
-static void axroute_loadfile()
+static void axroute_loadfile(void)
 {
 
   FILE * fp;
@@ -273,8 +253,7 @@ static void axroute_loadfile()
 
 /*---------------------------------------------------------------------------*/
 
-static void doroutelistentry(rp)
-struct axroute_tab *rp;
+static void doroutelistentry(struct axroute_tab *rp)
 {
 
   char *cp, buf[1024];
@@ -303,9 +282,7 @@ struct axroute_tab *rp;
 
 /*---------------------------------------------------------------------------*/
 
-static int doroutelist(argc, argv)
-int argc;
-char *argv[];
+static int doroutelist(int argc, char *argv[])
 {
 
   char call[AXALEN];
@@ -330,7 +307,7 @@ char *argv[];
 
 /*---------------------------------------------------------------------------*/
 
-static int doroutestat()
+static int doroutestat(void)
 {
 
   int total = 0;
@@ -348,7 +325,7 @@ static int doroutestat()
 
 /*---------------------------------------------------------------------------*/
 
-static void hash_performance()
+static void hash_performance(void)
 {
 
   int i, len;
@@ -366,9 +343,7 @@ static void hash_performance()
 
 /*---------------------------------------------------------------------------*/
 
-int main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
   axroute_loadfile();
   if (argc >= 2 && !strcmp(argv[1], "hash"))

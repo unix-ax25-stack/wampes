@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.7 1993/04/11 07:06:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.8 1993/05/17 13:45:00 deyke Exp $ */
 
 #include "global.h"
 
@@ -37,16 +37,12 @@ struct edv_t {
   int fd;
 };
 
-static int ipip_send __ARGS((struct mbuf *data, struct iface *ifp, int32 gateway, int tos));
-static void ipip_receive __ARGS((void *argp));
+static int ipip_send(struct mbuf *data, struct iface *ifp, int32 gateway, int tos);
+static void ipip_receive(void *argp);
 
 /*---------------------------------------------------------------------------*/
 
-static int ipip_send(data, ifp, gateway, tos)
-struct mbuf *data;
-struct iface *ifp;
-int32 gateway;
-int tos;
+static int ipip_send(struct mbuf *data, struct iface *ifp, int32 gateway, int tos)
 {
 
   char buf[MAX_FRAME];
@@ -80,8 +76,7 @@ int tos;
 
 /*---------------------------------------------------------------------------*/
 
-static void ipip_receive(argp)
-void *argp;
+static void ipip_receive(void *argp)
 {
 
   char *bufptr;
@@ -120,10 +115,7 @@ Fail:
 
 /*---------------------------------------------------------------------------*/
 
-int ipip_attach(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+int ipip_attach(int argc, char *argv[], void *p)
 {
 
   char *ifname = "ipip";

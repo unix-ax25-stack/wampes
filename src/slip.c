@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.13 1993/02/23 21:34:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.14 1993/05/17 13:45:17 deyke Exp $ */
 
 /* SLIP (Serial Line IP) encapsulation and control routines.
  * Copyright 1991 Phil Karn
@@ -20,8 +20,8 @@
 #include "trace.h"
 #include "pktdrvr.h"
 
-static struct mbuf *slip_decode __ARGS((struct slip *sp,int  c));
-static struct mbuf *slip_encode __ARGS((struct mbuf *bp));
+static struct mbuf *slip_decode(struct slip *sp,int  c);
+static struct mbuf *slip_encode(struct mbuf *bp);
 
 /* Slip level control structure */
 struct slip Slip[SLIP_MAX];
@@ -57,7 +57,7 @@ struct iface *ifp;
 	}
 #if 0
 	ifp->rxproc = newproc( ifn = if_name( ifp, " rx" ),
-		256,slip_rx,xdev,NULL,NULL,0);
+		512,slip_rx,xdev,NULL,NULL,0);
 	free(ifn);
 #else
 	ifp->rxproc = slip_rx;
@@ -144,7 +144,7 @@ struct mbuf *bp;
 	/* Allocate output mbuf that's twice as long as the packet.
 	 * This is a worst-case guess (consider a packet full of FR_ENDs!)
 	 */
-	lbp = alloc_mbuf((int16)(2*len_p(bp) + 2));
+	lbp = alloc_mbuf((uint16)(2*len_p(bp) + 2));
 	if(lbp == NULLBUF){
 		/* No space; drop */
 		free_p(bp);

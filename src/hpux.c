@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.37 1993/05/10 11:23:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.38 1993/05/17 13:44:56 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -46,7 +46,7 @@
 
 struct proc_t {
   pid_t pid;
-  void (*fnc) __ARGS((void *));
+  void (*fnc)(void *);
   void *arg;
   struct proc_t *next;
 };
@@ -55,12 +55,12 @@ static struct proc_t *procs;
 
 static struct fd_set chkread;
 static struct fd_set actread;
-static void (*readfnc[FD_SETSIZE]) __ARGS((void *));
+static void (*readfnc[FD_SETSIZE])(void *);
 static void *readarg[FD_SETSIZE];
 
 static struct fd_set chkwrite;
 static struct fd_set actwrite;
-static void (*writefnc[FD_SETSIZE]) __ARGS((void *));
+static void (*writefnc[FD_SETSIZE])(void *);
 static void *writearg[FD_SETSIZE];
 
 static int maxfd = -1;
@@ -70,11 +70,11 @@ static int local_kbd;
 static struct termios curr_termios;
 static struct termios prev_termios;
 
-static void check_files_changed __ARGS((void));
+static void check_files_changed(void);
 
 /*---------------------------------------------------------------------------*/
 
-pid_t dofork()
+pid_t dofork(void)
 {
   pid_t pid;
 
@@ -90,7 +90,7 @@ pid_t dofork()
 
 /*---------------------------------------------------------------------------*/
 
-void ioinit()
+void ioinit(void)
 {
 
   int i;
@@ -163,7 +163,7 @@ void ioinit()
 
 /*---------------------------------------------------------------------------*/
 
-void iostop()
+void iostop(void)
 {
   register struct iface *ifp;
 
@@ -176,8 +176,7 @@ void iostop()
 
 #ifndef RISCiX
 
-int system(cmdline)
-const char *cmdline;
+int system(const char *cmdline)
 {
 
   int i;
@@ -205,10 +204,7 @@ const char *cmdline;
 
 /*---------------------------------------------------------------------------*/
 
-int doshell(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+int doshell(int argc, char *argv[], void *p)
 {
   char buf[2048];
 
@@ -222,10 +218,7 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-void on_read(fd, fnc, arg)
-int fd;
-void (*fnc) __ARGS((void *));
-void *arg;
+void on_read(int fd, void (*fnc)(void *), void *arg)
 {
   readfnc[fd] = fnc;
   readarg[fd] = arg;
@@ -236,8 +229,7 @@ void *arg;
 
 /*---------------------------------------------------------------------------*/
 
-void off_read(fd)
-int fd;
+void off_read(int fd)
 {
   readfnc[fd] = 0;
   readarg[fd] = 0;
@@ -250,10 +242,7 @@ int fd;
 
 /*---------------------------------------------------------------------------*/
 
-void on_write(fd, fnc, arg)
-int fd;
-void (*fnc) __ARGS((void *));
-void *arg;
+void on_write(int fd, void (*fnc)(void *), void *arg)
 {
   writefnc[fd] = fnc;
   writearg[fd] = arg;
@@ -264,8 +253,7 @@ void *arg;
 
 /*---------------------------------------------------------------------------*/
 
-void off_write(fd)
-int fd;
+void off_write(int fd)
 {
   writefnc[fd] = 0;
   writearg[fd] = 0;
@@ -278,10 +266,7 @@ int fd;
 
 /*---------------------------------------------------------------------------*/
 
-void on_death(pid, fnc, arg)
-int pid;
-void (*fnc) __ARGS((void *));
-void *arg;
+void on_death(int pid, void (*fnc)(void *), void *arg)
 {
   struct proc_t *p;
 
@@ -301,8 +286,7 @@ void *arg;
 
 /*---------------------------------------------------------------------------*/
 
-void off_death(pid)
-int pid;
+void off_death(int pid)
 {
   struct proc_t *prev, *curr;
 
@@ -319,13 +303,13 @@ int pid;
 
 /*---------------------------------------------------------------------------*/
 
-static void dowait()
+static void dowait(void)
 {
 
   int status;
   pid_t pid;
   struct proc_t *prev, *curr;
-  void (*fnc) __ARGS((void *));
+  void (*fnc)(void *);
   void *arg;
 
   while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
@@ -346,7 +330,7 @@ static void dowait()
 
 /*---------------------------------------------------------------------------*/
 
-static void check_files_changed()
+static void check_files_changed(void)
 {
 
   static long nexttime, net_time, rc_time;
@@ -373,7 +357,7 @@ static void check_files_changed()
 
 /*---------------------------------------------------------------------------*/
 
-void eihalt()
+void eihalt(void)
 {
 
   int n;

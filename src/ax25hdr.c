@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25hdr.c,v 1.5 1993/04/26 14:47:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25hdr.c,v 1.6 1993/05/17 13:44:46 deyke Exp $ */
 
 /* AX25 header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -14,7 +14,7 @@ register struct ax25 *hdr;
 struct mbuf *bp;
 {
 	register char *cp;
-	register int16 i;
+	register uint16 i;
 
 	if(hdr == (struct ax25 *)NULL || hdr->ndigis > MAXDIGIS)
 		return NULLBUF;

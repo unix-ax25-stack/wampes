@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.27 1993/04/11 07:06:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.28 1993/05/17 13:45:10 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -22,9 +22,9 @@
 #include "hpux.h"
 #include "timer.h"
 
-static int find_speed __ARGS((long speed));
-static void pasy __ARGS((struct asy *asyp));
-static void asy_tx __ARGS((struct asy *asyp));
+static int find_speed(long speed);
+static void pasy(struct asy *asyp);
+static void asy_tx(struct asy *asyp);
 
 struct asy Asy[ASY_MAX];
 
@@ -121,15 +121,17 @@ long speed;
 
 /* Initialize asynch port "dev" */
 int
-asy_init(dev,ifp,arg1,arg2,bufsize,trigchar,speed,cts,rlsd)
+asy_init(dev,ifp,base,irq,bufsize,trigchar,speed,cts,rlsd,chain)
 int dev;
 struct iface *ifp;
-char *arg1,*arg2;       /* Attach args for address and vector */
-int16 bufsize;
+int base;
+int irq;
+uint16 bufsize;
 int trigchar;
 long speed;
 int cts;                /* Use CTS flow control */
 int rlsd;               /* Use Received Line Signal Detect (aka CD) */
+int chain;              /* Chain interrupts */
 {
 	register struct asy *ap;
 	char filename[80];

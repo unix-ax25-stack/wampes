@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_subr.c,v 1.5 1991/06/04 11:34:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_subr.c,v 1.6 1993/05/17 13:45:08 deyke Exp $ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -8,22 +8,20 @@
 
 /*---------------------------------------------------------------------------*/
 
-char  *get_user_from_path(path)
-char  *path;
+char *get_user_from_path(char *path)
 {
-  char  *cp;
+  char *cp;
 
   return (cp = strrchr(path, '!')) ? cp + 1 : path;
 }
 
 /*---------------------------------------------------------------------------*/
 
-char  *get_host_from_path(path)
-char  *path;
+char *get_host_from_path(char *path)
 {
 
-  char  *cp;
-  static char  tmp[1024];
+  char *cp;
+  static char tmp[1024];
 
   strcpy(tmp, path);
   if (!(cp = strrchr(tmp, '!'))) return "";
@@ -33,8 +31,7 @@ char  *path;
 
 /*---------------------------------------------------------------------------*/
 
-void mailer_failed(sp)
-struct mailsys *sp;
+void mailer_failed(struct mailsys *sp)
 {
   struct mailjob *jp;
 

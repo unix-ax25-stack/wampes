@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.h,v 1.3 1993/01/29 06:48:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.h,v 1.4 1993/05/17 13:44:47 deyke Exp $ */
 
 #ifndef _AXCLIENT_H
 #define _AXCLIENT_H
@@ -15,8 +15,8 @@
 #include "session.h"
 #endif
 
-void axclient_send_upcall __ARGS((struct ax25_cb *cp, int cnt));
-void axclient_recv_upcall __ARGS((struct ax25_cb *cp, int cnt));
-int doconnect __ARGS((int argc, char *argv[], void *p));
+void axclient_send_upcall(struct ax25_cb *cp, int cnt);
+void axclient_recv_upcall(struct ax25_cb *cp, int cnt);
+int doconnect(int argc, char *argv[], void *p);
 
 #endif  /* _AXCLIENT_H */

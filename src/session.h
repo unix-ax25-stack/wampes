@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.8 1991/05/09 07:38:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.9 1993/05/17 13:45:16 deyke Exp $ */
 
 #ifndef _SESSION_H
 #define _SESSION_H
@@ -50,7 +50,7 @@ struct session {
 		struct circuit *netrom;
 #endif
 	} cb;
-	void (*parse) __ARGS((char *,int));
+	void (*parse)(char *,int);
 				/* Where to hand typed input when conversing */
 	FILE *record;           /* Receive record file */
 	char *rfile;            /* Record file name */
@@ -64,19 +64,19 @@ extern struct session *Sessions;        /* Session descriptors themselves */
 extern struct session *Current;         /* Always points to current session */
 
 /* In session.c: */
-void freesession __ARGS((struct session *s));
-struct session *newsession __ARGS((void));
-int dosession __ARGS((int argc, char *argv[], void *p));
-int go __ARGS((int argc,char *argv[],void *p));
-int doclose __ARGS((int argc, char *argv[], void *p));
-int doreset __ARGS((int argc, char *argv[], void *p));
-int dokick __ARGS((int argc, char *argv[], void *p));
-int dorecord __ARGS((int argc, char *argv[], void *p));
-int doupload __ARGS((int argc, char *argv[], void *p));
+void freesession(struct session *s);
+struct session *newsession(void);
+int dosession(int argc, char *argv[], void *p);
+int go(int argc,char *argv[],void *p);
+int doclose(int argc, char *argv[], void *p);
+int doreset(int argc, char *argv[], void *p);
+int dokick(int argc, char *argv[], void *p);
+int dorecord(int argc, char *argv[], void *p);
+int doupload(int argc, char *argv[], void *p);
 
 /* In main.c: */
-int cmdmode __ARGS((void));
+int cmdmode(void);
 
-extern int16 Lport;
+extern uint16 Lport;
 
 #endif  /* _SESSION_H */

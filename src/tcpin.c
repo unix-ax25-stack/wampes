@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.10 1993/02/23 21:34:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.11 1993/05/17 13:45:20 deyke Exp $ */
 
 /* Process incoming TCP segments. Page number references are to ARPA RFC-793,
  * the TCP specification.
@@ -15,15 +15,15 @@
 #include "iface.h"
 #include "ip.h"
 
-static void update __ARGS((struct tcb *tcb,struct tcp *seg,int   length));
-static void proc_syn __ARGS((struct tcb *tcb,int  tos,struct tcp *seg));
-static void add_reseq __ARGS((struct tcb *tcb,int  tos,struct tcp *seg,
-	struct mbuf *bp,int   length));
-static void get_reseq __ARGS((struct tcb *tcb,char *tos,struct tcp *seq,
-	struct mbuf **bp,int16 *length));
-static int trim __ARGS((struct tcb *tcb,struct tcp *seg,struct mbuf **bpp,
-	int16 *length));
-static int in_window __ARGS((struct tcb *tcb,int32 seq));
+static void update(struct tcb *tcb,struct tcp *seg,int    length);
+static void proc_syn(struct tcb *tcb,int  tos,struct tcp *seg);
+static void add_reseq(struct tcb *tcb,int  tos,struct tcp *seg,
+	struct mbuf *bp,int    length);
+static void get_reseq(struct tcb *tcb,char *tos,struct tcp *seq,
+	struct mbuf **bp,uint16 *length);
+static int trim(struct tcb *tcb,struct tcp *seg,struct mbuf **bpp,
+	uint16 *length);
+static int in_window(struct tcb *tcb,int32 seq);
 
 /* This function is called from IP with the IP header in machine byte order,
  * along with a mbuf chain pointing to the TCP header.
@@ -41,7 +41,7 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 	struct connection conn;         /* Local copy of addresses */
 	struct pseudo_header ph;        /* Pseudo-header for checksumming */
 	int hdrlen;                     /* Length of TCP header */
-	int16 length;
+	uint16 length;
 	int32 t;
 
 	if(bp == NULLBUF)
@@ -465,7 +465,7 @@ register struct tcp *seg;       /* Offending TCP header */
 {
 	struct mbuf *hbp;
 	struct pseudo_header ph;
-	int16 tmp;
+	uint16 tmp;
 
 	if(seg->flags.rst)
 		return; /* Never send an RST in response to an RST */
@@ -523,7 +523,7 @@ static void
 update(tcb,seg,length)
 register struct tcb *tcb;
 register struct tcp *seg;
-int16 length;
+uint16 length;
 {
 	int32 acked;
 	int winupd = 0;
@@ -686,7 +686,7 @@ int16 length;
 	 * pullup won't be able to remove it from the queue, but that
 	 * causes no harm.
 	 */
-	pullup(&tcb->sndq,NULLCHAR,(int16)acked);
+	pullup(&tcb->sndq,NULLCHAR,(uint16)acked);
 
 	/* Stop retransmission timer, but restart it if there is still
 	 * unacknowledged data.
@@ -736,7 +736,7 @@ register struct tcb *tcb;
 char tos;
 struct tcp *seg;
 {
-	int16 mtu;
+	uint16 mtu;
 	struct tcp_rtt *tp;
 
 	tcb->flags.force = 1;   /* Always send a response */
@@ -788,7 +788,7 @@ struct tcb *tcb;
 char tos;
 struct tcp *seg;
 struct mbuf *bp;
-int16 length;
+uint16 length;
 {
 	register struct reseq *rp,*rp1;
 
@@ -832,7 +832,7 @@ register struct tcb *tcb;
 char *tos;
 struct tcp *seg;
 struct mbuf **bp;
-int16 *length;
+uint16 *length;
 {
 	register struct reseq *rp;
 
@@ -856,10 +856,10 @@ trim(tcb,seg,bpp,length)
 register struct tcb *tcb;
 register struct tcp *seg;
 struct mbuf **bpp;
-int16 *length;
+uint16 *length;
 {
 	long dupcnt,excess;
-	int16 len;              /* Segment length including flags */
+	uint16 len;             /* Segment length including flags */
 	char accept = 0;
 
 	len = *length;
@@ -902,7 +902,7 @@ int16 *length;
 			dupcnt--;
 		}
 		if(dupcnt > 0){
-			pullup(bpp,NULLCHAR,(int16)dupcnt);
+			pullup(bpp,NULLCHAR,(uint16)dupcnt);
 			seg->seq += dupcnt;
 			*length -= dupcnt;
 		}

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.2 1992/08/11 21:32:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.3 1993/05/17 13:45:12 deyke Exp $ */
 
 #ifdef __hpux
 
@@ -41,16 +41,12 @@ struct ni_packet {
   char data[MAX_FRAME];
 };
 
-static int ni_send __ARGS((struct mbuf *data, struct iface *ifp, int32 gateway, int tos));
-static void ni_recv __ARGS((void *argp));
+static int ni_send(struct mbuf *data, struct iface *ifp, int32 gateway, int tos);
+static void ni_recv(void *argp);
 
 /*---------------------------------------------------------------------------*/
 
-static int ni_send(data, ifp, gateway, tos)
-struct mbuf *data;
-struct iface *ifp;
-int32 gateway;
-int tos;
+static int ni_send(struct mbuf *data, struct iface *ifp, int32 gateway, int tos)
 {
 
   int l;
@@ -81,8 +77,7 @@ int tos;
 
 /*---------------------------------------------------------------------------*/
 
-static void ni_recv(argp)
-void *argp;
+static void ni_recv(void *argp)
 {
 
   int l;
@@ -104,10 +99,7 @@ Fail:
 
 /*---------------------------------------------------------------------------*/
 
-int ni_attach(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+int ni_attach(int argc, char *argv[], void *p)
 {
 
   char *ifname;

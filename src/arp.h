@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.9 1993/02/23 21:34:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.10 1993/05/17 13:44:43 deyke Exp $ */
 
 #ifndef _ARP_H
 #define _ARP_H
@@ -53,14 +53,14 @@ extern char *Arptypes[];        /* Type fields in ASCII, defined in arpcmd */
 
 /* Table of hardware types known to ARP */
 struct arp_type {
-	int16 hwalen;           /* Hardware length */
-	int16 iptype;           /* Hardware type field for IP */
-	int16 arptype;          /* Hardware type field for ARP */
-	int16 pendtime;         /* # secs to wait pending response */
+	uint16 hwalen;          /* Hardware length */
+	uint16 iptype;          /* Hardware type field for IP */
+	uint16 arptype;         /* Hardware type field for ARP */
+	uint16 pendtime;                /* # secs to wait pending response */
 	char *bdcst;            /* Hardware broadcast address */
-	char *(*format) __ARGS((char *,char *));
+	char *(*format)(char *,char *);
 				/* Function that formats addresses */
-	int (*scan) __ARGS((char *,char *));
+	int (*scan)(char *,char *);
 				/* Reverse of format */
 };
 extern struct arp_type Arp_type[];
@@ -68,11 +68,11 @@ extern struct arp_type Arp_type[];
 
 /* Format of an ARP request or reply packet. From p. 3 */
 struct arp {
-	int16 hardware;                 /* Hardware type */
-	int16 protocol;                 /* Protocol type */
+	uint16 hardware;                        /* Hardware type */
+	uint16 protocol;                        /* Protocol type */
 	char hwalen;                    /* Hardware address length, bytes */
 	char pralen;                    /* Length of protocol address */
-	int16 opcode;                   /* ARP opcode (request/reply) */
+	uint16 opcode;                  /* ARP opcode (request/reply) */
 	char shwaddr[MAXHWALEN];        /* Sender hardware address field */
 	int32 sprotaddr;                /* Sender Protocol address field */
 	char thwaddr[MAXHWALEN];        /* Target hardware address field */
@@ -86,7 +86,7 @@ struct arp_tab {
 	struct timer timer;     /* Time until aging this entry */
 	struct mbuf *pending;   /* Queue of datagrams awaiting resolution */
 	int32 ip_addr;          /* IP Address, host order */
-	int16 hardware;         /* Hardware type */
+	uint16 hardware;                /* Hardware type */
 	char state;             /* (In)complete */
 #define ARP_PENDING     0
 #define ARP_VALID       1
@@ -108,23 +108,23 @@ struct arp_stat {
 extern struct arp_stat Arp_stat;
 
 /* In arp.c: */
-struct arp_tab *arp_add __ARGS((int32 ipaddr,int   hardware,char *hw_addr,
-	int pub));
-void arp_drop __ARGS((void *p));
-int arp_init __ARGS((unsigned int hwtype,int hwalen,int iptype,int arptype,
-	int pendtime,char *bdcst,char *(*format) __ARGS((char *,char *)),
-	int  (*scan) __ARGS((char *,char *)) ));
-void arp_input __ARGS((struct iface *iface,struct mbuf *bp));
-struct arp_tab *arp_lookup __ARGS((int   hardware,int32 ipaddr));
-char *res_arp __ARGS((struct iface *iface,int   hardware,int32 target,struct mbuf *bp));
-struct arp_tab *revarp_lookup __ARGS((int hardware,char *hw_addr));
+struct arp_tab *arp_add(int32 ipaddr,int    hardware,char *hw_addr,
+	int pub);
+void arp_drop(void *p);
+int arp_init(unsigned int hwtype,int hwalen,int iptype,int arptype,
+	int pendtime,char *bdcst,char *(*format)(char *,char *),
+	int  (*scan)(char *,char *) );
+void arp_input(struct iface *iface,struct mbuf *bp);
+struct arp_tab *arp_lookup(int    hardware,int32 ipaddr);
+char *res_arp(struct iface *iface,int    hardware,int32 target,struct mbuf *bp);
+struct arp_tab *revarp_lookup(int hardware,char *hw_addr);
 
 /* In arphdr.c: */
-struct mbuf *htonarp __ARGS((struct arp *arp));
-int ntoharp __ARGS((struct arp *arp,struct mbuf **bpp));
+struct mbuf *htonarp(struct arp *arp);
+int ntoharp(struct arp *arp,struct mbuf **bpp);
 
 /* In arpfile.c: */
-void arp_savefile __ARGS((void));
-void arp_loadfile __ARGS((void));
+void arp_savefile(void);
+void arp_loadfile(void);
 
 #endif /* _ARP_H */

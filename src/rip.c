@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.9 1993/02/23 21:34:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.10 1993/05/17 13:45:14 deyke Exp $ */
 
 /* This file contains code to implement the Routing Information Protocol (RIP)
  * and is derived from 4.2BSD code. Mike Karels of Berkeley has stated on
@@ -24,21 +24,21 @@
 #include "arp.h"
 
 struct rip_stat Rip_stat;
-int16 Rip_trace;
+uint16 Rip_trace;
 int Rip_merge;
 struct rip_list *Rip_list;
 struct udp_cb *Rip_cb;
 
 struct rip_refuse *Rip_refuse;
 
-static void rip_rx __ARGS((struct iface *iface,struct udp_cb *sock,int cnt));
-static void proc_rip __ARGS((struct iface *iface,int32 gateway,
-	struct rip_route *ep,int32 ttl));
-static char *putheader __ARGS((char *cp,int  command,int  version));
-static char *putentry __ARGS((char *cp,int   fam,int32 target,int32 metric));
-static void rip_shout __ARGS((void *p));
-static void send_routes __ARGS((int32 dest,int   port,int split,int trig,
-	int us));
+static void rip_rx(struct iface *iface,struct udp_cb *sock,int cnt);
+static void proc_rip(struct iface *iface,int32 gateway,
+	struct rip_route *ep,int32 ttl);
+static char *putheader(char *cp,int  command,int  version);
+static char *putentry(char *cp,int    fam,int32 target,int32 metric);
+static void rip_shout(void *p);
+static void send_routes(int32 dest,int    port,int split,int trig,
+	int us);
 
 /* Send RIP CMD_RESPONSE packet(s) to the specified rip_list entry */
 static void
@@ -58,14 +58,14 @@ void *p;
 static void
 send_routes(dest,port,split,trig,us)
 int32 dest;             /* IP destination address to send to */
-int16 port;
+uint16 port;
 int split;              /* Do split horizon? */
 int trig;               /* Send only triggered updates? */
 int us;                 /* Include our address in update */
 {
 	char *cp;
 	int i,bits,numroutes,maxroutes;
-	int16 pktsize;
+	uint16 pktsize;
 	struct mbuf *bp;
 	struct route *rp;
 	struct socket lsock,fsock;
@@ -592,7 +592,7 @@ int32 ttl;
 int
 ripreq(dest,replyport)
 int32 dest;
-int16 replyport;
+uint16 replyport;
 {
 	struct mbuf *bp;
 	struct socket lsock,fsock;
@@ -650,7 +650,7 @@ char version;
 static char *
 putentry(cp,fam,target,metric)
 register char *cp;
-int16 fam;
+uint16 fam;
 int32 target;
 int32 metric;
 {

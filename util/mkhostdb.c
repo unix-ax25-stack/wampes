@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.4 1993/03/11 14:13:09 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.5 1993/05/17 13:47:18 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -12,13 +12,6 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <string.h>
 #include <unistd.h>
 
-#if defined(__STDC__)
-#define __ARGS(x)       x
-#else
-#define __ARGS(x)       ()
-#define const
-#endif
-
 #define DBHOSTADDR      "/tcp/hostaddr"
 #define DBHOSTNAME      "/tcp/hostname"
 #define DOMAINFILE      "/tcp/domain.txt"
@@ -30,22 +23,20 @@ static DBM *Dbhostaddr;
 static DBM *Dbhostname;
 static char origin[1024];
 
-static int aton __ARGS((const char *name, long *addrptr));
-static char *ntoa __ARGS((long addr));
-static void store_in_db __ARGS((const char *name, const char *addrstr));
-static void fix_line __ARGS((char *line));
-static char *fix_name __ARGS((const char *name));
-static void read_hosts_file __ARGS((const char *filename));
-static void read_domain_file __ARGS((const char *filename));
-static void qaddr __ARGS((const char *name));
-static void qname __ARGS((const char *addrstr));
-int main __ARGS((int argc, char **argv));
+static int aton(const char *name, long *addrptr);
+static char *ntoa(long addr);
+static void store_in_db(const char *name, const char *addrstr);
+static void fix_line(char *line);
+static char *fix_name(const char *name);
+static void read_hosts_file(const char *filename);
+static void read_domain_file(const char *filename);
+static void qaddr(const char *name);
+static void qname(const char *addrstr);
+int main(int argc, char **argv);
 
 /*---------------------------------------------------------------------------*/
 
-static int aton(name, addrptr)
-const char *name;
-long *addrptr;
+static int aton(const char *name, long *addrptr)
 {
 
   const char * p;
@@ -68,8 +59,7 @@ long *addrptr;
 
 /*---------------------------------------------------------------------------*/
 
-static char *ntoa(addr)
-long addr;
+static char *ntoa(long addr)
 {
   static char buf[16];
 
@@ -83,9 +73,7 @@ long addr;
 
 /*---------------------------------------------------------------------------*/
 
-static void store_in_db(name, addrstr)
-const char *name;
-const char *addrstr;
+static void store_in_db(const char *name, const char *addrstr)
 {
 
   datum daddr;
@@ -114,8 +102,7 @@ const char *addrstr;
 
 /*---------------------------------------------------------------------------*/
 
-static void fix_line(line)
-char *line;
+static void fix_line(char *line)
 {
   for (; *line; line++) {
     if (*line == ';' || *line == '#') {
@@ -128,8 +115,7 @@ char *line;
 
 /*---------------------------------------------------------------------------*/
 
-static char *fix_name(name)
-const char *name;
+static char *fix_name(const char *name)
 {
 
   int len;
@@ -148,8 +134,7 @@ const char *name;
 
 /*---------------------------------------------------------------------------*/
 
-static void read_hosts_file(filename)
-const char *filename;
+static void read_hosts_file(const char *filename)
 {
 
   FILE * fp;
@@ -174,8 +159,7 @@ const char *filename;
 
 /*---------------------------------------------------------------------------*/
 
-static void read_domain_file(filename)
-const char *filename;
+static void read_domain_file(const char *filename)
 {
 
   FILE * fp;
@@ -257,7 +241,7 @@ const char *filename;
       fprintf(stderr, "no such key: %s\n", dname.dptr);
       continue;
     }
-    memcpy(&addr, daddr.dptr, sizeof(addr));
+    memcpy((char *) &addr, daddr.dptr, sizeof(addr));
 
     store_in_db(fix_name(name), ntoa(addr));
 
@@ -267,8 +251,7 @@ const char *filename;
 
 /*---------------------------------------------------------------------------*/
 
-static void qaddr(name)
-const char *name;
+static void qaddr(const char *name)
 {
 
   char fullname[1024];
@@ -286,7 +269,7 @@ const char *name;
     dname.dsize = strlen(fullname) + 1;
     daddr = dbm_fetch(Dbhostaddr, dname);
     if (daddr.dptr) {
-      memcpy(&addr, daddr.dptr, sizeof(addr));
+      memcpy((char *) &addr, daddr.dptr, sizeof(addr));
       printf("%s  %s\n", ntoa(addr), fullname);
     } else
       fprintf(stderr, "no such key: %s\n", fullname);
@@ -299,7 +282,7 @@ const char *name;
   dname.dsize = strlen(fullname) + 1;
   daddr = dbm_fetch(Dbhostaddr, dname);
   if (daddr.dptr) {
-    memcpy(&addr, daddr.dptr, sizeof(addr));
+    memcpy((char *) &addr, daddr.dptr, sizeof(addr));
     printf("%s  %s\n", ntoa(addr), fullname);
     return;
   }
@@ -308,7 +291,7 @@ const char *name;
   dname.dsize = strlen(name) + 1;
   daddr = dbm_fetch(Dbhostaddr, dname);
   if (daddr.dptr) {
-    memcpy(&addr, daddr.dptr, sizeof(addr));
+    memcpy((char *) &addr, daddr.dptr, sizeof(addr));
     printf("%s  %s\n", ntoa(addr), name);
   } else
     fprintf(stderr, "no such key: %s\n", name);
@@ -316,8 +299,7 @@ const char *name;
 
 /*---------------------------------------------------------------------------*/
 
-static void qname(addrstr)
-const char *addrstr;
+static void qname(const char *addrstr)
 {
 
   datum daddr;
@@ -339,9 +321,7 @@ const char *addrstr;
 
 /*---------------------------------------------------------------------------*/
 
-int main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
 
   char buf[1024];

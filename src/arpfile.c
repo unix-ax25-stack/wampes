@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.8 1993/05/07 10:10:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.9 1993/05/17 13:44:44 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -11,8 +11,8 @@
 
 struct arp_saverecord_0 {
   int32 ip_addr;        /* IP address, host order */
-  int16 hardware;       /* Hardware type */
-  int16 hwalen;         /* Length of hardware address */
+  uint16 hardware;      /* Hardware type */
+  uint16 hwalen;        /* Length of hardware address */
   char pub;             /* Publish this entry? */
 };
 
@@ -34,7 +34,7 @@ static const char arp_tmpfilename[] = "/tcp/arp_tmp";
 
 /*---------------------------------------------------------------------------*/
 
-void arp_savefile()
+void arp_savefile(void)
 {
 
   FILE * fp;
@@ -76,7 +76,7 @@ void arp_savefile()
 
 /*---------------------------------------------------------------------------*/
 
-void arp_loadfile()
+void arp_loadfile(void)
 {
 
   FILE * fp;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.10 1991/06/04 11:34:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.11 1993/05/17 13:45:07 deyke Exp $ */
 
 #ifndef _MAIL_H
 #define _MAIL_H
@@ -14,44 +14,44 @@
 struct mailers;
 
 struct mailsys {
-  char  *sysname;
+  char *sysname;
   struct mailers *mailer;
-  char  *protocol, *address;
-  int  state;
+  char *protocol, *address;
+  int state;
 #define MS_NEVER        0       /* Inactive states */
 #define MS_SUCCESS      1
 #define MS_FAILURE      2
 #define MS_TRYING       3       /* Active states */
 #define MS_TALKING      4
-  long  nexttime;
+  long nexttime;
   struct mailjob *jobs;
   struct mailsys *next;
 };
 
 struct mailers {
-  char  *name;
-  void (*func) __ARGS((struct mailsys *sp));
+  char *name;
+  void (*func)(struct mailsys *sp);
 };
 
 struct mailjob {
-  char  to[1024], from[1024], subject[1024];
-  char  dfile[80], cfile[80], xfile[80];
-  char  return_reason[1024];
+  char to[1024], from[1024], subject[1024];
+  char dfile[80], cfile[80], xfile[80];
+  char return_reason[1024];
   struct mailjob *next;
 };
 
 /* In mail_bbs.c: */
-void mail_bbs __ARGS((struct mailsys *sp));
+void mail_bbs(struct mailsys *sp);
 
 /* In mail_retrn.c: */
-void mail_return __ARGS((struct mailjob *jp));
+void mail_return(struct mailjob *jp);
 
 /* In mail_smtp.c: */
-void mail_smtp __ARGS((struct mailsys *sp));
+void mail_smtp(struct mailsys *sp);
 
 /* In mail_subr.c: */
-char *get_user_from_path __ARGS((char *path));
-char *get_host_from_path __ARGS((char *path));
-void mailer_failed __ARGS((struct mailsys *sp));
+char *get_user_from_path(char *path);
+char *get_host_from_path(char *path);
+void mailer_failed(struct mailsys *sp);
 
 #endif  /* _MAIL_H */

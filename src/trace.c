@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.14 1993/02/23 21:34:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.15 1993/05/17 13:45:22 deyke Exp $ */
 
 /* Packet tracing - top level and generic routines, including hex/ascii
  * Copyright 1991 Phil Karn, KA9Q
@@ -8,9 +8,7 @@
 #include <ctype.h>
 #include <time.h>
 #include "global.h"
-#ifdef  ANSIPROTO
 #include <stdarg.h>
-#endif
 #include "mbuf.h"
 #include "iface.h"
 #include "pktdrvr.h"
@@ -19,11 +17,11 @@
 #include "session.h"
 #include "timer.h"
 
-static void ascii_dump __ARGS((FILE *fp,struct mbuf **bpp));
-static void ctohex __ARGS((char *buf,int   c));
-static void fmtline __ARGS((FILE *fp,int   addr,char *buf,int   len));
-void hex_dump __ARGS((FILE *fp,struct mbuf **bpp));
-static void showtrace __ARGS((struct iface *ifp));
+static void ascii_dump(FILE *fp,struct mbuf **bpp);
+static void ctohex(char *buf,int    c);
+static void fmtline(FILE *fp,int    addr,char *buf,int    len);
+void hex_dump(FILE *fp,struct mbuf **bpp);
+static void showtrace(struct iface *ifp);
 
 /* Redefined here so that programs calling dump in the library won't pull
  * in the rest of the package
@@ -54,7 +52,7 @@ int direction;
 struct mbuf *bp;
 {
 	struct mbuf *tbp;
-	int16 size;
+	uint16 size;
 	time_t timer;
 	char *cp;
 	struct iftype *ift;
@@ -139,8 +137,8 @@ hex_dump(fp,bpp)
 FILE *fp;
 register struct mbuf **bpp;
 {
-	int16 n;
-	int16 address;
+	uint16 n;
+	uint16 address;
 	char buf[16];
 
 	if(bpp == NULLBUFP || *bpp == NULLBUF || fp == NULLFILE)
@@ -159,7 +157,7 @@ FILE *fp;
 register struct mbuf **bpp;
 {
 	int c;
-	register int16 tot;
+	register uint16 tot;
 
 	if(bpp == NULLBUFP || *bpp == NULLBUF || fp == NULLFILE)
 		return;
@@ -182,22 +180,22 @@ register struct mbuf **bpp;
 static void
 fmtline(fp,addr,buf,len)
 FILE *fp;
-int16 addr;
+uint16 addr;
 char *buf;
-int16 len;
+uint16 len;
 {
 	char line[80];
 	register char *aptr,*cptr;
 	register char c;
 
 	memset(line,' ',sizeof(line));
-	ctohex(line,(int16)hibyte(addr));
-	ctohex(line+2,(int16)lobyte(addr));
+	ctohex(line,(uint16)hibyte(addr));
+	ctohex(line+2,(uint16)lobyte(addr));
 	aptr = &line[6];
 	cptr = &line[55];
 	while(len-- != 0){
 		c = *buf++;
-		ctohex(aptr,(int16)uchar(c));
+		ctohex(aptr,(uint16)uchar(c));
 		aptr += 3;
 		*cptr++ = isprint(uchar(c)) ? c : '.';
 	}
@@ -208,7 +206,7 @@ int16 len;
 static void
 ctohex(buf,c)
 register char *buf;
-register int16 c;
+register uint16 c;
 {
 	static char hex[] = "0123456789abcdef";
 
@@ -311,7 +309,6 @@ shuttrace()
 /* Log messages of the form
  * Tue Jan 31 00:00:00 1987 44.64.0.7:1003 open FTP
  */
-#if     defined(ANSIPROTO)
 void
 trace_log(struct iface *ifp,char *fmt, ...)
 {
@@ -344,27 +341,3 @@ tprintf(struct iface *ifp,char *fmt, ...)
 	va_end(ap);
 	return ret;
 }
-#else
-/*VARARGS2*/
-void
-trace_log(ifp,fmt,arg1,arg2,arg3,arg4,arg5)
-struct iface *ifp;
-char *fmt;
-int arg1,arg2,arg3,arg4,arg5;
-{
-	char *cp;
-	long t;
-
-	if(ifp->trfp == NULLFILE)
-		return;
-
-	t = secclock();
-	cp = ctime(&t);
-	rip(cp);
-	fprintf(ifp->trfp,"%s",cp);
-
-	fprintf(ifp->trfp," - ");
-	fprintf(ifp->trfp,fmt,arg1,arg2,arg3,arg4,arg5);
-	fprintf(ifp->trfp,"\n");
-}
-#endif

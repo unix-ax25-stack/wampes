@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.17 1993/02/26 10:17:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.18 1993/05/17 13:45:12 deyke Exp $ */
 
 #ifndef _NETROM_H
 #define _NETROM_H
@@ -96,16 +96,16 @@ struct circuit {
   struct timer timer_t4;        /* Busy timer */
   struct mbuf *reseq;           /* Resequencing queue */
   struct mbuf *rcvq;            /* Receive queue */
-  int16 rcvcnt;                 /* Receive queue length */
+  uint16 rcvcnt;                /* Receive queue length */
   struct mbuf *sndq;            /* Send queue */
   struct mbuf *resndq;          /* Resend queue */
   int unack;                    /* Number of unacked frames */
   int32 sndtime[256];           /* Time of 1st transmission */
-  void (*r_upcall) __ARGS((struct circuit *p, int cnt));
+  void (*r_upcall)(struct circuit *p, int cnt);
 				/* Call when data arrives */
-  void (*t_upcall) __ARGS((struct circuit *p, int cnt));
+  void (*t_upcall)(struct circuit *p, int cnt);
 				/* Call when ok to send more data */
-  void (*s_upcall) __ARGS((struct circuit *p, int oldstate, int newstate));
+  void (*s_upcall)(struct circuit *p, int oldstate, int newstate);
 				/* Call when connection state changes */
   char *user;                   /* User parameter (e.g., for mapping to an
 				 * application control block)
@@ -116,24 +116,24 @@ struct circuit {
 extern char *Nr4states[];
 
 /* In netrom.c: */
-int nr_send __ARGS((struct mbuf *bp, struct iface *iface, int32 gateway, int tos));
-void nr3_input __ARGS((const char *src, struct mbuf *bp));
-char *nr_addr2str __ARGS((struct circuit *pc));
-struct circuit *open_nr __ARGS((char *node, char *cuser, int window, void (*r_upcall )__ARGS ((struct circuit *p, int cnt )), void (*t_upcall )__ARGS ((struct circuit *p, int cnt )), void (*s_upcall )__ARGS ((struct circuit *p, int oldstate, int newstate )), char *user));
-int send_nr __ARGS((struct circuit *pc, struct mbuf *bp));
-int space_nr __ARGS((struct circuit *pc));
-int recv_nr __ARGS((struct circuit *pc, struct mbuf **bpp, int cnt));
-int close_nr __ARGS((struct circuit *pc));
-int reset_nr __ARGS((struct circuit *pc));
-int del_nr __ARGS((struct circuit *pc));
-int valid_nr __ARGS((struct circuit *pc));
-int kick_nr __ARGS((struct circuit *pc));
-void nrclient_send_upcall __ARGS((struct circuit *pc, int cnt));
-void nrclient_recv_upcall __ARGS((struct circuit *pc, int cnt));
-int nr_attach __ARGS((int argc, char *argv [], void *p));
-int donetrom __ARGS((int argc, char *argv [], void *p));
-int nr4start __ARGS((int argc, char *argv [], void *p));
-int nr40 __ARGS((int argc, char *argv [], void *p));
-void netrom_initialize __ARGS((void));
+int nr_send(struct mbuf *bp, struct iface *iface, int32 gateway, int tos);
+void nr3_input(const char *src, struct mbuf *bp);
+char *nr_addr2str(struct circuit *pc);
+struct circuit *open_nr(char *node, char *cuser, int window, void (*r_upcall)(struct circuit *p, int cnt), void (*t_upcall)(struct circuit *p, int cnt), void (*s_upcall)(struct circuit *p, int oldstate, int newstate), char *user);
+int send_nr(struct circuit *pc, struct mbuf *bp);
+int space_nr(struct circuit *pc);
+int recv_nr(struct circuit *pc, struct mbuf **bpp, int cnt);
+int close_nr(struct circuit *pc);
+int reset_nr(struct circuit *pc);
+int del_nr(struct circuit *pc);
+int valid_nr(struct circuit *pc);
+int kick_nr(struct circuit *pc);
+void nrclient_send_upcall(struct circuit *pc, int cnt);
+void nrclient_recv_upcall(struct circuit *pc, int cnt);
+int nr_attach(int argc, char *argv [], void *p);
+int donetrom(int argc, char *argv [], void *p);
+int nr4start(int argc, char *argv [], void *p);
+int nr40(int argc, char *argv [], void *p);
+void netrom_initialize(void);
 
 #endif  /* _NETROM_H */

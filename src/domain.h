@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.h,v 1.3 1992/11/27 17:08:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.h,v 1.4 1993/05/17 13:44:52 deyke Exp $ */
 
 #ifndef _DOMAIN_H
 #define _DOMAIN_H
@@ -61,7 +61,7 @@ extern int Dsocket;             /* Socket to use for domain queries */
 
 /* Header for all domain messages */
 struct dhdr {
-	int16 id;               /* Identification */
+	uint16 id;              /* Identification */
 	char qr;                /* Query/Response */
 #define QUERY           0
 #define RESPONSE        1
@@ -79,10 +79,10 @@ struct dhdr {
 #define NAME_ERROR      3
 #define NOT_IMPL        4
 #define REFUSED         5
-	int16 qdcount;          /* Question count */
-	int16 ancount;          /* Answer count */
-	int16 nscount;          /* Authority (name server) count */
-	int16 arcount;          /* Additional record count */
+	uint16 qdcount;         /* Question count */
+	uint16 ancount;         /* Answer count */
+	uint16 nscount;         /* Authority (name server) count */
+	uint16 arcount;         /* Additional record count */
 	struct rr *questions;   /* List of questions */
 	struct rr *answers;     /* List of answers */
 	struct rr *authority;   /* List of name servers */
@@ -90,7 +90,7 @@ struct dhdr {
 };
 
 struct mx {
-	int16 pref;
+	uint16 pref;
 	char *exch;
 };
 
@@ -126,11 +126,11 @@ struct rr {
 	char *name;             /* Domain name, ascii form */
 	int32 ttl;              /* Time-to-live */
 #define TTL_MISSING     0x80000000L
-	int16 class;            /* IN, etc */
+	uint16 class;           /* IN, etc */
 #define CLASS_MISSING   0
-	int16 type;             /* A, MX, etc */
+	uint16 type;            /* A, MX, etc */
 #define TYPE_MISSING    0
-	int16 rdlength;         /* Length of data field */
+	uint16 rdlength;                /* Length of data field */
 	union {
 		int32 addr;             /* Used for type == A */
 		struct soa soa;         /* Used for type == SOA */
@@ -145,15 +145,15 @@ struct rr {
 extern struct proc *Dfile_updater;
 
 /* In domain.c */
-int add_nameserver __ARGS((int32 address));
-void free_rr __ARGS((struct rr *rrlp));
-struct rr *inverse_a __ARGS((int32 ip_address));
-struct rr *resolve_rr __ARGS((char *dname,int16 dtype));
-char *resolve_a __ARGS((int32 ip_address, int shorten));
-struct rr *resolve_mailb __ARGS((char *name));
+int add_nameserver(int32 address);
+void free_rr(struct rr *rrlp);
+struct rr *inverse_a(int32 ip_address);
+struct rr *resolve_rr(char *dname,uint16 dtype);
+char *resolve_a(int32 ip_address, int shorten);
+struct rr *resolve_mailb(char *name);
 
 /* In domhdr.c: */
-int ntohdomain __ARGS((struct dhdr *dhdr,struct mbuf **bpp));
-struct mbuf *htondomain __ARGS((const struct dhdr *dhp));
+int ntohdomain(struct dhdr *dhdr,struct mbuf **bpp);
+struct mbuf *htondomain(const struct dhdr *dhp);
 
 #endif  /* _DOMAIN_H */

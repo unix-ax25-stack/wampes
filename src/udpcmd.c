@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.7 1992/05/14 13:20:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.8 1993/05/17 13:45:27 deyke Exp $ */
 
 /* UDP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -12,7 +12,7 @@
 #include "cmdparse.h"
 #include "commands.h"
 
-static int doudpstat __ARGS((int argc,char *argv[],void *p));
+static int doudpstat(int argc,char *argv[],void *p);
 
 static struct cmds Udpcmds[] = {
 	"status",       doudpstat,      0, 0,   NULLCHAR,

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/daemon.h,v 1.2 1992/01/08 13:45:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/daemon.h,v 1.3 1993/05/17 13:44:50 deyke Exp $ */
 
 #ifndef _DAEMON_H
 #define _DAEMON_H
@@ -6,24 +6,24 @@
 struct daemon {
 	char *name;
 	unsigned stksize;
-	void (*fp) __ARGS((int,void *,void *));
+	void (*fp)(int,void *,void *);
 };
 #define NULLDAEMON ((struct daemon *)0)
 extern struct daemon Daemons[];
 
 /* In alloc.c: */
-void gcollect __ARGS((int,void*,void*));
+void gcollect(int,void*,void*);
 
 /* In main.c: */
-void keyboard __ARGS((int,void*,void*));
-void network __ARGS((int,void *,void *));
-void display __ARGS((int,void *,void *));
+void keyboard(int,void*,void*);
+void network(int,void *,void *);
+void display(int,void *,void *);
 
 /* In kernel.c: */
-void killer __ARGS((int,void*,void*));
+void killer(int,void*,void*);
 
 /* In timer.c: */
-void timerproc __ARGS((int,void*,void*));
+void timerproc(int,void*,void*);
 
 #endif  /* _DAEMON_H */
 

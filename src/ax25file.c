@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.11 1993/05/07 10:10:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.12 1993/05/17 13:44:46 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -33,7 +33,7 @@ static const char axroute_tmpfilename[] = "/tcp/axroute_tmp";
 
 /*---------------------------------------------------------------------------*/
 
-void axroute_savefile()
+void axroute_savefile(void)
 {
 
   FILE * fp;
@@ -91,7 +91,7 @@ void axroute_savefile()
 
 /*---------------------------------------------------------------------------*/
 
-void axroute_loadfile()
+void axroute_loadfile(void)
 {
 
   FILE * fp;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.10 1993/01/29 06:48:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.11 1993/05/17 13:44:59 deyke Exp $ */
 
 /* IP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -17,15 +17,15 @@
 
 int32 Ip_addr;
 
-static int doadd __ARGS((int argc,char *argv[],void *p));
-static int dodrop __ARGS((int argc,char *argv[],void *p));
-static int doflush __ARGS((int argc,char *argv[],void *p));
-static int doipaddr __ARGS((int argc,char *argv[],void *p));
-static int doipstat __ARGS((int argc,char *argv[],void *p));
-static int dolook __ARGS((int argc,char *argv[],void *p));
-static int dortimer __ARGS((int argc,char *argv[],void *p));
-static int dottl __ARGS((int argc,char *argv[],void *p));
-static int dumproute __ARGS((struct route *rp));
+static int doadd(int argc,char *argv[],void *p);
+static int dodrop(int argc,char *argv[],void *p);
+static int doflush(int argc,char *argv[],void *p);
+static int doipaddr(int argc,char *argv[],void *p);
+static int doipstat(int argc,char *argv[],void *p);
+static int dolook(int argc,char *argv[],void *p);
+static int dortimer(int argc,char *argv[],void *p);
+static int dottl(int argc,char *argv[],void *p);
+static int dumproute(struct route *rp);
 
 static struct cmds Ipcmds[] = {
 	"address",      doipaddr,       0,      0, NULLCHAR,

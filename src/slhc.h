@@ -1,11 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.h,v 1.6 1993/01/29 06:48:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.h,v 1.7 1993/05/17 13:45:17 deyke Exp $ */
 
 #ifndef _SLHC_H
 #define _SLHC_H
 /*
  * Definitions for tcp compression routines.
  *
- * sHeader: slhc.h,v 1.2 91/08/06 17:22:38 karn Exp $
+ * sHeader: slhc.h,v 1.3 93/05/06 10:10:53 karn Exp $
  *
  * Copyright (c) 1989 Regents of the University of California.
  * All rights reserved.
@@ -123,8 +123,8 @@
  *
  *      VJ code         KA9Q style      generic
  *      u_char          byte_t          unsigned char    8 bits
- *      u_short         int16           unsigned short  16 bits
- *      u_int           int16           unsigned short  16 bits
+ *      u_short         uint16          unsigned short  16 bits
+ *      u_int           uint16          unsigned short  16 bits
  *      u_long          unsigned long   unsigned long   32 bits
  *      int             int32           long            32 bits
  */
@@ -175,18 +175,18 @@ struct slcompress {
 #define NULLSLCOMPR     (struct slcompress *)0
 
 /* In slhc.c: */
-struct slcompress *slhc_init __ARGS((int rslots, int tslots));
-void slhc_free __ARGS((struct slcompress *comp));
+struct slcompress *slhc_init(int rslots, int tslots);
+void slhc_free(struct slcompress *comp);
 
-int slhc_compress __ARGS((struct slcompress *comp,
-	struct mbuf **bpp, int compress_cid));
-int slhc_uncompress __ARGS((struct slcompress *comp,
-	struct mbuf **bpp));
-int slhc_remember __ARGS((struct slcompress *comp,
-	struct mbuf **bpp));
-int slhc_toss __ARGS((struct slcompress *comp));
+int slhc_compress(struct slcompress *comp,
+	struct mbuf **bpp, int compress_cid);
+int slhc_uncompress(struct slcompress *comp,
+	struct mbuf **bpp);
+int slhc_remember(struct slcompress *comp,
+	struct mbuf **bpp);
+int slhc_toss(struct slcompress *comp);
 
-void slhc_i_status __ARGS((struct slcompress *comp));
-void slhc_o_status __ARGS((struct slcompress *comp));
+void slhc_i_status(struct slcompress *comp);
+void slhc_o_status(struct slcompress *comp);
 
 #endif  /* _SLHC_H */

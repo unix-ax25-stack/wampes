@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpdump.c,v 1.4 1991/02/24 20:16:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpdump.c,v 1.5 1993/05/17 13:44:57 deyke Exp $ */
 
 /* ICMP header tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -21,7 +21,7 @@ int32 source,dest;
 int check;              /* If 0, bypass checksum verify */
 {
 	struct icmp icmp;
-	int16 csum;
+	uint16 csum;
 
 	if(bpp == NULLBUFP || *bpp == NULLBUF)
 		return;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.12 1993/04/15 13:12:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.13 1993/05/17 13:45:08 deyke Exp $ */
 
 /* Mail Delivery Agent for returned Mails */
 
@@ -15,8 +15,7 @@
 
 /*---------------------------------------------------------------------------*/
 
-void mail_return(jp)
-struct mailjob *jp;
+void mail_return(struct mailjob *jp)
 {
 
   FILE *fpi, *fpo;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.25 1993/03/30 17:24:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.26 1993/05/17 13:44:55 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -22,20 +22,6 @@
 #define BYTE_ORDER      LITTLE_ENDIAN
 #else
 #define BYTE_ORDER      BIG_ENDIAN
-#endif
-
-#if     defined(__TURBOC__) || defined(__STDC__) || defined(LATTICE)
-#define ANSIPROTO       1
-#else
-#define const
-#endif
-
-#ifndef __ARGS
-#ifdef  ANSIPROTO
-#define __ARGS(x)       x
-#else
-#define __ARGS(x)       ()
-#endif
 #endif
 
 #if     !defined(AMIGA) && (defined(LATTICE) || defined(MAC) || defined(__TURBOC__))
@@ -70,7 +56,7 @@
  * but it doesn't matter if they're signed or unsigned.
  */
 typedef int  int32;             /* 32-bit signed integer */
-typedef unsigned short int16;   /* 16-bit unsigned integer */
+typedef unsigned short uint16;  /* 16-bit unsigned integer */
 typedef unsigned char byte_t;   /*  8-bit unsigned integer */
 #define uchar(x) ((x) & 0xff)
 #define MAXINT16 65535          /* Largest 16-bit integer */
@@ -168,8 +154,8 @@ typedef unsigned char byte_t;   /*  8-bit unsigned integer */
 #define STREQ(x,y) (strcmp(x,y) == 0)
 
 /* Extract a short from a long */
-#define hiword(x)       ((int16)((x) >> 16))
-#define loword(x)       ((int16)(x))
+#define hiword(x)       ((uint16)((x) >> 16))
+#define loword(x)       ((uint16)(x))
 
 /* Extract a byte from a short */
 #define hibyte(x)       ((unsigned char)((x) >> 8))
@@ -180,38 +166,38 @@ typedef unsigned char byte_t;   /*  8-bit unsigned integer */
 #define lonibble(x)     ((x) & 0xf)
 
 /* Various low-level and miscellaneous functions */
-int availmem __ARGS((void));
-void *callocw __ARGS((unsigned nelem,unsigned size));
-int dirps __ARGS((void));
+int availmem(void);
+void *callocw(unsigned nelem,unsigned size);
+int dirps(void);
 int getopt();
-int htob __ARGS((int  c));
-int htoi __ARGS((char *));
-int readhex __ARGS((char *,char *,int));
-long htol __ARGS((char *));
-char *inbuf __ARGS((int16 port,char *buf,int16 cnt));
-int16 hash_ip __ARGS((int32 addr));
-int istate __ARGS((void));
+int htob(int  c);
+int htoi(char *);
+int readhex(char *,char *,int);
+long htol(char *);
+char *inbuf(uint16 port,char *buf,uint16 cnt);
+uint16 hash_ip(int32 addr);
+int istate(void);
 void log();
-int log2 __ARGS((int   x));
+int log2(int    x);
 #define ltop(x) ((void *) (x))
-void *mallocw __ARGS((unsigned nb));
-int memcnt __ARGS((char *buf,int  c,int size));
-char *outbuf __ARGS((int16 port,char *buf,int16 cnt));
+void *mallocw(unsigned nb);
+int memcnt(char *buf,int  c,int size);
+char *outbuf(uint16 port,char *buf,uint16 cnt);
 #define ptol(x) ((long) (x))
-void restore __ARGS((int));
-void rip __ARGS((char *));
-char *smsg __ARGS((char *msgs[],unsigned nmsgs,unsigned n));
-void stktrace __ARGS((void));
+void restore(int);
+void rip(char *);
+char *smsg(char *msgs[],unsigned nmsgs,unsigned n);
+void stktrace(void);
 #if     !defined __TURBOC__
 char *strdup();
 #endif
-int wildmat __ARGS((char *s,char *p,char **argv));
+int wildmat(char *s,char *p,char **argv);
 
 #include <stdlib.h>
 #include <string.h>
 
-int stricmp __ARGS((char *s1, char *s2));
-int strnicmp __ARGS((char *s1, char *s2, size_t maxlen));
+int stricmp(char *s1, char *s2);
+int strnicmp(char *s1, char *s2, size_t maxlen);
 
 #ifdef  AZTEC
 #define rewind(fp)      fseek(fp,0L,0);
@@ -241,8 +227,8 @@ int strnicmp __ARGS((char *s1, char *s2, size_t maxlen));
 #include <stdio.h>
 #endif
 #define fclose(fp)      amiga_fclose(fp)
-extern int amiga_fclose __ARGS((FILE *));
-extern FILE *tmpfile __ARGS((void));
+extern int amiga_fclose(FILE *);
+extern FILE *tmpfile(void);
 
 extern char *sys_errlist[];
 extern int errno;
@@ -291,7 +277,7 @@ extern int Debug;
 extern int Shortstatus;
 
 /* Use functions in misc.c because some platforms are broken, eg 386BSD */
-int Xtolower __ARGS((int));
-int Xtoupper __ARGS((int));
+int Xtolower(int);
+int Xtoupper(int);
 
 #endif  /* _GLOBAL_H */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapbtime.c,v 1.3 1993/02/28 17:35:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapbtime.c,v 1.4 1993/05/17 13:45:06 deyke Exp $ */
 
 /* LAPB (AX25) timer recovery routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -9,7 +9,7 @@
 #include "timer.h"
 #include "lapb.h"
 
-static void tx_enq __ARGS((struct ax25_cb *axp));
+static void tx_enq(struct ax25_cb *axp);
 
 /* Called whenever timer T1 expires */
 void

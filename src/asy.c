@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.9 1993/01/29 06:48:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.10 1993/05/17 13:44:44 deyke Exp $ */
 
 /* Generic serial line interface routines
  * Copyright 1992 Phil Karn, KA9Q
@@ -19,7 +19,7 @@
 /* #include "ppp.h" */
 #include "commands.h"
 
-static int asy_detach __ARGS((struct iface *ifp));
+static int asy_detach(struct iface *ifp);
 
 /* Attach a serial interface to the system
  * argv[0]: hardware type, must be "asy"
@@ -55,6 +55,9 @@ void *p;
 	int cts,rlsd;
 	struct asymode *ap;
 	char *cp;
+	int base;
+	int irq;
+	int chain;
 
 	if(if_lookup(argv[4]) != NULLIF){
 		printf("Interface %s already exists\n",argv[4]);
@@ -73,6 +76,10 @@ void *p;
 		printf("Too many asynch controllers\n");
 		return -1;
 	}
+
+	base = htoi(argv[1]);
+
+		irq = atoi(argv[2]);
 
 	/* Create interface structure and fill in details */
 	ifp = (struct iface *)callocw(1,sizeof(struct iface));
@@ -97,8 +104,7 @@ void *p;
 		}
 	}
 	if(ap->name == NULLCHAR){
-		printf("Mode %s unknown for interface %s\n",
-		 argv[3],argv[4]);
+		printf("Mode %s unknown for interface %s\n",argv[3],argv[4]);
 		if_detach(ifp);
 		return -1;
 	}
@@ -113,8 +119,12 @@ void *p;
 		if(strchr(argv[8],'r') != NULLCHAR)
 			rlsd = 1;
 	}
-	asy_init(dev,ifp,argv[1],argv[2],(int16)atol(argv[5]),
-		trigchar,atol(argv[7]),cts,rlsd);
+	if(strchr(argv[2],'c') != NULL)
+		chain = 1;
+	else
+		chain = 0;
+	asy_init(dev,ifp,base,irq,(uint16)atol(argv[5]),
+		trigchar,atol(argv[7]),cts,rlsd,chain);
 #if 0
 	cp = if_name(ifp," tx");
 	ifp->txproc = newproc(cp,768,if_tx,0,ifp,NULL,0);

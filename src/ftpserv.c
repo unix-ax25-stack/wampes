@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.18 1993/05/14 17:03:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.19 1993/05/17 13:44:55 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -24,15 +24,15 @@
 #include "login.h"
 #include "ftp.h"
 
-static void Xprintf __ARGS((struct tcb *tcb, char *message, char *arg1, char *arg2, char *arg3));
-static void ftpscs __ARGS((struct tcb *tcb, int old, int new));
-static void ftpscr __ARGS((struct tcb *tcb, int cnt));
-static void ftpsds __ARGS((struct tcb *tcb, int old, int new));
-static char *errmsg __ARGS((char *filename));
-static void ftpcommand __ARGS((struct ftp *ftp));
-static int pport __ARGS((struct socket *sock, char *arg));
-static void ftplogin __ARGS((struct ftp *ftp, char *pass));
-static int permcheck __ARGS((struct ftp *ftp, char *file));
+static void Xprintf(struct tcb *tcb, char *message, char *arg1, char *arg2, char *arg3);
+static void ftpscs(struct tcb *tcb, int old, int new);
+static void ftpscr(struct tcb *tcb, int cnt);
+static void ftpsds(struct tcb *tcb, int old, int new);
+static char *errmsg(char *filename);
+static void ftpcommand(struct ftp *ftp);
+static int pport(struct socket *sock, char *arg);
+static void ftplogin(struct ftp *ftp, char *pass);
+static int permcheck(struct ftp *ftp, char *file);
 
 /* Command table */
 static char *commands[] = {
@@ -212,7 +212,7 @@ static
 void
 ftpscr(tcb,cnt)
 struct tcb *tcb;
-int16 cnt;
+uint16 cnt;
 {
 	register struct ftp *ftp;
 	int c;

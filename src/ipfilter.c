@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfilter.c,v 1.1 1993/03/30 17:25:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfilter.c,v 1.2 1993/05/17 13:45:00 deyke Exp $ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,8 +17,7 @@ struct ipfilter_t {
 
 static struct ipfilter_t *Ipfilter;
 
-int ipfilter(addr)
-int32 addr;
+int ipfilter(int32 addr)
 {
 	struct ipfilter_t *curr, *prev;
 
@@ -37,10 +36,7 @@ int32 addr;
 }
 
 static int
-doipfilteradd(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+doipfilteradd(int argc, char *argv[], void *p)
 {
 
 	char *bitp;
@@ -83,10 +79,7 @@ void *p;
 }
 
 static int
-doipfilterdrop(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+doipfilterdrop(int argc, char *argv[], void *p)
 {
 
 	char *bitp;
@@ -139,10 +132,7 @@ static struct cmds Ipfiltercmds[] = {
 };
 
 int
-doipfilter(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+doipfilter(int argc, char *argv[], void *p)
 {
 
 	struct ipfilter_t *ptr;

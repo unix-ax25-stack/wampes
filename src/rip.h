@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.h,v 1.4 1993/02/23 21:34:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.h,v 1.5 1993/05/17 13:45:15 deyke Exp $ */
 
 #ifndef _RIP_H
 #define _RIP_H
@@ -70,7 +70,7 @@ struct rip_list {
 
 /* Host format of a single entry in a RIP response packet */
 struct rip_route {
-	int16   addr_fam;
+	uint16  addr_fam;
 	int32   target;
 	int32   metric;
 };
@@ -99,19 +99,19 @@ struct rip_refuse {
 #define NULLREF (struct rip_refuse *)0
 
 /* RIP primitives */
-int rip_init __ARGS((void));
-void rt_timeout __ARGS((void *s));
-void rip_trigger __ARGS((void));
-int rip_add __ARGS((int32 dest,int32 interval,int  flags));
-int riprefadd __ARGS((int32 gateway));
-int riprefdrop __ARGS((int32 gateway));
-int ripreq __ARGS((int32 dest,int   replyport));
-int rip_drop __ARGS((int32 dest));
-int nbits __ARGS((int32 target));
-void pullentry __ARGS((struct rip_route *ep,struct mbuf **bpp));
+int rip_init(void);
+void rt_timeout(void *s);
+void rip_trigger(void);
+int rip_add(int32 dest,int32 interval,int  flags);
+int riprefadd(int32 gateway);
+int riprefdrop(int32 gateway);
+int ripreq(int32 dest,int    replyport);
+int rip_drop(int32 dest);
+int nbits(int32 target);
+void pullentry(struct rip_route *ep,struct mbuf **bpp);
 
 /* RIP Definition */
-extern int16 Rip_trace;
+extern uint16 Rip_trace;
 extern int Rip_merge;
 extern struct rip_stat Rip_stat;
 extern struct rip_list *Rip_list;

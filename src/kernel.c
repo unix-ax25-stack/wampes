@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.10 1993/05/10 11:23:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.11 1993/05/17 13:45:03 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -22,9 +22,9 @@
 #endif
 
 #ifdef RISCiX
-void setstack __ARGS((int16 *));
+void setstack(uint16 *);
 #else
-void setstack __ARGS((void));
+void setstack(void);
 #endif
 
 #define DISABLE()
@@ -33,7 +33,7 @@ void setstack __ARGS((void));
 #define istate()        (1)
 #define restore(x)
 
-int16 *newstackptr;
+uint16 *newstackptr;
 
 #ifdef  PROCLOG
 FILE *proclog;
@@ -47,11 +47,11 @@ struct proc *Susptab;           /* Suspended processes */
 static struct mbuf *Killq;
 struct ksig Ksig;
 
-static void addproc __ARGS((struct proc *entry));
-static void delproc __ARGS((struct proc *entry));
+static void addproc(struct proc *entry);
+static void delproc(struct proc *entry);
 
-static void psig __ARGS((void *event,int n));
-static int procsigs __ARGS((void));
+static void psig(void *event,int n);
+static int procsigs(void);
 
 /* Create a process descriptor for the main function. Must be actually
  * called from the main function, and must be called before any other
@@ -120,7 +120,7 @@ int freeargs;           /* If set, free arg list on parg1 at termination */
 #endif
 	stksize = (stksize + 3) & ~3;
 	pp->stksize = stksize;
-	if((pp->stack = (int16 *)malloc(sizeof(int16)*stksize)) == NULL){
+	if((pp->stack = (uint16 *)malloc(sizeof(uint16)*stksize)) == NULL){
 		free(pp->name);
 		free((char *)pp);
 		return NULLPROC;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pktdrvr.h,v 1.6 1993/01/29 06:48:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pktdrvr.h,v 1.7 1993/05/17 13:45:13 deyke Exp $ */
 
 #ifndef _PKTDRVR_H
 #define _PKTDRVR_H
@@ -104,14 +104,14 @@ struct pktdrvr {
 extern struct pktdrvr Pktdrvr[];
 
 /* In pktdrvr.c: */
-char *pkint __ARGS((int dev,unsigned short cx, unsigned short ax));
-void pk_tx __ARGS((int dev,void *arg1,void *unused));
-int pk_send __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,int tos));
+char *pkint(int dev,unsigned short cx, unsigned short ax);
+void pk_tx(int dev,void *arg1,void *unused);
+int pk_send(struct mbuf *bp,struct iface *iface,int32 gateway,int tos);
 
 /* In pkvec.asm: */
-INTERRUPT pkvec0 __ARGS((void));
-INTERRUPT pkvec1 __ARGS((void));
-INTERRUPT pkvec2 __ARGS((void));
+INTERRUPT pkvec0(void);
+INTERRUPT pkvec1(void);
+INTERRUPT pkvec2(void);
 
 #endif  /* MSDOS */
 

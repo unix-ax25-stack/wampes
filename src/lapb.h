@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.13 1993/02/23 21:34:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.14 1993/05/17 13:45:06 deyke Exp $ */
 
 #ifndef _LAPB_H
 #define _LAPB_H
@@ -88,12 +88,12 @@ struct ax25_cb {
 	char vr;                        /* Our receive state variable */
 	char unack;                     /* Number of unacked frames */
 	int maxframe;                   /* Transmit flow control level, frames */
-	int16 paclen;                   /* Maximum outbound packet size, bytes */
-	int16 window;                   /* Local flow control limit, bytes */
+	uint16 paclen;                  /* Maximum outbound packet size, bytes */
+	uint16 window;                  /* Local flow control limit, bytes */
 	char proto;                     /* Protocol version */
 #define V1      1                       /* AX.25 Version 1 */
 #define V2      2                       /* AX.25 Version 2 */
-	int16 pthresh;                  /* Poll threshold, bytes */
+	uint16 pthresh;                 /* Poll threshold, bytes */
 	unsigned retries;               /* Retry counter */
 	unsigned n2;                    /* Retry limit */
 	int state;                      /* Link state */
@@ -111,9 +111,9 @@ struct ax25_cb {
 	int32 srt;                      /* Smoothed round-trip time, ms */
 	int32 mdev;                     /* Mean rtt deviation, ms */
 
-	void (*r_upcall) __ARGS((struct ax25_cb *,int));        /* Receiver upcall */
-	void (*t_upcall) __ARGS((struct ax25_cb *,int));        /* Transmit upcall */
-	void (*s_upcall) __ARGS((struct ax25_cb *,int,int));    /* State change upcall */
+	void (*r_upcall)(struct ax25_cb *,int); /* Receiver upcall */
+	void (*t_upcall)(struct ax25_cb *,int); /* Transmit upcall */
+	void (*s_upcall)(struct ax25_cb *,int,int);     /* State change upcall */
 
 	char *user;                     /* User pointer */
 
@@ -125,31 +125,31 @@ struct ax25_cb {
 extern struct ax25_cb Ax25default,*Ax25_cb;
 extern char *Ax25states[],*Axreasons[];
 extern int32 Axirtt,T3init,Blimit;
-extern int   N2,Maxframe,Paclen,Pthresh,Axwindow,Axversion;
+extern int    N2,Maxframe,Paclen,Pthresh,Axwindow,Axversion;
 
 extern int T1init;                      /* Retransmission timeout */
 extern int T4init;                      /* Busy timeout */
 extern int Axserver_enabled;
 
 /* In lapb.c: */
-void est_link __ARGS((struct ax25_cb *axp));
-void lapbstate __ARGS((struct ax25_cb *axp,int s));
-int lapb_input __ARGS((struct iface *iface,struct ax25 *hdr,struct mbuf *bp));
-int lapb_output __ARGS((struct ax25_cb *axp));
-struct mbuf *segmenter __ARGS((struct mbuf *bp,int   ssize));
-int sendctl __ARGS((struct ax25_cb *axp,int cmdrsp,int cmd));
-int busy __ARGS((struct ax25_cb *cp));
-void build_path __ARGS((struct ax25_cb *cp,struct iface *ifp,struct ax25 *hdr,int reverse));
+void est_link(struct ax25_cb *axp);
+void lapbstate(struct ax25_cb *axp,int s);
+int lapb_input(struct iface *iface,struct ax25 *hdr,struct mbuf *bp);
+int lapb_output(struct ax25_cb *axp);
+struct mbuf *segmenter(struct mbuf *bp,int    ssize);
+int sendctl(struct ax25_cb *axp,int cmdrsp,int cmd);
+int busy(struct ax25_cb *cp);
+void build_path(struct ax25_cb *cp,struct iface *ifp,struct ax25 *hdr,int reverse);
 
 /* In lapbtimer.c: */
-void pollthem __ARGS((void *p));
-void recover __ARGS((void *p));
+void pollthem(void *p);
+void recover(void *p);
 
 /* In ax25subr.c: */
-int16 ftype __ARGS((int control));
-void lapb_garbage __ARGS((int drastic));
+uint16 ftype(int control);
+void lapb_garbage(int drastic);
 
 /* In axserver.c: */
-void axserv_open __ARGS((struct ax25_cb *axp,int cnt));
+void axserv_open(struct ax25_cb *axp,int cnt);
 
 #endif  /* _LAPB_H */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.8 1991/06/04 11:33:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.9 1993/05/17 13:44:54 deyke Exp $ */
 
 /*
  *
@@ -29,9 +29,9 @@
 #include "session.h"
 /* #include "nr4.h" */
 
-static struct finger *alloc_finger __ARGS((void));
-static int free_finger __ARGS((struct finger *finger));
-static void f_state __ARGS((struct tcb *tcb, int old, int new));
+static struct finger *alloc_finger(void);
+static int free_finger(struct finger *finger);
+static void f_state(struct tcb *tcb, int old, int new);
 
 /*
  *
@@ -167,7 +167,7 @@ struct finger *finger;
 void
 fingcli_rcv(tcb, cnt)
 register struct tcb     *tcb;
-int16                   cnt;
+uint16                  cnt;
 {
 	struct mbuf     *bp;
 	char            *buf;
@@ -260,7 +260,7 @@ char                    old,            /* old state */
 			printf("%s\n",Tcpstates[new]);
 		}
 		printf("[%s]\n", Current->name);
-		bp = qdata(finger->user, (int16) strlen(finger->user));
+		bp = qdata(finger->user, (uint16) strlen(finger->user));
 		send_tcp(tcb, bp);
 		break;
 

@@ -1,7 +1,7 @@
 /* User Data Base Manager */
 
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.21 1993/04/15 13:12:42 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.22 1993/05/17 13:47:20 deyke Exp $";
 #endif
 
 #define DEBUG           0
@@ -20,13 +20,6 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-#ifdef __STDC__
-#define __ARGS(x)       x
-#else
-#define __ARGS(x)       ()
-#define const
-#endif
 
 struct user {
   struct user *next;
@@ -73,29 +66,28 @@ static long heapsize;
 static struct user *users[NUM_USERS];
 static struct user null_user;
 
-static void terminate __ARGS((const char *s));
-static void *allocate __ARGS((size_t size));
-static int calc_crc __ARGS((const char *str));
-static const char *strsave __ARGS((const char *s));
-static char *strlwc __ARGS((char *s));
-static char *rmspaces __ARGS((char *s));
-static char *strtrim __ARGS((char *s));
-static int is_call __ARGS((const char *s));
-static int is_qth __ARGS((const char *s));
-static int is_phone __ARGS((const char *s));
-static int is_mail __ARGS((const char *s));
-static int join __ARGS((const char **s1, const char **s2));
-static struct user *getup __ARGS((const char *call, int create));
-static FILE *fopenexcl __ARGS((const char *path));
-static void output_line __ARGS((const struct user *up, FILE *fp));
-static int fixusers __ARGS((void));
-static void fixpasswd __ARGS((void));
-static void fixaliases __ARGS((void));
+static void terminate(const char *s);
+static void *allocate(size_t size);
+static int calc_crc(const char *str);
+static const char *strsave(const char *s);
+static char *strlwc(char *s);
+static char *rmspaces(char *s);
+static char *strtrim(char *s);
+static int is_call(const char *s);
+static int is_qth(const char *s);
+static int is_phone(const char *s);
+static int is_mail(const char *s);
+static int join(const char **s1, const char **s2);
+static struct user *getup(const char *call, int create);
+static FILE *fopenexcl(const char *path);
+static void output_line(const struct user *up, FILE *fp);
+static int fixusers(void);
+static void fixpasswd(void);
+static void fixaliases(void);
 
 /*---------------------------------------------------------------------------*/
 
-static void terminate(s)
-const char *s;
+static void terminate(const char *s)
 {
   perror(s);
   if (lockfile) unlink(lockfile);
@@ -108,8 +100,7 @@ const char *s;
 
 /*---------------------------------------------------------------------------*/
 
-static void *allocate(size)
-size_t size;
+static void *allocate(size_t size)
 {
 
   static char *freespace;
@@ -142,8 +133,7 @@ size_t size;
 
 /* Calculate crc16 for a null terminated string (used for hashing) */
 
-static int calc_crc(str)
-const char *str;
+static int calc_crc(const char *str)
 {
 
   static const int crc_table[] = {
@@ -191,8 +181,7 @@ const char *str;
 
 /*---------------------------------------------------------------------------*/
 
-static const char *strsave(s)
-const char *s;
+static const char *strsave(const char *s)
 {
 
 #define NUM_STRINGS 4999
@@ -222,8 +211,7 @@ const char *s;
 
 /*---------------------------------------------------------------------------*/
 
-static char *strlwc(s)
-char *s;
+static char *strlwc(char *s)
 {
   char *p;
 
@@ -234,8 +222,7 @@ char *s;
 
 /*---------------------------------------------------------------------------*/
 
-static char *rmspaces(s)
-char *s;
+static char *rmspaces(char *s)
 {
   char *f, *t;
 
@@ -247,8 +234,7 @@ char *s;
 
 /*---------------------------------------------------------------------------*/
 
-static char *strtrim(s)
-char *s;
+static char *strtrim(char *s)
 {
   char *p;
 
@@ -260,8 +246,7 @@ char *s;
 
 /*---------------------------------------------------------------------------*/
 
-static int is_call(s)
-const char *s;
+static int is_call(const char *s)
 {
   int d, l;
 
@@ -277,8 +262,7 @@ const char *s;
 
 /*---------------------------------------------------------------------------*/
 
-static int is_qth(s)
-const char *s;
+static int is_qth(const char *s)
 {
   switch (strlen(s)) {
   case 5:
@@ -305,8 +289,7 @@ const char *s;
 
 /*---------------------------------------------------------------------------*/
 
-static int is_phone(s)
-const char *s;
+static int is_phone(const char *s)
 {
   int slash;
 
@@ -320,16 +303,14 @@ const char *s;
 
 /*---------------------------------------------------------------------------*/
 
-static int is_mail(s)
-const char *s;
+static int is_mail(const char *s)
 {
   return (int) (strchr(s, '@') != NULL);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int join(s1, s2)
-const char **s1, **s2;
+static int join(const char **s1, const char **s2)
 {
   if (s1 == s2) return 0;
   if (*s1 == null_string || strstr(*s2, *s1)) {
@@ -345,9 +326,7 @@ const char **s1, **s2;
 
 /*---------------------------------------------------------------------------*/
 
-static struct user *getup(call, create)
-const char *call;
-int create;
+static struct user *getup(const char *call, int create)
 {
 
   int hash;
@@ -369,8 +348,7 @@ int create;
 
 /*---------------------------------------------------------------------------*/
 
-static FILE *fopenexcl(path)
-const char *path;
+static FILE *fopenexcl(const char *path)
 {
 
   FILE * fp;
@@ -389,9 +367,7 @@ const char *path;
 
 /*---------------------------------------------------------------------------*/
 
-static void output_line(up, fp)
-const struct user *up;
-FILE *fp;
+static void output_line(const struct user *up, FILE *fp)
 {
 
 #define append(s)                    \
@@ -423,7 +399,7 @@ FILE *fp;
 
 /*---------------------------------------------------------------------------*/
 
-static int fixusers()
+static int fixusers(void)
 {
 
 #define NF 20
@@ -471,7 +447,7 @@ static int fixusers()
     *t = '\0';
     strcpy(orig_line, line);
     f = line;
-    memset(field, 0 , sizeof(field));
+    memset((char *) field, 0 , sizeof(field));
     nf = 0;
     user = null_user;
     for (; ; ) {
@@ -591,7 +567,7 @@ static int fixusers()
 
 /*---------------------------------------------------------------------------*/
 
-static void fixpasswd()
+static void fixpasswd(void)
 {
 
 #ifndef __386BSD__
@@ -623,7 +599,7 @@ static void fixpasswd()
 
 /*---------------------------------------------------------------------------*/
 
-static void fixaliases()
+static void fixaliases(void)
 {
 
   FILE *fpi, *fpo;
@@ -660,7 +636,7 @@ static void fixaliases()
 
 /*---------------------------------------------------------------------------*/
 
-int main()
+int main(void)
 {
 
   null_user.next = 0;

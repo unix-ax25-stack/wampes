@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.36 1993/05/10 11:23:16 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.37 1993/05/17 13:44:42 deyke Exp $
 
 DEST          = /tcp
 
@@ -277,8 +277,10 @@ RMTARGET      = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
 all:
 		chmod 755 cc
-		@if [ "`uname -n`" = mdddhd -o "`uname -n`" = deyke2 ] ; then \
+		@if [ "`uname -n`" = mdddhd ] ; then \
 		  make -i 'CC=c89' 'CFLAGS=-g -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024' _all; \
+		elif [ $(OS) = HP-UX ] ; then \
+		  make -i 'CC=c89' 'CFLAGS=-O -s -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024' _all; \
 		elif [ $(OS) = SunOS ] ; then \
 		  make -i 'CC=acc' 'CFLAGS=-O -s -DUNIX -DFD_SETSIZE=1024' _all; \
 		elif [ $(OS) = Linux ] ; then \

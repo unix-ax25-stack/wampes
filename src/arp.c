@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.12 1993/02/23 21:34:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.13 1993/05/17 13:44:43 deyke Exp $ */
 
 /* Address Resolution Protocol (ARP) functions. Sits between IP and
  * Level 2, mapping IP to Level 2 addresses for all outgoing datagrams.
@@ -15,7 +15,7 @@
 #include "arp.h"
 #include "icmp.h"
 
-static void arp_output __ARGS((struct iface *iface,int   hardware,int32 target));
+static void arp_output(struct iface *iface,int    hardware,int32 target);
 
 /* Hash table headers */
 struct arp_tab *Arp_tab[HASHMOD];
@@ -31,7 +31,7 @@ struct arp_stat Arp_stat;
 char *
 res_arp(iface,hardware,target,bp)
 struct iface *iface;    /* Pointer to interface block */
-int16 hardware;         /* Hardware type */
+uint16 hardware;                /* Hardware type */
 int32 target;           /* Target IP address */
 struct mbuf *bp;        /* IP datagram to be queued if unresolved */
 {
@@ -125,7 +125,7 @@ struct mbuf *bp;
 			/* Swap sender's and target's (us) hardware and protocol
 			 * fields, and send the packet back as a reply
 			 */
-			memcpy(arp.thwaddr,arp.shwaddr,(int16)uchar(arp.hwalen));
+			memcpy(arp.thwaddr,arp.shwaddr,(uint16)uchar(arp.hwalen));
 			/* Mark the end of the sender's AX.25 address
 			 * in case he didn't
 			 */
@@ -155,7 +155,7 @@ struct mbuf *bp;
 		/* Otherwise, respond if the guy he's looking for is
 		 * published in our table.
 		 */
-		memcpy(arp.thwaddr,arp.shwaddr,(int16)uchar(arp.hwalen));
+		memcpy(arp.thwaddr,arp.shwaddr,(uint16)uchar(arp.hwalen));
 		memcpy(arp.shwaddr,ap->hw_addr,at->hwalen);
 		arp.tprotaddr = arp.sprotaddr;
 		arp.sprotaddr = ap->ip_addr;
@@ -195,7 +195,7 @@ struct mbuf *bp;
 struct arp_tab *
 arp_add(ipaddr,hardware,hw_addr,pub)
 int32 ipaddr;           /* IP address, host order */
-int16 hardware;         /* Hardware type */
+uint16 hardware;                /* Hardware type */
 char *hw_addr;          /* Hardware address, if known; NULLCHAR otherwise */
 int pub;                /* Publish this entry? */
 {
@@ -269,7 +269,7 @@ void *p;
 /* Look up the given IP address in the ARP table */
 struct arp_tab *
 arp_lookup(hardware,ipaddr)
-int16 hardware;
+uint16 hardware;
 int32 ipaddr;
 {
 	register struct arp_tab *ap;
@@ -285,7 +285,7 @@ int32 ipaddr;
 static void
 arp_output(iface,hardware,target)
 struct iface *iface;
-int16 hardware;
+uint16 hardware;
 int32 target;
 {
 	struct arp arp;
@@ -315,7 +315,7 @@ int32 target;
 /* Look up the given hardware address in the ARP table */
 struct arp_tab *
 revarp_lookup(hardware,hw_addr)
-int16 hardware;
+uint16 hardware;
 char *hw_addr;
 {
 	register struct arp_tab *ap;

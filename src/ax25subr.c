@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.11 1993/03/11 15:01:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.12 1993/05/17 13:44:46 deyke Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -249,7 +249,7 @@ char *addr;
 	cp = e;
 	for(i=ALEN;i != 0;i--){
 		c = (*addr++ >> 1) & 0x7f;
-		if(c != ' ' && isprint(c))
+		if(c != ' ')
 			*cp++ = c;
 	}
 	if((*addr & SSID) != 0)
@@ -263,16 +263,16 @@ char *addr;
  * This is done by masking out any sequence numbers and the
  * poll/final bit after determining the general class (I/S/U) of the frame
  */
-int16
+uint16
 ftype(control)
 register int control;
 {
 	if((control & 1) == 0)  /* An I-frame is an I-frame... */
 		return I;
 	if(control & 2)         /* U-frames use all except P/F bit for type */
-		return (int16)(uchar(control) & ~PF);
+		return (uint16)(uchar(control) & ~PF);
 	else                    /* S-frames use low order 4 bits for type */
-		return (int16)(uchar(control) & 0xf);
+		return (uint16)(uchar(control) & 0xf);
 }
 
 int

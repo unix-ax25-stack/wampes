@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmphdr.c,v 1.3 1992/05/14 13:20:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmphdr.c,v 1.4 1993/05/17 13:44:57 deyke Exp $ */
 
 /* ICMP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -16,7 +16,7 @@ struct icmp *icmp;
 struct mbuf *bp;
 {
 	register char *cp;
-	int16 checksum;
+	uint16 checksum;
 
 	bp = pushdown(bp,ICMPLEN);
 	cp = bp->data;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.17 1993/03/04 23:11:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.18 1993/05/17 13:44:58 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -18,17 +18,17 @@
 #include "commands.h"
 #include "trace.h"
 
-static void showiface __ARGS((struct iface *ifp));
-static int mask2width __ARGS((int32 mask));
-static int ifipaddr __ARGS((int argc,char *argv[],void *p));
-static int iflinkadr __ARGS((int argc,char *argv[],void *p));
-static int ifbroad __ARGS((int argc,char *argv[],void *p));
-static int ifnetmsk __ARGS((int argc,char *argv[],void *p));
-static int ifrxbuf __ARGS((int argc,char *argv[],void *p));
-static int ifmtu __ARGS((int argc,char *argv[],void *p));
-static int ifforw __ARGS((int argc,char *argv[],void *p));
-static int ifencap __ARGS((int argc,char *argv[],void *p));
-static int iftxqlen __ARGS((int argc,char *argv[],void *p));
+static void showiface(struct iface *ifp);
+static int mask2width(int32 mask);
+static int ifipaddr(int argc,char *argv[],void *p);
+static int iflinkadr(int argc,char *argv[],void *p);
+static int ifbroad(int argc,char *argv[],void *p);
+static int ifnetmsk(int argc,char *argv[],void *p);
+static int ifrxbuf(int argc,char *argv[],void *p);
+static int ifmtu(int argc,char *argv[],void *p);
+static int ifforw(int argc,char *argv[],void *p);
+static int ifencap(int argc,char *argv[],void *p);
+static int iftxqlen(int argc,char *argv[],void *p);
 
 /* Interface list header */
 struct iface *Ifaces = &Loopback;
@@ -258,7 +258,7 @@ nu_output(ifp,dest,src,type,bp)
 struct iface *ifp;
 char *dest;
 char *src;
-int16 type;
+uint16 type;
 struct mbuf *bp;
 {
 	return (*ifp->raw)(ifp,bp);

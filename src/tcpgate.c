@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.9 1992/08/11 21:32:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.10 1993/05/17 13:45:19 deyke Exp $ */
 
 #include "global.h"
 
@@ -17,8 +17,8 @@
 #include "buildsaddr.h"
 
 struct dest {
-  int  port;
-  char  *name;
+  int port;
+  char *name;
   struct dest *next;
 };
 
@@ -26,11 +26,10 @@ static struct dest *dests;
 
 /*---------------------------------------------------------------------------*/
 
-static void tcp_send(tcb)
-struct tcb *tcb;
+static void tcp_send(struct tcb *tcb)
 {
 
-  int  cnt;
+  int cnt;
   struct mbuf *bp;
 
   if ((cnt = space_tcp(tcb)) <= 0) {
@@ -51,12 +50,10 @@ struct tcb *tcb;
 
 /*---------------------------------------------------------------------------*/
 
-static void tcp_receive(tcb, cnt)
-struct tcb *tcb;
-int  cnt;
+static void tcp_receive(struct tcb *tcb, int cnt)
 {
 
-  char  buffer[1024];
+  char buffer[1024];
   struct mbuf *bp;
 
   if (tcb->user > 0) {
@@ -72,26 +69,22 @@ int  cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void tcp_ready(tcb, cnt)
-struct tcb *tcb;
-int  cnt;
+static void tcp_ready(struct tcb *tcb, int cnt)
 {
   if (tcb->user > 0) on_read(tcb->user, (void (*)()) tcp_send, tcb);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void tcp_state(tcb, old, new)
-struct tcb *tcb;
-int  old, new;
+static void tcp_state(struct tcb *tcb, int old, int new)
 {
 
-  int  addrlen;
+  int addrlen;
   struct dest *dp;
   struct sockaddr *addr;
 
   switch (new) {
-#ifdef  QUICKSTART
+#ifdef QUICKSTART
   case TCP_SYN_RECEIVED:
 #else
   case TCP_ESTABLISHED:
@@ -123,14 +116,11 @@ int  old, new;
 
 /*---------------------------------------------------------------------------*/
 
-int  tcpgate1(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
+int tcpgate1(int argc, char *argv[], void *p)
 {
 
-  char  *name;
-  char  buf[80];
+  char *name;
+  char buf[80];
   struct dest *dp;
   struct socket lsocket;
 

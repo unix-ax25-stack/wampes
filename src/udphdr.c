@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udphdr.c,v 1.4 1992/06/01 10:34:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udphdr.c,v 1.5 1993/05/17 13:45:27 deyke Exp $ */
 
 /* UDP header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -17,7 +17,7 @@ struct mbuf *bp;
 struct pseudo_header *ph;
 {
 	register char *cp;
-	int16 checksum;
+	uint16 checksum;
 
 	/* Allocate UDP protocol header and fill it in */
 	bp = pushdown(bp,UDPHDR);
@@ -56,7 +56,7 @@ struct mbuf **bpp;
 /* Extract UDP checksum value from a network-format header without
  * disturbing the header
  */
-int16
+uint16
 udpcksum(bp)
 struct mbuf *bp;
 {

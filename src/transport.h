@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.h,v 1.8 1993/02/23 21:34:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.h,v 1.9 1993/05/17 13:45:23 deyke Exp $ */
 
 #ifndef _TRANSPORT_H
 #define _TRANSPORT_H
@@ -26,11 +26,11 @@ struct transport_cb {
 #define TP_NETROM       2
 #define TP_TCP          3
   void *cp;                     /* Pointer to connection control block */
-  void (*r_upcall) __ARGS((struct transport_cb *tp, int cnt));
+  void (*r_upcall)(struct transport_cb *tp, int cnt);
 				/* Called when data arrives */
-  void (*t_upcall) __ARGS((struct transport_cb *tp, int cnt));
+  void (*t_upcall)(struct transport_cb *tp, int cnt);
 				/* Called when ok to send more data */
-  void (*s_upcall) __ARGS((struct transport_cb *tp));
+  void (*s_upcall)(struct transport_cb *tp);
 				/* Called when connection is terminated */
   void *user;                   /* User parameter (e.g., for mapping to an
 				 * application control block
@@ -43,18 +43,18 @@ struct transport_cb {
 };
 
 /* In transport.c: */
-struct transport_cb *transport_open __ARGS((
+struct transport_cb *transport_open(
   const char *protocol,
   const char *address,
-  void (*r_upcall) __ARGS((struct transport_cb *tp, int cnt)),
-  void (*t_upcall) __ARGS((struct transport_cb *tp, int cnt)),
-  void (*s_upcall) __ARGS((struct transport_cb *tp)),
-  void *user));
-int transport_recv __ARGS((struct transport_cb *tp, struct mbuf **bpp, int cnt));
-int transport_send __ARGS((struct transport_cb *tp, struct mbuf *bp));
-int transport_send_space __ARGS((struct transport_cb *tp));
-void transport_set_timeout __ARGS((struct transport_cb *tp, int timeout));
-int transport_close __ARGS((struct transport_cb *tp));
-int transport_del __ARGS((struct transport_cb *tp));
+  void (*r_upcall)(struct transport_cb *tp, int cnt),
+  void (*t_upcall)(struct transport_cb *tp, int cnt),
+  void (*s_upcall)(struct transport_cb *tp),
+  void *user);
+int transport_recv(struct transport_cb *tp, struct mbuf **bpp, int cnt);
+int transport_send(struct transport_cb *tp, struct mbuf *bp);
+int transport_send_space(struct transport_cb *tp);
+void transport_set_timeout(struct transport_cb *tp, int timeout);
+int transport_close(struct transport_cb *tp);
+int transport_del(struct transport_cb *tp);
 
 #endif  /* _TRANSPORT_H */

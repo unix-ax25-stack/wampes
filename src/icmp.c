@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.11 1993/01/29 06:48:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.12 1993/05/17 13:44:57 deyke Exp $ */
 
 /* Internet Control Message Protocol (ICMP)
  * Copyright 1991 Phil Karn, KA9Q
@@ -53,8 +53,8 @@ int rxbroadcast;
 	struct mbuf *tbp;
 	struct icmp icmp;       /* ICMP header */
 	struct ip oip;          /* Offending datagram header */
-	int16 type;             /* Type of ICMP message */
-	int16 length;
+	uint16 type;            /* Type of ICMP message */
+	uint16 length;
 
 	icmpInMsgs++;
 	if(rxbroadcast){
@@ -190,8 +190,8 @@ union icmp_args *args;
 {
 	struct mbuf *bp = NULLBUF;
 	struct icmp icmp;       /* ICMP protocol header */
-	int16 dlen;             /* Length of data portion of offending pkt */
-	int16 length;           /* Total length of reply */
+	uint16 dlen;            /* Length of data portion of offending pkt */
+	uint16 length;          /* Total length of reply */
 
 	if(ip == NULLIP)
 		return -1;

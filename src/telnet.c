@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.15 1993/03/04 23:11:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.16 1993/05/17 13:45:21 deyke Exp $ */
 
 /* Internet Telnet client
  * Copyright 1991 Phil Karn, KA9Q
@@ -16,17 +16,17 @@
 #include "commands.h"
 #include "netuser.h"
 
-static void unix_send_tel __ARGS((char *buf, int n));
-static void send_tel __ARGS((char *buf, int n));
-static void tel_input __ARGS((struct telnet *tn, struct mbuf *bp));
-static void tn_tx __ARGS((struct tcb *tcb, int cnt));
-static void t_state __ARGS((struct tcb *tcb, int old, int new));
-static void free_telnet __ARGS((struct telnet *tn));
-static void willopt __ARGS((struct telnet *tn, int opt));
-static void wontopt __ARGS((struct telnet *tn, int opt));
-static void doopt __ARGS((struct telnet *tn, int opt));
-static void dontopt __ARGS((struct telnet *tn, int opt));
-static void answer __ARGS((struct telnet *tn, int r1, int r2));
+static void unix_send_tel(char *buf, int n);
+static void send_tel(char *buf, int n);
+static void tel_input(struct telnet *tn, struct mbuf *bp);
+static void tn_tx(struct tcb *tcb, int cnt);
+static void t_state(struct tcb *tcb, int old, int new);
+static void free_telnet(struct telnet *tn);
+static void willopt(struct telnet *tn, int opt);
+static void wontopt(struct telnet *tn, int opt);
+static void doopt(struct telnet *tn, int opt);
+static void dontopt(struct telnet *tn, int opt);
+static void answer(struct telnet *tn, int r1, int r2);
 
 int Refuse_echo = 0;
 int Tn_cr_mode = 0;    /* if true turn <cr> to <cr-nul> */
@@ -240,7 +240,7 @@ int cnt;
 static void
 tn_tx(tcb,cnt)
 struct tcb *tcb;
-int16 cnt;
+uint16 cnt;
 {
 	struct telnet *tn;
 	struct session *s;
@@ -254,7 +254,7 @@ int16 cnt;
 	if((bp = alloc_mbuf(cnt)) == NULLBUF)
 		return;
 	if((size = fread(bp->data,1,cnt,s->upload)) > 0){
-		bp->cnt = (int16)size;
+		bp->cnt = (uint16)size;
 		send_tcp(tcb,bp);
 	} else {
 		free_p(bp);
@@ -518,6 +518,6 @@ int r1,r2;
 	s[0] = IAC;
 	s[1] = r1;
 	s[2] = r2;
-	bp = qdata(s,(int16)3);
+	bp = qdata(s,(uint16)3);
 	send_tcp(tn->tcb,bp);
 }

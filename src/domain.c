@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.12 1993/03/30 17:24:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.13 1993/05/17 13:44:51 deyke Exp $ */
 
 #include "global.h"
 
@@ -64,24 +64,24 @@ static struct cache *Cache;
 static struct tcb *Domain_tcb;
 static struct udp_cb *Domain_ucb;
 
-static void strlwc __ARGS((char *to, const char *from));
-static int isaddr __ARGS((const char *s));
-static void add_to_cache __ARGS((const char *name, int32 addr));
-static char *dtype __ARGS((int value));
-static struct rr *make_rr __ARGS((int source, char *dname, int dclass, int dtype, int32 ttl, int rdl, void *data));
-static void put_rr __ARGS((FILE *fp, struct rr *rrp));
-static void dumpdomain __ARGS((struct dhdr *dhp));
-static int32 in_addr_arpa __ARGS((char *name));
-static struct mbuf *domain_server __ARGS((struct mbuf *bp));
-static void domain_server_udp __ARGS((struct iface *iface, struct udp_cb *up, int cnt));
-static void domain_server_tcp_recv __ARGS((struct tcb *tcb, int cnt));
-static void domain_server_tcp_state __ARGS((struct tcb *tcb, int old, int new));
-static int docacheflush __ARGS((int argc, char *argv [], void *p));
-static int docachelist __ARGS((int argc, char *argv [], void *p));
-static int docache __ARGS((int argc, char *argv [], void *p));
-static int dodnsquery __ARGS((int argc, char *argv [], void *p));
-static int dodnstrace __ARGS((int argc, char *argv [], void *p));
-static int dousegethostby __ARGS((int argc, char *argv [], void *p));
+static void strlwc(char *to, const char *from);
+static int isaddr(const char *s);
+static void add_to_cache(const char *name, int32 addr);
+static char *dtype(int value);
+static struct rr *make_rr(int source, char *dname, int dclass, int dtype, int32 ttl, int rdl, void *data);
+static void put_rr(FILE *fp, struct rr *rrp);
+static void dumpdomain(struct dhdr *dhp);
+static int32 in_addr_arpa(char *name);
+static struct mbuf *domain_server(struct mbuf *bp);
+static void domain_server_udp(struct iface *iface, struct udp_cb *up, int cnt);
+static void domain_server_tcp_recv(struct tcb *tcb, int cnt);
+static void domain_server_tcp_state(struct tcb *tcb, int old, int new);
+static int docacheflush(int argc, char *argv[], void *p);
+static int docachelist(int argc, char *argv[], void *p);
+static int docache(int argc, char *argv[], void *p);
+static int dodnsquery(int argc, char *argv[], void *p);
+static int dodnstrace(int argc, char *argv[], void *p);
+static int dousegethostby(int argc, char *argv[], void *p);
 
 /**
  **     Domain Resolver Commands
@@ -437,10 +437,10 @@ static struct rr *
 make_rr(source,dname,dclass,dtype,ttl,rdl,data)
 int source;
 char *dname;
-int16 dclass;
-int16 dtype;
+uint16 dclass;
+uint16 dtype;
 int32 ttl;
-int16 rdl;
+uint16 rdl;
 void *data;
 {
 	register struct rr *newrr;

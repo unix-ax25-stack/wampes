@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.19 1993/02/23 21:34:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.20 1993/05/17 13:44:58 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -23,25 +23,25 @@
  */
 struct iftype {
 	char *name;             /* Name of encapsulation technique */
-	int (*send) __ARGS((struct mbuf *,struct iface *,int32,int));
+	int (*send)(struct mbuf *,struct iface *,int32,int);
 				/* Routine to send an IP datagram */
-	int (*output) __ARGS((struct iface *,char *,char *,int  ,struct mbuf *));
+	int (*output)(struct iface *,char *,char *,int   ,struct mbuf *);
 				/* Routine to send link packet */
-	char *(*format) __ARGS((char *,char *));
+	char *(*format)(char *,char *);
 				/* Function that formats addresses */
-	int (*scan) __ARGS((char *,char *));
+	int (*scan)(char *,char *);
 				/* Reverse of format */
 	int type;               /* Type field for network process */
 	int hwalen;             /* Length of hardware address, if any */
-	void (*rcvf) __ARGS((struct iface *,struct mbuf *));
+	void (*rcvf)(struct iface *,struct mbuf *);
 				/* Function that handles incoming packets */
-	int (*addrtest) __ARGS((struct iface *,struct mbuf *));
+	int (*addrtest)(struct iface *,struct mbuf *);
 				/* Function that tests incoming addresses */
-	void (*trace) __ARGS((FILE *,struct mbuf **,int));
+	void (*trace)(FILE *,struct mbuf **,int);
 				/* Function that decodes protocol headers */
-	int (*dinit) __ARGS((struct iface *,int32,int,char **));
+	int (*dinit)(struct iface *,int32,int,char **);
 				/* Function to initialize demand dialing */
-	int (*dstat) __ARGS((struct iface *));
+	int (*dstat)(struct iface *);
 				/* Function to display dialer status */
 };
 #define NULLIFT (struct iftype *)0
@@ -56,9 +56,9 @@ struct iface {
 	int32 broadcast;        /* Broadcast address */
 	int32 netmask;          /* Network mask */
 
-	int16 mtu;              /* Maximum transmission unit size */
+	uint16 mtu;             /* Maximum transmission unit size */
 
-	int16 trace;            /* Trace flags */
+	uint16 trace;           /* Trace flags */
 #define IF_TRACE_OUT    0x01    /* Output packets */
 #define IF_TRACE_IN     0x10    /* Packets to me except broadcast */
 #define IF_TRACE_ASCII  0x100   /* Dump packets in ascii */
@@ -69,7 +69,7 @@ struct iface {
 
 	struct iface *forw;     /* Forwarding interface for output, if rx only */
 
-	void (*rxproc) __ARGS((struct iface *)); /* Receiver process, if any */
+	void (*rxproc)(struct iface *); /* Receiver process, if any */
 	struct proc *txproc;    /* IP send process */
 	struct proc *supv;      /* Supervisory process, if any */
 
@@ -78,17 +78,19 @@ struct iface {
 	int txbusy;             /* Transmitter is busy */
 
 	void *dstate;           /* Demand dialer link state, if any */
-	int (*dtickle)();       /* Function to tickle dialer, if any */
-	void (*dstatus)();      /* Function to display dialer state, if any */
+	int (*dtickle)(struct iface *);
+				/* Function to tickle dialer, if any */
+	void (*dstatus)(struct iface *);
+				/* Function to display dialer state, if any */
 
 	/* Device dependent */
 	int dev;                /* Subdevice number to pass to send */
 				/* To device -- control */
-	int32 (*ioctl) __ARGS((struct iface *,int cmd,int set,int32 val));
+	int32 (*ioctl)(struct iface *,int cmd,int set,int32 val);
 				/* From device -- when status changes */
-	int (*iostatus) __ARGS((struct iface *,int cmd,int32 val));
+	int (*iostatus)(struct iface *,int cmd,int32 val);
 				/* Call before detaching */
-	int (*stop) __ARGS((struct iface *));
+	int (*stop)(struct iface *);
 	char *hwaddr;           /* Device hardware address, if any */
 
 	/* Encapsulation dependent */
@@ -97,16 +99,16 @@ struct iface {
 	struct iftype *iftype;  /* Pointer to appropriate iftype entry */
 
 				/* Routine to send an IP datagram */
-	int (*send) __ARGS((struct mbuf *,struct iface *,int32,int));
+	int (*send)(struct mbuf *,struct iface *,int32,int);
 			/* Encapsulate any link packet */
-	int (*output) __ARGS((struct iface *,char *,char *,int  ,struct mbuf *));
+	int (*output)(struct iface *,char *,char *,int   ,struct mbuf *);
 			/* Send raw packet */
-	int (*raw)              __ARGS((struct iface *,struct mbuf *));
+	int (*raw)(struct iface *,struct mbuf *);
 			/* Display status */
-	void (*show)            __ARGS((struct iface *));
+	void (*show)(struct iface *);
 
-	int (*discard)          __ARGS((struct iface *,struct mbuf *));
-	int (*echo)             __ARGS((struct iface *,struct mbuf *));
+	int (*discard)(struct iface *,struct mbuf *);
+	int (*echo)(struct iface *,struct mbuf *);
 
 	/* Counters */
 	int32 ipsndcnt;         /* IP datagrams sent */
@@ -125,7 +127,7 @@ struct iface {
 #define CRC_CCITT       5       /* Send CRC_CCITT packets */
 	int32 crcerrors;        /* Packets received with CRC errors */
 	int32 ax25errors;       /* Packets received with bad ax25 header */
-	int16 flags;            /* Configuration flags */
+	uint16 flags;           /* Configuration flags */
 #define NO_RT_ADD       1       /* Don't call rt_add in ip_route */
 };
 #define NULLIF  (struct iface *)0
@@ -141,7 +143,7 @@ struct qhdr {
 /* List of link-level receive functions, initialized in config.c */
 struct rfunc {
 	int class;
-	void (*rcvf) __ARGS((struct iface *,struct mbuf *));
+	void (*rcvf)(struct iface *,struct mbuf *);
 };
 extern struct rfunc Rfunc[];
 
@@ -149,18 +151,18 @@ extern char Noipaddr[];
 extern struct mbuf *Hopper;
 
 /* In iface.c: */
-int bitbucket __ARGS((struct iface *ifp,struct mbuf *bp));
-int if_detach __ARGS((struct iface *ifp));
-struct iface *if_lookup __ARGS((char *name));
-char *if_name __ARGS((struct iface *ifp,char *comment));
-void if_tx __ARGS((int dev,void *arg1,void *unused));
-struct iface *ismyaddr __ARGS((int32 addr));
-void network __ARGS((int i,void *v1,void *v2));
-int nu_send __ARGS((struct mbuf *bp,struct iface *ifp,int32 gateway,int tos));
-int nu_output __ARGS((struct iface *,char *,char *,int  ,struct mbuf *));
-int setencap __ARGS((struct iface *ifp,char *mode));
+int bitbucket(struct iface *ifp,struct mbuf *bp);
+int if_detach(struct iface *ifp);
+struct iface *if_lookup(char *name);
+char *if_name(struct iface *ifp,char *comment);
+void if_tx(int dev,void *arg1,void *unused);
+struct iface *ismyaddr(int32 addr);
+void network(int i,void *v1,void *v2);
+int nu_send(struct mbuf *bp,struct iface *ifp,int32 gateway,int tos);
+int nu_output(struct iface *,char *,char *,int   ,struct mbuf *);
+int setencap(struct iface *ifp,char *mode);
 
 /* In config.c: */
-int net_route __ARGS((struct iface *ifp,struct mbuf *bp));
+int net_route(struct iface *ifp,struct mbuf *bp);
 
 #endif  /* _IFACE_H */

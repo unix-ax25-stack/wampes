@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.20 1993/04/11 07:06:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.21 1993/05/17 13:45:14 deyke Exp $ */
 
 #include "global.h"
 
@@ -35,31 +35,29 @@ struct controlblock {
 
 struct cmdtable {
   char *name;                           /* Command name (lower case) */
-  int (*fnc) __ARGS((struct controlblock *cp)); /* Command function */
+  int (*fnc)(struct controlblock *cp);  /* Command function */
 };
 
 static int fkbd = -1;
 static int flisten_net = -1;
 
-static char *getarg __ARGS((char *line, int all));
-static int command_switcher __ARGS((struct controlblock *cp, char *name, struct cmdtable *tableptr));
-static void delete_controlblock __ARGS((struct controlblock *cp));
-static void transport_try_send __ARGS((struct controlblock *cp));
-static void transport_recv_upcall __ARGS((struct transport_cb *tp, int cnt));
-static void transport_send_upcall __ARGS((struct transport_cb *tp, int cnt));
-static void transport_state_upcall __ARGS((struct transport_cb *tp));
-static int ascii_command __ARGS((struct controlblock *cp));
-static int binary_command __ARGS((struct controlblock *cp));
-static int connect_command __ARGS((struct controlblock *cp));
-static int console_command __ARGS((struct controlblock *cp));
-static void command_receive __ARGS((struct controlblock *cp));
-static void accept_connection_net __ARGS((void *p));
+static char *getarg(char *line, int all);
+static int command_switcher(struct controlblock *cp, char *name, struct cmdtable *tableptr);
+static void delete_controlblock(struct controlblock *cp);
+static void transport_try_send(struct controlblock *cp);
+static void transport_recv_upcall(struct transport_cb *tp, int cnt);
+static void transport_send_upcall(struct transport_cb *tp, int cnt);
+static void transport_state_upcall(struct transport_cb *tp);
+static int ascii_command(struct controlblock *cp);
+static int binary_command(struct controlblock *cp);
+static int connect_command(struct controlblock *cp);
+static int console_command(struct controlblock *cp);
+static void command_receive(struct controlblock *cp);
+static void accept_connection_net(void *p);
 
 /*---------------------------------------------------------------------------*/
 
-static char *getarg(line, all)
-char *line;
-int all;
+static char *getarg(char *line, int all)
 {
 
   char *arg;
@@ -85,10 +83,7 @@ int all;
 
 /*---------------------------------------------------------------------------*/
 
-static int command_switcher(cp, name, tableptr)
-struct controlblock *cp;
-char *name;
-struct cmdtable *tableptr;
+static int command_switcher(struct controlblock *cp, char *name, struct cmdtable *tableptr)
 {
   int namelen;
 
@@ -102,8 +97,7 @@ struct cmdtable *tableptr;
 
 /*---------------------------------------------------------------------------*/
 
-static void delete_controlblock(cp)
-struct controlblock *cp;
+static void delete_controlblock(struct controlblock *cp)
 {
   off_read(cp->fd);
   close(cp->fd);
@@ -112,8 +106,7 @@ struct controlblock *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_try_send(cp)
-struct controlblock *cp;
+static void transport_try_send(struct controlblock *cp)
 {
 
   int cnt;
@@ -138,9 +131,7 @@ struct controlblock *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_recv_upcall(tp, cnt)
-struct transport_cb *tp;
-int16 cnt;
+static void transport_recv_upcall(struct transport_cb *tp, int cnt)
 {
 
   char buffer[1024];
@@ -155,9 +146,7 @@ int16 cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_send_upcall(tp, cnt)
-struct transport_cb *tp;
-int16 cnt;
+static void transport_send_upcall(struct transport_cb *tp, int cnt)
 {
   struct controlblock *cp;
 
@@ -167,8 +156,7 @@ int16 cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_state_upcall(tp)
-struct transport_cb *tp;
+static void transport_state_upcall(struct transport_cb *tp)
 {
   delete_controlblock((struct controlblock *) tp->user);
   transport_del(tp);
@@ -176,8 +164,7 @@ struct transport_cb *tp;
 
 /*---------------------------------------------------------------------------*/
 
-static int ascii_command(cp)
-struct controlblock *cp;
+static int ascii_command(struct controlblock *cp)
 {
   cp->binary = 0;
   return 0;
@@ -185,8 +172,7 @@ struct controlblock *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static int binary_command(cp)
-struct controlblock *cp;
+static int binary_command(struct controlblock *cp)
 {
   cp->binary = 1;
   return 0;
@@ -194,8 +180,7 @@ struct controlblock *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static int connect_command(cp)
-struct controlblock *cp;
+static int connect_command(struct controlblock *cp)
 {
   char *protocol, *address;
 
@@ -213,8 +198,7 @@ struct controlblock *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static int console_command(cp)
-struct controlblock *cp;
+static int console_command(struct controlblock *cp)
 {
   char buf[1024];
 
@@ -237,8 +221,7 @@ struct controlblock *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void command_receive(cp)
-struct controlblock *cp;
+static void command_receive(struct controlblock *cp)
 {
 
   static struct cmdtable command_table[] = {
@@ -268,8 +251,7 @@ struct controlblock *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void accept_connection_net(p)
-void *p;
+static void accept_connection_net(void *p)
 {
 
   int addrlen;
@@ -290,10 +272,7 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-int dobye(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+int dobye(int argc, char *argv[], void *p)
 {
 struct iface *ifp;
 
@@ -312,7 +291,7 @@ struct iface *ifp;
 
 /*---------------------------------------------------------------------------*/
 
-void remote_net_initialize()
+void remote_net_initialize(void)
 {
 
   static char *socketnames[] = {

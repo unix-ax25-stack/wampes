@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.13 1993/02/23 21:34:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.14 1993/05/17 13:44:57 deyke Exp $ */
 
 /* ICMP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -26,14 +26,14 @@
 /* Hash table list heads */
 struct ping *ping[PMOD];
 
-static int doicmpec __ARGS((int argc, char *argv[],void *p));
-static int doicmpstat __ARGS((int argc, char *argv[],void *p));
-static int doicmptr __ARGS((int argc, char *argv[],void *p));
-static int pingem __ARGS((int32 target,int seq,int id,int len));
-static void ptimeout __ARGS((void *p));
-static int16 hash_ping __ARGS((int32 dest));
-static struct ping *add_ping __ARGS((int32 dest));
-static void del_ping __ARGS((struct ping *pp));
+static int doicmpec(int argc, char *argv[],void *p);
+static int doicmpstat(int argc, char *argv[],void *p);
+static int doicmptr(int argc, char *argv[],void *p);
+static int pingem(int32 target,int seq,int id,int len);
+static void ptimeout(void *p);
+static uint16 hash_ping(int32 dest);
+static struct ping *add_ping(int32 dest);
+static void del_ping(struct ping *pp);
 
 static struct cmds Icmpcmds[] = {
 	"echo",         doicmpec,       0, 0, NULLCHAR,
@@ -102,9 +102,9 @@ void *p;
 	int32 dest;
 	struct ping *pp1;
 	register struct ping *pp;
-	int16 hval;
+	uint16 hval;
 	int i;
-	int16 len;
+	uint16 len;
 
 	if(argc < 2){
 		printf("Host                Sent    Rcvd   %%   Srtt   Mdev  Length  Interval\n");
@@ -161,7 +161,7 @@ void *p;
 		pp->target = dest;
 		pp->len = len;
 		start_timer(&pp->timer);
-		pingem(dest,(int16)pp->sent++,REPEAT,len);
+		pingem(dest,(uint16)pp->sent++,REPEAT,len);
 	} else
 		pingem(dest,0,ONESHOT,len);
 
@@ -177,7 +177,7 @@ void *p;
 
 	/* Send another ping */
 	pp = (struct ping *)p;
-	pingem(pp->target,(int16)pp->sent++,REPEAT,pp->len);
+	pingem(pp->target,(uint16)pp->sent++,REPEAT,pp->len);
 	start_timer(&pp->timer);
 }
 void
@@ -188,7 +188,7 @@ struct icmp *icmp;
 struct mbuf *bp;
 {
 	register struct ping *pp;
-	int16 hval;
+	uint16 hval;
 	int32 rtt,abserr;
 	struct timeval tv,timestamp;
 	struct timezone tz;
@@ -238,9 +238,9 @@ struct mbuf *bp;
 static int
 pingem(target,seq,id,len)
 int32 target;   /* Site to be pinged */
-int16 seq;      /* ICMP Echo Request sequence number */
-int16 id;       /* ICMP Echo Request ID */
-int16 len;      /* Length of data field */
+uint16 seq;     /* ICMP Echo Request sequence number */
+uint16 id;      /* ICMP Echo Request ID */
+uint16 len;     /* Length of data field */
 {
 	struct mbuf *data;
 	struct mbuf *bp;
@@ -272,11 +272,11 @@ int16 len;      /* Length of data field */
 	}
 	return ip_send(INADDR_ANY,target,ICMP_PTCL,0,0,bp,len,0,0);
 }
-static int16
+static uint16
 hash_ping(dest)
 int32 dest;
 {
-	int16 hval;
+	uint16 hval;
 
 	hval = (hiword(dest) ^ loword(dest)) % PMOD;
 	return hval;
@@ -288,7 +288,7 @@ add_ping(dest)
 int32 dest;
 {
 	struct ping *pp;
-	int16 hval;
+	uint16 hval;
 
 	pp = (struct ping *)calloc(1,sizeof(struct ping));
 	if(pp == NULLPING)
@@ -307,7 +307,7 @@ static void
 del_ping(pp)
 struct ping *pp;
 {
-	int16 hval;
+	uint16 hval;
 
 	stop_timer(&pp->timer);
 

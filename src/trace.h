@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.h,v 1.9 1993/01/29 06:48:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.h,v 1.10 1993/05/17 13:45:23 deyke Exp $ */
 
 #ifndef _TRACE_H
 #define _TRACE_H
@@ -27,62 +27,62 @@ extern struct tracecmd Tracecmd[];      /* Defined in trace.c */
  * Entries are placed in this table by conditional compilation in main.c.
  */
 struct trace {
-	int (*addrtest) __ARGS((struct iface *iface,struct mbuf *bp));
-	void (*tracef) __ARGS((FILE *,struct mbuf **,int));
+	int (*addrtest)(struct iface *iface,struct mbuf *bp);
+	void (*tracef)(FILE *,struct mbuf **,int);
 };
 
 extern struct trace Tracef[];
 
 /* In trace.c: */
-void dump __ARGS((struct iface *ifp,int direction,struct mbuf *bp));
-void raw_dump __ARGS((struct iface *ifp,int direction, struct mbuf *bp));
-void trace_log __ARGS((struct iface *ifp,char *fmt, ...));
-void shuttrace __ARGS ((void));
-int tprintf __ARGS((struct iface *ifp,char *fmt,...));
-void hex_dump __ARGS((FILE *fp,struct mbuf **bpp));
+void dump(struct iface *ifp,int direction,struct mbuf *bp);
+void raw_dump(struct iface *ifp,int direction, struct mbuf *bp);
+void trace_log(struct iface *ifp,char *fmt, ...);
+void shuttrace(void);
+int tprintf(struct iface *ifp,char *fmt,...);
+void hex_dump(FILE *fp,struct mbuf **bpp);
 
 /* In arcdump.c: */
-void arc_dump __ARGS((FILE *fp,struct mbuf **bpp,int check));
-int arc_forus __ARGS((struct iface *iface,struct mbuf *bp));
+void arc_dump(FILE *fp,struct mbuf **bpp,int check);
+int arc_forus(struct iface *iface,struct mbuf *bp);
 
 /* In arpdump.c: */
-void arp_dump __ARGS((FILE *fp,struct mbuf **bpp));
+void arp_dump(FILE *fp,struct mbuf **bpp);
 
 /* In ax25dump.c: */
-void ax25_dump __ARGS((FILE *fp,struct mbuf **bpp,int check));
-int ax_forus __ARGS((struct iface *iface,struct mbuf *bp));
+void ax25_dump(FILE *fp,struct mbuf **bpp,int check);
+int ax_forus(struct iface *iface,struct mbuf *bp);
 
 /* In enetdump.c: */
-void ether_dump __ARGS((FILE *fp,struct mbuf **bpp,int check));
-int ether_forus __ARGS((struct iface *iface,struct mbuf *bp));
+void ether_dump(FILE *fp,struct mbuf **bpp,int check);
+int ether_forus(struct iface *iface,struct mbuf *bp);
 
 /* In icmpdump.c: */
-void icmp_dump __ARGS((FILE *fp,struct mbuf **bpp,int32 source,int32 dest,int check));
+void icmp_dump(FILE *fp,struct mbuf **bpp,int32 source,int32 dest,int check);
 
 /* In ipdump.c: */
-void ip_dump __ARGS((FILE *fp,struct mbuf **bpp,int check));
+void ip_dump(FILE *fp,struct mbuf **bpp,int check);
 
 /* In kissdump.c: */
-void ki_dump __ARGS((FILE *fp,struct mbuf **bpp,int check));
-int ki_forus __ARGS((struct iface *iface,struct mbuf *bp));
+void ki_dump(FILE *fp,struct mbuf **bpp,int check);
+int ki_forus(struct iface *iface,struct mbuf *bp);
 
 /* In nrdump.c: */
-void netrom_dump __ARGS((FILE *fp,struct mbuf **bpp,int check));
+void netrom_dump(FILE *fp,struct mbuf **bpp,int check);
 
 /* In pppdump.c: */
-void ppp_dump __ARGS((FILE *fp,struct mbuf **bpp,int check));
+void ppp_dump(FILE *fp,struct mbuf **bpp,int check);
 
 /* In ripdump.c: */
-void rip_dump __ARGS((FILE *fp,struct mbuf **bpp));
+void rip_dump(FILE *fp,struct mbuf **bpp);
 
 /* In slcompdump.c: */
-void sl_dump __ARGS((FILE *fp,struct mbuf **bpp,int check));
-void vjcomp_dump __ARGS((FILE *fp,struct mbuf **bpp,int unused));
+void sl_dump(FILE *fp,struct mbuf **bpp,int check);
+void vjcomp_dump(FILE *fp,struct mbuf **bpp,int unused);
 
 /* In tcpdump.c: */
-void tcp_dump __ARGS((FILE *fp,struct mbuf **bpp,int32 source,int32 dest,int check));
+void tcp_dump(FILE *fp,struct mbuf **bpp,int32 source,int32 dest,int check);
 
 /* In udpdump.c: */
-void udp_dump __ARGS((FILE *fp,struct mbuf **bpp,int32 source,int32 dest,int check));
+void udp_dump(FILE *fp,struct mbuf **bpp,int32 source,int32 dest,int check);
 
 #endif  /* _TRACE_H */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.h,v 1.8 1992/05/28 13:50:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.h,v 1.9 1993/05/17 13:45:12 deyke Exp $ */
 
 #ifndef _NETUSER_H
 #define _NETUSER_H
@@ -37,7 +37,7 @@ extern char Inet_eol[];
 /* Socket structure */
 struct socket {
 	int32 address;          /* IP address */
-	int16 port;             /* port number */
+	uint16 port;            /* port number */
 };
 #define NULLSOCK        (struct socket *)0
 
@@ -47,21 +47,21 @@ struct connection {
 	struct socket remote;
 };
 /* In domain.c: */
-int32 resolve __ARGS((char *name));
-int32 resolve_mx __ARGS((char *name));
-char *resolve_a __ARGS((int32 ip_address, int shorten));
+int32 resolve(char *name);
+int32 resolve_mx(char *name);
+char *resolve_a(int32 ip_address, int shorten);
 
 /* In netuser.c: */
-int32 aton __ARGS((char *s));
-char *inet_ntoa __ARGS((int32 a));
-char *pinet __ARGS((struct socket *s));
+int32 aton(char *s);
+char *inet_ntoa(int32 a);
+char *pinet(struct socket *s);
 
 /* In services.c: */
-char *tcp_port_name __ARGS((int port));
-char *udp_port_name __ARGS((int port));
-int tcp_port_number __ARGS((char *name));
-int udp_port_number __ARGS((char *name));
-char *pinet_tcp __ARGS((struct socket *s));
-char *pinet_udp __ARGS((struct socket *s));
+char *tcp_port_name(int port);
+char *udp_port_name(int port);
+int tcp_port_number(char *name);
+int udp_port_number(char *name);
+char *pinet_tcp(struct socket *s);
+char *pinet_udp(struct socket *s);
 
 #endif  /* _NETUSER_H */

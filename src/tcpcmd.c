@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.10 1993/01/29 06:48:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.11 1993/05/17 13:45:19 deyke Exp $ */
 
 /* TCP control and status routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -15,18 +15,18 @@
 #include "socket.h"
 #include "session.h"
 
-static int doirtt __ARGS((int argc,char *argv[],void *p));
-static int domss __ARGS((int argc,char *argv[],void *p));
-static int dortt __ARGS((int argc,char *argv[],void *p));
-static int dotcpkick __ARGS((int argc,char *argv[],void *p));
-static int dotcpreset __ARGS((int argc,char *argv[],void *p));
-static int dotcpstat __ARGS((int argc,char *argv[],void *p));
-static int dotcptr __ARGS((int argc,char *argv[],void *p));
-static int dowindow __ARGS((int argc,char *argv[],void *p));
-static int dosyndata __ARGS((int argc,char *argv[],void *p));
-static int tstat __ARGS((void));
-static int keychar __ARGS((int c));
-static void tcprepstat __ARGS((int interval,void *p1,void *p2));
+static int doirtt(int argc,char *argv[],void *p);
+static int domss(int argc,char *argv[],void *p);
+static int dortt(int argc,char *argv[],void *p);
+static int dotcpkick(int argc,char *argv[],void *p);
+static int dotcpreset(int argc,char *argv[],void *p);
+static int dotcpstat(int argc,char *argv[],void *p);
+static int dotcptr(int argc,char *argv[],void *p);
+static int dowindow(int argc,char *argv[],void *p);
+static int dosyndata(int argc,char *argv[],void *p);
+static int tstat(void);
+static int keychar(int c);
+static void tcprepstat(int interval,void *p1,void *p2);
 
 /* TCP subcommand table */
 static struct cmds Tcpcmds[] = {

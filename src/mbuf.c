@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.11 1993/01/29 06:48:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.12 1993/05/17 13:45:10 deyke Exp $ */
 
 /* mbuf (message buffer) primitives
  * Copyright 1991 Phil Karn, KA9Q
@@ -17,7 +17,7 @@ long Pushalloc;                 /* Calls to pushalloc() that call malloc */
  */
 struct mbuf *
 alloc_mbuf(size)
-register int16 size;
+register uint16 size;
 {
 	register struct mbuf *bp;
 
@@ -34,7 +34,7 @@ register int16 size;
 /* Allocate mbuf, waiting if memory is unavailable */
 struct mbuf *
 ambufw(size)
-int16 size;
+uint16 size;
 {
 	register struct mbuf *bp;
 
@@ -103,11 +103,11 @@ struct mbuf **q;
 }
 
 /* Count up the total number of bytes in a packet */
-int16
+uint16
 len_p(bp)
 register struct mbuf *bp;
 {
-	register int16 cnt = 0;
+	register uint16 cnt = 0;
 
 	while(bp != NULLBUF){
 		cnt += bp->cnt;
@@ -116,11 +116,11 @@ register struct mbuf *bp;
 	return cnt;
 }
 /* Count up the number of packets in a queue */
-int16
+uint16
 len_q(bp)
 register struct mbuf *bp;
 {
-	register int16 cnt;
+	register uint16 cnt;
 
 	for(cnt=0;bp != NULLBUF;cnt++,bp = bp->anext)
 		;
@@ -130,9 +130,9 @@ register struct mbuf *bp;
 void
 trim_mbuf(bpp,length)
 struct mbuf **bpp;
-int16 length;
+uint16 length;
 {
-	register int16 tot = 0;
+	register uint16 tot = 0;
 	register struct mbuf *bp;
 
 	if(bpp == NULLBUFP || *bpp == NULLBUF)
@@ -168,15 +168,15 @@ int16 length;
  * passed back through the first argument, and the return value is the
  * number of bytes actually duplicated.
  */
-int16
+uint16
 dup_p(hp,bp,offset,cnt)
 struct mbuf **hp;
 register struct mbuf *bp;
-register int16 offset;
-register int16 cnt;
+register uint16 offset;
+register uint16 cnt;
 {
 	register struct mbuf *cp;
-	int16 tot;
+	uint16 tot;
 
 	if(cnt == 0 || bp == NULLBUF || hp == NULLBUFP){
 		if(hp != NULLBUFP)
@@ -225,11 +225,11 @@ register int16 cnt;
 struct mbuf *
 copy_p(bp,cnt)
 register struct mbuf *bp;
-register int16 cnt;
+register uint16 cnt;
 {
 	register struct mbuf *cp;
 	register char *wp;
-	register int16 n;
+	register uint16 n;
 
 	if(bp == NULLBUF || cnt == 0 || (cp = alloc_mbuf(cnt)) == NULLBUF)
 		return NULLBUF;
@@ -247,14 +247,14 @@ register int16 cnt;
 /* Copy and delete "cnt" bytes from beginning of packet. Return number of
  * bytes actually pulled off
  */
-int16
+uint16
 pullup(bph,buf,cnt)
 struct mbuf **bph;
 char *buf;
-int16 cnt;
+uint16 cnt;
 {
 	register struct mbuf *bp;
-	int16 n,tot;
+	uint16 n,tot;
 
 	tot = 0;
 	if(bph == NULLBUFP)
@@ -291,15 +291,15 @@ int16 cnt;
  * 'offset' bytes from start of mbuf and copying no more than 'len'
  * bytes. Return actual number of bytes copied
  */
-int16
+uint16
 extract(bp,offset,buf,len)
 struct mbuf *bp;
-int16 offset;
+uint16 offset;
 char *buf;
-int16 len;
+uint16 len;
 {
-	int16 copied = 0;
-	int16 n;
+	uint16 copied = 0;
+	uint16 n;
 
 	/* Skip over offset if greater than first mbuf(s) */
 	while(bp != NULLBUF && offset >= bp->cnt){
@@ -347,7 +347,7 @@ struct mbuf *bp;
 struct mbuf *
 pushdown(bp,size)
 register struct mbuf *bp;
-int16 size;
+uint16 size;
 {
 	register struct mbuf *nbp;
 
@@ -410,7 +410,7 @@ register struct mbuf **q;
 struct mbuf *
 qdata(data,cnt)
 char *data;
-int16 cnt;
+uint16 cnt;
 {
 	register struct mbuf *bp;
 
@@ -420,13 +420,13 @@ int16 cnt;
 	return bp;
 }
 /* Copy mbuf data into user buffer */
-int16
+uint16
 dqdata(bp,buf,cnt)
 struct mbuf *bp;
 char *buf;
 unsigned cnt;
 {
-	int16 tot;
+	uint16 tot;
 	unsigned n;
 	struct mbuf *bp1;
 

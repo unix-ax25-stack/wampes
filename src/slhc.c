@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.c,v 1.3 1993/02/23 21:34:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slhc.c,v 1.4 1993/05/17 13:45:16 deyke Exp $ */
 
 /*
  * Routines to compress and uncompress tcp packets (for transmission
@@ -50,8 +50,8 @@
 #include "tcp.h"
 #include "slhc.h"
 
-static char *encode __ARGS((char *cp,int   n));
-static long decode __ARGS((struct mbuf **bpp));
+static char *encode(char *cp,int    n);
+static long decode(struct mbuf **bpp);
 
 /* Initialize compression data structure
  *      slots must be in range 0 to 255 (zero meaning no compression)
@@ -61,7 +61,7 @@ slhc_init(rslots,tslots)
 int rslots;
 int tslots;
 {
-	register int16 i;
+	register uint16 i;
 	register struct cstate *ts;
 	struct slcompress *comp;
 
@@ -114,7 +114,7 @@ struct slcompress *comp;
 static char *
 encode(cp,n)
 register char *cp;
-int16 n;
+uint16 n;
 {
 	if(n >= 256 || n == 0){
 		*cp++ = 0;
@@ -149,10 +149,10 @@ int compress_cid;
 	register struct cstate *ocs = &(comp->tstate[comp->xmit_oldest]);
 	register struct cstate *lcs = ocs;
 	register struct cstate *cs = lcs->next;
-	register int16 hlen;
+	register uint16 hlen;
 	register struct tcp *oth;
 	register unsigned long deltaS, deltaA;
-	register int16 changes = 0;
+	register uint16 changes = 0;
 	char new_seq[16];
 	register char *cp = new_seq;
 	struct mbuf *bp;
@@ -364,7 +364,7 @@ found:
 		cp = bp->data;
 		*cp++ = changes;
 	}
-	cp = put16(cp,(int16)deltaA);   /* Write TCP checksum */
+	cp = put16(cp,(uint16)deltaA);  /* Write TCP checksum */
 	memcpy(cp,new_seq,deltaS);      /* Write list of deltas */
 	comp->sls_o_compressed++;
 	return SL_TYPE_COMPRESSED_TCP;
@@ -433,7 +433,7 @@ struct mbuf **bpp;
 	switch(changes & SPECIALS_MASK){
 	case SPECIAL_I:         /* Echoed terminal traffic */
 		{
-		register int16 i;
+		register uint16 i;
 		i = cs->cs_ip.length;
 		i -= (cs->cs_ip.optlen + IPLEN + TCPLEN);
 		thp->ack += i;
@@ -501,8 +501,8 @@ struct mbuf **bpp;
 	register struct cstate *cs;
 	struct ip iph;
 	struct tcp th;
-	int16 len;
-	int16 hdrlen;
+	uint16 len;
+	uint16 hdrlen;
 	int slot;
 
 	/* Sneak a peek at the IP header's IHL field to find its length */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.h,v 1.5 1992/08/02 07:33:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.h,v 1.6 1993/05/17 13:44:54 deyke Exp $ */
 
 #ifndef _FTP_H
 #define _FTP_H
@@ -45,12 +45,12 @@ struct ftp {
 #define NULLFTP (struct ftp *)0
 
 /* In ftp.c: */
-void ftpdr __ARGS((struct tcb *tcb, int cnt));
-void ftpdt __ARGS((struct tcb *tcb, int cnt));
-struct ftp *ftp_create __ARGS((unsigned bufsize));
-void ftp_delete __ARGS((struct ftp *ftp));
+void ftpdr(struct tcb *tcb, int cnt);
+void ftpdt(struct tcb *tcb, int cnt);
+struct ftp *ftp_create(unsigned bufsize);
+void ftp_delete(struct ftp *ftp);
 
 /* In ftpcli.c: */
-void ftpccr __ARGS((struct tcb *tcb, int cnt));
+void ftpccr(struct tcb *tcb, int cnt);
 
 #endif  /* _FTP_H */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.17 1993/04/02 14:26:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.18 1993/05/17 13:44:43 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -34,7 +34,7 @@ static unsigned long Heapsize;
 static unsigned long Inuse;
 static unsigned long Morecores;
 
-static void giveup __ARGS((const char *mesg));
+static void giveup(const char *mesg);
 
 /*---------------------------------------------------------------------------*/
 

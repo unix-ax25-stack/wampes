@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.10 1993/03/30 17:23:33 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.11 1993/05/17 13:48:34 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -15,13 +15,6 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <termios.h>
 #include <unistd.h>
 
-#ifdef __STDC__
-#define __ARGS(x)       x
-#else
-#define __ARGS(x)       ()
-#define const
-#endif
-
 #ifdef __hpux
 #define SEL_ARG(x) ((int *) (x))
 #else
@@ -35,12 +28,11 @@ extern int optind;
 
 static struct termios prev_termios;
 
-static void stop __ARGS((char *arg));
+static void stop(char *arg);
 
 /*---------------------------------------------------------------------------*/
 
-static void stop(arg)
-char *arg;
+static void stop(char *arg)
 {
   if (*arg) perror(arg);
   tcsetattr(0, TCSANOW, &prev_termios);
@@ -49,9 +41,7 @@ char *arg;
 
 /*---------------------------------------------------------------------------*/
 
-int main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
 
 #if 1

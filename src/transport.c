@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.12 1993/02/23 21:34:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.13 1993/05/17 13:45:23 deyke Exp $ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -16,25 +16,23 @@
 
 static const char *delim = " \t\r\n";
 
-static int convert_eol __ARGS((struct mbuf **bpp, int mode, int *last_chr));
-static void transport_recv_upcall_ax25 __ARGS((struct ax25_cb *cp, int cnt));
-static void transport_recv_upcall_netrom __ARGS((struct circuit *cp, int cnt));
-static void transport_recv_upcall_tcp __ARGS((struct tcb *cp, int cnt));
-static void transport_send_upcall_ax25 __ARGS((struct ax25_cb *cp, int cnt));
-static void transport_send_upcall_netrom __ARGS((struct circuit *cp, int cnt));
-static void transport_send_upcall_tcp __ARGS((struct tcb *cp, int cnt));
-static void transport_state_upcall_ax25 __ARGS((struct ax25_cb *cp, int oldstate, int newstate));
-static void transport_state_upcall_netrom __ARGS((struct circuit *cp, int oldstate, int newstate));
-static void transport_state_upcall_tcp __ARGS((struct tcb *cp, int oldstate, int newstate));
-static struct ax25_cb *transport_open_ax25 __ARGS((const char *address, struct transport_cb *tp));
-static struct circuit *transport_open_netrom __ARGS((const char *address, struct transport_cb *tp));
-static struct tcb *transport_open_tcp __ARGS((const char *address, struct transport_cb *tp));
+static int convert_eol(struct mbuf **bpp, int mode, int *last_chr);
+static void transport_recv_upcall_ax25(struct ax25_cb *cp, int cnt);
+static void transport_recv_upcall_netrom(struct circuit *cp, int cnt);
+static void transport_recv_upcall_tcp(struct tcb *cp, int cnt);
+static void transport_send_upcall_ax25(struct ax25_cb *cp, int cnt);
+static void transport_send_upcall_netrom(struct circuit *cp, int cnt);
+static void transport_send_upcall_tcp(struct tcb *cp, int cnt);
+static void transport_state_upcall_ax25(struct ax25_cb *cp, int oldstate, int newstate);
+static void transport_state_upcall_netrom(struct circuit *cp, int oldstate, int newstate);
+static void transport_state_upcall_tcp(struct tcb *cp, int oldstate, int newstate);
+static struct ax25_cb *transport_open_ax25(const char *address, struct transport_cb *tp);
+static struct circuit *transport_open_netrom(const char *address, struct transport_cb *tp);
+static struct tcb *transport_open_tcp(const char *address, struct transport_cb *tp);
 
 /*---------------------------------------------------------------------------*/
 
-static int convert_eol(bpp, mode, last_chr)
-struct mbuf **bpp;
-int mode, *last_chr;
+static int convert_eol(struct mbuf **bpp, int mode, int *last_chr)
 {
 
   char buf[10240], *p;
@@ -80,9 +78,7 @@ int mode, *last_chr;
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_recv_upcall_ax25(cp, cnt)
-struct ax25_cb *cp;
-int cnt;
+static void transport_recv_upcall_ax25(struct ax25_cb *cp, int cnt)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->r_upcall) (*tp->r_upcall)(tp, cnt);
@@ -90,9 +86,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_recv_upcall_netrom(cp, cnt)
-struct circuit *cp;
-int cnt;
+static void transport_recv_upcall_netrom(struct circuit *cp, int cnt)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->r_upcall) (*tp->r_upcall)(tp, cnt);
@@ -100,9 +94,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_recv_upcall_tcp(cp, cnt)
-struct tcb *cp;
-int cnt;
+static void transport_recv_upcall_tcp(struct tcb *cp, int cnt)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->r_upcall) (*tp->r_upcall)(tp, cnt);
@@ -110,9 +102,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_send_upcall_ax25(cp, cnt)
-struct ax25_cb *cp;
-int cnt;
+static void transport_send_upcall_ax25(struct ax25_cb *cp, int cnt)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->t_upcall) (*tp->t_upcall)(tp, cnt);
@@ -120,9 +110,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_send_upcall_netrom(cp, cnt)
-struct circuit *cp;
-int cnt;
+static void transport_send_upcall_netrom(struct circuit *cp, int cnt)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->t_upcall) (*tp->t_upcall)(tp, cnt);
@@ -130,9 +118,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_send_upcall_tcp(cp, cnt)
-struct tcb *cp;
-int cnt;
+static void transport_send_upcall_tcp(struct tcb *cp, int cnt)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->t_upcall) (*tp->t_upcall)(tp, cnt);
@@ -140,9 +126,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_state_upcall_ax25(cp, oldstate, newstate)
-struct ax25_cb *cp;
-int oldstate, newstate;
+static void transport_state_upcall_ax25(struct ax25_cb *cp, int oldstate, int newstate)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->s_upcall && newstate == LAPB_DISCONNECTED) (*tp->s_upcall)(tp);
@@ -150,9 +134,7 @@ int oldstate, newstate;
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_state_upcall_netrom(cp, oldstate, newstate)
-struct circuit *cp;
-int oldstate, newstate;
+static void transport_state_upcall_netrom(struct circuit *cp, int oldstate, int newstate)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->s_upcall && newstate == NR4STDISC) (*tp->s_upcall)(tp);
@@ -160,9 +142,7 @@ int oldstate, newstate;
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_state_upcall_tcp(cp, oldstate, newstate)
-struct tcb *cp;
-int oldstate, newstate;
+static void transport_state_upcall_tcp(struct tcb *cp, int oldstate, int newstate)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   switch (newstate) {
@@ -177,9 +157,7 @@ int oldstate, newstate;
 
 /*---------------------------------------------------------------------------*/
 
-static struct ax25_cb *transport_open_ax25(address, tp)
-const char *address;
-struct transport_cb *tp;
+static struct ax25_cb *transport_open_ax25(const char *address, struct transport_cb *tp)
 {
 
   char *argv[128];
@@ -197,9 +175,7 @@ struct transport_cb *tp;
 
 /*---------------------------------------------------------------------------*/
 
-static struct circuit *transport_open_netrom(address, tp)
-const char *address;
-struct transport_cb *tp;
+static struct circuit *transport_open_netrom(const char *address, struct transport_cb *tp)
 {
 
   char *ascii_node, *ascii_user;
@@ -216,9 +192,7 @@ struct transport_cb *tp;
 
 /*---------------------------------------------------------------------------*/
 
-static struct tcb *transport_open_tcp(address, tp)
-const char *address;
-struct transport_cb *tp;
+static struct tcb *transport_open_tcp(const char *address, struct transport_cb *tp)
 {
 
   char *host, *port, tmp[1024];
@@ -235,13 +209,7 @@ struct transport_cb *tp;
 
 /*---------------------------------------------------------------------------*/
 
-struct transport_cb *transport_open(protocol, address, r_upcall, t_upcall, s_upcall, user)
-const char *protocol;
-const char *address;
-void (*r_upcall) __ARGS((struct transport_cb *tp, int cnt));
-void (*t_upcall) __ARGS((struct transport_cb *tp, int cnt));
-void (*s_upcall) __ARGS((struct transport_cb *tp));
-void *user;
+struct transport_cb *transport_open(const char *protocol, const char *address, void (*r_upcall)(struct transport_cb *tp, int cnt), void (*t_upcall)(struct transport_cb *tp, int cnt), void (*s_upcall)(struct transport_cb *tp), void *user)
 {
   struct transport_cb *tp;
 
@@ -271,10 +239,7 @@ void *user;
 
 /*---------------------------------------------------------------------------*/
 
-int transport_recv(tp, bpp, cnt)
-struct transport_cb *tp;
-struct mbuf **bpp;
-int cnt;
+int transport_recv(struct transport_cb *tp, struct mbuf **bpp, int cnt)
 {
   int result;
 
@@ -299,9 +264,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-int transport_send(tp, bp)
-struct transport_cb *tp;
-struct mbuf *bp;
+int transport_send(struct transport_cb *tp, struct mbuf *bp)
 {
   if dur_timer(&tp->timer) start_timer(&tp->timer);
   if (tp->send_mode != EOL_NONE)
@@ -319,8 +282,7 @@ struct mbuf *bp;
 
 /*---------------------------------------------------------------------------*/
 
-int transport_send_space(tp)
-struct transport_cb *tp;
+int transport_send_space(struct transport_cb *tp)
 {
   switch (tp->type) {
   case TP_AX25:
@@ -335,9 +297,7 @@ struct transport_cb *tp;
 
 /*---------------------------------------------------------------------------*/
 
-void transport_set_timeout(tp, timeout)
-struct transport_cb *tp;
-int timeout;
+void transport_set_timeout(struct transport_cb *tp, int timeout)
 {
   set_timer(&tp->timer, timeout * 1000L);
   start_timer(&tp->timer);
@@ -345,8 +305,7 @@ int timeout;
 
 /*---------------------------------------------------------------------------*/
 
-int transport_close(tp)
-struct transport_cb *tp;
+int transport_close(struct transport_cb *tp)
 {
   switch (tp->type) {
   case TP_AX25:
@@ -361,8 +320,7 @@ struct transport_cb *tp;
 
 /*---------------------------------------------------------------------------*/
 
-int transport_del(tp)
-struct transport_cb *tp;
+int transport_del(struct transport_cb *tp)
 {
   switch (tp->type) {
   case TP_AX25:

@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.21 1993/04/11 07:07:25 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.22 1993/05/17 13:47:18 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -18,13 +18,6 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <sys/time.h>
 #include <termios.h>
 #include <unistd.h>
-
-#ifdef __STDC__
-#define __ARGS(x)       x
-#else
-#define __ARGS(x)       ()
-#define const
-#endif
 
 #ifdef __hpux
 #define SEL_ARG(x) ((int *) (x))
@@ -48,15 +41,15 @@ static struct mbuf *sock_queue;
 static struct mbuf *term_queue;
 static struct termios prev_termios;
 
-static void open_terminal __ARGS((void));
-static void close_terminal __ARGS((void));
-static void terminate __ARGS((void));
-static void recvq __ARGS((int fd, struct mbuf **qp));
-static void sendq __ARGS((int fd, struct mbuf **qp));
+static void open_terminal(void);
+static void close_terminal(void);
+static void terminate(void);
+static void recvq(int fd, struct mbuf **qp);
+static void sendq(int fd, struct mbuf **qp);
 
 /*---------------------------------------------------------------------------*/
 
-static void open_terminal()
+static void open_terminal(void)
 {
   if (!Ansiterminal) {
     fputs("\033Z", stdout);                     /* display fncts off       */
@@ -79,7 +72,7 @@ static void open_terminal()
 
 /*---------------------------------------------------------------------------*/
 
-static void close_terminal()
+static void close_terminal(void)
 {
   if (!Ansiterminal) {
     fputs("\033&s0A", stdout);                  /* disable xmitfnctn */
@@ -90,7 +83,7 @@ static void close_terminal()
 
 /*---------------------------------------------------------------------------*/
 
-static void terminate()
+static void terminate(void)
 {
   close(fdsock);
   fcntl(fdout, F_SETFL, fcntl(fdout, F_GETFL, 0) & ~O_NONBLOCK);
@@ -103,9 +96,7 @@ static void terminate()
 
 /*---------------------------------------------------------------------------*/
 
-static void recvq(fd, qp)
-int fd;
-struct mbuf **qp;
+static void recvq(int fd, struct mbuf **qp)
 {
 
   char buf[1024];
@@ -129,9 +120,7 @@ struct mbuf **qp;
 
 /*---------------------------------------------------------------------------*/
 
-static void sendq(fd, qp)
-int fd;
-struct mbuf **qp;
+static void sendq(int fd, struct mbuf **qp)
 {
 
   int n;
@@ -150,9 +139,7 @@ struct mbuf **qp;
 
 /*---------------------------------------------------------------------------*/
 
-int main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
 
   char *ap;

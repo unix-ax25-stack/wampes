@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.9 1993/02/23 21:34:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.10 1993/05/17 13:44:47 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -8,15 +8,13 @@
 
 int Axserver_enabled;
 
-static void axserv_recv_upcall __ARGS((struct ax25_cb *axp, int cnt));
-static void axserv_send_upcall __ARGS((struct ax25_cb *axp, int cnt));
-static void axserv_state_upcall __ARGS((struct ax25_cb *axp, int oldstate, int newstate));
+static void axserv_recv_upcall(struct ax25_cb *axp, int cnt);
+static void axserv_send_upcall(struct ax25_cb *axp, int cnt);
+static void axserv_state_upcall(struct ax25_cb *axp, int oldstate, int newstate);
 
 /*---------------------------------------------------------------------------*/
 
-static void axserv_recv_upcall(axp, cnt)
-struct ax25_cb *axp;
-int cnt;
+static void axserv_recv_upcall(struct ax25_cb *axp, int cnt)
 {
   struct mbuf *bp;
 
@@ -26,9 +24,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void axserv_send_upcall(axp, cnt)
-struct ax25_cb *axp;
-int cnt;
+static void axserv_send_upcall(struct ax25_cb *axp, int cnt)
 {
   struct mbuf *bp;
 
@@ -38,9 +34,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-static void axserv_state_upcall(axp, oldstate, newstate)
-struct ax25_cb *axp;
-int oldstate, newstate;
+static void axserv_state_upcall(struct ax25_cb *axp, int oldstate, int newstate)
 {
   if (newstate == LAPB_DISCONNECTED) {
     login_close((struct login_cb *) axp->user);
@@ -50,9 +44,7 @@ int oldstate, newstate;
 
 /*---------------------------------------------------------------------------*/
 
-void axserv_open(axp, cnt)
-struct ax25_cb *axp;
-int cnt;
+void axserv_open(struct ax25_cb *axp, int cnt)
 {
   char callsign[AXBUF];
 
@@ -71,10 +63,7 @@ int cnt;
 
 /*---------------------------------------------------------------------------*/
 
-int ax25start(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+int ax25start(int argc, char *argv[], void *p)
 {
   Axserver_enabled = 1;
   return 0;
@@ -82,10 +71,7 @@ void *p;
 
 /*---------------------------------------------------------------------------*/
 
-int ax250(argc, argv, p)
-int argc;
-char *argv[];
-void *p;
+int ax250(int argc, char *argv[], void *p)
 {
   Axserver_enabled = 0;
   return 0;

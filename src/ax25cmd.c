@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.2 1993/02/23 21:34:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.3 1993/05/17 13:44:45 deyke Exp $ */
 
 /* AX25 control commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -20,27 +20,27 @@
 /* #include "nr4.h" */
 #include "commands.h"
 
-static int doaxkick __ARGS((int argc,char *argv[],void *p));
-static int doaxreset __ARGS((int argc,char *argv[],void *p));
-static int doaxroute __ARGS((int argc,char *argv[],void *p));
-static int doaxstat __ARGS((int argc,char *argv[],void *p));
-static int doaxwindow __ARGS((int argc,char *argv[],void *p));
-static int doblimit __ARGS((int argc,char *argv[],void *p));
-static int dodigipeat __ARGS((int argc,char *argv[],void *p));
-static int domaxframe __ARGS((int argc,char *argv[],void *p));
-static int domycall __ARGS((int argc,char *argv[],void *p));
-static int don2 __ARGS((int argc,char *argv[],void *p));
-static int dopaclen __ARGS((int argc,char *argv[],void *p));
-static int dopthresh __ARGS((int argc,char *argv[],void *p));
-static int dot1 __ARGS((int argc,char *argv[],void *p));
-static int dot3 __ARGS((int argc,char *argv[],void *p));
-static int dot4 __ARGS((int argc,char *argv[],void *p));
-static int doversion __ARGS((int argc,char *argv[],void *p));
-static int dorouteadd __ARGS((int argc,char *argv[],void *p));
-static void doroutelistentry __ARGS((struct ax_route *rp));
-static int doroutelist __ARGS((int argc,char *argv[],void *p));
-static int doroutestat __ARGS((int argc,char *argv[],void *p));
-static int dojumpstart __ARGS((int argc,char *argv[],void *p));
+static int doaxkick(int argc,char *argv[],void *p);
+static int doaxreset(int argc,char *argv[],void *p);
+static int doaxroute(int argc,char *argv[],void *p);
+static int doaxstat(int argc,char *argv[],void *p);
+static int doaxwindow(int argc,char *argv[],void *p);
+static int doblimit(int argc,char *argv[],void *p);
+static int dodigipeat(int argc,char *argv[],void *p);
+static int domaxframe(int argc,char *argv[],void *p);
+static int domycall(int argc,char *argv[],void *p);
+static int don2(int argc,char *argv[],void *p);
+static int dopaclen(int argc,char *argv[],void *p);
+static int dopthresh(int argc,char *argv[],void *p);
+static int dot1(int argc,char *argv[],void *p);
+static int dot3(int argc,char *argv[],void *p);
+static int dot4(int argc,char *argv[],void *p);
+static int doversion(int argc,char *argv[],void *p);
+static int dorouteadd(int argc,char *argv[],void *p);
+static void doroutelistentry(struct ax_route *rp);
+static int doroutelist(int argc,char *argv[],void *p);
+static int doroutestat(int argc,char *argv[],void *p);
+static int dojumpstart(int argc,char *argv[],void *p);
 
 char *Ax25states[] = {
 	"",

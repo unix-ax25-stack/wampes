@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pathname.c,v 1.4 1991/02/24 20:17:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pathname.c,v 1.5 1993/05/17 13:45:13 deyke Exp $ */
 
 /* Convert relative to absolute pathnames
  * Copyright 1991 Phil Karn, KA9Q
@@ -7,7 +7,7 @@
 #include "global.h"
 #include "dirutil.h"
 
-static void crunch __ARGS((char *buf,char *path));
+static void crunch(char *buf,char *path);
 
 /* Given a working directory and an arbitrary pathname, resolve them into
  * an absolute pathname. Memory is allocated for the result, which

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.h,v 1.7 1993/02/23 21:34:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.h,v 1.8 1993/05/17 13:44:57 deyke Exp $ */
 
 #ifndef _ICMP_H
 #define _ICMP_H
@@ -84,13 +84,13 @@ struct icmp {
 	char type;
 	char code;
 	union icmp_args {
-		int16 mtu;
+		uint16 mtu;
 		int32 unused;
 		unsigned char pointer;
 		int32 address;
 		struct {
-			int16 id;
-			int16 seq;
+			uint16 id;
+			uint16 seq;
 		} echo;
 	} args;
 };
@@ -132,28 +132,28 @@ struct ping {
 	int32 mdev;             /* Mean deviation */
 	int32 responses;        /* Total number of responses */
 	struct timer timer;     /* Ping interval timer */
-	int16 len;              /* Length of data portion of ping */
+	uint16 len;             /* Length of data portion of ping */
 };
 /* ICMP messages, decoded */
 extern char *Icmptypes[],*Unreach[],*Exceed[],*Redirect[];
 
 struct icmplink {
 	char proto;
-	void (*funct) __ARGS((int32,int32,int32,int ,int ,struct mbuf **));
+	void (*funct)(int32,int32,int32,int ,int ,struct mbuf **);
 };
 extern struct icmplink Icmplink[];
 
 /* In icmp.c: */
-void icmp_input __ARGS((struct iface *iface,struct ip *ip,struct mbuf *bp,
-	int rxbroadcast));
-int icmp_output __ARGS((struct ip *ip,struct mbuf *data,int  type,int  code,
-	union icmp_args *args));
+void icmp_input(struct iface *iface,struct ip *ip,struct mbuf *bp,
+	int rxbroadcast);
+int icmp_output(struct ip *ip,struct mbuf *data,int  type,int  code,
+	union icmp_args *args);
 
 /* In icmpcmd.c: */
-void echo_proc __ARGS((int32 source,int32 dest,struct icmp *icmp,struct mbuf *bp));
+void echo_proc(int32 source,int32 dest,struct icmp *icmp,struct mbuf *bp);
 
 /* In icmphdr.c: */
-struct mbuf *htonicmp __ARGS((struct icmp *icmp,struct mbuf *data));
-int ntohicmp __ARGS((struct icmp *icmp,struct mbuf **bpp));
+struct mbuf *htonicmp(struct icmp *icmp,struct mbuf *data);
+int ntohicmp(struct icmp *icmp,struct mbuf **bpp);
 
 #endif  /* _ICMP_H */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.h,v 1.7 1993/01/29 06:48:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.h,v 1.8 1993/05/17 13:45:13 deyke Exp $ */
 
 #ifndef _NRS_H
 #define _NRS_H
@@ -38,20 +38,20 @@ struct nrs {
 	struct mbuf *rbp;       /* Head of mbuf chain being filled */
 	struct mbuf *rbp1;      /* Pointer to mbuf currently being written */
 	char *rcp;              /* Write pointer */
-	int16 rcnt;             /* Length of mbuf chain */
+	uint16 rcnt;            /* Length of mbuf chain */
 	struct mbuf *tbp;       /* Transmit mbuf being sent */
 	long errors;            /* Checksum errors detected */
 	long packets ;          /* Number of packets received successfully */
 	struct iface *iface ;   /* Associated interface structure */
-	int (*send) __ARGS((int,struct mbuf *));/* Routine to send mbufs */
-	int (*get) __ARGS((int,char *,int));/* Routine to fetch input chars */
+	int (*send)(int,struct mbuf *);/* Routine to send mbufs */
+	int (*get)(int,char *,int);/* Routine to fetch input chars */
 };
 
 extern struct nrs Nrs[];
 /* In nrs.c: */
-int nrs_free __ARGS((struct iface *ifp));
-int nrs_init __ARGS((struct iface *ifp));
-int nrs_raw __ARGS((struct iface *iface,struct mbuf *bp));
-void nrs_recv __ARGS((struct iface *iface));
+int nrs_free(struct iface *ifp);
+int nrs_init(struct iface *ifp);
+int nrs_raw(struct iface *iface,struct mbuf *bp);
+void nrs_recv(struct iface *iface);
 
 #endif  /* _NRS_H */

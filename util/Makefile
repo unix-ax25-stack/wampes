@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.21 1993/05/10 11:24:12 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.22 1993/05/17 13:47:17 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 OS         = "`uname -s`"
@@ -8,7 +8,11 @@ TARGETS    = cnet mkhostdb netupdc netupds path pop2d udbm vitals
 
 all:
 	chmod 755 genupd
-	@if [ $(OS) = Linux ] ; then \
+	@if [ $(OS) = HP-UX ] ; then \
+	  make -i 'CC=c89' 'CFLAGS=-O -s' _all; \
+	elif [ $(OS) = SunOS ] ; then \
+	  make -i 'CC=acc' 'CFLAGS=-O -s' _all; \
+	elif [ $(OS) = Linux ] ; then \
 	  make -i 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' _all; \
 	elif [ $(OS) = ULTRIX ] ; then \
 	  make -i 'CC=cc' 'CFLAGS=-DULTRIX_RISC' _all; \

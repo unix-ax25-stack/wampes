@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.30 1993/05/10 11:22:50 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.31 1993/05/17 13:48:35 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -25,13 +25,6 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 
 #ifndef WNOHANG
 #define WNOHANG         1
-#endif
-
-#ifdef __STDC__
-#define __ARGS(x)       x
-#else
-#define __ARGS(x)       ()
-#define const
 #endif
 
 #ifdef __hpux
@@ -102,38 +95,38 @@ static struct fd_set chkwrite;
 
 static struct permlink *permlinks;
 
-static void appendstring __ARGS((struct connection *cp, const char *string));
-static int queuelength __ARGS((const struct mbuf *bp));
-static void free_connection __ARGS((struct connection *cp));
-static void free_closed_connections __ARGS((void));
-static char *getarg __ARGS((char *line, int all));
-static char *formatline __ARGS((char *prefix, char *text));
-static char *timestring __ARGS((long gmt));
-static struct connection *alloc_connection __ARGS((int fd));
-static void accept_connect_request __ARGS((int flisten));
-static void clear_locks __ARGS((void));
-static void send_user_change_msg __ARGS((char *name, char *host, int oldchannel, int newchannel));
-static void send_msg_to_user __ARGS((char *fromname, char *toname, char *text));
-static void send_msg_to_channel __ARGS((char *fromname, int channel, char *text));
-static void send_invite_msg __ARGS((char *fromname, char *toname, int channel));
-static void update_permlinks __ARGS((char *name, struct connection *cp));
-static void connect_permlinks __ARGS((void));
-static void bye_command __ARGS((struct connection *cp));
-static void channel_command __ARGS((struct connection *cp));
-static void help_command __ARGS((struct connection *cp));
-static void invite_command __ARGS((struct connection *cp));
-static void links_command __ARGS((struct connection *cp));
-static void msg_command __ARGS((struct connection *cp));
-static void name_command __ARGS((struct connection *cp));
-static void who_command __ARGS((struct connection *cp));
-static void h_cmsg_command __ARGS((struct connection *cp));
-static void h_host_command __ARGS((struct connection *cp));
-static void h_invi_command __ARGS((struct connection *cp));
-static void h_umsg_command __ARGS((struct connection *cp));
-static void h_user_command __ARGS((struct connection *cp));
-static void process_input __ARGS((struct connection *cp));
-static void read_configuration __ARGS((void));
-static void check_files_changed __ARGS((void));
+static void appendstring(struct connection *cp, const char *string);
+static int queuelength(const struct mbuf *bp);
+static void free_connection(struct connection *cp);
+static void free_closed_connections(void);
+static char *getarg(char *line, int all);
+static char *formatline(char *prefix, char *text);
+static char *timestring(long gmt);
+static struct connection *alloc_connection(int fd);
+static void accept_connect_request(int flisten);
+static void clear_locks(void);
+static void send_user_change_msg(char *name, char *host, int oldchannel, int newchannel);
+static void send_msg_to_user(char *fromname, char *toname, char *text);
+static void send_msg_to_channel(char *fromname, int channel, char *text);
+static void send_invite_msg(char *fromname, char *toname, int channel);
+static void update_permlinks(char *name, struct connection *cp);
+static void connect_permlinks(void);
+static void bye_command(struct connection *cp);
+static void channel_command(struct connection *cp);
+static void help_command(struct connection *cp);
+static void invite_command(struct connection *cp);
+static void links_command(struct connection *cp);
+static void msg_command(struct connection *cp);
+static void name_command(struct connection *cp);
+static void who_command(struct connection *cp);
+static void h_cmsg_command(struct connection *cp);
+static void h_host_command(struct connection *cp);
+static void h_invi_command(struct connection *cp);
+static void h_umsg_command(struct connection *cp);
+static void h_user_command(struct connection *cp);
+static void process_input(struct connection *cp);
+static void read_configuration(void);
+static void check_files_changed(void);
 
 /*---------------------------------------------------------------------------*/
 
@@ -143,8 +136,7 @@ static void check_files_changed __ARGS((void));
 
 #ifdef ULTRIX_RISC
 
-static char *strdup(s)
-const char *s;
+static char *strdup(const char *s)
 {
   char *p;
 
@@ -156,9 +148,7 @@ const char *s;
 
 /*---------------------------------------------------------------------------*/
 
-static void appendstring(cp, string)
-struct connection *cp;
-const char *string;
+static void appendstring(struct connection *cp, const char *string)
 {
   struct mbuf *bp, *p;
 
@@ -179,8 +169,7 @@ const char *string;
 
 /*---------------------------------------------------------------------------*/
 
-static int queuelength(bp)
-const struct mbuf *bp;
+static int queuelength(const struct mbuf *bp)
 {
   int len;
 
@@ -191,8 +180,7 @@ const struct mbuf *bp;
 
 /*---------------------------------------------------------------------------*/
 
-static void free_connection(cp)
-struct connection *cp;
+static void free_connection(struct connection *cp)
 {
 
   struct mbuf *bp;
@@ -217,7 +205,7 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void free_closed_connections()
+static void free_closed_connections(void)
 {
   struct connection *cp, *p;
 
@@ -241,9 +229,7 @@ static void free_closed_connections()
 
 /*---------------------------------------------------------------------------*/
 
-static char *getarg(line, all)
-char *line;
-int all;
+static char *getarg(char *line, int all)
 {
 
   char *arg;
@@ -272,8 +258,7 @@ int all;
  * words as necessary.
  */
 
-static char *formatline(prefix, text)
-char *prefix, *text;
+static char *formatline(char *prefix, char *text)
 {
 
 #define PREFIXLEN       10
@@ -328,8 +313,7 @@ char *prefix, *text;
 
 /*---------------------------------------------------------------------------*/
 
-static char *timestring(gmt)
-long gmt;
+static char *timestring(long gmt)
 {
 
   static char buffer[80];
@@ -346,8 +330,7 @@ long gmt;
 
 /*---------------------------------------------------------------------------*/
 
-static struct connection *alloc_connection(fd)
-int fd;
+static struct connection *alloc_connection(int fd)
 {
 
   int flags;
@@ -373,8 +356,7 @@ int fd;
 
 /*---------------------------------------------------------------------------*/
 
-static void accept_connect_request(flisten)
-int flisten;
+static void accept_connect_request(int flisten)
 {
 
   int addrlen;
@@ -387,7 +369,7 @@ int flisten;
 
 /*---------------------------------------------------------------------------*/
 
-static void clear_locks()
+static void clear_locks(void)
 {
   struct connection *p;
 
@@ -396,9 +378,7 @@ static void clear_locks()
 
 /*---------------------------------------------------------------------------*/
 
-static void send_user_change_msg(name, host, oldchannel, newchannel)
-char *name, *host;
-int oldchannel, newchannel;
+static void send_user_change_msg(char *name, char *host, int oldchannel, int newchannel)
 {
 
   char buffer[2048];
@@ -430,8 +410,7 @@ int oldchannel, newchannel;
 
 /*---------------------------------------------------------------------------*/
 
-static void send_msg_to_user(fromname, toname, text)
-char *fromname, *toname, *text;
+static void send_msg_to_user(char *fromname, char *toname, char *text)
 {
 
   char buffer[2048];
@@ -461,10 +440,7 @@ char *fromname, *toname, *text;
 
 /*---------------------------------------------------------------------------*/
 
-static void send_msg_to_channel(fromname, channel, text)
-char *fromname;
-int channel;
-char *text;
+static void send_msg_to_channel(char *fromname, int channel, char *text)
 {
 
   char buffer[2048];
@@ -489,9 +465,7 @@ char *text;
 
 /*---------------------------------------------------------------------------*/
 
-static void send_invite_msg(fromname, toname, channel)
-char *fromname, *toname;
-int channel;
+static void send_invite_msg(char *fromname, char *toname, int channel)
 {
 
   static char invitetext[] = "\n\007\007*** Message from %s at %s ...\nPlease join convers channel %d.\n\007\007\n";
@@ -570,9 +544,7 @@ int channel;
 
 /*---------------------------------------------------------------------------*/
 
-static void update_permlinks(name, cp)
-char *name;
-struct connection *cp;
+static void update_permlinks(char *name, struct connection *cp)
 {
   struct permlink *p;
 
@@ -588,7 +560,7 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void connect_permlinks()
+static void connect_permlinks(void)
 {
 
 #define MAX_WAITTIME   (60*60*3)
@@ -622,8 +594,7 @@ static void connect_permlinks()
 
 /*---------------------------------------------------------------------------*/
 
-static void bye_command(cp)
-struct connection *cp;
+static void bye_command(struct connection *cp)
 {
   struct connection *p;
 
@@ -653,8 +624,7 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void channel_command(cp)
-struct connection *cp;
+static void channel_command(struct connection *cp)
 {
 
   char *s;
@@ -686,8 +656,7 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void help_command(cp)
-struct connection *cp;
+static void help_command(struct connection *cp)
 {
   appendstring(cp, "Commands may be abbreviated. Commands are:\n");
 
@@ -708,8 +677,7 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void invite_command(cp)
-struct connection *cp;
+static void invite_command(struct connection *cp)
 {
   char *toname;
 
@@ -719,8 +687,7 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void links_command(cp)
-struct connection *cp;
+static void links_command(struct connection *cp)
 {
 
   char buffer[2048];
@@ -766,8 +733,7 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void msg_command(cp)
-struct connection *cp;
+static void msg_command(struct connection *cp)
 {
 
   char *toname, *text;
@@ -788,8 +754,7 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void name_command(cp)
-struct connection *cp;
+static void name_command(struct connection *cp)
 {
 
   char buffer[2048];
@@ -799,7 +764,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.30 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.31 $  Type /HELP for help.\n", myhostname);
   appendstring(cp, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
@@ -812,8 +777,7 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void who_command(cp)
-struct connection *cp;
+static void who_command(struct connection *cp)
 {
 
   char buffer[2048];
@@ -879,8 +843,7 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void h_cmsg_command(cp)
-struct connection *cp;
+static void h_cmsg_command(struct connection *cp)
 {
 
   char *name;
@@ -895,8 +858,7 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void h_host_command(cp)
-struct connection *cp;
+static void h_host_command(struct connection *cp)
 {
 
   char *name;
@@ -926,8 +888,7 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void h_invi_command(cp)
-struct connection *cp;
+static void h_invi_command(struct connection *cp)
 {
 
   char *fromname, *toname;
@@ -941,8 +902,7 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void h_umsg_command(cp)
-struct connection *cp;
+static void h_umsg_command(struct connection *cp)
 {
   char *fromname, *toname, *text;
 
@@ -954,8 +914,7 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void h_user_command(cp)
-struct connection *cp;
+static void h_user_command(struct connection *cp)
 {
 
   char *host;
@@ -994,8 +953,7 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void process_input(cp)
-struct connection *cp;
+static void process_input(struct connection *cp)
 {
 
   static struct cmdtable {
@@ -1054,7 +1012,7 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void read_configuration()
+static void read_configuration(void)
 {
 
   FILE *fp;
@@ -1088,7 +1046,7 @@ static void read_configuration()
 
 /*---------------------------------------------------------------------------*/
 
-static void check_files_changed()
+static void check_files_changed(void)
 {
 
   static long conftime;
@@ -1113,9 +1071,7 @@ static void check_files_changed()
 
 /*---------------------------------------------------------------------------*/
 
-int main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
 
   static struct {

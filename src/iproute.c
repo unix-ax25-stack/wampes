@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.23 1993/03/30 17:24:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.24 1993/05/17 13:45:02 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -30,8 +30,8 @@ static struct rt_cache Rt_cache[HASHMOD];
 int32 Rtlookups;
 int32 Rtchits;
 
-static int q_pkt __ARGS((struct iface *iface,int32 gateway,struct ip *ip,
-	struct mbuf *bp,int ckgood));
+static int q_pkt(struct iface *iface,int32 gateway,struct ip *ip,
+	struct mbuf *bp,int ckgood);
 
 /* Initialize modulo lookup table used by hash_ip() in pcgen.asm */
 void
@@ -59,15 +59,15 @@ struct mbuf *bp;        /* Input packet */
 int rxbroadcast;        /* True if packet had link broadcast address */
 {
 	struct ip ip;                   /* IP header being processed */
-	int16 ip_len;                   /* IP header length */
-	int16 length;                   /* Length of data portion */
+	uint16 ip_len;                  /* IP header length */
+	uint16 length;                  /* Length of data portion */
 	int32 gateway;                  /* Gateway IP address */
 	register struct route *rp;      /* Route table entry */
 	struct iface *iface;            /* Output interface, possibly forwarded */
-	int16 offset;                   /* Offset into current fragment */
-	int16 mf_flag;                  /* Original datagram MF flag */
+	uint16 offset;                  /* Offset into current fragment */
+	uint16 mf_flag;                 /* Original datagram MF flag */
 	int strict = 0;                 /* Strict source routing flag */
-	int16 opt_len;          /* Length of current option */
+	uint16 opt_len;         /* Length of current option */
 	char *opt;              /* -> beginning of current option */
 	int i;
 	int ckgood = IP_CS_OLD; /* Has good checksum without modification */
@@ -322,7 +322,7 @@ no_opt:
 	offset = ip.offset;
 	mf_flag = ip.flags.mf;          /* Save original MF flag */
 	while(length != 0){             /* As long as there's data left */
-		int16 fragsize;         /* Size of this fragment's data */
+		uint16 fragsize;                /* Size of this fragment's data */
 		struct mbuf *f_data;    /* Data portion of fragment */
 
 		/* After the first fragment, should remove those
@@ -638,22 +638,22 @@ unsigned int bits;
 #if 1
 
 /* Compute hash function on IP address */
-int16
+uint16
 hash_ip(addr)
 register int32 addr;
 {
-	register int16 ret;
+	register uint16 ret;
 
 	ret = hiword(addr);
 	ret ^= loword(addr);
-	return (int16)(ret % HASHMOD);
+	return (uint16)(ret % HASHMOD);
 }
 #endif
 #ifndef GWONLY
 /* Given an IP address, return the MTU of the local interface used to
  * reach that destination. This is used by TCP to avoid local fragmentation
  */
-int16
+uint16
 ip_mtu(addr)
 int32 addr;
 {

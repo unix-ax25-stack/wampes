@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.11 1993/03/04 23:11:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.12 1993/05/17 13:45:22 deyke Exp $ */
 
 /* General purpose software timer facilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -23,7 +23,7 @@ int32 Secclock;
  */
 static struct timer *Timers;
 
-static void t_alarm __ARGS((void *x));
+static void t_alarm(void *x);
 
 /* Process that handles clock ticks */
 void

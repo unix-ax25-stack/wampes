@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.13 1993/05/10 11:24:17 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.14 1993/05/17 13:47:33 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 OS         = "`uname -s`"
@@ -7,14 +7,14 @@ RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 TARGETS    = bbs findpath killdup sfstat
 
 all:
-	@if [ $(OS) = SunOS ] ; then \
+	@if [ $(OS) = HP-UX ] ; then \
+	  make -i 'CC=c89' 'CFLAGS=-O -s' _all; \
+	elif [ $(OS) = SunOS ] ; then \
 	  make -i 'CC=acc' 'CFLAGS=-O -s' _all; \
 	elif [ $(OS) = Linux ] ; then \
 	  make -i 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' _all; \
-	elif [ $(OS) = 386BSD ] ; then \
-	  make -i 'CC=cc' 'CFLAGS=-O -s' _all; \
 	else \
-	  make -i 'CC=c89' 'CFLAGS=-O -s' _all; \
+	  make -i 'CC=cc' 'CFLAGS=-O -s' _all; \
 	fi
 
 _all:   $(TARGETS)

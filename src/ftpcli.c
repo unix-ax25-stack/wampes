@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.11 1992/05/14 13:20:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.12 1993/05/17 13:44:55 deyke Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q
@@ -18,21 +18,21 @@
 #include "netuser.h"
 #include "dirutil.h"
 
-static void ftpparse __ARGS((char *line,int len));
-static int doascii __ARGS((int argc,char *argv[],void *p));
-static int dobinary __ARGS((int argc,char *argv[],void *p));
-static int doftpcd __ARGS((int argc,char *argv[],void *p));
-static int doget __ARGS((int argc,char *argv[],void *p));
-static int dolist __ARGS((int argc,char *argv[],void *p));
-static int dols __ARGS((int argc,char *argv[],void *p));
-static int domkdir __ARGS((int argc,char *argv[],void *p));
-static int doput __ARGS((int argc,char *argv[],void *p));
-static int dormdir __ARGS((int argc,char *argv[],void *p));
-static int dotype __ARGS((int argc,char *argv[],void *p));
-static int ftpsetup __ARGS((struct ftp *ftp,void (*recv )(),void (*send )(),void (*state )()));
-static void ftpccs __ARGS((struct tcb *tcb,int old,int new));
-static void ftpcds __ARGS((struct tcb *tcb,int old,int new));
-static int sndftpmsg __ARGS((struct ftp *ftp,char *fmt,char *arg));
+static void ftpparse(char *line,int len);
+static int doascii(int argc,char *argv[],void *p);
+static int dobinary(int argc,char *argv[],void *p);
+static int doftpcd(int argc,char *argv[],void *p);
+static int doget(int argc,char *argv[],void *p);
+static int dolist(int argc,char *argv[],void *p);
+static int dols(int argc,char *argv[],void *p);
+static int domkdir(int argc,char *argv[],void *p);
+static int doput(int argc,char *argv[],void *p);
+static int dormdir(int argc,char *argv[],void *p);
+static int dotype(int argc,char *argv[],void *p);
+static int ftpsetup(struct ftp *ftp,void (*recv)(),void (*send)(),void (*state)());
+static void ftpccs(struct tcb *tcb,int old,int new);
+static void ftpcds(struct tcb *tcb,int old,int new);
+static int sndftpmsg(struct ftp *ftp,char *fmt,char *arg);
 
 static char Notsess[] = "Not an FTP session!\n";
 static char cantwrite[] = "Can't write %s\n";
@@ -477,7 +477,7 @@ void (*state)();
 void
 ftpccr(tcb,cnt)
 register struct tcb *tcb;
-int16 cnt;
+uint16 cnt;
 {
 	struct mbuf *bp;
 	struct ftp *ftp;
@@ -608,7 +608,7 @@ char *fmt;
 char *arg;
 {
 	struct mbuf *bp;
-	int16 len;
+	uint16 len;
 
 	len = strlen(fmt) + strlen(arg) + 10;   /* fudge factor */
 	if((bp = alloc_mbuf(len)) == NULLBUF){

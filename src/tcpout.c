@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.9 1993/02/23 21:34:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.10 1993/05/17 13:45:20 deyke Exp $ */
 
 /* TCP output segment processing
  * Copyright 1991 Phil Karn, KA9Q
@@ -11,7 +11,7 @@
 #include "tcp.h"
 #include "ip.h"
 
-static double mybackoff __ARGS((int n));
+static double mybackoff(int n);
 
 static double mybackoff(n)
 int n;
@@ -31,11 +31,11 @@ register struct tcb *tcb;
 {
 	struct pseudo_header ph;/* Pseudo-header for checksum calcs */
 	struct mbuf *hbp,*dbp;  /* Header and data buffer pointers */
-	int16 hsize;            /* Size of header */
+	uint16 hsize;           /* Size of header */
 	struct tcp seg;         /* Local working copy of header */
-	int16 ssize;            /* Size of current segment being sent,
+	uint16 ssize;           /* Size of current segment being sent,
 				 * including SYN and FIN flags */
-	int16 dsize;            /* Size of segment less SYN and FIN */
+	uint16 dsize;           /* Size of segment less SYN and FIN */
 	int32 usable;           /* Usable window */
 	int32 sent;             /* Sequence count (incl SYN/FIN) already
 				 * in the pipe but not yet acked */
@@ -155,7 +155,7 @@ register struct tcb *tcb;
 			if(!tcb->flags.synack && sent != 0)
 				offset--;
 
-			dbp->cnt = extract(tcb->sndq,(int16)offset,dbp->data,dsize);
+			dbp->cnt = extract(tcb->sndq,(uint16)offset,dbp->data,dsize);
 			if(dbp->cnt != dsize){
 				/* We ran past the end of the send queue;
 				 * send a FIN

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25dump.c,v 1.7 1993/04/20 09:27:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25dump.c,v 1.8 1993/05/17 13:44:45 deyke Exp $ */
 
 /* AX25 header tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -11,7 +11,7 @@
 #include "trace.h"
 #include "socket.h"
 
-static char *decode_type __ARGS((int   type));
+static char *decode_type(int    type);
 
 /* Dump an AX.25 packet header */
 void
@@ -23,7 +23,7 @@ int check;      /* Not used */
 	char tmp[AXBUF];
 	char frmr[3];
 	int control,pid,seg;
-	int16 type;
+	uint16 type;
 	int unsegmented;
 	struct ax25 hdr;
 	char *hp;
@@ -139,7 +139,7 @@ int check;      /* Not used */
 }
 static char *
 decode_type(type)
-int16 type;
+uint16 type;
 {
 	switch(type){
 	case I:

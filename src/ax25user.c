@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25user.c,v 1.3 1993/02/26 10:17:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25user.c,v 1.4 1993/05/17 13:44:46 deyke Exp $ */
 
 /* User interface subroutines for AX.25
  * Copyright 1991 Phil Karn, KA9Q
@@ -17,9 +17,9 @@ struct ax25_cb *
 open_ax25(hdr,mode,r_upcall,t_upcall,s_upcall,user)
 struct ax25 *hdr;
 int mode;               /* active/passive/server */
-void (*r_upcall) __ARGS((struct ax25_cb *,int));        /* Receiver upcall handler */
-void (*t_upcall) __ARGS((struct ax25_cb *,int));        /* Transmitter upcall handler */
-void (*s_upcall) __ARGS((struct ax25_cb *,int,int));    /* State-change upcall handler */
+void (*r_upcall)(struct ax25_cb *,int);        /* Receiver upcall handler */
+void (*t_upcall)(struct ax25_cb *,int);        /* Transmitter upcall handler */
+void (*s_upcall)(struct ax25_cb *,int,int);    /* State-change upcall handler */
 char *user;             /* User linkage area */
 {
 	struct ax25_cb *axp;
@@ -85,7 +85,7 @@ struct mbuf *bp;
 int pid;
 {
 	struct mbuf *bp1;
-	int16 offset,len,size;
+	uint16 offset,len,size;
 
 	if(axp == NULLAX25 || bp == NULLBUF || axp->flags.closed){
 		free_p(bp);
@@ -119,7 +119,7 @@ int pid;
 struct mbuf *
 recv_ax25(axp,cnt)
 struct ax25_cb *axp;
-int16 cnt;
+uint16 cnt;
 {
 	struct mbuf *bp;
 

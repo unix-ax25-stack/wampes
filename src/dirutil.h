@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.h,v 1.3 1991/02/24 20:16:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.h,v 1.4 1993/05/17 13:44:51 deyke Exp $ */
 
 #ifndef _DIRUTIL_H
 #define _DIRUTIL_H
@@ -8,12 +8,12 @@
 #endif
 
 /* In dirutil.c */
-FILE *dir __ARGS((char *path,int full));
-int filedir __ARGS((char *name,int times,char *ret_str));
-int getdir __ARGS((char *path,int full,FILE *file));
+FILE *dir(char *path,int full);
+int filedir(char *name,int times,char *ret_str);
+int getdir(char *path,int full,FILE *file);
 
 /* In pathname.c: */
-char *pathname __ARGS((char *cd,char *path));
+char *pathname(char *cd,char *path);
 
 #endif /* _DIRUTIL_H */
 

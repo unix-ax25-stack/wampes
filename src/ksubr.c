@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.12 1993/03/30 17:24:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.13 1993/05/17 13:45:04 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -196,8 +196,8 @@ struct env {
 #endif
 #endif
 
-static int stkutil __ARGS((struct proc *pp));
-static void pproc __ARGS((struct proc *pp));
+static int stkutil(struct proc *pp);
+static void pproc(struct proc *pp);
 
 void
 kinit()
@@ -279,7 +279,7 @@ stkutil(pp)
 struct proc *pp;
 {
 	unsigned i;
-	register int16 *sp;
+	register uint16 *sp;
 
 	if(pp->stksize == 0)
 		return 0;       /* Main task -- too hard to check */
@@ -299,9 +299,9 @@ struct proc *pp;
 void
 chkstk()
 {
-	int16 *sbase;
-	int16 *stop;
-	int16 *sp;
+	uint16 *sbase;
+	uint16 *stop;
+	uint16 *sp;
 
 #ifdef __TURBOC__
 	sp = MK_FP(_SS,_SP);
@@ -310,7 +310,7 @@ chkstk()
 		return;
 	}
 #else
-	sp = (int16 *) &sp;
+	sp = (uint16 *) &sp;
 #endif
 	sbase = Curproc->stack;
 	if(sbase == NULL)

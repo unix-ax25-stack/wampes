@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.35 1993/03/04 23:11:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.36 1993/05/17 13:45:09 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -18,9 +18,7 @@
 #include <conio.h>
 #endif
 #include "global.h"
-#ifdef  ANSIPROTO
 #include <stdarg.h>
-#endif
 #include "mbuf.h"
 #include "timer.h"
 #include "proc.h"
@@ -67,7 +65,7 @@ char *Cmdline;                          /* Copy of most recent command line */
 
 int Debug;
 int Mode;
-int16 Lport = 1024;
+uint16 Lport = 1024;
 
 char Prompt[] = "%s> ";
 static FILE *Logfp;
@@ -75,7 +73,7 @@ time_t StartTime;                       /* time that NOS was started */
 static int Verbose;
 static int stop_repeat;
 
-static void process_char __ARGS((int c));
+static void process_char(int c);
 
 int
 main(argc,argv)
@@ -503,7 +501,7 @@ void *p;
 	struct socket fsock,lsock;
 	struct mbuf *bp;
 	int c;
-	int16 port,len;
+	uint16 port,len;
 	char *key = NULLCHAR;
 	int klen;
 	int32 addr = 0;

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.12 1993/05/10 11:22:49 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.13 1993/05/17 13:48:34 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 OS         = "`uname -s`"
@@ -7,7 +7,11 @@ RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 TARGETS    = convers conversd
 
 all:
-	@if [ $(OS) = Linux ] ; then \
+	@if [ $(OS) = HP-UX ] ; then \
+	  make -i 'CC=c89' 'CFLAGS=-O -s' _all; \
+	elif [ $(OS) = SunOS ] ; then \
+	  make -i 'CC=acc' 'CFLAGS=-O -s' _all; \
+	elif [ $(OS) = Linux ] ; then \
 	  make -i 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' _all; \
 	elif [ $(OS) = ULTRIX ] ; then \
 	  make -i 'CC=cc' 'CFLAGS=-DULTRIX_RISC' _all; \
