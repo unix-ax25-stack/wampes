@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.31 1995/02/23 09:54:29 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.32 1995/03/07 16:41:08 deyke Exp $
 
 hostname     dl1sbl-1
 ax25 mycall  dl1sbl-1
@@ -22,8 +22,8 @@ axip route add dl4sas-1 15.136.216.106          # hpbid1gf.bbn.hp.com
 axip route add dl4sel-1 15.136.162.7            # hpbbis45.bbn.hp.com
 
 route add  44.130.0.0/16        ipip     15.138.33.250
+route add  44.130.12.0/24       ipip     15.15.80.34
 route add  44.143.0.0/16        ipip     15.138.33.250
-route add  db0fho.ampr.org      ipip     15.15.80.34
 route add  db0sao-u.ampr.org    ipip     15.138.33.250
 route add  db0sao.ampr.org      ipip     15.138.33.250
 route add  df3du-1.ampr.org     ipip     15.138.80.94
