@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.7 1993/10/13 22:31:23 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.8 1994/01/16 17:12:36 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -321,8 +321,6 @@ static void qname(const char *addrstr)
 
 int main(int argc, char **argv)
 {
-
-  char buf[1024];
   int i;
 
   if (argc >= 1 && strstr(*argv, "qaddr")) {
@@ -340,14 +338,12 @@ int main(int argc, char **argv)
     for (i = 1; i < argc; i++) qname(argv[i]);
     dbm_close(Dbhostname);
   } else {
-    sprintf(buf, "%s.dir", DBHOSTADDR);
-    unlink(buf);
-    sprintf(buf, "%s.pag", DBHOSTADDR);
-    unlink(buf);
-    sprintf(buf, "%s.dir", DBHOSTNAME);
-    unlink(buf);
-    sprintf(buf, "%s.pag", DBHOSTNAME);
-    unlink(buf);
+    remove(DBHOSTADDR ".db");
+    remove(DBHOSTADDR ".dir");
+    remove(DBHOSTADDR ".pag");
+    remove(DBHOSTNAME ".db");
+    remove(DBHOSTNAME ".dir");
+    remove(DBHOSTNAME ".pag");
     if (!(Dbhostname = dbm_open(DBHOSTNAME, O_RDWR | O_CREAT, 0644))) {
       perror(DBHOSTNAME);
       exit(1);
