@@ -1,7 +1,7 @@
 /* User Data Base Manager */
 
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.22 1993/05/17 13:47:20 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.23 1993/08/30 15:04:01 deyke Exp $";
 #endif
 
 #define DEBUG           0
@@ -583,7 +583,9 @@ static void fixpasswd(void)
 #endif
   fp = fopenexcl(passtemp);
   while ((pp = getpwent()) != NULL) {
-    if (is_call(pp->pw_name) && (up = getup(pp->pw_name, 0)) != NULL)
+    if (is_call(pp->pw_name) &&
+	(up = getup(pp->pw_name, 0)) != NULL &&
+	*up->name)
       pp->pw_gecos = (char *) up->name;
     if (secured) pp->pw_passwd = "*";
     putpwent(pp, fp);

@@ -1,11 +1,11 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.34 1993/08/01 18:07:38 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.35 1993/08/30 15:04:00 deyke Exp $
 
 CFLAGS     = -I../lib
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
 OS         = "`uname -s`"
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
-TARGETS    = cnet md5 mkhostdb netupdc netupds path pop2d udbm
+TARGETS    = cnet md5 mkhostdb netupdc netupds path pop2d qth udbm
 
 all:;   chmod 755 genupd
 	@if [ $(OS) = HP-UX ] ; then \
@@ -99,6 +99,11 @@ pop2d:  pop2d.o
 	@sleep 1
 	$(CC) $(CFLAGS) $? $(LIBS) -o $@
 
+qth:    qth.o
+	$(RMTARGET)
+	@sleep 1
+	$(CC) $(CFLAGS) $? $(LIBS) -lm -o $@
+
 udbm:   udbm.o
 	$(RMTARGET)
 	@sleep 1
@@ -112,6 +117,7 @@ install: \
 	netupds \
 	/usr/local/bin/path \
 	pop2d \
+	/usr/local/bin/qth \
 	/usr/local/etc/udbm
 
 /usr/local/bin/cnet: cnet
@@ -130,6 +136,11 @@ install: \
 	cp $? $@
 
 /usr/local/bin/path: path
+	$(MKDIR)
+	$(RMTARGET)
+	cp $? $@
+
+/usr/local/bin/qth: qth
 	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
