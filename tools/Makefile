@@ -1,5 +1,5 @@
 CC         = c89
-CFLAGS     = -O -s -D_HPUX_SOURCE
+CFLAGS     = -Os -D_HPUX_SOURCE
 SHELL      = /bin/sh
 
 TARGETS    = \

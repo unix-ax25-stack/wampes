@@ -1,7 +1,8 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.3 1991/10/03 11:08:45 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.4 1992/08/24 19:09:43 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
-CFLAGS     = -Aa -O -s
+CC         = c89
+CFLAGS     = -Os
 SHELL      = /bin/sh
 
 .IGNORE:
