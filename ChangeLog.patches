@@ -1,4 +1,11 @@
-Version @(#) $Id: ChangeLog.patches,v 1.6 2002/02/05 12:00:34 dl9sau Exp $
+Version @(#) $Id: ChangeLog.patches,v 1.7 2002/05/27 03:17:00 dl9sau Exp $
+
+020527 Thomas Osterried <dl9sau>
+
+	- fix in route.c / rip_route():
+	    rt_add() may return 0 in some conditions, so rp is NULL.
+	    will log this event (when trace is on).
+	- added support for linux on sparc10 (sun4m)
 
 020205 Thomas Osterried <dl9sau>
 
