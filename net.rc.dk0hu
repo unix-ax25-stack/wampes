@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dk0hu,v 1.56 1999/04/21 19:56:49 deyke Exp $
+# @(#) $Id: net.rc.dk0hu,v 1.57 1999/04/25 16:56:36 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -26,21 +26,21 @@ ax25 route add axip default
 axip route add db0sao   192.1.1.1       # db0sao
 axip route add dl1sbl-1 15.136.120.113  # twister.bbn.hp.com
 
-route add  44.130.0.0/16        ipip     192.1.1.1
-route add  44.130.12.0/24       ipip     15.136.120.113
-route add  44.143.0.0/16        ipip     192.1.1.1
-route add  db0sao-u.ampr.org    ipip     192.1.1.1
-route add  db0sao.ampr.org      ipip     192.1.1.1
-route add  df3du-1.ampr.org     ipip     15.136.120.113
-route add  df9sr-1.ampr.org     ipip     15.136.120.113
-route add  dh8saw-1.ampr.org    ipip     15.136.120.113
-route add  dj3eg-1.ampr.org     ipip     15.136.120.113
-route add  dk0hu-u.ampr.org     ni
-route add  dl1sbl-1.ampr.org    ipip     15.136.120.113
-route add  dl1sbl.ampr.org      ipip     15.136.120.113
-route add  dl4sas-1.ampr.org    ipip     15.136.120.113
-route add  dl4sel-1.ampr.org    ipip     15.136.120.113
-route add  dl4sel.ampr.org      tnc0
+route add  44.130.0.0/16        ipip     192.1.1.1            1 0
+route add  44.130.12.0/24       ipip     15.136.120.113       1 0
+route add  44.143.0.0/16        ipip     192.1.1.1            1 0
+route add  db0sao-u.ampr.org    ipip     192.1.1.1            1 2147483
+route add  db0sao.ampr.org      ipip     192.1.1.1            1 2147483
+route add  df3du-1.ampr.org     ipip     15.136.120.113       1 2147483
+route add  df9sr-1.ampr.org     ipip     15.136.120.113       1 2147483
+route add  dh8saw-1.ampr.org    ipip     15.136.120.113       1 2147483
+route add  dj3eg-1.ampr.org     ipip     15.136.120.113       1 2147483
+route add  dk0hu-u.ampr.org     ni       0                    1 2147483
+route add  dl1sbl-1.ampr.org    ipip     15.136.120.113       1 2147483
+route add  dl1sbl.ampr.org      ipip     15.136.120.113       1 2147483
+route add  dl4sas-1.ampr.org    ipip     15.136.120.113       1 2147483
+route add  dl4sel-1.ampr.org    ipip     15.136.120.113       1 2147483
+route add  dl4sel.ampr.org      tnc0     0                    1 2147483
 
 arp add dl4sel ax25 dl4sel
 

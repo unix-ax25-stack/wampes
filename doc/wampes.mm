@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 990424" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 990425" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 990424
+Version 990425
 .S
 .SP 2
 .S 15
@@ -1540,9 +1540,9 @@ The default is 0.
 Remove the specified directory.
 .H 2 "route" " [\fIsubcommand\fP]"
 Without an argument, display the IP routing table.
-.H 3 "route add" " \fIhostid\fP[/\fIbits\fP]|default \fIinterface\fP [\fIgateway_hostid\fP [\fImetric\fP]]"
+.H 3 "route add" " \fIhostid\fP[/\fIbits\fP]|default \fIinterface\fP [\fIgateway_hostid\fP [\fImetric\fP [\fIttl\fP]]]"
 Add a permanent entry to the IP routing table.
-It will not time out as will an automatically created entry,
+If \fIttl\fP is 0 it will not time out,
 but must be removed with the \fBroute drop\fP command.
 \fBroute add\fP requires at least two more arguments,
 the \fIhostid\fP of the destination and the name of

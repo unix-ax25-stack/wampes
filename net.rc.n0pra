@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.n0pra,v 1.15 1999/04/21 19:56:49 deyke Exp $
+# @(#) $Id: net.rc.n0pra,v 1.16 1999/04/25 16:56:37 deyke Exp $
 
 hostname     n0pra
 ax25 mycall  n0pra
@@ -17,10 +17,10 @@ ax25 route add axip default
 
 axip route add dl1sbl-1 15.136.120.113  # twister.bbn.hp.com
 
-route add  db0fho/24            ipudp    15.254.48.2
-route add  dc1ik/24             ipudp    15.254.48.2
-route add  default              ipip     15.136.120.113
-route add  n0pra-u              ni
+route add  db0fho/24            ipudp    15.254.48.2          1 0
+route add  dc1ik/24             ipudp    15.254.48.2          1 0
+route add  default              ipip     15.136.120.113       1 0
+route add  n0pra-u              ni       0                    1 0
 
 source /tcp/netrom_links
 netrom links n0pra dl1sbl-1 200 permanent

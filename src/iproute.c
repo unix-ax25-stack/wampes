@@ -1,4 +1,4 @@
-/* @(#) $Id: iproute.c,v 1.39 1999/02/11 19:26:49 deyke Exp $ */
+/* @(#) $Id: iproute.c,v 1.40 1999/04/25 16:56:41 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -450,7 +450,7 @@ uint8 private           /* Inhibit advertising this entry ? */
 		*hp = rp;
 		rp->uses = 0;
 	}else{
-		/* Don't let automatic routes overwrite permanent routes */
+		/* Don't let temporary routes overwrite permanent routes */
 		if(ttl>0 && rp->iface != NULL && !run_timer(&rp->timer))
 			return NULL;
 	}
@@ -465,7 +465,13 @@ uint8 private           /* Inhibit advertising this entry ? */
 	rp->flags.rtprivate = private;  /* Should anyone be told of this route? */
 	rp->timer.func = rt_timeout;  /* Set the timer field */
 	rp->timer.arg = (void *)rp;
-	set_timer(&rp->timer,ttl*1000L);
+	if (ttl <= 0L) {
+		set_timer(&rp->timer, 0L);
+	} else if (ttl >= MAXINT32 / 1000L) {
+		set_timer(&rp->timer, MAXINT32);
+	} else {
+		set_timer(&rp->timer, ttl * 1000L);
+	}
 	stop_timer(&rp->timer);
 	start_timer(&rp->timer); /* start the timer if appropriate */
 

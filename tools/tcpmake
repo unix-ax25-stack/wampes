@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Id: tcpmake,v 1.38 1999/04/24 16:08:37 deyke Exp $
+# @(#) $Id: tcpmake,v 1.39 1999/04/25 16:56:42 deyke Exp $
 
 #------------------------------------------------------------------------------
 
@@ -145,5 +145,8 @@ cd ~/tcp
 make
 make distrib
 mk make
+
+cd ~/tcp/src
+make tags TAGS
 
 echo '***** tcpmake complete *****'

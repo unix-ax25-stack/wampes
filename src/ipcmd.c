@@ -1,4 +1,4 @@
-/* @(#) $Id: ipcmd.c,v 1.17 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: ipcmd.c,v 1.18 1999/04/25 16:56:41 deyke Exp $ */
 
 /* IP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -39,10 +39,10 @@ static struct cmds Ipcmds[] = {
 /* "route" subcommands */
 static struct cmds Rtcmds[] = {
 	{ "add",          doadd,          0,      3,
-	"route add <dest addr>[/<bits>] <if name> [gateway] [metric]" },
+	"route add <dest addr>[/<bits>] <if name> [gateway] [metric] [ttl]" },
 
 	{ "addprivate",   doadd,          0,      3,
-	"route addprivate <dest addr>[/<bits>] <if name> [gateway] [metric]" },
+	"route addprivate <dest addr>[/<bits>] <if name> [gateway] [metric] [ttl]" },
 
 	{ "drop",         dodrop,         0,      2,
 	"route drop <dest addr>[/<bits>]" },
@@ -156,6 +156,7 @@ void *p)
 	char *bitp;
 	int32 metric;
 	char private;
+	int32 ttl;
 
 	if(strncmp(argv[0],"addp",4) == 0)
 		private = 1;
@@ -197,8 +198,12 @@ void *p)
 		metric = atol(argv[4]);
 	else
 		metric = 1;
-
-	if(rt_add(dest,bits,gateway,ifp,metric,0,private) == NULL)
+	if (argc > 5) {
+		ttl = atol(argv[5]);
+	} else {
+		ttl = 0;
+	}
+	if(rt_add(dest,bits,gateway,ifp,metric,ttl,private) == NULL)
 		printf("Can't add route\n");
 	return 0;
 }

@@ -4,7 +4,7 @@
 </HEAD>
 <BODY>
 <H1>WAMPES Reference Manual</H1>
-Version 990424
+Version 990425
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
@@ -1590,9 +1590,9 @@ The default is 0.
 Remove the specified directory.
 <H3><A NAME="H4.45">4.45 route [<I>subcommand</I>]</A></H3>
 Without an argument, display the IP routing table.
-<H4><A NAME="H4.45.1">4.45.1 route add <I>hostid</I>[/<I>bits</I>]|default <I>interface</I> [<I>gateway_hostid</I> [<I>metric</I>]]</A></H4>
+<H4><A NAME="H4.45.1">4.45.1 route add <I>hostid</I>[/<I>bits</I>]|default <I>interface</I> [<I>gateway_hostid</I> [<I>metric</I> [<I>ttl</I>]]]</A></H4>
 Add a permanent entry to the IP routing table.
-It will not time out as will an automatically created entry,
+If <I>ttl</I> is 0 it will not time out,
 but must be removed with the <A HREF="#H4.45.3"><B>route drop</B></A> command.
 <A HREF="#H4.45.1"><B>route add</B></A> requires at least two more arguments,
 the <I>hostid</I> of the destination and the name of

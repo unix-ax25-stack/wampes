@@ -1,9 +1,9 @@
-.\" @(#) $Id: route,v 1.10 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
+.\" @(#) $Id: route,v 1.11 1999/04/25 16:56:40 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "route" " [\fIsubcommand\fP]"
 Without an argument, display the IP routing table.
-.H 3 "route add" " \fIhostid\fP[/\fIbits\fP]|default \fIinterface\fP [\fIgateway_hostid\fP [\fImetric\fP]]"
+.H 3 "route add" " \fIhostid\fP[/\fIbits\fP]|default \fIinterface\fP [\fIgateway_hostid\fP [\fImetric\fP [\fIttl\fP]]]"
 Add a permanent entry to the IP routing table.
-It will not time out as will an automatically created entry,
+If \fIttl\fP is 0 it will not time out,
 but must be removed with the \fBroute drop\fP command.
 \fBroute add\fP requires at least two more arguments,
 the \fIhostid\fP of the destination and the name of

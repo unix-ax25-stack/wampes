@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: makeiprt.c,v 1.17 1996/08/12 18:52:58 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: makeiprt.c,v 1.18 1999/04/25 16:56:42 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -524,35 +524,44 @@ static void print_routes(void)
 static void make_route_files(void)
 {
 
+  FILE *fp;
+  char *cp;
   char command[1024];
   char dest[1024];
-  char *cp;
-  const char * gateway;
-  FILE *fp;
+  const char *gateway;
+  int ttl;
   struct node *np;
   struct route *rp;
 
   for (np = Nodes; np; np = np->next) {
     strcpy(dest, np->name);
-    if ((cp = strchr(dest, '.'))) *cp = 0;
+    cp = strchr(dest, '.');
+    if (cp) {
+      *cp = 0;
+    }
     sprintf(command, "sort > /tmp/iprt.%s", dest);
-    if (!(fp = popen(command, "w"))) {
+    fp = popen(command, "w");
+    if (!fp) {
       perror(command);
       exit(1);
     }
     for (rp = np->routes; rp; rp = rp->next) {
-      if (!rp->bits)
+      ttl = 0;
+      if (!rp->bits) {
 	strcpy(dest, "default");
-      else if (rp->bits == 32)
+      } else if (rp->bits == 32) {
 	strcpy(dest, resolve_a(rp->dest));
-      else
+	ttl = 0x7fffffff / 1000;
+      } else {
 	sprintf(dest, "%s/%d", resolve_a(rp->dest), rp->bits);
+      }
       if (rp->iface != Loopback_iface) {
-	if (!rp->gateway || (rp->bits == 32 && rp->dest == rp->gateway))
-	  gateway = "";
-	else
+	if (!rp->gateway || (rp->bits == 32 && rp->dest == rp->gateway)) {
+	  gateway = "0";
+	} else {
 	  gateway = resolve_a(rp->gateway);
-	fprintf(fp, "route add%c %-20s %-8s %-20s\n", rp->priv ? 'p' : ' ', dest, rp->iface->name, gateway);
+	}
+	fprintf(fp, "route add%c %-20s %-8s %-20s %d %d\n", rp->priv ? 'p' : ' ', dest, rp->iface->name, gateway, 1, ttl);
       }
     }
     pclose(fp);
