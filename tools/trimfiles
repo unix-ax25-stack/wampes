@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.9 1994/01/17 14:53:13 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.10 1994/02/28 11:55:51 deyke Exp $
 
 PATH=/usr/5bin:$PATH
 tmp=tmp$$
@@ -8,22 +8,23 @@ if [ ! -f .trimtime ] ; then
   touch 0101000070 .trimtime
 fi
 for i in `find * -prune -type f '(' \
-	-name '*.c'          -o \
-	-name '*.conf'       -o \
-	-name '*.h'          -o \
-	-name 'Makefile'     -o \
-	-name 'README'       -o \
-	-name 'configure'    -o \
-	-name 'doc'          -o \
-	-name 'fixnetrc'     -o \
-	-name 'genupd'       -o \
-	-name 'hosts'        -o \
-	-name 'intro.txt'    -o \
-	-name 'ip_routes'    -o \
-	-name 'net.rc*'      -o \
-	-name 'netrom_links' -o \
-	-name 'notes'        -o \
-	-name 'smack.ms'        \
+	-name '*.c'             -o \
+	-name '*.conf'          -o \
+	-name '*.h'             -o \
+	-name 'Makefile'        -o \
+	-name 'Makefile.pure'   -o \
+	-name 'README'          -o \
+	-name 'configure'       -o \
+	-name 'doc'             -o \
+	-name 'fixnetrc'        -o \
+	-name 'genupd'          -o \
+	-name 'hosts'           -o \
+	-name 'intro.txt'       -o \
+	-name 'ip_routes'       -o \
+	-name 'net.rc*'         -o \
+	-name 'netrom_links'    -o \
+	-name 'notes'           -o \
+	-name 'smack.ms'           \
 	')' -newer .trimtime -print`
 do
   echo "$i \c"

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.12 1993/05/17 13:45:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.13 1994/02/28 11:55:22 deyke Exp $ */
 
 /* General purpose software timer facilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -51,7 +51,7 @@ void *v1,*v2;
 			if(t->func)
 				(*t->func)(t->arg);
 		}
-#ifndef PURIFY
+#ifndef SINGLE_THREADED
 		pwait(NULL);    /* Let them run before handling more ticks */
 #else
 		return;

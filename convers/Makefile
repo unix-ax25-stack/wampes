@@ -1,6 +1,9 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.31 1994/02/19 17:50:27 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.32 1994/02/28 11:55:56 deyke Exp $
 
 CFLAGS     = -I../lib
+LD         = $(CC)
+LDFLAGS    = $(CFLAGS) -s
+MAKEFILE   = Makefile
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
@@ -8,67 +11,67 @@ TARGETS    = convers conversd
 
 all:;   @case "`uname -sr`" in \
 	HP-UX*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=c89' \
-		'CFLAGS=-O -s -D_HPUX_SOURCE -I../lib' \
+		'CFLAGS=-O -D_HPUX_SOURCE -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all;; \
 	AIX*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=cc' \
-		'CFLAGS=-O -s -qchars=signed -D_ALL_SOURCE -I../lib' \
+		'CFLAGS=-O -qchars=signed -D_ALL_SOURCE -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all;; \
 	Linux*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=gcc' \
-		'CFLAGS=-O -s -I../lib' \
+		'CFLAGS=-O -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all;; \
 	386BSD*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=cc' \
-		'CFLAGS=-O -s -I../lib' \
+		'CFLAGS=-O -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all;; \
 	BSD/386*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=cc' \
-		'CFLAGS=-O -s -I../lib' \
+		'CFLAGS=-O -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all;; \
 	SunOS\ 4.*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=acc' \
-		'CFLAGS=-O -s -I../lib' \
+		'CFLAGS=-O -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all;; \
 	SunOS\ 5.*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=cc' \
-		'CFLAGS=-O -s -I../lib' \
+		'CFLAGS=-O -I../lib' \
 		'LIBS=../lib/libutil.a -lsocket -lnsl' \
 		_all;; \
 	ULTRIX*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=gcc' \
-		'CFLAGS=-O6 -s -DULTRIX_RISC -I../lib' \
+		'CFLAGS=-O6 -DULTRIX_RISC -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all;; \
 	A/UX*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=gcc -fpcc-struct-return' \
-		'CFLAGS=-O -s -D_POSIX_SOURCE -I../lib' \
+		'CFLAGS=-O -D_POSIX_SOURCE -I../lib' \
 		'LIBS=../lib/libutil.a -lposix' \
 		_all;; \
 	RISC\ iX*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=/tcp/cc' \
 		'CFLAGS=-DRISCiX -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all;; \
 	AOS*) \
-		/usr/local/bin/make -i \
+		/usr/local/bin/make -i -f $(MAKEFILE) \
 		'CC=/usr/local/bin/gcc' \
 		'CFLAGS=-O2 -I../lib' \
 		'LIBS=../aos/libaos.a ../lib/libutil.a' \
@@ -82,12 +85,12 @@ _all:   $(TARGETS)
 convers: convers.o
 	$(RMTARGET)
 	@sleep 1
-	$(CC) $(CFLAGS) $? $(LIBS) -o $@
+	$(LD) $(LDFLAGS) $? $(LIBS) -o $@
 
 conversd: conversd.o
 	$(RMTARGET)
 	@sleep 1
-	$(CC) $(CFLAGS) $? $(LIBS) -o $@
+	$(LD) $(LDFLAGS) $? $(LIBS) -o $@
 
 install: /usr/local/bin/convers /tcp/conversd
 
@@ -102,7 +105,7 @@ install: /usr/local/bin/convers /tcp/conversd
 
 clean:; rm -f *.o $(TARGETS) *~
 
-depend:; @mkmf
+depend:; @mkmf -f $(MAKEFILE)
 ###
 convers.o: ../lib/buildsaddr.h
 conversd.o: ../lib/buildsaddr.h ../lib/configure.h ../lib/md5.h \

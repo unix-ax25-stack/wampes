@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.42 1994/02/07 12:38:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.43 1994/02/28 11:55:18 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -119,7 +119,7 @@ char *argv[];
 	printf("(c) Copyright 1986-1993 by Phil Karn, KA9Q\n");
 	printf("\n");
 	/* Start background Daemons */
-#ifndef PURIFY
+#ifndef SINGLE_THREADED
 	for(tp=Daemons;;tp++){
 		if(tp->name == NULLCHAR)
 			break;
@@ -154,7 +154,7 @@ char *argv[];
 	cmdmode();
 
 	for(;;){
-#ifndef PURIFY
+#ifndef SINGLE_THREADED
 		pwait(NULL);
 #else
 		timerproc(0,0,0);
@@ -217,11 +217,11 @@ void *v2;
 
 	stop_repeat = 1;
 	n = read(0, p = buf, sizeof(buf));
-	if (n <= 0) dobye(0, (char **) 0, (void * ) 0);
+	if (n <= 0) dobye(0, (char **) 0, (void *) 0);
 	while (--n >= 0) {
-		process_char(uchar(*p++));
+		process_char(*p++ & 0xff);
 		while (Fkey_ptr && *Fkey_ptr)
-			process_char(uchar(*Fkey_ptr++));
+			process_char(*Fkey_ptr++ & 0xff);
 	}
 }
 int
@@ -237,8 +237,10 @@ void *p;
 		printf("key# must be 1..%d\n", NUM_FKEY);
 		return 1;
 	}
-	if (Fkey_table[n])
+	if (Fkey_table[n]) {
+		Fkey_ptr = 0;
 		free(Fkey_table[n]);
+	}
 	Fkey_table[n] = strdup(argv[2]);
 	return 0;
 }

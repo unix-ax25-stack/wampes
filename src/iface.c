@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.18 1993/05/17 13:44:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.19 1994/02/28 11:55:15 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -199,7 +199,7 @@ loop:
 			bp = dequeue(&Hopper);
 			break;
 		}
-#ifndef PURIFY
+#ifndef SINGLE_THREADED
 		pwait(&Hopper);
 #else
 		return;
@@ -223,7 +223,7 @@ loop:
 	/* Let everything else run - this keeps the system from wedging
 	 * when we're hit by a big burst of packets
 	 */
-#ifndef PURIFY
+#ifndef SINGLE_THREADED
 	pwait(NULL);
 	goto loop;
 #endif

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.19 1993/06/20 07:30:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.20 1994/02/28 11:55:11 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -45,7 +45,9 @@ char Ax25multi[][AXALEN] = {
 #endif
 	'\0',
 };
-char Mycall[AXALEN];
+char Mycall[AXALEN] = {
+	'N'<<1, 'O'<<1, 'C'<<1, 'A'<<1, 'L'<<1, 'L'<<1, '0'<<1  /* NOCALL */
+};
 struct ax_route *Ax_routes[AXROUTESIZE];
 struct iface *Axroute_default_ifp;
 int Digipeat = 2;       /* Controls digipeating */

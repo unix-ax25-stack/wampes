@@ -1,6 +1,8 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.18 1994/02/22 13:22:56 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.19 1994/02/28 11:58:20 deyke Exp $
 
 LIBRARY       = libutil.a
+
+MAKEFILE      = Makefile
 
 OBJS          = buildsaddr.o \
 		calc_crc.o \
@@ -26,61 +28,61 @@ all:;   if [ -x /bin/ksh ] ; then \
 	fi
 	@case "`uname -sr`" in \
 	HP-UX*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=c89' \
 		'CFLAGS=-O -D_HPUX_SOURCE' \
 		'RANLIB=:' \
 		_all;; \
 	AIX*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -qchars=signed -D_ALL_SOURCE' \
 		'RANLIB=:' \
 		_all;; \
 	Linux*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O' \
 		_all;; \
 	386BSD*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O' \
 		_all;; \
 	BSD/386*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O' \
 		_all;; \
 	SunOS\ 4.*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=acc' \
 		'CFLAGS=-O' \
 		_all;; \
 	SunOS\ 5.*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O' \
 		'RANLIB=:' \
 		_all;; \
 	ULTRIX*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O6 -DULTRIX_RISC' \
 		_all;; \
 	A/UX*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=gcc -fpcc-struct-return' \
 		'CFLAGS=-O -D_POSIX_SOURCE' \
 		'RANLIB=:' \
 		_all;; \
 	RISC\ iX*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=/tcp/cc' \
 		'CFLAGS=-DRISCiX' \
 		_all;; \
 	AOS*) \
-		/usr/local/bin/make -i \
+		/usr/local/bin/make -i -f $(MAKEFILE) \
 		'CC=/usr/local/bin/gcc' \
 		'CFLAGS=-O2' \
 		_all;; \
@@ -99,9 +101,9 @@ $(LIBRARY): $(OBJS)
 
 install:;
 
-clean:; rm -f *.o $(LIBRARY) *~
+clean:; rm -f *.o *.a *~
 
-depend:; @mkmf
+depend:; @mkmf -f $(MAKEFILE)
 ###
 buildsaddr.o: buildsaddr.h
 calc_crc.o: calc_crc.h

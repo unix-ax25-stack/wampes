@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.15 1994/02/19 17:50:38 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.16 1994/02/28 11:55:42 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -20,16 +20,18 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 
 struct iface {
   struct iface *next;
-  char *name;
+  const char *name;
   int cnt;
 };
 
-struct axroute_tab {
-  char call[AXALEN];
-  struct axroute_tab *digi;
-  struct iface *ifp;
-  long time;
-  struct axroute_tab *next;
+struct ax_route {
+	struct ax_route *next;          /* Linked list pointer */
+	char target[AXALEN];
+	struct ax_route *digi;
+	const struct iface *ifp;
+/*      int perm; */
+/*      int jumpstart; */
+	long time;
 };
 
 struct axroute_saverecord_1 {
@@ -40,23 +42,14 @@ struct axroute_saverecord_1 {
 };
 
 static const char axroutefile[] = "/tcp/axroute_data";
-static struct axroute_tab *axroute_tab[AXROUTESIZE];
+static struct ax_route *Ax_routes[AXROUTESIZE];
 static struct iface *Ifaces;
-
-static int axroute_hash(char *call);
-static struct axroute_tab *axroute_tabptr(char *call, int create);
-static struct iface *ifaceptr(char *name);
-static void axroute_loadfile(void);
-static void doroutelistentry(struct axroute_tab *rp);
-static int doroutelist(int argc, char *argv[]);
-static int doroutestat(void);
-static void hash_performance(void);
 
 /*---------------------------------------------------------------------------*/
 
 /* Convert encoded AX.25 address to printable string */
 
-char *pax25(char *e, char *addr)
+static char *pax25(char *e, const char *addr)
 {
 	int i;
 	char c;
@@ -84,7 +77,7 @@ char *pax25(char *e, char *addr)
  *   Return -1 on error, 0 if OK
  */
 
-int setcall(char *out, char *call)
+static int setcall(char *out, const char *call)
 {
 	int csize;
 	unsigned ssid;
@@ -92,9 +85,9 @@ int setcall(char *out, char *call)
 	char *dp;
 	char c;
 
-	if(out == NULLCHAR || call == NULLCHAR || *call == '\0'){
+	if(out == NULLCHAR || call == NULLCHAR || *call == '\0')
 		return -1;
-	}
+
 	/* Find dash, if any, separating callsign from ssid
 	 * Then compute length of callsign field and make sure
 	 * it isn't excessive
@@ -132,7 +125,7 @@ int setcall(char *out, char *call)
 
 /*---------------------------------------------------------------------------*/
 
-int addreq(char *a, char *b)
+static int addreq(const char *a, const char *b)
 {
 	if (*a++ != *b++) return 0;
 	if (*a++ != *b++) return 0;
@@ -145,7 +138,7 @@ int addreq(char *a, char *b)
 
 /*---------------------------------------------------------------------------*/
 
-void addrcp(char *to, char *from)
+static void addrcp(char *to, const char *from)
 {
 	*to++ = *from++;
 	*to++ = *from++;
@@ -158,55 +151,56 @@ void addrcp(char *to, char *from)
 
 /*---------------------------------------------------------------------------*/
 
-static int axroute_hash(char *call)
+static int axroute_hash(const char *call)
 {
-  long hashval;
+	int hashval;
 
-  hashval  = ((*call++ << 23) & 0x0f000000);
-  hashval |= ((*call++ << 19) & 0x00f00000);
-  hashval |= ((*call++ << 15) & 0x000f0000);
-  hashval |= ((*call++ << 11) & 0x0000f000);
-  hashval |= ((*call++ <<  7) & 0x00000f00);
-  hashval |= ((*call++ <<  3) & 0x000000f0);
-  hashval |= ((*call   >>  1) & 0x0000000f);
-  return hashval % AXROUTESIZE;
+	hashval  = ((*call++ << 23) & 0x0f000000);
+	hashval |= ((*call++ << 19) & 0x00f00000);
+	hashval |= ((*call++ << 15) & 0x000f0000);
+	hashval |= ((*call++ << 11) & 0x0000f000);
+	hashval |= ((*call++ <<  7) & 0x00000f00);
+	hashval |= ((*call++ <<  3) & 0x000000f0);
+	hashval |= ((*call   >>  1) & 0x0000000f);
+	return hashval;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static struct axroute_tab *axroute_tabptr(char *call, int create)
+static struct ax_route *ax_routeptr(const char *call, int create)
 {
 
-  int hashval;
-  struct axroute_tab *rp;
+	struct ax_route **tp;
+	struct ax_route *rp;
 
-  hashval = axroute_hash(call);
-  for (rp = axroute_tab[hashval]; rp && !addreq(rp->call, call); rp = rp->next) ;
-  if (!rp && create) {
-    rp = (struct axroute_tab *) calloc(1, sizeof(*rp));
-    addrcp(rp->call, call);
-    rp->next = axroute_tab[hashval];
-    axroute_tab[hashval] = rp;
-  }
-  return rp;
+	tp = Ax_routes + (axroute_hash(call) % AXROUTESIZE);
+	for (rp = *tp; rp && !addreq(rp->target, call); rp = rp->next)
+		;
+	if (!rp && create) {
+		rp = calloc(1, sizeof(*rp));
+		addrcp(rp->target, call);
+		rp->next = *tp;
+		*tp = rp;
+	}
+	return rp;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static struct iface *ifaceptr(char *name)
+static const struct iface *ifaceptr(const char *name)
 {
-  struct iface *ifp;
+	struct iface *ifp;
 
-  if (!*name) return 0;
-  for (ifp = Ifaces; ifp && strcmp(ifp->name, name); ifp = ifp->next) ;
-  if (!ifp) {
-    ifp = (struct iface *) calloc(1, sizeof(*ifp));
-    ifp->name = strdup(name);
-    ifp->next = Ifaces;
-    Ifaces = ifp;
-  }
-  ifp->cnt++;
-  return ifp;
+	if (!*name) return 0;
+	for (ifp = Ifaces; ifp && strcmp(ifp->name, name); ifp = ifp->next) ;
+	if (!ifp) {
+		ifp = (struct iface *) calloc(1, sizeof(*ifp));
+		ifp->name = strdup((char *) name);
+		ifp->next = Ifaces;
+		Ifaces = ifp;
+	}
+	ifp->cnt++;
+	return ifp;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -219,11 +213,11 @@ static void axroute_loadfile(void)
   char ifname[1024];
   int c;
   struct axroute_saverecord_1 buf;
-  struct axroute_tab *rp;
+  struct ax_route *rp;
 
-  if (!(fp = fopen(axroutefile, "rb"))) return;
+  if (!(fp = fopen(axroutefile, "r"))) return;
   getc(fp);
-  while (fread(&buf, sizeof(buf), 1, fp)) {
+  while (fread((char *) &buf, sizeof(buf), 1, fp)) {
     cp = ifname;
     do {
       if ((c = getc(fp)) == EOF) {
@@ -231,8 +225,8 @@ static void axroute_loadfile(void)
 	return;
       }
     } while (*cp++ = c);
-    rp = axroute_tabptr(buf.call, 1);
-    if (buf.digi[0]) rp->digi = axroute_tabptr(buf.digi, 1);
+    rp = ax_routeptr(buf.call, 1);
+    if (buf.digi[0]) rp->digi = ax_routeptr(buf.digi, 1);
     rp->ifp = ifaceptr(ifname);
     rp->time = buf.time;
   }
@@ -241,17 +235,17 @@ static void axroute_loadfile(void)
 
 /*---------------------------------------------------------------------------*/
 
-static void doroutelistentry(struct axroute_tab *rp)
+static void doroutelistentry(const struct ax_route *rp)
 {
 
   char *cp, buf[1024];
+  const struct ax_route *rp_stack[20];
   int i, n;
-  struct axroute_tab *rp_stack[20];
-  struct iface *ifp = 0;
+  const struct iface *ifp = 0;
   struct tm *tm;
 
   tm = localtime(&rp->time);
-  cp = pax25(buf, rp->call);
+  cp = pax25(buf, rp->target);
   for (n = 0; rp; rp = rp->digi) {
     rp_stack[++n] = rp;
     ifp = rp->ifp;
@@ -259,7 +253,7 @@ static void doroutelistentry(struct axroute_tab *rp)
   for (i = n; i > 1; i--) {
     strcat(cp, i == n ? " via " : ",");
     while (*cp) cp++;
-    pax25(cp, rp_stack[i]->call);
+    pax25(cp, rp_stack[i]->target);
   }
   printf("%2d-%.3s  %02d:%02d  %-9s  %s\n",
 	 tm->tm_mday,
@@ -277,18 +271,18 @@ static int doroutelist(int argc, char *argv[])
 
   char call[AXALEN];
   int i;
-  struct axroute_tab *rp;
+  struct ax_route *rp;
 
   puts("Date    Time   Interface  Path");
   if (argc < 2) {
     for (i = 0; i < AXROUTESIZE; i++)
-      for (rp = axroute_tab[i]; rp; rp = rp->next) doroutelistentry(rp);
+      for (rp = Ax_routes[i]; rp; rp = rp->next) doroutelistentry(rp);
     return 0;
   }
   argc--;
   argv++;
   for (; argc > 0; argc--, argv++)
-    if (setcall(call, *argv) || !(rp = axroute_tabptr(call, 0)))
+    if (setcall(call, *argv) || !(rp = ax_routeptr(call, 0)))
       printf("** Not in table ** %s\n", *argv);
     else
       doroutelistentry(rp);
@@ -319,12 +313,12 @@ static void hash_performance(void)
 {
 
   int i, len;
-  struct axroute_tab *rp;
+  struct ax_route *rp;
 
   puts("Index  Length");
   for (i = 0; i < AXROUTESIZE; i++) {
     len = 0;
-    for (rp = axroute_tab[i]; rp; rp = rp->next) len++;
+    for (rp = Ax_routes[i]; rp; rp = rp->next) len++;
     printf("%5d  %6d  ", i, len);
     while (len--) putchar('*');
     putchar('\n');

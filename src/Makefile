@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.63 1994/02/19 17:49:59 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.64 1994/02/28 11:55:10 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -282,68 +282,68 @@ RMTARGET      = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 all:;   chmod 755 cc
 	@case "`uname -sr`" in \
 	HP-UX*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=c89' \
 		'CFLAGS=-O -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024 -I../lib' \
 		'LIBS=../lib/libutil.a -lndbm' \
 		_all;; \
 	AIX*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -qchars=signed -DUNIX -D_ALL_SOURCE -DFD_SETSIZE=1024 -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all;; \
 	Linux*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O6 -DVC_DYNAMIC -DUNIX -I./linux_include -I../lib' \
 		'LDFLAGS=-static -s' \
 		'LIBS=../lib/libutil.a -ldbm' \
 		_all;; \
 	386BSD*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all;; \
 	BSD/386*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all;; \
 	SunOS\ 4.*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=acc' \
 		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all;; \
 	SunOS\ 5.*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=cc' \
 		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
 		'LIBS=../lib/libutil.a -lsocket -lnsl' \
 		_all;; \
 	ULTRIX*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O6 -DUNIX -DULTRIX_RISC -DFD_SETSIZE=64 -I../lib' \
 		'LIBS=../lib/libutil.a -ldbm' \
 		_all;; \
 	A/UX*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=gcc -fpcc-struct-return' \
 		'CFLAGS=-O -DUNIX -D_POSIX_SOURCE -I../lib' \
 		'LIBS=../lib/libutil.a -ldbm -lposix' \
 		_all;; \
 	RISC\ iX*) \
-		make -i \
+		make -i -f $(MAKEFILE) \
 		'CC=/tcp/src/cc' \
 		'CFLAGS=-DUNIX -DRISCiX -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all;; \
 	AOS*) \
-		/usr/local/bin/make -i \
+		/usr/local/bin/make -i -f $(MAKEFILE) \
 		'CC=/usr/local/bin/gcc' \
 		'CFLAGS=-O2 -DUNIX -Dibm6153 -I../lib' \
 		'LIBS=../aos/libaos.a ../lib/libutil.a' \
@@ -393,7 +393,7 @@ clean:;         @rm -f $(OBJS) *.o core *~
 
 clobber:;       @rm -f $(OBJS) $(PROGRAM) *.o core tags *~
 
-depend:;        @mkmf -f $(MAKEFILE) ROOT=$(ROOT)
+depend:;        @mkmf -f $(MAKEFILE)
 
 echo:;          @echo $(HDRS) $(SRCS)
 

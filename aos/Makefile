@@ -1,6 +1,8 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/aos/Makefile,v 1.2 1994/02/19 17:52:00 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/aos/Makefile,v 1.3 1994/02/28 11:57:02 deyke Exp $
 
 LIBRARY       = libaos.a
+
+MAKEFILE      = Makefile
 
 OBJS          = ctime.o \
 		getcwd.o \
@@ -32,7 +34,7 @@ all:;   @case "`uname -sr`" in \
 	RISC\ iX*) \
 		:;; \
 	AOS*) \
-		/usr/local/bin/make -i \
+		/usr/local/bin/make -i -f $(MAKEFILE) \
 		'CC=/usr/local/bin/gcc' \
 		'CFLAGS=-O2' \
 		_all;; \
@@ -53,6 +55,6 @@ install:;
 
 clean:; rm -f *.o $(LIBRARY) *~
 
-depend:; @mkmf
+depend:; @mkmf -f $(MAKEFILE)
 ###
 ctime.o: time.h ansi.h cdefs.h tzfile.h
