@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.2 1988/09/13 22:27:09 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.3 1988/10/02 16:33:06 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -23,7 +23,8 @@ extern void endutent();
 extern void exit();
 extern void free();
 
-#define PORT 3600
+#define MAXCHANNEL 99999
+#define PORT       3600
 
 struct mbuf {
   struct mbuf *next;
@@ -75,54 +76,6 @@ static struct utsname utsname;
 
 /*---------------------------------------------------------------------------*/
 
-/*
- * Executes read(2), cares about EINTR
- */
-
-int  doread(fildes, buf, nbyte)
-int  fildes;
-char  *buf;
-unsigned  nbyte;
-{
-  int  cnt;
-
-  for (; ; ) {
-    cnt = read(fildes, buf, nbyte);
-    if (cnt >= 0) return cnt;
-    if (errno != EINTR) return (-1);
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-
-/*
- * Executes write(2), retries until all data is send, cares about EINTR
- *
- * WARNING: SIGPIPE should be ignored by the calling context!
- */
-
-int  dowrite(fildes, buf, nbyte)
-int  fildes;
-char  *buf;
-unsigned  nbyte;
-{
-  int  cnt, len;
-
-  len = nbyte;
-  while (nbyte) {
-    cnt = write(fildes, buf, nbyte);
-    if (cnt < 0) {
-      if (errno != EINTR) return (-1);
-      cnt = 0;
-    }
-    buf += cnt;
-    nbyte -= cnt;
-  }
-  return len;
-}
-
-/*---------------------------------------------------------------------------*/
-
 static int  sigpipe_handler(sig, code, scp)
 int  sig;
 int  code;
@@ -150,26 +103,6 @@ char  *string;
     p->next = bp;
   } else
     *bpp = bp;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int  pullchar(bpp)
-struct mbuf **bpp;
-{
-
-  int  c;
-  register struct mbuf *bp, *p;
-
-  bp = *bpp;
-  c = (*bp->data++) & 0xff;
-  while (bp && !*bp->data) {
-    p = bp;
-    bp = bp->next;
-    free(p);
-  }
-  *bpp = bp;
-  return c;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -324,11 +257,20 @@ int  flisten;
 
   int  addrlen;
   int  fd;
+  int  flags;
   struct connection *cp;
   struct sockaddr_in addr;
 
   addrlen = sizeof(addr);
   if ((fd = accept(flisten, &addr, &addrlen)) < 0) return;
+  if ((flags = fcntl(fd, F_GETFL, 0)) == -1) {
+    close(fd);
+    return;
+  }
+  if (fcntl(fd, F_SETFL, flags | O_NDELAY) == -1) {
+    close(fd);
+    return;
+  }
   cp = (struct connection *) calloc(1, sizeof(struct connection ));
   cp->fd = fd;
   cp->fmask = (1 << fd);
@@ -463,7 +405,7 @@ int  channel;
       if ((stbuf.st_mode & 2) != 2) continue;
       if ((fd = open(buffer, O_WRONLY, 0644)) < 0) continue;
       sprintf(buffer, invitetext, fromname, timestring(currtime), channel);
-      dowrite(fd, buffer, (unsigned) strlen(buffer));
+      write(fd, buffer, (unsigned) strlen(buffer));
       close(fd);
       endutent();
       return;
@@ -505,6 +447,7 @@ static void connect_permlinks()
 
   char  buffer[2048];
   int  fd;
+  int  flags;
   register struct connection *cp;
   register struct permlink *p;
   struct sockaddr_in addr;
@@ -520,6 +463,14 @@ static void connect_permlinks()
       addr.sin_addr.s_addr = 0x7f000001;
       addr.sin_port = 3700;
       if (connect(fd, &addr, sizeof(addr))) {
+	close(fd);
+	continue;
+      }
+      if ((flags = fcntl(fd, F_GETFL, 0)) == -1) {
+	close(fd);
+	continue;
+      }
+      if (fcntl(fd, F_SETFL, flags | O_NDELAY) == -1) {
 	close(fd);
 	continue;
       }
@@ -572,16 +523,25 @@ struct connection *cp;
 static void channel_command(cp)
 struct connection *cp;
 {
+
+  char  buffer[2048];
   int  newchannel;
 
   newchannel = atoi(getarg(0, 0));
-  if (newchannel < 0 || newchannel > 99999) {
-    appendstring(&cp->obuf, "*** Channel numbers must be in the range 0..99999.\n");
+  if (newchannel < 0 || newchannel > MAXCHANNEL) {
+    sprintf(buffer, "*** Channel numbers must be in the range 0..%d.\n", MAXCHANNEL);
+    appendstring(&cp->obuf, buffer);
     return;
   }
-  if (newchannel == cp->channel) return;
+  if (newchannel == cp->channel) {
+    sprintf(buffer, "*** Already on channel %d.\n", cp->channel);
+    appendstring(&cp->obuf, buffer);
+    return;
+  }
   send_user_change_msg(cp->name, cp->host, cp->time, cp->channel, newchannel);
   cp->channel = newchannel;
+  sprintf(buffer, "*** Now on channel %d.\n", cp->channel);
+  appendstring(&cp->obuf, buffer);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -597,10 +557,10 @@ struct connection *cp;
   appendstring(&cp->obuf, "/EXIT                Terminate the convers session\n");
   appendstring(&cp->obuf, "/HELP                Print help information\n");
   appendstring(&cp->obuf, "/INVITE user         Invite user to join your channel\n");
-  appendstring(&cp->obuf, "/LINKS [L]           List all connections to other hosts\n");
+  appendstring(&cp->obuf, "/LINKS [LONG]        List all connections to other hosts\n");
   appendstring(&cp->obuf, "/MSG user text...    Send a private message to user\n");
   appendstring(&cp->obuf, "/QUIT                Terminate the convers session\n");
-  appendstring(&cp->obuf, "/WHO [Q] [L]         List all users and their channel numbers\n");
+  appendstring(&cp->obuf, "/WHO [QUICK] [LONG]  List all users and their channel numbers\n");
   appendstring(&cp->obuf, "/WRITE user text...  Send a private message to user\n");
 
   appendstring(&cp->obuf, "***\n");
@@ -681,15 +641,22 @@ struct connection *cp;
 static void name_command(cp)
 struct connection *cp;
 {
+
   char  buffer[2048];
+  int  newchannel;
 
   strcpy(cp->name, getarg(0, 0));
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  cp->channel = atoi(getarg(0, 0));
-  sprintf(buffer, "conversd @ %s $Revision: 2.2 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.3 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
+  newchannel = atoi(getarg(0, 0));
+  if (newchannel < 0 || newchannel > MAXCHANNEL) {
+    sprintf(buffer, "*** Channel numbers must be in the range 0..%d.\n", MAXCHANNEL);
+    appendstring(&cp->obuf, buffer);
+  } else
+    cp->channel = newchannel;
   send_user_change_msg(cp->name, cp->host, cp->time, -1, cp->channel);
 }
 
@@ -971,6 +938,7 @@ char  **argv;
   int  rmask, wmask;
   int  size;
   struct connection *cp;
+  struct mbuf *bp;
   struct sigvec vec;
   struct sockaddr_in addr;
 
@@ -1021,7 +989,7 @@ char  **argv;
     for (cp = connections; cp; cp = cp->next) {
 
       if (rmask & cp->fmask)
-	if ((size = doread(cp->fd, buffer, sizeof(buffer))) <= 0)
+	if ((size = read(cp->fd, buffer, sizeof(buffer))) < 0)
 	  bye_command(cp);
 	else {
 	  cp->received += size;
@@ -1046,9 +1014,17 @@ char  **argv;
 	}
 
       if (wmask & cp->fmask) {
-	c = pullchar(&cp->obuf);
-	if (dowrite(cp->fd, &c, 1) < 0) bye_command(cp);
-	cp->xmitted++;
+	size = write(cp->fd, cp->obuf->data, (unsigned) strlen(cp->obuf->data));
+	if (size < 0) {
+	  if (errno != EINTR) bye_command(cp);
+	} else {
+	  cp->xmitted += size;
+	  cp->obuf->data += size;
+	  while ((bp = cp->obuf) && !*cp->obuf->data) {
+	    cp->obuf = cp->obuf->next;
+	    free(bp);
+	  }
+	}
       }
 
     }
