@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.71 1989/06/29 23:00:18 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.72 1989/07/01 22:18:09 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -793,7 +793,9 @@ struct mail *mail;
 
   if (mail->type == 'P') send_to_mail(mail);
   if (mail->type == 'B') send_to_bbs(mail);
-  if (mail->type == 'B' && mail->status == '$') send_to_news(mail);
+  if (mail->type == 'B'   &&
+      mail->status == '$' &&
+      strlen(get_user_from_path(mail->to)) > 1) send_to_news(mail);
 
   /* Free mail */
 
