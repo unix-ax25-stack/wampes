@@ -1,4 +1,4 @@
-/* @(#) $Id: trace.c,v 1.22 1996/09/09 22:14:49 deyke Exp $ */
+/* @(#) $Id: trace.c,v 1.23 1998/04/28 01:34:07 deyke Exp $ */
 
 /* Packet tracing - top level and generic routines, including hex/ascii
  * Copyright 1991 Phil Karn, KA9Q
@@ -72,13 +72,13 @@ struct mbuf *bp
 		 && (ift->addrtest != NULL)
 		 && (*ift->addrtest)(ifp,bp) == 0)
 			return;         /* broadcasts are suppressed */
-		timer = secclock();
+		timer = (time_t) secclock();
 		cp = ctime(&timer);
 		cp[24] = '\0';
 		fprintf(fp,"\n%s - %s recv:\n",cp,ifp->name);
 		break;
 	case IF_TRACE_OUT:
-		timer = secclock();
+		timer = (time_t) secclock();
 		cp = ctime(&timer);
 		cp[24] = '\0';
 		fprintf(fp,"\n%s - %s sent:\n",cp,ifp->name);

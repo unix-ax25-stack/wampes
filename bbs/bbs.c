@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Id: bbs.c,v 3.10 1997/05/12 18:58:18 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: bbs.c,v 3.11 1998/04/28 01:35:19 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -1046,8 +1046,8 @@ static int get_header_value(const char *name, int do822, const char *line, char 
 
   char buf[1024];
   char *cp;
-  char *p1;
-  char *p2;
+  char *p1 = 0;
+  char *p2 = 0;
   int chr;
   int comment;
 
@@ -2280,7 +2280,7 @@ static void mybbs_command(int argc, const char **argv)
   strcpy(mail->fromuser, user.name);
   strcpy(mail->touser, "m");
   strcpy(mail->tohost, "thebox");
-  sprintf(mail->subject, "%s %ld", argv[1], time(0));
+  sprintf(mail->subject, "%s %ld", argv[1], (long) time(0));
   strupc(mail->subject);
   printf("Setting MYBBS of %s to %s.\n", mail->fromuser, argv[1]);
   route_mail(mail);

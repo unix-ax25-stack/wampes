@@ -1,4 +1,4 @@
-/* @(#) $Id: sntp.c,v 1.15 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: sntp.c,v 1.16 1998/04/28 01:34:07 deyke Exp $ */
 
 /* Simple Network Time Protocol (SNTP) (see RFC1361) */
 
@@ -501,7 +501,7 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 	abs_offset = fpabs(peer->offset);
 	if (abs_offset.i < Step_threshold) {
 #if HAS_ADJTIME || defined __hpux
-		tv.tv_sec = peer->offset.i;
+		tv.tv_sec = (int) peer->offset.i;
 		tv.tv_usec = (long) (peer->offset.f / USEC2F);
 		if (!adjtime(&tv, 0)) {
 			peer->adjts++;
@@ -514,7 +514,7 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 	}
 	if (gettimeofday(&tv, 0)) return;
 	now = fpadd(sys_clock(), peer->offset);
-	tv.tv_sec = now.i - TIMEBIAS;
+	tv.tv_sec = (int) (now.i - TIMEBIAS);
 	tv.tv_usec = (long) (now.f / USEC2F);
 	if (!settimeofday(&tv, 0)) {
 		peer->steps++;

@@ -1,4 +1,10 @@
-@(#) $Id: ChangeLog,v 1.43 1998/04/24 19:24:02 deyke Exp $
+@(#) $Id: ChangeLog,v 1.44 1998/04/28 01:33:45 deyke Exp $
+
+980427 Dieter Deyke <deyke@fc.hp.com>
+
+	Better removal of conflicting files and directories in netupds.c
+
+	Removed some compiler warnings
 
 980424 Dieter Deyke <deyke@fc.hp.com>
 

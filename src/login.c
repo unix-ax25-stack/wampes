@@ -1,4 +1,4 @@
-/* @(#) $Id: login.c,v 1.67 1998/03/09 17:42:56 deyke Exp $ */
+/* @(#) $Id: login.c,v 1.68 1998/04/28 01:34:07 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -212,7 +212,7 @@ void fixutmpfile(void)
       up->ut_exit.e_termination = 0;
       up->ut_exit.e_exit = 0;
 #endif
-      up->ut_time = secclock();
+      up->ut_time = (time_t) secclock();
       pututline(up);
     }
   endutent();
@@ -245,7 +245,7 @@ struct passwd *getpasswdentry(const char *name, int create)
 
   char homedirparent[80];
   char homedir[80];
-  FILE *fp;
+  FILE *fp = 0;
   int fd;
   int secured = 0;
   int uid;
@@ -616,7 +616,7 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
     utmpbuf.ut_pid = getpid();
     utmpbuf.ut_type = LOGIN_PROCESS;
 #endif
-    utmpbuf.ut_time = secclock();
+    utmpbuf.ut_time = (time_t) secclock();
 #if defined __hpux || defined __NeXT__
     strncpy(utmpbuf.ut_host, protocol, sizeof(utmpbuf.ut_host));
 #endif
@@ -675,7 +675,7 @@ void login_close(struct login_cb *tp)
       while (read(fdut, &utmpbuf, sizeof(utmpbuf)) == sizeof(utmpbuf))
 	if (!strcmp(utmpbuf.ut_line, tp->ptyname + 5)) {
 	  utmpbuf.ut_name[0] = 0;
-	  utmpbuf.ut_time = secclock();
+	  utmpbuf.ut_time = (time_t) secclock();
 #ifdef DEAD_PROCESS
 	  utmpbuf.ut_type = DEAD_PROCESS;
 #ifndef linux

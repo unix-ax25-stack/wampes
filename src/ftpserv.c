@@ -1,4 +1,4 @@
-/* @(#) $Id: ftpserv.c,v 1.39 1997/08/04 16:06:42 deyke Exp $ */
+/* @(#) $Id: ftpserv.c,v 1.40 1998/04/28 01:34:07 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -659,7 +659,7 @@ ftpcommand(struct ftp *ftp)
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
 			char sizestr[80];
-			sprintf(sizestr,"%ld",statbuf.st_size);
+			sprintf(sizestr,"%ld",(long)statbuf.st_size);
 			Xprintf(ftp->control,"213 %s\r\n",sizestr,"","");
 		}
 		FREE(file);

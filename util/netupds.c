@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: netupds.c,v 1.47 1998/04/24 19:26:39 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: netupds.c,v 1.48 1998/04/28 01:35:44 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -608,6 +608,31 @@ static void print_action(enum e_action action, unsigned short filemode, const ch
 
 /*---------------------------------------------------------------------------*/
 
+static int doremove(const char *filename)
+{
+
+  char tempfilename[1024];
+  int i;
+  struct stat statbuf;
+
+  if (lstat(filename, &statbuf)) {
+    return 0;
+  }
+  if (!remove(filename)) {
+    return 0;
+  }
+  strcpy(tempfilename, filename);
+  for (i = 0; i < 16; i++) {
+    strcat(tempfilename, "~");
+    if (!rename(filename, tempfilename)) {
+      return 0;
+    }
+  }
+  return remove(filename);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void update_mirror_from_master(struct s_file *p, const char *masterfilename, const char *mirrorfilename)
 {
 
@@ -619,14 +644,14 @@ static void update_mirror_from_master(struct s_file *p, const char *masterfilena
   switch (FTYPE(p->master.mode)) {
 
   case 0:
-    if (FTYPE(p->mirror.mode) && remove(mirrorfilename)) {
+    if (FTYPE(p->mirror.mode) && doremove(mirrorfilename)) {
       syscallerr(mirrorfilename);
     }
     break;
 
   case S_IFDIR:
     if (!S_ISDIR(p->mirror.mode)) {
-      if (FTYPE(p->mirror.mode) && remove(mirrorfilename)) {
+      if (FTYPE(p->mirror.mode) && doremove(mirrorfilename)) {
 	syscallerr(mirrorfilename);
       }
       if (mkdir(mirrorfilename, 0755)) {
@@ -638,7 +663,7 @@ static void update_mirror_from_master(struct s_file *p, const char *masterfilena
   case S_IFREG:
     if (!S_ISREG(p->mirror.mode) ||
 	memcmp(p->master.digest, p->mirror.digest, DIGESTSIZE)) {
-      if (FTYPE(p->mirror.mode) && remove(mirrorfilename)) {
+      if (FTYPE(p->mirror.mode) && doremove(mirrorfilename)) {
 	syscallerr(mirrorfilename);
       }
       if ((fd = open(masterfilename, O_RDONLY, 0644)) < 0) {
@@ -664,7 +689,7 @@ static void update_mirror_from_master(struct s_file *p, const char *masterfilena
   case S_IFLNK:
     if (!S_ISLNK(p->mirror.mode) ||
 	memcmp(p->master.digest, p->mirror.digest, DIGESTSIZE)) {
-      if (FTYPE(p->mirror.mode) && remove(mirrorfilename)) {
+      if (FTYPE(p->mirror.mode) && doremove(mirrorfilename)) {
 	syscallerr(mirrorfilename);
       }
       if ((len = readlink(masterfilename, buf, sizeof(buf))) < 0) {
@@ -736,7 +761,7 @@ static void update_mirror_from_rcs(struct s_file *p, const char *master, const c
   }
 
 Fail:
-  remove(mirrorfilename);
+  doremove(mirrorfilename);
   memset((char *) &p->mirror, 0, sizeof(struct s_fileentry));
 }
 
@@ -931,7 +956,7 @@ static void send_update(struct s_file *p, enum e_action action, int flags, const
   if (close(fd)) {
     syscallerr("close");
   }
-  if (remove(tempfilename)) {
+  if (doremove(tempfilename)) {
     syscallerr(tempfilename);
   }
   switch (readchar()) {
@@ -980,18 +1005,18 @@ static int recv_update(int flags)
   print_action(action, filemode, filename);
 
   if (action == ACT_DELETE) {
-    if (remove(filename)) {
+    if (doremove(filename)) {
       syscallerr(filename);
     }
     if (len > 2 && filename[len - 2] == '.' && filename[len - 1] == 'c') {
       filename[len - 1] = 'o';
-      remove(filename);
+      doremove(filename);
     }
     return 1;
   }
 
   if (S_ISDIR(filemode)) {
-    remove(filename);
+    doremove(filename);
     if (mkdir(filename, 0755)) {
       syscallerr(filename);
     }
@@ -1008,7 +1033,7 @@ static int recv_update(int flags)
     }
     readbuf(buf, filesize);
     buf[filesize] = 0;
-    remove(filename);
+    doremove(filename);
     umask(0333);
     if (symlink(buf, filename)) {
       syscallerr(filename);
@@ -1047,11 +1072,11 @@ static int recv_update(int flags)
 	    tempfilename2);
     system(buf);
     apply_diffs(filename, tempfilename2);
-    if (remove(tempfilename2)) {
+    if (doremove(tempfilename2)) {
       syscallerr(tempfilename2);
     }
   } else if (action == ACT_CREATE) {
-    remove(filename);
+    doremove(filename);
     sprintf(buf,
 	    "%s -d < %s > %s",
 	    (flags & USE_GZIP) ? GZIP_PROG : "compress",
@@ -1061,7 +1086,7 @@ static int recv_update(int flags)
   } else {
     protoerr();
   }
-  if (remove(tempfilename1)) {
+  if (doremove(tempfilename1)) {
     syscallerr(tempfilename1);
   }
   getdigest(filename, &mdContext);
@@ -1215,7 +1240,7 @@ static void server_version_1(int flags)
       if (FTYPE(p->mirror.mode) &&
 	  (FTYPE(p->mirror.mode) != FTYPE(p->client.mode) ||
 	   FTYPE(p->mirror.mode) != FTYPE(p->master.mode))) {
-	if (remove(mirrorfilename)) {
+	if (doremove(mirrorfilename)) {
 	  syscallerr(mirrorfilename);
 	}
 	memset((char *) &p->mirror, 0, sizeof(struct s_fileentry));
@@ -1421,7 +1446,7 @@ static void doclient(void)
   strcpy(buf, "net.rc.");
   strcat(buf, client);
   if (!lstat(buf, &statbuf)) {
-    remove("net.rc");
+    doremove("net.rc");
     link(buf, "net.rc");
   }
 

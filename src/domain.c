@@ -1,4 +1,4 @@
-/* @(#) $Id: domain.c,v 1.24 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: domain.c,v 1.25 1998/04/28 01:34:07 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -637,7 +637,7 @@ static struct mbuf *domain_server(
 struct mbuf *bp)
 {
 
-  char *cp;
+  char *cp = 0;
   char buffer[256];
   int32 addr;
   struct dhdr *dhp;
