@@ -1,0 +1,134 @@
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/console-modes,v 1.1 1994/08/05 10:43:59 deyke Exp $
+.nr Cl 7 \" Max level of header for table of contents
+.H 1 "Console modes"
+The console may be in one of two modes: \fBcommand mode\fP or
+\fBconverse mode\fP.
+In \fBcommand mode\fP the prompt \fIhostname\fP> is displayed and any of the
+commands described in the \fBCommands\fP chapter may be entered.
+In \fBconverse mode\fP
+keyboard input is processed according to the current session.
+.P
+Sessions come in many types: Telnet, FTP, AX25,
+Finger, and NETROM.
+.P
+In a Telnet, AX25, or NETROM
+session keyboard input is sent to the
+remote system, and any output from the remote system is displayed on the
+console. In an FTP session keyboard input has to consist of
+known local commands
+(see the \fBFTP Subcommands\fP chapter).
+A Finger session is used to peek at a
+remote system for its users (and what they are doing on some UNIX systems).
+.P
+The keyboard also has \fBcooked\fP and \fBraw\fP states.
+In \fBcooked\fP state input
+is line-at-a-time. The user may use the editing keys described below
+to edit the line.
+Hitting either Return or Linefeed passes the
+complete line to the application.
+In \fBraw\fP mode each character is
+immediately passed to the application as it is typed.
+The keyboard is always in \fBcooked\fP state in command mode.
+It is also \fBcooked\fP in converse mode on an AX25, FTP, or NETROM session.
+In a Telnet session it depends on
+whether the remote end has issued (and the local end has
+accepted) the Telnet WILL ECHO option (see the \fBecho\fP command).
+.P
+To escape back to \fBcommand mode\fP
+the user must enter the \fIescape\fP character, which is by
+default Control-] (0x1d, ASCII GS). Note that this is distinct from the
+ASCII character of the same name. The escape character can be changed (see
+the \fBescape\fP command).
+Setting the escape character to an unreachable code renders a system inescapable
+and the user hung in a session.
+.P
+The following editing keys are available:
+.VL 20 2 1
+.LI Control-A
+.LI Home
+.LI Shift-LeftArrow
+Move cursor to start of line.
+.SP
+.LI Escape\ b
+Move cursor backward one word.
+.SP
+.LI Control-B
+.LI LeftArrow
+Move cursor backward one character.
+.SP
+.LI Control-F
+.LI RightArrow
+Move cursor forward one character.
+.SP
+.LI Escape\ f
+Move cursor forward one word.
+.SP
+.LI Control-E
+.LI Shift-Home
+.LI Shift-RightArrow
+Move cursor to end of line.
+.SP
+.LI Control-W
+.LI Escape\ Backspace
+.LI Escape\ DEL
+Delete previous word.
+.SP
+.LI Backspace
+.LI Control-H
+.LI DEL
+Delete previous character.
+.SP
+.LI Escape\ d
+Delete current word.
+.SP
+.LI Control-D
+.LI DeleteChar
+Delete current character.
+.SP
+.LI Control-K
+.LI ClearLine
+Delete from cursor to end of line.
+.SP
+.LI Control-U
+.LI Control-X
+.LI DeleteLine
+Delete entire line.
+.SP
+.LI Control-V
+Escape next character. Editing characters
+can be entered in a command line or in
+a search string if preceded by a Control-V.
+Control-V removes the
+next character's editing features (if any).
+.SP
+.LI Control-L
+Linefeed and print line.
+.SP
+.LI Control-P
+.LI Prev
+.LI UpArrow
+Fetch previous command.
+Each time Control-P is entered,
+the next previous command in the history list is accessed.
+.SP
+.LI Control-N
+.LI DownArrow
+.LI Next
+Fetch next command.
+Each time Control-N is entered,
+the next command in the history list is accessed.
+.SP
+.LI Control-R\fIstring\fP
+Search the history list for a previous command line
+containing \fIstring\fP.
+\fIstring\fP is terminated by a Return or Linefeed.
+.SP
+.LI Control-J
+.LI Control-M
+.LI Enter
+.LI Return
+Append Return+Linefeed, then execute line.
+.SP
+.LI Control-T
+Execute line without appending Return+Linefeed to it.
+.LE

@@ -1,0 +1,59 @@
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/the-net-program,v 1.1 1994/08/05 10:44:08 deyke Exp $
+.nr Cl 2 \" Max level of header for table of contents
+.H 1 "The /tcp/net Program"
+The executable file \fB/tcp/net\fP
+(further called \fBWAMPES\fP) provides Internet (TCP/IP),
+NET/ROM and AX.25
+facilities. Because it has an internal multi-tasking system,
+\fBWAMPES\fP can act simultaneously as a client, a server and a packet switch
+for all three sets of protocols. That is, while a local user accesses remote
+services, the system can also provide those same services to remote users
+while also switching IP, NET/ROM and AX.25 packets and frames between other
+client and server nodes.
+.P
+The keyboard and display is used by the local operator to control both host
+and gateway level functions, for which a number of commands are provided.
+.H 2 "Startup"
+.DS I
+\fB/tcp/net [-g] [-v]\fP [\fIstartup file\fP]
+.DE
+When \fBWAMPES\fP is executed without arguments,
+it attempts to open the file \fB/tcp/net.rc\fP.
+If it exists, it is read and executed as though its contents
+were typed on the console as commands.
+This feature is useful for configuring network addresses,
+attaching communication interfaces, and starting the various services.
+.P
+The following command-line options are accepted:
+.VL 20 2
+.LI \fB-g\fP
+The \fB-g\fP option causes \fBWAMPES\fP to run in \fBdebug\fP mode.
+In \fBdebug\fP mode, \fBWAMPES\fP will NOT:
+.SP
+.BL 5 1
+.LI
+load or save the ARP table, the IP routing table, or the AX.25 routing table
+from or to a disc file
+.LI
+unlink any UNIX domain sockets
+.LI
+enable the 120 seconds watch dog timer
+.LI
+change its UNIX scheduling priority
+.LI
+check the files \fB/tcp/net\fP and \fB/tcp/net.rc\fP for modifications
+.LE
+.LI \fB-v\fP
+The \fB-v\fP option allows the user to view command execution during
+the startup of \fBWAMPES\fP.
+It echoes the commands read from the startup file before they are executed.
+This is a nice help if \fBWAMPES\fP stops (hangs) during initialization.
+.LE 1
+After all command line options, the name of an alternate startup file may
+be specified. This file is then opened and read instead
+of \fB/tcp/net.rc\fP.
+.H 2 "Environment variables"
+The following environment variables are read by \fBWAMPES\fP:
+.H 3 "TZ"
+The TZ variable should be set to the local timezone. Default is TZ=MEZ-1MESZ.
+This is used in various time stamps.
