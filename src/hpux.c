@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.2 1990/01/29 09:36:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.3 1990/02/22 12:42:44 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -73,6 +73,8 @@ int  ioinit()
     curr_termio.c_cc[VMIN] = 0;
     curr_termio.c_cc[VTIME] = 0;
     ioctl(0, TCSETA, &curr_termio);
+    printf("\033&s1A");   /* enable XmitFnctn */
+    fflush(stdout);
     setmask(chkread, 0);
   } else {
     for (i = 0; i < _NFILE; i++) close(i);
@@ -110,7 +112,11 @@ int  iostop()
 {
   register struct interface *ifp;
 
-  if (local_kbd) ioctl(0, TCSETA, &prev_termio);
+  if (local_kbd) {
+    ioctl(0, TCSETA, &prev_termio);
+    printf("\033&s0A");   /* disable XmitFnctn */
+    fflush(stdout);
+  }
   for (ifp = ifaces; ifp; ifp = ifp->next)
     if (ifp->stop) (*ifp->stop)(ifp->dev);
 }

@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.2 1990/02/22 12:42:52 deyke Exp $ */
+
 #include <stdio.h>
 #include <ctype.h>
 #include "global.h"
@@ -20,7 +22,7 @@ int trcount = 0;                /* used to close file for flushing */
 char trname[40];                /* name if not stdout */
 int notraceall;                 /* 0 = trace all, 1 = only in cmd mode */
 extern int mode;                /* command mode or not */
-long  currtime;
+extern long  currtime;
 
 dump(interface,direction,type,bp)
 register struct interface *interface;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.2 1990/02/05 09:42:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.3 1990/02/22 12:42:43 deyke Exp $ */
 
 /* AX25 protocol implementation */
 
@@ -52,6 +52,7 @@ struct axcb {
   struct timer timer_t2;        /* Acknowledgement delay timer */
   struct timer timer_t3;        /* No-activity timer */
   struct timer timer_t4;        /* Busy timer */
+  struct timer timer_t5;        /* Packet assembly timer */
   struct axreseq {              /* Resequencing queue */
     struct mbuf *bp;
     int  sum;
@@ -59,6 +60,7 @@ struct axcb {
   struct mbuf *rcvq;            /* Receive queue */
   int16 rcvcnt;                 /* Receive queue length */
   struct mbuf *sndq;            /* Send queue */
+  long  sndqtime;               /* Last send queue write time */
   struct mbuf *resndq;          /* Resend queue */
   int  unack;                   /* Number of unacked frames */
   long  sndtime[8];             /* Time of 1st transmission */
@@ -85,6 +87,7 @@ extern int  ax_t1init;                  /* Retransmission timeout */
 extern int  ax_t2init;                  /* Acknowledgement delay timeout */
 extern int  ax_t3init;                  /* No-activity timeout */
 extern int  ax_t4init;                  /* Busy timeout */
+extern int  ax_t5init;                  /* Packet assembly timeout */
 extern int  ax_window;                  /* Local flow control limit */
 extern struct axcb *axcb_server;        /* Server control block */
 

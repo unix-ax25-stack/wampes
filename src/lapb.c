@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.3 1990/02/05 09:42:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.4 1990/02/22 12:42:38 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
@@ -62,6 +62,7 @@ int  ax_t1init   =    5;        /* Retransmission timeout */
 int  ax_t2init   =    2;        /* Acknowledgement delay timeout */
 int  ax_t3init   =  900;        /* No-activity timeout */
 int  ax_t4init   =   60;        /* Busy timeout */
+int  ax_t5init   =    2;        /* Packet assembly timeout */
 int  ax_window   = 2048;        /* Local flow control limit */
 struct axcb *axcb_server;       /* Server control block */
 
@@ -362,6 +363,7 @@ int  fill_sndq;
   int  cnt;
   struct mbuf *bp;
 
+  stop_timer(&cp->timer_t5);
   while (cp->unack < ax_maxframe) {
     if (cp->state != CONNECTED || cp->remote_busy) return;
     if (fill_sndq && cp->t_upcall) {
@@ -371,7 +373,14 @@ int  fill_sndq;
     if (!cp->sndq) return;
     if (cp->mode == STREAM) {
       cnt = len_mbuf(cp->sndq);
-      if (!cnt || cp->unack && cnt < ax_paclen) return;
+      if (cnt < ax_paclen) {
+	if (cp->unack) return;
+	if (!cp->peer && cp->sndqtime + ax_t5init > currtime) {
+	  cp->timer_t5.start = cp->sndqtime + ax_t5init - currtime;
+	  start_timer(&cp->timer_t5);
+	  return;
+	}
+      }
       if (cnt > ax_paclen) cnt = ax_paclen;
       if (!(bp = alloc_mbuf(cnt))) return;
       pullup(&cp->sndq, bp->data, bp->cnt = cnt);
@@ -401,6 +410,7 @@ int  newstate;
   stop_timer(&cp->timer_t1);
   stop_timer(&cp->timer_t2);
   stop_timer(&cp->timer_t4);
+  stop_timer(&cp->timer_t5);
   reset_t1(cp);
   switch (newstate) {
   case DISCONNECTED:
@@ -500,6 +510,14 @@ static void t4_timeout(cp)
 struct axcb *cp;
 {
   if (!cp->polling) send_ack(cp, POLL);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void t5_timeout(cp)
+struct axcb *cp;
+{
+  try_send(cp, 1);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -644,6 +662,7 @@ int  ns;
   register struct axreseq *rp;
   register struct mbuf *tp;
 
+  if (next_seq(ns) == cp->vr) return 0;
   rp = &cp->reseq[ns];
   if (rp->bp) return 0;
   for (sum = 0, tp = bp; tp; tp = tp->next) {
@@ -715,6 +734,8 @@ struct mbuf *bp;
     cp->timer_t3.arg = (char *) cp;
     cp->timer_t4.func = t4_timeout;
     cp->timer_t4.arg = (char *) cp;
+    cp->timer_t5.func = t5_timeout;
+    cp->timer_t5.arg = (char *) cp;
     cp->next = axcb_head;
     axcb_head = cp;
     if (!for_me) {
@@ -728,6 +749,8 @@ struct mbuf *bp;
       cpp->timer_t3.arg = (char *) cpp;
       cpp->timer_t4.func = t4_timeout;
       cpp->timer_t4.arg = (char *) cpp;
+      cpp->timer_t5.func = t5_timeout;
+      cpp->timer_t5.arg = (char *) cpp;
       cpp->next = axcb_head;
       axcb_head = cpp;
       cpp->peer = cp;
@@ -750,7 +773,7 @@ struct mbuf *bp;
     cp->rejsent = 0;
     cp->remote_busy = 0;
     cp->vr = 0;
-    cp->vs = 0;
+    cp->vs = cp->unack;
     cp->retry = 0;
     for (i = 0; i < 8; i++)
       if (cp->reseq[i].bp) {
@@ -1354,16 +1377,21 @@ char  *argv[];
 	     cp->timer_t4.start - cp->timer_t4.count, cp->timer_t4.start);
     else
       printf("Timer T4:     Stopped\n");
+    if (run_timer(&cp->timer_t5))
+      printf("Timer T5:     %ld/%ld sec\n",
+	     cp->timer_t5.start - cp->timer_t5.count, cp->timer_t5.start);
+    else
+      printf("Timer T5:     Stopped\n");
     printf("Rcv queue:    %d\n", cp->rcvcnt);
     if (cp->reseq[0].bp || cp->reseq[1].bp ||
 	cp->reseq[2].bp || cp->reseq[3].bp ||
 	cp->reseq[4].bp || cp->reseq[5].bp ||
 	cp->reseq[6].bp || cp->reseq[7].bp) {
       printf("Reassembly queue:\n");
-      for (i = 0; i < 8; i++)
+      for (i = next_seq(cp->vr); i != cp->vr; i = next_seq(i))
 	if (cp->reseq[i].bp)
 	  printf("              Seq %3d: %3d bytes\n",
-		 (cp->vr + i) & 7, len_mbuf(cp->reseq[i].bp));
+		 i, len_mbuf(cp->reseq[i].bp));
     }
     printf("Snd queue:    %d\n", len_mbuf(cp->sndq));
     if (cp->resndq) {
@@ -1447,6 +1475,24 @@ char  *argv[];
 
 /*---------------------------------------------------------------------------*/
 
+/* Set packet assembly timer */
+
+static int  dot5(argc, argv)
+int  argc;
+char  *argv[];
+{
+  if (argc < 2)
+    printf("T5 %d sec\n", ax_t5init);
+  else {
+    int  tmp = atoi(argv[1]);
+    if (tmp < 1) return (-1);
+    ax_t5init = tmp;
+  }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* Set high water mark on receive queue that triggers RNR */
 
 static int  dowindow(argc, argv)
@@ -1490,6 +1536,7 @@ char  *argv[];
     "t2",       dot2,       0, NULLCHAR, "t2 must be > 0",
     "t3",       dot3,       0, NULLCHAR, NULLCHAR,
     "t4",       dot4,       0, NULLCHAR, "t4 must be > 0",
+    "t5",       dot5,       0, NULLCHAR, "t5 must be > 0",
     "window",   dowindow,   0, NULLCHAR, "window must be > 0",
 
     NULLCHAR,   NULLFP,     0, NULLCHAR, NULLCHAR
@@ -1532,6 +1579,8 @@ char  *user;
     cp->timer_t3.arg = (char *) cp;
     cp->timer_t4.func = t4_timeout;
     cp->timer_t4.arg = (char *) cp;
+    cp->timer_t5.func = t5_timeout;
+    cp->timer_t5.arg = (char *) cp;
     cp->r_upcall = r_upcall;
     cp->t_upcall = t_upcall;
     cp->s_upcall = s_upcall;
@@ -1577,12 +1626,14 @@ struct mbuf *bp;
   case CONNECTING:
   case CONNECTED:
     if (!cp->closed) {
-      cnt = len_mbuf(bp);
-      if (cp->mode == STREAM)
-	append(&cp->sndq, bp);
-      else
-	enqueue(&cp->sndq, bp);
-      try_send(cp, 0);
+      if (cnt = len_mbuf(bp)) {
+	if (cp->mode == STREAM)
+	  append(&cp->sndq, bp);
+	else
+	  enqueue(&cp->sndq, bp);
+	cp->sndqtime = currtime;
+	try_send(cp, 0);
+      }
       return cnt;
     }
   case DISCONNECTING:
@@ -1730,6 +1781,7 @@ struct axcb *cp;
   stop_timer(&cp->timer_t2);
   stop_timer(&cp->timer_t3);
   stop_timer(&cp->timer_t4);
+  stop_timer(&cp->timer_t5);
   for (i = 0; i < 8; i++) free_p(cp->reseq[i].bp);
   free_q(&cp->rcvq);
   free_q(&cp->sndq);

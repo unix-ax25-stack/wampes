@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.5 1990/02/14 16:17:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.6 1990/02/22 12:42:46 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
@@ -504,7 +504,7 @@ struct node *pn;
   while (pullup(&bp, buf, sizeof(buf)) == sizeof(buf)) {
     if (ismycall(axptr(buf))) continue;
     pd = nodeptr(axptr(buf), 1);
-    if (*(buf + AXALEN) > ' ') memcpy(pd->ident, buf + AXALEN, IDENTLEN);
+    if (buf[AXALEN] > ' ') memcpy(pd->ident, buf + AXALEN, IDENTLEN);
     pb = nodeptr(axptr(buf + AXALEN + IDENTLEN), 1);
     quality = uchar(buf[AXALEN+IDENTLEN+AXALEN]);
     if (pb == mynode) {
@@ -740,8 +740,8 @@ static void routing_manager_initialize()
   nr_interface.name = "netrom";
   nr_interface.mtu = 236;
   nr_interface.send = nr_send;
-/***  nr_interface.next = ifaces;  ***/
-/***  ifaces = &nr_interface;      ***/
+  nr_interface.next = ifaces;
+  ifaces = &nr_interface;
 
   arp_init(ARP_NETROM, AXALEN, 0, 0, NULLCHAR, psax25, setpath);
 
@@ -913,14 +913,23 @@ int  fill_sndq;
   int  cnt;
   struct mbuf *bp;
 
+  stop_timer(&pc->timer_t5);
   while (pc->unack < pc->window) {
     if (pc->state != CONNECTED || pc->remote_busy) return;
     if (fill_sndq && pc->t_upcall) {
       cnt = space_nr(pc);
       if (cnt > 0) (*pc->t_upcall)(pc, cnt);
     }
+    if (!pc->sndq) return;
     cnt = len_mbuf(pc->sndq);
-    if (!cnt || pc->unack && cnt < NR4MAXINFO) return;
+    if (cnt < NR4MAXINFO) {
+      if (pc->unack) return;
+      if (pc->sndqtime + 2 > currtime) {
+	pc->timer_t5.start = pc->sndqtime + 2 - currtime;
+	start_timer(&pc->timer_t5);
+	return;
+      }
+    }
     if (cnt > NR4MAXINFO) cnt = NR4MAXINFO;
     if (!(bp = alloc_mbuf(cnt))) return;
     pullup(&pc->sndq, bp->data, bp->cnt = cnt);
@@ -946,6 +955,7 @@ int  newstate;
   stop_timer(&pc->timer_t1);
   stop_timer(&pc->timer_t2);
   stop_timer(&pc->timer_t4);
+  stop_timer(&pc->timer_t5);
   reset_t1(pc);
   switch (newstate) {
   case DISCONNECTED:
@@ -1033,6 +1043,14 @@ struct circuit *pc;
 
 /*---------------------------------------------------------------------------*/
 
+static void l4_t5_timeout(pc)
+struct circuit *pc;
+{
+  try_send(pc, 1);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void circuit_manager(bp)
 struct mbuf *bp;
 {
@@ -1072,6 +1090,8 @@ struct mbuf *bp;
       pc->timer_t3.arg = (char *) pc;
       pc->timer_t4.func = l4_t4_timeout;
       pc->timer_t4.arg = (char *) pc;
+      pc->timer_t5.func = l4_t5_timeout;
+      pc->timer_t5.arg = (char *) pc;
       pc->r_upcall = nrserv_recv_upcall;
       pc->t_upcall = nrserv_send_upcall;
       pc->s_upcall = nrserv_state_upcall;
@@ -1262,6 +1282,8 @@ char  *user;
   pc->timer_t3.arg = (char *) pc;
   pc->timer_t4.func = l4_t4_timeout;
   pc->timer_t4.arg = (char *) pc;
+  pc->timer_t5.func = l4_t5_timeout;
+  pc->timer_t5.arg = (char *) pc;
   pc->r_upcall = r_upcall;
   pc->t_upcall = t_upcall;
   pc->s_upcall = s_upcall;
@@ -1293,9 +1315,11 @@ struct mbuf *bp;
   case CONNECTING:
   case CONNECTED:
     if (!pc->closed) {
-      cnt = len_mbuf(bp);
-      append(&pc->sndq, bp);
-      try_send(pc, 0);
+      if (cnt = len_mbuf(bp)) {
+	append(&pc->sndq, bp);
+	pc->sndqtime = currtime;
+	try_send(pc, 0);
+      }
       return cnt;
     }
   case DISCONNECTING:
@@ -1439,6 +1463,7 @@ struct circuit *pc;
   stop_timer(&pc->timer_t2);
   stop_timer(&pc->timer_t3);
   stop_timer(&pc->timer_t4);
+  stop_timer(&pc->timer_t5);
   free_q(&pc->reseq);
   free_q(&pc->rcvq);
   free_q(&pc->sndq);
@@ -1772,7 +1797,7 @@ char  *argv[];
 
   pi = linkinfoptr(pn1, pn2);
   pi->quality = quality;
-  pi->level = 3;
+  pi->level = min(pn1->level, pn2->level) + 1;
   pi->time = timestamp;
   calculate_all();
   return 0;
@@ -1939,6 +1964,10 @@ char  *argv[];
       printf("Timer T4:     %ld/%ld sec\n", pc->timer_t4.start - pc->timer_t4.count, pc->timer_t4.start);
     else
       printf("Timer T4:     Stopped\n");
+    if (pc->timer_t5.state == TIMER_RUN)
+      printf("Timer T5:     %ld/%ld sec\n", pc->timer_t5.start - pc->timer_t5.count, pc->timer_t5.start);
+    else
+      printf("Timer T5:     Stopped\n");
     printf("Rcv queue:    %d\n", pc->rcvcnt);
     if (pc->reseq) {
       printf("Reassembly queue:\n");
