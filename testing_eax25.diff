@@ -1,10 +1,10 @@
-Index: ax25.h
+Index: src/ax25.h
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25.h,v
 retrieving revision 1.26
 diff -c -r1.26 ax25.h
-*** ax25.h	19 Sep 2002 19:11:44 -0000	1.26
---- ax25.h	21 Sep 2003 11:25:45 -0000
+*** src/ax25.h	19 Sep 2002 19:11:44 -0000	1.26
+--- src/ax25.h	10 Mar 2005 21:34:31 -0000
 ***************
 *** 29,34 ****
 --- 29,36 ----
@@ -45,13 +45,13 @@ diff -c -r1.26 ax25.h
   };
   
   #define AXROUTESIZE     499
-Index: ax25cmd.c
+Index: src/ax25cmd.c
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25cmd.c,v
 retrieving revision 1.19
 diff -c -r1.19 ax25cmd.c
-*** ax25cmd.c	18 Sep 2002 18:56:07 -0000	1.19
---- ax25cmd.c	21 Sep 2003 11:25:46 -0000
+*** src/ax25cmd.c	18 Sep 2002 18:56:07 -0000	1.19
+--- src/ax25cmd.c	10 Mar 2005 21:34:32 -0000
 ***************
 *** 30,35 ****
 --- 30,36 ----
@@ -359,13 +359,13 @@ diff -c -r1.19 ax25cmd.c
   #endif
     if(argc < 2) {
       for (i = 0; i < AXROUTESIZE; i++)
-Index: ax25dump.c
+Index: src/ax25dump.c
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25dump.c,v
 retrieving revision 1.16
 diff -c -r1.16 ax25dump.c
-*** ax25dump.c	18 Sep 2002 18:56:06 -0000	1.16
---- ax25dump.c	21 Sep 2003 11:25:47 -0000
+*** src/ax25dump.c	18 Sep 2002 18:56:06 -0000	1.16
+--- src/ax25dump.c	10 Mar 2005 21:34:33 -0000
 ***************
 *** 21,41 ****
   int check       /* Not used */
@@ -449,7 +449,7 @@ diff -c -r1.16 ax25dump.c
 + 	putc(' ',fp);
   	fprintf(fp,"%s",decode_type(type));
   	/* Dump poll/final bit */
-! 	if(eax25 ? (controlx & 1) : (control & PF)){
+! 	if(eax25 ? (controlx & PF_EAX25) : (control & PF)){
   		switch(hdr.cmdrsp){
   		case LAPB_COMMAND:
   			fprintf(fp,"(P)");
@@ -618,13 +618,13 @@ diff -c -r1.16 ax25dump.c
   	case DISC:
   		return "DISC";
   	case DM:
-Index: ax25file.c
+Index: src/ax25file.c
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25file.c,v
 retrieving revision 1.20
 diff -c -r1.20 ax25file.c
-*** ax25file.c	12 Jan 2002 15:55:53 -0000	1.20
---- ax25file.c	21 Sep 2003 11:25:47 -0000
+*** src/ax25file.c	12 Jan 2002 15:55:53 -0000	1.20
+--- src/ax25file.c	10 Mar 2005 21:34:33 -0000
 ***************
 *** 8,18 ****
 --- 8,22 ----
@@ -755,13 +755,13 @@ diff -c -r1.20 ax25file.c
   
     }
   
-Index: ax25hdr.c
+Index: src/ax25hdr.c
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25hdr.c,v
 retrieving revision 1.11
 diff -c -r1.11 ax25hdr.c
-*** ax25hdr.c	19 Aug 1996 16:30:14 -0000	1.11
---- ax25hdr.c	21 Sep 2003 11:25:47 -0000
+*** src/ax25hdr.c	19 Aug 1996 16:30:14 -0000	1.11
+--- src/ax25hdr.c	10 Mar 2005 21:34:33 -0000
 ***************
 *** 65,70 ****
 --- 65,78 ----
@@ -793,13 +793,13 @@ diff -c -r1.11 ax25hdr.c
   	if(hdr->source[ALEN] & E)
   		return 2;       /* No digis */
   
-Index: ax25subr.c
+Index: src/ax25subr.c
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25subr.c,v
 retrieving revision 1.27
 diff -c -r1.27 ax25subr.c
-*** ax25subr.c	12 Jan 2002 15:55:53 -0000	1.27
---- ax25subr.c	21 Sep 2003 11:25:47 -0000
+*** src/ax25subr.c	12 Jan 2002 15:55:53 -0000	1.27
+--- src/ax25subr.c	10 Mar 2005 21:34:33 -0000
 ***************
 *** 18,23 ****
 --- 18,24 ----
@@ -875,13 +875,13 @@ diff -c -r1.27 ax25subr.c
     if (argc < 1) {
       printf("Missing call\n");
       return 1;
-Index: ax25user.c
+Index: src/ax25user.c
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25user.c,v
 retrieving revision 1.13
 diff -c -r1.13 ax25user.c
-*** ax25user.c	1 Feb 1999 22:24:25 -0000	1.13
---- ax25user.c	21 Sep 2003 11:25:47 -0000
+*** src/ax25user.c	1 Feb 1999 22:24:25 -0000	1.13
+--- src/ax25user.c	10 Mar 2005 21:34:33 -0000
 ***************
 *** 32,37 ****
 --- 32,44 ----
@@ -898,13 +898,13 @@ diff -c -r1.13 ax25user.c
   	}
   	if(s_upcall != NULL){
   		axp->r_upcall = r_upcall;
-Index: iface.c
+Index: src/iface.c
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/iface.c,v
 retrieving revision 1.35
 diff -c -r1.35 iface.c
-*** iface.c	20 Sep 2002 15:18:50 -0000	1.35
---- iface.c	21 Sep 2003 11:25:49 -0000
+*** src/iface.c	20 Sep 2002 15:18:50 -0000	1.35
+--- src/iface.c	10 Mar 2005 21:34:34 -0000
 ***************
 *** 30,35 ****
 --- 30,36 ----
@@ -977,13 +977,13 @@ diff -c -r1.35 iface.c
   	switch (ifp->crccontrol){
   	default:            printf("           crc off");           break;
   	case CRC_TEST_16:   printf("           crc-16 test");       break;
-Index: iface.h
+Index: src/iface.h
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/iface.h,v
 retrieving revision 1.28
 diff -c -r1.28 iface.h
-*** iface.h	19 Sep 2002 19:11:44 -0000	1.28
---- iface.h	21 Sep 2003 11:25:50 -0000
+*** src/iface.h	19 Sep 2002 19:11:44 -0000	1.28
+--- src/iface.h	10 Mar 2005 21:34:34 -0000
 ***************
 *** 134,139 ****
 --- 134,140 ----
@@ -994,13 +994,13 @@ diff -c -r1.28 iface.h
   };
   extern struct iface *Ifaces;    /* Head of interface list */
   extern struct iface  Loopback;  /* Optional loopback interface */
-Index: lapb.c
+Index: src/lapb.c
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/lapb.c,v
 retrieving revision 1.42
 diff -c -r1.42 lapb.c
-*** lapb.c	12 Jan 2002 15:55:53 -0000	1.42
---- lapb.c	21 Sep 2003 11:25:50 -0000
+*** src/lapb.c	12 Jan 2002 15:55:53 -0000	1.42
+--- src/lapb.c	10 Mar 2005 21:34:35 -0000
 ***************
 *** 30,36 ****
   
@@ -1071,7 +1071,7 @@ diff -c -r1.42 lapb.c
 + 	else {
 + 		if ((controlx = PULLCHAR(bpp)) == -1)
 + 			return -1;
-+ 		pf = (controlx & 1);
++ 		pf = (controlx & PF_EAX25);
 + 	}
 + 	/* Check for polls and finals */
 + 	if(pf){
@@ -1239,7 +1239,7 @@ diff -c -r1.42 lapb.c
   				free_p(&axp->reseq[tmp].bp);
   			}
   			axp->unack = axp->vr = axp->vs = 0;
---- 287,326 ----
+--- 287,327 ----
   		break;
   	case LAPB_CONNECTED:
   		switch(type){
@@ -1256,7 +1256,7 @@ diff -c -r1.42 lapb.c
 + 				free_p(bpp);
 + 				return 0;
 + 			}
-+ 			break;
++ 			goto ua1;
   		case SABM:
 + 			if (axp->mmask == EMMASK) {
 + 				axp->hdr.ext &= ~SSID_EAX25;
@@ -1270,6 +1270,7 @@ diff -c -r1.42 lapb.c
 + 				free_p(bpp);
 + 				return 0;
 + 			}
++ ua1:
   			sendctl(axp,LAPB_RESPONSE,UA|pf);
   			clr_ex(axp);
   			/* free_q(&axp->txq); */
@@ -1295,7 +1296,7 @@ diff -c -r1.42 lapb.c
   				free_p(&axp->reseq[tmp].bp);
   			}
   			axp->unack = axp->vr = axp->vs = 0;
---- 408,445 ----
+--- 409,448 ----
   		break;
   	case LAPB_RECOVERY:
   		switch(type){
@@ -1312,6 +1313,7 @@ diff -c -r1.42 lapb.c
 + 				free_p(bpp);
 + 				return 0;
 + 			}
++ 			goto ua2;
   		case SABM:
 + 			if (axp->mmask == EMMASK) {
 + 				axp->mmask = MMASK;
@@ -1325,6 +1327,7 @@ diff -c -r1.42 lapb.c
 + 				free_p(bpp);
 + 				return 0;
 + 			}
++ ua2:
   			sendctl(axp,LAPB_RESPONSE,UA|pf);
   			clr_ex(axp);
   			stop_timer(&axp->t1);
@@ -1343,7 +1346,7 @@ diff -c -r1.42 lapb.c
   	while(axp->unack != 0 && oldest != n){
   		if((bp = dequeue(&axp->txq)) == NULL){
   			/* Acking unsent frame */
---- 604,610 ----
+--- 607,613 ----
   	 * If we try to free a null pointer,
   	 * then we have a frame reject condition.
   	 */
@@ -1367,7 +1370,7 @@ diff -c -r1.42 lapb.c
   	}
   	if(axp->unack == 0){
   		/* All frames acked, stop timeout */
---- 627,640 ----
+--- 630,643 ----
   				axp->mdev = ((axp->mdev*3) + abserr + 2) >> 2;
   				/* Update timeout */
   				tmp = 4*axp->mdev+axp->srt;
@@ -1391,7 +1394,7 @@ diff -c -r1.42 lapb.c
   		axp->unack = 0;
   	}
   	if(acked != 0){
---- 647,653 ----
+--- 650,656 ----
   	if(rex_all){
   		axp->flags.retrans = 1;
   		axp->vs -= axp->unack;
@@ -1408,7 +1411,7 @@ diff -c -r1.42 lapb.c
   	axp->unack = 0;
   }
   /* Send S or U frame to currently connected station */
---- 699,705 ----
+--- 702,708 ----
   inv_rex(struct ax25_cb *axp)
   {
   	axp->vs -= axp->unack;
@@ -1418,11 +1421,11 @@ diff -c -r1.42 lapb.c
   /* Send S or U frame to currently connected station */
 ***************
 *** 603,608 ****
---- 709,715 ----
+--- 712,718 ----
   enum lapb_cmdrsp cmdrsp,
   int cmd
   ){
-+ 	int cmdx = -1;
++ 	int cmdx;
   	switch(cmd & ~PF){
   	case RR:
   	case REJ:
@@ -1438,7 +1441,7 @@ diff -c -r1.42 lapb.c
   }
   /* Start data transmission on link, if possible
    * Return number of frames sent
---- 719,737 ----
+--- 722,740 ----
   	case RNR:
   		axp->flags.rnrsent = 1;
   		break;
@@ -1449,22 +1452,22 @@ diff -c -r1.42 lapb.c
   	}
 ! 	if((ftype((char)cmd) & 0x3) == S) {       /* Insert V(R) if S frame */
 ! 		if (axp->mmask == EMMASK) {
-! 			cmdx = ((cmd & PF) ? 1 : 0) | (axp->vr << 1);
+! 			cmdx = ((cmd & PF) ? PF_EAX25 : 0) | (axp->vr << 1);
 ! 			cmd &= 0x7;		  /* clears upper four bits incl. PF */
 ! 		}
 ! 		else cmd |= (axp->vr << 5);
 ! 	}
-! 	return sendframe(axp,cmdrsp,cmd,cmdx,NULL);
+! 	return sendframe(axp,cmdrsp,cmd,axp->mmask == EMMASK ? cmdx : -1,NULL);
   }
   /* Start data transmission on link, if possible
    * Return number of frames sent
 ***************
 *** 626,631 ****
---- 742,748 ----
+--- 745,751 ----
   	struct mbuf *bp;
   	struct mbuf *tbp;
   	char control;
-+ 	char controlx = 0;
++ 	char controlx;
   	int sent = 0;
   	int i;
   
@@ -1482,7 +1485,7 @@ diff -c -r1.42 lapb.c
   		axp->unack++;
   		/* We're implicitly acking any data he's sent, so stop any
   		 * delayed ack
---- 763,778 ----
+--- 766,781 ----
   	 * or when there are no more frames to send
   	 */
   	while(bp != NULL && axp->unack < axp->maxframe){
@@ -1495,7 +1498,7 @@ diff -c -r1.42 lapb.c
   		dup_p(&tbp,bp,0,len_p(bp));
   		if(tbp == NULL)
   			return sent;    /* Probably out of memory */
-! 		sendframe(axp,LAPB_COMMAND,control,(axp->mmask == EMMASK ? controlx : -1), &tbp);
+! 		sendframe(axp,LAPB_COMMAND,control,axp->mmask == EMMASK ? controlx : -1,&tbp);
   		axp->unack++;
   		/* We're implicitly acking any data he's sent, so stop any
   		 * delayed ack
@@ -1508,7 +1511,7 @@ diff -c -r1.42 lapb.c
   			axp->rtt_time = msclock();
   			axp->flags.rtt_run = 1;
   		}
---- 787,793 ----
+--- 790,796 ----
   		bp = bp->anext;
   		if(!axp->flags.rtt_run){
   			/* Start round trip timer */
@@ -1518,7 +1521,7 @@ diff -c -r1.42 lapb.c
   		}
 ***************
 *** 679,684 ****
---- 800,806 ----
+--- 803,809 ----
   struct ax25_cb *axp,
   enum lapb_cmdrsp cmdrsp,
   int ctl,
@@ -1528,7 +1531,7 @@ diff -c -r1.42 lapb.c
   	struct iface *ifp;
 ***************
 *** 688,693 ****
---- 810,820 ----
+--- 813,823 ----
   		bp = NULL;
   		bpp = &bp;
   	}
@@ -1549,7 +1552,7 @@ diff -c -r1.42 lapb.c
   		for(sum = 0,tp = *bpp;tp;tp = tp->next)
   			for(p = tp->data,cnt = tp->cnt;cnt > 0;cnt--)
   				sum += *p++;
---- 886,892 ----
+--- 889,895 ----
   		return;
   
   	rp = &axp->reseq[ns];
@@ -1570,7 +1573,7 @@ diff -c -r1.42 lapb.c
   		if(axp->reseq[tmp].bp != NULL){
   			rejcond = 1;
   			break;
---- 901,911 ----
+--- 904,914 ----
   
   	old_vr = axp->vr;
   	while(axp->reseq[axp->vr].bp != NULL){
@@ -1591,7 +1594,7 @@ diff -c -r1.42 lapb.c
   		if(axp->peer)
   			send_ax25(axp->peer,&bp,-1);
   		else
---- 924,930 ----
+--- 927,933 ----
   
   	while((bp = axp->reseq[old_vr].bp) != NULL){
   		axp->reseq[old_vr].bp = NULL;
@@ -1608,7 +1611,7 @@ diff -c -r1.42 lapb.c
   			if (axp->reseq[i].bp) {
   				axp->flags.rejsent = YES;
   				sendctl(axp, LAPB_RESPONSE, REJ);
---- 1064,1070 ----
+--- 1067,1073 ----
   
   	axp = (struct ax25_cb *)p;
   	if (!axp->flags.rejsent) {
@@ -1616,15 +1619,15 @@ diff -c -r1.42 lapb.c
   			if (axp->reseq[i].bp) {
   				axp->flags.rejsent = YES;
   				sendctl(axp, LAPB_RESPONSE, REJ);
-Index: lapb.h
+Index: src/lapb.h
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/lapb.h,v
 retrieving revision 1.26
 diff -c -r1.26 lapb.h
-*** lapb.h	12 Jan 2002 15:55:53 -0000	1.26
---- lapb.h	21 Sep 2003 11:25:50 -0000
+*** src/lapb.h	12 Jan 2002 15:55:53 -0000	1.26
+--- src/lapb.h	10 Mar 2005 21:34:35 -0000
 ***************
-*** 32,38 ****
+*** 32,46 ****
   #define RNR     0x05    /* Receiver not ready */
   #define REJ     0x09    /* Reject */
   #define U       0x03    /* Unnumbered frames */
@@ -1632,7 +1635,15 @@ diff -c -r1.26 lapb.h
   #define DISC    0x43    /* Disconnect */
   #define DM      0x0f    /* Disconnected mode */
   #define UA      0x63    /* Unnumbered acknowledge */
---- 32,39 ----
+  #define FRMR    0x87    /* Frame reject */
+  #define UI      0x03    /* Unnumbered information */
+  #define PF      0x10    /* Poll/final bit */
+  
+  #define MMASK   7       /* Mask for modulo-8 sequence numbers */
+  
+  /* FRMR reason bits */
+  #define W       1       /* Invalid control field */
+--- 32,49 ----
   #define RNR     0x05    /* Receiver not ready */
   #define REJ     0x09    /* Reject */
   #define U       0x03    /* Unnumbered frames */
@@ -1641,10 +1652,10 @@ diff -c -r1.26 lapb.h
   #define DISC    0x43    /* Disconnect */
   #define DM      0x0f    /* Disconnected mode */
   #define UA      0x63    /* Unnumbered acknowledge */
-***************
-*** 41,46 ****
---- 42,48 ----
+  #define FRMR    0x87    /* Frame reject */
+  #define UI      0x03    /* Unnumbered information */
   #define PF      0x10    /* Poll/final bit */
++ #define PF_EAX25 0x01   /* Poll/final bit in extra eax25 byte */
   
   #define MMASK   7       /* Mask for modulo-8 sequence numbers */
 + #define EMMASK  0x7f    /* Mask for modulo-128 sequence numbers */
@@ -1660,7 +1671,7 @@ diff -c -r1.26 lapb.h
   	struct mbuf *rxasm;             /* Receive reassembly buffer */
   	struct mbuf *rxq;               /* Receive queue */
   
---- 84,91 ----
+--- 85,92 ----
   	struct iface *iface;            /* Interface */
   
   	struct mbuf *txq;               /* Transmit queue */
@@ -1671,7 +1682,7 @@ diff -c -r1.26 lapb.h
   
 ***************
 *** 140,145 ****
---- 143,149 ----
+--- 144,150 ----
   	struct slcompress *slcomp;      /* MW: TCP header compression table */
   	int slcomp_enable;              /* MW: compression enable flag */
   #endif
@@ -1688,7 +1699,7 @@ diff -c -r1.26 lapb.h
   extern enum lapb_version Axversion;
   
   extern int T1init;                      /* Retransmission timeout */
---- 161,167 ----
+--- 162,168 ----
   extern struct ax25_cb Ax25default,*Ax25_cb;
   extern char *Ax25states[],*Axreasons[];
   extern int32 Axirtt,Blimit;
@@ -1705,21 +1716,21 @@ diff -c -r1.26 lapb.h
   void axnl3(struct iface *iface,struct ax25_cb *axp,uint8 *src,
   	uint8 *dest,struct mbuf **bp,int mcast);
   int busy(struct ax25_cb *cp);
---- 201,207 ----
+--- 202,208 ----
   int lapb_output(struct ax25_cb *axp);
   struct mbuf *segmenter(struct mbuf **bp,uint ssize);
   int sendctl(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int cmd);
-! int sendframe(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int ctl, int ctl2,struct mbuf **data);
+! int sendframe(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int ctl,int ctl2,struct mbuf **data);
   void axnl3(struct iface *iface,struct ax25_cb *axp,uint8 *src,
   	uint8 *dest,struct mbuf **bp,int mcast);
   int busy(struct ax25_cb *cp);
-Index: lapbtime.c
+Index: src/lapbtime.c
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/lapbtime.c,v
 retrieving revision 1.10
 diff -c -r1.10 lapbtime.c
-*** lapbtime.c	19 Aug 1996 16:30:14 -0000	1.10
---- lapbtime.c	21 Sep 2003 11:25:51 -0000
+*** src/lapbtime.c	19 Aug 1996 16:30:14 -0000	1.10
+--- src/lapbtime.c	10 Mar 2005 21:34:35 -0000
 ***************
 *** 108,118 ****
   	 */
@@ -1737,15 +1748,15 @@ diff -c -r1.10 lapbtime.c
   	 */
   	if(axp->txq != NULL
   	 && (len_p(axp->txq) < axp->pthresh || axp->proto == V1)){
-+ 		int ctlx = -1;
++ 		int ctlx;
   		/* Retransmit oldest unacked I-frame */
   		dup_p(&bp,axp->txq,0,len_p(axp->txq));
 ! 		ctl = I | (((axp->vs - axp->unack) & axp->mmask) << 1);
 ! 		if (axp->mmask == EMMASK) {
-!                 	ctlx = PF | ((axp->vr & EMMASK) << 1);
+!                 	ctlx = PF_EAX25 | ((axp->vr & EMMASK) << 1);
 ! 		} else
 ! 			ctl |= (PF | (axp->vr << 5));
-! 		sendframe(axp,LAPB_COMMAND,ctl,ctlx,&bp);
+! 		sendframe(axp,LAPB_COMMAND,ctl,axp->mmask == EMMASK ? ctlx : -1,&bp);
   	} else {
   		ctl = busy(axp)                      ? RNR|PF : RR|PF;
   		sendctl(axp,LAPB_COMMAND,ctl);

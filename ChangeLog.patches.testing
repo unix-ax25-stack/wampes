@@ -1,0 +1,12 @@
+Version @(#) $Id: ChangeLog.patches.testing,v 1.1 2005/03/10 21:47:30 dl9sau Exp $
+
+20050310 Thomas Osterried <dl9sau>
+	  - introduced ChangeLog.patches.testing
+            testing patches are considered testing (thus may not stable)
+	    for e.g. testing_eax25.diff
+	  - testing_ax25.diff is a reference implementation for ax25
+            made by me. It's here since 2005-10-28.
+            Today i checked in an bugfix.
+            there are still some issues:
+              - the connection sleeps if you transfer much data
+              - reject condition: behaviour needs to be improved
