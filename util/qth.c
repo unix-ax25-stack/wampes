@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: qth.c,v 1.19 1999/06/20 17:47:48 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: qth.c,v 1.20 2002/09/18 19:07:54 dl9sau Exp $";
 #endif
 
 /* qth: qth, locator, distance, and course computations */
@@ -12,6 +12,8 @@ static const char rcsid[] = "@(#) $Id: qth.c,v 1.19 1999/06/20 17:47:48 deyke Ex
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
+#include <time.h>
 
 #ifndef M_PI
 #define M_PI            3.14159265358979323846
@@ -36,11 +38,27 @@ static void usage(void)
   printf("              <place> ::= <locator>\n");
   printf("              <place> ::= <grd> [<min> [<sec>]] east|west\n");
   printf("                          <grd> [<min> [<sec>]] north|south\n");
+  printf("              <place> ::= <gauss-krueger-coordinate>\n");
+  printf("                          mmmmmm[m]hhhhhh[h]\n");
+  printf("                          7*m+7*h: normal; 6*m+6*h: O2 (ex viag)\n");
+  printf("              [-nat] [-h value] [-d arg] <place> [arg2 [..]]\n");
+  printf("               -n: nmea compatible output.\n");
+  printf("                     [arg2 [arg3]] will be head/tail.\n");
+  printf("                     if present, a GPS checkum is automaticaly added.\n");
+  printf("               -a: nmea $GPGGA header. arg2 may be user specified suffix\n");
+  printf("               -t: nmea timestamp for $GPGGA\n");
+  printf("               -i: stamp $GPGGA information as invalid\n");
+  printf("               -h: give height above sea [and metric], for e.g. 100M\n");
+  printf("               -d: $GPGGA horizontal precision, for e.g. 1.5\n");
   printf("\n");
   printf("Examples: qth jn48kp\n");
   printf("          qth ei25e\n");
   printf("          qth 8 53 28 east 48 38 33 north\n");
   printf("          qth jn48aa 9 east 48 30 north\n");
+  printf("          qth 345827543286\n");
+  printf("          qth 34582705432860\n");
+  printf("          qth -n jo33sm\n");
+  printf("          qth -nat 34582705432860\n");
   exit(1);
 }
 
@@ -244,9 +262,144 @@ static void print_qth(const char *prompt, long longitude, long latitude, const c
 
 /*---------------------------------------------------------------------------*/
 
+void print_nmea(long longitude, long latitude, char *nmea_head, char *nmea_tail)
+{
+
+  char buf[256];
+  unsigned char crc = 0x00;
+  char c_nw = 'N';
+  char c_we = 'W';
+
+#define do_crc(s) { \
+	{ char *p = s; \
+	  while (*p) \
+	    crc ^= *p++; \
+	} \
+}
+
+  if (nmea_head) {
+    int len;
+    if (*nmea_head == '$')
+      nmea_head++;
+    do_crc(nmea_head);
+    printf("$%s", nmea_head);
+    len = strlen(nmea_head);
+    if (len > 1 && nmea_head[len-1] != ',') {
+      do_crc(",");
+      putchar(',');
+    }
+  }
+
+  if (latitude < 0) {
+    latitude *= -1;
+    c_nw = 'S';
+  }
+  if (longitude < 0) {
+    longitude *= -1;
+    c_we = 'E';
+  }
+  sprintf(buf, "%2.2d%2.2d.%3.3d,%c,%3.3d%2.2d.%3.3d,%c",
+	(int) latitude / 3600,
+	(int) latitude / 60 % 60,
+	(int) latitude % 60 * 1000 / 60,
+	c_nw,
+	(int) longitude / 3600,
+	(int) longitude / 60 % 60,
+	(int) longitude % 60 * 1000 / 60,
+	c_we);
+
+  do_crc(buf);
+  printf(buf);
+
+  if (nmea_tail && *nmea_tail) {
+	char *p;
+        if (*nmea_tail != ',') {
+          do_crc(",");
+          putchar(',');
+	}
+	if ((p = strchr(nmea_tail, '*')))
+	  *p = 0;
+	do_crc(nmea_tail);
+	printf(nmea_tail);
+  }
+  if (nmea_head || nmea_tail) {
+    // print crc
+    printf("*%2.2X", crc);
+  }
+
+  putchar('\n');
+
+}
+
+/*---------------------------------------------------------------------------*/
+
+void gauss_krueger_to_potsdam(char *s_long, char *s_lat, double *d_long, double *d_lat)
+{
+  long l_long = atol(s_long);
+  long l_lat = atol(s_lat);
+
+  int bm    = l_lat/1000000;
+  long y    = l_lat-(bm*1000000+500000);
+  double si = l_long/111120.6196;
+  double px = si+0.143885358*sin(2*si*0.017453292)+0.00021079*sin(4*si*0.017453292)+0.000000423*sin(6*si*0.017453292);
+  double t  = (sin(px*0.017453292))/(cos(px*0.017453292));
+  double v  = sqrt(1+0.006719219*cos(px*0.017453292)*cos(px*0.017453292));
+  double ys = (y*v)/6398786.85;
+  double dl  = ys*57.29577/cos(px*0.017453292) * (1-ys*ys/6*(v*v+2*t*t-ys*ys*(0.6+1.1*t*t)*(0.6+1.1*t*t)));
+
+  *d_lat = px-ys*ys*57.29577*t*v*v*(0.5-ys*ys*(4.97-3*t*t)/24);
+  *d_long = bm*3+dl;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void potsdam_to_wgs84(double *d_long, double *d_lat)
+{
+  double potsd_a  = 6377397.155;
+  double wgs84_a  = 6378137.0;
+  double potsd_f  = 1/299.152812838;
+  double wgs84_f  = 1/298.257223563;
+
+  double potsd_es = 2*potsd_f - potsd_f*potsd_f;
+
+  double potsd_dx = 606.0;
+  double potsd_dy = 23.0;
+  double potsd_dz = 413.0;
+  double latr = *d_lat/180*M_PI;
+  double lonr = *d_long/180*M_PI;
+
+  double sa = sin(latr);
+  double ca = cos(latr);
+  double so = sin(lonr);
+  double co = cos(lonr);
+
+  double bda  = 1-potsd_f;
+
+  double delta_a = wgs84_a - potsd_a;
+  double delta_f = wgs84_f - potsd_f;
+
+  double rn = potsd_a / sqrt(1-potsd_es*sin(latr)*sin(latr));
+  double rm = potsd_a * ((1-potsd_es)/sqrt(1-potsd_es*sin(latr)*sin(latr)*1-potsd_es*sin(latr)*sin(latr)*1-potsd_es*sin(latr)*sin(latr)));
+
+  double ta = (-potsd_dx*sa*co - potsd_dy*sa*so)+potsd_dz*ca;
+  double tb = delta_a*((rn*potsd_es*sa*ca)/potsd_a);
+  double tc = delta_f*(rm/bda+rn*bda)*sa*ca;
+  double dlat = (ta+tb+tc)/rm;
+
+  double dlon = (-potsd_dx*so + potsd_dy*co)/(rn*ca);
+
+  *d_lat  = (latr + dlat)*180/M_PI;
+  *d_long = (lonr + dlon)*180/M_PI;
+
+}
+
+/*---------------------------------------------------------------------------*/
+/* see GPL gauss converter gauss.pl from Nobert Hüttisch (nobbi@nobbi.com)   */
+
 static int parse_arg(long *longitude, long *latitude)
 {
   int c;
+  int len;
 
   if (! *argv) return -1;
 
@@ -262,6 +415,33 @@ static int parse_arg(long *longitude, long *latitude)
       usage();
       break;
     }
+    argv++;
+    return 0;
+  }
+
+  // gauss-krueger (len 14: normal, len 12: O2)
+  if ((len = strlen(argv[0])) == 12 || len == 14) {
+    char s_lat[8], s_long[8];
+    double d_long, d_lat;
+    char *p;
+    // only numeric args
+    for (p = argv[0]; *p; p++) {
+      if (*p < '0' || *p > '9') {
+	return -1;
+      }
+    }
+    strncpy(s_lat, argv[0], (len == 12 ? 6 : 7));
+    if (len == 12)
+      s_lat[6] = '0';
+    s_lat[7] = 0;
+    strncpy(s_long, argv[0]+(len == 12 ? 6 : 7), (len == 12 ? 6 : 7));
+    if (len == 12)
+      s_long[6] = '0';
+    s_long[7] = 0;
+    gauss_krueger_to_potsdam(s_long, s_lat, &d_long, &d_lat);
+    //potsdam_to_wgs84(&d_long, &d_lat);
+    *latitude = d_lat * 3600.0;
+    *longitude = -d_long * 3600.0;
     argv++;
     return 0;
   }
@@ -304,6 +484,53 @@ static int parse_arg(long *longitude, long *latitude)
 
 /*---------------------------------------------------------------------------*/
 
+void do_nmea(int pargc, int do_gpgga, int do_time, int is_invalid, long longitude, long latitude, char *s_height, char *s_hdop)
+{
+#define	nmea_GPGGA_head "$GPGGA"
+#define	nmea_GPGGA_tail ",%d,%2.2d,%s,%5.5d,%s,,,,"
+  char s_nmea_head[256];
+  char s_nmea_tail[256];
+  char *nmea_head = 0;
+  char *nmea_tail = 0;
+
+  if (do_gpgga) {
+    nmea_head = s_nmea_head;
+    if (do_time) {
+      time_t t = time(0);
+      struct tm *tm = gmtime(&t);
+      sprintf(s_nmea_head, "%s,%2.2d%2.2d%2.2d.0,", nmea_GPGGA_head, tm->tm_hour, tm->tm_min, tm->tm_sec);
+    } else {
+       sprintf(s_nmea_head, "%s,0,", nmea_GPGGA_head);
+    }
+    if (pargc > 1)
+      nmea_tail = argv[0];
+    else {
+      char *h_metric = "M";
+      int h_value = 0;
+
+      if (s_height) {
+	h_value = atoi(s_height);
+	while (*s_height && (*s_height < 'A' || *s_height > 'Z'))
+	  s_height++;
+	h_metric = s_height;
+      }
+      if (!s_hdop || strpbrk(s_hdop, ", \t\r\n"))
+        s_hdop = "1.0";
+      sprintf(s_nmea_tail, nmea_GPGGA_tail, is_invalid ? 0 : 1, is_invalid ? 0 : 1, s_hdop, h_value, h_metric);
+      nmea_tail = s_nmea_tail;
+    }
+  } else {
+    if (pargc > 1) {
+      nmea_head = argv[0];
+    if (pargc > 2)
+      nmea_tail = argv[1];
+   }
+ }
+ print_nmea(longitude, latitude, nmea_head, nmea_tail);
+}
+
+/*---------------------------------------------------------------------------*/
+
 int main(int pargc, char **pargv)
 {
 
@@ -320,10 +547,19 @@ int main(int pargc, char **pargv)
   double l2;
   FILE *fp;
   int two_is_me;
+  int c;
   long latitude1;
   long latitude2;
   long longitude1;
   long longitude2;
+  int nmea = 0;
+  int a_set = 0;
+  int t_set = 0;
+  int i_set = 0;
+  int h_set = 0;
+  int d_set = 1;
+  char *h_arg = 0;
+  char *d_arg = 0;
 
   if ((fp = fopen(CONFFILE, "r"))) {
     if (fscanf(fp, "%ld %ld", &longitude1, &latitude1) == 2) {
@@ -333,9 +569,46 @@ int main(int pargc, char **pargv)
     fclose(fp);
   }
 
-  argv = ++pargv;
+  while((c = getopt(pargc,pargv,"d:h:nati")) != EOF) {
+    switch (c) {
+    case 'n':
+      nmea = 1;
+      break;
+    case 'a':
+      a_set = 1;
+      break;
+    case 't':
+      t_set = 1;
+      break;
+    case 'i':
+      i_set = 1;
+      break;
+    case 'h':
+      h_set = 1;
+      h_arg = optarg;
+      break;
+    case 'd':
+      d_set = 1;
+      d_arg = optarg;
+      break;
+    default:
+      usage();
+    }
+  }
+  pargc -= optind;
+  if (nmea) {
+    if (pargc < 1 || pargc > 3)
+      usage();
+  }
+
+  argv = pargv + optind;
 
   if (parse_arg(&longitude1, &latitude1)) usage();
+  if (nmea) {
+    do_nmea(pargc, a_set, t_set, i_set, longitude1, latitude1, h_arg, d_arg);
+    exit(0);
+  }
+
   sec_to_loc(longitude1, latitude1, loc1);
   sec_to_qra(longitude1, latitude1, qra1);
 
