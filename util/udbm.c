@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.36 1994/10/09 08:23:10 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.37 1994/11/23 09:36:48 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -40,7 +40,7 @@ struct user {
   char alias;
 };
 
-#define NUM_USERS 2503
+#define NUM_USERS 8191
 
 #if DEBUG
 static const char usersfile[] = "users";
@@ -67,23 +67,6 @@ static const char null_string[] = "";
 static long heapsize;
 static struct user *users[NUM_USERS];
 static struct user null_user;
-
-static void terminate(const char *s);
-static void *allocate(size_t size);
-static const char *strsave(const char *s);
-static char *strlwc(char *s);
-static char *rmspaces(char *s);
-static char *strtrim(char *s);
-static int is_qth(const char *s);
-static int is_phone(const char *s);
-static int is_mail(const char *s);
-static int join(const char **s1, const char **s2);
-static struct user *getup(const char *call, int create);
-static FILE *fopenexcl(const char *path);
-static void output_line(const struct user *up, FILE *fp);
-static int fixusers(void);
-static void fixpasswd(void);
-static void fixaliases(void);
 
 /*---------------------------------------------------------------------------*/
 
@@ -424,8 +407,10 @@ static int fixusers(void)
       continue;
     }
     if (!*user.call) {
+#if 0
       fputs(orig_line, fpo);
       putc('\n', fpo);
+#endif
       continue;
     }
     up = getup(user.call, 1);

@@ -1,8 +1,7 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.20 1994/10/21 11:54:07 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.21 1994/11/23 09:36:31 deyke Exp $
 
 MAKEFILE   = Makefile
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
-PATH       = /opt/SUNWspro/bin:/usr/lang:/bin:/usr/bin:/usr/ccs/bin:/usr/ucb:/usr/contrib/bin:/usr/local/bin:/usr/local/etc
 
 all:;   @-rm -f bbs/bbs.h src/linux_include/stdlib.h
 	-chmod 755 cc
@@ -22,7 +21,7 @@ all:;   @-rm -f bbs/bbs.h src/linux_include/stdlib.h
 
 /usr/local/lib/users: users
 	$(MKDIR)
-	cp $? $@ && udbm
+	cp $? $@ && /usr/local/etc/udbm
 
 clean:;
 

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.48 1994/11/22 11:55:32 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.49 1994/11/23 09:36:33 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -2725,28 +2725,33 @@
 #44.130.88.x    Leipzig
 # lokale Adresskoordination: DL9WUM
 44.130.88.1     DL8WPM  # Henry Luedemann, O-7010 Leipzig; AT (ex Y22PM)
-44.130.88.2     DL8WIZ  # Micha, Leipzig (ex Y49FM)
+44.130.88.2     DL8WIZ  # * Micha, Leipzig (ex Y49FM)
 44.130.88.3     DL9WIZ  # Ron, Leipzig (ex Y49GM)
-44.130.88.4     DL3LST  # Rainer Streubel, Leipzig
-44.130.88.5     DL3LSM-2        # Mario Illgen
-44.130.88.6     DL9WUM  # Rolf Lieske, 04207 Leipzig
-44.130.88.7     Y23VE   # Aldo Jesovka, O-7010 Leipzig
+44.130.88.4     DL3LST  # * Rainer Streubel, Leipzig
+44.130.88.5     DL3LSM-2        # ? Mario Illgen
+44.130.88.6     DL9WUM  # * Rolf Lieske, 04207 Leipzig
+44.130.88.7     Y23VE   # ? Aldo Jesovka, O-7010 Leipzig
 44.130.88.10    DL8WKR  # Knut Rothe, O-7220 Pegau
 44.130.88.11    DL2LQB  # Michael Wollschlaeger, O-7222 Groitzsch
+44.130.88.13    DG0LDK-TEST # * Wolfgang Winter, 04357 Leipzig  ax25: DG0LDK-2
+44.130.88.14    DD3DA   # * Joerg Schlottmann, Leipzig
 44.130.88.15    DG3LSW  # Joachim Hilprecht, Leipzig
-44.130.88.16    DL6YTM  # Peter Wilkert, 04685 Nerchau
-44.130.88.17    DL6KWM  # Karsten Wilkert, 04685 Nerchau
+44.130.88.16    DL6YTM  # * Peter Wilkert, 04685 Nerchau
+44.130.88.17    DL6KWM  # * Karsten Wilkert, 04685 Nerchau
 44.130.88.18    DG0LAT  # Uwe Rost, 05516 Markkleeberg
-44.130.88.19    DL5YYM  # Guenter Dornblut, 04179 Leipzig
-44.130.88.20    DG0LDK  # Wolfgang Winter, 04357 Leipzig
+44.130.88.19    DL5YYM  # * Guenter Dornblut, 04179 Leipzig
+44.130.88.20    DG0LDK  # * Wolfgang Winter, 04357 Leipzig
 44.130.88.21    DG0LGJ  # Torsten, Rosswein
-44.130.88.22    DG0LGF  # Axel Maercker, Leipzig
-44.130.88.23    DG0LGA  # Raoul Brosch, Markkleeberg
-44.130.88.24    DG0LHW  # Mike Wittenbecher, 04315 Leipzig
+44.130.88.22    DG0LGF  # * Axel Maercker, Leipzig  ax25: DG0LGF-15
+44.130.88.23    DG0LGA  # * Raoul Brosch, Markkleeberg
+44.130.88.24    DG0LHW  # * Mike Wittenbecher, 04315 Leipzig
 44.130.88.25    DL8LWH  # Hendrik Wendschuch, Leipzig
 44.130.88.26    DL5YRM  # Tom Bolle, Leipzig
-44.130.88.27    DG2LWH  # Holger Baumgaertner, 04157 Leipzig
-44.130.88.35    DL1LRK  # Uwe Kasubek, Delitzsch
+44.130.88.27    DG2LWH  # * Holger Baumgaertner, 04157 Leipzig
+44.130.88.28    DG2LWD  # * Andreas Donat, 04347 Leipzig
+#
+44.130.88.35    DL1LRK  # * Uwe Kasubek, Delitzsch
+#
 #44.130.88.100  DB0LPZ  # reserviert
 #
 #44.130.89.x    Chemnitz

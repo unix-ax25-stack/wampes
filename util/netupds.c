@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.22 1994/11/21 11:36:40 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.23 1994/11/23 09:36:47 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -81,6 +81,7 @@ static char *inpptr;
 static char inpbuf[1024];
 static char outbuf[1024];
 static int fdinp;
+static int fdlock = -1;
 static int fdout;
 static int inpcnt;
 static int outcnt;
@@ -1231,7 +1232,7 @@ static void doserver(int argc, char **argv)
     exit(1);
   default:
     for (i = 0; i < FD_SETSIZE; i++)
-      if (i != fdinp && i != fdout && i != fdpipe[1])
+      if (i != fdinp && i != fdout && i != fdlock && i != fdpipe[1])
 	close(i);
     open("/dev/null", O_RDWR, 0666);
     dup(fdpipe[1]);
@@ -1367,13 +1368,14 @@ int main(int argc, char **argv)
 
   putenv("HOME=/");
   putenv("LOGNAME=root");
-  putenv("PATH=/bin:/usr/bin:/usr/local/bin:/usr/contrib/bin");
+  putenv("PATH=/opt/SUNWspro/bin:/usr/bsd:/usr/lang:/bin/posix:/bin:/usr/bin:/usr/ccs/bin:/usr/ucb:/usr/contrib/bin:/usr/local/bin:/usr/local/etc");
+  putenv("LD_LIBRARY_PATH=/opt/SUNWspro/lib");
   putenv("SHELL=/bin/sh");
   if (!getenv("TZ"))
     putenv("TZ=MEZ-1MESZ");
 
 #if !DEBUG
-  if (lock_file(LOCKFILE, 0) < 0)
+  if ((fdlock = lock_file(LOCKFILE, 0)) < 0)
     syscallerr(LOCKFILE);
 #endif
 

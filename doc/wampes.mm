@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.28 1994/11/22 11:56:06 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.29 1994/11/23 09:36:47 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
@@ -19,13 +19,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 941122" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 941123" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 941122
+Version 941123
 .S
 .SP 2
 .S 15
