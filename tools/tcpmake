@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.18 1994/11/28 10:39:50 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.19 1995/03/01 09:25:02 deyke Exp $
 
 save_file()
 {
@@ -102,12 +102,12 @@ nosdiff
 jnosdiff -w
 
 cd ~/tcp/manuals
-for manual in *; do
+for manual in netupd smack wampes; do
 	cd ~/tcp/manuals/$manual
 
 	file=frontpage
 	save_file $file
-	sed "s/Version ....../Version $date/g" < $file.old > $file
+	sed "s/Version [0-9][0-9][0-9][0-9][0-9][0-9]/Version $date/g" < $file.old > $file
 	check_file $file
 
 	file=../../doc/$manual.mm

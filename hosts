@@ -6010,7 +6010,7 @@
 ###
 # TCP/IP Hosts for Luxembourg 44.161.x.x
 # Coordinator: LX1BZ
-# Date: February 1, 1995
+# Date: February 26, 1995
 ###
 44.161.1.1   lx1jb       lx1jb.ampr.org       # Jean, 1232 Howald
 44.161.1.2   lx1jb-1     lx1jb-1.ampr.org     # Jean, 1232 Howald
@@ -6041,6 +6041,7 @@
 44.161.3.9   lx1kj       lx1kj.ampr.org       # Josy, 3551 Dudelange
 44.161.3.10  lx1zf       lx1zf.ampr.org       # Francis, 3940 Mondercange
 44.161.3.11  lx1hy       lx1hy.ampr.org       # Henri, 3260 Bettembourg
+44.161.3.12  lx1dm       lx1dm.ampr.org       # Marc, 3739 Rumelange
 #
 44.161.4.1   lx1jr       lx1jr.ampr.org       # Roland, 4813 Rodange
 44.161.4.2   lx1jr-1     lx1jr-1.ampr.org     # Roland, 4813 Rodange
@@ -6056,6 +6057,7 @@
 44.161.4.12  lx1em       lx1em.ampr.org       # Marc, 4393 Pontpierre
 44.161.4.13  lx1em-1     lx1em-1.ampr.org     # Marc, 4393 Pontpierre
 44.161.4.14  lx1bi       lx1bi.ampr.org       # Roger, 4442 Soleuvre
+44.161.4.15  lx1to       lx1to.ampr.org       # Theo, 4750 Petange
 #
 44.161.5.1   lx1db       lx1db.ampr.org       # Willy, 5254 Sandweiler
 44.161.5.2   lx1gv       lx1gv.ampr.org       # Guy, 5402 Assel
@@ -6082,6 +6084,9 @@
 44.161.8.7   lx1la       lx1la.ampr.org       # Laurent, 8472 Eischen
 44.161.8.8   lx1la-1     lx1la-1.ampr.org     # Laurent, 8472 Eischen
 44.161.8.9   lx1wz       lx1wz.ampr.org       # Laurent, 8366 Hagen
-44.161.8.10  lx1cf       lx1cf.ampr.org       # Leon, 8295 Keispelt
+44.161.8.10  lx1cf       lx1cf.ampr.org       # Leo, 8295 Keispelt
 44.161.8.11  lx1jm       lx1jm.ampr.org       # Jeng, 8361 Goetzingen
+44.161.8.12  lx1pa       lx1pa.ampr.org       # Arthur, 8015 Strassen
+#
+44.161.9.1   lx1cw       lx1cw.ampr.org       # Gilbert, 9179 Oberfeulen
 #

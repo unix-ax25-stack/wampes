@@ -1,40 +1,54 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/smack.mm,v 1.2 1994/11/13 21:48:37 deyke Exp $
-.\" -*- Text -*-
 .\"
-.\" File: smack.ms   (nroff source, ms package)
+.\" Format this manual with:
 .\"
-.\" Compile with:
-.\"                UNIX:    nroff -ms smack.ms | lpr
-.\"                   or    troff -ms smack.ms | lpr
-.\"                  PC:    cawf  -ms -fn smack.ms > lpt1:
+.\" tbl -TX < manual.mm | nroff -mm | col
+.\" - or -
+.\" tbl < manual.mm | troff -mm
+.\" - or -
+.\" gtbl < manual.mm | gnroff -mgm
+.\" - or -
+.\" gtbl < manual.mm | groff -mgm
 .\"
-.ll 65
-.pl 50
-.TL
-The SMACK Protocol
-.AU
-.sp
+.PH "" \" Page header
+.ds HF 3 3 3 3 3 3 3 \" All headers bold
+.ds HP +2 +2 +2 +2 +2 +2 +2 \" All headers 2 points bigger
+.nr Cl 7 \" Max level of header for table of contents
+.nr Ej 1 \" Level 1 headers on new page
+.nr Hb 7 \" Break after all headers
+.nr Hs 7 \" Empty line after all headers
+.nr Hy 1 \" Hyphenation on
+.\"
+.PF "^The SMACK Protocol^-\\\\nP-^Version 1.0" \" Page footer
+.\"
+.S 30
+.ce
+\fBThe SMACK Protocol\fP
+.ce
 Version 1.0, (27 February 1992)
-.sp
+.S
+.SP 2
+.S 15
+.ce
 by Jan Schiefer, DL5UE and Dieter Deyke, DK5SG/N0PRA
-.sp
+.SP
+.ce
 English translation by Mike Chace (G6DHU) February 1993
-.NH 1
-Introduction
-.LP
+.S
+.nr Ej 0 \" No new page for all headers
+.H 1 "Introduction"
+.P
 At the end of 1990, the Stuttgart Packet Radio Group began to think
 in earnest about the security of data between a TNC and a WAMPES [*] node.
 It was noted that many other Packet node systems suffered
 from loss of data on the serial lines and effort was put into
 devising an extension of the KISS protocol to overcome this.
-.LP
+.P
 The result of this development was SMACK (Stuttgart's Modified
 Amateur CRC KISS). This document introduces SMACK and its differences
 over normal KISS so that implementations for other systems can be
 developed.
-.NH 1
-What Is KISS ?
-.LP
+.H 1 "What Is KISS ?"
+.P
 The KISS protocol was developed in 1986 by Phil Karn (KA9Q) and Mike
 Cheppionis (K3MC) [1]. The need for KISS was born out of the
 requirement for a simple interface from TCP/IP software to the AX.25
@@ -42,16 +56,15 @@ Protocol environment. KISS provides a level 2a protocol interface. It
 provides channel access through CSMA/CD and the P-Persistence algorithm
 together with the conversion from synchronous HDLC data on the
 channel to asynchronous data on an RS232 serial channel.
-.LP
-KISS organises serial "packets" through a known delimiter and defines
+.P
+KISS organizes serial "packets" through a known delimiter and defines
 a simple command set enabling TNC parameters to be set. Later,
 improvements to the protocol were devised allowing a single serial
 channel to share data from more than one Packet Radio channel.
-.NH 1
-Modifications of the KISS Protocol
-.LP
+.H 1 "Modifications of the KISS Protocol"
+.P
 The host computer communicates with KISS in the form of packets. The
-start of each packet is recognised through the FEND delimiter. The
+start of each packet is recognized through the FEND delimiter. The
 Command Byte then follows. This determines whether the rest of the
 packet contains a command or data from the HDLC channel. Apart from
 the Reset Command ($FF), all commands use only the lower 4 bits for
@@ -59,24 +72,23 @@ the Command Byte. It is this property that allows multi channel TNCs
 to share the same serial channel through using the upper 4 bits as
 the HDLC channel number. This allows up to 16 HDLC channels to be
 supported.
-.LP
+.P
 Since we knew of no 16 or even 8 channel TNCs, we decided to use the
 uppermost bit of the Command Byte. If it is set, this signifies that
 packets with CRC follow. It is important to note that it is only data
 packets that carry this checksum. The lowest byte of the checksum is
 received first.
-.LP
+.P
 The following diagrams show the frame format of data packets, one
 with checksum and one without:
-.nf
 .DS
-.sp 1
+.SP 1
 +------+------+------+------+-----+------+------+
 | FEND | 0x00 | DATA | DATA | ... | DATA | FEND |
 +------+------+------+------+-----+------+------+
 
 KISS data frame (without checksum)
-.sp 2
+.SP 2
 +------+------+------+------+----
 | FEND | 0x80 | DATA | DATA | ...
 +------+------+------+------+----
@@ -87,28 +99,26 @@ KISS data frame (without checksum)
 
 SMACK data frame (with checksum)
 .DE
-.fi
-.LP
+.P
 At this point, it should be reiterated that only data frames are
 secured with the checksum. This prevents command frames being sent to
 the TNC when Host computer and TNC are not in agreement over whether
 CRC's are in use.
-.NH 1
-Switching from KISS to SMACK
-.LP
+.H 1 "Switching from KISS to SMACK"
+.P
 At startup, a SMACK-capable TNC is in normal KISS mode and therefore
 does not generate checksums. As soon as the first frame with CRC
 arrives, the SMACK send routine is invoked. From this point onwards,
 SMACK can only be exited through a reset. This is also the case for
 the host computer.
-.LP
+.P
 If however, a KISS TNC is present at the end of the serial link,
 frames from the host containing a CRC will be decoded as unknown
 Command Bytes and are therefore discarded. KISS operation then
 continues as normal. This has the advantage that normal and SMACK-capable
 KISS TNCs can operate using the same host. No changes in host
 configuration are required.
-.LP
+.P
 The KISS/SMACK negotiations are illustrated below:
 .DS
 ---------------------------------------------------------------
@@ -133,7 +143,7 @@ Example 1: KISS-TNC
 
 ---------------------------------------------------------------
 .DE
-.LP
+.P
 Example 2: SMACK-TNC
 .DS
 	      Host                          TNC
@@ -164,10 +174,10 @@ Example 2: SMACK-TNC
 
 ---------------------------------------------------------------
 .DE
-.LP
+.P
 Regardless of the sender's state (CRC/no CRC), received frames are
 always handled according to the following rules.
-.LP
+.P
 .DS
     Received Frame        | Action
 --------------------------+--------------
@@ -175,57 +185,60 @@ Without CRC               | Process Frame
 With CRC, Checksum OK     | Process Frame
 With CRC, Checksum Bad    | Discard Frame
 .DE
-.LP
-These rules assume that all KISS implementation discard unrecognised
+.P
+These rules assume that all KISS implementation discard unrecognized
 frames. This assumption is stated in the KISS Protocol Specification
 [1].
-.NH 1
-CRC Calculation and Implementation Tips
-.LP
+.H 1 "CRC Calculation and Implementation Tips"
+.P
 This is not the right forum in which to discuss the theory of the Cyclic
 Redundancy Check (CRC). For this information read the work of Michael
 Roehner, DC4OX [2]. This excerpt merely discusses the essential
 points that allow other implementations to be developed.
-.LP
+.P
 The check polynomial is the standard CRC16 Polynomial. This has the
 formula:
-.sp 1
+.SP 1
 .DS
 	 16    15   2
 	X   + X  + X  + 1
 .DE
-.LP
+.P
 The CRC generator is primed with 0. The CRC is calculated over all
 data frames including the Command Byte 0x80.
-.LP
+.P
 As discussed before, the KISS protocol delimits frames with the FEND
 character (0xc0). In the event that this character is present in the
 data portion of the frame, this is handled by the software. This
 strategy is called SLIP (Serial Line Internet Protocol) encoding.
-.LP
+.P
 The CRC must be calculated before SLIP encoding is carried out and
 checked after SLIP decoding is complete. This is for a number of
 reasons:
-.sp 1
-.IP -
+.SP 1
+.BL
+.LI
 The CRC bytes could themselves contain the FESC, FEND and TFEND
 "special" KISS characters.
-.IP -
+.LI
 The SLIP encoder/decoder is in most host implementations (eg NOS,
 WAMPES), used independently of KISS.
-.LP
+.LE
+.P
 The CRCs belong logically to the KISS layer.
-.LP
+.P
 The calculation algorithm is as follows:
-.IP 1.
+.AL
+.LI
 CRC generator is primed with 0.
-.IP 2.
+.LI
 Stuff all data bytes into the algorithm including the two CRC bytes.
-.IP 3.
+.LI
 At the end of the calculation, 0's must again be present in the CRC
 generator. If this is not the case, a corruption must have occurred
 and the frame must be discarded.
-.LP
+.LE
+.P
 Various calculation algorithms for CRC generators are discussed in
 [2]. Here is a simple table-driven generator written in the C
 language, which generates the CRC of a buffer (buf) of length n.
@@ -280,11 +293,11 @@ static int  calc_crc(char *buf, int n)
 
 /*--------------------------------------------------------*/
 .DE
-.LP
+.P
 The table requires some 512 bytes of memory. If this is too great for
 a simple TNC EPROM implementation, the table can be built up at
 runtime as in the following example:
-.sp 1
+.SP 1
 .DS
 /*--------------------------------------------------------*/
 
@@ -307,53 +320,55 @@ main()
 
 /*----------------------------------------------------------*/
 .DE
-.LP
+.P
 If this algorithm is coded in assembler, it requires less space than
 that taken by the table itself. The theory can be found in [2].
-.NH 2
-Implementations
-.LP
+.H 2 "Implementations"
+.P
 The SMACK protocol has been implemented in the following systems:
-.IP 1
+.AL
+.LI
 The WAMPES TCP/IP software
-.IP 2
+.LI
 SMACK, version 1.3. This software was developed by Jan Schiefer,
 DL5UE from the original TNC2 KISS implementation by K3MC. This has
 been used in the TNCs of the WAMPES network nodes DB0ID (Stuttgart)
 and DB0SAO (Stuttgart Mailbox).
-.IP 3
+.LI
 In NORD><LINK's "The Firmware", Multi Channel TNC software for TNC2
 and compatibles from version 2.4 onwards.
-.IP 4
+.LI
 Tommy Osterried, DL9SAU has implemented a SMACK patch that should be
 suitable for the NOS TCP/IP software variant.
-.NH 1
-The Future ?
-.LP
+.LE
+.H 1 "The Future ?"
+.P
 One development on the wish list would be an implementation of the
 SMACK protocol in the standard Packet Driver format [3]. This would
 then allow any existing version of NOS or NET to use SMACK without
 any changes to the source code. In any case, all Packet Radio
 software can benefit from the extra security that SMACK affords.
-.LP
-.NH 1
-References
-.IP [*]
+.P
+.H 1 "References"
+.VL 10 2 1
+.LI [*]
 WAMPES = Wuerttembergische Amateur Multi-Protocol-Experimental-
-Software. This is TCP/IP package that runs under various flavours
+Software. This is TCP/IP package that runs under various flavors
 of the UNIX operating system. It supports AX.25, NET/ROM and TCP/IP.
 It has been installed primarily in the Stuttgart area of Germany and
 provides the basic network node functions for that region. See also
 [4].
-.IP [1]
+.LI [1]
 Karn, Phil, KA9Q; Proposed "Raw" TNC Functional Spec, 6.8.1986;
 Available in many UseNet news archives.
-.IP [2]
+.LI [2]
 Roehner, Michael, DC4OX; What is CRC ?
 Available throughout the German Mailbox network, May 1988
-.IP [3]
+.LI [3]
 FTP Software, Inc.; PC/TCP Version 1.09 Packet Driver Specification;
 Wakefield, MA 1989
-.IP [4]
+.LI [4]
 Schiefer, Jan, DL5UE; WAMPES - Further Developments; Speech given to
 the 5th regional Packet Radio Meeting; Frankfurt 1989;
+.LE
+.TC 1 1 7 0
