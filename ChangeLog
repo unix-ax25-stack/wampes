@@ -1,4 +1,10 @@
-@(#) $Id: ChangeLog,v 1.41 1998/03/23 17:10:41 deyke Exp $
+@(#) $Id: ChangeLog,v 1.42 1998/04/16 01:53:25 deyke Exp $
+
+980415 Dieter Deyke <deyke@fc.hp.com>
+
+	Better error handling in netupds.c
+
+	Updated domain.txt
 
 980323 Dieter Deyke <deyke@fc.hp.com>
 

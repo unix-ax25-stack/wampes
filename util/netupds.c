@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: netupds.c,v 1.45 1998/03/09 21:32:44 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: netupds.c,v 1.46 1998/04/16 01:55:41 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -161,39 +161,52 @@ static char *exclude_table[] =
 
 static void quit(void)
 {
+
+  char *p;
+  int n;
+
   printf("Received %d bytes, sent %d bytes\n", received, xmitted);
-  if (outcnt > 0) {
-    write(fdout, outbuf, outcnt);
+  p = outbuf;
+  while (outcnt > 0) {
+    n = write(fdout, p, outcnt);
+    if (n <= 0) {
+      break;
+    }
+    p += n;
+    outcnt -= n;
   }
   exit(0);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void syscallerr(const char *mesg)
+static void syscallerr_handler(const char *mesg, int line)
 {
-  perror(mesg);
+  char buf[1024];
+
+  sprintf(buf, "Line %d: %s", line, mesg);
+  perror(buf);
   quit();
 }
+
+#define syscallerr(mesg) \
+	syscallerr_handler(mesg, __LINE__)
 
 /*---------------------------------------------------------------------------*/
 
-static void usererr(const char *mesg)
+static void usererr_handler(const char *mesg, int line)
 {
-  fprintf(stderr, "%s\n", mesg);
+  fprintf(stderr, "Line %d: %s\n", line, mesg);
   quit();
 }
+
+#define usererr(mesg) \
+	usererr_handler(mesg, __LINE__)
 
 /*---------------------------------------------------------------------------*/
-
-static void protoerr_handler(int line)
-{
-  fprintf(stderr, "Protocol violation detected in line %d\n", line);
-  quit();
-}
 
 #define protoerr() \
-	protoerr_handler(__LINE__)
+	usererr_handler("Protocol violation", __LINE__)
 
 /*---------------------------------------------------------------------------*/
 
@@ -204,11 +217,21 @@ static void protoerr_handler(int line)
 
 static void flushoutbuf(void)
 {
-  if (outcnt > 0) {
-    if (write(fdout, outbuf, outcnt) != outcnt) {
+
+  char *p;
+  int n;
+
+  p = outbuf;
+  while (outcnt > 0) {
+    n = write(fdout, p, outcnt);
+    if (n < 0) {
       syscallerr("write");
     }
-    outcnt = 0;
+    if (!n) {
+      usererr("write() returned 0");
+    }
+    p += n;
+    outcnt -= n;
   }
 }
 
