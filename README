@@ -1,4 +1,4 @@
-wampes-930902.tar.Z  (compressed) and wampes-930902.tar.gz (gzipped) are
+wampes-930903.tar.Z  (compressed) and wampes-930903.tar.gz (gzipped) are
 tar archives of WAMPES,  which is a NET/NOS  port to various  flavors of
 Unix.
 
@@ -36,7 +36,7 @@ it.  After unpacking please read the file  /tcp/doc/intro.txt.  For RISC
 iX you have to copy *.R to  /usr/lib.  Now  type  "make  -i" to  compile
 everything.
 
-wampes-930902.tar.Z    and    wampes-930902.tar.gz    should   go   into
+wampes-930903.tar.Z    and    wampes-930903.tar.gz    should   go   into
 /hamradio/packet/tcpip/wampes on UCSD.EDU.
 
 73,
