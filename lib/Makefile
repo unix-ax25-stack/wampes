@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.34 1999/01/22 21:22:12 deyke Exp $
+# @(#) $Id: Makefile,v 1.35 1999/01/24 22:25:18 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -13,13 +13,12 @@ OBJS          = buildsaddr.o \
 		strmatch.o \
 		strtoul.o
 
-all:;   if   [ -x /bin/bash ]; then /bin/bash configure; \
-	elif [ -x /bin/ksh  ]; then /bin/ksh  configure; \
-	else                        /bin/sh   configure; \
-	fi
-	. ../lib/configure.mak; $(MAKE) -i _all
-
-depend:; . ../lib/configure.mak; $(MAKE) -i _depend
+all:;   @echo "Configuring ..."
+	@if   [ -x /bin/bash ]; then /bin/bash configure; \
+	 elif [ -x /bin/ksh  ]; then /bin/ksh  configure; \
+	 else                        /bin/sh   configure; \
+	 fi
+	@. ../lib/configure.mak; $(MAKE) -i _all
 
 _all:   $(LIBRARY)
 
@@ -31,9 +30,7 @@ $(LIBRARY): $(OBJS)
 
 install:;
 
-clean:; @rm -f *.o *.a *~ \#*\#
-
-_depend:; @mkmf
+clean:; @rm -f *.o *.a configure.h configure.mak *~ \#*\#
 ###
 buildsaddr.o: buildsaddr.h
 calc_crc.o: calc_crc.h

@@ -1,4 +1,4 @@
-/* @(#) $Id: lcsum.c,v 1.12 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: lcsum.c,v 1.13 1999/01/24 22:23:24 deyke Exp $ */
 
 /*
  * Word aligned linear buffer checksum routine.  Called from mbuf checksum
@@ -19,13 +19,14 @@ register uint len)
 {
 	register int32 sum = 0;
 	uint16 result;
+	static const short byte_order_test = 0x1234;
 
 	while(len-- != 0)
 		sum += *wp++;
 	result = eac(sum);
-#if BYTE_ORDER == LITTLE_ENDIAN
-	/* Swap the result because of the (char *) to (int *) type punning */
-	result = (result << 8) | (result >> 8);
-#endif
+	if (*(((const char *) &byte_order_test)) == 0x34) { /* LITTLE_ENDIAN */
+		/* Swap the result because of the (char *) to (int *) type punning */
+		result = (result << 8) | (result >> 8);
+	}
 	return result;
 }

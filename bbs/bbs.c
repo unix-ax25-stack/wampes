@@ -1,8 +1,8 @@
-static const char rcsid[] = "@(#) $Id: bbs.c,v 3.12 1998/10/01 18:02:43 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: bbs.c,v 3.13 1999/01/24 22:24:50 deyke Exp $";
 
 /* Bulletin Board System */
 
-#ifdef __cplusplus
+#if defined __cplusplus && defined __hpux
 #define volatile
 #endif
 
@@ -218,16 +218,6 @@ static void inc_errors(void)
   if (level == MBOX && errors >= 3)
     exit(1);
 }
-
-/*---------------------------------------------------------------------------*/
-
-#if defined _SC_OPEN_MAX && !(defined __386BSD__ || \
-			      defined __bsdi__   || \
-			      defined __FreeBSD__)
-#define open_max()      ((int) sysconf(_SC_OPEN_MAX))
-#else
-#define open_max()      (1024)
-#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -2605,8 +2595,9 @@ static void shell_command(int argc, const char **argv)
   case 0:
     setgid(user.gid);
     setuid(user.uid);
-    for (i = open_max() - 1; i >= 3; i--)
+    for (i = 3; i < 1024; i++) {
       close(i);
+    }
     if (argc == 1)
       execl(user.shell, user.shell, 0);
     else

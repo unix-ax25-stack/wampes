@@ -1,36 +1,24 @@
 #! /bin/sh
 
-# @(#) $Id: vixxx,v 1.9 1996/08/12 18:52:58 deyke Exp $
+# @(#) $Id: vixxx,v 1.10 1999/01/24 22:24:52 deyke Exp $
 
-tmp=/tmp/tmp$$
-sed <xxx >$tmp -e "
+perl -ne < xxx "
 
-	/ change in ANSI C; /d
-	/ done$/d
-	/ Error code .* (ignored)/d
-	/ Error exit code .* (ignored)/d
-	/ is up to date/d
-	/ no change$/d
-	/ warning: macro replacement within a character constant/d
-	/acc /d
-	/This value will be ignored/d
-	/^Cannot create /d
-	/^cc /d
-	/^chmod[: ]/d
-	/^cp[: ]/d
-	/^ln[: ]/d
-	/^make: /d
-	/^mv[: ]/d
-	/^Permission denied/d
-	/^rm[: ]/d
-	/^The error code from the last failed command is /d
+	next if ! /:/;
 
-	/\
-	c89 /d
+	next if / .ignored/;
+	next if / ERROR in line 15: unknown . sequence/;
+	next if / Not owner/;
+	next if / Permission denied/;
+	next if / are identical/;
+	next if / is up to date/;
+	next if /: In function /;
+	next if /In file included from /;
+	next if /ing directory /;
+	next if /linux_include.netinet/;
+	next if /of .accept. differ in signedness/;
+	next if /of .recvfrom. differ in signedness/;
 
-	/\
-	cc /d
+	print;
 
-"
-vi $tmp
-rm -f $tmp
+" | less

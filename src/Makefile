@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.98 1999/01/22 21:20:07 deyke Exp $
+# @(#) $Id: Makefile,v 1.99 1999/01/24 22:23:24 deyke Exp $
 
 DEST          = /tcp
 
@@ -283,9 +283,8 @@ SRCS          = adjtime.c \
 		udphdr.c \
 		version.c
 
-all:;        . ../lib/configure.mak; $(MAKE) -i _all
-install:;    . ../lib/configure.mak; $(MAKE) -i _install
-depend:;     . ../lib/configure.mak; $(MAKE) -i _depend
+all:;        @. ../lib/configure.mak; $(MAKE) -i _all
+install:;    @. ../lib/configure.mak; $(MAKE) -i _install
 
 _all:           $(PROGRAM)
 
@@ -331,8 +330,6 @@ $(PROGRAM):     $(OBJS) $(LIBS)
 
 clean:;         @rm -f *.o $(PROGRAM) lint tags TAGS *~ \#*\#
 
-_depend:;       @mkmf
-
 _install:       $(DEST)/$(PROGRAM)
 
 lint:           $(HDRS) $(SRCS); @lih $(SRCS) > lint
@@ -344,6 +341,7 @@ TAGS:           $(HDRS) $(SRCS)
 		@etags $(HDRS) $(SRCS)
 
 $(DEST)/$(PROGRAM): $(PROGRAM)
+		$(MKDIR)
 		$(RMTARGET)
 		cp $(PROGRAM) $@
 

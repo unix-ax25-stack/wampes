@@ -1,10 +1,9 @@
-# @(#) $Id: Makefile,v 1.57 1999/01/22 21:21:37 deyke Exp $
+# @(#) $Id: Makefile,v 1.58 1999/01/24 22:24:50 deyke Exp $
 
 TARGETS    = bbs
 
-all:;        . ../lib/configure.mak; $(MAKE) -i _all
-install:;    . ../lib/configure.mak; $(MAKE) -i _install
-depend:;     . ../lib/configure.mak; $(MAKE) -i _depend
+all:;        @. ../lib/configure.mak; $(MAKE) -i _all
+install:;    @. ../lib/configure.mak; $(MAKE) -i _install
 
 _all:   $(TARGETS)
 
@@ -29,8 +28,6 @@ _install: /usr/local/bin/bbs /usr/local/lib/bbs.help
 	cp $? $@
 
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
-
-_depend:; @mkmf
 ###
 bbs.o: ../lib/buildsaddr.h ../lib/callvalid.h ../lib/configure.h \
 	../lib/lockfile.h ../lib/seteugid.h ../lib/strdup.h ../lib/strmatch.h

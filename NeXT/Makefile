@@ -1,17 +1,12 @@
-# @(#) $Id: Makefile,v 1.2 1999/01/22 21:22:09 deyke Exp $
+# @(#) $Id: Makefile,v 1.3 1999/01/24 22:25:14 deyke Exp $
 
 LIBRARY       = libnext.a
 
-
-OBJS          = putenv.o \
-		next.o
+OBJS          = next.o \
+		putenv.o
 
 all:;   @case "`uname -sr`" in \
 	NeXT*) . ../lib/configure.mak; $(MAKE) -i _all;; \
-	esac
-
-depend:; @case "`uname -sr`" in \
-	NeXT*) . ../lib/configure.mak; $(MAKE) -i _depend;; \
 	esac
 
 _all:   $(LIBRARY)
@@ -25,7 +20,5 @@ $(LIBRARY): $(OBJS)
 install:;
 
 clean:; @rm -f *.o *.a *~ \#*\#
-
-_depend:; @mkmf 
 ###
-ctime.o: time.h ansi.h cdefs.h tzfile.h
+next.o: next.h

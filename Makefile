@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.36 1999/01/22 21:19:44 deyke Exp $
+# @(#) $Id: Makefile,v 1.37 1999/01/24 22:23:07 deyke Exp $
 
 OBSOLETE   = /usr/local/bin/sfstat \
 	     bbs/bbs.h \
@@ -24,13 +24,13 @@ DIRS       = lib \
 
 all:;   @-rm -f $(OBSOLETE)
 	-chmod 755 cc
-	-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i all install ); done
-	-$(MAKE) -i /tcp/hostaddr.pag
-	-if [ -d tools ]; then ( cd tools; $(MAKE) -i all install ); fi
+	@-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i all install ); done
+	@-$(MAKE) -i /tcp/hostaddr.pag
+	@-if [ -d tools ]; then ( cd tools; $(MAKE) -i all install ); fi
 
-/tcp/hostaddr.pag: /tcp/hosts /tcp/domain.txt /usr/local/etc/mkhostdb
+/tcp/hostaddr.pag: /tcp/hosts /tcp/domain.txt util/mkhostdb
 	rm -f /tcp/hostaddr.* /tcp/hostname.*
-	/usr/local/etc/mkhostdb >/dev/null 2>&1
+	util/mkhostdb >/dev/null 2>&1
 	if [ -f /tcp/hostaddr.db ]; then ln /tcp/hostaddr.db $@; fi
 
 distrib:
@@ -69,6 +69,5 @@ distrib:
 	tar cvf - $$sources | gzip -9 -v > wampes-$$version.tar.gz; \
 	cp README wampes-$$version.txt
 
-clean:; -for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i clean ); done
-
-depend:; -for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i depend ); done
+clean:; @-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i clean ); done
+	@-if [ -d tools ]; then  ( cd tools; $(MAKE) -i clean ); fi

@@ -1,4 +1,4 @@
-/* @(#) $Id: global.h,v 1.45 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: global.h,v 1.46 1999/01/24 22:23:24 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -43,33 +43,11 @@ typedef int pid_t;
 #define private         private_
 #define signed
 #define this            this_
+#ifdef __hpux
 #define volatile
+#endif
 #else
 #define EXTERN_C
-#endif
-
-/*
- * Definitions for byte order, according to byte significance from low
- * address to high.
- */
-
-#ifndef BYTE_ORDER
-
-#define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
-#define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
-#define PDP_ENDIAN      3412    /* LSB first in word, MSW first in long */
-
-#if ( defined linux       || \
-      defined ULTRIX_RISC || \
-      defined __386BSD__  || \
-      defined __bsdi__    || \
-      defined __FreeBSD__ || \
-      defined __NeXT__    ) && !defined __mc68000__
-#define BYTE_ORDER      LITTLE_ENDIAN
-#else
-#define BYTE_ORDER      BIG_ENDIAN
-#endif
-
 #endif
 
 #if     !defined(AMIGA) && (defined(MAC) || defined(MSDOS))

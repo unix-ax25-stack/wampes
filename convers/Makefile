@@ -1,10 +1,9 @@
-# @(#) $Id: Makefile,v 1.43 1999/01/22 21:20:01 deyke Exp $
+# @(#) $Id: Makefile,v 1.44 1999/01/24 22:23:20 deyke Exp $
 
 TARGETS    = convers conversd
 
-all:;        . ../lib/configure.mak; $(MAKE) -i _all
-install:;    . ../lib/configure.mak; $(MAKE) -i _install
-depend:;     . ../lib/configure.mak; $(MAKE) -i _depend
+all:;        @. ../lib/configure.mak; $(MAKE) -i _all
+install:;    @. ../lib/configure.mak; $(MAKE) -i _install
 
 _all:   $(TARGETS)
 
@@ -30,8 +29,6 @@ _install: /usr/local/bin/convers /tcp/conversd
 	cp $? $@
 
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
-
-_depend:; @mkmf
 ###
 convers.o: ../lib/buildsaddr.h ../lib/configure.h
 conversd.o: ../lib/buildsaddr.h ../lib/configure.h ../lib/md5.h \

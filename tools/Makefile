@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.39 1999/01/22 21:21:39 deyke Exp $
+# @(#) $Id: Makefile,v 1.40 1999/01/24 22:24:52 deyke Exp $
 
 TARGETS    = \
 	     check_seteugid \
@@ -11,9 +11,8 @@ TARGETS    = \
 	     ms2mm \
 	     udpbridge
 
-all:;        . ../lib/configure.mak; $(MAKE) -i _all
-install:;    . ../lib/configure.mak; $(MAKE) -i _install
-depend:;     . ../lib/configure.mak; $(MAKE) -i _depend
+all:;        @. ../lib/configure.mak; $(MAKE) -i _all
+install:;    @. ../lib/configure.mak; $(MAKE) -i _install
 
 _all:   $(TARGETS)
 
@@ -73,9 +72,6 @@ _install: \
 	cp $? $@
 
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
-
-_depend:; @mkmf
 ###
 check_seteugid.o: ../lib/seteugid.h
 connect.o: ../lib/configure.h
-hs.o: ../lib/buildsaddr.h

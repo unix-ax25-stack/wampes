@@ -1,6 +1,8 @@
 #! /bin/ksh
 
-# @(#) $Id: tcpmake,v 1.35 1997/06/09 16:58:22 deyke Exp $
+# @(#) $Id: tcpmake,v 1.36 1999/01/24 22:24:52 deyke Exp $
+
+#------------------------------------------------------------------------------
 
 save_file()
 {
@@ -9,28 +11,27 @@ save_file()
 	fi
 }
 
+#------------------------------------------------------------------------------
+
 check_file()
 {
 	if [[ -f $1.old ]]; then
 		if cmp -s $1.old $1; then
+			rm -f $1
 			mv $1.old $1
 		else
-			rm $1.old
+			rm -f $1.old
 		fi
 	fi
 }
 
-date=$(date +%y%m%d)
+#------------------------------------------------------------------------------
 
 if [[ -x /bin/hp9000s700 ]] && /bin/hp9000s700; then
 	export CCOPTS='-z +ESlit'
 fi
 
-cd ~/tcp/lib
-file=configure.h
-save_file $file
-ksh < configure > configure.h
-check_file $file
+date=$(date +%y%m%d)
 
 cd ~/tcp
 file=README
@@ -46,6 +47,7 @@ check_file $file
 
 for dir in \
 	~/tcp \
+	~/tcp/NeXT \
 	~/tcp/aos \
 	~/tcp/bbs \
 	~/tcp/convers \
@@ -57,13 +59,12 @@ for dir in \
 	~/tcp/util \
 	; do
 	cd $dir
-	for file in Makefile*; do
-		if [[ -f $file ]]; then
-			save_file $file
-			make -f $file depend
-			check_file $file
-		fi
-	done
+	file=Makefile
+	if [[ -f $file ]]; then
+		save_file $file
+		CFLAGS='-I../lib' mkmf
+		check_file $file
+	fi
 	for file in *.[ch]; do
 		if [[ -f $file && $file != configure.h ]]; then
 			case $(grep -F -c '@(#) $Id' $file) in
@@ -86,16 +87,6 @@ for dir in \
 	trimfiles
 done
 
-cd ~/tcp
-make
-mk make
-
-cd ~/tcp/src
-make lint tags TAGS 
-nosdiff
-# jnosdiff -w
-
-cd ~/tcp/manuals
 for manual in bbs bridge netupd smack wampes; do
 	cd ~/tcp/manuals/$manual
 
@@ -111,6 +102,8 @@ for manual in bbs bridge netupd smack wampes; do
 
 done
 
+cd ~/tcp/lib; make
+cd ~/tcp/tools; make
 cd ~/tcp/doc
 for file in *.gif; do
 	save_file $file
@@ -148,6 +141,9 @@ groff -p -t -mgm -Tascii < ~/tcp/doc/bbs.mm | sed 's/.//g' | awk '
 	}
 ' | trim -s | expand > $file
 check_file $file
-mk make install
+
+cd ~/tcp
+make
+mk make
 
 echo '***** tcpmake complete *****'

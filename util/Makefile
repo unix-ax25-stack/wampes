@@ -1,10 +1,9 @@
-# @(#) $Id: Makefile,v 1.70 1999/01/22 21:22:04 deyke Exp $
+# @(#) $Id: Makefile,v 1.71 1999/01/24 22:25:10 deyke Exp $
 
 TARGETS    = bridge cnet md5 mkhostdb netupdc netupds path qth udbm
 
-all:;        . ../lib/configure.mak; $(MAKE) -i _all
-install:;    . ../lib/configure.mak; $(MAKE) -i _install
-depend:;     . ../lib/configure.mak; $(MAKE) -i _depend
+all:;        @. ../lib/configure.mak; $(MAKE) -i _all
+install:;    @. ../lib/configure.mak; $(MAKE) -i _install
 
 _all:   $(TARGETS)
 
@@ -94,8 +93,6 @@ _install: \
 	cp $? $@
 
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
-
-_depend:; @mkmf
 ###
 bridge.o: ../lib/buildsaddr.h ../lib/configure.h
 cnet.o: ../lib/buildsaddr.h ../lib/configure.h

@@ -1,4 +1,4 @@
-# @(#) $Id: configure,v 1.30 1999/01/22 21:22:12 deyke Exp $
+# @(#) $Id: configure,v 1.31 1999/01/24 22:25:18 deyke Exp $
 
 CC='cc'
 CFLAGS='-O -I../lib'
@@ -34,8 +34,12 @@ IRIX*)
 
 Linux*)
 	CC='gcc'
-	# CFLAGS="$CFLAGS -I../src/linux_include"
-	CFLAGS="$CFLAGS -fsigned-char -ansi -pedantic -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wnested-externs -Dlinux -D_GNU_SOURCE -I../src/linux_include"
+	case `hostname` in
+	deyke7*)
+		CFLAGS="$CFLAGS -fsigned-char -ansi -pedantic -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wnested-externs -Dlinux -D_GNU_SOURCE -I../src/linux_include";;
+	*)
+		CFLAGS="$CFLAGS -I../src/linux_include";;
+	esac
 	if [ -f /usr/lib/libndbm.so -o -f /usr/lib/libndbm.a ]; then
 		LIBDBM='ndbm'
 	elif [ -f /usr/lib/libgdbm.so -o -f /usr/lib/libgdbm.a ]; then

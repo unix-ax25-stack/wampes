@@ -1,4 +1,10 @@
-@(#) $Id: ChangeLog,v 1.50 1999/01/22 21:19:44 deyke Exp $
+@(#) $Id: ChangeLog,v 1.51 1999/01/24 22:23:07 deyke Exp $
+
+990124 Dieter Deyke <deyke@fc.hp.com>
+
+	Determine byte order at run time
+
+	Reduced warnings for Linux
 
 990122 Dieter Deyke <deyke@fc.hp.com>
 
