@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.24 1992/09/09 12:57:05 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.25 1992/09/25 20:06:49 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -19,8 +19,18 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <unistd.h>
 #include <utmp.h>
 
+#ifndef SOMAXCONN
+#define SOMAXCONN       5
+#endif
+
+#ifndef WNOHANG
+#define WNOHANG         1
+#endif
+
 #ifdef LINUX
-#include "../src/linux.h"
+#define FD_SET_TYPE fd_set
+#else
+#define FD_SET_TYPE struct fd_set
 #endif
 
 #if defined(__TURBOC__) || defined(__STDC__)
@@ -83,12 +93,13 @@ struct permlink {
 
 #define NULLPERMLINK  ((struct permlink *) 0)
 
+static FD_SET_TYPE chkread;
+static FD_SET_TYPE chkwrite;
 static char *myhostname;
 static int maxfd = -1;
 static long currtime;
 static struct connection *connections;
-static struct fd_set chkread;
-static struct fd_set chkwrite;
+
 static struct permlink *permlinks;
 
 static void appendstring __ARGS((struct connection *cp, const char *string));
@@ -747,7 +758,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.24 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.25 $  Type /HELP for help.\n", myhostname);
   appendstring(cp, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
@@ -1081,6 +1092,8 @@ char **argv;
     60, 0
   };
 
+  FD_SET_TYPE actread;
+  FD_SET_TYPE actwrite;
   char *sp;
   char buffer[2048];
   int addrlen;
@@ -1089,8 +1102,6 @@ char **argv;
   int size;
   int status;
   struct connection *cp;
-  struct fd_set actread;
-  struct fd_set actwrite;
   struct mbuf *bp;
   struct sockaddr *addr;
 

@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.3 1992/09/07 19:20:00 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.4 1992/09/25 20:07:04 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
   }
 
   if (fork()) exit(0);
-  for (i = 0; i < _NFILE; i++) close(i);
+  for (i = sysconf(_SC_OPEN_MAX) - 1; i >= 0; i--) close(i);
   chdir("/");
   setsid();
 

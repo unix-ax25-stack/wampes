@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.36 1992/09/05 08:16:41 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.37 1992/09/25 20:07:36 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -24,12 +24,7 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <unistd.h>
 
 extern char *optarg;
-extern char *sys_errlist[];
 extern int optind;
-
-#ifdef sun
-#define sigvector sigvec
-#endif
 
 #define __ARGS(x) x
 
@@ -168,8 +163,8 @@ static char *connect_addr(char *host);
 static void connect_bbs(void);
 static void parse_command_line(char *line);
 static void bbs(void);
-static void interrupt_handler(int sig, int code, struct sigcontext *scp);
-static void alarm_handler(int sig, int code, struct sigcontext *scp);
+static void interrupt_handler(int sig);
+static void alarm_handler(int sig);
 static void trap_signal(int sig, void (*handler)());
 static void rmail(void);
 static void rnews(void);
@@ -222,8 +217,11 @@ static const struct cmdtable {
 
 static void errorstop(int line)
 {
-  printf("Fatal error in line %d: %s\n", line, sys_errlist[errno]);
-  puts("Program stopped.");
+  char buf[80];
+
+  sprintf(buf, "Fatal error in line %d", line);
+  perror(buf);
+  fprintf(stderr, "Program stopped.\n");
   exit(1);
 }
 
@@ -423,6 +421,7 @@ static void get_seq(void)
 
   char buf[16];
   char fname[1024];
+  struct flock flk;
 
   if (mode != BBS) return;
   sprintf(fname, "%s/%s", user.dir, SEQFILE);
@@ -440,7 +439,11 @@ static void get_seq(void)
   setregid(0, 0);
 #endif
   if (fdseq < 0) halt();
-  if (lockf(fdseq, F_TLOCK, 0)) {
+  flk.l_type = F_WRLCK;
+  flk.l_whence = SEEK_SET;
+  flk.l_start = 0;
+  flk.l_len = 0;
+  if (fcntl(fdseq, F_SETLK, &flk) == -1) {
     puts("Sorry, you are already running another BBS.\n");
     exit(1);
   }
@@ -480,17 +483,29 @@ static void wait_for_prompt(void)
 
 static void lock(void)
 {
+  struct flock flk;
+
   if (fdlock < 0) {
     if ((fdlock = open("lock", O_RDWR | O_CREAT, 0644)) < 0) halt();
   }
-  if (lockf(fdlock, F_LOCK, 0)) halt();
+  flk.l_type = F_WRLCK;
+  flk.l_whence = SEEK_SET;
+  flk.l_start = 0;
+  flk.l_len = 0;
+  if (fcntl(fdlock, F_SETLKW, &flk) == -1) halt();
 }
 
 /*---------------------------------------------------------------------------*/
 
 static void unlock(void)
 {
-  if (lockf(fdlock, F_ULOCK, 0)) halt();
+  struct flock flk;
+
+  flk.l_type = F_UNLCK;
+  flk.l_whence = SEEK_SET;
+  flk.l_start = 0;
+  flk.l_len = 0;
+  if (fcntl(fdlock, F_SETLK, &flk) == -1) halt();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -729,7 +744,7 @@ static void send_to_mail(struct mail *mail)
   case 0:
     setgid(0);
     setuid(0);
-    for (i = 0; i < _NFILE; i++) close(i);
+    for (i = sysconf(_SC_OPEN_MAX) - 1; i >= 0; i--) close(i);
     setsid();
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");
@@ -782,7 +797,7 @@ static void send_to_news(struct mail *mail)
   case 0:
     setgid(0);
     setuid(0);
-    for (i = 0; i < _NFILE; i++) close(i);
+    for (i = sysconf(_SC_OPEN_MAX) - 1; i >= 0; i--) close(i);
     setsid();
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");
@@ -1732,7 +1747,7 @@ static void shell_command(int argc, char **argv)
   case 0:
     setgid(user.gid);
     setuid(user.uid);
-    for (i = 3; i < _NFILE; i++) close(i);
+    for (i = sysconf(_SC_OPEN_MAX) - 1; i >= 3; i--) close(i);
     chdir(user.cwd);
     *command = '\0';
     for (i = 1; i < argc; i++) {
@@ -2201,17 +2216,17 @@ static void bbs(void)
 
 /*---------------------------------------------------------------------------*/
 
-static void interrupt_handler(int sig, int code, struct sigcontext *scp)
+static void interrupt_handler(int sig)
 {
-  stopped = 1;
-#ifdef __hpux
-  scp->sc_syscall_action = SIG_RETURN;
+#ifdef LINUX
+  signal(sig, interrupt_handler);
 #endif
+  stopped = 1;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void alarm_handler(int sig, int code, struct sigcontext *scp)
+static void alarm_handler(int sig)
 {
   puts("\n*** Timeout ***");
   exit(1);
@@ -2219,8 +2234,14 @@ static void alarm_handler(int sig, int code, struct sigcontext *scp)
 
 /*---------------------------------------------------------------------------*/
 
-static void trap_signal(int sig, void (*handler)())
+static void trap_signal(int sig, void (*handler)(int))
 {
+#ifdef LINUX
+  signal(sig, handler);
+#else
+#ifdef sun
+#define sigvector sigvec
+#endif
   struct sigvec vec;
 
   sigvector(sig, (struct sigvec *) 0, &vec);
@@ -2232,6 +2253,7 @@ static void trap_signal(int sig, void (*handler)())
     vec.sv_handler = handler;
     sigvector(sig, &vec, (struct sigvec *) 0);
   }
+#endif
 }
 
 /*---------------------------------------------------------------------------*/

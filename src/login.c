@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.24 1992/09/14 12:30:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.25 1992/09/25 20:07:18 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -129,8 +129,10 @@ void fixutmpfile()
       restore_pty(up->ut_id);
       up->ut_user[0] = 0;
       up->ut_type = DEAD_PROCESS;
+#ifndef LINUX
       up->ut_exit.e_termination = 0;
       up->ut_exit.e_exit = 0;
+#endif
       up->ut_time = secclock();
       pututline(up);
     }
@@ -197,7 +199,11 @@ int create;
     unlink(PWLOCKFILE);
     return 0;
   }
+#ifndef LINUX
   fprintf(fp, "%s:,./:%d:%d::%s:\n", username, uid, GID, homedir);
+#else
+  fprintf(fp, "%s::%d:%d::%s:\n", username, uid, GID, homedir);
+#endif
   fclose(fp);
   pw = getpwuid(uid);
   unlink(PWLOCKFILE);
@@ -452,6 +458,9 @@ struct login_cb *tp;
     off_read(tp->pty);
     off_write(tp->pty);
     off_death(tp->pid);
+#ifdef LINUX
+    ioctl(tp->pty, TCFLSH, 2);
+#endif
     close(tp->pty);
     restore_pty(tp->id);
     pty_locktime[tp->num] = secclock() + 20;
@@ -468,8 +477,10 @@ struct login_cb *tp;
 	  utmpbuf.ut_time = secclock();
 #ifdef DEAD_PROCESS
 	  utmpbuf.ut_type = DEAD_PROCESS;
+#ifndef LINUX
 	  utmpbuf.ut_exit.e_termination = 0;
 	  utmpbuf.ut_exit.e_exit = 0;
+#endif
 #endif
 	  lseek(fdut, -sizeof(utmpbuf), SEEK_CUR);
 	  write(fdut, &utmpbuf, sizeof(utmpbuf));

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/proc.h,v 1.6 1992/09/01 16:52:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/proc.h,v 1.7 1992/09/25 20:07:22 deyke Exp $ */
 
 #ifndef _PROC_H
 #define _PROC_H
@@ -96,7 +96,6 @@ struct proc *newproc __ARGS((char *name,unsigned int stksize,
 	void (*pc) __ARGS((int,void *,void *)),
 	int iarg,void *parg1,void *parg2,int freeargs));
 #ifndef LINUX
- /* Linux: conflict with <signal.h> */
 void psignal __ARGS((void *event,int n));
 #endif
 int pwait __ARGS((void *event));

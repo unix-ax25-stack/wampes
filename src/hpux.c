@@ -1,6 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.26 1992/09/05 08:15:57 deyke Exp $ */
-
-#define FD_SETSIZE 64
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.27 1992/09/25 20:07:15 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -17,6 +15,16 @@
 
 #ifdef __hpux
 #include <sys/rtprio.h>
+#endif
+
+#ifndef WNOHANG
+#define WNOHANG 1
+#endif
+
+#ifdef LINUX
+#define FD_SET_TYPE fd_set
+#else
+#define FD_SET_TYPE struct fd_set
 #endif
 
 #include "global.h"
@@ -40,13 +48,13 @@ struct proc_t {
 
 static struct proc_t *procs;
 
-static struct fd_set chkread;
-static struct fd_set actread;
+static FD_SET_TYPE chkread;
+static FD_SET_TYPE actread;
 static void (*readfnc[FD_SETSIZE]) __ARGS((void *));
 static void *readarg[FD_SETSIZE];
 
-static struct fd_set chkwrite;
-static struct fd_set actwrite;
+static FD_SET_TYPE chkwrite;
+static FD_SET_TYPE actwrite;
 static void (*writefnc[FD_SETSIZE]) __ARGS((void *));
 static void *writearg[FD_SETSIZE];
 
@@ -330,7 +338,6 @@ static void dowait()
 static void check_files_changed()
 {
 
-  int changed = 0;
   static long nexttime, net_time, rc_time;
   struct stat statbuf;
 
@@ -339,15 +346,18 @@ static void check_files_changed()
 
   if (stat("/tcp/net", &statbuf)) return;
   if (!net_time) net_time = statbuf.st_mtime;
-  if (net_time != statbuf.st_mtime && statbuf.st_mtime < secclock() - 3600)
-    changed = 1;
+  if (net_time != statbuf.st_mtime && statbuf.st_mtime < secclock() - 3600) {
+    log((void *) 0, "%s has changed", "/tcp/net");
+    doexit(0, (char **) 0, (void *) 0);
+  }
 
   if (stat(Startup, &statbuf)) return;
   if (!rc_time) rc_time = statbuf.st_mtime;
-  if (rc_time != statbuf.st_mtime && statbuf.st_mtime < secclock() - 3600)
-    changed = 1;
+  if (rc_time != statbuf.st_mtime && statbuf.st_mtime < secclock() - 3600) {
+    log((void *) 0, "%s has changed", Startup);
+    doexit(0, (char **) 0, (void *) 0);
+  }
 
-  if (changed) doexit(0, (char **) 0, (void *) 0);
 }
 
 /*---------------------------------------------------------------------------*/

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.1 1992/08/24 10:08:22 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.2 1992/09/25 20:06:39 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -31,7 +31,7 @@ axip route add dj0ze-1  15.137.23.135           # hprtdt15.grc.hp.com
 axip route add dj3eg-1  15.136.170.163          # hpbmosm0.bbn.hp.com
 axip route add dk5sg    15.15.80.34             # mdddhd.fc.hp.com
 axip route add dl1sbl-1 15.136.56.132           # hpbeo20.bbn.hp.com
-axip route add dl2sel-1 15.136.168.71           # hpcsmncg.bbn.hp.com
+axip route add dl2sel-1 15.136.175.24           # hpcsmus.bbn.hp.com
 axip route add dl4sas-1 15.136.216.69           # hpbid1ge.bbn.hp.com
 axip route add dl4sel-1 15.136.170.158          # hpbbmofe.bbn.hp.com
 
@@ -44,7 +44,7 @@ route add  default          ipip     192.1.1.1
 route add  dl4sel-1         ipudp    15.136.170.158
 route add  dl4sel           tnc0
 route add  dl4sas-1         ipip     15.136.216.69
-route add  dl2sel-1         ipip     15.136.168.71
+route add  dl2sel-1         ipip     15.136.175.24
 route add  dl1sbl-1         ipip     15.136.56.132
 route add  dl1sbl           tnc0
 route add  dk5sg            ipip     15.15.80.34

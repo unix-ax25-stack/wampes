@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.8 1992/09/05 08:16:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.9 1992/09/25 20:07:19 deyke Exp $ */
 
 /* Mail Delivery Agent for returned Mails */
 
@@ -6,11 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#ifdef LINUX
-#include "linux.h"
-#else
 #include "hpux.h"
-#endif
 #include "mail.h"
 
 /*---------------------------------------------------------------------------*/
@@ -24,7 +20,7 @@ struct mailjob *jp;
   int i;
 
   if (dofork()) return;
-  for (i = 0; i < _NFILE; i++) close(i);
+  for (i = 0; i < FD_SETSIZE; i++) close(i);
   setsid();
   fopen("/dev/null", "r+");
   fopen("/dev/null", "r+");

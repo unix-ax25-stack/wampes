@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.6 1992/09/01 16:52:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.7 1992/09/25 20:07:17 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -154,9 +154,9 @@ int freeargs;           /* If set, free arg list on parg1 at termination */
 
 	func = pc;
 #ifdef __hp9000s800
-	newstackptr = pp->stack + 24;
+	newstackptr = pp->stack + 128;
 #else
-	newstackptr = pp->stack + pp->stksize;
+	newstackptr = pp->stack + (pp->stksize - 128);
 #endif
 #ifdef sun
 	if (!setjmp(jmpenv)) {

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.12 1992/09/01 16:52:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.13 1992/09/25 20:07:13 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -11,12 +11,6 @@
 #include "hpux.h"
 #include "dirutil.h"
 #include "commands.h"
-
-#ifdef LINUX
-extern const char* const sys_errlist[];
-#else
-extern char *sys_errlist[];
-#endif
 
 /* Create a directory listing in a temp file and return the resulting file
  * descriptor. If full == 1, give a full listing; else return just a list
@@ -64,8 +58,12 @@ int argc;
 char *argv[];
 void *p;
 {
-	if(mkdir(argv[1],0777) == -1)
-		printf("Can't make %s: %s\n",argv[1],sys_errlist[errno]);
+	char buf[1024];
+
+	if(mkdir(argv[1],0777) == -1){
+		sprintf(buf,"Can't make %s",argv[1]);
+		perror(buf);
+	}
 	return 0;
 }
 /* Remove directory */
@@ -75,7 +73,11 @@ int argc;
 char *argv[];
 void *p;
 {
-	if(rmdir(argv[1]) == -1)
-		printf("Can't remove %s: %s\n",argv[1],sys_errlist[errno]);
+	char buf[1024];
+
+	if(rmdir(argv[1]) == -1){
+		sprintf(buf,"Can't remove %s",argv[1]);
+		perror(buf);
+	}
 	return 0;
 }

@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect2.c,v 1.4 1992/09/07 19:20:00 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect2.c,v 1.5 1992/09/25 20:07:04 deyke Exp $";
 #endif
 
 #define _POSIX_SOURCE
@@ -16,7 +16,7 @@ int main()
   int fd1, fd2, n;
 
   if (fork()) exit(0);
-  for (n = 0; n < _NFILE; n++) close(n);
+  for (n = sysconf(_SC_OPEN_MAX) - 1; n >= 0; n--) close(n);
   chdir("/");
   setsid();
   if ((fd1 = open("/dev/ptyr1", O_RDWR, 0644)) < 0) exit(1);

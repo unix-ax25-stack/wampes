@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.17 1992/09/09 12:57:46 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.18 1992/09/25 20:07:47 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -18,6 +18,12 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
+
+#ifdef LINUX
+#define FD_SET_TYPE fd_set
+#else
+#define FD_SET_TYPE struct fd_set
+#endif
 
 #if defined(__TURBOC__) || defined(__STDC__)
 #define __ARGS(x)       x
@@ -149,14 +155,14 @@ int argc;
 char **argv;
 {
 
+  FD_SET_TYPE rmask;
+  FD_SET_TYPE wmask;
   char *ap;
   char *server;
   char area[1024];
   char bp[1024];
   int addrlen;
   int flags;
-  struct fd_set rmask;
-  struct fd_set wmask;
   struct sockaddr *addr;
   struct termios curr_termios;
 
