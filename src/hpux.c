@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.4 1990/03/01 18:27:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.5 1990/03/05 09:47:27 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -422,13 +422,12 @@ static void check_program_changed()
   static long  nextchecktime;
   struct stat statbuf;
 
-  if (nextchecktime > currtime) return;
+  if (debug || nextchecktime > currtime) return;
   nextchecktime = currtime + 600;
   if (stat("/tcp/net", &statbuf)) return;
-  if (lastmtime                     &&
-      lastmtime != statbuf.st_mtime &&
+  if (!lastmtime) lastmtime = statbuf.st_mtime;
+  if (lastmtime != statbuf.st_mtime &&
       statbuf.st_mtime < currtime - 3600) exit(1);
-  lastmtime = statbuf.st_mtime;
 }
 
 /*---------------------------------------------------------------------------*/
