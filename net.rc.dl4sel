@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel,v 1.17 1994/03/01 08:38:31 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel,v 1.18 1994/04/07 16:55:13 deyke Exp $
 
 hostname     dl4sel
 ax25 mycall  dl4sel
@@ -67,7 +67,6 @@ start domain
 start echo
 start ftp
 start netrom
-start remote
 start tcpgate convers unix:/tcp/sockets/convers
 start tcpgate finger
 start tcpgate smtp

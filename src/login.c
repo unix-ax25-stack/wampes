@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.52 1994/02/10 08:38:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.53 1994/04/07 16:55:23 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -628,7 +628,7 @@ void login_close(struct login_cb *tp)
     pty_name(slave, SLAVEPREFIX, tp->num);
     if (*UTMP__FILE && (fdut = open(UTMP__FILE, O_RDWR, 0644)) >= 0) {
       while (read(fdut, &utmpbuf, sizeof(utmpbuf)) == sizeof(utmpbuf))
-	if (!strncmp(utmpbuf.ut_line, slave + 5, sizeof(utmpbuf.ut_line))) {
+	if (!strcmp(utmpbuf.ut_line, slave + 5)) {
 	  utmpbuf.ut_name[0] = 0;
 	  utmpbuf.ut_time = secclock();
 #ifdef DEAD_PROCESS

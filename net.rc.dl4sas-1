@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sas-1,v 1.16 1994/03/01 08:38:31 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sas-1,v 1.17 1994/04/07 16:55:13 deyke Exp $
 
 hostname     dl4sas-1
 ax25 mycall  dl4sas-1
@@ -54,7 +54,6 @@ start discard
 start domain
 start echo
 start ftp
-start remote
 start tcpgate convers unix:/tcp/sockets/convers
 start tcpgate finger
 

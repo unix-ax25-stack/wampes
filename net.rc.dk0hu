@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.34 1994/03/01 08:38:30 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.35 1994/04/07 16:55:13 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -80,7 +80,6 @@ tcp window 2048
 start discard
 start domain
 start echo
-start remote
 start tcpgate convers unix:/tcp/sockets/convers
 start tcpgate nntp
 start tcpgate smtp

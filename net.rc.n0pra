@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.n0pra,v 1.7 1993/12/29 16:32:51 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.n0pra,v 1.8 1994/04/07 16:55:14 deyke Exp $
 
 hostname     n0pra
 ax25 mycall  n0pra
@@ -35,7 +35,6 @@ start discard
 start domain
 start echo
 start ftp
-start remote
 start tcpgate convers unix:/tcp/sockets/convers
 start tcpgate finger
 start tcpgate smtp

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.df3du-1,v 1.9 1994/03/01 08:38:30 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.df3du-1,v 1.10 1994/04/07 16:55:12 deyke Exp $
 
 hostname     df3du-1
 ax25 mycall  df3du-1
@@ -54,7 +54,6 @@ start discard
 start domain
 start echo
 start ftp
-start remote
 start tcpgate convers unix:/tcp/sockets/convers
 start tcpgate finger
 
