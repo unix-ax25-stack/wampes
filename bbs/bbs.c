@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.58 1988/12/30 11:11:47 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.59 1988/12/30 19:04:03 root Exp $";
 
 #include <sys/types.h>
 
@@ -101,6 +101,7 @@ static char  *hosts[] = {
   "db0cz",
   "db0gv",
   "db0ie",
+  "db0kg",
   "db0sao",
   NULL
 };
