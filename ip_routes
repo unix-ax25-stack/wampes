@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ip_routes,v 1.42 1994/09/05 12:49:42 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ip_routes,v 1.43 1994/09/06 17:03:40 deyke Exp $
 
 #Host           Destination     Bits    Iface   Metric  Gateway         Private
 #------------------------------------------------------------------------------
@@ -22,37 +22,23 @@ dl1sbl-1        dl4sas-1        32      ipip        20  15.136.216.106
 dl1sbl-1        dl4sel-1        32      ipip        20  15.136.136.223
 
 dk0hu           db0sao          32      ipip        20  192.1.1.1
-dk0hu           df3du-1         32      ipip        20  15.138.80.94
-dk0hu           df9sr-1         32      ipip        20  15.136.35.218
-dk0hu           dh8saw-1        32      ipip        20  15.138.72.40
-dk0hu           dj3eg-1         32      ipip        20  15.136.166.12
 dk0hu           dk0hu-u         32      ni           2
 dk0hu           dl1sbl-1        32      ipip        20  15.136.120.111
 dk0hu           dl2sel          32      tnc0      2000
-dk0hu           dl2sel-1        32      ipip        20  15.136.175.24
-dk0hu           dl4sas-1        32      ipip        20  15.136.216.106
 dk0hu           dl4sel          32      tnc0      2000
-dk0hu           dl4sel-1        32      ipip        20  15.136.136.223
 
-df3du-1         dk0hu           32      ipip        20  15.138.33.250
 df3du-1         dl1sbl-1        32      ipip        20  15.136.120.111
 
-df9sr-1         dk0hu           32      ipip        20  15.138.33.250
 df9sr-1         dl1sbl-1        32      ipip        20  15.136.120.111
 
-dh8saw-1        dk0hu           32      ipip        20  15.138.33.250
 dh8saw-1        dl1sbl-1        32      ipip        20  15.136.120.111
 
-dj3eg-1         dk0hu           32      ipip        20  15.138.33.250
 dj3eg-1         dl1sbl-1        32      ipip        20  15.136.120.111
 
-dl2sel-1        dk0hu           32      ipip        20  15.138.33.250
 dl2sel-1        dl1sbl-1        32      ipip        20  15.136.120.111
 
-dl4sas-1        dk0hu           32      ipip        20  15.138.33.250
 dl4sas-1        dl1sbl-1        32      ipip        20  15.136.120.111
 
-dl4sel-1        dk0hu           32      ipip        20  15.138.33.250
 dl4sel-1        dl1sbl-1        32      ipip        20  15.136.120.111
 
 # db0sao          db0id           32      tnc2      2000

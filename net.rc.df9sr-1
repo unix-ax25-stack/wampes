@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.df9sr-1,v 1.12 1994/09/05 12:49:43 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.df9sr-1,v 1.13 1994/09/06 17:03:41 deyke Exp $
 
 hostname     df9sr-1
 ax25 mycall  df9sr-1
@@ -11,27 +11,27 @@ attach netrom                   # ip over netrom
 
 ax25 route add axip default
 
-axip route add dk0hu 15.138.33.250
+axip route add dl1sbl-1 15.136.120.111          # hpbblb.bbn.hp.com
 
-route add  44.130.0.0/16        ipip     15.138.33.250
-route add  44.143.0.0/16        ipip     15.138.33.250
-route add  db0sao-u.ampr.org    ipip     15.138.33.250
-route add  db0sao.ampr.org      ipip     15.138.33.250
-route add  df1tl-1.ampr.org     ipip     15.138.33.250
-route add  df1tl-u.ampr.org     ipip     15.138.33.250
-route add  df3du-1.ampr.org     ipip     15.138.33.250
-route add  dh8saw-1.ampr.org    ipip     15.138.33.250
-route add  dj3eg-1.ampr.org     ipip     15.138.33.250
-route add  dk0hu-u.ampr.org     ipip     15.138.33.250
-route add  dk0hu.ampr.org       ipip     15.138.33.250
+route add  44.130.0.0/16        ipip     15.136.120.111
+route add  44.143.0.0/16        ipip     15.136.120.111
+route add  db0sao-u.ampr.org    ipip     15.136.120.111
+route add  db0sao.ampr.org      ipip     15.136.120.111
+route add  df1tl-1.ampr.org     ipip     15.136.120.111
+route add  df1tl-u.ampr.org     ipip     15.136.120.111
+route add  df3du-1.ampr.org     ipip     15.136.120.111
+route add  dh8saw-1.ampr.org    ipip     15.136.120.111
+route add  dj3eg-1.ampr.org     ipip     15.136.120.111
+route add  dk0hu-u.ampr.org     ipip     15.136.120.111
+route add  dk0hu.ampr.org       ipip     15.136.120.111
 route add  dk5sg-u.ampr.org     ipip     15.136.120.111
 route add  dk5sg.ampr.org       ipip     15.136.120.111
 route add  dl1sbl-1.ampr.org    ipip     15.136.120.111
-route add  dl2sel-1.ampr.org    ipip     15.138.33.250
-route add  dl2sel.ampr.org      ipip     15.138.33.250
-route add  dl4sas-1.ampr.org    ipip     15.138.33.250
-route add  dl4sel-1.ampr.org    ipip     15.138.33.250
-route add  dl4sel.ampr.org      ipip     15.138.33.250
+route add  dl2sel-1.ampr.org    ipip     15.136.120.111
+route add  dl2sel.ampr.org      ipip     15.136.120.111
+route add  dl4sas-1.ampr.org    ipip     15.136.120.111
+route add  dl4sel-1.ampr.org    ipip     15.136.120.111
+route add  dl4sel.ampr.org      ipip     15.136.120.111
 
 source /tcp/netrom_links
 

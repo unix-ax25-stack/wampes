@@ -1,4 +1,4 @@
-wampes-940905.tar.gz  is a gzipped tar archive of WAMPES, a NET/NOS port
+wampes-940906.tar.gz  is a gzipped tar archive of WAMPES, a NET/NOS port
 to various flavors of Unix.
 
 WAMPES currently supports the following configurations:
@@ -6,13 +6,12 @@ WAMPES currently supports the following configurations:
 +---------------+-----------------+-------------------------------------------+
 | OS:           | Hardware:       | Contact Person:                           |
 +---------------+-----------------+-------------------------------------------+
-| HP-UX 08.xx   | HP9000/300      | Dieter Deyke <deyke@fc.hp.com>            |
-| HP-UX 09.xx   | HP9000/400      |                                           |
+| HP-UX 09.xx   | HP9000/300      | Dieter Deyke <deyke@fc.hp.com>            |
+|               | HP9000/400      |                                           |
 |               | HP9000/700      |                                           |
 |               | HP9000/800      |                                           |
 +---------------+-----------------+-------------------------------------------+
-| SunOS 4.1.2   | SUN SPARC       | Dieter Deyke <deyke@fc.hp.com>            |
-| SunOS 4.1.3   | SUN SPARC       |                                           |
+| SunOS 4.1.3   | SUN SPARC       | Dieter Deyke <deyke@fc.hp.com>            |
 | SunOS 5.2     | SUN SPARC       |                                           |
 +---------------+-----------------+-------------------------------------------+
 | AIX 3.2       | IBM RS/6000     | Dieter Deyke <deyke@fc.hp.com>            |
@@ -44,16 +43,15 @@ To unpack this archive you have to:
 	su
 	mkdir /tcp
 	cd /tcp
-	gzip -d < wampes-940905.tar.gz | tar xvf -
+	gzip -d < wampes-940906.tar.gz | tar xvf -
 
 After  unpacking  please read the file  /tcp/doc/intro.txt.  For RISC iX
 you have to copy *.R to  /usr/lib.  Now type  "make -i" to  compile  and
 install everything.
 
-wampes-940905.tar.gz      is     available     in     the      directory
+wampes-940906.tar.gz      was     uploaded     to     the      directory
 /hamradio/packet/tcpip/incoming  on  FTP.UCSD.EDU,  but it may have been
 moved to the directory /hamradio/packet/tcpip/wampes.
 
 73,
 Dieter Deyke, DK5SG / N0PRA, <deyke@fc.hp.com>
-
