@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.10 1989/09/10 13:18:16 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.11 1989/09/11 23:00:11 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -906,7 +906,8 @@ struct dir_entry *p;
 {
   if (p) {
     dir_print(p->left);
-    printf((dir_column++ % 5) < 4 ? "%5d %-8s" : "%5d %s\n", p->count, p->to);
+    if (!stopped)
+      printf((dir_column++ % 5) < 4 ? "%5d %-8s" : "%5d %s\n", p->count, p->to);
     dir_print(p->right);
     free((char *) p);
   }
@@ -955,7 +956,7 @@ char  **argv;
   }
   dir_column = 0;
   dir_print(head);
-  if (dir_column % 5) putchar('\n');
+  if (!stopped && (dir_column % 5)) putchar('\n');
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1631,13 +1632,23 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
+#define Invalid (                       \
+   pi->deleted                     ||   \
+   *from && strcmp(pi->from, from) ||   \
+   *to   && strcmp(pi->to,   to)   ||   \
+   *at   && strcmp(pi->at,   at)        \
+   )
+
 static void xscreen_command(argc, argv)
 int  argc;
 char  **argv;
 {
 
   FILE * fp = 0;
+  char  at[1024];
   char  buf[1024];
+  char  from[1024];
+  char  to[1024];
   int  cmd;
   int  indexarrayentries;
   int  lines = 0;
@@ -1666,6 +1677,7 @@ char  **argv;
   ioctl(0, TCSETA, &curr_termio);
   if (!(maxlines = atoi(getenv("LINES")))) maxlines = 24;
 
+  *from = *to = *at = '\0';
   pi = indexarray;
   cmd = '\b';
   for (; ; ) {
@@ -1673,23 +1685,27 @@ char  **argv;
     fflush(stdout);
     while (!cmd) cmd = getchar();
     switch (cmd) {
+
     case '\b':
       if (pi > indexarray) pi--;
-      while (pi->deleted && pi > indexarray) pi--;
-      while (pi->deleted && pi < indexarray + (indexarrayentries - 1)) pi++;
-      cmd = pi->deleted ? 'q' : 'r';
+      while (Invalid && pi > indexarray) pi--;
+      while (Invalid && pi < indexarray + (indexarrayentries - 1)) pi++;
+      cmd = Invalid ? 'q' : 'r';
       break;
+
     case 'k':
       if (unlink(filename(pi->mesg))) halt();
       pi->deleted = 1;
       if (lseek(findex, (long) ((pi - indexarray) * sizeof(struct index )), 0) < 0) halt();
       if (write(findex, (char *) pi, sizeof(struct index )) != sizeof(struct index )) halt();
+
     case '\n':
       if (pi < indexarray + (indexarrayentries - 1)) pi++;
-      while (pi->deleted && pi < indexarray + (indexarrayentries - 1)) pi++;
-      while (pi->deleted && pi > indexarray) pi--;
-      cmd = pi->deleted ? 'q' : 'r';
+      while (Invalid && pi < indexarray + (indexarrayentries - 1)) pi++;
+      while (Invalid && pi > indexarray) pi--;
+      cmd = Invalid ? 'q' : 'r';
       break;
+
     case 'r':
       if (fp) {
 	fclose(fp);
@@ -1708,6 +1724,7 @@ char  **argv;
       }
       putchar('\n');
       lines++;
+
     case ' ':
       if (fp) {
 	while (lines < maxlines - 1 && fgets(buf, sizeof(buf), fp)) {
@@ -1722,6 +1739,7 @@ char  **argv;
       } else
 	cmd = '\n';
       break;
+
     case '0':
     case '1':
     case '2':
@@ -1732,13 +1750,48 @@ char  **argv;
     case '7':
     case '8':
     case '9':
-      for (mesg = 0; isdigit(cmd); cmd = getchar())
-	mesg = 10 * mesg + cmd - '0';
+      ioctl(0, TCSETA, &prev_termio);
+      printf("\nMessage number: %c", cmd);
+      *buf = cmd;
+      gets(buf + 1);
+      ioctl(0, TCSETA, &curr_termio);
+      mesg = atoi(buf);
       pi = indexarray;
-      while (mesg > pi->mesg && pi < indexarray + (indexarrayentries - 1)) pi++;
-      while (pi->deleted && pi > indexarray) pi--;
-      cmd = pi->deleted ? 'q' : 'r';
+      while ((mesg > pi->mesg || Invalid) && pi < indexarray + (indexarrayentries - 1)) pi++;
+      while (Invalid && pi > indexarray) pi--;
+      cmd = Invalid ? 'q' : 'r';
       break;
+
+    case '<':
+      *from = *to = *at = '\0';
+      ioctl(0, TCSETA, &prev_termio);
+      printf("\nFROM field: ");
+      gets(from);
+      ioctl(0, TCSETA, &curr_termio);
+      strupc(from);
+      cmd = Invalid ? '\n' : 'r';
+      break;
+
+    case '>':
+      *from = *to = *at = '\0';
+      ioctl(0, TCSETA, &prev_termio);
+      printf("\nTO field: ");
+      gets(to);
+      ioctl(0, TCSETA, &curr_termio);
+      strupc(to);
+      cmd = Invalid ? '\n' : 'r';
+      break;
+
+    case '@':
+      *from = *to = *at = '\0';
+      ioctl(0, TCSETA, &prev_termio);
+      printf("\nAT field: ");
+      gets(at);
+      ioctl(0, TCSETA, &curr_termio);
+      strupc(at);
+      cmd = Invalid ? '\n' : 'r';
+      break;
+
     case 'v':
       sprintf(buf, "vi %s", filename(pi->mesg));
       ioctl(0, TCSETA, &prev_termio);
@@ -1746,14 +1799,19 @@ char  **argv;
       ioctl(0, TCSETA, &curr_termio);
       cmd = 'r';
       break;
+
     case 'q':
       ioctl(0, TCSETA, &prev_termio);
       exit(0);
       break;
+
     case '?':
       puts("----------------------------------- Commands ----------------------------------");
+      puts("<          specify FROM field");
       puts("<number>   show numbered entry");
+      puts(">          specify TO field");
       puts("?          print command summary");
+      puts("@          specify AT field");
       puts("BACKSPACE  show previous entry");
       puts("RETURN     show next entry");
       puts("SPACE      show next screenful");
