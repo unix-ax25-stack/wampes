@@ -1,4 +1,12 @@
-@(#) $Id: ChangeLog,v 1.46 1998/07/27 16:39:15 deyke Exp $
+@(#) $Id: ChangeLog,v 1.47 1998/10/01 18:01:05 deyke Exp $
+
+981001 Dieter Deyke <deyke@fc.hp.com>
+
+	Switched to 4 digit dates in bbs.c
+
+980930 Dieter Deyke <deyke@fc.hp.com>
+
+	Updated domain.txt
 
 980727 Dieter Deyke <deyke@fc.hp.com>
 

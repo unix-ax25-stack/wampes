@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Id: bbs.c,v 3.11 1998/04/28 01:35:19 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: bbs.c,v 3.12 1998/10/01 18:02:43 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -440,11 +440,11 @@ static char *rfc822_date_string(long gmt)
   struct tm *tm;
 
   tm = gmtime((time_t *) &gmt);
-  sprintf(buf, "%.3s, %d %.3s %02d %02d:%02d:%02d GMT",
+  sprintf(buf, "%.3s, %d %.3s %d %02d:%02d:%02d GMT",
 	  daynames + 3 * tm->tm_wday,
 	  tm->tm_mday,
 	  monthnames + 3 * tm->tm_mon,
-	  tm->tm_year % 100,
+	  tm->tm_year + 1900,
 	  tm->tm_hour,
 	  tm->tm_min,
 	  tm->tm_sec);
