@@ -1,4 +1,4 @@
-/* @(#) $Id: krnlif.c,v 1.1 1996/10/08 20:00:24 deyke Exp $ */
+/* @(#) $Id: krnlif.c,v 1.2 1996/10/09 18:13:06 deyke Exp $ */
 
 #ifdef linux
 
@@ -199,7 +199,7 @@ static void krnlif_tx(struct krnlif *ki)
 	for (bp = ki->sndq; bp; bp = bp->next) {
 		cnt += bp->cnt;
 		if (cnt > sizeof(buf)) {
-			ki->sndq = free_mbuf(&ki->sndq);
+			free_mbuf(&ki->sndq);
 			return;
 		}
 		memcpy(bufp, bp->data, bp->cnt);
@@ -210,11 +210,11 @@ static void krnlif_tx(struct krnlif *ki)
 	if (i >= 0) {
 		ki->txpkts++;
 		ki->txchar += cnt;
-		ki->sndq = free_mbuf(&ki->sndq);
+		free_mbuf(&ki->sndq);
 		return;
 	}
 	if (errno == EMSGSIZE) {
-		ki->sndq = free_mbuf(&ki->sndq);
+		free_mbuf(&ki->sndq);
 		return;
 	}
 	if (errno == EWOULDBLOCK)

@@ -1,4 +1,8 @@
-@(#) $Id: ChangeLog,v 1.22 1996/10/08 20:00:30 deyke Exp $
+@(#) $Id: ChangeLog,v 1.23 1996/10/09 18:12:49 deyke Exp $
+
+961009 Dieter Deyke <deyke@fc.hp.com>
+
+	Ported krnlif.c to current WAMPES revision
 
 961008 Dieter Deyke <deyke@fc.hp.com>
 
