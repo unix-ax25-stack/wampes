@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.4 1990/08/14 10:08:26 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.5 1991/04/08 13:22:56 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -9,6 +9,14 @@ static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampe
 #include <string.h>
 #include <sys/socket.h>
 #include <time.h>
+
+#ifdef __STDC__
+#define __ARGS(x)       x
+#else
+#define __ARGS(x)       ()
+#endif
+
+struct sockaddr *build_sockaddr __ARGS((char *name, int *addrlen));
 
 /* SLIP constants */
 
@@ -29,8 +37,6 @@ static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampe
 #define SSID            0x1e    /* Sub station ID */
 
 #define uchar(c)        ((unsigned char) (c))
-
-extern struct sockaddr *build_sockaddr();
 
 struct conn {
   struct conn *prev, *next;
@@ -53,6 +59,11 @@ static char  nr_bdcst[] = {
 
 static int  filemask;
 static struct conn *connections;
+
+static void create_conn __ARGS((int flisten));
+static void close_conn __ARGS((struct conn *p));
+static int addreq __ARGS((char *a, char *b));
+static void route_packet __ARGS((struct conn *p));
 
 /*---------------------------------------------------------------------------*/
 
@@ -120,7 +131,7 @@ struct conn *p;
   int  sent[10];
   struct conn *p1, *p1next;
 
-  if (*p->buf != KISS_DATA) return;
+  if ((*p->buf & 0xf) != KISS_DATA) return;
   ap = p->buf + 1 + AXALEN;
   i = 0;
   for (; ; ) {
@@ -148,7 +159,7 @@ struct conn *p;
 
 /*---------------------------------------------------------------------------*/
 
-main()
+int  main()
 {
 
   char  buf[1024];
