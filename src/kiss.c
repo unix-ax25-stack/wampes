@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.11 1992/10/16 17:57:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.12 1992/11/29 17:37:51 deyke Exp $ */
 
 /* Routines for AX.25 encapsulation in KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -108,8 +108,7 @@ struct mbuf *bp;
 			return;
 		}
 		iface->crccontrol = CRC_16;
-	}
-	if(bp && (*bp->data & 0x20)){
+	}else if(bp && (*bp->data & 0x20)){
 		if(check_crc_rmnc(bp)){
 			iface->crcerrors++;
 			free_p(bp);

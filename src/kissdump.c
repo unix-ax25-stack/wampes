@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kissdump.c,v 1.6 1992/11/12 15:20:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kissdump.c,v 1.7 1992/11/29 17:37:52 deyke Exp $ */
 
 /* Tracing routines for KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -36,7 +36,7 @@ int check;
 			fprintf(fp,"crc-rmnc ");
 		}
 	}
-	type = PULLCHAR(bpp) & 0x5f;
+	type = PULLCHAR(bpp) & 0xf;
 	if(type == PARAM_DATA){
 		fprintf(fp,"Data\n");
 		ax25_dump(fp,bpp,check);

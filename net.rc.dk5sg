@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.8 1992/11/19 13:16:27 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.9 1992/11/29 17:37:10 deyke Exp $
 
 hostname     dk5sg
 ax25 mycall  dk5sg
@@ -33,7 +33,6 @@ tcp irtt 20000
 tcp mss 216
 tcp window 2048
 
-smtp timer 300
 start discard
 start domain
 start echo

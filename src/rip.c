@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.6 1992/05/14 13:20:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.7 1992/11/29 17:37:56 deyke Exp $ */
 
 /* This file contains code to implement the Routing Information Protocol (RIP)
  * and is derived from 4.2BSD code. Mike Karels of Berkeley has stated on
@@ -506,6 +506,10 @@ int32 ttl;
 
 	/* Don't touch private routes */
 	if(rp != NULLROUTE && (rp->flags & RTPRIVATE))
+		return;
+
+	/* Don't touch permanent routes */
+	if(rp != NULLROUTE && rp->iface != NULLIF && !run_timer(&rp->timer))
 		return;
 
 	if(rp == NULLROUTE){
