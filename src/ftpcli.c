@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.12 1993/05/17 13:44:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.13 1993/12/29 16:32:16 deyke Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q
@@ -19,20 +19,34 @@
 #include "dirutil.h"
 
 static void ftpparse(char *line,int len);
-static int doascii(int argc,char *argv[],void *p);
-static int dobinary(int argc,char *argv[],void *p);
 static int doftpcd(int argc,char *argv[],void *p);
+static int domkdir(int argc,char *argv[],void *p);
+static int dormdir(int argc,char *argv[],void *p);
+static int dobinary(int argc,char *argv[],void *p);
+static int doascii(int argc,char *argv[],void *p);
+static int dotype(int argc,char *argv[],void *p);
 static int doget(int argc,char *argv[],void *p);
+static int doreget(int argc,char *argv[],void *p);
 static int dolist(int argc,char *argv[],void *p);
 static int dols(int argc,char *argv[],void *p);
-static int domkdir(int argc,char *argv[],void *p);
 static int doput(int argc,char *argv[],void *p);
-static int dormdir(int argc,char *argv[],void *p);
-static int dotype(int argc,char *argv[],void *p);
+static int doappend(int argc,char *argv[],void *p);
 static int ftpsetup(struct ftp *ftp,void (*recv)(),void (*send)(),void (*state)());
 static void ftpccs(struct tcb *tcb,int old,int new);
 static void ftpcds(struct tcb *tcb,int old,int new);
 static int sndftpmsg(struct ftp *ftp,char *fmt,char *arg);
+static int doftpcdup(int argc,char *argv[],void *p);
+static int doftpdelete(int argc,char *argv[],void *p);
+static int doftpmodtime(int argc,char *argv[],void *p);
+static int doftppassword(int argc,char *argv[],void *p);
+static int doftppwd(int argc,char *argv[],void *p);
+static int doftpquit(int argc,char *argv[],void *p);
+static int doftpquote(int argc,char *argv[],void *p);
+static int doftprestart(int argc,char *argv[],void *p);
+static int doftprhelp(int argc,char *argv[],void *p);
+static int doftpsize(int argc,char *argv[],void *p);
+static int doftpsystem(int argc,char *argv[],void *p);
+static int doftpuser(int argc,char *argv[],void *p);
 
 static char Notsess[] = "Not an FTP session!\n";
 static char cantwrite[] = "Can't write %s\n";
@@ -46,19 +60,39 @@ static struct cmds Ftpabort[] = {
 
 static struct cmds Ftpcmds[] = {
 	"",             donothing,      0, 0, NULLCHAR,
+
+	"append",       doappend,       0, 2, "append <localfile> <remotefile>",
 	"ascii",        doascii,        0, 0, NULLCHAR,
 	"binary",       dobinary,       0, 0, NULLCHAR,
+	"bye",          doftpquit,      0, 0, NULLCHAR,
 	"cd",           doftpcd,        0, 2, "cd <directory>",
+	"cdup",         doftpcdup,      0, 0, NULLCHAR,
+	"delete",       doftpdelete,    0, 2, "delete <remotefile>",
 	"dir",          dolist,         0, 0, NULLCHAR,
-	"list",         dolist,         0, 0, NULLCHAR,
 	"get",          doget,          0, 2, "get <remotefile> <localfile>",
+	"image",        dobinary,       0, 0, NULLCHAR,
+	"list",         dolist,         0, 0, NULLCHAR,
 	"ls",           dols,           0, 0, NULLCHAR,
 	"mkdir",        domkdir,        0, 2, "mkdir <directory>",
-	"nlst",         dols,           0, 0, NULLCHAR,
-	"rmdir",        dormdir,        0, 2, "rmdir <directory>",
+	"modtime",      doftpmodtime,   0, 2, "modtime <remotefile>",
+	"nlist",        dols,           0, 0, NULLCHAR,
+	"password",     doftppassword,  0, 2, "password <password>",
 	"put",          doput,          0, 2, "put <localfile> <remotefile>",
+	"pwd",          doftppwd,       0, 0, NULLCHAR,
+	"quit",         doftpquit,      0, 0, NULLCHAR,
+	"quote",        doftpquote,     0, 2, "quote <ftp command>",
+	"recv",         doget,          0, 2, "recv <remotefile> <localfile>",
+	"reget",        doreget,        0, 2, "reget <remotefile> <localfile>",
+	"restart",      doftprestart,   0, 2, "restart <offset>",
+	"rhelp",        doftprhelp,     0, 0, NULLCHAR,
+	"rmdir",        dormdir,        0, 2, "rmdir <directory>",
+	"send",         doput,          0, 2, "send <localfile> <remotefile>",
+	"size",         doftpsize,      0, 2, "size <remotefile>",
+	"system",       doftpsystem,    0, 0, NULLCHAR,
 	"type",         dotype,         0, 0, NULLCHAR,
-	NULLCHAR,       NULLFP,         0, 0, NULLCHAR,
+	"user",         doftpuser,      0, 2, "user <user-name> [password]",
+
+	NULLCHAR,       NULLFP,         0, 0, "Unknown command; type \"?\" for list"
 };
 
 /* Handle top-level FTP command */
@@ -118,8 +152,6 @@ ftpparse(line,len)
 char *line;
 int len;
 {
-	struct mbuf *bp;
-
 	if(Current->cb.ftp->state != COMMAND_STATE){
 		/* The only command allowed in data transfer state is ABORT */
 		if(cmdparse(Ftpabort,line,NULL) == -1){
@@ -127,19 +159,7 @@ int len;
 		}
 		return;
 	}
-
-	/* Save it now because cmdparse modifies the original */
-	bp = qdata(line,len);
-
-	if(cmdparse(Ftpcmds,line,NULL) == -1){
-		/* Send it direct */
-		if(bp != NULLBUF)
-			send_tcp(Current->cb.ftp->control,bp);
-		else
-			printf(Nospace);
-	} else {
-		free_p(bp);
-	}
+	cmdparse(Ftpcmds,line,NULL);
 }
 /* Translate 'cd' to 'cwd' for convenience */
 static int
@@ -219,6 +239,9 @@ void *p;
 		case ASCII_TYPE:
 			printf("Ascii\n");
 			break;
+		case LOGICAL_TYPE:
+			printf("Logical bytesize %u\n",ftp->logbsize);
+			break;
 		}
 		return 0;
 	}
@@ -237,7 +260,8 @@ void *p;
 		break;
 	case 'L':
 	case 'l':
-		ftp->type = IMAGE_TYPE;
+		ftp->type = LOGICAL_TYPE;
+		ftp->logbsize = atoi(argv[2]);
 		sndftpmsg(ftp,"TYPE L %s\r\n",argv[2]);
 		break;
 	default:
@@ -255,7 +279,6 @@ void *p;
 {
 	char *remotename,*localname;
 	register struct ftp *ftp;
-	char *mode;
 
 	ftp = Current->cb.ftp;
 	if(ftp == NULLFTP){
@@ -272,17 +295,57 @@ void *p;
 	else
 		localname = argv[2];
 
-	if(ftp->type == IMAGE_TYPE)
-		mode = WRITE_BINARY;
-	else
-		mode = "w";
-
 	if(!strcmp(localname, "-")){
 		ftp->fp = stdout;
-	} else if((ftp->fp = fopen(localname,mode)) == NULLFILE){
+	} else if((ftp->fp = fopen(localname,"w")) == NULLFILE){
 		printf(cantwrite,localname);
 		return 1;
 	}
+	ftp->state = RECEIVING_STATE;
+	ftpsetup(ftp,ftpdr,NULLVFP,ftpcds);
+
+	/* Generate the command to start the transfer */
+	return sndftpmsg(ftp,"RETR %s\r\n",remotename);
+}
+/* Start receive transfer. Syntax: reget <remote name> [<local name>] */
+static int
+doreget(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	char *remotename,*localname;
+	register struct ftp *ftp;
+	int rest;
+
+	ftp = Current->cb.ftp;
+	if(ftp == NULLFTP){
+		printf(Notsess);
+		return 1;
+	}
+	if(ftp->fp != NULLFILE && ftp->fp != stdout)
+		fclose(ftp->fp);
+	ftp->fp = NULLFILE;
+
+	remotename = argv[1];
+	if(argc < 3)
+		localname = remotename;
+	else
+		localname = argv[2];
+
+	if((ftp->fp = fopen(localname,"a")) == NULLFILE){
+		printf(cantwrite,localname);
+		return 1;
+	}
+
+	fseek(ftp->fp,0,SEEK_END);
+	rest = ftell(ftp->fp);
+	if(rest){
+		char buf[16];
+		sprintf(buf,"%d",rest);
+		sndftpmsg(ftp,"REST %s\r\n",buf);
+	}
+
 	ftp->state = RECEIVING_STATE;
 	ftpsetup(ftp,ftpdr,NULLVFP,ftpcds);
 
@@ -366,7 +429,6 @@ char *argv[];
 void *p;
 {
 	char *remotename,*localname;
-	char *mode;
 	struct ftp *ftp;
 
 	if((ftp = Current->cb.ftp) == NULLFTP){
@@ -382,12 +444,7 @@ void *p;
 	if(ftp->fp != NULLFILE && ftp->fp != stdout)
 		fclose(ftp->fp);
 
-	if(ftp->type == IMAGE_TYPE)
-		mode = READ_BINARY;
-	else
-		mode = "r";
-
-	if((ftp->fp = fopen(localname,mode)) == NULLFILE){
+	if((ftp->fp = fopen(localname,"r")) == NULLFILE){
 		printf(cantread,localname);
 		return 1;
 	}
@@ -396,6 +453,39 @@ void *p;
 
 	/* Generate the command to start the transfer */
 	return sndftpmsg(ftp,"STOR %s\r\n",remotename);
+}
+/* Start transmit. Syntax: append <local name> [<remote name>] */
+static int
+doappend(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	char *remotename,*localname;
+	struct ftp *ftp;
+
+	if((ftp = Current->cb.ftp) == NULLFTP){
+		printf(Notsess);
+		return 1;
+	}
+	localname = argv[1];
+	if(argc < 3)
+		remotename = localname;
+	else
+		remotename = argv[2];
+
+	if(ftp->fp != NULLFILE && ftp->fp != stdout)
+		fclose(ftp->fp);
+
+	if((ftp->fp = fopen(localname,"r")) == NULLFILE){
+		printf(cantread,localname);
+		return 1;
+	}
+	ftp->state = SENDING_STATE;
+	ftpsetup(ftp,NULLVFP,ftpdt,ftpcds);
+
+	/* Generate the command to start the transfer */
+	return sndftpmsg(ftp,"APPE %s\r\n",remotename);
 }
 /* Abort a GET or PUT operation in progress. Note: this will leave
  * the partial file on the local or remote system
@@ -579,10 +669,6 @@ char old,new;
 		close_tcp(tcb);
 		if(ftp->state == RECEIVING_STATE){
 			/* End of file received on incoming file */
-#ifdef  CPM
-			if(ftp->type == ASCII_TYPE)
-				putc(CTLZ,ftp->fp);
-#endif
 			if(ftp->fp != stdout)
 				fclose(ftp->fp);
 			ftp->fp = NULLFILE;
@@ -620,3 +706,76 @@ char *arg;
 	send_tcp(ftp->control,bp);
 	return 0;
 }
+
+static int doftpcdup(int argc, char *argv[], void *p)
+{
+	return sndftpmsg(Current->cb.ftp, "CDUP\r\n", "");
+}
+
+static int doftpdelete(int argc, char *argv[], void *p)
+{
+	return sndftpmsg(Current->cb.ftp, "DELE %s\r\n", argv[1]);
+}
+
+static int doftpmodtime(int argc, char *argv[], void *p)
+{
+	return sndftpmsg(Current->cb.ftp, "MDTM %s\r\n", argv[1]);
+}
+
+static int doftppassword(int argc, char *argv[], void *p)
+{
+	return sndftpmsg(Current->cb.ftp, "PASS %s\r\n", argv[1]);
+}
+
+static int doftppwd(int argc, char *argv[], void *p)
+{
+	return sndftpmsg(Current->cb.ftp, "PWD\r\n", "");
+}
+
+static int doftpquit(int argc, char *argv[], void *p)
+{
+	return sndftpmsg(Current->cb.ftp, "QUIT\r\n", "");
+}
+
+static int doftpquote(int argc, char *argv[], void *p)
+{
+
+	char buf[2048];
+	int i;
+
+	*buf = 0;
+	for (i = 1; i < argc; i++) {
+		if (*buf) strcat(buf, " ");
+		strcat(buf, argv[i]);
+	}
+	return sndftpmsg(Current->cb.ftp, "%s\r\n", buf);
+}
+
+static int doftprestart(int argc, char *argv[], void *p)
+{
+	return sndftpmsg(Current->cb.ftp, "REST %s\r\n", argv[1]);
+}
+
+static int doftprhelp(int argc, char *argv[], void *p)
+{
+	return sndftpmsg(Current->cb.ftp, "HELP\r\n", "");
+}
+
+static int doftpsize(int argc, char *argv[], void *p)
+{
+	return sndftpmsg(Current->cb.ftp, "SIZE %s\r\n", argv[1]);
+}
+
+static int doftpsystem(int argc, char *argv[], void *p)
+{
+	return sndftpmsg(Current->cb.ftp, "SYST\r\n", "");
+}
+
+static int doftpuser(int argc, char *argv[], void *p)
+{
+	sndftpmsg(Current->cb.ftp, "USER %s\r\n", argv[1]);
+	if (argc >= 3)
+		sndftpmsg(Current->cb.ftp, "PASS %s\r\n", argv[2]);
+	return 0;
+}
+

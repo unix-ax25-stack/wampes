@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.16 1993/09/10 16:05:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.17 1993/12/29 16:32:14 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -8,6 +8,7 @@
 #undef  hibyte
 #undef  lobyte
 
+#include <errno.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
@@ -16,9 +17,6 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
-extern char *sys_errlist[];
-extern int errno;
 
 #include "mbuf.h"
 #include "iface.h"
@@ -211,7 +209,7 @@ int axip_attach(int argc, char *argv[], void *p)
   else
     fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (fd < 0) {
-    printf("cannot create socket: %s\n", sys_errlist[errno]);
+    printf("cannot create socket: %s\n", strerror(errno));
     return (-1);
   }
 
@@ -221,7 +219,7 @@ int axip_attach(int argc, char *argv[], void *p)
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(port);
     if (bind(fd, (struct sockaddr *) &addr, sizeof(addr))) {
-      printf("cannot bind address: %s\n", sys_errlist[errno]);
+      printf("cannot bind address: %s\n", strerror(errno));
       close(fd);
       return (-1);
     }

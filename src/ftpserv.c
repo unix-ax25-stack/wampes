@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.21 1993/09/19 16:21:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.22 1993/12/29 16:32:16 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -10,8 +10,9 @@
 
 #include <stdio.h>
 #include <ctype.h>
-#include <sys/stat.h>
 #include <time.h>
+#include <errno.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "global.h"
@@ -23,12 +24,13 @@
 #include "dirutil.h"
 #include "login.h"
 #include "ftp.h"
+#include "ftpserv.h"
 
 static void Xprintf(struct tcb *tcb, char *message, char *arg1, char *arg2, char *arg3);
 static void ftpscs(struct tcb *tcb, int old, int new);
 static void ftpscr(struct tcb *tcb, int cnt);
 static void ftpsds(struct tcb *tcb, int old, int new);
-static char *errmsg(char *filename);
+static char *errmsg(const char *filename);
 static void ftpcommand(struct ftp *ftp);
 static int pport(struct socket *sock, char *arg);
 static void ftplogin(struct ftp *ftp, char *pass);
@@ -38,47 +40,37 @@ static int user_denied(const char *username);
 /* Command table */
 static char *commands[] = {
 	"user",
-#define USER_CMD        0
 	"acct",
-#define ACCT_CMD        1
 	"pass",
-#define PASS_CMD        2
 	"type",
-#define TYPE_CMD        3
 	"list",
-#define LIST_CMD        4
 	"cwd",
-#define CWD_CMD         5
 	"dele",
-#define DELE_CMD        6
 	"name",
-#define NAME_CMD        7
 	"quit",
-#define QUIT_CMD        8
 	"retr",
-#define RETR_CMD        9
 	"stor",
-#define STOR_CMD        10
 	"port",
-#define PORT_CMD        11
 	"nlst",
-#define NLST_CMD        12
 	"pwd",
-#define PWD_CMD         13
 	"xpwd",                 /* For compatibility with 4.2BSD */
-#define XPWD_CMD        14
 	"mkd ",
-#define MKD_CMD         15
 	"xmkd",                 /* For compatibility with 4.2BSD */
-#define XMKD_CMD        16
 	"xrmd",                 /* For compatibility with 4.2BSD */
-#define XRMD_CMD        17
 	"rmd ",
-#define RMD_CMD         18
 	"stru",
-#define STRU_CMD        19
 	"mode",
-#define MODE_CMD        20
+	"syst",
+	"xmd5",
+	"appe",
+	"cdup",
+	"help",
+	"mdtm",
+	"noop",
+	"rest",
+	"size",
+	"xcup",
+	"xcwd",
 	NULLCHAR
 };
 
@@ -88,7 +80,7 @@ static char badcmd[] = "500 Unknown command\r\n";
 static char unsupp[] = "500 Unsupported command or option\r\n";
 static char givepass[] = "331 Enter PASS command\r\n";
 static char logged[] = "230 User \"%s\" logged in\r\n";
-static char typeok[] = "200 Type set to \"%s\"\r\n";
+static char typeok[] = "200 Type set to \"%s\"%s\r\n";
 static char only8[] = "501 Only logical bytesize 8 supported\r\n";
 static char deleok[] = "250 File deleted\r\n";
 static char mkdok[] = "200 MKD ok\r\n";
@@ -110,9 +102,7 @@ static struct tcb *ftp_tcb;
 
 /* Do printf on a tcp connection */
 /*VARARGS2*/
-static void Xprintf(tcb,message,arg1,arg2,arg3)
-struct tcb *tcb;
-char *message,*arg1,*arg2,*arg3;
+static void Xprintf(struct tcb *tcb,char *message,char *arg1,char *arg2,char *arg3)
 {
 	struct mbuf *bp;
 
@@ -144,10 +134,7 @@ void *p;
 	return 0;
 }
 /* Shut down FTP server */
-ftp0(argc,argv,p)
-int argc;
-char *argv[];
-void *p;
+ftp0(int argc,char *argv[],void *p)
 {
 	if(ftp_tcb != NULLTCB)
 		close_tcp(ftp_tcb);
@@ -156,9 +143,7 @@ void *p;
 /* FTP Server Control channel State change upcall handler */
 static
 void
-ftpscs(tcb,old,new)
-struct tcb *tcb;
-char old,new;
+ftpscs(struct tcb *tcb,int old,int new)
 {
 	struct ftp *ftp;
 	char *cp,*cp1;
@@ -211,9 +196,7 @@ char old,new;
 /* FTP Server Control channel Receiver upcall handler */
 static
 void
-ftpscr(tcb,cnt)
-struct tcb *tcb;
-uint16 cnt;
+ftpscr(struct tcb *tcb,int cnt)
 {
 	register struct ftp *ftp;
 	int c;
@@ -256,9 +239,7 @@ uint16 cnt;
 
 /* FTP server data channel connection state change upcall handler */
 static void
-ftpsds(tcb,old,new)
-struct tcb *tcb;
-char old,new;
+ftpsds(struct tcb *tcb,int old,int new)
 {
 	register struct ftp *ftp;
 
@@ -305,16 +286,11 @@ char old,new;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *errmsg(filename)
-char  *filename;
+static char *errmsg(const char *filename)
 {
+  static char buf[1024];
 
-  extern char  *sys_errlist[];
-  extern int  errno;
-
-  static char  buf[1024];
-
-  sprintf(buf, "550 %s: %s.\r\n", filename, sys_errlist[errno]);
+  sprintf(buf, "550 %s: %s.\r\n", filename, strerror(errno));
   return buf;
 }
 
@@ -322,38 +298,42 @@ char  *filename;
 
 #ifdef __hpux
 
-#define switch2user()   setresgid(ftp->gid, ftp->gid, 0); \
-			setresuid(ftp->uid, ftp->uid, 0)
-
-#define switchback()    setresuid(0, 0, 0); \
-			setresgid(0, 0, 0)
+#define AsUser(stmt)    if (!permcheck(ftp,file)) {                \
+			  Xprintf(ftp->control,noperm,file,"",""); \
+			  free(file);                              \
+			  return;                                  \
+			}                                          \
+			setresgid(ftp->gid,ftp->gid,0);            \
+			setresuid(ftp->uid,ftp->uid,0);            \
+			stmt;                                      \
+			setresuid(0,0,0);                          \
+			setresgid(0,0,0)
 
 #else
 
-#define switch2user()   setregid(0, ftp->gid); \
-			setreuid(0, ftp->uid)
-
-#define switchback()    setreuid(0, 0); \
-			setregid(0, 0)
+#define AsUser(stmt)    if (!permcheck(ftp,file)) {                \
+			  Xprintf(ftp->control,noperm,file,"",""); \
+			  free(file);                              \
+			  return;                                  \
+			}                                          \
+			setregid(0,ftp->gid);                      \
+			setreuid(0,ftp->uid);                      \
+			stmt;                                      \
+			setreuid(0,0);                             \
+			setregid(0,0)
 
 #endif
-
-#define checkperm()     if (!permcheck(ftp, file)) {                   \
-			  Xprintf(ftp->control, noperm, file, "", ""); \
-			  free(file);                                  \
-			  return;                                      \
-			}
 
 /* Parse and execute ftp commands */
 static
 void
-ftpcommand(ftp)
-register struct ftp *ftp;
+ftpcommand(struct ftp *ftp)
 {
 	char *cmd,*arg,*cp,**cmdp,*file;
-	char *mode;
-	int ok;
 	struct socket dport;
+	int rest;
+	int result;
+	struct stat statbuf;
 
 	cmd = ftp->buf;
 	if(ftp->cnt == 0){
@@ -395,15 +375,12 @@ register struct ftp *ftp;
 	case USER_CMD:
 		if(!strcmp(arg, "anonymous"))
 			arg = "ftp";
-		if(ftp->username)
-			free(ftp->username);
-		if((ftp->username = strdup(arg)) == NULLCHAR){
-			close_tcp(ftp->control);
-			break;
-		}
+		free(ftp->username);
+		ftp->username = strdup(arg);
 		Xprintf(ftp->control,givepass,"","","");
 		break;
 	case TYPE_CMD:
+		log(ftp->control,"TYPE %s",arg);
 		switch(arg[0]){
 		case 'A':
 		case 'a':       /* Ascii */
@@ -417,7 +394,11 @@ register struct ftp *ftp;
 			if(*arg == '\0' || *++arg != '8'){
 				Xprintf(ftp->control,only8,"","","");
 				break;
-			}       /* Note fall-thru */
+			}
+			ftp->type = LOGICAL_TYPE;
+			ftp->logbsize = 8;
+			Xprintf(ftp->control,typeok,"L"," (byte size 8)","");
+			break;
 		case 'B':
 		case 'b':       /* Binary */
 		case 'I':
@@ -431,25 +412,22 @@ register struct ftp *ftp;
 		}
 		break;
 	case QUIT_CMD:
+		log(ftp->control,"QUIT","");
 		Xprintf(ftp->control,bye,"","","");
 		close_tcp(ftp->control);
 		break;
 	case RETR_CMD:
 		/* Disk operation; return ACK now */
 		tcp_output(ftp->control);
+		rest = ftp->rest;
+		ftp->rest = 0;
 		file = pathname(ftp->cd,arg);
-		checkperm();
-		if(ftp->type == IMAGE_TYPE)
-			mode = READ_BINARY;
-		else
-			mode = "r";
-		switch2user();
-		ftp->fp = fopen(file,mode);
-		switchback();
-		if(ftp->fp == NULLFILE){
+		log(ftp->control,"RETR %s",file);
+		AsUser(ftp->fp = fopen(file,"r"));
+		if(ftp->fp == NULLFILE ||
+		   rest && fseek(ftp->fp,rest,SEEK_SET)){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
-			log(ftp->control,"RETR %s",file);
 			dport.address = INADDR_ANY;
 			dport.port = IPPORT_FTPD;
 			ftp->state = SENDING_STATE;
@@ -462,23 +440,38 @@ register struct ftp *ftp;
 	case STOR_CMD:
 		/* Disk operation; return ACK now */
 		tcp_output(ftp->control);
+		rest = ftp->rest;
+		ftp->rest = 0;
 		file = pathname(ftp->cd,arg);
-		checkperm();
-		if(ftp->type == IMAGE_TYPE)
-			mode = WRITE_BINARY;
-		else
-			mode = "w";
-		switch2user();
-		ftp->fp = fopen(file,mode);
-		switchback();
-		if(ftp->fp == NULLFILE){
+		log(ftp->control,"STOR %s",file);
+		AsUser(ftp->fp = fopen(file,"w"));
+		if(ftp->fp == NULLFILE ||
+		   rest && fseek(ftp->fp,rest,SEEK_SET)){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
-			log(ftp->control,"STOR %s",file);
 			dport.address = INADDR_ANY;
 			dport.port = IPPORT_FTPD;
 			ftp->state = RECEIVING_STATE;
 			Xprintf(ftp->control,sending,"STOR",arg,"");
+			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
+			 0,ftpdr,NULLVFP,ftpsds,ftp->control->tos,(int)ftp);
+		}
+		free(file);
+		break;
+	case APPE_CMD:
+		/* Disk operation; return ACK now */
+		tcp_output(ftp->control);
+		ftp->rest = 0;
+		file = pathname(ftp->cd,arg);
+		log(ftp->control,"APPE %s",file);
+		AsUser(ftp->fp = fopen(file,"a"));
+		if(ftp->fp == NULLFILE){
+			Xprintf(ftp->control,errmsg(file),"","","");
+		} else {
+			dport.address = INADDR_ANY;
+			dport.port = IPPORT_FTPD;
+			ftp->state = RECEIVING_STATE;
+			Xprintf(ftp->control,sending,"APPE",arg,"");
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
 			 0,ftpdr,NULLVFP,ftpsds,ftp->control->tos,(int)ftp);
 		}
@@ -495,10 +488,8 @@ register struct ftp *ftp;
 		/* Disk operation; return ACK now */
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
-		checkperm();
-		switch2user();
-		ftp->fp = dir(file,1);
-		switchback();
+		log(ftp->control,"LIST %s",file);
+		AsUser(ftp->fp = dir(file,1));
 		if(ftp->fp == NULLFILE){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
@@ -515,10 +506,8 @@ register struct ftp *ftp;
 		/* Disk operation; return ACK now */
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
-		checkperm();
-		switch2user();
-		ftp->fp = dir(file,0);
-		switchback();
+		log(ftp->control,"NLST %s",file);
+		AsUser(ftp->fp = dir(file,0));
 		if(ftp->fp == NULLFILE){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
@@ -531,44 +520,46 @@ register struct ftp *ftp;
 		}
 		free(file);
 		break;
+	case XCWD_CMD:
 	case CWD_CMD:
+	case XCUP_CMD:
+	case CDUP_CMD:
 		/* Disk operation; return ACK now */
 		tcp_output(ftp->control);
+		if(cmdp-commands == XCUP_CMD || cmdp-commands == CDUP_CMD)
+			arg = "..";
 		file = pathname(ftp->cd,arg);
-		checkperm();
-		switch2user();
-		ok = (chdir(file) == 0);
-		switchback();
-		if(ok){
+		log(ftp->control,"CWD  %s",file);
+		AsUser(result = chdir(file));
+		if(result){
+			Xprintf(ftp->control,errmsg(file),"","","");
+			free(file);
+		} else {
 			chdir("/");
 			Xprintf(ftp->control,pwdmsg,file,"","");
 			if(ftp->cd) free(ftp->cd);
 			ftp->cd = file;
-		} else {
-			Xprintf(ftp->control,errmsg(file),"","","");
-			free(file);
 		}
 		break;
 	case XPWD_CMD:
 	case PWD_CMD:
+		log(ftp->control,"PWD","");
 		Xprintf(ftp->control,pwdmsg,ftp->cd,"","");
 		break;
 	case ACCT_CMD:
+		log(ftp->control,"ACCT","");
 		Xprintf(ftp->control,unimp,"","","");
 		break;
 	case DELE_CMD:
 		/* Disk operation; return ACK now */
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
-		checkperm();
-		switch2user();
-		ok = (unlink(file) == 0);
-		switchback();
-		if(ok){
-			log(ftp->control,"DELE %s",file);
-			Xprintf(ftp->control,deleok,"","","");
-		} else {
+		log(ftp->control,"DELE %s",file);
+		AsUser(result = unlink(file));
+		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
+		} else {
+			Xprintf(ftp->control,deleok,"","","");
 		}
 		free(file);
 		break;
@@ -581,15 +572,12 @@ register struct ftp *ftp;
 		/* Disk operation; return ACK now */
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
-		checkperm();
-		switch2user();
-		ok = (mkdir(file,0755) == 0);
-		switchback();
-		if(ok){
-			log(ftp->control,"MKD %s",file);
-			Xprintf(ftp->control,mkdok,"","","");
-		} else {
+		log(ftp->control,"MKD %s",file);
+		AsUser(result = mkdir(file,0755));
+		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
+		} else {
+			Xprintf(ftp->control,mkdok,"","","");
 		}
 		free(file);
 		break;
@@ -598,37 +586,110 @@ register struct ftp *ftp;
 		/* Disk operation; return ACK now */
 		tcp_output(ftp->control);
 		file = pathname(ftp->cd,arg);
-		checkperm();
-		switch2user();
-		ok = (rmdir(file) == 0);
-		switchback();
-		if(ok){
-			log(ftp->control,"RMD %s",file);
-			Xprintf(ftp->control,deleok,"","","");
-		} else {
+		log(ftp->control,"RMD %s",file);
+		AsUser(result = rmdir(file));
+		if(result){
 			Xprintf(ftp->control,errmsg(file),"","","");
+		} else {
+			Xprintf(ftp->control,deleok,"","","");
 		}
 		free(file);
 		break;
 	case STRU_CMD:
+		log(ftp->control,"STRU %s",arg);
 		if(Xtolower(arg[0]) != 'f')
 			Xprintf(ftp->control,unsupp,"","","");
 		else
 			Xprintf(ftp->control,okay,"","","");
 		break;
 	case MODE_CMD:
+		log(ftp->control,"MODE %s",arg);
 		if(Xtolower(arg[0]) != 's')
 			Xprintf(ftp->control,unsupp,"","","");
 		else
 			Xprintf(ftp->control,okay,"","","");
 		break;
+	case SYST_CMD:
+		log(ftp->control,"SYST","");
+		Xprintf(ftp->control,"215 UNIX Type: L8\r\n","","","");
+		break;
+	case HELP_CMD:
+		{
+		char line[80];
+		int i;
+		Xprintf(ftp->control,"214- The following commands are recognized\r\n","","","");
+		*line = 0;
+		for(i = 0;commands[i];i++){
+			sprintf(line + strlen(line),"    %-4s",commands[i]);
+			if(strlen(line) >= 64){
+				Xprintf(ftp->control,"%s\r\n",line,"","");
+				*line = 0;
+			}
+		}
+		if(*line)
+			Xprintf(ftp->control,"%s\r\n",line,"","");
+		Xprintf(ftp->control,"214\r\n","","","");
+		}
+		break;
+	case MDTM_CMD:
+		/* Disk operation; return ACK now */
+		tcp_output(ftp->control);
+		file = pathname(ftp->cd,arg);
+		log(ftp->control,"MDTM %s",file);
+		AsUser(result = stat(file, &statbuf));
+		if(result){
+			Xprintf(ftp->control,errmsg(file),"","","");
+		} else {
+			char mdtmstr[80];
+			struct tm *ptm;
+			ptm = gmtime(&statbuf.st_mtime);
+			sprintf(mdtmstr,
+				"%04d%02d%02d%02d%02d%02d",
+				ptm->tm_year + 1900,
+				ptm->tm_mon + 1,
+				ptm->tm_mday,
+				ptm->tm_hour,
+				ptm->tm_min,
+				ptm->tm_sec);
+			Xprintf(ftp->control,"213 %s\r\n",mdtmstr,"","");
+		}
+		free(file);
+		break;
+	case NOOP_CMD:
+		log(ftp->control,"NOOP","");
+		Xprintf(ftp->control,"200 NOOP command successful.\r\n","","","");
+		break;
+	case REST_CMD:
+		ftp->rest = atoi(arg);
+		log(ftp->control,"REST %s",arg);
+		Xprintf(ftp->control,"350 Restarting at %s. Send STORE or RETRIEVE to initiate transfer.\r\n",arg,"","");
+		break;
+	case SIZE_CMD:
+		/* Disk operation; return ACK now */
+		tcp_output(ftp->control);
+		file = pathname(ftp->cd,arg);
+		log(ftp->control,"SIZE %s",file);
+		AsUser(ftp->fp = fopen(file,"r"));
+		if(ftp->fp == NULLFILE){
+			Xprintf(ftp->control,errmsg(file),"","","");
+		} else {
+			char sizestr[80];
+			fseek(ftp->fp,0,SEEK_END);
+			sprintf(sizestr,"%d",ftell(ftp->fp));
+			fclose(ftp->fp);
+			ftp->fp = 0;
+			Xprintf(ftp->control,"213 %s\r\n",sizestr,"","");
+		}
+		free(file);
+		break;
+	default:
+		Xprintf(ftp->control,unimp,"","","");
+		break;
 	}
 }
 static
 int
-pport(sock,arg)
-struct socket *sock;
-char *arg;
+pport(struct socket *sock,char *arg)
 {
 	int32 n;
 	int i;
@@ -668,7 +729,7 @@ char *crypt();
  * in pass
  */
 
-static void ftplogin(ftp, pass)
+static void ftplogin(ftp,pass)
 struct ftp *ftp;
 char *pass;
 {
@@ -703,9 +764,7 @@ Fail:
 
 /* Return 1 if the file operation is allowed, 0 otherwise */
 
-static int permcheck(ftp, file)
-struct ftp *ftp;
-char *file;
+static int permcheck(struct ftp *ftp,char *file)
 {
   if (file == NULLCHAR || ftp->path == NULLCHAR) return 0;
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.6 1993/09/22 16:44:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.7 1993/12/29 16:32:15 deyke Exp $ */
 
 /* Stuff common to both the FTP server and client */
 #include <stdio.h>
@@ -69,7 +69,7 @@ int cnt;
 		return;
 	}
 	eof_flag = 0;
-	if(ftp->type == IMAGE_TYPE){
+	if(ftp->type != ASCII_TYPE){
 		bp->cnt = fread(bp->data,1,cnt,ftp->fp);
 		if(bp->cnt != cnt)
 			eof_flag = 1;

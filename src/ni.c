@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.3 1993/05/17 13:45:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.4 1993/12/29 16:32:19 deyke Exp $ */
 
 #ifdef __hpux
 
@@ -8,6 +8,7 @@
 
 #include <sys/socket.h>
 
+#include <errno.h>
 #include <fcntl.h>
 #include <net/if.h>
 #include <net/if_ni.h>
@@ -18,9 +19,6 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-
-extern char *sys_errlist[];
-extern int errno;
 
 #include "mbuf.h"
 #include "iface.h"
@@ -134,46 +132,46 @@ int ni_attach(int argc, char *argv[], void *p)
   }
 
   if ((fd = open("/dev/ni", O_RDWR)) < 0) {
-    printf("/dev/ni: %s\n", sys_errlist[errno]);
+    printf("/dev/ni: %s\n", strerror(errno));
     return (-1);
   }
 
   if (ioctl(fd, NIOCGUNIT, &unit_number)) {
-    printf("NIOCGUNIT: %s\n", sys_errlist[errno]);
+    printf("NIOCGUNIT: %s\n", strerror(errno));
     close(fd);
     return (-1);
   }
 
   arg = AF_INET;
   if (ioctl(fd, NIOCBIND, &arg)) {
-    printf("NIOCBIND: %s\n", sys_errlist[errno]);
+    printf("NIOCBIND: %s\n", strerror(errno));
     close(fd);
     return (-1);
   }
 
   arg = NI_MTU;
   if (ioctl(fd, NIOCSMTU, &arg)) {
-    printf("NIOCSMTU: %s\n", sys_errlist[errno]);
+    printf("NIOCSMTU: %s\n", strerror(errno));
     close(fd);
     return (-1);
   }
 
   arg = NI_MQL;
   if (ioctl(fd, NIOCSQLEN, &arg)) {
-    printf("NIOCSQLEN: %s\n", sys_errlist[errno]);
+    printf("NIOCSQLEN: %s\n", strerror(errno));
     close(fd);
     return (-1);
   }
 
   arg = IFF_UP | IFF_POINTOPOINT;
   if (ioctl(fd, NIOCSFLAGS, &arg)) {
-    printf("NIOCSFLAGS: %s\n", sys_errlist[errno]);
+    printf("NIOCSFLAGS: %s\n", strerror(errno));
     close(fd);
     return (-1);
   }
 
   if ((sock_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-    printf("socket: %s\n", sys_errlist[errno]);
+    printf("socket: %s\n", strerror(errno));
     close(fd);
     return (-1);
   }
@@ -185,7 +183,7 @@ int ni_attach(int argc, char *argv[], void *p)
   addr.sin_addr.s_addr = htonl(dest);
   ifreq.ifr_addr = *((struct sockaddr *) &addr);
   if (ioctl(sock_fd, SIOCSIFADDR, (char *) &ifreq)) {
-    printf("SIOCSIFADDR: %s\n", sys_errlist[errno]);
+    printf("SIOCSIFADDR: %s\n", strerror(errno));
     close(fd);
     close(sock_fd);
     return (-1);
@@ -194,7 +192,7 @@ int ni_attach(int argc, char *argv[], void *p)
   addr.sin_addr.s_addr = htonl(Ip_addr);
   ifreq.ifr_addr = *((struct sockaddr *) &addr);
   if (ioctl(sock_fd, SIOCSIFDSTADDR, (char *) &ifreq)) {
-    printf("SIOCSIFDSTADDR: %s\n", sys_errlist[errno]);
+    printf("SIOCSIFDSTADDR: %s\n", strerror(errno));
     close(fd);
     close(sock_fd);
     return (-1);
@@ -203,7 +201,7 @@ int ni_attach(int argc, char *argv[], void *p)
   addr.sin_addr.s_addr = htonl(mask);
   ifreq.ifr_addr = *((struct sockaddr *) &addr);
   if (ioctl(sock_fd, SIOCSIFNETMASK, (char *) &ifreq)) {
-    printf("SIOCSIFNETMASK: %s\n", sys_errlist[errno]);
+    printf("SIOCSIFNETMASK: %s\n", strerror(errno));
     close(fd);
     close(sock_fd);
     return (-1);

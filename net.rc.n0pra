@@ -1,25 +1,27 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.n0pra,v 1.6 1993/07/17 20:33:13 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.n0pra,v 1.7 1993/12/29 16:32:51 deyke Exp $
 
 hostname     n0pra
 ax25 mycall  n0pra
-ip address   44.128.4.4
+ip address   n0pra
 netrom ident "#fc1"
 
 attach axip                     # ax.25 over host ip
 attach ipip                     # ip over host ip
 attach netrom                   # ip over netrom
+attach ni ni n0pra-u            # ip to host ip
 
 ax25 route add axip default
 
 axip route add dk5sg 15.15.80.34 # mdddhd.fc.hp.com
 
-route add  default          ipip     15.15.80.34
+route add  n0pra-u              ni
+route add  default              ipip     15.15.80.34
 
 source /tcp/netrom_links
 
 # netrom broadcast axip nodes
 
-domain usegethostby off
+domain usegethostby on
 echo accept
 icmp trace on
 ip rtimer 300

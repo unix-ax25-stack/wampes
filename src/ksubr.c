@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.20 1993/09/22 16:44:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.21 1993/12/29 16:32:18 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -52,10 +52,44 @@ struct env {
 #define getstackptr(ep) ((ep)->a7)
 #elif defined __hp9000s800
 struct env {
-	long    i_dont_know;
-	long    sp;
+	long    jb_rp;          /* Return Pointer */
+	long    jb_sp;          /* Marker SP */
+	long    jb_sm;          /* Signal Mask */
+	long    jb_os;          /* On Sigstack */
+	long    jb_gr3;         /* Entry Save General Registers */
+	long    jb_gr4;
+	long    jb_gr5;
+	long    jb_gr6;
+	long    jb_gr7;
+	long    jb_gr8;
+	long    jb_gr9;
+	long    jb_gr10;
+	long    jb_gr11;
+	long    jb_gr12;
+	long    jb_gr13;
+	long    jb_gr14;
+	long    jb_gr15;
+	long    jb_gr16;
+	long    jb_gr17;
+	long    jb_gr18;
+	long    jb_gr19;
+	long    jb_sr3;         /* Entry Save Space Register */
+	double  jb_fr12;        /* Entry Save Floating Point Registers */
+	double  jb_fr13;
+	double  jb_fr14;
+	double  jb_fr15;
+	long    jb_save;        /* Restore Mask? (see sigsetjmp/siglongjmp) */
+	/* alignment hole */
+	double  jb_fr16;
+	double  jb_fr17;
+	double  jb_fr18;
+	double  jb_fr19;
+	double  jb_fr20;
+	double  jb_fr21;
+	long    jb_rp_prime;  /* rp prime from frame marker */
+	long    jb_ext_dp;    /* external_dp from frame marker */
 };
-#define getstackptr(ep) ((ep)->sp)
+#define getstackptr(ep) ((ep)->jb_sp)
 #elif defined _AIX
 struct env {
 	long    i_dont_know_0;
