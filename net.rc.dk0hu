@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.22 1993/10/10 08:19:24 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.23 1993/11/07 17:00:48 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -34,6 +34,12 @@ axip route add dl4sel-1 15.136.136.223          # isoit041.bbn.hp.com
 axip route add dl5ue-1  15.8.62.21              # schiefer.hpl.hp.com
 
 route add  dk5sg-u.ampr.org     ipip     15.15.80.34
+route add  db0id.ampr.org       ipip     192.1.1.1
+route add  db0sao-u.ampr.org    ipip     192.1.1.1
+route add  df1tl-1.ampr.org     ipip     192.1.1.1
+route add  db0id-u.ampr.org     ipip     192.1.1.1
+route add  df5oo.ampr.org       ipip     192.1.1.1
+route add  df1tl-u.ampr.org     ipip     192.1.1.1
 route add  dl5ue-1.ampr.org     ipip     15.8.62.21
 route add  dl4sel-1.ampr.org    ipip     15.136.136.223
 route add  dl4sel.ampr.org      tnc0
@@ -46,6 +52,7 @@ route add  dj3eg-1.ampr.org     ipip     15.136.170.163
 route add  dh8saw-1.ampr.org    ipip     15.138.72.40
 route add  df3du-1.ampr.org     ipip     15.138.80.94
 route addp dd2fx.ampr.org       tnc0
+route add  db0sao.ampr.org      ipip     192.1.1.1
 route add  44.142.52.0/23       ipip     192.1.1.1
 route add  44.130.0.0/16        ipip     192.1.1.1
 

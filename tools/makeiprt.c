@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.6 1993/10/13 22:34:32 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.7 1993/11/07 17:00:57 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -13,6 +13,8 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+
+#define MERGE_HOST_ROUTES       0
 
 #define DBHOSTADDR      "/tcp/hostaddr"
 #define DBHOSTNAME      "/tcp/hostname"
@@ -434,18 +436,23 @@ static void merge_routes(void)
   for (np = Nodes; np; np = np->next) {
 Retry:
     for (prev = 0, curr = np->routes; curr; prev = curr, curr = curr->next) {
-      for (rp = curr->next; rp; rp = rp->next) {
-	if (is_in(curr->dest, curr->bits, rp->dest, rp->bits)) {
-	  if (curr->iface != rp->iface || curr->gateway != rp->gateway)
-	    break;
-	  if (prev)
-	    prev->next = curr->next;
-	  else
-	    np->routes = curr->next;
-	  free(curr);
-	  goto Retry;
+#if MERGE_HOST_ROUTES
+				/* hosts and networks */
+#else
+      if (curr->bits < 32)      /* networks only */
+#endif
+	for (rp = curr->next; rp; rp = rp->next) {
+	  if (is_in(curr->dest, curr->bits, rp->dest, rp->bits)) {
+	    if (curr->iface != rp->iface || curr->gateway != rp->gateway)
+	      break;
+	    if (prev)
+	      prev->next = curr->next;
+	    else
+	      np->routes = curr->next;
+	    free(curr);
+	    goto Retry;
+	  }
 	}
-      }
     }
   }
 }

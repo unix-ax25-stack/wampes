@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.10 1993/05/17 13:44:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.11 1993/11/07 17:01:13 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -59,7 +59,9 @@ void route_savefile(void)
   }
   if (!(fp = fopen(route_tmpfilename, "w"))) return;
   putc(ROUTE_FILE_VERSION, fp);
+#if 0
   rt_merge(0);
+#endif
   for (bits = 1; bits <= 32; bits++)
     for (i = 0; i < HASHMOD; i++)
       for (p = Routes[bits-1][i]; p; p = p->next)
