@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.14 1989/11/18 09:29:10 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.15 1990/03/05 23:44:45 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -30,9 +30,6 @@ extern long  lseek();
 extern long  sigsetmask();
 extern long  time();
 extern struct sockaddr *build_sockaddr();
-extern unsigned long  alarm();
-extern unsigned long  sleep();
-extern unsigned short  getuid();
 extern void _exit();
 extern void exit();
 extern void free();
@@ -118,6 +115,7 @@ static int  level;
 #define MBOX 1
 #define ROOT 2
 
+static char  *MYHOSTNAME;
 static char  *myhostname;
 static char  mydesc[80];
 static char  prompt[1024] = "bbs> ";
@@ -1016,7 +1014,7 @@ char  **argv;
 		 tm->tm_mday,
 		 tm->tm_hour,
 		 tm->tm_min,
-		 myhostname,
+		 MYHOSTNAME,
 		 mydesc);
 	  if (!(fp = fopen(filename(index.mesg), "r"))) halt();
 	  while ((c = getc(fp)) != EOF) putchar(c);
@@ -2208,6 +2206,8 @@ char  **argv;
 
   if (uname(&utsname)) halt();
   myhostname = utsname.nodename;
+  MYHOSTNAME = strsave(myhostname);
+  strupc(MYHOSTNAME);
 
   pw = doforward ? getpwnam(sysname) : getpwuid(getuid());
   if (!pw) halt();
