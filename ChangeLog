@@ -1,6 +1,10 @@
-@(#) $Id: ChangeLog,v 1.58 1999/06/20 19:03:46 deyke Exp $
+@(#) $Id: ChangeLog,v 1.59 1999/07/10 15:00:53 deyke Exp $
+
+990710 Dieter Deyke <deyke@fc.hp.com>
 
 	Ported to RedHat Linux 6.0
+
+	Updated domain.txt
 
 990515 Dieter Deyke <deyke@fc.hp.com>
 

@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^Bridge Reference Manual^-\\\\nP-^Version 990620" \" Page footer
+.PF "^Bridge Reference Manual^-\\\\nP-^Version 990710" \" Page footer
 .\"
 .S 30
 .ce
 \fBBridge Reference Manual\fP
 .ce
-Version 990620
+Version 990710
 .S
 .SP 2
 .S 15
