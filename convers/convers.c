@@ -1,13 +1,15 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.11 1993/05/17 13:48:34 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.12 1993/06/30 11:50:59 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
 
 #include <sys/types.h>
 
+#include <stdio.h>      /* must be before pwd.h */
+
+#include <pwd.h>
 #include <signal.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -50,6 +52,9 @@ int main(int argc, char **argv)
   char *server = "*:3600";
 #endif
 
+  char *cp;
+  char *name;
+  char *note = 0;
   char buffer[2048];
   char c;
   char inbuf[2048];
@@ -65,6 +70,7 @@ int main(int argc, char **argv)
   int size;
   struct fd_set actread;
   struct fd_set chkread;
+  struct passwd *pw;
   struct sockaddr *addr;
   struct termios curr_termios;
 
@@ -78,10 +84,13 @@ int main(int argc, char **argv)
   curr_termios.c_cc[VTIME] = 0;
   if (tcsetattr(0, TCSANOW, &curr_termios)) stop(*argv);
 
-  while ((ch = getopt(argc, argv, "c:s:")) != EOF)
+  while ((ch = getopt(argc, argv, "c:n:s:")) != EOF)
     switch (ch) {
     case 'c':
       channel = atoi(optarg);
+      break;
+    case 'n':
+      note = optarg;
       break;
     case 's':
       server = optarg;
@@ -92,7 +101,7 @@ int main(int argc, char **argv)
     }
 
   if (errflag || optind < argc || !(addr = build_sockaddr(server, &addrlen))) {
-    fprintf(stderr, "usage: convers [-c channel] [-s host:service]\n");
+    fprintf(stderr, "usage: convers [-s host:service] [-c channel] [-n note]\n");
     stop("");
   }
 
@@ -100,7 +109,14 @@ int main(int argc, char **argv)
   if (socket(addr->sa_family, SOCK_STREAM, 0) != 3) stop(*argv);
   if (connect(3, addr, addrlen)) stop(*argv);
 
-  sprintf(inbuf, "/NAME %s %d\n", getenv("LOGNAME"), channel);
+  name = getenv("LOGNAME");
+  if (!note && (pw = getpwnam(name))) {
+    note = pw->pw_gecos;
+    if (cp = strchr(note, ',')) *cp = 0;
+  }
+  if (!note || !*note) note = "@";
+
+  sprintf(inbuf, "/NAME %s %d %s\n", name, channel, note);
   if (write(3, inbuf, strlen(inbuf)) < 0) stop(*argv);
 
   FD_ZERO(&chkread);

@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.38 1993/06/21 21:47:05 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.39 1993/06/30 11:50:59 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -73,6 +73,7 @@ extern int optind;
 #define MAX_UNKNOWNTIME (  15*60)
 #define MAX_WAITTIME    (3*60*60)
 #define MIN_WAITTIME    (     60)
+#define NO_NOTE         "@"
 
 #define NULLCHAR        ((char *) 0)
 
@@ -95,6 +96,8 @@ struct user {
   struct host *u_host;          /* Host where user is logged on */
   struct link *u_link;          /* Link to this user */
   int u_channel;                /* Channel number */
+  int u_oldchannel;             /* Prev channel number */
+  char *u_note;                 /* Note */
   long u_stime;                 /* Connect time */
   struct user *u_next;          /* Linked list pointer */
 };
@@ -157,7 +160,7 @@ static char *formatline(const char *prefix, const char *text);
 static char *localtimestring(long utc);
 static void accept_connect_request(const int *flistenptr);
 static void clear_locks(void);
-static void send_user_change_msg(const char *name, const char *host, int oldchannel, int newchannel);
+static void send_user_change_msg(const struct user *up);
 static void send_msg_to_user(const char *fromname, const char *toname, const char *text);
 static void send_msg_to_channel(const char *fromname, int channel, const char *text);
 static void send_invite_msg(const char *fromname, const char *toname, int channel);
@@ -169,6 +172,7 @@ static void hosts_command(struct link *lp);
 static void invite_command(struct link *lp);
 static void links_command(struct link *lp);
 static void msg_command(struct link *lp);
+static void note_command(struct link *lp);
 static void peers_command(struct link *lp);
 static void name_command(struct link *lp);
 static void users_command(struct link *lp);
@@ -176,6 +180,7 @@ static void who_command(struct link *lp);
 static void h_cmsg_command(struct link *lp);
 static void h_host_command(struct link *lp);
 static void h_invi_command(struct link *lp);
+static void h_udat_command(struct link *lp);
 static void h_umsg_command(struct link *lp);
 static void h_user_command(struct link *lp);
 static void process_input(struct link *lp);
@@ -225,7 +230,8 @@ static struct user *userptr(const char *name, struct host *hp)
 	up = (struct user *) calloc(1, sizeof(*up));
 	up->u_name = strdup((char *) name);
 	up->u_host = hp;
-	up->u_channel = -1;
+	up->u_channel = up->u_oldchannel = -1;
+	up->u_note = strdup(NO_NOTE);
 	up->u_stime = currtime;
 	up->u_next = *upp;
 	*upp = up;
@@ -465,7 +471,7 @@ static void clear_locks(void)
 
 /*---------------------------------------------------------------------------*/
 
-static void send_user_change_msg(const char *name, const char *host, int oldchannel, int newchannel)
+static void send_user_change_msg(const struct user *up)
 {
 
   char buffer[2048];
@@ -473,19 +479,19 @@ static void send_user_change_msg(const char *name, const char *host, int oldchan
 
   for (lp = links; lp; lp = lp->l_next) {
     if (!lp->l_locked) {
-      if (lp->l_user) {
-	if (lp->l_user->u_channel == oldchannel) {
-	  if (newchannel >= 0)
-	    sprintf(buffer, "*** %s switched to channel %d.\n", name, newchannel);
+      if (lp->l_user && up->u_oldchannel != up->u_channel) {
+	if (lp->l_user->u_channel == up->u_oldchannel) {
+	  if (up->u_channel >= 0)
+	    sprintf(buffer, "*** %s switched to channel %d.\n", up->u_name, up->u_channel);
 	  else
-	    sprintf(buffer, "*** %s signed off.\n", name);
+	    sprintf(buffer, "*** %s signed off.\n", up->u_name);
 	  send_string(lp, buffer);
-	} else if (lp->l_user->u_channel == newchannel) {
-	  sprintf(buffer, "*** %s signed on.\n", name);
+	} else if (lp->l_user->u_channel == up->u_channel) {
+	  sprintf(buffer, "*** %s signed on.\n", up->u_name);
 	  send_string(lp, buffer);
 	}
       } else if (lp->l_host) {
-	sprintf(buffer, "/\377\200USER %s %s %d %d %d\n", name, host, 0, oldchannel, newchannel);
+	sprintf(buffer, "/\377\200USER %s %s %d %d %d %s\n", up->u_name, up->u_host->h_name, 0, up->u_oldchannel, up->u_channel, up->u_note);
 	send_string(lp, buffer);
       }
     }
@@ -719,10 +725,13 @@ static void close_link(struct link *lp)
 
   for (upp = &users; up = *upp; )
     if (up->u_link == lp) {
+      up->u_oldchannel = up->u_channel;
+      up->u_channel = -1;
       clear_locks();
-      send_user_change_msg(up->u_name, up->u_host->h_name, up->u_channel, -1);
+      send_user_change_msg(up);
       *upp = up->u_next;
       free(up->u_name);
+      free(up->u_note);
       free(up);
     } else
       upp = &up->u_next;
@@ -760,8 +769,9 @@ static void channel_command(struct link *lp)
     send_string(lp, buffer);
     return;
   }
-  send_user_change_msg(up->u_name, up->u_host->h_name, up->u_channel, newchannel);
+  up->u_oldchannel = up->u_channel;
   up->u_channel = newchannel;
+  send_user_change_msg(up);
   sprintf(buffer, "*** Now on channel %d.\n", up->u_channel);
   send_string(lp, buffer);
 }
@@ -783,6 +793,8 @@ static void help_command(struct link *lp)
     "/WHO                 Show active channels and users\n"
 
     "/CHANNEL n           Switch to channel n\n"
+    "/NOTE text...        Set note to text\n"
+    "/NOTE @              Clear note\n"
 
     "/MSG user text...    Send a private message to user\n"
     "/WRITE user text...  Send a private message to user\n"
@@ -889,6 +901,27 @@ static void msg_command(struct link *lp)
 
 /*---------------------------------------------------------------------------*/
 
+static void note_command(struct link *lp)
+{
+
+  char *note;
+  char buffer[2048];
+  struct user *up;
+
+  up = lp->l_user;
+  note = getarg(NULLCHAR, 1);
+  if (*note && strcmp(up->u_note, note)) {
+    free(up->u_note);
+    up->u_note = strdup(note);
+    up->u_oldchannel = up->u_channel;
+    send_user_change_msg(up);
+  }
+  sprintf(buffer, "*** Your note is set to \"%s\".\n", strcmp(up->u_note, NO_NOTE) ? up->u_note : "");
+  send_string(lp, buffer);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void peers_command(struct link *lp)
 {
 
@@ -938,30 +971,38 @@ static void name_command(struct link *lp)
 {
 
   char *name;
+  char *note;
   char buffer[2048];
-  int oldchannel;
+  int send_msg = 0;
   struct link *lpold;
   struct user *up;
 
   name = getarg(NULLCHAR, 0);
   if (!*name) return;
   up = userptr(name, &my);
-  oldchannel = up->u_channel;
   lpold = up->u_link;
   up->u_link = lp;
   if (lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.38 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.39 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
+  up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
   if (up->u_channel < 0 || up->u_channel > MAX_CHANNEL) {
     sprintf(buffer, "*** Channel numbers must be in the range 0..%d.\n", MAX_CHANNEL);
     send_string(lp, buffer);
     up->u_channel = 0;
   }
-  if (oldchannel != up->u_channel)
-    send_user_change_msg(name, my.h_name, oldchannel, up->u_channel);
+  if (up->u_oldchannel != up->u_channel) send_msg = 1;
+  note = getarg(NULLCHAR, 1);
+  if (!*note) note = NO_NOTE;
+  if (strcmp(up->u_note, note)) {
+    free(up->u_note);
+    up->u_note = strdup(note);
+    send_msg = 1;
+  }
+  if (send_msg) send_user_change_msg(up);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -972,14 +1013,15 @@ static void users_command(struct link *lp)
   char buffer[2048];
   struct user *up;
 
-  send_string(lp, "User     Host     Channel   Time\n");
+  send_string(lp, "User     Host     Channel   Time Note\n");
   for (up = users; up; up = up->u_next) {
     sprintf(buffer,
-	    "%-8.8s %-8.8s %7d %s\n",
+	    "%-8.8s %-8.8s %7d %s %s\n",
 	    up->u_name,
 	    up->u_host->h_name,
 	    up->u_channel,
-	    localtimestring(up->u_stime));
+	    localtimestring(up->u_stime),
+	    strcmp(up->u_note, NO_NOTE) ? up->u_note : "");
     send_string(lp, buffer);
   }
   send_string(lp, "***\n");
@@ -1076,7 +1118,7 @@ static void h_host_command(struct link *lp)
   send_string(lp, buffer);
 
   for (up = users; up; up = up->u_next) {
-    sprintf(buffer, "/\377\200USER %s %s %d %d %d\n", up->u_name, up->u_host->h_name, 0, -1, up->u_channel);
+    sprintf(buffer, "/\377\200USER %s %s %d %d %d %s\n", up->u_name, up->u_host->h_name, 0, -1, up->u_channel, up->u_note);
     send_string(lp, buffer);
   }
 
@@ -1095,6 +1137,37 @@ static void h_invi_command(struct link *lp)
   toname = getarg(NULLCHAR, 0);
   channel = getarg(NULLCHAR, 0);
   if (*channel) send_invite_msg(fromname, toname, atoi(channel));
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void h_udat_command(struct link *lp)
+{
+
+  char *cp;
+  char *host;
+  char *name;
+  char *note;
+  struct host *hp;
+  struct user *up;
+
+  name = getarg(NULLCHAR, 0);
+  host = getarg(NULLCHAR, 0);
+  if (!*host) return;
+  hp = hostptr(host);
+  if (hp == &my) return;
+  up = userptr(name, hp);
+  note = getarg(NULLCHAR, 1);
+  for (cp = note; isdigit(*cp & 0xff); cp++) ;
+  if (!*cp || isspace(*cp & 0xff))
+    for (note = cp; isspace(*note & 0xff); note++) ;
+  if (!*note) note = NO_NOTE;
+  if (!strcmp(up->u_note, note)) return;
+  up->u_oldchannel = up->u_channel;
+  free(up->u_note);
+  up->u_note = strdup(note);
+  up->u_link = hp->h_link = lp;
+  send_user_change_msg(up);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1120,6 +1193,7 @@ static void h_user_command(struct link *lp)
   char *channel;
   char *host;
   char *name;
+  char *note;
   char buffer[2048];
   int newchannel;
   struct host *hp;
@@ -1135,21 +1209,29 @@ static void h_user_command(struct link *lp)
   newchannel = atoi(channel);
   hp = hostptr(host);
   up = userptr(name, hp);
+  note = getarg(NULLCHAR, 1);
+  if (!*note) note = up->u_note;
 
-  if (up->u_channel != newchannel)
+  if (up->u_channel != newchannel || strcmp(up->u_note, note))
     if (hp == &my) {
-      sprintf(buffer, "/\377\200USER %s %s %d %d %d\n", name, host, 0, newchannel, up->u_channel);
+      sprintf(buffer, "/\377\200USER %s %s %d %d %d %s\n", name, host, 0, newchannel, up->u_channel, up->u_note);
       send_string(lp, buffer);
     } else {
-      send_user_change_msg(name, host, up->u_channel, newchannel);
+      up->u_oldchannel = up->u_channel;
       up->u_channel = newchannel;
+      if (strcmp(up->u_note, note)) {
+	free(up->u_note);
+	up->u_note = strdup(note);
+      }
       up->u_link = hp->h_link = lp;
+      send_user_change_msg(up);
     }
 
   for (upp = &users; up = *upp; )
     if (up->u_channel < 0) {
       *upp = up->u_next;
       free(up->u_name);
+      free(up->u_note);
       free(up);
     } else
       upp = &up->u_next;
@@ -1184,6 +1266,7 @@ static void process_input(struct link *lp)
     "invite",           invite_command,
     "links",            links_command,
     "msg",              msg_command,
+    "note",             note_command,
     "peers",            peers_command,
     "quit",             close_link,
     "users",            users_command,
@@ -1197,6 +1280,7 @@ static void process_input(struct link *lp)
 
     "\377\200cmsg",     h_cmsg_command,
     "\377\200invi",     h_invi_command,
+    "\377\200udat",     h_udat_command,
     "\377\200umsg",     h_umsg_command,
     "\377\200user",     h_user_command,
 

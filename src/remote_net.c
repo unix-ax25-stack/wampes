@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.22 1993/06/27 07:50:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.23 1993/06/30 11:50:48 deyke Exp $ */
 
 #include "global.h"
 
@@ -202,7 +202,7 @@ static int console_command(struct controlblock *cp)
 {
   char buf[1024];
 
-  if (fkbd >= 0 || isatty(0)) {
+  if (fkbd >= 0 || (isatty(0) && isatty(1))) {
     sprintf(buf, "*** %s busy\n", Hostname);
     write(cp->fd, buf, strlen(buf));
     return (-1);

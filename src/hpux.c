@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.43 1993/06/21 21:46:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.44 1993/06/30 11:50:39 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -112,7 +112,7 @@ void ioinit(void)
   fixdir("/tcp/sockets", 0755);
   fixdir("/tcp/.sockets", 0700);
 
-  if (local_kbd = isatty(0)) {
+  if (local_kbd = (isatty(0) && isatty(1))) {
     tcgetattr(0, &prev_termios);
     curr_termios = prev_termios;
     curr_termios.c_iflag = BRKINT | ICRNL | IXON | IXANY | IXOFF;

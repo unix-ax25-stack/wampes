@@ -1,4 +1,4 @@
-wampes-930627.tar.Z  (compressed) and wampes-930627.tar.gz (gzipped) are
+wampes-930630.tar.Z  (compressed) and wampes-930630.tar.gz (gzipped) are
 tar archives of WAMPES,  which is a NET/NOS port to HP-UX.  It currently
 supports HP 9000 series 300, 400, 700, and 800 computers,  running HP-UX
 08.xx or HP-UX 09.xx.
@@ -16,7 +16,7 @@ Ultrix      port     of     WAMPES      please     to     Olaf      Erb,
 To unpack this archive you should  create the  directory  /tcp and cd to
 it.  After unpacking please read the file /tcp/doc/intro.txt.
 
-wampes-930627.tar.Z,  wampes-930627.tar.gz,  and all followups should go
+wampes-930630.tar.Z,  wampes-930630.tar.gz,  and all followups should go
 into /hamradio/packet/tcpip/wampes on UCSD.EDU.
 
 73,
