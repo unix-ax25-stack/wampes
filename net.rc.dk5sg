@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.1 1992/08/24 10:08:22 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.2 1992/09/01 17:00:10 deyke Exp $
 
 hostname     dk5sg
 ax25 mycall  dk5sg
@@ -41,6 +41,7 @@ start ftp
 start remote
 start tcpgate convers unix:/tcp/sockets/convers
 start tcpgate finger
+start tcpgate netupds
 start tcpgate smtp
 
 source /tcp/net.rc.local

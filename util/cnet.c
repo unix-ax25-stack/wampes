@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.13 1992/08/26 17:29:26 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.14 1992/09/01 16:58:44 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -12,7 +12,7 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <termio.h>
+#include <termios.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -21,11 +21,14 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <sys/stream.h>
 #include <sys/ptem.h>
 #include <sys/pty.h>
-#define FIOSNBIO        FIONBIO
 #endif
 
 #ifdef LINUX
 #define FIOSNBIO        O_NONBLOCK
+#endif
+
+#ifndef FIOSNBIO
+#define FIOSNBIO        FIONBIO
 #endif
 
 #if defined(__TURBOC__) || defined(__STDC__)
@@ -56,7 +59,7 @@ struct mbuf {
 static int Ansiterminal = 1;
 static struct mbuf *sock_queue;
 static struct mbuf *term_queue;
-static struct termio prev_termio;
+static struct termios prev_termios;
 
 static void open_terminal __ARGS((void));
 static void close_terminal __ARGS((void));
@@ -110,7 +113,7 @@ static void terminate()
   for (; term_queue; term_queue = term_queue->next)
     write(TERM_OUT_FDES, term_queue->data, term_queue->cnt);
   close_terminal();
-  ioctl(TERM_INP_FDES, TCSETA, &prev_termio);
+  tcsetattr(TERM_INP_FDES, TCSANOW, &prev_termios);
   exit(0);
 }
 
@@ -127,7 +130,7 @@ struct mbuf **qp;
 
   n = read(fd, buf, sizeof(buf));
   if (n <= 0) terminate();
-  bp = malloc(sizeof(*bp) + n);
+  bp = (struct mbuf *) malloc(sizeof(*bp) + n);
   if (!bp) terminate();
   bp->next = 0;
   bp->cnt = n;
@@ -178,7 +181,7 @@ char **argv;
   int wmask;
   long arg;
   struct sockaddr *addr;
-  struct termio curr_termio;
+  struct termios curr_termios;
 
 #ifdef ISC
   server = (argc < 2) ? "*:4720" : argv[1];
@@ -211,12 +214,12 @@ char **argv;
   open_terminal();
   arg = 1;
   ioctl(TERM_OUT_FDES, FIOSNBIO, &arg);
-  ioctl(TERM_INP_FDES, TCGETA, &prev_termio);
-  ioctl(TERM_INP_FDES, TCGETA, &curr_termio);
-  curr_termio.c_lflag = 0;
-  curr_termio.c_cc[VMIN] = 1;
-  curr_termio.c_cc[VTIME] = 0;
-  ioctl(TERM_INP_FDES, TCSETA, &curr_termio);
+  tcgetattr(TERM_INP_FDES, &prev_termios);
+  curr_termios = prev_termios;
+  curr_termios.c_lflag = 0;
+  curr_termios.c_cc[VMIN] = 1;
+  curr_termios.c_cc[VTIME] = 0;
+  tcsetattr(TERM_INP_FDES, TCSANOW, &curr_termios);
 
   if (Ansiterminal) {
     if (write(SOCK_OUT_FDES, "\033[D", 3) != 3) terminate();

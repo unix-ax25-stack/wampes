@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.4 1991/11/22 16:21:03 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.5 1992/09/01 16:58:45 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -63,9 +63,9 @@ static void hash_performance __ARGS((void));
 #ifdef __TURBOC__       /* PC specific functions */
 
 static void swap4(p)
-char  *p;
+char *p;
 {
-  char  t;
+  char t;
 
   t = p[0];
   p[0] = p[3];
@@ -192,10 +192,10 @@ register char *to,*from;
 
 /*---------------------------------------------------------------------------*/
 
-static int  axroute_hash(call)
-char  *call;
+static int axroute_hash(call)
+char *call;
 {
-  long  hashval;
+  long hashval;
 
   hashval  = ((*call++ << 23) & 0x0f000000);
   hashval |= ((*call++ << 19) & 0x00f00000);
@@ -210,17 +210,17 @@ char  *call;
 /*---------------------------------------------------------------------------*/
 
 static struct axroute_tab *axroute_tabptr(call, create)
-char  *call;
-int  create;
+char *call;
+int create;
 {
 
-  int  hashval;
+  int hashval;
   struct axroute_tab *rp;
 
   hashval = axroute_hash(call);
   for (rp = axroute_tab[hashval]; rp && !addreq(rp->call, call); rp = rp->next) ;
   if (!rp && create) {
-    rp = calloc(1, sizeof(*rp));
+    rp = (struct axroute_tab *) calloc(1, sizeof(*rp));
     addrcp(rp->call, call);
     rp->next = axroute_tab[hashval];
     axroute_tab[hashval] = rp;
@@ -238,7 +238,7 @@ char *name;
   if (!*name) return 0;
   for (ifp = Ifaces; ifp && strcmp(ifp->name, name); ifp = ifp->next) ;
   if (!ifp) {
-    ifp = calloc(1, sizeof(*ifp));
+    ifp = (struct iface *) calloc(1, sizeof(*ifp));
     ifp->name = strdup(name);
     ifp->next = Ifaces;
     Ifaces = ifp;
@@ -312,13 +312,13 @@ struct axroute_tab *rp;
 
 /*---------------------------------------------------------------------------*/
 
-static int  doroutelist(argc, argv)
-int  argc;
-char  *argv[];
+static int doroutelist(argc, argv)
+int argc;
+char *argv[];
 {
 
-  char  call[AXALEN];
-  int  i;
+  char call[AXALEN];
+  int i;
   struct axroute_tab *rp;
 
   puts("Date    Interface  Path");
@@ -360,7 +360,7 @@ static int doroutestat()
 static void hash_performance()
 {
 
-  int  i, len;
+  int i, len;
   struct axroute_tab *rp;
 
   puts("Index  Length");
@@ -375,14 +375,14 @@ static void hash_performance()
 
 /*---------------------------------------------------------------------------*/
 
-int  main(argc, argv)
-int  argc;
-char  **argv;
+int main(argc, argv)
+int argc;
+char **argv;
 {
   axroute_loadfile();
-  if (!strcmp(argv[1], "hash"))
+  if (argc >= 2 && !strcmp(argv[1], "hash"))
     hash_performance();
-  else if (!strcmp(argv[1], "stat"))
+  else if (argc >= 2 && !strcmp(argv[1], "stat"))
     doroutestat();
   else
     doroutelist(argc, argv);

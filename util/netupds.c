@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.7 1991/11/22 16:21:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.8 1992/09/01 16:58:45 deyke Exp $ */
 
 /* Net Update Server */
 
@@ -37,13 +37,13 @@ const char *s;
 /*---------------------------------------------------------------------------*/
 
 static void doread(fd, buf, cnt)
-int  fd;
-char  *buf;
+int fd;
+char *buf;
 size_t cnt;
 {
 
-  char  *p = buf;
-  int  n;
+  char *p = buf;
+  int n;
 
   while (cnt) {
     n = read(fd, p, cnt);
@@ -60,13 +60,13 @@ size_t cnt;
 /*---------------------------------------------------------------------------*/
 
 static void dowrite(fd, buf, cnt)
-int  fd;
+int fd;
 const char *buf;
 size_t cnt;
 {
 
   const char * p = buf;
-  int  n;
+  int n;
 
   while (cnt) {
     n = write(fd, p, cnt);
@@ -78,19 +78,19 @@ size_t cnt;
 
 /*---------------------------------------------------------------------------*/
 
-int  main()
+int main()
 {
 
-  char  buf[1024];
-  char  client[1024];
-  char  filename[1024];
-  int  fdfile;
-  int  fdpipe[2];
-  int  fdsocket;
-  int  filesize;
-  int  i;
-  int  net_filesize;
-  int  net_i;
+  char buf[1024];
+  char client[1024];
+  char filename[1024];
+  int fdfile;
+  int fdpipe[2];
+  int fdsocket;
+  int filesize;
+  int i;
+  int net_filesize;
+  int net_i;
   struct stat statbuf;
 
   alarm(6 * 3600);
@@ -108,7 +108,7 @@ int  main()
   case -1:
     exit(1);
   case 0:
-    for (i = 0; i < _NFILE; i++)
+    for (i = 0; i < FD_SETSIZE; i++)
       if (i != fdpipe[0]) close(i);
     dup(fdpipe[0]);
     open("/dev/null", O_RDWR, 0666);
@@ -117,7 +117,7 @@ int  main()
     execl("/usr/bin/mailx", "mailx", "-s", "netupds log", "root", (char *) 0);
     exit(1);
   default:
-    for (i = 0; i < _NFILE; i++)
+    for (i = 0; i < FD_SETSIZE; i++)
       if (i != fdpipe[1] && i != fdsocket) close(i);
     open("/dev/null", O_RDWR, 0666);
     dup(fdpipe[1]);
