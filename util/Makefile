@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.8 1991/11/22 16:21:01 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.9 1992/05/20 11:03:07 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 CFLAGS     = -O -s
@@ -6,11 +6,8 @@ SHELL      = /bin/sh
 
 .IGNORE:
 
-all:    bridge cnet netupdc netupds path pop2d udbm vitals
-
-bridge: bridge.c $(BUILDSADDR)
-	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
-	$(CC) $(CFLAGS) -I../src bridge.c $(BUILDSADDR) -o $@
+all:    cnet netupdc netupds path pop2d udbm vitals
+	rm -f bridge*
 
 cnet:   cnet.c $(BUILDSADDR)
 	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
@@ -42,7 +39,6 @@ vitals: vitals.c
 	$(CC) $(CFLAGS) vitals.c -o $@
 
 install: \
-	bridge \
 	/usr/local/bin/cnet \
 	netupdc \
 	netupds \
@@ -64,4 +60,4 @@ install: \
 	cp udbm $@ ; exit 0
 
 clean:
-	rm -f *.o bridge cnet netupdc netupds path pop2d udbm vitals
+	rm -f *.o cnet netupdc netupds path pop2d udbm vitals
