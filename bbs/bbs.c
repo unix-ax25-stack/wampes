@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.16 1990/10/18 17:38:22 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.17 1990/10/22 18:11:20 deyke Exp $";
 
 #define _HPUX_SOURCE 1
 
@@ -37,6 +37,8 @@ extern int  lockf __ARGS((int fildes, int function, long size));
 extern int  optind;
 extern int  putenv __ARGS((char *string));
 extern int  setpgrp __ARGS((void));
+extern int  setresgid __ARGS((int rgid, int egid, int sgid));
+extern int  setresuid __ARGS((int ruid, int euid, int suid));
 extern int  sigvector __ARGS((int sig, struct sigvec *vec, struct sigvec *ovec));
 extern long  sigsetmask __ARGS((long mask));
 extern struct sockaddr *build_sockaddr __ARGS((char *name, int *addrlen));
@@ -130,8 +132,9 @@ static char  prompt[1024] = "bbs> ";
 static int  debug;
 static int  doforward;
 static int  errors;
+static int  fdindex;
 static int  fdlock = -1;
-static int  findex;
+static int  fdseq;
 static int  level;
 static struct user user;
 volatile static int stopped;
@@ -148,6 +151,7 @@ static char *timestr __ARGS((long gmt));
 static int callvalid __ARGS((char *call));
 static char *dirname __ARGS((int mesg));
 static char *filename __ARGS((int mesg));
+static void get_seq __ARGS((void));
 static void put_seq __ARGS((void));
 static void wait_for_prompt __ARGS((void));
 static void lock __ARGS((void));
@@ -443,16 +447,49 @@ int  mesg;
 
 /*---------------------------------------------------------------------------*/
 
+static void get_seq()
+{
+
+  char  buf[16];
+  char  fname[1024];
+  struct stat statbuf;
+
+  sprintf(fname, "%s/%s", user.dir, SEQFILE);
+
+  /*** remove old .bbsseq files owned by root ***/
+
+  if (!stat(fname, &statbuf) && statbuf.st_uid != user.uid) {
+    if ((fdseq = open(fname, O_RDONLY, 0644)) < 0) halt();
+    if (read(fdseq, buf, sizeof(buf)) >= 2) user.seq = atoi(buf);
+    close(fdseq);
+    unlink(fname);
+  }
+
+  setresgid(user.gid, user.gid, 1);
+  setresuid(user.uid, user.uid, 0);
+  fdseq = open(fname, O_RDWR | O_CREAT, 0644);
+  setresuid(0, 0, 0);
+  setresgid(1, 1, 1);
+  if (fdseq < 0) halt();
+  if (lockf(fdseq, F_TLOCK, 0)) {
+    puts("Sorry, you are already running another BBS.\n");
+    exit(1);
+  }
+  if (read(fdseq, buf, sizeof(buf)) >= 2) user.seq = atoi(buf);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void put_seq()
 {
 
-  FILE * fp;
-  char  fname[80];
+  char  buf[16];
+  int  n;
 
   if (debug) return;
-  sprintf(fname, "%s/%s", user.dir, SEQFILE);
-  if (!(fp = fopen(fname, "w")) || fprintf(fp, "%d\n", user.seq) < 0) halt();
-  fclose(fp);
+  if ((n = sprintf(buf, "%d\n", user.seq)) < 2) halt();
+  if (lseek(fdseq, 0l, 0)) halt();
+  if (write(fdseq, buf, (unsigned) n) != n) halt();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -495,21 +532,21 @@ struct index *index;
   int  i1, i2, im, pos;
 
   i1 = 0;
-  if (lseek(findex, 0l, 0)) halt();
-  if (read(findex, (char *) index, sizeof(struct index )) != sizeof(struct index )) return 0;
+  if (lseek(fdindex, 0l, 0)) halt();
+  if (read(fdindex, (char *) index, sizeof(struct index )) != sizeof(struct index )) return 0;
   if (n == index->mesg) return 1;
   if (n < index->mesg) return 0;
 
-  if ((pos = lseek(findex, (long) (-sizeof(struct index )), 2)) < 0) halt();
+  if ((pos = lseek(fdindex, (long) (-sizeof(struct index )), 2)) < 0) halt();
   i2 = pos / sizeof(struct index );
-  if (read(findex, (char *) index, sizeof(struct index )) != sizeof(struct index )) halt();
+  if (read(fdindex, (char *) index, sizeof(struct index )) != sizeof(struct index )) halt();
   if (n == index->mesg) return 1;
   if (n > index->mesg) return 0;
 
   while (i1 + 1 < i2) {
     im = (i1 + i2) / 2;
-    if (lseek(findex, (long) (im * sizeof(struct index )), 0) < 0) halt();
-    if (read(findex, (char *) index, sizeof(struct index )) != sizeof(struct index )) halt();
+    if (lseek(fdindex, (long) (im * sizeof(struct index )), 0) < 0) halt();
+    if (read(fdindex, (char *) index, sizeof(struct index )) != sizeof(struct index )) halt();
     if (n == index->mesg) return 1;
     if (n > index->mesg)
       i1 = im;
@@ -566,9 +603,9 @@ char  *bid, *mid;
   struct index *pi, index[1000];
 
   validdate = time((long *) 0) - 90 * DAYS;
-  if (lseek(findex, 0l, 0)) halt();
+  if (lseek(fdindex, 0l, 0)) halt();
   for (; ; ) {
-    n = read(findex, (char *) (pi = index), 1000 * sizeof(struct index )) / sizeof(struct index );
+    n = read(fdindex, (char *) (pi = index), 1000 * sizeof(struct index )) / sizeof(struct index );
     if (n < 1) return 1;
     for (; n; n--, pi++)
       if (pi->date >= validdate && !strcmp(pi->bid, bid)) return 0;
@@ -587,10 +624,10 @@ struct mail *mail;
 
   lock();
   if (msg_uniq(mail->bid, mail->mid)) {
-    if (lseek(findex, (long) (-sizeof(struct index )), 2) < 0)
+    if (lseek(fdindex, (long) (-sizeof(struct index )), 2) < 0)
       index.mesg = 1;
     else {
-      if (read(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+      if (read(fdindex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
       index.mesg++;
     }
     index.date = mail->date;
@@ -621,8 +658,8 @@ struct mail *mail;
 	index.size += (strlen(p->str) + 1);
       }
     fclose(fp);
-    if (lseek(findex, 0l, 2) < 0) halt();
-    if (write(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+    if (lseek(fdindex, 0l, 2) < 0) halt();
+    if (write(fdindex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
     if (index.mesg == user.seq + 1) {
       user.seq = index.mesg;
       put_seq();
@@ -646,8 +683,8 @@ struct mail *mail;
   case -1:
     halt();
   case 0:
-    setuid(0);
-    setgid(1);
+    setresgid(1, 1, 1);
+    setresuid(0, 0, 0);
     for (i = 0; i < _NFILE; i++) close(i);
     setpgrp();
     fopen("/dev/null", "r+");
@@ -696,8 +733,8 @@ struct mail *mail;
   case -1:
     halt();
   case 0:
-    setuid(0);
-    setgid(1);
+    setresgid(1, 1, 1);
+    setresuid(0, 0, 0);
     for (i = 0; i < _NFILE; i++) close(i);
     setpgrp();
     fopen("/dev/null", "r+");
@@ -733,9 +770,13 @@ struct mail *mail;
       fprintf(fp, "Posting-Version: DK5SG-BBS version %s %s; site %s.ampr.org\n",
 		  revision.number, revision.date, myhostname);
       putc('\n', fp);
-      for (p = mail->head; p; p = p->next) {
+      p = mail->head;
+      while (p && p->str[0] == 'R' && p->str[1] == ':') p = p->next;
+      while (p && p->str[0] == '\0') p = p->next;
+      while (p) {
 	fputs(p->str, fp);
 	putc('\n', fp);
+	p = p->next;
       }
       pclose(fp);
       _exit(0);
@@ -998,8 +1039,8 @@ char  **argv;
 	  calleq(index.to, user.name)) {
 	if (unlink(filename(mesg))) halt();
 	index.deleted = 1;
-	if (lseek(findex, (long) (-sizeof(struct index )), 1) < 0) halt();
-	if (write(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+	if (lseek(fdindex, (long) (-sizeof(struct index )), 1) < 0) halt();
+	if (write(fdindex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
 	printf("Message %d deleted.\n", mesg);
       } else
 	printf("Message %d not deleted:  Permission denied.\n", mesg);
@@ -1036,9 +1077,9 @@ char  **argv;
 
   head = 0;
   cmp = 0;
-  if (lseek(findex, 0l, 0)) halt();
+  if (lseek(fdindex, 0l, 0)) halt();
   for (; ; ) {
-    n = read(findex, (char *) (pi = index), 1000 * sizeof(struct index )) / sizeof(struct index );
+    n = read(fdindex, (char *) (pi = index), 1000 * sizeof(struct index )) / sizeof(struct index );
     if (n < 1) break;
     for (; n; n--, pi++)
       if (read_allowed(pi))
@@ -1097,8 +1138,8 @@ char  **argv;
 
   do_not_exit = doforward;
   if (!get_index(user.seq, &index))
-    if (lseek(findex, 0l, 0)) halt();
-  while (read(findex, (char *) &index, sizeof(struct index )) == sizeof(struct index )) {
+    if (lseek(fdindex, 0l, 0)) halt();
+  while (read(fdindex, (char *) &index, sizeof(struct index )) == sizeof(struct index )) {
     if (!index.deleted                &&
 	index.mesg > user.seq         &&
 	!calleq(index.at, myhostname) &&
@@ -1290,10 +1331,10 @@ char  **argv;
       to = strupc(argv[i]);
     }
   }
-  if (lseek(findex, (long) (-sizeof(struct index )), 2) >= 0) {
+  if (lseek(fdindex, (long) (-sizeof(struct index )), 2) >= 0) {
     for (; ; ) {
       if (stopped) return;
-      if (read(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+      if (read(fdindex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
       if (index.mesg < min) break;
       if (index.mesg <= max                            &&
 	  read_allowed(&index)                         &&
@@ -1321,7 +1362,7 @@ char  **argv;
 	}
 	if (--count <= 0) break;
       }
-      if (lseek(findex, -2l * sizeof(struct index ), 1) < 0) break;
+      if (lseek(fdindex, -2l * sizeof(struct index ), 1) < 0) break;
     }
   }
   if (!found)
@@ -1629,8 +1670,8 @@ char  **argv;
     puts("Sorry, cannot fork.");
     break;
   case 0:
-    setgid(user.gid);
-    setuid(user.uid);
+    setresgid(user.gid, user.gid, user.gid);
+    setresuid(user.uid, user.uid, user.uid);
     for (i = 3; i < _NFILE; i++) close(i);
     chdir(user.cwd);
     *command = '\0';
@@ -1682,9 +1723,9 @@ char  **argv;
 
   validdate = time((long *) 0) - 90 * DAYS;
   printf("DK5SG-BBS  Revision: %s %s\n", revision.number, revision.date);
-  if (lseek(findex, 0l, 0)) halt();
+  if (lseek(fdindex, 0l, 0)) halt();
   for (; ; ) {
-    n = read(findex, (char *) (pi = index), 1000 * sizeof(struct index )) / sizeof(struct index );
+    n = read(fdindex, (char *) (pi = index), 1000 * sizeof(struct index )) / sizeof(struct index );
     if (n < 1) break;
     for (; n; n--, pi++) {
       highest = pi->mesg;
@@ -1736,9 +1777,9 @@ char  **argv;
 
   validdate = time((long *) 0) - 90 * DAYS;
   if ((f = open(tempfile, O_WRONLY | O_CREAT | O_EXCL, 0644)) < 0) halt();
-  if (lseek(findex, 0l, 0)) halt();
+  if (lseek(fdindex, 0l, 0)) halt();
   wflag = 0;
-  while (read(findex, (char *) & index, sizeof(struct index )) == sizeof(struct index )) {
+  while (read(fdindex, (char *) & index, sizeof(struct index )) == sizeof(struct index )) {
     wflag = 1;
     if (!index.deleted || *index.bid && index.date >= validdate) {
       if (write(f, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
@@ -1748,7 +1789,7 @@ char  **argv;
   if (wflag)
     if (write(f, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
   if (close(f)) halt();
-  if (close(findex)) halt();
+  if (close(fdindex)) halt();
   if (rename(tempfile, INDEXFILE)) halt();
   exit(0);
 }
@@ -1785,13 +1826,13 @@ char  **argv;
   struct termio curr_termio, prev_termio;
   unsigned int  indexarraysize;
 
-  if (fstat(findex, &statbuf)) halt();
+  if (fstat(fdindex, &statbuf)) halt();
   indexarraysize = statbuf.st_size;
   indexarrayentries = indexarraysize / sizeof(struct index );
   if (!indexarrayentries) return;
   if (!(indexarray = (struct index *) malloc(indexarraysize))) halt();
-  if (lseek(findex, 0l, 0)) halt();
-  if (read(findex, (char *) indexarray, indexarraysize) != indexarraysize) halt();
+  if (lseek(fdindex, 0l, 0)) halt();
+  if (read(fdindex, (char *) indexarray, indexarraysize) != indexarraysize) halt();
 
   ioctl(0, TCGETA, &prev_termio);
   memcpy(&curr_termio, &prev_termio, sizeof(struct termio ));
@@ -1821,8 +1862,8 @@ char  **argv;
     case 'k':
       if (unlink(filename(pi->mesg))) halt();
       pi->deleted = 1;
-      if (lseek(findex, (long) ((pi - indexarray) * sizeof(struct index )), 0) < 0) halt();
-      if (write(findex, (char *) pi, sizeof(struct index )) != sizeof(struct index )) halt();
+      if (lseek(fdindex, (long) ((pi - indexarray) * sizeof(struct index )), 0) < 0) halt();
+      if (write(fdindex, (char *) pi, sizeof(struct index )) != sizeof(struct index )) halt();
 
     case '\n':
       if (pi < indexarray + (indexarrayentries - 1)) pi++;
@@ -1951,7 +1992,7 @@ char  **argv;
       puts("RETURN     show next entry");
       puts("SPACE      show next screenful");
       puts("k          delete current entry");
-      puts("q          quit BBS");
+      puts("q          quit screen mode");
       puts("r          redisplay current entry");
       puts("s          specify SUBJECT substring");
       puts("v          edit current entry");
@@ -2224,7 +2265,6 @@ char  **argv;
 #define RMAIL 1
 #define RNEWS 2
 
-  FILE * fp;
   char  *dir = WRKDIR;
   char  *sysname;
   char  buf[1024];
@@ -2300,11 +2340,6 @@ char  **argv;
   user.dir = strdup(pw->pw_dir);
   user.shell = strdup(pw->pw_shell);
   endpwent();
-  sprintf(buf, "%s/%s", user.dir, SEQFILE);
-  if (fp = fopen(buf, "r")) {
-    fscanf(fp, "%d", &user.seq);
-    fclose(fp);
-  }
   if (!user.uid) level = ROOT;
   if (connect_addr(user.name)) level = MBOX;
 
@@ -2325,7 +2360,9 @@ char  **argv;
   if (!getenv("TZ"))
     putenv("TZ=MEZ-1MESZ");
 
-  if ((findex = open(INDEXFILE, O_RDWR | O_CREAT, 0644)) < 0) halt();
+  get_seq();
+
+  if ((fdindex = open(INDEXFILE, O_RDWR | O_CREAT, 0644)) < 0) halt();
 
   switch (mode) {
   case BBS:
