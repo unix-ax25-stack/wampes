@@ -62,7 +62,7 @@
 44.130.0.55     dh5lap  dh5lap.ampr.org
 44.130.0.56     dl6lay  dl6lay.ampr.org
 44.130.0.57     dl3xak  dl3xak.ampr.org
-44.130.0.58     dk2he   dk2he.ampr.org
+44.130.0.58     dj8xt   dj8xt.ampr.org
 44.130.0.59     dl9hcj  dl9hcj.ampr.org
 44.130.0.60     db4oc-hh        db4oc-hh.ampr.org
 44.130.0.61     dl1cr   dl1cr.ampr.org
@@ -159,6 +159,14 @@
 44.130.0.181    dk3uz-svr       dk3uz-svr.ampr.org
 44.130.0.182    dg7laz  dg7laz.ampr.org
 44.130.0.183    dl7laz-2        dl7laz-2.ampr.org
+44.130.0.192    dg4ham-a        dg4ham-a.ampr.org
+44.130.0.193    dg4ham-b        dg4ham-b.ampr.org
+44.130.0.194    dg4ham-c        dg4ham-c.ampr.org
+44.130.0.195    dg4ham-d        dg4ham-d.ampr.org
+44.130.0.196    dg4ham-e        dg4ham-e.ampr.org
+44.130.0.197    dg4ham-f        dg4ham-f.ampr.org
+44.130.0.198    dg4ham-g        dg4ham-g.ampr.org
+44.130.0.199    dg4ham-h        dg4ham-h.ampr.org
 44.130.0.200    db0sef  db0sef.ampr.org
 44.130.0.202    dg5ht-1 dg5ht-1.ampr.org
 44.130.0.203    dl8xas-wampes   dl8xas-wampes.ampr.org
@@ -195,6 +203,8 @@
 44.130.1.20     dd0ld   dd0ld.ampr.org
 44.130.1.21     dl1hbn  dl1hbn.ampr.org
 44.130.1.22     dg2lbi  dg2lbi.ampr.org
+44.130.1.23     dg3lad  dg3lad.ampr.org
+44.130.1.24     dg3lad-svr      dg3lad-svr.ampr.org
 44.130.1.25     dg5lan  dg5lan.ampr.org
 44.130.1.28     dl8xi   dl8xi.ampr.org
 44.130.1.29     dd9lm   dd9lm.ampr.org
@@ -241,19 +251,23 @@
 44.130.2.193    db0agm-u        db0agm-u.ampr.org
 44.130.2.194    db0agm-s        db0agm-s.ampr.org
 44.130.2.195    db0agm-5        db0agm-5.ampr.org
+44.130.2.196    lgtest  lgtest.ampr.org
+44.130.2.197    lgtest-2        lgtest-2.ampr.org
+44.130.2.198    lgtest-3        lgtest-3.ampr.org
+44.130.2.199    lgtest-4        lgtest-4.ampr.org
 44.130.2.200    db0agm  db0agm.ampr.org
-44.130.2.201    db0agm  db0agm.ampr.org
-44.130.2.202    db0agm-u        db0agm-u.ampr.org
+44.130.2.201    dl5xm   dl5xm.ampr.org
+44.130.2.202    dl5xm-2 dl5xm-2.ampr.org
 44.130.2.203    dg6xu   dg6xu.ampr.org
 44.130.2.204    dg6xu-s dg6xu-s.ampr.org
-44.130.2.205    db0agm-5        db0agm-5.ampr.org
+44.130.2.205    dj4kw   dj4kw.ampr.org
 44.130.2.206    dk9gg   dk9gg.ampr.org
 44.130.2.208    dj4kw-dos       dj4kw-dos.ampr.org
 44.130.2.209    dj4kw-isc       dj4kw-isc.ampr.org
 44.130.2.210    dl5xc   dl5xc.ampr.org
 44.130.2.211    dk2he   dk2he.ampr.org
 44.130.2.212    dk2he-2 dk2he-2.ampr.org
-44.130.2.213    db5hd   db5hd.ampr.org
+44.130.2.213    dk2he-3 dk2he-3.ampr.org
 44.130.2.214    dl4hch  dl4hch.ampr.org
 44.130.2.215    dc8jm   dc8jm.ampr.org
 44.130.2.216    dj6tk   dj6tk.ampr.org
@@ -3020,37 +3034,37 @@
 44.130.56.241   DL3MCW-G        # ; WAMPES, route via DL3MCW
 44.130.56.242   DL3MCW-D        #
 44.130.56.243   DJ6OM   # Martin Zippe, 80935 Muenchen
-44.130.57.1     DD1GV   # Vajk, Neu-Ulm
-44.130.57.2     DC2SF   # Stefan, Bellenberg
-44.130.57.3     DL9LAO  # Karl H. Figur, 89075 Ulm
-44.130.57.4     DG5MNC  # Wolfgang Bleher, 87700 Memmingen
-44.130.57.5     DL4MGY  # Thomas
-44.130.57.6     DG5MNC-U# Wolfgang LINUX Kernel
-44.130.57.7     DL6SBV  # Peter
-44.130.57.8             www-DG5MNC # Wolfgang html port 80
-44.130.57.9             DL9MFL  # Edgar, 87719 Mindelheim, JN58GB
-44.130.57.10    DG4SJ   # Rainer, Illerkirchberg
-44.130.57.11    DG3SCF  # Achim Schuetz, Erbach
-44.130.57.12    DL4DCB  # Carsten, Neu-Ulm, PC
-44.130.57.13    DG4MND-u        # Christian Szkola, 87700 Memmingen
-44.130.57.14    DG4MND  # Christian Szkola, 87700 Memmingen
-44.130.57.15    DF2DR   # Hermann Schumacher, Ulm
-44.130.57.16    DL3SDM  # Michael
-44.130.57.17    LAPTOP.DF2DR    # Hermann Schuhmacher, Ulm
-44.130.57.18    DL1MHR-u        #       Wolfram Hennemann, 87700 Memmingen JN57CX
-44.130.57.19    DL1MHR  # Wolfram Hennemann, 87700 Memmingen JN57CX
-44.130.57.20    DG7MGY  # Hubert Fink, Guenzburg
-44.130.57.21    DL6SBV-u        # Peter Knupfer
-44.130.57.22    DG6SDB  # Dominik, Neu-Ulm; Amiga
-44.130.57.23    DG7SFB  # Olgun, Ulm,
-44.130.57.24    DJ4MZ   # Simon, 86825 Bad Woerishofen
-44.130.57.25    DC1MIK  # Michael, Burgau
-44.130.57.59    DG2SDF  # Thomas Schake, 89250 Senden
-44.130.57.100   DB0ULM-baybox   # (DC2SF); BBS Baybox
-44.130.57.101   DB0ULM-bu       # (DC2SF); BBS Unix-Port Baybox
-44.130.57.200   DB0ULM-10       # (DC2SF); BBS 89287 Bellenberg WAMPES ***
-44.130.57.201   DB0ULM-u# (DC2SF); BBS 89287 Bellenberg LINUX  ***
-44.130.57.202    DC2SF-u# DC2SF 2. Rechner
+44.130.57.1     DD1GV             # Vajk, Neu-Ulm
+44.130.57.2     DC2SF             # Stefan, Bellenberg
+44.130.57.3     DL9LAO            # Karl H. Figur, 89075 Ulm
+44.130.57.4     DG5MNC            # Wolfgang Bleher, 87700 Memmingen
+44.130.57.5     DL4MGY            # Thomas
+44.130.57.6     DG5MNC-U          # Wolfgang LINUX Kernel
+44.130.57.7     DL6SBV            # Peter
+44.130.57.8     www-DG5MNC        # Wolfgang html port 80
+44.130.57.9     DL9MFL            # Edgar, 87719 Mindelheim, JN58GB
+44.130.57.10    DG4SJ             # Rainer, Illerkirchberg
+44.130.57.11    DG3SCF            # Achim Schuetz, Erbach
+44.130.57.12    DL4DCB            # Carsten, Neu-Ulm, PC
+44.130.57.13    DG4MND-u          # Christian Szkola, 87700 Memmingen
+44.130.57.14    DG4MND            # Christian Szkola, 87700 Memmingen
+44.130.57.15    DF2DR             # Hermann Schumacher, Ulm
+44.130.57.16    DL3SDM            # Michael
+44.130.57.17    LAPTOP.DF2DR      # Hermann Schuhmacher, Ulm
+44.130.57.18    DL1MHR-u          # Wolfram Hennemann, 87700 Memmingen JN57CX
+44.130.57.19    DL1MHR            # Wolfram Hennemann, 87700 Memmingen JN57CX
+44.130.57.20    DG7MGY            # Hubert Fink, Guenzburg
+44.130.57.21    DL6SBV-u          # Peter Knupfer
+44.130.57.22    DG6SDB            # Dominik, Neu-Ulm; Amiga
+44.130.57.23    DG7SFB            # Olgun, Ulm,
+44.130.57.24    DJ4MZ             # Simon, 86825 Bad Woerishofen
+44.130.57.25    DC1MIK            # Michael, Burgau
+44.130.57.59    DG2SDF            # Thomas Schake, 89250 Senden
+44.130.57.100   DB0ULM-baybox     # (DC2SF); BBS Baybox
+44.130.57.101   DB0ULM-bu         # (DC2SF); BBS Unix-Port Baybox
+44.130.57.200   DB0ULM            # (DC2SF); BBS 89287 Bellenberg WAMPES ***
+44.130.57.201   DB0ULM-u          # (DC2SF); BBS 89287 Bellenberg LINUX  ***
+44.130.57.202   DC2SF-u           # DC2SF 2. Rechner
 44.130.58.1     DB0ZKA  # Digi Augsburg (DL3MEW)
 44.130.58.2     DB0ZKA-TEST     #
 44.130.58.3     DL3MEW  # Bodo Assner, 8902 Neusaess
@@ -3584,7 +3598,7 @@
 44.130.91.3     DG0LP           # Lutz Poetschulat, 08066 Zwickau
 44.130.91.4     DG0JAZ          # Jan Hinterkopf, Zwickau
 44.130.91.5     DG0LP-U         # Lutz Poetschulat, 08066 Zwickau UNIX
-44.130.91.6     DL1PI           # Udo Pampel, Zwickau-Weissenborn
+44.130.91.6     DL1PI           # Udo Pampel, 08058 Zwickau
 44.130.91.7     DG0LPW          # Lutz Peters, 08396 Waldenburg
 44.130.91.8     DL2JFL          # Frank Lohse, 09246 Pleissa
 44.130.91.9     DG2AD           # Gerd
@@ -3612,6 +3626,7 @@
 44.130.128.4    dg6xl   dg6xl.ampr.org
 44.130.128.65   db0hhb  db0hhb.ampr.org
 44.130.128.66   dk4hpa  dk4hpa.ampr.org
+44.130.128.67   dj7wl-2 dj7wl-2.ampr.org
 44.130.144.1    DB0NOS  # TCP/IP-Svr Oerlinghausen ***
 44.130.144.2    FTP.DB0NOS      # FTP-Svr Oerlinghausen ***
 44.130.144.8    BBS.DB0NOS      # BayCom-Mailbox Oerlinghausen
@@ -3700,19 +3715,22 @@
 44.130.146.200  DK0HN   # Club stn Herten, Server
 44.130.146.210  DG2YHX  #
 44.130.147.1    DJ5ZD   # Alexander, Bad Laasphe
-44.130.149.1    DB0BRI-10   db0bri.ampr.org     #linux db0bri
-44.130.149.2    DB0BRI-10   db0bri-w.ampr.org   #wampes db0bri
-44.130.149.10   DL6DBH-10   dl6dbh.ampr.org     #Meinolf Lutter
-44.130.149.20   DG8DG-10                        #Werner  Gîbel
-44.130.149.31   DK5DD-10                        #Heinz Gîdde
+44.130.149.1    DB0BRI-10 #  db0bri.ampr.org    linux db0bri
+44.130.149.2    DB0BRI-10 #  db0bri-w.ampr.org  wampes db0bri
+44.130.149.5    DB0BRI-11                       #Testrechner fÅr Jnos
+44.130.149.10   DL6DBH-10 #  dl6dbh.ampr.org    Meinolf Lutter
+44.130.149.20   DG8DG-10                        #Werner  Gˆbel
+44.130.149.31   DK5DD-10                        #Heinz Gˆdde
 44.130.149.32   DG9DU-10                        #Ferdi Pappenheim
 44.130.149.33   DH5DAB-10                       #Ulrich Frigger
 44.130.149.34   DL8DBR-10                       #Rudolf Gro·mann
 44.130.149.35   DL4DBX-10                       #Bernd
 44.130.149.36   DG5DDB-10
-44.130.149.37   DH0DAF-10                       #GÅnther Brenzinger
+44.130.149.37   DH0DAF-10                       #G¸nther Brenzinger
+44.130.149.38   DG9DAP-10                       #Werner Disse
 44.130.149.42   DG8DAB-10                       #Ferdi Becker
 44.130.149.45   DK0BH-10                        #Clubstation Brilon
+44.130.149.49   DF0PG-10                        #Schulstation
 44.130.149.50   DG8YGZ-10                       #Olaf Polan
 44.130.149.51   DG5YGZ-10                       #Marco
 44.130.150.1    dg3aah
@@ -6210,66 +6228,69 @@
 44.143.9.72    OE9MKV   # Mario Kienspergher, Juxweg 6, 6800 Feldkirch-
 44.143.9.100   W.OE9XFR # [A] WAMPES-Knoten Feldkirch (Wampes)
 44.143.9.101   OE9XFR   # [A] WAMPES-Knoten Feldkirch (Unix)
-44.143.16.1     OE1XIR
-44.143.16.2     OE1XIB
-44.143.16.3     OE1XTR
-44.143.16.10    GW.OE1HMC
-44.143.16.11    SEC.OE1HMC
-44.143.16.12    TER.OE1HMC
-44.143.16.13    OE1HMC
-44.143.16.14    OE1DMW
-44.143.16.15    SEC.OE1DMW
-44.143.16.16    OE1MSB
-44.143.16.17    SEC.OE1MSB
-44.143.16.18    SP7MUD
-44.143.16.19    OE1MMA
-44.143.16.20    OE3GFS
-44.143.16.21    OE1SMC
-44.143.16.22    OE1CMS
-44.143.16.24    OE1GOU
-44.143.16.25    OE1YXU
-44.143.16.26    OE1WWL
-44.143.16.27    SEC.OE1WWL
-44.143.16.28    TER.OE1WWL
-44.143.16.30    OE1GWW
-44.143.16.31    OE3GMW
-44.143.16.32    OE3DNA
-44.143.16.33    OE3PHA
-44.143.16.34    OE1WCA
-44.143.16.35    OE3UGW
-44.143.16.36    OE1JEB
-44.143.16.37    OE1HHC
-44.143.16.38    OE1FWU
-44.143.16.39    OE1AZS
-44.143.16.40    OE1TKW
-44.143.16.41    OE1RMB
-44.143.16.42    WIEN.OE3DZW
-44.143.16.43    OE1DGG
-44.143.16.44    OE1PPA
-44.143.16.45    OE1GOB
-44.143.16.46    OE1MEB
-44.143.16.47    OE4CFC
-44.143.16.48    OE1HZA
-44.143.16.49    SEC.OE1HZA
-44.143.16.50    OE1RZB
-44.143.16.51    OE1DHK
-44.143.16.52    SEC.OE3GMW
-44.143.16.55    OE1YVW
-44.143.16.100   OE3KLU
-44.143.16.144   OE1KDA
-44.143.16.145   VERDI.OE1KDA
-44.143.16.146   TER.OE1KDA
-44.143.16.224   OE1XVR
-44.143.16.225   SEC.OE1XVR
-44.143.16.226   TER.OE1XVR
-44.143.16.227   QUART.OE1XVR
-44.143.16.228   QUINT.OE1XVR
+44.143.16.1          OE1XIR
+44.143.16.2          OE1XIB
+44.143.16.3          OE1XTR
+44.143.16.10         GW.OE1HMC
+44.143.16.11         SEC.OE1HMC
+44.143.16.12         TER.OE1HMC
+44.143.16.13         OE1HMC
+44.143.16.14         OE1DMW
+44.143.16.15         SEC.OE1DMW
+44.143.16.16         OE1MSB
+44.143.16.17         SEC.OE1MSB
+44.143.16.18         SP7MUD
+44.143.16.19         OE1MMA
+44.143.16.20         OE3GFS
+44.143.16.21         OE1SMC
+44.143.16.22         OE1CMS
+44.143.16.24         OE1GOU
+44.143.16.25         OE1YXU
+44.143.16.26         OE1WWL
+44.143.16.27         SEC.OE1WWL
+44.143.16.28         TER.OE1WWL
+44.143.16.30         OE1GWW
+44.143.16.31         OE3GMW
+44.143.16.32         OE3DNA
+44.143.16.33         OE3PHA
+44.143.16.34         OE1WCA
+44.143.16.35         OE3UGW
+44.143.16.36         OE1JEB
+44.143.16.37         OE1HHC
+44.143.16.38         OE1FWU
+44.143.16.39         OE1AZS
+44.143.16.40         OE1TKW
+44.143.16.41         OE1RMB
+44.143.16.42         WIEN.OE3DZW
+44.143.16.43         OE1DGG
+44.143.16.44         OE1PPA
+44.143.16.45         OE1GOB
+44.143.16.46         OE1MEB
+44.143.16.47         OE4CFC
+44.143.16.48         OE1HZA
+44.143.16.49         SEC.OE1HZA
+44.143.16.50         OE1RZB
+44.143.16.51         OE1DHK
+44.143.16.52         SEC.OE3GMW
+44.143.16.55         IR.OE1YVW
+44.143.16.100        OE3KLU
+44.143.16.144        OE1KDA
+44.143.16.145        VERDI.OE1KDA
+44.143.16.146        TER.OE1KDA
+44.143.16.224        OE1XUR
+44.143.16.225        SEC.OE1XUR
+44.143.16.226        TER.OE1XUR
+44.143.16.227        QUART.OE1XUR
+44.143.16.228        QUINT.OE1XUR
 44.143.17.105   9K6.OE1XAB    # [P] Mailbox, 1100 Wien
 44.143.17.106   9K6.OE1XAR    # [P] Testknoten, Wien
 44.143.17.107   9K6.OE1XLR    # [P] Knoten Laaberg, 1100 Wien
 44.143.17.108   OE1XTU        # [P] Radioklub der TU Wien
 44.143.18.1     OE1XAR
 44.143.18.14    OE1YVW
+44.143.20.10    OE3DZW
+44.143.20.11    OE1TKW
+44.143.20.14    LR.OE1YVW
 44.143.22.1     OE1XTU
 44.143.22.65    VENUS.OE1KIB
 44.143.22.66    SATURN.OE1KIB
@@ -6360,6 +6381,7 @@
 44.143.105.1   NET.OE9LKI #
 44.143.144.10   OE6OWG
 44.143.144.11   OE6LID
+44.143.144.12   OE6BPG
 44.143.144.14   OE6PTG
 44.143.146.11   OE6RHT
 44.143.146.12   OE6DLD
@@ -6404,6 +6426,7 @@
 44.143.225.21   NET.OE9LKI
 44.143.225.22   OE9MDV
 44.143.225.41   OE9RSV
+44.143.225.45   OE9TFH
 44.143.225.55   OE9GWV
 44.143.225.56   NET.OE9GWV
 44.143.241.1    MARS.OE1KIB   # Subnetz OE1KIB (Token Ring) 44.143.241.0/28
@@ -7268,6 +7291,7 @@
 44.161.1.11  lx2jl       lx2jl.ampr.org       # Jean-Luc, 1618 Luxembourg
 44.161.1.12  lx1kt       lx1kt.ampr.org       # Guy, 1924 Luxembourg
 44.161.1.100 lx0ist      lx0ist.ampr.org      # Tcp/Ip-Digi, Luxembourg
+44.161.1.101 lx0ist-1    lx0ist-1.ampr.org    # Internet-Gateway, Luxembourg
 44.161.2.1   lx1ar       lx1ar.ampr.org       # Alfred, 2172 Luxembourg
 44.161.2.2   lx1gh       lx1gh.ampr.org       # Georges, 2410 Luxembourg
 44.161.2.3   lx2jd       lx2jd.ampr.org       # Joseph, 2143 Luxembourg
@@ -7284,6 +7308,9 @@
 44.161.3.10  lx1zf       lx1zf.ampr.org       # Francis, 3940 Mondercange
 44.161.3.11  lx1hy       lx1hy.ampr.org       # Henri, 3260 Bettembourg
 44.161.3.12  lx1dm       lx1dm.ampr.org       # Marc, 3739 Rumelange
+44.161.3.13  lx1pf-1     lx1pf-1.ampr.org     # Pierre, 3322 Bivange
+44.161.3.100 lx0lnb      lx0lnb.ampr.org      # Tcp/Ip-Digi-GW, 3542 Dudelange
+44.161.3.101 lx0lnb-1    lx0lnb-1.ampr.org    # Tcp/Ip-Digi-GW, 3542 Dudelange
 44.161.4.1   lx1jr       lx1jr.ampr.org       # Roland, 4813 Rodange
 44.161.4.2   lx1jr-1     lx1jr-1.ampr.org     # Roland, 4813 Rodange
 44.161.4.3   lx9aa       lx9aa.ampr.org       # TELECO, 4122 Esch-Alzette
@@ -7303,6 +7330,7 @@
 44.161.4.17  lx1nw       linux.lx1nw.ampr.org # Michel, 4482 Soleuvre
 44.161.4.18  lx1nw       shack.lx1nw.ampr.org # Michel, 4482 Soleuvre
 44.161.4.19  lx2dx       lx2dx.ampr.org       # Jean-Claude, 4962 Clemency
+44.161.4.20  lx1ad       lx1ad.ampr.org       # Fernand, 4170 Esch-Alzette
 44.161.5.1   lx1db       lx1db.ampr.org       # Willy, 5254 Sandweiler
 44.161.5.2   lx1gv       lx1gv.ampr.org       # Guy, 5402 Assel
 44.161.5.3   lx1gv-1     lx1gv-1.ampr.org     # Guy, 5402 Assel
@@ -7310,6 +7338,7 @@
 44.161.5.5   lx2ar       lx2ar.ampr.org       # Angelo, 5816 Hesperange
 44.161.5.6   lx1sf       lx1sf.ampr.org       # Fernand, 5353 Oetrange
 44.161.5.7   lx1hw       lx1hw.ampr.org       # Hubert, 5351 Oetrange
+44.161.5.8   lx2gt       lx2gt.ampr.org       # Luc, 5471 Wellenstein
 44.161.6.1   lx1si       lx1si.ampr.org       # Marcel, 6979 Rameldange
 44.161.6.2   lx1se       lx1se.ampr.org       # Francois, 6160 Bourglinster
 44.161.6.3   lx1kq       lx1kq.ampr.org       # Mich, 6170 Godbrange
@@ -7317,7 +7346,7 @@
 44.161.6.5   lx1ht       lx1ht.ampr.org       # Ted, 6165 Ernster
 44.161.6.6   lx1jh       lx1jh.ampr.org       # Jean-Marie, 6869 Wecker
 44.161.6.7   lx2ec       lx2ec.ampr.org       # Edward, 6133 Junglinster
-44.161.6.8   lx2ec-m     lx2ec-m.ampr.org     # Edward, 6133 Junglinster
+44.161.6.8   lx2ec-2     lx2ec-2.ampr.org     # Edward, 6133 Junglinster
 44.161.6.9   lx2mp       lx2mp.ampr.org       # Sandro, 6633 Wasserbillig
 44.161.7.1   lx1jc       lx1jc.ampr.org       # Jean, 7206 Steinsel
 44.161.7.2   lx1pl       lx1pl.ampr.org       # Paul, 7381 Bofferdange
@@ -7336,3 +7365,8 @@
 44.161.8.11  lx1jm       lx1jm.ampr.org       # Jeng, 8361 Goetzingen
 44.161.8.12  lx1pa       lx1pa.ampr.org       # Arthur, 8015 Strassen
 44.161.9.1   lx1cw       lx1cw.ampr.org       # Gilbert, 9179 Oberfeulen
+44.161.9.2   lx1un       lx1un.ampr.org       # Alain, 9657 Harlange
+44.161.9.3   lx9un       lx9un.ampr.org       # Stausee Funker, 9657 Harlange
+44.161.9.100 lx0hst      lx0hst.ampr.org      # Tcp/Ip-Digi, Eschdorf
+44.161.9.101 lx0hst-1    lx0hst-1.ampr.org    # Tcp/Ip-Digi, Eschdorf
+44.161.9.102 lx0hst-2    lx0hst-2.ampr.org    # Tcp/Ip-Digi, Eschdorf
