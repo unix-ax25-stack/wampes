@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.2 1989/01/16 20:44:49 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.3 1989/01/16 21:44:52 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -23,10 +23,8 @@ char  **argv;
   struct sockaddr *addr;
   struct termio termio, termio_save;
 
-  /*****
+/*** server = (argc < 2) ? "loopback:netkbd" : argv[1]; ***/
   server = (argc < 2) ? "unix:/tcp/sockets/netkbd" : argv[1];
-  *****/
-  server = (argc < 2) ? "loopback:netkbd" : argv[1];
   if (!(addr = build_sockaddr(server, &addrlen))) {
     fprintf(stderr, "%s: Cannot build address from \"%s\"\n", argv[0], server);
     exit(1);
