@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.8 1990/03/19 12:33:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.9 1990/04/05 11:14:31 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -342,7 +342,6 @@ void check_time()
   if (!lasttime) lasttime = currtime;
   while (lasttime < currtime) { /* Handle possibility of several missed ticks */
     lasttime++;
-    icmpclk();                  /* Call this one before tick */
     tick();
     iss();
   }

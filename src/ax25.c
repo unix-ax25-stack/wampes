@@ -1,8 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.2 1990/02/12 11:55:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.3 1990/04/05 11:14:25 deyke Exp $ */
 
 /* Low level AX.25 frame processing - address header */
 
-#include <memory.h>
 #include <stdio.h>
 
 #include "global.h"
@@ -154,13 +153,11 @@ struct mbuf *bp;
 		    uchar(bp->data[15]);
       rt_add(src_ipaddr, 32, 0, 0, interface);
       tp = hw_addr;
-      memcpy(tp, axheader + AXALEN, AXALEN);
-      tp[6] = (tp[6] & SSID) | 0x60;
+      addrcp(axptr(tp), axptr(axheader + AXALEN));
       tp += AXALEN;
       fp = axheader + addrsize - AXALEN;
       while (fp > axheader + AXALEN) {
-	memcpy(tp, fp, AXALEN);
-	tp[6] = (tp[6] & SSID) | 0x60;
+	addrcp(axptr(tp), axptr(fp));
 	fp -= AXALEN;
 	tp += AXALEN;
       }

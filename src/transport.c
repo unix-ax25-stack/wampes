@@ -1,4 +1,5 @@
-#include <memory.h>
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.2 1990/04/05 11:14:44 deyke Exp $ */
+
 #include <string.h>
 
 #include "global.h"
@@ -23,7 +24,7 @@ int  mode, *last_chr;
 
   char  buf[10240], *p;
   int  chr, cnt;
-  struct mbuf *bp, *bp1;
+  struct mbuf *bp;
 
   p = buf;
   bp = *bpp;
@@ -55,13 +56,10 @@ int  mode, *last_chr;
       }
       *last_chr = chr;
     }
-    bp1 = bp;
-    bp = bp->next;
-    free((char *) bp1);
+    bp = free_mbuf(bp);
   }
   cnt = p - buf;
-  if (bp = alloc_mbuf(cnt)) memcpy(bp->data, buf, bp->cnt = cnt);
-  *bpp = bp;
+  *bpp = qdata(buf, cnt);
   return cnt;
 }
 
@@ -183,8 +181,7 @@ struct transport_cb *tp;
       if (setcall(axptr(pathptr), strptr)) return 0;
       if (pathptr == path) {
 	pathptr += AXALEN;
-	memcpy(pathptr, (char *) & mycall, AXALEN);
-	pathptr[6] &= ~E;
+	addrcp(axptr(pathptr), &mycall);
       }
       pathptr += AXALEN;
     }

@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.2 1990/04/05 11:14:34 deyke Exp $ */
+
 /* Internet Control Message Protocol */
 #include "global.h"
 #include "mbuf.h"
@@ -74,7 +76,8 @@ char rxbroadcast;
 	case PARAM_PROB:        /* Parameter Problem */
 		break;
        case ECHO_REPLY:         /* Echo Reply */
-		echo_proc(source,dest,&icmp);
+		echo_proc(source,dest,&icmp,bp);
+		bp = NULLBUF;   /* so it won't get freed */
 		break;
 	case TIMESTAMP:         /* Timestamp */
 	case TIME_REPLY:        /* Timestamp Reply */

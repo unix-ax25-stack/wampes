@@ -1,17 +1,22 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.h,v 1.2 1990/04/05 11:14:35 deyke Exp $ */
+
 /* Internet Control Message Protocol */
 
 /* Message types */
-#define ECHO_REPLY      0       /* Echo Reply */
-#define DEST_UNREACH    3       /* Destination Unreachable */
-#define QUENCH          4       /* Source Quench */
-#define REDIRECT        5       /* Redirect */
-#define ECHO            8       /* Echo Request */
-#define TIME_EXCEED     11      /* Time-to-live Exceeded */
-#define PARAM_PROB      12      /* Parameter Problem */
-#define TIMESTAMP       13      /* Timestamp */
-#define TIME_REPLY      14      /* Timestamp Reply */
-#define INFO_RQST       15      /* Information Request */
-#define INFO_REPLY      16      /* Information Reply */
+#define ECHO_REPLY              0       /* Echo Reply */
+#define DEST_UNREACH            3       /* Destination Unreachable */
+#define QUENCH                  4       /* Source Quench */
+#define REDIRECT                5       /* Redirect */
+#define ECHO                    8       /* Echo Request */
+#define TIME_EXCEED             11      /* Time-to-live Exceeded */
+#define PARAM_PROB              12      /* Parameter Problem */
+#define TIMESTAMP               13      /* Timestamp */
+#define TIME_REPLY              14      /* Timestamp Reply */
+#define INFO_RQST               15      /* Information Request */
+#define INFO_REPLY              16      /* Information Reply */
+#define ICMP_ADDR_MASK          17      /* Address mask request */
+#define ICMP_ADDR_MASK_REPLY    18      /* Address mask reply */
+#define ICMP_TYPES              19
 
 /* Internal format of an ICMP header (checksum is missing) */
 struct icmp {
@@ -53,7 +58,7 @@ struct icmp_errors {
 	unsigned noloop;                /* No ICMP in response to an ICMP */
 	unsigned bdcsts;                /* Ignore broadcast ICMPs */
 };
-#define ICMP_TYPES      17
+
 struct icmp_stats {
 	unsigned input[ICMP_TYPES];     /* ICMP input stats by type */
 	unsigned output[ICMP_TYPES];    /* ICMP output stats by type */

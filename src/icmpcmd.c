@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.2 1990/04/05 11:14:36 deyke Exp $ */
+
 /* ICMP-related user commands */
 #include <stdio.h>
 #include "global.h"
@@ -7,6 +9,7 @@
 #include "internet.h"
 #include "timer.h"
 #include "ping.h"
+#include "hpux.h"
 
 int
 doicmpstat()
@@ -35,15 +38,6 @@ doicmpstat()
 /* Hash table list heads */
 struct ping *ping[PMOD];
 
-/* Counter for generating seq numbers */
-static int16 iclk;
-
-/* Increment counter -- called by low level clock tick */
-icmpclk()
-{
-	iclk++;
-}
-
 /* Send ICMP Echo Request packets */
 doping(argc,argv)
 int argc;
@@ -56,17 +50,20 @@ char *argv[];
 	int16 hval,hash_ping();
 	int i;
 	char *inet_ntoa();
+	int16 len;
 
 	if(argc < 2){
-		printf("Host                Sent    Rcvd   %%   Avg RTT  Interval\n");
+		printf("Host                Sent    Rcvd   %%   Srtt   Mdev  Length  Interval\n");
 		for(i=0;i<PMOD;i++){
 			for(pp = ping[i];pp != NULLPING;pp = pp->next){
-				printf("%-16s",inet_ntoa(pp->remote));
-				printf("%8lu%8lu",pp->count,pp->echoes);
-				printf("%4lu%10lu%10lu\n",
-				 (long)pp->echoes * 100 / pp->count,
-				 pp->echoes != 0 ?
-				 (long)pp->ttotal * MSPTICK / pp->echoes : 0,
+				printf("%-16s",inet_ntoa(pp->target));
+				printf("%8lu%8lu",pp->sent,pp->responses);
+				printf("%4lu",
+				 (long)pp->responses * 100 / pp->sent);
+				printf("%7lu", pp->srtt);
+				printf("%7lu", pp->mdev);
+				printf("%8u", pp->len);
+				printf("%10lu\n",
 				 ((long)pp->timer.start * MSPTICK + 500) / 1000);
 			}
 		}
@@ -85,26 +82,30 @@ char *argv[];
 		printf("Host %s unknown\n",argv[1]);
 		return 1;
 	}
+	if(argc > 2)
+		len = atoi(argv[2]);
+	else
+		len = 0;
 	/* See if dest is already in table */
 	hval = hash_ping(dest);
 	for(pp = ping[hval]; pp != NULLPING; pp = pp->next){
-		if(pp->remote == dest){
+		if(pp->target == dest){
 			break;
 		}
 	}
-	if(argc > 2){
+	if(argc > 3){
 		/* Inter-ping time is specified; set up timer structure */
 		if(pp == NULLPING)
 			pp = add_ping(dest);
-		pp->timer.start = atoi(argv[2]) * (1000.0 / MSPTICK);
+		pp->timer.start = atoi(argv[3]) * (1000.0 / MSPTICK);
 		pp->timer.func = ptimeout;
 		pp->timer.arg = (char *)pp;
-		pp->remote = dest;
+		pp->target = dest;
+		pp->len = len;
 		start_timer(&pp->timer);
-		pp->count++;
-		pingem(dest,iclk,REPEAT);
+		pingem(dest,(int16)pp->sent++,REPEAT,len);
 	} else
-		pingem(dest,iclk,ONESHOT);
+		pingem(dest,0,ONESHOT,len);
 
 	return 0;
 }
@@ -118,57 +119,86 @@ char *p;
 
 	/* Send another ping */
 	pp = (struct ping *)p;
-	pp->count++;
-	pingem(pp->remote,iclk,REPEAT);
+	pingem(pp->target,(int16)pp->sent++,REPEAT,pp->len);
 	start_timer(&pp->timer);
 }
 /* Send ICMP Echo Request packet */
-static
-pingem(dest,seq,id)
-int32 dest;
-int16 seq;
-int16 id;
+static int
+pingem(target,seq,id,len)
+int32 target;   /* Site to be pinged */
+int16 seq;      /* ICMP Echo Request sequence number */
+int16 id;       /* ICMP Echo Request ID */
+int16 len;      /* Length of optional data field */
 {
+	struct mbuf *data;
 	struct mbuf *bp,*htonicmp();
 	struct icmp icmp;
 	extern struct icmp_stats icmp_stats;
 
+	if((data = alloc_mbuf((int16)(len+sizeof(currtime)))) == NULLBUF)
+		return -1;
+	data->cnt = len+sizeof(currtime);
+	/* Set optional data field, if any, to all 55's */
+	if(len != 0)
+		memset(data->data+sizeof(currtime),0x55,len);
+
+	/* Insert timestamp and build ICMP header */
+	memcpy(data->data,(char *)&currtime,sizeof(currtime));
 	icmp_stats.output[ECHO]++;
 	icmp.type = ECHO;
 	icmp.code = 0;
 	icmp.args.echo.seq = seq;
 	icmp.args.echo.id = id;
-	if((bp = htonicmp(&icmp,NULLBUF)) == NULLBUF)
+	if((bp = htonicmp(&icmp,data)) == NULLBUF){
+		free_p(data);
 		return 0;
-	return ip_send(ip_addr,dest,ICMP_PTCL,0,0,bp,len_mbuf(bp),0,0);
+	}
+	return ip_send(ip_addr,target,ICMP_PTCL,0,0,bp,len_mbuf(bp),0,0);
 }
 
 /* Called with incoming Echo Reply packet */
-int
-echo_proc(source,dest,icmp)
-int32 source,dest;
+echo_proc(source,dest,icmp,bp)
+int32 source;
+int32 dest;
 struct icmp *icmp;
+struct mbuf *bp;
 {
 	register struct ping *pp;
 	int16 hval,hash_ping();
-	int16 rtt;
 	char *inet_ntoa();
+	int32 timestamp,rtt,abserr;
 
-	rtt = iclk - icmp->args.echo.seq;
+	/* Get stamp */
+	if(pullup(&bp,(char *)&timestamp,sizeof(timestamp))
+	 != sizeof(timestamp)){
+		/* The timestamp is missing! */
+		free_p(bp);     /* Probably not necessary */
+		return;
+	}
+	free_p(bp);
+
+	rtt = (currtime - timestamp) * 1000l;
 	hval = hash_ping(source);
 	for(pp = ping[hval]; pp != NULLPING; pp = pp->next)
-		if(pp->remote == source)
+		if(pp->target == source)
 			break;
-	if(pp == NULLPING || icmp->args.echo.id != 1){
+	if(pp == NULLPING || icmp->args.echo.id != REPEAT){
 		printf("%s: echo reply id %u seq %u, %lu ms\n",
 		 inet_ntoa(source),
 		 icmp->args.echo.id,icmp->args.echo.seq,
-		 (long)rtt * MSPTICK);
+		 (long)rtt);
 		 fflush(stdout);
 	} else {
 		/* Repeated poll, just keep stats */
-		pp->ttotal += rtt;
-		pp->echoes++;
+		pp->responses++;
+		if(pp->responses == 1){
+			/* First response, base entire SRTT on it */
+			pp->srtt = rtt;
+		} else {
+			abserr = rtt > pp->srtt ? rtt - pp->srtt : pp->srtt - rtt;
+			pp->srtt = (7*pp->srtt + rtt + 4) >> 3;
+			pp->mdev = (3*pp->mdev + abserr + 2) >> 2;
+		}
 	}
 }
 static
@@ -216,7 +246,7 @@ struct ping *pp;
 	if(pp->prev != NULLPING) {
 		pp->prev->next = pp->next;
 	} else {
-		hval = hash_ping(pp->remote);
+		hval = hash_ping(pp->target);
 		ping[hval] = pp->next;
 	}
 	free((char *)pp);

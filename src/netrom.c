@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.10 1990/03/19 12:33:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.11 1990/04/05 11:14:39 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
@@ -254,6 +254,9 @@ static void link_manager_initialize()
 /****************************** Routing Manager ******************************/
 /*---------------------------------------------------------------------------*/
 
+#define NRRTDESTLEN     21      /* length of destination entry in */
+				/* nodes broadcast */
+
 struct link {
   struct node *node;
   struct linkinfo *info;
@@ -489,7 +492,7 @@ struct mbuf *bp;
 struct node *pn;
 {
 
-  char  buf[AXALEN+IDENTLEN+AXALEN+1];
+  char  buf[NRRTDESTLEN];
   char  id;
   char  ident[IDENTLEN];
   int  quality;
@@ -500,9 +503,10 @@ struct node *pn;
   if (pn == mynode) goto discard;
   if (pullup(&bp, &id, 1) != 1 || uchar(id) != 0xff) goto discard;
   if (pullup(&bp, ident, IDENTLEN) != IDENTLEN) goto discard;
+  if (len_mbuf(bp) % NRRTDESTLEN) goto discard;
   if (*ident > ' ') memcpy(pn->ident, ident, IDENTLEN);
   update_link(mynode, pn, 1, nr_hfqual);
-  while (pullup(&bp, buf, sizeof(buf)) == sizeof(buf)) {
+  while (pullup(&bp, buf, NRRTDESTLEN) == NRRTDESTLEN) {
     if (ismycall(axptr(buf))) continue;
     pd = nodeptr(axptr(buf), 1);
     if (buf[AXALEN] > ' ') memcpy(pd->ident, buf + AXALEN, IDENTLEN);
@@ -573,7 +577,7 @@ static void send_broadcast()
 	  addrcp(axptr(p), pn->neighbor ? pn->neighbor->call : pn->call);
 	  p += AXALEN;
 	  *p++ = pn->quality;
-	  if ((bp->cnt = p - bp->data) > 256 - 21) {
+	  if ((bp->cnt = p - bp->data) > 256 - NRRTDESTLEN) {
 	    send_broadcast_packet(bp);
 	    routes_stat.sent++;
 	    bp = NULLBUF;

@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpmsg.c,v 1.2 1990/04/05 11:14:38 deyke Exp $ */
+
 #include "global.h"
 /* ICMP message types */
 char *icmptypes[] = {
@@ -17,7 +19,9 @@ char *icmptypes[] = {
 	"Timestamp",
 	"Timestamp Reply",
 	"Information Request",
-	"Information Reply"
+	"Information Reply",
+	"Address Mask Request",
+	"Address Mask Reply"
 };
 
 /* ICMP unreachable messages */

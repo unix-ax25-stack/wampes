@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.7 1990/03/23 12:10:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.8 1990/04/05 11:14:27 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
@@ -99,7 +99,7 @@ int  create;
   int  hashval;
   register struct axroute_tab *rp;
 
-  hashval = axroute_hash(call);
+  hashval = axroute_hash((char *) call);
   for (rp = axroute_tab[hashval]; rp && !addreq(&rp->call, call); rp = rp->next) ;
   if (!rp && create) {
     rp = (struct axroute_tab *) calloc(1, sizeof(struct axroute_tab ));
@@ -567,12 +567,12 @@ int  reverse;
   for (ap = newpath; !(ap[6] & E); ap += AXALEN) ;
   cp->pathlen = ap - newpath + AXALEN;
   if (reverse) {
-    memcpy(cp->path, newpath + AXALEN, AXALEN);
-    memcpy(cp->path + AXALEN, newpath, AXALEN);
+    addrcp(axptr(cp->path), axptr(newpath + AXALEN));
+    addrcp(axptr(cp->path + AXALEN), axptr(newpath));
     for (tp = cp->path + 2 * AXALEN;
 	 tp < cp->path + cp->pathlen;
 	 tp += AXALEN, ap -= AXALEN)
-      memcpy(tp, ap, AXALEN);
+      addrcp(axptr(tp), axptr(ap));
   } else
     memcpy(cp->path, newpath, cp->pathlen);
 
@@ -612,7 +612,7 @@ int  reverse;
       if (rp->digi && cp->pathlen < sizeof(cp->path)) {
 	len = (cp->path + cp->pathlen) - ap;
 	if (len) memcpy(buf, ap, len);
-	memcpy(ap, &rp->digi->call, AXALEN);
+	addrcp(axptr(ap), &rp->digi->call);
 	if (len) memcpy(ap + AXALEN, buf, len);
 	cp->pathlen += AXALEN;
       }
@@ -1185,8 +1185,7 @@ char  *argv[];
     }
     if (p == cb.path) {
       p += AXALEN;
-      memcpy(p, (char *) &mycall, AXALEN);
-      p[6] &= ~E;
+      addrcp(axptr(p), &mycall);
     }
     p += AXALEN;
   }
