@@ -1,10 +1,10 @@
-ANSI          =
 ANSI          = -Aa -D_HPUX_SOURCE
+ANSI          =
 
 DEFINES       = -DUNIX
 
-CFLAGS        = $(ANSI) $(DEFINES) -O
 CFLAGS        = $(ANSI) $(DEFINES) -g
+CFLAGS        = $(ANSI) $(DEFINES) -O
 
 DEST          = /tcp
 
@@ -137,6 +137,8 @@ OBJS          = 8250.o \
 		ripdump.o \
 		services.o \
 		session.o \
+		setsp.o \
+		setsp.o \
 		slip.o \
 		smisc.o \
 		stime.o \
@@ -236,6 +238,8 @@ SRCS          = 8250.c \
 		ripdump.c \
 		services.c \
 		session.c \
+		setsp.c \
+		setsp.s \
 		slip.c \
 		smisc.c \
 		stime.c \
@@ -264,13 +268,13 @@ SRCS          = 8250.c \
 
 all:            $(PROGRAM)
 
-setsp.o:        setsp.300 setsp.800
-		if hp9000s300; then as setsp.300 -o setsp.o; fi
-		if hp9000s800; then as setsp.800 -o setsp.o; fi
+setsp.o:        setsp.c
+		-$(CC) -E $(CFLAGS) $< > setsp.s
+		-as setsp.s
 
-$(PROGRAM):     $(OBJS) setsp.o $(LIBS)
+$(PROGRAM):     $(OBJS) $(LIBS)
 		@echo "Linking $(PROGRAM) ..."
-		@$(LD) $(LDFLAGS) $(OBJS) setsp.o $(LIBS) -o $(PROGRAM)
+		@$(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM)
 
 clean:;         @rm -f $(OBJS) *.o core
 
