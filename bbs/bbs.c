@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.23 1991/06/15 20:29:37 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.24 1991/06/17 13:23:39 deyke Exp $";
 
 #define _HPUX_SOURCE 1
 
@@ -55,6 +55,10 @@ extern struct sockaddr *build_sockaddr(char *name, int *addrlen);
 #define USER        0
 #define MBOX        1
 #define ROOT        2
+
+#define BBS         0
+#define RMAIL       1
+#define RNEWS       2
 
 #define LEN_BID     12
 #define LEN_SUBJECT 80
@@ -130,6 +134,7 @@ static int  fdindex;
 static int  fdlock = -1;
 static int  fdseq;
 static int  level;
+static int  mode = BBS;
 static struct user user;
 static volatile int stopped;
 
@@ -435,6 +440,7 @@ static void get_seq(void)
   char  buf[16];
   char  fname[1024];
 
+  if (mode != BBS) return;
   sprintf(fname, "%s/%s", user.dir, SEQFILE);
   setresgid(user.gid, user.gid, 1);
   setresuid(user.uid, user.uid, 0);
@@ -457,7 +463,7 @@ static void put_seq(void)
   char  buf[16];
   int  n;
 
-  if (debug) return;
+  if (mode != BBS || debug) return;
   if ((n = sprintf(buf, "%d\n", user.seq)) < 2) halt();
   if (lseek(fdseq, 0l, 0)) halt();
   if (write(fdseq, buf, (unsigned) n) != n) halt();
@@ -2170,16 +2176,11 @@ static void rnews(void)
 int main(int argc, char **argv)
 {
 
-#define BBS   0
-#define RMAIL 1
-#define RNEWS 2
-
   char  *dir = WRKDIR;
   char  *sysname;
   char  buf[1024];
   int  c;
   int  err_flag = 0;
-  int  mode = BBS;
   struct passwd *pw;
 
   trap_signal(SIGINT,  interrupt_handler);
