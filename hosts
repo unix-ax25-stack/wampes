@@ -1498,52 +1498,55 @@
 44.130.23.40    DG1DCN  # Marc Noeker, Lennestadt: Amiga 2000
 44.130.23.102   DK3AK-14        # Siegmar Krause, 5982 Neuenrade
 #
-#44.130.144.x   Bielefeld
-# --- lokale Adresskoordination: DL3YEN
-#44.130.144...  fuer Digipeater und Mailbox BI/Oerlinghausen
-44.130.144.1    DB0NOS  # TCP/IP Server, Oerlinghausen; ***
-44.130.144.2    FTP.DB0NOS      # FTP-Server
-44.130.144.16   DL3YEN  # Wolfgang Beckmann, 33544 Bielefeld; AT
+#44.130.144.xxx Bielefeld/Oerlinghausen Stand 08.02.95
+44.130.144.1    DB0NOS  # TCP/IP-Svr Oerlinghausen ***
+44.130.144.2    FTP.DB0NOS              # FTP-Svr Oerlinghausen ***
+#44.130.144.3-44.130.144.15 fuer DB0NOS-Peripherie und Subrechner
+44.130.144.16   DL3YEN  # Wolf, Bielefeld
 44.130.144.17   KR4PH   #
-44.130.144.18   DL8KD   # Roland Werner, 4811 Oerlinghausen; Amiga
+44.130.144.18   DL8KD   # Roland, Oerlinghausen
 44.130.144.19   SYS2.DL8KD      #
-44.130.144.20   DG6YGD  # Dirk Wacker, Augustdorf
-44.130.144.21   DL2YEN  # Tom Woller, 4930 Detmold
-44.130.144.22   DG7YBQ  # Uwe Herrmann, 4800 Bielefeld 14; Amiga
-44.130.144.23   DL9YEM  # Stefan Rupprecht, 4815 Schloss-Holte-Stukenbrock
-44.130.144.24   DG6YDZ  # Dieter Hergast, 4811 Oerlinghausen
-44.130.144.25   DH4YAJ  # Carl-Christian Mueller, 4800 Bielefeld 11; Amiga
-44.130.144.26   DG8YFL  # Karl-Heinz Reisner, Bielefeld; Amiga
-44.130.144.27   DG6YL   # Herbert Wienciers, Augustdorf
+44.130.144.20   DG6YGD  # Dirk, Detmold
+44.130.144.21   DL2YEN  # Tom, Detmold
+44.130.144.22   DG7YBQ  # Uwe, Bielefeld
+44.130.144.23   DL9YEM  # Stefan, Schloss Holte
+44.130.144.24   DG6YDZ  # Dieter, Oerlinghausen
+44.130.144.25   DH4YAJ  # Christian, Bielefeld
+44.130.144.26   DG8YFL  # Karl-Heinz, Bielefeld
+44.130.144.27   DG6YL   # Herbert, Augustdorf
 44.130.144.28   DL8YEA  # Peter, Bielefeld
-44.130.144.29   DG3YFS  # Raymond Beard, Stromberg
-44.130.144.30   DH6YAY  # Stefan, Guetersloh
+44.130.144.29   DG3YFS  # Raymond, Stromberg
+44.130.144.30   DH6YAY  # Stefan, GÅtersloh
 44.130.144.31   AA2RL   #
-44.130.144.32   DG9YGJ  # Stefan Liebner, 4986 Roedinghausen; IBM386
-44.130.144.33   SYS1.DG8YAY     # Joerg Frommenjohann, 4800 Bielefeld 1
-44.130.144.34   SYS2.DG8YAY     #
-44.130.144.35   DL5YDE  # Ernst Luehr, 4815 Schloss-Holte-Stukenbrock
+44.130.144.32   DG9YGJ  # Stefan, Roedinghausen
+44.130.144.33   SYS1.DG8YAY             # Joerg, Bielefeld
+44.130.144.34   SYS2.DG8YAY             #
+44.130.144.35   DL5YDE  # Ernst, Stukenbrock
 44.130.144.36   DG4YDB  # Michael, Bielefeld
 44.130.144.37   DG7YHV  # Juergen
-44.130.144.38   DG6YGF  # Erhard Golling, Bielefeld; Amiga
+44.130.144.38   DG6YGF  # Erhard, Bielefeld
 44.130.144.39   DG4YHU  # Stephan, Detmold
-44.130.144.40   DL3YEO  # Heiko, Bielefeld
+44.130.144.40   DL3YEO  # Herko, Bielefeld
 44.130.144.41   DG8YHT  # Jens, Detmold
 44.130.144.42   DH9YAX  # Udo, Verl
 44.130.144.43   DL1YDI  # Dirk, Steinhagen
 44.130.144.44   DL5YEQ  # Jens, Bielefeld
-44.130.144.45   DH2YAU  # Andreas, Bielefeld
-44.130.144.46   DB0CGS  # Contest-Gruppe Senne (DH2YAU)
-44.130.144.48   DG1YHN  # Sven, Paderborn
-44.130.144.49   DL1YCG  # Andreas, Bielefeld-Senne
-44.130.144.50   DB9WT   # Hans Buth, 49186 Bad Iburg
-44.130.144.51   DB9WT-2 #
-44.130.144.56   DK3RC   # Horst Brueggemann, 4930 Detmold
-44.130.144.57   DK3RC-1 # Horst Brueggemann, Bielstein
-44.130.144.58   DL0JW   # Clubstn N58, 4811 Oerlinghausen (DL8KD)
-44.130.144.60   LINUX.DG6YGD    # Dirk, Detmold
+44.130.144.45   DH2YAU  # Andreas,Bielefeld
+44.130.144.46   DB0CGS  # Clubstation,Bielefeld
+44.130.144.47   DL3YGK-1        # Frank
+44.130.144.48   DG1YHN  # Sven
+44.130.144.49   DL1YCG  # Andreas Bielefeld-Senne I
+44.130.144.50   DB9WT   # Hans, Bad Iburg
+44.130.144.51   DB9WT-2 # Hans, Bad Iburg
+44.130.144.52   DG5DBV  # Oli, Lippetal (Gestinghausen),Rechner 1 DOS/WIN
+44.130.144.53   DG5DBV-7        # Oli,Lippetal (Gestinghausen), Rechner 2 Linux/Netware
+44.130.144.54   DG7YHQ  # Friedhelm,Schloss-Holte
+44.130.144.56   DK3RC   # Horst, Detmold
+44.130.144.57   DK3RC-1 # Horst, Bielstein
+44.130.144.58   DL0JW   # Clubstation N58, Oerlinghausen
+44.130.144.60   Linux.DG6YGD            # Dirk, Detmold
 44.130.144.66   DG1YAY  # Christof, Buende
-44.130.144.67   DG1YAY-7        # ; IP-Router
+44.130.144.67   DG1YAY-7        # TCP/IP-Router # Christof Buende
 #
 #44.130.147.x   Siegen
 44.130.147.1    DJ5ZD   # Alexander, Bad Laasphe
@@ -3242,17 +3245,16 @@
 44.130.87.11    DG1HQB-1        # Jens, Bonau nr Teuchern
 #
 #44.130.88.x    Leipzig
-# --- lokale Adresskoordination: DL9WUM
-44.130.88.1     DL8WPM  # Henry Luedemann, O-7010 Leipzig; AT (ex Y22PM)
-44.130.88.2     DL8WIZ  # Micha, Leipzig (ex Y49FM)
-44.130.88.3     DL9WIZ  # Ron, Leipzig (ex Y49GM)
+# lokale Adresskoordination: DL9WUM
+44.130.88.1     DL8WPM  # Henry Luedemann, Leipzig
+44.130.88.2     DL8WIZ  # Micha Neumann, Leipzig  ax25: DL8WIZ-2
+44.130.88.3     DL9WIZ  # Ron Ruemmler, Leipzig
 44.130.88.4     DL3LST  # Rainer Streubel, Leipzig
 44.130.88.5     DL3LSM-2        # Mario Illgen
 44.130.88.6     DL9WUM  # Rolf Lieske, 04207 Leipzig
-44.130.88.7     Y23VE   # Aldo Jesovka, O-7010 Leipzig
-44.130.88.10    DL8WKR  # Knut Rothe, O-7220 Pegau
-44.130.88.11    DL2LQB  # Michael Wollschlaeger, O-7222 Groitzsch
-44.130.88.13    DG0LDK-TEST     #
+44.130.88.10    DL8WKR  # Knut Rothe, Pegau
+44.130.88.11    DL2LQB  # Michael Wollschlaeger, Groitzsch
+44.130.88.13    DG0LDK-TEST # Wolfgang Winter, 04357 Leipzig  ax25: DG0LDK-2
 44.130.88.14    DD3DA   # Joerg Schlottmann, Leipzig
 44.130.88.15    DG3LSW  # Joachim Hilprecht, Leipzig
 44.130.88.16    DL6YTM  # Peter Wilkert, 04685 Nerchau
@@ -3261,23 +3263,25 @@
 44.130.88.19    DL5YYM  # Guenter Dornblut, 04179 Leipzig
 44.130.88.20    DG0LDK  # Wolfgang Winter, 04357 Leipzig
 44.130.88.21    DG0LGJ  # Torsten, Rosswein
-44.130.88.22    DG0LGF  # Axel Maercker, Leipzig
-44.130.88.23    DG0LGA  # Raoul Brosch, Markkleeberg
+44.130.88.22    DG0LGF  # Axel Maercker, Leipzig  ax25: DG0LGF-14
 44.130.88.24    DG0LHW  # Mike Wittenbecher, 04315 Leipzig
 44.130.88.25    DL8LWH  # Hendrik Wendschuch, Leipzig
 44.130.88.26    DL5YRM  # Tom Bolle, Leipzig
-44.130.88.28    DG2LWD  # Andread Donat, 04347 Leipzig
-44.130.88.27    DG2LWH  # Holger Baumgaertner, 04347 Leipzig
+44.130.88.28    DG2LWD  # Andreas Donat, 04347 Leipzig
 44.130.88.29    DG0LHL  # Wilfried Ploog, 04349 Leipzig
-44.130.88.30    DG0LGA-OS2      # ; AX25: DG0LGA-2
 44.130.88.31    DG0LSK  # Klaus Schollmeyer, 04299 Leipzig
 44.130.88.32    DG0LJS  # Achim Schulze, 04209 Leipzig
-44.130.88.33    DG0LDK-U        #
-44.130.88.34    DG2LWH-2        #
-44.130.88.35    DL1LRK  # Uwe Kasubek, Delitzsch
+44.130.88.33    DG0LDK-U # Linux-System  ax25: DG0LDK-1
 44.130.88.36    DG0LEH  # Edgar Hornig, 04277 Leipzig
-44.130.88.37    DL1LQA  # Jo Hoppe, 04229 Leipzig
-44.130.88.100   DB0LPZ-SVR      # ; AX25: DB0LPZ-10
+44.130.88.37    DL2LQA  # Jo Hoppe, 04229 Leipzig
+44.130.88.38    DB5RB   # Raoul Brosch, Markkleeberg
+44.130.88.39    DC6HB   # Holger Baumgaertner, 04157 Leipzig
+44.130.88.40    DC6HB-2 # System2  ax25: DC6HB-2
+44.130.88.41    DB5RB-2 # System2  ax25: DB5RB-2
+44.130.88.42    DF8MM   # Uwe Kasubek, Delitzsch
+44.130.88.43    DL1DRZ  # Wilfried Reil, 04157 Leipzig
+#
+44.130.88.100   DB0LPZ-SVR  # ax25: DB0LPZ-10
 #
 #44.130.89.x    Chemnitz
 44.130.89.1     Y28PN   # Uwe Huebner, O-9052 Chemnitz; UNIX/NOS
@@ -6061,7 +6065,7 @@
 44.144.22.1     on1abr  on1abr.ampr.org #Igor,Grimbergen
 #
 #
-#  May 28th,1995
+#  August 27th,1995
 #
 #
 #  44.151       Pierre-Francois MONET  f5bqp  (FRANCE)
@@ -6069,8 +6073,10 @@
 #
 #               BBS      :   f5bqp@ff6ptt-1
 #               Internet :   pf@paris.csd.harris.com
+#
 
-44.151.1.1      f1iqa f1iqa.ampr.org
+44.151.1.1      f5iqa f5iqa.ampr.org
+44.151.1.2      f5iqa-1 f5iqa-1.ampr.org
 
 44.151.2.1      f5jvi f5jvi.ampr.org
 
@@ -6139,6 +6145,7 @@
 44.151.31.1     f6css f6css.ampr.org
 44.151.31.2     f1foy f1foy.ampr.org
 44.151.31.3     f1jtr f1jtr.ampr.org
+44.151.31.4     f6bhk f6bhk.ampr.org
 
 44.151.33.1     f5nnn f5nnn.ampr.org
 44.151.33.2     f1ont f1ont.ampr.org
@@ -6156,6 +6163,7 @@
 44.151.34.5     f1ert f1ert.ampr.org
 44.151.34.6     fa1aez fa1aez.ampr.org
 44.151.34.7     f1jkj f1jkj.ampr.org
+44.151.34.8     f5uhx f5uhx.ampr.org
 
 44.151.36.1     f6ctb f6ctb.ampr.org
 
@@ -6194,6 +6202,11 @@
 44.151.38.33    f1rmb f1rmb.ampr.org
 44.151.38.34    f5ods f5ods.ampr.org
 44.151.38.35    f6ban f6ban.ampr.org
+44.151.38.36    f1smf-1 f1smf-1.ampr.org
+44.151.38.37    f1svs f1svs.ampr.org
+44.151.38.38    f1rmb-1 f1rmb-1.ampr.org
+44.151.38.39    f5kmr f5kmr.ampr.org
+44.151.38.40    f5kmr-1 f5kmr-1.ampr.org
 44.151.38.100   f5puy-9 f5puy-9.ampr.org
 44.151.38.108   f5git-1 f5git-1.ampr.org
 44.151.38.109   f5git-2 f5git-2.ampr.org
@@ -6250,6 +6263,9 @@
 44.151.49.3     f9yb f9yb.ampr.org
 44.151.49.4     f1tro f1tro.ampr.org
 44.151.49.5     f6djc f6djc.ampr.org
+
+44.151.50.1     f1rzn f1rzn.ampr.org
+44.151.50.2     f1rzn-1 f1rzn-1.ampr.org
 
 44.151.51.1     f1zi f1zi.ampr.org
 44.151.51.2     f6ajk f6ajk.ampr.org
@@ -6316,6 +6332,10 @@
 44.151.57.30    f5ocp f5ocp.ampr.org
 44.151.57.31    f5eli f5eli.ampr.org
 44.151.57.32    f1apy f1apy.ampr.org
+44.151.57.33    f6aky f6aky.ampr.org
+44.151.57.34    f5ojo f5ojo.ampr.org
+44.151.57.35    f5gel f5gel.ampr.org
+44.151.57.36    f5ulr f5ulr.ampr.org
 
 44.151.59.1     f3cf f3cf.ampr.org
 44.151.59.2     f6btx f6btx.ampr.org
@@ -6357,6 +6377,11 @@
 44.151.59.38    f6kju f6kju.ampr.org
 44.151.59.39    fa1tza fa1tza.ampr.org
 44.151.59.40    fa1tyt fa1tyt.ampr.org
+44.151.59.41    fb1nhf fb1nhf.ampr.org
+44.151.59.42    f5lfh f5lfh.ampr.org
+44.151.59.43    f1not f1not.ampr.org
+44.151.59.44    fa1ayr fa1ayr.ampr.org
+44.151.59.45    f5ohw-8 f5ohw-8.ampr.org
 44.151.59.170   f1gyg-59 f1gyg-59.ampr.org
 
 44.151.60.1     f9so f9so.ampr.org
@@ -6377,6 +6402,7 @@
 44.151.62.10    f1ths f1ths.ampr.org
 44.151.62.11    f5gnu f5gnu.ampr.org
 44.151.62.12    f5nud f5nud.ampr.org
+44.151.62.13    f5ohw f5ohw.ampr.org
 
 44.151.63.2     f6cbl-3 f6cbl-3.ampr.org
 44.151.63.3     f6cbl-4 f6cbl-4.ampr.org
@@ -6414,6 +6440,7 @@
 44.151.67.18    f6jfd f6jfd.ampr.org
 44.151.67.19    f5lkh f5lkh.ampr.org
 44.151.67.20    f1iqi f1iqi.ampr.org
+44.151.67.21    fa1ovv fa1ovv.ampr.org
 
 44.151.68.1     f1aan f1aan.ampr.org
 44.151.68.2     f5sny f5sny.ampr.org
@@ -6422,7 +6449,7 @@
 44.151.68.5     f6ary f6ary.ampr.org
 44.151.68.6     f6avw f6avw.ampr.org
 44.151.68.7     f1ipi f1ipi.ampr.org
-44.151.68.8     f5uii f5uii.ampr.org
+44.151.68.8     f1uii f1uii.ampr.org
 
 44.151.69.1     f5pql f5pql.ampr.org
 44.151.69.2     f8kly f8kly.ampr.org
@@ -6432,7 +6459,9 @@
 44.151.69.6     f1iap f1iap.ampr.org
 44.151.69.7     f5rhy f5rhy.ampr.org
 44.151.69.8     f1roe f1roe.ampr.org
+44.151.69.9     fa1thn fa1thn.ampr.org
 44.151.69.10    f1its f1its.ampr.org
+44.151.69.11    fa1thn fa1thn.ampr.org
 
 44.151.70.1     f6cuo f6cuo.ampr.org
 44.151.70.2     f6cuo-1 f6cuo-1.ampr.org
@@ -6482,6 +6511,7 @@
 44.151.77.14    f6kse f6kse.ampr.org
 44.151.77.15    f5hpe f5hpe.ampr.org
 44.151.77.16    f1afw f1afw.ampr.org
+44.151.77.17    fa1ukp fa1ukp.ampr.org
 
 44.151.78.1     f5dh f5dh.ampr.org
 44.151.78.2     f6fgo f6fgo.ampr.org
@@ -6601,7 +6631,8 @@
 44.151.91.48    f1tpm f1tpm.ampr.org
 44.151.91.49    f1tpm-1 f1tpm-1.ampr.org
 44.151.91.50    f5teo f5teo.ampr.org
-44.151.91.51    f1euc-3 f1euc.ampr.org
+44.151.91.51    f1euc-3 f1euc-3.ampr.org
+44.151.91.52    f1ius f1ius.ampr.org
 44.151.91.60    f1gyg-1 f1gyg-1.ampr.org
 44.151.91.96    f5bqp-9 f5bqp-9.ampr.org
 44.151.91.112   dl7mw dl7mw.ampr.org
@@ -6623,7 +6654,7 @@
 44.151.92.96    f1tdi-9 f1tdi-9.ampr.org
 
 44.151.93.1     f6itu f6itu.ampr.org
-44.151.93.2     f1lff f1lff.ampr.org
+44.151.93.2     f5lff f5lff.ampr.org
 44.151.93.3     f5dys f5dys.ampr.org
 44.151.93.4     f5lrg f5lrg.ampr.org
 44.151.93.5
@@ -6667,11 +6698,16 @@
 44.151.95.5     f6huk f6huk.ampr.org
 44.151.95.6     f2kx f2kx.ampr.org
 44.151.95.7     f6bzo f6bzo.ampr.org
-44.151.95.8
+44.151.95.8     f1uff f1uff.ampr.org
 44.151.95.9     f6bne f6bne.ampr.org
 44.151.95.10    f1ciy f1ciy.ampr.org
 44.151.95.11    f1dru f1dru.ampr.org
 44.151.95.12    f6htz f6htz.ampr.org
+44.151.95.13    f6bzu f6bzu.ampr.org
+44.151.95.14    f6htz-1 f6htz-1.ampr.org
+44.151.95.15    fa1prv fa1prv.ampr.org
+44.151.95.16    fa1tpg fa1tpg.ampr.org
+44.151.95.17    fa1tpg-1 fa1tpg-1.ampr.org
 44.151.95.73    f6bzo-1 f6bzo-1.ampr.org
 
 ###
