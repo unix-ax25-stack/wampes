@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/route,v 1.4 1994/07/27 09:47:59 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/route,v 1.5 1994/08/05 10:36:29 deyke Exp $
 .H 2 "route" " [\fIsubcommand\fP]"
 Without an argument, display the IP routing table.
 .H 3 "route add" " \fIhostid\fP[/\fIbits\fP]|default \fIinterface\fP [\fIgateway_hostid\fP [\fImetric\fP]]"
@@ -62,20 +62,20 @@ route add 44.0.0.3 sl0
 .DS I
 .ft CW
 # Route all default traffic to the gateway on the local Ethernet
-# with IP address 44.0.0.1
+# with IP address 44.0.0.1.
 route add default ec0 44.0.0.1
 .ft P
 .DE
 .DS I
 .ft CW
 # The local Ethernet has an ARPA Class-C address assignment.
-# Route all IP addresses beginning with 192.4.8 to it
+# Route all IP addresses beginning with 192.4.8 to it.
 route add 192.4.8/24 ec0
 .ft P
 .DE
 .DS I
 .ft CW
-# The station with IP address 44.0.0.10 is on the local AX.25 channel
+# The station with IP address 44.0.0.10 is on the local AX.25 channel.
 route add 44.0.0.10 ax0
 .ft P
 .DE

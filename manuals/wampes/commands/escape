@@ -1,5 +1,6 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/escape,v 1.3 1994/07/27 09:47:54 deyke Exp $
-.H 2 "escape" " [\fIchar\fP]"
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/escape,v 1.4 1994/08/05 10:36:24 deyke Exp $
+.H 2 "escape" " [\fIcharacter\fP]"
 Display or set the current command-mode escape character.
-Control characters have to be prefixed by control-V.
-The default is control-] (0x1d).
+To enter a control character from the keyboard it has
+to be prefixed by Control-V.
+The default is Control-] (0x1d, ASCII GS).

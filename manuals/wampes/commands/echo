@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/echo,v 1.2 1994/07/27 09:47:54 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/echo,v 1.3 1994/08/05 10:36:24 deyke Exp $
 .H 2 "echo" " [accept|refuse]"
 Display or set the flag controlling client Telnet's response to
 a remote WILL ECHO offer.
@@ -9,8 +9,7 @@ of a negotiated agreement to the contrary, neither end echoes
 data received from the other. In this mode, a Telnet client
 session echoes keyboard input locally and nothing is actually
 sent until a carriage return is typed. Local line editing is
-also performed: backspace deletes the last character typed,
-while control-U deletes the entire line.
+also performed, see the \fBConsole modes\fP chapter.
 .P
 When communicating from keyboard to keyboard the standard local
 echo mode is used, so the setting of this parameter has no

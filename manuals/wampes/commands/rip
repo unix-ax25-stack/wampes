@@ -1,9 +1,9 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/rip,v 1.4 1994/07/27 09:47:58 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/rip,v 1.5 1994/08/05 10:36:29 deyke Exp $
 .H 2 "rip" " \fIsubcommand\fP"
 These commands control the Routing Information Protocol (RIP) service.
-.H 3 "rip accept" " \fIgateway\fP"
-Remove the specified gateway from the RIP filter table, allowing future
-broadcasts from that gateway to be accepted.
+.H 3 "rip accept" " \fIhostid\fP"
+Remove the specified host from the RIP filter table, allowing future
+broadcasts from that host to be accepted.
 .H 3 "rip add" " \fIhostid\fP \fIseconds\fP [\fIflags\fP]"
 Add an entry to the RIP broadcast table. The IP routing table will be sent
 to \fIhostid\fP every interval of \fIseconds\fP. If
@@ -13,7 +13,7 @@ for this destination. That is, any IP routing table entries pointing to the
 interface that will be used to send this update will be removed from the
 update. If split horizon processing is not specified, then all routing
 table entries except those marked "private" will be sent in each update.
-(Private entries are never sent in RIP packets).
+Private entries are never sent in RIP packets.
 .P
 Triggered updates are always done. That is, any change in the routing table
 that causes a previously reachable destination to become unreachable will
@@ -24,23 +24,17 @@ Note that for RIP packets to be sent properly to a broadcast address, there
 must exist correct IP routing and ARP table entries that will first steer
 the broadcast to the correct interface and then place the correct link-level
 broadcast address in the link-level destination field. If a standard IP
-broadcast address convention is used (eg. 128.96.0.0 or 128.96.255.255)
+broadcast address convention is used (eg. 44.255.255.255)
 then chances are you already have the necessary IP routing table entry, but
 unusual subnet or cluster-addressed networks may require special attention.
 However, an \fBarp add\fP command will be required to translate this address to
-the appropriate link level broadcast address. For example,
-.DS I
-.ft CW
-arp add 128.96.0.0 ethernet ff:ff:ff:ff:ff:ff
-.ft P
-.DE
-for an Ethernet network, and
+the appropriate link level broadcast address. For example:
 .DS I
 .ft CW
 arp add 44.255.255.255 ax25 qst-0
 .ft P
 .DE
-for an AX25 packet radio channel.
+for an AX.25 packet radio channel.
 .H 3 "rip drop" " \fIhostid\fP"
 Remove an entry from the RIP broadcast table.
 .H 3 "rip merge" " [on|off]"
@@ -52,26 +46,25 @@ entry already in the table. That is, the target address(es) specified
 by the entry in question must also match the target addresses of the
 less specific entry and the two entries must have the same interface
 and gateway fields. For example, if the routing table contains
-.DS I
 .TS
-tab(;) ;
+center tab(;) ;
 lB lB lB lB lB lB lB lB
 l l l l l l l l.
 Dest;Len;Interface;Gateway;Metric;P;Timer;Use
 1.2.3.4;32;ethernet0;128.96.1.2;1;0;0;0
 1.2.3;24;ethernet0;128.96.1.2;1;0;0;0
 .TE
-.DE
+.SP
 then the first entry would be deleted as redundant since packets sent to
 1.2.3.4 will still be routed correctly by the second entry. Note that the
 relative metrics of the entries are ignored.
 The default is \fBoff\fP.
-.H 3 "rip refuse" " \fIgateway\fP"
-Refuse to accept RIP updates from the specified gateway by adding the
-gateway to the RIP filter table. It may be later removed with the \fBrip
+.H 3 "rip refuse" " \fIhostid\fP"
+Refuse to accept RIP updates from the specified host by adding the
+host to the RIP filter table. It may be later removed with the \fBrip
 accept\fP command.
-.H 3 "rip request" " \fIgateway\fP"
-Send a RIP Request packet to the specified gateway, causing it to reply
+.H 3 "rip request" " \fIhostid\fP"
+Send a RIP Request packet to the specified host, causing it to reply
 with a RIP Response packet containing its routing table.
 .H 3 "rip status"
 Display RIP status, including a count of the number of packets sent

@@ -1,7 +1,7 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/record,v 1.2 1994/07/27 09:47:58 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/record,v 1.3 1994/08/05 10:36:28 deyke Exp $
 .H 2 "record" " [off|\fIfilename\fP]"
-Append to \fIfilename\fP all data received on the current
-session. Data sent on the current session is also written into the file
-except for Telnet sessions in remote echo mode. The command \fBrecord off\fP
-stops recording and closes the file. If no
-argument is specified the current status is displayed.
+Append to \fIfilename\fP all data received on the current session.
+Data sent on the current session is also written into the file
+except for Telnet sessions in remote echo mode.
+The command \fBrecord off\fP stops recording and closes the file.
+If no argument is specified the current status is displayed.

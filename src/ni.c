@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.4 1993/12/29 16:32:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.5 1994/08/05 10:35:54 deyke Exp $ */
 
 #ifdef __hpux
 
@@ -219,6 +219,8 @@ int ni_attach(int argc, char *argv[], void *p)
   ifp = callocw(1, sizeof(*ifp));
   ifp->name = strdup(ifname);
   ifp->addr = Ip_addr;
+  ifp->broadcast = 0xffffffffL;
+  ifp->netmask = 0xffffffffL;
   ifp->mtu = NI_MTU;
   setencap(ifp, "None");
 

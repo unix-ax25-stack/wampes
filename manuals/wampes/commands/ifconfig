@@ -1,31 +1,60 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ifconfig,v 1.4 1994/07/27 09:47:56 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ifconfig,v 1.5 1994/08/05 10:36:25 deyke Exp $
 .H 2 "ifconfig" " [\fIinterface\fP [[\fIsubcommand\fP \fIparameter\fP] ...]"
 Without arguments display the status of all interfaces.
 When only \fIinterface\fP is given, the status of that interface is displayed.
 Multiple subcommand/parameter pairs can be put on one line.
-.H 3 "ifconfig \fIinterface\fP broadcast" " \fIaddr\fP"
-Set the broadcast address of \fIinterface\fP to \fIaddr\fP.
+.H 3 "ifconfig \fIinterface\fP broadcast" " \fIaddress\fP"
+Set the broadcast address of \fIinterface\fP to \fIaddress\fP.
 This is related to the \fBnetmask\fP subcommand.
 See also the \fBarp\fP command.
 .H 3 "ifconfig \fIinterface\fP encapsulation" " \fIencapsulation\fP"
 Set the encapsulation for \fIinterface\fP to \fIencapsulation\fP.
-\fIEncapsulation\fP may be one of
-\fBnone\fP,
-\fBax25ui\fP,
-\fBax25i\fP,
-\fBkissui\fP,
-\fBkissi\fP,
-\fBslip\fP,
-\fBvjslip\fP,
-\fBnetrom\fP,
-or
-\fBnrs\fP.
-MORE TO BE WRITTEN.
-.H 3 "ifconfig \fIinterface\fP forward" " \fIinterface-2\fP"
+\fIEncapsulation\fP may be one of:
+.VL 20 2
+.LI \fBnone\fP
+No encapsulation.
+.LI \fBslip\fP
+Serial Line Internet Protocol.
+Encapsulates IP datagrams directly in SLIP frames without a link
+header. This is for operation on point-to-point lines and is compatible
+with 4.2BSD UNIX SLIP.
+.LI \fBvjslip\fP
+Compressed SLIP.
+.LI \fBax25ui\fP,\ \fBax25i\fP
+Similar to \fBslip\fP, except that an AX.25 header
+is added to the datagram before SLIP encoding.
+.LI \fBkissui\fP,\ \fBkissi\fP
+Similar to \fBslip\fP, except that an AX.25 header
+and a KISS TNC control header
+is added to the datagram before SLIP encoding.
+.LI \fBnetrom\fP
+Adds a NET/ROM network header to the datagram.
+.LI \fBnrs\fP
+Adds an AX.25 header,
+then encodes the frame using
+the NET/ROM asynchronous framing technique
+for communication with a local NET/ROM TNC.
+.LE 1
+For AX.25 based encapsulations UI frames (datagram mode) will be used
+if any of the following conditions is true,
+otherwise I frames (virtual circuit mode) will be used:
+.SP
+.BL 5 1
+.LI
+the "low delay" bit is set in the IP type-of-service field.
+.LI
+the "reliability" bit is NOT set in the IP type-of-service field,
+and encapsulation is \fBax25ui\fP, \fBkissui\fP, or \fBnrs\fP.
+.LI
+the destination is the broadcast address
+(this is helpful when broadcasting on an interface
+that uses \fBax25i\fP or \fBkissi\fP encapsulation).
+.LE
+.H 3 "ifconfig \fIinterface\fP forward" " \fIinterface2\fP"
 When a forward is defined, all output for \fIinterface\fP is redirected to
-\fIinterface-2\fP. To remove the forward, set \fIinterface-2\fP to \fIinterface\fP.
-.H 3 "ifconfig \fIinterface\fP ipaddress" " \fIaddr\fP"
-Set the IP address to \fIaddr\fP for this interface. This might be necessary
+\fIinterface2\fP. To remove the forward, set \fIinterface2\fP to \fIinterface\fP.
+.H 3 "ifconfig \fIinterface\fP ipaddress" " \fIaddress\fP"
+Set the IP address to \fIaddress\fP for this interface. This might be necessary
 when a system acts as a gateway.
 See also the \fBhostname\fP and \fBip address\fP commands.
 .H 3 "ifconfig \fIinterface\fP linkaddress" " \fIhardware-dependent\fP"
@@ -41,7 +70,7 @@ Set the subnet mask for this interface.
 The \fIaddress\fP takes the form of an IP address
 with 1's in the network and subnet parts of the address,
 and 0's in the host part of the address.
-Sample:
+Example:
 .DS I
 .ft CW
 ifconfig ec0 netmask 0xffffff00

@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/arp,v 1.3 1994/07/27 09:47:52 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/arp,v 1.4 1994/08/05 10:36:22 deyke Exp $
 .H 2 "arp" " [\fIsubcommand\fP]"
 Without an argument,
 display the Address Resolution Protocol table that maps IP addresses
@@ -28,4 +28,4 @@ you might want the first machine to publish it's own AX.25 address
 as the right answer for ARP queries addressing the second machine.
 This way, the rest of the world doesn't know the second machine
 isn't really on the air.
-(Use this feature with great care.)
+Use this feature with great care.

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.22 1994/02/07 12:39:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.23 1994/08/05 10:35:59 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -147,6 +147,7 @@ static const struct keytable Keytable[] = {
 	"\033[x",       TT_ANSI,        KA_FK6,
 	"\033[y",       TT_ANSI,        KA_FK7,
 	"\033\010",     TT_UNKNOWN,     KA_DEL_PREV_WORD,
+	"\033\177",     TT_UNKNOWN,     KA_DEL_PREV_WORD,
 	"\033b",        TT_UNKNOWN,     KA_LEFT_WORD,
 	"\033d",        TT_UNKNOWN,     KA_DEL_CURR_WORD,
 	"\033f",        TT_UNKNOWN,     KA_RIGHT_WORD,

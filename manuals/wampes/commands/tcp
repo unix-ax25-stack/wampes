@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/tcp,v 1.4 1994/07/27 09:48:00 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/tcp,v 1.5 1994/08/05 10:36:31 deyke Exp $
 .H 2 "tcp" " \fIsubcommand\fP"
 These commands control the Transmission Control Protocol service.
 .H 3 "tcp irtt" " [\fImilliseconds\fP]"
@@ -39,16 +39,18 @@ The default is 512 bytes.
 Delete the TCP control block at the specified address.
 The control block address can be found with the \fBtcp status\fP command.
 .H 3 "tcp rtt" " \fItcb_addr\fP \fImilliseconds\fP"
-Replaces the automatically computed round trip time in the specified TCB
-with the rtt in milliseconds. This command is useful to speed up
-recovery from a series of lost packets since it provides a manual bypass
-around the normal backoff retransmission timing mechanisms.
+Replaces the automatically computed round trip time in the specified
+TCP control block with the rtt in milliseconds.
+This command is useful to speed up recovery from a series of lost packets
+since it provides a manual bypass around the
+normal backoff retransmission timing mechanisms.
 .H 3 "tcp status" " [\fItcb_addr\fP]"
-Without arguments, displays several TCP-level statistics, plus a summary of
-all existing TCP connections, including TCB address, send and receive queue
-sizes, local and remote sockets, and connection state. If \fItcb_addr\fP is
-specified, a more detailed dump of the specified TCB is generated, including
-send and receive sequence numbers and timer information.
+Without arguments, display several TCP-level statistics, plus a summary of
+all existing TCP connections, including TCP control block address,
+send and receive queue sizes, local and remote sockets, and connection state.
+If \fItcb_addr\fP is specified, a more detailed dump of the specified
+TCP control block is generated, including send and receive sequence numbers
+and timer information.
 .H 3 "tcp syndata" " [on|off]"
 Display or set the TCP SYN+data piggybacking flag.
 Some TCP implementations cannot handle SYN+data together.

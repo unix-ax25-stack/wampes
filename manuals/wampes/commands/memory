@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/memory,v 1.3 1994/07/27 09:47:57 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/memory,v 1.4 1994/08/05 10:36:27 deyke Exp $
 .H 2 "memory" " \fIsubcommand\fP"
 These commands control memory allocation.
 .H 3 "memory debug" " [on|off]"
@@ -21,22 +21,28 @@ Display the total number (counted since program startup) of all memory
 allocation requests. Requests for different block sizes (rounded up to
 the next power of two) are counted separately.
 .H 3 "memory status"
-Display a summary of storage allocator statistics. The first line
+Display a summary of storage allocator statistics:
+.SP
+.BL
+.LI
+The first line
 shows the total size of the heap, the amount of heap
 memory available in bytes and as a percentage of the total heap size,
-and the number of sbrk() system calls used to increase the heap size.
-.P
+and the number of sbrk system calls used to increase the heap size.
+.LI
 The second line shows the total number of calls to allocate and free blocks
 of memory, the difference of these two values (i.e., the number of allocated
 blocks outstanding), the number of allocation requests that were denied
-due to lack of memory, and the number of calls to free() that attempted to
+due to lack of memory, and the number of calls to free that attempted to
 free garbage
 (eg. by freeing the same block twice or freeing a garbled pointer).
-.P
+.LI
 The third line shows the total number of splits
 (breaking a big heap block into two small blocks)
 and merges
 (combining two adjacent small blocks into one big block),
 and the difference of these two values.
-.P
-The fourth line shows the number of calls to pushdown, and the number of calls to pushdown which resulted in a call to malloc.
+.LI
+The fourth line shows the number of calls to pushdown,
+and the number of calls to pushdown which resulted in a call to malloc.
+.LE

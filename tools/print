@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/print,v 1.1 1994/07/12 16:31:57 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/print,v 1.2 1994/08/05 10:35:36 deyke Exp $
 
 if [[ -n "$1" ]] ; then
 	files="$*"
@@ -8,4 +8,21 @@ else
 	files="$(< filelist)"
 fi
 
-cat $files | tbl -TX | nroff -mm | col
+case ${0##*/} in
+nprint)
+	cat $files | tbl -TX | nroff -mm | col
+	;;
+tprint)
+	cat $files | tbl | troff -mm
+	;;
+gnprint)
+	cat $files | gtbl | gnroff -mgm
+	;;
+gtprint)
+	cat $files | gtbl | groff -mgm
+	;;
+*)
+	echo $0 not recognized
+	exit 1
+	;;
+esac

@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/sntp,v 1.3 1994/07/27 09:47:59 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/sntp,v 1.4 1994/08/05 10:36:30 deyke Exp $
 .H 2 "sntp" " \fIsubcommand\fP"
 TO BE WRITTEN.
 .H 3 "sntp add" " \fIhostid\fP [\fIinterval\fP]"
@@ -13,9 +13,9 @@ with each one, response times, etc.
 .H 3 "sntp step_threshold" " [\fIstep_threshold\fP]"
 Display or set the step threshold (measured in seconds). If the
 required time adjustment is less than the step threshold, the
-adjtime() system call will be used to slow down or to accelerate
+adjtime system call will be used to slow down or to accelerate
 the clock, otherwise the clock will be stepped using
-settimeofday().
+settimeofday.
 The default is 1 second.
 .H 3 "sntp sys"
 Display the sntp server configuration.
@@ -24,19 +24,16 @@ Display or set the sntp server leap indicator. This is a
 two-bit code warning of an impending leap second to be
 inserted/deleted in the last minute of the current day, coded as
 follows:
-.DS
-.TS
-center box tab(;) ;
-cB | cB
-l | l.
-Value;Meaning
-_
-0;no warning
-1;last minute has 61 seconds
-2;last minute has 59 seconds)
-3;alarm condition (clock not synchronized)
-.TE
-.DE
+.VL 20 2 1
+.LI \fB0\fP
+no warning
+.LI \fB1\fP
+last minute has 61 seconds
+.LI \fB2\fP
+last minute has 59 seconds)
+.LI \fB3\fP
+alarm condition (clock not synchronized)
+.LE 1
 The default is 0.
 .H 4 "sntp sys precision" " [\fIprecision\fP]"
 Display or set the sntp server precision. This is an eight-bit
@@ -52,7 +49,6 @@ stratum 0 (unspecified) or stratum 1 (primary reference), this
 is a string of up to 4 characters. While not enumerated as part
 of the NTP specification, the following are representative ASCII
 identifiers:
-.DS
 .TS
 center box tab(;) ;
 cB | cB | cB
@@ -73,7 +69,7 @@ _
 2;address;secondary reference (four-octet Internet address
 ;;of the NTP server)
 .TE
-.DE
+.SP
 The default is UNIX.
 .H 4 "sntp sys reftime"
 Display the sntp server reference time.
@@ -97,19 +93,16 @@ The default is 0.
 Display or set the sntp server stratum. This is a eight-bit
 integer indicating the stratum level of the local clock, with
 values defined as follows:
-.DS
-.TS
-center box tab(;) ;
-cB | cB
-l | l.
-Stratum;Meaning
-_
-0;unspecified or unavailable
-1;primary reference (e.g., radio clock)
-2-15;secondary reference (via NTP or SNTP)
-16-255;reserved
-.TE
-.DE
+.VL 20 2 1
+.LI \fB0\fP
+unspecified or unavailable
+.LI \fB1\fP
+primary reference (e.g., radio clock)
+.LI \fB2\fP-\fB15\fP
+secondary reference (via NTP or SNTP)
+.LI \fB16\fP-\fB255\fP
+reserved
+.LE 1
 The default is 1.
 .H 3 "sntp trace" " [on|off]"
 Enable or disable sntp tracing.

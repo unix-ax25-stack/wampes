@@ -1,4 +1,5 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/0intro,v 1.2 1994/07/27 09:47:51 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/0intro,v 1.3 1994/08/05 10:36:21 deyke Exp $
+.nr Cl 2 \" Max level of header for table of contents
 .H 1 "Commands"
 This section describes the commands recognized in command mode, or
 within a startup file such as \fBnet.rc\fP. These are given in the following
@@ -13,12 +14,12 @@ notation:
 Many commands take subcommands or parameters, which may be optional or
 required. In general, if a required subcommand or parameter is omitted,
 an error message will summarize the available subcommands or required
-parameters. (Giving a '?' in place of the subcommand will also
+parameters. Giving a '?' in place of the subcommand will also
 generate the message. This is useful when the command word alone is a
-valid command.) If a command takes an optional value parameter, issuing
+valid command. If a command takes an optional value parameter, issuing
 the command without the parameter generally displays the current value
-of the variable. (Exceptions to this rule are noted in the individual
-command descriptions.)
+of the variable. Exceptions to this rule are noted in the individual
+command descriptions.
 .P
 Two or more parameters separated by vertical bar(s) denote a choice
 between the specified values. Optional parameters are shown enclosed in
@@ -35,4 +36,7 @@ full.
 .P
 FTP subcommands (eg. put, get, dir, etc) are recognized only in
 converse mode with the appropriate FTP session, they are not recognized
-in command mode. (See the \fBFTP Subcommands\fP chapter.)
+in command mode (see the \fBFTP Subcommands\fP chapter).
+.P
+A word beginning with \fB#\fP causes that word and all the following
+characters on the same line to be ignored.

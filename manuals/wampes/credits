@@ -1,4 +1,5 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/credits,v 1.2 1994/07/27 09:47:47 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/credits,v 1.3 1994/08/05 10:36:15 deyke Exp $
+.nr Cl 7 \" Max level of header for table of contents
 .H 1 "Credits"
 This manual is based in part on publications authored by
 .DS I

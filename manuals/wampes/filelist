@@ -1,6 +1,8 @@
 setup
 frontpage
 credits
+the-net-program
+console-modes
 commands/[0-9a-z]*
 ftp-commands/[0-9a-z]*
 setting-paclen

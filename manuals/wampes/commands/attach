@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/attach,v 1.5 1994/07/27 09:47:52 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/attach,v 1.6 1994/08/05 10:36:22 deyke Exp $
 .H 2 "attach" " \fItype\fP [\fItype specific options\fP]
 Configure and attach an interface to the system.
 The details are highly interface type dependent.
@@ -26,8 +26,8 @@ but instead of talking directly to a hardware device file, this interface type
 will open a UNIX TCP connection to \fIip-addr\fP and \fIport\fP.
 The primary use of this interface type is to talk to some TNC which is
 connected to the system via the LAN.
-\fIip-addr\fP is the destination IP address.
-It has to be specified as one hexadecimal number.
+\fIip-addr\fP is the destination IP address,
+and has to be specified as one hexadecimal number.
 For example, 127.0.0.1 has to be given as 7f000001.
 \fIport\fP is the numeric destination TCP port address.
 See the \fBifconfig encapsulation\fP command for the list of
@@ -43,7 +43,7 @@ it is also fragmented at the AX.25 level (as opposed to the IP level) before
 transmission.
 See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
 for more information.
-\fIspeed\fP must be specified, but is ignored.
+\fIspeed\fP must be specified, but is not used.
 .H 3 "attach axip" " [\fIname\fP [ip|udp [\fIport\fP]]]"
 This creates an AX.25 frame encapsulator for transmission
 of AX.25 frames over the UNIX's networking system.

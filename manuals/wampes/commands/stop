@@ -1,26 +1,32 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/stop,v 1.2 1994/07/27 09:48:00 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/stop,v 1.3 1994/08/05 10:36:30 deyke Exp $
 .H 2 "stop" " \fIserver\fP"
 Stop the specified server, rejecting any further remote connect
 requests. Existing connections are allowed to complete normally.
-.H 3 "stop ax25"
-TO BE WRITTEN.
-.H 3 "stop discard"
-TO BE WRITTEN.
-.H 3 "stop domain"
-TO BE WRITTEN.
-.H 3 "stop echo"
-TO BE WRITTEN.
-.H 3 "stop ftp"
-TO BE WRITTEN.
-.H 3 "stop netrom"
-TO BE WRITTEN.
-.H 3 "stop rip"
-TO BE WRITTEN.
-.H 3 "stop sntp"
-TO BE WRITTEN.
-.H 3 "stop telnet"
-TO BE WRITTEN.
-.H 3 "stop time"
-TO BE WRITTEN.
-.H 3 "stop remote"
-TO BE WRITTEN.
+See also the \fBstart\fP command.
+.P
+\fIserver\fP has to be one of:
+.SP
+.BL 5 1
+.LI
+\fBax25\fP
+.LI
+\fBdiscard\fP
+.LI
+\fBdomain\fP
+.LI
+\fBecho\fP
+.LI
+\fBftp\fP
+.LI
+\fBnetrom\fP
+.LI
+\fBrip\fP
+.LI
+\fBsntp\fP
+.LI
+\fBtelnet\fP
+.LI
+\fBtime\fP
+.LI
+\fBremote\fP
+.LE

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.45 1994/07/12 16:30:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.46 1994/08/05 10:35:51 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -97,10 +97,11 @@ char *argv[];
 	time(&StartTime);
 	Hostname = strdup("net");
 
-	Debug = (argc >= 2);
-
-	while((c = getopt(argc,argv,"v")) != EOF){
+	while((c = getopt(argc,argv,"gv")) != EOF){
 		switch(c){
+		case 'g':
+			Debug = 1;
+			break;
 		case 'v':
 			Verbose = 1;
 			break;
