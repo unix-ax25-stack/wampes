@@ -1,4 +1,14 @@
-Version @(#) $Id: ChangeLog.patches,v 1.3 2002/01/12 16:09:55 dl9sau Exp $
+Version @(#) $Id: ChangeLog.patches,v 1.4 2002/01/22 21:09:52 dl9sau Exp $
+
+020122 Thomas Osterried <dl9sau>
+
+	software like xnet always sends PID=text CText on ax25 connects.
+	a connect from wampes to an xnet triggered by an IP frame that
+	is routed as AX25.IP VC leaded to a login of the xnet to our
+	own system due to the received CText (or to a disconnect if login
+	is disabled)
+	a modification in ax25.c now fixes this problem with non-protocol-
+	compliant hosts like xnet.
 
 020112 Thomas Osterried <dl9sau>
 

@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25.c,v 1.34 2002/01/12 15:55:53 dl9sau Exp $ */
+/* @(#) $Id: ax25.c,v 1.35 2002/01/22 21:09:52 dl9sau Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -37,6 +37,8 @@ uint8 Mycall[AXALEN] = {
 struct ax_route *Ax_routes[AXROUTESIZE];
 struct iface *Axroute_default_ifp;
 int Digipeat = 2;       /* Controls digipeating */
+
+/*---------------------------------------------------------------------------*/
 
 int
 axi_send(
@@ -90,11 +92,13 @@ uint8 tos
 		memset(&hdr,0,sizeof(struct ax25));
 		addrcp(hdr.dest,hw_addr);
 		axp = open_ax25(&hdr,
-		 AX_ACTIVE,NULL,NULL,NULL,NULL);
+		 AX_ACTIVE,axserv_recv_upcall_discard,NULL,NULL,NULL);
 		if(axp == NULL){
 			free_p(bpp);
 			return -1;
 		}
+		// discard ax25 PID=text CText for compatibilty with xnet
+		axp->r_upcall = axserv_recv_upcall_discard;
 	}
 	if(axp->state == LAPB_DISCONNECTED){
 		est_link(axp);

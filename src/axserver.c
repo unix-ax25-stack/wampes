@@ -1,4 +1,4 @@
-/* @(#) $Id: axserver.c,v 1.16 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: axserver.c,v 1.17 2002/01/22 21:09:52 dl9sau Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -7,6 +7,16 @@
 #include "login.h"
 
 int Axserver_enabled;
+
+/*---------------------------------------------------------------------------*/
+
+void axserv_recv_upcall_discard(struct ax25_cb *axp, int cnt)
+{
+  struct mbuf *bp;
+
+      bp = recv_ax25(axp, 0);
+      free_p(&bp);
+}
 
 /*---------------------------------------------------------------------------*/
 
