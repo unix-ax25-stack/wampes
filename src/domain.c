@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.1 1991/07/16 17:56:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.2 1991/07/17 14:59:01 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -14,6 +14,7 @@
 #include "global.h"
 #include "timer.h"
 #include "netuser.h"
+#include "cmdparse.h"
 
 #define HOSTSFILE       "/tcp/hosts"
 #define LOCALDOMAIN     ".ampr.org"
@@ -24,6 +25,7 @@ struct hosttable {
   char name[1];
 };
 
+static int Useserver;
 static struct hosttable *hosttable;
 
 static void strlwc __ARGS((char *to, const char *from));
@@ -31,6 +33,7 @@ static int isaddr __ARGS((const char *s));
 static void add_to_hosttable __ARGS((const char *name, int32 addr));
 static void load_hosttable __ARGS((void));
 static int32 search_name_in_hosttable __ARGS((const char *name));
+static int doduseserver __ARGS((int argc, char *argv [], void *p));
 
 /*---------------------------------------------------------------------------*/
 
@@ -147,7 +150,7 @@ char *name;
     *p = '\0';
     if (addr = search_name_in_hosttable(lwc_name))
       return addr;
-    if (hp = gethostbyname(name))
+    if (Useserver && (hp = gethostbyname(name)))
       return ntohl(((struct in_addr *)(hp->h_addr))->s_addr);
     return 0;
   }
@@ -161,7 +164,7 @@ char *name;
 
   if (addr = search_name_in_hosttable(lwc_name))
     return addr;
-  if (hp = gethostbyname(name))
+  if (Useserver && (hp = gethostbyname(name)))
     return ntohl(((struct in_addr *)(hp->h_addr))->s_addr);
 
   return 0;
@@ -193,11 +196,13 @@ int shorten;
       return hosttable->name;
     }
 
-  in_addr.s_addr = htonl(addr);
-  hp = gethostbyaddr((char *) & in_addr, sizeof(in_addr), AF_INET);
-  if (hp) {
-    add_to_hosttable(hp->h_name, addr);
-    return hosttable->name;
+  if (Useserver) {
+    in_addr.s_addr = htonl(addr);
+    hp = gethostbyaddr((char *) & in_addr, sizeof(in_addr), AF_INET);
+    if (hp) {
+      add_to_hosttable(hp->h_name, addr);
+      return hosttable->name;
+    }
   }
 
   sprintf(buf,
@@ -208,5 +213,30 @@ int shorten;
 	  uchar(addr      ));
   add_to_hosttable(buf, addr);
   return hosttable->name;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static struct cmds Dcmds[] = {
+  "useserver", doduseserver, 0, 0, NULLCHAR,
+  NULLCHAR,    NULLFP,       0, 0, NULLCHAR
+};
+
+int dodomain(argc, argv, p)
+int argc;
+char *argv[];
+void *p;
+{
+  return subcmd(Dcmds, argc, argv, p);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int doduseserver(argc, argv, p)
+int argc;
+char *argv[];
+void *p;
+{
+  return setbool(&Useserver, "Using server", argc, argv);
 }
 
