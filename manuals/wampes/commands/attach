@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/attach,v 1.10 1994/11/13 21:48:40 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/attach,v 1.11 1996/08/11 18:04:23 deyke Exp $
 .H 2 "attach" " \fItype\fP [\fItype specific options\fP]"
 Configure and attach an interface to the system.
 The details are highly interface type dependent.
@@ -97,3 +97,7 @@ attach ni ni dk5sg-u # ip to host ip
 .DE
 .P
 Currently \fBattach ni\fP is available on HP-UX systems only.
+.H 3 "attach tun" " \fIname\fP"
+This creates an IP point-to-point link between \fBWAMPES\fP and UNIX,
+by creating a new interface named \fIname\fP on the \fBWAMPES\fP side.
+Currently \fBattach tun\fP is available on FreeBSD systems only.

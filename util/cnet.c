@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.38 1996/06/20 11:49:19 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.39 1996/08/11 18:04:15 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -196,7 +196,8 @@ int main(int argc, char **argv)
   char cmdbuf[1024];
   char *areaptr;
   char *cmdptr = 0;
-  char *server;
+  char *progname = "cnet";
+  char *server = "unix:/tcp/.sockets/netcmd";
   char *termstr;
   char *upstr;
   int addrlen;
@@ -218,19 +219,30 @@ int main(int argc, char **argv)
   setposix();
 #endif
 
-  if (argc >= 2 && !strcmp(argv[1], "-c")) {
-    if (argc < 3) {
+  if (argc >= 1) {
+    progname = *argv;
+    argc--;
+    argv++;
+  }
+
+  if (argc >= 1 && !strcmp(*argv, "-c")) {
+    if (argc < 2) {
       fprintf(stderr, "Option requires an argument -- c\n");
       exit(1);
     }
-    cmdptr = argv[2];
+    cmdptr = argv[1];
     argc -= 2;
     argv += 2;
   }
 
-  server = (argc < 2) ? "unix:/tcp/.sockets/netcmd" : argv[1];
+  if (argc >= 1) {
+    server = *argv;
+    argc--;
+    argv++;
+  }
+
   if (!(addr = build_sockaddr(server, &addrlen))) {
-    fprintf(stderr, "%s: Cannot build address from \"%s\"\n", *argv, server);
+    fprintf(stderr, "%s: Cannot build address from \"%s\"\n", progname, server);
     exit(1);
   }
   if ((fdsock = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) {

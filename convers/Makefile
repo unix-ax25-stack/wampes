@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.37 1996/05/28 15:56:39 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.38 1996/08/11 18:03:58 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -28,10 +28,17 @@ all:;   @case "`uname -sr`" in \
 		'CFLAGS=-O -signed -I../lib' \
 		_all;; \
 	Linux*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc' \
-		'CFLAGS=-O -I../lib' \
-		_all;; \
+		if [ -r /lib/libc.so.5 ]; then \
+			$(MAKE) -i -f $(MAKEFILE) \
+			'CC=gcc' \
+			'CFLAGS=-O -I../lib' \
+			_all; \
+		else \
+			$(MAKE) -i -f $(MAKEFILE) \
+			'CC=gcc' \
+			'CFLAGS=-O -I../lib' \
+			_all; \
+		fi;; \
 	386BSD*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
@@ -107,7 +114,7 @@ install: /usr/local/bin/convers /tcp/conversd
 	$(RMTARGET)
 	cp $? $@
 
-clean:; @rm -f *.o $(TARGETS) *~
+clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 
 depend:; @mkmf -f $(MAKEFILE)
 ###

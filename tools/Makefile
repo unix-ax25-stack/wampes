@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.31 1996/05/28 15:57:46 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.32 1996/08/11 18:04:08 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -40,11 +40,19 @@ all:;   @case "`uname -sr`" in \
 		'SLIBS=' \
 		_all;; \
 	Linux*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc' \
-		'CFLAGS=-O -I../lib' \
-		'SLIBS=-ldbm' \
-		_all;; \
+		if [ -r /lib/libc.so.5 ]; then \
+			$(MAKE) -i -f $(MAKEFILE) \
+			'CC=gcc' \
+			'CFLAGS=-O -I../lib' \
+			'SLIBS=-lgdbm' \
+			_all; \
+		else \
+			$(MAKE) -i -f $(MAKEFILE) \
+			'CC=gcc' \
+			'CFLAGS=-O -I../lib' \
+			'SLIBS=-ldbm' \
+			_all; \
+		fi;; \
 	386BSD*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
@@ -161,7 +169,7 @@ install: \
 	$(RMTARGET)
 	cp $? $@
 
-clean:; @rm -f *.o $(TARGETS) *~
+clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 
 depend:; @mkmf -f $(MAKEFILE)
 ###

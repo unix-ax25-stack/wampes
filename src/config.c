@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.44 1996/01/22 13:13:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.45 1996/08/11 18:05:04 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -354,6 +354,10 @@ struct cmds Attab[] = {
 #ifdef __hpux
 	"ni", ni_attach, 0, 3,
 	"attach ni <label> <dest> [mask]",
+#endif
+#ifdef __FreeBSD__
+	"tun", tun_attach, 0, 2,
+	"attach tun <label>",
 #endif
 
 	NULL,

@@ -1,4 +1,16 @@
-@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ChangeLog,v 1.13 1996/07/29 16:34:52 deyke Exp $
+@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ChangeLog,v 1.14 1996/08/11 18:03:57 deyke Exp $
+
+960811 Dieter Deyke (deyke@fc.hp.com)
+
+	Switched to RCS version 5.7 for development
+
+	Added support for Linux ELF systems
+
+	Added support for IP tunnel for FreeBSD (developed by dc1ik)
+
+	Fixed wrong program name in error message in cnet
+
+	Updated domain.txt and hosts
 
 960729 Dieter Deyke (deyke@fc.hp.com)
 

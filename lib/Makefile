@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.28 1996/05/28 15:58:05 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.29 1996/08/11 18:04:16 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -50,10 +50,17 @@ all:;   if [ -x /bin/bash ]; then \
 		'RANLIB=:' \
 		_all;; \
 	Linux*) \
-		$(MAKE) -i -f $(MAKEFILE) \
-		'CC=gcc' \
-		'CFLAGS=-O' \
-		_all;; \
+		if [ -r /lib/libc.so.5 ]; then \
+			$(MAKE) -i -f $(MAKEFILE) \
+			'CC=gcc' \
+			'CFLAGS=-O' \
+			_all; \
+		else \
+			$(MAKE) -i -f $(MAKEFILE) \
+			'CC=gcc' \
+			'CFLAGS=-O' \
+			_all; \
+		fi;; \
 	386BSD*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
@@ -115,7 +122,7 @@ $(LIBRARY): $(OBJS)
 
 install:;
 
-clean:; @rm -f *.o *.a *~
+clean:; @rm -f *.o *.a *~ \#*\#
 
 depend:; @mkmf -f $(MAKEFILE)
 ###
