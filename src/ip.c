@@ -1,4 +1,4 @@
-/* @(#) $Id: ip.c,v 1.18 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: ip.c,v 1.19 1999/12/17 04:36:15 deyke Exp $ */
 
 /* Upper half of IP, consisting of send/receive primitives, including
  * fragment reassembly, for higher level protocols.
@@ -306,7 +306,7 @@ struct mbuf **bpp       /* The fragment itself */
 	case PREPEND:   /* Prepend to nextfrag */
 		tbp = nextfrag->buf;
 		nextfrag->buf = *bpp;
-		bpp = NULL;
+		*bpp = NULL;
 		append(&nextfrag->buf,&tbp);
 		nextfrag->offset = ip->offset;  /* Extend backward */
 		break;
