@@ -323,8 +323,6 @@
 44.130.8.9      DJ5BA   # Jochen Bredemeyer, Diepholz
 44.130.8.10     DG8BBT  # Harald, 4550 Bramsche 3
 44.130.8.11     DL1BKE  # Joerg Reuter, 49716 Meppen
-44.130.8.12     DB9WT   # Hans Buth, 49186 Bad Iburg; AT486
-44.130.8.13     DB9WT-1 # ; Amiga 2000
 44.130.8.14     SYS1.DK9BW      # Heiner Bischof, Hilter
 44.130.8.15     SYS2.DK9BW      #
 44.130.8.16     SYS1.DG4BD      # Jochen Krause, Bad Rothenfelde
@@ -339,6 +337,8 @@
 44.130.8.30     DG9BFO   # Dieter Oder, 49593 Bersenbrueck; linuX
 44.130.8.31     DG9BFO-1 # linuX
 44.130.8.32     DG9BFO-2 # Wnos/LinuX
+44.130.8.40     DG9BHW-SVR # Sebastian Lemke, Quakenbrueck
+44.130.8.41     DG9BHW     # Sebastian Lemke, Quakenbrueck
 44.139.8.50     DK7BW    # Herman 49835 witmarschen lohne
 44.130.8.55     DL5DBM   # Anwar, Kettenkamp
 44.130.8.56     DL5DBM-2 # Anwar, Kettenkamp
@@ -2057,6 +2057,9 @@
 44.130.29.145 dh9iam    # Michael Lambeck
 44.130.29.146 dh9iam-w  # Michael Lambeck
 44.130.29.147 dj1pi     # Richard                     76744 Woerth
+44.130.29.148 dc1ik-p   # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.149 dc1ik-u   # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.150 dc1ik     # JN49ea Olaf Erb             76131 Karlsruhe
 #
 #44.130.30.x    Nordhessen
 # --- lokale Adresskoordination: DG1ZX-A
@@ -2096,9 +2099,6 @@
 44.130.32.49    DL8KCX  # Michael, 5000 Koeln
 44.130.32.100   DL5KCG  # Albert Ludwig, 53859 Niederkassel
 44.130.32.128   DJ8IM   # Henk
-#
-#44.130.33.x    Saarland
-# --- lokale Adresskoordination: DL4VAP
 44.130.33.1     DF3VI   # Patrick, 6650 Homburg
 44.130.33.2     DL4VCN  # George Nashan, 66424 Homburg (ex DC1VL)
 44.130.33.3     DL4VAP  # Marcus Meier, 66578 Schiffweiler
@@ -2107,6 +2107,7 @@
 44.130.33.6     DD1VZ   # Peter , Kleinblittersdorf/Saar
 44.130.33.7     DB6VP   # Peter , Voelklingen (Loc. JN39KG)
 44.130.33.8     DJ0QO   # Rene Zimnoch, Rehlingen-Siersburg
+44.130.33.9     DH0PAC  # Bernhard
 44.130.33.10    DG6VB   # Thomas , Ludweiler
 44.130.33.11    DG6VB-2
 44.130.33.12    DG6VB-3
@@ -2234,7 +2235,6 @@
 44.130.41.7     DF2IAQ-1        #
 44.130.41.8     DB0CPU  # Digi Ludwigshafen (DF1IAQ)
 44.130.41.9     DL9TD   # Wolfgang, Ludwigshafen
-44.130.41.10    DC1IK   # Olaf Erb, 6904 Eppelheim; *** AT386, WAMPES-Test
 44.130.41.11    DB8US   # Michael Waldbrenner, 6800 Mannheim
 44.130.41.12    DB8UX   # Andreas Waldbrenner, 6800 Mannheim
 44.130.41.13    DD8UM   # Udo Hessenhauer, Bammenthal nr Heidelberg
@@ -2275,8 +2275,6 @@
 44.130.41.88    DB6WY   # Wolfgang, 6780 Pirmasens
 44.130.41.89    DB0PSC-12       # Digi PS, 6780 Pirmasens (DD1IA); NOVELL-Gateway
 44.130.41.91    DC8IL   # Thoams, Kaiserslautern
-44.130.41.98    DC1IK-P # Olaf Erb, 6904 Eppelheim
-44.130.41.99    DC1IK-U #
 44.130.41.100   DJ6PY   # Karl Thiel, 6730 Neustadt
 44.130.41.110   DA2XX   # Bob, Konken (WY7O)
 44.130.41.111   DL9DAZ  # Karl-Heinz Menne, 67551 Worms
@@ -2291,9 +2289,10 @@
 44.130.41.200   DH6IAL-SVR      # Mark
 44.130.41.245   DD0WF   # Thomas Schleicher, Muenschweiler nr Pirmasens
 #
-#44.130.42.x    Koblenz
-# regionale Koordination dl5di@db0lj-1.ampr.org
+# Hostliste Region 42, Stand 3. Mai 1996
 #
+#44.130.42.x    Koblenz
+# --- lokale Adresskoordination Raum Koblenz: DL5DI
 44.130.42.1     DL5DI   # Hans-Juergen Barthen, 56642 Kruft
 44.130.42.2     DL5DI-amiga     # Hans-Juergen Barthen
 44.130.42.3     DB0LJ-1 # PBBS Mittelrhein (DL5DI); *** Linux Server
@@ -2316,6 +2315,7 @@
 44.130.42.21    DF9PV   # Franz Kohlmann, 56564 Neuwied; Amiga
 44.130.42.22    DK4DA   # Dietmar
 44.130.42.23    DG3EKE  # Hartmut, Spessart nr. Mayen
+44.130.42.24    DF1PN   # Richard Szygalski, 56075 Koblenz
 44.130.42.30    DC1PIA  # Thomas Lehnet, Koblenz
 44.130.42.31    DC1PIA-1        # Thomas Lehnet, Koblenz
 44.130.42.32    DC1PIA-2        # Thomas Lehnet, Koblenz
@@ -2323,8 +2323,6 @@
 44.130.42.51    DF4PM-2 # Heinz, 56073 Koblenz; WAMPES-Router
 44.130.42.52    DF4PM-nb # Heinz, 56073 Koblenz; Notebook LinuX
 44.130.42.100   DB0LJ-R # ; Wampes Router
-44.130.42.101   DB0LJ-B # ; PC-NFS-Client
-44.130.42.102   DB0LJ-O # ; OS2-Server/PC-NFS-Client
 #
 #44.130.44.x    Trier, Eifel
 # --- lokale Adresskoordination: DG6VJ
@@ -3193,15 +3191,16 @@
 44.130.62.40   DL1NCH         # Jacek Kupiec Bayreuth
 44.130.62.100  DB0BBG-10      # Digipeater Bamberg K„lberberg
 #
-#44.130.63.x    Unterfranken
-# lokale Adresskoordination: DL1NC
+#44.130.63.x    Unterfranken, Stand: 29.4.96
+# lokale Adressenkoordination: DL1NC
+# neuester Eintrag: DG9NFE
 44.130.63.1     DD6CV   # Christan Volk, Johannesberg
 44.130.63.2     DH4NBC  # Michael Reinicke, JN49XS
 44.130.63.3     DJ9UN   # Werner Steinhaeuser, JN49WS
 44.130.63.4     DL4NER  # Werner Maier, Wuerzburg
 44.130.63.5     DL1NC   # Robert Steinhaeusser, JN49VS
 44.130.63.6     DG9NBT  # Martin Leicht, JN49WS
-44.130.63.7     DL1NC-W #
+44.130.63.7     DL1NC-W
 44.130.63.8     DJ3TP   # Wolf Jaudzims, 97990 Weikersheim
 44.130.63.9     DG8NCY  # Claus Kuhn, 97475 Zeil
 44.130.63.10    DL4NCQ  # Bruno Hoffmann, Kleinwallstadt
@@ -3210,22 +3209,28 @@
 44.130.63.13    DL1NDU  # Christian Schneider, Retzbach
 44.130.63.14    DL4NDE  # Bernd Goetter, JO50CB
 44.130.63.15    DH4NAH  # Norbert Fecher, 63877 Sailauf
-44.130.63.16    DL4NDE-P        #
+44.130.63.16    DL4NDE-P
 44.130.63.20    DG5NER  # Maximilian Ibel, Wuerzburg
+44.130.63.22    DH4NBC-T
 44.130.63.25    DG1NED  # Holger Grund, Grossheubach
-44.130.63.26    DG1NED-2        #
-44.130.63.33    DG2NEX  # Jochen, Wuerzburg
-44.130.63.34    DG2NEX-U        #
+44.130.63.26    DG1NED-2
+44.130.63.33    DG2NEX  # Jochen Wahlen, Wuerzburg
+44.130.63.34    DG2NEX-U
+44.130.63.35    DG2NEX-W
+44.130.63.42    DG9NFE  # Hans-Christoph Wirth, JN49WU
 44.130.63.44    DG1NBB  # Holger Albrecht, 63868 Grosswallstadt
-44.130.63.50    DL1NC-E #
+44.130.63.50    DL1NC-E
 44.130.63.55    DG3NFW  # Michael Russ, JN49XT
+44.130.63.66    DL2SEK  # Michael Matthes, JN49WL
 44.130.63.73    DG7NFO  # Christian Schmitt, JN49XT
 44.130.63.100   DB0AJA  # Digi Wuerzburg (DL6NDG), JN59AS
 44.130.63.123   DG1NEG  # Ralph Gessner, Wuerzburg
 44.130.63.144   DG9NEQ  # Guenter Wolf, Wuerzburg
-44.130.63.145   DG9NEQ-W        #
-44.130.63.146   DG9NEQ-NOS      #
+44.130.63.145   DG9NEQ-W
+44.130.63.146   DG9NEQ-NOS
 44.130.63.178   DL6NAG  # Hendrik Fischer, Wuerzburg
+44.130.63.179   DL6NAG-W
+44.130.63.222   DH4NBC-U
 #
 #44.130.184.x   Memmingen/Kempten
 44.130.184.1    DG4MKB  # Alexander Schmidt, 87700 Memmingen
@@ -3376,6 +3381,7 @@
 44.130.88.52    DG2LVS  # Volker Smok, 04207 Leipzig
 44.130.88.53    DH1WP   # Wolfgang Pruess, Leipzig
 44.130.88.54    DL5ZD   # Tom Bolle, Leipzig
+44.130.88.55    DD3ML-U #
 44.130.88.88    DC6HB-A #
 44.130.88.100   DB0LPZ-SVR  # DB0LPZ-10
 #
@@ -5419,7 +5425,7 @@
 #  IP-Adressen Raum Wien,  44.143.16/24
 #
 #------------------------------------------------------
-44.143.16.1    oe1xir        #
+44.143.16.1    oe1xir        # IBM - Club Wien
 44.143.16.10   gw.oe1hmc     #
 44.143.16.100  oe3klu        # Karl, Schwechat bei Wien
 44.143.16.11   sec.oe1hmc    #
@@ -5432,26 +5438,27 @@
 44.143.16.15   sec.oe1dmw    #
 44.143.16.16   oe1msb        # Michael, Wien
 44.143.16.17   sec.oe1msb    #
-44.143.16.18   sp7mud        #
+44.143.16.18   sp7mud        # Adam
 44.143.16.19   oe1mma        # Markus, Wien
 44.143.16.20   oe3gfs        # Gerhard, Hennersdorf
 44.143.16.200  sat.oe3gfs    #
 44.143.16.21   oe1smc        # Hans, Wien
-44.143.16.22   oe1cms        #
-44.143.16.23   oe1xya        #
+44.143.16.22   oe1cms        # Christine, Wien
+44.143.16.23   oe1xya        # Amateurfunkclub Wien 10
 44.143.16.24   oe1gou        # Gerald, Wien
 44.143.16.25   oe1yxu        # Gertrud, Wien
 44.143.16.26   oe1wwl        # Walter, Wien
 44.143.16.27   sec.oe1wwl    #
 44.143.16.28   ter.oe1wwl    #
+44.143.16.30   oe1gww        # Guenter
 44.143.16.31   oe3gmw        # Gottfried, Wr. Neudorf
-44.143.16.32   oe3dna        #
+44.143.16.32   oe3dna        # Andy, Amstetten
 44.143.16.33   oe3pha        # Peter, Wien
 44.143.16.34   oe1wca        # Werner, Wien
 44.143.16.35   oe3ugw        # Paul, Kapellerfeld
-44.143.16.36   oe1jeb        #
-44.143.16.37   oe1hhc        #
-44.143.16.38   oe1fwu        #
+44.143.16.36   oe1jeb        # Jan
+44.143.16.37   oe1hhc        # Harald, Wien
+44.143.16.38   oe1fwu        # Friedrich, Wien
 44.143.16.9    oe1xtu        # Clubstation der TU-Wien
 #
 # 44.143.xxx.xxx * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen

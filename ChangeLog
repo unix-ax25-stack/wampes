@@ -1,4 +1,8 @@
-@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ChangeLog,v 1.9 1996/05/01 13:29:33 deyke Exp $
+@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ChangeLog,v 1.10 1996/05/14 09:23:46 deyke Exp $
+
+960514 Dieter Deyke (deyke@fc.hp.com)
+
+	Updated domain.txt and hosts
 
 960501 Dieter Deyke (deyke@fc.hp.com)
 
