@@ -1,14 +1,5 @@
 ===============================================================================
 
-<dc6iq/p>: genau
-Hmm, wo soll ich das denn abspeichern? In der Routing table?
-<dc6iq/p>: so nach dem motto: tcp irtt dc1ik 60000 permanent oder so
-<dc6iq/p>: nur im ram.
-<dc6iq/p>: die leute, die es brauchen schreiben sich es dann zu den routen im
-	  net.rc
-
-===============================================================================
-
 dann ist es kein Bug, aber trotzdem unschoen. In meinem /etc/profile
 pruefe ich auf Anzahl der Felder in /etc/passwd und finde es unschoen
 wenn die variert. Das duerfte auch einige andere scripts die von einer

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.26 1992/10/05 17:29:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.27 1992/11/18 18:28:53 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -70,6 +70,7 @@ static int32 pty_locktime[NUMPTY];
 
 static int find_pty __ARGS((int *numptr, char *slave));
 static void restore_pty __ARGS((const char *id));
+static int callvalid __ARGS((const char *call));
 static void write_log __ARGS((struct login_cb *tp, const char *buf, int cnt));
 static FILE *fopen_logfile __ARGS((const char *user, const char *protocol));
 static int do_telnet __ARGS((struct login_cb *tp, int chr));
@@ -149,6 +150,26 @@ void fixutmpfile()
 
 /*---------------------------------------------------------------------------*/
 
+static int callvalid(const char *call)
+{
+  int d, l;
+
+  l = strlen(call);
+  if (l < 3 || l > 6) return 0;
+  if (isdigit(uchar(call[0])) && isdigit(uchar(call[1]))) return 0;
+  if (!(isdigit(uchar(call[1])) || isdigit(uchar(call[2])))) return 0;
+  if (!isalpha(uchar(call[l-1]))) return 0;
+  d = 0;
+  for (; *call; call++) {
+    if (!isalnum(uchar(*call))) return 0;
+    if (isdigit(uchar(*call))) d++;
+  }
+  if (d < 1 || d > 2) return 0;
+  return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
 struct passwd *getpasswdentry(name, create)
 const char *name;
 int create;
@@ -164,12 +185,18 @@ int create;
   int uid;
   struct passwd *pw;
 
-  /* Fix user name */
+  /* Find user name */
 
-  for (cp = username; isalnum(uchar(*name)); *cp++ = tolower(uchar(*name++))) ;
-  *cp = 0;
-  if (!isalpha(uchar(*username)) || strlen(username) > 8)
-    strcpy(username, DEFAULTUSER);
+  for (; ; ) {
+    while (*name && !isalnum(uchar(*name))) name++;
+    for (cp = username; isalnum(uchar(*name)); *cp++ = tolower(uchar(*name++))) ;
+    *cp = 0;
+    if (!*username) {
+      strcpy(username, DEFAULTUSER);
+      break;
+    }
+    if (callvalid(username)) break;
+  }
 
   /* Search existing passwd entry */
 

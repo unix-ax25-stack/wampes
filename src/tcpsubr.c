@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.10 1992/05/28 13:50:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.11 1992/11/18 18:29:00 deyke Exp $ */
 
 /* Low level TCP routines:
  *  control block management
@@ -46,7 +46,7 @@ int16 Tcp_mss = DEF_MSS;        /* Maximum segment size to be sent with SYN */
 int32 Tcp_irtt = DEF_RTT;       /* Initial guess at round trip time */
 int Tcp_trace;                  /* State change tracing flag */
 int Tcp_syndata;
-struct tcp_rtt Tcp_rtt[RTTCACHE];
+struct tcp_rtt *Tcp_rtt;
 struct mib_entry Tcp_mib[] = {
 	NULLCHAR,               0,
 	"tcpRtoAlgorithm",      4,      /* Van Jacobsen's algorithm */
@@ -275,35 +275,51 @@ int32 addr;             /* Destination IP address */
 int32 rtt;
 {
 	register struct tcp_rtt *tp;
+	register struct tcp_rtt *pp;
 	int32 abserr;
 
 	if(addr == 0)
 		return;
-	tp = &Tcp_rtt[(unsigned short)addr % RTTCACHE];
-	if(tp->addr != addr){
-		/* New entry */
-		tp->addr = addr;
-		tp->srtt = rtt;
-		tp->mdev = 0;
-	} else {
+
+	for (pp = 0, tp = Tcp_rtt; tp; pp = tp, tp = tp->next)
+	    if (tp->addr == addr) {
+		if (pp) {
+		    pp->next = tp->next;
+		    tp->next = Tcp_rtt;
+		    Tcp_rtt = tp;
+		}
 		/* Run our own SRTT and MDEV integrators, with rounding */
 		abserr = (rtt > tp->srtt) ? rtt - tp->srtt : tp->srtt - rtt;
 		tp->srtt = ((AGAIN-1)*tp->srtt + rtt + (AGAIN/2)) >> LAGAIN;
 		tp->mdev = ((DGAIN-1)*tp->mdev + abserr + (DGAIN/2)) >> LDGAIN;
-	}
+		return;
+	    }
+	tp = malloc(sizeof(*tp));
+	tp->addr = addr;
+	tp->srtt = rtt;
+	tp->mdev = 0;
+	tp->next = Tcp_rtt;
+	Tcp_rtt = tp;
 }
 struct tcp_rtt *
 rtt_get(addr)
 int32 addr;
 {
 	register struct tcp_rtt *tp;
+	register struct tcp_rtt *pp;
 
 	if(addr == 0)
 		return NULLRTT;
-	tp = &Tcp_rtt[(unsigned short)addr % RTTCACHE];
-	if(tp->addr != addr)
-		return NULLRTT;
-	return tp;
+	for (pp = 0, tp = Tcp_rtt; tp; pp = tp, tp = tp->next)
+		if (tp->addr == addr) {
+			if (pp) {
+				pp->next = tp->next;
+				tp->next = Tcp_rtt;
+				Tcp_rtt = tp;
+			}
+			return tp;
+		}
+	return NULLRTT;
 }
 
 /* TCP garbage collection - called by storage allocator when free space

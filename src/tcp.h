@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.8 1992/05/28 13:50:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.9 1992/11/18 18:28:59 deyke Exp $ */
 
 #ifndef _TCP_H
 #define _TCP_H
@@ -34,7 +34,7 @@
 
 #define DEF_MSS 512     /* Default maximum segment size */
 #define DEF_WND 2048    /* Default receiver window */
-#define RTTCACHE 16     /* # of TCP round-trip-time cache entries */
+/* #define RTTCACHE 16  /* # of TCP round-trip-time cache entries */
 #define DEF_RTT 5000    /* Initial guess at round trip time (5 sec) */
 #define MSL2    30      /* Guess at two maximum-segment lifetimes */
 #define MIN_RTO 500L    /* Minimum timeout, milliseconds */
@@ -199,9 +199,10 @@ struct tcp_rtt {
 	int32 addr;             /* Destination IP address */
 	int32 srtt;             /* Most recent SRTT */
 	int32 mdev;             /* Most recent mean deviation */
+	struct tcp_rtt *next;   /* Linked-list pointer */
 };
 #define NULLRTT (struct tcp_rtt *)0
-extern struct tcp_rtt Tcp_rtt[];
+extern struct tcp_rtt *Tcp_rtt;
 
 /* TCP statistics counters */
 struct tcp_stat {

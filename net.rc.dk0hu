@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.8 1992/11/16 10:20:42 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.9 1992/11/18 18:28:14 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -66,6 +66,7 @@ icmp trace on
 ip rtimer 100
 ip ttl 30
 log /tcp/net.log
+tcp irtt 20000
 tcp mss 216
 tcp window 2048
 

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.15 1992/11/09 16:32:34 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.16 1992/11/18 18:29:08 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 CFLAGS     = -O -s
@@ -25,6 +25,8 @@ mkhostdb: mkhostdb.c
 	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
 	if [ `uname -s` = SunOS ] ; then \
 	  $(CC) $(CFLAGS) mkhostdb.c -o $@ ; \
+	elif [ `uname -s` = Linux ] ; then \
+	  $(CC) $(CFLAGS) mkhostdb.c -ldbm -o $@ ; \
 	else \
 	  $(CC) $(CFLAGS) mkhostdb.c -lndbm -o $@ ; \
 	fi

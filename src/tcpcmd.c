@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.8 1992/05/14 13:20:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.9 1992/11/18 18:28:59 deyke Exp $ */
 
 /* TCP control and status routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -81,9 +81,18 @@ void *p;
 {
 	struct tcp_rtt *tp;
 
+	if(argc > 2){
+		int32 addr;
+		if((addr = resolve(argv[1])) == 0){
+			printf(Badhost,argv[1]);
+			return 1;
+		}
+		rtt_add(addr,atol(argv[2]));
+		return 0;
+	}
 	setlong(&Tcp_irtt,"TCP default irtt",argc,argv);
 	if(argc < 2){
-		for(tp = &Tcp_rtt[0];tp < &Tcp_rtt[RTTCACHE];tp++){
+		for(tp = Tcp_rtt;tp;tp=tp->next){
 			if(tp->addr != 0){
 				if(printf("%s: srtt %lu mdev %lu\n",
 				 inet_ntoa(tp->addr),

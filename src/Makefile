@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.28 1992/11/16 10:20:47 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.29 1992/11/18 18:28:42 deyke Exp $
 
 DEFINES       = -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024
 
@@ -300,6 +300,8 @@ $(PROGRAM):     $(OBJS) $(LIBS)
 		@echo "Linking $(PROGRAM) ..."
 		@if [ `uname -s` = SunOS ] ; then \
 		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM) ; \
+		elif [ `uname -s` = Linux ] ; then \
+		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -ldbm -o $(PROGRAM) ; \
 		else \
 		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -lndbm -o $(PROGRAM) ; \
 		fi
