@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25dump.c,v 1.6 1993/02/23 21:34:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25dump.c,v 1.7 1993/04/20 09:27:06 deyke Exp $ */
 
 /* AX25 header tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -46,6 +46,8 @@ int check;      /* Not used */
 			 (hp[ALEN] & REPEATED) ? "*":"");
 		}
 	}
+	if(hdr.qso_num != -1)
+		fprintf(fp," QSO %d",hdr.qso_num);
 	if((control = PULLCHAR(bpp)) == -1)
 		return;
 

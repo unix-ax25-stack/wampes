@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25hdr.c,v 1.3 1992/05/14 13:19:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25hdr.c,v 1.4 1993/04/20 09:27:06 deyke Exp $ */
 
 /* AX25 header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -78,6 +78,29 @@ struct mbuf **bpp;
 
 	if(pullup(bpp,hdr->dest,AXALEN) < AXALEN)
 		return -1;
+
+	/* Decompress Flexnet header */
+	if (hdr->dest[1] & 1) {
+		hdr->ndigis = hdr->nextdigi = 0;
+		hdr->cmdrsp = (hdr->dest[1] & 2) ? LAPB_COMMAND : LAPB_RESPONSE;
+		hdr->qso_num = ((hdr->dest[0] << 6) & 0x3fc0) | ((hdr->dest[1] >> 2) & 0x3f);
+		hdr->dest[0] = (((hdr->dest[2] >> 1) & 0x7e)                               ) + 0x40;
+		hdr->dest[1] = (((hdr->dest[2] << 5) & 0x60) | ((hdr->dest[3] >> 3) & 0x1e)) + 0x40;
+		hdr->dest[2] = (((hdr->dest[3] << 3) & 0x78) | ((hdr->dest[4] >> 5) & 0x06)) + 0x40;
+		hdr->dest[3] = (((hdr->dest[4] << 1) & 0x7e)                               ) + 0x40;
+		hdr->dest[4] = (((hdr->dest[5] >> 1) & 0x7e)                               ) + 0x40;
+		hdr->dest[5] = (((hdr->dest[5] << 5) & 0x60) | ((hdr->dest[6] >> 3) & 0x1e)) + 0x40;
+		hdr->dest[6] = ((hdr->dest[6] << 1) & SSID) | 0x60;
+		hdr->source[0] = 0x7e;
+		hdr->source[1] = 0x40;
+		hdr->source[2] = 0x40;
+		hdr->source[3] = 0x40;
+		hdr->source[4] = 0x40;
+		hdr->source[5] = 0x40;
+		hdr->source[6] = 0x60;
+		return 2;
+	}
+	hdr->qso_num = -1;
 
 	if(pullup(bpp,hdr->source,AXALEN) < AXALEN)
 		return -1;
