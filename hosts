@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.30 1994/05/02 16:51:48 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.31 1994/05/03 14:30:27 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -1814,6 +1814,7 @@
 44.130.48.100   DL2SAE  # Axel Wankmueller, 7250 Leonberg
 44.130.48.101   DL9SAV  # Peter Schweitzer, 7141 Schwieberdingen
 44.130.48.102   DL1SBR  # Frank Grossmann, 7123 Sachsenheim
+44.130.48.103   DL2SAE-1        # Axel Wankmueller, Leonberg QRL
 44.130.48.104   DG4SCV-1        # Rolf Rose
 44.130.48.105   DG4SCV  # Rolf Rose, 7250 Leonberg
 44.130.48.106   DD2FX   # Rolf, 7148 Remseck 3; *** Atari

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.1 1994/05/02 16:52:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.2 1994/05/03 14:30:49 deyke Exp $ */
 
 /* Simple Network Time Protocol (SNTP) (see RFC1361) */
 
@@ -293,6 +293,7 @@ static void sntp_server(struct iface *iface, struct udp_cb *ucb, int cnt)
 	pkt.rootdispersion = 0.0;
 	pkt.refid = ('U' << 24) | ('N' << 16) | ('I' << 8) | 'X';
 	pkt.reftime = rec;
+	if (!pkt.org) pkt.org = pkt.xmt;
 	pkt.rec = rec;
 	pkt.keyid = 0;
 	memset(pkt.check, 0, sizeof(pkt.check));
@@ -418,7 +419,7 @@ static void sntp_client_send(void *arg)
 	memset((char *) & pkt, 0, sizeof(pkt));
 	pkt.version = 1;
 	pkt.mode = 3;
-	pkt.org = peer->xmt = sys_clock();
+	pkt.org = pkt.xmt = peer->xmt = sys_clock();
 	if (bp = htonntp(&pkt)) {
 		send_udp(&peer->ucb->socket, &peer->fsocket, DELAY, 0, bp, 0, 0, 0);
 		peer->sent++;
@@ -443,9 +444,9 @@ static int dosntpadd(int argc, char **argv, void *p)
 		printf(Badhost, argv[1]);
 		return 1;
 	}
-	interval = (argc < 3) ? 3600 : atoi(argv[2]);
+	interval = (argc < 3) ? 3333 : atoi(argv[2]);
 	if (interval <= 0)
-		interval = 3600;
+		interval = 3333;
 	lsocket.address = INADDR_ANY;
 	lsocket.port = Lport++;
 	peer = (struct peer *) calloc(1, sizeof(*peer));

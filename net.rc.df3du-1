@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.df3du-1,v 1.11 1994/05/02 16:51:51 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.df3du-1,v 1.12 1994/05/03 14:30:29 deyke Exp $
 
 hostname     df3du-1
 ax25 mycall  df3du-1
@@ -60,6 +60,6 @@ start ftp
 start tcpgate convers unix:/tcp/sockets/convers
 start tcpgate finger
 
-sntp add dk0hu 3333
+sntp add dk0hu
 
 source /tcp/net.rc.local
