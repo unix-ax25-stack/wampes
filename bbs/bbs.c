@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.55 1988/10/08 17:11:58 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.56 1988/10/09 07:42:26 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -173,13 +173,13 @@ register char  *s;
 static char  *strpos(str, pat)
 char  *str, *pat;
 {
-  register char  *sp, *pp;
+  register char  *s, *p;
 
   for (; ; str++)
-    for (sp = str, pp = pat; ; ) {
-      if (!*pp) return str;
-      if (!*sp) return (char *) 0;
-      if (*sp++ != *pp++) break;
+    for (s = str, p = pat; ; ) {
+      if (!*p) return str;
+      if (!*s) return (char *) 0;
+      if (*s++ != *p++) break;
     }
 }
 
@@ -1222,14 +1222,7 @@ static void h_cmd()
 
 static void host_cmd()
 {
-  register char  **p;
-
-  for (p = hosts; *p; p++)
-    if (calleq(*p, loginname)) {
-      hostmode = 1;
-      return;
-    }
-  unknown_command();
+  if (!hostmode) unknown_command();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1561,6 +1554,7 @@ char  **argv;
 #define RMAIL 1
 #define RNEWS 2
 
+  char  **hp;
   char  *cp;
   char  *dir = WRKDIR;
   int  c;
@@ -1578,6 +1572,8 @@ char  **argv;
   cp = getenv("LOGNAME");
   if (!cp || !*cp) halt();
   strlwc(strcpy(loginname, cp));
+  for (hp = hosts; *hp; hp++)
+    if (calleq(*hp, loginname)) hostmode = 1;
   while ((c = getopt(argc, argv, "dmn")) != EOF)
     switch (c) {
     case 'd':
