@@ -1,18 +1,23 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 1.4 1988/09/01 21:29:36 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 1.5 1988/09/02 20:36:59 dk5sg Exp $";
 
 #include <sys/types.h>
 
 #include <ctype.h>
+#include <fcntl.h>
 #include <memory.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <time.h>
+#include <utmp.h>
 
 extern char  *calloc();
 extern char  *malloc();
 extern long  time();
+extern struct utmp *getutent();
+extern void endutent();
 extern void exit();
 extern void free();
 
@@ -24,16 +29,23 @@ struct mbuf {
 };
 
 struct connection {
-  struct connection *next;
-  int  fd;
-  int  fmask;
-  long  time;
-  int  channel;
-  int  closed;
-  char  user[80];
-  char  ibuf[2048];
-  int  icnt;
-  struct mbuf *obuf;
+  int  type;                    /* Connection type */
+#define CT_UNKNOWN      0
+#define CT_USER         1
+#define CT_HOST         2
+#define CT_CLOSED       3
+  char  name[80];               /* Name of user or host */
+  char  host[80];               /* Name of host where user is logged on */
+  struct connection *via;       /* Pointer to neighbor host */
+  int  channel;                 /* Channel number */
+  long  time;                   /* Login time */
+  int  locked;                  /* Set if mesg already sent */
+  int  fd;                      /* Socket file descriptor */
+  int  fmask;                   /* Socket file descriptor mask */
+  char  ibuf[2048];             /* Input buffer */
+  int  icnt;                    /* Number of bytes in input buffer */
+  struct mbuf *obuf;            /* Output queue */
+  struct connection *next;      /* Linked list pointer */
 };
 
 static struct connection *connections;
@@ -102,7 +114,7 @@ static void free_closed_connections()
   register struct connection *cp, *p;
 
   for (p = 0, cp = connections; cp; ) {
-    if (!cp->closed) {
+    if (cp->type != CT_CLOSED) {
       p = cp;
       cp = cp->next;
     } else if (p) {
@@ -220,7 +232,7 @@ int  flisten;
   cp->fd = fd;
   cp->fmask = (1 << fd);
   cp->time = time(0l);
-  appendstring(&cp->obuf, "conversd $Revision: 1.4 $  Type /HELP for help.\n");
+  appendstring(&cp->obuf, "conversd $Revision: 1.5 $  Type /HELP for help.\n");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -230,8 +242,8 @@ struct connection *cp;
 {
   char  buffer[2048];
 
-  cp->closed = 1;
-  sprintf(buffer, "*** %s signed off.\n", cp->user);
+  cp->type = CT_CLOSED;
+  sprintf(buffer, "*** %s signed off.\n", cp->name);
   sendchannel(cp, buffer);
 }
 
@@ -246,10 +258,10 @@ struct connection *cp;
 
   newchannel = atoi(getarg(0, 0));
   if (cp->channel == newchannel) return;
-  sprintf(buffer, "*** %s signed off.\n", cp->user);
+  sprintf(buffer, "*** %s signed off.\n", cp->name);
   sendchannel(cp, buffer);
   cp->channel = newchannel;
-  sprintf(buffer, "*** %s signed on.\n", cp->user);
+  sprintf(buffer, "*** %s signed on.\n", cp->name);
   sendchannel(cp, buffer);
 }
 
@@ -265,6 +277,7 @@ struct connection *cp;
   appendstring(&cp->obuf, "/CHANNEL n           Switch to channel n\n");
   appendstring(&cp->obuf, "/EXIT                Terminate the convers session\n");
   appendstring(&cp->obuf, "/HELP                Print help information\n");
+  appendstring(&cp->obuf, "/INVITE user         Invite user to join your channel\n");
   appendstring(&cp->obuf, "/MSG user text...    Send a private message to user\n");
   appendstring(&cp->obuf, "/QUIT                Terminate the convers session\n");
   appendstring(&cp->obuf, "/WHO                 Print all users and their channel numbers\n");
@@ -275,20 +288,68 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
+static void invite_command(cp)
+struct connection *cp;
+{
+
+  char  *name;
+  char  buffer[2048];
+  char  line[80];
+  int  fd;
+  long  now;
+  struct connection *p;
+  struct stat stbuf;
+  struct tm *tm;
+  struct utmp *up;
+
+  name = getarg(0, 0);
+  now = time(0l);
+  tm = localtime(&now);
+  sprintf(buffer, "\n\007\007*** Message from %s at %d:%02d ...\nPlease join convers channel %d.\n\007\007\n", cp->name, tm->tm_hour, tm->tm_min, cp->channel);
+  for (p = connections; p; p = p->next)
+    if (!strcmp(p->name, name)) {
+      if (p->channel != cp->channel) appendstring(&p->obuf, buffer);
+      return;
+    }
+  while (up = getutent())
+    if (up->ut_type == USER_PROCESS && !strcmp(up->ut_user, name)) {
+      sprintf(line, "/dev/%s", up->ut_line);
+      if (stat(line, &stbuf)) continue;
+      if ((stbuf.st_mode & 2) != 2) continue;
+      if ((fd = open(line, O_WRONLY, 0644)) < 0) continue;
+      write(fd, buffer, (unsigned) strlen(buffer));
+      close(fd);
+      endutent();
+      return;
+    }
+  endutent();
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void msg_command(cp)
 struct connection *cp;
 {
 
   char  *msg;
-  char  *user;
+  char  *name;
   char  buffer[2048];
+  int  found;
   struct connection *p;
 
-  user = getarg(0, 0);
-  sprintf(buffer, "<*%s*>:", cp->user);
+  name = getarg(0, 0);
+  sprintf(buffer, "<*%s*>:", cp->name);
   msg = formatline(buffer, getarg(0, 1));
+  found = 0;
   for (p = connections; p; p = p->next)
-    if (!strcmp(p->user, user)) appendstring(&p->obuf, msg);
+    if (!strcmp(p->name, name)) {
+      appendstring(&p->obuf, msg);
+      found = 1;
+    }
+  if (!found) {
+    sprintf(buffer, "*** No such user: %s\n", name);
+    appendstring(&cp->obuf, buffer);
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -298,9 +359,9 @@ struct connection *cp;
 {
   char  buffer[2048];
 
-  if (*cp->user) return;
-  strcpy(cp->user, getarg(0, 0));
-  sprintf(buffer, "*** %s signed on.\n", cp->user);
+  if (*cp->name) return;
+  strcpy(cp->name, getarg(0, 0));
+  sprintf(buffer, "*** %s signed on.\n", cp->name);
   sendchannel(cp, buffer);
 }
 
@@ -317,7 +378,7 @@ struct connection *cp;
   appendstring(&cp->obuf, "Channel  Time   User\n");
   for (p = connections; p; p = p->next) {
     tm = localtime(&p->time);
-    sprintf(buffer, "%7d  %2d:%02d  %s\n", p->channel, tm->tm_hour, tm->tm_min, p->user);
+    sprintf(buffer, "%7d  %2d:%02d  %s\n", p->channel, tm->tm_hour, tm->tm_min, p->name);
     appendstring(&cp->obuf, buffer);
   }
   appendstring(&cp->obuf, "***\n");
@@ -339,6 +400,7 @@ struct connection *cp;
     "channel", channel_command,
     "exit",    bye_command,
     "help",    help_command,
+    "invite",  invite_command,
     "msg",     msg_command,
     "name",    name_command,
     "quit",    bye_command,
@@ -364,7 +426,7 @@ struct connection *cp;
     appendstring(&cp->obuf, buffer);
     return;
   }
-  sprintf(buffer, "<%s>:", cp->user);
+  sprintf(buffer, "<%s>:", cp->name);
   sendchannel(cp, formatline(buffer, cp->ibuf));
 }
 
