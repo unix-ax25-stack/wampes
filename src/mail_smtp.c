@@ -1,7 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.11 1994/04/13 09:51:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.12 1994/04/18 08:38:44 deyke Exp $ */
 
 /* SMTP Mail Delivery Agent */
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,11 +41,17 @@ static void mail_smtp_transaction(struct mesg *mp)
 {
 
   char tmp[1024];
+  int valid_reply;
   struct mailjob *jp;
 
   jp = mp->sp->jobs;
-  if (mp->state == SMTP_OPEN_STATE && (*mp->buf < '0' || *mp->buf > '9')) return;
-  if (*mp->buf == (mp->state == SMTP_DATA_STATE ? '3' : '2'))
+  valid_reply = (isdigit(mp->buf[0] & 0xff) &&
+		 isdigit(mp->buf[1] & 0xff) &&
+		 isdigit(mp->buf[2] & 0xff) &&
+		 (mp->buf[3] == ' ' || mp->buf[3] == '-'));
+  if (mp->state == SMTP_OPEN_STATE && !valid_reply) return;
+  if (valid_reply && mp->buf[3] == '-') return;
+  if (valid_reply && *mp->buf == (mp->state == SMTP_DATA_STATE ? '3' : '2'))
     switch (mp->state) {
     case SMTP_OPEN_STATE:
       mp->state = SMTP_HELO_STATE;
