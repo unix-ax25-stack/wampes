@@ -1,5 +1,5 @@
 @               IN      SOA   ucsd.edu. brian.ucsd.edu.  (
-				93093012	; Serial
+				93100612	; Serial
                                 360000  ; Refresh
                                 3600    ; Retry
                                 3600000 ; Expire
@@ -220,7 +220,10 @@ aa4zi	IN	A	44.70.12.60
 aa5df	IN	A	44.30.2.22
 aa5df	IN	MX 10	aa5df
 aa5mw	IN	A	44.76.3.26
+aa5nu	IN	A	44.28.0.58
 aa5od	IN	A	44.122.1.20
+aa5sa	IN	A	44.28.0.154
+aa5ux	IN	A	44.28.0.57
 aa6av	IN	A	44.4.42.6
 aa6br	IN	A	44.4.8.196
 aa6bs	IN	A	44.4.10.28
@@ -250,6 +253,7 @@ aa6wb	IN	A	44.4.34.8
 aa6xl	IN	A	44.4.22.4
 aa7aj	IN	A	44.116.0.150
 aa7aj-3	IN	A	44.116.0.151
+aa7bq	IN	A	44.124.11.53
 aa7jf	IN	A	44.116.0.132
 aa7tr	IN	A	44.40.12.11
 aa8db	IN	A	44.70.4.152
@@ -258,10 +262,12 @@ aa8ei	IN	A	44.70.14.18
 aa8ia	IN	A	44.70.8.9
 aa8ia-1	IN	A	44.70.8.12
 aa9a	IN	A	44.92.1.21
+aa9ai	IN	A	44.48.90.8
 aa9bx	IN	A	44.72.203.1
 aa9ct	IN	A	44.72.1.97
 aa9dv	IN	A	44.72.207.33
 aa9en	IN	A	44.72.7.3
+aa9fp	IN	A	44.48.70.17
 aaw-107net	IN	A	44.154.107.0
 ab1a	IN	A	44.56.0.111
 ab3a	IN	A	44.96.0.20
@@ -295,9 +301,9 @@ ac7k	IN	MX 5	cronus.upl.com.
 ac7n	IN	A	44.116.0.139
 ac8r	IN	A	44.70.4.43
 ace.wa7ipx	IN	A	44.24.111.22
-ace.wa7ipx	IN	MX 10	henson.cc.wwu.edu.
-ace.wa7ipx	IN	MX 20	nyssa.wa7ipx
-ace.wa7ipx	IN	MX 30	adric.wa7ipx
+ace.wa7ipx	IN	MX 10	nyssa.wa7ipx.ampr.org.
+ace.wa7ipx	IN	MX 20	henson.cc.wwu.edu.
+ace.wa7ipx	IN	MX 5	nyssa.alphasoft.com.
 act	IN	A	44.136.0.255
 actgate.n5npl	IN	A	44.28.0.108
 actgate.n5npl	IN	MX 10	actgate.n5npl
@@ -316,10 +322,11 @@ ad8i-6	IN	A	44.70.0.36
 ad8i-7	IN	A	44.70.0.37
 ad8i-8	IN	A	44.70.0.38
 ad8i-9	IN	A	44.70.0.39
+adltalk.vk5wi	IN	CNAME	bbs.vk5wi
 adric.wa7ipx	IN	A	44.24.111.17
-adric.wa7ipx	IN	MX 10	henson.cc.wwu.edu.
-adric.wa7ipx	IN	MX 20	nyssa.wa7ipx
-adric.wa7ipx	IN	MX 30	adric.wa7ipx
+adric.wa7ipx	IN	MX 10	nyssa.wa7ipx.ampr.org.
+adric.wa7ipx	IN	MX 20	henson.cc.wwu.edu.
+adric.wa7ipx	IN	MX 5	nyssa.alphasoft.com.
 ae1b	IN	A	44.56.4.86
 ae1c	IN	A	44.56.0.128
 ae1d	IN	A	44.52.2.20
@@ -338,6 +345,7 @@ af8c	IN	A	44.70.4.46
 af8u	IN	A	44.102.56.17
 af8u	IN	MX 10	af8u
 af8u	IN	MX 20	hamgate.cc.wayne.edu.
+af9l	IN	A	44.48.70.20
 ag2v	IN	A	44.68.32.14
 ag9v	IN	A	44.70.12.232
 ag9v	IN	MX 10	udcps3.cps.udayton.edu.
@@ -378,6 +386,7 @@ ak1p	IN	A	44.56.0.21
 ak1p-1	IN	A	44.56.16.3
 ak3p	IN	A	44.80.0.99
 ak7s	IN	A	44.24.0.18
+ak7z	IN	A	44.124.12.19
 ak8y	IN	A	44.70.4.3
 ak9y	IN	A	44.72.51.33
 al7aq	IN	A	44.24.0.77
@@ -416,6 +425,7 @@ amiga.n1lhl	IN	A	44.56.4.156
 amiga.n8aho	IN	A	44.70.4.51
 amiga.n8fow	IN	CNAME	n8fow
 amiga.ve3sdj	IN	A	44.135.104.3
+amiga.wb6jkw	IN	A	44.16.1.59
 amiga500.ve3sdj	IN	A	44.135.104.2
 amy.wa1ptc	IN	A	44.118.0.18
 anarts	IN	A	44.136.8.48
@@ -599,6 +609,7 @@ bbs.vk3bbs	IN	MX 0	bbs.vk3bbs
 bbs.vk3bbs	IN	MX 10	minnie.cs.adfa.oz.au.
 bbs.vk3fab	IN	A	44.136.114.10
 bbs.vk5lz	IN	A	44.136.178.1
+bbs.vk5tty	IN	A	44.136.176.1
 bbs.vk5wi	IN	A	44.136.180.1
 bbs.vk5xxx	IN	A	44.136.188.1
 bbs.w1edh	IN	A	44.88.1.17
@@ -654,6 +665,8 @@ box6.wa7shi	IN	A	44.26.0.38
 box7.wa7shi	IN	A	44.26.0.39
 brainiac.nr0d	IN	A	44.94.10.52
 brian.ka1jy	IN	A	44.88.1.1
+bridge	IN	A	44.28.0.2
+bridgeprot	IN	A	n1cit-9
 bridgewater	IN	CNAME	switch.bridgewater
 britcolumbia	IN	A	44.135.0.0
 brk_bks_ofe	IN	A	44.131.6.0
@@ -1214,7 +1227,7 @@ dd9wq	IN	A	44.130.40.20
 dd9wv	IN	A	44.130.34.3
 dd9zy	IN	A	44.130.25.2
 dd9zy-2	IN	A	44.130.25.12
-delete	IN	A	44.136.73.a
+delete	IN	A	44.130.24.74
 demo0.n9gbh	IN	A	44.72.248.0
 demo1.n9gbh	IN	A	44.72.248.1
 demo2.n9gbh	IN	A	44.72.248.2
@@ -1229,6 +1242,7 @@ detroit	IN	A	44.102.48.8
 detroit	IN	MX 10	detroit
 detroit	IN	MX 20	hamgate.cc.wayne.edu.
 detx1h	IN	A	44.102.48.9
+dev.kc2nm	IN	A	44.88.0.152
 dewy.ve3mwm	IN	A	44.135.85.59
 df0db	IN	A	44.130.59.3
 df0fkb	IN	A	44.130.27.19
@@ -2725,6 +2739,7 @@ dl9yet-2	IN	A	44.130.15.37
 dl9yet-7	IN	A	44.130.144.31
 dns.kg7cp	IN	A	44.24.100.76
 dns.painesville	IN	A	44.70.248.3
+dns.vk5wi	IN	CNAME	bbs.vk5wi
 dogstar.n0kna	IN	A	44.94.10.130
 donald	IN	A	44.28
 dora.n7rid	IN	A	44.24.111.35
@@ -3276,6 +3291,7 @@ empire.wd0fhg	IN	A	44.32.0.34
 emu.vk5gga	IN	A	44.136.176.17
 en1.kc2ct	IN	A	44.68.8.28
 end	IN	A	44.70.4.200
+ensign.wb9vvf	IN	A	44.20.0.81
 eth.sv1aaw	IN	A	44.154.107.1
 ethanac.kd7nm	IN	A	44.24.101.10
 eureka	IN	A	44.4.48.1
@@ -5365,6 +5381,7 @@ ik1qae	IN	A	44.134.144.142
 ik1qae-10	IN	A	44.134.144.143
 ik1qaf	IN	A	44.134.144.47
 ik1qaf-10	IN	A	44.134.144.51
+ik1qld	IN	A	44.134.128.192
 ik2anp	IN	A	44.134.160.32
 ik2aoh	IN	A	44.134.160.205
 ik2aos	IN	A	44.134.160.98
@@ -5680,6 +5697,7 @@ iltest.n9lvi	IN	A	44.73.6.5
 iltest.n9lvi	IN	MX 10	wb9uus
 iltest.n9lvi	IN	MX 20	wb9uus.bradley.edu.
 iltest.n9lvi	IN	MX 30	bradley.bradley.edu.
+in	IN	A	44.130.24.74
 in3apk	IN	A	44.134.176.37
 in3asw	IN	A	44.134.176.98
 in3bbw	IN	A	44.134.176.120
@@ -5925,6 +5943,7 @@ iw1cay	IN	A	44.134.128.138
 iw1cbh	IN	A	44.134.128.130
 iw1cbk	IN	A	44.134.128.144
 iw1cbk-10	IN	A	44.134.128.148
+iw1cfl	IN	A	44.134.128.73
 iw1cfq	IN	A	44.134.128.173
 iw1cgw	IN	A	44.134.128.180
 iw1ci	IN	A	44.134.128.198
@@ -5933,6 +5952,7 @@ iw1cix	IN	A	44.134.128.188
 iw1cnf	IN	A	44.134.128.31
 iw1cpo	IN	A	44.134.128.34
 iw1csr	IN	A	44.134.128.43
+iw1cxz	IN	A	44.134.128.59
 iw1dam	IN	A	44.134.128.174
 iw1geq	IN	A	44.134.128.45
 iw1pfs	IN	A	44.134.144.80
@@ -6272,6 +6292,7 @@ java.n5snn	IN	A	44.76.1.191
 java.n5snn	IN	MX 5	ausgw.w5ehm
 jeff-2	IN	A	44.16.0.144
 jere	IN	A	44.100
+jerry.vk5zwi	IN	A	44.136.203.6
 jevex.n7rid	IN	A	44.24.111.37
 jevex.n7rid	IN	MX 10	henson.cc.wwu.edu.
 jevex.n7rid	IN	MX 20	vistar.n7rid
@@ -6353,6 +6374,7 @@ k0mfy	IN	A	44.46.66.4
 k0mfy-1	IN	A	44.46.66.1
 k0mvl	IN	A	44.22.1.8
 k0orb	IN	A	44.46.0.40
+k0otz	IN	A	44.124.11.100
 k0pfx	IN	A	44.46.0.39
 k0pfx-1	IN	A	44.46.65.8
 k0pfx-2	IN	A	44.46.64.2
@@ -6405,6 +6427,7 @@ k1ki	IN	A	44.88.1.13
 k1lho	IN	A	44.88.0.94
 k1liq	IN	A	44.104.0.8
 k1lnj	IN	A	44.96.0.80
+k1lom	IN	A	44.88.0.158
 k1lt	IN	A	44.70.0.13
 k1lt-1	IN	A	44.70.0.14
 k1ltj	IN	A	44.88.0.45
@@ -6558,13 +6581,16 @@ k5dji	IN	A	44.80.0.94
 k5dpg	IN	A	44.108.0.6
 k5dsf	IN	A	44.76.2.160
 k5dsf	IN	MX 10	k5dsf
+k5evi	IN	A	44.28.0.5
 k5guu	IN	A	44.108.5.1
 k5hg	IN	A	44.76.0.252
-k5hj	IN	A	44.28.0.96
+k5hj	IN	A	44.28.0.32
 k5mju	IN	A	44.76.1.136
+k5qbm	IN	A	44.28.0.153
 k5qxj	IN	A	44.108.0.8
 k5vmx	IN	A	44.76.4.16
 k5wph.ampr.org	IN	A	44.77.0.78
+k5yef	IN	A	44.28.0.99
 k5yfw	IN	A	44.76.2.88
 k5yfw	IN	MX 10	k5yfw
 k5ygo	IN	A	44.76.1.140
@@ -6635,6 +6661,8 @@ k7mkg	IN	MX 20	ece.orst.edu.
 k7mkg-2	IN	A	44.26.1.6
 k7mm	IN	A	44.86.0.72
 k7myu	IN	A	44.26.0.240
+k7pyk	IN	A	44.124.11.88
+k7qcw	IN	A	44.124.12.28
 k7swt	IN	A	44.40.9.1
 k7tbm	IN	A	44.24.102.1
 k7tbm-ms	IN	A	44.24.102.2
@@ -6650,8 +6678,10 @@ k7typ-1	IN	A	44.26.1.4
 k7ukp	IN	A	44.26.0.136
 k7ukp-1	IN	A	44.26.0.137
 k7uyx	IN	A	44.26.1.1
+k7vau	IN	A	44.124.12.31
 k7yst	IN	A	44.24.0.166
 k7ztm	IN	A	44.40.4.8
+k7zwi	IN	A	44.124.11.24
 k8abs	IN	A	44.92.6.8
 k8cs	IN	A	44.98.0.84
 k8dvw	IN	A	44.102.48.23
@@ -6730,7 +6760,7 @@ k9vxw-3	IN	A	44.72.41.68
 k9wfy	IN	A	44.72.38.3
 ka0aye	IN	A	44.46.0.113
 ka0day	IN	A	44.46.0.97
-ka0dfn	IN	A	44.26.0.56
+ka0dfn	IN	A	44.26.3.67
 ka0etf	IN	A	44.46.66.8
 ka0gzn	IN	A	44.32.0.128
 ka0ilr	IN	A	44.50.1.16
@@ -6793,9 +6823,9 @@ ka1jmf-1	IN	A	44.56.14.5
 ka1jy	IN	A	44.88.0.20
 ka1jy-1	IN	A	44.88.1.2
 ka1jy-3	IN	A	44.88.3.1
-ka1jy-9	IN	A	44.88.0.25
 ka1jy-9	IN	CNAME	tolland
 ka1jyu	IN	A	44.88.0.41
+ka1kag	IN	CNAME	kd1jg
 ka1kf	IN	A	44.56.8.131
 ka1kla	IN	A	44.56.10.20
 ka1kri	IN	A	44.56.10.13
@@ -6981,6 +7011,7 @@ ka5oze	IN	A	44.76.4.44
 ka5ppx	IN	A	44.28.0.71
 ka5ppx	IN	MX 10	system200.cecs.unt.edu.
 ka5ppx	IN	MX 20	dfwgate
+ka5rrg	IN	A	44.28.0.45
 ka5sfc	IN	A	44.76.1.112
 ka5t	IN	A	44.76.1.44
 ka5vdj	IN	A	44.76.1.72
@@ -7035,14 +7066,15 @@ ka6ykg	IN	A	44.16.0.118
 ka6yrk	IN	A	44.4.12.8
 ka6ysc	IN	A	44.2.0.209
 ka7air	IN	A	44.24.0.107
-ka7arc	IN	A	44.26.0.216
-ka7arc-1	IN	A	44.26.0.68
+ka7arc	IN	A	44.26.3.136
+ka7arc-1	IN	A	44.26.3.137
 ka7axd-2	IN	A	44.116.0.26
 ka7axd-3	IN	A	44.116.0.27
 ka7ayf	IN	A	44.12.0.10
 ka7bza	IN	A	44.24.0.35
 ka7cfu	IN	A	44.86.0.13
 ka7cse	IN	A	44.24.0.67
+ka7cuz	IN	A	44.124.12.30
 ka7dar	IN	A	44.24.0.129
 ka7dat	IN	A	44.24.0.102
 ka7ehk	IN	A	44.26.1.2
@@ -7051,13 +7083,15 @@ ka7ehk	IN	MX 10	wg7j.ece.orst.edu.
 ka7ehk	IN	MX 20	ece.orst.edu.
 ka7exm	IN	A	44.4.4.12
 ka7ezo	IN	A	44.2.0.34
-ka7fha	IN	A	44.26.0.252
+ka7fha	IN	A	44.26.3.98
 ka7fwr	IN	A	44.26.1.11
 ka7gha	IN	A	44.12.0.11
 ka7gji	IN	A	44.24.100.7
 ka7gnp	IN	A	44.4.4.22
 ka7jxr	IN	CNAME	alpaca.ka7jxr
+ka7lch	IN	A	44.124.11.56
 ka7lwf	IN	A	44.40.9.5
+ka7mps	IN	A	44.124.11.30
 ka7mqw	IN	A	44.24.0.177
 ka7nkx	IN	A	44.70.12.13
 ka7ocf	IN	A	44.26.1.24
@@ -7079,11 +7113,11 @@ ka7tvc	IN	A	44.24.0.53
 ka7vqd	IN	A	44.26.0.112
 ka7wna	IN	A	44.24.0.25
 ka7wnh	IN	A	44.24.0.72
-ka7wwe	IN	A	44.26.0.100
+ka7wwe	IN	A	44.26.3.131
 ka7ybh	IN	A	44.24.0.43
 ka7zem	IN	A	44.24.0.126
 ka7zfd	IN	A	44.40.1.6
-ka7zis	IN	A	44.26.0.164
+ka7zis	IN	A	44.26.3.134
 ka8cni	IN	A	44.70.4.138
 ka8cpb	IN	A	44.70.4.54
 ka8cve	IN	A	44.92.8.3
@@ -7131,6 +7165,8 @@ ka9fjs	IN	A	44.48.0.1
 ka9fjs-2	IN	A	44.48.0.10
 ka9hmp	IN	A	44.94.249.60
 ka9kdc	IN	A	44.72.22.33
+ka9lcf	IN	A	44.48.30.31
+ka9lcf-1	IN	A	44.48.30.32
 ka9liy	IN	A	44.72.32.1
 ka9lmk	IN	A	44.72.64.3
 ka9lmk-1	IN	A	44.72.64.4
@@ -7143,6 +7179,7 @@ ka9mgs	IN	A	44.72.26.161
 ka9mhi	IN	A	44.92.7.3
 ka9mhk	IN	A	44.72.41.130
 ka9mkr	IN	A	44.48.0.14
+ka9mwm-3	IN	A	44.48.20.9
 ka9nhl	IN	A	44.72.21.33
 ka9nto	IN	A	44.92.2.1
 ka9nwy	IN	A	44.92.2.4
@@ -7151,6 +7188,7 @@ ka9nzi	IN	MX 0	ka9nzi
 ka9nzi	IN	MX 1	ke9yq.imsa.edu.
 ka9obz	IN	A	44.72.8.71
 ka9oiw	IN	A	44.72.206.97
+ka9okt	IN	A	44.48.70.11
 ka9pon	IN	A	44.72.27.162
 ka9pqe	IN	A	44.72.50.100
 ka9q	IN	A	44.8.0.42
@@ -7161,8 +7199,20 @@ ka9rxk	IN	A	44.72.211.99
 ka9scf	IN	A	44.72.18.1
 ka9scf-1	IN	A	44.72.18.2
 ka9scf-10	IN	A	44.72.21.97
+ka9scf-11	IN	A	44.72.21.106
+ka9scf-12	IN	A	44.72.18.14
+ka9scf-13	IN	A	44.72.18.15
+ka9scf-14	IN	A	44.72.18.16
+ka9scf-15	IN	A	44.72.18.17
+ka9scf-2	IN	A	44.72.18.5
 ka9scf-2	IN	CNAME	hf.ka9scf
 ka9scf-3	IN	A	44.72.18.6
+ka9scf-4	IN	A	44.72.18.8
+ka9scf-5	IN	A	44.72.18.9
+ka9scf-6	IN	A	44.72.18.10
+ka9scf-7	IN	A	44.72.18.11
+ka9scf-8	IN	A	44.72.18.12
+ka9scf-9	IN	A	44.72.18.13
 ka9sww	IN	A	44.72.48.193
 ka9tqc	IN	A	44.92.6.3
 ka9vaw	IN	A	44.72.1.161
@@ -7172,12 +7222,16 @@ ka9vsh	IN	A	44.72.1.65
 ka9wap	IN	A	44.72.80.97
 ka9wgn	IN	A	44.72.137.65
 ka9wmi	IN	A	44.72.20.97
+ka9wmw	IN	A	44.48.20.7
+ka9wmw-2	IN	A	44.48.20.8
 ka9wsb	IN	A	44.72.13.129
 ka9wsb-1	IN	A	44.72.13.130
 ka9wsb-2	IN	CNAME	wiggle
 ka9wsb-3	IN	A	44.72.13.132
 ka9wsb-4	IN	A	44.72.13.133
+ka9yca	IN	A	44.72.6.143
 ka9zgh	IN	A	44.72.17.2
+ka9zpa	IN	A	44.48.70.18
 kado.nm0h	IN	A	44.94.10.210
 kalqm	IN	A	44.48.90.5
 katie.vk2kvf	IN	A	44.136.18.8
@@ -7299,12 +7353,16 @@ kb4xn	IN	A	44.100.0.4
 kb5aif	IN	A	44.108.0.67
 kb5ara	IN	A	44.76.5.84
 kb5awm	IN	A	44.76.5.56
+kb5cca	IN	A	44.28.0.11
 kb5cms	IN	A	44.30.0.3
 kb5dby	IN	A	44.76.1.156
 kb5ekc	IN	A	44.108.0.13
 kb5elv	IN	A	44.76.1.16
 kb5elv	IN	MX 5	ausgw.w5ehm
+kb5ewv	IN	A	44.28.0.7
 kb5exb	IN	A	44.76.1.48
+kb5fmv	IN	A	44.28.0.102
+kb5ftt	IN	A	44.28.0.17
 kb5ga	IN	A	44.108.2.5
 kb5gq	IN	A	44.108.2.3
 kb5hpn	IN	A	44.69.0.98
@@ -7318,6 +7376,7 @@ kb5mu	IN	A	44.8.0.8
 kb5mu-1	IN	A	44.8.0.56
 kb5mu-2	IN	A	44.8.0.33
 kb5mvf	IN	A	44.76.5.168
+kb5nxw	IN	A	44.28.0.112
 kb5poz	IN	A	44.76.2.184
 kb5poz	IN	MX 10	kb5poz
 kb5rsy	IN	A	44.76.1.211
@@ -7329,9 +7388,11 @@ kb5tkh	IN	A	44.76.1.18
 kb5tkh	IN	MX 0	kb5tkh
 kb5tkh	IN	MX 10	ausgw.w5ehm
 kb5urs	IN	A	44.76.0.40
+kb5vnw	IN	A	44.28.1.25
 kb5w-8	IN	A	44.42.0.33
 kb5wxe	IN	A	44.76.5.140
 kb5wy	IN	A	44.108.3.1
+kb5yxb	IN	A	44.28.0.100
 kb6bhn	IN	A	44.4.18.134
 kb6bpm	IN	A	44.16.1.49
 kb6bzz	IN	A	44.10.0.181
@@ -7385,7 +7446,9 @@ kb6zhn	IN	A	44.4.4.30
 kb7aba	IN	A	44.24.0.62
 kb7ail	IN	A	44.24.0.56
 kb7b	IN	A	44.24.101.59
+kb7ccm	IN	A	44.124.11.19
 kb7dcd	IN	A	44.24.102.64
+kb7dje	IN	A	44.124.11.10
 kb7dz	IN	A	44.24.103.6
 kb7dz	IN	MX 10	kb7dz
 kb7eiu	IN	A	44.125.132.1
@@ -7393,10 +7456,13 @@ kb7erw	IN	A	44.24.0.60
 kb7flt	IN	A	44.24.100.11
 kb7fru	IN	A	44.24.0.108
 kb7gbq	IN	A	44.24.0.99
+kb7gdz	IN	A	44.124.11.14
 kb7gfg	IN	A	44.40.6.1
 kb7gfg	IN	MX 5	cronus.upl.com.
 kb7gud	IN	A	44.112.0.50
+kb7gut	IN	A	44.124.11.92
 kb7hs	IN	A	44.86.0.69
+kb7ia	IN	A	44.124.11.89
 kb7ilj	IN	A	44.24.0.118
 kb7irs	IN	A	44.26.1.8
 kb7irs	IN	MX 0	kb7irs
@@ -7405,6 +7471,7 @@ kb7irs	IN	MX 20	ece.orst.edu.
 kb7jeq	IN	A	44.40.10.4
 kb7jrg	IN	A	44.24.0.119
 kb7kcr	IN	A	44.24.0.155
+kb7ky	IN	A	44.124.11.69
 kb7kzw	IN	A	44.24.0.156
 kb7lig	IN	A	44.24.100.9
 kb7llk	IN	A	44.125.128.2
@@ -7419,6 +7486,7 @@ kb7ntl-3	IN	A	44.116.0.155
 kb7pjb	IN	A	44.125.129.2
 kb7pst	IN	A	44.40.6.10
 kb7pux	IN	A	44.125.132.6
+kb7pxb	IN	A	44.124.11.123
 kb7qbs	IN	A	44.125.131.2
 kb7qbs.bbs	IN	A	44.125.131.1
 kb7qcn	IN	A	44.24.102.72
@@ -7436,13 +7504,16 @@ kb7ter	IN	A	44.40.8.14
 kb7ter	IN	MX 10	byugate.w7ohr
 kb7tnd	IN	A	44.26.1.13
 kb7tpo	IN	A	44.40.8.18
+kb7tv	IN	A	44.124.11.17
 kb7uv	IN	A	44.68.32.18
 kb7vbd	IN	A	44.40.6.23
 kb7vbf	IN	A	44.40.6.42
+kb7xp	IN	A	44.124.11.70
 kb7xr	IN	A	44.40.4.2
 kb7xr	IN	MX 10	kb7xr
 kb7xr	IN	MX 20	uugate.wa7slg
 kb7xr	IN	MX 30	uugate.aim.utah.edu.
+kb7yel	IN	A	44.124.11.129
 kb7yw	IN	A	44.70.4.39
 kb7yw-1	IN	A	44.70.4.40
 kb7yw-2	IN	A	44.70.4.41
@@ -7487,6 +7558,7 @@ kb8frw	IN	MX 20	hamgate.cc.wayne.edu.
 kb8ftf	IN	A	44.102.48.25
 kb8ftf	IN	MX 10	kb8ftf
 kb8ftf	IN	MX 20	hamgate.cc.wayne.edu.
+kb8gm	IN	A	44.28.0.38
 kb8gsa	IN	A	44.70.16.78
 kb8gvq	IN	A	44.70.4.134
 kb8gvq-1	IN	A	44.70.4.135
@@ -7497,6 +7569,7 @@ kb8khw	IN	A	44.70.4.119
 kb8lmc	IN	A	44.70.16.62
 kb8lqg	IN	A	44.70.249.66
 kb8mpd	IN	A	44.70.16.53
+kb8mw	IN	A	44.28.0.46
 kb8nh	IN	A	44.48.30.2
 kb8po	IN	A	44.102.16.21
 kb8po	IN	MX 10	kb8po
@@ -7804,6 +7877,7 @@ kb9dzh	IN	A	44.72.224.68
 kb9edh	IN	A	44.72.123.161
 kb9efg	IN	A	44.72.51.129
 kb9eky	IN	A	44.48.80.2
+kb9emw	IN	A	44.48.90.9
 kb9ezl	IN	A	44.72.123.162
 kb9fbl	IN	A	44.72.20.66
 kb9fli	IN	A	44.72.174.193
@@ -7846,6 +7920,7 @@ kc1td	IN	A	44.56.0.191
 kc1te	IN	A	44.56.0.77
 kc1ua-1	IN	A	44.56.8.23
 kc1uh	IN	A	44.88.0.24
+kc1uh	IN	CNAME	wq1r
 kc1un	IN	A	44.56.8.112
 kc1un-1	IN	A	44.56.8.96
 kc1ur	IN	A	44.56.8.18
@@ -7907,6 +7982,7 @@ kc5l	IN	A	44.76.2.84
 kc5l	IN	MX 10	kc5l
 kc5po	IN	A	44.108.0.12
 kc5ry	IN	A	44.72.159.97
+kc5x	IN	A	44.124.13.26
 kc5yd	IN	A	44.98.0.66
 kc6a	IN	A	44.16.0.159
 kc6cal	IN	A	44.16.1.39
@@ -8001,6 +8077,7 @@ kc6yzw	IN	A	44.10.0.224
 kc6zus	IN	A	44.16.1.43
 kc6zwr	IN	CNAME	a.kb6rih
 kc7bc	IN	A	44.40.10.6
+kc7cg	IN	A	44.124.12.11
 kc7co	IN	A	44.116.0.62
 kc7co-1	IN	A	44.116.0.63
 kc7co-2	IN	A	44.116.0.64
@@ -8012,16 +8089,20 @@ kc7fn	IN	A	44.24.0.84
 kc7gt	IN	A	44.24.0.27
 kc7pm	IN	A	44.40.1.19
 kc7rn	IN	A	44.24.0.80
+kc7y	IN	A	44.124.11.15
 kc8dz	IN	A	44.70.16.26
 kc8er	IN	A	44.70.4.118
 kc8jn	IN	A	44.70.8.1
 kc8jn-1	IN	A	44.70.8.2
 kc8jn-2	IN	A	44.70.8.3
 kc8u	IN	A	44.70.0.47
+kc9du	IN	A	44.72.37.226
 kc9ff	IN	A	44.48.0.36
 kc9hi	IN	A	44.48.0.33
 kc9ic	IN	A	44.72.32.161
+kc9ky	IN	A	44.73.155.129
 kc9ne	IN	A	44.92.6.9
+kc9oo	IN	A	44.72.15.193
 kc9wd	IN	A	44.72.150.129
 kd0ag	IN	A	44.94.3.8
 kd0pj	IN	A	44.46.0.14
@@ -8031,6 +8112,7 @@ kd1br	IN	A	44.88.0.127
 kd1by	IN	A	44.88.0.91
 kd1du	IN	A	44.88.0.96
 kd1eh	IN	A	44.52.0.58
+kd1eu	IN	A	44.88.2.36
 kd1f	IN	A	44.68.8.46
 kd1gg	IN	A	44.56.0.219
 kd1he	IN	A	44.52.0.53
@@ -8143,6 +8225,7 @@ kd5vu	IN	A	44.76.1.40
 kd5vu	IN	MX 0	kd5vu
 kd5vu	IN	MX 10	ausgw.w5ehm
 kd5xa	IN	A	44.76.5.144
+kd5yw	IN	A	44.28.0.39
 kd6aaa	IN	A	44.16.0.194
 kd6agb	IN	A	44.4.32.128
 kd6aku	IN	A	44.4.34.72
@@ -8208,6 +8291,7 @@ kd6lhb	IN	A	44.4.22.96
 kd6li	IN	A	44.4.30.72
 kd6lmq	IN	A	44.4.28.158
 kd6lvy	IN	A	44.16.1.54
+kd6mcn	IN	A	44.16.1.55
 kd6mks	IN	A	44.16.1.22
 kd6mlc	IN	A	44.2.0.191
 kd6ncd	IN	A	44.16.1.13
@@ -8245,6 +8329,7 @@ kd7nx	IN	A	44.40.1.20
 kd7nx-9	IN	A	44.40.1.37
 kd7om	IN	A	44.24.0.86
 kd7p	IN	A	44.24.0.47
+kd7qk	IN	A	44.124.12.26
 kd7qr	IN	A	44.24.0.22
 kd7um	IN	A	44.40.1.18
 kd7uw	IN	A	44.24.103.9
@@ -8324,6 +8409,7 @@ ke5bj	IN	A	44.28.0.37
 ke5ci	IN	A	44.30.2.3
 ke5dc	IN	A	44.4.34.132
 ke5fz	IN	A	44.108.0.14
+ke5qw	IN	A	44.28.1.28
 ke5sj-8	IN	A	44.42.0.32
 ke6abz	IN	A	44.16.1.57
 ke6ajc	IN	A	44.4.4.58
@@ -8340,6 +8426,7 @@ ke7kd	IN	A	44.125.128.1
 ke7kd.bbs	IN	A	44.125.128.4
 ke7ns	IN	A	44.40.6.5
 ke7om	IN	A	44.24.0.7
+ke7ot	IN	A	44.124.11.26
 ke7pv	IN	A	44.82.0.6
 ke7ry	IN	A	44.24.0.101
 ke7th-3	IN	A	44.116.0.80
@@ -8418,11 +8505,14 @@ kf4te	IN	MX 0	kd4pwu
 kf4wp	IN	A	44.98.0.51
 kf4wq	IN	A	44.74.1.40
 kf5au-8	IN	A	44.42.0.49
+kf5fw	IN	A	44.28.0.56
+kf5gp	IN	A	44.28.0.23
 kf5iz-8	IN	A	44.42.0.144
 kf5mg	IN	A	44.28.0.14
 kf5mg	IN	MX 0	kf5mg
 kf5mg	IN	MX 10	system200.cecs.unt.edu.
 kf5mg	IN	MX 20	dfwgate
+kf5mg-os2	IN	A	44.28.0.94
 kf5vh	IN	A	44.108.0.4
 kf5wl	IN	A	44.108.0.68
 kf6gg	IN	MX 10	ent-img.com.
@@ -8437,12 +8527,15 @@ kf7ap	IN	A	44.86.0.22
 kf7ck	IN	A	44.40.8.12
 kf7eb	IN	A	44.86.0.66
 kf7ff	IN	A	44.24.102.48
-kf7ke	IN	A	44.26.0.196
+kf7ke	IN	A	44.26.3.135
 kf7qz	IN	A	44.24.0.95
 kf7sp	IN	A	44.40.1.23
 kf7tp	IN	A	44.124.11.37
+kf7tp3	IN	A	44.124.11.38
+kf7tp9	IN	A	44.124.11.39
 kf7wa	IN	A	44.24.0.113
 kf7wq	IN	A	44.40.1.34
+kf7xi	IN	A	44.124.11.22
 kf7xv	IN	A	44.24.107.6
 kf8be	IN	A	44.102.48.50
 kf8bn	IN	A	44.70.4.177
@@ -8468,14 +8561,19 @@ kf9ne	IN	A	44.72.6.66
 kf9ne-1	IN	A	44.72.6.67
 kg0ax	IN	A	44.32.0.112
 kg0gl	IN	A	44.94.249.96
+kg5bb	IN	A	44.28.0.50
 kg5bj	IN	A	44.76.2.120
 kg5bj	IN	MX 10	kg5bj
 kg5cb	IN	A	44.76.4.28
 kg5dg	IN	A	44.76.1.60
 kg5mz-8	IN	A	44.42.0.50
+kg5qc	IN	A	44.28.0.16
 kg5rg	IN	A	44.76.5.64
+kg5sh	IN	A	44.28.0.101
 kg5us	IN	A	44.76.2.100
 kg5us	IN	MX 10	kg5us
+kg5xx	IN	A	44.28.0.4
+kg5xx-1	IN	A	44.28.0.69
 kg6hq	IN	A	44.4.0.36
 kg6kf	IN	A	44.4.26.4
 kg6kf	IN	MX 10	kg6kf
@@ -8485,6 +8583,7 @@ kg6tc-4	IN	A	44.10.0.39
 kg6tn	IN	A	44.4.20.6
 kg6tq	IN	A	44.2.0.77
 kg6tw-pc	IN	A	44.36.0.49
+kg7bz	IN	A	44.124.12.24
 kg7cp	IN	A	44.24.107.111
 kg7fc	IN	A	44.40.4.11
 kg7fu	IN	A	44.24.100.226
@@ -8495,6 +8594,8 @@ kg7gi	IN	MX 30	uugate.aim.utah.edu.
 kg7hq	IN	A	44.24.0.110
 kg7il	IN	A	44.24.0.152
 kg7iy	IN	A	44.125.128.7
+kg7jd	IN	A	44.124.11.127
+kg7jl	IN	A	44.124.11.97
 kg7mh	IN	A	44.40.1.1
 kg7mh	IN	MX 10	kg7mh
 kg7mh	IN	MX 20	uugate.wa7slg
@@ -8545,13 +8646,18 @@ ki5cy	IN	A	44.76.1.76
 ki5ef	IN	A	44.76.2.104
 ki5ef	IN	MX 10	ki5ef
 ki5fa	IN	A	44.30.2.12
+ki5lm	IN	A	44.28.0.41
 ki5ln	IN	A	44.4.12.36
+ki5lp	IN	A	44.28.0.43
+ki5nm	IN	A	44.28.0.52
 ki5oh	IN	A	44.30.2.20
 ki5rx	IN	A	44.76.4.152
+ki5uq	IN	A	44.28.0.82
 ki5zw	IN	A	44.78.18.4
 ki5zw	IN	MX 10	osuunx.ucc.okstate.edu.
 ki6ap	IN	A	44.4.24.64
 ki6ax	IN	A	44.20.0.7
+ki6ax	IN	CNAME	co.ki6ax
 ki6bp	IN	A	44.8.0.44
 ki6cq	IN	A	44.16.0.223
 ki6ft	IN	A	44.2.0.102
@@ -8562,8 +8668,11 @@ ki6oy	IN	A	44.4.30.196
 ki6ps	IN	A	44.24.0.128
 ki6v	IN	A	44.4.34.4
 ki6we	IN	A	44.2.0.182
+ki7ae-1	IN	A	44.26.3.129
+ki7ae-5	IN	A	44.26.3.130
 ki7be	IN	A	44.40.4.13
 ki7n	IN	A	44.4.4.4
+ki9h	IN	A	44.72.21.227
 kj0u	IN	A	44.46.0.28
 kj1y	IN	A	44.56.0.78
 kj4jj	IN	A	44.100.82.22
@@ -8685,6 +8794,7 @@ kn4zo	IN	A	44.75.1.36
 kn5f	IN	A	44.76.5.36
 kn6co	IN	A	44.10.0.219
 kn6dl	IN	A	44.4.16.64
+kn7b	IN	A	44.124.12.23
 kn7mvo	IN	A	44.24.0.78
 ko0f	IN	A	44.94.3.3
 ko1c	IN	A	44.52.0.116
@@ -8713,10 +8823,12 @@ kr2c-3	IN	A	44.116.0.98
 kr4v	IN	A	44.62.0.102
 kr4v	IN	MX 0	kr4v
 kr4v	IN	MX 10	wa4ong
+kr5s	IN	A	44.124.16.10
 ks1a	IN	A	44.56.14.23
 ks1a-1	IN	A	44.56.4.70
 ks5v	IN	A	44.76.2.176
 ks5v	IN	MX 10	ks5v
+ks8j	IN	A	44.124.11.25
 ks9o	IN	A	44.72.69.161
 ks9o-1	IN	A	44.72.88.193
 ks9o-2	IN	A	44.72.88.194
@@ -8726,6 +8838,7 @@ kt1e	IN	A	44.52.0.60
 kt2q	IN	A	44.64.0.29
 kt3h	IN	A	44.80.8.76
 kt6m	IN	A	44.16.0.191
+kt8d	IN	A	44.28.0.22
 kt9v	IN	A	44.48.0.12
 ku3o	IN	A	44.74.1.72
 ku4a	IN	A	44.106.2.30
@@ -8735,6 +8848,7 @@ kurubcst	IN	A	44.139.14.255
 kurunet	IN	A	44.139.14.0
 kv2z	IN	A	44.68.32.47
 kv7g	IN	A	44.86.0.75
+kv8f	IN	A	44.28.0.55
 kv8g	IN	MX 10	kv8g
 kv8g	IN	MX 20	hamgate.cc.wayne.edu.
 kv9p	IN	A	44.92.6.1
@@ -8750,6 +8864,8 @@ kw7u	IN	A	44.24.100.13
 kx1s	IN	A	44.56.4.93
 kx2i	IN	A	44.68.64.143
 kx2o	IN	A	44.64.0.204
+kx7y	IN	A	44.124.11.98
+kx9o	IN	A	44.72.4.163
 ky1k	IN	A	44.118.0.29
 ky1k-6	IN	A	44.44.0.250
 ky1k-7	IN	A	44.44.0.45
@@ -8871,7 +8987,9 @@ lcc	IN	A	44.70.248.69
 lcema	IN	A	44.70.4.73
 ldhmi	IN	A	44.72.38.35
 leela.wa7ipx	IN	A	44.24.111.20
-leela.wa7ipx	IN	MX 10	henson.cc.wwu.edu.
+leela.wa7ipx	IN	MX 10	nyssa.wa7ipx.ampr.org.
+leela.wa7ipx	IN	MX 20	henson.cc.wwu.edu.
+leela.wa7ipx	IN	MX 5	nyssa.alphasoft.com.
 levin.ei9gl	IN	A	44.155.1.63
 lewy.ve3mwm	IN	A	44.135.85.60
 li.n2oqn	IN	A	44.68.16.25
@@ -8892,6 +9010,7 @@ lp.n6are	IN	A	44.16.0.127
 lp.n6rn	IN	A	44.16.0.212
 lp.vk2xzc	IN	A	44.136.8.173
 lp.w6mik	IN	A	44.16.0.29
+lt.kc2nm	IN	A	44.88.0.153
 lt.n5ll	IN	A	44.76.2.41
 lt.n5ll	IN	MX 10	lt.n5ll
 lt.vk2xfw	IN	A	44.136.8.184
@@ -8957,6 +9076,7 @@ merit	IN	CNAME	hamgate.merit
 meson.pu3akm	IN	A	44.174.7.13
 mglap	IN	A	44.28.0.94
 mglap.kf5mg	IN	CNAME	mglap
+mgos2	IN	A	44.28.0.84
 mgpc	IN	A	44.28.0.85
 mgpc.kf5mg	IN	CNAME	mgpc
 mgunix	IN	A	44.28.0.84
@@ -9192,6 +9312,9 @@ n1cba	IN	A	44.118.0.26
 n1cby	IN	A	44.52.0.80
 n1cip	IN	A	44.88.0.136
 n1cit	IN	A	44.88.0.67
+n1cit-7	IN	A	44.88.5.1
+n1cit-8	IN	A	44.88.3.18
+n1cit-9	IN	A	44.88.6.1
 n1clw	IN	A	44.88.1.9
 n1clz	IN	A	44.88.0.86
 n1cnv	IN	A	44.88.0.50
@@ -9203,7 +9326,7 @@ n1cpk-2	IN	A	44.56.4.72
 n1csr	IN	A	44.118.0.12
 n1cui	IN	A	44.88.0.13
 n1cwd	IN	A	44.88.0.101
-n1cwp	IN	A	44.26.0.244
+n1cwp	IN	A	44.26.3.6
 n1cwy	IN	A	44.56.4.134
 n1cxj	IN	A	44.88.0.9
 n1dam	IN	A	44.56.4.55
@@ -9811,6 +9934,7 @@ n4wqj	IN	A	44.62.64.72
 n4wyk	IN	A	44.75.5.40
 n4xcv	IN	A	44.75.5.76
 n4xi	IN	A	44.48.90.2
+n4xi-5	IN	A	44.48.90.10
 n4xqg	IN	A	44.62.0.124
 n4xxv	IN	A	44.75.5.88
 n4ydp	IN	MX 20	soup.bds.com.
@@ -9832,12 +9956,13 @@ n5bpf	IN	A	44.108.0.69
 n5brg	IN	A	44.28.0.66
 n5cjl	IN	A	44.108.4.1
 n5ckq	IN	A	44.76.1.32
+n5csu	IN	A	44.28.0.40
 n5dwu-8	IN	A	44.42.0.48
 n5ek	IN	A	44.108.0.65
 n5faz.ampr.org	IN	A	44.77.0.70
 n5ffy	IN	A	44.76.1.108
 n5fpj	IN	A	44.76.1.92
-n5fzf	IN	A	44.28.0.225
+n5fzf	IN	A	44.28.0.97
 n5gig	IN	A	44.76.0.60
 n5hd	IN	A	44.28.0.19
 n5hd	IN	MX 10	system200.cecs.unt.edu.
@@ -9850,6 +9975,7 @@ n5ign	IN	A	44.108.3.2
 n5iut	IN	A	44.76.3.35
 n5jkh	IN	A	44.76.3.30
 n5jlq	IN	A	44.76.1.144
+n5jol	IN	A	44.28.0.113
 n5jxe	IN	A	44.16.0.120
 n5jxs	IN	A	44.76.0.16
 n5kkf-8	IN	A	44.42.0.145
@@ -9864,7 +9990,9 @@ n5ljf	IN	A	44.76.1.160
 n5ljg	IN	A	44.76.1.124
 n5ll	IN	A	44.76.2.40
 n5ll	IN	MX 10	n5ll
-n5lpi	IN	A	44.28.0.10
+n5lpi	IN	A	44.28.0.27
+n5lpi-8	IN	A	44.28.0.10
+n5lpl	IN	A	44.28.0.12
 n5lvp	IN	A	44.76.1.168
 n5lyt	IN	A	44.76.6.129
 n5lyt	IN	MX 10	groucho.n5lyt
@@ -9879,13 +10007,17 @@ n5npl	IN	A	44.28.0.107
 n5npl	IN	MX 10	n5npl
 n5npl	IN	MX 20	actgate.tstc.edu.
 n5nwi	IN	A	44.76.1.64
+n5oad	IN	A	44.28.0.25
+n5oar	IN	A	44.28.0.53
 n5obu	IN	A	44.8.0.70
 n5ood	IN	A	44.28.1.16
+n5opy	IN	A	44.28.0.18
 n5ovp	IN	A	44.4.28.70
 n5owd	IN	A	44.76.1.128
 n5owk	IN	A	44.78.4.2
 n5owk	IN	MX 10	sabea-oc.af.mil.
 n5owz	IN	A	44.76.4.148
+n5ozz	IN	A	44.28.0.26
 n5pbc	IN	A	44.76.4.36
 n5pbd	IN	A	44.76.4.140
 n5pgh	IN	A	44.108.2.7
@@ -9899,6 +10031,8 @@ n5qzp	IN	A	44.108.1.65
 n5rg.ampr.org	IN	A	44.77.0.72
 n5rjf	IN	A	44.76.0.230
 n5rlm	IN	A	44.108.0.15
+n5rtw	IN	A	44.28.0.29
+n5rwc	IN	A	44.28.0.28
 n5sbp	IN	A	44.76.4.20
 n5sgk	IN	A	44.76.2.140
 n5sgk	IN	MX 10	n5sgk
@@ -9907,11 +10041,14 @@ n5sgl	IN	MX 10	n5sgl
 n5shl	IN	A	44.76.1.132
 n5shl	IN	MX 0	n5shl.org
 n5shl	IN	MX 5	ausgw.w5ehm
+n5skt	IN	A	44.28.0.42
 n5snn	IN	A	44.76.1.192
 n5snn	IN	MX 0	n5snn
 n5snn	IN	MX 10	ausgw.w5ehm
 n5snn	IN	MX 20	leadfoot.pe.utexas.edu.
 n5snt	IN	A	44.76.1.172
+n5svz	IN	A	44.28.1.30
+n5svz2	IN	A	44.28.1.31
 n5szf	IN	A	44.76.0.220
 n5szf	IN	MX 10	n5szf
 n5szf	IN	MX 20	pop.n5szf
@@ -9920,6 +10057,7 @@ n5thn	IN	A	44.76.2.124
 n5thn	IN	MX 10	n5thn
 n5tlp	IN	A	44.76.1.176
 n5tlz	IN	A	44.76.1.164
+n5ud	IN	A	44.28.0.59
 n5ukh	IN	A	44.76.2.168
 n5ukh	IN	MX 10	n5ukh
 n5uns	IN	A	44.76.0.44
@@ -9930,8 +10068,12 @@ n5vdk	IN	MX 10	n5vdk
 n5vmf	IN	A	44.76.4.136
 n5whw	IN	A	44.76.5.24
 n5wlz	IN	A	44.76.4.156
+n5xed	IN	A	44.28.1.35
 n5xoo.ampr.org	IN	A	44.77.0.74
 n5xxm	IN	A	44.32.0.64
+n5ybp	IN	A	44.28.0.60
+n5yih	IN	A	44.28.0.51
+n5ysq	IN	A	44.28.0.103
 n5zfg	IN	A	44.76.1.194
 n5zlv	IN	A	44.76.1.206
 n6air	IN	A	44.4.12.64
@@ -9964,6 +10106,7 @@ n6esv	IN	A	44.2.0.42
 n6fqr	IN	A	44.4.2.8
 n6frw	IN	A	44.18.0.4
 n6fw	IN	A	44.4.4.46
+n6gah	IN	A	44.4.24.68
 n6gal	IN	A	44.4.2.28
 n6gf	IN	A	44.2.0.100
 n6ghj	IN	A	44.16.0.221
@@ -9982,6 +10125,7 @@ n6jf	IN	A	44.10.0.172
 n6jls	IN	A	44.16.0.110
 n6kfr	IN	A	44.2.1.81
 n6knw	IN	A	44.16.0.46
+n6kql	IN	A	44.124.14.12
 n6kzb-3	IN	A	44.18.0.133
 n6ldl	IN	A	44.4.8.4
 n6lxa	IN	A	44.4.20.192
@@ -10147,10 +10291,12 @@ n6zuf	IN	A	44.6.0.198
 n6zuf.races	IN	A	44.6.0.199
 n6zui	IN	A	44.16.1.47
 n7ahl	IN	A	44.22.2.10
+n7ail	IN	A	44.124.14.10
 n7akr	IN	A	44.64.0.9
 n7apc	IN	A	44.116.0.91
 n7apc-3	IN	A	44.116.0.92
 n7bfg	IN	A	44.24.0.16
+n7bki	IN	A	44.124.11.28
 n7bti	IN	A	44.24.0.15
 n7cak	IN	A	44.24.0.33
 n7cbk	IN	A	44.40.8.10
@@ -10160,15 +10306,21 @@ n7cvz-1	IN	A	44.116.0.135
 n7cvz-2	IN	A	44.116.0.136
 n7cvz-4	IN	A	44.116.0.137
 n7cvz-5	IN	A	44.116.0.138
+n7dme	IN	A	44.124.12.10
 n7dxt	IN	A	44.26.0.200
 n7eif	IN	A	44.26.1.23
 n7ent	IN	A	44.24.0.88
+n7eoj	IN	A	44.124.12.14
 n7ep	IN	A	44.24.0.224
 n7evt	IN	A	44.40.6.2
-n7fae	IN	A	44.26.0.84
+n7fae	IN	A	44.26.3.163
 n7fdm	IN	A	44.24.102.96
+n7fds	IN	A	44.124.12.34
+n7fet	IN	A	44.124.11.18
 n7fsp	IN	A	44.4.12.66
+n7fu	IN	A	44.124.11.102
 n7fya	IN	A	44.24.0.13
+n7fzd	IN	A	44.124.11.60
 n7gjw	IN	A	44.24.0.48
 n7gmf	IN	A	44.24.0.175
 n7goi	IN	A	44.24.100.14
@@ -10178,6 +10330,7 @@ n7hae	IN	A	44.26.0.72
 n7hae-1	IN	A	44.26.0.73
 n7hfz	IN	A	44.24.0.17
 n7hmf	IN	A	44.40.8.1
+n7hnb	IN	A	44.124.11.35
 n7hpr	IN	A	44.24.0.139
 n7hqr	IN	A	44.26.0.24
 n7hqr-1	IN	A	44.26.0.25
@@ -10193,6 +10346,7 @@ n7iji	IN	A	44.75.7.32
 n7ijx	IN	A	44.24.102.21
 n7ipb	IN	CNAME	algedi
 n7ipj	IN	A	44.24.0.19
+n7iqc	IN	A	44.124.12.17
 n7is	IN	A	44.12.0.12
 n7ish	IN	A	44.40.1.17
 n7iss	IN	A	44.86.0.10
@@ -10204,6 +10358,7 @@ n7joh	IN	A	44.116.0.49
 n7joh-1	IN	A	44.116.0.50
 n7jqq	IN	A	44.24.0.124
 n7jtq	IN	A	44.24.0.79
+n7jzt	IN	A	44.124.12.15
 n7kbt	IN	A	44.24.0.37
 n7kej-3	IN	A	44.116.0.78
 n7keo	IN	A	44.86.0.84
@@ -10216,9 +10371,11 @@ n7koj-3	IN	A	44.116.0.61
 n7kqk	IN	A	44.40.1.15
 n7ktl	IN	A	44.125.128.5
 n7kwd	IN	A	44.24.102.18
-n7llu	IN	A	44.26.0.104
+n7llu	IN	A	44.26.3.132
 n7lol	IN	A	44.24.0.104
 n7lpy	IN	A	44.46.0.38
+n7lqe	IN	A	44.124.11.108
+n7lqv	IN	A	44.124.15.10
 n7lyr	IN	A	44.124.11.94
 n7mff	IN	A	44.40.4.1
 n7mff	IN	MX 5	cronus.upl.com.
@@ -10238,6 +10395,7 @@ n7nkr	IN	A	44.40.12.10
 n7nkr.home	IN	A	44.40.1.43
 n7npb	IN	A	44.125.132.4
 n7npb.bbs	IN	A	44.125.132.3
+n7nqm	IN	A	44.124.11.96
 n7nti	IN	A	44.40.8.5
 n7nti-2	IN	A	44.40.8.7
 n7nvi	IN	A	44.14.1.45
@@ -10246,11 +10404,14 @@ n7obr	IN	A	44.6.0.18
 n7ojv.bbs	IN	A	44.125.130.1
 n7oli	IN	A	44.16.0.207
 n7olv	IN	A	44.24.100.158
+n7oo	IN	A	44.124.13.16
 n7owh	IN	CNAME	bebe.n7owh
 n7oxf	IN	A	44.40.8.3
 n7oxh	IN	A	44.40.8.8
 n7pdx	IN	A	44.2.0.73
+n7pht	IN	A	44.124.11.115
 n7pkl	IN	A	44.24.0.173
+n7pmr	IN	A	44.124.11.31
 n7pwf	IN	A	44.116.0.67
 n7pwf-1	IN	A	44.116.0.68
 n7pzd	IN	A	44.24.102.88
@@ -10275,6 +10436,7 @@ n7ryo-1	IN	A	44.116.0.75
 n7sau	IN	A	44.24.107.7
 n7sfi	IN	A	44.40.3.1
 n7sig	IN	A	44.24.0.172
+n7smu	IN	A	44.124.12.35
 n7tin	IN	A	44.24.105.12
 n7trt-3	IN	A	44.116.0.82
 n7try	IN	A	44.116.0.156
@@ -10291,6 +10453,7 @@ n7uig	IN	A	44.24.100.6
 n7uoj	IN	A	44.86.0.16
 n7uwx	IN	A	44.40.12.13
 n7uxh	IN	A	44.26.1.7
+n7uzv	IN	A	44.124.11.32
 n7vcz	IN	A	44.40.6.3
 n7vcz	IN	MX 30	uugate.wa7slg
 n7vcz	IN	MX 40	uugate.aim.utah.edu.
@@ -10518,6 +10681,7 @@ n8oha	IN	A	44.70.4.186
 n8oil	IN	A	44.70.4.149
 n8oil-1	IN	A	44.70.4.150
 n8oil-2	IN	A	44.70.4.151
+n8okm	IN	A	44.72.7.43
 n8oni	IN	A	44.70.4.132
 n8oni.slip	IN	A	44.70.4.164
 n8opx	IN	A	44.70.4.131
@@ -10616,7 +10780,7 @@ n9bac-7	IN	A	44.48.30.8
 n9bac-8	IN	A	44.48.30.9
 n9bbe	IN	A	44.72.36.33
 n9bdf	IN	A	44.72.33.1
-n9bh	IN	A	44.72.42.034
+n9bh	IN	A	44.72.42.34
 n9bqm	IN	A	44.92.5.17
 n9bsv	IN	A	44.72.53.199
 n9bub	IN	A	44.48.0.5
@@ -10672,6 +10836,9 @@ n9gtm-3	IN	A	44.72.14.228
 n9gtt	IN	A	44.73.149.33
 n9gun	IN	A	44.72.20.65
 n9gxa	IN	A	44.48.30.12
+n9gxa-5	IN	A	44.48.30.28
+n9gxa-6	IN	A	44.48.30.29
+n9gxa-7	IN	A	44.48.30.30
 n9hcy	IN	A	44.92.0.15
 n9hdw	IN	A	44.72.22.39
 n9hdw-1	IN	A	44.72.22.40
@@ -10706,6 +10873,9 @@ n9itw	IN	A	44.72.224.65
 n9itw-3	IN	A	44.73.224.69
 n9itw-7	IN	A	44.73.224.70
 n9iud	IN	A	44.72.52.193
+n9iur	IN	A	44.48.20.4
+n9iur-2	IN	A	44.48.20.5
+n9iur-3	IN	A	44.48.20.6
 n9ixe	IN	A	44.72.53.97
 n9iyf	IN	A	44.72.18.3
 n9iyj	IN	A	44.72.43.129
@@ -10750,10 +10920,13 @@ n9kut	IN	A	44.73.174.194
 n9kux	IN	A	44.72.64.6
 n9kux-1	IN	A	44.72.64.7
 n9lax	IN	A	44.48.0.43
+n9lax-5	IN	A	44.48.0.52
 n9lcf-4	IN	A	44.48.30.20
 n9lcf-4.amrp.org	IN	A	44.48.30.20
 n9lcp	IN	A	44.72.53.65
+n9ldq	IN	A	44.72.43.225
 n9lem	IN	A	44.72.21.226
+n9lil	IN	A	44.72.40.147
 n9lin	IN	A	44.72.39.65
 n9lmf	IN	A	44.72.75.225
 n9lmz	IN	A	44.72.20.130
@@ -10793,6 +10966,7 @@ n9mri	IN	A	44.72.43.132
 n9mtj	IN	A	44.48.40.5
 n9mtj-2	IN	A	44.48.40.6
 n9mwb	IN	A	44.72.7.40
+n9nby	IN	A	44.72.34.66
 n9ndd	IN	A	44.72.53.2
 n9ndh	IN	A	44.72.32.162
 n9ngf-2	IN	A	44.48.0.44
@@ -10819,6 +10993,7 @@ n9opg	IN	A	44.72.38.226
 n9out	IN	A	44.72.42.225
 n9oyp	IN	A	44.72.1.98
 n9ozf	IN	A	44.72.53.4
+n9pbd	IN	A	44.73.163.193
 n9pbf	IN	A	44.73.151.67
 n9pbf	IN	MX 0	n9pbf
 n9pbf	IN	MX 10	wb9uus
@@ -10838,17 +11013,26 @@ n9qnz	IN	A	44.72.6.198
 n9qob	IN	A	44.72.13.162
 n9qoc	IN	A	44.72.20.232
 n9rbi	IN	A	44.72.33.226
+n9rdt	IN	A	44.48.0.51
+n9rfk	IN	A	44.48.70.16
 n9rhu	IN	A	44.72.20.230
 n9rkc	IN	A	44.72.27.194
+n9rkh	IN	A	44.72.7.42
 n9ro	IN	A	44.72.41.97
 n9rzw	IN	A	44.72.43.133
+n9sat	IN	A	44.72.41.100
+n9shg	IN	A	44.72.51.1
 n9smi	IN	A	44.72.13.163
 n9sqy	IN	A	44.72.38.97
+n9stj	IN	A	44.72.38.61
 n9stv	IN	A	44.72.34.33
 n9swh	IN	A	44.72.20.68
 n9szi	IN	A	44.73.160.1
 n9tgx	IN	A	44.72.25.226
+n9tjg	IN	A	44.48.20.10
 n9tnn	IN	A	44.72.71.129
+n9tol	IN	A	44.72.2.6
+n9uip	IN	A	44.72.41.135
 na2b	IN	A	44.69.0.67
 na4m	IN	A	44.76.1.1
 na4p	IN	A	44.75.3.54
@@ -10856,6 +11040,7 @@ na7g	IN	A	44.40.4.5
 natasha.wa2hee	IN	A	44.96.1.4
 nawc.k3nal	IN	A	44.80.8.70
 nb.n2ihl	IN	A	44.68.16.7
+nb5i	IN	A	44.28.0.104
 nb6d	IN	A	44.4.40.108
 nbc.g4nqo	IN	A	44.131.19.42
 nbc.wa2ndv	IN	A	44.68.32.23
@@ -10888,6 +11073,7 @@ nd6d	IN	A	44.18.0.33
 ne-ohio	IN	A	44.70.4.0
 ne0b	IN	A	44.46.0.11
 ne0b.amrp.org	IN	A	44.46.0.11
+ne1h	IN	A	44.16.1.58
 ne3e	IN	A	44.112.0.20
 ne3x	IN	A	44.80.9.36
 needham	IN	CNAME	switch.needham
@@ -10958,7 +11144,9 @@ nj1a	IN	A	44.56.4.45
 nj1h	IN	A	44.52.0.21
 nj1q	IN	A	44.88.1.46
 nj2l	IN	A	44.88.0.40
+nj5q	IN	A	44.28.1.29
 nj6a	IN	A	44.4.30.230
+nj7p	IN	A	44.124.13.20
 nj8t	IN	A	44.4.26.26
 nj9v	IN	A	44.72.50.97
 nk1m	IN	A	44.52.0.49
@@ -10991,6 +11179,7 @@ nmsugw	IN	CNAME	marconi.w5gb.ampr.org.
 nn0v	IN	A	44.50.0.23
 nn1r	IN	A	44.64.0.104
 nn2z	IN	CNAME	unix.nn2z
+nntp.vk5xxx	IN	CNAME	gw.vk5xxx
 no0g	IN	A	44.46.0.82
 no0n	IN	A	44.54.0.50
 no1u	IN	A	44.56.8.3
@@ -11032,6 +11221,7 @@ nq1x	IN	A	44.52.0.113
 nq2d	IN	A	44.68.8.41
 nq2f	IN	A	44.68.24.4
 nq3n	IN	A	44.112.0.142
+nq7k	IN	A	44.124.11.104
 nr0d	IN	A	44.94.249.17
 nr0d-eth	IN	A	44.94.10.49
 nr0y	IN	A	44.94.249.28
@@ -11096,7 +11286,7 @@ nv0o	IN	MX 10	nv0o
 nv0o	IN	MX 20	k0ku.ece.ukans.edu.
 nv0o-1	IN	A	44.46.0.32
 nv0u	IN	A	44.46.176.5
-nv7n	IN	A	44.26.0.132
+nv7n	IN	A	44.26.3.133
 nv7o	IN	A	44.40.5.1
 nv7v	IN	A	44.40.8.2
 nv8i	IN	A	44.70.16.61
@@ -11125,9 +11315,9 @@ ny7e	IN	A	44.40.1.13
 ny9r	IN	A	44.72.41.98
 nycuhs.ebn	IN	A	44.68.40.1
 nyssa.wa7ipx	IN	A	44.24.111.18
-nyssa.wa7ipx	IN	MX 10	henson.cc.wwu.edu.
-nyssa.wa7ipx	IN	MX 20	nyssa.wa7ipx
-nyssa.wa7ipx	IN	MX 30	adric.wa7ipx
+nyssa.wa7ipx	IN	MX 10	nyssa.wa7ipx.ampr.org.
+nyssa.wa7ipx	IN	MX 20	henson.cc.wwu.edu.
+nyssa.wa7ipx	IN	MX 5	nyssa.alphasoft.com.
 nz1p	IN	A	44.56.8.33
 nz3o	IN	A	44.80.12.9
 nz8r	IN	A	44.70.0.28
@@ -11519,6 +11709,7 @@ on1cfx	IN	A	44.144.8.7
 on1cfx-1	IN	A	44.144.2.38
 on1chs	IN	A	44.144.1.6
 on1cht	IN	A	44.144.2.55
+on1cj	IN	A	44.137.28.51
 on1ew	IN	A	44.144.7.20
 on1kbu	IN	A	44.144.6.18
 on1kcf	IN	A	44.144.4.4
@@ -11923,6 +12114,7 @@ pa0vlz	IN	A	44.137.49.16
 pa0vm	IN	A	44.137.32.57
 pa0wah	IN	A	44.137.12.31
 pa0wal	IN	A	44.137.36.7
+pa0wca	IN	A	44.137.0.196
 pa0wch	IN	A	44.137.24.4
 pa0wdg	IN	A	44.137.36.61
 pa0wdn	IN	A	44.137.0.12
@@ -12044,6 +12236,7 @@ pa3cdm	IN	A	44.137.46.29
 pa3cef	IN	A	44.137.52.10
 pa3ces	IN	A	44.137.8.57
 pa3cev	IN	A	44.137.24.35
+pa3cgf	IN	A	44.137.0.197
 pa3cgh	IN	A	44.137.44.27
 pa3chk	IN	A	44.137.0.3
 pa3chn	IN	A	44.137.8.56
@@ -12207,6 +12400,7 @@ pa3ewk	IN	A	44.137.24.65
 pa3exp	IN	A	44.137.40.71
 pa3ezc	IN	A	44.137.0.188
 pa3ezh	IN	A	44.137.0.163
+pa3ezq	IN	A	44.137.16.69
 pa3fbg	IN	A	44.137.0.14
 pa3fbl	IN	A	44.137.24.74
 pa3fbo	IN	A	44.137.0.106
@@ -12383,6 +12577,7 @@ pc.sk5mk	IN	A	44.140.0.17
 pc.sm0kjd	IN	A	44.140.0.234
 pc.ve3btz	IN	A	44.135.80.5
 pc.ve3gvz	IN	A	44.135.88.65
+pc.ve3lum	IN	A	44.135.89.33
 pc.ve3mtg	IN	A	44.135.81.24
 pc.ve3pkd	IN	A	44.135.88.63
 pc.ve3uow	IN	A	44.135.84.6
@@ -12603,6 +12798,7 @@ pe1hzg	IN	A	44.137.24.3
 pe1hzg	IN	MX 50	hb9zz.ethz.ch.
 pe1hzg	IN	MX 55	pi8ehv
 pe1hzx	IN	A	44.137.32.99
+pe1icq	IN	A	44.137.24.147
 pe1ifh	IN	A	44.137.12.9
 pe1ifx	IN	A	44.137.36.29
 pe1ihs	IN	A	44.137.20.2
@@ -12836,6 +13032,7 @@ pe1ojj	IN	A	44.137.44.34
 pe1omh	IN	A	44.137.48.56
 pe1omn	IN	A	44.137.46.25
 pe1ona	IN	A	44.137.36.48
+pe1onh	IN	A	44.137.0.195
 pe1ool	IN	A	44.137.36.60
 pe1oot	IN	A	44.137.0.148
 pe1oov	IN	A	44.137.48.60
@@ -12871,9 +13068,9 @@ pe21	IN	A	44.131.29.192
 pe40	IN	A	44.131.29.222
 pe72	IN	A	44.131.29.223
 peri.wa7ipx	IN	A	44.24.0.75
-peri.wa7ipx	IN	MX 10	henson.cc.wwu.edu.
-peri.wa7ipx	IN	MX 20	nyssa.wa7ipx
-peri.wa7ipx	IN	MX 30	adric.wa7ipx
+peri.wa7ipx	IN	MX 10	nyssa.wa7ipx.ampr.org.
+peri.wa7ipx	IN	MX 20	henson.cc.wwu.edu.
+peri.wa7ipx	IN	MX 5	nyssa.alphasoft.com.
 perry.pa0gri	IN	A	44.137.1.6
 petaluma	IN	A	44.4.40.128
 petbbs	IN	A	44.131.29.4
@@ -12891,6 +13088,7 @@ phone.sv1vn	IN	A	44.154.100.6
 phone.sv1xv	IN	A	44.154.100.4
 phone.sv8rv	IN	A	44.154.100.7
 phonenet	IN	A	44.154.100.0
+phxtcp	IN	A	44.124.11.40
 pi1rty	IN	CNAME	pi8cwg
 pi4dec	IN	A	44.137.32.108
 pi4eme	IN	A	44.137.56.35
@@ -13116,6 +13314,7 @@ router.dg4ydq	IN	A	44.130.22.39
 router.sv1xv	IN	A	44.154.1.250
 rover.n3eua	IN	A	44.32.0.3
 rover.n7vvx	IN	A	44.40.12.180
+rowdy	IN	A	44.28.1.17
 royale.w8idn	IN	A	44.92.9.2
 rpslap.wd9fwd	IN	A	44.52.2.12
 rsv.n6nko	IN	A	44.16.0.116
@@ -13124,6 +13323,7 @@ rubato.kf0jc.ampr.org	IN	A	44.20.0.219
 russ	IN	A	44.62.0.80
 rv.w5ifp	IN	A	44.76.2.2
 rv.w5ifp	IN	MX 10	rv.w5ifp
+rwsys	IN	A	44.28.1.9
 ryeham	IN	CNAME	gw.ve3rpi
 ryerson	IN	CNAME	gw.ve3rpi
 rylos.n2idf	IN	A	44.64.0.77
@@ -13149,9 +13349,14 @@ sat.n8emr	IN	A	44.70.0.4
 sbede.g4owg	IN	A	44.131.2.94
 sbks_hub	IN	A	44.131.6.128
 sc.ve3cdx	IN	A	44.135.85.70
+scarc	IN	CNAME	vk5arc
 sccara.w6uw	IN	A	44.4.12.132
 sccr	IN	CNAME	sccr.n6esv
 sccr.n6esv	IN	A	44.2.0.28
+scout1.vk5tty	IN	A	44.136.203.1
+scout1.vk5yak	IN	A	44.136.203.4
+scout2.vk5tty	IN	A	44.136.203.2
+scout3.vk5tty	IN	A	44.136.203.3
 scouts.vk2sfh	IN	A	44.136.8.189
 scr.ve3cdx	IN	A	44.135.85.71
 scrooge.kl7jl	IN	A	44.22.0.2
@@ -13484,7 +13689,6 @@ switch.ka1jy	IN	CNAME	tolland
 switch.ka8thb	IN	A	44.70.12.2
 switch.ka9q	IN	A	129.46.80.1
 switch.kb4mdd	IN	A	44.100.208.1
-switch.ke3z	IN	A	44.88.0.26
 switch.mfd	IN	A	44.70.4.91
 switch.mtg	IN	A	44.70.4.90
 switch.n1lmp	IN	CNAME	portland
@@ -13695,6 +13899,7 @@ sys2.pe1ndo	IN	A	44.137.24.111
 sys2.pe1nmb	IN	A	44.137.32.60
 sys2.pe1nmk	IN	A	44.137.32.140
 sys2.pe1nnh	IN	A	44.137.0.142
+sys2.pe1npd	IN	A	44.137.24.146
 sys2.pe1nqb	IN	A	44.137.28.39
 sys2.pe1ocq	IN	A	44.137.8.46
 sys2.pe1opm	IN	A	44.137.32.117
@@ -13794,9 +13999,9 @@ tcpip.suffield	IN	A	44.70.240.2
 tcpnode.ve3mx	IN	A	44.135.86.7
 tcpnode.ve3snp	IN	A	44.135.86.2
 tegan.wa7ipx	IN	A	44.24.111.19
-tegan.wa7ipx	IN	MX 10	henson.cc.wwu.edu.
-tegan.wa7ipx	IN	MX 20	nyssa.wa7ipx
-tegan.wa7ipx	IN	MX 30	adric.wa7ipx
+tegan.wa7ipx	IN	MX 10	nyssa.wa7ipx.ampr.org.
+tegan.wa7ipx	IN	MX 20	henson.cc.wwu.edu.
+tegan.wa7ipx	IN	MX 5	nyssa.alphasoft.com.
 tek.ka7axd	IN	A	44.116.0.24
 telemark.n7jdb	IN	A	44.116.0.29
 temp.gb7sau	IN	A	44.131.192.61
@@ -13837,6 +14042,8 @@ to.ve3mmn	IN	MX 10	ryeham.ee.ryerson.ca.
 to.ve3mmn	IN	MX 5	ve3rpi
 to.ve3tmf	IN	A	44.135.88.103
 to.wa6fxt	IN	A	44.6.0.129
+tolland	IN	A	44.88.0.25
+tom.vk5zwi	IN	A	44.136.203.5
 toronto	IN	A	44.135.88.0
 tosh-eth.g4jec	IN	A	44.94.10.17
 tosh-uhf.g4jec	IN	A	44.94.9.1
@@ -13849,10 +14056,11 @@ trebcst	IN	A	44.139.12.255
 trenet	IN	A	44.139.12.0
 triacus.n6oyu	IN	A	44.4.6.225
 trumbullsw	IN	A	44.70.4.101
+tst.ve3tle	IN	A	44.135.89.30
 turlough.wa7ipx	IN	A	44.24.111.21
-turlough.wa7ipx	IN	MX 10	henson.cc.wwu.edu.
-turlough.wa7ipx	IN	MX 20	nyssa.wa7ipx
-turlough.wa7ipx	IN	MX 30	adric.wa7ipx
+turlough.wa7ipx	IN	MX 10	nyssa.wa7ipx.ampr.org.
+turlough.wa7ipx	IN	MX 20	henson.cc.wwu.edu.
+turlough.wa7ipx	IN	MX 5	nyssa.alphasoft.com.
 tx.aa5df	IN	CNAME	aa5df
 u386.g8zhr	IN	A	44.131.8.147
 u486.g8zhr	IN	A	44.131.8.149
@@ -14071,6 +14279,7 @@ ve3ekf	IN	A	44.135.104.14
 ve3eoe	IN	A	44.135.100.3
 ve3epk	IN	A	44.135.88.23
 ve3esg	IN	A	44.135.84.54
+ve3evq	IN	A	44.135.89.35
 ve3ex	IN	A	44.135.88.84
 ve3eyn	IN	A	44.135.81.18
 ve3eyq	IN	A	44.135.88.24
@@ -14135,6 +14344,7 @@ ve3hqw	IN	A	44.135.88.30
 ve3hsf	IN	A	44.135.88.31
 ve3htr	IN	A	44.135.91.8
 ve3hxy	IN	A	44.135.85.21
+ve3hzz	IN	A	44.135.102.11
 ve3ibh	IN	A	44.135.90.14
 ve3ibk	IN	A	44.135.85.24
 ve3icd	IN	A	44.135.96.83
@@ -14157,6 +14367,7 @@ ve3ign	IN	A	44.135.88.32
 ve3ihg	IN	A	44.135.90.15
 ve3ijd	IN	A	44.135.104.128
 ve3ilj	IN	A	44.135.84.137
+ve3inb	IN	A	44.135.89.46
 ve3inf	IN	A	44.135.90.8
 ve3iny	IN	A	44.135.84.61
 ve3iqz	IN	A	44.135.100.4
@@ -14221,6 +14432,7 @@ ve3liq	IN	A	44.135.88.35
 ve3ljw	IN	A	44.135.85.61
 ve3lkd	IN	A	44.135.104.131
 ve3lny	IN	A	44.135.88.4
+ve3lom	IN	A	44.135.89.47
 ve3lpm	IN	A	44.135.91.10
 ve3ls	IN	A	44.135.80.17
 ve3ltw	IN	A	44.135.80.16
@@ -14387,7 +14599,8 @@ ve3rwn	IN	A	44.135.100.12
 ve3rx	IN	A	44.135.88.52
 ve3sbs	IN	A	44.135.84.70
 ve3sbx	IN	A	44.135.89.24
-ve3sbx-14	IN	A	44.135.89.31
+ve3sbx-12	IN	A	44.135.89.32
+ve3sbx-14	IN	A	44135.89.31
 ve3scz	IN	A	44.135.96.47
 ve3sep	IN	A	44.135.85.72
 ve3sjv	IN	A	44.135.84.23
@@ -14402,6 +14615,7 @@ ve3snz	IN	A	44.135.96.90
 ve3spd	IN	A	44.135.98.2
 ve3spz	IN	A	44.135.88.80
 ve3squ	IN	A	44.135.80.20
+ve3srd	IN	A	44.135.89.48
 ve3ssf	IN	A	44.135.100.1
 ve3ssv	IN	A	44.135.85.23
 ve3suy	IN	A	44.135.96.61
@@ -14461,6 +14675,7 @@ ve3ubx	IN	A	44.135.91.18
 ve3uh	IN	A	44.135.89.17
 ve3uj	IN	A	44.135.89.28
 ve3ujj	IN	A	44.135.84.63
+ve3ujv	IN	A	44.135.89.45
 ve3ukb	IN	A	44.135.102.6
 ve3ull	IN	A	44.135.96.67
 ve3uni	IN	A	44.135.84.53
@@ -14503,6 +14718,7 @@ ve3xxt	IN	A	44.135.88.90
 ve3xym	IN	A	44.135.104.11
 ve3ybc	IN	A	44.135.96.107
 ve3yrb	IN	A	44.135.103.11
+ve3yxt	IN	A	44.135.89.34
 ve3zah	IN	A	44.135.84.42
 ve3zav	IN	A	44.135.80.15
 ve3zco	IN	A	44.135.80.8
@@ -15521,6 +15737,7 @@ vk4djl	IN	A	44.136.149.14
 vk4dxn	IN	A	44.136.138.71
 vk4etc	IN	A	44.136.138.88
 vk4fc	IN	A	44.136.147.63
+vk4fee	IN	A	44.136.147.11
 vk4fn	IN	A	44.136.141.18
 vk4fps	IN	A	44.136.138.63
 vk4fuv	IN	A	44.136.147.9
@@ -15547,6 +15764,7 @@ vk4kga	IN	A	44.136.138.36
 vk4kgg	IN	A	44.136.145.4
 vk4kgl	IN	A	44.136.138.110
 vk4kgm	IN	A	44.136.149.13
+vk4kgq	IN	A	44.136.143.4
 vk4kin	IN	A	44.136.138.85
 vk4kiv	IN	A	44.136.138.17
 vk4kiv	IN	MX 0	vk4kiv.qut
@@ -15579,7 +15797,7 @@ vk4rzd.lan	IN	A	44.136.145.100
 vk4sf	IN	A	44.136.138.9
 vk4sf.bbs	IN	A	44.136.138.21
 vk4sp	IN	A	44.136.145.6
-vk4str	IN	A	44.136.138.32
+vk4str	IN	A	44.136.138.115
 vk4taa	IN	A	44.136.138.10
 vk4tad	IN	A	44.136.147.8
 vk4tc	IN	A	44.136.138.65
@@ -15592,7 +15810,6 @@ vk4tgm	IN	A	44.136.138.95
 vk4tmc	IN	A	44.136.141.19
 vk4tmh	IN	A	44.136.149.16
 vk4tsa	IN	A	44.136.141.13
-vk4tvk	IN	A	44.136.143.4
 vk4ty	IN	A	44.136.138.43
 vk4ugc	IN	A	44.136.138.48
 vk4un	IN	A	44.136.149.6
@@ -15640,33 +15857,47 @@ vk4zhl	IN	A	44.136.149.2
 vk4zil	IN	A	44.136.141.14
 vk4zkf	IN	A	44.136.147.3
 vk4zq	IN	A	44.136.138.70
+vk5aah	IN	A	44.136.176.18
 vk5aei	IN	A	44.136.171.12
+vk5alw	IN	A	44.136.174.3
 vk5arc	IN	A	44.136.176.10
-vk5asf	IN	A	44.136.171.6
-vk5asf2	IN	A	44.136.171.7
+vk5asf	IN	A	44.136.180.5
+vk5asf2	IN	A	44.136.171.6
+vk5asf3	IN	A	44.136.171.7
 vk5atb	IN	A	44.136.192.3
-vk5ben	IN	A	44.136.171.14
 vk5cq	IN	A	44.136.176.3
 vk5cq2	IN	A	44.136.171.19
 vk5eb	IN	A	44.136.182.1
 vk5eb1	IN	A	44.136.180.2
 vk5eb2	IN	A	44.136.171.4
+vk5eb3	IN	A	44.136.174.2
 vk5eb70	IN	A	44.136.186.3
 vk5ex	IN	A	44.136.171.9
 vk5kav	IN	A	44.136.180.3
-vk5kdc	IN	A	44.136.171.20
+vk5kdc	IN	A	44.136.174.1
+vk5kdc2	IN	A	44.136.182.2
+vk5kdc3	IN	A	44.136.171.20
 vk5ket	IN	A	44.136.178.2
 vk5ko	IN	A	44.136.176.4
 vk5ko70	IN	A	44.136.186.4
+vk5kot	IN	A	44.136.176.19
+vk5krt	IN	A	44.136.180.7
 vk5krw	IN	A	44.136.171.13
+vk5lz	IN	CNAME	bbs.vk5lz
 vk5oa	IN	A	44.136.172.1
 vk5po	IN	A	44.136.171.11
+vk5sz	IN	A	44.136.171.14
 vk5taa	IN	A	44.136.171.5
+vk5tty	IN	CNAME	bbs.vk5tty
+vk5vb	IN	A	44.136.178.3
+vk5wi	IN	CNAME	bbs.vk5wi
 vk5xdr	IN	A	44.136.186.1
 vk5xdr2	IN	A	44.136.176.15
 vk5xdr3	IN	A	44.136.188.4
 vk5xip	IN	A	44.136.171.16
 vk5xs	IN	A	44.136.176.8
+vk5xxx	IN	CNAME	gw.vk5xxx
+vk5yak	IN	CNAME	alpaca.vk5yak
 vk5yak70	IN	A	44.136.186.5
 vk5zar	IN	A	44.136.171.10
 vk5zcf	IN	A	44.136.192.2
@@ -15681,8 +15912,10 @@ vk5zmu	IN	A	44.136.180.4
 vk5zmu2	IN	A	44.136.171.22
 vk5ztv	IN	A	44.136.176.14
 vk5ztv2	IN	A	44.136.171.21
+vk5ztv3	IN	A	44.136.182.3
 vk5zty	IN	A	44.136.192.1
 vk5zty2	IN	A	44.136.171.15
+vk5zw	IN	A	44.136.180.6
 vk5zwi	IN	A	44.136.176.2
 vk5zwi2	IN	A	44.136.171.3
 vk5zwi70	IN	A	44.136.186.2
@@ -15820,6 +16053,7 @@ vu2rsb	IN	A	44.167.200.1
 vu2zap	IN	A	44.167.1.2
 vware.n0ren	IN	A	44.94.10.34
 w.n6ull	IN	A	44.2.0.179
+w0dro	IN	A	44.28.0.15
 w0dyd	IN	A	44.94.249.88
 w0kcm	IN	A	44.94.249.89
 w0kit	IN	A	44.96.0.192
@@ -15860,7 +16094,6 @@ w1dc	IN	A	44.56.4.129
 w1dgd	IN	A	44.56.8.21
 w1edh	IN	A	44.88.0.72
 w1edh-7	IN	A	44.88.3.100
-w1edh-9	IN	A	44.88.0.26
 w1edh-9	IN	CNAME	bethany
 w1eo	IN	A	44.56.4.78
 w1eox	IN	A	44.88.0.63
@@ -16040,6 +16273,7 @@ w5hcs	IN	A	44.28.0.111
 w5hcs	IN	MX 10	system200.cecs.unt.edu.
 w5hcs	IN	MX 20	dfwgate
 w5hdd	IN	A	44.4.8.20
+w5hvk	IN	A	44.26.3.2
 w5ifp	IN	A	44.76.2.1
 w5ifp	IN	MX 10	w5ifp
 w5jdv	IN	A	44.28.0.36
@@ -16050,6 +16284,7 @@ w5rkn	IN	MX 0	w5rkn
 w5rkn	IN	MX 10	ausgw.w5ehm
 w5tex	IN	A	44.76.2.164
 w5tex	IN	MX 10	w5tex
+w5too	IN	A	44.28.0.33
 w5tyf	IN	A	44.30.2.1
 w5ulf	IN	A	44.72.5.229
 w5vbx	IN	A	44.108.2.8
@@ -16090,6 +16325,8 @@ w6qwk	IN	A	44.4.30.66
 w6rst	IN	A	44.4.32.160
 w6rwn	IN	A	44.16.0.245
 w6ske	IN	A	44.4.8.16
+w6swe	IN	A	44.124.12.16
+w6swe-3	IN	A	44.124.12.38
 w6tiv	IN	A	44.4.12.12
 w6tj-3	IN	A	44.18.0.131
 w6trw	IN	A	44.16.0.137
@@ -16116,10 +16353,15 @@ w7gbb	IN	A	44.24.100.188
 w7gci	IN	A	44.24.0.182
 w7ghm	IN	A	44.24.0.29
 w7gnp	IN	A	44.124.11.76
+w7gnp-11	IN	A	44.124.11.77
+w7gnp-9	IN	CNAME	w7gnp9.ampr.org
+w7gnp4	IN	A	44.124.10.1
+w7gnp9	IN	A	44.124.10.2
 w7gpw	IN	A	44.24.102.40
 w7htu	IN	A	44.24.0.57
-w7ieo	IN	A	44.26.0.228
+w7ieo	IN	A	44.26.3.138
 w7ihc	IN	A	44.40.1.9
+w7jhx	IN	A	44.124.12.12
 w7jie	IN	A	44.24.0.178
 w7jil	IN	A	44.86.0.63
 w7jlf	IN	A	44.24.0.190
@@ -16133,15 +16375,17 @@ w7lvf	IN	A	44.2.0.195
 w7mcu	IN	A	44.24.100.30
 w7mgg	IN	A	44.24.0.34
 w7nft	IN	A	44.40.5.2
+w7oek	IN	A	44.26.3.3
 w7ohr	IN	CNAME	byugate.w7ohr
 w7oiv	IN	A	44.24.100.109
 w7oiv-pc	IN	A	44.24.100.23
-w7oxs	IN	A	44.26.0.148
+w7oxs	IN	A	44.26.3.161
 w7rsj	IN	A	44.86.0.60
 w7smr	IN	A	44.116.0.93
 w7smr-3	IN	A	44.116.0.94
 w7tvk	IN	A	44.86.0.94
 w7uab	IN	A	44.4.4.54
+w7upf	IN	A	44.124.12.33
 w7wfs	IN	A	44.24.0.97
 w7wkr	IN	A	44.24.0.83
 w7xs	IN	A	44.24.0.120
@@ -16269,6 +16513,7 @@ wa0ahq	IN	A	44.46.66.3
 wa0arz	IN	A	44.24.0.82
 wa0cqg	IN	A	44.94.249.64
 wa0cqg-uhf	IN	A	44.94.9.3
+wa0d	IN	A	44.28.0.72
 wa0emx	IN	A	44.46.176.6
 wa0emx-1	IN	A	44.46.176.7
 wa0fya-3	IN	A	44.46.82.1
@@ -16554,6 +16799,7 @@ wa5kyv	IN	A	44.30.0.28
 wa5kyv.ampr.org	IN	A	44.77.0.38
 wa5lhs	IN	A	44.76.1.80
 wa5mph-8	IN	A	44.42.0.22
+wa5mwd	IN	A	44.28.0.3
 wa5pgv	IN	A	44.72.159.98
 wa5qzi	IN	A	44.76.2.48
 wa5qzi	IN	MX 10	wa5qzi
@@ -16685,8 +16931,11 @@ wa7gfp-1	IN	A	44.116.0.55
 wa7gfp-2	IN	A	44.116.0.56
 wa7gfp-3	IN	A	44.116.0.57
 wa7gmy	IN	A	44.24.0.233
+wa7gpf	IN	A	44.124.11.34
 wa7hra	IN	A	44.24.0.11
-wa7ipx	IN	CNAME	nyssa.wa7ipx
+wa7ihm	IN	A	44.124.12.32
+wa7ika	IN	A	44.124.11.27
+wa7ipx	IN	CNAME	nyssa.wa7ipx.ampr.org.
 wa7ldv	IN	A	44.116.0.53
 wa7lft	IN	A	44.86.0.78
 wa7mbl	IN	A	44.40.12.1
@@ -16696,7 +16945,6 @@ wa7nzl	IN	A	44.2.0.183
 wa7oef	IN	A	44.4.8.224
 wa7ovu	IN	A	44.4.12.70
 wa7pib	IN	A	44.40.10.7
-wa7qcf	IN	A	44.26.0.172
 wa7qfr	IN	A	44.24.0.12
 wa7qne	IN	A	44.24.102.19
 wa7shp	IN	A	44.26.2.32
@@ -16709,7 +16957,7 @@ wa7tas	IN	A	44.26.1.21
 wa7tas	IN	MX 0	wa7tas
 wa7tas	IN	MX 10	wg7j.ece.orst.edu.
 wa7tas	IN	MX 20	ece.orst.edu.
-wa7teg	IN	A	44.26.0.76
+wa7teg	IN	A	44.26.3.5
 wa7ttd	IN	A	44.116.0.158
 wa7ttd-3	IN	A	44.116.0.159
 wa7ttd-4	IN	A	44.116.0.160
@@ -16777,7 +17025,7 @@ wa9aek-8	IN	A	44.72.40.137
 wa9aek-9	IN	A	44.72.40.138
 wa9agn	IN	A	44.72.4.161
 wa9auw	IN	A	44.72.24.227
-wa9awg	IN	A	44.48.90.3
+wa9awg	IN	A	44.48.90.7
 wa9bzw	IN	A	44.92.2.3
 wa9dbj	IN	A	44.72.5.226
 wa9dnz	IN	A	44.72.41.2
@@ -16850,6 +17098,7 @@ wb0tkc	IN	A	44.50.2.1
 wb0ugo	IN	A	44.50.1.18
 wb0uvd	IN	A	44.94.249.49
 wb0vfw	IN	A	44.94.249.77
+wb0wil	IN	A	44.73.146.36
 wb0ydi	IN	A	44.94.249.72
 wb0yfl	IN	A	44.50.0.20
 wb0yiu	IN	A	44.46.0.13
@@ -16931,7 +17180,7 @@ wb2qbp	IN	A	44.68.32.3
 wb2qja	IN	A	44.68.64.151
 wb2qja1	IN	A	44.68.64.174
 wb2rmi	IN	A	44.80.16.89
-wb2sef	IN	A	44.96.0.32
+wb2sef	IN	A	44.124.11.84
 wb2sef1	IN	A	44.96.0.10
 wb2sib	IN	A	44.68.196.204
 wb2snh	IN	A	44.68.196.207
@@ -16989,6 +17238,7 @@ wb4kqn	IN	A	44.75.3.52
 wb4kxs	IN	A	44.62.0.112
 wb4okg	IN	A	44.75.5.86
 wb4pyl	IN	A	44.36.0.29
+wb4qhm	IN	A	44.28.0.30
 wb4qnp	IN	A	44.100.0.76
 wb4rho	IN	A	44.100.0.128
 wb4wja	IN	A	44.75.3.40
@@ -17001,11 +17251,14 @@ wb5bbw	IN	A	44.76.0.1
 wb5bbw	IN	MX 10	cs.wb5bbw
 wb5cey	IN	A	44.76.1.68
 wb5clw	IN	A	44.46.0.96
+wb5cqu	IN	A	44.28.0.122
+wb5ctq	IN	A	44.28.0.8
 wb5dbf	IN	A	44.28.0.192
 wb5ddp	IN	A	44.76.2.72
 wb5ddp	IN	MX 10	n0ccw
 wb5eku	IN	A	44.16.0.1
 wb5ftf	IN	A	44.24.0.54
+wb5gfj	IN	A	44.28.0.115
 wb5hhm	IN	A	44.4.38.6
 wb5hjv	IN	A	44.76.0.64
 wb5itt	IN	A	44.76.4.40
@@ -17013,7 +17266,9 @@ wb5jeq	IN	A	44.108.2.6
 wb5lwp	IN	A	44.108.0.16
 wb5mnd	IN	A	44.28.0.193
 wb5msb	IN	A	44.100.209.16
+wb5myy	IN	A	44.28.0.20
 wb5oap	IN	A	44.30.2.32
+wb5oic	IN	A	44.28.0.44
 wb5prv	IN	A	44.48.0.49
 wb5prv-5	IN	A	44.48.5.49
 wb5pwg	IN	A	44.76.5.88
@@ -17032,7 +17287,8 @@ wb5vrc	IN	A	44.76.2.96
 wb5vrc	IN	MX 10	wb5vrc
 wb5vul	IN	A	44.4.2.12
 wb5vzl	IN	A	44.76.1.180
-wb5vzt	IN	A	44.48.70.15
+wb5vzt	IN	A	44.48.70.19
+wb5wbw	IN	A	44.28.0.54
 wb5yuv	IN	A	44.28.0.35
 wb5zld	IN	A	44.4.8.226
 wb6aoc	IN	A	44.2.0.86
@@ -17052,7 +17308,7 @@ wb6eee	IN	A	44.4.30.36
 wb6ehv	IN	A	44.10.0.8
 wb6elu	IN	A	44.4.28.144
 wb6eqo	IN	A	44.4.44.4
-wb6erg	IN	A	44.26.0.52
+wb6erg	IN	A	44.26.3.144
 wb6gfj	IN	A	44.4.2.226
 wb6gop	IN	A	44.2.0.90
 wb6hhv	IN	A	44.8.0.2
@@ -17111,21 +17367,23 @@ wb6ymh	IN	A	44.16.0.70
 wb6ymh-1	IN	A	44.16.0.71
 wb6ymh-2	IN	A	44.16.0.72
 wb6ymh-3	IN	A	44.16.0.73
-wb6yqp	IN	A	44.26.0.88
+wb6yqp	IN	A	44.26.3.34
 wb6zqz	IN	A	44.4.32.64
 wb6zrc-3	IN	A	44.16.0.102
 wb6zsu	IN	A	44.10.0.158
 wb6zvw	IN	A	44.4.14.4
-wb7ahn	IN	A	44.26.0.156
+wb7ahn	IN	A	44.26.3.97
 wb7ajp	IN	A	44.24.100.189
 wb7asq	IN	A	44.40.12.3
 wb7ayu	IN	A	44.24.101.7
 wb7bac	IN	A	44.24.0.186
-wb7bpi	IN	A	44.26.0.40
+wb7bni	IN	A	44.124.11.80
+wb7bpi	IN	A	44.26.3.4
 wb7bzb	IN	A	44.24.0.148
 wb7cjo	IN	A	44.86.0.1
 wb7cjo-2	IN	A	44.86.3.1
 wb7cjo-3	IN	A	44.86.3.5
+wb7cky	IN	A	44.124.12.13
 wb7cnj	IN	A	44.12.0.38
 wb7dch	IN	A	44.24.100.8
 wb7dsa	IN	A	44.24.0.187
@@ -17141,8 +17399,10 @@ wb7fid	IN	MX 10	uugate.wa7slg
 wb7fid	IN	MX 20	uugate.aim.utah.edu.
 wb7nrs	IN	A	44.24.0.74
 wb7oda	IN	A	44.40.12.5
-wb7okx	IN	A	44.26.0.212
+wb7okx	IN	A	44.26.3.162
 wb7ose	IN	A	44.24.0.132
+wb7pvn	IN	A	44.124.12.25
+wb7qgn	IN	A	44.124.11.64
 wb7qkp	IN	A	44.18.0.2
 wb7qkp-1	IN	A	44.18.0.130
 wb7rai	IN	A	44.116.0.143
@@ -17150,8 +17410,8 @@ wb7rdi	IN	A	44.24.0.66
 wb7s	IN	A	44.86.0.57
 wb7sbd	IN	A	44.16.0.250
 wb7spd	IN	A	44.102.48.41
-wb7szm	IN	A	44.26.0.116
-wb7tpy	IN	A	44.124.0.1
+wb7szm	IN	A	44.26.3.66
+wb7tpy	IN	A	44.124.11.50
 wb7tpy	IN	MX 10	enuucp.eas.asu.edu.
 wb7tpy	IN	MX 20	wb7tpy
 wb7trh	IN	A	44.8.0.13
@@ -17162,7 +17422,7 @@ wb7vhb-2	IN	A	44.116.0.85
 wb7vhb-3	IN	A	44.116.0.86
 wb7vhb-4	IN	A	44.116.0.87
 wb7vhb-5	IN	A	44.116.0.88
-wb7vms	IN	A	44.26.0.232
+wb7vms	IN	A	44.26.3.33
 wb7vwr	IN	A	44.40.10.1
 wb8bhk	IN	A	44.70.0.84
 wb8bii	IN	A	44.70.4.55
@@ -17171,8 +17431,10 @@ wb8cee-1	IN	A	44.70.0.16
 wb8chj	IN	A	44.92.6.6
 wb8cki	IN	A	44.70.0.83
 wb8cxo	IN	A	44.70.4.81
+wb8ehs	IN	A	44.28.0.21
 wb8evi	IN	A	44.70.4.53
 wb8grx	IN	A	44.70.12.25
+wb8guc	IN	A	44.124.11.110
 wb8hhz	IN	A	44.70.16.90
 wb8i	IN	A	44.102.204.16
 wb8imy	IN	A	44.88.0.123
@@ -17307,6 +17569,7 @@ wb9uwa	IN	MX 20	wb9uus.bradley.edu.
 wb9uwa	IN	MX 30	bradley.bradley.edu.
 wb9uyr	IN	A	44.72.20.226
 wb9uza	IN	A	44.48.30.14
+wb9vvf	IN	CNAME	ensign.wb9vvf
 wb9wls	IN	A	44.72.18.7
 wb9wtq	IN	A	44.72.25.225
 wb9yae	IN	CNAME	wb9yae-4
@@ -17337,6 +17600,7 @@ wc8j	IN	A	44.70.4.63
 wc8j-1	IN	A	44.70.4.76
 wc90.g6crv	IN	A	44.131.1.220
 wc9c	IN	A	44.72.38.2
+wc9c-1	IN	A	44.72.38.5
 wc9f	IN	A	44.48.10.9
 wc9g	IN	A	44.48.100.5
 wd0acd	IN	A	44.76.4.52
@@ -17352,6 +17616,7 @@ wd0ety	IN	CNAME	ult.wd0ety
 wd0etz	IN	A	44.28.0.65
 wd0faa	IN	A	44.4.28.194
 wd0fhg	IN	CNAME	empire.wd0fhg.ampr.org.
+wd0gle	IN	A	44.124.12.29
 wd0gmr	IN	A	44.46.0.50
 wd0gnk	IN	A	44.94.1.4
 wd0heb	IN	A	44.94.1.3
@@ -17365,13 +17630,13 @@ wd2z	IN	A	44.68.16.3
 wd4amv	IN	A	44.75.5.56
 wd4biw	IN	A	44.98.0.74
 wd4cpf-1	IN	A	44.100.48.1
-wd4eck	IN	A	44.26.0.44
+wd4eck	IN	A	44.26.3.1
 wd4epk	IN	A	44.98.0.87
 wd4fjg	IN	A	44.17.0.11
 wd4fsu-pc	IN	A	44.36.8.14
 wd4him	IN	A	44.98.0.50
 wd4myc	IN	A	44.98.0.62
-wd4ned	IN	A	44.26.0.168
+wd4ned	IN	A	44.26.3.164
 wd4ntk-pc	IN	A	44.36.8.41
 wd4oqc-2	IN	A	44.36.0.23
 wd4oqc-3	IN	A	44.36.0.24
@@ -17387,6 +17652,7 @@ wd5gnw	IN	A	44.76.4.24
 wd5hcy	IN	A	44.28.0.61
 wd5hcy	IN	MX 10	system200.cecs.unt.edu.
 wd5hcy	IN	MX 20	dfwgate
+wd5hjp	IN	A	44.28.0.9
 wd5hls	IN	A	44.76.1.36
 wd5hls	IN	MX 10	val.com.
 wd5jud	IN	A	44.108.1.3
@@ -17421,6 +17687,7 @@ wd8ebz	IN	A	44.102.40.22
 wd8ebz	IN	MX 10	wd8ebz
 wd8ebz	IN	MX 20	hamgate.cc.wayne.edu.
 wd8ejc	IN	A	44.70.16.63
+wd8kpz	IN	A	44.124.11.23
 wd8maf	IN	A	44.70.0.93
 wd8nng	IN	A	44.70.12.58
 wd8o	IN	A	44.102.40.20
@@ -17447,6 +17714,7 @@ wd9dbj	IN	A	44.72.13.97
 wd9dhi	IN	A	44.92.1.6
 wd9djd	IN	A	44.72.1.69
 wd9dmp	IN	A	44.72.13.161
+wd9dqh	IN	A	44.124.12.22
 wd9eka	IN	A	44.48.60.2
 wd9eqd	IN	A	44.80.8.61
 wd9evk	IN	A	44.48.0.7
@@ -17503,7 +17771,7 @@ wg7j	IN	MX 10	wg7j.ece.orst.edu.
 wg7j	IN	MX 20	ece.orst.edu.
 wg9v	IN	A	44.72.32.131
 wh20.g0gsr	IN	A	44.131.1.117
-wh3aaa	IN	A	44.26.0.60
+wh3aaa	IN	A	44.26.3.65
 wh6aq	IN	A	44.14.10.43
 wh6aq	IN	MX 0	wh6aq
 wh6aq	IN	MX 1	uhm
@@ -17523,6 +17791,7 @@ wi2w	IN	A	44.64.0.14
 wi3p	IN	A	44.66.0.2
 wi5k	IN	A	44.108.4.2
 wi7c	IN	A	44.125.129.4
+wi9r	IN	A	44.72.7.1
 wicen10252	IN	A	44.136.10.252
 wicen10253	IN	A	44.136.10.253
 wicen8252	IN	A	44.136.8.252
@@ -17564,6 +17833,7 @@ wk8c	IN	A	44.70.16.28
 wk8g	IN	A	44.70.4.26
 wk8g-1	IN	A	44.70.4.27
 wk8i	IN	A	44.70.16.107
+wk8u	IN	A	44.28.0.24
 wk9t	IN	A	44.72.22.67
 wl7am	IN	A	44.22.3.4
 wl7aml	IN	A	44.22.0.33
@@ -17640,8 +17910,10 @@ wq0n	IN	A	44.46.0.52
 wq0w	IN	A	44.46.0.26
 wq0z	IN	A	44.46.0.95
 wq1k	IN	A	44.4.2.134
+wq1r	IN	A	44.88.0.24
 wq4b-2	IN	A	44.36.20.24
 wq4b-pc	IN	A	44.36.20.23
+wq7u	IN	A	44.124.11.90
 wr1a	IN	A	44.52.0.93
 wr1b	IN	A	44.88.1.36
 wr1g	IN	A	44.88.0.151
@@ -17694,9 +17966,11 @@ wtz	IN	CNAME	n0mfd-7
 wu2a	IN	A	44.4.30.226
 wu2z	IN	A	44.64.0.139
 wu6e	IN	A	44.32.0.132
+wu7o	IN	A	44.124.11.103
 wv2u	IN	A	44.68.24.64
 wv3f	IN	A	44.80.9.24
 wv7b	IN	A	44.40.8.9
+wv7i	IN	A	44.124.11.45
 wv8a	IN	A	44.102.48.54
 wv9a	IN	A	44.72.50.194
 wv9e	IN	A	44.48.30.17
