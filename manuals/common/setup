@@ -1,0 +1,12 @@
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/common/setup,v 1.1 1994/07/22 13:22:18 deyke Exp $
+. \"
+.PH "" \" Page header
+.SA 1 \" Right justified
+.ds Ci 0 0 0 0 0 0 0 \" Table of contents indent list
+.ds HF 3 3 3 3 3 3 3 \" All headers bold
+.ds HP +2 +2 +2 +2 +2 +2 +2 \" All headers 2 points bigger
+.nr Cl 7 \" Save all headers for table of contents
+.nr Ej 1 \" Level 1 headers on new page
+.nr Hb 7 \" Break after all headers
+.nr Hs 7 \" Empty line after all headers
+.nr Hy 1 \" Hyphenation on
