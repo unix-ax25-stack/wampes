@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.64 1994/10/06 16:15:16 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.65 1995/04/16 11:23:47 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -925,6 +925,7 @@ static void help_command(struct link *lp)
     "/LINKS               Show all links\n"
     "/PEERS               Show all peers\n"
     "/USERS               Show all users\n"
+    "/ONLINE              Show all users\n"
 
     "***\n");
 }
@@ -1116,7 +1117,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.64 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.65 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1364,6 +1365,17 @@ static void process_input(struct link *lp)
     { "\377\200host",   h_host_command },
     { "name",           name_command },
 
+    { "bye",            close_link },
+    { "exit",           close_link },
+    { "hosts",          hosts_command },
+    { "kick",           kick_command },
+    { "links",          links_command },
+    { "online",         users_command },
+    { "peers",          peers_command },
+    { "quit",           close_link },
+    { "users",          users_command },
+    { "who",            who_command },
+
     { 0,                0 }
   };
 
@@ -1380,6 +1392,7 @@ static void process_input(struct link *lp)
     { "links",          links_command },
     { "msg",            msg_command },
     { "note",           note_command },
+    { "online",         users_command },
     { "peers",          peers_command },
     { "personal",       note_command },
     { "quit",           close_link },

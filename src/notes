@@ -1,12 +1,28 @@
 -------------------------------------------------------------------------------
 
+- bbs.c:  new bbs batch loader
+
+- bbs.c:  accept /ex for EOF
+
+- bbs.c:  convert cancel control msgs to E msgs
+
+- mail_bbs.c:  X-R header lines have to be converted to R header lines
+
+- make a domain search list
+  default: ampr.org. .
+  see 5-2 Networking
+
+- Net/Rom T2 timer (200ms)
+
+- AX.25 extended seq numbers
+
 - make netrom table with fast disconnect
 
-- flexnet: Zeiten zu dl1sbl-1 waren 60 Sek und 140 Sek
+- flexnet:  Zeiten zu dl1sbl-1 waren 60 Sek und 140 Sek
 
-- flexnet: delete peer only after 2nd poll timeout
+- flexnet:  delete peer only after 2nd poll timeout
 
-- TCP with closed windows: spinning
+- TCP with closed windows:  spinning
 
 - muss die pty beim login erst geflushed werden?
 
@@ -19,16 +35,16 @@
 
 - 'rs' does not work on hp-terminals
 
-- even in raw mode it should be possible to send ^] without leaving the session
-  --> check telnet
+- even in raw mode it should be possible to send ^] without leaving the
+  session --> check telnet
 
 - check overflow in mail buffers
 
 - "will echo" implementieren und testen (all telnet options)
 
-- tty.h; ttydriv an session koppeln (Schwierigkeit: keine CmdSession)
+- tty.h; ttydriv an session koppeln (Schwierigkeit:  keine CmdSession)
 
-- Mailer: Alle Message Delimiter entfernen
+- Mailer:  Alle Message Delimiter entfernen
 
 -------------------------------------------------------------------------------
 
@@ -51,38 +67,38 @@ wampes manual:
 
 - ftp reget only for binary transfers
 
-- arp add: talk about automatic entries
+- arp add:  talk about automatic entries
 
-- route add: talk about automatic entries
+- route add:  talk about automatic entries
 
 - make all TRACE descriptions the same
 
 -------------------------------------------------------------------------------
 
-- A block of size  MAX_N has no buddy, it can not be  combined  with any
+- A block of size MAX_N has no buddy, it can not be combined with any
   other block.
 
 - A block of size < MAX_N will have a buddy.
 
 - We keep a table of addresses of all blocks of size MAX_N.  This allows
   us to "normalize" the address of a block, and to calculate the address
-  of its buddy. ===== BETTER SOLUTION REQUIRED =====
+  of its buddy.  ===== BETTER SOLUTION REQUIRED =====
 
 	pbuddy = (p - base) ^ size;
 
-- For every  block with size less than MAX_N we can tell if the block is
-  free or not.  A free  block does  contain a pointer  to an other  free
-  block, or a NULL  pointer.  The pointer  will never  point to the free
-  table.  A used block  does  contain a pointer  that will  point to the
-  free table.  An alternative  would be to store n in used blocks.  n is
-  a small integer in the range MIN_N..MAX_N  (typically 3..20), so n can
+- For every block with size less than MAX_N we can tell if the block is
+  free or not.  A free block does contain a pointer to an other free
+  block, or a NULL pointer.  The pointer will never point to the free
+  table.  A used block does contain a pointer that will point to the
+  free table.  An alternative would be to store n in used blocks.  n is
+  a small integer in the range MIN_N..MAX_N (typically 3..20), so n can
   easily be distinguished from a pointer.
 
-- If we free a block,  and its buddy is free too, then those two  blocks
-  will be  recombined.  To unlink the buddy  from the free list  without
+- If we free a block, and its buddy is free too, then those two blocks
+  will be recombined.  To unlink the buddy from the free list without
   searching the free list has to be doubly linked.
 
-- Therefore,  we need two  pointers in each free  block, and we need one
+- Therefore, we need two pointers in each free block, and we need one
   pointer (or a size) in each allocated block.
 
 -------------------------------------------------------------------------------
