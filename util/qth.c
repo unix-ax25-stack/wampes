@@ -1,7 +1,7 @@
 /* qth: qth, locator, distance, and course computations */
 
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/qth.c,v 1.9 1993/09/01 16:00:12 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/qth.c,v 1.10 1993/09/02 10:27:12 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -14,13 +14,17 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #define M_PI            3.14159265358979323846
 #endif
 
-#define QTH_INI         "/usr/local/lib/qth.ini"
+#define CONFFILE        "/usr/local/lib/qth.conf"
 #define RADIUS          6370.0
 
 static char **argv;
 static int argc;
 static long mylatitude  =  (48L *3600L + 38L *60L + 33L);
 static long mylongitude = -( 8L *3600L + 53L *60L + 28L);
+
+#ifdef __hpux
+#pragma OPTIMIZE OFF
+#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -319,7 +323,7 @@ int main(int pargc, char **pargv)
   FILE * fp;
   long longitude2;
 
-  if (fp = fopen(QTH_INI, "r")) {
+  if (fp = fopen(CONFFILE, "r")) {
     if (fscanf(fp, "%ld %ld", &longitude1, &latitude1) == 2) {
       mylongitude = longitude1;
       mylatitude = latitude1;

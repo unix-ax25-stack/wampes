@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.3 1993/07/23 06:31:45 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.4 1993/09/02 10:26:49 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -1711,7 +1711,7 @@
 44.130.48.221   DL4SAS  # Eugen Bauknecht, Pliezhausen
 44.130.48.222   DD0SQ   # Raimund Roetzer, 7038 Holzgerlingen
 44.130.48.223   DG7KBV  # Johannes
-44.130.48.224   DD2FX-SUN       # Rolf
+44.130.48.224   DF5OO   # Frank Blaesing, 71229 Leonberg
 44.130.48.225   DD2FX-RS6000    # Rolf; ***
 44.130.48.226   DL4KU   # Peter Piepkorn, 7000 Stuttgart 31; Atari ST1040 STF
 44.130.48.227   DL9SDN  # Werner Haas, 7014 Kornwestheim
