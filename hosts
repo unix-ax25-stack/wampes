@@ -495,13 +495,17 @@
 44.130.12.53    DG8BAH  # Kai Siebels, Westoverledingen; JNOS
 44.130.12.54    DC1BE   # Dirk Wahrheit, Papenburg; JNOS
 44.130.12.55    DL1BAH  # Karl Heinz Schirmer, Norden; JNOS
-44.130.12.56    DL8BCJ  # Horst, 26757 Borkum
+44.130.12.56    DL8BCJ  # Horst Will, 26757 Borkum
 44.130.12.57    DL1BJL-U        # Matthias, Emden; Linux
 44.130.12.58    DL1BJL-W        # Matthias, Emden; Wampes
 44.130.12.59    DL1BJL-T        # Matthias, Emden; TNOS
 44.130.12.60    DB0FHO-W        # ; Wampes
 44.130.12.61    DB0FHO-L        # ; Linux
 44.130.12.62    NNTP.DB0FHO     # ; NNTP-Server, Linux
+44.130.12.63    DG2BDB  # Stefan Fischer, Norden; WNOS
+44.130.12.64    DD8BA   # Steven Sporkmann, Holdorf; NOS
+44.130.12.65    DC3BW   # Juergen Rinas, Sande; Linux
+44.130.12.66    DL1BFE  # Gregor Ulsamer, Emden; JNOS
 #
 #44.130.13.x    Hildesheim
 # lokale Adresskoordination: DC5ON
@@ -1428,7 +1432,7 @@
 44.130.23.40    DG1DCN  # Marc Noeker, Lennestadt: Amiga 2000
 44.130.23.102   DK3AK-14        # Siegmar Krause, 5982 Neuenrade
 #
-#44.130.144.xxx Bielefeld/Oerlinghausen Stand 08.02.95
+#44.130.144.xxx Bielefeld/Oerlinghausen Stand 01.08.95
 44.130.144.1    DB0NOS  # TCP/IP-Svr Oerlinghausen ***
 44.130.144.2    FTP.DB0NOS              # FTP-Svr Oerlinghausen ***
 #44.130.144.3-44.130.144.15 fuer DB0NOS-Peripherie und Subrechner
@@ -1446,7 +1450,7 @@
 44.130.144.27   DG6YL   # Herbert, Augustdorf
 44.130.144.28   DL8YEA  # Peter, Bielefeld
 44.130.144.29   DG3YFS  # Raymond, Stromberg
-# 44.130.144.30 DL9YET nach 44.130.15.56
+44.130.144.30   DH6YAY  # Stefan, GÅtersloh
 44.130.144.31   AA2RL   #
 44.130.144.32   DG9YGJ  # Stefan, Roedinghausen
 44.130.144.33   SYS1.DG8YAY             # Joerg, Bielefeld
@@ -1461,11 +1465,18 @@
 44.130.144.42   DH9YAX  # Udo, Verl
 44.130.144.43   DL1YDI  # Dirk, Steinhagen
 44.130.144.44   DL5YEQ  # Jens, Bielefeld
+44.130.144.45   DH2YAU  # Andreas,Bielefeld
+44.130.144.46   DB0CGS  # Clubstation,Bielefeld
+44.130.144.48   DG1YHN  # Sven, Paderborn
+44.130.144.49   DL1YCG  # Andreas, Bielefeld-Senne I
+44.130.144.50   DB9WT   # Hans, Bad Iburg
+44.130.144.51   DB9WT-2 # Hans, Bad Iburg
 44.130.144.56   DK3RC   # Horst, Detmold
 44.130.144.57   DK3RC-1 # Horst, Bielstein
 44.130.144.58   DL0JW   # Clubstation N58, Oerlinghausen
-44.130.144.60   SYS2.DG6YGD             # Dirk, Detmold
+44.130.144.60   LINUX.DG6YGD            # Dirk, Detmold
 44.130.144.66   DG1YAY  # Christof, Buende
+44.130.144.67   DG1YAY-7        # TCPIP/ROUTER, Christof, Buende
 #
 #44.130.24.x    Rhein-Main
 # lokale Adress-Koordination: DG1ZX
