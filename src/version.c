@@ -1,6 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/version.c,v 1.323 1996/06/30 10:17:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/version.c,v 1.324 1996/07/29 16:36:00 deyke Exp $ */
 
-static char id[] = "@(#)WAMPES-960630";
+static char id[] = "@(#)WAMPES-960729";
 
 /* version control information */
 char *Version = id + 4;
