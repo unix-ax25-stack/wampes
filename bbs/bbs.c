@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.89 1995/05/09 21:13:03 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.90 1995/05/13 18:46:55 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -141,16 +141,12 @@ static struct nntp_channel nntp_channel = {
   -1
 };
 
-static int mdays[] = {
-  31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
-};
-
 static char prompt[1024] = "bbs> ";
 static char *myhostname;
 static const char daynames[] = "SunMonTueWedThuFriSat";
 static const char monthnames[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
-static int doforward;
-static int do_not_exit;
+static int did_forward;
+static int do_forward;
 static int errors;
 static int fdindex;
 static int fdseq;
@@ -252,7 +248,7 @@ static int Strncasecmp(const char *s1, const char *s2, int n)
 
 /*---------------------------------------------------------------------------*/
 
-static const char *strcasepos(const char *str, const char *pat)
+static const char *Strcasestr(const char *str, const char *pat)
 {
   const char *s, *p;
 
@@ -278,26 +274,27 @@ static char *strtrim(char *s)
 
 /*---------------------------------------------------------------------------*/
 
-static void rip(char *s)
+static char *rip(char *s)
 {
   char *p;
 
   for (p = s; *p; p++) ;
   while (--p >= s && (*p == '\r' || *p == '\n')) ;
   p[1] = 0;
+  return s;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static struct strlist *alloc_string(const char *str)
+static struct strlist *alloc_string(const char *s)
 {
   struct strlist *p;
 
-  p = (struct strlist *) malloc(sizeof(struct strlist *) + strlen(str) + 1);
+  p = (struct strlist *) malloc(sizeof(struct strlist *) + strlen(s) + 1);
   if (!p)
     halt();
   p->next = 0;
-  strcpy(p->str, str);
+  strcpy(p->str, s);
   return p;
 }
 
@@ -385,6 +382,42 @@ static char *rfc822_date_string(long gmt)
 
 /*---------------------------------------------------------------------------*/
 
+static long calculate_date(int yy, int mm, int dd,
+			   int h, int m, int s,
+			   int tzcorrection)
+{
+
+  static int mdays[] = {
+    31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+  };
+
+  int i;
+  long jdate;
+
+  if (yy <= 37)
+    yy += 2000;
+  if (yy <= 99)
+    yy += 1900;
+  mdays[1] = 28 + (yy % 4 == 0 && (yy % 100 || yy % 400 == 0));
+  mm--;
+  if (yy < 1970 || yy > 2037 ||
+      mm < 0 || mm > 11 ||
+      dd < 1 || dd > mdays[mm] ||
+      h < 0 || h > 23 ||
+      m < 0 || m > 59 ||
+      s < 0 || s > 59)
+    return -1;
+  jdate = dd - 1;
+  for (i = 0; i < mm; i++)
+    jdate += mdays[i];
+  for (i = 1970; i < yy; i++)
+    jdate += 365 + (i % 4 == 0);
+  jdate *= (24L * 60L * 60L);
+  return jdate + 3600 * h + 60 * m + s - tzcorrection;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static long parse_rfc822_date(const char *str)
 {
 
@@ -394,12 +427,10 @@ static long parse_rfc822_date(const char *str)
   int dd;
   int h;
   int i;
-  int mm;
   int m;
   int s;
   int tzcorrection;
   int yy;
-  long jdate;
 
   i = sscanf((char *) str,
 	     "%*s %d %3s %d %d:%d:%d %s",
@@ -423,26 +454,13 @@ static long parse_rfc822_date(const char *str)
   } else {
     tzcorrection = 0;
   }
-  if (yy <= 37)
-    yy += 2000;
-  if (yy <= 99)
-    yy += 1900;
   if (strlen(monthstr) != 3)
     return -1;
   p = strstr(monthnames, monthstr);
   if (!p)
     return -1;
-  mm = (p - monthnames) / 3;
-  mdays[1] = 28 + (yy % 4 == 0 && (yy % 100 || yy % 400 == 0));
-  if (yy < 1970 || yy > 2037 || dd < 1 || dd > mdays[mm])
-    return -1;
-  jdate = dd - 1;
-  for (i = 0; i < mm; i++)
-    jdate += mdays[i];
-  for (i = 1970; i < yy; i++)
-    jdate += 365 + (i % 4 == 0);
-  jdate *= (24L * 60L * 60L);
-  return jdate + 3600 * h + 60 * m + s - tzcorrection;
+  return calculate_date(yy, (p - monthnames) / 3 + 1, dd,
+			h, m, s, tzcorrection);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -651,15 +669,13 @@ static int read_allowed(const struct index *index)
 static void translate_bangs(char *s)
 {
 
-  char tmp[1024];
   char *p;
+  static char tmp[1024];
 
   if ((p = strchr(s, '!'))) {
     *p = 0;
     translate_bangs(p + 1);
-    strcpy(tmp, p + 1);
-    strcat(tmp, "@");
-    strcat(tmp, s);
+    sprintf(tmp, "%s@%s", p + 1, s);
     strcpy(s, tmp);
   }
 }
@@ -717,7 +733,8 @@ static char *get_host_from_header(const char *line)
       p++;
     for (q = p; isalnum(*q & 0xff); q++) ;
     *q = 0;
-    return strlwc(p);
+    if (*p)
+      return strlwc(p);
   }
   return 0;
 }
@@ -729,33 +746,15 @@ static long get_date_from_header(const char *line)
 
   int dd;
   int h;
-  int i;
   int mm;
   int m;
   int yy;
-  long jdate;
 
-  if (sscanf((char *) line, "R:%02d%02d%02d/%02d%02d", &yy, &mm, &dd, &h, &m) != 5)
+  if (sscanf((char *) line,
+	     "R:%02d%02d%02d/%02d%02d",
+	     &yy, &mm, &dd, &h, &m) != 5)
     return -1;
-  if (yy <= 37)
-    yy += 2000;
-  else
-    yy += 1900;
-  mm--;
-  mdays[1] = 28 + (yy % 4 == 0 && (yy % 100 || yy % 400 == 0));
-  if (yy < 1970 || yy > 2037 ||
-      mm < 0 || mm > 11 ||
-      dd < 1 || dd > mdays[mm] ||
-      h > 23 ||
-      m > 59)
-    return -1;
-  jdate = dd - 1;
-  for (i = 0; i < mm; i++)
-    jdate += mdays[i];
-  for (i = 1970; i < yy; i++)
-    jdate += 365 + (i % 4 == 0);
-  jdate *= (24L * 60L * 60L);
-  return jdate + 3600 * h + 60 * m;
+  return calculate_date(yy, mm, dd, h, m, 0, 0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -765,35 +764,31 @@ static void send_to_bbs(struct mail *mail)
 
   FILE *fp;
   int fdlock;
+  int mesg;
   struct index index;
   struct strlist *p;
 
   if ((fdlock = lock_file(SENDLOCKFILE, 0)) < 0)
     halt();
   if (lseek(fdindex, -SIZEINDEX, SEEK_END) < 0)
-     index.mesg = 1;
+    mesg = 1;
   else {
     if (read(fdindex, &index, SIZEINDEX) != SIZEINDEX)
-       halt();
-    index.mesg++;
+      halt();
+    mesg = index.mesg + 1;
   }
+  memset((char *) &index, 0, SIZEINDEX);
+  index.mesg = mesg;
   index.date = mail->date;
   strncpy(index.bid, mail->bid, LEN_BID);
-  index.bid[LEN_BID] = 0;
   strupc(index.bid);
   strncpy(index.subject, mail->subject, LEN_SUBJECT);
-  index.subject[LEN_SUBJECT] = 0;
   strncpy(index.to, mail->touser, LEN_TO);
-  index.to[LEN_TO] = 0;
   strupc(index.to);
   strncpy(index.at, mail->tohost, LEN_AT);
-  index.at[LEN_AT] = 0;
   strupc(index.at);
   strncpy(index.from, mail->fromuser, LEN_FROM);
-  index.from[LEN_FROM] = 0;
   strupc(index.from);
-  index.deleted = 0;
-  index.size = 0;
   if (!(fp = fopen(getfilename(index.mesg), "w"))) {
     make_parent_directories(getfilename(index.mesg));
     if (!(fp = fopen(getfilename(index.mesg), "w")))
@@ -809,7 +804,7 @@ static void send_to_bbs(struct mail *mail)
     }
   fclose(fp);
   if (write(fdindex, &index, SIZEINDEX) != SIZEINDEX)
-     halt();
+    halt();
   close(fdlock);
 }
 
@@ -822,15 +817,13 @@ static void send_to_mail_or_news(struct mail *mail, enum e_type dest)
   char command[1024];
   char path[1024];
   char *h;
-  char *prog;
   FILE *fp;
   struct strlist *p;
 
-  prog = (dest == NEWS) ? RNEWS_PROG : SENDMAIL_PROG;
   if (dest == NEWS)
-    strcpy(command, prog);
+    strcpy(command, RNEWS_PROG);
   else
-    sprintf(command, "%s -oi -oem -f %s@%s %s@%s", prog,
+    sprintf(command, SENDMAIL_PROG " -oi -oem -f %s@%s %s@%s",
 	    mail->fromuser, mail->fromhost,
 	    mail->touser, mail->tohost);
   if (!(fp = popen(command, "w")))
@@ -872,7 +865,7 @@ static void send_to_mail_or_news(struct mail *mail, enum e_type dest)
       strcpy(path, user.name);
     fprintf(fp, "Path: %s\n", path);
   }
-  if (mail->lifetime != -1) {
+  if (mail->lifetime) {
     fprintf(fp, "Lifetime: %d\n", mail->lifetime);
     fprintf(fp, "Expires: %s\n", rfc822_date_string(time(0) + DAYS * mail->lifetime));
   }
@@ -900,7 +893,6 @@ static struct mail *alloc_mail(void)
   mail = (struct mail *) calloc(1, sizeof(struct mail));
   if (!mail)
     halt();
-  mail->lifetime = -1;
   return mail;
 }
 
@@ -1026,8 +1018,10 @@ static void route_mail(struct mail *mail)
 
   /* Check for bogus mails */
 
-  if ((cp = get_host_from_header(mail->subject)) && callvalid(cp))
-    goto Done;
+  if ((cp = get_host_from_header(mail->subject)) && callvalid(cp)) {
+    free_mail(mail);
+    return;
+  }
 
   /* Fix addresses */
 
@@ -1046,11 +1040,11 @@ static void route_mail(struct mail *mail)
 
   /* Set date */
 
-  for (p = mail->head; p; p = p->next)
-    if ((gmt = get_date_from_header(p->str)) != -1)
-      mail->date = gmt;
-    else
+  for (p = mail->head; p; p = p->next) {
+    if ((gmt = get_date_from_header(p->str)) == -1)
       break;
+    mail->date = gmt;
+  }
   if (!mail->date)
     mail->date = time(0);
 
@@ -1076,8 +1070,7 @@ static void route_mail(struct mail *mail)
 	  tm->tm_min,
 	  myhostname,
 	  MYDOMAIN);
-  strupc(buf);
-  append_line(mail, buf, HEAD);
+  append_line(mail, strupc(buf), HEAD);
 
   /* Call delivery agents */
 
@@ -1091,7 +1084,6 @@ static void route_mail(struct mail *mail)
 
   /* Free mail */
 
-Done:
   free_mail(mail);
 }
 
@@ -1276,6 +1268,8 @@ static struct mail *read_mail_or_news_file(const char *filename, enum e_type src
 	get_header_value("Lifetime:", 0, line, lifetime);
 	get_header_value("Expires:", 0, line, expires);
 	get_header_value("Bulletin-ID:", 1, line, mail->bid);
+	if (!*mail->bid)
+	  get_header_value("BBS-Message-ID:", 1, line, mail->bid);
 	if (get_header_value("X-R:", 0, line, Rline + 2)) {
 	  Rline[0] = 'R';
 	  Rline[1] = ':';
@@ -1334,8 +1328,7 @@ static struct mail *read_mail_or_news_file(const char *filename, enum e_type src
     if ((cp = strstr(line, MIDSUFFIX))) {
       *cp = 0;
       line[LEN_BID] = 0;
-      strupc(line);
-      strcpy(mail->subject, line);
+      strcpy(mail->subject, strupc(line));
     }
   }
 
@@ -1356,7 +1349,7 @@ static void forward_message(struct mail *mail)
   int fast_forward;
   struct strlist *p;
 
-  do_not_exit = 1;
+  did_forward = 1;
   fast_forward = (!strcmp(mail->touser, "e") ||
 		  !strcmp(mail->touser, "m"));
   sprintf(buf, "S %s", mail->touser);
@@ -1366,15 +1359,14 @@ static void forward_message(struct mail *mail)
     sprintf(buf + strlen(buf), " < %s", mail->fromuser);
   if (*mail->bid)
     sprintf(buf + strlen(buf), " $%s", mail->bid);
-  if (mail->lifetime != -1)
+  if (mail->lifetime)
     sprintf(buf + strlen(buf), " # %d", mail->lifetime);
   if (fast_forward) {
     if (*mail->subject)
       sprintf(buf + strlen(buf), " %s", mail->subject);
     strcat(buf, " \032");
   }
-  strupc(buf);
-  puts(buf);
+  puts(strupc(buf));
   if (fast_forward)
     *buf = 'n';
   else
@@ -1383,10 +1375,8 @@ static void forward_message(struct mail *mail)
   case 'O':
   case 'o':
     puts(*mail->subject ? mail->subject : "(no subject)");
-    /* sleep(5);                   /* Bugfix for TheBox 1.9 */
     for (p = mail->head; p; p = p->next)
       puts(p->str);
-    /* sleep(5);                   /* Bugfix for TheBox 1.9 */
     puts("\032");
     /* fall thru */
   case 'N':
@@ -1416,14 +1406,14 @@ static void forward_mail(void)
   FILE *fp;
   struct dirent *dp;
   struct mail *mail;
-  struct strlist *filelist = 0;
+  struct strlist *filelist;
   struct strlist *p;
   struct strlist *q;
 
-  strcpy(dirname, UUCP_DIR "/");
-  strcat(dirname, user.name);
+  sprintf(dirname, UUCP_DIR "/%s", user.name);
   if (!(dirp = opendir(dirname)))
     return;
+  filelist = 0;
   for (dp = readdir(dirp); dp; dp = readdir(dirp)) {
     if (*dp->d_name != 'C')
       continue;
@@ -1468,12 +1458,13 @@ static void forward_mail(void)
     if (*xfile) {
       if (!(fp = fopen(xfile, "r")))
 	continue;
-      while (fgets(line, sizeof(line), fp))
+      while (fgets(line, sizeof(line), fp)) {
+	rip(line);
 	if (!strncmp(line, "C rmail ", 8)) {
 	  sprintf(to, "%s!%s", user.name, line + 8);
-	  strtrim(to);
 	  break;
 	}
+      }
       fclose(fp);
     }
     if (!*to)
@@ -1494,7 +1485,7 @@ static void forward_mail(void)
 
 /*---------------------------------------------------------------------------*/
 
-static void forward_news(int *timeout)
+static void forward_news(void)
 {
 
   char batchfile[1024];
@@ -1506,20 +1497,16 @@ static void forward_news(int *timeout)
   long starttime;
   struct mail *mail;
   struct stat statbuf;
-  struct strlist *filelist = 0;
-  struct strlist *filetail = 0;
+  struct strlist *filelist;
+  struct strlist *filetail;
   struct strlist *p;
 
-  *timeout = 0;
-  strcpy(batchfile, NEWSSPOOL "/out.going/");
-  strcat(batchfile, user.name);
-  strcpy(workfile, batchfile);
-  strcat(workfile, ".bbs");
+  sprintf(batchfile, NEWSSPOOL "/out.going/%s", user.name);
+  sprintf(workfile, "%s.bbs", batchfile);
   if (!(fp = fopen(workfile, "r"))) {
     if (rename(batchfile, workfile))
       return;
-    strcpy(line, CTLINND " -s flush ");
-    strcat(line, user.name);
+    sprintf(line, CTLINND " -s flush %s", user.name);
     system(line);
     for (i = 0;; i++) {
       if (!stat(batchfile, &statbuf))
@@ -1531,6 +1518,7 @@ static void forward_news(int *timeout)
     if (!(fp = fopen(workfile, "r")))
       halt();
   }
+  filelist = filetail = 0;
   while (fgets(line, sizeof(line), fp)) {
     for (cp = line; *cp; cp++) {
       if (isspace(*cp & 0xff)) {
@@ -1540,8 +1528,7 @@ static void forward_news(int *timeout)
     }
     if (*line != '/') {
       char tmp[1024];
-      strcpy(tmp, NEWSSPOOL "/");
-      strcat(tmp, line);
+      sprintf(tmp, NEWSSPOOL "/%s", line);
       strcpy(line, tmp);
     }
     if (!stat(line, &statbuf)) {
@@ -1581,7 +1568,10 @@ static void forward_news(int *timeout)
 	halt();
     }
     if (starttime + 600 <= time(0)) {
-      *timeout = 1;
+      while ((p = filelist)) {
+	filelist = p->next;
+	free(p);
+      }
       return;
     }
   }
@@ -1591,14 +1581,18 @@ static void forward_news(int *timeout)
 
 static void f_command(int argc, char **argv)
 {
-  int timeout;
+  int did_any_forward;
 
-  do_not_exit = doforward;
-  do {
+  did_any_forward = 0;
+  for (;;) {
+    did_forward = 0;
     forward_mail();
-    forward_news(&timeout);
-  } while (timeout);
-  if (!do_not_exit)
+    forward_news();
+    if (!did_forward)
+      break;
+    did_any_forward = 1;
+  }
+  if (!do_forward && !did_any_forward)
     exit(0);
   putchar('F');
 }
@@ -1691,7 +1685,7 @@ static void list_command(int argc, char **argv)
 	  (!from     || !strcmp(index.from, from))     &&
 	  (!to       || !strcmp(index.to, to))         &&
 	  (!at       || !strcmp(index.at, at))         &&
-	  (!subject  || strcasepos(index.subject, subject))) {
+	  (!subject  || Strcasestr(index.subject, subject))) {
 	if (!found) {
 	  puts("  Msg#  Size To      @ BBS     From     Date    Subject");
 	  found = 1;
@@ -1935,6 +1929,8 @@ static void send_command(int argc, char **argv)
     if (!strcmp("#", argv[i])) {
       nextarg("#");
       mail->lifetime = atoi(argv[i]);
+      if (mail->lifetime < 1)
+	mail->lifetime = 1;
     } else if (!strcmp("$", argv[i])) {
       nextarg("$");
       strcpy(mail->bid, argv[i]);
@@ -2213,7 +2209,7 @@ static void help_command(int argc, char **argv)
   } else {
     state = 0;
     while (!stopped && fgets(line, sizeof(line), fp)) {
-      strtrim(line);
+      rip(line);
       if (state == 0 && *line == '^' && !Strcasecmp(line + 1, argv[1]))
 	state = 1;
       if (state == 1 && *line != '^')
@@ -2368,21 +2364,21 @@ static void bbs(void)
     while (fgets(line, sizeof(line), fp)) parse_command_line(line);
     fclose(fp);
   }
-  if (doforward) {
+  if (do_forward) {
     connect_bbs();
     wait_for_prompt();
   }
   if (level == MBOX) printf("[THEBOX-1.8-H$]\n");
-  if (doforward) wait_for_prompt();
+  if (do_forward) wait_for_prompt();
   for (; ; ) {
-    if (doforward)
+    if (do_forward)
       strcpy(line, "f>");
     else {
       printf("%s", (level == MBOX) ? ">\n" : prompt);
       getstring(line);
     }
     parse_command_line(line);
-    doforward = 0;
+    do_forward = 0;
     if (stopped) {
       puts("\n*** Interrupt ***");
       stopped = 0;
@@ -2430,7 +2426,7 @@ int main(int argc, char **argv)
 	exit(1);
       }
       sysname = optarg;
-      doforward = 1;
+      do_forward = 1;
       break;
     case 'p':
       packetcluster = 1;
@@ -2444,7 +2440,7 @@ int main(int argc, char **argv)
     }
   if (optind < argc) err_flag = 1;
   if (err_flag) {
-    puts("usage: bbs [-w seconds] [-f system]");
+    puts("usage: bbs [-w seconds] [-f system] [-p]");
     exit(1);
   }
 
@@ -2454,7 +2450,7 @@ int main(int argc, char **argv)
   if ((cp = strchr(buf, '.'))) *cp = 0;
   if (!(myhostname = strdup(buf))) halt();
 
-  pw = doforward ? getpwnam(sysname) : getpwuid(getuid());
+  pw = do_forward ? getpwnam(sysname) : getpwuid(getuid());
   if (!pw) halt();
   if (!(user.name = strdup(pw->pw_name))) halt();
   user.uid = (int) pw->pw_uid;

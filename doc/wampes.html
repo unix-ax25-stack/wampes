@@ -4,7 +4,7 @@
 </HEAD>
 <BODY>
 <H1>WAMPES Reference Manual</H1>
-Version 950509
+Version 950513
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
@@ -1141,10 +1141,8 @@ sizes (rounded up to the next power of two) are counted separately.
 <H4><A NAME="H4.31.3">4.31.3 memory merge [on|off]</A></H4>
 Display or set the flag controlling
 the attempt to merge adjacent free memory blocks into
-bigger blocks. Since merging is CPU intensive in the current
-implementation, and since the probability is high that a merged block
-will have to be split again soon, this option is currently not
-recommended. The default is <B>off</B>.
+bigger blocks.
+The default is <B>on</B>.
 <H4><A NAME="H4.31.4">4.31.4 memory sizes</A></H4>
 Display the total number (counted since program startup) of all memory
 allocation requests. Requests for different block sizes (rounded up to

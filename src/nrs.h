@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.h,v 1.8 1993/05/17 13:45:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.h,v 1.9 1995/05/13 18:46:52 deyke Exp $ */
 
 #ifndef _NRS_H
 #define _NRS_H
@@ -18,7 +18,7 @@
 #define NRS_MAX 16              /* Maximum number of Nrs channels */
 
 /* SLIP definitions */
-#define NRS_ALLOC       512     /* Receiver allocation increment */
+#define NRS_ALLOC       480     /* Receiver allocation increment */
 
 #define STX     0x02            /* frame start */
 #define ETX 0x03                /* frame end */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.h,v 1.12 1993/05/17 13:45:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.h,v 1.13 1995/05/13 18:46:53 deyke Exp $ */
 
 #ifndef _SLIP_H
 #define _SLIP_H
@@ -18,7 +18,7 @@
 #define SLIP_MAX 16             /* Maximum number of slip channels */
 
 /* SLIP definitions */
-#define SLIP_ALLOC      512     /* Receiver allocation increment */
+#define SLIP_ALLOC      480     /* Receiver allocation increment */
 
 #define FR_END          0300    /* Frame End */
 #define FR_ESC          0333    /* Frame Escape */

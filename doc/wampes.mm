@@ -18,13 +18,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 950509" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 950513" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 950509
+Version 950513
 .S
 .SP 2
 .S 15
@@ -1070,10 +1070,8 @@ sizes (rounded up to the next power of two) are counted separately.
 .H 3 "memory merge" " [on|off]"
 Display or set the flag controlling
 the attempt to merge adjacent free memory blocks into
-bigger blocks. Since merging is CPU intensive in the current
-implementation, and since the probability is high that a merged block
-will have to be split again soon, this option is currently not
-recommended. The default is \fBoff\fP.
+bigger blocks.
+The default is \fBon\fP.
 .H 3 "memory sizes"
 Display the total number (counted since program startup) of all memory
 allocation requests. Requests for different block sizes (rounded up to

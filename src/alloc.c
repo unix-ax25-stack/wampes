@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.28 1995/05/09 21:12:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.29 1995/05/13 18:46:48 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -30,13 +30,16 @@
 #include "mbuf.h"
 #include "cmdparse.h"
 
-#define ALIGN           8
-
-#define MIN_N           3       /* Min size is 8 bytes */
+#define MIN_N           4       /* Min size is 16 bytes */
 #define MAX_N           16      /* Max size is 65536 bytes */
 
-union block {
-  union block *next;
+#define USEROFFSET      8       /* Offset of user area from block start */
+
+struct block {
+  int n;                        /* Block size index */
+  int inuse;                    /* Block in-use flag */
+  struct block *prev;           /* Linked-list pointer (free blocks only) */
+  struct block *next;           /* Linked-list pointer (free blocks only) */
 };
 
 static const int Blocksize[] = {
@@ -50,7 +53,7 @@ static const int Blocksize[] = {
   0x10000000, 0x20000000, 0x40000000, 0x80000000
 };
 
-static union block *Freetable[33];
+static struct block *Freetable[33];
 static unsigned long Memfail;   /* Count of allocation failures */
 static unsigned long Allocs;    /* Total allocations */
 static unsigned long Frees;     /* Total frees */
@@ -60,7 +63,7 @@ static unsigned long Inuse;
 static unsigned long Morecores;
 static int Memdebug;
 static unsigned long Sizes[33];
-static int Memmerge;
+static int Memmerge = 1;
 static unsigned long Splits;
 static unsigned long Merges;
 
@@ -74,77 +77,65 @@ static int domerge(int argc,char *argv[],void *p);
 static int dosizes(int argc,char *argv[],void *p);
 
 struct cmds Memcmds[] = {
-	"debug",        domdebug,       0, 0, NULLCHAR,
-	"freelist",     dofreelist,     0, 0, NULLCHAR,
-	"merge",        domerge,        0, 0, NULLCHAR,
-	"sizes",        dosizes,        0, 0, NULLCHAR,
-	"status",       dostat,         0, 0, NULLCHAR,
-	NULLCHAR,
+	{ "debug",      domdebug,       0, 0, NULLCHAR },
+	{ "freelist",   dofreelist,     0, 0, NULLCHAR },
+	{ "merge",      domerge,        0, 0, NULLCHAR },
+	{ "sizes",      dosizes,        0, 0, NULLCHAR },
+	{ "status",     dostat,         0, 0, NULLCHAR },
+	{ NULLCHAR }
 };
 
 /*---------------------------------------------------------------------------*/
 
-static void putblock(union block *p, int n)
-{
-
-  union block **cpp;
-  union block *cp;
-  union block *np;
-  union block *pp;
-
-Retry:
-  if (!Memmerge || n == MAX_N) {
-    p->next = Freetable[n];
-    Freetable[n] = p;
-    return;
-  }
-  pp = (union block *) (((char *) p) - Blocksize[n]);
-  np = (union block *) (((char *) p) + Blocksize[n]);
-  for (cpp = Freetable + n; ; cpp = &cp->next) {
-    cp = *cpp;
-    if (cp == pp || cp == np) {
-      Merges++;
-      *cpp = cp->next;
-#if 0
-      putblock(cp == pp ? pp : p, n + 1);
-      return;
-#else
-      if (cp == pp) p = pp;
-      n++;
-      goto Retry;
-#endif
-    }
-    if (!cp || cp > p) {
-      p->next = cp;
-      *cpp = p;
-      return;
-    }
-  }
+#define link_block(p, n) \
+{ \
+  p->n = n; \
+  p->inuse = 0; \
+  p->prev = 0; \
+  if ((p->next = Freetable[n])) \
+    p->next->prev = p; \
+  Freetable[n] = p; \
 }
 
 /*---------------------------------------------------------------------------*/
 
-static union block *getblock(int n)
+#define unlink_block(p, n) \
+{ \
+  if (p->prev) \
+    p->prev->next = p->next; \
+  else \
+    Freetable[n] = p->next; \
+  if (p->next) \
+    p->next->prev = p->prev; \
+}
+
+/*---------------------------------------------------------------------------*/
+
+static struct block *getblock(int n)
 {
 
   int a;
-  union block *p;
+  struct block *buddy;
+  struct block *p;
 
   if ((p = Freetable[n])) {
-    Freetable[n] = p->next;
+    unlink_block(p, n);
   } else if (n == MAX_N) {
-    if ((a = (int) sbrk(Blocksize[MAX_N] + ALIGN - 1)) == -1) {
+    if ((a = (int) sbrk(0)) == -1) {
+      Memfail++;
+      return 0;
+    }
+    a = (a + Blocksize[MAX_N] - 1) & ~(Blocksize[MAX_N] - 1);
+    if (brk((void *) (a + Blocksize[MAX_N]))) {
       Memfail++;
       return 0;
     }
     Morecores++;
     Heapsize += Blocksize[MAX_N];
-    a += sizeof(union block *);
-    a = (a + ALIGN - 1) & ~(ALIGN - 1);
-    a -= sizeof(union block *);
-    p = (union block *) a;
+    p = (struct block *) a;
   } else if ((p = getblock(n + 1))) {
-    putblock((union block *) (Blocksize[n] + (char *) p), n);
+    buddy = (struct block *) ((int) p + Blocksize[n]);
+    link_block(buddy, n);
     Splits++;
   } else {
     return 0;
@@ -161,9 +152,9 @@ unsigned nb)
 {
 
   int n;
-  union block *p;
+  struct block *p;
 
-  nb += sizeof(union block *) - 1;
+  nb += USEROFFSET - 1;
   n = 0;
   if (nb & 0xffff0000) { n += 16; nb >>= 16; }
   if (nb & 0x0000ff00) { n +=  8; nb >>=  8; }
@@ -179,10 +170,11 @@ unsigned nb)
   if (!(p = getblock(n))) return 0;
   Sizes[n]++;
   if (Memdebug) memset((char *) p, USEDPATTERN, Blocksize[n]);
-  p->next = (union block *) (Freetable + n);
+  p->n = n;
+  p->inuse = 1;
   Allocs++;
   Inuse += Blocksize[n];
-  return (void *) (p + 1);
+  return (void *) ((int) p + USEROFFSET);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -194,26 +186,45 @@ void *blk)
 {
 
   int n;
-  union block *p;
+  struct block *buddy;
+  struct block *p;
 
-  if ((p = (union block *) blk)) {
-    if ((ALIGN - 1) & (int) p) {
-      fprintf(stderr, "free: bad alignment\n");
-      Invalid++;
-      return;
-    }
-    p--;
-    n = p->next - (union block *) Freetable;
-    if (n < MIN_N || n > MAX_N) {
-      fprintf(stderr, "free: bad free table pointer\n");
-      Invalid++;
-      return;
-    }
-    if (Memdebug) memset((char *) p, FREEPATTERN, Blocksize[n]);
-    Frees++;
-    Inuse -= Blocksize[n];
-    putblock(p, n);
+  if (!blk)
+    return;
+  p = (struct block *) ((int) blk - USEROFFSET);
+  n = p->n;
+  if (n < MIN_N || n > MAX_N) {
+    fprintf(stderr, "free: n out of range\n");
+    Invalid++;
+    return;
   }
+  if (!p->inuse) {
+    fprintf(stderr, "free: inuse flag not set\n");
+    Invalid++;
+    return;
+  }
+  if ((int) p & (Blocksize[n] - 1)) {
+    fprintf(stderr, "free: bad alignment\n");
+    Invalid++;
+    return;
+  }
+  if (Memdebug)
+    memset((char *) p, FREEPATTERN, Blocksize[n]);
+  Frees++;
+  Inuse -= Blocksize[n];
+  if (Memmerge) {
+    while (n < MAX_N) {
+      buddy = (struct block *) ((int) p ^ Blocksize[n]);
+      if (buddy->inuse || buddy->n != n)
+	break;
+      unlink_block(buddy, n);
+      if (p > buddy)
+	p = buddy;
+      n++;
+      Merges++;
+    }
+  }
+  link_block(p, n);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -226,7 +237,7 @@ unsigned size)
 {
 
   int n;
-  union block *tp;
+  struct block *p;
   unsigned osize;
   void *newp;
 
@@ -238,16 +249,25 @@ unsigned size)
     return 0;
   }
 
-  tp = (union block *) area;
-  tp--;
-  n = tp->next - (union block *) Freetable;
+  p = (struct block *) ((int) area - USEROFFSET);
+  n = p->n;
   if (n < MIN_N || n > MAX_N) {
-    fprintf(stderr, "realloc: bad free table pointer\n");
+    fprintf(stderr, "realloc: n out of range\n");
+    Invalid++;
+    return malloc(size);
+  }
+  if (!p->inuse) {
+    fprintf(stderr, "realloc: inuse flag not set\n");
+    Invalid++;
+    return malloc(size);
+  }
+  if ((int) p & (Blocksize[n] - 1)) {
+    fprintf(stderr, "realloc: bad alignment\n");
     Invalid++;
     return malloc(size);
   }
   if ((newp = malloc(size))) {
-    osize = Blocksize[n] - sizeof(union block *);
+    osize = Blocksize[n] - USEROFFSET;
     memcpy(newp, area, osize < size ? osize : size);
     free(area);
   }
@@ -341,7 +361,7 @@ void *envp)
 {
 
 	int n;
-	union block *p;
+	struct block *p;
 	unsigned long l;
 	unsigned long len[33];
 
@@ -368,25 +388,7 @@ int argc,
 char *argv[],
 void *envp)
 {
-
-	int n;
-	int prev;
-	union block *p;
-	union block *pnext;
-
-	prev = Memmerge;
-	setbool(&Memmerge, "Heap merging", argc, argv);
-	if (Memmerge && !prev)
-		for (n = MAX_N - 1; n >= MIN_N; n--) {
-			p = Freetable[n];
-			Freetable[n] = 0;
-			while (p) {
-				pnext = p->next;
-				putblock(p, n);
-				p = pnext;
-			}
-		}
-	return 0;
+	return setbool(&Memmerge, "Heap merging", argc, argv);
 }
 
 /*---------------------------------------------------------------------------*/
