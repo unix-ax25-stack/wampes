@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.23 1992/09/07 19:19:34 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.24 1992/09/09 12:57:05 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -7,7 +7,6 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <sys/types.h>
 
 #include <ctype.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
@@ -41,8 +40,6 @@ struct mbuf {
   struct mbuf *next;
   char *data;
 };
-
-#define NULLMBUF  ((struct mbuf *) 0)
 
 struct connection {
   int type;                     /* Connection type */
@@ -87,13 +84,15 @@ struct permlink {
 #define NULLPERMLINK  ((struct permlink *) 0)
 
 static char *myhostname;
+static int maxfd = -1;
 static long currtime;
 static struct connection *connections;
+static struct fd_set chkread;
+static struct fd_set chkwrite;
 static struct permlink *permlinks;
 
-static void appendstring __ARGS((struct mbuf **bpp, char *string));
-static int queuelength __ARGS((struct mbuf *bp));
-static void freequeue __ARGS((struct mbuf **bpp));
+static void appendstring __ARGS((struct connection *cp, const char *string));
+static int queuelength __ARGS((const struct mbuf *bp));
 static void free_connection __ARGS((struct connection *cp));
 static void free_closed_connections __ARGS((void));
 static char *getarg __ARGS((char *line, int all));
@@ -123,6 +122,7 @@ static void h_umsg_command __ARGS((struct connection *cp));
 static void h_user_command __ARGS((struct connection *cp));
 static void process_input __ARGS((struct connection *cp));
 static void read_configuration __ARGS((void));
+static void check_files_changed __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
 
@@ -130,31 +130,33 @@ static void read_configuration __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
 
-static void appendstring(bpp, string)
-struct mbuf **bpp;
-char *string;
+static void appendstring(cp, string)
+struct connection *cp;
+const char *string;
 {
-  register struct mbuf *bp, *p;
+  struct mbuf *bp, *p;
 
   if (!*string) return;
 
   bp = (struct mbuf *) malloc(sizeof(*bp) + strlen(string) + 1);
-  bp->next = NULLMBUF;
+  bp->next = 0;
   bp->data = strcpy((char *) (bp + 1), string);
 
-  if (*bpp) {
-    for (p = *bpp; p->next; p = p->next) ;
+  if (cp->obuf) {
+    for (p = cp->obuf; p->next; p = p->next) ;
     p->next = bp;
-  } else
-    *bpp = bp;
+  } else {
+    cp->obuf = bp;
+    FD_SET(cp->fd, &chkwrite);
+  }
 }
 
 /*---------------------------------------------------------------------------*/
 
 static int queuelength(bp)
-register struct mbuf *bp;
+const struct mbuf *bp;
 {
-  register int len;
+  int len;
 
   for (len = 0; bp; bp = bp->next)
     len += strlen(bp->data);
@@ -163,30 +165,27 @@ register struct mbuf *bp;
 
 /*---------------------------------------------------------------------------*/
 
-static void freequeue(bpp)
-struct mbuf **bpp;
-{
-  register struct mbuf *bp, *p;
-
-  bp = *bpp;
-  while (p = bp) {
-    bp = bp->next;
-    free(p);
-  }
-  *bpp = NULLMBUF;
-}
-
-/*---------------------------------------------------------------------------*/
-
 static void free_connection(cp)
-register struct connection *cp;
+struct connection *cp;
 {
-  register struct permlink *p;
+
+  struct mbuf *bp;
+  struct permlink *p;
 
   for (p = permlinks; p; p = p->next)
     if (p->connection == cp) p->connection = NULLCONNECTION;
-  if (cp->fd >= 0) close(cp->fd);
-  freequeue(&cp->obuf);
+  if (cp->fd >= 0) {
+    close(cp->fd);
+    FD_CLR(cp->fd, &chkread);
+    FD_CLR(cp->fd, &chkwrite);
+    if (cp->fd == maxfd)
+      while (--maxfd >= 0)
+	if (FD_ISSET(maxfd, &chkread)) break;
+  }
+  while (bp = cp->obuf) {
+    cp->obuf = bp->next;
+    free(bp);
+  }
   free(cp);
 }
 
@@ -194,7 +193,7 @@ register struct connection *cp;
 
 static void free_closed_connections()
 {
-  register struct connection *cp, *p;
+  struct connection *cp, *p;
 
   for (p = NULLCONNECTION, cp = connections; cp; )
     if (cp->type == CT_CLOSED ||
@@ -246,8 +245,8 @@ char *prefix, *text;
 #define PREFIXLEN 10
 #define LINELEN   79
 
-  register char *f, *t, *x;
-  register int l, lw;
+  char *f, *t, *x;
+  int l, lw;
 
   static char buf[2048];
 
@@ -318,7 +317,10 @@ int fd;
   cp->fd = fd;
   cp->time = currtime;
   cp->next = connections;
-  return connections = cp;
+  connections = cp;
+  if (maxfd < fd) maxfd = fd;
+  FD_SET(fd, &chkread);
+  return cp;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -339,7 +341,7 @@ int flisten;
 
 static void clear_locks()
 {
-  register struct connection *p;
+  struct connection *p;
 
   for (p = connections; p; p = p->next) p->locked = 0;
 }
@@ -352,7 +354,7 @@ int oldchannel, newchannel;
 {
 
   char buffer[2048];
-  register struct connection *p;
+  struct connection *p;
 
   for (p = connections; p; p = p->next) {
     if (p->type == CT_USER && !p->via && !p->locked) {
@@ -361,18 +363,18 @@ int oldchannel, newchannel;
 	  sprintf(buffer, "*** %s switched to channel %d.\n", name, newchannel);
 	else
 	  sprintf(buffer, "*** %s signed off.\n", name);
-	appendstring(&p->obuf, buffer);
+	appendstring(p, buffer);
 	p->locked = 1;
       }
       if (p->channel == newchannel) {
 	sprintf(buffer, "*** %s signed on.\n", name);
-	appendstring(&p->obuf, buffer);
+	appendstring(p, buffer);
 	p->locked = 1;
       }
     }
     if (p->type == CT_HOST && !p->locked) {
       sprintf(buffer, "/\377\200USER %s %s %d %d %d\n", name, host, 0, oldchannel, newchannel);
-      appendstring(&p->obuf, buffer);
+      appendstring(p, buffer);
       p->locked = 1;
     }
   }
@@ -385,24 +387,24 @@ char *fromname, *toname, *text;
 {
 
   char buffer[2048];
-  register struct connection *p;
+  struct connection *p;
 
   for (p = connections; p; p = p->next)
     if (p->type == CT_USER && !strcmp(p->name, toname))
       if (p->via) {
 	if (!p->via->locked) {
 	  sprintf(buffer, "/\377\200UMSG %s %s %s\n", fromname, toname, text);
-	  appendstring(&p->via->obuf, buffer);
+	  appendstring(p->via, buffer);
 	  p->via->locked = 1;
 	}
       } else {
 	if (!p->locked) {
 	  if (strcmp(fromname, "conversd")) {
 	    sprintf(buffer, "<*%s*>:", fromname);
-	    appendstring(&p->obuf, formatline(buffer, text));
+	    appendstring(p, formatline(buffer, text));
 	  } else {
-	    appendstring(&p->obuf, text);
-	    appendstring(&p->obuf, "\n");
+	    appendstring(p, text);
+	    appendstring(p, "\n");
 	  }
 	  p->locked = 1;
 	}
@@ -418,20 +420,20 @@ char *text;
 {
 
   char buffer[2048];
-  register struct connection *p;
+  struct connection *p;
 
   for (p = connections; p; p = p->next)
     if (p->type == CT_USER && p->channel == channel)
       if (p->via) {
 	if (!p->via->locked) {
 	  sprintf(buffer, "/\377\200CMSG %s %d %s\n", fromname, channel, text);
-	  appendstring(&p->via->obuf, buffer);
+	  appendstring(p->via, buffer);
 	  p->via->locked = 1;
 	}
       } else {
 	if (!p->locked) {
 	  sprintf(buffer, "<%s>:", fromname);
-	  appendstring(&p->obuf, formatline(buffer, text));
+	  appendstring(p, formatline(buffer, text));
 	  p->locked = 1;
 	}
       }
@@ -465,7 +467,7 @@ int channel;
       }
       if (!p->via && !p->locked) {
 	sprintf(buffer, invitetext, fromname, timestring(currtime), channel);
-	appendstring(&p->obuf, buffer);
+	appendstring(p, buffer);
 	clear_locks();
 	sprintf(buffer, responsetext, toname, myhostname);
 	send_msg_to_user("conversd", fromname, buffer);
@@ -473,7 +475,7 @@ int channel;
       }
       if (p->via && !p->via->locked) {
 	sprintf(buffer, "/\377\200INVI %s %s %d\n", fromname, toname, channel);
-	appendstring(&p->via->obuf, buffer);
+	appendstring(p->via, buffer);
 	return;
       }
     }
@@ -509,7 +511,7 @@ int channel;
   for (p = connections; p; p = p->next)
     if (p->type == CT_HOST && !p->locked) {
       sprintf(buffer, "/\377\200INVI %s %s %d\n", fromname, toname, channel);
-      appendstring(&p->obuf, buffer);
+      appendstring(p, buffer);
     }
 
 }
@@ -520,7 +522,7 @@ static void update_permlinks(name, cp)
 char *name;
 struct connection *cp;
 {
-  register struct permlink *p;
+  struct permlink *p;
 
   for (p = permlinks; p; p = p->next)
     if (!strcmp(p->name, name)) {
@@ -542,8 +544,8 @@ static void connect_permlinks()
   char buffer[2048];
   int addrlen;
   int fd;
-  register struct connection *cp;
-  register struct permlink *p;
+  struct connection *cp;
+  struct permlink *p;
   struct sockaddr *addr;
 
   for (p = permlinks; p; p = p->next) {
@@ -559,10 +561,10 @@ static void connect_permlinks()
       continue;
     }
     p->connection = cp;
-    if (*p->command) appendstring(&cp->obuf, p->command);
-    appendstring(&cp->obuf, "convers\n");
+    if (*p->command) appendstring(cp, p->command);
+    appendstring(cp, "convers\n");
     sprintf(buffer, "/\377\200HOST %s\n", myhostname);
-    appendstring(&cp->obuf, buffer);
+    appendstring(cp, buffer);
   }
 }
 
@@ -571,7 +573,7 @@ static void connect_permlinks()
 static void bye_command(cp)
 struct connection *cp;
 {
-  register struct connection *p;
+  struct connection *p;
 
   switch (cp->type) {
   case CT_UNKNOWN:
@@ -610,24 +612,24 @@ struct connection *cp;
   s = getarg(0, 0);
   if (!*s) {
     sprintf(buffer, "*** You are on channel %d.\n", cp->channel);
-    appendstring(&cp->obuf, buffer);
+    appendstring(cp, buffer);
     return;
   }
   newchannel = atoi(s);
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
     sprintf(buffer, "*** Channel numbers must be in the range 0..%d.\n", MAXCHANNEL);
-    appendstring(&cp->obuf, buffer);
+    appendstring(cp, buffer);
     return;
   }
   if (newchannel == cp->channel) {
     sprintf(buffer, "*** Already on channel %d.\n", cp->channel);
-    appendstring(&cp->obuf, buffer);
+    appendstring(cp, buffer);
     return;
   }
   send_user_change_msg(cp->name, cp->host, cp->channel, newchannel);
   cp->channel = newchannel;
   sprintf(buffer, "*** Now on channel %d.\n", cp->channel);
-  appendstring(&cp->obuf, buffer);
+  appendstring(cp, buffer);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -635,21 +637,21 @@ struct connection *cp;
 static void help_command(cp)
 struct connection *cp;
 {
-  appendstring(&cp->obuf, "Commands may be abbreviated. Commands are:\n");
+  appendstring(cp, "Commands may be abbreviated. Commands are:\n");
 
-  appendstring(&cp->obuf, "/?                   Print help information\n");
-  appendstring(&cp->obuf, "/BYE                 Terminate the convers session\n");
-  appendstring(&cp->obuf, "/CHANNEL n           Switch to channel n\n");
-  appendstring(&cp->obuf, "/EXIT                Terminate the convers session\n");
-  appendstring(&cp->obuf, "/HELP                Print help information\n");
-  appendstring(&cp->obuf, "/INVITE user         Invite user to join your channel\n");
-  appendstring(&cp->obuf, "/LINKS [LONG]        List all connections to other hosts\n");
-  appendstring(&cp->obuf, "/MSG user text...    Send a private message to user\n");
-  appendstring(&cp->obuf, "/QUIT                Terminate the convers session\n");
-  appendstring(&cp->obuf, "/WHO [QUICK] [LONG]  List all users and their channel numbers\n");
-  appendstring(&cp->obuf, "/WRITE user text...  Send a private message to user\n");
+  appendstring(cp, "/?                   Print help information\n");
+  appendstring(cp, "/BYE                 Terminate the convers session\n");
+  appendstring(cp, "/CHANNEL n           Switch to channel n\n");
+  appendstring(cp, "/EXIT                Terminate the convers session\n");
+  appendstring(cp, "/HELP                Print help information\n");
+  appendstring(cp, "/INVITE user         Invite user to join your channel\n");
+  appendstring(cp, "/LINKS [LONG]        List all connections to other hosts\n");
+  appendstring(cp, "/MSG user text...    Send a private message to user\n");
+  appendstring(cp, "/QUIT                Terminate the convers session\n");
+  appendstring(cp, "/WHO [QUICK] [LONG]  List all users and their channel numbers\n");
+  appendstring(cp, "/WRITE user text...  Send a private message to user\n");
 
-  appendstring(&cp->obuf, "***\n");
+  appendstring(cp, "***\n");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -676,7 +678,7 @@ struct connection *cp;
   struct permlink *pp;
 
   full = *(getarg(0, 0));
-  appendstring(&cp->obuf, full ?
+  appendstring(cp, full ?
     "Host     State         Since NextTry Tries Queue Receivd Xmitted\n" :
     "Host     State         Since\n");
   for (pc = connections; pc; pc = pc->next)
@@ -691,7 +693,7 @@ struct connection *cp;
 	      queuelength(pc->obuf),
 	      pc->received,
 	      pc->xmitted);
-      appendstring(&cp->obuf, buffer);
+      appendstring(cp, buffer);
     }
   for (pp = permlinks; pp; pp = pp->next)
     if (!pp->connection || pp->connection->type != CT_HOST) {
@@ -705,9 +707,9 @@ struct connection *cp;
 	      timestring(pp->statetime),
 	      tmp,
 	      pp->tries);
-      appendstring(&cp->obuf, buffer);
+      appendstring(cp, buffer);
     }
-  appendstring(&cp->obuf, "***\n");
+  appendstring(cp, "***\n");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -718,7 +720,7 @@ struct connection *cp;
 
   char *toname, *text;
   char buffer[2048];
-  register struct connection *p;
+  struct connection *p;
 
   toname = getarg(0, 0);
   text = getarg(0, 1);
@@ -727,7 +729,7 @@ struct connection *cp;
     if (p->type == CT_USER && !strcmp(p->name, toname)) break;
   if (!p) {
     sprintf(buffer, "*** No such user: %s.\n", toname);
-    appendstring(&cp->obuf, buffer);
+    appendstring(cp, buffer);
   } else
     send_msg_to_user(cp->name, toname, text);
 }
@@ -745,12 +747,12 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.23 $  Type /HELP for help.\n", myhostname);
-  appendstring(&cp->obuf, buffer);
+  sprintf(buffer, "conversd @ %s $Revision: 2.24 $  Type /HELP for help.\n", myhostname);
+  appendstring(cp, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
     sprintf(buffer, "*** Channel numbers must be in the range 0..%d.\n", MAXCHANNEL);
-    appendstring(&cp->obuf, buffer);
+    appendstring(cp, buffer);
   } else
     cp->channel = newchannel;
   send_user_change_msg(cp->name, cp->host, -1, cp->channel);
@@ -778,7 +780,7 @@ struct connection *cp;
   }
 
   if (quick) {
-    appendstring(&cp->obuf, "Channel Users\n");
+    appendstring(cp, "Channel Users\n");
     clear_locks();
     do {
       channel = -1;
@@ -794,14 +796,14 @@ struct connection *cp;
 	}
       if (channel >= 0) {
 	strcat(buffer, "\n");
-	appendstring(&cp->obuf, buffer);
+	appendstring(cp, buffer);
       }
     } while (channel >= 0);
-    appendstring(&cp->obuf, "***\n");
+    appendstring(cp, "***\n");
     return;
   }
 
-  appendstring(&cp->obuf, full ?
+  appendstring(cp, full ?
       "User     Host     Via      Channel   Time Queue Receivd Xmitted\n" :
       "User     Host     Via      Channel   Time\n");
   for (p = connections; p; p = p->next)
@@ -818,9 +820,9 @@ struct connection *cp;
 	      queuelength(p->obuf),
 	      p->received,
 	      p->xmitted);
-      appendstring(&cp->obuf, buffer);
+      appendstring(cp, buffer);
     }
-  appendstring(&cp->obuf, "***\n");
+  appendstring(cp, "***\n");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -847,8 +849,8 @@ struct connection *cp;
 
   char *name;
   char buffer[2048];
-  register struct connection *p;
-  register struct permlink *pp;
+  struct connection *p;
+  struct permlink *pp;
 
   name = getarg(0, 0);
   if (!*name) return;
@@ -862,11 +864,11 @@ struct connection *cp;
   strcpy(cp->name, name);
   update_permlinks(name, cp);
   sprintf(buffer, "/\377\200HOST %s\n", myhostname);
-  appendstring(&cp->obuf, buffer);
+  appendstring(cp, buffer);
   for (p = connections; p; p = p->next)
     if (p->type == CT_USER) {
       sprintf(buffer, "/\377\200USER %s %s %d %d %d\n", p->name, p->host, 0, -1, p->channel);
-      appendstring(&cp->obuf, buffer);
+      appendstring(cp, buffer);
     }
 }
 
@@ -908,7 +910,7 @@ struct connection *cp;
   char *name;
   int newchannel;
   int oldchannel;
-  register struct connection *p;
+  struct connection *p;
 
   name = getarg(0, 0);
   host = getarg(0, 0);
@@ -989,7 +991,7 @@ struct connection *cp;
       }
     if (cp->type == CT_USER) {
       sprintf(buffer, "*** Unknown command '/%s'. Type /HELP for help.\n", arg);
-      appendstring(&cp->obuf, buffer);
+      appendstring(cp, buffer);
     }
     return;
   }
@@ -1064,16 +1066,18 @@ int argc;
 char **argv;
 {
 
-  static char *socketnames[] = {
-#ifdef ISC
-    "*:3600",
-#else
-    "unix:/tcp/sockets/convers",
+  static struct {
+    char *name;
+    int fd;
+  } listeners[] = {
+#ifndef ISC
+    "unix:/tcp/sockets/convers", -1,
 #endif
-    0
+    "*:3600", -1,
+    0, -1
   };
 
-  static struct timeval select_timeout = {
+  static const struct timeval select_timeout = {
     60, 0
   };
 
@@ -1081,14 +1085,12 @@ char **argv;
   char buffer[2048];
   int addrlen;
   int arg;
-  int flisten[FD_SETSIZE];
   int i;
-  int maxfd;
   int size;
   int status;
   struct connection *cp;
-  struct fd_set rmask;
-  struct fd_set wmask;
+  struct fd_set actread;
+  struct fd_set actwrite;
   struct mbuf *bp;
   struct sockaddr *addr;
 
@@ -1108,29 +1110,30 @@ char **argv;
   if (argc < 2) {
     read_configuration();
   } else {
-    socketnames[0] = argv[1];
-    socketnames[1] = 0;
+    listeners[0].name = argv[1];
+    listeners[1].name = 0;
   }
 
-  for (i = 0; socketnames[i]; i++) {
-    flisten[i] = -1;
-    if ((addr = build_sockaddr(socketnames[i], &addrlen)) &&
-	(flisten[i] = socket(addr->sa_family, SOCK_STREAM, 0)) >= 0) {
+  for (i = 0; listeners[i].name; i++)
+    if ((addr = build_sockaddr(listeners[i].name, &addrlen)) &&
+	(listeners[i].fd = socket(addr->sa_family, SOCK_STREAM, 0)) >= 0) {
       switch (addr->sa_family) {
       case AF_UNIX:
 	unlink(addr->sa_data);
 	break;
       case AF_INET:
 	arg = 1;
-	setsockopt(flisten[i], SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
+	setsockopt(listeners[i].fd, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
 	break;
       }
-      if (bind(flisten[i], addr, addrlen) || listen(flisten[i], SOMAXCONN)) {
-	close(flisten[i]);
-	flisten[i] = -1;
+      if (bind(listeners[i].fd, addr, addrlen) || listen(listeners[i].fd, SOMAXCONN)) {
+	close(listeners[i].fd);
+	listeners[i].fd = -1;
+      } else {
+	if (maxfd < listeners[i].fd) maxfd = listeners[i].fd;
+	FD_SET(listeners[i].fd, &chkread);
       }
     }
-  }
 
   for (; ; ) {
 
@@ -1142,38 +1145,26 @@ char **argv;
 
     connect_permlinks();
 
-    maxfd = -1;
-    FD_ZERO(&rmask);
-    FD_ZERO(&wmask);
-    for (i = 0; socketnames[i]; i++)
-      if (flisten[i] >= 0) {
-	if (maxfd < flisten[i]) maxfd = flisten[i];
-	FD_SET(flisten[i], &rmask);
-      }
-    for (cp = connections; cp; cp = cp->next)
-      if (cp->fd >= 0) {
-	if (maxfd < cp->fd) maxfd = cp->fd;
-	FD_SET(cp->fd, &rmask);
-	if (cp->obuf) FD_SET(cp->fd, &wmask);
-      }
-    if (select(maxfd + 1, (int *) &rmask, (int *) &wmask, (int *) 0, &select_timeout) <= 0) {
-      FD_ZERO(&rmask);
-      FD_ZERO(&wmask);
+    actread = chkread;
+    actwrite = chkwrite;
+    if (select(maxfd + 1, (int *) &actread, (int *) &actwrite, (int *) 0, &select_timeout) <= 0) {
+      FD_ZERO(&actread);
+      FD_ZERO(&actwrite);
     }
 
     time(&currtime);
 
-    for (i = 0; socketnames[i]; i++)
-      if (flisten[i] >= 0 && FD_ISSET(flisten[i], &rmask))
-	accept_connect_request(flisten[i]);
+    for (i = 0; listeners[i].name; i++)
+      if (listeners[i].fd >= 0 && FD_ISSET(listeners[i].fd, &actread))
+	accept_connect_request(listeners[i].fd);
 
     for (cp = connections; cp; cp = cp->next) {
 
-      if (cp->fd >= 0 && FD_ISSET(cp->fd, &rmask)) {
+      if (cp->fd >= 0 && FD_ISSET(cp->fd, &actread)) {
 	size = read(cp->fd, buffer, sizeof(buffer));
-	if (size < 0) {
-	  if (errno != EAGAIN) bye_command(cp);
-	} else {
+	if (size <= 0)
+	  bye_command(cp);
+	else {
 	  cp->received += size;
 	  for (i = 0; i < size; i++)
 	    switch (buffer[i]) {
@@ -1196,17 +1187,19 @@ char **argv;
 	}
       }
 
-      if (cp->fd >= 0 && FD_ISSET(cp->fd, &wmask)) {
-	size = write(cp->fd, cp->obuf->data, strlen(cp->obuf->data));
-	if (size < 0) {
-	  if (errno != EAGAIN) bye_command(cp);
-	} else {
+      if (cp->fd >= 0 && FD_ISSET(cp->fd, &actwrite)) {
+	bp = cp->obuf;
+	size = write(cp->fd, bp->data, strlen(bp->data));
+	if (size <= 0)
+	  bye_command(cp);
+	else {
 	  cp->xmitted += size;
-	  cp->obuf->data += size;
-	  while ((bp = cp->obuf) && !*cp->obuf->data) {
-	    cp->obuf = cp->obuf->next;
+	  bp->data += size;
+	  if (!*bp->data) {
+	    cp->obuf = bp->next;
 	    free(bp);
 	  }
+	  if (!cp->obuf) FD_CLR(cp->fd, &chkwrite);
 	}
       }
 

@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.16 1992/09/07 19:21:13 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.17 1992/09/09 12:57:46 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -9,7 +9,6 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <sys/types.h>
 
 #include <curses.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
@@ -108,11 +107,7 @@ struct mbuf **qp;
   struct mbuf *bp, *tp;
 
   n = read(fd, buf, sizeof(buf));
-  if (!n) terminate();
-  if (n < 0) {
-    if (errno != EAGAIN) terminate();
-    return;
-  }
+  if (n <= 0) terminate();
   bp = (struct mbuf *) malloc(sizeof(*bp) + n);
   if (!bp) terminate();
   bp->next = 0;
@@ -138,11 +133,7 @@ struct mbuf **qp;
 
   bp = *qp;
   n = write(fd, bp->data, bp->cnt);
-  if (!n) terminate();
-  if (n < 0) {
-    if (errno != EAGAIN) terminate();
-    n = 0;
-  }
+  if (n <= 0) terminate();
   bp->data += n;
   bp->cnt -= n;
   if (!bp->cnt) {
