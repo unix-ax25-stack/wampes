@@ -1,9 +1,10 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/netrom_links,v 1.8 1993/09/17 09:32:25 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/netrom_links,v 1.9 1993/10/09 16:56:04 deyke Exp $
 
 # netrom links db0id     db0dlg-2  100 permanent
 # netrom links db0id     db0hp-10  200 permanent
 netrom links db0id     db0rot    150 permanent
 netrom links db0id     db0sao    200 permanent
+netrom links db0id     dd2fx     192 permanent
 
 netrom links db0sao    df1tl     192 permanent
 
