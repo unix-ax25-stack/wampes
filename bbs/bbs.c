@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.27 1991/10/18 18:30:51 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.28 1991/11/23 21:02:13 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -549,20 +549,24 @@ static char  *get_host_from_path(char *path)
 
 /*---------------------------------------------------------------------------*/
 
-static int  msg_uniq(const char *bid, const char *mid)
+static int msg_uniq(const char *bid, const char *mid)
 {
 
-  int  n;
-  long  validdate;
-  struct index *pi, index[1000];
+  int i, n;
+  long validdate;
+  static long startpos;
+  struct index index_array[1000];
 
   validdate = time((long *) 0) - 90 * DAYS;
-  if (lseek(fdindex, 0l, 0)) halt();
+  if (lseek(fdindex, startpos, 0) != startpos) halt();
   for (; ; ) {
-    n = read(fdindex, (char *) (pi = index), 1000 * sizeof(struct index )) / sizeof(struct index );
-    if (n < 1) return 1;
-    for (; n; n--, pi++)
-      if (pi->date >= validdate && !strcmp(pi->bid, bid)) return 0;
+    n = read(fdindex, index_array, sizeof(index_array)) / sizeof(struct index );
+    if (n <= 0) return 1;
+    for (i = 0; i < n; i++)
+      if (index_array[i].date < validdate)
+	startpos += sizeof(struct index );
+      else if (!strcmp(index_array[i].bid, bid))
+	return 0;
   }
 }
 
