@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.16 1993/03/11 14:12:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.17 1993/03/11 15:01:55 deyke Exp $ */
 
 #include "global.h"
 
@@ -69,7 +69,7 @@ int all;
     if (!(p = strchr(p, quote))) p = "";
   } else
     while (*p && !isspace(uchar(*p))) {
-      *p = tolower(*p);
+      *p = Xtolower(*p);
       p++;
     }
   if (*p) *p++ = '\0';

@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.47 1993/03/11 14:13:01 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.48 1993/03/11 15:02:09 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -104,6 +104,8 @@ static volatile int stopped;
 
 /* In bbs.c: */
 static void errorstop(int line);
+static int Xtolower(int c);
+static int Xtoupper(int c);
 static char *strupc(char *s);
 static char *strlwc(char *s);
 static int Strcasecmp(const char *s1, const char *s2);
@@ -260,10 +262,7 @@ static char *strdup(const char *s)
 
 /* Use private function because some platforms are broken, eg 386BSD */
 
-#undef tolower
-
-int tolower(c)
-int c;
+static int Xtolower(int c)
 {
   return (c >= 'A' && c <= 'Z') ? (c - 'A' + 'a') : c;
 }
@@ -272,10 +271,7 @@ int c;
 
 /* Use private function because some platforms are broken, eg 386BSD */
 
-#undef toupper
-
-int toupper(c)
-int c;
+static int Xtoupper(int c)
 {
   return (c >= 'a' && c <= 'z') ? (c - 'a' + 'A') : c;
 }
@@ -286,7 +282,7 @@ static char *strupc(char *s)
 {
   char *p;
 
-  for (p = s; *p = toupper(*p); p++) ;
+  for (p = s; *p = Xtoupper(*p); p++) ;
   return s;
 }
 
@@ -296,7 +292,7 @@ static char *strlwc(char *s)
 {
   char *p;
 
-  for (p = s; *p = tolower(*p); p++) ;
+  for (p = s; *p = Xtolower(*p); p++) ;
   return s;
 }
 
@@ -304,24 +300,24 @@ static char *strlwc(char *s)
 
 static int Strcasecmp(const char *s1, const char *s2)
 {
-  while (tolower(*s1) == tolower(*s2)) {
+  while (Xtolower(*s1) == Xtolower(*s2)) {
     if (!*s1) return 0;
     s1++;
     s2++;
   }
-  return tolower(*s1) - tolower(*s2);
+  return Xtolower(*s1) - Xtolower(*s2);
 }
 
 /*---------------------------------------------------------------------------*/
 
 static int Strncasecmp(const char *s1, const char *s2, int n)
 {
-  while (--n >= 0 && tolower(*s1) == tolower(*s2)) {
+  while (--n >= 0 && Xtolower(*s1) == Xtolower(*s2)) {
     if (!*s1) return 0;
     s1++;
     s2++;
   }
-  return n < 0 ? 0 : tolower(*s1) - tolower(*s2);
+  return n < 0 ? 0 : Xtolower(*s1) - Xtolower(*s2);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -346,7 +342,7 @@ static const char *strcasepos(const char *str, const char *pat)
     for (s = str, p = pat; ; s++, p++) {
       if (!*p) return str;
       if (!*s) return 0;
-      if (tolower(*s) != tolower(*p)) break;
+      if (Xtolower(*s) != Xtolower(*p)) break;
     }
 }
 
@@ -1166,7 +1162,7 @@ static int get_header_value(const char *name, int do822, char *line, char *value
   int c, comment;
 
   for (; *name; name++, line++)
-    if (tolower(*name) != tolower(*line)) return 0;
+    if (Xtolower(*name) != Xtolower(*line)) return 0;
 
   if (do822) {
     for (comment = 0, p1 = line; c = *p1; p1++) {

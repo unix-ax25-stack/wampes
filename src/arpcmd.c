@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.9 1992/05/14 13:19:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.10 1993/03/11 15:01:36 deyke Exp $ */
 
 /* ARP commands
  * Copyright 1991, Phil Karn, KA9Q
@@ -79,7 +79,7 @@ void *p;
 		return 1;
 	}
 	/* This is a kludge. It really ought to be table driven */
-	switch(tolower(argv[2][0])){
+	switch(Xtolower(argv[2][0])){
 	case 'n':       /* Net/Rom pseudo-type */
 		hardware = ARP_NETROM;
 		break;
@@ -87,7 +87,7 @@ void *p;
 		hardware = ARP_ETHER;
 		break;
 	case 'a':       /* "ax25" */
-		switch(tolower(argv[2][1])) {
+		switch(Xtolower(argv[2][1])) {
 		case 'x':
 			hardware = ARP_AX25;
 			break;
@@ -141,7 +141,7 @@ void *p;
 		return 1;
 	}
 	/* This is a kludge. It really ought to be table driven */
-	switch(tolower(argv[2][0])){
+	switch(Xtolower(argv[2][0])){
 	case 'n':
 		hardware = ARP_NETROM;
 		break;
@@ -149,7 +149,7 @@ void *p;
 		hardware = ARP_ETHER;
 		break;
 	case 'a':       /* "ax25" */
-		switch(tolower(argv[2][1])) {
+		switch(Xtolower(argv[2][1])) {
 		case 'x':
 			hardware = ARP_AX25;
 			break;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.10 1993/02/28 17:35:32 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.11 1993/03/11 15:01:38 deyke Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -185,7 +185,7 @@ char *call;
 	for(i=0;i<csize;i++){
 		c = *call++;
 		if(islower(c))
-			c = toupper(c);
+			c = Xtoupper(c);
 		*out++ = c << 1;
 	}
 	/* Pad with shifted spaces if necessary */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.36 1993/03/11 14:12:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.37 1993/03/11 15:01:52 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -1738,7 +1738,7 @@ void *p;
     printf("Ident %-6.6s\n", mynode->ident);
   else
     for (cp = argv[1], i = 0; i < IDENTLEN; i++)
-      mynode->ident[i] = *cp ? toupper(*cp++) : ' ';
+      mynode->ident[i] = *cp ? Xtoupper(*cp++) : ' ';
   return 0;
 }
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.16 1992/09/25 20:07:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.17 1993/03/11 15:01:43 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -369,11 +369,11 @@ register struct ftp *ftp;
 #ifdef  UNIX
 	/* Translate first word to lower case */
 	for(cp = cmd;*cp != ' ' && *cp != '\0';cp++)
-		*cp = tolower(*cp);
+		*cp = Xtolower(*cp);
 #else
 	/* Translate entire buffer to lower case */
 	for(cp = cmd;*cp != '\0';cp++)
-		*cp = tolower(*cp);
+		*cp = Xtolower(*cp);
 #endif
 	/* Find command in table; if not present, return syntax error */
 	for(cmdp = commands;*cmdp != NULLCHAR;cmdp++)
@@ -629,13 +629,13 @@ register struct ftp *ftp;
 		free(file);
 		break;
 	case STRU_CMD:
-		if(tolower(arg[0]) != 'f')
+		if(Xtolower(arg[0]) != 'f')
 			Xprintf(ftp->control,unsupp,"","","");
 		else
 			Xprintf(ftp->control,okay,"","","");
 		break;
 	case MODE_CMD:
-		if(tolower(arg[0]) != 's')
+		if(Xtolower(arg[0]) != 's')
 			Xprintf(ftp->control,unsupp,"","","");
 		else
 			Xprintf(ftp->control,okay,"","","");

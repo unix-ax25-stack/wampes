@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.14 1993/03/11 14:12:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.15 1993/03/11 15:01:51 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -164,13 +164,13 @@ const char *s;
 int stricmp(s1,s2)
 char *s1,*s2;
 {
-	while(tolower(*s1) == tolower(*s2)){
+	while(Xtolower(*s1) == Xtolower(*s2)){
 		if(!*s1)
 			return 0;
 		s1++;
 		s2++;
 	}
-	return tolower(*s1) - tolower(*s2);
+	return Xtolower(*s1) - Xtolower(*s2);
 }
 
 strnicmp(a,b,n)
@@ -182,8 +182,8 @@ size_t n;
 	while(n-- != 0 && (a1 = *a++) != '\0' && (b1 = *b++) != '\0'){
 		if(a1 == b1)
 			continue;       /* No need to convert */
-		a1 = tolower(a1);
-		b1 = tolower(b1);
+		a1 = Xtolower(a1);
+		b1 = Xtolower(b1);
 		if(a1 == b1)
 			continue;       /* NOW they match! */
 		if(a1 > b1)
