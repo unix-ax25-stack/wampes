@@ -1,8 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.12 1993/05/17 13:44:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.13 1993/10/23 20:44:15 deyke Exp $ */
 
 /* Internet Control Message Protocol (ICMP)
  * Copyright 1991 Phil Karn, KA9Q
  */
+#include <sys/types.h>
+#include <sys/time.h>
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
@@ -141,6 +143,7 @@ int rxbroadcast;
 			free_p(bp);
 			return;
 		}
+		icmpOutMsgs++;
 		net_route(NULLIF,tbp);
 		}
 #else
@@ -167,7 +170,40 @@ int rxbroadcast;
 		break;
 	case ICMP_TIMESTAMP:    /* Timestamp */
 		icmpInTimestamps++;
-		break;
+		{
+		int32 tmp;
+		char buf[12];
+		struct timeval tv;
+		struct timezone tz;
+		if(pullup(&bp,buf,sizeof(buf)) != sizeof(buf)){
+			free_p(bp);
+			return;
+		}
+		gettimeofday(&tv,&tz);
+		tmp = (tv.tv_sec % 86400) * 1000 + tv.tv_usec / 1000;
+		put32(&buf[4],tmp);     /* Receive Timestamp */
+		put32(&buf[8],tmp);     /* Transmit Timestamp */
+		bp = pushdown(bp,sizeof(buf));
+		memcpy(bp->data,buf,sizeof(buf));
+		icmp.type = ICMP_TIME_REPLY;
+		if((tbp = htonicmp(&icmp,bp)) == NULLBUF){
+			free_p(bp);
+			return;
+		}
+		icmpOutTimestampReps++;
+		tmp = ip->source;
+		ip->source = ip->dest;
+		ip->dest = tmp;
+		ip->ttl = ipDefaultTTL;
+		bp = tbp;
+		if((tbp = htonip(ip,bp,IP_CS_NEW)) == NULLBUF){
+			free_p(bp);
+			return;
+		}
+		icmpOutMsgs++;
+		net_route(NULLIF,tbp);
+		return;
+		}
 	case ICMP_TIME_REPLY:   /* Timestamp Reply */
 		icmpInTimestampReps++;
 		break;
