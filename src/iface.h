@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.7 1991/05/09 07:38:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.8 1991/06/18 17:27:00 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -77,6 +77,11 @@ struct iface {
 	int32 crcerrors;        /* Packets received with CRC errors (KISS only) */
 
 	void *extension;        /* Pointer to protocol extension block, if any */
+
+				/* encapsulation discard */
+	int (*discard) __ARGS((struct iface *,struct mbuf *));
+				/* encapsulation echo */
+	int (*echo) __ARGS((struct iface *,struct mbuf *));
 };
 #define NULLIF  (struct iface *)0
 extern struct iface *Ifaces;    /* Head of interface list */

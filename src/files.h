@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.h,v 1.3 1991/05/09 07:38:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.h,v 1.4 1991/06/18 17:26:49 deyke Exp $ */
 
 #ifndef _FILES_H
 #define _FILES_H
@@ -32,6 +32,7 @@ extern char *Arealist;          /* List of message areas */
 extern char *Helpdir;           /* Mailbox help file directory */
 extern char *Rewritefile;       /* Address rewrite file */
 extern char *Newsdir;           /* News messages and NNTP data */
+extern char *Popusers;          /* POP2 user and passwd file */
 extern char *Signature;         /* Mail signature file directory */
 extern char *Forwardfile;       /* Mail forwarding file */
 extern char *Historyfile;       /* Message ID history file */

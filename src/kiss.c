@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.7 1991/04/25 18:27:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.8 1991/06/18 17:27:05 deyke Exp $ */
 
 /* Routines for AX.25 encapsulation in KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -71,7 +71,7 @@ int32 val;
 {
 	struct mbuf *hbp;
 	char *cp;
-	int rval = val;
+	int rval = 0;
 
 	/* At present, only certain parameters are supported by
 	 * stock KISS TNCs. As additional params are implemented,
@@ -103,6 +103,7 @@ int32 val;
 		*cp = val;
 		hbp->cnt = 2;
 		slip_raw(iface,hbp);    /* Even more "raw" than kiss_raw */
+		rval = val;             /* per Jay Maynard -- mce */
 		break;
 	case PARAM_SPEED:       /* These go to the local asy driver */
 	case PARAM_DTR:

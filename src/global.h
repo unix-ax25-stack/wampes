@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.12 1991/06/04 11:33:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.13 1991/06/18 17:26:53 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -162,8 +162,12 @@ int strnicmp __ARGS((char *s1, char *s2, size_t maxlen));
 
 #if     defined(__TURBOC__) && defined(MSDOS)
 #define movblock(so,ss,do,ds,c) movedata(ss,so,ds,do,c)
+#ifndef outportw
 #define outportw outport
+#endif
+#ifndef inportw
 #define inportw inport
+#endif
 
 #else
 
@@ -215,21 +219,15 @@ extern char Eol[];
 
 extern void (*Gcollect[])();
 
-/*
- * The following extern statements are to allow compilation by
- * Turbo C++ 1.00
- */
-#if 1
-extern struct ax25_cb;
-extern struct dirsort;
-extern struct iface;
-extern struct ip;
-extern struct mbx;
-extern struct mbuf;
-extern struct nr4cb;
-extern struct session;
-extern struct slip;
-#endif
+struct ax25_cb;
+struct dirsort;
+struct iface;
+struct ip;
+struct mbx;
+struct mbuf;
+struct nr4cb;
+struct session;
+struct slip;
 
 extern int Debug;
 extern int Shortstatus;

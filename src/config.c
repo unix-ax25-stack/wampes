@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.9 1991/05/17 17:06:32 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.10 1991/06/18 17:26:42 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -39,7 +39,11 @@
 #include "cmdparse.h"
 #include "commands.h"
 /* #include "mailbox.h" */
+/* #include "ax25mail.h" */
+/* #include "nr4mail.h" */
+/* #include "tipmail.h" */
 /* #include "daemon.h" */
+#include "bootp.h"
 
 static int dostart __ARGS((int argc,char *argv[],void *p));
 static int dostop __ARGS((int argc,char *argv[],void *p));
@@ -137,6 +141,24 @@ char *Axmulti[] = {
 };
 #endif
 
+#if     0
+void (*Listusers) __ARGS((int s)) = listusers;
+#else
+void (*Listusers) __ARGS((int s)) = NULL;
+#endif
+
+#ifndef BOOTP
+int WantBootp = 0;
+
+int
+bootp_validPacket(ip,bpp)
+struct ip *ip;
+struct mbuf **bpp;
+{
+	return 0;
+}
+#endif
+
 struct iftype Iftypes[] = {
 	/* This entry must be first, since Loopback refers to it */
 	"None",         NULL,           NULL,           NULL,
@@ -204,6 +226,10 @@ struct cmds Cmds[] = {
 #ifdef  AX25
 	"ax25",         doax25,         0, 0, NULLCHAR,
 #endif
+#ifdef  BOOTP
+	"bootp",        dobootp,        0, 0, NULLCHAR,
+	"bootpd",       bootpdcmd,      0, 0, NULLCHAR,
+#endif
 	"bye",          dobye,          0, 0, NULLCHAR,
 /* This one is out of alpabetical order to allow abbreviation to "c" */
 #ifdef  AX25
@@ -220,7 +246,7 @@ struct cmds Cmds[] = {
 /*      "detach",       dodetach,       0, 2, "detach <interface>", */
 #ifdef  DIALER
 	"dialer",       dodialer,       512, 3,
-	"dialer <iface> <seconds> <hostid> <pings> <file>",
+	"dialer <iface> [<file> [<seconds> [<pings> [<hostid>]]]]",
 #endif
 #ifndef AMIGA
 /*      "dir",          dodir,          512, 0, NULLCHAR, /* note sequence */
@@ -287,6 +313,9 @@ struct cmds Cmds[] = {
 	NULLCHAR,
 #ifdef  PI
 	"pistatus",     dopistat,       0, 0, NULLCHAR,
+#endif
+#ifdef POP
+	"pop",          dopop,          0, 0, NULLCHAR,
 #endif
 #ifdef PPP
 	"ppp",          doppp_commands, 0, 0, NULLCHAR,
@@ -574,6 +603,9 @@ static struct cmds Startcmds[] = {
 #if     defined(NETROM) && defined(MAILBOX)
 	"netrom",       nr4start,       256, 0, NULLCHAR,
 #endif
+#ifdef POP
+	"pop",          pop1,           256, 0, NULLCHAR,
+#endif
 #ifdef  RIP
 	"rip",          doripinit,      0,   0, NULLCHAR,
 #endif
@@ -596,6 +628,9 @@ static struct cmds Stopcmds[] = {
 	"ftp",          ftp0,           0, 0, NULLCHAR,
 #if     defined(NETROM) && defined(MAILBOX)
 	"netrom",       nr40,           0, 0, NULLCHAR,
+#endif
+#ifdef  POP
+	"pop",          pop0,           0, 0, NULLCHAR,
 #endif
 #ifdef  RIP
 	"rip",          doripstop,      0, 0, NULLCHAR,

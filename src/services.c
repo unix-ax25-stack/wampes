@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.1 1990/10/12 19:26:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.2 1991/06/18 17:27:27 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -22,6 +22,8 @@ static struct port_table tcp_port_table[] = {
   "ftp",         IPPORT_FTP,    /* ARPA file transfer protocol (cmd) */
   "ftp-data",    IPPORT_FTPD,   /* ARPA file transfer protocol (data) */
   "netupds",     4715,
+  "nntp",        IPPORT_NNTP,
+  "pop2",        IPPORT_POP,    /* Post Office Prot. v2 */
   "smtp",        IPPORT_SMTP,   /* ARPA simple mail transfer protocol */
   "telnet",      IPPORT_TELNET, /* ARPA virtual terminal protocol */
   "ttylink",     IPPORT_TTYLINK,
@@ -30,6 +32,8 @@ static struct port_table tcp_port_table[] = {
 
 static struct port_table udp_port_table[] = {
   "*",           0,
+  "bootpc",      IPPORT_BOOTPC,
+  "bootps",      IPPORT_BOOTPS,
   "domain",      IPPORT_DOMAIN, /* ARPA domain nameserver */
   "remote",      IPPORT_REMOTE,
   "rip",         IPPORT_RIP,
@@ -37,8 +41,24 @@ static struct port_table udp_port_table[] = {
   NULLCHAR
 };
 
+static char *nextstr __ARGS((void));
 static char *port_name __ARGS((struct port_table *table, int port));
 static int port_number __ARGS((struct port_table *table, char *name));
+
+/*---------------------------------------------------------------------------*/
+
+static char  *nextstr()
+{
+
+#define NUMSTR  16
+
+  static char  strstore[NUMSTR][128];
+  static int  strindex;
+
+  strindex++;
+  if (strindex >= NUMSTR) strindex = 0;
+  return strstore[strindex];
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -46,12 +66,13 @@ static char  *port_name(table, port)
 struct port_table *table;
 int  port;
 {
-  static char  buf[16];
+  char  *p;
 
   for (; table->name; table++)
     if (port == table->port) return table->name;
-  sprintf(buf, "%u", port);
-  return buf;
+  p = nextstr();
+  sprintf(p, "%u", port);
+  return p;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -107,10 +128,11 @@ char  *name;
 char  *pinet_tcp(s)
 struct socket *s;
 {
-  static char  buf[128];
+  char  *p;
 
-  sprintf(buf, "%s:%s", inet_ntoa(s->address), tcp_port_name(s->port));
-  return buf;
+  p = nextstr();
+  sprintf(p, "%s:%s", inet_ntoa(s->address), tcp_port_name(s->port));
+  return p;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -118,9 +140,10 @@ struct socket *s;
 char  *pinet_udp(s)
 struct socket *s;
 {
-  static char  buf[128];
+  char  *p;
 
-  sprintf(buf, "%s:%s", inet_ntoa(s->address), udp_port_name(s->port));
-  return buf;
+  p = nextstr();
+  sprintf(p, "%s:%s", inet_ntoa(s->address), udp_port_name(s->port));
+  return p;
 }
 

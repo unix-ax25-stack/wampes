@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.5 1991/05/09 07:38:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.6 1991/06/18 17:27:31 deyke Exp $ */
 
 #ifndef _SOCKET_H
 #define _SOCKET_H
@@ -39,10 +39,13 @@
 #define IPPORT_SMTP     25      /* Mail port */
 #define IPPORT_FINGER   79      /* Finger port */
 #define IPPORT_TTYLINK  87      /* Chat port */
+#define IPPORT_POP      109     /* pop2 port */
 #define IPPORT_NNTP     119     /* Netnews port */
 
 /* UDP port numbers */
 #define IPPORT_DOMAIN   53
+#define IPPORT_BOOTPS   67
+#define IPPORT_BOOTPC   68
 #define IPPORT_RIP      520
 #define IPPORT_REMOTE   1234    /* Pulled out of the air */
 

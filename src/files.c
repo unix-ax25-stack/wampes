@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.6 1991/05/09 07:38:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.7 1991/06/18 17:26:48 deyke Exp $ */
 
 /* System-dependent definitions of various files, spool directories, etc */
 #include <stdio.h>
@@ -21,6 +21,7 @@ char *Arealist = "/spool/areas";/* List of message areas */
 char *Helpdir = "/spool/help";  /* Mailbox help file directory */
 char *Rewritefile = "/spool/rewrite"; /* Address rewrite file */
 char *Newsdir = "/spool/news";          /* News messages and NNTP data */
+char *Popusers = "/popusers";           /* POP user and passwd file */
 char *Signature = "/spool/signatur"; /* Mail signature file directory */
 char *Forwardfile = "/spool/forward.bbs"; /* Mail forwarding file */
 char *Historyfile = "/spool/history"; /* Message ID history file */
@@ -44,6 +45,7 @@ char *Arealist = "./areas";             /* List of message areas */
 char *Helpdir = "./help";       /* Mailbox help file directory */
 char *Rewritefile = "./rewrite"; /* Address rewrite file */
 char *Newsdir = "./news";               /* News messages and NNTP data */
+char *Popusers = "./popusers";          /* POP user and passwd file */
 char *Signature = "./signatur"; /* Mail signature file directory */
 char *Forwardfile = "./forward.bbs"; /* Mail forwarding file */
 char *Historyfile = "./history"; /* Message ID history file */
@@ -67,6 +69,7 @@ char *Arealist = "TCPIP:spool/areas";   /* List of message areas */
 char *Helpdir = "TCPIP:spool/help";     /* Mailbox help file directory */
 char *Rewritefile = "TCPIP:spool/rewrite"; /* Address rewrite file */
 char *Newsdir = "TCPIP:spool/news";     /* News messages and NNTP data */
+char *Popusers = "TCPIP:/popusers";     /* POP user and passwd file */
 char *Signature = "TCPIP:spool/signatur"; /* Mail signature file directory */
 char *Forwardfile = "TCPIP:spool/forward.bbs"; /* Mail forwarding file */
 char *Historyfile = "TCPIP:spool/history"; /* Message ID history file */
@@ -90,6 +93,7 @@ char *Arealist = "Mikes Hard Disk:spool/areas"; /* List of message areas */
 char *Helpdir = "Mikes Hard Disk:spool/help"; /* Mailbox help file directory */
 char *Rewritefile = "Mikes Hard Disk:spool/rewrite"; /* Address rewrite file */
 char *Newsdir = "Mikes Hard Disk:spool/news"; /* News messages and NNTP data */
+char *Popusers = "Mikes Hard Disk:/popusers";   /* POP user and passwd file */
 char *Signature = "Mikes Hard Disk:spool/signatur"; /* Mail signature file directory */
 char *Forwardfile = "Mikes Hard Disk:spool/forward.bbs"; /* Mail forwarding file */
 char *Historyfile = "Mikes Hard Disk:spool/history"; /* Message ID history file */

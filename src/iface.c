@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.7 1991/05/09 07:38:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.8 1991/06/18 17:26:59 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -68,6 +68,8 @@ struct iface Loopback = {
 	0,              /* sendcrc      */
 	0,              /* crcerrors    */
 	NULL,           /* extension    */
+	NULLFP,         /* (*discard)   */
+	NULLFP,         /* (*echo)      */
 };
 /* Encapsulation pseudo-interface */
 struct iface Encap = {
@@ -106,6 +108,8 @@ struct iface Encap = {
 	0,              /* sendcrc      */
 	0,              /* crcerrors    */
 	NULL,           /* extension    */
+	NULLFP,         /* (*discard)   */
+	NULLFP,         /* (*echo)      */
 };
 
 char Noipaddr[] = "IP address field missing, and ip address not set\n";

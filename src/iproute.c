@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.8 1991/06/10 19:32:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.9 1991/06/18 17:27:04 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -16,7 +16,7 @@
 #include "rip.h"
 #include "trace.h"
 #include "pktdrvr.h"
-/* #include "bootp.h" */
+#include "bootp.h"
 
 struct route *Routes[32][HASHMOD];      /* Routing table */
 struct route R_default = {              /* Default route entry */
@@ -66,6 +66,7 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 	char rel;
 	int16 opt_len;          /* Length of current option */
 	char *opt;              /* -> beginning of current option */
+	int i;
 	struct mbuf *tbp;
 	int ckgood = 1;
 	int pointer;            /* Relative pointer index for sroute/rroute */
@@ -119,26 +120,43 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 	 * header in case fragmentation is needed later
 	 */
 	strict = 0;
-	for(opt = ip.options; opt < &ip.options[ip.optlen];opt += opt_len){
-		/* Most options have a length field. If this is a EOL or NOOP,
-		 * this (garbage) value won't be used
-		 */
-		opt_len = uchar(opt[1]);
+	for(i=0;i<ip.optlen;i += opt_len){
 
-		switch(opt[0] & OPT_NUMBER){
+		/* First check for the two special 1-byte options */
+		switch(ip.options[i] & OPT_NUMBER){
 		case IP_EOL:
 			goto no_opt;    /* End of options list, we're done */
 		case IP_NOOP:
 			opt_len = 1;
-			break;          /* No operation, skip to next option */
+			continue;       /* No operation, skip to next option */
+		}
+		/* Not a 1-byte option, so ensure that there's at least
+		 * two bytes of option left, that the option length is
+		 * at least two, and that there's enough space left for
+		 * the specified option length.
+		 */
+		if(ip.optlen - i < 2
+		 || ((opt_len = uchar(ip.options[i+1])) < 2)
+		 || ip.optlen - i < opt_len){
+			/* Truncated option, send ICMP and drop packet */
+			if(!rxbroadcast){
+				union icmp_args icmp_args;
+
+				icmp_args.pointer = IPLEN + i;
+				icmp_output(&ip,bp,ICMP_PARAM_PROB,0,&icmp_args);
+			}
+			free_p(bp);
+			return -1;
+		}
+		opt = &ip.options[i];
+
+		switch(opt[0] & OPT_NUMBER){
 		case IP_SSROUTE:        /* Strict source route & record route */
 			strict = 1;     /* note fall-thru */
 		case IP_LSROUTE:        /* Loose source route & record route */
 			/* Source routes are ignored unless we're in the
 			 * destination field
 			 */
-			if(ismyaddr(ip.dest) == NULLIF)
-				break;  /* Skip to next option */
 			if(opt_len < 3){
 				/* Option is too short to be a legal sroute.
 				 * Send an ICMP message and drop it.
@@ -146,12 +164,14 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 				if(!rxbroadcast){
 					union icmp_args icmp_args;
 
-					icmp_args.pointer = IPLEN + opt - ip.options;
+					icmp_args.pointer = IPLEN + i;
 					icmp_output(&ip,bp,ICMP_PARAM_PROB,0,&icmp_args);
 				}
 				free_p(bp);
 				return -1;
 			}
+			if(ismyaddr(ip.dest) == NULLIF)
+				break;  /* Skip to next option */
 			pointer = uchar(opt[2]);
 			if(pointer + 4 > opt_len)
 				break;  /* Route exhausted; it's for us */
@@ -173,7 +193,7 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 				if(!rxbroadcast){
 					union icmp_args icmp_args;
 
-					icmp_args.pointer = IPLEN + opt - ip.options;
+					icmp_args.pointer = IPLEN + i;
 					icmp_output(&ip,bp,ICMP_PARAM_PROB,0,&icmp_args);
 				}
 				free_p(bp);
@@ -185,7 +205,7 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 				if(!rxbroadcast){
 					union icmp_args icmp_args;
 
-					icmp_args.pointer = IPLEN + opt - ip.options;
+					icmp_args.pointer = IPLEN + i;
 					icmp_output(&ip,bp,ICMP_PARAM_PROB,0,&icmp_args);
 				}
 				/* Also drop if odd-sized */
@@ -207,8 +227,8 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 no_opt:
 
 	/* See if it's a broadcast or addressed to us, and kick it upstairs */
-	if(ismyaddr(ip.dest) != NULLIF || rxbroadcast /* ||
-		(WantBootp && bootp_validPacket(&ip, &bp)) */ ){
+	if(ismyaddr(ip.dest) != NULLIF || rxbroadcast ||
+		(WantBootp && bootp_validPacket(&ip, &bp))){
 #ifdef  GWONLY
 	/* We're only a gateway, we have no host level protocols */
 		if(!rxbroadcast)

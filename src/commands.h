@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.5 1991/05/09 07:38:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.6 1991/06/18 17:26:41 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -23,6 +23,12 @@ int doax25 __ARGS((int argc,char *argv[],void *p));
 int doaxheard __ARGS((int argc,char *argv[],void *p));
 int doaxdest __ARGS((int argc,char *argv[],void *p));
 int doconnect __ARGS((int argc,char *argv[],void *p));
+
+/* In bootp.c */
+int dobootp __ARGS((int argc,char *argv[],void *p));
+
+/* In bootpd.c */
+int bootpdcmd __ARGS((int argc,char *argv[],void *p));
 
 /* In dialer.c: */
 int dodialer __ARGS((int argc,char *argv[],void *p));
@@ -137,8 +143,12 @@ int pk_attach __ARGS((int argc,char *argv[],void *p));
 int pi_attach __ARGS((int argc,char *argv[],void *p));
 int dopistat __ARGS((int argc,char *argv[],void *p));
 
-/* In pppcmd.c: */
-int doppp_commands __ARGS((int argc,char *argv[], void *p));
+/* in popcli.c */
+int dopop __ARGS((int argc,char *argv[],void *p));
+
+/* in popserv.c */
+int pop1 __ARGS((int argc,char *argv[],void *p));
+int pop0 __ARGS((int argc,char *argv[],void *p));
 
 /* In rarp.c: */
 int dorarp __ARGS((int argc,char *argv[],void *p));
@@ -203,8 +213,6 @@ int dotelnet __ARGS((int argc,char *argv[],void *p));
 
 /* In tip.c: */
 int dotip __ARGS((int argc,char *argv[],void *p));
-int tipstart __ARGS((int argc,char *argv[],void *p));
-int tip0 __ARGS((int argc,char *argv[],void *p));
 
 /* In ttylink.c: */
 int ttylstart __ARGS((int argc,char *argv[],void *p));
