@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.34 1993/06/03 06:33:55 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.35 1993/06/06 08:26:34 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -16,16 +16,26 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
 #include <utmp.h>
 
-#if defined(__hpux) || defined(sun) || defined(LINUX) || defined(ULTRIX_RISC) || defined(__386BSD__)
+#if defined(__hpux) \
+ || defined(LINUX) \
+ || defined(__386BSD__) \
+ || defined(sun) \
+ || defined(ULTRIX_RISC) \
+ || defined(macII)
 #include <sys/uio.h>
-#endif
-
 #ifndef MAXIOV
 #define MAXIOV          16
 #endif
+#else
+#undef  MAXIOV
+#endif
+
+extern char *strdup();
 
 #ifndef SOMAXCONN
 #define SOMAXCONN       5
@@ -35,16 +45,16 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #define S_IWOTH         2
 #endif
 
-#ifndef SIGCHLD
-#define SIGCHLD         SIGCLD
-#endif
-
 #ifndef UTMP_FILE
 #ifdef _PATH_UTMP
 #define UTMP_FILE       _PATH_UTMP
 #else
 #define UTMP_FILE       "/etc/utmp"
 #endif
+#endif
+
+#ifndef WNOHANG
+#define WNOHANG         1
 #endif
 
 #ifdef __hpux
@@ -174,20 +184,6 @@ static void read_configuration(void);
 static void check_files_changed(void);
 static void link_recv(struct link *lp);
 static void link_send(struct link *lp);
-
-/*---------------------------------------------------------------------------*/
-
-#ifdef ULTRIX_RISC
-
-static char *strdup(const char *string)
-{
-  char *cp;
-
-  if (cp = malloc(strlen(string) + 1)) strcpy(cp, string);
-  return cp;
-}
-
-#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -957,7 +953,7 @@ static void name_command(struct link *lp)
   if (lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.34 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.35 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_channel = atoi(getarg(NULLCHAR, 0));
   if (up->u_channel < 0 || up->u_channel > MAX_CHANNEL) {
@@ -1344,7 +1340,7 @@ static void link_send(struct link *lp)
   int n;
   struct mbuf *mp;
 
-#if defined(__hpux) || defined(sun) || defined(LINUX) || defined(ULTRIX_RISC) || defined(__386BSD__)
+#ifdef MAXIOV
 
   struct iovec iov[MAXIOV];
 
@@ -1404,6 +1400,7 @@ int main(int argc, char **argv)
   int chr;
   int errflag = 0;
   int i;
+  int status;
   struct fd_set actread;
   struct fd_set actwrite;
   struct listeners *sp;
@@ -1441,7 +1438,6 @@ int main(int argc, char **argv)
   chdir("/");
   setsid();
   signal(SIGPIPE, SIG_IGN);
-  signal(SIGCHLD, SIG_IGN);
   if (!getenv("TZ")) putenv("TZ=MEZ-1MESZ");
 
   gethostname(buffer, sizeof(buffer));
@@ -1476,6 +1472,7 @@ int main(int argc, char **argv)
     }
 
   for (; ; ) {
+    waitpid(-1, &status, WNOHANG);
     free_closed_links();
     check_files_changed();
     connect_peers();

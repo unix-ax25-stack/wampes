@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.36 1993/05/17 13:45:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.37 1993/06/06 08:23:56 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -84,6 +84,10 @@ char *argv[];
 	struct daemon *tp;
 	int c;
 	char cmdbuf[256];
+
+#ifdef macII
+	setposix();
+#endif
 
 	setvbuf(stdout,NULLCHAR,_IOFBF,8192);
 	time(&StartTime);

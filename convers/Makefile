@@ -1,35 +1,61 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.14 1993/05/18 10:53:42 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.15 1993/06/06 08:26:34 deyke Exp $
 
-BUILDSADDR = ../src/buildsaddr.o
 OS         = "`uname -s`"
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
 TARGETS    = convers conversd
 
-all:
-	@if [ $(OS) = HP-UX ] ; then \
-	  make -i 'CC=c89' 'CFLAGS=-O -s' _all; \
-	elif [ $(OS) = SunOS ] ; then \
-	  make -i 'CC=acc' 'CFLAGS=-O -s' _all; \
+all:;   @if [ $(OS) = HP-UX ] ; then \
+		make -i \
+		'CC=c89' \
+		'CFLAGS=-O -s -I../lib' \
+		'LIBS=../lib/libutil.a' \
+		_all; \
 	elif [ $(OS) = Linux ] ; then \
-	  make -i 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' _all; \
+		make -i \
+		'CC=gcc' \
+		'CFLAGS=-O6 -s -DLINUX -I../lib' \
+		'LIBS=../lib/libutil.a' \
+		_all; \
+	elif [ $(OS) = 386BSD ] ; then \
+		make -i \
+		'CC=cc' \
+		'CFLAGS=-O -s -I../lib' \
+		'LIBS=../lib/libutil.a' \
+		_all; \
+	elif [ $(OS) = SunOS ] ; then \
+		make -i \
+		'CC=acc' \
+		'CFLAGS=-O -s -I../lib' \
+		'LIBS=../lib/libutil.a' \
+		_all; \
 	elif [ $(OS) = ULTRIX ] ; then \
-	  make -i 'CC=gcc' 'CFLAGS=-DULTRIX_RISC' _all; \
+		make -i \
+		'CC=gcc' \
+		'CFLAGS=-O6 -s -DULTRIX_RISC -I../lib' \
+		'LIBS=../lib/libutil.a' \
+		_all; \
+	elif [ $(OS) = A/UX ] ; then \
+		make -i \
+		'CC=gcc' \
+		'CFLAGS=-O -s -D_POSIX_SOURCE -I../lib' \
+		'LIBS=../lib/libutil.a -lposix' \
+		_all; \
 	elif [ $(OS) = "RISC iX" ] ; then \
-	  make -i 'CC=/tcp/cc' 'CFLAGS=-DRISCiX' _all; \
+		make -i \
+		'CC=/tcp/cc' \
+		'CFLAGS=-DRISCiX -I../lib' \
+		'LIBS=../lib/libutil.a' \
+		_all; \
 	else \
-	  make -i 'CC=cc' 'CFLAGS=-O -s' _all; \
+		echo System $(OS) is not supported; \
 	fi
 
 _all:   $(TARGETS)
 
-convers: convers.c $(BUILDSADDR)
+.c:
 	$(RMTARGET)
-	$(CC) $(CFLAGS) -I../src convers.c $(BUILDSADDR) $(LIBS) -o $@
-
-conversd: conversd.c $(BUILDSADDR)
-	$(RMTARGET)
-	$(CC) $(CFLAGS) -I../src conversd.c $(BUILDSADDR) $(LIBS) -o $@
+	$(CC) $(CFLAGS) $< $(LIBS) -o $@
 
 install: /usr/local/bin/convers /tcp/conversd
 
@@ -41,5 +67,4 @@ install: /usr/local/bin/convers /tcp/conversd
 	$(RMTARGET)
 	cp conversd $@
 
-clean:
-	rm -f *.o $(TARGETS) *~
+clean:; rm -f *.o $(TARGETS) *~

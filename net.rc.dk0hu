@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.15 1993/04/02 14:24:20 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.16 1993/06/06 08:23:27 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -23,7 +23,7 @@ attach netrom                   # ip over netrom
 ax25 route add axip default
 
 axip route add db0sao   192.1.1.1               # db0sao
-axip route add dg9sbl-1 15.137.34.8             #
+axip route add dg9sbl-1 15.137.34.8             # hpbbscfs
 axip route add dg9yev-1 15.137.23.159           # hprtdt39.grc.hp.com
 axip route add dh8saw-1 15.138.72.40            # hpbbis90.bbn.hp.com
 axip route add dj0ze-1  15.137.23.135           # hprtdt15.grc.hp.com
@@ -34,9 +34,11 @@ axip route add dl2sel-1 15.136.175.24           # hpcsmus.bbn.hp.com
 axip route add dl3sel-1 15.138.72.170           # hpbbmop6.bbn.hp.com
 axip route add dl4sas-1 15.136.216.69           # hpbid1ge.bbn.hp.com
 axip route add dl4sel-1 15.136.136.223          # isoit041.bbn.hp.com
+axip route add dl5ue-1  15.8.62.21              # schiefer.hpl.hp.com
 
 route add  dl1sbl-u         tnc0     dl1sbl
 route add  dk5sg-u          ipip     15.15.80.34
+route add  dl5ue-1          ipip     15.8.62.21
 route add  dl4sel-1         ipip     15.136.136.223
 route add  dl4sel           tnc0
 route add  dl4sas-1         ipip     15.136.216.69

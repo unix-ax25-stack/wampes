@@ -1,68 +1,66 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.23 1993/05/18 10:54:15 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.24 1993/06/06 08:23:34 deyke Exp $
 
-BUILDSADDR = ../src/buildsaddr.o
 OS         = "`uname -s`"
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
 TARGETS    = cnet mkhostdb netupdc netupds path pop2d udbm vitals
 
-all:
-	chmod 755 genupd
+all:;   chmod 755 genupd
 	@if [ $(OS) = HP-UX ] ; then \
-	  make -i 'CC=c89' 'CFLAGS=-O -s' _all; \
-	elif [ $(OS) = SunOS ] ; then \
-	  make -i 'CC=acc' 'CFLAGS=-O -s' _all; \
+		make -i \
+		'CC=c89' \
+		'CFLAGS=-O -s -I../lib' \
+		'LIBS=../lib/libutil.a -lndbm' \
+		_all; \
 	elif [ $(OS) = Linux ] ; then \
-	  make -i 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' _all; \
+		make -i \
+		'CC=gcc' \
+		'CFLAGS=-O6 -s -DLINUX -I../lib' \
+		'LIBS=../lib/libutil.a -ldbm' \
+		_all; \
+	elif [ $(OS) = 386BSD ] ; then \
+		make -i \
+		'CC=cc' \
+		'CFLAGS=-O -s -I../lib' \
+		'LIBS=../lib/libutil.a' \
+		_all; \
+	elif [ $(OS) = SunOS ] ; then \
+		make -i \
+		'CC=acc' \
+		'CFLAGS=-O -s -I../lib' \
+		'LIBS=../lib/libutil.a' \
+		_all; \
 	elif [ $(OS) = ULTRIX ] ; then \
-	  make -i 'CC=gcc' 'CFLAGS=-DULTRIX_RISC' _all; \
+		make -i \
+		'CC=gcc' \
+		'CFLAGS=-O6 -s -DULTRIX_RISC -I../lib' \
+		'LIBS=../lib/libutil.a -ldbm' \
+		_all; \
+	elif [ $(OS) = A/UX ] ; then \
+		make -i \
+		'CC=gcc' \
+		'CFLAGS=-O -s -D_POSIX_SOURCE -I../lib' \
+		'LIBS=../lib/libutil.a -lposix' \
+		_all; \
+	elif [ $(OS) = "RISC iX" ] ; then \
+		make -i \
+		'CC=/tcp/cc' \
+		'CFLAGS=-DRISCiX -I../lib' \
+		'LIBS=../lib/libutil.a' \
+		_all; \
 	else \
-	  make -i 'CC=cc' 'CFLAGS=-O -s' _all; \
+		echo System $(OS) is not supported; \
 	fi
 
 _all:   $(TARGETS)
 
-cnet:   cnet.c $(BUILDSADDR)
+cnet:   cnet.c
 	$(RMTARGET)
-	$(CC) $(CFLAGS) -I../src cnet.c $(BUILDSADDR) -lcurses -ltermcap -o $@
+	$(CC) $(CFLAGS) cnet.c -lcurses -ltermcap $(LIBS) -o $@
 
-mkhostdb: mkhostdb.c
+.c:
 	$(RMTARGET)
-	@if [ $(OS) = SunOS ] ; then \
-	  $(CC) $(CFLAGS) mkhostdb.c -o $@ ; \
-	elif [ $(OS) = 386BSD ] ; then \
-	  $(CC) $(CFLAGS) mkhostdb.c -o $@ ; \
-	elif [ $(OS) = Linux ] ; then \
-	  $(CC) $(CFLAGS) mkhostdb.c -ldbm -o $@ ; \
-	elif [ $(OS) = ULTRIX ] ; then \
-	  $(CC) $(CFLAGS) mkhostdb.c -ldbm -o $@ ; \
-	else \
-	  $(CC) $(CFLAGS) mkhostdb.c -lndbm -o $@ ; \
-	fi
-
-netupdc: netupdc.c $(BUILDSADDR)
-	$(RMTARGET)
-	$(CC) $(CFLAGS) -I../src netupdc.c $(BUILDSADDR) -o $@
-
-netupds: netupds.c
-	$(RMTARGET)
-	$(CC) $(CFLAGS) netupds.c -o $@
-
-path:   path.c
-	$(RMTARGET)
-	$(CC) $(CFLAGS) path.c -o $@
-
-pop2d:  pop2d.c
-	$(RMTARGET)
-	$(CC) $(CFLAGS) pop2d.c -o $@
-
-udbm:   udbm.c
-	$(RMTARGET)
-	$(CC) $(CFLAGS) udbm.c -o $@
-
-vitals: vitals.c
-	$(RMTARGET)
-	$(CC) $(CFLAGS) vitals.c -o $@
+	$(CC) $(CFLAGS) $< $(LIBS) -o $@
 
 install: \
 	/usr/local/bin/cnet \
@@ -90,5 +88,4 @@ install: \
 	$(RMTARGET)
 	cp udbm $@
 
-clean:
-	rm -f *.o $(TARGETS) *~
+clean:; rm -f *.o $(TARGETS) *~

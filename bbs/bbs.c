@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.54 1993/06/03 06:33:36 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.55 1993/06/06 08:23:42 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -21,12 +21,14 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <termios.h>
+#include <time.h>
 #include <unistd.h>
 
 extern char *optarg;
+extern char *strdup();
 extern int optind;
 
-#include "../src/buildsaddr.h"
+#include "buildsaddr.h"
 #include "bbs.h"
 
 #define SECONDS     (1L)
@@ -239,20 +241,6 @@ static void errorstop(int line)
 #define open_max()      sysconf(_SC_OPEN_MAX)
 #else
 #define open_max()      (1024)
-#endif
-
-/*---------------------------------------------------------------------------*/
-
-#ifdef ULTRIX_RISC
-
-static char *strdup(const char *s)
-{
-  char *p;
-
-  if (p = malloc(strlen(s) + 1)) strcpy(p, s);
-  return p;
-}
-
 #endif
 
 /*---------------------------------------------------------------------------*/

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.29 1993/06/03 06:33:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.30 1993/06/06 08:23:57 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -8,11 +8,18 @@
 #include <termios.h>
 #include <unistd.h>
 
-#if defined(__hpux) || defined(sun) || defined(LINUX) || defined(ULTRIX_RISC) || defined(__386BSD__)
+#if defined(__hpux) \
+ || defined(LINUX) \
+ || defined(__386BSD__) \
+ || defined(sun) \
+ || defined(ULTRIX_RISC) \
+ || defined(macII)
 #include <sys/uio.h>
 #ifndef MAXIOV
-#define MAXIOV 16
+#define MAXIOV          16
 #endif
+#else
+#undef  MAXIOV
 #endif
 
 #include "global.h"
@@ -331,7 +338,7 @@ struct asy *asyp;
 	int n;
 
 	if (asyp->sndq != NULLBUF) {
-#if defined(__hpux) || defined(sun) || defined(LINUX) || defined(ULTRIX_RISC) || defined(__386BSD__)
+#ifdef MAXIOV
 		struct iovec iov[MAXIOV];
 		struct mbuf *bp;
 		n = 0;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.14 1993/05/30 07:56:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.15 1993/06/06 08:23:55 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -173,6 +173,23 @@ struct env {
 	long    unknown9;
 };
 #define getstackptr(ep) ((ep)->esp)
+#elif macII
+struct env {
+	long    d2;
+	long    d3;
+	long    d4;
+	long    d5;
+	long    d6;
+	long    d7;
+	long    a1;
+	long    a2;
+	long    a3;
+	long    a4;
+	long    a5;
+	long    a6;
+	long    a7;
+};
+#define getstackptr(ep) ((ep)->a7)
 #else
 struct env {
 	long    dummy;

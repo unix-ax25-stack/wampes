@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.10 1993/05/17 13:44:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.11 1993/06/06 08:23:52 deyke Exp $ */
 
 /* Parse command line, set up command arguments Unix-style, and call function.
  * Note: argument is modified (delimiters are overwritten with nulls)
@@ -361,7 +361,7 @@ int argc;
 char *argv[];
 {
 	if(argc < 2)
-		printf("%s: %i\n",label,*var);
+		printf("%s: %d\n",label,*var);
 	else
 		*var = atoi(argv[1]);
 
@@ -395,11 +395,11 @@ int minval;
 int maxval;
 {
   if (argc < 2)
-    printf("%s: %i\n", label, *var);
+    printf("%s: %d\n", label, *var);
   else {
     int  tmp = atoi(argv[1]);
     if (tmp < minval || tmp > maxval) {
-      printf("%s must be %i..%i\n", label, minval, maxval);
+      printf("%s must be %d..%d\n", label, minval, maxval);
       return 1;
     }
     *var = tmp;

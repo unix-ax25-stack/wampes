@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/pty-test.c,v 1.2 1993/03/04 23:13:08 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/pty-test.c,v 1.3 1993/06/06 08:24:10 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -12,7 +12,6 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <errno.h>
 #include <fcntl.h>
 #include <pwd.h>
-#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ptyio.h>
@@ -60,8 +59,7 @@ void master(void)
   cnt = linelen;
   for (; ; ) {
     rmask = wmask = emask = fmask;
-    if (select(fd + 1, &rmask, &wmask, &emask, &timeout) < 1)
-      continue;
+    if (select(fd + 1, &rmask, &wmask, &emask, &timeout) < 1) continue;
 
     if (1 /*rmask & fmask*/ ) {
       char *rp;
@@ -71,10 +69,8 @@ void master(void)
 /*
       printf("read() returned %d\n", rn);
       for (; rn > 0; rn--) {
-	if (*rp == 0x11)
-	  printf("^Q received.\n");
-	if (*rp == 0x13)
-	  printf("^S received.\n");
+	if (*rp == 0x11) printf("^Q received.\n");
+	if (*rp == 0x13) printf("^S received.\n");
 	rp++;
       }
 */
@@ -82,11 +78,9 @@ void master(void)
 
     if (wmask & fmask) {
       n = cnt / 2 + 1;
-      if (n > cnt)
-	n = cnt;
+      if (n > cnt) n = cnt;
       n = write(fd, p, n);
-      if (!n)
-	printf("write returned 0\n");
+      if (!n) printf("write returned 0\n");
       if (n < 0) {
 	perror("write");
 	exit(1);
@@ -100,8 +94,7 @@ void master(void)
     }
 
     if (emask & fmask) {
-      if (ioctl(fd, TIOCREQCHECK, &request_info))
-	continue;
+      if (ioctl(fd, TIOCREQCHECK, &request_info)) continue;
       ioctl(fd, TIOCREQSET, &request_info);
       if (request_info.request == TIOCCLOSE) {
 	printf("Close trapped.\n");
@@ -174,8 +167,7 @@ static void makeline(char *s, int n)
   char *p = s;
   while (n-- > 1) {
     *p++ = c++;
-    if (c >= 127)
-      c = ' ';
+    if (c >= 127) c = ' ';
   }
   *p++ = '\n';
   *p = 0;
@@ -187,19 +179,15 @@ int main(int argc, char **argv)
 {
   int n = 80;
 
-  if (argc >= 2)
-    n = atoi(argv[1]);
-  if (n < 1)
-    n = 1;
+  if (argc >= 2) n = atoi(argv[1]);
+  if (n < 1) n = 1;
   makeline(line, n);
   linelen = strlen(line);
   printf("linelen = %d\n", linelen);
-  signal(SIGCLD, SIG_IGN);
-  if (fork()) {
+  if (fork())
     master();
-  } else {
+  else
     slave();
-  }
   return 0;
 }
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.38 1993/05/17 13:45:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.39 1993/06/06 08:23:55 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -13,11 +13,17 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <termios.h>
+#include <time.h>
 #include <unistd.h>
 #include <utmp.h>
 
 #ifdef __386BSD__
 #include <sys/ioctl.h>
+#endif
+
+#ifdef macII
+#undef LOGIN_PROCESS
+extern struct utmp *getutent();
 #endif
 
 #include "global.h"
@@ -104,7 +110,12 @@ static int find_pty(int *numptr, char *slave)
       if ((fd = open(master, O_RDWR | O_NONBLOCK, 0600)) >= 0) {
 	*numptr = num;
 #ifdef ULTRIX_RISC
-	fcntl(master, F_SETFL, FIONBIO); /* O_NONBLOCK does not work?! */
+	fcntl(fd, F_SETFL, FIONBIO); /* O_NONBLOCK does not work?! */
+#endif
+#ifdef macII
+	/* this extra fcntl is necessary for an unknown reason, since the
+	   flag is already set... perhaps there's a race somewhere? */
+	fcntl(fd, F_SETFL, O_NONBLOCK | fcntl(fd, F_GETFL, 0));
 #endif
 	pty_name(slave, SLAVEPREFIX, num);
 	return fd;
@@ -506,8 +517,10 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
     pututline(&utmpbuf);
     endutent();
 #endif
-#if defined sun || defined __386BSD__
+#if defined(sun) || defined(__386BSD__)
     execle("/usr/bin/login", "login", "-h", protocol, pw->pw_name, (char *) 0, &env);
+#elif macII
+    execle("/bin/remlogin", "login", "-h", protocol, pw->pw_name, (char *) 0, &env);
 #else
     execle("/bin/login", "login", pw->pw_name, (char *) 0, &env);
 #endif

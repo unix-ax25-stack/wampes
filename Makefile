@@ -1,13 +1,13 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.9 1993/05/10 11:22:16 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.10 1993/06/06 08:23:26 deyke Exp $
 
 PATH  = /bin:/usr/bin:/usr/lang:/usr/local/bin:/usr/contrib/bin:/usr/local/etc
 
-all:
-	chmod 755 cc
-	-(dir=src     ; if [ -d $$dir ]; then cd $$dir; make -i; make -i install; fi)
-	-(dir=convers ; if [ -d $$dir ]; then cd $$dir; make -i; make -i install; fi)
-	-(dir=util    ; if [ -d $$dir ]; then cd $$dir; make -i; make -i install; fi)
-	-(dir=bbs     ; if [ -d $$dir ]; then cd $$dir; make -i; make -i install; fi)
+all:;   chmod 755 cc
+	-(dir=lib    ; if [ -d $$dir ]; then cd $$dir; make -i all install; fi)
+	-(dir=src    ; if [ -d $$dir ]; then cd $$dir; make -i all install; fi)
+	-(dir=convers; if [ -d $$dir ]; then cd $$dir; make -i all install; fi)
+	-(dir=util   ; if [ -d $$dir ]; then cd $$dir; make -i all install; fi)
+	-(dir=bbs    ; if [ -d $$dir ]; then cd $$dir; make -i all install; fi)
 	-make -i _all
 
 _all:   /tcp/hostaddr.pag

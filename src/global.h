@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.26 1993/05/17 13:44:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.27 1993/06/06 08:23:53 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -233,6 +233,8 @@ extern FILE *tmpfile(void);
 extern char *sys_errlist[];
 extern int errno;
 #endif
+
+#define inet_ntoa Xinet_ntoa    /* Resolve name conflict with libc */
 
 /* Externals used by getopt */
 extern int optind;

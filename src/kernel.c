@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.12 1993/05/30 07:56:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.13 1993/06/06 08:23:55 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -16,7 +16,7 @@
 #include "daemon.h"
 #include "hardware.h"
 
-#if defined(__hpux) || defined(ULTRIX_RISC) || defined(sun)
+#if defined(__hpux) || defined(ULTRIX_RISC) || defined(sun) || defined(macII)
 #define setjmp          _setjmp
 #define longjmp         _longjmp
 #endif
@@ -168,6 +168,11 @@ int freeargs;           /* If set, free arg list on parg1 at termination */
 #elif ULTRIX_RISC
 	if (!setjmp(jmpenv)) {
 	  jmpenv[32] = (int) newstackptr;
+	  longjmp(jmpenv, 1);
+	}
+#elif macII
+	if (!setjmp(jmpenv)) {
+	  jmpenv[12] = (int) newstackptr;
 	  longjmp(jmpenv, 1);
 	}
 #elif RISCiX

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.38 1993/05/18 10:53:56 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.39 1993/06/06 08:23:50 deyke Exp $
 
 DEST          = /tcp
 
@@ -10,7 +10,6 @@ HDRS          = arp.h \
 		ax25mail.h \
 		axclient.h \
 		bootp.h \
-		buildsaddr.h \
 		cmdparse.h \
 		commands.h \
 		config.h \
@@ -60,9 +59,7 @@ HDRS          = arp.h \
 
 LD            = $(CC)
 
-LDFLAGS       = $(CFLAGS)
-
-LIBS          =
+LDFLAGS       = $(CFLAGS) -s
 
 MAKEFILE      = Makefile
 
@@ -83,7 +80,6 @@ OBJS          = alloc.o \
 		axclient.o \
 		axip.o \
 		axserver.o \
-		buildsaddr.o \
 		cmdparse.o \
 		config.o \
 		crc.o \
@@ -187,7 +183,6 @@ SRCS          = alloc.c \
 		axclient.c \
 		axip.c \
 		axserver.c \
-		buildsaddr.c \
 		cmdparse.c \
 		config.c \
 		crc.c \
@@ -275,63 +270,86 @@ SRCS          = alloc.c \
 OS            = "`uname -s`"
 RMTARGET      = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
-all:
-		chmod 755 cc
-		@if [ "`uname -n`" = mdddhd ] ; then \
-		  make -i 'CC=c89' 'CFLAGS=-g -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024' _all; \
-		elif [ $(OS) = HP-UX ] ; then \
-		  make -i 'CC=c89' 'CFLAGS=-O -s -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024' _all; \
-		elif [ $(OS) = SunOS ] ; then \
-		  make -i 'CC=acc' 'CFLAGS=-O -s -DUNIX -DFD_SETSIZE=1024' _all; \
-		elif [ $(OS) = Linux ] ; then \
-		  make -i 'CC=gcc' 'CFLAGS=-O6 -DUNIX -DLINUX -I./linux_include' _all; \
-		elif [ $(OS) = ULTRIX ] ; then \
-		  make -i 'CC=gcc' 'CFLAGS=-O6 -DUNIX -DULTRIX_RISC -DFD_SETSIZE=64' _all; \
-		elif [ $(OS) = "RISC iX" ] ; then \
-		  make -i 'CC=/tcp/src/cc' 'CFLAGS=-DUNIX -DRISCiX' _all; \
-		else \
-		  make -i 'CC=cc' 'CFLAGS=-O -s -DUNIX -DFD_SETSIZE=1024' _all; \
-		fi
+all:;   chmod 755 cc
+	@if [ $(OS) = HP-UX ] ; then \
+		make -i \
+		'CC=c89' \
+		'CFLAGS=-O -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024 -I../lib' \
+		'LIBS=../lib/libutil.a -lndbm' \
+		_all; \
+	elif [ $(OS) = Linux ] ; then \
+		make -i \
+		'CC=gcc' \
+		'CFLAGS=-O6 -DUNIX -DLINUX -I./linux_include -I../lib' \
+		'LIBS=../lib/libutil.a -ldbm' \
+		_all; \
+	elif [ $(OS) = 386BSD ] ; then \
+		make -i \
+		'CC=cc' \
+		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
+		'LIBS=../lib/libutil.a' \
+		_all; \
+	elif [ $(OS) = SunOS ] ; then \
+		make -i \
+		'CC=acc' \
+		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
+		'LIBS=../lib/libutil.a' \
+		_all; \
+	elif [ $(OS) = ULTRIX ] ; then \
+		make -i \
+		'CC=gcc' \
+		'CFLAGS=-O6 -DUNIX -DULTRIX_RISC -DFD_SETSIZE=64 -I../lib' \
+		'LIBS=../lib/libutil.a -ldbm' \
+		_all; \
+	elif [ $(OS) = A/UX ] ; then \
+		make -i \
+		'CC=gcc' \
+		'CFLAGS=-O -DUNIX -D_POSIX_SOURCE -I../lib' \
+		'LIBS=../lib/libutil.a -lposix' \
+		_all; \
+	elif [ $(OS) = "RISC iX" ] ; then \
+		make -i \
+		'CC=/tcp/src/cc' \
+		'CFLAGS=-DUNIX -DRISCiX -I../lib' \
+		'LIBS=../lib/libutil.a' \
+		_all; \
+	else \
+		echo System $(OS) is not supported; \
+	fi
 
 _all:           $(PROGRAM)
 
-setsp.o:        setsp.c
-		@if [ $(OS) = Linux ] ; then \
-		  $(CC) -E -DLINUX $< > setsp.s; \
-		  cc -c setsp.s; \
-		  rm -f setsp.s; \
-		elif [ $(OS) = 386BSD ] ; then \
-		  $(CC) -E $< > setsp.s; \
-		  cc -c setsp.s; \
-		  rm -f setsp.s; \
-		elif [ $(OS) = ULTRIX ] ; then \
-		  /bin/cc -c setsp.c; \
-		elif [ $(OS) = "RISC iX" ] ; then \
-		  $(CC) -E -DRISCiX $< > setsp.s; \
-		  cc -c setsp.s; \
-		  rm -f setsp.s; \
-		else \
-		  $(CC) $(CFLAGS) -P $<; \
-		  as setsp.i -o $@; \
-		  rm -f setsp.i; \
-		fi
+setsp.o: setsp.c
+	@if [ $(OS) = HP-UX ] ; then \
+		$(CC) -E $< > setsp.s; \
+		as setsp.s -o $@; \
+		rm -f setsp.s; \
+	elif [ $(OS) = Linux ] ; then \
+		$(CC) -E -DLINUX $< > setsp.s; \
+		cc -c setsp.s; \
+		rm -f setsp.s; \
+	elif [ $(OS) = 386BSD ] ; then \
+		$(CC) -E $< > setsp.s; \
+		cc -c setsp.s; \
+		rm -f setsp.s; \
+	elif [ $(OS) = SunOS ] ; then \
+		$(CC) $(CFLAGS) -c setsp.c; \
+	elif [ $(OS) = ULTRIX ] ; then \
+		$(CC) $(CFLAGS) -c setsp.c; \
+	elif [ $(OS) = A/UX ] ; then \
+		$(CC) $(CFLAGS) -c setsp.c; \
+	elif [ $(OS) = "RISC iX" ] ; then \
+		$(CC) -E -DRISCiX $< > setsp.s; \
+		cc -c setsp.s; \
+		rm -f setsp.s; \
+	else \
+		echo System $(OS) is not supported; \
+	fi
 
-$(PROGRAM):     $(OBJS) $(LIBS)
+$(PROGRAM):     $(OBJS)
 		@echo "Linking $(PROGRAM) ..."
 		$(RMTARGET)
-		@if [ $(OS) = SunOS ] ; then \
-		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM) ; \
-		elif [ $(OS) = 386BSD ] ; then \
-		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM) ; \
-		elif [ $(OS) = Linux ] ; then \
-		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -ldbm -o $(PROGRAM) ; \
-		elif [ $(OS) = ULTRIX ] ; then \
-		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -ldbm -o $(PROGRAM) ; \
-		elif [ $(OS) = "RISC iX" ] ; then \
-		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM) ; \
-		else \
-		  $(LD) $(LDFLAGS) $(OBJS) $(LIBS) -lndbm -o $(PROGRAM) ; \
-		fi
+		@$(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM)
 
 clean:;         @rm -f $(OBJS) *.o core *~
 
@@ -389,7 +407,6 @@ axclient.o: global.h config.h mbuf.h timer.h ax25.h iface.h proc.h lapb.h \
 axip.o: global.h mbuf.h iface.h proc.h timer.h internet.h netuser.h ax25.h \
 	socket.h trace.h pktdrvr.h cmdparse.h hpux.h crc.h
 axserver.o: global.h mbuf.h ax25.h iface.h proc.h timer.h lapb.h login.h
-buildsaddr.o: global.h
 cmdparse.o: global.h proc.h mbuf.h timer.h cmdparse.h
 config.o: global.h config.h mbuf.h timer.h proc.h iface.h ip.h internet.h \
 	tcp.h netuser.h udp.h lapb.h ax25.h enet.h kiss.h nrs.h netrom.h \
@@ -477,7 +494,7 @@ nrs.o: global.h mbuf.h iface.h proc.h timer.h pktdrvr.h ax25.h nrs.h asy.h \
 	trace.h commands.h
 pathname.o: global.h dirutil.h
 remote_net.o: global.h mbuf.h iface.h proc.h timer.h transport.h hpux.h \
-	buildsaddr.h main.h
+	main.h
 rip.o: global.h mbuf.h netuser.h udp.h iface.h proc.h timer.h internet.h ip.h \
 	rip.h arp.h
 ripcmd.o: global.h mbuf.h netuser.h internet.h cmdparse.h timer.h iface.h \
@@ -503,7 +520,7 @@ tcpcmd.o: global.h timer.h mbuf.h netuser.h internet.h tcp.h iface.h proc.h \
 tcpdump.o: global.h mbuf.h netuser.h internet.h tcp.h iface.h proc.h timer.h \
 	ip.h trace.h
 tcpgate.o: global.h mbuf.h netuser.h tcp.h iface.h proc.h timer.h internet.h \
-	ip.h hpux.h buildsaddr.h
+	ip.h hpux.h
 tcphdr.o: global.h mbuf.h tcp.h iface.h proc.h timer.h internet.h ip.h \
 	netuser.h
 tcpin.o: global.h timer.h mbuf.h netuser.h internet.h tcp.h iface.h proc.h \

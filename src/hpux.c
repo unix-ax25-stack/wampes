@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.39 1993/06/03 06:33:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.40 1993/06/06 08:23:53 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -123,7 +123,11 @@ void ioinit(void)
     tcsetattr(0, TCSANOW, &curr_termios);
     on_read(0, (void (*)()) keyboard, (void *) 0);
   } else {
-    for (i = 0; i < FD_SETSIZE; i++) close(i);
+    fclose(stdin);
+    fclose(stdout);
+    fclose(stderr);
+    for (i = 3; i < FD_SETSIZE; i++) close(i);
+
     setsid();
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");
