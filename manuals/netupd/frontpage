@@ -1,12 +1,12 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/netupd/Attic/frontpage,v 1.58 1995/10/06 21:21:30 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/netupd/Attic/frontpage,v 1.59 1995/10/14 16:42:06 deyke Exp $
 .\"
-.PF "^Net Update Reference Manual^-\\\\nP-^Version 951006" \" Page footer
+.PF "^Net Update Reference Manual^-\\\\nP-^Version 951014" \" Page footer
 .\"
 .S 30
 .ce
 \fBNet Update Reference Manual\fP
 .ce
-Version 951006
+Version 951014
 .S
 .SP 2
 .S 15

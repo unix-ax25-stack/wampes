@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 951006" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 951014" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 951006
+Version 951014
 .S
 .SP 2
 .S 15
@@ -890,9 +890,9 @@ hops across the network you expect to transit packets.
 The default is 255 hops.
 .H 2 "ipfilter" " [\fIsubcommand\fP]"
 Without an argument, display the IP filter table,
-which allows or denies IP packets to be sent to a destination.
+which allows or denies IP packets to be received from or sent to a destination.
 .P
-The default is to allow IP packets to be sent to any destination.
+The default is to allow IP packets to be received from or sent to any destination.
 Use the \fBipfilter allow\fP and \fBipfilter deny\fP commands
 to extend the table.
 Entries listed earlier take precedence over entries listed later.

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.30 1995/10/06 21:21:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.31 1995/10/14 16:41:52 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -108,7 +108,7 @@ int rxbroadcast)        /* True if packet had link broadcast address */
 		return -1;
 	}
 
-	if(!ipfilter(ip.dest)){
+	if(!ipfilter(ip.source)||!ipfilter(ip.dest)){
 		free_p(bp);
 		return -1;
 	}

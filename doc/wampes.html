@@ -4,7 +4,7 @@
 </HEAD>
 <BODY>
 <H1>WAMPES Reference Manual</H1>
-Version 951006
+Version 951014
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
@@ -983,9 +983,9 @@ hops across the network you expect to transit packets.
 The default is 255 hops.
 <H3><A NAME="H4.27">4.27 ipfilter [<I>subcommand</I>]</A></H3>
 Without an argument, display the IP filter table,
-which allows or denies IP packets to be sent to a destination.
+which allows or denies IP packets to be received from or sent to a destination.
 <P>
-The default is to allow IP packets to be sent to any destination.
+The default is to allow IP packets to be received from or sent to any destination.
 Use the <B>ipfilter allow</B> and <B>ipfilter deny</B> commands
 to extend the table.
 Entries listed earlier take precedence over entries listed later.

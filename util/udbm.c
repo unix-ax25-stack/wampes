@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.39 1995/06/04 09:36:44 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.40 1995/10/14 16:42:00 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -19,20 +19,11 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <sys/stat.h>
 #include <unistd.h>
 
-#ifdef ibm032
-
-#include <sys/dir.h>
-
-#define dirent direct
-
-#else
-
-#include <dirent.h>
-
+#if defined __cplusplus || defined __lint || defined __GNUC__
+#if defined __cplusplus
+extern "C"
 #endif
-
-#ifdef __cplusplus
-extern "C" int putpwent(const struct passwd *p, FILE *f);
+int putpwent(const struct passwd *p, FILE *f);
 #endif
 
 #include "calc_crc.h"
@@ -71,18 +62,18 @@ static const char aliasfile[] = ALIASES_FILE;
 static const char aliastemp[] = ALIASES_FILE ".tmp";
 #endif
 
-static const char *lockfile;
-static const char null_string[] = "";
-static long heapsize;
-static struct user *users[NUM_USERS];
-static struct user null_user;
+static const char Null_string[] = "";
+static const char *Lockfile;
+static long Heapsize;
+static struct user Null_user;
+static struct user *Users[NUM_USERS];
 
 /*---------------------------------------------------------------------------*/
 
 static void terminate(const char *s)
 {
   perror(s);
-  if (lockfile) remove(lockfile);
+  if (Lockfile) remove(Lockfile);
   exit(1);
 }
 
@@ -105,7 +96,7 @@ static void *allocate(size_t size)
       }
       if ((freespace = (char *) malloc(allocsize))) {
 	freesize = allocsize;
-	heapsize += allocsize;
+	Heapsize += allocsize;
 	break;
       }
       allocsize >>= 1;
@@ -119,33 +110,37 @@ static void *allocate(size_t size)
 
 /*---------------------------------------------------------------------------*/
 
-static const char *strsave(const char *s)
+static const char *strstore(const char *str)
 {
 
 #define NUM_STRINGS 4999
 
   struct strings {
     struct strings *next;
-    char s[1];
+    /***************************** String value is stored here */
   };
 
-  int hash;
-  static struct strings *strings[NUM_STRINGS];
-  struct strings *p;
+#define strptr(p)       ((char *) ((p)+1))
 
-  if (!*s) return null_string;
-  for (p = strings[hash = calc_crc_16(s) % NUM_STRINGS];
-       p && strcmp(s, p->s);
-       p = p->next)
-    ;
-  if (!p) {
-    p = (struct strings *) allocate(sizeof(struct strings *) + strlen(s) + 1);
-    strcpy(p->s, s);
-    p->next = strings[hash];
-    strings[hash] = p;
-  }
-  return p->s;
+  static struct strings *Strings[NUM_STRINGS];
+  struct strings *p;
+  struct strings **hp;
+
+  if (!*str)
+    return Null_string;
+  hp = Strings + calc_crc_16(str) % NUM_STRINGS;
+  for (p = *hp; p; p = p->next)
+    if (!strcmp(strptr(p), str))
+      return strptr(p);
+  p = (struct strings *) allocate(sizeof(struct strings) + strlen(str) + 1);
+  strcpy(strptr(p), str);
+  p->next = *hp;
+  *hp = p;
+  return strptr(p);
 }
+
+#undef NUM_STRINGS
+#undef strptr
 
 /*---------------------------------------------------------------------------*/
 
@@ -235,11 +230,11 @@ static int is_mail(const char *s)
 static int join(const char **s1, const char **s2)
 {
   if (s1 == s2) return 0;
-  if (*s1 == null_string || strstr(*s2, *s1)) {
+  if (*s1 == Null_string || strstr(*s2, *s1)) {
     *s1 = *s2;
     return 0;
   }
-  if (*s2 == null_string || strstr(*s1, *s2)) {
+  if (*s2 == Null_string || strstr(*s1, *s2)) {
     *s2 = *s1;
     return 0;
   }
@@ -254,16 +249,16 @@ static struct user *getup(const char *call, int create)
   int hash;
   struct user *up;
 
-  for (up = users[hash = calc_crc_16(call) % NUM_USERS];
+  for (up = Users[hash = calc_crc_16(call) % NUM_USERS];
        up && strcmp(call, up->call);
        up = up->next)
     ;
   if (create && !up) {
     up = (struct user *) allocate(sizeof(struct user));
-    *up = null_user;
-    up->call = strsave(call);
-    up->next = users[hash];
-    users[hash] = up;
+    *up = Null_user;
+    up->call = strstore(call);
+    up->next = Users[hash];
+    Users[hash] = up;
   }
   return up;
 }
@@ -281,20 +276,10 @@ static FILE *fopenexcl(const char *path)
     if (cnt >= 10) terminate(path);
     sleep(cnt);
   }
-  lockfile = path;
+  Lockfile = path;
   fp = fdopen(fd, "w");
   if (!fp) terminate(path);
   return fp;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int string_is_numeric(const char *s)
-{
-  for (; *s; s++)
-    if (!isdigit(*s & 0xff))
-      return 0;
-  return 1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -305,38 +290,51 @@ static void parse_mybbs_messages(void)
   char from[1024];
   char line[1024];
   char mybbs[1024];
+  char tmp[1024];
   char *cp;
-  DIR *dirp;
-  FILE *fp;
-  int maxnum;
-  int minnum;
-  int num;
+  const char *batchfile;
+  const char *workfile;
+  FILE *fpmsg;
+  FILE *fpwrk;
+  int i;
   int timestamp;
-  struct dirent *dp;
+  struct stat statbuf;
   struct user *up;
 
-  if (!*NEWS_DIR || !(dirp = opendir(NEWS_DIR "/ampr/bbs/m")))
+  if (!*NEWS_DIR)
     return;
-  maxnum = 0;
-  minnum = 0x7fffffff;
-  while ((dp = readdir(dirp))) {
-    if (string_is_numeric(dp->d_name)) {
-      num = atoi(dp->d_name);
-      if (minnum > num)
-	minnum = num;
-      if (maxnum < num)
-	maxnum = num;
+  batchfile = NEWS_DIR "/out.going/udbm";
+  workfile = NEWS_DIR "/out.going/udbm.bbs";
+  if (!(fpwrk = fopen(workfile, "r"))) {
+    if (rename(batchfile, workfile))
+      return;
+    system(CTLINND_PROG " -s flush udbm");
+    for (i = 0;; i++) {
+      if (!stat(batchfile, &statbuf))
+	break;
+      if (i > 60)
+	terminate(batchfile);
+      sleep(1);
     }
+    if (!(fpwrk = fopen(workfile, "r")))
+      terminate(workfile);
   }
-  closedir(dirp);
-
-  for (num = minnum; num <= maxnum; num++) {
-    sprintf(line, NEWS_DIR "/ampr/bbs/m/%d", num);
-    if (!(fp = fopen(line, "r")))
+  while (fgets(line, sizeof(line), fpwrk)) {
+    for (cp = line; *cp; cp++) {
+      if (isspace(*cp & 0xff)) {
+	*cp = 0;
+	break;
+      }
+    }
+    if (*line != '/') {
+      sprintf(tmp, NEWS_DIR "/%s", line);
+      strcpy(line, tmp);
+    }
+    if (!(fpmsg = fopen(line, "r")))
       continue;
     *from = 0;
     *mybbs = 0;
-    while (fgets(line, sizeof(line), fp)) {
+    while (fgets(line, sizeof(line), fpmsg)) {
       if (!strncmp(line, "From: ", 6)) {
 	sscanf(line, "From: %s", from);
 	if ((cp = strchr(from, '@')))
@@ -355,12 +353,17 @@ static void parse_mybbs_messages(void)
 	up = getup(strlwc(from), 1);
 	*line = '@';
 	strcpy(line + 1, strlwc(mybbs));
-	up->mail = strsave(line);
+	up->mail = strstore(line);
 	break;
       }
     }
-    fclose(fp);
+    fclose(fpmsg);
   }
+  fclose(fpwrk);
+#if !DEBUG
+  if (remove(workfile))
+    terminate(workfile);
+#endif
 }
 
 /*---------------------------------------------------------------------------*/
@@ -426,7 +429,7 @@ static int fixusers(void)
     f = line;
     memset((char *) field, 0 , sizeof(field));
     nf = 0;
-    user = null_user;
+    user = Null_user;
     for (; ; ) {
       while (*f && (*f == ' ' || *f == ',')) f++;
       if (!*f) break;
@@ -442,19 +445,19 @@ static int fixusers(void)
     for (i = 0; i < NF; i++)
       if (field[i]) {
 	if (!*user.call && callvalid(field[i])) {
-	  user.call = strsave(strlwc(field[i]));
+	  user.call = strstore(strlwc(field[i]));
 	  field[i] = 0;
 	  nf--;
 	} else if (!*user.qth && is_qth(field[i])) {
-	  user.qth = strsave(strlwc(field[i]));
+	  user.qth = strstore(strlwc(field[i]));
 	  field[i] = 0;
 	  nf--;
 	} else if (!*user.phone && is_phone(field[i])) {
-	  user.phone = strsave(field[i]);
+	  user.phone = strstore(field[i]);
 	  field[i] = 0;
 	  nf--;
 	} else if (!*user.mail && is_mail(field[i])) {
-	  user.mail = strsave(strlwc(rmspaces(field[i])));
+	  user.mail = strstore(strlwc(rmspaces(field[i])));
 	  field[i] = 0;
 	  nf--;
 	}
@@ -462,7 +465,7 @@ static int fixusers(void)
     if (nf)
       for (i = 0; i < NF; i++)
 	if (field[i]) {
-	  user.name = strsave(field[i]);
+	  user.name = strstore(field[i]);
 	  field[i] = 0;
 	  nf--;
 	  break;
@@ -470,7 +473,7 @@ static int fixusers(void)
     if (nf >= 2)
       for (i = 0; i < NF; i++)
 	if (field[i]) {
-	  user.street = strsave(field[i]);
+	  user.street = strstore(field[i]);
 	  field[i] = 0;
 	  nf--;
 	  break;
@@ -478,7 +481,7 @@ static int fixusers(void)
     if (nf)
       for (i = 0; i < NF; i++)
 	if (field[i]) {
-	  user.city = strsave(field[i]);
+	  user.city = strstore(field[i]);
 	  field[i] = 0;
 	  nf--;
 	  break;
@@ -519,15 +522,15 @@ static int fixusers(void)
     up = getup(hostname, 1);
     *line = '@';
     strcpy(line + 1, up->call);
-    up->mail = strsave(line);
+    up->mail = strstore(line);
   }
 
   for (i = 0; i < NUM_USERS; i++)
-    for (up = users[i]; up; up = up->next) output_line(up, fpo);
+    for (up = Users[i]; up; up = up->next) output_line(up, fpo);
   fclose(fpo);
 
   if (rename(userstemp, usersfile)) terminate(usersfile);
-  lockfile = 0;
+  Lockfile = 0;
   return errors;
 }
 
@@ -559,7 +562,7 @@ static void fixpasswd(void)
   endpwent();
   fclose(fp);
   if (rename(passtemp, passfile)) terminate(passfile);
-  lockfile = 0;
+  Lockfile = 0;
 
 #endif
 
@@ -592,7 +595,7 @@ static void fixaliases(void)
   fclose(fpi);
   fputs("# Generated aliases\n", fpo);
   for (i = 0; i < NUM_USERS; i++)
-    for (up = users[i]; up; up = up->next)
+    for (up = Users[i]; up; up = up->next)
       if (!up->alias && *up->mail)
 	if (*up->mail == '@')
 	  fprintf(fpo, "%s\t\t: %s%s\n", up->call, up->call, up->mail);
@@ -600,7 +603,7 @@ static void fixaliases(void)
 	  fprintf(fpo, "%s\t\t: %s\n", up->call, up->mail);
   fclose(fpo);
   if (rename(aliastemp, aliasfile)) terminate(aliasfile);
-  lockfile = 0;
+  Lockfile = 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -608,15 +611,15 @@ static void fixaliases(void)
 int main(void)
 {
 
-  null_user.next = 0;
-  null_user.call = null_string;
-  null_user.name = null_string;
-  null_user.street = null_string;
-  null_user.city = null_string;
-  null_user.qth = null_string;
-  null_user.phone = null_string;
-  null_user.mail = null_string;
-  null_user.alias = 0;
+  Null_user.next = 0;
+  Null_user.call = Null_string;
+  Null_user.name = Null_string;
+  Null_user.street = Null_string;
+  Null_user.city = Null_string;
+  Null_user.qth = Null_string;
+  Null_user.phone = Null_string;
+  Null_user.mail = Null_string;
+  Null_user.alias = 0;
 
   umask(022);
   if (!fixusers()) {
@@ -628,7 +631,7 @@ int main(void)
   }
 
 #if DEBUG
-  fprintf(stderr, "Total heap size = %ld Bytes\n", heapsize);
+  fprintf(stderr, "Total heap size = %ld Bytes\n", Heapsize);
 #endif
 
   return 0;
