@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.17 1994/02/14 16:34:11 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.18 1994/02/15 17:39:21 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -4066,3 +4066,318 @@
 #
 #         10-15 reserved for future use by hb9h, A.R.T.
 #---------------------------------------------------------------------------
+#HOSTS.NET FOR BELGIUM
+#
+# 44.144 Eric Langhendries ON7LE Belgium
+#
+#     Eric LANGHENDRIES,
+#       ON7LE / KA3WII
+#   27, rue des Carriäres,
+#   B-5570         WINENNE
+#          BELGIUM
+#
+#   Date: 14/FEB/1994.
+#
+#
+# I DO NOT SEND UNNECESSARY LISTS WHEN THERE ARE NO CHANGES !!!!!
+#
+#
+#
+#
+#Province of Antwerp
+#
+44.144.1.1      on8mc   on8mc.ampr.org  #Herwig,Herenthout
+44.144.1.2      on1awb  on1awb.ampr.org  #Bert,Antwerpen
+44.144.1.3      on8sq   on8sq.ampr.org  #Emil,Merksem
+44.144.1.4      on1aot  on1aot.ampr.org #Walter,Mortsel
+44.144.1.5      on7vs   on7vs.ampr.org  #Marus,Antwerpen
+44.144.1.6      on1chs  on1chs.ampr.org  #Kris,Antwerpen
+44.144.1.7      on4anw  on4anw.ampr.org  #Eddy,Antwerpen
+44.144.1.8      on1cbz  on1cbz.ampr.org  #Frits,Antwerpen-Kiel
+44.144.1.9      on6ml   on6ml.ampr.org  #Mike,Kalmthout
+44.144.1.10     on1aig  on1aig.ampr.org #Andre,Kontich
+44.144.1.11     on7eq   on7eq.ampr.org  #Jean-Jacques,Kontich
+44.144.1.12     on1awu  on1awu.ampr.org #Willy,Edegem
+44.144.1.13     on1gl   on1gl.ampr.org  #Luc,Borgerhout
+44.144.10.1     on1anr  on1anr.ampr.org #TCP-IP node,Antwerpen
+#
+#Province of Brabant
+#
+44.144.2.1      on7kl   on7kl.ampr.org  #Ted,Bruxelles
+44.144.2.2      on5eb   on5eb.ampr.org  #Jean,Kraainem
+44.144.2.3      on7jb   on7jb.ampr.org  #Jacques,Bruxelles
+44.144.2.4      on7im   on7im.ampr.org  #Robert,Opwijk
+44.144.2.5      on4awv  on4awv.ampr.org #Wim,Leuven
+44.144.2.6      on1caj  on1caj.ampr.org #Henri,Kortenberg
+44.144.2.7      on7um   on7um.ampr.org  #Andre,Lubbeek
+44.144.2.8      on1bgo  on1bgo.ampr.org #Andre,Leuven
+44.144.2.9      on4aod  on4aod.ampr.org #Daniel,Leuven
+44.144.2.10     on7fh   on7fh.ampr.org  #Herman,Aarschot
+44.144.2.11     on4dst  on4dst.ampr.org #Klub,Diest
+44.144.2.12     on1cbt  on1cbt.ampr.org #Marc,Diest
+44.144.2.13     on7vq   on7vq.ampr.org  #Freddy,Erps-Kwerps
+44.144.2.14     on6yo   on6yo.ampr.org  #Daniel,Bruxelles
+44.144.2.15     on4aau  on4aau.ampr.org #Marc,Kortenberg
+44.144.2.16     on7nu   on7nu.ampr.org  #Daniel,Bruxelles
+44.144.2.17     on5av   on5av.ampr.org  #Patrick,Bruxelles
+44.144.2.18     on4dv   on4dv.ampr.org  #Bob,Herent
+44.144.2.19     on1kjp  on1kjp.ampr.org #Jean-Pierre,St.Jean Geest
+44.144.2.20     on1bet  on1bet.ampr.org #Dirk,Herent
+44.144.2.21     on4afr  on4afr.ampr.org #Wim,Kessel-Lo
+44.144.2.22     on5xl   on5xl.ampr.org  #Red Cross Emergency Stn,Brussels
+44.144.2.23     on1bz   on1bz.ampr.org  #Marc,Bruxelles
+44.144.2.24     on1kdx  on1kdx.ampr.org #Philippe,Bruxelles
+44.144.2.25     on4kch  on4kch.ampr.org #Jean-Pierre,Jodoigne
+44.144.2.26     on4awn  on4awn.ampr.org #Herman,Erps-Kwerps
+44.144.2.27     on1kjp-3  on1kjp-3.ampr.org #Jean-Pierre,St.Jean Geest
+44.144.2.28     sys1.on5vy  sys1.on5vy.ampr.org #Tony,Bruxelles
+44.144.2.29     on5iq   on5iq.ampr.org  #William,Bruxelles
+44.144.2.30     on9cep  on9cep.ampr.org #Achim,Wezembeek
+44.144.2.31     on7hu   on7hu.ampr.org  #Walter,Zoutleeuw
+44.144.2.32     on6mh   on6mh.ampr.org  #Michel,Bruxelles
+44.144.2.33     on9cmb  on9cmb.ampr.org #Martine,Bruxelles
+44.144.2.34     on9bas  on9bas.ampr.org #Mike,Wezembeek
+44.144.2.35     on1kvx  on1kvx.ampr.org #Yves,Opwijk
+44.144.2.36     on1aml  on1aml.ampr.org #Patrick,Zemst-Elewijt
+44.144.2.37     on4cp-6 on4cp-6.ampr.org #Radio Club "De Antenne",Leuven
+44.144.2.38     on1cfx-1 on1cfx-1.ampr.org #Christophe,Leuven
+44.144.2.39     on4jg   on4jg.ampr.org  #Edmond,Grimbergen
+44.144.2.40     on1klm  on1klm.ampr.org #Michel,Lasne
+44.144.2.41     on4kch-1  on4kch-1.ampr.org       #Jean-Pierre,Jodoigne
+44.144.2.42     sys2.on5yf  sys2.on5yf.ampr.org   #Daniel,Rixensart
+44.144.2.43     sys1.on5yf  sys1.on5yf.ampr.org   #Daniel,Rixensart
+44.144.2.44     on5yf   on5yf.ampr.org  #Daniel,Rixensart
+44.144.2.45     on1aqc  on1aqc.ampr.org #Stefaan,Brussel
+44.144.2.46     on1bgx  on1bgx.ampr.org #Xavier,Brussel
+44.144.2.47     on1aog  on1aog.ampr.org #Bart,Brussel
+44.144.2.48     on6lf   on6lf.ampr.org  #Jean,Nil-St.Vincent
+44.144.2.49     on6ky   on6ky.ampr.org  #Andre,Bruxelles
+44.144.2.50     on4wx   on4wx.ampr.org  #Stephan,Nivelles
+44.144.2.51     on7zd   on7zd.ampr.org  #Jacques,Jandrenouille
+44.144.2.52     on1kot  on1kot.ampr.org #Marc,Rebecq
+44.144.2.53     on1lhj  on1lhj.ampr.org #Jean-Francois,Nivelles
+44.144.2.54     on6zq   on6zq.ampr.org  #Christophe,Bruxelles
+44.144.2.55     on1cht  on1cht.ampr.org #Peter,Deurne-Diest
+44.144.2.56     on6ng   on6ng.bt.be.ampr.org  #Marc,Leuven
+44.144.2.57     on1bno  on1bno.ampr.org #Noach,Linter
+44.144.2.58     on1mh   on1mh.ampr.org  #Johan,Everberg
+44.144.2.59     on4id   on4id.ampr.org  #Medard,Jezus-Eik
+44.144.2.60     sys2.on1aqc  sys2.on1aqc.ampr.org    #Stefaan,Brussel
+44.144.2.61     sys2.on5vy   sys2.on5vy.ampr.org     #Tony,Bruxelles
+44.144.2.62     on1arx  on1arx.ampr.org #Ken,St.Pieters-Leeuw
+44.144.2.63     on1beu  on1beu.ampr.org #Erik, Tildonk
+44.144.2.64     on7yi   on7yi.ampr.org  #Peter,Couture-St-Germain
+44.144.2.65     on1bxb  on1bxb.ampr.org #Bartel,Leuven
+44.144.2.66     on1bge  on1bge.ampr.org #Eddy,Erps-Kwerps
+44.144.2.67     on6ng-sys  on6ng-sys.bt.be.ampr.org  #Marc,Leuven
+44.144.2.68     on1azh  on1azh.ampr.org #Louis,Oud-Heverlee
+44.144.2.69     on7be   on7be.ampr.org  #Bernard,Limal
+44.144.2.70     on1adb  on1adb.ampr.org #Erik,Dilbeek
+44.144.2.73     on6lo   on6lo.ampr.org  #Patrice,Koekelberg
+#
+#Province of Hainaut
+#
+44.144.3.1      on4hu   on4hu.ampr.org  #Andre,Mouscron
+44.144.3.2      on4hu-6 on4hu-6.ampr.org  #Andre,Mouscron
+44.144.3.3      on4hu-8 on4hu-8.ampr.org  #Andre,Mouscron
+44.144.3.4      on6df   on6df.ampr.org  #Francois,Courcelles
+44.144.3.5      on1kgx  on1kgx.ampr.org #Philippe,Marcinelle
+44.144.3.6      on4ld   on4ld.ampr.org  #Daniel,Reves
+44.144.3.7      on5mc   on5mc.ampr.org  #Jean-Claude,Tournai
+44.144.3.8      on5ps   on5ps.ampr.org  #Claude,Montignies-le-Tilleul
+44.144.3.9      on6an   on6an.ampr.org  #Noel,Gosselies
+44.144.3.10     on4lj   on4lj.ampr.org  #Joel,Gosselies
+44.144.3.11     on7an   on7an.ampr.org  #Bernard,Roux
+44.144.3.12     on5ps-2 on5ps-2.ampr.org  #Claude,Montignies-le-Tilleul
+44.144.3.13     on4kdz  on4kdz.ampr.org #Marc,Baudour
+44.144.3.14     on4kep  on4kep.ampr.org #Emile,Blaregnies
+44.144.3.15     on1kpu  on1kpu.ampr.org #Roland,Wiheries
+44.144.3.16     on4bg   on4bg.ampr.org  #Guy,Jurbise
+44.144.3.17     on6em   on6em.ampr.org  #Michel,Hornu
+44.144.3.18     on5mt   on5mt.ampr.org  #Michel,St-Ghislain
+44.144.3.19     on7dc   on7dc.ampr.org  #Claude,Baudour
+44.144.3.20     on4bk   on4bk.ampr.org  #Roger,Gosselies
+44.144.3.21     on1kzc  on1kzc.ampr.org #Romuald,Thieusies
+44.144.3.22     on1kjk  on1kjk.ampr.org #Jacques,Mons
+44.144.3.23     on1kkh  on1kkh.ampr.org #Eric,Boussu
+44.144.3.24     on4pe   on4pe.ampr.org  #Jean,Leuze
+44.144.3.25     on1kgz  on1kgz.ampr.org #David,Cuesmes
+44.144.3.26     on7sj   on7sj.ampr.org  #Jacques,Mont-sur-Marchienne
+44.144.3.27     on5jt   on5jt.ampr.org  #Jean-Pierre,Frasnes-lez-Buissenal
+44.144.3.28     on1kgx-1 on1kgx-1.ampr.org  #Philippe,Marcinelle
+44.144.3.29     on1ktq  on1ktq.ampr.org #David,Pecq
+44.144.3.30     on1lcr  on1lcr.ampr.org #Eric,Herseaux
+44.144.3.31     on7hb   on7hb.ampr.org  #Henri,La Louviere
+44.144.3.32     on1ktu  on1ktu.ampr.org #Jean-Marie,Ghislenghien
+44.144.3.33     on6cm-1 on6cm-1.ampr.org  #Radio-Club
+44.144.3.34     on9acn  on9acn.ampr.org #Christos,Mons
+44.144.3.35     on1lvl  on1lvl.ampr.org #Luc,Montignies-sur-Sambre
+44.144.3.36     on6op   on6op.ampr.org  #Bernard,Hornu
+44.144.30.1     on4hu-5 on4hu-5.ampr.org  #Server,Mouscron
+44.144.30.2     on6rm   on6rm.ampr.org  #Radio-Club du Borinage,Server
+44.144.30.3     on6cm   on6cm.ampr.org  #Radio-Club,Server
+44.144.31.1     on4hu-1 on4hu-1.ampr.org  #IProuter
+44.144.31.2     on4hu-2 on4hu-2.ampr.org  #IProuter
+44.144.31.3     on4hu-3 on4hu-3.ampr.org  #IProuter
+44.144.31.4     on4hu-4 on4hu-4.ampr.org  #IProuter
+44.144.31.9     on4hu-9 on4hu-9.ampr.org  #IProuter
+44.144.31.10    on4hu-10 on4hu-10.ampr.org #IProuter
+#
+#Province of Liege
+#
+44.144.4.1      on5ki   on5ki.ampr.org  #Nadine,Verviers
+44.144.4.2      on5cq   on5cq.ampr.org  #Claude,Blegny-Trembleur
+44.144.4.3      on5th   on5th.ampr.org  #Jean-Claude,Neuville-en-Condroz
+44.144.4.4      on1kcf  on1kcf.ampr.org #Jean,Baelen
+44.144.4.5      on1kjr  on1kjr.ampr.org #Jean,Dison
+44.144.4.6      on1kps  on1kps.ampr.org #Pierre,Alleur
+44.144.4.7      on4kjp  on4kjp.ampr.org #Jacques,Jalhay
+44.144.4.8      on6jy   on6jy.ampr.org  #Luc,Battice
+44.144.4.9      on1ba   on1ba.ampr.org  #Jose,Herstal
+44.144.4.10     on5da   on5da.ampr.org #Daniel,Berloz
+44.144.4.11     on4uaa  on4uaa.ampr.org #Erni,Amel
+44.144.4.12     on4ea   on4ea.ampr.org  #Roland,Battice
+44.144.4.13     on4wu   on4wu.ampr.org  #Alphonse,Barchon
+44.144.4.14     on1ksx  on1ksx.ampr.org #Serge,Ans
+44.144.4.15     on5zs   on5zs.ampr.org  #Daniel,Wanze
+44.144.4.16     on5ps-3 on5ps-3.ampr.org  #Claude,Liege
+44.144.4.17     on9bao  on9bao.ampr.org  #Thorsten,La Calamine/Kelmis
+44.144.4.18     on1kcf-1 on1kcf-1.ampr.org  #Jean,Baelen
+44.144.4.19     on1lbo  on1lbo.ampr.org #Olivier,Stembert
+44.144.4.20     on6dp   on6dp.ampr.org  #Paul,Plainevaux
+44.144.5.21     on1ktz  on1ktz.ampr.org #Jean-Marie,Lierneux
+44.144.5.22     on5dg   on5dg.ampr.org  #Guy,Boncelles
+44.144.5.23     on5ni   on5ni.ampr.org  #Jacques,Boncelles
+44.144.40.1     on5pl-6 on5pl-6.ampr.org  #Server
+#
+#Province of Limburg
+#
+44.144.5.1      on7ks   on7ks.ampr.org  #Maurice,Beringen
+44.144.5.2      on1mq   on1mq.ampr.org  #Paul,Borgloon
+44.144.5.3      on6nt   on6nt.ampr.org  #Tony,Hasselt
+44.144.5.4      on1kvn  on1kvn.ampr.org #Nicole,St-Truiden
+44.144.5.5      on8go   on8go.ampr.org  #Jules,St-Truiden
+44.144.5.6      on7vr   on7vr.ampr.org  #Edward,Tongeren
+44.144.5.7      on1wl   on1wl.ampr.org  #Alfons,Kuringen
+44.144.5.8      on6hn   on6hn.ampr.org  #Hugo,Tongeren
+44.144.5.9      on4abr  on4abr.ampr.org #Danny,Hasselt
+44.144.5.10     on1aue  on1aue.ampr.org #Jurgen,Munsterbilzen
+44.144.5.11     on4ajj  on4ajj.ampr.org #Jos,Munsterbilzen
+44.144.5.12     on1axq  on1axq.ampr.org #Michael,Hasselt
+44.144.5.13     on4abs  on4abs.ampr.org #Mark,St-Truiden
+44.144.5.14     on1byi  on1byi.ampr.org #Yvo,St-Truiden
+44.144.5.15     on1auw  on1auw.ampr.org #Ennio,Beringen-Mijn
+44.144.5.16     on1ank  on1ank.ampr.org #Alfons,Kaulille
+44.144.50.1     on4aic-8  on4aic-8.ampr.org  #Klubstation (LPV),Hasselt
+#
+#Province of Luxemburg
+#
+44.144.6.1      on1kxm-1 on1kxm-1.ampr.org  #Patrick,Arlon
+44.144.6.2      on1kxm  on1kxm.ampr.org #Patrick,Arlon
+44.144.6.3      on5da-1 on5da-1.ampr.org  #Daniel
+44.144.6.4      on4kvi  on4kvi.ampr.org #Renauld,Vielsalm
+44.144.6.5      on7ts   on7ts.ampr.org  #Joseph,Fraiture
+44.144.6.6      on1kgc  on1kgc.ampr.org #Joseph,Stockem
+44.144.6.7      on5rf   on5rf.ampr.org  #Francis,Libin
+44.144.6.8      on6sb   on6sb.ampr.org  #Bruno,Libramont
+44.144.6.9      on5vy-1 on5vy-1.ampr.org  #Tony,Libin
+44.144.6.10     on5rf-1 on5rf-1.ampr.org  #Francis,Libin
+44.144.6.11     on5pk   on5pk.ampr.org  #Jose,Izel/Semois
+44.144.6.12     on7dh   on7dh.ampr.org  #Marcel,Arville
+44.144.6.13     on5sa   on5sa.ampr.org  #Michel,Arlon
+44.144.6.14     on1kmy  on1kmy.ampr.org #Yvon,Izel/Semois
+44.144.6.15     on7ep   on7ep.ampr.org  #Etienne,Signeulx
+44.144.6.16     on5hf   on5hf.ampr.org  #Michel,Guerlange
+44.144.6.17     on4mu   on4mu.ampr.org  #Denis,Martelange
+44.144.6.18     on1kbu  on1kbu.ampr.org #Jose,Bastogne
+44.144.60.1     on7lu   on7lu.ampr.org  #Radio-Club,Athus
+#
+#Province of Namur
+#
+44.144.7.1      on7le   on7le.ampr.org  #Eric,Winenne
+44.144.7.2      on4yh   on4yh.ampr.org  #Paul,Tarcienne
+44.144.7.3      on5eb-1 on5eb-1.ampr.org  #Jean,Pessoux
+44.144.7.4      on4zm   on4zm.ampr.org  #Georges,Sambreville
+44.144.7.5      on7yf   on7yf.ampr.org  #Freddy,Gembloux
+44.144.7.6      on6gw   on6gw.ampr.org  #Guy,Gembloux
+44.144.7.7      on5wb   on5wb.ampr.org  #Yves,Namur
+44.144.7.8      on6yd   on6yd.ampr.org  #Yves,Taravisee
+44.144.7.9      on1kwk  on1kwk.ampr.org #Luc,Gembloux
+44.144.7.10     on6tb   on6tb.ampr.org  #Bauduin,Vedrin
+44.144.7.11     on5gw   on5gw.ampr.org  #Paul,Gembloux
+44.144.7.12     on5dx   on5dx.ampr.org  #Charles,Emines
+44.144.7.13     on5mq   on5mq.ampr.org  #Willy,Laneffe
+44.144.7.14     on7le-8 on7le-8.ampr.org  #Eric/mobile station
+44.144.7.15     on8pa   on8pa.ampr.org  #Julien,Haillot
+44.144.7.16     on7zq   on7zq.ampr.org  #Marc,Sombreffe
+44.144.7.17     on5pt   on5pt.ampr.org  #Jean-Claude,Malonne
+44.144.7.18     on4wp   on4wp.ampr.org  #Rene,Godinne
+44.144.7.19     on1kua  on1kua.ampr.org #Alain,Spontin
+44.144.7.20     on1ew   on1ew.ampr.org  #Raymond,Namur
+44.144.7.21     on1kia  on1kia.ampr.org #Adelin,Namur
+44.144.7.22     on4gx   on4gx.ampr.org  #Pierre,Vedrin
+44.144.7.23     on4ls   on4ls.ampr.org  #Jean-Luc,Bouge
+44.144.7.24     on1kfe  on1kfe.ampr.org #Didier,Jambes
+44.144.7.25     on6xy   on6xy.ampr.org  #Jean-Marie,Mazy
+44.144.7.26     on4gx-1 on4gx-1.ampr.org  #Pierre,Portable station
+44.144.7.27     on1ktw  on1ktw.ampr.org #Alain,Bievre
+44.144.7.28     on1kkl  on1kkl.ampr.org #Jean-Pol,Emines
+44.144.7.29     on1kua-1  on1kua-1.ampr.org  #Alain, Portable station
+44.144.7.30     on4vs   on4vs.ampr.org  #Jean-Paul,Jemeppe-sur-Sambre
+44.144.7.31     on1dr   on1dr.ampr.org  #Rene,Bois-de-Villers
+44.144.7.32     on5qk   on5qk.ampr.org  #Roland,Sombreffe
+44.144.7.33     on5pp   on5pp.ampr.org  #Roger,Malonne
+#
+#Province of East-Flanders
+#
+44.144.8.1      on1bbo  on1bbo.ampr.org #Luc,Lebbeke
+44.144.8.2      on1bjc  on1bjc.ampr.org #Jan,Mere
+44.144.8.3      on5ex   on5ex.ampr.org  #Johan,De Pinte
+44.144.8.4      on4mq   on4mq.ampr.org  #Achiel,Bambrugge
+44.144.8.5      on1xk   on1xk.ampr.org  #Ivo,St.Niklaas
+44.144.8.6      on1xk-1 on1xk-1.ampr.org  #Ivo,St.Niklaas
+44.144.8.7      on1cfx  on1cfx.ampr.org #Christophe,Belsele
+44.144.8.8      on9ccu  on9ccu.ampr.org #Paolo,Gent
+44.144.8.9      on7by   on7by.ampr.org  #Winny,Wetteren
+44.144.8.10     on4xi   on4xi.ampr.org  #Marcel,St.Niklaas
+44.144.8.11     on4ro   on4ro.ampr.org  #Guy,Eeklo
+44.144.8.12     on9cyl  on9cyl.ampr.org #Tiny,Eeklo
+#44.144.8.13    on1bxb  on1bxb.ampr.org #Bartel,Ninove (TO BE CONFIRMED LATER)
+44.144.8.14     on7ko   on7ko.ampr.org  #Omer,Vrasene
+44.144.8.15     on1bhm  on1bhm.ampr.org #Guy,St.Niklaas
+44.144.8.16     on7ce   on7ce.ampr.org  #Eduard,Dendermonde
+44.144.8.17     on4azl  on4azl.ampr.org #Luc,Wondelgem
+44.144.8.18     on1bej  on1bej.ampr.org #Bert,Mariakerke
+44.144.8.19     on4aej  on4aej.ampr.org #Achilles,Eeklo
+44.144.8.20     on1aof  on1aof.ampr.org #Didier,De Pinte
+44.144.8.21     on1hc   on1hc.ampr.org  #Luc,Wondelgem
+44.144.8.22     on1bdv  on1bdv.ampr.org #Arnout,Aalst
+44.144.8.23     on6ej   on6ej.ampr.org  #Jan,Aalst
+#
+#Province of West-Flanders
+#
+44.144.9.1      on1buc  on1buc.ampr.org #Francois,Eernegem
+44.144.9.2      on1ced  on1ced.ampr.org #Philip,Zwevezele
+44.144.9.3      on4awd  on4awd.ampr.org #Filip,Tielt
+44.144.9.4      on1adg  on1adg.ampr.org #Paul,Tielt
+44.144.9.5      on1aqz  on1aqz.ampr.org #Johan,Koksijde
+44.144.9.6      on1btj  on1btj.ampr.org #Lieven,Marke
+44.144.9.7      on1btj-1  on1btj-1.ampr.org  #Lieven,Marke
+44.144.9.8      on1buw  on1buw.ampr.org #Frans,Zonnebeke
+44.144.9.9      on4aso  on4aso.ampr.org #Johan,Ieper
+44.144.9.10     on4uo   on4uo.ampr.org  #Urbain,Nieuwpoort
+44.144.9.11     on1arf  on1arf.ampr.org #Kristoff,Brugge
+44.144.9.12     on1arf-1  on1arf-1.ampr.org  #Kristoff,Oostende
+44.144.9.13     on4aak  on4aak.ampr.org #Mark,De Haan
+44.144.9.14     on1aux  on1aux.ampr.org #Geert,Brugge
+44.144.9.15     on4kb   on4kb.ampr.org  #Jan,Torhout
+44.144.9.16     on1fm   on1fm.ampr.org  #Jurgen,Moorslede
+44.144.9.17     on1jl   on1jl.ampr.org  #Rudi,Jabbeke
+44.144.9.18     on1ksl  on1ksl.ampr.org #Lucien,Lombardsijde
+44.144.9.19     on5kk   on5kk.ampr.org  #Geert,Bredene
+44.144.9.20     sys2.on4aak  sys2.on4aak.ampr.org  #Marc,De Haan
+44.144.9.21     on4tt   on4tt.ampr.org  #Jaak,Loppem
+44.144.9.22     on4ake  on4ake.ampr.org #Chris,Ruislede
+44.144.9.23     on1bvk  on1bvk.ampr.org #Koen,Jabbeke
+44.144.9.24     on1atq  on1atq.ampr.org #Brecht,Wervik
+#
