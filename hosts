@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.26 1994/04/11 11:07:52 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.27 1994/04/14 08:31:38 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -4160,9 +4160,9 @@
 44.143.1.145    SEC.OE1KDA # Krzysztof Dabrowski, 1230 Wien, Othellog.1/3/2
 44.143.1.200    OE1XBR   # Robert Zak, 1210 Wien
 # 9600 bit/s Knoten
-# 44.143.17.xx
+44.143.17.xx
 # Schnelle Knoten (Zukunft)
-# 44.143.33.xx
+44.143.33.xx
 # Subnetz OE1KIB (Token Ring) 44.143.241.0
 44.143.241.1    MARS.OE1KIB # Gateway (JNOS)
 44.143.241.2    SATURN.OE1KIB
@@ -4183,11 +4183,11 @@
 44.143.2.9      OE2HHN   # Herbert Heitzmann, 5580 Tamsweg, Taurachweg 150
 44.143.2.10
 # 1200 bit/s Knoten
-# 44.143.2.100
+44.143.2.100
 # 9600 bit/s Knoten
-# 44.143.18.xx
+44.143.18.xx
 # Schnelle Knoten (Zukunft)
-# 44.143.34.xx
+44.143.34.xx
 # -----------------------------------------------------------------------
 #
 #44.143.3.xxx   NIEDEROESTERREICH
@@ -4207,11 +4207,10 @@
 44.143.3.100    OE3XAC   # Klubstation d. Amateurfunkklub Schwechat
 44.143.3.101    OE3XWR   # Knoten Windischhuette (geplannt)
 44.143.3.102    OE3XSR   # Waldviertler Amateurradioklub, Haugschlag, JN79ma
-# 44.143.3.200
 # 9600 bit/s Knoten
-# 44.143.19.xx
+44.143.19.xx
 # Schnelle Knoten (Zukunft)
-# 44.143.35.xx
+44.143.35.xx
 # -----------------------------------------------------------------------
 #
 #44.143.4.xxx   BURGENLAND
@@ -4222,11 +4221,11 @@
 44.143.4.4
 44.143.4.5
 # 1200 bit/s Knoten
-# 44.143.4.100
+44.143.4.100
 # 9600 bit/s Knoten
-# 44.143.20.xx
+44.143.20.xx
 # Schnelle Knoten (Zukunft)
-# 44.143.36.xx
+44.143.36.xx
 # -----------------------------------------------------------------------
 #
 #44.143.5.xxx  OBEROESTERREICH
@@ -4253,11 +4252,11 @@
 44.143.5.17    OE5OHO   #
 44.143.5.18    OE5BKL   #
 # 1200 bit/s Knoten
-# 44.143.5.100
+44.143.5.100   JKULINZ  # OE5X.., Linz, Oper. OE5LEN
 # 9600 bit/s Knoten
-# 44.143.21.xx
+44.143.21.xx
 # Schnelle Knoten (Zukunft)
-# 44.143.37.xx
+44.143.37.xx
 # -----------------------------------------------------------------------
 #
 #44.143.6.xxx   STEIERMARK
@@ -4267,7 +4266,7 @@
 44.143.6.3     OE6UBG   # Brani Wusser, 8053 Graz
 44.143.6.4     OE6PWD   # Walter Pflanzl, 8020 Graz
 44.143.6.5     OE6CRD   # Christian Steger, 8132 Pernegg, JN77qi
-44.143.6.6     OE6CLD   # Claus Stehlik , 8111 Judendorf
+44.143.6.6     OE6CLD   # Claus Stehlik, 8111 Judendorf
 44.143.6.7     OE6OWG   # Walter
 44.143.6.8     OE6WND   # Wolfgang, Graz, JN77rr
 44.143.6.9     OE6HCD   # Hans-Christian Caluba, 8010 Graz
@@ -4279,17 +4278,18 @@
 44.143.6.15    OE6MCD   # Dietmar Schantin, Herrgottwiesgasse 233
 			# A-8055 Graz
 44.143.6.16    OE6IFD   # Heinz
+44.143.6.66    OE6IWG   # Walter Steinwender, Kapfenberg, JN77pk
+44.143.6.67    OE6YNE   # Ingrid Steinwender, Kapfenberg, JN87pk
 # 1200 bit/s Knoten
-# 44.143.6.100
-# 44.143.6.200   oe6xxx   # reserviert fuer Mailbox
+44.143.6.100   OE6XWR   # Kapfenberg-Rennleld, JN77pk
 # 9600 bit/s Knoten
-# 44.143.22.xx
+44.143.22.xx
 # Schnelle Knoten (Zukunft)
-# 44.143.38.xx
+44.143.38.xx
 # -----------------------------------------------------------------------
 #
 #44.143.7.xxx   TIROL
-44.143.7.1     OE7EKJ   # Helmut Kupsa , 6176 Voels
+44.143.7.1     OE7EKJ   # Helmut Kupsa, 6176 Voels
 44.143.7.2     OE7AHN   # Alois
 44.143.7.3     OE7HNT   # Georg
 44.143.7.4     OE7KKT   # Karsten, Innsbruck
@@ -4306,11 +4306,11 @@
 44.143.7.15
 # 1200 bit/s Knoten
 44.143.7.100   OE7XIR   # Helmut Kupsa                     ***
-# 44.143.7.200
+44.143.7.200
 # 9600 bit/s Knoten
-# 44.143.23.xx
+44.143.23.xx
 # Schnelle Knoten (Zukunft)
-# 44.143.39.xx
+44.143.39.xx
 # -----------------------------------------------------------------------
 #
 #44.143.8.xxx   KAERNTEN
@@ -4322,11 +4322,11 @@
 44.143.8.5
 44.143.8.15    OE8DHK   # Hannes,
 # 1200 bit/s Knoten
-# 44.143.8.100
+44.143.8.100
 # 9600 bit/s Knoten
-# 44.143.24.xx
+44.143.24.xx
 # Schnelle Knoten (Zukunft)
-# 44.143.40.xx
+44.143.40.xx
 # -----------------------------------------------------------------------
 #
 #44.143.9.xxx   VORARLBERG
@@ -4341,11 +4341,11 @@
 44.143.9.73    OE9FKI   # Franz Kienspergher, Juxweg 6, 6800 Feldkirch-
 			# Altenstadt
 # 1200 bit/s Knoten
-# 44.143.9.100
+44.143.9.100
 # 9600 bit/s Knoten
-# 44.143.25.xx
+44.143.25.xx
 # Schnelle Knoten (Zukunft)
-# 44.143.41.xx
+44.143.41.xx
 # -----------------------------------------------------------------------
 #HOSTS.NET FOR BELGIUM
 #
