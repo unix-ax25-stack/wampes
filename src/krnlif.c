@@ -1,4 +1,4 @@
-/* @(#) $Id: krnlif.c,v 1.10 2002/06/19 11:24:30 dl9sau Exp $ */
+/* @(#) $Id: krnlif.c,v 1.11 2002/09/18 19:03:45 dl9sau Exp $ */
 
 #if defined linux
 
@@ -157,7 +157,7 @@ static int krnlif_up(struct krnlif *ki)
 #else
 	if ((ki->fd = socket(PF_PACKET, SOCK_RAW, ki->proto)) < 0) {
 #endif
-		printf("error in krnlif_up: socket() for %s failed. this should never happen\n", ki->proto);
+		printf("error in krnlif_up: socket() for %s failed. this should never happen\n", ki->iface->name);
 		goto Fail;
 	}
 	strcpy(ifr.ifr_name, ki->iface->name);
@@ -231,30 +231,11 @@ static int krnlif_down(struct krnlif *ki)
 
 /*---------------------------------------------------------------------------*/
 
-/* Asynchronous line I/O control */
-
-static int32 krnlif_ioctl(struct iface *ifp, int cmd, int set, int32 val)
-{
-	struct krnlif *ki;
-
-	if (!ifp || ifp->dev < 0 || ifp->dev >= KRNLIF_MAX)
-		return -1;
-	ki = KrnlIf + ifp->dev;
-
-	switch(cmd){
-	case PARAM_DOWN:
-		return krnlif_down(ki) ? 0 : 1;
-	case PARAM_UP:
-		return krnlif_up(ki) ? 0 : 1;
-	}
-	return -1;
-}
-
-/*---------------------------------------------------------------------------*/
-
 static void krnlif_tx(struct krnlif *ki)
 {
+#ifdef	USE_OBSOLETE_SOCK_PACKET
 	struct sockaddr to;
+#endif
 	uint8 buf[4096]; /* should be enough */
 	uint8 *bufp = buf;
 	int cnt = 0;
@@ -314,6 +295,55 @@ static void krnlif_tx(struct krnlif *ki)
 
 /*---------------------------------------------------------------------------*/
 
+/* Asynchronous line I/O control */
+
+static int32 krnlif_ioctl(struct iface *ifp, int cmd, int set, int32 val)
+{
+	struct krnlif *ki;
+	struct mbuf *bp;
+
+	if (!ifp || ifp->dev < 0 || ifp->dev >= KRNLIF_MAX)
+		return -1;
+	ki = KrnlIf + ifp->dev;
+
+	switch(cmd){
+	case PARAM_DOWN:
+		return krnlif_down(ki) ? 0 : 1;
+	case PARAM_UP:
+		return krnlif_up(ki) ? 0 : 1;
+	case PARAM_RETURN:
+                return 0;
+	case PARAM_TXDELAY:
+	case PARAM_PERSIST:
+	case PARAM_SLOTTIME:
+	case PARAM_TXTAIL:
+	case PARAM_FULLDUP:
+	case PARAM_HW:
+	case 12:                /* echo */
+	case 13:                /* rxdelay */
+		if (!set)
+			return -1;      /* Can't read back */
+		if (ki->iface == NULL || ki->fd < 0)
+			return -1;
+		if (!(bp = alloc_mbuf(2)))
+			return -1;
+		bp->data[0] = cmd;
+		bp->data[1] = (unsigned char) val;
+		bp->cnt = 2;
+        	dump(ifp,IF_TRACE_OUT,bp);
+        	ifp->rawsndcnt++;
+        	ifp->lastsent = secclock();
+        	if (ifp->trace & IF_TRACE_RAW)
+                	raw_dump(ifp,-1,bp);
+		enqueue(&ki->sndq, &bp);
+		on_write(ki->fd, (void (*)(void *)) krnlif_tx, ki);
+		return 1;
+	}
+	return -1;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static int krnlif_raw(struct iface *iface, struct mbuf **bpp)
 {
 	struct krnlif *ki;
@@ -347,7 +377,9 @@ static void krnlif_rx(struct iface *iface)
 {
 	struct krnlif *ki;
 	struct sockaddr from;
+#ifdef	USE_OBSOLETE_SOCK_PACKET
 	int from_len = sizeof(from);
+#endif
 	int i;
 	struct mbuf *bp;
 	int j;
@@ -385,7 +417,7 @@ static void krnlif_rx(struct iface *iface)
 	if (i <= 0) {
 		free_mbuf(&bp);
 		if (i < 0 || errno != EWOULDBLOCK) {
-			printf("warning: read %d bytes, cause %s (%i)\n", i, strerror(errno), errno);
+			printf("warning: read %d bytes from %s, cause %s (%i)\n", i, ki->iface->name, strerror(errno), errno);
 			krnlif_down(ki);
 		}
 		return;
