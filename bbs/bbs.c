@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.69 1994/01/14 21:28:11 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.70 1994/01/15 15:49:59 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -2006,8 +2006,10 @@ static void xcrunch_command(int argc, char **argv)
   dbm_close(bid_db);
   if (close(fdindex)) halt();
   if (rename(TEMP_INDEXFILE, INDEXFILE)) halt();
-  if (rename(TEMP_BID_DB ".dir", BID_DB ".dir")) halt();
-  if (rename(TEMP_BID_DB ".pag", BID_DB ".pag")) halt();
+  if (rename(TEMP_BID_DB ".db", BID_DB ".db")) {
+    if (rename(TEMP_BID_DB ".dir", BID_DB ".dir")) halt();
+    if (rename(TEMP_BID_DB ".pag", BID_DB ".pag")) halt();
+  }
   exit(0);
 }
 
