@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.33 1998/03/09 17:42:18 deyke Exp $
+# @(#) $Id: Makefile,v 1.34 1998/03/09 20:15:16 deyke Exp $
 
 MAKEFILE   = Makefile
 MKDIR      = @if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi
@@ -42,7 +42,10 @@ distrib:
 		ChangeLog \
 		Makefile \
 		NeXT/*.[ch] \
+		NeXT/*.sh \
 		NeXT/Makefile \
+		NeXT/README.NeXT \
+		NeXT/uname-next \
 		README \
 		aos/*.[ch] \
 		aos/Makefile \

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: netupds.c,v 1.43 1998/03/09 17:46:14 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: netupds.c,v 1.44 1998/03/09 20:17:02 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -104,6 +104,11 @@ static char *include_table[] =
   "*.R",
   "ChangeLog",
   "Makefile",
+  "NeXT/*.[ch]",
+  "NeXT/*.sh",
+  "NeXT/Makefile",
+  "NeXT/README.NeXT",
+  "NeXT/uname-next",
   "README",
   "aos",
   "aos/*.[ch]",
