@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.8 1992/06/01 10:34:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.9 1992/07/24 20:00:15 deyke Exp $ */
 
 #include "global.h"
 
@@ -230,7 +230,7 @@ void *p;
   Axip_iface->mtu = 256;
   setencap(Axip_iface, "AX25");
   Axip_iface->raw = axip_raw;
-  Axip_iface->sendcrc = 1;
+  Axip_iface->crccontrol = CRC_ON;
   on_read(sock, axip_recv, (void * ) 0);
   Axip_iface->next = Ifaces;
   Ifaces = Axip_iface;

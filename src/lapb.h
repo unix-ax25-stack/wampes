@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.10 1991/05/09 07:38:32 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.11 1992/07/24 20:00:26 deyke Exp $ */
 
 #ifndef _LAPB_H
 #define _LAPB_H
@@ -65,28 +65,29 @@
 struct ax25_cb {
   struct ax25 hdr;              /* AX25 header */
   struct iface *ifp;            /* Pointer to interface structure */
-  int  state;                   /* Connection state */
+  int state;                    /* Connection state */
 #define DISCONNECTED  0
 #define CONNECTING    1
 #define CONNECTED     2
 #define DISCONNECTING 3
-  int  reason;                  /* Reason for disconnecting */
+  int reason;                   /* Reason for disconnecting */
 #define NORMAL        0         /* Normal disconnect */
 #define RESET         1         /* Disconnected by other end */
 #define TIMEOUT       2         /* Excessive retransmissions */
 #define NETWORK       3         /* Network problem */
-  int  mode;                    /* Connection mode */
+  int routing_changes;          /* Number of routing changes */
+  int mode;                     /* Connection mode */
 #define STREAM        0
 #define DGRAM         1
-  int  closed;                  /* Disconnect when send queue empty */
-  int  polling;                 /* Poll frame has been sent */
-  int  rnrsent;                 /* RNR frame has been sent */
-  int  rejsent;                 /* REJ frame has been sent */
+  int closed;                   /* Disconnect when send queue empty */
+  int polling;                  /* Poll frame has been sent */
+  int rnrsent;                  /* RNR frame has been sent */
+  int rejsent;                  /* REJ frame has been sent */
   int32 remote_busy;            /* Other end's window is closed */
-  int  vr;                      /* Incoming sequence number expected next */
-  int  vs;                      /* Next sequence number to be sent */
-  int  cwind;                   /* Congestion window */
-  int  retry;                   /* Retransmission retry count */
+  int vr;                       /* Incoming sequence number expected next */
+  int vs;                       /* Next sequence number to be sent */
+  int cwind;                    /* Congestion window */
+  int retry;                    /* Retransmission retry count */
   int32 srtt;                   /* Smoothed round trip time, milliseconds */
   int32 mdev;                   /* Mean deviation, milliseconds */
   struct timer timer_t1;        /* Retransmission timer */
@@ -96,14 +97,14 @@ struct ax25_cb {
   struct timer timer_t5;        /* Packet assembly timer */
   struct axreseq {              /* Resequencing queue */
     struct mbuf *bp;
-    int  sum;
+    int sum;
   } reseq[8];
   struct mbuf *rcvq;            /* Receive queue */
   int16 rcvcnt;                 /* Receive queue length */
   struct mbuf *sndq;            /* Send queue */
   int32 sndqtime;               /* Last send queue write time */
   struct mbuf *resndq;          /* Resend queue */
-  int  unack;                   /* Number of unacked frames */
+  int unack;                    /* Number of unacked frames */
   int32 sndtime[8];             /* Time of 1st transmission */
   void (*r_upcall) __ARGS((struct ax25_cb *p, int cnt));
 				/* Call when data arrives */
@@ -111,7 +112,7 @@ struct ax25_cb {
 				/* Call when ok to send more data */
   void (*s_upcall) __ARGS((struct ax25_cb *p, int oldstate, int newstate));
 				/* Call when connection state changes */
-  char  *user;                  /* User parameter (e.g., for mapping to an
+  char *user;                   /* User parameter (e.g., for mapping to an
 				 * application control block)
 				 */
   struct ax25_cb *peer;         /* Pointer to peer's control block */
@@ -120,18 +121,18 @@ struct ax25_cb {
 
 #define NULLAXCB ((struct ax25_cb *) 0)
 
-extern char  *ax25reasons[];            /* Reason names */
-extern char  *ax25states[];             /* State names */
-extern int  ax_maxframe;                /* Transmit flow control level */
-extern int  ax_paclen;                  /* Maximum outbound packet size */
-extern int  ax_pthresh;                 /* Send polls for packets larger than this */
-extern int  ax_retry;                   /* Retry limit */
+extern char *ax25reasons[];             /* Reason names */
+extern char *ax25states[];              /* State names */
+extern int ax_maxframe;                 /* Transmit flow control level */
+extern int ax_paclen;                   /* Maximum outbound packet size */
+extern int ax_pthresh;                  /* Send polls for packets larger than this */
+extern int ax_retry;                    /* Retry limit */
 extern int32 ax_t1init;                 /* Retransmission timeout */
 extern int32 ax_t2init;                 /* Acknowledgement delay timeout */
 extern int32 ax_t3init;                 /* No-activity timeout */
 extern int32 ax_t4init;                 /* Busy timeout */
 extern int32 ax_t5init;                 /* Packet assembly timeout */
-extern int  ax_window;                  /* Local flow control limit */
+extern int ax_window;                   /* Local flow control limit */
 extern struct ax25_cb *axcb_server;     /* Server control block */
 
 /* In lapb.c: */

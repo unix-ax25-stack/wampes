@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.14 1992/06/08 12:59:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.15 1992/07/24 20:00:24 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -528,6 +528,9 @@ char private;           /* Inhibit advertising this entry ? */
 			rp->next->prev = rp;
 		*hp = rp;
 		rp->uses = 0;
+	}else{
+		/* Don't let automatic routes overwrite permanent routes */
+		if(ttl>0 && !run_timer(&rp->timer))return NULLROUTE;
 	}
 	rp->target = target;
 	rp->bits = bits;

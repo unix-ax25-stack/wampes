@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.22 1992/05/14 13:20:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.23 1992/07/24 20:00:25 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -436,13 +436,15 @@ static void build_path(cp, ifp, hdr, reverse)
 struct ax25_cb *cp;
 struct iface *ifp;
 struct ax25 *hdr;
-int  reverse;
+int reverse;
 {
 
-  char  *dest;
-  int  d;
-  int  i;
+  char *dest;
+  int d;
+  int i;
   struct ax_route *rp;
+
+  cp->routing_changes++;
 
   if (reverse) {
 
@@ -612,7 +614,6 @@ struct mbuf *bp;
 
   if (type == SABM) {
     int  i;
-    build_path(cp, iface, hdr, 1);
     if (cp->unack)
       start_timer(&cp->timer_t1);
     else
@@ -657,8 +658,10 @@ struct mbuf *bp;
       if (type == SABM && cmdrsp != VERS1 && cpp->state == DISCONNECTED) {
 	setaxstate(cpp, CONNECTING);
       } else if (type == SABM && cmdrsp != VERS1 && cpp->state == CONNECTING) {
-	build_path(cpp, NULLIF, hdr, 0);
-	send_packet(cpp, SABM, POLL, NULLBUF);
+	if (cpp->routing_changes < 3) {
+	  build_path(cpp, NULLIF, hdr, 0);
+	  send_packet(cpp, SABM, POLL, NULLBUF);
+	}
       } else {
 	if (cmdrsp != RESP && cmdrsp != FINAL)
 	  send_packet(cp, DM, (cmdrsp == POLL) ? FINAL : RESP, NULLBUF);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.18 1992/06/08 12:59:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.19 1992/07/24 20:00:20 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -107,6 +107,44 @@ typedef unsigned char byte_t;   /*  8-bit unsigned integer */
 #define TRUE 1
 #define NO 0
 #define YES 1
+
+#define CTLA 0x1
+#define CTLB 0x2
+#define CTLC 0x3
+#define CTLD 0x4
+#define CTLE 0x5
+#define CTLF 0x6
+#define CTLG 0x7
+#define CTLH 0x8
+#define CTLI 0x9
+#define CTLJ 0xa
+#define CTLK 0xb
+#define CTLL 0xc
+#define CTLM 0xd
+#define CTLN 0xe
+#define CTLO 0xf
+#define CTLP 0x10
+#define CTLQ 0x11
+#define CTLR 0x12
+#define CTLS 0x13
+#define CTLT 0x14
+#define CTLU 0x15
+#define CTLV 0x16
+#define CTLW 0x17
+#define CTLX 0x18
+#define CTLY 0x19
+#define CTLZ 0x1a
+
+#define BELL    CTLG
+#define BS      CTLH
+#define TAB     CTLI
+#define LF      CTLJ
+#define FF      CTLL
+#define CR      CTLM
+#define XON     CTLQ
+#define XOFF    CTLS
+#define ESC     0x1b
+#define DEL     0x7f
 
 /* string equality shorthand */
 #define STREQ(x,y) (strcmp(x,y) == 0)

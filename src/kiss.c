@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.9 1992/06/01 10:34:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.10 1992/07/24 20:00:25 deyke Exp $ */
 
 /* Routines for AX.25 encapsulation in KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -73,9 +73,11 @@ struct mbuf *bp;
 	/* Put type field for KISS TNC on front */
 	bp = pushdown(bp,1);
 	bp->data[0] = PARAM_DATA;
-	if(iface->sendcrc){
+	if(iface->crccontrol != CRC_OFF){
 		bp->data[0] |= 0x80;
 		append_crc(bp);
+		if(iface->crccontrol == CRC_TEST)
+			iface->crccontrol = CRC_OFF;
 	}
 	/* slip_raw also increments sndrawcnt */
 	slip_raw(iface,bp);
@@ -96,6 +98,7 @@ struct mbuf *bp;
 			free_p(bp);
 			return;
 		}
+		iface->crccontrol = CRC_ON;
 	}
 	kisstype = PULLCHAR(&bp);
 	switch(kisstype & 0xf){

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.30 1992/06/01 10:34:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.31 1992/07/24 20:00:29 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -672,7 +672,9 @@ struct mbuf *bp;
 struct node *fromneighbor;
 {
 
-  int  ttl;
+  int ttl;
+  int32 ipaddr;
+  struct arp_tab *ap;
   struct node *pn;
 
   if (!bp || bp->cnt < 15) goto discard;
@@ -696,10 +698,14 @@ struct node *fromneighbor;
 	uchar(bp->data[19]) == 0          &&
 	uchar(bp->data[15]) == NRPROTO_IP &&
 	uchar(bp->data[16]) == NRPROTO_IP &&
+	(ipaddr = get32(bp->data + 32))   &&
 	Nr_iface) {
       Nr_iface->rawrecvcnt++;
       Nr_iface->lastrecv = secclock();
-      arp_add(get32(bp->data + 32), ARP_NETROM, bp->data, 0);
+      if ((ap = arp_lookup(ARP_NETROM, ipaddr)) == NULLARP ||
+	  ap->state != ARP_VALID ||
+	  run_timer(&ap->timer))
+	arp_add(ipaddr, ARP_NETROM, bp->data, 0);
       pullup(&bp, NULLCHAR, 20);
       dump(Nr_iface, IF_TRACE_IN, bp);
       ip_route(Nr_iface, bp, 0);

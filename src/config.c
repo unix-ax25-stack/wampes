@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.21 1992/06/08 12:59:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.22 1992/07/24 20:00:17 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -644,8 +644,12 @@ struct mbuf *bp;
 int mcast;
 {
 	int32 ipaddr;
+	struct arp_tab *ap;
 	if (bp && bp->cnt >= 20 && (ipaddr = get32(bp->data + 12)))
-		arp_add(ipaddr, ARP_AX25, src, 0);
+		if((ap = arp_lookup(ARP_AX25,ipaddr)) == NULLARP ||
+		   ap->state != ARP_VALID ||
+		   run_timer(&ap->timer))
+			arp_add(ipaddr, ARP_AX25, src, 0);
 	(void)ip_route(iface,bp,mcast);
 }
 
