@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.6 1991/04/18 18:14:15 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.7 1991/06/05 16:34:16 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -159,6 +159,7 @@ int  main()
 
   char  buf[1024];
   int  addrlen;
+  int  arg;
   int  flisten, flistenmask;
   int  i;
   int  n;
@@ -174,7 +175,8 @@ int  main()
   if (!addr) exit(1);
   flisten = socket(addr->sa_family, SOCK_STREAM, 0);
   if (flisten < 0) exit(1);
-  setsockopt(flisten, SOL_SOCKET, SO_REUSEADDR, (char *) 0, 0);
+  arg = 1;
+  setsockopt(flisten, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
   if (bind(flisten, addr, addrlen)) exit(1);
   if (listen(flisten, SOMAXCONN)) exit(1);
   filemask = flistenmask = (1 << flisten);

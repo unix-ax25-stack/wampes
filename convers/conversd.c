@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.15 1990/03/23 12:07:31 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.16 1991/06/05 16:31:39 deyke Exp $";
 
 #include <sys/types.h>
 
@@ -699,7 +699,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.15 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.16 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
@@ -1003,6 +1003,7 @@ char  **argv;
 
   char  buffer[2048];
   int  addrlen;
+  int  arg;
   int  flisten[_NFILE], flistenmask[_NFILE];
   int  i;
   int  nfd, rmask, wmask;
@@ -1040,7 +1041,8 @@ char  **argv;
 	  unlink(addr->sa_data);
 	  break;
 	case AF_INET:
-	  setsockopt(flisten[i], SOL_SOCKET, SO_REUSEADDR, (char *) 0, 0);
+	  arg = 1;
+	  setsockopt(flisten[i], SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
 	  break;
 	}
 	if (!bind(flisten[i], addr, addrlen) && !listen(flisten[i], SOMAXCONN)) {
