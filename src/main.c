@@ -1,11 +1,11 @@
-/* @(#) $Id: main.c,v 1.66 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: main.c,v 1.67 2000/01/01 16:12:54 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
  *  keyboard processing
  *  generic user commands
  *
- * Copyright 1986-1996 Phil Karn, KA9Q
+ * Copyright 1986 to 1996 Phil Karn, KA9Q
  */
 #include <sys/types.h>
 #include <unistd.h>
@@ -106,8 +106,8 @@ main(int argc,char *argv[])
 
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
 	printf("\n================ %s ================\n", Version);
-	printf("(c) Copyright 1990-1999 by Dieter Deyke, DK5SG / N0PRA\n");
-	printf("(c) Copyright 1986-1996 by Phil Karn, KA9Q\n");
+	printf("(c) Copyright 1990-2000 by Dieter Deyke, DK5SG / N0PRA\n");
+	printf("(c) Copyright 1986" "-1996 by Phil Karn, KA9Q\n");
 	printf("\n");
 	/* Start background Daemons */
 #ifndef SINGLE_THREADED
@@ -616,4 +616,3 @@ void *p)
   cooked();
   return 0;
 }
-

@@ -1,17 +1,17 @@
-.\" @(#) $Id: frontpage,v 1.108 1999/12/17 04:44:51 deyke Exp $ -*- Mode: Nroff -*-
+.\" @(#) $Id: frontpage,v 1.109 2000/01/01 16:12:52 deyke Exp $ -*- Mode: Nroff -*-
 .\"
-.PF "^BBS Reference Manual^-\\\\nP-^Version 991216" \" Page footer
+.PF "^BBS Reference Manual^-\\\\nP-^Version 000101" \" Page footer
 .\"
 .S 30
 .ce
 \fBBBS Reference Manual\fP
 .ce
-Version 991216
+Version 000101
 .S
 .SP 2
 .S 15
 .ce
 Dieter Deyke, DK5SG/N0PRA
 .ce
-deyke@hotpop.com
+deyke@crosswinds.net
 .S

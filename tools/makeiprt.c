@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: makeiprt.c,v 1.19 1999/06/20 17:47:47 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: makeiprt.c,v 1.20 2000/01/01 16:12:55 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -73,7 +73,7 @@ struct node {
 static DBM *Dbhostaddr;
 static DBM *Dbhostname;
 static const struct iface *Loopback_iface;
-static int Usegethostby;
+static int Usegethostby = 1;
 static struct cache *Cache;
 static struct iface *Ifaces;
 static struct node *Nodes;
@@ -218,7 +218,7 @@ static const char *resolve_a(long addr)
     }
   }
 
-  if (Usegethostby) {
+  if (Usegethostby && (addr & 0xff000000) == 0x2c000000) {
     in_addr.s_addr = htonl(addr);
     hp = gethostbyaddr((char *) &in_addr, sizeof(in_addr), AF_INET);
     if (hp) {

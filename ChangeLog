@@ -1,4 +1,12 @@
-@(#) $Id: ChangeLog,v 1.71 1999/12/17 04:38:13 deyke Exp $
+@(#) $Id: ChangeLog,v 1.72 2000/01/01 16:12:47 deyke Exp $
+
+000101 Dieter Deyke <deyke@crosswinds.net>
+
+	Added support for ethertap devices
+
+	Removed casting of select() arguments (was used only by HP-UX 09.xx)
+
+	Updated email address and distribution location in README
 
 991216 Dieter Deyke <deyke@hotpop.com>
 

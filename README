@@ -1,4 +1,4 @@
-wampes-991216.tar.gz is a gzipped tar archive of WAMPES, a NET/NOS port
+wampes-000101.tar.gz is a gzipped tar archive of WAMPES, a NET/NOS port
 to various flavors of Unix.
 
 WAMPES currently supports the following configurations:
@@ -6,22 +6,22 @@ WAMPES currently supports the following configurations:
 +---------------+-----------------+-------------------------------------------+
 | OS:           | Hardware:       | Contact Person:                           |
 +---------------+-----------------+-------------------------------------------+
-| HP-UX 09.xx   | HP9000/300      | Dieter Deyke <deyke@hotpop.com>           |
+| HP-UX 09.xx   | HP9000/300      | Dieter Deyke <deyke@crosswinds.net>       |
 | HP-UX 10.xx   | HP9000/400      |                                           |
 | HP-UX 11.xx   | HP9000/700      |                                           |
 |               | HP9000/800      |                                           |
 +---------------+-----------------+-------------------------------------------+
-| SunOS 4.x     | SUN SPARC       | Dieter Deyke <deyke@hotpop.com>           |
+| SunOS 4.x     | SUN SPARC       | Dieter Deyke <deyke@crosswinds.net>       |
 | SunOS 5.x     | SUN SPARC       |                                           |
 +---------------+-----------------+-------------------------------------------+
-| AIX 4.x       | IBM RS/6000     | Dieter Deyke <deyke@hotpop.com>           |
+| AIX 4.x       | IBM RS/6000     | Dieter Deyke <deyke@crosswinds.net>       |
 +---------------+-----------------+-------------------------------------------+
-| IRIX 5.x      | SGI             | Dieter Deyke <deyke@hotpop.com>           |
-| IRIX 6.x      | SGI             | Dieter Deyke <deyke@hotpop.com>           |
+| IRIX 5.x      | SGI             | Dieter Deyke <deyke@crosswinds.net>       |
+| IRIX 6.x      | SGI             | Dieter Deyke <deyke@crosswinds.net>       |
 +---------------+-----------------+-------------------------------------------+
 | AOS           | IBM RT          | Jan Jaeger <janj@acci.com.au>             |
 +---------------+-----------------+-------------------------------------------+
-| 386BSD 0.1.34 | PC              | Dieter Deyke <deyke@hotpop.com>           |
+| 386BSD 0.1.34 | PC              | Dieter Deyke <deyke@crosswinds.net>       |
 +---------------+-----------------+-------------------------------------------+
 | NetBSD 1.3.2  | PC              |                                           |
 +---------------+-----------------+-------------------------------------------+
@@ -50,17 +50,19 @@ To unpack this archive you have to:
 	su
 	mkdir /tcp
 	cd /tcp
-	gzip -d < wampes-991216.tar.gz | tar xvf -
+	gzip -d < wampes-000101.tar.gz | tar xvf -
 
 After unpacking please read the file /tcp/doc/intro.txt.  For FreeBSD
 2.1 and later, "GNU make (gmake)" must be used instead of /usr/bin/make.
 For RISC iX you have to copy *.R to /usr/lib.  Now type "make -i" to
 compile and install everything.
 
-wampes-991216.tar.gz can be found at
+wampes-000101.tar.gz can be found at
+
 	http://deyke.tripod.com/
+	http://www.crosswinds.net/~deyke/
 
 73,
 Dieter Deyke - deyke@cocreate.fc.hp.com
-	     - deyke@hotpop.com
+	     - deyke@crosswinds.net
 	     - dk5sg@db0sao.ampr.org

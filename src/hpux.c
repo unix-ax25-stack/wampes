@@ -1,4 +1,4 @@
-/* @(#) $Id: hpux.c,v 1.62 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: hpux.c,v 1.63 2000/01/01 16:12:54 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -42,12 +42,6 @@
 #include "hpux.h"
 
 #define TIMEOUT 120
-
-#if defined __hpux && !defined _FD_SET
-#define SEL_ARG(x) ((int *) (x))
-#else
-#define SEL_ARG(x) (x)
-#endif
 
 struct proc_t {
   pid_t pid;
@@ -435,7 +429,7 @@ void eihalt(void)
     if (nte > 999) nte = 999;
     timeout.tv_usec = 1000 * nte;
   }
-  if (select(maxfd + 1, SEL_ARG(&actread), SEL_ARG(&actwrite), 0, &timeout) < 1) {
+  if (select(maxfd + 1, &actread, &actwrite, 0, &timeout) < 1) {
     FD_ZERO(&actread);
     actwrite = actread;
   } else

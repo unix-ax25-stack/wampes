@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: cnet.c,v 1.44 1999/01/22 21:22:04 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: cnet.c,v 1.45 2000/01/01 16:12:56 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -39,12 +39,6 @@ extern int optind;
 
 #ifndef O_NONBLOCK
 #define O_NONBLOCK      O_NDELAY
-#endif
-
-#if defined __hpux && !defined _FD_SET
-#define SEL_ARG(x) ((int *) (x))
-#else
-#define SEL_ARG(x) (x)
 #endif
 
 #include "buildsaddr.h"
@@ -334,7 +328,7 @@ int main(int argc, char **argv)
     if (term_queue) {
       FD_SET(fdout, &wmask);
     }
-    if (select(fdsock + 1, SEL_ARG(&rmask), SEL_ARG(&wmask), 0, 0) > 0) {
+    if (select(fdsock + 1, &rmask, &wmask, 0, 0) > 0) {
       if (FD_ISSET(fdsock, &rmask)) {
 	recvq(fdsock, &term_queue);
       }

@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.db0sao,v 1.70 1999/12/02 02:13:53 deyke Exp $
+# @(#) $Id: net.rc.db0sao,v 1.71 2000/01/01 16:12:47 deyke Exp $
 
 domain usegethostby on
 
@@ -42,7 +42,6 @@ ax25 route add permanent tnc1 default
 axip route add dk0hu 192.1.1.2
 
 route add  44.130.0.0/16        tnc1     0                    1 0
-route add  44.130.12.0/24       ipip     192.1.1.2            1 0
 route add  44.143.0.0/16        tnc1     0                    1 0
 route add  db0sao-u.ampr.org    ni       0                    1 2147483
 route add  df3du-1.ampr.org     ipip     192.1.1.2            1 2147483

@@ -1,4 +1,4 @@
-/* @(#) $Id: config.c,v 1.56 1999/06/20 17:47:46 deyke Exp $ */
+/* @(#) $Id: config.c,v 1.57 2000/01/01 16:12:54 deyke Exp $ */
 
 /* Copyright 1991 Phil Karn, KA9Q
  */
@@ -147,6 +147,9 @@ struct cmds Attab[] = {
 
 	{ "kernel", krnlif_attach, 0, 2,
 	"attach kernel <iface> [nopromisc]" },
+
+	{ "ethertap", ethertap_attach, 0, 2,
+	"attach ethertap <label>" },
 
 	{ NULL }
 };

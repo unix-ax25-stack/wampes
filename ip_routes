@@ -1,13 +1,8 @@
-# @(#) $Id: ip_routes,v 1.59 1999/05/15 20:15:27 deyke Exp $
+# @(#) $Id: ip_routes,v 1.60 2000/01/01 16:12:47 deyke Exp $
 
 #Host           Destination     Bits    Iface   Metric  Gateway         Private
 #------------------------------------------------------------------------------
 
-dk5sg           0               0       ipip       200  15.136.120.113
-dk5sg           44.130.12.0     24      ipudp      200  15.254.48.2
-dk5sg           dk5sg-u         32      ni           2
-
-dl1sbl-1        44.130.12.0     24      ipudp      200  15.254.48.2
 dl1sbl-1        df3du-1         32      ipip        20  15.138.80.94
 dl1sbl-1        df9sr-1         32      ipip        20  15.136.35.218
 dl1sbl-1        dh8saw-1        32      ipip        20  15.138.72.40

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: bridge.c,v 1.20 1999/01/22 21:22:04 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: bridge.c,v 1.21 2000/01/01 16:12:56 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -18,12 +18,6 @@ static const char rcsid[] = "@(#) $Id: bridge.c,v 1.20 1999/01/22 21:22:04 deyke
 
 #ifndef SOMAXCONN
 #define SOMAXCONN       5
-#endif
-
-#if defined __hpux && !defined _FD_SET
-#define SEL_ARG(x) ((int *) (x))
-#else
-#define SEL_ARG(x) (x)
 #endif
 
 #if defined sun
@@ -247,7 +241,7 @@ int main(int argc, char **argv)
 
   for (;;) {
     actread = chkread;
-    if (select(maxfd + 1, SEL_ARG(&actread), 0, 0, 0) <= 0)
+    if (select(maxfd + 1, &actread, 0, 0, 0) <= 0)
       continue;
     if (FD_ISSET(flisten, &actread))
       create_connection(flisten);

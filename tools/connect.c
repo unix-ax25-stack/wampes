@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: connect.c,v 1.22 1999/01/22 21:21:39 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: connect.c,v 1.23 2000/01/01 16:12:55 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -14,12 +14,6 @@ static const char rcsid[] = "@(#) $Id: connect.c,v 1.22 1999/01/22 21:21:39 deyk
 
 #ifdef _AIX
 #include <sys/select.h>
-#endif
-
-#if defined __hpux && !defined _FD_SET
-#define SEL_ARG(x) ((int *) (x))
-#else
-#define SEL_ARG(x) (x)
 #endif
 
 extern char *optarg;
@@ -194,7 +188,7 @@ int main(int argc, char **argv)
     actread = chkread;
     timeout.tv_sec = 3600;
     timeout.tv_usec = 0;
-    if (!select(channels, SEL_ARG(&actread), 0, 0, &timeout))
+    if (!select(channels, &actread, 0, 0, &timeout))
       terminate();
     for (i = 0; i < channels; i++)
       if (FD_ISSET(i, &actread)) {
@@ -210,4 +204,3 @@ int main(int argc, char **argv)
       }
   }
 }
-

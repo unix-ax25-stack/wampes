@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.n0pra,v 1.19 1999/11/22 22:39:53 deyke Exp $
+# @(#) $Id: net.rc.n0pra,v 1.20 2000/01/01 16:12:48 deyke Exp $
 
 domain usegethostby on
 
@@ -9,7 +9,6 @@ netrom ident "#FC1"
 
 attach axip                     # ax.25 over host ip
 attach ipip                     # ip over host ip
-attach ipip ipudp udp 20004     # ip over host udp
 attach netrom                   # ip over netrom
 attach ni ni n0pra-u            # ip to host ip
 
@@ -19,8 +18,6 @@ ax25 route add axip default
 
 axip route add dl1sbl-1 15.136.120.113
 
-route add  db0fho/24            ipudp    15.254.48.2          1 0
-route add  dc1ik/24             ipudp    15.254.48.2          1 0
 route add  default              ipip     15.136.120.113       1 0
 route add  n0pra-u              ni       0                    1 0
 

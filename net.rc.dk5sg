@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dk5sg,v 1.49 1999/11/22 22:39:52 deyke Exp $
+# @(#) $Id: net.rc.dk5sg,v 1.50 2000/01/01 16:12:48 deyke Exp $
 
 domain usegethostby on
 
@@ -9,22 +9,18 @@ netrom ident "#FC"
 
 attach axip                     # ax.25 over host ip
 attach ipip                     # ip over host ip
-attach ipip ipudp udp 20004     # ip over host udp
 attach netrom                   # ip over netrom
 attach ni ni dk5sg-u            # ip to host ip
 
 ax25 route add axip default
 
-axip route add db0fho   db0fho
 axip route add dl1sbl-1 15.136.120.113
 
-route add  44.130.12.0/24       ipudp    15.254.48.2          1 0
 route add  default              ipip     15.136.120.113       1 0
 route add  dk5sg-u.ampr.org     ni       0                    1 2147483
 
 netrom broadcast axip nodes
 
-# flexnet link add dc1ik
 flexnet link add dl1sbl-1
 
 echo accept

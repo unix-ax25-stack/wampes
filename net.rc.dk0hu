@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dk0hu,v 1.61 1999/11/27 17:18:56 deyke Exp $
+# @(#) $Id: net.rc.dk0hu,v 1.62 2000/01/01 16:12:48 deyke Exp $
 
 domain usegethostby on
 
@@ -30,7 +30,6 @@ axip route add db0sao   192.1.1.1
 axip route add dl1sbl-1 15.136.120.113
 
 route add  44.130.0.0/16        ipip     192.1.1.1            1 0
-route add  44.130.12.0/24       ipip     15.136.120.113       1 0
 route add  44.143.0.0/16        ipip     192.1.1.1            1 0
 route add  db0sao-u.ampr.org    ipip     192.1.1.1            1 2147483
 route add  db0sao.ampr.org      ipip     192.1.1.1            1 2147483

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: pty-test.c,v 1.9 1996/08/12 18:52:58 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: pty-test.c,v 1.10 2000/01/01 16:12:55 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -50,12 +50,12 @@ void master(void)
     exit(1);
   }
   fmask = (1 << fd);
-  timeout.tv_sec = 0;
-  timeout.tv_usec = 0;
   p = line;
   cnt = linelen;
   for (; ; ) {
     rmask = wmask = emask = fmask;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
     if (select(fd + 1, &rmask, &wmask, &emask, &timeout) < 1) continue;
 
     if (1 /*rmask & fmask*/ ) {
@@ -137,8 +137,6 @@ void slave(void)
     exit(1);
   }
 
-  timeout.tv_sec = 0;
-  timeout.tv_usec = 300000;
   for (; ; ) {
     n = read(fd, buf, sizeof(buf));
     if (n < 0) {
@@ -152,6 +150,8 @@ void slave(void)
     else
       putchar('.');
     fflush(stdout);
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 300000;
     select(0, 0, 0, 0, &timeout);
   }
 }
@@ -187,4 +187,3 @@ int main(int argc, char **argv)
     slave();
   return 0;
 }
-

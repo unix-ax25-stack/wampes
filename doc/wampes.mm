@@ -12,20 +12,20 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 991216" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 000101" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 991216
+Version 000101
 .S
 .SP 2
 .S 15
 .ce
 Dieter Deyke, DK5SG/N0PRA
 .ce
-deyke@hotpop.com
+deyke@crosswinds.net
 .S
 .nr Cl 7 \" Max level of header for table of contents
 .H 1 "Credits"
@@ -333,110 +333,110 @@ The third line shows transmit (TX) statistics, including the total
 number of write system calls and transmitted characters.
 .LE
 .H 2 "attach" " \fItype\fP [\fItype specific options\fP]"
-Configure and attach an interface to the system.
-The details are highly interface type dependent.
+Configure and attach an interface to the system. The details are
+highly interface type dependent.
 .H 3 "attach asy 0" " 0 \fIencapsulation\fP \fIname\fP 0 \fImtu\fP \fIspeed\fP"
-Configure and attach an asynchronous communications interface to the system.
-See the \fBifconfig encapsulation\fP command for the list of
-available encapsulations.
-\fIname\fP specifies the name of the interface,
-and is also used to open the interface device file in the directory \fB/dev\fP.
-\fImtu\fP is the Maximum Transmission Unit size, in bytes.
-Datagrams larger than this limit will be fragmented at the IP layer
-into smaller pieces.
-For AX.25 UI frames, this limits the size of the information field.
-For AX.25 I frames, however, the \fBax25 paclen\fP parameter is also relevant.
-If the datagram or fragment is still larger than \fBpaclen\fP,
-it is also fragmented at the AX.25 level (as opposed to the IP level) before
-transmission.
-See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
-for more information.
-\fIspeed\fP is the transmission speed in bits per second (eg. 9600).
+Configure and attach an asynchronous communications interface to the
+system. See the \fBifconfig encapsulation\fP command for the list of
+available encapsulations. \fIname\fP specifies the name of the
+interface, and is also used to open the interface device file in the
+directory \fB/dev\fP. \fImtu\fP is the Maximum Transmission Unit size,
+in bytes. Datagrams larger than this limit will be fragmented at the
+IP layer into smaller pieces. For AX.25 UI frames, this limits the
+size of the information field. For AX.25 I frames, however, the
+\fBax25 paclen\fP parameter is also relevant. If the datagram or
+fragment is still larger than \fBpaclen\fP, it is also fragmented at
+the AX.25 level (as opposed to the IP level) before transmission. See
+the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter for
+more information. \fIspeed\fP is the transmission speed in bits per
+second (eg. 9600).
 .P
-If any I/O error is encountered reading or writing the interface device file,
-the interface will be marked \fBDOWN\fP.
-Use the \fBparam\fP \fIname\fP \fBUp\fP command to re-enable the interface.
+If any I/O error is encountered reading or writing the interface
+device file, the interface will be marked \fBDOWN\fP. Use the
+\fBparam\fP \fIname\fP \fBUp\fP command to re-enable the interface.
 .H 3 "attach asy \fIip-addr\fP" " \fIport\fP \fIencapsulation\fP \fIname\fP 0 \fImtu\fP \fIspeed\fP"
-Configure and attach a UNIX TCP connection based interface to the system.
-This is very similar to the asynchronous communications interface described above,
-but instead of talking directly to a hardware device file, this interface type
-will open a UNIX TCP connection to \fIip-addr\fP and \fIport\fP.
-The primary use of this interface type is to talk to some TNC which is
-connected to the system via the LAN.
-\fIip-addr\fP is the destination IP address,
-and has to be specified as one hexadecimal number.
-For example, 127.0.0.1 has to be given as 7f000001.
-\fIport\fP is the numeric destination TCP port address.
-See the \fBifconfig encapsulation\fP command for the list of
-available encapsulations.
-\fIname\fP specifies the name of the interface.
-\fImtu\fP is the Maximum Transmission Unit size, in bytes.
+Configure and attach a UNIX TCP connection based interface to the
+system. This is very similar to the asynchronous communications
+interface described above, but instead of talking directly to a
+hardware device file, this interface type will open a UNIX TCP
+connection to \fIip-addr\fP and \fIport\fP. The primary use of this
+interface type is to talk to some TNC which is connected to the system
+via the LAN. \fIip-addr\fP is the destination IP address, and has to
+be specified as one hexadecimal number. For example, 127.0.0.1 has to
+be given as 7f000001. \fIport\fP is the numeric destination TCP port
+address. See the \fBifconfig encapsulation\fP command for the list of
+available encapsulations. \fIname\fP specifies the name of the
+interface. \fImtu\fP is the Maximum Transmission Unit size, in bytes.
 Datagrams larger than this limit will be fragmented at the IP layer
-into smaller pieces.
-For AX.25 UI frames, this limits the size of the information field.
-For AX.25 I frames, however, the \fBax25 paclen\fP parameter is also relevant.
-If the datagram or fragment is still larger than \fBpaclen\fP,
-it is also fragmented at the AX.25 level (as opposed to the IP level) before
-transmission.
-See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
-for more information.
-\fIspeed\fP must be specified, but is not used.
+into smaller pieces. For AX.25 UI frames, this limits the size of the
+information field. For AX.25 I frames, however, the \fBax25 paclen\fP
+parameter is also relevant. If the datagram or fragment is still
+larger than \fBpaclen\fP, it is also fragmented at the AX.25 level (as
+opposed to the IP level) before transmission. See the
+\fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter for more
+information. \fIspeed\fP must be specified, but is not used.
 .P
-If any I/O error is encountered reading or writing the UNIX TCP connection,
-the interface will be marked \fBDOWN\fP.
-Use the \fBparam\fP \fIname\fP \fBUp\fP command to re-enable the interface.
+If any I/O error is encountered reading or writing the UNIX TCP
+connection, the interface will be marked \fBDOWN\fP. Use the
+\fBparam\fP \fIname\fP \fBUp\fP command to re-enable the interface.
 .H 3 "attach axip" " [\fIname\fP [ip|udp [\fIport\fP]]]"
-This creates an AX.25 frame encapsulator for transmission
-of AX.25 frames over the UNIX's networking system.
-The interface will be named \fIname\fP,
-or \fBaxip\fP if \fIname\fP is not specified.
-The default encapsulation will use IP protocol 93,
-but it is possible to use UDP instead.
-If \fIport\fP is specified that IP protocol number or UDP port number
-will be used instead of 93.
-See also RFC1226 and the \fBaxip\fP command.
+This creates an AX.25 frame encapsulator for transmission of AX.25
+frames over the UNIX's networking system. The interface will be named
+\fIname\fP, or \fBaxip\fP if \fIname\fP is not specified. The default
+encapsulation will use IP protocol 93, but it is possible to use UDP
+instead. If \fIport\fP is specified that IP protocol number or UDP
+port number will be used instead of 93. See also RFC1226 and the
+\fBaxip\fP command.
 .H 3 "attach ipip" " [\fIname\fP [ip|udp [\fIport\fP]]]"
-This creates an IP frame encapsulator for transmission
-of IP frames over the UNIX's networking system.
-The interface will be named \fIname\fP,
-or \fBipip\fP if \fIname\fP is not specified.
-The default encapsulation will use IP protocol 4,
-but it is possible to use UDP instead.
-If \fIport\fP is specified that IP protocol number or UDP port number
-will be used instead of 4.
+This creates an IP frame encapsulator for transmission of IP frames
+over the UNIX's networking system. The interface will be named
+\fIname\fP, or \fBipip\fP if \fIname\fP is not specified. The default
+encapsulation will use IP protocol 4, but it is possible to use UDP
+instead. If \fIport\fP is specified that IP protocol number or UDP
+port number will be used instead of 4.
 .H 3 "attach netrom"
-This creates an IP frame encapsulator for transmission
-of IP frames over the NET/ROM transport.
-The interface will be named
-\fBnetrom\fP.
+This creates an IP frame encapsulator for transmission of IP frames
+over the NET/ROM transport. The interface will be named \fBnetrom\fP.
 .H 3 "attach ni" " \fIname\fP \fIip-addr\fP [\fInetmask\fP]"
 This creates an IP point-to-point link between \fBWAMPES\fP and UNIX,
 by creating a new interface named \fIname\fP on the \fBWAMPES\fP side,
-and by creating a new interface named \fBni?\fP
-with IP address \fIip-addr\fP
-and netmask \fInetmask\fP
-on the UNIX side.
-It also establishes a UNIX routing table entry
-directing traffic for \fBWAMPES\fP to the newly created interface.
-\fIip-addr\fP and \fInetmask\fP have to be specified
-as numeric IP addresses in dotted decimal notation (eg. 44.0.0.1),
-or as symbolic names stored in the domain name database.
-\fInetmask\fP defaults to 255.0.0.0 if not specified.
-Example:
+and by creating a new interface named \fBni?\fP with IP address
+\fIip-addr\fP and netmask \fInetmask\fP on the UNIX side. It also
+establishes a UNIX routing table entry directing traffic for
+\fBWAMPES\fP to the newly created interface. \fIip-addr\fP and
+\fInetmask\fP have to be specified as numeric IP addresses in dotted
+decimal notation (eg. 44.0.0.1), or as symbolic names stored in the
+domain name database. \fInetmask\fP defaults to 255.0.0.0 if not
+specified. Example:
 .DS I
 .ft CW
 attach ni ni dk5sg-u # ip to host ip
 .ft P
 .DE
 .P
-Currently \fBattach ni\fP is available on HP-UX systems only.
+\fBattach ni\fP is available on HP-UX systems only.
+.H 3 "attach ethertap" " \fIname\fP"
+This creates an IP point-to-point link between \fBWAMPES\fP and UNIX,
+by creating a new interface named \fIname\fP on the \fBWAMPES\fP side.
+Example:
+.DS I
+.ft CW
+shell ifconfig tap0 44.128.4.5 up mtu 256 netmask 255.0.0.0 broadcast 44.255.255.255
+attach ethertap tap0 # ip to host ip
+ifconfig tap0 mtu 256
+.ft P
+.DE
+.P
+\fBattach ethertap\fP is available only on systems supporting ethertap
+devices (eg Linux kernel 2.2 and up).
 .H 3 "attach tun" " \fIname\fP"
 This creates an IP point-to-point link between \fBWAMPES\fP and UNIX,
 by creating a new interface named \fIname\fP on the \fBWAMPES\fP side.
-Currently \fBattach tun\fP is available on FreeBSD systems only.
+.P
+\fBattach tun\fP is available on FreeBSD systems only.
 .H 3 "attach kernel" " \fIname\fP [nopromisc]"
-Currently \fBattach kernel\fP is available on Linux systems only.
-MORE TO BE WRITTEN.
+\fBattach kernel\fP is available on Linux systems only. MORE
+TO BE WRITTEN.
 .H 2 "ax25" " \fIsubcommand\fP"
 These commands control the AX.25 service.
 .H 3 "ax25 blimit" " [\fIlimit\fP]"

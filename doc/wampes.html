@@ -4,12 +4,12 @@
 </HEAD>
 <BODY>
 <H1>WAMPES Reference Manual</H1>
-Version 991216
+Version 000101
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
 <BR>
-deyke@hotpop.com
+deyke@crosswinds.net
 <BR>
 <HR><H2>Table of Contents</H2>
 <OL>
@@ -434,108 +434,106 @@ displayed its value.
 number of write system calls and transmitted characters.
 </UL>
 <H3><A NAME="H4.6">4.6 attach <I>type</I> [<I>type specific options</I>]</A></H3>
-Configure and attach an interface to the system.
-The details are highly interface type dependent.
+Configure and attach an interface to the system. The details are
+highly interface type dependent.
 <H4><A NAME="H4.6.1">4.6.1 attach asy 0 0 <I>encapsulation</I> <I>name</I> 0 <I>mtu</I> <I>speed</I></A></H4>
-Configure and attach an asynchronous communications interface to the system.
-See the <B>ifconfig encapsulation</B> command for the list of
-available encapsulations.
-<I>name</I> specifies the name of the interface,
-and is also used to open the interface device file in the directory <B>/dev</B>.
-<I>mtu</I> is the Maximum Transmission Unit size, in bytes.
-Datagrams larger than this limit will be fragmented at the IP layer
-into smaller pieces.
-For AX.25 UI frames, this limits the size of the information field.
-For AX.25 I frames, however, the <A HREF="#H4.7.11"><B>ax25 paclen</B></A> parameter is also relevant.
-If the datagram or fragment is still larger than <B>paclen</B>,
-it is also fragmented at the AX.25 level (as opposed to the IP level) before
-transmission.
-See the <A HREF="#H6."><B>Setting Paclen, Maxframe, MTU, MSS and Window</B></A> chapter
-for more information.
-<I>speed</I> is the transmission speed in bits per second (eg. 9600).
+Configure and attach an asynchronous communications interface to the
+system. See the <B>ifconfig encapsulation</B> command for the list of
+available encapsulations. <I>name</I> specifies the name of the
+interface, and is also used to open the interface device file in the
+directory <B>/dev</B>. <I>mtu</I> is the Maximum Transmission Unit size,
+in bytes. Datagrams larger than this limit will be fragmented at the
+IP layer into smaller pieces. For AX.25 UI frames, this limits the
+size of the information field. For AX.25 I frames, however, the
+<A HREF="#H4.7.11"><B>ax25 paclen</B></A> parameter is also relevant. If the datagram or
+fragment is still larger than <B>paclen</B>, it is also fragmented at
+the AX.25 level (as opposed to the IP level) before transmission. See
+the <A HREF="#H6."><B>Setting Paclen, Maxframe, MTU, MSS and Window</B></A> chapter for
+more information. <I>speed</I> is the transmission speed in bits per
+second (eg. 9600).
 <P>
-If any I/O error is encountered reading or writing the interface device file,
-the interface will be marked <B>DOWN</B>.
-Use the <A HREF="#H4.35"><B>param</B></A> <I>name</I> <B>Up</B> command to re-enable the interface.
+If any I/O error is encountered reading or writing the interface
+device file, the interface will be marked <B>DOWN</B>. Use the
+<A HREF="#H4.35"><B>param</B></A> <I>name</I> <B>Up</B> command to re-enable the interface.
 <H4><A NAME="H4.6.2">4.6.2 attach asy <I>ip-addr</I> <I>port</I> <I>encapsulation</I> <I>name</I> 0 <I>mtu</I> <I>speed</I></A></H4>
-Configure and attach a UNIX TCP connection based interface to the system.
-This is very similar to the asynchronous communications interface described above,
-but instead of talking directly to a hardware device file, this interface type
-will open a UNIX TCP connection to <I>ip-addr</I> and <I>port</I>.
-The primary use of this interface type is to talk to some TNC which is
-connected to the system via the LAN.
-<I>ip-addr</I> is the destination IP address,
-and has to be specified as one hexadecimal number.
-For example, 127.0.0.1 has to be given as 7f000001.
-<I>port</I> is the numeric destination TCP port address.
-See the <B>ifconfig encapsulation</B> command for the list of
-available encapsulations.
-<I>name</I> specifies the name of the interface.
-<I>mtu</I> is the Maximum Transmission Unit size, in bytes.
+Configure and attach a UNIX TCP connection based interface to the
+system. This is very similar to the asynchronous communications
+interface described above, but instead of talking directly to a
+hardware device file, this interface type will open a UNIX TCP
+connection to <I>ip-addr</I> and <I>port</I>. The primary use of this
+interface type is to talk to some TNC which is connected to the system
+via the LAN. <I>ip-addr</I> is the destination IP address, and has to
+be specified as one hexadecimal number. For example, 127.0.0.1 has to
+be given as 7f000001. <I>port</I> is the numeric destination TCP port
+address. See the <B>ifconfig encapsulation</B> command for the list of
+available encapsulations. <I>name</I> specifies the name of the
+interface. <I>mtu</I> is the Maximum Transmission Unit size, in bytes.
 Datagrams larger than this limit will be fragmented at the IP layer
-into smaller pieces.
-For AX.25 UI frames, this limits the size of the information field.
-For AX.25 I frames, however, the <A HREF="#H4.7.11"><B>ax25 paclen</B></A> parameter is also relevant.
-If the datagram or fragment is still larger than <B>paclen</B>,
-it is also fragmented at the AX.25 level (as opposed to the IP level) before
-transmission.
-See the <A HREF="#H6."><B>Setting Paclen, Maxframe, MTU, MSS and Window</B></A> chapter
-for more information.
-<I>speed</I> must be specified, but is not used.
+into smaller pieces. For AX.25 UI frames, this limits the size of the
+information field. For AX.25 I frames, however, the <A HREF="#H4.7.11"><B>ax25 paclen</B></A>
+parameter is also relevant. If the datagram or fragment is still
+larger than <B>paclen</B>, it is also fragmented at the AX.25 level (as
+opposed to the IP level) before transmission. See the
+<A HREF="#H6."><B>Setting Paclen, Maxframe, MTU, MSS and Window</B></A> chapter for more
+information. <I>speed</I> must be specified, but is not used.
 <P>
-If any I/O error is encountered reading or writing the UNIX TCP connection,
-the interface will be marked <B>DOWN</B>.
-Use the <A HREF="#H4.35"><B>param</B></A> <I>name</I> <B>Up</B> command to re-enable the interface.
+If any I/O error is encountered reading or writing the UNIX TCP
+connection, the interface will be marked <B>DOWN</B>. Use the
+<A HREF="#H4.35"><B>param</B></A> <I>name</I> <B>Up</B> command to re-enable the interface.
 <H4><A NAME="H4.6.3">4.6.3 attach axip [<I>name</I> [ip|udp [<I>port</I>]]]</A></H4>
-This creates an AX.25 frame encapsulator for transmission
-of AX.25 frames over the UNIX's networking system.
-The interface will be named <I>name</I>,
-or <A HREF="#H4.8"><B>axip</B></A> if <I>name</I> is not specified.
-The default encapsulation will use IP protocol 93,
-but it is possible to use UDP instead.
-If <I>port</I> is specified that IP protocol number or UDP port number
-will be used instead of 93.
-See also RFC1226 and the <A HREF="#H4.8"><B>axip</B></A> command.
+This creates an AX.25 frame encapsulator for transmission of AX.25
+frames over the UNIX's networking system. The interface will be named
+<I>name</I>, or <A HREF="#H4.8"><B>axip</B></A> if <I>name</I> is not specified. The default
+encapsulation will use IP protocol 93, but it is possible to use UDP
+instead. If <I>port</I> is specified that IP protocol number or UDP
+port number will be used instead of 93. See also RFC1226 and the
+<A HREF="#H4.8"><B>axip</B></A> command.
 <H4><A NAME="H4.6.4">4.6.4 attach ipip [<I>name</I> [ip|udp [<I>port</I>]]]</A></H4>
-This creates an IP frame encapsulator for transmission
-of IP frames over the UNIX's networking system.
-The interface will be named <I>name</I>,
-or <B>ipip</B> if <I>name</I> is not specified.
-The default encapsulation will use IP protocol 4,
-but it is possible to use UDP instead.
-If <I>port</I> is specified that IP protocol number or UDP port number
-will be used instead of 4.
+This creates an IP frame encapsulator for transmission of IP frames
+over the UNIX's networking system. The interface will be named
+<I>name</I>, or <B>ipip</B> if <I>name</I> is not specified. The default
+encapsulation will use IP protocol 4, but it is possible to use UDP
+instead. If <I>port</I> is specified that IP protocol number or UDP
+port number will be used instead of 4.
 <H4><A NAME="H4.6.5">4.6.5 attach netrom</A></H4>
-This creates an IP frame encapsulator for transmission
-of IP frames over the NET/ROM transport.
-The interface will be named
-<A HREF="#H4.33"><B>netrom</B></A>.
+This creates an IP frame encapsulator for transmission of IP frames
+over the NET/ROM transport. The interface will be named <A HREF="#H4.33"><B>netrom</B></A>.
 <H4><A NAME="H4.6.6">4.6.6 attach ni <I>name</I> <I>ip-addr</I> [<I>netmask</I>]</A></H4>
 This creates an IP point-to-point link between <B>WAMPES</B> and UNIX,
 by creating a new interface named <I>name</I> on the <B>WAMPES</B> side,
-and by creating a new interface named <B>ni?</B>
-with IP address <I>ip-addr</I>
-and netmask <I>netmask</I>
-on the UNIX side.
-It also establishes a UNIX routing table entry
-directing traffic for <B>WAMPES</B> to the newly created interface.
-<I>ip-addr</I> and <I>netmask</I> have to be specified
-as numeric IP addresses in dotted decimal notation (eg. 44.0.0.1),
-or as symbolic names stored in the domain name database.
-<I>netmask</I> defaults to 255.0.0.0 if not specified.
-Example:
+and by creating a new interface named <B>ni?</B> with IP address
+<I>ip-addr</I> and netmask <I>netmask</I> on the UNIX side. It also
+establishes a UNIX routing table entry directing traffic for
+<B>WAMPES</B> to the newly created interface. <I>ip-addr</I> and
+<I>netmask</I> have to be specified as numeric IP addresses in dotted
+decimal notation (eg. 44.0.0.1), or as symbolic names stored in the
+domain name database. <I>netmask</I> defaults to 255.0.0.0 if not
+specified. Example:
 <PRE>
 attach ni ni dk5sg-u # ip to host ip
 </PRE>
 <P>
-Currently <A HREF="#H4.6.6"><B>attach ni</B></A> is available on HP-UX systems only.
-<H4><A NAME="H4.6.7">4.6.7 attach tun <I>name</I></A></H4>
+<A HREF="#H4.6.6"><B>attach ni</B></A> is available on HP-UX systems only.
+<H4><A NAME="H4.6.7">4.6.7 attach ethertap <I>name</I></A></H4>
 This creates an IP point-to-point link between <B>WAMPES</B> and UNIX,
 by creating a new interface named <I>name</I> on the <B>WAMPES</B> side.
-Currently <A HREF="#H4.6.7"><B>attach tun</B></A> is available on FreeBSD systems only.
-<H4><A NAME="H4.6.8">4.6.8 attach kernel <I>name</I> [nopromisc]</A></H4>
-Currently <A HREF="#H4.6.8"><B>attach kernel</B></A> is available on Linux systems only.
-MORE TO BE WRITTEN.
+Example:
+<PRE>
+shell ifconfig tap0 44.128.4.5 up mtu 256 netmask 255.0.0.0 broadcast 44.255.255.255
+attach ethertap tap0 # ip to host ip
+ifconfig tap0 mtu 256
+</PRE>
+<P>
+<A HREF="#H4.6.7"><B>attach ethertap</B></A> is available only on systems supporting ethertap
+devices (eg Linux kernel 2.2 and up).
+<H4><A NAME="H4.6.8">4.6.8 attach tun <I>name</I></A></H4>
+This creates an IP point-to-point link between <B>WAMPES</B> and UNIX,
+by creating a new interface named <I>name</I> on the <B>WAMPES</B> side.
+<P>
+<A HREF="#H4.6.8"><B>attach tun</B></A> is available on FreeBSD systems only.
+<H4><A NAME="H4.6.9">4.6.9 attach kernel <I>name</I> [nopromisc]</A></H4>
+<A HREF="#H4.6.9"><B>attach kernel</B></A> is available on Linux systems only. MORE
+TO BE WRITTEN.
 <H3><A NAME="H4.7">4.7 ax25 <I>subcommand</I></A></H3>
 These commands control the AX.25 service.
 <H4><A NAME="H4.7.1">4.7.1 ax25 blimit [<I>limit</I>]</A></H4>

@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.103 1999/06/20 19:03:51 deyke Exp $
+# @(#) $Id: Makefile,v 1.104 2000/01/01 16:12:53 deyke Exp $
 
 DEST          = /tcp
 
@@ -91,6 +91,7 @@ OBJS          = adjtime.o \
 		dirutil.o \
 		domain.o \
 		domhdr.o \
+		ethertap.o \
 		files.o \
 		finger.o \
 		flexnet.o \
@@ -199,6 +200,7 @@ SRCS          = adjtime.c \
 		dirutil.c \
 		domain.c \
 		domhdr.c \
+		ethertap.c \
 		files.c \
 		finger.c \
 		flexnet.c \
@@ -406,6 +408,8 @@ domain.o: ../lib/configure.h global.h ../lib/strdup.h mbuf.h iface.h proc.h \
 	domain.h
 domhdr.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h domain.h proc.h \
 	timer.h
+ethertap.o: global.h ../lib/configure.h ../lib/strdup.h hpux.h iface.h mbuf.h \
+	proc.h timer.h netuser.h ../lib/strerror.h trace.h
 files.o: files.h
 finger.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h socket.h proc.h \
 	timer.h internet.h icmp.h iface.h ip.h netuser.h tcp.h ftp.h \

@@ -12,20 +12,20 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^Bridge Reference Manual^-\\\\nP-^Version 991216" \" Page footer
+.PF "^Bridge Reference Manual^-\\\\nP-^Version 000101" \" Page footer
 .\"
 .S 30
 .ce
 \fBBridge Reference Manual\fP
 .ce
-Version 991216
+Version 000101
 .S
 .SP 2
 .S 15
 .ce
 Dieter Deyke, DK5SG/N0PRA
 .ce
-deyke@hotpop.com
+deyke@crosswinds.net
 .S
 .nr Ej 0 \" No new page for all headers
 .H 1 "The bridge utility"

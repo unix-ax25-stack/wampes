@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: conversd.c,v 2.80 1999/02/01 22:24:22 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: conversd.c,v 2.81 2000/01/01 16:12:49 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -46,12 +46,6 @@ static const char rcsid[] = "@(#) $Id: conversd.c,v 2.80 1999/02/01 22:24:22 dey
 
 #ifndef WNOHANG
 #define WNOHANG         1
-#endif
-
-#if defined __hpux && !defined _FD_SET
-#define SEL_ARG(x) ((int *) (x))
-#else
-#define SEL_ARG(x) (x)
 #endif
 
 extern char *optarg;
@@ -1433,7 +1427,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.80 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.81 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(0, ONE_TOKEN, KEEP_CASE));
@@ -2083,7 +2077,7 @@ int main(int argc, char **argv)
     *cp = 0;
   strchg(&my.h_name, buffer);
   strcpy(buffer, "W-");
-  if ((cp = strchr("$Revision: 2.80 $", ' ')))
+  if ((cp = strchr("$Revision: 2.81 $", ' ')))
     strcat(buffer, cp + 1);
   if ((cp = strchr(buffer, ' ')))
     *cp = 0;
@@ -2187,7 +2181,7 @@ int main(int argc, char **argv)
     actwrite = chkwrite;
     timeout.tv_sec = 10;
     timeout.tv_usec = 0;
-    i = select(maxfd + 1, SEL_ARG(&actread), SEL_ARG(&actwrite), 0, &timeout);
+    i = select(maxfd + 1, &actread, &actwrite, 0, &timeout);
     time((time_t *) &currtime);
     if (i > 0)
       for (i = maxfd; i >= 0; i--) {

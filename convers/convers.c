@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: convers.c,v 1.24 1998/03/09 17:42:49 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: convers.c,v 1.25 2000/01/01 16:12:49 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -23,12 +23,6 @@ static const char rcsid[] = "@(#) $Id: convers.c,v 1.24 1998/03/09 17:42:49 deyk
 #include <sgtty.h>
 #else
 #include <termios.h>
-#endif
-
-#if defined __hpux && !defined _FD_SET
-#define SEL_ARG(x) ((int *) (x))
-#else
-#define SEL_ARG(x) (x)
 #endif
 
 #include "buildsaddr.h"
@@ -500,7 +494,7 @@ int main(int argc, char **argv)
     FD_ZERO(&rmask);
     FD_SET(fdin, &rmask);
     FD_SET(fdsock, &rmask);
-    select(fdsock + 1, SEL_ARG(&rmask), 0, 0, 0);
+    select(fdsock + 1, &rmask, 0, 0, 0);
     if (FD_ISSET(fdin, &rmask)) {
       doinput();
     } else if (FD_ISSET(fdsock, &rmask)) {
