@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.3 1992/05/14 13:20:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.4 1992/05/26 10:09:09 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -39,7 +39,6 @@ static struct port_table udp_port_table[] = {
   "domain",      IPPORT_DOMAIN, /* ARPA domain nameserver */
   "remote",      IPPORT_REMOTE,
   "rip",         IPPORT_RIP,
-  "stime",       4713,
   NULLCHAR
 };
 

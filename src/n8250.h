@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.h,v 1.4 1992/01/08 13:44:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.h,v 1.5 1992/05/26 10:08:47 deyke Exp $ */
 
 /* Various I/O definitions specific to asynch I/O */
 #ifndef _8250_H
@@ -16,7 +16,6 @@
 struct asy {
 	struct iface *iface;
 
-	char *ipc_socket;       /* Host:port of ipc destination */
 	int fd;                 /* File descriptor */
 
 	struct mbuf *sndq;      /* Transmit queue */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.27 1992/05/14 13:20:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.28 1992/05/26 10:09:04 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -606,31 +606,6 @@ void *p;
   fclose(fp);
   Mode = CMD_MODE;
   cooked();
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-#include <sys/rtprio.h>
-
-int  dortprio(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-  int  tmp;
-
-  if (argc < 2) {
-    tmp = rtprio(0, RTPRIO_NOCHG);
-    if (tmp == RTPRIO_RTOFF)
-      printf("Rtprio off\n");
-    else
-      printf("Rtprio %d\n", tmp);
-  } else {
-    tmp = atoi(argv[1]);
-    if (tmp <= 0 || tmp > 127) tmp = RTPRIO_RTOFF;
-    rtprio(0, tmp);
-  }
   return 0;
 }
 

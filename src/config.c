@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.17 1992/05/14 13:19:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.18 1992/05/26 10:08:53 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -206,7 +206,6 @@ struct cmds Cmds[] = {
 #endif
 	"rmdir",        dormd,          0, 2, "rmdir <directory>",
 	"route",        doroute,        0, 0, NULLCHAR,
-	"rtprio",       dortprio,       0, 0, NULLCHAR,
 	"status",       dostatus,       0, 0, NULLCHAR,
 	"session",      dosession,      0, 0, NULLCHAR,
 #ifdef  SCC
@@ -222,7 +221,6 @@ struct cmds Cmds[] = {
 	"start",        dostart,        0, 2, "start <servername>",
 	"stop",         dostop,         0, 2, "stop <servername>",
 #endif
-	"stime",        dostime,        0, 0, NULLCHAR,
 	"tcp",          dotcp,          0, 0, NULLCHAR,
 	"telnet",       dotelnet,       1024, 2, "telnet <address>",
 /*      "test",         dotest,         1024, 0, NULLCHAR, */

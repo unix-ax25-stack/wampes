@@ -1,11 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.15 1992/05/14 13:19:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.16 1992/05/26 10:08:46 deyke Exp $ */
 
 #include <sys/types.h>
 
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <termio.h>
 #include <unistd.h>
 
@@ -29,12 +28,11 @@
 #include "8250.h"
 #include "asy.h"
 #include "devparam.h"
-#include "buildsaddr.h"
 #include "hpux.h"
 #include "timer.h"
 
-static int find_speed __ARGS((int speed));
-static int asy_open __ARGS((int dev));
+static int find_speed __ARGS((long speed));
+static void pasy __ARGS((struct asy *asyp));
 static void asy_tx __ARGS((struct asy *asyp));
 
 struct asy Asy[ASY_MAX];
@@ -42,7 +40,8 @@ struct asy Asy[ASY_MAX];
 /*---------------------------------------------------------------------------*/
 
 static struct {
-	int speed, flags;
+	long speed;
+	int flags;
 } speed_table[] = {
 #ifdef B50
 	50, B50,
@@ -117,7 +116,7 @@ static struct {
 
 static int
 find_speed(speed)
-int speed;
+long speed;
 {
 	int i;
 
@@ -125,74 +124,6 @@ int speed;
 	while (speed_table[i].speed < speed && speed_table[i+1].speed > 0)
 		i++;
 	return i;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int
-asy_open(dev)
-int dev;
-{
-
-#define MIN_WAIT (3*60)
-#define MAX_WAIT (3*60*60)
-
-  static struct {
-    long  next;
-    long  wait;
-  } times[ASY_MAX];
-
-  char  buf[80];
-  int  addrlen;
-  int  flags;
-  int  sp;
-  long  arg;
-  struct asy *ap;
-  struct iface *ifp;
-  struct sockaddr *addr;
-  struct termio termio;
-
-  if (times[dev].next > secclock()) return (-1);
-  times[dev].wait *= 2;
-  if (times[dev].wait < MIN_WAIT) times[dev].wait = MIN_WAIT;
-  if (times[dev].wait > MAX_WAIT) times[dev].wait = MAX_WAIT;
-  times[dev].next = secclock() + times[dev].wait;
-  ap = Asy + dev;
-  ifp = ap->iface;
-  asy_stop(ifp);
-  if (!strncmp(ifp->name, "ipc", 3)) {
-    if (!(addr = build_sockaddr(ap->ipc_socket, &addrlen))) goto Fail;
-    if ((ap->fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) goto Fail;
-    if (connect(ap->fd, addr, addrlen)) goto Fail;
-    if ((flags = fcntl(ap->fd, F_GETFL, 0)) == -1) goto Fail;
-    if (fcntl(ap->fd, F_SETFL, flags | O_NDELAY) == -1) goto Fail;
-    ap->speed = -1;
-  } else {
-    strcpy(buf, "/dev/");
-    strcat(buf, ifp->name);
-    if ((ap->fd = open(buf, O_RDWR, 0666)) < 0) goto Fail;
-    sp = find_speed(ap->speed);
-    ap->speed = speed_table[sp].speed;
-    termio.c_iflag = IGNBRK | IGNPAR;
-    termio.c_oflag = 0;
-    termio.c_cflag = speed_table[sp].flags | CS8 | CREAD | CLOCAL;
-    termio.c_lflag = 0;
-    termio.c_line = 0;
-    termio.c_cc[VMIN] = 0;
-    termio.c_cc[VTIME] = 0;
-    if (ioctl(ap->fd, TCSETA, &termio) == -1) goto Fail;
-    if (ioctl(ap->fd, TCFLSH, 2) == -1) goto Fail;
-    arg = 1;
-    ioctl(ap->fd, FIOSNBIO, &arg);      /*** will fail on pty master side ***/
-  }
-  times[dev].wait = 0;
-  on_read(ap->fd, (void (*)()) ifp->rxproc, ifp);
-  return 0;
-
-Fail:
-  if (ap->fd > 0) close(ap->fd);
-  ap->fd = -1;
-  return (-1);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -209,13 +140,36 @@ char monitor;
 long speed;
 {
 	register struct asy *ap;
+	char filename[80];
+	int sp;
+	long arg;
+	struct termio termio;
 
 	ap = &Asy[dev];
+	strcpy(filename, "/dev/");
+	strcat(filename, ifp->name);
+	if ((ap->fd = open(filename, O_RDWR, 0666)) < 0) goto Fail;
 	ap->iface = ifp;
-	ap->ipc_socket = strdup(arg2);
-	ap->speed = speed;
-	asy_open(dev);
+	sp = find_speed(speed);
+	ap->speed = speed_table[sp].speed;
+	termio.c_iflag = IGNBRK | IGNPAR;
+	termio.c_oflag = 0;
+	termio.c_cflag = speed_table[sp].flags | CS8 | CREAD | CLOCAL;
+	termio.c_lflag = 0;
+	termio.c_line = 0;
+	termio.c_cc[VMIN] = 0;
+	termio.c_cc[VTIME] = 0;
+	if (ioctl(ap->fd, TCSETA, &termio) == -1) goto Fail;
+	if (ioctl(ap->fd, TCFLSH, 2) == -1) goto Fail;
+	arg = 1;
+	ioctl(ap->fd, FIOSNBIO, &arg);  /*** will fail on pty master side ***/
+	on_read(ap->fd, (void (*)()) ifp->rxproc, ifp);
 	return 0;
+
+Fail:
+	if (ap->fd >= 0) close(ap->fd);
+	ap->iface = NULLIF;
+	return -1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -228,13 +182,14 @@ struct iface *ifp;
 
 	ap = &Asy[ifp->dev];
 
-	if (ap->fd > 0) {
-		off_read(ap->fd);
-		off_write(ap->fd);
-		free_q(&ap->sndq);
-		close(ap->fd);
-		ap->fd = -1;
-	}
+	if(ap->iface == NULLIF)
+		return -1;      /* Not allocated */
+	ap->iface = NULLIF;
+
+	off_read(ap->fd);
+	off_write(ap->fd);
+	free_q(&ap->sndq);
+	close(ap->fd);
 
 	return 0;
 }
@@ -258,14 +213,14 @@ long bps;
 	if(asyp->iface == NULLIF)
 		return -1;
 
-	if (asyp->fd <= 0 || !strncmp(asyp->iface->name, "ipc", 3))
-		return (-1);
+	if(bps == 0)
+		return -1;
 	sp = find_speed(bps);
 	if (ioctl(asyp->fd, TCGETA, &termio))
-		return (-1);
+		return -1;
 	termio.c_cflag = (termio.c_cflag & ~CBAUD) | speed_table[sp].flags;
 	if (ioctl(asyp->fd, TCSETA, &termio))
-		return (-1);
+		return -1;
 	asyp->speed = speed_table[sp].speed;
 	return 0;
 }
@@ -280,12 +235,14 @@ int cmd;
 int set;
 int32 val;
 {
+	struct asy *ap = &Asy[ifp->dev];
+
 	switch(cmd){
 	case PARAM_SPEED:
 		if(set)
 			asy_speed(ifp->dev,val);
-		return Asy[ifp->dev].speed;
-	};
+		return ap->speed;
+	}
 	return -1;
 }
 
@@ -299,15 +256,13 @@ int cnt;
 {
 	struct asy *ap;
 
-	ap = Asy + dev;
-	if (ap->fd <= 0 && asy_open(dev))
+	ap = &Asy[dev];
+	if(ap->iface == NULLIF)
 		return 0;
-	cnt = read(ap->fd, buf, (unsigned) cnt);
+	cnt = read(ap->fd,buf,cnt);
 	ap->rxints++;
-	if (cnt <= 0) {
-		asy_stop(ap->iface);
+	if (cnt <= 0)
 		return 0;
-	}
 	ap->rxchar += cnt;
 	if (ap->rxhiwat < cnt)
 		ap->rxhiwat = cnt;
@@ -323,27 +278,77 @@ char *argv[];
 void *p;
 {
 	register struct asy *asyp;
+	struct iface *ifp;
+	int i;
 
-	for(asyp = Asy;asyp < &Asy[ASY_MAX];asyp++){
-		if(asyp->iface == NULLIF)
-			continue;
-
-		printf("%s:",asyp->iface->name);
-		printf(" %ld bps\n",asyp->speed);
-
-		printf(" RX: %lu int, %lu chr, %lu hw hi\n",
-			asyp->rxints,
-			asyp->rxchar,
-			asyp->rxhiwat);
-		asyp->rxhiwat = 0;
-
-		if(printf(" TX: %lu int, %lu chr, %u q\n",
-			asyp->txints,
-			asyp->txchar,
-			len_p(asyp->sndq)) == EOF)
-			break;
+	if(argc < 2){
+		for(asyp = Asy;asyp < &Asy[ASY_MAX];asyp++){
+			if(asyp->iface != NULLIF)
+				pasy(asyp);
+		}
+		return 0;
 	}
+	for(i=1;i<argc;i++){
+		if((ifp = if_lookup(argv[i])) == NULLIF){
+			printf("Interface %s unknown\n",argv[i]);
+			continue;
+		}
+		for(asyp = Asy;asyp < &Asy[ASY_MAX];asyp++){
+			if(asyp->iface == ifp){
+				pasy(asyp);
+				break;
+			}
+		}
+		if(asyp == &Asy[ASY_MAX])
+			printf("Interface %s not asy\n",argv[i]);
+	}
+
 	return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void
+pasy(asyp)
+struct asy *asyp;
+{
+
+	printf("%s:",asyp->iface->name);
+
+	printf(" %lu bps\n",asyp->speed);
+
+	printf(" RX: int %lu chars %lu hw hi %lu\n",
+	 asyp->rxints,asyp->rxchar,asyp->rxhiwat);
+	asyp->rxhiwat = 0;
+
+	printf(" TX: int %lu chars %lu%s\n",
+	 asyp->txints,asyp->txchar,
+	 asyp->sndq ? " BUSY" : "");
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Serial transmit process, common to all protocols */
+static void
+asy_tx(asyp)
+struct asy *asyp;
+{
+	int n;
+
+	if (asyp->sndq != NULLBUF) {
+		n = write(asyp->fd, asyp->sndq->data, asyp->sndq->cnt);
+		asyp->txints++;
+		if (n > 0) {
+			asyp->txchar += n;
+			asyp->sndq->data += n;
+			asyp->sndq->cnt -= n;
+			if(asyp->sndq->cnt == 0){
+				asyp->sndq = free_mbuf(asyp->sndq);
+				if (asyp->sndq == NULLBUF)
+					off_write(asyp->fd);
+			}
+		}
+	}
 }
 
 /*---------------------------------------------------------------------------*/
@@ -356,39 +361,18 @@ struct mbuf *bp;
 {
 	struct asy *asyp;
 
-	if(dev < 0 || dev >= ASY_MAX)
+	if(dev < 0 || dev >= ASY_MAX){
+		free_p(bp);
 		return -1;
+	}
 	asyp = &Asy[dev];
-	if (asyp->fd > 0 || !asy_open(dev)) {
+
+	if(asyp->iface == NULLIF)
+		free_p(bp);
+	else {
 		append(&asyp->sndq, bp);
 		on_write(asyp->fd, (void (*)()) asy_tx, asyp);
-	} else
-		free_p(bp);
+	}
 	return 0;
 }
 
-/*---------------------------------------------------------------------------*/
-
-/* Serial transmit process, common to all protocols */
-static void
-asy_tx(asyp)
-struct asy *asyp;
-{
-	int  n;
-
-	if (asyp->sndq != NULLBUF) {
-		n = write(asyp->fd, asyp->sndq->data, asyp->sndq->cnt);
-		if (n <= 0) {
-			asy_stop(asyp->iface);
-			return;
-		}
-		asyp->sndq->data += n;
-		asyp->sndq->cnt -= n;
-		asyp->txints++;
-		asyp->txchar += n;
-	}
-	while (asyp->sndq != NULLBUF && asyp->sndq->cnt == 0)
-		asyp->sndq = free_mbuf(asyp->sndq);
-	if (asyp->sndq == NULLBUF)
-		off_write(asyp->fd);
-}

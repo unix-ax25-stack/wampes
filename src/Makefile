@@ -143,7 +143,6 @@ OBJS          = 8250.o \
 		setsp.o \
 		slip.o \
 		smisc.o \
-		stime.o \
 		tcpcmd.o \
 		tcpdump.o \
 		tcpgate.o \
@@ -245,7 +244,6 @@ SRCS          = 8250.c \
 		setsp.c \
 		slip.c \
 		smisc.c \
-		stime.c \
 		tcpcmd.c \
 		tcpdump.c \
 		tcpgate.c \
@@ -311,8 +309,7 @@ $(DEST)/$(PROGRAM): $(PROGRAM)
 		$(CC) $(CFLAGS) -c $<
 
 ###
-8250.o: global.h mbuf.h proc.h timer.h iface.h 8250.h asy.h devparam.h \
-	buildsaddr.h hpux.h
+8250.o: global.h mbuf.h proc.h timer.h iface.h 8250.h asy.h devparam.h hpux.h
 alloc.o: global.h
 arp.o: global.h mbuf.h timer.h iface.h proc.h enet.h ax25.h icmp.h internet.h \
 	ip.h session.h hardware.h telnet.h arp.h
@@ -436,8 +433,6 @@ slip.o: global.h config.h mbuf.h iface.h proc.h timer.h ip.h internet.h \
 	slhc.h tcp.h netuser.h asy.h slip.h trace.h
 smisc.o: global.h mbuf.h socket.h proc.h timer.h remote.h tcp.h iface.h \
 	internet.h ip.h netuser.h udp.h commands.h hardware.h
-stime.o: global.h mbuf.h netuser.h timer.h udp.h iface.h proc.h internet.h \
-	ip.h
 tcpcmd.o: global.h timer.h mbuf.h netuser.h internet.h tcp.h iface.h proc.h \
 	ip.h cmdparse.h commands.h
 tcpdump.o: global.h mbuf.h netuser.h internet.h tcp.h iface.h proc.h timer.h \

@@ -14,8 +14,6 @@ fuer MS-DOS, die auch 'reget' koennen.
 
 ===============================================================================
 
-- remove ipc interface, switch all 7.0 users to ip-over-udp
-
 - 'rs' does not work on hp-terminals
 
 - even in raw mode it should be possible to send ^] without leaving the session
