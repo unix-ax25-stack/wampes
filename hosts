@@ -1405,7 +1405,7 @@
 #
 #44.130.144.xxx Bielefeld/Oerlinghausen Stand 08.02.95
 44.130.144.1    DB0NOS  # TCP/IP-Svr Oerlinghausen ***
-44.130.144.2    FTP.DB0NOS.AMPR.ORG     # FTP-Svr Oerlinghausen ***
+44.130.144.2    FTP.DB0NOS              # FTP-Svr Oerlinghausen ***
 #44.130.144.3-44.130.144.15 fuer DB0NOS-Peripherie und Subrechner
 44.130.144.16   DL3YEN  # Wolf, Bielefeld
 44.130.144.17   KR4PH   #
@@ -1424,8 +1424,8 @@
 # 44.130.144.30 DL9YET nach 44.130.15.56
 44.130.144.31   AA2RL   #
 44.130.144.32   DG9YGJ  # Stefan, Roedinghausen
-44.130.144.33   SYS1.DG8YAY.AMPR.ORG    # Joerg, Bielefeld
-44.130.144.34   SYS2.DG8YAY.AMPR.ORG    #
+44.130.144.33   SYS1.DG8YAY             # Joerg, Bielefeld
+44.130.144.34   SYS2.DG8YAY             #
 44.130.144.35   DL5YDE  # Ernst, Stukenbrock
 44.130.144.36   DG4YDB  # Michael, Bielefeld
 44.130.144.37   DG7YHV  # Juergen
@@ -1439,7 +1439,7 @@
 44.130.144.56   DK3RC   # Horst, Detmold
 44.130.144.57   DK3RC-1 # Horst, Bielstein
 44.130.144.58   DL0JW   # Clubstation N58, Oerlinghausen
-44.130.144.60   SYS2.DG6YGD.AMPR.ORG    # Dirk, Detmold
+44.130.144.60   SYS2.DG6YGD             # Dirk, Detmold
 44.130.144.66   DG1YAY  # Christof, Buende
 #
 #44.130.24.x    Rhein-Main
@@ -2878,19 +2878,85 @@
 44.130.81.5     DG1HQY  # Ralf, Aschersleben
 #
 #44.130.82.x    Magdeburg
-44.130.82.1     DG0CAD  # Gerald Mews, O-3300 Schoenebeck/Elbe; AT386SX
-44.130.82.2     DL9MGG  # Torsten Baecker, Schoenebeck (ex Y56GG)
-44.130.82.3     DL6MPG  # Uwe, Oschersleben (ex Y55PG)
-44.130.82.4     DG6MUE  # Jens Muenster, Magdeburg
-44.130.82.5     DG6MJA  # Hergo Pape, Magdeburg
-44.130.82.6     DG6MUE-1        # Jens Muenster, Magdeburg
-44.130.82.7     DG6MJA-1        # Hergo Pape, Magdeburg
-44.130.82.8     DL8MMR  # Mario Roeber, Magdeburg
-44.130.82.9     DL6CIB  # Olaf Fischer, Magdeburg
-44.130.82.10    Y71G    # Mailbox, Magdeburg
-44.130.82.11    DL6MKG  # Burkhard Schroeder, 39218 Schoenebeck
-44.130.82.12    DL6CPF  # Rene, Osterwieck
-44.130.82.100   DB0OCA-10       # ; Huy, nr Halberstadt (DL6MPG)
+#
+# Gerald Mews,  Schoenebeck
+44.130.82.1     dg0cad
+#
+# Torsten Baecker, Schoenebeck
+44.130.82.2     dl9mgg
+#
+# Uwe, Oschersleben (Ex Y55PG)
+44.130.82.3     dl6mpg
+#
+# Jens Muenster,         Magdeburg
+44.130.82.4     dg6mue
+44.130.82.6     dg6mue-1
+#
+# Hergo Pape,           Magdeburg
+44.130.82.5     dg6mja
+44.130.82.7     dg6mja-1
+#
+# Mario Roeber,         Magdeburg
+44.130.82.8     dl8mmr
+#
+# Olaf Fischer,         Magdeburg
+44.130.82.9     dl6cib
+#
+# Mario Roeber,         Magdeburg Mailbox (Ex Y71G)
+44.130.82.10    db0mge-10
+44.130.82.11    db0mge
+#
+#
+#
+# Rene, Osterwieck
+44.130.82.12    dl6cpf
+#
+# Manfred,              Magdeburg
+44.130.82.13    dl8mog
+#
+# Mario Borstel,        Magdeburg
+44.130.82.14    dl6cia
+#
+# Holger Laub,          Glindenberg
+44.130.82.15    dl6cgt
+#
+# Olaf Fischer,         Magdeburg
+44.130.82.16    dl6cib
+#
+# Peter F.,             Magdeburg
+44.130.82.17    dg0cbo-1
+44.130.82.18    dg0cbo
+#
+# Hergo Pape,           Magdeburg
+#44.130.82.200  dg6mja-2
+44.130.82.19    dg6mja-2
+44.130.82.20    dg6mja-3
+#
+# Gerald Mews,  Schoenebeck
+44.130.82.21    dg0cad-u
+#
+# Olaf Fischer,         Magdeburg
+44.130.82.22    dl6cib-2
+44.130.82.23    dl6cib-3
+#
+# Mario Roeber,         Magdeburg
+44.130.82.24  dl8mmr-1
+#
+# Matthias Weingart     Magdeburg
+44.130.82.25    dg6mmt
+44.130.82.26    dg6mmt-1
+#
+# Karsten Dierks,       Magdeburg
+44.130.82.27    dg0cfl
+#
+# Burkhard Schroeder    Schoenebeck
+44.130.82.28    dl6mkg
+#
+# Henri Schultze        Magdeburg
+44.130.82.29    dg0cdb
+#
+# TCP/IP Teil DB0OCA   HUY/Halberstadt
+44.130.82.100 db0oca
 #
 #44.130.83.x    Dessau
 44.130.83.1     DG1HRG  # Guido, Woerlitz
@@ -2915,7 +2981,7 @@
 44.130.88.7     Y23VE   # Aldo Jesovka, O-7010 Leipzig
 44.130.88.10    DL8WKR  # Knut Rothe, O-7220 Pegau
 44.130.88.11    DL2LQB  # Michael Wollschlaeger, O-7222 Groitzsch
-44.130.88.13    DG0LDK-TEST     #
+44.130.88.13    DG0LDK-TEST     # Wolfgang Winter, 04357 Leipzig  ax25: DG0LDK-2
 44.130.88.14    DD3DA   # Joerg Schlottmann, Leipzig
 44.130.88.15    DG3LSW  # Joachim Hilprecht, Leipzig
 44.130.88.16    DL6YTM  # Peter Wilkert, 04685 Nerchau
@@ -2924,15 +2990,20 @@
 44.130.88.19    DL5YYM  # Guenter Dornblut, 04179 Leipzig
 44.130.88.20    DG0LDK  # Wolfgang Winter, 04357 Leipzig
 44.130.88.21    DG0LGJ  # Torsten, Rosswein
-44.130.88.22    DG0LGF  # Axel Maercker, Leipzig
+44.130.88.22    DG0LGF  # Axel Maercker, Leipzig  ax25: DG0LGF-15
 44.130.88.23    DG0LGA  # Raoul Brosch, Markkleeberg
 44.130.88.24    DG0LHW  # Mike Wittenbecher, 04315 Leipzig
 44.130.88.25    DL8LWH  # Hendrik Wendschuch, Leipzig
 44.130.88.26    DL5YRM  # Tom Bolle, Leipzig
-44.130.88.28    DG2LWD  # Andread Donat, 04347 Leipzig
+44.130.88.27    DG2LWH  # Holger Baumgaertner, 04157 Leipzig
+44.130.88.28    DG2LWD  # Andreas Donat, 04347 Leipzig
 44.130.88.29    DG0LHL  # Wilfried Ploog, 04349 Leipzig
+#
+44.130.88.34    DG2LWH-2 # ax25: DG2LWH-2
 44.130.88.35    DL1LRK  # Uwe Kasubek, Delitzsch
-44.130.88.100   DB0LPZ#
+44.130.88.36    DG0LEH  # Edgar Hornig, 04277 Leipzig
+#
+44.130.88.100   DB0LPZ-SVR  # ax25: DB0LPZ-10 (in Kuerze QRV)
 #
 #44.130.89.x    Chemnitz
 44.130.89.1     Y28PN   # Uwe Huebner, O-9052 Chemnitz; UNIX/NOS
@@ -6233,3 +6304,11 @@
 #
 44.161.9.1   lx1cw       lx1cw.ampr.org       # Gilbert, 9179 Oberfeulen
 #
+
+connect2.c
+pty-test.c
+makeiprt.c
+tcpcheckin
+spellcheck
+connect2.o
+makeiprt.o

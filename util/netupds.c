@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.28 1995/03/29 22:03:39 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.29 1995/04/06 06:20:48 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -1054,19 +1054,26 @@ static void server_version_1(const char *client, int flags)
   newhead = 0;
   while ((p = Filehead)) {
     Filehead = p->next;
+    strcpy(masterfilename, master);
+    strcat(masterfilename, "/");
+    strcat(masterfilename, p->name);
+    strcpy(mirrorfilename, mirror);
+    strcat(mirrorfilename, "/");
+    strcat(mirrorfilename, p->name);
     if (!FTYPE(p->master.mode)) {
-      strcpy(masterfilename, master);
-      strcat(masterfilename, "/");
-      strcat(masterfilename, p->name);
-      strcpy(mirrorfilename, mirror);
-      strcat(mirrorfilename, "/");
-      strcat(mirrorfilename, p->name);
       if (FTYPE(p->client.mode))
 	send_update(p, ACT_DELETE, flags, masterfilename, mirrorfilename);
       else
 	update_mirror_from_master(p, masterfilename, mirrorfilename);
       free(p);
     } else {
+      if (FTYPE(p->mirror.mode) &&
+	  (FTYPE(p->mirror.mode) != FTYPE(p->client.mode) ||
+	   FTYPE(p->mirror.mode) != FTYPE(p->master.mode))) {
+	if (remove(mirrorfilename))
+	  syscallerr(mirrorfilename);
+	memset((char *) &p->mirror, 0, sizeof(struct fileentry));
+      }
       p->next = newhead;
       newhead = p;
     }
@@ -1081,14 +1088,6 @@ static void server_version_1(const char *client, int flags)
     strcpy(mirrorfilename, mirror);
     strcat(mirrorfilename, "/");
     strcat(mirrorfilename, p->name);
-
-    if (FTYPE(p->mirror.mode) &&
-	(FTYPE(p->mirror.mode) != FTYPE(p->client.mode) ||
-	 FTYPE(p->mirror.mode) != FTYPE(p->master.mode))) {
-      if (remove(mirrorfilename))
-	syscallerr(mirrorfilename);
-      memset((char *) &p->mirror, 0, sizeof(struct fileentry));
-    }
 
     if (FTYPE(p->master.mode) != FTYPE(p->client.mode)) {
       send_update(p, ACT_CREATE, flags, masterfilename, mirrorfilename);
