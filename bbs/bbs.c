@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.46 1993/03/05 20:15:36 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.47 1993/03/11 14:13:01 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -87,6 +87,8 @@ struct dir_entry {
 static char *MYHOSTNAME;
 static char *myhostname;
 static char prompt[1024] = "bbs> ";
+static const char daynames[] = "SunMonTueWedThuFriSat";
+static const char monthnames[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
 static int debug;
 static int doforward;
 static int errors;
@@ -111,6 +113,7 @@ static const char *strcasepos(const char *str, const char *pat);
 static char *getstring(char *s);
 static char *timestr(long gmt);
 static char *rfc822_date(long gmt);
+static long parse_date(const char *str);
 static int callvalid(const char *call);
 static void make_parent_directories(const char *filename);
 static char *getfilename(int mesg);
@@ -255,11 +258,35 @@ static char *strdup(const char *s)
 
 /*---------------------------------------------------------------------------*/
 
+/* Use private function because some platforms are broken, eg 386BSD */
+
+#undef tolower
+
+int tolower(c)
+int c;
+{
+  return (c >= 'A' && c <= 'Z') ? (c - 'A' + 'a') : c;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Use private function because some platforms are broken, eg 386BSD */
+
+#undef toupper
+
+int toupper(c)
+int c;
+{
+  return (c >= 'a' && c <= 'z') ? (c - 'a' + 'A') : c;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static char *strupc(char *s)
 {
   char *p;
 
-  for (p = s; *p = toupper(uchar(*p)); p++) ;
+  for (p = s; *p = toupper(*p); p++) ;
   return s;
 }
 
@@ -269,7 +296,7 @@ static char *strlwc(char *s)
 {
   char *p;
 
-  for (p = s; *p = tolower(uchar(*p)); p++) ;
+  for (p = s; *p = tolower(*p); p++) ;
   return s;
 }
 
@@ -277,18 +304,24 @@ static char *strlwc(char *s)
 
 static int Strcasecmp(const char *s1, const char *s2)
 {
-  while (tolower(uchar(*s1)) == tolower(uchar(*s2++)))
-    if (!*s1++) return 0;
-  return tolower(uchar(*s1)) - tolower(uchar(s2[-1]));
+  while (tolower(*s1) == tolower(*s2)) {
+    if (!*s1) return 0;
+    s1++;
+    s2++;
+  }
+  return tolower(*s1) - tolower(*s2);
 }
 
 /*---------------------------------------------------------------------------*/
 
 static int Strncasecmp(const char *s1, const char *s2, int n)
 {
-  while (--n >= 0 && tolower(uchar(*s1)) == tolower(uchar(*s2++)))
-    if (!*s1++) return 0;
-  return n < 0 ? 0 : tolower(uchar(*s1)) - tolower(uchar(s2[-1]));
+  while (--n >= 0 && tolower(*s1) == tolower(*s2)) {
+    if (!*s1) return 0;
+    s1++;
+    s2++;
+  }
+  return n < 0 ? 0 : tolower(*s1) - tolower(*s2);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -298,7 +331,7 @@ static char *strtrim(char *s)
   char *p;
 
   for (p = s; *p; p++) ;
-  while (--p >= s && isspace(uchar(*p))) ;
+  while (--p >= s && isspace(*p & 0xff)) ;
   p[1] = 0;
   return s;
 }
@@ -310,10 +343,10 @@ static const char *strcasepos(const char *str, const char *pat)
   const char *s, *p;
 
   for (; ; str++)
-    for (s = str, p = pat; ; ) {
+    for (s = str, p = pat; ; s++, p++) {
       if (!*p) return str;
       if (!*s) return 0;
-      if (tolower(uchar(*s++)) != tolower(uchar(*p++))) break;
+      if (tolower(*s) != tolower(*p)) break;
     }
 }
 
@@ -372,7 +405,7 @@ static char *timestr(long gmt)
   tm = gmtime(&gmt);
   sprintf(buf, "%02d%.3s%02d/%02d%02d",
 	       tm->tm_mday,
-	       "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
+	       monthnames + 3 * tm->tm_mon,
 	       tm->tm_year % 100,
 	       tm->tm_hour,
 	       tm->tm_min);
@@ -389,14 +422,46 @@ static char *rfc822_date(long gmt)
 
   tm = gmtime(&gmt);
   sprintf(buf, "%.3s, %d %.3s %02d %02d:%02d:%02d GMT",
-	  "SunMonTueWedThuFriSat" + 3 * tm->tm_wday,
+	  daynames + 3 * tm->tm_wday,
 	  tm->tm_mday,
-	  "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
+	  monthnames + 3 * tm->tm_mon,
 	  tm->tm_year % 100,
 	  tm->tm_hour,
 	  tm->tm_min,
 	  tm->tm_sec);
   return buf;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static long parse_date(const char *str)
+{
+
+  char *p;
+  char monthstr[4];
+  long t;
+  struct tm tm;
+
+  if (sscanf(str,
+	     "%*s %d %3s %d %d:%d:%d",
+	     &tm.tm_mday,
+	     monthstr,
+	     &tm.tm_year,
+	     &tm.tm_hour,
+	     &tm.tm_min,
+	     &tm.tm_sec) != 6) return -1;
+  if (strlen(monthstr) != 3) return -1;
+  p = strstr(monthnames, monthstr);
+  if (!p) return -1;
+  tm.tm_mon = (p - monthnames) / 3;
+  tm.tm_isdst = 0;
+#if defined __hpux
+  t = mktime(&tm);
+  if (t != -1) return t - timezone;
+#elif defined sun
+  return timegm(&tm);
+#endif
+  return -1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -898,13 +963,13 @@ static void send_to_news(struct mail *mail)
 static void fix_address(char *addr)
 {
 
-  char tmp[1024];
   char *p1, *p2;
+  char tmp[1024];
+  int c, skip;
 
   for (p1 = addr; *p1; p1++)
     switch (*p1) {
     case '%':
-    case '.':
       *p1 = '@';
       break;
     case ',':
@@ -933,6 +998,15 @@ static void fix_address(char *addr)
     }
     strcpy(addr, tmp);
   }
+
+  for (skip = 0, p1 = p2 = addr; c = *p1; p1++) {
+    if (c == '.')
+      skip = 1;
+    else if (c == '!')
+      skip = 0;
+    if (!skip) *p2++ = c;
+  }
+  *p2 = 0;
 
   if (!strchr(addr, '!')) {
     sprintf(tmp, "%s!%s", myhostname, addr);
@@ -1091,8 +1165,8 @@ static int get_header_value(const char *name, int do822, char *line, char *value
   char *p1, *p2;
   int c, comment;
 
-  while (*name)
-    if (tolower(uchar(*name++)) != tolower(uchar(*line++))) return 0;
+  for (; *name; name++, line++)
+    if (tolower(*name) != tolower(*line)) return 0;
 
   if (do822) {
     for (comment = 0, p1 = line; c = *p1; p1++) {
@@ -1271,7 +1345,8 @@ static void forward_message(const struct index *index, const char *filename, int
 	   *index->bid ? " $" : "",
 	   index->bid);
   if (!getstring(buf)) exit(1);
-  switch (tolower(uchar(*buf))) {
+  switch (*buf) {
+  case 'O':
   case 'o':
     puts(*index->subject ? index->subject : "no subject");
     sleep(5); /* Bugfix for TheBox 1.9 */
@@ -1297,6 +1372,7 @@ static void forward_message(const struct index *index, const char *filename, int
     puts("\032");
     wait_for_prompt();
     break;
+  case 'N':
   case 'n':
     wait_for_prompt();
     break;
@@ -2408,6 +2484,7 @@ static void recv_from_mail_or_news(void)
 
   char *cp;
   char distr[1024];
+  char expire[1024];
   char line[1024];
   int from_priority;
   int n;
@@ -2418,6 +2495,7 @@ static void recv_from_mail_or_news(void)
     mail = alloc_mail();
     *mail->to = 0;
     *distr = 0;
+    *expire = 0;
     from_priority = 0;
     state = 0;
     n = strncmp(line, "#! rnews ", 9) ? 0x7fffffff : atoi(line + 9);
@@ -2435,6 +2513,7 @@ static void recv_from_mail_or_news(void)
 	  get_header_value("Subject:", 0, line, mail->subject);
 	  get_header_value("Message-ID:", 1, line, mail->mid);
 	  get_header_value("Distribution:", 1, line, distr);
+	  get_header_value("Expires:", 1, line, expire);
 	  get_header_value("Bulletin-ID:", 1, line, mail->bid);
 	} else
 	  state = 1;
@@ -2458,6 +2537,13 @@ static void recv_from_mail_or_news(void)
       if (*distr) {
 	strcat(mail->to, "@");
 	strcat(mail->to, distr);
+      }
+      if (*expire) {
+	mail->lifetime = parse_date(expire);
+	if (mail->lifetime != -1) {
+	  mail->lifetime = (mail->lifetime - time((long *) 0)) / DAYS;
+	  if (mail->lifetime < 1) mail->lifetime = 1;
+	}
       }
       route_mail(mail);
     }

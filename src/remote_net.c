@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.15 1993/01/29 06:48:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.16 1993/03/11 14:12:50 deyke Exp $ */
 
 #include "global.h"
 
@@ -56,7 +56,7 @@ int all;
 {
 
   char *arg;
-  int c, quote;
+  int quote;
   static char *p;
 
   if (line) p = line;
@@ -69,8 +69,8 @@ int all;
     if (!(p = strchr(p, quote))) p = "";
   } else
     while (*p && !isspace(uchar(*p))) {
-      c = tolower(uchar(*p));
-      *p++ = c;
+      *p = tolower(*p);
+      p++;
     }
   if (*p) *p++ = '\0';
   return arg;

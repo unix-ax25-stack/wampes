@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel,v 1.6 1993/03/02 12:50:49 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel,v 1.7 1993/03/11 14:12:13 deyke Exp $
 
 hostname     dl4sel
 ax25 mycall  dl4sel
@@ -9,7 +9,7 @@ netrom ident deufr
 
 attach asy 0 0 kissi tnc0 0 256 4800
 param tnc0  1  25   # txdelay
-param tnc0  2 127   # persistence
+param tnc0  2  31   # persistence
 param tnc0  3  30   # slottime
 param tnc0  4   3   # txtail
 param tnc0  5   0   # full duplex

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.22 1993/02/23 21:34:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.23 1993/03/11 14:12:37 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -279,5 +279,13 @@ struct usock;
 
 extern int Debug;
 extern int Shortstatus;
+
+/* Use functions in misc.c because some platforms are broken, eg 386BSD */
+#undef tolower
+#define tolower(c) Xtolower(c)
+int Xtolower __ARGS((int));
+#undef toupper
+#define toupper(c) Xtoupper(c)
+int Xtoupper __ARGS((int));
 
 #endif  /* _GLOBAL_H */

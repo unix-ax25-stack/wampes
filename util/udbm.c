@@ -1,7 +1,7 @@
 /* User Data Base Manager */
 
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.16 1992/09/30 15:55:26 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.17 1993/03/11 14:13:10 deyke Exp $";
 #endif
 
 #define DEBUG           0
@@ -220,7 +220,8 @@ char *s;
 {
   char *p;
 
-  for (p = s; (*p = tolower(uchar(*p))) != 0; p++) ;
+  for (p = s; *p; p++)
+    if (*p >= 'A' && *p <= 'Z') *p = tolower(*p);
   return s;
 }
 

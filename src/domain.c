@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.9 1993/01/29 06:48:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.10 1993/03/11 14:12:35 deyke Exp $ */
 
 #include "global.h"
 
@@ -208,7 +208,7 @@ static void strlwc(to, from)
 char *to;
 const char *from;
 {
-  while (*to++ = tolower(uchar(*from++))) ;
+  while (*to++ = tolower(*from++)) ;
 }
 
 /*---------------------------------------------------------------------------*/

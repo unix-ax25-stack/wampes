@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.27 1993/02/28 17:40:55 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.28 1993/03/11 14:12:21 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -247,7 +247,6 @@ int all;
 {
 
   char *arg;
-  int c;
   static char *p;
 
   if (line) p = line;
@@ -255,8 +254,8 @@ int all;
   if (all) return p;
   arg = p;
   while (*p && !isspace(uchar(*p))) {
-    c = tolower(uchar(*p));
-    *p++ = c;
+    if (*p >= 'A' && *p <= 'Z') *p = tolower(*p);
+    p++;
   }
   if (*p) *p++ = '\0';
   return arg;
@@ -264,41 +263,64 @@ int all;
 
 /*---------------------------------------------------------------------------*/
 
+/* Returns a formatted version of the given text.
+ * The prefix appears at the beginning of the text, and each
+ * line after the first will be indented to column PREFIXLEN.
+ * All whitespace (SPACE and TAB) will be replaced by a single
+ * SPACE character,
+ * Lines will be filled to be CONVLINELEN characters long, wrapping
+ * words as necessary.
+ */
+
 static char *formatline(prefix, text)
 char *prefix, *text;
 {
 
-#define PREFIXLEN 10
-#define LINELEN   79
+#define PREFIXLEN       10
+#define CONVLINELEN     79
 
-  char *f, *t, *x;
+  char *e, *f, *t, *x;
   int l, lw;
-
   static char buf[2048];
 
-  for (f = prefix, t = buf; *f; *t++ = *f++) ;
-  l = t - buf;
-  f = text;
+  e = buf + (sizeof(buf) - 2);
 
-  for (; ; ) {
+  /* Copy prefix into buf, set l to length of prefix */
+  for (f = prefix, t = buf; *f; f++)
+    if (t < e) *t++ = *f;
+  l = t - buf;
+
+  for (f = text; ; ) {
+
+    /* Skip leading spaces */
     while (isspace(uchar(*f))) f++;
-    if (!*f) {
+
+    /* Return if nothing more or no room left */
+    if (!*f || t >= e) {
       *t++ = '\n';
-      *t = '\0';
+      *t = 0;
       return buf;
     }
+
+    /* Find length of next word (seq. of non-blanks) */
     for (x = f; *x && !isspace(uchar(*x)); x++) ;
     lw = x - f;
-    if (l > PREFIXLEN && l + 1 + lw > LINELEN) {
-      *t++ = '\n';
+
+    /* If the word would extend past end of line, do newline */
+    if (l > PREFIXLEN && l + 1 + lw > CONVLINELEN) {
+      if (t < e) *t++ = '\n';
       l = 0;
     }
+
+    /* Put out a single space, or indent to column PREFIXLEN */
     do {
-      *t++ = ' ';
+      if (t < e) *t++ = ' ';
       l++;
     } while (l < PREFIXLEN);
+
+    /* Put out the word */
     while (lw--) {
-      *t++ = *f++;
+      if (t < e) *t++ = *f++;
       l++;
     }
   }
@@ -773,7 +795,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.27 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.28 $  Type /HELP for help.\n", myhostname);
   appendstring(cp, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {

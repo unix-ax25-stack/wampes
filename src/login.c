@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.30 1993/01/29 06:48:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.31 1993/03/11 14:12:42 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -183,8 +183,8 @@ const char *name;
   static char username[128];
 
   for (; ; ) {
-    while (*name && !isalnum(uchar(*name))) name++;
-    for (cp = username; isalnum(uchar(*name)); *cp++ = tolower(uchar(*name++))) ;
+    while (*name && !isalnum(*name & 0xff)) name++;
+    for (cp = username; isalnum(*name & 0xff); *cp++ = tolower(*name++)) ;
     *cp = 0;
     if (!*username) return DEFAULTUSER;
     if (callvalid(username)) return username;

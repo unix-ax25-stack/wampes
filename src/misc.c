@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.13 1993/01/29 06:48:32 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.14 1993/03/11 14:12:44 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -10,6 +10,18 @@
 #include "mbuf.h"
 
 char Whitespace[] = " \t\r\n";
+
+int Xtolower(c)
+int c;
+{
+	return (c >= 'A' && c <= 'Z') ? (c - 'A' + 'a') : c;
+}
+
+int Xtoupper(c)
+int c;
+{
+	return (c >= 'a' && c <= 'z') ? (c - 'a' + 'A') : c;
+}
 
 /* Select from an array of strings, or return ascii number if out of range */
 char *
@@ -149,12 +161,16 @@ const char *s;
 
 /* Case-insensitive string comparison */
 
-int stricmp(s1, s2)
-char *s1, *s2;
+int stricmp(s1,s2)
+char *s1,*s2;
 {
-  while (tolower(uchar(*s1)) == tolower(uchar(*s2++)))
-    if (!*s1++) return 0;
-  return tolower(uchar(*s1)) - tolower(uchar(s2[-1]));
+	while(tolower(*s1) == tolower(*s2)){
+		if(!*s1)
+			return 0;
+		s1++;
+		s2++;
+	}
+	return tolower(*s1) - tolower(*s2);
 }
 
 strnicmp(a,b,n)

@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.3 1992/11/30 13:56:44 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.4 1993/03/11 14:13:09 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -122,7 +122,7 @@ char *line;
       *line = 0;
       return;
     }
-    *line = tolower(*line & 0xff);
+    if (*line >= 'A' && *line <= 'Z') *line = tolower(*line);
   }
 }
 
