@@ -1354,7 +1354,7 @@
 44.130.20.131   DD3KC   # Petra Schwarz, Huertgenwald
 44.130.20.200   DL1EDB  # Chris Schlaeger, 5100 Aachen; Atari ST
 #
-# 44.130.21.0   Bonn/Euskirchen
+#44.130.21.x    Bonn/Euskirchen
 # Lokaler Koordinator: DG1KJD  Router/NS: dg1kjd-svr v. db0me
 44.130.21.1     DL4KW   # Rolf Willerscheid, 5350 Euskirchen
 44.130.21.2     DG4KS-1 # Andreas Kempf, 5350 Euskirchen
@@ -1419,17 +1419,19 @@
 44.130.21.65    DL3KBJ  # Rainer, Bonn
 44.130.21.66    DJ0IA   # Steve Takacs 53773 Hennef-Lichtenberg
 44.130.21.67    DG5KAY  # Herbert Falkenbach 53332 Bornheim
+44.130.21.68    DD9KV   # Volker, Odendorf
 44.130.21.70    DL6KBG  # Oliver Goldenstein, 5308 Rheinbach-Niederdrees
 44.130.21.71    DL1KIM  # Ingo Maurischat, 5300 Bonn 1
 44.130.21.72    DB5KW   # Marcel Arndt, 5308 Rheinbach
 44.130.21.77    DG1KBI  # Werner Bayer, 53879 Euskirchen
+44.130.21.87    DL8FCU  # Alexander Sudermann, Niederbachem
 44.130.21.89    DG6KAO  # Joerg Siebertz, 53757 Sankt Augustin
 44.130.21.90    DG3KCR-R        #
 44.130.21.91    DG3KCR-S        #
 44.130.21.92    DG3KCR-D        #
 44.130.21.93    DG3KCR-A        #
 44.130.21.94    DG3KCR-L        #
-44.130.21.95    DL1KR   # Bernd
+44.130.21.95    DL1KR   # Bernd Schaefer, 51570 Windeck-Dattenfeld
 44.130.21.111   DG2KMN  # Michael
 44.130.21.128   DB0NET-8        # Euskirchen TCP/IP Switch; ***, ARP via DB0NET RMNC
 44.130.21.134   DC7OP   # Andreas, Mechernich
@@ -1910,12 +1912,12 @@
 44.130.28.30    DL8ZAD  # Juergen, 35789 Weilmuenster nr Wetzlar
 44.130.28.58    DF0WS   # ClubStn F58, 35396 Giessen-Wieseck
 #---------------------------------------------------------------------------
-# KA_HOSTS BEGIN [960324]
+# KA_HOSTS BEGIN [960513]
 # Hier die Karlsruher IP-Adressen:
 #
 44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc1ik@db0sao.ampr.org,
 #                       # dc1ik@db0sao.#bw.deu.eu,
-#                       # erb@inss1.etec.uni-karlsruhe.de
+#                       # erb@inss1.etec.uni-karlsruhe.de,erb@bofh.ampr.org
 #
 44.130.29.1  db0rot-w   # JN48ft *** Mailbox Rotensol 76332 Bad Herrenalb
 44.130.29.2  dg9bad-7   #        Thomas Waehner       89171 Illerkirchberg
