@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.64 1989/03/16 20:59:11 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.65 1989/03/29 21:26:32 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -11,6 +11,7 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <sys/stat.h>
 #include <sys/utsname.h>
 #include <time.h>
+#include <unistd.h>
 
 extern char  *calloc();
 extern char  *getenv();
@@ -90,6 +91,7 @@ static char  *myhostname;
 static char  loginname[80];
 static int  debug;
 static int  errors;
+static int  fdlock = -1;
 static int  findex;
 static int  hostmode;
 static int  locked;
@@ -360,15 +362,11 @@ static int  check_abort()
 
 static void lock()
 {
-  int  fd, try;
-
-  if (!locked) {
-    for (try = 1; ; try++) {
-      if (try > 10) halt();
-      if ((fd = open("lock", O_WRONLY | O_CREAT | O_EXCL, 0644)) >= 0) break;
-      sleep((unsigned long) try);
+  if (locked <= 0) {
+    if (fdlock < 0) {
+      if ((fdlock = open("lock", O_RDWR | O_CREAT, 0644)) < 0) halt();
     }
-    if (close(fd)) halt();
+    if (lockf(fdlock, F_LOCK, 0)) halt();
   }
   locked++;
 }
@@ -377,9 +375,8 @@ static void lock()
 
 static void unlock()
 {
-  locked--;
-  if (locked <= 0)
-    if (unlink("lock")) halt();
+  if (--locked <= 0)
+    if (lockf(fdlock, F_ULOCK, 0)) halt();
 }
 
 /*---------------------------------------------------------------------------*/
