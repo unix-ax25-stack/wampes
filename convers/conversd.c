@@ -1,3 +1,5 @@
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 1.2 1988/08/29 22:27:54 dk5sg Exp $";
+
 #include <sys/types.h>
 
 #include <ctype.h>
@@ -169,7 +171,7 @@ int  flisten;
   connections = cp;
   cp->fd = fd;
   cp->time = time(0l);
-  appendstring(&cp->obuf, "convers version 880427. Type /HELP for help.\n");
+  appendstring(&cp->obuf, "conversd $Revision: 1.2 $  Type /HELP for help.\n");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -217,6 +219,7 @@ struct connection *cp;
   appendstring(&cp->obuf, "/QUIT        Terminate the convers session\n");
   appendstring(&cp->obuf, "/WHO         Print all users and their channel numbers\n");
 
+  appendstring(&cp->obuf, "***\n");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -248,6 +251,7 @@ struct connection *cp;
     sprintf(buffer, "%7d  %2d:%02d  %s\n", p->channel, tm->tm_hour, tm->tm_min, p->user);
     appendstring(&cp->obuf, buffer);
   }
+  appendstring(&cp->obuf, "***\n");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -358,7 +362,7 @@ main()
 	      }
 	      break;
 	    default:
-	      if (cp->icnt < sizeof(cp->ibuf) - 5) 
+	      if (cp->icnt < sizeof(cp->ibuf) - 5)
 		cp->ibuf[cp->icnt++] = buffer[i];
 	      break;
 	    }

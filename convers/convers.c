@@ -1,3 +1,5 @@
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.2 1988/08/29 22:27:48 dk5sg Exp $";
+
 #include <sys/types.h>
 
 #include <netdb.h>
@@ -67,8 +69,8 @@ char  **argv;
   if (socket(AF_INET, SOCK_STREAM, 0) != 3) stop(*argv);
   if (connect(3, &addr, sizeof(struct sockaddr_in ))) stop(*argv);
 
-  incnt = sprintf(inbuf, "/NAME %s\n", getenv("LOGNAME"));
-  if (write(3, inbuf, (unsigned) incnt) != incnt) stop(*argv);
+  i = sprintf(inbuf, "/NAME %s\n", getenv("LOGNAME"));
+  if (write(3, inbuf, (unsigned) i) != i) stop(*argv);
 
   for (; ; ) {
     mask = 011;
@@ -80,20 +82,30 @@ char  **argv;
 	  c = buffer[i];
 	  if (c == '\r') c = '\n';
 	  if (c == prev_termio.c_cc[VERASE]) {
-	    if (incnt) incnt--;
-	    if (echo && write(1, "\b \b", 3) != 3) stop(*argv);
+	    if (incnt) {
+	      incnt--;
+	      if (echo && write(1, "\b \b", 3) != 3) stop(*argv);
+	    }
 	  } else if (c == prev_termio.c_cc[VKILL]) {
 	    for (; incnt; incnt--)
 	      if (echo && write(1, "\b \b", 3) != 3) stop(*argv);
 	  } else if (echo && c == 18) {
-	    if (write(1, "\\\n", 2) != 2) stop(*argv);
+	    if (write(1, "^R\n", 3) != 3) stop(*argv);
 	    if (write(1, inbuf, (unsigned) incnt) != incnt) stop(*argv);
 	  } else {
 	    inbuf[incnt++] = c;
 	    if (echo && write(1, &c, 1) != 1) stop(*argv);
 	  }
-	  if (c == '\n' || incnt == sizeof(inbuf)) {
-	    if (write(3, inbuf, (unsigned) incnt) != incnt) stop(*argv);
+	  if (c == '\n' || incnt == sizeof(inbuf) - 1) {
+	    if (*inbuf == '!') {
+	      inbuf[incnt] = '\0';
+	      if (ioctl(0, TCSETA, &prev_termio)) stop(*argv);
+	      system(inbuf + 1);
+	      if (ioctl(0, TCSETA, &curr_termio)) stop(*argv);
+	      if (write(1, "!\n", 2) != 2) stop(*argv);
+	    } else {
+	      if (write(3, inbuf, (unsigned) incnt) != incnt) stop(*argv);
+	    }
 	    incnt = 0;
 	  }
 	}
