@@ -1,11 +1,13 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.21 1993/12/29 16:32:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.22 1994/02/07 12:38:58 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <sys/types.h>
+#ifndef ibm032
 #include <setjmp.h>
+#endif
 #include <stdio.h>
 #include <time.h>
 /* #include <dos.h> */
@@ -257,6 +259,26 @@ struct env {
 	long    a7;
 };
 #define getstackptr(ep) ((ep)->a7)
+#elif defined ibm032
+struct env {
+	unsigned        r1;
+	unsigned        r6;
+	unsigned        r7;
+	unsigned        r8;
+	unsigned        r9;
+	unsigned        r10;
+	unsigned        r11;
+	unsigned        r12;
+	unsigned        r13;
+	unsigned        r14;
+	unsigned        r15;
+	unsigned        sigmask;
+	unsigned        resv1;
+	unsigned        resv2;
+	unsigned        resv3;
+	unsigned        resv4;
+};
+#define getstackptr(ep) ((ep)->r1)
 #else
 struct env {
 	long    dummy;

@@ -1,9 +1,4 @@
-#! /bin/sh
-
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.5 1994/01/09 16:20:12 deyke Exp $
-
-tab="\
-	"
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.6 1994/02/07 12:39:40 deyke Exp $
 
 findfile()
 {
@@ -11,11 +6,11 @@ findfile()
 	shift
 	for i in $* ; do
 		if [ $isfile $i -a ! $islink $i ] ; then
-			echo "#define $name${tab}\"$i\""
+			echo "#define ${name} \"$i\""
 			return
 		fi
 	done
-	echo "#define $name${tab}\"\""
+	echo "#define ${name} \"\""
 }
 
 findprog()
@@ -24,17 +19,17 @@ findprog()
 	shift
 	for i in $* ; do
 		if [ $isfile $i -a $isexec $i -a ! $islink $i ] ; then
-			echo "#define $name${tab}\"$i\""
+			echo "#define ${name} \"$i\""
 			return
 		fi
 	done
 	for i in $* ; do
 		if [ $isfile $i -a $isexec $i ] ; then
-			echo "#define $name${tab}\"$i\""
+			echo "#define ${name} \"$i\""
 			return
 		fi
 	done
-	echo "#define $name${tab}\"\""
+	echo "#define ${name} \"\""
 }
 
 finddir()
@@ -43,17 +38,17 @@ finddir()
 	shift
 	for i in $* ; do
 		if [ $isdir $i -a ! $islink $i ] ; then
-			echo "#define $name${tab}\"$i\""
+			echo "#define ${name} \"$i\""
 			return
 		fi
 	done
 	for i in $* ; do
 		if [ $isdir $i ] ; then
-			echo "#define $name${tab}\"$i\""
+			echo "#define ${name} \"$i\""
 			return
 		fi
 	done
-	echo "#define $name${tab}\"\""
+	echo "#define ${name} \"\""
 }
 
 OS="`uname -s`"
@@ -75,6 +70,8 @@ elif [ "$OS" = A/UX ] ; then
 	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h
 elif [ "$OS" = "RISC iX" ] ; then
 	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h
+elif [ "$OS" = AOS ] ; then
+	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L
 else
 	echo "System $OS is not supported."
 	exit 1

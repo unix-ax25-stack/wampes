@@ -1,10 +1,13 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.15 1993/05/17 13:45:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.16 1994/02/07 12:39:05 deyke Exp $ */
 
 /* Packet tracing - top level and generic routines, including hex/ascii
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <sys/types.h>
 #include <stdio.h>
+#ifdef ibm032
+#define vfprintf fprintf
+#endif
 #include <ctype.h>
 #include <time.h>
 #include "global.h"

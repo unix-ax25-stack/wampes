@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.17 1994/01/14 21:27:44 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.18 1994/02/07 12:38:34 deyke Exp $
 
 PATH       = /opt/SUNWspro/bin:/usr/lang:/bin:/usr/bin:/usr/ccs/bin:/usr/ucb:/usr/contrib/bin:/usr/local/bin:/usr/local/etc
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
@@ -6,6 +6,7 @@ MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
 all:;   @-rm -f bbs/bbs.h
 	-chmod 755 cc
 	-(dir=lib    ; if [ -d $$dir ]; then cd $$dir; make -i all install; fi)
+	-(dir=aos    ; if [ -d $$dir ]; then cd $$dir; make -i all install; fi)
 	-(dir=src    ; if [ -d $$dir ]; then cd $$dir; make -i all install; fi)
 	-(dir=convers; if [ -d $$dir ]; then cd $$dir; make -i all install; fi)
 	-(dir=util   ; if [ -d $$dir ]; then cd $$dir; make -i all install; fi)

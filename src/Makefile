@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.61 1994/01/31 12:57:31 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.62 1994/02/07 12:38:50 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -344,6 +344,13 @@ all:;   chmod 755 cc
 		'CFLAGS=-DUNIX -DRISCiX -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all; \
+	elif [ $(OS) = AOS ] ; then \
+		/usr/local/bin/make -i \
+		'CC=/usr/local/bin/gcc' \
+		'CFLAGS=-O2 -DUNIX -Dibm6153 -I../lib' \
+		'LIBS=../aos/libaos.a ../lib/libutil.a' \
+		'LDFLAGS=-g' \
+		_all; \
 	else \
 		echo System $(OS) is not supported; \
 	fi
@@ -374,6 +381,8 @@ setsp.o: setsp.c
 	elif [ $(OS) = "RISC iX" ] ; then \
 		$(CC) -E -DRISCiX $< > setsp.s; \
 		cc -c setsp.s; \
+	elif [ $(OS) = AOS ] ; then \
+		$(CC) $(CFLAGS) -c setsp.c; \
 	else \
 		echo System $(OS) is not supported; \
 	fi
@@ -382,7 +391,7 @@ setsp.o: setsp.c
 $(PROGRAM):     $(OBJS)
 		@echo "Linking $(PROGRAM) ..."
 		$(RMTARGET)
-		@$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM)
+		@$(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM)
 
 clean:;         @rm -f $(OBJS) *.o core *~
 

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.59 1994/01/14 21:28:18 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.60 1994/02/07 12:39:32 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -14,6 +14,7 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/uio.h>
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
@@ -23,20 +24,16 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <sys/select.h>
 #endif
 
-#if defined __hpux \
- || defined _AIX \
- || defined linux \
- || defined __386BSD__ \
- || defined __bsdi__ \
- || defined sun \
- || defined ULTRIX_RISC \
- || defined macII
-#include <sys/uio.h>
 #ifndef MAXIOV
 #define MAXIOV          16
 #endif
-#else
-#undef  MAXIOV
+
+#ifndef O_NOCTTY
+#define O_NOCTTY        0
+#endif
+
+#ifndef O_NONBLOCK
+#define O_NONBLOCK      O_NDELAY
 #endif
 
 #ifndef SOMAXCONN
@@ -1109,7 +1106,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.59 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.60 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1662,7 +1659,11 @@ int main(int argc, char **argv)
     }
 
   for (; ; ) {
+#ifdef ibm032
+    wait3(&status, WNOHANG, 0);
+#else
     waitpid(-1, &status, WNOHANG);
+#endif
     free_resources();
     check_files_changed();
     connect_peers();

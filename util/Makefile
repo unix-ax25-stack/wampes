@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.44 1994/01/14 21:28:05 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.45 1994/02/07 12:39:23 deyke Exp $
 
 CFLAGS     = -I../lib
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
@@ -69,6 +69,12 @@ all:;   chmod 755 genupd
 		'CC=/tcp/cc' \
 		'CFLAGS=-DRISCiX -I../lib' \
 		'LIBS=../lib/libutil.a -lcurses -ltermcap' \
+		_all; \
+	elif [ $(OS) = AOS ] ; then \
+		/usr/local/bin/make -i \
+		'CC=/usr/local/bin/gcc' \
+		'CFLAGS=-O2 -Dibm6153 -I../lib' \
+		'LIBS=../aos/libaos.a ../lib/libutil.a -lcurses -ltermcap' \
 		_all; \
 	else \
 		echo System $(OS) is not supported; \

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.27 1993/10/13 22:31:23 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.28 1994/02/07 12:39:23 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -16,11 +16,21 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <termios.h>
 #include <unistd.h>
 
 #ifdef _AIX
 #include <sys/select.h>
+#endif
+
+#ifdef ibm032
+#include <sgtty.h>
+#include <sys/fcntl.h>
+#else
+#include <termios.h>
+#endif
+
+#ifndef O_NONBLOCK
+#define O_NONBLOCK      O_NDELAY
 #endif
 
 #ifdef __hpux
@@ -43,7 +53,14 @@ static int fdout = 1;
 static int fdsock = -1;
 static struct mbuf *sock_queue;
 static struct mbuf *term_queue;
+
+#ifdef ibm032
+static struct sgttyb prev_sgttyb;
+static struct tchars prev_tchars;
+static struct ltchars prev_ltchars;
+#else
 static struct termios prev_termios;
+#endif
 
 static void open_terminal(void);
 static void close_terminal(void);
@@ -55,6 +72,7 @@ static void sendq(int fd, struct mbuf **qp);
 
 static void open_terminal(void)
 {
+#ifndef ibm6153
   if (!Ansiterminal) {
     fputs("\033Z", stdout);                     /* display fncts off       */
     fputs("\033&k1I", stdout);                  /* enable ascii 8 bits     */
@@ -72,17 +90,20 @@ static void open_terminal(void)
     fputs("\033&f0a8k0d2L\033w", stdout);       /* key8 = ESC w            */
     fflush(stdout);
   }
+#endif
 }
 
 /*---------------------------------------------------------------------------*/
 
 static void close_terminal(void)
 {
+#ifndef ibm6153
   if (!Ansiterminal) {
     fputs("\033&s0A", stdout);                  /* disable xmitfnctn */
     fputs("\033&jR", stdout);                   /* release keys */
     fflush(stdout);
   }
+#endif
 }
 
 /*---------------------------------------------------------------------------*/
@@ -94,7 +115,13 @@ static void terminate(void)
   for (; term_queue; term_queue = term_queue->next)
     write(fdout, term_queue->data, term_queue->cnt);
   close_terminal();
+#ifdef ibm032
+  ioctl(fdin, TIOCSETP, &prev_sgttyb);
+  ioctl(fdin, TIOCSETC, &prev_tchars);
+  ioctl(fdin, TIOCSLTC, &prev_ltchars);
+#else
   tcsetattr(fdin, TCSANOW, &prev_termios);
+#endif
   exit(0);
 }
 
@@ -155,17 +182,32 @@ int main(int argc, char **argv)
   struct fd_set rmask;
   struct fd_set wmask;
   struct sockaddr *addr;
+
+#ifdef ibm032
+  struct sgttyb curr_sgttyb;
+  struct tchars curr_tchars;
+  struct ltchars curr_ltchars;
+#else
   struct termios curr_termios;
+#endif
 
 #ifdef macII
   setposix();
 #endif
 
   signal(SIGPIPE, SIG_IGN);
+  signal(SIGINT,  (void (*)()) terminate);
+  signal(SIGQUIT, (void (*)()) terminate);
   signal(SIGTERM, (void (*)()) terminate);
-  signal(SIGHUP, (void (*)()) terminate);
+  signal(SIGHUP,  (void (*)()) terminate);
 
+#ifdef ibm032
+  ioctl(fdin, TIOCGETP, &prev_sgttyb);
+  ioctl(fdin, TIOCGETC, &prev_tchars);
+  ioctl(fdin, TIOCGLTC, &prev_ltchars);
+#else
   tcgetattr(fdin, &prev_termios);
+#endif
   ap = area;
   if (tgetent(bp, getenv("TERM")) == 1 && strcmp(tgetstr("up", &ap), "\033[A"))
     Ansiterminal = 0;
@@ -188,10 +230,12 @@ int main(int argc, char **argv)
     terminate();
   }
   write(fdsock, "console\n", 8);
+#ifndef ibm6153
   if (Ansiterminal)
     write(fdsock, "\033[D", 3);
   else
     write(fdsock, "\033D", 2);
+#endif
   if ((flags = fcntl(fdsock, F_GETFL, 0)) == -1 ||
       fcntl(fdsock, F_SETFL, flags | O_NONBLOCK) == -1) {
     perror("fcntl");
@@ -199,11 +243,30 @@ int main(int argc, char **argv)
   }
 
   open_terminal();
+#ifdef ibm032
+  curr_sgttyb = prev_sgttyb;
+  curr_tchars = prev_tchars;
+  curr_ltchars = prev_ltchars;
+  curr_sgttyb.sg_flags |= CBREAK;
+  curr_sgttyb.sg_flags &= ~ECHO;
+/*
+  curr_tchars.t_intrc = 0xff;
+  curr_tchars.t_quitc = 0xff;
+  curr_tchars.t_eofc = 0xff;
+  curr_tchars.t_brkc = 0xff;
+*/
+  curr_ltchars.t_suspc = 0xff;
+  curr_ltchars.t_dsuspc = 0xff;
+  ioctl(fdin, TIOCSETP, &curr_sgttyb);
+  ioctl(fdin, TIOCSETC, &curr_tchars);
+  ioctl(fdin, TIOCSLTC, &curr_ltchars);
+#else
   curr_termios = prev_termios;
   curr_termios.c_lflag = 0;
   curr_termios.c_cc[VMIN] = 0;
   curr_termios.c_cc[VTIME] = 0;
   tcsetattr(fdin, TCSANOW, &curr_termios);
+#endif
   if ((flags = fcntl(fdout, F_GETFL, 0)) == -1 ||
       fcntl(fdout, F_SETFL, flags | O_NONBLOCK) == -1) {
     perror("fcntl");

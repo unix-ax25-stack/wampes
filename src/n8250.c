@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.35 1993/09/22 16:44:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.36 1994/02/07 12:39:00 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -7,23 +7,26 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <termios.h>
+#include <sys/uio.h>
 #include <unistd.h>
 
-#if defined __hpux \
- || defined _AIX \
- || defined linux \
- || defined __386BSD__ \
- || defined __bsdi__ \
- || defined sun \
- || defined ULTRIX_RISC \
- || defined macII
-#include <sys/uio.h>
+#ifdef ibm032
+#include <sgtty.h>
+typedef long speed_t;
+#else
+#include <termios.h>
+#endif
+
 #ifndef MAXIOV
 #define MAXIOV          16
 #endif
-#else
-#undef  MAXIOV
+
+#ifndef O_NOCTTY
+#define O_NOCTTY        0
+#endif
+
+#ifndef O_NONBLOCK
+#define O_NONBLOCK      O_NDELAY
 #endif
 
 #include "global.h"
@@ -164,26 +167,47 @@ int chain;              /* Chain interrupts */
 		ap->speed = speed_table[sp].speed;
 	} else {
 		char filename[80];
-		struct termios termios;
 		strcpy(filename, "/dev/");
 		strcat(filename, ifp->name);
 		if ((ap->fd = open(filename, O_RDWR|O_NONBLOCK|O_NOCTTY, 0644)) < 0)
 			goto Fail;
+#ifdef ibm032
+		fcntl(ap->fd, F_SETFL, O_NONBLOCK | fcntl(ap->fd, F_GETFL, 0));
+#endif
 		ap->iface = ifp;
 		sp = find_speed(speed);
 		ap->speed = speed_table[sp].speed;
-		memset((char *) &termios, 0, sizeof(termios));
-		termios.c_iflag = IGNBRK | IGNPAR;
-		termios.c_cflag = CS8 | CREAD | CLOCAL;
-		if (cfsetispeed(&termios, speed_table[sp].flags)) goto Fail;
-		if (cfsetospeed(&termios, speed_table[sp].flags)) goto Fail;
-		if (tcsetattr(ap->fd, TCSANOW, &termios)) goto Fail;
+		{
+#ifdef ibm032
+			struct sgttyb sgttyb;
+			memset((char *) &sgttyb, 0, sizeof(sgttyb));
+			sgttyb.sg_ispeed = speed_table[sp].flags;
+			sgttyb.sg_ospeed = speed_table[sp].flags;
+			sgttyb.sg_flags = RAW | ANYP | LPASS8 | LNOHANG;
+			if (ioctl(ap->fd, TIOCSETP, &sgttyb))
+				goto Fail;
+#else
+			struct termios termios;
+			memset((char *) &termios, 0, sizeof(termios));
+			termios.c_iflag = IGNBRK | IGNPAR;
+			termios.c_cflag = CS8 | CREAD | CLOCAL;
+			if (cfsetispeed(&termios, speed_table[sp].flags))
+				goto Fail;
+			if (cfsetospeed(&termios, speed_table[sp].flags))
+				goto Fail;
+			if (tcsetattr(ap->fd, TCSANOW, &termios))
+				goto Fail;
+#endif
+		}
 	}
 	on_read(ap->fd, (void (*)()) ifp->rxproc, ifp);
 	return 0;
 
 Fail:
-	if (ap->fd >= 0) close(ap->fd);
+	if (ap->fd >= 0) {
+		close(ap->fd);
+		ap->fd = -1;
+	}
 	ap->iface = NULLIF;
 	return -1;
 }
@@ -221,7 +245,6 @@ long bps;
 
 	struct asy *asyp;
 	int sp;
-	struct termios termios;
 
 	if(bps <= 0 || dev >= ASY_MAX)
 		return -1;
@@ -232,14 +255,28 @@ long bps;
 	if(bps == 0)
 		return -1;
 	sp = find_speed(bps);
-	if (tcgetattr(asyp->fd, &termios))
-		return -1;
-	if (cfsetispeed(&termios, speed_table[sp].flags))
-		return -1;
-	if (cfsetospeed(&termios, speed_table[sp].flags))
-		return -1;
-	if (tcsetattr(asyp->fd, TCSANOW, &termios))
-		return -1;
+	{
+#ifdef ibm032
+		struct sgttyb sgttyb;
+		if (ioctl(asyp->fd, TIOCGETP, &sgttyb))
+			return -1;
+		sgttyb.sg_ispeed = speed_table[sp].flags;
+		sgttyb.sg_ospeed = speed_table[sp].flags;
+		if (ioctl(asyp->fd, TIOCSETP, &sgttyb))
+			return -1;
+#else
+		struct termios termios;
+		if (tcgetattr(asyp->fd, &termios))
+			return -1;
+		if (cfsetispeed(&termios, speed_table[sp].flags))
+			return -1;
+		if (cfsetospeed(&termios, speed_table[sp].flags))
+			return -1;
+		if (tcsetattr(asyp->fd, TCSANOW, &termios))
+			return -1;
+
+#endif
+	}
 	asyp->speed = speed_table[sp].speed;
 	return 0;
 }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.41 1994/01/21 11:11:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.42 1994/02/07 12:38:59 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -89,7 +89,11 @@ char *argv[];
 	setposix();
 #endif
 
+#ifdef ibm032
+	setbuffer(stdout,NULLCHAR,8192);
+#else
 	setvbuf(stdout,NULLCHAR,_IOFBF,8192);
+#endif
 	time(&StartTime);
 	Hostname = strdup("net");
 

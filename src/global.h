@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.30 1993/09/22 16:44:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.31 1994/02/07 12:38:55 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -197,8 +197,15 @@ char *strdup();
 #endif
 int wildmat(char *s,char *p,char **argv);
 
+#ifdef ibm032
+#include <stddef.h>
+typedef int pid_t;
+#endif
+
 #include <stdlib.h>
+#ifndef ibm032
 #include <string.h>
+#endif
 
 int stricmp(char *s1, char *s2);
 int strnicmp(char *s1, char *s2, size_t maxlen);
@@ -238,7 +245,7 @@ extern char *sys_errlist[];
 extern int errno;
 #endif
 
-#define inet_ntoa Xinet_ntoa    /* Resolve name conflict with libc */
+#define inet_ntoa Xinet_ntoa    /* Resolve name conflict */
 
 /* Externals used by getopt */
 extern int optind;

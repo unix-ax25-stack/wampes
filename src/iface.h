@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.20 1993/05/17 13:44:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.21 1994/02/07 12:38:56 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -136,6 +136,9 @@ extern struct iface  Loopback;  /* Optional loopback interface */
 extern struct iface  Encap;     /* IP-in-IP pseudo interface */
 
 /* Header put on front of each packet sent to an interface */
+#ifdef ibm032
+#define qhdr Xqhdr      /* Resolve name conflict */
+#endif
 struct qhdr {
 	char tos;
 	int32 gateway;

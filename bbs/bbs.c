@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.72 1994/01/26 11:11:54 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.73 1994/02/07 12:38:44 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -7,7 +7,6 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <stdio.h>
 
 #include <ctype.h>
-#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <ndbm.h>
@@ -17,11 +16,31 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <sys/wait.h>
-#include <termios.h>
 #include <time.h>
 #include <unistd.h>
+
+#ifdef ibm032
+
+#include <sys/dir.h>
+#include <sys/fcntl.h>
+#include <sys/file.h>
+
+typedef int pid_t;
+
+#define SEEK_SET L_SET
+#define SEEK_CUR L_INCR
+#define SEEK_END L_XTND
+
+#define dirent direct
+
+#else
+
+#include <dirent.h>
+#include <sys/time.h>
+#include <termios.h>
+
+#endif
 
 extern char *optarg;
 extern int optind;
@@ -497,11 +516,16 @@ static void get_seq(void)
   fdseq = open(fname, O_RDWR | O_CREAT, 0644);
   seteugid(0, 0);
   if (fdseq < 0) halt();
+#ifdef ibm032
+  if (flock(fdseq, LOCK_EX | LOCK_NB) == -1)
+#else
   flk.l_type = F_WRLCK;
   flk.l_whence = SEEK_SET;
   flk.l_start = 0;
   flk.l_len = 0;
-  if (fcntl(fdseq, F_SETLK, &flk) == -1) {
+  if (fcntl(fdseq, F_SETLK, &flk) == -1)
+#endif
+  {
     puts("Sorry, you are already running another BBS.\n");
     exit(1);
   }
@@ -546,11 +570,15 @@ static void lock(void)
   if (fdlock < 0) {
     if ((fdlock = open(LOCKFILE, O_RDWR | O_CREAT, 0644)) < 0) halt();
   }
+#ifdef ibm032
+  if (flock(fdlock, LOCK_EX) == -1) halt();
+#else
   flk.l_type = F_WRLCK;
   flk.l_whence = SEEK_SET;
   flk.l_start = 0;
   flk.l_len = 0;
   if (fcntl(fdlock, F_SETLKW, &flk) == -1) halt();
+#endif
 }
 
 /*---------------------------------------------------------------------------*/
@@ -559,11 +587,15 @@ static void unlock(void)
 {
   struct flock flk;
 
+#ifdef ibm032
+  if (flock(fdlock, LOCK_UN) == -1) halt();
+#else
   flk.l_type = F_UNLCK;
   flk.l_whence = SEEK_SET;
   flk.l_start = 0;
   flk.l_len = 0;
   if (fcntl(fdlock, F_SETLK, &flk) == -1) halt();
+#endif
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1899,7 +1931,7 @@ static void shell_command(int argc, char **argv)
   default:
     signal(SIGINT,  SIG_IGN);
     signal(SIGQUIT, SIG_IGN);
-    while (waitpid(pid, &status, 0) != pid) ;
+    while (wait(&status) != pid) ;
     signal(SIGINT,  interrupt_handler);
     signal(SIGQUIT, interrupt_handler);
     break;
@@ -2030,6 +2062,8 @@ static void xcrunch_command(int argc, char **argv)
 
 static void xscreen_command(int argc, char **argv)
 {
+
+#ifndef ibm032
 
   FILE *fp = 0;
   char at[1024];
@@ -2229,6 +2263,9 @@ static void xscreen_command(int argc, char **argv)
       break;
     }
   }
+
+#endif
+
 }
 
 #undef Invalid

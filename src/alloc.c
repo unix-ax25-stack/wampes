@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.22 1994/02/01 08:47:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.23 1994/02/07 12:38:50 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -58,6 +58,8 @@ static unsigned long Inuse;
 static unsigned long Morecores;
 static int Memdebug;
 static unsigned long Sizes[33];
+static unsigned long Splits;
+static unsigned long Recombinations;
 
 #define FREEPATTERN     0xbb
 #define USEDPATTERN     0xdd
@@ -96,6 +98,7 @@ Retry:
   for (cpp = Freetable + n; ; cpp = &cp->next) {
     cp = *cpp;
     if (cp == pp || cp == np) {
+      Recombinations++;
       *cpp = cp->next;
 #if 0
       putblock(cp == pp ? pp : p, n + 1);
@@ -132,7 +135,7 @@ static struct block *getblock(int n)
       return 0;
     }
     Morecores++;
-    Heapsize += (Blocksize[MAX_N] + ALIGN - 1);
+    Heapsize += Blocksize[MAX_N];
     a += sizeof(struct block *);
     a = (a + ALIGN - 1) & ~(ALIGN - 1);
     a -= sizeof(struct block *);
@@ -145,6 +148,7 @@ static struct block *getblock(int n)
     q->next = Freetable[n];
     Freetable[n] = q;
 #endif
+    Splits++;
   } else {
     return 0;
   }
@@ -327,6 +331,8 @@ void *envp;
 	 Morecores);
 	printf("allocs %lu frees %lu (diff %lu) alloc fails %lu invalid frees %lu\n",
 		Allocs,Frees,Allocs-Frees,Memfail,Invalid);
+	printf("splits %lu recombinations %lu (diff %lu)\n",
+		Splits,Recombinations,Splits-Recombinations);
 	printf("pushdown calls %lu pushdown calls to malloc %lu\n",
 		Pushdowns,Pushalloc);
 	return 0;

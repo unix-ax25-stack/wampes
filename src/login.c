@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.50 1994/01/09 16:19:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.51 1994/02/07 12:38:58 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -12,18 +12,29 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <termios.h>
 #include <time.h>
 #include <unistd.h>
 #include <utmp.h>
+
+#ifdef ibm032
+#include <sgtty.h>
+#include <sys/file.h>
+#define SEEK_CUR L_INCR
+#else
+#include <termios.h>
+#endif
 
 #if defined __386BSD__ || defined __bsdi__
 #include <sys/ioctl.h>
 #endif
 
 #ifdef macII
-#undef LOGIN_PROCESS
 extern struct utmp *getutent();
+#undef LOGIN_PROCESS
+#endif
+
+#ifndef O_NONBLOCK
+#define O_NONBLOCK      O_NDELAY
 #endif
 
 #include "callvalid.h"
@@ -128,7 +139,7 @@ static int find_pty(int *numptr, char *slave)
 #ifdef ULTRIX_RISC
 	fcntl(fd, F_SETFL, FIONBIO); /* O_NONBLOCK does not work?! */
 #endif
-#ifdef macII
+#if defined macII || defined ibm032
 	/* this extra fcntl is necessary for an unknown reason, since the
 	   flag is already set... perhaps there's a race somewhere? */
 	fcntl(fd, F_SETFL, O_NONBLOCK | fcntl(fd, F_GETFL, 0));
@@ -243,10 +254,14 @@ struct passwd *getpasswdentry(const char *name, int create)
 
   sprintf(homedirparent, "%s/%.3s...", Homedir, name);
   sprintf(homedir, "%s/%s", homedirparent, name);
+
 #if defined __386BSD__ || defined __bsdi__
+
   sprintf(cmdbuf, "chpass -a '%s::%d:%d::0:0::%s:%s' >/dev/null 2>&1", name, uid, Gid, homedir, Shell);
   system(cmdbuf);
+
 #else
+
 #ifdef __hpux
   if (!stat(SPASSWDFILE, &statbuf) && (fp = fopen(SPASSWDFILE, "a"))) {
     fprintf(fp, "%s::%d:0\n", name, uid);
@@ -259,7 +274,7 @@ struct passwd *getpasswdentry(const char *name, int create)
     return 0;
   }
   fprintf(fp,
-	  "%s:%s:%d:%d::%s:%s\n",
+	  "%s:%s:%d:%d:Amateur &:%s:%s\n",
 	  name,
 	  secured ? "*" : "",
 	  uid,
@@ -267,7 +282,12 @@ struct passwd *getpasswdentry(const char *name, int create)
 	  homedir,
 	  Shell);
   fclose(fp);
+#ifdef ibm032
+  system("/etc/mkpasswd " PASSWDFILE);
 #endif
+
+#endif
+
   pw = getpwuid(uid);
   unlink(PWLOCKFILE);
 
@@ -334,8 +354,6 @@ static FILE *fopen_logfile(const char *user, const char *protocol)
 
 static int do_telnet(struct login_cb *tp, int chr)
 {
-  struct termios termios;
-
   switch (tp->state) {
   case TS_DATA:
     if (chr != IAC) {
@@ -375,18 +393,34 @@ static int do_telnet(struct login_cb *tp, int chr)
   case TS_DO:
     if (chr <= NOPTIONS) tp->option[chr] = 1;
     if (chr == TN_ECHO) {
+#ifdef ibm032
+      struct sgttyb sgttyb;
+      ioctl(tp->pty, TIOCGETP, &sgttyb);
+      sgttyb.sg_flags |= ECHO;
+      ioctl(tp->pty, TIOCGETP, &sgttyb);
+#else
+      struct termios termios;
       tcgetattr(tp->pty, &termios);
       termios.c_lflag |= (ECHO | ECHOE);
       tcsetattr(tp->pty, TCSANOW, &termios);
+#endif
     }
     tp->state = TS_DATA;
     break;
   case TS_DONT:
     if (chr <= NOPTIONS) tp->option[chr] = 0;
     if (chr == TN_ECHO) {
+#ifdef ibm032
+      struct sgttyb sgttyb;
+      ioctl(tp->pty, TIOCGETP, &sgttyb);
+      sgttyb.sg_flags &= ~ECHO;
+      ioctl(tp->pty, TIOCGETP, &sgttyb);
+#else
+      struct termios termios;
       tcgetattr(tp->pty, &termios);
       termios.c_lflag &= ~(ECHO | ECHOE);
       tcsetattr(tp->pty, TCSANOW, &termios);
+#endif
     }
     tp->state = TS_DATA;
     break;
@@ -458,7 +492,6 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
   int i;
   struct login_cb *tp;
   struct passwd *pw;
-  struct termios termios;
   struct utmp utmpbuf;
 
   tp = (struct login_cb *) calloc(1, sizeof(*tp));
@@ -489,25 +522,45 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
 #ifdef TIOCSCTTY
     ioctl(0, TIOCSCTTY, (char *) 0);
 #endif
-    memset((char *) &termios, 0, sizeof(termios));
-    termios.c_iflag = ICRNL | IXOFF;
-    termios.c_oflag = OPOST | ONLCR;
+    {
+#ifdef ibm032
+      struct tchars tchars;
+      struct sgttyb sgttyb;
+      ioctl(0, TIOCGETC, &tchars);
+      ioctl(0, TIOCGETP, &sgttyb);
+      tchars.t_intrc = 127;
+      tchars.t_quitc = 28;
+      tchars.t_eofc = 4;
+      sgttyb.sg_ispeed = B1200;
+      sgttyb.sg_ospeed = B1200;
+      sgttyb.sg_flags = CRMOD;
+      sgttyb.sg_erase = 8;
+      sgttyb.sg_kill = 24;
+      ioctl(0, TIOCSETC, &tchars);
+      ioctl(0, TIOCSETP, &sgttyb);
+#else
+      struct termios termios;
+      memset((char *) &termios, 0, sizeof(termios));
+      termios.c_iflag = ICRNL | IXOFF;
+      termios.c_oflag = OPOST | ONLCR;
 #ifdef TAB3
-    termios.c_oflag |= TAB3;
+      termios.c_oflag |= TAB3;
 #endif
 #ifdef OXTABS
-    termios.c_oflag |= OXTABS;
+      termios.c_oflag |= OXTABS;
 #endif
-    termios.c_cflag = CS8 | CREAD | CLOCAL;
-    termios.c_lflag = ISIG | ICANON;
-    termios.c_cc[VINTR]  = 127;
-    termios.c_cc[VQUIT]  =  28;
-    termios.c_cc[VERASE] =   8;
-    termios.c_cc[VKILL]  =  24;
-    termios.c_cc[VEOF]   =   4;
-    cfsetispeed(&termios, B1200);
-    cfsetospeed(&termios, B1200);
-    tcsetattr(0, TCSANOW, &termios);
+      termios.c_cflag = CS8 | CREAD | CLOCAL;
+      termios.c_lflag = ISIG | ICANON;
+      termios.c_cc[VINTR]  = 127;
+      termios.c_cc[VQUIT]  =  28;
+      termios.c_cc[VERASE] =   8;
+      termios.c_cc[VKILL]  =  24;
+      termios.c_cc[VEOF]   =   4;
+      cfsetispeed(&termios, B1200);
+      cfsetospeed(&termios, B1200);
+      tcsetattr(0, TCSANOW, &termios);
+#endif
+    }
 #ifdef LOGIN_PROCESS
     memset(&utmpbuf, 0, sizeof(utmpbuf));
     strcpy(utmpbuf.ut_name, "LOGIN");
@@ -531,7 +584,7 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
     argv[argc++] = "/bin/remlogin";
     argv[argc++] = "-h";
     argv[argc++] = (char *) protocol;
-#elif defined linux
+#elif defined linux || defined ibm032
     argv[argc++] = "/bin/login";
     argv[argc++] = "-h";
     argv[argc++] = (char *) protocol;

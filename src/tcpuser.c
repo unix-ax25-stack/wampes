@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.17 1993/06/13 18:36:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.18 1994/02/07 12:39:04 deyke Exp $ */
 
 /* User calls to TCP
  * Copyright 1991 Phil Karn, KA9Q
@@ -349,9 +349,9 @@ int32 addr;
 void
 reset_all()
 {
+#if 0
 	register struct tcb *tcb,*tcbnext;
 
-#if 0
 	for(tcb=Tcbs;tcb != NULLTCB;tcb = tcbnext){
 		tcbnext = tcb->next;
 		reset_tcp(tcb);

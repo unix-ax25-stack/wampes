@@ -1,14 +1,17 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.18 1993/10/13 22:30:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.19 1994/02/07 12:38:59 deyke Exp $ */
 
 /* Mail Delivery Agent for returned Mails */
+
+#include <sys/types.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <unistd.h>
+
 #ifdef ULTRIX_RISC
 #include <sys/signal.h>
 #endif
-#include <unistd.h>
 
 #include "configure.h"
 

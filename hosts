@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.15 1994/02/01 08:47:18 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.16 1994/02/07 12:38:37 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -2369,7 +2369,8 @@
 #
 #44.130.80.x    Harz
 44.130.80.1     DL2HSI  # Michael 'Miki' Stengel, Ballenstedt (ex Y23FH)
-44.130.80.2     LAP.DL2HSI      #
+44.130.80.2     DL2HSI-U
+44.130.80.3     DL2HSI-A
 #
 #44.130.81.x    Halle
 44.130.81.1     Y34YH   # Juergen, Halle

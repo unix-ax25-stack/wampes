@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.47 1993/10/31 07:25:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.48 1994/02/07 12:38:55 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -10,16 +10,23 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/wait.h>
-#ifdef _AIX
-#include <sys/select.h>
-#endif
-#ifdef ULTRIX_RISC
-#include <sys/signal.h>
-#endif
-#include <termios.h>
 #include <unistd.h>
 
 #include <sys/resource.h>
+
+#ifdef _AIX
+#include <sys/select.h>
+#endif
+
+#ifdef ULTRIX_RISC
+#include <sys/signal.h>
+#endif
+
+#ifdef ibm032
+#include <sgtty.h>
+#else
+#include <termios.h>
+#endif
 
 #ifndef WNOHANG
 #define WNOHANG 1
@@ -68,9 +75,16 @@ static int maxfd = -1;
 
 static int local_kbd;
 
-static struct termios curr_termios;
-static struct termios prev_termios;
+#ifdef ibm032
+static struct sgttyb curr_sgttyb, prev_sgttyb;
+static struct tchars curr_tchars, prev_tchars;
+static struct ltchars curr_ltchars, prev_ltchars;
+#else
+static struct termios curr_termios, prev_termios;
+#endif
 
+static void child_dead(pid_t pid);
+static void dowait(void);
 static void check_files_changed(void);
 
 /*---------------------------------------------------------------------------*/
@@ -112,6 +126,25 @@ void ioinit(void)
   fixdir("/tcp/.sockets", 0700);
 
   if (local_kbd = (isatty(0) && isatty(1))) {
+#ifdef ibm032
+    ioctl(0, TIOCGETP, &prev_sgttyb);
+    ioctl(0, TIOCGETC, &prev_tchars);
+    ioctl(0, TIOCGLTC, &prev_ltchars);
+    curr_sgttyb = prev_sgttyb;
+    curr_tchars = prev_tchars;
+    curr_ltchars = prev_ltchars;
+    curr_sgttyb.sg_flags |= CBREAK;
+    curr_sgttyb.sg_flags &= ~ECHO;
+    curr_tchars.t_intrc = 0xff;
+    curr_tchars.t_quitc = 0xff;
+    curr_tchars.t_eofc = 0xff;
+    curr_tchars.t_brkc = 0xff;
+    curr_ltchars.t_suspc = 0xff;
+    curr_ltchars.t_dsuspc = 0xff;
+    ioctl(0, TIOCSETP, &curr_sgttyb);
+    ioctl(0, TIOCSETC, &curr_tchars);
+    ioctl(0, TIOCSLTC, &curr_ltchars);
+#else
     tcgetattr(0, &prev_termios);
     curr_termios = prev_termios;
     curr_termios.c_iflag = BRKINT | ICRNL | IXON | IXANY | IXOFF;
@@ -119,6 +152,7 @@ void ioinit(void)
     curr_termios.c_cc[VMIN] = 0;
     curr_termios.c_cc[VTIME] = 0;
     tcsetattr(0, TCSANOW, &curr_termios);
+#endif
     on_read(0, (void (*)()) keyboard, (void *) 0);
   } else {
 #ifdef macII
@@ -173,9 +207,55 @@ void iostop(void)
 {
   register struct iface *ifp;
 
-  if (local_kbd) tcsetattr(0, TCSANOW, &prev_termios);
+  if (local_kbd) {
+#ifdef ibm032
+    ioctl(0, TIOCSETP, &prev_sgttyb);
+    ioctl(0, TIOCSETC, &prev_tchars);
+    ioctl(0, TIOCSLTC, &prev_ltchars);
+#else
+    tcsetattr(0, TCSANOW, &prev_termios);
+#endif
+  }
   for (ifp = Ifaces; ifp; ifp = ifp->next)
     if (ifp->stop) (*ifp->stop)(ifp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void child_dead(pid_t pid)
+{
+
+  struct proc_t *prev, *curr;
+  void (*fnc)(void *);
+  void *arg;
+
+  for (prev = 0, curr = procs; curr; prev = curr, curr = curr->next)
+    if (curr->pid == pid) {
+      fnc = curr->fnc;
+      arg = curr->arg;
+      if (prev)
+	prev->next = curr->next;
+      else
+	procs = curr->next;
+      free(curr);
+      if (fnc) (*fnc)(arg);
+      return;
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void dowait(void)
+{
+
+  int status;
+  pid_t pid;
+
+#ifdef ibm032
+  while ((pid = wait3(&status, WNOHANG, 0)) > 0) child_dead(pid);
+#else
+  while ((pid = waitpid(-1, &status, WNOHANG)) > 0) child_dead(pid);
+#endif
 }
 
 /*---------------------------------------------------------------------------*/
@@ -200,7 +280,11 @@ int system(const char *cmdline)
   default:
     signal(SIGINT,  SIG_IGN);
     signal(SIGQUIT, SIG_IGN);
-    while (waitpid(pid, &status, 0) == -1 && errno == EINTR) ;
+    for (; ; ) {
+      i = wait(&status);
+      if (i == pid) break;
+      if (i > 0) child_dead(i);
+    }
     signal(SIGINT,  SIG_DFL);
     signal(SIGQUIT, SIG_DFL);
     return status;
@@ -306,33 +390,6 @@ void off_death(int pid)
       free(curr);
       return;
     }
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void dowait(void)
-{
-
-  int status;
-  pid_t pid;
-  struct proc_t *prev, *curr;
-  void (*fnc)(void *);
-  void *arg;
-
-  while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-    for (prev = 0, curr = procs; curr; prev = curr, curr = curr->next)
-      if (curr->pid == pid) {
-	fnc = curr->fnc;
-	arg = curr->arg;
-	if (prev)
-	  prev->next = curr->next;
-	else
-	  procs = curr->next;
-	free(curr);
-	if (fnc) (*fnc)(arg);
-	break;
-      }
-  }
 }
 
 /*---------------------------------------------------------------------------*/

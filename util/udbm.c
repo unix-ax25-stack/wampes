@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.31 1994/01/14 21:28:06 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.32 1994/02/07 12:39:25 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -476,7 +476,7 @@ static int fixusers(void)
 static void fixpasswd(void)
 {
 
-#if !(defined __386BSD__ || defined __bsdi__)
+#if !(defined __386BSD__ || defined __bsdi__ || defined ibm032)
 
   FILE * fp;
   int secured = 0;

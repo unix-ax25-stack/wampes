@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.15 1994/01/21 11:11:33 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.16 1994/02/07 12:39:39 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -14,8 +14,11 @@ OS            = "`uname -s`"
 
 RANLIB        = ranlib
 
-all:;   chmod 755 configure
-	./configure > configure.tmp
+all:;   if [ -x /bin/ksh ] ; then \
+		/bin/ksh < configure > configure.tmp; \
+	else \
+		/bin/sh < configure > configure.tmp; \
+	fi
 	if cmp -s configure.tmp configure.h ; then \
 		rm -f configure.tmp; \
 	else \
@@ -77,6 +80,11 @@ all:;   chmod 755 configure
 		make -i \
 		'CC=/tcp/cc' \
 		'CFLAGS=-DRISCiX' \
+		_all; \
+	elif [ $(OS) = AOS ] ; then \
+		/usr/local/bin/make -i \
+		'CC=/usr/local/bin/gcc' \
+		'CFLAGS=-O2' \
 		_all; \
 	else \
 		echo System $(OS) is not supported; \

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.21 1993/06/13 18:36:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.22 1994/02/07 12:39:06 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -182,7 +182,7 @@ static void clreol(void);
 
 /*---------------------------------------------------------------------------*/
 
-int raw()
+int raw(void)
 {
 	Rawmode = 1;
 	return 0;
@@ -190,7 +190,7 @@ int raw()
 
 /*---------------------------------------------------------------------------*/
 
-int cooked()
+int cooked(void)
 {
 	Rawmode = 0;
 	return 0;
@@ -198,8 +198,7 @@ int cooked()
 
 /*---------------------------------------------------------------------------*/
 
-static void printchr(chr)
-int chr;
+static void printchr(int chr)
 {
 	chr &= 0xff;
 	if (chr < 32) {
@@ -226,8 +225,7 @@ int chr;
 
 /*---------------------------------------------------------------------------*/
 
-static void backchr(chr)
-int chr;
+static void backchr(int chr)
 {
 	putchar('\b');
 	chr &= 0x7f;
@@ -237,9 +235,12 @@ int chr;
 
 /*---------------------------------------------------------------------------*/
 
-static void delchr(chr)
-int chr;
+static void delchr(int chr)
 {
+#ifdef ibm6153
+	putchar(' ');
+	putchar('\b');
+#else
 	putchar('\033');
 	if (Ansiterminal) putchar('[');
 	putchar('P');
@@ -249,12 +250,12 @@ int chr;
 		if (Ansiterminal) putchar('[');
 		putchar('P');
 	}
+#endif
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void inschr(chr)
-int chr;
+static void inschr(int chr)
 {
 	int c;
 
@@ -273,7 +274,7 @@ int chr;
 
 /*---------------------------------------------------------------------------*/
 
-static void clreol()
+static void clreol(void)
 {
 	putchar('\033');
 	if (Ansiterminal) putchar('[');
@@ -288,9 +289,7 @@ static void clreol()
  * also stashes a pointer to the character(s) in the "buf" argument.
  */
 
-int ttydriv(chr, buf)
-int chr;
-char **buf;
+int ttydriv(int chr, char **buf)
 {
 
 	static char linebuf[LINESIZE];

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.14 1993/10/13 22:31:13 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.15 1994/02/07 12:39:32 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -12,11 +12,16 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <termios.h>
 #include <unistd.h>
 
 #ifdef _AIX
 #include <sys/select.h>
+#endif
+
+#ifdef ibm032
+#include <sgtty.h>
+#else
+#include <termios.h>
 #endif
 
 #ifdef __hpux
@@ -30,7 +35,11 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 extern char *optarg;
 extern int optind;
 
+#ifdef ibm032
+static struct sgttyb prev_sgttyb;
+#else
 static struct termios prev_termios;
+#endif
 
 static void stop(char *arg);
 
@@ -39,7 +48,11 @@ static void stop(char *arg);
 static void stop(char *arg)
 {
   if (*arg) perror(arg);
+#ifdef ibm032
+  ioctl(0, TIOCSETP, &prev_sgttyb);
+#else
   tcsetattr(0, TCSANOW, &prev_termios);
+#endif
   exit(0);
 }
 
@@ -65,26 +78,45 @@ int main(int argc, char **argv)
   int ch;
   int channel = 0;
   int echo;
+  int erase_char;
   int errflag = 0;
   int i;
   int incnt = 0;
+  int kill_char;
   int outcnt = 0;
   int size;
   struct fd_set actread;
   struct fd_set chkread;
   struct passwd *pw;
   struct sockaddr *addr;
+
+#ifdef ibm032
+  struct sgttyb curr_sgttyb;
+#else
   struct termios curr_termios;
+#endif
 
   signal(SIGPIPE, SIG_IGN);
 
+#ifdef ibm032
+  if (ioctl(0, TIOCGETP, &prev_sgttyb)) stop(*argv);
+  echo = prev_sgttyb.sg_flags & ECHO;
+  erase_char = prev_sgttyb.sg_erase;
+  kill_char = prev_sgttyb.sg_kill;
+  curr_sgttyb = prev_sgttyb;
+  curr_sgttyb.sg_flags = CRMOD | CBREAK;
+  if (ioctl(0, TIOCSETP, &curr_sgttyb)) stop(*argv);
+#else
   if (tcgetattr(0, &prev_termios)) stop(*argv);
+  echo = prev_termios.c_lflag & ECHO;
+  erase_char = prev_termios.c_cc[VERASE];
+  kill_char = prev_termios.c_cc[VKILL];
   curr_termios = prev_termios;
-  echo = curr_termios.c_lflag & ECHO;
   curr_termios.c_lflag = 0;
   curr_termios.c_cc[VMIN] = 1;
   curr_termios.c_cc[VTIME] = 0;
   if (tcsetattr(0, TCSANOW, &curr_termios)) stop(*argv);
+#endif
 
   while ((ch = getopt(argc, argv, "c:n:s:")) != EOF)
     switch (ch) {
@@ -134,12 +166,12 @@ int main(int argc, char **argv)
 	for (i = 0; i < size; i++) {
 	  c = buffer[i];
 	  if (c == '\r') c = '\n';
-	  if (c == prev_termios.c_cc[VERASE]) {
+	  if (c == erase_char) {
 	    if (incnt) {
 	      incnt--;
 	      if (echo && write(1, "\b \b", 3) < 0) stop(*argv);
 	    }
-	  } else if (c == prev_termios.c_cc[VKILL]) {
+	  } else if (c == kill_char) {
 	    for (; incnt; incnt--)
 	      if (echo && write(1, "\b \b", 3) < 0) stop(*argv);
 	  } else if (echo && c == 18) {
@@ -152,9 +184,15 @@ int main(int argc, char **argv)
 	  if (c == '\n' || incnt == sizeof(inbuf) - 1) {
 	    if (*inbuf == '!') {
 	      inbuf[incnt] = '\0';
+#ifdef ibm032
+	      if (ioctl(0, TIOCSETP, &prev_sgttyb)) stop(*argv);
+	      system(inbuf + 1);
+	      if (ioctl(0, TIOCSETP, &curr_sgttyb)) stop(*argv);
+#else
 	      if (tcsetattr(0, TCSANOW, &prev_termios)) stop(*argv);
 	      system(inbuf + 1);
 	      if (tcsetattr(0, TCSANOW, &curr_termios)) stop(*argv);
+#endif
 	      if (write(1, "!\n", 2) < 0) stop(*argv);
 	    } else {
 	      if (write(3, inbuf, incnt) < 0) stop(*argv);

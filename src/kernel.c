@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.17 1993/09/22 16:44:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.18 1994/02/07 12:38:57 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -7,7 +7,9 @@
 #include <stdio.h>
 #endif
 /* #include <dos.h> */
+#ifndef ibm032
 #include <setjmp.h>
+#endif
 #include "global.h"
 #include "mbuf.h"
 #include "proc.h"
@@ -212,6 +214,11 @@ int freeargs;           /* If set, free arg list on parg1 at termination */
 #elif defined macII
 	if (!setjmp(jmpenv)) {
 	  jmpenv[12] = (int) newstackptr;
+	  longjmp(jmpenv, 1);
+	}
+#elif defined ibm032
+	if (!setjmp(jmpenv)) {
+	  jmpenv[0] = (int) newstackptr;
 	  longjmp(jmpenv, 1);
 	}
 #elif defined RISCiX
