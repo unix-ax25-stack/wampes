@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.29 1995/04/06 06:20:48 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.30 1995/05/23 21:52:04 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -34,7 +34,7 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #define DEFAULTSERVER   "db0sao"        /* Default netupd server */
 #define DIGESTSIZE      16              /* MD5 digest size */
 #define HASHSIZE        499             /* Hash table size */
-#define LOCKFILE        "/tcp/netupdlock" /* Lock file */
+#define LOCKFILE        "/tcp/locks/netupd" /* Lock file */
 #define MASTERDIR       "/tcp"          /* Master directory */
 #define MIRRORDIR       "/tcp/netupdmirrors" /* Mirror directory */
 #define NETCMD          "unix:/tcp/.sockets/netcmd" /* Net Cmd socket */
@@ -1308,6 +1308,7 @@ int main(int argc, char **argv)
     putenv("TZ=MEZ-1MESZ");
 
 #if !DEBUG
+  mkdir("/tcp/locks", 0755);
   if ((fdlock = lock_file(LOCKFILE, 0)) < 0)
     syscallerr(LOCKFILE);
 #endif

@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.91 1995/05/14 14:48:43 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.92 1995/05/23 21:51:59 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -2444,6 +2444,7 @@ int main(int argc, char **argv)
     exit(1);
   }
 
+  mkdir(LOCKDIR, 0755);
   mkdir(WRKDIR, 0755);
 
   if (gethostname(buf, sizeof(buf))) halt();

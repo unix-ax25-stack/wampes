@@ -3128,9 +3128,9 @@
 #       brief: als boven maar met retour envelope, gefrankeerd !!!
 #       Telefoon alleen 's avonds tussen 20.30 en 22.00 s.v.p. .
 #
-# revision 10 feb 1995
+# revision 1 mei 1995
 #
-44.137.0.0      PA_ZH1net
+44.137.0.0      PA_ZH1net       # /22 subnet - mask 255.255.240.0
 44.137.0.2      pa0gri          # gerard
 44.137.0.3      pa3chk          # olaf
 44.137.0.4      pa3ggz          # jan
@@ -3242,7 +3242,7 @@
 44.137.0.113    pe1bud          # hans
 44.137.0.114    sys2.pa2ern     # henk
 44.137.0.115    pe1cul          # jack
-44.137.0.116    pe1nws          # fred
+44.137.0.116    pa3gqb          # fred
 44.137.0.117    pe1knt          # rene
 44.137.0.118    pe1oco          # hans
 44.137.0.119    pa3cba          # wil
@@ -3264,7 +3264,7 @@
 44.137.0.136    pa2ipa          # nico
 44.137.0.137    pa3fwi          # jan-willem
 44.137.0.138    pa3fux          # jan
-44.137.0.139    pe1oei          # hans
+44.137.0.139    pa3grs          # hans
 44.137.0.140    i1ccx           # emilio
 44.137.0.141    pa3fly          # marcel
 44.137.0.142    sys2.pe1nnh     # peter
@@ -3340,8 +3340,8 @@
 44.137.0.212    pa3euo          # petra
 44.137.0.213    pa3eup          # detlef
 44.137.0.214    sys2.pe1otx     # henk
-44.137.0.215    pe1ppf          # jan
-44.137.0.216    sys2.pe1ppf     # jan
+44.137.0.215    pe1pff          # jan
+44.137.0.216    sys2.pe1pff     # jan
 44.137.0.217    pa3gnp          # kees
 44.137.0.218    pa3glb          # manfred
 44.137.0.219    pe1mpq          # henk
@@ -3374,6 +3374,11 @@
 44.137.0.246    sys2.pa3fsi     # gys
 44.137.0.247    sys2.pe1mfu     # robert
 44.137.0.248    pa0dhs          # henk
+44.137.0.249    pi4kpn          # kees
+44.137.0.250    pa3gfq          # norman
+44.137.0.251    sys3.pe1nnh     # peter
+44.137.0.252    pe1evi          # rob
+44.137.0.253    sys3.pa3cgf     # dolf
 #
 44.137.1.1      net.pa0gri      net     # TCP/IP net server and IP switch
 44.137.1.2      devel.pa0gri    # gerard
@@ -3386,6 +3391,7 @@
 44.137.1.9      gr09pc          # gvdg
 44.137.1.10     chakka.pa0gri chakka    # gvdg
 44.137.1.11     sunny.pa0gri sunny      # gvdg
+#
 44.137.1.16     sys2.pa0okc     # chris
 44.137.1.17     sys3.pa0okc     # chris
 44.137.1.18     sys4.pa0okc     # chris
@@ -3393,7 +3399,12 @@
 44.137.1.20     sys6.pa0okc     # chris
 44.137.1.21     gw.pa0okc       # chris
 #
-44.137.4.0      PA_LBnet
+44.137.2.1      pe1puj          # edwin
+44.137.2.2      pe1prx          # johan
+44.137.2.3      pi5thr          # student
+44.137.2.4      sys4.pa0wdn     # hans
+#
+44.137.4.0      PA_LBnet        # /22 subnet - mask 255.255.240.0
 44.137.4.1      pe1ayx          # hans
 44.137.4.2      home.pa3eug     # ramon
 44.137.4.3      pa3bvp          # john
@@ -3442,7 +3453,7 @@
 44.137.4.48     pe1jyy          # john
 44.137.4.49     sys2.pe1gzb     # jacq
 #
-44.137.8.0      PA_NBWnet
+44.137.8.0      PA_NBWnet       # /22 subnet - mask 255.255.240.0
 44.137.8.1      pa0hwb          # hans
 44.137.8.2      pi8hwb          # hans
 44.137.8.3      pe1gqe          # joop
@@ -3540,8 +3551,15 @@
 44.137.8.96     sys2.pa0wof     # paul
 44.137.8.97     sys3.pb3gtr     # ton
 44.137.8.98     sys4.pe1otp     # rob
+44.137.8.99     pe1psg          # charles
+44.137.8.100    pi8pwg          # hans
+44.137.8.101    sys2.pi8brd     # hans
+44.137.8.102    sys2.pi8hwb     # hans
+44.137.8.103    sys3.pi8hwb     # hans
+44.137.8.104    pe1nmk          # hans
+44.137.8.105    sys2.pe1nmk     # hans
 #
-44.137.12.0     PA_GRnet
+44.137.12.0     PA_GRnet        # /22 subnet - mask 255.255.240.0
 44.137.12.1     pa3esk          # frans
 44.137.12.2     pe1ljf          # harm
 44.137.12.3     pe1ndu          # rieks
@@ -3577,8 +3595,9 @@
 44.137.12.33    sys2.pa3esk     # frans
 44.137.12.34    pe1hyu          # frans
 44.137.12.35    sys2.pe0jri     # joop
+44.137.12.36    sys2.pa3gbe     # jan
 #
-44.137.16.0     PA_NH1net
+44.137.16.0     PA_NH1net       # /22 subnet - mask 255.255.240.0
 44.137.16.1     pa3efu          # jan
 44.137.16.2     sys2.pe1btv     # ruud
 44.137.16.3     pa0rys          # ger
@@ -3609,13 +3628,13 @@
 44.137.16.28    pi8yrc          # ruud
 44.137.16.29    pa3eli          # jan
 44.137.16.30    pa3aqj          # hans
-44.137.16.31    3egu            # roger
+44.137.16.31    pa3egu          # roger
 44.137.16.32    pe1njc          # frank
 44.137.16.34    pa0vab          # peter
 44.137.16.35    pe1jyt          # fred
 44.137.16.36    pe1byw          # jan
 44.137.16.37    pa0rvt          # rein
-44.137.16.38    sys2.pe1nat     # e
+44.137.16.38    sys2.pe1nat     # ed
 44.137.16.39    pe1bxr          # erik
 44.137.16.40    pa3ato          # ted
 44.137.16.41    pe1brv          # joop
@@ -3623,7 +3642,7 @@
 44.137.16.44    pa3fdq          # paul
 44.137.16.45    pi5dd           # paul
 44.137.16.46    pa3bhn          # jos
-44.137.16.47    pa2vlg          # joan
+44.137.16.47    pa2vlg          # johan
 44.137.16.48    pa0jhv          # jan
 44.137.16.49    pa0jhs          # jacob
 44.137.16.50    pe1hns          # bert
@@ -3680,14 +3699,19 @@
 44.137.16.101   pa0tax          # jan
 44.137.16.102   pe1faw          # ron
 44.137.16.103   pa3bug          # cor
-44.137.16.104 pa3fjh          # walter
+44.137.16.104   pa3fjh          # walter
+44.137.16.105   pa0rcf          # aart
+44.137.16.106   pa3fth          # wil
+44.137.16.107   pi8vab          # peter
+44.137.16.108   pe1ptm          # ron
 #
+# subnet voor demo (HCC etc..)
 44.137.17.1     pa0hzp-1        # henk
 44.137.17.2     pa0hzp-2        # henk
 44.137.17.3     pa0hzp-3        # henk
 44.137.17.4     pa0hzp-4        # henk
 #
-44.137.20.0     PA_FLnet
+44.137.20.0     PA_FLnet        # /22 subnet - mask 255.255.240.0
 44.137.20.1     nop.pa0gri      # gerard
 44.137.20.2     pa3ffs          # marijn
 44.137.20.3     pe1mrn          # jan
@@ -3709,7 +3733,7 @@
 44.137.20.20    pa3ets          # ron
 44.137.20.21    pa3ami          # piet
 #
-44.137.24.0     PA_NBOnet
+44.137.24.0     PA_NBOnet       # /22 subnet - mask 255.255.240.0
 44.137.24.1     pi8tcp          # club
 44.137.24.2     pe1dtn          # peter
 44.137.24.3     pe1hzg          # geert jan
@@ -3909,8 +3933,17 @@
 44.137.24.197   pe1ppd          # eric
 44.137.24.198   pa3glz          # ton
 44.137.24.199   pa3avs          # rolf
+44.137.24.200   sys2.pi5tle     # hans
+44.137.24.201   sys2.pa0ruy     # hans
+44.137.24.202   sys3.pe1ofl     # patrick
+44.137.24.203   pa0avn          # andre
+44.137.24.204   pa3fxj          # ton
+44.137.24.205   pe1hbk          # erik
+44.137.24.206   sys2.pe1hbk     # erik
+44.137.24.207   pa3fne          # peter
+44.137.24.208   sys3.pe1ogt     # hans
 #
-44.137.28.0     PA_ZLnet
+44.137.28.0     PA_ZLnet        # /22 subnet - mask 255.255.240.0
 44.137.28.1     pb0acz          # bram
 44.137.28.2     pe1khx          # rob
 44.137.28.3     pa3cwi          # kees
@@ -3995,8 +4028,11 @@
 44.137.28.82    pe1pts          # michel
 44.137.28.83    pe1ptv          # niels
 44.137.28.84    sys3.pi5vls     # mts
+44.137.28.85    unix.pi8goe     # henk
+44.137.28.86    sys2.pa3dmm     # henk
+44.137.28.87    sys2.pe1pnz     # bert
 #
-44.137.32.0     PA_ZH2net
+44.137.32.0     PA_ZH2net       # /22 subnet - mask 255.255.240.0
 44.137.32.1     pa3dlt          # koos
 44.137.32.2     pe1gwo          #
 44.137.32.3     pe1huz          # djur
@@ -4058,7 +4094,6 @@
 44.137.32.65    pa3cuh          # wim
 44.137.32.66    pa3eki          # jaap
 44.137.32.67    pa3dtk          # bertus
-44.137.32.68    pe1nmk          # hans
 44.137.32.69    pe1nau          # mike
 44.137.32.70    pa3fgr          # frans
 44.137.32.71    pi8omp          # olaf
@@ -4129,7 +4164,6 @@
 44.137.32.137   pe1npf          # edwin
 44.137.32.138   pa3gmp          # frank
 44.137.32.139   pe1mui          # roel
-44.137.32.140   sys2.pe1nmk     # hans
 44.137.32.141   pa3cov          # tjakko
 44.137.32.142   sys2.pa3cov     # tjakko
 44.137.32.143   pa3eoy          # frank
@@ -4171,6 +4205,11 @@
 44.137.32.181   pe1okr          # rudolf
 44.137.32.182   pa0gbl          # gerrit
 44.137.32.183   sys3.pa3gte     # rins
+44.137.32.184   pe1pqd          # jan
+44.137.32.185   pe1ogm          # pieter
+44.137.32.186   pa3gqf          # richard
+44.137.32.187   pa3dls          # jan
+44.137.32.188   pe1pss          # ruud
 #
 44.137.33.0     pa2aganet               # adam subnet 0-15
 44.137.33.1     sys2.pa2aga     # adam
@@ -4183,7 +4222,7 @@
 44.137.33.10    pa2aga-10       # adam
 44.137.33.15    Dynamic.pa2aga  # adam
 #
-44.137.36.0     PA_NH2net
+44.137.36.0     PA_NH2net       # /22 subnet - mask 255.255.240.0
 44.137.36.1     pa0lky          # lupko
 44.137.36.2     pa0rjv          # robert
 44.137.36.3     pe1kpr          # john
@@ -4246,7 +4285,7 @@
 44.137.36.65    sys2.pe1hmd     # jan
 44.137.36.66    pa3fym          # remco
 44.137.36.67    pa3bft          # cees
-44.137.36.68    pa6zmy          # almar
+44.137.36.68    pi4rck          # almar
 44.137.36.69    pi5ren          # rens en rens
 44.137.36.70    pe1pdc          # evert
 44.137.36.71    pe1heu          # frank
@@ -4259,13 +4298,14 @@
 44.137.36.78    pe1pnl          # joop
 44.137.36.79    pa3bkw          # frans
 44.137.36.80    sys2.pa3dbv     # peter
+44.137.36.81    sys2.pa3fym     # remco
+44.137.36.82    pa3gsd          # jos
 #
-44.137.40.0     PA_UTnet
+44.137.40.0     PA_UTnet        # /22 subnet - mask 255.255.240.0
 44.137.40.1     pe1chl          # rob
 44.137.40.2     sys2.pe1chl     # rob
 44.137.40.3     pe1jlj          # roel
 44.137.40.4     pe1lde          # henk
-44.137.40.5     pa3eoa          # herman
 44.137.40.6     sys2.pe1jlj     # roel
 44.137.40.7     pa3fmk          # olbert
 44.137.40.8     pa0erg          # eddy
@@ -4314,7 +4354,7 @@
 44.137.40.52    pa3cmi          # wim
 44.137.40.53    pa3fil          # frank
 44.137.40.54    sys2.pb0aaq     # frank
-44.137.40.55    pa3cpm          # henni
+44.137.40.55    pa3cpm          # hennie
 44.137.40.56    sys2.pa3dco     # paul
 44.137.40.57    pa3etk          # hans
 44.137.40.58    pa3fxw          # robert
@@ -4372,10 +4412,18 @@
 44.137.40.110   pa3aba          # joop
 44.137.40.111   pa3bef          # berrie
 44.137.40.112   pe1ppj          # arjo
+44.137.40.113   pe1arn          # carel
+44.137.40.114   pe1bbf          # richard
+44.137.40.115   pa0iz           # eric
+44.137.40.116   mac.pa3fym      # remco
+44.137.40.118   pe1ozm          # erik
+44.137.40.119   pe1oul          # jos
+44.137.40.120   pa0rz           # paul
+44.137.40.121   pe1nxs          # gerard
 #
 #44.137.41.0    koxnet          # rob subnet 0-15
 #
-44.137.44.0     PA_GLnet
+44.137.44.0     PA_GL1net       # /24 subnet - mask 255.255.255.0
 # subnet land van maas en waal en rijn
 44.137.44.1     pa0hbp          # hans
 44.137.44.2     pa3dso          # ron
@@ -4434,7 +4482,12 @@
 44.137.44.55    pe1ahx          # catharinus
 44.137.44.56    pe1gyb          # rob
 44.137.44.57    pe1okj          # paul
+44.137.44.58    pa3bdj          # antonie
+44.137.44.59    pa0khs          # henk
+44.137.44.60    pe1pta          # ernest
+44.137.44.61    pi5ah           # ernest
 # subnet achterhoek
+44.137.45.0     PA_GL2net       # /24 subnet - mask 255.255.255.0
 44.137.45.1     pe1dkc          # ed
 44.137.45.2     pe1ivp          # sander
 44.137.45.3     pa0dlf          # dolf
@@ -4443,9 +4496,12 @@
 44.137.45.6     pa3cpr  pe1maq          # jan christa
 44.137.45.7     pe1anw          # frans
 44.137.45.8     pa3fpl          # henk
-44.137.45.9     pe1nxv          # ben
+44.137.45.9     pa3grb          # ben
 44.137.45.10    pe0fko          # fred
+44.137.45.11    pa3eoi          # chris
+44.137.45.12    pe1izr          # hans
 # subnet veluwe
+44.137.46.0     PA_GL3net       # /24 subnet - mask 255.255.255.0
 44.137.46.1     pe1gox          # rob
 44.137.46.2     pa0dal          # bert
 44.137.46.3     pa3ayb          # bert
@@ -4473,7 +4529,6 @@
 44.137.46.25    pe1omn          # ton
 44.137.46.26    pa0eht          # eddy
 44.137.46.27    sys2.pa0eht     # eddy
-44.137.46.28    pa0pur          # george
 44.137.46.29    pa3cdm          # lex
 44.137.46.30    pa3duy          # dirk
 44.137.46.31    pa3gqj          # erik
@@ -4496,8 +4551,14 @@
 44.137.46.48    pe1khp          # adriaan
 44.137.46.49    pe1hqc          # iskander
 44.137.46.50    pa3dhm          # carel
+44.137.46.51    sys2.pe1hqc     # iskander
+44.137.46.52    pa3feo          # berry
+44.137.46.53    sys3.pe1hqc     # iskander
+44.137.46.54    sys4.pe1hqc     # iskander
 #
-44.137.48.0     PA_OVnet1
+44.137.47.0     PA_GL4net       # /24 subnet - mask 255.255.255.0
+#
+44.137.48.0     PA_OV1net       # /24 subnet - mask 255.255.255.0
 44.137.48.1     pa0apa          # andre
 44.137.48.2     pa3ffa          # erik
 44.137.48.3     pi8daz          # eduard
@@ -4574,9 +4635,9 @@
 44.137.48.78    pe1owg          # arnold
 44.137.48.79    pa0ens          # jan
 44.137.48.80    sys2.pa3fwm     # pieter tjerk
-44.137.48.81  zon.pa3fwm      # pieter tjerk
+44.137.48.81    zon.pa3fwm      # pieter tjerk
 #
-44.137.49.0     PA_OVnet2
+44.137.49.0     PA_OV2net       # /24 subnet - mask 255.255.255.0
 44.137.49.1     pi4vrn          # henk
 44.137.49.2     pe0rtm          # henk
 44.137.49.3     pa3dhs          # klaas
@@ -4598,7 +4659,11 @@
 44.137.49.20    pe1ohk          # nico
 44.137.49.21    pe1hbw          # henk
 #
-44.137.52.0     PA_DRnet
+44.137.50.0     PA_OV3net       # /24 subnet - mask 255.255.255.0
+#
+44.137.51.0     PA_OV4net       # /24 subnet - mask 255.255.255.0
+#
+44.137.52.0     PA_DRnet        # /22 subnet - mask 255.255.240.0
 44.137.52.1     pa0adc          # henk
 44.137.52.2     pa0nam          # bert
 44.137.52.3     pa0fa           # jan
@@ -4620,8 +4685,9 @@
 44.137.52.19    pe1kvj          # erik
 44.137.52.20    pe1oza          # michel
 44.137.52.21    pe1ntb          # andre
+44.137.52.22    pa0pur          # george
 #
-44.137.56.0     PA_FRnet
+44.137.56.0     PA_FRnet        # /22 subnet - mask 255.255.240.0
 44.137.56.1     pa3ffy          # ton
 44.137.56.2     pe1dvx          # kees
 44.137.56.3     pe1dzq          # alfred
@@ -4674,9 +4740,12 @@
 44.137.56.50    pe1oez          # wietse
 44.137.56.51    sys2.pe1jhq     # sake
 44.137.56.52    sys3.pe1jhq     # sake
-44.137.56.53  pa0gtw          # fred
+44.137.56.53    pa0gtw          # fred
+44.137.56.54    pe1nii          # siebe
+44.137.56.55    pa0unt          # nico
+44.137.56.56    pe1myz          # tjeerd
 #
-44.137.60.0     PA_SPAREnet
+44.137.60.0     PA_SPAREnet     # /22 subnet - mask 255.255.240.0
 #===========================================================================
 # AMPR.ORG Amateur Packet Radio TCP/IP Network
 # 44.142.xxx.xxx - Internet Protocol Address list for HB9 - Switzerland
