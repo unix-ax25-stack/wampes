@@ -1,4 +1,4 @@
-/* @(#) $Id: krnlif.c,v 1.11 2002/09/18 19:03:45 dl9sau Exp $ */
+/* @(#) $Id: krnlif.c,v 1.12 2002/10/19 12:16:36 dl9sau Exp $ */
 
 #if defined linux
 
@@ -253,12 +253,13 @@ static void krnlif_tx(struct krnlif *ki)
 		//printf("debug: got %d bytes, first 0x%02x\n", bp->cnt, bp->data[0]);
 		cnt += bp->cnt;
 		if (cnt > sizeof(buf)) {
-			/* dl9sau bugfix: free_p() to free this packet,
+			/* packet too large. drop.
+			 * dl9sau bugfix: free_p() to free this packet,
 			 * not free_mbuf(), because ki->sndq must point to the
 			 * next packet (anext) or point to 0 when no packet
 			 * is left in the sendqueue.
 			 */
-			free_p(&ki->sndq);
+			ki->sndq = free_p(&ki->sndq);
 			return;
 		}
 		memcpy(bufp, bp->data, bp->cnt);
@@ -279,12 +280,14 @@ static void krnlif_tx(struct krnlif *ki)
 	if (i >= 0) {
 		ki->txpkts++;
 		ki->txchar += cnt;
-		free_p(&ki->sndq);
+		// free packet. will go to next
+		ki->sndq = free_p(&ki->sndq);
 		return;
 	}
 	perror("krnlif_tx(): sendto()");
 	printf("debug: krnlif_tx: sendto() returned %d while sending %d bytes\n", i, cnt);
 	if (errno == EMSGSIZE) {
+		// drop packet
 		free_p(&ki->sndq);
 		return;
 	}
