@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ax25,v 1.6 1994/08/24 11:27:22 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ax25,v 1.7 1994/08/29 09:05:54 deyke Exp $
 .H 2 "ax25" " \fIsubcommand\fP"
 These commands control the AX.25 service.
 .H 3 "ax25 blimit" " [\fIlimit\fP]"
@@ -11,22 +11,32 @@ Note that this is applicable only to actual AX.25 connections, UI frames
 will never be retransmitted by the AX.25 layer.
 The default is 16.
 .H 3 "ax25 destlist" " [\fIinterface\fP]"
-Display the destination list, i.e. the addressed-to stations. Next to the
-time of the last transmission to that station the time that station replied
-(if heard) is displayed. This gives a good reference to see if a station
-is reachable and responding.
+Display the AX.25 "destination" list.
+Each address seen in the destination field
+of an AX.25 frame is displayed (most recent first),
+along with the time since it was last referenced.
+The time since the same address was last seen in the source field
+of an AX.25 frame on the same interface is also shown.
+If the address has never been seen in the source field of a frame,
+then this field is left blank.
+(This indicates that the destination is either a multicast address or a "hidden station".)
 If \fIinterface\fP is given, only the list for that interface is displayed.
 .H 3 "ax25 digipeat" " [0|1|2]"
 Display or set the digipeat mode. The default is 2. MORE TO BE WRITTEN.
 .H 3 "ax25 flush"
-Clear the AX.25 "heard" list (see \fBax25 heard\fP).
+Clear the AX.25 "heard" and "destination" lists
+(see \fBax25 heard\fP and \fBax25 destlist\fP).
 .H 3 "ax25 heard" " [\fIinterface\fP]"
-Display the AX.25 "heard" list. For each interface that is configured to
-use AX.25, a list of all addresses heard through that interface is
-shown, along with a count of the number of packets heard from each station
+Display the AX.25 "heard" list.
+For each interface that is configured to use AX.25,
+a list of all addresses heard through that interface is shown,
+along with a count of the number of packets heard from each station
 and the interval, in days:hr:min:sec format, since each station was last heard.
-The local station appears first in the listing, the packet count
-actually reflects the number of packets transmitted.
+The list is sorted in most-recently-heard order.
+The local station appears first in the listing,
+the packet count actually reflects the number of packets transmitted.
+This count will be correct whether or not the modem monitors
+its own transmissions.
 If \fIinterface\fP is given, only the list for that interface is displayed.
 .H 3 "ax25 jumpstart" " \fIax25_addr\fP [on|off]"
 The default is \fBoff\fP.

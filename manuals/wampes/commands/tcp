@@ -1,6 +1,6 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/tcp,v 1.6 1994/08/24 11:27:25 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/tcp,v 1.7 1994/08/29 09:05:57 deyke Exp $
 .H 2 "tcp" " \fIsubcommand\fP"
-These commands control the Transmission Control Protocol service.
+These commands control the Transmission Control Protocol (TCP) service.
 .H 3 "tcp irtt" " [\fImilliseconds\fP]"
 Display or set the initial round trip time estimate, in milliseconds, to be
 used for new TCP connections until they can measure and adapt to the

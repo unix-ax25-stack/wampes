@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.6 1994/08/24 11:27:30 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.7 1994/08/29 09:05:39 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
@@ -20,13 +20,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940824" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940829" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 940824
+Version 940829
 .S
 .SP 2
 .S 15
@@ -408,8 +408,26 @@ of IP frames over the NET/ROM transport.
 The interface will be named
 \fBnetrom\fP.
 .H 3 "attach ni" " \fIname\fP \fIip-addr\fP [\fInetmask\fP]"
+This creates an IP point-to-point link between \fBWAMPES\fP and UNIX,
+by creating a new interface named \fIname\fP on the \fBWAMPES\fP side,
+and by creating a new interface named \fBni?\fP
+with IP address \fIip-addr\fP
+and netmask \fInetmask\fP
+on the UNIX side.
+It also establishes a UNIX routing table entry
+directing traffic for \fBWAMPES\fP to the newly created interface.
+\fIip-addr\fP and \fInetmask\fP have to be specified
+as numeric IP addresses in dotted decimal notation (eg. 44.0.0.1),
+or as symbolic names stored in the domain name database.
+\fInetmask\fP defaults to 255.0.0.0 if not specified.
+Example:
+.DS I
+.ft CW
+attach ni ni dk5sg-u # ip to host ip
+.ft P
+.DE
+.P
 Currently \fBattach ni\fP is available on HP-UX systems only.
-MORE TO BE WRITTEN.
 .H 2 "ax25" " \fIsubcommand\fP"
 These commands control the AX.25 service.
 .H 3 "ax25 blimit" " [\fIlimit\fP]"
@@ -422,22 +440,32 @@ Note that this is applicable only to actual AX.25 connections, UI frames
 will never be retransmitted by the AX.25 layer.
 The default is 16.
 .H 3 "ax25 destlist" " [\fIinterface\fP]"
-Display the destination list, i.e. the addressed-to stations. Next to the
-time of the last transmission to that station the time that station replied
-(if heard) is displayed. This gives a good reference to see if a station
-is reachable and responding.
+Display the AX.25 "destination" list.
+Each address seen in the destination field
+of an AX.25 frame is displayed (most recent first),
+along with the time since it was last referenced.
+The time since the same address was last seen in the source field
+of an AX.25 frame on the same interface is also shown.
+If the address has never been seen in the source field of a frame,
+then this field is left blank.
+(This indicates that the destination is either a multicast address or a "hidden station".)
 If \fIinterface\fP is given, only the list for that interface is displayed.
 .H 3 "ax25 digipeat" " [0|1|2]"
 Display or set the digipeat mode. The default is 2. MORE TO BE WRITTEN.
 .H 3 "ax25 flush"
-Clear the AX.25 "heard" list (see \fBax25 heard\fP).
+Clear the AX.25 "heard" and "destination" lists
+(see \fBax25 heard\fP and \fBax25 destlist\fP).
 .H 3 "ax25 heard" " [\fIinterface\fP]"
-Display the AX.25 "heard" list. For each interface that is configured to
-use AX.25, a list of all addresses heard through that interface is
-shown, along with a count of the number of packets heard from each station
+Display the AX.25 "heard" list.
+For each interface that is configured to use AX.25,
+a list of all addresses heard through that interface is shown,
+along with a count of the number of packets heard from each station
 and the interval, in days:hr:min:sec format, since each station was last heard.
-The local station appears first in the listing, the packet count
-actually reflects the number of packets transmitted.
+The list is sorted in most-recently-heard order.
+The local station appears first in the listing,
+the packet count actually reflects the number of packets transmitted.
+This count will be correct whether or not the modem monitors
+its own transmissions.
 If \fIinterface\fP is given, only the list for that interface is displayed.
 .H 3 "ax25 jumpstart" " \fIax25_addr\fP [on|off]"
 The default is \fBoff\fP.
@@ -577,7 +605,7 @@ Remove the specified files from the file system.
 .H 2 "disconnect" " [\fIsession#\fP]"
 An alias for the \fBclose\fP command (for the benefit of AX.25 users).
 .H 2 "domain" " \fIsubcommand\fP"
-These commands control the Domain Name Service.
+These commands control the Domain Name Service (DNS).
 .H 3 "domain cache list"
 Show the current contents of the in-memory cache for resource
 records.
@@ -673,7 +701,7 @@ If \fIhostname\fP is the same as the name of an attached interface,
 \fIhostname\fP will be substituted by the canonical host name
 which corresponds to the IP address of that interface.
 .H 2 "icmp" " \fIsubcommand\fP"
-These commands control the Internet Control Message Protocol service.
+These commands control the Internet Control Message Protocol (ICMP) service.
 .H 3 "icmp echo" " [on|off]"
 Display or set the flag controlling the asynchronous display of
 ICMP Echo Reply packets. This flag must be \fBon\fP for one-shot
@@ -771,9 +799,11 @@ See also the \fBroute\fP command.
 Set the receive buffer size.
 This value is currently not used by \fBWAMPES\fP.
 .H 3 "ifconfig \fIinterface\fP txqlen" " \fIsize\fP"
-TO BE WRITTEN.
+Set the transmit queue limit
+(maximum number of packets waiting in the transmit queue).
+If set to 0 the transmit queue is unlimited.
 .H 2 "ip" " \fIsubcommand\fP"
-These commands control the Internet Protocol service.
+These commands control the Internet Protocol (IP) service.
 .H 3 "ip address" " [\fIhostid\fP]"
 Display or set the default local IP address. This command must be given before
 an \fBattach\fP command if it is to be used as the default IP address for
@@ -1154,9 +1184,11 @@ be read or set.
 The implementation of this command for the various interface
 drivers is incomplete and subject to change.
 .H 2 "ping" " [\fIsubcommand\fP]"
-TO BE WRITTEN.
+Without an argument,
+display the Ping table,
+which lists statistics on all active repetitive pings.
 .H 3 "ping clear"
-TO BE WRITTEN.
+Stop all active repetitive pings, and clear the Ping table.
 .H 3 "ping \fIhostid\fP" " [\fIpacketsize\fP [\fIinterval\fP]]"
 Ping (send ICMP ECHO_REQUEST packets to) the specified host.
 ECHO_REQUEST datagrams have an IP and ICMP header,
@@ -1169,10 +1201,12 @@ If \fIpacketsize\fP is smaller than 16 bytes,
 there is not enough room for timing information.
 In this case the round-trip times are not displayed.
 .P
-If \fIinterval\fP is specified, pings will be repeated indefinitely
-at the specified interval (in seconds),
+If \fIinterval\fP is specified,
+pings will be repeated at the specified interval (in seconds)
+until the \fBping clear\fP command is issued,
 otherwise a single, "one shot" ping is done.
-Responses to one-shot pings appear asynchronously on the command screen.
+Responses to one-shot pings appear asynchronously on the command screen,
+while responses from repetitive pings are stored in the Ping table.
 .H 2 "ps"
 Display all current processes in the system. The fields are as follows:
 .VL 20 2
@@ -1249,8 +1283,19 @@ If no password is set with the \fB-s\fP option,
 then the \fBexit\fP and \fBreset\fP subcommands are disabled.
 .H 2 "rename" " \fIoldfilename\fP \fInewfilename\fP"
 Rename \fIoldfilename\fP to \fInewfilename\fP.
-.H 2 "repeat" " \fImilliseconds\fP \fIcommand\fP [\fIarguments\fP ...]"
-TO BE WRITTEN.
+.H 2 "repeat" " [\fImilliseconds\fP] \fIcommand\fP [\fIarguments\fP ...]"
+Execute \fIcommand\fP every \fImilliseconds\fP,
+or once every second if \fImilliseconds\fP is not specified.
+Before each iteration the screen is cleared.
+\fBrepeat\fP is terminated if any keyboard input is made,
+or if \fIcommand\fP returns an error.
+Example:
+.DS I
+.ft CW
+repeat 2000 tcp status
+.ft P
+.DE
+executes "tcp status" every two seconds.
 .H 2 "reset" " [\fIsession#\fP]"
 Reset the specified session, if no argument is given, reset the current
 session. This command should be used with caution since it does not
@@ -1433,7 +1478,7 @@ and a \fBdefault\fP route is in effect, it will be used.
 Drop all automatically created entries from the IP routing table, permanent
 entries are not affected.
 .H 3 "route lookup" " \fIhostid\fP"
-TO BE WRITTEN.
+Display the IP routing table entry which will be used to route to \fIhostid\fP.
 .H 2 "session" " [\fIsession#\fP]"
 Without arguments, display the list of current sessions,
 including session number, remote TCP, AX.25, or NET/ROM address
@@ -1447,7 +1492,7 @@ When the subshell exits, \fBWAMPES\fP resumes.
 Background activity (FTP servers, etc) is also suspended
 while the subshell executes.
 .H 2 "smtp" " \fIsubcommand\fP"
-These commands control the Simple Message Transport Protocol service
+These commands control the Simple Message Transport Protocol (SMTP) service
 (and all other mail delivery clients).
 .H 3 "smtp kick" " [\fIdestination\fP]"
 Run through the outgoing mail queue and attempt to deliver any pending mail.
@@ -1469,7 +1514,7 @@ subject of course to the \fBsmtp maxclients\fP limit. Setting a value of zero
 disables
 queue scanning altogether, note that this is the default!
 .H 2 "sntp" " \fIsubcommand\fP"
-TO BE WRITTEN.
+These commands control the Simple Network Time Protocol (SNTP) service.
 .H 3 "sntp add" " \fIhostid\fP [\fIinterval\fP]"
 Add \fIhostid\fP to the list of sntp servers.
 \fIinterval\fP specifies the poll interval in seconds (default 3333).
@@ -1585,48 +1630,48 @@ in a separate file, which can be read at some point in \fBnet.rc\fP.
 Start the specified server, allowing remote connection requests.
 .H 3 "start ax25"
 Start the AX.25 Login server.
-MORE TO BE WRITTEN.
+See also the \fBax25\fP and \fBlogin\fP commands.
 .H 3 "start discard" " [\fIport\fP]"
 Start the TCP DISCARD server.
-The default \fIport\fP is 9.
-MORE TO BE WRITTEN.
+Default \fIport\fP is 9.
+See also RFC863.
 .H 3 "start domain" " [\fIport\fP]"
 Start the TCP/UDP DOMAIN server.
-The default \fIport\fP is 53.
-MORE TO BE WRITTEN.
+Default \fIport\fP is 53.
+See also the \fBdomain\fP command, RFC1034, and RFC1035.
 .H 3 "start echo" " [\fIport\fP]"
 Start the TCP ECHO server.
-The default \fIport\fP is 7.
-MORE TO BE WRITTEN.
+Default \fIport\fP is 7.
+See also RFC862.
 .H 3 "start ftp" " [\fIport\fP]"
 Start the TCP FTP server.
-The default \fIport\fP is 21.
-MORE TO BE WRITTEN.
+Default \fIport\fP is 21.
+See also the \fBftp\fP command.
 .H 3 "start tcpgate" " \fIport\fP [\fIhost\fP[:\fIservice\fP]]"
 Start a \fBWAMPES\fP TCP to UNIX TCP gateway.
 MORE TO BE WRITTEN.
 .H 3 "start netrom"
 Start the NET/ROM Login server.
-MORE TO BE WRITTEN.
+See also the \fBnetrom\fP and \fBlogin\fP commands.
 .H 3 "start rip"
 Start the UDP RIP server on port 520.
-MORE TO BE WRITTEN.
+See also the \fBrip\fP command and RFC1058.
 .H 3 "start sntp"
 Start the UDP SNTP server on port 123.
-MORE TO BE WRITTEN.
+See also the \fBsntp\fP command and RFC1361.
 .H 3 "start telnet" " [\fIport\fP]"
 Start the TCP TELNET server.
-The default \fIport\fP is 23.
-MORE TO BE WRITTEN.
+Default \fIport\fP is 23.
+See also the \fBlogin\fP command.
 .H 3 "start time"
 Start the UDP TIME server on port 37.
-MORE TO BE WRITTEN.
+See also RFC868.
 .H 3 "start remote" " [\fIport\fP]"
 Start the UDP REMOTE server.
-The default \fIport\fP is 1234.
-MORE TO BE WRITTEN.
+Default \fIport\fP is 1234.
+See also the \fBremote\fP command.
 .H 2 "status"
-TO BE WRITTEN.
+Display a one-line summary of each AX.25, NET/ROM, TCP, and UDP control block.
 .H 2 "stop" " \fIserver\fP"
 Stop the specified server, rejecting any further remote connect
 requests. Existing connections are allowed to complete normally.
@@ -1658,7 +1703,7 @@ See also the \fBstart\fP command.
 \fBremote\fP
 .LE
 .H 2 "tcp" " \fIsubcommand\fP"
-These commands control the Transmission Control Protocol service.
+These commands control the Transmission Control Protocol (TCP) service.
 .H 3 "tcp irtt" " [\fImilliseconds\fP]"
 Display or set the initial round trip time estimate, in milliseconds, to be
 used for new TCP connections until they can measure and adapt to the
@@ -1787,9 +1832,10 @@ Enable raw packet dumps
 .LE 1
 If \fItracefile\fP is not specified, tracing will be to the console.
 .H 2 "udp" " \fIsubcommand\fP"
-These commands control the User Datagram Protocol service.
+These commands control the User Datagram Protocol (UDP) service.
 .H 3 "udp status"
-Displays the status of all UDP receive queues.
+Display several UDP-level statistics, plus a summary of
+all existing UDP control blocks.
 .H 2 "upload" " [stop|\fIfilename\fP]"
 Open \fIfilename\fP and send it on the current session as though it were
 typed on the terminal.
@@ -1797,7 +1843,13 @@ The command \fBupload stop\fP stops uploading and closes the file.
 If no argument is specified the current status is displayed.
 .nr Cl 2 \" Max level of header for table of contents
 .H 1 "FTP Subcommands"
-TO BE WRITTEN.
+This section describes the commands recognized in converse mode
+with a FTP session.
+.P
+All commands may be abbreviated.
+You only need type enough of a command's name to distinguish it from others
+that begin with the same series of letters.
+Parameters, however, must be typed in full.
 .H 2 "abort"
 Abort a file transfer operation in progress.
 When receiving a file, \fBabort\fP simply resets the data connection.

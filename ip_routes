@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ip_routes,v 1.39 1994/08/24 11:26:46 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ip_routes,v 1.40 1994/08/29 09:05:10 deyke Exp $
 
 #Host           Destination     Bits    Iface   Metric  Gateway         Private
 #------------------------------------------------------------------------------
@@ -7,7 +7,6 @@ hpcsos          44              8       none      2000
 hpcsos          dk5sg           32      none       100
 
 dk5sg           15              8       ni         100  0               P
-dk5sg           dk0hu           32      ipip       200  15.138.33.250
 dk5sg           dk5sg-u         32      ni           2
 dk5sg           dl1sbl-1        32      ipip       200  15.136.120.111
 dk5sg           hpcsos          32      ipip94     100  15.255.240.16   P
@@ -21,7 +20,6 @@ dk0hu           df9sr-1         32      ipip        20  15.136.35.218
 dk0hu           dh8saw-1        32      ipip        20  15.138.72.40
 dk0hu           dj3eg-1         32      ipip        20  15.136.166.12
 dk0hu           dk0hu-u         32      ni           2
-dk0hu           dk5sg           32      ipip       200  15.15.80.34
 dk0hu           dl1sbl-1        32      ipip        20  15.136.120.111
 dk0hu           dl2sel          32      tnc0      2000
 dk0hu           dl2sel-1        32      ipip        20  15.136.175.24

@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ifconfig,v 1.7 1994/08/24 11:27:23 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ifconfig,v 1.8 1994/08/29 09:05:55 deyke Exp $
 .H 2 "ifconfig" " [\fIinterface\fP [[\fIsubcommand\fP \fIparameter\fP] ...]"
 Without arguments display the status of all interfaces.
 When only \fIinterface\fP is given, the status of that interface is displayed.
@@ -82,4 +82,6 @@ See also the \fBroute\fP command.
 Set the receive buffer size.
 This value is currently not used by \fBWAMPES\fP.
 .H 3 "ifconfig \fIinterface\fP txqlen" " \fIsize\fP"
-TO BE WRITTEN.
+Set the transmit queue limit
+(maximum number of packets waiting in the transmit queue).
+If set to 0 the transmit queue is unlimited.

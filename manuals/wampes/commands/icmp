@@ -1,6 +1,6 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/icmp,v 1.3 1994/08/05 10:36:25 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/icmp,v 1.4 1994/08/29 09:05:55 deyke Exp $
 .H 2 "icmp" " \fIsubcommand\fP"
-These commands control the Internet Control Message Protocol service.
+These commands control the Internet Control Message Protocol (ICMP) service.
 .H 3 "icmp echo" " [on|off]"
 Display or set the flag controlling the asynchronous display of
 ICMP Echo Reply packets. This flag must be \fBon\fP for one-shot

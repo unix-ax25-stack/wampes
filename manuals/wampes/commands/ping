@@ -1,8 +1,10 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ping,v 1.3 1994/07/27 09:47:57 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ping,v 1.4 1994/08/29 09:05:55 deyke Exp $
 .H 2 "ping" " [\fIsubcommand\fP]"
-TO BE WRITTEN.
+Without an argument,
+display the Ping table,
+which lists statistics on all active repetitive pings.
 .H 3 "ping clear"
-TO BE WRITTEN.
+Stop all active repetitive pings, and clear the Ping table.
 .H 3 "ping \fIhostid\fP" " [\fIpacketsize\fP [\fIinterval\fP]]"
 Ping (send ICMP ECHO_REQUEST packets to) the specified host.
 ECHO_REQUEST datagrams have an IP and ICMP header,
@@ -15,7 +17,9 @@ If \fIpacketsize\fP is smaller than 16 bytes,
 there is not enough room for timing information.
 In this case the round-trip times are not displayed.
 .P
-If \fIinterval\fP is specified, pings will be repeated indefinitely
-at the specified interval (in seconds),
+If \fIinterval\fP is specified,
+pings will be repeated at the specified interval (in seconds)
+until the \fBping clear\fP command is issued,
 otherwise a single, "one shot" ping is done.
-Responses to one-shot pings appear asynchronously on the command screen.
+Responses to one-shot pings appear asynchronously on the command screen,
+while responses from repetitive pings are stored in the Ping table.

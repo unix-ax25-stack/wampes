@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/attach,v 1.7 1994/08/21 10:17:29 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/attach,v 1.8 1994/08/29 09:05:53 deyke Exp $
 .H 2 "attach" " \fItype\fP [\fItype specific options\fP]
 Configure and attach an interface to the system.
 The details are highly interface type dependent.
@@ -69,5 +69,23 @@ of IP frames over the NET/ROM transport.
 The interface will be named
 \fBnetrom\fP.
 .H 3 "attach ni" " \fIname\fP \fIip-addr\fP [\fInetmask\fP]"
+This creates an IP point-to-point link between \fBWAMPES\fP and UNIX,
+by creating a new interface named \fIname\fP on the \fBWAMPES\fP side,
+and by creating a new interface named \fBni?\fP
+with IP address \fIip-addr\fP
+and netmask \fInetmask\fP
+on the UNIX side.
+It also establishes a UNIX routing table entry
+directing traffic for \fBWAMPES\fP to the newly created interface.
+\fIip-addr\fP and \fInetmask\fP have to be specified
+as numeric IP addresses in dotted decimal notation (eg. 44.0.0.1),
+or as symbolic names stored in the domain name database.
+\fInetmask\fP defaults to 255.0.0.0 if not specified.
+Example:
+.DS I
+.ft CW
+attach ni ni dk5sg-u # ip to host ip
+.ft P
+.DE
+.P
 Currently \fBattach ni\fP is available on HP-UX systems only.
-MORE TO BE WRITTEN.

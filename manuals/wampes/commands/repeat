@@ -1,3 +1,14 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/repeat,v 1.3 1994/07/27 09:47:58 deyke Exp $
-.H 2 "repeat" " \fImilliseconds\fP \fIcommand\fP [\fIarguments\fP ...]"
-TO BE WRITTEN.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/repeat,v 1.4 1994/08/29 09:05:56 deyke Exp $
+.H 2 "repeat" " [\fImilliseconds\fP] \fIcommand\fP [\fIarguments\fP ...]"
+Execute \fIcommand\fP every \fImilliseconds\fP,
+or once every second if \fImilliseconds\fP is not specified.
+Before each iteration the screen is cleared.
+\fBrepeat\fP is terminated if any keyboard input is made,
+or if \fIcommand\fP returns an error.
+Example:
+.DS I
+.ft CW
+repeat 2000 tcp status
+.ft P
+.DE
+executes "tcp status" every two seconds.

@@ -1,6 +1,6 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ip,v 1.4 1994/08/24 11:27:23 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ip,v 1.5 1994/08/29 09:05:55 deyke Exp $
 .H 2 "ip" " \fIsubcommand\fP"
-These commands control the Internet Protocol service.
+These commands control the Internet Protocol (IP) service.
 .H 3 "ip address" " [\fIhostid\fP]"
 Display or set the default local IP address. This command must be given before
 an \fBattach\fP command if it is to be used as the default IP address for

@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/route,v 1.6 1994/08/21 10:17:32 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/route,v 1.7 1994/08/29 09:05:56 deyke Exp $
 .H 2 "route" " [\fIsubcommand\fP]"
 Without an argument, display the IP routing table.
 .H 3 "route add" " \fIhostid\fP[/\fIbits\fP]|default \fIinterface\fP [\fIgateway_hostid\fP [\fImetric\fP]]"
@@ -90,4 +90,4 @@ and a \fBdefault\fP route is in effect, it will be used.
 Drop all automatically created entries from the IP routing table, permanent
 entries are not affected.
 .H 3 "route lookup" " \fIhostid\fP"
-TO BE WRITTEN.
+Display the IP routing table entry which will be used to route to \fIhostid\fP.

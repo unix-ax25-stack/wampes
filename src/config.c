@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.37 1994/05/06 17:15:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.38 1994/08/29 09:05:18 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -224,7 +224,7 @@ struct cmds Cmds[] = {
 	"record",       dorecord,       0, 0, NULLCHAR,
 	"remote",       doremote,       0, 3, "remote [-p port] [-k key] [-a kickaddr] <address> exit|reset|kick",
 	"rename",       dorename,       0, 3, "rename <oldfile> <newfile>",
-	"repeat",       dorepeat,       16000, 3, "repeat <interval> <command> [args...]",
+	"repeat",       dorepeat,       16000, 2, "repeat [<interval>] <command> [args...]",
 	"reset",        doreset,        0, 0, NULLCHAR,
 #ifdef  RIP
 	"rip",          dorip,          0, 0, NULLCHAR,

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.46 1994/08/05 10:35:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.47 1994/08/29 09:05:23 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -104,6 +104,9 @@ char *argv[];
 			break;
 		case 'v':
 			Verbose = 1;
+			break;
+		case '?':
+			exit(1);
 			break;
 		}
 	}
@@ -255,7 +258,7 @@ void *p;
 	int32 interval;
 	int ret;
 
-	if(isdigit(argv[1][0])){
+	if(argc >= 3 && isdigit(argv[1][0])){
 		interval = atol(argv[1]);
 		if(interval <= 0)
 			interval = 1;

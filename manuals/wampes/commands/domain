@@ -1,6 +1,6 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/domain,v 1.4 1994/08/21 10:17:30 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/domain,v 1.5 1994/08/29 09:05:54 deyke Exp $
 .H 2 "domain" " \fIsubcommand\fP"
-These commands control the Domain Name Service.
+These commands control the Domain Name Service (DNS).
 .H 3 "domain cache list"
 Show the current contents of the in-memory cache for resource
 records.

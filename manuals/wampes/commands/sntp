@@ -1,6 +1,6 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/sntp,v 1.6 1994/08/24 11:27:25 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/sntp,v 1.7 1994/08/29 09:05:56 deyke Exp $
 .H 2 "sntp" " \fIsubcommand\fP"
-TO BE WRITTEN.
+These commands control the Simple Network Time Protocol (SNTP) service.
 .H 3 "sntp add" " \fIhostid\fP [\fIinterval\fP]"
 Add \fIhostid\fP to the list of sntp servers.
 \fIinterval\fP specifies the poll interval in seconds (default 3333).

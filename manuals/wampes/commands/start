@@ -1,45 +1,45 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/start,v 1.4 1994/08/21 10:17:32 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/start,v 1.5 1994/08/29 09:05:56 deyke Exp $
 .H 2 "start" " \fIserver\fP [\fIarguments\fP]"
 Start the specified server, allowing remote connection requests.
 .H 3 "start ax25"
 Start the AX.25 Login server.
-MORE TO BE WRITTEN.
+See also the \fBax25\fP and \fBlogin\fP commands.
 .H 3 "start discard" " [\fIport\fP]"
 Start the TCP DISCARD server.
-The default \fIport\fP is 9.
-MORE TO BE WRITTEN.
+Default \fIport\fP is 9.
+See also RFC863.
 .H 3 "start domain" " [\fIport\fP]"
 Start the TCP/UDP DOMAIN server.
-The default \fIport\fP is 53.
-MORE TO BE WRITTEN.
+Default \fIport\fP is 53.
+See also the \fBdomain\fP command, RFC1034, and RFC1035.
 .H 3 "start echo" " [\fIport\fP]"
 Start the TCP ECHO server.
-The default \fIport\fP is 7.
-MORE TO BE WRITTEN.
+Default \fIport\fP is 7.
+See also RFC862.
 .H 3 "start ftp" " [\fIport\fP]"
 Start the TCP FTP server.
-The default \fIport\fP is 21.
-MORE TO BE WRITTEN.
+Default \fIport\fP is 21.
+See also the \fBftp\fP command.
 .H 3 "start tcpgate" " \fIport\fP [\fIhost\fP[:\fIservice\fP]]"
 Start a \fBWAMPES\fP TCP to UNIX TCP gateway.
 MORE TO BE WRITTEN.
 .H 3 "start netrom"
 Start the NET/ROM Login server.
-MORE TO BE WRITTEN.
+See also the \fBnetrom\fP and \fBlogin\fP commands.
 .H 3 "start rip"
 Start the UDP RIP server on port 520.
-MORE TO BE WRITTEN.
+See also the \fBrip\fP command and RFC1058.
 .H 3 "start sntp"
 Start the UDP SNTP server on port 123.
-MORE TO BE WRITTEN.
+See also the \fBsntp\fP command and RFC1361.
 .H 3 "start telnet" " [\fIport\fP]"
 Start the TCP TELNET server.
-The default \fIport\fP is 23.
-MORE TO BE WRITTEN.
+Default \fIport\fP is 23.
+See also the \fBlogin\fP command.
 .H 3 "start time"
 Start the UDP TIME server on port 37.
-MORE TO BE WRITTEN.
+See also RFC868.
 .H 3 "start remote" " [\fIport\fP]"
 Start the UDP REMOTE server.
-The default \fIport\fP is 1234.
-MORE TO BE WRITTEN.
+Default \fIport\fP is 1234.
+See also the \fBremote\fP command.

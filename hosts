@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.37 1994/07/22 13:17:31 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.38 1994/08/29 09:05:08 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -2185,6 +2185,7 @@
 44.130.48.250   DB7SR   # Detlef, 7123 Sachsenheim
 44.130.48.251   DD7SD   # Yvonne Nass, 7123 Sachsenheim
 44.130.48.252   DL4SDC-U        # Andreas, Boeblingen
+44.130.48.253   DD5KX   # Gerhard Kmle, Rutesheim
 44.130.48.254   DL4TA-S # Ralf D. Kloth, 70174 Stuttgart
 #
 #44.130.49.x    Villingen/Schwenningen/Hechingen
