@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.28 1994/04/15 08:21:02 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.29 1994/04/25 17:06:26 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -1942,6 +1942,7 @@
 44.130.48.229   DL3SEL-U        # Stefan Karl, Office; WAMPES
 44.130.48.230   DL4SCI  # Jochen Jacobs; WAMPES
 44.130.48.231   DL4SCI-U        # ; WAMPES
+44.130.48.232   DL8SDE-U        # Marco Munk; Wampes
 44.130.48.233   DL6SDM  # Gunther, Neckarsulm; AT386
 44.130.48.234   DH8SAW  # Joachim Kempf, 7030 Boeblingen
 44.130.48.235   DH8SAW-1        # Joachim Kempf, 7030 Boeblingen
