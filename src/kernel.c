@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.3 1992/05/14 13:20:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.4 1992/06/01 10:34:20 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -404,10 +404,9 @@ void *event;
 /* Make ready the first 'n' processes waiting for a given event. The ready
  * processes will see a return value of 0 from pwait().  Note that they don't
  * actually get control until we explicitly give up the CPU ourselves through
- * a pwait(). Psignal may be called from interrupt level. It returns the
- * number of processes that were woken up.
+ * a pwait(). Psignal may be called from interrupt level.
  */
-int
+void
 psignal(event,n)
 void *event;    /* Event to signal */
 int n;          /* Max number of processes to wake up */
@@ -416,13 +415,12 @@ int n;          /* Max number of processes to wake up */
 	struct proc *pnext;
 	int i_state;
 	unsigned int hashval;
-	int cnt = 0;
 
 	if(Stkchk)
 		chkstk();
 
 	if(event == NULL)
-		return 0;               /* Null events are invalid */
+		return;                 /* Null events are invalid */
 
 	/* n = 0 means "signal everybody waiting for this event" */
 	if(n == 0)
@@ -446,7 +444,6 @@ int n;          /* Max number of processes to wake up */
 			pp->event = NULL;
 			addproc(pp);
 			n--;
-			cnt++;
 		}
 	}
 	for(pp = Susptab;n != 0 && pp != NULLPROC;pp = pnext){
@@ -465,11 +462,10 @@ int n;          /* Max number of processes to wake up */
 			pp->retval = 0;
 			addproc(pp);
 			n--;
-			cnt++;
 		}
 	}
 	restore(i_state);
-	return cnt;
+	return;
 }
 
 /* Rename a process */

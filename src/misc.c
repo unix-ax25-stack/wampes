@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.10 1991/10/03 11:05:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.11 1992/06/01 10:34:24 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -58,7 +58,28 @@ register char *s;
 		;
 	cp[1] = '\0';
 }
+/* Count the occurrances of 'c' in a buffer */
+int
+memcnt(buf,c,size)
+char *buf;
+char c;
+int size;
+{
+	int cnt = 0;
+	char *icp;
 
+	while(size != 0){
+		if((icp = memchr(buf,c,size)) == NULLCHAR)
+			break;  /* No more found */
+		/* Advance the start of the next search to right after
+		 * this character
+		 */
+		buf += (icp - buf + 1);
+		size -= (icp - buf + 1);
+		cnt++;
+	}
+	return cnt;
+}
 #if !(defined(hpux)||defined(__hpux))
 /* Copy a string to a malloc'ed buffer. Turbo C has this one in its
  * library, but it doesn't call mallocw() and can therefore return NULL.

@@ -1,11 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.11 1992/05/14 13:20:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.12 1992/06/01 10:34:18 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <stdio.h>
 #include "global.h"
-#include "config.h"
 #include "mbuf.h"
 #include "proc.h"
 #include "iface.h"
@@ -16,6 +15,7 @@
 #include "pktdrvr.h"
 #include "cmdparse.h"
 #include "commands.h"
+#include "trace.h"
 
 static void showiface __ARGS((struct iface *ifp));
 static int mask2width __ARGS((int32 mask));
@@ -42,19 +42,18 @@ struct iface Loopback = {
 	MAXINT16,       /* mtu          No limit */
 	0,              /* flags        */
 	0,              /* trace        */
-	NULLCHAR,       /* trfile       */
 	NULLFILE,       /* trfp         */
 	NULLIF,         /* forw         */
 	NULL,           /* rxproc       */
-	NULL,           /* txproc       */
-	NULL,           /* supv         */
+	NULLPROC,       /* txproc       */
+	NULLPROC,       /* supv         */
+	NULLBUF,        /* outq         */
 	0,              /* dev          */
 	NULL,           /* (*ioctl)     */
 	NULLFP,         /* (*iostatus)  */
 	NULLFP,         /* (*stop)      */
 	NULLCHAR,       /* hwaddr       */
 	NULL,           /* extension    */
-	CL_NONE,        /* type         */
 	0,              /* xdev         */
 	&Iftypes[0],    /* iftype       */
 	NULLFP,         /* (*send)      */
@@ -83,19 +82,18 @@ struct iface Encap = {
 	MAXINT16,       /* mtu          No limit */
 	0,              /* flags        */
 	0,              /* trace        */
-	NULLCHAR,       /* trfile       */
 	NULLFILE,       /* trfp         */
 	NULLIF,         /* forw         */
 	NULL,           /* rxproc       */
-	NULL,           /* txproc       */
-	NULL,           /* supv         */
+	NULLPROC,       /* txproc       */
+	NULLPROC,       /* supv         */
+	NULLBUF,        /* outq         */
 	0,              /* dev          */
 	NULL,           /* (*ioctl)     */
 	NULLFP,         /* (*iostatus)  */
 	NULLFP,         /* (*stop)      */
 	NULLCHAR,       /* hwaddr       */
 	NULL,           /* extension    */
-	CL_NONE,        /* type         */
 	0,              /* xdev         */
 	&Iftypes[0],    /* iftype       */
 	ip_encap,       /* (*send)      */
@@ -130,6 +128,35 @@ struct cmds Ifcmds[] = {
 	NULLCHAR,
 };
 
+/*
+ * General purpose interface transmit task, one for each device that can
+ * send IP datagrams. It waits on the interface's IP output queue (outq),
+ * extracts IP datagrams placed there in priority order by ip_route(),
+ * and sends them to the device's send routine.
+ */
+void
+if_tx(dev,arg1,unused)
+int dev;
+void *arg1;
+void *unused;
+{
+	struct mbuf *bp;        /* Buffer to send */
+	struct iface *iface;    /* Pointer to interface control block */
+	struct qhdr qhdr;
+
+	iface = arg1;
+	for(;;){
+		while(iface->outq == NULLBUF)
+			pwait(&iface->outq);
+
+		bp = dequeue(&iface->outq);
+		pullup(&bp,(char *)&qhdr,sizeof(qhdr));
+		(*iface->send)(bp,iface,qhdr.gateway,qhdr.tos);
+
+		/* Let other tasks run, just in case send didn't block */
+		pwait(NULL);
+	}
+}
 /* Process packets in the Hopper */
 void
 network(i,v1,v2)
@@ -138,60 +165,34 @@ void *v1;
 void *v2;
 {
 	struct mbuf *bp;
-	struct phdr phdr;
+	struct iftype *ift;
+	struct iface *ifp;
 
 loop:
-	while(Hopper == NULLBUF)
-		pwait(&Hopper);
 
+	for(;;){
+		bp = Hopper;
+		if(bp != NULLBUF){
+			bp = dequeue(&Hopper);
+			break;
+		}
+		pwait(&Hopper);
+	}
 	/* Process the input packet */
-	bp = dequeue(&Hopper);
-	pullup(&bp,(char *)&phdr,sizeof(phdr));
-	if(phdr.iface != NULLIF){
-		phdr.iface->rawrecvcnt++;
-		phdr.iface->lastrecv = secclock();
+	pullup(&bp,(char *)&ifp,sizeof(ifp));
+	if(ifp != NULLIF){
+		ifp->rawrecvcnt++;
+		ifp->lastrecv = secclock();
+		ift = ifp->iftype;
+	} else {
+		ift = &Iftypes[0];
 	}
-	dump(phdr.iface,IF_TRACE_IN,phdr.type,bp);
-	switch(phdr.type){
-#ifdef  KISS
-	case CL_KISS:
-		kiss_recv(phdr.iface,bp);
-		break;
-#endif
-#ifdef  AX25
-	case CL_AX25:
-		ax_recv(phdr.iface,bp);
-		break;
-#endif
-#ifdef  ETHER
-	case CL_ETHERNET:
-		eproc(phdr.iface,bp);
-		break;
-#endif
-#ifdef ARCNET
-	case CL_ARCNET:
-		aproc(phdr.iface,bp);
-		break;
-#endif
-#ifdef PPP
-	case CL_PPP:
-		ppp_proc(phdr.iface,bp);
-		break;
-#endif
-	/* These types have no link layer protocol at the point when they're
-	 * put in the hopper, so they can be handed directly to IP. The
-	 * separate types are just for user convenience when running the
-	 * "iface" command.
-	 */
-	case CL_NONE:
-	case CL_SERIAL_LINE:
-	case CL_SLFP:
-		ip_route(phdr.iface,bp,0);
-		break;
-	default:
-		free_p(bp);
-		break;
-	}
+	dump(ifp,IF_TRACE_IN,bp);
+
+	if(ift->rcvf != NULLVFP)
+		(*ift->rcvf)(ifp,bp);
+	else
+		free_p(bp);     /* Nowhere to send it */
 	/* Let everything else run - this keeps the system from wedging
 	 * when we're hit by a big burst of packets
 	 */
@@ -203,28 +204,13 @@ loop:
  * returns 0 if OK
  */
 int
-net_route(ifp, type, bp)
+net_route(ifp,bp)
 struct iface *ifp;
-int type;
 struct mbuf *bp;
 {
-	struct mbuf *nbp;
-	struct phdr phdr;
-
-	phdr.iface = ifp;
-	phdr.type = type;
-
-	if ((nbp = pushdown(bp,sizeof(phdr))) == NULLBUF ){
-		return -1;
-	}
-	memcpy( &nbp->data[0],(char *)&phdr,sizeof(phdr));
-	enqueue(&Hopper,nbp);
-	/* Especially on slow machines, serial I/O can be quite
-	 * compute intensive, so release the machine before we
-	 * do the next packet.  This will allow this packet to
-	 * go on toward its ultimate destination. [Karn]
-	 */
-	pwait(NULL);
+	bp = pushdown(bp,sizeof(ifp));
+	memcpy(&bp->data[0],(char *)&ifp,sizeof(ifp));
+	enqueue(&Hopper,bp);
 	return 0;
 }
 
@@ -249,7 +235,7 @@ void *p;
 	}
 	if(argc == 2){
 		showiface(ifp);
-		if ( ifp->show != NULLVFP ) {
+		if(ifp->show != NULLVFP){
 			(*ifp->show)(ifp);
 		}
 		return 0;
@@ -371,7 +357,6 @@ char *mode;
 	ifp->iftype = ift;
 	ifp->send = ift->send;
 	ifp->output = ift->output;
-	ifp->type = ift->type;
 	return 0;
 }
 /* Set interface receive buffer size */
@@ -444,15 +429,77 @@ register struct iface *ifp;
 		ifp->flags,ifp->trace,ifp->netmask,inet_ntoa(ifp->broadcast));
 	if(ifp->forw != NULLIF)
 		printf("           output forward to %s\n",ifp->forw->name);
-	printf("           sent: ip %lu tot %lu idle %s\n",
-	 ifp->ipsndcnt,ifp->rawsndcnt,tformat(secclock() - ifp->lastsent));
+	printf("           sent: ip %lu tot %lu idle %s qlen %d\n",
+	 ifp->ipsndcnt,ifp->rawsndcnt,tformat(secclock() - ifp->lastsent),
+		len_q(ifp->outq));
 	printf("           recv: ip %lu tot %lu idle %s\n",
 	 ifp->iprecvcnt,ifp->rawrecvcnt,tformat(secclock() - ifp->lastrecv));
-	printf("           CRC %s errors %lu\n",
-	 ifp->sendcrc ? "enabled" : "disabled", ifp->crcerrors);
-	printf("           bad ax25 headers %lu\n",
-	 ifp->ax25errors);
-	printf("\n");
+	printf("           crc %s crc errors %lu bad ax25 headers %lu\n",
+	 ifp->sendcrc ? "enabled" : "disabled",ifp->crcerrors,ifp->ax25errors);
+}
+
+/* Detach a specified interface */
+int
+if_detach(ifp)
+register struct iface *ifp;
+{
+	struct iface *iftmp;
+	struct route *rp,*rptmp;
+	int i,j;
+
+	if(ifp == &Loopback || ifp == &Encap)
+		return -1;
+
+#if 0
+	/* Drop all routes that point to this interface */
+	if(R_default.iface == ifp)
+		rt_drop(0L,0);  /* Drop default route */
+
+	for(i=0;i<HASHMOD;i++){
+		for(j=0;j<32;j++){
+			for(rp = Routes[j][i];rp != NULLROUTE;rp = rptmp){
+				/* Save next pointer in case we delete this entry */
+				rptmp = rp->next;
+				if(rp->iface == ifp)
+					rt_drop(rp->target,rp->bits);
+			}
+		}
+	}
+	/* Unforward any other interfaces forwarding to this one */
+	for(iftmp = Ifaces;iftmp != NULLIF;iftmp = iftmp->next){
+		if(iftmp->forw == ifp)
+			iftmp->forw = NULLIF;
+	}
+	/* Call device shutdown routine, if any */
+	if(ifp->stop != NULLFP)
+		(*ifp->stop)(ifp);
+
+	killproc(ifp->rxproc);
+	killproc(ifp->txproc);
+	killproc(ifp->supv);
+#endif
+
+	/* Free allocated memory associated with this interface */
+	if(ifp->name != NULLCHAR)
+		free(ifp->name);
+	if(ifp->hwaddr != NULLCHAR)
+		free(ifp->hwaddr);
+	/* Remove from interface list */
+	if(ifp == Ifaces){
+		Ifaces = ifp->next;
+	} else {
+		/* Search for entry just before this one
+		 * (necessary because list is only singly-linked.)
+		 */
+		for(iftmp = Ifaces;iftmp != NULLIF ;iftmp = iftmp->next)
+			if(iftmp->next == ifp)
+				break;
+		if(iftmp != NULLIF && iftmp->next == ifp)
+			iftmp->next = ifp->next;
+	}
+	/* Finally free the structure itself */
+	free((char *)ifp);
+	return 0;
 }
 
 /* Given the ascii name of an interface, return a pointer to the structure,
@@ -511,9 +558,12 @@ if_name(ifp,comment)
 struct iface *ifp;
 char *comment;
 {
-	char *result = mallocw( strlen(ifp->name) + strlen(comment) + 1 );
-	strcpy( result, ifp->name );
-	return strcat( result, comment );
+	char *result;
+
+	result = mallocw(strlen(ifp->name) + strlen(comment) + 1);
+	strcpy(result,ifp->name);
+	strcat(result,comment);
+	return result;
 }
 
 /* Raw output routine that tosses all packets. Used by dialer, tip, etc */

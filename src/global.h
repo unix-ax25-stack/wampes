@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.16 1992/05/28 13:50:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.17 1992/06/01 10:34:16 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -137,7 +137,7 @@ void log();
 int log2 __ARGS((int x));
 #define ltop(x) ((void *) (x))
 void *mallocw __ARGS((unsigned nb));
-int memcnt __ARGS((char *buf,char c,int size));
+int memcnt __ARGS((char *buf,int c,int size));
 char *outbuf __ARGS((int16 port,char *buf,int16 cnt));
 #define ptol(x) ((long) (x))
 void restore __ARGS((int));

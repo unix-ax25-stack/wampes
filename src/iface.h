@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.12 1992/05/28 13:50:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.13 1992/06/01 10:34:18 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -23,7 +23,7 @@
  */
 struct iftype {
 	char *name;             /* Name of encapsulation technique */
-	int (*send) __ARGS((struct mbuf *,struct iface *,int32,int,int,int,int));
+	int (*send) __ARGS((struct mbuf *,struct iface *,int32,int));
 				/* Routine to send an IP datagram */
 	int (*output) __ARGS((struct iface *,char *,char *,int,struct mbuf *));
 				/* Routine to send link packet */
@@ -33,6 +33,9 @@ struct iftype {
 				/* Reverse of format */
 	int type;               /* Type field for network process */
 	int hwalen;             /* Length of hardware address, if any */
+	void (*rcvf) __ARGS((struct iface *,struct mbuf *));
+	int (*addrtest) __ARGS((struct iface *,struct mbuf *));
+	void (*trace) __ARGS((FILE *,struct mbuf **,int));
 };
 #define NULLIFT (struct iftype *)0
 extern struct iftype Iftypes[];
@@ -59,7 +62,6 @@ struct iface {
 #define IF_TRACE_HEX    0x200   /* Dump packets in hex/ascii */
 #define IF_TRACE_NOBC   0x1000  /* Suppress broadcasts */
 #define IF_TRACE_RAW    0x2000  /* Raw dump, if supported */
-	char *trfile;           /* Trace file name, if any */
 	FILE *trfp;             /* Stream to trace to */
 
 	struct iface *forw;     /* Forwarding interface for output, if rx only */
@@ -67,6 +69,8 @@ struct iface {
 	void (*rxproc) __ARGS((struct iface *)); /* Receiver process, if any */
 	struct proc *txproc;    /* IP send process */
 	struct proc *supv;      /* Supervisory process, if any */
+
+	struct mbuf *outq;      /* IP datagram transmission queue */
 
 	/* Device dependent */
 	int dev;                /* Subdevice number to pass to send */
@@ -80,12 +84,11 @@ struct iface {
 
 	/* Encapsulation dependent */
 	void *edv;              /* Pointer to protocol extension block, if any */
-	int type;               /* Link header type for phdr */
 	int xdev;               /* Associated Slip or Nrs channel, if any */
 	struct iftype *iftype;  /* Pointer to appropriate iftype entry */
 
 				/* Routine to send an IP datagram */
-	int (*send) __ARGS((struct mbuf *,struct iface *,int32,int,int,int,int));
+	int (*send) __ARGS((struct mbuf *,struct iface *,int32,int));
 			/* Encapsulate any link packet */
 	int (*output) __ARGS((struct iface *,char *,char *,int,struct mbuf *));
 			/* Send raw packet */
@@ -104,8 +107,8 @@ struct iface {
 	int32 lastsent;         /* Clock time of last send */
 	int32 lastrecv;         /* Clock time of last receive */
 
-	int sendcrc;            /* Send CRC if true (KISS only) */
-	int32 crcerrors;        /* Packets received with CRC errors (KISS only) */
+	int sendcrc;            /* Send CRC if true */
+	int32 crcerrors;        /* Packets received with CRC errors */
 	int32 ax25errors;       /* Packets received with bad ax25 header */
 };
 #define NULLIF  (struct iface *)0
@@ -125,12 +128,6 @@ struct rfunc {
 };
 extern struct rfunc Rfunc[];
 
-/* Header put on front of each packet in input queue */
-struct phdr {
-	struct iface *iface;
-	unsigned short type;    /* Use pktdrvr "class" values */
-};
-
 extern char Noipaddr[];
 extern struct mbuf *Hopper;
 
@@ -145,6 +142,6 @@ void if_tx __ARGS((int dev,void *arg1,void *unused));
 void network __ARGS((int i,void *v1,void *v2));
 
 /* In config.c: */
-int net_route __ARGS((struct iface *ifp,int type,struct mbuf *bp));
+int net_route __ARGS((struct iface *ifp,struct mbuf *bp));
 
 #endif  /* _IFACE_H */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.13 1992/05/14 13:19:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.14 1992/06/01 10:34:09 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -47,14 +47,11 @@ int Digipeat = 2;       /* Controls digipeating */
 
 /* Send IP datagrams across an AX.25 link */
 int
-ax_send(bp,iface,gateway,prec,del,tput,rel)
+ax_send(bp,iface,gateway,tos)
 struct mbuf *bp;
 struct iface *iface;
 int32 gateway;
-int prec;
-int del;
-int tput;
-int rel;
+int tos;
 {
 	char *hw_addr;
 

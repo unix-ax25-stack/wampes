@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pktdrvr.h,v 1.4 1992/05/28 13:50:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pktdrvr.h,v 1.5 1992/06/01 10:34:27 deyke Exp $ */
 
 #ifndef _PKTDRVR_H
 #define _PKTDRVR_H
@@ -110,8 +110,7 @@ INTERRUPT pkint __ARGS((unsigned short bp, unsigned short di,
      unsigned short ax, unsigned short ip, unsigned short cs,
      unsigned short flags, int dev));
 void pk_tx __ARGS((int dev,void *arg1,void *unused));
-int pk_send __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,
-	int prec,int del,int tput,int rel));
+int pk_send __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,int tos));
 
 /* In pkvec.asm: */
 INTERRUPT pkvec0 __ARGS((void));

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.7 1992/05/14 13:20:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.8 1992/06/01 10:34:27 deyke Exp $ */
 
 /* This module implements the serial line framing method used by
  * net/rom nodes.  This allows the net/rom software to talk to
@@ -9,7 +9,6 @@
  */
 #include <stdio.h>
 #include "global.h"
-#include "timer.h"
 #include "mbuf.h"
 #include "iface.h"
 #include "pktdrvr.h"
@@ -25,6 +24,53 @@ static struct mbuf *nrs_decode __ARGS((int dev,int c));
 /* control structures, sort of overlayed on async control blocks */
 struct nrs Nrs[ASY_MAX];
 
+int
+nrs_init(ifp,vj)
+struct iface *ifp;
+int vj; /* Unused */
+{
+	int xdev;
+	struct nrs *np;
+	char *ifn;
+
+	/* Set up a net/rom serial iface */
+	for(xdev = 0;xdev < NRS_MAX;xdev++){
+		np = &Nrs[xdev];
+		if(np->iface == NULLIF)
+			break;
+	}
+	if(xdev >= NRS_MAX) {
+		printf("Too many nrs devices\n");
+		return -1;
+	}
+	/* no call supplied? */
+	setencap(ifp,"AX25");
+	ifp->ioctl = asy_ioctl;
+	ifp->raw = nrs_raw;
+
+	ifp->hwaddr = mallocw(AXALEN);
+	memcpy(ifp->hwaddr,Mycall,AXALEN);
+	ifp->xdev = xdev;
+	np->iface = ifp;
+	np->send = asy_send;
+	np->get = get_asy;
+#if 0
+	ifp->rxproc = newproc( ifn = if_name( ifp, " nrs" ),
+		256,nrs_recv,xdev,NULL,NULL,0);
+	free(ifn);
+#else
+	ifp->rxproc = nrs_recv;
+#endif
+	return 0;
+}
+int
+nrs_free(ifp)
+struct iface *ifp;
+{
+	if(Nrs[ifp->xdev].iface == ifp)
+		Nrs[ifp->xdev].iface = NULLIF;
+	return 0;
+}
 /* Send a raw net/rom serial frame */
 int
 nrs_raw(iface,bp)
@@ -33,7 +79,7 @@ struct mbuf *bp;
 {
 	struct mbuf *bp1;
 
-	dump(iface,IF_TRACE_OUT,CL_AX25,bp);
+	dump(iface,IF_TRACE_OUT,bp);
 	iface->rawsndcnt++;
 	iface->lastsent = secclock();
 
@@ -184,25 +230,17 @@ struct iface *iface;
 
 	char *cp,buf[4096];
 	int cnt,dev;
-	struct mbuf *bp,*nbp;
+	struct mbuf *bp;
 	struct nrs *np;
-	struct phdr phdr;
 
 	dev = iface->xdev;
-	np = Nrs+dev;
-
+	np = &Nrs[dev];
+	/* Process any pending input */
 	cnt = (*np->get)(iface->dev,cp=buf,sizeof(buf));
 	while(--cnt >= 0){
 		if((bp = nrs_decode(dev,*cp++)) == NULLBUF)
 			continue;
-		if((nbp = pushdown(bp,sizeof(phdr))) == NULLBUF){
-			free_p(bp);
-			continue;
-		}
-		phdr.iface = Nrs[dev].iface;
-		phdr.type = CL_AX25;
-		memcpy(&nbp->data[0],(char *)&phdr,sizeof(phdr));
-		enqueue(&Hopper,nbp);
+		net_route(np->iface,bp);
 	}
 
 }

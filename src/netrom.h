@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.13 1992/01/12 18:40:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.14 1992/06/01 10:34:26 deyke Exp $ */
 
 #ifndef _NETROM_H
 #define _NETROM_H
@@ -116,7 +116,7 @@ struct circuit {
 /* In netrom.c: */
 int isnetrom __ARGS((char *call));
 void new_neighbor __ARGS((char *call));
-int nr_send __ARGS((struct mbuf *bp, struct iface *iface, int32 gateway, int prec, int del, int tput, int rel));
+int nr_send __ARGS((struct mbuf *bp, struct iface *iface, int32 gateway, int tos));
 void nr3_input __ARGS((struct mbuf *bp, char *fromcall));
 char *nr_addr2str __ARGS((struct circuit *pc));
 struct circuit *open_nr __ARGS((char *node, char *cuser, int window, void (*r_upcall )__ARGS ((struct circuit *p, int cnt )), void (*t_upcall )__ARGS ((struct circuit *p, int cnt )), void (*s_upcall )__ARGS ((struct circuit *p, int oldstate, int newstate )), char *user));

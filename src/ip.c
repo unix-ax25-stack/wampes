@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.6 1992/01/08 13:45:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.7 1992/06/01 10:34:19 deyke Exp $ */
 
 /* Upper half of IP, consisting of send/receive primitives, including
  * fragment reassembly, for higher level protocols.
@@ -71,7 +71,6 @@ char df;                        /* Don't-fragment flag */
 	struct mbuf *tbp;
 	struct ip ip;                   /* IP header */
 	static int16 id_cntr = 0;       /* Datagram serial number */
-	struct phdr phdr;
 
 	ipOutRequests++;
 
@@ -102,23 +101,16 @@ char df;                        /* Don't-fragment flag */
 		free_p(bp);
 		return -1;
 	}
-	if((bp = pushdown(tbp,sizeof(phdr))) == NULLBUF){
-		free_p(tbp);
-		return -1;
-	}
 	if(ismyaddr(ip.dest)){
 		/* Pretend it has been sent by the loopback interface before
 		 * it appears in the receive queue
 		 */
-		phdr.iface = &Loopback;
+		net_route(&Loopback,tbp);
 		Loopback.ipsndcnt++;
 		Loopback.rawsndcnt++;
 		Loopback.lastsent = secclock();
 	} else
-		phdr.iface = NULLIF;
-	phdr.type = CL_NONE;
-	memcpy(&bp->data[0],(char *)&phdr,sizeof(phdr));
-	enqueue(&Hopper,bp);
+		net_route(NULLIF,tbp);
 	return 0;
 }
 
@@ -191,18 +183,7 @@ struct ip *ip;          /* Extracted IP header */
 struct mbuf *bp;        /* Data portion */
 int rxbroadcast;        /* True if received on subnet broadcast address */
 {
-	struct phdr phdr;
-	struct mbuf *tbp;
-
-	if((tbp = pushdown(bp,sizeof(phdr))) == NULLBUF){
-		free_p(bp);
-		return;
-	}
-	bp = tbp;
-	phdr.iface = &Encap;
-	phdr.type = CL_NONE;
-	memcpy(&bp->data[0],(char *)&phdr,sizeof(phdr));
-	enqueue(&Hopper,bp);
+	net_route(&Encap,bp);
 }
 
 /* Process IP datagram fragments

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.9 1992/05/14 13:20:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.10 1992/06/01 10:34:30 deyke Exp $ */
 
 /* SLIP (Serial Line IP) encapsulation and control routines.
  * Copyright 1991 Phil Karn
@@ -11,7 +11,6 @@
  */
 #include <stdio.h>
 #include "global.h"
-#include "config.h"
 #include "mbuf.h"
 #include "iface.h"
 #include "ip.h"
@@ -19,33 +18,94 @@
 #include "asy.h"
 #include "slip.h"
 #include "trace.h"
+#include "pktdrvr.h"
 
 static struct mbuf *slip_decode __ARGS((struct slip *sp,int c));
 static struct mbuf *slip_encode __ARGS((struct mbuf *bp));
 
 /* Slip level control structure */
-struct slip Slip[ASY_MAX];
+struct slip Slip[SLIP_MAX];
 
+int
+slip_init(ifp,vj)
+struct iface *ifp;
+int vj;
+{
+	int xdev;
+	struct slip *sp;
+	char *ifn;
+
+	for(xdev = 0;xdev < SLIP_MAX;xdev++){
+		sp = &Slip[xdev];
+		if(sp->iface == NULLIF)
+			break;
+	}
+	if(xdev >= SLIP_MAX) {
+		printf("Too many slip devices\n");
+		return -1;
+	}
+	ifp->ioctl = asy_ioctl;
+	ifp->raw = slip_raw;
+	ifp->show = slip_status;
+	ifp->flags = 0;
+	ifp->xdev = xdev;
+
+	sp->iface = ifp;
+	sp->send = asy_send;
+	sp->get = get_asy;
+	sp->type = CL_SERIAL_LINE;
+#if 0
+	if(vj){
+		sp->escaped |= SLIP_VJCOMPR;
+		sp->slcomp = slhc_init(16,16);
+		setencap(ifp,"VJSLIP");
+	} else
+#endif
+		setencap(ifp,"SLIP");
+
+#if 0
+	ifp->rxproc = newproc( ifn = if_name( ifp, " rx" ),
+		256,slip_rx,xdev,NULL,NULL,0);
+	free(ifn);
+#else
+	ifp->rxproc = slip_rx;
+#endif
+	return 0;
+}
+int
+slip_free(ifp)
+struct iface *ifp;
+{
+	struct slip *sp;
+
+	sp = &Slip[ifp->xdev];
+#if 0
+	if(sp->slcomp != NULLSLCOMPR){
+		slhc_free(sp->slcomp);
+		sp->slcomp = NULLSLCOMPR;
+	}
+#endif
+	sp->iface = NULLIF;
+	return 0;
+}
 /* Send routine for point-to-point slip */
 int
-slip_send(bp,iface,gateway,prec,del,tput,rel)
+slip_send(bp,iface,gateway,tos)
 struct mbuf *bp;        /* Buffer to send */
 struct iface *iface;    /* Pointer to interface control block */
 int32 gateway;          /* Ignored (SLIP is point-to-point) */
-int prec;
-int del;
-int tput;
-int rel;
+int tos;
 {
-#ifdef VJCOMPRESS
+#if 0
 	register struct slip *sp;
 	int type;
 #endif
+
 	if(iface == NULLIF){
 		free_p(bp);
 		return -1;
 	}
-#ifdef VJCOMPRESS
+#if 0
 	sp = &Slip[iface->xdev];
 	if (sp->escaped & SLIP_VJCOMPR) {
 		/* Attempt IP/ICP header compression */
@@ -63,7 +123,7 @@ struct mbuf *bp;
 {
 	struct mbuf *bp1;
 
-	dump(iface,IF_TRACE_OUT,Slip[iface->xdev].type,bp);
+	dump(iface,IF_TRACE_OUT,bp);
 	iface->rawsndcnt++;
 	iface->lastsent = secclock();
 	if((bp1 = slip_encode(bp)) == NULLBUF){
@@ -179,7 +239,7 @@ char c;         /* Incoming character */
 }
 /* Process SLIP line input */
 void
-asy_rx(iface)
+slip_rx(iface)
 struct iface *iface;
 {
 
@@ -198,10 +258,10 @@ struct iface *iface;
 		if((bp = slip_decode(sp,*cp++)) == NULLBUF)
 			continue;       /* More to come */
 
-#ifdef VJCOMPRESS
 		if (sp->iface->trace & IF_TRACE_RAW)
 			raw_dump(sp->iface,IF_TRACE_IN,bp);
 
+#if 0
 		if (sp->escaped & SLIP_VJCOMPR) {
 			if ((c = bp->data[0]) & SL_TYPE_COMPRESSED_TCP) {
 				if ( slhc_uncompress(sp->slcomp, &bp) <= 0 ) {
@@ -219,11 +279,14 @@ struct iface *iface;
 			}
 		}
 #endif
-		if ( net_route( sp->iface, sp->type, bp ) != 0 ) {
-			free_p(bp);
-		}
+		net_route( sp->iface, bp);
+		/* Especially on slow machines, serial I/O can be quite
+		 * compute intensive, so release the machine before we
+		 * do the next packet.  This will allow this packet to
+		 * go on toward its ultimate destination. [Karn]
+		 */
+		pwait(NULL);
 	}
-/*      free_p(bp); */
 }
 
 /* Show serial line status */
@@ -242,13 +305,8 @@ struct iface *iface;
 		/* Must not be a SLIP device */
 		return;
 
-	printf("  IN:\t%lu pkts\n", iface->rawrecvcnt);
-#ifdef VJCOMPRESS
+#if 0
 	slhc_i_status(sp->slcomp);
-#endif
-	printf("  OUT:\t%lu pkts\n", iface->rawsndcnt);
-#ifdef VJCOMPRESS
 	slhc_o_status(sp->slcomp);
 #endif
 }
-

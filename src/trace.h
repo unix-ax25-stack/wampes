@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.h,v 1.7 1992/05/28 13:50:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.h,v 1.8 1992/06/01 10:34:34 deyke Exp $ */
 
 #ifndef _TRACE_H
 #define _TRACE_H
@@ -34,7 +34,7 @@ struct trace {
 extern struct trace Tracef[];
 
 /* In trace.c: */
-void dump __ARGS((struct iface *ifp,int direction,unsigned type,struct mbuf *bp));
+void dump __ARGS((struct iface *ifp,int direction,struct mbuf *bp));
 void raw_dump __ARGS((struct iface *ifp,int direction, struct mbuf *bp));
 void trace_log __ARGS((struct iface *ifp,char *fmt, ...));
 void shuttrace __ARGS ((void));

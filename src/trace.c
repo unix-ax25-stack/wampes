@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.10 1992/05/14 13:20:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.11 1992/06/01 10:34:34 deyke Exp $ */
 
 /* Packet tracing - top level and generic routines, including hex/ascii
  * Copyright 1991 Phil Karn, KA9Q
@@ -47,67 +47,64 @@ struct tracecmd Tracecmd[] = {
 };
 
 void
-dump(ifp,direction,type,bp)
+dump(ifp,direction,bp)
 register struct iface *ifp;
 int direction;
-unsigned type;
 struct mbuf *bp;
 {
 	struct mbuf *tbp;
-	void (*func) __ARGS((FILE *,struct mbuf **,int));
 	int16 size;
 	time_t timer;
 	char *cp;
+	struct iftype *ift;
+	FILE *fp;
 
-	if(ifp == NULL || (ifp->trace & direction) == 0)
+	if(ifp == NULL || (ifp->trace & direction) == 0
+	 || (fp = ifp->trfp) == NULLFILE)
 		return; /* Nothing to trace */
 
+	ift = ifp->iftype;
 	switch(direction){
 	case IF_TRACE_IN:
 		if((ifp->trace & IF_TRACE_NOBC)
-		 && (Tracef[type].addrtest != NULLFP)
-		 && (*Tracef[type].addrtest)(ifp,bp) == 0)
+		 && ift != NULLIFT
+		 && (ift->addrtest != NULLFP)
+		 && (*ift->addrtest)(ifp,bp) == 0)
 			return;         /* broadcasts are suppressed */
 		timer = secclock();
 		cp = ctime(&timer);
 		cp[24] = '\0';
-		fprintf(ifp->trfp,"\n%s - %s recv:\n",cp,ifp->name);
+		fprintf(fp,"\n%s - %s recv:\n",cp,ifp->name);
 		break;
 	case IF_TRACE_OUT:
 		timer = secclock();
 		cp = ctime(&timer);
 		cp[24] = '\0';
-		fprintf(ifp->trfp,"\n%s - %s sent:\n",cp,ifp->name);
+		fprintf(fp,"\n%s - %s sent:\n",cp,ifp->name);
 		break;
 	}
 	if(bp == NULLBUF || (size = len_p(bp)) == 0){
-		fprintf(ifp->trfp,"empty packet!!\n");
+		fprintf(fp,"empty packet!!\n");
 		return;
 	}
-
-	if(type < NCLASS)
-		func = Tracef[type].tracef;
-	else
-		func = NULLVFP;
-
 	dup_p(&tbp,bp,0,size);
 	if(tbp == NULLBUF){
-		fprintf(ifp->trfp,nospace);
+		fprintf(fp,nospace);
 		return;
 	}
-	if(func != NULLVFP)
-		(*func)(ifp->trfp,&tbp,1);
+	if(ift != NULLIFT && ift->trace != NULLVFP)
+		(*ift->trace)(fp,&tbp,1);
 	if(ifp->trace & IF_TRACE_ASCII){
 		/* Dump only data portion of packet in ascii */
-		ascii_dump(ifp->trfp,&tbp);
+		ascii_dump(fp,&tbp);
 	} else if(ifp->trace & IF_TRACE_HEX){
 		/* Dump entire packet in hex/ascii */
 		free_p(tbp);
 		dup_p(&tbp,bp,0,len_p(bp));
 		if(tbp != NULLBUF)
-			hex_dump(ifp->trfp,&tbp);
+			hex_dump(fp,&tbp);
 		else
-			fprintf(ifp->trfp,nospace);
+			fprintf(fp,nospace);
 	}
 	free_p(tbp);
 }
@@ -120,18 +117,19 @@ int direction;
 struct mbuf *bp;
 {
 	struct mbuf *tbp;
+	FILE *fp;
 
-	/* Dump entire packet in hex/ascii */
-	fprintf(ifp->trfp,"\n******* raw packet dump (%s %s)\n",
-		((direction & IF_TRACE_OUT) ? "send" : "recv"),ifp->name);
+	if((fp = ifp->trfp) == NULLFILE)
+		return;
+	fprintf(fp,"\n******* raw packet dump (%s)\n",
+	 ((direction & IF_TRACE_OUT) ? "send" : "recv"));
 	dup_p(&tbp,bp,0,len_p(bp));
 	if(tbp != NULLBUF)
-		hex_dump(ifp->trfp,&tbp);
+		hex_dump(fp,&tbp);
 	else
-		fprintf(ifp->trfp,nospace);
-	fprintf(ifp->trfp,"*******\n");
+		fprintf(fp,nospace);
+	fprintf(fp,"*******\n");
 	free_p(tbp);
-	return;
 }
 
 /* Dump an mbuf in hex */
@@ -144,7 +142,7 @@ register struct mbuf **bpp;
 	int16 address;
 	char buf[16];
 
-	if(bpp == NULLBUFP || *bpp == NULLBUF)
+	if(bpp == NULLBUFP || *bpp == NULLBUF || fp == NULLFILE)
 		return;
 
 	address = 0;
@@ -162,7 +160,7 @@ register struct mbuf **bpp;
 	int c;
 	register int16 tot;
 
-	if(bpp == NULLBUFP || *bpp == NULLBUF)
+	if(bpp == NULLBUFP || *bpp == NULLBUF || fp == NULLFILE)
 		return;
 
 	tot = 0;
@@ -251,20 +249,15 @@ void *p;
 		else
 			ifp->trace = htoi(argv[2]);
 	}
-	/* Always default to stdout unless trace file is given */
-	if(ifp->trfp != NULLFILE && ifp->trfp != stdout)
+	if(ifp->trfp != NULLFILE && ifp->trfp != stdout){
+		/* Close existing trace file */
 		fclose(ifp->trfp);
+	}
 	ifp->trfp = stdout;
-	if(ifp->trfile != NULLCHAR)
-		free(ifp->trfile);
-	ifp->trfile = NULLCHAR;
-
 	if(argc >= 4){
 		if((ifp->trfp = fopen(argv[3],APPEND_TEXT)) == NULLFILE){
 			printf("Can't write to %s\n",argv[3]);
 			ifp->trfp = stdout;
-		} else {
-			ifp->trfile = strdup(argv[3]);
 		}
 	}
 	showtrace(ifp);
@@ -297,8 +290,6 @@ register struct iface *ifp;
 		if(ifp->trace & IF_TRACE_RAW)
 			printf(" Raw output");
 
-		if(ifp->trfile != NULLCHAR)
-			printf(" trace file: %s",ifp->trfile);
 		printf("\n");
 	} else
 		printf(" tracing off\n");
@@ -313,9 +304,6 @@ shuttrace()
 	for(ifp = Ifaces; ifp != NULLIF; ifp = ifp->next){
 		if(ifp->trfp != NULLFILE && ifp->trfp != stdout)
 			fclose(ifp->trfp);
-		if(ifp->trfile != NULLCHAR)
-			free(ifp->trfile);
-		ifp->trfile = NULLCHAR;
 		ifp->trfp = NULLFILE;
 	}
 }
@@ -330,20 +318,33 @@ trace_log(struct iface *ifp,char *fmt, ...)
 	va_list ap;
 	char *cp;
 	long t;
+	FILE *fp;
 
-	if(ifp->trfp == NULLFILE)
+	if((fp = ifp->trfp) == NULLFILE)
 		return;
 
 	t = secclock();
 	cp = ctime(&t);
 	rip(cp);
-	fprintf(ifp->trfp,"%s",cp);
+	fprintf(fp,"%s - ",cp);
 
-	fprintf(ifp->trfp," - ");
 	va_start(ap,fmt);
-	vfprintf(ifp->trfp,fmt,ap);
+	vfprintf(fp,fmt,ap);
 	va_end(ap);
-	fprintf(ifp->trfp,"\n");
+	fprintf(fp,"\n");
+}
+int
+tprintf(struct iface *ifp,char *fmt, ...)
+{
+	va_list ap;
+	int ret = 0;
+
+	if(ifp->trfp == NULLFILE)
+		return -1;
+	va_start(ap,fmt);
+	ret = vfprintf(ifp->trfp,fmt,ap);
+	va_end(ap);
+	return ret;
 }
 #else
 /*VARARGS2*/
@@ -369,4 +370,3 @@ int arg1,arg2,arg3,arg4,arg5;
 	fprintf(ifp->trfp,"\n");
 }
 #endif
-

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.8 1992/05/14 13:19:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.9 1992/06/01 10:34:14 deyke Exp $ */
 
 /* System-dependent definitions of various files, spool directories, etc */
 #include <stdio.h>
@@ -75,7 +75,7 @@ char *Popusers = "TCPIP:/popusers";     /* POP user and passwd file */
 char *Signature = "TCPIP:spool/signatur"; /* Mail signature file directory */
 char *Forwardfile = "TCPIP:spool/forward.bbs"; /* Mail forwarding file */
 char *Historyfile = "TCPIP:spool/history"; /* Message ID history file */
-char *Tmpdir = "TCPIP:tmp";
+Char *Tmpdir = "TCPIP:tmp";
 #define SEPARATOR       "/"
 char Eol[] = "\r\n";
 #endif
@@ -100,7 +100,7 @@ char *Popusers = "Mikes Hard Disk:/popusers";   /* POP user and passwd file */
 char *Signature = "Mikes Hard Disk:spool/signatur"; /* Mail signature file directory */
 char *Forwardfile = "Mikes Hard Disk:spool/forward.bbs"; /* Mail forwarding file */
 char *Historyfile = "Mikes Hard Disk:spool/history"; /* Message ID history file */
-char *Tmpdir = "Mikes Hard Disk:tmp";
+Char *Tmpdir = "Mikes Hard Disk:tmp";
 #define SEPARATOR       "/"
 char Eol[] = "\r";
 #endif

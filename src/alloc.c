@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.12 1992/05/28 13:50:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.13 1992/06/01 10:34:07 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -33,12 +33,11 @@ static unsigned long Inuse;
 static unsigned long Morecores;
 
 static void giveup __ARGS((char *mesg));
-static unsigned int blksize __ARGS((void *p));
 
 /*---------------------------------------------------------------------------*/
 
 static void giveup(mesg)
-char  *mesg;
+char *mesg;
 {
   fprintf(stderr, mesg);
   abort();
@@ -46,14 +45,16 @@ char  *mesg;
 
 /*---------------------------------------------------------------------------*/
 
-void *malloc(size)
-register unsigned int  size;
+/* Allocate block of 'size' bytes */
+void *
+malloc(size)
+unsigned size;
 {
 
   static struct block *freespace;
-  static unsigned int  freesize;
+  static unsigned int freesize;
 
-  int  align_error;
+  int align_error;
   register struct block *p, *tp;
 
   size = (size + sizeof(struct block *) + MINSIZE - 1) & ~(MINSIZE - 1);
@@ -92,23 +93,17 @@ register unsigned int  size;
 
 /*---------------------------------------------------------------------------*/
 
-void *mallocw(size)
-unsigned int  size;
-{
-  return malloc(size);
-}
-
-/*---------------------------------------------------------------------------*/
-
 void *_malloc(size)
-unsigned int  size;
+unsigned int size;
 {
   return malloc(size);
 }
 
 /*---------------------------------------------------------------------------*/
 
-void free(pp)
+/* Put memory block back on heap */
+void
+free(pp)
 void *pp;
 {
   register struct block *p, *tp;
@@ -149,33 +144,23 @@ void *pp;
 
 /*---------------------------------------------------------------------------*/
 
-/* Return size of allocated buffer, in bytes */
-
-static unsigned int  blksize(p)
+/* Move existing block to new area */
+void *
+realloc(p,size)
 void *p;
-{
-  register struct block *tp;
-
-  tp = (struct block *) p;
-  tp--;
-  tp = tp->next;
-  return (tp - Freetable) * MINSIZE - sizeof(struct block *);
-}
-
-/*---------------------------------------------------------------------------*/
-
-void *realloc(p, size)
-void *p;
-unsigned int  size;
+unsigned size;
 {
 
-  unsigned int  oldsize;
+  struct block *tp;
+  unsigned osize;
   void *q;
 
-  oldsize = blksize(p);
-  if (size <= oldsize) return p;
+  tp = p;
+  tp--;
+  osize = (tp->next - Freetable) * MINSIZE - sizeof(struct block *);
+  if (size <= osize) return p;
   if (q = malloc(size)) {
-    memcpy(q, p, oldsize);
+    memcpy(q, p, osize);
     free(p);
   }
   return q;
@@ -185,38 +170,48 @@ unsigned int  size;
 
 void *_realloc(p, size)
 void *p;
-unsigned int  size;
+unsigned int size;
 {
   return realloc(p, size);
 }
 
 /*---------------------------------------------------------------------------*/
 
-void *calloc(nelem, elsize)
-unsigned int  nelem, elsize;
+/* Allocate block of cleared memory */
+void *
+calloc(nelem,size)
+unsigned nelem; /* Number of elements */
+unsigned size;  /* Size of each element */
 {
 
-  register char  *q;
-  register unsigned int  size;
-  register void *p;
+	register unsigned i;
+	register void *cp;
 
-  if (p = malloc(size = nelem * elsize))
-    for (q = (char *) p;  size--; *q++ = '\0') ;
-  return p;
+	if ((cp = malloc(i = nelem * size)) != NULL)
+		memset(cp,0,i);
+	return cp;
 }
 
 /*---------------------------------------------------------------------------*/
 
-void *callocw(nelem, elsize)
-unsigned int  nelem, elsize;
+void *_calloc(nelem, elsize)
+unsigned int nelem, elsize;
 {
   return calloc(nelem, elsize);
 }
 
 /*---------------------------------------------------------------------------*/
 
-void *_calloc(nelem, elsize)
-unsigned int  nelem, elsize;
+void *mallocw(size)
+unsigned int size;
+{
+  return malloc(size);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void *callocw(nelem, elsize)
+unsigned int nelem, elsize;
 {
   return calloc(nelem, elsize);
 }

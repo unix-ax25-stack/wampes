@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.19 1992/05/28 13:50:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.20 1992/06/01 10:34:12 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -468,17 +468,32 @@ struct arp_type Arp_type[NHWTYPES] = {
 struct iftype Iftypes[] = {
 	/* This entry must be first, since Loopback refers to it */
 	"None",         NULL,           NULL,           NULL,
-	NULL,           CL_NONE,        0,
+	NULL,           CL_NONE,        0,              ip_proc,
+	NULLFP,         ip_dump,
 
 #ifdef  AX25
 	"AX25",         ax_send,        ax_output,      pax25,
-	setcall,        CL_AX25,        AXALEN,
-#endif
+	setcall,        CL_AX25,        AXALEN,         ax_recv,
+	ax_forus,       ax25_dump,
+#endif  /* AX25 */
+
+#ifdef  KISS
+	"KISS",         ax_send,        ax_output,      pax25,
+	setcall,        CL_AX25,        AXALEN,         kiss_recv,
+	ki_forus,       ki_dump,
+#endif  /* KISS */
 
 #ifdef  SLIP
 	"SLIP",         slip_send,      NULL,           NULL,
-	NULL,           CL_NONE,        0,
-#endif
+	NULL,           CL_NONE,        0,              ip_proc,
+	NULLFP,         ip_dump,
+#endif  /* SLIP */
+
+#ifdef  VJCOMPRESS
+	"VJSLIP",       slip_send,      NULL,           NULL,
+	NULL,           CL_NONE,        0,              ip_proc,
+	NULLFP,         sl_dump,
+#endif  /* VJCOMPRESS */
 
 #ifdef  ETHER
 	/* Note: NULL is specified for the scan function even though
@@ -486,26 +501,67 @@ struct iftype Iftypes[] = {
 	 * address setting.
 	 */
 	"Ethernet",     enet_send,      enet_output,    pether,
-	NULL,           CL_ETHERNET,    EADDR_LEN,
-#endif
+	NULL,           CL_ETHERNET,    EADDR_LEN,      eproc,
+	ether_forus,    ether_dump,
+#endif  /* ETHER */
 
 #ifdef  NETROM
 	"NETROM",       nr_send,        NULL,           pax25,
-	setcall,        CL_NETROM,      AXALEN,
-#endif
+	setcall,        CL_NETROM,      AXALEN,         NULLVFP,
+	NULLFP,         NULLVFP,
+#endif  /* NETROM */
 
 #ifdef  SLFP
 	"SLFP",         pk_send,        NULL,           NULL,
-	NULL,           CL_NONE,        0,
-#endif
+	NULL,           CL_NONE,        0,              ip_proc,
+	NULLFP,         ip_dump,
+#endif  /* SLFP */
 
 #ifdef  PPP
 	"PPP",          ppp_send,       ppp_output,     NULL,
-	NULL,           CL_PPP, 0,
-#endif
+	NULL,           CL_PPP,         0,              ppp_proc,
+	NULLFP,         ppp_dump,
+#endif  /* PPP */
 
+#ifdef  ARCNET
+	"Arcnet",       anet_send,      anet_output,    parc,
+	garc,           CL_ARCNET,      1,              aproc,
+	arc_forus,      arc_dump,
+#endif  /* ARCNET */
+
+#ifdef  QTSO
+	"QTSO",         qtso_send,      qtso_output,    NULL,
+	NULL,           CL_NONE,        0,              qtso_proc,
+	NULLFP,         NULLVFP,
+#endif  /* QTSO */
+
+	NULLCHAR,       NULLFP,         NULLFP,         NULL,
+	NULL,           -1,             0,              NULLVFP,
+	NULLFP,         NULLVFP,
+};
+
+/* Asynchronous interface mode table */
+#ifdef  ASY
+struct asymode Asymode[] = {
+#ifdef  SLIP
+	"SLIP", FR_END,         slip_init,      slip_free,
+#endif
+#ifdef  KISS
+	"AX25", FR_END,         kiss_init,      kiss_free,
+	"KISS", FR_END,         kiss_init,      kiss_free,
+#endif
+#ifdef  NRS
+	"NRS",  ETX,            nrs_init,       nrs_free,
+#endif
+#ifdef  PPP
+	"PPP",  HDLC_FLAG,      ppp_init,       ppp_free,
+#endif
+#ifdef  QTSO
+	"QTSO", HDLC_FLAG,      qtso_init,      qtso_free,
+#endif
 	NULLCHAR
 };
+#endif  /* ASY */
 
 /* daemons to be run at startup time */
 struct daemon Daemons[] = {
@@ -538,72 +594,6 @@ struct mbuf **bpp;
 /* Packet tracing stuff */
 #ifdef  TRACE
 #include "trace.h"
-
-/* Protocol tracing function pointers. Matches list of class definitions
- * in pktdrvr.h.
- */
-struct trace Tracef[] = {
-	NULLFP,         ip_dump,        /* CL_NONE */
-
-#ifdef  ETHER                           /* CL_ETHERNET */
-	ether_forus,    ether_dump,
-#else
-	NULLFP,         NULLVFP,
-#endif  /* ETHER */
-
-	NULLFP,         NULLVFP,        /* CL_PRONET_10 */
-	NULLFP,         NULLVFP,        /* CL_IEEE8025 */
-	NULLFP,         NULLVFP,        /* CL_OMNINET */
-
-#ifdef  APPLETALK
-	at_forus,       at_dump,        /* CL_APPLETALK */
-#else
-	NULLFP,         NULLVFP,
-#endif  /* APPLETALK */
-
-#ifdef VJCOMPRESS
-	NULLFP,         sl_dump,        /* CL_SERIAL_LINE */
-#else
-	NULLFP,         ip_dump,        /* CL_SERIAL_LINE */
-#endif
-	NULLFP,         NULLVFP,        /* CL_STARLAN */
-
-#ifdef  ARCNET
-	arc_forus,      arc_dump,       /* CL_ARCNET */
-#else
-	NULLFP,         NULLVFP,
-#endif  /* ARCNET */
-
-#ifdef  AX25
-	ax_forus,       ax25_dump,      /* CL_AX25 */
-#else
-	NULLFP,         NULLVFP,
-#endif  /* AX25 */
-
-#ifdef  KISS                            /* CL_KISS */
-	ki_forus,       ki_dump,
-#else
-	NULLFP,         NULLVFP,
-#endif  /* KISS */
-
-	NULLFP,         NULLVFP,        /* CL_IEEE8023 */
-	NULLFP,         NULLVFP,        /* CL_FDDI */
-	NULLFP,         NULLVFP,        /* CL_INTERNET_X25 */
-	NULLFP,         NULLVFP,        /* CL_LANSTAR */
-	NULLFP,         ip_dump,        /* CL_SLFP */
-
-#ifdef  NETROM                          /* CL_NETROM */
-	NULLFP,         ip_dump,
-#else
-	NULLFP,         NULLVFP,
-#endif
-
-#ifdef PPP
-	NULLFP,         ppp_dump,       /* CL_PPP */
-#else
-	NULLFP,         NULLVFP,
-#endif /* PPP */
-};
 
 #else   /* TRACE */
 

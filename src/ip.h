@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.9 1992/05/28 13:50:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.10 1992/06/01 10:34:19 deyke Exp $ */
 
 #ifndef _IP_H
 #define _IP_H
@@ -188,8 +188,7 @@ void del_ip __ARGS((struct raw_ip *rrp));
 void ipinit __ARGS((void));
 int16 ip_mtu __ARGS((int32 addr));
 void encap_tx __ARGS((int dev,void *arg1,void *unused));
-int ip_encap __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,
-	int prec,int del,int tput,int rel));
+int ip_encap __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,int tos));
 void ip_proc __ARGS((struct iface *iface,struct mbuf *bp));
 int ip_route __ARGS((struct iface *i_iface,struct mbuf *bp,int rxbroadcast));
 int32 locaddr __ARGS((int32 addr));

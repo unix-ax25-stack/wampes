@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.17 1992/05/28 13:50:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.18 1992/06/01 10:34:24 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -130,14 +130,15 @@ long speed;
 
 /* Initialize asynch port "dev" */
 int
-asy_init(dev,ifp,arg1,arg2,bufsize,trigchar,monitor,speed)
+asy_init(dev,ifp,arg1,arg2,bufsize,trigchar,speed,cts,rlsd)
 int dev;
 struct iface *ifp;
 char *arg1,*arg2;       /* Attach args for address and vector */
 int16 bufsize;
 int trigchar;
-char monitor;
 long speed;
+int cts;                /* Use CTS flow control */
+int rlsd;               /* Use Received Line Signal Detect (aka CD) */
 {
 	register struct asy *ap;
 	char filename[80];

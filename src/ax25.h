@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.8 1992/01/12 18:39:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.9 1992/06/01 10:34:09 deyke Exp $ */
 
 #ifndef _AX25_H
 #define _AX25_H
@@ -99,8 +99,7 @@ extern struct axlink Axlink[];
 
 /* In ax25.c: */
 void ax_recv __ARGS((struct iface *,struct mbuf *));
-int ax_send __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,int prec,
-	int del,int tput,int rel));
+int ax_send __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,int tos));
 int ax_output __ARGS((struct iface *iface,char *dest,char *source,int pid,
 	struct mbuf *data));
 void axnl3 __ARGS((struct iface *iface,struct ax25_cb *axp,char *src,

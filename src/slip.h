@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.h,v 1.9 1992/05/28 13:50:32 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.h,v 1.10 1992/06/01 10:34:30 deyke Exp $ */
 
 #ifndef _SLIP_H
 #define _SLIP_H
@@ -46,14 +46,12 @@ struct slip {
 /* In slip.c: */
 extern struct slip Slip[];
 
-void asy_rx __ARGS((struct iface *iface));
 void asytxdone __ARGS((int dev));
 int slip_free __ARGS((struct iface *ifp));
 int slip_init __ARGS((struct iface *ifp,int vj));
 int slip_raw __ARGS((struct iface *iface,struct mbuf *data));
-void slip_rx __ARGS((int xdev,void *p1,void *p2));
-int slip_send __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,int prec,
-	int del,int tput,int rel));
+void slip_rx __ARGS((struct iface *iface));
+int slip_send __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,int tos));
 void slip_status __ARGS((struct iface *iface));
 
 #endif  /* _SLIP_H */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.c,v 1.5 1991/05/09 07:39:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.c,v 1.6 1992/06/01 10:34:35 deyke Exp $ */
 
 /* Internet User Data Protocol (UDP)
  * Copyright 1991 Phil Karn, KA9Q
@@ -52,25 +52,24 @@ void (*r_upcall)();
 
 /* Send a UDP datagram */
 int
-send_udp(lsocket,fsocket,tos,ttl,data,length,id,df)
+send_udp(lsocket,fsocket,tos,ttl,bp,length,id,df)
 struct socket *lsocket;         /* Source socket */
 struct socket *fsocket;         /* Destination socket */
 char tos;                       /* Type-of-service for IP */
 char ttl;                       /* Time-to-live for IP */
-struct mbuf *data;              /* Data field, if any */
+struct mbuf *bp;                /* Data field, if any */
 int16 length;                   /* Length of data field */
 int16 id;                       /* Optional ID field for IP */
 char df;                        /* Don't Fragment flag for IP */
 {
-	struct mbuf *bp;
 	struct pseudo_header ph;
 	struct udp udp;
 	int32 laddr;
 
-	if(length != 0 && data != NULLBUF)
-		trim_mbuf(&data,length);
+	if(length != 0 && bp != NULLBUF)
+		trim_mbuf(&bp,length);
 	else
-		length = len_p(data);
+		length = len_p(bp);
 
 	length += UDPHDR;
 
@@ -88,11 +87,7 @@ char df;                        /* Don't Fragment flag for IP */
 	ph.dest = fsocket->address;
 	ph.protocol = UDP_PTCL;
 
-	if((bp = htonudp(&udp,data,&ph)) == NULLBUF){
-		Net_error = NO_MEM;
-		free_p(data);
-		return 0;
-	}
+	bp = htonudp(&udp,bp,&ph);
 	udpOutDatagrams++;
 	ip_send(laddr,fsocket->address,UDP_PTCL,tos,ttl,bp,length,id,df);
 	return (int)length;
@@ -182,7 +177,6 @@ int rxbroadcast;        /* The only protocol that accepts 'em */
 	struct udp_cb *up;
 	struct socket lsocket;
 	struct socket fsocket;
-	struct mbuf *packet;
 	int16 length;
 
 	if(bp == NULLBUF)
@@ -232,18 +226,13 @@ int rxbroadcast;        /* The only protocol that accepts 'em */
 		return;
 	}
 	/* Create space for the foreign socket info */
-	if((packet = pushdown(bp,sizeof(fsocket))) == NULLBUF){
-		/* No space, drop whole packet */
-		free_p(bp);
-		udpInErrors++;
-		return;
-	}
+	bp = pushdown(bp,sizeof(fsocket));
 	fsocket.address = ip->source;
 	fsocket.port = udp.source;
-	memcpy(&packet->data[0],(char *)&fsocket,sizeof(fsocket));
+	memcpy(&bp->data[0],(char *)&fsocket,sizeof(fsocket));
 
 	/* Queue it */
-	enqueue(&up->rcvq,packet);
+	enqueue(&up->rcvq,bp);
 	up->rcvcnt++;
 	udpInDatagrams++;
 	if(up->r_upcall)

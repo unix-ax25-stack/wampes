@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.12 1992/05/28 13:50:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.13 1992/06/01 10:34:20 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -11,6 +11,7 @@
 #include "timer.h"
 #include "internet.h"
 #include "ip.h"
+#include "tcp.h"
 #include "netuser.h"
 #include "icmp.h"
 #include "rip.h"
@@ -26,6 +27,9 @@ struct route R_default = {              /* Default route entry */
 };
 
 static struct rt_cache Rt_cache;
+
+static int q_pkt __ARGS((struct iface *iface,int32 gateway,struct ip *ip,
+	struct mbuf *bp,int ckgood));
 
 /* Initialize modulo lookup table used by hash_ip() in pcgen.asm */
 void
@@ -59,14 +63,9 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 	int16 offset;                   /* Offset into current fragment */
 	int16 mf_flag;                  /* Original datagram MF flag */
 	int strict = 0;                 /* Strict source routing flag */
-	char prec;                      /* Extracted from tos field */
-	char del;
-	char tput;
-	char rel;
 	int16 opt_len;          /* Length of current option */
 	char *opt;              /* -> beginning of current option */
 	int i;
-	struct mbuf *tbp;
 	int ckgood = IP_CS_OLD; /* Has good checksum without modification */
 	int pointer;            /* Relative pointer index for sroute/rroute */
 
@@ -293,21 +292,11 @@ no_opt:
 		ipOutNoRoutes++;
 		return -1;
 	}
-	prec = PREC(ip.tos);
-	del = ip.tos & DELAY;
-	tput = ip.tos & THRUPUT;
-	rel = ip.tos & RELIABILITY;
-
 	if(ip.length <= iface->mtu){
 		/* Datagram smaller than interface MTU; put header
 		 * back on and send normally.
 		 */
-		if((tbp = htonip(&ip,bp,ckgood)) == NULLBUF){
-			free_p(bp);
-			return -1;
-		}
-		iface->ipsndcnt++;
-		return (*iface->send)(tbp,iface,gateway,prec,del,tput,rel);
+		return q_pkt(iface,gateway,&ip,bp,ckgood);
 	}
 	/* Fragmentation needed */
 	if(ip.flags.df){
@@ -349,20 +338,10 @@ no_opt:
 			ipFragFails++;
 			return -1;
 		}
-		/* Put IP header back on, recomputing checksum */
-		if((tbp = htonip(&ip,f_data,IP_CS_NEW)) == NULLBUF){
-			free_p(f_data);
-			free_p(bp);
+		if(q_pkt(iface,gateway,&ip,f_data,IP_CS_NEW) == -1){
 			ipFragFails++;
 			return -1;
 		}
-		/* and ship it out */
-		if((*iface->send)(tbp,iface,gateway,prec,del,tput,rel) == -1){
-			ipFragFails++;
-			free_p(bp);
-			return -1;
-		}
-		iface->ipsndcnt++;
 		ipFragCreates++;
 		offset += fragsize;
 		length -= fragsize;
@@ -371,19 +350,109 @@ no_opt:
 	free_p(bp);
 	return 0;
 }
+/* Direct IP input routine for packets without link-level header */
+void
+ip_proc(iface,bp)
+struct iface *iface;
+struct mbuf *bp;
+{
+	ip_route(iface,bp,0);
+}
+
+/* Add an IP datagram to an interface output queue, sorting first by
+ * the precedence field in the IP header, and secondarily by an
+ * "interactive" flag set by peeking at the transport layer to see
+ * if the packet belongs to what appears to be an interactive session.
+ * A layer violation, yes, but a useful one...
+ */
+static int
+q_pkt(iface,gateway,ip,bp,ckgood)
+struct iface *iface;
+int32 gateway;
+struct ip *ip;
+struct mbuf *bp;
+int ckgood;
+{
+	struct mbuf *tbp,*tlast;
+	struct tcp tcp;
+	struct qhdr qhdr;
+	struct qhdr qtmp;
+	int i;
+
+	if((tbp = htonip(ip,bp,ckgood)) == NULLBUF){
+		free_p(bp);
+		return -1;
+	}
+	bp = pushdown(tbp,sizeof(struct qhdr));
+	iface->ipsndcnt++;
+	/* create priority field consisting of tos with 2 unused
+	 * low order bits stripped, one of which we'll use as an
+	 * "interactive" flag.
+	 */
+	qhdr.tos = (ip->tos & 0xfc);
+	qhdr.gateway = gateway;
+	if(iface->outq == NULLBUF){
+		/* Queue empty, no priority decisions to be made
+		 * This is the usual case for fast networks like Ethernet,
+		 * so we can avoid some time-consuming stuff
+		 */
+		memcpy(bp->data,(char *)&qhdr,sizeof(qhdr));
+#if 1
+		pullup(&bp,(char *)&qhdr,sizeof(qhdr));
+		(*iface->send)(bp,iface,qhdr.gateway,qhdr.tos);
+#else
+		iface->outq = bp;
+		psignal(&iface->outq,1);
+#endif
+		return 0;
+	}
+	/* See if this packet references a "priority" TCP port number */
+	if(ip->protocol == TCP_PTCL && ip->offset == 0){
+		/* Extract a copy of the TCP header */
+		if(dup_p(&tbp,bp,sizeof(struct qhdr)+IPLEN+
+		 ip->optlen,TCPLEN+TCP_MAXOPT) >= TCPLEN){
+			ntohtcp(&tcp,&tbp);
+			for(i=0;Tcp_interact[i] != -1;i++){
+				if(tcp.source == Tcp_interact[i]
+				 || tcp.dest == Tcp_interact[i]){
+					qhdr.tos |= 1;
+					break;
+				}
+			}
+		}
+		free_p(tbp);
+	}
+	memcpy(bp->data,(char *)&qhdr,sizeof(qhdr));
+	/* Search the queue looking for the first packet with precedence
+	 * lower than our packet
+	 */
+	tlast = NULLBUF;
+	for(tbp = iface->outq;tbp != NULLBUF;tlast=tbp,tbp = tbp->anext){
+		memcpy((char *)&qtmp,tbp->data,sizeof(qtmp));
+		if(qhdr.tos > qtmp.tos){
+			break;  /* Add it just before tbp */
+		}
+	}
+	bp->anext = tbp;
+	if(tlast == NULLBUF){
+		/* First on queue */
+		iface->outq = bp;
+	} else {
+		tlast->anext = bp;
+	}
+	psignal(&iface->outq,1);
+	return 0;
+}
 int
-ip_encap(bp,iface,gateway,prec,del,tput,rel)
+ip_encap(bp,iface,gateway,tos)
 struct mbuf *bp;
 struct iface *iface;
 int32 gateway;
-int prec;
-int del;
-int tput;
-int rel;
+int tos;
 {
 	struct ip ip;
 
-	dump(iface,IF_TRACE_OUT,CL_NONE,bp);
+	dump(iface,IF_TRACE_OUT,bp);
 	iface->rawsndcnt++;
 	iface->lastsent = secclock();
 

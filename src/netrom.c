@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.29 1992/05/14 13:20:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.30 1992/06/01 10:34:25 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -701,7 +701,7 @@ struct node *fromneighbor;
       Nr_iface->lastrecv = secclock();
       arp_add(get32(bp->data + 32), ARP_NETROM, bp->data, 0);
       pullup(&bp, NULLCHAR, 20);
-      dump(Nr_iface, IF_TRACE_IN, Nr_iface->type, bp);
+      dump(Nr_iface, IF_TRACE_IN, bp);
       ip_route(Nr_iface, bp, 0);
       return;
     }
@@ -765,20 +765,17 @@ struct mbuf *data;
 
 /*---------------------------------------------------------------------------*/
 
-int nr_send(bp, iface, gateway, prec, del, tput, rel)
+int nr_send(bp, iface, gateway, tos)
 struct mbuf *bp;
 struct iface *iface;
 int32 gateway;
-int prec;
-int del;
-int tput;
-int rel;
+int tos;
 {
 
   struct arp_tab *arp;
   struct mbuf *nbp;
 
-  dump(iface, IF_TRACE_OUT, iface->type, bp);
+  dump(iface, IF_TRACE_OUT, bp);
   iface->rawsndcnt++;
   iface->lastsent = secclock();
   if (!(arp = arp_lookup(ARP_NETROM, gateway))) {

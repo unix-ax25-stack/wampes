@@ -1,11 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.7 1992/05/28 13:50:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.c,v 1.8 1992/06/01 10:34:09 deyke Exp $ */
 
 /* Generic serial line interface routines
  * Copyright 1992 Phil Karn, KA9Q
  */
 #include <stdio.h>
 #include "global.h"
-#include "config.h"
 #include "proc.h"
 #include "iface.h"
 #include "netuser.h"
@@ -19,6 +18,8 @@
 #include "slip.h"
 /* #include "ppp.h" */
 #include "commands.h"
+
+static int asy_detach __ARGS((struct iface *ifp));
 
 /* Attach a serial interface to the system
  * argv[0]: hardware type, must be "asy"
@@ -36,6 +37,8 @@
  * argv[8]: optional flags,
  *              'v' for Van Jacobson TCP header compression (SLIP only,
  *                  use ppp command for VJ compression with PPP);
+ *              'c' for cts flow control
+ *              'r' for rlsd (cd) detection
  */
 int
 asy_attach(argc,argv,p)
@@ -44,18 +47,12 @@ char *argv[];
 void *p;
 {
 	register struct iface *ifp;
-	struct asy *asyp;
-	char *ifn;
 	int dev;
-	int xdev;
 	int trigchar = -1;
-	char monitor = FALSE;
-#if     defined(SLIP) || defined(AX25)
-	struct slip *sp;
-#endif
-#ifdef  NRS
-	struct nrs *np;
-#endif
+	int cts,rlsd;
+	struct asymode *ap;
+	int vj;
+	char *cp;
 
 	if(if_lookup(argv[4]) != NULLIF){
 		printf("Interface %s already exists\n",argv[4]);
@@ -63,8 +60,7 @@ void *p;
 	}
 	/* Find unused asy control block */
 	for(dev=0;dev < ASY_MAX;dev++){
-		asyp = &Asy[dev];
-		if(asyp->iface == NULLIF)
+		if(Asy[dev].iface == NULLIF)
 			break;
 	}
 	if(dev >= ASY_MAX){
@@ -78,130 +74,70 @@ void *p;
 	ifp->name = strdup(argv[4]);
 	ifp->mtu = atoi(argv[6]);
 	ifp->dev = dev;
-	ifp->stop = asy_stop;
+	ifp->stop = asy_detach;
+	if(argc > 8 && strchr(argv[8],'v') != NULLCHAR)
+		vj = 1;
+	else
+		vj = 0;
 
-#ifdef  SLIP
-	if(stricmp(argv[3],"SLIP") == 0) {
-		for(xdev = 0;xdev < SLIP_MAX;xdev++){
-			sp = &Slip[xdev];
-			if(sp->iface == NULLIF)
-				break;
+	/* Look for the interface mode in the table */
+	for(ap = Asymode;ap->name != NULLCHAR;ap++){
+		if(stricmp(argv[3],ap->name) == 0){
+			trigchar = uchar(ap->trigchar);
+			if((*ap->init)(ifp,vj) != 0){
+				printf("%s: mode %s Init failed\n",
+				 ifp->name,argv[3]);
+				if_detach(ifp);
+				return -1;
+			}
+			break;
 		}
-		if(xdev >= SLIP_MAX) {
-			printf("Too many slip devices\n");
-			return -1;
-		}
-		setencap(ifp,"SLIP");
-		ifp->ioctl = asy_ioctl;
-		ifp->raw = slip_raw;
-		ifp->show = slip_status;
-		ifp->flags = 0;
-		ifp->xdev = xdev;
-
-		sp->iface = ifp;
-		sp->send = asy_send;
-		sp->get = get_asy;
-		sp->type = CL_SERIAL_LINE;
-		trigchar = FR_END;
-#ifdef VJCOMPRESS
-		if((argc > 8) && (strchr(argv[8],'v') != NULLCHAR)) {
-			sp->escaped |= SLIP_VJCOMPR;
-			sp->slcomp = slhc_init(16,16);
-		}
-#else
-		sp->slcomp = NULL;
-#endif  /* VJCOMPRESS */
-		ifp->rxproc = asy_rx;
-	} else
-#endif
-#ifdef  AX25
-	if(stricmp(argv[3],"AX25") == 0) {
-		/* Set up a SLIP link to use AX.25 */
-		for(xdev = 0;xdev < SLIP_MAX;xdev++){
-			sp = &Slip[xdev];
-			if(sp->iface == NULLIF)
-				break;
-		}
-		if(xdev >= SLIP_MAX) {
-			printf("Too many slip devices\n");
-			return -1;
-		}
-		setencap(ifp,"AX25");
-		ifp->ioctl = kiss_ioctl;
-		ifp->raw = kiss_raw;
-		ifp->show = slip_status;
-
-		if(ifp->hwaddr == NULLCHAR)
-			ifp->hwaddr = mallocw(AXALEN);
-		memcpy(ifp->hwaddr,Mycall,AXALEN);
-		ifp->xdev = xdev;
-
-		sp->iface = ifp;
-		sp->send = asy_send;
-		sp->get = get_asy;
-		sp->type = CL_KISS;
-		trigchar = FR_END;
-		ifp->rxproc = asy_rx;
-	} else
-#endif
-#ifdef  NRS
-	if(stricmp(argv[3],"NRS") == 0) {
-		/* Set up a net/rom serial iface */
-		for(xdev = 0;xdev < SLIP_MAX;xdev++){
-			np = &Nrs[xdev];
-			if(np->iface == NULLIF)
-				break;
-		}
-		if(xdev >= SLIP_MAX) {
-			printf("Too many nrs devices\n");
-			return -1;
-		}
-		/* no call supplied? */
-		setencap(ifp,"AX25");
-		ifp->ioctl = asy_ioctl;
-		ifp->raw = nrs_raw;
-
-		ifp->hwaddr = mallocw(AXALEN);
-		memcpy(ifp->hwaddr,Mycall,AXALEN);
-		ifp->xdev = xdev;
-		np->iface = ifp;
-		np->send = asy_send;
-		np->get = get_asy;
-		trigchar = ETX;
-		ifp->rxproc = nrs_recv;
-	} else
-#endif
-#ifdef  PPP
-	if(stricmp(argv[3],"PPP") == 0) {
-		/* Setup for Point-to-Point Protocol */
-		trigchar = HDLC_FLAG;
-		monitor = TRUE;
-		setencap(ifp,"PPP");
-		ifp->ioctl = asy_ioctl;
-		ifp->flags = FALSE;
-
-		/* Initialize parameters for various PPP phases/protocols */
-		if (ppp_init(ifp) != 0) {
-			printf("Cannot allocate PPP control block\n");
-			free(ifp->name);
-			free((char *)ifp);
-			return -1;
-		}
-	} else
-#endif
-	{
+	}
+	if(ap->name == NULLCHAR){
 		printf("Mode %s unknown for interface %s\n",
-			argv[3],argv[4]);
-		free(ifp->name);
-		free(ifp);
+		 argv[3],argv[4]);
+		if_detach(ifp);
 		return -1;
 	}
-
 	/* Link in the interface */
 	ifp->next = Ifaces;
 	Ifaces = ifp;
 
+	cts = rlsd = 0;
+	if(argc > 8){
+		if(strchr(argv[8],'c') != NULLCHAR)
+			cts = 1;
+		if(strchr(argv[8],'r') != NULLCHAR)
+			rlsd = 1;
+	}
 	asy_init(dev,ifp,argv[1],argv[2],(int16)atol(argv[5]),
-		trigchar,monitor,(int16)atol(argv[7]));
+		trigchar,(int16)atol(argv[7]),cts,rlsd);
+#if 0
+	cp = if_name(ifp," tx");
+	ifp->txproc = newproc(cp,768,if_tx,0,ifp,NULL,0);
+	free(cp);
+#endif
 	return 0;
 }
+
+static int
+asy_detach(ifp)
+struct iface *ifp;
+{
+	struct asymode *ap;
+
+	if(ifp == NULLIF)
+		return -1;
+	asy_stop(ifp);
+
+	/* Call mode-dependent routine */
+	for(ap = Asymode;ap->name != NULLCHAR;ap++){
+		if(ifp->iftype != NULLIFT
+		 && stricmp(ifp->iftype->name,ap->name) == 0
+		 && ap->free != NULLFP){
+			(*ap->free)(ifp);
+		}
+	}
+	return 0;
+}
+

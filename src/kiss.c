@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.8 1991/06/18 17:27:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.9 1992/06/01 10:34:21 deyke Exp $ */
 
 /* Routines for AX.25 encapsulation in KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -11,21 +11,67 @@
 #include "slip.h"
 #include "asy.h"
 #include "ax25.h"
+#include "pktdrvr.h"
 #include "crc.h"
 
-/* Send raw data packet on KISS TNC */
+/* Set up a SLIP link to use AX.25 */
 int
-kiss_raw(iface,data)
-struct iface *iface;
-struct mbuf *data;
+kiss_init(ifp,vj)
+struct iface *ifp;
+int vj; /* Unused */
 {
-	register struct mbuf *bp;
+	int xdev;
+	struct slip *sp;
+	char *ifn;
 
-	/* Put type field for KISS TNC on front */
-	if((bp = pushdown(data,1)) == NULLBUF){
-		free_p(data);
+	for(xdev = 0;xdev < SLIP_MAX;xdev++){
+		sp = &Slip[xdev];
+		if(sp->iface == NULLIF)
+			break;
+	}
+	if(xdev >= SLIP_MAX) {
+		printf("Too many slip devices\n");
 		return -1;
 	}
+	setencap(ifp,"KISS");
+	ifp->ioctl = kiss_ioctl;
+	ifp->raw = kiss_raw;
+	ifp->show = slip_status;
+
+	if(ifp->hwaddr == NULLCHAR)
+		ifp->hwaddr = mallocw(AXALEN);
+	memcpy(ifp->hwaddr,Mycall,AXALEN);
+	ifp->xdev = xdev;
+
+	sp->iface = ifp;
+	sp->send = asy_send;
+	sp->get = get_asy;
+	sp->type = CL_KISS;
+#if 0
+	ifp->rxproc = newproc( ifn = if_name( ifp, " rx" ),
+		256,slip_rx,xdev,NULL,NULL,0);
+	free(ifn);
+#else
+	ifp->rxproc = slip_rx;
+#endif
+	return 0;
+}
+int
+kiss_free(ifp)
+struct iface *ifp;
+{
+	if(Slip[ifp->xdev].iface == ifp)
+		Slip[ifp->xdev].iface = NULLIF;
+	return 0;
+}
+/* Send raw data packet on KISS TNC */
+int
+kiss_raw(iface,bp)
+struct iface *iface;
+struct mbuf *bp;
+{
+	/* Put type field for KISS TNC on front */
+	bp = pushdown(bp,1);
 	bp->data[0] = PARAM_DATA;
 	if(iface->sendcrc){
 		bp->data[0] |= 0x80;

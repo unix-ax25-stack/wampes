@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.7 1992/05/14 13:19:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.8 1992/06/01 10:34:11 deyke Exp $ */
 
 #include "global.h"
 
@@ -101,7 +101,7 @@ struct mbuf *data;
   struct axip_route *rp;
   struct mbuf *bp;
 
-  dump(iface, IF_TRACE_OUT, iface->type, data);
+  dump(iface, IF_TRACE_OUT, data);
   iface->rawsndcnt++;
   iface->lastsent = secclock();
 
@@ -195,7 +195,7 @@ void *argp;
   }
   axip_route_add(src, &from);
 
-  net_route(Axip_iface, Axip_iface->type, qdata(bufptr, l));
+  net_route(Axip_iface, qdata(bufptr, l));
   return;
 
 fail:

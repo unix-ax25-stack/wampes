@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/proc.h,v 1.2 1991/10/11 18:56:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/proc.h,v 1.3 1992/06/01 10:34:28 deyke Exp $ */
 
 #ifndef _PROC_H
 #define _PROC_H
@@ -58,7 +58,7 @@ struct proc *mainproc __ARGS((char *name));
 struct proc *newproc __ARGS((char *name,unsigned int stksize,
 	void (*pc) __ARGS((int,void *,void *)),
 	int iarg,void *parg1,void *parg2,int freeargs));
-int psignal __ARGS((void *event,int n));
+void psignal __ARGS((void *event,int n));
 int pwait __ARGS((void *event));
 void resume __ARGS((struct proc *pp));
 void suspend __ARGS((struct proc *pp));

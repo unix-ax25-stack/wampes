@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.2 1992/05/14 13:20:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.3 1992/06/01 10:34:20 deyke Exp $ */
 
 #include "global.h"
 
@@ -36,26 +36,23 @@ struct edv_t {
   struct sockaddr_in addr;
 };
 
-static int ipip_send __ARGS((struct mbuf *data, struct iface *ifp, int32 gateway, int prec, int del, int tput, int rel));
+static int ipip_send __ARGS((struct mbuf *data, struct iface *ifp, int32 gateway, int tos));
 static void ipip_recv __ARGS((void *argp));
 
 /*---------------------------------------------------------------------------*/
 
-static int ipip_send(data, ifp, gateway, prec, del, tput, rel)
+static int ipip_send(data, ifp, gateway, tos)
 struct mbuf *data;
 struct iface *ifp;
 int32 gateway;
-int prec;
-int del;
-int tput;
-int rel;
+int tos;
 {
 
   char buf[MAX_FRAME];
   int l;
   struct edv_t *edv;
 
-  dump(ifp, IF_TRACE_OUT, ifp->type, data);
+  dump(ifp, IF_TRACE_OUT, data);
   ifp->rawsndcnt++;
   ifp->lastsent = secclock();
 
@@ -99,7 +96,7 @@ void *argp;
     l -= hdr_len;
   }
   if (l <= 0) goto fail;
-  net_route(ifp, ifp->type, qdata(bufptr, l));
+  net_route(ifp, qdata(bufptr, l));
   return;
 
 fail:
