@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.66 1989/06/10 08:22:27 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.67 1989/06/12 21:46:47 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -8,6 +8,7 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
 #include <time.h>
@@ -22,6 +23,7 @@ extern int  errno;
 extern int  optind;
 extern long  lseek();
 extern long  time();
+extern struct sockaddr *build_sockaddr();
 extern unsigned long  sleep();
 extern unsigned short  getgid();
 extern unsigned short  getuid();
@@ -192,19 +194,25 @@ char  *str, *pat;
 static char  *getstring(s)
 char  *s;
 {
-  register char  *p = s;
-  register int  c;
+
+  char  *p;
+  static int  chr, lastchr;
 
   fflush(stdout);
-  for (; ; ) {
+  for (p = s; ; ) {
     *p = '\0';
-    switch (c = getchar()) {
+    if (ferror(stdin) || feof(stdin)) return NULL;
+    lastchr = chr;
+    switch (chr = getchar()) {
     case EOF:
       if (p == s) return NULL;
-    case '\n':
+    case '\r':
       return strtrim(s);
+    case '\n':
+      if (lastchr != '\r') return strtrim(s);
+      break;
     default:
-      if (c) *p++ = c;
+      if (chr) *p++ = chr;
     }
   }
 }
@@ -349,13 +357,27 @@ static int  check_abort()
 
   rmask = 1;
   if (select(1, &rmask, (int *) 0, (int *) 0, &timeout) == 1) {
-    getstring(buf);
+    if (!getstring(buf)) exit(1);
     if (*buf == 'A' || *buf == 'a') {
       puts("*** Aborted by User ***");
       return 1;
     }
   }
   return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void wait_for_prompt()
+{
+
+  char  buf[1024];
+  int  l;
+
+  do {
+    if (!getstring(buf)) exit(1);
+    l = strlen(buf);
+  } while (!l || buf[l-1] != '>');
 }
 
 /*---------------------------------------------------------------------------*/
@@ -908,10 +930,10 @@ static void s_cmd()
     }
   }
   puts(hostmode ? "OK" : "Enter subject:");
-  getstring(mail->subject);
+  if (!getstring(mail->subject)) exit(1);
   if (!hostmode) puts("Enter message: (terminate with ^Z or /EX or ***END)");
   for (; ; ) {
-    if (!getstring(line)) break;
+    if (!getstring(line)) exit(1);
     if (*line == '\032') break;
     if (!strncmp(line, "/EX", 3)) break;
     if (!strncmp(line, "/ex", 3)) break;
@@ -1063,14 +1085,13 @@ static void c_cmd()
 
 /*---------------------------------------------------------------------------*/
 
-static void f_cmd()
+static void f_cmd(do_not_exit)
+int  do_not_exit;
 {
 
   FILE * fp;
   char  buf[1024];
   int  c;
-  int  found;
-  int  l;
   struct index index;
   struct tm *tm;
 
@@ -1079,14 +1100,13 @@ static void f_cmd()
     return;
   }
   if (lseek(findex, 0l, 0)) halt();
-  found = 0;
   while (read(findex, (char *) &index, sizeof(struct index )) == sizeof(struct index )) {
     if ((index.status == '$' && index.mesg > seq.forw ||
 	 index.status != '$' && index.status != 'F' && index.mesg && can_forward(index.at)) &&
 	!host_in_header(filename(index.mesg), loginname)) {
-      found = 1;
+      do_not_exit = 1;
       printf("S%c %s%s%s < %s%s%s\n", index.type, index.to, *index.at ? " @ " : "", index.at, index.from, *index.bid ? " $" : "", index.bid);
-      getstring(buf);
+      if (!getstring(buf)) exit(1);
       switch (*strlwc(buf)) {
       case 'o':
 	puts(index.subject);
@@ -1098,10 +1118,7 @@ static void f_cmd()
 	while ((c = getc(fp)) != EOF) putchar(c);
 	fclose(fp);
 	puts("\032");
-	do {
-	  getstring(buf);
-	  l = strlen(buf);
-	} while (!l || buf[l-1] != '>');
+	wait_for_prompt();
 	if (index.status == 'N' || index.status == 'Y') {
 	  index.status = 'F';
 	  if (lseek(findex, (long) (-sizeof(struct index )), 1) < 0) halt();
@@ -1109,10 +1126,7 @@ static void f_cmd()
 	}
 	break;
       case 'n':
-	do {
-	  getstring(buf);
-	  l = strlen(buf);
-	} while (!l || buf[l-1] != '>');
+	wait_for_prompt();
 	break;
       default:
 	exit(1);
@@ -1123,8 +1137,10 @@ static void f_cmd()
       put_seq();
     }
   }
-  if (!found) exit(0);
-  putchar('F');
+  if (do_not_exit)
+    putchar('F');
+  else
+    exit(0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1638,7 +1654,28 @@ static void z_cmd()
 
 /*---------------------------------------------------------------------------*/
 
-static void bbs()
+static void connect_bbs()
+{
+
+  int  addrlen;
+  int  fd;
+  struct sockaddr *addr;
+
+  if (!(addr = build_sockaddr("unix:/tcp/sockets/netcmd", &addrlen))) exit(1);
+  if ((fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) exit(1);
+  if (connect(fd, addr, addrlen)) exit(1);
+  dup2(fd, 0);
+  dup2(fd, 1);
+  close(fd);
+  fdopen(0, "r+");
+  fdopen(1, "r+");
+  printf("connect tcp %s telnet\n", loginname);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void bbs(doforward)
+int  doforward;
 {
 
   char  line[1024];
@@ -1646,14 +1683,22 @@ static void bbs()
   int  i;
   register char  *p;
 
-  printf("[MBL-$]\n");
+  if (doforward) {
+    connect_bbs();
+    wait_for_prompt();
+  }
   printf("[DK5SG-%s-H$]\n", revision.number);
+  if (doforward) wait_for_prompt();
   for (; ; ) {
-    if (hostmode)
-      puts(">");
-    else
-      printf("%s de %s-BBS \007 >\n", loginname, myhostname);
-    if (!getstring(line)) strcpy(line, "b");
+    if (doforward)
+      strcpy(line, "f>");
+    else {
+      if (hostmode)
+	puts(">");
+      else
+	printf("%s de %s-BBS \007 >\n", loginname, myhostname);
+      if (!getstring(line)) exit(1);
+    }
     for (p = strlwc(line), i = 0; i < NARGS; i++) {
       quote = '\0';
       while (isspace(uchar(*p))) p++;
@@ -1672,7 +1717,7 @@ static void bbs()
     case 'a':                     break;
     case 'b':  b_cmd();           break;
     case 'c':  c_cmd();           break;
-    case 'f':  f_cmd();           break;
+    case 'f':  f_cmd(doforward);  break;
     case 'h':  h_cmd();           break;
     case 'i':  i_cmd();           break;
     case 'k':  k_cmd();           break;
@@ -1684,6 +1729,7 @@ static void bbs()
     case 'z':  z_cmd();           break;
     default:   unknown_command(); break;
     }
+    doforward = 0;
   }
 }
 
@@ -1702,6 +1748,7 @@ char  **argv;
   char  *cp;
   char  *dir = WRKDIR;
   int  c;
+  int  doforward = 0;
   int  err_flag = 0;
   int  mode = BBS;
 
@@ -1718,11 +1765,17 @@ char  **argv;
   strlwc(strcpy(loginname, cp));
   for (hp = hosts; *hp; hp++)
     if (calleq(*hp, loginname)) hostmode = 1;
-  while ((c = getopt(argc, argv, "dmn")) != EOF)
+  while ((c = getopt(argc, argv, superuser ? "df:mn" : "d")) != EOF)
     switch (c) {
     case 'd':
       debug = 1;
       dir = DEBUGDIR;
+      break;
+    case 'f':
+      strlwc(strcpy(loginname, optarg));
+      hostmode = 1;
+      mode = BBS;
+      doforward = 1;
       break;
     case 'm':
       mode = RMAIL;
@@ -1736,7 +1789,10 @@ char  **argv;
     }
   if (optind < argc) err_flag = 1;
   if (err_flag) {
-    puts("usage: bbs [-d] [-m|-n]");
+    if (superuser)
+      puts("usage: bbs [-d] [-f system|-m|-n]");
+    else
+      puts("usage: bbs [-d]");
     exit(1);
   }
   mkdir(dir, 0755);
@@ -1746,7 +1802,7 @@ char  **argv;
   get_seq();
   switch (mode) {
   case BBS:
-    bbs();
+    bbs(doforward);
     break;
   case RMAIL:
     rmail();
