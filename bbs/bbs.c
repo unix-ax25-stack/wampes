@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.57 1988/10/09 19:20:09 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.58 1988/12/30 11:11:47 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -712,19 +712,9 @@ struct mail *mail;
 
   /* Set type & status */
 
-  if (hostmode) {
-    if (*mail->bid) {
-      mail->type = 'B';
-      mail->status = '$';
-    } else {
-      mail->type = callvalid(get_user_from_path(mail->to)) ? 'P' : 'B';
-      mail->status = 'N';
-    }
-  } else {
-    mail->type = callvalid(get_user_from_path(mail->to)) ? 'P' : 'B';
-    mail->status =
-      (mail->type=='P' || callvalid(get_host_from_path(mail->to))) ? 'N' : '$';
-  }
+  mail->type = callvalid(get_user_from_path(mail->to)) ? 'P' : 'B';
+  mail->status =
+    (mail->type == 'P' || callvalid(get_host_from_path(mail->to))) ? 'N' : '$';
 
   /* Set bid */
 
