@@ -1,6 +1,6 @@
 /* User Data Base Manager */
 
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.6 1989/09/17 11:31:31 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.7 1989/10/14 10:29:53 dk5sg Exp $";
 
 #include <ctype.h>
 #include <fcntl.h>
@@ -569,7 +569,7 @@ static void fixaliases()
   fputs("# Generated aliases\n", fpo);
   for (i = 0; i < NUM_USERS; i++)
     for (up = users[i]; up; up = up->next)
-      if (*up->mail)
+      if (*up->mail && strcmp(up->name, "Mailing List"))
 	if (*up->mail == '@')
 	  fprintf(fpo, "%s\t\t: %s%s\n", up->call, up->call, up->mail);
 	else
