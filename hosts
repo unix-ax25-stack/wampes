@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.16 1994/02/07 12:38:37 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.17 1994/02/14 16:34:11 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -2086,6 +2086,8 @@
 44.130.176.123  DG2SBV-SATGATE  #
 44.130.176.124  DG2SBV-SATBBS   #
 44.130.176.125  DG2SBV  # Horst Venzke, Althuette; WNOS
+44.130.176.129  DG8SER  # Andreas Mnzenmaier
+44.130.176.130  DG8SER-U        # Andreas Mnzenmaier Unix
 44.130.176.137  DL1SEZ-7        # Klaus Micheler, Sachsenheim
 #
 #44.130.56.x    Muenchen

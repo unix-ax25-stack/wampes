@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.6 1994/02/07 12:39:40 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.7 1994/02/14 16:34:42 deyke Exp $
 
 findfile()
 {
@@ -57,7 +57,7 @@ if [ "$OS" = HP-UX ] ; then
 elif [ "$OS" = AIX ] ; then
 	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L
 elif [ "$OS" = Linux ] ; then
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h
+	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L
 elif [ "$OS" = 386BSD ] ; then
 	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h
 elif [ "$OS" = BSD/386 ] ; then
