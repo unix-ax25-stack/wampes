@@ -1822,9 +1822,9 @@
 44.130.35.14    DD4KO   # Olaf Jung, 5270 Gummersbach
 44.130.35.15    DG2KHE  # Hagen Erdmann, 5270 Gummersbach
 #
-# 44.130.36.xxx   Berlin
+# 44.130.36.xxx - 44.130.39.xxx Berlin
 #
-44.130.36.1       DL6DBH        # Meinolf, 1000 Berlin; AT
+#44.130.36.1      dc7ch         # Juergen
 44.130.36.2       DC7ER         # Andreas, 1000 Berlin 47
 44.130.36.3       DH7ABQ        # Ralf, 1000 Berlin 44
 44.130.36.5       DL5HCK-1      # Klaus Simon, 1000 Berlin 41
@@ -1841,13 +1841,13 @@
 44.130.36.23      DC7FO-3       #
 44.130.36.24      DC7FO-4       #
 44.130.36.25      DC7FO-5       #
-44.130.36.30      DL7UWO        # Manfred ( ex Y23WO )
+44.130.36.30      DL7UWO        # Manfred
 44.130.36.32      DF1GX         # Claus-Peter
 44.130.36.33      st.DF1GX      #
 44.130.36.34      pc.DF1GX      #
 #44.130.36.35     df1gx         #
 #44.130.36.36     df1gx         #
-44.130.36.40      DL7VKH        # Karl-Heinz, Berlin-Pankow ( ex y26wo )
+44.130.36.40      DL7VKH        # Karl-Heinz, Berlin-Pankow
 44.130.36.41      DK7IN-1       # Rolf, 1000 Berlin 65; AT486
 44.130.36.42      DK7IN-2       # Rolf, 1000 Berlin 65; XT
 44.130.36.43      DK7IN         # Rolf, 1000 Berlin 65; AT386
@@ -1859,7 +1859,7 @@
 44.130.36.65      DB5QO         # Dieter, Berlin 46
 44.130.36.66      DD5MP         # Antonio, Berlin
 44.130.36.70      DD6OA-7       # Bodo, Berlin-Buckow (-7 = TCP/IP;-0 = AX25)
-44.130.36.75      DL7VFX        # Thomas Kroeger, Berlin ( ex y37to )
+44.130.36.75      DL7VFX        # Thomas Kroeger, Berlin
 44.130.36.80      DL7UEA        # Bernd, Berlin
 44.130.36.81      DL9SAU-1      # Thommas Osterried, Berlin
 44.130.36.82      DL9SAU-A      # Thommas Osterried, Berlin
@@ -1867,7 +1867,9 @@
 44.130.36.84      DD6RG         # Joachim Henschke, 12249 Berlin
 44.130.36.95      DD5AA         # Alain, Berlin-Wedding ;NNTP, SMTP, POP-Server
 44.130.36.97      DL7NW         # Siegbert, Berlin
-44.130.36.111     DL7UAW        # Andy ( ex y24lo )
+# 44.130.36.100                 # reserviert fuer TCP/IP Digi Berlin
+# 44.130.36.101                 # reserviert fuer TCP/IP Digi Berlin
+44.130.36.111     DL7UAW        # Andy
 44.130.36.200     DL7AUC        # Pat, 1000 Berlin
 44.130.36.201     DL7AUC-1      #
 44.130.36.202     DL7AUC-2      #
@@ -2199,7 +2201,7 @@
 44.130.48.204   DL5SBT  # Werner Heker, 7400 Tuebingen; AT
 44.130.48.205   DH2SAQ-10       # Hans-Peter Fricke, 7148 Remseck 1 Neckarrems
 44.130.48.206   DL3SEE  # Wolfgang, 7140 Ludwigsburg
-44.130.48.207   DG5SBX  # Gerald, Magstadt
+44.130.48.207   DL4SEO  # Gerald, Magstadt
 44.130.48.208   DG1SBP  # Bernd, Pforzheim
 44.130.48.209   DL4SDH  # Heiko, Kirchheim
 44.130.48.210   DF7XT   # Reiner Gundelach, 7410 Reutlingen 17
