@@ -11,9 +11,10 @@
 #           Routing-Knotenrechner sind mit *** gekennzeichnet
 # -----------------------------------------------------------------------
 #
-# 44.130.0.x Hamburg
-# local coordination dk3uz
-# last update 961111
+#44.130.0.x Hamburg
+#local coordination dk3uz
+#last update 961229
+#
 44.130.0.1      dl2vo   dl2vo.ampr.org
 44.130.0.2      dl2vo-1 dl2vo-1.ampr.org
 44.130.0.3      dk5xa   dk5xa.ampr.org
@@ -53,6 +54,7 @@
 44.130.0.40     dk3ud   dk3ud.ampr.org
 44.130.0.41     dh8bag  dh8bag.ampr.org
 44.130.0.42     db2hb   db2hb.ampr.org
+44.130.0.43     dl3haq-t        dl3haq-t.ampr.org
 44.130.0.44     df4hr   df4hr.ampr.org
 44.130.0.45     dl5hcd  dl5hcd.ampr.org
 44.130.0.46     dl6hbo  dl6hbo.ampr.org
@@ -124,6 +126,8 @@
 44.130.0.125    dg4hx-wampes    dg4hx-wampes.ampr.org
 44.130.0.126    dc1hi   dc1hi.ampr.org
 44.130.0.127    dl1hdw  dl1hdw.ampr.org
+44.130.0.128    dk3hg-3 dk3hg-3.ampr.org
+44.130.0.129    dk3hg-3svr      dk3hg-3svr.ampr.org
 44.130.0.130    dd0xp   dd0xp.ampr.org
 44.130.0.131    dd6xl   dd6xl.ampr.org
 44.130.0.132    dd2xt   dd2xt.ampr.org
@@ -404,9 +408,9 @@
 44.130.8.88     DB0NON   # ;arp db0non-10 /jo32nk / LinuX
 44.130.8.100    DB0SM    # geplanter IP-Router, 49716 Meppen
 #
-#44.130.9.x     Braunschweig
+#44.130.9.x     Braunschweig, lokale Koordination DF2AU
 44.130.9.1      DK4EG   # Detlef Schmidt, 3300 Braunschweig
-44.130.9.2      DB0FC   # Digi Braunschweig (DK4EG)
+44.130.9.2      DB0FC-L # Digi Braunschweig (DF2AU), Linux Kernel
 44.130.9.3      DK3NY   # Gert Bemman, 3320 Salzgitter
 44.130.9.4      DF3AV   # Reinhard Ruediger, 3150 Peine
 44.130.9.5      DF3AV-1 # /DK0MAV-Test (BBS)
@@ -436,7 +440,7 @@
 44.130.9.29     DL0PPP-U        #
 44.130.9.30     DG9ABY  # Thomas, Meerdorf/Peine
 44.130.9.31     DL4OCE  # Arne, Ahnsen
-44.130.9.33     DF2AU   # Hans Georg Giese, Braunschweig
+44.130.9.33     DF2AU   # Hans Georg Giese, 38108 Braunschweig
 44.130.9.34     DC9IR   # Ulli, 38165 Lehre
 44.130.9.35     DC9IR-2 #
 44.130.9.36     DG1AM   # Mario Klebsch, Wolfenbuettel
@@ -449,12 +453,14 @@
 44.130.9.47     DG6ABM  #
 44.130.9.48     DG6ABM-1        #
 44.130.9.39     DG3AAU  #
+44.130.9.40     DB0FC   # Digipeater DB0FC, Wampe
 44.130.9.50     DH0OAE  # Oliver Teuber, 37534 Badenhausen
 44.130.9.51     DK3NY-1 # Gert Bemann, 38228 Salzgitter
 44.130.9.52     DB7AF   # Martin Kuehn, 38228 Salzgitter
 44.130.9.53     DB7AF-1 #
 44.130.9.54     DF8OM   # Peter K.J. Hoyer, Neuhaus
 44.130.9.55     DF8OM-2 #
+44.130.9.56     DL9OCD  # Michael Alfred Gross, 29323 Wietze
 44.130.9.100    DB0NID  # TCP/IP-Server Harz, 38678 Torfhaus
 44.130.9.101    DB0NID-U        #
 #
@@ -1388,6 +1394,7 @@
 44.130.20.60    DG9KAT  # Johann Tandara, 5144 Wegberg
 44.130.20.61    DG9KAT-2        # , QRL
 44.130.20.62    DG2KDT  # Thomas Dackweiler, 52349 Düren
+44.130.20.63    DG7KN   # Ludwig Hansing, 52072 Aachen
 44.130.20.64    DL9KAW  # Peter Strang, 5100 Aachen
 44.130.20.65    DL9KAW-1        #
 44.130.20.66    DH6KQ   # Andreas Fromm, 52379 Langerwehe
@@ -1405,6 +1412,7 @@
 44.130.20.78    DB0BM   # Netzknoten Juelich; ***, AX25: DB0BM-8 via DB0BM
 44.130.20.79    DK0HJ   # Fachhochschule, 5170 Juelich
 44.130.20.81    DJ0JU   # Henrik Olsen, 5138 Heinsberg Karken
+44.130.20.82    DH3KD   # Dieter Urbancik, 52080 Aachen
 44.130.20.83    DH0KAI  # Manfred Jost, 5100 Aachen (ex DB1PD)
 44.130.20.84    DL5KCE  # Axel Pfaff, Eschweiler
 44.130.20.85    DL0THA  # Computer Club a.d. RWTH Aachen (CCAC)
@@ -1425,7 +1433,8 @@
 #44.130.20.100  Reserviert
 44.130.20.101   DG3KCE  # Frank, Dueren
 44.130.20.102   DG1KAO  # Willi Ahn, 51156 Monsschau
-44.130.20.103   DG1KAO-1        #
+44.130.20.103   DG1KAO-1 #
+44.130.20.104   DG1KAO-2 #
 44.130.20.105   DL6KCW  # Manfred, Wegberg
 44.130.20.106   DL1BKE-A        # Joerg Reuter, 52072 Aachen
 44.130.20.107   DL1BKE-U        # ; LINUX
@@ -1436,6 +1445,8 @@
 44.130.20.112   DG3KBQ  # Thorsten
 44.130.20.113   LX1NW-DL        # Michel, Aachen
 44.130.20.114   LX1NW-T #
+44.130.20.115   DG6KBE # Hans Loehrer, 52224 Stolberg
+44.130.20.116   DJ2JJ # Josef Duerbaum, 52353 Dueren
 44.130.20.119   DL1KAA # Dieter Borowski,52428 Juelich
 44.130.20.120   DL1KMW  # Martin, Aachen
 44.130.20.121   DL2KFF  # Fritz Friedhoff, 52074 Aachen
@@ -2456,13 +2467,19 @@
 44.130.44.10    DF8SK   # Peter, Konz
 44.130.44.11    DB0DAU  # Digi Daun/Eifel
 44.130.44.12    DJ7HQ   # ?
+44.130.44.13    DH5VS   # Michael Steck, 54295 Trier
+44.130.44.14    DH6VL   # Harald Lehnart, 54329 Konz
+44.130.44.15    DC0WI   # Karl-Heinz, 54344 Kenn
+44.130.44.16    DG3FDM  # Jan Morawek, ????? Trier
+44.130.44.20    DF7PO   # Winfried Schubert, 54295 Trier
 44.130.44.88    DB2VM-1 # Andreas, Trier
 44.130.44.99    DD8PZ   # Jochen,
 44.130.44.100   DB2VM-2 #
 44.130.44.127   DF9WM   # Christoph Bungard, Germersheim
-44.130.44.200   DL0BBS  # TCP/IP Server Trier
-44.130.44.201   DL0BBS-SVR  #
-44.130.44.202   DL0BBS-USR  #
+44.130.44.200   DB0GH-6  # TCP/IP Server Trier
+44.130.44.201   DB0GH-SVR  #
+44.130.44.202   DL0BBS  #
+#44.130.44.255  Broadcast Region44
 #
 #44.130.48.x    Stuttgart
 # lokale Adresskoordination im Raum Stuttgart: DC3SN
@@ -3275,7 +3292,7 @@
 44.130.61.111   DB0SWR  # Digi Wertheim
 #
 #    Die oberfraenkischen Hosts:
-#                                       Stand:  12.04.96
+#                                       Stand:  04.01.97
 # 44.130.62.xx (Bamberg/Bayreuth)
 # lokale Adresskoordination DL1NAT [44.130.62.3]
 #
@@ -3292,14 +3309,13 @@
 44.130.62.11   DH3NBA         # Heiko Eschrich Drosendorf
 44.130.62.12   DL8NDN         # Harms Gundelsheim
 44.130.62.13   DL3NEQ         # Wolfgang Burgebrach
-44.130.62.14   DG2NBD         # Bernd Drechsel Bamberg
+44.130.62.14   DG2NBD         # Bernd Drechsel Selb
 44.130.62.15   DG3NCU         # Florian Kreuzer Roedental
-44.130.62.16   DG8NBN         # Volker Bamberg
-44.130.62.17   DG8NBN-GATE    # Volker Bamberg
+44.130.62.16   DL8NEP         # Volker Bamberg
+44.130.62.17   DL8NEP-GATE    # Volker Bamberg
 44.130.62.18   DG7NEF-2       # Wolfgang Bamberg
 44.130.62.19   DG7NEF-GATE    # Wolfgang Bamberg
 44.130.62.20   DG7NEF         # Wolfgang Bamberg
-44.130.62.21   DL9NBX         # Roland Coburg
 44.130.62.22   DF9NE          # Anton Spindler Stadtsteinach
 44.130.62.23   DG9NBQ         # Holger Klecha Bamberg
 44.130.62.24   DJ4BE          # Josef Kronach
@@ -3312,8 +3328,17 @@
 44.130.62.31   DG1NBH         # Bernd Schuberth Altendorf
 44.130.62.32   DG1NBH-2       # Bernd Schuberth Altendorf
 44.130.62.33   DG1NBH-GATE    # Bernd Schuberth Altendorf
+44.130.62.34   DK4RY          # Hans Eckert Doehlau
+44.130.62.35   DL8NEG         # Oliver Fleischmann Gundelsheim
+44.130.62.36   DL8NEG-GATE    # Oliver Fleischmann Gundelsheim
 44.130.62.40   DL1NCH         # Jacek Kupiec Bayreuth
-44.130.62.100  DB0BBG-10      # Digipeater Bamberg K„lberberg
+44.130.62.41   DG8NCV         # Jossi Hirschaid
+44.130.62.42   DL3NEU-GATE    # Daniel Goetz Hirschaid
+44.130.62.48   DL1NAL         # Siegfried Ottner Marktredwitz
+#44.130.62.49   DB0MAK         # DIGI Marktredwitz
+#44.130.62.50   DB0MAK-10      # DIGI-Server Marktredwitz
+#44.130.62.100  DB0BBG-10      # Digipeater Bamberg Kaelberberg
+#44.130.62.200  DB0FOR-10      # Digipeater Forchheim Hetzles
 #
 #44.130.63.x    Unterfranken, Stand: 19.07.96
 # PLZ 63700-63999, 97000-97999
@@ -3525,17 +3550,23 @@
 44.130.88.56    DL3AWB  # Jens Buchta, 04610 Wintersdorf
 44.130.88.57    DH0LQH  # Wolf-Dieter Graewe, 04610 Wintersdorf
 44.130.88.77    DC5PA   # Philipp Ahlner, 04209 Leipzig
+44.130.88.78    DC5PA-U #
 44.130.88.88    DC6HB-A #
 44.130.88.100   DB0LPZ-SVR  # Wampes, ax25 DB0LPZ-10
 44.130.88.101   DB0LPZ-U    # Linux
+44.130.88.102   DB0LPZ      #
 44.130.88.110   DD3ML-SVR   # Wampes
+44.130.88.122   DF0CU       # Klubstation Universitaet Leipzig
+44.130.88.133   DF0CU-I     # ax25: DF0CU-14
 44.130.88.200   DC6HB-SVR   # Wampes
 44.130.88.201   DC6HB-U     # Linux
-44.130.88.222   DG0LGF-A    # ax25 DG0LGF-13
+44.130.88.203   DL8WIZ-SVR  # Wampes
+44.130.88.204   DL8WIZ-U    # Linux
+44.130.88.222   DG0LGF-A    # ax25: DG0LGF-13
 #
-# END
 #
-# Stand per 31.Okt.96
+#
+# Stand per 16.Dez.96
 #
 #44.130.89.x    Chemnitz
 44.130.89.1     Y28PN   # Uwe Huebner, O-9052 Chemnitz; UNIX/NOS

@@ -1,4 +1,10 @@
-@(#) $Id: ChangeLog,v 1.26 1996/12/09 16:43:11 deyke Exp $
+@(#) $Id: ChangeLog,v 1.27 1997/01/13 18:18:05 deyke Exp $
+
+970113 Dieter Deyke <deyke@fc.hp.com>
+
+	ARP now sends ICMP_HOST_UNREACH if address cannot be resolved
+
+	Updated domain.txt and hosts
 
 961209 Dieter Deyke <deyke@fc.hp.com>
 

@@ -1,4 +1,4 @@
-/* @(#) $Id: arp.c,v 1.18 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: arp.c,v 1.19 1997/01/13 18:18:37 deyke Exp $ */
 
 /* Address Resolution Protocol (ARP) functions. Sits between IP and
  * Level 2, mapping IP to Level 2 addresses for all outgoing datagrams.
@@ -261,6 +261,16 @@ void *p)
 		ap->prev->next = ap->next;
 	else
 		Arp_tab[hash_ip(ap->ip_addr)] = ap->next;
+	if(ap->pending != NULL){
+		struct ip ip;
+		struct mbuf *bp;
+		bp = dequeue(&ap->pending);
+		if(bp != NULL){
+			ntohip(&ip,&bp);
+			icmp_output(&ip,bp,ICMP_DEST_UNREACH,ICMP_HOST_UNREACH,NULL);
+			free_p(&bp);
+		}
+	}
 	free_q(&ap->pending);
 	free(ap->hw_addr);
 	free(ap);
