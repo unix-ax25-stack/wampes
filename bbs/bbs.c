@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.3 1989/08/23 23:53:47 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.4 1989/08/26 18:06:23 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -70,6 +70,7 @@ struct index {
   char  to[LEN_TO+1];
   char  at[LEN_AT+1];
   char  from[LEN_FROM+1];
+  char  deleted;
 };
 
 struct seq {
@@ -453,9 +454,43 @@ static int  nextmesg()
 
 /*---------------------------------------------------------------------------*/
 
+static int  get_index(n, index)
+int  n;
+struct index *index;
+{
+  int  i1, i2, im, pos;
+
+  i1 = 0;
+  if (lseek(findex, 0l, 0)) halt();
+  if (read(findex, (char *) index, sizeof(struct index )) != sizeof(struct index )) return 0;
+  if (n == index->mesg) return 1;
+  if (n < index->mesg) return 0;
+
+  if ((pos = lseek(findex, (long) (-sizeof(struct index )), 2)) < 0) halt();
+  i2 = pos / sizeof(struct index );
+  if (read(findex, (char *) index, sizeof(struct index )) != sizeof(struct index )) halt();
+  if (n == index->mesg) return 1;
+  if (n > index->mesg) return 0;
+
+  while (i1 + 1 < i2) {
+    im = (i1 + i2) / 2;
+    if (lseek(findex, (long) (im * sizeof(struct index )), 0) < 0) halt();
+    if (read(findex, (char *) index, sizeof(struct index )) != sizeof(struct index )) halt();
+    if (n == index->mesg) return 1;
+    if (n > index->mesg)
+      i1 = im;
+    else
+      i2 = im;
+  }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static int  read_allowed(index)
 struct index *index;
 {
+  if (index->deleted) return 0;
   if (level == ROOT) return 1;
   if (!index->to[1]) return 0;
   if (calleq(index->from, loginname)) return 1;
@@ -544,6 +579,7 @@ struct mail *mail;
     strncpy(index.from, get_user_from_path(mail->from), LEN_FROM);
     index.from[LEN_FROM] = '\0';
     strupc(index.from);
+    index.deleted = 0;
     if (lseek(findex, 0l, 2) < 0) halt();
     if (write(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
   }
@@ -897,33 +933,24 @@ int  argc;
 char  **argv;
 {
 
-  int  found;
   int  i;
   int  mesg;
   struct index index;
 
-  for (i = 1; i < argc; i++) {
-    found = 0;
-    if ((mesg = atoi(argv[i])) > 0) {
-      if (lseek(findex, 0l, 0)) halt();
-      while (read(findex, (char *) & index, sizeof(struct index )) == sizeof(struct index ))
-	if (index.mesg == mesg) {
-	  found = 1;
-	  if (level == ROOT                 ||
-	      calleq(index.from, loginname) ||
-	      calleq(index.to, loginname)) {
-	    if (unlink(filename(mesg))) halt();
-	    index.mesg = 0;
-	    if (lseek(findex, (long) (-sizeof(struct index )), 1) < 0) halt();
-	    if (write(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
-	    printf("Message %d deleted.\n", mesg);
-	  } else
-	    printf("Message %d not deleted:  Permission denied.\n", mesg);
-	  break;
-	}
-    }
-    if (!found) printf("No such message: '%s'.\n", argv[i]);
-  }
+  for (i = 1; i < argc; i++)
+    if ((mesg = atoi(argv[i])) > 0 && get_index(mesg, &index) && !index.deleted)
+      if (level == ROOT                 ||
+	  calleq(index.from, loginname) ||
+	  calleq(index.to, loginname)) {
+	if (unlink(filename(mesg))) halt();
+	index.deleted = 1;
+	if (lseek(findex, (long) (-sizeof(struct index )), 1) < 0) halt();
+	if (write(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+	printf("Message %d deleted.\n", mesg);
+      } else
+	printf("Message %d not deleted:  Permission denied.\n", mesg);
+    else
+      printf("No such message: '%s'.\n", argv[i]);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -954,9 +981,10 @@ char  **argv;
   do_not_exit = doforward;
   if (lseek(findex, 0l, 0)) halt();
   while (read(findex, (char *) &index, sizeof(struct index )) == sizeof(struct index )) {
-    if ((index.status == '$' && index.mesg > seq.forw ||
-	 index.status != '$' && index.status != 'F' && index.mesg && can_forward(index.at)) &&
-	!host_in_header(filename(index.mesg), loginname)) {
+    if (!index.deleted &&
+	((index.status == '$' && index.mesg > seq.forw ||
+	 index.status != '$' && index.status != 'F' && can_forward(index.at)) &&
+	!host_in_header(filename(index.mesg), loginname))) {
       do_not_exit = 1;
       printf("S%c %s%s%s < %s%s%s\n", index.type, index.to, *index.at ? " @ " : "", index.at, index.from, *index.bid ? " $" : "", index.bid);
       if (!getstring(buf)) exit(1);
@@ -1129,9 +1157,8 @@ char  **argv;
     for (; ; ) {
       if (stopped) return;
       if (read(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
-      if (index.mesg && index.mesg < min) break;
-      if (index.mesg                                   &&
-	  index.mesg <= max                            &&
+      if (index.mesg < min) break;
+      if (index.mesg <= max                            &&
 	  read_allowed(&index)                         &&
 	  (!bid      || !strcmp(index.bid, bid))       &&
 	  (!from     || !strcmp(index.from, from))     &&
@@ -1228,61 +1255,52 @@ char  **argv;
   char  *p;
   char  buf[1024];
   char  path[1024];
-  int  found;
   int  i;
   int  inheader;
   int  mesg;
   struct index index;
 
-  for (i = 1; i < argc; i++) {
-    found = 0;
-    if ((mesg = atoi(argv[i])) > 0) {
-      if (lseek(findex, 0l, 0)) halt();
-      while (read(findex, (char *) & index, sizeof(struct index )) == sizeof(struct index ))
-	if (index.mesg == mesg && read_allowed(&index)) {
-	  found = 1;
-	  if (!(fp = fopen(filename(index.mesg), "r"))) halt();
-	  printf("Msg# %d Type:%c Stat:%c To: %s%s%s From: %s Date: %s\n",
-		 index.mesg,
-		 index.type,
-		 index.status,
-		 index.to,
-		 *index.at ? " @" : "",
-		 index.at,
-		 index.from,
-		 timestr(index.date));
-	  if (*index.subject) printf("Subject: %s\n", index.subject);
-	  if (*index.bid) printf("Bulletin ID: %s\n", index.bid);
-	  *path = '\0';
-	  inheader = 1;
-	  while (fgets(buf, sizeof(buf), fp)) {
-	    if (stopped) {
-	      fclose(fp);
-	      return;
-	    }
-	    if (inheader) {
-	      if (p = get_host_from_header(buf)) {
-		strcat(path, *path ? "!" : "Path: ");
-		strcat(path, p);
-		continue;
-	      }
-	      if (*path) puts(path);
-	      inheader = 0;
-	    }
-	    fputs(buf, stdout);
-	  }
-	  putchar('\n');
+  for (i = 1; i < argc; i++)
+    if ((mesg = atoi(argv[i])) > 0 && get_index(mesg, &index) && read_allowed(&index)) {
+      if (!(fp = fopen(filename(mesg), "r"))) halt();
+      printf("Msg# %d Type:%c Stat:%c To: %s%s%s From: %s Date: %s\n",
+	     index.mesg,
+	     index.type,
+	     index.status,
+	     index.to,
+	     *index.at ? " @" : "",
+	     index.at,
+	     index.from,
+	     timestr(index.date));
+      if (*index.subject) printf("Subject: %s\n", index.subject);
+      if (*index.bid) printf("Bulletin ID: %s\n", index.bid);
+      *path = '\0';
+      inheader = 1;
+      while (fgets(buf, sizeof(buf), fp)) {
+	if (stopped) {
 	  fclose(fp);
-	  if (index.status == 'N' && (index.type != 'P' || calleq(index.to, loginname))) {
-	    index.status = 'Y';
-	    if (lseek(findex, (long) (-sizeof(struct index )), 1) < 0) halt();
-	    if (write(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
-	  }
-	  break;
+	  return;
 	}
-    }
-    if (!found) printf("No such message: '%s'.\n", argv[i]);
-  }
+	if (inheader) {
+	  if (p = get_host_from_header(buf)) {
+	    strcat(path, *path ? "!" : "Path: ");
+	    strcat(path, p);
+	    continue;
+	  }
+	  if (*path) puts(path);
+	  inheader = 0;
+	}
+	fputs(buf, stdout);
+      }
+      putchar('\n');
+      fclose(fp);
+      if (index.status == 'N' && (index.type != 'P' || calleq(index.to, loginname))) {
+	index.status = 'Y';
+	if (lseek(findex, (long) (-sizeof(struct index )), 1) < 0) halt();
+	if (write(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+      }
+    } else
+      printf("No such message: '%s'.\n", argv[i]);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1428,15 +1446,16 @@ char  **argv;
   for (; ; ) {
     n = read(findex, (char *) (pi = index), 1000 * sizeof(struct index )) / sizeof(struct index );
     if (n < 1) break;
-    for (; n; n--, pi++)
-      if (pi->mesg) {
+    for (; n; n--, pi++) {
+      highest = pi->mesg;
+      if (!pi->deleted) {
 	active++;
-	highest = pi->mesg;
 	if (read_allowed(pi)) {
 	  readable++;
 	  if (pi->mesg > listed) new++;
 	}
       }
+    }
   }
   printf("%5d highest message number\n", highest);
   printf("%5d active messages\n", active);
@@ -1473,11 +1492,11 @@ char  **argv;
   if ((f = open(tempfile, O_WRONLY | O_CREAT | O_EXCL, 0644)) < 0) halt();
   if (lseek(findex, 0l, 0)) halt();
   while (read(findex, (char *) &index, sizeof(struct index )) == sizeof(struct index )) {
-    delete = (index.mesg == 0 && *index.bid == '\0')      ||
-	     (index.mesg == 0 && index.date < keepdate)   ||
+    delete = (index.deleted && !*index.bid)               ||
+	     (index.deleted && index.date < keepdate)     ||
 	     (index.type == 'P' && index.date < keepdate) ||
 	     (index.status == 'F');
-    if (index.mesg) {
+    if (!index.deleted) {
       index.size = (delete || stat(filename(index.mesg), &statbuf)) ? 0 : statbuf.st_size;
       if (!index.size) {
 	delete = 1;
@@ -1538,19 +1557,19 @@ char  **argv;
     switch (cmd) {
     case '\b':
       if (pi > indexarray) pi--;
-      while (!pi->mesg && pi > indexarray) pi--;
-      while (!pi->mesg && pi < indexarray + (indexarrayentries - 1)) pi++;
+      while (pi->deleted && pi > indexarray) pi--;
+      while (pi->deleted && pi < indexarray + (indexarrayentries - 1)) pi++;
       cmd = 'r';
       break;
     case 'k':
       if (unlink(filename(pi->mesg))) halt();
-      pi->mesg = 0;
+      pi->deleted = 1;
       if (lseek(findex, (long) ((pi - indexarray) * sizeof(struct index )), 0) < 0) halt();
       if (write(findex, (char *) pi, sizeof(struct index )) != sizeof(struct index )) halt();
     case '\n':
       if (pi < indexarray + (indexarrayentries - 1)) pi++;
-      while (!pi->mesg && pi < indexarray + (indexarrayentries - 1)) pi++;
-      while (!pi->mesg && pi > indexarray) pi--;
+      while (pi->deleted && pi < indexarray + (indexarrayentries - 1)) pi++;
+      while (pi->deleted && pi > indexarray) pi--;
     case 'r':
       if (fp) {
 	fclose(fp);
@@ -1597,7 +1616,7 @@ char  **argv;
 	mesg = 10 * mesg + cmd - '0';
       pi = indexarray;
       while (mesg > pi->mesg && pi < indexarray + (indexarrayentries - 1)) pi++;
-      while (!pi->mesg && pi > indexarray) pi--;
+      while (pi->deleted && pi > indexarray) pi--;
       cmd = 'r';
       break;
     case 'v':
