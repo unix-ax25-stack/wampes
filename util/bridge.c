@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.5 1991/04/08 13:22:56 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.6 1991/04/18 18:14:15 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -9,6 +9,7 @@ static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampe
 #include <string.h>
 #include <sys/socket.h>
 #include <time.h>
+#include <unistd.h>
 
 #ifdef __STDC__
 #define __ARGS(x)       x
@@ -124,30 +125,24 @@ struct conn *p;
 {
 
   char  *ap;
-  char  *call[10];
   char  *dest;
-  int  i;
+  char  *src;
   int  multicast;
-  int  sent[10];
   struct conn *p1, *p1next;
 
   if ((*p->buf & 0xf) != KISS_DATA) return;
-  ap = p->buf + 1 + AXALEN;
-  i = 0;
-  for (; ; ) {
-    if (i >= 9) return;
-    call[i] = ap;
-    sent[i] = ap[6] & REPEATED;
-    i++;
-    if (ap[6] & E) break;
+  dest = p->buf + 1;
+  ap = src = dest + AXALEN;
+  while (!(ap[6] & E)) {
     ap += AXALEN;
+    if (ap[6] & REPEATED)
+      src = ap;
+    else {
+      dest = ap;
+      break;
+    }
   }
-  sent[0] = 1;
-  call[i] = p->buf + 1;
-  sent[i] = 0;
-  for (i = 0; sent[i]; i++) ;
-  memcpy(p->call, call[i-1], AXALEN);
-  dest = call[i];
+  memcpy(p->call, src, AXALEN);
   multicast = (addreq(dest, ax25_bdcst) || addreq(dest, nr_bdcst));
   for (p1 = connections; p1; p1 = p1next) {
     p1next = p1->next;
