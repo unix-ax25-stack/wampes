@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.47 1993/10/14 14:00:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.48 1993/10/31 07:25:54 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -76,7 +76,7 @@ struct login_cb {
 };
 
 static char Defaultuser[16] = "guest";
-static char Homedir[80] = "/users/funk";
+static char Homedir[80] = HOME_DIR "/funk";
 static char Logfiledir[80];
 static char Shell[80];
 static int Auto = 1;

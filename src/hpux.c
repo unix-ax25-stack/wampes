@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.46 1993/09/17 09:32:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.47 1993/10/31 07:25:53 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -24,6 +24,8 @@
 #ifndef WNOHANG
 #define WNOHANG 1
 #endif
+
+#include "configure.h"
 
 #include "global.h"
 #include "iface.h"
@@ -143,7 +145,7 @@ void ioinit(void)
     nice(-39);
   }
   if (!getenv("HOME"))
-    putenv("HOME=/users/root");
+    putenv("HOME=" HOME_DIR "/root");
   if (!getenv("LOGNAME"))
     putenv("LOGNAME=root");
   if (!getenv("PATH"))

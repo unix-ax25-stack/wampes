@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.27 1993/10/13 22:31:24 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.28 1993/10/31 07:26:24 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -20,6 +20,8 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #include <unistd.h>
 
 #include "configure.h"
+
+#include "../bbs/bbs.h"
 
 struct user {
   struct user *next;
@@ -47,7 +49,7 @@ static char aliastemp[] = "aliases.tmp";
 #else
 static char usersfile[] = "/usr/local/lib/users";
 static char userstemp[] = "/usr/local/lib/users.tmp";
-static char indexfile[] = "/users/bbs/index";
+static char indexfile[] = WRKDIR "/" INDEXFILE;
 static char passfile[]  = "/etc/passwd";
 static char passtemp[]  = "/etc/ptmp";
 static char spassfile[] = "/.secure/etc/passwd";
@@ -398,26 +400,6 @@ static int fixusers(void)
 {
 
 #define NF 20
-
-#define LEN_BID     12
-#define LEN_SUBJECT 80
-#define LEN_TO      8
-#define LEN_AT      8
-#define LEN_FROM    8
-
-  struct index {
-    long size;
-    long date;
-    int mesg;
-    char bid[LEN_BID+1];
-    char lifetime_h;
-    char subject[LEN_SUBJECT+1];
-    char lifetime_l;
-    char to[LEN_TO+1];
-    char at[LEN_AT+1];
-    char from[LEN_FROM+1];
-    char deleted;
-  };
 
   FILE *fpi, *fpo;
   char *cp;

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.54 1993/10/23 20:44:13 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.55 1993/10/31 07:25:50 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -460,8 +460,8 @@ ftpcli.o: global.h mbuf.h session.h proc.h timer.h hardware.h telnet.h ax25.h \
 	ftp.h commands.h dirutil.h
 ftpserv.o: global.h mbuf.h socket.h proc.h timer.h netuser.h tcp.h iface.h \
 	internet.h ip.h dirutil.h login.h ftp.h
-hpux.o: global.h iface.h mbuf.h proc.h timer.h files.h hardware.h login.h \
-	commands.h main.h hpux.h
+hpux.o: ../lib/configure.h global.h iface.h mbuf.h proc.h timer.h files.h \
+	hardware.h login.h commands.h main.h hpux.h
 icmp.o: global.h mbuf.h iface.h proc.h timer.h ip.h internet.h icmp.h \
 	session.h hardware.h telnet.h ax25.h netuser.h
 icmpcmd.o: global.h icmp.h mbuf.h iface.h proc.h timer.h internet.h ip.h \

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.15 1993/10/13 22:31:23 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.16 1993/10/31 07:26:23 deyke Exp $";
 #endif
 
 /* Net Update Server */
@@ -118,7 +118,7 @@ int main(void)
   alarm(6 * 3600);
 
   umask(022);
-  putenv("HOME=/users/root");
+  putenv("HOME=" HOME_DIR "/root");
   putenv("LOGNAME=root");
   putenv("PATH=/bin:/usr/bin:/usr/local/bin:/usr/contrib/bin");
   putenv("SHELL=/bin/sh");
@@ -158,12 +158,12 @@ int main(void)
   printf((flags & USE_GZIP)  ? " GZIP"  : " COMPRESS");
   printf("\n");
 
-  sprintf(buf, "/users/funk/dk5sg/tcp.%s", client);
+  sprintf(buf, HOME_DIR "/funk/dk5sg/tcp.%s", client);
   if (chdir(buf)) pexit(buf);
 
   tmpnam(filename);
   sprintf(buf,
-	  "/users/funk/dk5sg/tcp/util/genupd %s %s | %s > %s",
+	  "/tcp/util/genupd %s %s | %s > %s",
 	  client,
 	  (flags & USE_PATCH) ? "patch"   : "ex",
 	  (flags & USE_GZIP)  ? GZIP_PROG " -9" : "compress",

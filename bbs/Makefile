@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.28 1993/10/13 22:31:06 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.29 1993/10/31 07:26:12 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -97,7 +97,7 @@ sfstat: sfstat.o
 	@sleep 1
 	$(CC) $(CFLAGS) $? $(LIBS) -o $@
 
-install: /usr/local/bin/bbs findpath killdup /usr/local/bin/sfstat /users/bbs/help
+install: /usr/local/bin/bbs findpath killdup /usr/local/bin/sfstat /usr/local/lib/bbs.help
 
 /usr/local/bin/bbs: bbs
 	$(MKDIR)
@@ -112,7 +112,7 @@ install: /usr/local/bin/bbs findpath killdup /usr/local/bin/sfstat /users/bbs/he
 	$(RMTARGET)
 	cp $? $@
 
-/users/bbs/help: help
+/usr/local/lib/bbs.help: help
 	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
@@ -121,7 +121,7 @@ clean:; rm -f *.o $(TARGETS) *~
 
 depend:; @mkmf
 ###
-bbs.o: bbs.h ../lib/buildsaddr.h ../lib/configure.h ../lib/strdup.h
-findpath.o: bbs.h
-killdup.o: bbs.h
-sfstat.o: bbs.h
+bbs.o: bbs.h ../lib/configure.h ../lib/buildsaddr.h ../lib/strdup.h
+findpath.o: bbs.h ../lib/configure.h
+killdup.o: bbs.h ../lib/configure.h
+sfstat.o: bbs.h ../lib/configure.h
