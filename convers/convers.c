@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.2 1988/08/29 22:27:48 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.3 1988/09/01 21:29:32 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -13,6 +13,8 @@ static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampe
 extern char  *getenv();
 extern void exit();
 extern void perror();
+
+#define PORT 3600
 
 static struct termio prev_termio;
 static struct utsname utsname;
@@ -35,10 +37,10 @@ char  **argv;
 {
 
   char  *hostname;
-  char  buffer[1024];
+  char  buffer[2048];
   char  c;
-  char  inbuf[1024];
-  char  outbuf[1024];
+  char  inbuf[2048];
+  char  outbuf[2048];
   int  echo;
   int  i;
   int  incnt = 0;
@@ -59,12 +61,12 @@ char  **argv;
 
   if (uname(&utsname)) stop(*argv);
   addr.sin_family = AF_INET;
-  if (!(hp = gethostbyname(hostname = argc >= 2 ? argv[1] : utsname.nodename))) {
+  if (!(hp = gethostbyname(hostname = (argc >= 2) ? argv[1] : utsname.nodename))) {
     fprintf(stderr, "%s: %s not found in /etc/hosts\n", *argv, hostname);
     stop(0);
   }
   addr.sin_addr.s_addr = ((struct in_addr *) (hp->h_addr))->s_addr;
-  addr.sin_port = 9876;
+  addr.sin_port = (argc >= 3) ? atoi(argv[2]) : PORT;
   close(3);
   if (socket(AF_INET, SOCK_STREAM, 0) != 3) stop(*argv);
   if (connect(3, &addr, sizeof(struct sockaddr_in ))) stop(*argv);

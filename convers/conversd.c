@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 1.3 1988/08/30 22:19:42 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 1.4 1988/09/01 21:29:36 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -16,7 +16,7 @@ extern long  time();
 extern void exit();
 extern void free();
 
-#define PORT 9876
+#define PORT 3600
 
 struct mbuf {
   struct mbuf *next;
@@ -26,6 +26,7 @@ struct mbuf {
 struct connection {
   struct connection *next;
   int  fd;
+  int  fmask;
   long  time;
   int  channel;
   int  closed;
@@ -134,124 +135,30 @@ char  *string;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *getarg(iptr)
-char  *iptr;
+static char  *getarg(line, all)
+char  *line;
+int  all;
 {
 
   char  *arg;
-  int  c;
-  static char  *ip;
+  int  c, quote;
+  static char  *p;
 
-  if (iptr) ip = iptr;
-  while (*ip == ' ' || *ip == '\t') ip++;
-  arg = ip;
-  while (*ip && *ip != ' ' && *ip != '\t') {
-    c = tolower(*ip & 0xff);
-    *ip++ = c;
-  }
-  if (*ip) *ip++ = '\0';
+  if (line) p = line;
+  while (isspace(*p & 0xff)) p++;
+  if (all) return p;
+  quote = '\0';
+  if (*p == '"' || *p == '\'') quote = *p++;
+  arg = p;
+  if (quote) {
+    if (!(p = strchr(p, quote))) p = "";
+  } else
+    while (*p && !isspace(*p & 0xff)) {
+      c = tolower(*p & 0xff);
+      *p++ = c;
+    }
+  if (*p) *p++ = '\0';
   return arg;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void doconnect(flisten)
-int  flisten;
-{
-
-  int  addrlen;
-  int  fd;
-  struct connection *cp;
-  struct sockaddr_in addr_in;
-
-  addrlen = sizeof(addr_in);
-  if ((fd = accept(flisten, &addr_in, &addrlen)) < 0) return;
-  cp = (struct connection *) calloc(1, sizeof(struct connection ));
-  cp->next = connections;
-  connections = cp;
-  cp->fd = fd;
-  cp->time = time(0l);
-  appendstring(&cp->obuf, "conversd $Revision: 1.3 $  Type /HELP for help.\n");
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void bye_command(cp)
-struct connection *cp;
-{
-  char  buffer[2048];
-
-  cp->closed = 1;
-  sprintf(buffer, "*** %s signed off.\n", cp->user);
-  sendchannel(cp, buffer);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void channel_command(cp)
-struct connection *cp;
-{
-
-  char  buffer[2048];
-  int  newchannel;
-
-  newchannel = atoi(getarg(0));
-  if (cp->channel == newchannel) return;
-  sprintf(buffer, "*** %s signed off.\n", cp->user);
-  sendchannel(cp, buffer);
-  cp->channel = newchannel;
-  sprintf(buffer, "*** %s signed on.\n", cp->user);
-  sendchannel(cp, buffer);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void help_command(cp)
-struct connection *cp;
-{
-  appendstring(&cp->obuf, "Commands may be abbreviated. Commands are:\n");
-
-  appendstring(&cp->obuf, "/?           Print help information\n");
-  appendstring(&cp->obuf, "/BYE         Terminate the convers session\n");
-  appendstring(&cp->obuf, "/CHANNEL n   Switch to channel n\n");
-  appendstring(&cp->obuf, "/EXIT        Terminate the convers session\n");
-  appendstring(&cp->obuf, "/HELP        Print help information\n");
-  appendstring(&cp->obuf, "/QUIT        Terminate the convers session\n");
-  appendstring(&cp->obuf, "/WHO         Print all users and their channel numbers\n");
-
-  appendstring(&cp->obuf, "***\n");
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void name_command(cp)
-struct connection *cp;
-{
-  char  buffer[2048];
-
-  if (*cp->user) return;
-  strcpy(cp->user, getarg(0));
-  sprintf(buffer, "*** %s signed on.\n", cp->user);
-  sendchannel(cp, buffer);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void who_command(cp)
-struct connection *cp;
-{
-
-  char  buffer[2048];
-  struct connection *p;
-  struct tm *tm;
-
-  appendstring(&cp->obuf, "Channel  Time   User\n");
-  for (p = connections; p; p = p->next) {
-    tm = localtime(&p->time);
-    sprintf(buffer, "%7d  %2d:%02d  %s\n", p->channel, tm->tm_hour, tm->tm_min, p->user);
-    appendstring(&cp->obuf, buffer);
-  }
-  appendstring(&cp->obuf, "***\n");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -296,6 +203,128 @@ char  *prefix, *text;
 
 /*---------------------------------------------------------------------------*/
 
+static void doconnect(flisten)
+int  flisten;
+{
+
+  int  addrlen;
+  int  fd;
+  struct connection *cp;
+  struct sockaddr_in addr_in;
+
+  addrlen = sizeof(addr_in);
+  if ((fd = accept(flisten, &addr_in, &addrlen)) < 0) return;
+  cp = (struct connection *) calloc(1, sizeof(struct connection ));
+  cp->next = connections;
+  connections = cp;
+  cp->fd = fd;
+  cp->fmask = (1 << fd);
+  cp->time = time(0l);
+  appendstring(&cp->obuf, "conversd $Revision: 1.4 $  Type /HELP for help.\n");
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void bye_command(cp)
+struct connection *cp;
+{
+  char  buffer[2048];
+
+  cp->closed = 1;
+  sprintf(buffer, "*** %s signed off.\n", cp->user);
+  sendchannel(cp, buffer);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void channel_command(cp)
+struct connection *cp;
+{
+
+  char  buffer[2048];
+  int  newchannel;
+
+  newchannel = atoi(getarg(0, 0));
+  if (cp->channel == newchannel) return;
+  sprintf(buffer, "*** %s signed off.\n", cp->user);
+  sendchannel(cp, buffer);
+  cp->channel = newchannel;
+  sprintf(buffer, "*** %s signed on.\n", cp->user);
+  sendchannel(cp, buffer);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void help_command(cp)
+struct connection *cp;
+{
+  appendstring(&cp->obuf, "Commands may be abbreviated. Commands are:\n");
+
+  appendstring(&cp->obuf, "/?                   Print help information\n");
+  appendstring(&cp->obuf, "/BYE                 Terminate the convers session\n");
+  appendstring(&cp->obuf, "/CHANNEL n           Switch to channel n\n");
+  appendstring(&cp->obuf, "/EXIT                Terminate the convers session\n");
+  appendstring(&cp->obuf, "/HELP                Print help information\n");
+  appendstring(&cp->obuf, "/MSG user text...    Send a private message to user\n");
+  appendstring(&cp->obuf, "/QUIT                Terminate the convers session\n");
+  appendstring(&cp->obuf, "/WHO                 Print all users and their channel numbers\n");
+  appendstring(&cp->obuf, "/WRITE user text...  Send a private message to user\n");
+
+  appendstring(&cp->obuf, "***\n");
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void msg_command(cp)
+struct connection *cp;
+{
+
+  char  *msg;
+  char  *user;
+  char  buffer[2048];
+  struct connection *p;
+
+  user = getarg(0, 0);
+  sprintf(buffer, "<*%s*>:", cp->user);
+  msg = formatline(buffer, getarg(0, 1));
+  for (p = connections; p; p = p->next)
+    if (!strcmp(p->user, user)) appendstring(&p->obuf, msg);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void name_command(cp)
+struct connection *cp;
+{
+  char  buffer[2048];
+
+  if (*cp->user) return;
+  strcpy(cp->user, getarg(0, 0));
+  sprintf(buffer, "*** %s signed on.\n", cp->user);
+  sendchannel(cp, buffer);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void who_command(cp)
+struct connection *cp;
+{
+
+  char  buffer[2048];
+  struct connection *p;
+  struct tm *tm;
+
+  appendstring(&cp->obuf, "Channel  Time   User\n");
+  for (p = connections; p; p = p->next) {
+    tm = localtime(&p->time);
+    sprintf(buffer, "%7d  %2d:%02d  %s\n", p->channel, tm->tm_hour, tm->tm_min, p->user);
+    appendstring(&cp->obuf, buffer);
+  }
+  appendstring(&cp->obuf, "***\n");
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void process_input(cp)
 struct connection *cp;
 {
@@ -310,9 +339,11 @@ struct connection *cp;
     "channel", channel_command,
     "exit",    bye_command,
     "help",    help_command,
+    "msg",     msg_command,
     "name",    name_command,
     "quit",    bye_command,
     "who",     who_command,
+    "write",   msg_command,
 
     0, 0
   };
@@ -323,7 +354,7 @@ struct connection *cp;
   struct cmdtable *cmdp;
 
   if (*cp->ibuf == '/') {
-    arglen = strlen(arg = getarg(cp->ibuf + 1));
+    arglen = strlen(arg = getarg(cp->ibuf + 1, 0));
     for (cmdp = cmdtable; cmdp->name; cmdp++)
       if (!strncmp(cmdp->name, arg, arglen)) {
 	(*cmdp->fnc)(cp);
@@ -339,12 +370,15 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
-main()
+main(argc, argv)
+int  argc;
+char  **argv;
 {
 
   char  buffer[2048];
   char  c;
   int  flisten;
+  int  flistenmask;
   int  i;
   int  nfd;
   int  rmask, wmask;
@@ -358,10 +392,11 @@ main()
   putenv("TZ=MEZ-1MESZ");
 
   if ((flisten = socket(AF_INET, SOCK_STREAM, 0)) < 0) exit(1);
+  flistenmask = (1 << flisten);
   memset((char *) & addr_in, 0, sizeof(addr_in ));
   addr_in.sin_family = AF_INET;
   addr_in.sin_addr.s_addr = INADDR_ANY;
-  addr_in.sin_port = PORT;
+  addr_in.sin_port = (argc >= 2) ? atoi(argv[1]) : PORT;
   setsockopt(flisten, SOL_SOCKET, SO_REUSEADDR, (char *) 0, 0);
   if (bind(flisten, &addr_in, sizeof(addr_in ))) exit(1);
   if (listen(flisten, 20)) exit(1);
@@ -371,20 +406,20 @@ main()
     free_closed_connections();
 
     nfd = flisten + 1;
-    rmask = (1 << flisten);
+    rmask = flistenmask;
     wmask = 0;
     for (cp = connections; cp; cp = cp->next) {
       if (nfd <= cp->fd) nfd = cp->fd + 1;
-      rmask |= (1 << cp->fd);
-      if (cp->obuf) wmask |= (1 << cp->fd);
+      rmask |= cp->fmask;
+      if (cp->obuf) wmask |= cp->fmask;
     }
     select(nfd, &rmask, &wmask, (int *) 0, (struct timeval *) 0);
 
-    if (rmask & (1 << flisten)) doconnect(flisten);
+    if (rmask & flistenmask) doconnect(flisten);
 
     for (cp = connections; cp; cp = cp->next) {
 
-      if (rmask & (1 << cp->fd))
+      if (rmask & cp->fmask)
 	if ((size = read(cp->fd, buffer, sizeof(buffer))) <= 0)
 	  bye_command(cp);
 	else
@@ -395,8 +430,8 @@ main()
 	      break;
 	    case '\n':
 	    case '\r':
-	      cp->ibuf[cp->icnt] = '\0';
 	      if (cp->icnt) {
+		cp->ibuf[cp->icnt] = '\0';
 		process_input(cp);
 		cp->icnt = 0;
 	      }
@@ -407,7 +442,7 @@ main()
 	      break;
 	    }
 
-      if (wmask & (1 << cp->fd)) {
+      if (wmask & cp->fmask) {
 	c = pullchar(&cp->obuf);
 	write(cp->fd, &c, 1);
       }
