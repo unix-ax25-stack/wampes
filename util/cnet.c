@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.3 1989/01/16 21:44:52 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.4 1990/02/14 12:27:10 deyke Exp $";
 
 #include <sys/types.h>
 
@@ -56,8 +56,7 @@ char  **argv;
     } else {
       size = read(3, buffer, sizeof(buffer));
       if (size <= 0) break;
-      for (i = 0; i < size; i++)
-	if (buffer[i] != '\r') putchar(buffer[i]);
+      for (i = 0; i < size; i++) putchar(buffer[i]);
       fflush(stdout);
     }
   }
