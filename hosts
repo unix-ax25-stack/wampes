@@ -1150,6 +1150,7 @@
 44.130.20.2     st.dg2kk        # Walter Doerr (Atari)
 44.130.20.3     oh2mkq-dh
 44.130.20.4     dl4ydp
+44.130.20.5     dl4kbs  # Tobias Dingwerth, 52070 Aachen
 44.130.20.10    dg2kca  # Wolfram Sauerteig, 5100 Aachen
 44.130.20.12    dk0af   # AMDAT e.V., 5100 Aachen; SUN-Gateway
 44.130.20.13    dk0af-1 #
@@ -1200,7 +1201,6 @@
 44.130.20.77    dj2im-8 # Erich Vogelsang, 5170 Juelich Fachhochschule
 44.130.20.78    db0bm   # Netzknoten Juelich; ***, AX25: DB0BM-8 via DB0BM
 44.130.20.79    dk0hj   # Fachhochschule, 5170 Juelich
-44.130.20.80    dl4ybg  # Mark Wahl, 5100 Aachen
 44.130.20.81    dj0ju   # Henrik Olsen, 5138 Heinsberg Karken
 44.130.20.83    db1pd   # Manfred Jost, 5100 Aachen
 44.130.20.84    dl5kce  # Axel Pfaff, Eschweiler
@@ -5573,31 +5573,29 @@
 44.144.22.1     on1abr  on1abr.ampr.org #Igor,Grimbergen
 #
 #
-#                             H O S T S . N E T
+#  March 11th,1995
 #
-#  March 27th , 1994 .
-#
-# 44.151        Pierre-Francois MONET  f5bqp  (FRANCE)
+#  44.151       Pierre-Francois MONET  f5bqp  (FRANCE)
 #
 #
-#               BBS :   f5bqp@ff6ptt-1
-#
+#               BBS      :   f5bqp@ff6ptt-1
+#               Internet :   pf@paris.csd.harris.com
 
-44.151.01.1     f1iqa f1iqa.ampr.org
+44.151.1.1      f1iqa f1iqa.ampr.org
 
-44.151.02.1     f5jvi f5jvi.ampr.org
+44.151.2.1      f5jvi f5jvi.ampr.org
 
-44.151.04.1     f6gzl-1 f6gzl-1.ampr.org
+44.151.4.1      f6gzl-1 f6gzl-1.ampr.org
 
-44.151.06.1     f5cau f5cau.ampr.org
-44.151.06.2     f6hzo f6hzo.ampr.org
-44.151.06.3     f6kdj f6kdj.ampr.org
-44.151.06.4     f1ddl f1ddl.ampr.org
-44.151.06.5     f1bdb f1bdb.ampr.org
-44.151.06.6     f5pxm f5pxm.ampr.org
-44.151.06.7     f1syy f1syy.ampr.org
+44.151.6.1      f5cau f5cau.ampr.org
+44.151.6.2      f6hzo f6hzo.ampr.org
+44.151.6.3      f6kdj f6kdj.ampr.org
+44.151.6.4      f1ddl f1ddl.ampr.org
+44.151.6.5      f1bdb f1bdb.ampr.org
+44.151.6.6      f5pxm f5pxm.ampr.org
+44.151.6.7      f1syy f1syy.ampr.org
 
-44.151.08.1     f6aku f6aku.ampr.org
+44.151.8.1      f6aku f6aku.ampr.org
 
 44.151.13.1     f5pz f5pz.ampr.org
 44.151.13.2     f5raj f5raj.ampr.org
@@ -5607,19 +5605,19 @@
 44.151.13.6     f6fsu f6fsu.ampr.org
 44.151.13.7     f5me f5me.ampr.org
 44.151.13.8     f1hgh f1hgh.ampr.org
+44.151.13.9     f5nkg f5nkg.ampr.org
+
+44.151.16.1     f5rue f5rue.ampr.org
+44.151.16.2     fa1lqp fa1lqp.ampr.org
 
 44.151.17.1     f1rke f1rke.ampr.org
 
 44.151.20.1     f5npb-1 f5npb-1.ampr.org
 
-44.151.21.1
-44.151.21.2
+44.151.21.2     f1iyj f1iyj.ampr.org
 44.151.21.3     f1ref f1ref.ampr.org
 44.151.21.4     f5oeg f5oeg.ampr.org
 44.151.21.5     f1rgv f1rgv.ampr.org
-44.151.21.6
-44.151.21.7
-44.151.21.8
 44.151.21.9     f5pcw f5pcw.ampr.org
 44.151.21.10    f5fyu f5fyu.ampr.org
 
@@ -5630,6 +5628,11 @@
 44.151.25.3     f5jio-1 f5jio-1.ampr.org
 
 44.151.26.1     f5odp f5odp.ampr.org
+44.151.26.2     f5odp-2 f5odp-2.ampr.org
+44.151.26.3     f5odp-3 f5odp-3.ampr.org
+44.151.26.4     f5odp-4 f5odp-4.ampr.org
+44.151.26.5     f5odp-5 f5odp-5.ampr.org
+44.151.26.7     f5odp-7 f5odp-7.ampr.org
 
 44.151.27.1     f6gnj f6gnj.ampr.org
 
@@ -5641,6 +5644,7 @@
 
 44.151.31.1     f6css f6css.ampr.org
 44.151.31.2     f1foy f1foy.ampr.org
+44.151.31.3     f1jtr f1jtr.ampr.org
 
 44.151.33.1     f5nnn f5nnn.ampr.org
 44.151.33.2     f1ont f1ont.ampr.org
@@ -5653,6 +5657,8 @@
 44.151.34.1     f5rws f5rws.ampr.org
 44.151.34.2     f1fnm f1fnm.ampr.org
 44.151.34.3     f1dmg f1dmg.ampr.org
+44.151.34.4     f1ebv f1ebv.ampr.org
+44.151.34.5     f1ert f1ert.ampr.org
 
 44.151.36.1     f6ctb f6ctb.ampr.org
 
@@ -5660,7 +5666,7 @@
 44.151.38.2     f5oxl f5oxl.ampr.org
 44.151.38.3     f1epq f1epq.ampr.org
 44.151.38.4     f1ang f1ang.ampr.org
-44.151.38.5     f1rga f1rga.ampr.org
+44.151.38.5     f5kga f5kga.ampr.org
 44.151.38.6     f5puy f5puy.ampr.org
 44.151.38.7     f5yw f5yw.ampr.org
 44.151.38.8     f5git f5git.ampr.org
@@ -5672,14 +5678,29 @@
 44.151.38.14    f5ocd f5ocd.ampr.org
 44.151.38.15    f1rpc f1rpc.ampr.org
 44.151.38.16    f6kjj f6kjj.ampr.org
-44.151.38.17    f1ibu f1ibu.ampr.org
+44.151.38.17    fa1jhd fa1jhd.ampr.org
 44.151.38.18    fa1iic-9 fa1iic-9.ampr.org
 44.151.38.19    f1iju f1iju.ampr.org
-44.151.38.128   f1rga-2 f1rga-2.ampr.org
-44.151.38.129   f1ojj-2 f1ojj-2.ampr.org
+44.151.38.20    f5gjj f5gjj.ampr.org
+44.151.38.21    f5rqg f5rqg.ampr.org
+44.151.38.22    f5jbx f5jbx.ampr.org
+44.151.38.23    f3kk  f3kk.ampr.org
+44.151.38.24    f1smf f1smf.ampr.org
+44.151.38.25    f6hxz f6hxz.ampr.org
+44.151.38.26    f1tco f1tco.ampr.org
+44.151.38.100   f5puy-9 f5puy-9.ampr.org
+44.151.38.108   f5git-1 f5git-1.ampr.org
+44.151.38.109   f5git-2 f5git-2.ampr.org
+44.151.38.110   f5git-3 f5git-3.ampr.org
+44.151.38.111   f5git-4 f5git-4.ampr.org
+44.151.38.129   f6kjj-2 f6kjj-2.ampr.org
+44.151.38.130   f6kjj-7 f6kjj-7.ampr.org
+44.151.38.254   pa0kkv-1 pa0kkv-1.ampr.org
 
 44.151.39.1     f5sn f5sn.ampr.org
 44.151.39.2     f1tiv f1tiv.ampr.org
+44.151.39.3     f1ivt f1ivt.ampr.org
+44.151.39.4     fa1tnk fa1tnk.ampr.org
 
 44.151.41.1     f1lil f1lil.ampr.org
 44.151.41.2     f6cwo f6cwo.ampr.org
@@ -5687,7 +5708,7 @@
 44.151.44.1     f1jln f1jln.ampr.org
 44.151.44.2     f1mby f1mby.ampr.org
 44.151.44.3     f1mby-2 f1mby-2.ampr.org
-44.151.44.4     f6gnv f6gnv.ampr.org
+44.151.44.4     f1jln-2 fc1jln-2.ampr.org
 44.151.44.5     f5nwk-2 f5nwk-2.ampr.org
 44.151.44.6     f5nwk f5nwk.ampr.org
 44.151.44.7     f1lqn f1lqn.ampr.org
@@ -5703,18 +5724,32 @@
 44.151.44.18    f1bcb f1bcb.ampr.org
 44.151.44.19    f1sow f1sow.ampr.org
 44.151.44.20    f5icj f5icj.ampr.org
-44.151.44.100   ff1leq ff1leq.ampr.org
-44.151.44.118   f6gez-2 f6gez-2.ampr.org
+44.151.44.21    f1hgd f1hgd.ampr.org
+44.151.44.22    f5jdz f5jdz.ampr.org
+44.151.44.23    f5itk f1itk.ampr.org
+44.151.44.24    f5iec f5iec.ampr.org
+44.151.44.25    f1sow-2 f1sow-2.ampr.org
+44.151.44.26    f6hqg f6hqg.ampr.org
+44.151.44.27    f1tbr f1tbr.ampr.org
+44.151.44.31    f6daa f6daa.ampr.org
 
 44.151.47.1     f6cnn f6cnn.ampr.org
 44.151.47.2     f5mww f5mww.ampr.org
+44.151.47.3     f6gvc f6gvc.ampr.org
+44.151.47.4     f6hrw f6hrw.ampr.org
 
 44.151.49.1     f5jpy f5jpy.ampr.org
 44.151.49.2     f1gsr f1gsr.ampr.org
 44.151.49.3     f9yb f9yb.ampr.org
+44.151.49.4     f1tro f1tro.ampr.org
+44.151.49.5     f6djc f6djc.ampr.org
 
 44.151.51.1     f1zi f1zi.ampr.org
 44.151.51.2     f6ajk f6ajk.ampr.org
+44.151.51.3     f1zi-1 f1zi-1.ampr.org
+44.151.51.4     f6kif f6kif.ampr.org
+44.151.51.5     f6kif-1 f6kif-1.ampr.org
+44.151.51.6     pa3dsz pa3dsz.ampr.org
 
 44.151.53.1     f1exl f1exl.ampr.org
 
@@ -5724,14 +5759,27 @@
 44.151.54.4     f5lbl f5lbl.ampr.org
 44.151.54.5     f5lbl-9 f5lbl-9.ampr.org
 44.151.54.6     f5sjt f5sjt.ampr.org
+44.151.54.7     f6ddw f6ddw.ampr.org
+44.151.54.8     f5sda f5sda.ampr.org
+44.151.54.9     f1rhk f1rhk.ampr.org
+44.151.54.10    f1sls f1sls.ampr.org
+44.151.54.11    f1hml f1hml.ampr.org
+44.151.54.12    f1hlh F1hlh.ampr.org
+44.151.54.13    f5len f5len.ampr.org
+44.151.54.14    f1tsb f1tsb.ampr.org
+44.151.54.15    f6ddr f6ddr.ampr.org
+44.151.54.16    f6kim f6kim.ampr.org
+44.151.54.17    f3tk f3tk.ampr.org
+44.151.54.18    f5ngz f5ngz.ampr.org
 
 44.151.55.1     f6hvg f6hvg.ampr.org
 44.151.55.2     f6hvg-1 f6hvg-1.ampr.org
 44.151.55.3     f1hdj f1hdj.ampr.org
 44.151.55.4     f5owj f5owj.ampr.org
+44.151.55.5     F5lkd f5lkd.ampr.org
 
-44.151.57.1     f5gi-1 f5gi-1.ampr.org
-44.151.57.2     f5gi f5gi.ampr.org
+44.151.57.1     f5gi f5gi.ampr.org
+44.151.57.2     f5gi-1 f5gi-1.ampr.org
 44.151.57.3     f6baz f6baz.ampr.org
 44.151.57.4     f5kab f5kab.ampr.org
 44.151.57.5     f6kgq f6kgq.ampr.org
@@ -5740,6 +5788,25 @@
 44.151.57.8     f6kat f6kat.ampr.org
 44.151.57.9     f6djw f6djw.ampr.org
 44.151.57.10    f6cha f6cha.ampr.org
+44.151.57.11    f6gdv f6gdv.ampr.org
+44.151.57.12    f5kth f5kth.ampr.org
+44.151.57.13    f6byh f6byh.ampr.org
+44.151.57.14    f1jmj f1jmj.ampr.org
+44.151.57.15    f6hdp f6hdp.ampr.org
+44.151.57.16    f1jio f1jio.ampr.org
+44.151.57.17    f5tqh f5tqh.ampr.org
+44.151.57.18    f5orq f5orq.ampr.org
+44.151.57.19    f1ngp f1ngp.ampr.org
+44.151.57.20    f1ulq f1ulq.ampr.org
+44.151.57.22    f5rcd f5rcd.ampr.org
+44.151.57.23    f5ufp f5ufp.ampr.org
+44.151.57.24    f5uij f5uij.ampr.org
+44.151.57.25    f5jqe f5jqe.ampr.org
+44.151.57.26    f1tea f1tea.ampr.org
+44.151.57.27    f1njm f1njm.ampr.org
+44.151.57.28    fa1udy fa1udy.ampr.org
+44.151.57.29    f1sis f1sis.ampr.org
+44.151.57.30    f5ocp f5ocp.ampr.org
 
 44.151.59.1     f3cf f3cf.ampr.org
 44.151.59.2     f6btx f6btx.ampr.org
@@ -5756,7 +5823,7 @@
 44.151.59.13    fa1mzi-1 fa1mzi-1.ampr.org
 44.151.59.14    fa1mzi-3 fa1mzi-3.ampr.org
 44.151.59.15    f6acy f6acy.ampr.org
-44.151.59.16    f1gum f1gum.ampr.org
+44.151.59.16    f1gum-2 f1gum-2.ampr.org
 44.151.59.17    f1dff f1dff.ampr.org
 44.151.59.18    f1dff-7 f1dff-7.ampr.org
 44.151.59.19    f5nlk f5nlk.ampr.org
@@ -5764,13 +5831,27 @@
 44.151.59.21    f1hpz-9 f1hpz-9.ampr.org
 44.151.59.22    f5jmw f5jmw.ampr.org
 44.151.59.23    f6gju f6gju.ampr.org
-44.151.59.24    f6cmn-2 f6cmn-2.ampr.org
+44.151.59.24    f6cmn f6cmn.ampr.org
 44.151.59.25    f1jbg f1jbg.ampr.org
 44.151.59.26    f5izq f5izq.ampr.org
 44.151.59.27    f1nwc f1nwc.ampr.org
+44.151.59.28    fa1pbv-1 fa1pbv-1.ampr.org
+44.151.59.29    f6dic-1 f6dic-1.ampr.org
+44.151.59.30    f1lxj f1lxj.ampr.org
+44.151.59.31    f1tuj f1tuj.ampr.org
+44.151.59.32    f6gzl-2 f6gzl-2.ampr.org
+44.151.59.33    f5rkg f5rkg.ampr.org
+44.151.59.34    fa1tbd fa1tbd.ampr.org
+44.151.59.35    fa1tyq fa1tyq.ampr.org
+44.151.59.36    f6geo f6geo.ampr.org
+44.151.59.37    f5lln f5lln.ampr.org
+44.151.59.170   f1gyg-59 f1gyg-59.ampr.org
 
 44.151.60.1     f9so f9so.ampr.org
 44.151.60.2     f9so-1 f9so-1.ampr.org
+44.151.60.3     f5yg f5yg.ampr.org
+44.151.60.4     f1czs f1czs.ampr.org
+44.151.60.5     f5sem f5sem.ampr.org
 
 44.151.62.1     f6hsi f6hsi.ampr.org
 44.151.62.2     f6hsi-3 f6hsi-3.ampr.org
@@ -5779,6 +5860,10 @@
 44.151.62.5     f1gum f1gum.ampr.org
 44.151.62.6     fb1izt fb1izt.ampr.org
 44.151.62.7     f6dfb f6dfb.ampr.org
+44.151.62.8     f5ige f5ige.ampr.org
+44.151.62.9     f1pez f1pez.ampr.org
+44.151.62.10    f1ths f1ths.ampr.org
+44.151.62.11    f5gnu f5gnu.ampr.org
 
 44.151.63.2     f6cbl-3 f6cbl-3.ampr.org
 44.151.63.3     f6cbl-4 f6cbl-4.ampr.org
@@ -5813,18 +5898,26 @@
 44.151.67.15    f5pkf f5pkf.ampr.org
 44.151.67.16    f1jfr f1jfr.ampr.org
 44.151.67.17    f1sca-3 f1sca-3.ampr.org
+44.151.67.18    f6jfd f6jfd.ampr.org
+44.151.67.19    f5lkh f5lkh.ampr.org
 
 44.151.68.1     f1aan f1aan.ampr.org
 44.151.68.2     f5sny f5sny.ampr.org
+44.151.68.3     f1ski f1ski.ampr.org
+44.151.68.4     f5pgo f5pgo.ampr.org
+44.151.68.5     f6ary f6ary.ampr.org
+44.151.68.6     f6avw f6avw.ampr.org
+44.151.68.7     f1ipi f1ipi.ampr.org
 
 44.151.69.1     f5pql f5pql.ampr.org
-44.151.69.2     f2ly f2ly.ampr.org
+44.151.69.2     f8kly f8kly.ampr.org
 44.151.69.3     f5loz f5loz.ampr.org
 44.151.69.4     f5pje f5pje.ampr.org
 44.151.69.5     f1sse f1sse.ampr.org
 44.151.69.6     f1iap f1iap.ampr.org
 44.151.69.7     f5rhy f5rhy.ampr.org
 44.151.69.8     f1roe f1roe.ampr.org
+44.151.69.10    f1its f1its.ampr.org
 
 44.151.70.1     f6cuo f6cuo.ampr.org
 44.151.70.2     f6cuo-1 f6cuo-1.ampr.org
@@ -5842,12 +5935,20 @@
 44.151.74.5     f1tim f1tim.ampr.org
 44.151.74.6     f6bgc f6bgc.ampr.org
 44.151.74.7     f1tim-1 f1tim-1.ampr.org
+44.151.74.8     f6bgc f6gc.ampr.org
+44.151.74.9     f6bgc-1 f6bgc-1.ampr.org
+44.151.74.10    f5dn f5dn.ampr.org
+44.151.74.11    f5dn-1 f5dn-1.ampr.org
+44.151.74.12    f9io f9io.ampr.org
+44.151.74.13    fa1joc fa1joc.ampr.org
 
 44.151.75.1     f6abj-2 f6abj-2.ampr.org
 44.151.75.2     f2kl f2kl.ampr.org
 44.151.75.3     f6dks f6dks.ampr.org
 44.151.75.4     f5sdm f5sdm.ampr.org
 44.151.75.5     f6gls f6gls.ampr.org
+44.151.75.6     f1suy-4 f1suy-4.ampr.org
+44.151.75.7     f1tup f1tup.ampr.org
 
 44.151.77.1     f1ebn f1ebn.ampr.org
 44.151.77.2     f1oat f1oat.ampr.org
@@ -5891,16 +5992,27 @@
 44.151.78.24    f6kfv f6kfv.ampr.org
 44.151.78.25    f6iqf f6iqf.ampr.org
 44.151.78.26    f6ktx f6ktx.ampr.org
+44.151.78.27    f6kbf f6kbf.ampr.org
+44.151.78.28    f6kbf-1 f6kbf-1.ampr.org
+44.151.78.29    f5ilg f5ilg.ampr.org
+44.151.78.30    fa1sxc fa1sxc.ampr.org
 
-44.151.80.0     f1vja-1 f1vja-1.ampr.org
+44.151.80.0     f6kvj-1 f6kvj-1.ampr.org
 44.151.80.1     f6ign f6ign.ampr.org
 44.151.80.2     f6ign-3 f6ign-3.ampr.org
 44.151.80.3     f6bvl f6bvl.ampr.org
 44.151.80.4     f6bxh f6bxh.ampr.org
 44.151.80.5     f6bxh-1 f6bxh-1.ampr.org
+44.151.80.10    f6ign-5 f6ign-5.ampr.org
+44.151.80.15    f6bxh-5 f6bxh-5.ampr.org
+44.151.80.255
 
 44.151.81.1     f1rsu f1rsu.ampr.org
 44.151.81.2     f6css-1 f6css-1.ampr.org
+44.151.81.3     f5pmd-3 f5pmd-3.ampr.org
+44.151.81.4     f5kbq-4 f5kbq-4.ampr.org
+44.151.81.5     f5rsy-1 f5rsy-1.ampr.org
+44.151.81.20    f5rsy-8 f5rsy-8.ampr.org
 
 44.151.83.1     f2xc f2xc.ampr.org
 44.151.83.2     f2ad f2ad.ampr.org
@@ -5909,17 +6021,16 @@
 44.151.83.5     f6cuo-10 f6cuo-10.ampr.org
 44.151.83.6     f6exe f6exe.ampr.org
 44.151.83.7     f5smz f5smz.ampr.org
-44.151.83.8     f5nkg f5nkg.ampr.org
 
 44.151.86.1     f6fdn f6fdn.ampr.org
 44.151.86.2     f6fdn-1 f6fdn-1.ampr.org
 44.151.86.3     f6fdn-2 f6fdn-2.ampr.org
 44.151.86.4     f3zz f3zz.ampr.org
 
-44.151.87.1     f5ojn f5ojn.ampr.org
-
 44.151.88.1     f1hpa f1hpa.ampr.org
 44.151.88.2     f6gis f6gis.ampr.org
+44.151.88.3     f1dwf f1dwf.ampr.org
+44.151.88.4     f5msr f5msr.ampr.org
 
 44.151.89.1     f1phk f1phk.ampr.org
 
@@ -5942,6 +6053,7 @@
 44.151.91.17    f1gwd f1gwd.ampr.org
 44.151.91.18    f1ofr f1ofr.ampr.org
 44.151.91.19    f6ggn f6ggn.ampr.org
+44.151.91.20    f1tpl f1tpl.ampr.org
 44.151.91.21    f6ptt-1 f6ptt-1.ampr.org
 44.151.91.22    f5poe f5poe.ampr.org
 44.151.91.23    f1mpr f1mpr.ampr.org
@@ -5959,15 +6071,17 @@
 44.151.91.35    f1ppk f1ppk.ampr.org
 44.151.91.36    f5ted f5ted.ampr.org
 44.151.91.37    f1euc f1euc.ampr.org
-44.151.91.38    f1bgg f1bgg.ampr.org
+44.151.91.38    f5bgg f5bgg.ampr.org
 44.151.91.39    f1euc-1 f1euc-1.ampr.org
-44.151.91.40    f5gjj f5gjj.ampr.org
+44.151.91.40    f5rby-1 f5rby-1.ampr.org
 44.151.91.41    f5hnk f5hnk.ampr.org
-44.151.91.42    f6kbf f6kbf.ampr.org
-44.151.91.43    f6kbf-1 f6kbf-1.ampr.org
-44.151.91.44    f1my f1my.ampr.org
+44.151.91.44    f1my-1 f1my-1.ampr.org
 44.151.91.45    f6iqf f6iqf.ampr.org
 44.151.91.46    f1ocm f1ocm.ampr.org
+44.151.91.47    f5bgg-1 f5bgg-1.ampr.org
+44.151.91.48    f1tpm f1tpm.ampr.org
+44.151.91.49    f1tpm-1 f1tpm-1.ampr.org
+44.151.91.50    f5teo f5teo.ampr.org
 44.151.91.60    f1gyg-1 f1gyg-1.ampr.org
 44.151.91.96    f5bqp-9 f5bqp-9.ampr.org
 44.151.91.112   dl7mw dl7mw.ampr.org
@@ -5981,6 +6095,7 @@
 44.151.92.6     f1rrj f1rrj.ampr.org
 44.151.92.7     f1ser f1ser.ampr.org
 44.151.92.8     f6fhz f6fhz.ampr.org
+44.151.92.9     f1edh f1edh.ampr.org
 44.151.92.96    f1tdi-9 f1tdi-9.ampr.org
 
 44.151.93.1     f6itu f6itu.ampr.org
@@ -5992,9 +6107,13 @@
 44.151.93.7     ve2fp ve2fp.ampr.org
 44.151.93.8     fa1sek fa1sek.ampr.org
 44.151.93.9     f5kef f5kef.ampr.org
+44.151.93.10    f1suy-1 f1suy-1.ampr.org
+44.151.93.11    f5ozq f5ozq.ampr.org
+44.151.93.12    f5pzq f5pzq.ampr.org
+44.151.93.13    f5kjt f5kjt.ampr.org
+44.151.93.14    f5kjt-1 f5kjt-1.ampr.org
 
 44.151.94.1     f2zv f2zv.ampr.org
-44.151.94.2     f5st f5st.ampr.org
 44.151.94.3     f5dtk f5dtk.ampr.org
 44.151.94.4     f6hqz f6hqz.ampr.org
 44.151.94.5     f5gyw f5gyw.ampr.org
@@ -6014,6 +6133,7 @@
 44.151.94.19    f1slk f1slk.ampr.org
 44.151.94.20    f1slk-1 f1slk-1.ampr.org
 44.151.94.21    f5lxs f5lxs.ampr.org
+44.151.94.22    f1baq f1baq.ampr.org
 44.151.94.96    f5dtk-9 f5dtk-9.ampr.org
 
 44.151.95.1     f1aav f1aav.ampr.org
@@ -6026,8 +6146,8 @@
 44.151.95.8     f6huk-1 f6huk-1.ampr.org
 44.151.95.9     f6bne f6bne.ampr.org
 44.151.95.10    f1ciy f1ciy.ampr.org
+44.151.95.11    f1dru f1dru.ampr.org
 44.151.95.73    f6bzo-1 f6bzo-1.ampr.org
-
 ###
 # TCP/IP Hosts for Luxembourg 44.161.x.x
 # Coordinator: LX1BZ

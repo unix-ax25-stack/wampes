@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.10 1994/12/11 17:00:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.11 1995/03/20 08:51:06 deyke Exp $ */
 
 /* Simple Network Time Protocol (SNTP) (see RFC1361) */
 
@@ -570,8 +570,19 @@ static int dosntpadd(int argc, char **argv, void *p)
 		printf(Badhost, argv[1]);
 		return 1;
 	}
+
 	interval = (argc < 3) ? 3333 : atoi(argv[2]);
-	if (interval <= 0) interval = 3333;
+	if (interval <= 0)
+		interval = 3333;
+
+	for (peer = Peers; peer; peer = peer->next) {
+		if (peer->fsocket.address == addr) {
+			set_timer(&peer->timer, interval * 1000L);
+			sntp_client_send(peer);
+			return 0;
+		}
+	}
+
 	lsocket.address = INADDR_ANY;
 	lsocket.port = Lport++;
 	peer = (struct peer *) calloc(1, sizeof(struct peer));

@@ -1,4 +1,4 @@
-wampes-950313.tar.gz is a gzipped tar archive of WAMPES, a NET/NOS port
+wampes-950320.tar.gz is a gzipped tar archive of WAMPES, a NET/NOS port
 to various flavors of Unix.
 
 WAMPES currently supports the following configurations:
@@ -24,8 +24,8 @@ WAMPES currently supports the following configurations:
 +---------------+-----------------+-------------------------------------------+
 | NetBSD 0.8a   | 386             | Dieter Deyke <deyke@fc.hp.com>            |
 +---------------+-----------------+-------------------------------------------+
-| FreeBSD 2.1   | 386             | Paul Traina <pst@shockwave.com>           |
-| (use gmake)   |                 |                                           |
+| FreeBSD 1.x   | 386             | Paul Traina <pst@shockwave.com>           |
+| FreeBSD 2.x   |                 |                                           |
 +---------------+-----------------+-------------------------------------------+
 | BSDI 1.0      | 386             | J.R. Westmoreland <jr@upl.com>            |
 +---------------+-----------------+-------------------------------------------+
@@ -46,13 +46,14 @@ To unpack this archive you have to:
 	su
 	mkdir /tcp
 	cd /tcp
-	gzip -d < wampes-950313.tar.gz | tar xvf -
+	gzip -d < wampes-950320.tar.gz | tar xvf -
 
-After unpacking please read the file /tcp/doc/intro.txt.  For RISC iX
-you have to copy *.R to /usr/lib.  Now type "make -i" to compile and
-install everything.
+After unpacking please read the file /tcp/doc/intro.txt.  For FreeBSD
+2.1 and later, "GNU make (gmake)" must be used instead of /usr/bin/make.
+For RISC iX you have to copy *.R to /usr/lib.  Now type "make -i" to
+compile and install everything.
 
-wampes-950313.tar.gz can be found in
+wampes-950320.tar.gz can be found in
 	ftp://ftp.ucsd.edu/hamradio/packet/tcpip/incoming/
 or
 	ftp://ftp.ucsd.edu/hamradio/packet/tcpip/wampes/
