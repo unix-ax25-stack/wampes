@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.19 1991/01/02 16:50:28 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.20 1991/01/14 11:44:31 deyke Exp $";
 
 #define _HPUX_SOURCE 1
 
@@ -452,21 +452,8 @@ static void get_seq()
 
   char  buf[16];
   char  fname[1024];
-  int  must_put = 0;
-  struct stat statbuf;
 
   sprintf(fname, "%s/%s", user.dir, SEQFILE);
-
-  /*** remove old .bbsseq files owned by root ***/
-
-  if (!stat(fname, &statbuf) && statbuf.st_uid != user.uid) {
-    if ((fdseq = open(fname, O_RDONLY, 0644)) < 0) halt();
-    if (read(fdseq, buf, sizeof(buf)) >= 2) user.seq = atoi(buf);
-    close(fdseq);
-    unlink(fname);
-    must_put = 1;
-  }
-
   setresgid(user.gid, user.gid, 1);
   setresuid(user.uid, user.uid, 0);
   fdseq = open(fname, O_RDWR | O_CREAT, 0644);
@@ -478,7 +465,6 @@ static void get_seq()
     exit(1);
   }
   if (read(fdseq, buf, sizeof(buf)) >= 2) user.seq = atoi(buf);
-  if (must_put) put_seq();
 }
 
 /*---------------------------------------------------------------------------*/
