@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.40 1994/09/19 17:07:10 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.41 1994/09/26 15:46:50 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -1897,6 +1897,10 @@
 44.130.41.112   DL1UW   # Christan, Hilsbach
 44.130.41.123   DH6IAL  # Mark Weimann, Kaiserlautern; WNOS
 44.130.41.124   DL7UC   # Ludwig, Kaiserslautern
+44.130.41.130   DG4IAX  # Mario Duckstein, 67766 Hockenheim (Wampes)
+44.130.41.131   DG4IAX-U #Mario Duckstein, 67766 Hockenheim (Linux)
+44.130.41.132   DJ5JI   # Rudi Burkard, 68775 Ketsch (Wampes)
+44.130.41.133   DJ5JI-U # Rudi Burkard, 68775 Ketsch (Linux)
 44.130.41.200   DH6IAL-SVR      # Mark
 #
 #44.130.42.x    Koblenz
@@ -2332,6 +2336,7 @@
 44.130.176.51   DK3SI-LNX       #
 44.130.176.52   DG2SFC  # Dieter Klotzbuecher, 74074 Heilbronn
 44.130.176.53   DB0WAN-U        #
+44.130.176.60   DG9SGA  # Didi, Leinf.Echterdingen
 44.130.176.100  DB0RBS-10       # TCP/IP Server Schwieberdingen (DL1SEM)
 44.130.176.120  DL4IS   # Karl-Heinz Kreutel, 75245 Neulingen
 44.130.176.123  DG2SBV-SATGATE  #

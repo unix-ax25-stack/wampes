@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.22 1994/09/19 17:08:13 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.23 1994/09/26 15:47:04 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -15,7 +15,6 @@ TARGETS    = \
 	     connect2 \
 	     filter \
 	     makeiprt \
-	     mp \
 	     s2m
 
 all:;   @case "`uname -sr`" in \
@@ -129,11 +128,6 @@ makeiprt: makeiprt.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
 	$(LD) $(LDFLAGS) makeiprt.o $(LIBS) $(SLIBS) -o $@
-
-mp:     mp.o $(LIBS)
-	$(RMTARGET)
-	@sleep 1
-	$(LD) $(LDFLAGS) mp.o $(LIBS) $(SLIBS) -o $@
 
 s2m:    s2m.o $(LIBS)
 	$(RMTARGET)
