@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.4 1994/10/30 21:26:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.5 1994/11/08 14:26:25 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -594,11 +594,7 @@ static int doflexnetlinkadd(int argc, char *argv[], void *p)
 		printf("Cannot add link to myself\n");
 		return 1;
 	}
-	if (find_peer(call)) {
-		printf("Duplicate link \"%s\"\n", argv[1]);
-		return 1;
-	}
-	if (!(pp = create_peer(call))) {
+	if (!(pp = find_peer(call)) && !(pp = create_peer(call))) {
 		printf(Nospace);
 		return 1;
 	}

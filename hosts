@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.45 1994/10/30 21:26:52 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.46 1994/11/08 14:26:20 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -796,7 +796,7 @@
 44.130.17.190   DL9DK   #
 44.130.17.200   DF8XQ   # Hans Streibel, Dortmund
 #
-#44.130.18.x    Essen
+#44.130.18.xxx  und 44.130.146.xxx Essen
 # --- lokale Adress-Koordination: DF5JZ
 44.130.18.1     DD1EG   # Detlef Broetz, 4300 Essen 1
 44.130.18.2     DF5JY   # Peter Plischka, 4300 Essen 1
@@ -820,16 +820,20 @@
 44.130.18.20    DH6EAE  # Michael, Bochum
 44.130.18.21    DF2OW   # Bert, 4300 Essen 14
 44.130.18.22    DB5JY   #
-44.130.18.23    DL1EER  # Roland, 4178 Wetten
+44.130.18.23    DL1EER  # Roland 4178 Wetten
 44.130.18.24    DD8ED   # Frank Tofahrn, 4100 Duisburg 18
-44.130.18.25    DB8EG   # Roland, Duisburg
+44.130.18.25    FREI
 44.130.18.26    DH0EAV  # Schorsch, Dinslaken
-44.130.18.27    DF5JZ   # Detlef Meis, Dinslaken; Knotenrechner
-44.130.18.28    DF5JZ-TEST      # ; DET
+44.130.18.27    DF5JZ    # Detlef Meis, Dinslaken; Knotenrechner
+44.130.18.28    DF5JZ-TEST      # Detlef Meis, Dinslaken; DET
 44.130.18.29    DG5EAH  # Ursula, Dinslaken
 44.130.18.30    DB0DV   # Clubstation L30, Dinslaken
 44.130.18.31    DL2EF   # Frank
 44.130.18.32    DB6EI   # , Vorde
+44.130.18.33    dd8qk   # klaus wohlfarth
+44.130.18.34    dg8yhc  # heinz-peter sause
+44.130.18.35    dj5qe   # udo hornfischer+?>
+44.130.18.36    df7vh   # udo kirchhoff
 44.130.18.37    LAP.DH0EAV      #
 44.130.18.38    DL6EBJ  # Werner, Dinslaken
 44.130.18.39    DG5JR   # , Dinslaken
@@ -844,44 +848,45 @@
 44.130.18.48    DL7EE   # , Essen
 44.130.18.49    DG5JR-TEST      # , Dinslaken
 44.130.18.50    DK0EN   # Clubstation L10, Essen
-44.130.18.52    DF4EM   # Kai
+44.130.18.51    Frei
+44.130.18.52    DF4EM   #
 44.130.18.53    DC5JB   # Claus, Essen
 44.130.18.54    DG3ED-TEST      # Michael, Essen
-44.130.18.55    DG3ED   #
+44.130.18.55    DG3ED   # Michael, Essen
 44.130.18.56    DG2ET   # Peter, 4300 Essen
 44.130.18.57    DL3ECD  # Uli, Essen
 44.130.18.58    DH3JN   #
 44.130.18.59    DF9JY   # Hans, Essen-Kray
 44.130.18.60    DC6JQ   # Werner, Essen
 44.130.18.61    DB7EB   # Karin, Essen
-44.130.18.62    DL2EAA  # Dirk, Oberhausen (ex DG1EFW)
+44.130.18.62    DL2EAA  # Dirk, Oberhausen
 44.130.18.63    DL8EBM  # Joerg, Duisburg
 44.130.18.64    DB5JL   #
-44.130.18.65    DC9DA   # Bernd, Gelsenkirchen
-44.130.18.66    DL2EF-TEST      #
-44.130.18.67    DC4JZ   #
-44.130.18.68    DG3EAH  #
-44.130.18.69    DL1EIO  # Markus, Duisburg
+44.130.18.65    DC9DA   # Bernd Gerlsenkirchen
+44.130.18.66    DL2EF-test   #
+44.130.18.67    DC4JZ
+44.130.18.68    DG3EAH
+44.130.18.69    DL1EIO  #Markus Duisburg
 44.130.18.70    DF3EY   # Gerd, 4137 Rheurdt
-44.130.18.71    DG7EAV  # Thomas, Moers
+44.130.18.71    DG7EAV  # Thomas, Moers 3 !!DL2EBB der VorgÑnger will nicht mehr!!
 44.130.18.72    DL2PP   # Alois, Kamplintfort
 44.130.18.73    DG7EL   # , Kamplintfort
-44.130.18.74    DB1JT   #
-44.130.18.75    DB9JA   # Thomas, Essen
+44.130.18.74    DB1JT
+44.130.18.75    DB9JA   # Thomas Essen
 44.130.18.76    DB7JG   # Joerg, 5620 Velbert
 44.130.18.77    DL9EBR  # Bernhard Rateike, 4152 Kempen 3
 44.130.18.78    DG6EAJ  # Holger, 5620 Velbert
-44.130.18.79    DG1EFV  # Werner, Oberhausen
+44.130.18.79    DG1EFV  #
 44.130.18.80    DL2WP   # , Gelsenkirchen
 44.130.18.81    DF7YC   # , Gelsenkirchen
 44.130.18.82    DK7JY   # Klaus Dittloff, Oberhausen
 44.130.18.83    DB3ED   # Rudolf Fenten, 4200 Oberhausen
-44.130.18.84    DJ6DH   # Oliver Hirsch, 4630 Bochum
+44.130.18.84    DJ6DH   # Oliver Hirsch , 4630 Bochum
 44.130.18.85    DJ4EO   #
-44.130.18.86    DH2JW   # Wolfgang Hoffmann, 4100 Duisburg
-44.130.18.87    DC0EO   # Dieter, Duisburg
+44.130.18.86    DH2JW   # Wolfgang Hoffmann 4100 Duisburg
+44.130.18.87    DC0EO   # Dieter Duisburg
 44.130.18.88    DB1JR   #
-44.130.18.89    DF8QJ   # Klaus Dieter, Gladbeck
+44.130.18.89    DF8QJ   # Klaus Dieter Galdbeck
 44.130.18.90    DB2QS   # Wolfgang, Recklinghausen
 44.130.18.91    DL3QQ   # , Gladbeck
 44.130.18.92    DL1YDD  # Hartmut Paesler, 4350 Recklinghausen
@@ -891,33 +896,42 @@
 44.130.18.96    DF5DH   # Friedrich Liebig, 4250 Bottrop
 44.130.18.97    DL9DBP  # Guido Elsner, 4630 Bochum
 44.130.18.99    DG9DAX  # Martin Meise, 4630 Bochum
-44.130.18.100   DB0QS   # TCP/IP Digi Dinslaken (DF5JZ)
-44.130.18.101   DB0QS-SVR       #
-44.130.18.102   DB0QS-MAIL      #
+#
+#
+44.130.18.100   DB0QS  # TCP/IP Digi Dinslaken (DF5JZ)
+44.130.18.101   DB0QS-svr
+44.130.18.101   DB0QS-s
+44.130.18.101   DB0QS-test
+44.130.18.102   DB0QS-mail
+44.130.18.102   DB0QS-m
+#
+#
+44.130.15.105   DH5JB   # Holger ,Velbert
 44.130.18.106   DH1DAC  # Stefan Schroeer, 4630 Bochum
 44.130.18.107   DG7JD   #
 44.130.18.108   DF7EU   #
-44.130.18.109   DG1EBK  # Rainer, Essen
+44.130.18.109   DG1EBK  # Rainer Essen
+44.130.18.110   DG1EDP  # Thomas Gelsenkirchen
 44.130.18.111   DL9YAP  #
 44.130.18.112   DL1EJP  #
 44.130.18.113   DG4EAW  # Hannes, 4236 Hamminkeln
-44.130.18.114   QRL.DD9QP       # Egbert Zimmermann, 4242 Rees 1; NOS
+44.130.18.114   qrl.dd9qp       # Egbert Zimmermann, 4242 Rees 1; NOS
 44.130.18.115   DF6JZ   # , Kranenburg
-44.130.18.116   DL1EDA  # Ralf, Essen
-44.130.18.117   DK2ER   # Andre, Essen
-44.130.18.118   DL6YEW  # Werner, Gladbeck
-44.130.18.119   DG7YGE  # Theo, Gladbeck
+44.130.18.116   DL1EDA  # Ralf Essen
+44.130.18.117   DK2ER   # Andre Essen
+44.130.18.118   DL6YEW  # Werner Gladbeck
+44.130.18.119   DG7YGE  # Theo Gladbeck
 44.130.18.120   DF9DD   # Eckhard Schnaare, 4320 Hattingen
-44.130.18.121   DJ7ES   # Horst, Muelheim
-44.130.18.122   DL1EFJ  # Norbert
-44.130.18.123   DJ0MDW  # , Essen
-44.130.18.124   DJ2JC   # Joerg, Essen
-44.130.18.125   DG2EN   # Klaus
-44.130.18.126   DG3EAJ  # Hans Wilhelm, Duisburg
+44.130.18.121   DJ7ES   # Horst MÅlheim
+44.130.18.122   DL1EFJ  #
+44.130.18.123   DJ0MDW  #       Essen
+44.130.18.124   DJ2JC   # Joerg Essen
+44.130.18.125   DG2EN   # Klaus Duisbur
+44.130.18.126   DG3EAJ  # Hanz Wilchelm Duisburg
 44.130.18.128   DD8ED-1 # OBTEST
-44.130.18.130   DH4JT   # Thomas Klapper, 4300 Essen
-44.130.18.131   DF7EU-2 #
-44.130.18.132   DG7JB   # Juergen, Essen
+44.130.18.130   DH4JT   #
+44.130.18.131   DF7EU   #
+44.130.18.132   DG7JB   # JÅrgen Essen
 44.130.18.139   DL3JR   #
 44.130.18.140   DL3EAM  # Rolf, 4130 Moers
 44.130.18.141   DJ8IO   # Conni, Moers
@@ -934,61 +948,66 @@
 44.130.18.152   DH3JE   # Jens, Muehlheim
 44.130.18.153   DD7EZ   # Kai, Muehlheim
 44.130.18.154   DG9YFH  # Thomas, Herten
-44.130.18.155   DL1ELY  # Stefan, Voerde (ex DD9EP)
-44.130.18.156   DL6YEM  # Heiko, Recklinghausen
-44.130.18.157   DG7YGP  # Carsten Michel, Marl
-44.130.18.158   DG1EIL  # Erik, Essen
-44.130.18.159   DL8MDV  # Marten Guettner, 4330 Muelheim
-44.130.18.160   DL5EAT  #
-44.130.18.161   DL1EFR  # Dieter, Ringenberg
-44.130.18.162   DL2EAA-SYS      #
-44.130.18.163   DG1ECE  # Ulrich, Moers
-44.130.18.164   DH4DAN-2        # Joerg, Castrop-Rauxel
-44.130.18.165   DL3YDM  # Michael, Bottrop
-44.130.18.167   DL5YEY  # Joerg, Bottrop
-44.130.18.171   DL9EBR-1        #
-44.130.18.172   DL1EKZ  # Hans Kindel, 4130 Moers
-44.130.18.173   DL1YAF  # Christof, Bottrop
-44.130.18.174   DG6YDV  # Juergen, Oberhausen
-44.130.18.187   DG1EAD-2        # Dieter Hinsch, Duesseldorf
-44.130.18.188   DB6QB   # Joerg Willimzik, Recklinghausen; AT386
-44.130.18.189   DG4YFV  # Eddy, Dorsten
-44.130.18.190   DG5EAU  # Michael, Meerbusch
-44.130.18.191   DG6EAU  # , Meerbusch
+44.130.18.155   DL1ELY  #EX DD9EP   Steffan Voerde
+44.130.18.156   DL6YEM  # Recklinkhausen
+44.130.18.157   DH7YAX  # Carsten , Marl  EX DG7YGP
+44.130.18.158   DG1EIL  # Erik Essen
+44.130.18.159   DL8MDV  #
+44.130.18.160   DL5EAT
+44.130.18.161   DL1EFR  # Dieter Ringenberg
+44.130.18.162   DL2EAA-SYS
+44.130.18.163   DG1ECE  # Ulrich Moers
+44.130 18.164   DH4DAN  # Jîrg Castrop-Rauxel
+44.130.18.165   DL3YDM  # Michael Bottropp
+44.130.18.166   DH5JF   # Albrecht Muehlheim
+44.130.18.167   DL5YEY  # Joerg    Bottrop
+44.130.18.168   DJ0PR   # Harry Kempen
+44.130.18.171   DL9EBR-U
+44.130.18.172   DL1EKZ Hans Kindel, Wittfeldstr. 13  4130 Moers
+44.130.18.173   DL1YAF  # Christof Bottrop
+44.130.18.174   DG6YDV  # Jurgen   Oberhausen
+44.130.18.175   DH6JG   # Gerd Niederkruechten-Emlpt
+44.130.18.180   DL8YEX  # Holger
+44.130.18.187   DG1EAD Dieter Hinsch Duesseldorf
+44.130.18.188   DB6QB   # Joerg  Rechlinkgausen
+44.130.18.189   DG4YFV  # EDDI Dorsten
+44.130.18.190   DG5EAU  # Michael Meerbusch
+44.130.18.191   DG6EAU  #         Meerbusch
+44.130.18.192   DL9YEZ  # Lars Gollub, 4370 Marl ex DG6YGL [44.130.18.190]
 44.130.18.200   DL0THE  # Technisches Hilfswerk, Essen
 44.130.18.201   DL2DBS  # Uwe, Bochum
-44.130.18.202   DL6EO   # Michael, Essen (ex DD8EO)
-44.130.18.203   DG5EH   # Marco, Essen
+44.130.18.202   DL6EO   # Micheal Essen
+44.130.18.203   DG5EH   # Marco Essen
 44.130.18.205   DL3DAZ  # Falk, Bochum; UNIX
-44.130.18.206   DL4DZ   #
-44.130.18.207   DL1EFO  # Dominik, Essen
-44.130.18.208   DL1EKA  # Ansger, Essen
-44.130.18.209   DL1EKV  # Stefan, Essen
-44.130.18.210   DH0EAE  # Benno, Recklinhausen
-44.130.18.211   DL8EBZ  # Will, PA0WCH
-44.130.18.214   LAP.DD9QP       #
-44.130.18.215   DL9EH   # Peter, Essen
-44.130.18.216   DG1EDM  # Frank, Essen
-44.130.18.220   DL1EFO-SVR      #
-44.130.18.221   DL1EAP  # Wolfgang, Duisburg
+44.130.18.206   DL4DZ
+44.130.18.207   DL1EFO  # Dominik Essen
+44.130.18.208   DL1EKA  # Ansger Essen
+44.130.18.209   DL1EKV  # Stefan Essen
+44.130.18.210   DH0EAE  # Benno Rheinhausen
+44.130.18.211   DL8EBZ  # PA0WCH Deutsches call WILL
+44.130.18.214   lap.dd9qp
+44.130.18.215   DL9EH   # Peter Essen
+44.130.18.216   DG1EDM  # Frank ESSEN
+44.130.18.220   DL1EFO-svr  # Server
+44.130.18.221   DL1EAP  # Wolfgang Duisburg
 44.130.18.222   DL6YAK  # Martin Hoeppner, Gelsenkirchen
 44.130.18.223   DH6JP   # Peter
-44.130.18.224   DD8ED-9600      # 9600Bd-Test
-44.130.18.225   DL1EJT  # Horst, Essen
-44.130.18.226   DG4EKF  # Evelin, Essen
+44.130.18.224   DD8ED-9600      # 9600-Bd-Test
+44.130.18.225   DL1EJT  # Horst Essen
+44.130.18.226   DG4EKF  # Evelin Essen
 44.130.18.230   DC4JG   # Werner, Wesel
 44.130.18.233   DG5EM   #
-44.130.18.234   DG7EF   # Frank Bohl, Duisburg
-44.130.18.235   DL3EBS  # Andre, Kamplinfort
+44.130.18.234   DG7EF   # Frank Bohl Duisburg
+44.130.18.235   DL3EBS  # Andere Kamplintfort
 44.130.18.236   DG1EKN  #
-44.130.18.237   DL1EHF  # Hans-Joachim, Duisburg
+44.130.18.237   DL1EHF  # Hans-Joachim Duisburg
 44.130.18.240   DG9ET   # , Voerde
 44.130.18.241   DG1EGV  # , Voerde
 44.130.18.242   DG8EAE  #
-44.130.18.244   DG8EG-SVR       #
-44.130.18.245   DL3ED   # Ulrich, Muelheim
-44.130.18.246   DG4EAX  # Bernd, Muelheim
-44.130.18.249   DG2EAN  # Frank Mones, 46537 Dinslaken
+44.130.18.244   DG8EG-svr # Server von DG8EG
+44.130.18.245   DL3ED   # Ulrich , MÅhlheim
+44.130.18.246   DG4EAX  # Bernd , MÅhlheim
+44.130.18.249   DG2EAN  # Frank Mones Dinslaken
 44.130.18.250   DH8EAD  # Joerg, Essen Stoppenberg
 44.130.18.251   ST.DH8EAD       # Joerg; Atari-ST
 44.130.18.252   DB5DA   # Ferdi, Bochum Wattenscheid
@@ -999,8 +1018,10 @@
 44.130.145.144  DL4DAC  # Thomas, Bochum
 #
 #44.130.146.x   Essen 2
-44.130.146.100  DB0RES          # Digi,BBS,Newsgate Rees , JO31ES (DD9QP)
-44.130.146.101  DB0RES-SVR      # FTP-server DB0RES      , JO31ES (DD9QP)
+44.130.146.100  DB0RES     # Digi,BBS,Newsgate Rees , JO31ES (DD9QP)
+44.130.146.101  DB0RES-SVR # FTP-server DB0RES      , JO31ES (DD9QP)
+44.130.146.200  DK0HN      # Clubstation Herten Sever
+44.130.146.210  DG2YHX     #
 #
 #44.130.19.x    Koeln/Duesseldorf
 # lokale Adresskoordination: DG8JT

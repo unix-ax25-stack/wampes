@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.21 1994/07/22 13:18:20 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.22 1994/11/08 14:26:35 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -11,6 +11,7 @@ OBJS          = buildsaddr.o \
 		md5.o \
 		seteugid.o \
 		strdup.o \
+		strmatch.o \
 		strtoul.o
 
 RANLIB        = ranlib
@@ -116,3 +117,4 @@ callvalid.o: callvalid.h
 md5.o: md5.h
 seteugid.o: seteugid.h
 strdup.o: strdup.h
+strmatch.o: strmatch.h
