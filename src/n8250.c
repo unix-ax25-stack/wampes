@@ -1,10 +1,14 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.30 1993/06/06 08:23:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.31 1993/06/17 07:27:34 deyke Exp $ */
+
+#include "global.h"
 
 #include <sys/types.h>
 
 #include <fcntl.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -22,7 +26,6 @@
 #undef  MAXIOV
 #endif
 
-#include "global.h"
 #include "mbuf.h"
 #include "proc.h"
 #include "iface.h"
@@ -144,24 +147,37 @@ int rlsd;               /* Use Received Line Signal Detect (aka CD) */
 int chain;              /* Chain interrupts */
 {
 	register struct asy *ap;
-	char filename[80];
 	int sp;
-	struct termios termios;
 
 	ap = &Asy[dev];
-	strcpy(filename, "/dev/");
-	strcat(filename, ifp->name);
-	if ((ap->fd = open(filename, O_RDWR|O_NONBLOCK|O_NOCTTY, 0644)) < 0)
-	  goto Fail;
-	ap->iface = ifp;
-	sp = find_speed(speed);
-	ap->speed = speed_table[sp].speed;
-	memset((char *) &termios, 0, sizeof(termios));
-	termios.c_iflag = IGNBRK | IGNPAR;
-	termios.c_cflag = CS8 | CREAD | CLOCAL;
-	if (cfsetispeed(&termios, speed_table[sp].flags)) goto Fail;
-	if (cfsetospeed(&termios, speed_table[sp].flags)) goto Fail;
-	if (tcsetattr(ap->fd, TCSANOW, &termios)) goto Fail;
+	if (irq && base) {      /* Hide TCP connections in here */
+		struct sockaddr_in addr;
+		memset((char *) &addr, 0, sizeof(addr));
+		addr.sin_family = AF_INET;
+		addr.sin_addr.s_addr = htonl((unsigned long) base);
+		addr.sin_port = htons((unsigned short) irq);
+		if ((ap->fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) goto Fail;
+		if (connect(ap->fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) goto Fail;
+		ap->iface = ifp;
+		sp = find_speed(speed);
+		ap->speed = speed_table[sp].speed;
+	} else {
+		char filename[80];
+		struct termios termios;
+		strcpy(filename, "/dev/");
+		strcat(filename, ifp->name);
+		if ((ap->fd = open(filename, O_RDWR|O_NONBLOCK|O_NOCTTY, 0644)) < 0)
+			goto Fail;
+		ap->iface = ifp;
+		sp = find_speed(speed);
+		ap->speed = speed_table[sp].speed;
+		memset((char *) &termios, 0, sizeof(termios));
+		termios.c_iflag = IGNBRK | IGNPAR;
+		termios.c_cflag = CS8 | CREAD | CLOCAL;
+		if (cfsetispeed(&termios, speed_table[sp].flags)) goto Fail;
+		if (cfsetospeed(&termios, speed_table[sp].flags)) goto Fail;
+		if (tcsetattr(ap->fd, TCSANOW, &termios)) goto Fail;
+	}
 	on_read(ap->fd, (void (*)()) ifp->rxproc, ifp);
 	return 0;
 
@@ -251,7 +267,7 @@ int32 val;
 /*---------------------------------------------------------------------------*/
 
 int
-get_asy(dev, buf, cnt)
+get_asy(dev,buf,cnt)
 int dev;
 char *buf;
 int cnt;

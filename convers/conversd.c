@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.36 1993/06/10 09:44:22 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.37 1993/06/17 07:27:12 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -198,7 +198,7 @@ static struct host *hostptr(const char *name)
     if (!hp || (r = strcmp(hp->h_name, name)) >= 0) {
       if (!hp || r) {
 	hp = (struct host *) calloc(1, sizeof(*hp));
-	hp->h_name = strdup(name);
+	hp->h_name = strdup((char *) name);
 	hp->h_next = *hpp;
 	*hpp = hp;
       }
@@ -223,7 +223,7 @@ static struct user *userptr(const char *name, struct host *hp)
 	!r && (r = strcmp(up->u_host->h_name, hp->h_name)) >= 0) {
       if (!up || r) {
 	up = (struct user *) calloc(1, sizeof(*up));
-	up->u_name = strdup(name);
+	up->u_name = strdup((char *) name);
 	up->u_host = hp;
 	up->u_channel = -1;
 	up->u_stime = currtime;
@@ -952,7 +952,7 @@ static void name_command(struct link *lp)
   if (lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.36 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.37 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_channel = atoi(getarg(NULLCHAR, 0));
   if (up->u_channel < 0 || up->u_channel > MAX_CHANNEL) {

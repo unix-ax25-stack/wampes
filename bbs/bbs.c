@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.56 1993/06/10 09:44:00 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.57 1993/06/17 07:27:54 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -423,7 +423,7 @@ static long parse_date(const char *str)
   long t;
   struct tm tm;
 
-  if (sscanf(str,
+  if (sscanf((char *) str,
 	     "%*s %d %3s %d %d:%d:%d",
 	     &tm.tm_mday,
 	     monthstr,

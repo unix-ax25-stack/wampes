@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.41 1993/06/14 13:53:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.42 1993/06/17 07:27:33 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -545,7 +545,7 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
 #elif macII
     argv[argc++] = "/bin/remlogin";
     argv[argc++] = "-h";
-    argv[argc++] = protocol;
+    argv[argc++] = (char *) protocol;
 #else
     argv[argc++] = "/bin/login";
 #endif

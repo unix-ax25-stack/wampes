@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.2 1993/06/10 09:46:32 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.3 1993/06/17 07:28:14 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -38,7 +38,7 @@ all:;   @if [ $(OS) = HP-UX ] ; then \
 		_all; \
 	elif [ $(OS) = A/UX ] ; then \
 		make -i \
-		'CC=gcc' \
+		'CC=gcc -fpcc-struct-return' \
 		'CFLAGS=-O -D_POSIX_SOURCE' \
 		'RANLIB=:' \
 		_all; \

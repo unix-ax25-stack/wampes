@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.26 1993/06/10 09:44:05 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.27 1993/06/17 07:28:04 deyke Exp $
 
 CFLAGS     = -I../lib
 OS         = "`uname -s`"
@@ -39,9 +39,9 @@ all:;   chmod 755 genupd
 		_all; \
 	elif [ $(OS) = A/UX ] ; then \
 		make -i \
-		'CC=gcc' \
+		'CC=gcc -fpcc-struct-return' \
 		'CFLAGS=-O -s -D_POSIX_SOURCE -I../lib' \
-		'LIBS=../lib/libutil.a -lposix' \
+		'LIBS=../lib/libutil.a -ldbm -lposix' \
 		_all; \
 	elif [ $(OS) = "RISC iX" ] ; then \
 		make -i \

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.16 1993/06/10 09:44:21 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.17 1993/06/17 07:27:12 deyke Exp $
 
 CFLAGS     = -I../lib
 OS         = "`uname -s`"
@@ -38,7 +38,7 @@ all:;   @if [ $(OS) = HP-UX ] ; then \
 		_all; \
 	elif [ $(OS) = A/UX ] ; then \
 		make -i \
-		'CC=gcc' \
+		'CC=gcc -fpcc-struct-return' \
 		'CFLAGS=-O -s -D_POSIX_SOURCE -I../lib' \
 		'LIBS=../lib/libutil.a -lposix' \
 		_all; \
