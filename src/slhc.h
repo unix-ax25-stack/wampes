@@ -1,4 +1,4 @@
-/* @(#) $Id: slhc.h,v 1.10 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: slhc.h,v 1.11 2002/01/12 15:55:53 dl9sau Exp $ */
 
 #ifndef _SLHC_H
 #define _SLHC_H
@@ -140,6 +140,10 @@ struct cstate {
 	struct cstate *next;    /* next in ring (xmit) */
 	struct ip cs_ip;        /* ip/tcp hdr from most recent packet */
 	struct tcp cs_tcp;
+#ifdef	AX25_VJCOMP
+	uint32 lastdropped;     /* MW: retransmittion timeout */
+	uint8 deny_compression;
+#endif
 };
 
 /*

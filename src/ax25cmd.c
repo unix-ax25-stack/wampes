@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25cmd.c,v 1.17 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: ax25cmd.c,v 1.18 2002/01/12 15:55:53 dl9sau Exp $ */
 
 /* AX25 control commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -343,7 +343,15 @@ struct ax25_cb *axp)
 	else
 		printf("stop");
 	printf("/%lu ms\n",dur_timer(&axp->t5));
-
+#ifdef	AX25_VJCOMP
+        /* MW: dump VJ statistics if any */
+        if (axp->slcomp) {
+                printf("VJ input: ");
+                slhc_i_status(axp->slcomp);
+                printf("VJ outpt: ");
+                slhc_o_status(axp->slcomp);
+        }
+#endif
 }
 
 /* Display or change our AX.25 address */
@@ -521,7 +529,11 @@ void *p)
 
   static struct cmds routecmds[] = {
 
+#ifdef	AX25_VJCOMP
+    { "add",  dorouteadd,  0, 3, "ax25 route add [permanent] [vj] <interface> default|<path>" },
+#else
     { "add",  dorouteadd,  0, 3, "ax25 route add [permanent] <interface> default|<path>" },
+#endif
     { "list", doroutelist, 0, 0, NULL },
     { "stat", doroutestat, 0, 0, NULL },
 
@@ -542,6 +554,10 @@ void *p)
 {
 
   int i, j, perm;
+#ifdef	AX25_VJCOMP
+  int vj;
+  struct ax_route *axrp;
+#endif
   struct ax25 hdr, hdr1;
   struct iface *iface;
 
@@ -552,6 +568,13 @@ void *p)
     argc--;
     argv++;
   }
+
+#ifdef	AX25_VJCOMP
+  if ((vj = !strcmp(*argv, "vj"))) {
+    argc--;
+    argv++;
+  }
+#endif
 
   if (!(iface = if_lookup(*argv))) {
     printf("Interface \"%s\" unknown\n", *argv);
@@ -565,7 +588,11 @@ void *p)
   argv++;
 
   if (argc <= 0) {
+#ifdef	AX25_VJCOMP
+    printf("Usage: ax25 route add [permanent] <interface> [vj] default|<path>\n");
+#else
     printf("Usage: ax25 route add [permanent] <interface> default|<path>\n");
+#endif
     return 1;
   }
 
@@ -584,6 +611,10 @@ void *p)
     addrcp(hdr1.digis[i], hdr.digis[j]);
 
   axroute_add(iface, &hdr1, perm);
+#ifdef	AX25_VJCOMP
+  axrp = ax_routeptr(hdr.dest, 0);
+  axrp->vjcomp = vj;
+#endif
   return 0;
 }
 
@@ -598,6 +629,9 @@ struct ax_route *rp)
 	int jumpstart;
 	int n;
 	int perm;
+#ifdef	AX25_VJCOMP
+	int vjcomp;
+#endif
 	struct ax_route *rp_stack[20];
 	struct iface *ifp = 0;
 	struct tm *tm;
@@ -606,6 +640,9 @@ struct ax_route *rp)
 	pax25(cp = buf, rp->target);
 	perm = rp->perm;
 	jumpstart = rp->jumpstart;
+#ifdef	AX25_VJCOMP
+	vjcomp = rp->vjcomp;
+#endif
 	for (n = 0; rp; rp = rp->digi) {
 		rp_stack[++n] = rp;
 		ifp = rp->ifp;
@@ -616,7 +653,11 @@ struct ax_route *rp)
 			cp++;
 		pax25(cp, rp_stack[i]->target);
 	}
+#ifdef	AX25_VJCOMP
+	printf("%2d-%.3s  %02d:%02d  %-9s  %c%c%c %s\n",
+#else
 	printf("%2d-%.3s  %02d:%02d  %-9s  %c%c %s\n",
+#endif
 	       tm->tm_mday,
 	       "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
 	       tm->tm_hour,
@@ -624,6 +665,9 @@ struct ax_route *rp)
 	       ifp ? ifp->name : "???",
 	       perm ? 'P' : ' ',
 	       jumpstart ? 'J' : ' ',
+#ifdef	AX25_VJCOMP
+               vjcomp ? 'C' : ' ',
+#endif
 	       buf);
 }
 
@@ -638,7 +682,11 @@ void *p)
   int i;
   struct ax_route *rp;
 
+#ifdef	AX25_VJCOMP
+  puts("Date    Time   Interface  PJC Path");
+#else
   puts("Date    Time   Interface  PJ Path");
+#endif
   if(argc < 2) {
     for (i = 0; i < AXROUTESIZE; i++)
       for (rp = Ax_routes[i]; rp; rp = rp->next) doroutelistentry(rp);

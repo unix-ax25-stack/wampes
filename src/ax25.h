@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25.h,v 1.22 2000/03/04 18:31:13 deyke Exp $ */
+/* @(#) $Id: ax25.h,v 1.23 2002/01/12 15:55:53 dl9sau Exp $ */
 
 #ifndef _AX25_H
 #define _AX25_H
@@ -66,6 +66,7 @@ struct ax_route {
 	int perm;
 	int jumpstart;
 	long time;
+	int vjcomp;                     /* MW: can do TCP compression */
 };
 
 #define AXROUTESIZE     499
@@ -74,6 +75,10 @@ extern struct iface *Axroute_default_ifp;
 
 /* AX.25 Level 3 Protocol IDs (PIDs) */
 #define PID_X25         0x01    /* CCITT X.25 PLP */
+#ifdef	AX25_VJCOMP
+#define PID_VJCOMP      0x06    /* MW: VJ compressed  */
+#define PID_VJUNCOMP    0x07    /* MW: VJ uncompressed */
+#endif
 #define PID_SEGMENT     0x08    /* Segmentation fragment */
 #define PID_TEXNET      0xc3    /* TEXNET datagram protocol */
 #define PID_LQ          0xc4    /* Link quality protocol */
@@ -126,6 +131,13 @@ int valid_remote_call(const uint8 *call);
 struct ax_route *ax_routeptr(const uint8 *call, int create);
 void axroute_add(struct iface *iface, struct ax25 *hdr, int perm);
 void axroute(struct ax25 *hdr, struct iface **ifpp);
+
+#ifdef	AX25_VJCOMP
+/* MW: prototypes for VJ receiver hooks (in ax25.c) */
+void ax_rx_vjcomp(struct iface *ifp, struct ax25_cb *axp, uint8 *dest, uint8 *src, struct mbuf **bpp, int mcast);
+void ax_rx_vjuncomp(struct iface *ifp, struct ax25_cb *axp, uint8 *dest, uint8 *src, struct mbuf **bpp, int mcast);
+void ax_rx_ip(struct iface *ifp, struct ax25_cb *axp, uint8 *dest, uint8 *src, struct mbuf **bpp, int mcast);
+#endif
 
 /* In axhdr.c: */
 void htonax25(struct ax25 *hdr,struct mbuf **data);

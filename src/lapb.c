@@ -1,4 +1,4 @@
-/* @(#) $Id: lapb.c,v 1.41 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: lapb.c,v 1.42 2002/01/12 15:55:53 dl9sau Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -123,6 +123,18 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 				axr = ax_routeptr(axp->hdr.dest,0);
 				if(axr && axr->jumpstart)
 					axserv_open(axp,0);
+#ifdef	AX25_VJCOMP
+                            /* MW: Reset VJ structures */
+                            if (axp->slcomp) {
+                              slhc_free(axp->slcomp);
+                              axp->slcomp = NULL;
+                              printf("VJ reset on ax_bc %p\n", axp);
+                            }
+                            if (axr && axr->vjcomp) {
+                                axp->slcomp_enable = 1;
+                                printf("VJ init on ax_cb %p\n", axp);
+                            }
+#endif
 			}
 			} else {
 				switch(axp->peer->state){
@@ -231,6 +243,14 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 				free_p(&axp->reseq[tmp].bp);
 			}
 			axp->unack = axp->vr = axp->vs = 0;
+#ifdef	AX25_VJCOMP
+                       /* MW: reset VJ structures */
+                        if (axp->slcomp) {
+                                slhc_free(axp->slcomp);
+                                axp->slcomp = NULL;
+                                printf("VJ reset on ax_cb %p\n", axp);
+                        }
+#endif
 			lapbstate(axp,LAPB_CONNECTED); /* Purge queues */
 			break;
 		case DISC:
@@ -250,6 +270,14 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 		case UA:
 			axp->flags.remotebusy = NO;
 			stop_timer(&axp->t4);
+#ifdef	AX25_VJCOMP
+                        /* MW: reset VJ structures */
+                        if (axp->slcomp) {
+                              slhc_free(axp->slcomp);
+                              axp->slcomp = NULL;
+                              printf("VJ reset on ax_cb %p\n", axp);
+                        }
+#endif
 			/* est_link(axp); */
 			/* lapbstate(axp,LAPB_SETUP);      Re-establish */
 			break;
@@ -309,6 +337,14 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 				free_p(&axp->reseq[tmp].bp);
 			}
 			axp->unack = axp->vr = axp->vs = 0;
+#ifdef	AX25_VJCOMP
+                        /* MW: reset VJ structures */
+                        if (axp->slcomp) {
+                                slhc_free(axp->slcomp);
+                                axp->slcomp = NULL;
+                                printf("VJ reset on ax_cb %p\n", axp);
+                        }
+#endif
 			lapbstate(axp,LAPB_CONNECTED); /* Purge queues */
 			break;
 		case DISC:
@@ -329,6 +365,14 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 		case UA:
 			axp->flags.remotebusy = NO;
 			stop_timer(&axp->t4);
+#ifdef	AX25_VJCOMP
+                        /* MW: reset VJ structures */
+                        if (axp->slcomp) {
+                                slhc_free(axp->slcomp);
+                                axp->slcomp = NULL;
+                                printf("VJ reset on ax_cb %p\n", axp);
+                        }
+#endif
 			/* est_link(axp); */
 			/* lapbstate(axp,LAPB_SETUP);      Re-establish */
 			break;

@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25.c,v 1.33 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: ax25.c,v 1.34 2002/01/12 15:55:53 dl9sau Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -59,6 +59,10 @@ uint8 tos
 	struct mbuf *tbp;
 	uint8 *hw_addr;
 	struct ax25_cb *axp;
+	uint8 pid;
+#ifdef	AX25_VJCOMP
+        int type;
+#endif
 
 	if((hw_addr = res_arp(iface,ARP_AX25,gateway,bpp)) == NULL)
 		return 0;       /* Wait for address resolution */
@@ -96,15 +100,186 @@ uint8 tos
 		est_link(axp);
 		lapbstate(axp,LAPB_SETUP);
 	}
+#ifdef	AX25_VJCOMP
+	/* MW: TCP compression stuff */
+        if (axp->slcomp == NULL)
+            axp->slcomp = slhc_init(32, 32);
+
+        /* Attempt compression */
+        if (axp->slcomp_enable)
+            type = axhc_compress(axp->slcomp, bpp, TRUE);
+        else
+            type = axhc_compress(axp->slcomp, bpp, FALSE);
+        
+        switch (type) {
+        case SL_TYPE_IP:
+            pid = PID_IP;
+            break;
+            
+        case SL_TYPE_UNCOMPRESSED_TCP:
+            pid = PID_VJUNCOMP;
+            break;
+            
+        case SL_TYPE_COMPRESSED_TCP:
+            pid = PID_VJCOMP;
+            break;
+            
+        case SL_TYPE_ERROR:
+            free_p(bpp);
+            return -1;
+
+        default:
+            free_p(bpp);
+            printf("vj: oops! Unhandled case in ax25.c\n");
+            return -1;
+        }
+#else
+	pid = PID_IP;
+#endif
 	/* Insert the PID */
 	pushdown(bpp,NULL,1);
-	(*bpp)->data[0] = PID_IP;
+	(*bpp)->data[0] = pid;
 	if((tbp = segmenter(bpp,axp->paclen)) == NULL){
 		free_p(bpp);
 		return -1;
 	}
 	return send_ax25(axp,&tbp,-1);
 }
+
+#ifdef	AX25_VJCOMP
+/* MW: learning ARPs'n'Routes */
+static void
+learn(
+struct iface *ifp,
+uint8 *hwaddr,
+struct mbuf **bpp,
+int mcast)
+{
+    int32 ipaddr = 0;
+    struct arp_tab *ap;
+    
+    if (mcast || !bpp || !*bpp)
+        return;
+
+    ipaddr = get32((*bpp)->data + 12);
+
+#if 1
+    ap = arp_lookup(ARP_AX25, ipaddr);
+    if (ap == NULL || 
+        (ap != NULL && ap->state == ARP_VALID && run_timer(&ap->timer)))
+    {
+        arp_add(ipaddr, ARP_AX25, hwaddr, 0);
+    }
+#else
+    /* look for a valid resolution for hwaddr */
+    ap = revarp_lookup(ARP_AX25, hwaddr);
+    if (ap != NULL && ap->state == ARP_VALID) {
+        /* if we have a resolution but ip addresses dont match,
+         * add a route. Don't ever overwrite ARPs, only
+         * refresh them, but not if the timer isn't running.
+         */
+        if (ap->ip_addr != ipaddr) {
+            rt_add(ipaddr, 32, ap->ip_addr, ifp, 1L, 0x7fffffff/1000, 0);
+        } else {
+            rt_drop(ipaddr, 32); 
+            if (run_timer(&ap->timer)) {
+                arp_add(ap->ip_addr, ARP_AX25, hwaddr, 0);
+            }
+        }
+    } else {
+        /* we have no (valid) resolution for hwaddr.
+         * now there are 2 possibilities and we add
+         * an ARP entry in both of them:
+         * 1. the ip address is a new one (or the resolution
+         *    is invalid)
+         * 2. the hwaddr for a given ip address has
+         *    changed.
+         * You will find that both cases are equal, so
+         * we simply call arp_add here without distinguishing
+         * between them.
+         */
+        rt_drop(ipaddr, 32);
+        arp_add(ipaddr, ARP_AX25, hwaddr, 0);
+    }
+#endif
+}
+
+/* MW: handle incoming VJ compressed packets */
+void
+ax_rx_vjcomp(
+struct iface *ifp,
+struct ax25_cb *axp,
+uint8 *ax_src,
+uint8 *ax_dest,
+struct mbuf **bpp,
+int mcast)
+{
+        axp->slcomp_enable = 1;
+        /* MW: check if we already have initialized slots,
+         * if not, it's too late. flush the frame.
+         */
+        if (axp->slcomp == NULL) {
+                axp->slcomp = slhc_init(32, 32);
+                free_p(bpp);
+                return;
+        }
+        if (slhc_uncompress(axp->slcomp, bpp) <= 0) {
+                free_p(bpp);
+                return;
+        }
+        learn(ifp, ax_src, bpp, mcast); 
+        ip_route(ifp, bpp, 0);
+}
+
+void 
+ax_rx_vjuncomp(
+struct iface *ifp,
+struct ax25_cb *axp,
+uint8 *ax_src,
+uint8 *ax_dest,
+struct mbuf **bpp,
+int mcast)
+{
+        axp->slcomp_enable = 1;
+
+        /* MW: check if we already have initialized slots,
+         * do so if not.
+         */
+        if (axp->slcomp == NULL) {
+                axp->slcomp = slhc_init(32, 32);
+        }
+        if (slhc_remember(axp->slcomp, bpp) <= 0) {
+                free_p(bpp);
+                return;
+        }
+        learn(ifp, ax_src, bpp, mcast); 
+        ip_route(ifp, bpp, 0);
+}
+
+extern int axhc_remember(struct slcompress *, struct mbuf **);
+
+void ax_rx_ip(
+struct iface *ifp,
+struct ax25_cb *axp,
+uint8 *ax_src,
+uint8 *ax_dest,
+struct mbuf **bpp,
+int mcast)
+{
+/*
+    if (axp->slcomp == NULL) {
+        axp->slcomp = slhc_init(32, 32);
+    }
+    if (axhc_remember(axp->slcomp, bpp) <= 0) {
+        free_p(bpp);
+        return;
+    }
+*/
+    learn(ifp, ax_src, bpp, mcast);
+    ip_route(ifp, bpp, 0);
+}
+#endif
+
 /* Add header and send connectionless (UI) AX.25 packet.
  * Note that the calling order here must match enet_output
  * since ARP also uses it.

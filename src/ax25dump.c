@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25dump.c,v 1.14 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: ax25dump.c,v 1.15 2002/01/12 15:55:53 dl9sau Exp $ */
 
 /* AX25 header tracing
  * Copyright 1991 Phil Karn, KA9Q
@@ -104,6 +104,17 @@ int check       /* Not used */
 				/* Don't verify checksums unless unsegmented */
 				ip_dump(fp,bpp,unsegmented);
 				break;
+#ifdef  AX25_VJCOMP
+                        case PID_VJUNCOMP:
+				fprintf(fp," pid=VJ\n");
+				/* Don't verify checksums */
+				ip_dump(fp,bpp,0);
+				break;
+                        case PID_VJCOMP:
+                                fprintf(fp," pid=VJC\n");
+                                /*sl_dump(fp,bpp,0);*/
+                                break;
+#endif
 			case PID_X25:
 				fprintf(fp," pid=X.25\n");
 				break;

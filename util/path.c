@@ -1,6 +1,8 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: path.c,v 1.27 1996/09/09 22:17:36 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: path.c,v 1.28 2002/01/12 15:55:53 dl9sau Exp $";
 #endif
+
+#define	AX25_VJCOMP	1
 
 #include <ctype.h>
 #include <stdio.h>
@@ -40,6 +42,15 @@ struct axroute_saverecord_1 {
   long time;
 /*char ifname[]; */
 };
+
+#ifdef	AX25_VJCOMP
+struct axroute_saverecord_2 {
+  uint8 call[AXALEN];
+  uint8 digi[AXALEN];
+  long time;
+  int vjcomp;
+};
+#endif
 
 static const char axroutefile[] = "/tcp/axroute_data";
 static struct ax_route *Ax_routes[AXROUTESIZE];
@@ -212,7 +223,11 @@ static void axroute_loadfile(void)
   char *cp;
   FILE *fp;
   int c;
+#ifdef	AX25_VJCOMP
+  struct axroute_saverecord_2 buf;
+#else
   struct axroute_saverecord_1 buf;
+#endif
   struct ax_route *rp;
 
   if (!(fp = fopen(axroutefile, "r"))) return;

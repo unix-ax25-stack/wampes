@@ -1,4 +1,4 @@
-/* @(#) $Id: global.h,v 1.48 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: global.h,v 1.49 2002/01/12 15:55:53 dl9sau Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -86,6 +86,17 @@ typedef unsigned char uint8;    /* 8-bit unsigned integer */
 #define MAXINT32 0x7fffffff     /* Largest 32-bit integer */
 
 #define HASHMOD 7               /* Modulus used by hash_ip() function */
+
+#ifdef	AX25_VJCOMP
+/* Since not all compilers support structure assignment, the ASSIGN()
+ * macro is used. This controls how it's actually implemented.
+ */
+#ifdef  NOSTRUCTASSIGN  /* Version for old compilers that don't support it */
+#define ASSIGN(a,b)     memcpy((char *)&(a),(char *)&(b),sizeof(b));
+#else                   /* Version for compilers that do */
+#define ASSIGN(a,b)     ((a) = (b))
+#endif
+#endif
 
 /* standard boolean constants */
 #define FALSE 0

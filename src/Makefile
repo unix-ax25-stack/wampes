@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.105 2000/01/15 18:34:14 deyke Exp $
+# @(#) $Id: Makefile,v 1.106 2002/01/12 15:55:53 dl9sau Exp $
 
 DEST          = /tcp
 
@@ -82,6 +82,7 @@ OBJS          = adjtime.o \
 		ax25user.o \
 		axclient.o \
 		axheard.o \
+		axhc.o \
 		axip.o \
 		axserver.o \
 		cmdparse.o \
@@ -191,6 +192,7 @@ SRCS          = adjtime.c \
 		ax25user.c \
 		axclient.c \
 		axheard.c \
+		axhc.c \
 		axip.c \
 		axserver.c \
 		cmdparse.c \
@@ -347,7 +349,7 @@ $(DEST)/$(PROGRAM): $(PROGRAM)
 
 .c.o:
 		@rm -f $@
-		$(CC) $(CFLAGS) -c $<
+		$(CC) $(CFLAGS) -DAX25_VJCOMP -c $<
 
 ###
 adjtime.o:\

@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25subr.c,v 1.26 2000/03/04 18:31:13 deyke Exp $ */
+/* @(#) $Id: ax25subr.c,v 1.27 2002/01/12 15:55:53 dl9sau Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -91,6 +91,12 @@ del_ax25(struct ax25_cb *conn)
 	free_q(&axp->txq);
 	free_q(&axp->rxasm);
 	free_q(&axp->rxq);
+#ifdef	AX25_VJCOMP
+        /* MW: free VJ related structures */
+        if (axp->slcomp) {
+                slhc_free(axp->slcomp);
+        }
+#endif
 	free(axp);
 }
 
@@ -110,9 +116,20 @@ cr_ax25(uint8 *addr)
 		/* Not already in table; create an entry
 		 * and insert it at the head of the chain
 		 */
+#ifdef	AX25_VJCOMP
+		struct ax_route *rp;
+#endif
 		axp = (struct ax25_cb *)callocw(1,sizeof(struct ax25_cb));
 		axp->next = Ax25_cb;
 		Ax25_cb = axp;
+#ifdef	AX25_VJCOMP
+		/* MW: init structures for VJ */
+                if ((rp = ax_routeptr(addr, 0)) != NULL) {
+                    if (rp->vjcomp)
+                        axp->slcomp_enable = 1;
+
+                }
+#endif
 	}
 	axp->user = 0;
 	axp->state = LAPB_DISCONNECTED;

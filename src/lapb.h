@@ -1,4 +1,4 @@
-/* @(#) $Id: lapb.h,v 1.25 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: lapb.h,v 1.26 2002/01/12 15:55:53 dl9sau Exp $ */
 
 #ifndef _LAPB_H
 #define _LAPB_H
@@ -136,6 +136,10 @@ struct ax25_cb {
 	int routing_changes;            /* Number of routing changes */
 	struct ax25_cb *peer;           /* Pointer to peer's control block */
 	int id;                         /* Control block ID */
+#ifdef	AX25_VJCOMP
+	struct slcompress *slcomp;      /* MW: TCP header compression table */
+	int slcomp_enable;              /* MW: compression enable flag */
+#endif
 };
 /* Linkage to network protocols atop ax25 */
 struct axlink {

@@ -1,4 +1,4 @@
-/* @(#) $Id: config.c,v 1.58 2000/02/05 23:54:48 deyke Exp $ */
+/* @(#) $Id: config.c,v 1.59 2002/01/12 15:55:53 dl9sau Exp $ */
 
 /* Copyright 1991 Phil Karn, KA9Q
  */
@@ -218,6 +218,10 @@ struct axlink Axlink[] = {
 	{ PID_FLEXNET,    flexnet_input },
 	{ PID_NETROM,     axnr },
 	{ PID_NO_L3,      axnl3 },
+#ifdef	AX25_VJCOMP
+        { PID_VJCOMP,     ax_rx_vjcomp },
+	{ PID_VJUNCOMP,   ax_rx_vjuncomp },
+#endif
 	{ 0,              NULL }
 };
 

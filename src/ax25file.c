@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25file.c,v 1.19 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: ax25file.c,v 1.20 2002/01/12 15:55:53 dl9sau Exp $ */
 
 #include <stdio.h>
 
@@ -8,7 +8,11 @@
 #include "ax25.h"
 #include "main.h"
 
+#ifdef	AX25_VJCOMP
+#define AXROUTE_FILE_VERSION    2
+#else
 #define AXROUTE_FILE_VERSION    1
+#endif
 #define AXROUTE_HOLDTIME        (0x7fffffff / 1000)
 #define AXROUTE_SAVETIME        (10L*60L*1000L)
 
@@ -28,6 +32,15 @@ struct axroute_saverecord_1 {
 /*char ifname[]; */
 };
 
+#ifdef	AX25_VJCOMP
+struct axroute_saverecord_2 {
+  uint8 call[AXALEN];
+  uint8 digi[AXALEN];
+  long time;
+  int vjcomp;
+};
+#endif
+
 static const char axroute_filename[] = "/tcp/axroute_data";
 static const char axroute_tmpfilename[] = "/tcp/axroute_tmp";
 
@@ -39,7 +52,11 @@ void axroute_savefile(void)
   FILE *fp;
   int i;
   static struct timer timer;
+#ifdef	AX25_VJCOMP
+  struct axroute_saverecord_2 buf;
+#else
   struct axroute_saverecord_1 buf;
+#endif
   struct ax_route *rp, *lp;
 
   if (Debug) return;
@@ -71,6 +88,9 @@ void axroute_savefile(void)
 	if (rp->digi)
 	  addrcp(buf.digi, rp->digi->target);
 	buf.time = rp->time;
+#ifdef	AX25_VJCOMP
+	buf.vjcomp = rp->vjcomp;
+#endif
 	fwrite((char *) &buf, sizeof(buf), 1, fp);
 	if (rp->ifp)
 	  fwrite(rp->ifp->name, strlen(rp->ifp->name) + 1, 1, fp);
@@ -160,6 +180,40 @@ void axroute_loadfile(void)
 	rp->time = buf.time;
       }
     }
+#ifdef	AX25_VJCOMP
+  case 2:
+    {
+
+      char *cp;
+      char ifname[1024];
+      int c;
+      struct ax_route *rp;
+      struct axroute_saverecord_2 buf;
+      struct iface *ifp;
+
+      while (fread((char *) &buf, sizeof(buf), 1, fp)) {
+        cp = ifname;
+        do {
+          if ((c = getc(fp)) == EOF) {
+            fclose(fp);
+            return;
+          }
+        } while ((*cp++ = c));
+        if (*ifname)
+          for (ifp = Ifaces; ifp && strcmp(ifp->name, ifname); ifp = ifp->next) 
+;
+        else
+          ifp = 0;
+        if (buf.time + AXROUTE_HOLDTIME < secclock()) continue;
+        if (!valid_remote_call(buf.call)) continue;
+        rp = ax_routeptr(buf.call, 1);
+        if (valid_remote_call(buf.digi)) rp->digi = ax_routeptr(buf.digi, 1);
+        rp->ifp = ifp;
+        rp->time = buf.time;
+        rp->vjcomp = buf.vjcomp;
+      }
+    }
+#endif
 
   }
 
