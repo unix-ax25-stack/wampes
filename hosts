@@ -2841,14 +2841,18 @@
 44.130.62.10   DG1NBR         # Matthias Klauda Breitbrunn
 44.130.62.11   DH3NBA         # Heiko Eschrich Drosendorf
 44.130.62.12   DL8NDN         # Harms Gundelsheim
+44.130.62.13   DL3NEQ         # Wolfgang Burgebrach
 44.130.62.14   DG2NBD         # Bernd Drechsel Bamberg
-44.130.62.15   DG3NCU         # Florian Roedental
+44.130.62.15   DG3NCU         # Florian Kreuzer Roedental
+44.130.62.16   DG8NBN         # Volker Bamberg
+44.130.62.17   DG8NBN-GATE    # Volker Bamberg
+44.130.62.18   DG7NEF-2       # Wolfgang Bamberg
 44.130.62.19   DG7NEF-GATE    # Wolfgang Bamberg
 44.130.62.20   DG7NEF         # Wolfgang Bamberg
 44.130.62.21   DL9NBX         # Roland Coburg
 44.130.62.22   DF9NE          # Anton Spindler Stadtsteinach
-44.130.62.30   DL1NV          # Guenther Kronach
-#44.130.62.100  DB0BBG-10      # Digipeater Bamberg Kaelberberg
+44.130.62.30   DL1NV          # GÅnther Kestel Kronach
+44.130.62.100  DB0BBG-10      # Digipeater Bamberg KÑlberberg
 #
 #44.130.63.x    Franken
 # lokale Adresskoordination: DL1NC
@@ -2929,13 +2933,11 @@
 44.130.82.8     dl8mmr
 #
 # Olaf Fischer,         Magdeburg
-44.130.82.9     dl6cib
+44.130.82.9     dl6cibold
 #
-# Mario Roeber,         Magdeburg Mailbox (Ex Y71G)
+# Mario Roeber,  Magdeburg Mailbox (Ex Y71G)
 44.130.82.10    db0mge-10
 44.130.82.11    db0mge
-#
-#
 #
 # Rene, Osterwieck
 44.130.82.12    dl6cpf
@@ -2984,8 +2986,13 @@
 # Henri Schultze        Magdeburg
 44.130.82.29    dg0cdb
 #
+# Bernd                  Magdeburg
+44.130.82.30    dl8msg
+#
 # TCP/IP Teil DB0OCA   HUY/Halberstadt
 44.130.82.100 db0oca
+#
+44.130.82.200   dg6mja-2
 #
 #44.130.83.x    Dessau
 44.130.83.1     DG1HRG  # Guido, Woerlitz
@@ -5050,8 +5057,8 @@
 # -----------------------------------------------------------------------
 # Spalte 1: IP-Nummer, 32 bit, dargestellt in 4 Bytes
 # Spalte 2: abgekuerzter Host-Name (ergaenze in <name>.AMPR.ORG)
-# Spalte 3: Kommentar: Name des Betreibers, Ort. Verlaessliche TCP/IP-
-#           Routing-Knotenrechner sind mit *** gekennzeichnet
+# Spalte 3: Kommentar: Name des Betreibers, Ort. FÅr Knotenstationen:
+# Attribute [P] - Plannung, [A] - aktiv, [G] - Gateway, [N] - abgeschaltet.
 # -----------------------------------------------------------------------
 #
 #44.143.1.xxx   WIEN
@@ -5064,11 +5071,10 @@
 44.143.1.5      OE1ACC   # Alexander Czernin-Morzin, 1090 Wien,
 			 # Schul-Strassnitzki Gasse 5,
 			 # 72047.1712@compuserve.com
-44.143.1.6      OE1KIB   # Klaus Kudielka, 1180 Wien, Peter Jordanstr. 165
 44.143.1.7      OE1MMA   # Markus Melcher, 1030 Wien, WeissgeberlÑnde 22/12
 44.143.1.8      SP7MUD   # Adam Merwart, 1140 Wien
 44.143.1.9      OE1SMC   # Hans Mayer, 1238 Wien, Am Hasensprung 6-8
-			 # mayer@ping.at.unisys.com
+			 # mayer@ping.at
 44.143.1.10     OE1RZB   # Robert Zak, 1210 Wien, Koloniestr. 2-10/10/2
 44.143.1.11     TER.OE1XXB # Amateurfunkklub Alterlaa, 1230 Wien, Helmut
 44.143.1.12     OE1JMU   # Juergen Mauch, 1130 Wien, Dvorakg. 40A/1/3
@@ -5087,35 +5093,45 @@
 44.143.1.24     OE1GOU   # Gerald Forthuber, 1050 Wien, Spengergasse 12/19
 44.143.1.25     OE1YXU   # Gertrude Forthuber, 1050 Wien, Spengergasse 12/14
 44.143.1.26     OE1FHS   # Florian HÑrtlehner, 1140 Wien
+44.143.1.27     OE1HHC   # Harald Huber, 1190 Wien, Peter Altenberggasse 19
+44.143.1.28     OE1CMS   # Christine Mayer, 1238 Wien, Am Hasensprung 6-8
+44.143.1.29     SEC.OE1WWL # Wolfgang Wagner
+44.143.1.30     TER.OE1WWL #
+44.143.1.31     OE1BHS   # Heinz Bergmann, Wien
+44.143.1.32     OE1JHB   # Johann Hackinger, 1020 Wien, Castelletzgasse 16/26
 # 1200 bit/s Knoten
-44.143.1.100    OE1XRR   # Irmela Gagern
-44.143.1.101    OE1XXB   # Amateurfunkklub Alterlaa, 1230 Wien, Helmut
-44.143.1.102    SEC.OE1XXB # Amateurfunkklub Alterlaa, 1230 Wien, Helmut
-44.143.1.103    OE1XXU   # Amateurfunkklub Alterlaa, 1230 Wien, Juergen
-44.143.1.104    SEC.OE1XXU # Amateurfunkklub Alterlaa, 1230 Wien, Juergen
-44.143.1.105    OE1XAB   # Mailbox (geplannt), Wien
-44.143.1.106    OE1XAR   # Testknoten, Wien
-44.143.1.107    OE1XLR   # Knoten Laaerberg (geplannt), 1100 Wien
-44.143.1.108    OE1XTU   # Radioklub der TU Wien
+44.143.1.100    OE1XRR   # [P] Irmela Gagern
+44.143.1.101    OE1XXB   # [P] Amateurfunkklub Alterlaa, 1230 Wien, Helmut
+44.143.1.102    SEC.OE1XXB # [P] Amateurfunkklub Alterlaa, 1230 Wien, Helmut
+44.143.1.103    OE1XXU   # [P] Amateurfunkklub Alterlaa, 1230 Wien, Juergen
+44.143.1.104    SEC.OE1XXU # [P] Amateurfunkklub Alterlaa, 1230 Wien, Juergen
+44.143.1.105    OE1XAB   # [P] Mailbox, Wien
+44.143.1.106    OE1XAR   # [A] Testknoten, Wien
+44.143.1.107    OE1XLR   # [P] Knoten Laaerberg, 1100 Wien
+44.143.1.108    OE1XTU   # [P] Radioklub der TU Wien
+44.143.1.111    OE1XYA   # [P] Amateurfunkklub X, 1238 Wien,
+			 # Am Hasensprung 6-8
 44.143.1.144    OE1KDA   # Koordinator Oesterreich
 44.143.1.145    SEC.OE1KDA # Krzysztof Dabrowski, 1230 Wien, Othellog.1/3/2
 44.143.1.146    TER.OE1KDA #
-44.143.1.200    OE1XBR   # Robert Zak, 1210 Wien
-44.143.1.206    SEC.OE1XAR # Testknoten, Wien
+44.143.1.200    OE1XBR   # [P] Robert Zak, 1210 Wien
+44.143.1.206    SEC.OE1XAR # [P] Testknoten, Wien
 # 9600 bit/s Knoten
-44.143.17.105   9K6.OE1XAB # Mailbox (geplannt), Wien
-44.143.17.106   9K6.OE1XAR # Testknoten, Wien
-44.143.17.107   9K6.OE1XLR # Knoten Laaberg (geplannt), Wien
-# Schnelle Knoten (Zukunft)
-44.143.33.xx
+44.143.17.105   9K6.OE1XAB # [P] Mailbox, Wien
+44.143.17.106   9K6.OE1XAR # [P] Testknoten, Wien
+44.143.17.107   9K6.OE1XLR # [P] Knoten Laaberg, Wien
+44.143.17.108   9K6.OE1XTU # [P] Radioklub der TU Wien
+# Schnelle Knoten
+44.143.33.6     56K.OE1KIB # Klaus Kudielka, 1180 Wien, Peter Jordanstr. 165
+44.143.33.108   56K.OE1XTU # [P] Radioklub der TU Wien
 # Subnetz OE1HMC 44.143.177.0
 44.143.177.1    SEC.OE1HMC # Netz-"Master",
 44.143.177.2    NEWS.OE1HMC # nntp server
-44.143.177.3    NET.OE1HMC # Host moser.co.at: 192.164.66.50
+44.143.177.3    NET.OE1HMC # Host moser@moser.co.at: 192.164.66.50
 # Subnetz OE1KIB (Token Ring) 44.143.241.0
 44.143.241.1    MARS.OE1KIB # Gateway (JNOS)
-44.143.241.2    SATURN.OE1KIB
-44.143.241.3    MERKUR.OE1KIB
+44.143.241.2    SATURN.OE1KIB # Klaus Kudielka, 1180 Wien,
+			   # Peter Jordanstr. 165
 44.143.241.4    VENUS.OE1KIB # Server (UNIX)
 # -----------------------------------------------------------------------
 #
@@ -5134,9 +5150,9 @@
 			 # Schillinghoferstr. 27, ADL 201
 # 1200 bit/s Knoten
 44.143.2.100
-# 9600 bit/s Knoten
+# 9600 bit/s Knoten [P]
 44.143.18.xx
-# Schnelle Knoten (Zukunft)
+# Schnelle Knoten [P]
 44.143.34.xx
 # -----------------------------------------------------------------------
 #
@@ -5164,18 +5180,31 @@
 44.143.3.16     OE3BLA   # Brunold Loidl, 3400 Klosterneuburg,
 			 # Alleestr.9a
 44.143.3.17     OE3MGB   # Michael,
+44.143.3.18     OE3BHB   # Heinz Binder, 3860 Heidenreichstein,
+			 # Anton Hobbigerstr. 760
+44.143.3.19     OE3DBB   # Daniela Bîhm, Eggern,
+44.143.3.20     OE3FRU   # Franz Rodinger, 3871 Alt Nagelberg,
+			 # Hinterpocherstr. 227
+44.143.3.21     OE3YSS   # Irmela Gagern, (OE3YSS-6)
+44.143.3.22     OE3GWU   # Hartwig Weninger, 3973 Karlstift, Nr. 131
+44.143.3.23     OE3DJB   # Friedman Jagsch, 3910 Zwettl, Neubaustrasse 1
+44.143.3.24     OE3JLC   # Johannes Loidl, 3910 Zwettl, Kremserstr. 5
 44.143.3.31     OE3GMW   # Gottfried Motowidlo, 2351 Wiener Neudorf,
 			 # Reisenbauerring 7/2/18
 # 1200 bit/s Knoten
-44.143.3.100    OE3XAC   # Klubstation d. Amateurfunkklub Schwechat
-44.143.3.101    OE3XWR   # Knoten Windischhuette (geplannt)
-44.143.3.102    OE3XSR   # Waldviertler Amateurradioklub, Haugschlag, JN79ma
-44.143.3.103    OE3XZR   # Knoten Zwettl, Waldviertler Amateur Radio Club
-44.143.3.104    OE3XNR   # Knoten Nebelstein, OeVSV-L3
-44.143.3.200    OE3XKR   # Knoten Schwechat/Rannersdorf (geplannt)
-# 9600 bit/s Knoten
+44.143.3.100    OE3XAC   # [P] Klubstation d. Amateurfunkklub Schwechat
+44.143.3.101    OE3XWR   # [N] Knoten Windischhuette
+44.143.3.102    OE3XSR   # [A] Waldviertler Amateurradioklub, Haugschlag,
+			 # JN79ma (OE3XSR-6)
+44.143.3.103    OE3XZR   # [P] Knoten Zwettl, Waldviertler Amateur Radio Club
+44.143.3.104    OE3XNR   # [A] Knoten Nebelstein, OeVSV-L3
+44.143.3.200    OE3XKR   # [A] Knoten Schwechat/Rannersdorf (NOD.OE3XKR)
+44.143.3.230    OE3XLR   # [P] Knoten Muckenkogel (OE3XLR-5)
+44.143.3.231    SEC.OE3XLR # [P] Knoten Muckenkogel OE3XLR-6)
+44.143.3.232    SEC.OE1XRR # [P] Versuche unter OE1XRR/3
+# 9600 bit/s Knoten [P]
 44.143.19.xx
-# Schnelle Knoten (Zukunft)
+# Schnelle Knoten [P]
 44.143.35.xx
 # -----------------------------------------------------------------------
 #
@@ -5189,9 +5218,9 @@
 			 # JN87dt
 # 1200 bit/s Knoten
 44.143.4.100
-# 9600 bit/s Knoten
+# 9600 bit/s Knoten [P]
 44.143.20.xx
-# Schnelle Knoten (Zukunft)
+# Schnelle Knoten [P]
 44.143.36.xx
 # -----------------------------------------------------------------------
 #
@@ -5233,12 +5262,14 @@
 44.143.5.26    OE5FFN   # Arno, Linz
 44.143.5.27    OE5BYL   # Johann Bachl, 4910 Ried/Innkreis, Rosenweg 6
 44.143.5.28    OE5DWN   # Daniel,
+44.143.5.29    OE5GJN   # Gerald Jungbauer, Leonfelderstr. 75, 4040 Linz
+44.143.5.30    OE5FOL   # Hans Prader, 4552 Wartberg, Penzendorf 84
 # 1200 bit/s Knoten
-44.143.5.100   OE5XUR   # JKULINZ, Linz, Oper. OE5AON, packet-internet
+44.143.5.100   OE5XUR   # [GA], JKULINZ, Linz, Oper. OE5AON, packet-internet
 			# gateway: 140.78.4.35 hamgate.edvz.uni-linz.ac.at
-# 9600 bit/s Knoten
+# 9600 bit/s Knoten [P]
 44.143.21.xx
-# Schnelle Knoten (Zukunft)
+# Schnelle Knoten [P]
 44.143.37.xx
 # -----------------------------------------------------------------------
 #
@@ -5273,11 +5304,11 @@
 			# Hugo v. Hoffmansthalw. 3/4, JN77pk
 44.143.6.67    OE6YNE   # Ingrid Steinwender, 8605 Kapfenberg, JN77pk
 # 1200 bit/s Knoten
-44.143.6.100   OE6XWR   # Kapfenberg-Rennleld, JN77qj
+44.143.6.100   OE6XWR   # [P] Kapfenberg-Rennleld, JN77qj
 # 9600 bit/s Knoten
-44.143.22.100  9K6.OE6XWR # Kapfengerg-Rennfeld, JN77qj
-# Schnelle Knoten (Zukunft)
-44.143.38.100  SEC.OE6XWR # Kapfenberg-Rennfeld, JN77qj
+44.143.22.100  9K6.OE6XWR # [P] Kapfengerg-Rennfeld, JN77qj
+# Schnelle Knoten
+44.143.38.100  SEC.OE6XWR # [P] Kapfenberg-Rennfeld, JN77qj
 # -----------------------------------------------------------------------
 #
 #44.143.7.xxx   TIROL
@@ -5292,11 +5323,10 @@
 44.143.7.10    OE7TKT   # Thomas Kuschel, Winkelweg 13, 6064 Rum
 44.143.7.11    SEC.OE6RHT # Reinhard
 # 1200 bit/s Knoten
-44.143.7.100   OE7XIR   # Helmut Kupsa                     ***
-44.143.7.200
-# 9600 bit/s Knoten
+44.143.7.100   OE7XIR   # [P] Helmut Kupsa
+# 9600 bit/s Knoten [P]
 44.143.23.xx
-# Schnelle Knoten (Zukunft)
+# Schnelle Knoten [P]
 44.143.39.xx
 # -----------------------------------------------------------------------
 #
@@ -5309,14 +5339,15 @@
 44.143.8.4     OE8DJK   # Bernd Stroj, 9220 Velden, Aicherstr. 6
 44.143.8.5     OE8AGK   # Alexander, Klagenfurt
 44.143.8.6     OE8CIQ   # Chris,
+44.143.8.10    OE8PCK   # Paul Clay, 9020 Klagenfurt, Ludengasse 56
 44.143.8.15    OE8DHK   # Hannes Defner, 9802 Spittal/Drau, Pf. 88
 44.143.8.19    OE8TGK   # Alexander Kînig, 9201 Krumpendorf, Blumenweg 15,
 			# JN76cb
 # 1200 bit/s Knoten
 44.143.8.100
-# 9600 bit/s Knoten
+# 9600 bit/s Knoten [P]
 44.143.24.xx
-# Schnelle Knoten (Zukunft)
+# Schnelle Knoten [P]
 44.143.40.xx
 # -----------------------------------------------------------------------
 #
@@ -5327,6 +5358,8 @@
 44.143.9.3     OE9DGV   # Guntram Summer, 6845 Hohenems, Hochquellenstr. 20 A
 44.143.9.4     OE9LAJ   # Alexander List, 6824 Schlins, Dafens. 4
 44.143.9.5     U.OE9WLJ # Wilfried Haeusle UNIX,
+44.143.9.6     OE9LKI   # Kurt Lampert, 6841 Maeder, Torkelweg 8a
+44.143.9.7     U.OE9LKI # Kurt Lampert, UNIX
 44.143.9.27    OE9HHV   # Hubert HÑmerle, 6850 Dornbirn, Im Horn 27
 44.143.9.55    OE9GWV   # Guntram Wagner, 6710 Nenzing,
 			# Anderas Gassnerstr. 11, JN47ue
@@ -5335,12 +5368,14 @@
 44.143.9.73    OE9FKI   # Franz Kienspergher, Juxweg 6, 6800 Feldkirch-
 			# Altenstadt
 # 1200 bit/s Knoten
-44.143.9.100   W.OE9XFR # WAMPES-Knoten Feldkirch (Wampes)
-44.143.9.101   OE9XFR   # WAMPES-Knoten Feldkirch (Unix)
+44.143.9.100   W.OE9XFR # [A] WAMPES-Knoten Feldkirch (Wampes)
+44.143.9.101   OE9XFR   # [A] WAMPES-Knoten Feldkirch (Unix)
 # 9600 bit/s Knoten
 44.143.25.xx
-# Schnelle Knoten (Zukunft)
+# Schnelle Knoten [P]
 44.143.41.xx
+# Subnetz OE9MKV 44.143.73.0
+44.143.73.1    VANESSA.OE9MKV #
 #HOSTS.NET FOR BELGIUM
 #
 # 44.144 Eric Langhendries ON7LE Belgium
