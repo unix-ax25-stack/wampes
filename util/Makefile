@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.73 1999/06/20 19:03:53 deyke Exp $
+# @(#) $Id: Makefile,v 1.74 2000/01/15 18:34:16 deyke Exp $
 
 TARGETS    = bridge cnet md5 mkhostdb netupdc netupds path qth udbm
 
@@ -80,11 +80,37 @@ _install: \
 
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 ###
-bridge.o: ../lib/buildsaddr.h ../lib/configure.h
-cnet.o: ../lib/buildsaddr.h ../lib/configure.h
-md5drivr.o: ../lib/md5.h
-mkhostdb.o: ../lib/configure.h
-netupds.o: ../lib/buildsaddr.h ../lib/calc_crc.h ../lib/configure.h \
-	../lib/lockfile.h ../lib/md5.h ../lib/strdup.h ../lib/strmatch.h
-path.o: ../lib/strdup.h ../lib/configure.h
-udbm.o: ../lib/calc_crc.h ../lib/callvalid.h ../lib/configure.h
+bridge.o:\
+	../lib/buildsaddr.h\
+	../lib/configure.h\
+	bridge.c
+cnet.o:\
+	../lib/buildsaddr.h\
+	../lib/configure.h\
+	cnet.c
+md5drivr.o:\
+	../lib/md5.h\
+	md5drivr.c
+mkhostdb.o:\
+	../lib/configure.h\
+	mkhostdb.c
+netupds.o:\
+	../lib/buildsaddr.h\
+	../lib/calc_crc.h\
+	../lib/configure.h\
+	../lib/lockfile.h\
+	../lib/md5.h\
+	../lib/strdup.h\
+	../lib/strmatch.h\
+	netupds.c
+path.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	path.c
+qth.o:\
+	qth.c
+udbm.o:\
+	../lib/calc_crc.h\
+	../lib/callvalid.h\
+	../lib/configure.h\
+	udbm.c

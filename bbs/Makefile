@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.59 1999/01/27 18:46:52 deyke Exp $
+# @(#) $Id: Makefile,v 1.60 2000/01/15 18:34:09 deyke Exp $
 
 TARGETS    = bbs
 
@@ -28,5 +28,12 @@ _install: /usr/local/bin/bbs /usr/local/lib/bbs.help
 
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 ###
-bbs.o: ../lib/buildsaddr.h ../lib/callvalid.h ../lib/configure.h \
-	../lib/lockfile.h ../lib/seteugid.h ../lib/strdup.h ../lib/strmatch.h
+bbs.o:\
+	../lib/buildsaddr.h\
+	../lib/callvalid.h\
+	../lib/configure.h\
+	../lib/lockfile.h\
+	../lib/seteugid.h\
+	../lib/strdup.h\
+	../lib/strmatch.h\
+	bbs.c

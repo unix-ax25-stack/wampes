@@ -3,7 +3,7 @@ frontpage
 credits
 the-net-program
 console-modes
-commands/[[:digit:][:lower:]]*
-ftp-commands/[[:digit:][:lower:]]*
+commands/[0-9a-z]*
+ftp-commands/[0-9a-z]*
 setting-paclen
 ../common/contents

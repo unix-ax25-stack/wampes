@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.104 2000/01/01 16:12:53 deyke Exp $
+# @(#) $Id: Makefile,v 1.105 2000/01/15 18:34:14 deyke Exp $
 
 DEST          = /tcp
 
@@ -350,236 +350,1468 @@ $(DEST)/$(PROGRAM): $(PROGRAM)
 		$(CC) $(CFLAGS) -c $<
 
 ###
-adjtime.o: ../lib/configure.h
-alloc.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h cmdparse.h
-arp.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h iface.h \
-	proc.h ax25.h icmp.h internet.h ip.h arp.h
-arpcmd.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h ax25.h \
-	iface.h proc.h arp.h netuser.h cmdparse.h commands.h
-arpdump.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h arp.h iface.h \
-	proc.h timer.h netuser.h trace.h
-arpfile.o: global.h ../lib/configure.h ../lib/strdup.h timer.h arp.h mbuf.h \
-	iface.h proc.h main.h
-arphdr.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h arp.h iface.h \
-	proc.h timer.h
-asy.o: global.h ../lib/configure.h ../lib/strdup.h proc.h mbuf.h timer.h \
-	iface.h netuser.h slhc.h ip.h internet.h tcp.h n8250.h asy.h ax25.h \
-	kiss.h nrs.h slip.h commands.h
-ax25.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
-	timer.h arp.h slip.h slhc.h ip.h internet.h tcp.h netuser.h ax25.h \
-	lapb.h netrom.h session.h telnet.h devparam.h
-ax25cmd.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h proc.h \
-	iface.h ax25.h lapb.h cmdparse.h socket.h session.h telnet.h tcp.h \
-	internet.h ip.h netuser.h tty.h commands.h
-ax25dump.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h ax25.h iface.h \
-	proc.h timer.h lapb.h trace.h socket.h
-ax25file.o: global.h ../lib/configure.h ../lib/strdup.h timer.h iface.h \
-	mbuf.h proc.h ax25.h main.h
-ax25hdr.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h ax25.h iface.h \
-	proc.h timer.h
-ax25subr.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h ax25.h \
-	iface.h proc.h lapb.h
-ax25user.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h \
-	iface.h proc.h lapb.h ax25.h
-axclient.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h ax25.h \
-	iface.h proc.h lapb.h session.h telnet.h tcp.h internet.h ip.h \
-	netuser.h
-axheard.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
-	timer.h ax25.h ip.h internet.h
-axip.o: global.h ../lib/configure.h ../lib/strdup.h ../lib/strerror.h mbuf.h \
-	iface.h proc.h timer.h internet.h netuser.h ax25.h socket.h trace.h \
-	cmdparse.h hpux.h crc.h
-axserver.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h ax25.h iface.h \
-	proc.h timer.h lapb.h login.h
-cmdparse.o: ../lib/strtoul.h ../lib/configure.h global.h ../lib/strdup.h \
-	proc.h mbuf.h timer.h cmdparse.h
-config.o: ../lib/configure.h global.h ../lib/strdup.h mbuf.h timer.h proc.h \
-	iface.h ip.h internet.h tcp.h netuser.h udp.h lapb.h ax25.h kiss.h \
-	nrs.h netrom.h session.h telnet.h pktdrvr.h slip.h slhc.h arp.h \
-	icmp.h cmdparse.h commands.h ax25mail.h tipmail.h daemon.h socket.h \
-	asy.h trace.h flexnet.h
-crc.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h crc.h \
-	../lib/calc_crc.h
-devparam.o: global.h ../lib/configure.h ../lib/strdup.h devparam.h
-dirutil.o: global.h ../lib/configure.h ../lib/strdup.h hpux.h dirutil.h \
-	commands.h
-domain.o: ../lib/configure.h global.h ../lib/strdup.h mbuf.h iface.h proc.h \
-	timer.h socket.h tcp.h internet.h ip.h netuser.h udp.h cmdparse.h \
-	domain.h
-domhdr.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h domain.h proc.h \
+adjtime.o:\
+	../lib/configure.h\
+	adjtime.c
+alloc.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	alloc.c\
+	cmdparse.h\
+	global.h\
+	mbuf.h
+arp.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	arp.c\
+	arp.h\
+	ax25.h\
+	global.h\
+	icmp.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	proc.h\
 	timer.h
-ethertap.o: global.h ../lib/configure.h ../lib/strdup.h hpux.h iface.h mbuf.h \
-	proc.h timer.h netuser.h ../lib/strerror.h trace.h
-files.o: files.h
-finger.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h socket.h proc.h \
-	timer.h internet.h icmp.h iface.h ip.h netuser.h tcp.h ftp.h \
-	session.h telnet.h ax25.h finger.h
-flexnet.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h iface.h \
-	proc.h ax25.h lapb.h trace.h flexnet.h cmdparse.h commands.h
-ftp.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h netuser.h timer.h \
-	tcp.h iface.h proc.h internet.h ip.h ftp.h session.h telnet.h ax25.h
-ftpcli.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h session.h proc.h \
-	timer.h telnet.h tcp.h iface.h internet.h ip.h netuser.h ax25.h \
-	cmdparse.h socket.h icmp.h ftp.h commands.h dirutil.h ../lib/seek.h
-ftpserv.o: ../lib/seek.h ../lib/seteugid.h ../lib/strerror.h \
-	../lib/configure.h global.h ../lib/strdup.h mbuf.h socket.h proc.h \
-	timer.h netuser.h tcp.h iface.h internet.h ip.h dirutil.h login.h \
-	ftp.h session.h telnet.h ax25.h ftpserv.h
-hpux.o: ../lib/configure.h global.h ../lib/strdup.h iface.h mbuf.h proc.h \
-	timer.h files.h login.h commands.h main.h hpux.h
-icmp.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
-	timer.h ip.h internet.h icmp.h ping.h netuser.h
-icmpcmd.o: global.h ../lib/configure.h ../lib/strdup.h icmp.h mbuf.h iface.h \
-	proc.h timer.h internet.h ip.h netuser.h socket.h cmdparse.h \
-	commands.h
-icmpdump.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h internet.h \
-	netuser.h icmp.h iface.h proc.h timer.h ip.h trace.h
-icmphdr.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h internet.h ip.h \
-	iface.h proc.h timer.h icmp.h
-icmpmsg.o: global.h ../lib/configure.h ../lib/strdup.h
-iface.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h proc.h timer.h \
-	iface.h ip.h internet.h icmp.h netuser.h ax25.h cmdparse.h commands.h \
+arpcmd.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	arp.h\
+	arpcmd.c\
+	ax25.h\
+	cmdparse.h\
+	commands.h\
+	global.h\
+	iface.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	timer.h
+arpdump.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	arp.h\
+	arpdump.c\
+	global.h\
+	iface.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	timer.h\
 	trace.h
-ip.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h internet.h \
-	netuser.h iface.h proc.h ip.h icmp.h
-ipcmd.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h internet.h \
-	timer.h netuser.h iface.h proc.h ip.h cmdparse.h commands.h rip.h \
-	udp.h
-ipdump.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h internet.h \
-	iface.h proc.h timer.h ip.h trace.h netuser.h
-ipfile.o: global.h ../lib/configure.h ../lib/strdup.h timer.h iface.h mbuf.h \
-	proc.h ip.h internet.h main.h
-ipfilter.o: global.h ../lib/configure.h ../lib/strdup.h netuser.h cmdparse.h
-iphdr.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h ip.h iface.h \
-	proc.h timer.h internet.h
-ipip.o: global.h ../lib/configure.h ../lib/strdup.h ../lib/strerror.h mbuf.h \
-	iface.h proc.h timer.h internet.h netuser.h socket.h trace.h \
-	cmdparse.h hpux.h
-iproute.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
-	timer.h internet.h ip.h tcp.h netuser.h icmp.h rip.h udp.h trace.h \
-	ipfilter.h
-kernel.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h proc.h timer.h \
-	socket.h daemon.h
-kiss.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
-	timer.h kiss.h devparam.h slip.h slhc.h ip.h internet.h tcp.h \
-	netuser.h asy.h ax25.h pktdrvr.h crc.h
-kissdump.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h kiss.h iface.h \
-	proc.h timer.h devparam.h ax25.h trace.h crc.h
-krnlif.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
-	timer.h netuser.h commands.h devparam.h trace.h hpux.h ax25.h
-ksubr.o: global.h ../lib/configure.h ../lib/strdup.h proc.h mbuf.h timer.h \
-	commands.h main.h
-lapb.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h ax25.h \
-	iface.h proc.h lapb.h ip.h internet.h
-lapbtime.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h ax25.h iface.h \
-	proc.h timer.h lapb.h
-lcsum.o: global.h ../lib/configure.h ../lib/strdup.h ip.h mbuf.h iface.h \
-	proc.h timer.h internet.h
-login.o: ../lib/callvalid.h ../lib/configure.h ../lib/seek.h global.h \
-	../lib/strdup.h mbuf.h timer.h hpux.h telnet.h tcp.h iface.h proc.h \
-	internet.h ip.h netuser.h cmdparse.h commands.h login.h
-mail_daemn.o: ../lib/configure.h global.h ../lib/strdup.h timer.h mail.h \
-	cmdparse.h commands.h
-mail_retrn.o: ../lib/configure.h hpux.h global.h ../lib/strdup.h mail.h
-mail_smtp.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h transport.h \
-	timer.h mail.h
-mail_subr.o: timer.h global.h ../lib/configure.h ../lib/strdup.h mail.h
-main.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h proc.h \
-	iface.h arp.h ip.h internet.h tcp.h netuser.h udp.h ax25.h kiss.h \
-	netrom.h session.h telnet.h ftp.h tty.h socket.h cmdparse.h \
-	commands.h daemon.h devparam.h files.h main.h remote.h trace.h hpux.h \
-	remote_net.h
-mbuf.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h proc.h timer.h
-misc.o: global.h ../lib/configure.h ../lib/strdup.h socket.h mbuf.h proc.h \
+arpfile.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	arp.h\
+	arpfile.c\
+	global.h\
+	iface.h\
+	main.h\
+	mbuf.h\
+	proc.h\
 	timer.h
-n8250.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h proc.h timer.h \
-	iface.h n8250.h asy.h devparam.h hpux.h
-netrom.o: global.h ../lib/configure.h ../lib/strdup.h netuser.h mbuf.h \
-	timer.h iface.h proc.h arp.h ip.h internet.h ax25.h lapb.h netrom.h \
-	session.h telnet.h tcp.h cmdparse.h trace.h login.h
-netuser.o: global.h ../lib/configure.h ../lib/strdup.h netuser.h
-ni.o: ../lib/configure.h global.h ../lib/strdup.h ../lib/strerror.h mbuf.h \
-	iface.h proc.h timer.h netuser.h trace.h hpux.h
-nrdump.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h ax25.h \
-	iface.h proc.h netrom.h session.h telnet.h tcp.h internet.h ip.h \
-	netuser.h trace.h
-nrs.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
-	timer.h ax25.h nrs.h asy.h trace.h commands.h
-pathname.o: global.h ../lib/configure.h ../lib/strdup.h dirutil.h
-ping.o: global.h ../lib/configure.h ../lib/strdup.h icmp.h mbuf.h iface.h \
-	proc.h timer.h internet.h ip.h netuser.h socket.h session.h telnet.h \
-	tcp.h ax25.h commands.h ping.h
-remote_net.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h \
-	proc.h timer.h transport.h hpux.h ../lib/buildsaddr.h main.h \
-	cmdparse.h
-rip.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h netuser.h udp.h \
-	iface.h proc.h timer.h internet.h ip.h rip.h arp.h
-ripcmd.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h netuser.h \
-	internet.h cmdparse.h timer.h iface.h proc.h udp.h ip.h rip.h \
-	commands.h
-ripdump.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h netuser.h \
-	timer.h rip.h iface.h proc.h udp.h internet.h ip.h trace.h
-services.o: global.h ../lib/configure.h ../lib/strdup.h socket.h mbuf.h \
-	proc.h timer.h netuser.h
-session.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h proc.h timer.h \
-	tcp.h iface.h internet.h ip.h netuser.h ftp.h session.h telnet.h \
-	ax25.h icmp.h tty.h socket.h cmdparse.h commands.h main.h axclient.h \
-	lapb.h finger.h netrom.h
-slhc.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h internet.h ip.h \
-	iface.h proc.h timer.h tcp.h netuser.h slhc.h
-slhcdump.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h internet.h \
-	ip.h iface.h proc.h timer.h slhc.h tcp.h netuser.h trace.h
-slip.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
-	timer.h ip.h internet.h slhc.h tcp.h netuser.h asy.h slip.h trace.h \
-	pktdrvr.h
-smisc.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h socket.h proc.h \
-	timer.h remote.h tcp.h iface.h internet.h ip.h netuser.h udp.h \
-	commands.h main.h
-sntp.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
-	timer.h socket.h udp.h internet.h ip.h netuser.h cmdparse.h session.h \
-	telnet.h tcp.h ax25.h
-tcpcmd.o: global.h ../lib/configure.h ../lib/strdup.h timer.h mbuf.h \
-	netuser.h internet.h tcp.h iface.h proc.h ip.h cmdparse.h commands.h \
-	socket.h session.h telnet.h ax25.h main.h
-tcpdump.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h netuser.h \
-	internet.h tcp.h iface.h proc.h timer.h ip.h trace.h
-tcpgate.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h netuser.h tcp.h \
-	iface.h proc.h timer.h internet.h ip.h hpux.h ../lib/buildsaddr.h
-tcphdr.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h tcp.h iface.h \
-	proc.h timer.h internet.h ip.h netuser.h
-tcpin.o: global.h ../lib/configure.h ../lib/strdup.h timer.h mbuf.h netuser.h \
-	internet.h tcp.h iface.h proc.h ip.h icmp.h
-tcpout.o: global.h ../lib/configure.h ../lib/strdup.h timer.h mbuf.h \
-	netuser.h internet.h tcp.h iface.h proc.h ip.h
-tcpsubr.o: global.h ../lib/configure.h ../lib/strdup.h timer.h mbuf.h \
-	netuser.h internet.h tcp.h iface.h proc.h ip.h
-tcptimer.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h \
-	netuser.h internet.h tcp.h iface.h proc.h ip.h
-tcpuser.o: global.h ../lib/configure.h ../lib/strdup.h timer.h mbuf.h \
-	netuser.h socket.h proc.h internet.h tcp.h iface.h ip.h icmp.h
-telnet.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h socket.h proc.h \
-	timer.h telnet.h tcp.h iface.h internet.h ip.h netuser.h session.h \
-	ax25.h icmp.h tty.h commands.h cmdparse.h
-timep.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
-	timer.h socket.h udp.h internet.h ip.h netuser.h
-timer.o: global.h ../lib/configure.h ../lib/strdup.h timer.h proc.h mbuf.h \
-	commands.h daemon.h socket.h
-tnserv.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h socket.h proc.h \
-	timer.h netuser.h tcp.h iface.h internet.h ip.h login.h tipmail.h
-trace.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
-	timer.h commands.h trace.h session.h telnet.h tcp.h internet.h ip.h \
-	netuser.h ax25.h
-transport.o: global.h ../lib/configure.h ../lib/strdup.h netuser.h mbuf.h \
-	timer.h ax25.h iface.h proc.h lapb.h netrom.h session.h telnet.h \
-	tcp.h internet.h ip.h transport.h
-ttydriv.o: global.h ../lib/configure.h ../lib/strdup.h tty.h
-tun.o: global.h ../lib/configure.h ../lib/strdup.h ../lib/strerror.h mbuf.h \
-	iface.h proc.h timer.h netuser.h trace.h hpux.h
-udp.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h netuser.h iface.h \
-	proc.h timer.h udp.h internet.h ip.h icmp.h
-udpcmd.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h netuser.h udp.h \
-	iface.h proc.h timer.h internet.h ip.h cmdparse.h commands.h
-udpdump.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h netuser.h \
-	internet.h udp.h iface.h proc.h timer.h ip.h socket.h trace.h
-udphdr.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h ip.h iface.h \
-	proc.h timer.h internet.h udp.h netuser.h
+arphdr.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	arp.h\
+	arphdr.c\
+	global.h\
+	iface.h\
+	mbuf.h\
+	proc.h\
+	timer.h
+asy.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	asy.c\
+	asy.h\
+	ax25.h\
+	commands.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	kiss.h\
+	mbuf.h\
+	n8250.h\
+	netuser.h\
+	nrs.h\
+	proc.h\
+	slhc.h\
+	slip.h\
+	tcp.h\
+	timer.h
+ax25.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	arp.h\
+	ax25.c\
+	ax25.h\
+	devparam.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	lapb.h\
+	mbuf.h\
+	netrom.h\
+	netuser.h\
+	proc.h\
+	session.h\
+	slhc.h\
+	slip.h\
+	tcp.h\
+	telnet.h\
+	timer.h
+ax25cmd.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	ax25cmd.c\
+	cmdparse.h\
+	commands.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	lapb.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	session.h\
+	socket.h\
+	tcp.h\
+	telnet.h\
+	timer.h\
+	tty.h
+ax25dump.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	ax25dump.c\
+	global.h\
+	iface.h\
+	lapb.h\
+	mbuf.h\
+	proc.h\
+	socket.h\
+	timer.h\
+	trace.h
+ax25file.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	ax25file.c\
+	global.h\
+	iface.h\
+	main.h\
+	mbuf.h\
+	proc.h\
+	timer.h
+ax25hdr.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	ax25hdr.c\
+	global.h\
+	iface.h\
+	mbuf.h\
+	proc.h\
+	timer.h
+ax25subr.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	ax25subr.c\
+	global.h\
+	iface.h\
+	lapb.h\
+	mbuf.h\
+	proc.h\
+	timer.h
+ax25user.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	ax25user.c\
+	global.h\
+	iface.h\
+	lapb.h\
+	mbuf.h\
+	proc.h\
+	timer.h
+axclient.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	axclient.c\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	lapb.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	session.h\
+	tcp.h\
+	telnet.h\
+	timer.h
+axheard.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	axheard.c\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	proc.h\
+	timer.h
+axip.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	../lib/strerror.h\
+	ax25.h\
+	axip.c\
+	cmdparse.h\
+	crc.h\
+	global.h\
+	hpux.h\
+	iface.h\
+	internet.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	socket.h\
+	timer.h\
+	trace.h
+axserver.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	axserver.c\
+	global.h\
+	iface.h\
+	lapb.h\
+	login.h\
+	mbuf.h\
+	proc.h\
+	timer.h
+cmdparse.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	../lib/strtoul.h\
+	cmdparse.c\
+	cmdparse.h\
+	global.h\
+	mbuf.h\
+	proc.h\
+	timer.h
+config.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	arp.h\
+	asy.h\
+	ax25.h\
+	ax25mail.h\
+	cmdparse.h\
+	commands.h\
+	config.c\
+	daemon.h\
+	flexnet.h\
+	global.h\
+	icmp.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	kiss.h\
+	lapb.h\
+	mbuf.h\
+	netrom.h\
+	netuser.h\
+	nrs.h\
+	pktdrvr.h\
+	proc.h\
+	session.h\
+	slhc.h\
+	slip.h\
+	socket.h\
+	tcp.h\
+	telnet.h\
+	timer.h\
+	tipmail.h\
+	trace.h\
+	udp.h
+crc.o:\
+	../lib/calc_crc.h\
+	../lib/configure.h\
+	../lib/strdup.h\
+	crc.c\
+	crc.h\
+	global.h\
+	mbuf.h
+devparam.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	devparam.c\
+	devparam.h\
+	global.h
+dirutil.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	commands.h\
+	dirutil.c\
+	dirutil.h\
+	global.h\
+	hpux.h
+domain.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	cmdparse.h\
+	domain.c\
+	domain.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	socket.h\
+	tcp.h\
+	timer.h\
+	udp.h
+domhdr.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	domain.h\
+	domhdr.c\
+	global.h\
+	mbuf.h\
+	proc.h\
+	timer.h
+ethertap.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	../lib/strerror.h\
+	ethertap.c\
+	global.h\
+	hpux.h\
+	iface.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	timer.h\
+	trace.h
+files.o:\
+	files.c\
+	files.h
+finger.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	finger.c\
+	finger.h\
+	ftp.h\
+	global.h\
+	icmp.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	session.h\
+	socket.h\
+	tcp.h\
+	telnet.h\
+	timer.h
+flexnet.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	cmdparse.h\
+	commands.h\
+	flexnet.c\
+	flexnet.h\
+	global.h\
+	iface.h\
+	lapb.h\
+	mbuf.h\
+	proc.h\
+	timer.h\
+	trace.h
+ftp.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	ftp.c\
+	ftp.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	session.h\
+	tcp.h\
+	telnet.h\
+	timer.h
+ftpcli.o:\
+	../lib/configure.h\
+	../lib/seek.h\
+	../lib/strdup.h\
+	ax25.h\
+	cmdparse.h\
+	commands.h\
+	dirutil.h\
+	ftp.h\
+	ftpcli.c\
+	global.h\
+	icmp.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	session.h\
+	socket.h\
+	tcp.h\
+	telnet.h\
+	timer.h
+ftpserv.o:\
+	../lib/configure.h\
+	../lib/seek.h\
+	../lib/seteugid.h\
+	../lib/strdup.h\
+	../lib/strerror.h\
+	ax25.h\
+	dirutil.h\
+	ftp.h\
+	ftpserv.c\
+	ftpserv.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	login.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	session.h\
+	socket.h\
+	tcp.h\
+	telnet.h\
+	timer.h
+hpux.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	commands.h\
+	files.h\
+	global.h\
+	hpux.c\
+	hpux.h\
+	iface.h\
+	login.h\
+	main.h\
+	mbuf.h\
+	proc.h\
+	timer.h
+icmp.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	icmp.c\
+	icmp.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	ping.h\
+	proc.h\
+	timer.h
+icmpcmd.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	cmdparse.h\
+	commands.h\
+	global.h\
+	icmp.h\
+	icmpcmd.c\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	socket.h\
+	timer.h
+icmpdump.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	icmp.h\
+	icmpdump.c\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	timer.h\
+	trace.h
+icmphdr.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	icmp.h\
+	icmphdr.c\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	proc.h\
+	timer.h
+icmpmsg.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	icmpmsg.c
+iface.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	cmdparse.h\
+	commands.h\
+	global.h\
+	icmp.h\
+	iface.c\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	timer.h\
+	trace.h
+ip.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	icmp.h\
+	iface.h\
+	internet.h\
+	ip.c\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	timer.h
+ipcmd.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	cmdparse.h\
+	commands.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	ipcmd.c\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	rip.h\
+	timer.h\
+	udp.h
+ipdump.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	ipdump.c\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	timer.h\
+	trace.h
+ipfile.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	ipfile.c\
+	main.h\
+	mbuf.h\
+	proc.h\
+	timer.h
+ipfilter.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	cmdparse.h\
+	global.h\
+	ipfilter.c\
+	netuser.h
+iphdr.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	iphdr.c\
+	mbuf.h\
+	proc.h\
+	timer.h
+ipip.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	../lib/strerror.h\
+	cmdparse.h\
+	global.h\
+	hpux.h\
+	iface.h\
+	internet.h\
+	ipip.c\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	socket.h\
+	timer.h\
+	trace.h
+iproute.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	icmp.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	ipfilter.h\
+	iproute.c\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	rip.h\
+	tcp.h\
+	timer.h\
+	trace.h\
+	udp.h
+kernel.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	daemon.h\
+	global.h\
+	kernel.c\
+	mbuf.h\
+	proc.h\
+	socket.h\
+	timer.h
+kiss.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	asy.h\
+	ax25.h\
+	crc.h\
+	devparam.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	kiss.c\
+	kiss.h\
+	mbuf.h\
+	netuser.h\
+	pktdrvr.h\
+	proc.h\
+	slhc.h\
+	slip.h\
+	tcp.h\
+	timer.h
+kissdump.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	crc.h\
+	devparam.h\
+	global.h\
+	iface.h\
+	kiss.h\
+	kissdump.c\
+	mbuf.h\
+	proc.h\
+	timer.h\
+	trace.h
+krnlif.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	commands.h\
+	devparam.h\
+	global.h\
+	hpux.h\
+	iface.h\
+	krnlif.c\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	timer.h\
+	trace.h
+ksubr.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	commands.h\
+	global.h\
+	ksubr.c\
+	main.h\
+	mbuf.h\
+	proc.h\
+	timer.h
+lapb.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	lapb.c\
+	lapb.h\
+	mbuf.h\
+	proc.h\
+	timer.h
+lapbtime.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	global.h\
+	iface.h\
+	lapb.h\
+	lapbtime.c\
+	mbuf.h\
+	proc.h\
+	timer.h
+lcsum.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	lcsum.c\
+	mbuf.h\
+	proc.h\
+	timer.h
+login.o:\
+	../lib/callvalid.h\
+	../lib/configure.h\
+	../lib/seek.h\
+	../lib/strdup.h\
+	cmdparse.h\
+	commands.h\
+	global.h\
+	hpux.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	login.c\
+	login.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	tcp.h\
+	telnet.h\
+	timer.h
+mail_daemn.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	cmdparse.h\
+	commands.h\
+	global.h\
+	mail.h\
+	mail_daemn.c\
+	timer.h
+mail_retrn.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	hpux.h\
+	mail.h\
+	mail_retrn.c
+mail_smtp.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	mail.h\
+	mail_smtp.c\
+	mbuf.h\
+	timer.h\
+	transport.h
+mail_subr.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	mail.h\
+	mail_subr.c\
+	timer.h
+main.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	arp.h\
+	ax25.h\
+	cmdparse.h\
+	commands.h\
+	daemon.h\
+	devparam.h\
+	files.h\
+	ftp.h\
+	global.h\
+	hpux.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	kiss.h\
+	main.c\
+	main.h\
+	mbuf.h\
+	netrom.h\
+	netuser.h\
+	proc.h\
+	remote.h\
+	remote_net.h\
+	session.h\
+	socket.h\
+	tcp.h\
+	telnet.h\
+	timer.h\
+	trace.h\
+	tty.h\
+	udp.h
+mbuf.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	mbuf.c\
+	mbuf.h\
+	proc.h\
+	timer.h
+misc.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	mbuf.h\
+	misc.c\
+	proc.h\
+	socket.h\
+	timer.h
+n8250.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	asy.h\
+	devparam.h\
+	global.h\
+	hpux.h\
+	iface.h\
+	mbuf.h\
+	n8250.c\
+	n8250.h\
+	proc.h\
+	timer.h
+netrom.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	arp.h\
+	ax25.h\
+	cmdparse.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	lapb.h\
+	login.h\
+	mbuf.h\
+	netrom.c\
+	netrom.h\
+	netuser.h\
+	proc.h\
+	session.h\
+	tcp.h\
+	telnet.h\
+	timer.h\
+	trace.h
+netuser.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	netuser.c\
+	netuser.h
+ni.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	../lib/strerror.h\
+	global.h\
+	hpux.h\
+	iface.h\
+	mbuf.h\
+	netuser.h\
+	ni.c\
+	proc.h\
+	timer.h\
+	trace.h
+nrdump.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netrom.h\
+	netuser.h\
+	nrdump.c\
+	proc.h\
+	session.h\
+	tcp.h\
+	telnet.h\
+	timer.h\
+	trace.h
+nrs.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	asy.h\
+	ax25.h\
+	commands.h\
+	global.h\
+	iface.h\
+	mbuf.h\
+	nrs.c\
+	nrs.h\
+	proc.h\
+	timer.h\
+	trace.h
+pathname.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	dirutil.h\
+	global.h\
+	pathname.c
+ping.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	commands.h\
+	global.h\
+	icmp.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	ping.c\
+	ping.h\
+	proc.h\
+	session.h\
+	socket.h\
+	tcp.h\
+	telnet.h\
+	timer.h
+remote_net.o:\
+	../lib/buildsaddr.h\
+	../lib/configure.h\
+	../lib/strdup.h\
+	cmdparse.h\
+	global.h\
+	hpux.h\
+	iface.h\
+	main.h\
+	mbuf.h\
+	proc.h\
+	remote_net.c\
+	timer.h\
+	transport.h
+rip.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	arp.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	rip.c\
+	rip.h\
+	timer.h\
+	udp.h
+ripcmd.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	cmdparse.h\
+	commands.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	rip.h\
+	ripcmd.c\
+	timer.h\
+	udp.h
+ripdump.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	rip.h\
+	ripdump.c\
+	timer.h\
+	trace.h\
+	udp.h
+services.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	services.c\
+	socket.h\
+	timer.h
+session.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	axclient.h\
+	cmdparse.h\
+	commands.h\
+	finger.h\
+	ftp.h\
+	global.h\
+	icmp.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	lapb.h\
+	main.h\
+	mbuf.h\
+	netrom.h\
+	netuser.h\
+	proc.h\
+	session.c\
+	session.h\
+	socket.h\
+	tcp.h\
+	telnet.h\
+	timer.h\
+	tty.h
+setsp.o:\
+	setsp.c
+slhc.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	slhc.c\
+	slhc.h\
+	tcp.h\
+	timer.h
+slhcdump.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	slhc.h\
+	slhcdump.c\
+	tcp.h\
+	timer.h\
+	trace.h
+slip.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	asy.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	pktdrvr.h\
+	proc.h\
+	slhc.h\
+	slip.c\
+	slip.h\
+	tcp.h\
+	timer.h\
+	trace.h
+smisc.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	commands.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	main.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	remote.h\
+	smisc.c\
+	socket.h\
+	tcp.h\
+	timer.h\
+	udp.h
+sntp.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	cmdparse.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	session.h\
+	sntp.c\
+	socket.h\
+	tcp.h\
+	telnet.h\
+	timer.h\
+	udp.h
+tcpcmd.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	cmdparse.h\
+	commands.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	main.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	session.h\
+	socket.h\
+	tcp.h\
+	tcpcmd.c\
+	telnet.h\
+	timer.h
+tcpdump.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	tcp.h\
+	tcpdump.c\
+	timer.h\
+	trace.h
+tcpgate.o:\
+	../lib/buildsaddr.h\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	hpux.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	tcp.h\
+	tcpgate.c\
+	timer.h
+tcphdr.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	tcp.h\
+	tcphdr.c\
+	timer.h
+tcpin.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	icmp.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	tcp.h\
+	tcpin.c\
+	timer.h
+tcpout.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	tcp.h\
+	tcpout.c\
+	timer.h
+tcpsubr.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	tcp.h\
+	tcpsubr.c\
+	timer.h
+tcptimer.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	tcp.h\
+	tcptimer.c\
+	timer.h
+tcpuser.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	icmp.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	socket.h\
+	tcp.h\
+	tcpuser.c\
+	timer.h
+telnet.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	cmdparse.h\
+	commands.h\
+	global.h\
+	icmp.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	session.h\
+	socket.h\
+	tcp.h\
+	telnet.c\
+	telnet.h\
+	timer.h\
+	tty.h
+timep.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	socket.h\
+	timep.c\
+	timer.h\
+	udp.h
+timer.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	commands.h\
+	daemon.h\
+	global.h\
+	mbuf.h\
+	proc.h\
+	socket.h\
+	timer.c\
+	timer.h
+tnserv.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	login.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	socket.h\
+	tcp.h\
+	timer.h\
+	tipmail.h\
+	tnserv.c
+trace.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	commands.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	session.h\
+	tcp.h\
+	telnet.h\
+	timer.h\
+	trace.c\
+	trace.h
+transport.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	ax25.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	lapb.h\
+	mbuf.h\
+	netrom.h\
+	netuser.h\
+	proc.h\
+	session.h\
+	tcp.h\
+	telnet.h\
+	timer.h\
+	transport.c\
+	transport.h
+ttydriv.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	tty.h\
+	ttydriv.c
+tun.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	../lib/strerror.h\
+	global.h\
+	hpux.h\
+	iface.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	timer.h\
+	trace.h\
+	tun.c
+udp.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	icmp.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	timer.h\
+	udp.c\
+	udp.h
+udpcmd.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	cmdparse.h\
+	commands.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	timer.h\
+	udp.h\
+	udpcmd.c
+udpdump.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	socket.h\
+	timer.h\
+	trace.h\
+	udp.h\
+	udpdump.c
+udphdr.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	timer.h\
+	udp.h\
+	udphdr.c
+version.o:\
+	version.c

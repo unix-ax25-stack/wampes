@@ -1,4 +1,4 @@
-/* @(#) $Id: ethertap.c,v 1.1 2000/01/01 17:37:01 deyke Exp $ */
+/* @(#) $Id: ethertap.c,v 1.2 2000/01/15 18:34:15 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -35,6 +35,13 @@ static int ethertap_send(struct mbuf **bpp, struct iface *ifp, int32 gateway, ui
   struct edv_t *edv;
   struct ethertap_packet ethertap_packet;
 
+  static const unsigned char ethernet_header[16] = {
+    0x00, 0x00,                                 /* ??? */
+    0xfe, 0xfd, 0x00, 0x00, 0x00, 0x00,         /* Destination address (kernel ethertap module) */
+    0xfe, 0xfe, 0x00, 0x00, 0x00, 0x00,         /* Source address (WAMPES ethertap module) */
+    0x08, 0x00                                  /* Protocol (IP) */
+  };
+
   edv = (struct edv_t *) ifp->edv;
   dump(ifp, IF_TRACE_OUT, *bpp);
   ifp->rawsndcnt++;
@@ -47,10 +54,7 @@ static int ethertap_send(struct mbuf **bpp, struct iface *ifp, int32 gateway, ui
     free_p(bpp);
     return -1;
   }
-  memset(ethertap_packet.ethernet_header, 0, sizeof(ethertap_packet.ethernet_header));
-  ethertap_packet.ethernet_header[2] = (char) 0xfe;
-  ethertap_packet.ethernet_header[3] = (char) 0xfd;
-  ethertap_packet.ethernet_header[14] = (char) 0x08;
+  memcpy(ethertap_packet.ethernet_header, (const char *) ethernet_header, sizeof(ethernet_header));
   write(edv->fd, &ethertap_packet, l + sizeof(ethertap_packet.ethernet_header));
   return l;
 }
@@ -69,7 +73,9 @@ static void ethertap_recv(void *argp)
   ifp = (struct iface *) argp;
   edv = (struct edv_t *) ifp->edv;
   l = read(edv->fd, &ethertap_packet, sizeof(ethertap_packet)) - sizeof(ethertap_packet.ethernet_header);
-  if (l <= 0) {
+  if (l <= 0 ||
+      ethertap_packet.ethernet_header[14] != 0x08 ||
+      ethertap_packet.ethernet_header[15] != 0x00) {
     goto Fail;
   }
   bp = qdata(ethertap_packet.data, l);

@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.45 1999/12/02 02:13:52 deyke Exp $
+# @(#) $Id: Makefile,v 1.46 2000/01/15 18:34:08 deyke Exp $
 
 OBSOLETE   = /usr/local/bin/sfstat \
 	     /usr/local/etc/mkhostdb \
@@ -87,3 +87,4 @@ clean:; @-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i clean ); done
 	@-rm -f wampes-??????.t*
 	@-find . -name .pure -exec rm {} \;
 	@-find . -name .trimtime -exec rm {} \;
+###

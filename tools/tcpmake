@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Id: tcpmake,v 1.40 1999/06/20 19:03:52 deyke Exp $
+# @(#) $Id: tcpmake,v 1.41 2000/01/15 18:34:16 deyke Exp $
 
 #------------------------------------------------------------------------------
 
@@ -63,7 +63,7 @@ for dir in \
 	file=Makefile
 	if [[ -f $file ]]; then
 		save_file $file
-		CFLAGS='-I../lib' mkmf
+		make_depend
 		check_file $file
 	fi
 	for file in *.[ch]; do

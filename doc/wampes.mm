@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 000101" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 000115" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 000101
+Version 000115
 .S
 .SP 2
 .S 15
@@ -421,7 +421,7 @@ by creating a new interface named \fIname\fP on the \fBWAMPES\fP side.
 Example:
 .DS I
 .ft CW
-shell ifconfig tap0 44.128.4.5 up mtu 256 netmask 255.0.0.0 broadcast 44.255.255.255
+shell ifconfig tap0 44.128.4.5 up mtu 256
 attach ethertap tap0 # ip to host ip
 ifconfig tap0 mtu 256
 .ft P

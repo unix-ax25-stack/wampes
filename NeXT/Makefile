@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.4 1999/01/27 18:47:13 deyke Exp $
+# @(#) $Id: Makefile,v 1.5 2000/01/15 18:34:09 deyke Exp $
 
 LIBRARY       = libnext.a
 
@@ -20,4 +20,8 @@ install:;
 
 clean:; @rm -f *.o *.a *~ \#*\#
 ###
-next.o: next.h
+next.o:\
+	next.c\
+	next.h
+putenv.o:\
+	putenv.c

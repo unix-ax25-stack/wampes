@@ -1,4 +1,10 @@
-@(#) $Id: ChangeLog,v 1.72 2000/01/01 16:12:47 deyke Exp $
+@(#) $Id: ChangeLog,v 1.73 2000/01/15 18:34:08 deyke Exp $
+
+000115 Dieter Deyke <deyke@crosswinds.net>
+
+	Minor improvements to ethertap module
+
+	Changed build system to make it more portable
 
 000101 Dieter Deyke <deyke@crosswinds.net>
 

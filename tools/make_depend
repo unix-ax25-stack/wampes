@@ -1,0 +1,108 @@
+#! /usr/bin/perl -w
+
+# @(#) $Id: make_depend,v 1.1 2000/01/15 18:34:16 deyke Exp $
+
+require 5.003;
+
+use FileHandle;
+
+use strict;
+
+use vars '%files';
+use vars '%i';
+
+#------------------------------------------------------------------------------
+
+# Scan one file for include files
+
+sub scanfile {
+
+	my ($filename) = @_;
+
+	my ($dir);
+	my ($fh);
+	my ($file);
+	my ($found);
+
+	return if exists($files{$filename});
+	$files{$filename} = $filename;
+	$fh = FileHandle->new();
+	$fh->open($filename) or die("$filename: $!\n");
+	while ($file = <$fh>) {
+		if ($file =~ s/^\#\s*include\s*\"([^\"]+)\".*\n/$1/) {
+			$found = 0;
+			foreach $dir ('.', '../lib') {
+				if (-f "$dir/$file") {
+					$found = 1;
+					$file = "$dir/$file" if $dir ne '.';
+					$files{$filename} .= " $file";
+					scanfile($file);
+					last;
+				}
+			}
+			print("While scanning $filename: $file not found\n") if !$found;
+		}
+	}
+	$fh->close();
+}
+
+#------------------------------------------------------------------------------
+
+sub roll_up {
+	my ($filename) = @_;
+	my ($file);
+	foreach $file (split(/ /, $files{$filename})) {
+		if (!exists($i{$file})) {
+			$i{$file} = 1;
+			roll_up($file);
+		}
+	}
+}
+
+#------------------------------------------------------------------------------
+
+sub main {
+
+	my ($fhi);
+	my ($fho);
+	my ($file);
+	my ($makefile) = 'Makefile';
+	my ($obj);
+	my ($tmpmakefile) = 'Makefile.tmp';
+
+	%files = ();
+	opendir(DIR, '.') or die("opendir(\".\"): $!\n");
+	foreach $file (grep(/\.c$/, readdir(DIR))) {
+		scanfile($file);
+	}
+	closedir(DIR);
+
+	$fhi = FileHandle->new();
+	$fhi->open($makefile) or die("$makefile: $!\n");
+	$fho = FileHandle->new();
+	$fho->open($tmpmakefile, 'w') or die("$tmpmakefile: $!\n");
+	while (<$fhi>) {
+		last if $_ eq "###\n";
+		print($fho $_);
+	}
+	$fhi->close();
+	print($fho "###\n");
+	foreach $file (sort(grep(/\.c$/, keys(%files)))) {
+		($obj = $file) =~ s!\.c$!.o!;
+		print($fho "$obj:");
+		%i = ();
+		roll_up($file);
+		foreach (sort(keys(%i))) {
+			print($fho "\\\n\t$_");
+		}
+		print($fho "\n");
+	}
+	$fho->close();
+	unlink($makefile) or die("$makefile: $!\n");
+	rename($tmpmakefile, $makefile) or die("rename(\"$tmpmakefile\", \"$makefile\"): $!\n");
+
+}
+
+#------------------------------------------------------------------------------
+
+main();

@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.36 1999/01/27 18:47:17 deyke Exp $
+# @(#) $Id: Makefile,v 1.37 2000/01/15 18:34:12 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -31,13 +31,37 @@ install:;
 
 clean:; @rm -f *.o *.a configure.h configure.mak *~ \#*\#
 ###
-buildsaddr.o: buildsaddr.h
-calc_crc.o: calc_crc.h
-callvalid.o: callvalid.h
-lockfile.o: lockfile.h seek.h
-md5.o: md5.h
-seteugid.o: seteugid.h
-strdup.o: configure.h strdup.h
-strerror.o: configure.h strerror.h
-strmatch.o: strmatch.h
-strtoul.o: configure.h strtoul.h
+buildsaddr.o:\
+	buildsaddr.c\
+	buildsaddr.h
+calc_crc.o:\
+	calc_crc.c\
+	calc_crc.h
+callvalid.o:\
+	callvalid.c\
+	callvalid.h
+lockfile.o:\
+	lockfile.c\
+	lockfile.h\
+	seek.h
+md5.o:\
+	md5.c\
+	md5.h
+seteugid.o:\
+	seteugid.c\
+	seteugid.h
+strdup.o:\
+	configure.h\
+	strdup.c\
+	strdup.h
+strerror.o:\
+	configure.h\
+	strerror.c\
+	strerror.h
+strmatch.o:\
+	strmatch.c\
+	strmatch.h
+strtoul.o:\
+	configure.h\
+	strtoul.c\
+	strtoul.h

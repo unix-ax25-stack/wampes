@@ -4,7 +4,7 @@
 </HEAD>
 <BODY>
 <H1>WAMPES Reference Manual</H1>
-Version 000101
+Version 000115
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
@@ -519,7 +519,7 @@ This creates an IP point-to-point link between <B>WAMPES</B> and UNIX,
 by creating a new interface named <I>name</I> on the <B>WAMPES</B> side.
 Example:
 <PRE>
-shell ifconfig tap0 44.128.4.5 up mtu 256 netmask 255.0.0.0 broadcast 44.255.255.255
+shell ifconfig tap0 44.128.4.5 up mtu 256
 attach ethertap tap0 # ip to host ip
 ifconfig tap0 mtu 256
 </PRE>

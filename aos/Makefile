@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.13 1999/01/27 18:47:26 deyke Exp $
+# @(#) $Id: Makefile,v 1.14 2000/01/15 18:34:09 deyke Exp $
 
 LIBRARY       = libaos.a
 
@@ -23,4 +23,17 @@ install:;
 
 clean:; @rm -f *.o *.a *~ \#*\#
 ###
-ctime.o: time.h ansi.h cdefs.h tzfile.h
+ctime.o:\
+	ansi.h\
+	cdefs.h\
+	ctime.c\
+	time.h\
+	tzfile.h
+getcwd.o:\
+	getcwd.c
+putenv.o:\
+	putenv.c
+setsid.o:\
+	setsid.c
+strstr.o:\
+	strstr.c

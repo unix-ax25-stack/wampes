@@ -1,4 +1,4 @@
-.\" @(#) $Id: attach,v 1.16 2000/01/01 16:12:53 deyke Exp $ -*- Mode: Nroff -*-
+.\" @(#) $Id: attach,v 1.17 2000/01/15 18:34:14 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "attach" " \fItype\fP [\fItype specific options\fP]"
 Configure and attach an interface to the system. The details are
 highly interface type dependent.
@@ -88,7 +88,7 @@ by creating a new interface named \fIname\fP on the \fBWAMPES\fP side.
 Example:
 .DS I
 .ft CW
-shell ifconfig tap0 44.128.4.5 up mtu 256 netmask 255.0.0.0 broadcast 44.255.255.255
+shell ifconfig tap0 44.128.4.5 up mtu 256
 attach ethertap tap0 # ip to host ip
 ifconfig tap0 mtu 256
 .ft P
