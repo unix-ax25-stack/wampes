@@ -1,4 +1,4 @@
-/* @(#) $Id: setsp.c,v 1.16 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: setsp.c,v 1.17 2002/05/27 03:16:13 dl9sau Exp $ */
 
 #ifndef __lint
 
@@ -64,6 +64,10 @@ setstack:
 	movel   sp@,a0
 	movel   newstackptr,sp
 	jmp     a0@
+#elif	__sparc__
+	mov   %sp, %g0
+	set   newstackptr,%sp
+	jmp     %g0
 #else
 	movl    %esp, %ebp
 	movl    newstackptr, %esp
@@ -76,6 +80,10 @@ _setstack:
 	movel   sp@,a0
 	movel   _newstackptr,sp
 	jmp     a0@
+#elif	__sparc__
+	mov   %sp, %g0
+	mov   newstackptr,%sp
+	jmp     %g0
 #else
 	movl    %esp, %ebp
 	movl    _newstackptr, %esp
