@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.22 1991/02/04 18:10:20 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.23 1991/06/15 20:29:37 deyke Exp $";
 
 #define _HPUX_SOURCE 1
 
@@ -23,25 +23,19 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <time.h>
 #include <unistd.h>
 
-#ifdef __STDC__
-#define __ARGS(x)       x
-#else
-#define __ARGS(x)       ()
-#endif
-
 extern char  *optarg;
 extern char  *sys_errlist[];
-extern int  getopt __ARGS((int argc, char **argv, char *optstring));
-extern int  ioctl __ARGS((int fildes, int request, ...));
-extern int  lockf __ARGS((int fildes, int function, long size));
+extern int  getopt(int argc, char **argv, char *optstring);
+extern int  ioctl(int fildes, int request, ...);
+extern int  lockf(int fildes, int function, long size);
 extern int  optind;
-extern int  putenv __ARGS((char *string));
-extern int  setpgrp __ARGS((void));
-extern int  setresgid __ARGS((int rgid, int egid, int sgid));
-extern int  setresuid __ARGS((int ruid, int euid, int suid));
-extern int  sigvector __ARGS((int sig, struct sigvec *vec, struct sigvec *ovec));
-extern long  sigsetmask __ARGS((long mask));
-extern struct sockaddr *build_sockaddr __ARGS((char *name, int *addrlen));
+extern int  putenv(char *string);
+extern int  setpgrp(void);
+extern int  setresgid(int rgid, int egid, int sgid);
+extern int  setresuid(int ruid, int euid, int suid);
+extern int  sigvector(int sig, struct sigvec *vec, struct sigvec *ovec);
+extern long  sigsetmask(long mask);
+extern struct sockaddr *build_sockaddr(char *name, int *addrlen);
 
 #define BIDFILE     "seqbid"
 #define DEBUGDIR    "/tmp/bbs"
@@ -53,8 +47,8 @@ extern struct sockaddr *build_sockaddr __ARGS((char *name, int *addrlen));
 #define SEQFILE     ".bbsseq"
 #define WRKDIR      "/users/bbs"
 
-#define SECONDES    (1L)
-#define MINUTES     (60L*SECONDES)
+#define SECONDS     (1L)
+#define MINUTES     (60L*SECONDS)
 #define HOURS       (60L*MINUTES)
 #define DAYS        (24L*HOURS)
 
@@ -92,8 +86,8 @@ struct index {
 
 struct user {
   char  *name;
-  int  uid;
-  int  gid;
+  uid_t uid;
+  gid_t gid;
   char  *dir;
   char  *shell;
   char  *cwd;
@@ -137,76 +131,77 @@ static int  fdlock = -1;
 static int  fdseq;
 static int  level;
 static struct user user;
-volatile static int stopped;
+static volatile int stopped;
 
-static void errorstop __ARGS((int line));
-static char *strupc __ARGS((char *s));
-static char *strlwc __ARGS((char *s));
-static int strcasecmp __ARGS((char *s1, char *s2));
-static int strncasecmp __ARGS((char *s1, char *s2, int n));
-static char *strtrim __ARGS((char *s));
-static char *strcasepos __ARGS((char *str, char *pat));
-static char *getstring __ARGS((char *s));
-static char *timestr __ARGS((long gmt));
-static int callvalid __ARGS((char *call));
-static char *dirname __ARGS((int mesg));
-static char *filename __ARGS((int mesg));
-static void get_seq __ARGS((void));
-static void put_seq __ARGS((void));
-static void wait_for_prompt __ARGS((void));
-static void lock __ARGS((void));
-static void unlock __ARGS((void));
-static int get_index __ARGS((int n, struct index *index));
-static int read_allowed __ARGS((struct index *index));
-static char *get_user_from_path __ARGS((char *path));
-static char *get_host_from_path __ARGS((char *path));
-static int msg_uniq __ARGS((char *bid, char *mid));
-static void send_to_bbs __ARGS((struct mail *mail));
-static void send_to_mail __ARGS((struct mail *mail));
-static void send_to_news __ARGS((struct mail *mail));
-static void fix_address __ARGS((char *addr));
-static struct mail *alloc_mail __ARGS((void));
-static void free_mail __ARGS((struct mail *mail));
-static void route_mail __ARGS((struct mail *mail));
-static void append_line __ARGS((struct mail *mail, char *line));
-static void get_header_value __ARGS((char *name, char *line, char *value));
-static char *get_host_from_header __ARGS((char *line));
-static int host_in_header __ARGS((char *fname, char *host));
-static void delete_command __ARGS((int argc, char **argv));
-static void dir_print __ARGS((struct dir_entry *p));
-static void dir_command __ARGS((int argc, char **argv));
-static void disconnect_command __ARGS((int argc, char **argv));
-static void f_command __ARGS((int argc, char **argv));
-static void help_command __ARGS((int argc, char **argv));
-static void info_command __ARGS((int argc, char **argv));
-static void list_command __ARGS((int argc, char **argv));
-static void mybbs_command __ARGS((int argc, char **argv));
-static void prompt_command __ARGS((int argc, char **argv));
-static void quit_command __ARGS((int argc, char **argv));
-static void read_command __ARGS((int argc, char **argv));
-static void reply_command __ARGS((int argc, char **argv));
-static void send_command __ARGS((int argc, char **argv));
-static void shell_command __ARGS((int argc, char **argv));
-static void sid_command __ARGS((int argc, char **argv));
-static void status_command __ARGS((int argc, char **argv));
-static void unknown_command __ARGS((int argc, char **argv));
-static void xcrunch_command __ARGS((int argc, char **argv));
-static void xscreen_command __ARGS((int argc, char **argv));
-static char *connect_addr __ARGS((char *host));
-static void connect_bbs __ARGS((void));
-static void parse_command_line __ARGS((char *line));
-static void bbs __ARGS((void));
-static void interrupt_handler __ARGS((int sig, int code, struct sigcontext *scp));
-static void alarm_handler __ARGS((int sig, int code, struct sigcontext *scp));
-static void trap_signal __ARGS((int sig, void (*handler )()));
-static void rmail __ARGS((void));
-static void rnews __ARGS((void));
+static void errorstop(int line);
+static char *strupc(char *s);
+static char *strlwc(char *s);
+static int strcasecmp(const char *s1, const char *s2);
+static int strncasecmp(const char *s1, const char *s2, int n);
+static char *strtrim(char *s);
+static const char *strcasepos(const char *str, const char *pat);
+static char *getstring(char *s);
+static char *timestr(long gmt);
+static int callvalid(const char *call);
+static char *dirname(int mesg);
+static char *filename(int mesg);
+static void get_seq(void);
+static void put_seq(void);
+static void wait_for_prompt(void);
+static void lock(void);
+static void unlock(void);
+static int get_index(int n, struct index *index);
+static int read_allowed(const struct index *index);
+static char *get_user_from_path(char *path);
+static char *get_host_from_path(char *path);
+static int msg_uniq(const char *bid, const char *mid);
+static void send_to_bbs(struct mail *mail);
+static void send_to_mail(struct mail *mail);
+static void send_to_news(struct mail *mail);
+static void fix_address(char *addr);
+static struct mail *alloc_mail(void);
+static void free_mail(struct mail *mail);
+static void route_mail(struct mail *mail);
+static void append_line(struct mail *mail, char *line);
+static void get_header_value(const char *name, char *line, char *value);
+static char *get_host_from_header(char *line);
+static int host_in_header(char *fname, char *host);
+static void delete_command(int argc, char **argv);
+static void dir_print(struct dir_entry *p);
+static void dir_command(int argc, char **argv);
+static void disconnect_command(int argc, char **argv);
+static void f_command(int argc, char **argv);
+static void help_command(int argc, char **argv);
+static void info_command(int argc, char **argv);
+static void list_command(int argc, char **argv);
+static void mybbs_command(int argc, char **argv);
+static void prompt_command(int argc, char **argv);
+static void quit_command(int argc, char **argv);
+static void read_command(int argc, char **argv);
+static void reply_command(int argc, char **argv);
+static void send_command(int argc, char **argv);
+static void shell_command(int argc, char **argv);
+static void sid_command(int argc, char **argv);
+static void status_command(int argc, char **argv);
+static void unknown_command(int argc, char **argv);
+static void xcrunch_command(int argc, char **argv);
+static void xscreen_command(int argc, char **argv);
+static char *connect_addr(char *host);
+static void connect_bbs(void);
+static void parse_command_line(char *line);
+static void bbs(void);
+static void interrupt_handler(int sig, int code, struct sigcontext *scp);
+static void alarm_handler(int sig, int code, struct sigcontext *scp);
+static void trap_signal(int sig, void (*handler )());
+static void rmail(void);
+static void rnews(void);
+int main(int argc, char **argv);
 
 /*---------------------------------------------------------------------------*/
 
-static struct cmdtable {
+static const struct cmdtable {
   char  *name;
-  void (*fnc) __ARGS((int argc, char * *argv));
+  void (*fnc)(int argc, char * *argv);
   int  argc;
   int  level;
 } cmdtable[] = {
@@ -247,8 +242,7 @@ static struct cmdtable {
 
 /*---------------------------------------------------------------------------*/
 
-static void errorstop(line)
-int  line;
+static void errorstop(int line)
 {
   printf("Fatal error in line %d: %s\n", line, sys_errlist[errno]);
   puts("Program stopped.");
@@ -265,8 +259,7 @@ int  line;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *strupc(s)
-char  *s;
+static char  *strupc(char *s)
 {
   char *p;
 
@@ -276,8 +269,7 @@ char  *s;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *strlwc(s)
-char  *s;
+static char  *strlwc(char *s)
 {
   char *p;
 
@@ -287,8 +279,7 @@ char  *s;
 
 /*---------------------------------------------------------------------------*/
 
-static int  strcasecmp(s1, s2)
-char  *s1, *s2;
+static int  strcasecmp(const char *s1, const char *s2)
 {
   while (_tolower(uchar(*s1)) == _tolower(uchar(*s2++)))
     if (!*s1++) return 0;
@@ -297,9 +288,7 @@ char  *s1, *s2;
 
 /*---------------------------------------------------------------------------*/
 
-static int  strncasecmp(s1, s2, n)
-char  *s1, *s2;
-int  n;
+static int  strncasecmp(const char *s1, const char *s2, int n)
 {
   while (--n >= 0 && _tolower(uchar(*s1)) == _tolower(uchar(*s2++)))
     if (!*s1++) return 0;
@@ -308,8 +297,7 @@ int  n;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *strtrim(s)
-char  *s;
+static char  *strtrim(char *s)
 {
   char *p;
 
@@ -321,10 +309,9 @@ char  *s;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *strcasepos(str, pat)
-char  *str, *pat;
+static const char *strcasepos(const char *str, const char *pat)
 {
-  char  *s, *p;
+  const char *s, *p;
 
   for (; ; str++)
     for (s = str, p = pat; ; ) {
@@ -336,8 +323,7 @@ char  *str, *pat;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *getstring(s)
-char  *s;
+static char  *getstring(char *s)
 {
 
   char  *p;
@@ -382,8 +368,7 @@ char  *s;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *timestr(gmt)
-long  gmt;
+static char  *timestr(long gmt)
 {
   static char  buf[20];
   struct tm *tm;
@@ -400,8 +385,7 @@ long  gmt;
 
 /*---------------------------------------------------------------------------*/
 
-static int  callvalid(call)
-char  *call;
+static int  callvalid(const char *call)
 {
   int  d, l;
 
@@ -425,8 +409,7 @@ char  *call;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *dirname(mesg)
-int  mesg;
+static char  *dirname(int mesg)
 {
   static char  buf[4];
 
@@ -436,8 +419,7 @@ int  mesg;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *filename(mesg)
-int  mesg;
+static char  *filename(int mesg)
 {
   static char  buf[8];
 
@@ -447,7 +429,7 @@ int  mesg;
 
 /*---------------------------------------------------------------------------*/
 
-static void get_seq()
+static void get_seq(void)
 {
 
   char  buf[16];
@@ -469,7 +451,7 @@ static void get_seq()
 
 /*---------------------------------------------------------------------------*/
 
-static void put_seq()
+static void put_seq(void)
 {
 
   char  buf[16];
@@ -483,7 +465,7 @@ static void put_seq()
 
 /*---------------------------------------------------------------------------*/
 
-static void wait_for_prompt()
+static void wait_for_prompt(void)
 {
 
   char  buf[1024];
@@ -497,7 +479,7 @@ static void wait_for_prompt()
 
 /*---------------------------------------------------------------------------*/
 
-static void lock()
+static void lock(void)
 {
   if (fdlock < 0) {
     if ((fdlock = open("lock", O_RDWR | O_CREAT, 0644)) < 0) halt();
@@ -507,27 +489,27 @@ static void lock()
 
 /*---------------------------------------------------------------------------*/
 
-static void unlock()
+static void unlock(void)
 {
   if (lockf(fdlock, F_ULOCK, 0)) halt();
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int  get_index(n, index)
-int  n;
-struct index *index;
+static int  get_index(int n, struct index *index)
 {
-  int  i1, i2, im, pos;
+
+  int  i1, i2, im;
+  long  pos;
 
   i1 = 0;
-  if (lseek(fdindex, 0l, 0)) halt();
+  if (lseek(fdindex, 0L, 0)) halt();
   if (read(fdindex, (char *) index, sizeof(struct index )) != sizeof(struct index )) return 0;
   if (n == index->mesg) return 1;
   if (n < index->mesg) return 0;
 
   if ((pos = lseek(fdindex, (long) (-sizeof(struct index )), 2)) < 0) halt();
-  i2 = pos / sizeof(struct index );
+  i2 = (int) (pos / sizeof(struct index));
   if (read(fdindex, (char *) index, sizeof(struct index )) != sizeof(struct index )) halt();
   if (n == index->mesg) return 1;
   if (n > index->mesg) return 0;
@@ -547,8 +529,7 @@ struct index *index;
 
 /*---------------------------------------------------------------------------*/
 
-static int  read_allowed(index)
-struct index *index;
+static int  read_allowed(const struct index *index)
 {
   if (index->deleted) return 0;
   if (level == ROOT) return 1;
@@ -558,33 +539,33 @@ struct index *index;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *get_user_from_path(path)
-char  *path;
+static char  *get_user_from_path(char *path)
 {
   char  *cp;
 
-  return (cp = strrchr(path, '!')) ? cp + 1 : path;
+  cp = strrchr(path, '!');
+  return cp ? (cp + 1) : path;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static char  *get_host_from_path(path)
-char  *path;
+static char  *get_host_from_path(char *path)
 {
 
   char  *cp;
   static char  tmp[1024];
 
   strcpy(tmp, path);
-  if (!(cp = strrchr(tmp, '!'))) return myhostname;
+  cp = strrchr(tmp, '!');
+  if (!cp) return myhostname;
   *cp = '\0';
-  return (cp = strrchr(tmp, '!')) ? cp + 1 : tmp;
+  cp = strrchr(tmp, '!');
+  return cp ? (cp + 1) : tmp;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int  msg_uniq(bid, mid)
-char  *bid, *mid;
+static int  msg_uniq(const char *bid, const char *mid)
 {
 
   int  n;
@@ -603,8 +584,7 @@ char  *bid, *mid;
 
 /*---------------------------------------------------------------------------*/
 
-static void send_to_bbs(mail)
-struct mail *mail;
+static void send_to_bbs(struct mail *mail)
 {
 
   FILE * fp;
@@ -659,8 +639,7 @@ struct mail *mail;
 
 /*---------------------------------------------------------------------------*/
 
-static void send_to_mail(mail)
-struct mail *mail;
+static void send_to_mail(struct mail *mail)
 {
 
   FILE * fp;
@@ -707,8 +686,7 @@ struct mail *mail;
 
 /*---------------------------------------------------------------------------*/
 
-static void send_to_news(mail)
-struct mail *mail;
+static void send_to_news(struct mail *mail)
 {
 
   FILE * fp;
@@ -781,8 +759,7 @@ struct mail *mail;
 
 /*---------------------------------------------------------------------------*/
 
-static void fix_address(addr)
-char  *addr;
+static void fix_address(char *addr)
 {
 
   char  tmp[1024];
@@ -831,7 +808,7 @@ char  *addr;
 
 /*---------------------------------------------------------------------------*/
 
-static struct mail *alloc_mail()
+static struct mail *alloc_mail(void)
 {
   struct mail *mail;
 
@@ -842,8 +819,7 @@ static struct mail *alloc_mail()
 
 /*---------------------------------------------------------------------------*/
 
-static void free_mail(mail)
-struct mail *mail;
+static void free_mail(struct mail *mail)
 {
   struct strlist *p;
 
@@ -856,8 +832,7 @@ struct mail *mail;
 
 /*---------------------------------------------------------------------------*/
 
-static void route_mail(mail)
-struct mail *mail;
+static void route_mail(struct mail *mail)
 {
 
 #define MidSuffix  "@bbs.net"
@@ -938,13 +913,11 @@ struct mail *mail;
 
 /*---------------------------------------------------------------------------*/
 
-static void append_line(mail, line)
-struct mail *mail;
-char  *line;
+static void append_line(struct mail *mail, char *line)
 {
   struct strlist *p;
 
-  p = (struct strlist *) malloc(sizeof(struct strlist ) + strlen(line));
+  p = malloc(sizeof(struct strlist) + strlen(line));
   p->next = 0;
   strcpy(p->str, line);
   if (!mail->head)
@@ -956,8 +929,7 @@ char  *line;
 
 /*---------------------------------------------------------------------------*/
 
-static void  get_header_value(name, line, value)
-char  *name, *line, *value;
+static void  get_header_value(const char *name, char *line, char *value)
 {
   char  *p1, *p2;
 
@@ -973,8 +945,7 @@ char  *name, *line, *value;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *get_host_from_header(line)
-char  *line;
+static char  *get_host_from_header(char *line)
 {
 
   char  *p, *q;
@@ -992,9 +963,7 @@ char  *line;
 
 /*---------------------------------------------------------------------------*/
 
-static int  host_in_header(fname, host)
-char  *fname;
-char  *host;
+static int  host_in_header(char *fname, char *host)
 {
 
   FILE  * fp;
@@ -1013,9 +982,7 @@ char  *host;
 
 /*---------------------------------------------------------------------------*/
 
-static void delete_command(argc, argv)
-int  argc;
-char  **argv;
+static void delete_command(int argc, char **argv)
 {
 
   int  i;
@@ -1042,8 +1009,7 @@ char  **argv;
 
 static int  dir_column;
 
-static void dir_print(p)
-struct dir_entry *p;
+static void dir_print(struct dir_entry *p)
 {
   if (p) {
     dir_print(p->left);
@@ -1056,9 +1022,7 @@ struct dir_entry *p;
 
 /*---------------------------------------------------------------------------*/
 
-static void dir_command(argc, argv)
-int  argc;
-char  **argv;
+static void dir_command(int argc, char **argv)
 {
 
   int  n, cmp;
@@ -1102,9 +1066,7 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
-static void disconnect_command(argc, argv)
-int  argc;
-char  **argv;
+static void disconnect_command(int argc, char **argv)
 {
   puts("Disconnecting...");
   kill(0, 1);
@@ -1113,9 +1075,7 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
-static void f_command(argc, argv)
-int  argc;
-char  **argv;
+static void f_command(int argc, char **argv)
 {
 
   FILE * fp;
@@ -1196,16 +1156,14 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
-static void help_command(argc, argv)
-int  argc;
-char  **argv;
+static void help_command(int argc, char **argv)
 {
 
   FILE * fp;
   char  line[1024];
   int  i;
   int  state;
-  struct cmdtable *cmdp;
+  const struct cmdtable *cmdp;
 
   if (argc < 2) {
     puts("Commands may be abbreviated.  Commands are:");
@@ -1243,9 +1201,7 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
-static void info_command(argc, argv)
-int  argc;
-char  **argv;
+static void info_command(int argc, char **argv)
 {
 
   FILE * fp;
@@ -1268,9 +1224,7 @@ char  **argv;
     return;               \
   }
 
-static void list_command(argc, argv)
-int  argc;
-char  **argv;
+static void list_command(int argc, char **argv)
 {
 
   char  *at = 0;
@@ -1365,9 +1319,7 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
-static void mybbs_command(argc, argv)
-int  argc;
-char  **argv;
+static void mybbs_command(int argc, char **argv)
 {
   struct mail *mail;
 
@@ -1386,18 +1338,14 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
-static void prompt_command(argc, argv)
-int  argc;
-char  **argv;
+static void prompt_command(int argc, char **argv)
 {
   strcpy(prompt, argv[1]);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void quit_command(argc, argv)
-int  argc;
-char  **argv;
+static void quit_command(int argc, char **argv)
 {
   puts("BBS terminated.");
   exit(0);
@@ -1405,9 +1353,7 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
-static void read_command(argc, argv)
-int  argc;
-char  **argv;
+static void read_command(int argc, char **argv)
 {
 
   FILE * fp;
@@ -1457,9 +1403,7 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
-static void reply_command(argc, argv)
-int  argc;
-char  **argv;
+static void reply_command(int argc, char **argv)
 {
 
   FILE * fp;
@@ -1542,9 +1486,7 @@ char  **argv;
     return;               \
   }
 
-static void send_command(argc, argv)
-int  argc;
-char  **argv;
+static void send_command(int argc, char **argv)
 {
 
   char  *errstr = "The %s option requires an argument.  Type ? SEND for help.\n";
@@ -1641,15 +1583,13 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
-static void shell_command(argc, argv)
-int  argc;
-char  **argv;
+static void shell_command(int argc, char **argv)
 {
 
   char  command[2048];
   int  i;
   int  oldstopped;
-  int  pid;
+  pid_t pid;
   int  status;
   long  oldmask;
 
@@ -1685,18 +1625,14 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
-static void sid_command(argc, argv)
-int  argc;
-char  **argv;
+static void sid_command(int argc, char **argv)
 {
   /*** ignore System IDentifiers (SIDs) for now ***/
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void status_command(argc, argv)
-int  argc;
-char  **argv;
+static void status_command(int argc, char **argv)
 {
 
   int  active = 0;
@@ -1742,9 +1678,7 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
-static void unknown_command(argc, argv)
-int  argc;
-char  **argv;
+static void unknown_command(int argc, char **argv)
 {
   errors++;
   printf("Unknown command '%s'.  Type ? for help.\n", *argv);
@@ -1752,9 +1686,7 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
-static void xcrunch_command(argc, argv)
-int  argc;
-char  **argv;
+static void xcrunch_command(int argc, char **argv)
 {
 
   char  *tempfile = "index.tmp";
@@ -1792,9 +1724,7 @@ char  **argv;
    *subject && !strcasepos(pi->subject, subject)    \
    )
 
-static void xscreen_command(argc, argv)
-int  argc;
-char  **argv;
+static void xscreen_command(int argc, char **argv)
 {
 
   FILE * fp = 0;
@@ -1823,7 +1753,7 @@ char  **argv;
   if (read(fdindex, (char *) indexarray, indexarraysize) != indexarraysize) halt();
 
   ioctl(0, TCGETA, &prev_termio);
-  memcpy(&curr_termio, &prev_termio, sizeof(struct termio ));
+  curr_termio = prev_termio;
   curr_termio.c_iflag = BRKINT | ICRNL | IXON | IXANY | IXOFF;
   curr_termio.c_lflag = 0;
   curr_termio.c_cc[VMIN] = 1;
@@ -2001,8 +1931,7 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *connect_addr(host)
-char  *host;
+static char  *connect_addr(char *host)
 {
 
   FILE * fp;
@@ -2029,7 +1958,7 @@ char  *host;
 
 /*---------------------------------------------------------------------------*/
 
-static void connect_bbs()
+static void connect_bbs(void)
 {
 
   char  *address;
@@ -2053,8 +1982,7 @@ static void connect_bbs()
 
 /*---------------------------------------------------------------------------*/
 
-static void parse_command_line(line)
-char  *line;
+static void parse_command_line(char *line)
 {
 
   char  *argv[256];
@@ -2065,7 +1993,7 @@ char  *line;
   int  argc;
   int  len;
   int  quote;
-  struct cmdtable *cmdp;
+  const struct cmdtable *cmdp;
 
   argc = 0;
   memset(argv, 0, sizeof(argv));
@@ -2103,7 +2031,7 @@ char  *line;
 
 /*---------------------------------------------------------------------------*/
 
-static void bbs()
+static void bbs(void)
 {
 
   FILE * fp;
@@ -2140,9 +2068,7 @@ static void bbs()
 
 /*---------------------------------------------------------------------------*/
 
-static void interrupt_handler(sig, code, scp)
-int  sig, code;
-struct sigcontext *scp;
+static void interrupt_handler(int sig, int code, struct sigcontext *scp)
 {
   stopped = 1;
   scp->sc_syscall_action = SIG_RETURN;
@@ -2150,9 +2076,7 @@ struct sigcontext *scp;
 
 /*---------------------------------------------------------------------------*/
 
-static void alarm_handler(sig, code, scp)
-int  sig, code;
-struct sigcontext *scp;
+static void alarm_handler(int sig, int code, struct sigcontext *scp)
 {
   puts("\n*** Timeout ***");
   exit(1);
@@ -2160,9 +2084,7 @@ struct sigcontext *scp;
 
 /*---------------------------------------------------------------------------*/
 
-static void trap_signal(sig, handler)
-int  sig;
-void (*handler)();
+static void trap_signal(int sig, void (*handler)())
 {
   struct sigvec vec;
 
@@ -2176,7 +2098,7 @@ void (*handler)();
 
 /*---------------------------------------------------------------------------*/
 
-static void rmail()
+static void rmail(void)
 {
 
   char  line[1024];
@@ -2184,15 +2106,16 @@ static void rmail()
   struct mail *mail;
 
   mail = alloc_mail();
-  strcpy(mail->to, "alle@alle");
+  strcpy(mail->to, "alle");
   if (scanf("%*s%s", mail->from) != 1) halt();
   if (!getstring(line)) halt();
   while (getstring(line))
     switch (state) {
     case 0:
-      get_header_value("Subject:", line, mail->subject);
+      get_header_value("Newsgroups:",  line, mail->to);
+      get_header_value("Subject:",     line, mail->subject);
       get_header_value("Bulletin-ID:", line, mail->bid);
-      get_header_value("Message-ID:", line, mail->mid);
+      get_header_value("Message-ID:",  line, mail->mid);
       if (*line) continue;
       state = 1;
     case 1:
@@ -2206,7 +2129,7 @@ static void rmail()
 
 /*---------------------------------------------------------------------------*/
 
-static void rnews()
+static void rnews(void)
 {
 
   char  line[1024];
@@ -2220,7 +2143,7 @@ static void rnews()
     if (strncmp(line, "#! rnews ", 9)) halt();
     n = atoi(line + 9);
     while (n > 0) {
-      if (!fgets(line, n < sizeof(line) ? n + 1 : (int) sizeof(line), stdin)) halt();
+      if (!fgets(line, (n < sizeof(line)) ? (n + 1) : (int) sizeof(line), stdin)) halt();
       n -= strlen(line);
       strtrim(line);
       switch (state) {
@@ -2244,9 +2167,7 @@ static void rnews()
 
 /*---------------------------------------------------------------------------*/
 
-main(argc, argv)
-int  argc;
-char  **argv;
+int main(int argc, char **argv)
 {
 
 #define BBS   0
@@ -2298,7 +2219,7 @@ char  **argv;
       mode = RNEWS;
       break;
     case 'w':
-      sleep((unsigned long) atoi(optarg));
+      sleep(atoi(optarg));
       break;
     case '?':
       err_flag = 1;
