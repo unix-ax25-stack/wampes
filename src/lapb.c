@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.5 1990/02/27 11:07:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.6 1990/03/07 09:25:41 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
@@ -876,8 +876,8 @@ struct mbuf *bp;
 	    cp->mdev = ((DGAIN - 1) * cp->mdev + abserr) / DGAIN;
 	    reset_t1(cp);
 	    if (cp->cwind < ax_maxframe) {
+	      cp->mdev += ((cp->srtt / cp->cwind) / 2);
 	      cp->cwind++;
-	      cp->mdev += 1250;
 	    }
 	  }
 	}
