@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.14 1994/01/26 12:59:50 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.15 1994/02/01 08:47:18 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -2074,6 +2074,12 @@
 44.130.176.25   DG9SCI  # Bernd
 44.130.176.26   DG9SCI-U        #
 44.130.176.27   DG2SFG  # Ingmar, Nuertingen
+44.130.176.40   DF9SR   # Joachim Weller, 71083 Herrenberg
+44.130.176.41   DF9SR-U # Joachim Weller, 71083 Herrenberg, Unix
+44.130.176.42   DF9SR-1 # Joachim Weller, 71083 Herrenberg, QRL
+44.130.176.43   DF9SR-2 # Joachim Weller, 71083 Herrenberg, QRL Unix
+44.130.176.44   DL4SDD  # Peter Rother, Stgt Sillenbuch
+44.130.176.45   DL4SDD-U        # Peter Rother, Stgt Sillenbuch, Unix
 44.130.176.49   DL8SK   # Simon
 44.130.176.50   DK3SI-SUN       # Harald Tietze
 44.130.176.51   DK3SI-LNX       #

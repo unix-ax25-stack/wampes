@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.21 1994/01/31 12:57:32 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.22 1994/02/01 08:47:31 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -229,6 +229,7 @@ void *area;
 unsigned size;
 {
 
+  int n;
   struct block *tp;
   unsigned osize;
   void *new;
@@ -243,10 +244,15 @@ unsigned size;
 
   tp = area;
   tp--;
-  osize = Blocksize[tp->next - (struct block *) Freetable] - sizeof(struct block *);
-  if (size <= osize) return area;
+  n = tp->next - (struct block *) Freetable;
+  if (n < MIN_N || n > MAX_N) {
+    fprintf(stderr, "realloc: bad free table pointer\n");
+    Invalid++;
+    return malloc(size);
+  }
   if (new = malloc(size)) {
-    memcpy(new, area, osize);
+    osize = Blocksize[n] - sizeof(struct block *);
+    memcpy(new, area, osize < size ? osize : size);
     free(area);
   }
   return new;
