@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strdup.c,v 1.9 1996/08/11 18:17:33 deyke Exp $ */
+/* @(#) $Id: strdup.c,v 1.10 1996/08/12 18:53:41 deyke Exp $ */
 
 #include "configure.h"
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.14 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: tnserv.c,v 1.15 1996/08/12 18:51:17 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"

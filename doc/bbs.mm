@@ -1,3 +1,4 @@
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/bbs.mm,v 1.52 1996/08/12 18:53:24 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
@@ -11,14 +12,15 @@
 .nr Hb 7 \" Break after all headers
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/bbs.mm,v 1.52 1996/08/12 18:53:24 deyke Exp $
 .\"
-.PF "^BBS Reference Manual^-\\\\nP-^Version 960811" \" Page footer
+.PF "^BBS Reference Manual^-\\\\nP-^Version 960812" \" Page footer
 .\"
 .S 30
 .ce
 \fBBBS Reference Manual\fP
 .ce
-Version 960811
+Version 960812
 .S
 .SP 2
 .S 15
@@ -27,6 +29,7 @@ Dieter Deyke, DK5SG/N0PRA
 .ce
 deyke@fc.hp.com
 .S
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/bbs.mm,v 1.52 1996/08/12 18:53:24 deyke Exp $
 .nr Cl 2 \" Max level of header for table of contents
 .H 1 "Start"
 .nr Ej 0 \" From now on do not start a new page for any header level
@@ -274,6 +277,7 @@ l l.
 -\fInumber\fP;All articles from the lowest possible number to \fInumber\fP.
 \fInumber\fP-\fInumber\fP;All articles from the \fInumber\fP to \fInumber\fP.
 .TE
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/bbs.mm,v 1.52 1996/08/12 18:53:24 deyke Exp $
 .H 1 "S&F data flow"
 .PS
 reset
@@ -325,4 +329,5 @@ arrow from MAILSPOOL \
 	to 1/3 of the way between BBSOUT.sw and BBSOUT.nw \
 	chop circlerad chop 0
 .PE
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/bbs.mm,v 1.52 1996/08/12 18:53:24 deyke Exp $
 .TC 1 1 7 0

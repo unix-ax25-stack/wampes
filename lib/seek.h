@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/seek.h,v 1.2 1996/08/11 18:17:33 deyke Exp $ */
+/* @(#) $Id: seek.h,v 1.3 1996/08/12 18:53:41 deyke Exp $ */
 
 #ifndef _SEEK_H
 #define _SEEK_H

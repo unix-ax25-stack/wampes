@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.59 1996/08/11 18:15:53 deyke Exp $
+# @(#) $Id: net.rc.db0sao,v 1.60 1996/08/12 18:50:57 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/qth.c,v 1.17 1996/08/11 18:17:27 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: qth.c,v 1.18 1996/08/12 18:53:33 deyke Exp $";
 #endif
 
 /* qth: qth, locator, distance, and course computations */

@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/fixnetrc,v 1.7 1996/08/11 18:17:09 deyke Exp $
+# @(#) $Id: fixnetrc,v 1.8 1996/08/12 18:52:58 deyke Exp $
 
 empty=/tmp/tmp$$
 

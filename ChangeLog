@@ -1,4 +1,8 @@
-@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ChangeLog,v 1.15 1996/08/11 18:15:53 deyke Exp $
+@(#) $Id: ChangeLog,v 1.16 1996/08/12 18:50:57 deyke Exp $
+
+960812 Dieter Deyke (deyke@fc.hp.com)
+
+	Switched from using RCS keyword Header to using Id
 
 960811 Dieter Deyke (deyke@fc.hp.com)
 

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.30 1996/08/11 18:17:33 deyke Exp $
+# @(#) $Id: Makefile,v 1.31 1996/08/12 18:53:41 deyke Exp $
 
 LIBRARY       = libutil.a
 

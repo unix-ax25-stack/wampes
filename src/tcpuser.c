@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.23 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: tcpuser.c,v 1.24 1996/08/12 18:51:17 deyke Exp $ */
 
 /* User calls to TCP
  * Copyright 1991 Phil Karn, KA9Q

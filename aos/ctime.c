@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/aos/ctime.c,v 1.3 1996/08/11 18:17:41 deyke Exp $ */
+/* @(#) $Id: ctime.c,v 1.4 1996/08/12 18:53:54 deyke Exp $ */
 
 /*
  * Copyright (c) 1987, 1989 Regents of the University of California.

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.h,v 1.8 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: n8250.h,v 1.9 1996/08/12 18:51:17 deyke Exp $ */
 
 /* Various I/O definitions specific to asynch I/O */
 #ifndef _N8250_H

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lcsum.c,v 1.10 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: lcsum.c,v 1.11 1996/08/12 18:51:17 deyke Exp $ */
 
 /*
  * Word aligned linear buffer checksum routine.  Called from mbuf checksum

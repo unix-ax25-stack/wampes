@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.16 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: arp.c,v 1.17 1996/08/12 18:51:17 deyke Exp $ */
 
 /* Address Resolution Protocol (ARP) functions. Sits between IP and
  * Level 2, mapping IP to Level 2 addresses for all outgoing datagrams.

@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.32 1996/08/11 18:17:09 deyke Exp $
+# @(#) $Id: tcpmake,v 1.33 1996/08/12 18:52:58 deyke Exp $
 
 save_file()
 {
@@ -77,10 +77,10 @@ for dir in \
 	done
 	for file in *.[ch]; do
 		if [[ -f $file && $file != configure.h ]]; then
-			case $(grep -F -c '@(#) $Header' $file) in
+			case $(grep -F -c '@(#) $Id' $file) in
 			0)
 				save_file $file
-				echo '/* @(#) $Header\c' > $file
+				echo '/* @(#) $Id\c' > $file
 				echo '$ */\n' >> $file
 				cat $file.old >> $file
 				check_file $file
@@ -117,7 +117,7 @@ for manual in bbs bridge netupd smack wampes; do
 
 	file=../../doc/$manual.mm
 	save_file $file
-	cat $(< filelist) | grep -v '@(#) $Header' > $file
+	cat $(< filelist) | grep -v '@(#) $Id' > $file
 	check_file $file
 
 done

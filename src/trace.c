@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.19 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: trace.c,v 1.20 1996/08/12 18:51:17 deyke Exp $ */
 
 /* Packet tracing - top level and generic routines, including hex/ascii
  * Copyright 1991 Phil Karn, KA9Q

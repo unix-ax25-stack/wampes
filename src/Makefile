@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.91 1996/08/11 18:16:09 deyke Exp $
+# @(#) $Id: Makefile,v 1.92 1996/08/12 18:51:17 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -434,7 +434,7 @@ depend:;        @mkmf -f $(MAKEFILE)
 
 echo:;          @echo $(HDRS) $(SRCS)
 
-index:;         @PATH=/usr/bin:$$PATH ctags -wx $(HDRS) $(SRCS)
+index:;         @ctags -wx $(HDRS) $(SRCS)
 
 install:        $(DEST)/$(PROGRAM)
 
@@ -443,7 +443,7 @@ lint:           $(HDRS) $(SRCS); @lih $(SRCS) > lint
 print:;         @$(PRINT) $(HDRS) $(SRCS)
 
 tags:           $(HDRS) $(SRCS)
-		@PATH=/usr/bin:$$PATH ctags -w $(HDRS) $(SRCS)
+		@ctags -w $(HDRS) $(SRCS)
 
 TAGS:           $(HDRS) $(SRCS)
 		@etags $(HDRS) $(SRCS)

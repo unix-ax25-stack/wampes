@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 3.4 1996/08/11 18:17:07 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: bbs.c,v 3.5 1996/08/12 18:52:55 deyke Exp $";
 
 /* Bulletin Board System */
 

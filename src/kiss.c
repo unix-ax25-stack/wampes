@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.18 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: kiss.c,v 1.19 1996/08/12 18:51:17 deyke Exp $ */
 
 /* Routines for AX.25 encapsulation in KISS TNC
  * Copyright 1991 Phil Karn, KA9Q

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.14 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: rip.c,v 1.15 1996/08/12 18:51:17 deyke Exp $ */
 
 /* This file contains code to implement the Routing Information Protocol (RIP)
  * and is derived from 4.2BSD code. Mike Karels of Berkeley has stated on

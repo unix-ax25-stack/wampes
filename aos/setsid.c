@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/aos/setsid.c,v 1.3 1996/08/11 18:17:41 deyke Exp $ */
+/* @(#) $Id: setsid.c,v 1.4 1996/08/12 18:53:54 deyke Exp $ */
 
 /* setsid.c
  * remove tty association

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/netrom_links,v 1.20 1996/08/11 18:15:53 deyke Exp $
+# @(#) $Id: netrom_links,v 1.21 1996/08/12 18:50:57 deyke Exp $
 
 # netrom links db0id     db0dlg-2  100 permanent
 # netrom links db0id     db0hp-10  200 permanent

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.22 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: ftpcli.c,v 1.23 1996/08/12 18:51:17 deyke Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q

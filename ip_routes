@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ip_routes,v 1.53 1996/08/11 18:15:53 deyke Exp $
+# @(#) $Id: ip_routes,v 1.54 1996/08/12 18:50:57 deyke Exp $
 
 #Host           Destination     Bits    Iface   Metric  Gateway         Private
 #------------------------------------------------------------------------------

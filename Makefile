@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.31 1996/08/11 18:15:53 deyke Exp $
+# @(#) $Id: Makefile,v 1.32 1996/08/12 18:50:57 deyke Exp $
 
 MAKEFILE   = Makefile
 MKDIR      = @if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi

@@ -1,3 +1,4 @@
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/smack.mm,v 1.8 1996/08/12 18:53:24 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
@@ -11,6 +12,7 @@
 .nr Hb 7 \" Break after all headers
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/smack.mm,v 1.8 1996/08/12 18:53:24 deyke Exp $
 .\"
 .PF "^The SMACK Protocol^-\\\\nP-^Version 1.0" \" Page footer
 .\"
@@ -28,6 +30,7 @@ by Jan Schiefer, DL5UE and Dieter Deyke, DK5SG/N0PRA
 .ce
 English translation by Mike Chace (G6DHU) February 1993
 .S
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/smack.mm,v 1.8 1996/08/12 18:53:24 deyke Exp $
 .nr Ej 0 \" No new page for all headers
 .H 1 "Introduction"
 .P
@@ -365,4 +368,5 @@ Wakefield, MA 1989
 Schiefer, Jan, DL5UE; WAMPES - Further Developments; Speech given to
 the 5th regional Packet Radio Meeting; Frankfurt 1989;
 .LE
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/smack.mm,v 1.8 1996/08/12 18:53:24 deyke Exp $
 .TC 1 1 7 0

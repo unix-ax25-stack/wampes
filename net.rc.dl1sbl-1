@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.35 1996/08/11 18:15:53 deyke Exp $
+# @(#) $Id: net.rc.dl1sbl-1,v 1.36 1996/08/12 18:50:57 deyke Exp $
 
 hostname     dl1sbl-1
 ax25 mycall  dl1sbl-1

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/internet.h,v 1.9 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: internet.h,v 1.10 1996/08/12 18:51:17 deyke Exp $ */
 
 #ifndef _INTERNET_H
 #define _INTERNET_H

@@ -1,9 +1,10 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Attic/tcpcheckin,v 1.4 1996/08/11 18:17:09 deyke Exp $
+# @(#) $Id: tcpcheckin,v 1.5 1996/08/12 18:52:58 deyke Exp $
 
 for dir in $(find ~/tcp -type d -name RCS -print); do
 	cd $dir/..
-	pwd
-	ci -l -mNone -q RCS/*,v
+	echo Processing $(pwd)
+	ci -l -mNone -M -T -q RCS/*,v
+	ci -l -mNone -M -T -q RCS/*,v # Do it twice to remove locker
 done

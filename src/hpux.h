@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.h,v 1.16 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: hpux.h,v 1.17 1996/08/12 18:51:17 deyke Exp $ */
 
 #ifndef _HPUX_H
 #define _HPUX_H

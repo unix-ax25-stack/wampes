@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.h,v 1.3 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: flexnet.h,v 1.4 1996/08/12 18:51:17 deyke Exp $ */
 
 #ifndef _FLEXNET_H
 #define _FLEXNET_H

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.20 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: transport.c,v 1.21 1996/08/12 18:51:17 deyke Exp $ */
 
 #include "global.h"
 #include "netuser.h"

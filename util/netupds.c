@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.39 1996/08/11 18:17:27 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: netupds.c,v 1.40 1996/08/12 18:53:33 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */

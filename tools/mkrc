@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mkrc,v 1.10 1996/08/11 18:17:09 deyke Exp $
+# @(#) $Id: mkrc,v 1.11 1996/08/12 18:52:58 deyke Exp $
 
 for i in 1 2 3 4 5 6 7 8 9; do
 cat > i${i} << EOF

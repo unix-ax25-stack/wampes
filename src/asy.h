@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.h,v 1.17 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: asy.h,v 1.18 1996/08/12 18:51:17 deyke Exp $ */
 
 #ifndef _ASY_H
 #define _ASY_H

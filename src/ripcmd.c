@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ripcmd.c,v 1.7 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: ripcmd.c,v 1.8 1996/08/12 18:51:17 deyke Exp $ */
 
 /* RIP-related user commands
  *   Al Broscious, N3FCT

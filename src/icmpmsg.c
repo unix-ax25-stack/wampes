@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpmsg.c,v 1.7 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: icmpmsg.c,v 1.8 1996/08/12 18:51:17 deyke Exp $ */
 
 /* ICMP message type tables
  * Copyright 1991 Phil Karn, KA9Q

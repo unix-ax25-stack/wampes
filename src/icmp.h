@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.h,v 1.11 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: icmp.h,v 1.12 1996/08/12 18:51:17 deyke Exp $ */
 
 #ifndef _ICMP_H
 #define _ICMP_H

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.34 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: iproute.c,v 1.35 1996/08/12 18:51:17 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code

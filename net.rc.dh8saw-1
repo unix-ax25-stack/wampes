@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dh8saw-1,v 1.26 1996/08/11 18:15:53 deyke Exp $
+# @(#) $Id: net.rc.dh8saw-1,v 1.27 1996/08/12 18:50:57 deyke Exp $
 
 hostname     dh8saw-1
 ax25 mycall  dh8saw-1

@@ -1,3 +1,4 @@
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
@@ -11,14 +12,15 @@
 .nr Hb 7 \" Break after all headers
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 960811" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 960812" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 960811
+Version 960812
 .S
 .SP 2
 .S 15
@@ -27,6 +29,7 @@ Dieter Deyke, DK5SG/N0PRA
 .ce
 deyke@fc.hp.com
 .S
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .nr Cl 7 \" Max level of header for table of contents
 .H 1 "Credits"
 This manual is based in part on publications authored by
@@ -35,6 +38,7 @@ Phil Karn, KA9Q
 Bdale Garbee, N3EUA
 Gerard van der Grinten, PA0GRI
 .DE
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .nr Cl 2 \" Max level of header for table of contents
 .H 1 "The /tcp/net Program"
 The executable file \fB/tcp/net\fP
@@ -94,6 +98,7 @@ The following environment variables are read by \fBWAMPES\fP:
 The TZ variable should be set to the local timezone. Default is TZ=MEZ-1MESZ.
 This is used in various time stamps.
 .LE
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .nr Cl 7 \" Max level of header for table of contents
 .H 1 "Console modes"
 The console may be in one of two modes: \fBcommand mode\fP or
@@ -227,6 +232,7 @@ Append Return+Linefeed, then execute line.
 .LI Control-T
 Execute line without appending Return+Linefeed to it.
 .LE
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .nr Cl 2 \" Max level of header for table of contents
 .H 1 "Commands"
 This section describes the commands recognized in command mode, or
@@ -268,14 +274,18 @@ in command mode (see the \fBFTP Subcommands\fP chapter).
 .P
 A word beginning with \fB#\fP causes that word and all the following
 characters on the same line to be ignored.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "<cr>"
 Entering a carriage return (empty line) while in command mode
 puts you in converse mode with the current session. If there is
 no current session, \fBWAMPES\fP remains in command mode.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "!" " \fIshell_command_line\fP"
 An alias for the \fBshell\fP command.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "?"
 Display a brief summary of top-level commands.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "arp" " [\fIsubcommand\fP]"
 Without an argument,
 display the Address Resolution Protocol table that maps IP addresses
@@ -307,6 +317,7 @@ as the right answer for ARP queries addressing the second machine.
 This way, the rest of the world doesn't know the second machine
 isn't really on the air.
 Use this feature with great care.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "asystat" " [\fIinterface\fP ...]"
 Display statistics on the specified or all
 attached asynchronous communications interfaces.
@@ -331,6 +342,7 @@ displayed its value.
 The third line shows transmit (TX) statistics, including the total
 number of write system calls and transmitted characters.
 .LE
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "attach" " \fItype\fP [\fItype specific options\fP]"
 Configure and attach an interface to the system.
 The details are highly interface type dependent.
@@ -433,6 +445,7 @@ Currently \fBattach ni\fP is available on HP-UX systems only.
 This creates an IP point-to-point link between \fBWAMPES\fP and UNIX,
 by creating a new interface named \fIname\fP on the \fBWAMPES\fP side.
 Currently \fBattach tun\fP is available on FreeBSD systems only.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "ax25" " \fIsubcommand\fP"
 These commands control the AX.25 service.
 .H 3 "ax25 blimit" " [\fIlimit\fP]"
@@ -600,6 +613,7 @@ and network packet traffic, a RNR generated because of
 backlogged interactive traffic will also stop network
 packet traffic.
 The default is 2048 bytes.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "axip" " \fIsubcommand\fP"
 TO BE WRITTEN.
 .H 3 "axip route"
@@ -608,8 +622,10 @@ TO BE WRITTEN.
 TO BE WRITTEN.
 .H 4 "axip route drop" " \fIax25_addr\fP"
 TO BE WRITTEN.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "bye"
 TO BE WRITTEN.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "close" " [\fIsession#\fP]"
 Close the specified session, without an argument, close the
 current session. On an AX.25 session this command initiates a
@@ -623,6 +639,7 @@ automatically responds by closing the outgoing half of the
 connection. \fBclose\fP is more graceful than the \fBreset\fP command, in
 that it is less likely to leave the remote TCP in a "half-open"
 state.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "connect" " \fIax25_addr\fP [\fIdigipeater\fP ...]"
 Initiate a "vanilla" AX.25 session to the specified \fIax25_addr\fP.
 Up to 8 optional digipeaters may be given, note that the word
@@ -634,10 +651,13 @@ text, terminated by a carriage return. A single AX.25
 connection may be used for terminal-to-terminal, IP and NET/ROM
 traffic, with the three types of data being automatically separated
 by their AX.25 Protocol IDs.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "delete" " \fIfilename\fP ..."
 Remove the specified files from the file system.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "disconnect" " [\fIsession#\fP]"
 An alias for the \fBclose\fP command (for the benefit of AX.25 users).
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "domain" " \fIsubcommand\fP"
 These commands control the Domain Name Service (DNS).
 .H 3 "domain cache list"
@@ -660,6 +680,7 @@ the use of the UNIX functions gethostbyname
 and gethostbyaddr.
 The default is \fBoff\fP.
 MORE TO BE WRITTEN.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "echo" " [accept|refuse]"
 Display or set the flag controlling client Telnet's response to
 a remote WILL ECHO offer.
@@ -692,6 +713,7 @@ Berkeley UNIX has a bug in that it will still echo input even
 after the client has refused the WILL ECHO offer. To get around
 this problem, enter the \fBstty -echo\fP command to the shell once
 you have logged in.)
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "eol" " [standard|null]"
 Display or set Telnet's end-of-line behavior when in remote echo mode.
 In \fBstandard\fP mode, each key is sent as-is.
@@ -701,22 +723,27 @@ use it only when you find that a particular system responds to line feeds
 but not carriage returns.
 Only SunOS release 3.2 seems to exhibit this behavior, later releases are fixed.
 The default is \fBstandard\fP.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "escape" " [\fIcharacter\fP]"
 Display or set the current command-mode escape character.
 To enter a control character from the keyboard it has
 to be prefixed by Control-V.
 The default is Control-] (0x1d, ASCII GS).
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "exit"
 Exit (terminate) \fBWAMPES\fP.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "finger" " [\fIuser\fP]@\fIhostid\fP"
 Issue a network finger request for user \fIuser\fP at host \fIhostid\fP. If only
 \fB@\fP\fIhostid\fP is given, all users on that host are identified.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "fkey" " \fIkey#\fP \fItext\fP"
 Set the value for a programmable key on the keyboard.
 To enter a control character from the keyboard it has
 to be prefixed by Control-V.
 \fIText\fP has to be enclosed in double quotes if it
 contains white space.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "flexnet" " \fIsubcommand\fP"
 These commands control the FLEXNET service.
 .H 3 "flexnet dest" " [\fIax25_addr\fP]"
@@ -781,6 +808,7 @@ Remove the specified entry from the FLEXNET link table.
 Display the path to the specified FLEXNET destination. Call signs shown
 in capital letters along the path support the FLEXNET protocol,
 those in lower-case letters do not.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "ftp" " \fIhostid\fP [\fIport\fP]"
 Open a FTP control channel to the specified remote host
 and enter converse mode on the new session.
@@ -788,6 +816,7 @@ If \fIport\fP is given that port is used. Default port is 21.
 Responses from the remote server are displayed directly on the screen.
 See the \fBFTP Subcommands\fP chapter for descriptions of the commands
 available in a FTP session.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "hostname" " [\fIhostname\fP]"
 Display or set the local host's name. By convention this should
 be the same as the host's primary domain name. This string is
@@ -798,6 +827,7 @@ Note that \fBhostname\fP does NOT set the system's IP address.
 If \fIhostname\fP is the same as the name of an attached interface,
 \fIhostname\fP will be substituted by the canonical host name
 which corresponds to the IP address of that interface.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "icmp" " \fIsubcommand\fP"
 These commands control the Internet Control Message Protocol (ICMP) service.
 .H 3 "icmp echo" " [on|off]"
@@ -814,6 +844,7 @@ messages. These informational messages are generated by
 routers in response to routing, protocol or congestion
 problems.
 The default is \fBoff\fP.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "ifconfig" " [\fIinterface\fP [[\fIsubcommand\fP \fIparameter\fP] ...]"
 Without arguments display the status of all interfaces.
 When only \fIinterface\fP is given, the status of that interface is displayed.
@@ -902,6 +933,7 @@ This value is currently not used by \fBWAMPES\fP.
 Set the transmit queue limit
 (maximum number of packets waiting in the transmit queue).
 If set to 0 the transmit queue is unlimited.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "ip" " \fIsubcommand\fP"
 These commands control the Internet Protocol (IP) service.
 .H 3 "ip address" " [\fIhostid\fP]"
@@ -920,6 +952,7 @@ take. The idea is to bound the lifetime of the packet should it become caught
 in a routing loop, so make the value slightly larger than the number of
 hops across the network you expect to transit packets.
 The default is 255 hops.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "ipfilter" " [\fIsubcommand\fP]"
 Without an argument, display the IP filter table,
 which allows or denies IP packets to be received from or sent to a destination.
@@ -993,18 +1026,21 @@ ipfilter allow ke0gb
 ipfilter allow winfree.n3eua
 .ft P
 .DE
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "kick" " [\fIsession#\fP]"
 Kick all control blocks associated with a session.
 If no argument is given, kick the current session.
 Performs the same function as the \fBax25 kick\fP,
 \fBnetrom kick\fP, and \fBtcp kick\fP commands,
 but is easier to type.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "log" " [stop|\fIfilename\fP]"
 Display the current log filename or set the filename for logging
 server sessions. If \fBstop\fP is given as the argument,
 logging is terminated (the servers themselves are unaffected).
 If a file name is given as an argument, server session log
 entries will be appended to it.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "login" " \fIsubcommand\fP"
 TO BE WRITTEN.
 .H 3 "login auto" " [on|off]"
@@ -1081,6 +1117,7 @@ Display or set the login shell to be used when creating new user
 accounts (see \fBlogin create\fP). If set to "" UNIX will
 choose its own default shell.
 The default is "".
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "memory" " \fIsubcommand\fP"
 These commands control memory allocation.
 .H 3 "memory debug" " [on|off]"
@@ -1127,8 +1164,10 @@ and the difference of these two values.
 The fourth line shows the number of calls to pushdown,
 and the number of calls to pushdown which resulted in a call to malloc.
 .LE
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "mkdir" " \fIdirname\fP"
 Create the specified directory.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "netrom" " \fIsubcommand\fP"
 These commands control the NET/ROM service.
 .H 3 "netrom broadcast" " [\fIinterface\fP \fIax25_addr\fP [\fIdigipeater\fP ...]]"
@@ -1271,8 +1310,10 @@ The control block address can be found with the \fBnetrom status\fP command.
 Without an argument, display a one-line summary of each NET/ROM control block.
 If the address of a particular control block is specified, the contents of
 that control block are shown in more detail.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "nrstat"
 Display statistics on all attached NET/ROM serial interfaces.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "param" " \fIinterface\fP [\fIname\fP|\fInumber\fP [\fIvalue\fP]]"
 Invoke a device-specific control routine.
 The following parameter names are recognized by the \fBparam\fP command,
@@ -1328,6 +1369,7 @@ be read or set.
 .P
 The implementation of this command for the various interface
 drivers is incomplete and subject to change.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "ping" " [\fIsubcommand\fP]"
 Without an argument,
 display the Ping table,
@@ -1352,6 +1394,7 @@ until the \fBping clear\fP command is issued,
 otherwise a single, "one shot" ping is done.
 Responses to one-shot pings appear asynchronously on the command screen,
 while responses from repetitive pings are stored in the Ping table.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "ps"
 Display all current processes in the system. The fields are as follows:
 .VL 20 2
@@ -1385,12 +1428,14 @@ Always zero.
 .LI \fBname\fP
 The name of the process.
 .LE
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "record" " [off|\fIfilename\fP]"
 Append to \fIfilename\fP all data received on the current session.
 Data sent on the current session is also written into the file
 except for Telnet sessions in remote echo mode.
 The command \fBrecord off\fP stops recording and closes the file.
 If no argument is specified the current status is displayed.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "remote" " [-p \fIport\fP] [-k \fIkey\fP] [-a \fIkickaddr\fP] \fIhostid\fP exit|reset|kick"
 Send a UDP packet to the specified host commanding it
 to exit the \fBWAMPES\fP or \fBNOS\fP program, reset the processor,
@@ -1426,8 +1471,10 @@ The password is set on the server with the \fB-s\fP option,
 and it is specified to the client with the \fB-k\fP option.
 If no password is set with the \fB-s\fP option,
 then the \fBexit\fP and \fBreset\fP subcommands are disabled.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "rename" " \fIoldfilename\fP \fInewfilename\fP"
 Rename \fIoldfilename\fP to \fInewfilename\fP.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "repeat" " [\fImilliseconds\fP] \fIcommand\fP [\fIarguments\fP ...]"
 Execute \fIcommand\fP every \fImilliseconds\fP,
 or once every second if \fImilliseconds\fP is not specified.
@@ -1441,6 +1488,7 @@ repeat 2000 tcp status
 .ft P
 .DE
 executes "tcp status" every two seconds.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "reset" " [\fIsession#\fP]"
 Reset the specified session, if no argument is given, reset the current
 session. This command should be used with caution since it does not
@@ -1449,6 +1497,7 @@ TCP a reset (RST) message will be automatically generated should the remote
 TCP send anything after a local \fBreset\fP has been done. In AX.25 the DM
 message performs a similar role. Both are used to get rid of a lingering
 half-open connection after a remote system has crashed.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "rip" " \fIsubcommand\fP"
 These commands control the Routing Information Protocol (RIP) service.
 .H 3 "rip accept" " \fIhostid\fP"
@@ -1530,8 +1579,10 @@ in the routing table to be displayed, while packets that cause no changes
 cause no output. Setting the variable to 2 produces maximum output,
 including tracing of RIP packets that cause no change in the routing table.
 The default is 0.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "rmdir" " \fIdirname\fP"
 Remove the specified directory.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "route" " [\fIsubcommand\fP]"
 Without an argument, display the IP routing table.
 .H 3 "route add" " \fIhostid\fP[/\fIbits\fP]|default \fIinterface\fP [\fIgateway_hostid\fP [\fImetric\fP]]"
@@ -1624,6 +1675,7 @@ Drop all automatically created entries from the IP routing table, permanent
 entries are not affected.
 .H 3 "route lookup" " \fIhostid\fP"
 Display the IP routing table entry which will be used to route to \fIhostid\fP.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "session" " [\fIsession#\fP]"
 Without arguments, display the list of current sessions,
 including session number, remote TCP, AX.25, or NET/ROM address
@@ -1631,11 +1683,13 @@ and the address of the TCP, AX.25, or NET/ROM control block.
 An asterisk (*) is shown next to the current session.
 Entering a session number as an argument to the \fBsession\fP
 command will put you in converse mode with that session.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "shell" " \fIshell_command_line\fP"
 Suspend \fBWAMPES\fP and execute a subshell (/bin/sh).
 When the subshell exits, \fBWAMPES\fP resumes.
 Background activity (FTP servers, etc) is also suspended
 while the subshell executes.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "smtp" " \fIsubcommand\fP"
 These commands control the Simple Message Transport Protocol (SMTP) service
 (and all other mail delivery clients).
@@ -1658,6 +1712,7 @@ for outgoing mail every 10 minutes and attempt to deliver anything it finds,
 subject of course to the \fBsmtp maxclients\fP limit. Setting a value of zero
 disables
 queue scanning altogether, note that this is the default!
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "sntp" " \fIsubcommand\fP"
 These commands control the Simple Network Time Protocol (SNTP) service.
 .H 3 "sntp add" " \fIhostid\fP [\fIinterval\fP]"
@@ -1767,10 +1822,12 @@ The default is 1.
 Display or set the flag controlling
 sntp tracing.
 The default is \fBoff\fP.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "source" " \fIfilename\fP"
 Read subsequent commands from \fIfilename\fP until EOF, then resume reading
 commands from the previous stream. This can be used to keep routing statements
 in a separate file, which can be read at some point in \fBnet.rc\fP.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "start" " \fIserver\fP [\fIarguments\fP]"
 Start the specified server, allowing remote connection requests.
 .H 3 "start ax25"
@@ -1815,8 +1872,10 @@ See also RFC868.
 Start the UDP REMOTE server.
 Default \fIport\fP is 1234.
 See also the \fBremote\fP command.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "status"
 Display a one-line summary of each AX.25, NET/ROM, TCP, and UDP control block.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "stop" " \fIserver\fP"
 Stop the specified server, rejecting any further remote connect
 requests. Existing connections are allowed to complete normally.
@@ -1847,6 +1906,7 @@ See also the \fBstart\fP command.
 .LI
 \fBremote\fP
 .LE
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "tcp" " \fIsubcommand\fP"
 These commands control the Transmission Control Protocol (TCP) service.
 .H 3 "tcp irtt" " [\fImilliseconds\fP]"
@@ -1927,13 +1987,16 @@ Display or set the TCP wscale flag,
 which controls the use of the TCP WINDOW SCALE option.
 The default is \fBoff\fP.
 See also RFC1072.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "telnet" " \fIhostid\fP [\fIport\fP]"
 Create a Telnet session to the specified host and enter converse mode.
 If \fIport\fP is given that port is used. Default port is 23.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "topt" " [on|off]"
 Display or set the flag controlling the display of client Telnet's
 option processing.
 The default is \fBoff\fP.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "trace" " [\fIinterface\fP [\fIflags\fP|subcommand [\fItracefile\fP]]]"
 Control packet tracing by the interface drivers.
 Specific bits in \fIflags\fP enable tracing of the various interfaces
@@ -1993,16 +2056,19 @@ Enable output trace
 Enable raw packet dumps
 .LE 1
 If \fItracefile\fP is not specified, tracing will be to the console.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "udp" " \fIsubcommand\fP"
 These commands control the User Datagram Protocol (UDP) service.
 .H 3 "udp status"
 Display several UDP-level statistics, plus a summary of
 all existing UDP control blocks.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "upload" " [stop|\fIfilename\fP]"
 Open \fIfilename\fP and send it on the current session as though it were
 typed on the terminal.
 The command \fBupload stop\fP stops uploading and closes the file.
 If no argument is specified the current status is displayed.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .nr Cl 2 \" Max level of header for table of contents
 .H 1 "FTP Subcommands"
 This section describes the commands recognized in converse mode
@@ -2012,6 +2078,7 @@ All commands may be abbreviated.
 You only need type enough of a command's name to distinguish it from others
 that begin with the same series of letters.
 Parameters, however, must be typed in full.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "abort"
 Abort a file transfer operation in progress.
 When receiving a file, \fBabort\fP simply resets the data connection.
@@ -2021,25 +2088,33 @@ When sending a file, \fBabort\fP sends a premature end-of-file.
 Note that in both cases \fBabort\fP will leave a partial copy of the file on
 the destination machine, which must be removed manually if it is
 unwanted. \fBAbort\fP is valid only when a transfer is in progress.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "append" " \fIlocal-file\fP [\fIremote-file\fP]"
 Copy \fIlocal-file\fP to the end of \fIremote-file\fP.
 If \fIremote-file\fP is left unspecified,
 the local file name is used in naming the remote file.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "ascii"
 Set the file transfer type to network ASCII. This is the default type.
 See also the \fBtype\fP command.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "binary"
 Set the file transfer type to BINARY/IMAGE.
 See also the \fBtype\fP command.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "bye"
 Close the connection to the server host.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "cd" " \fIremote-directory\fP"
 Set the working directory on the server host to \fIremote-directory\fP.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "cdup"
 Set the working directory on the server host to the parent of the
 current remote working directory.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "delete" " \fIremote-file\fP"
 Delete \fIremote-file\fP. \fIremote-file\fP can be an empty directory.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "dir" " [\fIremote-directory\fP [\fIlocal-file\fP]]"
 Write a listing of \fIremote-directory\fP to standard output or optionally to
 \fIlocal-file\fP.
@@ -2049,39 +2124,52 @@ For example, most UNIX systems produce output from the command
 \fBls -l\fP (see also \fBnlist\fP).
 If neither \fIremote-directory\fP nor \fIlocal-file\fP is specified,
 list the remote working directory to standard output.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "get" " \fIremote-file\fP [\fIlocal-file\fP]"
 Copy \fIremote-file\fP to \fIlocal-file\fP. If \fIlocal-file\fP is unspecified,
 ftp uses the specified \fIremote-file\fP name as the \fIlocal-file\fP name.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "image"
 Set the file transfer type to BINARY/IMAGE.
 See also the \fBtype\fP command.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "ls" " [\fIremote-directory\fP [\fIlocal-file\fP]]"
 An alias for the \fBdir\fP command.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "mkdir" " \fIremote-directory\fP"
 Create \fIremote-directory\fP.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "modtime" " \fIremote-file\fP"
 Show the last modification time of \fIremote-file\fP.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "nlist" " [\fIremote-directory\fP [\fIlocal-file\fP]]"
 Write an abbreviated listing of \fIremote-directory\fP to standard output or optionally to
 \fIlocal-file\fP.
 If neither \fIremote-directory\fP nor \fIlocal-file\fP is specified,
 list the remote working directory to standard output.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "password" " \fIpassword\fP"
 Supply the \fIpassword\fP required by a remote system to complete
 the login procedure.
 The \fBpassword\fP command has only to be used if \fIpassword\fP
 was not specified with the \fBuser\fP command.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "put" " \fIlocal-file\fP [\fIremote-file\fP]"
 Copy \fIlocal-file\fP to \fIremote-file\fP. If \fIremote-file\fP is unspecified,
 ftp assigns the \fIlocal-file\fP name to the \fIremote-file\fP name.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "pwd"
 Write the name of the remote working directory to standard output.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "quit"
 An alias for the \fBbye\fP command.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "quote" " \fIftp-command\fP"
 Send \fIftp-command\fP, verbatim, to the server host.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "recv" " \fIremote-file\fP [\fIlocal-file\fP]"
 An alias for the \fBget\fP command.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "reget" " \fIremote-file\fP [\fIlocal-file\fP]"
 \fBreget\fP acts like \fBget\fP, except that if \fIlocal-file\fP exists and is
 smaller than \fIremote-file\fP, \fIlocal-file\fP is presumed to be a
@@ -2089,21 +2177,28 @@ partially transferred copy of \fIremote-file\fP and the transfer is
 continued from the apparent point of failure. This command is
 useful when transferring very large files over networks that tend
 to drop connections.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "restart" " \fIoffset\fP"
 Restart the immediately following \fBget\fP or \fBput\fP
 at the indicated \fIoffset\fP.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "rhelp" " [\fIcommand-name\fP]"
 Request help from the server host. If \fIcommand-name\fP is specified,
 supply it to the server.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "rmdir" " \fIremote-directory\fP"
 Delete \fIremote-directory\fP. \fIremote-directory\fP must be an empty
 directory.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "send" " \fIlocal-file\fP [\fIremote-file\fP]"
 An alias for the \fBput\fP command.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "size" " \fIremote-file\fP"
 Show the size of \fIremote-file\fP.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "system"
 Show the type of operating system running on the remote machine.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "type" " [a|b|i|l \fIbytesize\fP]"
 Set the FTP file transfer type to either ASCII (type \fBa\fP), or
 BINARY/IMAGE (type \fBb\fP or \fBi\fP).
@@ -2122,9 +2217,11 @@ Type \fBl\fP (logical byte size) is used when exchanging binary files
 with remote servers having oddball word sizes (e.g., DECSYSTEM-10s and 20s).
 Locally it works exactly like BINARY/IMAGE, except that it notifies the
 remote system how large the byte size is. \fIbytesize\fP is typically 8.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .H 2 "user" " \fIuser-name\fP [\fIpassword\fP]"
 Log into the server host on the current connection, which must
 already be open.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .nr Cl 7 \" Max level of header for table of contents
 .H 1 "Setting Paclen, Maxframe, MTU, MSS and Window"
 Many \fBWAMPES\fP users are confused by these parameters and do not know how to
@@ -2387,4 +2484,5 @@ parameters
 will work correctly and give reasonable performance. Only in special
 circumstances such as operation over a very poor link or experimentation
 with high speed modems should it be necessary to change them.
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.116 1996/08/12 18:53:24 deyke Exp $
 .TC 1 1 7 0

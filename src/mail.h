@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.18 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: mail.h,v 1.19 1996/08/12 18:51:17 deyke Exp $ */
 
 #ifndef _MAIL_H
 #define _MAIL_H

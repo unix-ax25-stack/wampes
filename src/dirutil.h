@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.h,v 1.5 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: dirutil.h,v 1.6 1996/08/12 18:51:17 deyke Exp $ */
 
 #ifndef _DIRUTIL_H
 #define _DIRUTIL_H

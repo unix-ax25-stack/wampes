@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.c,v 1.10 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: udp.c,v 1.11 1996/08/12 18:51:17 deyke Exp $ */
 
 /* Internet User Data Protocol (UDP)
  * Copyright 1991 Phil Karn, KA9Q

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.35 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: ftpserv.c,v 1.36 1996/08/12 18:51:17 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q

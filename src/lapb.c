@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.39 1996/08/11 18:16:09 deyke Exp $ */
+/* @(#) $Id: lapb.c,v 1.40 1996/08/12 18:51:17 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
