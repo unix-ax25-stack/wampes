@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.1 1992/11/09 16:32:45 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.2 1992/11/12 15:21:05 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -23,16 +23,18 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #define DBHOSTNAME      "/tcp/hostname"
 #define DOMAINFILE      "/tcp/domain.txt"
 #define HOSTSFILE       "/tcp/hosts"
-#define LOCALDOMAIN     ".ampr.org"
+#define LOCALDOMAIN     "ampr.org"
+#define LOCALDOMAINFILE "/tcp/domain.local"
 
-static DBM *dbhostaddr;
-static DBM *dbhostname;
+static DBM *Dbhostaddr;
+static DBM *Dbhostname;
 
 static int aton __ARGS((const char *name, long *addrptr));
 static char *ntoa __ARGS((long addr));
 static void store_in_db __ARGS((const char *name, const char *addrstr));
-static void read_hosts_file __ARGS((void));
-static void read_domain_file __ARGS((void));
+static void fix_line __ARGS((char *line));
+static void read_hosts_file __ARGS((const char *filename));
+static void read_domain_file __ARGS((const char *filename));
 static void qaddr __ARGS((const char *name));
 static void qname __ARGS((const char *addrstr));
 int main __ARGS((int argc, char **argv));
@@ -89,18 +91,18 @@ const char *addrstr;
   int i;
   long addr;
 
-  if (aton(addrstr, &addr)) return;
+  if (aton(addrstr, &addr) || !addr || !~addr) return;
   dname.dptr = (char *) name;
-  dname.dsize = strlen(dname.dptr) + 1;
+  dname.dsize = strlen(name) + 1;
   daddr.dptr = (char *) & addr;
   daddr.dsize = sizeof(addr);
-  i = dbm_store(dbhostaddr, dname, daddr, DBM_INSERT);
+  i = dbm_store(Dbhostaddr, dname, daddr, DBM_INSERT);
   if (i < 0) {
     perror("dbm_store");
     exit(1);
   }
   if (i > 0) fprintf(stderr, "duplicate name: %s\n", name);
-  i = dbm_store(dbhostname, daddr, dname, DBM_INSERT);
+  i = dbm_store(Dbhostname, daddr, dname, DBM_INSERT);
   if (i < 0) {
     perror("dbm_store");
     exit(1);
@@ -110,28 +112,37 @@ const char *addrstr;
 
 /*---------------------------------------------------------------------------*/
 
-static void read_hosts_file()
+static void fix_line(line)
+char *line;
+{
+  for (; *line; line++) {
+    if (*line == ';' || *line == '#') {
+      *line = 0;
+      return;
+    }
+    *line = tolower(*line & 0xff);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void read_hosts_file(filename)
+const char *filename;
 {
 
   FILE * fp;
-  char *p;
   char addrstr[1024];
   char line[1024];
   char name[1024];
 
-  if (!(fp = fopen(HOSTSFILE, "r"))) {
-    perror(HOSTSFILE);
-    exit(1);
+  if (!(fp = fopen(filename, "r"))) {
+    perror(filename);
+    return;
   }
   while (fgets(line, sizeof(line), fp)) {
-    for (p = line; *p; p++) {
-      if (*p == ';' || *p == '#') {
-	*p = 0;
-	break;
-      }
-      *p = tolower(*p & 0xff);
-    }
+    fix_line(line);
     if (sscanf(line, "%s %s", addrstr, name) == 2) {
+      strcat(name, ".");
       strcat(name, LOCALDOMAIN);
       store_in_db(name, addrstr);
     }
@@ -141,7 +152,8 @@ static void read_hosts_file()
 
 /*---------------------------------------------------------------------------*/
 
-static void read_domain_file()
+static void read_domain_file(filename)
+const char *filename;
 {
 
   FILE * fp;
@@ -151,25 +163,22 @@ static void read_domain_file()
   char name[1024];
   char origin[1024];
   const char * delim = " \t\n";
+  datum daddr;
+  datum dname;
+  int len;
+  long addr;
 
-  if (!(fp = fopen(DOMAINFILE, "r"))) {
-    perror(DOMAINFILE);
-    exit(1);
-  }
-  *origin = 0;
+  strcpy(origin, LOCALDOMAIN);
   *name = 0;
+  if (!(fp = fopen(filename, "r"))) {
+    perror(filename);
+    return;
+  }
   while (fgets(line, sizeof(line), fp)) {
-
-    for (p = line; *p; p++) {
-      if (*p == ';' || *p == '#') {
-	*p = 0;
-	break;
-      }
-      *p = tolower(*p & 0xff);
-    }
+    fix_line(line);
 
     if (!strncmp(line, "$origin", 7)) {
-      strcpy(origin, strtok(line + 7, delim));
+      if (p = strtok(line + 7, delim)) strcpy(origin, p);
       continue;
     }
 
@@ -177,18 +186,12 @@ static void read_domain_file()
 
     if (!isspace(*line & 0xff)) {
       strcpy(name, p);
-      if (!(p = strtok((char *) 0, delim))) continue;
+      p = strtok((char *) 0, delim);
     }
 
-    if (isdigit(*p & 0xff)) {
-      /* ttl */
-      if (!(p = strtok((char *) 0, delim))) continue;
-    }
-
-    if (!strcmp(p, "in")) {
-      /* class */
-      if (!(p = strtok((char *) 0, delim))) continue;
-    }
+    while (p && (isdigit(*p & 0xff) || !strcmp(p, "in")))
+      p = strtok((char *) 0, delim);
+    if (!p) continue;
 
     if (strcmp(p, "a")) continue;
 
@@ -201,9 +204,64 @@ static void read_domain_file()
     else
       sprintf(fullname, "%s.%s", name, origin);
 
-    if (fullname[strlen(fullname)-1] == '.') fullname[strlen(fullname)-1] = 0;
+    len = strlen(fullname);
+    if (len && fullname[len-1] == '.') fullname[len-1] = 0;
 
     store_in_db(fullname, p);
+
+  }
+  fclose(fp);
+
+  strcpy(origin, LOCALDOMAIN);
+  *name = 0;
+  if (!(fp = fopen(filename, "r"))) {
+    perror(filename);
+    return;
+  }
+  while (fgets(line, sizeof(line), fp)) {
+    fix_line(line);
+
+    if (!strncmp(line, "$origin", 7)) {
+      if (p = strtok(line + 7, delim)) strcpy(origin, p);
+      continue;
+    }
+
+    if (!(p = strtok(line, delim))) continue;
+
+    if (!isspace(*line & 0xff)) {
+      strcpy(name, p);
+      p = strtok((char *) 0, delim);
+    }
+
+    while (p && (isdigit(*p & 0xff) || !strcmp(p, "in")))
+      p = strtok((char *) 0, delim);
+    if (!p) continue;
+
+    if (strcmp(p, "cname")) continue;
+
+    if (!(p = strtok((char *) 0, delim))) continue;
+
+    len = strlen(p);
+    if (len && p[len-1] == '.') p[len-1] = 0;
+
+    dname.dptr = p;
+    dname.dsize = strlen(p) + 1;
+    daddr = dbm_fetch(Dbhostaddr, dname);
+    if (!daddr.dptr) {
+      fprintf(stderr, "no such key: %s\n", p);
+      continue;
+    }
+    memcpy(&addr, daddr.dptr, sizeof(addr));
+
+    if (!strcmp(name, "@"))
+      strcpy(fullname, origin);
+    else
+      strcpy(fullname, name);
+
+    len = strlen(fullname);
+    if (len && fullname[len-1] == '.') fullname[len-1] = 0;
+
+    store_in_db(fullname, ntoa(addr));
 
   }
   fclose(fp);
@@ -227,29 +285,30 @@ const char *name;
   if (len && fullname[len-1] == '.') {
     fullname[len-1] = 0;
     dname.dptr = fullname;
-    dname.dsize = strlen(dname.dptr) + 1;
-    daddr = dbm_fetch(dbhostaddr, dname);
+    dname.dsize = strlen(fullname) + 1;
+    daddr = dbm_fetch(Dbhostaddr, dname);
     if (daddr.dptr) {
       memcpy(&addr, daddr.dptr, sizeof(addr));
-      printf("%s  %s\n", ntoa(addr), name);
+      printf("%s  %s\n", ntoa(addr), fullname);
     } else
-      fprintf(stderr, "no such key: %s\n", name);
+      fprintf(stderr, "no such key: %s\n", fullname);
     return;
   }
 
+  strcat(fullname, ".");
   strcat(fullname, LOCALDOMAIN);
   dname.dptr = fullname;
-  dname.dsize = strlen(dname.dptr) + 1;
-  daddr = dbm_fetch(dbhostaddr, dname);
+  dname.dsize = strlen(fullname) + 1;
+  daddr = dbm_fetch(Dbhostaddr, dname);
   if (daddr.dptr) {
     memcpy(&addr, daddr.dptr, sizeof(addr));
-    printf("%s  %s\n", ntoa(addr), name);
+    printf("%s  %s\n", ntoa(addr), fullname);
     return;
   }
 
   dname.dptr = (char *) name;
-  dname.dsize = strlen(dname.dptr) + 1;
-  daddr = dbm_fetch(dbhostaddr, dname);
+  dname.dsize = strlen(name) + 1;
+  daddr = dbm_fetch(Dbhostaddr, dname);
   if (daddr.dptr) {
     memcpy(&addr, daddr.dptr, sizeof(addr));
     printf("%s  %s\n", ntoa(addr), name);
@@ -273,7 +332,7 @@ const char *addrstr;
   }
   daddr.dptr = (char *) & addr;
   daddr.dsize = sizeof(addr);
-  dname = dbm_fetch(dbhostname, daddr);
+  dname = dbm_fetch(Dbhostname, daddr);
   if (dname.dptr)
     printf("%s  %s\n", ntoa(addr), dname.dptr);
   else
@@ -286,22 +345,24 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-  char buf[1024];
 
-  if (strstr(*argv, "qaddr")) {
-    if (!(dbhostaddr = dbm_open(DBHOSTADDR, O_RDONLY, 0644))) {
+  char buf[1024];
+  int i;
+
+  if (argc >= 1 && strstr(*argv, "qaddr")) {
+    if (!(Dbhostaddr = dbm_open(DBHOSTADDR, O_RDONLY, 0644))) {
       perror(DBHOSTADDR);
       exit(1);
     }
-    qaddr(argv[1]);
-    dbm_close(dbhostaddr);
-  } else if (strstr(*argv, "qname")) {
-    if (!(dbhostname = dbm_open(DBHOSTNAME, O_RDONLY, 0644))) {
+    for (i = 1; i < argc; i++) qaddr(argv[i]);
+    dbm_close(Dbhostaddr);
+  } else if (argc >= 1 && strstr(*argv, "qname")) {
+    if (!(Dbhostname = dbm_open(DBHOSTNAME, O_RDONLY, 0644))) {
       perror(DBHOSTNAME);
       exit(1);
     }
-    qname(argv[1]);
-    dbm_close(dbhostname);
+    for (i = 1; i < argc; i++) qname(argv[i]);
+    dbm_close(Dbhostname);
   } else {
     sprintf(buf, "%s.dir", DBHOSTADDR);
     unlink(buf);
@@ -311,21 +372,20 @@ char **argv;
     unlink(buf);
     sprintf(buf, "%s.pag", DBHOSTNAME);
     unlink(buf);
-    if (!(dbhostname = dbm_open(DBHOSTNAME, O_RDWR | O_CREAT, 0644))) {
+    if (!(Dbhostname = dbm_open(DBHOSTNAME, O_RDWR | O_CREAT, 0644))) {
       perror(DBHOSTNAME);
       exit(1);
     }
-    if (!(dbhostaddr = dbm_open(DBHOSTADDR, O_RDWR | O_CREAT, 0644))) {
+    if (!(Dbhostaddr = dbm_open(DBHOSTADDR, O_RDWR | O_CREAT, 0644))) {
       perror(DBHOSTADDR);
       exit(1);
     }
-    store_in_db("all-zeros-broadcast", "0.0.0.0");
-    store_in_db("all-ones-broadcast", "255.255.255.255");
     store_in_db("localhost", "127.0.0.1");
-    read_hosts_file();
-    read_domain_file();
-    dbm_close(dbhostname);
-    dbm_close(dbhostaddr);
+    read_domain_file(LOCALDOMAINFILE);
+    read_hosts_file(HOSTSFILE);
+    read_domain_file(DOMAINFILE);
+    dbm_close(Dbhostname);
+    dbm_close(Dbhostaddr);
   }
   return 0;
 }

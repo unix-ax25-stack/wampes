@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.16 1992/09/01 16:52:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.17 1992/11/12 15:20:30 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -231,6 +231,8 @@ int axip_attach __ARGS((int argc,char *argv[],void *p));
 int doaxip __ARGS((int argc,char *argv[],void *p));
 int dobye __ARGS((int argc,char *argv[],void *p));
 int dofkey __ARGS((int argc,char *argv[],void *p));
+int domain0 __ARGS((int argc,char *argv[],void *p));
+int domain1 __ARGS((int argc,char *argv[],void *p));
 int dosource __ARGS((int argc,char *argv[],void *p));
 int ipip_attach __ARGS((int argc,char *argv[],void *p));
 int ni_attach __ARGS((int argc,char *argv[],void *p));

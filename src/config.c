@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.27 1992/09/01 16:52:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.28 1992/11/12 15:20:30 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -326,6 +326,7 @@ static struct cmds Startcmds[] = {
 	"ax25",         ax25start,      256, 0, NULLCHAR,
 #endif
 	"discard",      dis1,           256, 0, NULLCHAR,
+	"domain",       domain1,        256, 0, NULLCHAR,
 	"echo",         echo1,          256, 0, NULLCHAR,
 /*      "finger",       finstart,       256, 0, NULLCHAR, */
 	"ftp",          ftpstart,       256, 0, NULLCHAR,
@@ -354,6 +355,7 @@ static struct cmds Stopcmds[] = {
 	"ax25",         ax250,          0, 0, NULLCHAR,
 #endif
 	"discard",      dis0,           0, 0, NULLCHAR,
+	"domain",       domain0,        0, 0, NULLCHAR,
 	"echo",         echo0,          0, 0, NULLCHAR,
 /*      "finger",       fin0,           0, 0, NULLCHAR, */
 	"ftp",          ftp0,           0, 0, NULLCHAR,
