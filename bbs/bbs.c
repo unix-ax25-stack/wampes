@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.61 1989/01/15 10:21:45 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.62 1989/02/02 11:17:57 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -216,9 +216,10 @@ long  gmt;
   struct tm *tm;
 
   tm = gmtime(&gmt);
-  sprintf(buf, "%2d-%.3s/%02d%02d",
+  sprintf(buf, "%02d%.3s%02d/%02d%02d",
 	       tm->tm_mday,
 	       "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
+	       tm->tm_year % 100,
 	       tm->tm_hour,
 	       tm->tm_min);
   return buf;
@@ -1367,10 +1368,10 @@ static void l_cmd()
 	  (!at      || calleq(at, index.at))     &&
 	  (!sub     || strpos(strlwc(strcpy(buf, index.subject)), sub))) {
 	if (!found) {
-	  puts("Msg# TS  Size To       @ BBS    From     Date   Subject");
+	  puts(" Msg#  Size To      @ BBS     From     Date    Subject");
 	  found = 1;
 	}
-	printf("%4d %c%c %5ld %-8s%c%-8s %-8s %-6.6s %.31s\n", index.mesg, index.type, index.status, index.size, index.to, *index.at ? '@' : ' ', index.at, index.from, timestr(index.date), index.subject);
+	printf("%5d %5ld %-8s%c%-8s %-8s %-7.7s %.32s\n", index.mesg, index.size, index.to, *index.at ? '@' : ' ', index.at, index.from, timestr(index.date), index.subject);
 	if (update_seq && seq.list < index.mesg) {
 	  seq.list = index.mesg;
 	  put_seq();
