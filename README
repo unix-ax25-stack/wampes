@@ -1,4 +1,4 @@
-wampes-950919.tar.gz is a gzipped tar archive of WAMPES, a NET/NOS port
+wampes-950926.tar.gz is a gzipped tar archive of WAMPES, a NET/NOS port
 to various flavors of Unix.
 
 WAMPES currently supports the following configurations:
@@ -16,7 +16,7 @@ WAMPES currently supports the following configurations:
 +---------------+-----------------+-------------------------------------------+
 | AIX 4.1       | IBM RS/6000     | Dieter Deyke <deyke@fc.hp.com>            |
 +---------------+-----------------+-------------------------------------------+
-| IRIX 5.2      | SGI             | Dieter Deyke <deyke@fc.hp.com>            |
+| IRIX 5.3      | SGI             | Dieter Deyke <deyke@fc.hp.com>            |
 +---------------+-----------------+-------------------------------------------+
 | AOS           | IBM RT          | Jan Jaeger <janj@acci.com.au>             |
 +---------------+-----------------+-------------------------------------------+
@@ -46,14 +46,14 @@ To unpack this archive you have to:
 	su
 	mkdir /tcp
 	cd /tcp
-	gzip -d < wampes-950919.tar.gz | tar xvf -
+	gzip -d < wampes-950926.tar.gz | tar xvf -
 
 After unpacking please read the file /tcp/doc/intro.txt.  For FreeBSD
 2.1 and later, "GNU make (gmake)" must be used instead of /usr/bin/make.
 For RISC iX you have to copy *.R to /usr/lib.  Now type "make -i" to
 compile and install everything.
 
-wampes-950919.tar.gz can be found in
+wampes-950926.tar.gz can be found in
 	ftp://ftp.ucsd.edu/hamradio/packet/tcpip/incoming/
 or
 	ftp://ftp.ucsd.edu/hamradio/packet/tcpip/wampes/

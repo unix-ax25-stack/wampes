@@ -217,7 +217,7 @@
 #
 # Lueneburg
 44.130.2.200    DB0AGI  # Digi
-44.130.2.201    DB0AGM-10       # Mailbox; LINUX
+44.130.2.201    DB0AGM          # Mailbox; LINUX
 44.130.2.202    DB0AGM-U        # Mailbox; WAMPES
 44.130.2.205    DL5XC   # Karsten Albrecht, 2120 Lueneburg
 44.130.2.208    DJ4KW-DOS       # Gerd R. Sapper, Lueneburg
@@ -3225,7 +3225,7 @@
 44.130.82.30    DL8MSG  # Bernd, Magdeburg
 44.130.82.31    DL6CPF-U        #
 44.130.82.35    DG2ACG  # Uwe, Magdeburg
-44.130.82.100   DB0OCA-10       # ; Huy, nr Halberstadt (DL6MPG)
+44.130.82.100   DB0OCA          # ; Huy, nr Halberstadt (DL6MPG)
 #
 #44.130.83.x    Dessau
 44.130.83.1     DG1HRG  # Guido, Woerlitz
