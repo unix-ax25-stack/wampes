@@ -1,33 +1,29 @@
 Index: src/ax25.h
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25.h,v
-retrieving revision 1.26
-diff -c -r1.26 ax25.h
-*** src/ax25.h	19 Sep 2002 19:11:44 -0000	1.26
---- src/ax25.h	10 Mar 2005 21:34:31 -0000
+retrieving revision 1.27
+diff -c -r1.27 ax25.h
+*** src/ax25.h	11 Mar 2005 14:36:09 -0000	1.27
+--- src/ax25.h	11 Mar 2005 14:47:55 -0000
 ***************
-*** 29,34 ****
---- 29,36 ----
-  #define REPEATED        0x80    /* Has-been-repeated bit in repeater field */
-  #define E               0x01    /* Address extension bit */
-  #define C               0x80    /* Command/response designation */
-+ #define SSID_DAMA       0x20    /* DAMA flag */
-+ #define SSID_EAX25      0x40    /* EAX25 session marker */
+*** 57,63 ****
+  	int nextdigi;                   /* Index to next digi in chain */
+  	enum lapb_cmdrsp cmdrsp;        /* Command/response */
+  	int qso_num;                    /* QSO number or -1 */
+! 	uint8 ext;                      /* ax25 extensions like DAMA, modulo-128 (EAX25) */
+  };
   
-  /* Our AX.25 address */
-  extern uint8 Mycall[];
-***************
-*** 55,60 ****
+  /* AX.25 routing table entry */
 --- 57,63 ----
   	int nextdigi;                   /* Index to next digi in chain */
   	enum lapb_cmdrsp cmdrsp;        /* Command/response */
   	int qso_num;                    /* QSO number or -1 */
-+ 	uint8 ext;			/* ax25 extensions like DAMA, modulo-128 (EAX25) */
+! 	uint8 ext;			/* ax25 extensions like DAMA, modulo-128 (EAX25) */
   };
   
   /* AX.25 routing table entry */
 ***************
-*** 66,72 ****
+*** 69,75 ****
   	int perm;
   	int jumpstart;
   	long time;
@@ -51,7 +47,7 @@ RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25cmd.c,v
 retrieving revision 1.19
 diff -c -r1.19 ax25cmd.c
 *** src/ax25cmd.c	18 Sep 2002 18:56:07 -0000	1.19
---- src/ax25cmd.c	10 Mar 2005 21:34:32 -0000
+--- src/ax25cmd.c	11 Mar 2005 14:47:55 -0000
 ***************
 *** 30,35 ****
 --- 30,36 ----
@@ -359,272 +355,13 @@ diff -c -r1.19 ax25cmd.c
   #endif
     if(argc < 2) {
       for (i = 0; i < AXROUTESIZE; i++)
-Index: src/ax25dump.c
-===================================================================
-RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25dump.c,v
-retrieving revision 1.16
-diff -c -r1.16 ax25dump.c
-*** src/ax25dump.c	18 Sep 2002 18:56:06 -0000	1.16
---- src/ax25dump.c	10 Mar 2005 21:34:33 -0000
-***************
-*** 21,41 ****
-  int check       /* Not used */
-  ){
-  	char tmp[AXBUF];
-! 	char frmr[3];
-! 	int control,pid,seg;
-  	uint type;
-  	int unsegmented;
-  	struct ax25 hdr;
-  	uint8 *hp;
-! 	char *is_dama;
-  
-- 	fprintf(fp,"AX25: ");
-  	/* Extract the address header */
-  	if(ntohax25(&hdr,bpp) < 0){
-  		/* Something wrong with the header */
-! 		fprintf(fp," bad header!\n");
-  		return;
-  	}
-  	fprintf(fp,"%s",pax25(tmp,hdr.source));
-  	fprintf(fp,"->%s",pax25(tmp,hdr.dest));
-  	if(hdr.ndigis > 0){
---- 21,45 ----
-  int check       /* Not used */
-  ){
-  	char tmp[AXBUF];
-! 	//char frmr[3];
-! 	char frmr[5];
-! 	int control,controlx,pid,seg;
-  	uint type;
-  	int unsegmented;
-  	struct ax25 hdr;
-  	uint8 *hp;
-! 	char *s_ext;
-! 	int eax25 = 0;
-  
-  	/* Extract the address header */
-  	if(ntohax25(&hdr,bpp) < 0){
-  		/* Something wrong with the header */
-! 		fprintf(fp,"AX25: bad header!\n");
-  		return;
-  	}
-+         eax25 = (hdr.ext & SSID_EAX25);
-+ 	s_ext = (hdr.ext & SSID_DAMA) ? " [DAMA]\n" : "\n";
-+ 	fprintf(fp, "%sAX25: ", eax25 ? "E" : "");
-  	fprintf(fp,"%s",pax25(tmp,hdr.source));
-  	fprintf(fp,"->%s",pax25(tmp,hdr.dest));
-  	if(hdr.ndigis > 0){
-***************
-*** 49,62 ****
-  	}
-  	if(hdr.qso_num != -1)
-  		fprintf(fp," QSO %d",hdr.qso_num);
-! 	if((control = PULLCHAR(bpp)) == -1)
-  		return;
-! 
-! 	putc(' ',fp);
-  	type = ftype(control);
-  	fprintf(fp,"%s",decode_type(type));
-  	/* Dump poll/final bit */
-! 	if(control & PF){
-  		switch(hdr.cmdrsp){
-  		case LAPB_COMMAND:
-  			fprintf(fp,"(P)");
---- 53,73 ----
-  	}
-  	if(hdr.qso_num != -1)
-  		fprintf(fp," QSO %d",hdr.qso_num);
-! 	if((control = PULLCHAR(bpp)) == -1) {
-! 		putc('\n',fp);
-  		return;
-! 	}
-  	type = ftype(control);
-+ 	if ((type & 0x3) == U)  /* modulo-128 only in I or S frames */
-+ 		eax25 = 0;
-+ 	if  (eax25 && (controlx = PULLCHAR(bpp)) == -1) {
-+ 		putc('\n',fp);
-+ 		return;
-+ 	}
-+ 	putc(' ',fp);
-  	fprintf(fp,"%s",decode_type(type));
-  	/* Dump poll/final bit */
-! 	if(eax25 ? (controlx & PF_EAX25) : (control & PF)){
-  		switch(hdr.cmdrsp){
-  		case LAPB_COMMAND:
-  			fprintf(fp,"(P)");
-***************
-*** 71,81 ****
-  	}
-  	/* Dump sequence numbers */
-  	if((type & 0x3) != U)   /* I or S frame? */
-! 		fprintf(fp," NR=%d",(control>>5)&7);
-! 	is_dama = (!(hdr.source[ALEN] & 0x20) ? " [DAMA]\n" : "\n");
-  	if(type == I || type == UI){
-  		if(type == I)
-! 			fprintf(fp," NS=%d",(control>>1)&7);
-  		/* Decode I field */
-  		if((pid = PULLCHAR(bpp)) != -1){        /* Get pid */
-  			if(pid == PID_SEGMENT){
---- 82,91 ----
-  	}
-  	/* Dump sequence numbers */
-  	if((type & 0x3) != U)   /* I or S frame? */
-! 		fprintf(fp," NR=%d",(eax25 ? ((controlx>>1)&0x7f) : (control>>5)&7));
-  	if(type == I || type == UI){
-  		if(type == I)
-! 			fprintf(fp," NS=%d",(eax25 ? ((control>>1) &0x7f) : (control>>1)&7));
-  		/* Decode I field */
-  		if((pid = PULLCHAR(bpp)) != -1){        /* Get pid */
-  			if(pid == PID_SEGMENT){
-***************
-*** 90,152 ****
-  
-  			switch(pid){
-  			case PID_SEGMENT:
-! 				fputs(is_dama, fp);
-  				break;  /* Already displayed */
-  			case PID_ARP:
-! 				fprintf(fp," pid=ARP%s", is_dama);
-  				arp_dump(fp,bpp);
-  				break;
-  			case PID_NETROM:
-! 				fprintf(fp," pid=NET/ROM%s", is_dama);
-  				/* Don't verify checksums unless unsegmented */
-  				netrom_dump(fp,bpp,unsegmented);
-  				break;
-  			case PID_IP:
-! 				fprintf(fp," pid=IP%s", is_dama);
-  				/* Don't verify checksums unless unsegmented */
-  				ip_dump(fp,bpp,unsegmented);
-  				break;
-  #ifdef  AX25_VJCOMP
-                          case PID_VJUNCOMP:
-! 				fprintf(fp," pid=VJ%s", is_dama);
-  				/* Don't verify checksums */
-  				ip_dump(fp,bpp,0);
-  				break;
-                          case PID_VJCOMP:
-!                                 fprintf(fp," pid=VJC%s", is_dama);
-                                  /*sl_dump(fp,bpp,0);*/
-                                  break;
-  #endif
-  			case PID_X25:
-! 				fprintf(fp," pid=X.25%s", is_dama);
-  				break;
-  			case PID_TEXNET:
-! 				fprintf(fp," pid=TEXNET%s", is_dama);
-  				break;
-  			case PID_FLEXNET:
-! 				fprintf(fp," pid=FLEXNET%s", is_dama);
-  				flexnet_dump(fp,bpp);
-  				break;
-  			case PID_NO_L3:
-! 				fprintf(fp," pid=Text%s", is_dama);
-  				break;
-  			default:
-! 				fprintf(fp," pid=0x%x%s",pid, is_dama);
-  			}
-  		}
-! 	} else if(type == FRMR && pullup(bpp,frmr,3) == 3){
-  		fprintf(fp,": %s",decode_type(ftype(frmr[0])));
-! 		fprintf(fp," Vr = %d Vs = %d",(frmr[1] >> 5) & MMASK,
-! 			(frmr[1] >> 1) & MMASK);
-! 		if(frmr[2] & W)
-  			fprintf(fp," Invalid control field");
-! 		if(frmr[2] & X)
-  			fprintf(fp," Illegal I-field");
-! 		if(frmr[2] & Y)
-  			fprintf(fp," Too-long I-field");
-! 		if(frmr[2] & Z)
-  			fprintf(fp," Invalid seq number");
-! 		fputs(is_dama, fp);
-  	} else
-  		putc('\n',fp);
-  
---- 100,163 ----
-  
-  			switch(pid){
-  			case PID_SEGMENT:
-! 				fputs(s_ext, fp);
-  				break;  /* Already displayed */
-  			case PID_ARP:
-! 				fprintf(fp," pid=ARP%s", s_ext);
-  				arp_dump(fp,bpp);
-  				break;
-  			case PID_NETROM:
-! 				fprintf(fp," pid=NET/ROM%s", s_ext);
-  				/* Don't verify checksums unless unsegmented */
-  				netrom_dump(fp,bpp,unsegmented);
-  				break;
-  			case PID_IP:
-! 				fprintf(fp," pid=IP%s", s_ext);
-  				/* Don't verify checksums unless unsegmented */
-  				ip_dump(fp,bpp,unsegmented);
-  				break;
-  #ifdef  AX25_VJCOMP
-                          case PID_VJUNCOMP:
-! 				fprintf(fp," pid=VJ%s", s_ext);
-  				/* Don't verify checksums */
-  				ip_dump(fp,bpp,0);
-  				break;
-                          case PID_VJCOMP:
-!                                 fprintf(fp," pid=VJC%s", s_ext);
-                                  /*sl_dump(fp,bpp,0);*/
-                                  break;
-  #endif
-  			case PID_X25:
-! 				fprintf(fp," pid=X.25%s", s_ext);
-  				break;
-  			case PID_TEXNET:
-! 				fprintf(fp," pid=TEXNET%s", s_ext);
-  				break;
-  			case PID_FLEXNET:
-! 				fprintf(fp," pid=FLEXNET%s", s_ext);
-  				flexnet_dump(fp,bpp);
-  				break;
-  			case PID_NO_L3:
-! 				fprintf(fp," pid=Text%s", s_ext);
-  				break;
-  			default:
-! 				fprintf(fp," pid=0x%x%s",pid, s_ext);
-  			}
-  		}
-! 	} else if(type == FRMR && pullup(bpp,frmr,(eax25 ? 5 : 3)) == (eax25 ? 5 : 3)){
-  		fprintf(fp,": %s",decode_type(ftype(frmr[0])));
-! 		fprintf(fp," Vr = %d Vs = %d",
-! 			(eax25 ? (frmr[3] >> 1) & EMMASK : (frmr[1] >> 5) & MMASK),
-! 			(eax25 ? (frmr[2] >> 1) & EMMASK : (frmr[1] >> 1) & MMASK));
-! 		if(frmr[eax25 ? 4 : 2] & W)
-  			fprintf(fp," Invalid control field");
-! 		if(frmr[eax25 ? 4 : 2] & X)
-  			fprintf(fp," Illegal I-field");
-! 		if(frmr[eax25 ? 4 : 2] & Y)
-  			fprintf(fp," Too-long I-field");
-! 		if(frmr[eax25 ? 4 : 2] & Z)
-  			fprintf(fp," Invalid seq number");
-! 		fputs(s_ext, fp);
-  	} else
-  		putc('\n',fp);
-  
-***************
-*** 159,164 ****
---- 170,177 ----
-  		return "I";
-  	case SABM:
-  		return "SABM";
-+ 	case SABME:
-+ 		return "SABME";
-  	case DISC:
-  		return "DISC";
-  	case DM:
 Index: src/ax25file.c
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25file.c,v
 retrieving revision 1.20
 diff -c -r1.20 ax25file.c
 *** src/ax25file.c	12 Jan 2002 15:55:53 -0000	1.20
---- src/ax25file.c	10 Mar 2005 21:34:33 -0000
+--- src/ax25file.c	11 Mar 2005 14:47:56 -0000
 ***************
 *** 8,18 ****
 --- 8,22 ----
@@ -755,51 +492,13 @@ diff -c -r1.20 ax25file.c
   
     }
   
-Index: src/ax25hdr.c
-===================================================================
-RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25hdr.c,v
-retrieving revision 1.11
-diff -c -r1.11 ax25hdr.c
-*** src/ax25hdr.c	19 Aug 1996 16:30:14 -0000	1.11
---- src/ax25hdr.c	10 Mar 2005 21:34:33 -0000
-***************
-*** 65,70 ****
---- 65,78 ----
-  		cp[ALEN] |= C;
-  	else
-  		cp[ALEN] &= ~C;
-+ 	if (hdr->ext & SSID_EAX25)
-+ 		cp[ALEN] &= ~SSID_EAX25;
-+ 	else
-+ 		cp[ALEN] |= SSID_EAX25;
-+ 	if (hdr->ext & SSID_DAMA)
-+ 		cp[ALEN] &= ~SSID_DAMA;
-+ 	else
-+ 		cp[ALEN] |= SSID_DAMA;
-  	/* Set E bit on source address if no digis */
-  	if(hdr->ndigis == 0){
-  		cp[ALEN] |= E;
-***************
-*** 137,142 ****
---- 145,155 ----
-  
-  	hdr->ndigis = 0;
-  	hdr->nextdigi = 0;
-+ 	hdr->ext = 0;
-+ 	if (!(hdr->source[ALEN] & SSID_EAX25))
-+ 		hdr->ext |= SSID_EAX25;
-+ 	if (!(hdr->source[ALEN] & SSID_DAMA))
-+ 		hdr->ext |= SSID_DAMA;
-  	if(hdr->source[ALEN] & E)
-  		return 2;       /* No digis */
-  
 Index: src/ax25subr.c
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25subr.c,v
-retrieving revision 1.27
-diff -c -r1.27 ax25subr.c
-*** src/ax25subr.c	12 Jan 2002 15:55:53 -0000	1.27
---- src/ax25subr.c	10 Mar 2005 21:34:33 -0000
+retrieving revision 1.29
+diff -c -r1.29 ax25subr.c
+*** src/ax25subr.c	11 Mar 2005 14:42:13 -0000	1.29
+--- src/ax25subr.c	11 Mar 2005 14:47:56 -0000
 ***************
 *** 18,23 ****
 --- 18,24 ----
@@ -858,30 +557,13 @@ diff -c -r1.27 ax25subr.c
   	}
   	axp->user = 0;
   	axp->state = LAPB_DISCONNECTED;
-***************
-*** 295,301 ****
-  char *argv[],
-  struct ax25 *hdr)
-  {
-!   hdr->ndigis = hdr->nextdigi = 0;
-    if (argc < 1) {
-      printf("Missing call\n");
-      return 1;
---- 296,302 ----
-  char *argv[],
-  struct ax25 *hdr)
-  {
-!   hdr->ndigis = hdr->nextdigi = hdr->ext = 0;
-    if (argc < 1) {
-      printf("Missing call\n");
-      return 1;
 Index: src/ax25user.c
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/ax25user.c,v
 retrieving revision 1.13
 diff -c -r1.13 ax25user.c
 *** src/ax25user.c	1 Feb 1999 22:24:25 -0000	1.13
---- src/ax25user.c	10 Mar 2005 21:34:33 -0000
+--- src/ax25user.c	11 Mar 2005 14:47:56 -0000
 ***************
 *** 32,37 ****
 --- 32,44 ----
@@ -904,7 +586,7 @@ RCS file: /var/cvs/ampr/wampes-import/tcp/src/iface.c,v
 retrieving revision 1.35
 diff -c -r1.35 iface.c
 *** src/iface.c	20 Sep 2002 15:18:50 -0000	1.35
---- src/iface.c	10 Mar 2005 21:34:34 -0000
+--- src/iface.c	11 Mar 2005 14:47:58 -0000
 ***************
 *** 30,35 ****
 --- 30,36 ----
@@ -983,7 +665,7 @@ RCS file: /var/cvs/ampr/wampes-import/tcp/src/iface.h,v
 retrieving revision 1.28
 diff -c -r1.28 iface.h
 *** src/iface.h	19 Sep 2002 19:11:44 -0000	1.28
---- src/iface.h	10 Mar 2005 21:34:34 -0000
+--- src/iface.h	11 Mar 2005 14:47:58 -0000
 ***************
 *** 134,139 ****
 --- 134,140 ----
@@ -997,10 +679,10 @@ diff -c -r1.28 iface.h
 Index: src/lapb.c
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/lapb.c,v
-retrieving revision 1.42
-diff -c -r1.42 lapb.c
-*** src/lapb.c	12 Jan 2002 15:55:53 -0000	1.42
---- src/lapb.c	10 Mar 2005 21:34:35 -0000
+retrieving revision 1.43
+diff -c -r1.43 lapb.c
+*** src/lapb.c	11 Mar 2005 14:36:09 -0000	1.43
+--- src/lapb.c	11 Mar 2005 14:47:59 -0000
 ***************
 *** 30,36 ****
   
@@ -1622,48 +1304,39 @@ diff -c -r1.42 lapb.c
 Index: src/lapb.h
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/lapb.h,v
-retrieving revision 1.26
-diff -c -r1.26 lapb.h
-*** src/lapb.h	12 Jan 2002 15:55:53 -0000	1.26
---- src/lapb.h	10 Mar 2005 21:34:35 -0000
+retrieving revision 1.27
+diff -c -r1.27 lapb.h
+*** src/lapb.h	11 Mar 2005 14:36:09 -0000	1.27
+--- src/lapb.h	11 Mar 2005 14:47:59 -0000
 ***************
-*** 32,46 ****
+*** 32,38 ****
   #define RNR     0x05    /* Receiver not ready */
   #define REJ     0x09    /* Reject */
   #define U       0x03    /* Unnumbered frames */
 ! #define SABM    0x2f    /* Set Asynchronous Balanced Mode */
+  #define SABME   0x6f    /* Set Asynchronous Balanced Mode moduluo-128 */
   #define DISC    0x43    /* Disconnect */
   #define DM      0x0f    /* Disconnected mode */
-  #define UA      0x63    /* Unnumbered acknowledge */
-  #define FRMR    0x87    /* Frame reject */
-  #define UI      0x03    /* Unnumbered information */
-  #define PF      0x10    /* Poll/final bit */
-  
-  #define MMASK   7       /* Mask for modulo-8 sequence numbers */
-  
-  /* FRMR reason bits */
-  #define W       1       /* Invalid control field */
---- 32,49 ----
+--- 32,38 ----
   #define RNR     0x05    /* Receiver not ready */
   #define REJ     0x09    /* Reject */
   #define U       0x03    /* Unnumbered frames */
 ! #define SABM    0x2f    /* Set Asynchronous Balanced Mode modulo-8 */
-! #define SABME   0x6f    /* Set Asynchronous Balanced Mode moduluo-128 */
+  #define SABME   0x6f    /* Set Asynchronous Balanced Mode moduluo-128 */
   #define DISC    0x43    /* Disconnect */
   #define DM      0x0f    /* Disconnected mode */
-  #define UA      0x63    /* Unnumbered acknowledge */
-  #define FRMR    0x87    /* Frame reject */
-  #define UI      0x03    /* Unnumbered information */
-  #define PF      0x10    /* Poll/final bit */
-+ #define PF_EAX25 0x01   /* Poll/final bit in extra eax25 byte */
-  
-  #define MMASK   7       /* Mask for modulo-8 sequence numbers */
-+ #define EMMASK  0x7f    /* Mask for modulo-128 sequence numbers */
-  
-  /* FRMR reason bits */
-  #define W       1       /* Invalid control field */
 ***************
-*** 82,88 ****
+*** 42,48 ****
+  #define PF      0x10    /* Poll/final bit */
+  #define PF_EAX25 0x01   /* Poll/final bit in extra eax25 byte */
+  
+- 
+  #define MMASK   7       /* Mask for modulo-8 sequence numbers */
+  #define EMMASK  0x7f    /* Mask for modulo-128 sequence numbers */
+  
+--- 42,47 ----
+***************
+*** 86,92 ****
   	struct iface *iface;            /* Interface */
   
   	struct mbuf *txq;               /* Transmit queue */
@@ -1681,7 +1354,7 @@ diff -c -r1.26 lapb.h
   	struct mbuf *rxq;               /* Receive queue */
   
 ***************
-*** 140,145 ****
+*** 144,149 ****
 --- 144,150 ----
   	struct slcompress *slcomp;      /* MW: TCP header compression table */
   	int slcomp_enable;              /* MW: compression enable flag */
@@ -1691,7 +1364,7 @@ diff -c -r1.26 lapb.h
   /* Linkage to network protocols atop ax25 */
   struct axlink {
 ***************
-*** 157,163 ****
+*** 161,167 ****
   extern struct ax25_cb Ax25default,*Ax25_cb;
   extern char *Ax25states[],*Axreasons[];
   extern int32 Axirtt,Blimit;
@@ -1708,14 +1381,14 @@ diff -c -r1.26 lapb.h
   
   extern int T1init;                      /* Retransmission timeout */
 ***************
-*** 197,203 ****
+*** 201,207 ****
   int lapb_output(struct ax25_cb *axp);
   struct mbuf *segmenter(struct mbuf **bp,uint ssize);
   int sendctl(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int cmd);
 ! int sendframe(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int ctl,struct mbuf **data);
   void axnl3(struct iface *iface,struct ax25_cb *axp,uint8 *src,
   	uint8 *dest,struct mbuf **bp,int mcast);
-  int busy(struct ax25_cb *cp);
+  void axflextalk(struct iface *iface,struct ax25_cb *axp,uint8 *src,
 --- 202,208 ----
   int lapb_output(struct ax25_cb *axp);
   struct mbuf *segmenter(struct mbuf **bp,uint ssize);
@@ -1723,14 +1396,14 @@ diff -c -r1.26 lapb.h
 ! int sendframe(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int ctl,int ctl2,struct mbuf **data);
   void axnl3(struct iface *iface,struct ax25_cb *axp,uint8 *src,
   	uint8 *dest,struct mbuf **bp,int mcast);
-  int busy(struct ax25_cb *cp);
+  void axflextalk(struct iface *iface,struct ax25_cb *axp,uint8 *src,
 Index: src/lapbtime.c
 ===================================================================
 RCS file: /var/cvs/ampr/wampes-import/tcp/src/lapbtime.c,v
 retrieving revision 1.10
 diff -c -r1.10 lapbtime.c
 *** src/lapbtime.c	19 Aug 1996 16:30:14 -0000	1.10
---- src/lapbtime.c	10 Mar 2005 21:34:35 -0000
+--- src/lapbtime.c	11 Mar 2005 14:47:59 -0000
 ***************
 *** 108,118 ****
   	 */

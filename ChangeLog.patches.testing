@@ -1,4 +1,7 @@
-Version @(#) $Id: ChangeLog.patches.testing,v 1.1 2005/03/10 21:47:30 dl9sau Exp $
+Version @(#) $Id: ChangeLog.patches.testing,v 1.2 2005/03/11 14:52:35 dl9sau Exp $
+
+20050311 Thomas Osterried <dl9sau>
+	  - new diff for new wampes checkin today
 
 20050310 Thomas Osterried <dl9sau>
 	  - introduced ChangeLog.patches.testing
