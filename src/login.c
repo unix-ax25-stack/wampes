@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.23 1992/09/07 19:20:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.24 1992/09/14 12:30:36 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -22,10 +22,6 @@
 #include "hpux.h"
 #include "telnet.h"
 #include "login.h"
-
-#ifdef sun
-#include <sys/filio.h>
-#endif
 
 #define MASTERPREFIX        "/dev/pty"
 #define SLAVEPREFIX         "/dev/tty"
@@ -96,10 +92,6 @@ char *slave;
       pty_locktime[num] = secclock() + 60;
       pty_name(master, MASTERPREFIX, num);
       if ((fd = open(master, O_RDWR | O_NONBLOCK, 0600)) >= 0) {
-#ifdef sun
-	int arg = 1;
-	ioctl(fd, FIONBIO, &arg);
-#endif
 	*numptr = num;
 	pty_name(slave, SLAVEPREFIX, num);
 	return fd;
@@ -168,15 +160,13 @@ int create;
   /* Fix user name */
 
   for (cp = username; isalnum(uchar(*name)); *cp++ = tolower(uchar(*name++))) ;
-  *cp = '\0';
+  *cp = 0;
   if (!isalpha(uchar(*username)) || strlen(username) > 8)
     strcpy(username, DEFAULTUSER);
 
   /* Search existing passwd entry */
 
-  while ((pw = getpwent()) && strcmp(username, pw->pw_name)) ;
-  endpwent();
-  if (pw) return pw;
+  if (pw = getpwnam(username)) return pw;
   if (!create) return 0;
 
   /* Find free user id */
@@ -210,7 +200,6 @@ int create;
   fprintf(fp, "%s:,./:%d:%d::%s:\n", username, uid, GID, homedir);
   fclose(fp);
   pw = getpwuid(uid);
-  endpwent();
   unlink(PWLOCKFILE);
 
   /* Create home directory */
