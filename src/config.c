@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.24 1992/08/11 21:32:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.25 1992/08/20 19:36:23 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -510,7 +510,7 @@ struct iftype Iftypes[] = {
 #ifdef  NETROM
 	"NETROM",       nr_send,        NULL,           pax25,
 	setcall,        CL_NETROM,      AXALEN,         NULLVFP,
-	NULLFP,         NULLVFP,
+	NULLFP,         ip_dump,
 #endif  /* NETROM */
 
 #ifdef  SLFP

@@ -1,4 +1,6 @@
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.11 1991/11/22 16:21:02 deyke Exp $";
+#ifndef __lint
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.12 1992/08/20 19:35:45 deyke Exp $";
+#endif
 
 #define _HPUX_SOURCE
 
@@ -10,7 +12,11 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#ifdef LINUX
+#define FIOSNBIO        O_NONBLOCK
+#else
 #include <term.h>
+#endif
 #include <termio.h>
 #include <time.h>
 #include <unistd.h>
@@ -199,10 +205,11 @@ char **argv;
     perror(*argv);
     exit(1);
   }
-
+#ifndef LINUX
   setupterm(0, 1, 0);
   if (!strcmp(cursor_up, "\033A")) ansiterminal = 0;
   resetterm();
+#endif
 
   open_terminal();
   arg = 1;

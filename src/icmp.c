@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.7 1992/01/08 13:45:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.8 1992/08/20 19:36:27 deyke Exp $ */
 
 /* Internet Control Message Protocol (ICMP)
  * Copyright 1991 Phil Karn, KA9Q
@@ -130,7 +130,22 @@ int rxbroadcast;
 			return;
 		}
 		icmpOutEchoReps++;
+#if 1
+		{
+		int32 tmp;
+		tmp = ip->source;
+		ip->source = ip->dest;
+		ip->dest = tmp;
+		bp = tbp;
+		if((tbp = htonip(ip,bp,IP_CS_NEW)) == NULLBUF){
+			free_p(bp);
+			return;
+		}
+		net_route(NULLIF,tbp);
+		}
+#else
 		ip_send(ip->dest,ip->source,ICMP_PTCL,ip->tos,0,tbp,length,0,0);
+#endif
 		return;
 	case ICMP_REDIRECT:     /* Redirect */
 		icmpInRedirects++;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.17 1992/08/19 13:20:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.18 1992/08/20 19:36:29 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -178,8 +178,8 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 			 * put our address into the route field, and bump
 			 * the pointer. We've already ensured enough space.
 			 */
-			ip.dest = get32(&opt[pointer]);
-			put32(&opt[pointer],locaddr(ip.dest));
+			ip.dest = get32(&opt[pointer-1]);
+			put32(&opt[pointer-1],locaddr(ip.dest));
 			opt[2] += 4;
 			ckgood = IP_CS_NEW;
 			break;
@@ -215,7 +215,7 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 				/* Add our address to the route.
 				 * We've already ensured there's enough space.
 				 */
-				put32(&opt[pointer],locaddr(ip.dest));
+				put32(&opt[pointer-1],locaddr(ip.dest));
 				opt[2] += 4;
 				ckgood = IP_CS_NEW;
 			}
