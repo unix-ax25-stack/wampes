@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.7 1991/05/24 12:09:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.8 1991/06/04 11:33:50 deyke Exp $ */
 
 /*
  *
@@ -209,7 +209,6 @@ int16                   cnt;
 			}
 			bp = free_mbuf(bp);
 		}
-	fflush(stdout);
 }
 
 /* State change upcall routine */
@@ -270,6 +269,5 @@ char                    old,            /* old state */
 			printf("%s\n",Tcpstates[new]);
 		break;
 	}
-	fflush(stdout);
 }
 

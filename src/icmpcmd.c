@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.9 1991/05/24 12:09:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.10 1991/06/04 11:33:59 deyke Exp $ */
 
 /* ICMP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -219,7 +219,6 @@ struct mbuf *bp;
 		  inet_ntoa(source),
 		  icmp->args.echo.id,icmp->args.echo.seq,
 		  (long)rtt);
-		fflush(stdout);
 	} else {
 		/* Repeated poll, just keep stats */
 		pp->responses++;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.4 1991/04/25 18:26:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.5 1991/06/04 11:33:52 deyke Exp $ */
 
 /* Stuff common to both the FTP server and client */
 #include <stdio.h>
@@ -125,9 +125,9 @@ unsigned bufsize;
 	if((ftp = (struct ftp *)calloc(1,sizeof (struct ftp))) == NULLFTP)
 		return NULLFTP;
 	if(bufsize != 0 && (ftp->buf = malloc(bufsize)) == NULLCHAR){
-		printf("called by ftp_create\n");fflush(stdout);
+		printf("called by ftp_create\n");
 		ftp_delete(ftp);
-		printf("called by ftp_create\n");fflush(stdout);
+		printf("called by ftp_create\n");
 		return NULLFTP;
 	}
 	ftp->state = COMMAND_STATE;

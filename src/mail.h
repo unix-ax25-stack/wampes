@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.9 1991/05/21 19:08:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.10 1991/06/04 11:34:19 deyke Exp $ */
 
 #ifndef _MAIL_H
 #define _MAIL_H
@@ -52,6 +52,6 @@ void mail_smtp __ARGS((struct mailsys *sp));
 /* In mail_subr.c: */
 char *get_user_from_path __ARGS((char *path));
 char *get_host_from_path __ARGS((char *path));
-void free_mailjobs __ARGS((struct mailsys *sp));
+void mailer_failed __ARGS((struct mailsys *sp));
 
 #endif  /* _MAIL_H */

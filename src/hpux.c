@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.18 1991/06/01 22:18:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.19 1991/06/04 11:33:56 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -77,7 +77,6 @@ void ioinit()
     curr_termio.c_cc[VTIME] = 0;
     ioctl(0, TCSETA, &curr_termio);
     printf("\033&s1A");   /* enable XmitFnctn */
-    fflush(stdout);
     on_read(0, keyboard, (void *) 0);
   } else {
     for (i = 0; i < _NFILE; i++) close(i);
@@ -118,7 +117,6 @@ void iostop()
   if (local_kbd) {
     ioctl(0, TCSETA, &prev_termio);
     printf("\033&s0A");   /* disable XmitFnctn */
-    fflush(stdout);
   }
   for (ifp = Ifaces; ifp; ifp = ifp->next)
     if (ifp->stop) (*ifp->stop)(ifp);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.9 1991/04/25 18:26:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.10 1991/06/04 11:33:41 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -81,7 +81,6 @@ int  cnt;
     putchar(c);
     if (Current->record) putc(c, Current->record);
   }
-  fflush(stdout);
 }
 
 /*---------------------------------------------------------------------------*/

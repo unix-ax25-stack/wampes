@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.7 1991/05/21 19:09:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.8 1991/06/04 11:34:25 deyke Exp $ */
 
 /* SMTP Mail Delivery Agent */
 
@@ -9,7 +9,6 @@
 
 #include "global.h"
 #include "mbuf.h"
-#include "timer.h"
 #include "transport.h"
 #include "mail.h"
 
@@ -176,11 +175,8 @@ struct transport_cb *tp;
     if (mp->fp) fclose(mp->fp);
     if (!mp->sp->jobs)
       mp->sp->state = MS_SUCCESS;
-    else {
-      free_mailjobs(mp->sp);
-      mp->sp->state = MS_FAILURE;
-      mp->sp->nexttime = secclock() + RETRYTIME;
-    }
+    else
+      mailer_failed(mp->sp);
     free(mp);
   }
   transport_del(tp);
@@ -202,7 +198,7 @@ struct mailsys *sp;
     if (strcmp(sp->protocol, "tcp"))
       transport_send(mp->tp, qdata("cmd.smtp\n", 9));
   } else {
-    free_mailjobs(sp);
+    mailer_failed(sp);
     free(mp);
   }
 }

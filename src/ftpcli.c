@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.9 1991/05/29 12:01:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.10 1991/06/04 11:33:53 deyke Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q
@@ -125,7 +125,6 @@ int len;
 		if(cmdparse(Ftpabort,line,NULL) == -1){
 			tprintf("Transfer in progress; only ABORT is acceptable\n");
 		}
-		fflush(stdout);
 		return;
 	}
 
@@ -141,7 +140,6 @@ int len;
 	} else {
 		free_p(bp);
 	}
-	fflush(stdout);
 }
 /* Translate 'cd' to 'cwd' for convenience */
 static int
@@ -437,7 +435,6 @@ void *p;
 		break;
 	}
 	ftp->state = COMMAND_STATE;
-	fflush(stdout);
 	return 0;
 }
 /* create data port, and send PORT message */
@@ -499,7 +496,6 @@ int16 cnt;
 			fwrite(bp->data,1,(unsigned)bp->cnt,stdout);
 			bp = free_mbuf(bp);
 		}
-		fflush(stdout);
 	}
 }
 
@@ -551,8 +547,6 @@ char old,new;
 			tprintf("%s\n",Tcpstates[new]);
 		break;
 	}
-	if(notify)
-		fflush(stdout);
 }
 /* FTP Client Data channel State change upcall handler */
 static void
@@ -578,7 +572,6 @@ char old,new;
 			if(Current != NULLSESSION && Current->cb.ftp == ftp){
 				tprintf("Put complete, %lu bytes sent\n",
 					tcb->snd.una - tcb->iss - 2);
-				fflush(stdout);
 			}
 		}
 		break;
@@ -597,7 +590,6 @@ char old,new;
 			if(Current != NULLSESSION && Current->cb.ftp == ftp){
 				tprintf("Get complete, %lu bytes received\n",
 					tcb->rcv.nxt - tcb->irs - 2);
-				fflush(stdout);
 			}
 		}
 		break;

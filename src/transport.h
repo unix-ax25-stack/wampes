@@ -1,7 +1,19 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.h,v 1.6 1991/04/25 18:27:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.h,v 1.7 1991/06/04 11:35:01 deyke Exp $ */
 
 #ifndef _TRANSPORT_H
 #define _TRANSPORT_H
+
+#ifndef _GLOBAL_H
+#include "global.h"
+#endif
+
+#ifndef _MBUF_H
+#include "mbuf.h"
+#endif
+
+#ifndef _TIMER_H
+#include "timer.h"
+#endif
 
 #define EOL_NONE        0       /* No EOL conversion (binary) */
 #define EOL_CR          1       /* EOL is "\r" */

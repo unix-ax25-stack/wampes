@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.20 1991/06/01 22:18:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.21 1991/06/04 11:34:29 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -123,6 +123,8 @@ char *argv[];
 	/* Main commutator loop */
 	for(;;){
 
+		fflush(stdout);
+
 		/* Service the clock */
 		timerproc();
 
@@ -141,7 +143,6 @@ cmdmode()
 		Mode = CMD_MODE;
 		cooked();
 		tprintf(Prompt,Hostname);
-		fflush(stdout);
 	}
 	return 0;
 }
@@ -173,17 +174,14 @@ void *v;
 		switch (Mode) {
 		case CMD_MODE:
 			cmdparse(Cmds, ttybuf, NULL);
-			fflush(stdout);
 			break;
 		case CONV_MODE:
 			if (Current->parse != NULLVFP)
 				(*Current->parse)(ttybuf, cnt);
 			break;
 		}
-		if (Mode == CMD_MODE) {
+		if (Mode == CMD_MODE)
 			tprintf(Prompt, Hostname);
-			fflush(stdout);
-		}
 	}
 }
 /* Standard commands called from main */

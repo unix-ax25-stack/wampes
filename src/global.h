@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.11 1991/05/17 17:06:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.12 1991/06/04 11:33:55 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -9,6 +9,8 @@
 
 #if     defined(__TURBOC__) || defined(__STDC__) || defined(LATTICE)
 #define ANSIPROTO       1
+#else
+#define const
 #endif
 
 #ifndef __ARGS

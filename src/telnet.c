@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.10 1991/05/24 12:10:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.11 1991/06/04 11:34:55 deyke Exp $ */
 
 /* Internet Telnet client
  * Copyright 1991 Phil Karn, KA9Q
@@ -230,7 +230,6 @@ int cnt;
 	if(recv_tcp(tcb,&bp,cnt) > 0)
 		tel_input(tn,bp);
 
-	fflush(stdout);
 	if((record = tn->session->record) != NULLFILE)
 		fflush(record);
 }
@@ -317,7 +316,6 @@ char old,new;
 			printf("%s\n",Tcpstates[new]);
 		break;
 	}
-	fflush(stdout);
 }
 /* Delete telnet structure */
 static void

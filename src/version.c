@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/version.c,v 1.8 1991/06/01 22:18:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/version.c,v 1.9 1991/06/04 11:35:06 deyke Exp $ */
 
 /* version control information */
-char Version[] = "WAMPES-910601";
+char Version[] = "WAMPES-910604";
