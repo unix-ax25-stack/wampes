@@ -1,28 +1,52 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.2 1990/08/23 17:33:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.3 1990/09/11 13:45:37 deyke Exp $ */
 
 /* Upper half of IP, consisting of send/receive primitives, including
  * fragment reassembly, for higher level protocols.
  * Not needed when running as a standalone gateway.
  */
-#define TLB     30 * (1000/MSPTICK)     /* Reassembly limit time */
 #include "global.h"
 #include "mbuf.h"
 #include "timer.h"
 #include "internet.h"
+#include "netuser.h"
 #include "iface.h"
+#include "pktdrvr.h"
 #include "ip.h"
 #include "icmp.h"
 
-void ip_recv();
+static struct mbuf *fraghandle __ARGS((struct ip *ip,struct mbuf *bp));
+static void ip_timeout __ARGS((void *arg));
+static void free_reasm __ARGS((struct reasm *rp));
+static void freefrag __ARGS((struct frag *fp));
+static struct reasm *lookup_reasm __ARGS((struct ip *ip));
+static struct reasm *creat_reasm __ARGS((struct ip *ip));
+static struct frag *newfrag __ARGS((int offset,int last,struct mbuf *bp));
 
-static struct mbuf *fraghandle();
-static void ip_timeout(),freefrag(),free_reasm();
-static struct reasm *lookup_reasm(),*creat_reasm();
-static struct frag *newfrag();
-
-int32 ip_ttl = MAXTTL;  /* Default time-to-live for IP datagrams */
+struct mib_entry Ip_mib[20] = {
+	"",                     0,
+	"ipForwarding",         1,
+	"ipDefaultTTL",         MAXTTL,
+	"ipInReceives",         0,
+	"ipInHdrErrors",        0,
+	"ipInAddrErrors",       0,
+	"ipForwDatagrams",      0,
+	"ipInUnknownProtos",    0,
+	"ipInDiscards",         0,
+	"ipInDelivers",         0,
+	"ipOutRequests",        0,
+	"ipOutDiscards",        0,
+	"ipOutNoRoutes",        0,
+	"ipReasmTimeout",       TLB,
+	"ipReasmReqds",         0,
+	"ipReasmOKs",           0,
+	"ipReasmFails",         0,
+	"ipFragOKs",            0,
+	"ipFragFails",          0,
+	"ipFragCreates",        0,
+};
 
 struct reasm *Reasmq;
+static struct raw_ip *Raw_ip;
 
 #define INSERT  0
 #define APPEND  1
@@ -43,25 +67,29 @@ int16 length;                   /* Optional length of data portion */
 int16 id;                       /* Optional identification */
 char df;                        /* Don't-fragment flag */
 {
-	struct mbuf *htonip(),*tbp;
+	struct mbuf *tbp;
 	struct ip ip;           /* Pointer to IP header */
 	static int16 id_cntr;   /* Datagram serial number */
+	struct phdr *phdr;
 
+	ipOutRequests++;
+
+	if(source == INADDR_ANY)
+		source = locaddr(dest);
 	if(length == 0 && bp != NULLBUF)
 		length = len_p(bp);
 	if(id == 0)
 		id = id_cntr++;
 	if(ttl == 0)
-		ttl = ip_ttl;
+		ttl = ipDefaultTTL;
 
 	/* Fill in IP header */
 	ip.tos = tos;
 	ip.length = IPLEN + length;
 	ip.id = id;
-	if(df)
-		ip.fl_offs = DF;
-	else
-		ip.fl_offs = 0;
+	ip.offset = 0;
+	ip.flags.mf = 0;
+	ip.flags.df = df;
 	ip.ttl = ttl;
 	ip.protocol = protocol;
 	ip.source = source;
@@ -71,49 +99,85 @@ char df;                        /* Don't-fragment flag */
 		free_p(bp);
 		return -1;
 	}
-	return ip_route(tbp,0);         /* Toss it to the router */
+	if((bp = pushdown(tbp,sizeof(struct phdr))) == NULLBUF){
+		free_p(tbp);
+		return -1;
+	}
+	phdr = (struct phdr *)bp->data;
+	if(ismyaddr(ip.dest)){
+		/* Pretend it has been sent by the loopback interface before
+		 * it appears in the receive queue
+		 */
+		phdr->iface = &Loopback;
+		phdr->iface->ipsndcnt++;
+		phdr->iface->rawsndcnt++;
+	} else
+		phdr->iface = NULLIF;
+	phdr->type = CL_NONE;
+	enqueue(&Hopper,bp);
+	return 0;
 }
 
 /* Reassemble incoming IP fragments and dispatch completed datagrams
  * to the proper transport module
  */
 void
-ip_recv(ip,bp,rxbroadcast)
+ip_recv(iface,ip,bp,rxbroadcast)
+struct iface *iface;    /* Incoming interface */
 struct ip *ip;          /* Extracted IP header */
 struct mbuf *bp;        /* Data portion */
-char rxbroadcast;       /* True if received on subnet broadcast address */
+int rxbroadcast;        /* True if received on subnet broadcast address */
 {
-	void (*recv)(); /* Function to call with completed datagram */
-	void tcp_input(),udp_input(),icmp_input();
+	/* Function to call with completed datagram */
+	register struct raw_ip *rp;
+	struct mbuf *bp1,*tbp;
+	int rxcnt = 0;
+	register struct iplink *ipp;
 
-	/* Initial check for protocols we can't handle */
-	switch(uchar(ip->protocol)){
-	case TCP_PTCL:
-		recv = tcp_input;
-		break;
-	case UDP_PTCL:
-		recv = udp_input;
-		break;
-	case ICMP_PTCL:
-		recv = icmp_input;
-		break;
-	default:
-		/* Send an ICMP Protocol Unknown response... */
-		Ip_stats.badproto++;
-		/* ...unless it's a broadcast */
-		if(!rxbroadcast){
-			icmp_output(ip,bp,ICMP_DEST_UNREACH,ICMP_PROT_UNREACH,(union icmp_args *)NULL);
-		}
-		free_p(bp);
-		return;
-	}
 	/* If we have a complete packet, call the next layer
 	 * to handle the result. Note that fraghandle passes back
 	 * a length field that does NOT include the IP header
 	 */
-	if((bp = fraghandle(ip,bp)) != NULLBUF)
-		(*recv)(bp,ip->protocol,ip->source,ip->dest,ip->tos,
-			ip->length - (IPLEN + ip->optlen),rxbroadcast);
+	if((bp = fraghandle(ip,bp)) == NULLBUF)
+		return;         /* Not done yet */
+
+	ipInDelivers++;
+
+	for(rp = Raw_ip;rp != NULLRIP;rp = rp->next){
+		if(rp->protocol != ip->protocol)
+			continue;
+		rxcnt++;
+		/* Duplicate the data portion, and put the header back on */
+		dup_p(&bp1,bp,0,len_p(bp));
+		if(bp1 != NULLBUF && (tbp = htonip(ip,bp1)) != NULLBUF){
+			enqueue(&rp->rcvq,tbp);
+			if(rp->r_upcall != NULLVFP)
+				(*rp->r_upcall)(rp);
+		} else {
+			free_p(bp1);
+		}
+	}
+	/* Look it up in the transport protocol table */
+	for(ipp = Iplink;ipp->funct        ;ipp++){
+		if(ipp->proto == ip->protocol)
+			break;
+	}
+	if(ipp->funct        ){
+		/* Found, call transport protocol */
+		(*ipp->funct)(iface,ip,bp,rxbroadcast);
+	} else {
+		/* Not found */
+		if(rxcnt == 0){
+			/* Send an ICMP Protocol Unknown response... */
+			ipInUnknownProtos++;
+			/* ...unless it's a broadcast */
+			if(!rxbroadcast){
+				icmp_output(ip,bp,ICMP_DEST_UNREACH,
+				 ICMP_PROT_UNREACH,(union icmp_args *)NULL);
+			}
+		}
+		free_p(bp);
+	}
 }
 /* Process IP datagram fragments
  * If datagram is complete, return it with ip->length containing the data
@@ -129,26 +193,25 @@ struct mbuf *bp;        /* The fragment itself */
 	struct frag *lastfrag,*nextfrag,*tfp;
 	struct mbuf *tbp;
 	int16 i;
-	int16 offset;           /* Index of first byte in fragment */
 	int16 last;             /* Index of first byte beyond fragment */
-	char mf;                /* 1 if not last fragment, 0 otherwise */
 
-	offset = (ip->fl_offs & F_OFFSET) << 3; /* Convert to bytes */
-	last = offset + ip->length - (IPLEN + ip->optlen);
-	mf = (ip->fl_offs & MF) ? 1 : 0;
+	last = ip->offset + ip->length - (IPLEN + ip->optlen);
 
 	rp = lookup_reasm(ip);
-	if(offset == 0 && !mf){
+	if(ip->offset == 0 && !ip->flags.mf){
 		/* Complete datagram received. Discard any earlier fragments */
-		if(rp != NULLREASM)
+		if(rp != NULLREASM){
 			free_reasm(rp);
-
+			ipReasmOKs++;
+		}
 		return bp;
 	}
+	ipReasmReqds++;
 	if(rp == NULLREASM){
 		/* First fragment; create new reassembly descriptor */
 		if((rp = creat_reasm(ip)) == NULLREASM){
 			/* No space for descriptor, drop fragment */
+			ipReasmFails++;
 			free_p(bp);
 			return NULLBUF;
 		}
@@ -160,7 +223,7 @@ struct mbuf *bp;        /* The fragment itself */
 	/* If this is the last fragment, we now know how long the
 	 * entire datagram is; record it
 	 */
-	if(!mf)
+	if(!ip->flags.mf)
 		rp->length = last;
 
 	/* Set nextfrag to the first fragment which begins after us,
@@ -168,18 +231,18 @@ struct mbuf *bp;        /* The fragment itself */
 	 */
 	lastfrag = NULLFRAG;
 	for(nextfrag = rp->fraglist;nextfrag != NULLFRAG;nextfrag = nextfrag->next){
-		if(nextfrag->offset > offset)
+		if(nextfrag->offset > ip->offset)
 			break;
 		lastfrag = nextfrag;
 	}
 	/* Check for overlap with preceeding fragment */
-	if(lastfrag != NULLFRAG  && offset < lastfrag->last){
+	if(lastfrag != NULLFRAG  && ip->offset < lastfrag->last){
 		/* Strip overlap from new fragment */
-		i = lastfrag->last - offset;
+		i = lastfrag->last - ip->offset;
 		pullup(&bp,NULLCHAR,i);
 		if(bp == NULLBUF)
 			return NULLBUF; /* Nothing left */
-		offset += i;
+		ip->offset += i;
 	}
 	/* Look for overlap with succeeding segments */
 	for(; nextfrag != NULLFRAG; nextfrag = tfp){
@@ -209,13 +272,13 @@ struct mbuf *bp;        /* The fragment itself */
 	 * join to either or both fragments.
 	 */
 	i = INSERT;
-	if(lastfrag != NULLFRAG && lastfrag->last == offset)
+	if(lastfrag != NULLFRAG && lastfrag->last == ip->offset)
 		i |= APPEND;
 	if(nextfrag != NULLFRAG && nextfrag->offset == last)
 		i |= PREPEND;
 	switch(i){
 	case INSERT:    /* Insert new desc between lastfrag and nextfrag */
-		tfp = newfrag(offset,last,bp);
+		tfp = newfrag(ip->offset,last,bp);
 		tfp->prev = lastfrag;
 		tfp->next = nextfrag;
 		if(lastfrag != NULLFRAG)
@@ -233,7 +296,7 @@ struct mbuf *bp;        /* The fragment itself */
 		tbp = nextfrag->buf;
 		nextfrag->buf = bp;
 		append(&nextfrag->buf,tbp);
-		nextfrag->offset = offset;      /* Extend backward */
+		nextfrag->offset = ip->offset;  /* Extend backward */
 		break;
 	case (APPEND|PREPEND):
 		/* Consolidate by appending this fragment and nextfrag
@@ -261,10 +324,54 @@ struct mbuf *bp;        /* The fragment itself */
 		/* Tell IP the entire length */
 		ip->length = rp->length + (IPLEN + ip->optlen);
 		free_reasm(rp);
+		ipReasmOKs++;
 		return bp;
 	} else
 		return NULLBUF;
 }
+/* Arrange for receipt of raw IP datagrams */
+struct raw_ip *
+raw_ip(protocol,r_upcall)
+int protocol;
+void (*r_upcall)();
+{
+	register struct raw_ip *rp;
+
+	rp = (struct raw_ip *)callocw(1,sizeof(struct raw_ip));
+	rp->protocol = protocol;
+	rp->r_upcall = r_upcall;
+	rp->next = Raw_ip;
+	if(rp->next != NULLRIP)
+		rp->next->prev = rp;
+	Raw_ip = rp;
+	return rp;
+}
+/* Free a raw IP descriptor */
+void
+del_ip(rpp)
+struct raw_ip *rpp;
+{
+	register struct raw_ip *rp;
+
+	/* Do sanity check on arg */
+	for(rp = Raw_ip;rp != NULLRIP;rp = rp->next)
+		if(rp == rpp)
+			break;
+	if(rp == NULLRIP)
+		return; /* Doesn't exist */
+
+	/* Unlink */
+	if(rp->prev != NULLRIP)
+		rp->prev->next = rp->next;
+	else
+		Raw_ip = rp->next;
+	if(rp->next != NULLRIP)
+		rp->next->prev = rp->prev;
+	/* Free resources */
+	free_q(&rp->rcvq);
+	free((char *)rp);
+}
+
 static struct reasm *
 lookup_reasm(ip)
 struct ip *ip;
@@ -287,7 +394,7 @@ int32 dest,
 char protocol;
 int16 id;
 {
-	register int16 hval;
+	register unsigned int hval;
 
 	hval = loword(source);
 	hval ^= hiword(source);
@@ -295,8 +402,7 @@ int16 id;
 	hval ^= hiword(dest);
 	hval ^= uchar(protocol);
 	hval ^= id;
-	hval %= RHASH;
-	return hval;
+	return hval % RHASH;
 }
 #endif
 /* Create a reassembly descriptor,
@@ -314,9 +420,9 @@ register struct ip *ip;
 	rp->dest = ip->dest;
 	rp->id = ip->id;
 	rp->protocol = ip->protocol;
-	rp->timer.start = TLB;
+	rp->timer.start = (ipReasmTimeout * 1000) / MSPTICK;
 	rp->timer.func = ip_timeout;
-	rp->timer.arg = (char *)rp;
+	rp->timer.arg = rp;
 
 	rp->next = Reasmq;
 	if(rp->next != NULLREASM)
@@ -352,12 +458,13 @@ register struct reasm *rp;
 /* Handle reassembly timeouts by deleting all reassembly resources */
 static void
 ip_timeout(arg)
-int *arg;
+void *arg;
 {
 	register struct reasm *rp;
 
 	rp = (struct reasm *)arg;
 	free_reasm(rp);
+	ipReasmFails++;
 }
 /* Create a fragment */
 static
@@ -386,4 +493,31 @@ struct frag *fp;
 {
 	free_p(fp->buf);
 	free((char *)fp);
+}
+
+/* In red alert mode, blow away the whole reassembly queue. Otherwise crunch
+ * each fragment on each reassembly descriptor
+ */
+void
+ip_garbage(red)
+int red;
+{
+	struct reasm *rp,*rp1;
+	struct frag *fp;
+	struct raw_ip *rwp;
+
+	/* Run through the reassembly queue */
+	for(rp = Reasmq;rp != NULLREASM;rp = rp1){
+		rp1 = rp->next;
+		if(red){
+			free_reasm(rp);
+		} else {
+			for(fp = rp->fraglist;fp != NULLFRAG;fp = fp->next){
+				mbuf_crunch(&fp->buf);
+			}
+		}
+	}
+	/* Run through the raw IP queue */
+	for(rwp = Raw_ip;rwp != NULLRIP;rwp = rwp->next)
+		mbuf_crunch(&rwp->rcvq);
 }

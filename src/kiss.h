@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.h,v 1.2 1990/08/23 17:33:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.h,v 1.3 1990/09/11 13:45:46 deyke Exp $ */
 
 #ifndef KISS_DATA
 
@@ -11,6 +11,8 @@
 #define KISS_FD         5
 #define KISS_HW         6
 #define KISS_RETURN     0xff
+
+struct iface;
 
 /* In kiss.c: */
 int kiss_raw __ARGS((struct iface *iface,struct mbuf *data));

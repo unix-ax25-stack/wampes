@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.2 1990/08/23 17:32:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.3 1990/09/11 13:45:22 deyke Exp $ */
 
 /* FTP Server state machine - see RFC 959 */
 
@@ -103,21 +103,23 @@ static char okay[] = "200 Ok\r\n";
 static struct tcb *ftp_tcb;
 
 /* Start up FTP service */
-ftp1(argc,argv)
+ftpstart(argc,argv,p)
 int argc;
 char *argv[];
+void *p;
 {
 	struct socket lsocket;
 
 	if(ftp_tcb != NULLTCB)
 		close_tcp(ftp_tcb);
-	lsocket.address = Ip_addr;
+	lsocket.address = INADDR_ANY;
 	if(argc < 2)
 		lsocket.port = IPPORT_FTP;
 	else
 		lsocket.port = tcp_portnum(argv[1]);
 
 	ftp_tcb = open_tcp(&lsocket,NULLSOCK,TCP_SERVER,0,ftpscr,NULLVFP,ftpscs,0,(char *)NULL);
+	return 0;
 }
 /* Shut down FTP server */
 ftp0(argc,argv,p)
@@ -193,7 +195,7 @@ struct tcb *tcb;
 int16 cnt;
 {
 	register struct ftp *ftp;
-	char c;
+	int c;
 	struct mbuf *bp;
 
 	if((ftp = (struct ftp *)tcb->user) == NULLFTP){
@@ -205,7 +207,7 @@ int16 cnt;
 	case COMMAND_STATE:
 		/* Assemble an input line in the session buffer. Return if incomplete */
 		recv_tcp(tcb,&bp,0);
-		while(pullup(&bp,&c,1) == 1){
+		while((c = PULLCHAR(&bp)) != -1){
 			switch(c){
 			case '\r':      /* Strip cr's */
 				continue;

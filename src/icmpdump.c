@@ -1,11 +1,13 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpdump.c,v 1.2 1990/08/23 17:33:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpdump.c,v 1.3 1990/09/11 13:45:32 deyke Exp $ */
 
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
 #include "internet.h"
+#include "netuser.h"
 #include "icmp.h"
 #include "trace.h"
+#include "ip.h"
 
 /* Dump an ICMP header */
 void
@@ -24,32 +26,21 @@ int check;              /* If 0, bypass checksum verify */
 
 	ntohicmp(&icmp,bpp);
 
-	if(uchar(icmp.type) <= 16 && Icmptypes[uchar(icmp.type)] != NULLCHAR)
-		fprintf(fp,"ICMP: %s",Icmptypes[uchar(icmp.type)]);
-	else
-		fprintf(fp,"ICMP: type %u",uchar(icmp.type));
+	fprintf(fp,"ICMP: type %s",smsg(Icmptypes,ICMP_TYPES,uchar(icmp.type)));
 
 	switch(uchar(icmp.type)){
 	case ICMP_DEST_UNREACH:
-		if(uchar(icmp.code) <= 5)
-			fprintf(fp," %s",Unreach[uchar(icmp.code)]);
-		else
-			fprintf(fp," code %u",uchar(icmp.code));
+		fprintf(fp," code %s",smsg(Unreach,NUNREACH,uchar(icmp.code)));
 		break;
 	case ICMP_REDIRECT:
-		if(uchar(icmp.code) <= 3)
-			fprintf(fp," %s",Redirect[uchar(icmp.code)]);
-		else
-			fprintf(fp," code %u",uchar(icmp.code));
+		fprintf(fp," code %s",smsg(Redirect,NREDIRECT,uchar(icmp.code)));
+		fprintf(fp," new gateway %s",inet_ntoa(icmp.args.address));
 		break;
 	case ICMP_TIME_EXCEED:
-		if(uchar(icmp.code) <= 1)
-			fprintf(fp," %s",Exceed[uchar(icmp.code)]);
-		else
-			fprintf(fp," code %u",uchar(icmp.code));
+		fprintf(fp," code %s",smsg(Exceed,NEXCEED,uchar(icmp.code)));
 		break;
 	case ICMP_PARAM_PROB:
-		fprintf(fp," pointer = %u",icmp.args.pointer);
+		fprintf(fp," pointer %u",icmp.args.pointer);
 		break;
 	case ICMP_ECHO:
 	case ICMP_ECHO_REPLY:
@@ -63,7 +54,7 @@ int check;              /* If 0, bypass checksum verify */
 	if(check && csum != 0){
 		fprintf(fp," CHECKSUM ERROR (%u)",csum);
 	}
-	fprintf(fp,"\n");
+	putc('\n',fp);
 	/* Dump the offending IP header, if any */
 	switch(icmp.type){
 	case ICMP_DEST_UNREACH:

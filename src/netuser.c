@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.4 1990/08/23 17:33:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.5 1990/09/11 13:46:09 deyke Exp $ */
 
 /* Miscellaneous format conversion subroutines */
 
@@ -175,5 +175,14 @@ register char  *s;
     l = (l << 4) | (c & 0xf);
   }
   return l;
+}
+char *
+pinet(s)
+struct socket *s;
+{
+	static char buf[30];
+
+	sprintf(buf,"%s:%u",inet_ntoa(s->address),s->port);
+	return buf;
 }
 

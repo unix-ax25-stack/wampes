@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.2 1990/08/23 17:33:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.3 1990/09/11 13:45:52 deyke Exp $ */
 
 /* Mailer Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -81,7 +81,10 @@ static void read_configuration()
 
 /*---------------------------------------------------------------------------*/
 
-mail_daemon()
+int  mail_daemon(argc, argv, argp)
+int  argc;
+char  *argv[];
+void *argp;
 {
 
   DIR * dirp;

@@ -1,4 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.2 1990/08/23 17:33:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.3 1990/09/11 13:45:50 deyke Exp $ */
+
+#ifndef MAIL_INCLUDED
+#define MAIL_INCLUDED
 
 #define CONFFILE   "/tcp/mail.conf"
 #define SPOOLDIR   "/usr/spool/uucp"
@@ -22,9 +25,22 @@ struct mailsys {
   struct mailsys *nextsys;
 };
 
-extern char  *get_host_from_path();
-extern char  *get_user_from_path();
-extern void abort_mailjob();
-extern void mail_bbs();
-extern void mail_return();
-extern void mail_smtp();
+/* mail_bbs.c */
+void mail_bbs __ARGS((struct mailsys *sp));
+
+/* mail_daemn.c */
+int mail_daemon __ARGS((int argc,char *argv[],void *p));
+
+/* mail_retrn.c */
+void mail_return __ARGS((struct mailjob *jp));
+
+/* mail_smtp.c */
+void mail_smtp __ARGS((struct mailsys *sp));
+
+/* mail_subr.c */
+char *get_user_from_path __ARGS((char *path));
+char *get_host_from_path __ARGS((char *path));
+void abort_mailjob __ARGS((struct mailsys *sp));
+
+#endif  /* MAIL_INCLUDED */
+

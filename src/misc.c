@@ -1,6 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.2 1990/08/23 17:33:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.3 1990/09/11 13:46:02 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities */
+#include <ctype.h>
 #include <stdio.h>
 #include "global.h"
 #include "socket.h"
@@ -53,13 +54,13 @@ register char *s;
 		*cp = '\0';
 }
 
-/* Routines not needed for Turbo 2.0, but available for older libraries */
-#ifdef  AZTEC
-
-/* Copy a string to a malloc'ed buffer */
+/* Copy a string to a malloc'ed buffer. Turbo C has this one in its
+ * library, but it doesn't call mallocw() and can therefore return NULL.
+ * NOS uses of strdup() generally don't check for NULL, so they need this one.
+ */
 char *
 strdup(s)
-const char *s;
+char *s;
 {
 	register char *out;
 	register int len;
@@ -73,6 +74,8 @@ const char *s;
 	out[len] = '\0';
 	return out;
 }
+/* Routines not needed for Turbo 2.0, but available for older libraries */
+/* #ifdef  AZTEC */
 
 /* Case-insensitive string comparison */
 strnicmp(a,b,n)
@@ -96,6 +99,7 @@ register int n;
 	return 0;
 }
 
+#ifdef  AZTEC
 char *
 strtok(s1,s2)
 char *s1;       /* Source string (first call) or NULL */

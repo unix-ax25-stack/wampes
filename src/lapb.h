@@ -1,4 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.5 1990/08/23 17:32:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.6 1990/09/11 13:45:07 deyke Exp $ */
+
+#ifndef AXPROTO_INCLUDED
+#define AXPROTO_INCLUDED
 
 /* AX25 protocol implementation */
 
@@ -65,9 +68,12 @@ struct axcb {
   struct mbuf *resndq;          /* Resend queue */
   int  unack;                   /* Number of unacked frames */
   long  sndtime[8];             /* Time of 1st transmission */
-  void (*r_upcall)();           /* Call when data arrives */
-  void (*t_upcall)();           /* Call when ok to send more data */
-  void (*s_upcall)();           /* Call when connection state changes */
+  void (*r_upcall) __ARGS((struct axcb *p, int cnt));
+				/* Call when data arrives */
+  void (*t_upcall) __ARGS((struct axcb *p, int cnt));
+				/* Call when ok to send more data */
+  void (*s_upcall) __ARGS((struct axcb *p, int oldstate, int newstate));
+				/* Call when connection state changes */
   char  *user;                  /* User parameter (e.g., for mapping to an
 				 * application control block)
 				 */
@@ -79,7 +85,6 @@ struct axcb {
 
 extern char  *ax25reasons[];            /* Reason names */
 extern char  *ax25states[];             /* State names */
-extern char  *pathtostr();
 extern int  ax_maxframe;                /* Transmit flow control level */
 extern int  ax_paclen;                  /* Maximum outbound packet size */
 extern int  ax_pthresh;                 /* Send polls for packets larger than this */
@@ -92,13 +97,23 @@ extern int  ax_t5init;                  /* Packet assembly timeout */
 extern int  ax_window;                  /* Local flow control limit */
 extern struct axcb *axcb_server;        /* Server control block */
 
-/* AX25 user calls */
-extern struct axcb *open_ax();
-extern int  send_ax();
-extern int  space_ax();
-extern int  recv_ax();
-extern int  close_ax();
-extern int  reset_ax();
-extern int  del_ax();
-extern int  valid_ax();
+/* axproto.c */
+int axroute __ARGS((struct axcb *cp, struct mbuf *bp));
+char *pathtostr __ARGS((struct axcb *cp));
+int axproto_recv __ARGS((struct iface *ifp, struct mbuf *bp));
+int doax25 __ARGS((int argc, char *argv [], void *p));
+struct axcb *open_ax __ARGS((char *path, int mode,
+	void (*r_upcall) __ARGS((struct axcb *p, int cnt)),
+	void (*t_upcall) __ARGS((struct axcb *p, int cnt)),
+	void (*s_upcall) __ARGS((struct axcb *p, int oldstate, int newstate)),
+	char *user));
+int send_ax __ARGS((struct axcb *cp, struct mbuf *bp));
+int space_ax __ARGS((struct axcb *cp));
+int recv_ax __ARGS((struct axcb *cp, struct mbuf **bpp, int cnt));
+int close_ax __ARGS((struct axcb *cp));
+int reset_ax __ARGS((struct axcb *cp));
+int del_ax __ARGS((struct axcb *cp));
+int valid_ax __ARGS((struct axcb *cp));
+
+#endif  /* AXPROTO_INCLUDED */
 

@@ -1,9 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lcsum.c,v 1.2 1990/08/23 17:33:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lcsum.c,v 1.3 1990/09/11 13:45:47 deyke Exp $ */
 
-#include "global.h"
-#if     (defined(MPU8086) || defined(MPU8080) || defined(vax) || defined(iAPX286))
+#if     (defined(MPU8086) || defined(MPU8080) || defined(vax))
 #define LITTLE_ENDIAN   /* Low order bytes are first in memory */
 #endif                  /* Almost all other machines are big-endian */
+#include "global.h"
+#include "ip.h"
+
 /*
  * Word aligned linear buffer checksum routine.  Called from mbuf checksum
  * routine with simple args.  Intent is that this routine may be replaced
@@ -14,7 +16,6 @@ lcsum(wp,len)
 register int16 *wp;
 register int16 len;
 {
-	int16 eac();
 	register int32 sum = 0;
 	int16 result;
 

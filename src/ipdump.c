@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.2 1990/08/23 17:33:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.3 1990/09/11 13:45:41 deyke Exp $ */
 
 #include <stdio.h>
 #include "global.h"
@@ -18,7 +18,6 @@ int check;
 {
 	struct ip ip;
 	int16 ip_len;
-	int16 offset;
 	int16 length;
 	int16 csum;
 
@@ -48,20 +47,19 @@ int check;
 		inet_ntoa(ip.dest),ip_len,uchar(ip.ttl));
 	if(ip.tos != 0)
 		fprintf(fp," tos %u",uchar(ip.tos));
-	offset = (ip.fl_offs & F_OFFSET) << 3;
-	if(offset != 0 || (ip.fl_offs & MF))
-		fprintf(fp," id %u offs %u",ip.id,offset);
-	if(ip.fl_offs & DF)
+	if(ip.offset != 0 || ip.flags.mf)
+		fprintf(fp," id %u offs %u",ip.id,ip.offset);
+	if(ip.flags.df)
 		fprintf(fp," DF");
-	if(ip.fl_offs & MF){
+	if(ip.flags.mf){
 		fprintf(fp," MF");
 		check = 0;      /* Bypass host-level checksum verify */
 	}
 	if(csum != 0)
 		fprintf(fp," CHECKSUM ERROR (%u)",csum);
 
-	if(offset != 0){
-		fprintf(fp,"\n");
+	if(ip.offset != 0){
+		putc('\n',fp);
 		return;
 	}
 	switch(uchar(ip.protocol)){
@@ -82,4 +80,3 @@ int check;
 		break;
 	}
 }
-

@@ -1,52 +1,55 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.2 1990/08/23 17:33:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.3 1990/09/11 13:45:45 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
 #include "iface.h"
 #include "kiss.h"
+#include "slip.h"
 #include "ax25.h"
-#include "trace.h"
 
 /* Send raw data packet on KISS TNC */
-kiss_raw(interface,data)
-struct iface *interface;
+int
+kiss_raw(iface,data)
+struct iface *iface;
 struct mbuf *data;
 {
 	register struct mbuf *bp;
 
-	dump(interface,IF_TRACE_OUT,TRACE_AX25,data);
-
-	if (!idigi(interface, data)) return;
+	if (!idigi(iface, data)) return 0;
 
 	/* Put type field for KISS TNC on front */
 	if((bp = pushdown(data,1)) == NULLBUF){
 		free_p(data);
-		return;
+		return -1;
 	}
 	bp->data[0] = KISS_DATA;
-
-	slip_raw(interface,bp);
+	/* slip_raw also increments sndrawcnt */
+	slip_raw(iface,bp);
+	return 0;
 }
 
 /* Process incoming KISS TNC frame */
 void
-kiss_recv(interface,bp)
-struct iface *interface;
+kiss_recv(iface,bp)
+struct iface *iface;
 struct mbuf *bp;
 {
 	char kisstype;
 
-	kisstype = pullchar(&bp);
+	kisstype = PULLCHAR(&bp);
 	switch(kisstype & 0xf){
 	case KISS_DATA:
-		dump(interface,IF_TRACE_IN,TRACE_AX25,bp);
-		ax_recv(interface,bp);
+		ax_recv(iface,bp);
+		break;
+	default:
+		free_p(bp);
 		break;
 	}
 }
 /* Perform device control on KISS TNC by sending control messages */
-kiss_ioctl(interface,argc,argv)
-struct iface *interface;
+int
+kiss_ioctl(iface,argc,argv)
+struct iface *iface;
 int argc;
 char *argv[];
 {
@@ -55,7 +58,7 @@ char *argv[];
 	char *cp;
 
 	if(argc < 1){
-		printf("Data field missing\r\n");
+		tprintf("Data field missing\n");
 		return 1;
 	}
 	/* Allocate space for arg bytes */
@@ -68,7 +71,6 @@ char *argv[];
 	for(i=0,cp = hbp->data;i < argc;)
 		*cp++ = atoi(argv[i++]);
 
-	slip_raw(interface,hbp);        /* Even more "raw" than kiss_raw */
+	slip_raw(iface,hbp);    /* Even more "raw" than kiss_raw */
 	return 0;
 }
-

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.3 1990/08/23 17:32:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.4 1990/09/11 13:45:23 deyke Exp $ */
 
 #ifndef MAXINT16
 
@@ -29,6 +29,7 @@
  */
 #define READ_BINARY     "rb"
 #define WRITE_BINARY    "wb"
+#define APPEND_BINARY   "ab+"
 #define READ_TEXT       "rt"
 #define WRITE_TEXT      "wt"
 #define APPEND_TEXT     "at+"
@@ -37,6 +38,7 @@
 
 #define READ_BINARY     "r"
 #define WRITE_BINARY    "w"
+#define APPEND_BINARY   "a+"
 #define READ_TEXT       "r"
 #define WRITE_TEXT      "w"
 #define APPEND_TEXT     "a+"
@@ -121,7 +123,8 @@ void log();
 void *ltop __ARGS((long));
 void *mallocw __ARGS((unsigned nb));
 char *outbuf __ARGS((int16 port,char *buf,int16 cnt));
-long ptol __ARGS((void *));
+/* long ptol __ARGS((void *)); */
+#define ptol(x) ((long) x)
 void restore __ARGS((int));
 void rip __ARGS((char *));
 char *smsg __ARGS((char *msgs[],unsigned nmsgs,unsigned n));
@@ -185,8 +188,13 @@ extern int32 Memthresh;
 extern char Badhost[];
 extern char Nospace[];
 extern char Notval[];
-extern char Hostname[];
+extern char *Hostname;
 extern char Version[];
+
+/* Your system's end-of-line convention */
+extern char Eol[];
+
+extern void (*Gcollect[])();
 
 #endif  /* MAXINT16 */
 

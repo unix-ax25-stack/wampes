@@ -1,8 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.4 1990/08/23 17:32:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.5 1990/09/11 13:44:48 deyke Exp $ */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "global.h"
 
 extern char  *sbrk();
 
@@ -22,6 +23,8 @@ static struct block freetable[FREETABLESIZE];
 static unsigned int  allocated;
 static unsigned int  failures;
 static unsigned int  inuse;
+
+static void giveup __ARGS((char *mesg));
 
 /*---------------------------------------------------------------------------*/
 
@@ -203,7 +206,17 @@ unsigned int  nelem, elsize;
 
 /*---------------------------------------------------------------------------*/
 
-int  memstat()
+unsigned long  availmem()
+{
+  return 0x7fffffff;
+}
+
+/*---------------------------------------------------------------------------*/
+
+int  domem(argc, argv, p)
+int  argc;
+char  *argv[];
+void *p;
 {
   printf("%7u bytes of memory allocated\n", allocated);
   printf("%7u bytes of memory being used (%lu%% used)\n", inuse, 100l * inuse / allocated);

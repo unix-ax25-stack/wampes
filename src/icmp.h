@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.h,v 1.3 1990/08/23 17:33:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.h,v 1.4 1990/09/11 13:45:30 deyke Exp $ */
 
 #ifndef ICMP_ECHO_REPLY
 
@@ -94,6 +94,8 @@ struct icmp {
 
 #define NREDIRECT       3
 
+extern int Icmp_trace;
+
 struct ping {
 	struct ping *next;      /* Linked list pointers */
 	struct ping *prev;
@@ -108,10 +110,17 @@ struct ping {
 /* ICMP messages, decoded */
 extern char *Icmptypes[],*Unreach[],*Exceed[],*Redirect[];
 
+struct icmplink {
+	char proto;
+	void (*funct) __ARGS((int32,int32,int32,int,int,struct mbuf **));
+};
+extern struct icmplink Icmplink[];
+
 /* In icmp.c: */
-void icmp_input __ARGS((struct mbuf *bp, int protocol, int32 source, int32 dest, int tos, int length, int rxbroadcast));
-int icmp_output __ARGS((struct ip *ip, struct mbuf *data, int type, int code,
-      union icmp_args *args));
+void icmp_input __ARGS((struct iface *iface,struct ip *ip,struct mbuf *bp,
+	int rxbroadcast));
+int icmp_output __ARGS((struct ip *ip,struct mbuf *data,int type,int code,
+	union icmp_args *args));
 
 /* In icmpcmd.c: */
 void echo_proc __ARGS((int32 source,int32 dest,struct icmp *icmp,struct mbuf *bp));
@@ -119,22 +128,6 @@ void echo_proc __ARGS((int32 source,int32 dest,struct icmp *icmp,struct mbuf *bp
 /* In icmphdr.c: */
 struct mbuf *htonicmp __ARGS((struct icmp *icmp,struct mbuf *data));
 int ntohicmp __ARGS((struct icmp *icmp,struct mbuf **bpp));
-
-/*** old stuff ***/
-
-struct icmp_errors {
-	unsigned checksum;              /* ICMP Checksum errors */
-	unsigned nospace;               /* alloc_mbuf failed someplace */
-	unsigned noloop;                /* No ICMP in response to an ICMP */
-	unsigned bdcsts;                /* Ignore broadcast ICMPs */
-};
-
-struct icmp_stats {
-	unsigned input[ICMP_TYPES];     /* ICMP input stats by type */
-	unsigned output[ICMP_TYPES];    /* ICMP output stats by type */
-};
-
-/*** old stuff ***/
 
 #endif  /* ECHO_REPLY */
 

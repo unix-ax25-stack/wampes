@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.3 1990/08/23 17:32:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.4 1990/09/11 13:44:49 deyke Exp $ */
 
 /* Address Resolution Protocol (ARP) functions. Sits between IP and
  * Level 2, mapping IP to Level 2 addresses for all outgoing datagrams.
@@ -17,48 +17,10 @@
 static unsigned arp_hash __ARGS((int hardware,int32 ipaddr));
 static void arp_output __ARGS((struct iface *iface,int hardware,int32 target));
 
-/* ARP entries for particular subnetwork types. The table values
- * are filled in by calls to arp_init() at device attach time
- */
-#define NTYPES  9
-struct arp_type Arp_type[NTYPES];
-
 /* Hash table headers */
 struct arp_tab *Arp_tab[ARPSIZE];
 
 struct arp_stat Arp_stat;
-
-/* Initialize an entry in the ARP table
- * Called by the device driver at attach time
- */
-int
-arp_init(hwtype,hwalen,iptype,arptype,pendtime,bdcst,format,scan)
-unsigned int hwtype;    /* ARP Hardware type */
-int hwalen;             /* Hardware address length */
-int iptype;             /* Subnet's protocol ID for IP */
-int arptype;            /* Subnet's protocol ID for ARP */
-int pendtime;           /* # secs to wait pending response */
-char *bdcst;            /* Subnet's broadcast address (if any) */
-char *(*format) __ARGS((char *,char *));
-			/* Function to format hardware addresses */
-int (*scan) __ARGS((char *out,char *in[],int cnt));
-			/* Function to scan addresses in ascii */
-{
-	register struct arp_type *at;
-
-	if(hwtype >= NTYPES)
-		return -1;      /* Table too small */
-
-	at = &Arp_type[hwtype];
-	at->hwalen = (int16)hwalen;
-	at->iptype = (int16)iptype;
-	at->arptype = (int16)arptype;
-	at->pendtime = (int16)pendtime;
-	at->bdcst = bdcst;
-	at->format = format;
-	at->scan = scan;
-	return 0;
-}
 
 /* Resolve an IP address to a hardware address; if not found,
  * initiate query and return NULLCHAR.  If an address is returned, the
@@ -74,15 +36,26 @@ int32 target;           /* Target IP address */
 struct mbuf *bp;        /* IP datagram to be queued if unresolved */
 {
 	register struct arp_tab *arp;
+	struct ip ip;
 
 	if((arp = arp_lookup(hardware,target)) != NULLARP && arp->state == ARP_VALID)
 		return arp->hw_addr;
+
+	if(arp != NULLARP){
+		/* Earlier packets are already pending, kick this one back
+		 * as a source quench
+		 */
+		ntohip(&ip,&bp);
+		icmp_output(&ip,bp,ICMP_QUENCH,0,NULL);
+		free_p(bp);
+	} else {
 		/* Create an entry and put the datagram on the
 		 * queue pending an answer
 		 */
 		arp = arp_add(target,hardware,NULLCHAR,0,0);
 		enqueue(&arp->pending,bp);
 		arp_output(iface,hardware,target);
+	}
 	return NULLCHAR;
 }
 /* Handle incoming ARP packets. This is almost a direct implementation of
@@ -105,7 +78,7 @@ struct mbuf *bp;
 	Arp_stat.recv++;
 	if(ntoharp(&arp,&bp) == -1)     /* Convert into host format */
 		return;
-	if(arp.hardware >= NTYPES){
+	if(arp.hardware >= NHWTYPES){
 		/* Unknown hardware type, ignore */
 		Arp_stat.badtype++;
 		return;
@@ -137,7 +110,7 @@ struct mbuf *bp;
 		ap = arp_add(arp.sprotaddr,arp.hardware,arp.shwaddr,uchar(arp.hwalen),0);
 	}
 	/* See if we're the address they're looking for */
-	if(arp.tprotaddr == Ip_addr){
+	if(ismyaddr(arp.tprotaddr) != NULLIF){
 		if(ap == NULLARP)       /* Only if not already in the table */
 			arp_add(arp.sprotaddr,arp.hardware,arp.shwaddr,uchar(arp.hwalen),0);
 
@@ -154,7 +127,7 @@ struct mbuf *bp;
 
 			memcpy(arp.shwaddr,iface->hwaddr,at->hwalen);
 			arp.tprotaddr = arp.sprotaddr;
-			arp.sprotaddr = Ip_addr;
+			arp.sprotaddr = iface->addr;
 			arp.opcode = ARP_REPLY;
 			if((bp = htonarp(&arp)) == NULLBUF)
 				return;
@@ -210,7 +183,7 @@ int pub;                /* Publish this entry? */
 	struct arp_type *at;
 	unsigned hashval;
 
-	if(hardware >=NTYPES)
+	if(hardware >=NHWTYPES)
 		return NULLARP; /* Invalid hardware type */
 	at = &Arp_type[hardware];
 
@@ -239,12 +212,8 @@ int pub;                /* Publish this entry? */
 		/* Response has come in, update entry and run through queue */
 		ap->state = ARP_VALID;
 		ap->timer.start = ARPLIFE * (1000 / MSPTICK);
-		if(ap->hw_addr != NULLCHAR)
-			free(ap->hw_addr);
-		if((ap->hw_addr = malloc(hw_alen)) == NULLCHAR){
-			free((char *)ap);
-			return NULLARP;
-		}
+		free(ap->hw_addr);
+		ap->hw_addr = mallocw(hw_alen);
 		memcpy(ap->hw_addr,hw_addr,hw_alen);
 		/* This kludge marks the end of an AX.25 address to allow
 		 * for optional digipeaters (insert Joan Rivers salute here)
@@ -255,7 +224,7 @@ int pub;                /* Publish this entry? */
 		ap->pub = pub;
 		arp_savefile();
 		while((bp = dequeue(&ap->pending)) != NULLBUF)
-			ip_route(bp,0);
+			ip_route(NULLIF,bp,0);
 	}
 	start_timer(&ap->timer);
 	return ap;
@@ -278,9 +247,8 @@ void *p;
 		ap->prev->next = ap->next;
 	else
 		Arp_tab[arp_hash(ap->hardware,ap->ip_addr)] = ap->next;
-	if(ap->hw_addr != NULLCHAR)
-		free(ap->hw_addr);
 	free_q(&ap->pending);
+	free(ap->hw_addr);
 	free((char *)ap);
 }
 
@@ -319,7 +287,7 @@ int32 target;
 	arp.pralen = sizeof(int32);
 	arp.opcode = ARP_REQUEST;
 	memcpy(arp.shwaddr,iface->hwaddr,at->hwalen);
-	arp.sprotaddr = Ip_addr;
+	arp.sprotaddr = iface->addr;
 	memset(arp.thwaddr,0,at->hwalen);
 	arp.tprotaddr = target;
 	if((bp = htonarp(&arp)) == NULLBUF)
@@ -343,4 +311,3 @@ int32 ipaddr;
 	hashval ^= loword(ipaddr);
 	return hashval % ARPSIZE;
 }
-

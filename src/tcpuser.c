@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.6 1990/08/23 17:34:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.7 1990/09/11 13:46:35 deyke Exp $ */
 
 /* User calls to TCP */
 
@@ -37,6 +37,8 @@ char *user;             /* User linkage area */
 		return NULLTCB;
 	}
 	conn.local.address = lsocket->address;
+	if (!conn.local.address)
+		conn.local.address = Ip_addr;
 	conn.local.port = lsocket->port;
 	if(fsocket != NULLSOCK){
 		conn.remote.address = fsocket->address;

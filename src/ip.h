@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.2 1990/08/23 17:33:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.3 1990/09/11 13:45:39 deyke Exp $ */
 
 #ifndef NROUTE
 
@@ -7,23 +7,46 @@
 #include "timer.h"
 
 #define NROUTE  5       /* Number of hash chains in routing table */
+#define TLB     30      /* Default reassembly timeout, sec */
+#define IPVERSION       4
 
 extern int32 Ip_addr;   /* Our IP address for ICMP and source routing */
 
-extern int32 ip_ttl;    /* Default time-to-live for IP datagrams */
+/* SNMP MIB variables, used for statistics and control. See RFC 1066 */
+extern struct mib_entry Ip_mib[];
+#define ipForwarding            Ip_mib[1].value.integer
+#define ipDefaultTTL            Ip_mib[2].value.integer
+#define ipInReceives            Ip_mib[3].value.integer
+#define ipInHdrErrors           Ip_mib[4].value.integer
+#define ipInAddrErrors          Ip_mib[5].value.integer
+#define ipForwDatagrams         Ip_mib[6].value.integer
+#define ipInUnknownProtos       Ip_mib[7].value.integer
+#define ipInDiscards            Ip_mib[8].value.integer
+#define ipInDelivers            Ip_mib[9].value.integer
+#define ipOutRequests           Ip_mib[10].value.integer
+#define ipOutDiscards           Ip_mib[11].value.integer
+#define ipOutNoRoutes           Ip_mib[12].value.integer
+#define ipReasmTimeout          Ip_mib[13].value.integer
+#define ipReasmReqds            Ip_mib[14].value.integer
+#define ipReasmOKs              Ip_mib[15].value.integer
+#define ipReasmFails            Ip_mib[16].value.integer
+#define ipFragOKs               Ip_mib[17].value.integer
+#define ipFragFails             Ip_mib[18].value.integer
+#define ipFragCreates           Ip_mib[19].value.integer
 
-#define IPVERSION       4
+#define NUMIPMIB        19
+
 /* IP header, INTERNAL representation */
 struct ip {
 	char version;           /* IP version number */
 	char tos;               /* Type of service */
 	int16 length;           /* Total length */
 	int16 id;               /* Identification */
-	int16 fl_offs;          /* Flags + fragment offset */
-
-#define F_OFFSET        0x1fff  /* Offset field */
-#define DF      0x4000          /* Don't fragment flag */
-#define MF      0x2000          /* More Fragments flag */
+	int16 offset;           /* Fragment offset in bytes */
+	struct {
+		char df;        /* Don't fragment flag */
+		char mf;        /* More Fragments flag */
+	} flags;
 
 	char ttl;               /* Time to live */
 	char protocol;          /* Protocol */
@@ -60,9 +83,15 @@ struct route {
 	struct route *prev;     /* Linked list pointers */
 	struct route *next;
 	int32 target;           /* Target IP address */
+	unsigned int bits;      /* Number of significant bits in target */
 	int32 gateway;          /* IP address of local gateway for this target */
-	int metric;             /* Hop count, whatever */
+	int32 metric;           /* Hop count or whatever */
 	struct iface *iface;    /* Device interface structure */
+	int flags;
+#define RTPRIVATE       0x1     /* Should the world be told of this route ? */
+#define RTTRIG  0x2             /* Trigger is pending for this route */
+	struct timer timer;     /* Time until aging of this entry */
+	int32 uses;             /* Usage count */
 };
 #define NULLROUTE       (struct route *)0
 extern struct route *Routes[32][NROUTE];        /* Routing table */
@@ -75,19 +104,18 @@ struct rt_cache {
 	int32 target;
 	struct route *route;
 };
-extern struct rt_cache rt_cache;
 
 /* Reassembly descriptor */
 struct reasm {
 	struct reasm *next;     /* Linked list pointers */
 	struct reasm *prev;
-	int32 source;           /* These four fields uniquely describe a datagram */
+	struct timer timer;     /* Reassembly timeout timer */
+	struct frag *fraglist;  /* Head of data fragment chain */
+	int16 length;           /* Entire datagram length, if known */
+	int32 source;           /* src/dest/id/protocol uniquely describe a datagram */
 	int32 dest;
 	int16 id;
 	char protocol;
-	int16 length;           /* Entire datagram length, if known */
-	struct timer timer;     /* Reassembly timeout timer */
-	struct frag *fraglist;  /* Head of data fragment chain */
 };
 #define NULLREASM       (struct reasm *)0
 
@@ -103,19 +131,28 @@ struct frag {
 
 extern struct reasm *Reasmq;    /* The list of reassembly descriptors */
 
-/* IP error logging counters */
-struct ip_stats {
-	long total;             /* Total packets received */
-	unsigned runt;          /* Smaller than minimum size */
-	unsigned length;        /* IP header length field too small */
-	unsigned version;       /* Wrong IP version */
-	unsigned checksum;      /* IP header checksum errors */
-	unsigned badproto;      /* Unsupported protocol */
+/* Structure for handling raw IP user sockets */
+struct raw_ip {
+	struct raw_ip *prev;
+	struct raw_ip *next;
+
+	struct mbuf *rcvq;      /* receive queue */
+	void (*r_upcall) __ARGS((struct raw_ip *));
+	int protocol;           /* Protocol */
+	int user;               /* User linkage */
 };
-extern struct ip_stats Ip_stats;
+#define NULLRIP ((struct raw_ip *)0)
+
+/* Transport protocol link table */
+struct iplink {
+	char proto;
+	void (*funct) __ARGS((struct iface *,struct ip *,struct mbuf *,int));
+};
+extern struct iplink Iplink[];
 
 /* In ip.c: */
-void ip_recv __ARGS((struct ip *ip,struct mbuf *bp,
+void ip_garbage __ARGS((int drastic));
+void ip_recv __ARGS((struct iface *iface,struct ip *ip,struct mbuf *bp,
 	int rxbroadcast));
 int ip_send __ARGS((int32 source,int32 dest,int protocol,int tos,int ttl,
 	struct mbuf *bp,int length,int id,int df));
@@ -124,11 +161,11 @@ void del_ip __ARGS((struct raw_ip *rrp));
 
 /* In iproute.c: */
 int16 ip_mtu __ARGS((int32 addr));
-int ip_route __ARGS((struct mbuf *bp,int rxbroadcast));
+int ip_route __ARGS((struct iface *i_iface,struct mbuf *bp,int rxbroadcast));
 int32 locaddr __ARGS((int32 addr));
 void rt_merge __ARGS((int trace));
 struct route *rt_add __ARGS((int32 target,unsigned int bits,int32 gateway,
-	int32 metric,struct iface *iface));
+	struct iface *iface,int32 metric,int32 ttl,int private));
 int rt_drop __ARGS((int32 target,unsigned int bits));
 struct route *rt_lookup __ARGS((int32 target));
 struct route *rt_blookup __ARGS((int32 target,unsigned int bits));
@@ -141,6 +178,10 @@ int ntohip __ARGS((struct ip *ip,struct mbuf **bpp));
 
 /* In either lcsum.c or pcgen.asm: */
 int16 lcsum __ARGS((int16 *wp,int len));
+
+/* ipfile.c */
+int route_savefile __ARGS((void));
+int route_loadfile __ARGS((void));
 
 #endif /* NROUTE */
 

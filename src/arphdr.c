@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arphdr.c,v 1.1 1990/08/23 17:32:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arphdr.c,v 1.2 1990/09/11 13:44:54 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -14,7 +14,8 @@ register struct arp *arp;
 
 	if(arp == (struct arp *)NULL)
 		return NULLBUF;
-	if((bp = alloc_mbuf(sizeof(struct arp))) == NULLBUF)
+
+	if((bp = alloc_mbuf(ARPLEN + 2 * uchar(arp->hwalen))) == NULLBUF)
 		return NULLBUF;
 
 	buf = bp->data;
@@ -45,13 +46,12 @@ struct mbuf **bpp;
 
 	arp->hardware = pull16(bpp);
 	arp->protocol = pull16(bpp);
-	arp->hwalen = pullchar(bpp);
-	arp->pralen = pullchar(bpp);
+	arp->hwalen = PULLCHAR(bpp);
+	arp->pralen = PULLCHAR(bpp);
 	arp->opcode = pull16(bpp);
 	pullup(bpp,arp->shwaddr,(int16)uchar(arp->hwalen));
 	arp->sprotaddr = pull32(bpp);
 	pullup(bpp,arp->thwaddr,(int16)uchar(arp->hwalen));
-
 	arp->tprotaddr = pull32(bpp);
 
 	/* Get rid of anything left over */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.3 1990/08/23 17:34:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.4 1990/09/11 13:46:43 deyke Exp $ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -178,10 +178,10 @@ struct transport_cb *tp;
   while (strptr) {
     if (strncmp("via", strptr, strlen(strptr))) {
       if (pathptr > path + 10 * AXALEN - 1) return 0;
-      if (setcall(axptr(pathptr), strptr)) return 0;
+      if (setcall(pathptr, strptr)) return 0;
       if (pathptr == path) {
 	pathptr += AXALEN;
-	addrcp(axptr(pathptr), &mycall);
+	addrcp(pathptr, Mycall);
       }
       pathptr += AXALEN;
     }
@@ -207,13 +207,13 @@ struct transport_cb *tp;
   int  recv_nr(), send_nr(), space_nr(), close_nr(), del_nr();
   struct ax25_addr node;
 
-  if (setcall(&node, address)) return 0;
+  if (setcall((char *) &node, address)) return 0;
   tp->recv = recv_nr;
   tp->send = send_nr;
   tp->send_space = space_nr;
   tp->close = close_nr;
   tp->del = del_nr;
-  return open_nr(&node, &mycall, 0, transport_recv_upcall_netrom, transport_send_upcall_netrom, transport_state_upcall_netrom, (char *) tp);
+  return open_nr(&node, axptr(Mycall), 0, transport_recv_upcall_netrom, transport_send_upcall_netrom, transport_state_upcall_netrom, (char *) tp);
 }
 
 /*---------------------------------------------------------------------------*/

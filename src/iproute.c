@@ -1,4 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.2 1990/08/23 17:33:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.3 1990/09/11 13:45:43 deyke Exp $ */
+
+#define DEBUG   1
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -12,18 +14,19 @@
 #include "icmp.h"
 #include "iface.h"
 #include "trace.h"
+#include "rip.h"
 
-static int16 hash_ip();
+static int16 hash_ip __ARGS((int32 addr));
 
 struct route *Routes[32][NROUTE];       /* Routing table */
-struct route R_default;                 /* Default route entry */
+struct route R_default = {              /* Default route entry */
+	NULLROUTE, NULLROUTE,
+	0,0,0,
+	RIP_INFINITY            /* Init metric to infinity */
+};
 
 int32 Ip_addr;
-struct ip_stats Ip_stats;
-
-#ifndef GWONLY
-struct mbuf *loopq;     /* Queue for loopback packets */
-#endif
+static struct rt_cache Rt_cache;
 
 /* Route an IP datagram. This is the "hopper" through which all IP datagrams,
  * coming or going, must pass.
@@ -33,11 +36,11 @@ struct mbuf *loopq;     /* Queue for loopback packets */
  * IP destination address.
  */
 int
-ip_route(bp,rxbroadcast)
-struct mbuf *bp;
-char rxbroadcast;       /* True if packet had link broadcast address */
+ip_route(i_iface,bp,rxbroadcast)
+struct iface *i_iface;  /* Input interface */
+struct mbuf *bp;        /* Input packet */
+int rxbroadcast;        /* True if packet had link broadcast address */
 {
-	struct mbuf *htonip();
 	struct ip ip;                   /* IP header being processed */
 	int16 ip_len;                   /* IP header length */
 	int16 length;                   /* Length of data portion */
@@ -47,19 +50,22 @@ char rxbroadcast;       /* True if packet had link broadcast address */
 	int16 offset;                   /* Offset into current fragment */
 	int16 mf_flag;                  /* Original datagram MF flag */
 	int strict = 0;                 /* Strict source routing flag */
-	char precedence;                /* Extracted from tos field */
-	char delay;
-	char throughput;
-	char reliability;
+	char prec;                      /* Extracted from tos field */
+	char del;
+	char tput;
+	char rel;
 	int16 opt_len;          /* Length of current option */
 	char *opt;              /* -> beginning of current option */
 	char *ptr;              /* -> pointer field in source route fields */
 	struct mbuf *tbp;
 
-	Ip_stats.total++;
+	if(i_iface != NULLIF){
+		ipInReceives++; /* Not locally generated */
+		i_iface->iprecvcnt++;
+	}
 	if(len_p(bp) < IPLEN){
 		/* The packet is shorter than a legal IP header */
-		Ip_stats.runt++;
+		ipInHdrErrors++;
 		free_p(bp);
 		return -1;
 	}
@@ -67,13 +73,13 @@ char rxbroadcast;       /* True if packet had link broadcast address */
 	ip_len = (bp->data[0] & 0xf) << 2;
 	if(ip_len < IPLEN){
 		/* The IP header length field is too small */
-		Ip_stats.length++;
+		ipInHdrErrors++;
 		free_p(bp);
 		return -1;
 	}
 	if(cksum(NULLHEADER,bp,ip_len) != 0){
 		/* Bad IP header checksum; discard */
-		Ip_stats.checksum++;
+		ipInHdrErrors++;
 		free_p(bp);
 		return -1;
 	}
@@ -82,7 +88,7 @@ char rxbroadcast;       /* True if packet had link broadcast address */
 
 	if(ip.version != IPVERSION){
 		/* We can't handle this version of IP */
-		Ip_stats.version++;
+		ipInHdrErrors++;
 		free_p(bp);
 		return -1;
 	}
@@ -90,13 +96,15 @@ char rxbroadcast;       /* True if packet had link broadcast address */
 	length = ip.length - ip_len;    /* Length of data portion */
 	trim_mbuf(&bp,length);
 
+	/* If we're running low on memory, return a source quench */
+	if(!rxbroadcast && availmem() < Memthresh)
+		icmp_output(&ip,bp,ICMP_QUENCH,0,NULL);
+
 	/* Process options, if any. Also compute length of secondary IP
 	 * header in case fragmentation is needed later
 	 */
 	strict = 0;
 	for(opt = ip.options; opt < &ip.options[ip.optlen];opt += opt_len){
-		int32 get32();
-
 		/* Most options have a length field. If this is a EOL or NOOP,
 		 * this (garbage) value won't be used
 		 */
@@ -114,7 +122,7 @@ char rxbroadcast;       /* True if packet had link broadcast address */
 			/* Source routes are ignored unless we're in the
 			 * destination field
 			 */
-			if(ip.dest != Ip_addr)
+			if(ismyaddr(ip.dest) == NULLIF)
 				break;  /* Skip to next option */
 			if(uchar(opt[2]) >= opt_len){
 				break;  /* Route exhausted; it's for us */
@@ -125,22 +133,24 @@ char rxbroadcast;       /* True if packet had link broadcast address */
 			 */
 			ptr = opt + uchar(opt[2]) - 1;
 			ip.dest = get32(ptr);
-			put32(ptr,Ip_addr);
+			put32(ptr,locaddr(ip.dest));
 			opt[2] += 4;
 			break;
 		case IP_RROUTE: /* Record route */
 			if(uchar(opt[2]) >= opt_len){
 				/* Route area exhausted; kick back an error */
-				union icmp_args icmp_args;
+				if(!rxbroadcast){
+					union icmp_args icmp_args;
 
-				icmp_args.pointer = IPLEN + opt - ip.options;
-				icmp_output(&ip,bp,ICMP_PARAM_PROB,0,&icmp_args);
+					icmp_args.pointer = IPLEN + opt - ip.options;
+					icmp_output(&ip,bp,ICMP_PARAM_PROB,0,&icmp_args);
+				}
 				free_p(bp);
 				return -1;
 			}
 			/* Add our address to the route */
 			ptr = opt + uchar(opt[2]) - 1;
-			ptr = put32(ptr,Ip_addr);
+			ptr = put32(ptr,locaddr(ip.dest));
 			opt[2] += 4;
 			break;
 		}
@@ -148,57 +158,46 @@ char rxbroadcast;       /* True if packet had link broadcast address */
 no_opt:
 
 	/* See if it's a broadcast or addressed to us, and kick it upstairs */
-	if(ip.dest == Ip_addr || rxbroadcast){
+	if(ismyaddr(ip.dest) != NULLIF || rxbroadcast){
 #ifdef  GWONLY
 	/* We're only a gateway, we have no host level protocols */
 		if(!rxbroadcast)
-			icmp_output(&ip,bp,ICMP_DEST_UNREACH,ICMP_PROT_UNREACH,(union icmp_args *)NULL);
+			icmp_output(&ip,bp,ICMP_DEST_UNREACH,
+			 ICMP_PROT_UNREACH,(union icmp_args *)NULL);
+		ipInUnknownProtos++;
 		free_p(bp);
 #else
-
-		/* If this is a local loopback packet, place on the loopback
-		 * queue for processing in the main loop. This prevents the
-		 * infinite stack recursion and other problems that would
-		 * otherwise occur when we talk to ourselves, e.g., with ftp
-		 */
-		if(ip.source == Ip_addr){
-			/* Put IP header back on */
-			if((tbp = htonip(&ip,bp)) == NULLBUF){
-				free_p(bp);
-				return -1;
-			}
-			/* Copy loopback packet into new buffer.
-			 * This avoids an obscure problem with TCP which
-			 * dups its outgoing data before transmission and
-			 * then frees it when an ack comes, even though the
-			 * receiver might not have actually read it yet
-			 */
-			bp = copy_p(tbp,len_p(tbp));
-			free_p(tbp);
-			if(bp == NULLBUF)
-				return -1;
-			enqueue(&loopq,bp);
-		} else {
-			ip_recv(&ip,bp,rxbroadcast);
-		}
+		ip_recv(i_iface,&ip,bp,rxbroadcast);
 #endif
 		return 0;
 	}
+	/* Packet is not destined to us. If it originated elsewhere, count
+	 * it as a forwarded datagram.
+	 */
+	if(i_iface != NULLIF)
+		ipForwDatagrams++;
 
-	/* Decrement TTL and discard if zero */
+	/* Decrement TTL and discard if zero. We don't have to check
+	 * rxbroadcast here because it's already been checked
+	 */
 	if(--ip.ttl == 0){
 		/* Send ICMP "Time Exceeded" message */
 		icmp_output(&ip,bp,ICMP_TIME_EXCEED,0,NULLICMP);
+		ipInHdrErrors++;
 		free_p(bp);
 		return -1;
 	}
 	/* Look up target address in routing table */
 	if((rp = rt_lookup(ip.dest)) == NULLROUTE){
-		/* No route exists, return unreachable message */
+		/* No route exists, return unreachable message (we already
+		 * know this can't be a broadcast)
+		 */
 		icmp_output(&ip,bp,ICMP_DEST_UNREACH,ICMP_HOST_UNREACH,NULLICMP);
 		free_p(bp);
+		ipOutNoRoutes++;
 		return -1;
 	}
+	rp->uses++;
 	/* Check for output forwarding and divert if necessary */
 	iface = rp->iface;
 	if(iface->forw != NULLIF)
@@ -211,15 +210,18 @@ no_opt:
 		gateway = rp->gateway;
 
 	if(strict && gateway != ip.dest){
-		/* Strict source routing requires a direct entry */
+		/* Strict source routing requires a direct entry
+		 * Again, we know this isn't a broadcast
+		 */
 		icmp_output(&ip,bp,ICMP_DEST_UNREACH,ICMP_ROUTE_FAIL,NULLICMP);
 		free_p(bp);
+		ipOutNoRoutes++;
 		return -1;
 	}
-	precedence = PREC(ip.tos);
-	delay = ip.tos & DELAY;
-	throughput = ip.tos & THRUPUT;
-	reliability = ip.tos & RELIABILITY;
+	prec = PREC(ip.tos);
+	del = ip.tos & DELAY;
+	tput = ip.tos & THRUPUT;
+	rel = ip.tos & RELIABILITY;
 
 	if(ip.length <= iface->mtu){
 		/* Datagram smaller than interface MTU; put header
@@ -229,19 +231,20 @@ no_opt:
 			free_p(bp);
 			return -1;
 		}
-		return (*iface->send)(tbp,iface,gateway,
-			precedence,delay,throughput,reliability);
+		iface->ipsndcnt++;
+		return (*iface->send)(tbp,iface,gateway,prec,del,tput,rel);
 	}
 	/* Fragmentation needed */
-	if(ip.fl_offs & DF){
+	if(ip.flags.df){
 		/* Don't Fragment set; return ICMP message and drop */
 		icmp_output(&ip,bp,ICMP_DEST_UNREACH,ICMP_FRAG_NEEDED,NULLICMP);
 		free_p(bp);
+		ipFragFails++;
 		return -1;
 	}
 	/* Create fragments */
-	offset = (ip.fl_offs & F_OFFSET) << 3;
-	mf_flag = ip.fl_offs & MF;      /* Save original MF flag */
+	offset = ip.offset;
+	mf_flag = ip.flags.mf;          /* Save original MF flag */
 	while(length != 0){             /* As long as there's data left */
 		int16 fragsize;         /* Size of this fragment's data */
 		struct mbuf *f_data;    /* Data portion of fragment */
@@ -249,61 +252,65 @@ no_opt:
 		/* After the first fragment, should remove those
 		 * options that aren't supposed to be copied on fragmentation
 		 */
-		ip.fl_offs = offset >> 3;
+		ip.offset = offset;
 		if(length + ip_len <= iface->mtu){
 			/* Last fragment; send all that remains */
 			fragsize = length;
-			ip.fl_offs |= mf_flag;  /* Pass original MF flag */
+			ip.flags.mf = mf_flag;  /* Pass original MF flag */
 		} else {
 			/* More to come, so send multiple of 8 bytes */
 			fragsize = (iface->mtu - ip_len) & 0xfff8;
-			ip.fl_offs |= MF;
+			ip.flags.mf = 1;
 		}
 		ip.length = fragsize + ip_len;
 
-		/* Move the data fragment into a new, separate mbuf */
-		if((f_data = alloc_mbuf(fragsize)) == NULLBUF){
+		/* Duplicate the fragment */
+		dup_p(&f_data,bp,offset,fragsize);
+		if(f_data == NULLBUF){
 			free_p(bp);
+			ipFragFails++;
 			return -1;
 		}
-		f_data->cnt = pullup(&bp,f_data->data,fragsize);
-
 		/* Put IP header back on */
 		if((tbp = htonip(&ip,f_data)) == NULLBUF){
 			free_p(f_data);
 			free_p(bp);
+			ipFragFails++;
 			return -1;
 		}
 		/* and ship it out */
-		if((*iface->send)(tbp,iface,gateway,
-			precedence,delay,throughput,reliability) == -1)
+		if((*iface->send)(tbp,iface,gateway,prec,del,tput,rel) == -1){
+			ipFragFails++;
+			free_p(bp);
 			return -1;
-
+		}
+		iface->ipsndcnt++;
+		ipFragCreates++;
 		offset += fragsize;
 		length -= fragsize;
 	}
+	ipFragOKs++;
+	free_p(bp);
 	return 0;
 }
 
-struct rt_cache rt_cache;
-
 /* Add an entry to the IP routing table. Returns 0 on success, -1 on failure */
 struct route *
-rt_add(target,bits,gateway,metric,iface)
+rt_add(target,bits,gateway,iface,metric,ttl,private)
 int32 target;           /* Target IP address prefix */
 unsigned int bits;      /* Size of target address prefix in bits (0-32) */
-int32 gateway;
-int metric;
-struct iface *iface;
+int32 gateway;          /* Optional gateway to be reached via interface */
+struct iface *iface;    /* Interface to which packet is to be routed */
+int32 metric;           /* Metric for this route entry */
+int32 ttl;              /* Lifetime of this route entry in sec */
+char private;           /* Inhibit advertising this entry ? */
 {
 	struct route *rp,**hp;
-	int16 i;
-	int32 mask;
 
 	if(iface == NULLIF)
 		return NULLROUTE;
 
-	rt_cache.target = 0;    /* Flush cache */
+	Rt_cache.route = NULLROUTE;     /* Flush cache */
 
 	/* Zero bits refers to the default route */
 	if(bits == 0){
@@ -312,9 +319,9 @@ struct iface *iface;
 		if(bits > 32)
 			bits = 32;
 
-		/* Mask off don't-care bits */
-		if(bits < 32)
-			target &= (~0) << (32 - bits);
+		/* Mask off target according to width */
+		target &= ~0L << (32-bits);
+
 		/* Search appropriate chain for existing entry */
 		for(rp = Routes[bits-1][hash_ip(target)];rp != NULLROUTE;rp = rp->next){
 			if(rp->target == target)
@@ -325,8 +332,7 @@ struct iface *iface;
 		/* The target is not already in the table, so create a new
 		 * entry and put it in.
 		 */
-		if((rp = (struct route *)malloc(sizeof(struct route))) == NULLROUTE)
-			return NULLROUTE;
+		rp = (struct route *)callocw(1,sizeof(struct route));
 		/* Insert at head of table */
 		rp->prev = NULLROUTE;
 		hp = &Routes[bits-1][hash_ip(target)];
@@ -334,11 +340,19 @@ struct iface *iface;
 		if(rp->next != NULLROUTE)
 			rp->next->prev = rp;
 		*hp = rp;
+		rp->uses = 0;
 	}
 	rp->target = target;
+	rp->bits = bits;
 	rp->gateway = gateway;
 	rp->metric = metric;
 	rp->iface = iface;
+	rp->flags = private ? RTPRIVATE : 0;    /* Should anyone be told of this route? */
+	rp->timer.func = rt_timeout;  /* Set the timer field */
+	rp->timer.arg = (void *)rp;
+	rp->timer.start = (1000 * ttl) / MSPTICK;
+	stop_timer(&rp->timer);
+	start_timer(&rp->timer); /* start the timer if appropriate */
 
 	route_savefile();
 	return rp;
@@ -353,22 +367,20 @@ int32 target;
 unsigned int bits;
 {
 	register struct route *rp;
-	unsigned int i;
-	int32 mask;
 
-	rt_cache.target = 0;    /* Flush the cache */
+	Rt_cache.route = NULLROUTE;     /* Flush the cache */
 
 	if(bits == 0){
 		/* Nail the default entry */
+		stop_timer(&R_default.timer);
 		R_default.iface = NULLIF;
 		return 0;
 	}
 	if(bits > 32)
 		bits = 32;
 
-	/* Mask off don't-care bits */
-	if(bits < 32)
-		target &= (~0) << (32 - bits);
+	/* Mask off target according to width */
+	target &= ~0L << (32-bits);
 
 	/* Search appropriate chain for existing entry */
 	for(rp = Routes[bits-1][hash_ip(target)];rp != NULLROUTE;rp = rp->next){
@@ -378,6 +390,7 @@ unsigned int bits;
 	if(rp == NULLROUTE)
 		return -1;      /* Not in table */
 
+	stop_timer(&rp->timer);
 	if(rp->next != NULLROUTE)
 		rp->next->prev = rp->prev;
 	if(rp->prev != NULLROUTE)
@@ -398,8 +411,7 @@ register int32 addr;
 
 	ret = hiword(addr);
 	ret ^= loword(addr);
-	ret %= NROUTE;
-	return ret;
+	return (int16)(ret % NROUTE);
 }
 #ifndef GWONLY
 /* Given an IP address, return the MTU of the local interface used to
@@ -422,6 +434,37 @@ int32 addr;
 	else
 		return iface->mtu;
 }
+/* Given a destination address, return the IP address of the local
+ * interface that will be used to reach it. If there is no route
+ * to the destination, pick the first non-loopback address.
+ */
+int32
+locaddr(addr)
+int32 addr;
+{
+	register struct route *rp;
+	struct iface *ifp;
+
+	if(ismyaddr(addr) != NULLIF)
+		return addr;    /* Loopback case */
+
+	rp = rt_lookup(addr);
+	if(rp != NULLROUTE && rp->iface != NULLIF)
+		ifp = rp->iface;
+	else {
+		for(ifp = Ifaces;ifp != NULLIF;ifp = ifp->next){
+			if(ifp != &Loopback)
+				break;
+		}
+	}
+	if(ifp == NULLIF || ifp == &Loopback)
+		return 0;       /* No dice */
+
+	if(ifp->forw != NULLIF)
+		return ifp->forw->addr;
+	else
+		return ifp->addr;
+}
 #endif
 /* Look up target in hash table, matching the entry having the largest number
  * of leading bits in common. Return default route if not found;
@@ -436,8 +479,9 @@ int32 target;
 	int32 tsave;
 	int32 mask;
 
-	if(target == rt_cache.target)
-		return rt_cache.route;
+	/* Examine cache first */
+	if(target == Rt_cache.target && Rt_cache.route != NULLROUTE)
+		return Rt_cache.route;
 
 	tsave = target;
 
@@ -447,161 +491,69 @@ int32 target;
 		for(rp = Routes[bits][hash_ip(target)];rp != NULLROUTE;rp = rp->next){
 			if(rp->target == target){
 				/* Stash in cache and return */
-				rt_cache.target = tsave;
-				rt_cache.route = rp;
+				Rt_cache.target = tsave;
+				Rt_cache.route = rp;
 				return rp;
 			}
 		}
 		mask <<= 1;
 	}
 	if(R_default.iface != NULLIF){
-		rt_cache.target = tsave;
-		rt_cache.route = &R_default;
+		Rt_cache.target = tsave;
+		Rt_cache.route = &R_default;
 		return &R_default;
 	} else
 		return NULLROUTE;
 }
-/* Convert IP header in host format to network mbuf */
-struct mbuf *
-htonip(ip,data)
-struct ip *ip;
-struct mbuf *data;
+/* Search routing table for entry with specific width */
+struct route *
+rt_blookup(target,bits)
+int32 target;
+unsigned int bits;
 {
-	int16 hdr_len;
-	struct mbuf *bp;
-	register char *cp;
-	int16 checksum;
+	register struct route *rp;
 
-	hdr_len = IPLEN + ip->optlen;
-	if((bp = pushdown(data,hdr_len)) == NULLBUF){
-		free_p(data);
-		return NULLBUF;
-	}
-	cp = bp->data;
+	if(bits == 0 && R_default.iface != NULLIF)
+		return &R_default;
 
-	*cp++ = (IPVERSION << 4) | (hdr_len >> 2);
-	*cp++ = ip->tos;
-	cp = put16(cp,ip->length);
-	cp = put16(cp,ip->id);
-	cp = put16(cp,ip->fl_offs);
-	*cp++ = ip->ttl;
-	*cp++ = ip->protocol;
-	cp = put16(cp,0);       /* Clear checksum */
-	cp = put32(cp,ip->source);
-	cp = put32(cp,ip->dest);
-	if(ip->optlen != 0)
-		memcpy(cp,ip->options,ip->optlen);
+	/* Mask off target according to width */
+	target &= ~0L << (32-bits);
 
-	/* Compute checksum and insert into header */
-	checksum = cksum(NULLHEADER,bp,hdr_len);
-	put16(&bp->data[10],checksum);
-
-	return bp;
-}
-/* Extract an IP header from mbuf */
-int
-ntohip(ip,bpp)
-struct ip *ip;
-struct mbuf **bpp;
-{
-	char v_ihl;
-	int16 ihl;
-
-	v_ihl = pullchar(bpp);
-	ip->version = (v_ihl >> 4) & 0xf;
-	ip->tos = pullchar(bpp);
-	ip->length = pull16(bpp);
-	ip->id = pull16(bpp);
-	ip->fl_offs = pull16(bpp);
-	ip->ttl = pullchar(bpp);
-	ip->protocol = pullchar(bpp);
-	(void)pull16(bpp);      /* Toss checksum */
-	ip->source = pull32(bpp);
-	ip->dest = pull32(bpp);
-
-	ihl = (v_ihl & 0xf) << 2;
-	if(ihl < IPLEN){
-		/* Bogus packet; header is too short */
-		return -1;
-	}
-	ip->optlen = ihl - IPLEN;
-	if(ip->optlen != 0)
-		pullup(bpp,ip->options,ip->optlen);
-
-	return ip->optlen + IPLEN;
-}
-/* Perform end-around-carry adjustment */
-int16
-eac(sum)
-register int32 sum;     /* Carries in high order 16 bits */
-{
-	register int16 csum;
-
-	while((csum = sum >> 16) != 0)
-		sum = csum + (sum & 0xffffL);
-	return (int16) (sum & 0xffffl); /* Chops to 16 bits */
-}
-/* Checksum a mbuf chain, with optional pseudo-header */
-int16
-cksum(ph,m,len)
-struct pseudo_header *ph;
-register struct mbuf *m;
-int16 len;
-{
-	register unsigned int cnt, total;
-	register int32 sum, csum;
-	register char *up;
-	int16 csum1;
-	int swap = 0;
-	int16 lcsum();
-
-	sum = 0l;
-
-	/* Sum pseudo-header, if present */
-	if(ph != NULLHEADER){
-		sum = hiword(ph->source);
-		sum += loword(ph->source);
-		sum += hiword(ph->dest);
-		sum += loword(ph->dest);
-		sum += uchar(ph->protocol);
-		sum += ph->length;
-	}
-	/* Now do each mbuf on the chain */
-	for(total = 0; m != NULLBUF && total < len; m = m->next) {
-		cnt = min(m->cnt, len - total);
-		up = (char *)m->data;
-		csum = 0;
-
-		if(((long)up) & 1){
-			/* Handle odd leading byte */
-			if(swap)
-				csum = uchar(*up++);
-			else
-				csum = (int16)(uchar(*up++) << 8);
-			cnt--;
-			swap = !swap;
+	for(rp = Routes[bits-1][hash_ip(target)];rp != NULLROUTE;rp = rp->next){
+		if(rp->target == target){
+			return rp;
 		}
-		if(cnt > 1){
-			/* Have the primitive checksumming routine do most of
-			 * the work. At this point, up is guaranteed to be on
-			 * a short boundary
-			 */
-			csum1 = lcsum((unsigned short *)up, cnt >> 1);
-			if(swap)
-				csum1 = (csum1 << 8) | (csum1 >> 8);
-			csum += csum1;
-		}
-		/* Handle odd trailing byte */
-		if(cnt & 1){
-			if(swap)
-				csum += uchar(up[--cnt]);
-			else
-				csum += (int16)(uchar(up[--cnt]) << 8);
-			swap = !swap;
-		}
-		sum += csum;
-		total += m->cnt;
 	}
-	/* Do final end-around carry, complement and return */
-	return ~eac(sum) & 0xffff;
+	return NULLROUTE;
+}
+/* Scan the routing table. For each entry, see if there's a less-specific
+ * one that points to the same interface and gateway. If so, delete
+ * the more specific entry, since it is redundant.
+ */
+void
+rt_merge(trace)
+int trace;
+{
+	int bits,i,j;
+	struct route *rp,*rpnext,*rp1;
+
+	for(bits=32;bits>0;bits--){
+		for(i = 0;i<NROUTE;i++){
+			for(rp = Routes[bits-1][i];rp != NULLROUTE;rp = rpnext){
+				rpnext = rp->next;
+				for(j=bits-1;j >= 0;j--){
+					if((rp1 = rt_blookup(rp->target,j)) != NULLROUTE
+					 && rp1->iface == rp->iface
+					 && rp1->gateway == rp->gateway){
+						if(trace > 1)
+							printf("merge %s %d\n",
+							 inet_ntoa(rp->target),
+							 rp->bits);
+						rt_drop(rp->target,rp->bits);
+						break;
+					}
+				}
+			}
+		}
+	}
 }

@@ -1,4 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.h,v 1.2 1990/08/23 17:34:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.h,v 1.3 1990/09/11 13:46:44 deyke Exp $ */
+
+#ifndef TRANSPORT_INCLUDED
+#define TRANSPORT_INCLUDED
 
 #define EOL_NONE        0       /* No EOL conversion (binary) */
 #define EOL_CR          1       /* EOL is "\r" */
@@ -25,10 +28,14 @@ struct transport_cb {
   int  send_char;               /* Last char sent */
 };
 
-extern struct transport_cb *transport_open();
-extern int  transport_recv();
-extern int  transport_send();
-extern int  transport_send_space();
-extern void transport_set_timeout();
-extern int  transport_close();
-extern int  transport_del();
+/* transport.c */
+struct transport_cb *transport_open __ARGS((char *protocol, char *address, void (*r_upcall )(), void (*t_upcall )(), void (*s_upcall )(), char *user));
+int transport_recv __ARGS((struct transport_cb *tp, struct mbuf **bpp, int cnt));
+int transport_send __ARGS((struct transport_cb *tp, struct mbuf *bp));
+int transport_send_space __ARGS((struct transport_cb *tp));
+void transport_set_timeout __ARGS((struct transport_cb *tp, int timeout));
+int transport_close __ARGS((struct transport_cb *tp));
+int transport_del __ARGS((struct transport_cb *tp));
+
+#endif  /* TRANSPORT_INCLUDED */
+

@@ -1,9 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.h,v 1.2 1990/08/23 17:34:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.h,v 1.3 1990/09/11 13:46:22 deyke Exp $ */
 
 #ifndef SLIP_ALLOC
 #include "global.h"
 
-#define SLIP_MAX 5              /* Maximum number of slip channels */
+#define SLIP_MAX        16      /* Maximum number of slip channels */
 
 /* SLIP definitions */
 #define SLIP_ALLOC      512     /* Receiver allocation increment */
@@ -15,8 +15,7 @@
 
 /* Slip protocol control structure */
 struct slip {
-	struct mbuf *sndq;      /* Encapsulated packets awaiting transmission */
-	int16 sndcnt;           /* Number of datagrams on queue */
+	struct iface *iface;
 	char escaped;           /* Receiver State control flag */
 	struct mbuf *rbp;       /* Head of mbuf chain being filled */
 	struct mbuf *rbp1;      /* Pointer to mbuf currently being written */
@@ -26,12 +25,11 @@ struct slip {
 	int16 errors;           /* Receiver input errors */
 	int type;               /* Protocol of input */
 	int (*send) __ARGS((int,struct mbuf *)); /* Routine to send mbufs */
-	char (*get) __ARGS((int));       /* Routine to fetch input chars */
-	void (*recv)();         /* Function to call with an incoming buffer */
+	int (*get) __ARGS((int,char *,int));     /* Routine to fetch input chars */
 };
 extern struct slip Slip[];
 /* In slip.c: */
-void asy_rx __ARGS((int dev,void *p1,void *p2));
+void asy_rx __ARGS((struct iface *iface));
 void asytxdone __ARGS((int dev));
 int slip_raw __ARGS((struct iface *iface,struct mbuf *data));
 int slip_send __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,int prec,

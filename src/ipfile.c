@@ -1,22 +1,23 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.2 1990/08/23 17:33:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.3 1990/09/11 13:45:42 deyke Exp $ */
 
 #include <stdio.h>
 
 #include "global.h"
 #include "iface.h"
-#include "timer.h"
 #include "ip.h"
 
 extern int  debug;
+extern long  currtime;
 
-#define ROUTE_FILE_VERSION   0
+#define ROUTE_FILE_VERSION   1
 #define ROUTE_SAVETIME       (60*10)
 
 struct route_saverecord {
-  int32 dest;           /* Dest IP address */
-  int  bits;            /* Number of significant bits */
+  int32 target;         /* Target IP address */
+  unsigned int  bits;   /* Number of significant bits */
   int32 gateway;        /* IP address of local gateway for this target */
-  int  metric;          /* Hop count, whatever */
+  int32 metric;         /* Hop count or whatever */
+  int  flags;
 };
 
 static char  route_filename[] = "/tcp/route_data";
@@ -28,7 +29,6 @@ route_savefile()
 {
 
   FILE * fp;
-  extern long  currtime;
   register int  bits;
   register int  i;
   register struct route *p;
@@ -43,11 +43,12 @@ route_savefile()
   for (bits = 1; bits <= 32; bits++)
     for (i = 0; i < NROUTE; i++)
       for (p = Routes[bits-1][i]; p; p = p->next) {
-	buf.dest = p->target;
-	buf.bits = bits;
+	buf.target = p->target;
+	buf.bits = p->bits;
 	buf.gateway = p->gateway;
 	buf.metric = p->metric;
-	fwrite((char *) & buf, sizeof(buf), 1, fp);
+	buf.flags = p->flags;
+	fwrite((char *) &buf, sizeof(buf), 1, fp);
 	fwrite(p->iface->name, strlen(p->iface->name) + 1, 1, fp);
       }
   fclose(fp);
@@ -80,7 +81,8 @@ route_loadfile()
 	}
       } while (*cp++ = c);
       for (ifp = Ifaces; ifp && strcmp(ifp->name, ifname); ifp = ifp->next) ;
-      if (ifp) rt_add(buf.dest, buf.bits, buf.gateway, buf.metric, ifp);
+      if (ifp)
+	rt_add(buf.target, buf.bits, buf.gateway, ifp, buf.metric, 0, buf.flags & RTPRIVATE);
     }
   fclose(fp);
 }

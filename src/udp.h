@@ -1,10 +1,19 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.h,v 1.2 1990/08/23 17:34:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.h,v 1.3 1990/09/11 13:46:47 deyke Exp $ */
 
 #ifndef NUDP
 
 #include "global.h"
 #include "netuser.h"
 #include "internet.h"
+#include "ip.h"
+
+/* SNMP MIB variables, used for statistics and control. See RFC 1066 */
+extern struct mib_entry Udp_mib[];
+#define udpInDatagrams  Udp_mib[1].value.integer
+#define udpNoPorts      Udp_mib[2].value.integer
+#define udpInErrors     Udp_mib[3].value.integer
+#define udpOutDatagrams Udp_mib[4].value.integer
+#define NUMUDPMIB       4
 
 /* User Datagram Protocol definitions */
 #define NUDP    20
@@ -26,24 +35,42 @@ struct udp_cb {
 	struct udp_cb *prev;    /* Linked list pointers */
 	struct udp_cb *next;
 	struct socket socket;   /* Local port accepting datagrams */
-	void (*r_upcall)();     /* Function to call when one arrives */
+	void (*r_upcall) __ARGS((struct iface *iface,struct udp_cb *,int));
+				/* Function to call when one arrives */
 	struct mbuf *rcvq;      /* Queue of pending datagrams */
 	int rcvcnt;             /* Count of pending datagrams */
+	int user;               /* User link */
 };
 extern struct udp_cb *Udps[];   /* Hash table for UDP structures */
 #define NULLUDP (struct udp_cb *)0
 
-/* UDP statistics counters */
-struct udp_stat {
-	int16 rcvd;             /* Packets received */
-	int16 sent;             /* Packets sent */
-	int16 cksum;            /* Checksum errors */
-	int16 unknown;          /* Unknown socket */
-	int16 bdcsts;           /* Incoming broadcasts */
-};
-
 /* UDP primitives */
-int open_udp(),recv_udp(),send_udp(),del_udp();
+
+/* In udp.c: */
+int del_udp __ARGS((struct udp_cb *up));
+struct udp_cb *open_udp __ARGS((struct socket *lsocket,
+	void (*r_upcall) __ARGS((struct iface *iface,struct udp_cb *,int))));
+int recv_udp __ARGS((struct udp_cb *up,struct socket *fsocket,struct mbuf **bp));
+int send_udp __ARGS((struct socket *lsocket,struct socket *fsocket,int tos,
+	int ttl,struct mbuf *data,int length,int id,int df));
+void udp_input __ARGS((struct iface *iface,struct ip *ip,struct mbuf *bp,
+	int rxbroadcast));
+void udp_garbage __ARGS((int drastic));
+
+#ifdef HOPCHECK
+void udp_icmp __ARGS((int32 icsource, int32 ipsource,int32 ipdest,
+	int ictype,int iccode,struct mbuf **bpp));
+/* In hop.c: */
+void hop_icmp __ARGS((struct udp_cb *ucb, int32 icsource, int32 ipdest,
+	int udpdest, int ictype, int iccode));
+#endif
+
+/* In udpcmd.c: */
+int st_udp __ARGS((struct udp_cb *udp,int n));
+
+/* In udphdr.c: */
+struct mbuf *htonudp __ARGS((struct udp *udp,struct mbuf *data,struct pseudo_header *ph));
+int ntohudp __ARGS((struct udp *udp,struct mbuf **bpp));
 
 #endif  /* NUDP */
 

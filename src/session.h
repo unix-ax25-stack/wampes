@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.2 1990/08/23 17:33:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.3 1990/09/11 13:46:20 deyke Exp $ */
 
 #ifndef NULLSESSION
 
@@ -35,7 +35,7 @@ struct session {
 	char *ufile;            /* Upload file name */
 };
 #define NULLSESSION     (struct session *)0
-extern unsigned nsessions;
+extern unsigned Nsessions;              /* Maximum number of sessions */
 extern struct session *sessions;
 extern struct session *current;
 

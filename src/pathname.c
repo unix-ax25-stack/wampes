@@ -1,8 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pathname.c,v 1.2 1990/08/23 17:33:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pathname.c,v 1.3 1990/09/11 13:46:13 deyke Exp $ */
 
+#include <stdio.h>
 #include "global.h"
+#include "dirutil.h"
 
-static crunch __ARGS((char *buf, char *path));
+static void crunch __ARGS((char *buf,char *path));
 
 /* Given a working directory and an arbitrary pathname, resolve them into
  * an absolute pathname. Memory is allocated for the result, which
@@ -13,30 +15,34 @@ pathname(cd,path)
 char *cd;       /* Current working directory */
 char *path;     /* Pathname argument */
 {
-	register char *buf,*cp;
-	char *cdtmp,*pathtmp;
+	register char *buf;
+#ifdef  MSDOS
+	char *cp,c;
+	char *tbuf;
+	int tflag = 0;
+#endif
 
 	if(cd == NULLCHAR || path == NULLCHAR)
 		return NULLCHAR;
-#if     (defined(MSDOS) || defined(ATARI_ST))
-	/* Make temporary copies of cd and path
-	 * with all \'s translated to /'s
-	*/
-	pathtmp = malloc((unsigned)strlen(path)+1);
-	strcpy(pathtmp,path);
-	path = pathtmp;
-	if((cp = path) != NULLCHAR){
-		while((cp = strchr(cp,'\\')) != NULLCHAR)
-			*cp = '/';
-	}
-	cdtmp = malloc((unsigned)strlen(cd)+1);
-	strcpy(cdtmp,cd);
-	cd = cdtmp;
-	if((cp = cd) != NULLCHAR){
-		while((cp = strchr(cp,'\\')) != NULLCHAR)
-			*cp = '/';
+
+#ifdef  MSDOS
+	/* If path has any backslashes, make a local copy with them
+	 * translated into forward slashes
+	 */
+	if(strchr(path,'\\') != NULLCHAR){
+		tflag = 1;
+		cp = tbuf = mallocw(strlen(path));
+		while((c = *path++) != '\0'){
+			if(c == '\\')
+				*cp++ = '/';
+			else
+				*cp++ = c;
+		}
+		*cp = '\0';
+		path = tbuf;
 	}
 #endif
+
 	/* Strip any leading white space on args */
 	while(*cd == ' ' || *cd == '\t')
 		cd++;
@@ -44,7 +50,7 @@ char *path;     /* Pathname argument */
 		path++;
 
 	/* Allocate and initialize output buffer; user must free */
-	buf = malloc((unsigned)strlen(cd) + strlen(path) + 10); /* fudge factor */
+	buf = mallocw((unsigned)strlen(cd) + strlen(path) + 10);        /* fudge factor */
 	buf[0] = '\0';
 
 	/* Interpret path relative to cd only if it doesn't begin with "/" */
@@ -58,15 +64,9 @@ char *path;     /* Pathname argument */
 		buf[0] = '/';
 		buf[1] = '\0';
 	}
-
-#if     (defined(MSDOS) || defined(ATARI_ST))
-	/* Translate all /'s back to \'s and free temp copies of args */
-	if((cp = buf) != NULLCHAR){
-		while((cp = strchr(cp,'/')) != NULLCHAR)
-			*cp = '\\';
-	}
-	free(cdtmp);
-	free(pathtmp);
+#ifdef  MSDOS
+	if(tflag)
+		free(tbuf);
 #endif
 	return buf;
 }
@@ -74,7 +74,7 @@ char *path;     /* Pathname argument */
 /* Process a path name string, starting with and adding to
  * the existing buffer
  */
-static
+static void
 crunch(buf,path)
 char *buf;
 register char *path;

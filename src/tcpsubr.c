@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.4 1990/08/23 17:34:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.5 1990/09/11 13:46:34 deyke Exp $ */
 
 #include "global.h"
 #include "timer.h"
@@ -259,8 +259,8 @@ struct mbuf **bpp;
 	if(*bpp == NULLBUF)
 		/* Buffer too short to pull off header length */
 		return -1;
-	hdrlen = (pullchar(bpp) & 0xf0) >> 2;
-	tcph->flags = pullchar(bpp);
+	hdrlen = (PULLCHAR(bpp) & 0xf0) >> 2;
+	tcph->flags = PULLCHAR(bpp);
 	tcph->wnd = pull16(bpp);
 	(void)pull16(bpp);      /* Skip checksum */
 	tcph->up = pull16(bpp);
@@ -280,7 +280,7 @@ struct mbuf **bpp;
 	}
 	/* Process options */
 	for(i=TCPLEN; i < hdrlen;){
-		switch(pullchar(bpp)){
+		switch(PULLCHAR(bpp)){
 		case EOL_KIND:
 			i++;
 			goto eol;       /* End of options list */
@@ -288,7 +288,7 @@ struct mbuf **bpp;
 			i++;
 			break;
 		case MSS_KIND:
-			optlen = pullchar(bpp);
+			optlen = PULLCHAR(bpp);
 			if(optlen == MSS_LENGTH)
 				tcph->mss = pull16(bpp);
 			i += optlen;

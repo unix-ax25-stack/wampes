@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.h,v 1.2 1990/08/23 17:34:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.h,v 1.3 1990/09/11 13:46:42 deyke Exp $ */
 
 #ifndef TRACE_INCL
 #define TRACE_INCL
@@ -17,19 +17,6 @@ struct trace {
 };
 
 extern struct trace Tracef[];
-
-extern void (*tracef[])();
-
-#define TRACE_AX25      0
-#define TRACE_ETHER     1
-#define TRACE_IP        2
-#define TRACE_APPLETALK 3
-#define TRACE_SLFP      4
-#define NTRACE          5
-
-#define TRACE_SENT      0
-#define TRACE_RECV      1
-#define TRACE_LOOP      2
 
 /* In trace.c: */
 void dump __ARGS((struct iface *iface,int direction,unsigned type,struct mbuf *bp));
@@ -60,7 +47,7 @@ void ki_dump __ARGS((FILE *fp,struct mbuf **bpp,int check));
 int ki_forus __ARGS((struct iface *iface,struct mbuf *bp));
 
 /* In nrdump.c: */
-void netrom_dump __ARGS((FILE *fp,struct mbuf **bpp));
+void netrom_dump __ARGS((FILE *fp,struct mbuf **bpp,int check));
 
 /* In ripdump.c: */
 void rip_dump __ARGS((FILE *fp,struct mbuf **bpp));

@@ -1,6 +1,12 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.2 1990/08/23 17:34:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.3 1990/09/11 13:46:28 deyke Exp $ */
 
 /* TCP implementation. Follows RFC 793 as closely as possible */
+#ifndef NULLTCB
+
+#include "global.h"
+#include "netuser.h"
+#include "timer.h"
+#include "internet.h"
 
 #define DEF_WND 2048    /* Default receiver window */
 #define NTCB    19      /* # TCB hash table headers */
@@ -169,3 +175,8 @@ extern int16 tcp_mss;
 extern int16 tcp_window;
 extern int32 tcp_irtt;
 
+/* In tcpin.c: */
+void tcp_icmp __ARGS((int32 icsource,int32 source,int32 dest,
+	int type,int code,struct mbuf **bpp));
+
+#endif  /* NULLTCB */

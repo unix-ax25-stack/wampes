@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.2 1990/08/23 17:32:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.3 1990/09/11 13:45:16 deyke Exp $ */
 
 /* System-dependent definitions of various files, spool directories, etc */
 #include "global.h"
@@ -18,6 +18,7 @@ char *Fdir = "/finger";         /* Finger info directory */
 char *Arealist = "/spool/areas";/* List of message areas */
 char *Helpdir = "/spool/help";  /* Mailbox help file directory */
 char *Rewritefile = "/spool/rewrite"; /* Address rewrite file */
+char Eol[] = "\r\n";
 #define SEPARATOR       "/"
 #endif
 
@@ -41,6 +42,7 @@ char *Arealist = "./areas";             /* List of message areas */
 char *Helpdir = "./help";       /* Mailbox help file directory */
 char *Rewritefile = "./rewrite"; /* Address rewrite file */
 #define SEPARATOR       "/"
+char Eol[] = "\n";
 #endif
 
 #ifdef  AMIGA
@@ -59,6 +61,7 @@ char *Arealist = "TCPIP:spool/areas";   /* List of message areas */
 char *Helpdir = "TCPIP:spool/help";     /* Mailbox help file directory */
 char *Rewritefile = "TCPIP:spool/rewrite"; /* Address rewrite file */
 #define SEPARATOR       "/"
+char Eol[] = "\r\n";
 #endif
 
 #ifdef  MAC
@@ -77,6 +80,7 @@ char *Arealist = "Mikes Hard Disk:spool/areas"; /* List of message areas */
 char *Helpdir = "Mikes Hard Disk:spool/help"; /* Mailbox help file directory */
 char *Rewritefile = "Mikes Hard Disk:spool/rewrite"; /* Address rewrite file */
 #define SEPARATOR       ":"
+char Eol[] = "\r";
 #endif
 
 static char *strcatdup __ARGS((char *a,char *b,char *c));
@@ -103,17 +107,29 @@ char *root;
 	Rewritefile = strcatdup(root,SEPARATOR,Rewritefile);
 }
 
-/* Concatenate three strings into a malloc'ed output buffer */
+/* Concatenate root, separator and arg strings into a malloc'ed output
+ * buffer, then remove repeated occurrences of the separator char
+ */
 static char *
 strcatdup(a,b,c)
 char *a,*b,*c;
 {
-	char *out;
+	char *out,*p1,*p2;
 
 	out = mallocw(strlen(a) + strlen(b) + strlen(c) + 1);
 	strcpy(out,a);
 	strcat(out,b);
 	strcat(out,c);
+	if(*b != '\0'){
+		/* Remove any repeated occurrences of the separator char */
+		p1 = p2 = out;
+		while(*p2 != '\0'){
+			*p1++ = *p2++;
+			while(p2[0] == p2[-1] && p2[0] == b[0])
+				p2++;
+		}
+		*p1 = '\0';
+	}
 	return out;
 }
 

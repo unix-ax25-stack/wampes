@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.2 1990/08/23 17:32:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.3 1990/09/11 13:45:19 deyke Exp $ */
 
 /* Stuff common to both the FTP server and client */
 #include <stdio.h>
@@ -18,7 +18,7 @@ int16 cnt;
 {
 	register struct ftp *ftp;
 	struct mbuf *bp;
-	char c;
+	int c;
 
 	ftp = (struct ftp *)tcb->user;
 	if(ftp->state != RECEIVING_STATE){
@@ -30,7 +30,7 @@ int16 cnt;
 
 #if (UNIX || MAC || AMIGA || ATARI_ST)
 	if(ftp->type == ASCII_TYPE){
-		while(pullup(&bp,&c,1) == 1){
+		while((c = PULLCHAR(&bp)) != -1){
 			if(c != '\r')
 				putc(c,ftp->fp);
 		}

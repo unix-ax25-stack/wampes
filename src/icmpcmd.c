@@ -1,19 +1,18 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.4 1990/08/23 17:33:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.5 1990/09/11 13:45:31 deyke Exp $ */
 
 /* ICMP-related user commands */
 #include <stdio.h>
 #include <time.h>
 #include "global.h"
 #include "icmp.h"
+#include "ip.h"
 #include "mbuf.h"
 #include "netuser.h"
 #include "internet.h"
 #include "timer.h"
-
-static int pingem __ARGS((int32 target, int seq, int id, int len));
-static int16 hash_ping __ARGS((int32 dest));
-static struct ping *add_ping __ARGS((int32 dest));
-static void del_ping __ARGS((struct ping *pp));
+#include "socket.h"
+#include "cmdparse.h"
+#include "commands.h"
 
 #define NULLPING (struct ping *)0
 #define PMOD    7
@@ -25,34 +24,74 @@ static void del_ping __ARGS((struct ping *pp));
 /* Hash table list heads */
 struct ping *ping[PMOD];
 
+static int doicmpstat __ARGS((int argc, char *argv [], void *p));
+static int doicmptr __ARGS((int argc, char *argv [], void *p));
+static int doicmpec __ARGS((int argc, char *argv [], void *p));
+static void ptimeout __ARGS((void *p));
+static int pingem __ARGS((int32 target, int seq, int id, int len));
+static int16 hash_ping __ARGS((int32 dest));
+static struct ping *add_ping __ARGS((int32 dest));
+static void del_ping __ARGS((struct ping *pp));
+
+static struct cmds Icmpcmds[] = {
+	"echo",         doicmpec,       0, 0, NULLCHAR,
+	"status",       doicmpstat,     0, 0, NULLCHAR,
+	"trace",        doicmptr,       0, 0, NULLCHAR,
+	NULLCHAR
+};
+
+int Icmp_trace;
+static int Icmp_echo = 1;
+
 int
+doicmp(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	return subcmd(Icmpcmds,argc,argv,p);
+}
+
+static int
 doicmpstat(argc,argv,p)
 int argc;
 char *argv[];
 void *p;
 {
-	extern struct icmp_errors icmp_errors;
-	extern struct icmp_stats icmp_stats;
-	extern char *Icmptypes[];
 	register int i;
+	int lim;
 
-	printf("ICMP: chksum err %u no space %u icmp %u bdcsts %u\n",
-	 icmp_errors.checksum,icmp_errors.nospace,icmp_errors.noloop,
-	 icmp_errors.bdcsts);
-	printf("type  rcvd  sent\n");
-	for(i=0;i<ICMP_TYPES;i++){
-		if(icmp_stats.input[i] == 0 && icmp_stats.output[i] == 0)
-			continue;
-		printf("%-6u%-6u%-6u",i,icmp_stats.input[i],
-			icmp_stats.output[i]);
-		if(Icmptypes[i] != NULLCHAR)
-			printf("  %s",Icmptypes[i]);
-		printf("\n");
+	/* Note that the ICMP variables are shown in column order, because
+	 * that lines up the In and Out variables on the same line
+	 */
+	lim = NUMICMPMIB/2;
+	for(i=1;i<=lim;i++){
+		tprintf("(%2u)%-20s%10lu",i,Icmp_mib[i].name,
+		 Icmp_mib[i].value.integer);
+		tprintf("     (%2u)%-20s%10lu\n",i+lim,Icmp_mib[i+lim].name,
+		 Icmp_mib[i+lim].value.integer);
 	}
 	return 0;
 }
+static int
+doicmptr(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	return setbool(&Icmp_trace,"ICMP tracing",argc,argv);
+}
+static int
+doicmpec(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	return setbool(&Icmp_echo,"ICMP echo response accept",argc,argv);
+}
 
 /* Send ICMP Echo Request packets */
+int
 doping(argc,argv,p)
 int argc;
 char *argv[];
@@ -61,10 +100,8 @@ void *p;
 	int32 dest;
 	struct ping *pp1;
 	register struct ping *pp;
-	void ptimeout();
 	int16 hval;
 	int i;
-	char *inet_ntoa();
 	int16 len;
 
 	if(argc < 2){
@@ -130,9 +167,9 @@ void *p;
 }
 
 /* Called by ping timeout */
-void
+static void
 ptimeout(p)
-char *p;
+void *p;
 {
 	register struct ping *pp;
 
@@ -141,46 +178,6 @@ char *p;
 	pingem(pp->target,(int16)pp->sent++,REPEAT,pp->len);
 	start_timer(&pp->timer);
 }
-/* Send ICMP Echo Request packet */
-static int
-pingem(target,seq,id,len)
-int32 target;   /* Site to be pinged */
-int16 seq;      /* ICMP Echo Request sequence number */
-int16 id;       /* ICMP Echo Request ID */
-int16 len;      /* Length of data field */
-{
-	struct mbuf *data;
-	struct mbuf *bp,*htonicmp();
-	struct icmp icmp;
-	extern struct icmp_stats icmp_stats;
-	int i;
-	struct timeval tv;
-	struct timezone tz;
-
-	if ((data = alloc_mbuf(len)) == NULLBUF)
-		return -1;
-	for (i = ICMPLEN; i < len; i++)
-		data->data[i] = i;
-	data->data += ICMPLEN;
-	data->cnt = len - ICMPLEN;
-	/* Insert timestamp and build ICMP header */
-	if (len >= ICMPLEN + sizeof(struct timeval)) {
-		gettimeofday(&tv, &tz);
-		memcpy(data->data, (char *) &tv, sizeof(struct timeval));
-	}
-	icmp_stats.output[ICMP_ECHO]++;
-	icmp.type = ICMP_ECHO;
-	icmp.code = 0;
-	icmp.args.echo.seq = seq;
-	icmp.args.echo.id = id;
-	if((bp = htonicmp(&icmp,data)) == NULLBUF){
-		free_p(data);
-		return 0;
-	}
-	return ip_send(Ip_addr,target,ICMP_PTCL,0,0,bp,len,0,0);
-}
-
-/* Called with incoming Echo Reply packet */
 void
 echo_proc(source,dest,icmp,bp)
 int32 source;
@@ -190,7 +187,6 @@ struct mbuf *bp;
 {
 	register struct ping *pp;
 	int16 hval;
-	char *inet_ntoa();
 	int32 rtt,abserr;
 	struct timeval tv,timestamp;
 	struct timezone tz;
@@ -212,6 +208,8 @@ struct mbuf *bp;
 		if(pp->target == source)
 			break;
 	if(pp == NULLPING || icmp->args.echo.id != REPEAT){
+		if(!Icmp_echo)
+			return;
 		printf(
 		  (rtt == -1) ?
 		    "%s: echo reply id %u seq %u\n" :
@@ -234,6 +232,44 @@ struct mbuf *bp;
 			pp->mdev = (3*pp->mdev + abserr + 2) >> 2;
 		}
 	}
+}
+/* Send ICMP Echo Request packet */
+static int
+pingem(target,seq,id,len)
+int32 target;   /* Site to be pinged */
+int16 seq;      /* ICMP Echo Request sequence number */
+int16 id;       /* ICMP Echo Request ID */
+int16 len;      /* Length of data field */
+{
+	struct mbuf *data;
+	struct mbuf *bp;
+	struct icmp icmp;
+	int i;
+	struct timeval tv;
+	struct timezone tz;
+
+	if ((data = alloc_mbuf(len)) == NULLBUF)
+		return -1;
+	for (i = ICMPLEN; i < len; i++)
+		data->data[i] = i;
+	data->data += ICMPLEN;
+	data->cnt = len - ICMPLEN;
+	/* Insert timestamp and build ICMP header */
+	if (len >= ICMPLEN + sizeof(struct timeval)) {
+		gettimeofday(&tv, &tz);
+		memcpy(data->data, (char *) &tv, sizeof(struct timeval));
+	}
+	icmpOutEchos++;
+	icmpOutMsgs++;
+	icmp.type = ICMP_ECHO;
+	icmp.code = 0;
+	icmp.args.echo.seq = seq;
+	icmp.args.echo.id = id;
+	if((bp = htonicmp(&icmp,data)) == NULLBUF){
+		free_p(data);
+		return 0;
+	}
+	return ip_send(Ip_addr,target,ICMP_PTCL,0,0,bp,len,0,0);
 }
 static int16
 hash_ping(dest)

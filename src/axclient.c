@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.4 1990/08/23 17:32:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.5 1990/09/11 13:45:03 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -30,7 +30,7 @@ int16 n;
 
 /*---------------------------------------------------------------------------*/
 
-axclient_send_upcall(cp, cnt)
+void axclient_send_upcall(cp, cnt)
 struct axcb *cp;
 int  cnt;
 {
@@ -63,16 +63,17 @@ int  cnt;
 
 /*---------------------------------------------------------------------------*/
 
-axclient_recv_upcall(cp)
+void axclient_recv_upcall(cp, cnt)
 struct axcb *cp;
+int  cnt;
 {
 
-  char  c;
+  int  c;
   struct mbuf *bp;
 
   if (!(mode == CONV_MODE && current && current->type == AX25TNC && current->cb.ax25 == cp)) return;
   recv_ax(cp, &bp, 0);
-  while (pullup(&bp, &c, 1)) {
+  while ((c = PULLCHAR(&bp)) != -1) {
     if (c == '\r') c = '\n';
     putchar(c);
     if (current->record) putc(c, current->record);
@@ -133,13 +134,13 @@ void *p;
       printf("Too many digipeaters (max 8)\n");
       return 1;
     }
-    if (setcall(axptr(ap), *argv)) {
+    if (setcall(ap, *argv)) {
       printf("Invalid call \"%s\"\n", *argv);
       return 1;
     }
     if (ap == path) {
       ap += AXALEN;
-      addrcp(axptr(ap), &mycall);
+      addrcp(ap, Mycall);
     }
     ap += AXALEN;
   }

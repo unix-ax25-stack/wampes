@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.10 1990/08/23 17:32:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.11 1990/09/11 13:45:04 deyke Exp $ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +12,7 @@
 #include "iface.h"
 #include "ax25.h"
 #include "axproto.h"
+#include "netrom.h"
 #include "cmdparse.h"
 #include "asy.h"
 
@@ -98,7 +99,7 @@ int  create;
   register struct axroute_tab *rp;
 
   hashval = axroute_hash((char *) call);
-  for (rp = axroute_tab[hashval]; rp && !addreq(&rp->call, call); rp = rp->next) ;
+  for (rp = axroute_tab[hashval]; rp && !addreq((char *) &rp->call, (char *) call); rp = rp->next) ;
   if (!rp && create) {
     rp = (struct axroute_tab *) calloc(1, sizeof(struct axroute_tab ));
     rp->call = *call;
@@ -190,13 +191,13 @@ int  perm;
   struct ax25_addr calls[20];
   struct axroute_tab *lastnode = 0;
 
-  for (ap = cp->path + AXALEN; !ismycall(axptr(ap)); ap += AXALEN) ;
+  for (ap = cp->path + AXALEN; !ismycall(ap); ap += AXALEN) ;
   do {
     ap += AXALEN;
     if (ap >= cp->path + cp->pathlen) ap = cp->path;
-    if (!*ap || ismycall(axptr(ap))) return;
+    if (!*ap || ismycall(ap)) return;
     for (i = 0; i < ncalls; i++)
-      if (addreq(calls + i, axptr(ap))) return;
+      if (addreq((char *) (calls + i), ap)) return;
     calls[ncalls++] = *axptr(ap);
   } while (ap != cp->path);
 
@@ -314,8 +315,7 @@ struct mbuf *data;
   }
   if (cmdrsp & PF) control |= PF;
   *p++ = control;
-  if (cp->mode == STREAM && (type == I || type == UI))
-    *p++ = (PID_FIRST | PID_LAST | PID_NO_L3);
+  if (cp->mode == STREAM && (type == I || type == UI)) *p++ = PID_NO_L3;
   if (type == RR || type == REJ || type == UA) cp->rnrsent = 0;
   if (type == RNR) cp->rnrsent = 1;
   if (type == REJ) cp->rejsent = 1;
@@ -568,12 +568,12 @@ int  reverse;
   for (ap = newpath; !(ap[6] & E); ap += AXALEN) ;
   cp->pathlen = ap - newpath + AXALEN;
   if (reverse) {
-    addrcp(axptr(cp->path), axptr(newpath + AXALEN));
-    addrcp(axptr(cp->path + AXALEN), axptr(newpath));
+    addrcp(cp->path, newpath + AXALEN);
+    addrcp(cp->path + AXALEN, newpath);
     for (tp = cp->path + 2 * AXALEN;
 	 tp < cp->path + cp->pathlen;
 	 tp += AXALEN, ap -= AXALEN)
-      addrcp(axptr(tp), axptr(ap));
+      addrcp(tp, ap);
   } else
     memcpy(cp->path, newpath, cp->pathlen);
 
@@ -589,7 +589,7 @@ int  reverse;
 
   myaddr = NULLCHAR;
   for (ap = cp->path + 2 * AXALEN; ap < cp->path + cp->pathlen; ap += AXALEN)
-    if (ismycall(axptr(ap))) myaddr = ap;
+    if (ismycall(ap)) myaddr = ap;
 
   /*** autorouting ***/
 
@@ -613,7 +613,7 @@ int  reverse;
       if (rp->digi && cp->pathlen < sizeof(cp->path)) {
 	len = (cp->path + cp->pathlen) - ap;
 	if (len) memcpy(buf, ap, len);
-	addrcp(axptr(ap), &rp->digi->call);
+	addrcp(ap, (char *) &rp->digi->call);
 	if (len) memcpy(ap + AXALEN, buf, len);
 	cp->pathlen += AXALEN;
       }
@@ -660,18 +660,18 @@ struct axcb *cp;
   if (!cp->pathlen) return "*";
   p = buf;
   ap = cp->path + AXALEN;
-  if (!ismycall(axptr(ap))) {
-    pax25(p, axptr(ap));
+  if (!ismycall(ap)) {
+    pax25(p, ap);
     while (*p) p++;
     *p++ = '-';
     *p++ = '>';
   }
-  pax25(p, axptr(cp->path));
+  pax25(p, cp->path);
   while (*p) p++;
   while (!(ap[6] & E)) {
     ap += AXALEN;
     *p++ = ',';
-    pax25(p, axptr(ap));
+    pax25(p, ap);
     while (*p) p++;
     if (ap[6] & REPEATED) *p++ = '*';
   }
@@ -733,9 +733,9 @@ struct mbuf *bp;
       type = control & 0xf;
   } else
     type = I;
-  for_me = ismycall(axptr(bp->data));
+  for_me = ismycall(bp->data);
 
-  if (!for_me && (type == UI || addreq(axptr(bp->data), axptr(bp->data + AXALEN)))) {
+  if (!for_me && (type == UI || addreq(bp->data, bp->data + AXALEN))) {
     axroute(NULLAXCB, bp);
     return;
   }
@@ -746,7 +746,7 @@ struct mbuf *bp;
     cmdrsp = ((bp->data[6] & C) ? DST_C : SRC_C) | (control & PF);
 
   for (cp = axcb_head; cp; cp = cp->next)
-    if (addreq(axptr(bp->data + AXALEN), axptr(cp->path)) && addreq(axptr(bp->data), axptr(cp->path + AXALEN))) break;
+    if (addreq(bp->data + AXALEN, cp->path) && addreq(bp->data, cp->path + AXALEN)) break;
   if (!cp) {
     if (for_me && netrom_server_axcb && isnetrom(axptr(bp->data + AXALEN)))
       cp = create_axcb(netrom_server_axcb);
@@ -787,7 +787,7 @@ struct mbuf *bp;
       }
   }
 
-  if (cp->mode == STREAM && type == I && uchar(cntrlptr[1]) != (PID_FIRST | PID_LAST | PID_NO_L3)) {
+  if (cp->mode == STREAM && type == I && uchar(cntrlptr[1]) != PID_NO_L3) {
     cp->mode = DGRAM;
     if (cpp) cpp->mode = DGRAM;
   }
@@ -890,7 +890,7 @@ struct mbuf *bp;
       }
       if (type == I) {
 	if (for_me &&
-	    uchar(cntrlptr[1]) == (PID_NETROM | PID_FIRST | PID_LAST) &&
+	    uchar(cntrlptr[1]) == PID_NETROM &&
 	    cp->r_upcall != netrom_server_axcb->r_upcall) {
 	  new_neighbor(axptr(bp->data + AXALEN));
 	  setaxstate(cp, DISCONNECTING);
@@ -1016,9 +1016,9 @@ int  argc;
 char  *argv[];
 void *p;
 {
-  extern int  digipeat;
+  extern int  Digipeat;
 
-  return setintrc(&digipeat, "Digipeat", argc, argv, 0, 2);
+  return setintrc(&Digipeat, "Digipeat", argc, argv, 0, 2);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1045,11 +1045,11 @@ void *p;
   char  buf[15];
 
   if (argc < 2) {
-    pax25(buf, &mycall);
+    pax25(buf, Mycall);
     printf("Mycall %s\n", buf);
   } else {
-    if (setcall(&mycall, argv[1]) == -1) return 1;
-    mycall.ssid |= E;
+    if (setcall(Mycall, argv[1]) == -1) return 1;
+    Mycall[ALEN] |= E;
   }
   return 0;
 }
@@ -1153,13 +1153,13 @@ void *p;
       printf("Too many digipeaters (max 8)\n");
       return 1;
     }
-    if (setcall(axptr(ap), *argv)) {
+    if (setcall(ap, *argv)) {
       printf("Invalid call \"%s\"\n", *argv);
       return 1;
     }
     if (ap == cb.path) {
       ap += AXALEN;
-      addrcp(axptr(ap), &mycall);
+      addrcp(ap, Mycall);
     }
     ap += AXALEN;
   }
@@ -1187,7 +1187,7 @@ struct axroute_tab *rp;
   struct tm *tm;
 
   tm = gmtime(&rp->time);
-  pax25(cp = buf, &rp->call);
+  pax25(cp = buf, (char *) &rp->call);
   perm = rp->perm;
   for (n = 0; rp; rp = rp->digi) {
     rp_stack[++n] = rp;
@@ -1196,7 +1196,7 @@ struct axroute_tab *rp;
   for (i = n; i > 1; i--) {
     strcat(cp, i == n ? " via " : ",");
     while (*cp) cp++;
-    pax25(cp, &(rp_stack[i]->call));
+    pax25(cp, (char *) &(rp_stack[i]->call));
   }
   printf("%2d-%.3s  %-9s  %c %s\n",
 	 tm->tm_mday,
@@ -1227,7 +1227,7 @@ void *p;
   argc--;
   argv++;
   for (; argc > 0; argc--, argv++)
-    if (setcall(&call, *argv) || !(rp = axroute_tabptr(&call, 0)))
+    if (setcall((char *) &call, *argv) || !(rp = axroute_tabptr(&call, 0)))
       printf("*** Not in table *** %s\n", *argv);
     else
       doroutelistentry(rp);
@@ -1512,9 +1512,9 @@ void *p;
 struct axcb *open_ax(path, mode, r_upcall, t_upcall, s_upcall, user)
 char  *path;
 int  mode;
-void (*r_upcall)();
-void (*t_upcall)();
-void (*s_upcall)();
+void (*r_upcall) __ARGS((struct axcb *p, int cnt));
+void (*t_upcall) __ARGS((struct axcb *p, int cnt));
+void (*s_upcall) __ARGS((struct axcb *p, int oldstate, int newstate));
 char  *user;
 {
   register struct axcb *cp;
@@ -1522,7 +1522,7 @@ char  *user;
   switch (mode) {
   case AX25_ACTIVE:
     for (cp = axcb_head; cp; cp = cp->next)
-      if (!cp->peer && addreq(axptr(path), axptr(cp->path))) {
+      if (!cp->peer && addreq(path, cp->path)) {
 	Net_error = CON_EXISTS;
 	return NULLAXCB;
       }

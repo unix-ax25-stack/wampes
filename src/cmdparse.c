@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.2 1990/08/23 17:32:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.3 1990/09/11 13:45:10 deyke Exp $ */
 
 /* Parse command line, set up command arguments Unix-style, and call function.
  * Note: argument is modified (delimiters are overwritten with nulls)
@@ -220,6 +220,21 @@ char *argv[];
 int
 setshort(var,label,argc,argv)
 unsigned short *var;
+char *label;
+int argc;
+char *argv[];
+{
+	if(argc < 2)
+		tprintf("%s: %u\n",label,*var);
+	else
+		*var = atoi(argv[1]);
+
+	return 0;
+}
+/* Subroutine for setting and displaying integer variables */
+int
+setint(var,label,argc,argv)
+int *var;
 char *label;
 int argc;
 char *argv[];

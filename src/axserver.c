@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.3 1990/08/23 17:32:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.4 1990/09/11 13:45:08 deyke Exp $ */
 
 #include <stdlib.h>
 
@@ -7,10 +7,15 @@
 #include "axproto.h"
 #include "login.h"
 
+static void axserv_recv_upcall __ARGS((struct axcb *cp, int cnt));
+static void axserv_send_upcall __ARGS((struct axcb *cp, int cnt));
+static void axserv_state_upcall __ARGS((struct axcb *cp, int oldstate, int newstate));
+
 /*---------------------------------------------------------------------------*/
 
-static void axserv_recv_upcall(cp)
+static void axserv_recv_upcall(cp, cnt)
 struct axcb *cp;
+int  cnt;
 {
   struct mbuf *bp;
 
@@ -20,8 +25,9 @@ struct axcb *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void axserv_send_upcall(cp)
+static void axserv_send_upcall(cp, cnt)
 struct axcb *cp;
+int  cnt;
 {
   struct mbuf *bp;
 
@@ -37,7 +43,7 @@ int  oldstate, newstate;
 {
   switch (newstate) {
   case CONNECTED:
-    cp->user = (char *) login_open(pathtostr(cp), "AX25", axserv_send_upcall, close_ax, (char *) cp);
+    cp->user = (char *) login_open(pathtostr(cp), "AX25", (void (*)()) axserv_send_upcall, (void (*)()) close_ax, cp);
     if (!cp->user) close_ax(cp);
     break;
   case DISCONNECTED:
@@ -49,22 +55,28 @@ int  oldstate, newstate;
 
 /*---------------------------------------------------------------------------*/
 
-int axserv_stop()
+int  ax250(argc, argv, p)
+int  argc;
+char  *argv[];
+void *p;
 {
-  if (!axcb_server) return (-1);
-  free((char *) axcb_server);
-  axcb_server = NULLAXCB;
+  if (axcb_server) {
+    free((char *) axcb_server);
+    axcb_server = NULLAXCB;
+  }
   return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-int axserv_start(argc, argv)
+int  ax25start(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
-  axserv_stop();
-  axcb_server = open_ax(NULLCHAR, AX25_SERVER, axserv_recv_upcall, axserv_send_upcall, axserv_state_upcall, NULLCHAR);
+  if (!axcb_server)
+    axcb_server = open_ax(NULLCHAR, AX25_SERVER, axserv_recv_upcall,
+			  axserv_send_upcall, axserv_state_upcall, NULLCHAR);
   return axcb_server ? 0 : -1;
 }
 

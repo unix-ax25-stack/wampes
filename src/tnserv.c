@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.3 1990/08/23 17:34:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.4 1990/09/11 13:46:40 deyke Exp $ */
 
 #include "global.h"
 #include "socket.h"
@@ -6,6 +6,8 @@
 #include "timer.h"
 #include "tcp.h"
 #include "login.h"
+
+char  *psocket();
 
 static struct tcb *tcb_server;
 
@@ -43,7 +45,7 @@ char  old, new;
 #else
   case ESTABLISHED:
 #endif
-    tcb->user = (char *) login_open(psocket(&tcb->conn.remote), "TELNET", tnserv_send_upcall, close_tcp, (char *) tcb);
+    tcb->user = (char *) login_open(psocket(&tcb->conn.remote), "TELNET", (void (*)()) tnserv_send_upcall, (void (*)()) close_tcp, tcb);
     if (!tcb->user)
       close_tcp(tcb);
     else
@@ -65,22 +67,29 @@ char  old, new;
 
 /*---------------------------------------------------------------------------*/
 
-tn0()
+int  telnet0(argc, argv, p)
+int  argc;
+char  *argv[];
+void *p;
 {
   if (tcb_server) close_tcp(tcb_server);
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-tn1(argc, argv)
+int  telnet1(argc, argv, p)
 int  argc;
 char  *argv[];
+void *p;
 {
   struct socket lsocket;
 
   if (tcb_server) close_tcp(tcb_server);
-  lsocket.address = Ip_addr;
+  lsocket.address = INADDR_ANY;
   lsocket.port = (argc < 2) ? IPPORT_TELNET : tcp_portnum(argv[1]);
-  tcb_server = open_tcp(&lsocket, NULLSOCK, TCP_SERVER, 0, tnserv_recv_upcall, tnserv_send_upcall, tnserv_state_upcall, 0, NULLCHAR);
+  tcb_server = open_tcp(&lsocket, NULLSOCK, TCP_SERVER, 0, tnserv_recv_upcall,
+			tnserv_send_upcall, tnserv_state_upcall, 0, NULLCHAR);
+  return 0;
 }
 

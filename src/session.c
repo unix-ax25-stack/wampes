@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.3 1990/08/23 17:33:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.4 1990/09/11 13:46:19 deyke Exp $ */
 
 /* Session control */
 #include <stdio.h>
@@ -35,7 +35,7 @@ char *cp;
 	if(cp == NULLCHAR){
 		s = current;
 	} else {
-		if((i = atoi(cp)) >= nsessions)
+		if((i = atoi(cp)) >= Nsessions)
 			return NULLSESSION;
 		s = &sessions[i];
 	}
@@ -62,7 +62,7 @@ void *p;
 		return 0;
 	}
 	printf(" #       &CB Type   Rcv-Q  State        Remote socket\n");
-	for(s=sessions; s < &sessions[nsessions];s++){
+	for(s=sessions; s < &sessions[Nsessions];s++){
 		switch(s->type){
 		case TELNET:
 			printf("%c%-3d%8lx Telnet  %4d  %-13s%-s",
@@ -137,7 +137,7 @@ void *p;
 		break;
 #ifdef  AX25
 	case AX25TNC:
-		axclient_recv_upcall(current->cb.ax25);
+		axclient_recv_upcall(current->cb.ax25,0);
 		break;
 #endif
 	case FINGER:
@@ -145,7 +145,7 @@ void *p;
 		break ;
 #ifdef  NETROM
 	case NRSESSION:
-		nrclient_recv_upcall(current->cb.netrom);
+		nrclient_recv_upcall(current->cb.netrom,0);
 		break;
 #endif
 	}
@@ -276,7 +276,7 @@ newsession()
 {
 	register int i;
 
-	for(i=0;i<nsessions;i++)
+	for(i=0;i<Nsessions;i++)
 		if(sessions[i].type == FREE)
 			return &sessions[i];
 	return NULLSESSION;

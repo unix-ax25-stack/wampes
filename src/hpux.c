@@ -1,30 +1,41 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.10 1990/08/23 17:32:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.11 1990/09/11 13:45:26 deyke Exp $ */
 
 #include <sys/types.h>
 
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <termio.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "global.h"
-#include "mbuf.h"
 #include "iface.h"
 #include "asy.h"
-#include "unix.h"
+#include "files.h"
 #include "hpux.h"
 
-extern char  *getenv();
 extern int  debug;
 extern long  sigsetmask();
-extern long  time();
-extern struct mbuf *loopq;
-extern unsigned long  alarm();
 extern void _exit();
+
+struct asy {
+  struct iface *iface;  /* Associated interface structure */
+  int  fd;              /* File descriptor */
+  int  speed;           /* Line speed */
+  char  *ipc_socket;    /* Host:port of ipc destination */
+};
+
+int  Nasy;
+static struct asy Asy[ASY_MAX];
+
+long  currtime;
+static long  lasttime;
 
 int  chkread[2];
 int  actread[2];
@@ -41,15 +52,13 @@ int  actexcp[2];
 void (*excpfnc[_NFILE])();
 char *excparg[_NFILE];
 
-int  Nasy;
-long  currtime;
-struct asy asy[ASY_MAX];
-struct iface *Ifaces;
-
 static int  local_kbd;
-static long  lasttime;
+
 static struct termio curr_termio;
 static struct termio prev_termio;
+
+static int asy_open __ARGS((int dev));
+static void check_files_changed __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
 
@@ -63,7 +72,7 @@ struct sigcontext *scp;
 
 /*---------------------------------------------------------------------------*/
 
-int  ioinit()
+void ioinit()
 {
 
   int i;
@@ -112,7 +121,7 @@ int  ioinit()
 
 /*---------------------------------------------------------------------------*/
 
-int  iostop()
+void iostop()
 {
   register struct iface *ifp;
 
@@ -122,7 +131,7 @@ int  iostop()
     fflush(stdout);
   }
   for (ifp = Ifaces; ifp; ifp = ifp->next)
-    if (ifp->stop) (*ifp->stop)(ifp->dev);
+    if (ifp->stop) (*ifp->stop)(ifp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -145,20 +154,24 @@ int  kbread()
 
 /*---------------------------------------------------------------------------*/
 
-int  asy_stop(dev)
-int  dev;
+int  asy_stop(iface)
+struct iface *iface;
 {
-  if (asy[dev].fd > 0) {
-    close(asy[dev].fd);
-    clrmask(chkread, asy[dev].fd);
-    asy[dev].fd = -1;
+  register struct asy *ap;
+
+  ap = Asy + iface->dev;
+  if (ap->fd > 0) {
+    close(ap->fd);
+    clrmask(chkread, ap->fd);
+    ap->fd = -1;
   }
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
 static int  asy_open(dev)
-int16 dev;
+int  dev;
 {
 
 #define MIN_WAIT (3*60)
@@ -171,7 +184,7 @@ int16 dev;
 
   char  buf[80];
   int  addrlen;
-  register struct asy *asp;
+  register struct asy *ap;
   register struct iface *ifp;
   struct sockaddr *addr;
   struct sockaddr *build_sockaddr();
@@ -182,24 +195,22 @@ int16 dev;
   if (times[dev].wait < MIN_WAIT) times[dev].wait = MIN_WAIT;
   if (times[dev].wait > MAX_WAIT) times[dev].wait = MAX_WAIT;
   times[dev].next = currtime + times[dev].wait;
-  for (ifp = Ifaces; ifp; ifp = ifp->next)
-    if (ifp->dev == dev && ifp->stop == asy_stop) break;
-  if (!ifp) return (-1);
-  asy_stop(dev);
-  asp = asy + dev;
+  ap = Asy + dev;
+  ifp = ap->iface;
+  asy_stop(ifp);
   if (!strncmp(ifp->name, "ipc", 3)) {
-    if (!(addr = build_sockaddr(asp->tty, &addrlen))) return (-1);
-    if ((asp->fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) return (-1);
-    if (connect(asp->fd, addr, addrlen)) {
-      close(asp->fd);
-      asp->fd = -1;
+    if (!(addr = build_sockaddr(ap->ipc_socket, &addrlen))) return (-1);
+    if ((ap->fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) return (-1);
+    if (connect(ap->fd, addr, addrlen)) {
+      close(ap->fd);
+      ap->fd = -1;
       return (-1);
     }
-    asp->speed = 0;
+    ap->speed = 0;
   } else {
     strcpy(buf, "/dev/");
     strcat(buf, ifp->name);
-    if ((asp->fd = open(buf, O_RDWR)) < 0) return (-1);
+    if ((ap->fd = open(buf, O_RDWR)) < 0) return (-1);
     termio.c_iflag = IGNBRK | IGNPAR;
     termio.c_oflag = 0;
     termio.c_cflag = B9600 | CS8 | CREAD | CLOCAL;
@@ -207,40 +218,45 @@ int16 dev;
     termio.c_line = 0;
     termio.c_cc[VMIN] = 0;
     termio.c_cc[VTIME] = 0;
-    ioctl(asp->fd, TCSETA, &termio);
-    ioctl(asp->fd, TCFLSH, 2);
-    asp->speed = 9600;
+    ioctl(ap->fd, TCSETA, &termio);
+    ioctl(ap->fd, TCFLSH, 2);
+    ap->speed = 9600;
   }
-  setmask(chkread, asp->fd);
+  setmask(chkread, ap->fd);
+  times[dev].wait = 0;
   return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-int  asy_init(dev, arg1, arg2, bufsize)
-int16 dev;
+int  asy_init(dev, iface, arg1, arg2, bufsize, trigchar, cts)
+int  dev;
+struct iface *iface;
 char  *arg1, *arg2;
 unsigned  bufsize;
+int  trigchar;
+char  cts;
 {
-  asy[dev].tty = strcpy(malloc((unsigned) (strlen(arg2) + 1)), arg2);
+  Asy[dev].iface = iface;
+  Asy[dev].ipc_socket = strdup(arg2);
   return asy_open(dev);
 }
 
 /*---------------------------------------------------------------------------*/
 
 int  asy_speed(dev, speed)
-int  dev, speed;
+int  dev;
+long  speed;
 {
 
-  register struct asy *asp;
+  register struct asy *ap;
   register struct iface *ifp;
   struct termio termio;
 
-  asp = asy + dev;
-  for (ifp = Ifaces; ifp; ifp = ifp->next)
-    if (ifp->dev == dev && ifp->stop == asy_stop) break;
-  if (!ifp || asp->fd <= 0 || !strncmp(ifp->name, "ipc", 3)) return (-1);
-  if (ioctl(asp->fd, TCGETA, &termio)) return (-1);
+  ap = Asy + dev;
+  ifp = ap->iface;
+  if (!ifp || ap->fd <= 0 || !strncmp(ifp->name, "ipc", 3)) return (-1);
+  if (ioctl(ap->fd, TCGETA, &termio)) return (-1);
   termio.c_cflag &= ~CBAUD;
   switch (speed) {
   case    50: termio.c_cflag |= B50;    break;
@@ -263,72 +279,61 @@ int  dev, speed;
   case 38400: termio.c_cflag |= B38400; break;
   default:    return (-1);
   }
-  if (ioctl(asp->fd, TCSETA, &termio)) return (-1);
-  asp->speed = speed;
+  if (ioctl(ap->fd, TCSETA, &termio)) return (-1);
+  ap->speed = speed;
   return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-asy_ioctl(interface, argc, argv)
-struct iface *interface;
+int  asy_ioctl(iface, argc, argv)
+struct iface *iface;
 int  argc;
 char  *argv[];
 {
   if (argc < 1) {
-    printf("%d\n", asy[interface->dev].speed);
+    tprintf("%u\n", Asy[iface->dev].speed);
     return 0;
   }
-  return asy_speed(interface->dev, atoi(argv[0]));
+  return asy_speed(iface->dev, atoi(argv[0]));
 }
 
 /*---------------------------------------------------------------------------*/
 
-int  stxrdy(dev)
-int  dev;
-{
-  return 1;
-}
-
-/*---------------------------------------------------------------------------*/
-
-void asy_output(dev, buf, cnt)
+int  get_asy(dev, buf, cnt)
 int  dev;
 char  *buf;
-unsigned short  cnt;
+int  cnt;
 {
-  if (asy[dev].fd <= 0 && asy_open(dev) < 0) return;
-  if (dowrite(asy[dev].fd, buf, (unsigned) cnt) < 0) asy_open(dev);
+  struct asy *ap;
+
+  ap = Asy + dev;
+  if (Asy[dev].fd <= 0 && asy_open(dev) < 0) return 0;
+  if (!maskset(actread, ap->fd)) return 0;
+  cnt = read(ap->fd, buf, (unsigned) cnt);
+  if (cnt <= 0) {
+    asy_open(dev);
+    return 0;
+  }
+  return cnt;
 }
 
 /*---------------------------------------------------------------------------*/
 
-int  asy_recv(dev, buf, cnt)
+int  asy_send(dev, bp)
 int  dev;
-char  *buf;
-unsigned  cnt;
+struct mbuf *bp;
 {
-  register struct asy *asp;
 
-  if (cnt != 1) {
-    printf("*** asy_recv called with (cnt != 1); Programm aborted ***\n");
-    abort();
-  }
+  char  buf[1024];
+  int  cnt;
+  struct asy *ap;
 
-  asp = asy + dev;
-  if (asp->incnt <= 0) {
-    if (asy[dev].fd <= 0 && asy_open(dev) < 0) return 0;
-    if (!maskset(actread, asp->fd)) return 0;
-    clrmask(actread, asp->fd);
-    asp->incnt = read(asp->fd, asp->inptr = asp->inbuf, sizeof(asp->inbuf));
-    if (asp->incnt <= 0) {
-      asy_open(dev);
-      return 0;
-    }
-  }
-  asp->incnt--;
-  *buf = *asp->inptr++;
-  return 1;
+  ap = Asy + dev;
+  while (cnt = pullup(&bp, buf, sizeof(buf)))
+    if (ap->fd > 0 || !asy_open(dev))
+      if (dowrite(ap->fd, buf, (unsigned) cnt) < 0) asy_open(dev);
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -380,43 +385,6 @@ char  *cmdline;
 
 /*---------------------------------------------------------------------------*/
 
-static char  *strquote_for_shell(s1, s2)
-char  *s1, *s2;
-{
-  char  *p = s1;
-
-  while (*s2) {
-    *p++ = '\\';
-    *p++ = *s2++;
-  }
-  *p = '\0';
-  return s1;
-}
-
-/*---------------------------------------------------------------------------*/
-
-FILE *dir(path, full)
-char  *path;
-int  full;
-{
-
-  FILE * fp;
-  char  buf[1024];
-  char  cmd[1024];
-  char  fname[L_tmpnam];
-
-  tmpnam(fname);
-  sprintf(cmd, "/bin/ls -A %s %s >%s 2>&1",
-	       full ? "-l" : "",
-	       strquote_for_shell(buf, path),
-	       fname);
-  fp = system(cmd) ? 0 : fopen(fname, "r");
-  unlink(fname);
-  return fp;
-}
-
-/*---------------------------------------------------------------------------*/
-
 static void check_files_changed()
 {
 
@@ -432,12 +400,12 @@ static void check_files_changed()
   if (net_time != statbuf.st_mtime && statbuf.st_mtime < currtime - 3600)
     changed = 1;
 
-  if (stat("/tcp/net.rc", &statbuf)) return;
+  if (stat(Startup, &statbuf)) return;
   if (!rc_time) rc_time = statbuf.st_mtime;
   if (rc_time != statbuf.st_mtime && statbuf.st_mtime < currtime - 3600)
     changed = 1;
 
-  if (changed) doexit(0, NULL, NULL);
+  if (changed) doexit(0, (char **) 0, (void *) 0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -454,10 +422,10 @@ eihalt()
   struct timezone tz;
 
   check_files_changed();
-  wait3(&status, -1, (int *) 0);
+  wait3(&status, WNOHANG, (int *) 0);
   if (!debug) alarm(60l);
   timeout.tv_sec = timeout.tv_usec = 0;
-  if (!loopq) {
+  if (!Hopper) {
     gettimeofday(&t, &tz);
     currtime = t.tv_sec;
     if (currtime == lasttime) timeout.tv_usec = 999999 - t.tv_usec;

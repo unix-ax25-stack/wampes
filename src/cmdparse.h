@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.h,v 1.2 1990/08/23 17:32:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.h,v 1.3 1990/09/11 13:45:11 deyke Exp $ */
 
 #ifndef NARG
 
@@ -20,8 +20,10 @@ struct cmds {
 int cmdparse __ARGS((struct cmds cmds[],char *line,void *p));
 int subcmd __ARGS((struct cmds tab[],int argc,char *argv[],void *p));
 int setbool __ARGS((int *var,char *label,int argc,char *argv[]));
+int setint __ARGS((int *var,char *label,int argc,char *argv[]));
 int setlong __ARGS((int32 *var,char *label,int argc,char *argv[]));
 int setshort __ARGS((unsigned short *var,char *label,int argc,char *argv[]));
+int setintrc __ARGS((int *var, char *label, int argc, char *argv [], int minval, int maxval));
 
 #endif  /* NARG */
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.2 1990/08/23 17:32:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.3 1990/09/11 13:44:50 deyke Exp $ */
 
 #ifndef ARPSIZE
 
@@ -15,6 +15,8 @@
 #define PENDTIME        15      /* 15 seconds */
 
 /* ARP definitions (see RFC 826) */
+
+#define ARPLEN  16              /* Size of ARP hdr, minus hardware addresses */
 
 /* Address size definitions */
 #define IPALEN  4               /* Length in bytes of an IP address */

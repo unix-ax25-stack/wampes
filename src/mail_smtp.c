@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.2 1990/08/23 17:33:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.3 1990/09/11 13:45:54 deyke Exp $ */
 
 /* SMTP Mail Delivery Agent */
 
@@ -112,13 +112,13 @@ struct transport_cb *tp;
 int16 cnt;
 {
 
-  char  c;
+  int  c;
   register struct mesg *mp;
   struct mbuf *bp;
 
   mp = (struct mesg *) tp->user;
   transport_recv(tp, &bp, 0);
-  while (pullup(&bp, &c, 1) == 1)
+  while ((c = PULLCHAR(&bp)) != -1)
     if (c == '\n') {
       mp->buf[mp->cnt] = '\0';
       mail_smtp_transaction(mp);

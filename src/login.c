@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.7 1990/08/23 17:33:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.8 1990/09/11 13:45:48 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -15,6 +15,7 @@
 #include <sys/rtprio.h>
 #include <termio.h>
 #include <time.h>
+#include <unistd.h>
 #include <utmp.h>
 
 #include "global.h"
@@ -54,14 +55,22 @@ struct login_cb {
   struct mbuf *sndq;            /* pty send queue */
   int  lastchr;                 /* last chr written to pty */
   int  linelen;                 /* counter for automatic line break */
-  void (*closefnc)();           /* func to call if pty gets closed */
-  char  *closearg;              /* argument for closefnc */
+  void (*closefnc) __ARGS((void *closearg));
+				/* func to call if pty gets closed */
+  void  *closearg;              /* argument for closefnc */
   int  telnet;                  /* telnet mode */
   int  state;                   /* telnet state */
   char  option[NOPTIONS+1];     /* telnet options */
 };
 
 static char  pty_inuse[256];
+
+static int find_pty __ARGS((int *numptr, char *slave));
+static void restore_pty __ARGS((char *id));
+static void write_log_header __ARGS((int fd, char *user, char *protocol));
+static int do_telnet __ARGS((struct login_cb *tp, int chr));
+static void write_pty __ARGS((struct login_cb *tp));
+static void excp_handler __ARGS((struct login_cb *tp));
 
 /*---------------------------------------------------------------------------*/
 
@@ -297,12 +306,12 @@ struct login_cb *tp;
 
   char  *p;
   char  buf[256];
-  char  chr;
+  int  chr;
   int  cnt;
   int  lastchr;
 
   p = buf;
-  while (pullup(&tp->sndq, &chr, 1)) {
+  while ((chr = PULLCHAR(&tp->sndq)) != -1) {
     lastchr = tp->lastchr;
     tp->lastchr = chr;
     if (!tp->telnet || do_telnet(tp, uchar(chr))) {
@@ -348,8 +357,9 @@ struct login_cb *tp;
 
 struct login_cb *login_open(user, protocol, read_upcall, close_upcall, upcall_arg)
 char  *user, *protocol;
-void (*read_upcall)(), (*close_upcall)();
-char  *upcall_arg;
+void (*read_upcall) __ARGS((void *upcall_arg));
+void (*close_upcall) __ARGS((void *upcall_arg));
+void  *upcall_arg;
 {
 
   char  *env = 0;

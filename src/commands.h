@@ -1,10 +1,13 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.1 1990/08/23 17:32:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.2 1990/09/11 13:45:12 deyke Exp $ */
 
 /* In 8250.c, amiga.c: */
 int doasystat __ARGS((int argc,char *argv[],void *p));
 
 /* In alloc.c: */
 int domem __ARGS((int argc,char *argv[],void *p));
+
+/* In amiga.c: */
+int doamiga __ARGS((int argc,char *argv[],void *p));
 
 /* In arpcmd.c: */
 int doarp __ARGS((int argc,char *argv[],void *p));
@@ -25,6 +28,8 @@ int doconnect __ARGS((int argc,char *argv[],void *p));
 /* In dirutil.c: */
 int docd __ARGS((int argc,char *argv[],void *p));
 int dodir __ARGS((int argc,char *argv[],void *p));
+int domkd __ARGS((int argc,char *argv[],void *p));
+int dormd __ARGS((int argc,char *argv[],void *p));
 
 /* In domain.c: */
 int dodomain __ARGS((int argc,char *argv[],void *p));
@@ -62,6 +67,9 @@ int ftp0 __ARGS((int argc,char *argv[],void *p));
 int dohapnstat __ARGS((int argc,char *argv[],void *p));
 int hapn_attach __ARGS((int argc,char *argv[],void *p));
 
+/* In hop.c: */
+int dohop __ARGS((int argc,char *argv[],void *p));
+
 /* In hs.c: */
 int dohs __ARGS((int argc,char *argv[],void *p));
 int hs_attach __ARGS((int argc,char *argv[],void *p));
@@ -92,6 +100,7 @@ int doattach __ARGS((int argc,char *argv[],void *p));
 int doparam __ARGS((int argc,char *argv[],void *p));
 int domode __ARGS((int argc,char *argv[],void *p));
 int domore __ARGS((int argc,char *argv[],void *p));
+int donothing __ARGS((int argc,char *argv[],void *p));
 int donrstat __ARGS((int argc,char *argv[],void *p));
 int doescape __ARGS((int argc,char *argv[],void *p));
 int doremote __ARGS((int argc,char *argv[],void *p));
@@ -111,7 +120,7 @@ int pc_attach __ARGS((int argc,char *argv[],void *p));
 /* In pktdrvr.c: */
 int pk_attach __ARGS((int argc,char *argv[],void *p));
 
-/* In rip.c: */
+/* In ripcmd.c: */
 int dorip __ARGS((int argc,char *argv[],void *p));
 
 /* In ripcmd.c: */
@@ -171,6 +180,9 @@ int doecho __ARGS((int argc,char *argv[],void *p));
 int doeol __ARGS((int argc,char *argv[],void *p));
 int dotelnet __ARGS((int argc,char *argv[],void *p));
 
+/* In tip.c: */
+int dotip __ARGS((int argc,char *argv[],void *p));
+
 /* In ttylink.c: */
 int ttylstart __ARGS((int argc,char *argv[],void *p));
 int ttyl0 __ARGS((int argc,char *argv[],void *p));
@@ -180,4 +192,13 @@ int dotrace __ARGS((int argc,char *argv[],void *p));
 
 /* In udpcmd.c: */
 int doudp __ARGS((int argc,char *argv[],void *p));
+
+/* In various files: */
+
+int dobye __ARGS((int argc,char *argv[],void *p));
+int dortprio __ARGS((int argc,char *argv[],void *p));
+int dosource __ARGS((int argc,char *argv[],void *p));
+int dostime __ARGS((int argc,char *argv[],void *p));
+int mail_daemon __ARGS((int argc,char *argv[],void *p));
+int tcpgate1 __ARGS((int argc,char *argv[],void *p));
 

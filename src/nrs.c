@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.2 1990/08/23 17:33:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.3 1990/09/11 13:46:11 deyke Exp $ */
 
 /* This module implements the serial line framing method used by
  * net/rom nodes.  This allows the net/rom software to talk to
@@ -10,90 +10,53 @@
 #include "global.h"
 #include "mbuf.h"
 #include "iface.h"
+#include "pktdrvr.h"
 #include "ax25.h"
 #include "nrs.h"
 #include "asy.h"
 #include "trace.h"
+#include "commands.h"
 
-static nrsq __ARGS((int dev, struct mbuf *bp));
-static nrasy_start __ARGS((int dev));
+int Nnrs;
+
 static struct mbuf *nrs_encode __ARGS((struct mbuf *bp));
-static struct mbuf *nrs_decode __ARGS((int dev, int c));
+static struct mbuf *nrs_decode __ARGS((int dev,int c));
 
 /* control structures, sort of overlayed on async control blocks */
 struct nrs Nrs[ASY_MAX];
 
 /* Send a raw net/rom serial frame */
-nrs_raw(interface,bp)
-struct iface *interface;
+int
+nrs_raw(iface,bp)
+struct iface *iface;
 struct mbuf *bp;
 {
-	dump(interface,IF_TRACE_OUT,TRACE_AX25,bp) ;
+	struct mbuf *bp1;
 
-	/* Queue a frame on the output queue and start transmitter */
-	nrsq(interface->dev,bp);
-}
+	dump(iface,IF_TRACE_OUT,CL_AX25,bp) ;
 
-/* Encode a raw packet in net/rom framing, put on link output queue, and kick
- * transmitter
- */
-static
-nrsq(dev,bp)
-int16 dev;              /* Serial line number */
-struct mbuf *bp;        /* Buffer to be sent */
-{
-	register struct nrs *sp;
-
-	if((bp = nrs_encode(bp)) == NULLBUF)
-		return;
-
-	sp = &Nrs[dev];
-	enqueue(&sp->sndq,bp);
-	sp->sndcnt++;
-	if(sp->tbp == NULLBUF)
-		nrasy_start(dev);
-}
-
-/* Start output, if possible, on asynch device dev */
-static
-nrasy_start(dev)
-int16 dev;
-{
-	register struct nrs *sp;
-
-	if(!stxrdy(dev))
-		return;         /* Transmitter not ready */
-
-	sp = &Nrs[dev];
-	if(sp->tbp != NULLBUF){
-		/* transmission just completed */
-		free_p(sp->tbp);
-		sp->tbp = NULLBUF;
+	if((bp1 = nrs_encode(bp)) == NULLBUF){
+		free_p(bp);
+		return -1;
 	}
-	if(sp->sndq == NULLBUF)
-		return; /* No work */
-
-	sp->tbp = dequeue(&sp->sndq);
-	sp->sndcnt--;
-	asy_output(dev,sp->tbp->data,sp->tbp->cnt);
+	return Nrs[iface->xdev].send(iface->dev,bp1);
 }
 
 /* Encode a packet in net/rom serial format */
-static
-struct mbuf *
+static struct mbuf *
 nrs_encode(bp)
 struct mbuf *bp;
 {
 	struct mbuf *lbp;       /* Mbuf containing line-ready packet */
 	register char *cp;
-	char c;
+	int c;
 	unsigned char csum = 0 ;
 
 	/* Allocate output mbuf that's twice as long as the packet.
 	 * This is a worst-case guess (consider a packet full of STX's!)
 	 * Add five bytes for STX, ETX, checksum, and two nulls.
 	 */
-	lbp = alloc_mbuf(2*len_p(bp) + 5);
+	lbp = alloc_mbuf((int16)(2*len_p(bp) + 5));
 	if(lbp == NULLBUF){
 		/* No space; drop */
 		free_p(bp);
@@ -104,8 +67,8 @@ struct mbuf *bp;
 	*cp++ = STX ;
 
 	/* Copy input to output, escaping special characters */
-	while(pullup(&bp,&c,1) == 1){
-		switch(uchar(c)){
+	while((c = PULLCHAR(&bp)) != -1){
+		switch(c){
 		case STX:
 		case ETX:
 		case DLE:
@@ -114,7 +77,7 @@ struct mbuf *bp;
 		default:
 			*cp++ = c;
 		}
-		csum += uchar(c) ;
+		csum += c;
 	}
 	*cp++ = ETX;
 	*cp++ = csum ;
@@ -127,10 +90,9 @@ struct mbuf *bp;
 /* Process incoming bytes in net/rom serial format
  * When a buffer is complete, return it; otherwise NULLBUF
  */
-static
-struct mbuf *
+static struct mbuf *
 nrs_decode(dev,c)
-int16 dev;      /* net/rom unit number */
+int dev;        /* net/rom unit number */
 char c;         /* Incoming character */
 {
 	struct mbuf *bp;
@@ -144,7 +106,6 @@ char c;         /* Incoming character */
 				sp->csum = 0 ;                          /* reset checksum */
 			}
 			return NULLBUF ;
-			break ; /* just for yucks */
 		case NRS_CSUM:
 			bp = sp->rbp ;
 			sp->rbp = NULLBUF ;
@@ -152,37 +113,32 @@ char c;         /* Incoming character */
 			sp->state = NRS_INTER ; /* go back to inter-packet state */
 			if (sp->csum == uchar(c)) {
 				sp->packets++ ;
-				return bp ;
-			}
-			else {
+			} else {
 				free_p(bp) ;    /* drop packet with bad checksum */
+				bp = NULLBUF;
 				sp->errors++ ;  /* increment error count */
-				return NULLBUF ;
 			}
-			break ;
+			return bp ;
 		case NRS_ESCAPE:
 			sp->state = NRS_INPACK ;        /* end of escape */
 			break ;                 /* this will drop through to char processing */
 		case NRS_INPACK:
 			switch (uchar(c)) {
-				/* If we see an STX in a packet, assume that previous */
-				/* packet was trashed, and start a new packet */
-				case STX:
-					free_p(sp->rbp) ;
-					sp->rbp = NULLBUF ;
-					sp->rcnt = 0 ;
-					sp->csum = 0 ;
-					sp->errors++ ;
-					return NULLBUF ;
-					break ;
-				case ETX:
-					sp->state = NRS_CSUM ;  /* look for checksum */
-					return NULLBUF ;
-					break ;
-				case DLE:
-					sp->state = NRS_ESCAPE ;
-					return NULLBUF ;
-					break ;
+			/* If we see an STX in a packet, assume that previous */
+			/* packet was trashed, and start a new packet */
+			case STX:
+				free_p(sp->rbp) ;
+				sp->rbp = NULLBUF ;
+				sp->rcnt = 0 ;
+				sp->csum = 0 ;
+				sp->errors++ ;
+				return NULLBUF ;
+			case ETX:
+				sp->state = NRS_CSUM ;  /* look for checksum */
+				return NULLBUF ;
+			case DLE:
+				sp->state = NRS_ESCAPE ;
+				return NULLBUF ;
 			}
 	}
 	/* If we get to here, it's with a character that's part of the packet.
@@ -220,28 +176,36 @@ char c;         /* Incoming character */
 
 /* Process net/rom serial line I/O */
 void
-nrs_recv(interface)
-struct iface *interface;
+nrs_recv(iface)
+struct iface *iface;
 {
-	char c;
-	struct mbuf *bp;
-	int16 dev;
-	int16 asy_recv();
 
-	dev = interface->dev;
-	/* Process any pending input */
-	while(asy_recv(dev,&c,1) != 0)
-		if((bp = nrs_decode(dev,c)) != NULLBUF) {
-			dump(interface,IF_TRACE_IN,TRACE_AX25,bp) ;
-			ax_recv(interface,bp);
+	char *cp,buf[1024];
+	int cnt,dev;
+	struct mbuf *bp,*nbp;
+	struct nrs *np;
+	struct phdr *phdr;
+
+	dev = iface->xdev;
+	np = Nrs+dev;
+
+	cnt = (*np->get)(iface->dev,cp=buf,sizeof(buf));
+	while(--cnt >= 0){
+		if((bp = nrs_decode(dev,*cp++)) == NULLBUF)
+			continue;
+		if((nbp = pushdown(bp,sizeof(struct phdr))) == NULLBUF){
+			free_p(bp);
+			continue;
 		}
+		phdr = (struct phdr *)nbp->data;
+		phdr->iface = Nrs[dev].iface;
+		phdr->type = CL_AX25;
+		enqueue(&Hopper,nbp);
+	}
 
-	/* Kick the transmitter if it's idle */
-	if(stxrdy(dev))
-		nrasy_start(dev);
 }
-
 /* donrstat:  display status of active net/rom serial interfaces */
+int
 donrstat(argc,argv,p)
 int argc ;
 char *argv[] ;
@@ -250,13 +214,14 @@ void *p;
 	register struct nrs *np ;
 	register int i ;
 
-	printf("Interface  SndQ  RcvB  NumReceived  CSumErrors\n") ;
+	tprintf("Interface   RcvB  NumReceived  CSumErrors\n") ;
 
 	for (i = 0, np = Nrs ; i < ASY_MAX ; i++, np++)
 		if (np->iface != NULLIF)
-			printf(" %8s   %3d  %4d   %10lu  %10lu\n",
-					np->iface->name, np->sndcnt, np->rcnt,
-					np->packets, np->errors) ;
+			if(tprintf(" %8s   %4d   %10lu  %10lu\n",
+			 np->iface->name, np->rcnt,
+			 np->packets, np->errors) == EOF)
+				break;
 
 	return 0 ;
 }

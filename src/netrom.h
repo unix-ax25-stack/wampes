@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.7 1990/08/23 17:33:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.8 1990/09/11 13:46:08 deyke Exp $ */
 
 #ifndef NETROM_INCLUDED
 #define NETROM_INCLUDED
@@ -63,9 +63,12 @@ struct circuit {
   struct mbuf *resndq;          /* Resend queue */
   int  unack;                   /* Number of unacked frames */
   long  sndtime[256];           /* Time of 1st transmission */
-  void (*r_upcall)();           /* Call when data arrives */
-  void (*t_upcall)();           /* Call when ok to send more data */
-  void (*s_upcall)();           /* Call when connection state changes */
+  void (*r_upcall) __ARGS((struct circuit *p, int cnt));
+				/* Call when data arrives */
+  void (*t_upcall) __ARGS((struct circuit *p, int cnt));
+				/* Call when ok to send more data */
+  void (*s_upcall) __ARGS((struct circuit *p, int oldstate, int newstate));
+				/* Call when connection state changes */
   char  *user;                  /* User parameter (e.g., for mapping to an
 				 * application control block)
 				 */
@@ -77,8 +80,9 @@ struct session; /* announce struct session */
 /* netrom.c */
 int isnetrom __ARGS((struct ax25_addr *call));
 int new_neighbor __ARGS((struct ax25_addr *call));
+int nr_send __ARGS((struct mbuf *bp, struct iface *iface, int32 gateway, int prec, int del, int tput, int rel));
 int nr3_input __ARGS((struct mbuf *bp, struct ax25_addr *fromcall));
-struct circuit *open_nr __ARGS((struct ax25_addr *node, struct ax25_addr *cuser, int window, void (*r_upcall )(), void (*t_upcall )(), void (*s_upcall )(), char *user));
+struct circuit *open_nr __ARGS((struct ax25_addr *node, struct ax25_addr *cuser, int window, void (*r_upcall )__ARGS ((struct circuit *p, int cnt )), void (*t_upcall )__ARGS ((struct circuit *p, int cnt )), void (*s_upcall )__ARGS ((struct circuit *p, int oldstate, int newstate )), char *user));
 int send_nr __ARGS((struct circuit *pc, struct mbuf *bp));
 int space_nr __ARGS((struct circuit *pc));
 int recv_nr __ARGS((struct circuit *pc, struct mbuf **bpp, int cnt));
@@ -86,9 +90,10 @@ int close_nr __ARGS((struct circuit *pc));
 int reset_nr __ARGS((struct circuit *pc));
 int del_nr __ARGS((struct circuit *pc));
 int valid_nr __ARGS((struct circuit *pc));
-int nrclient_send_upcall __ARGS((struct circuit *pc, int cnt));
-int nrclient_recv_upcall __ARGS((struct circuit *pc));
+void nrclient_send_upcall __ARGS((struct circuit *pc, int cnt));
+void nrclient_recv_upcall __ARGS((struct circuit *pc, int cnt));
 int print_netrom_session __ARGS((struct session *s));
+int nr_attach __ARGS((int argc, char *argv [], void *p));
 int donetrom __ARGS((int argc, char *argv [], void *p));
 int netrom_initialize __ARGS((void));
 

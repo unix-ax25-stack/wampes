@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.2 1990/08/23 17:34:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.3 1990/09/11 13:46:48 deyke Exp $ */
 
 /* UDP-related user commands */
 #include <stdio.h>
@@ -8,36 +8,60 @@
 #include "udp.h"
 #include "internet.h"
 #include "cmdparse.h"
+#include "commands.h"
 
-int doudpstat();
-struct cmds udpcmds[] = {
-	"status",       doudpstat,      0, 0,      NULLCHAR,
-	NULLCHAR,       NULLFP,         0, 0,      "udp subcommands: status"
+static int doudpstat __ARGS((int argc,char *argv[],void *p));
+
+static struct cmds Udpcmds[] = {
+	"status",       doudpstat,      0, 0,   NULLCHAR,
+	NULLCHAR,
 };
-
+int
 doudp(argc,argv,p)
 int argc;
 char *argv[];
 void *p;
 {
-	return subcmd(udpcmds,argc,argv,p);
+	return subcmd(Udpcmds,argc,argv,p);
 }
-/* Dump UDP statistics and control blocks */
-doudpstat()
+int
+st_udp(udp,n)
+struct udp_cb *udp;
+int n;
 {
-	extern struct udp_stat udp_stat;
-	char *psocket();
+	if(n == 0)
+		tprintf("    &UCB Rcv-Q  Local socket\n");
+
+	return tprintf("%8lx%6u  %s\n",ptol(udp),udp->rcvcnt,pinet(&udp->socket));
+}
+
+/* Dump UDP statistics and control blocks */
+static int
+doudpstat(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
 	register struct udp_cb *udp;
 	register int i;
 
-	printf("sent %u rcvd %u bdcsts %u cksum err %u unknown socket %u\n",
-	udp_stat.sent,udp_stat.rcvd,udp_stat.bdcsts,udp_stat.cksum,udp_stat.unknown);
-	printf("    &UCB Rcv-Q  Local socket\n");
+	for(i=1;i<=NUMUDPMIB;i++){
+		tprintf("(%2u)%-20s%10lu",i,
+		 Udp_mib[i].name,Udp_mib[i].value.integer);
+		if(i % 2)
+			tprintf("     ");
+		else
+			tprintf("\n");
+	}
+	if((i % 2) == 0)
+		tprintf("\n");
+
+	tprintf("    &UCB Rcv-Q  Local socket\n");
 	for(i=0;i<NUDP;i++){
 		for(udp = Udps[i];udp != NULLUDP; udp = udp->next){
-			printf("%8lx%6u  %s\n",(long)udp,udp->rcvcnt,
-			 psocket(&udp->socket));
+			if(st_udp(udp,1) == EOF)
+				return 0;
 		}
 	}
+	return 0;
 }
-

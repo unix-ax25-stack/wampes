@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.h,v 1.2 1990/08/23 17:33:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.h,v 1.3 1990/09/11 13:46:01 deyke Exp $ */
 
 #ifndef NULLBUF
 
@@ -18,12 +18,17 @@ struct mbuf {
 #define NULLBUF (struct mbuf *)0
 #define NULLBUFP (struct mbuf **)0
 
+#define PULLCHAR(bpp)\
+ ((bpp) != NULL && (*bpp) != NULLBUF && (*bpp)->cnt > 1 ? \
+ ((*bpp)->cnt--,(unsigned char)*(*bpp)->data++) : pullchar(bpp))
+
 /* In mbuf.c: */
 void enqueue __ARGS((struct mbuf **q,struct mbuf *bp));
 void append __ARGS((struct mbuf **bph,struct mbuf *bp));
 void free_q __ARGS((struct mbuf **q));
 void trim_mbuf __ARGS((struct mbuf **bpp,int length));
 struct mbuf *alloc_mbuf __ARGS((int size));
+struct mbuf *ambufw __ARGS((int size));
 struct mbuf *free_mbuf __ARGS((struct mbuf *bp));
 struct mbuf *dequeue __ARGS((struct mbuf **q));
 struct mbuf *copy_p __ARGS((struct mbuf *bp,int cnt));
@@ -39,11 +44,13 @@ int32 pull32 __ARGS((struct mbuf **bpp));
 int32 get32 __ARGS((char *cp));
 int16 pull16 __ARGS((struct mbuf **bpp));
 void refiq __ARGS((void));
+void mbuf_crunch __ARGS((struct mbuf **bpp));
 int16 get16 __ARGS((char *cp));
-char pullchar __ARGS((struct mbuf **bpp));
+int pullchar __ARGS((struct mbuf **bpp));
 char *put16 __ARGS((char *cp,int x));
 char *put32 __ARGS((char *cp,int32 x));
 int write_p __ARGS((FILE *fp,struct mbuf *bp));
+void iqstat __ARGS((void));
 
 #define AUDIT(bp)       audit(bp,__FILE__,__LINE__)
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.2 1990/08/23 17:32:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.3 1990/09/11 13:44:51 deyke Exp $ */
 
 #include <stdio.h>
 #include <ctype.h>
@@ -63,7 +63,7 @@ int argc;
 char *argv[];
 void *p;
 {
-	int16 hwalen,hardware,naddr;
+	int16 hardware,hwalen,naddr = 1;
 	int32 addr;
 	char *hwaddr;
 	struct arp_tab *ap;
@@ -88,7 +88,6 @@ void *p;
 		break;
 	case 'e':       /* "ether" */
 		hardware = ARP_ETHER;
-		naddr = 1;
 		break;
 	case 'a':       /* "ax25" */
 		hardware = ARP_AX25;
@@ -96,7 +95,6 @@ void *p;
 		break;
 	case 'm':       /* "mac appletalk" */
 		hardware = ARP_APPLETALK;
-		naddr = 1;
 		break;
 	default:
 		tprintf("unknown hardware type \"%s\"\n",argv[2]);
@@ -117,7 +115,7 @@ void *p;
 	/* Destination address */
 	(*at->scan)(hwaddr,&argv[3],argc - 3);
 	ap = arp_add(addr,hardware,hwaddr,hwalen,pub);  /* Put in table */
-	free(hwaddr);                                   /* Clean up */
+	free(hwaddr);                           /* Clean up */
 	stop_timer(&ap->timer);                 /* Make entry permanent */
 	ap->timer.count = ap->timer.start = 0;
 	return 0;

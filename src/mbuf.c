@@ -1,10 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.3 1990/08/23 17:33:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.4 1990/09/11 13:45:59 deyke Exp $ */
 
 /* Primitive mbuf allocate/free routines */
 
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
+#include "config.h"
 
 /* Allocate mbuf with associated buffer of 'size' bytes. If interrupts
  * are enabled, use the regular heap. If they're off, use the special
@@ -20,15 +21,27 @@ register int16 size;
 
 	if(bp == NULLBUF)
 		return NULLBUF;
-	bp->next = bp->anext = NULLBUF;
-	if((bp->size = size) != 0){
+	/* Clear just the header portion */
+	memset((char *)bp,0,sizeof(struct mbuf));
+	if((bp->size = size) != 0)
 		bp->data = (char *)(bp + 1);
-	} else {
-		bp->data = NULLCHAR;
-	}
-	bp->refcnt = 1;
-	bp->dup = NULLBUF;
-	bp->cnt = 0;
+	bp->refcnt++;
+	return bp;
+}
+/* Allocate mbuf, waiting if memory is unavailable */
+struct mbuf *
+ambufw(size)
+int16 size;
+{
+	register struct mbuf *bp;
+
+	bp = (struct mbuf *)mallocw((unsigned)(size + sizeof(struct mbuf)));
+
+	/* Clear just the header portion */
+	memset((char *)bp,0,sizeof(struct mbuf));
+	if((bp->size = size) != 0)
+		bp->data = (char *)(bp + 1);
+	bp->refcnt++;
 	return bp;
 }
 
@@ -47,9 +60,11 @@ register struct mbuf *bp;
 		/* Follow indirection, if any */
 		free_mbuf(bp->dup);
 
-		if(--bp->refcnt == 0){
+		/* If reference count has gone to zero, put it
+		 * back on the heap
+		 */
+		if(--bp->refcnt <= 0)
 			free((char *)bp);
-		}
 	}
 	return bp1;
 }
@@ -238,8 +253,7 @@ int16 cnt;
 	tot = 0;
 	if(bph == NULLBUFP)
 		return 0;
-	while(*bph != NULLBUF && cnt != 0){
-		bp = *bph;
+	while(cnt != 0 && (bp = *bph) != NULLBUF){
 		n = min(cnt,bp->cnt);
 		if(buf != NULLCHAR){
 			if(n == 1)      /* Common case optimization */
@@ -310,13 +324,10 @@ int16 size;
 		bp->data -= size;
 		bp->cnt += size;
 	} else {
-		if((nbp = alloc_mbuf(size)) != NULLBUF){
-			nbp->next = bp;
-			nbp->cnt = size;
-			bp = nbp;
-		} else {
-			bp = NULLBUF;
-		}
+		nbp = ambufw(size);
+		nbp->next = bp;
+		nbp->cnt = size;
+		bp = nbp;
 	}
 	return bp;
 }
@@ -363,8 +374,7 @@ int16 cnt;
 {
 	register struct mbuf *bp;
 
-	if((bp = alloc_mbuf(cnt)) == NULLBUF)
-		return NULLBUF;
+	bp = ambufw(cnt);
 	memcpy(bp->data,data,cnt);
 	bp->cnt = cnt;
 	return bp;
@@ -421,16 +431,15 @@ struct mbuf **bpp;
 	return get16(buf);
 }
 /* Pull single character from mbuf */
-char
+int
 pullchar(bpp)
 struct mbuf **bpp;
 {
 	char c;
 
 	if(pullup(bpp,&c,1) != 1)
-		/* Return zero if nothing left */
-		c = 0;
-	return c;
+		return -1;              /* Nothing left */
+	return (int)uchar(c);
 }
 int
 write_p(fp,bp)
@@ -443,4 +452,37 @@ struct mbuf *bp;
 		bp = bp->next;
 	}
 	return 0;
+}
+/* Reclaim unused space in a mbuf chain. If the argument is a chain of mbufs
+ * and/or it appears to have wasted space, copy it to a single new mbuf and
+ * free the old mbuf(s). But refuse to move mbufs that merely
+ * reference other mbufs, or that have other headers referencing them.
+ *
+ * Be extremely careful that there aren't any other pointers to
+ * (or into) this mbuf, since we have no way of detecting them here.
+ * This function is meant to be called only when free memory is in
+ * short supply.
+ */
+void
+mbuf_crunch(bpp)
+struct mbuf **bpp;
+{
+	register struct mbuf *bp = *bpp;
+	struct mbuf *nbp;
+
+	if(bp->refcnt > 1 || bp->dup != NULLBUF){
+		/* Can't crunch, there are other refs */
+		return;
+	}
+	if(bp->next == NULLBUF && bp->cnt == bp->size){
+		/* Nothing to be gained by crunching */
+		return;
+	}
+	if((nbp = copy_p(bp,len_p(bp))) == NULLBUF){
+		/* Copy failed due to lack of (contiguous) space */
+		return;
+	}
+	nbp->anext = bp->anext;
+	free_p(bp);
+	*bpp = nbp;
 }

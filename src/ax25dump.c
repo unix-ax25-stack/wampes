@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25dump.c,v 1.2 1990/08/23 17:32:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25dump.c,v 1.3 1990/09/11 13:44:59 deyke Exp $ */
 
 #include <stdio.h>
 #include "global.h"
@@ -6,6 +6,7 @@
 #include "ax25.h"
 #include "timer.h"
 #include "trace.h"
+#include "socket.h"
 
 static char *decode_type __ARGS((int type));
 
@@ -16,9 +17,11 @@ FILE *fp;
 struct mbuf **bpp;
 int check;      /* Not used */
 {
-	char tmp[20];
-	char control,pid;
-	int16 type,ftype();
+	char tmp[AXBUF];
+	char frmr[3];
+	int control,pid,seg;
+	int16 type;
+	int unsegmented;
 	struct ax25 hdr;
 	struct ax25_addr *hp;
 
@@ -29,19 +32,18 @@ int check;      /* Not used */
 		fprintf(fp," bad header!\n");
 		return;
 	}
-	pax25(tmp,&hdr.source);
-	fprintf(fp,"%s",tmp);
-	pax25(tmp,&hdr.dest);
-	fprintf(fp,"->%s",tmp);
+	fprintf(fp,"%s",pax25(tmp,(char *) &hdr.source));
+	fprintf(fp,"->%s",pax25(tmp,(char *) &hdr.dest));
 	if(hdr.ndigis > 0){
 		fprintf(fp," v");
-		for(hp = &hdr.digis[0]; hp < &hdr.digis[hdr.ndigis]; hp++){
+		for(hp = &hdr.digis[0]; hp < &hdr.digis[hdr.ndigis];
+		 hp++){
 			/* Print digi string */
-			pax25(tmp,hp);
-			fprintf(fp," %s%s",tmp,(hp->ssid & REPEATED) ? "*":"");
+			fprintf(fp," %s%s",pax25(tmp,(char *) hp),
+			 (hp->ssid & REPEATED) ? "*":"");
 		}
 	}
-	if(pullup(bpp,&control,1) != 1)
+	if((control = PULLCHAR(bpp)) == -1)
 		return;
 
 	putc(' ',fp);
@@ -68,184 +70,70 @@ int check;      /* Not used */
 		if(type == I)
 			fprintf(fp," NS=%d",(control>>1)&7);
 		/* Decode I field */
-		if(pullup(bpp,&pid,1) == 1){    /* Get pid */
-			switch(pid & (PID_FIRST | PID_LAST)){
-			case PID_FIRST:
-				fprintf(fp," First frag");
-				break;
-			case PID_LAST:
-				fprintf(fp," Last frag");
-				break;
-			case PID_FIRST|PID_LAST:
-				break;  /* Complete message, say nothing */
-			case 0:
-				fprintf(fp," Middle frag");
-				break;
-			}
-			fprintf(fp," pid=");
-			switch(pid & 0x3f){
+		if((pid = PULLCHAR(bpp)) != -1){        /* Get pid */
+			if(pid == PID_SEGMENT){
+				unsegmented = 0;
+				seg = PULLCHAR(bpp);
+				fprintf(fp,"%s remain %u",seg & SEG_FIRST ?
+				 " First seg;" : "",seg & SEG_REM);
+				if(seg & SEG_FIRST)
+					pid = PULLCHAR(bpp);
+			} else
+				unsegmented = 1;
+
+			switch(pid){
+			case PID_SEGMENT:
+				putc('\n',fp);
+				break;  /* Already displayed */
 			case PID_ARP:
-				fprintf(fp,"ARP\n");
-				break;
-			case PID_NETROM:
-				fprintf(fp,"NET/ROM\n");
-				break;
-			case PID_IP:
-				fprintf(fp,"IP\n");
-				break;
-			case PID_NO_L3:
-				fprintf(fp,"Text\n");
-				break;
-			default:
-				fprintf(fp,"0x%x\n",pid);
-			}
-			/* Only decode frames that are the first in a
-			 * multi-frame sequence
-			 */
-			switch(pid & (PID_PID | PID_FIRST)){
-			case PID_ARP | PID_FIRST:
+				fprintf(fp," pid=ARP\n");
 				arp_dump(fp,bpp);
 				break;
-			case PID_IP | PID_FIRST:
-				/* Only checksum complete frames */
-				ip_dump(fp,bpp,pid & PID_LAST);
+			case PID_NETROM:
+				fprintf(fp," pid=NET/ROM\n");
+				/* Don't verify checksums unless unsegmented */
+				netrom_dump(fp,bpp,unsegmented);
 				break;
-			case PID_NETROM | PID_FIRST:
-				netrom_dump(fp,bpp);
+			case PID_IP:
+				fprintf(fp," pid=IP\n");
+				/* Don't verify checksums unless unsegmented */
+				ip_dump(fp,bpp,unsegmented);
 				break;
+			case PID_X25:
+				fprintf(fp," pid=X.25\n");
+				break;
+			case PID_TEXNET:
+				fprintf(fp," pid=TEXNET\n");
+				break;
+			case PID_NO_L3:
+				fprintf(fp," pid=Text\n");
+				break;
+			default:
+				fprintf(fp," pid=0x%x\n",pid);
 			}
 		}
-	} else if(type == FRMR && pullup(bpp,tmp,3) == 3){
-		fprintf(fp,": %s",decode_type(ftype(tmp[0])));
-		fprintf(fp," Vr = %d Vs = %d",(tmp[1] >> 5) & MMASK,
-			(tmp[1] >> 1) & MMASK);
-		if(tmp[2] & W)
+	} else if(type == FRMR && pullup(bpp,frmr,3) == 3){
+		fprintf(fp,": %s",decode_type(ftype(frmr[0])));
+		fprintf(fp," Vr = %d Vs = %d",(frmr[1] >> 5) & MMASK,
+			(frmr[1] >> 1) & MMASK);
+		if(frmr[2] & W)
 			fprintf(fp," Invalid control field");
-		if(tmp[2] & X)
+		if(frmr[2] & X)
 			fprintf(fp," Illegal I-field");
-		if(tmp[2] & Y)
+		if(frmr[2] & Y)
 			fprintf(fp," Too-long I-field");
-		if(tmp[2] & Z)
+		if(frmr[2] & Z)
 			fprintf(fp," Invalid seq number");
-		fputc('\n',fp);
+		putc('\n',fp);
 	} else
-		fputc('\n',fp);
+		putc('\n',fp);
 
-	fflush(stdout);
-}
-/* Display NET/ROM network and transport headers */
-void
-netrom_dump(fp,bpp)
-FILE *fp;
-struct mbuf **bpp;
-{
-	struct ax25_addr src,dest;
-	char x;
-	char tmp[16];
-	char thdr[5];
-	register i;
-
-	if(bpp == NULLBUFP || *bpp == NULLBUF)
-		return;
-	/* See if it is a routing broadcast */
-	if(uchar(*(*bpp)->data) == 0xff) {
-		pullup(bpp,tmp,1);              /* Signature */
-		pullup(bpp,tmp,ALEN);
-		tmp[ALEN] = '\0';
-		fprintf(fp,"NET/ROM Routing: %s\n",tmp);
-		for(i = 0;i < 11;i++) {
-			if (pullup(bpp,tmp,AXALEN) < AXALEN)
-				break;
-			memcpy(src.call,tmp,ALEN);
-			src.ssid = tmp[ALEN];
-			pax25(tmp,&src);
-			fprintf(fp,"        %12s",tmp);
-			pullup(bpp,tmp,ALEN);
-			tmp[ALEN] = '\0';
-			fprintf(fp,"%8s",tmp);
-			pullup(bpp,tmp,AXALEN);
-			memcpy(src.call,tmp, ALEN);
-			src.ssid = tmp[ALEN];
-			pax25(tmp,&src);
-			fprintf(fp,"    %12s", tmp);
-			pullup(bpp,tmp,1);
-			fprintf(fp,"    %3u\n", (unsigned)uchar(tmp[0]));
-		}
-		return;
-	}
-	/* Decode network layer */
-	pullup(bpp,tmp,AXALEN);
-	memcpy(src.call,tmp,ALEN);
-	src.ssid = tmp[ALEN];
-	pax25(tmp,&src);
-	fprintf(fp,"NET/ROM: %s",tmp);
-
-	pullup(bpp,tmp,AXALEN);
-	memcpy(dest.call,tmp,ALEN);
-	dest.ssid = tmp[ALEN];
-	pax25(tmp,&dest);
-	fprintf(fp,"->%s",tmp);
-
-	pullup(bpp,&x,1);
-	fprintf(fp," ttl %d\n",uchar(x));
-
-	/* Read first five bytes of "transport" header */
-	pullup(bpp,thdr,5);
-	switch(thdr[4] & 0xf){
-	case 0: /* network PID extension */
-		if (uchar(thdr[0]) == PID_IP && uchar(thdr[1]) == PID_IP)
-			ip_dump(fp,bpp,1) ;
-		else
-			fprintf(fp,"         protocol family %x, proto %x",
-					uchar(thdr[0]), uchar(thdr[1])) ;
-		break ;
-	case 1: /* Connect request */
-		fprintf(fp,"         conn rqst: ckt %d/%d",uchar(thdr[0]),uchar(thdr[1]));
-		pullup(bpp,&x,1);
-		fprintf(fp," wnd %d",x);
-		pullup(bpp,(char *)&src,AXALEN);
-		pax25(tmp,&src);
-		fprintf(fp," %s",tmp);
-		pullup(bpp,(char *)&dest,AXALEN);
-		pax25(tmp,&dest);
-		fprintf(fp,"->%s",tmp);
-		break;
-	case 2: /* Connect acknowledgement */
-		fprintf(fp,"         conn ack: ur ckt %d/%d my ckt %d/%d",
-			uchar(thdr[0]), uchar(thdr[1]), uchar(thdr[2]),
-			uchar(thdr[3]));
-		pullup(bpp,&x,1);
-		fprintf(fp," wnd %d",x);
-		break;
-	case 3: /* Disconnect request */
-		fprintf(fp,"         disc: ckt %d/%d",uchar(thdr[0]),uchar(thdr[1]));
-		break;
-	case 4: /* Disconnect acknowledgement */
-		fprintf(fp,"         disc ack: ckt %d/%d",uchar(thdr[0]),uchar(thdr[1]));
-		break;
-	case 5: /* Information (data) */
-		fprintf(fp,"         info: ckt %d/%d",uchar(thdr[0]),uchar(thdr[1]));
-		fprintf(fp," txseq %d rxseq %d",uchar(thdr[2]), uchar(thdr[3]));
-		break;
-	case 6: /* Information acknowledgement */
-		fprintf(fp,"         info ack: ckt %d/%d rxseq %d",
-				uchar(thdr[0]),uchar(thdr[1]),uchar(thdr[3]));
-		break;
-	default:
-		fprintf(fp,"         unknown transport type %d", thdr[4] & 0x0f) ;
-		break;
-	}
-	if(thdr[4] & 0x80)
-		fprintf(fp," CHOKE");
-	if(thdr[4] & 0x40)
-		fprintf(fp," NAK");
-	fputc('\n',fp);
 }
 static char *
 decode_type(type)
 int16 type;
 {
-	switch(uchar(type)){
+	switch(type){
 	case I:
 		return "I";
 	case SABM:
@@ -269,5 +157,29 @@ int16 type;
 	default:
 		return "[invalid]";
 	}
+}
+
+/* Return 1 if this packet is directed to us, 0 otherwise. Note that
+ * this checks only the ultimate destination, not the digipeater field
+ */
+int
+ax_forus(iface,bp)
+struct iface *iface;
+struct mbuf *bp;
+{
+	struct mbuf *bpp;
+	char dest[AXALEN];
+
+	/* Duplicate the destination address */
+	if(dup_p(&bpp,bp,0,AXALEN) != AXALEN){
+		free_p(bpp);
+		return 0;
+	}
+	if(pullup(&bpp,dest,AXALEN) < AXALEN)
+		return 0;
+	if(addreq(dest,iface->hwaddr))
+		return 1;
+	else
+		return 0;
 }
 

@@ -1,15 +1,15 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.2 1990/08/23 17:34:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.3 1990/09/11 13:46:36 deyke Exp $ */
 
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
 #include "socket.h"
-#include "timer.h"
-#include "icmp.h"
-#include "netuser.h"
-#include "tcp.h"
 #include "telnet.h"
 #include "session.h"
+#include "icmp.h"
+#include "tcp.h"
+#include "commands.h"
+#include "netuser.h"
 
 void rcv_char();
 
@@ -24,8 +24,8 @@ static void answer __ARGS((struct telnet *tn, int r1, int r2));
 
 #define CTLZ    26
 
-int refuse_echo = 0;
-int unix_line_mode = 0;    /* if true turn <cr> to <nl> when in line mode */
+int Refuse_echo = 0;
+int Tn_cr_mode = 0;    /* if true turn <cr> to <cr-nul> */
 
 #ifdef  DEBUG
 char *t_options[] = {
@@ -73,7 +73,7 @@ void *p;
 	if((s->name = malloc((unsigned)strlen(argv[1])+1)) != NULLCHAR)
 		strcpy(s->name,argv[1]);
 	s->type = TELNET;
-	if ((refuse_echo == 0) && (unix_line_mode != 0)) {
+	if ((Refuse_echo == 0) && (Tn_cr_mode != 0)) {
 		s->parse = unix_send_tel;
 	} else {
 		s->parse = send_tel;
@@ -136,7 +136,7 @@ tel_input(tn,bp)
 register struct telnet *tn;
 struct mbuf *bp;
 {
-	char c;
+	int c;
 	FILE *record;
 
 	/* Optimization for very common special case -- no special chars */
@@ -149,10 +149,10 @@ struct mbuf *bp;
 			bp = free_mbuf(bp);
 		}
 	}
-	while(pullup(&bp,&c,1) == 1){
+	while((c = PULLCHAR(&bp)) != -1){
 		switch(tn->state){
 		case TS_DATA:
-			if(uchar(c) == IAC){
+			if(c == IAC){
 				tn->state = TS_IAC;
 			} else {
 				if(!tn->remote[TN_TRANSMIT_BINARY])
@@ -163,7 +163,7 @@ struct mbuf *bp;
 			}
 			break;
 		case TS_IAC:
-			switch(uchar(c)){
+			switch(c){
 			case WILL:
 				tn->state = TS_WILL;
 				break;
@@ -330,6 +330,52 @@ struct telnet *tn;
 		free((char *)tn);
 }
 
+int
+doecho(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	if(argc < 2){
+		if(Refuse_echo)
+			tprintf("Refuse\n");
+		else
+			tprintf("Accept\n");
+	} else {
+		if(argv[1][0] == 'r')
+			Refuse_echo = 1;
+		else if(argv[1][0] == 'a')
+			Refuse_echo = 0;
+		else
+			return -1;
+	}
+	return 0;
+}
+/* set for unix end of line for remote echo mode telnet */
+int
+doeol(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	if(argc < 2){
+		if(Tn_cr_mode)
+			tprintf("null\n");
+		else
+			tprintf("standard\n");
+	} else {
+		if(argv[1][0] == 'n')
+			Tn_cr_mode = 1;
+		else if(argv[1][0] == 's')
+			Tn_cr_mode = 0;
+		else {
+			tprintf("Usage: %s [standard|null]\n",argv[0]);
+			return -1;
+		}
+	}
+	return 0;
+}
+
 /* The guts of the actual Telnet protocol: negotiating options */
 static void
 willopt(tn,opt)
@@ -354,7 +400,7 @@ char opt;
 		if(tn->remote[uchar(opt)] == 1)
 			return;         /* Already set, ignore to prevent loop */
 		if(uchar(opt) == TN_ECHO){
-			if(refuse_echo){
+			if(Refuse_echo){
 				/* User doesn't want to accept */
 				ack = DONT;
 				break;

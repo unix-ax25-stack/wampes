@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.2 1990/08/23 17:32:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.3 1990/09/11 13:45:18 deyke Exp $ */
 
 /*
  *
@@ -75,7 +75,7 @@ void *p;
 	if ((finger = alloc_finger()) == NULLFING)
 		return(1);
 
-	if ((host = strchr(argv[1], '@')) == NULL) {
+	if ((host = strrchr(argv[1], '@')) == NULL) {
 		fsocket.address = Ip_addr;      /* no host, use local */
 		if ((finger->user = malloc(strlen(argv[1]) + 3)) == NULL) {
 			free_finger(finger);

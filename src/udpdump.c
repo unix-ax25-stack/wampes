@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpdump.c,v 1.2 1990/08/23 17:34:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpdump.c,v 1.3 1990/09/11 13:46:49 deyke Exp $ */
 
 #include <stdio.h>
 #include "global.h"
@@ -6,6 +6,8 @@
 #include "netuser.h"
 #include "internet.h"
 #include "udp.h"
+#include "ip.h"
+#include "socket.h"
 #include "trace.h"
 
 /* Dump a UDP header */
@@ -42,6 +44,12 @@ int check;              /* If 0, bypass checksum verify */
 	if(check)
 		fprintf(fp," CHECKSUM ERROR (%u)",csum);
 
-	fprintf(fp,"\n");
+	putc('\n',fp);
+
+	switch(udp.dest){
+	case IPPORT_RIP:
+		rip_dump(fp,bpp);
+	}
+
 }
 

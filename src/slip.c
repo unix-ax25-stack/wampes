@@ -1,10 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.2 1990/08/23 17:34:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.3 1990/09/11 13:46:21 deyke Exp $ */
 
 /* Send and receive IP datagrams on serial lines. Compatible with SLIP
  * under Berkeley Unix.
  */
 #include <stdio.h>
-#include "config.h"
 #include "global.h"
 #include "mbuf.h"
 #include "iface.h"
@@ -12,24 +11,11 @@
 #include "slip.h"
 #include "asy.h"
 #include "trace.h"
-#if defined(MODEM_CALL)
-#include <string.h>
-#include "timer.h"
-#endif
 
-extern unsigned restricted_dev;
-int asy_ioctl();
-int kiss_ioctl();
-int slip_send();
-void doslip();
+int Nslip;
 
-static int slipq __ARGS((int dev, struct mbuf *data));
-static void asy_start __ARGS((int dev));
+static struct mbuf *slip_decode __ARGS((int dev,int c));
 static struct mbuf *slip_encode __ARGS((struct mbuf *bp));
-static struct mbuf *slip_decode __ARGS((int dev, int c));
-static int m_send __ARGS((unsigned dev, char *a));
-static int xinstr __ARGS((char *src, char *pat));
-static int m_expect __ARGS((unsigned dev, char *a));
 
 /* Slip level control structure */
 struct slip Slip[ASY_MAX];
@@ -38,74 +24,36 @@ struct slip Slip[ASY_MAX];
  * This is a trivial function since there is no slip link-level header
  */
 int
-slip_send(data,interface,gateway,precedence,delay,throughput,reliability)
-struct mbuf *data;              /* Buffer to send */
-struct iface *interface;    /* Pointer to interface control block */
-int32 gateway;                  /* Ignored (SLIP is point-to-point) */
-char precedence;
-char delay;
-char throughput;
-char reliability;
+slip_send(bp,iface,gateway,prec,del,tput,rel)
+struct mbuf *bp;        /* Buffer to send */
+struct iface *iface;    /* Pointer to interface control block */
+int32 gateway;          /* Ignored (SLIP is point-to-point) */
+int prec;
+int del;
+int tput;
+int rel;
 {
-	if(interface == NULLIF){
-		free_p(data);
+	if(iface == NULLIF){
+		free_p(bp);
 		return -1;
 	}
-	dump(interface,IF_TRACE_OUT,TRACE_IP,data);
-	return (*interface->raw)(interface,data);
+	iface->rawsndcnt++;
+	return (*iface->raw)(iface,bp);
 }
 /* Send a raw slip frame -- also trivial */
 int
-slip_raw(interface,data)
-struct iface *interface;
-struct mbuf *data;
+slip_raw(iface,bp)
+struct iface *iface;
+struct mbuf *bp;
 {
-	/* Queue a frame on the slip output queue and start transmitter */
-	return slipq(interface->dev,data);
-}
-/* Encode a raw packet in slip framing, put on link output queue, and kick
- * transmitter
- */
-static int
-slipq(dev,data)
-int16 dev;              /* Serial line number */
-struct mbuf *data;      /* Buffer to be sent */
-{
-	register struct slip *sp;
-	struct mbuf *bp;
+	struct mbuf *bp1;
 
-	if((bp = slip_encode(data)) == NULLBUF)
+	dump(iface,IF_TRACE_OUT,Slip[iface->xdev].type,bp);
+	if((bp1 = slip_encode(bp)) == NULLBUF){
+		free_p(bp);
 		return -1;
-
-	sp = &Slip[dev];
-	enqueue(&sp->sndq,bp);
-	sp->sndcnt++;
-	if(sp->tbp == NULLBUF)
-		asy_start(dev);
-	return 0;
-}
-/* Start output, if possible, on asynch device dev */
-static void
-asy_start(dev)
-int16 dev;
-{
-	register struct slip *sp;
-
-	if(!stxrdy(dev))
-		return;         /* Transmitter not ready */
-
-	sp = &Slip[dev];
-	if(sp->tbp != NULLBUF){
-		/* transmission just completed */
-		free_p(sp->tbp);
-		sp->tbp = NULLBUF;
 	}
-	if(sp->sndq == NULLBUF)
-		return; /* No work */
-
-	sp->tbp = dequeue(&sp->sndq);
-	sp->sndcnt--;
-	asy_output(dev,sp->tbp->data,sp->tbp->cnt);
+	return Slip[iface->xdev].send(iface->dev,bp1);
 }
 /* Encode a packet in SLIP format */
 static
@@ -115,12 +63,12 @@ struct mbuf *bp;
 {
 	struct mbuf *lbp;       /* Mbuf containing line-ready packet */
 	register char *cp;
-	char c;
+	int c;
 
 	/* Allocate output mbuf that's twice as long as the packet.
 	 * This is a worst-case guess (consider a packet full of FR_ENDs!)
 	 */
-	lbp = alloc_mbuf(2*len_p(bp) + 2);
+	lbp = alloc_mbuf((int16)(2*len_p(bp) + 2));
 	if(lbp == NULLBUF){
 		/* No space; drop */
 		free_p(bp);
@@ -132,8 +80,8 @@ struct mbuf *bp;
 	*cp++ = FR_END;
 
 	/* Copy input to output, escaping special characters */
-	while(pullup(&bp,&c,1) == 1){
-		switch(uchar(c)){
+	while((c = PULLCHAR(&bp)) != -1){
+		switch(c){
 		case FR_ESC:
 			*cp++ = FR_ESC;
 			*cp++ = T_FR_ESC;
@@ -156,7 +104,7 @@ struct mbuf *bp;
 static
 struct mbuf *
 slip_decode(dev,c)
-int16 dev;      /* Slip unit number */
+int dev;        /* Slip unit number */
 char c;         /* Incoming character */
 {
 	struct mbuf *bp;
@@ -216,190 +164,33 @@ char c;         /* Incoming character */
 	sp->rcnt++;
 	return NULLBUF;
 }
-/* Process SLIP line I/O */
+/* Process SLIP line input */
 void
-doslip(interface)
-struct iface *interface;
+asy_rx(iface)
+struct iface *iface;
 {
-	char c;
-	struct mbuf *bp;
-	int16 dev;
-	int16 asy_recv();
 
-	dev = interface->dev;
-	if(dev == restricted_dev) return;
-	/* Process any pending input */
-	while(asy_recv(dev,&c,1) != 0)
-		if((bp = slip_decode(dev,c)) != NULLBUF)
-			(*Slip[dev].recv)(interface,bp);
+	char *cp,buf[1024];
+	int cnt,dev;
+	struct mbuf *bp,*nbp;
+	struct phdr *phdr;
+	struct slip *sp;
 
-	/* Kick the transmitter if it's idle */
-	if(stxrdy(dev))
-		asy_start(dev);
+	dev = iface->xdev;
+	sp = Slip+dev;
+
+	cnt = (*sp->get)(iface->dev,cp=buf,sizeof(buf));
+	while(--cnt >= 0){
+		if((bp = slip_decode(dev,*cp++)) == NULLBUF)
+			continue;       /* More to come */
+
+		if((nbp = pushdown(bp,sizeof(struct phdr))) == NULLBUF){
+			free_p(bp);
+			continue;
+		}
+		phdr = (struct phdr *)nbp->data;
+		phdr->iface = iface;
+		phdr->type = sp->type;
+		enqueue(&Hopper,nbp);
+	}
 }
-/* Unwrap incoming SLIP packets -- trivial operation since there's no
- * link level header
- */
-void
-slip_recv(interface,bp)
-struct iface *interface;
-struct mbuf *bp;
-{
-	/* By definition, all incoming packets are "addressed" to us */
-	dump(interface,IF_TRACE_IN,TRACE_IP,bp);
-	ip_route(bp,0);
-}
-
-#if defined(MODEM_CALL)
-
-int check_time(),keep_things_going();
-
-static char *ex="r\015t\011s n\012E\004b\010\\\\N\000";
-static struct timer ar;
-static int debug;
-
-static
-int m_send(dev, a)
-unsigned dev;
-char *a;
-{
-	int i;
-	unsigned l;
-	char *ss, *cp, *pt;
-
-	ss=pt=a;
-	l=0;
-	while(*a) {
-		if(*a=='\\') {
-			a++;
-			if(*a=='d') {
-				asy_output(dev,ss,l);
-				l=0;
-				a++;
-				ss=pt=a;
-				set_timer(&ar,1000);
-				start_timer(&ar);
-				while(ar.state == TIMER_RUN)
-					keep_things_going();
-				continue;
-			}
-			if((cp = strchr(ex,*a)) != NULL) {
-				*pt++ = *(cp+1);
-				l++;
-				a++;
-				continue;
-			}
-		} /* if(*a=='\\') */
-		*pt++ = *a++;
-		l++;
-	}
-	asy_output(dev,ss,l);
-} /* m_send */
-
-/******************************************************************************
- * returns the character position of the substring pat within the string
- *  src if the substring exists, 0 if the substring does not exist.
- *  the first character position is considered to be 1, not 0 which
- *  is the first position within the array.
- */
-static
-int xinstr(src,pat)
-char *src,*pat;
-{
-	register char *s_src, *s_pat;
-	int rtn;
-
-	s_src=src;
-	s_pat=pat;
-	rtn=1;
-	while(*s_src) {
-		while((*s_pat) && (*s_src==*s_pat)) { s_src++; s_pat++; }
-		if(!(*s_pat)) return(rtn);
-		rtn++; s_pat=pat; s_src=(++src);
-	}
-	return(0);
-} /* xinstr */
-
-static
-int m_expect(dev, a)
-unsigned dev;
-char *a;
-{
-	char *str, *pstr, c;
-	int tot;
-
-	if(*a=='\\') return 1;
-/*
- * make room for the received string
- */
-	if((str=malloc(5000)) == NULL) {
-		printf("No room for malloc: m_expect\n");
-		fflush(stdout);
-		return -1;
-	}
-/*
- * a single backspace means don't wait for anything
- */
-	pstr=str;
-	*pstr='\0';
-	tot=0;
-	set_timer(&ar,30000);
-	start_timer(&ar);
-	while (!xinstr(str,a)) {
-		while(asy_recv(dev,&c,1)) {
-/*
- * ignore incoming nulls
- */
-			if(c) {
-				*(pstr++)=c;
-				*pstr='\0';
-				if(++tot > 4995) {
-					if(debug) printf("%s",str);fflush(stdout);
-					free(str);
-					return -1;
-				}
-			}
-		}
-		check_time();
-		if(ar.state != TIMER_RUN) {
-			free(str);
-			if(debug) printf("%s",str);fflush(stdout);
-			return -1;
-		}
-	}
-	if(debug) printf("%s",str);fflush(stdout);
-	free(str);
-	return 1;
-} /* m_expect */
-
-int modem_init(dev, argc, argv)
-unsigned dev;
-int argc;
-char **argv;
-{
-	int i, done;
-	i=0;
-	debug = 0;
-	if(argv[0][0]=='-') {
-		debug=1;
-		i++;
-		argc--;
-	}
-	while(argc) {
-		if(debug) {
-			printf("\nI'm sending  : '%s'\n",argv[i]);
-			fflush(stdout);
-		}
-		if(debug && argc>1) {
-			printf("I'm expecting: '%s'\n",argv[1+i]);
-			fflush(stdout);
-		}
-		if(m_send(dev,argv[i++]) == -1) return -1;
-		if(--argc>0) {
-			if(m_expect(dev,argv[i++]) == -1) return -1;
-			argc--;
-		}
-	}
-	return 1;
-} /* modem_init */
-#endif /* MODEM_CALL */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.h,v 1.2 1990/08/23 17:33:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.h,v 1.3 1990/09/11 13:46:10 deyke Exp $ */
 
 /* Global structures and constants needed by an Internet user process */
 #ifndef NCONN
@@ -41,8 +41,8 @@ struct connection {
 	struct socket remote;
 };
 /* In domain.c: */
-int32 dresolve __ARGS((char *name));
 int32 resolve __ARGS((char *name));
+char *resolve_a __ARGS((int32 ip_address));
 
 /* In netuser.c: */
 int32 aton __ARGS((char *s));

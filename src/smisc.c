@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.3 1990/08/23 17:34:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.4 1990/09/11 13:46:23 deyke Exp $ */
 
 /* Miscellaneous servers */
 #include <stdio.h>
@@ -9,20 +9,19 @@
 #include "netuser.h"
 #include "timer.h"
 #include "tcp.h"
+#include "udp.h"
 #include "remote.h"
-
-extern long currtime;
 
 char *Rempass = " ";    /* Remote access password */
 
 static struct tcb *disc_tcb,*echo_tcb;
-static struct socket remsock;
+static struct udp_cb *remote_up;
 
 static void disc_recv __ARGS((struct tcb *tcb, int cnt));
 static void echo_recv __ARGS((struct tcb *tcb, int cnt));
 static void echo_trans __ARGS((struct tcb *tcb, int cnt));
 static void misc_state __ARGS((struct tcb *tcb, int old, int new));
-static void uremote __ARGS((struct socket *sock, int cnt));
+static void uremote __ARGS((struct iface *iface, struct udp_cb *up, int cnt));
 static int chkrpass __ARGS((struct mbuf **bpp));
 
 /* Start up discard server */
@@ -33,12 +32,13 @@ void *p;
 {
 	struct socket lsocket;
 
-	lsocket.address = Ip_addr;
+	lsocket.address = INADDR_ANY;
 	if(argc < 2)
 		lsocket.port = IPPORT_DISCARD;
 	else
 		lsocket.port = tcp_portnum(argv[1]);
 	disc_tcb = open_tcp(&lsocket,NULLSOCK,TCP_SERVER,0,disc_recv,NULLVFP,misc_state,0,(char *)NULL);
+	return 0;
 }
 /* Start echo server */
 echo1(argc,argv,p)
@@ -48,13 +48,13 @@ void *p;
 {
 	struct socket lsocket;
 
-	lsocket.address = Ip_addr;
+	lsocket.address = INADDR_ANY;
 	if(argc < 2)
 		lsocket.port = IPPORT_ECHO;
 	else
 		lsocket.port = tcp_portnum(argv[1]);
 	echo_tcb = open_tcp(&lsocket,NULLSOCK,TCP_SERVER,0,echo_recv,echo_trans,misc_state,0,(char *)NULL);
-
+	return 0;
 }
 
 /* Start remote exit/reboot server */
@@ -63,13 +63,15 @@ int argc;
 char *argv[];
 void *p;
 {
+	struct socket sock;
 
-	remsock.address = Ip_addr;
+	sock.address = INADDR_ANY;
 	if(argc < 2)
-		remsock.port = IPPORT_REMOTE;
+		sock.port = IPPORT_REMOTE;
 	else
-		remsock.port = atoi(argv[1]);
-	open_udp(&remsock,uremote);
+		sock.port = atoi(argv[1]);
+	open_udp(&sock,uremote);
+	return 0;
 }
 
 /* Shut down miscellaneous servers */
@@ -80,6 +82,7 @@ void *p;
 {
 	if(disc_tcb != NULLTCB)
 		close_tcp(disc_tcb);
+	return 0;
 }
 echo0(argc,argv,p)
 int argc;
@@ -88,13 +91,18 @@ void *p;
 {
 	if(echo_tcb != NULLTCB)
 		close_tcp(echo_tcb);
+	return 0;
 }
 rem0(argc,argv,p)
 int argc;
 char *argv[];
 void *p;
 {
-	del_udp(&remsock);
+	if(remote_up){
+		del_udp(remote_up);
+		remote_up = 0;
+	}
+	return 0;
 }
 /* Discard server receiver upcall */
 static
@@ -177,22 +185,20 @@ char old,new;
 }
 /* Process remote exit/reset command */
 static void
-uremote(sock,cnt)
-struct socket *sock;
-int16 cnt;
+uremote(iface,up,cnt)
+struct iface *iface;
+struct udp_cb *up;
+int cnt;
 {
+
 	struct mbuf *bp;
 	struct socket fsock;
 	int i;
-	char command,*cp;
-	extern FILE *logfp;
+	char command;
 	int32 addr;
 
-	cp = ctime(&currtime);
-	rip(cp);
-
-	recv_udp(sock,&fsock,&bp);
-	command = pullchar(&bp);
+	recv_udp(up,&fsock,&bp);
+	command = PULLCHAR(&bp);
 	switch(uchar(command)){
 #ifdef  MSDOS   /* Only present on PCs running MSDOS */
 	case SYS_RESET:
@@ -208,12 +214,9 @@ int16 cnt;
 #endif
 	case SYS_EXIT:
 		i = chkrpass(&bp);
-		if(logfp != NULLFILE){
-			fprintf(logfp,"%s %s - Remote exit %s\n",
-				cp,psocket(&fsock),
-				i == 0 ? "PASSWORD FAIL" : "" );
-			fflush(logfp);
-		}
+		log(NULLTCB,"%s - Remote exit %s",
+		 psocket(&fsock),
+		 i == 0 ? "PASSWORD FAIL" : "" );
 		if(i != 0){
 			iostop();
 			exit(0);

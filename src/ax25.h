@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.2 1990/08/23 17:32:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.3 1990/09/11 13:44:58 deyke Exp $ */
 
 #ifndef AX25_INCLUDED
 #define AX25_INCLUDED
@@ -37,6 +37,7 @@
 #define MAXDIGIS        7       /* 7 digipeaters plus src/dest */
 #define ALEN            6       /* Number of chars in callsign field */
 #define AXALEN          7       /* Total AX.25 address length, including SSID */
+#define AXBUF           10      /* Buffer size for maximum-length ascii call */
 
 /* Internal representation of an AX.25 address */
 struct ax25_addr {
@@ -49,10 +50,10 @@ struct ax25_addr {
 };
 #define NULLAXADDR      (struct ax25_addr *)0
 /* Our AX.25 address */
-extern struct ax25_addr mycall;
+extern char Mycall[AXALEN];
 
 /* AX.25 broadcast address: "QST   -0" in shifted ASCII */
-extern struct ax25_addr ax25_bdcst;
+extern struct ax25_addr Ax25_bdcst;
 
 /* Internal representation of an AX.25 header */
 struct ax25 {
@@ -68,23 +69,24 @@ struct ax25 {
 #define LAPB_COMMAND            1
 #define LAPB_RESPONSE           2
 
-/* Bit fields in AX.25 Level 3 Protocol IDs (PIDs)
- * The high order two bits control multi-frame messages.
- * The lower 6 bits is the actual PID. Single-frame messages are
- * sent with both the FIRST and LAST bits set, so that the resulting PIDs
- * are compatible with older code.
- */
-#define PID_FIRST       0x80    /* Frame is first in a message */
-#define PID_LAST        0x40    /* Frame is last in a message */
-#define PID_PID         0x3f    /* Protocol ID subfield */
+/* AX.25 Level 3 Protocol IDs (PIDs) */
+#define PID_X25         0x01    /* CCITT X.25 PLP */
+#define PID_SEGMENT     0x08    /* Segmentation fragment */
+#define PID_TEXNET      0xc3    /* TEXNET datagram protocol */
+#define PID_LQ          0xc4    /* Link quality protocol */
+#define PID_APPLETALK   0xca    /* Appletalk */
+#define PID_APPLEARP    0xcb    /* Appletalk ARP */
+#define PID_IP          0xcc    /* ARPA Internet Protocol */
+#define PID_ARP         0xcd    /* ARPA Address Resolution Protocol */
+#define PID_FLEXNET     0xce    /* FLEXNET */
+#define PID_NETROM      0xcf    /* NET/ROM */
+#define PID_NO_L3       0xf0    /* No level 3 protocol */
 
-#define PID_IP          0x0c    /* ARPA Internet Protocol */
-#define PID_ARP         0x0d    /* ARPA Address Resolution Protocol */
-#define PID_NETROM      0x0f    /* NET/ROM */
-#define PID_NO_L3       0x30    /* No level 3 protocol */
+#define SEG_FIRST       0x80    /* First segment of a sequence */
+#define SEG_REM         0x7f    /* Mask for # segments remaining */
 
 #define axptr(a)         ((struct ax25_addr *) (a))
-#define ismycall(call)   addreq((call), &mycall)
+#define ismycall(call)   addreq(call, Mycall)
 
 /* ax25.c */
 int ax_send __ARGS((struct mbuf *bp, struct iface *iface, int32 gateway, int precedence, int delay, int throughput, int reliability));
@@ -93,11 +95,11 @@ void ax_recv __ARGS((struct iface *iface, struct mbuf *bp));
 int axarp __ARGS((void));
 
 /* ax25subr.c */
-int setcall __ARGS((struct ax25_addr *out, char *call));
+int setcall __ARGS((char *out,char *call));
 int setpath __ARGS((char *out, char *in [], int cnt));
-int addreq __ARGS((struct ax25_addr *a, struct ax25_addr *b));
-void addrcp __ARGS((struct ax25_addr *to, struct ax25_addr *from));
-int pax25 __ARGS((char *e, struct ax25_addr *addr));
+int addreq __ARGS((char *a, char *b));
+void addrcp __ARGS((char *to, char *from));
+char *pax25 __ARGS((char *e,char *addr));
 char *psax25 __ARGS((char *e, char *addr));
 char *getaxaddr __ARGS((struct ax25_addr *ap, char *cp));
 char *putaxaddr __ARGS((char *cp, struct ax25_addr *ap));
