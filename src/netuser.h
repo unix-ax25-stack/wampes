@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.h,v 1.5 1991/02/24 20:17:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.h,v 1.6 1991/04/12 18:35:21 deyke Exp $ */
 
 #ifndef _NETUSER_H
 #define _NETUSER_H
@@ -30,7 +30,9 @@ extern int Net_error;   /* Error return code */
 #define TCP_SERVER      2       /* Passive, clone on opening */
 
 /* Local IP wildcard address */
+#ifndef INADDR_ANY
 #define INADDR_ANY      0x0L
+#endif
 
 /* Socket structure */
 struct socket {

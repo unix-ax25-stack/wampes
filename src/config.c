@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.6 1991/03/28 19:39:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.7 1991/04/12 18:34:43 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -23,7 +23,7 @@
 #include "pktdrvr.h"
 #include "slip.h"
 /* #include "slcomp.h" */
-/* #include "usock.h" */
+#include "usock.h"
 #include "kiss.h"
 #include "enet.h"
 #include "ax25.h"
@@ -500,16 +500,8 @@ char *dest;
 struct mbuf *bp;
 int mcast;
 {
-	int32 src_ipaddr;
-	struct arp_tab *arp;
-
-	if (bp->cnt >= 20) {
-		src_ipaddr = get32(bp->data + 12);
-		if (arp = arp_add(src_ipaddr, ARP_AX25, src, 0)) {
-			stop_timer(&arp->timer);
-			set_timer(&arp->timer, 0);
-		}
-	}
+	if (bp->cnt >= 20)
+		arp_add(get32(bp->data + 12), ARP_AX25, src, 0);
 	(void)ip_route(iface,bp,mcast);
 }
 

@@ -1,4 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.3 1990/10/22 11:37:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.4 1991/04/12 18:34:44 deyke Exp $ */
+
+#include <sys/types.h>
 
 #include <errno.h>
 #include <stdio.h>

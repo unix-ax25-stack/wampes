@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.4 1991/02/24 20:17:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.5 1991/04/12 18:35:04 deyke Exp $ */
 
 /* Routines for AX.25 encapsulation in KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -7,7 +7,9 @@
 #include "mbuf.h"
 #include "iface.h"
 #include "kiss.h"
+#include "devparam.h"
 #include "slip.h"
+#include "asy.h"
 #include "ax25.h"
 
 /* Send raw data packet on KISS TNC */
@@ -23,7 +25,7 @@ struct mbuf *data;
 		free_p(data);
 		return -1;
 	}
-	bp->data[0] = KISS_DATA;
+	bp->data[0] = PARAM_DATA;
 	/* slip_raw also increments sndrawcnt */
 	slip_raw(iface,bp);
 	return 0;
@@ -39,7 +41,7 @@ struct mbuf *bp;
 
 	kisstype = PULLCHAR(&bp);
 	switch(kisstype & 0xf){
-	case KISS_DATA:
+	case PARAM_DATA:
 		ax_recv(iface,bp);
 		break;
 	default:
@@ -48,30 +50,56 @@ struct mbuf *bp;
 	}
 }
 /* Perform device control on KISS TNC by sending control messages */
-int
-kiss_ioctl(iface,argc,argv)
+int32
+kiss_ioctl(iface,cmd,set,val)
 struct iface *iface;
-int argc;
-char *argv[];
+int cmd;
+int set;
+int32 val;
 {
 	struct mbuf *hbp;
-	int i;
 	char *cp;
+	int rval = 0;
 
-	if(argc < 1){
-		tprintf("Data field missing\n");
-		return 1;
+	/* At present, only certain parameters are supported by
+	 * stock KISS TNCs. As additional params are implemented,
+	 * this will have to be edited
+	 */
+	switch(cmd){
+	case PARAM_RETURN:
+		set = 1;        /* Note fall-thru */
+	case PARAM_TXDELAY:
+	case PARAM_PERSIST:
+	case PARAM_SLOTTIME:
+	case PARAM_TXTAIL:
+	case PARAM_FULLDUP:
+	case PARAM_HW:
+	case 12:                /* echo */
+	case 13:                /* rxdelay */
+		if(!set){
+			rval = -1;      /* Can't read back */
+			break;
+		}
+		/* Allocate space for cmd and arg */
+		if((hbp = alloc_mbuf(2)) == NULLBUF){
+			free_p(hbp);
+			rval = -1;
+			break;
+		}
+		cp = hbp->data;
+		*cp++ = cmd;
+		*cp = val;
+		hbp->cnt = 2;
+		slip_raw(iface,hbp);    /* Even more "raw" than kiss_raw */
+		break;
+	case PARAM_SPEED:       /* These go to the local asy driver */
+	case PARAM_DTR:
+	case PARAM_RTS:
+		rval = asy_ioctl(iface,cmd,set,val);
+		break;
+	default:                /* Not implemented */
+		rval = -1;
+		break;
 	}
-	/* Allocate space for arg bytes */
-	if((hbp = alloc_mbuf((int16)argc)) == NULLBUF){
-		free_p(hbp);
-		return 0;
-	}
-	hbp->cnt = argc;
-	hbp->next = NULLBUF;
-	for(i=0,cp = hbp->data;i < argc;)
-		*cp++ = atoi(argv[i++]);
-
-	slip_raw(iface,hbp);    /* Even more "raw" than kiss_raw */
-	return 0;
+	return rval;
 }

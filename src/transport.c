@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.6 1991/02/24 20:17:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.7 1991/04/12 18:35:44 deyke Exp $ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -308,7 +308,7 @@ void transport_set_timeout(tp, timeout)
 struct transport_cb *tp;
 int  timeout;
 {
-  set_timer(&tp->timer, timeout * 1000l);
+  set_timer(&tp->timer, timeout * 1000L);
   start_timer(&tp->timer);
 }
 

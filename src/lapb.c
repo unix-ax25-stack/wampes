@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.15 1991/03/28 19:39:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.16 1991/04/12 18:35:06 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -755,7 +755,7 @@ struct mbuf *bp;
       if (cp->polling || cp->unack && !cp->remote_busy)
 	start_timer(&cp->timer_t1);
       if (cp->closed && !cp->sndq && !cp->unack ||
-	  cp->remote_busy && msclock() - cp->remote_busy > 900000l)
+	  cp->remote_busy && msclock() - cp->remote_busy > 900000L)
 	setaxstate(cp, DISCONNECTING);
       break;
     case SABM:

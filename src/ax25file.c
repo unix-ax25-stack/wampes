@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.2 1991/03/28 19:39:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.3 1991/04/12 18:34:38 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -11,8 +11,8 @@
 
 extern int  debug;
 
-#define AXROUTEHOLDTIME (60l*60*24*90)
-#define AXROUTESAVETIME (60l*10)
+#define AXROUTEHOLDTIME (0x7fffffff / 1000)
+#define AXROUTESAVETIME (60L*10)
 
 struct axroutesaverecord {
   char  call[AXALEN];

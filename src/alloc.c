@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.7 1991/02/24 20:16:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.8 1991/04/12 18:34:30 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -24,13 +24,13 @@ struct block {
 };
 
 static struct block Freetable[FREETABLESIZE];
-static unsigned long  Allocs;   /* Total allocations */
-static unsigned long  Frees;    /* Total frees */
-static unsigned long  Heapsize;
-static unsigned long  Inuse;
-static unsigned long  Invalid;  /* Total calls to free with garbage arg */
-static unsigned long  Memfail;  /* Count of allocation failures */
-static unsigned long  Morecores;
+static unsigned long Memfail;   /* Count of allocation failures */
+static unsigned long Allocs;    /* Total allocations */
+static unsigned long Frees;     /* Total frees */
+static unsigned long Invalid;   /* Total calls to free with garbage arg */
+static unsigned long Heapsize;
+static unsigned long Inuse;
+static unsigned long Morecores;
 
 static void giveup __ARGS((char *mesg));
 
@@ -235,7 +235,7 @@ char  *argv[];
 void *p;
 {
   tprintf("heap size %lu avail %lu (%lu%%) morecores %lu\n",
-   Heapsize, Heapsize - Inuse, 100l * (Heapsize - Inuse) / Heapsize, Morecores);
+   Heapsize, Heapsize - Inuse, 100L * (Heapsize - Inuse) / Heapsize, Morecores);
   tprintf("allocs %lu frees %lu (diff %lu) alloc fails %lu invalid frees %lu\n",
    Allocs, Frees, Allocs - Frees, Memfail, Invalid);
   return 0;

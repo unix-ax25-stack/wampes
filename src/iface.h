@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.4 1991/02/24 20:16:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.5 1991/04/12 18:34:57 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -22,7 +22,7 @@ struct iface {
 	int32 addr;             /* IP address */
 	int32 broadcast;        /* Broadcast address */
 	int32 netmask;          /* Network mask */
-	int (*ioctl) __ARGS((struct iface *,int,char **));
+	int32 (*ioctl) __ARGS((struct iface *,int cmd,int set,int32 val));
 				/* Function to handle device control */
 	int (*send) __ARGS((struct mbuf *,struct iface *,int32,int,int,int,int));
 				/* Routine to send an IP datagram */

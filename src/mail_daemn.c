@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.7 1991/02/24 20:17:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.8 1991/04/12 18:35:11 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -128,7 +128,7 @@ void *p;
   }
   Mail_timer.func = (void (*)()) mail_tick;
   Mail_timer.arg = 0;
-  set_timer(&Mail_timer, atol(argv[1]) * 1000l);
+  set_timer(&Mail_timer, atol(argv[1]) * 1000L);
   start_timer(&Mail_timer);
   return 0;
 }
@@ -296,7 +296,7 @@ char  *sysname;
       if (!*mj.from) continue;
       if (stat(mj.cfile, &statbuf)) continue;
       if (statbuf.st_mtime + RETURNTIME < secclock()) {
-	sprintf(mj.return_reason, "520 %s... Cannot connect for %d days\n", sp->sysname, RETURNTIME / (60l*60*24));
+	sprintf(mj.return_reason, "520 %s... Cannot connect for %d days\n", sp->sysname, RETURNTIME / (60L*60*24));
 	mail_return(&mj);
       } else {
 	jp = (struct mailjob *) memcpy(malloc(sizeof(struct mailjob )), &mj, sizeof(struct mailjob ));

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.5 1991/02/24 20:17:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.6 1991/04/12 18:34:59 deyke Exp $ */
 
 #ifndef _IP_H
 #define _IP_H
@@ -200,7 +200,7 @@ int ntohip __ARGS((struct ip *ip,struct mbuf **bpp));
 int16 lcsum __ARGS((int16 *wp,int len));
 
 /* In ipfile.c: */
-int route_savefile __ARGS((void));
-int route_loadfile __ARGS((void));
+void route_savefile __ARGS((void));
+void route_loadfile __ARGS((void));
 
 #endif /* _IP_H */

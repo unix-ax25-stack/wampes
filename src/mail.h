@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.7 1991/02/24 20:17:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.8 1991/04/12 18:35:10 deyke Exp $ */
 
 #ifndef _MAIL_H
 #define _MAIL_H
@@ -7,8 +7,8 @@
 
 #define CONFFILE   "/tcp/mail.conf"
 #define SPOOLDIR   "/usr/spool/uucp"
-#define RETRYTIME  (60l*60)
-#define RETURNTIME (60l*60*24*3)
+#define RETRYTIME  (60L*60)
+#define RETURNTIME (60L*60*24*3)
 #define MAXJOBS    10
 
 struct mailers;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.7 1991/03/28 19:39:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.8 1991/04/12 18:34:51 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -124,7 +124,7 @@ typedef unsigned short int16;   /* 16-bit unsigned integer */
 unsigned long availmem __ARGS((void));
 void *callocw __ARGS((unsigned nelem,unsigned size));
 int dirps __ARGS((void));
-int getopt __ARGS((int argc,char *argv[],char *opts));
+int getopt();
 int htoi __ARGS((char *));
 long htol __ARGS((char *));
 char *inbuf __ARGS((int16 port,char *buf,int16 cnt));
@@ -132,17 +132,17 @@ int16 hash_ip __ARGS((int32 addr));
 int istate __ARGS((void));
 void log();
 int log2 __ARGS((int x));
-#define ltop(x) ((void *) x)
+#define ltop(x) ((void *) (x))
 void *mallocw __ARGS((unsigned nb));
 char *outbuf __ARGS((int16 port,char *buf,int16 cnt));
-#define ptol(x) ((long) x)
+#define ptol(x) ((long) (x))
 void restore __ARGS((int));
 void rflush __ARGS((void));
 void rip __ARGS((char *));
 char *smsg __ARGS((char *msgs[],unsigned nmsgs,unsigned n));
 int tprintf __ARGS((char *fmt,...));
 #if     !defined __TURBOC__
-char *strdup __ARGS((char *));
+char *strdup();
 #endif
 int wildmat __ARGS((char *s,char *p,char **argv));
 

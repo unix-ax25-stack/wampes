@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.18 1991/03/28 19:39:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.19 1991/04/12 18:35:17 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -506,7 +506,7 @@ static void calculate_all()
   }
 #ifdef FORCE_BC
   if (start_broadcast_timer) {
-    set_timer(&broadcast_timer, 10 * 1000l);
+    set_timer(&broadcast_timer, 10 * 1000L);
     start_timer(&broadcast_timer);
   }
 #endif
@@ -609,7 +609,7 @@ static void send_broadcast()
   struct mbuf *bp;
   struct node *pn;
 
-  set_timer(&broadcast_timer, nr_bdcstint * 1000l);
+  set_timer(&broadcast_timer, nr_bdcstint * 1000L);
   start_timer(&broadcast_timer);
   if (!broadcasts) return;
   bp = alloc_broadcast_packet();
@@ -674,15 +674,7 @@ struct node *fromneighbor;
 	uchar(bp->data[15]) == NRPROTO_IP &&
 	uchar(bp->data[16]) == NRPROTO_IP &&
 	Nr_iface) {
-
-      int32 src_ipaddr;
-      struct arp_tab *arp;
-
-      src_ipaddr = get32(bp->data + 32);
-      if (arp = arp_add(src_ipaddr, ARP_NETROM, bp->data, 0)) {
-	stop_timer(&arp->timer);
-	set_timer(&arp->timer, 0);
-      }
+      arp_add(get32(bp->data + 32), ARP_NETROM, bp->data, 0);
       pullup(&bp, NULLCHAR, 20);
       ip_route(Nr_iface, bp, 0);
       return;
@@ -795,7 +787,7 @@ char  *fromcall;
 static void routing_manager_initialize()
 {
   broadcast_timer.func = (void (*) __ARGS((void *))) send_broadcast;
-  set_timer(&broadcast_timer, 10 * 1000l);
+  set_timer(&broadcast_timer, 10 * 1000L);
   start_timer(&broadcast_timer);
 }
 
@@ -1111,7 +1103,7 @@ static struct circuit *create_circuit()
   pc->remoteindex = -1;
   pc->remoteid = -1;
   pc->cwind = 1;
-  pc->srtt = 500l * nr_ttimeout;
+  pc->srtt = 500L * nr_ttimeout;
   pc->mdev = pc->srtt / 2;
   reset_t1(pc);
   pc->timer_t1.func = (void (*) __ARGS((void *))) l4_t1_timeout;
@@ -1163,7 +1155,7 @@ struct mbuf *bp;
 	  pc->localid == uchar(bp->data[1])) break;
     }
 
-  set_timer(&pc->timer_t3, nr_timeout * 1000l);
+  set_timer(&pc->timer_t3, nr_timeout * 1000L);
   start_timer(&pc->timer_t3);
 
   switch (bp->data[4] & NR4OPCODE) {
@@ -1219,7 +1211,7 @@ struct mbuf *bp;
     stop_timer(&pc->timer_t1);
     if (bp->data[4] & NR4CHOKE) {
       if (!pc->remote_busy) pc->remote_busy = msclock();
-      set_timer(&pc->timer_t4, nr_tbsydelay * 1000l);
+      set_timer(&pc->timer_t4, nr_tbsydelay * 1000L);
       start_timer(&pc->timer_t4);
       pc->cwind = 1;
     } else {

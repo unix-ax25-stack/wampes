@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.12 1991/03/28 19:39:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.13 1991/04/12 18:35:14 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -40,6 +40,7 @@
 #include "hardware.h"
 #include "commands.h"
 #include "trace.h"
+#include "devparam.h"
 #include "hpux.h"
 
 extern int errno;
@@ -89,7 +90,7 @@ char *argv[];
 
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
 	tprintf("\n");
-	tprintf("WAMPES version 910303\n");
+	tprintf("@(#)WAMPES version 910412\n" + 4);
 	tprintf("(c) Copyright 1990, 1991 by Dieter Deyke, DK5SG\n");
 	tprintf("(c) Copyright 1990 by Phil Karn, KA9Q\n");
 	tprintf("\n");
@@ -317,18 +318,44 @@ char *argv[];
 void *p;
 {
 	register struct iface *ifp;
+	int param,set;
+	int32 val;
 
 	if((ifp = if_lookup(argv[1])) == NULLIF){
 		tprintf("Interface \"%s\" unknown\n",argv[1]);
 		return 1;
 	}
-	if(ifp->ioctl == NULLFP){
+	if(ifp->ioctl == NULL){
 		tprintf("Not supported\n");
 		return 1;
 	}
-	/* Pass rest of args to device-specific code */
-	return (*ifp->ioctl)(ifp,argc-2,argv+2);
+	if(argc <= 2){
+		for(param=1;param<=16;param++){
+			val = (*ifp->ioctl)(ifp,param,0,0L);
+			if(val != -1)
+				tprintf("%s: %ld\n",parmname(param),val);
+		}
+		return 0;
+	}
+	param = devparam(argv[2]);
+	if(param == -1){
+		tprintf("Unknown parameter %s\n",argv[2]);
+		return 1;
+	}
+	if(argc > 3){
+		set = 1;
+		val = atol(argv[3]);
+	} else
+		set = 0;
+	val = (*ifp->ioctl)(ifp,param,set,val);
+	if(val == -1){
+		tprintf("Parameter %s not supported\n",argv[2]);
+	} else {
+		printf("%s: %ld\n",parmname(param),val);
+	}
+	return 0;
 }
+
 /* Log messages of the form
  * Tue Jan 31 00:00:00 1987 44.64.0.7:1003 open FTP
  */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.4 1991/02/24 20:16:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.5 1991/04/12 18:34:46 deyke Exp $ */
 
 /* System-dependent definitions of various files, spool directories, etc */
 #include "global.h"
@@ -28,7 +28,7 @@ char Eol[] = "\r\n";
 #endif
 
 #ifdef  UNIX
-#if (defined(hpux)||defined(__hpux))
+#if (defined(hpux)||defined(__hpux)||defined(ISC))
 char *Startup = "/tcp/net.rc";          /* Initialization file */
 #else
 char *Startup = "./startup.net";        /* Initialization file */

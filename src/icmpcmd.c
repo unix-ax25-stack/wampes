@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.7 1991/02/24 20:16:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.8 1991/04/12 18:34:54 deyke Exp $ */
 
 /* ICMP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -155,7 +155,7 @@ void *p;
 		/* Inter-ping time is specified; set up timer structure */
 		if(pp == NULLPING)
 			pp = add_ping(dest);
-		set_timer(&pp->timer, atoi(argv[3]) * 1000l);
+		set_timer(&pp->timer, atoi(argv[3]) * 1000L);
 		pp->timer.func = ptimeout;
 		pp->timer.arg = pp;
 		pp->target = dest;

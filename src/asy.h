@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.h,v 1.4 1991/02/24 20:16:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/asy.h,v 1.5 1991/04/12 18:34:36 deyke Exp $ */
 
 #ifndef _ASY_H
 #define _ASY_H
@@ -27,7 +27,7 @@
 int asy_autobaud __ARGS((int dev));
 int asy_init __ARGS((int dev,struct iface *iface,char *arg1,char *arg2,
 	unsigned bufsize,int trigchar,int cts,int rlsd));
-int asy_ioctl __ARGS((struct iface *iface,int argc,char *argv[]));
+int32 asy_ioctl __ARGS((struct iface *iface,int cmd,int set,int32 val));
 void asy_output __ARGS((int dev,char *buf,int cnt));
 int asy_send __ARGS((int dev,struct mbuf *bp));
 int asy_speed __ARGS((int dev,long speed,long autospeed));

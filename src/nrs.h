@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.h,v 1.4 1991/02/24 20:17:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.h,v 1.5 1991/04/12 18:35:22 deyke Exp $ */
 
 #ifndef _NRS_H
 #define _NRS_H
@@ -43,8 +43,8 @@ struct nrs {
 	long errors;            /* Checksum errors detected */
 	long packets ;          /* Number of packets received successfully */
 	struct iface *iface ;   /* Associated interface structure */
-	int (*send) __ARGS((int,struct mbuf *)); /* Routine to send mbufs */
-	int (*get) __ARGS((int,char *,int));     /* Routine to fetch input chars */
+	int (*send) __ARGS((int,struct mbuf *));/* Routine to send mbufs */
+	int (*get) __ARGS((int,char *,int));/* Routine to fetch input chars */
 };
 
 extern struct nrs Nrs[];

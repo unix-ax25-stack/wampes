@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.2 1991/03/28 19:38:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.3 1991/04/12 18:34:28 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -18,6 +18,7 @@
 #include "nrs.h"
 #include "hpux.h"
 #include "8250.h"
+#include "devparam.h"
 
 extern struct sockaddr *build_sockaddr();
 
@@ -121,17 +122,21 @@ struct iface *iface;
 /*---------------------------------------------------------------------------*/
 
 /* Asynchronous line I/O control */
-int
-asy_ioctl(iface,argc,argv)
+int32
+asy_ioctl(iface,cmd,set,val)
 struct iface *iface;
-int argc;
-char *argv[];
+int cmd;
+int set;
+int32 val;
 {
-  if (argc < 1) {
-    tprintf("%u\n", Asy[iface->dev].speed);
-    return 0;
-  }
-  return asy_speed(iface->dev, (long) atoi(argv[0]), 0);
+	switch(cmd){
+	case PARAM_SPEED:
+		if(set){
+			asy_speed(iface->dev,val,0L);
+		}
+		return Asy[iface->dev].speed;
+	}
+	return -1;
 }
 
 /*---------------------------------------------------------------------------*/

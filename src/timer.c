@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.3 1991/02/24 20:17:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.4 1991/04/12 18:35:41 deyke Exp $ */
 
 /* General purpose software timer facilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -133,21 +133,34 @@ int32 next_timer_event()
 /*---------------------------------------------------------------------------*/
 
 /* Convert time count in seconds to printable days:hr:min:sec format */
-
-char  *tformat(t)
+char *
+tformat(t)
 int32 t;
 {
-  static char  buf[16];
-  unsigned int  days, hrs, mins, secs;
+	static char buf[17],*cp;
+	unsigned int days,hrs,mins,secs;
+	int minus;
 
-  secs = t % 60;
-  t /= 60;
-  mins = t % 60;
-  t /= 60;
-  hrs = t % 24;
-  t /= 24;
-  days = t;
-  sprintf(buf, "%u:%02u:%02u:%02u", days, hrs, mins, secs);
-  return buf;
+	if(t < 0){
+		t = -t;
+		minus = 1;
+	} else
+		minus = 0;
+
+	secs = t % 60;
+	t /= 60;
+	mins = t % 60;
+	t /= 60;
+	hrs = t % 24;
+	t /= 24;
+	days = t;
+	if(minus){
+		cp = buf+1;
+		buf[0] = '-';
+	} else
+		cp = buf;
+	sprintf(cp,"%u:%02u:%02u:%02u",days,hrs,mins,secs);
+
+	return buf;
 }
 

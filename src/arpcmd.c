@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.5 1991/02/24 20:16:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.6 1991/04/12 18:34:33 deyke Exp $ */
 
 /* ARP commands
  * Copyright 1991, Phil Karn, KA9Q
@@ -207,12 +207,12 @@ dumparp()
 	 Arp_stat.recv,Arp_stat.badtype,Arp_stat.badaddr,Arp_stat.inreq,
 	 Arp_stat.replies,Arp_stat.outreq);
 
-	tprintf("IP addr         Type           Time Q Addr\n");
+	tprintf("IP addr         Type           Time    Q Addr\n");
 	for(i=0;i<HASHMOD;i++){
 		for(ap = Arp_tab[i];ap != (struct arp_tab *)NULL;ap = ap->next){
 			tprintf("%-16s",inet_ntoa(ap->ip_addr));
 			tprintf("%-15s",smsg(Arptypes,NHWTYPES,ap->hardware));
-			tprintf("%-5ld",read_timer(&ap->timer)/1000L);
+			tprintf("%-8ld",read_timer(&ap->timer)/1000L);
 			if(ap->state == ARP_PENDING)
 				tprintf("%-2u",len_q(ap->pending));
 			else

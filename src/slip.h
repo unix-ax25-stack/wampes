@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.h,v 1.4 1991/02/24 20:17:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.h,v 1.5 1991/04/12 18:35:31 deyke Exp $ */
 
 #ifndef _SLIP_H
 #define _SLIP_H
@@ -30,8 +30,8 @@ struct slip {
 	struct mbuf *tbp;       /* Transmit mbuf being sent */
 	int16 errors;           /* Receiver input errors */
 	int type;               /* Protocol of input */
-	int (*send) __ARGS((int,struct mbuf *)); /* Routine to send mbufs */
-	int (*get) __ARGS((int,char *,int));     /* Routine to fetch input chars */
+	int (*send) __ARGS((int,struct mbuf *));/* Routine to send mbufs */
+	int (*get) __ARGS((int,char *,int));    /* Routine to fetch input chars */
 };
 extern struct slip Slip[];
 /* In slip.c: */
