@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.26 1994/04/23 15:40:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.27 1994/09/05 12:47:10 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -117,7 +117,7 @@ static void Xprintf(struct tcb *tcb,char *message,char *arg1,char *arg2,char *ar
 	send_tcp(tcb,bp);
 }
 /* Start up FTP service */
-ftpstart(argc,argv,p)
+int ftpstart(argc,argv,p)
 int argc;
 char *argv[];
 void *p;
@@ -136,7 +136,7 @@ void *p;
 	return 0;
 }
 /* Shut down FTP server */
-ftp0(int argc,char *argv[],void *p)
+int ftp0(int argc,char *argv[],void *p)
 {
 	if(ftp_tcb != NULLTCB)
 		close_tcp(ftp_tcb);
@@ -408,7 +408,7 @@ ftpcommand(struct ftp *ftp)
 		log(ftp->control,"RETR %s",file);
 		AsUser(ftp->fp = fopen(file,"r"));
 		if(ftp->fp == NULLFILE ||
-		   rest && fseek(ftp->fp,rest,SEEK_SET)){
+		   (rest && fseek(ftp->fp,rest,SEEK_SET))){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
 			dport.address = INADDR_ANY;
@@ -430,7 +430,7 @@ ftpcommand(struct ftp *ftp)
 		log(ftp->control,"STOR %s",file);
 		AsUser(ftp->fp = fopen(file,"w"));
 		if(ftp->fp == NULLFILE ||
-		   rest && fseek(ftp->fp,rest,SEEK_SET)){
+		   (rest && fseek(ftp->fp,rest,SEEK_SET))){
 			Xprintf(ftp->control,errmsg(file),"","","");
 		} else {
 			dport.address = INADDR_ANY;
@@ -770,7 +770,7 @@ static int user_denied(const char *username)
   FILE *fp;
   char buf[80];
 
-  if (fp = fopen("/etc/ftpusers", "r")) {
+  if ((fp = fopen("/etc/ftpusers", "r"))) {
     while (fgets(buf, sizeof(buf), fp)) {
       rip(buf);
       if (!strcmp(buf, username)) {

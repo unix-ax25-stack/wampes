@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.8 1994/05/08 11:00:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.9 1994/09/05 12:47:21 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -43,10 +43,6 @@ static struct port_table udp_port_table[] = {
   "time",        IPPORT_TIME,   /* Time Protocol */
   NULLCHAR
 };
-
-static char *nextstr(void);
-static char *port_name(struct port_table *table, int port);
-static int port_number(struct port_table *table, char *name);
 
 /*---------------------------------------------------------------------------*/
 

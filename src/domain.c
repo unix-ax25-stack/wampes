@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.16 1994/04/13 09:51:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.17 1994/09/05 12:47:09 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -144,7 +144,7 @@ void *p;
 {
   struct cache *cp;
 
-  while (cp = Cache) {
+  while ((cp = Cache)) {
     Cache = cp->next;
     free(cp);
   }
@@ -207,7 +207,7 @@ static void strlwc(to, from)
 char *to;
 const char *from;
 {
-  while (*to++ = Xtolower(*from++)) ;
+  while ((*to++ = Xtolower(*from++))) ;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -218,7 +218,7 @@ const char *s;
   int c;
 
   if (s)
-    while (c = uchar(*s++))
+    while ((c = uchar(*s++)))
       if (c != '[' && c != ']' && !isdigit(c) && c != '.') return 0;
   return 1;
 }

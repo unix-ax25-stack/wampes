@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.12 1993/05/17 13:44:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.13 1994/09/05 12:47:06 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -145,7 +145,7 @@ void axroute_loadfile(void)
 	    fclose(fp);
 	    return;
 	  }
-	} while (*cp++ = c);
+	} while ((*cp++ = c));
 	if (*ifname)
 	  for (ifp = Ifaces; ifp && strcmp(ifp->name, ifname); ifp = ifp->next) ;
 	else

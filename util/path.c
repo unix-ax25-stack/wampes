@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.18 1994/07/25 11:01:37 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.19 1994/09/05 12:47:28 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -224,7 +224,7 @@ static void axroute_loadfile(void)
 	fclose(fp);
 	return;
       }
-    } while (*cp++ = c);
+    } while ((*cp++ = c));
     rp = ax_routeptr(buf.call, 1);
     if (buf.digi[0]) rp->digi = ax_routeptr(buf.digi, 1);
     rp->ifp = ifaceptr(ifname);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.47 1994/08/29 09:05:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.48 1994/09/05 12:47:16 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -517,7 +517,7 @@ void *p;
 	int c;
 	uint16 port,len;
 	char *key = NULLCHAR;
-	int klen;
+	int klen = 0;
 	int32 addr = 0;
 	char *cmd,*host;
 

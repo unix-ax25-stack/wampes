@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.11 1993/05/17 13:44:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.12 1994/09/05 12:47:05 deyke Exp $ */
 
 /* ARP commands
  * Copyright 1991, Phil Karn, KA9Q
@@ -59,7 +59,7 @@ void *p;
 	}
 	return subcmd(Arpcmds,argc,argv,p);
 }
-static
+static int
 doarpadd(argc,argv,p)
 int argc;
 char *argv[];
@@ -126,7 +126,7 @@ void *p;
 	return 0;
 }
 /* Remove an ARP entry */
-static
+static int
 doarpdrop(argc,argv,p)
 int argc;
 char *argv[];

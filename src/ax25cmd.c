@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.4 1993/06/20 07:30:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25cmd.c,v 1.5 1994/09/05 12:47:06 deyke Exp $ */
 
 /* AX25 control commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -241,7 +241,7 @@ struct iface *ifp;
 	Ld = NULLLD;
 }
 
-static
+static int
 doaxreset(argc,argv,p)
 int argc;
 char *argv[];
@@ -259,7 +259,7 @@ void *p;
 }
 
 /* Display AX.25 link level control blocks */
-static
+static int
 doaxstat(argc,argv,p)
 int argc;
 char *argv[];
@@ -332,7 +332,7 @@ register struct ax25_cb *axp;
 }
 
 /* Display or change our AX.25 address */
-static
+static int
 domycall(argc,argv,p)
 int argc;
 char *argv[];
@@ -350,7 +350,7 @@ void *p;
 }
 
 /* Control AX.25 digipeating */
-static
+static int
 dodigipeat(argc,argv,p)
 int argc;
 char *argv[];
@@ -359,7 +359,7 @@ void *p;
 	return setintrc(&Digipeat,"Digipeat",argc,argv,0,2);
 }
 /* Set limit on retransmission backoff */
-static
+static int
 doblimit(argc,argv,p)
 int argc;
 char *argv[];
@@ -367,7 +367,7 @@ void *p;
 {
 	return setint(&Blimit,"blimit",argc,argv);
 }
-static
+static int
 doversion(argc,argv,p)
 int argc;
 char *argv[];
@@ -376,7 +376,7 @@ void *p;
 	return setintrc(&Axversion,"AX25 version",argc,argv,1,2);
 }
 
-static
+static int
 dot1(argc,argv,p)
 int argc;
 char *argv[];
@@ -386,7 +386,7 @@ void *p;
 }
 
 /* Set idle timer */
-static
+static int
 dot3(argc,argv,p)
 int argc;
 char *argv[];
@@ -396,7 +396,7 @@ void *p;
 }
 
 /* Set busy timer */
-static
+static int
 dot4(argc,argv,p)
 int argc;
 char *argv[];
@@ -406,7 +406,7 @@ void *p;
 }
 
 /* Set retry limit count */
-static
+static int
 don2(argc,argv,p)
 int argc;
 char *argv[];
@@ -415,7 +415,7 @@ void *p;
 	return setintrc(&N2,"Retry limit",argc,argv,0,MAXINT16);
 }
 /* Force a retransmission */
-static
+static int
 doaxkick(argc,argv,p)
 int argc;
 char *argv[];
@@ -432,7 +432,7 @@ void *p;
 	return 0;
 }
 /* Set maximum number of frames that will be allowed in flight */
-static
+static int
 domaxframe(argc,argv,p)
 int argc;
 char *argv[];
@@ -442,7 +442,7 @@ void *p;
 }
 
 /* Set maximum length of I-frame data field */
-static
+static int
 dopaclen(argc,argv,p)
 int argc;
 char *argv[];
@@ -451,7 +451,7 @@ void *p;
 	return setintrc(&Paclen,"Max frame length (bytes)",argc,argv,1,MAXINT16);
 }
 /* Set size of I-frame above which polls will be sent after a timeout */
-static
+static int
 dopthresh(argc,argv,p)
 int argc;
 char *argv[];
@@ -461,7 +461,7 @@ void *p;
 }
 
 /* Set high water mark on receive queue that triggers RNR */
-static
+static int
 doaxwindow(argc,argv,p)
 int argc;
 char *argv[];
@@ -508,7 +508,7 @@ void *p;
   argc--;
   argv++;
 
-  if (perm = !strcmp(*argv, "permanent")) {
+  if ((perm = !strcmp(*argv, "permanent"))) {
     argc--;
     argv++;
   }
@@ -558,7 +558,7 @@ struct ax_route *rp;
 	int n;
 	int perm;
 	struct ax_route *rp_stack[20];
-	struct iface *ifp;
+	struct iface *ifp = 0;
 	struct tm *tm;
 
 	tm = localtime(&rp->time);
@@ -652,7 +652,7 @@ void *p;
   total = 0;
   for (dev = 0; dev < NIFACES; dev++) {
     if(ifptable[dev].count ||
-	Axroute_default_ifp && Axroute_default_ifp == ifptable[dev].ifp)
+	(Axroute_default_ifp && Axroute_default_ifp == ifptable[dev].ifp))
       printf("%c %-7s  %5d\n",
 	     ifptable[dev].ifp == Axroute_default_ifp ? '*' : ' ',
 	     ifptable[dev].ifp->name,

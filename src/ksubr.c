@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.23 1994/05/05 11:17:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.24 1994/09/05 12:47:14 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -394,7 +394,7 @@ struct proc *pp;
 	 (pp->flags & P_ISTATE) ? 'I' : ' ',
 	 (pp->state & WAITING) ? 'W' : ' ',
 	 (pp->state & SUSPEND) ? 'S' : ' ',
-	 pp->input,pp->output,pp->name);
+	 (int)pp->input,(int)pp->output,pp->name);
 }
 static int
 stkutil(pp)

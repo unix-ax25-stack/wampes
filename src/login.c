@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.53 1994/04/07 16:55:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.54 1994/09/05 12:47:15 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -49,10 +49,6 @@ extern struct utmp *getutent();
 #include "commands.h"
 #include "login.h"
 
-#define MASTERPREFIX        "/dev/pty"
-#define SLAVEPREFIX         "/dev/tty"
-#define NUMPTY              256
-
 #define PASSWDFILE          "/etc/passwd"
 #define SPASSWDFILE         "/.secure/etc/passwd"
 #define PWLOCKFILE          "/etc/ptmp"
@@ -63,8 +59,7 @@ extern struct utmp *getutent();
 
 struct login_cb {
   int pty;                      /* pty file descriptor */
-  int num;                      /* pty number */
-  char id[4];                   /* pty id (last 2 chars) */
+  char ptyname[80];             /* pty device file name */
   pid_t pid;                    /* process id of login process */
   char inpbuf[512];             /* pty read buffer */
   char *inpptr;                 /* pty read buffer pointer */
@@ -96,73 +91,90 @@ static int Create = 1;
 static int Gid = 400;
 static int Maxuid = MAXUID;
 static int Minuid = 400;
-static int32 Pty_locktime[NUMPTY];
-
-static int find_pty(int *numptr, char *slave);
-static void restore_pty(const char *id);
-static char *find_user_name(const char *name);
-static void write_log(struct login_cb *tp, const char *buf, int cnt);
-static FILE *fopen_logfile(const char *user, const char *protocol);
-static int do_telnet(struct login_cb *tp, int chr);
-static void write_pty(struct login_cb *tp);
-static void death_handler(struct login_cb *tp);
-static int dologinauto(int argc, char *argv [], void *p);
-static int dologincreate(int argc, char *argv [], void *p);
-static int dologindefaultuser(int argc, char *argv [], void *p);
-static int dologingid(int argc, char *argv [], void *p);
-static int dologinhomedir(int argc, char *argv [], void *p);
-static int dologinlogfiledir(int argc, char *argv [], void *p);
-static int dologinmaxuid(int argc, char *argv [], void *p);
-static int dologinminuid(int argc, char *argv [], void *p);
-static int dologinshell(int argc, char *argv [], void *p);
 
 /*---------------------------------------------------------------------------*/
 
-#define pty_name(name, prefix, num) \
-  sprintf(name, "%s%c%x", prefix, 'p' + (num >> 4), num & 0xf)
-
-/*---------------------------------------------------------------------------*/
-
-static int find_pty(int *numptr, char *slave)
+static int find_pty(char *ptyname)
 {
 
+  char *n;
+  char *ptsname();
   char master[80];
   int fd;
   int num;
+  static int lastnum = -1;
 
-  for (num = 0; num < NUMPTY; num++)
-    if (Pty_locktime[num] < secclock()) {
-      Pty_locktime[num] = secclock() + 60;
-      pty_name(master, MASTERPREFIX, num);
-      if ((fd = open(master, O_RDWR | O_NONBLOCK, 0600)) >= 0) {
-	*numptr = num;
-#ifdef ULTRIX_RISC
-	fcntl(fd, F_SETFL, FIONBIO); /* O_NONBLOCK does not work?! */
+  /* Try multiplexed special file first */
+
+#if defined __hp9000s800
+
+  if ((fd = open("/dev/ptym/clone", O_RDWR | O_NONBLOCK, 0600)) >= 0) {
+    if ((n = ptsname(fd))) {
+      strcpy(ptyname, n);
+      return fd;
+    }
+    close(fd);
+  }
+
+#elif defined _AIX
+
+  if ((fd = open("/dev/ptc", O_RDWR | O_NONBLOCK, 0600)) >= 0) {
+    if ((n = ttyname(fd))) {
+      strcpy(ptyname, n);
+      return fd;
+    }
+    close(fd);
+  }
+
+#elif defined __sgi
+
+  if ((fd = open("/dev/ptc", O_RDWR | O_NONBLOCK, 0600)) >= 0) {
+    if ((n = ptsname(fd))) {
+      strcpy(ptyname, n);
+      return fd;
+    }
+    close(fd);
+  }
+
+#elif defined sun && defined _SC_STREAM_MAX
+
+  if ((fd = open("/dev/ptmx", O_RDWR | O_NONBLOCK, 0600)) >= 0) {
+    if ((n = ptsname(fd))) {
+      strcpy(ptyname, n);
+      return fd;
+    }
+    close(fd);
+  }
+
+#endif
+
+  /* Search Berkeley style pty */
+
+#define NUMPTY 176
+
+#define make_ptyname(name, prefix, num) \
+  sprintf(name, "%s%c%x", prefix, 'p' + (num >> 4), num & 0xf)
+
+  for (num = lastnum + 1; ; num++) {
+    if (num >= NUMPTY) num = 0;
+    make_ptyname(master, "/dev/pty", num);
+    if ((fd = open(master, O_RDWR | O_NONBLOCK, 0600)) >= 0) {
+#if defined ULTRIX_RISC
+      fcntl(fd, F_SETFL, FIONBIO); /* O_NONBLOCK does not work! */
 #endif
 #if defined macII || defined ibm032
-	/* this extra fcntl is necessary for an unknown reason, since the
-	   flag is already set... perhaps there's a race somewhere? */
-	fcntl(fd, F_SETFL, O_NONBLOCK | fcntl(fd, F_GETFL, 0));
+      /* this extra fcntl is necessary for an unknown reason, since the
+	 flag is already set... perhaps there is a race somewhere? */
+      fcntl(fd, F_SETFL, O_NONBLOCK | fcntl(fd, F_GETFL, 0));
 #endif
-	pty_name(slave, SLAVEPREFIX, num);
-	return fd;
-      }
+      make_ptyname(ptyname, "/dev/tty", num);
+      lastnum = num;
+      return fd;
     }
+    if (num == lastnum) break;
+  }
+
   return (-1);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void restore_pty(const char *id)
-{
-  char filename[80];
-
-  sprintf(filename, "%s%s", MASTERPREFIX, id);
-  chown(filename, 0, 0);
-  chmod(filename, 0666);
-  sprintf(filename, "%s%s", SLAVEPREFIX, id);
-  chown(filename, 0, 0);
-  chmod(filename, 0666);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -172,11 +184,14 @@ void fixutmpfile(void)
 
 #ifdef USER_PROCESS
 
+  char ptyname[80];
   struct utmp *up;
 
-  while (up = getutent())
+  while ((up = getutent()))
     if (up->ut_type == USER_PROCESS && kill(up->ut_pid, 0)) {
-      restore_pty(up->ut_id);
+      sprintf(ptyname, "/dev/%s", up->ut_line);
+      chown(ptyname, 0, 0);
+      chmod(ptyname, 0666);
       up->ut_name[0] = 0;
       up->ut_type = DEAD_PROCESS;
 #ifndef linux
@@ -227,7 +242,7 @@ struct passwd *getpasswdentry(const char *name, int create)
 
   /* Search existing passwd entry */
 
-  if (pw = getpwnam(name)) return pw;
+  if ((pw = getpwnam(name))) return pw;
   if (!create) return 0;
 
   /* Find free user id */
@@ -235,7 +250,7 @@ struct passwd *getpasswdentry(const char *name, int create)
   if ((fd = open(PWLOCKFILE, O_WRONLY | O_CREAT | O_EXCL, 0644)) < 0) return 0;
   close(fd);
   memset(bitmap, 0, sizeof(bitmap));
-  while (pw = getpwent()) {
+  while ((pw = getpwent())) {
     if (!strcmp(name, pw->pw_name)) break;
     if (pw->pw_uid <= Maxuid) bitmap[pw->pw_uid] = 1;
   }
@@ -333,8 +348,8 @@ static FILE *fopen_logfile(const char *user, const char *protocol)
   struct tm *tm;
 
   if (!*Logfiledir) return 0;
-  sprintf(filename, "%s/log.%05d.%04d", Logfiledir, getpid(), cnt++);
-  if (fp = fopen(filename, "a")) {
+  sprintf(filename, "%s/log.%05d.%04d", Logfiledir, (int) getpid(), cnt++);
+  if ((fp = fopen(filename, "a"))) {
     tm = localtime((long *) &Secclock);
     fprintf(fp,
 	    "%s at %2d-%.3s-%02d %2d:%02d:%02d by %s\n",
@@ -445,7 +460,7 @@ static void write_pty(struct login_cb *tp)
       lastchr = tp->lastchr;
       tp->lastchr = chr;
       if (!tp->telnet || do_telnet(tp, chr & 0xff)) {
-	if (lastchr != '\r' || chr != '\0' && chr != '\n') {
+	if (lastchr != '\r' || (chr != '\0' && chr != '\n')) {
 	  *p++ = chr;
 	  if (chr == '\r' || chr == '\n') {
 	    tp->linelen = 0;
@@ -488,7 +503,6 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
 
   char *argv[16];
   char *env = 0;
-  char slave[80];
   int argc;
   int i;
   struct login_cb *tp;
@@ -498,11 +512,10 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
   tp = (struct login_cb *) calloc(1, sizeof(*tp));
   if (!tp) return 0;
   tp->telnet = !strcmp(protocol, "TELNET");
-  if ((tp->pty = find_pty(&tp->num, slave)) < 0) {
+  if ((tp->pty = find_pty(tp->ptyname)) < 0) {
     free(tp);
     return 0;
   }
-  strcpy(tp->id, slave + strlen(slave) - 2);
   tp->readfnc = read_upcall;
   tp->closefnc = close_upcall;
   tp->fncarg = upcall_arg;
@@ -516,10 +529,10 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
       pw = 0;
     for (i = 0; i < FD_SETSIZE; i++) close(i);
     setsid();
-    open(slave, O_RDWR, 0666);
+    open(tp->ptyname, O_RDWR, 0666);
     dup(0);
     dup(0);
-    chmod(slave, 0622);
+    chmod(tp->ptyname, 0622);
 #ifdef TIOCSCTTY
     ioctl(0, TIOCSCTTY, (char *) 0);
 #endif
@@ -565,8 +578,8 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
 #ifdef LOGIN_PROCESS
     memset(&utmpbuf, 0, sizeof(utmpbuf));
     strcpy(utmpbuf.ut_name, "LOGIN");
-    strcpy(utmpbuf.ut_id, tp->id);
-    strcpy(utmpbuf.ut_line, slave + 5);
+    strcpy(utmpbuf.ut_id, tp->ptyname + strlen(tp->ptyname) - 2);
+    strcpy(utmpbuf.ut_line, tp->ptyname + 5);
     utmpbuf.ut_pid = getpid();
     utmpbuf.ut_type = LOGIN_PROCESS;
     utmpbuf.ut_time = secclock();
@@ -606,7 +619,6 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
 void login_close(struct login_cb *tp)
 {
 
-  char slave[80];
   int fdut = -1;
   struct utmp utmpbuf;
 
@@ -615,20 +627,19 @@ void login_close(struct login_cb *tp)
     off_read(tp->pty);
     off_write(tp->pty);
     off_death(tp->pid);
+    chown(tp->ptyname, 0, 0);
+    chmod(tp->ptyname, 0666);
 #ifdef linux
     ioctl(tp->pty, TCFLSH, 2);
 #endif
     close(tp->pty);
-    restore_pty(tp->id);
-    Pty_locktime[tp->num] = secclock() + 20;
   }
   if (tp->logfp) fclose(tp->logfp);
   if (tp->pid > 0) {
     kill(-tp->pid, SIGHUP);
-    pty_name(slave, SLAVEPREFIX, tp->num);
     if (*UTMP__FILE && (fdut = open(UTMP__FILE, O_RDWR, 0644)) >= 0) {
       while (read(fdut, &utmpbuf, sizeof(utmpbuf)) == sizeof(utmpbuf))
-	if (!strcmp(utmpbuf.ut_line, slave + 5)) {
+	if (!strcmp(utmpbuf.ut_line, tp->ptyname + 5)) {
 	  utmpbuf.ut_name[0] = 0;
 	  utmpbuf.ut_time = secclock();
 #ifdef DEAD_PROCESS
@@ -680,7 +691,7 @@ struct mbuf *login_read(struct login_cb *tp, int cnt)
   fcntl(tp->pty, F_SETFL, FIONBIO); /* Without this the read blocks! */
 #endif
   on_read(tp->pty, tp->readfnc, tp->fncarg);
-  head = 0;
+  head = tail = 0;
   while (cnt) {
     if (tp->inpcnt <= 0) {
       if ((tp->inpcnt = read(tp->pty, tp->inpptr = tp->inpbuf, sizeof(tp->inpbuf))) <= 0)

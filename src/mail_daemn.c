@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.18 1994/04/13 09:51:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.19 1994/09/05 12:47:16 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -167,7 +167,7 @@ static void read_configuration(void)
   if (stat(CONFFILE, &statbuf)) return;
   if (lastmtime == statbuf.st_mtime || statbuf.st_mtime > secclock() - 5) return;
   if (!(fp = fopen(CONFFILE, "r"))) return;
-  while (sp = Systems) {
+  while ((sp = Systems)) {
     Systems = Systems->next;
     free(sp->sysname);
     free(sp->protocol);
@@ -175,7 +175,7 @@ static void read_configuration(void)
     free(sp);
   }
   while (fgets(line, sizeof(line), fp)) {
-    if (cp = strchr(line, '#')) *cp = 0;
+    if ((cp = strchr(line, '#'))) *cp = 0;
     if (!(sysname = strtok(line, ":"))) continue;
     if (!(mailername = strtok(NULLCHAR, ":"))) continue;
     if (!(protocol = strtok(NULLCHAR, ":"))) continue;
@@ -247,7 +247,7 @@ static void mail_tick(char *sysname)
 	q->next = p;
       }
       if (++cnt > MAXJOBS) {
-	for (p = filelist; p->next; q = p, p = p->next) ;
+	for (q = 0, p = filelist; p->next; q = p, p = p->next) ;
 	q->next = 0;
 	free(p);
 	cnt--;
@@ -255,7 +255,7 @@ static void mail_tick(char *sysname)
     }
     closedir(dirp);
     tail = 0;
-    for (; p = filelist; filelist = p->next, free(p)) {
+    for (; (p = filelist); filelist = p->next, free(p)) {
       memset((char *) &mj, 0, sizeof(mj));
       sprintf(mj.cfile, "%s/%s", spooldir, p->name);
       if (!(fp = fopen(mj.cfile, "r"))) continue;

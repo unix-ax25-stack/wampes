@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.14 1993/10/07 15:09:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.15 1994/09/05 12:47:07 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -10,9 +10,6 @@
 #include "ax25.h"
 #include "lapb.h"
 #include "session.h"
-
-static void axclient_parse(char *buf, int n);
-static void axclient_state_upcall(struct ax25_cb *cp, int oldstate, int newstate);
 
 /*---------------------------------------------------------------------------*/
 
@@ -47,7 +44,7 @@ void axclient_send_upcall(struct ax25_cb *cp, int cnt)
     *p++ = chr;
     cnt--;
   }
-  if (bp->cnt = p - bp->data)
+  if ((bp->cnt = p - bp->data))
     send_ax25(cp, bp, PID_NO_L3);
   else
     free_p(bp);
@@ -84,8 +81,8 @@ static void axclient_state_upcall(struct ax25_cb *cp, int oldstate, int newstate
 
   notify = (Current && Current->type == AX25TNC && Current == (struct session *) cp->user);
   if (newstate != LAPB_DISCONNECTED) {
-    if (notify && !(oldstate == LAPB_CONNECTED && newstate == LAPB_RECOVERY ||
-		    oldstate == LAPB_RECOVERY && newstate == LAPB_CONNECTED))
+    if (notify && !((oldstate == LAPB_CONNECTED && newstate == LAPB_RECOVERY) ||
+		    (oldstate == LAPB_RECOVERY && newstate == LAPB_CONNECTED)))
       printf("%s\n", Ax25states[newstate]);
   } else {
     if (notify) printf("%s (%s)\n", Ax25states[newstate], Axreasons[cp->reason]);

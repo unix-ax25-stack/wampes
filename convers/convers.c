@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.15 1994/02/07 12:39:32 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.16 1994/09/05 12:47:25 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -146,7 +146,7 @@ int main(int argc, char **argv)
   name = getenv("LOGNAME");
   if (!note && (pw = getpwnam(name))) {
     note = pw->pw_gecos;
-    if (cp = strchr(note, ',')) *cp = 0;
+    if ((cp = strchr(note, ','))) *cp = 0;
   }
   if (!note || !*note) note = "@";
 

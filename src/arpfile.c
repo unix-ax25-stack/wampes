@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.9 1993/05/17 13:44:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.10 1994/09/05 12:47:05 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -18,13 +18,13 @@ struct arp_saverecord_0 {
 
 struct arp_saverecord_1 {
   int32 ip_addr;        /* IP address, host order */
-  char hardware;        /* Hardware type */
+  unsigned char hardware;/* Hardware type */
   char pub;             /* Publish this entry? */
 };
 
 struct arp_saverecord_2 {
   int32 ip_addr;        /* IP address, host order */
-  char hardware;        /* Hardware type */
+  unsigned char hardware;/* Hardware type */
   char pub;             /* Publish this entry? */
   int32 expires;
 };

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.10 1993/05/17 13:44:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.11 1994/09/05 12:47:07 deyke Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -7,10 +7,6 @@
 #include "login.h"
 
 int Axserver_enabled;
-
-static void axserv_recv_upcall(struct ax25_cb *axp, int cnt);
-static void axserv_send_upcall(struct ax25_cb *axp, int cnt);
-static void axserv_state_upcall(struct ax25_cb *axp, int oldstate, int newstate);
 
 /*---------------------------------------------------------------------------*/
 
@@ -28,7 +24,7 @@ static void axserv_send_upcall(struct ax25_cb *axp, int cnt)
 {
   struct mbuf *bp;
 
-  if (bp = login_read((struct login_cb *) axp->user, space_ax25(axp)))
+  if ((bp = login_read((struct login_cb *) axp->user, space_ax25(axp))))
     send_ax25(axp, bp, PID_NO_L3);
 }
 

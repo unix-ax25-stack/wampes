@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.17 1993/06/06 08:23:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.18 1994/09/05 12:47:17 deyke Exp $ */
 
 /* Miscellaneous machine independent utilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -173,7 +173,7 @@ char *s1,*s2;
 	return Xtolower(*s1) - Xtolower(*s2);
 }
 
-strnicmp(a,b,n)
+int strnicmp(a,b,n)
 char *a,*b;
 size_t n;
 {

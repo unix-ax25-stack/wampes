@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.24 1994/01/09 16:19:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.25 1994/09/05 12:47:20 deyke Exp $ */
 
 #include "global.h"
 
@@ -308,7 +308,7 @@ void remote_net_initialize(void)
   struct sockaddr *addr;
 
   for (i = 0; socketnames[i]; i++) {
-    if (addr = build_sockaddr(socketnames[i], &addrlen)) {
+    if ((addr = build_sockaddr(socketnames[i], &addrlen))) {
       if ((flisten_net = socket(addr->sa_family, SOCK_STREAM, 0)) >= 0) {
 	switch (addr->sa_family) {
 	case AF_UNIX:

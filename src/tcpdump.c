@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpdump.c,v 1.6 1993/05/17 13:45:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpdump.c,v 1.7 1994/09/05 12:47:22 deyke Exp $ */
 
 /* TCP header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -48,7 +48,7 @@ int check;              /* 0 if checksum test is to be bypassed */
 
 	ntohtcp(&seg,bpp);
 
-	fprintf(fp,"TCP: %u->%u Seq x%lx",seg.source,seg.dest,seg.seq,seg.ack);
+	fprintf(fp,"TCP: %u->%u Seq x%lx",seg.source,seg.dest,seg.seq);
 	if(seg.flags.ack)
 		fprintf(fp," Ack x%lx",seg.ack);
 	if(seg.flags.congest)

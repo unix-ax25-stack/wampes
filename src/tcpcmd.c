@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.11 1993/05/17 13:45:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.12 1994/09/05 12:47:22 deyke Exp $ */
 
 /* TCP control and status routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -25,8 +25,6 @@ static int dotcptr(int argc,char *argv[],void *p);
 static int dowindow(int argc,char *argv[],void *p);
 static int dosyndata(int argc,char *argv[],void *p);
 static int tstat(void);
-static int keychar(int c);
-static void tcprepstat(int interval,void *p1,void *p2);
 
 /* TCP subcommand table */
 static struct cmds Tcpcmds[] = {

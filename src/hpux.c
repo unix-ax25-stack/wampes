@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.50 1994/05/15 16:54:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.51 1994/09/05 12:47:11 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -83,10 +83,6 @@ static struct ltchars curr_ltchars, prev_ltchars;
 static struct termios curr_termios, prev_termios;
 #endif
 
-static void child_dead(pid_t pid);
-static void dowait(void);
-static void check_files_changed(void);
-
 /*---------------------------------------------------------------------------*/
 
 pid_t dofork(void)
@@ -125,7 +121,7 @@ void ioinit(void)
   fixdir("/tcp/sockets", 0755);
   fixdir("/tcp/.sockets", 0700);
 
-  if (local_kbd = (isatty(0) && isatty(1))) {
+  if ((local_kbd = (isatty(0) && isatty(1)))) {
 #ifdef ibm032
     ioctl(0, TIOCGETP, &prev_sgttyb);
     ioctl(0, TIOCGETC, &prev_tchars);

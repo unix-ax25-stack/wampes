@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.12 1994/03/30 11:20:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.13 1994/09/05 12:47:12 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -104,7 +104,7 @@ void route_loadfile(void)
 	    fclose(fp);
 	    return;
 	  }
-	} while (*cp++ = c);
+	} while ((*cp++ = c));
 	for (ifp = Ifaces; ifp && strcmp(ifp->name, ifname); ifp = ifp->next) ;
 	if (ifp)
 	  rt_add(buf.target, buf.bits, buf.gateway, ifp, buf.metric,
@@ -122,7 +122,7 @@ void route_loadfile(void)
 	    fclose(fp);
 	    return;
 	  }
-	} while (*cp++ = c);
+	} while ((*cp++ = c));
 	for (ifp = Ifaces; ifp && strcmp(ifp->name, ifname); ifp = ifp->next) ;
 	if (ifp && (ttl = buf.expires - secclock()) > 0)
 	  rt_add(buf.target, buf.bits, buf.gateway, ifp, buf.metric,

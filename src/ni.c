@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.5 1994/08/05 10:35:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.6 1994/09/05 12:47:19 deyke Exp $ */
 
 #ifdef __hpux
 
@@ -38,9 +38,6 @@ struct ni_packet {
   struct sockaddr addr;
   char data[MAX_FRAME];
 };
-
-static int ni_send(struct mbuf *data, struct iface *ifp, int32 gateway, int tos);
-static void ni_recv(void *argp);
 
 /*---------------------------------------------------------------------------*/
 

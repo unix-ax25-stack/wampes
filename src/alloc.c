@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.24 1994/02/10 08:37:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.25 1994/09/05 12:47:04 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -128,7 +128,7 @@ static struct block *getblock(int n)
   int a;
   struct block *p;
 
-  if (p = Freetable[n]) {
+  if ((p = Freetable[n])) {
     Freetable[n] = p->next;
   } else if (n == MAX_N) {
     if ((a = (int) sbrk(Blocksize[MAX_N] + ALIGN - 1)) == -1) {
@@ -141,7 +141,7 @@ static struct block *getblock(int n)
     a = (a + ALIGN - 1) & ~(ALIGN - 1);
     a -= sizeof(struct block *);
     p = (struct block *) a;
-  } else if (p = getblock(n + 1)) {
+  } else if ((p = getblock(n + 1))) {
     putblock((struct block *) (Blocksize[n] + (char *) p), n);
     Splits++;
   } else {
@@ -194,7 +194,7 @@ void *blk;
   int n;
   struct block *p;
 
-  if (p = (struct block *) blk) {
+  if ((p = (struct block *) blk)) {
     if ((ALIGN - 1) & (int) p) {
       fprintf(stderr, "free: bad alignment\n");
       Invalid++;
@@ -244,7 +244,7 @@ unsigned size;
     Invalid++;
     return malloc(size);
   }
-  if (new = malloc(size)) {
+  if ((new = malloc(size))) {
     osize = Blocksize[n] - sizeof(struct block *);
     memcpy(new, area, osize < size ? osize : size);
     free(area);

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/qth.c,v 1.12 1994/02/22 13:22:50 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/qth.c,v 1.13 1994/09/05 12:47:29 deyke Exp $";
 #endif
 
 /* qth: qth, locator, distance, and course computations */
@@ -323,7 +323,7 @@ int main(int pargc, char **pargv)
   FILE * fp;
   long longitude2;
 
-  if (fp = fopen(CONFFILE, "r")) {
+  if ((fp = fopen(CONFFILE, "r"))) {
     if (fscanf(fp, "%ld %ld", &longitude1, &latitude1) == 2) {
       mylongitude = longitude1;
       mylatitude = latitude1;

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dh8saw-1,v 1.18 1994/08/31 11:39:37 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dh8saw-1,v 1.19 1994/09/05 12:49:43 deyke Exp $
 
 hostname     dh8saw-1
 ax25 mycall  dh8saw-1
@@ -24,9 +24,9 @@ route add  df9sr-1.ampr.org     ipip     15.138.33.250
 route add  dj3eg-1.ampr.org     ipip     15.138.33.250
 route add  dk0hu-u.ampr.org     ipip     15.138.33.250
 route add  dk0hu.ampr.org       ipip     15.138.33.250
-route add  dk5sg-u.ampr.org     ipip     15.138.33.250
-route add  dk5sg.ampr.org       ipip     15.138.33.250
-route add  dl1sbl-1.ampr.org    ipip     15.138.33.250
+route add  dk5sg-u.ampr.org     ipip     15.136.120.111
+route add  dk5sg.ampr.org       ipip     15.136.120.111
+route add  dl1sbl-1.ampr.org    ipip     15.136.120.111
 route add  dl2sel-1.ampr.org    ipip     15.138.33.250
 route add  dl2sel.ampr.org      ipip     15.138.33.250
 route add  dl4sas-1.ampr.org    ipip     15.138.33.250

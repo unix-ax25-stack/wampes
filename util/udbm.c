@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.33 1994/02/19 17:50:39 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.34 1994/09/05 12:47:29 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -192,21 +192,21 @@ static int is_qth(const char *s)
 {
   switch (strlen(s)) {
   case 5:
-    if ((s[0] >= 'A' && s[0] <= 'Z' || s[0] >= 'a' && s[0] <= 'z') &&
-	(s[1] >= 'A' && s[1] <= 'Z' || s[1] >= 'a' && s[1] <= 'z') &&
-	(s[2] >= '0' && s[2] <= '8'                              ) &&
-	(s[3] >= '0' && s[3] <= '9'                              ) &&
-	(s[4] >= 'A' && s[4] <= 'J' || s[4] >= 'a' && s[4] <= 'j') &&
-	 s[4] != 'I' && s[4] != 'i')
+    if (((s[0] >= 'A' && s[0] <= 'Z') || (s[0] >= 'a' && s[0] <= 'z')) &&
+	((s[1] >= 'A' && s[1] <= 'Z') || (s[1] >= 'a' && s[1] <= 'z')) &&
+	((s[2] >= '0' && s[2] <= '8')                                ) &&
+	((s[3] >= '0' && s[3] <= '9')                                ) &&
+	((s[4] >= 'A' && s[4] <= 'J') || (s[4] >= 'a' && s[4] <= 'j')) &&
+	  s[4] != 'I' && s[4] != 'i')
       return 1;
     break;
   case 6:
-    if ((s[0] >= 'A' && s[0] <= 'R' || s[0] >= 'a' && s[0] <= 'r') &&
-	(s[1] >= 'A' && s[1] <= 'R' || s[1] >= 'a' && s[1] <= 'r') &&
-	(s[2] >= '0' && s[2] <= '9'                              ) &&
-	(s[3] >= '0' && s[3] <= '9'                              ) &&
-	(s[4] >= 'A' && s[4] <= 'X' || s[4] >= 'a' && s[4] <= 'x') &&
-	(s[5] >= 'A' && s[5] <= 'X' || s[5] >= 'a' && s[5] <= 'x'))
+    if (((s[0] >= 'A' && s[0] <= 'R') || (s[0] >= 'a' && s[0] <= 'r')) &&
+	((s[1] >= 'A' && s[1] <= 'R') || (s[1] >= 'a' && s[1] <= 'r')) &&
+	((s[2] >= '0' && s[2] <= '9')                                ) &&
+	((s[3] >= '0' && s[3] <= '9')                                ) &&
+	((s[4] >= 'A' && s[4] <= 'X') || (s[4] >= 'a' && s[4] <= 'x')) &&
+	((s[5] >= 'A' && s[5] <= 'X') || (s[5] >= 'a' && s[5] <= 'x')))
       return 1;
     break;
   }
@@ -454,7 +454,7 @@ static int fixusers(void)
   }
 
   gethostname(hostname, sizeof(hostname));
-  if (cp = strchr(hostname, '.')) *cp = 0;
+  if ((cp = strchr(hostname, '.'))) *cp = 0;
   if (callvalid(hostname)) {
     up = getup(hostname, 1);
     *line = '@';

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.10 1994/06/23 08:32:40 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.11 1994/09/05 12:47:33 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -71,7 +71,7 @@ static struct node *Nodes;
 
 static void strlwc(char *to, const char *from)
 {
-  while (*to++ = tolower(*from++ & 0xff)) ;
+  while ((*to++ = tolower(*from++ & 0xff))) ;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -424,13 +424,13 @@ static void sort_routes(void)
   for (np = Nodes; np; np = np->next) {
     for (bits = 0; bits <= 32; bits++)
       rt[bits] = 0;
-    while (rp = np->routes) {
+    while ((rp = np->routes)) {
       np->routes = rp->next;
       rp->next = rt[rp->bits];
       rt[rp->bits] = rp;
     }
     for (bits = 0; bits <= 32; bits++) {
-      while (rp = rt[bits]) {
+      while ((rp = rt[bits])) {
 	rt[bits] = rp->next;
 	rp->next = np->routes;
 	np->routes = rp;
@@ -508,7 +508,7 @@ static void print_routes(void)
       else
 	sprintf(dest, "%s/%d", resolve_a(rp->dest), rp->bits);
       if (rp->iface != Loopback_iface) {
-	if (!rp->gateway || rp->bits == 32 && rp->dest == rp->gateway)
+	if (!rp->gateway || (rp->bits == 32 && rp->dest == rp->gateway))
 	  gateway = "";
 	else
 	  gateway = resolve_a(rp->gateway);
@@ -534,7 +534,7 @@ static void make_route_files(void)
 
   for (np = Nodes; np; np = np->next) {
     strcpy(dest, np->name);
-    if (cp = strchr(dest, '.')) *cp = 0;
+    if ((cp = strchr(dest, '.'))) *cp = 0;
     sprintf(command, "sort > /tmp/iprt.%s", dest);
     if (!(fp = popen(command, "w"))) {
       perror(command);
@@ -548,7 +548,7 @@ static void make_route_files(void)
       else
 	sprintf(dest, "%s/%d", resolve_a(rp->dest), rp->bits);
       if (rp->iface != Loopback_iface) {
-	if (!rp->gateway || rp->bits == 32 && rp->dest == rp->gateway)
+	if (!rp->gateway || (rp->bits == 32 && rp->dest == rp->gateway))
 	  gateway = "";
 	else
 	  gateway = resolve_a(rp->gateway);

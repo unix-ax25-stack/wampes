@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.9 1994/02/19 17:50:38 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.10 1994/09/05 12:47:28 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -179,7 +179,7 @@ static void read_domain_file(const char *filename)
     fix_line(line);
 
     if (!strncmp(line, "$origin", 7)) {
-      if (p = strtok(line + 7, delim)) strcpy(origin, p);
+      if ((p = strtok(line + 7, delim))) strcpy(origin, p);
       continue;
     }
 
@@ -213,7 +213,7 @@ static void read_domain_file(const char *filename)
     fix_line(line);
 
     if (!strncmp(line, "$origin", 7)) {
-      if (p = strtok(line + 7, delim)) strcpy(origin, p);
+      if ((p = strtok(line + 7, delim))) strcpy(origin, p);
       continue;
     }
 

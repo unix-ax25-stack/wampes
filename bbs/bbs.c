@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.77 1994/04/15 16:13:57 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.78 1994/09/05 12:47:30 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -280,7 +280,7 @@ static char *strupc(char *s)
 {
   char *p;
 
-  for (p = s; *p = Xtoupper(*p); p++) ;
+  for (p = s; (*p = Xtoupper(*p)); p++) ;
   return s;
 }
 
@@ -290,7 +290,7 @@ static char *strlwc(char *s)
 {
   char *p;
 
-  for (p = s; *p = Xtolower(*p); p++) ;
+  for (p = s; (*p = Xtolower(*p)); p++) ;
   return s;
 }
 
@@ -815,8 +815,8 @@ static void send_to_news(struct mail *mail)
       while (p && p->str[0] == 'R' && p->str[1] == ':')
 	p = p->next;
       while (p &&
-	  (p->str[0] == 'd' && p->str[1] == 'e' && p->str[2] == ' ' ||
-	   p->str[0] == 't' && p->str[1] == 'o' && p->str[2] == ' '))
+	  ((p->str[0] == 'd' && p->str[1] == 'e' && p->str[2] == ' ') ||
+	   (p->str[0] == 't' && p->str[1] == 'o' && p->str[2] == ' ')))
 	p = p->next;
       while (p && p->str[0] == 0)
 	p = p->next;
@@ -863,7 +863,7 @@ static void fix_address(char *addr)
     strcpy(addr, tmp);
   }
 
-  while (p2 = strrchr(addr, '@')) {
+  while ((p2 = strrchr(addr, '@'))) {
     *p2 = 0;
     p1 = p2;
     while (p1 > addr && *p1 != '!') p1--;
@@ -876,7 +876,7 @@ static void fix_address(char *addr)
     strcpy(addr, tmp);
   }
 
-  for (skip = 0, p1 = p2 = addr; c = *p1; p1++) {
+  for (skip = 0, p1 = p2 = addr; (c = *p1); p1++) {
     if (c == '.')
       skip = 1;
     else if (c == '!')
@@ -925,7 +925,7 @@ static void free_mail(struct mail *mail)
 {
   struct strlist *p;
 
-  while (p = mail->head) {
+  while ((p = mail->head)) {
     mail->head = p->next;
     free(p);
   }
@@ -1053,7 +1053,7 @@ static int get_header_value(const char *name, int do822, char *line, char *value
     if (Xtolower(*name) != Xtolower(*line)) return 0;
 
   if (do822) {
-    for (comment = 0, p1 = line; c = *p1; p1++) {
+    for (comment = 0, p1 = line; (c = *p1); p1++) {
       if (c == '(') comment++;
       if (comment) *p1 = ' ';
       if (comment && c == ')') comment--;
@@ -1250,7 +1250,7 @@ static void forward_message(const struct index *index, const char *filename, int
       if (skip_header)
 	while (fgets(buf, sizeof(buf), fp) && *buf != '\n') ;
       while (fgets(buf, sizeof(buf), fp)) {
-	if (cp = strchr(buf, '\n')) *cp = 0;
+	if ((cp = strchr(buf, '\n'))) *cp = 0;
 	remove_message_delimiters(buf);
 	puts(buf);
       }
@@ -1307,7 +1307,7 @@ static void f_command(int argc, char **argv)
   do_not_exit = doforward;
 
   sprintf(dirname, "%s/%s", UUCP_DIR, user.name);
-  if (dirp = opendir(dirname)) {
+  if ((dirp = opendir(dirname))) {
     for (dp = readdir(dirp); dp; dp = readdir(dirp)) {
       if (*dp->d_name != 'C') continue;
       p = (struct filelist *) malloc(sizeof(*p));
@@ -1322,7 +1322,7 @@ static void f_command(int argc, char **argv)
       }
     }
     closedir(dirp);
-    for (; p = filelist; filelist = p->next, free(p)) {
+    for (; (p = filelist); filelist = p->next, free(p)) {
       sprintf(cfile, "%s/%s/%s", UUCP_DIR, user.name, p->name);
       if (!(fp = fopen(cfile, "r"))) continue;
       *dfile = *xfile = *to = 0;
@@ -1649,7 +1649,7 @@ static void read_command(int argc, char **argv)
 	  return;
 	}
 	if (inheader) {
-	  if (p = get_host_from_header(buf)) {
+	  if ((p = get_host_from_header(buf))) {
 	    strcat(path, *path ? "!" : "Path: ");
 	    strcat(path, p);
 	    continue;
@@ -1841,7 +1841,7 @@ static void send_command(int argc, char **argv)
     if (!(check_header && line[0] == ' ' && line[1] == '[')) {
       append_line(mail, line);
       if (check_header) {
-	if (p = get_host_from_header(line)) {
+	if ((p = get_host_from_header(line))) {
 	  if (*path) strcat(path, "!");
 	  strcat(path, p);
 	} else if (*path)
@@ -1986,7 +1986,7 @@ static void xcrunch_command(int argc, char **argv)
   wflag = 0;
   while (read(fdindex, &index, sizeof(struct index)) == sizeof(struct index)) {
     wflag = 1;
-    if (!index.deleted || *index.bid && index.date >= validdate) {
+    if (!index.deleted || (*index.bid && index.date >= validdate)) {
       if (write(f, &index, sizeof(struct index)) != sizeof(struct index)) halt();
       wflag = 0;
       if (*index.bid && index.date >= validdate) {
@@ -2014,12 +2014,12 @@ static void xcrunch_command(int argc, char **argv)
 
 /*---------------------------------------------------------------------------*/
 
-#define Invalid (                                   \
-   pi->deleted                                   || \
-   *from    &&  strcmp(pi->from, from)           || \
-   *to      &&  strcmp(pi->to,   to)             || \
-   *at      &&  strcmp(pi->at,   at)             || \
-   *subject && !strcasepos(pi->subject, subject)    \
+#define Invalid (                                     \
+   pi->deleted                                     || \
+   (*from    &&  strcmp(pi->from, from))           || \
+   (*to      &&  strcmp(pi->to,   to))             || \
+   (*at      &&  strcmp(pi->at,   at))             || \
+   (*subject && !strcasepos(pi->subject, subject))    \
    )
 
 static void xscreen_command(int argc, char **argv)
@@ -2247,7 +2247,7 @@ static char *connect_addr(const char *host)
   if (!(fp = fopen(CONFIGFILE, "r"))) return 0;
   addr = 0;
   while (fgets(line, sizeof(line), fp)) {
-    if (p = strchr(line, '#')) *p = 0;
+    if ((p = strchr(line, '#'))) *p = 0;
     for (p = line; isspace(*p & 0xff); p++) ;
     for (h = p; *p && !isspace(*p & 0xff); p++) ;
     if (*p) *p++ = 0;
@@ -2322,7 +2322,7 @@ static void parse_command_line(char *line)
   if (!(len = strlen(*argv))) return;
   for (cmdp = cmdtable; ; cmdp++)
     if (!cmdp->name ||
-	level >= cmdp->level && !Strncasecmp(cmdp->name, *argv, len)) {
+	(level >= cmdp->level && !Strncasecmp(cmdp->name, *argv, len))) {
       if (argc >= cmdp->argc)
 	(*cmdp->fnc)(argc, argv);
       else {
@@ -2346,7 +2346,7 @@ static void bbs(void)
   if (level != MBOX)
     printf("DK5SG-BBS  Revision: %s   Type ? for help.\n", revision.number);
   sprintf(line, "%s/%s", user.dir, RCFILE);
-  if (fp = fopen(line, "r")) {
+  if ((fp = fopen(line, "r"))) {
     while (fgets(line, sizeof(line), fp)) parse_command_line(line);
     fclose(fp);
   }
@@ -2440,16 +2440,16 @@ static void recv_from_mail_or_news(void)
       strtrim(line);
     }
     while (*mail->to && strncmp(mail->to, "ampr.bbs.", 9))
-      if (cp = strchr(mail->to, ','))
+      if ((cp = strchr(mail->to, ',')))
 	strcpy(mail->to, cp + 1);
       else
 	*mail->to = 0;
     if (*mail->to) strcpy(mail->to, mail->to + 9);
     if (*mail->to && from_priority && state == 2) {
-      if (cp = strchr(mail->to, ',')) *cp = 0;
-      if (cp = strrchr(mail->to, '.')) strcpy(mail->to, cp + 1);
-      if (cp = strchr(distr, ',')) *cp = 0;
-      if (cp = strrchr(distr, '.')) strcpy(distr, cp + 1);
+      if ((cp = strchr(mail->to, ','))) *cp = 0;
+      if ((cp = strrchr(mail->to, '.'))) strcpy(mail->to, cp + 1);
+      if ((cp = strchr(distr, ','))) *cp = 0;
+      if ((cp = strrchr(distr, '.'))) strcpy(distr, cp + 1);
       if (*distr) {
 	strcat(mail->to, "@");
 	strcat(mail->to, distr);
@@ -2471,7 +2471,7 @@ int main(int argc, char **argv)
 
   char *cp;
   char *dir = WRKDIR;
-  char *sysname;
+  char *sysname = 0;
   char buf[1024];
   int c;
   int err_flag = 0;
@@ -2535,7 +2535,7 @@ int main(int argc, char **argv)
   }
 
   if (gethostname(buf, sizeof(buf))) halt();
-  if (cp = strchr(buf, '.')) *cp = 0;
+  if ((cp = strchr(buf, '.'))) *cp = 0;
   myhostname = strdup(buf);
   MYHOSTNAME = strdup(strupc(buf));
 

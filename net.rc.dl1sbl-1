@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.25 1994/08/31 11:39:38 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.26 1994/09/05 12:49:43 deyke Exp $
 
 hostname     dl1sbl-1
 ax25 mycall  dl1sbl-1
@@ -11,8 +11,15 @@ attach netrom                   # ip over netrom
 
 ax25 route add axip default
 
+axip route add df3du-1  15.138.80.94            # hpbidmp2.bbn.hp.com
+axip route add df9sr-1  15.136.35.218           # bmdjw.bbn.hp.com
+axip route add dh8saw-1 15.138.72.40            # hpbbis90.bbn.hp.com
+axip route add dj3eg-1  15.136.166.12           # hpbmosm0.bbn.hp.com
 axip route add dk0hu    15.138.33.250           # hp0hu.bbn.hp.com
 axip route add dk5sg    15.15.80.34             # mdddhd.fc.hp.com
+axip route add dl2sel-1 15.136.175.24           # hpcsmus.bbn.hp.com
+axip route add dl4sas-1 15.136.216.106          # hpbid1gf.bbn.hp.com
+axip route add dl4sel-1 15.136.136.223          # isoit041.bbn.hp.com
 
 route add  44.130.0.0/16        ipip     15.138.33.250
 route add  44.143.0.0/16        ipip     15.138.33.250
@@ -20,24 +27,25 @@ route add  db0sao-u.ampr.org    ipip     15.138.33.250
 route add  db0sao.ampr.org      ipip     15.138.33.250
 route add  df1tl-1.ampr.org     ipip     15.138.33.250
 route add  df1tl-u.ampr.org     ipip     15.138.33.250
-route add  df3du-1.ampr.org     ipip     15.138.33.250
-route add  df9sr-1.ampr.org     ipip     15.138.33.250
-route add  dh8saw-1.ampr.org    ipip     15.138.33.250
-route add  dj3eg-1.ampr.org     ipip     15.138.33.250
+route add  df3du-1.ampr.org     ipip     15.138.80.94
+route add  df9sr-1.ampr.org     ipip     15.136.35.218
+route add  dh8saw-1.ampr.org    ipip     15.138.72.40
+route add  dj3eg-1.ampr.org     ipip     15.136.166.12
 route add  dk0hu-u.ampr.org     ipip     15.138.33.250
 route add  dk0hu.ampr.org       ipip     15.138.33.250
 route add  dk5sg-u.ampr.org     ipip     15.15.80.34
 route add  dk5sg.ampr.org       ipip     15.15.80.34
-route add  dl2sel-1.ampr.org    ipip     15.138.33.250
+route add  dl2sel-1.ampr.org    ipip     15.136.175.24
 route add  dl2sel.ampr.org      ipip     15.138.33.250
-route add  dl4sas-1.ampr.org    ipip     15.138.33.250
-route add  dl4sel-1.ampr.org    ipip     15.138.33.250
+route add  dl4sas-1.ampr.org    ipip     15.136.216.106
+route add  dl4sel-1.ampr.org    ipip     15.136.136.223
 route add  dl4sel.ampr.org      ipip     15.138.33.250
 
 source /tcp/netrom_links
 
 # netrom broadcast axip nodes
 
+domain usegethostby on
 echo accept
 icmp trace on
 ip rtimer 300
@@ -51,6 +59,7 @@ start discard
 start domain
 start echo
 start ftp
+start sntp
 start tcpgate convers unix:/tcp/sockets/convers
 start tcpgate finger
 start time

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.6 1994/05/15 16:54:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/sntp.c,v 1.7 1994/09/05 12:47:22 deyke Exp $ */
 
 /* Simple Network Time Protocol (SNTP) (see RFC1361) */
 
@@ -98,11 +98,11 @@ static struct sys sys = {
 	LEAP_NOWARNING,                         /* leap */
 	1,                                      /* stratum */
 	-10,                                    /* precision */
-	0x00000000, 0x00400000,                 /* rho */
-	0, 0,                                   /* rootdelay */
-	0, 0,                                   /* rootdispersion */
+	{ 0x00000000, 0x00400000 },             /* rho */
+	{ 0, 0 },                               /* rootdelay */
+	{ 0, 0 },                               /* rootdispersion */
 	('U'<<24)|('N'<<16)|('I'<<8)|'X',       /* refid */
-	0, 0,                                   /* reftime */
+	{ 0, 0 }                                /* reftime */
 };
 
 static const struct fp Zero = { 0, 0 };
@@ -134,7 +134,7 @@ static struct udp_cb *Server_ucb;
 /*---------------------------------------------------------------------------*/
 
 #define fpisge(fp1, fp2) \
-	((fp1).i > (fp2).i || (fp1).i == (fp2).i && (fp1).f >= (fp2).f)
+	((fp1).i > (fp2).i || ((fp1).i == (fp2).i && (fp1).f >= (fp2).f))
 
 /*---------------------------------------------------------------------------*/
 
@@ -254,7 +254,7 @@ static struct mbuf *htonntp(const struct pkt *pkt)
 	struct mbuf *bp;
 	unsigned long *p;
 
-	if (bp = ambufw(NTP_PACKET_SIZE)) {
+	if ((bp = ambufw(NTP_PACKET_SIZE))) {
 		bp->cnt = NTP_PACKET_SIZE;
 		p = (unsigned long *) bp->data;
 		*p++ = htonl(((pkt->leap      & 0x03) << 30) |
@@ -408,7 +408,7 @@ static void sntp_server(struct iface *iface, struct udp_cb *ucb, int cnt)
 	pkt.keyid = 0;
 	memset(pkt.check, 0, sizeof(pkt.check));
 	pkt.xmt = sys_clock();
-	if (bp = htonntp(&pkt)) {
+	if ((bp = htonntp(&pkt))) {
 		send_udp(&ucb->socket, &fsocket, DELAY, 0, bp, 0, 0, 0);
 		if (Ntrace) {
 			printf("sent: ");
@@ -540,7 +540,7 @@ static void sntp_client_send(void *arg)
 	pkt.rootdelay = One;
 	pkt.rootdispersion = One;
 	pkt.xmt = peer->xmt = sys_clock();
-	if (bp = htonntp(&pkt)) {
+	if ((bp = htonntp(&pkt))) {
 		send_udp(&peer->ucb->socket, &peer->fsocket, DELAY, 0, bp, 0, 0, 0);
 		peer->sent++;
 		if (Ntrace) {
@@ -603,7 +603,7 @@ static int dosntpdrop(int argc, char **argv, void *p)
 		printf(Badhost, argv[1]);
 		return 1;
 	}
-	for (pp = &Peers; peer = *pp; pp = &peer->next)
+	for (pp = &Peers; (peer = *pp); pp = &peer->next)
 		if (peer->fsocket.address == addr) {
 			*pp = peer->next;
 			del_udp(peer->ucb);

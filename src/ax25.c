@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.21 1994/04/13 09:51:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.22 1994/09/05 12:47:05 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -355,7 +355,7 @@ struct mbuf *data;
 		free_p(bp);
 		return -1;
 	}
-	if (ifp = axp->iface) {
+	if ((ifp = axp->iface)) {
 		if (ifp->forw)
 			ifp = ifp->forw;
 		logsrc(ifp,ifp->hwaddr);

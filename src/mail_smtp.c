@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.13 1994/06/23 08:32:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.14 1994/09/05 12:47:16 deyke Exp $ */
 
 /* SMTP Mail Delivery Agent */
 
@@ -80,7 +80,7 @@ nextjob:
       transport_send(mp->tp, qdata("data\n", 5));
       break;
     case SMTP_DATA_STATE:
-      if (mp->fp = fopen(jp->dfile, "r")) {
+      if ((mp->fp = fopen(jp->dfile, "r"))) {
 	mp->state = SMTP_SEND_STATE;
 	fgets(tmp, sizeof(tmp), mp->fp);
 	mail_smtp_send_upcall(mp->tp, transport_send_space(mp->tp));
@@ -97,7 +97,7 @@ nextjob:
       if (*jp->xfile) unlink(jp->xfile);
       mp->sp->jobs = jp->next;
       free(jp);
-      if (jp = mp->sp->jobs) goto nextjob;
+      if ((jp = mp->sp->jobs)) goto nextjob;
       mp->state = SMTP_QUIT_STATE;
       transport_send(mp->tp, qdata("quit\n", 5));
       break;
@@ -156,7 +156,7 @@ static void mail_smtp_send_upcall(struct transport_cb *tp, int cnt)
   p = bp->data;
   while (p - bp->data < cnt && (c = getc(mp->fp)) != EOF)
     if (c && c != '\004' && c != '\032') *p++ = c;
-  if (bp->cnt = p - bp->data)
+  if ((bp->cnt = p - bp->data))
     transport_send(tp, bp);
   else
     free_p(bp);
@@ -174,7 +174,7 @@ static void mail_smtp_state_upcall(struct transport_cb *tp)
 {
   struct mesg *mp;
 
-  if (mp = (struct mesg *) tp->user) {
+  if ((mp = (struct mesg *) tp->user)) {
     if (mp->fp) fclose(mp->fp);
     if (!mp->sp->jobs)
       mp->sp->state = MS_SUCCESS;
@@ -193,7 +193,7 @@ void mail_smtp(struct mailsys *sp)
 
   mp = (struct mesg *) calloc(1, sizeof(*mp));
   mp->sp = sp;
-  if (mp->tp = transport_open(sp->protocol, sp->address, mail_smtp_recv_upcall, mail_smtp_send_upcall, mail_smtp_state_upcall, (char *) mp)) {
+  if ((mp->tp = transport_open(sp->protocol, sp->address, mail_smtp_recv_upcall, mail_smtp_send_upcall, mail_smtp_state_upcall, (char *) mp))) {
     mp->tp->recv_mode = EOL_LF;
     mp->tp->send_mode = strcmp(sp->protocol, "tcp") ? EOL_CR : EOL_CRLF;
     transport_set_timeout(mp->tp, 3600);

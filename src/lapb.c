@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.29 1993/05/17 13:45:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.30 1994/09/05 12:47:14 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -417,8 +417,8 @@ struct mbuf *bp;                /* Rest of frame, starting with ctl */
 		axp->response = 0;
 	}
 	if((axp->state == LAPB_RECOVERY || axp->state == LAPB_CONNECTED) &&
-	   (axp->flags.closed && !axp->txq ||
-	    axp->flags.remotebusy && (bugfix = msclock() - axp->flags.remotebusy) > 900000L)){
+	   ((axp->flags.closed && !axp->txq) ||
+	    (axp->flags.remotebusy && (bugfix = msclock() - axp->flags.remotebusy) > 900000L))){
 		sendctl(axp,LAPB_COMMAND,DISC|PF);
 		start_timer(&axp->t1);
 		lapbstate(axp,LAPB_DISCPENDING);

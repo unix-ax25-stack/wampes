@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.41 1994/08/05 10:35:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.42 1994/09/05 12:47:17 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -422,7 +422,7 @@ static void calculate_all(void)
     calculate_qualities(neighbor);
     for (pn = nodes; pn; pn = pn->next)
       if (pn->quality < pn->tmp_quality ||
-	  pn->quality == pn->tmp_quality && neighbor == pn->old_neighbor) {
+	  (pn->quality == pn->tmp_quality && neighbor == pn->old_neighbor)) {
 	pn->quality = pn->tmp_quality;
 	pn->neighbor = neighbor;
       }
@@ -516,7 +516,7 @@ static struct mbuf *alloc_broadcast_packet(void)
 {
   struct mbuf *bp;
 
-  if (bp = alloc_mbuf(258)) {
+  if ((bp = alloc_mbuf(258))) {
     bp->data[0] = UI;
     bp->data[1] = PID_NETROM;
     bp->data[2] = 0xff;
@@ -845,7 +845,7 @@ static void send_l4_packet(struct circuit *pc, int opcode, struct mbuf *data)
       opcode |= NR4NAK;
       pc->naksent = 1;
     }
-    if (pc->chokesent = nrbusy(pc)) opcode |= NR4CHOKE;
+    if ((pc->chokesent = nrbusy(pc))) opcode |= NR4CHOKE;
     pc->response = 0;
     bp->data[0] = pc->remoteindex;
     bp->data[1] = pc->remoteid;
@@ -855,6 +855,9 @@ static void send_l4_packet(struct circuit *pc, int opcode, struct mbuf *data)
     if ((opcode & NR4OPCODE) == NR4OPINFO)
       pc->send_state = uchar(pc->send_state + 1);
     break;
+  default:
+    free_p(data);
+    return;
   }
   if (start_t1_timer) start_timer(&pc->timer_t1);
   send_l3_packet(Mycall, pc->node, nr_ttlinit, bp);
@@ -1222,7 +1225,7 @@ int send_nr(struct circuit *pc, struct mbuf *bp)
   case NR4STCPEND:
   case NR4STCON:
     if (!pc->closed) {
-      if (cnt = len_p(bp)) {
+      if ((cnt = len_p(bp))) {
 	append(&pc->sndq, bp);
 	try_send(pc, 0);
       }
@@ -1415,7 +1418,7 @@ static void nrserv_send_upcall(struct circuit *pc, int cnt)
 {
   struct mbuf *bp;
 
-  if (bp = login_read((struct login_cb *) pc->user, space_nr(pc)))
+  if ((bp = login_read((struct login_cb *) pc->user, space_nr(pc))))
     send_nr(pc, bp);
 }
 
@@ -1474,7 +1477,7 @@ void nrclient_send_upcall(struct circuit *pc, int cnt)
     *p++ = chr;
     cnt--;
   }
-  if (bp->cnt = p - bp->data)
+  if ((bp->cnt = p - bp->data))
     send_nr(pc, bp);
   else
     free_p(bp);

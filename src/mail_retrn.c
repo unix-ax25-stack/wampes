@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.19 1994/02/07 12:38:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.20 1994/09/05 12:47:16 deyke Exp $ */
 
 /* Mail Delivery Agent for returned Mails */
 
@@ -33,7 +33,7 @@ void mail_return(struct mailjob *jp)
   fopen("/dev/null", "r+");
   fopen("/dev/null", "r+");
   fopen("/dev/null", "r+");
-  if (fpi = fopen(jp->dfile, "r")) {
+  if ((fpi = fopen(jp->dfile, "r"))) {
     if (!*SENDMAIL_PROG) exit(1);
     sprintf(line, "%s -oi -oem -f '<>' %s", SENDMAIL_PROG, jp->from);
     if (!(fpo = popen(line, "w"))) exit(1);

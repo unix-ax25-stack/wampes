@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.12 1994/06/16 13:14:39 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.13 1994/09/05 12:47:32 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
   struct fd_set actread;
   struct timeval timeout;
 
-  if (fp = fopen(PIDFILE, "r")) {
+  if ((fp = fopen(PIDFILE, "r"))) {
     kill(getw(fp), SIGKILL);
     fclose(fp);
     sleep(1);
@@ -179,7 +179,7 @@ int main(int argc, char **argv)
   chdir("/");
   setsid();
 
-  if (fp = fopen(PIDFILE, "w")) {
+  if ((fp = fopen(PIDFILE, "w"))) {
     putw(getpid(), fp);
     fclose(fp);
   }

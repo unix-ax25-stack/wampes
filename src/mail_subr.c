@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_subr.c,v 1.6 1993/05/17 13:45:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_subr.c,v 1.7 1994/09/05 12:47:16 deyke Exp $ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -35,7 +35,7 @@ void mailer_failed(struct mailsys *sp)
 {
   struct mailjob *jp;
 
-  while (jp = sp->jobs) {
+  while ((jp = sp->jobs)) {
     sp->jobs = jp->next;
     free(jp);
   }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.13 1994/08/05 10:35:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.14 1994/09/05 12:47:13 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -38,9 +38,6 @@ struct edv_t {
   int port;
   int fd;
 };
-
-static int ipip_send(struct mbuf *data, struct iface *ifp, int32 gateway, int tos);
-static void ipip_receive(void *argp);
 
 /*---------------------------------------------------------------------------*/
 

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.60 1994/02/07 12:39:32 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.61 1994/09/05 12:47:26 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -299,7 +299,7 @@ static struct user *userptr(const char *name, struct host *hp)
     up = *upp;
     if (!up ||
 	(r = strcmp(up->u_name, name)) > 0 ||
-	!r && (r = strcmp(up->u_host->h_name, hp->h_name)) >= 0) {
+	(!r && (r = strcmp(up->u_host->h_name, hp->h_name)) >= 0)) {
       if (!up || r) {
 	up = (struct user *) calloc(1, sizeof(*up));
 	up->u_name = strdup((char *) name);
@@ -388,7 +388,7 @@ static void free_resources(void)
   struct user **upp;
   struct user *up;
 
-  for (lpp = &links; lp = *lpp; ) {
+  for (lpp = &links; (lp = *lpp); ) {
     if (lp->l_user || lp->l_host) {
       if (lp->l_mtime + MAX_IDLETIME < currtime) send_string(lp, "\n");
     } else if (lp->l_fd >= 0) {
@@ -396,7 +396,7 @@ static void free_resources(void)
     }
     if (lp->l_fd < 0) {
       *lpp = lp->l_next;
-      while (mp = lp->l_sndq) {
+      while ((mp = lp->l_sndq)) {
 	lp->l_sndq = mp->m_next;
 	free(mp);
       }
@@ -405,7 +405,7 @@ static void free_resources(void)
       lpp = &lp->l_next;
   }
 
-  for (upp = &users; up = *upp; )
+  for (upp = &users; (up = *upp); )
     if (up->u_channel < 0 && up->u_stime + HOLDTIME < currtime) {
       *upp = up->u_next;
       free(up->u_name);
@@ -615,7 +615,7 @@ static void send_msg_to_user(const char *fromname, const char *toname, const cha
     make_string_unique(host_buffer);
   else if (!is_string_unique(host_buffer))
     return;
-  if (cp = strchr(text, UNIQMARKER)) *cp = 0;
+  if ((cp = strchr(text, UNIQMARKER))) *cp = 0;
   if (strcmp(fromname, "conversd")) {
     sprintf(prefix, "<*%s*>:", fromname);
     formatted_line = formatline(prefix, text);
@@ -649,7 +649,7 @@ static void send_msg_to_channel(const char *fromname, int channel, char *text, i
     make_string_unique(host_buffer);
   else if (!is_string_unique(host_buffer))
     return;
-  if (cp = strchr(text, UNIQMARKER)) *cp = 0;
+  if ((cp = strchr(text, UNIQMARKER))) *cp = 0;
   sprintf(prefix, "<%s>:", fromname);
   formatted_line = formatline(prefix, text);
   for (up = users; up; up = up->u_next)
@@ -790,7 +790,7 @@ static void connect_peers(void)
     *buffer = 0;
     cp = pp->p_command;
     while (*cp) {
-      if (cp1 = strstr(cp, "\\n")) {
+      if ((cp1 = strstr(cp, "\\n"))) {
 	strncat(buffer, cp, cp1 - cp);
 	cp = cp1 + 2;
       } else {
@@ -1106,7 +1106,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.60 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.61 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1314,7 +1314,7 @@ static void h_user_command(struct link *lp)
       (seq == 0 &&
        up->u_seq == 0 &&
        (!up->u_link || lp == up->u_link) &&
-       (newchannel != up->u_channel || newchannel >= 0 && strcmp(note, up->u_note)))) {
+       (newchannel != up->u_channel || (newchannel >= 0 && strcmp(note, up->u_note))))) {
     up->u_seq = seq;
     if (hp == &my) {
       if (debug >= 2) printf("*** Got info about my own user: rejected.\n");
@@ -1433,9 +1433,9 @@ static void read_configuration(void)
   int got_host_name = 0;
   struct peer *pp;
 
-  if (fp = fopen(conffile, "r")) {
+  if ((fp = fopen(conffile, "r"))) {
     while (fgets(line, sizeof(line), fp)) {
-      if (cp = strchr(line, '#')) *cp = 0;
+      if ((cp = strchr(line, '#'))) *cp = 0;
       host_name = getarg(line, 0);
       if (*host_name && !got_host_name) {
 	free(my.h_name);
@@ -1628,7 +1628,7 @@ int main(int argc, char **argv)
   if (!getenv("TZ")) putenv("TZ=MEZ-1MESZ");
 
   gethostname(buffer, sizeof(buffer));
-  if (cp = strchr(buffer, '.')) *cp = 0;
+  if ((cp = strchr(buffer, '.'))) *cp = 0;
   my.h_name = strdup(buffer);
 
   time(&currtime);

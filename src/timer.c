@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.14 1994/05/15 16:54:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.15 1994/09/05 12:47:24 deyke Exp $ */
 
 /* General purpose software timer facilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -44,7 +44,7 @@ void *v1,*v2;
 		Msclock = 1000 * Secclock + tv.tv_usec / 1000;
 
 		while((t = Timers) && (bugfix = t->expiration - Msclock) <= 0) {
-			if (Timers = t->next)
+			if ((Timers = t->next))
 				Timers->prev = NULLTIMER;
 			t->state = TIMER_EXPIRE;
 			if(t->func)
@@ -93,7 +93,7 @@ struct timer *t;
 	else
 		tprev->next = t;
 
-	if (t->next = tnext)
+	if ((t->next = tnext))
 		tnext->prev = t;
 }
 /* Stop a timer */
@@ -145,7 +145,7 @@ int
 Xpause(ms)
 int32 ms;
 {
-	int val;
+	int val = 0;
 
 	if(Curproc == NULLPROC || ms <= 0)
 		return 0;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/adjtime.c,v 1.2 1994/05/11 10:46:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/adjtime.c,v 1.3 1994/09/05 12:47:04 deyke Exp $ */
 
 #if defined __hpux && !HAS_ADJTIME
 
@@ -36,7 +36,7 @@ typedef union {
 #define DELTA1  0
 #define DELTA2  1
 
-adjtime(delta, olddelta)
+int adjtime(delta, olddelta)
      register struct timeval *delta;
      register struct timeval *olddelta;
 {
