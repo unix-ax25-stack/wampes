@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.20 1994/03/13 21:05:03 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.21 1994/03/21 09:24:05 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -4616,3 +4616,455 @@
 44.144.9.23     on1bvk  on1bvk.ampr.org #Koen,Jabbeke
 44.144.9.24     on1atq  on1atq.ampr.org #Brecht,Wervik
 #
+#
+#                             H O S T S . N E T
+#
+#  March 12th , 1994 .
+#
+# 44.151        Pierre-Francois MONET  f5bqp  (FRANCE)
+#
+#
+#               BBS :   f5bqp@ff6ptt-1
+#
+
+44.151.01.1     f1iqa f1iqa.ampr.org
+
+44.151.02.1     f5jvi f5jvi.ampr.org
+
+44.151.04.1     f6gzl-1 f6gzl-1.ampr.org
+
+44.151.06.1     f5cau f5cau.ampr.org
+44.151.06.2     f6hzo f6hzo.ampr.org
+44.151.06.3     f6kdj f6kdj.ampr.org
+44.151.06.4     f1ddl f1ddl.ampr.org
+44.151.06.5     f1bdb f1bdb.ampr.org
+44.151.06.6     f5pxm f5pxm.ampr.org
+44.151.06.7     f1syy f1syy.ampr.org
+
+44.151.08.1     f6aku f6aku.ampr.org
+
+44.151.13.1     f5pz f5pz.ampr.org
+44.151.13.2     f5raj f5raj.ampr.org
+44.151.13.3     f6gaq f6gaq.ampr.org
+44.151.13.4     fb1rci fb1rci.ampr.org
+44.151.13.5     f5mdr f5mdr.ampr.org
+44.151.13.6     f6fsu f6fsu.ampr.org
+44.151.13.7     f5me f5me.ampr.org
+44.151.13.8     f1hgh f1hgh.ampr.org
+
+44.151.17.1     f5rke f5rke.ampr.org
+
+44.151.20.1     f5npb-1 f5npb-1.ampr.org
+
+44.151.21.1
+44.151.21.2
+44.151.21.3     f1ref f1ref.ampr.org
+44.151.21.4     f5oeg f5oeg.ampr.org
+44.151.21.5     f1rgv f1rgv.ampr.org
+44.151.21.6
+44.151.21.7
+44.151.21.8
+44.151.21.9     f5pcw f5pcw.ampr.org
+44.151.21.10    f5fyu f5fyu.ampr.org
+
+44.151.24.1     f1mac f1mac.ampr.org
+
+44.151.25.1     f1jhs f1jhs.ampr.org
+44.151.25.2     f5jio f5jio.ampr.org
+44.151.25.3     f5jio-1 f5jio-1.ampr.org
+
+44.151.26.1     f5odp f5odp.ampr.org
+
+44.151.27.1     f6gnj f6gnj.ampr.org
+
+44.151.29.1     f1sio f1sio.ampr.org
+
+44.151.30.1     f5qw f5qw.ampr.org
+44.151.30.2     f5ong f5ong.ampr.org
+44.151.30.3     fa1tda fa1tda.ampr.org
+
+44.151.31.1     f6css f6css.ampr.org
+44.151.31.2     f1foy f1foy.ampr.org
+
+44.151.33.1     f5nnn f5nnn.ampr.org
+44.151.33.2     f1ont f1ont.ampr.org
+44.151.33.3     f1te f1te.ampr.org
+44.151.33.4     f6frz-1 f6frz-1.ampr.org
+44.151.33.5     f1omy f1omy.ampr.org
+44.151.33.6     f5nsl f5nsl.ampr.org
+44.151.33.7     fb1olf fb1olf.ampr.org
+
+44.151.34.1     f5rws f5rws.ampr.org
+44.151.34.2     f1fnm f1fnm.ampr.org
+44.151.34.3     f1dmg f1dmg.ampr.org
+
+44.151.36.1     f6ctb f6ctb.ampr.org
+
+44.151.38.1     pa0kkv pa0kkv.ampr.org
+44.151.38.2     f5oxl f5oxl.ampr.org
+44.151.38.3     f1epq f1epq.ampr.org
+44.151.38.4     f1ang f1ang.ampr.org
+44.151.38.5     f1rga f1rga.ampr.org
+44.151.38.6     f5puy f5puy.ampr.org
+44.151.38.7     f5yw f5yw.ampr.org
+44.151.38.8     f5git f5git.ampr.org
+44.151.38.9     f5git-9 f5git-9.ampr.org
+44.151.38.10    f1ckt f1ckt.ampr.org
+44.151.38.11    f1enx f1enx.ampr.org
+44.151.38.12    f6ipn f6ipn.ampr.org
+44.151.38.13    fa1iic fa1iic.ampr.org
+44.151.38.14    f5ocd f5ocd.ampr.org
+44.151.38.15    f1rpc f1rpc.ampr.org
+44.151.38.16    f6kjj f6kjj.ampr.org
+44.151.38.17    f1ibu f1ibu.ampr.org
+44.151.38.18    fa1iic-9 fa1iic-9.ampr.org
+44.151.38.19    f1iju f1iju.ampr.org
+44.151.38.128   f1rga-2 f1rga-2.ampr.org
+44.151.38.129   f1ojj-2 f1ojj-2.ampr.org
+
+44.151.39.1     f5sn f5sn.ampr.org
+44.151.39.2     f1tiv f1tiv.ampr.org
+
+44.151.41.1     f1lil f1lil.ampr.org
+44.151.41.2     f6cwo f6cwo.ampr.org
+
+44.151.44.1     f1jln f1jln.ampr.org
+44.151.44.2     f1mby f1mby.ampr.org
+44.151.44.3     f1mby-2 f1mby-2.ampr.org
+44.151.44.4     f6gnv f6gnv.ampr.org
+44.151.44.5     f5nwk-2 f5nwk-2.ampr.org
+44.151.44.6     f5nwk f5nwk.ampr.org
+44.151.44.7     f1lqn f1lqn.ampr.org
+44.151.44.8     f5jfy f5jfy.ampr.org
+44.151.44.10    f5hrs f5hrs.ampr.org
+44.151.44.11    f1pnu f1pnu.ampr.org
+44.151.44.12    f6bsw f6bsw.ampr.org
+44.151.44.13    f6bsw-2 f6bsw-2.ampr.org
+44.151.44.14    f1pli f1pli.ampr.org
+44.151.44.15    f5bh f5bh.ampr.org
+44.151.44.16    f1int f1int.ampr.org
+44.151.44.17    f1pli-2 f1pli-2.ampr.org
+44.151.44.18    f1bcb f1bcb.ampr.org
+44.151.44.19    f1sow f1sow.ampr.org
+44.151.44.20    f5icj f5icj.ampr.org
+44.151.44.100   ff1leq ff1leq.ampr.org
+44.151.44.118   f6gez-2 f6gez-2.ampr.org
+
+44.151.47.1     f6cnn f6cnn.ampr.org
+44.151.47.2     f5mww f5mww.ampr.org
+
+44.151.49.1     f5jpy f5jpy.ampr.org
+44.151.49.2     f1gsr f1gsr.ampr.org
+44.151.49.3     f9yb f9yb.ampr.org
+
+44.151.51.1     f1zi f1zi.ampr.org
+44.151.51.2     f6ajk f6ajk.ampr.org
+
+44.151.53.1     f1exl f1exl.ampr.org
+
+44.151.54.1     f1rzi f1rzi.ampr.org
+44.151.54.2     f1onz f1onz.ampr.org
+44.151.54.3     f5muz f5muz.ampr.org
+44.151.54.4     f5lbl f5lbl.ampr.org
+44.151.54.5     f5lbl-9 f5lbl-9.ampr.org
+44.151.54.6     f5sjt f5sjt.ampr.org
+
+44.151.55.1     f6hvg f6hvg.ampr.org
+44.151.55.2     f6hvg-1 f6hvg-1.ampr.org
+44.151.55.3     f1hdj f1hdj.ampr.org
+44.151.55.4     f5owj f5owj.ampr.org
+
+44.151.57.1     f5gi-1 f5gi-1.ampr.org
+44.151.57.2     f5gi f5gi.ampr.org
+44.151.57.3     f6baz f6baz.ampr.org
+44.151.57.4     f5kab f5kab.ampr.org
+44.151.57.5     f6kgq f6kgq.ampr.org
+44.151.57.6     f3qw f3qw.ampr.org
+44.151.57.7     f1dro f1dro.ampr.org
+44.151.57.8     f6kat f6kat.ampr.org
+
+44.151.59.1     f3cf f3cf.ampr.org
+44.151.59.2     f6btx f6btx.ampr.org
+44.151.59.3     f1heq f1heq.ampr.org
+44.151.59.4     f5nwb f5nwb.ampr.org
+44.151.59.5     f5cmq f5cmq.ampr.org
+44.151.59.6     f6gzl f6gzl.ampr.org
+44.151.59.7     f3ea f3ea.ampr.org
+44.151.59.8     f1hpz f1hpz.ampr.org
+44.151.59.9     f1dff f1dff.ampr.org
+44.151.59.10    f1mlz f1mlz.ampr.org
+44.151.59.11    f6ktv f6ktv.ampr.org
+44.151.59.12    fa1mzi fa1mzi.ampr.org
+44.151.59.13    fa1mzi-1 fa1mzi-1.ampr.org
+44.151.59.14    fa1mzi-3 fa1mzi-3.ampr.org
+44.151.59.15    f6acy f6acy.ampr.org
+44.151.59.16    f1gum f1gum.ampr.org
+44.151.59.17    f1dff f1dff.ampr.org
+44.151.59.18    f1dff-7 f1dff-7.ampr.org
+44.151.59.19    f5nlk f5nlk.ampr.org
+44.151.59.20    f1hpz-8 f1hpz-8.ampr.org
+44.151.59.21    f1hpz-9 f1hpz-9.ampr.org
+44.151.59.22    f5jmw f5jmw.ampr.org
+44.151.59.23    f6gju f6gju.ampr.org
+44.151.59.24    f6cmn-2 f6cmn-2.ampr.org
+44.151.59.25    f1jbg f1jbg.ampr.org
+44.151.59.26    f5izq f5izq.ampr.org
+44.151.59.27    f1nwc f1nwc.ampr.org
+
+44.151.60.1     f9so f9so.ampr.org
+44.151.60.2     f9so-1 f9so-1.ampr.org
+
+44.151.62.1     f6hsi f6hsi.ampr.org
+44.151.62.2     f6hsi-3 f6hsi-3.ampr.org
+44.151.62.3     f6hdw f6hdw.ampr.org
+44.151.62.4     f1slp f1slp.ampr.org
+44.151.62.5     f1gum f1gum.ampr.org
+44.151.62.6     fb1izt fb1izt.ampr.org
+44.151.62.7     f6dfb f6dfb.ampr.org
+
+44.151.63.2     f6cbl-3 f6cbl-3.ampr.org
+44.151.63.3     f6cbl-4 f6cbl-4.ampr.org
+44.151.63.4     f5xw f5xw.ampr.org
+44.151.63.5     f5xw-1 f5xw-1.ampr.org
+44.151.63.6     f1phr f1phr.ampr.org
+44.151.63.7     f1phr-1 f1phr-1.ampr.org
+
+44.151.64.1     f1acm f1acm.ampr.org
+44.151.64.2     f1acm-6 f1acm-6.ampr.org
+44.151.64.3     f6kdu f6kdu.ampr.org
+44.151.64.4     f5pmm f5pmm.ampr.org
+
+44.151.65.1     f6kph f6kph.ampr.org
+44.151.65.2     f5sgy f5sgy.ampr.org
+44.151.65.3     f5sdm-2 f5sdm-2.ampr.org
+
+44.151.67.1     f6dhd f6dhd.ampr.org
+44.151.67.2     f6bec f6bec.ampr.org
+44.151.67.3     f6knj f6knj.ampr.org
+44.151.67.4     f5ciw f5ciw.ampr.org
+44.151.67.5     f6buf f6buf.ampr.org
+44.151.67.6     f3em f3em.ampr.org
+44.151.67.7     f5nff f5nff.ampr.org
+44.151.67.8     f1sca f1sca.ampr.org
+44.151.67.9     f1sca-2 f1sca-2.ampr.org
+44.151.67.10    f5siq-1 f5siq-1.ampr.org
+44.151.67.11    f5siq f5siq.ampr.org
+44.151.67.12    f6ctd f6ctd.ampr.org
+44.151.67.13    f1rjj f1rjj.ampr.org
+44.151.67.14    f1tfm f1tfm.ampr.org
+44.151.67.15    f5pkf f5pkf.ampr.org
+44.151.67.16    f1jfr f1jfr.ampr.org
+
+44.151.68.1     f1aan f1aan.ampr.org
+
+44.151.69.1     f5pql f5pql.ampr.org
+44.151.69.2     f2ly f2ly.ampr.org
+44.151.69.3     f5loz f5loz.ampr.org
+44.151.69.4     f5pje f5pje.ampr.org
+44.151.69.5     f1sse f1sse.ampr.org
+44.151.69.6     f1iap f1iap.ampr.org
+44.151.69.7     f5rhy f5rhy.ampr.org
+44.151.69.8     f1roe f1roe.ampr.org
+
+44.151.70.1     f6cuo f6cuo.ampr.org
+44.151.70.2     f6cuo-1 f6cuo-1.ampr.org
+
+44.151.71.1     f1msl f1msl.ampr.org
+44.151.71.2     f1nxz f1nxz.ampr.org
+44.151.71.3     f1gyt f1gyt.ampr.org
+
+44.151.73.1     f1mcq f1mcq.ampr.org
+
+44.151.74.1     f5djl f5djl.ampr.org
+44.151.74.2     f5djl-1 f5djl-1.ampr.org
+44.151.74.3     f6big f6big.ampr.org
+44.151.74.4     f6big-1 f6big-1.ampr.org
+44.151.74.5     f1tim f1tim.ampr.org
+44.151.74.6     f6bgc f6bgc.ampr.org
+44.151.74.7     f1tim-1 f1tim-1.ampr.org
+
+44.151.75.1     f6abj-2 f6abj-2.ampr.org
+44.151.75.2     f2kl f2kl.ampr.org
+44.151.75.3     f6dks f6dks.ampr.org
+44.151.75.4     f5sdm f5sdm.ampr.org
+44.151.75.5     f6gls f6gls.ampr.org
+
+44.151.77.1     f1ebn f1ebn.ampr.org
+44.151.77.2     f1oat f1oat.ampr.org
+44.151.77.3     f6frz f6frz.ampr.org
+44.151.77.4     f1jsn f1jsn.ampr.org
+44.151.77.5     f5hom f5hom.ampr.org
+44.151.77.6     f6hvs f6hvs.ampr.org
+44.151.77.7     f1efo f1efo.ampr.org
+44.151.77.8     f6kbm f6kbm.ampr.org
+44.151.77.9     f6emn f6emn.ampr.org
+44.151.77.10    f6emn f6emn.ampr.org
+44.151.77.11    f5wk f5wk.ampr.org
+44.151.77.12    f5wk-1 f5wk-1.ampr.org
+44.151.77.13    f5hes f5hes.ampr.org
+44.151.77.14    f6kse f6kse.ampr.org
+44.151.77.15    f5hpe f5hpe.ampr.org
+
+44.151.78.1     f5dh f5dh.ampr.org
+44.151.78.2     f6fgo f6fgo.ampr.org
+44.151.78.3     f1pnl f1pnl.ampr.org
+44.151.78.4     f6bnm f6bnm.ampr.org
+44.151.78.5     f5mfz f5mfz.ampr.org
+44.151.78.6     f1ezg f1ezg.ampr.org
+44.151.78.7     f1gyf f1gyf.ampr.org
+44.151.78.8     f1oor f1oor.ampr.org
+44.151.78.9     f1agr f1agr.ampr.org
+44.151.78.10    f5hwq f5hwq.ampr.org
+44.151.78.11    f8ox f8ox.ampr.org
+44.151.78.12    f1frv f1frv.ampr.org
+44.151.78.13    f5jnm f5jnm.ampr.org
+44.151.78.14    f6hgx f6hgx.ampr.org
+44.151.78.15    f6cej f6cej.ampr.org
+44.151.78.16    f1sje f1sje.ampr.org
+44.151.78.17    f1ptl f1ptl.ampr.org
+44.151.78.18    f6ich f6ich.ampr.org
+44.151.78.19    f1sje-1 f1sje-1.ampr.org
+44.151.78.20    f1pbz f1pbz.ampr.org
+44.151.78.21    f6flv f6flv.ampr.org
+44.151.78.22    f1bbi f1bbi.ampr.org
+44.151.78.23    f5ofm f5ofm.ampr.org
+44.151.78.24    f6kfv f6kfv.ampr.org
+44.151.78.25    f6iqf f6iqf.ampr.org
+44.151.78.26    f6ktx f6ktx.ampr.org
+
+44.151.80.0     f1vja-1 f1vja-1.ampr.org
+44.151.80.1     f6ign f6ign.ampr.org
+44.151.80.2     f6ign-3 f6ign-3.ampr.org
+44.151.80.3     f6bvl f6bvl.ampr.org
+44.151.80.4     f6bxh f6bxh.ampr.org
+44.151.80.5     f6bxh-1 f6bxh-1.ampr.org
+
+44.151.81.1     f1rsu f1rsu.ampr.org
+44.151.81.2     f6css-1 f6css-1.ampr.org
+
+44.151.83.1     f2xc f2xc.ampr.org
+44.151.83.2     f2ad f2ad.ampr.org
+44.151.83.3     f2ti f2ti.ampr.org
+44.151.83.4     f6cuo-9 f6cuo-9.ampr.org
+44.151.83.5     f6cuo-10 f6cuo-10.ampr.org
+44.151.83.6     f6exe f6exe.ampr.org
+44.151.83.7     f5smz f5smz.ampr.org
+44.151.83.8     f5nkg f5nkg.ampr.org
+
+44.151.86.1     f6fdn f6fdn.ampr.org
+44.151.86.2     f6fdn-1 f6fdn-1.ampr.org
+44.151.86.3     f6fdn-2 f6fdn-2.ampr.org
+44.151.86.4     f3zz f3zz.ampr.org
+
+44.151.87.1     f5ojn f5ojn.ampr.org
+
+44.151.88.1     f1hpa f1hpa.ampr.org
+44.151.88.2     f6gis f6gis.ampr.org
+
+44.151.89.1     f1phk f1phk.ampr.org
+
+44.151.91.1     f5bqp f5bqp.ampr.org
+44.151.91.2     f5djl f5djl.ampr.org
+44.151.91.3     f5djl-1 f5djl-1.ampr.org
+44.151.91.4     f5bqp-1 f5bqp-1.ampr.org
+44.151.91.5     f5bqp-2 f5bqp-2.ampr.org
+44.151.91.6     f1gyg f1gyg.ampr.org
+44.151.91.7     f6cnb f6cnb.ampr.org
+44.151.91.8     f1hdi f1hdi.ampr.org
+44.151.91.9     f6bia f6bia.ampr.org
+44.151.91.10    g8tpf g8tpf.ampr.org
+44.151.91.11    f6epy f6epy.ampr.org
+44.151.91.12    f6cnb-1 f6cnb-1.ampr.org
+44.151.91.13    f6cnb-2 f6cnb-2.ampr.org
+44.151.91.14    f6kpy f6kpy.ampr.org
+44.151.91.15    f6coc f6coc.ampr.org
+44.151.91.16    f1gye f1gye.ampr.org
+44.151.91.17    f1gwd f1gwd.ampr.org
+44.151.91.18    f1ofr f1ofr.ampr.org
+44.151.91.19    f6ggn f6ggn.ampr.org
+44.151.91.21    f6ptt-1 f6ptt-1.ampr.org
+44.151.91.22    f5poe f5poe.ampr.org
+44.151.91.23    f1mpr f1mpr.ampr.org
+44.151.91.24    f5poe-1 f5poe-1.ampr.org
+44.151.91.25    f5oqo f5oqo.ampr.org
+44.151.91.26    f6hts f6hts.ampr.org
+44.151.91.27    f1pod f1pod.ampr.org
+44.151.91.28    f1pod-1 f1pod-1.ampr.org
+44.151.91.29    f5bwy f5bwy.ampr.org
+44.151.91.30    f5rby f5rby.ampr.org
+44.151.91.31    f6dwl f6dwl.ampr.org
+44.151.91.32    f5pkw f5pkw.ampr.org
+44.151.91.33    f1my f1my.ampr.org
+44.151.91.34    f5pie f5pie.ampr.org
+44.151.91.35    f1ppk f1ppk.ampr.org
+44.151.91.36    f5ted f5ted.ampr.org
+44.151.91.37    f1euc f1euc.ampr.org
+44.151.91.38    f1bgg f1bgg.ampr.org
+44.151.91.39    f1euc-1 f1euc-1.ampr.org
+44.151.91.40    f5gjj f5gjj.ampr.org
+44.151.91.41    f5hnk f5hnk.ampr.org
+44.151.91.42    f6kbf f6kbf.ampr.org
+44.151.91.43    f6kbf-1 f6kbf-1.ampr.org
+44.151.91.44    f1my f1my.ampr.org
+44.151.91.45    f6iqf f6iqf.ampr.org
+44.151.91.46    f1ocm f1ocm.ampr.org
+44.151.91.60    f1gyg-1 f1gyg-1.ampr.org
+44.151.91.96    f5bqp-9 f5bqp-9.ampr.org
+44.151.91.112   dl7mw dl7mw.ampr.org
+44.151.91.113   f5vag f5vag.ampr.org
+
+44.151.92.1     f6ano f6ano.ampr.org
+44.151.92.2     f6adt f6adt.ampr.org
+44.151.92.3     f6dwj f6dwj.ampr.org
+44.151.92.4     f1tdi f1tdi.ampr.org
+44.151.92.5     f1tdi-1 f1tdi-1.ampr.org
+44.151.92.6     f1rrj f1rrj.ampr.org
+44.151.92.7     f1ser f1ser.ampr.org
+44.151.92.8     f6fhz f6fhz.ampr.org
+44.151.92.96    f1tdi-9 f1tdi-9.ampr.org
+
+44.151.93.1     f6itu f6itu.ampr.org
+44.151.93.2     f1lff f1lff.ampr.org
+44.151.93.3     f5dys f5dys.ampr.org
+44.151.93.4     f5lrg f5lrg.ampr.org
+44.151.93.5     f1suy f1suy.ampr.org
+44.151.93.6     f6kds f6kds.ampr.org
+44.151.93.7     ve2fp ve2fp.ampr.org
+44.151.93.8     fa1sek fa1sek.ampr.org
+44.151.93.9     f5kef f5kef.ampr.org
+
+44.151.94.1     f2zv f2zv.ampr.org
+44.151.94.2     f5st f5st.ampr.org
+44.151.94.3     f5dtk f5dtk.ampr.org
+44.151.94.4     f6hqz f6hqz.ampr.org
+44.151.94.5     f5gyw f5gyw.ampr.org
+44.151.94.6     f5dan f5dan.ampr.org
+44.151.94.7     f1jwj f1jwj.ampr.org
+44.151.94.8     f5pbx f5pbx.ampr.org
+44.151.94.9     f1fvw f1fvw.ampr.org
+44.151.94.10    f1gie f1gie.ampr.org
+44.151.94.11    f1bcs f1bcs.ampr.org
+44.151.94.12    f6gal f6gal.ampr.org
+44.151.94.13    f5dqk f5dqk.ampr.org
+44.151.94.14    f5npb f5npb.ampr.org
+44.151.94.15    f5dtk-1 f5dtk-1.ampr.org
+44.151.94.16    f5npn f5npn.ampr.org
+44.151.94.17    f1gie-2 f1gie-2.ampr.org
+44.151.94.18    f1jso f1jso.ampr.org
+44.151.94.19    f1slk f1slk.ampr.org
+44.151.94.20    f1slk-1 f1slk-1.ampr.org
+44.151.94.21    f5lxs f5lxs.ampr.org
+44.151.94.96    f5dtk-9 f5dtk-9.ampr.org
+
+44.151.95.1     f1aav f1aav.ampr.org
+44.151.95.2     f1eou f1eou.ampr.org
+44.151.95.3     f6enb f6enb.ampr.org
+44.151.95.4     f1chf f1chf.ampr.org
+44.151.95.5     f6huk f6huk.ampr.org
+44.151.95.6     f2kx f2kx.ampr.org
+44.151.95.7     f6bzo f6bzo.ampr.org
+44.151.95.8     f6huk-1 f6huk-1.ampr.org
+44.151.95.9     f6bne f6bne.ampr.org
+44.151.95.10    f1ciy f1ciy.ampr.org
+44.151.95.73    f6bzo-1 f6bzo-1.ampr.org
+
