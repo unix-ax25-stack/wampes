@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.5 1988/10/19 22:51:53 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.6 1989/01/14 23:29:24 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -23,7 +23,7 @@ extern void endutent();
 extern void exit();
 extern void free();
 
-#define MAXCHANNEL 99999
+#define MAXCHANNEL 32767
 #define PORT       3600
 
 struct mbuf {
@@ -308,9 +308,8 @@ int  flisten;
 
 /*---------------------------------------------------------------------------*/
 
-static void send_user_change_msg(name, host, time, oldchannel, newchannel)
+static void send_user_change_msg(name, host, oldchannel, newchannel)
 char  *name, *host;
-long  time;
 int  oldchannel, newchannel;
 {
 
@@ -334,7 +333,7 @@ int  oldchannel, newchannel;
       }
     }
     if (p->type == CT_HOST && !p->locked) {
-      sprintf(buffer, "/\377\200USER %s %s %d %d %d\n", name, host, time, oldchannel, newchannel);
+      sprintf(buffer, "/\377\200USER %s %s %d %d %d\n", name, host, 0, oldchannel, newchannel);
       appendstring(&p->obuf, buffer);
       p->locked = 1;
     }
@@ -514,7 +513,7 @@ struct connection *cp;
   case CT_USER:
     cp->type = CT_CLOSED;
     for (q = connections; q; q = q->next) q->locked = 0;
-    send_user_change_msg(cp->name, cp->host, cp->time, cp->channel, -1);
+    send_user_change_msg(cp->name, cp->host, cp->channel, -1);
     break;
   case CT_HOST:
     cp->type = CT_CLOSED;
@@ -523,7 +522,7 @@ struct connection *cp;
       if (p->via == cp) {
 	p->type = CT_CLOSED;
 	for (q = connections; q; q = q->next) q->locked = 0;
-	send_user_change_msg(p->name, p->host, p->time, p->channel, -1);
+	send_user_change_msg(p->name, p->host, p->channel, -1);
       }
     break;
   case CT_CLOSED:
@@ -551,7 +550,7 @@ struct connection *cp;
     appendstring(&cp->obuf, buffer);
     return;
   }
-  send_user_change_msg(cp->name, cp->host, cp->time, cp->channel, newchannel);
+  send_user_change_msg(cp->name, cp->host, cp->channel, newchannel);
   cp->channel = newchannel;
   sprintf(buffer, "*** Now on channel %d.\n", cp->channel);
   appendstring(&cp->obuf, buffer);
@@ -662,7 +661,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.5 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.6 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
@@ -670,7 +669,7 @@ struct connection *cp;
     appendstring(&cp->obuf, buffer);
   } else
     cp->channel = newchannel;
-  send_user_change_msg(cp->name, cp->host, cp->time, -1, cp->channel);
+  send_user_change_msg(cp->name, cp->host, -1, cp->channel);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -782,7 +781,7 @@ struct connection *cp;
   appendstring(&cp->obuf, buffer);
   for (p = connections; p; p = p->next)
     if (p->type == CT_USER) {
-      sprintf(buffer, "/\377\200USER %s %s %d %d %d\n", p->name, p->host, p->time, -1, p->channel);
+      sprintf(buffer, "/\377\200USER %s %s %d %d %d\n", p->name, p->host, 0, -1, p->channel);
       appendstring(&cp->obuf, buffer);
     }
 }
@@ -826,19 +825,17 @@ struct connection *cp;
   char  buffer[2048];
   int  newchannel;
   int  oldchannel;
-  long  time;
   register struct connection *p;
 
   name = getarg(0, 0);
   host = getarg(0, 0);
-  time = atoi(getarg(0, 0));
+  getarg(0, 0);            /*** ignore this argument, protocol has changed ***/
   oldchannel = atoi(getarg(0, 0));
   newchannel = atoi(getarg(0, 0));
 
   for (p = connections; p; p = p->next)
     if (p->type == CT_USER       &&
 	p->channel == oldchannel &&
-	p->time == time          &&
 	p->via == cp             &&
 	!strcmp(p->name, name)   &&
 	!strcmp(p->host, host))  break;
@@ -849,12 +846,12 @@ struct connection *cp;
     strcpy(p->host, host);
     p->via = cp;
     p->channel = oldchannel;
-    p->time = time;
+    p->time = currtime;
     p->next = connections;
     connections = p;
   }
   if ((p->channel = newchannel) < 0) p->type = CT_CLOSED;
-  send_user_change_msg(name, host, time, oldchannel, newchannel);
+  send_user_change_msg(name, host, oldchannel, newchannel);
 }
 
 /*---------------------------------------------------------------------------*/
