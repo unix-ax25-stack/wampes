@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.11 1993/04/11 07:07:11 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.12 1993/04/15 13:12:32 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
@@ -38,15 +38,18 @@ sfstat: sfstat.c bbs.h
 install: /usr/local/bin/bbs findpath killdup /usr/local/bin/sfstat /users/bbs/help
 
 /usr/local/bin/bbs: bbs
-	cp bbs /usr/local/bin/bbs.tmp
-	cd /usr/local/bin; chmod 4555 bbs.tmp; mv -f bbs bbs.old.$$$$; mv -f bbs.tmp bbs; rm -f BBS; ln bbs BBS; rm -f bbs.old.*
+	rm -f /usr/local/bin/BBS
+	$(RMTARGET)
+	cp bbs $@
+	chmod 4555 $@
+	ln $@ /usr/local/bin/BBS
 
 /usr/local/bin/sfstat: sfstat
 	$(RMTARGET)
 	cp sfstat $@
 
 /users/bbs/help: help
-	rm -f $@
+	$(RMTARGET)
 	cp help $@
 clean:
 	rm -f *.o $(TARGETS) *~

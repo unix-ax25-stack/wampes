@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.50 1993/04/11 07:07:11 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.51 1993/04/15 13:12:32 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -854,7 +854,11 @@ static void send_to_mail(struct mail *mail)
     case -1:
       _exit(1);
     case 0:
+#ifdef __386BSD__
+      sprintf(command, "/usr/sbin/sendmail -oi -oem -f %s %s", mail->from, mail->to);
+#else
       sprintf(command, "/usr/lib/sendmail -oi -oem -f %s %s", mail->from, mail->to);
+#endif
       if (!(fp = popen(command, "w"))) _exit(1);
       fprintf(fp, "From: %s\n", mail->from);
       fprintf(fp, "To: %s\n", mail->to);

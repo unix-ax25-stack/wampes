@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.35 1993/04/06 13:13:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.36 1993/04/15 13:12:22 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -32,6 +32,7 @@
 #define NUMPTY              256
 
 #define PASSWDFILE          "/etc/passwd"
+#define SPASSWDFILE         "/.secure/etc/passwd"
 #define PWLOCKFILE          "/etc/ptmp"
 
 #define DEFAULTUSER         "guest"
@@ -208,8 +209,10 @@ int create;
   char homedir[80];
   char homedirparent[80];
   int fd;
+  int secured = 0;
   int uid;
   struct passwd *pw;
+  struct stat statbuf;
 
   /* Search existing passwd entry */
 
@@ -236,7 +239,7 @@ int create;
     return 0;
   }
 
-  /* Add user to passwd file */
+  /* Add user to passwd file(s) */
 
   sprintf(homedirparent, "%s/%.3s...", HOMEDIRPARENTPARENT, name);
   sprintf(homedir, "%s/%s", homedirparent, name);
@@ -244,11 +247,24 @@ int create;
   sprintf(cmdbuf, "chpass -a '%s::%d:%d::0:0::%s:' >/dev/null 2>&1", name, uid, GID, homedir);
   system(cmdbuf);
 #else
+#ifdef __hpux
+  if (!stat(SPASSWDFILE, &statbuf) && (fp = fopen(SPASSWDFILE, "a"))) {
+    fprintf(fp, "%s::%d:0\n", name, uid);
+    fclose(fp);
+    secured = 1;
+  }
+#endif
   if (!(fp = fopen(PASSWDFILE, "a"))) {
     unlink(PWLOCKFILE);
     return 0;
   }
-  fprintf(fp, "%s::%d:%d::%s:\n", name, uid, GID, homedir);
+  fprintf(fp,
+	  "%s:%s:%d:%d::%s:\n",
+	  name,
+	  secured ? "*" : "",
+	  uid,
+	  GID,
+	  homedir);
   fclose(fp);
 #endif
   pw = getpwuid(uid);

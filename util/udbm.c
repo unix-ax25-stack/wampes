@@ -1,7 +1,7 @@
 /* User Data Base Manager */
 
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.20 1993/04/06 13:14:04 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.21 1993/04/15 13:12:42 deyke Exp $";
 #endif
 
 #define DEBUG           0
@@ -10,16 +10,16 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 
 #include <sys/types.h>
 
+#include <stdio.h>
+
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <stdio.h>
+#include <pwd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-#include <pwd.h>
 
 #ifdef __STDC__
 #define __ARGS(x)       x
@@ -48,6 +48,7 @@ static char userstemp[] = "users.tmp";
 static char indexfile[] = "index";
 static char passfile[]  = "passwd";
 static char passtemp[]  = "ptmp";
+static char spassfile[] = "spasswd";
 static char aliasfile[] = "aliases";
 static char aliastemp[] = "aliases.tmp";
 #else
@@ -56,6 +57,7 @@ static char userstemp[] = "/usr/local/lib/users.tmp";
 static char indexfile[] = "/users/bbs/index";
 static char passfile[]  = "/etc/passwd";
 static char passtemp[]  = "/etc/ptmp";
+static char spassfile[] = "/.secure/etc/passwd";
 #ifdef __386BSD__
 static char aliasfile[] = "/etc/aliases";
 static char aliastemp[] = "/etc/aliases.tmp";
@@ -595,29 +597,20 @@ static void fixpasswd()
 #ifndef __386BSD__
 
   FILE * fp;
+  int secured = 0;
   struct passwd *pp;
+  struct stat statbuf;
   struct user *up;
 
+#ifdef __hpux
+  if (!stat(spassfile, &statbuf)) secured = 1;
+#endif
   fp = fopenexcl(passtemp);
   while ((pp = getpwent()) != NULL) {
     if (is_call(pp->pw_name) && (up = getup(pp->pw_name, 0)) != NULL)
       pp->pw_gecos = (char *) up->name;
-    fprintf(fp,
-	    "%s:%s%s%s:%d:%d:%s:%s:%s\n",
-	    pp->pw_name,
-	    pp->pw_passwd,
-#if defined(LINUX) || defined(ULTRIX_RISC)
-	    "",
-	    "",
-#else
-	    *pp->pw_age ? "," : "",
-	    pp->pw_age,
-#endif
-	    pp->pw_uid,
-	    pp->pw_gid,
-	    pp->pw_gecos,
-	    pp->pw_dir,
-	    pp->pw_shell);
+    if (secured) pp->pw_passwd = "*";
+    putpwent(pp, fp);
   }
   endpwent();
   fclose(fp);
@@ -685,7 +678,11 @@ int main()
     fixpasswd();
     fixaliases();
 #if !DEBUG
+#ifdef sun
+    system("exec /usr/ucb/newaliases >/dev/null 2>&1");
+#else
     system("exec /usr/bin/newaliases >/dev/null 2>&1");
+#endif
 #endif
   }
 

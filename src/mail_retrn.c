@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.11 1993/02/26 10:17:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.12 1993/04/15 13:12:23 deyke Exp $ */
 
 /* Mail Delivery Agent for returned Mails */
 
@@ -30,7 +30,11 @@ struct mailjob *jp;
   fopen("/dev/null", "r+");
   fopen("/dev/null", "r+");
   if (fpi = fopen(jp->dfile, "r")) {
+#ifdef __386BSD__
+    sprintf(line, "/usr/sbin/sendmail -oi -oem -f '<>' %s", jp->from);
+#else
     sprintf(line, "/usr/lib/sendmail -oi -oem -f '<>' %s", jp->from);
+#endif
     if (!(fpo = popen(line, "w"))) exit(1);
     fprintf(fpo, "From: Mail Delivery Subsystem <MAILER-DAEMON>\n");
     fprintf(fpo, "To: %s\n", jp->from);
