@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.18 1993/04/02 14:26:40 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.19 1993/04/06 13:14:02 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 SHELL      = /bin/sh
@@ -8,6 +8,8 @@ TARGETS    = cnet mkhostdb netupdc netupds path pop2d udbm vitals
 all:
 	@if [ `uname -s` = Linux ] ; then \
 	  make -i 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' $(TARGETS); \
+	elif [ `uname -s` = ULTRIX ] ; then \
+	  make -i 'CC=cc' 'CFLAGS=-DULTRIX_RISC' $(TARGETS); \
 	else \
 	  make -i 'CC=cc' 'CFLAGS=-O -s' $(TARGETS); \
 	fi

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.17 1993/04/02 14:26:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.18 1993/04/06 13:13:56 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -17,35 +17,38 @@
 #define TT_ANSI         1
 #define TT_HP           2
 
-#define KA_NONE         0       /* Use key literally */
-#define KA_FK1          1       /* Function key 1 */
-#define KA_FK2          2       /* Function key 2 */
-#define KA_FK3          3       /* Function key 3 */
-#define KA_FK4          4       /* Function key 4 */
-#define KA_FK5          5       /* Function key 5 */
-#define KA_FK6          6       /* Function key 6 */
-#define KA_FK7          7       /* Function key 7 */
-#define KA_FK8          8       /* Function key 8 */
-#define KA_FK9          9       /* Function key 9 */
-#define KA_FK10        10       /* Function key 10 */
-#define KA_BACK        11       /* Delete previous character */
-#define KA_CLEAR       12       /* Clear line */
-#define KA_CLREOL      13       /* Clear to end of line */
-#define KA_DELCHAR     14       /* Delete current character */
-#define KA_DELWORD     15       /* Delete previous word */
-#define KA_ECHO        16       /* Echo input to output */
-#define KA_END         17       /* Go to end of line */
-#define KA_HOME        18       /* Go to start of line */
-#define KA_IGNORE      19       /* Ignore this key */
-#define KA_LEFT        20       /* Go left one character */
-#define KA_NEXT        21       /* Recall next line */
-#define KA_PREV        22       /* Recall previous line */
-#define KA_QUOTE       23       /* Quote next character */
-#define KA_REDISPLAY   24       /* Redisplay line */
-#define KA_RETURN      25       /* Return line to caller */
-#define KA_RIGHT       26       /* Go right one character */
-#define KA_SEARCH      27       /* Search line */
-#define KA_TRANSMIT    28       /* Return line to caller (without CR/LF) */
+#define KA_NONE            0    /* Use key literally */
+#define KA_FK1             1    /* Function key 1 */
+#define KA_FK2             2    /* Function key 2 */
+#define KA_FK3             3    /* Function key 3 */
+#define KA_FK4             4    /* Function key 4 */
+#define KA_FK5             5    /* Function key 5 */
+#define KA_FK6             6    /* Function key 6 */
+#define KA_FK7             7    /* Function key 7 */
+#define KA_FK8             8    /* Function key 8 */
+#define KA_FK9             9    /* Function key 9 */
+#define KA_FK10           10    /* Function key 10 */
+#define KA_DEL_CURR_CHAR  11    /* Delete current character */
+#define KA_DEL_CURR_WORD  12    /* Delete current word */
+#define KA_DEL_LINE       13    /* Delete whole line */
+#define KA_DEL_PREV_CHAR  14    /* Delete previous character */
+#define KA_DEL_PREV_WORD  15    /* Delete previous word */
+#define KA_DEL_TO_EOL     16    /* Delete to end of line */
+#define KA_ECHO           17    /* Echo input to output */
+#define KA_IGNORE         18    /* Ignore this key */
+#define KA_LEFT_CHAR      19    /* Go left one character */
+#define KA_LEFT_MAX       20    /* Go to start of line */
+#define KA_LEFT_WORD      21    /* Go left one word */
+#define KA_NEXT           22    /* Recall next line */
+#define KA_PREV           23    /* Recall previous line */
+#define KA_QUOTE          24    /* Quote next character */
+#define KA_REDISPLAY      25    /* Redisplay line */
+#define KA_RETURN         26    /* Return line to caller */
+#define KA_RIGHT_CHAR     27    /* Go right one character */
+#define KA_RIGHT_MAX      28    /* Go to end of line */
+#define KA_RIGHT_WORD     29    /* Go right one word */
+#define KA_SEARCH         30    /* Search line */
+#define KA_TRANSMIT       31    /* Return line to caller (without CR/LF) */
 
 struct keytable {
 	const char str[8];
@@ -55,41 +58,41 @@ struct keytable {
 
 static struct keytable Keytable[] = {
 
-	"\001",         TT_UNKNOWN,     KA_HOME,
-	"\002",         TT_UNKNOWN,     KA_LEFT,
-	"\004",         TT_UNKNOWN,     KA_DELCHAR,
-	"\005",         TT_UNKNOWN,     KA_END,
-	"\006",         TT_UNKNOWN,     KA_RIGHT,
-	"\010",         TT_UNKNOWN,     KA_BACK,
+	"\001",         TT_UNKNOWN,     KA_LEFT_MAX,
+	"\002",         TT_UNKNOWN,     KA_LEFT_CHAR,
+	"\004",         TT_UNKNOWN,     KA_DEL_CURR_CHAR,
+	"\005",         TT_UNKNOWN,     KA_RIGHT_MAX,
+	"\006",         TT_UNKNOWN,     KA_RIGHT_CHAR,
+	"\010",         TT_UNKNOWN,     KA_DEL_PREV_CHAR,
 	"\012",         TT_UNKNOWN,     KA_RETURN,
-	"\013",         TT_UNKNOWN,     KA_CLREOL,
+	"\013",         TT_UNKNOWN,     KA_DEL_TO_EOL,
 	"\014",         TT_UNKNOWN,     KA_REDISPLAY,
 	"\015",         TT_UNKNOWN,     KA_RETURN,
 	"\016",         TT_UNKNOWN,     KA_NEXT,
 	"\020",         TT_UNKNOWN,     KA_PREV,
 	"\022",         TT_UNKNOWN,     KA_SEARCH,
 	"\024",         TT_UNKNOWN,     KA_TRANSMIT,
-	"\025",         TT_UNKNOWN,     KA_CLEAR,
+	"\025",         TT_UNKNOWN,     KA_DEL_LINE,
 	"\026",         TT_UNKNOWN,     KA_QUOTE,
-	"\027",         TT_UNKNOWN,     KA_DELWORD,
-	"\030",         TT_UNKNOWN,     KA_CLEAR,
-	"\033&r1L",     TT_HP,          KA_HOME,
-	"\033&r1R",     TT_HP,          KA_END,
+	"\027",         TT_UNKNOWN,     KA_DEL_PREV_WORD,
+	"\030",         TT_UNKNOWN,     KA_DEL_LINE,
+	"\033&r1L",     TT_HP,          KA_LEFT_MAX,
+	"\033&r1R",     TT_HP,          KA_RIGHT_MAX,
 	"\033A",        TT_HP,          KA_PREV,
 	"\033B",        TT_HP,          KA_NEXT,
-	"\033C",        TT_HP,          KA_RIGHT,
-	"\033D",        TT_HP,          KA_LEFT,
-	"\033F",        TT_HP,          KA_END,
-	"\033G",        TT_HP,          KA_CLREOL,
-	"\033H",        TT_HP,          KA_HOME,
-	"\033J",        TT_HP,          KA_CLEAR,
-	"\033K",        TT_HP,          KA_CLREOL,
+	"\033C",        TT_HP,          KA_RIGHT_CHAR,
+	"\033D",        TT_HP,          KA_LEFT_CHAR,
+	"\033F",        TT_HP,          KA_RIGHT_MAX,
+	"\033G",        TT_HP,          KA_DEL_TO_EOL,
+	"\033H",        TT_HP,          KA_LEFT_MAX,
+	"\033J",        TT_HP,          KA_DEL_LINE,
+	"\033K",        TT_HP,          KA_DEL_TO_EOL,
 	"\033L",        TT_HP,          KA_IGNORE,
-	"\033M",        TT_HP,          KA_CLEAR,
+	"\033M",        TT_HP,          KA_DEL_LINE,
 	"\033OA",       TT_ANSI,        KA_PREV,
 	"\033OB",       TT_ANSI,        KA_NEXT,
-	"\033OC",       TT_ANSI,        KA_RIGHT,
-	"\033OD",       TT_ANSI,        KA_LEFT,
+	"\033OC",       TT_ANSI,        KA_RIGHT_CHAR,
+	"\033OD",       TT_ANSI,        KA_LEFT_CHAR,
 	"\033OP",       TT_ANSI,        KA_FK1,
 	"\033OQ",       TT_ANSI,        KA_FK2,
 	"\033OR",       TT_ANSI,        KA_FK3,
@@ -106,13 +109,13 @@ static struct keytable Keytable[] = {
 	"\033Ow",       TT_ANSI,        KA_FK5,
 	"\033Ox",       TT_ANSI,        KA_FK6,
 	"\033Oy",       TT_ANSI,        KA_FK7,
-	"\033P",        TT_HP,          KA_DELCHAR,
+	"\033P",        TT_HP,          KA_DEL_CURR_CHAR,
 	"\033Q",        TT_HP,          KA_IGNORE,
 	"\033S",        TT_HP,          KA_ECHO,
 	"\033T",        TT_HP,          KA_ECHO,
 	"\033U",        TT_HP,          KA_NEXT,
 	"\033V",        TT_HP,          KA_PREV,
-	"\033Y",        TT_HP,          KA_END,
+	"\033Y",        TT_HP,          KA_RIGHT_MAX,
 	"\033[11~",     TT_ANSI,        KA_FK1,
 	"\033[12~",     TT_ANSI,        KA_FK2,
 	"\033[13~",     TT_ANSI,        KA_FK3,
@@ -125,8 +128,8 @@ static struct keytable Keytable[] = {
 	"\033[6~",      TT_ANSI,        KA_NEXT,
 	"\033[A",       TT_ANSI,        KA_PREV,
 	"\033[B",       TT_ANSI,        KA_NEXT,
-	"\033[C",       TT_ANSI,        KA_RIGHT,
-	"\033[D",       TT_ANSI,        KA_LEFT,
+	"\033[C",       TT_ANSI,        KA_RIGHT_CHAR,
+	"\033[D",       TT_ANSI,        KA_LEFT_CHAR,
 	"\033[P",       TT_ANSI,        KA_FK1,
 	"\033[Q",       TT_ANSI,        KA_FK2,
 	"\033[R",       TT_ANSI,        KA_FK3,
@@ -143,7 +146,11 @@ static struct keytable Keytable[] = {
 	"\033[w",       TT_ANSI,        KA_FK5,
 	"\033[x",       TT_ANSI,        KA_FK6,
 	"\033[y",       TT_ANSI,        KA_FK7,
-	"\033h",        TT_HP,          KA_HOME,
+	"\033\010",     TT_UNKNOWN,     KA_DEL_PREV_WORD,
+	"\033b",        TT_UNKNOWN,     KA_LEFT_WORD,
+	"\033d",        TT_UNKNOWN,     KA_DEL_CURR_WORD,
+	"\033f",        TT_UNKNOWN,     KA_RIGHT_WORD,
+	"\033h",        TT_HP,          KA_LEFT_MAX,
 	"\033p",        TT_HP,          KA_FK1,
 	"\033q",        TT_HP,          KA_FK2,
 	"\033r",        TT_HP,          KA_FK3,
@@ -152,7 +159,7 @@ static struct keytable Keytable[] = {
 	"\033u",        TT_HP,          KA_FK6,
 	"\033v",        TT_HP,          KA_FK7,
 	"\033w",        TT_HP,          KA_FK8,
-	"\177",         TT_UNKNOWN,     KA_BACK,
+	"\177",         TT_UNKNOWN,     KA_DEL_PREV_CHAR,
 
 	"",             TT_UNKNOWN,     KA_NONE
 
@@ -296,7 +303,7 @@ char **buf;
 	static int quote;
 	static int rptr, wptr;
 
-	char *p, *f, *t;
+	char *p;
 	int cnt;
 	int i;
 	int keyaction;
@@ -369,7 +376,37 @@ char **buf;
 		Fkey_ptr = Fkey_table[keyaction-KA_FK1];
 		break;
 
-	case KA_BACK:
+	case KA_DEL_CURR_CHAR:
+		if (pos < end) {
+			delchr(*pos);
+			for (p = pos + 1; p < end; p++) p[-1] = *p;
+			end--;
+		}
+		break;
+
+	case KA_DEL_CURR_WORD:
+		while (pos < end && *pos == ' ') {
+			delchr(*pos);
+			for (p = pos + 1; p < end; p++) p[-1] = *p;
+			end--;
+		}
+		while (pos < end && *pos != ' ') {
+			delchr(*pos);
+			for (p = pos + 1; p < end; p++) p[-1] = *p;
+			end--;
+		}
+		break;
+
+	case KA_DEL_LINE:
+		while (pos > linebuf) backchr(*--pos);
+	case KA_DEL_TO_EOL:
+		if (pos < end) {
+			clreol();
+			end = pos;
+		}
+		break;
+
+	case KA_DEL_PREV_CHAR:
 		if (pos > linebuf) {
 			backchr(*--pos);
 			delchr(*pos);
@@ -378,55 +415,37 @@ char **buf;
 		}
 		break;
 
-	case KA_CLEAR:
-		while (pos > linebuf) backchr(*--pos);
-	case KA_CLREOL:
-		if (end > pos) {
-			end = pos;
-			clreol();
-		}
-		break;
-
-	case KA_DELCHAR:
-		if (pos < end) {
+	case KA_DEL_PREV_WORD:
+		while (pos > linebuf && pos[-1] == ' ') {
+			backchr(*--pos);
 			delchr(*pos);
 			for (p = pos + 1; p < end; p++) p[-1] = *p;
-			end--;
 		}
-		break;
-
-	case KA_DELWORD:
-		p = pos;
-		while (p > linebuf && p[-1] == ' ') {
-			backchr(*--p);
-			delchr(*p);
+		while (pos > linebuf && pos[-1] != ' ') {
+			backchr(*--pos);
+			delchr(*pos);
+			for (p = pos + 1; p < end; p++) p[-1] = *p;
 		}
-		while (p > linebuf && p[-1] != ' ') {
-			backchr(*--p);
-			delchr(*p);
-		}
-		for (f = pos, t = p; f < end; ) *t++ = *f++;
-		pos = p;
-		end = t;
 		break;
 
 	case KA_ECHO:
 		for (i = 0; i < keycnt; i++) putchar(keybuf[i]);
 		break;
 
-	case KA_END:
-		while (pos < end) printchr(*pos++);
-		break;
-
-	case KA_HOME:
-		while (pos > linebuf) backchr(*--pos);
-		break;
-
 	case KA_IGNORE:
 		break;
 
-	case KA_LEFT:
+	case KA_LEFT_CHAR:
 		if (pos > linebuf) backchr(*--pos);
+		break;
+
+	case KA_LEFT_MAX:
+		while (pos > linebuf) backchr(*--pos);
+		break;
+
+	case KA_LEFT_WORD:
+		while (pos > linebuf && pos[-1] == ' ') backchr(*--pos);
+		while (pos > linebuf && pos[-1] != ' ') backchr(*--pos);
 		break;
 
 	case KA_NEXT:
@@ -520,20 +539,24 @@ char **buf;
 		}
 		break;
 
-	case KA_RIGHT:
-		if (pos - linebuf >= LINEMAX)
-			putchar(7);
-		else {
-			if (pos == end) *end++ = ' ';
-			printchr(*pos++);
-		}
+	case KA_RIGHT_CHAR:
+		if (pos < end) printchr(*pos++);
+		break;
+
+	case KA_RIGHT_MAX:
+		while (pos < end) printchr(*pos++);
+		break;
+
+	case KA_RIGHT_WORD:
+		while (pos < end && *pos == ' ') printchr(*pos++);
+		while (pos < end && *pos != ' ') printchr(*pos++);
 		break;
 
 	case KA_SEARCH:
 		while (pos > linebuf) backchr(*--pos);
-		if (end > pos) {
-			end = pos;
+		if (pos < end) {
 			clreol();
+			end = pos;
 		}
 		*end++ = '\022';
 		printchr(*pos++);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.18 1993/03/30 17:24:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.19 1993/04/06 13:13:51 deyke Exp $ */
 
 #include "global.h"
 
@@ -46,7 +46,7 @@ static int ascii_command __ARGS((struct controlblock *cp));
 static int binary_command __ARGS((struct controlblock *cp));
 static int connect_command __ARGS((struct controlblock *cp));
 static void command_receive __ARGS((struct controlblock *cp));
-static void accept_connection __ARGS((void *p));
+static void accept_connection_net __ARGS((void *p));
 
 /*---------------------------------------------------------------------------*/
 
@@ -236,7 +236,7 @@ struct controlblock *cp;
 
 /*---------------------------------------------------------------------------*/
 
-static void accept_connection(p)
+static void accept_connection_net(p)
 void *p;
 {
 
@@ -287,7 +287,7 @@ void remote_net_initialize()
 	  break;
 	}
 	if (!bind(flisten, addr, addrlen) && !listen(flisten, SOMAXCONN)) {
-	  on_read(flisten, accept_connection, (void *) 0);
+	  on_read(flisten, accept_connection_net, (void *) 0);
 	} else {
 	  close(flisten);
 	  flisten = -1;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domhdr.c,v 1.4 1993/01/29 06:48:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domhdr.c,v 1.5 1993/04/06 13:13:39 deyke Exp $ */
 
 /* Domain header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -6,6 +6,8 @@
 #include "global.h"
 #include "mbuf.h"
 #include "domain.h"
+
+#define dn_expand Xdn_expand    /* Resolve name conflict with libc */
 
 static int dn_expand __ARGS((char *msg,char *eom,char *compressed,char *full,
 	int fullen));

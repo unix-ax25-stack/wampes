@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.34 1993/04/02 14:26:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.35 1993/04/06 13:13:46 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -15,6 +15,10 @@
 #include <termios.h>
 #include <unistd.h>
 #include <utmp.h>
+
+#ifdef __386BSD__
+#include <sys/ioctl.h>
+#endif
 
 #include "global.h"
 #include "mbuf.h"
@@ -472,6 +476,9 @@ void *upcall_arg;
     dup(0);
     dup(0);
     chmod(slave, 0622);
+#ifdef TIOCSCTTY
+    ioctl(0, TIOCSCTTY, (char *) 0);
+#endif
     memset((char *) &termios, 0, sizeof(termios));
     termios.c_iflag = ICRNL | IXOFF;
     termios.c_oflag = OPOST | ONLCR;
