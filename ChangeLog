@@ -1,4 +1,8 @@
-@(#) $Id: ChangeLog,v 1.28 1997/02/11 17:51:36 deyke Exp $
+@(#) $Id: ChangeLog,v 1.29 1997/03/07 19:57:04 deyke Exp $
+
+970307 Dieter Deyke <deyke@fc.hp.com>
+
+	Updated domain.txt and hosts
 
 970211 Dieter Deyke <deyke@fc.hp.com>
 
