@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.65 1989/03/29 21:26:32 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.66 1989/06/10 08:22:27 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -902,12 +902,12 @@ static void s_cmd()
     mail->bid[LEN_BID] = '\0';
     strupc(mail->bid);
     if (!msg_uniq(mail->bid, mail->mid)) {
-      puts("NO, Bulletin-ID already exists");
+      puts("No");
       free((char *) mail);
       return;
     }
   }
-  puts(hostmode ? "OK, go ahead" : "Enter subject:");
+  puts(hostmode ? "OK" : "Enter subject:");
   getstring(mail->subject);
   if (!hostmode) puts("Enter message: (terminate with ^Z or /EX or ***END)");
   for (; ; ) {
