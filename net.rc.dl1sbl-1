@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dl1sbl-1,v 1.36 1996/08/12 18:50:57 deyke Exp $
+# @(#) $Id: net.rc.dl1sbl-1,v 1.37 1996/10/28 22:46:12 deyke Exp $
 
 hostname     dl1sbl-1
 ax25 mycall  dl1sbl-1
@@ -17,7 +17,7 @@ axip route add dh8saw-1 15.138.72.40            # hpbbis90.bbn.hp.com
 axip route add dj3eg-1  15.136.160.150          # hpbmosm0.bbn.hp.com
 axip route add dk0hu    15.138.33.250           # hp0hu.bbn.hp.com
 axip route add dk5sg    15.15.80.34             # mdddhd.fc.hp.com
-axip route add dl4sas-1 15.136.216.106          # hpbid1gf.bbn.hp.com
+axip route add dl4sas-1 15.136.157.138          # hpbid1gf.bbn.hp.com
 axip route add dl4sel-1 15.136.162.7            # hpbbis45.bbn.hp.com
 
 route add  44.130.0.0/16        ipip     15.138.33.250
@@ -33,7 +33,7 @@ route add  dk0hu-u.ampr.org     ipip     15.138.33.250
 route add  dk0hu.ampr.org       ipip     15.138.33.250
 route add  dk5sg-u.ampr.org     ipip     15.15.80.34
 route add  dk5sg.ampr.org       ipip     15.15.80.34
-route add  dl4sas-1.ampr.org    ipip     15.136.216.106
+route add  dl4sas-1.ampr.org    ipip     15.136.157.138
 route add  dl4sel-1.ampr.org    ipip     15.136.162.7
 route add  dl4sel.ampr.org      ipip     15.138.33.250
 

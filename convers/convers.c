@@ -1,11 +1,12 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: convers.c,v 1.22 1996/08/12 18:51:12 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: convers.c,v 1.23 1996/10/28 22:46:37 deyke Exp $";
 #endif
 
 #include <sys/types.h>
 
 #include <stdio.h>      /* must be before pwd.h */
 
+#include <ctype.h>
 #include <pwd.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -35,23 +36,352 @@ static const char rcsid[] = "@(#) $Id: convers.c,v 1.22 1996/08/12 18:51:12 deyk
 extern char *optarg;
 extern int optind;
 
+enum e_what {
+  ONE_TOKEN,
+  REST_OF_LINE
+};
+
+enum e_case {
+  KEEP_CASE,
+  LOWER_CASE
+};
+
+static const char *progname;
+
+static int fdin = 0;
+static int fdout = 1;
+static int fdsock = -1;
+
+static int echo;
+static int erase_char;
+static int kill_char;
+static int restore_tty;
+
+static int beep_flag;
+
 #ifdef ibm032
 static struct sgttyb prev_sgttyb;
+static struct sgttyb curr_sgttyb;
 #else
 static struct termios prev_termios;
+static struct termios curr_termios;
 #endif
+
+/*---------------------------------------------------------------------------*/
+
+static void prev_tty(void)
+{
+  if (restore_tty) {
+#ifdef ibm032
+    ioctl(fdin, TIOCSETP, &prev_sgttyb);
+#else
+    tcsetattr(fdin, TCSANOW, &prev_termios);
+#endif
+  }
+  restore_tty = 0;
+}
 
 /*---------------------------------------------------------------------------*/
 
 static void stop(const char *arg)
 {
-  if (*arg) perror(arg);
-#ifdef ibm032
-  ioctl(0, TIOCSETP, &prev_sgttyb);
-#else
-  tcsetattr(0, TCSANOW, &prev_termios);
-#endif
+  if (*arg) {
+    perror(arg);
+  }
+  prev_tty();
   exit(0);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void curr_tty(void)
+{
+#ifdef ibm032
+  if (ioctl(fdin, TIOCSETP, &curr_sgttyb)) {
+    stop(progname);
+  }
+#else
+  if (tcsetattr(fdin, TCSANOW, &curr_termios)) {
+    stop(progname);
+  }
+#endif
+  restore_tty = 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void set_tty(void)
+{
+#ifdef ibm032
+  if (ioctl(fdin, TIOCGETP, &prev_sgttyb)) {
+    stop(progname);
+  }
+  echo = prev_sgttyb.sg_flags & ECHO;
+  erase_char = prev_sgttyb.sg_erase;
+  kill_char = prev_sgttyb.sg_kill;
+  curr_sgttyb = prev_sgttyb;
+  curr_sgttyb.sg_flags = CRMOD | CBREAK;
+#else
+  if (tcgetattr(fdin, &prev_termios)) {
+    stop(progname);
+  }
+  echo = prev_termios.c_lflag & ECHO;
+  erase_char = prev_termios.c_cc[VERASE];
+  kill_char = prev_termios.c_cc[VKILL];
+  curr_termios = prev_termios;
+  curr_termios.c_lflag = 0;
+  curr_termios.c_cc[VMIN] = 1;
+  curr_termios.c_cc[VTIME] = 0;
+#endif
+  curr_tty();
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int doread(int fd, char *buffer, int numbytes)
+{
+  int n;
+
+  n = read(fd, buffer, numbytes);
+  if (n < 0) {
+    stop(progname);
+  }
+  if (!n) {
+    stop("");
+  }
+  return n;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void dowrite(int fd, const char *buffer, int numbytes)
+{
+  if (write(fd, buffer, numbytes) < 0) {
+    stop(progname);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void dologin(int channel, const char *note)
+{
+
+  char buffer[2048];
+  char *cp;
+  char *name;
+  struct passwd *pw;
+
+  name = getenv("LOGNAME");
+  if (!note && (pw = getpwnam(name))) {
+    note = pw->pw_gecos;
+    if ((cp = strchr(note, ','))) {
+      *cp = 0;
+    }
+  }
+  if (!note || !*note) {
+    note = "@";
+  }
+  sprintf(buffer, "/NAME %s %d %s\n", name, channel, note);
+  dowrite(fdsock, buffer, strlen(buffer));
+}
+
+/*---------------------------------------------------------------------------*/
+
+static char *getarg(char *line, enum e_what what, enum e_case how)
+{
+
+  char *arg;
+  char *cp;
+  static char *next_arg;
+
+  if (line) {
+    for (next_arg = cp = line; *cp; cp++) ;
+    while (--cp >= line && isspace(*cp & 0xff)) ;
+    cp[1] = 0;
+  }
+  while (isspace(*next_arg & 0xff))
+    next_arg++;
+  arg = next_arg;
+  if (what == ONE_TOKEN) {
+    while (*next_arg && !isspace(*next_arg & 0xff))
+      next_arg++;
+    if (*next_arg)
+      *next_arg++ = 0;
+  } else {
+    next_arg = "";
+  }
+  if (how == LOWER_CASE) {
+    for (cp = arg; *cp; cp++) {
+      if (*cp >= 'A' && *cp <= 'Z')
+	*cp = tolower(*cp);
+    }
+  }
+  return arg;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void beep_command(void)
+{
+
+  char buffer[2048];
+  char *arg;
+
+  arg = getarg(0, ONE_TOKEN, LOWER_CASE);
+  if (!strcmp(arg, "on")) {
+    beep_flag = 1;
+  } else if (!strcmp(arg, "off")) {
+    beep_flag = 0;
+  }
+  sprintf(buffer, "*** BEEP is %s\n", beep_flag ? "ON" : "OFF");
+  dowrite(fdout, buffer, strlen(buffer));
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void help_command(void)
+{
+  const char *help_text =
+  "==================================== LOCAL ====================================\n"
+  "Commands may be abbreviated.  Commands are:\n"
+
+  "/?                   Show help information\n"
+  "/HELP                Show help information\n"
+
+  "/BEEP [on|off]       Display/set BEEP flag\n"
+
+  "==================================== REMOTE ===================================\n";
+
+  char commandbuf[2048];
+
+  dowrite(fdout, help_text, strlen(help_text));
+  sprintf(commandbuf, "/HELP %s\n", getarg(0, REST_OF_LINE, KEEP_CASE));
+  dowrite(fdsock, commandbuf, strlen(commandbuf));
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void process_line(const char *line, int numbytes)
+{
+
+  struct command {
+    const char *c_name;
+    void (*c_fnc) (void);
+  };
+
+  static const struct command commands[] =
+  {
+
+    {"?", help_command},
+
+    {"beep", beep_command},
+    {"help", help_command},
+
+    {0, 0}
+  };
+
+  char commandbuf[2048];
+  char *arg;
+  const struct command *cp;
+  int arglen;
+
+  if (*line == '!') {
+    prev_tty();
+    system(line + 1);
+    curr_tty();
+    dowrite(fdout, "!\n", 2);
+  } else if (*line == '/') {
+    strcpy(commandbuf, line + 1);
+    arg = getarg(commandbuf, ONE_TOKEN, LOWER_CASE);
+    arglen = strlen(arg);
+    for (cp = commands; cp->c_name; cp++) {
+      if (!strncmp(cp->c_name, arg, arglen)) {
+	cp->c_fnc();
+	return;
+      }
+    }
+    dowrite(fdsock, line, numbytes);
+  } else if (numbytes > 1) {
+    dowrite(fdsock, line, numbytes);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void doinput(void)
+{
+
+  char buffer[2048];
+  char chr;
+  int i;
+  int size;
+  static char inbuf[2048];
+  static int incnt;
+
+  do {
+    size = doread(fdin, buffer, sizeof(buffer));
+    for (i = 0; i < size; i++) {
+      chr = buffer[i];
+      if (chr == '\r') {
+	chr = '\n';
+      }
+      if (chr == erase_char) {
+	if (incnt) {
+	  incnt--;
+	  if (echo) {
+	    dowrite(fdout, "\b \b", 3);
+	  }
+	}
+      } else if (chr == kill_char) {
+	for (; incnt; incnt--) {
+	  if (echo) {
+	    dowrite(fdout, "\b \b", 3);
+	  }
+	}
+      } else if (echo && chr == 18) {
+	dowrite(fdout, "^R\n", 3);
+	dowrite(fdout, inbuf, incnt);
+      } else {
+	inbuf[incnt++] = chr;
+	if (echo) {
+	  dowrite(fdout, &chr, 1);
+	}
+      }
+      if (chr == '\n' || incnt >= sizeof(inbuf) - 1) {
+	inbuf[incnt] = 0;
+	process_line(inbuf, incnt);
+	incnt = 0;
+      }
+    }
+  } while (incnt);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void dooutput(void)
+{
+
+  char buffer[2048];
+  char chr;
+  int i;
+  int size;
+  static char outbuf[2048];
+  static int outcnt;
+
+  size = doread(fdsock, buffer, sizeof(buffer));
+  for (i = 0; i < size; i++) {
+    chr = buffer[i];
+    if (chr != '\r') {
+      outbuf[outcnt++] = chr;
+    }
+    if (chr == '\n' || outcnt >= sizeof(outbuf)) {
+      dowrite(fdout, outbuf, outcnt);
+      outcnt = 0;
+      if (beep_flag) {
+	dowrite(fdout, "\007", 1);
+      }
+    }
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -60,65 +390,27 @@ int main(int argc, char **argv)
 {
 
   char buffer[2048];
-  char c;
-  char inbuf[2048];
-  char outbuf[2048];
-  char *cp;
-  char *name;
   char *note = 0;
   const char *server = "unix:/tcp/sockets/convers";
   int addrlen;
   int channel = 0;
-  int ch;
+  int chr;
   int dohosts = 0;
   int dokick = 0;
   int dolinks = 0;
   int dopeers = 0;
   int dousers = 0;
   int dowho = 0;
-  int echo;
-  int erase_char;
   int errflag = 0;
-  int incnt = 0;
-  int i;
-  int kill_char;
-  int outcnt = 0;
-  int size;
-  struct fd_set actread;
-  struct fd_set chkread;
-  struct passwd *pw;
+  struct fd_set rmask;
   struct sockaddr *addr = 0;
 
-#ifdef ibm032
-  struct sgttyb curr_sgttyb;
-#else
-  struct termios curr_termios;
-#endif
+  progname = *argv;
 
   signal(SIGPIPE, SIG_IGN);
 
-#ifdef ibm032
-  if (ioctl(0, TIOCGETP, &prev_sgttyb)) stop(*argv);
-  echo = prev_sgttyb.sg_flags & ECHO;
-  erase_char = prev_sgttyb.sg_erase;
-  kill_char = prev_sgttyb.sg_kill;
-  curr_sgttyb = prev_sgttyb;
-  curr_sgttyb.sg_flags = CRMOD | CBREAK;
-  if (ioctl(0, TIOCSETP, &curr_sgttyb)) stop(*argv);
-#else
-  if (tcgetattr(0, &prev_termios)) stop(*argv);
-  echo = prev_termios.c_lflag & ECHO;
-  erase_char = prev_termios.c_cc[VERASE];
-  kill_char = prev_termios.c_cc[VKILL];
-  curr_termios = prev_termios;
-  curr_termios.c_lflag = 0;
-  curr_termios.c_cc[VMIN] = 1;
-  curr_termios.c_cc[VTIME] = 0;
-  if (tcsetattr(0, TCSANOW, &curr_termios)) stop(*argv);
-#endif
-
-  while ((ch = getopt(argc, argv, "c:hkln:ps:uw")) != EOF)
-    switch (ch) {
+  while ((chr = getopt(argc, argv, "c:hkln:ps:uw")) != EOF) {
+    switch (chr) {
     case 'c':
       channel = atoi(optarg);
       break;
@@ -150,6 +442,7 @@ int main(int argc, char **argv)
       errflag = 1;
       break;
     }
+  }
 
   if (errflag || optind < argc || !(addr = build_sockaddr(server, &addrlen))) {
     fprintf(stderr, "usage: convers"
@@ -166,108 +459,51 @@ int main(int argc, char **argv)
     stop("");
   }
 
-  close(3);
-  if (socket(addr->sa_family, SOCK_STREAM, 0) != 3) stop(*argv);
-  if (connect(3, addr, addrlen)) stop(*argv);
+  fdsock = socket(addr->sa_family, SOCK_STREAM, 0);
+  if (fdsock < 0 || connect(fdsock, addr, addrlen)) {
+    stop(progname);
+  }
 
   if (dohosts || dokick || dolinks || dopeers || dousers || dowho) {
     *buffer = 0;
-    if (dopeers)
+    if (dopeers) {
       strcat(buffer, "/PEERS\n");
-    if (dolinks)
+    }
+    if (dolinks) {
       strcat(buffer, "/LINKS\n");
-    if (dohosts)
+    }
+    if (dohosts) {
       strcat(buffer, "/HOSTS\n");
-    if (dousers)
+    }
+    if (dousers) {
       strcat(buffer, "/USERS\n");
-    if (dowho)
+    }
+    if (dowho) {
       strcat(buffer, "/WHO\n");
-    if (dokick)
+    }
+    if (dokick) {
       strcat(buffer, "/KICK\n");
+    }
     strcat(buffer, "/QUIT\n");
-    if (write(3, buffer, strlen(buffer)) < 0)
-      stop(*argv);
+    dowrite(fdsock, buffer, strlen(buffer));
     for (;;) {
-      size = read(3, buffer, sizeof(buffer));
-      if (size < 0)
-	stop(*argv);
-      if (size == 0)
-	stop("");
-      if (write(1, buffer, size) < 0)
-	stop(*argv);
+      dowrite(fdout, buffer, doread(fdsock, buffer, sizeof(buffer)));
     }
   }
 
-  name = getenv("LOGNAME");
-  if (!note && (pw = getpwnam(name))) {
-    note = pw->pw_gecos;
-    if ((cp = strchr(note, ','))) *cp = 0;
-  }
-  if (!note || !*note) note = "@";
+  dologin(channel, note);
 
-  sprintf(inbuf, "/NAME %s %d %s\n", name, channel, note);
-  if (write(3, inbuf, strlen(inbuf)) < 0) stop(*argv);
+  set_tty();
 
-  FD_ZERO(&chkread);
-  FD_SET(0, &chkread);
-  FD_SET(3, &chkread);
-
-  for (; ; ) {
-    actread = chkread;
-    select(4, SEL_ARG(&actread), 0, 0, 0);
-    if (FD_ISSET(0, &actread)) {
-      do {
-	if ((size = read(0, buffer, sizeof(buffer))) <= 0) stop("");
-	for (i = 0; i < size; i++) {
-	  c = buffer[i];
-	  if (c == '\r') c = '\n';
-	  if (c == erase_char) {
-	    if (incnt) {
-	      incnt--;
-	      if (echo && write(1, "\b \b", 3) < 0) stop(*argv);
-	    }
-	  } else if (c == kill_char) {
-	    for (; incnt; incnt--)
-	      if (echo && write(1, "\b \b", 3) < 0) stop(*argv);
-	  } else if (echo && c == 18) {
-	    if (write(1, "^R\n", 3) < 0) stop(*argv);
-	    if (write(1, inbuf, incnt) < 0) stop(*argv);
-	  } else {
-	    inbuf[incnt++] = c;
-	    if (echo && write(1, &c, 1) < 0) stop(*argv);
-	  }
-	  if (c == '\n' || incnt == sizeof(inbuf) - 1) {
-	    if (*inbuf == '!') {
-	      inbuf[incnt] = '\0';
-#ifdef ibm032
-	      if (ioctl(0, TIOCSETP, &prev_sgttyb)) stop(*argv);
-	      system(inbuf + 1);
-	      if (ioctl(0, TIOCSETP, &curr_sgttyb)) stop(*argv);
-#else
-	      if (tcsetattr(0, TCSANOW, &prev_termios)) stop(*argv);
-	      system(inbuf + 1);
-	      if (tcsetattr(0, TCSANOW, &curr_termios)) stop(*argv);
-#endif
-	      if (write(1, "!\n", 2) < 0) stop(*argv);
-	    } else {
-	      if (write(3, inbuf, incnt) < 0) stop(*argv);
-	    }
-	    incnt = 0;
-	  }
-	}
-      } while (incnt);
-    } else {
-      size = read(3, buffer, sizeof(buffer));
-      if (size <= 0) stop("");
-      for (i = 0; i < size; i++) {
-	c = buffer[i];
-	if (c != '\r') outbuf[outcnt++] = c;
-	if (c == '\n' || outcnt == sizeof(outbuf)) {
-	  if (write(1, outbuf, outcnt) < 0) stop(*argv);
-	  outcnt = 0;
-	}
-      }
+  for (;;) {
+    FD_ZERO(&rmask);
+    FD_SET(fdin, &rmask);
+    FD_SET(fdsock, &rmask);
+    select(fdsock + 1, SEL_ARG(&rmask), 0, 0, 0);
+    if (FD_ISSET(fdin, &rmask)) {
+      doinput();
+    } else if (FD_ISSET(fdsock, &rmask)) {
+      dooutput();
     }
   }
 }
-

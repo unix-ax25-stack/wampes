@@ -1371,6 +1371,7 @@
 44.130.20.59    DH3YBE  # Kai Klopp, 52072 Aachen
 44.130.20.60    DG9KAT  # Johann Tandara, 5144 Wegberg
 44.130.20.61    DG9KAT-2        # , QRL
+44.130.20.62    DG2KDT  # Thomas Dackweiler, 52349 Düren
 44.130.20.64    DL9KAW  # Peter Strang, 5100 Aachen
 44.130.20.65    DL9KAW-1        #
 44.130.20.66    DH6KQ   # Andreas Fromm, 52379 Langerwehe
@@ -2443,10 +2444,14 @@
 44.130.44.9     DH0VF   # Jan, Wittlich
 44.130.44.10    DF8SK   # Peter, Konz
 44.130.44.11    DB0DAU  # Digi Daun/Eifel
+44.130.44.12    DJ7HQ   # ?
 44.130.44.88    DB2VM-1 # Andreas, Trier
 44.130.44.99    DD8PZ   # Jochen,
 44.130.44.100   DB2VM-2 #
 44.130.44.127   DF9WM   # Christoph Bungard, Germersheim
+44.130.44.200   DL0BBS  # TCP/IP Server Trier
+44.130.44.201   DL0BBS-SVR  #
+44.130.44.202   DL0BBS-USR  #
 #
 #44.130.48.x    Stuttgart
 # lokale Adresskoordination im Raum Stuttgart: DC3SN
@@ -3381,16 +3386,19 @@
 44.130.80.4     DG1HUN  # Dirk, Thale
 44.130.80.100   DL0TAL  # AG Afu, Gymnasium Thale (DL4HSG)
 44.130.80.200   DL0TAL-2        #
+#44.130.81.x    Halle/S.
+# --- lokale Adresskoordination: DL5SA
+44.130.81.1     DL9HQH  # Juergen Engelhardt,    06128 Halle/S.
+44.130.81.2     DL3HRT  # Karsten Hansky,        06712 Kretzschau
+44.130.81.3     DL5SA   # Eberhard Zuch,         06110 Halle/S.
+44.130.81.4     DL2AF   # Michael Seifert,       06130 Halle/S.
+44.130.81.5     DG1HQY  # Ralf Schmidt,          06449 Aschersleben
+44.130.81.6     DL3HZM  # Matthias Mitte,        06712 Zeitz
+44.130.81.7     DL5SA-U # Eberhard Zuch,         06110 Halle/S.
+44.130.81.18    DL1HRC  # Andreas Bier,          06217 Leuna-Merseburg
+44.130.81.100   DL0MLU  # ClubStn W35 MLU-Halle, 06108 Halle/S.
 #
-#44.130.81.x    Halle
-# --- lokale Adresskoordination: DL1HUA
-44.130.81.1     DL9HQH  # Juergen Engelhardt, 06128 Halle (ex Y34YH)
-44.130.81.2     DL3HRT  # Karsten Hansky, 06712 Kretzschau (ex Y81XH); AT386SX
-44.130.81.3     DL1HUA  # Eberhard Zuch, 06110 Halle (ex DH0HQB)
-44.130.81.4     DL2HRD  # Michael Seifert, 06130 Halle
-44.130.81.5     DG1HQY  # Ralf Schmidt, 06449 Aschersleben
-44.130.81.18    DL1HRC  # Andreas Bier, 06217 Leuna-Merseburg
-44.130.81.100   DL0MLU  # Clubstn OV W35 MLU-Halle, 06108 Halle
+# Stand: 10/96
 #
 #44.130.82.x    Magdeburg
 # --- lokale Adresskoordination: DL6MPG

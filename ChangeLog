@@ -1,4 +1,10 @@
-@(#) $Id: ChangeLog,v 1.23 1996/10/09 18:12:49 deyke Exp $
+@(#) $Id: ChangeLog,v 1.24 1996/10/28 22:46:12 deyke Exp $
+
+961028 Dieter Deyke <deyke@fc.hp.com>
+
+	Added BEEP command to convers.c
+
+	Updated domain.txt and hosts
 
 961009 Dieter Deyke <deyke@fc.hp.com>
 
