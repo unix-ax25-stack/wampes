@@ -1,5 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kissdump.c,v 1.1 1990/09/11 13:45:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kissdump.c,v 1.2 1991/02/24 20:17:07 deyke Exp $ */
 
+/* Tracing routines for KISS TNC
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include "global.h"
 #include "mbuf.h"
 #include "kiss.h"

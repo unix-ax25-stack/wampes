@@ -1,10 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.4 1990/10/26 19:20:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.c,v 1.5 1991/02/24 20:17:28 deyke Exp $ */
 
 /* This module implements the serial line framing method used by
  * net/rom nodes.  This allows the net/rom software to talk to
  * an actual net/rom over its serial interface, which is useful
  * if we want to do packet switching for multi-line wormholes.
- * Dan Frank, W9NK
+ *
+ * Copyright 1989 Dan Frank, W9NK
  */
 #include <stdio.h>
 #include "global.h"
@@ -16,8 +17,6 @@
 #include "asy.h"
 #include "trace.h"
 #include "commands.h"
-
-int Nnrs;
 
 static struct mbuf *nrs_encode __ARGS((struct mbuf *bp));
 static struct mbuf *nrs_decode __ARGS((int dev,int c));
@@ -33,7 +32,9 @@ struct mbuf *bp;
 {
 	struct mbuf *bp1;
 
-	dump(iface,IF_TRACE_OUT,CL_AX25,bp) ;
+	dump(iface,IF_TRACE_OUT,CL_AX25,bp);
+	iface->rawsndcnt++;
+	iface->lastsent = secclock();
 
 	if((bp1 = nrs_encode(bp)) == NULLBUF){
 		free_p(bp);
@@ -50,7 +51,7 @@ struct mbuf *bp;
 	struct mbuf *lbp;       /* Mbuf containing line-ready packet */
 	register char *cp;
 	int c;
-	unsigned char csum = 0 ;
+	unsigned char csum = 0;
 
 	/* Allocate output mbuf that's twice as long as the packet.
 	 * This is a worst-case guess (consider a packet full of STX's!)
@@ -64,7 +65,7 @@ struct mbuf *bp;
 	}
 	cp = lbp->data;
 
-	*cp++ = STX ;
+	*cp++ = STX;
 
 	/* Copy input to output, escaping special characters */
 	while((c = PULLCHAR(&bp)) != -1){
@@ -80,9 +81,9 @@ struct mbuf *bp;
 		csum += c;
 	}
 	*cp++ = ETX;
-	*cp++ = csum ;
-	*cp++ = NUL ;
-	*cp++ = NUL ;
+	*cp++ = csum;
+	*cp++ = NUL;
+	*cp++ = NUL;
 
 	lbp->cnt = cp - lbp->data;
 	return lbp;
@@ -101,44 +102,44 @@ char c;         /* Incoming character */
 	sp = &Nrs[dev];
 	switch(sp->state) {
 		case NRS_INTER:
-			if (uchar(c) == STX) {  /* look for start of frame */
-				sp->state = NRS_INPACK ;        /* we're in a packet */
-				sp->csum = 0 ;                          /* reset checksum */
+			if(uchar(c) == STX) {   /* look for start of frame */
+				sp->state = NRS_INPACK; /* we're in a packet */
+				sp->csum = 0;                           /* reset checksum */
 			}
-			return NULLBUF ;
+			return NULLBUF;
 		case NRS_CSUM:
-			bp = sp->rbp ;
-			sp->rbp = NULLBUF ;
-			sp->rcnt = 0 ;
-			sp->state = NRS_INTER ; /* go back to inter-packet state */
-			if (sp->csum == uchar(c)) {
-				sp->packets++ ;
+			bp = sp->rbp;
+			sp->rbp = NULLBUF;
+			sp->rcnt = 0;
+			sp->state = NRS_INTER;  /* go back to inter-packet state */
+			if(sp->csum == uchar(c)) {
+				sp->packets++;
 			} else {
-				free_p(bp) ;    /* drop packet with bad checksum */
+				free_p(bp);     /* drop packet with bad checksum */
 				bp = NULLBUF;
-				sp->errors++ ;  /* increment error count */
+				sp->errors++;   /* increment error count */
 			}
-			return bp ;
+			return bp;
 		case NRS_ESCAPE:
-			sp->state = NRS_INPACK ;        /* end of escape */
-			break ;                 /* this will drop through to char processing */
+			sp->state = NRS_INPACK; /* end of escape */
+			break;                  /* this will drop through to char processing */
 		case NRS_INPACK:
 			switch (uchar(c)) {
 			/* If we see an STX in a packet, assume that previous */
 			/* packet was trashed, and start a new packet */
 			case STX:
-				free_p(sp->rbp) ;
-				sp->rbp = NULLBUF ;
-				sp->rcnt = 0 ;
-				sp->csum = 0 ;
-				sp->errors++ ;
-				return NULLBUF ;
+				free_p(sp->rbp);
+				sp->rbp = NULLBUF;
+				sp->rcnt = 0;
+				sp->csum = 0;
+				sp->errors++;
+				return NULLBUF;
 			case ETX:
-				sp->state = NRS_CSUM ;  /* look for checksum */
-				return NULLBUF ;
+				sp->state = NRS_CSUM;   /* look for checksum */
+				return NULLBUF;
 			case DLE:
-				sp->state = NRS_ESCAPE ;
-				return NULLBUF ;
+				sp->state = NRS_ESCAPE;
+				return NULLBUF;
 			}
 	}
 	/* If we get to here, it's with a character that's part of the packet.
@@ -147,7 +148,7 @@ char c;         /* Incoming character */
 	if(sp->rbp == NULLBUF){
 		/* Allocate first mbuf for new packet */
 		if((sp->rbp1 = sp->rbp = alloc_mbuf(NRS_ALLOC)) == NULLBUF) {
-			sp->state = NRS_INTER ;
+			sp->state = NRS_INTER;
 			return NULLBUF; /* No memory, drop */
 		}
 		sp->rcp = sp->rbp->data;
@@ -158,7 +159,7 @@ char c;         /* Incoming character */
 			free_p(sp->rbp);
 			sp->rbp = NULLBUF;
 			sp->rcnt = 0;
-			sp->state = NRS_INTER ;
+			sp->state = NRS_INTER;
 			return NULLBUF;
 		}
 		sp->rbp1 = sp->rbp1->next;
@@ -170,7 +171,7 @@ char c;         /* Incoming character */
 	*sp->rcp++ = c;
 	sp->rbp1->cnt++;
 	sp->rcnt++;
-	sp->csum += uchar(c) ;  /* add to checksum */
+	sp->csum += uchar(c);   /* add to checksum */
 	return NULLBUF;
 }
 
@@ -184,7 +185,7 @@ struct iface *iface;
 	int cnt,dev;
 	struct mbuf *bp,*nbp;
 	struct nrs *np;
-	struct phdr *phdr;
+	struct phdr phdr;
 
 	dev = iface->xdev;
 	np = Nrs+dev;
@@ -193,13 +194,13 @@ struct iface *iface;
 	while(--cnt >= 0){
 		if((bp = nrs_decode(dev,*cp++)) == NULLBUF)
 			continue;
-		if((nbp = pushdown(bp,sizeof(struct phdr))) == NULLBUF){
+		if((nbp = pushdown(bp,sizeof(phdr))) == NULLBUF){
 			free_p(bp);
 			continue;
 		}
-		phdr = (struct phdr *)nbp->data;
-		phdr->iface = Nrs[dev].iface;
-		phdr->type = CL_AX25;
+		phdr.iface = Nrs[dev].iface;
+		phdr.type = CL_AX25;
+		memcpy(&nbp->data[0],(char *)&phdr,sizeof(phdr));
 		enqueue(&Hopper,nbp);
 	}
 
@@ -207,21 +208,21 @@ struct iface *iface;
 /* donrstat:  display status of active net/rom serial interfaces */
 int
 donrstat(argc,argv,p)
-int argc ;
-char *argv[] ;
+int argc;
+char *argv[];
 void *p;
 {
-	register struct nrs *np ;
-	register int i ;
+	register struct nrs *np;
+	register int i;
 
-	tprintf("Interface   RcvB  NumReceived  CSumErrors\n") ;
+	tprintf("Interface   RcvB  NumReceived  CSumErrors\n");
 
-	for (i = 0, np = Nrs ; i < ASY_MAX ; i++, np++)
-		if (np->iface != NULLIF)
+	for(i = 0, np = Nrs; i < ASY_MAX; i++, np++)
+		if(np->iface != NULLIF)
 			if(tprintf(" %8s   %4d   %10lu  %10lu\n",
 			 np->iface->name, np->rcnt,
 			 np->packets, np->errors) == EOF)
 				break;
 
-	return 0 ;
+	return 0;
 }

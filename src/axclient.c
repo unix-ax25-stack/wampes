@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.6 1990/10/12 19:25:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.7 1991/02/24 20:16:35 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -9,14 +9,14 @@
 #include "mbuf.h"
 #include "timer.h"
 #include "ax25.h"
-#include "axproto.h"
+#include "lapb.h"
 #include "session.h"
 
 /*---------------------------------------------------------------------------*/
 
-static axclient_parse(buf, n)
-char  *buf;
-int16 n;
+static int axclient_parse(buf, n)
+char *buf;
+int n;
 {
   if (!(Current && Current->type == AX25TNC && Current->cb.ax25)) return;
   if (n >= 1 && buf[n-1] == '\n') n--;
@@ -144,7 +144,7 @@ void *p;
   s->name = NULLCHAR;
   s->cb.ax25 = NULLAXCB;
   s->parse = axclient_parse;
-  if (!(s->cb.ax25 = open_ax(path, AX25_ACTIVE, axclient_recv_upcall, axclient_send_upcall, axclient_state_upcall, (char *) s))) {
+  if (!(s->cb.ax25 = open_ax(path, AX_ACTIVE, axclient_recv_upcall, axclient_send_upcall, axclient_state_upcall, (char *) s))) {
     freesession(s);
     switch (Net_error) {
     case NONE:

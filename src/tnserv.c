@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.5 1990/10/12 19:26:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tnserv.c,v 1.6 1991/02/24 20:17:53 deyke Exp $ */
 
 #include "global.h"
 #include "socket.h"
@@ -17,8 +17,10 @@ int  cnt;
 {
   struct mbuf *bp;
 
-  recv_tcp(tcb, &bp, 0);
-  login_write((struct login_cb *) tcb->user, bp);
+  if (tcb->user) {
+    recv_tcp(tcb, &bp, 0);
+    login_write((struct login_cb *) tcb->user, bp);
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -29,7 +31,8 @@ int  cnt;
 {
   struct mbuf *bp;
 
-  if (bp = login_read((struct login_cb *) tcb->user, space_tcp(tcb)))
+  if (tcb->user &&
+      (bp = login_read((struct login_cb *) tcb->user, space_tcp(tcb))))
     send_tcp(tcb, bp);
 }
 

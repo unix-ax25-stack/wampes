@@ -1,10 +1,21 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.h,v 1.3 1990/09/11 13:46:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrs.h,v 1.4 1991/02/24 20:17:29 deyke Exp $ */
 
-#ifndef NRS_ALLOC
+#ifndef _NRS_H
+#define _NRS_H
 
+#ifndef _GLOBAL_H
 #include "global.h"
+#endif
 
-#define NRS_MAX         16      /* Maximum number of Nrs channels */
+#ifndef _MBUF_H
+#include "mbuf.h"
+#endif
+
+#ifndef _IFACE_H
+#include "iface.h"
+#endif
+
+#define NRS_MAX 16              /* Maximum number of Nrs channels */
 
 /* SLIP definitions */
 #define NRS_ALLOC       512     /* Receiver allocation increment */
@@ -41,4 +52,4 @@ extern struct nrs Nrs[];
 int nrs_raw __ARGS((struct iface *iface,struct mbuf *bp));
 void nrs_recv __ARGS((struct iface *iface));
 
-#endif  /* NRS_ALLOC */
+#endif  /* _NRS_H */

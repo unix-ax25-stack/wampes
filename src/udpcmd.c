@@ -1,6 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.4 1990/10/12 19:27:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpcmd.c,v 1.5 1991/02/24 20:18:00 deyke Exp $ */
 
-/* UDP-related user commands */
+/* UDP-related user commands
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"

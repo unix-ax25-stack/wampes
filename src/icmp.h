@@ -1,10 +1,35 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.h,v 1.4 1990/09/11 13:45:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.h,v 1.5 1991/02/24 20:16:53 deyke Exp $ */
 
-#ifndef ICMP_ECHO_REPLY
+#ifndef _ICMP_H
+#define _ICMP_H
 
+#ifndef _GLOBAL_H
 #include "global.h"
+#endif
+
+#ifndef _MBUF_H
+#include "mbuf.h"
+#endif
+
+#ifndef _IFACE_H
+#include "iface.h"
+#endif
+
+#ifndef _INTERNET_H
 #include "internet.h"
+#endif
+
+#ifndef _IP_H
 #include "ip.h"
+#endif
+
+#ifndef _SESSION_H
+#include "session.h"
+#endif
+
+#ifndef _TIMER_H
+#include "timer.h"
+#endif
 
 /* SNMP MIB variables, used for statistics and control. See RFC 1066 */
 extern struct mib_entry Icmp_mib[];
@@ -59,6 +84,7 @@ struct icmp {
 	char type;
 	char code;
 	union icmp_args {
+		int16 mtu;
 		int32 unused;
 		unsigned char pointer;
 		int32 address;
@@ -129,5 +155,4 @@ void echo_proc __ARGS((int32 source,int32 dest,struct icmp *icmp,struct mbuf *bp
 struct mbuf *htonicmp __ARGS((struct icmp *icmp,struct mbuf *data));
 int ntohicmp __ARGS((struct icmp *icmp,struct mbuf **bpp));
 
-#endif  /* ECHO_REPLY */
-
+#endif  /* _ICMP_H */

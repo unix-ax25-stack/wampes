@@ -1,6 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.6 1990/10/12 19:26:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.7 1991/02/24 20:17:26 deyke Exp $ */
 
-/* Miscellaneous format conversion subroutines */
+/* Miscellaneous integer and IP address format conversion subroutines
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 
 #include <sys/types.h>
 
@@ -11,8 +13,8 @@
 #include <sys/stat.h>
 
 #include "global.h"
+#include "timer.h"
 #include "netuser.h"
-#include "hpux.h"
 
 int Net_error;
 
@@ -77,14 +79,14 @@ static void read_hosttable()
   struct hosttable *hp;
   struct stat statbuf;
 
-  if (nextchecktime > currtime) return;
-  nextchecktime = currtime + 60;
+  if (nextchecktime > secclock()) return;
+  nextchecktime = secclock() + 60;
   if (stat("/tcp/hosts", &statbuf)) return;
-  if (lastmtime == statbuf.st_mtime || statbuf.st_mtime > currtime - 5) return;
+  if (lastmtime == statbuf.st_mtime || statbuf.st_mtime > secclock() - 5) return;
   lastmtime = statbuf.st_mtime;
   while (hp = hosttable) {
     hosttable = hosttable->next;
-    free((char *) hp);
+    free(hp);
   }
   if (!(fp = fopen("/tcp/hosts", "r"))) return;
   while (fgets(line, sizeof(line), fp)) {

@@ -1,8 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.h,v 1.2 1990/08/23 17:32:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.h,v 1.3 1991/02/24 20:16:46 deyke Exp $ */
+
+#ifndef _FTP_H
+#define _FTP_H
 
 /* Definitions common to both FTP servers and clients */
-
-#ifndef ASCII_TYPE
 
 #define CTLZ    26              /* EOF for CP/M systems */
 
@@ -45,5 +46,4 @@ struct ftp {
 
 #define NULLFTP (struct ftp *)0
 
-#endif  /* ASCII_TYPE */
-
+#endif  /* _FTP_H */

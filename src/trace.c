@@ -1,15 +1,18 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.4 1990/09/11 13:46:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.c,v 1.5 1991/02/24 20:17:54 deyke Exp $ */
 
+/* Packet tracing - top level and generic routines, including hex/ascii
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include <ctype.h>
 #include <time.h>
 #include "global.h"
 #include "mbuf.h"
 #include "iface.h"
+#include "timer.h"
 #include "trace.h"
 #include "pktdrvr.h"
 #include "commands.h"
-#include "hpux.h"
 
 static void ascii_dump __ARGS((FILE *fp,struct mbuf **bpp));
 static void ctohex __ARGS((char *buf,int c));
@@ -44,12 +47,14 @@ struct mbuf *bp;
 		 && (Tracef[type].addrtest != NULLFP)
 		 && (*Tracef[type].addrtest)(iface,bp) == 0)
 			return;         /* broadcasts are suppressed */
-		cp = ctime(&currtime);
+		timer = secclock();
+		cp = ctime(&timer);
 		cp[24] = '\0';
 		fprintf(iface->trfp,"%s  - %s recv:\n",cp,iface->name);
 		break;
 	case IF_TRACE_OUT:
-		cp = ctime(&currtime);
+		timer = secclock();
+		cp = ctime(&timer);
 		cp[24] = '\0';
 		fprintf(iface->trfp,"%s - %s sent:\n",cp,iface->name);
 		break;
@@ -84,6 +89,28 @@ struct mbuf *bp;
 			fprintf(iface->trfp,nospace);
 	}
 	free_p(tbp);
+}
+
+/* Dump packet bytes, no interpretation */
+void
+raw_dump(iface,direction,bp)
+struct iface *iface;
+int direction;
+struct mbuf *bp;
+{
+	struct mbuf *tbp;
+
+	/* Dump entire packet in hex/ascii */
+	fprintf(iface->trfp,"******* raw packet dump (%s %s)\n",
+		((direction & IF_TRACE_OUT) ? "send" : "recv"),iface->name);
+	dup_p(&tbp,bp,0,len_p(bp));
+	if(tbp != NULLBUF)
+		hex_dump(iface->trfp,&tbp);
+	else
+		fprintf(iface->trfp,nospace);
+	fprintf(iface->trfp,"*******\n");
+	free_p(tbp);
+	return;
 }
 
 /* Dump an mbuf in hex */
@@ -218,7 +245,7 @@ register struct iface *ifp;
 	if(ifp == NULLIF)
 		return;
 	tprintf("%s:",ifp->name);
-	if(ifp->trace & (IF_TRACE_IN | IF_TRACE_OUT)){
+	if(ifp->trace & (IF_TRACE_IN | IF_TRACE_OUT | IF_TRACE_RAW)){
 		if(ifp->trace & IF_TRACE_IN)
 			tprintf(" input");
 		if(ifp->trace & IF_TRACE_OUT)
@@ -233,10 +260,29 @@ register struct iface *ifp;
 			tprintf(" (ASCII dump)");
 		else
 			tprintf(" (headers only)");
+
+		if(ifp->trace & IF_TRACE_RAW)
+			tprintf(" Raw output");
+
 		if(ifp->trfile != NULLCHAR)
 			tprintf(" trace file: %s",ifp->trfile);
 		tprintf("\n");
 	} else
 		tprintf(" tracing off\n");
+}
+
+/* shut down all trace files */
+void shuttrace()
+{
+	struct iface *ifp;
+
+	for(ifp = Ifaces; ifp != NULLIF; ifp = ifp->next){
+		if(ifp->trfp != NULLFILE && ifp->trfp != stdout)
+			fclose(ifp->trfp);
+		if(ifp->trfile != NULLCHAR)
+			free(ifp->trfile);
+		ifp->trfile = NULLCHAR;
+		ifp->trfp = NULLFILE;
+	}
 }
 

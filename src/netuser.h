@@ -1,9 +1,13 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.h,v 1.4 1990/10/12 19:26:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.h,v 1.5 1991/02/24 20:17:27 deyke Exp $ */
+
+#ifndef _NETUSER_H
+#define _NETUSER_H
 
 /* Global structures and constants needed by an Internet user process */
-#ifndef NCONN
 
+#ifndef _GLOBAL_H
 #include "global.h"
+#endif
 
 #define NCONN   20              /* Maximum number of open network connections */
 
@@ -42,7 +46,8 @@ struct connection {
 };
 /* In domain.c: */
 int32 resolve __ARGS((char *name));
-char *resolve_a __ARGS((int32 ip_address));
+int32 resolve_mx __ARGS((char *name));
+char *resolve_a __ARGS((int32 ip_address, int shorten));
 
 /* In netuser.c: */
 int32 aton __ARGS((char *s));
@@ -57,4 +62,4 @@ int udp_port_number __ARGS((char *name));
 char *pinet_tcp __ARGS((struct socket *s));
 char *pinet_udp __ARGS((struct socket *s));
 
-#endif  /* NCONN */
+#endif  /* _NETUSER_H */

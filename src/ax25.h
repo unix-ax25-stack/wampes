@@ -1,54 +1,36 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.4 1990/10/12 19:25:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.5 1991/02/24 20:16:32 deyke Exp $ */
 
-#ifndef AX25_INCLUDED
-#define AX25_INCLUDED
+#ifndef _AX25_H
+#define _AX25_H
 
+#ifndef _GLOBAL_H
 #include "global.h"
+#endif
+
+#ifndef _MBUF_H
+#include "mbuf.h"
+#endif
+
+#ifndef _IFACE_H
 #include "iface.h"
+#endif
 
 /* AX.25 datagram (address) sub-layer definitions */
 
-/* Upper sub-layer (LAPB) definitions */
-
-/* Control field templates */
-#define I       0x00    /* Information frames */
-#define S       0x01    /* Supervisory frames */
-#define RR      0x01    /* Receiver ready */
-#define RNR     0x05    /* Receiver not ready */
-#define REJ     0x09    /* Reject */
-#define U       0x03    /* Unnumbered frames */
-#define SABM    0x2f    /* Set Asynchronous Balanced Mode */
-#define DISC    0x43    /* Disconnect */
-#define DM      0x0f    /* Disconnected mode */
-#define UA      0x63    /* Unnumbered acknowledge */
-#define FRMR    0x87    /* Frame reject */
-#define UI      0x03    /* Unnumbered information */
-#define PF      0x10    /* Poll/final bit */
-
-#define MMASK   7       /* Mask for modulo-8 sequence numbers */
-
-/* FRMR reason bits */
-#define W       1       /* Invalid control field */
-#define X       2       /* Unallowed I-field */
-#define Y       4       /* Too-long I-field */
-#define Z       8       /* Invalid sequence number */
-
-/* Maximum number of digipeaters */
-#define MAXDIGIS        7       /* 7 digipeaters plus src/dest */
+#define MAXDIGIS        7       /* Maximum number of digipeaters */
 #define ALEN            6       /* Number of chars in callsign field */
 #define AXALEN          7       /* Total AX.25 address length, including SSID */
 #define AXBUF           10      /* Buffer size for maximum-length ascii call */
 
-/* Internal representation of an AX.25 address */
-struct ax25_addr {
-	char call[ALEN];
-	char ssid;
+#ifndef _LAPB_H
+#include "lapb.h"
+#endif
+
+/* Bits within SSID field of AX.25 address */
 #define SSID            0x1e    /* Sub station ID */
 #define REPEATED        0x80    /* Has-been-repeated bit in repeater field */
 #define E               0x01    /* Address extension bit */
 #define C               0x80    /* Command/response designation */
-};
-#define NULLAXADDR      (struct ax25_addr *)0
 /* Our AX.25 address */
 extern char Mycall[AXALEN];
 
@@ -59,17 +41,33 @@ extern int Digipeat;
 
 /* Internal representation of an AX.25 header */
 struct ax25 {
-	struct ax25_addr dest;                  /* Destination address */
-	struct ax25_addr source;                /* Source address */
-	struct ax25_addr digis[MAXDIGIS];       /* Digi string */
-	int ndigis;                             /* Number of digipeaters */
-	int cmdrsp;                             /* Command/response */
+	char dest[AXALEN];              /* Destination address */
+	char source[AXALEN];            /* Source address */
+	char digis[MAXDIGIS][AXALEN];   /* Digi string */
+	int ndigis;                     /* Number of digipeaters */
+	int nextdigi;                   /* Index to next digi in chain */
+	int cmdrsp;                     /* Command/response */
 };
 
 /* C-bit stuff */
 #define LAPB_UNKNOWN            0
 #define LAPB_COMMAND            1
 #define LAPB_RESPONSE           2
+
+/* AX.25 routing table entry */
+struct ax_route {
+	char call[AXALEN];
+	struct ax_route *digi;
+	struct iface *ifp;
+	int perm;
+	long time;
+	struct ax_route *next;
+};
+
+#define AXROUTESIZE     499
+
+extern struct ax_route *Ax_routes[AXROUTESIZE];
+extern struct iface *axroute_default_ifp;
 
 /* AX.25 Level 3 Protocol IDs (PIDs) */
 #define PID_X25         0x01    /* CCITT X.25 PLP */
@@ -87,31 +85,49 @@ struct ax25 {
 #define SEG_FIRST       0x80    /* First segment of a sequence */
 #define SEG_REM         0x7f    /* Mask for # segments remaining */
 
-#define axptr(a)         ((struct ax25_addr *) (a))
 #define ismycall(call)   addreq(call, Mycall)
 
+/* Linkage to network protocols atop ax25 */
+struct axlink {
+	int pid;
+	void (*funct) __ARGS((struct iface *,struct ax25_cb *,char *, char *,
+	 struct mbuf *,int));
+};
+extern struct axlink Axlink[];
+
+/* List of AX.25 multicast addresses */
+extern char *Axmulti[];
+
+/* Codes for the open_ax call */
+#define AX_PASSIVE      0       /* not implemented */
+#define AX_ACTIVE       1
+#define AX_SERVER       2       /* Passive, clone on opening */
+
 /* In ax25.c: */
-int ax_send __ARGS((struct mbuf *bp, struct iface *iface, int32 gateway, int precedence, int delay, int throughput, int reliability));
-int ax_output __ARGS((struct iface *iface, char *dest, char *source, int pid, struct mbuf *data));
-void ax_recv __ARGS((struct iface *iface, struct mbuf *bp));
+void ax_recv __ARGS((struct iface *,struct mbuf *));
+int ax_send __ARGS((struct mbuf *bp,struct iface *iface,int32 gateway,int prec,
+	int del,int tput,int rel));
+int ax_output __ARGS((struct iface *iface,char *dest,char *source,int pid,
+	struct mbuf *data));
+void axnl3 __ARGS((struct iface *iface,struct ax25_cb *axp,char *src,
+	char *dest,struct mbuf *bp,int mcast));
+struct ax_route *ax_routeptr __ARGS((char *call, int create));
+void axroute_add __ARGS((struct iface *iface, struct ax25 *hdr, int perm));
+int axroute __ARGS((struct ax25_cb *cp, struct mbuf *bp));
+
+/* In axhdr.c: */
+struct mbuf *htonax25 __ARGS((struct ax25 *hdr,struct mbuf *data));
+int ntohax25 __ARGS((struct ax25 *hdr,struct mbuf **bpp));
 
 /* In ax25subr.c: */
-int setcall __ARGS((char *out,char *call));
-int setpath __ARGS((char *out, char *in [], int cnt));
-int addreq __ARGS((char *a, char *b));
-void addrcp __ARGS((char *to, char *from));
+int addreq __ARGS((char *a,char *b));
+void addrcp __ARGS((char *to,char *from));
 char *pax25 __ARGS((char *e,char *addr));
-char *psax25 __ARGS((char *e, char *addr));
-char *getaxaddr __ARGS((struct ax25_addr *ap, char *cp));
-char *putaxaddr __ARGS((char *cp, struct ax25_addr *ap));
-struct mbuf *htonax25 __ARGS((struct ax25 *hdr, struct mbuf *data));
-int atohax25 __ARGS((struct ax25 *hdr, char *hwaddr, struct ax25_addr *source));
-int ntohax25 __ARGS((struct ax25 *hdr, struct mbuf **bpp));
+int setcall __ARGS((char *out,char *call));
 int16 ftype __ARGS((int control));
 
-/* In idigi.c: */
-int idigi __ARGS((struct iface *ifp, struct mbuf *bp));
-int doidigi __ARGS((int argc, char *argv [], void *p));
+/* In ax25file.c: */
+void axroute_savefile __ARGS((void));
+void axroute_loadfile __ARGS((void));
 
-#endif  /* AX25_INCLUDED */
-
+#endif  /* _AX25_H */

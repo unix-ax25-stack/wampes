@@ -1,10 +1,13 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25dump.c,v 1.4 1990/10/22 11:37:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25dump.c,v 1.5 1991/02/24 20:16:33 deyke Exp $ */
 
+/* AX25 header tracing
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
 #include "ax25.h"
-#include "timer.h"
+#include "lapb.h"
 #include "trace.h"
 #include "socket.h"
 
@@ -23,7 +26,7 @@ int check;      /* Not used */
 	int16 type;
 	int unsegmented;
 	struct ax25 hdr;
-	struct ax25_addr *hp;
+	char *hp;
 
 	fprintf(fp,"AX25: ");
 	/* Extract the address header */
@@ -32,15 +35,15 @@ int check;      /* Not used */
 		fprintf(fp," bad header!\n");
 		return;
 	}
-	fprintf(fp,"%s",pax25(tmp,(char *) &hdr.source));
-	fprintf(fp,"->%s",pax25(tmp,(char *) &hdr.dest));
+	fprintf(fp,"%s",pax25(tmp,hdr.source));
+	fprintf(fp,"->%s",pax25(tmp,hdr.dest));
 	if(hdr.ndigis > 0){
 		fprintf(fp," v");
-		for(hp = &hdr.digis[0]; hp < &hdr.digis[hdr.ndigis];
-		 hp++){
+		for(hp = hdr.digis[0]; hp < &hdr.digis[hdr.ndigis][0];
+		 hp += AXALEN){
 			/* Print digi string */
-			fprintf(fp," %s%s",pax25(tmp,(char *) hp),
-			 (hp->ssid & REPEATED) ? "*":"");
+			fprintf(fp," %s%s",pax25(tmp,hp),
+			 (hp[ALEN] & REPEATED) ? "*":"");
 		}
 	}
 	if((control = PULLCHAR(bpp)) == -1)

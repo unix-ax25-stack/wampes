@@ -1,6 +1,12 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.10 1990/10/26 19:20:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.11 1991/02/24 20:17:17 deyke Exp $ */
 
-/* Main network program - provides both client and server functions */
+/* Main-level NOS program:
+ *  initialization
+ *  keyboard processing
+ *  generic user commands
+ *
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -53,6 +59,7 @@ char Nospace[] = "No space!!\n";        /* Generic malloc fail message */
 static FILE *Logfp;
 int32 resolve();
 int16 Lport = 1024;
+static int Verbose;
 
 int
 main(argc,argv)
@@ -60,37 +67,47 @@ int argc;
 char *argv[];
 {
 	static char inbuf[BUFSIZ];      /* keep it off the stack */
-	int c;
-	char *ttybuf,*fgets();
+	char *ttybuf;
 	int16 cnt;
-	int ttydriv();
-	int cmdparse();
-	void check_time();
 	FILE *fp;
 	struct iface *ifp;
+	int c;
 
 	debug = (argc >= 2);
+
+	while((c = getopt(argc,argv,"v")) != EOF){
+		switch(c){
+		case 'v':
+			Verbose = 1;
+			break;
+		}
+	}
+	ipinit();
 	ioinit();
 	netrom_initialize();
 	remote_net_initialize();
 
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
 	tprintf("\n");
-	tprintf("WAMPES version %s\n","901026");
-	tprintf("(c) Copyright 1990 by Dieter Deyke, DK5SG\n");
+	tprintf("WAMPES version 910224\n");
+	tprintf("(c) Copyright 1990, 1991 by Dieter Deyke, DK5SG\n");
 	tprintf("(c) Copyright 1990 by Phil Karn, KA9Q\n");
 	tprintf("\n");
 
-	if(argc > 1){
+	if(optind < argc){
 		/* Read startup file named on command line */
-		fp = fopen(argv[1],"r");
+		if((fp = fopen(argv[optind],READ_TEXT)) == NULLFILE)
+			tprintf("Can't read config file %s: %s\n",
+			 argv[optind],sys_errlist[errno]);
 	} else {
-		fp = fopen(Startup,"r");
+		fp = fopen(Startup,READ_TEXT);
 	}
 	if(fp != NULLFILE){
 		while(fgets(inbuf,BUFSIZ,fp) != NULLCHAR){
 			char intmp[BUFSIZ];
 			strcpy(intmp,inbuf);
+			if(Verbose)
+				tprintf("%s",intmp);
 			if(cmdparse(Cmds,inbuf,NULL) != 0){
 				tprintf("input line: %s",intmp);
 			}
@@ -148,12 +165,12 @@ char *argv[];
 
 		/* Service the interfaces */
 		for(ifp = Ifaces; ifp != NULLIF; ifp = ifp->next){
-			if(ifp->proc != NULLVFP)
-				(*ifp->proc)(ifp);
+			if(ifp->rxproc != NULLVFP)
+				(*ifp->rxproc)(ifp);
 		}
 
-		/* Service the clock if it has ticked */
-		check_time();
+		/* Service the clock */
+		timerproc();
 
 		if(Hopper)
 			network();
@@ -228,6 +245,20 @@ void *p;
 	if(argc < 2)
 		tprintf("%s\n",Hostname);
 	else {
+#if 0
+		struct iface *ifp;
+		char *name;
+
+		if((ifp = if_lookup(argv[1])) != NULLIF){
+			if((name = resolve_a(ifp->addr, FALSE)) == NULLCHAR){
+				tprintf("interface name not defined\n");
+				return 1;
+			} else {
+				/* free(argv[1]); */
+				argv[1] = name;
+			}
+		}
+#endif
 		if(Hostname != NULLCHAR)
 			free(Hostname);
 		Hostname = strdup(argv[1]);
@@ -307,7 +338,7 @@ int32 arg1,arg2,arg3,arg4;
 
 	if(Logfp == NULLFILE)
 		return;
-	cp = ctime(&currtime);
+	cp = ctime((long *) &Secclock);
 	rip(cp);
     if (tcb)
 	fprintf(Logfp,"%s %s - ",cp,pinet_tcp(&tcb->conn.remote));
@@ -397,10 +428,7 @@ void *p;
 	while((c = getopt(argc,argv,"a:p:k:s:")) != EOF){
 		switch(c){
 		case 'a':
-			if (!(addr = resolve(optarg))) {
-				tprintf("Host %s unknown\n",optarg);
-				return 1;
-			}
+			addr = resolve(optarg);
 			break;
 		case 'p':
 			port = atoi(optarg);
@@ -416,7 +444,7 @@ void *p;
 	}
 	if(optind > argc - 2){
 		tprintf("Insufficient args\n");
-		return 1;
+		return -1;
 	}
 	host = argv[optind++];
 	cmd = argv[optind];

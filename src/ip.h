@@ -1,16 +1,34 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.4 1990/10/12 19:25:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.5 1991/02/24 20:17:00 deyke Exp $ */
 
-#ifndef NROUTE
+#ifndef _IP_H
+#define _IP_H
 
+#ifndef _GLOBAL_H
 #include "global.h"
-#include "internet.h"
-#include "timer.h"
+#endif
 
-#define NROUTE  5       /* Number of hash chains in routing table */
+#ifndef _MBUF_H
+#include "mbuf.h"
+#endif
+
+#ifndef _IFACE_H
+#include "iface.h"
+#endif
+
+#ifndef _INTERNET_H
+#include "internet.h"
+#endif
+
+#ifndef _TIMER_H
+#include "timer.h"
+#endif
+
 #define TLB     30      /* Default reassembly timeout, sec */
 #define IPVERSION       4
+#define IP_MAXOPT       40      /* Largest option field, bytes */
 
 extern int32 Ip_addr;   /* Our IP address for ICMP and source routing */
+extern char Hashtab[];  /* Modulus lookup table */
 
 /* SNMP MIB variables, used for statistics and control. See RFC 1066 */
 extern struct mib_entry Ip_mib[];
@@ -50,10 +68,11 @@ struct ip {
 
 	char ttl;               /* Time to live */
 	char protocol;          /* Protocol */
+	int16 checksum;         /* Header checksum */
 	int32 source;           /* Source address */
 	int32 dest;             /* Destination address */
-	char options[44];       /* Options field */
-	int16 optlen;           /* Length of options field, bytes */
+	char options[IP_MAXOPT];/* Options field */
+	int optlen;             /* Length of options field, bytes */
 };
 #define NULLIP  (struct ip *)0
 #define IPLEN   20      /* Length of standard IP header */
@@ -94,7 +113,7 @@ struct route {
 	int32 uses;             /* Usage count */
 };
 #define NULLROUTE       (struct route *)0
-extern struct route *Routes[32][NROUTE];        /* Routing table */
+extern struct route *Routes[32][HASHMOD];       /* Routing table */
 extern struct route R_default;                  /* Default route entry */
 
 /* Cache for the last-used routing entry, speeds up the common case where
@@ -160,6 +179,7 @@ struct raw_ip *raw_ip __ARGS((int protocol,void (*r_upcall) __ARGS((struct raw_i
 void del_ip __ARGS((struct raw_ip *rrp));
 
 /* In iproute.c: */
+void ipinit __ARGS((void));
 int16 ip_mtu __ARGS((int32 addr));
 int ip_route __ARGS((struct iface *i_iface,struct mbuf *bp,int rxbroadcast));
 int32 locaddr __ARGS((int32 addr));
@@ -173,7 +193,7 @@ struct route *rt_blookup __ARGS((int32 target,unsigned int bits));
 /* In iphdr.c: */
 int16 cksum __ARGS((struct pseudo_header *ph,struct mbuf *m,int len));
 int16 eac __ARGS((int32 sum));
-struct mbuf *htonip __ARGS((struct ip *ip,struct mbuf *data));
+struct mbuf *htonip __ARGS((struct ip *ip,struct mbuf *data,int cflag));
 int ntohip __ARGS((struct ip *ip,struct mbuf **bpp));
 
 /* In either lcsum.c or pcgen.asm: */
@@ -183,5 +203,4 @@ int16 lcsum __ARGS((int16 *wp,int len));
 int route_savefile __ARGS((void));
 int route_loadfile __ARGS((void));
 
-#endif /* NROUTE */
-
+#endif /* _IP_H */

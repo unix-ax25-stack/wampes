@@ -1,5 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrdump.c,v 1.1 1990/09/11 13:46:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/nrdump.c,v 1.2 1991/02/24 20:17:28 deyke Exp $ */
 
+/* NET/ROM header tracing routines
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
@@ -17,18 +20,18 @@ int check;
 {
 	char src[AXALEN],dest[AXALEN];
 	char tmp[AXBUF];
-	char thdr[5];
+	char thdr[NR4MINHDR];
 	register i;
 
 	if(bpp == NULLBUFP || *bpp == NULLBUF)
 		return;
 	/* See if it is a routing broadcast */
-	if(uchar(*(*bpp)->data) == 0xff) {
+	if(uchar(*(*bpp)->data) == NR3NODESIG) {
 		(void)PULLCHAR(bpp);            /* Signature */
 		pullup(bpp,tmp,ALEN);
 		tmp[ALEN] = '\0';
 		fprintf(fp,"NET/ROM Routing: %s\n",tmp);
-		for(i = 0;i < 11;i++) {
+		for(i = 0;i < NRDESTPERPACK;i++) {
 			if (pullup(bpp,src,AXALEN) < AXALEN)
 				break;
 			fprintf(fp,"        %12s",pax25(tmp,src));
@@ -53,10 +56,10 @@ int check;
 	fprintf(fp," ttl %d\n",i);
 
 	/* Read first five bytes of "transport" header */
-	pullup(bpp,thdr,5);
+	pullup(bpp,thdr,NR4MINHDR);
 	switch(thdr[4] & NR4OPCODE){
 	case NR4OPPID:  /* network PID extension */
-		if (thdr[0] == PID_IP && thdr[1] == PID_IP) {
+		if (thdr[0] == NRPROTO_IP && thdr[1] == NRPROTO_IP) {
 			ip_dump(fp,bpp,check) ;
 			return;
 		}

@@ -1,6 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.5 1990/10/12 19:25:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.6 1991/02/24 20:16:49 deyke Exp $ */
 
-#ifndef MAXINT16
+#ifndef _GLOBAL_H
+#define _GLOBAL_H
 
 /* Global definitions used by every source file.
  * Some may be compiler dependent.
@@ -55,8 +56,10 @@ typedef unsigned short int16;   /* 16-bit unsigned integer */
 #define MAXINT16 65535          /* Largest 16-bit integer */
 #define MAXINT32 4294967295L    /* Largest 32-bit integer */
 
+#define HASHMOD 7               /* Modulus used by hash_ip() function */
+
 /* The "interrupt" keyword is non-standard, so make it configurable */
-#ifdef  __TURBOC__
+#if     defined(__TURBOC__) && defined(MSDOS)
 #define INTERRUPT       void interrupt
 #else
 #define INTERRUPT       void
@@ -96,6 +99,15 @@ typedef unsigned short int16;   /* 16-bit unsigned integer */
 #define NULLVIFP (INTERRUPT (*)())0
 #define NULLFILE (FILE *)0      /* Null file pointer */
 
+/* standard boolean constants */
+#define FALSE 0
+#define TRUE 1
+#define NO 0
+#define YES 1
+
+/* string equality shorthand */
+#define STREQ(x,y) (strcmp(x,y) == 0)
+
 /* Extract a short from a long */
 #define hiword(x)       ((int16)((x) >> 16))
 #define loword(x)       ((int16)(x))
@@ -112,20 +124,19 @@ typedef unsigned short int16;   /* 16-bit unsigned integer */
 unsigned long availmem __ARGS((void));
 void *callocw __ARGS((unsigned nelem,unsigned size));
 int dirps __ARGS((void));
-void freeargs __ARGS((int argc,char *argv[]));
 int getopt __ARGS((int argc,char *argv[],char *opts));
 int htoi __ARGS((char *));
 long htol __ARGS((char *));
 char *inbuf __ARGS((int16 port,char *buf,int16 cnt));
+int16 hash_ip __ARGS((int32 addr));
 int istate __ARGS((void));
 void log();
-/* void *ltop __ARGS((long)); */
 #define ltop(x) ((void *) x)
 void *mallocw __ARGS((unsigned nb));
 char *outbuf __ARGS((int16 port,char *buf,int16 cnt));
-/* long ptol __ARGS((void *)); */
 #define ptol(x) ((long) x)
 void restore __ARGS((int));
+void rflush __ARGS((void));
 void rip __ARGS((char *));
 char *smsg __ARGS((char *msgs[],unsigned nmsgs,unsigned n));
 int tprintf __ARGS((char *fmt,...));
@@ -142,7 +153,7 @@ int wildmat __ARGS((char *s,char *p,char **argv));
 #define rewind(fp)      fseek(fp,0L,0);
 #endif
 
-#ifdef  __TURBOC__
+#if     defined(__TURBOC__) && defined(MSDOS)
 #define movblock(so,ss,do,ds,c) movedata(ss,so,ds,do,c)
 #define outportw outport
 #define inportw inport
@@ -182,6 +193,9 @@ extern char *optarg;
 /* Threshold setting on available memory */
 extern int32 Memthresh;
 
+/* System clock - count of ticks since startup */
+extern int32 Clock;
+
 /* Various useful standard error messages */
 extern char Badhost[];
 extern char Nospace[];
@@ -194,7 +208,20 @@ extern char Eol[];
 
 extern void (*Gcollect[])();
 
+/*
+ * The following extern statements are to allow compilation by
+ *  Turbo C++ 1.00
+ */
+extern struct ax25_cb;
+extern struct dirsort;
+extern struct iface;
+extern struct ip;
+extern struct mbx;
+extern struct mbuf;
+extern struct nr4cb;
+extern struct session;
+extern struct slip;
+
 extern int Shortstatus;
 
-#endif  /* MAXINT16 */
-
+#endif  /* _GLOBAL_H */

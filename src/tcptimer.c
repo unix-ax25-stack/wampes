@@ -1,6 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcptimer.c,v 1.3 1990/10/12 19:26:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcptimer.c,v 1.4 1991/02/24 20:17:49 deyke Exp $ */
 
-/* TCP timeout routines */
+/* TCP timeout routines
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
@@ -48,6 +50,9 @@ int32
 backoff(n)
 int n;
 {
+	if(n > 31)
+		n = 31; /* Prevent truncation to zero */
+
 	return 1L << n; /* Binary exponential back off */
 }
 

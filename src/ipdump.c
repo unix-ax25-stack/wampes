@@ -1,10 +1,12 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.3 1990/09/11 13:45:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.4 1991/02/24 20:17:02 deyke Exp $ */
 
+/* IP header tracing routines
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
 #include "internet.h"
-#include "timer.h"
 #include "iface.h"
 #include "ip.h"
 #include "trace.h"

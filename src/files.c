@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.3 1990/09/11 13:45:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.c,v 1.4 1991/02/24 20:16:44 deyke Exp $ */
 
 /* System-dependent definitions of various files, spool directories, etc */
 #include "global.h"
@@ -18,6 +18,11 @@ char *Fdir = "/finger";         /* Finger info directory */
 char *Arealist = "/spool/areas";/* List of message areas */
 char *Helpdir = "/spool/help";  /* Mailbox help file directory */
 char *Rewritefile = "/spool/rewrite"; /* Address rewrite file */
+char *Newsdir = "/spool/news";          /* News messages and NNTP data */
+char *Signature = "/spool/signatur"; /* Mail signature file directory */
+char *Forwardfile = "/spool/forward.bbs"; /* Mail forwarding file */
+char *Historyfile = "/spool/history"; /* Message ID history file */
+char *PPPhosts = "/ppphosts";   /* peer ID to IP address lookup table */
 char Eol[] = "\r\n";
 #define SEPARATOR       "/"
 #endif
@@ -41,6 +46,11 @@ char *Fdir = "./finger";                /* Finger info directory */
 char *Arealist = "./areas";             /* List of message areas */
 char *Helpdir = "./help";       /* Mailbox help file directory */
 char *Rewritefile = "./rewrite"; /* Address rewrite file */
+char *Newsdir = "./news";               /* News messages and NNTP data */
+char *Signature = "./signatur"; /* Mail signature file directory */
+char *Forwardfile = "./forward.bbs"; /* Mail forwarding file */
+char *Historyfile = "./history"; /* Message ID history file */
+char *PPPhosts = "./ppphosts";  /* peer ID to IP address lookup table */
 #define SEPARATOR       "/"
 char Eol[] = "\n";
 #endif
@@ -60,6 +70,11 @@ char *Fdir = "TCPIP:finger";            /* Finger info directory */
 char *Arealist = "TCPIP:spool/areas";   /* List of message areas */
 char *Helpdir = "TCPIP:spool/help";     /* Mailbox help file directory */
 char *Rewritefile = "TCPIP:spool/rewrite"; /* Address rewrite file */
+char *Newsdir = "TCPIP:spool/news";     /* News messages and NNTP data */
+char *Signature = "TCPIP:spool/signatur"; /* Mail signature file directory */
+char *Forwardfile = "TCPIP:spool/forward.bbs"; /* Mail forwarding file */
+char *Historyfile = "TCPIP:spool/history"; /* Message ID history file */
+char *PPPhosts = "TCPIP:ppphosts";      /* peer ID to IP address lookup table */
 #define SEPARATOR       "/"
 char Eol[] = "\r\n";
 #endif
@@ -79,6 +94,11 @@ char *Fdir = "Mikes Hard Disk:finger";          /* Finger info directory */
 char *Arealist = "Mikes Hard Disk:spool/areas"; /* List of message areas */
 char *Helpdir = "Mikes Hard Disk:spool/help"; /* Mailbox help file directory */
 char *Rewritefile = "Mikes Hard Disk:spool/rewrite"; /* Address rewrite file */
+char *Newsdir = "Mikes Hard Disk:spool/news"; /* News messages and NNTP data */
+char *Signature = "Mikes Hard Disk:spool/signatur"; /* Mail signature file directory */
+char *Forwardfile = "Mikes Hard Disk:spool/forward.bbs"; /* Mail forwarding file */
+char *Historyfile = "Mikes Hard Disk:spool/history"; /* Message ID history file */
+char *PPPhosts = "Mikes Hard Disk:ppphosts";    /* peer ID to IP address lookup table */
 #define SEPARATOR       ":"
 char Eol[] = "\r";
 #endif
@@ -105,6 +125,11 @@ char *root;
 	Arealist = strcatdup(root,SEPARATOR,Arealist);
 	Helpdir = strcatdup(root,SEPARATOR,Helpdir);
 	Rewritefile = strcatdup(root,SEPARATOR,Rewritefile);
+	Newsdir = strcatdup(root,SEPARATOR,Newsdir);
+	Signature = strcatdup(root,SEPARATOR,Signature);
+	Forwardfile = strcatdup(root,SEPARATOR,Forwardfile);
+	Historyfile = strcatdup(root,SEPARATOR,Historyfile);
+	PPPhosts = strcatdup(root,SEPARATOR,PPPhosts);
 }
 
 /* Concatenate root, separator and arg strings into a malloc'ed output

@@ -1,8 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.3 1990/09/11 13:45:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.c,v 1.4 1991/02/24 20:16:59 deyke Exp $ */
 
 /* Upper half of IP, consisting of send/receive primitives, including
  * fragment reassembly, for higher level protocols.
  * Not needed when running as a standalone gateway.
+ * Copyright 1991 Phil Karn, KA9Q
  */
 #include "global.h"
 #include "mbuf.h"
@@ -70,7 +71,7 @@ char df;                        /* Don't-fragment flag */
 	struct mbuf *tbp;
 	struct ip ip;           /* Pointer to IP header */
 	static int16 id_cntr;   /* Datagram serial number */
-	struct phdr *phdr;
+	struct phdr phdr;
 
 	ipOutRequests++;
 
@@ -84,6 +85,7 @@ char df;                        /* Don't-fragment flag */
 		ttl = ipDefaultTTL;
 
 	/* Fill in IP header */
+	ip.version = IPVERSION;
 	ip.tos = tos;
 	ip.length = IPLEN + length;
 	ip.id = id;
@@ -95,25 +97,25 @@ char df;                        /* Don't-fragment flag */
 	ip.source = source;
 	ip.dest = dest;
 	ip.optlen = 0;
-	if((tbp = htonip(&ip,bp)) == NULLBUF){
+	if((tbp = htonip(&ip,bp,0)) == NULLBUF){
 		free_p(bp);
 		return -1;
 	}
-	if((bp = pushdown(tbp,sizeof(struct phdr))) == NULLBUF){
+	if((bp = pushdown(tbp,sizeof(phdr))) == NULLBUF){
 		free_p(tbp);
 		return -1;
 	}
-	phdr = (struct phdr *)bp->data;
 	if(ismyaddr(ip.dest)){
 		/* Pretend it has been sent by the loopback interface before
 		 * it appears in the receive queue
 		 */
-		phdr->iface = &Loopback;
-		phdr->iface->ipsndcnt++;
-		phdr->iface->rawsndcnt++;
+		phdr.iface = &Loopback;
+		Loopback.ipsndcnt++;
+		Loopback.rawsndcnt++;
 	} else
-		phdr->iface = NULLIF;
-	phdr->type = CL_NONE;
+		phdr.iface = NULLIF;
+	phdr.type = CL_NONE;
+	memcpy(&bp->data[0],(char *)&phdr,sizeof(phdr));
 	enqueue(&Hopper,bp);
 	return 0;
 }
@@ -149,7 +151,7 @@ int rxbroadcast;        /* True if received on subnet broadcast address */
 		rxcnt++;
 		/* Duplicate the data portion, and put the header back on */
 		dup_p(&bp1,bp,0,len_p(bp));
-		if(bp1 != NULLBUF && (tbp = htonip(ip,bp1)) != NULLBUF){
+		if(bp1 != NULLBUF && (tbp = htonip(ip,bp1,1)) != NULLBUF){
 			enqueue(&rp->rcvq,tbp);
 			if(rp->r_upcall != NULLVFP)
 				(*rp->r_upcall)(rp);
@@ -173,7 +175,7 @@ int rxbroadcast;        /* True if received on subnet broadcast address */
 			/* ...unless it's a broadcast */
 			if(!rxbroadcast){
 				icmp_output(ip,bp,ICMP_DEST_UNREACH,
-				 ICMP_PROT_UNREACH,(union icmp_args *)NULL);
+				 ICMP_PROT_UNREACH,NULLICMP);
 			}
 		}
 		free_p(bp);
@@ -420,7 +422,7 @@ register struct ip *ip;
 	rp->dest = ip->dest;
 	rp->id = ip->id;
 	rp->protocol = ip->protocol;
-	rp->timer.start = (ipReasmTimeout * 1000) / MSPTICK;
+	set_timer(&rp->timer,ipReasmTimeout * 1000);
 	rp->timer.func = ip_timeout;
 	rp->timer.arg = rp;
 

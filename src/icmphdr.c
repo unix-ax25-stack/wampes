@@ -1,5 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmphdr.c,v 1.1 1990/09/11 13:45:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmphdr.c,v 1.2 1991/02/24 20:16:56 deyke Exp $ */
 
+/* ICMP header conversion routines
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include "global.h"
 #include "mbuf.h"
 #include "internet.h"
@@ -24,6 +27,14 @@ struct mbuf *data;
 	*cp++ = icmp->code;
 	cp = put16(cp,0);               /* Clear checksum */
 	switch(icmp->type){
+	case ICMP_DEST_UNREACH:
+		if(icmp->code == ICMP_FRAG_NEEDED){
+			/* Deering/Mogul max MTU indication */
+			cp = put16(cp,0);
+			cp = put16(cp,icmp->args.mtu);
+		} else
+			cp = put32(cp,0L);
+		break;
 	case ICMP_PARAM_PROB:
 		*cp++ = icmp->args.pointer;
 		*cp++ = 0;
@@ -67,6 +78,11 @@ struct mbuf **bpp;
 	icmp->type = icmpbuf[0];
 	icmp->code = icmpbuf[1];
 	switch(icmp->type){
+	case ICMP_DEST_UNREACH:
+		/* Retrieve Deering/Mogul MTU value */
+		if(icmp->code == ICMP_FRAG_NEEDED)
+			icmp->args.mtu = get16(&icmpbuf[6]);
+		break;
 	case ICMP_PARAM_PROB:
 		icmp->args.pointer = icmpbuf[4];
 		break;

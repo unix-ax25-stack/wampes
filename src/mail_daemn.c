@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.6 1990/10/26 19:20:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.7 1991/02/24 20:17:15 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -13,7 +13,6 @@
 
 #include "global.h"
 #include "timer.h"
-#include "hpux.h"
 #include "mail.h"
 #include "cmdparse.h"
 #include "commands.h"
@@ -103,8 +102,8 @@ void *p;
       break;
     case MS_FAILURE:
       state = "Failure";
-      if (sp->nexttime > currtime)
-	sprintf(waittime, "%d sec", sp->nexttime - currtime);
+      if (sp->nexttime > secclock())
+	sprintf(waittime, "%d sec", sp->nexttime - secclock());
       break;
     }
     tprintf("%-10s %-7s %-10s %-8s %9s\n", sp->sysname, sp->mailer->name, sp->protocol, state, waittime);
@@ -123,8 +122,8 @@ void *p;
 {
   if (argc < 2) {
     tprintf("%lu/%lu\n",
-	    read_timer(&Mail_timer) * MSPTICK / 1000,
-	    dur_timer(&Mail_timer) * MSPTICK / 1000);
+	    read_timer(&Mail_timer) / 1000,
+	    dur_timer(&Mail_timer) / 1000);
     return 0;
   }
   Mail_timer.func = (void (*)()) mail_tick;
@@ -173,7 +172,7 @@ static void read_configuration()
   for (sp = Systems; sp; sp = sp->next)
     if (sp->jobs) return;
   if (stat(CONFFILE, &statbuf)) return;
-  if (lastmtime == statbuf.st_mtime || statbuf.st_mtime > currtime - 5) return;
+  if (lastmtime == statbuf.st_mtime || statbuf.st_mtime > secclock() - 5) return;
   if (!(fp = fopen(CONFFILE, "r"))) return;
   while (sp = Systems) {
     Systems = Systems->next;
@@ -234,7 +233,7 @@ char  *sysname;
     if (sp->jobs) clients++;
   for (sp = Systems; sp && clients < Maxclients; sp = sp->next) {
     if (sysname && !strcmp(sp->sysname, sysname)) sp->nexttime = 0;
-    if (sp->jobs || sp->nexttime > currtime) continue;
+    if (sp->jobs || sp->nexttime > secclock()) continue;
     sprintf(spooldir, "%s/%s", SPOOLDIR, sp->sysname);
     if (!(dirp = opendir(spooldir))) continue;
     filelist = 0;
@@ -296,7 +295,7 @@ char  *sysname;
       fclose(fp);
       if (!*mj.from) continue;
       if (stat(mj.cfile, &statbuf)) continue;
-      if (statbuf.st_mtime + RETURNTIME < currtime) {
+      if (statbuf.st_mtime + RETURNTIME < secclock()) {
 	sprintf(mj.return_reason, "520 %s... Cannot connect for %d days\n", sp->sysname, RETURNTIME / (60l*60*24));
 	mail_return(&mj);
       } else {

@@ -1,4 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.h,v 1.1 1990/08/23 17:32:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/files.h,v 1.2 1991/02/24 20:16:44 deyke Exp $ */
+
+#ifndef _FILES_H
+#define _FILES_H
 
 /* External definitions for configuration-dependent file names set in
  * files.c
@@ -13,5 +16,14 @@ extern char *Routeqdir; /* queue for router */
 extern char *Alias;     /* the alias file */
 extern char *Dfile;     /* Domain cache */
 extern char *Fdir;      /* Finger info directory */
-
+extern char *Arealist;          /* List of message areas */
+extern char *Helpdir;           /* Mailbox help file directory */
+extern char *Rewritefile;       /* Address rewrite file */
+extern char *Newsdir;           /* News messages and NNTP data */
+extern char *Signature;         /* Mail signature file directory */
+extern char *Forwardfile;       /* Mail forwarding file */
+extern char *Historyfile;       /* Message ID history file */
+extern char *PPPhosts;          /* peer ID to IP address lookup table */
 void initroot __ARGS((char *root));
+
+#endif  /* _FILES_H */

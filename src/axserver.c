@@ -1,10 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.5 1990/10/12 19:25:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axserver.c,v 1.6 1991/02/24 20:16:36 deyke Exp $ */
 
 #include <stdlib.h>
 
 #include "global.h"
 #include "timer.h"
-#include "axproto.h"
+#include "ax25.h"
+#include "lapb.h"
 #include "login.h"
 
 static void axserv_recv_upcall __ARGS((struct ax25_cb *cp, int cnt));
@@ -61,7 +62,7 @@ char  *argv[];
 void *p;
 {
   if (axcb_server) {
-    free((char *) axcb_server);
+    free(axcb_server);
     axcb_server = NULLAXCB;
   }
   return 0;
@@ -75,7 +76,7 @@ char  *argv[];
 void *p;
 {
   if (!axcb_server)
-    axcb_server = open_ax(NULLCHAR, AX25_SERVER, axserv_recv_upcall,
+    axcb_server = open_ax(NULLCHAR, AX_SERVER, axserv_recv_upcall,
 			  axserv_send_upcall, axserv_state_upcall, NULLCHAR);
   return axcb_server ? 0 : -1;
 }

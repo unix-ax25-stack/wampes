@@ -1,6 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.c,v 1.3 1990/09/11 13:46:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.c,v 1.4 1991/02/24 20:17:59 deyke Exp $ */
 
-/* Send and receive User Datagram Protocol packets */
+/* Internet User Data Protocol (UDP)
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include "global.h"
 #include "mbuf.h"
 #include "netuser.h"
@@ -104,7 +106,7 @@ register struct udp_cb *up;
 struct socket *fsocket;         /* Place to stash incoming socket */
 struct mbuf **bp;               /* Place to stash data packet */
 {
-	struct socket *sp;
+	struct socket sp;
 	struct mbuf *buf;
 	int16 length;
 
@@ -119,16 +121,17 @@ struct mbuf **bp;               /* Place to stash data packet */
 	buf = dequeue(&up->rcvq);
 	up->rcvcnt--;
 
-	sp = (struct socket *)buf->data;
+	/* Strip socket header */
+	pullup(&buf,(char *)&sp,sizeof(struct socket));
+
 	/* Fill in the user's foreign socket structure, if given */
 	if(fsocket != NULLSOCK){
-		fsocket->address = sp->address;
-		fsocket->port = sp->port;
+		fsocket->address = sp.address;
+		fsocket->port = sp.port;
 	}
-	/* Strip socket header and hand data to user */
-	pullup(&buf,NULLCHAR,sizeof(struct socket));
+	/* Hand data to user */
 	length = len_p(buf);
-	if(bp != (struct mbuf **)NULL)
+	if(bp != NULLBUFP)
 		*bp = buf;
 	else
 		free_p(buf);
@@ -176,7 +179,7 @@ int rxbroadcast;        /* The only protocol that accepts 'em */
 	struct udp udp;
 	struct udp_cb *up;
 	struct socket lsocket;
-	struct socket *fsocket;
+	struct socket fsocket;
 	struct mbuf *packet;
 	int ckfail = 0;
 	int16 length;
@@ -225,15 +228,15 @@ int rxbroadcast;        /* The only protocol that accepts 'em */
 		return;
 	}
 	/* Create space for the foreign socket info */
-	if((packet = pushdown(bp,sizeof(struct socket))) == NULLBUF){
+	if((packet = pushdown(bp,sizeof(fsocket))) == NULLBUF){
 		/* No space, drop whole packet */
 		free_p(bp);
 		udpInErrors++;
 		return;
 	}
-	fsocket = (struct socket *)packet->data;
-	fsocket->address = ip->source;
-	fsocket->port = udp.source;
+	fsocket.address = ip->source;
+	fsocket.port = udp.source;
+	memcpy(&packet->data[0],(char *)&fsocket,sizeof(fsocket));
 
 	/* Queue it */
 	enqueue(&up->rcvq,packet);

@@ -1,10 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.4 1990/09/11 13:45:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.5 1991/02/24 20:16:52 deyke Exp $ */
 
-/* Internet Control Message Protocol */
+/* Internet Control Message Protocol (ICMP)
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
-#include "timer.h"
 #include "iface.h"
 #include "ip.h"
 #include "icmp.h"
@@ -201,7 +202,7 @@ union icmp_args *args;
 		return -1;      /* The caller will free data */
 
 	/* Recreate and tack on offending IP header */
-	if((data = htonip(ip,bp)) == NULLBUF){
+	if((data = htonip(ip,bp,1)) == NULLBUF){
 		free_p(bp);
 		icmpOutErrors++;
 		return -1;
@@ -243,6 +244,8 @@ union icmp_args *args;
 		icmpOutAddrMaskReps++;
 		break;
 	case ICMP_DEST_UNREACH:
+		if(icmp.code == ICMP_FRAG_NEEDED)
+			icmp.args.mtu = args->mtu;
 		icmpOutDestUnreachs++;
 		break;
 	case ICMP_TIME_EXCEED:
@@ -252,6 +255,7 @@ union icmp_args *args;
 		icmpOutSrcQuenchs++;
 		break;
 	}
+	icmpOutMsgs++;
 	/* Now stick on the ICMP header */
 	if((bp = htonicmp(&icmp,data)) == NULLBUF){
 		free_p(data);

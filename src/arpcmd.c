@@ -1,5 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.4 1990/10/12 19:25:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpcmd.c,v 1.5 1991/02/24 20:16:27 deyke Exp $ */
 
+/* ARP commands
+ * Copyright 1991, Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include <ctype.h>
 #include "global.h"
@@ -19,16 +22,16 @@ static void dumparp __ARGS((void));
 
 static struct cmds Arpcmds[] = {
 	"add", doarpadd, 0, 4,
-	"arp add <hostid> ether|ax25|netrom <ether addr|callsign>",
+	"arp add <hostid> ether|ax25|netrom|arcnet <ether addr|callsign>",
 
 	"drop", doarpdrop, 0, 3,
-	"arp drop <hostid> ether|ax25|netrom",
+	"arp drop <hostid> ether|ax25|netrom|arcnet",
 
 	"flush", doarpflush, 0, 0,
 	NULLCHAR,
 
 	"publish", doarpadd, 0, 4,
-	"arp publish <hostid> ether|ax25|netrom <ether addr|callsign>",
+	"arp publish <hostid> ether|ax25|netrom|arcnet <ether addr|callsign>",
 
 	NULLCHAR,
 };
@@ -39,7 +42,7 @@ char *Arptypes[] = {
 	"AX.25",
 	"Pronet",
 	"Chaos",
-	"IEEE 802",
+	"",
 	"Arcnet",
 	"Appletalk"
 };
@@ -62,7 +65,7 @@ int argc;
 char *argv[];
 void *p;
 {
-	int16 hardware,hwalen,naddr = 1;
+	int16 hardware;
 	int32 addr;
 	char *hwaddr;
 	struct arp_tab *ap;
@@ -79,18 +82,22 @@ void *p;
 	switch(tolower(argv[2][0])){
 	case 'n':       /* Net/Rom pseudo-type */
 		hardware = ARP_NETROM;
-		naddr = argc - 3 ;
-		if (naddr != 1) {
-			tprintf("No digipeaters in NET/ROM arp entries - ") ;
-			return 1 ;
-		}
 		break;
 	case 'e':       /* "ether" */
 		hardware = ARP_ETHER;
 		break;
 	case 'a':       /* "ax25" */
-		hardware = ARP_AX25;
-		naddr = argc - 3;
+		switch(tolower(argv[2][1])) {
+		case 'x':
+			hardware = ARP_AX25;
+			break;
+		case 'r':
+			hardware = ARP_ARCNET;
+			break;
+		default:
+			tprintf("unknown hardware type \"%s\"\n",argv[2]);
+			return -1;
+		}
 		break;
 	case 'm':       /* "mac appletalk" */
 		hardware = ARP_APPLETALK;
@@ -109,14 +116,13 @@ void *p;
 		return 1;
 	}
 	/* Allocate buffer for hardware address and fill with remaining args */
-	hwalen = at->hwalen * naddr;
-	hwaddr = mallocw(hwalen);
+	hwaddr = mallocw(at->hwalen);
 	/* Destination address */
-	(*at->scan)(hwaddr,&argv[3],argc - 3);
-	ap = arp_add(addr,hardware,hwaddr,hwalen,pub);  /* Put in table */
+	(*at->scan)(hwaddr,argv[3]);
+	ap = arp_add(addr,hardware,hwaddr,pub); /* Put in table */
 	free(hwaddr);                           /* Clean up */
 	stop_timer(&ap->timer);                 /* Make entry permanent */
-	ap->timer.count = ap->timer.start = 0;
+	set_timer(&ap->timer,0L);
 	return 0;
 }
 /* Remove an ARP entry */
@@ -143,7 +149,17 @@ void *p;
 		hardware = ARP_ETHER;
 		break;
 	case 'a':       /* "ax25" */
-		hardware = ARP_AX25;
+		switch(tolower(argv[2][1])) {
+		case 'x':
+			hardware = ARP_AX25;
+			break;
+		case 'r':
+			hardware = ARP_ARCNET;
+			break;
+		default:
+			hardware = 0;
+			break;
+		}
 		break;
 	case 'm':       /* "mac appletalk" */
 		hardware = ARP_APPLETALK;
@@ -168,10 +184,10 @@ void *p;
 	struct arp_tab *aptmp;
 	int i;
 
-	for(i=0;i<ARPSIZE;i++){
+	for(i=0;i<HASHMOD;i++){
 		for(ap = Arp_tab[i];ap != NULLARP;ap = aptmp){
 			aptmp = ap->next;
-			if(ap->timer.start != 0)
+			if(dur_timer(&ap->timer) != 0)
 				arp_drop(ap);
 		}
 	}
@@ -192,11 +208,11 @@ dumparp()
 	 Arp_stat.replies,Arp_stat.outreq);
 
 	tprintf("IP addr         Type           Time Q Addr\n");
-	for(i=0;i<ARPSIZE;i++){
+	for(i=0;i<HASHMOD;i++){
 		for(ap = Arp_tab[i];ap != (struct arp_tab *)NULL;ap = ap->next){
 			tprintf("%-16s",inet_ntoa(ap->ip_addr));
 			tprintf("%-15s",smsg(Arptypes,NHWTYPES,ap->hardware));
-			tprintf("%-5ld",read_timer(&ap->timer)*(long)MSPTICK/1000);
+			tprintf("%-5ld",read_timer(&ap->timer)/1000L);
 			if(ap->state == ARP_PENDING)
 				tprintf("%-2u",len_q(ap->pending));
 			else

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.5 1990/10/12 19:26:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.6 1991/02/24 20:17:56 deyke Exp $ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -8,7 +8,7 @@
 #include "mbuf.h"
 #include "timer.h"
 #include "ax25.h"
-#include "axproto.h"
+#include "lapb.h"
 #include "netrom.h"
 #include "tcp.h"
 #include "transport.h"
@@ -171,7 +171,6 @@ struct transport_cb *tp;
   char  *strptr;
   char  path[10*AXALEN];
   char  tmp[1024];
-  int  recv_ax(), send_ax(), space_ax(), close_ax(), del_ax();
 
   pathptr = path;
   strptr = strtok(strcpy(tmp, address), " \t\r\n");
@@ -194,7 +193,7 @@ struct transport_cb *tp;
   tp->send_space = space_ax;
   tp->close = close_ax;
   tp->del = del_ax;
-  return open_ax(path, AX25_ACTIVE, transport_recv_upcall_ax25, transport_send_upcall_ax25, transport_state_upcall_ax25, (char *) tp);
+  return open_ax(path, AX_ACTIVE, transport_recv_upcall_ax25, transport_send_upcall_ax25, transport_state_upcall_ax25, (char *) tp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -203,17 +202,15 @@ static struct circuit *transport_open_netrom(address, tp)
 char  *address;
 struct transport_cb *tp;
 {
+  char  node[AXALEN];
 
-  int  recv_nr(), send_nr(), space_nr(), close_nr(), del_nr();
-  struct ax25_addr node;
-
-  if (setcall((char *) &node, address)) return 0;
+  if (setcall(node, address)) return 0;
   tp->recv = recv_nr;
   tp->send = send_nr;
   tp->send_space = space_nr;
   tp->close = close_nr;
   tp->del = del_nr;
-  return open_nr(&node, axptr(Mycall), 0, transport_recv_upcall_netrom, transport_send_upcall_netrom, transport_state_upcall_netrom, (char *) tp);
+  return open_nr(node, Mycall, 0, transport_recv_upcall_netrom, transport_send_upcall_netrom, transport_state_upcall_netrom, (char *) tp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -224,7 +221,6 @@ struct transport_cb *tp;
 {
 
   char  *host, *port, tmp[1024];
-  int  recv_tcp(), send_tcp(), space_tcp(), close_tcp(), del_tcp();
   struct socket fsocket, lsocket;
 
   if (!(host = strtok(strcpy(tmp, address), " \t\r\n"))) return 0;
@@ -256,7 +252,7 @@ char  *user;
   tp->s_upcall = s_upcall;
   tp->user = user;
   tp->timer.func = (void (*)()) transport_close;
-  tp->timer.arg = (char *) tp;
+  tp->timer.arg = tp;
   Net_error = INVALID;
   if (!strcmp(protocol, "ax25"))
     tp->cp = (char *) transport_open_ax25(address, tp);
@@ -267,7 +263,7 @@ char  *user;
   else
     Net_error = NOPROTO;
   if (tp->cp) return tp;
-  free((char *) tp);
+  free(tp);
   return 0;
 }
 
@@ -280,7 +276,7 @@ int16 cnt;
 {
   int  result;
 
-  if (tp->timer.start) start_timer(&tp->timer);
+  if dur_timer(&tp->timer) start_timer(&tp->timer);
   result = (*tp->recv)(tp->cp, bpp, cnt);
   if (result < 1 || tp->recv_mode == EOL_NONE) return result;
   return convert_eol(bpp, tp->recv_mode, &tp->recv_char);
@@ -292,7 +288,7 @@ int  transport_send(tp, bp)
 struct transport_cb *tp;
 struct mbuf *bp;
 {
-  if (tp->timer.start) start_timer(&tp->timer);
+  if dur_timer(&tp->timer) start_timer(&tp->timer);
   if (tp->send_mode != EOL_NONE)
     convert_eol(&bp, tp->send_mode, &tp->send_char);
   return (*tp->send)(tp->cp, bp);
@@ -331,7 +327,7 @@ struct transport_cb *tp;
 {
   (*tp->del)(tp->cp);
   stop_timer(&tp->timer);
-  free((char *) tp);
+  free(tp);
   return 0;
 }
 

@@ -1,11 +1,31 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.h,v 1.3 1990/09/11 13:46:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udp.h,v 1.4 1991/02/24 20:18:00 deyke Exp $ */
 
-#ifndef NUDP
+#ifndef _UDP_H
+#define _UDP_H
 
+#ifndef _GLOBAL_H
 #include "global.h"
-#include "netuser.h"
+#endif
+
+#ifndef _MBUF_H
+#include "mbuf.h"
+#endif
+
+#ifndef _IFACE_H
+#include "iface.h"
+#endif
+
+#ifndef _INTERNET_H
 #include "internet.h"
+#endif
+
+#ifndef _IP_H
 #include "ip.h"
+#endif
+
+#ifndef _NETUSER_H
+#include "netuser.h"
+#endif
 
 /* SNMP MIB variables, used for statistics and control. See RFC 1066 */
 extern struct mib_entry Udp_mib[];
@@ -72,5 +92,4 @@ int st_udp __ARGS((struct udp_cb *udp,int n));
 struct mbuf *htonudp __ARGS((struct udp *udp,struct mbuf *data,struct pseudo_header *ph));
 int ntohudp __ARGS((struct udp *udp,struct mbuf **bpp));
 
-#endif  /* NUDP */
-
+#endif  /* _UDP_H */

@@ -1,14 +1,52 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.7 1990/10/12 19:25:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.8 1991/02/24 20:17:10 deyke Exp $ */
 
-#ifndef AXPROTO_INCLUDED
-#define AXPROTO_INCLUDED
+#ifndef _LAPB_H
+#define _LAPB_H
 
-/* AX25 protocol implementation */
+#ifndef _GLOBAL_H
+#include "global.h"
+#endif
 
-/* Codes for the open_ax call */
-#define AX25_PASSIVE    0       /* not implemented */
-#define AX25_ACTIVE     1
-#define AX25_SERVER     2       /* Passive, clone on opening */
+#ifndef _MBUF_H
+#include "mbuf.h"
+#endif
+
+#ifndef _IFACE_H
+#include "iface.h"
+#endif
+
+#ifndef _TIMER_H
+#include "timer.h"
+#endif
+
+#ifndef _AX25_H
+#include "ax25.h"
+#endif
+
+/* Upper sub-layer (LAPB) definitions */
+
+/* Control field templates */
+#define I       0x00    /* Information frames */
+#define S       0x01    /* Supervisory frames */
+#define RR      0x01    /* Receiver ready */
+#define RNR     0x05    /* Receiver not ready */
+#define REJ     0x09    /* Reject */
+#define U       0x03    /* Unnumbered frames */
+#define SABM    0x2f    /* Set Asynchronous Balanced Mode */
+#define DISC    0x43    /* Disconnect */
+#define DM      0x0f    /* Disconnected mode */
+#define UA      0x63    /* Unnumbered acknowledge */
+#define FRMR    0x87    /* Frame reject */
+#define UI      0x03    /* Unnumbered information */
+#define PF      0x10    /* Poll/final bit */
+
+#define MMASK   7       /* Mask for modulo-8 sequence numbers */
+
+/* FRMR reason bits */
+#define W       1       /* Invalid control field */
+#define X       2       /* Unallowed I-field */
+#define Y       4       /* Too-long I-field */
+#define Z       8       /* Invalid sequence number */
 
 /* AX25 protocol constants */
 #define DST_C   1               /* Set C bit in dest addr */
@@ -45,7 +83,7 @@ struct ax25_cb {
   int  polling;                 /* Poll frame has been sent */
   int  rnrsent;                 /* RNR frame has been sent */
   int  rejsent;                 /* REJ frame has been sent */
-  long  remote_busy;            /* Other end's window is closed */
+  int32 remote_busy;            /* Other end's window is closed */
   int  vr;                      /* Incoming sequence number expected next */
   int  vs;                      /* Next sequence number to be sent */
   int  cwind;                   /* Congestion window */
@@ -64,10 +102,10 @@ struct ax25_cb {
   struct mbuf *rcvq;            /* Receive queue */
   int16 rcvcnt;                 /* Receive queue length */
   struct mbuf *sndq;            /* Send queue */
-  long  sndqtime;               /* Last send queue write time */
+  int32 sndqtime;               /* Last send queue write time */
   struct mbuf *resndq;          /* Resend queue */
   int  unack;                   /* Number of unacked frames */
-  long  sndtime[8];             /* Time of 1st transmission */
+  int32 sndtime[8];             /* Time of 1st transmission */
   void (*r_upcall) __ARGS((struct ax25_cb *p, int cnt));
 				/* Call when data arrives */
   void (*t_upcall) __ARGS((struct ax25_cb *p, int cnt));
@@ -89,24 +127,19 @@ extern int  ax_maxframe;                /* Transmit flow control level */
 extern int  ax_paclen;                  /* Maximum outbound packet size */
 extern int  ax_pthresh;                 /* Send polls for packets larger than this */
 extern int  ax_retry;                   /* Retry limit */
-extern int  ax_t1init;                  /* Retransmission timeout */
-extern int  ax_t2init;                  /* Acknowledgement delay timeout */
-extern int  ax_t3init;                  /* No-activity timeout */
-extern int  ax_t4init;                  /* Busy timeout */
-extern int  ax_t5init;                  /* Packet assembly timeout */
+extern int32 ax_t1init;                 /* Retransmission timeout */
+extern int32 ax_t2init;                 /* Acknowledgement delay timeout */
+extern int32 ax_t3init;                 /* No-activity timeout */
+extern int32 ax_t4init;                 /* Busy timeout */
+extern int32 ax_t5init;                 /* Packet assembly timeout */
 extern int  ax_window;                  /* Local flow control limit */
 extern struct ax25_cb *axcb_server;     /* Server control block */
 
-/* In axproto.c: */
-int axroute __ARGS((struct ax25_cb *cp, struct mbuf *bp));
+/* In lapb.c: */
 char *pathtostr __ARGS((struct ax25_cb *cp));
 int axproto_recv __ARGS((struct iface *ifp, struct mbuf *bp));
 int doax25 __ARGS((int argc, char *argv [], void *p));
-struct ax25_cb *open_ax __ARGS((char *path, int mode,
-	void (*r_upcall) __ARGS((struct ax25_cb *p, int cnt)),
-	void (*t_upcall) __ARGS((struct ax25_cb *p, int cnt)),
-	void (*s_upcall) __ARGS((struct ax25_cb *p, int oldstate, int newstate)),
-	char *user));
+struct ax25_cb *open_ax __ARGS((char *path, int mode, void (*r_upcall )__ARGS ((struct ax25_cb *p, int cnt )), void (*t_upcall )__ARGS ((struct ax25_cb *p, int cnt )), void (*s_upcall )__ARGS ((struct ax25_cb *p, int oldstate, int newstate )), char *user));
 int send_ax __ARGS((struct ax25_cb *cp, struct mbuf *bp));
 int space_ax __ARGS((struct ax25_cb *cp));
 int recv_ax __ARGS((struct ax25_cb *cp, struct mbuf **bpp, int cnt));
@@ -115,5 +148,4 @@ int reset_ax __ARGS((struct ax25_cb *cp));
 int del_ax __ARGS((struct ax25_cb *cp));
 int valid_ax __ARGS((struct ax25_cb *cp));
 
-#endif  /* AXPROTO_INCLUDED */
-
+#endif  /* _LAPB_H */

@@ -1,7 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.5 1990/10/12 19:25:06 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.6 1991/02/24 20:16:25 deyke Exp $ */
 
 /* Address Resolution Protocol (ARP) functions. Sits between IP and
  * Level 2, mapping IP to Level 2 addresses for all outgoing datagrams.
+ * Copyright 1991 Phil Karn, KA9Q
  */
 #include "global.h"
 #include "mbuf.h"
@@ -14,11 +15,10 @@
 #include "arp.h"
 #include "icmp.h"
 
-static unsigned arp_hash __ARGS((int hardware,int32 ipaddr));
 static void arp_output __ARGS((struct iface *iface,int hardware,int32 target));
 
 /* Hash table headers */
-struct arp_tab *Arp_tab[ARPSIZE];
+struct arp_tab *Arp_tab[HASHMOD];
 
 struct arp_stat Arp_stat;
 
@@ -40,7 +40,6 @@ struct mbuf *bp;        /* IP datagram to be queued if unresolved */
 
 	if((arp = arp_lookup(hardware,target)) != NULLARP && arp->state == ARP_VALID)
 		return arp->hw_addr;
-
 	if(arp != NULLARP){
 		/* Earlier packets are already pending, kick this one back
 		 * as a source quench
@@ -52,7 +51,7 @@ struct mbuf *bp;        /* IP datagram to be queued if unresolved */
 		/* Create an entry and put the datagram on the
 		 * queue pending an answer
 		 */
-		arp = arp_add(target,hardware,NULLCHAR,0,0);
+		arp = arp_add(target,hardware,NULLCHAR,0);
 		enqueue(&arp->pending,bp);
 		arp_output(iface,hardware,target);
 	}
@@ -74,6 +73,7 @@ struct mbuf *bp;
 	struct arp arp;
 	struct arp_tab *ap;
 	struct arp_type *at;
+	int i;
 
 	Arp_stat.recv++;
 	if(ntoharp(&arp,&bp) == -1)     /* Convert into host format */
@@ -106,13 +106,13 @@ struct mbuf *bp;
 	 */
 	ap = NULLARP;   /* ap plays the role of merge_flag in the spec */
 	if((ap = arp_lookup(arp.hardware,arp.sprotaddr)) != NULLARP
-	 && ap->timer.start != 0){
-		ap = arp_add(arp.sprotaddr,arp.hardware,arp.shwaddr,uchar(arp.hwalen),0);
+	 && dur_timer(&ap->timer) != 0){
+		ap = arp_add(arp.sprotaddr,arp.hardware,arp.shwaddr,0);
 	}
 	/* See if we're the address they're looking for */
 	if(ismyaddr(arp.tprotaddr) != NULLIF){
 		if(ap == NULLARP)       /* Only if not already in the table */
-			arp_add(arp.sprotaddr,arp.hardware,arp.shwaddr,uchar(arp.hwalen),0);
+			arp_add(arp.sprotaddr,arp.hardware,arp.shwaddr,0);
 
 		if(arp.opcode == ARP_REQUEST){
 			/* Swap sender's and target's (us) hardware and protocol
@@ -149,11 +149,6 @@ struct mbuf *bp;
 		 * published in our table.
 		 */
 		memcpy(arp.thwaddr,arp.shwaddr,(int16)uchar(arp.hwalen));
-		/* Mark the end of the sender's AX.25 address
-		 * in case he didn't
-		 */
-		if(arp.hardware == ARP_AX25)
-			arp.thwaddr[uchar(arp.hwalen)-1] |= E;
 		memcpy(arp.shwaddr,ap->hw_addr,at->hwalen);
 		arp.tprotaddr = arp.sprotaddr;
 		arp.sprotaddr = ap->ip_addr;
@@ -167,15 +162,34 @@ struct mbuf *bp;
 			(*iface->output)(iface,arp.thwaddr,
 			 iface->hwaddr,at->arptype,bp);
 		Arp_stat.inreq++;
+	} else if(arp.opcode == REVARP_REQUEST){
+		for(i=0;i<HASHMOD;i++)
+			for(ap = Arp_tab[i];ap != NULLARP;ap = ap->next)
+				if(memcmp(ap->hw_addr, arp.thwaddr,at->hwalen) == 0)
+					goto found;
+	found:  if(ap != NULLARP && ap->pub){
+			memcpy(arp.shwaddr,iface->hwaddr,at->hwalen);
+			arp.tprotaddr = ap->ip_addr;
+			arp.sprotaddr = iface->addr;
+			arp.opcode = REVARP_REPLY;
+			if((bp = htonarp(&arp)) == NULLBUF)
+				return;
+			if(iface->forw != NULLIF)
+				(*iface->forw->output)(iface->forw,
+				 arp.thwaddr,iface->forw->hwaddr,REVARP_TYPE,bp);
+			else
+				(*iface->output)(iface,arp.thwaddr,
+				 iface->hwaddr,REVARP_TYPE,bp);
+			Arp_stat.inreq++;
+		}
 	}
 }
 /* Add an IP-addr / hardware-addr pair to the ARP table */
 struct arp_tab *
-arp_add(ipaddr,hardware,hw_addr,hw_alen,pub)
+arp_add(ipaddr,hardware,hw_addr,pub)
 int32 ipaddr;           /* IP address, host order */
 int16 hardware;         /* Hardware type */
 char *hw_addr;          /* Hardware address, if known; NULLCHAR otherwise */
-int16 hw_alen;          /* Length of hardware address */
 int pub;                /* Publish this entry? */
 {
 	struct mbuf *bp;
@@ -190,13 +204,14 @@ int pub;                /* Publish this entry? */
 	if((ap = arp_lookup(hardware,ipaddr)) == NULLARP){
 		/* New entry */
 		ap = (struct arp_tab *)callocw(1,sizeof(struct arp_tab));
+		ap->hw_addr = mallocw(at->hwalen);
 		ap->timer.func = arp_drop;
 		ap->timer.arg = ap;
 		ap->hardware = hardware;
 		ap->ip_addr = ipaddr;
 
 		/* Put on head of hash chain */
-		hashval = arp_hash(hardware,ipaddr);
+		hashval = hash_ip(ipaddr);
 		ap->prev = NULLARP;
 		ap->next = Arp_tab[hashval];
 		Arp_tab[hashval] = ap;
@@ -207,20 +222,12 @@ int pub;                /* Publish this entry? */
 	if(hw_addr == NULLCHAR){
 		/* Await response */
 		ap->state = ARP_PENDING;
-		ap->timer.start = Arp_type[hardware].pendtime * (1000 / MSPTICK);
+		set_timer(&ap->timer,Arp_type[hardware].pendtime * 1000L);
 	} else {
 		/* Response has come in, update entry and run through queue */
 		ap->state = ARP_VALID;
-		ap->timer.start = ARPLIFE * (1000 / MSPTICK);
-		free(ap->hw_addr);
-		ap->hw_addr = mallocw(hw_alen);
-		memcpy(ap->hw_addr,hw_addr,hw_alen);
-		/* This kludge marks the end of an AX.25 address to allow
-		 * for optional digipeaters (insert Joan Rivers salute here)
-		 */
-		if(hardware == ARP_AX25)
-			ap->hw_addr[hw_alen-1] |= E;
-		ap->hwalen = hw_alen;
+		set_timer(&ap->timer,ARPLIFE*1000L);
+		memcpy(ap->hw_addr,hw_addr,at->hwalen);
 		ap->pub = pub;
 		arp_savefile();
 		while((bp = dequeue(&ap->pending)) != NULLBUF)
@@ -246,7 +253,7 @@ void *p;
 	if(ap->prev != NULLARP)
 		ap->prev->next = ap->next;
 	else
-		Arp_tab[arp_hash(ap->hardware,ap->ip_addr)] = ap->next;
+		Arp_tab[hash_ip(ap->ip_addr)] = ap->next;
 	free_q(&ap->pending);
 	free(ap->hw_addr);
 	free((char *)ap);
@@ -261,7 +268,7 @@ int32 ipaddr;
 	register struct arp_tab *ap;
 
 	arp_loadfile();
-	for(ap = Arp_tab[arp_hash(hardware,ipaddr)]; ap != NULLARP; ap = ap->next){
+	for(ap = Arp_tab[hash_ip(ipaddr)]; ap != NULLARP; ap = ap->next){
 		if(ap->ip_addr == ipaddr && ap->hardware == hardware)
 			break;
 	}
@@ -298,17 +305,3 @@ int32 target;
 	Arp_stat.outreq++;
 }
 
-/* Hash a {hardware type, IP address} pair */
-static
-unsigned
-arp_hash(hardware,ipaddr)
-int16 hardware;
-int32 ipaddr;
-{
-	register unsigned hashval;
-
-	hashval = hardware;
-	hashval ^= hiword(ipaddr);
-	hashval ^= loword(ipaddr);
-	return hashval % ARPSIZE;
-}

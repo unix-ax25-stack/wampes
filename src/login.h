@@ -1,7 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.h,v 1.4 1990/10/12 19:26:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.h,v 1.5 1991/02/24 20:17:13 deyke Exp $ */
 
-#ifndef LOGIN_INCLUDED
-#define LOGIN_INCLUDED
+#ifndef _LOGIN_H
+#define _LOGIN_H
 
 /* In login.c: */
 int fixutmpfile __ARGS((void));
@@ -14,5 +14,4 @@ void login_close __ARGS((struct login_cb *tp));
 struct mbuf *login_read __ARGS((struct login_cb *tp, int cnt));
 void login_write __ARGS((struct login_cb *tp, struct mbuf *bp));
 
-#endif  /* LOGIN_INCLUDED */
-
+#endif  /* _LOGIN_H */

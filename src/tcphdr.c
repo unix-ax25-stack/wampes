@@ -1,5 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcphdr.c,v 1.1 1990/10/12 19:26:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcphdr.c,v 1.2 1991/02/24 20:17:45 deyke Exp $ */
 
+/* TCP header conversion routines
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include "global.h"
 #include "mbuf.h"
 #include "tcp.h"
@@ -7,7 +10,8 @@
 #include "internet.h"
 
 /* Convert TCP header in host format into mbuf ready for transmission,
- * link in data (if any), and compute checksum
+ * link in data (if any). If ph != NULL, compute checksum, otherwise
+ * take checksum from tcph->checksum
  */
 struct mbuf *
 htontcp(tcph,data,ph)
@@ -18,10 +22,13 @@ struct pseudo_header *ph;
 	int16 hdrlen;
 	struct mbuf *bp;
 	register char *cp;
-	int16 csum;
 
-	hdrlen = (tcph->mss != 0) ? TCPLEN + MSS_LENGTH : TCPLEN;
-
+	hdrlen =  TCPLEN;
+	if(tcph->optlen > 0 && tcph->optlen <= TCP_MAXOPT){
+		hdrlen += tcph->optlen;
+	} else if(tcph->mss != 0){
+		hdrlen += MSS_LENGTH;
+	}
 	if((bp = pushdown(data,hdrlen)) == NULLBUF){
 		free_p(data);
 		return NULLBUF;
@@ -47,18 +54,28 @@ struct pseudo_header *ph;
 		*cp |= 1;
 	cp++;
 	cp = put16(cp,tcph->wnd);
-	*cp++ = 0;      /* Zero out checksum field */
-	*cp++ = 0;
+	if(ph == NULLHEADER){
+		/* Use user-supplied checksum */
+		cp = put16(cp,tcph->checksum);
+	} else {
+		/* Zero out checksum field for later recalculation */
+		*cp++ = 0;
+		*cp++ = 0;
+	}
 	cp = put16(cp,tcph->up);
 
-	if(tcph->mss != 0){
-		*cp++ = MSS_KIND;
-		*cp++ = MSS_LENGTH;
-		cp = put16(cp,tcph->mss);
+	/* Write options, if any */
+	if(hdrlen > TCPLEN){
+		if(tcph->mss != 0){
+			*cp++ = MSS_KIND;
+			*cp++ = MSS_LENGTH;
+			cp = put16(cp,tcph->mss);
+		} else
+			memcpy(cp,tcph->options,tcph->optlen);
 	}
-	csum = cksum(ph,bp,ph->length);
-	/* Fill checksum field */
-	put16(&bp->data[16],csum);
+	/* Recompute checksum, if requested */
+	if(ph != NULLHEADER)
+		put16(&bp->data[16],cksum(ph,bp,ph->length));
 
 	return bp;
 }
@@ -68,10 +85,9 @@ ntohtcp(tcph,bpp)
 register struct tcp *tcph;
 struct mbuf **bpp;
 {
-	int16 hdrlen;
-	int16 i,optlen;
+	int hdrlen,i,optlen,kind;
 	register int flags;
-	char hdrbuf[TCPLEN];
+	char hdrbuf[TCPLEN],*cp;
 
 	i = pullup(bpp,hdrbuf,TCPLEN);
 	/* Note that the results will be garbage if the header is too short.
@@ -91,41 +107,52 @@ struct mbuf **bpp;
 	tcph->flags.syn = flags & 2;
 	tcph->flags.fin = flags & 1;
 	tcph->wnd = get16(&hdrbuf[14]);
+	tcph->checksum = get16(&hdrbuf[16]);
 	tcph->up = get16(&hdrbuf[18]);
 	tcph->mss = 0;
+	tcph->optlen = hdrlen - TCPLEN;
 
 	/* Check for option field. Only space for one is allowed, but
 	 * since there's only one TCP option (MSS) this isn't a problem
 	 */
 	if(i < TCPLEN || hdrlen < TCPLEN)
 		return -1;      /* Header smaller than legal minimum */
-	if(hdrlen == TCPLEN)
+	if(tcph->optlen == 0)
 		return (int)hdrlen;     /* No options, all done */
 
-	if(hdrlen > len_p(*bpp) + TCPLEN){
+	if(tcph->optlen > len_p(*bpp)){
 		/* Remainder too short for options length specified */
 		return -1;
 	}
+	pullup(bpp,tcph->options,tcph->optlen); /* "Can't fail" */
 	/* Process options */
-	for(i=TCPLEN; i < hdrlen;){
-		switch(PULLCHAR(bpp)){
+	for(cp=tcph->options,i=tcph->optlen; i > 0;){
+		kind = *cp++;
+		/* Process single-byte options */
+		switch(kind){
 		case EOL_KIND:
-			i++;
-			goto eol;       /* End of options list */
+			i--;
+			cp++;
+			return (int)hdrlen;     /* End of options list */
 		case NOOP_KIND:
-			i++;
-			break;
+			i--;
+			cp++;
+			continue;       /* Go look for next option */
+		}
+		/* All other options have a length field */
+		optlen = uchar(*cp++);
+
+		/* Process valid multi-byte options */
+		switch(kind){
 		case MSS_KIND:
-			optlen = PULLCHAR(bpp);
-			if(optlen == MSS_LENGTH)
-				tcph->mss = pull16(bpp);
-			i += optlen;
+			if(optlen == MSS_LENGTH){
+				tcph->mss = get16(cp);
+			}
 			break;
 		}
+		optlen = max(2,optlen); /* Enforce legal minimum */
+		i -= optlen;
+		cp += optlen - 2;
 	}
-eol:
-	/* Get rid of any padding */
-	if(i < hdrlen)
-		pullup(bpp,NULLCHAR,(int16)(hdrlen - i));
 	return (int)hdrlen;
 }

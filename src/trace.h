@@ -1,10 +1,17 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.h,v 1.3 1990/09/11 13:46:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/trace.h,v 1.4 1991/02/24 20:17:55 deyke Exp $ */
 
-#ifndef TRACE_INCL
-#define TRACE_INCL
+#ifndef _TRACE_H
+#define _TRACE_H
+
+#ifndef _MBUF_H
+#include "mbuf.h"
+#endif
+
+#ifndef _IFACE_H
+#include "iface.h"
+#endif
 
 #include <stdio.h>
-#include "iface.h"
 
 /* Definitions for packet dumping */
 
@@ -20,6 +27,8 @@ extern struct trace Tracef[];
 
 /* In trace.c: */
 void dump __ARGS((struct iface *iface,int direction,unsigned type,struct mbuf *bp));
+void raw_dump __ARGS((struct iface *iface,int direction, struct mbuf *bp));
+void shuttrace __ARGS ((void));
 
 /* In arcdump.c: */
 void arc_dump __ARGS((FILE *fp,struct mbuf **bpp,int check));
@@ -49,8 +58,15 @@ int ki_forus __ARGS((struct iface *iface,struct mbuf *bp));
 /* In nrdump.c: */
 void netrom_dump __ARGS((FILE *fp,struct mbuf **bpp,int check));
 
+/* In pppdump.c: */
+void ppp_dump __ARGS((FILE *fp,struct mbuf **bpp,int check));
+
 /* In ripdump.c: */
 void rip_dump __ARGS((FILE *fp,struct mbuf **bpp));
+
+/* In slcompdump.c: */
+void sl_dump __ARGS((FILE *fp,struct mbuf **bpp,int check));
+void vjcomp_dump __ARGS((FILE *fp,struct mbuf **bpp,int unused));
 
 /* In tcpdump.c: */
 void tcp_dump __ARGS((FILE *fp,struct mbuf **bpp,int32 source,int32 dest,int check));
@@ -58,4 +74,4 @@ void tcp_dump __ARGS((FILE *fp,struct mbuf **bpp,int32 source,int32 dest,int che
 /* In udpdump.c: */
 void udp_dump __ARGS((FILE *fp,struct mbuf **bpp,int32 source,int32 dest,int check));
 
-#endif  /* TRACE_INCL */
+#endif  /* _TRACE_H */

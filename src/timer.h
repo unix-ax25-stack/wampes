@@ -1,8 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.h,v 1.2 1990/08/23 17:34:22 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.h,v 1.3 1991/02/24 20:17:53 deyke Exp $ */
 
-#ifndef TIMER_STOP
+#ifndef _TIMER_H
+#define _TIMER_H
 
+#ifndef _GLOBAL_H
 #include "global.h"
+#endif
 
 /* Software timers
  * There is one of these structures for each simulated timer.
@@ -31,19 +34,22 @@ struct timer {
 #define TIMER_EXPIRE    2
 };
 #define NULLTIMER       (struct timer *)0
-#define MAX_TIME        (int32)0x7fffffff       /* Max long integer */
-#define MSPTICK         1000            /* Milliseconds per tick */
 /* Useful user macros that hide the timer structure internals */
-#define set_timer(t,x)  (((t)->start) = (x)/MSPTICK)
 #define dur_timer(t)    ((t)->start)
 #define run_timer(t)    ((t)->state == TIMER_RUN)
 
-extern int32 Clock;     /* Count of ticks since start up */
-
 /* In timer.c: */
+void timerproc __ARGS((void));
 int32 read_timer __ARGS((struct timer *t));
+#define set_timer(t,x)  ((t)->start = (x))
 void start_timer __ARGS((struct timer *t));
 void stop_timer __ARGS((struct timer *t));
+int32 next_timer_event __ARGS((void));
+char *tformat __ARGS((int32 t));
 
-#endif  /* TIMER_STOP */
+extern int32 Msclock;
+extern int32 Secclock;
+#define msclock()       (Msclock)
+#define secclock()      (Secclock)
 
+#endif  /* _TIMER_H */

@@ -1,20 +1,26 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iphdr.c,v 1.1 1990/09/11 13:45:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iphdr.c,v 1.2 1991/02/24 20:17:03 deyke Exp $ */
 
+/* IP header conversion routines
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include "global.h"
 #include "mbuf.h"
 #include "ip.h"
 #include "internet.h"
 
-/* Convert IP header in host format to network mbuf */
+/* Convert IP header in host format to network mbuf
+ * If cflag != 0, take checksum from structure,
+ * otherwise compute it automatically.
+ */
 struct mbuf *
-htonip(ip,data)
-struct ip *ip;
+htonip(ip,data,cflag)
+register struct ip *ip;
 struct mbuf *data;
+int cflag;
 {
 	int16 hdr_len;
 	struct mbuf *bp;
 	register char *cp;
-	int16 checksum;
 	int16 fl_offs;
 
 	hdr_len = IPLEN + ip->optlen;
@@ -24,7 +30,7 @@ struct mbuf *data;
 	}
 	cp = bp->data;
 
-	*cp++ = (IPVERSION << 4) | (hdr_len >> 2);
+	*cp++ = (ip->version << 4) | (hdr_len >> 2);
 	*cp++ = ip->tos;
 	cp = put16(cp,ip->length);
 	cp = put16(cp,ip->id);
@@ -37,22 +43,29 @@ struct mbuf *data;
 	cp = put16(cp,fl_offs);
 	*cp++ = ip->ttl;
 	*cp++ = ip->protocol;
-	cp = put16(cp,0);       /* Clear checksum */
+	if(cflag){
+		/* Use checksum from host structure */
+		cp = put16(cp,ip->checksum);
+	} else {
+		/* Clear checksum for later recalculation */
+		*cp++ = 0;
+		*cp++ = 0;
+	}
 	cp = put32(cp,ip->source);
 	cp = put32(cp,ip->dest);
 	if(ip->optlen != 0)
 		memcpy(cp,ip->options,ip->optlen);
 
-	/* Compute checksum and insert into header */
-	checksum = cksum(NULLHEADER,bp,hdr_len);
-	put16(&bp->data[10],checksum);
+	/* If requested, recompute checksum and insert into header */
+	if(!cflag)
+		put16(&bp->data[10],cksum(NULLHEADER,bp,hdr_len));
 
 	return bp;
 }
 /* Extract an IP header from mbuf */
 int
 ntohip(ip,bpp)
-struct ip *ip;
+register struct ip *ip;
 struct mbuf **bpp;
 {
 	int16 ihl;
@@ -72,6 +85,7 @@ struct mbuf **bpp;
 	ip->flags.df = (fl_offs & 0x4000) ? 1 : 0;
 	ip->ttl = ipbuf[8];
 	ip->protocol = ipbuf[9];
+	ip->checksum = get16(&ipbuf[10]);
 	ip->source = get32(&ipbuf[12]);
 	ip->dest = get32(&ipbuf[16]);
 

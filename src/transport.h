@@ -1,7 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.h,v 1.4 1990/10/12 19:27:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.h,v 1.5 1991/02/24 20:17:57 deyke Exp $ */
 
-#ifndef TRANSPORT_INCLUDED
-#define TRANSPORT_INCLUDED
+#ifndef _TRANSPORT_H
+#define _TRANSPORT_H
 
 #define EOL_NONE        0       /* No EOL conversion (binary) */
 #define EOL_CR          1       /* EOL is "\r" */
@@ -37,5 +37,4 @@ void transport_set_timeout __ARGS((struct transport_cb *tp, int timeout));
 int transport_close __ARGS((struct transport_cb *tp));
 int transport_del __ARGS((struct transport_cb *tp));
 
-#endif  /* TRANSPORT_INCLUDED */
-
+#endif  /* _TRANSPORT_H */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.4 1990/10/12 19:26:28 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.5 1991/02/24 20:17:32 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -84,7 +84,7 @@ struct controlblock *cp;
   readfnc[cp->fd] = (void (*)()) 0;
   readarg[cp->fd] = (char *) 0;
   close(cp->fd);
-  free((char *) cp);
+  free(cp);
 }
 
 /*---------------------------------------------------------------------------*/

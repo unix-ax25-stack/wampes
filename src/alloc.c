@@ -1,4 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.6 1990/10/26 19:19:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.7 1991/02/24 20:16:24 deyke Exp $ */
+
+/* memory allocation routines
+ */
 
 #include <stdio.h>
 #include <stdlib.h>

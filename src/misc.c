@@ -1,6 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.3 1990/09/11 13:46:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/misc.c,v 1.4 1991/02/24 20:17:20 deyke Exp $ */
 
-/* Miscellaneous machine independent utilities */
+/* Miscellaneous machine independent utilities
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <ctype.h>
 #include <stdio.h>
 #include "global.h"
@@ -157,7 +159,9 @@ register char *delim;
 }
 #endif  /* AZTEC */
 
-/* Host-network conversion routines, replaced on the 8086 with assembler */
+/* Host-network conversion routines, replaced on the x86 with
+ * assembler code in pcgen.asm
+ */
 #ifndef MSDOS
 /* Put a long in host order into a char array in network order */
 char *

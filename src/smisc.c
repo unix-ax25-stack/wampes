@@ -1,6 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.5 1990/10/12 19:26:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/smisc.c,v 1.6 1991/02/24 20:17:40 deyke Exp $ */
 
-/* Miscellaneous servers */
+/* Miscellaneous Internet servers: discard, echo and remote
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include <time.h>
 #include "global.h"
@@ -22,7 +24,7 @@ static void echo_recv __ARGS((struct tcb *tcb, int cnt));
 static void echo_trans __ARGS((struct tcb *tcb, int cnt));
 static void misc_state __ARGS((struct tcb *tcb, int old, int new));
 static void uremote __ARGS((struct iface *iface, struct udp_cb *up, int cnt));
-static int chkrpass __ARGS((struct mbuf **bpp));
+static int chkrpass __ARGS((struct mbuf *bp));
 
 /* Start up TCP discard server */
 dis1(argc,argv,p)
@@ -202,7 +204,7 @@ int cnt;
 	switch(uchar(command)){
 #ifdef  MSDOS   /* Only present on PCs running MSDOS */
 	case SYS_RESET:
-		i = chkrpass(&bp);
+		i = chkrpass(bp);
 		log(Rem,"%s - Remote reset %s",
 		 pinet_udp((struct sockaddr *)&fsock),
 		 i == 0 ? "PASSWORD FAIL" : "" );
@@ -213,7 +215,7 @@ int cnt;
 		break;
 #endif
 	case SYS_EXIT:
-		i = chkrpass(&bp);
+		i = chkrpass(bp);
 		log(NULLTCB,"%s - Remote exit %s",
 		 pinet_udp(&fsock),
 		 i == 0 ? "PASSWORD FAIL" : "" );
@@ -235,20 +237,21 @@ int cnt;
 }
 /* Check remote password */
 static int
-chkrpass(bpp)
-struct mbuf **bpp;
+chkrpass(bp)
+struct mbuf *bp;
 {
 	char *lbuf;
 	int16 len;
 	int rval = 0;
 
-	len = len_p(*bpp);
-	if(strlen(Rempass) == len) {
-		lbuf = malloc(len);
-		pullup(bpp,lbuf,len);
-		if(strncmp(Rempass,lbuf,len) == 0)
-			rval = 1;
-		free(lbuf);
-	}
+	len = len_p(bp);
+	if(strlen(Rempass) != len)
+		return rval;
+	lbuf = mallocw(len);
+	pullup(&bp,lbuf,len);
+	if(strncmp(Rempass,lbuf,len) == 0)
+		rval = 1;
+	free(lbuf);
 	return rval;
 }
+

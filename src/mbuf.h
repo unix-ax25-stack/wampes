@@ -1,9 +1,13 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.h,v 1.3 1990/09/11 13:46:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.h,v 1.4 1991/02/24 20:17:19 deyke Exp $ */
 
-#ifndef NULLBUF
+#ifndef _MBUF_H
+#define _MBUF_H
 
 #include <stdio.h>
+
+#ifndef _GLOBAL_H
 #include "global.h"
+#endif
 
 /* Basic message buffer structure */
 struct mbuf {
@@ -42,7 +46,7 @@ int16 dqdata __ARGS((struct mbuf *bp,char *buf,unsigned cnt));
 int16 len_q __ARGS((struct mbuf *bp));
 int32 pull32 __ARGS((struct mbuf **bpp));
 int32 get32 __ARGS((char *cp));
-int16 pull16 __ARGS((struct mbuf **bpp));
+long pull16 __ARGS((struct mbuf **bpp));
 void refiq __ARGS((void));
 void mbuf_crunch __ARGS((struct mbuf **bpp));
 int16 get16 __ARGS((char *cp));
@@ -54,5 +58,4 @@ void iqstat __ARGS((void));
 
 #define AUDIT(bp)       audit(bp,__FILE__,__LINE__)
 
-#endif  /* NULLBUF */
-
+#endif  /* _MBUF_H */

@@ -1,6 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.5 1990/10/12 19:26:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.6 1991/02/24 20:17:37 deyke Exp $ */
 
-/* Session control */
+/* NOS User Session control
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include "global.h"
 #include "config.h"
@@ -40,17 +42,20 @@ char *cp;
 	if(cp == NULLCHAR){
 		sp = Current;
 	} else {
-		if((i = atoi(cp)) >= Nsessions)
-			return NULLSESSION;
-		sp = &Sessions[i];
+		i = (unsigned)atoi(cp);
+		if(i >= Nsessions)
+			sp = NULLSESSION;
+		else
+			sp = &Sessions[i];
 	}
 	if(sp == NULLSESSION || sp->type == FREE)
-		return NULLSESSION;
+		sp = NULLSESSION;
 
 	return sp;
 }
 
 /* Select and display sessions */
+int
 dosession(argc,argv,p)
 int argc;
 char *argv[];
@@ -58,9 +63,13 @@ void *p;
 {
 	struct session *sp;
 
+	sp = (struct session *)p;
+
 	if(argc > 1){
-		if((Current = sessptr(argv[1])) != NULLSESSION)
-			go(argc,argv,p);
+		if((Current = sessptr(argv[1])) != NULLSESSION){
+			go(0,NULL,sp);
+		} else
+			tprintf("Session %s not active\n",argv[1]);
 		return 0;
 	}
 	tprintf(" #       &CB Type   Rcv-Q  State        Remote socket\n");
@@ -118,12 +127,10 @@ void *p;
 		default:
 			continue;
 		}
-		if(sp->rfile != NULLCHAR || sp->ufile != NULLCHAR)
-			tprintf("\t");
 		if(sp->rfile != NULLCHAR)
-			tprintf("Record: %s ",sp->rfile);
+			tprintf("    Record: %s ",sp->rfile);
 		if(sp->ufile != NULLCHAR)
-			tprintf("Upload: %s",sp->ufile);
+			tprintf("    Upload: %s",sp->ufile);
 		tprintf("\n");
 	}
 	return 0;
@@ -135,6 +142,7 @@ int argc;
 char *argv[];
 void *p;
 {
+
 	void rcv_char(),ftpccr(),fingcli_rcv();
 
 	if(Current == NULLSESSION || Current->type == FREE)
@@ -165,6 +173,7 @@ void *p;
 	}
 	return 0;
 }
+int
 doclose(argc,argv,p)
 int argc;
 char *argv[];
@@ -199,6 +208,7 @@ void *p;
 	}
 	return 0;
 }
+int
 doreset(argc,argv,p)
 int argc;
 char *argv[];
@@ -292,6 +302,7 @@ newsession()
 			return &Sessions[i];
 	return NULLSESSION;
 }
+void
 freesession(sp)
 struct session *sp;
 {
@@ -318,11 +329,12 @@ struct session *sp;
 		sp->name = NULLCHAR;
 	}
 	sp->type = FREE;
-	memset((char *) sp, 0, sizeof(struct session));
+	memset(sp, 0, sizeof(struct session));
 	if(sp == Current)
 		Current = NULLSESSION;
 }
 /* Control session recording */
+int
 dorecord(argc,argv,p)
 int argc;
 char *argv[];
@@ -355,6 +367,7 @@ void *p;
 	return 0;
 }
 /* Control file transmission */
+int
 doupload(argc,argv,p)
 int argc;
 char *argv[];

@@ -1,5 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25hdr.c,v 1.1 1990/09/11 13:45:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25hdr.c,v 1.2 1991/02/24 20:16:33 deyke Exp $ */
 
+/* AX25 header conversion routines
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include "global.h"
 #include "mbuf.h"
 #include "ax25.h"
@@ -25,40 +28,44 @@ struct mbuf *data;
 	/* Now convert */
 	cp = bp->data;          /* cp -> dest field */
 
-	hdr->dest.ssid &= ~E;   /* Dest E-bit is always off */
-	/* Encode command/response in C bits */
-	switch(hdr->cmdrsp){
-	case LAPB_COMMAND:
-		hdr->dest.ssid |= C;
-		hdr->source.ssid &= ~C;
-		break;
-	case LAPB_RESPONSE:
-		hdr->dest.ssid &= ~C;
-		hdr->source.ssid |= C;
-		break;
-	default:
-		hdr->dest.ssid &= ~C;
-		hdr->source.ssid &= ~C;
-		break;
-	}
-	cp = putaxaddr(cp,&hdr->dest);
+	/* Generate destination field */
+	memcpy(cp,hdr->dest,AXALEN);
+	if(hdr->cmdrsp == LAPB_COMMAND)
+		cp[ALEN] |= C;  /* Command frame sets C bit in dest */
+	else
+		cp[ALEN] &= ~C;
+	cp[ALEN] &= ~E; /* Dest E-bit is always off */
 
+	cp += AXALEN;           /* cp -> source field */
+
+	/* Generate source field */
+	memcpy(cp,hdr->source,AXALEN);
+	if(hdr->cmdrsp == LAPB_RESPONSE)
+		cp[ALEN] |= C;
+	else
+		cp[ALEN] &= ~C;
 	/* Set E bit on source address if no digis */
 	if(hdr->ndigis == 0){
-		hdr->source.ssid |= E;
-		putaxaddr(cp,&hdr->source);
+		cp[ALEN] |= E;
 		return bp;
-	}
-	hdr->source.ssid &= ~E;
-	cp = putaxaddr(cp,&hdr->source);
+	} else
+		cp[ALEN] &= ~E;
+
+	cp += AXALEN;           /* cp -> first digi field */
 
 	/* All but last digi get copied with E bit off */
-	for(i=0; i < hdr->ndigis - 1; i++){
-		hdr->digis[i].ssid &= ~E;
-		cp = putaxaddr(cp,&hdr->digis[i]);
+	for(i=0; i < hdr->ndigis; i++){
+		memcpy(cp,hdr->digis[i],AXALEN);
+		if(i < hdr->ndigis - 1)
+			cp[ALEN] &= ~E;
+		else
+			cp[ALEN] |= E;  /* Last digipeater has E bit set */
+		if(i < hdr->nextdigi)
+			cp[ALEN] |= REPEATED;
+		else
+			cp[ALEN] &= ~REPEATED;
+		cp += AXALEN;           /* cp -> next digi field */
 	}
-	hdr->digis[i].ssid |= E;
-	cp = putaxaddr(cp,&hdr->digis[i]);
 	return bp;
 }
 /* Convert a network-format AX.25 header into a host format structure
@@ -69,39 +76,36 @@ ntohax25(hdr,bpp)
 register struct ax25 *hdr;      /* Output structure */
 struct mbuf **bpp;
 {
-	register struct ax25_addr *axp;
-	char *getaxaddr();
-	char buf[AXALEN];
+	register char *axp;
 
-	if(pullup(bpp,buf,AXALEN) < AXALEN)
+	if(pullup(bpp,hdr->dest,AXALEN) < AXALEN)
 		return -1;
-	getaxaddr(&hdr->dest,buf);
 
-	if(pullup(bpp,buf,AXALEN) < AXALEN)
+	if(pullup(bpp,hdr->source,AXALEN) < AXALEN)
 		return -1;
-	getaxaddr(&hdr->source,buf);
 
 	/* Process C bits to get command/response indication */
-	if((hdr->source.ssid & C) == (hdr->dest.ssid & C))
+	if((hdr->source[ALEN] & C) == (hdr->dest[ALEN] & C))
 		hdr->cmdrsp = LAPB_UNKNOWN;
-	else if(hdr->source.ssid & C)
+	else if(hdr->source[ALEN] & C)
 		hdr->cmdrsp = LAPB_RESPONSE;
 	else
 		hdr->cmdrsp = LAPB_COMMAND;
 
 	hdr->ndigis = 0;
-	if(hdr->source.ssid & E)
+	hdr->nextdigi = 0;
+	if(hdr->source[ALEN] & E)
 		return 2;       /* No digis */
 
-	/* Process digipeaters */
-	for(axp = hdr->digis;axp < &hdr->digis[MAXDIGIS]; axp++){
-		if(pullup(bpp,buf,AXALEN) < AXALEN)
-			return -1;
-		getaxaddr(axp,buf);
-		if(axp->ssid & E){      /* Last one */
-			hdr->ndigis = axp - hdr->digis + 1;
+	/* Count and process the digipeaters */
+	axp = hdr->digis[0];
+	while(hdr->ndigis < MAXDIGIS && pullup(bpp,axp,AXALEN) == AXALEN){
+		hdr->ndigis++;
+		if(axp[ALEN] & REPEATED)
+			hdr->nextdigi++;
+		if(axp[ALEN] & E)       /* Last one */
 			return hdr->ndigis + 2;
-		}
+		axp += AXALEN;
 	}
 	return -1;      /* Too many digis */
 }

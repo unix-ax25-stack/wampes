@@ -1,13 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.15 1990/10/26 19:20:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.16 1991/02/24 20:16:50 deyke Exp $ */
 
 #include <sys/types.h>
 
-#include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <termio.h>
@@ -16,7 +14,7 @@
 
 #include "global.h"
 #include "iface.h"
-#include "asy.h"
+#include "timer.h"
 #include "files.h"
 #include "hardware.h"
 #include "hpux.h"
@@ -26,24 +24,6 @@ extern long  sigsetmask();
 extern void _exit();
 
 #define TIMEOUT 120
-
-struct asy {
-  struct iface *iface;  /* Associated interface structure */
-  int  fd;              /* File descriptor */
-  int  speed;           /* Line speed */
-  char  *ipc_socket;    /* Host:port of ipc destination */
-  long  rxints;         /* receive interrupts */
-  long  txints;         /* transmit interrupts */
-  long  rxchar;         /* Received characters */
-  long  txchar;         /* Transmitted characters */
-  long  rxhiwat;        /* High water mark on rx fifo */
-};
-
-int  Nasy;
-static struct asy Asy[ASY_MAX];
-
-long  currtime;
-static long  lasttime;
 
 int  chkread[2];
 int  actread[2];
@@ -65,7 +45,6 @@ static int  local_kbd;
 static struct termio curr_termio;
 static struct termio prev_termio;
 
-static int asy_open __ARGS((int dev));
 static void check_files_changed __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
@@ -123,7 +102,7 @@ void ioinit()
     putenv("SHELL=/bin/sh");
   if (!getenv("TZ"))
     putenv("TZ=MEZ-1MESZ");
-  currtime = time(0);
+  timerproc();          /* Init times */
   fixutmpfile();
 }
 
@@ -158,229 +137,6 @@ int  kbread()
   if (cnt <= 0) return (-1);
   cnt--;
   return uchar(*ptr++);
-}
-
-/*---------------------------------------------------------------------------*/
-
-int  asy_stop(iface)
-struct iface *iface;
-{
-  register struct asy *ap;
-
-  ap = Asy + iface->dev;
-  if (ap->fd > 0) {
-    close(ap->fd);
-    clrmask(chkread, ap->fd);
-    ap->fd = -1;
-  }
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int  asy_open(dev)
-int  dev;
-{
-
-#define MIN_WAIT (3*60)
-#define MAX_WAIT (3*60*60)
-
-  static struct {
-    long  next;
-    long  wait;
-  } times[ASY_MAX];
-
-  char  buf[80];
-  int  addrlen;
-  register struct asy *ap;
-  register struct iface *ifp;
-  struct sockaddr *addr;
-  struct sockaddr *build_sockaddr();
-  struct termio termio;
-
-  if (times[dev].next > currtime) return (-1);
-  times[dev].wait *= 2;
-  if (times[dev].wait < MIN_WAIT) times[dev].wait = MIN_WAIT;
-  if (times[dev].wait > MAX_WAIT) times[dev].wait = MAX_WAIT;
-  times[dev].next = currtime + times[dev].wait;
-  ap = Asy + dev;
-  ifp = ap->iface;
-  asy_stop(ifp);
-  if (!strncmp(ifp->name, "ipc", 3)) {
-    if (!(addr = build_sockaddr(ap->ipc_socket, &addrlen))) return (-1);
-    if ((ap->fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) return (-1);
-    if (connect(ap->fd, addr, addrlen)) {
-      close(ap->fd);
-      ap->fd = -1;
-      return (-1);
-    }
-    ap->speed = 0;
-  } else {
-    strcpy(buf, "/dev/");
-    strcat(buf, ifp->name);
-    if ((ap->fd = open(buf, O_RDWR)) < 0) return (-1);
-    termio.c_iflag = IGNBRK | IGNPAR;
-    termio.c_oflag = 0;
-    termio.c_cflag = B9600 | CS8 | CREAD | CLOCAL;
-    termio.c_lflag = 0;
-    termio.c_line = 0;
-    termio.c_cc[VMIN] = 0;
-    termio.c_cc[VTIME] = 0;
-    ioctl(ap->fd, TCSETA, &termio);
-    ioctl(ap->fd, TCFLSH, 2);
-    ap->speed = 9600;
-  }
-  setmask(chkread, ap->fd);
-  times[dev].wait = 0;
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-int  asy_init(dev, iface, arg1, arg2, bufsize, trigchar, cts)
-int  dev;
-struct iface *iface;
-char  *arg1, *arg2;
-unsigned  bufsize;
-int  trigchar;
-char  cts;
-{
-  Asy[dev].iface = iface;
-  Asy[dev].ipc_socket = strdup(arg2);
-  return asy_open(dev);
-}
-
-/*---------------------------------------------------------------------------*/
-
-int  asy_speed(dev, speed)
-int  dev;
-long  speed;
-{
-
-  register struct asy *ap;
-  register struct iface *ifp;
-  struct termio termio;
-
-  ap = Asy + dev;
-  ifp = ap->iface;
-  if (!ifp || ap->fd <= 0 || !strncmp(ifp->name, "ipc", 3)) return (-1);
-  if (ioctl(ap->fd, TCGETA, &termio)) return (-1);
-  termio.c_cflag &= ~CBAUD;
-  switch (speed) {
-  case    50: termio.c_cflag |= B50;    break;
-  case    75: termio.c_cflag |= B75;    break;
-  case   110: termio.c_cflag |= B110;   break;
-  case   134: termio.c_cflag |= B134;   break;
-  case   150: termio.c_cflag |= B150;   break;
-  case   200: termio.c_cflag |= B200;   break;
-  case   300: termio.c_cflag |= B300;   break;
-  case   600: termio.c_cflag |= B600;   break;
-  case   900: termio.c_cflag |= B900;   break;
-  case  1200: termio.c_cflag |= B1200;  break;
-  case  1800: termio.c_cflag |= B1800;  break;
-  case  2400: termio.c_cflag |= B2400;  break;
-  case  3600: termio.c_cflag |= B3600;  break;
-  case  4800: termio.c_cflag |= B4800;  break;
-  case  7200: termio.c_cflag |= B7200;  break;
-  case  9600: termio.c_cflag |= B9600;  break;
-  case 19200: termio.c_cflag |= B19200; break;
-  case 38400: termio.c_cflag |= B38400; break;
-  default:    return (-1);
-  }
-  if (ioctl(ap->fd, TCSETA, &termio)) return (-1);
-  ap->speed = speed;
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-int  asy_ioctl(iface, argc, argv)
-struct iface *iface;
-int  argc;
-char  *argv[];
-{
-  if (argc < 1) {
-    tprintf("%u\n", Asy[iface->dev].speed);
-    return 0;
-  }
-  return asy_speed(iface->dev, atoi(argv[0]));
-}
-
-/*---------------------------------------------------------------------------*/
-
-int  get_asy(dev, buf, cnt)
-int  dev;
-char  *buf;
-int  cnt;
-{
-  struct asy *ap;
-
-  ap = Asy + dev;
-  if (Asy[dev].fd <= 0 && asy_open(dev) < 0) return 0;
-  if (!maskset(actread, ap->fd)) return 0;
-  cnt = read(ap->fd, buf, (unsigned) cnt);
-  ap->rxints++;
-  if (cnt <= 0) {
-    asy_open(dev);
-    return 0;
-  }
-  ap->rxchar += cnt;
-  if (ap->rxhiwat < cnt) ap->rxhiwat = cnt;
-  return cnt;
-}
-
-/*---------------------------------------------------------------------------*/
-
-int  asy_send(dev, bp)
-int  dev;
-struct mbuf *bp;
-{
-
-  char  buf[4096];
-  int  cnt;
-  struct asy *ap;
-
-  ap = Asy + dev;
-  while (cnt = pullup(&bp, buf, sizeof(buf)))
-    if (ap->fd > 0 || !asy_open(dev)) {
-      if (dowrite(ap->fd, buf, (unsigned) cnt) < 0) asy_open(dev);
-      ap->txints++;
-      ap->txchar += cnt;
-    }
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-int  doasystat(argc, argv, p)
-int  argc;
-char  *argv[];
-void *p;
-{
-  register struct asy *asyp;
-
-  for (asyp = Asy; asyp < &Asy[Nasy]; asyp++) {
-    tprintf("%s:\n", asyp->iface->name);
-    tprintf(" RX: int %lu chr %lu hiwat %lu\n",
-     asyp->rxints, asyp->rxchar, asyp->rxhiwat);
-    if (tprintf(" TX: int %lu chr %lu\n", asyp->txints, asyp->txchar) == EOF)
-      break;
-  }
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* checks the time then ticks and updates ISS */
-
-void check_time()
-{
-  currtime = time(0);
-  if (!lasttime) lasttime = currtime;
-  while (lasttime < currtime) { /* Handle possibility of several missed ticks */
-    lasttime++;
-    tick();
-  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -442,17 +198,17 @@ static void check_files_changed()
   static long  nexttime, net_time, rc_time;
   struct stat statbuf;
 
-  if (debug || nexttime > currtime) return;
-  nexttime = currtime + 600;
+  if (debug || nexttime > secclock()) return;
+  nexttime = secclock() + 600;
 
   if (stat("/tcp/net", &statbuf)) return;
   if (!net_time) net_time = statbuf.st_mtime;
-  if (net_time != statbuf.st_mtime && statbuf.st_mtime < currtime - 3600)
+  if (net_time != statbuf.st_mtime && statbuf.st_mtime < secclock() - 3600)
     changed = 1;
 
   if (stat(Startup, &statbuf)) return;
   if (!rc_time) rc_time = statbuf.st_mtime;
-  if (rc_time != statbuf.st_mtime && statbuf.st_mtime < currtime - 3600)
+  if (rc_time != statbuf.st_mtime && statbuf.st_mtime < secclock() - 3600)
     changed = 1;
 
   if (changed) doexit(0, (char **) 0, (void *) 0);
@@ -465,21 +221,14 @@ eihalt()
 
   int  n;
   int  status;
+  int32 nte;
   register int  nfds;
   register unsigned int  i;
-  struct timeval t;
   struct timeval timeout;
-  struct timezone tz;
 
   check_files_changed();
   wait3(&status, WNOHANG, (int *) 0);
   if (!debug) alarm(TIMEOUT);
-  timeout.tv_sec = timeout.tv_usec = 0;
-  if (!Hopper) {
-    gettimeofday(&t, &tz);
-    currtime = t.tv_sec;
-    if (currtime == lasttime) timeout.tv_usec = 999999 - t.tv_usec;
-  }
   if (chkread[1] | chkwrite[1] | chkexcp[1]) {
     i = chkread[1] | chkwrite[1] | chkexcp[1];
     nfds = 32;
@@ -499,6 +248,14 @@ eihalt()
   actwrite[1] = chkwrite[1];
   actexcp [0] = chkexcp [0];
   actexcp [1] = chkexcp [1];
+  timeout.tv_sec = 0;
+  if (Hopper)
+    timeout.tv_usec = 0;
+  else {
+    nte = next_timer_event();
+    if (nte > 999) nte = 999;
+    timeout.tv_usec = 1000 * nte;
+  }
   if (select(nfds, actread, actwrite, actexcp, &timeout) < 1) {
     actread [0] = actread [1] = 0;
     actwrite[0] = actwrite[1] = 0;

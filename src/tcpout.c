@@ -1,5 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.3 1990/10/12 19:26:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.4 1991/02/24 20:17:47 deyke Exp $ */
 
+/* TCP output segment processing
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include "global.h"
 #include "timer.h"
 #include "mbuf.h"
@@ -34,7 +37,8 @@ register struct tcb *tcb;
 				 * including SYN and FIN flags */
 	int16 dsize;            /* Size of segment less SYN and FIN */
 	int16 usable;           /* Usable window */
-	int16 sent;             /* Sequence count (incl SYN/FIN) already in the pipe */
+	int16 sent;             /* Sequence count (incl SYN/FIN) already
+				 * in the pipe but not yet acked */
 
 	if(tcb == NULLTCB)
 		return;
@@ -45,7 +49,15 @@ register struct tcb *tcb;
 		return; /* Don't send anything */
 	}
 	for(;;){
+		/* Compute data already in flight */
 		sent = tcb->snd.ptr - tcb->snd.una;
+
+		/* If transmitter has been idle for more than a RTT,
+		 * take the congestion window back down to one packet.
+		 */
+		if(!run_timer(&tcb->timer)
+		 && (msclock() - tcb->lastactive) > tcb->srtt)
+			tcb->cwind = tcb->mss;
 
 		/* Compute usable send window as minimum of offered
 		 * and congestion windows, minus data already in flight.
@@ -71,18 +83,21 @@ register struct tcb *tcb;
 		 * Apply John Nagle's "single outstanding segment" rule.
 		 * If data is already in the pipeline, don't send
 		 * more unless it is MSS-sized or the very last packet.
-		 *
-		 * Also inhibit data until our SYN has been acked. This
-		 * ought to be OK, but some old TCPs have problems with
-		 * data piggybacked on SYNs.
 		 */
-		if(sent != 0
-		 && !(tcb->state == TCP_FINWAIT1 && ssize == tcb->sndcnt-sent)
-		 && (ssize < tcb->mss || !tcb->flags.synack)){
+		if(sent != 0 && ssize < tcb->mss
+		 && !(tcb->state == TCP_FINWAIT1 && ssize == tcb->sndcnt-sent)){
 			ssize = 0;
 		}
-		dsize = ssize;
-
+		/* Unless the tcp syndata option is on, inhibit data until
+		 * our SYN has been acked. This ought to be OK, but some
+		 * old TCPs have problems with data piggybacked on SYNs.
+		 */
+		if(!tcb->flags.synack && !Tcp_syndata){
+			if(tcb->snd.ptr == tcb->iss)
+				ssize = min(1,ssize);   /* Send only SYN */
+			else
+				ssize = 0;      /* Don't send anything */
+		}
 		if(ssize == 0 && !tcb->flags.force)
 			break;          /* No need to send anything */
 
@@ -96,8 +111,6 @@ register struct tcb *tcb;
 		 * transition, then the state change will already have been
 		 * made. This allows this routine to be called from a
 		 * retransmission timeout with force=1.
-		 * If SYN is being sent, adjust the dsize counter so we'll
-		 * try to get the right amount of data off the send queue.
 		 */
 		seg.flags.urg = 0; /* Not used in this implementation */
 		seg.flags.rst = 0;
@@ -108,19 +121,20 @@ register struct tcb *tcb;
 
 		hsize = TCPLEN; /* Except when SYN being sent */
 		seg.mss = 0;
+		seg.optlen = 0;
 
-		switch(tcb->state){
-		case TCP_SYN_SENT:
-			seg.flags.ack = 0;      /* Note fall-thru */
-		case TCP_SYN_RECEIVED:
-			if(tcb->snd.ptr == tcb->iss){
-				seg.flags.syn = 1;
-				dsize--;
-				/* Also send MSS */
-				seg.mss = Tcp_mss;
-				hsize = TCPLEN + MSS_LENGTH;
-			}
-			break;
+		if(tcb->state == TCP_SYN_SENT)
+			seg.flags.ack = 0; /* Haven't seen anything yet */
+
+		dsize = ssize;
+		if(!tcb->flags.synack && tcb->snd.ptr == tcb->iss){
+			/* Send SYN */
+			seg.flags.syn = 1;
+			dsize--;        /* SYN isn't really in snd queue */
+			/* Also send MSS */
+			seg.mss = Tcp_mss;
+			seg.optlen = 0;
+			hsize = TCPLEN + MSS_LENGTH;
 		}
 		seg.seq = tcb->snd.ptr;
 		seg.ack = tcb->rcv.nxt;
@@ -133,7 +147,16 @@ register struct tcb *tcb;
 		 * will return one less than dsize if a FIN needs to be sent.
 		 */
 		if(dsize != 0){
-			if(dup_p(&dbp,tcb->sndq,sent,dsize) != dsize){
+			int16 offset;
+
+			/* SYN doesn't actually take up space on the sndq,
+			 * so take it out of the sent count
+			 */
+			offset = sent;
+			if(!tcb->flags.synack && sent != 0)
+				offset--;
+
+			if(dup_p(&dbp,tcb->sndq,offset,dsize) != dsize){
 				/* We ran past the end of the send queue;
 				 * send a FIN
 				 */
@@ -179,20 +202,16 @@ register struct tcb *tcb;
 		 * and round trip timers if they aren't already running.
 		 */
 		if(ssize != 0){
-			/* Set round trip timer. The 3*MSPTICK term
-			 * rounds things up, preventing unnecessary timeouts
-			 * when the mdev and srtt values are small enough for
-			 * truncation errors to be significant.
-			 */
-			tcb->timer.start = mybackoff(tcb->backoff) *
-			 (2 * tcb->mdev + tcb->srtt + 3*MSPTICK) / MSPTICK;
+			/* Set round trip timer. */
+			set_timer(&tcb->timer,mybackoff(tcb->backoff)
+			 * (4 * tcb->mdev + tcb->srtt));
 			if(!run_timer(&tcb->timer))
 				start_timer(&tcb->timer);
 
 			/* If round trip timer isn't running, start it */
 			if(!tcb->flags.rtt_run){
 				tcb->flags.rtt_run = 1;
-				tcb->rtt_time = Clock;
+				tcb->rtt_time = msclock();
 				tcb->rttseq = tcb->snd.ptr;
 			}
 		}

@@ -1,13 +1,23 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.4 1990/10/12 19:25:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.5 1991/02/24 20:16:26 deyke Exp $ */
 
-#ifndef ARPSIZE
+#ifndef _ARP_H
+#define _ARP_H
 
+#ifndef _GLOBAL_H
 #include "global.h"
-#include "iface.h"
-#include "timer.h"
+#endif
 
-/* Size of ARP hash table */
-#define ARPSIZE 17
+#ifndef _MBUF_H
+#include "mbuf.h"
+#endif
+
+#ifndef _IFACE_H
+#include "iface.h"
+#endif
+
+#ifndef _TIMER_H
+#include "timer.h"
+#endif
 
 /* Lifetime of a valid ARP entry */
 #define ARPLIFE         900     /* 15 minutes */
@@ -25,6 +35,8 @@
 /* ARP opcodes */
 #define ARP_REQUEST     1
 #define ARP_REPLY       2
+#define REVARP_REQUEST  3
+#define REVARP_REPLY    4
 
 /* Hardware types */
 #define ARP_NETROM      0       /* Fake for NET/ROM (never actually sent) */
@@ -48,7 +60,7 @@ struct arp_type {
 	char *bdcst;            /* Hardware broadcast address */
 	char *(*format) __ARGS((char *,char *));
 				/* Function that formats addresses */
-	int (*scan) __ARGS((char *out,char *in[],int cnt));
+	int (*scan) __ARGS((char *,char *));
 				/* Reverse of format */
 };
 extern struct arp_type Arp_type[];
@@ -75,7 +87,6 @@ struct arp_tab {
 	struct mbuf *pending;   /* Queue of datagrams awaiting resolution */
 	int32 ip_addr;          /* IP Address, host order */
 	int16 hardware;         /* Hardware type */
-	int16 hwalen;           /* Hardware length */
 	char state;             /* (In)complete */
 #define ARP_PENDING     0
 #define ARP_VALID       1
@@ -98,11 +109,11 @@ extern struct arp_stat Arp_stat;
 
 /* In arp.c: */
 struct arp_tab *arp_add __ARGS((int32 ipaddr,int hardware,char *hw_addr,
-	int hw_alen,int pub));
+	int pub));
 void arp_drop __ARGS((void *p));
 int arp_init __ARGS((unsigned int hwtype,int hwalen,int iptype,int arptype,
 	int pendtime,char *bdcst,char *(*format) __ARGS((char *,char *)),
-	int  (*scan) __ARGS((char *out,char *in[],int cnt)) ));
+	int  (*scan) __ARGS((char *,char *)) ));
 void arp_input __ARGS((struct iface *iface,struct mbuf *bp));
 struct arp_tab *arp_lookup __ARGS((int hardware,int32 ipaddr));
 char *res_arp __ARGS((struct iface *iface,int hardware,int32 target,struct mbuf *bp));
@@ -115,5 +126,4 @@ int ntoharp __ARGS((struct arp *arp,struct mbuf **bpp));
 void arp_savefile __ARGS((void));
 void arp_loadfile __ARGS((void));
 
-#endif /* ARPSIZE */
-
+#endif /* _ARP_H */

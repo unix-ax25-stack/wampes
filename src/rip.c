@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.2 1990/10/12 19:26:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/rip.c,v 1.3 1991/02/24 20:17:33 deyke Exp $ */
 
 /* This file contains code to implement the Routing Information Protocol (RIP)
  * and is derived from 4.2BSD code. Mike Karels of Berkeley has stated on
@@ -49,7 +49,7 @@ void *p;
 	rl = (struct rip_list *)p;
 	stop_timer(&rl->rip_time);
 	send_routes(rl->dest,RIP_PORT,(rl->flags & RIP_SPLIT),0);
-	rl->rip_time.start = (rl->interval * 1000) / MSPTICK;
+	set_timer(&rl->rip_time,rl->interval*1000L);
 	start_timer(&rl->rip_time);
 }
 
@@ -101,7 +101,7 @@ int trig;               /* Send only triggered updates? */
 		}
 	}
 	for(bits=0;bits<32;bits++){
-		for(i=0;i<NROUTE;i++){
+		for(i=0;i<HASHMOD;i++){
 			for(rp = Routes[bits][i];rp != NULLROUTE;rp=rp->next){
 				if((rp->flags & RTPRIVATE)
 				 || (trig && !(rp->flags & RTTRIG)))
@@ -170,7 +170,7 @@ char flags;
 	rl->flags = flags;
 
 	/* and set up the timer stuff */
-	rl->rip_time.start = (interval * 1000) / MSPTICK;
+	set_timer(&rl->rip_time,interval*1000L);
 	rl->rip_time.func = rip_shout;
 	rl->rip_time.arg = rl;
 	start_timer(&rl->rip_time);
@@ -277,7 +277,7 @@ rip_trigger()
 	/* Clear the trigger list */
 	R_default.flags &= ~RTTRIG;
 	for(bits=0;bits<32;bits++){
-		for(i=0;i<NROUTE;i++){
+		for(i=0;i<HASHMOD;i++){
 			for(rp = Routes[bits][i];rp != NULLROUTE;rp = rp->next){
 				rp->flags &= ~RTTRIG;
 			}
@@ -660,10 +660,10 @@ void *s;
 	stop_timer(&rp->timer);
 	if(rp->metric < RIP_INFINITY){
 		rp->metric = RIP_INFINITY;
-		if(rp->timer.start == 0)
-			rp->timer.start = RIP_TTL;
+		if(dur_timer(&rp->timer) == 0)
+			set_timer(&rp->timer,RIP_TTL*1000L);
 		/* wait 2/3 of timeout before garbage collect */
-		rp->timer.start = (rp->timer.start<<1)/3;
+		set_timer(&rp->timer,dur_timer(&rp->timer)*2/3);
 		rp->timer.func = rt_timeout;
 		rp->timer.arg = (void *)rp;
 		start_timer(&rp->timer);

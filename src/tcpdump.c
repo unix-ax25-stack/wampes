@@ -1,11 +1,13 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpdump.c,v 1.3 1990/10/12 19:26:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpdump.c,v 1.4 1991/02/24 20:17:44 deyke Exp $ */
 
+/* TCP header tracing routines
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
 #include "netuser.h"
 #include "internet.h"
-#include "timer.h"
 #include "tcp.h"
 #include "ip.h"
 #include "trace.h"
@@ -31,6 +33,7 @@ int check;              /* 0 if checksum test is to be bypassed */
 	struct tcp seg;
 	struct pseudo_header ph;
 	int16 csum;
+	int16 dlen;
 
 	if(bpp == NULLBUFP || *bpp == NULLBUF)
 		return;
@@ -66,6 +69,8 @@ int check;              /* 0 if checksum test is to be bypassed */
 	/* Print options, if any */
 	if(seg.mss != 0)
 		fprintf(fp," MSS %u",seg.mss);
+	if((dlen = len_p(*bpp)) != 0)
+		fprintf(fp," Data %u",dlen);
 	if(check && csum != 0)
 		fprintf(fp," CHECKSUM ERROR (%u)",csum);
 	putc('\n',fp);

@@ -1,8 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/internet.h,v 1.2 1990/08/23 17:33:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/internet.h,v 1.3 1991/02/24 20:16:59 deyke Exp $ */
 
-#ifndef MAXTTL
+#ifndef _INTERNET_H
+#define _INTERNET_H
 
+#ifndef _GLOBAL_H
 #include "global.h"
+#endif
 
 /* Global structures and constants pertaining to the interface between IP and
  *      higher level protocols
@@ -59,5 +62,4 @@ struct mib_entry {
 	} value;
 };
 
-#endif  /* MAXTTL */
-
+#endif  /* _INTERNET_H */

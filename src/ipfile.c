@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.3 1990/09/11 13:45:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.4 1991/02/24 20:17:03 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -7,7 +7,6 @@
 #include "ip.h"
 
 extern int  debug;
-extern long  currtime;
 
 #define ROUTE_FILE_VERSION   1
 #define ROUTE_SAVETIME       (60*10)
@@ -35,13 +34,13 @@ route_savefile()
   static long  nextsavetime;
   struct route_saverecord buf;
 
-  if (!nextsavetime) nextsavetime = currtime + ROUTE_SAVETIME;
-  if (debug || nextsavetime > currtime) return;
-  nextsavetime = currtime + ROUTE_SAVETIME;
+  if (!nextsavetime) nextsavetime = secclock() + ROUTE_SAVETIME;
+  if (debug || nextsavetime > secclock()) return;
+  nextsavetime = secclock() + ROUTE_SAVETIME;
   if (!(fp = fopen(route_tmpfilename, "w"))) return;
   putc(ROUTE_FILE_VERSION, fp);
   for (bits = 1; bits <= 32; bits++)
-    for (i = 0; i < NROUTE; i++)
+    for (i = 0; i < HASHMOD; i++)
       for (p = Routes[bits-1][i]; p; p = p->next) {
 	buf.target = p->target;
 	buf.bits = p->bits;

@@ -1,6 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.6 1990/10/12 19:25:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmpcmd.c,v 1.7 1991/02/24 20:16:54 deyke Exp $ */
 
-/* ICMP-related user commands */
+/* ICMP-related user commands
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include <time.h>
 #include "global.h"
@@ -116,7 +118,7 @@ void *p;
 				tprintf("%7lu", pp->mdev);
 				tprintf("%8u", pp->len);
 				tprintf("%10lu\n",
-				 ((long)pp->timer.start * MSPTICK + 500) / 1000);
+				 dur_timer(&pp->timer) / 1000);
 			}
 		}
 		return 0;
@@ -155,7 +157,7 @@ void *p;
 			pp = add_ping(dest);
 		set_timer(&pp->timer, atoi(argv[3]) * 1000l);
 		pp->timer.func = ptimeout;
-		pp->timer.arg = (char *)pp;
+		pp->timer.arg = pp;
 		pp->target = dest;
 		pp->len = len;
 		start_timer(&pp->timer);
@@ -257,7 +259,7 @@ int16 len;      /* Length of data field */
 	/* Insert timestamp and build ICMP header */
 	if (len >= ICMPLEN + sizeof(struct timeval)) {
 		gettimeofday(&tv, &tz);
-		memcpy(data->data, (char *) &tv, sizeof(struct timeval));
+		memcpy(data->data, &tv, sizeof(struct timeval));
 	}
 	icmpOutEchos++;
 	icmpOutMsgs++;
@@ -318,6 +320,6 @@ struct ping *pp;
 		hval = hash_ping(pp->target);
 		ping[hval] = pp->next;
 	}
-	free((char *)pp);
+	free(pp);
 }
 

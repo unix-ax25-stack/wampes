@@ -1,6 +1,15 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pktdrvr.h,v 1.1 1990/09/11 13:46:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/pktdrvr.h,v 1.2 1991/02/24 20:17:31 deyke Exp $ */
 
-#ifndef CL_ETHERNET
+#ifndef _PKTDRVR_H
+#define _PKTDRVR_H
+
+#ifndef _MBUF_H
+#include "mbuf.h"
+#endif
+
+#ifndef _IFACE_H
+#include "iface.h"
+#endif
 
 #define PK_MAX  3       /* Add extra interrupt hooks if you increase this */
 
@@ -22,7 +31,10 @@
 #define CL_LANSTAR      14
 #define CL_SLFP         15
 #define CL_NETROM       16
-#define NCLASS          17
+#define CL_PPP          17
+#define NCLASS          18
+
+#ifdef  MSDOS
 
 /* Packet driver interface types (not a complete list) */
 #define TC500           1
@@ -82,6 +94,7 @@ struct pktdrvr {
 	int intno;      /* Interrupt vector */
 	short handle1;  /* Driver handle(s) */
 	short handle2;
+	short handle3;
 	struct mbuf *buffer;    /* Currently allocated rx buffer */
 	struct mbuf *rcvq;      /* Receive queue */
 	struct iface *iface;
@@ -102,4 +115,6 @@ INTERRUPT pkvec0 __ARGS((void));
 INTERRUPT pkvec1 __ARGS((void));
 INTERRUPT pkvec2 __ARGS((void));
 
-#endif  /* CL_ETHERNET */
+#endif  /* MSDOS */
+
+#endif  /* _PKTDRVR_H */

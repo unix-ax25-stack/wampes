@@ -1,5 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.3 1990/10/12 19:26:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.4 1991/02/24 20:17:43 deyke Exp $ */
 
+/* TCP control and status routines
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include "global.h"
 #include "timer.h"
@@ -18,6 +21,7 @@ static int dotcpreset __ARGS((int argc,char *argv[],void *p));
 static int dotcpstat __ARGS((int argc,char *argv[],void *p));
 static int dotcptr __ARGS((int argc,char *argv[],void *p));
 static int dowindow __ARGS((int argc,char *argv[],void *p));
+static int dosyndata __ARGS((int argc,char *argv[],void *p));
 static int tstat __ARGS((void));
 
 /* TCP subcommand table */
@@ -28,6 +32,7 @@ static struct cmds Tcpcmds[] = {
 	"reset",        dotcpreset,     0, 2,   "tcp reset <tcb>",
 	"rtt",          dortt,          0, 3,   "tcp rtt <tcb> <val>",
 	"status",       dotcpstat,      0, 0,   NULLCHAR,
+	"syndata",      dosyndata,      0, 0,   NULLCHAR,
 	"trace",        dotcptr,        0, 0,   NULLCHAR,
 	"window",       dowindow,       0, 0,   NULLCHAR,
 	NULLCHAR,
@@ -143,6 +148,15 @@ char *argv[];
 void *p;
 {
 	return setshort(&Tcp_window,"TCP window",argc,argv);
+}
+
+static int
+dosyndata(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	return setbool(&Tcp_syndata,"TCP syn+data piggybacking",argc,argv);
 }
 
 /* Display status of TCBs */
@@ -296,8 +310,8 @@ struct tcb *tcb;
 		break;
 	case TIMER_RUN:
 		tprintf("Timer running (%ld/%ld ms) ",
-		 (long)MSPTICK * read_timer(&tcb->timer),
-		 (long)MSPTICK * dur_timer(&tcb->timer));
+		 (long)read_timer(&tcb->timer),
+		 (long)dur_timer(&tcb->timer));
 		break;
 	case TIMER_EXPIRE:
 		tprintf("Timer expired ");

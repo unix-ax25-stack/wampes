@@ -1,6 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.3 1990/09/11 13:45:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.4 1991/02/24 20:17:01 deyke Exp $ */
 
-/* IP-related user commands */
+/* IP-related user commands
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
@@ -114,7 +116,7 @@ void *p;
 "Dest            Len Interface    Gateway          Metric  P Timer  Use\n");
 
 	for(bits=31;bits>=0;bits--){
-		for(i=0;i<NROUTE;i++){
+		for(i=0;i<HASHMOD;i++){
 			for(rp = Routes[bits][i];rp != NULLROUTE;rp = rp->next){
 				if(dumproute(rp) == EOF)
 					return 0;
@@ -150,20 +152,21 @@ void *p;
 		dest = 0;
 		bits = 0;
 	} else {
-		if((dest = resolve(argv[1])) == 0){
-			tprintf(Badhost,argv[1]);
-			return 1;
-		}
-
 		/* If IP address is followed by an optional slash and
 		 * a length field, (e.g., 128.96/16) get it;
 		 * otherwise assume a full 32-bit address
 		 */
 		if((bitp = strchr(argv[1],'/')) != NULLCHAR){
-			bitp++;
+			/* Terminate address token for resolve() call */
+			*bitp++ = '\0';
 			bits = atoi(bitp);
 		} else
 			bits = 32;
+
+		if((dest = resolve(argv[1])) == 0){
+			tprintf(Badhost,argv[1]);
+			return 1;
+		}
 	}
 	if((ifp = if_lookup(argv[2])) == NULLIF){
 		tprintf("Interface \"%s\" unknown\n",argv[2]);
@@ -206,7 +209,8 @@ void *p;
 		 * (e.g., 128.96/16) get it; otherwise assume a full 32-bit address
 		 */
 		if((bitp = strchr(argv[1],'/')) != NULLCHAR){
-			bitp++;
+			/* Terminate address token for resolve() call */
+			*bitp++ = '\0';
 			bits = atoi(bitp);
 		} else
 			bits = 32;
@@ -232,7 +236,7 @@ void *p;
 	if(R_default.timer.state == TIMER_RUN){
 		rt_drop(0,0);   /* Drop default route */
 	}
-	for(i=0;i<NROUTE;i++){
+	for(i=0;i<HASHMOD;i++){
 		for(j=0;j<32;j++){
 			for(rp = Routes[j][i];rp != NULLROUTE;rp = rptmp){
 				rptmp = rp->next;
@@ -266,7 +270,7 @@ register struct route *rp;
 	tprintf("%-8lu",rp->metric);
 	tprintf("%c ",(rp->flags & RTPRIVATE) ? 'P' : ' ');
 	tprintf("%-7lu",
-	 (MSPTICK * read_timer(&rp->timer)) / 1000);
+	 read_timer(&rp->timer) / 1000L);
 	return tprintf("%lu\n",rp->uses);
 }
 

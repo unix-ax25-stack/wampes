@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.5 1990/10/26 19:20:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.6 1991/02/24 20:17:16 deyke Exp $ */
 
 /* SMTP Mail Delivery Agent */
 
@@ -11,7 +11,6 @@
 #include "mbuf.h"
 #include "timer.h"
 #include "transport.h"
-#include "hpux.h"
 #include "mail.h"
 
 struct mesg {
@@ -180,7 +179,7 @@ struct transport_cb *tp;
     else {
       free_mailjobs(mp->sp);
       mp->sp->state = MS_FAILURE;
-      mp->sp->nexttime = currtime + RETRYTIME;
+      mp->sp->nexttime = secclock() + RETRYTIME;
     }
     free(mp);
   }

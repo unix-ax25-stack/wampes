@@ -1,5 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.3 1990/09/11 13:45:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.4 1991/02/24 20:17:05 deyke Exp $ */
 
+/* Routines for AX.25 encapsulation in KISS TNC
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include "global.h"
 #include "mbuf.h"
 #include "iface.h"
@@ -14,8 +17,6 @@ struct iface *iface;
 struct mbuf *data;
 {
 	register struct mbuf *bp;
-
-	if (!idigi(iface, data)) return 0;
 
 	/* Put type field for KISS TNC on front */
 	if((bp = pushdown(data,1)) == NULLBUF){

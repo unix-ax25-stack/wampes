@@ -1,7 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.3 1990/09/11 13:45:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.c,v 1.4 1991/02/24 20:16:37 deyke Exp $ */
 
 /* Parse command line, set up command arguments Unix-style, and call function.
  * Note: argument is modified (delimiters are overwritten with nulls)
+ *
+ * Copyright 1991 Phil Karn, KA9Q
+ *
  * Improved error handling by Brian Boesch of Stanford University
  */
 #include <ctype.h>
@@ -235,6 +238,22 @@ char *argv[];
 int
 setint(var,label,argc,argv)
 int *var;
+char *label;
+int argc;
+char *argv[];
+{
+	if(argc < 2)
+		tprintf("%s: %i\n",label,*var);
+	else
+		*var = atoi(argv[1]);
+
+	return 0;
+}
+
+/* Subroutine for setting and displaying unsigned integer variables */
+int
+setuns(var,label,argc,argv)
+unsigned *var;
 char *label;
 int argc;
 char *argv[];

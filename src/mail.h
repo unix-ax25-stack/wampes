@@ -1,7 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.6 1990/10/26 19:20:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.7 1991/02/24 20:17:13 deyke Exp $ */
 
-#ifndef MAIL_INCLUDED
-#define MAIL_INCLUDED
+#ifndef _MAIL_H
+#define _MAIL_H
 
 #include "global.h"
 
@@ -54,5 +54,4 @@ char *get_user_from_path __ARGS((char *path));
 char *get_host_from_path __ARGS((char *path));
 void free_mailjobs __ARGS((struct mailsys *sp));
 
-#endif  /* MAIL_INCLUDED */
-
+#endif  /* _MAIL_H */

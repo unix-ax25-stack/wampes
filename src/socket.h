@@ -1,8 +1,19 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.2 1990/10/12 19:26:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.3 1991/02/24 20:17:41 deyke Exp $ */
 
-#ifndef SOCK_STREAM
+#ifndef _SOCKET_H
+#define _SOCKET_H
 
+#ifndef _GLOBAL_H
 #include "global.h"
+#endif
+
+#ifdef  ANSIPROTO
+#include <stdarg.h>
+#endif
+
+#ifndef _MBUF_H
+#include "mbuf.h"
+#endif
 
 /* Local IP wildcard address */
 #define INADDR_ANY      0x0L
@@ -116,4 +127,4 @@ struct sockaddr_nr {
 
 extern int32 Ip_addr;
 
-#endif  /* SOCK_STREAM */
+#endif  /* _SOCKET_H */

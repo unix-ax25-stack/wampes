@@ -1,4 +1,13 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lcsum.c,v 1.3 1990/09/11 13:45:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lcsum.c,v 1.4 1991/02/24 20:17:11 deyke Exp $ */
+
+/*
+ * Word aligned linear buffer checksum routine.  Called from mbuf checksum
+ * routine with simple args.  Intent is that this routine may be replaced
+ * by assembly language routine for speed if so desired. (On the PC, the
+ * replacement is in pcgen.asm.)
+ *
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 
 #if     (defined(MPU8086) || defined(MPU8080) || defined(vax))
 #define LITTLE_ENDIAN   /* Low order bytes are first in memory */
@@ -6,11 +15,6 @@
 #include "global.h"
 #include "ip.h"
 
-/*
- * Word aligned linear buffer checksum routine.  Called from mbuf checksum
- * routine with simple args.  Intent is that this routine may be replaced
- * by assembly language routine for speed if so desired.
- */
 int16
 lcsum(wp,len)
 register int16 *wp;

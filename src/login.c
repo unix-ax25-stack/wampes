@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.9 1990/10/12 19:26:02 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.10 1991/02/24 20:17:12 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -130,7 +130,7 @@ fixutmpfile()
       up->ut_type = DEAD_PROCESS;
       up->ut_exit.e_termination = 0;
       up->ut_exit.e_exit = 0;
-      up->ut_time = currtime;
+      up->ut_time = secclock();
       pututline(up);
     }
   endutent();
@@ -219,7 +219,7 @@ char  *user, *protocol;
   char  buf[1024];
   struct tm *tm;
 
-  tm = localtime(&currtime);
+  tm = localtime((long *) &Secclock);
   sprintf(buf,
 	  "%s at %2d-%.3s-%02d %2d:%02d:%02d by %s\n",
 	  protocol,
@@ -375,7 +375,7 @@ void  *upcall_arg;
   if (!tp) return 0;
   tp->telnet = !strcmp(protocol, "TELNET");
   if ((tp->pty = find_pty(&tp->num, slave)) < 0) {
-    free((char *) tp);
+    free(tp);
     return 0;
   }
   strcpy(tp->id, slave + strlen(slave) - 2);
@@ -402,7 +402,7 @@ void  *upcall_arg;
     dup(0);
     dup(0);
     chmod(slave, 0622);
-    memset((char *) &termio, 0, sizeof(termio));
+    memset(&termio, 0, sizeof(termio));
     termio.c_iflag = ICRNL | IXOFF;
     termio.c_oflag = OPOST | ONLCR | TAB3;
     termio.c_cflag = B1200 | CS8 | CREAD | CLOCAL;
@@ -415,13 +415,13 @@ void  *upcall_arg;
     ioctl(0, TCSETA, &termio);
     ioctl(0, TCFLSH, 2);
     if (!pw || pw->pw_passwd[0]) exit(1);
-    memset((char *) &utmp, 0, sizeof(utmp));
+    memset(&utmp, 0, sizeof(utmp));
     strcpy(utmp.ut_user, "LOGIN");
     strcpy(utmp.ut_id, tp->id);
     strcpy(utmp.ut_line, slave + 5);
     utmp.ut_pid = getpid();
     utmp.ut_type = LOGIN_PROCESS;
-    utmp.ut_time = currtime;
+    utmp.ut_time = secclock();
 #ifdef _UTMP_INCLUDED   /* for HP-UX 6.5 compatibility */
     strncpy(utmp.ut_host, protocol, sizeof(utmp.ut_host));
 #endif
@@ -460,7 +460,7 @@ struct login_cb *tp;
   }
   if (tp->pid > 0) {
     kill(-tp->pid, SIGHUP);
-    memset((char *) &utmp, 0, sizeof(utmp));
+    memset(&utmp, 0, sizeof(utmp));
     strcpy(utmp.ut_id, tp->id);
     utmp.ut_type = DEAD_PROCESS;
     if (up = getutid(&utmp)) {
@@ -468,8 +468,8 @@ struct login_cb *tp;
       up->ut_type = DEAD_PROCESS;
       up->ut_exit.e_termination = 0;
       up->ut_exit.e_exit = 0;
-      up->ut_time = currtime;
-      memcpy((char *) &utmp, (char *) up, sizeof(utmp));
+      up->ut_time = secclock();
+      memcpy(&utmp, up, sizeof(utmp));
       pututline(up);
       fwtmp = open("/etc/wtmp", O_WRONLY | O_CREAT | O_APPEND, 0644);
       write(fwtmp, (char *) &utmp, sizeof(utmp));
@@ -478,7 +478,7 @@ struct login_cb *tp;
     endutent();
   }
   free_q(&tp->sndq);
-  free((char *) tp);
+  free(tp);
 }
 
 /*---------------------------------------------------------------------------*/

@@ -1,8 +1,12 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.4 1990/10/12 19:25:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.5 1991/02/24 20:16:57 deyke Exp $ */
 
+/* IP interface control and configuration routines
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include "global.h"
 #include "iface.h"
+#include "mbuf.h"
 #include "pktdrvr.h"
 #include "ip.h"
 #include "netuser.h"
@@ -273,8 +277,10 @@ register struct iface *ifp;
 		ifp->flags,ifp->trace,ifp->netmask,inet_ntoa(ifp->broadcast));
 	if(ifp->forw != NULLIF)
 		tprintf("           output forward to %s\n",ifp->forw->name);
-	tprintf("           sent: ip %lu tot %lu recv: ip %lu tot %lu\n",
-	 ifp->ipsndcnt,ifp->rawsndcnt,ifp->iprecvcnt,ifp->rawrecvcnt);
+	tprintf("           sent: ip %lu tot %lu idle %s\n",
+	 ifp->ipsndcnt,ifp->rawsndcnt,tformat(secclock() - ifp->lastsent));
+	tprintf("           recv: ip %lu tot %lu idle %s\n",
+	 ifp->iprecvcnt,ifp->rawrecvcnt,tformat(secclock() - ifp->lastrecv));
 }
 
 /* Given the ascii name of an interface, return a pointer to the structure,
@@ -325,4 +331,13 @@ int32 mask;
 		width++;
 	}
 	return width;
+}
+/* Raw output routine that dumps all packets. Used by dialer,  tip, etc */
+int
+dumppkt(ifp,bp)
+struct iface *ifp;
+struct mbuf *bp;
+{
+	free_p(bp);
+	return 0;
 }

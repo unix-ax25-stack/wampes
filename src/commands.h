@@ -1,4 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.2 1990/09/11 13:45:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.3 1991/02/24 20:16:39 deyke Exp $ */
+
+#ifndef _COMMANDS_H
+#define _COMMANDS_H
 
 /* In 8250.c, amiga.c: */
 int doasystat __ARGS((int argc,char *argv[],void *p));
@@ -24,6 +27,9 @@ int ax25start __ARGS((int argc,char *argv[],void *p));
 int doax25 __ARGS((int argc,char *argv[],void *p));
 int doaxheard __ARGS((int argc,char *argv[],void *p));
 int doconnect __ARGS((int argc,char *argv[],void *p));
+
+/* In dialer.c: */
+int dodialer __ARGS((int argc,char *argv[],void *p));
 
 /* In dirutil.c: */
 int docd __ARGS((int argc,char *argv[],void *p));
@@ -104,6 +110,10 @@ int donothing __ARGS((int argc,char *argv[],void *p));
 int donrstat __ARGS((int argc,char *argv[],void *p));
 int doescape __ARGS((int argc,char *argv[],void *p));
 int doremote __ARGS((int argc,char *argv[],void *p));
+int doboot __ARGS((int argc,char *argv[],void *p));
+
+/* In nntpcli.c: */
+int donntp __ARGS((int argc,char *argv[],void *p));
 
 /* In nrcmd.c: */
 int donetrom __ARGS((int argc,char *argv[],void *p));
@@ -113,12 +123,23 @@ int nr_attach __ARGS((int argc,char *argv[],void *p));
 
 /* In pc.c: */
 int doshell __ARGS((int argc,char *argv[],void *p));
+int doisat __ARGS((int argc,char *argv[],void *p));
 
 /* In pc100.h: */
 int pc_attach __ARGS((int argc,char *argv[],void *p));
 
 /* In pktdrvr.c: */
 int pk_attach __ARGS((int argc,char *argv[],void *p));
+
+/* In pi.c: */
+int pi_attach __ARGS((int argc,char *argv[],void *p));
+int dopistat __ARGS((int argc,char *argv[],void *p));
+
+/* In pppcmd.c: */
+int dopppcontrol __ARGS((int argc,char *argv[], void *p));
+
+/* In rarp.c: */
+int dorarp __ARGS((int argc,char *argv[],void *p));
 
 /* In ripcmd.c: */
 int dorip __ARGS((int argc,char *argv[],void *p));
@@ -182,6 +203,8 @@ int dotelnet __ARGS((int argc,char *argv[],void *p));
 
 /* In tip.c: */
 int dotip __ARGS((int argc,char *argv[],void *p));
+int tipstart __ARGS((int argc,char *argv[],void *p));
+int tip0 __ARGS((int argc,char *argv[],void *p));
 
 /* In ttylink.c: */
 int ttylstart __ARGS((int argc,char *argv[],void *p));
@@ -199,6 +222,6 @@ int dobye __ARGS((int argc,char *argv[],void *p));
 int dortprio __ARGS((int argc,char *argv[],void *p));
 int dosource __ARGS((int argc,char *argv[],void *p));
 int dostime __ARGS((int argc,char *argv[],void *p));
-int mail_daemon __ARGS((int argc,char *argv[],void *p));
 int tcpgate1 __ARGS((int argc,char *argv[],void *p));
 
+#endif  /* _COMMANDS_H */

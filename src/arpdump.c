@@ -1,9 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpdump.c,v 1.3 1990/09/11 13:44:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpdump.c,v 1.4 1991/02/24 20:16:28 deyke Exp $ */
 
+/* ARP packet tracing routines
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
-#include "timer.h"
 #include "arp.h"
 #include "netuser.h"
 #include "trace.h"
@@ -16,6 +18,7 @@ struct mbuf **bpp;
 	struct arp arp;
 	struct arp_type *at;
 	int is_ip = 0;
+	char tmp[25];
 
 	if(bpp == NULLBUFP || *bpp == NULLBUF)
 		return;
@@ -52,11 +55,25 @@ struct mbuf **bpp;
 	case ARP_REPLY:
 		fprintf(fp," op REPLY");
 		break;
+	case REVARP_REQUEST:
+		fprintf(fp," op REVERSE REQUEST");
+		break;
+	case REVARP_REPLY:
+		fprintf(fp," op REVERSE REPLY");
+		break;
 	default:
 		fprintf(fp," op %u",arp.opcode);
 		break;
 	}
+	fprintf(fp,"\n");
+	fprintf(fp,"     sender hwaddr %s",at->format(tmp,arp.shwaddr));
 	if(is_ip)
-		fprintf(fp," target %s",inet_ntoa(arp.tprotaddr));
-	putc('\n',fp);
+		fprintf(fp," IPaddr %s\n",inet_ntoa(arp.sprotaddr));
+	else
+		fprintf(fp,"\n");
+	fprintf(fp,"     target hwaddr %s",at->format(tmp,arp.thwaddr));
+	if(is_ip)
+		fprintf(fp," IPaddr %s\n",inet_ntoa(arp.tprotaddr));
+	else
+		fprintf(fp,"\n");
 }

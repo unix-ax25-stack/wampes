@@ -1,9 +1,17 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.3 1990/09/11 13:45:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.4 1991/02/24 20:16:58 deyke Exp $ */
 
-#ifndef NULLIF
-#include <stdio.h>
+#ifndef _IFACE_H
+#define _IFACE_H
+
+#ifndef _GLOBAL_H
 #include "global.h"
+#endif
+
+#ifndef _MBUF_H
 #include "mbuf.h"
+#endif
+
+#include <stdio.h>
 
 /* Interface control structure */
 struct iface {
@@ -36,6 +44,7 @@ struct iface {
 #define IF_TRACE_ASCII  0x100   /* Dump packets in ascii */
 #define IF_TRACE_HEX    0x200   /* Dump packets in hex/ascii */
 #define IF_TRACE_NOBC   0x1000  /* Suppress broadcasts */
+#define IF_TRACE_RAW    0x2000  /* Raw dump, if supported */
 	char *trfile;           /* Trace file name, if any */
 	FILE *trfp;             /* Stream to trace to */
 	char *hwaddr;           /* Device hardware address, if any */
@@ -45,8 +54,10 @@ struct iface {
 	int32 iprecvcnt;        /* IP datagrams received */
 	int32 rawrecvcnt;       /* Raw packets received */
 	int32 lastsent;         /* Clock time of last send */
-	void (*proc) __ARGS((struct iface *));  /* Pointer to line process, if any */
-	struct proc *proc1;     /* Second line process, if any */
+	int32 lastrecv;         /* Clock time of last receive */
+	void (*rxproc) __ARGS((struct iface *)); /* Receiver process, if any */
+	struct proc *txproc;    /* Transmitter process, if any */
+	struct proc *supv;      /* Supervisory process, if any */
 };
 #define NULLIF  (struct iface *)0
 extern struct iface *Ifaces;    /* Head of interface list */
@@ -85,6 +96,6 @@ struct iface *if_lookup __ARGS((char *name));
 struct iface *ismyaddr __ARGS((int32 addr));
 int if_detach __ARGS((struct iface *ifp));
 int setencap __ARGS((struct iface *ifp,char *mode));
+int dumppkt __ARGS((struct iface *ifp,struct mbuf *bp));
 
-#endif  /* NULLIF */
-
+#endif  /* _IFACE_H */

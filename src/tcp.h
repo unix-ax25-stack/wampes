@@ -1,14 +1,36 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.4 1990/10/12 19:26:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.5 1991/02/24 20:17:42 deyke Exp $ */
+
+#ifndef _TCP_H
+#define _TCP_H
 
 /* TCP implementation. Follows RFC 793 as closely as possible */
-#ifndef NULLTCB
-
+#ifndef _GLOBAL_H
 #include "global.h"
-#include "netuser.h"
-#include "timer.h"
-#include "internet.h"
+#endif
+
+#ifndef _MBUF_H
+#include "mbuf.h"
+#endif
+
+#ifndef _IFACE_H
 #include "iface.h"
+#endif
+
+#ifndef _INTERNET_H
+#include "internet.h"
+#endif
+
+#ifndef _IP_H
 #include "ip.h"
+#endif
+
+#ifndef _NETUSER_H
+#include "netuser.h"
+#endif
+
+#ifndef _TIMER_H
+#include "timer.h"
+#endif
 
 #define DEF_WND 2048    /* Default receiver window */
 #define NTCB    19      /* # TCB hash table headers */
@@ -16,9 +38,12 @@
 #define DEF_MSS 512     /* Default maximum segment size */
 #define DEF_RTT 5000    /* Initial guess at round trip time (5 sec) */
 #define MSL2    30      /* Guess at two maximum-segment lifetimes */
+#define TCP_MAXOPT      40      /* Largest option field, bytes */
 
-extern int32 Clock;
-#define geniss()        ((int32)Clock << 18)    /* Increment clock at 4.5 Mbytes/sec */
+#define geniss()        ((int32)msclock() << 12) /* Increment clock at 4 MB/sec */
+
+/* Number of consecutive duplicate acks to trigger fast recovery */
+#define TCPDUPACKS      3
 
 /* Round trip timing parameters */
 #define AGAIN   8       /* Average RTT gain = 1/8 */
@@ -44,9 +69,12 @@ struct tcp {
 		char syn;
 		char fin;
 	} flags;
-	int16 wnd;      /* Receiver flow control window */
-	int16 up;       /* Urgent pointer */
-	int16 mss;      /* Optional max seg size */
+	int16 wnd;                      /* Receiver flow control window */
+	int16 checksum;                 /* Checksum */
+	int16 up;                       /* Urgent pointer */
+	int16 mss;                      /* Optional max seg size */
+	char options[TCP_MAXOPT];       /* Options field */
+	int optlen;                     /* Length of options field, bytes */
 };
 /* TCP options */
 #define EOL_KIND        0
@@ -111,6 +139,7 @@ struct tcb {
 	int32 resent;           /* Count of bytes retransmitted */
 	int16 cwind;            /* Congestion window */
 	int16 ssthresh;         /* Slow-start threshold */
+	int dupacks;            /* Count of duplicate (do-nothing) ACKs */
 
 	/* Receive sequence variables */
 	struct {
@@ -155,6 +184,7 @@ struct tcb {
 	int32 rttseq;           /* Sequence number being timed */
 	int32 srtt;             /* Smoothed round trip time, milliseconds */
 	int32 mdev;             /* Mean deviation, milliseconds */
+	int32 lastactive;       /* Clock time when xmtr last active */
 
 	int user;               /* User parameter (e.g., for mapping to an
 				 * application control block
@@ -201,6 +231,7 @@ extern int16 Tcp_mss;
 extern int16 Tcp_window;
 extern int32 Tcp_irtt;
 extern int Tcp_trace;
+extern int Tcp_syndata;
 extern char *Tcpstates[];
 extern char *Tcpreasons[];
 
@@ -262,4 +293,4 @@ int space_tcp __ARGS((struct tcb *tcb));
 char *tcp_port __ARGS((int n));
 int tcpval __ARGS((struct tcb *tcb));
 
-#endif  /* NULLTCB */
+#endif  /* _TCP_H */

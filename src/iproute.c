@@ -1,9 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.3 1990/09/11 13:45:43 deyke Exp $ */
-
-#define DEBUG   1
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.4 1991/02/24 20:17:04 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
+ *
+ * Copyright 1991 Phil Karn, KA9Q
  */
 #include "global.h"
 #include "mbuf.h"
@@ -16,9 +16,7 @@
 #include "trace.h"
 #include "rip.h"
 
-static int16 hash_ip __ARGS((int32 addr));
-
-struct route *Routes[32][NROUTE];       /* Routing table */
+struct route *Routes[32][HASHMOD];      /* Routing table */
 struct route R_default = {              /* Default route entry */
 	NULLROUTE, NULLROUTE,
 	0,0,0,
@@ -27,6 +25,16 @@ struct route R_default = {              /* Default route entry */
 
 int32 Ip_addr;
 static struct rt_cache Rt_cache;
+
+/* Initialize modulo lookup table used by hash_ip() in pcgen.asm */
+void
+ipinit()
+{
+	int i;
+
+	for(i=0;i<256;i++)
+		Hashtab[i] = i % HASHMOD;
+}
 
 /* Route an IP datagram. This is the "hopper" through which all IP datagrams,
  * coming or going, must pass.
@@ -92,13 +100,17 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 		free_p(bp);
 		return -1;
 	}
+
+	if(i_iface != NULLIF && ismyaddr(ip.source) == NULLIF)
+		rt_add(ip.source, 32, 0L, i_iface, 1L, 0L, 0);
+
 	/* Trim data segment if necessary. */
 	length = ip.length - ip_len;    /* Length of data portion */
 	trim_mbuf(&bp,length);
 
 	/* If we're running low on memory, return a source quench */
 	if(!rxbroadcast && availmem() < Memthresh)
-		icmp_output(&ip,bp,ICMP_QUENCH,0,NULL);
+		icmp_output(&ip,bp,ICMP_QUENCH,0,NULLICMP);
 
 	/* Process options, if any. Also compute length of secondary IP
 	 * header in case fragmentation is needed later
@@ -137,7 +149,7 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 			opt[2] += 4;
 			break;
 		case IP_RROUTE: /* Record route */
-			if(uchar(opt[2]) >= opt_len){
+			if(uchar(opt[2]) > opt_len-3){
 				/* Route area exhausted; kick back an error */
 				if(!rxbroadcast){
 					union icmp_args icmp_args;
@@ -145,13 +157,16 @@ int rxbroadcast;        /* True if packet had link broadcast address */
 					icmp_args.pointer = IPLEN + opt - ip.options;
 					icmp_output(&ip,bp,ICMP_PARAM_PROB,0,&icmp_args);
 				}
-				free_p(bp);
-				return -1;
+				if(uchar(opt[2]) != opt_len + 1){
+					free_p(bp);
+					return -1;
+				}
+			} else {
+				/* Add our address to the route */
+				ptr = opt + uchar(opt[2]) - 1;
+				ptr = put32(ptr,locaddr(ip.dest));
+				opt[2] += 4;
 			}
-			/* Add our address to the route */
-			ptr = opt + uchar(opt[2]) - 1;
-			ptr = put32(ptr,locaddr(ip.dest));
-			opt[2] += 4;
 			break;
 		}
 	}
@@ -163,7 +178,7 @@ no_opt:
 	/* We're only a gateway, we have no host level protocols */
 		if(!rxbroadcast)
 			icmp_output(&ip,bp,ICMP_DEST_UNREACH,
-			 ICMP_PROT_UNREACH,(union icmp_args *)NULL);
+			 ICMP_PROT_UNREACH,NULLICMP);
 		ipInUnknownProtos++;
 		free_p(bp);
 #else
@@ -225,9 +240,12 @@ no_opt:
 
 	if(ip.length <= iface->mtu){
 		/* Datagram smaller than interface MTU; put header
-		 * back on and send normally
+		 * back on and send normally. Adjust the header checksum
+		 * to allow for the modified TTL.
 		 */
-		if((tbp = htonip(&ip,bp)) == NULLBUF){
+		if(((ip.checksum += 0x100) & 0xff00) == 0)
+			ip.checksum++;  /* End-around carry */
+		if((tbp = htonip(&ip,bp,1)) == NULLBUF){
 			free_p(bp);
 			return -1;
 		}
@@ -237,7 +255,10 @@ no_opt:
 	/* Fragmentation needed */
 	if(ip.flags.df){
 		/* Don't Fragment set; return ICMP message and drop */
-		icmp_output(&ip,bp,ICMP_DEST_UNREACH,ICMP_FRAG_NEEDED,NULLICMP);
+		union icmp_args icmp_args;
+
+		icmp_args.mtu = iface->mtu;
+		icmp_output(&ip,bp,ICMP_DEST_UNREACH,ICMP_FRAG_NEEDED,&icmp_args);
 		free_p(bp);
 		ipFragFails++;
 		return -1;
@@ -271,8 +292,8 @@ no_opt:
 			ipFragFails++;
 			return -1;
 		}
-		/* Put IP header back on */
-		if((tbp = htonip(&ip,f_data)) == NULLBUF){
+		/* Put IP header back on, recomputing checksum */
+		if((tbp = htonip(&ip,f_data,0)) == NULLBUF){
 			free_p(f_data);
 			free_p(bp);
 			ipFragFails++;
@@ -350,7 +371,7 @@ char private;           /* Inhibit advertising this entry ? */
 	rp->flags = private ? RTPRIVATE : 0;    /* Should anyone be told of this route? */
 	rp->timer.func = rt_timeout;  /* Set the timer field */
 	rp->timer.arg = (void *)rp;
-	rp->timer.start = (1000 * ttl) / MSPTICK;
+	set_timer(&rp->timer,ttl*1000L);
 	stop_timer(&rp->timer);
 	start_timer(&rp->timer); /* start the timer if appropriate */
 
@@ -401,9 +422,11 @@ unsigned int bits;
 	free((char *)rp);
 	return 0;
 }
+#if 1
+char Hashtab[256];      /* Modulus lookup table */
 
 /* Compute hash function on IP address */
-static int16
+int16
 hash_ip(addr)
 register int32 addr;
 {
@@ -411,8 +434,9 @@ register int32 addr;
 
 	ret = hiword(addr);
 	ret ^= loword(addr);
-	return (int16)(ret % NROUTE);
+	return (int16)(ret % HASHMOD);
 }
+#endif
 #ifndef GWONLY
 /* Given an IP address, return the MTU of the local interface used to
  * reach that destination. This is used by TCP to avoid local fragmentation
@@ -513,9 +537,12 @@ unsigned int bits;
 {
 	register struct route *rp;
 
-	if(bits == 0 && R_default.iface != NULLIF)
-		return &R_default;
-
+	if(bits == 0){
+		if(R_default.iface != NULLIF)
+			return &R_default;
+		else
+			return NULLROUTE;
+	}
 	/* Mask off target according to width */
 	target &= ~0L << (32-bits);
 
@@ -538,7 +565,7 @@ int trace;
 	struct route *rp,*rpnext,*rp1;
 
 	for(bits=32;bits>0;bits--){
-		for(i = 0;i<NROUTE;i++){
+		for(i = 0;i<HASHMOD;i++){
 			for(rp = Routes[bits-1][i];rp != NULLROUTE;rp = rpnext){
 				rpnext = rp->next;
 				for(j=bits-1;j >= 0;j--){

@@ -1,6 +1,13 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.4 1990/10/22 11:37:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.5 1991/02/24 20:16:40 deyke Exp $ */
 
-/* Stuff heavily dependent on the configuration info in config.h */
+/* A collection of stuff heavily dependent on the configuration info
+ * in config.h. The idea is that configuration-dependent tables should
+ * be located here to avoid having to pepper lots of .c files with #ifdefs,
+ * requiring them to include config.h and be recompiled each time config.h
+ * is modified.
+ *
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 
 #include <stdio.h>
 /* #include <dos.h> */
@@ -12,13 +19,15 @@
 /* #include "daemon.h" */
 #include "timer.h"
 #include "iface.h"
+/* #include "ppp.h" */
 #include "pktdrvr.h"
 #include "slip.h"
+/* #include "slcompre.h" */
 /* #include "usock.h" */
 #include "kiss.h"
 #include "enet.h"
 #include "ax25.h"
-/* #include "lapb.h" */
+#include "lapb.h"
 #include "netrom.h"
 /* #include "nr4.h" */
 #include "arp.h"
@@ -27,10 +36,23 @@
 #include "tcp.h"
 #include "udp.h"
 #include "commands.h"
+#include "hardware.h"   /***/
+#ifdef  ARCNET
+#include "arcnet.h"
+#endif
 
 static int dostart __ARGS((int argc,char *argv[],void *p));
 static int dostop __ARGS((int argc,char *argv[],void *p));
 static int dostatus __ARGS((int argc,char *argv[],void *p));
+
+#ifdef  AX25
+static void axip __ARGS((struct iface *iface,struct ax25_cb *axp,char *src,
+	char *dest,struct mbuf *bp,int mcast));
+static void axarp __ARGS((struct iface *iface,struct ax25_cb *axp,char *src,
+	char *dest,struct mbuf *bp,int mcast));
+static void axnr __ARGS((struct iface *iface,struct ax25_cb *axp,char *src,
+	char *dest,struct mbuf *bp,int mcast));
+#endif
 
 struct mbuf *Hopper;
 unsigned Nsessions = NSESSIONS;
@@ -58,7 +80,7 @@ struct icmplink Icmplink[] = {
 /* ARP protocol linkages */
 struct arp_type Arp_type[NHWTYPES] = {
 #ifdef  NETROM
-	AXALEN, 0, 0, 0, NULLCHAR, psax25, setpath,     /* ARP_NETROM */
+	AXALEN, 0, 0, 0, NULLCHAR, pax25, setcall,      /* ARP_NETROM */
 #else
 	0, 0, 0, 0, NULLCHAR,NULL,NULL,
 #endif
@@ -72,7 +94,7 @@ struct arp_type Arp_type[NHWTYPES] = {
 	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_EETHER */
 
 #ifdef  AX25
-	AXALEN, PID_IP, PID_ARP, 10, Ax25_bdcst, psax25, setpath,
+	AXALEN, PID_IP, PID_ARP, 10, Ax25_bdcst, pax25, setcall,
 #else
 	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_AX25 */
 #endif
@@ -91,6 +113,28 @@ struct arp_type Arp_type[NHWTYPES] = {
 
 	0, 0, 0, 0, NULLCHAR,NULL,NULL,                 /* ARP_APPLETALK */
 };
+
+#ifdef  AX25
+/* Linkage to network protocols atop ax25 */
+struct axlink Axlink[] = {
+	PID_IP,         axip,
+	PID_ARP,        axarp,
+#ifdef  NETROM
+	PID_NETROM,     axnr,
+#endif
+	PID_NO_L3,      axnl3,
+	0,              NULL,
+};
+
+/* List of AX.25 multicast addresses */
+char *Axmulti[] = {
+	Ax25_bdcst,
+#ifdef  NETROM
+	Nr_nodebc,
+#endif
+	NULLCHAR,
+};
+#endif
 
 struct iftype Iftypes[] = {
 	/* This entry must be first, since Loopback refers to it */
@@ -124,6 +168,11 @@ struct iftype Iftypes[] = {
 #ifdef  SLFP
 	"SLFP",         pk_send,        NULL,           NULL,
 	NULL,           CL_NONE,        0,
+#endif
+
+#ifdef  PPP
+	"PPP",          ppp_send,       ppp_output,     NULL,
+	NULL,           CL_PPP, 0,
 #endif
 
 	NULLCHAR
@@ -167,6 +216,10 @@ struct cmds Cmds[] = {
 #ifndef AMIGA
 /*      "dir",          dodir,          512, 0, NULLCHAR, /* note sequence */
 #endif
+#ifdef  DIALER
+	"dialer",       dodialer,       512, 3,
+		"dialer <interface> <interval> <ping target> <script_file>",
+#endif
 	"delete",       dodelete,       0, 2, "delete <file>",
 /*      "detach",       dodetach,       0, 2, "detach <interface>", */
 /*      "domain",       dodomain,       0, 0, NULLCHAR, */
@@ -201,6 +254,9 @@ struct cmds Cmds[] = {
 	"icmp",         doicmp,         0, 0, NULLCHAR,
 	"ifconfig",     doifconfig,     0, 0, NULLCHAR,
 	"ip",           doip,           0, 0, NULLCHAR,
+#ifdef  MSDOS
+	"isat",         doisat,         0, 0, NULLCHAR,
+#endif
 	"kick",         dokick,         0, 0, NULLCHAR,
 	"log",          dolog,          0, 0, NULLCHAR,
 #ifdef  MAILBOX
@@ -214,12 +270,21 @@ struct cmds Cmds[] = {
 /*      "more",         domore,         512, 2, "more <filename>", */
 #ifdef  NETROM
 	"netrom",       donetrom,       0, 0, NULLCHAR,
+#endif  /* NETROM */
+#ifdef  NNTP
+	"nntp",         donntp,         0, 0, NULLCHAR,
+#endif  /* NNTP */
 #ifdef  NRS
 	"nrstat",       donrstat,       0, 0, NULLCHAR,
 #endif  /* NRS */
-#endif  /* NETROM */
 	"param",        doparam,        0, 2, "param <interface>",
 	"ping",         doping,         512, 0, NULLCHAR,
+#ifdef  PI
+	"pistatus",     dopistat,       0, 0, NULLCHAR,
+#endif
+#ifdef PPP
+	"ppp",          dopppcontrol,   0, 0, NULLCHAR,
+#endif
 /*      "ps",           ps,             0, 0, NULLCHAR, */
 #if     !defined(UNIX) && !defined(AMIGA)
 	"pwd",          docd,           0, 0, NULLCHAR,
@@ -300,6 +365,12 @@ struct cmds Attab[] = {
 	"attach eagle <address> <vector> ax25 <label> <buffers>\
  <mtu> <speed> [ip_addra] [ip_addrb]",
 #endif
+#ifdef  PI
+	/* PI 8530 HDLC adaptor */
+	"pi", pi_attach, 0, 8,
+	"attach pi <address> <vector> <dmachannel> ax25 <label> <buffers>\
+ <mtu> <speed> [ip_addra] [ip_addrb]",
+#endif
 #ifdef  HAPN
 	/* Hamilton Area Packet Radio (HAPN) 8273 HDLC adaptor */
 	"hapn", hapn_attach, 0, 8,
@@ -362,7 +433,11 @@ struct trace Tracef[] = {
 	NULLFP,         NULLVFP,
 #endif  /* APPLETALK */
 
+#ifdef VJCOMPRESS
+	NULLFP,         sl_dump,        /* CL_SERIAL_LINE */
+#else
 	NULLFP,         ip_dump,        /* CL_SERIAL_LINE */
+#endif
 	NULLFP,         NULLVFP,        /* CL_STARLAN */
 
 #ifdef  ARCNET
@@ -395,6 +470,11 @@ struct trace Tracef[] = {
 	NULLFP,         NULLVFP,
 #endif
 
+#ifdef PPP
+	NULLFP,         ppp_dump,       /* CL_PPP */
+#else
+	NULLFP,         NULLVFP,
+#endif /* PPP */
 };
 #else   /* TRACE */
 
@@ -408,6 +488,58 @@ struct mbuf *bp;
 {
 }
 #endif  /* TRACE */
+
+#ifdef  AX25
+/* Hooks for passing incoming AX.25 data frames to network protocols */
+static void
+axip(iface,axp,src,dest,bp,mcast)
+struct iface *iface;
+struct ax25_cb *axp;
+char *src;
+char *dest;
+struct mbuf *bp;
+int mcast;
+{
+	int32 src_ipaddr;
+	struct arp_tab *arp;
+
+	if (bp->cnt >= 20) {
+		src_ipaddr = get32(bp->data + 12);
+		if (arp = arp_add(src_ipaddr, ARP_AX25, src, 0)) {
+			stop_timer(&arp->timer);
+			set_timer(&arp->timer, 0);
+		}
+	}
+	(void)ip_route(iface,bp,mcast);
+}
+
+static void
+axarp(iface,axp,src,dest,bp,mcast)
+struct iface *iface;
+struct ax25_cb *axp;
+char *src;
+char *dest;
+struct mbuf *bp;
+int mcast;
+{
+	(void)arp_input(iface,bp);
+}
+
+#ifdef  NETROM
+static void
+axnr(iface,axp,src,dest,bp,mcast)
+struct iface *iface;
+struct ax25_cb *axp;
+char *src;
+char *dest;
+struct mbuf *bp;
+int mcast;
+{
+	nr3_input(bp, src);
+}
+
+#endif  /* NETROM */
+#endif  /* AX25 */
 
 #ifndef RIP
 /* Stub for routing timeout when RIP is not configured -- just remove entry */
@@ -441,6 +573,7 @@ static struct cmds Startcmds[] = {
 /*      "smtp",         smtp1,          256, 0, NULLCHAR, */
 #if     defined(MAILBOX)
 	"telnet",       telnet1,        256, 0, NULLCHAR,
+/*      "tip",          tipstart,       256, 2, "start tip <interface>", */
 #endif
 /*      "ttylink",      ttylstart,      256, 0, NULLCHAR, */
 	"remote",       rem1,           256, 0, NULLCHAR,
@@ -463,6 +596,7 @@ static struct cmds Stopcmds[] = {
 /*      "smtp",         smtp0,          0, 0, NULLCHAR, */
 #ifdef  MAILBOX
 	"telnet",       telnet0,        0, 0, NULLCHAR,
+/*      "tip",          tip0,           0, 2, "stop tip <interface>", */
 #endif
 /*      "ttylink",      ttyl0,          0, 0, NULLCHAR, */
 	"remote",       rem0,           0, 0, NULLCHAR,
@@ -534,8 +668,10 @@ network()
 	/* Process the input packet */
 	bp = dequeue(&Hopper);
 	pullup(&bp,(char *)&phdr,sizeof(phdr));
-	if(phdr.iface != NULLIF)
+	if(phdr.iface != NULLIF){
 		phdr.iface->rawrecvcnt++;
+		phdr.iface->lastrecv = secclock();
+	}
 	dump(phdr.iface,IF_TRACE_IN,phdr.type,bp);
 	switch(phdr.type){
 #ifdef  KISS
@@ -556,6 +692,11 @@ network()
 #ifdef ARCNET
 	case CL_ARCNET:
 		aproc(phdr.iface,bp);
+		break;
+#endif
+#ifdef PPP
+	case CL_PPP:
+		pproc(phdr.iface,bp);
 		break;
 #endif
 	/* These types have no link layer protocol at the point when they're

@@ -1,43 +1,21 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.13 1990/10/22 11:37:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.14 1991/02/24 20:17:07 deyke Exp $ */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+/* Link Access Procedures Balanced (LAPB), the upper sublayer of
+ * AX.25 Level 2.
+ */
+
 #include <time.h>
 
 #include "global.h"
 #include "netuser.h"
-#include "mbuf.h"
 #include "timer.h"
-#include "iface.h"
 #include "ax25.h"
-#include "axproto.h"
+#include "lapb.h"
 #include "netrom.h"
 #include "cmdparse.h"
 #include "asy.h"
 
-extern int  debug;
-extern long  currtime;
 extern struct ax25_cb *netrom_server_axcb;
-
-#define AXROUTEHOLDTIME (60l*60*24*90)
-#define AXROUTESAVETIME (60l*10)
-#define AXROUTESIZE     499
-
-struct axroute_tab {
-  struct ax25_addr call;
-  struct axroute_tab *digi;
-  struct iface *ifp;
-  int  perm;
-  long  time;
-  struct axroute_tab *next;
-};
-
-struct axroutesaverecord {
-  struct ax25_addr call, digi;
-  short  dev;
-  long  time;
-};
 
 char  *ax25states[] = {
   "Disconnected",
@@ -53,215 +31,64 @@ char  *ax25reasons[] = {
   "Network"
 };
 
-int  ax_maxframe =    7;        /* Transmit flow control level */
-int  ax_paclen   =  236;        /* Maximum outbound packet size */
-int  ax_pthresh  =   64;        /* Send polls for packets larger than this */
-int  ax_retry    =   10;        /* Retry limit */
-int  ax_t1init   =    5;        /* Retransmission timeout */
-int  ax_t2init   =    2;        /* Acknowledgement delay timeout */
-int  ax_t3init   =  900;        /* No-activity timeout */
-int  ax_t4init   =   60;        /* Busy timeout */
-int  ax_t5init   =    2;        /* Packet assembly timeout */
-int  ax_window   = 2048;        /* Local flow control limit */
+int  ax_maxframe =      7;      /* Transmit flow control level */
+int  ax_paclen   =    236;      /* Maximum outbound packet size */
+int  ax_pthresh  =     64;      /* Send polls for packets larger than this */
+int  ax_retry    =     10;      /* Retry limit */
+int32 ax_t1init  =   5000;      /* Retransmission timeout */
+int32 ax_t2init  =   2000;      /* Acknowledgement delay timeout */
+int32 ax_t3init  = 900000;      /* No-activity timeout */
+int32 ax_t4init  =  60000;      /* Busy timeout */
+int32 ax_t5init  =   1000;      /* Packet assembly timeout */
+int  ax_window   =   2048;      /* Local flow control limit */
 struct ax25_cb *axcb_server;    /* Server control block */
 
-static char  axroutefile[] = "/tcp/axroute_data";
-static char  axroutetmpfile[] = "/tcp/axroute_tmp";
 static struct ax25_cb *axcb_head;
-static struct axroute_tab *axroute_tab[AXROUTESIZE];
-static struct iface *axroute_default_ifp;
 
-/*---------------------------------------------------------------------------*/
-
-static int  axroute_hash(call)
-register char  *call;
-{
-  register long  hashval;
-
-  hashval  = ((*call++ << 23) & 0x0f000000);
-  hashval |= ((*call++ << 19) & 0x00f00000);
-  hashval |= ((*call++ << 15) & 0x000f0000);
-  hashval |= ((*call++ << 11) & 0x0000f000);
-  hashval |= ((*call++ <<  7) & 0x00000f00);
-  hashval |= ((*call++ <<  3) & 0x000000f0);
-  hashval |= ((*call   >>  1) & 0x0000000f);
-  return hashval % AXROUTESIZE;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static struct axroute_tab *axroute_tabptr(call, create)
-struct ax25_addr *call;
-int  create;
-{
-
-  int  hashval;
-  register struct axroute_tab *rp;
-
-  hashval = axroute_hash((char *) call);
-  for (rp = axroute_tab[hashval]; rp && !addreq((char *) &rp->call, (char *) call); rp = rp->next) ;
-  if (!rp && create) {
-    rp = (struct axroute_tab *) calloc(1, sizeof(struct axroute_tab ));
-    rp->call = *call;
-    rp->next = axroute_tab[hashval];
-    axroute_tab[hashval] = rp;
-  }
-  return rp;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void axroute_savefile()
-{
-
-  FILE * fp;
-  register int  i;
-  register struct axroute_tab *rp, *lp;
-  static long  nextsavetime;
-  struct axroutesaverecord buf;
-
-  if (!nextsavetime) nextsavetime = currtime + AXROUTESAVETIME;
-  if (debug || nextsavetime > currtime) return;
-  nextsavetime = currtime + AXROUTESAVETIME;
-  if (!(fp = fopen(axroutetmpfile, "w"))) return;
-  for (i = 0; i < AXROUTESIZE; i++)
-    for (lp = 0, rp = axroute_tab[i]; rp; )
-      if (rp->time + AXROUTEHOLDTIME >= currtime) {
-	buf.call = rp->call;
-	if (rp->digi)
-	  buf.digi = rp->digi->call;
-	else
-	  buf.digi.call[0] = '\0';
-	buf.dev = rp->ifp ? rp->ifp->dev : -1;
-	buf.time = rp->time;
-	fwrite((char *) &buf, sizeof(buf), 1, fp);
-	lp = rp;
-	rp = rp->next;
-      } else if (lp) {
-	lp->next = rp->next;
-	free((char *) rp);
-	rp = lp->next;
-      } else {
-	axroute_tab[i] = rp->next;
-	free((char *) rp);
-	rp = axroute_tab[i];
-      }
-  fclose(fp);
-  rename(axroutetmpfile, axroutefile);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void axroute_loadfile()
-{
-
-  FILE * fp;
-  static int  done;
-  struct axroute_tab *rp;
-  struct axroutesaverecord buf;
-  struct iface *ifp, *ifptable[ASY_MAX];
-
-  if (done) return;
-  done = 1;
-  if (debug || !(fp = fopen(axroutefile, "r"))) return;
-  memset((char *) ifptable, 0, sizeof(ifptable));
-  for (ifp = Ifaces; ifp; ifp = ifp->next)
-    if (ifp->output == ax_output) ifptable[ifp->dev] = ifp;
-  while (fread((char *) & buf, sizeof(buf), 1, fp)) {
-    if (buf.time + AXROUTEHOLDTIME < currtime) continue;
-    rp = axroute_tabptr(&buf.call, 1);
-    if (buf.digi.call[0]) rp->digi = axroute_tabptr(&buf.digi, 1);
-    if (buf.dev >= 0 && buf.dev < ASY_MAX) rp->ifp = ifptable[buf.dev];
-    rp->time = buf.time;
-  }
-  fclose(fp);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void axroute_add(cp, perm)
-struct ax25_cb *cp;
-int  perm;
-{
-
-  int  ncalls = 0;
-  register char  *ap;
-  register int  i;
-  register struct axroute_tab *rp;
-  struct ax25_addr calls[20];
-  struct axroute_tab *lastnode = 0;
-
-  for (ap = cp->path + AXALEN; !ismycall(ap); ap += AXALEN) ;
-  do {
-    ap += AXALEN;
-    if (ap >= cp->path + cp->pathlen) ap = cp->path;
-    if (!*ap || ismycall(ap)) return;
-    for (i = 0; i < ncalls; i++)
-      if (addreq((char *) (calls + i), ap)) return;
-    calls[ncalls++] = *axptr(ap);
-  } while (ap != cp->path);
-
-  for (i = 0; i < ncalls; i++) {
-    rp = axroute_tabptr(calls + i, 1);
-    if (perm || !rp->perm) {
-      if (lastnode) {
-	rp->digi = lastnode;
-	rp->ifp = 0;
-      } else {
-	rp->digi = 0;
-	rp->ifp = cp->ifp;
-      }
-      rp->perm = perm;
-    }
-    rp->time = currtime;
-    lastnode = rp;
-  }
-  axroute_savefile();
-}
-
-/*---------------------------------------------------------------------------*/
-
-int  axroute(cp, bp)
-struct ax25_cb *cp;
-struct mbuf *bp;
-{
-
-  register char  *dest;
-  register struct axroute_tab *rp;
-  struct iface *ifp;
-
-  if (cp && cp->ifp)
-    ifp = cp->ifp;
-  else {
-    if (bp->data[AXALEN + 6] & E)
-      dest = bp->data;
-    else
-      for (dest = bp->data + 2 * AXALEN; ; dest += AXALEN) {
-	if (!(dest[6] & REPEATED)) break;
-	if (dest[6] & E) {
-	  dest = bp->data;
-	  break;
-	}
-      }
-    rp = axroute_tabptr(axptr(dest), 0);
-    ifp = (rp && rp->ifp) ? rp->ifp : axroute_default_ifp;
-  }
-  if (ifp) {
-    if (ifp->forw) ifp = ifp->forw;
-    ifp->rawsndcnt++;
-    (*ifp->raw)(ifp, bp);
-    ifp->lastsent = Clock;
-  } else
-    free_p(bp);
-}
+static void reset_t1 __ARGS((struct ax25_cb *cp));
+static void inc_t1 __ARGS((struct ax25_cb *cp));
+static void send_packet __ARGS((struct ax25_cb *cp, int type, int cmdrsp, struct mbuf *data));
+static int busy __ARGS((struct ax25_cb *cp));
+static void send_ack __ARGS((struct ax25_cb *cp, int cmdrsp));
+static void try_send __ARGS((struct ax25_cb *cp, int fill_sndq));
+static void setaxstate __ARGS((struct ax25_cb *cp, int newstate));
+static void t1_timeout __ARGS((struct ax25_cb *cp));
+static void t2_timeout __ARGS((struct ax25_cb *cp));
+static void t3_timeout __ARGS((struct ax25_cb *cp));
+static void t4_timeout __ARGS((struct ax25_cb *cp));
+static void t5_timeout __ARGS((struct ax25_cb *cp));
+static struct ax25_cb *create_axcb __ARGS((struct ax25_cb *prototype));
+static void build_path __ARGS((struct ax25_cb *cp, struct iface *ifp, char *newpath, int reverse));
+static int put_reseq __ARGS((struct ax25_cb *cp, struct mbuf *bp, int ns));
+static int dodigipeat __ARGS((int argc, char *argv [], void *p));
+static int domaxframe __ARGS((int argc, char *argv [], void *p));
+static int domycall __ARGS((int argc, char *argv [], void *p));
+static int dopaclen __ARGS((int argc, char *argv [], void *p));
+static int dopthresh __ARGS((int argc, char *argv [], void *p));
+static int doaxreset __ARGS((int argc, char *argv [], void *p));
+static int doretry __ARGS((int argc, char *argv [], void *p));
+static int dorouteadd __ARGS((int argc, char *argv [], void *p));
+static void doroutelistentry __ARGS((struct ax_route *rp));
+static int doroutelist __ARGS((int argc, char *argv [], void *p));
+static int doroutestat __ARGS((int argc, char *argv [], void *p));
+static int doaxroute __ARGS((int argc, char *argv [], void *p));
+static int doaxstatus __ARGS((int argc, char *argv [], void *p));
+static int dot1 __ARGS((int argc, char *argv [], void *p));
+static int dot2 __ARGS((int argc, char *argv [], void *p));
+static int dot3 __ARGS((int argc, char *argv [], void *p));
+static int dot4 __ARGS((int argc, char *argv [], void *p));
+static int dot5 __ARGS((int argc, char *argv [], void *p));
+static int doaxwindow __ARGS((int argc, char *argv [], void *p));
 
 /*---------------------------------------------------------------------------*/
 
 static void reset_t1(cp)
 struct ax25_cb *cp;
 {
-  cp->timer_t1.start = (cp->srtt + 2 * cp->mdev + MSPTICK) / MSPTICK;
-  if (cp->timer_t1.start < 2) cp->timer_t1.start = 2;
+  int32 tmp;
+
+  tmp = cp->srtt + 2 * cp->mdev;
+  set_timer(&cp->timer_t1, tmp > 0 ? tmp : 1);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -271,13 +98,9 @@ struct ax25_cb *cp;
 {
   int32 tmp;
 
-  if (tmp = cp->timer_t1.start / 4)
-    cp->timer_t1.start += tmp;
-  else
-    cp->timer_t1.start++;
-  tmp = (10 * cp->srtt + MSPTICK) / MSPTICK;
-  if (cp->timer_t1.start > tmp) cp->timer_t1.start = tmp;
-  if (cp->timer_t1.start < 2) cp->timer_t1.start = 2;
+  tmp = (dur_timer(&cp->timer_t1) * 5 + 2) / 4;
+  if (tmp > 10 * cp->srtt) tmp = 10 * cp->srtt;
+  set_timer(&cp->timer_t1, tmp > 0 ? tmp : 1);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -331,7 +154,7 @@ struct mbuf *data;
 /*---------------------------------------------------------------------------*/
 
 static int  busy(cp)
-register struct ax25_cb *cp;
+struct ax25_cb *cp;
 {
   return cp->peer ? space_ax(cp->peer) <= 0 : cp->rcvcnt >= ax_window;
 }
@@ -356,7 +179,7 @@ int  cmdrsp;
 /*---------------------------------------------------------------------------*/
 
 static void try_send(cp, fill_sndq)
-register struct ax25_cb *cp;
+struct ax25_cb *cp;
 int  fill_sndq;
 {
 
@@ -378,8 +201,8 @@ int  fill_sndq;
       cnt = len_p(cp->sndq);
       if (cnt < ax_paclen) {
 	if (cp->unack) return;
-	if (!cp->peer && cp->sndqtime + ax_t5init > currtime) {
-	  cp->timer_t5.start = cp->sndqtime + ax_t5init - currtime;
+	if (!cp->peer && cp->sndqtime + ax_t5init - msclock() > 0) {
+	  set_timer(&cp->timer_t5, cp->sndqtime + ax_t5init - msclock());
 	  start_timer(&cp->timer_t5);
 	  return;
 	}
@@ -392,7 +215,7 @@ int  fill_sndq;
     }
     enqueue(&cp->resndq, bp);
     cp->unack++;
-    cp->sndtime[cp->vs] = currtime;
+    cp->sndtime[cp->vs] = msclock();
     dup_p(&bp, bp, 0, MAXINT16);
     send_packet(cp, I, CMD, bp);
   }
@@ -529,7 +352,7 @@ struct ax25_cb *cp;
 static struct ax25_cb *create_axcb(prototype)
 struct ax25_cb *prototype;
 {
-  register struct ax25_cb *cp;
+  struct ax25_cb *cp;
 
   if (prototype) {
     cp = (struct ax25_cb *) malloc(sizeof(struct ax25_cb ));
@@ -537,16 +360,16 @@ struct ax25_cb *prototype;
   } else
     cp = (struct ax25_cb *) calloc(1, sizeof(struct ax25_cb ));
   cp->cwind = 1;
-  cp->timer_t1.func = (void (*) __ARGS((void *))) t1_timeout;
-  cp->timer_t1.arg = (char *) cp;
-  cp->timer_t2.func = (void (*) __ARGS((void *))) t2_timeout;
-  cp->timer_t2.arg = (char *) cp;
-  cp->timer_t3.func = (void (*) __ARGS((void *))) t3_timeout;
-  cp->timer_t3.arg = (char *) cp;
-  cp->timer_t4.func = (void (*) __ARGS((void *))) t4_timeout;
-  cp->timer_t4.arg = (char *) cp;
-  cp->timer_t5.func = (void (*) __ARGS((void *))) t5_timeout;
-  cp->timer_t5.arg = (char *) cp;
+  cp->timer_t1.func = (void (*)()) t1_timeout;
+  cp->timer_t1.arg = cp;
+  cp->timer_t2.func = (void (*)()) t2_timeout;
+  cp->timer_t2.arg = cp;
+  cp->timer_t3.func = (void (*)()) t3_timeout;
+  cp->timer_t3.arg = cp;
+  cp->timer_t4.func = (void (*)()) t4_timeout;
+  cp->timer_t4.arg = cp;
+  cp->timer_t5.func = (void (*)()) t5_timeout;
+  cp->timer_t5.arg = cp;
   cp->next = axcb_head;
   return axcb_head = cp;
 }
@@ -554,16 +377,16 @@ struct ax25_cb *prototype;
 /*---------------------------------------------------------------------------*/
 
 static void build_path(cp, ifp, newpath, reverse)
-register struct ax25_cb *cp;
+struct ax25_cb *cp;
 struct iface *ifp;
 char  *newpath;
 int  reverse;
 {
 
+  char  *ap, *tp, *myaddr;
   char  buf[10*AXALEN];
   int  len, ndigi;
-  register char  *ap, *tp, *myaddr;
-  register struct axroute_tab *rp;
+  struct ax_route *rp;
 
   /*** find address length and copy address into control block ***/
 
@@ -582,10 +405,6 @@ int  reverse;
   /*** store interface pointer into control block ***/
 
   cp->ifp = ifp;
-
-  /*** save address for auto routing ***/
-
-  if (reverse && ifp) axroute_add(cp, 0);
 
   /*** find my digipeater address (use the last one) ***/
 
@@ -610,12 +429,12 @@ int  reverse;
     /*** add necessary digipeaters and find interface ***/
 
     ap = myaddr ? myaddr + AXALEN : cp->path + 2 * AXALEN;
-    rp = axroute_tabptr(axptr((ap >= cp->path + cp->pathlen) ? cp->path : ap), 0);
+    rp = ax_routeptr((ap >= cp->path + cp->pathlen) ? cp->path : ap, 0);
     for (; rp; rp = rp->digi) {
       if (rp->digi && cp->pathlen < sizeof(cp->path)) {
 	len = (cp->path + cp->pathlen) - ap;
 	if (len) memcpy(buf, ap, len);
-	addrcp(ap, (char *) &rp->digi->call);
+	addrcp(ap, rp->digi->call);
 	if (len) memcpy(ap + AXALEN, buf, len);
 	cp->pathlen += AXALEN;
       }
@@ -645,7 +464,7 @@ int  reverse;
     ndigi = (cp->path + cp->pathlen - myaddr) / AXALEN - 1;
   else
     ndigi = cp->pathlen / AXALEN - 2;
-  cp->srtt = 500l * ax_t1init * (1 + 2 * ndigi);
+  cp->srtt = (ax_t1init * (1 + 2 * ndigi)) / 2;
   cp->mdev = cp->srtt / 2;
   reset_t1(cp);
 }
@@ -656,7 +475,7 @@ char  *pathtostr(cp)
 struct ax25_cb *cp;
 {
 
-  register char  *ap, *p;
+  char  *ap, *p;
   static char  buf[128];
 
   if (!cp->pathlen) return "*";
@@ -689,10 +508,10 @@ struct mbuf *bp;
 int  ns;
 {
 
-  register char  *p;
-  register int  cnt, sum;
-  register struct axreseq *rp;
-  register struct mbuf *tp;
+  char  *p;
+  int  cnt, sum;
+  struct axreseq *rp;
+  struct mbuf *tp;
 
   if (next_seq(ns) == cp->vr) return 0;
   rp = &cp->reseq[ns];
@@ -750,7 +569,7 @@ struct mbuf *bp;
   for (cp = axcb_head; cp; cp = cp->next)
     if (addreq(bp->data + AXALEN, cp->path) && addreq(bp->data, cp->path + AXALEN)) break;
   if (!cp) {
-    if (for_me && netrom_server_axcb && isnetrom(axptr(bp->data + AXALEN)))
+    if (for_me && netrom_server_axcb && isnetrom(bp->data + AXALEN))
       cp = create_axcb(netrom_server_axcb);
     else if (for_me && axcb_server)
       cp = create_axcb(axcb_server);
@@ -794,7 +613,7 @@ struct mbuf *bp;
     if (cpp) cpp->mode = DGRAM;
   }
 
-  cp->timer_t3.start = ax_t3init;
+  set_timer(&cp->timer_t3, ax_t3init);
   start_timer(&cp->timer_t3);
 
   switch (cp->state) {
@@ -873,10 +692,10 @@ struct mbuf *bp;
 	if (!cp->polling) {
 	  cp->retry = 0;
 	  if (cp->sndtime[(nr-1)&7]) {
-	    int32 rtt = (currtime - cp->sndtime[(nr-1)&7]) * 1000l;
+	    int32 rtt = msclock() - cp->sndtime[(nr-1)&7];
 	    int32 abserr = (rtt > cp->srtt) ? rtt - cp->srtt : cp->srtt - rtt;
-	    cp->srtt = ((AGAIN - 1) * cp->srtt + rtt) / AGAIN;
-	    cp->mdev = ((DGAIN - 1) * cp->mdev + abserr) / DGAIN;
+	    cp->srtt = ((AGAIN - 1) * cp->srtt + rtt + (AGAIN / 2)) / AGAIN;
+	    cp->mdev = ((DGAIN - 1) * cp->mdev + abserr + (DGAIN / 2)) / DGAIN;
 	    reset_t1(cp);
 	    if (cp->cwind < ax_maxframe) {
 	      cp->mdev += ((cp->srtt / cp->cwind) / 2);
@@ -894,7 +713,7 @@ struct mbuf *bp;
 	if (for_me &&
 	    uchar(cntrlptr[1]) == PID_NETROM &&
 	    cp->r_upcall != netrom_server_axcb->r_upcall) {
-	  new_neighbor(axptr(bp->data + AXALEN));
+	  new_neighbor(bp->data + AXALEN);
 	  setaxstate(cp, DISCONNECTING);
 	  free_p(bp);
 	  return;
@@ -919,7 +738,7 @@ struct mbuf *bp;
 	if (cmdrsp == POLL)
 	  send_ack(cp, FINAL);
 	else {
-	  cp->timer_t2.start = ax_t2init;
+	  set_timer(&cp->timer_t2, ax_t2init);
 	  start_timer(&cp->timer_t2);
 	}
 	if (cp->r_upcall && cp->rcvcnt) (*cp->r_upcall)(cp, cp->rcvcnt);
@@ -927,8 +746,8 @@ struct mbuf *bp;
 	if (cmdrsp == POLL) send_ack(cp, FINAL);
 	if (cp->polling && cmdrsp == FINAL) cp->retry = cp->polling = 0;
 	if (type == RNR) {
-	  if (!cp->remote_busy) cp->remote_busy = currtime;
-	  cp->timer_t4.start = ax_t4init;
+	  if (!cp->remote_busy) cp->remote_busy = msclock();
+	  set_timer(&cp->timer_t4, ax_t4init);
 	  start_timer(&cp->timer_t4);
 	  cp->cwind = 1;
 	} else {
@@ -959,7 +778,7 @@ struct mbuf *bp;
       if (cp->polling || cp->unack && !cp->remote_busy)
 	start_timer(&cp->timer_t1);
       if (cp->closed && !cp->sndq && !cp->unack ||
-	  cp->remote_busy && cp->remote_busy + 900l < currtime)
+	  cp->remote_busy && msclock() - cp->remote_busy > 900000l)
 	setaxstate(cp, DISCONNECTING);
       break;
     case SABM:
@@ -1121,10 +940,10 @@ char  *argv[];
 void *p;
 {
 
-  char  *ap;
-  int  perm;
-  struct ax25_cb cb;
-  struct iface *if_lookup();
+  char  tmp[AXALEN];
+  int  i, j, perm;
+  struct ax25 hdr;
+  struct iface *iface;
 
   argc--;
   argv++;
@@ -1134,61 +953,70 @@ void *p;
     argv++;
   }
 
-  if (!(cb.ifp = if_lookup(*argv))) {
+  if (!(iface = if_lookup(*argv))) {
     printf("Interface \"%s\" unknown\n", *argv);
     return 1;
   }
-  if (cb.ifp->output != ax_output) {
+  if (iface->output != ax_output) {
     printf("Interface \"%s\" not kiss\n", *argv);
     return 1;
   }
   argc--;
   argv++;
-  if (!strcmp(*argv, "default")) {
-    axroute_default_ifp = cb.ifp;
-    return 0;
-  }
-  for (ap = cb.path; argc > 0; argc--, argv++) {
-    if (!strncmp("via", *argv, strlen(*argv))) continue;
-    if (ap >= cb.path + sizeof(cb.path)) {
-      printf("Too many digipeaters (max 8)\n");
-      return 1;
-    }
-    if (setcall(ap, *argv)) {
-      printf("Invalid call \"%s\"\n", *argv);
-      return 1;
-    }
-    if (ap == cb.path) {
-      ap += AXALEN;
-      addrcp(ap, Mycall);
-    }
-    ap += AXALEN;
-  }
-  if (ap < cb.path + 2 * AXALEN) {
-    printf("Missing call\n");
+
+  if (argc <= 0) {
+    printf("Usage: ax25 route add [permanent] <interface> default|<path>\n");
     return 1;
   }
-  ap[-1] |= E;
-  cb.pathlen = ap - cb.path;
-  axroute_add(&cb, perm);
+
+  if (!strcmp(*argv, "default")) {
+    axroute_default_ifp = iface;
+    return 0;
+  }
+
+  if (setcall(hdr.source, *argv)) {
+    printf("Invalid call \"%s\"\n", *argv);
+    return 1;
+  }
+  argc--;
+  argv++;
+
+  for (hdr.nextdigi = 0; argc > 0; argc--, argv++)
+    if (strncmp("via", *argv, strlen(*argv))) {
+      if (hdr.nextdigi >= MAXDIGIS) {
+	printf("Too many digipeaters (max %d)\n", MAXDIGIS);
+	return 1;
+      }
+      if (setcall(hdr.digis[hdr.nextdigi++], *argv)) {
+	printf("Invalid call \"%s\"\n", *argv);
+	return 1;
+      }
+    }
+  for (i = 0, j = hdr.nextdigi - 1; i < j; i++, j--) {
+    addrcp(tmp, hdr.digis[i]);
+    addrcp(hdr.digis[i], hdr.digis[j]);
+    addrcp(hdr.digis[j], tmp);
+  }
+
+  axroute_add(iface, &hdr, perm);
   return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
 static void doroutelistentry(rp)
-struct axroute_tab *rp;
+struct ax_route *rp;
 {
 
   char  *cp, buf[1024];
   int  i, n;
   int  perm;
-  struct axroute_tab *rp_stack[20];
+  struct ax_route *rp_stack[20];
   struct iface *ifp;
   struct tm *tm;
 
   tm = gmtime(&rp->time);
-  pax25(cp = buf, (char *) &rp->call);
+  pax25(cp = buf, rp->call);
   perm = rp->perm;
   for (n = 0; rp; rp = rp->digi) {
     rp_stack[++n] = rp;
@@ -1197,7 +1025,7 @@ struct axroute_tab *rp;
   for (i = n; i > 1; i--) {
     strcat(cp, i == n ? " via " : ",");
     while (*cp) cp++;
-    pax25(cp, (char *) &(rp_stack[i]->call));
+    pax25(cp, rp_stack[i]->call);
   }
   printf("%2d-%.3s  %-9s  %c %s\n",
 	 tm->tm_mday,
@@ -1215,20 +1043,20 @@ char  *argv[];
 void *p;
 {
 
+  char  call[AXALEN];
   int  i;
-  struct ax25_addr call;
-  struct axroute_tab *rp;
+  struct ax_route *rp;
 
   puts("Date    Interface  P Path");
   if (argc < 2) {
     for (i = 0; i < AXROUTESIZE; i++)
-      for (rp = axroute_tab[i]; rp; rp = rp->next) doroutelistentry(rp);
+      for (rp = Ax_routes[i]; rp; rp = rp->next) doroutelistentry(rp);
     return 0;
   }
   argc--;
   argv++;
   for (; argc > 0; argc--, argv++)
-    if (setcall((char *) &call, *argv) || !(rp = axroute_tabptr(&call, 0)))
+    if (setcall(call, *argv) || !(rp = ax_routeptr(call, 0)))
       printf("*** Not in table *** %s\n", *argv);
     else
       doroutelistentry(rp);
@@ -1244,16 +1072,16 @@ void *p;
 {
 
   int  count[ASY_MAX], total;
-  register int  i, dev;
-  register struct axroute_tab *rp, *dp;
+  int  i, dev;
+  struct ax_route *rp, *dp;
   struct iface *ifp, *ifptable[ASY_MAX];
 
-  memset((char *) ifptable, 0, sizeof(ifptable));
-  memset((char *) count, 0, sizeof(count));
+  memset(ifptable, 0, sizeof(ifptable));
+  memset(count, 0, sizeof(count));
   for (ifp = Ifaces; ifp; ifp = ifp->next)
     if (ifp->output == ax_output) ifptable[ifp->dev] = ifp;
   for (i = 0; i < AXROUTESIZE; i++)
-    for (rp = axroute_tab[i]; rp; rp = rp->next) {
+    for (rp = Ax_routes[i]; rp; rp = rp->next) {
       for (dp = rp; dp->digi; dp = dp->digi) ;
       if (dp->ifp) count[dp->ifp->dev]++;
     }
@@ -1279,7 +1107,7 @@ void *p;
 
   static struct cmds routecmds[] = {
 
-    "add",  dorouteadd,  0, 3, "ax25 route add [permanent] <interface> <path>",
+    "add",  dorouteadd,  0, 3, "ax25 route add [permanent] <interface> default|<path>",
     "list", doroutelist, 0, 0, NULLCHAR,
     "stat", doroutestat, 0, 0, NULLCHAR,
 
@@ -1303,13 +1131,13 @@ void *p;
 {
 
   int  i;
-  register struct ax25_cb *cp;
+  struct ax25_cb *cp;
   struct mbuf *bp;
 
   if (argc < 2) {
     printf("   &AXCB Rcv-Q Unack  Rt  Srtt  State          Remote socket\n");
     for (cp = axcb_head; cp; cp = cp->next)
-      printf("%8lx %5u%c%3u/%u%c %2d %5.1f  %-13s  %s\n",
+      printf("%8lx %5u%c%3u/%u%c %2d%6lu  %-13s  %s\n",
 	     (long) cp,
 	     cp->rcvcnt,
 	     cp->rnrsent ? '*' : ' ',
@@ -1317,7 +1145,7 @@ void *p;
 	     cp->cwind,
 	     cp->remote_busy ? '*' : ' ',
 	     cp->retry,
-	     cp->srtt / 1000.0,
+	     cp->srtt,
 	     ax25states[cp->state],
 	     pathtostr(cp));
     if (axcb_server)
@@ -1340,43 +1168,43 @@ void *p;
     printf("RNRsent:      %s\n", cp->rnrsent ? "Yes" : "No");
     printf("REJsent:      %s\n", cp->rejsent ? "Yes" : "No");
     if (cp->remote_busy)
-      printf("Remote_busy:  %ld sec\n", currtime - cp->remote_busy);
+      printf("Remote_busy:  %lu ms\n", msclock() - cp->remote_busy);
     else
       printf("Remote_busy:  No\n");
     printf("CWind:        %d\n", cp->cwind);
     printf("Retry:        %d\n", cp->retry);
     printf("Srtt:         %ld ms\n", cp->srtt);
     printf("Mean dev:     %ld ms\n", cp->mdev);
+    tprintf("Timer T1:     ");
     if (run_timer(&cp->timer_t1))
-      printf("Timer T1:     %ld/%ld sec\n",
-	     read_timer(&cp->timer_t1) * MSPTICK / 1000,
-	     dur_timer (&cp->timer_t1) * MSPTICK / 1000);
+      tprintf("%lu", read_timer(&cp->timer_t1));
     else
-      printf("Timer T1:     Stopped\n");
+      tprintf("stop");
+    tprintf("/%lu ms\n", dur_timer(&cp->timer_t1));
+    tprintf("Timer T2:     ");
     if (run_timer(&cp->timer_t2))
-      printf("Timer T2:     %ld/%ld sec\n",
-	     read_timer(&cp->timer_t2) * MSPTICK / 1000,
-	     dur_timer (&cp->timer_t2) * MSPTICK / 1000);
+      tprintf("%lu", read_timer(&cp->timer_t2));
     else
-      printf("Timer T2:     Stopped\n");
+      tprintf("stop");
+    tprintf("/%lu ms\n", dur_timer(&cp->timer_t2));
+    tprintf("Timer T3:     ");
     if (run_timer(&cp->timer_t3))
-      printf("Timer T3:     %ld/%ld sec\n",
-	     read_timer(&cp->timer_t3) * MSPTICK / 1000,
-	     dur_timer (&cp->timer_t3) * MSPTICK / 1000);
+      tprintf("%lu", read_timer(&cp->timer_t3));
     else
-      printf("Timer T3:     Stopped\n");
+      tprintf("stop");
+    tprintf("/%lu ms\n", dur_timer(&cp->timer_t3));
+    tprintf("Timer T4:     ");
     if (run_timer(&cp->timer_t4))
-      printf("Timer T4:     %ld/%ld sec\n",
-	     read_timer(&cp->timer_t4) * MSPTICK / 1000,
-	     dur_timer (&cp->timer_t4) * MSPTICK / 1000);
+      tprintf("%lu", read_timer(&cp->timer_t4));
     else
-      printf("Timer T4:     Stopped\n");
+      tprintf("stop");
+    tprintf("/%lu ms\n", dur_timer(&cp->timer_t4));
+    tprintf("Timer T5:     ");
     if (run_timer(&cp->timer_t5))
-      printf("Timer T5:     %ld/%ld sec\n",
-	     read_timer(&cp->timer_t5) * MSPTICK / 1000,
-	     dur_timer (&cp->timer_t5) * MSPTICK / 1000);
+      tprintf("%lu", read_timer(&cp->timer_t5));
     else
-      printf("Timer T5:     Stopped\n");
+      tprintf("stop");
+    tprintf("/%lu ms\n", dur_timer(&cp->timer_t5));
     printf("Rcv queue:    %d\n", cp->rcvcnt);
     if (cp->reseq[0].bp || cp->reseq[1].bp ||
 	cp->reseq[2].bp || cp->reseq[3].bp ||
@@ -1408,7 +1236,7 @@ int  argc;
 char  *argv[];
 void *p;
 {
-  return setintrc(&ax_t1init, "T1 (sec)", argc, argv, 1, 15);
+  return setintrc(&ax_t1init, "T1 (ms)", argc, argv, 1, 0x7fffffff);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1420,7 +1248,7 @@ int  argc;
 char  *argv[];
 void *p;
 {
-  return setintrc(&ax_t2init, "T2 (sec)", argc, argv, 1, MAXINT16);
+  return setintrc(&ax_t2init, "T2 (ms)", argc, argv, 1, 0x7fffffff);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1432,7 +1260,7 @@ int  argc;
 char  *argv[];
 void *p;
 {
-  return setintrc(&ax_t3init, "T3 (sec)", argc, argv, 0, MAXINT16);
+  return setintrc(&ax_t3init, "T3 (ms)", argc, argv, 0, 0x7fffffff);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1444,7 +1272,7 @@ int  argc;
 char  *argv[];
 void *p;
 {
-  return setintrc(&ax_t4init, "T4 (sec)", argc, argv, 1, MAXINT16);
+  return setintrc(&ax_t4init, "T4 (ms)", argc, argv, 1, 0x7fffffff);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1456,7 +1284,7 @@ int  argc;
 char  *argv[];
 void *p;
 {
-  return setintrc(&ax_t5init, "T5 (sec)", argc, argv, 1, MAXINT16);
+  return setintrc(&ax_t5init, "T5 (ms)", argc, argv, 1, 0x7fffffff);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1484,7 +1312,6 @@ void *p;
   static struct cmds axcmds[] = {
 
     "digipeat", dodigipeat, 0, 0, NULLCHAR,
-    "idigi",    doidigi,    0, 0, NULLCHAR,
     "maxframe", domaxframe, 0, 0, NULLCHAR,
     "mycall",   domycall,   0, 0, NULLCHAR,
     "paclen",   dopaclen,   0, 0, NULLCHAR,
@@ -1518,10 +1345,10 @@ void (*t_upcall) __ARGS((struct ax25_cb *p, int cnt));
 void (*s_upcall) __ARGS((struct ax25_cb *p, int oldstate, int newstate));
 char  *user;
 {
-  register struct ax25_cb *cp;
+  struct ax25_cb *cp;
 
   switch (mode) {
-  case AX25_ACTIVE:
+  case AX_ACTIVE:
     for (cp = axcb_head; cp; cp = cp->next)
       if (!cp->peer && addreq(path, cp->path)) {
 	Net_error = CON_EXISTS;
@@ -1538,7 +1365,7 @@ char  *user;
     cp->user = user;
     setaxstate(cp, CONNECTING);
     return cp;
-  case AX25_SERVER:
+  case AX_SERVER:
     if (!(cp = (struct ax25_cb *) calloc(1, sizeof(struct ax25_cb )))) {
       Net_error = NO_MEM;
       return NULLAXCB;
@@ -1560,7 +1387,7 @@ int  send_ax(cp, bp)
 struct ax25_cb *cp;
 struct mbuf *bp;
 {
-  int16 cnt;
+  int cnt;
 
   if (!(cp && bp)) {
     free_p(bp);
@@ -1580,7 +1407,7 @@ struct mbuf *bp;
 	  append(&cp->sndq, bp);
 	else
 	  enqueue(&cp->sndq, bp);
-	cp->sndqtime = currtime;
+	cp->sndqtime = msclock();
 	try_send(cp, 0);
       }
       return cnt;
@@ -1626,7 +1453,7 @@ struct ax25_cb *cp;
 int  recv_ax(cp, bpp, cnt)
 struct ax25_cb *cp;
 struct mbuf **bpp;
-int16 cnt;
+int cnt;
 {
   if (!(cp && bpp)) {
     Net_error = INVALID;
@@ -1703,7 +1530,7 @@ struct ax25_cb *cp;
     return (-1);
   }
   if (cp == axcb_server) {
-    free((char *) axcb_server);
+    free(axcb_server);
     axcb_server = NULLAXCB;
     return 0;
   }
@@ -1719,7 +1546,7 @@ struct ax25_cb *cp;
 {
 
   int  i;
-  register struct ax25_cb *p, *q;
+  struct ax25_cb *p, *q;
 
   for (q = 0, p = axcb_head; p != cp; q = p, p = p->next)
     if (!p) {
@@ -1739,16 +1566,16 @@ struct ax25_cb *cp;
   free_q(&cp->rcvq);
   free_q(&cp->sndq);
   free_q(&cp->resndq);
-  free((char *) cp);
+  free(cp);
   return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
 int  valid_ax(cp)
-register struct ax25_cb *cp;
+struct ax25_cb *cp;
 {
-  register struct ax25_cb *p;
+  struct ax25_cb *p;
 
   if (!cp) return 0;
   if (cp == axcb_server) return 1;

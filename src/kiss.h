@@ -1,6 +1,15 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.h,v 1.3 1990/09/11 13:45:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.h,v 1.4 1991/02/24 20:17:06 deyke Exp $ */
 
-#ifndef KISS_DATA
+#ifndef _KISS_H
+#define _KISS_H
+
+#ifndef _MBUF_H
+#include "mbuf.h"
+#endif
+
+#ifndef _IFACE_H
+#include "iface.h"
+#endif
 
 /* KISS TNC control */
 #define KISS_DATA       0
@@ -12,13 +21,10 @@
 #define KISS_HW         6
 #define KISS_RETURN     0xff
 
-struct iface;
-
 /* In kiss.c: */
 int kiss_raw __ARGS((struct iface *iface,struct mbuf *data));
 void kiss_recv __ARGS((struct iface *iface,struct mbuf *bp));
 int kiss_ioctl __ARGS((struct iface *iface,int argc,char *argv[]));
 void kiss_recv __ARGS((struct iface *iface,struct mbuf *bp));
 
-#endif  /* KISS_DATA */
-
+#endif  /* _KISS_H */

@@ -1,7 +1,9 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.5 1990/10/12 19:26:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpin.c,v 1.6 1991/02/24 20:17:46 deyke Exp $ */
 
 /* Process incoming TCP segments. Page number references are to ARPA RFC-793,
  * the TCP specification.
+ *
+ * Copyright 1991 Phil Karn, KA9Q
  */
 #include "global.h"
 #include "timer.h"
@@ -13,7 +15,7 @@
 #include "iface.h"
 #include "ip.h"
 
-static void update __ARGS((struct tcb *tcb,struct tcp *seg));
+static void update __ARGS((struct tcb *tcb,struct tcp *seg,int length));
 static void proc_syn __ARGS((struct tcb *tcb,int tos,struct tcp *seg));
 static void add_reseq __ARGS((struct tcb *tcb,int tos,struct tcp *seg,
 	struct mbuf *bp,int length));
@@ -177,7 +179,7 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 				/* Our SYN has been acked, otherwise the ACK
 				 * wouldn't have been valid.
 				 */
-				update(tcb,&seg);
+				update(tcb,&seg,length);
 				setstate(tcb,TCP_ESTABLISHED);
 			} else {
 				setstate(tcb,TCP_SYN_RECEIVED);
@@ -261,7 +263,7 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 		switch(tcb->state){
 		case TCP_SYN_RECEIVED:
 			if(seq_within(seg.ack,tcb->snd.una+1,tcb->snd.nxt)){
-				update(tcb,&seg);
+				update(tcb,&seg,length);
 				setstate(tcb,TCP_ESTABLISHED);
 			} else {
 				free_p(bp);
@@ -271,29 +273,29 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 			break;
 		case TCP_ESTABLISHED:
 		case TCP_CLOSE_WAIT:
-			update(tcb,&seg);
+			update(tcb,&seg,length);
 			break;
 		case TCP_FINWAIT1:      /* p. 73 */
-			update(tcb,&seg);
+			update(tcb,&seg,length);
 			if(tcb->sndcnt == 0){
 				/* Our FIN is acknowledged */
 				setstate(tcb,TCP_FINWAIT2);
 			}
 			break;
 		case TCP_FINWAIT2:
-			update(tcb,&seg);
+			update(tcb,&seg,length);
 			break;
 		case TCP_CLOSING:
-			update(tcb,&seg);
+			update(tcb,&seg,length);
 			if(tcb->sndcnt == 0){
 				/* Our FIN is acknowledged */
 				setstate(tcb,TCP_TIME_WAIT);
-				tcb->timer.start = MSL2 * (1000 / MSPTICK);
+				set_timer(&tcb->timer,MSL2*1000L);
 				start_timer(&tcb->timer);
 			}
 			break;
 		case TCP_LAST_ACK:
-			update(tcb,&seg);
+			update(tcb,&seg,length);
 			if(tcb->sndcnt == 0){
 				/* Our FIN is acknowledged, close connection */
 				close_self(tcb,NORMAL);
@@ -345,7 +347,7 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 				if(tcb->sndcnt == 0){
 					/* Our FIN has been acked; bypass TCP_CLOSING state */
 					setstate(tcb,TCP_TIME_WAIT);
-					tcb->timer.start = MSL2 * (1000/MSPTICK);
+					set_timer(&tcb->timer,MSL2*1000L);
 					start_timer(&tcb->timer);
 				} else {
 					setstate(tcb,TCP_CLOSING);
@@ -354,7 +356,7 @@ int rxbroadcast;        /* Incoming broadcast - discard if true */
 			case TCP_FINWAIT2:
 				tcb->rcv.nxt++;
 				setstate(tcb,TCP_TIME_WAIT);
-				tcb->timer.start = MSL2 * (1000/MSPTICK);
+				set_timer(&tcb->timer,MSL2*1000L);
 				start_timer(&tcb->timer);
 				break;
 			case TCP_CLOSE_WAIT:
@@ -487,6 +489,7 @@ register struct tcp *seg;       /* Offending TCP header */
 	seg->wnd = 0;
 	seg->up = 0;
 	seg->mss = 0;
+	seg->optlen = 0;
 	if((hbp = htontcp(seg,NULLBUF,&ph)) == NULLBUF)
 		return;
 	/* Ship it out (note swap of addresses) */
@@ -498,9 +501,10 @@ register struct tcp *seg;       /* Offending TCP header */
  * From page 72.
  */
 static void
-update(tcb,seg)
+update(tcb,seg,length)
 register struct tcb *tcb;
 register struct tcp *seg;
+int16 length;
 {
 	int16 acked;
 	int16 expand;
@@ -528,8 +532,60 @@ register struct tcp *seg;
 		tcb->snd.wl2 = seg->ack;
 	}
 	/* See if anything new is being acknowledged */
-	if(!seq_gt(seg->ack,tcb->snd.una))
-		return; /* Nothing more to do */
+	if(!seq_gt(seg->ack,tcb->snd.una)){
+		if(seg->ack != tcb->snd.una)
+			return; /* Old ack, ignore */
+
+		if(length != 0 || seg->flags.syn || seg->flags.fin)
+			return; /* Nothing acked, but there is data */
+
+		/* Van Jacobson "fast recovery" code */
+		if(++tcb->dupacks == TCPDUPACKS){
+			/* We've had a burst of do-nothing acks, so
+			 * we almost certainly lost a packet.
+			 * Resend it now to avoid a timeout. (This is
+			 * Van Jacobson's 'quick recovery' algorithm.)
+			 */
+			int32 ptrsave;
+
+			/* Knock the threshold down just as though
+			 * this were a timeout, since we've had
+			 * network congestion.
+			 */
+			tcb->ssthresh = tcb->cwind/2;
+			tcb->ssthresh = max(tcb->ssthresh,tcb->mss);
+
+			/* Manipulate the machinery in tcp_output() to
+			 * retransmit just the missing packet
+			 */
+			ptrsave = tcb->snd.ptr;
+			tcb->snd.ptr = tcb->snd.una;
+			tcb->cwind = tcb->mss;
+			tcp_output(tcb);
+			tcb->snd.ptr = ptrsave;
+
+			/* "Inflate" the congestion window, pretending as
+			 * though the duplicate acks were normally acking
+			 * the packets beyond the one that was lost.
+			 */
+			tcb->cwind = tcb->ssthresh + TCPDUPACKS*tcb->mss;
+		} else if(tcb->dupacks > TCPDUPACKS){
+			/* Continue to inflate the congestion window
+			 * until the acks finally get "unstuck".
+			 */
+			tcb->cwind += tcb->mss;
+		}
+		return;
+	}
+	if(tcb->dupacks >= TCPDUPACKS && tcb->cwind > tcb->ssthresh){
+		/* The acks have finally gotten "unstuck". So now we
+		 * can "deflate" the congestion window, i.e. take it
+		 * back down to where it would be after slow start
+		 * finishes.
+		 */
+		tcb->cwind = tcb->ssthresh;
+	}
+	tcb->dupacks = 0;
 
 	/* We're here, so the ACK must have actually acked something */
 	acked = seg->ack - tcb->snd.una;
@@ -573,49 +629,43 @@ register struct tcp *seg;
 			/* This packet was sent only once and now
 			 * it's been acked, so process the round trip time
 			 */
-			rtt = (Clock - tcb->rtt_time) * MSPTICK;
+			rtt = msclock() - tcb->rtt_time;
 
-			/* If this ACKs our SYN, this is the first ACK
-			 * we've received; base our entire SRTT estimate
-			 * on it. Otherwise average it in with the prior
-			 * history, also computing mean deviation.
-			 */
-			if(rtt > tcb->srtt &&
-			 (tcb->state == TCP_SYN_SENT || tcb->state == TCP_SYN_RECEIVED)){
-				tcb->srtt = rtt;
-			} else {
-				abserr = (rtt > tcb->srtt) ? rtt - tcb->srtt : tcb->srtt - rtt;
-				/* Run SRTT and MDEV integrators, with rounding */
-				tcb->srtt = ((AGAIN-1)*tcb->srtt + rtt + (AGAIN/2)) >> LAGAIN;
-				tcb->mdev = ((DGAIN-1)*tcb->mdev + abserr + (DGAIN/2)) >> LDGAIN;
-			}
+			abserr = (rtt > tcb->srtt) ? rtt - tcb->srtt : tcb->srtt - rtt;
+			/* Run SRTT and MDEV integrators, with rounding */
+			tcb->srtt = ((AGAIN-1)*tcb->srtt + rtt + (AGAIN/2)) >> LAGAIN;
+			tcb->mdev = ((DGAIN-1)*tcb->mdev + abserr + (DGAIN/2)) >> LDGAIN;
+
 			rtt_add(tcb->conn.remote.address,rtt);
 			/* Reset the backoff level */
 			tcb->backoff = 0;
 		}
 	}
+	tcb->sndcnt -= acked;   /* Update virtual byte count on snd queue */
+	tcb->snd.una = seg->ack;
+
 	/* If we're waiting for an ack of our SYN, note it and adjust count */
 	if(!(tcb->flags.synack)){
 		tcb->flags.synack = 1;
-		acked--;
-		tcb->sndcnt--;
+		acked--;        /* One less byte to pull from real snd queue */
 	}
 	/* Remove acknowledged bytes from the send queue and update the
 	 * unacknowledged pointer. If a FIN is being acked,
-	 * pullup won't be able to remove it from the queue.
+	 * pullup won't be able to remove it from the queue, but that
+	 * causes no harm.
 	 */
 	pullup(&tcb->sndq,NULLCHAR,acked);
 
-	/* This will include the FIN if there is one */
-	tcb->sndcnt -= acked;
-	tcb->snd.una = seg->ack;
-
 	/* Stop retransmission timer, but restart it if there is still
-	 * unacknowledged data.
+	 * unacknowledged data. If there is no more unacked data,
+	 * the transmitter has gone at least momentarily idle, so
+	 * record the time for the VJ restart-slowstart rule.
 	 */
 	stop_timer(&tcb->timer);
 	if(tcb->snd.una != tcb->snd.nxt)
 		start_timer(&tcb->timer);
+	else
+		tcb->lastactive = msclock();
 
 	/* If retransmissions have been occurring, make sure the
 	 * send pointer doesn't repeat ancient history
@@ -632,14 +682,10 @@ register struct tcp *seg;
 	/* If outgoing data was acked, notify the user so he can send more
 	 * unless we've already sent a FIN.
 	 */
-	if(acked != 0){
-		switch(tcb->state){
-		case TCP_ESTABLISHED:
-		case TCP_CLOSE_WAIT:
-			if(tcb->t_upcall && tcb->window > tcb->sndcnt){
-				(*tcb->t_upcall)(tcb,tcb->window - tcb->sndcnt);
-			}
-		}
+	if(acked != 0 && tcb->t_upcall
+	 && (tcb->state == TCP_ESTABLISHED || tcb->state == TCP_CLOSE_WAIT)
+	 && tcb->window > tcb->sndcnt){
+		(*tcb->t_upcall)(tcb,tcb->window - tcb->sndcnt);
 	}
 }
 

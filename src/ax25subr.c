@@ -1,10 +1,17 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.5 1990/10/12 19:25:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25subr.c,v 1.6 1991/02/24 20:16:34 deyke Exp $ */
 
+/* Low level AX.25 routines:
+ *  callsign conversion
+ *  control block management
+ *
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
 #include "timer.h"
 #include "ax25.h"
+#include "lapb.h"
 #include <ctype.h>
 
 /*
@@ -61,21 +68,6 @@ char *call;
 	*out = 0x60 | (ssid << 1);
 	return 0;
 }
-/* Set a digipeater string in an ARP table entry */
-int
-setpath(out,in,cnt)
-char *out;      /* Target char array containing addresses in net form */
-char *in[];     /* Input array of tokenized callsigns in ASCII */
-int cnt;        /* Number of callsigns in array */
-{
-	if(cnt == 0)
-		return;
-	while(cnt-- > 0){
-		setcall(out,*in++);
-		out += AXALEN;
-	}
-	out[-1] |= E;
-}
 int
 addreq(a,b)
 register char *a,*b;
@@ -121,84 +113,6 @@ char *addr;
 	else
 		*cp = '\0';
 	return e;
-}
-
-/* Print a string of AX.25 addresses in the form
- * "KA9Q-0 [via N4HY-0,N2DSY-2]"
- * Designed for use by ARP - arg is a char string
- */
-char *
-psax25(e,addr)
-char *e,*addr;
-{
-  int i;
-  char *cp;
-
-  cp = e;
-  *cp = '\0';
-  for (i = 0; ; i++) {
-    pax25(cp, addr);
-    if (addr[ALEN] & E) break;
-    addr += AXALEN;
-    if (i)
-      strcat(cp, ",");
-    else
-      strcat(cp, " via ");
-    while (*cp) cp++;
-  }
-  return e;
-}
-char *
-getaxaddr(ap,cp)
-register struct ax25_addr *ap;
-register char *cp;
-{
-	memcpy(ap->call,cp,ALEN);
-	cp += ALEN;
-	ap->ssid = *cp++;
-	return cp;
-}
-char *
-putaxaddr(cp,ap)
-register char *cp;
-register struct ax25_addr *ap;
-{
-	memcpy(cp,ap->call,ALEN);
-	cp += ALEN;
-	*cp++ = ap->ssid;
-	return cp;
-}
-
-/* Convert an AX.25 ARP table entry into a host format address structure
- * ready for use in transmitting a packet
- */
-int
-atohax25(hdr,hwaddr,source)
-register struct ax25 *hdr;
-register char *hwaddr;
-struct ax25_addr *source;
-{
-	register struct ax25_addr *axp;
-
-	hwaddr = getaxaddr(&hdr->dest,hwaddr);  /* Destination address */
-	ASSIGN(hdr->source,*source);            /* Source address */
-	if(hdr->dest.ssid & E){
-		/* No digipeaters */
-		hdr->ndigis = 0;
-		hdr->dest.ssid &= ~E;
-		hdr->source.ssid |= E;
-		return 2;
-	}
-	hdr->source.ssid &= ~E;
-	hdr->dest.ssid &= ~E;
-	for(axp = hdr->digis; axp < &hdr->digis[MAXDIGIS]; axp++){
-		hwaddr = getaxaddr(axp,hwaddr);
-		if(axp->ssid & E){
-			hdr->ndigis = axp - hdr->digis + 1;
-			return hdr->ndigis;
-		}
-	}
-	return -1;
 }
 
 /* Figure out the frame type from the control field

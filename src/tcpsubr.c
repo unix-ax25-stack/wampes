@@ -1,5 +1,14 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.6 1990/10/12 19:26:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.7 1991/02/24 20:17:48 deyke Exp $ */
 
+/* Low level TCP routines:
+ *  control block management
+ *  sequence number logical operations
+ *  state transitions
+ *  RTT cacheing
+ *  garbage collection
+ *
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include "global.h"
 #include "timer.h"
@@ -38,11 +47,12 @@ struct tcb *Tcbs[NTCB];
 int16 Tcp_mss = DEF_MSS;        /* Maximum segment size to be sent with SYN */
 int32 Tcp_irtt = DEF_RTT;       /* Initial guess at round trip time */
 int Tcp_trace;                  /* State change tracing flag */
+int Tcp_syndata;
 struct tcp_rtt Tcp_rtt[RTTCACHE];
 struct mib_entry Tcp_mib[] = {
 	NULLCHAR,               0,
 	"tcpRtoAlgorithm",      4,      /* Van Jacobsen's algorithm */
-	"tcpRtoMin",            MSPTICK,        /* No lower bound */
+	"tcpRtoMin",            0,      /* No lower bound */
 	"tcpRtoMax",            MAXINT32,       /* No upper bound */
 	"tcpMaxConn",           -1L,    /* No limit */
 	"tcpActiveOpens",       0,
@@ -101,7 +111,7 @@ struct connection *conn;
 		tcb->srtt = Tcp_irtt;   /* mdev = 0 */
 	}
 	/* Initialize timer intervals */
-	tcb->timer.start = tcb->srtt / MSPTICK;
+	set_timer(&tcb->timer,tcb->srtt);
 	tcb->timer.func = tcp_timeout;
 	tcb->timer.arg = tcb;
 
@@ -240,22 +250,38 @@ register int newstate;
 		 Tcpstates[oldstate],Tcpstates[newstate]);
 
 	/* Update MIB variables */
-	if(oldstate == TCP_CLOSED && newstate == TCP_SYN_SENT)
-		tcpActiveOpens++;
-	else if(oldstate == TCP_LISTEN && newstate == TCP_SYN_RECEIVED)
-		tcpPassiveOpens++;
-	else if((oldstate == TCP_SYN_SENT || oldstate == TCP_SYN_RECEIVED)
-	 && newstate == TCP_CLOSED)
-		tcpAttemptFails++;
-	else if(oldstate == TCP_SYN_RECEIVED && newstate == TCP_LISTEN)
-		tcpAttemptFails++;
-	else if((oldstate == TCP_ESTABLISHED || oldstate == TCP_CLOSE_WAIT)
-	 && newstate == TCP_CLOSED)
-		tcpEstabResets++;
-
-	if(oldstate == TCP_ESTABLISHED || oldstate == TCP_CLOSE_WAIT)
+	switch(oldstate){
+	case TCP_CLOSED:
+		if(newstate == TCP_SYN_SENT)
+			tcpActiveOpens++;
+		break;
+	case TCP_LISTEN:
+		if(newstate == TCP_SYN_RECEIVED)
+			tcpPassiveOpens++;
+		break;
+	case TCP_SYN_SENT:
+		if(newstate == TCP_CLOSED)
+			tcpAttemptFails++;
+		break;
+	case TCP_SYN_RECEIVED:
+		switch(newstate){
+		case TCP_CLOSED:
+		case TCP_LISTEN:
+			tcpAttemptFails++;
+			break;
+		}
+		break;
+	case TCP_ESTABLISHED:
+	case TCP_CLOSE_WAIT:
+		switch(newstate){
+		case TCP_CLOSED:
+		case TCP_LISTEN:
+			tcpEstabResets++;
+			break;
+		}
 		tcpCurrEstab--;
-
+		break;
+	}
 	if(newstate == TCP_ESTABLISHED || newstate == TCP_CLOSE_WAIT)
 		tcpCurrEstab++;
 
@@ -263,6 +289,7 @@ register int newstate;
 		(*tcb->s_upcall)(tcb,oldstate,newstate);
 
 	switch(newstate){
+	case TCP_SYN_RECEIVED:  /***/
 	case TCP_ESTABLISHED:
 		/* Notify the user that he can begin sending data */
 		if(tcb->t_upcall && tcb->window > tcb->sndcnt)
@@ -345,3 +372,4 @@ int red;
 		}
 	}
 }
+

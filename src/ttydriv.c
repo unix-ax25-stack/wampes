@@ -1,7 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.5 1990/08/23 17:34:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.6 1991/02/24 20:17:58 deyke Exp $ */
 
-/* TTY input driver */
-
+/* TTY input line editing
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

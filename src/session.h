@@ -1,6 +1,29 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.4 1990/10/12 19:26:35 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.5 1991/02/24 20:17:38 deyke Exp $ */
 
-#ifndef NULLSESSION
+#ifndef _SESSION_H
+#define _SESSION_H
+
+#include <stdio.h>
+
+#ifndef _GLOBAL_H
+#include "global.h"
+#endif
+
+#ifndef _HARDWARE_H
+#include "hardware.h"
+#endif
+
+#ifndef _TELNET_H
+#include "telnet.h"
+#endif
+
+#ifndef _ICMP_H
+#include "icmp.h"
+#endif
+
+#ifndef _AX25_H
+#include "ax25.h"
+#endif
 
 extern int mode;
 #define CMD_MODE        1       /* Command mode */
@@ -15,7 +38,6 @@ struct session {
 #define AX25TNC 3
 #define FINGER  4
 #define NRSESSION 5
-
 	char *name;     /* Name of remote host */
 	union {
 		struct ftp *ftp;
@@ -28,28 +50,30 @@ struct session {
 		struct circuit *netrom;
 #endif
 	} cb;
-	int (*parse)();         /* Where to hand typed input when conversing */
+	int (*parse) __ARGS((char *,int));
+				/* Where to hand typed input when conversing */
 	FILE *record;           /* Receive record file */
 	char *rfile;            /* Record file name */
 	FILE *upload;           /* Send file */
 	char *ufile;            /* Upload file name */
 };
 #define NULLSESSION     (struct session *)0
+
 extern unsigned Nsessions;              /* Maximum number of sessions */
-extern struct session *Sessions;
-extern struct session *Current;
+extern struct session *Sessions;        /* Session descriptors themselves */
+extern struct session *Current;         /* Always points to current session */
 
 /* In session.c: */
+void freesession __ARGS((struct session *s));
+struct session *newsession __ARGS((void));
 int dosession __ARGS((int argc, char *argv[], void *p));
 int go __ARGS((int argc,char *argv[],void *p));
 int doclose __ARGS((int argc, char *argv[], void *p));
 int doreset __ARGS((int argc, char *argv[], void *p));
 int dokick __ARGS((int argc, char *argv[], void *p));
-struct session *newsession __ARGS((void));
-int freesession __ARGS((struct session *s));
 int dorecord __ARGS((int argc, char *argv[], void *p));
 int doupload __ARGS((int argc, char *argv[], void *p));
 
 extern int16 Lport;
 
-#endif  /* NULLSESSION */
+#endif  /* _SESSION_H */

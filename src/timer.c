@@ -1,7 +1,17 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.2 1990/08/23 17:34:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/timer.c,v 1.3 1991/02/24 20:17:52 deyke Exp $ */
 
+/* General purpose software timer facilities
+ * Copyright 1991 Phil Karn, KA9Q
+ */
+#include <stdio.h>
+#include <time.h>
 #include "global.h"
 #include "timer.h"
+
+extern int gettimeofday __ARGS((struct timeval *tp, struct timezone *tzp));
+
+int32 Msclock;
+int32 Secclock;
 
 /* Head of running timer chain.
  * The list of running timers is sorted in increasing order of interval;
@@ -13,45 +23,38 @@
  */
 static struct timer *Timers;
 
-/* This variable keeps a running count of ticks since program startup */
-int32 Clock;
-
 /*---------------------------------------------------------------------------*/
 
 /* Process that handles clock ticks */
 
-void tick()
+void timerproc()
 {
-  register struct timer *t;
 
-  Clock++;
+  static int  last_Msclock_valid;
+  static int32 last_Msclock;
+
+  int32 elapsed;
+  register struct timer *t;
+  struct timeval tv;
+  struct timezone tz;
+
+  gettimeofday(&tv, &tz);
+  Secclock = tv.tv_sec;
+  Msclock = 1000 * Secclock + (tv.tv_usec + 500) / 1000;
+  elapsed = last_Msclock_valid ? Msclock - last_Msclock : 0;
+  last_Msclock = Msclock;
+  last_Msclock_valid = 1;
+
   if (!Timers) return;
-  Timers->count--;
+  Timers->count -= elapsed;
   while ((t = Timers) && t->count <= 0) {
-    if (Timers = t->next) Timers->prev = 0;
+    if (Timers = t->next) {
+      Timers->count += t->count;
+      Timers->prev = 0;
+    }
     t->state = TIMER_EXPIRE;
     if (t->func) (*t->func)(t->arg);
   }
-}
-
-/*---------------------------------------------------------------------------*/
-
-/* Stop a timer */
-
-void stop_timer(t)
-register struct timer *t;
-{
-  if (t->state == TIMER_RUN) {
-    if (t->prev)
-      t->prev->next = t->next;
-    else
-      Timers = t->next;
-    if (t->next) {
-      t->next->prev = t->prev;
-      t->next->count += t->count;
-    }
-  }
-  t->state = TIMER_STOP;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -81,7 +84,27 @@ register struct timer *t;
 
 /*---------------------------------------------------------------------------*/
 
-/* Return count of ticks remaining on this timer */
+/* Stop a timer */
+
+void stop_timer(t)
+register struct timer *t;
+{
+  if (t->state == TIMER_RUN) {
+    if (t->prev)
+      t->prev->next = t->next;
+    else
+      Timers = t->next;
+    if (t->next) {
+      t->next->prev = t->prev;
+      t->next->count += t->count;
+    }
+  }
+  t->state = TIMER_STOP;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Return milliseconds remaining on this timer */
 
 int32 read_timer(t)
 struct timer *t;
@@ -97,5 +120,34 @@ struct timer *t;
     if (tp == t) break;
   }
   return tot;
+}
+
+/*---------------------------------------------------------------------------*/
+
+int32 next_timer_event()
+{
+  if (Timers) return Timers->count;
+  return 0x7fffffff;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Convert time count in seconds to printable days:hr:min:sec format */
+
+char  *tformat(t)
+int32 t;
+{
+  static char  buf[16];
+  unsigned int  days, hrs, mins, secs;
+
+  secs = t % 60;
+  t /= 60;
+  mins = t % 60;
+  t /= 60;
+  hrs = t % 24;
+  t /= 24;
+  days = t;
+  sprintf(buf, "%u:%02u:%02u:%02u", days, hrs, mins, secs);
+  return buf;
 }
 

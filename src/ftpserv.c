@@ -1,6 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.5 1990/10/22 11:37:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.6 1991/02/24 20:16:48 deyke Exp $ */
 
-/* FTP Server state machine - see RFC 959 */
+/* Internet FTP Server
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 
 #define LINELEN         128     /* Length of command buffer */
 
@@ -20,8 +22,6 @@
 #include "timer.h"
 #include "tcp.h"
 #include "ftp.h"
-
-extern long currtime;
 
 static void ftpscs __ARGS((struct tcb *tcb, int old, int new));
 static void ftpscr __ARGS((struct tcb *tcb, int cnt));
@@ -185,7 +185,7 @@ char old,new;
 
 		/* Note current directory */
 		log(tcb,"open FTP");
-		cp = ctime(&currtime);
+		cp = ctime((long *) &Secclock);
 		if((cp1 = strchr(cp,'\n')) != NULLCHAR)
 			*cp1 = '\0';
 		Xprintf(ftp->control,banner,Hostname,Version,cp);

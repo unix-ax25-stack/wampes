@@ -1,5 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpdump.c,v 1.3 1990/09/11 13:46:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/udpdump.c,v 1.4 1991/02/24 20:18:01 deyke Exp $ */
 
+/* UDP packet tracing
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
@@ -39,6 +42,8 @@ int check;              /* If 0, bypass checksum verify */
 
 	fprintf(fp," %u->%u",udp.source,udp.dest);
 	fprintf(fp," len %u",udp.length);
+	if(udp.length > UDPHDR)
+		fprintf(fp," Data %u",udp.length - UDPHDR);
 	if(udp.checksum == 0)
 		check = 0;
 	if(check)

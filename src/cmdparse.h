@@ -1,6 +1,7 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.h,v 1.3 1990/09/11 13:45:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/cmdparse.h,v 1.4 1991/02/24 20:16:38 deyke Exp $ */
 
-#ifndef NARG
+#ifndef _CMDPARSE_H
+#define _CMDPARSE_H
 
 #define NARG            40      /* Max number of args to commands */
 
@@ -23,7 +24,7 @@ int setbool __ARGS((int *var,char *label,int argc,char *argv[]));
 int setint __ARGS((int *var,char *label,int argc,char *argv[]));
 int setlong __ARGS((int32 *var,char *label,int argc,char *argv[]));
 int setshort __ARGS((unsigned short *var,char *label,int argc,char *argv[]));
+int setuns __ARGS((unsigned *var,char *label,int argc,char *argv[]));
 int setintrc __ARGS((int *var, char *label, int argc, char *argv [], int minval, int maxval));
 
-#endif  /* NARG */
-
+#endif  /* _CMDPARSE_H */

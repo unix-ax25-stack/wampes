@@ -1,7 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.4 1990/09/11 13:45:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.5 1991/02/24 20:17:18 deyke Exp $ */
 
-/* Primitive mbuf allocate/free routines */
-
+/* mbuf (message buffer) primitives
+ * Copyright 1991 Phil Karn, KA9Q
+ */
 #include <stdio.h>
 #include "global.h"
 #include "mbuf.h"
@@ -17,15 +18,15 @@ register int16 size;
 {
 	register struct mbuf *bp;
 
-	bp = (struct mbuf *)malloc((unsigned)(size + sizeof(struct mbuf)));
-
-	if(bp == NULLBUF)
-		return NULLBUF;
-	/* Clear just the header portion */
-	memset((char *)bp,0,sizeof(struct mbuf));
-	if((bp->size = size) != 0)
-		bp->data = (char *)(bp + 1);
-	bp->refcnt++;
+		/* Interrupts are enabled, use the heap normally */
+		bp = (struct mbuf *)malloc((unsigned)(size + sizeof(struct mbuf)));
+		if(bp == NULLBUF)
+			return NULLBUF;
+		/* Clear just the header portion */
+		memset((char *)bp,0,sizeof(struct mbuf));
+		if((bp->size = size) != 0)
+			bp->data = (char *)(bp + 1);
+		bp->refcnt++;
 	return bp;
 }
 /* Allocate mbuf, waiting if memory is unavailable */
@@ -57,14 +58,14 @@ register struct mbuf *bp;
 
 	if(bp != NULLBUF){
 		bp1 = bp->next;
-		/* Follow indirection, if any */
-		free_mbuf(bp->dup);
+			/* Follow indirection, if any */
+			free_mbuf(bp->dup);
 
-		/* If reference count has gone to zero, put it
-		 * back on the heap
-		 */
-		if(--bp->refcnt <= 0)
-			free((char *)bp);
+			/* If reference count has gone to zero, put it
+			 * back on the heap
+			 */
+			if(--bp->refcnt <= 0)
+				free((char *)bp);
 	}
 	return bp1;
 }
@@ -404,7 +405,10 @@ unsigned cnt;
 	free_p(bp);
 	return tot;
 }
-/* Pull a 32-bit integer in host order from buffer in network byte order */
+/* Pull a 32-bit integer in host order from buffer in network byte order.
+ * On error, return 0. Note that this is indistinguishable from a normal
+ * return.
+ */
 int32
 pull32(bpp)
 struct mbuf **bpp;
@@ -417,16 +421,18 @@ struct mbuf **bpp;
 	}
 	return get32(buf);
 }
-/* Pull a 16-bit integer in host order from buffer in network byte order */
-int16
+/* Pull a 16-bit integer in host order from buffer in network byte order.
+ * Return -1 on error
+ */
+long
 pull16(bpp)
 struct mbuf **bpp;
 {
 	char buf[2];
 
 	if(pullup(bpp,buf,2) != 2){
-		/* Return zero if insufficient buffer */
-		return 0;
+		/* Return -1 if insufficient buffer */
+		return -1;
 	}
 	return get16(buf);
 }
