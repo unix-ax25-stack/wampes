@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.9 1993/05/17 13:45:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.10 1993/06/21 21:46:37 deyke Exp $ */
 
 /* SMTP Mail Delivery Agent */
 
@@ -87,7 +87,7 @@ nextjob:
     case SMTP_UNLK_STATE:
       unlink(jp->cfile);
       unlink(jp->dfile);
-      unlink(jp->xfile);
+      if (*jp->xfile) unlink(jp->xfile);
       mp->sp->jobs = jp->next;
       free(jp);
       if (jp = mp->sp->jobs) goto nextjob;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.31 1993/06/17 07:27:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.32 1993/06/21 21:46:38 deyke Exp $ */
 
 #include "global.h"
 
@@ -13,7 +13,7 @@
 #include <unistd.h>
 
 #if defined(__hpux) \
- || defined(LINUX) \
+ || defined(linux) \
  || defined(__386BSD__) \
  || defined(sun) \
  || defined(ULTRIX_RISC) \

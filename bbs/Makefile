@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.18 1993/06/17 07:27:54 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.19 1993/06/21 21:47:31 deyke Exp $
 
 CFLAGS     = -I../lib
 OS         = "`uname -s`"
@@ -15,7 +15,7 @@ all:;   @if [ $(OS) = HP-UX ] ; then \
 	elif [ $(OS) = Linux ] ; then \
 		make -i \
 		'CC=gcc' \
-		'CFLAGS=-O6 -s -DLINUX -I../lib' \
+		'CFLAGS=-O6 -s -N -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all; \
 	elif [ $(OS) = 386BSD ] ; then \

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.42 1993/06/17 07:27:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.43 1993/06/21 21:46:36 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -166,7 +166,7 @@ void fixutmpfile(void)
       restore_pty(up->ut_id);
       up->ut_user[0] = 0;
       up->ut_type = DEAD_PROCESS;
-#ifndef LINUX
+#ifndef linux
       up->ut_exit.e_termination = 0;
       up->ut_exit.e_exit = 0;
 #endif
@@ -546,6 +546,10 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
     argv[argc++] = "/bin/remlogin";
     argv[argc++] = "-h";
     argv[argc++] = (char *) protocol;
+#elif linux
+    argv[argc++] = "/bin/login";
+    argv[argc++] = "-h";
+    argv[argc++] = (char *) protocol;
 #else
     argv[argc++] = "/bin/login";
 #endif
@@ -588,7 +592,7 @@ void login_close(struct login_cb *tp)
     off_read(tp->pty);
     off_write(tp->pty);
     off_death(tp->pid);
-#ifdef LINUX
+#ifdef linux
     ioctl(tp->pty, TCFLSH, 2);
 #endif
     close(tp->pty);
@@ -607,7 +611,7 @@ void login_close(struct login_cb *tp)
 	  utmpbuf.ut_time = secclock();
 #ifdef DEAD_PROCESS
 	  utmpbuf.ut_type = DEAD_PROCESS;
-#ifndef LINUX
+#ifndef linux
 	  utmpbuf.ut_exit.e_termination = 0;
 	  utmpbuf.ut_exit.e_exit = 0;
 #endif

@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.57 1993/06/17 07:27:54 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.58 1993/06/21 21:47:31 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -436,7 +436,7 @@ static long parse_date(const char *str)
   if (!p) return -1;
   tm.tm_mon = (p - monthnames) / 3;
   tm.tm_isdst = 0;
-#if defined __hpux || defined LINUX
+#if defined __hpux || defined linux
   t = mktime(&tm);
   if (t != -1) return t - timezone;
 #elif defined sun

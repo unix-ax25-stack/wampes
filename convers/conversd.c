@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.37 1993/06/17 07:27:12 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.38 1993/06/21 21:47:05 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -22,7 +22,7 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <utmp.h>
 
 #if defined(__hpux) \
- || defined(LINUX) \
+ || defined(linux) \
  || defined(__386BSD__) \
  || defined(sun) \
  || defined(ULTRIX_RISC) \
@@ -952,7 +952,7 @@ static void name_command(struct link *lp)
   if (lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.37 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.38 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_channel = atoi(getarg(NULLCHAR, 0));
   if (up->u_channel < 0 || up->u_channel > MAX_CHANNEL) {

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.13 1993/05/17 13:45:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.14 1993/06/21 21:46:37 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -77,7 +77,7 @@ static int domail_list(int argc, char *argv[], void *p)
 
   printf("System     Mailer  Transport  State    Wait time\n");
   for (sp = Systems; sp; sp = sp->next) {
-    *waittime = '\0';
+    *waittime = 0;
     switch (sp->state) {
     case MS_NEVER:
       state = "";
@@ -137,7 +137,7 @@ static void strtrim(char *s)
 
   while (*p) p++;
   while (--p >= s && isspace(uchar(*p))) ;
-  p[1] = '\0';
+  p[1] = 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -197,6 +197,7 @@ static void mail_tick(char *sysname)
   char spooldir[80];
   char tmp1[1024];
   char tmp2[1024];
+  char tmp3[1024];
   int clients;
   int cnt;
   struct dirent *dp;
@@ -247,21 +248,28 @@ static void mail_tick(char *sysname)
       sprintf(mj.cfile, "%s/%s", spooldir, p->name);
       if (!(fp = fopen(mj.cfile, "r"))) continue;
       while (fgets(line, sizeof(line), fp)) {
+	if (*line == 'E' && sscanf(line, "%*s %*s %*s %*s %*s %s %*s %*s %*s %s %s", tmp1, tmp2, tmp3) == 3 && *tmp1 == 'D' && !strcmp(tmp2, "rmail")) {
+	  sprintf(mj.dfile, "%s/%s", spooldir, tmp1);
+	  sprintf(mj.to, "%s!%s", sp->sysname, tmp3);
+	  strtrim(mj.to);
+	}
 	if (*line == 'S' && sscanf(line, "%*s %*s %s %*s %*s %s", tmp1, tmp2) == 2 && *tmp1 == 'D')
 	  sprintf(mj.dfile, "%s/%s", spooldir, tmp2);
 	if (*line == 'S' && sscanf(line, "%*s %*s %s %*s %*s %s", tmp1, tmp2) == 2 && *tmp1 == 'X')
 	  sprintf(mj.xfile, "%s/%s", spooldir, tmp2);
       }
       fclose(fp);
-      if (*mj.dfile == '\0' || *mj.xfile == '\0') continue;
-      if (!(fp = fopen(mj.xfile, "r"))) continue;
-      while (fgets(line, sizeof(line), fp))
-	if (!strncmp(line, "C rmail ", 8)) {
-	  sprintf(mj.to, "%s!%s", sp->sysname, line + 8);
-	  strtrim(mj.to);
-	  break;
-	}
-      fclose(fp);
+      if (!*mj.dfile) continue;
+      if (*mj.xfile) {
+	if (!(fp = fopen(mj.xfile, "r"))) continue;
+	while (fgets(line, sizeof(line), fp))
+	  if (!strncmp(line, "C rmail ", 8)) {
+	    sprintf(mj.to, "%s!%s", sp->sysname, line + 8);
+	    strtrim(mj.to);
+	    break;
+	  }
+	fclose(fp);
+      }
       if (!*mj.to) continue;
       if (!(fp = fopen(mj.dfile, "r"))) continue;
       if (fscanf(fp, "%*s %s", tmp1) == 1) {

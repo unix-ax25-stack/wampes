@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.15 1993/06/06 08:23:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ksubr.c,v 1.16 1993/06/21 21:46:36 deyke Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
@@ -149,7 +149,7 @@ struct env {
 	long    nbjregs;
 };
 #define getstackptr(ep) ((ep)->sp)
-#elif LINUX
+#elif linux
 struct env {
 	long    ebx;
 	long    esi;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.42 1993/06/10 14:53:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.43 1993/06/21 21:46:33 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -94,7 +94,7 @@ void ioinit(void)
 {
 
   int i;
-#ifndef LINUX
+#ifndef linux
   struct rlimit rlp;
 #endif
 
