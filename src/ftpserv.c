@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.25 1994/01/21 11:10:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.26 1994/04/23 15:40:28 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -415,6 +415,7 @@ ftpcommand(struct ftp *ftp)
 			dport.port = IPPORT_FTPD;
 			ftp->state = SENDING_STATE;
 			Xprintf(ftp->control,sending,"RETR",arg,"");
+			if (ftp->data) ftp->data->user = 0;
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
 			 0,NULLVFP,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
 		}
@@ -436,6 +437,7 @@ ftpcommand(struct ftp *ftp)
 			dport.port = IPPORT_FTPD;
 			ftp->state = RECEIVING_STATE;
 			Xprintf(ftp->control,sending,"STOR",arg,"");
+			if (ftp->data) ftp->data->user = 0;
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
 			 0,ftpdr,NULLVFP,ftpsds,ftp->control->tos,(int)ftp);
 		}
@@ -455,6 +457,7 @@ ftpcommand(struct ftp *ftp)
 			dport.port = IPPORT_FTPD;
 			ftp->state = RECEIVING_STATE;
 			Xprintf(ftp->control,sending,"APPE",arg,"");
+			if (ftp->data) ftp->data->user = 0;
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
 			 0,ftpdr,NULLVFP,ftpsds,ftp->control->tos,(int)ftp);
 		}
@@ -480,6 +483,7 @@ ftpcommand(struct ftp *ftp)
 			dport.port = IPPORT_FTPD;
 			ftp->state = SENDING_STATE;
 			Xprintf(ftp->control,sending,"LIST",file,"");
+			if (ftp->data) ftp->data->user = 0;
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
 			 0,NULLVFP,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
 		}
@@ -498,6 +502,7 @@ ftpcommand(struct ftp *ftp)
 			dport.port = IPPORT_FTPD;
 			ftp->state = SENDING_STATE;
 			Xprintf(ftp->control,sending,"NLST",file,"");
+			if (ftp->data) ftp->data->user = 0;
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
 			 0,NULLVFP,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
 		}

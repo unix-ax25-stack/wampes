@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.19 1994/02/28 11:55:15 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.20 1994/04/23 15:40:29 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -225,8 +225,8 @@ loop:
 	 */
 #ifndef SINGLE_THREADED
 	pwait(NULL);
-	goto loop;
 #endif
+	goto loop;
 }
 
 /* put mbuf into Hopper for network task
