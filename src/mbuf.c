@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.14 1995/12/20 09:46:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.15 1995/12/21 13:50:37 deyke Exp $ */
 
 /* mbuf (message buffer) primitives
  * Copyright 1991 Phil Karn, KA9Q
@@ -16,8 +16,8 @@ static int32 Cachehits;         /* Hits on free mbuf cache */
 static unsigned long Msizes[16];
 
 #define SMALL_MBUF      32
-#define MED_MBUF        128
-#define LARGE_MBUF      2048
+#define MED_MBUF        224
+#define LARGE_MBUF      2016
 
 static struct mbuf *Mbufcache[3];
 
