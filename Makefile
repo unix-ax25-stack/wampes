@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.46 2000/01/15 18:34:08 deyke Exp $
+# @(#) $Id: Makefile,v 1.47 2000/02/05 23:54:43 deyke Exp $
 
 OBSOLETE   = /usr/local/bin/sfstat \
 	     /usr/local/etc/mkhostdb \
@@ -80,7 +80,8 @@ distrib:
 	version=`awk -F- '/.#.WAMPES-/ {print substr($$2,1,6)}' < src/version.c`; \
 	ln wampes-latest.tar wampes-$$version.tar; \
 	ln README wampes-$$version.txt; \
-	gzip -9 < wampes-latest.tar > wampes-$$version.tar.gz
+	gzip -9 < wampes-latest.tar > wampes-$$version.tar.gz; \
+	gpg --detach-sign --force-v3-sigs wampes-$$version.tar.gz
 
 clean:; @-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i clean ); done
 	@-if [ -d tools ]; then  ( cd tools; $(MAKE) -i clean ); fi

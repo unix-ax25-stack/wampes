@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.db0sao,v 1.71 2000/01/01 16:12:47 deyke Exp $
+# @(#) $Id: net.rc.db0sao,v 1.72 2000/02/05 23:54:43 deyke Exp $
 
 domain usegethostby on
 
@@ -83,9 +83,7 @@ start ftp
 start netrom
 start sntp
 start tcpgate convers unix:/tcp/sockets/convers
-start tcpgate cvspserver 192.1.1.2:cvspserver
 start tcpgate finger
-start tcpgate http 192.1.1.2:http
 start tcpgate imap
 start tcpgate netupds
 start tcpgate nntp

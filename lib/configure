@@ -1,4 +1,4 @@
-# @(#) $Id: configure,v 1.35 1999/06/20 19:03:49 deyke Exp $
+# @(#) $Id: configure,v 1.36 2000/02/05 23:54:46 deyke Exp $
 
 CC='cc'
 CFLAGS='-O -I../lib'
@@ -235,12 +235,13 @@ checksymbol()
 		/u
 
 	finddir MAIL_DIR \
-		/var/mail \
 		/var/spool/mail \
-		/usr/mail \
-		/usr/spool/mail
+		/var/mail \
+		/usr/spool/mail \
+		/usr/mail
 
 	finddir NEWS_DIR \
+		/usr/local/news/spool \
 		/var/spool/news \
 		/usr/spool/news
 
@@ -260,15 +261,15 @@ checksymbol()
 		/usr/lib/aliases
 
 	findfile UTMP__FILE \
-		/var/adm/utmp \
 		/var/run/utmp \
+		/var/adm/utmp \
 		/etc/utmp
 
 	findfile WTMP__FILE \
-		/var/adm/wtmp \
 		/var/log/wtmp \
-		/etc/wtmp \
-		/usr/adm/wtmp
+		/var/adm/wtmp \
+		/usr/adm/wtmp \
+		/etc/wtmp
 
 	echo
 
@@ -302,8 +303,9 @@ checksymbol()
 		/usr/bsd/newaliases
 
 	findprog RNEWS_PROG \
-		/usr/bin/rnews \
+		/usr/local/news/bin/rnews \
 		/usr/local/bin/rnews \
+		/usr/bin/rnews \
 		/usr/lib/news/rnews \
 		/usr/lib/rnews
 

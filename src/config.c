@@ -1,4 +1,4 @@
-/* @(#) $Id: config.c,v 1.57 2000/01/01 16:12:54 deyke Exp $ */
+/* @(#) $Id: config.c,v 1.58 2000/02/05 23:54:48 deyke Exp $ */
 
 /* Copyright 1991 Phil Karn, KA9Q
  */
@@ -56,14 +56,12 @@ struct cmds Cmds[] = {
 	{ "!",            doshell,        0, 0, NULL },
 	{ "arp",          doarp,          0, 0, NULL },
 	{ "asystat",      doasystat,      0, 0, NULL },
-	{ "attach",       doattach,       0, 2,
-		"attach <hardware> <hw specific options>" },
+	{ "attach",       doattach,       0, 2, "attach <hardware> <hw specific options>" },
 	{ "ax25",         doax25,         0, 0, NULL },
 	{ "axip",         doaxip,         0, 0, NULL },
 	{ "bye",          dobye,          0, 0, NULL },
 /* This one is out of alpabetical order to allow abbreviation to "c" */
-	{ "connect",      doconnect,      0, 2,
-	  "connect callsign [digipeaters]" },
+	{ "connect",      doconnect,      0, 2, "connect callsign [digipeaters]" },
 	{ "close",        doclose,        0, 0, NULL },
 /* This one is out of alpabetical order to allow abbreviation to "d" */
 	{ "disconnect",   doclose,        0, 0, NULL },
@@ -95,7 +93,7 @@ struct cmds Cmds[] = {
 	{ "record",       dorecord,       0, 0, NULL },
 	{ "remote",       doremote,       0, 3, "remote [-p port] [-k key] [-a kickaddr] <address> exit|reset|kick" },
 	{ "rename",       dorename,       0, 3, "rename <oldfile> <newfile>" },
-	{ "repeat",       dorepeat,       16000, 2, "repeat [<interval>] <command> [args...]" },
+	{ "repeat",       dorepeat,   16000, 2, "repeat [<interval>] <command> [args...]" },
 	{ "reset",        doreset,        0, 0, NULL },
 	{ "rip",          dorip,          0, 0, NULL },
 	{ "rmdir",        dormd,          0, 2, "rmdir <directory>" },
@@ -114,8 +112,7 @@ struct cmds Cmds[] = {
 	{ "trace",        dotrace,        0, 0, NULL },
 	{ "udp",          doudp,          0, 0, NULL },
 	{ "upload",       doupload,       0, 0, NULL },
-	{ NULL,   NULL,           0, 0,
-		"Unknown command; type \"?\" for list" }
+	{ NULL,           NULL,           0, 0, "Unknown command; type \"?\" for list" }
 };
 
 /* List of supported hardware devices */
@@ -251,47 +248,65 @@ struct arp_type Arp_type[NHWTYPES] = {
 struct iftype Iftypes[] = {
 
 	/* This entry must be first, since Loopback refers to it */
-	{ "None",         nu_send,        nu_output,      NULL,
-	NULL,           CL_NONE,        0,              ip_proc,
-	NULL,           ip_dump,        NULL,           NULL },
+	{
+		"None",         nu_send,        nu_output,      NULL,
+		NULL,           CL_NONE,        0,              ip_proc,
+		NULL,           ip_dump,        NULL,           NULL
+	},
 
-	{ "AX25UI",       axui_send,      ax_output,      pax25,
-	setcall,        CL_AX25,        AXALEN,         ax_recv,
-	ax_forus,       ax25_dump,      NULL,           NULL },
+	{
+		"AX25UI",       axui_send,      ax_output,      pax25,
+		setcall,        CL_AX25,        AXALEN,         ax_recv,
+		ax_forus,       ax25_dump,      NULL,           NULL
+	},
 
-	{ "AX25I",        axi_send,       ax_output,      pax25,
-	setcall,        CL_AX25,        AXALEN,         ax_recv,
-	ax_forus,       ax25_dump,      NULL,           NULL },
+	{
+		"AX25I",        axi_send,       ax_output,      pax25,
+		setcall,        CL_AX25,        AXALEN,         ax_recv,
+		ax_forus,       ax25_dump,      NULL,           NULL
+	},
 
-	{ "KISSUI",       axui_send,      ax_output,      pax25,
-	setcall,        CL_AX25,        AXALEN,         kiss_recv,
-	ki_forus,       ki_dump,        NULL,           NULL },
+	{
+		"KISSUI",       axui_send,      ax_output,      pax25,
+		setcall,        CL_AX25,        AXALEN,         kiss_recv,
+		ki_forus,       ki_dump,        NULL,           NULL
+	},
 
-	{ "KISSI",        axi_send,       ax_output,      pax25,
-	setcall,        CL_AX25,        AXALEN,         kiss_recv,
-	ki_forus,       ki_dump,        NULL,           NULL },
+	{
+		"KISSI",        axi_send,       ax_output,      pax25,
+		setcall,        CL_AX25,        AXALEN,         kiss_recv,
+		ki_forus,       ki_dump,        NULL,           NULL
+	},
 
-	{ "SLIP",         slip_send,      NULL,           NULL,
-	NULL,           CL_NONE,        0,              ip_proc,
-	NULL,           ip_dump,
-					NULL,           NULL },
+	{
+		"SLIP",         slip_send,      NULL,           NULL,
+		NULL,           CL_NONE,        0,              ip_proc,
+		NULL,           ip_dump,        NULL,           NULL
+	},
 
-	{ "VJSLIP",       vjslip_send,    NULL,           NULL,
-	NULL,           CL_NONE,        0,              ip_proc,
-	NULL,           sl_dump,
-					NULL,           NULL },
+	{
+		"VJSLIP",       vjslip_send,    NULL,           NULL,
+		NULL,           CL_NONE,        0,              ip_proc,
+		NULL,           sl_dump,        NULL,           NULL
+	},
 
-	{ "NETROM",       nr_send,        NULL,           pax25,
-	setcall,        CL_NETROM,      AXALEN,         NULL,
-	NULL,           ip_dump,        NULL,           NULL },
+	{
+		"NETROM",       nr_send,        NULL,           pax25,
+		setcall,        CL_NETROM,      AXALEN,         NULL,
+		NULL,           ip_dump,        NULL,           NULL
+	},
 
-	{ "NRS",          axui_send,      ax_output,      pax25,
-	setcall,        CL_AX25,        AXALEN,         ax_recv,
-	ax_forus,       ax25_dump,      NULL,           NULL },
+	{
+		"NRS",          axui_send,      ax_output,      pax25,
+		setcall,        CL_AX25,        AXALEN,         ax_recv,
+		ax_forus,       ax25_dump,      NULL,           NULL
+	},
 
-	{ NULL,   NULL,           NULL,           NULL,
-	NULL,           -1,             0,              NULL,
-	NULL,           NULL,   NULL,           NULL }
+	{
+		NULL,           NULL,           NULL,           NULL,
+		NULL,           -1,             0,              NULL,
+		NULL,           NULL,           NULL,           NULL
+	}
 };
 
 /* Asynchronous interface mode table */
@@ -308,10 +323,10 @@ struct asymode Asymode[] = {
 
 /* daemons to be run at startup time */
 struct daemon Daemons[] = {
-	{ "killer",       1024,   killer },
+	{ "killer",        1024,  killer },
 	{ "timer",        16000,  timerproc },
 	{ "network",      16000,  network },
-	{ NULL,       0,      NULL }
+	{ NULL,               0,  NULL }
 };
 
 /* Packet tracing stuff */

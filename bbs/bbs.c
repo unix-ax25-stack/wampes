@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Id: bbs.c,v 3.14 1999/09/18 23:13:59 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: bbs.c,v 3.15 2000/02/05 23:54:43 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -702,6 +702,7 @@ static void split_address(const char *addr, char *userpart, char *hostpart)
   }
   if (!strcmp(userpart, "deyke")) {
     strcpy(userpart, "dk5sg");
+    strcpy(hostpart, "");
   }
   if ((cp = strchr(hostpart, '.'))) {
     *cp = 0;
@@ -1570,7 +1571,7 @@ static struct mail *get_article(const struct group *p, int i, enum e_what what)
 
   if (i < p->low || i > p->high)
     return 0;
-  sprintf(filename, NEWS_DIR "/%s/%d", p->name, i);
+  sprintf(filename, NEWS_DIR "/articles/%s/%d", p->name, i);
   for (cp = filename; *cp; cp++) {
     if (*cp == '.')
       *cp = '/';
@@ -1955,7 +1956,7 @@ static void forward_news(void)
   struct strlist *filetail;
   struct strlist *p;
 
-  sprintf(batchfile, NEWS_DIR "/out.going/%s", user.name);
+  sprintf(batchfile, NEWS_DIR "/outgoing/%s", user.name);
   sprintf(workfile, "%s.bbs", batchfile);
   if (!(fp = fopen(workfile, "r"))) {
     if (rename(batchfile, workfile))
@@ -1982,7 +1983,7 @@ static void forward_news(void)
     }
     if (*line != '/') {
       char tmp[1024];
-      sprintf(tmp, NEWS_DIR "/%s", line);
+      sprintf(tmp, NEWS_DIR "/articles/%s", line);
       strcpy(line, tmp);
     }
     if (!stat(line, &statbuf)) {

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: udbm.c,v 1.50 1999/06/20 17:47:48 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: udbm.c,v 1.51 2000/02/05 23:54:48 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -305,8 +305,8 @@ static void parse_mybbs_messages(void)
 
   if (!*NEWS_DIR || !*CTLINND_PROG)
     return;
-  batchfile = NEWS_DIR "/out.going/udbm";
-  workfile = NEWS_DIR "/out.going/udbm.bbs";
+  batchfile = NEWS_DIR "/outgoing/udbm";
+  workfile = NEWS_DIR "/outgoing/udbm.bbs";
   if (!(fpwrk = fopen(workfile, "r"))) {
     if (rename(batchfile, workfile))
       return;
@@ -329,7 +329,7 @@ static void parse_mybbs_messages(void)
       }
     }
     if (*line != '/') {
-      sprintf(tmp, NEWS_DIR "/%s", line);
+      sprintf(tmp, NEWS_DIR "/articles/%s", line);
       strcpy(line, tmp);
     }
     if (!(fpmsg = fopen(line, "r")))
