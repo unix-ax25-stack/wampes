@@ -1,9 +1,9 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.52 1994/12/02 21:36:07 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.53 1995/01/30 14:15:08 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
 ip address   db0sao
-netrom ident gaert
+netrom ident GAERT
 
 # tnc1: user access (70cm)
 

@@ -1,9 +1,9 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel,v 1.26 1994/12/02 21:36:08 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel,v 1.27 1995/01/30 14:15:10 deyke Exp $
 
 hostname     dl4sel
 ax25 mycall  dl4sel
 ip address   dl4sel
-netrom ident deufr
+netrom ident DEUFR
 
 # tnc0: 2m
 

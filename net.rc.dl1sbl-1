@@ -1,9 +1,9 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.29 1994/12/02 21:36:08 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.30 1995/01/30 14:15:09 deyke Exp $
 
 hostname     dl1sbl-1
 ax25 mycall  dl1sbl-1
 ip address   dl1sbl-1
-netrom ident "#boeb1"
+netrom ident "#BOEB1"
 
 attach axip                     # ax.25 over host ip
 attach ipip                     # ip over host ip

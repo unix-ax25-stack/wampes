@@ -1,9 +1,9 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.48 1994/12/02 21:36:08 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.49 1995/01/30 14:15:09 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
 ip address   dk0hu
-netrom ident "#boeb"
+netrom ident "#BOEB"
 
 # tnc0: 2 m
 

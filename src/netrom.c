@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.45 1994/10/10 13:16:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.46 1995/01/30 14:15:24 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -482,10 +482,10 @@ static void broadcast_recv(struct mbuf *bp, struct node *pn)
   if (pn == mynode) goto discard;
   if (PULLCHAR(&bp) != 0xff) goto discard;
   if (pullup(&bp, ident, IDENTLEN) != IDENTLEN) goto discard;
-  if (len_p(bp) % NRRTDESTLEN) goto discard;
   if (*ident > ' ') memcpy(pn->ident, ident, IDENTLEN);
   update_link(mynode, pn, 1, nr_hfqual);
   while (pullup(&bp, buf, NRRTDESTLEN) == NRRTDESTLEN) {
+    if (!*buf) break;
     if (addreq(buf, Mycall)) continue;
     pd = nodeptr(buf, 1);
     if (buf[AXALEN] > ' ') memcpy(pd->ident, buf + AXALEN, IDENTLEN);
@@ -1672,7 +1672,7 @@ static int doident(int argc, char *argv[], void *p)
     printf("Ident %-6.6s\n", mynode->ident);
   else
     for (cp = argv[1], i = 0; i < IDENTLEN; i++)
-      mynode->ident[i] = *cp ? Xtoupper(*cp++) : ' ';
+      mynode->ident[i] = *cp ? *cp++ : ' ';
   return 0;
 }
 
