@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.10 1993/11/25 07:45:54 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.11 1993/12/08 13:11:54 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -1975,6 +1975,8 @@
 44.130.176.18   DG7SEP  # Andi, Filderstadt
 44.130.176.19   DG4SEP  # Oliver Kurfess, 70794 Filderstadt Plattenhardt; Amiga
 44.130.176.20   DH6SBR  # Markus
+44.130.176.25   DG9SCI
+44.130.176.26   DG9SCI-U
 44.130.176.49   DL8SK   # Simon
 44.130.176.50   DK3SI-SUN       # Harald Tietze
 44.130.176.51   DK3SI-LNX       #
