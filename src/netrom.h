@@ -1,12 +1,10 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.2 1990/01/29 09:37:17 deyke Exp $ */
+
 /* Round trip timing parameters */
 #define AGAIN   8               /* Average RTT gain = 1/8 */
 #define DGAIN   4               /* Mean deviation gain = 1/4 */
 
 #define NR4MAXINFO      236     /* Maximum data in an info packet */
-
-#define NR4CHOKE        0x80
-#define NR4NAK          0x40
-#define NR4MORE         0x20
 
 #define NR4OPPID        0       /* Protocol ID extension to network layer */
 #define NR4OPCONRQ      1       /* Connect request */
@@ -16,6 +14,9 @@
 #define NR4OPINFO       5       /* Information packet */
 #define NR4OPACK        6       /* Information acknowledge */
 #define NR4OPCODE       0x0f    /* Mask for opcode nybble */
+#define NR4MORE         0x20    /* MORE bit */
+#define NR4NAK          0x40    /* NAK bit */
+#define NR4CHOKE        0x80    /* CHOKE bit */
 
 struct circuit {
   int  localindex;              /* Local circuit index */
@@ -60,7 +61,7 @@ struct circuit {
   void (*t_upcall)();           /* Call when ok to send more data */
   void (*s_upcall)();           /* Call when connection state changes */
   char  *user;                  /* User parameter (e.g., for mapping to an
-				 * application control block
+				 * application control block)
 				 */
   struct circuit *next;         /* Linked-list pointer */
 };

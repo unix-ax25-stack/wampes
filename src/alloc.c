@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.2 1990/01/29 09:36:47 deyke Exp $ */
+
 #include <memory.h>
 #include <stdio.h>
 
@@ -62,6 +64,14 @@ register unsigned int  size;
 
 /*---------------------------------------------------------------------------*/
 
+char  *_malloc(size)
+unsigned int  size;
+{
+  return malloc(size);
+}
+
+/*---------------------------------------------------------------------------*/
+
 void free(pp)
 char  *pp;
 {
@@ -74,6 +84,14 @@ char  *pp;
     p->next = tp->next;
     tp->next = p;
   }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void _free(pp)
+char  *pp;
+{
+  free(pp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -112,6 +130,15 @@ unsigned int  size;
 
 /*---------------------------------------------------------------------------*/
 
+char  *_realloc(p, size)
+char  *p;
+unsigned int  size;
+{
+  return realloc(p, size);
+}
+
+/*---------------------------------------------------------------------------*/
+
 char  *calloc(nelem, elsize)
 unsigned int  nelem, elsize;
 {
@@ -125,6 +152,14 @@ unsigned int  nelem, elsize;
 
 /*---------------------------------------------------------------------------*/
 
+char  *_calloc(nelem, elsize)
+unsigned int  nelem, elsize;
+{
+  return calloc(nelem, elsize);
+}
+
+/*---------------------------------------------------------------------------*/
+
 int  memstat()
 {
   printf("%7u bytes of memory allocated\n", allocated);
@@ -132,3 +167,4 @@ int  memstat()
   printf("%7u requests for memory denied\n", failures);
   return 0;
 }
+

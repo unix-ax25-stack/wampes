@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.2 1990/01/29 09:37:23 deyke Exp $ */
+
 #include "global.h"
 #include "timer.h"
 #include "mbuf.h"
@@ -156,17 +158,14 @@ register struct tcb *tcb;
 {
 	register struct tcb **tcbhead;
 	int16 hash_tcb();
-	char i_state;
 
 	tcb->prev = NULLTCB;
-	i_state = disable();
 	tcbhead = &tcbs[hash_tcb(&tcb->conn)];
 	tcb->next = *tcbhead;
 	if(tcb->next != NULLTCB){
 		tcb->next->prev = tcb;
 	}
 	*tcbhead = tcb;
-	restore(i_state);
 }
 /* Remove TCB from whatever hash chain it may be on */
 void
@@ -175,9 +174,7 @@ register struct tcb *tcb;
 {
 	register struct tcb **tcbhead;
 	int16 hash_tcb();
-	char i_state;
 
-	i_state = disable();
 	tcbhead = &tcbs[hash_tcb(&tcb->conn)];
 	if(*tcbhead == tcb)
 		*tcbhead = tcb->next;   /* We're the first one on the chain */
@@ -185,7 +182,6 @@ register struct tcb *tcb;
 		tcb->prev->next = tcb->next;
 	if(tcb->next != NULLTCB)
 		tcb->next->prev = tcb->prev;
-	restore(i_state);
 }
 void
 setstate(tcb,newstate)

@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpuser.c,v 1.2 1990/01/29 09:37:25 deyke Exp $ */
+
 /* User calls to TCP */
 #include "global.h"
 #include "timer.h"
@@ -135,7 +137,25 @@ struct tcb *tcb;
     net_error = INVALID;
     return (-1);
   }
-  return tcb->window - tcb->sndcnt;
+  switch (tcb->state) {
+  case CLOSED:
+    net_error = NO_CONN;
+    return (-1);
+  case LISTEN:
+  case SYN_SENT:
+  case SYN_RECEIVED:
+  case ESTABLISHED:
+  case CLOSE_WAIT:
+    return tcb->window - tcb->sndcnt;
+  case FINWAIT1:
+  case FINWAIT2:
+  case CLOSING:
+  case LAST_ACK:
+  case TIME_WAIT:
+    net_error = CON_CLOS;
+    return (-1);
+  }
+  return (-1);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -333,30 +353,37 @@ static struct tcp_port_table {
   char  *name;
   int16 port;
 } tcp_port_table[] = {
-  "*",        0,
-  "convers",  3600,
-  "discard",  DISCARD_PORT,
-  "echo",     ECHO_PORT,
-  "finger",   FINGER_PORT,
-  "ftp",      FTP_PORT,         /* ARPA file transfer protocol */
-  "ftp-data", FTPD_PORT,
-  "smtp",     SMTP_PORT,        /* ARPA simple mail transfer protocol */
-  "telnet",   TELNET_PORT,      /* ARPA virtual terminal protocol */
+  "*",           0,
+  "convers",     3600,
+  "discard",     DISCARD_PORT,  /* ARPA discard protocol */
+  "echo",        ECHO_PORT,     /* ARPA echo protocol */
+  "finger",      FINGER_PORT,   /* ARPA finger protocol */
+  "ftp",         FTP_PORT,      /* ARPA file transfer protocol (cmd) */
+  "ftp-data",    FTPD_PORT,     /* ARPA file transfer protocol (data) */
+  "smtp",        SMTP_PORT,     /* ARPA simple mail transfer protocol */
+  "telnet",      TELNET_PORT,   /* ARPA virtual terminal protocol */
 #if 0
-  "domain",     53,             /* ARPA domain nameserver */
-  "portmap",   111,             /* map RPC program numbers to ports */
-  "exec",      512,             /* remote execution, passwd required */
-  "login",     513,             /* remote login */
-  "shell",     514,             /* remote command, no passwd used */
-  "printer",   515,             /* remote print spooling */
-  "DAServer",  987,             /* SQL distributed access */
-  "rlb",      1260,             /* remote loopback diagnostic */
-  "nft",      1536,             /* NS network file transfer */
-  "rfa",      4672,             /* NS remote file access */
-  "grmd",     5999,             /* graphics resource manager */
-  "X11",      6000,             /* X11 server */
-  "mserve",   6060,             /* broadcast messages */
-  "spc",      6111,             /* sub-process control */
+  "domain",         53,         /* ARPA domain nameserver */
+  "portmap",       111,         /* map RPC program numbers to ports */
+  "netbios_ns",    137,         /* NetBIOS Name Service */
+  "netbios_dgm",   138,         /* NetBIOS Datagram Service */
+  "netbios_ssn",   139,         /* NetBIOS Session Service */
+  "exec",          512,         /* remote execution, passwd required */
+  "login",         513,         /* remote login */
+  "shell",         514,         /* remote command, no passwd used */
+  "printer",       515,         /* remote print spooling */
+  "DAServer",      987,         /* SQL distributed access */
+  "rlb",          1260,         /* remote loopback diagnostic */
+  "nft",          1536,         /* NS network file transfer */
+  "netdist",      2106,         /* update(1m) network distribution service */
+  "rfa",          4672,         /* NS remote file access */
+  "lanmgrx.osB",  5696,         /* LAN Manager/X for B.00.00 OfficeShare */
+  "X10_LI",       5800,         /* X10 server, little endian */
+  "X10_MI",       5900,         /* X10 server, big endian */
+  "grmd",         5999,         /* graphics resource manager */
+  "X11",          6000,         /* X11 server */
+  "mserve",       6060,         /* broadcast messages */
+  "spc",          6111,         /* sub-process control */
 #endif
   NULLCHAR,      0
 };

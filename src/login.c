@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.2 1990/01/29 09:37:01 deyke Exp $ */
+
 #include <sys/types.h>
 
 #include <ctype.h>
@@ -8,33 +10,56 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/ptyio.h>
 #include <sys/rtprio.h>
 #include <termio.h>
 #include <time.h>
 #include <utmp.h>
 
 #include "global.h"
+#include "mbuf.h"
 #include "timer.h"
 #include "hpux.h"
+#include "telnet.h"
 #include "login.h"
 
 extern struct utmp *getutent();
 extern struct utmp *getutid();
 extern void endutent();
 extern void exit();
+extern void free();
 extern void pututline();
 
 #define MASTERPREFIX        "/dev/pty"
 #define SLAVEPREFIX         "/dev/tty"
 
 #define PASSWDFILE          "/etc/passwd"
-#define LOCKFILE            "/etc/ptmp"
+#define PWLOCKFILE          "/etc/ptmp"
 
 #define DEFAULTUSER         "guest"
 #define FIRSTUID            400
 #define MAXUID              4095
 #define GID                 400
 #define HOMEDIRPARENTPARENT "/users/funk"
+
+/* login server control block */
+
+struct login_cb {
+  int  pty;                     /* pty file descriptor */
+  int  num;                     /* pty number */
+  char  id[4];                  /* pty id (last 2 chars) */
+  int  pid;                     /* process id of login process */
+  char  buffer[512];            /* pty read buffer */
+  char  *bufptr;                /* pty read buffer index */
+  int  bufcnt;                  /* pty read buffer count */
+  int  lastchr;                 /* last chr written to pty */
+  int  linelen;                 /* counter for automatic line break */
+  void (*closefnc)();           /* func to call if pty gets closed */
+  char  *closearg;              /* argument for closefnc */
+  int  telnet;                  /* telnet mode */
+  int  state;                   /* telnet state */
+  char  option[NOPTIONS+1];     /* telnet options */
+};
 
 static char  pty_inuse[256];
 
@@ -90,7 +115,7 @@ fixutmpfile()
 
   while (up = getutent())
     if (up->ut_type == USER_PROCESS && kill(up->ut_pid, 0)) {
-      restore_pty(up->ut_line);
+      restore_pty(up->ut_id);
       up->ut_user[0] = '\0';
       up->ut_type = DEAD_PROCESS;
       up->ut_exit.e_termination = 0;
@@ -134,21 +159,21 @@ int  create;
 
   /* Find free user id */
 
-  memset(bitmap, 0, sizeof(bitmap));
-  if ((fd = open(LOCKFILE, O_WRONLY | O_CREAT | O_EXCL, 0644)) < 0) return 0;
+  if ((fd = open(PWLOCKFILE, O_WRONLY | O_CREAT | O_EXCL, 0644)) < 0) return 0;
   close(fd);
+  memset(bitmap, 0, sizeof(bitmap));
   while (pw = getpwent()) {
     if (!strcmp(username, pw->pw_name)) break;
     if (pw->pw_uid <= MAXUID) bitmap[pw->pw_uid] = 1;
   }
   endpwent();
   if (pw) {
-    unlink(LOCKFILE);
+    unlink(PWLOCKFILE);
     return pw;
   }
   for (uid = FIRSTUID; uid <= MAXUID && bitmap[uid]; uid++) ;
   if (uid > MAXUID) {
-    unlink(LOCKFILE);
+    unlink(PWLOCKFILE);
     return 0;
   }
 
@@ -157,14 +182,14 @@ int  create;
   sprintf(homedirparent, "%s/%.3s...", HOMEDIRPARENTPARENT, username);
   sprintf(homedir, "%s/%s", homedirparent, username);
   if (!(fp = fopen(PASSWDFILE, "a"))) {
-    unlink(LOCKFILE);
+    unlink(PWLOCKFILE);
     return 0;
   }
   fprintf(fp, "%s:,./:%d:%d::%s:/bin/sh\n", username, uid, GID, homedir);
   fclose(fp);
   pw = getpwuid(uid);
   endpwent();
-  unlink(LOCKFILE);
+  unlink(PWLOCKFILE);
 
   /* Create home directory */
 
@@ -176,20 +201,16 @@ int  create;
 
 /*---------------------------------------------------------------------------*/
 
-static FILE *fopen_logfile(user, protocol)
+static void write_log_header(fd, user, protocol)
+int  fd;
 char  *user, *protocol;
 {
 
-  FILE * fp;
-  char  filename[80];
-  static int  cnt;
+  char  buf[1024];
   struct tm *tm;
 
-  sprintf(filename, "/tcp/logs/log.%05d.%04d", getpid(), cnt++);
-  fp = fopen(filename, "a");
-  if (!fp) return 0;
   tm = localtime(&currtime);
-  fprintf(fp,
+  sprintf(buf,
 	  "%s at %2d-%.3s-%02d %2d:%02d:%02d by %s\n",
 	  protocol,
 	  tm->tm_mday,
@@ -199,16 +220,31 @@ char  *user, *protocol;
 	  tm->tm_min,
 	  tm->tm_sec,
 	  user);
-  fflush(fp);
-  return fp;
+  write_log(fd, buf, (int) strlen(buf));
 }
 
 /*---------------------------------------------------------------------------*/
 
-struct login_cb *login_open(user, protocol, pollfnc, pollarg)
+static void excp_handler(tp)
+struct login_cb *tp;
+{
+  struct request_info request_info;
+
+  if (ioctl(tp->pty, TIOCREQCHECK, &request_info)) return;
+  ioctl(tp->pty, TIOCREQSET, &request_info);
+  if (request_info.request == TIOCCLOSE) {
+    clrmask(chkread, tp->pty);
+    clrmask(chkexcp, tp->pty);
+    if (tp->closefnc) (*tp->closefnc)(tp->closearg);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+struct login_cb *login_open(user, protocol, read_upcall, close_upcall, upcall_arg)
 char  *user, *protocol;
-void (*pollfnc)();
-char  *pollarg;
+void (*read_upcall)(), (*close_upcall)();
+char  *upcall_arg;
 {
 
   char  *env = 0;
@@ -221,25 +257,27 @@ char  *pollarg;
 
   tp = (struct login_cb *) calloc(1, sizeof(struct login_cb ));
   if (!tp) return 0;
+  tp->telnet = !strcmp(protocol, "TELNET");
   if ((tp->pty = find_pty(&tp->num, slave)) < 0) {
-    free(tp);
+    free((char *) tp);
     return 0;
   }
   strcpy(tp->id, slave + strlen(slave) - 2);
-  tp->fplog = fopen_logfile(user, protocol);
-  memset(&utmp, 0, sizeof(struct utmp ));
-  strcpy(utmp.ut_id, tp->id);
-  strcpy(utmp.ut_line, slave + 5);
-  utmp.ut_type = DEAD_PROCESS;
-  pututline(&utmp);
-  endutent();
+  tp->closefnc = close_upcall;
+  tp->closearg = upcall_arg;
+  readfnc[tp->pty] = read_upcall;
+  readarg[tp->pty] = upcall_arg;
+  setmask(chkread, tp->pty);
+  excpfnc[tp->pty] = excp_handler;
+  excparg[tp->pty] = (char *) tp;
+  setmask(chkexcp, tp->pty);
+  i = 1;
+  ioctl(tp->pty, TIOCTRAP, &i);
+  write_log_header(tp->pty, user, protocol);
   if (!(tp->pid = fork())) {
     rtprio(0, RTPRIO_RTOFF);
     pw = getpasswdentry(user, 1);
-    if (!pw || pw->pw_passwd[0]) {
-      pw = getpasswdentry("", 0);
-      if (!pw || pw->pw_passwd[0]) exit(1);
-    }
+    if (!pw || pw->pw_passwd[0]) pw = getpasswdentry("", 0);
     for (i = 0; i < _NFILE; i++) close(i);
     setpgrp();
     open(slave, O_RDWR, 0666);
@@ -258,7 +296,11 @@ char  *pollarg;
     termio.c_cc[VEOF] = 4;
     ioctl(0, TCSETA, &termio);
     ioctl(0, TCFLSH, 2);
+    if (!pw || pw->pw_passwd[0]) exit(1);
+    memset((char *) &utmp, 0, sizeof(struct utmp ));
     strcpy(utmp.ut_user, "LOGIN");
+    strcpy(utmp.ut_id, tp->id);
+    strcpy(utmp.ut_line, slave + 5);
     utmp.ut_pid = getpid();
     utmp.ut_type = LOGIN_PROCESS;
     utmp.ut_time = currtime;
@@ -267,10 +309,6 @@ char  *pollarg;
     execle("/bin/login", "login", pw->pw_name, (char *) 0, &env);
     exit(1);
   }
-  tp->poll_timer.start = 1;
-  tp->poll_timer.func = pollfnc;
-  tp->poll_timer.arg = pollarg;
-  start_timer(&tp->poll_timer);
   return tp;
 }
 
@@ -284,73 +322,187 @@ struct login_cb *tp;
   struct utmp utmp, *up;
 
   if (!tp) return;
-  stop_timer(&tp->poll_timer);
-  if (tp->pid) kill(-tp->pid, SIGHUP);
   if (tp->pty > 0) {
+    clrmask(chkread, tp->pty);
+    readfnc[tp->pty] = (void (*)()) 0;
+    readarg[tp->pty] = (char *) 0;
+    clrmask(chkexcp, tp->pty);
+    excpfnc[tp->pty] = (void (*)()) 0;
+    excparg[tp->pty] = (char *) 0;
     close(tp->pty);
     restore_pty(tp->id);
     pty_inuse[tp->num] = 0;
+    write_log(tp->pty, (char *) 0, -1);
   }
-  if (tp->fplog) fclose(tp->fplog);
-  memset(&utmp, 0, sizeof(struct utmp ));
-  strcpy(utmp.ut_id, tp->id);
-  utmp.ut_type = DEAD_PROCESS;
-  if (up = getutid(&utmp)) {
-    up->ut_user[0] = '\0';
-    up->ut_type = DEAD_PROCESS;
-    up->ut_exit.e_termination = 0;
-    up->ut_exit.e_exit = 0;
-    up->ut_time = currtime;
-    memcpy(&utmp, up, sizeof(struct utmp ));
-    pututline(up);
-    fwtmp = open("/etc/wtmp", O_WRONLY | O_CREAT | O_APPEND, 0644);
-    write(fwtmp, (char *) &utmp, sizeof(struct utmp ));
-    close(fwtmp);
+  if (tp->pid > 0) {
+    kill(-tp->pid, SIGHUP);
+    memset((char *) &utmp, 0, sizeof(struct utmp ));
+    strcpy(utmp.ut_id, tp->id);
+    utmp.ut_type = DEAD_PROCESS;
+    if (up = getutid(&utmp)) {
+      up->ut_user[0] = '\0';
+      up->ut_type = DEAD_PROCESS;
+      up->ut_exit.e_termination = 0;
+      up->ut_exit.e_exit = 0;
+      up->ut_time = currtime;
+      memcpy((char *) &utmp, (char *) up, sizeof(struct utmp ));
+      pututline(up);
+      fwtmp = open("/etc/wtmp", O_WRONLY | O_CREAT | O_APPEND, 0644);
+      write(fwtmp, (char *) & utmp, sizeof(struct utmp ));
+      close(fwtmp);
+    }
+    endutent();
   }
-  endutent();
   free((char *) tp);
 }
 
 /*---------------------------------------------------------------------------*/
 
-int  login_read(tp)
-struct login_cb *tp;
-{
-  int  c;
+#define ASIZE 512
 
-  if (tp->bufcnt < 1)
-    if ((tp->bufcnt = read(tp->pty, tp->bufptr = tp->buffer, sizeof(tp->buffer))) < 1)
-      return (-1);
-  c = uchar(*tp->bufptr++);
-  tp->bufcnt--;
-  if (tp->fplog && c != '\r') putc(c, tp->fplog);
-  return c;
+#define add_to_mbuf(chr) \
+{ \
+  if (!head) head = tail = alloc_mbuf(ASIZE); \
+  if (tail->cnt >= ASIZE) tail = tail->next = alloc_mbuf(ASIZE); \
+  tail->data[tail->cnt++] = chr; \
+  cnt--; \
 }
 
 /*---------------------------------------------------------------------------*/
 
-void login_write(tp, c)
+struct mbuf *login_read(tp, cnt)
 struct login_cb *tp;
-char  c;
+int  cnt;
 {
-  if (!c || c == '\n') return;
-  if (c == '\r' || tp->linelen >= 255) {
-    write(tp->pty, "\r", 1);
-    if (tp->fplog) putc('\n', tp->fplog);
-    tp->linelen = 0;
+
+  int  chr;
+  struct mbuf *head, *tail;
+
+  if (cnt <= 0) {
+    clrmask(chkread, tp->pty);
+    return 0;
   }
-  if (c != '\r') {
-    write(tp->pty, &c, 1);
-    if (tp->fplog) putc(c, tp->fplog);
-    tp->linelen++;
+  setmask(chkread, tp->pty);
+  head = 0;
+  while (cnt) {
+    if (tp->bufcnt <= 0) {
+      if ((tp->bufcnt = read(tp->pty, tp->bufptr = tp->buffer, sizeof(tp->buffer))) <= 0)
+	return head;
+      write_log(tp->pty, tp->buffer, tp->bufcnt);
+    }
+    tp->bufcnt--;
+    chr = uchar(*tp->bufptr++);
+    if (tp->telnet) {
+      add_to_mbuf(chr);
+      if (chr == IAC) add_to_mbuf(IAC);
+    } else {
+      if (chr != '\n') add_to_mbuf(chr);
+    }
   }
+  return head;
 }
 
 /*---------------------------------------------------------------------------*/
 
-int  login_dead(tp)
+static int  do_telnet(tp, chr)
 struct login_cb *tp;
+int  chr;
 {
-  return (kill(tp->pid, 0) == -1);
+  struct termio termio;
+
+  switch (tp->state) {
+  case TS_DATA:
+    if (chr != IAC) {
+      /*** if (!tp->option[TN_TRANSMIT_BINARY]) chr &= 0x7f; ***/
+      return 1;
+    }
+    tp->state = TS_IAC;
+    break;
+  case TS_IAC:
+    switch (chr) {
+    case WILL:
+      tp->state = TS_WILL;
+      break;
+    case WONT:
+      tp->state = TS_WONT;
+      break;
+    case DO:
+      tp->state = TS_DO;
+      break;
+    case DONT:
+      tp->state = TS_DONT;
+      break;
+    case IAC:
+      tp->state = TS_DATA;
+      return 1;
+    default:
+      tp->state = TS_DATA;
+      break;
+    }
+    break;
+  case TS_WILL:
+    tp->state = TS_DATA;
+    break;
+  case TS_WONT:
+    tp->state = TS_DATA;
+    break;
+  case TS_DO:
+    if (chr <= NOPTIONS) tp->option[chr] = 1;
+    if (chr == TN_ECHO) {
+      ioctl(tp->pty, TCGETA, &termio);
+      termio.c_lflag |= (ECHO | ECHOE);
+      ioctl(tp->pty, TCSETA, &termio);
+    }
+    tp->state = TS_DATA;
+    break;
+  case TS_DONT:
+    if (chr <= NOPTIONS) tp->option[chr] = 0;
+    if (chr == TN_ECHO) {
+      ioctl(tp->pty, TCGETA, &termio);
+      termio.c_lflag &= ~(ECHO | ECHOE);
+      ioctl(tp->pty, TCSETA, &termio);
+    }
+    tp->state = TS_DATA;
+    break;
+  }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void login_write(tp, bp)
+struct login_cb *tp;
+struct mbuf *bp;
+{
+
+  char  *rp, *wp;
+  char  wbuf[8*1024];
+  int  chr, cnt;
+  struct mbuf *hbp;
+
+  wp = wbuf;
+  while (bp) {
+    rp = bp->data;
+    for (cnt = bp->cnt; cnt; tp->lastchr = chr, cnt--) {
+      chr = uchar(*rp++);
+      if (tp->telnet && !do_telnet(tp, chr)) continue;
+      if (tp->lastchr != '\r' || chr != '\0' && chr != '\n') {
+	*wp++ = chr;
+	if (chr == '\r' || chr == '\n')
+	  tp->linelen = 0;
+	else if (++tp->linelen >= 255) {
+	  *wp++ = '\r';
+	  tp->linelen = 0;
+	}
+      }
+    }
+    hbp = bp;
+    bp = bp->next;
+    free((char *) hbp);
+  }
+  if (cnt = wp - wbuf) {
+    write(tp->pty, wbuf, (unsigned) cnt);
+    write_log(tp->pty, wbuf, cnt);
+  }
 }
 

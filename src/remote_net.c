@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.2 1990/01/29 09:37:20 deyke Exp $ */
+
 #include <sys/types.h>
 
 #include <ctype.h>
@@ -77,7 +79,7 @@ struct cmdtable *tableptr;
 static void delete_controlblock(cp)
 struct controlblock *cp;
 {
-  clrmask(filemask, cp->fd);
+  clrmask(chkread, cp->fd);
   readfnc[cp->fd] = (void (*)()) 0;
   readarg[cp->fd] = (char *) 0;
   close(cp->fd);
@@ -95,14 +97,14 @@ struct controlblock *cp;
 
   cnt = transport_send_space(cp->tp);
   if (cnt <= 0) {
-    clrmask(filemask, cp->fd);
+    clrmask(chkread, cp->fd);
     return;
   }
   if (!(bp = alloc_mbuf(cnt))) return;
   cnt = doread(cp->fd, bp->data, (unsigned) cnt);
   if (cnt <= 0) {
     free_p(bp);
-    clrmask(filemask, cp->fd);
+    clrmask(chkread, cp->fd);
     transport_close(cp->tp);
     return;
   }
@@ -136,7 +138,7 @@ int16 cnt;
   struct controlblock *cp;
 
   cp = (struct controlblock *) tp->user;
-  setmask(filemask, cp->fd);
+  setmask(chkread, cp->fd);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -234,7 +236,7 @@ char  *flisten;
     return;
   }
   cp->fd = fd;
-  setmask(filemask, fd);
+  setmask(chkread, fd);
   readfnc[fd] = command_receive;
   readarg[fd] = (char *) cp;
 }
@@ -265,7 +267,7 @@ remote_net_initialize()
 	  break;
 	}
 	if (!bind(flisten, addr, addrlen) && !listen(flisten, SOMAXCONN)) {
-	  setmask(filemask, flisten);
+	  setmask(chkread, flisten);
 	  readfnc[flisten] = accept_connection;
 	  readarg[flisten] = (char *) flisten;
 	} else {

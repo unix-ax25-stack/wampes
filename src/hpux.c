@@ -1,7 +1,7 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.2 1990/01/29 09:36:56 deyke Exp $ */
+
 #include <sys/types.h>
 
-#include <ctype.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <memory.h>
 #include <signal.h>
@@ -21,21 +21,26 @@
 extern char  *getenv();
 extern int  abort();
 extern int  debug;
-extern int  errno;
 extern long  sigsetmask();
 extern long  time();
 extern struct mbuf *loopq;
 extern unsigned long  alarm();
 extern void _exit();
 
+int  chkread[2];
+int  actread[2];
+void (*readfnc[_NFILE])();
 char *readarg[_NFILE];
-int  filemask[2];
-int  readmask[2];
-long  currtime;
+
+int  chkexcp[2];
+int  actexcp[2];
+void (*excpfnc[_NFILE])();
+char *excparg[_NFILE];
+
 struct asy asy[ASY_MAX];
 struct interface *ifaces;
+long  currtime;
 unsigned  nasy;
-void (*readfnc[_NFILE])();
 
 static int  local_kbd;
 static long  lasttime;
@@ -68,7 +73,7 @@ int  ioinit()
     curr_termio.c_cc[VMIN] = 0;
     curr_termio.c_cc[VTIME] = 0;
     ioctl(0, TCSETA, &curr_termio);
-    setmask(filemask, 0);
+    setmask(chkread, 0);
   } else {
     for (i = 0; i < _NFILE; i++) close(i);
     setpgrp();
@@ -119,8 +124,8 @@ int  kbread()
   static int  incnt;
 
   if (!local_kbd) return remote_kbd();
-  if (incnt <= 0 && maskset(readmask, 0)) {
-    clrmask(readmask, 0);
+  if (incnt <= 0 && maskset(actread, 0)) {
+    clrmask(actread, 0);
     incnt = read(0, inptr = inbuf, sizeof(inbuf));
   }
   if (incnt <= 0) return (-1);
@@ -135,7 +140,7 @@ int  dev;
 {
   if (asy[dev].fd > 0) {
     close(asy[dev].fd);
-    clrmask(filemask, asy[dev].fd);
+    clrmask(chkread, asy[dev].fd);
     asy[dev].fd = -1;
   }
 }
@@ -196,7 +201,7 @@ int16 dev;
     ioctl(asp->fd, TCFLSH, 2);
     asp->speed = 9600;
   }
-  setmask(filemask, asp->fd);
+  setmask(chkread, asp->fd);
   return 0;
 }
 
@@ -303,8 +308,8 @@ unsigned  cnt;
   asp = asy + dev;
   if (asp->incnt <= 0) {
     if (asy[dev].fd <= 0 && asy_open(dev) < 0) return 0;
-    if (!maskset(readmask, asp->fd)) return 0;
-    clrmask(readmask, asp->fd);
+    if (!maskset(actread, asp->fd)) return 0;
+    clrmask(actread, asp->fd);
     asp->incnt = read(asp->fd, asp->inptr = asp->inbuf, sizeof(asp->inbuf));
     if (asp->incnt <= 0) {
       asy_open(dev);
@@ -346,7 +351,7 @@ char  *cmdline;
     return (-1);
   case 0:
     for (i = 3; i < _NFILE; i++) close(i);
-    execl("/bin/sh", "sh", "-c", cmdline, 0);
+    execl("/bin/sh", "sh", "-c", cmdline, (char *) 0);
     _exit(127);
   default:
     oldmask = sigsetmask(-1);
@@ -354,6 +359,14 @@ char  *cmdline;
     sigsetmask(oldmask);
     return status;
   }
+}
+
+/*---------------------------------------------------------------------------*/
+
+int  _system(cmdline)
+char  *cmdline;
+{
+  return system(cmdline);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -395,24 +408,10 @@ int  full;
 
 /*---------------------------------------------------------------------------*/
 
-int  disable()
-{
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-/*ARGSUSED*/
-int  restore(i_state)
-char  i_state;
-{
-}
-
-/*---------------------------------------------------------------------------*/
-
 eihalt()
 {
 
+  int  n;
   int  status;
   register int  nfds;
   register unsigned int  i;
@@ -428,23 +427,29 @@ eihalt()
     currtime = t.tv_sec;
     if (currtime == lasttime) timeout.tv_usec = 999999 - t.tv_usec;
   }
-  if (filemask[1]) {
-    i = filemask[1];
+  if (chkread[1] | chkexcp[1]) {
+    i = chkread[1] | chkexcp[1];
     nfds = 32;
   } else {
-    i = filemask[0];
+    i = chkread[0] | chkexcp[0];
     nfds = 0;
   }
-  while (i) {
-    nfds++;
-    i >>= 1;
-  }
-  readmask[0] = filemask[0];
-  readmask[1] = filemask[1];
-  if (select(nfds, readmask, (int *) 0, (int *) 0, &timeout) < 1)
-    readmask[0] = readmask[1] = 0;
+  for (n = 16; n; n >>= 1)
+    if (i & ((-1) << n)) {
+      nfds += n;
+      i >>= n;
+    }
+  if (i) nfds++;
+  actread[0] = chkread[0];
+  actread[1] = chkread[1];
+  actexcp[0] = chkexcp[0];
+  actexcp[1] = chkexcp[1];
+  if (select(nfds, actread, (int *) 0, actexcp, &timeout) < 1)
+    actread[0] = actread[1] = actexcp[0] = actexcp[1] = 0;
   else
-    for (i = 0; i < nfds; i++)
-      if (readfnc[i] && maskset(readmask, i)) (*readfnc[i])(readarg[i]);
+    for (i = 0; i < nfds; i++) {
+      if (readfnc[i] && maskset(actread, i)) (*readfnc[i])(readarg[i]);
+      if (excpfnc[i] && maskset(actexcp, i)) (*excpfnc[i])(excparg[i]);
+    }
 }
 

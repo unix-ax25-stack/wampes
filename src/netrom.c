@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.2 1990/01/29 09:37:12 deyke Exp $ */
+
 #include <memory.h>
 #include <stdio.h>
 
@@ -982,7 +984,7 @@ struct mbuf *bp;
 
   int  nakrcvd;
   register struct circuit *pc;
-  void nrserv_recv_upcall(), nrserv_state_upcall();
+  void nrserv_recv_upcall(), nrserv_send_upcall(), nrserv_state_upcall();
 
   if (!bp || bp->cnt < 5) goto discard;
 
@@ -1014,6 +1016,7 @@ struct mbuf *bp;
       pc->timer_t4.func = l4_t4_timeout;
       pc->timer_t4.arg = (char *) pc;
       pc->r_upcall = nrserv_recv_upcall;
+      pc->t_upcall = nrserv_send_upcall;
       pc->s_upcall = nrserv_state_upcall;
       pc->next = circuits;
       circuits = pc;
@@ -1254,7 +1257,19 @@ struct circuit *pc;
     net_error = INVALID;
     return (-1);
   }
-  return (pc->window - pc->unack) * NR4MAXINFO - len_mbuf(pc->sndq);
+  switch (pc->state) {
+  case DISCONNECTED:
+    net_error = NO_CONN;
+    return (-1);
+  case CONNECTING:
+  case CONNECTED:
+    if (!pc->closed)
+      return (pc->window - pc->unack) * NR4MAXINFO - len_mbuf(pc->sndq);
+  case DISCONNECTING:
+    net_error = CON_CLOS;
+    return (-1);
+  }
+  return (-1);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1391,48 +1406,24 @@ register struct circuit *pc;
 
 /*---------------------------------------------------------------------------*/
 
-static void nrserv_poll(pc)
+static void nrserv_recv_upcall(pc)
 struct circuit *pc;
 {
-
-  char  *p;
-  int  c;
-  int  cnt;
-  struct login_cb *tp;
   struct mbuf *bp;
 
-  tp = (struct login_cb *) pc->user;
-  start_timer(&tp->poll_timer);
-  if ((cnt = space_nr(pc)) <= 0) return;
-  if (!(bp = alloc_mbuf(cnt))) return;
-  p = bp->data;
-  while (p - bp->data < cnt && (c = login_read(tp)) != -1)
-    if (c != '\n') *p++ = c;
-  if (bp->cnt = p - bp->data)
-    send_nr(pc, bp);
-  else {
-    free_p(bp);
-    if (login_dead(tp)) {
-      stop_timer(&tp->poll_timer);
-      close_nr(pc);
-    }
-  }
+  recv_nr(pc, &bp, 0);
+  login_write((struct login_cb *) pc->user, bp);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void nrserv_recv_upcall(pc, cnt)
+static void nrserv_send_upcall(pc)
 struct circuit *pc;
-int16 cnt;
 {
-
-  char  c;
-  struct login_cb *tp;
   struct mbuf *bp;
 
-  tp = (struct login_cb *) pc->user;
-  recv_nr(pc, &bp, 0);
-  while (pullup(&bp, &c, 1) == 1) login_write(tp, c);
+  if (bp = login_read((struct login_cb *) pc->user, space_nr(pc)))
+    send_nr(pc, bp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1443,7 +1434,7 @@ int  oldstate, newstate;
 {
   switch (newstate) {
   case CONNECTED:
-    pc->user = (char *) login_open(print_address(pc), "NETROM", nrserv_poll, (char *) pc);
+    pc->user = (char *) login_open(print_address(pc), "NETROM", nrserv_send_upcall, close_nr, (char *) pc);
     if (!pc->user) close_nr(pc);
     break;
   case DISCONNECTED:

@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.2 1990/01/29 09:36:50 deyke Exp $ */
+
 #include <memory.h>
 #include <stdio.h>
 #include <string.h>
@@ -1483,9 +1485,22 @@ struct axcb *cp;
     net_error = INVALID;
     return (-1);
   }
-  limit = ax_maxframe * ax_paclen;
-  if (ax_window > limit) limit = ax_window;
-  return limit - cp->sndcnt;
+  switch (cp->state) {
+  case DISCONNECTED:
+    net_error = NO_CONN;
+    return (-1);
+  case CONNECTING:
+  case CONNECTED:
+    if (!cp->closed) {
+      limit = ax_maxframe * ax_paclen;
+      if (ax_window > limit) limit = ax_window;
+      return limit - cp->sndcnt;
+    }
+  case DISCONNECTING:
+    net_error = CON_CLOS;
+    return (-1);
+  }
+  return (-1);
 }
 
 /*---------------------------------------------------------------------------*/

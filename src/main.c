@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.2 1990/01/29 09:37:07 deyke Exp $ */
+
 /* Main network program - provides both client and server functions */
 
 #define HOSTNAMELEN 64
@@ -129,6 +131,7 @@ int  doremote();
 int  doreset();
 int  doroute();
 int  dosession();
+int  dosource();
 int  dostart();
 int  dostatus();
 int  dostime();
@@ -230,6 +233,7 @@ static struct cmds cmds[] = {
 	"route",        doroute,        0, NULLCHAR,    NULLCHAR,
 	"status",       dostatus,       0, NULLCHAR,    NULLCHAR,
 	"session",      dosession,      0, NULLCHAR,    NULLCHAR,
+	"source",       dosource,       2, "source <filename>", NULLCHAR,
 #ifdef  SERVERS
 	"start",        dostart,        2, "start <servername>",NULLCHAR,
 	"stime",        dostime,        0, NULLCHAR,    NULLCHAR,
@@ -1125,6 +1129,26 @@ char  *argv[];
   my_argv[0] = "ip";
   doip(2, my_argv);
 
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int  dosource(argc, argv)
+int  argc;
+char  *argv[];
+{
+
+  FILE * fp;
+  char  inbuf[BUFSIZ];
+
+  if (!(fp = fopen(argv[1], "r"))) {
+    printf("cannot open %s\n", argv[1]);
+    return 1;
+  }
+  while (fgets(inbuf, BUFSIZ, fp))
+    cmdparse(cmds, inbuf);
+  fclose(fp);
   return 0;
 }
 

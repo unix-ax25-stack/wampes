@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.2 1990/01/29 09:37:22 deyke Exp $ */
+
 #include <sys/types.h>
 
 #include <stdio.h>
@@ -25,14 +27,14 @@ struct tcb *tcb;
 
   fd = (int) tcb->user;
   if ((cnt = space_tcp(tcb)) <= 0) {
-    clrmask(filemask, fd);
+    clrmask(chkread, fd);
     return;
   }
   if (!(bp = alloc_mbuf(cnt))) return;
   cnt = doread(fd, bp->data, (unsigned) cnt);
   if (cnt <= 0) {
     free_p(bp);
-    clrmask(filemask, fd);
+    clrmask(chkread, fd);
     close_tcp(tcb);
     return;
   }
@@ -66,7 +68,7 @@ int16 cnt;
   int  fd;
 
   fd = (int) tcb->user;
-  setmask(filemask, fd);
+  setmask(chkread, fd);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -96,7 +98,7 @@ char  old, new;
       close_tcp(tcb);
       return;
     }
-    setmask(filemask, fd);
+    setmask(chkread, fd);
     readfnc[fd] = tcp_send;
     readarg[fd] = (char *) tcb;
     return;
@@ -112,7 +114,7 @@ char  old, new;
     log(tcb, "close %s", tcp_port(tcb->conn.local.port));
     fd = (int) tcb->user;
     if (fd > 0 && fd < _NFILE) {
-      clrmask(filemask, fd);
+      clrmask(chkread, fd);
       readfnc[fd] = (void (*)()) 0;
       readarg[fd] = (char *) 0;
       close(fd);

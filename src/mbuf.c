@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mbuf.c,v 1.2 1990/01/29 09:37:10 deyke Exp $ */
+
 /* Primitive mbuf allocate/free routines */
 
 #include "global.h"
@@ -72,9 +74,8 @@ int16
 len_mbuf(bp)
 register struct mbuf *bp;
 {
-	int cnt;
+	register int cnt = 0;
 
-	cnt = 0;
 	while(bp != NULLBUF){
 		cnt += bp->cnt;
 		bp = bp->next;
@@ -216,8 +217,11 @@ int16 cnt;
 	while(*bph != NULLBUF && cnt != 0){
 		bp = *bph;
 		n = min(cnt,bp->cnt);
-		if(buf != NULLCHAR && n != 0){
-			memcpy(buf,bp->data,n);
+		if(buf != NULLCHAR){
+			if(n == 1)      /* Common case optimization */
+				*buf = *bp->data;
+			else if(n > 1)
+				memcpy(buf,bp->data,n);
 			buf += n;
 		}
 		tot += n;
@@ -289,11 +293,9 @@ struct mbuf **q;
 struct mbuf *bp;
 {
 	register struct mbuf *p;
-	char i_state;
 
 	if(q == NULLBUFP || bp == NULLBUF)
 		return;
-	i_state = disable();
 	if(*q == NULLBUF){
 		/* List is empty, stick at front */
 		*q = bp;
@@ -302,7 +304,6 @@ struct mbuf *bp;
 			;
 		p->anext = bp;
 	}
-	restore(i_state);
 }
 /* Unlink a packet from the head of the queue */
 struct mbuf *
@@ -310,16 +311,13 @@ dequeue(q)
 register struct mbuf **q;
 {
 	register struct mbuf *bp;
-	char i_state;
 
 	if(q == NULLBUFP)
 		return NULLBUF;
-	i_state = disable();
 	if((bp = *q) != NULLBUF){
 		*q = bp->anext;
 		bp->anext = NULLBUF;
 	}
-	restore(i_state);
 	return bp;
 }
 
