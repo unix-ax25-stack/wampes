@@ -1,5 +1,9 @@
 -------------------------------------------------------------------------------
 
+- netupd should resync automatically
+
+- upload of a big file to telnet:loopback:echo causes spinning
+
 - muss die pty beim login erst geflushed werden?
 
 - Der from teil  kann nur !  enthalten,  dann  steht  der s&f.  ==> wenn

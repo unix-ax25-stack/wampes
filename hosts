@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.34 1994/06/27 10:03:26 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.35 1994/07/05 10:45:01 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -2093,6 +2093,7 @@
 44.130.176.49   DL8SK   # Simon
 44.130.176.50   DK3SI-SUN       # Harald Tietze
 44.130.176.51   DK3SI-LNX       #
+44.130.176.120  DL4IS   # Karl-Heinz Kreutel, 75245 Neulingen
 44.130.176.123  DG2SBV-SATGATE  #
 44.130.176.124  DG2SBV-SATBBS   #
 44.130.176.125  DG2SBV  # Horst Venzke, Althuette; WNOS
