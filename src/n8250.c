@@ -1,9 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.4 1991/04/17 19:47:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.5 1991/04/25 18:26:27 deyke Exp $ */
 
 #include <sys/types.h>
 
 #include <fcntl.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <termio.h>
 #include <unistd.h>
@@ -19,8 +20,7 @@
 #include "hpux.h"
 #include "8250.h"
 #include "devparam.h"
-
-extern struct sockaddr *build_sockaddr();
+#include "buildsaddr.h"
 
 static int asy_open __ARGS((int dev));
 

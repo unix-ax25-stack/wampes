@@ -1,12 +1,10 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.5 1991/04/12 18:34:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.6 1991/04/25 18:26:31 deyke Exp $ */
 
 #include <stdio.h>
 
 #include "global.h"
 #include "timer.h"
 #include "arp.h"
-
-extern int  debug;
 
 #define ARP_FILE_VERSION   2
 #define ARP_SAVETIME       (60L*10)
@@ -47,7 +45,7 @@ void arp_savefile()
   struct arp_tab *p;
 
   if (!nextsavetime) nextsavetime = secclock() + ARP_SAVETIME;
-  if (debug || nextsavetime > secclock()) return;
+  if (Debug || nextsavetime > secclock()) return;
   nextsavetime = secclock() + ARP_SAVETIME;
   if (!(fp = fopen(arp_tmpfilename, "w"))) return;
   putc(ARP_FILE_VERSION, fp);
@@ -82,7 +80,7 @@ void arp_loadfile()
 
   if (done) return;
   done = 1;
-  if (debug || !(fp = fopen(arp_filename, "r"))) return;
+  if (Debug || !(fp = fopen(arp_filename, "r"))) return;
   switch (getc(fp)) {
   case 0:
     {

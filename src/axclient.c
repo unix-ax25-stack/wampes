@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.8 1991/03/28 19:39:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.9 1991/04/25 18:26:38 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -12,9 +12,12 @@
 #include "lapb.h"
 #include "session.h"
 
+static void axclient_parse __ARGS((char *buf, int n));
+static void axclient_state_upcall __ARGS((struct ax25_cb *cp, int oldstate, int newstate));
+
 /*---------------------------------------------------------------------------*/
 
-static int axclient_parse(buf, n)
+static void axclient_parse(buf, n)
 char *buf;
 int n;
 {

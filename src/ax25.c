@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.9 1991/03/28 19:39:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.10 1991/04/25 18:26:34 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -340,7 +340,7 @@ int  perm;
 
 /*---------------------------------------------------------------------------*/
 
-int  axroute(cp, bp)
+void axroute(cp, bp)
 struct ax25_cb *cp;
 struct mbuf *bp;
 {

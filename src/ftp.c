@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.3 1990/09/11 13:45:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.c,v 1.4 1991/04/25 18:26:49 deyke Exp $ */
 
 /* Stuff common to both the FTP server and client */
 #include <stdio.h>
@@ -14,7 +14,7 @@
 void
 ftpdr(tcb,cnt)
 struct tcb *tcb;
-int16 cnt;
+int cnt;
 {
 	register struct ftp *ftp;
 	struct mbuf *bp;
@@ -28,7 +28,7 @@ int16 cnt;
 	/* This will likely also generate an ACK with window rotation */
 	recv_tcp(tcb,&bp,cnt);
 
-#if (UNIX || MAC || AMIGA || ATARI_ST)
+#if (defined(UNIX) || defined(MAC) || defined(AMIGA) || defined(ATARI_ST))
 	if(ftp->type == ASCII_TYPE){
 		while((c = PULLCHAR(&bp)) != -1){
 			if(c != '\r')
@@ -53,7 +53,7 @@ int16 cnt;
 void
 ftpdt(tcb,cnt)
 struct tcb *tcb;
-int16 cnt;
+int cnt;
 {
 	struct ftp *ftp;
 	struct mbuf *bp;
@@ -120,7 +120,6 @@ struct ftp *
 ftp_create(bufsize)
 unsigned bufsize;
 {
-	void ftp_delete();
 	register struct ftp *ftp;
 
 	if((ftp = (struct ftp *)calloc(1,sizeof (struct ftp))) == NULLFTP)

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.6 1991/03/28 19:39:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.h,v 1.7 1991/04/25 18:26:35 deyke Exp $ */
 
 #ifndef _AX25_H
 #define _AX25_H
@@ -109,7 +109,7 @@ void axnl3 __ARGS((struct iface *iface,struct ax25_cb *axp,char *src,
 	char *dest,struct mbuf *bp,int mcast));
 struct ax_route *ax_routeptr __ARGS((char *call, int create));
 void axroute_add __ARGS((struct iface *iface, struct ax25 *hdr, int perm));
-int axroute __ARGS((struct ax25_cb *cp, struct mbuf *bp));
+void axroute __ARGS((struct ax25_cb *cp, struct mbuf *bp));
 char *ax25hdr_to_string __ARGS((struct ax25 *hdr));
 
 /* In axhdr.c: */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.6 1991/04/17 19:48:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.7 1991/04/25 18:27:38 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -13,8 +13,7 @@
 #include "netuser.h"
 #include "tcp.h"
 #include "hpux.h"
-
-struct sockaddr *build_sockaddr __ARGS((char *name, int *addrlen));
+#include "buildsaddr.h"
 
 struct dest {
   int  port;
@@ -107,8 +106,8 @@ int  old, new;
       close_tcp(tcb);
       return;
     }
-    readfnc[fd] = tcp_send;
-    readarg[fd] = (char *) tcb;
+    readfnc[fd] = (void (*)()) tcp_send;
+    readarg[fd] = tcb;
     setmask(chkread, fd);
     return;
   case TCP_CLOSE_WAIT:

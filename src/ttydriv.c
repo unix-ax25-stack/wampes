@@ -1,10 +1,13 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.6 1991/02/24 20:17:58 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.7 1991/04/25 18:27:48 deyke Exp $ */
 
 /* TTY input line editing
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "global.h"
+#include "tty.h"
 
 #define LINESIZE     1024
 #define LINEMAX      (LINESIZE-5)
@@ -15,18 +18,24 @@
 
 static int  rawmode;
 
+static void printchr __ARGS((int chr));
+static void backchr __ARGS((int chr));
+static void delchr __ARGS((int chr));
+
 /*---------------------------------------------------------------------------*/
 
-raw()
+int  raw()
 {
   rawmode = 1;
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-cooked()
+int  cooked()
 {
   rawmode = 0;
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/

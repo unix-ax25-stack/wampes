@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.10 1991/02/24 20:17:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.11 1991/04/25 18:27:10 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -119,7 +119,7 @@ char  *id;
 
 /*---------------------------------------------------------------------------*/
 
-fixutmpfile()
+void fixutmpfile()
 {
   register struct utmp *up;
 
@@ -384,10 +384,10 @@ void  *upcall_arg;
   readfnc[tp->pty] = read_upcall;
   readarg[tp->pty] = upcall_arg;
   setmask(chkread, tp->pty);
-  writefnc[tp->pty] = write_pty;
-  writearg[tp->pty] = (char *) tp;
-  excpfnc[tp->pty] = excp_handler;
-  excparg[tp->pty] = (char *) tp;
+  writefnc[tp->pty] = (void (*)()) write_pty;
+  writearg[tp->pty] = tp;
+  excpfnc[tp->pty] = (void (*)()) excp_handler;
+  excparg[tp->pty] = tp;
   setmask(chkexcp, tp->pty);
   i = 1;
   ioctl(tp->pty, TIOCTRAP, &i);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.7 1991/02/24 20:17:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netuser.c,v 1.8 1991/04/25 18:27:22 deyke Exp $ */
 
 /* Miscellaneous integer and IP address format conversion subroutines
  * Copyright 1991 Phil Karn, KA9Q
@@ -23,6 +23,10 @@ static struct hosttable {
   int32 addr;
   char  name[1];
 } *hosttable;
+
+static void strlwc __ARGS((char *to, char *from));
+static void add_to_hosttable __ARGS((char *name, int32 addr));
+static void read_hosttable __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
 

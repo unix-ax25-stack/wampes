@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.h,v 1.5 1991/02/24 20:17:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.h,v 1.6 1991/04/25 18:27:47 deyke Exp $ */
 
 #ifndef _TRANSPORT_H
 #define _TRANSPORT_H
@@ -9,16 +9,24 @@
 #define EOL_CRLF        3       /* EOL is "\r\n" */
 
 struct transport_cb {
-  char  *cp;                    /* Pointer to connection control block */
-  int  (*recv)();               /* Recv function */
-  int  (*send)();               /* Send function */
-  int  (*send_space)();         /* Send space function */
-  int  (*close)();              /* Close function */
-  int  (*del)();                /* Delete function */
-  void (*r_upcall)();           /* Called when data arrives */
-  void (*t_upcall)();           /* Called when ok to send more data */
-  void (*s_upcall)();           /* Called when connection is terminated */
-  char  *user;                  /* User parameter (e.g., for mapping to an
+  void *cp;                     /* Pointer to connection control block */
+  int (*recv) __ARGS((void *cp, struct mbuf **bpp, int cnt));
+				/* Recv function */
+  int (*send) __ARGS((void *cp, struct mbuf *bp));
+				/* Send function */
+  int (*send_space) __ARGS((void *cp));
+				/* Send space function */
+  int (*close) __ARGS((void *cp));
+				/* Close function */
+  int (*del) __ARGS((void *cp));
+				/* Delete function */
+  void (*r_upcall) __ARGS((struct transport_cb *tp, int cnt));
+				/* Called when data arrives */
+  void (*t_upcall) __ARGS((struct transport_cb *tp, int cnt));
+				/* Called when ok to send more data */
+  void (*s_upcall) __ARGS((struct transport_cb *tp));
+				/* Called when connection is terminated */
+  void *user;                   /* User parameter (e.g., for mapping to an
 				 * application control block
 				 */
   struct timer timer;           /* No activity timer */
@@ -29,7 +37,13 @@ struct transport_cb {
 };
 
 /* In transport.c: */
-struct transport_cb *transport_open __ARGS((char *protocol, char *address, void (*r_upcall )(), void (*t_upcall )(), void (*s_upcall )(), char *user));
+struct transport_cb *transport_open __ARGS((
+  char *protocol,
+  char *address,
+  void (*r_upcall) __ARGS((struct transport_cb *tp, int cnt)),
+  void (*t_upcall) __ARGS((struct transport_cb *tp, int cnt)),
+  void (*s_upcall) __ARGS((struct transport_cb *tp)),
+  void *user));
 int transport_recv __ARGS((struct transport_cb *tp, struct mbuf **bpp, int cnt));
 int transport_send __ARGS((struct transport_cb *tp, struct mbuf *bp));
 int transport_send_space __ARGS((struct transport_cb *tp));

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.6 1991/03/28 19:40:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.h,v 1.7 1991/04/25 18:27:33 deyke Exp $ */
 
 #ifndef _SESSION_H
 #define _SESSION_H
@@ -50,7 +50,7 @@ struct session {
 		struct circuit *netrom;
 #endif
 	} cb;
-	int (*parse) __ARGS((char *,int));
+	void (*parse) __ARGS((char *,int));
 				/* Where to hand typed input when conversing */
 	FILE *record;           /* Receive record file */
 	char *rfile;            /* Record file name */
@@ -73,6 +73,9 @@ int doreset __ARGS((int argc, char *argv[], void *p));
 int dokick __ARGS((int argc, char *argv[], void *p));
 int dorecord __ARGS((int argc, char *argv[], void *p));
 int doupload __ARGS((int argc, char *argv[], void *p));
+
+/* In main.c: */
+int cmdmode __ARGS((void));
 
 extern int16 Lport;
 

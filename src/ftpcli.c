@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.6 1991/03/28 19:39:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpcli.c,v 1.7 1991/04/25 18:26:50 deyke Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q
@@ -18,9 +18,7 @@
 #include "netuser.h"
 #include "dirutil.h"
 
-void ftpdr(),ftpdt(),ftpccr();
-int doabort();
-
+static void ftpparse __ARGS((char *line,int len));
 static int doascii __ARGS((int argc,char *argv[],void *p));
 static int dobinary __ARGS((int argc,char *argv[],void *p));
 static int doftpcd __ARGS((int argc,char *argv[],void *p));
@@ -70,10 +68,8 @@ int argc;
 char *argv[];
 void *p;
 {
-	int32 resolve();
-	int ftpparse();
 	struct session *s;
-	struct ftp *ftp,*ftp_create();
+	struct ftp *ftp;
 	struct tcb *tcb;
 	struct socket lsocket,fsocket;
 
@@ -117,10 +113,10 @@ void *p;
 	return 0;
 }
 /* Parse user FTP commands */
-int
+static void
 ftpparse(line,len)
 char *line;
-int16 len;
+int len;
 {
 	struct mbuf *bp;
 
@@ -442,6 +438,7 @@ void *p;
 	}
 	ftp->state = COMMAND_STATE;
 	fflush(stdout);
+	return 0;
 }
 /* create data port, and send PORT message */
 static int
@@ -461,7 +458,7 @@ void (*state)();
 
 	if((bp = alloc_mbuf(35)) == NULLBUF){   /* 5 more than worst case */
 		tprintf(Nospace);
-		return;
+		return 0;
 	}
 	/* I know, this looks gross, but it works! */
 	sprintf(bp->data,"PORT %u,%u,%u,%u,%u,%u\r\n",
@@ -477,6 +474,7 @@ void (*state)();
 	/* Post a listen on the data connection */
 	ftp->data = open_tcp(&lsocket,NULLSOCK,TCP_PASSIVE,0,
 		recv,send,state,0,(int)ftp);
+	return 0;
 }
 /* FTP Client Control channel Receiver upcall routine */
 void

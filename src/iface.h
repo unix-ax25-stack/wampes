@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.5 1991/04/12 18:34:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.h,v 1.6 1991/04/25 18:27:01 deyke Exp $ */
 
 #ifndef _IFACE_H
 #define _IFACE_H
@@ -58,6 +58,8 @@ struct iface {
 	void (*rxproc) __ARGS((struct iface *)); /* Receiver process, if any */
 	struct proc *txproc;    /* Transmitter process, if any */
 	struct proc *supv;      /* Supervisory process, if any */
+	int sendcrc;            /* Send CRC if true (KISS only) */
+	int32 crcerrors;        /* Packets received with CRC errors (KISS only) */
 };
 #define NULLIF  (struct iface *)0
 extern struct iface *Ifaces;    /* Head of interface list */

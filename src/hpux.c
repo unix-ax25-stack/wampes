@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.16 1991/02/24 20:16:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.17 1991/04/25 18:26:54 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -17,9 +17,10 @@
 #include "timer.h"
 #include "files.h"
 #include "hardware.h"
+#include "login.h"
+#include "commands.h"
 #include "hpux.h"
 
-extern int  debug;
 extern long  sigsetmask();
 extern void _exit();
 
@@ -27,18 +28,18 @@ extern void _exit();
 
 int  chkread[2];
 int  actread[2];
-void (*readfnc[_NFILE])();
-char *readarg[_NFILE];
+void (*readfnc[_NFILE]) __ARGS((void *));
+void *readarg[_NFILE];
 
 int  chkwrite[2];
 int  actwrite[2];
-void (*writefnc[_NFILE])();
-char *writearg[_NFILE];
+void (*writefnc[_NFILE]) __ARGS((void *));
+void *writearg[_NFILE];
 
 int  chkexcp[2];
 int  actexcp[2];
-void (*excpfnc[_NFILE])();
-char *excparg[_NFILE];
+void (*excpfnc[_NFILE]) __ARGS((void *));
+void *excparg[_NFILE];
 
 static int  local_kbd;
 
@@ -89,9 +90,9 @@ void ioinit()
   sigvector(SIGPIPE, &vec, (struct sigvec *) 0);
   vec.sv_handler = (void (*)()) abort;
   sigvector(SIGALRM, &vec, (struct sigvec *) 0);
-  if (!debug) alarm(TIMEOUT);
+  if (!Debug) alarm(TIMEOUT);
   umask(022);
-  if (!debug) rtprio(0, 127);
+  if (!Debug) rtprio(0, 127);
   if (!getenv("HOME"))
     putenv("HOME=/users/root");
   if (!getenv("LOGNAME"))
@@ -198,7 +199,7 @@ static void check_files_changed()
   static long  nexttime, net_time, rc_time;
   struct stat statbuf;
 
-  if (debug || nexttime > secclock()) return;
+  if (Debug || nexttime > secclock()) return;
   nexttime = secclock() + 600;
 
   if (stat("/tcp/net", &statbuf)) return;
@@ -216,7 +217,7 @@ static void check_files_changed()
 
 /*---------------------------------------------------------------------------*/
 
-eihalt()
+void eihalt()
 {
 
   int  n;
@@ -228,7 +229,7 @@ eihalt()
 
   check_files_changed();
   wait3(&status, WNOHANG, (int *) 0);
-  if (!debug) alarm(TIMEOUT);
+  if (!Debug) alarm(TIMEOUT);
   if (chkread[1] | chkwrite[1] | chkexcp[1]) {
     i = chkread[1] | chkwrite[1] | chkexcp[1];
     nfds = 32;

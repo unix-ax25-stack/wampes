@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.3 1991/04/12 18:34:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.4 1991/04/25 18:26:36 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -8,8 +8,6 @@
 #include "iface.h"
 #include "ax25.h"
 #include "asy.h"
-
-extern int  debug;
 
 #define AXROUTEHOLDTIME (0x7fffffff / 1000)
 #define AXROUTESAVETIME (60L*10)
@@ -38,7 +36,7 @@ void axroute_savefile()
   struct axroutesaverecord buf;
 
   if (!nextsavetime) nextsavetime = secclock() + AXROUTESAVETIME;
-  if (debug || nextsavetime > secclock()) return;
+  if (Debug || nextsavetime > secclock()) return;
   nextsavetime = secclock() + AXROUTESAVETIME;
   if (!(fp = fopen(axroutetmpfile, "w"))) return;
   for (i = 0; i < AXROUTESIZE; i++)
@@ -81,7 +79,7 @@ void axroute_loadfile()
 
   if (done) return;
   done = 1;
-  if (debug || !(fp = fopen(axroutefile, "r"))) return;
+  if (Debug || !(fp = fopen(axroutefile, "r"))) return;
   memset(ifptable, 0, sizeof(ifptable));
   for (ifp = Ifaces; ifp; ifp = ifp->next)
     if (ifp->output == ax_output) ifptable[ifp->dev] = ifp;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.h,v 1.3 1991/02/24 20:17:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.h,v 1.4 1991/04/25 18:27:43 deyke Exp $ */
 
 #ifndef _TELNET_H
 #define _TELNET_H
@@ -43,7 +43,8 @@ struct telnet {
 };
 #define NULLTN  (struct telnet *)0
 extern int refuse_echo;
-struct telnet *open_telnet();
-int send_tel(),tel_input();
+
+/* In telnet.c: */
+void rcv_char __ARGS((struct tcb *tcb, int cnt));
 
 #endif  /* _TELNET_H */

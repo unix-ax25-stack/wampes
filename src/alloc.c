@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.8 1991/04/12 18:34:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.9 1991/04/25 18:26:28 deyke Exp $ */
 
 /* memory allocation routines
  */
@@ -33,6 +33,7 @@ static unsigned long Inuse;
 static unsigned long Morecores;
 
 static void giveup __ARGS((char *mesg));
+static unsigned int blksize __ARGS((void *p));
 
 /*---------------------------------------------------------------------------*/
 
@@ -150,7 +151,7 @@ void *pp;
 
 /* Return size of allocated buffer, in bytes */
 
-unsigned int  blksize(p)
+static unsigned int  blksize(p)
 void *p;
 {
   register struct block *tp;

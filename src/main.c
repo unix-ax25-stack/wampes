@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.13 1991/04/12 18:35:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.14 1991/04/25 18:27:15 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -33,6 +33,8 @@
 #include "kiss.h"
 #include "enet.h"
 #include "timer.h"
+#include "tty.h"
+#include "usock.h"
 #include "netrom.h"
 #include "ip.h"
 #include "tcp.h"
@@ -42,6 +44,7 @@
 #include "trace.h"
 #include "devparam.h"
 #include "hpux.h"
+#include "remote_net.h"
 
 extern int errno;
 extern char *sys_errlist[];
@@ -52,7 +55,7 @@ extern struct cmds Cmds[],Startcmds[],Stopcmds[],Attab[];
 static char Escape = 0x1d;      /* default escape character is ^] */
 #endif
 
-int debug;
+int Debug;
 int Mode;
 char Badhost[] = "Unknown host %s\n";
 char *Hostname;
@@ -74,7 +77,7 @@ char *argv[];
 	struct iface *ifp;
 	int c;
 
-	debug = (argc >= 2);
+	Debug = (argc >= 2);
 
 	while((c = getopt(argc,argv,"v")) != EOF){
 		switch(c){
@@ -90,7 +93,7 @@ char *argv[];
 
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
 	tprintf("\n");
-	tprintf("@(#)WAMPES version 910412\n" + 4);
+	tprintf("@(#)WAMPES version 910425\n" + 4);
 	tprintf("(c) Copyright 1990, 1991 by Dieter Deyke, DK5SG\n");
 	tprintf("(c) Copyright 1990 by Phil Karn, KA9Q\n");
 	tprintf("\n");
@@ -130,15 +133,14 @@ char *argv[];
 				}
 				continue;
 			}
-#endif
-#ifdef SYS5
+#else
 			if(c == Escape && Escape != 0){
 				ttydriv('\r', &ttybuf);
 				Mode = CONV_MODE;
 				cmdmode();
 				continue;
 			}
-#endif   /* SYS5 */
+#endif
 			if ((cnt = ttydriv(c, &ttybuf)) == 0)
 				continue;
 			switch(Mode){
@@ -153,7 +155,7 @@ char *argv[];
 					cmdmode();
 				} else
 #endif  /* MSDOS */
-					if(Current->parse != NULLFP)
+					if(Current->parse != NULLVFP)
 						(*Current->parse)(ttybuf,cnt);
 
 				break;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.10 1991/02/24 20:17:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.11 1991/04/25 18:27:21 deyke Exp $ */
 
 #ifndef _NETROM_H
 #define _NETROM_H
@@ -117,9 +117,9 @@ extern char Nr_nodebc[AXALEN];
 
 /* In netrom.c: */
 int isnetrom __ARGS((char *call));
-int new_neighbor __ARGS((char *call));
+void new_neighbor __ARGS((char *call));
 int nr_send __ARGS((struct mbuf *bp, struct iface *iface, int32 gateway, int prec, int del, int tput, int rel));
-int nr3_input __ARGS((struct mbuf *bp, char *fromcall));
+void nr3_input __ARGS((struct mbuf *bp, char *fromcall));
 char *nr_addr2str __ARGS((struct circuit *pc));
 struct circuit *open_nr __ARGS((char *node, char *cuser, int window, void (*r_upcall )__ARGS ((struct circuit *p, int cnt )), void (*t_upcall )__ARGS ((struct circuit *p, int cnt )), void (*s_upcall )__ARGS ((struct circuit *p, int oldstate, int newstate )), char *user));
 int send_nr __ARGS((struct circuit *pc, struct mbuf *bp));
@@ -135,6 +135,6 @@ int nr_attach __ARGS((int argc, char *argv [], void *p));
 int donetrom __ARGS((int argc, char *argv [], void *p));
 int nr4start __ARGS((int argc, char *argv [], void *p));
 int nr40 __ARGS((int argc, char *argv [], void *p));
-int netrom_initialize __ARGS((void));
+void netrom_initialize __ARGS((void));
 
 #endif  /* _NETROM_H */

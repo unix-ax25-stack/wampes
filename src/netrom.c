@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.19 1991/04/12 18:35:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.20 1991/04/25 18:27:18 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -108,7 +108,7 @@ static void circuit_manager __ARGS((struct mbuf *bp));
 static void nrserv_recv_upcall __ARGS((struct circuit *pc, int cnt));
 static void nrserv_send_upcall __ARGS((struct circuit *pc, int cnt));
 static void nrserv_state_upcall __ARGS((struct circuit *pc, int oldstate, int newstate));
-static int nrclient_parse __ARGS((char *buf, int n));
+static void nrclient_parse __ARGS((char *buf, int n));
 static void nrclient_state_upcall __ARGS((struct circuit *pc, int oldstate, int newstate));
 static int donconnect __ARGS((int argc, char *argv [], void *p));
 static int dobroadcast __ARGS((int argc, char *argv [], void *p));
@@ -527,7 +527,7 @@ static void calculate_all()
 
 /*---------------------------------------------------------------------------*/
 
-int  new_neighbor(call)
+void new_neighbor(call)
 char  *call;
 {
   if (update_link(mynode, nodeptr(call, 1), 1, nr_hfqual))
@@ -772,7 +772,7 @@ int  rel;
 
 /*---------------------------------------------------------------------------*/
 
-nr3_input(bp, fromcall)
+void nr3_input(bp, fromcall)
 struct mbuf *bp;
 char  *fromcall;
 {
@@ -1577,7 +1577,7 @@ int  oldstate, newstate;
 
 /*---------------------------------------------------------------------------*/
 
-static int nrclient_parse(buf, n)
+static void nrclient_parse(buf, n)
 char *buf;
 int n;
 {
@@ -2174,7 +2174,7 @@ void *p;
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 
-netrom_initialize()
+void netrom_initialize()
 {
   link_manager_initialize();
   routing_manager_initialize();

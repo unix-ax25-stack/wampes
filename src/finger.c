@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.5 1991/03/28 19:39:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/finger.c,v 1.6 1991/04/25 18:26:47 deyke Exp $ */
 
 /*
  *
@@ -45,15 +45,11 @@ int     argc;
 char    *argv[];
 void *p;
 {
-	void            f_state(),
-			fingcli_rcv();
-	int32           resolve();
 	struct session  *s;
 	struct tcb      *tcb;
 	struct socket   lsocket,
 			fsocket;
-	struct finger   *finger,
-					*alloc_finger();
+	struct finger   *finger;
 	char            *host;
 
 	if (argc < 2) {
@@ -125,7 +121,7 @@ void *p;
 		strcpy(s->name, host);
 
 	s->type = FINGER;
-	s->parse = (int (*)()) NULL;
+	s->parse = 0;
 
 	tcb = open_tcp(&lsocket, &fsocket, TCP_ACTIVE, 0,
 	 fingcli_rcv, (void (*)()) 0, f_state, 0, (int) finger);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.5 1991/04/12 18:35:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.6 1991/04/25 18:27:04 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -6,8 +6,6 @@
 #include "timer.h"
 #include "iface.h"
 #include "ip.h"
-
-extern int  debug;
 
 #define ROUTE_FILE_VERSION   2
 #define ROUTE_SAVETIME       (60L*10)
@@ -46,7 +44,7 @@ void route_savefile()
   struct route_saverecord_2 buf;
 
   if (!nextsavetime) nextsavetime = secclock() + ROUTE_SAVETIME;
-  if (debug || nextsavetime > secclock()) return;
+  if (Debug || nextsavetime > secclock()) return;
   nextsavetime = secclock() + ROUTE_SAVETIME;
   if (!(fp = fopen(route_tmpfilename, "w"))) return;
   putc(ROUTE_FILE_VERSION, fp);
@@ -85,7 +83,7 @@ void route_loadfile()
 
   if (done) return;
   done = 1;
-  if (debug || !(fp = fopen(route_filename, "r"))) return;
+  if (Debug || !(fp = fopen(route_filename, "r"))) return;
   switch (getc(fp)) {
   case 1:
     {

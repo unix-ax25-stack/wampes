@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.6 1991/04/17 19:47:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kiss.c,v 1.7 1991/04/25 18:27:06 deyke Exp $ */
 
 /* Routines for AX.25 encapsulation in KISS TNC
  * Copyright 1991 Phil Karn, KA9Q
@@ -11,6 +11,7 @@
 #include "slip.h"
 #include "asy.h"
 #include "ax25.h"
+#include "crc.h"
 
 /* Send raw data packet on KISS TNC */
 int
@@ -26,6 +27,10 @@ struct mbuf *data;
 		return -1;
 	}
 	bp->data[0] = PARAM_DATA;
+	if(iface->sendcrc){
+		bp->data[0] |= 0x80;
+		append_crc(bp);
+	}
 	/* slip_raw also increments sndrawcnt */
 	slip_raw(iface,bp);
 	return 0;
@@ -39,6 +44,13 @@ struct mbuf *bp;
 {
 	char kisstype;
 
+	if(bp && (*bp->data & 0x80)){
+		if(check_crc(bp)){
+			iface->crcerrors++;
+			free_p(bp);
+			return;
+		}
+	}
 	kisstype = PULLCHAR(&bp);
 	switch(kisstype & 0xf){
 	case PARAM_DATA:

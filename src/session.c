@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.7 1991/03/28 19:40:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.8 1991/04/25 18:27:32 deyke Exp $ */
 
 /* NOS User Session control
  * Copyright 1991 Phil Karn, KA9Q
@@ -20,6 +20,7 @@
 #include "session.h"
 #include "cmdparse.h"
 #include "timer.h"
+#include "tty.h"
 #include "commands.h"
 #include "hardware.h"
 
@@ -27,6 +28,8 @@ struct session *Sessions;
 struct session *Current;
 char Notval[] = "Not a valid control block\n";
 static char Badsess[] = "Invalid session\n";
+
+static struct session *sessptr __ARGS((char *cp));
 
 /* Convert a character string containing a decimal session index number
  * into a pointer. If the arg is NULLCHAR, use the current default session.
@@ -142,9 +145,6 @@ int argc;
 char *argv[];
 void *p;
 {
-
-	void rcv_char(),ftpccr(),fingcli_rcv();
-
 	if(Current == NULLSESSION || Current->type == FREE)
 		return 0;
 	Mode = CONV_MODE;

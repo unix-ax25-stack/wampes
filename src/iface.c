@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.5 1991/02/24 20:16:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iface.c,v 1.6 1991/04/25 18:27:00 deyke Exp $ */
 
 /* IP interface control and configuration routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -26,6 +26,7 @@ static int ifrxbuf __ARGS((int argc,char *argv[],void *p));
 static int ifmtu __ARGS((int argc,char *argv[],void *p));
 static int ifforw __ARGS((int argc,char *argv[],void *p));
 static int ifencap __ARGS((int argc,char *argv[],void *p));
+static int ifcrc __ARGS((int argc,char *argv[],void *p));
 
 /* Interface list header */
 struct iface *Ifaces = &Loopback;
@@ -65,6 +66,7 @@ char Noipaddr[] = "IP address field missing, and ip address not set\n";
 
 struct cmds Ifcmds[] = {
 	"broadcast",            ifbroad,        0,      2,      NULLCHAR,
+	"crc",                  ifcrc,          0,      2,      NULLCHAR,
 	"encapsulation",        ifencap,        0,      2,      NULLCHAR,
 	"forward",              ifforw,         0,      2,      NULLCHAR,
 	"ipaddress",            ifipaddr,       0,      2,      NULLCHAR,
@@ -256,6 +258,17 @@ void *p;
 	return 0;
 }
 
+static int
+ifcrc(argc,argv,p)
+int argc;
+char *argv[];
+void *p;
+{
+	struct iface *ifp = p;
+
+	return setbool(&ifp->sendcrc, "CRC generation", argc, argv);
+}
+
 /* Display the parameters for a specified interface */
 static void
 showiface(ifp)
@@ -281,6 +294,9 @@ register struct iface *ifp;
 	 ifp->ipsndcnt,ifp->rawsndcnt,tformat(secclock() - ifp->lastsent));
 	tprintf("           recv: ip %lu tot %lu idle %s\n",
 	 ifp->iprecvcnt,ifp->rawrecvcnt,tformat(secclock() - ifp->lastrecv));
+	tprintf("           CRC %s errors %lu\n",
+	 ifp->sendcrc ? "enabled" : "disabled", ifp->crcerrors);
+	tprintf("\n");
 }
 
 /* Given the ascii name of an interface, return a pointer to the structure,

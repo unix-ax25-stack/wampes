@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.8 1991/04/12 18:34:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.9 1991/04/25 18:26:53 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -223,6 +223,7 @@ extern struct nr4cb;
 extern struct session;
 extern struct slip;
 
+extern int Debug;
 extern int Shortstatus;
 
 #endif  /* _GLOBAL_H */

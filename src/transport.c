@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.7 1991/04/12 18:35:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.8 1991/04/25 18:27:46 deyke Exp $ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -11,9 +11,22 @@
 #include "lapb.h"
 #include "netrom.h"
 #include "tcp.h"
+#include "session.h"
 #include "transport.h"
 
-extern int16 Lport;
+static int convert_eol __ARGS((struct mbuf **bpp, int mode, int *last_chr));
+static void transport_recv_upcall_ax25 __ARGS((struct ax25_cb *cp, int cnt));
+static void transport_recv_upcall_netrom __ARGS((struct circuit *cp, int cnt));
+static void transport_recv_upcall_tcp __ARGS((struct tcb *cp, int cnt));
+static void transport_send_upcall_ax25 __ARGS((struct ax25_cb *cp, int cnt));
+static void transport_send_upcall_netrom __ARGS((struct circuit *cp, int cnt));
+static void transport_send_upcall_tcp __ARGS((struct tcb *cp, int cnt));
+static void transport_state_upcall_ax25 __ARGS((struct ax25_cb *cp, int oldstate, int newstate));
+static void transport_state_upcall_netrom __ARGS((struct circuit *cp, int oldstate, int newstate));
+static void transport_state_upcall_tcp __ARGS((struct tcb *cp, int oldstate, int newstate));
+static struct ax25_cb *transport_open_ax25 __ARGS((char *address, struct transport_cb *tp));
+static struct circuit *transport_open_netrom __ARGS((char *address, struct transport_cb *tp));
+static struct tcb *transport_open_tcp __ARGS((char *address, struct transport_cb *tp));
 
 /*---------------------------------------------------------------------------*/
 
@@ -67,7 +80,7 @@ int  mode, *last_chr;
 
 static void transport_recv_upcall_ax25(cp, cnt)
 struct ax25_cb *cp;
-int16 cnt;
+int cnt;
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->r_upcall) (*tp->r_upcall)(tp, cnt);
@@ -77,7 +90,7 @@ int16 cnt;
 
 static void transport_recv_upcall_netrom(cp, cnt)
 struct circuit *cp;
-int16 cnt;
+int cnt;
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->r_upcall) (*tp->r_upcall)(tp, cnt);
@@ -87,7 +100,7 @@ int16 cnt;
 
 static void transport_recv_upcall_tcp(cp, cnt)
 struct tcb *cp;
-int16 cnt;
+int cnt;
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->r_upcall) (*tp->r_upcall)(tp, cnt);
@@ -97,7 +110,7 @@ int16 cnt;
 
 static void transport_send_upcall_ax25(cp, cnt)
 struct ax25_cb *cp;
-int16 cnt;
+int cnt;
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->t_upcall) (*tp->t_upcall)(tp, cnt);
@@ -107,7 +120,7 @@ int16 cnt;
 
 static void transport_send_upcall_netrom(cp, cnt)
 struct circuit *cp;
-int16 cnt;
+int cnt;
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->t_upcall) (*tp->t_upcall)(tp, cnt);
@@ -117,7 +130,7 @@ int16 cnt;
 
 static void transport_send_upcall_tcp(cp, cnt)
 struct tcb *cp;
-int16 cnt;
+int cnt;
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   if (tp->t_upcall) (*tp->t_upcall)(tp, cnt);
@@ -147,7 +160,7 @@ int  oldstate, newstate;
 
 static void transport_state_upcall_tcp(cp, oldstate, newstate)
 struct tcb *cp;
-char  oldstate, newstate;
+int oldstate, newstate;
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   switch (newstate) {
@@ -188,11 +201,11 @@ struct transport_cb *tp;
   }
   if (pathptr < path + 2 * AXALEN) return 0;
   pathptr[-1] |= E;
-  tp->recv = recv_ax;
-  tp->send = send_ax;
-  tp->send_space = space_ax;
-  tp->close = close_ax;
-  tp->del = del_ax;
+  tp->recv = (int (*)()) recv_ax;
+  tp->send = (int (*)()) send_ax;
+  tp->send_space = (int (*)()) space_ax;
+  tp->close = (int (*)()) close_ax;
+  tp->del = (int (*)()) del_ax;
   return open_ax(path, AX_ACTIVE, transport_recv_upcall_ax25, transport_send_upcall_ax25, transport_state_upcall_ax25, (char *) tp);
 }
 
@@ -205,11 +218,11 @@ struct transport_cb *tp;
   char  node[AXALEN];
 
   if (setcall(node, address)) return 0;
-  tp->recv = recv_nr;
-  tp->send = send_nr;
-  tp->send_space = space_nr;
-  tp->close = close_nr;
-  tp->del = del_nr;
+  tp->recv = (int (*)()) recv_nr;
+  tp->send = (int (*)()) send_nr;
+  tp->send_space = (int (*)()) space_nr;
+  tp->close = (int (*)()) close_nr;
+  tp->del = (int (*)()) del_nr;
   return open_nr(node, Mycall, 0, transport_recv_upcall_netrom, transport_send_upcall_netrom, transport_state_upcall_netrom, (char *) tp);
 }
 
@@ -229,24 +242,27 @@ struct transport_cb *tp;
   if (!(fsocket.port = tcp_port_number(port))) return 0;
   lsocket.address = Ip_addr;
   lsocket.port = Lport++;
-  tp->recv = recv_tcp;
-  tp->send = send_tcp;
-  tp->send_space = space_tcp;
-  tp->close = close_tcp;
-  tp->del = del_tcp;
+  tp->recv = (int (*)()) recv_tcp;
+  tp->send = (int (*)()) send_tcp;
+  tp->send_space = (int (*)()) space_tcp;
+  tp->close = (int (*)()) close_tcp;
+  tp->del = (int (*)()) del_tcp;
   return open_tcp(&lsocket, &fsocket, TCP_ACTIVE, 0, transport_recv_upcall_tcp, transport_send_upcall_tcp, transport_state_upcall_tcp, 0, (int) tp);
 }
 
 /*---------------------------------------------------------------------------*/
 
 struct transport_cb *transport_open(protocol, address, r_upcall, t_upcall, s_upcall, user)
-char  *protocol, *address;
-void (*r_upcall)(), (*t_upcall)(), (*s_upcall)();
-char  *user;
+char *protocol;
+char *address;
+void (*r_upcall) __ARGS((struct transport_cb *tp, int cnt));
+void (*t_upcall) __ARGS((struct transport_cb *tp, int cnt));
+void (*s_upcall) __ARGS((struct transport_cb *tp));
+void *user;
 {
   struct transport_cb *tp;
 
-  tp = (struct transport_cb *) calloc(1, sizeof(struct transport_cb ));
+  tp = calloc(1, sizeof(struct transport_cb ));
   tp->r_upcall = r_upcall;
   tp->t_upcall = t_upcall;
   tp->s_upcall = s_upcall;
@@ -255,11 +271,11 @@ char  *user;
   tp->timer.arg = tp;
   Net_error = INVALID;
   if (!strcmp(protocol, "ax25"))
-    tp->cp = (char *) transport_open_ax25(address, tp);
+    tp->cp = transport_open_ax25(address, tp);
   else if (!strcmp(protocol, "netrom"))
-    tp->cp = (char *) transport_open_netrom(address, tp);
+    tp->cp = transport_open_netrom(address, tp);
   else if (!strcmp(protocol, "tcp"))
-    tp->cp = (char *) transport_open_tcp(address, tp);
+    tp->cp = transport_open_tcp(address, tp);
   else
     Net_error = NOPROTO;
   if (tp->cp) return tp;
@@ -272,7 +288,7 @@ char  *user;
 int  transport_recv(tp, bpp, cnt)
 struct transport_cb *tp;
 struct mbuf **bpp;
-int16 cnt;
+int cnt;
 {
   int  result;
 

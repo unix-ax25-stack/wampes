@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.6 1991/04/12 18:35:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.7 1991/04/25 18:27:27 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -13,9 +13,7 @@
 #include "timer.h"
 #include "transport.h"
 #include "hpux.h"
-
-extern int  debug;
-extern struct sockaddr *build_sockaddr();
+#include "buildsaddr.h"
 
 struct controlblock {
   int  fd;                              /* Socket descriptor */
@@ -27,8 +25,21 @@ struct controlblock {
 
 struct cmdtable {
   char  *name;                          /* Command name (lower case) */
-  int  (*fnc)();                        /* Command function */
+  int  (*fnc) __ARGS((struct controlblock *cp)); /* Command function */
 };
+
+static char *getarg __ARGS((char *line, int all));
+static int command_switcher __ARGS((struct controlblock *cp, char *name, struct cmdtable *tableptr));
+static void delete_controlblock __ARGS((struct controlblock *cp));
+static void transport_try_send __ARGS((struct controlblock *cp));
+static void transport_recv_upcall __ARGS((struct transport_cb *tp, int cnt));
+static void transport_send_upcall __ARGS((struct transport_cb *tp, int cnt));
+static void transport_state_upcall __ARGS((struct transport_cb *tp));
+static int ascii_command __ARGS((struct controlblock *cp));
+static int binary_command __ARGS((struct controlblock *cp));
+static int connect_command __ARGS((struct controlblock *cp));
+static void command_receive __ARGS((struct controlblock *cp));
+static void accept_connection __ARGS((void *flisten));
 
 /*---------------------------------------------------------------------------*/
 
@@ -81,8 +92,8 @@ static void delete_controlblock(cp)
 struct controlblock *cp;
 {
   clrmask(chkread, cp->fd);
-  readfnc[cp->fd] = (void (*)()) 0;
-  readarg[cp->fd] = (char *) 0;
+  readfnc[cp->fd] = 0;
+  readarg[cp->fd] = 0;
   close(cp->fd);
   free(cp);
 }
@@ -184,7 +195,7 @@ struct controlblock *cp;
     cp->tp->recv_mode = EOL_LF;
     cp->tp->send_mode = (!strcmp(protocol, "tcp")) ? EOL_CRLF : EOL_CR;
   }
-  readfnc[cp->fd] = transport_try_send;
+  readfnc[cp->fd] = (void (*)()) transport_try_send;
   return 0;
 }
 
@@ -221,7 +232,7 @@ struct controlblock *cp;
 /*---------------------------------------------------------------------------*/
 
 static void accept_connection(flisten)
-char  *flisten;
+void *flisten;
 {
 
   int  addrlen;
@@ -237,14 +248,14 @@ char  *flisten;
     return;
   }
   cp->fd = fd;
+  readfnc[fd] = (void (*)()) command_receive;
+  readarg[fd] = cp;
   setmask(chkread, fd);
-  readfnc[fd] = command_receive;
-  readarg[fd] = (char *) cp;
 }
 
 /*---------------------------------------------------------------------------*/
 
-remote_net_initialize()
+void remote_net_initialize()
 {
 
   static char  *socketnames[] = {
@@ -264,7 +275,7 @@ remote_net_initialize()
       if ((flisten = socket(addr->sa_family, SOCK_STREAM, 0)) >= 0) {
 	switch (addr->sa_family) {
 	case AF_UNIX:
-	  if (!debug) unlink(addr->sa_data);
+	  if (!Debug) unlink(addr->sa_data);
 	  break;
 	case AF_INET:
 	  setsockopt(flisten, SOL_SOCKET, SO_REUSEADDR, (char *) 0, 0);
@@ -273,7 +284,7 @@ remote_net_initialize()
 	if (!bind(flisten, addr, addrlen) && !listen(flisten, SOMAXCONN)) {
 	  setmask(chkread, flisten);
 	  readfnc[flisten] = accept_connection;
-	  readarg[flisten] = (char *) flisten;
+	  readarg[flisten] = (void *) flisten;
 	} else {
 	  close(flisten);
 	}

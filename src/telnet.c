@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.7 1991/03/28 19:40:16 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/telnet.c,v 1.8 1991/04/25 18:27:42 deyke Exp $ */
 
 /* Internet Telnet client
  * Copyright 1991 Phil Karn, KA9Q
@@ -11,14 +11,16 @@
 #include "session.h"
 #include "icmp.h"
 #include "tcp.h"
+#include "tty.h"
 #include "commands.h"
 #include "netuser.h"
 
-void rcv_char();
-
+static void unix_send_tel __ARGS((char *buf, int n));
+static void send_tel __ARGS((char *buf, int n));
+static void tel_input __ARGS((struct telnet *tn, struct mbuf *bp));
 static void tn_tx __ARGS((struct tcb *tcb, int cnt));
 static void t_state __ARGS((struct tcb *tcb, int old, int new));
-static free_telnet __ARGS((struct telnet *tn));
+static void free_telnet __ARGS((struct telnet *tn));
 static void willopt __ARGS((struct telnet *tn, int opt));
 static void wontopt __ARGS((struct telnet *tn, int opt));
 static void doopt __ARGS((struct telnet *tn, int opt));
@@ -50,8 +52,6 @@ char *argv[];
 void *p;
 {
 	int32 resolve();
-	int send_tel();
-	int unix_send_tel();
 	struct session *s;
 	struct telnet *tn;
 	struct tcb *tcb;
@@ -102,10 +102,10 @@ void *p;
 }
 
 /* Process typed characters */
-int
+static void
 unix_send_tel(buf,n)
 char *buf;
-int16 n;
+int n;
 {
 	int i;
 
@@ -117,10 +117,10 @@ int16 n;
 	}
 	send_tel(buf,n);
 }
-int
+static void
 send_tel(buf,n)
 char *buf;
-int16 n;
+int n;
 {
 	struct mbuf *bp;
 	if(Current == NULLSESSION || Current->cb.telnet == NULLTN
@@ -134,7 +134,7 @@ int16 n;
 }
 
 /* Process incoming TELNET characters */
-int
+static void
 tel_input(tn,bp)
 register struct telnet *tn;
 struct mbuf *bp;
@@ -212,7 +212,7 @@ struct mbuf *bp;
 void
 rcv_char(tcb,cnt)
 register struct tcb *tcb;
-int16 cnt;
+int cnt;
 {
 	struct mbuf *bp;
 	struct telnet *tn;
@@ -320,7 +320,7 @@ char old,new;
 	fflush(stdout);
 }
 /* Delete telnet structure */
-static
+static void
 free_telnet(tn)
 struct telnet *tn;
 {
