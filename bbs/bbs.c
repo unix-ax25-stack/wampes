@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.38 1992/11/06 12:04:11 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.39 1992/11/17 10:35:44 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -848,10 +848,14 @@ static void send_to_news(struct mail *mail)
       fprintf(fp, "Bulletin-ID: <%s>\n", mail->bid);
       putc('\n', fp);
       p = mail->head;
-      while (p && p->str[0] == 'R' && p->str[1] == ':') p = p->next;
-      if (p && p->str[0] == 'd' && p->str[1] == 'e' && p->str[2] == ' ')
+      while (p && p->str[0] == 'R' && p->str[1] == ':')
 	p = p->next;
-      while (p && p->str[0] == 0) p = p->next;
+      while (p &&
+	  (p->str[0] == 'd' && p->str[1] == 'e' && p->str[2] == ' ' ||
+	   p->str[0] == 't' && p->str[1] == 'o' && p->str[2] == ' '))
+	p = p->next;
+      while (p && p->str[0] == 0)
+	p = p->next;
       while (p) {
 	fputs(p->str, fp);
 	putc('\n', fp);
@@ -1724,13 +1728,15 @@ static void send_command(int argc, char **argv)
     }
     if (*line == '\032') break;
     if (!Strncasecmp(line, "***end", 6)) break;
-    append_line(mail, line);
-    if (check_header) {
-      if (p = get_host_from_header(line)) {
-	if (*path) strcat(path, "!");
-	strcat(path, p);
-      } else if (*path)
-	check_header = 0;
+    if (!(check_header && line[0] == ' ' && line[1] == '[')) {
+      append_line(mail, line);
+      if (check_header) {
+	if (p = get_host_from_header(line)) {
+	  if (*path) strcat(path, "!");
+	  strcat(path, p);
+	} else if (*path)
+	  check_header = 0;
+      }
     }
     if (strchr(line, '\032')) break;
   }

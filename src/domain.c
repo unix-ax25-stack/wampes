@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.5 1992/11/16 10:20:52 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.6 1992/11/17 10:35:00 deyke Exp $ */
 
 #include "global.h"
 
@@ -70,9 +70,9 @@ static struct rr *make_rr __ARGS((int source, char *dname, int dclass, int dtype
 static void put_rr __ARGS((FILE *fp, struct rr *rrp));
 static void dumpdomain __ARGS((struct dhdr *dhp));
 static int32 in_addr_arpa __ARGS((char *name));
-static char *putname __ARGS((char *cp, char *name));
-static char *putq __ARGS((char *cp, struct rr *rrp));
-static char *putrr __ARGS((char *cp, struct rr *rrp));
+static char *putname __ARGS((char *cp, const char *name));
+static char *putq __ARGS((char *cp, const struct rr *rrp));
+static char *putrr __ARGS((char *cp, const struct rr *rrp));
 static void domain_server __ARGS((struct iface *iface, struct udp_cb *up, int cnt));
 static int docacheflush __ARGS((int argc, char *argv [], void *p));
 static int docachelist __ARGS((int argc, char *argv [], void *p));
@@ -513,9 +513,9 @@ char *name;
 
 static char *putname(cp, name)
 char *cp;
-char *name;
+const char *name;
 {
-  char *cp1;
+  const char *cp1;
 
   for (; ; ) {
     for (cp1 = name; *cp1 && *cp1 != '.'; cp1++) ;
@@ -530,7 +530,7 @@ char *name;
 
 static char *putq(cp, rrp)
 char *cp;
-struct rr *rrp;
+const struct rr *rrp;
 {
   for (; rrp; rrp = rrp->next) {
     cp = putname(cp, rrp->name);
@@ -544,7 +544,7 @@ struct rr *rrp;
 
 static char *putrr(cp, rrp)
 char *cp;
-struct rr *rrp;
+const struct rr *rrp;
 {
 
   char *cp1;
@@ -593,7 +593,7 @@ struct rr *rrp;
       break;
     case TYPE_TXT:
       memcpy(cp, rrp->rdata.data, rrp->rdlength);
-      cp += rrp->rdlength;
+      cp += (int) rrp->rdlength;
       break;
     default:
       break;
@@ -618,7 +618,6 @@ int cnt;
   struct mbuf *bp;
   struct rr *qp;
   struct rr *rrp;
-  struct rr *tail;
   struct socket fsock;
 
   recv_udp(up, &fsock, &bp);
@@ -629,33 +628,33 @@ int cnt;
     dumpdomain(dhp);
   }
   if (dhp->qr != QUERY) goto Done;
-  if (dhp->opcode) goto Done;   /* Not a standard query */
   dhp->qr = RESPONSE;
   dhp->aa = 0;
   dhp->tc = 0;
   dhp->ra = 0;
-  dhp->rcode = NO_ERROR;
-  for (tail = dhp->answers; tail && tail->next; tail = tail->next) ;
-  for (qp = dhp->questions; qp; qp = qp->next) {
-    if ((qp->type == TYPE_A || qp->type == TYPE_ANY) && (addr = resolve(qp->name))) {
-      rrp = make_rr(RR_NONE, qp->name, CLASS_IN, TYPE_A, 86400, sizeof(addr), &addr);
-      if (tail)
-	tail->next = rrp;
-      else
+  if (!dhp->opcode) {
+    dhp->rcode = NO_ERROR;
+    for (qp = dhp->questions; qp; qp = qp->next) {
+      if (qp->class == CLASS_IN &&
+	  (qp->type == TYPE_A || qp->type == TYPE_ANY) &&
+	  (addr = resolve(qp->name))) {
+	rrp = make_rr(RR_NONE, qp->name, CLASS_IN, TYPE_A, 86400, sizeof(addr), &addr);
+	rrp->next = dhp->answers;
 	dhp->answers = rrp;
-      tail = rrp;
-      dhp->ancount++;
-    }
-    if ((qp->type == TYPE_PTR || qp->type == TYPE_ANY) && (addr = in_addr_arpa(qp->name)) && !isaddr(cp = resolve_a(addr, 0))) {
-      rrp = make_rr(RR_NONE, qp->name, CLASS_IN, TYPE_PTR, 86400, strlen(cp) + 2, cp);
-      if (tail)
-	tail->next = rrp;
-      else
+	dhp->ancount++;
+      }
+      if (qp->class == CLASS_IN &&
+	  (qp->type == TYPE_PTR || qp->type == TYPE_ANY) &&
+	  (addr = in_addr_arpa(qp->name)) &&
+	  !isaddr(cp = resolve_a(addr, 0))) {
+	rrp = make_rr(RR_NONE, qp->name, CLASS_IN, TYPE_PTR, 86400, strlen(cp) + 2, cp);
+	rrp->next = dhp->answers;
 	dhp->answers = rrp;
-      tail = rrp;
-      dhp->ancount++;
+	dhp->ancount++;
+      }
     }
-  }
+  } else
+    dhp->rcode = NOT_IMPL;
   if (Dtrace) {
     printf("sent: ");
     dumpdomain(dhp);
