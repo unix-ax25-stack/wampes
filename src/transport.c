@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.13 1993/05/17 13:45:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.14 1994/02/19 17:50:12 deyke Exp $ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -14,7 +14,7 @@
 #include "session.h"
 #include "transport.h"
 
-static const char *delim = " \t\r\n";
+static const char delim[] = " \t\r\n";
 
 static int convert_eol(struct mbuf **bpp, int mode, int *last_chr);
 static void transport_recv_upcall_ax25(struct ax25_cb *cp, int cnt);

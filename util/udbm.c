@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.32 1994/02/07 12:39:25 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.33 1994/02/19 17:50:39 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -39,27 +39,27 @@ struct user {
 #define NUM_USERS 2503
 
 #if DEBUG
-static char usersfile[] = "users";
-static char userstemp[] = "users.tmp";
-static char indexfile[] = "index";
-static char passfile[]  = "passwd";
-static char passtemp[]  = "ptmp";
-static char spassfile[] = "spasswd";
-static char aliasfile[] = "aliases";
-static char aliastemp[] = "aliases.tmp";
+static const char usersfile[] = "users";
+static const char userstemp[] = "users.tmp";
+static const char indexfile[] = "index";
+static const char passfile[]  = "passwd";
+static const char passtemp[]  = "ptmp";
+static const char spassfile[] = "spasswd";
+static const char aliasfile[] = "aliases";
+static const char aliastemp[] = "aliases.tmp";
 #else
-static char usersfile[] = "/usr/local/lib/users";
-static char userstemp[] = "/usr/local/lib/users.tmp";
-static char indexfile[] = WRKDIR "/" INDEXFILE;
-static char passfile[]  = "/etc/passwd";
-static char passtemp[]  = "/etc/ptmp";
-static char spassfile[] = "/.secure/etc/passwd";
-static char aliasfile[] = ALIASES_FILE;
-static char aliastemp[] = ALIASES_FILE ".tmp";
+static const char usersfile[] = "/usr/local/lib/users";
+static const char userstemp[] = "/usr/local/lib/users.tmp";
+static const char indexfile[] = WRKDIR "/" INDEXFILE;
+static const char passfile[]  = "/etc/passwd";
+static const char passtemp[]  = "/etc/ptmp";
+static const char spassfile[] = "/.secure/etc/passwd";
+static const char aliasfile[] = ALIASES_FILE;
+static const char aliastemp[] = ALIASES_FILE ".tmp";
 #endif
 
 static const char *lockfile;
-static const char *null_string = "";
+static const char null_string[] = "";
 static long heapsize;
 static struct user *users[NUM_USERS];
 static struct user null_user;

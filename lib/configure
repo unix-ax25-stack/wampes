@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.7 1994/02/14 16:34:42 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.8 1994/02/19 17:50:47 deyke Exp $
 
 findfile()
 {
@@ -51,31 +51,33 @@ finddir()
 	echo "#define ${name} \"\""
 }
 
-OS="`uname -s`"
-if [ "$OS" = HP-UX ] ; then
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h
-elif [ "$OS" = AIX ] ; then
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L
-elif [ "$OS" = Linux ] ; then
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L
-elif [ "$OS" = 386BSD ] ; then
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h
-elif [ "$OS" = BSD/386 ] ; then
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h
-elif [ "$OS" = SunOS ] ; then
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h
-elif [ "$OS" = ULTRIX ] ; then
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h
-elif [ "$OS" = A/UX ] ; then
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h
-elif [ "$OS" = "RISC iX" ] ; then
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h
-elif [ "$OS" = AOS ] ; then
-	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L
-else
-	echo "System $OS is not supported."
-	exit 1
-fi
+case "`uname -sr`" in
+HP-UX*)
+	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
+AIX*)
+	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L;;
+Linux*)
+	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L;;
+386BSD*)
+	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
+BSD/386*)
+	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
+SunOS\ 4.*)
+	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
+SunOS\ 5.*)
+	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
+ULTRIX*)
+	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
+A/UX*)
+	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
+RISC\ iX*)
+	isdir=-d ; isexec=-x ; isfile=-f ; islink=-h;;
+AOS*)
+	isdir=-d ; isexec=-x ; isfile=-f ; islink=-L;;
+*)
+	echo System `uname -sr` is not supported
+	exit 1;;
+esac
 
 echo "#ifndef _CONFIGURE_H"
 echo "#define _CONFIGURE_H"

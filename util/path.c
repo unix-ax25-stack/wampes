@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.14 1993/10/13 22:31:24 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.15 1994/02/19 17:50:38 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -39,7 +39,7 @@ struct axroute_saverecord_1 {
 /*char ifname[]; */
 };
 
-static char axroutefile[] = "/tcp/axroute_data";
+static const char axroutefile[] = "/tcp/axroute_data";
 static struct axroute_tab *axroute_tab[AXROUTESIZE];
 static struct iface *Ifaces;
 

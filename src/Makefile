@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.62 1994/02/07 12:38:50 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.63 1994/02/19 17:49:59 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -277,115 +277,111 @@ SRCS          = alloc.c \
 
 # SYSHDRS       =
 
-OS            = "`uname -s`"
 RMTARGET      = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
 all:;   chmod 755 cc
-	@if [ $(OS) = HP-UX ] ; then \
+	@case "`uname -sr`" in \
+	HP-UX*) \
 		make -i \
 		'CC=c89' \
 		'CFLAGS=-O -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024 -I../lib' \
 		'LIBS=../lib/libutil.a -lndbm' \
-		_all; \
-	elif [ $(OS) = AIX ] ; then \
+		_all;; \
+	AIX*) \
 		make -i \
 		'CC=cc' \
 		'CFLAGS=-O -qchars=signed -DUNIX -D_ALL_SOURCE -DFD_SETSIZE=1024 -I../lib' \
 		'LIBS=../lib/libutil.a' \
-		_all; \
-	elif [ $(OS) = Linux ] ; then \
+		_all;; \
+	Linux*) \
 		make -i \
 		'CC=gcc' \
 		'CFLAGS=-O6 -DVC_DYNAMIC -DUNIX -I./linux_include -I../lib' \
 		'LDFLAGS=-static -s' \
 		'LIBS=../lib/libutil.a -ldbm' \
-		_all; \
-	elif [ $(OS) = 386BSD ] ; then \
+		_all;; \
+	386BSD*) \
 		make -i \
 		'CC=cc' \
 		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
 		'LIBS=../lib/libutil.a' \
-		_all; \
-	elif [ $(OS) = BSD/386 ] ; then \
+		_all;; \
+	BSD/386*) \
 		make -i \
 		'CC=cc' \
 		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
 		'LIBS=../lib/libutil.a' \
-		_all; \
-	elif [ $(OS) = SunOS ] ; then \
-		(if [ -x /usr/lang/acc ] ; then \
-			make -i \
-			'CC=acc' \
-			'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
-			'LIBS=../lib/libutil.a' \
-			_all; \
-		else \
-			make -i \
-			'CC=cc' \
-			'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
-			'LIBS=../lib/libutil.a -lsocket -lnsl' \
-			_all; \
-		fi) \
-	elif [ $(OS) = ULTRIX ] ; then \
+		_all;; \
+	SunOS\ 4.*) \
+		make -i \
+		'CC=acc' \
+		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
+		'LIBS=../lib/libutil.a' \
+		_all;; \
+	SunOS\ 5.*) \
+		make -i \
+		'CC=cc' \
+		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
+		'LIBS=../lib/libutil.a -lsocket -lnsl' \
+		_all;; \
+	ULTRIX*) \
 		make -i \
 		'CC=gcc' \
 		'CFLAGS=-O6 -DUNIX -DULTRIX_RISC -DFD_SETSIZE=64 -I../lib' \
 		'LIBS=../lib/libutil.a -ldbm' \
-		_all; \
-	elif [ $(OS) = A/UX ] ; then \
+		_all;; \
+	A/UX*) \
 		make -i \
 		'CC=gcc -fpcc-struct-return' \
 		'CFLAGS=-O -DUNIX -D_POSIX_SOURCE -I../lib' \
 		'LIBS=../lib/libutil.a -ldbm -lposix' \
-		_all; \
-	elif [ $(OS) = "RISC iX" ] ; then \
+		_all;; \
+	RISC\ iX*) \
 		make -i \
 		'CC=/tcp/src/cc' \
 		'CFLAGS=-DUNIX -DRISCiX -I../lib' \
 		'LIBS=../lib/libutil.a' \
-		_all; \
-	elif [ $(OS) = AOS ] ; then \
+		_all;; \
+	AOS*) \
 		/usr/local/bin/make -i \
 		'CC=/usr/local/bin/gcc' \
 		'CFLAGS=-O2 -DUNIX -Dibm6153 -I../lib' \
 		'LIBS=../aos/libaos.a ../lib/libutil.a' \
 		'LDFLAGS=-g' \
-		_all; \
-	else \
-		echo System $(OS) is not supported; \
-	fi
+		_all;; \
+	*) \
+		echo System `uname -sr` is not supported;; \
+	esac
 
 _all:           $(PROGRAM)
 
 setsp.o: setsp.c
-	@if [ $(OS) = HP-UX ] ; then \
-		$(CC) -E $< > setsp.s; \
-		as setsp.s -o $@; \
-	elif [ $(OS) = AIX ] ; then \
-		$(CC) $(CFLAGS) -c setsp.c; \
-	elif [ $(OS) = Linux ] ; then \
-		$(CC) -E $< > setsp.s; \
-		cc -c setsp.s; \
-	elif [ $(OS) = 386BSD ] ; then \
-		$(CC) -E $< > setsp.s; \
-		cc -c setsp.s; \
-	elif [ $(OS) = BSD/386 ] ; then \
-		cpp $< > setsp.s; \
-		cc -c setsp.s; \
-	elif [ $(OS) = SunOS ] ; then \
-		$(CC) $(CFLAGS) -c setsp.c; \
-	elif [ $(OS) = ULTRIX ] ; then \
-		/bin/cc -c setsp.c; \
-	elif [ $(OS) = A/UX ] ; then \
-		$(CC) $(CFLAGS) -c setsp.c; \
-	elif [ $(OS) = "RISC iX" ] ; then \
-		$(CC) -E -DRISCiX $< > setsp.s; \
-		cc -c setsp.s; \
-	elif [ $(OS) = AOS ] ; then \
-		$(CC) $(CFLAGS) -c setsp.c; \
-	else \
-		echo System $(OS) is not supported; \
-	fi
+	@case "`uname -sr`" in \
+	HP-UX*) \
+		$(CC) -E $< > setsp.s; as setsp.s -o $@;; \
+	AIX*) \
+		$(CC) $(CFLAGS) -c setsp.c;; \
+	Linux*) \
+		$(CC) -E $< > setsp.s; cc -c setsp.s;; \
+	386BSD*) \
+		$(CC) -E $< > setsp.s; cc -c setsp.s;; \
+	BSD/386*) \
+		cpp $< > setsp.s; cc -c setsp.s;; \
+	SunOS\ 4.*) \
+		$(CC) $(CFLAGS) -c setsp.c;; \
+	SunOS\ 5.*) \
+		$(CC) $(CFLAGS) -c setsp.c;; \
+	ULTRIX*) \
+		/bin/cc -c setsp.c;; \
+	A/UX*) \
+		$(CC) $(CFLAGS) -c setsp.c;; \
+	RISC\ iX*) \
+		$(CC) -E -DRISCiX $< > setsp.s; cc -c setsp.s;; \
+	AOS*) \
+		$(CC) $(CFLAGS) -c setsp.c;; \
+	*) \
+		echo System `uname -sr` is not supported;; \
+	esac
 	@rm -f setsp.s
 
 $(PROGRAM):     $(OBJS)
