@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.4 1989/08/26 18:06:23 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.5 1989/08/27 17:42:57 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -64,9 +64,9 @@ struct index {
   long  date;
   int  mesg;
   char  bid[LEN_BID+1];
-  char  type;
+  char  pad1;
   char  subject[LEN_SUBJECT+1];
-  char  status;
+  char  pad2;
   char  to[LEN_TO+1];
   char  at[LEN_AT+1];
   char  from[LEN_FROM+1];
@@ -90,8 +90,6 @@ struct mail {
   char  bid[1024];
   char  mid[1024];
   long  date;
-  int  type;
-  int  status;
   struct strlist *head;
   struct strlist *tail;
 };
@@ -353,42 +351,6 @@ static void put_seq()
 
 /*---------------------------------------------------------------------------*/
 
-static int  can_forward(host)
-char  *host;
-{
-
-  FILE * fp;
-  char  *cp;
-  char  buf[1024];
-  char  s1[1024];
-  char  s2[1024];
-  register struct strlist *p;
-  static int  initialized;
-  static struct strlist *hostlist;
-
-  if (calleq(host, loginname)) return 1;
-  if (!initialized) {
-    initialized = 1;
-    if (!(fp = fopen("/usr/lib/mail/paths", "r"))) return 0;
-    while (fgets(buf, sizeof(buf), fp))
-      if (sscanf(buf, "%s%s", s1, s2) == 2) {
-	if (cp = strchr(s2, '!')) *cp = '\0';
-	if (!strcmp(s2, loginname)) {
-	  p = (struct strlist *) malloc(sizeof(struct strlist ) + strlen(s1));
-	  strcpy(p->str, s1);
-	  p->next = hostlist;
-	  hostlist = p;
-	}
-      }
-    fclose(fp);
-  }
-  for (p = hostlist; p; p = p->next)
-    if (calleq(p->str, host)) return 1;
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
 static void wait_for_prompt()
 {
 
@@ -420,36 +382,6 @@ static void unlock()
 {
   if (--locked <= 0)
     if (lockf(fdlock, F_ULOCK, 0)) halt();
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int  lastmesg()
-{
-
-  FILE * fp;
-  int  n;
-
-  n = 0;
-  if (fp = fopen("seq/seq.msg", "r")) {
-    fscanf(fp, "%d", &n);
-    fclose(fp);
-  }
-  return n;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int  nextmesg()
-{
-
-  FILE * fp;
-  int  n;
-
-  n = lastmesg() + 1;
-  if (!(fp = fopen("seq/seq.msg", "w")) || fprintf(fp, "%d\n", n) < 0) halt();
-  fclose(fp);
-  return n;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -492,10 +424,7 @@ struct index *index;
 {
   if (index->deleted) return 0;
   if (level == ROOT) return 1;
-  if (!index->to[1]) return 0;
-  if (calleq(index->from, loginname)) return 1;
-  if (calleq(index->to, loginname)) return 1;
-  if (index->type != 'P') return 1;
+  if (index->to[1]) return 1;
   return 0;
 }
 
@@ -552,7 +481,12 @@ struct mail *mail;
 
   lock();
   if (msg_uniq(mail->bid, mail->mid)) {
-    index.mesg = nextmesg();
+    if (lseek(findex, (long) (-sizeof(struct index )), 2) < 0)
+      index.mesg = 1;
+    else {
+      if (read(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+      index.mesg++;
+    }
     index.size = 0;
     if (!(fp = fopen(filename(index.mesg), "w"))) {
       mkdir(dirname(index.mesg), 0755);
@@ -566,10 +500,10 @@ struct mail *mail;
     fclose(fp);
     index.date = mail->date;
     strcpy(index.bid, mail->bid);
-    index.type = mail->type;
+    index.pad1 = 0;
     strncpy(index.subject, mail->subject, LEN_SUBJECT);
     index.subject[LEN_SUBJECT] = '\0';
-    index.status = mail->status;
+    index.pad2 = 0;
     strncpy(index.to, get_user_from_path(mail->to), LEN_TO);
     index.to[LEN_TO] = '\0';
     strupc(index.to);
@@ -790,12 +724,6 @@ struct mail *mail;
   fix_address(mail->from);
   fix_address(mail->to);
 
-  /* Set type & status */
-
-  mail->type = callvalid(get_user_from_path(mail->to)) ? 'P' : 'B';
-  mail->status =
-    (mail->type == 'P' || callvalid(get_host_from_path(mail->to))) ? 'N' : '$';
-
   /* Set bid */
 
   if (!*mail->bid && (cp = strchr(mail->mid, '@')) && !strcmp(cp, MidSuffix)) {
@@ -839,11 +767,16 @@ struct mail *mail;
 
   /* Call delivery agents */
 
-  if (mail->type == 'P') send_to_mail(mail);
-  if (mail->type == 'B') send_to_bbs(mail);
-  if (mail->type == 'B'   &&
-      mail->status == '$' &&
-      strlen(get_user_from_path(mail->to)) > 1) send_to_news(mail);
+  if (callvalid(get_user_from_path(mail->to)))
+    send_to_mail(mail);
+  else if (calleq(get_host_from_path(mail->to), myhostname))
+    send_to_bbs(mail);
+  else if (callvalid(get_host_from_path(mail->to)))
+    send_to_mail(mail);
+  else {
+    send_to_bbs(mail);
+    if (strlen(get_user_from_path(mail->to)) > 1) send_to_news(mail);
+  }
 
   /* Free mail */
 
@@ -981,12 +914,11 @@ char  **argv;
   do_not_exit = doforward;
   if (lseek(findex, 0l, 0)) halt();
   while (read(findex, (char *) &index, sizeof(struct index )) == sizeof(struct index )) {
-    if (!index.deleted &&
-	((index.status == '$' && index.mesg > seq.forw ||
-	 index.status != '$' && index.status != 'F' && can_forward(index.at)) &&
-	!host_in_header(filename(index.mesg), loginname))) {
+    if (!index.deleted        &&
+	index.mesg > seq.forw &&
+	!host_in_header(filename(index.mesg), loginname)) {
       do_not_exit = 1;
-      printf("S%c %s%s%s < %s%s%s\n", index.type, index.to, *index.at ? " @ " : "", index.at, index.from, *index.bid ? " $" : "", index.bid);
+      printf("S %s%s%s < %s%s%s\n", index.to, *index.at ? " @ " : "", index.at, index.from, *index.bid ? " $" : "", index.bid);
       if (!getstring(buf)) exit(1);
       switch (*buf) {
       case 'O':
@@ -1001,11 +933,6 @@ char  **argv;
 	fclose(fp);
 	puts("\032");
 	wait_for_prompt();
-	if (index.status == 'N' || index.status == 'Y') {
-	  index.status = 'F';
-	  if (lseek(findex, (long) (-sizeof(struct index )), 1) < 0) halt();
-	  if (write(findex, (char *) &index, sizeof(struct index )) != sizeof(struct index )) halt();
-	}
 	break;
       case 'N':
       case 'n':
@@ -1263,10 +1190,8 @@ char  **argv;
   for (i = 1; i < argc; i++)
     if ((mesg = atoi(argv[i])) > 0 && get_index(mesg, &index) && read_allowed(&index)) {
       if (!(fp = fopen(filename(mesg), "r"))) halt();
-      printf("Msg# %d Type:%c Stat:%c To: %s%s%s From: %s Date: %s\n",
+      printf("Msg# %d   To: %s%s%s   From: %s   Date: %s\n",
 	     index.mesg,
-	     index.type,
-	     index.status,
 	     index.to,
 	     *index.at ? " @" : "",
 	     index.at,
@@ -1294,11 +1219,6 @@ char  **argv;
       }
       putchar('\n');
       fclose(fp);
-      if (index.status == 'N' && (index.type != 'P' || calleq(index.to, loginname))) {
-	index.status = 'Y';
-	if (lseek(findex, (long) (-sizeof(struct index )), 1) < 0) halt();
-	if (write(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
-      }
     } else
       printf("No such message: '%s'.\n", argv[i]);
 }
@@ -1488,14 +1408,18 @@ char  **argv;
   struct index index;
   struct stat statbuf;
 
+  /***************************************************************************/
+
+  puts("Der letzte Eintrag darf nie gecrunched werden!");
+  exit(0);
+
+  /***************************************************************************/
+
   keepdate = time((long *) 0) - 90 * DAYS;
   if ((f = open(tempfile, O_WRONLY | O_CREAT | O_EXCL, 0644)) < 0) halt();
   if (lseek(findex, 0l, 0)) halt();
   while (read(findex, (char *) &index, sizeof(struct index )) == sizeof(struct index )) {
-    delete = (index.deleted && !*index.bid)               ||
-	     (index.deleted && index.date < keepdate)     ||
-	     (index.type == 'P' && index.date < keepdate) ||
-	     (index.status == 'F');
+    delete = (index.deleted && (!*index.bid || index.date < keepdate));
     if (!index.deleted) {
       index.size = (delete || stat(filename(index.mesg), &statbuf)) ? 0 : statbuf.st_size;
       if (!index.size) {
@@ -1576,7 +1500,7 @@ char  **argv;
 	fp = 0;
       }
       if (!(fp = fopen(filename(pi->mesg), "r"))) halt();
-      printf("\033&a0y0C\033JMsg# %d Type:%c Stat:%c To: %s%s%s From: %s Date: %s\n", pi->mesg, pi->type, pi->status, pi->to, *pi->at ? " @" : "", pi->at, pi->from, timestr(pi->date));
+      printf("\033&a0y0C\033JMsg# %d   To: %s%s%s   From: %s   Date: %s\n", pi->mesg, pi->to, *pi->at ? " @" : "", pi->at, pi->from, timestr(pi->date));
       lines++;
       if (*pi->subject) {
 	printf("Subject: %s\n", pi->subject);
@@ -1998,11 +1922,13 @@ char  **argv;
     puts("usage: bbs [-d] [-f system|-m|-n]");
     exit(1);
   }
-  mkdir(dir, 0755);
-  if (chdir(dir)) halt();
+  if (chdir(dir)) {
+    mkdir(dir, 0755);
+    if (chdir(dir)) halt();
+    if (mkdir("seq", 0755)) halt();
+  }
   if (connect_addr(loginname)) level = MBOX;
   if ((findex = open("index", O_RDWR | O_CREAT, 0644)) < 0) halt();
-  mkdir("seq", 0755);
   get_seq();
   switch (mode) {
   case BBS:
@@ -2015,7 +1941,6 @@ char  **argv;
     rnews();
     break;
   }
-  exit(0);
   return 0;
 }
 
