@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.53 1993/05/18 10:53:49 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.54 1993/06/03 06:33:36 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -167,7 +167,6 @@ static void parse_command_line(char *line);
 static void bbs(void);
 static void interrupt_handler(int sig);
 static void alarm_handler(int sig);
-static void trap_signal(int sig, void (*handler)());
 static void recv_from_mail_or_news(void);
 int main(int argc, char **argv);
 
@@ -1954,10 +1953,8 @@ static void shell_command(int argc, char **argv)
 
   char command[2048];
   int i;
-  int oldstopped;
-  pid_t pid;
   int status;
-  long oldmask;
+  pid_t pid;
 
   switch (pid = fork()) {
   case -1:
@@ -1980,11 +1977,11 @@ static void shell_command(int argc, char **argv)
     _exit(127);
     break;
   default:
-    oldmask = sigsetmask(-1);
-    oldstopped = stopped;
+    signal(SIGINT,  SIG_IGN);
+    signal(SIGQUIT, SIG_IGN);
     while (waitpid(pid, &status, 0) != pid) ;
-    sigsetmask(oldmask);
-    stopped = oldstopped;
+    signal(SIGINT,  interrupt_handler);
+    signal(SIGQUIT, interrupt_handler);
     break;
   }
 }
@@ -2438,9 +2435,7 @@ static void bbs(void)
 
 static void interrupt_handler(int sig)
 {
-#ifdef LINUX
   signal(sig, interrupt_handler);
-#endif
   stopped = 1;
 }
 
@@ -2450,30 +2445,6 @@ static void alarm_handler(int sig)
 {
   puts("\n*** Timeout ***");
   exit(1);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void trap_signal(int sig, void (*handler)(int))
-{
-#ifdef LINUX
-  signal(sig, handler);
-#else
-#if defined(sun) || defined(__386BSD__) || defined(ULTRIX_RISC)
-#define sigvector sigvec
-#endif
-  struct sigvec vec;
-
-  sigvector(sig, (struct sigvec *) 0, &vec);
-  if (vec.sv_handler != SIG_IGN) {
-    vec.sv_mask = vec.sv_flags = 0;
-#ifdef sun
-    vec.sv_flags = SV_INTERRUPT;
-#endif
-    vec.sv_handler = handler;
-    sigvector(sig, &vec, (struct sigvec *) 0);
-  }
-#endif
 }
 
 /*---------------------------------------------------------------------------*/
@@ -2561,10 +2532,9 @@ int main(int argc, char **argv)
   int err_flag = 0;
   struct passwd *pw;
 
-  trap_signal(SIGINT,  interrupt_handler);
-  trap_signal(SIGQUIT, interrupt_handler);
-  trap_signal(SIGTERM, interrupt_handler);
-  trap_signal(SIGALRM, alarm_handler);
+  signal(SIGINT,  interrupt_handler);
+  signal(SIGQUIT, interrupt_handler);
+  signal(SIGALRM, alarm_handler);
 
   umask(022);
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.19 1993/05/17 13:44:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.20 1993/06/03 06:33:23 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -673,7 +673,15 @@ char *arg;
 
 #include <pwd.h>
 
+#ifdef __386BSD__
+
+#define crypt(key, salt) (key)
+
+#else
+
 char *crypt();
+
+#endif
 
 /* Attempt to log in the user whose name is in ftp->username and password
  * in pass
@@ -683,13 +691,18 @@ static void ftplogin(ftp, pass)
 struct ftp *ftp;
 char *pass;
 {
+
+  char salt[3];
   struct passwd *pw;
 
   pw = getpasswdentry(ftp->username, 0);
   if (!pw) goto Fail;
+  salt[0] = pw->pw_passwd[0];
+  salt[1] = pw->pw_passwd[1];
+  salt[2] = 0;
   if (pw->pw_passwd[0] &&
       strcmp(pw->pw_name, "ftp") &&
-      strcmp(crypt(pass, pw->pw_passwd), pw->pw_passwd)) goto Fail;
+      strcmp(crypt(pass, salt), pw->pw_passwd)) goto Fail;
   ftp->uid = pw->pw_uid;
   ftp->gid = pw->pw_gid;
   if (ftp->cd) free(ftp->cd);

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.28 1993/05/17 13:45:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.29 1993/06/03 06:33:26 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -8,8 +8,11 @@
 #include <termios.h>
 #include <unistd.h>
 
-#if defined(__hpux) || defined(sun) || defined(__386BSD__)
+#if defined(__hpux) || defined(sun) || defined(LINUX) || defined(ULTRIX_RISC) || defined(__386BSD__)
 #include <sys/uio.h>
+#ifndef MAXIOV
+#define MAXIOV 16
+#endif
 #endif
 
 #include "global.h"
@@ -325,19 +328,12 @@ static void
 asy_tx(asyp)
 struct asy *asyp;
 {
-
 	int n;
 
-#if defined(__hpux) || defined(sun) || defined(__386BSD__)
-
-#ifndef MAXIOV
-#define MAXIOV 16
-#endif
-
-	struct iovec iov[MAXIOV];
-	struct mbuf *bp;
-
 	if (asyp->sndq != NULLBUF) {
+#if defined(__hpux) || defined(sun) || defined(LINUX) || defined(ULTRIX_RISC) || defined(__386BSD__)
+		struct iovec iov[MAXIOV];
+		struct mbuf *bp;
 		n = 0;
 		for (bp = asyp->sndq; bp && n < MAXIOV; bp = bp->next) {
 			iov[n].iov_base = bp->data;
@@ -345,6 +341,9 @@ struct asy *asyp;
 			n++;
 		}
 		n = writev(asyp->fd, iov, n);
+#else
+		n = write(asyp->fd, asyp->sndq->data, asyp->sndq->cnt);
+#endif
 		asyp->txints++;
 		if (n > 0)
 			asyp->txchar += n;
@@ -359,24 +358,6 @@ struct asy *asyp;
 			}
 		}
 	}
-
-#else
-
-	if (asyp->sndq != NULLBUF) {
-		n = write(asyp->fd, asyp->sndq->data, asyp->sndq->cnt);
-		asyp->txints++;
-		if (n > 0) {
-			asyp->txchar += n;
-			asyp->sndq->data += n;
-			asyp->sndq->cnt -= n;
-			if(asyp->sndq->cnt == 0){
-				asyp->sndq = free_mbuf(asyp->sndq);
-			}
-		}
-	}
-
-#endif
-
 	if (asyp->sndq == NULLBUF)
 		off_write(asyp->fd);
 }

@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.33 1993/05/30 07:56:35 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.34 1993/06/03 06:33:55 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -19,7 +19,7 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <unistd.h>
 #include <utmp.h>
 
-#if defined(__hpux) || defined(sun) || defined(__386BSD__)
+#if defined(__hpux) || defined(sun) || defined(LINUX) || defined(ULTRIX_RISC) || defined(__386BSD__)
 #include <sys/uio.h>
 #endif
 
@@ -957,7 +957,7 @@ static void name_command(struct link *lp)
   if (lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.33 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.34 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_channel = atoi(getarg(NULLCHAR, 0));
   if (up->u_channel < 0 || up->u_channel > MAX_CHANNEL) {
@@ -1344,7 +1344,7 @@ static void link_send(struct link *lp)
   int n;
   struct mbuf *mp;
 
-#if defined(__hpux) || defined(sun) || defined(__386BSD__)
+#if defined(__hpux) || defined(sun) || defined(LINUX) || defined(ULTRIX_RISC) || defined(__386BSD__)
 
   struct iovec iov[MAXIOV];
 

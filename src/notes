@@ -1,3 +1,12 @@
+was haelst Du von der Idee, das create-Flag vom getpasswdentry
+configurierbar zu machen? Ich hatte hier (dc1ik-1) das Problem, dass
+ein User, der ueber telnet kam, eingelogged wurde - anstatt in die
+Default-Usershell zu fallen. Zum Glueck ist nichts passiert.
+
+Ich aendere halt das getpasswd(??, 1) immer in eine 0 um, damit dies nicht
+vorkommt, das eine Mal hatte ich es vergessen, was dann halt zu der Panne
+fuehrte :-(
+
 - Der from teil  kann nur !  enthalten,  dann  steht  der s&f.  ==> wenn
   from == !  ist irgendein substitute einsetzen !!!
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.38 1993/05/17 13:44:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.39 1993/06/03 06:33:24 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -181,7 +181,6 @@ int system(const char *cmdline)
 
   int i;
   int status;
-  long oldmask;
   pid_t pid;
 
   if (!cmdline) return 1;
@@ -193,9 +192,11 @@ int system(const char *cmdline)
     execl("/bin/sh", "sh", "-c", cmdline, (char *) 0);
     exit(1);
   default:
-    oldmask = sigsetmask(-1);
+    signal(SIGINT,  SIG_IGN);
+    signal(SIGQUIT, SIG_IGN);
     while (waitpid(pid, &status, 0) == -1 && errno == EINTR) ;
-    sigsetmask(oldmask);
+    signal(SIGINT,  SIG_DFL);
+    signal(SIGQUIT, SIG_DFL);
     return status;
   }
 }
