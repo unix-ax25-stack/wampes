@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.9 1994/06/16 13:14:39 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.10 1994/06/23 08:32:40 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -162,7 +162,7 @@ static long resolve(const char *name)
       }
     }
 
-  if (Usegethostby && (hp = gethostbyname(name))) {
+  if (Usegethostby && (hp = gethostbyname((char *) name))) {
     addr = ntohl(((struct in_addr *)(hp->h_addr))->s_addr);
     strlwc(names[0], hp->h_name);
     add_to_cache(names[0], addr);
