@@ -1,7 +1,7 @@
 /* User Data Base Manager */
 
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.15 1992/09/01 16:58:45 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.16 1992/09/30 15:55:26 deyke Exp $";
 #endif
 
 #define DEBUG           0
@@ -17,26 +17,11 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-
-#ifdef __TURBOC__
-
-#include <alloc.h>
-#include <dos.h>
-#include <io.h>
-
-struct passwd {
-  char *pw_name;
-  char *pw_gecos;
-};
-
-#else
-
-#include <pwd.h>
 #include <unistd.h>
 
-#endif
+#include <pwd.h>
 
-#if (defined(__STDC__) || defined(__TURBOC__))
+#ifdef __STDC__
 #define __ARGS(x)       x
 #else
 #define __ARGS(x)       ()
@@ -81,9 +66,6 @@ static long heapsize;
 static struct user *users[NUM_USERS];
 static struct user null_user;
 
-struct passwd *getpwent __ARGS((void));
-void endpwent __ARGS((void));
-int putpwent __ARGS((struct passwd *p, FILE *f));
 static void terminate __ARGS((const char *s));
 static void *allocate __ARGS((size_t size));
 static int calc_crc __ARGS((const char *str));
@@ -102,28 +84,6 @@ static void output_line __ARGS((const struct user *up, FILE *fp));
 static int fixusers __ARGS((void));
 static void fixpasswd __ARGS((void));
 static void fixaliases __ARGS((void));
-
-/*---------------------------------------------------------------------------*/
-
-#ifdef __TURBOC__
-
-unsigned _stklen = 10240;
-
-struct passwd *getpwent(void)
-{
-  return NULL;
-}
-
-void endpwent(void)
-{
-}
-
-int putpwent(struct passwd *p, FILE *f)
-{
-  return 0;
-}
-
-#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -153,10 +113,6 @@ size_t size;
   size = (size + 3) & ~3;
   if (size > freesize) {
     for (; ; ) {
-#ifdef __TURBOC__
-      fprintf(stderr, "size = %u coreleft = %lu allocsize = %u\n",
-	      size, coreleft(), allocsize);
-#endif
       if (size > allocsize) {
 	errno = ENOMEM;
 	terminate("allocate()");
@@ -620,9 +576,6 @@ static int fixusers()
     for (up = users[i]; up; up = up->next) output_line(up, fpo);
   fclose(fpo);
 
-#ifdef __TURBOC__
-  unlink(usersfile);
-#endif
   if (rename(userstemp, usersfile)) terminate(usersfile);
   lockfile = NULL;
   return errors;
@@ -645,9 +598,6 @@ static void fixpasswd()
   }
   endpwent();
   fclose(fp);
-#ifdef __TURBOC__
-  unlink(passfile);
-#endif
   if (rename(passtemp, passfile)) terminate(passfile);
   lockfile = NULL;
 }
@@ -685,9 +635,6 @@ static void fixaliases()
 	else
 	  fprintf(fpo, "%s\t\t: %s\n", up->call, up->mail);
   fclose(fpo);
-#ifdef __TURBOC__
-  unlink(aliasfile);
-#endif
   if (rename(aliastemp, aliasfile)) terminate(aliasfile);
   lockfile = NULL;
 }
@@ -711,7 +658,7 @@ int main()
   if (!fixusers()) {
     fixpasswd();
     fixaliases();
-#if (!DEBUG && !defined(__TURBOC__))
+#if !DEBUG
     system("exec /usr/bin/newaliases >/dev/null 2>&1");
 #endif
   }

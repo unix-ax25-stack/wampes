@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.7 1992/09/21 19:28:25 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.8 1992/09/30 15:54:58 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 CC         = c89
@@ -8,6 +8,13 @@ SHELL      = /bin/sh
 TARGETS    = bbs findpath killdup sfstat
 
 .IGNORE:
+
+all_test:
+	@if [ `uname -s` = Linux ] ; then \
+	  make 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' all; \
+	else \
+	  make all; \
+	fi
 
 all:    $(TARGETS)
 

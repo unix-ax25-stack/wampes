@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.23 1992/09/25 20:07:10 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.24 1992/09/30 15:54:31 deyke Exp $
 
 DEFINES       = -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=64
 
@@ -275,17 +275,25 @@ SRCS          = alloc.c \
 
 all_test:
 		@if [ `uname -n` = mdddhd -o `uname -n` = deyke2 -o `uname -s` = SunOS ] ; then \
-		  make 'CC=c89' 'OPTIMIZE=-g'    all ; \
+		  make 'CC=c89' 'OPTIMIZE=-g' all; \
+		elif [ `uname -s` = Linux ] ; then \
+		  make 'CC=gcc' 'CFLAGS=-O6 -I./linux_include -DUNIX -DLITTLE_ENDIAN -DLINUX' all; \
 		else \
-		  make          'OPTIMIZE=-O -s' all ; \
+		  make 'OPTIMIZE=-O -s' all; \
 		fi
 
 all:            $(PROGRAM)
 
 setsp.o:        setsp.c
-		$(CC) $(CFLAGS) -P $<
-		as setsp.i -o $@
-		rm -f setsp.i
+		@if [ `uname -s` = Linux ] ; then \
+		  $(CC) -E -DLINUX $< > setsp.s; \
+		  cc -c setsp.s; \
+		  rm -f setsp.s; \
+		else \
+		  $(CC) $(CFLAGS) -P $<; \
+		  as setsp.i -o $@; \
+		  rm -f setsp.i; \
+		fi
 
 $(PROGRAM):     $(OBJS) $(LIBS)
 		@echo "Linking $(PROGRAM) ..."

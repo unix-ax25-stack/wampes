@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.6 1992/09/05 08:13:25 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.7 1992/09/30 15:53:55 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 CFLAGS     = -O -s
@@ -7,6 +7,13 @@ SHELL      = /bin/sh
 TARGETS    = convers conversd
 
 .IGNORE:
+
+all_test:
+	@if [ `uname -s` = Linux ] ; then \
+	  make 'CC=gcc' 'CFLAGS=-O6 -s -DLINUX' all; \
+	else \
+	  make all; \
+	fi
 
 all:    $(TARGETS)
 

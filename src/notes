@@ -1,5 +1,9 @@
 ===============================================================================
 
+- allow more file descriptors (1024)
+
+===============================================================================
+
 Hallo Dieter,
 was haelst Du denn vom 'reget' Command bei FTP?
 (bzw. REST-Command)

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.32 1992/09/01 16:52:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.33 1992/09/30 15:54:42 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -504,7 +504,11 @@ void *p;
 	char *cmd,*host;
 
 	port = IPPORT_REMOTE;   /* Set default */
+#ifdef LINUX
+	optind = 0;
+#else
 	optind = 1;             /* reinit getopt() */
+#endif
 	while((c = getopt(argc,argv,"a:p:k:s:")) != EOF){
 		switch(c){
 		case 'a':
