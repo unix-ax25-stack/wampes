@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.5 1993/09/10 16:05:11 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.6 1993/09/29 15:47:52 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -1725,6 +1725,8 @@
 44.130.48.235   DH8SAW-1        # Joachim Kempf, 7030 Boeblingen
 44.130.48.236   DG8SEU  # Jan, Herrenberg
 44.130.48.237   dh8sbm  # Rolf
+44.130.48.238   df1tn   # Reiner Klenk, Klotzstr.11, 70190 Stuttgart.
+44.130.48.239   df1tn-u # Reiner Klenk, Klotzstr.11, 70190 Stuttgart.
 44.130.48.242   DK6TE   # Claus
 44.130.48.243   DC4TE   # Ingrid
 44.130.48.244   DB0WAN  # IP Digi, Wannweil (DL5SAA); ***
