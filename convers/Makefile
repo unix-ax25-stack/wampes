@@ -1,12 +1,14 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.5 1992/08/25 09:28:13 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.6 1992/09/05 08:13:25 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 CFLAGS     = -O -s
 SHELL      = /bin/sh
 
+TARGETS    = convers conversd
+
 .IGNORE:
 
-all:    convers conversd
+all:    $(TARGETS)
 
 convers: convers.c $(BUILDSADDR)
 	$(CC) $(CFLAGS) -I../src convers.c $(BUILDSADDR) $(LIBS) -o $@
@@ -31,4 +33,4 @@ isc:
 	@make "CFLAGS=-Os -DISC -DISC3" "LIBS=-linet" all
 
 clean:
-	rm -f *.o convers conversd
+	rm -f *.o $(TARGETS)

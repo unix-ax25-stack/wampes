@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.21 1992/09/01 20:09:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.22 1992/09/05 08:16:01 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -46,7 +46,7 @@ struct login_cb {
   int pty;                      /* pty file descriptor */
   int num;                      /* pty number */
   char id[4];                   /* pty id (last 2 chars) */
-  int pid;                      /* process id of login process */
+  pid_t pid;                    /* process id of login process */
   char inpbuf[512];             /* pty read buffer */
   char *inpptr;                 /* pty read buffer pointer */
   int inpcnt;                   /* pty read buffer count */
@@ -96,7 +96,7 @@ char *slave;
     if (pty_locktime[num] < secclock()) {
       pty_locktime[num] = secclock() + 60;
       pty_name(master, MASTERPREFIX, num);
-      if ((fd = open(master, O_RDWR | O_NDELAY, 0600)) >= 0) {
+      if ((fd = open(master, O_RDWR | O_NONBLOCK, 0600)) >= 0) {
 #ifdef sun
 	arg = 1;
 	ioctl(fd, FIONBIO, &arg);
@@ -402,7 +402,7 @@ void *upcall_arg;
     pw = getpasswdentry(user, 1);
     if (!pw || pw->pw_passwd[0]) pw = getpasswdentry("", 0);
     for (i = 0; i < FD_SETSIZE; i++) close(i);
-    setpgrp();
+    setsid();
     open(slave, O_RDWR, 0666);
     dup(0);
     dup(0);
@@ -458,9 +458,10 @@ struct login_cb *tp;
     off_read(tp->pty);
     off_write(tp->pty);
     off_death(tp->pid);
+    tcflush(tp->pty, TCIOFLUSH);
     close(tp->pty);
     restore_pty(tp->id);
-    pty_locktime[tp->num] = 0;
+    pty_locktime[tp->num] = secclock() + 20;
     write_log(tp->pty, (char *) 0, -1);
   }
   if (tp->pid > 0) {

@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.35 1992/09/01 16:54:55 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.36 1992/09/05 08:16:41 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -730,7 +730,7 @@ static void send_to_mail(struct mail *mail)
     setgid(0);
     setuid(0);
     for (i = 0; i < _NFILE; i++) close(i);
-    setpgrp();
+    setsid();
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");
@@ -783,7 +783,7 @@ static void send_to_news(struct mail *mail)
     setgid(0);
     setuid(0);
     for (i = 0; i < _NFILE; i++) close(i);
-    setpgrp();
+    setsid();
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");

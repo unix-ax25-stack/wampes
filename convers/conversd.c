@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.21 1992/09/01 16:46:12 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.22 1992/09/05 08:13:25 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -21,13 +21,6 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #ifdef LINUX
 #include "../src/linux.h"
 #endif
-
-#ifndef O_NOCTTY
-#define O_NOCTTY 0
-#endif
-
-extern struct utmp *getutent();
-extern void endutent();
 
 #if defined(__TURBOC__) || defined(__STDC__)
 #define __ARGS(x)       x
@@ -452,10 +445,11 @@ int channel;
   static char responsetext[] = "*** Invitation sent to %s @ %s.";
 
   char buffer[2048];
-  int fd;
+  int fdtty;
+  int fdut;
   struct connection *p;
   struct stat stbuf;
-  struct utmp *up;
+  struct utmp utmpbuf;
 
   for (p = connections; p; p = p->next)
     if (p->type == CT_USER && !strcmp(p->name, toname)) {
@@ -480,24 +474,30 @@ int channel;
       }
     }
 
+    if ((fdut = open("/etc/utmp", O_RDONLY, 0644)) >= 0) {
+      while (read(fdut, &utmpbuf, sizeof(utmpbuf)) == sizeof(utmpbuf))
+	if (
 #ifdef USER_PROCESS
-  while (up = getutent())
-    if (up->ut_type == USER_PROCESS && !strcmp(up->ut_user, toname)) {
-      sprintf(buffer, "/dev/%s", up->ut_line);
-      if (stat(buffer, &stbuf)) continue;
-      if ((stbuf.st_mode & 2) != 2) continue;
-      if ((fd = open(buffer, O_WRONLY | O_NOCTTY, 0644)) < 0) continue;
-      sprintf(buffer, invitetext, fromname, timestring(currtime), channel);
-      write(fd, buffer, strlen(buffer));
-      close(fd);
-      endutent();
-      clear_locks();
-      sprintf(buffer, responsetext, toname, myhostname);
-      send_msg_to_user("conversd", fromname, buffer);
-      return;
-    }
-  endutent();
+	    utmpbuf.ut_type == USER_PROCESS &&
 #endif
+	    !strncmp(utmpbuf.ut_user, toname, sizeof(utmpbuf.ut_name))
+	   ) {
+	  strcpy(buffer, "/dev/");
+	  strncat(buffer, utmpbuf.ut_line, sizeof(utmpbuf.ut_line));
+	  if (stat(buffer, &stbuf)) continue;
+	  if (!(stbuf.st_mode & 2)) continue;
+	  if ((fdtty = open(buffer, O_WRONLY | O_NOCTTY, 0644)) < 0) continue;
+	  sprintf(buffer, invitetext, fromname, timestring(currtime), channel);
+	  write(fdtty, buffer, strlen(buffer));
+	  close(fdtty);
+	  close(fdut);
+	  clear_locks();
+	  sprintf(buffer, responsetext, toname, myhostname);
+	  send_msg_to_user("conversd", fromname, buffer);
+	  return;
+	}
+      close(fdut);
+    }
 
   for (p = connections; p; p = p->next)
     if (p->type == CT_HOST && !p->locked) {
@@ -738,7 +738,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.21 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.22 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
@@ -1063,7 +1063,7 @@ char **argv;
   umask(022);
   for (i = 0; i < FD_SETSIZE; i++) close(i);
   chdir("/");
-  setpgrp();
+  setsid();
   signal(SIGPIPE, SIG_IGN);
   if (!getenv("TZ")) putenv("TZ=MEZ-1MESZ");
 

@@ -1,5 +1,5 @@
 #ifndef __LINT__
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.1 1992/07/24 20:01:49 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.2 1992/09/05 08:15:18 deyke Exp $";
 #endif
 
 #include <fcntl.h>
@@ -69,7 +69,7 @@ char **argv;
   if (fork()) exit(0);
   for (i = 0; i < _NFILE; i++) close(i);
   chdir("/");
-  setpgrp();
+  setsid();
 
   for (i = 0; i < channels; i++) {
     sprintf(tmp, "/dev/ptyr%d", i + 1);

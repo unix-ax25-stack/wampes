@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.h,v 1.11 1992/09/01 16:52:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.h,v 1.12 1992/09/05 08:15:57 deyke Exp $ */
 
 #ifndef _HPUX_H
 #define _HPUX_H
@@ -8,7 +8,7 @@
 #endif
 
 /* In hpux.c: */
-int dofork __ARGS((void));
+pid_t dofork __ARGS((void));
 void ioinit __ARGS((void));
 void iostop __ARGS((void));
 int system __ARGS((const char *cmdline));
@@ -18,8 +18,8 @@ void on_read __ARGS((int fd, void (*fnc )__ARGS ((void *)), void *arg));
 void off_read __ARGS((int fd));
 void on_write __ARGS((int fd, void (*fnc )__ARGS ((void *)), void *arg));
 void off_write __ARGS((int fd));
-void on_death __ARGS((int pid, void (*fnc )__ARGS ((void *)), void *arg));
-void off_death __ARGS((int pid));
+void on_death __ARGS((pid_t pid, void (*fnc )__ARGS ((void *)), void *arg));
+void off_death __ARGS((pid_t pid));
 void eihalt __ARGS((void));
 
 #endif  /* _HPUX_H */

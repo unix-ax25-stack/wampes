@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.24 1992/09/01 20:09:57 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.25 1992/09/05 08:16:04 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -52,7 +52,7 @@ struct asy Asy[ASY_MAX];
 
 static struct {
 	long speed;
-	int flags;
+	speed_t flags;
 } speed_table[] = {
 #ifdef B50
 	50, B50,
@@ -160,7 +160,7 @@ int rlsd;               /* Use Received Line Signal Detect (aka CD) */
 	ap = &Asy[dev];
 	strcpy(filename, "/dev/");
 	strcat(filename, ifp->name);
-	if ((ap->fd = open(filename, O_RDWR, 0666)) < 0) goto Fail;
+	if ((ap->fd = open(filename, O_RDWR | O_NOCTTY, 0666)) < 0) goto Fail;
 	ap->iface = ifp;
 	sp = find_speed(speed);
 	ap->speed = speed_table[sp].speed;

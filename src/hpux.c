@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.25 1992/09/01 20:09:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.26 1992/09/05 08:15:57 deyke Exp $ */
 
 #define FD_SETSIZE 64
 
@@ -32,7 +32,7 @@
 #define TIMEOUT 120
 
 struct proc_t {
-  int pid;
+  pid_t pid;
   void (*fnc) __ARGS((void *));
   void *arg;
   struct proc_t *next;
@@ -61,9 +61,9 @@ static void check_files_changed __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
 
-int dofork()
+pid_t dofork()
 {
-  int pid;
+  pid_t pid;
 
   fflush(stdout);
   if (!(pid = fork())) {
@@ -100,7 +100,7 @@ void ioinit()
     on_read(0, (void (*)()) keyboard, (void *) 0);
   } else {
     for (i = 0; i < FD_SETSIZE; i++) close(i);
-    setpgrp();
+    setsid();
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");
     fopen("/dev/null", "r+");
@@ -155,8 +155,10 @@ int system(cmdline)
 const char *cmdline;
 {
 
-  int i, pid, status;
+  int i;
+  int status;
   long oldmask;
+  pid_t pid;
 
   if (!cmdline) return 1;
   switch (pid = dofork()) {
@@ -258,7 +260,7 @@ int fd;
 /*---------------------------------------------------------------------------*/
 
 void on_death(pid, fnc, arg)
-int pid;
+pid_t pid;
 void (*fnc) __ARGS((void *));
 void *arg;
 {
@@ -281,7 +283,7 @@ void *arg;
 /*---------------------------------------------------------------------------*/
 
 void off_death(pid)
-int pid;
+pid_t pid;
 {
   struct proc_t *prev, *curr;
 
@@ -301,8 +303,8 @@ int pid;
 static void dowait()
 {
 
-  int pid;
   int status;
+  pid_t pid;
   struct proc_t *prev, *curr;
   void (*fnc) __ARGS((void *));
   void *arg;

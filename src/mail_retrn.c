@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.7 1992/09/01 16:52:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.8 1992/09/05 08:16:02 deyke Exp $ */
 
 /* Mail Delivery Agent for returned Mails */
 
@@ -25,7 +25,7 @@ struct mailjob *jp;
 
   if (dofork()) return;
   for (i = 0; i < _NFILE; i++) close(i);
-  setpgrp();
+  setsid();
   fopen("/dev/null", "r+");
   fopen("/dev/null", "r+");
   fopen("/dev/null", "r+");
