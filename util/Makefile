@@ -1,10 +1,10 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.30 1993/07/08 21:15:48 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.31 1993/07/11 15:04:13 deyke Exp $
 
 CFLAGS     = -I../lib
 OS         = "`uname -s`"
 RMTARGET   = @if [ -f $@ ] ; then rm -f $@ || mv -f $@ $@~ ; fi
 
-TARGETS    = cnet md5 mkhostdb netupdc netupds path pop2d udbm vitals
+TARGETS    = cnet md5 mkhostdb netupdc netupds path pop2d udbm
 
 all:;   chmod 755 genupd
 	@if [ $(OS) = HP-UX ] ; then \
@@ -95,11 +95,6 @@ udbm:   udbm.o
 	@sleep 1
 	$(CC) $(CFLAGS) $? $(LIBS) -o $@
 
-vitals: vitals.o
-	$(RMTARGET)
-	@sleep 1
-	$(CC) $(CFLAGS) $? $(LIBS) -o $@
-
 install: \
 	/usr/local/bin/cnet \
 	/usr/local/bin/md5 \
@@ -108,8 +103,7 @@ install: \
 	netupds \
 	/usr/local/bin/path \
 	pop2d \
-	/usr/local/etc/udbm \
-	vitals
+	/usr/local/etc/udbm
 
 /usr/local/bin/cnet: cnet
 	$(RMTARGET)

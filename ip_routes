@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ip_routes,v 1.14 1993/07/11 07:40:42 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/ip_routes,v 1.15 1993/07/11 15:04:04 deyke Exp $
 
 #host           destination     bits    iface   gateway                 private
 #------------------------------------------------------------------------------
@@ -13,30 +13,21 @@ dk5sg           hpcsos          32      ipip    15.255.240.16           P
 
 dk0hu           db0sao          32      ipip    192.1.1.1
 dk0hu           dd2fx           32      tnc0    0                       P
-dk0hu           dg9sbl-1        32      ipip    15.137.34.8
-dk0hu           dg9yev-1        32      ipip    15.137.23.159
 dk0hu           dh8saw-1        32      ipip    15.138.72.40
-dk0hu           dj0ze-1         32      ipip    15.137.23.135
 dk0hu           dj3eg-1         32      ipip    15.136.170.163
 dk0hu           dk5sg           32      ipip    15.15.80.34
-dk0hu           dl1sbl          32      tnc0
 dk0hu           dl1sbl-1        32      ipip    15.136.56.132
 dk0hu           dl2sel          32      tnc0
 dk0hu           dl2sel-1        32      ipip    15.136.175.24
-dk0hu           dl3sel-1        32      ipip    15.138.72.170
 dk0hu           dl4sas-1        32      ipip    15.136.216.69
 dk0hu           dl4sel          32      tnc0
 dk0hu           dl4sel-1        32      ipip    15.136.136.223
 dk0hu           dl5ue-1         32      ipip    15.8.62.21
 
-dg9sbl-1        dk0hu           32      ipip    15.136.56.6
-dg9yev-1        dk0hu           32      ipip    15.136.56.6
 dh8saw-1        dk0hu           32      ipip    15.136.56.6
-dj0ze-1         dk0hu           32      ipip    15.136.56.6
 dj3eg-1         dk0hu           32      ipip    15.136.56.6
 dl1sbl-1        dk0hu           32      ipip    15.136.56.6
 dl2sel-1        dk0hu           32      ipip    15.136.56.6
-dl3sel-1        dk0hu           32      ipip    15.136.56.6
 dl4sas-1        dk0hu           32      ipip    15.136.56.6
 dl4sel-1        dk0hu           32      ipip    15.136.56.6
 
@@ -53,9 +44,6 @@ db0id           dd2fx           32      tnc1
 
 dd2fx           db0id           32      tnc1
 dd2fx           dk0hu           32      tnc2    0                       P
-
-dl1sbl          dk0hu           32      tnc0
-dl1sbl          dl1sbl-u        32      ni
 
 dl2sel          dk0hu           32      tnc0
 

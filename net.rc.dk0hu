@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.17 1993/06/07 06:30:49 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.18 1993/07/11 15:04:05 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -23,41 +23,32 @@ attach netrom                   # ip over netrom
 ax25 route add axip default
 
 axip route add db0sao   192.1.1.1               # db0sao
-axip route add dg9sbl-1 15.137.34.8             # hpbbscfs
-axip route add dg9yev-1 15.137.23.159           # hprtdt39.grc.hp.com
 axip route add dh8saw-1 15.138.72.40            # hpbbis90.bbn.hp.com
-axip route add dj0ze-1  15.137.23.135           # hprtdt15.grc.hp.com
 axip route add dj3eg-1  15.136.170.163          # hpbmosm0.bbn.hp.com
 axip route add dk5sg    15.15.80.34             # mdddhd.fc.hp.com
 axip route add dl1sbl-1 15.136.56.132           # hpbeo20.bbn.hp.com
 axip route add dl2sel-1 15.136.175.24           # hpcsmus.bbn.hp.com
-axip route add dl3sel-1 15.138.72.170           # hpbbmop6.bbn.hp.com
 axip route add dl4sas-1 15.136.216.69           # hpbid1ge.bbn.hp.com
 axip route add dl4sel-1 15.136.136.223          # isoit041.bbn.hp.com
 axip route add dl5ue-1  15.8.62.21              # schiefer.hpl.hp.com
 
-route add  dl1sbl-u         tnc0     dl1sbl
 route add  dk5sg-u          ipip     15.15.80.34
 route add  dl5ue-1          ipip     15.8.62.21
 route add  dl4sel-1         ipip     15.136.136.223
 route add  dl4sel           tnc0
 route add  dl4sas-1         ipip     15.136.216.69
-route add  dl3sel-1         ipip     15.138.72.170
 route add  dl2sel-1         ipip     15.136.175.24
 route add  dl2sel           tnc0
 route add  dl1sbl-1         ipip     15.136.56.132
-route add  dl1sbl           tnc0
 route add  dk5sg            ipip     15.15.80.34
 route add  dj3eg-1          ipip     15.136.170.163
-route add  dj0ze-1          ipip     15.137.23.135
 route add  dh8saw-1         ipip     15.138.72.40
-route add  dg9yev-1         ipip     15.137.23.159
-route add  dg9sbl-1         ipip     15.137.34.8
 route addp dd2fx            tnc0
 route add  44.142.52/23     ipip     192.1.1.1
 route add  44.130/16        ipip     192.1.1.1
 
-arp add dl1sbl ax25 dl1sbl
+arp add dd2fx  ax25 dd2fx-2
+arp add dl2sel ax25 dl2sel
 arp add dl4sel ax25 dl4sel
 
 source /tcp/netrom_links

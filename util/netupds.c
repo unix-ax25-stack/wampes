@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.12 1993/06/07 06:33:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.13 1993/07/11 15:04:14 deyke Exp $ */
 
 /* Net Update Server */
 
@@ -149,7 +149,6 @@ int main(void)
   printf("Flags =");
   printf((flags & USE_PATCH) ? " PATCH" : " EX");
   printf((flags & USE_GZIP)  ? " GZIP"  : " COMPRESS");
-  printf((flags & USE_MD5)   ? " MD5"   : " VITALS");
   printf("\n");
 
   sprintf(buf, "/users/funk/dk5sg/tcp.%s", client);
@@ -157,10 +156,9 @@ int main(void)
 
   tmpnam(filename);
   sprintf(buf,
-	  "/users/funk/dk5sg/tcp/util/genupd %s %s %s | %s > %s",
+	  "/users/funk/dk5sg/tcp/util/genupd %s %s | %s > %s",
 	  client,
 	  (flags & USE_PATCH) ? "patch"   : "ex",
-	  (flags & USE_MD5)   ? "md5"     : "vitals",
 	  (flags & USE_GZIP)  ? "gzip -9" : "compress",
 	  filename);
   system(buf);
