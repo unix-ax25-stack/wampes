@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ip,v 1.3 1994/07/27 09:47:56 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ip,v 1.4 1994/08/24 11:27:23 deyke Exp $
 .H 2 "ip" " \fIsubcommand\fP"
 These commands control the Internet Protocol service.
 .H 3 "ip address" " [\fIhostid\fP]"
@@ -6,7 +6,7 @@ Display or set the default local IP address. This command must be given before
 an \fBattach\fP command if it is to be used as the default IP address for
 that interface.
 .H 3 "ip rtimer" " [\fIseconds\fP]"
-Display or set the IP reassembly timeout. The default is 30 seconds.
+Display or set the IP fragment reassembly timeout. The default is 30 seconds.
 .H 3 "ip status"
 Display Internet Protocol (IP) statistics, such as total packet counts
 and error counters of various types.

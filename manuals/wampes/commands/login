@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/login,v 1.6 1994/08/21 10:17:30 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/login,v 1.7 1994/08/24 11:27:23 deyke Exp $
 .H 2 "login" " \fIsubcommand\fP"
 TO BE WRITTEN.
 .H 3 "login auto" " [on|off]"
@@ -45,7 +45,6 @@ n0pra will be:
 The default is HOME_DIR/funk.
 .P
 HOME_DIR is defined in /tcp/lib/configure.h and has a value of
-.SP
 .BL 5 1
 .LI
 /home

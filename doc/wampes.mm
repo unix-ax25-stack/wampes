@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.5 1994/08/21 10:19:06 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.6 1994/08/24 11:27:30 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
@@ -20,13 +20,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940821" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940824" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 940821
+Version 940824
 .S
 .SP 2
 .S 15
@@ -73,7 +73,6 @@ The following command-line options are accepted:
 .LI \fB-g\fP
 The \fB-g\fP option causes \fBWAMPES\fP to run in \fBdebug\fP mode.
 In \fBdebug\fP mode, \fBWAMPES\fP will NOT:
-.SP
 .BL 5 1
 .LI
 load or save the ARP table, the IP routing table, or the AX.25 routing table
@@ -93,7 +92,7 @@ the startup of \fBWAMPES\fP.
 It echoes the commands read from the startup file before they are executed.
 This is a nice help if \fBWAMPES\fP stops (hangs) during initialization.
 .LE 1
-After all command line options, the name of an alternate startup file may
+After all command-line options, the name of an alternate startup file may
 be specified. This file is then opened and read instead
 of \fB/tcp/net.rc\fP.
 .H 2 "Environment variables"
@@ -118,7 +117,7 @@ Finger, and NETROM.
 In a Telnet, AX25, or NETROM
 session keyboard input is sent to the
 remote system, and any output from the remote system is displayed on the
-console. In an FTP session keyboard input has to consist of
+console. In a FTP session keyboard input has to consist of
 known local commands
 (see the \fBFTP Subcommands\fP chapter).
 A Finger session is used to peek at a
@@ -177,8 +176,8 @@ Move cursor to end of line.
 .LI Escape\ DEL
 Delete previous word.
 .SP
-.LI Backspace
 .LI Control-H
+.LI Backspace
 .LI DEL
 Delete previous character.
 .SP
@@ -216,8 +215,8 @@ Each time Control-P is entered,
 the next previous command in the history list is accessed.
 .SP
 .LI Control-N
-.LI DownArrow
 .LI Next
+.LI DownArrow
 Fetch next command.
 Each time Control-N is entered,
 the next command in the history list is accessed.
@@ -251,7 +250,7 @@ notation:
 Many commands take subcommands or parameters, which may be optional or
 required. In general, if a required subcommand or parameter is omitted,
 an error message will summarize the available subcommands or required
-parameters. Giving a '?' in place of the subcommand will also
+parameters. Giving a \fB?\fP in place of the subcommand will also
 generate the message. This is useful when the command word alone is a
 valid command. If a command takes an optional value parameter, issuing
 the command without the parameter generally displays the current value
@@ -320,7 +319,6 @@ Use this feature with great care.
 Display statistics on the specified or all
 attached asynchronous communications interfaces.
 The display for each interface consists of three lines:
-.SP
 .BL
 .LI
 The first line shows the interface name and the speed in
@@ -330,7 +328,7 @@ The second line shows receiver (RX) event
 counts: the total number of read system calls, received
 characters, and the receiver high water mark. The receiver high water
 mark is the maximum number of characters ever read from the
-device during a single system call. This is useful for
+device during a single read system call. This is useful for
 monitoring system interrupt latency margins as it shows how
 close the port hardware has come to overflowing due to the
 inability of the CPU to respond in time.
@@ -476,19 +474,19 @@ for more information.
 .H 3 "ax25 pthresh" " [\fIsize\fP]"
 Display or set the poll threshold to be used for new AX.25 Version 2
 connections. The poll threshold controls retransmission behavior as
-follows. If the oldest unacknowledged I-frame size is less than the poll
+follows. If the oldest unacknowledged I frame size is less than the poll
 threshold, it will be sent with the poll (P) bit set if a timeout occurs.
-If the oldest unacked I-frame size is equal to or greater than the
+If the oldest unacknowledged I frame size is equal to or greater than the
 threshold, then a RR or RNR frame, as appropriate, with the poll bit set
 will be sent if a timeout occurs.
 .P
 The idea behind the poll threshold is that the extra time needed to send a
-"small" I-frame instead of a supervisory frame when polling after a timeout
-is small, and since there's a good chance the I-frame will have to be sent
+"small" I frame instead of a supervisory frame when polling after a timeout
+is small, and since there is a good chance the I frame will have to be sent
 anyway (i.e., if it were lost previously) then you might as well send it as
-the poll. But if the I-frame is large, send a supervisory (RR/RNR) poll
+the poll. But if the I frame is large, send a supervisory (RR/RNR) poll
 instead to determine first if retransmitting the oldest unacknowledged
-I-frame is necessary, the timeout might have been caused by a lost
+I frame is necessary, the timeout might have been caused by a lost
 acknowledgement. This is obviously a tradeoff, so experiment with the
 poll threshold setting. The default is 64 bytes.
 .H 3 "ax25 reset" " \fIaxcb_addr\fP"
@@ -509,7 +507,7 @@ Add an entry to the AX.25 routing table. An automatic \fBax25 route add\fP
 is executed if digipeaters are specified in an AX.25 \fBconnect\fP
 command, or if a connection is received from a remote station.
 Such automatic routing table entries won't override locally
-created permanent entries, however. MORE TO BE WRITTEN.
+created \fBpermanent\fP entries, however. MORE TO BE WRITTEN.
 .H 4 "ax25 route list" " [\fIax25_addr\fP ...]"
 TO BE WRITTEN.
 .H 3 "ax25 status" " [\fIaxcb_addr\fP]"
@@ -533,10 +531,10 @@ that uses the poll/final bits).
 Set the number of bytes that can be pending on an AX.25 receive queue
 beyond which I frames will be answered with RNR (Receiver Not Ready)
 responses. This presently applies only to suspended interactive AX.25
-sessions, since incoming I-frames containing network (IP, NET/ROM) packets
+sessions, since incoming I frames containing network (IP, NET/ROM) packets
 are always processed immediately and are not placed on the receive queue.
 However, when an AX.25 connection carries both interactive
-and network packet traffic, an RNR generated because of
+and network packet traffic, a RNR generated because of
 backlogged interactive traffic will also stop network
 packet traffic.
 The default is 2048 bytes.
@@ -552,15 +550,15 @@ TO BE WRITTEN.
 TO BE WRITTEN.
 .H 2 "close" " [\fIsession#\fP]"
 Close the specified session, without an argument, close the
-current session. On an AX.25 session, this command initiates a
-disconnect. On a FTP or Telnet session, this command sends a
+current session. On an AX.25 session this command initiates a
+disconnect. On a FTP or Telnet session this command sends a
 FIN (i.e., initiates a close) on the session's TCP connection.
 This is an alternative to asking the remote server to initiate a
 close (QUIT to FTP, or the logout command appropriate for the
 remote system in the case of Telnet). When either FTP or Telnet
 sees the incoming half of a TCP connection close, it
 automatically responds by closing the outgoing half of the
-connection. Close is more graceful than the \fBreset\fP command, in
+connection. \fBclose\fP is more graceful than the \fBreset\fP command, in
 that it is less likely to leave the remote TCP in a "half-open"
 state.
 .H 2 "connect" " \fIax25_addr\fP [\fIdigipeater\fP ...]"
@@ -616,7 +614,7 @@ When communicating from keyboard to keyboard the standard local
 echo mode is used, so the setting of this parameter has no
 effect. However, many timesharing systems (eg. UNIX) prefer to
 do their own echoing of typed input. (This makes screen editors
-work right, among other things). Such systems send a Telnet
+work right, among other things.) Such systems send a Telnet
 WILL ECHO offer immediately upon receiving an incoming Telnet
 connection request. If \fBecho accept\fP is in effect, a client
 Telnet session will automatically return a DO ECHO response. In
@@ -650,7 +648,7 @@ The default is Control-] (0x1d, ASCII GS).
 Exit (terminate) \fBWAMPES\fP.
 .H 2 "finger" " [\fIuser\fP]@\fIhostid\fP"
 Issue a network finger request for user \fIuser\fP at host \fIhostid\fP. If only
-@\fIhostid\fP is given, all users on that host are identified.
+\fB@\fP\fIhostid\fP is given, all users on that host are identified.
 .H 2 "fkey" " \fIkey#\fP \fItext\fP"
 Set the value for a programmable key on the keyboard.
 To enter a control character from the keyboard it has
@@ -727,9 +725,8 @@ the NET/ROM asynchronous framing technique
 for communication with a local NET/ROM TNC.
 .LE 1
 For AX.25 based encapsulations UI frames (datagram mode) will be used
-if any of the following conditions is true,
+if any one of the following conditions is true,
 otherwise I frames (virtual circuit mode) will be used:
-.SP
 .BL 5 1
 .LI
 the "low delay" bit is set in the IP type-of-service field.
@@ -747,7 +744,7 @@ When a forward is defined, all output for \fIinterface\fP is redirected to
 .H 3 "ifconfig \fIinterface\fP ipaddress" " \fIhostid\fP"
 Set the IP address to \fIhostid\fP for this interface. This might be necessary
 when a system acts as a gateway.
-See also the \fBhostname\fP and \fBip address\fP commands.
+See also the \fBip address\fP command.
 .H 3 "ifconfig \fIinterface\fP linkaddress" " \fIhardware-dependent\fP"
 Set the hardware dependent address for this interface. For
 AX.25 this can be the callsign, for ethernet an ethernet
@@ -782,7 +779,7 @@ Display or set the default local IP address. This command must be given before
 an \fBattach\fP command if it is to be used as the default IP address for
 that interface.
 .H 3 "ip rtimer" " [\fIseconds\fP]"
-Display or set the IP reassembly timeout. The default is 30 seconds.
+Display or set the IP fragment reassembly timeout. The default is 30 seconds.
 .H 3 "ip status"
 Display Internet Protocol (IP) statistics, such as total packet counts
 and error counters of various types.
@@ -877,7 +874,6 @@ n0pra will be:
 The default is HOME_DIR/funk.
 .P
 HOME_DIR is defined in /tcp/lib/configure.h and has a value of
-.SP
 .BL 5 1
 .LI
 /home
@@ -933,7 +929,6 @@ allocation requests. Requests for different block sizes (rounded up to
 the next power of two) are counted separately.
 .H 3 "memory status"
 Display a summary of storage allocator statistics:
-.SP
 .BL
 .LI
 The first line
@@ -1488,8 +1483,8 @@ with each one, response times, etc.
 Display or set the step threshold (measured in seconds). If the
 required time adjustment is less than the step threshold, the
 adjtime system call will be used to slow down or to accelerate
-the clock, otherwise the clock will be stepped using
-settimeofday.
+the clock, otherwise the clock will be stepped using the
+settimeofday system call.
 The default is 1 second.
 .H 3 "sntp sys"
 Display the sntp server configuration.
@@ -1638,7 +1633,6 @@ requests. Existing connections are allowed to complete normally.
 See also the \fBstart\fP command.
 .P
 \fIserver\fP has to be one of:
-.SP
 .BL 5 1
 .LI
 \fBax25\fP
@@ -1699,6 +1693,8 @@ outgoing TCP connect request (SYN segments). This tells the remote end the
 size of the largest segment (packet) it may send. Changing MSS affects
 only future connections, existing connections are unaffected.
 The default is 512 bytes.
+See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
+for more information.
 .H 3 "tcp reset" " \fItcb_addr\fP"
 Delete the TCP control block at the specified address.
 The control block address can be found with the \fBtcp status\fP command.
@@ -1726,6 +1722,8 @@ The default is \fBoff\fP.
 Display or set the default receive window size in bytes to be used by TCP
 when creating new connections. Existing connections are unaffected.
 The default is 2048 bytes.
+See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
+for more information.
 .H 2 "telnet" " \fIhostid\fP [\fIport\fP]"
 Create a Telnet session to the specified host and enter converse mode.
 If \fIport\fP is given that port is used. Default port is 23.
@@ -1922,7 +1920,7 @@ avoiding interoperability problems that may appear when communicating
 with non-\fBWAMPES\fP implementations of AX.25.
 .H 2 "AX.25 Parameters"
 .H 3 "Paclen"
-Paclen limits the size of the data field in an AX.25 I-frame. This
+Paclen limits the size of the data field in an AX.25 I frame. This
 value does NOT include the AX.25 protocol header (source,
 destination and digipeater addresses).
 .P
@@ -1931,7 +1929,7 @@ has no effect in unconnected mode.
 .P
 The default value of \fBpaclen\fP is 256 bytes.
 .H 3 "Maxframe"
-This parameter controls the number of I-frames that \fBWAMPES\fP may send
+This parameter controls the number of I frames that \fBWAMPES\fP may send
 on an AX.25 connection before it must stop and wait for an acknowledgement.
 Since the AX.25/LAPB sequence number field is 3 bits wide, this number
 cannot be larger than 7.
@@ -2014,7 +2012,7 @@ datagram without the use of IP-level fragmentation. Such a
 scheme is provided in AX.25 Version 2.1. It can break
 a large IP or NET/ROM datagram into a series of \fBpaclen\fP-sized
 AX.25 segments (not to be confused with TCP segments),
-one per AX.25 I-frame, for transmission and reassemble them into
+one per AX.25 I frame, for transmission and reassemble them into
 a single datagram at the other end of the link before handing it up to the
 IP or NET/ROM module. Unfortunately, the segmentation procedure is a new
 feature in AX.25 and is not yet widely implemented,
@@ -2069,10 +2067,10 @@ Interoperability problems may therefore result if larger MTUs are used in
 \fBWAMPES\fP.
 .P
 Choosing an MTU for an AX.25 interface is more complex. When the interface
-operates in datagram (UI-frame) mode, the \fBpaclen\fP parameter does not
+operates in datagram (UI frame) mode, the \fBpaclen\fP parameter does not
 apply. The MTU effectively becomes the \fBpaclen\fP of the link. However,
 as mentioned earlier, large packets sent on AX.25 \fIconnections\fP are
-automatically segmented into I-frames no larger than \fBpaclen\fP bytes.
+automatically segmented into I frames no larger than \fBpaclen\fP bytes.
 Unfortunately, as also mentioned earlier, \fBWAMPES\fP and \fBNOS\fP are so far the only known
 implementations of the new AX.25 segmentation procedure. This is fine as long
 as all of the NET/ROM nodes along a path are running \fBWAMPES\fP, but since the main
@@ -2084,7 +2082,7 @@ NET/ROM. The way to do this is to make sure that packets larger
 than \fBpaclen\fP are never handed to AX.25. A NET/ROM transport header is
 5 bytes long and a NET/ROM network header takes 15 bytes, so 20 bytes must
 be added to the size of an IP datagram when figuring the size of the AX.25
-I-frame data field. If \fBpaclen\fP is 256, this leaves 236 bytes for the IP
+I frame data field. If \fBpaclen\fP is 256, this leaves 236 bytes for the IP
 datagram. This is the default MTU of the \fBnetrom\fP pseudo-interface, so
 as long as \fBpaclen\fP is at least 256 bytes, AX.25 segmentation can't
 happen. But if smaller values of \fBpaclen\fP are used, the \fBnetrom\fP MTU

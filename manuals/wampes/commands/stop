@@ -1,11 +1,10 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/stop,v 1.3 1994/08/05 10:36:30 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/stop,v 1.4 1994/08/24 11:27:25 deyke Exp $
 .H 2 "stop" " \fIserver\fP"
 Stop the specified server, rejecting any further remote connect
 requests. Existing connections are allowed to complete normally.
 See also the \fBstart\fP command.
 .P
 \fIserver\fP has to be one of:
-.SP
 .BL 5 1
 .LI
 \fBax25\fP

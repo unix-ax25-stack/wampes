@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/the-net-program,v 1.2 1994/08/21 10:17:15 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/the-net-program,v 1.3 1994/08/24 11:27:15 deyke Exp $
 .nr Cl 2 \" Max level of header for table of contents
 .H 1 "The /tcp/net Program"
 The executable file \fB/tcp/net\fP
@@ -29,7 +29,6 @@ The following command-line options are accepted:
 .LI \fB-g\fP
 The \fB-g\fP option causes \fBWAMPES\fP to run in \fBdebug\fP mode.
 In \fBdebug\fP mode, \fBWAMPES\fP will NOT:
-.SP
 .BL 5 1
 .LI
 load or save the ARP table, the IP routing table, or the AX.25 routing table
@@ -49,7 +48,7 @@ the startup of \fBWAMPES\fP.
 It echoes the commands read from the startup file before they are executed.
 This is a nice help if \fBWAMPES\fP stops (hangs) during initialization.
 .LE 1
-After all command line options, the name of an alternate startup file may
+After all command-line options, the name of an alternate startup file may
 be specified. This file is then opened and read instead
 of \fB/tcp/net.rc\fP.
 .H 2 "Environment variables"

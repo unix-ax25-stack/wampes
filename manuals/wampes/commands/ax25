@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ax25,v 1.5 1994/08/21 10:17:29 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ax25,v 1.6 1994/08/24 11:27:22 deyke Exp $
 .H 2 "ax25" " \fIsubcommand\fP"
 These commands control the AX.25 service.
 .H 3 "ax25 blimit" " [\fIlimit\fP]"
@@ -63,19 +63,19 @@ for more information.
 .H 3 "ax25 pthresh" " [\fIsize\fP]"
 Display or set the poll threshold to be used for new AX.25 Version 2
 connections. The poll threshold controls retransmission behavior as
-follows. If the oldest unacknowledged I-frame size is less than the poll
+follows. If the oldest unacknowledged I frame size is less than the poll
 threshold, it will be sent with the poll (P) bit set if a timeout occurs.
-If the oldest unacked I-frame size is equal to or greater than the
+If the oldest unacknowledged I frame size is equal to or greater than the
 threshold, then a RR or RNR frame, as appropriate, with the poll bit set
 will be sent if a timeout occurs.
 .P
 The idea behind the poll threshold is that the extra time needed to send a
-"small" I-frame instead of a supervisory frame when polling after a timeout
-is small, and since there's a good chance the I-frame will have to be sent
+"small" I frame instead of a supervisory frame when polling after a timeout
+is small, and since there is a good chance the I frame will have to be sent
 anyway (i.e., if it were lost previously) then you might as well send it as
-the poll. But if the I-frame is large, send a supervisory (RR/RNR) poll
+the poll. But if the I frame is large, send a supervisory (RR/RNR) poll
 instead to determine first if retransmitting the oldest unacknowledged
-I-frame is necessary, the timeout might have been caused by a lost
+I frame is necessary, the timeout might have been caused by a lost
 acknowledgement. This is obviously a tradeoff, so experiment with the
 poll threshold setting. The default is 64 bytes.
 .H 3 "ax25 reset" " \fIaxcb_addr\fP"
@@ -96,7 +96,7 @@ Add an entry to the AX.25 routing table. An automatic \fBax25 route add\fP
 is executed if digipeaters are specified in an AX.25 \fBconnect\fP
 command, or if a connection is received from a remote station.
 Such automatic routing table entries won't override locally
-created permanent entries, however. MORE TO BE WRITTEN.
+created \fBpermanent\fP entries, however. MORE TO BE WRITTEN.
 .H 4 "ax25 route list" " [\fIax25_addr\fP ...]"
 TO BE WRITTEN.
 .H 3 "ax25 status" " [\fIaxcb_addr\fP]"
@@ -120,10 +120,10 @@ that uses the poll/final bits).
 Set the number of bytes that can be pending on an AX.25 receive queue
 beyond which I frames will be answered with RNR (Receiver Not Ready)
 responses. This presently applies only to suspended interactive AX.25
-sessions, since incoming I-frames containing network (IP, NET/ROM) packets
+sessions, since incoming I frames containing network (IP, NET/ROM) packets
 are always processed immediately and are not placed on the receive queue.
 However, when an AX.25 connection carries both interactive
-and network packet traffic, an RNR generated because of
+and network packet traffic, a RNR generated because of
 backlogged interactive traffic will also stop network
 packet traffic.
 The default is 2048 bytes.

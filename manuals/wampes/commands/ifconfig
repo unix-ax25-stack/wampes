@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ifconfig,v 1.6 1994/08/21 10:17:30 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ifconfig,v 1.7 1994/08/24 11:27:23 deyke Exp $
 .H 2 "ifconfig" " [\fIinterface\fP [[\fIsubcommand\fP \fIparameter\fP] ...]"
 Without arguments display the status of all interfaces.
 When only \fIinterface\fP is given, the status of that interface is displayed.
@@ -36,9 +36,8 @@ the NET/ROM asynchronous framing technique
 for communication with a local NET/ROM TNC.
 .LE 1
 For AX.25 based encapsulations UI frames (datagram mode) will be used
-if any of the following conditions is true,
+if any one of the following conditions is true,
 otherwise I frames (virtual circuit mode) will be used:
-.SP
 .BL 5 1
 .LI
 the "low delay" bit is set in the IP type-of-service field.
@@ -56,7 +55,7 @@ When a forward is defined, all output for \fIinterface\fP is redirected to
 .H 3 "ifconfig \fIinterface\fP ipaddress" " \fIhostid\fP"
 Set the IP address to \fIhostid\fP for this interface. This might be necessary
 when a system acts as a gateway.
-See also the \fBhostname\fP and \fBip address\fP commands.
+See also the \fBip address\fP command.
 .H 3 "ifconfig \fIinterface\fP linkaddress" " \fIhardware-dependent\fP"
 Set the hardware dependent address for this interface. For
 AX.25 this can be the callsign, for ethernet an ethernet

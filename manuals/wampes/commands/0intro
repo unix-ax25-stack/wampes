@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/0intro,v 1.4 1994/08/21 10:17:29 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/0intro,v 1.5 1994/08/24 11:27:21 deyke Exp $
 .nr Cl 2 \" Max level of header for table of contents
 .H 1 "Commands"
 This section describes the commands recognized in command mode, or
@@ -14,7 +14,7 @@ notation:
 Many commands take subcommands or parameters, which may be optional or
 required. In general, if a required subcommand or parameter is omitted,
 an error message will summarize the available subcommands or required
-parameters. Giving a '?' in place of the subcommand will also
+parameters. Giving a \fB?\fP in place of the subcommand will also
 generate the message. This is useful when the command word alone is a
 valid command. If a command takes an optional value parameter, issuing
 the command without the parameter generally displays the current value

@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/console-modes,v 1.1 1994/08/05 10:43:59 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/console-modes,v 1.2 1994/08/24 11:27:14 deyke Exp $
 .nr Cl 7 \" Max level of header for table of contents
 .H 1 "Console modes"
 The console may be in one of two modes: \fBcommand mode\fP or
@@ -14,7 +14,7 @@ Finger, and NETROM.
 In a Telnet, AX25, or NETROM
 session keyboard input is sent to the
 remote system, and any output from the remote system is displayed on the
-console. In an FTP session keyboard input has to consist of
+console. In a FTP session keyboard input has to consist of
 known local commands
 (see the \fBFTP Subcommands\fP chapter).
 A Finger session is used to peek at a
@@ -73,8 +73,8 @@ Move cursor to end of line.
 .LI Escape\ DEL
 Delete previous word.
 .SP
-.LI Backspace
 .LI Control-H
+.LI Backspace
 .LI DEL
 Delete previous character.
 .SP
@@ -112,8 +112,8 @@ Each time Control-P is entered,
 the next previous command in the history list is accessed.
 .SP
 .LI Control-N
-.LI DownArrow
 .LI Next
+.LI DownArrow
 Fetch next command.
 Each time Control-N is entered,
 the next command in the history list is accessed.

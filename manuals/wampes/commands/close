@@ -1,14 +1,14 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/close,v 1.2 1994/07/27 09:47:53 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/close,v 1.3 1994/08/24 11:27:22 deyke Exp $
 .H 2 "close" " [\fIsession#\fP]"
 Close the specified session, without an argument, close the
-current session. On an AX.25 session, this command initiates a
-disconnect. On a FTP or Telnet session, this command sends a
+current session. On an AX.25 session this command initiates a
+disconnect. On a FTP or Telnet session this command sends a
 FIN (i.e., initiates a close) on the session's TCP connection.
 This is an alternative to asking the remote server to initiate a
 close (QUIT to FTP, or the logout command appropriate for the
 remote system in the case of Telnet). When either FTP or Telnet
 sees the incoming half of a TCP connection close, it
 automatically responds by closing the outgoing half of the
-connection. Close is more graceful than the \fBreset\fP command, in
+connection. \fBclose\fP is more graceful than the \fBreset\fP command, in
 that it is less likely to leave the remote TCP in a "half-open"
 state.

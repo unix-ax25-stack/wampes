@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/sntp,v 1.5 1994/08/21 10:17:32 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/sntp,v 1.6 1994/08/24 11:27:25 deyke Exp $
 .H 2 "sntp" " \fIsubcommand\fP"
 TO BE WRITTEN.
 .H 3 "sntp add" " \fIhostid\fP [\fIinterval\fP]"
@@ -14,8 +14,8 @@ with each one, response times, etc.
 Display or set the step threshold (measured in seconds). If the
 required time adjustment is less than the step threshold, the
 adjtime system call will be used to slow down or to accelerate
-the clock, otherwise the clock will be stepped using
-settimeofday.
+the clock, otherwise the clock will be stepped using the
+settimeofday system call.
 The default is 1 second.
 .H 3 "sntp sys"
 Display the sntp server configuration.

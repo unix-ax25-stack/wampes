@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/tcp,v 1.5 1994/08/05 10:36:31 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/tcp,v 1.6 1994/08/24 11:27:25 deyke Exp $
 .H 2 "tcp" " \fIsubcommand\fP"
 These commands control the Transmission Control Protocol service.
 .H 3 "tcp irtt" " [\fImilliseconds\fP]"
@@ -35,6 +35,8 @@ outgoing TCP connect request (SYN segments). This tells the remote end the
 size of the largest segment (packet) it may send. Changing MSS affects
 only future connections, existing connections are unaffected.
 The default is 512 bytes.
+See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
+for more information.
 .H 3 "tcp reset" " \fItcb_addr\fP"
 Delete the TCP control block at the specified address.
 The control block address can be found with the \fBtcp status\fP command.
@@ -62,3 +64,5 @@ The default is \fBoff\fP.
 Display or set the default receive window size in bytes to be used by TCP
 when creating new connections. Existing connections are unaffected.
 The default is 2048 bytes.
+See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
+for more information.

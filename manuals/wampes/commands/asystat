@@ -1,9 +1,8 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/asystat,v 1.4 1994/08/05 10:36:22 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/asystat,v 1.5 1994/08/24 11:27:22 deyke Exp $
 .H 2 "asystat" " [\fIinterface\fP ...]"
 Display statistics on the specified or all
 attached asynchronous communications interfaces.
 The display for each interface consists of three lines:
-.SP
 .BL
 .LI
 The first line shows the interface name and the speed in
@@ -13,7 +12,7 @@ The second line shows receiver (RX) event
 counts: the total number of read system calls, received
 characters, and the receiver high water mark. The receiver high water
 mark is the maximum number of characters ever read from the
-device during a single system call. This is useful for
+device during a single read system call. This is useful for
 monitoring system interrupt latency margins as it shows how
 close the port hardware has come to overflowing due to the
 inability of the CPU to respond in time.
