@@ -1,4 +1,4 @@
-.\" @(#) $Id: attach,v 1.13 1996/08/19 16:32:32 deyke Exp $
+.\" @(#) $Id: attach,v 1.14 1996/10/08 20:03:09 deyke Exp $
 .H 2 "attach" " \fItype\fP [\fItype specific options\fP]"
 Configure and attach an interface to the system.
 The details are highly interface type dependent.
@@ -101,3 +101,6 @@ Currently \fBattach ni\fP is available on HP-UX systems only.
 This creates an IP point-to-point link between \fBWAMPES\fP and UNIX,
 by creating a new interface named \fIname\fP on the \fBWAMPES\fP side.
 Currently \fBattach tun\fP is available on FreeBSD systems only.
+.H 3 "attach kernel" " \fIname\fP [nopromisc]"
+Currently \fBattach kernel\fP is available on Linux systems only.
+MORE TO BE WRITTEN.

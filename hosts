@@ -1998,7 +1998,7 @@
 44.130.28.30    DL8ZAD  # Juergen, 35789 Weilmuenster nr Wetzlar
 44.130.28.58    DF0WS   # ClubStn F58, 35396 Giessen-Wieseck
 #---------------------------------------------------------------------------
-# KA_HOSTS BEGIN [960923]
+# KA_HOSTS BEGIN [960926]
 # Hier die Karlsruher IP-Adressen:
 #
 44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc1ik@db0sao.ampr.org,
@@ -2152,6 +2152,7 @@
 44.130.29.152 dg3acw    # JN48ea Martin Dinkloh       76131 Karlsruhe
 44.130.29.153 dg3acw-u  # JN48ea Martin Dinkloh       76131 Karlsruhe
 44.130.29.154 dh0glg    # JN48DW Guido Liedtke        76287 Rheinstetten
+44.130.29.155 dh9iag-3  # JN48ex Gunnar Bernstein     76199 Karlsruhe
 #
 # KA_HOSTS END
 #---------------------------------------------------------------------------

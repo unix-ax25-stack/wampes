@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.93 1996/08/19 16:30:14 deyke Exp $
+# @(#) $Id: Makefile,v 1.94 1996/10/08 20:00:52 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -129,6 +129,7 @@ OBJS          = adjtime.o \
 		kernel.o \
 		kiss.o \
 		kissdump.o \
+		krnlif.o \
 		ksubr.o \
 		lapb.o \
 		lapbtime.o \
@@ -240,6 +241,7 @@ SRCS          = adjtime.c \
 		kernel.c \
 		kiss.c \
 		kissdump.c \
+		krnlif.c \
 		ksubr.c \
 		lapb.c \
 		lapbtime.c \
@@ -574,6 +576,9 @@ kiss.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
 	netuser.h asy.h ax25.h pktdrvr.h crc.h
 kissdump.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h kiss.h iface.h \
 	proc.h timer.h devparam.h ax25.h trace.h crc.h
+krnlif.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h iface.h proc.h \
+	timer.h netuser.h commands.h devparam.h trace.h hpux.h config.h \
+	ax25.h
 ksubr.o: global.h ../lib/configure.h ../lib/strdup.h proc.h mbuf.h timer.h \
 	commands.h main.h
 lapb.o: global.h ../lib/configure.h ../lib/strdup.h mbuf.h timer.h ax25.h \

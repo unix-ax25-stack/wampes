@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 961001" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 961008" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 961001
+Version 961008
 .S
 .SP 2
 .S 15
@@ -434,6 +434,9 @@ Currently \fBattach ni\fP is available on HP-UX systems only.
 This creates an IP point-to-point link between \fBWAMPES\fP and UNIX,
 by creating a new interface named \fIname\fP on the \fBWAMPES\fP side.
 Currently \fBattach tun\fP is available on FreeBSD systems only.
+.H 3 "attach kernel" " \fIname\fP [nopromisc]"
+Currently \fBattach kernel\fP is available on Linux systems only.
+MORE TO BE WRITTEN.
 .H 2 "ax25" " \fIsubcommand\fP"
 These commands control the AX.25 service.
 .H 3 "ax25 blimit" " [\fIlimit\fP]"

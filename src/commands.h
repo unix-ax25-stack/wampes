@@ -1,4 +1,4 @@
-/* @(#) $Id: commands.h,v 1.30 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: commands.h,v 1.31 1996/10/08 20:00:52 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -274,12 +274,13 @@ int domain1(int argc,char *argv[],void *p);
 int dosntp(int argc,char *argv[],void *p);
 int dosource(int argc,char *argv[],void *p);
 int ipip_attach(int argc,char *argv[],void *p);
+int krnlif_attach(int argc,char *argv[],void *p);
 int ni_attach(int argc,char *argv[],void *p);
 int sntp0(int argc,char *argv[],void *p);
 int sntp1(int argc,char *argv[],void *p);
 int tcpgate1(int argc,char *argv[],void *p);
-int tun_attach(int argc,char *argv[],void *p);
 int time0(int argc,char *argv[],void *p);
 int time1(int argc,char *argv[],void *p);
+int tun_attach(int argc,char *argv[],void *p);
 
 #endif  /* _COMMANDS_H */

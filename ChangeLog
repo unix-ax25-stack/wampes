@@ -1,4 +1,10 @@
-@(#) $Id: ChangeLog,v 1.21 1996/10/01 14:59:58 deyke Exp $
+@(#) $Id: ChangeLog,v 1.22 1996/10/08 20:00:30 deyke Exp $
+
+961008 Dieter Deyke <deyke@fc.hp.com>
+
+	Added "attach kernel" for Linux (developed by Thomas Sailer)
+
+	Updated domain.txt and hosts
 
 961001 Dieter Deyke <deyke@fc.hp.com>
 
@@ -6,7 +12,7 @@
 
 960909 Dieter Deyke <deyke@fc.hp.com>
 
-	Fixed some warnings for HP-UX 10.20
+	Fixed some warnings on HP-UX 10.20
 
 	Updated domain.txt and hosts
 
@@ -29,7 +35,7 @@
 
 	Fixed configure script for bash, and for BSD based systems
 
-	Updated IP tunnel for FreeBSD (developed by dc1ik)
+	Updated IP tunnel for FreeBSD (developed by Olaf Erb)
 
 960819 Dieter Deyke <deyke@fc.hp.com>
 
@@ -65,7 +71,7 @@
 
 	Added support for Linux ELF systems
 
-	Added support for IP tunnel for FreeBSD (developed by dc1ik)
+	Added support for IP tunnel for FreeBSD (developed by Olaf Erb)
 
 	Fixed wrong program name in error message in cnet
 
