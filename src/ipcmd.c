@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.6 1991/05/09 07:38:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipcmd.c,v 1.7 1991/07/16 17:55:21 deyke Exp $ */
 
 /* IP-related user commands
  * Copyright 1991 Phil Karn, KA9Q
@@ -113,7 +113,7 @@ void *p;
 	 * 192.001.002.003 32  sl0          192.002.003.004  0
 	 */
 	tprintf(
-"Dest            Len Interface    Gateway          Metric  P   Timer Use\n");
+"Dest               Len Interface    Gateway            Metric P   Timer Use\n");
 
 	for(bits=31;bits>=0;bits--){
 		for(i=0;i<HASHMOD;i++){
@@ -260,15 +260,15 @@ register struct route *rp;
 		cp = inet_ntoa(rp->target);
 	else
 		cp = "default";
-	tprintf("%-16s",cp);
+	tprintf("%-18.18s ",cp);
 	tprintf("%-4u",rp->bits);
 	tprintf("%-13s",rp->iface->name);
 	if(rp->gateway != 0)
 		cp = inet_ntoa(rp->gateway);
 	else
 		cp = "";
-	tprintf("%-17s",cp);
-	tprintf("%-8lu",rp->metric);
+	tprintf("%-18.18s ",cp);
+	tprintf("%-7lu",rp->metric);
 	tprintf("%c ",(rp->flags & RTPRIVATE) ? 'P' : ' ');
 	tprintf("%7lu ",
 	 read_timer(&rp->timer) / 1000L);

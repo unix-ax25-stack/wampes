@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.6 1991/06/18 17:27:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.7 1991/07/16 17:55:48 deyke Exp $ */
 
 #ifndef _SOCKET_H
 #define _SOCKET_H
@@ -28,6 +28,7 @@
 #define IPPROTO_ICMP    1
 #define IPPROTO_TCP     6
 #define IPPROTO_UDP     17
+#define IPPROTO_AX25    93
 #define IPPROTO_IP      94
 
 /* TCP port numbers */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.5 1991/05/09 07:38:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipdump.c,v 1.6 1991/07/16 17:55:22 deyke Exp $ */
 
 /* IP header tracing routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -83,6 +83,10 @@ int check;
 	case ICMP_PTCL:
 		fprintf(fp," prot ICMP\n");
 		icmp_dump(fp,bpp,ip.source,ip.dest,check);
+		break;
+	case AX25_PTCL:
+		fprintf(fp," prot AX25\n");
+		ax25_dump(fp,bpp,check);
 		break;
 	default:
 		fprintf(fp," prot %u\n",uchar(ip.protocol));

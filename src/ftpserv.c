@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.11 1991/07/08 14:04:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.12 1991/07/16 17:55:11 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -686,11 +686,12 @@ char  *pass;
 
  if ((pw = getpasswdentry(username, 0)) &&
      (sw = getspwdentry(username)) &&
-     (!*sw->sp_pwdp || !strcmp(pw->pw_name, "ftp"))) {
+     (!*sw->sp_pwdp || !strcmp(pw->pw_name, "ftp")))
 #else
   if ((pw = getpasswdentry(username, 0)) &&
-      (!*pw->pw_passwd || !strcmp(pw->pw_name, "ftp"))) {
+      (!*pw->pw_passwd || !strcmp(pw->pw_name, "ftp")))
 #endif
+  {
     ftp->uid = pw->pw_uid;
     ftp->gid = pw->pw_gid;
     if (ftp->cd) free(ftp->cd);

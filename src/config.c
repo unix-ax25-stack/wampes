@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.10 1991/06/18 17:26:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.11 1991/07/16 17:55:02 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -225,6 +225,7 @@ struct cmds Cmds[] = {
 		"attach <hardware> <hw specific options>",
 #ifdef  AX25
 	"ax25",         doax25,         0, 0, NULLCHAR,
+	"axip",         doaxip,         0, 0, NULLCHAR,
 #endif
 #ifdef  BOOTP
 	"bootp",        dobootp,        0, 0, NULLCHAR,
@@ -438,6 +439,10 @@ struct cmds Attab[] = {
 	"attach scc <devices> init <addr> <spacing> <Aoff> <Boff> <Dataoff>\n"
 	"   <intack> <vec> [p]<clock> [hdwe] [param]\n"
 	"attach scc <chan> slip|kiss|nrs|ax25 <label> <mtu> <speed> <bufsize> [call] ",
+#endif
+#ifdef  AX25
+	"axip", axip_attach, 0, 1,
+	"attach axip",
 #endif
 	NULLCHAR,
 };

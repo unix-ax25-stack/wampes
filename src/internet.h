@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/internet.h,v 1.4 1991/05/09 07:38:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/internet.h,v 1.5 1991/07/16 17:55:19 deyke Exp $ */
 
 #ifndef _INTERNET_H
 #define _INTERNET_H
@@ -15,6 +15,7 @@
 #define ICMP_PTCL       1       /* Internet Control Message Protocol */
 #define TCP_PTCL        6       /* Transmission Control Protocol */
 #define UDP_PTCL        17      /* User Datagram Protocol */
+#define AX25_PTCL       93      /* AX.25 inside IP according to RFC-1226 */
 #define IP_PTCL         94      /* IP inside IP */
 
 #define MAXTTL          255     /* Maximum possible IP time-to-live value */
