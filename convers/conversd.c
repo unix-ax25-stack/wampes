@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.46 1993/07/18 19:52:21 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.47 1993/07/19 20:50:32 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -1198,7 +1198,7 @@ static void name_command(struct link *lp)
   if (lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.46 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.47 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1390,7 +1390,7 @@ static void h_user_command(struct link *lp)
   hp = hostptr(host);
   up = userptr(name, hp);
   if (!seq) {
-    if (up->u_link != lp) return;
+    if (up->u_link && up->u_link != lp) return;
     seq = up->u_seq;
   } else if (seq < up->u_seq)
     return;
@@ -1405,7 +1405,7 @@ static void h_user_command(struct link *lp)
       send_string(lp, buffer);
     } else {
       hp->h_link = lp;
-      up->u_link = (up->u_channel >= 0) ? lp : 0;
+      up->u_link = (newchannel >= 0) ? lp : 0;
       up->u_oldchannel = up->u_channel;
       up->u_channel = newchannel;
       if (strcmp(up->u_note, note)) {
