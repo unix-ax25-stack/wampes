@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.5 1990/10/22 11:38:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.6 1990/10/26 19:20:45 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -80,11 +80,35 @@ int  argc;
 char  *argv[];
 void *p;
 {
+
+  char  *state;
+  char  waittime[16];
   struct mailsys *sp;
 
-  tprintf("System     Mailer  Transport\n");
-  for (sp = Systems; sp; sp = sp->next)
-    tprintf("%-10s %-7s %-10s\n", sp->sysname, sp->mailer->name, sp->protocol);
+  tprintf("System     Mailer  Transport  State    Wait time\n");
+  for (sp = Systems; sp; sp = sp->next) {
+    *waittime = '\0';
+    switch (sp->state) {
+    case MS_NEVER:
+      state = "";
+      break;
+    case MS_TRYING:
+      state = "Trying";
+      break;
+    case MS_TALKING:
+      state = "Talking";
+      break;
+    case MS_SUCCESS:
+      state = "Success";
+      break;
+    case MS_FAILURE:
+      state = "Failure";
+      if (sp->nexttime > currtime)
+	sprintf(waittime, "%d sec", sp->nexttime - currtime);
+      break;
+    }
+    tprintf("%-10s %-7s %-10s %-8s %9s\n", sp->sysname, sp->mailer->name, sp->protocol, state, waittime);
+  }
   return 0;
 }
 
@@ -286,6 +310,7 @@ char  *sysname;
     }
     if (sp->jobs) {
       clients++;
+      sp->state = MS_TRYING;
       (*sp->mailer->func)(sp);
     }
   }

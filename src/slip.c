@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.3 1990/09/11 13:46:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/slip.c,v 1.4 1990/10/26 19:21:08 deyke Exp $ */
 
 /* Send and receive IP datagrams on serial lines. Compatible with SLIP
  * under Berkeley Unix.
@@ -170,7 +170,7 @@ asy_rx(iface)
 struct iface *iface;
 {
 
-	char *cp,buf[1024];
+	char *cp,buf[4096];
 	int cnt,dev;
 	struct mbuf *bp,*nbp;
 	struct phdr *phdr;

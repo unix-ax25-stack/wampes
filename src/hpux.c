@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.14 1990/10/22 11:37:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.15 1990/10/26 19:20:25 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -32,8 +32,11 @@ struct asy {
   int  fd;              /* File descriptor */
   int  speed;           /* Line speed */
   char  *ipc_socket;    /* Host:port of ipc destination */
+  long  rxints;         /* receive interrupts */
+  long  txints;         /* transmit interrupts */
   long  rxchar;         /* Received characters */
   long  txchar;         /* Transmitted characters */
+  long  rxhiwat;        /* High water mark on rx fifo */
 };
 
 int  Nasy;
@@ -316,11 +319,13 @@ int  cnt;
   if (Asy[dev].fd <= 0 && asy_open(dev) < 0) return 0;
   if (!maskset(actread, ap->fd)) return 0;
   cnt = read(ap->fd, buf, (unsigned) cnt);
+  ap->rxints++;
   if (cnt <= 0) {
     asy_open(dev);
     return 0;
   }
   ap->rxchar += cnt;
+  if (ap->rxhiwat < cnt) ap->rxhiwat = cnt;
   return cnt;
 }
 
@@ -331,15 +336,16 @@ int  dev;
 struct mbuf *bp;
 {
 
-  char  buf[1024];
+  char  buf[4096];
   int  cnt;
   struct asy *ap;
 
   ap = Asy + dev;
   while (cnt = pullup(&bp, buf, sizeof(buf)))
     if (ap->fd > 0 || !asy_open(dev)) {
-      ap->txchar += cnt;
       if (dowrite(ap->fd, buf, (unsigned) cnt) < 0) asy_open(dev);
+      ap->txints++;
+      ap->txchar += cnt;
     }
   return 0;
 }
@@ -355,8 +361,10 @@ void *p;
 
   for (asyp = Asy; asyp < &Asy[Nasy]; asyp++) {
     tprintf("%s:\n", asyp->iface->name);
-    tprintf(" RX: chr %lu\n", asyp->rxchar);
-    if (tprintf(" TX: chr %lu\n", asyp->txchar) == EOF) break;
+    tprintf(" RX: int %lu chr %lu hiwat %lu\n",
+     asyp->rxints, asyp->rxchar, asyp->rxhiwat);
+    if (tprintf(" TX: int %lu chr %lu\n", asyp->txints, asyp->txchar) == EOF)
+      break;
   }
   return 0;
 }

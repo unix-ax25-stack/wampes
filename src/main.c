@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.9 1990/10/22 11:38:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.10 1990/10/26 19:20:49 deyke Exp $ */
 
 /* Main network program - provides both client and server functions */
 #include <stdio.h>
@@ -76,7 +76,7 @@ char *argv[];
 
 	Sessions = (struct session *)callocw(Nsessions,sizeof(struct session));
 	tprintf("\n");
-	tprintf("WAMPES version %s\n","901019");
+	tprintf("WAMPES version %s\n","901026");
 	tprintf("(c) Copyright 1990 by Dieter Deyke, DK5SG\n");
 	tprintf("(c) Copyright 1990 by Phil Karn, KA9Q\n");
 	tprintf("\n");

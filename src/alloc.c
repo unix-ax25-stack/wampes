@@ -1,11 +1,12 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.5 1990/09/11 13:44:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/alloc.c,v 1.6 1990/10/26 19:19:56 deyke Exp $ */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "global.h"
 
-extern char  *sbrk();
+extern char *sbrk __ARGS((int incr));
 
 #define DEBUG           1
 
@@ -19,10 +20,14 @@ struct block {
   struct block *next;
 };
 
-static struct block freetable[FREETABLESIZE];
-static unsigned int  allocated;
-static unsigned int  failures;
-static unsigned int  inuse;
+static struct block Freetable[FREETABLESIZE];
+static unsigned long  Allocs;   /* Total allocations */
+static unsigned long  Frees;    /* Total frees */
+static unsigned long  Heapsize;
+static unsigned long  Inuse;
+static unsigned long  Invalid;  /* Total calls to free with garbage arg */
+static unsigned long  Memfail;  /* Count of allocation failures */
+static unsigned long  Morecores;
 
 static void giveup __ARGS((char *mesg));
 
@@ -48,23 +53,24 @@ register unsigned int  size;
   register struct block *p, *tp;
 
   size = (size + sizeof(struct block *) + MINSIZE - 1) & ~(MINSIZE - 1);
-  if ((tp = freetable + size / MINSIZE) >= freetable + FREETABLESIZE)
+  if ((tp = Freetable + size / MINSIZE) >= Freetable + FREETABLESIZE)
     giveup("malloc: requested block too large\n");
   if (p = tp->next)
     tp->next = p->next;
   else {
     if (size > freesize) {
       if (freesize) {
-	struct block *tpf = freetable + freesize / MINSIZE;
+	struct block *tpf = Freetable + freesize / MINSIZE;
 	freespace->next = tpf->next;
 	tpf->next = freespace;
 	freesize = 0;
       }
       if ((freespace = SBRK(ALLOCSIZE)) == MEMFULL) {
-	failures++;
+	Memfail++;
 	return 0;
       }
-      allocated += (freesize = ALLOCSIZE);
+      Morecores++;
+      Heapsize += (freesize = ALLOCSIZE);
       if (align_error = (MINSIZE - 1) & -(((int) freespace) + sizeof(struct block *))) {
 	freespace = (struct block *) (align_error + (int) freespace);
 	freesize -= MINSIZE;
@@ -75,7 +81,8 @@ register unsigned int  size;
     freesize -= size;
   }
   p->next = tp;
-  inuse += size;
+  Allocs++;
+  Inuse += size;
   return (void *) (p + 1);
 }
 
@@ -103,20 +110,26 @@ void *pp;
   register struct block *p, *tp;
 
   if (p = (struct block *) pp) {
+    if ((MINSIZE - 1) & (int) p) {
 #if DEBUG
-    if ((MINSIZE - 1) & (int) p) giveup("free: bad alignment\n");
+      giveup("free: bad alignment\n");
 #else
-    if ((MINSIZE - 1) & (int) p) return;
+      Invalid++;
+      return;
 #endif
+    }
     p--;
     tp = p->next;
+    if (tp < Freetable || tp >= Freetable + FREETABLESIZE) {
 #if DEBUG
-    if (tp < freetable || tp >= freetable + FREETABLESIZE)
       giveup("free: bad free table pointer\n");
 #else
-    if (tp < freetable || tp >= freetable + FREETABLESIZE) return;
+      Invalid++;
+      return;
 #endif
-    inuse -= (tp - freetable) * MINSIZE;
+    }
+    Frees++;
+    Inuse -= (tp - Freetable) * MINSIZE;
     p->next = tp->next;
     tp->next = p;
   }
@@ -142,7 +155,7 @@ void *p;
   tp = (struct block *) p;
   tp--;
   tp = tp->next;
-  return (tp - freetable) * MINSIZE - sizeof(struct block *);
+  return (tp - Freetable) * MINSIZE - sizeof(struct block *);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -218,9 +231,10 @@ int  argc;
 char  *argv[];
 void *p;
 {
-  printf("%7u bytes of memory allocated\n", allocated);
-  printf("%7u bytes of memory being used (%lu%% used)\n", inuse, 100l * inuse / allocated);
-  printf("%7u requests for memory denied\n", failures);
+  tprintf("heap size %lu avail %lu (%lu%%) morecores %lu\n",
+   Heapsize, Heapsize - Inuse, 100l * (Heapsize - Inuse) / Heapsize, Morecores);
+  tprintf("allocs %lu frees %lu (diff %lu) alloc fails %lu invalid frees %lu\n",
+   Allocs, Frees, Allocs - Frees, Memfail, Invalid);
   return 0;
 }
 
