@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.n0pra,v 1.20 2000/01/01 16:12:48 deyke Exp $
+# @(#) $Id: net.rc.n0pra,v 1.21 2000/02/12 19:39:21 deyke Exp $
 
 domain usegethostby on
 
@@ -18,8 +18,22 @@ ax25 route add axip default
 
 axip route add dl1sbl-1 15.136.120.113
 
-route add  default              ipip     15.136.120.113       1 0
-route add  n0pra-u              ni       0                    1 0
+route add  44.130.0.0/16        ipip     15.136.120.113       1 0
+route add  44.143.0.0/16        ipip     15.136.120.113       1 0
+route add  db0sao-u.ampr.org    ipip     15.136.120.113       1 2147483
+route add  db0sao.ampr.org      ipip     15.136.120.113       1 2147483
+route add  df3du-1.ampr.org     ipip     15.136.120.113       1 2147483
+route add  df9sr-1.ampr.org     ipip     15.136.120.113       1 2147483
+route add  dh8saw-1.ampr.org    ipip     15.136.120.113       1 2147483
+route add  dj3eg-1.ampr.org     ipip     15.136.120.113       1 2147483
+route add  dk0hu-u.ampr.org     ipip     15.136.120.113       1 2147483
+route add  dk0hu.ampr.org       ipip     15.136.120.113       1 2147483
+route add  dl1sbl-1.ampr.org    ipip     15.136.120.113       1 2147483
+route add  dl1sbl.ampr.org      ipip     15.136.120.113       1 2147483
+route add  dl4sas-1.ampr.org    ipip     15.136.120.113       1 2147483
+route add  dl4sel-1.ampr.org    ipip     15.136.120.113       1 2147483
+route add  dl4sel.ampr.org      ipip     15.136.120.113       1 2147483
+route add  n0pra-u.ampr.org     ni       0                    1 2147483
 
 netrom broadcast axip nodes
 
@@ -37,6 +51,17 @@ tcp window 2048
 
 login auto 0
 login create 0
+
+# start ftp
+# start tcpgate convers unix:/tcp/sockets/convers
+# start tcpgate finger
+# start tcpgate nntp
+# start tcpgate smtp
+start discard
+start domain
+start echo
+start sntp
+start time
 
 fkey 1 "flexnet link"
 fkey 2 "flexnet dest"

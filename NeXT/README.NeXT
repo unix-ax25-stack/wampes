@@ -6,7 +6,6 @@ please read this carefully.
 i had 'only' the black hardware, that is with the motorola mk68040 chip,
 but i'm shure wampes would compile on i386 plattforms, too.
 
-
 if
   you know what you are doing, just type /tcp/NeXT/make-NeXT-install.sh
 else
@@ -17,7 +16,6 @@ cheers,
 
 ---------
 
-
 wampes compiles with either NeXT Developer cc or gcc 2.7.2.2.f.2 for NeXT.
 
 you should have installed at gcc this point to get output from setsp.c,
@@ -25,9 +23,8 @@ because cc does not understand option -E:
 > src/Makefile:
 >         NeXT*) \
 >                 gcc -E $< |grep -v ^# > setsp.s; as setsp.s -o $@;; \
-		  -> explicit gcc instead of $(CC) 
+		  -> explicit gcc instead of $(CC)
 anyway, you may extract it by hand :)
-
 
 important notes:
 ----------------
@@ -46,12 +43,11 @@ convers/conversd seem to be clear.
 
 not yet testet:
 --------------
-bbs, netupds, and bridge
+bbs and bridge
 but i expect no problems.
 
 udbm may not work properly (missing putpwent()), but makes no sense as long as
 netinfo service is not supported.
-
 
 compilation notes / missing system calls:
 -----------------------------------------
@@ -68,7 +64,6 @@ int putpwent(const struct passwd *p, FILE *f)
 
 while the missing putpwent only affects udbm,
 the missing putenv/setenv is a real problem.
-
 
 you need bash to be able to run mkhostdb for the domain database.
 
@@ -93,7 +88,6 @@ btw: code from the three possibilities is each time different.
 
 i have deceided to compile just with cc -posix.
 
-
 new files:
 ----------
 /tcp/NeXT/*
@@ -109,5 +103,3 @@ changed files:
 /tcp/src/ksubr.c
 /tcp/src/login.c
 /tcp/src/setsp.c
-/tcp/util/netupds.c
-

@@ -1,4 +1,4 @@
-/* @(#) $Id: intro.txt,v 1.14 1999/01/27 18:47:03 deyke Exp $ */
+/* @(#) $Id: intro.txt,v 1.15 2000/02/12 19:39:23 deyke Exp $ */
 
 This file gives some info about setting up WAMPES for the first time.
 Don't expect something perfect, it was just a quick hack to help people
@@ -46,12 +46,6 @@ net-program too, 'bye' leaves only cnet.
 /usr/local/bin/path (copied from /tcp/util/path)
 
 Shows an ax25 path to a host.
-
-/tcp/util/netupd[c,s]
-
-Netupdate-Client+Server.  Allows WAMPES clients to get new revisions of
-the WAMPES software from a WAMPES source server.  Used in the Stuttgart
-area to update all local WAMPES systems automatically from cron.
 
 /usr/local/bin/md5 (copied from /tcp/util/md5)
 

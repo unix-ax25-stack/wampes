@@ -1,6 +1,6 @@
-# @(#) $Id: Makefile,v 1.74 2000/01/15 18:34:16 deyke Exp $
+# @(#) $Id: Makefile,v 1.75 2000/02/12 19:39:29 deyke Exp $
 
-TARGETS    = bridge cnet md5 mkhostdb netupdc netupds path qth udbm
+TARGETS    = bridge cnet md5 mkhostdb path qth udbm
 
 all:;        @. ../lib/configure.mak; $(MAKE) -i _all
 install:;    @. ../lib/configure.mak; $(MAKE) -i _install
@@ -23,14 +23,6 @@ mkhostdb: mkhostdb.o $(LIBS)
 	$(RMTARGET)
 	$(LD) $(LDFLAGS) mkhostdb.o $(LIBS) $(SLIBS) -o $@
 
-netupdc: netupds
-	$(RMTARGET)
-	ln netupds $@
-
-netupds: netupds.o $(LIBS)
-	$(RMTARGET)
-	$(LD) $(LDFLAGS) netupds.o $(LIBS) $(SLIBS) -o $@
-
 path:   path.o $(LIBS)
 	$(RMTARGET)
 	$(LD) $(LDFLAGS) path.o $(LIBS) $(SLIBS) -o $@
@@ -45,8 +37,6 @@ udbm:   udbm.o $(LIBS)
 
 _install: \
 	bridge \
-	netupdc \
-	netupds \
 	/usr/local/bin/cnet \
 	/usr/local/bin/md5 \
 	/usr/local/bin/path \
@@ -94,15 +84,6 @@ md5drivr.o:\
 mkhostdb.o:\
 	../lib/configure.h\
 	mkhostdb.c
-netupds.o:\
-	../lib/buildsaddr.h\
-	../lib/calc_crc.h\
-	../lib/configure.h\
-	../lib/lockfile.h\
-	../lib/md5.h\
-	../lib/strdup.h\
-	../lib/strmatch.h\
-	netupds.c
 path.o:\
 	../lib/configure.h\
 	../lib/strdup.h\

@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.db0sao,v 1.72 2000/02/05 23:54:43 deyke Exp $
+# @(#) $Id: net.rc.db0sao,v 1.73 2000/02/12 19:39:21 deyke Exp $
 
 domain usegethostby on
 
@@ -85,7 +85,6 @@ start sntp
 start tcpgate convers unix:/tcp/sockets/convers
 start tcpgate finger
 start tcpgate imap
-start tcpgate netupds
 start tcpgate nntp
 start tcpgate pop2
 start tcpgate pop3
@@ -102,5 +101,3 @@ ax25 jumpstart db0pic-7  on
 ax25 jumpstart db0sdx    on
 
 smtp timer 300
-
-source /tcp/net.rc.local

@@ -1,10 +1,11 @@
 #! /bin/ksh
 
-# @(#) $Id: fixnetrc,v 1.8 1996/08/12 18:52:58 deyke Exp $
+# @(#) $Id: fixnetrc,v 1.9 2000/02/12 19:39:28 deyke Exp $
 
-empty=/tmp/tmp$$
+empty=/tmp/tmp1$$
+tmp=/tmp/tmp2$$
 
-rm -f /tmp/iprt.* $empty
+rm -f /tmp/iprt.* $empty $tmp
 
 echo ' ' > $empty
 
@@ -13,6 +14,20 @@ makeiprt || exit 1
 for i in net.rc.*; do
 	file=${i#net.rc.}
 	if [[ -f /tmp/iprt.$file ]]; then
+		case $file in
+		dk5sg)
+			cat /tmp/iprt.$file | grep -v n0pra > $tmp
+			mv $tmp /tmp/iprt.$file
+			;;
+		n0pra)
+			cat /tmp/iprt.$file | grep -v dk5sg > $tmp
+			mv $tmp /tmp/iprt.$file
+			;;
+		*)
+			cat /tmp/iprt.$file | grep -v dk5sg | grep -v n0pra > $tmp
+			mv $tmp /tmp/iprt.$file
+			;;
+		esac
 		ex - net.rc.$file <<EOF
 		%g/^route add/d
 		r $empty
@@ -25,4 +40,4 @@ done
 
 trimfiles
 
-rm -f /tmp/iprt.* $empty
+rm -f /tmp/iprt.* $empty $tmp

@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Id: tcpmake,v 1.41 2000/01/15 18:34:16 deyke Exp $
+# @(#) $Id: tcpmake,v 1.42 2000/02/12 19:39:29 deyke Exp $
 
 #------------------------------------------------------------------------------
 
@@ -87,7 +87,7 @@ for dir in \
 	done
 done
 
-for manual in bbs bridge netupd smack wampes; do
+for manual in bbs bridge smack wampes; do
 	cd ~/tcp/manuals/$manual
 
 	file=frontpage
@@ -106,7 +106,7 @@ cd ~/tcp/doc
 for file in *.gif; do
 	save_file $file
 done
-for manual in bbs bridge netupd smack wampes; do
+for manual in bbs bridge smack wampes; do
 	file=$manual.html
 	save_file $file
 	mm2html $manual.mm > $file
