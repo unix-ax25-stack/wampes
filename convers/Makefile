@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.19 1993/06/23 06:10:06 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.20 1993/07/08 21:14:27 deyke Exp $
 
 CFLAGS     = -I../lib
 OS         = "`uname -s`"
@@ -79,4 +79,4 @@ clean:; rm -f *.o $(TARGETS) *~
 depend:; @mkmf
 ###
 convers.o: ../lib/buildsaddr.h
-conversd.o: ../lib/buildsaddr.h ../lib/strdup.h
+conversd.o: ../lib/buildsaddr.h ../lib/strdup.h ../lib/md5.h

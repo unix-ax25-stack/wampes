@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.29 1993/06/23 06:09:51 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.30 1993/07/08 21:15:48 deyke Exp $
 
 CFLAGS     = -I../lib
 OS         = "`uname -s`"
@@ -60,10 +60,10 @@ cnet:   cnet.o
 	@sleep 1
 	$(CC) $(CFLAGS) $? -lcurses -ltermcap $(LIBS) -o $@
 
-md5:    md5.o md5drivr.o
+md5:    md5drivr.o
 	$(RMTARGET)
 	@sleep 1
-	$(CC) $(CFLAGS) md5.o md5drivr.o $(LIBS) -o $@
+	$(CC) $(CFLAGS) md5drivr.o $(LIBS) -o $@
 
 mkhostdb: mkhostdb.o
 	$(RMTARGET)
@@ -136,8 +136,7 @@ clean:; rm -f *.o $(TARGETS) *~
 depend:; @mkmf
 ###
 cnet.o: ../lib/buildsaddr.h
-md5.o: md5.h
-md5drivr.o: md5.h
+md5drivr.o: ../lib/md5.h
 netupdc.o: ../lib/buildsaddr.h netupd.h ../lib/strdup.h
 netupds.o: netupd.h
 path.o: ../lib/strdup.h
