@@ -1,4 +1,4 @@
-# @(#) $Id: configure,v 1.36 2000/02/05 23:54:46 deyke Exp $
+# @(#) $Id: configure,v 1.37 2000/02/13 19:01:37 deyke Exp $
 
 CC='cc'
 CFLAGS='-O -I../lib'
@@ -234,20 +234,10 @@ checksymbol()
 		/usr/people \
 		/u
 
-	finddir MAIL_DIR \
-		/var/spool/mail \
-		/var/mail \
-		/usr/spool/mail \
-		/usr/mail
-
 	finddir NEWS_DIR \
 		/usr/local/news/spool \
 		/var/spool/news \
 		/usr/spool/news
-
-	finddir SPOOL_DIR \
-		/var/spool \
-		/usr/spool
 
 	finddir UUCP_DIR \
 		/var/spool/uucp \
@@ -277,12 +267,6 @@ checksymbol()
 		/usr/local/news/bin/ctlinnd \
 		/usr/lib/news/bin/ctlinnd \
 		/usr/bin/ctlinnd
-
-	findprog GZIP_PROG \
-		/usr/bin/gzip \
-		/bin/gzip \
-		/usr/local/bin/gzip \
-		/usr/contrib/bin/gzip
 
 	findprog LS_PROG \
 		/usr/bin/ls \

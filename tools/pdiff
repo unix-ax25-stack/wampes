@@ -2,7 +2,7 @@
 
 # Dieter Deyke
 # November 26, 1997
-# Copyright (c) 1997-1999 CoCreate Software GmbH. All Rights Reserved.
+# Copyright (c) 1997-2000 CoCreate Software GmbH. All Rights Reserved.
 # Company Confidential
 
 require 5.003;
@@ -53,10 +53,10 @@ sub dirname {
 sub mkdir_p {
 	my ($dir) = @_;
 	-d $dir and return;
-	mkdir($dir, 0750) and return;
+	mkdir($dir, 0755) and return;
 	mkdir_p(dirname($dir));
 	-d $dir and return;
-	mkdir($dir, 0750) or die("mkdir(\"$dir\"): $!\n");
+	mkdir($dir, 0755) or die("mkdir(\"$dir\"): $!\n");
 }
 
 #------------------------------------------------------------------------------
@@ -92,7 +92,7 @@ sub parse_pdiff_args {
 		@files = @ARGV;
 	} else {
 		$fh = FileHandle->new();
-		$fh->open('cvs -q -n update |') or die();
+		$fh->open('cvs -q -n update |') or die("cvs: $!\n");
 		while (defined($line = <$fh>)) {
 			push(@files, $2) if $line =~ m!^(A|R|M|C) (.*)\n!;
 		}
@@ -145,6 +145,25 @@ sub cmpfiles {
 
 #------------------------------------------------------------------------------
 
+sub selectfile {
+
+	my ($oldfile, $newfile) = @_;
+
+	my (@statbuf);
+
+	if (cmpfiles($oldfile, $newfile)) {
+		if (@statbuf = stat($oldfile)) {
+			chmod($statbuf[2] & 0777, $newfile) or die("chmod(\"$newfile\"): $!\n");
+		}
+		unlink($oldfile);
+		rename($newfile, $oldfile) or die("rename(\"$newfile\", \"$oldfile\"): $!\n");
+	} else {
+		unlink($newfile) or die("$newfile: $!\n");
+	}
+}
+
+#------------------------------------------------------------------------------
+
 # Trim one file
 
 sub trimfile {
@@ -181,13 +200,7 @@ sub trimfile {
 	}
 	close(SRC);
 	close(DST);
-	if (cmpfiles($tmpfilename, $filename)) {
-		unlink($filename) or die("$filename: $!\n");
-		rename($tmpfilename, $filename) or die("rename(\"$tmpfilename\", \"$filename\"): $!\n");
-		chmod(0750, $filename) or die("chmod(0750, \"$filename\"): $!\n");
-	} else {
-		unlink($tmpfilename) or die("$tmpfilename: $!\n");
-	}
+	selectfile($filename, $tmpfilename);
 }
 
 #------------------------------------------------------------------------------

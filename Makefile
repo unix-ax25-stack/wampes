@@ -1,24 +1,4 @@
-# @(#) $Id: Makefile,v 1.48 2000/02/12 19:39:20 deyke Exp $
-
-OBSOLETE   = /usr/local/bin/sfstat \
-	     /usr/local/etc/mkhostdb \
-	     bbs/bbs.h \
-	     bbs/findpath* \
-	     bbs/help* \
-	     bbs/killdup* \
-	     bbs/sfstat* \
-	     doc/bbs.2.gif \
-	     lib/bbs.h \
-	     netrom_links \
-	     src/bootp.h \
-	     src/cc \
-	     src/config.h \
-	     src/enet.h \
-	     src/hardware.h \
-	     src/linux_include/stdlib.h \
-	     src/mail_bbs.* \
-	     users \
-	     util/genupd
+# @(#) $Id: Makefile,v 1.49 2000/02/13 19:01:30 deyke Exp $
 
 DIRS       = lib \
 	     aos \
@@ -28,8 +8,7 @@ DIRS       = lib \
 	     util \
 	     bbs
 
-all:;   @-rm -f $(OBSOLETE)
-	-chmod 755 cc
+all:;   @-chmod 755 cc
 	@-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i all install ); done
 	@-$(MAKE) -i /tcp/hostaddr.pag
 	@-if [ -d tools ]; then ( cd tools; $(MAKE) -i all install ); fi
@@ -81,7 +60,9 @@ distrib:
 	ln wampes-latest.tar wampes-$$version.tar; \
 	ln README wampes-$$version.txt; \
 	gzip -9 < wampes-latest.tar > wampes-$$version.tar.gz; \
-	gpg --detach-sign --force-v3-sigs --armor wampes-$$version.tar.gz
+	if [ `hostname` = deyke1.fc.hp.com ]; then \
+		gpg --detach-sign --force-v3-sigs --armor wampes-$$version.tar.gz; \
+	fi
 
 clean:; @-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i clean ); done
 	@-if [ -d tools ]; then  ( cd tools; $(MAKE) -i clean ); fi

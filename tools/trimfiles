@@ -2,7 +2,7 @@
 
 # Dieter Deyke
 # November 14, 1997
-# Copyright (c) 1997-1999 CoCreate Software GmbH. All Rights Reserved.
+# Copyright (c) 1997-2000 CoCreate Software GmbH. All Rights Reserved.
 # Company Confidential
 
 require 5.003;
@@ -49,6 +49,25 @@ sub cmpfiles {
 
 #------------------------------------------------------------------------------
 
+sub selectfile {
+
+	my ($oldfile, $newfile) = @_;
+
+	my (@statbuf);
+
+	if (cmpfiles($oldfile, $newfile)) {
+		if (@statbuf = stat($oldfile)) {
+			chmod($statbuf[2] & 0777, $newfile) or die("chmod(\"$newfile\"): $!\n");
+		}
+		unlink($oldfile);
+		rename($newfile, $oldfile) or die("rename(\"$newfile\", \"$oldfile\"): $!\n");
+	} else {
+		unlink($newfile) or die("$newfile: $!\n");
+	}
+}
+
+#------------------------------------------------------------------------------
+
 # Trim one file
 
 sub trimfile {
@@ -85,13 +104,7 @@ sub trimfile {
 	}
 	close(SRC);
 	close(DST);
-	if (cmpfiles($tmpfilename, $filename)) {
-		unlink($filename) or die("$filename: $!\n");
-		rename($tmpfilename, $filename) or die("rename(\"$tmpfilename\", \"$filename\"): $!\n");
-		chmod(0750, $filename) or die("chmod(0750, \"$filename\"): $!\n");
-	} else {
-		unlink($tmpfilename) or die("$tmpfilename: $!\n");
-	}
+	selectfile($filename, $tmpfilename);
 }
 
 #------------------------------------------------------------------------------
@@ -127,7 +140,7 @@ sub trimfiles {
 
 	@files = ();
 	$fh = FileHandle->new();
-	$fh->open('cvs -q -n update |') or die();
+	$fh->open('cvs -q -n update |') or die("cvs: $!\n");
 	while (defined($line = <$fh>)) {
 		push(@files, $2) if $line =~ m!^(A|M) (.*)\n!;
 	}

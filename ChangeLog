@@ -1,4 +1,10 @@
-@(#) $Id: ChangeLog,v 1.75 2000/02/12 19:39:20 deyke Exp $
+@(#) $Id: ChangeLog,v 1.76 2000/02/13 19:01:30 deyke Exp $
+
+000213 Dieter Deyke <deyke@crosswinds.net>
+
+	Fixed some file permissions
+
+	Cleanup
 
 000212 Dieter Deyke <deyke@crosswinds.net>
 

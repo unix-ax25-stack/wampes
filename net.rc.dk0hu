@@ -1,4 +1,4 @@
-# @(#) $Id: net.rc.dk0hu,v 1.63 2000/02/12 19:39:21 deyke Exp $
+# @(#) $Id: net.rc.dk0hu,v 1.64 2000/02/13 19:01:33 deyke Exp $
 
 domain usegethostby on
 
@@ -33,16 +33,9 @@ route add  44.130.0.0/16        ipip     192.1.1.1            1 0
 route add  44.143.0.0/16        ipip     192.1.1.1            1 0
 route add  db0sao-u.ampr.org    ipip     192.1.1.1            1 2147483
 route add  db0sao.ampr.org      ipip     192.1.1.1            1 2147483
-route add  df3du-1.ampr.org     ipip     15.136.120.113       1 2147483
-route add  df9sr-1.ampr.org     ipip     15.136.120.113       1 2147483
-route add  dh8saw-1.ampr.org    ipip     15.136.120.113       1 2147483
-route add  dj3eg-1.ampr.org     ipip     15.136.120.113       1 2147483
 route add  dk0hu-u.ampr.org     ni       0                    1 2147483
 route add  dl1sbl-1.ampr.org    ipip     15.136.120.113       1 2147483
 route add  dl1sbl.ampr.org      ipip     15.136.120.113       1 2147483
-route add  dl4sas-1.ampr.org    ipip     15.136.120.113       1 2147483
-route add  dl4sel-1.ampr.org    ipip     15.136.120.113       1 2147483
-route add  dl4sel.ampr.org      tnc0     0                    1 2147483
 
 arp add dl4sel ax25 dl4sel
 
