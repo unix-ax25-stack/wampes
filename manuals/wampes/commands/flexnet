@@ -1,0 +1,13 @@
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/flexnet,v 1.1 1994/10/25 10:21:53 deyke Exp $
+.H 2 "flexnet" " \fIsubcommand\fP"
+These commands control the FLEXNET service.
+.H 3 "flexnet dest" " [\fIax25_addr\fP]"
+TO BE WRITTEN.
+.H 3 "flexnet link"
+TO BE WRITTEN.
+.H 4 "flexnet link add" " \fIax25_addr\fP"
+TO BE WRITTEN.
+.H 4 "flexnet link delete" " \fIax25_addr\fP"
+TO BE WRITTEN.
+.H 3 "flexnet query" " \fIax25_addr\fP"
+TO BE WRITTEN.
