@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.1 1990/09/11 13:45:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.2 1990/09/17 11:51:18 deyke Exp $ */
 
 /* Stuff heavily dependent on the configuration info in config.h */
 
@@ -133,7 +133,7 @@ struct cmds Cmds[] = {
 	/* The "go" command must be first */
 	"",             go,             0, 0, NULLCHAR,
 #ifndef AMIGA
-/*      "!",            doshell,        0, 0, NULLCHAR, */
+	"!",            doshell,        0, 0, NULLCHAR,
 #endif
 /*      "abort",        doabort,        0, 0, NULLCHAR, */
 #ifdef  AMIGA
@@ -240,7 +240,7 @@ struct cmds Cmds[] = {
 	"sccstat",      dosccstat,      0, 0, NULLCHAR,
 #endif
 #if     !defined(AMIGA)
-/*      "shell",        doshell,        0, 0, NULLCHAR, */
+	"shell",        doshell,        0, 0, NULLCHAR,
 #endif
 /*      "smtp",         dosmtp,         0, 0, NULLCHAR, */
 /*      "socket",       dosock,         0, 0, NULLCHAR, */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.11 1990/09/11 13:45:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.12 1990/09/17 11:51:28 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -360,6 +360,7 @@ const char *cmdline;
   int  i, pid, status;
   long  oldmask;
 
+  if (!cmdline) return 1;
   switch (pid = fork()) {
   case -1:
     return (-1);
@@ -381,6 +382,23 @@ int  _system(cmdline)
 char  *cmdline;
 {
   return system(cmdline);
+}
+
+/*---------------------------------------------------------------------------*/
+
+int  doshell(argc, argv, p)
+int  argc;
+char  *argv[];
+void *p;
+{
+  char  buf[2048];
+
+  *buf = '\0';
+  while (--argc > 0) {
+    if (*buf) strcat(buf, " ");
+    strcat(buf, *++argv);
+  }
+  return system(buf);
 }
 
 /*---------------------------------------------------------------------------*/
