@@ -1,4 +1,9 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/common/setup,v 1.1 1994/07/22 13:22:18 deyke Exp $
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/common/setup,v 1.2 1994/07/25 11:01:46 deyke Exp $
+. \"
+. \" Format this manual with:
+. \" tbl -TX < manual.mm | nroff -mm | col
+. \" or:
+. \" tbl < manual.mm | troff -mm
 . \"
 .PH "" \" Page header
 .SA 1 \" Right justified

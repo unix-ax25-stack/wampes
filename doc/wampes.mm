@@ -1,4 +1,9 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.1 1994/07/22 13:21:49 deyke Exp $
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.2 1994/07/25 11:01:31 deyke Exp $
+. \"
+. \" Format this manual with:
+. \" tbl -TX < manual.mm | nroff -mm | col
+. \" or:
+. \" tbl < manual.mm | troff -mm
 . \"
 .PH "" \" Page header
 .SA 1 \" Right justified
@@ -11,18 +16,28 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 . \"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940722" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940725" \" Page footer
 . \"
-.SP 20
+.S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 940722
+Version 940725
+.S
 .SP 2
+.S 15
 .ce
 Dieter Deyke, DK5SG/N0PRA
 .ce
 deyke@fc.hp.com
+.S
+.H 1 "Credits"
+This manual is based in part on publications authored by
+.DS I
+Phil Karn, KA9Q
+Bdale Garbee, N3EUA
+Gerard van der Grinten, PA0GRI
+.DE
 .H 1 "Commands"
 This section describes the commands recognized in command mode, or
 within a startup file such as \fBnet.rc\fP. These are given in the following
@@ -123,7 +138,7 @@ number of write system calls and transmitted characters.
 Configure and attach an interface to the system.
 The details are highly interface type dependent.
 .H 3 "attach asy 0" " 0 \fIencapsulation\fP \fIname\fP 0 \fImtu\fP \fIspeed\fP"
-Configure and attach an asynchronous communications port to the system.
+Configure and attach an asynchronous communications interface to the system.
 See the \fBifconfig encapsulation\fP command for the list of
 available encapsulations.
 \fIname\fP specifies the name of the interface,
@@ -140,8 +155,8 @@ See the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter
 for more information.
 \fIspeed\fP is the transmission speed in bits per second (eg. 9600).
 .H 3 "attach asy \fIip-addr\fP" " \fIport\fP \fIencapsulation\fP \fIname\fP 0 \fImtu\fP \fIspeed\fP"
-Configure and attach a UNIX host TCP connection based port to the system.
-This is very similar to the asynchronous communications port described above,
+Configure and attach a UNIX host TCP connection based interface to the system.
+This is very similar to the asynchronous communications interface described above,
 but instead of talking directly to a hardware device file, this interface type
 will open a UNIX host TCP connection to \fIip-addr\fP and \fIport\fP.
 The primary use of this interface type is to talk to some TNC which is
@@ -149,7 +164,7 @@ connected to the system via the LAN.
 \fIip-addr\fP is the destination IP address.
 It has to be specified as one hexadecimal number.
 For example, 127.0.0.1 has to be given as 7f000001.
-\fIport\fP is the destination TCP port address.
+\fIport\fP is the numeric destination TCP port address.
 See the \fBifconfig encapsulation\fP command for the list of
 available encapsulations.
 \fIname\fP specifies the name of the interface.
@@ -1255,30 +1270,58 @@ The default is 2048 bytes.
 .H 2 "telnet" " \fIhostid\fP [\fIport\fP]"
 Create a Telnet session to the specified host and enter converse mode.
 If \fIport\fP is given that port is used. Default port is 23.
-.H 2 "trace" " [\fIinterface\fP [off|\fIbtio\fP [\fItracefile\fP]]]"
-Controls packet tracing by the interface drivers. Specific bits enable
-tracing of the various interfaces and the amount of information produced.
-Tracing is controlled on a per-interface basis. Without arguments, \fBtrace\fP
-gives a list of all defined interfaces and their tracing status.
-Output can be limited to a single interface by specifying it, and the
-control flags can be change by specifying them as well. The flags are
-given as a hexadecimal number which is interpreted as follows:
-.DS I
-.ft CW
-    O - Enable tracing of output packets if 1, disable if 0
-    I - Enable tracing of input packets if 1, disable if 0
-    T - Controls type of tracing:
-	0 - Protocol headers are decoded, but data is not displayed
-	1 - Protocol headers are decoded, and data (but not the
-	    headers themselves) are displayed as ASCII characters,
-	    64 characters/line. Unprintable characters are displayed
-	    as periods.
-	2 - Protocol headers are decoded, and the entire packet
-	    (headers AND data) is also displayed in hexadecimal
-	    and ASCII, 16 characters per line.
-    B - Broadcast filter flag. If set, only packets specifically addressed
-	to this node will be traced, broadcast packets will not be displayed.
-.ft P
+.H 2 "trace" " [\fIinterface\fP [\fIflags\fP|subcommand [\fItracefile\fP]]]"
+Control packet tracing by the interface drivers.
+Specific bits in \fIflags\fP enable tracing of the various interfaces
+and the amount of information produced.
+Tracing is controlled on a per-interface basis.
+Without arguments, \fBtrace\fP displays a list of all defined interfaces
+and their tracing status.
+Output can be limited to a single interface by specifying it,
+and the control flags can be changed by specifying them as well.
+\fIflags\fP is constructed from the logical OR of the following flag bits:
+.DS
+.TS
+center box tab(;) ;
+cB | cB
+l | l.
+Flag;Meaning
+_
+0001;Trace output packets
+0010;Trace input packets
+_
+0000;Decode headers
+0100;Print data (but not headers) in ASCII
+0200;Print headers and data in HEX and ASCII
+_
+1000;Trace only packets addressed to me, suppress broadcasts
+_
+2000;Print all packet bytes (input and output), no interpretation
+.TE
+.DE
+Instead of defining the trace flags numerically one of the following
+subcommands may be given:
+.DS
+.TS
+center box tab(;) ;
+cB | cB
+l | l.
+Subcommand;Meaning
+_
+-ascii;Decode headers only
+-broadcast;Disable trace of broadcasts
+-hex;Print data (but not headers) in ASCII
+-input;Disable input trace
+-output;Disable output trace
+-raw;Disable raw packet dumps
+ascii;Print data (but not headers) in ASCII
+broadcast;Enable trace of broadcasts
+hex;Print headers and data in HEX and ASCII
+input;Enable input trace
+off;Turn off all trace output
+output;Enable output trace
+raw;Enable raw packet dumps
+.TE
 .DE
 If \fItracefile\fP is not specified, tracing will be to the console.
 .H 2 "udp" " \fIsubcommand\fP"

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.17 1994/04/13 09:52:05 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.18 1994/07/25 11:01:37 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -299,7 +299,7 @@ static int doroutestat(void)
 
   puts("Interface  Count");
   for (ifp = Ifaces; ifp; ifp = ifp->next) {
-    printf("%-9s  %5d\n", ifp->name, ifp->cnt);
+    printf("  %-7s  %5d\n", ifp->name, ifp->cnt);
     total += ifp->cnt;
   }
   puts("---------  -----");

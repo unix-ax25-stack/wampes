@@ -1,27 +1,55 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/trace,v 1.3 1994/07/18 09:15:54 deyke Exp $
-.H 2 "trace" " [\fIinterface\fP [off|\fIbtio\fP [\fItracefile\fP]]]"
-Controls packet tracing by the interface drivers. Specific bits enable
-tracing of the various interfaces and the amount of information produced.
-Tracing is controlled on a per-interface basis. Without arguments, \fBtrace\fP
-gives a list of all defined interfaces and their tracing status.
-Output can be limited to a single interface by specifying it, and the
-control flags can be change by specifying them as well. The flags are
-given as a hexadecimal number which is interpreted as follows:
-.DS I
-.ft CW
-    O - Enable tracing of output packets if 1, disable if 0
-    I - Enable tracing of input packets if 1, disable if 0
-    T - Controls type of tracing:
-	0 - Protocol headers are decoded, but data is not displayed
-	1 - Protocol headers are decoded, and data (but not the
-	    headers themselves) are displayed as ASCII characters,
-	    64 characters/line. Unprintable characters are displayed
-	    as periods.
-	2 - Protocol headers are decoded, and the entire packet
-	    (headers AND data) is also displayed in hexadecimal
-	    and ASCII, 16 characters per line.
-    B - Broadcast filter flag. If set, only packets specifically addressed
-	to this node will be traced, broadcast packets will not be displayed.
-.ft P
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/trace,v 1.4 1994/07/25 11:01:55 deyke Exp $
+.H 2 "trace" " [\fIinterface\fP [\fIflags\fP|subcommand [\fItracefile\fP]]]"
+Control packet tracing by the interface drivers.
+Specific bits in \fIflags\fP enable tracing of the various interfaces
+and the amount of information produced.
+Tracing is controlled on a per-interface basis.
+Without arguments, \fBtrace\fP displays a list of all defined interfaces
+and their tracing status.
+Output can be limited to a single interface by specifying it,
+and the control flags can be changed by specifying them as well.
+\fIflags\fP is constructed from the logical OR of the following flag bits:
+.DS
+.TS
+center box tab(;) ;
+cB | cB
+l | l.
+Flag;Meaning
+_
+0001;Trace output packets
+0010;Trace input packets
+_
+0000;Decode headers
+0100;Print data (but not headers) in ASCII
+0200;Print headers and data in HEX and ASCII
+_
+1000;Trace only packets addressed to me, suppress broadcasts
+_
+2000;Print all packet bytes (input and output), no interpretation
+.TE
+.DE
+Instead of defining the trace flags numerically one of the following
+subcommands may be given:
+.DS
+.TS
+center box tab(;) ;
+cB | cB
+l | l.
+Subcommand;Meaning
+_
+-ascii;Decode headers only
+-broadcast;Disable trace of broadcasts
+-hex;Print data (but not headers) in ASCII
+-input;Disable input trace
+-output;Disable output trace
+-raw;Disable raw packet dumps
+ascii;Print data (but not headers) in ASCII
+broadcast;Enable trace of broadcasts
+hex;Print headers and data in HEX and ASCII
+input;Enable input trace
+off;Turn off all trace output
+output;Enable output trace
+raw;Enable raw packet dumps
+.TE
 .DE
 If \fItracefile\fP is not specified, tracing will be to the console.

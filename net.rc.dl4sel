@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel,v 1.21 1994/05/06 17:15:33 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel,v 1.22 1994/07/25 11:00:05 deyke Exp $
 
 hostname     dl4sel
 ax25 mycall  dl4sel
@@ -46,7 +46,6 @@ route add  dl2sel-1.ampr.org    tnc0     dk0hu.ampr.org
 route add  dl2sel.ampr.org      tnc0     dk0hu.ampr.org
 route add  dl4sas-1.ampr.org    tnc0     dk0hu.ampr.org
 route add  dl4sel-1.ampr.org    tnc0     dk0hu.ampr.org
-route add  dl5ue-1.ampr.org     tnc0     dk0hu.ampr.org
 
 arp add dk0hu ax25 dk0hu
 

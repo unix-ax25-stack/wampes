@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.df9sr-1,v 1.8 1994/07/22 13:17:34 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.df9sr-1,v 1.9 1994/07/25 11:00:03 deyke Exp $
 
 hostname     df9sr-1
 ax25 mycall  df9sr-1
@@ -38,7 +38,6 @@ route add  dl2sel.ampr.org      ipip     15.138.33.250
 route add  dl4sas-1.ampr.org    ipip     15.138.33.250
 route add  dl4sel-1.ampr.org    ipip     15.138.33.250
 route add  dl4sel.ampr.org      ipip     15.138.33.250
-route add  dl5ue-1.ampr.org     ipip     15.138.33.250
 
 source /tcp/netrom_links
 

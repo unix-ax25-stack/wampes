@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.39 1994/07/22 13:17:34 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.40 1994/07/25 11:00:04 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -33,7 +33,6 @@ axip route add dl1sbl-1 15.136.120.112          # flash.bbn.hp.com
 axip route add dl2sel-1 15.136.175.24           # hpcsmus.bbn.hp.com
 axip route add dl4sas-1 15.136.216.106          # hpbid1gf.bbn.hp.com
 axip route add dl4sel-1 15.136.136.223          # isoit041.bbn.hp.com
-axip route add dl5ue-1  15.144.61.46            # schiefer.hpl.hp.com
 
 route add  44.130.0.0/16        ipip     192.1.1.1
 route add  44.142.52.0/23       ipip     192.1.1.1
@@ -60,7 +59,6 @@ route add  dl2sel.ampr.org      tnc0
 route add  dl4sas-1.ampr.org    ipip     15.136.216.106
 route add  dl4sel-1.ampr.org    ipip     15.136.136.223
 route add  dl4sel.ampr.org      tnc0
-route add  dl5ue-1.ampr.org     ipip     15.144.61.46
 
 arp add dl2sel ax25 dl2sel
 arp add dl4sel ax25 dl4sel

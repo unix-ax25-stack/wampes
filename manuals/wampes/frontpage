@@ -1,14 +1,17 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/frontpage,v 1.4 1994/07/22 13:18:34 deyke Exp $
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/frontpage,v 1.5 1994/07/25 11:01:45 deyke Exp $
 . \"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940722" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 940725" \" Page footer
 . \"
-.SP 20
+.S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 940722
+Version 940725
+.S
 .SP 2
+.S 15
 .ce
 Dieter Deyke, DK5SG/N0PRA
 .ce
 deyke@fc.hp.com
+.S
