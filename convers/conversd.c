@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.66 1995/04/21 12:35:44 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.67 1996/01/04 19:11:37 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -1129,7 +1129,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.66 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.67 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1461,11 +1461,11 @@ static void process_input(struct link *lp)
 static void read_configuration(void)
 {
 
-  FILE * fp;
+  char line[1024];
   char *cp;
   char *host_name;
   char *sock_name;
-  char line[1024];
+  FILE *fp;
   int got_host_name = 0;
   struct peer *pp;
 

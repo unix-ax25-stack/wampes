@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.13 1994/10/06 16:15:42 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.14 1996/01/04 19:11:51 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -306,13 +306,13 @@ static struct node *get_node(long addr)
 static void read_routes(void)
 {
 
-  FILE * fp;
   char deststr[1024];
   char gatewaystr[1024];
   char hoststr[1024];
   char ifacestr[1024];
   char line[1024];
   char privstr[1024];
+  FILE *fp;
   int bits;
   int linnum;
   int metric;
@@ -524,11 +524,11 @@ static void print_routes(void)
 static void make_route_files(void)
 {
 
-  FILE * fp;
-  char *cp;
   char command[1024];
   char dest[1024];
+  char *cp;
   const char * gateway;
+  FILE *fp;
   struct node *np;
   struct route *rp;
 

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.14 1994/10/06 16:15:42 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/connect.c,v 1.15 1996/01/04 19:11:50 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -130,9 +130,9 @@ static void route_packet(struct connection *p)
 int main(int argc, char **argv)
 {
 
-  FILE * fp;
-  char *cp;
   char tmp[1024];
+  char *cp;
+  FILE *fp;
   int ch;
   int errflag = 0;
   int fail = 0;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.20 1995/12/26 11:18:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.21 1996/01/04 19:11:44 deyke Exp $ */
 
 #ifndef _LAPB_H
 #define _LAPB_H
@@ -103,7 +103,7 @@ struct ax25_cb {
 #define LB_DM           1               /* Received DM from other end */
 #define LB_TIMEOUT      2               /* Excessive retries */
 
-/*      uint8 response;                 /* Response owed to other end */
+/*      uint8 response;                    Response owed to other end */
 	uint8 vs;                       /* Our send state variable */
 	uint8 vr;                       /* Our receive state variable */
 	uint8 unack;                    /* Number of unacked frames */

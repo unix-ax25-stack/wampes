@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.18 1995/12/20 09:46:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.19 1996/01/04 19:11:47 deyke Exp $ */
 
 /* NOS User Session control
  * Copyright 1991 Phil Karn, KA9Q
@@ -278,7 +278,9 @@ void *p)
 			printf(Notval);
 			return 1;
 		}
-		if(sp->cb.ftp->data != NULL)
+		if(sp->type == FTP &&
+		    sp->cb.ftp != NULL &&
+		    sp->cb.ftp->data != NULL)
 			kick_tcp(sp->cb.ftp->data);
 		break;
 #ifdef  AX25

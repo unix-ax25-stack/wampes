@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.20 1995/12/20 09:46:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.21 1996/01/04 19:11:40 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -65,7 +65,7 @@ static void strlwc(char *to, const char *from);
 static int isaddr(const char *s);
 static void add_to_cache(const char *name, int32 addr);
 static char *dtype(int value);
-static struct rr *make_rr(int source, char *dname, int dclass, int dtype, int32 ttl, int rdl, void *data);
+static struct rr *make_rr(int source, char *dname, int dclass, int d_type, int32 ttl, int rdl, void *data);
 static void put_rr(FILE *fp, struct rr *rrp);
 static void dumpdomain(struct dhdr *dhp);
 static int32 in_addr_arpa(char *name);
@@ -435,7 +435,7 @@ make_rr(
 int source,
 char *dname,
 int dclass,
-int dtype,
+int d_type,
 int32 ttl,
 int rdl,
 void *data)
@@ -446,12 +446,12 @@ void *data)
 	newrr->source = source;
 	newrr->name = strdup(dname);
 	newrr->class = dclass;
-	newrr->type = dtype;
+	newrr->type = d_type;
 	newrr->ttl = ttl;
 	if((newrr->rdlength = rdl) == 0)
 		return newrr;
 
-	switch(dtype){
+	switch(d_type){
 	case TYPE_A:
 	  {
 		register int32 *ap = (int32 *)data;

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.12 1995/11/19 11:54:17 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.13 1996/01/04 19:11:54 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -124,10 +124,10 @@ static char *fix_name(const char *name)
 static void read_hosts_file(const char *filename)
 {
 
-  FILE * fp;
   char addrstr[1024];
   char line[1024];
   char name[1024];
+  FILE *fp;
 
   if (!(fp = fopen(filename, "r"))) {
     perror(filename);
@@ -149,12 +149,12 @@ static void read_hosts_file(const char *filename)
 static void read_domain_file(const char *filename)
 {
 
-  FILE * fp;
-  char *p;
   char line[1024];
   char name[1024];
+  char *p;
   datum daddr;
   datum dname;
+  FILE *fp;
   long addr;
   static const char delim[] = " \t\n";
 

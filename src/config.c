@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.42 1995/12/26 11:18:40 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.43 1996/01/04 19:11:40 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -124,7 +124,7 @@ struct cmds Cmds[] = {
 		 "dialer <iface> <timeout> [device-dependent args]",
 #endif
 #ifndef AMIGA
-/*      "dir",          dodir,          0, 0, NULL, /* note sequence */
+/*      "dir",          dodir,          0, 0, NULL,    note sequence */
 #endif
 #ifdef  CDMA_DM
 	"dm",           dodm,           0, 0, NULL,
@@ -764,11 +764,19 @@ uint8 *dest,
 struct mbuf **bpp,
 int mcast
 ){
-	int32 ipaddr;
+
+	int32 ipaddr = 0;
 	struct arp_tab *ap;
-	struct mbuf *bp = *bpp;
+	uint16 ip_len = 0;
 	uint8 hwaddr[AXALEN];
-	if(!mcast && bp && bp->cnt >= 20 && (ipaddr = get32(bp->data + 12))){
+
+	if(!mcast &&
+	   bpp &&
+	   *bpp &&
+	   (*bpp)->cnt >= IPLEN &&
+	   (ipaddr = get32((*bpp)->data + 12)) &&
+	   (ip_len = ((*bpp)->data[0] & 0xf) << 2) >= IPLEN &&
+	   !cksum(NULL, *bpp, ip_len)){
 		iface->flags |= NO_RT_ADD;
 		addrcp(hwaddr, src);
 		if((ap = revarp_lookup(ARP_AX25,hwaddr)) != NULL &&

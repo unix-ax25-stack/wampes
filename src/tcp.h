@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.17 1995/12/26 11:18:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcp.h,v 1.18 1996/01/04 19:11:48 deyke Exp $ */
 
 #ifndef _TCP_H
 #define _TCP_H
@@ -34,7 +34,7 @@
 
 #define DEF_MSS 512     /* Default maximum segment size */
 #define DEF_WND 2048    /* Default receiver window */
-/* #define RTTCACHE 16  /* # of TCP round-trip-time cache entries */
+/* #define RTTCACHE 16     # of TCP round-trip-time cache entries */
 #define DEF_RTT 5000    /* Initial guess at round trip time (5 sec) */
 #define MSL2    30      /* Guess at two maximum-segment lifetimes */
 #define MIN_RTO 500L    /* Minimum timeout, milliseconds */

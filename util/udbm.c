@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.42 1995/11/19 11:54:18 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.43 1996/01/04 19:11:55 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -268,7 +268,7 @@ static struct user *getup(const char *call, int create)
 static FILE *fopenexcl(const char *path)
 {
 
-  FILE * fp;
+  FILE *fp;
   int fd, cnt;
 
   for (cnt = 1; ; cnt++) {
@@ -541,7 +541,7 @@ static void fixpasswd(void)
 
 #if !(defined __386BSD__ || defined __bsdi__ || defined ibm032 || defined __FreeBSD__)
 
-  FILE * fp;
+  FILE *fp;
   int secured = 0;
   struct passwd *pp;
   struct stat statbuf;

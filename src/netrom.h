@@ -1,7 +1,11 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.20 1995/12/26 11:18:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.21 1996/01/04 19:11:45 deyke Exp $ */
 
 #ifndef _NETROM_H
 #define _NETROM_H
+
+#ifndef _GLOBAL_H
+#include "global.h"
+#endif
 
 #ifndef _MBUF_H
 #include "mbuf.h"
@@ -13,10 +17,6 @@
 
 #ifndef _AX25_H
 #include "ax25.h"
-#endif
-
-#ifndef _GLOBAL_H
-#include "global.h"
 #endif
 
 #ifndef _TIMER_H
@@ -41,8 +41,8 @@
 #define NRPROTO_IP      0x0c
 
 /* Round trip timing parameters */
-#define AGAIN   8               /* Average RTT gain = 1/8 */
-#define DGAIN   4               /* Mean deviation gain = 1/4 */
+#define NRAGAIN         8       /* Average RTT gain = 1/8 */
+#define NRDGAIN         4       /* Mean deviation gain = 1/4 */
 
 #define NR4MAXINFO      236     /* Maximum data in an info packet */
 #define NR4MINHDR       5       /* Minimum length of NET/ROM transport header */
@@ -67,6 +67,14 @@ enum netrom_state {
   NR4STLISTEN                   /* Listening for incoming connections */
 };
 
+enum netrom_reason {
+  NR4RNORMAL,                   /* Normal, requested disconnect */
+  NR4RREMOTE,                   /* Remote requested */
+  NR4RTIMEOUT,                  /* Connection timed out */
+  NR4RRESET,                    /* Connection reset locally */
+  NR4RREFUSED                   /* Connect request refused */
+};
+
 struct circuit {
   int localindex;               /* Local circuit index */
   int localid;                  /* Local circuit ID */
@@ -76,12 +84,7 @@ struct circuit {
   uint8 node[AXALEN];           /* Call of peer node */
   uint8 cuser[AXALEN];          /* Call of user */
   enum netrom_state state;      /* Connection state */
-  uint8 reason;                 /* Reason for disconnecting */
-#define NR4RNORMAL      0               /* Normal, requested disconnect */
-#define NR4RREMOTE      1               /* Remote requested */
-#define NR4RTIMEOUT     2               /* Connection timed out */
-#define NR4RRESET       3               /* Connection reset locally */
-#define NR4RREFUSED     4               /* Connect request refused */
+  enum netrom_reason reason;    /* Reason for disconnecting */
   int window;                   /* Negotiated window size */
   unsigned int naksent:1;       /* NAK has been sent */
   unsigned int chokesent:1;     /* CHOKE has been sent */

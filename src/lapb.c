@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.35 1995/12/26 11:18:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.c,v 1.36 1996/01/04 19:11:43 deyke Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -247,14 +247,14 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			axp->flags.remotebusy = NO;
 			stop_timer(&axp->t4);
 			/* est_link(axp); */
-			/* lapbstate(axp,LAPB_SETUP);   /* Re-establish */
+			/* lapbstate(axp,LAPB_SETUP);      Re-establish */
 			break;
 		case FRMR:
 			sendctl(axp,LAPB_COMMAND,DISC|PF);
 			start_timer(&axp->t1);
 			lapbstate(axp,LAPB_DISCPENDING);
 			/* est_link(axp); */
-			/* lapbstate(axp,LAPB_SETUP);   /* Re-establish link */
+			/* lapbstate(axp,LAPB_SETUP);      Re-establish link */
 			break;
 		case RR:
 		case RNR:
@@ -324,14 +324,14 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			axp->flags.remotebusy = NO;
 			stop_timer(&axp->t4);
 			/* est_link(axp); */
-			/* lapbstate(axp,LAPB_SETUP);   /* Re-establish */
+			/* lapbstate(axp,LAPB_SETUP);      Re-establish */
 			break;
 		case FRMR:
 			sendctl(axp,LAPB_COMMAND,DISC|PF);
 			start_timer(&axp->t1);
 			lapbstate(axp,LAPB_DISCPENDING);
 			/* est_link(axp); */
-			/* lapbstate(axp,LAPB_SETUP);   /* Re-establish link */
+			/* lapbstate(axp,LAPB_SETUP);      Re-establish link */
 			break;
 		case RR:
 		case RNR:

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.17 1995/12/20 09:46:49 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_smtp.c,v 1.18 1996/01/04 19:11:44 deyke Exp $ */
 
 /* SMTP Mail Delivery Agent */
 
@@ -11,19 +11,22 @@
 #include "transport.h"
 #include "mail.h"
 
+enum smtp_state {
+  SMTP_OPEN_STATE,
+  SMTP_HELO_STATE,
+  SMTP_MAIL_STATE,
+  SMTP_RCPT_STATE,
+  SMTP_DATA_STATE,
+  SMTP_SEND_STATE,
+  SMTP_UNLK_STATE,
+  SMTP_QUIT_STATE
+};
+
 struct mesg {
-  int state;
-#define SMTP_OPEN_STATE 0
-#define SMTP_HELO_STATE 1
-#define SMTP_MAIL_STATE 2
-#define SMTP_RCPT_STATE 3
-#define SMTP_DATA_STATE 4
-#define SMTP_SEND_STATE 5
-#define SMTP_UNLK_STATE 6
-#define SMTP_QUIT_STATE 7
+  enum smtp_state state;
   char buf[1024];
   int cnt;
-  FILE * fp;
+  FILE *fp;
   struct mailsys *sp;
   struct transport_cb *tp;
 };

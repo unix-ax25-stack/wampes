@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strerror.c,v 1.1 1995/03/24 13:02:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strerror.c,v 1.2 1996/01/04 19:11:56 deyke Exp $ */
 
 #include "configure.h"
 
@@ -15,5 +15,9 @@ char *strerror(int errnum)
     return "unknown error";
   return "no details given";
 }
+
+#else
+
+int strerror_dummy;     /* Prevent "Empty source file" message */
 
 #endif

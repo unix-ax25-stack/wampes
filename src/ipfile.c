@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.16 1995/12/20 09:46:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.17 1996/01/04 19:11:42 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -45,7 +45,7 @@ static const char route_tmpfilename[] = "/tcp/route_tmp";
 void route_savefile(void)
 {
 
-  FILE * fp;
+  FILE *fp;
   int bits;
   int i;
   static struct timer timer;
@@ -96,9 +96,9 @@ void route_savefile(void)
 void route_loadfile(void)
 {
 
-  FILE * fp;
-  char *cp;
   char ifname[1024];
+  char *cp;
+  FILE *fp;
   int c;
   int32 ttl;
   static int done;

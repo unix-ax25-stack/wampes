@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 3.1 1995/11/19 11:54:12 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 3.2 1996/01/04 19:11:49 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -941,14 +941,32 @@ static void append_line(struct mail *mail, const char *line, enum e_where where)
 
 /*---------------------------------------------------------------------------*/
 
+static void prepend_Rline(struct mail *mail, long gmt)
+{
+
+  char line[1024];
+  struct tm *tm;
+
+  tm = gmtime(&gmt);
+  sprintf(line, "R:%02d%02d%02d/%02d%02dz @:%s.%s",
+	  tm->tm_year % 100,
+	  tm->tm_mon + 1,
+	  tm->tm_mday,
+	  tm->tm_hour,
+	  tm->tm_min,
+	  myhostname,
+	  mydomain);
+  append_line(mail, strupc(line), HEAD);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void route_mail(struct mail *mail)
 {
 
-  char buf[1024];
   char *cp;
   long gmt;
   struct strlist *p;
-  struct tm *tm;
 
   /* Check for bogus mails */
 
@@ -994,17 +1012,7 @@ static void route_mail(struct mail *mail)
 
   /* Prepend R: line */
 
-  gmt = time(0);
-  tm = gmtime(&gmt);
-  sprintf(buf, "R:%02d%02d%02d/%02d%02dz @:%s.%s",
-	  tm->tm_year % 100,
-	  tm->tm_mon + 1,
-	  tm->tm_mday,
-	  tm->tm_hour,
-	  tm->tm_min,
-	  myhostname,
-	  mydomain);
-  append_line(mail, strupc(buf), HEAD);
+  prepend_Rline(mail, time(0));
 
   /* Call delivery agents */
 
@@ -1411,15 +1419,21 @@ static struct mail *read_mail_or_news_file(const char *filename, enum e_type src
   char Rline[1024];
   char *cp;
   FILE *fp;
+  int first_Rline;
+  int insert_Rline;
   int in_header;
   long expiretime;
   struct mail *mail;
+  struct stat statbuf;
 
-  if (!(fp = fopen(filename, "r")))
+  if (!(fp = fopen(filename, "r")) || stat(filename, &statbuf))
     halt();
 
+  first_Rline = 1;
+  insert_Rline = 1;
   in_header = 1;
   mail = alloc_mail();
+  *date = 0;
   *distribution = 0;
   *expires = 0;
   *from = 0;
@@ -1451,6 +1465,12 @@ static struct mail *read_mail_or_news_file(const char *filename, enum e_type src
 	  Rline[0] = 'R';
 	  Rline[1] = ':';
 	  append_line(mail, Rline, TAIL);
+	  if (first_Rline) {
+	    first_Rline = 0;
+	    if ((cp = get_host_from_header(Rline)) && !strcmp(cp, myhostname)) {
+	      insert_Rline = 0;
+	    }
+	  }
 	}
       } else {
 	in_header = 0;
@@ -1486,7 +1506,7 @@ static struct mail *read_mail_or_news_file(const char *filename, enum e_type src
     strcpy(mail->tohost, distribution);
   }
 
-  generate_bid_and_mid(mail, src != NEWS);
+  generate_bid_and_mid(mail, src == MAIL);
   if (!*mail->bid) {
     free_mail(mail);
     return 0;
@@ -1520,6 +1540,10 @@ static struct mail *read_mail_or_news_file(const char *filename, enum e_type src
   if (src == NEWS && !*mail->touser) {
     free_mail(mail);
     return 0;
+  }
+
+  if (insert_Rline) {
+    prepend_Rline(mail, statbuf.st_mtime);
   }
 
   return mail;

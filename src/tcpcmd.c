@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.17 1995/12/26 11:18:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpcmd.c,v 1.18 1996/01/04 19:11:47 deyke Exp $ */
 
 /* TCP control and status routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -244,7 +244,7 @@ void *p2)
 }
 
 /* Dump TCP stats and summary of all TCBs
-/*     &TCB Rcv-Q Snd-Q  Local socket           Remote socket          State
+ *     &TCB Rcv-Q Snd-Q  Local socket           Remote socket          State
  *     1234     0     0  xxx.xxx.xxx.xxx:xxxxx  xxx.xxx.xxx.xxx:xxxxx  Established
  */
 static int

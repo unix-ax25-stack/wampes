@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25user.c,v 1.7 1995/12/26 11:18:39 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25user.c,v 1.8 1996/01/04 19:11:39 deyke Exp $ */
 
 /* User interface subroutines for AX.25
  * Copyright 1991 Phil Karn, KA9Q
@@ -210,11 +210,15 @@ int
 reset_ax25(
 struct ax25_cb *axp)
 {
+#if 0
 	void (*upcall)(struct ax25_cb *,enum lapb_state,enum lapb_state);
+#endif
 
 	if(axp == NULL)
 		return -1;
+#if 0
 	upcall = axp->s_upcall;
+#endif
 	lapbstate(axp,LAPB_DISCONNECTED);
 #if 0
 	/* Clean up if the standard upcall isn't in use */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.50 1995/12/30 15:05:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.51 1996/01/04 19:11:45 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -434,12 +434,12 @@ static void calculate_all(void)
       pn->force_broadcast = 1;
     if (pn->force_broadcast) start_broadcast_timer = 1;
   }
-#ifdef FORCE_BC
   if (start_broadcast_timer) {
     set_timer(&broadcast_timer, 10 * 1000L);
+#ifdef FORCE_BC
     start_timer(&broadcast_timer);
-  }
 #endif
+  }
 
   /*** remove obsolete nodes ***/
 
@@ -1099,8 +1099,8 @@ static void circuit_manager(struct mbuf **bpp)
       if (pc->sndtime[((*bpp)->data[3]-1) & 0xff]) {
 	int32 rtt = msclock() - pc->sndtime[((*bpp)->data[3]-1) & 0xff];
 	int32 abserr = (rtt > pc->srtt) ? rtt - pc->srtt : pc->srtt - rtt;
-	pc->srtt = ((AGAIN - 1) * pc->srtt + rtt + (AGAIN / 2)) / AGAIN;
-	pc->mdev = ((DGAIN - 1) * pc->mdev + abserr + (DGAIN / 2)) / DGAIN;
+	pc->srtt = ((NRAGAIN - 1) * pc->srtt + rtt + (NRAGAIN / 2)) / NRAGAIN;
+	pc->mdev = ((NRDGAIN - 1) * pc->mdev + abserr + (NRDGAIN / 2)) / NRDGAIN;
 	reset_t1(pc);
 	if (pc->cwind < pc->window) pc->cwind++;
       }

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.10 1995/12/26 11:18:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ni.c,v 1.11 1996/01/04 19:11:46 deyke Exp $ */
 
 #ifdef __hpux
 
@@ -239,5 +239,9 @@ int ni_attach(int argc, char *argv[], void *p)
 
   return 0;
 }
+
+#else
+
+int ni_dummy;           /* Prevent "Empty source file" message */
 
 #endif

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.53 1995/12/20 09:46:50 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.54 1996/01/04 19:11:44 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -380,12 +380,12 @@ int argc,
 char *argv[],
 void *p)
 {
-	static char *logname;
+	static char *log_name;
 	char tbuf[32];
 
 	if(argc < 2){
 		if(Logfp)
-			printf("Logging to %s\n",logname);
+			printf("Logging to %s\n",log_name);
 		else
 			printf("Logging off\n");
 		return 0;
@@ -394,12 +394,12 @@ void *p)
 		logmsg(NULL,"NOS log closed","");
 		fclose(Logfp);
 		Logfp = NULL;
-		free(logname);
-		logname = NULL;
+		free(log_name);
+		log_name = NULL;
 	}
 	if(strcmp(argv[1],"stop") != 0){
-		logname = strdup(argv[1]);
-		Logfp = fopen(logname,APPEND_TEXT);
+		log_name = strdup(argv[1]);
+		Logfp = fopen(log_name,APPEND_TEXT);
 		strcpy(tbuf,ctime(&StartTime));
 		rip(tbuf);
 		logmsg(NULL,"NOS was started at %s", tbuf);

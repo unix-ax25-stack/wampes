@@ -1,9 +1,21 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.h,v 1.11 1995/12/30 15:05:44 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftp.h,v 1.12 1996/01/04 19:11:41 deyke Exp $ */
 
 #ifndef _FTP_H
 #define _FTP_H
 
 #include <stdio.h>
+
+#ifndef _GLOBAL_H
+#include "global.h"
+#endif
+
+#ifndef _TCP_H
+#include "tcp.h"
+#endif
+
+#ifndef _SESSION_H
+#include "session.h"
+#endif
 
 /* Definitions common to both FTP servers and clients */
 enum ftp_type {
@@ -31,7 +43,7 @@ struct ftp {
 	struct socket port;     /* Remote port for data connection */
 	char *username;         /* Arg to USER command */
 	char *root;             /* Root directory name */
-/*      char perms;             /* Permission flag bits */
+/*      char perms;                Permission flag bits */
 				/* (See FILES.H for definitions) */
 	char *cd;               /* Current directory name */
 

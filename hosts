@@ -2069,15 +2069,16 @@
 # --- lokale Adresskoordination: DL4VAP
 44.130.33.1     DF3VI   # Patrick, 6650 Homburg
 44.130.33.2     DL4VCN  # George Nashan, 66424 Homburg (ex DC1VL)
-44.130.33.3     DL4VAP  # Marcus Meier, 66578 Schiffweiler
-44.130.33.4     DL4VAP-U        #
-44.130.33.5     DL4VAP-2        #
-44.130.33.6     DD1VZ   # Peter, 66271 Kleinblittersdorf
-44.130.33.10    DG6VB   # Thomas Dick, Ludweiler
-44.130.33.11    DG6VB-2 #
-44.130.33.12    DG6VB-3 #
-44.130.33.15    DK3XT   # Bernd, Dettenheim
-44.130.33.42    DG8VD   # Christoph, Blieskastel
+44.130.33.3     DL4VAP  # Marcus Meier, 66578 Schiffweiler (JN39NI)
+44.130.33.4     DL4VAP-U
+44.130.33.5     DL4VAP-2
+44.130.33.6     DD1VZ   # Peter , Kleinblittersdorf/Saar
+44.130.33.7     DB6VP   # Peter , Voelklingen (Loc. JN39KG)
+44.130.33.10    DG6VB   # Thomas , Ludweiler
+44.130.33.11    DG6VB-2
+44.130.33.12    DG6VB-3
+44.130.33.15    DK3XT   # Bernd, Dettenheim (Loc. JN49FE)
+44.130.33.42    DF7CB   # Christoph, Blieskastel (Loc. JN39PF) ex dg8vd
 #
 44.130.34.1     DB0NWS  # ; ***
 44.130.34.2     DD4PN   # Volker, 5248 Mittelhof

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.83 1995/12/20 09:46:50 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.84 1996/01/04 19:11:44 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -485,9 +485,9 @@ domain.o: global.h mbuf.h iface.h proc.h timer.h socket.h tcp.h internet.h \
 	ip.h netuser.h udp.h cmdparse.h domain.h
 domhdr.o: global.h mbuf.h domain.h proc.h timer.h
 files.o: global.h netuser.h files.h
-finger.o: config.h global.h mbuf.h timer.h internet.h icmp.h iface.h proc.h \
-	ip.h netuser.h tcp.h ftp.h telnet.h ax25.h finger.h session.h \
-	hardware.h
+finger.o: config.h global.h mbuf.h socket.h proc.h timer.h internet.h icmp.h \
+	iface.h ip.h netuser.h tcp.h ftp.h session.h hardware.h telnet.h \
+	ax25.h finger.h
 flexnet.o: global.h mbuf.h timer.h iface.h proc.h ax25.h lapb.h trace.h \
 	flexnet.h cmdparse.h commands.h
 ftp.o: global.h mbuf.h netuser.h timer.h tcp.h iface.h proc.h internet.h ip.h \
@@ -497,7 +497,7 @@ ftpcli.o: global.h mbuf.h session.h proc.h timer.h hardware.h telnet.h tcp.h \
 	ftp.h commands.h dirutil.h ../lib/seek.h
 ftpserv.o: ../lib/seek.h ../lib/seteugid.h global.h mbuf.h socket.h proc.h \
 	timer.h netuser.h tcp.h iface.h internet.h ip.h dirutil.h login.h \
-	ftp.h ftpserv.h
+	ftp.h session.h hardware.h telnet.h ax25.h ftpserv.h
 hpux.o: ../lib/configure.h global.h iface.h mbuf.h proc.h timer.h files.h \
 	hardware.h login.h commands.h main.h hpux.h
 icmp.o: global.h mbuf.h iface.h proc.h timer.h ip.h internet.h icmp.h ping.h \
@@ -572,8 +572,8 @@ ripdump.o: global.h mbuf.h netuser.h timer.h rip.h iface.h proc.h udp.h \
 	internet.h ip.h trace.h
 services.o: global.h socket.h mbuf.h proc.h timer.h netuser.h
 session.o: global.h config.h mbuf.h proc.h timer.h tcp.h iface.h internet.h \
-	ip.h netuser.h ftp.h icmp.h telnet.h tty.h session.h hardware.h \
-	ax25.h socket.h cmdparse.h commands.h main.h axclient.h lapb.h \
+	ip.h netuser.h ftp.h session.h hardware.h telnet.h ax25.h icmp.h \
+	tty.h socket.h cmdparse.h commands.h main.h axclient.h lapb.h \
 	finger.h netrom.h
 slhc.o: global.h mbuf.h internet.h ip.h iface.h proc.h timer.h tcp.h \
 	netuser.h slhc.h
