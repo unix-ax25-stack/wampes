@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.29 1992/11/18 18:28:42 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.30 1992/11/27 17:08:23 deyke Exp $
 
 DEFINES       = -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024
 
@@ -369,8 +369,8 @@ config.o: global.h config.h mbuf.h timer.h proc.h iface.h ip.h internet.h \
 crc.o: global.h mbuf.h crc.h
 devparam.o: global.h devparam.h
 dirutil.o: global.h hpux.h dirutil.h commands.h
-domain.o: global.h mbuf.h iface.h proc.h timer.h socket.h udp.h internet.h \
-	ip.h netuser.h cmdparse.h domain.h
+domain.o: global.h mbuf.h iface.h proc.h timer.h socket.h tcp.h internet.h \
+	ip.h netuser.h udp.h cmdparse.h domain.h
 domhdr.o: global.h mbuf.h domain.h proc.h timer.h
 files.o: global.h netuser.h files.h
 finger.o: config.h global.h mbuf.h timer.h internet.h icmp.h iface.h proc.h \

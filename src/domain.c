@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.7 1992/11/27 07:37:30 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.8 1992/11/27 17:08:27 deyke Exp $ */
 
 #include "global.h"
 
@@ -17,6 +17,7 @@
 #include "mbuf.h"
 #include "iface.h"
 #include "socket.h"
+#include "tcp.h"
 #include "udp.h"
 #include "timer.h"
 #include "netuser.h"
@@ -31,11 +32,6 @@ struct cache {
   struct cache *next;
   int32 addr;
   char name[1];
-};
-
-struct compress_table {
-  const char *name;
-  int offset;
 };
 
 static int Dtrace = FALSE;
@@ -65,8 +61,8 @@ static DBM *Dbhostname;
 static int Usegethostby;
 static int32 Nextcacheflushtime;
 static struct cache *Cache;
-static struct compress_table Compress_table[128];
-static struct udp_cb *Domain_up;
+static struct tcb *Domain_tcb;
+static struct udp_cb *Domain_ucb;
 
 static void strlwc __ARGS((char *to, const char *from));
 static int isaddr __ARGS((const char *s));
@@ -76,11 +72,10 @@ static struct rr *make_rr __ARGS((int source, char *dname, int dclass, int dtype
 static void put_rr __ARGS((FILE *fp, struct rr *rrp));
 static void dumpdomain __ARGS((struct dhdr *dhp));
 static int32 in_addr_arpa __ARGS((char *name));
-static char *putstring __ARGS((char *cp, const char *str));
-static char *putname __ARGS((char *buffer, char *cp, const char *name));
-static char *putq __ARGS((char *buffer, char *cp, const struct rr *rrp));
-static char *putrr __ARGS((char *buffer, char *cp, const struct rr *rrp));
-static void domain_server __ARGS((struct iface *iface, struct udp_cb *up, int cnt));
+static struct mbuf *domain_server __ARGS((struct mbuf *bp));
+static void domain_server_udp __ARGS((struct iface *iface, struct udp_cb *up, int cnt));
+static void domain_server_tcp_recv __ARGS((struct tcb *tcb, int cnt));
+static void domain_server_tcp_state __ARGS((struct tcb *tcb, int old, int new));
 static int docacheflush __ARGS((int argc, char *argv [], void *p));
 static int docachelist __ARGS((int argc, char *argv [], void *p));
 static int docache __ARGS((int argc, char *argv [], void *p));
@@ -518,134 +513,17 @@ char *name;
 
 /*---------------------------------------------------------------------------*/
 
-static char *putstring(cp, str)
-char *cp;
-const char *str;
-{
-  char *cp1;
-
-  cp1 = cp;
-  cp++;
-  while (*str) *cp++ = *str++;
-  *cp1 = cp - cp1 - 1;
-  return cp;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static char *putname(buffer, cp, name)
-char *buffer;
-char *cp;
-const char *name;
-{
-
-  const char *cp1;
-  int i;
-
-  for (; ; ) {
-    for (i = 0; Compress_table[i].name; i++)
-      if (!strcmp(Compress_table[i].name, name))
-	return put16(cp, 0xc000 | Compress_table[i].offset);
-    for (cp1 = name; *cp1 && *cp1 != '.'; cp1++) ;
-    if (!(*cp++ = cp1 - name)) break;
-    Compress_table[i].name = name;
-    Compress_table[i].offset = cp - buffer - 1;
-    Compress_table[i+1].name = 0;
-    while (name < cp1) *cp++ = *name++;
-    if (*name) name++;
-  }
-  return cp;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static char *putq(buffer, cp, rrp)
-char *buffer;
-char *cp;
-const struct rr *rrp;
-{
-  for (; rrp; rrp = rrp->next) {
-    cp = putname(buffer, cp, rrp->name);
-    cp = put16(cp, rrp->type);
-    cp = put16(cp, rrp->class);
-  }
-  return cp;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static char *putrr(buffer, cp, rrp)
-char *buffer;
-char *cp;
-const struct rr *rrp;
-{
-  char *cp1;
-
-  for (; rrp; rrp = rrp->next) {
-    cp = putname(buffer, cp, rrp->name);
-    cp = put16(cp, rrp->type);
-    cp = put16(cp, rrp->class);
-    cp1 = put32(cp, rrp->ttl);
-    cp = cp1 + 2;
-    switch (rrp->type) {
-    case TYPE_A:
-      cp = put32(cp, rrp->rdata.addr);
-      break;
-    case TYPE_CNAME:
-    case TYPE_MB:
-    case TYPE_MG:
-    case TYPE_MR:
-    case TYPE_NS:
-    case TYPE_PTR:
-      cp = putname(buffer, cp, rrp->rdata.name);
-      break;
-    case TYPE_HINFO:
-      cp = putstring(cp, rrp->rdata.hinfo.cpu);
-      cp = putstring(cp, rrp->rdata.hinfo.os);
-      break;
-    case TYPE_MX:
-      cp = put16(cp, rrp->rdata.mx.pref);
-      cp = putname(buffer, cp, rrp->rdata.mx.exch);
-      break;
-    case TYPE_SOA:
-      cp = putname(buffer, cp, rrp->rdata.soa.mname);
-      cp = putname(buffer, cp, rrp->rdata.soa.rname);
-      cp = put32(cp, rrp->rdata.soa.serial);
-      cp = put32(cp, rrp->rdata.soa.refresh);
-      cp = put32(cp, rrp->rdata.soa.retry);
-      cp = put32(cp, rrp->rdata.soa.expire);
-      cp = put32(cp, rrp->rdata.soa.minimum);
-      break;
-    case TYPE_TXT:
-      cp = putstring(cp, rrp->rdata.name);
-      break;
-    default:
-      break;
-    }
-    put16(cp1, cp - cp1 - 2);
-  }
-  return cp;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void domain_server(iface, up, cnt)
-struct iface *iface;
-struct udp_cb *up;
-int cnt;
+static struct mbuf *domain_server(bp)
+struct mbuf *bp;
 {
 
   char *cp;
   char buffer[256];
-  int tmp;
   int32 addr;
   struct dhdr *dhp;
-  struct mbuf *bp;
   struct rr *qp;
   struct rr *rrp;
-  struct socket fsock;
 
-  recv_udp(up, &fsock, &bp);
   dhp = malloc(sizeof(*dhp));
   if (ntohdomain(dhp, &bp)) goto Done;
   if (Dtrace) {
@@ -724,28 +602,7 @@ int cnt;
     printf("sent: ");
     dumpdomain(dhp);
   }
-  Compress_table[0].name = 0;
-  bp = alloc_mbuf(512);
-  cp = bp->data;
-  cp = put16(cp, dhp->id);
-  tmp = 0;
-  if (dhp->qr) tmp |= 0x8000;
-  tmp |= (dhp->opcode & 0xf) << 11;
-  if (dhp->aa) tmp |= 0x0400;
-  if (dhp->tc) tmp |= 0x0200;
-  if (dhp->rd) tmp |= 0x0100;
-  if (dhp->ra) tmp |= 0x0080;
-  tmp |= (dhp->rcode & 0xf);
-  cp = put16(cp, tmp);
-  cp = put16(cp, dhp->qdcount);
-  cp = put16(cp, dhp->ancount);
-  cp = put16(cp, dhp->nscount);
-  cp = put16(cp, dhp->arcount);
-  cp = putq(bp->data, cp, dhp->questions);
-  cp = putrr(bp->data, cp, dhp->answers);
-  cp = putrr(bp->data, cp, dhp->authority);
-  cp = putrr(bp->data, cp, dhp->additional);
-  bp->cnt = cp - bp->data;
+  bp = htondomain(dhp);
 
 #if 0
   {
@@ -753,7 +610,7 @@ int cnt;
     struct dhdr *dhp1;
     struct mbuf *bp1;
 
-    bp1 = copy_p(bp, 9999);
+    dup_p(&bp1, bp, 0, 9999);
     dhp1 = malloc(sizeof(*dhp1));
     if (ntohdomain(dhp1, &bp1)) {
       printf("ntohdomain failed!\n");
@@ -770,14 +627,83 @@ int cnt;
   }
 #endif
 
-  send_udp(&up->socket, &fsock, 0, 0, bp, 0, 0, 0);
-
 Done:
   free_rr(dhp->questions);
   free_rr(dhp->answers);
   free_rr(dhp->authority);
   free_rr(dhp->additional);
   free(dhp);
+  return bp;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void domain_server_udp(iface, up, cnt)
+struct iface *iface;
+struct udp_cb *up;
+int cnt;
+{
+
+  struct mbuf *bp;
+  struct socket fsocket;
+
+  recv_udp(up, &fsocket, &bp);
+  bp = domain_server(bp);
+  if (bp) send_udp(&up->socket, &fsocket, 0, 0, bp, 0, 0, 0);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void domain_server_tcp_recv(tcb, cnt)
+struct tcb *tcb;
+int cnt;
+{
+
+  int len;
+  struct mbuf **rcvqptr;
+  struct mbuf *bp;
+
+  if (recv_tcp(tcb, &bp, cnt) <= 0) return;
+  rcvqptr = (struct mbuf **) &tcb->user;
+  append(rcvqptr, bp);
+  if (len_p(*rcvqptr) < 2) return;
+  len = pull16(rcvqptr);
+  if (len_p(*rcvqptr) < len) {
+    *rcvqptr = pushdown(*rcvqptr, 2);
+    put16((*rcvqptr)->data, len);
+    return;
+  }
+  dup_p(&bp, *rcvqptr, 0, len);
+  pullup(rcvqptr, NULLCHAR, len);
+  bp = domain_server(bp);
+  if (!bp) return;
+  len = len_p(bp);
+  bp = pushdown(bp, 2);
+  put16(bp->data, len);
+  send_tcp(tcb, bp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void domain_server_tcp_state(tcb, old, new)
+struct tcb *tcb;
+int old, new;
+{
+  switch (new) {
+  case TCP_ESTABLISHED:
+    tcb->user = 0;
+    log(tcb, "open %s", tcp_port_name(tcb->conn.local.port));
+    break;
+  case TCP_CLOSE_WAIT:
+    close_tcp(tcb);
+    break;
+  case TCP_CLOSED:
+    free_p((struct mbuf *) tcb->user);
+    log(tcb, "close %s", tcp_port_name(tcb->conn.local.port));
+    del_tcp(tcb);
+    if (tcb == Domain_tcb) Domain_tcb = 0;
+    break;
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -787,9 +713,13 @@ int argc;
 char *argv[];
 void *p;
 {
-  if (Domain_up) {
-    del_udp(Domain_up);
-    Domain_up = 0;
+  if (Domain_ucb) {
+    del_udp(Domain_ucb);
+    Domain_ucb = 0;
+  }
+  if (Domain_tcb) {
+    close_tcp(Domain_tcb);
+    Domain_tcb = 0;
   }
   return 0;
 }
@@ -801,15 +731,18 @@ int argc;
 char *argv[];
 void *p;
 {
-  struct socket sock;
+  struct socket lsocket;
 
-  sock.address = INADDR_ANY;
-  if (argc < 2)
-    sock.port = IPPORT_DOMAIN;
-  else
-    sock.port = atoi(argv[1]);
-  if (Domain_up) del_udp(Domain_up);
-  Domain_up = open_udp(&sock, domain_server);
+  lsocket.address = INADDR_ANY;
+  lsocket.port = (argc < 2) ? IPPORT_DOMAIN : udp_port_number(argv[1]);
+  if (Domain_ucb) del_udp(Domain_ucb);
+  Domain_ucb = open_udp(&lsocket, domain_server_udp);
+
+  lsocket.address = INADDR_ANY;
+  lsocket.port = (argc < 2) ? IPPORT_DOMAIN : tcp_port_number(argv[1]);
+  if (Domain_tcb) close_tcp(Domain_tcb);
+  Domain_tcb = open_tcp(&lsocket, NULLSOCK, TCP_SERVER, 0, domain_server_tcp_recv, NULLVFP, domain_server_tcp_state, 0, 0);
+
   return 0;
 }
 

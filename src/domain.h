@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.h,v 1.2 1992/11/27 07:37:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.h,v 1.3 1992/11/27 17:08:27 deyke Exp $ */
 
 #ifndef _DOMAIN_H
 #define _DOMAIN_H
@@ -154,5 +154,6 @@ struct rr *resolve_mailb __ARGS((char *name));
 
 /* In domhdr.c: */
 int ntohdomain __ARGS((struct dhdr *dhdr,struct mbuf **bpp));
+struct mbuf *htondomain __ARGS((const struct dhdr *dhp));
 
 #endif  /* _DOMAIN_H */

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domhdr.c,v 1.2 1992/11/27 07:37:31 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domhdr.c,v 1.3 1992/11/27 17:08:28 deyke Exp $ */
 
 /* Domain header conversion routines
  * Copyright 1991 Phil Karn, KA9Q
@@ -11,6 +11,11 @@ static int dn_expand __ARGS((char *msg,char *eom,char *compressed,char *full,
 	int fullen));
 static char *getq __ARGS((struct rr **rrpp,char *msg,char *cp));
 static char *ntohrr __ARGS((struct rr **rrpp,char *msg,char *cp));
+
+static char *putstring __ARGS((char *cp, const char *str));
+static char *putname __ARGS((char *buffer, char *cp, const char *name));
+static char *putq __ARGS((char *buffer, char *cp, const struct rr *rrp));
+static char *putrr __ARGS((char *buffer, char *cp, const struct rr *rrp));
 
 int
 ntohdomain(dhdr,bpp)
@@ -297,5 +302,159 @@ int fullen;             /* Length of same */
 	*full++ = '\0';
 	fullen--;
 	return clen;    /* Length of compressed message */
+}
+
+/*---------------------------------------------------------------------------*/
+
+static struct compress_table {
+  const char *name;
+  int offset;
+} Compress_table[128];
+
+/*---------------------------------------------------------------------------*/
+
+static char *putstring(cp, str)
+char *cp;
+const char *str;
+{
+  char *cp1;
+
+  cp1 = cp;
+  cp++;
+  while (*str) *cp++ = *str++;
+  *cp1 = cp - cp1 - 1;
+  return cp;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static char *putname(buffer, cp, name)
+char *buffer;
+char *cp;
+const char *name;
+{
+
+  const char *cp1;
+  int i;
+
+  for (; ; ) {
+    for (i = 0; Compress_table[i].name; i++)
+      if (!strcmp(Compress_table[i].name, name))
+	return put16(cp, 0xc000 | Compress_table[i].offset);
+    for (cp1 = name; *cp1 && *cp1 != '.'; cp1++) ;
+    if (!(*cp++ = cp1 - name)) break;
+    Compress_table[i].name = name;
+    Compress_table[i].offset = cp - buffer - 1;
+    Compress_table[i+1].name = 0;
+    while (name < cp1) *cp++ = *name++;
+    if (*name) name++;
+  }
+  return cp;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static char *putq(buffer, cp, rrp)
+char *buffer;
+char *cp;
+const struct rr *rrp;
+{
+  for (; rrp; rrp = rrp->next) {
+    cp = putname(buffer, cp, rrp->name);
+    cp = put16(cp, rrp->type);
+    cp = put16(cp, rrp->class);
+  }
+  return cp;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static char *putrr(buffer, cp, rrp)
+char *buffer;
+char *cp;
+const struct rr *rrp;
+{
+  char *cp1;
+
+  for (; rrp; rrp = rrp->next) {
+    cp = putname(buffer, cp, rrp->name);
+    cp = put16(cp, rrp->type);
+    cp = put16(cp, rrp->class);
+    cp1 = put32(cp, rrp->ttl);
+    cp = cp1 + 2;
+    switch (rrp->type) {
+    case TYPE_A:
+      cp = put32(cp, rrp->rdata.addr);
+      break;
+    case TYPE_CNAME:
+    case TYPE_MB:
+    case TYPE_MG:
+    case TYPE_MR:
+    case TYPE_NS:
+    case TYPE_PTR:
+      cp = putname(buffer, cp, rrp->rdata.name);
+      break;
+    case TYPE_HINFO:
+      cp = putstring(cp, rrp->rdata.hinfo.cpu);
+      cp = putstring(cp, rrp->rdata.hinfo.os);
+      break;
+    case TYPE_MX:
+      cp = put16(cp, rrp->rdata.mx.pref);
+      cp = putname(buffer, cp, rrp->rdata.mx.exch);
+      break;
+    case TYPE_SOA:
+      cp = putname(buffer, cp, rrp->rdata.soa.mname);
+      cp = putname(buffer, cp, rrp->rdata.soa.rname);
+      cp = put32(cp, rrp->rdata.soa.serial);
+      cp = put32(cp, rrp->rdata.soa.refresh);
+      cp = put32(cp, rrp->rdata.soa.retry);
+      cp = put32(cp, rrp->rdata.soa.expire);
+      cp = put32(cp, rrp->rdata.soa.minimum);
+      break;
+    case TYPE_TXT:
+      cp = putstring(cp, rrp->rdata.name);
+      break;
+    default:
+      break;
+    }
+    put16(cp1, cp - cp1 - 2);
+  }
+  return cp;
+}
+
+/*---------------------------------------------------------------------------*/
+
+struct mbuf *htondomain(dhp)
+const struct dhdr *dhp;
+{
+
+  char *cp;
+  int tmp;
+  struct mbuf *bp;
+
+  Compress_table[0].name = 0;
+  bp = alloc_mbuf(512);
+  if (!bp) return 0;
+  cp = bp->data;
+  cp = put16(cp, dhp->id);
+  tmp = 0;
+  if (dhp->qr) tmp |= 0x8000;
+  tmp |= (dhp->opcode & 0xf) << 11;
+  if (dhp->aa) tmp |= 0x0400;
+  if (dhp->tc) tmp |= 0x0200;
+  if (dhp->rd) tmp |= 0x0100;
+  if (dhp->ra) tmp |= 0x0080;
+  tmp |= (dhp->rcode & 0xf);
+  cp = put16(cp, tmp);
+  cp = put16(cp, dhp->qdcount);
+  cp = put16(cp, dhp->ancount);
+  cp = put16(cp, dhp->nscount);
+  cp = put16(cp, dhp->arcount);
+  cp = putq(bp->data, cp, dhp->questions);
+  cp = putrr(bp->data, cp, dhp->answers);
+  cp = putrr(bp->data, cp, dhp->authority);
+  cp = putrr(bp->data, cp, dhp->additional);
+  bp->cnt = cp - bp->data;
+  return bp;
 }
 
