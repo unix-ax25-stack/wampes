@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.23 1994/09/26 15:47:04 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.24 1994/10/25 10:22:15 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -15,7 +15,7 @@ TARGETS    = \
 	     connect2 \
 	     filter \
 	     makeiprt \
-	     s2m
+	     ms2mm
 
 all:;   @case "`uname -sr`" in \
 	HP-UX*) \
@@ -129,10 +129,10 @@ makeiprt: makeiprt.o $(LIBS)
 	@sleep 1
 	$(LD) $(LDFLAGS) makeiprt.o $(LIBS) $(SLIBS) -o $@
 
-s2m:    s2m.o $(LIBS)
+ms2mm:  ms2mm.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
-	$(LD) $(LDFLAGS) s2m.o $(LIBS) $(SLIBS) -o $@
+	$(LD) $(LDFLAGS) ms2mm.o $(LIBS) $(SLIBS) -o $@
 
 install:;
 

@@ -1,9 +1,11 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/ms2mm.c,v 1.2 1994/09/05 12:47:34 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/ms2mm.c,v 1.3 1994/10/25 10:22:16 deyke Exp $";
 #endif
 
 #include <stdio.h>
 #include <string.h>
+
+/*---------------------------------------------------------------------------*/
 
 static void print_header(int n)
 {
@@ -24,9 +26,8 @@ static void print_header(int n)
 
 /*---------------------------------------------------------------------------*/
 
-int main()
+int main(void)
 {
-
   char line[1024];
 
   while (gets(line)) {
@@ -44,7 +45,6 @@ int main()
       puts(line);
     }
   }
-
   return 0;
 }
 

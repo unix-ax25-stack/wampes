@@ -1,14 +1,14 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mkrc,v 1.8 1994/10/21 11:54:27 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mkrc,v 1.9 1994/10/25 10:22:16 deyke Exp $
 
-for i in 1 2 3 4 ; do
-cat >i$i << EOF
+for i in 1 2 3 4 5 6 7 8 9; do
+cat > i${i} << EOF
 
-hostname     test$i
-ax25 mycall  test$i
-ip address   $i.$i.$i.$i
-netrom ident test$i
+hostname test${i}
+ax25 mycall test${i}
+ip address ${i}.${i}.${i}.${i}
+netrom ident test${i}
 
 attach asy 7f000001 4713 kissui i 0 256 9600
 

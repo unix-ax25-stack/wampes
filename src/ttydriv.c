@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.24 1994/09/19 17:08:08 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.25 1994/10/25 10:22:14 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -55,7 +55,7 @@ enum e_keyaction {
 };
 
 struct keytable {
-	const char str[8];
+	char str[8];
 	enum e_ttytype ttytype;
 	enum e_keyaction keyaction;
 };

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.1 1994/10/21 11:55:13 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.2 1994/10/25 10:22:08 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -13,12 +13,13 @@
 #include "cmdparse.h"
 #include "commands.h"
 
-#define DEFAULTDELAY    600             /* Default delay (1 minute) */
-#define FLEXBUF         13              /* Size of flexnet call in ascii */
+#define DEFAULTDELAY    600     /* Default delay (1 minute) */
+#define FLEXBUF         13      /* Size of flexnet call in ascii */
 #define FLEXLEN         (AXALEN+1)      /* Length of flexnet call */
-#define LENPOLL         201             /* Total length of poll packet */
-#define LENROUT         256             /* Maximum length of rout packet */
-#define MAXDELAY        3000            /* Maximum delay (5 minutes) */
+#define LENPOLL         201     /* Total length of poll packet */
+#define LENROUT         256     /* Maximum length of rout packet */
+#define MAXDELAY        3000    /* Maximum delay (5 minutes) */
+#define MAXQCALLS       50      /* Maximum # of calls in qury packet */
 #define POLLINTERVAL    (5*60*1000L)    /* Time between polls (5 minutes) */
 
 #define FLEX_INIT       '0'     /* Link initialization */
@@ -27,6 +28,12 @@
 #define FLEX_ROUT       '3'     /* Routing information */
 #define FLEX_QURY       '6'     /* Path query */
 #define FLEX_RSLT       '7'     /* Query result */
+
+enum e_token {
+	NOTOKEN,                /* I do not have token */
+	WANTTOKEN,              /* I do not have token, but did request it */
+	HAVETOKEN               /* I have token */
+};
 
 struct peer {
 	struct peer *next;      /* Linked-list pointer */
@@ -37,7 +44,8 @@ struct peer {
 	int32 lastpolltime;     /* Time of last poll (ms) */
 	struct ax25_cb *axp;    /* AX.25 control block pointer */
 	int id;                 /* Last AX.25 control block id */
-	int havetoken;          /* True if allowed to send routing infos */
+	enum e_token token;     /* Token state */
+	int permanent;          /* True if peer was created manually */
 };
 
 struct neighbor {
@@ -51,6 +59,15 @@ struct dest {
 	struct dest *next;      /* Linked-list pointer */
 	char call[FLEXLEN];     /* Flexnet call */
 	struct neighbor *neighbors;     /* List of neighbors */
+};
+
+struct querypkt {
+	int hopcnt;             /* Hop count */
+	int qsonum;             /* QSO number */
+	char srccall[AXALEN];   /* Source call in AX.25 format */
+	char destcall[AXALEN];  /* Destination call in AX.25 format */
+	int numcalls;           /* Number of calls in bufs array */
+	char bufs[MAXQCALLS][AXBUF];    /* Calls in ascii format */
 };
 
 static struct dest *Dests;      /* List of destinations */
@@ -73,23 +90,9 @@ static int flexsetcall(char *call, const char *ascii)
 		printf("Invalid call \"%s\"\n", ascii);
 		return (-1);
 	}
-	call[ALEN+1] = call[ALEN];
+	call[ALEN + 1] = call[ALEN];
 	return 0;
 }
-
-/*---------------------------------------------------------------------------*/
-
-#if 0
-
-static int flexsetcall_no_mesg(char *call, const char *ascii)
-{
-	if (setcall(call, (char *) ascii))
-		return (-1);
-	call[ALEN+1] = call[ALEN];
-	return 0;
-}
-
-#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -157,7 +160,7 @@ static void update_axroute(const struct dest *pd)
 	if (!(rpp = ax_routeptr(pn->peer->call, 0)))
 		return;
 	dest_is_peer = addreq(pd->call, pn->peer->call);
-	for (addrcp(call, pd->call); ; call[ALEN] += 2) {
+	for (addrcp(call, pd->call);; call[ALEN] += 2) {
 		if (!(rpd = ax_routeptr(call, 1)))
 			return;
 		if (!rpd->perm) {
@@ -171,7 +174,7 @@ static void update_axroute(const struct dest *pd)
 			for (; rpd; rpd = rpd->digi)
 				rpd->time = secclock();
 		}
-		if ((call[ALEN] & SSID) >= (pd->call[ALEN+1] & SSID))
+		if ((call[ALEN] & SSID) >= (pd->call[ALEN + 1] & SSID))
 			break;
 	}
 }
@@ -186,8 +189,8 @@ static void delete_unreachables(void)
 	struct neighbor **ppn;
 	struct neighbor *pn;
 
-	for (ppd = &Dests; (pd = *ppd); ) {
-		for (ppn = &pd->neighbors; (pn = *ppn); ) {
+	for (ppd = &Dests; (pd = *ppd);) {
+		for (ppn = &pd->neighbors; (pn = *ppn);) {
 			if (!pn->delay && !pn->lastdelay) {
 				*ppn = pn->next;
 				free(pn);
@@ -212,32 +215,24 @@ static void update_delay(const char *destcall, struct peer *pp, int delay)
 	struct dest *pd;
 	struct neighbor *pn;
 
-	/* Find or create destination */
-
 	if (!(pd = find_dest(destcall))) {
 		if (!delay)
 			return;
-		if (!(pd = (struct dest *) calloc(1, sizeof(struct dest ))))
+		if (!(pd = (struct dest *) calloc(1, sizeof(struct dest))))
 			return;
 		pd->next = Dests;
 		Dests = pd;
 		flexaddrcp(pd->call, destcall);
 	}
-
-	/* Find or create neighbor */
-
 	if (!(pn = find_neighbor(pd, pp))) {
 		if (!delay)
 			return;
-		if (!(pn = (struct neighbor *) calloc(1, sizeof(struct neighbor ))))
+		if (!(pn = (struct neighbor *) calloc(1, sizeof(struct neighbor))))
 			return;
 		pn->next = pd->neighbors;
 		pd->neighbors = pn;
 		pn->peer = pp;
 	}
-
-	/* Update delay */
-
 	pn->delay = delay;
 }
 
@@ -293,16 +288,17 @@ static struct ax25_cb *setaxp(struct peer *pp)
 	struct neighbor *pn;
 
 	if (!(pp->axp = find_ax25(pp->call))) {
-		memset((char *) & hdr, 0, sizeof(struct ax25 ));
+		memset((char *) &hdr, 0, sizeof(struct ax25));
 		addrcp(hdr.dest, pp->call);
 		if (!(pp->axp = open_ax25(&hdr, AX_ACTIVE, 0, 0, 0, 0)))
 			return 0;
 	}
 	if (pp->id != pp->axp->id) {
 		pp->id = pp->axp->id;
-		pp->lastpolltime = 0;
+		pp->token = NOTOKEN;
 		for (pd = Dests; pd; pd = pd->next)
-			if ((pn = find_neighbor(pd, pp)))
+			if (!addreq(pd->call, pp->call) &&
+			    (pn = find_neighbor(pd, pp)))
 				pn->delay = pn->lastdelay = 0;
 		send_init(pp);
 		send_poll(pp);
@@ -330,7 +326,7 @@ static void send_rout(struct peer *pp)
 		if (addreq(pd->call, pp->call))
 			continue;
 		if (!(pnpeer = find_neighbor(pd, pp))) {
-			if (!(pnpeer = (struct neighbor *) calloc(1, sizeof(struct neighbor ))))
+			if (!(pnpeer = (struct neighbor *) calloc(1, sizeof(struct neighbor))))
 				break;
 			pnpeer->next = pd->neighbors;
 			pd->neighbors = pnpeer;
@@ -340,19 +336,24 @@ static void send_rout(struct peer *pp)
 		pnbest = find_best_neighbor(pd);
 		if (pnbest && pnbest != pnpeer)
 			delay = pnbest->delay;
-		if (!(lastdelay = pnpeer->lastdelay)) lastdelay = MAXDELAY + 1;
+		if (!(lastdelay = pnpeer->lastdelay))
+			lastdelay = MAXDELAY + 1;
 		if (delay > lastdelay || iround(1.25 * delay) < lastdelay) {
-			if (!pp->havetoken) {
-				if ((bp = alloc_mbuf(3))) {
+#if 0
+			if (pp->token != HAVETOKEN) {
+				if (pp->token != WANTTOKEN &&
+				    (bp = alloc_mbuf(3))) {
 					cp = bp->data;
 					*cp++ = FLEX_ROUT;
 					*cp++ = '+';
 					*cp++ = '\r';
 					bp->cnt = 3;
 					send_ax25(pp->axp, bp, PID_FLEXNET);
+					pp->token = WANTTOKEN;
 				}
 				return;
 			}
+#endif
 			if (bp && (cp - bp->data) > LENROUT - 14) {
 				*cp++ = '\r';
 				bp->cnt = cp - bp->data;
@@ -368,8 +369,9 @@ static void send_rout(struct peer *pp)
 			for (i = 0; i < ALEN; i++)
 				*cp++ = (pd->call[i] >> 1) & 0x7f;
 			*cp++ = '0' + ((pd->call[ALEN] & SSID) >> 1);
-			*cp++ = '0' + ((pd->call[ALEN+1] & SSID) >> 1);
-			if (delay > MAXDELAY) delay = 0;
+			*cp++ = '0' + ((pd->call[ALEN + 1] & SSID) >> 1);
+			if (delay > MAXDELAY)
+				delay = 0;
 			sprintf(cp, "%d ", pnpeer->lastdelay = delay);
 			while (*cp)
 				cp++;
@@ -429,17 +431,61 @@ static void process_changes(void)
 
 /*---------------------------------------------------------------------------*/
 
-static void polltimer_expired(void *unused)
+static void delete_peer(struct peer *peer)
 {
+
+	struct dest *pd;
+	struct neighbor **ppn;
+	struct neighbor *pn;
+	struct peer **ppp;
 	struct peer *pp;
 
+	for (ppp = &Peers; (pp = *ppp);) {
+		if (pp == peer) {
+			for (pd = Dests; pd; pd = pd->next) {
+				for (ppn = &pd->neighbors; (pn = *ppn);) {
+					if (pn->peer == pp) {
+						*ppn = pn->next;
+						free(pn);
+						break;
+					} else {
+						ppn = &pn->next;
+					}
+				}
+			}
+			if ((pp->axp = find_ax25(pp->call)))
+				disc_ax25(pp->axp);
+			*ppp = pp->next;
+			free(pp);
+			if (!Peers)
+				stop_timer(&Polltimer);
+			return;
+		} else {
+			ppp = &pp->next;
+		}
+	}
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void polltimer_expired(void *unused)
+{
+
+	struct peer *pp;
+	struct peer *ppnext = 0;
+
 	start_timer(&Polltimer);
-	for (pp = Peers; pp; pp = pp->next) {
+	for (pp = Peers; pp; pp = ppnext) {
+		ppnext = pp->next;
 		if (pp->lastpolltime)
-			pp->id--;
+			if (pp->permanent)
+				pp->id--;
+			else
+				delete_peer(pp);
+	}
+	for (pp = Peers; pp; pp = pp->next)
 		if (setaxp(pp) && !pp->lastpolltime)
 			send_poll(pp);
-	}
 	process_changes();
 }
 
@@ -449,13 +495,13 @@ static struct peer *create_peer(const char *call)
 {
 	struct peer *pp;
 
-	if ((pp = (struct peer *) calloc(1, sizeof(struct peer )))) {
+	if ((pp = (struct peer *) calloc(1, sizeof(struct peer)))) {
 		if (!Peers) {
 			Polltimer.func = polltimer_expired;
 			Polltimer.arg = 0;
 			set_timer(&Polltimer, POLLINTERVAL);
-			start_timer(&Polltimer);
 		}
+		start_timer(&Polltimer);
 		pp->next = Peers;
 		Peers = pp;
 		flexaddrcp(pp->call, call);
@@ -471,8 +517,8 @@ static int doflexnetdest(int argc, char *argv[], void *p)
 
 	char buf[FLEXBUF];
 	char call[FLEXLEN];
-	int lowest;
-	int newlowest;
+	int curr;
+	int next;
 	struct dest *pd1;
 	struct dest *pd;
 	struct neighbor *pn;
@@ -490,12 +536,12 @@ static int doflexnetdest(int argc, char *argv[], void *p)
 	for (pd = Dests; pd; pd = pd->next) {
 		if (!pd1 || pd == pd1) {
 			printf("%-12s", sprintflexcall(buf, pd->call));
-			for (lowest = 1; lowest != (newlowest = 0x7fffffff); lowest = newlowest)
+			for (curr = 1; curr != (next = 0x7fffffff); curr = next)
 				for (pn = pd->neighbors; pn; pn = pn->next)
-					if (pn->delay == lowest)
+					if (pn->delay == curr)
 						printf("  %s (%d)", sprintflexcall(buf, pn->peer->call), pn->delay);
-					else if (pn->delay > lowest && pn->delay < newlowest)
-						newlowest = pn->delay;
+					else if (pn->delay > curr && pn->delay < next)
+						next = pn->delay;
 			putchar('\n');
 		}
 	}
@@ -504,9 +550,30 @@ static int doflexnetdest(int argc, char *argv[], void *p)
 
 /*---------------------------------------------------------------------------*/
 
+static int doflexnetdestdebug(int argc, char *argv[], void *p)
+{
+
+	char buf[FLEXBUF];
+	struct dest *pd;
+	struct neighbor *pn;
+
+	printf("Call          Neighbors\n");
+	for (pd = Dests; pd; pd = pd->next) {
+		printf("%-12s", sprintflexcall(buf, pd->call));
+		for (pn = pd->neighbors; pn; pn = pn->next)
+			printf("  %s (D=%d L=%d)", sprintflexcall(buf, pn->peer->call), pn->delay, pn->lastdelay);
+		putchar('\n');
+	}
+	return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static int doflexnetlinkadd(int argc, char *argv[], void *p)
 {
+
 	char call[FLEXLEN];
+	struct peer *pp;
 
 	if (flexsetcall(call, argv[1]))
 		return 1;
@@ -518,10 +585,11 @@ static int doflexnetlinkadd(int argc, char *argv[], void *p)
 		printf("Duplicate link \"%s\"\n", argv[1]);
 		return 1;
 	}
-	if (!create_peer(call)) {
+	if (!(pp = create_peer(call))) {
 		printf(Nospace);
 		return 1;
 	}
+	pp->permanent = 1;
 	return 0;
 }
 
@@ -531,41 +599,17 @@ static int doflexnetlinkdel(int argc, char *argv[], void *p)
 {
 
 	char call[FLEXLEN];
-	struct dest *pd;
-	struct neighbor **ppn;
-	struct neighbor *pn;
-	struct peer **ppp;
 	struct peer *pp;
 
 	if (flexsetcall(call, argv[1]))
 		return 1;
-	for (ppp = &Peers; (pp = *ppp); ) {
-		if (addreq(pp->call, call)) {
-			for (pd = Dests; pd; pd = pd->next) {
-				for (ppn = &pd->neighbors; (pn = *ppn); ) {
-					if (pn->peer == pp) {
-						*ppn = pn->next;
-						free(pn);
-						break;
-					} else {
-						ppn = &pn->next;
-					}
-				}
-			}
-			if ((pp->axp = find_ax25(pp->call)))
-				disc_ax25(pp->axp);
-			*ppp = pp->next;
-			free(pp);
-			if (!Peers)
-				stop_timer(&Polltimer);
-			process_changes();
-			return 0;
-		} else {
-			ppp = &pp->next;
-		}
+	if (!(pp = find_peer(call))) {
+		printf("Link \"%s\" not found\n", argv[1]);
+		return 1;
 	}
-	printf("Link \"%s\" not found\n", argv[1]);
-	return 1;
+	delete_peer(pp);
+	process_changes();
+	return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -575,13 +619,21 @@ static int doflexnetlinklist(int argc, char *argv[], void *p)
 
 	char buf[FLEXBUF];
 	int state;
+	static const char tokenstr[] = "NWY";
 	struct ax25_cb *axp;
 	struct peer *pp;
 
-	printf("Call         Remote  Local Smooth State\n");
+	printf("Call         Remote  Local Smooth P T State\n");
 	for (pp = Peers; pp; pp = pp->next) {
 		state = (axp = find_ax25(pp->call)) ? axp->state : LAPB_DISCONNECTED;
-		printf("%-12s %6d %6d %6d %s\n", sprintflexcall(buf, pp->call), pp->remdelay, pp->locdelay, iround(pp->delay), Ax25states[state]);
+		printf("%-12s %6d %6d %6d %c %c %s\n",
+		       sprintflexcall(buf, pp->call),
+		       pp->remdelay,
+		       pp->locdelay,
+		       iround(pp->delay),
+		       pp->permanent ? 'P' : ' ',
+		       tokenstr[pp->token],
+		       Ax25states[state]);
 	}
 	return 0;
 }
@@ -604,59 +656,206 @@ static int doflexnetlink(int argc, char *argv[], void *p)
 
 /*---------------------------------------------------------------------------*/
 
-#if 0
+static int addrmatch(const char *axcall, const char *flexcall)
+{
+	if (*axcall++ != *flexcall++) return 0;
+	if (*axcall++ != *flexcall++) return 0;
+	if (*axcall++ != *flexcall++) return 0;
+	if (*axcall++ != *flexcall++) return 0;
+	if (*axcall++ != *flexcall++) return 0;
+	if (*axcall++ != *flexcall++) return 0;
+	return ((*axcall & SSID) >= (flexcall[0] & SSID) &&
+		(*axcall & SSID) <= (flexcall[1] & SSID));
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int decode_query_packet(struct mbuf *bp, struct querypkt *qp)
+{
+
+	char *cp;
+	int chr;
+	int gotsrc;
+	int i;
+
+	if ((chr = PULLCHAR(&bp)) == -1)
+		goto discard;
+	qp->hopcnt = chr - ' ';
+	if (qp->hopcnt < 0 || qp->hopcnt > 30)
+		goto discard;
+	qp->qsonum = 0;
+	for (i = 0; i < 5; i++) {
+		chr = PULLCHAR(&bp);
+		if (chr == ' ')
+			continue;
+		if (chr < '0' || chr > '9')
+			goto discard;
+		qp->qsonum = qp->qsonum * 10 + chr - '0';
+	}
+	gotsrc = 0;
+	qp->numcalls = 0;
+	cp = qp->bufs[qp->numcalls];
+	for (;;) {
+		chr = PULLCHAR(&bp);
+		if (chr == -1)
+			goto discard;
+		if ((chr == ' ' || chr == '\r') && cp != qp->bufs[qp->numcalls]) {
+			*cp = 0;
+			if (setcall(qp->destcall, qp->bufs[qp->numcalls]))
+				goto discard;
+			qp->numcalls++;
+			if (!gotsrc) {
+				addrcp(qp->srccall, qp->destcall);
+				gotsrc = 1;
+			}
+			cp = qp->bufs[qp->numcalls];
+		}
+		if (chr == ' ')
+			continue;
+		else if (chr == '\r')
+			break;
+		else if ((chr >= '0' && chr <= '9') ||
+			 (chr >= 'A' && chr <= 'Z') ||
+			 (chr >= 'a' && chr <= 'z') ||
+			 (chr == '-')) {
+			if (qp->numcalls > MAXQCALLS)
+				goto discard;
+			*cp++ = chr;
+			if (cp - qp->bufs[qp->numcalls] >= AXBUF)
+				goto discard;
+		} else
+			goto discard;
+	}
+	free_p(bp);
+	return 0;
+
+      discard:
+	free_p(bp);
+	return (-1);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void print_query_packet(const struct querypkt *qp)
+{
+	int i;
+
+	printf("Flexnet routing:");
+	for (i = 0; i < qp->numcalls; i++)
+		printf(" %s", qp->bufs[i]);
+	putchar('\n');
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int send_query_packet(int type, const struct querypkt *qp, const char *call)
+{
+
+	char *cp;
+	int i;
+	struct dest *pd;
+	struct mbuf *bp;
+	struct neighbor *pn;
+
+	for (pd = Dests; pd; pd = pd->next)
+		if (addrmatch(call, pd->call))
+			break;
+	if (!pd)
+		return (-1);
+	if (!(pn = find_best_neighbor(pd)))
+		return (-1);
+	if (!setaxp(pn->peer))
+		return (-1);
+	if (!(bp = alloc_mbuf(LENROUT)))
+		return (-1);
+	cp = bp->data;
+	*cp++ = type;
+	*cp++ = ' ' + qp->hopcnt;
+	sprintf(cp, "%05d", qp->qsonum);
+	cp += 5;
+	for (i = 0; i < qp->numcalls; i++) {
+		if (cp - bp->data > LENROUT - 11)
+			return (-1);
+		if (i > 0)
+			*cp++ = ' ';
+		strcpy(cp, qp->bufs[i]);
+		while (*cp)
+			cp++;
+	}
+	*cp++ = '\r';
+	bp->cnt = cp - bp->data;
+	send_ax25(pn->peer->axp, bp, PID_FLEXNET);
+	return 0;
+}
+
+/*---------------------------------------------------------------------------*/
 
 static int doflexnetquery(int argc, char *argv[], void *p)
 {
 
-	char asciicall[AXBUF];
-	char call[FLEXLEN];
-	char destcall[FLEXBUF];
-	char myasciicall[AXBUF];
-	char viacall[AXBUF];
-	struct dest *p1;
-	struct mbuf *bp;
-	struct neighbor *p2;
-	struct peer *p3;
+	char *cp;
+	char buf[AXBUF];
+	int n;
+	struct ax_route *rp;
+	struct ax_route *rp_stack[20];
+	struct dest *pd;
+	struct iface *ifp;
+	struct neighbor *pn;
+	struct querypkt querypkt;
 
-	if (flexsetcall(call, argv[1]))
-		return 1;
-	pax25(asciicall, call);
-	pax25(myasciicall, Mycall);
-	if (ismyax25addr(call)) {
-		printf("Cannot query myself\n");
+	memset((char *) &querypkt, 0, sizeof(struct querypkt));
+	if (setcall(querypkt.destcall, argv[1])) {
+		printf("Invalid call \"%s\"\n", argv[1]);
 		return 1;
 	}
-	if (!(p1 = find_dest(call))) {
+	for (pd = Dests; pd; pd = pd->next)
+		if (addrmatch(querypkt.destcall, pd->call))
+			break;
+	if (!pd) {
 		printf("Destination \"%s\" not found\n", argv[1]);
 		return 1;
 	}
-	sprintflexcall(destcall, p1->call);
-	if (!(p2 = find_best_neighbor(p1)))
-		goto error;
-	printf("%s, %d\n", destcall, p2->delay);
-	if (addreq(p1->call, p2->peer->call)) {
-		printf("*** flexnet routing: %s %s\n", myasciicall, asciicall);
+	if (!(pn = find_best_neighbor(pd))) {
+		printf("Destination \"%s\" not reachable\n", argv[1]);
 		return 1;
 	}
-	p3 = p2->peer;
-	if (!setaxp(p3))
-		goto error;
-	pax25(viacall, p3->call);
-	bp = alloc_mbuf(200);
-	if (!bp)
-		goto error;
-	sprintf(bp->data, "%c!00000%s %s %s \r", FLEX_QURY, myasciicall, viacall, asciicall);
-	bp->cnt = strlen(bp->data);
-	send_ax25(p3->axp, bp, PID_FLEXNET);
+	if (!(rp = ax_routeptr(pn->peer->call, 0))) {
+		printf("No AX.25 route for link \"%s\"\n", pax25(buf, pn->peer->call));
+		return 1;
+	}
+	ifp = 0;
+	for (n = 0; rp; rp = rp->digi) {
+		rp_stack[n++] = rp;
+		ifp = rp->ifp;
+	}
+	addrcp(querypkt.srccall, ifp ? ifp->hwaddr : Mycall);
+	pax25(querypkt.bufs[0], querypkt.srccall);
+	querypkt.numcalls = 1;
+	while (--n >= 0) {
+		if (querypkt.numcalls >= MAXQCALLS) {
+			printf("Too many hops\n");
+			return 1;
+		}
+		cp = querypkt.bufs[querypkt.numcalls++];
+		pax25(cp, rp_stack[n]->target);
+		if (n > 0)
+			for (; (*cp = Xtolower(*cp)); cp++) ;
+	}
+	if (addreq(pd->call, pn->peer->call)) {
+		print_query_packet(&querypkt);
+		return 0;
+	}
+	if (querypkt.numcalls >= MAXQCALLS) {
+		printf("Too many hops\n");
+		return 1;
+	}
+	pax25(querypkt.bufs[querypkt.numcalls++], querypkt.destcall);
+	if (send_query_packet(FLEX_QURY, &querypkt, pn->peer->call))
+		printf("Could not send query to %s\n", pax25(buf, pn->peer->call));
+	else
+		printf("Query sent to %s\n", pax25(buf, pn->peer->call));
 	return 0;
-
-error:
-	printf("Usage: flexnet query <call>\n");  /*****???????????*******/
-	return 1;
 }
-
-#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -665,10 +864,9 @@ int doflexnet(int argc, char *argv[], void *p)
 
 	static struct cmds Flexnetcmds[] = {
 		{ "dest",      doflexnetdest,      0, 0, 0 },
+		{ "destdebug", doflexnetdestdebug, 0, 0, 0 },
 		{ "link",      doflexnetlink,      0, 0, 0 },
-#if 0
 		{ "query",     doflexnetquery,     0, 2, "flexnet query <call>" },
-#endif
 		{ 0,           0,                  0, 0, 0 }
 	};
 
@@ -682,9 +880,9 @@ static int pullnumber(struct mbuf **bpp, int *val)
 	int chr;
 
 	*val = 0;
-	for (; ; ) {
+	for (;;) {
 		chr = PULLCHAR(bpp);
-		if (chr == -1 || chr < '0' || chr > '9')
+		if (chr < '0' || chr > '9')
 			return chr;
 		*val = *val * 10 + chr - '0';
 	}
@@ -718,11 +916,19 @@ static int pullflexcall(struct mbuf **bpp, int chr, char *call)
 
 static void recv_init(struct peer *pp, struct mbuf *bp)
 {
+
 	int chr;
+	struct dest *pd;
+	struct neighbor *pn;
 
 	if ((chr = PULLCHAR(&bp)) != -1)
-		pp->call[ALEN+1] = ((chr << 1) & SSID) | 0x60;
+		pp->call[ALEN + 1] = ((chr << 1) & SSID) | 0x60;
 	free_p(bp);
+	pp->token = NOTOKEN;
+	for (pd = Dests; pd; pd = pd->next)
+		if (!addreq(pd->call, pp->call) &&
+		    (pn = find_neighbor(pd, pp)))
+			pn->delay = pn->lastdelay = 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -768,7 +974,7 @@ static void recv_rprt(struct peer *pp, struct mbuf *bp)
 
 /*---------------------------------------------------------------------------*/
 
-static void recv_poll(struct peer *pp, struct mbuf *bp)
+static void recv_poll(const struct peer *pp, struct mbuf *bp)
 {
 	free_p(bp);
 	if ((bp = alloc_mbuf(20))) {
@@ -789,7 +995,7 @@ static void recv_rout(struct peer *pp, struct mbuf *bp)
 	int delay;
 	struct mbuf *bp2;
 
-	for (; ; ) {
+	for (;;) {
 		chr = PULLCHAR(&bp);
 		if ((chr >= '0' && chr <= '9') || (chr >= 'A' && chr <= 'Z')) {
 			if (pullflexcall(&bp, chr, call))
@@ -810,11 +1016,11 @@ static void recv_rout(struct peer *pp, struct mbuf *bp)
 				*cp++ = '\r';
 				bp2->cnt = 3;
 				send_ax25(pp->axp, bp2, PID_FLEXNET);
-				pp->havetoken = 0;
+				pp->token = NOTOKEN;
 			}
 			break;
 		} else if (chr == '-') {
-			pp->havetoken = 1;
+			pp->token = HAVETOKEN;
 			break;
 		} else {
 			break;
@@ -825,135 +1031,68 @@ static void recv_rout(struct peer *pp, struct mbuf *bp)
 
 /*---------------------------------------------------------------------------*/
 
-#if 0
-
-static void recv_rslt(struct peer *pe, struct mbuf *bp)
+static void recv_qury(struct peer *pp, struct mbuf *bp)
 {
 
 	char *cp;
-	char call2[FLEXLEN];
-	char call[AXBUF];
-	int i;
+	int n;
+	struct ax_route *rp;
+	struct ax_route *rp_stack[20];
 	struct dest *pd;
 	struct neighbor *pn;
-	struct peer *pp;
+	struct querypkt querypkt;
 
-	*bp->data = FLEX_RSLT; /* restore packet type */
-	for (cp = call, i = 0; i < AXBUF - 1; i++) {
-		if ((*cp = bp->data[7+i]) == ' ')
+	if (decode_query_packet(bp, &querypkt))
+		return;
+	querypkt.hopcnt++;
+	if (ismyax25addr(querypkt.destcall)) {
+		send_query_packet(FLEX_RSLT, &querypkt, querypkt.srccall);
+		return;
+	}
+	querypkt.numcalls--;
+	for (pd = Dests; pd; pd = pd->next)
+		if (addrmatch(querypkt.destcall, pd->call))
 			break;
-		cp++;
-	}
-	*cp = 0;
-	if (flexsetcall_no_mesg(call2, call))
-		goto discard;
-	if (addreq(call2, Mycall)) {
-		for (cp = bp->data + 7, i = bp->cnt - 7; (i > 0) && (*cp != '\r'); cp++, i--)
-			;
-		*cp = 0;
-		printf("*** flexnet routing: %s\n", bp->data + 7);
-		goto discard;
-	}
-	if (!(pd = find_dest(call2)))
-		goto discard;
+	if (!pd)
+		return;
 	if (!(pn = find_best_neighbor(pd)))
-		goto discard;
-	pp = pn->peer;
-	if (!setaxp(pp))
-		goto discard;
-	send_ax25(pp->axp, bp, PID_FLEXNET);
-	return;
-
-discard:
-	free_p(bp);
+		return;
+	if (!(rp = ax_routeptr(pn->peer->call, 0)))
+		return;
+	for (n = 0; rp; rp = rp->digi)
+		rp_stack[n++] = rp;
+	while (--n >= 0) {
+		if (querypkt.numcalls >= MAXQCALLS)
+			return;
+		cp = querypkt.bufs[querypkt.numcalls++];
+		pax25(cp, rp_stack[n]->target);
+		if (n > 0)
+			for (; (*cp = Xtolower(*cp)); cp++) ;
+	}
+	if (addreq(pd->call, pn->peer->call)) {
+		send_query_packet(FLEX_RSLT, &querypkt, querypkt.srccall);
+	} else {
+		if (querypkt.numcalls >= MAXQCALLS)
+			return;
+		pax25(querypkt.bufs[querypkt.numcalls++], querypkt.destcall);
+		send_query_packet(FLEX_QURY, &querypkt, pn->peer->call);
+	}
 }
-
-#endif
 
 /*---------------------------------------------------------------------------*/
 
-#if 0
-
-static void recv_qury(struct peer *pe, struct mbuf *bp)
+static void recv_rslt(struct peer *pp, struct mbuf *bp)
 {
+	struct querypkt querypkt;
 
-	char *cp;
-	char call[FLEXLEN];
-	char rcall[AXBUF], dcall[AXBUF];
-	int i, j;
-	struct dest *p;
-	struct mbuf *bp2;
-	struct neighbor *p1;
-	struct peer *p2;
-
-	if (!(bp2 = alloc_mbuf(pe->axp->paclen)))
-		goto discard;
-	bp2->data[bp2->cnt++] = FLEX_QURY; /* new packet is too routing enq */
-	if ((i = PULLCHAR(&bp)) < ' ')
-		goto discard; /* this is the current number of entries */
-	i -= ' ';
-	bp2->data[bp2->cnt++] = '!' + i;
-	/* now copy the five chars of the QSO number */
-	for (j = 0; j < 5; j++)
-		if ((bp2->data[bp2->cnt++] = PULLCHAR(&bp)) < ' ')
-			goto discard;
-	for (; ; ) {
-		if (bp2->cnt >= pe->axp->paclen)
-			goto discard;
-		if ((bp2->data[bp2->cnt] = PULLCHAR(&bp)) < ' ')
-			goto discard;
-		if (bp2->data[bp2->cnt++] == ' ')
-			if (i > 0)
-				i--;
-			else
-				break;
-	}
-	cp = rcall;
-	for (j = 0; j < AXBUF - 1; j++) {
-		if ((*cp = PULLCHAR(&bp)) <= ' ')
-			break;
-		cp++;
-	}
-	*cp = 0;
-	free_p(bp);
-	if (flexsetcall_no_mesg(call, rcall))
-		goto discard;
-	if (!(p = find_dest(call)))
-		goto discard;
-	if (!(p1 = find_best_neighbor(p)))
-		goto discard;
-	if (addreq(p->call, p1->peer->call)) { /* make a type 7 packet and append the call */
-		for (cp = rcall; *cp; cp++) {
-			if (bp2->cnt >= pe->axp->paclen - 1)
-				goto discard;
-			bp2->data[bp2->cnt++] = *cp;
-		}
-		bp2->data[bp2->cnt++] = '\r';
-		recv_rslt(0, bp2); /***********/
+	if (decode_query_packet(bp, &querypkt))
 		return;
-	}
-	p2 = p1->peer;
-	pax25(dcall, p2->call);
-	for (cp = dcall; *cp; cp++) {
-		if (bp2->cnt >= pe->axp->paclen - 1)
-			goto discard;
-		bp2->data[bp2->cnt++] = *cp;
-	}
-	bp2->data[bp2->cnt++] = ' ';
-	for (cp = rcall; *cp; cp++) {
-		if (bp2->cnt >= pe->axp->paclen - 1)
-			goto discard;
-		bp2->data[bp2->cnt++] = *cp;
-	}
-	bp2->data[bp2->cnt++] = '\r';
-	send_ax25(pe->axp, bp2, PID_FLEXNET);
-	return;
-discard:
-	free_p(bp2);
-	free_p(bp);
+	querypkt.hopcnt++;
+	if (ismyax25addr(querypkt.srccall))
+		print_query_packet(&querypkt);
+	else
+		send_query_packet(FLEX_RSLT, &querypkt, querypkt.srccall);
 }
-
-#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -969,7 +1108,7 @@ void flexnet_input(struct iface *iface, struct ax25_cb *axp, char *src, char *de
 		if (ismyax25addr(src))
 			goto discard;
 		addrcp(call, src);
-		call[ALEN+1] = call[ALEN];
+		call[ALEN + 1] = call[ALEN];
 		if (!(pp = create_peer(call)))
 			goto discard;
 	} else if (pp->id != axp->id) {
@@ -993,16 +1132,13 @@ void flexnet_input(struct iface *iface, struct ax25_cb *axp, char *src, char *de
 		recv_rout(pp, bp);
 		break;
 
-#if 0
 	case FLEX_QURY:
 		recv_qury(pp, bp);
 		break;
 
 	case FLEX_RSLT:
-		bp = pushdown(bp, 1);
 		recv_rslt(pp, bp);
 		break;
-#endif
 
 	default:
 		goto discard;
@@ -1011,7 +1147,7 @@ void flexnet_input(struct iface *iface, struct ax25_cb *axp, char *src, char *de
 	process_changes();
 	return;
 
-discard:
+      discard:
 	free_p(bp);
 }
 
@@ -1020,11 +1156,12 @@ discard:
 void flexnet_dump(FILE *fp, struct mbuf **bpp)
 {
 
-	char buf[16];
-	char call[16];
+	char buf[FLEXBUF];
+	char call[FLEXLEN];
 	int chr;
 	int func;
 	int i;
+	struct querypkt querypkt;
 
 	if (bpp == NULLBUFP || *bpp == NULLBUF)
 		return;
@@ -1054,7 +1191,7 @@ void flexnet_dump(FILE *fp, struct mbuf **bpp)
 
 	case FLEX_ROUT:
 		fprintf(fp, " Routing:");
-		for (; ; ) {
+		for (;;) {
 			chr = PULLCHAR(bpp);
 			if (chr == -1) {
 				goto too_short;
@@ -1082,15 +1219,20 @@ void flexnet_dump(FILE *fp, struct mbuf **bpp)
 		break;
 
 	case FLEX_QURY:
-		fprintf(fp, " Route query:\n  ");
-		while ((chr = PULLCHAR(bpp)) != -1 && chr != '\r')
-			putc(chr, fp);
-		break;
-
 	case FLEX_RSLT:
-		fprintf(fp, " Query response:\n  ");
-		while ((chr = PULLCHAR(bpp)) != -1 && chr != '\r')
-			putc(chr, fp);
+		if (func == FLEX_QURY)
+			fprintf(fp, " Route query");
+		else
+			fprintf(fp, " Query response");
+		if (decode_query_packet(*bpp, &querypkt)) {
+			*bpp = 0;
+			fprintf(fp, " - bad packet\n");
+			return;
+		}
+		*bpp = 0;
+		fprintf(fp, " - hopcnt: %d qso: %d\n  ", querypkt.hopcnt, querypkt.qsonum);
+		for (i = 0; i < querypkt.numcalls; i++)
+			printf(" %s", querypkt.bufs[i]);
 		break;
 
 	default:
@@ -1101,7 +1243,6 @@ void flexnet_dump(FILE *fp, struct mbuf **bpp)
 	putc('\n', fp);
 	return;
 
-too_short:
+      too_short:
 	fprintf(fp, " - packet too short\n");
 }
-

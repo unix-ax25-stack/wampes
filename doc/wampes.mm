@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.19 1994/10/21 11:54:29 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.20 1994/10/25 10:22:17 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
@@ -20,13 +20,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 941021" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 941025" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 941021
+Version 941025
 .S
 .SP 2
 .S 15
@@ -692,6 +692,18 @@ To enter a control character from the keyboard it has
 to be prefixed by Control-V.
 \fIText\fP has to be enclosed in double quotes if it
 contains white space.
+.H 2 "flexnet" " \fIsubcommand\fP"
+These commands control the FLEXNET service.
+.H 3 "flexnet dest" " [\fIax25_addr\fP]"
+TO BE WRITTEN.
+.H 3 "flexnet link"
+TO BE WRITTEN.
+.H 4 "flexnet link add" " \fIax25_addr\fP"
+TO BE WRITTEN.
+.H 4 "flexnet link delete" " \fIax25_addr\fP"
+TO BE WRITTEN.
+.H 3 "flexnet query" " \fIax25_addr\fP"
+TO BE WRITTEN.
 .H 2 "ftp" " \fIhostid\fP [\fIport\fP]"
 Open a FTP control channel to the specified remote host
 and enter converse mode on the new session.
