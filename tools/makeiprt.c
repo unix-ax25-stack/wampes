@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.1 1992/08/19 13:13:20 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/makeiprt.c,v 1.2 1992/11/19 13:16:25 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -343,6 +343,34 @@ static void propagate_routes(void)
 
 /*---------------------------------------------------------------------------*/
 
+static void sort_routes(void)
+{
+
+  int bits;
+  struct node *np;
+  struct route *rp;
+  struct route *rt[33];
+
+  for (np = nodes; np; np = np->next) {
+    for (bits = 0; bits <= 32; bits++)
+      rt[bits] = 0;
+    while (rp = np->routes) {
+      np->routes = rp->next;
+      rp->next = rt[rp->bits];
+      rt[rp->bits] = rp;
+    }
+    for (bits = 0; bits <= 32; bits++) {
+      while (rp = rt[bits]) {
+	rt[bits] = rp->next;
+	rp->next = np->routes;
+	np->routes = rp;
+      }
+    }
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void merge_routes(void)
 {
 
@@ -351,14 +379,13 @@ static void merge_routes(void)
   struct route *rp1;
   struct route *rp;
 
-  for (np = nodes; np; np = np->next) {
+  for (np = nodes; np; np = np->next)
 Retry:
-    for (prev = 0, rp = np->routes; rp; prev = rp, rp = rp->next)
-      for (rp1 = np->routes; rp1; rp1 = rp1->next)
-	if (rp != rp1 &&
-	    is_in(rp->dest, rp->bits, rp1->dest, rp1->bits) &&
-	    rp->iface == rp1->iface &&
-	    rp->gateway == rp1->gateway) {
+    for (prev = 0, rp = np->routes; rp; prev = rp, rp = rp->next) {
+      for (rp1 = rp->next; rp1; rp1 = rp1->next)
+	if (is_in(rp->dest, rp->bits, rp1->dest, rp1->bits)) {
+	  if (rp->iface != rp1->iface || rp->gateway != rp1->gateway)
+	    goto Nomatch;
 	  if (prev)
 	    prev->next = rp->next;
 	  else
@@ -366,7 +393,9 @@ Retry:
 	  free(rp);
 	  goto Retry;
 	}
-  }
+Nomatch:
+      ;
+    }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -463,6 +492,7 @@ int main()
   read_routes();
   create_links();
   propagate_routes();
+  sort_routes();
   merge_routes();
 #if 0
   print_links();

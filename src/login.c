@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.27 1992/11/18 18:28:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.28 1992/11/19 13:16:47 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -150,7 +150,8 @@ void fixutmpfile()
 
 /*---------------------------------------------------------------------------*/
 
-static int callvalid(const char *call)
+static int callvalid(call)
+const char *call;
 {
   int d, l;
 

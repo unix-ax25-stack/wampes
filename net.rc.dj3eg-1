@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dj3eg-1,v 1.3 1992/11/18 18:28:14 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dj3eg-1,v 1.4 1992/11/19 13:16:27 deyke Exp $
 
 hostname     dj3eg-1
 ax25 mycall  dj3eg-1
@@ -13,7 +13,7 @@ ax25 route add axip default
 
 axip route add dk0hu 15.136.56.6
 
-route add  default          ipip     15.136.56.6
+route add  44/8             ipip     15.136.56.6
 
 source /tcp/netrom_links
 
