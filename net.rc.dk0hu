@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.35 1994/04/07 16:55:13 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.36 1994/05/02 16:51:52 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -37,10 +37,13 @@ axip route add dl5ue-1  15.144.61.46            # schiefer.hpl.hp.com
 
 route add  44.130.0.0/16        ipip     192.1.1.1
 route add  44.142.52.0/23       ipip     192.1.1.1
+route add  44.143.0.0/16        ipip     192.1.1.1
 route add  db0id-u.ampr.org     ipip     192.1.1.1
 route add  db0id.ampr.org       ipip     192.1.1.1
+route add  db0mws.ampr.org      ipip     192.1.1.1
 route add  db0sao-u.ampr.org    ipip     192.1.1.1
 route add  db0sao.ampr.org      ipip     192.1.1.1
+route add  db0uni.ampr.org      ipip     192.1.1.1
 route add  dd2fx.ampr.org       ipip     192.1.1.1
 route add  df1tl-1.ampr.org     ipip     192.1.1.1
 route add  df1tl-u.ampr.org     ipip     192.1.1.1
@@ -80,6 +83,7 @@ tcp window 2048
 start discard
 start domain
 start echo
+start sntp
 start tcpgate convers unix:/tcp/sockets/convers
 start tcpgate nntp
 start tcpgate smtp

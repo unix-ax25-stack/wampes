@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl6sfe,v 1.2 1994/04/07 16:55:13 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl6sfe,v 1.3 1994/05/02 16:51:51 deyke Exp $
 
 hostname     dg2sfg
 ax25 mycall  dg2sfg
@@ -45,7 +45,6 @@ tcp irtt 60000
 tcp mss 216
 tcp window 2048
 
-smtp timer 300
 start ax25
 start discard
 start domain
@@ -61,6 +60,8 @@ start tcpgate pop3
 start tcpgate smtp
 start telnet
 
-trace ttyS3 0111 /dev/tty7
+smtp timer 300
+
+trace ttyS3 111 /dev/tty7
 
 source /tcp/net.rc.local

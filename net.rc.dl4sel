@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel,v 1.18 1994/04/07 16:55:13 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel,v 1.19 1994/05/02 16:51:53 deyke Exp $
 
 hostname     dl4sel
 ax25 mycall  dl4sel
@@ -23,10 +23,13 @@ ax25 route add permanent tnc0 dk0hu
 
 route add  44.130.0.0/16        tnc0     dk0hu.ampr.org
 route add  44.142.52.0/23       tnc0     dk0hu.ampr.org
+route add  44.143.0.0/16        tnc0     dk0hu.ampr.org
 route add  db0id-u.ampr.org     tnc0     dk0hu.ampr.org
 route add  db0id.ampr.org       tnc0     dk0hu.ampr.org
+route add  db0mws.ampr.org      tnc0     dk0hu.ampr.org
 route add  db0sao-u.ampr.org    tnc0     dk0hu.ampr.org
 route add  db0sao.ampr.org      tnc0     dk0hu.ampr.org
+route add  db0uni.ampr.org      tnc0     dk0hu.ampr.org
 route add  dd2fx.ampr.org       tnc0     dk0hu.ampr.org
 route add  df1tl-1.ampr.org     tnc0     dk0hu.ampr.org
 route add  df1tl-u.ampr.org     tnc0     dk0hu.ampr.org
@@ -60,7 +63,6 @@ tcp irtt 60000
 tcp mss 216
 tcp window 2048
 
-smtp timer 300
 start ax25
 start discard
 start domain
@@ -71,5 +73,8 @@ start tcpgate convers unix:/tcp/sockets/convers
 start tcpgate finger
 start tcpgate smtp
 start telnet
+
+smtp timer 300
+sntp add dk0hu 3333
 
 source /tcp/net.rc.local

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.43 1994/02/28 11:55:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.44 1994/05/02 16:52:07 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -529,7 +529,7 @@ void *p;
 			addr = resolve(optarg);
 			break;
 		case 'p':
-			port = atoi(optarg);
+			port = udp_port_number(optarg);
 			break;
 		case 'k':
 			key = optarg;

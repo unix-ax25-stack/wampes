@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.22 1993/12/30 08:25:38 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.23 1994/05/02 16:52:01 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -253,9 +253,12 @@ int doipfilter(int argc,char *argv[],void *p);
 int dologin(int argc,char *argv[],void *p);
 int domain0(int argc,char *argv[],void *p);
 int domain1(int argc,char *argv[],void *p);
+int dosntp(int argc,char *argv[],void *p);
 int dosource(int argc,char *argv[],void *p);
 int ipip_attach(int argc,char *argv[],void *p);
 int ni_attach(int argc,char *argv[],void *p);
+int sntp0(int argc,char *argv[],void *p);
+int sntp1(int argc,char *argv[],void *p);
 int tcpgate1(int argc,char *argv[],void *p);
 
 #endif  /* _COMMANDS_H */

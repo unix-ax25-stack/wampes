@@ -1,7 +1,8 @@
 #! /bin/csh -f
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.11 1994/02/07 12:39:16 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.12 1994/05/02 16:52:49 deyke Exp $
 
+set nonomatch
 tcpremove
 sh < ~/tcp/lib/configure > ~/tcp/lib/configure.h
 foreach dir ( \
@@ -16,16 +17,18 @@ foreach dir ( \
 	~/tcp/tools \
 	~/tcp/util )
 	cd $dir
-	if (-f Makefile) then
-		cp -p Makefile Makefile.old
-		make depend
-		if ( { cmp -s Makefile Makefile.old } ) then
-			rm Makefile
-			mv Makefile.old Makefile
-		else
-			rm Makefile.old
+	foreach m (Makefile*)
+		if (-f $m) then
+			cp -p $m $m.old
+			make -f $m depend
+			if ( { cmp -s $m $m.old } ) then
+				rm $m
+				mv $m.old $m
+			else
+				rm $m.old
+			endif
 		endif
-	endif
+	end
 	trimfiles
 end
 cd ~/tcp/src

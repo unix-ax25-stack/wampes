@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sas-1,v 1.17 1994/04/07 16:55:13 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sas-1,v 1.18 1994/05/02 16:51:52 deyke Exp $
 
 hostname     dl4sas-1
 ax25 mycall  dl4sas-1
@@ -15,10 +15,13 @@ axip route add dk0hu 15.138.33.250
 
 route add  44.130.0.0/16        ipip     15.138.33.250
 route add  44.142.52.0/23       ipip     15.138.33.250
+route add  44.143.0.0/16        ipip     15.138.33.250
 route add  db0id-u.ampr.org     ipip     15.138.33.250
 route add  db0id.ampr.org       ipip     15.138.33.250
+route add  db0mws.ampr.org      ipip     15.138.33.250
 route add  db0sao-u.ampr.org    ipip     15.138.33.250
 route add  db0sao.ampr.org      ipip     15.138.33.250
+route add  db0uni.ampr.org      ipip     15.138.33.250
 route add  dd2fx.ampr.org       ipip     15.138.33.250
 route add  df1tl-1.ampr.org     ipip     15.138.33.250
 route add  df1tl-u.ampr.org     ipip     15.138.33.250
@@ -56,5 +59,7 @@ start echo
 start ftp
 start tcpgate convers unix:/tcp/sockets/convers
 start tcpgate finger
+
+sntp add dk0hu 3333
 
 source /tcp/net.rc.local

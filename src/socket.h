@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.14 1993/05/17 13:45:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.15 1994/05/02 16:52:11 deyke Exp $ */
 
 #ifndef _SOCKET_H
 #define _SOCKET_H
@@ -44,6 +44,7 @@
 #define IPPORT_DOMAIN   53
 #define IPPORT_BOOTPS   67
 #define IPPORT_BOOTPC   68
+#define IPPORT_NTP      123     /* Network Time Protocol */
 #define IPPORT_RIP      520
 #define IPPORT_REMOTE   1234    /* Pulled out of the air */
 #define IPPORT_BSR      5000    /* BSR X10 interface server port (UDP) */

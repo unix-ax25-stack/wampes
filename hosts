@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.29 1994/04/25 17:06:26 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.30 1994/05/02 16:51:48 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -1655,9 +1655,9 @@
 44.130.41.30    DG1IC   # Ralf Gember, 6800 Mannheim 1
 44.130.41.42    DD3IF   # Hans Huebinger, 6700 Ludwigshafen
 44.130.41.50    DF2IAD  # Jan, Bad Bergzabern
-44.130.41.64    DB0AAC  # Digi Kaiserslautern; AT: NNTP,SMTP,FTP
-44.130.41.65    DB0AAC-SVR      # Digi Kaiserslautern; POP, AX25 DB0AAC-10
-44.130.41.66    DB0AAC-TEST     #
+44.130.41.64    DB0KLN  # Digi Kaiserslautern; AT: NNTP,SMTP,FTP
+44.130.41.65    DB0KLN-SVR      # Digi Kaiserslautern; POP, AX25 DB0KLN
+44.130.41.66    DB0KLN-TEST     #
 44.130.41.67    DF2VL   # Joachim Groh, 6750 Kaiserslautern
 44.130.41.69    DL5UJ   # Jens Ritter, 6750 Kaiserslautern
 44.130.41.70    DB5WZ   # Oliver Diry, 6520 Worms

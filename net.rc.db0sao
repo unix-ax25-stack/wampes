@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.36 1994/04/07 16:55:12 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.37 1994/05/02 16:51:50 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -42,9 +42,12 @@ axip route add dk0hu 192.1.1.2
 
 route add  44.130.0.0/16        tnc2     db0id.ampr.org
 route add  44.142.52.0/23       tnc2     db0id.ampr.org
+route add  44.143.0.0/16        tnc2     db0id.ampr.org
 route add  db0id-u.ampr.org     tnc2     db0id.ampr.org
 route add  db0id.ampr.org       tnc2
+route add  db0mws.ampr.org      tnc2     db0id.ampr.org
 route add  db0sao-u.ampr.org    ni
+route add  db0uni.ampr.org      tnc2     db0id.ampr.org
 route add  dd2fx.ampr.org       tnc2     db0id.ampr.org
 route add  df1tl-1.ampr.org     tnc1
 route add  df1tl-u.ampr.org     tnc1     df1tl-1.ampr.org
@@ -83,13 +86,13 @@ tcp irtt 60000
 tcp mss 216
 tcp window 2048
 
-smtp timer 300
 start ax25
 start discard
 start domain
 start echo
 start ftp
 start netrom
+start sntp
 start tcpgate convers unix:/tcp/sockets/convers
 start tcpgate finger
 start tcpgate netupds
@@ -106,5 +109,7 @@ ax25 jumpstart db0pic-7  on
 ax25 jumpstart db0rbs    on
 ax25 jumpstart db0sdx    on
 ax25 jumpstart db0ulm-8  on
+
+smtp timer 300
 
 source /tcp/net.rc.local

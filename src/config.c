@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.35 1993/06/13 18:36:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.36 1994/05/02 16:52:01 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -243,6 +243,7 @@ struct cmds Cmds[] = {
 #if     defined(SMTP)
 	"smtp",         dosmtp,         0, 0, NULLCHAR,
 #endif
+	"sntp",         dosntp,         0, 0, NULLCHAR,
 /*      "socket",       dosock,         0, 0, NULLCHAR, */
 	"source",       dosource,       0, 2, "source <filename>",
 #ifdef  SERVERS
@@ -392,6 +393,7 @@ static struct cmds Startcmds[] = {
 #ifdef  SMTP
 /*      "smtp",         smtp1,          256, 0, NULLCHAR, */
 #endif
+	"sntp",         sntp1,          0, 0, NULLCHAR,
 #if     defined(MAILBOX)
 	"telnet",       telnet1,        0, 0, NULLCHAR,
 /*      "tip",          tipstart,       256, 2, "start tip <interface>", */
@@ -427,6 +429,7 @@ static struct cmds Stopcmds[] = {
 #ifdef  SMTP
 /*      "smtp",         smtp0,          0, 0, NULLCHAR, */
 #endif
+	"sntp",         sntp0,          0, 0, NULLCHAR,
 #ifdef  MAILBOX
 	"telnet",       telnet0,        0, 0, NULLCHAR,
 /*      "tip",          tip0,           0, 2, "stop tip <interface>", */

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.66 1994/04/19 16:32:46 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.67 1994/05/02 16:51:59 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -73,7 +73,8 @@ LIBS          = ../lib/libutil.a
 
 MAKEFILE      = Makefile
 
-OBJS          = alloc.o \
+OBJS          = adjtime.o \
+		alloc.o \
 		arp.o \
 		arpcmd.o \
 		arpdump.o \
@@ -152,6 +153,7 @@ OBJS          = alloc.o \
 		slhcdump.o \
 		slip.o \
 		smisc.o \
+		sntp.o \
 		tcpcmd.o \
 		tcpdump.o \
 		tcpgate.o \
@@ -179,7 +181,8 @@ PROGRAM       = net
 
 SLIBS         =
 
-SRCS          = alloc.c \
+SRCS          = adjtime.c \
+		alloc.c \
 		arp.c \
 		arpcmd.c \
 		arpdump.c \
@@ -258,6 +261,7 @@ SRCS          = alloc.c \
 		slhcdump.c \
 		slip.c \
 		smisc.c \
+		sntp.c \
 		tcpcmd.c \
 		tcpdump.c \
 		tcpgate.c \
@@ -556,6 +560,8 @@ slip.o: global.h mbuf.h iface.h proc.h timer.h ip.h internet.h slhc.h tcp.h \
 	netuser.h asy.h slip.h trace.h pktdrvr.h
 smisc.o: global.h mbuf.h socket.h proc.h timer.h remote.h tcp.h iface.h \
 	internet.h ip.h netuser.h udp.h commands.h hardware.h
+sntp.o: global.h mbuf.h iface.h proc.h timer.h socket.h udp.h internet.h ip.h \
+	netuser.h cmdparse.h session.h hardware.h telnet.h ax25.h
 tcpcmd.o: global.h timer.h mbuf.h netuser.h internet.h tcp.h iface.h proc.h \
 	ip.h cmdparse.h commands.h socket.h session.h hardware.h telnet.h \
 	ax25.h
