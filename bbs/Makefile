@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.6 1992/09/05 08:16:41 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/Makefile,v 1.7 1992/09/21 19:28:25 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 CC         = c89
@@ -27,7 +27,7 @@ sfstat: sfstat.c bbs.h
 	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
 	$(CC) $(CFLAGS) sfstat.c -o $@
 
-install: /usr/local/bin/bbs findpath killdup /usr/local/bin/sfstat
+install: /usr/local/bin/bbs findpath killdup /usr/local/bin/sfstat /users/bbs/help
 
 /usr/local/bin/bbs: bbs
 	cp bbs /usr/local/bin/bbs.tmp ; exit 0
@@ -37,5 +37,8 @@ install: /usr/local/bin/bbs findpath killdup /usr/local/bin/sfstat
 	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
 	cp sfstat $@ ; exit 0
 
+/users/bbs/help: help
+	rm -f $@ ; exit 0
+	cp help $@
 clean:
 	rm -f *.o $(TARGETS)
