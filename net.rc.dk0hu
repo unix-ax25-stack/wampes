@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.46 1994/10/21 11:54:12 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.47 1994/11/22 11:55:36 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -28,6 +28,7 @@ axip route add dl1sbl-1 15.136.120.111          # hpbblb.bbn.hp.com
 
 route add  44.130.0.0/16        ipip     192.1.1.1
 route add  44.143.0.0/16        ipip     192.1.1.1
+route add  db0fho.ampr.org      ipip     15.136.120.111
 route add  db0sao-u.ampr.org    ipip     192.1.1.1
 route add  db0sao.ampr.org      ipip     192.1.1.1
 route add  df1tl-1.ampr.org     ipip     192.1.1.1
@@ -51,8 +52,8 @@ arp add dl4sel ax25 dl4sel
 
 source /tcp/netrom_links
 
-# netrom broadcast tnc0  nodes
-# netrom broadcast axip  nodes
+# netrom broadcast tnc0 nodes
+netrom broadcast axip nodes
 
 flexnet link add db0sao
 flexnet link add dl1sbl-1

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.76 1994/11/21 11:36:26 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.77 1994/11/22 11:55:39 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -315,7 +315,6 @@ all:;   chmod 755 cc
 		make -i -f $(MAKEFILE) \
 		'CC=gcc' \
 		'CFLAGS=-O6 -DUNIX -I./linux_include -I../lib' \
-		'LDFLAGS=-s' \
 		'SLIBS=-ldbm' \
 		_all;; \
 	386BSD*) \

@@ -1,7 +1,5 @@
 -------------------------------------------------------------------------------
 
-- change ipfilter man page
-
 - delete peer only after 2nd poll timeout
 
 - TCP with closed windows: spinning

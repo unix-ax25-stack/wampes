@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.47 1994/11/18 11:36:37 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.48 1994/11/22 11:55:32 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -957,7 +957,7 @@
 44.130.18.161   DL1EFR  # Dieter Ringenberg
 44.130.18.162   DL2EAA-SYS
 44.130.18.163   DG1ECE  # Ulrich Moers
-44.130 18.164   DH4DAN  # J”rg Castrop-Rauxel
+44.130.18.164   DH4DAN  # J”rg Castrop-Rauxel
 44.130.18.165   DL3YDM  # Michael Bottropp
 44.130.18.166   DH5JF   # Albrecht Muehlheim
 44.130.18.167   DL5YEY  # Joerg    Bottrop

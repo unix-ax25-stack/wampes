@@ -1,4 +1,4 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.27 1994/11/21 11:36:39 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/doc/wampes.mm,v 1.28 1994/11/22 11:56:06 deyke Exp $
 .\"
 .\" Format this manual with:
 .\"
@@ -19,13 +19,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 941121" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 941122" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 941121
+Version 941122
 .S
 .SP 2
 .S 15
@@ -893,31 +893,78 @@ in a routing loop, so make the value slightly larger than the number of
 hops across the network you expect to transit packets.
 The default is 255 hops.
 .H 2 "ipfilter" " [\fIsubcommand\fP]"
-Without an argument, display the IP filter table.
-If the IP filter table is empty, \fBWAMPES\fP will allow IP packets
-to be sent to any destination.
-If the IP filter table contains at least one entry,
-\fBWAMPES\fP will allow IP packets to be sent only to destinations listed
-in the IP filter table, IP packets to other destinations will be
-discarded.
-.H 3 "ipfilter add" " \fIhostid\fP[/\fIbits\fP]"
-This command adds an entry to the IP filter table.
+Without an argument, display the IP filter table,
+which allows or denies IP packets to be sent to a destination.
+.P
+The default is to allow IP packets to be sent to any destination.
+Use the \fBipfilter allow\fP and \fBipfilter deny\fP commands
+to extend the table.
+Entries listed earlier take precedence over entries listed later.
+.H 3 "ipfilter allow|deny" " \fIhostid\fP[/\fIbits\fP] [to \fIhostid\fP[/\fIbits\fP]]"
+This command (re)defines the rights for a range of IP addresses.
 The optional /\fIbits\fP suffix to \fIhostid\fP specifies how
 many leading bits in \fIhostid\fP are to be considered significant.
 If not specified, 32 bits (i.e., full significance) is
-assumed. With this option, a single IP filter table entry may refer to
+assumed. With this option, a single \fIhostid\fP/\fIbits\fP
+specification may refer to
 many hosts all sharing a common bit string prefix in their IP addresses.
 For example, ARPA Class A, B and C networks would use suffixes of /8,
 /16 and /24 respectively. The command
 .DS I
 .ft CW
-ipfilter add 44/8
+ipfilter allow 44/8
 .ft P
 .DE
-causes any IP addresses beginning with "44" in the first 8 bits to be
+causes any IP address beginning with "44" in the first 8 bits to be
 allowed, the remaining 24 bits are "don't-cares".
-.H 3 "ipfilter drop" " \fIhostid\fP[/\fIbits\fP]"
-Remove the specified entry from the IP filter table.
+.P
+If two \fIhostid\fPs are specified, those two IP addresses and all
+IP addresses in between are allowed or denied.
+For example:
+.DS I
+.ft CW
+ipfilter allow 44.1.2.0 to 44.1.2.255
+.ft P
+.DE
+is equivalent to
+.DS I
+.ft CW
+ipfilter allow 44.1.2/24
+.ft P
+.DE
+In case one or both of the \fIhostid\fPs has a /\fIbits\fP suffix,
+the range of IP addresses allowed or denied
+is from the lowest to the highest IP address.
+For example:
+.DS I
+.ft CW
+ipfilter allow 44.1/16 to 44.3/16
+.ft P
+.DE
+is equivalent to
+.DS I
+.ft CW
+ipfilter allow 44.1.0.0 to 44.3.255.255
+.ft P
+.DE
+The \fBipfilter\fP command tries to combine multiple \fBallow\fP and \fBdeny\fP
+commands into as few IP filter table entries as possible.
+Because the table initially allows everything,
+the first \fBipfilter\fP command must be \fBdeny\fP to have any effect.
+To only allow certain IP addresses use something like
+the following command sequence:
+.DS I
+.ft CW
+ipfilter deny 0/0 # default is deny
+ipfilter allow 127.0.0.1 # loopback
+ipfilter allow 44.128.4/24
+ipfilter allow 44.130/16
+ipfilter allow 44.142/16
+ipfilter allow 44.143/16
+ipfilter allow ke0gb
+ipfilter allow winfree.n3eua
+.ft P
+.DE
 .H 2 "kick" " [\fIsession#\fP]"
 Kick all control blocks associated with a session.
 If no argument is given, kick the current session.

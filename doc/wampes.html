@@ -4,7 +4,7 @@
 </HEAD>
 <BODY>
 <H1>WAMPES Reference Manual</H1>
-Version 941121
+Version 941122
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
@@ -979,29 +979,66 @@ in a routing loop, so make the value slightly larger than the number of
 hops across the network you expect to transit packets.
 The default is 255 hops.
 <H3><A NAME="H4.27">4.27 ipfilter [<I>subcommand</I>]</A></H3>
-Without an argument, display the IP filter table.
-If the IP filter table is empty, <B>WAMPES</B> will allow IP packets
-to be sent to any destination.
-If the IP filter table contains at least one entry,
-<B>WAMPES</B> will allow IP packets to be sent only to destinations listed
-in the IP filter table, IP packets to other destinations will be
-discarded.
-<H4><A NAME="H4.27.1">4.27.1 ipfilter add <I>hostid</I>[/<I>bits</I>]</A></H4>
-This command adds an entry to the IP filter table.
+Without an argument, display the IP filter table,
+which allows or denies IP packets to be sent to a destination.
+<P>
+The default is to allow IP packets to be sent to any destination.
+Use the <B>ipfilter allow</B> and <B>ipfilter deny</B> commands
+to extend the table.
+Entries listed earlier take precedence over entries listed later.
+<H4><A NAME="H4.27.1">4.27.1 ipfilter allow|deny <I>hostid</I>[/<I>bits</I>] [to <I>hostid</I>[/<I>bits</I>]]</A></H4>
+This command (re)defines the rights for a range of IP addresses.
 The optional /<I>bits</I> suffix to <I>hostid</I> specifies how
 many leading bits in <I>hostid</I> are to be considered significant.
 If not specified, 32 bits (i.e., full significance) is
-assumed. With this option, a single IP filter table entry may refer to
+assumed. With this option, a single <I>hostid</I>/<I>bits</I>
+specification may refer to
 many hosts all sharing a common bit string prefix in their IP addresses.
 For example, ARPA Class A, B and C networks would use suffixes of /8,
 /16 and /24 respectively. The command
 <PRE>
-ipfilter add 44/8
+ipfilter allow 44/8
 </PRE>
-causes any IP addresses beginning with &quot;44&quot; in the first 8 bits to be
+causes any IP address beginning with &quot;44&quot; in the first 8 bits to be
 allowed, the remaining 24 bits are &quot;don't-cares&quot;.
-<H4><A NAME="H4.27.2">4.27.2 ipfilter drop <I>hostid</I>[/<I>bits</I>]</A></H4>
-Remove the specified entry from the IP filter table.
+<P>
+If two <I>hostid</I>s are specified, those two IP addresses and all
+IP addresses in between are allowed or denied.
+For example:
+<PRE>
+ipfilter allow 44.1.2.0 to 44.1.2.255
+</PRE>
+is equivalent to
+<PRE>
+ipfilter allow 44.1.2/24
+</PRE>
+In case one or both of the <I>hostid</I>s has a /<I>bits</I> suffix,
+the range of IP addresses allowed or denied
+is from the lowest to the highest IP address.
+For example:
+<PRE>
+ipfilter allow 44.1/16 to 44.3/16
+</PRE>
+is equivalent to
+<PRE>
+ipfilter allow 44.1.0.0 to 44.3.255.255
+</PRE>
+The <A HREF="#H4.27">ipfilter</A> command tries to combine multiple <B>allow</B> and <B>deny</B>
+commands into as few IP filter table entries as possible.
+Because the table initially allows everything,
+the first <A HREF="#H4.27">ipfilter</A> command must be <B>deny</B> to have any effect.
+To only allow certain IP addresses use something like
+the following command sequence:
+<PRE>
+ipfilter deny 0/0 # default is deny
+ipfilter allow 127.0.0.1 # loopback
+ipfilter allow 44.128.4/24
+ipfilter allow 44.130/16
+ipfilter allow 44.142/16
+ipfilter allow 44.143/16
+ipfilter allow ke0gb
+ipfilter allow winfree.n3eua
+</PRE>
 <H3><A NAME="H4.28">4.28 kick [<I>session#</I>]</A></H3>
 Kick all control blocks associated with a session.
 If no argument is given, kick the current session.
