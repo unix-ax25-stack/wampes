@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.18 1992/06/01 10:34:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.19 1992/07/10 11:35:33 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -337,7 +337,9 @@ struct asy *asyp;
 	int n;
 
 	if (asyp->sndq != NULLBUF) {
-		n = write(asyp->fd, asyp->sndq->data, asyp->sndq->cnt);
+		n = asyp->sndq->cnt;
+		if (n > 200) n = 200;   /* Don't overrun master pty */
+		n = write(asyp->fd, asyp->sndq->data, n);
 		asyp->txints++;
 		if (n > 0) {
 			asyp->txchar += n;
