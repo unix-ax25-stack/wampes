@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.19 1991/06/04 11:33:56 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.20 1991/09/17 22:21:38 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -65,8 +65,16 @@ struct sigcontext *scp;
 void ioinit()
 {
 
-  int  i;
+  int i;
   struct sigvec vec;
+
+#define fixdir(name, mode) \
+	{ mkdir((name), (mode)); chmod((name), (mode)); }
+
+  fixdir("/tcp", 0755);
+  fixdir("/tcp/sockets", 0755);
+  fixdir("/tcp/.sockets", 0700);
+  fixdir("/tcp/logs", 0700);
 
   if (local_kbd = isatty(0)) {
     ioctl(0, TCGETA, &prev_termio);

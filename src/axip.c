@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.1 1991/07/16 17:56:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.2 1991/09/17 22:21:32 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -90,11 +90,13 @@ struct iface *iface;
 struct mbuf *data;
 {
 
+  char **mpp;
   char *dest;
   char *p;
   char buf[MAX_FRAME];
   int cnt;
   int l;
+  int multicast;
   int16 fcs;
   struct axip_route *rp;
   struct mbuf *bp;
@@ -135,12 +137,18 @@ struct mbuf *data;
     }
   }
 
-  for (rp = Axip_routes; ; rp = rp->next) {
-    if (!rp) return (-1);
-    if (addreq(rp->call, dest)) break;
+  multicast = 0;
+  for (mpp = Axmulti; *mpp; mpp++) {
+    if (addreq(dest, *mpp)) {
+      multicast = 1;
+      break;
+    }
   }
+  for (rp = Axip_routes; rp; rp = rp->next)
+    if (multicast || addreq(rp->call, dest))
+      sendto(sock, buf, l, 0, (struct sockaddr *) & rp->addr, sizeof(rp->addr));
 
-  return sendto(sock, buf, l, 0, (struct sockaddr *) & rp->addr, sizeof(rp->addr));
+  return l;
 }
 
 /*---------------------------------------------------------------------------*/
