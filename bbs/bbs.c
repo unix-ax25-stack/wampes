@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.30 1991/12/18 05:54:11 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.31 1991/12/22 19:19:06 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -168,7 +168,7 @@ static void parse_command_line(char *line);
 static void bbs(void);
 static void interrupt_handler(int sig, int code, struct sigcontext *scp);
 static void alarm_handler(int sig, int code, struct sigcontext *scp);
-static void trap_signal(int sig, void (*handler )());
+static void trap_signal(int sig, void (*handler)());
 static void rmail(void);
 static void rnews(void);
 int main(int argc, char **argv);
@@ -176,7 +176,7 @@ int main(int argc, char **argv);
 /*---------------------------------------------------------------------------*/
 
 static const struct cmdtable {
-  char *name;
+  const char *name;
   void (*fnc)(int argc, char **argv);
   int argc;
   int level;
@@ -213,7 +213,7 @@ static const struct cmdtable {
   "XSCREEN",    xscreen_command,        0,      ROOT,
   "[",          sid_command,            0,      MBOX,
 
-  (char *) 0,   unknown_command,        0,      USER
+  0,            unknown_command,        0,      USER
 };
 
 /*---------------------------------------------------------------------------*/
@@ -448,7 +448,7 @@ static void put_seq(void)
   if (mode != BBS || debug) return;
   if ((n = sprintf(buf, "%d\n", user.seq)) < 2) halt();
   if (lseek(fdseq, 0L, SEEK_SET)) halt();
-  if (write(fdseq, buf, (unsigned) n) != n) halt();
+  if (write(fdseq, buf, n) != n) halt();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -492,20 +492,20 @@ static int get_index(int n, struct index *index)
 
   i1 = 0;
   if (lseek(fdindex, 0L, SEEK_SET)) halt();
-  if (read(fdindex, (char *) index, sizeof(struct index )) != sizeof(struct index )) return 0;
+  if (read(fdindex, index, sizeof(struct index)) != sizeof(struct index)) return 0;
   if (n == index->mesg) return 1;
   if (n < index->mesg) return 0;
 
-  if ((pos = lseek(fdindex, (long) (-sizeof(struct index )), SEEK_END)) < 0) halt();
+  if ((pos = lseek(fdindex, -sizeof(struct index), SEEK_END)) < 0) halt();
   i2 = (int) (pos / sizeof(struct index));
-  if (read(fdindex, (char *) index, sizeof(struct index )) != sizeof(struct index )) halt();
+  if (read(fdindex, index, sizeof(struct index)) != sizeof(struct index)) halt();
   if (n == index->mesg) return 1;
   if (n > index->mesg) return 0;
 
   while (i1 + 1 < i2) {
     im = (i1 + i2) / 2;
-    if (lseek(fdindex, (long) (im * sizeof(struct index )), SEEK_SET) < 0) halt();
-    if (read(fdindex, (char *) index, sizeof(struct index )) != sizeof(struct index )) halt();
+    if (lseek(fdindex, im * sizeof(struct index), SEEK_SET) < 0) halt();
+    if (read(fdindex, index, sizeof(struct index)) != sizeof(struct index)) halt();
     if (n == index->mesg) return 1;
     if (n > index->mesg)
       i1 = im;
@@ -655,12 +655,13 @@ static void send_to_bbs(struct mail *mail)
   struct index index;
   struct strlist *p;
 
+  if (!*mail->subject) return;
   lock();
   if (msg_uniq(mail->bid, mail->mid)) {
-    if (lseek(fdindex, (long) (-sizeof(struct index )), SEEK_END) < 0)
+    if (lseek(fdindex, -sizeof(struct index), SEEK_END) < 0)
       index.mesg = 1;
     else {
-      if (read(fdindex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+      if (read(fdindex, &index, sizeof(struct index)) != sizeof(struct index)) halt();
       index.mesg++;
     }
     index.date = mail->date;
@@ -684,15 +685,14 @@ static void send_to_bbs(struct mail *mail)
       make_parent_directories(getfilename(index.mesg));
       if (!(fp = fopen(getfilename(index.mesg), "w"))) halt();
     }
-    if (strcmp(index.to, "E") && strcmp(index.to, "M"))
-      for (p = mail->head; p; p = p->next) {
-	if (fputs(p->str, fp) == EOF) halt();
-	if (putc('\n', fp) == EOF) halt();
-	index.size += (strlen(p->str) + 1);
-      }
+    for (p = mail->head; p; p = p->next) {
+      if (fputs(p->str, fp) == EOF) halt();
+      if (putc('\n', fp) == EOF) halt();
+      index.size += (strlen(p->str) + 1);
+    }
     fclose(fp);
     if (lseek(fdindex, 0L, SEEK_END) < 0) halt();
-    if (write(fdindex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+    if (write(fdindex, &index, sizeof(struct index)) != sizeof(struct index)) halt();
     if (index.mesg == user.seq + 1) {
       user.seq = index.mesg;
       put_seq();
@@ -761,6 +761,7 @@ static void send_to_news(struct mail *mail)
   struct strlist *p;
   struct tm *tm;
 
+  if (!*mail->subject) return;
   if ((fd = open("/usr/bin/rnews", O_RDONLY)) < 0) return;
   close(fd);
   switch (fork()) {
@@ -793,7 +794,7 @@ static void send_to_news(struct mail *mail)
 	      tm->tm_hour,
 	      tm->tm_min,
 	      tm->tm_sec);
-      if (*mail->subject) fprintf(fp, "Subject: %s\n", mail->subject);
+      fprintf(fp, "Subject: %s\n", mail->subject);
       fprintf(fp, "Bulletin-ID: <%s>\n", mail->bid);
       fprintf(fp, "Message-ID: <%s>\n", mail->mid);
       fprintf(fp, "Path: %s\n", mail->from);
@@ -879,7 +880,7 @@ static struct mail *alloc_mail(void)
 {
   struct mail *mail;
 
-  mail = (struct mail *) calloc(1, sizeof(struct mail ));
+  mail = calloc(1, sizeof(*mail));
   mail->lifetime = -1;
   return mail;
 }
@@ -909,6 +910,14 @@ static void route_mail(struct mail *mail)
   char *cp;
   char *s;
   struct strlist *p;
+
+  /* Check mail header */
+
+  if (level == MBOX) {
+    if (!mail->head) return;
+    cp = get_host_from_header(mail->head->str);
+    if (!cp || !calleq(cp, user.name)) return;
+  }
 
   /* Set date */
 
@@ -949,6 +958,10 @@ static void route_mail(struct mail *mail)
     strcat(mail->mid, MidSuffix);
   }
 
+  /* Trim subject */
+
+  strtrim(mail->subject);
+
   /* Remove message delimiters */
 
   for (p = mail->head; p; p = p->next) {
@@ -961,13 +974,13 @@ static void route_mail(struct mail *mail)
 
   /* Call delivery agents */
 
-  if (callvalid(get_user_from_path(mail->to)))
+  if (callvalid(get_user_from_path(mail->to))) {
     send_to_mail(mail);
-  else if (calleq(get_host_from_path(mail->to), myhostname))
+  } else if (calleq(get_host_from_path(mail->to), myhostname)) {
     send_to_bbs(mail);
-  else if (callvalid(get_host_from_path(mail->to)))
+  } else if (callvalid(get_host_from_path(mail->to))) {
     send_to_mail(mail);
-  else {
+  } else {
     send_to_bbs(mail);
     if (strlen(get_user_from_path(mail->to)) > 1) send_to_news(mail);
   }
@@ -984,7 +997,7 @@ static void append_line(struct mail *mail, char *line)
 {
   struct strlist *p;
 
-  p = malloc(sizeof(struct strlist) + strlen(line));
+  p = malloc(sizeof(*p) + strlen(line));
   p->next = 0;
   strcpy(p->str, line);
   if (!mail->head)
@@ -1091,8 +1104,8 @@ static void delete_command(int argc, char **argv)
 	  calleq(index.to, user.name)) {
 	if (unlink(getfilename(mesg))) halt();
 	index.deleted = 1;
-	if (lseek(fdindex, (long) (-sizeof(struct index )), SEEK_CUR) < 0) halt();
-	if (write(fdindex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+	if (lseek(fdindex, -sizeof(struct index), SEEK_CUR) < 0) halt();
+	if (write(fdindex, &index, sizeof(struct index)) != sizeof(struct index)) halt();
 	printf("Message %d deleted.\n", mesg);
       } else
 	printf("Message %d not deleted:  Permission denied.\n", mesg);
@@ -1128,13 +1141,13 @@ static void dir_command(int argc, char **argv)
   cmp = 0;
   if (lseek(fdindex, 0L, SEEK_SET)) halt();
   for (; ; ) {
-    n = read(fdindex, (char *) (pi = index), 1000 * sizeof(struct index )) / sizeof(struct index );
+    n = read(fdindex, pi = index, 1000 * sizeof(struct index)) / sizeof(struct index);
     if (n < 1) break;
     for (; n; n--, pi++)
       if (read_allowed(pi))
 	for (prev = 0, curr = head; ; ) {
 	  if (!curr) {
-	    curr = (struct dir_entry *) malloc(sizeof(struct dir_entry ));
+	    curr = malloc(sizeof(*curr));
 	    curr->left = curr->right = 0;
 	    curr->count = 1;
 	    strcpy(curr->to, pi->to);
@@ -1184,7 +1197,7 @@ static void f_command(int argc, char **argv)
   do_not_exit = doforward;
   if (!get_index(user.seq, &index))
     if (lseek(fdindex, 0L, SEEK_SET)) halt();
-  while (read(fdindex, (char *) &index, sizeof(struct index )) == sizeof(struct index )) {
+  while (read(fdindex, &index, sizeof(struct index)) == sizeof(struct index)) {
     if (!index.deleted                &&
 	index.mesg > user.seq         &&
 	!calleq(index.at, myhostname) &&
@@ -1213,22 +1226,18 @@ static void f_command(int argc, char **argv)
       switch (_tolower(uchar(*buf))) {
       case 'o':
 	puts(index.subject);
-	if (!strcmp(index.to, "E") || !strcmp(index.to, "M"))
-	  putchar('\n');
-	else {
-	  tm = gmtime(&index.date);
-	  printf("R:%02d%02d%02d/%02d%02dz @%-6s %s\n",
-		 tm->tm_year % 100,
-		 tm->tm_mon + 1,
-		 tm->tm_mday,
-		 tm->tm_hour,
-		 tm->tm_min,
-		 MYHOSTNAME,
-		 mydesc);
-	  if (!(fp = fopen(getfilename(index.mesg), "r"))) halt();
-	  while ((c = getc(fp)) != EOF) putchar(c);
-	  fclose(fp);
-	}
+	tm = gmtime(&index.date);
+	printf("R:%02d%02d%02d/%02d%02dz @%-6s %s\n",
+	       tm->tm_year % 100,
+	       tm->tm_mon + 1,
+	       tm->tm_mday,
+	       tm->tm_hour,
+	       tm->tm_min,
+	       MYHOSTNAME,
+	       mydesc);
+	if (!(fp = fopen(getfilename(index.mesg), "r"))) halt();
+	while ((c = getc(fp)) != EOF) putchar(c);
+	fclose(fp);
 	puts("\032");
 	wait_for_prompt();
 	break;
@@ -1371,10 +1380,10 @@ static void list_command(int argc, char **argv)
       to = strupc(argv[i]);
     }
   }
-  if (lseek(fdindex, (long) (-sizeof(struct index )), SEEK_END) >= 0) {
+  if (lseek(fdindex, -sizeof(struct index), SEEK_END) >= 0) {
     for (; ; ) {
       if (stopped) return;
-      if (read(fdindex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+      if (read(fdindex, &index, sizeof(struct index)) != sizeof(struct index)) halt();
       if (index.mesg < min) break;
       if (index.mesg <= max                            &&
 	  read_allowed(&index)                         &&
@@ -1402,7 +1411,7 @@ static void list_command(int argc, char **argv)
 	}
 	if (--count <= 0) break;
       }
-      if (lseek(fdindex, -2L * sizeof(struct index ), SEEK_CUR) < 0) break;
+      if (lseek(fdindex, -2L * sizeof(struct index), SEEK_CUR) < 0) break;
     }
   }
   if (!found)
@@ -1648,7 +1657,15 @@ static void send_command(int argc, char **argv)
     free_mail(mail);
     return;
   }
-  if (packetcluster || level != MBOX) puts("Enter message: (terminate with ^Z or ***END)");
+  strtrim(mail->subject);
+  if (!*mail->subject && level != MBOX) {
+    errors++;
+    puts("No subject specified.");
+    free_mail(mail);
+    return;
+  }
+  if (packetcluster || level != MBOX)
+    puts("Enter message: (terminate with ^Z or ***END)");
   for (; ; ) {
     if (!getstring(line)) exit(1);
     if (stopped) {
@@ -1745,7 +1762,7 @@ static void status_command(int argc, char **argv)
   printf("DK5SG-BBS  Revision: %s %s\n", revision.number, revision.date);
   if (lseek(fdindex, 0L, SEEK_SET)) halt();
   for (; ; ) {
-    n = read(fdindex, (char *) (pi = index), 1000 * sizeof(struct index )) / sizeof(struct index );
+    n = read(fdindex, pi = index, 1000 * sizeof(struct index)) / sizeof(struct index);
     if (n < 1) break;
     for (; n; n--, pi++) {
       highest = pi->mesg;
@@ -1795,15 +1812,15 @@ static void xcrunch_command(int argc, char **argv)
   if ((f = open(tempfile, O_WRONLY | O_CREAT | O_EXCL, 0644)) < 0) halt();
   if (lseek(fdindex, 0L, SEEK_SET)) halt();
   wflag = 0;
-  while (read(fdindex, (char *) & index, sizeof(struct index )) == sizeof(struct index )) {
+  while (read(fdindex, &index, sizeof(struct index)) == sizeof(struct index)) {
     wflag = 1;
     if (!index.deleted || *index.bid && index.date >= validdate) {
-      if (write(f, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+      if (write(f, &index, sizeof(struct index)) != sizeof(struct index)) halt();
       wflag = 0;
     }
   }
   if (wflag)
-    if (write(f, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+    if (write(f, &index, sizeof(struct index)) != sizeof(struct index)) halt();
   if (close(f)) halt();
   if (close(fdindex)) halt();
   if (rename(tempfile, INDEXFILE)) halt();
@@ -1842,11 +1859,11 @@ static void xscreen_command(int argc, char **argv)
 
   if (fstat(fdindex, &statbuf)) halt();
   indexarraysize = statbuf.st_size;
-  indexarrayentries = indexarraysize / sizeof(struct index );
+  indexarrayentries = indexarraysize / sizeof(struct index);
   if (!indexarrayentries) return;
-  if (!(indexarray = (struct index *) malloc(indexarraysize))) halt();
+  if (!(indexarray = malloc(indexarraysize))) halt();
   if (lseek(fdindex, 0L, SEEK_SET)) halt();
-  if (read(fdindex, (char *) indexarray, indexarraysize) != indexarraysize) halt();
+  if (read(fdindex, indexarray, indexarraysize) != indexarraysize) halt();
 
   ioctl(0, TCGETA, &prev_termio);
   curr_termio = prev_termio;
@@ -1876,8 +1893,8 @@ static void xscreen_command(int argc, char **argv)
     case 'k':
       if (unlink(getfilename(pi->mesg))) halt();
       pi->deleted = 1;
-      if (lseek(fdindex, (long) ((pi - indexarray) * sizeof(struct index )), SEEK_SET) < 0) halt();
-      if (write(fdindex, (char *) pi, sizeof(struct index )) != sizeof(struct index )) halt();
+      if (lseek(fdindex, (pi - indexarray) * sizeof(struct index), SEEK_SET) < 0) halt();
+      if (write(fdindex, pi, sizeof(struct index)) != sizeof(struct index)) halt();
 
     case '\n':
       if (pi < indexarray + (indexarrayentries - 1)) pi++;
