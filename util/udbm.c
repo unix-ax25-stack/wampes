@@ -1,6 +1,6 @@
 /* User Data Base Manager */
 
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.5 1989/09/17 11:10:56 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.6 1989/09/17 11:31:31 dk5sg Exp $";
 
 #include <ctype.h>
 #include <fcntl.h>
@@ -8,6 +8,7 @@ static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampe
 #include <pwd.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/utsname.h>
 
 struct user {
   char  call[8];
@@ -24,6 +25,7 @@ struct user {
 
 static int  errors;
 static struct user *users[NUM_USERS];
+static struct utsname utsname;
 
 /*---------------------------------------------------------------------------*/
 
@@ -503,9 +505,8 @@ static void fixusers()
     close(fd);
   }
 
-  up = getup("df1tl",  1); sprintf(up->mail, "@%s", up->call);
-  up = getup("dg9scn", 1); sprintf(up->mail, "@%s", up->call);
-  up = getup("dl1sbl", 1); sprintf(up->mail, "@%s", up->call);
+  up = getup(utsname.nodename, 1);
+  sprintf(up->mail, "@%s", up->call);
 
   for (i = 0; i < NUM_USERS; i++)
     for (up = users[i]; up; up = up->next) output_line(up, fpo);
@@ -582,6 +583,7 @@ static void fixaliases()
 main()
 {
   umask(022);
+  uname(&utsname);
   fixusers();
   if (!errors) fixpasswd();
   if (!errors) fixaliases();
