@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.25 1992/08/20 19:36:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.26 1992/08/21 16:42:48 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -634,6 +634,7 @@ struct usock *up;
 #endif
 
 #ifdef  AX25
+#if 0
 /* Hooks for passing incoming AX.25 data frames to network protocols */
 static void
 axip(iface,axp,src,dest,bp,mcast)
@@ -653,6 +654,38 @@ int mcast;
 			arp_add(ipaddr, ARP_AX25, src, 0);
 	(void)ip_route(iface,bp,mcast);
 }
+#else
+/* Hooks for passing incoming AX.25 data frames to network protocols */
+static void
+axip(iface,axp,src,dest,bp,mcast)
+struct iface *iface;
+struct ax25_cb *axp;
+char *src;
+char *dest;
+struct mbuf *bp;
+int mcast;
+{
+	int32 ipaddr;
+	struct arp_tab *ap;
+	char hwaddr[AXALEN];
+	if(!mcast && bp && bp->cnt >= 20 && (ipaddr = get32(bp->data + 12))){
+		iface->flags |= NO_RT_ADD;
+		addrcp(hwaddr, src);
+		if((ap = revarp_lookup(ARP_AX25,hwaddr)) != NULLARP &&
+		   ap->state == ARP_VALID &&
+		   !run_timer(&ap->timer) &&
+		   ap->ip_addr != ipaddr){
+			rt_add(ipaddr,32,ap->ip_addr,iface,1L,0x7fffffff/1000,0);
+		}else if((ap = arp_lookup(ARP_AX25,ipaddr)) == NULLARP ||
+		   ap->state != ARP_VALID ||
+		   run_timer(&ap->timer)){
+			rt_add(ipaddr,32,0L,iface,1L,0x7fffffff/1000,0);
+			arp_add(ipaddr, ARP_AX25, hwaddr, 0);
+		}
+	}
+	(void)ip_route(iface,bp,mcast);
+}
+#endif
 
 static void
 axarp(iface,axp,src,dest,bp,mcast)

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.8 1992/08/20 19:36:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/icmp.c,v 1.9 1992/08/21 16:42:49 deyke Exp $ */
 
 /* Internet Control Message Protocol (ICMP)
  * Copyright 1991 Phil Karn, KA9Q
@@ -136,6 +136,7 @@ int rxbroadcast;
 		tmp = ip->source;
 		ip->source = ip->dest;
 		ip->dest = tmp;
+		ip->ttl = ipDefaultTTL;
 		bp = tbp;
 		if((tbp = htonip(ip,bp,IP_CS_NEW)) == NULLBUF){
 			free_p(bp);

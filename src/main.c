@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.30 1992/08/11 21:32:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.31 1992/08/21 16:42:52 deyke Exp $ */
 
 /* Main-level NOS program:
  *  initialization
@@ -135,6 +135,7 @@ char *argv[];
 		}
 		fclose(fp);
 	}
+	Mode = CONV_MODE;
 	cmdmode();
 
 	/* Main commutator loop */

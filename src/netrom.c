@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.31 1992/07/24 20:00:29 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.32 1992/08/21 16:42:53 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -694,6 +694,7 @@ struct node *fromneighbor;
   }
 
   if (ismycall(bp->data + AXALEN)) {
+    char hwaddr[AXALEN];
     if (bp->cnt >= 40                     &&
 	uchar(bp->data[19]) == 0          &&
 	uchar(bp->data[15]) == NRPROTO_IP &&
@@ -704,8 +705,10 @@ struct node *fromneighbor;
       Nr_iface->lastrecv = secclock();
       if ((ap = arp_lookup(ARP_NETROM, ipaddr)) == NULLARP ||
 	  ap->state != ARP_VALID ||
-	  run_timer(&ap->timer))
-	arp_add(ipaddr, ARP_NETROM, bp->data, 0);
+	  run_timer(&ap->timer)) {
+	addrcp(hwaddr, bp->data);
+	arp_add(ipaddr, ARP_NETROM, hwaddr, 0);
+      }
       pullup(&bp, NULLCHAR, 20);
       dump(Nr_iface, IF_TRACE_IN, bp);
       ip_route(Nr_iface, bp, 0);

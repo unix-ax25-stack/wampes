@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.10 1992/05/26 10:08:48 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.11 1992/08/21 16:42:46 deyke Exp $ */
 
 /* Address Resolution Protocol (ARP) functions. Sits between IP and
  * Level 2, mapping IP to Level 2 addresses for all outgoing datagrams.
@@ -310,5 +310,24 @@ int32 target;
 	(*iface->output)(iface,at->bdcst,
 		iface->hwaddr,at->arptype,bp);
 	Arp_stat.outreq++;
+}
+
+/* Look up the given hardware address in the ARP table */
+struct arp_tab *
+revarp_lookup(hardware,hw_addr)
+int16 hardware;
+char *hw_addr;
+{
+	register struct arp_tab *ap;
+	int hwalen;
+	int i;
+
+	arp_loadfile();
+	hwalen = Arp_type[hardware].hwalen;
+	for(i=0;i<HASHMOD;i++)
+		for(ap = Arp_tab[i]; ap != NULLARP; ap = ap->next)
+			if(memcmp(ap->hw_addr,hw_addr,hwalen) == 0)
+				return ap;
+	return NULLARP;
 }
 

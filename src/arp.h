@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.6 1991/04/12 18:34:32 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.h,v 1.7 1992/08/21 16:42:46 deyke Exp $ */
 
 #ifndef _ARP_H
 #define _ARP_H
@@ -117,6 +117,7 @@ int arp_init __ARGS((unsigned int hwtype,int hwalen,int iptype,int arptype,
 void arp_input __ARGS((struct iface *iface,struct mbuf *bp));
 struct arp_tab *arp_lookup __ARGS((int hardware,int32 ipaddr));
 char *res_arp __ARGS((struct iface *iface,int hardware,int32 target,struct mbuf *bp));
+struct arp_tab *revarp_lookup __ARGS((int hardware,char *hw_addr));
 
 /* In arphdr.c: */
 struct mbuf *htonarp __ARGS((struct arp *arp));

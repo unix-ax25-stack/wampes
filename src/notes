@@ -1,45 +1,5 @@
 ===============================================================================
 
-From dc1ik@dc1ik.ampr.org Fri Jul 10 06:27 MDT 1992
-Received: from localhost by mdddhd.fc.hp.com with SMTP
-	(16.8/15.5+IOS 3.22) id AA08168; Fri, 10 Jul 92 06:27:34 -0600
-Return-Path: <dc1ik@dc1ik.ampr.org>
-Received: by db0sao; Fri, 10 Jul 92 14:24:48 +0200
-Received: from localhost by db0sao; Fri, 10 Jul 92 14:24:11 +0200
-Received: by dc1ik.ka.sub.org (/\=-/\ Smail3.1.18.1 #18.14)
-	id <m0m6Li7-0000PlC@dc1ik.ka.sub.org>; Fri, 10 Jul 92 14:12 MEZ
-Message-Id: <m0m6Li7-0000PlC@dc1ik.ka.sub.org>
-From: db0sao!dc1ik!dc1ik (Olaf Erb)
-Subject: Static ip routes
-To: dk5sg@dc1ik.ampr.org
-Date: Fri, 10 Jul 92 14:12:33 MEZ
-Reply-To: db0sao!dc1ik
-X-Mailer: ELM [version 2.3 PL6]
-Status: RO
-
-Hallo Dieter,
-was haelst Du davon, dem Wampes statische Routen beizubringen? Es gibt
-(leider) oefters den Effekt, dass durch irgendwelche Spielereien der User
-die IP Routes umgelernt werden- db0sao-db0id laeuft ueber ein 70cm-2m Gateway
-via db0id, dk0hu, mein dc1ik-1 wusste auf einmal Dich und db0sao via dc1ik
-zu routen- zum Glueck war die ttl nicht sehr hoch, bei diesem Loop.
-Das Wampes vom dc1ik-1 ist auch nicht am Unix angeschlossen, weil ich nicht
-vermeiden koennte, dass jemand den dc1ik-1 als Gateway zu non-ampr Hosts
-nimmt, und wenn es nur intern im Institut waere.
-Ich glaube in den letzten ka9q's ist ein 'ip access-code' drin, vielleicht
-ist das auch sinnvoll, speziell bei dem Gatewaybetrieb.
-Der Autorouter vom Wampes ist eine tolle Sache, aber fuer wirklich feste
-Routen muesste man permanent was eintragen koennen, damit es keine Probleme
-gibt.
-Ansonsten ueberlege ich mir, den ipip-Daemon irgendwie ans Wampes dran-
-zubasteln, damit ich eine Kontrolle habe was wie geroutet wird.
-Was meinst Du dazu?
-
-Gruss
-Olaf
-
-===============================================================================
-
 Hallo Dieter,
 was haelst Du denn vom 'reget' Command bei FTP?
 (bzw. REST-Command)
