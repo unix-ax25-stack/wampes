@@ -2800,25 +2800,26 @@
 #
 #44.130.62.x    Bamberg/Bayreuth
 # lokale Adresskoordination: DL1NAT
-44.130.62.1     DD8NE   # Hans-Joachim Hetscher, 8602 Stegaurach; PC
-44.130.62.2     DL9NCF  # Alfred Schloegel, 8600 Bamberg
-44.130.62.3     DL1NAT  # Paul Dorn, Bamberg
-44.130.62.4     DL1NAT-A        #
-44.130.62.5     DL6NED  # Andre Bergmann, 95359 Kasendorf; AT386
-44.130.62.6     DD8NE-GATE      #
-44.130.62.7     DJ7YD   # Winfried Kopp, Hof/Saale
-44.130.62.8     DG2NAE  # Harald Sapper, Coburg
-44.130.62.9     DL8NCC  # Klaus Voelkel, Bamberg
-44.130.62.10    DG1NBR  # Matthias Klauda, 8601 Breitbrunn
-44.130.62.11    DH3NBA  # Heiko Eschrich, 96117 Memmelsdorf
-44.130.62.12    DL8NDN  # Harms, Gundelsheim
-44.130.62.14    DG2NBD  # Bernd Drechsel, Bamberg
-44.130.62.19    DG7NEF-GATE     # Wolfgang, Bamberg
-44.130.62.20    DG7NEF  # Wolfgang, Bamberg
-44.130.62.21    DL9NBX  # Roland Voellmer, 96450 Coburg
-44.130.62.22    DF9NE   # Anton Spindler, Stadtsteinach
-44.130.62.30    DL1NV   # Guenther Kestel, 96317 Kronach
-44.130.62.100   DB0BBG-10       # Digi Bamberg Kaelberberg
+44.130.62.1    DD8NE          # Hans-Joachim Hetscher Stegaurach
+44.130.62.2    DL9NCF         # Alfred Schloegel Bamberg
+44.130.62.3    DL1NAT         # Paul Dorn Bamberg
+44.130.62.4    DL1NAT-A       # Paul Dorn Bamberg
+44.130.62.5    DL6NED         # Andre Bergmann Kasendorf
+44.130.62.6    DD8NE-GATE     # Hans-Joachim Hetscher Stegaurach
+44.130.62.7    DJ7YD          # Winfried Kopp Hof/Saale
+44.130.62.8    DG2NAE         # Harry Sapper Coburg
+44.130.62.9    DL8NCC         # Klaus Voelkel Bamberg
+44.130.62.10   DG1NBR         # Matthias Klauda Breitbrunn
+44.130.62.11   DH3NBA         # Heiko Eschrich Drosendorf
+44.130.62.12   DL8NDN         # Harms Gundelsheim
+44.130.62.14   DG2NBD         # Bernd Drechsel Bamberg
+44.130.62.15   DG3NCU         # Florian Roedental
+44.130.62.19   DG7NEF-GATE    # Wolfgang Bamberg
+44.130.62.20   DG7NEF         # Wolfgang Bamberg
+44.130.62.21   DL9NBX         # Roland Coburg
+44.130.62.22   DF9NE          # Anton Spindler Stadtsteinach
+44.130.62.30   DL1NV          # Guenther Kronach
+#44.130.62.100  DB0BBG-10      # Digipeater Bamberg Kaelberberg
 #
 #44.130.63.x    Franken
 # lokale Adresskoordination: DL1NC
