@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.17 1994/10/09 08:22:42 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/convers.c,v 1.18 1995/04/21 12:35:44 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -65,21 +65,27 @@ int main(int argc, char **argv)
   char *server = "*:3600";
 #endif
 
-  char *cp;
-  char *name;
-  char *note = 0;
   char buffer[2048];
   char c;
   char inbuf[2048];
   char outbuf[2048];
+  char *cp;
+  char *name;
+  char *note = 0;
   int addrlen;
-  int ch;
   int channel = 0;
+  int ch;
+  int dohosts = 0;
+  int dokick = 0;
+  int dolinks = 0;
+  int dopeers = 0;
+  int dousers = 0;
+  int dowho = 0;
   int echo;
   int erase_char;
   int errflag = 0;
-  int i;
   int incnt = 0;
+  int i;
   int kill_char;
   int outcnt = 0;
   int size;
@@ -116,16 +122,34 @@ int main(int argc, char **argv)
   if (tcsetattr(0, TCSANOW, &curr_termios)) stop(*argv);
 #endif
 
-  while ((ch = getopt(argc, argv, "c:n:s:")) != EOF)
+  while ((ch = getopt(argc, argv, "c:hkln:ps:uw")) != EOF)
     switch (ch) {
     case 'c':
       channel = atoi(optarg);
       break;
+    case 'h':
+      dohosts = 1;
+      break;
+    case 'k':
+      dokick = 1;
+      break;
+    case 'l':
+      dolinks = 1;
+      break;
     case 'n':
       note = optarg;
       break;
+    case 'p':
+      dopeers = 1;
+      break;
     case 's':
       server = optarg;
+      break;
+    case 'u':
+      dousers = 1;
+      break;
+    case 'w':
+      dowho = 1;
       break;
     case '?':
       errflag = 1;
@@ -133,13 +157,51 @@ int main(int argc, char **argv)
     }
 
   if (errflag || optind < argc || !(addr = build_sockaddr(server, &addrlen))) {
-    fprintf(stderr, "usage: convers [-s host:service] [-c channel] [-n note]\n");
+    fprintf(stderr, "usage: convers"
+	    " [-c channel]"
+	    " [-h]"
+	    " [-k]"
+	    " [-l]"
+	    " [-n note]"
+	    " [-p]"
+	    " [-s host:service]"
+	    " [-u]"
+	    " [-w]"
+	    "\n");
     stop("");
   }
 
   close(3);
   if (socket(addr->sa_family, SOCK_STREAM, 0) != 3) stop(*argv);
   if (connect(3, addr, addrlen)) stop(*argv);
+
+  if (dohosts || dokick || dolinks || dopeers || dousers || dowho) {
+    *buffer = 0;
+    if (dopeers)
+      strcat(buffer, "/PEERS\n");
+    if (dolinks)
+      strcat(buffer, "/LINKS\n");
+    if (dohosts)
+      strcat(buffer, "/HOSTS\n");
+    if (dousers)
+      strcat(buffer, "/USERS\n");
+    if (dowho)
+      strcat(buffer, "/WHO\n");
+    if (dokick)
+      strcat(buffer, "/KICK\n");
+    strcat(buffer, "/QUIT\n");
+    if (write(3, buffer, strlen(buffer)) < 0)
+      stop(*argv);
+    for (;;) {
+      size = read(3, buffer, sizeof(buffer));
+      if (size < 0)
+	stop(*argv);
+      if (size == 0)
+	stop("");
+      if (write(1, buffer, size) < 0)
+	stop(*argv);
+    }
+  }
 
   name = getenv("LOGNAME");
   if (!note && (pw = getpwnam(name))) {

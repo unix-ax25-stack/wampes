@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.65 1995/04/16 11:23:47 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.66 1995/04/21 12:35:44 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -110,6 +110,7 @@ struct link {
   int l_received;               /* Number of bytes received */
   struct mbuf *l_sndq;          /* Output queue */
   int l_xmitted;                /* Number of bytes transmitted */
+  int l_closed;                 /* Set if BYE command was executed */
   long l_stime;                 /* Time of last state change */
   long l_mtime;                 /* Time of last input/output */
   struct link *l_next;          /* Linked list pointer */
@@ -165,10 +166,12 @@ static void send_msg_to_channel(const char *fromname, int channel, char *text, i
 static void send_invite_msg(const char *fromname, const char *toname, int channel, const char *text, int make_unique);
 static void connect_peers(void);
 static void close_link(struct link *lp);
+static void bye_command(struct link *lp);
 static void channel_command(struct link *lp);
 static void help_command(struct link *lp);
 static void hosts_command(struct link *lp);
 static void invite_command(struct link *lp);
+static void kick_command(struct link *lp);
 static void links_command(struct link *lp);
 static void msg_command(struct link *lp);
 static void note_command(struct link *lp);
@@ -860,6 +863,15 @@ static void close_link(struct link *lp)
 
 /*---------------------------------------------------------------------------*/
 
+static void bye_command(struct link *lp)
+{
+  lp->l_closed = 1;
+  if (!lp->l_sndq)
+    close_link(lp);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void channel_command(struct link *lp)
 {
 
@@ -1117,7 +1129,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.65 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.66 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1365,14 +1377,14 @@ static void process_input(struct link *lp)
     { "\377\200host",   h_host_command },
     { "name",           name_command },
 
-    { "bye",            close_link },
-    { "exit",           close_link },
+    { "bye",            bye_command },
+    { "exit",           bye_command },
     { "hosts",          hosts_command },
     { "kick",           kick_command },
     { "links",          links_command },
     { "online",         users_command },
     { "peers",          peers_command },
-    { "quit",           close_link },
+    { "quit",           bye_command },
     { "users",          users_command },
     { "who",            who_command },
 
@@ -1382,9 +1394,9 @@ static void process_input(struct link *lp)
   static const struct command user_commands[] = {
 
     { "?",              help_command },
-    { "bye",            close_link },
+    { "bye",            bye_command },
     { "channel",        channel_command },
-    { "exit",           close_link },
+    { "exit",           bye_command },
     { "help",           help_command },
     { "hosts",          hosts_command },
     { "invite",         invite_command },
@@ -1395,7 +1407,7 @@ static void process_input(struct link *lp)
     { "online",         users_command },
     { "peers",          peers_command },
     { "personal",       note_command },
-    { "quit",           close_link },
+    { "quit",           bye_command },
     { "users",          users_command },
     { "who",            who_command },
     { "write",          msg_command },
@@ -1587,7 +1599,11 @@ static void link_send(struct link *lp)
       }
     }
   }
-  if (!lp->l_sndq) FD_CLR(lp->l_fd, &chkwrite);
+  if (!lp->l_sndq) {
+    FD_CLR(lp->l_fd, &chkwrite);
+    if (lp->l_closed)
+      close_link(lp);
+  }
 }
 
 /*---------------------------------------------------------------------------*/
