@@ -1,0 +1,40 @@
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.df3du-1,v 1.1 1993/07/17 20:33:40 deyke Exp $
+
+hostname     df3du-1
+ax25 mycall  df3du-1
+ip address   df3du-1
+netrom ident "#boeb9"
+
+attach axip                     # ax.25 over host ip
+attach ipip                     # ip over host ip
+attach netrom                   # ip over netrom
+
+ax25 route add axip default
+
+axip route add dk0hu 15.136.56.6
+
+route add  44.142.52/23     ipip     15.136.56.6
+route add  44.130/16        ipip     15.136.56.6
+
+source /tcp/netrom_links
+
+# netrom broadcast axip nodes
+
+echo accept
+icmp trace on
+ip rtimer 300
+ip ttl 30
+log /tcp/net.log
+tcp irtt 60000
+tcp mss 216
+tcp window 2048
+
+start discard
+start domain
+start echo
+start ftp
+start remote
+start tcpgate convers unix:/tcp/sockets/convers
+start tcpgate finger
+
+source /tcp/net.rc.local
