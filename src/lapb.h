@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.3 1990/02/22 12:42:43 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/lapb.h,v 1.4 1990/02/27 10:59:56 deyke Exp $ */
 
 /* AX25 protocol implementation */
 
@@ -45,6 +45,7 @@ struct axcb {
   long  remote_busy;            /* Other end's window is closed */
   int  vr;                      /* Incoming sequence number expected next */
   int  vs;                      /* Next sequence number to be sent */
+  int  cwind;                   /* Congestion window */
   int  retry;                   /* Retransmission retry count */
   int32 srtt;                   /* Smoothed round trip time, milliseconds */
   int32 mdev;                   /* Mean deviation, milliseconds */

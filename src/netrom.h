@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.4 1990/02/22 12:42:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.5 1990/02/27 11:00:09 deyke Exp $ */
 
 /* Round trip timing parameters */
 #define AGAIN   8               /* Average RTT gain = 1/8 */
@@ -43,6 +43,7 @@ struct circuit {
   int  closed;                  /* Disconnect when send queue empty */
   int  recv_state;              /* Incoming sequence number expected next */
   int  send_state;              /* Next sequence number to be sent */
+  int  cwind;                   /* Congestion window */
   long  remote_busy;            /* Other end's window is closed */
   int  retry;                   /* Retransmission retry count */
   int32 srtt;                   /* Smoothed round trip time, milliseconds */

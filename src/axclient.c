@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.2 1990/02/27 10:59:34 deyke Exp $ */
+
 #include <memory.h>
 #include <stdio.h>
 #include <string.h>
@@ -18,16 +20,15 @@ char  *buf;
 int16 n;
 {
   if (!(current && current->type == AX25TNC && current->cb.ax25)) return (-1);
-  if (buf[n-1] == '\n') n--;
-  if (n <= 0) return (-1);
+  if (n >= 1 && buf[n-1] == '\n') n--;
+  if (!n) return (-1);
   return send_ax(current->cb.ax25, qdata(buf, n));
 }
 
 /*---------------------------------------------------------------------------*/
 
-void axclient_recv_upcall(cp, cnt)
+void axclient_recv_upcall(cp)
 struct axcb *cp;
-int16 cnt;
 {
 
   char  c;
