@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.68 1994/05/05 11:17:08 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.69 1994/05/06 17:15:51 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -164,6 +164,7 @@ OBJS          = adjtime.o \
 		tcptimer.o \
 		tcpuser.o \
 		telnet.o \
+		timep.o \
 		timer.o \
 		tnserv.o \
 		trace.o \
@@ -272,6 +273,7 @@ SRCS          = adjtime.c \
 		tcptimer.c \
 		tcpuser.c \
 		telnet.c \
+		timep.c \
 		timer.c \
 		tnserv.c \
 		trace.c \
@@ -591,6 +593,8 @@ tcpuser.o: global.h timer.h mbuf.h netuser.h socket.h proc.h internet.h tcp.h \
 telnet.o: global.h mbuf.h socket.h proc.h timer.h telnet.h session.h \
 	hardware.h ax25.h iface.h icmp.h internet.h ip.h tcp.h netuser.h \
 	tty.h commands.h
+timep.o: global.h mbuf.h iface.h proc.h timer.h socket.h udp.h internet.h \
+	ip.h netuser.h
 timer.o: global.h timer.h proc.h mbuf.h commands.h daemon.h hardware.h \
 	socket.h
 tnserv.o: global.h mbuf.h socket.h proc.h timer.h netuser.h tcp.h iface.h \

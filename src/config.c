@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.36 1994/05/02 16:52:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.37 1994/05/06 17:15:54 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -396,6 +396,7 @@ static struct cmds Startcmds[] = {
 	"sntp",         sntp1,          0, 0, NULLCHAR,
 #if     defined(MAILBOX)
 	"telnet",       telnet1,        0, 0, NULLCHAR,
+	"time",         time1,          0, 0, NULLCHAR,
 /*      "tip",          tipstart,       256, 2, "start tip <interface>", */
 #endif
 /*      "term",         term1,          256, 0, NULLCHAR, */
@@ -432,6 +433,7 @@ static struct cmds Stopcmds[] = {
 	"sntp",         sntp0,          0, 0, NULLCHAR,
 #ifdef  MAILBOX
 	"telnet",       telnet0,        0, 0, NULLCHAR,
+	"time",         time0,          0, 0, NULLCHAR,
 /*      "tip",          tip0,           0, 2, "stop tip <interface>", */
 #endif
 /*      "term",         term0,          0, 0, NULLCHAR, */

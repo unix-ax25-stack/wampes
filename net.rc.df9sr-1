@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.df9sr-1,v 1.5 1994/05/02 16:51:51 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.df9sr-1,v 1.6 1994/05/06 17:15:32 deyke Exp $
 
 hostname     df9sr-1
 ax25 mycall  df9sr-1
@@ -59,5 +59,6 @@ start echo
 start ftp
 start tcpgate convers unix:/tcp/sockets/convers
 start tcpgate finger
+start time
 
 source /tcp/net.rc.local

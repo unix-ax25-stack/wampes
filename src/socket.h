@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.15 1994/05/02 16:52:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/socket.h,v 1.16 1994/05/06 17:16:01 deyke Exp $ */
 
 #ifndef _SOCKET_H
 #define _SOCKET_H
@@ -41,6 +41,7 @@
 #define IPPORT_TERM     5000    /* Serial interface server port */
 
 /* UDP port numbers */
+#define IPPORT_TIME     37      /* Time Protocol */
 #define IPPORT_DOMAIN   53
 #define IPPORT_BOOTPS   67
 #define IPPORT_BOOTPC   68

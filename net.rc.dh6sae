@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dh6sae,v 1.3 1994/05/02 16:51:51 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dh6sae,v 1.4 1994/05/06 17:15:32 deyke Exp $
 
 hostname     dh6sae
 ax25 mycall  dh6sae
@@ -53,6 +53,7 @@ start tcpgate nntp
 start tcpgate pop2
 start tcpgate smtp
 start telnet
+start time
 
 smtp timer 4200
 

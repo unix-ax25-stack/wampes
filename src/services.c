@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.6 1994/05/02 16:52:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/services.c,v 1.7 1994/05/06 17:16:00 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -40,6 +40,7 @@ static struct port_table udp_port_table[] = {
   "ntp",         IPPORT_NTP,    /* Network Time Protocol */
   "remote",      IPPORT_REMOTE,
   "rip",         IPPORT_RIP,
+  "time",        IPPORT_TIME,   /* Time Protocol */
   NULLCHAR
 };
 

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.23 1994/05/02 16:52:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/commands.h,v 1.24 1994/05/06 17:15:53 deyke Exp $ */
 
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
@@ -260,5 +260,7 @@ int ni_attach(int argc,char *argv[],void *p);
 int sntp0(int argc,char *argv[],void *p);
 int sntp1(int argc,char *argv[],void *p);
 int tcpgate1(int argc,char *argv[],void *p);
+int time0(int argc,char *argv[],void *p);
+int time1(int argc,char *argv[],void *p);
 
 #endif  /* _COMMANDS_H */

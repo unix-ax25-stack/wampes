@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.38 1994/05/05 11:16:59 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.39 1994/05/06 17:15:31 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -100,6 +100,7 @@ start tcpgate nntp
 start tcpgate pop2
 start tcpgate smtp
 start telnet
+start time
 
 ax25 jumpstart db0ais    on
 ax25 jumpstart db0cz     on
