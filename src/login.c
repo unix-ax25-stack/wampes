@@ -1,4 +1,4 @@
-/* @(#) $Id: login.c,v 1.71 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: login.c,v 1.72 2002/11/21 19:07:02 dl9sau Exp $ */
 
 #include <sys/types.h>
 
@@ -91,7 +91,8 @@ struct login_cb {
 };
 
 static char Defaultuser[16] = "guest";
-static char Homedir[80] = HOME_DIR "/funk";
+// dl9sau: changed /home/funk to /home/hams (a better international choice)
+static char Homedir[80] = HOME_DIR "/hams";
 static char Logfiledir[80];
 static char Shell[80];
 static int Auto = 1;

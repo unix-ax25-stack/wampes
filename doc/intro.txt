@@ -1,4 +1,4 @@
-/* @(#) $Id: intro.txt,v 1.16 2000/03/04 18:31:10 deyke Exp $ */
+/* @(#) $Id: intro.txt,v 1.17 2002/11/21 19:07:02 dl9sau Exp $ */
 
 This file gives some info about setting up WAMPES for the first time.
 Don't expect something perfect, it was just a quick hack to help people
@@ -11,7 +11,7 @@ Change the hostnames, ax25 calls etc.  *please*.
 
 All files should go to /tcp (mail.conf, net.rc, convers.conf).
 
-For user-logins you've to create a /users/funk directory, because WAMPES
+For user-logins you've to create a /home/hams directory, because WAMPES
 creates user-accounts automatically under this dir, and adds entries to
 /etc/passwd.
 

@@ -1,5 +1,11 @@
-Version @(#) $Id: ChangeLog.patches,v 1.14 2002/10/19 18:43:29 dl9sau Exp $
+Version @(#) $Id: ChangeLog.patches,v 1.15 2002/11/21 19:07:02 dl9sau Exp $
 
+021121 Thomas Osterried <dl9sau>
+	- login.c and doc/wampes.*, doc/intro.txt
+		- home directory "funk" for amateur radio packet users is a
+		  bit confusing for non-german users. /home/hams/ may be a
+		  better approach
+		
 021019 Thomas Osterried <dl9sau>
 
 	- krnlif.c

@@ -1068,7 +1068,7 @@ n0pra will be:
 .DS I
 /home/radio/n0p.../n0pra
 .DE
-The default is HOME_DIR/funk.
+The default is HOME_DIR/hams.
 .P
 HOME_DIR is defined in /tcp/lib/configure.h and has a value of
 .BL 5 1
