@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.13 1989/06/28 20:33:39 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.14 1990/01/15 12:59:12 deyke Exp $";
 
 #include <sys/types.h>
 
@@ -187,22 +187,17 @@ int  all;
 {
 
   char  *arg;
-  int  c, quote;
+  int  c;
   static char  *p;
 
   if (line) p = line;
   while (isspace(uchar(*p))) p++;
   if (all) return p;
-  quote = '\0';
-  if (*p == '"' || *p == '\'') quote = *p++;
   arg = p;
-  if (quote) {
-    if (!(p = strchr(p, quote))) p = "";
-  } else
-    while (*p && !isspace(uchar(*p))) {
-      c = tolower(uchar(*p));
-      *p++ = c;
-    }
+  while (*p && !isspace(uchar(*p))) {
+    c = tolower(uchar(*p));
+    *p++ = c;
+  }
   if (*p) *p++ = '\0';
   return arg;
 }
@@ -696,7 +691,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.13 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.14 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
