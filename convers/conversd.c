@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.40 1993/07/02 06:04:37 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.41 1993/07/06 06:35:55 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -74,6 +74,8 @@ extern int optind;
 #define MAX_WAITTIME    (3*60*60)
 #define MIN_WAITTIME    (     60)
 #define NO_NOTE         "@"
+#define STRINGHOLDTIME  (  30*60)
+#define UNIQMARKER      (' ' | 0x80)
 
 #define NULLCHAR        ((char *) 0)
 
@@ -149,6 +151,8 @@ static struct link *links;
 static struct peer *peers;
 static struct user *users;
 
+static int is_string_unique(const char *string);
+static void make_string_unique(char *string);
 static struct host *hostptr(const char *name);
 static struct user *userptr(const char *name, struct host *hp);
 static void trace(struct link *lp, const char *string);
@@ -161,9 +165,9 @@ static char *localtimestring(long utc);
 static void accept_connect_request(const int *flistenptr);
 static void clear_locks(void);
 static void send_user_change_msg(const struct user *up);
-static void send_msg_to_user(const char *fromname, const char *toname, const char *text);
-static void send_msg_to_channel(const char *fromname, int channel, const char *text);
-static void send_invite_msg(const char *fromname, const char *toname, int channel);
+static void send_msg_to_user(const char *fromname, const char *toname, const char *text, int make_unique);
+static void send_msg_to_channel(const char *fromname, int channel, char *text, int make_unique);
+static void send_invite_msg(const char *fromname, const char *toname, int channel, const char *text, int make_unique);
 static void connect_peers(void);
 static void close_link(struct link *lp);
 static void channel_command(struct link *lp);
@@ -188,6 +192,127 @@ static void read_configuration(void);
 static void check_files_changed(void);
 static void link_recv(struct link *lp);
 static void link_send(struct link *lp);
+
+/*---------------------------------------------------------------------------*/
+
+/* Work around bug in prototype generator */
+
+static void dummy(void)
+{
+}
+
+/*---------------------------------------------------------------------------*/
+
+static const unsigned short crc_table[] = {
+  0x0000, 0xc0c1, 0xc181, 0x0140, 0xc301, 0x03c0, 0x0280, 0xc241,
+  0xc601, 0x06c0, 0x0780, 0xc741, 0x0500, 0xc5c1, 0xc481, 0x0440,
+  0xcc01, 0x0cc0, 0x0d80, 0xcd41, 0x0f00, 0xcfc1, 0xce81, 0x0e40,
+  0x0a00, 0xcac1, 0xcb81, 0x0b40, 0xc901, 0x09c0, 0x0880, 0xc841,
+  0xd801, 0x18c0, 0x1980, 0xd941, 0x1b00, 0xdbc1, 0xda81, 0x1a40,
+  0x1e00, 0xdec1, 0xdf81, 0x1f40, 0xdd01, 0x1dc0, 0x1c80, 0xdc41,
+  0x1400, 0xd4c1, 0xd581, 0x1540, 0xd701, 0x17c0, 0x1680, 0xd641,
+  0xd201, 0x12c0, 0x1380, 0xd341, 0x1100, 0xd1c1, 0xd081, 0x1040,
+  0xf001, 0x30c0, 0x3180, 0xf141, 0x3300, 0xf3c1, 0xf281, 0x3240,
+  0x3600, 0xf6c1, 0xf781, 0x3740, 0xf501, 0x35c0, 0x3480, 0xf441,
+  0x3c00, 0xfcc1, 0xfd81, 0x3d40, 0xff01, 0x3fc0, 0x3e80, 0xfe41,
+  0xfa01, 0x3ac0, 0x3b80, 0xfb41, 0x3900, 0xf9c1, 0xf881, 0x3840,
+  0x2800, 0xe8c1, 0xe981, 0x2940, 0xeb01, 0x2bc0, 0x2a80, 0xea41,
+  0xee01, 0x2ec0, 0x2f80, 0xef41, 0x2d00, 0xedc1, 0xec81, 0x2c40,
+  0xe401, 0x24c0, 0x2580, 0xe541, 0x2700, 0xe7c1, 0xe681, 0x2640,
+  0x2200, 0xe2c1, 0xe381, 0x2340, 0xe101, 0x21c0, 0x2080, 0xe041,
+  0xa001, 0x60c0, 0x6180, 0xa141, 0x6300, 0xa3c1, 0xa281, 0x6240,
+  0x6600, 0xa6c1, 0xa781, 0x6740, 0xa501, 0x65c0, 0x6480, 0xa441,
+  0x6c00, 0xacc1, 0xad81, 0x6d40, 0xaf01, 0x6fc0, 0x6e80, 0xae41,
+  0xaa01, 0x6ac0, 0x6b80, 0xab41, 0x6900, 0xa9c1, 0xa881, 0x6840,
+  0x7800, 0xb8c1, 0xb981, 0x7940, 0xbb01, 0x7bc0, 0x7a80, 0xba41,
+  0xbe01, 0x7ec0, 0x7f80, 0xbf41, 0x7d00, 0xbdc1, 0xbc81, 0x7c40,
+  0xb401, 0x74c0, 0x7580, 0xb541, 0x7700, 0xb7c1, 0xb681, 0x7640,
+  0x7200, 0xb2c1, 0xb381, 0x7340, 0xb101, 0x71c0, 0x7080, 0xb041,
+  0x5000, 0x90c1, 0x9181, 0x5140, 0x9301, 0x53c0, 0x5280, 0x9241,
+  0x9601, 0x56c0, 0x5780, 0x9741, 0x5500, 0x95c1, 0x9481, 0x5440,
+  0x9c01, 0x5cc0, 0x5d80, 0x9d41, 0x5f00, 0x9fc1, 0x9e81, 0x5e40,
+  0x5a00, 0x9ac1, 0x9b81, 0x5b40, 0x9901, 0x59c0, 0x5880, 0x9841,
+  0x8801, 0x48c0, 0x4980, 0x8941, 0x4b00, 0x8bc1, 0x8a81, 0x4a40,
+  0x4e00, 0x8ec1, 0x8f81, 0x4f40, 0x8d01, 0x4dc0, 0x4c80, 0x8c41,
+  0x4400, 0x84c1, 0x8581, 0x4540, 0x8701, 0x47c0, 0x4680, 0x8641,
+  0x8201, 0x42c0, 0x4380, 0x8341, 0x4100, 0x81c1, 0x8081, 0x4040
+};
+
+/*---------------------------------------------------------------------------*/
+
+static int is_string_unique(const char *string)
+{
+
+  struct string {
+    struct string *s_next;
+    long s_time;
+    unsigned short s_len;
+    unsigned short s_sum;
+    unsigned short s_crc;
+  };
+
+  const char *cp;
+  int i;
+  static struct string *strings[256];
+  static struct string *stringstail[256];
+  struct string *sp;
+  unsigned short crc = 0;
+  unsigned short len = 0;
+  unsigned short sum = 0;
+
+  for (cp = string; *cp; cp++) {
+    len++;
+    sum += (*cp & 0xff);
+    crc = (crc >> 8) ^ crc_table[(crc ^ *cp) & 0xff];
+  }
+  i = crc & 0xff;
+
+  while ((sp = strings[i]) && sp->s_time + STRINGHOLDTIME < currtime) {
+    strings[i] = sp->s_next;
+    free(sp);
+  }
+
+  for (sp = strings[i]; sp; sp = sp->s_next)
+    if (sp->s_len == len && sp->s_sum == sum && sp->s_crc == crc) return 0;
+
+  sp = (struct string *) malloc(sizeof(*sp));
+  sp->s_next = 0;
+  sp->s_time = currtime;
+  sp->s_len = len;
+  sp->s_sum = sum;
+  sp->s_crc = crc;
+  if (strings[i])
+    stringstail[i]->s_next = sp;
+  else
+    strings[i] = sp;
+  stringstail[i] = sp;
+  return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void make_string_unique(char *string)
+{
+
+  char *cp;
+  int i;
+
+  if (is_string_unique(string)) return;
+  cp = strchr(string, UNIQMARKER);
+  if (cp) {
+    cp++;
+    i = atoi(cp);
+  } else {
+    for (cp = string; *cp; cp++) ;
+    if (cp > string && cp[-1] == '\n') cp--;
+    *cp++ = UNIQMARKER;
+    i = 0;
+  }
+  for (; ; ) {
+    sprintf(cp, "%d\n", ++i);
+    if (is_string_unique(string)) return;
+  }
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -491,7 +616,14 @@ static void send_user_change_msg(const struct user *up)
 	  send_string(lp, buffer);
 	}
       } else if (lp->l_host) {
-	sprintf(buffer, "/\377\200USER %s %s %d %d %d %s\n", up->u_name, up->u_host->h_name, 0, up->u_oldchannel, up->u_channel, up->u_note);
+	sprintf(buffer,
+		"/\377\200USER %s %s %d %d %d %s\n",
+		up->u_name,
+		up->u_host->h_name,
+		0,
+		up->u_oldchannel,
+		up->u_channel,
+		up->u_channel >= 0 ? up->u_note : "@");
 	send_string(lp, buffer);
       }
     }
@@ -500,56 +632,68 @@ static void send_user_change_msg(const struct user *up)
 
 /*---------------------------------------------------------------------------*/
 
-static void send_msg_to_user(const char *fromname, const char *toname, const char *text)
+static void send_msg_to_user(const char *fromname, const char *toname, const char *text, int make_unique)
 {
 
-  char buffer[2048];
+  char *cp;
+  char *formatted_line;
+  char host_buffer[2048];
+  char prefix[2048];
   struct link *lp;
   struct user *up;
 
+  if (!*text) return;
+  sprintf(host_buffer, "/\377\200UMSG %s %s %s\n", fromname, toname, text);
+  if (make_unique)
+    make_string_unique(host_buffer);
+  else if (!is_string_unique(host_buffer))
+    return;
+  if (cp = strchr(text, UNIQMARKER)) *cp = 0;
+  if (strcmp(fromname, "conversd")) {
+    sprintf(prefix, "<*%s*>:", fromname);
+    formatted_line = formatline(prefix, text);
+  } else {
+    sprintf(prefix, "%s\n", text);
+    formatted_line = prefix;
+  }
   for (up = users; up; up = up->u_next) {
     lp = up->u_link;
-    if (!lp->l_locked && !strcmp(up->u_name, toname)) {
-      if (lp->l_host) {
-	sprintf(buffer, "/\377\200UMSG %s %s %s\n", fromname, toname, text);
-	send_string(lp, buffer);
-      } else if (strcmp(fromname, "conversd")) {
-	sprintf(buffer, "<*%s*>:", fromname);
-	send_string(lp, formatline(buffer, text));
-      } else {
-	sprintf(buffer, "%s\n", text);
-	send_string(lp, buffer);
-      }
-    }
+    if (!lp->l_locked && !strcmp(up->u_name, toname))
+      send_string(lp, lp->l_host ? host_buffer : formatted_line);
   }
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void send_msg_to_channel(const char *fromname, int channel, const char *text)
+static void send_msg_to_channel(const char *fromname, int channel, char *text, int make_unique)
 {
 
-  char buffer[2048];
+  char *cp;
+  char *formatted_line;
+  char host_buffer[2048];
+  char prefix[2048];
   struct link *lp;
   struct user *up;
 
+  if (!*text) return;
+  sprintf(host_buffer, "/\377\200CMSG %s %d %s\n", fromname, channel, text);
+  if (make_unique)
+    make_string_unique(host_buffer);
+  else if (!is_string_unique(host_buffer))
+    return;
+  if (cp = strchr(text, UNIQMARKER)) *cp = 0;
+  sprintf(prefix, "<%s>:", fromname);
+  formatted_line = formatline(prefix, text);
   for (up = users; up; up = up->u_next) {
     lp = up->u_link;
-    if (!lp->l_locked && up->u_channel == channel) {
-      if (lp->l_host) {
-	sprintf(buffer, "/\377\200CMSG %s %d %s\n", fromname, channel, text);
-	send_string(lp, buffer);
-      } else {
-	sprintf(buffer, "<%s>:", fromname);
-	send_string(lp, formatline(buffer, text));
-      }
-    }
+    if (!lp->l_locked && up->u_channel == channel)
+      send_string(lp, lp->l_host ? host_buffer : formatted_line);
   }
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void send_invite_msg(const char *fromname, const char *toname, int channel)
+static void send_invite_msg(const char *fromname, const char *toname, int channel, const char *text, int make_unique)
 {
 
   static const char invitetext[] =
@@ -560,6 +704,7 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
   "*** Invitation sent to %s @ %s.";
 
   char buffer[2048];
+  char host_buffer[2048];
   int fdtty;
   int fdut;
   struct link *lp;
@@ -567,11 +712,17 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
   struct user *up;
   struct utmp utmpbuf;
 
+  sprintf(host_buffer, "/\377\200INVI %s %s %d %s\n", fromname, toname, channel, text);
+  if (make_unique)
+    make_string_unique(host_buffer);
+  else if (!is_string_unique(host_buffer))
+    return;
+
   for (up = users; up; up = up->u_next)
     if (up->u_channel == channel && !strcmp(up->u_name, toname)) {
       clear_locks();
       sprintf(buffer, "*** User %s is already on this channel.", toname);
-      send_msg_to_user("conversd", fromname, buffer);
+      send_msg_to_user("conversd", fromname, buffer, 1);
       return;
     }
 
@@ -581,14 +732,13 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
       send_string(up->u_link, buffer);
       clear_locks();
       sprintf(buffer, responsetext, toname, my.h_name);
-      send_msg_to_user("conversd", fromname, buffer);
+      send_msg_to_user("conversd", fromname, buffer, 1);
       return;
     }
 
   for (up = users; up; up = up->u_next)
     if (!up->u_link->l_locked && !strcmp(up->u_name, toname)) {
-      sprintf(buffer, "/\377\200INVI %s %s %d\n", fromname, toname, channel);
-      send_string(up->u_link, buffer);
+      send_string(up->u_link, host_buffer);
       return;
     }
 
@@ -613,17 +763,15 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
 	close(fdut);
 	clear_locks();
 	sprintf(buffer, responsetext, toname, my.h_name);
-	send_msg_to_user("conversd", fromname, buffer);
+	send_msg_to_user("conversd", fromname, buffer, 1);
 	return;
       }
     close(fdut);
   }
 
   for (lp = links; lp; lp = lp->l_next)
-    if (lp->l_host && !lp->l_locked) {
-      sprintf(buffer, "/\377\200INVI %s %s %d\n", fromname, toname, channel);
-      send_string(lp, buffer);
-    }
+    if (lp->l_host && !lp->l_locked)
+      send_string(lp, host_buffer);
 
 }
 
@@ -837,7 +985,8 @@ static void invite_command(struct link *lp)
   char *toname;
 
   toname = getarg(NULLCHAR, 0);
-  if (*toname) send_invite_msg(lp->l_user->u_name, toname, lp->l_user->u_channel);
+  if (*toname)
+    send_invite_msg(lp->l_user->u_name, toname, lp->l_user->u_channel, "", 1);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -891,10 +1040,9 @@ static void msg_command(struct link *lp)
 
   toname = getarg(NULLCHAR, 0);
   text = getarg(NULLCHAR, 1);
-  if (!*text) return;
   for (up = users; up; up = up->u_next)
     if (!strcmp(up->u_name, toname)) {
-      send_msg_to_user(lp->l_user->u_name, toname, text);
+      send_msg_to_user(lp->l_user->u_name, toname, text, 1);
       return;
     }
   sprintf(buffer, "*** No such user: %s.\n", toname);
@@ -987,7 +1135,7 @@ static void name_command(struct link *lp)
   if (lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.40 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.41 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(NULLCHAR, 0));
@@ -1068,13 +1216,11 @@ static void h_cmsg_command(struct link *lp)
 {
 
   char *name;
-  char *text;
   int channel;
 
   name = getarg(NULLCHAR, 0);
   channel = atoi(getarg(NULLCHAR, 0));
-  text = getarg(NULLCHAR, 1);
-  if (*text) send_msg_to_channel(name, channel, text);
+  send_msg_to_channel(name, channel, getarg(NULLCHAR, 1), 0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1138,7 +1284,8 @@ static void h_invi_command(struct link *lp)
   fromname = getarg(NULLCHAR, 0);
   toname = getarg(NULLCHAR, 0);
   channel = getarg(NULLCHAR, 0);
-  if (*channel) send_invite_msg(fromname, toname, atoi(channel));
+  if (*channel)
+    send_invite_msg(fromname, toname, atoi(channel), getarg(NULLCHAR, 1), 0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1178,13 +1325,11 @@ static void h_umsg_command(struct link *lp)
 {
 
   char *fromname;
-  char *text;
   char *toname;
 
   fromname = getarg(NULLCHAR, 0);
   toname = getarg(NULLCHAR, 0);
-  text = getarg(NULLCHAR, 1);
-  if (*text) send_msg_to_user(fromname, toname, text);
+  send_msg_to_user(fromname, toname, getarg(NULLCHAR, 1), 0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1214,7 +1359,7 @@ static void h_user_command(struct link *lp)
   note = getarg(NULLCHAR, 1);
   if (!*note) note = up->u_note;
 
-  if (up->u_channel != newchannel || strcmp(up->u_note, note))
+  if (up->u_channel != newchannel || newchannel >= 0 && strcmp(up->u_note, note))
     if (hp == &my) {
       sprintf(buffer, "/\377\200USER %s %s %d %d %d %s\n", name, host, 0, newchannel, up->u_channel, up->u_note);
       send_string(lp, buffer);
@@ -1316,7 +1461,7 @@ static void process_input(struct link *lp)
       send_string(lp, buffer);
     }
   } else if (lp->l_user)
-    send_msg_to_channel(lp->l_user->u_name, lp->l_user->u_channel, getarg(lp->l_ibuf, 1));
+    send_msg_to_channel(lp->l_user->u_name, lp->l_user->u_channel, getarg(lp->l_ibuf, 1), 1);
 }
 
 /*---------------------------------------------------------------------------*/
