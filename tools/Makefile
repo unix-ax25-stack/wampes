@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.26 1995/03/13 13:32:21 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/Makefile,v 1.27 1995/06/19 11:20:34 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -14,6 +14,7 @@ TARGETS    = \
 	     connect \
 	     connect2 \
 	     filter \
+	     import \
 	     makeiprt \
 	     mm2html \
 	     ms2mm
@@ -131,6 +132,11 @@ filter: filter.o $(LIBS)
 	@sleep 1
 	$(LD) $(LDFLAGS) filter.o $(LIBS) $(SLIBS) -o $@
 
+import: import.o $(LIBS)
+	$(RMTARGET)
+	@sleep 1
+	$(LD) $(LDFLAGS) import.o $(LIBS) $(SLIBS) -o $@
+
 makeiprt: makeiprt.o $(LIBS)
 	$(RMTARGET)
 	@sleep 1
@@ -146,7 +152,13 @@ ms2mm:  ms2mm.o $(LIBS)
 	@sleep 1
 	$(LD) $(LDFLAGS) ms2mm.o $(LIBS) $(SLIBS) -o $@
 
-install:;
+install: \
+	/usr/local/bin/import
+
+/usr/local/bin/import: import
+	$(MKDIR)
+	$(RMTARGET)
+	cp $? $@
 
 clean:; @rm -f *.o $(TARGETS) *~
 

@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.22 1995/06/10 17:23:39 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.23 1995/06/19 11:20:36 deyke Exp $
 
 save_file()
 {
@@ -27,7 +27,10 @@ if [[ -x /bin/hp9000s700 ]] && /bin/hp9000s700; then
 fi
 
 cd ~/tcp/lib
+file=configure.h
+save_file $file
 ksh < configure > configure.h
+check_file $file
 
 cd ~/tcp/hostfiles
 trimfiles
@@ -71,7 +74,7 @@ for dir in \
 		fi
 	done
 	for file in *.[ch]; do
-		if [[ -f $file ]]; then
+		if [[ -f $file && $file != configure.h ]]; then
 			case $(grep -F -c '@(#) $Header' $file) in
 			0)
 				save_file $file
@@ -98,6 +101,7 @@ mk make
 
 cd ~/tcp/tools
 make
+mk make install
 
 cd ~/tcp/src
 make lint tags

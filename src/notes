@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 
-- handle M msgs (feed to udbm?)
+- do not place a lock for inbound mail
 
 - create bbs routing tables
 
@@ -12,8 +12,6 @@
 - check overflow in mail buffers
 
 - Mailer:  Alle Message Delimiter entfernen
-
-- mm2html:  handle pictures
 
 - make a domain search list
   default: ampr.org. .

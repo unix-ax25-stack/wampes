@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.7 1995/06/10 17:23:38 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.8 1995/06/19 11:20:35 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -445,9 +445,14 @@ static void dot_PS(int argc, char **argv)
   printf("<IMG SRC=\"%s\" ALT=\"[picture]\">\n", filename);
   sprintf(buf,
 	  "groff -p | "
-	  "gs -sDEVICE=ppmraw -r125 -q -dNOPAUSE -sOutputFile=- - | "
+	  "gs -sDEVICE=pbmraw -r125 -q -dNOPAUSE -sOutputFile=- - | "
 	  "pnmcrop | "
-	  "ppmtogif -transparent black > %s", filename);
+#if 0
+	  "ppmtogif -transparent white > %s",
+#else
+	  "ppmtogif > %s",
+#endif
+	  filename);
   if (!(tempptr = popen(buf, "w"))) {
     perror("popen");
     exit(1);
