@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.38 1993/09/22 16:45:22 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.39 1993/09/24 09:10:15 deyke Exp $
 
 CFLAGS     = -I../lib
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
@@ -23,7 +23,7 @@ all:;   chmod 755 genupd
 	elif [ $(OS) = Linux ] ; then \
 		make -i \
 		'CC=gcc' \
-		'CFLAGS=-O6 -s -I../lib' \
+		'CFLAGS=-O -s -I../lib' \
 		'LIBS=../lib/libutil.a -lcurses -ltermcap -ldbm' \
 		_all; \
 	elif [ $(OS) = 386BSD ] ; then \
