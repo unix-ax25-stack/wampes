@@ -1,4 +1,4 @@
-/* @(#) $Id: ethertap.c,v 1.7 2002/06/30 02:57:16 dl9sau Exp $ */
+/* @(#) $Id: ethertap.c,v 1.8 2003/07/24 00:47:47 dl9sau Exp $ */
 
 /* the ethertap device. now with TUN/TAP support (by dl9sau) */
 
@@ -269,7 +269,9 @@ int ethertap_attach(int argc, char *argv[], void *p)
   int fd;
   struct edv_t *edv;
   struct iface *ifp;
+#ifdef	linux
   struct ifreq ifr;
+#endif
   struct stat statbuf;
   int version = 0;
   int ifp_mtu = 0;
@@ -290,6 +292,9 @@ int ethertap_attach(int argc, char *argv[], void *p)
       printf("%s: %s\n", devname, strerror(errno));
       return -1;
     }
+#ifndef	linux
+  }
+#else
 #ifdef	TRY_TUNTAP
   } else {
     strcpy(devname, ifname);
@@ -352,6 +357,7 @@ int ethertap_attach(int argc, char *argv[], void *p)
     perror("SIOSGIFMTU");
 
   close(skfd);
+#endif /* linux */
 
   ifp = (struct iface *) callocw(1, sizeof(struct iface));
   ifp->name = strdup(ifname);

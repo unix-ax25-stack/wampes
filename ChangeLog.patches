@@ -1,4 +1,10 @@
-Version @(#) $Id: ChangeLog.patches,v 1.15 2002/11/21 19:07:02 dl9sau Exp $
+Version @(#) $Id: ChangeLog.patches,v 1.16 2003/07/24 00:47:46 dl9sau Exp $
+
+030724 Thomas Osterried <dl9sau>
+	- ethertap.c did not compile on an hpux. -> needed some #ifdef
+	  exclusions around my linux specific extensions.
+	  todo: hpux seems also capable of tun/tap, but parts my current
+	        imlpementation need to be ported.
 
 021121 Thomas Osterried <dl9sau>
 	- login.c and doc/wampes.*, doc/intro.txt
