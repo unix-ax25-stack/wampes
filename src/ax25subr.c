@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25subr.c,v 1.28 2005/03/11 14:36:09 dl9sau Exp $ */
+/* @(#) $Id: ax25subr.c,v 1.29 2005/03/11 14:42:13 dl9sau Exp $ */
 
 /* Low level AX.25 routines:
  *  callsign conversion
@@ -296,7 +296,6 @@ char *argv[],
 struct ax25 *hdr)
 {
   hdr->ndigis = hdr->nextdigi = hdr->ext = 0;
-  hdr->ndigis = hdr->nextdigi = 0;
   if (argc < 1) {
     printf("Missing call\n");
     return 1;
