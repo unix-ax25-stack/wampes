@@ -1,5 +1,5 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ping,v 1.1 1994/07/12 16:32:26 deyke Exp $
-.H 2 "ping"
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ping,v 1.2 1994/07/18 09:15:52 deyke Exp $
+.H 2 "ping" " [\fIsubcommand\fP]"
 TO BE WRITTEN.
 .H 3 "ping clear"
 TO BE WRITTEN.

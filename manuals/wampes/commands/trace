@@ -1,5 +1,5 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/trace,v 1.2 1994/07/13 15:49:02 deyke Exp $
-.H 2 "trace" " [\fIinterface\fP [off | \fIbtio\fP [\fItracefile\fP]]]"
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/trace,v 1.3 1994/07/18 09:15:54 deyke Exp $
+.H 2 "trace" " [\fIinterface\fP [off|\fIbtio\fP [\fItracefile\fP]]]"
 Controls packet tracing by the interface drivers. Specific bits enable
 tracing of the various interfaces and the amount of information produced.
 Tracing is controlled on a per-interface basis. Without arguments, \fBtrace\fP

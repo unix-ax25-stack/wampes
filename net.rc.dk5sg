@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.24 1994/05/06 17:15:32 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.25 1994/07/18 09:15:13 deyke Exp $
 
 hostname     dk5sg
 ax25 mycall  dk5sg
@@ -6,7 +6,8 @@ ip address   dk5sg
 netrom ident "#fc"
 
 attach axip                     # ax.25 over host ip
-attach ipip                     # ip over host ip
+attach ipip                     # ip over host ip (ip proto  4)
+attach ipip ipip94 ip 94        # ip over host ip (ip proto 94)
 attach netrom                   # ip over netrom
 attach ni ni dk5sg-u            # ip to host ip
 
@@ -41,8 +42,8 @@ route add  dl4sel-1.ampr.org    ipip     15.138.33.250
 route add  dl4sel.ampr.org      ipip     15.138.33.250
 route add  dl5ue-1.ampr.org     ipip     15.138.33.250
 route addp 15.0.0.0/8           ni
-route addp 44.0.0.0/8           ipip     15.255.240.16
-route addp hpcsos.ampr.org      ipip     15.255.240.16
+route addp 44.0.0.0/8           ipip94   15.255.240.16
+route addp hpcsos.ampr.org      ipip94   15.255.240.16
 
 source /tcp/netrom_links
 

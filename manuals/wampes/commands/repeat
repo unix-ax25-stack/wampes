@@ -1,3 +1,3 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/repeat,v 1.1 1994/07/12 16:32:26 deyke Exp $
-.H 2 "repeat"
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/repeat,v 1.2 1994/07/18 09:15:52 deyke Exp $
+.H 2 "repeat" " \fImilliseconds\fP \fIcommand\fP [\fIarguments\fP ...]"
 TO BE WRITTEN.

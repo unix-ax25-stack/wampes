@@ -1,3 +1,17 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/attach,v 1.1 1994/07/12 16:32:24 deyke Exp $
-.H 2 "attach"
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/attach,v 1.2 1994/07/18 09:15:48 deyke Exp $
+.H 2 "attach" " \fItype\fP [\fItype specific options\fP]
+TO BE WRITTEN.
+.H 3 "attach asy 0" " 0 \fIencapsulation\fP \fIname\fP 0 \fImtu\fP \fIspeed\fP"
+TO BE WRITTEN.
+.H 3 "attach asy \fIip-addr\fP" " \fIport\fP \fIencapsulation\fP \fIname\fP 0 \fImtu\fP \fIspeed\fP"
+TO BE WRITTEN.
+.H 3 "attach axip" " [\fIname\fP [ip|udp [\fIport\fP]]]"
+TO BE WRITTEN.
+.H 3 "attach ipip" " [\fIname\fP [ip|udp [\fIport\fP]]]"
+TO BE WRITTEN.
+.H 3 "attach netrom"
+TO BE WRITTEN.
+.H 3 "attach ni" " \fIname\fP \fIip-addr\fP [\fInetmask\fP]"
+Currently \fBattach ni\fP is available on HP-UX systems only.
+.P
 TO BE WRITTEN.

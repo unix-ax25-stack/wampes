@@ -1,6 +1,6 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/shell,v 1.1 1994/07/12 16:32:27 deyke Exp $
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/shell,v 1.2 1994/07/18 09:15:53 deyke Exp $
 .H 2 "shell" " \fIshell_command_line\fP"
-Suspend \fBWAMPES\fP and execute a sub-shell (/bin/sh).
-When the sub-shell exits, \fBWAMPES\fP resumes.
+Suspend \fBWAMPES\fP and execute a subshell (/bin/sh).
+When the subshell exits, \fBWAMPES\fP resumes.
 Background activity (FTP servers, etc) is also suspended
-while the sub-shell executes.
+while the subshell executes.

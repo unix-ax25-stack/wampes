@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ax25,v 1.1 1994/07/12 16:32:24 deyke Exp $
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/ax25,v 1.2 1994/07/18 09:15:49 deyke Exp $
 .H 2 "ax25" " \fIsubcommand\fP"
 These commands control the AX.25 service.
 .H 3 "ax25 blimit" " [\fIlimit\fP]"
@@ -24,16 +24,16 @@ Clear the AX.25 "heard" list (see \fBax25 heard\fP).
 Display the AX.25 "heard" list. For each interface that is configured to
 use AX.25, a list of all ax25_addresses heard through that interface is
 shown, along with a count of the number of packets heard from each station
-and the interval, in hr:min:sec format, since each station was last heard.
-The local station always appears first in the listing, the packet count
-actually reflects the number of packets transmitted. This entry is always
-present even if no packets have been sent. If \fIinterface\fP is given, only
-the list for that interface is displayed.
+and the interval, in days:hr:min:sec format, since each station was last heard.
+The local station appears first in the listing, the packet count
+actually reflects the number of packets transmitted.
+If \fIinterface\fP is given, only the list for that interface is displayed.
 .H 3 "ax25 jumpstart" " \fIax25_addr\fP [on|off]"
 The default is \fBoff\fP.
 MORE TO BE WRITTEN.
 .H 3 "ax25 kick" " \fIaxcb_addr\fP"
-Force a retransmission on the specified AX.25 control block.
+If there is unacknowledged data on the send queue of the specified AX.25
+control block, this command forces an immediate retransmission.
 The control block address can be found with the \fBax25 status\fP command.
 .H 3 "ax25 maxframe" " [\fIcount\fP]"
 Display or set the maximum number of frames that will be allowed to remain
@@ -75,7 +75,7 @@ I-frame is necessary, the timeout might have been caused by a lost
 acknowledgement. This is obviously a tradeoff, so experiment with the
 poll threshold setting. The default is 64 bytes.
 .H 3 "ax25 reset" " \fIaxcb_addr\fP"
-Delete the AX.25 connection control block at the specified address.
+Delete the AX.25 control block at the specified address.
 The control block address can be found with the \fBax25 status\fP command.
 .H 3 "ax25 retry" " [\fIcount\fP]"
 Limit the number of successive unsuccessful transmission attempts on
@@ -98,8 +98,7 @@ TO BE WRITTEN.
 .H 3 "ax25 status" " [\fIaxcb_addr\fP]"
 Without an argument, display a one-line summary of each AX.25 control block.
 If the address of a particular control block is specified, the contents of
-that control block are dumped in more detail. Note that the send queue units
-are frames, while the receive queue units are bytes.
+that control block are dumped in more detail.
 .H 3 "ax25 t1" " [\fImilliseconds\fP]"
 Display or set the AX.25 retransmission timer.
 The default is 5000 milliseconds (5 seconds). MORE TO BE WRITTEN.

@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/netrom,v 1.1 1994/07/12 16:32:26 deyke Exp $
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/netrom,v 1.2 1994/07/18 09:15:52 deyke Exp $
 .H 2 "netrom" " \fIsubcommand\fP"
 These commands control the NET/ROM service.
 .H 3 "netrom broadcast" " [\fIinterface\fP \fIax25_addr\fP \fIdigipeater\fP ...]"
@@ -8,7 +8,9 @@ TO BE WRITTEN.
 .H 3 "netrom ident" " [\fIident\fP]"
 TO BE WRITTEN.
 .H 3 "netrom kick" " \fInrcb_addr\fP"
-TO BE WRITTEN.
+If there is unacknowledged data on the send queue of the specified NET/ROM
+control block, this command forces an immediate retransmission.
+The control block address can be found with the \fBnetrom status\fP command.
 .H 3 "netrom links" " [\fInode\fP [\fInode2\fP \fIquality\fP [permanent]]]"
 TO BE WRITTEN.
 .H 3 "netrom nodes" " [\fInode\fP]"
@@ -16,6 +18,9 @@ TO BE WRITTEN.
 .H 3 "netrom parms" " [\fIparm#\fP [\fIvalue\fP ...]]"
 TO BE WRITTEN.
 .H 3 "netrom reset" " \fInrcb_addr\fP"
-TO BE WRITTEN.
+Delete the NET/ROM control block at the specified address.
+The control block address can be found with the \fBnetrom status\fP command.
 .H 3 "netrom status" " [\fInrcb_addr\fP]"
-TO BE WRITTEN.
+Without an argument, display a one-line summary of each NET/ROM control block.
+If the address of a particular control block is specified, the contents of
+that control block are dumped in more detail.

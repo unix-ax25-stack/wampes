@@ -1,4 +1,4 @@
-. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/rip,v 1.2 1994/07/13 15:49:00 deyke Exp $
+. \" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/wampes/commands/rip,v 1.3 1994/07/18 09:15:53 deyke Exp $
 .H 2 "rip" " \fIsubcommand\fP"
 These commands control the Routing Information Protocol (RIP) service.
 .H 3 "rip accept" " \fIgateway\fP"
@@ -52,7 +52,7 @@ entry already in the table. That is, the target address(es) specified
 by the entry in question must also match the target addresses of the
 less specific entry and the two entries must have the same interface
 and gateway fields. For example, if the routing table contains
-.DS
+.DS I
 .TS
 tab(;) ;
 lB lB lB lB lB lB lB lB

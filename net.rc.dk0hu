@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.37 1994/05/06 17:15:32 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.38 1994/07/18 09:15:13 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -17,7 +17,8 @@ param tnc0 12   0   # echo
 param tnc0 13   1   # rxdelay
 
 attach axip                     # ax.25 over host ip
-attach ipip                     # ip over host ip
+attach ipip                     # ip over host ip (ip proto  4)
+attach ipip ipip94 ip 94        # ip over host ip (ip proto 94)
 attach netrom                   # ip over netrom
 attach ni ni dk0hu-u            # ip to host ip
 
