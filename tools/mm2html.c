@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.3 1994/11/21 11:36:37 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.4 1994/11/28 10:39:49 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -241,7 +241,7 @@ static void print_contents(void)
 
   if (headers) {
     lastlevel = 0;
-    puts("<H2>Table of Contents</H2>");
+    puts("<HR><H2>Table of Contents</H2>");
     for (hp = headers; hp; hp = hp->next) {
       if (hp->in_toc) {
 	while (lastlevel < hp->level) {
@@ -399,6 +399,8 @@ static void dot_H(int argc, char **argv)
       print_contents();
       afterheader = 1;
     }
+    if (level == 1)
+      printf("<HR>");
     printf("<H%d><A NAME=\"%s\">%s %s", level + 1, label, label + 1, argv[2]);
     if (argc > 3)
       printf("%s", argv[3]);

@@ -4,14 +4,14 @@
 </HEAD>
 <BODY>
 <H1>WAMPES Reference Manual</H1>
-Version 941123
+Version 941128
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
 <BR>
 deyke@fc.hp.com
 <BR>
-<H2>Table of Contents</H2>
+<HR><H2>Table of Contents</H2>
 <OL>
 <LI><A HREF="#H1.">Credits</A>
 <LI><A HREF="#H2.">The /tcp/net Program</A>
@@ -139,14 +139,14 @@ deyke@fc.hp.com
 <LI><A HREF="#H6.4">Summary</A>
 </OL>
 </OL>
-<H2><A NAME="H1.">1. Credits</A></H2>
+<HR><H2><A NAME="H1.">1. Credits</A></H2>
 This manual is based in part on publications authored by
 <PRE>
 Phil Karn, KA9Q
 Bdale Garbee, N3EUA
 Gerard van der Grinten, PA0GRI
 </PRE>
-<H2><A NAME="H2.">2. The /tcp/net Program</A></H2>
+<HR><H2><A NAME="H2.">2. The /tcp/net Program</A></H2>
 The executable file <B>/tcp/net</B>
 (further called <B>WAMPES</B>) provides Internet (TCP/IP),
 NET/ROM and AX.25
@@ -199,7 +199,7 @@ The following environment variables are read by <B>WAMPES</B>:
 <DD>The TZ variable should be set to the local timezone. Default is TZ=MEZ-1MESZ.
 This is used in various time stamps.
 </DL>
-<H2><A NAME="H3.">3. Console modes</A></H2>
+<HR><H2><A NAME="H3.">3. Console modes</A></H2>
 The console may be in one of two modes: <B>command mode</B> or
 <B>converse mode</B>.
 In <B>command mode</B> the prompt <I>hostname</I>&gt; is displayed and any of the
@@ -331,7 +331,7 @@ containing <I>string</I>.
 <DT>Control-T
 <DD>Execute line without appending Return+Linefeed to it.
 </DL>
-<H2><A NAME="H4.">4. Commands</A></H2>
+<HR><H2><A NAME="H4.">4. Commands</A></H2>
 This section describes the commands recognized in command mode, or
 within a startup file such as <B>net.rc</B>. These are given in the following
 notation:
@@ -1989,7 +1989,7 @@ Open <I>filename</I> and send it on the current session as though it were
 typed on the terminal.
 The command <B>upload stop</B> stops uploading and closes the file.
 If no argument is specified the current status is displayed.
-<H2><A NAME="H5.">5. FTP Subcommands</A></H2>
+<HR><H2><A NAME="H5.">5. FTP Subcommands</A></H2>
 This section describes the commands recognized in converse mode
 with a FTP session.
 <P>
@@ -2110,7 +2110,7 @@ remote system how large the byte size is. <I>bytesize</I> is typically 8.
 <H3><A NAME="H5.30">5.30 user <I>user-name</I> [<I>password</I>]</A></H3>
 Log into the server host on the current connection, which must
 already be open.
-<H2><A NAME="H6.">6. Setting Paclen, Maxframe, MTU, MSS and Window</A></H2>
+<HR><H2><A NAME="H6.">6. Setting Paclen, Maxframe, MTU, MSS and Window</A></H2>
 Many <B>WAMPES</B> users are confused by these parameters and do not know how to
 set them properly. This chapter will first review these parameters and
 then discuss how to choose values for them. Special emphasis is given to

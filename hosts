@@ -1,5 +1,3 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.49 1994/11/23 09:36:33 deyke Exp $
-#
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
 # -----------------------------------------------------------------------
@@ -1023,80 +1021,85 @@
 44.130.146.200  DK0HN      # Clubstation Herten Sever
 44.130.146.210  DG2YHX     #
 #
-#44.130.19.x    Koeln/Duesseldorf
+#44.130.19.x  Koeln/Duesseldorf
 # lokale Adresskoordination: DG8JT
-44.130.19.1     DG8JT   # Joachim Hoeft, 40627 Duesseldorf
-44.130.19.2     DD9EY   # Bernhard, 4000 Duesseldorf
-44.130.19.3     DH4EAQ  # Wolfgang, 4030 Ratingen
-44.130.19.4     DK6JD   # Karl-Heinz, 4030 Ratingen
-44.130.19.5     DK0RC   # Clubstn R12, Ratingen
-44.130.19.6     DL3EBN  # Walter, Ratingen
-44.130.19.10    DF6KI   # Wolfgang Voogd, 5090 Leverkusen 1
-44.130.19.11    DL0THK  # THW, 5090 Leverkusen
-44.130.19.12    DL1EGL  # Robert, 4048 Grevenbroich 5
-44.130.19.19    DL2EBV  # Ernst Kirschbaum, 4048 Grevenbroich 1
-44.130.19.20    DH5JG   # Frank Valdor, 5090 Leverkusen
-44.130.19.32    DG6EAE  # Juergen Hussels, 5650 Solingen 1
-44.130.19.33    DB1JJ   # Robert Schneider, 5650 Solingen
-44.130.19.34    DG6KK   # Bernhard Hoffmann, Koeln/Dellbrueck
-44.130.19.39    DF8IK   # Peter Perner, 5024 Pulheim-Brauweiler
-44.130.19.40    DH3EAN  # Kaspar Klingholz, 5650 Solingen
-44.130.19.41    DL0AAA  # , 5060 Bensberg (DJ7CT)
-44.130.19.44    DG2JH   # Norbert Muench, 5600 Wuppertal 1
-44.130.19.45    DG3EAZ  # Jost, Duesseldorf-Oberkassel
-44.130.19.46    DG1JN   # Rolf Wagner, 5000 Koeln
-44.130.19.47    DH9EAX  # Rolf, Kaarst
-44.130.19.48    DL1WX   # Josef Wankerl, 4018 Langenfeld
-44.130.19.49    DD9JN   # Werner, Duesseldorf
-44.130.19.50    DG9EP   # Walter Koch, 4006 Erkrath-Hochdahl
-44.130.19.51    DK8JV   # Eberhard Backeshoff, 4020 Mettmann
-44.130.19.52    DJ0ZE   # Eric Donato, 4030 Ratingen
-44.130.19.53    DJ0ZE-1 #
-44.130.19.54    DG9YEV  # Georg Baxmann, 4390 Gladbeck
-44.130.19.55    DG9YEV-1        #
-44.130.19.56    DD2JX   # Ludger Theis, 4020 Mettmann
-44.130.19.57    DD2JX-1 #
-44.130.19.58    DF9JD   # Alfred Spitzer, 5650 Solingen
-44.130.19.61    DL3NCW  # Joachim Herzig, 4050 Moenchengladbach; 386SX, WNOS
-44.130.19.62    DG1ECH  # Bernd Janssen, 4006 Meerbusch
-44.130.19.63    DL1KBB  # Thomas Redeker, 5000 Koeln 80
-44.130.19.66    DJ5JQ   # Eckhard Grah, 5650 Solingen
-44.130.19.67    DL1ER   # Uli, Viersen
-44.130.19.68    DG2EAT  # Arno Loehdorf, 5650 Solingen 1
-44.130.19.69    DH8KAM  # Ingo, Fliesteden
-44.130.19.70    DC2JK   # Oliver, Remscheid
-44.130.19.71    DG1KJD  # Jens David, 53881 Euskirchen-Elsig
-44.130.19.74    GM6TKS  # Mark, Moenchengladbach
-44.130.19.75    DL3KHB  # Klaus, 50181 Bedburg/Erft
-44.130.19.76    DG1KHR  # Hans, Eitorf
-44.130.19.78    DL6KL   # Adolf Loosen, Koeln 90 Porz
-44.130.19.79    DG5MGQ-2        # Toby
-44.130.19.80    DC6BC   # Norbert; Atari
-44.130.19.81    DC6BC-1 # ; AT386
-44.130.19.82    DC6BC-2 # ; AT386 Unix V
-44.130.19.86    DL3DBT-QRL      # Dirk, Duesseldorf
-44.130.19.100   DB0SYS  # IP-Server Duesseldorf (DG8JT); ***
-44.130.19.110   DJ0MDJ  # Christoph
-44.130.19.111   DG8JT-1 # Joachim Hoeft, Duesseldorf; WNOS
-44.130.19.112   DG1EHE  # Ulf Uhrmann, 42655 Solingen
-44.130.19.113   DB5VP   # Ralf Schwab, 4000 Duesseldorf 1
-44.130.19.114   DB9ER   # Dieter Schneider, 40699 Erkrath
-44.130.19.115   DG1EAD  # Dieter Hinsch, 4000 Duesseldorf 13
-44.130.19.116   DG6YGW  # Martin, Duesseldorf-Oberkassel
-44.130.19.117   DG1ELC  # Serge Urbaniak, 41472 Neuss
-44.130.19.118   DG1EGR  # Ingo, Duesseldorf
-44.130.19.144   DG1JL   # Mike, 5620 Velbert; Amiga-3000
-44.130.19.145   DL7ZY   # Stefan, Bergheim-Glessen
-44.130.19.146   DL7ZY-2 #
-44.130.19.147   DL1MI   # Hans, Viersen
-44.130.19.154   DL3EBB  # Achim Breuer, 41236 Moenchengladbach; AT486
-44.130.19.155   DL3EBB-U        # ; Linux
-44.130.19.156   DL3EBB-2        # ; GNOS
-44.130.19.157   DD3EX   # Heiko Streeck
-44.130.19.158   DD1JD   # Dirk Symons, 40233 Duesseldorf
-44.130.19.200   DD4EB   # Kirsten Wieck, 4018 Langenfeld
-44.130.19.253   DG9EKC  # Stephan Eickel, 40724 Hilden; AT386
-44.130.19.254   TEST.DD9EY      # DD9EY Testrechner
+44.130.19.1   DG8JT   # Joachim Hoeft, 40627 Duesseldorf
+44.130.19.2   DD9EY   # Bernhard, 4000 Duesseldorf
+44.130.19.3   DH4EAQ  # Wolfgang, 4030 Ratingen
+44.130.19.4   DK6JD   # Karl-Heinz, 4030 Ratingen
+44.130.19.5   DK0RC   # Clubstn R12, Ratingen
+44.130.19.6   DL3EBN  # Walter, Ratingen
+44.130.19.7   DG8EKG  # Ansgar, Duesseldorf - Unterrath
+44.130.19.10  DF6KI   # Wolfgang Voogd, 5090 Leverkusen 1
+44.130.19.11  DL0THK  # THW, 5090 Leverkusen
+44.130.19.12  DL1EGL  # Robert, 4048 Grevenbroich 5
+44.130.19.14  DF1ER   # Frank   Erkrath/Hochdahl
+44.130.19.19  DL2EBV  # Ernst Kirschbaum, 4048 Grevenbroich 1
+44.130.19.20  DH5JG   # Frank Valdor, 5090 Leverkusen
+44.130.19.32  DG6EAE  # Juergen Hussels, 5650 Solingen 1
+44.130.19.33  DB1JJ   # Robert Schneider, 5650 Solingen
+44.130.19.34  DG6KK   # Bernhard Hoffmann, Koeln/Dellbrueck
+44.130.19.39  DF8IK   # Peter Perner, 5024 Pulheim-Brauweiler
+44.130.19.40  DH3EAN  # Kaspar Klingholz, 5650 Solingen
+44.130.19.41  DL0AAA  # , 5060 Bensberg (DJ7CT)
+44.130.19.44  DG2JH   # Norbert Muench, 5600 Wuppertal 1
+44.130.19.45  DG3EAZ  # Jost, Duesseldorf-Oberkassel
+44.130.19.46  DG1JN   # Rolf Wagner, 5000 Koeln
+44.130.19.47  DH9EAX  # Rolf, Kaarst
+44.130.19.48  DL1WX   # Josef Wankerl, 4018 Langenfeld
+44.130.19.49  DD9JN   # Werner, Duesseldorf
+44.130.19.50  DG9EP   # Walter Koch, 4006 Erkrath-Hochdahl
+44.130.19.51  DK8JV   # Eberhard Backeshoff, 4020 Mettmann
+44.130.19.52  DJ0ZE   # Eric Donato, 4030 Ratingen
+44.130.19.53  DJ0ZE-1 #
+44.130.19.54  DG9YEV  # Georg Baxmann, 4390 Gladbeck
+44.130.19.55  DG9YEV-1        #
+44.130.19.56  DD2JX   # Ludger Theis, 4020 Mettmann
+44.130.19.57  DD2JX-1 #
+44.130.19.58  DF9JD   # Alfred Spitzer, 5650 Solingen
+44.130.19.61  DL3NCW  # Joachim Herzig, 4050 Moenchengladbach; 386SX, WNOS
+44.130.19.62  DG1ECH  # Bernd Janssen, 4006 Meerbusch
+44.130.19.63  DL1KBB  # Thomas Redeker, 5000 Koeln 80
+44.130.19.66  DJ5JQ   # Eckhard Grah, 5650 Solingen
+44.130.19.67  DL1ER   # Uli, Viersen
+44.130.19.68  DG2EAT  # Arno Loehdorf, 5650 Solingen 1
+44.130.19.69  DH8KAM  # Ingo, Fliesteden
+44.130.19.70  DC2JK   # Oliver, Remscheid
+44.130.19.71  DG1KJD  # Jens David, 53881 Euskirchen-Elsig
+44.130.19.72  DG8KBR  # Rolf
+44.130.19.73  DC4KO  # Oliver, Bensberg
+44.130.19.74  GM6TKS  # Mark, Moenchengladbach
+44.130.19.75  DL3KHB  # Klaus, 50181 Bedburg/Erft
+44.130.19.76  DG1KHR  # Hans, Eitorf
+44.130.19.78  DL6KL   # Adolf Loosen, Koeln 90 Porz
+44.130.19.79  DG5MGQ-2        # Toby
+44.130.19.80  DC6BC   # Norbert; Atari
+44.130.19.81  DC6BC-1 # ; AT386
+44.130.19.82  DC6BC-2 # ; AT386 Unix V
+44.130.19.86  DL3DBT-QRL      # Dirk, Duesseldorf
+44.130.19.100 DB0SYS  # IP-Server Duesseldorf (DG8JT); ***
+44.130.19.110 DJ0MDJ  # Christoph
+44.130.19.111 DG8JT-1 # Joachim Hoeft, Duesseldorf; WNOS
+44.130.19.112 DG1EHE  # Ulf Uhrmann, 42655 Solingen
+44.130.19.113 DB5VP   # Ralf Schwab, 4000 Duesseldorf 1
+44.130.19.114 DB9ER   # Dieter Schneider, 40699 Erkrath
+44.130.19.115 DG1EAD  # Dieter Hinsch, 4000 Duesseldorf 13
+44.130.19.116 DG6YGW  # Martin, Duesseldorf-Oberkassel
+44.130.19.117 DG1ELC  # Serge Urbaniak, 41472 Neuss
+44.130.19.118 DG1EGR  # Ingo, Duesseldorf
+44.130.19.144 DG1JL   # Mike, 5620 Velbert; Amiga-3000
+44.130.19.145 DL7ZY   # Stefan, Bergheim-Glessen
+44.130.19.146 DL7ZY-2 #
+44.130.19.147 DL1MI   # Hans, Viersen
+44.130.19.150 DB0MJ   # PR/RTTY GATE (DG1EAD)
+44.130.19.154 DL3EBB  # Achim Breuer, 41236 Moenchengladbach; AT486
+44.130.19.155 DL3EBB-U        # ; Linux
+44.130.19.156 DL3EBB-2        # ; GNOS
+44.130.19.157 DD3EX   # Heiko Streeck
+44.130.19.158 DD1JD   # Dirk Symons, 40233 Duesseldorf
+44.130.19.200 DD4EB   # Kirsten Wieck, 4018 Langenfeld
+44.130.19.253 DG9EKC  # Stephan Eickel, 40724 Hilden; AT386
+44.130.19.254 TEST.DD9EY      # DD9EY Testrechner
 #
 #44.130.20.x    Aachen
 44.130.20.1     DG2KK   # Walter Doerr, 5160 Dueren
@@ -2636,21 +2639,24 @@
 #
 #44.130.62.x    Bamberg/Bayreuth
 # lokale Adresskoordination: DL1NAT
-44.130.62.1     DD8NE   # Hans-Joachim Hetscher, 8602 Stegaurach; PC
-44.130.62.2     DL9NCF  # Alfred Schloegel, 8600 Bamberg
-44.130.62.3     DL1NAT  # Paul Dorn, Bamberg
-44.130.62.4     DL1NAT-A        #
-44.130.62.5     DL6NED  # Andre Bergmann, 95359 Kasendorf; AT386
-44.130.62.6     DD8NE-GATE      #
-44.130.62.7     DJ7YD   # Winfried Kopp, Hof/Saale
-44.130.62.8     DG2NAE  # Harald Sapper, Coburg
-44.130.62.10    DG1NBR  # Matthias Klauda, 8601 Breitbrunn
-44.130.62.11    DH3NBA  # Heiko Eschrich, 96117 Memmelsdorf (ex DB6NZ)
-44.130.62.19    DG7NEF-GATE     # Wolfgang, Bamberg
-44.130.62.20    DG7NEF  # Wolfgang, Bamberg
-44.130.62.21    DL9NBX  # Roland Voellmer, 96450 Coburg
-44.130.62.30    DL1NV   # Guenther Kestel, 96317 Kronach
-44.130.62.100   DB0BBG-10       # Digi Bamberg Kaelberberg
+44.130.62.1    DD8NE          # Hans-Joachim Hetscher Stegaurach
+44.130.62.2    DL9NCF         # Alfred Schloegel Bamberg
+44.130.62.3    DL1NAT         # Paul Dorn Bamberg
+44.130.62.4    DL1NAT-A       # Paul Dorn Bamberg
+44.130.62.5    DL6NED         # Andre Bergmann Kasendorf
+44.130.62.6    DD8NE-GATE     # Hans-Joachim Hetscher Stegaurach
+44.130.62.7    DJ7YD          # Winfried Kopp Hof/Saale
+44.130.62.8    DG2NAE         # Harry Sapper Coburg
+44.130.62.9    DL8NCC         # Klaus Voelkel Bamberg
+44.130.62.10   DG1NBR         # Matthias Klauda Breitbrunn
+44.130.62.11   DH3NBA         # Heiko Eschrich Drosendorf
+44.130.62.12   DL8NDN         # Harms Gundelsheim
+44.130.62.14   DG2NBD         # Bernd Drechsel Bamberg
+44.130.62.19   DG7NEF-GATE    # Wolfgang Bamberg
+44.130.62.20   DG7NEF         # Wolfgang Bamberg
+44.130.62.21   DL9NBX         # Roland Coburg
+44.130.62.30   DL1NV          # Guenther Kestel Kronach
+44.130.62.100  DB0BBG-10      # Digipeater Bamberg Kaelberberg
 #
 #44.130.63.x    Franken
 # lokale Adresskoordination: DL1NC
@@ -2849,7 +2855,7 @@
 #       brief: als boven maar met retour envelope, gefrankeerd !!!
 #       Telefoon alleen 's avonds tussen 20.30 en 22.00 s.v.p. .
 #
-# revision 7 oct 1994
+# revision 02 nov 1994
 #
 44.137.0.0      PA_ZH1net
 44.137.0.2      pa0gri          # gerard
@@ -3082,6 +3088,10 @@
 44.137.0.233    sys3.pa3bat     # roel
 44.137.0.234    sys4.pa3bat     # roel
 44.137.0.235    pe1pje          # vincent
+44.137.0.236    pa0gjh          # gerritjan
+44.137.0.237    pe1ppm          # jan
+44.137.0.238    pa3gck          # asbjorn
+44.137.0.239    sys2.pa0fhg     # frits
 #
 44.137.1.1      net.pa0gri      net     # TCP/IP net server and IP switch
 44.137.1.2      devel.pa0gri    # gerard
@@ -3238,6 +3248,7 @@
 44.137.8.88     pa3ctx          # dick
 44.137.8.89     pa0car          # anton
 44.137.8.90     sys3.pe1otp     # rob
+44.137.8.91     sys3.pe1mhp     # jan
 #
 44.137.12.0     PA_GRnet
 44.137.12.1     pa3esk          # frans
@@ -3371,6 +3382,7 @@
 44.137.16.94    pa0jxm          # jacob
 44.137.16.95    sys3.pe1dgz     # jan-charles
 44.137.16.96    pe1pjq          # erik
+44.137.16.97    pi8sat          # bert
 #
 44.137.17.1     pa0hzp-1        # henk
 44.137.17.2     pa0hzp-2        # henk
@@ -3396,6 +3408,7 @@
 44.137.20.17    pe1hhy          # peter
 44.137.20.18    pe1ljs          # jan
 44.137.20.19    pa2tsl          # tom
+44.137.20.21    pa3ami          # piet
 44.137.20.20    pa3ets          # ron
 #
 44.137.24.0     PA_NBOnet
@@ -3578,6 +3591,12 @@
 44.137.24.177   pe1pnq          # simon
 44.137.24.178   pe1not          # jean-paul
 44.137.24.179   pe1ose          # harold
+44.137.24.182   pa3gpw          # hans
+44.137.24.183   pe1pmd      # olaf
+44.137.24.184   pa0rwh          # rob
+44.137.24.185   pa3alo          # richard
+44.137.24.186   pe1ahy          # henk
+44.137.24.187   sys2.pe1ofl     # patrick
 44.137.24.180   sys3.pa3cii     # john
 44.137.24.181   pa0toi          # theo
 #
@@ -3820,13 +3839,14 @@
 44.137.32.164   pa3cge          # bob
 44.137.32.165   pe1pdf          # bram
 44.137.32.166   pe1mxv          # peter
-44.137.32
-167     pe1osd          # cock
+44.137.32.167   pe1osd          # cock
 44.137.32.168   pe1orp          # andre
 44.137.32.169   pa3aby          # louis
 44.137.32.170   pe1oon          # richard
 44.137.32.171   pa0gbo          # m
 44.137.32.172   pe1met          # fred
+44.137.32.177   pa3bxr          # rob
+44.137.32.178   pa0fre          # fred
 44.137.32.173   pa2ger          # ger
 44.137.32.174   pe1ozb          # paul
 44.137.32.175   sys2.pe1itn     # hans
@@ -3904,6 +3924,8 @@
 44.137.36.66    pa3fym          # remco
 44.137.36.67    pa3bft          # cees
 44.137.36.68    pa6zmy          # almar
+44.137.36.74    pe1iaa          # harry
+44.137.36.75    dox.pe1kdh      # rens
 44.137.36.69    pi5ren          # rens en rens
 44.137.36.70    pe1pdc          # evert
 44.137.36.71    pe1heu          # frank
@@ -4008,7 +4030,10 @@
 44.137.40.96    pi4gac          # robert
 44.137.40.97    pe1ezw          # hans
 44.137.40.98    pe1pio          # menno
+44.137.40.108   pe1mad          # cor
 44.137.40.99    sys2.pe1lxx     # paul
+#44.137.41.0    koxnet          # rob subnet 0-15
+#
 44.137.40.100   sys3.pe1lxx     # paul
 44.137.40.101   sys4.pe1lxx     # paul
 44.137.40.102   pe1pet          # marcel
@@ -4122,6 +4147,8 @@
 44.137.46.33    sys4.pe1mew     # remko
 44.137.46.34    pe1njz          # hans
 44.137.46.35    pa3cwl          # janjaap
+44.137.46.45    pa3fbx          # benno
+44.137.46.46    sys2.pa3fbx     # benno
 44.137.46.36    pi4vrz          # ron
 44.137.46.37    pe1lif          # marinus
 44.137.46.38    sys2.pi8vrz     # ron
