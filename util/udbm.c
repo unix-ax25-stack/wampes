@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.41 1995/10/23 16:05:30 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.42 1995/11/19 11:54:18 deyke Exp $";
 #endif
 
 /* User Data Base Manager */
@@ -636,4 +636,3 @@ int main(void)
 
   return 0;
 }
-

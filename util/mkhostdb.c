@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.11 1994/09/19 17:08:20 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/mkhostdb.c,v 1.12 1995/11/19 11:54:17 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -20,17 +20,6 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 static DBM *Dbhostaddr;
 static DBM *Dbhostname;
 static char origin[1024];
-
-static int aton(const char *name, long *addrptr);
-static char *ntoa(long addr);
-static void store_in_db(const char *name, const char *addrstr);
-static void fix_line(char *line);
-static char *fix_name(const char *name);
-static void read_hosts_file(const char *filename);
-static void read_domain_file(const char *filename);
-static void qaddr(const char *name);
-static void qname(const char *addrstr);
-int main(int argc, char **argv);
 
 /*---------------------------------------------------------------------------*/
 
@@ -82,7 +71,7 @@ static void store_in_db(const char *name, const char *addrstr)
   if (aton(addrstr, &addr) || !addr || !~addr) return;
   dname.dptr = (char *) name;
   dname.dsize = strlen(name) + 1;
-  daddr.dptr = (char *) & addr;
+  daddr.dptr = (char *) &addr;
   daddr.dsize = sizeof(addr);
   i = dbm_store(Dbhostaddr, dname, daddr, DBM_INSERT);
   if (i < 0) {
@@ -187,16 +176,16 @@ static void read_domain_file(const char *filename)
 
     if (!isspace(*line & 0xff)) {
       strcpy(name, p);
-      p = strtok((char *) 0, delim);
+      p = strtok(0, delim);
     }
 
     while (p && (isdigit(*p & 0xff) || !strcmp(p, "in")))
-      p = strtok((char *) 0, delim);
+      p = strtok(0, delim);
     if (!p) continue;
 
     if (strcmp(p, "a")) continue;
 
-    if (!(p = strtok((char *) 0, delim))) continue;
+    if (!(p = strtok(0, delim))) continue;
 
     store_in_db(fix_name(name), p);
 
@@ -221,16 +210,16 @@ static void read_domain_file(const char *filename)
 
     if (!isspace(*line & 0xff)) {
       strcpy(name, p);
-      p = strtok((char *) 0, delim);
+      p = strtok(0, delim);
     }
 
     while (p && (isdigit(*p & 0xff) || !strcmp(p, "in")))
-      p = strtok((char *) 0, delim);
+      p = strtok(0, delim);
     if (!p) continue;
 
     if (strcmp(p, "cname")) continue;
 
-    if (!(p = strtok((char *) 0, delim))) continue;
+    if (!(p = strtok(0, delim))) continue;
 
     dname.dptr = fix_name(p);
     dname.dsize = strlen(dname.dptr) + 1;
@@ -308,7 +297,7 @@ static void qname(const char *addrstr)
     fprintf(stderr, "no such key: %s\n", addrstr);
     return;
   }
-  daddr.dptr = (char *) & addr;
+  daddr.dptr = (char *) &addr;
   daddr.dsize = sizeof(addr);
   dname = dbm_fetch(Dbhostname, daddr);
   if (dname.dptr)
@@ -361,4 +350,3 @@ int main(int argc, char **argv)
   }
   return 0;
 }
-

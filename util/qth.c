@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/qth.c,v 1.14 1994/10/09 08:23:09 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/qth.c,v 1.15 1995/11/19 11:54:18 deyke Exp $";
 #endif
 
 /* qth: qth, locator, distance, and course computations */
@@ -387,4 +387,3 @@ int main(int pargc, char **pargv)
   }
   return 0;
 }
-

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/calc_crc.c,v 1.1 1994/01/14 21:29:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/calc_crc.c,v 1.2 1995/11/19 11:54:18 deyke Exp $ */
 
 #include "calc_crc.h"
 
@@ -52,4 +52,3 @@ int calc_crc_16(const char *str)
     crc = ((crc >> 8) & 0xff) ^ Crc_16_table[(crc ^ *str++) & 0xff];
   return crc;
 }
-

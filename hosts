@@ -1251,6 +1251,7 @@
 44.130.20.16    DL3NO   # Rupert Mohr, 5100 Aachen
 44.130.20.17    DG2KHJ  # Heinmz-Juergen Hartfuss, 52068 Aachen
 44.130.20.18    DL4KON  # Ingo Krause, 52134 Merkstein
+44.130.20.19    DG7PC   # Christian Hilgers,52070 Aachen
 44.130.20.20    DL9KAR  # Bernd Lettow, 5180 Eschweiler
 44.130.20.21    DB3KW   # Georg Schmitz, 5100 Aachen
 44.130.20.22    DB3KW-1 #
@@ -1258,6 +1259,8 @@
 44.130.20.24    DB3KW-3 #
 44.130.20.25    DB3KW-4 #
 44.130.20.26    DL2KDF  # Peter Verhuelsdonk, 5100 Aachen
+44.130.20.27    DL2KTJ  # Thomas Jansen, 41844 Wegberg
+44.130.20.28    DG1KND  # Detlef Neudecker, 52477 Alsdorf
 44.130.20.30    DK3KO   # Wilhelm Golz, 5100 Aachen
 44.130.20.35    DF2JH   # Jochen, Aachen
 44.130.20.39    DH9KAE-1 # Detlef Brunkel, 52531 Uebach-Palenberg; Linux Router
@@ -1353,7 +1356,7 @@
 44.130.21.23    DG4KP   # Dieter, Alfter
 44.130.21.24    DL8EBV  #
 44.130.21.25    DL0RK   # DK5KS
-44.130.21.26    DH9KL   #
+44.130.21.26    DL6KS   # Helmut, G23 Meckenheim/Rheinbach
 44.130.21.27    DD0KT   #
 44.130.21.28    DF4KO   #
 44.130.21.29    DG3OC   # Fritz Tegtmeier, Linz
@@ -1393,7 +1396,7 @@
 44.130.21.63    DL8SH   # Dieter, 5204 Lohmar
 44.130.21.64    DB0GHH  # Digi Bonn, JO30MS (Gustav-Heinemann-Haus)
 44.130.21.65    DL3KBJ  # Rainer, Bonn
-44.130.21.66    DJ0IA   # Steve Takacs 53773 Hennef-Lichtenber
+44.130.21.66    DJ0IA   # Steve Takacs 53773 Hennef-Lichtenberg
 44.130.21.67    DG5KAY  # Herbert Falkenbach 53332 Bornheim
 44.130.21.70    DL6KBG  # Oliver Goldenstein, 5308 Rheinbach-Niederdrees
 44.130.21.71    DL1KIM  # Ingo Maurischat, 5300 Bonn 1

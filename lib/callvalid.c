@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/callvalid.c,v 1.1 1994/01/09 16:22:26 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/callvalid.c,v 1.2 1995/11/19 11:54:18 deyke Exp $ */
 
 #include <ctype.h>
 #include <string.h>
@@ -24,4 +24,3 @@ int callvalid(const char *call)
   if (d < 1 || d > 2) return 0;
   return 1;
 }
-

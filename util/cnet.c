@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.30 1994/10/06 16:15:45 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.31 1995/11/19 11:54:16 deyke Exp $";
 #endif
 
 #ifndef linux
@@ -290,4 +290,3 @@ int main(int argc, char **argv)
     }
   }
 }
-

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strdup.c,v 1.5 1994/10/09 08:23:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/strdup.c,v 1.6 1995/11/19 11:54:19 deyke Exp $ */
 
 #ifdef __cplusplus
 #define EXTERN_C        extern "C"
@@ -19,4 +19,3 @@ char *strdup(const char *s)
   if ((p = (char *) malloc(strlen(s) + 1))) strcpy(p, s);
   return p;
 }
-

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.20 1994/10/06 16:15:46 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.21 1995/11/19 11:54:17 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -338,4 +338,3 @@ int main(int argc, char **argv)
     doroutelist(argc, argv);
   return 0;
 }
-

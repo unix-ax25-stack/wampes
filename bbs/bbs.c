@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 3.0 1995/11/07 22:54:41 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 3.1 1995/11/19 11:54:12 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -207,6 +207,15 @@ static void errorstop(int line)
 /*---------------------------------------------------------------------------*/
 
 #define halt() errorstop(__LINE__)
+
+/*---------------------------------------------------------------------------*/
+
+static void inc_errors(void)
+{
+  errors++;
+  if (level == MBOX && errors >= 3)
+    exit(1);
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -853,7 +862,7 @@ static void generate_bid_and_mid(struct mail *mail, int generate_bid)
   }
 
   if (generate_bid && !*mail->bid) {
-    if ((fdlock = lock_file(BIDLOCKFILE, 0)) < 0)
+    if ((fdlock = lock_file(BIDLOCKFILE, 1, 0)) < 0)
       halt();
     t = t1 = time(0);
     cp = mail->bid + 13;
@@ -1266,14 +1275,14 @@ static int set_position(int find_next_unread)
   if (!groups) {
     load_groups();
     if (!groups) {
-      printf("No groups available.\n");
+      puts("No groups available.");
       return 0;
     }
   }
 
   if (!find_next_unread) {
     if (!current_group) {
-      printf("Need to specify group first.\n");
+      puts("Need to specify group first.");
       return 0;
     } else {
       return 1;
@@ -1288,7 +1297,7 @@ static int set_position(int find_next_unread)
 	break;
     }
     if (!current_group) {
-      printf("No subscribed-to groups available.\n");
+      puts("No subscribed-to groups available.");
       return 0;
     }
     current_article = current_group->low;
@@ -1300,7 +1309,7 @@ static int set_position(int find_next_unread)
       if (!(p = p->next))
 	p = groups;
       if (p == current_group) {
-	printf("No more articels to read.\n");
+	puts("No more articles to read.");
 	return 0;
       }
       if (p->subscribed && p->unread) {
@@ -1652,7 +1661,7 @@ static void delete_command(int argc, const char **argv)
   for (; argc; argc--, argv++) {
     parse_range(current_group, *argv, &low, &high);
     if (low < current_group->low || high > current_group->high) {
-      printf("Message number out of range.\n");
+      puts("Message number out of range.");
       continue;
     }
     for (i = low; i <= high; i++) {
@@ -1669,7 +1678,7 @@ static void delete_command(int argc, const char **argv)
       strcpy(delete_mail->fromuser, user.name);
       strcpy(delete_mail->touser, "e");
       strcpy(delete_mail->tohost, "thebox");
-      sprintf(delete_mail->subject, "%s", orig_mail->bid);
+      strcpy(delete_mail->subject, orig_mail->bid);
       free_mail(orig_mail);
       route_mail(delete_mail);
     }
@@ -2003,7 +2012,7 @@ static void f_command(int argc, const char **argv)
 
   did_any_forward = 0;
   sprintf(fname, FWDLOCKFILE "%s", user.name);
-  if ((fdlock = lock_file(fname, 1)) >= 0) {
+  if ((fdlock = lock_file(fname, 1, 1)) >= 0) {
     for (;;) {
       did_forward = 0;
       forward_mail();
@@ -2092,64 +2101,74 @@ static void list_command(int argc, const char **argv)
   char from[1024];
   char pattern[1024];
   int changed;
+  int found;
   int i;
   int j;
+  int unreads_only;
   int unread;
   long timeout;
   struct mail *mail;
 
-  if (!set_position(argc < 2))
-    return;
-  printf("GROUP: %s\n", current_group->name + NEWSGROUPSPREFIXLENGTH);
+  unreads_only = (argc < 2);
   changed = 0;
+  found = 0;
   timeout = time(0) - maxage * DAYS;
-  for (i = current_group->low; i <= current_group->high && !stopped; i++) {
-    unread = !is_read(current_group, i);
-    if (!unread && argc < 2)
-      continue;
-    if (!(mail = get_article(current_group, i, HEADER_ONLY))) {
-      if (unread) {
-	set_read(current_group, i);
-	current_group->unread--;
-	unread = 0;
-	changed = 1;
-      }
-      continue;
-    }
-    if (mail->date < timeout) {
-      if (unread) {
-	set_read(current_group, i);
-	current_group->unread--;
-	unread = 0;
-	changed = 1;
-      }
-      if (argc < 2) {
-	free_mail(mail);
+  while (!stopped) {
+    if (!set_position(unreads_only))
+      break;
+    for (i = current_group->low; i <= current_group->high && !stopped; i++) {
+      unread = !is_read(current_group, i);
+      if (unreads_only && !unread)
+	continue;
+      if (!(mail = get_article(current_group, i, HEADER_ONLY))) {
+	if (unread) {
+	  set_read(current_group, i);
+	  current_group->unread--;
+	  changed = 1;
+	}
 	continue;
       }
-    }
-    sprintf(from, "%s@%s", mail->fromuser, mail->fromhost);
-    if (argc >= 2) {
-      for (j = 1; j < argc; j++) {
-	*pattern = '*';
-	strcpy(pattern + 1, argv[j]);
-	strcat(pattern + 1, "*");
-	if (stringcasematch(from, pattern))
-	  break;
-	if (stringcasematch(mail->subject, pattern))
-	  break;
+      if (mail->date < timeout) {
+	if (unread) {
+	  set_read(current_group, i);
+	  current_group->unread--;
+	  changed = 1;
+	  unread = 0;
+	}
+	if (unreads_only) {
+	  free_mail(mail);
+	  continue;
+	}
       }
-      if (j >= argc) {
-	free_mail(mail);
-	continue;
+      sprintf(from, "%s@%s", mail->fromuser, mail->fromhost);
+      if (!unreads_only) {
+	for (j = 1; j < argc; j++) {
+	  *pattern = '*';
+	  strcpy(pattern + 1, argv[j]);
+	  strcat(pattern + 1, "*");
+	  if (stringcasematch(from, pattern))
+	    break;
+	  if (stringcasematch(mail->subject, pattern))
+	    break;
+	}
+	if (j >= argc) {
+	  free_mail(mail);
+	  continue;
+	}
       }
+      if (!found) {
+	found = 1;
+	printf("GROUP: %s\n", current_group->name + NEWSGROUPSPREFIXLENGTH);
+      }
+      printf("%5d %c %-55.55s %-15.15s\n",
+	     i - current_group->low + 1,
+	     unread ? '+' : ' ',
+	     mail->subject,
+	     from);
+      free_mail(mail);
     }
-    printf("%5d %c %-55.55s %-15.15s\n",
-	   i - current_group->low + 1,
-	   unread ? '+' : ' ',
-	   mail->subject,
-	   from);
-    free_mail(mail);
+    if (found || !unreads_only)
+      break;
   }
   if (changed) {
     store_groups();
@@ -2181,7 +2200,7 @@ static void mark_command(int argc, const char **argv)
   for (a = 1; a < argc; a++) {
     parse_range(current_group, argv[a], &low, &high);
     if (low < current_group->low || high > current_group->high) {
-      printf("Message number out of range.\n");
+      puts("Message number out of range.");
       continue;
     }
     for (i = low; i <= high; i++) {
@@ -2303,7 +2322,7 @@ static void read_command(int argc, const char **argv)
   for (; argc && !stopped; argc--, argv++) {
     parse_range(current_group, *argv, &low, &high);
     if (low < current_group->low || high > current_group->high) {
-      printf("Message number out of range.\n");
+      puts("Message number out of range.");
       continue;
     }
     for (current_article = low; !stopped;) {
@@ -2387,7 +2406,7 @@ static void reply_command(int argc, const char **argv)
   } else if (argc == 1) {
     i = atoi(*argv) + current_group->low - 1;
   } else {
-    printf("Too many arguments.  Type HELP REPLY for help.\n");
+    puts("Too many arguments.  Type HELP REPLY for help.");
     return;
   }
   if (!(orig_mail = get_article(current_group, i, HEADER_ONLY))) {
@@ -2434,9 +2453,9 @@ static void reload_command(int argc, const char **argv)
 
 #define nextarg(name)     \
   if (++i >= argc) {      \
-    errors++;             \
     printf(errstr, name); \
     free_mail(mail);      \
+    inc_errors();         \
     return;               \
   }
 
@@ -2479,15 +2498,15 @@ static void send_command(int argc, const char **argv)
       strcat(mail->subject, argv[i]);
     }
   if (!*mail->touser) {
-    errors++;
     puts("No recipient specified.");
     free_mail(mail);
+    inc_errors();
     return;
   }
   if (level == USER && !mail->touser[1]) {
-    errors++;
     puts("Invalid recipient specified.");
     free_mail(mail);
+    inc_errors();
     return;
   }
   if (!*mail->tohost)
@@ -2524,9 +2543,9 @@ static void send_command(int argc, const char **argv)
   }
   strtrim(mail->subject);
   if (!*mail->subject && level != MBOX) {
-    errors++;
     puts("No subject specified.");
     free_mail(mail);
+    inc_errors();
     return;
   }
   if (!got_control_z) {
@@ -2653,15 +2672,15 @@ static void version_command(int argc, const char **argv)
   }
 
   printf("DK5SG-BBS  Revision: %s %s\n", revision.number, revision.date);
-  printf("\n");
+  putchar('\n');
   printf("Headers:              %8s\n", headers);
   printf("Maxage:               %8d\n", maxage);
-  printf("\n");
+  putchar('\n');
   printf("Groups:               %8d\n", grp);
   printf("Subscribed-to groups: %8d\n", sub);
   printf("Articles:             %8d\n", art);
   printf("Unread articles:      %8d\n", unr);
-  printf("\n");
+  putchar('\n');
   printf("Current group:        %8s\n", current_group ?
 	 current_group->name + NEWSGROUPSPREFIXLENGTH :
 	 "NONE");
@@ -2838,16 +2857,20 @@ static void execute_command(int argc, const char **argv, int recursion_level)
   int len;
   struct alias *p;
 
+  if (stopped)
+    return;
+
   if (recursion_level >= 20) {
-    errors++;
-    printf("Alias loop.\n");
-    goto Done;
+    puts("Alias loop.");
+    inc_errors();
+    stopped = 1;
+    return;
   }
 
   if (!(len = strlen(*argv))) {
-    errors++;
-    printf("Unknown command ''.  Type HELP for help.\n");
-    goto Done;
+    puts("Unknown command ''.  Type HELP for help.");
+    inc_errors();
+    return;
   }
 
   /* Check for full match on alias */
@@ -2855,7 +2878,7 @@ static void execute_command(int argc, const char **argv, int recursion_level)
   for (p = aliases; p; p = p->next) {
     if (!Strcasecmp(p->name, *argv)) {
       parse_command_line(p->value, argc - 1, argv + 1, recursion_level + 1);
-      goto Done;
+      return;
     }
   }
 
@@ -2864,17 +2887,17 @@ static void execute_command(int argc, const char **argv, int recursion_level)
   for (cmdp = cmdtable; cmdp->name; cmdp++) {
     if (level >= cmdp->level && !Strncasecmp(cmdp->name, *argv, len)) {
       if (argc < cmdp->minargs) {
-	errors++;
 	printf("Too few arguments.  Type HELP %s for help.\n", cmdp->name);
+	inc_errors();
       } else if (argc > cmdp->maxargs) {
-	errors++;
 	printf("Too many arguments.  Type HELP %s for help.\n", cmdp->name);
+	inc_errors();
       } else {
 	if (cmdp->name)
 	  argv[0] = cmdp->name;
 	(*cmdp->fnc)(argc, argv);
       }
-      goto Done;
+      return;
     }
   }
 
@@ -2883,16 +2906,12 @@ static void execute_command(int argc, const char **argv, int recursion_level)
   for (p = aliases; p; p = p->next) {
     if (!Strncasecmp(p->name, *argv, len)) {
       parse_command_line(p->value, argc - 1, argv + 1, recursion_level + 1);
-      goto Done;
+      return;
     }
   }
 
-  errors++;
   printf("Unknown command '%s'.  Type HELP for help.\n", *argv);
-
-Done:
-  if (level == MBOX && errors >= 3)
-    exit(1);
+  inc_errors();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -2903,15 +2922,20 @@ static void parse_command_line(const char *line, int add_argc, const char **add_
 #define STARTDELIM      "#$<["
 #define ANYDELIM        "@>;"
 
+#define NARGS           256
+
   char buf[2048];
-  char quoted[256];
+  char quoted[NARGS];
   char *t;
-  const char *argv[256];
+  const char *argv[NARGS];
   const char *f;
   const char **ap;
   int argc;
   int i;
   int quote;
+
+  if (stopped)
+    return;
 
   argc = 0;
   for (f = line, t = buf;;) {
@@ -2919,6 +2943,11 @@ static void parse_command_line(const char *line, int add_argc, const char **add_
       f++;
     if (!*f)
       break;
+    if (argc >= NARGS) {
+      puts("Too many arguments.");
+      inc_errors();
+      return;
+    }
     argv[argc] = t;
     quoted[argc] = 0;
     if (*f == '"' || *f == '\'') {
@@ -2938,8 +2967,14 @@ static void parse_command_line(const char *line, int add_argc, const char **add_
     argc++;
   }
 
-  while (add_argc-- > 0)
+  while (add_argc-- > 0) {
+    if (argc >= NARGS) {
+      puts("Too many arguments.");
+      inc_errors();
+      return;
+    }
     argv[argc++] = *add_argv++;
+  }
 
   for (ap = argv; argc > 0;) {
     for (i = 0; i < argc; i++) {
@@ -2966,7 +3001,7 @@ static void print_prompt(void)
   struct tm *tm = 0;
 
   if (level == MBOX) {
-    printf(">\n");
+    puts(">");
     return;
   }
   t = line;
@@ -3101,7 +3136,7 @@ static void bbs(void)
     connect_bbs();
     wait_for_prompt();
   }
-  if (level == MBOX) printf("[THEBOX-1.8-H$]\n");
+  if (level == MBOX) puts("[THEBOX-1.8-H$]");
   if (do_forward) wait_for_prompt();
   for (;;) {
     if (do_forward)
@@ -3128,7 +3163,7 @@ static void doexport(void)
   int fdlock;
 
   sprintf(fname, FWDLOCKFILE "%s", user.name);
-  if ((fdlock = lock_file(fname, 1)) >= 0) {
+  if ((fdlock = lock_file(fname, 1, 1)) >= 0) {
     forward_news();
     close(fdlock);
   }
