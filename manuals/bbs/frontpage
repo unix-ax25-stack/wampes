@@ -1,12 +1,12 @@
-.\" @(#) $Id: frontpage,v 1.66 1997/03/17 19:39:42 deyke Exp $
+.\" @(#) $Id: frontpage,v 1.67 1997/04/14 22:11:10 deyke Exp $
 .\"
-.PF "^BBS Reference Manual^-\\\\nP-^Version 970317" \" Page footer
+.PF "^BBS Reference Manual^-\\\\nP-^Version 970414" \" Page footer
 .\"
 .S 30
 .ce
 \fBBBS Reference Manual\fP
 .ce
-Version 970317
+Version 970414
 .S
 .SP 2
 .S 15

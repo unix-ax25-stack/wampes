@@ -294,78 +294,89 @@
 44.130.3.5      DG8BBG  # Manfred Potthast, 2742 Gnarrenburg
 44.130.3.6      DL5BG   # Rainer Victoria, 2740 Bremervoerde
 #
-# 44.130.4.0 (Kiel area) Bereich Kiel,Neumuenster,Ploen,Luetjenburg incl.
+#44.130.4.x     Kiel
+44.130.4.1      DB0OQ   # PBBS-Kiel (DH1LAH)
+44.130.4.2      DH1LAH  # Hans-Herrmann Schnoor, 2300 Kiel 1
+44.130.4.3      DD9LS   # Folke Stender, 2301 Westensee/Brux
+44.130.4.5      DG5LAA  # Andre Kruetzfeld, 201 Felde/Holst.
+44.130.4.6      DL4LAA  # Rainer Kruse, 2304 Flintbek
+44.130.4.7      DF6LT   # Torsten Dobert, 2300 Kiel 14
+44.130.4.8      DC8CA   # Rudolf Koeppe, 2301 Felde
+44.130.4.9      DC5LZ   # Kurt Zimmer, 2351 Husberg
+44.130.4.10     DG6LR   # Roland Zimmer, 2351 Husberg
+44.130.4.11     DF8LZ   # Dirk Lerche, 2300 Kiel
+44.130.4.12     DH2LAB  # Matthias Mania, 2300 Kiel
+44.130.4.13     DL5LF   # Frank Dobert, 2300 Kiel 1
+44.130.4.14     DF3LZ   # Roland Proesch, 2306 Stakendorf
+44.130.4.15     DL9LAQ  # Bernhard, 2300 Kiel
+44.130.4.16     DJ2LY   # Hans-Juergen Zibull, 2300 Kiel
+44.130.4.17     DL8LAP  # Harald Adamus, 2313 Raisdorf
+44.130.4.18     DD8LF   # Frank Reese, 2300 Kiel
+44.130.4.19     DG4LI   # Juergen Silz, 2300 Kiel 14
+44.130.4.20     DL5LQ   # Joern Bockwoldt, 2308 Preetz
+44.130.4.21     DJ9WO   # Werner Giesel, 2308 Preetz
+44.130.4.22     DF5DU   # Klaus Fenger, 2309 Warnau
+44.130.4.23     DL5LU   # Ulli Hoffmann, 2300 Kiel
+44.130.4.24     DC0LR   # Hans-Peter Matthiesen, 2300 Kiel
+44.130.4.25     DK9LJ   # Martin Hoppe, 2300 Kiel
+44.130.4.26     DB9LJ   # Juergen Mostowski, 2300 Kiel
+44.130.4.27     DF1LX   # Peter Krueger, 2300 Kiel
+44.130.4.28     DG3LP   # Holger Petersen, 24105 Kiel
+44.130.4.29     DG2LS   # Hendrik Scholz, Raisdorf
+44.130.4.30     DK6CX   # Gitta G., 2300 Kiel
+44.130.4.41     DG2LAN  # Werner Lange, 2360 Bad Segeberg
+44.130.4.129    DB0IL   # Digi Kiel
+44.130.4.130    DF6LN   # Nils
+44.130.4.193    DB0KCC  # Cluster Kiel
+44.130.4.194    DF4PA   # Mark Leicher
+44.130.4.195    DJ7SW   # Lup SchlÅter
 #
-44.130.4.1      db0oq   db0oq.ampr.org. # PBBS-Kiel (verantwortlich DH1LAH)
-44.130.4.2      dh1lah  dh1lah.ampr.org.        # Hans-Herrmann Schnoor, 2300 Kiel 1
-44.130.4.3      dd9ls   dd9ls.ampr.org. # Folke Stender, 2301 Westensee/Brux
-44.130.4.5      dg5laa  dg5laa.ampr.org.        # Andre Kruetzfeld, 2301 Felde/Holst.
-44.130.4.6      dl4laa  dl4laa.ampr.org.        # Rainer Kruse, 2302 Flintbek
-44.130.4.7      df6lt   df6lt.ampr.org. # Torsten Dobert, 2300 Kiel
-44.130.4.8      dc8ca   dc8ca.ampr.org. # Rudolf Koeppe, 2301 Felde
-44.130.4.9      dc5lz   dc5lz.ampr.org. # Kurt Zimmer, 2351 Husberg
-44.130.4.10     dg6lr   dg6lr.ampr.org. # Roland Zimmer, 2351 Husberg
-44.130.4.11     df8lz   df8lz.ampr.org. # Dirk Lerche, 2300 Kiel
-44.130.4.12     dh2lab  dh2lab.ampr.org.        # Matthias Mania, 2300 Kiel
-44.130.4.13     dl5lf   dl5lf.ampr.org. #
-44.130.4.14     df3lz   df3lz.ampr.org. # Roland Proesch, 2306 Stakendorf
-44.130.4.15     dl9laq  dl9laq.ampr.org.        # Bernhard, 2300 Kiel
-44.130.4.16     dj2ly   dj2ly.ampr.org. # Hans-Juergen Zibull, 2300 Kiel
-44.130.4.17     dl8lap  dl8lap.ampr.org.        # Harald Adamus, 2313 Raisdorf
-44.130.4.18     dd8lf   dd8lf.ampr.org. # Frank Reese, 2300 Kiel
-44.130.4.19     dg4li   dg4li.ampr.org. # Juergen Silz, 2300 Kiel 14
-44.130.4.20     dl5lq   dl5lq.ampr.org. # Joern Bockwoldt, 2308 Preetz
-44.130.4.21     dj9wo   dj9wo.ampr.org. # Werner Giesel, 2308 Preetz
-44.130.4.22     df5du   df5du.ampr.org. # Klaus Fenger, 2309 Warnau
-44.130.4.23     dl5lu   dl5lu.ampr.org. # Ulli Hoffmann, 2300 Kiel
-44.130.4.24     dc0lr   dc0lr.ampr.org. # Hans-Peter Matthiesen, 2300 Kiel
-44.130.4.25     dk9lj   dk9lj.ampr.org. # Martin Hoppe, 2300 Kiel
-44.130.4.26     db9lj   db9lj.ampr.org. # Juergen Mostowski, 2300 Kiel
-44.130.4.27     df1lx   df1lx.ampr.org. # Peter Krueger, 2300 Kiel
-44.130.4.28     dg3lp   dg3lp.ampr.org. # Holger Petersen 2300 Kiel (24105 Kiel)
-44.130.4.30     dk6cx   dk6cx.ampr.org. # Gitta G., 2300 Kiel
-44.130.4.41     dg2lan  dg2lan.ampr.org.        # Werner Lange, 2360 Bad Segeberg
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# 44.130.5.0    (Husum area) noerdlich Heide,Rendsburg,Eckernfoerde incl.
+#44.130.5.x     Husum
+44.130.5.1      DB0HES  # PBBS Westkueste (DG5LK)
+44.130.5.2      DD7LP   # Christian Petersen, 2251 Ahrenshoeft
+44.130.5.3      DG5LK   # Gerd Krueger, 2251 Ostenfeld
+44.130.5.4      DL4LG   # Hans-Juergen Knop, 2371 Alt Duvenstedt
+44.130.5.5      DJ9LX   # Kai, 2330 Eckernfoerde
+44.130.5.7      DD8LG   # Peter, 2330 Eckernfoerde
+44.130.5.8      DB6LH   # Jochen, 2330 Eckernfoerde
+44.130.5.10     DJ1XT   # William Brauer, 2342 Gelting
+44.130.5.11     DG8LAV  # Karlheinz Hagen, 2381 Dannewerk
+44.130.5.12     DC4LQ   # Michael Littwin, 2380 Schleswig
+44.130.5.13     DG9LAO  #
+44.130.5.14     DG8LBH  # Dirk, Flensburg
+44.130.5.65     DB0SYL  # Digi Sylt
+44.130.5.66     DL3LK   # Volker Burkhardt, List auf Sylt
+44.130.5.81     DG6BDO  # Andreas, Kronshagen
 #
-44.130.5.1      db0hes  db0hes.ampr.org.        # PBBS-Westkueste (verantwortlich DG5LK)
-44.130.5.2      dd7lp   dd7lp.ampr.org. # Christian Petersen, 2251 Ahrenshoeft
-44.130.5.3      dg5lk   dg5lk.ampr.org. # Gerd Krueger, 2251 Ostenfeld
-44.130.5.4      dl4lg   dl4lg.ampr.org. # Hans-Juergen Knop, 2371 Alt Duvenstedt
-44.130.5.5      dj9lx   dj9lx.ampr.org. # Kai         , 2330 Eckernfoerde
-44.130.5.7      dd8lg   dd8lg.ampr.org. # Peter,      , 2330 Eckernfoerde
-44.130.5.8      db6lh   db6lh.ampr.org. # Jochen      , 2330 Eckernfîrde
-# dk7bw jetzt 44.130.8.50
-44.130.5.10     dj1xt   dj1xt.ampr.org. # William Brauer, 2342 Gelting
-44.130.5.11     dg8lav  dg8lav.ampr.org.        # Karlheinz Hagen, 2381 Dannewerk
-44.130.5.12     dc4lq   dc4lq.ampr.org. # Michael Littwin, 2380 Schleswig
-44.130.5.13     dg9lao  dg9lao.ampr.org.        # ?
-44.130.5.81     dg6bdo  dg6bdo.ampr.org.        # Andreas, Kronshagen
+#44.130.6.x     Itzehoe
+44.130.6.1      DB0HHW  # Digi Uetersen
+44.130.6.2      DD9LY   # Herbert Peters, 2219 Laegerdorf
+44.130.6.3      SYS1-DG7LAN     # Andy Schinkel, Uetersen
+44.130.6.4      DL8LBY  # Martin Ejem, Uetersen
+44.130.6.5      DG5LAL  # Jens Beesen, Elmshorn
+44.130.6.20     DL8XI   # Ingo, Wilstedt
+44.130.6.21     DK2LS   # Ulrich Schmiech, 25436 Uetersen
 #
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# 44.130.6.0    (Itzehoe area) suedlich Heide,Neumuenster,Bad Oldesloe
-#
-44.130.6.2      dd9ly   dd9ly.ampr.org. # Herbert Peters, 2219 Laegerdorf
-44.130.6.3      sys1-dg7lan     sys1-dg7lan.ampr.org.   # Andy Schinkel, Uetersen
-44.130.6.4      dl8lby  dl8lby.ampr.org.        # Martin Ejem, Uetersen
-44.130.6.5      dg5lal  dg5lal.ampr.org.        # Jens Beesen, Elmshorn
-44.130.6.10     db1lk   db1lk.ampr.org. # Michael XXX , Uetersen
-44.130.6.20     dl8xi   dl8xi.ampr.org. # Ingo, Wilstedt
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# 44.130.7.0    (Luebeck area) oestlich Hamburg, Bad Oldesloe, Luetjenburg
-#
-44.130.7.2      dl1lab  dl1lab.ampr.org.        # Wilfried Strehling, 2430 Neustadt
-44.130.7.3      dj8tq   dj8tq.ampr.org. # Ernst Lembke , 2430 Neustadt
-44.130.7.4      dk9xt   dk9xt.ampr.org. # Peter Hintz, 2400 LÅbeck
-44.130.7.5      dg4har  dg4har.ampr.org.        # Reinhold Cordes, 2400 Luebeck 14
-44.130.7.6      dj8ks   dj8ks.ampr.org. # Siegfried Krueger, 2400 Luebeck 14
-44.130.7.7      dg3lv   dg3lv.ampr.org. # Tobias Finger, 23619 Heilshoop jo53gu
-44.130.7.8      dl5has  dl5has.ampr.org.        # Stefan Burmeister, Pommernring 25, 2400 LÅbeck 14, JO53KW
-44.130.7.9      dl0dwl  dl0dwl.ampr.org.        # Clubstation DrÑgerwerk LÅbeck, Moislinger Allee 53, 2400 LÅbeck 1
-#                                               (verantwortlich DL5HAS)  JO53IU
-44.130.7.10     dc1lf   dc1lf.ampr.org  # Bernd , 23812 Wahlstedt
-44.130.7.14     df0se   df0se.ampr.org. # Clubstation OV Bad Segeberg  M14   JO53EW
-44.130.7.129    db0seg  db0seg.ampr.org.        # FÅlldigi Schieren bei Bad Segeberg, JO53EW
+#44.130.7.x     Luebeck
+44.130.7.1      DB0MAR  # Digi Timmendorfer Strand
+44.130.7.2      DL1LAB  # Wilfried Strehling, 2430 Neustadt
+44.130.7.3      DJ8TQ   # Ernst Lembke, 2430 Neustadt
+44.130.7.4      DK9XT   # Peter Hintz, 2400 Luebeck
+44.130.7.5      DG4HAR  # Reinhold Cordes, 2400 Luebeck 14
+44.130.7.6      DJ8KS   # Siegfried Krueger, 2400 Luebeck 14
+44.130.7.7      DG3LV   # Tobias Finger, 23619 Heilshoop
+44.130.7.8      DL5HAS  # Stefan Burmeister, 2400 Luebeck 14
+44.130.7.9      DL0DWL  # ClubStn Draegerwerk, Luebeck (DL5HAS)
+44.130.7.10     DC1LF   # Bernd, 23812 Wahlstedt
+44.130.7.12     DC3LX   # Markus Berg, 23684 Gronenberg
+44.130.7.13     DL5HBF  # Ulrich Kundt, 23617 Stockelsdorf
+44.130.7.14     DF0SE   # ClubStn M14, Bad Segeberg
+44.130.7.20     DL2GG   # Rainer, Eutin
+44.130.7.129    DB0SEG  # Fuelldigi, Schieren nr Bad Segeberg
+# 44.130.7.193  ??????  # geplanter Digi Raum Heiligenhafen
+44.130.7.194    DK7LS   # Gerd-Uwe Schmidt, Gremersdorf
+44.130.7.195    DK3LL   # Christian Langbehn, Oldenburg
+44.130.7.196    DL2ZP   # Bernd Rîper, Damlos
 #
 # 44.130.8.x    Region 8 Osnabrueck
 #
@@ -701,7 +712,9 @@
 44.130.14.27    DF0US   # Clubstn Solling, H34, 37170 Uslar
 44.130.14.28    LAPTOP.DL1AAZ   # Andre Fischer, 37170 Uslar
 44.130.14.29    PC.DL1AAZ       # Andre Fischer, 37170 Uslar
+44.130.14.30    DL0PAC  # Clubstn Karl-Heinz Goersmann, 37077 Goettingen
 44.130.14.31    DL8AAX  # Dirk Unverzagt, 37139 Adelebsen
+44.130.14.32    WWW.DL3DA       # Karl-Heinz Goersmann, 37077 Goettingen
 44.130.14.40    DL0RSW  # Clubstn Personn-Realschule Weende, 37075 Goettingen
 44.130.14.50    DK0EME  # Clubstn Emil-Mehle, 37075 Goettingen
 44.130.14.51    DL1AAA  # Thomas Mehle, 37085 Goettingen
@@ -2759,9 +2772,34 @@
 44.130.48.253   DG2GGI-3        # Thorsten
 44.130.48.254   DL4TA-S # Ralf D. Kloth, 70174 Stuttgart
 #
-#44.130.49.x    Villingen/Schwenningen/Hechingen
-44.130.49.1     DG3SAJ  # Hans J. Goetz, 7734 Brigachtal
-44.130.49.2     DH9GAR  # Andreas, Hechingen
+# 44.130.49.x   Region Schwarzwald-Baar-Heuberg
+# lokale Adresskoordination: DG1GKQ@DB0NDR.#NDS.DEU.EU
+#       email: klaus@skylink.de
+#
+44.130.49.1     dg3saj  # Hans-Juergen; Brigachtal JN48FA; @DB0CZ
+44.130.49.2     dh9gar  #
+44.130.49.3     dl1gnc  # Czeslaw
+44.130.49.7     dc0ij   # Holger; Brigachtal JN48FA; @DB0CZ
+44.130.49.8     db0cz   # Mailbox-Brigachtal; Brigachtal JN48FA;@DB0CZ;
+44.130.49.9     dl2grd  # Dirk; Villingen JN48FB; @DB0CZ
+44.130.49.10    dl1gfm  # Markus; Villingen JN48FB; @DB0CZ
+44.130.49.11    sys2.dl1gfm     # Markus; Villingen JN48Fb; @DB0CZ
+44.130.49.12    dg2ggp  # Gerd; Villingen JN48FB; @DB0CZ
+44.130.49.13    dg1guw  # Uwe; Villingen JN48FB; @DB0CZ
+44.130.49.14    sys2.dl2grd     # Dirk; Villingen JN48FB; @DB0CZ
+44.130.49.15    dg1gmy  # Michael
+44.130.49.16    dl2gwy  # Wendy; Burgberg
+44.130.49.33    dk8ts   # Franz; St. Georgen, JN48DD; @DB0CZ
+44.130.49.34    dc5gy   # Johannes; St. Georgen, JN48DD; @DB0CZ
+44.130.49.35    dl2gps  # Sven; St. Georgen, JN48DD; @DB0CZ
+44.130.49.36    dl1grj  # Juergen; St. Gerogen, JN48DD; @DB0CZ
+44.130.49.65    dg1gkq  # Klaus; Furtwangen JN48CB; @DB0NDR
+44.130.49.66    linux.dg1gkq
+44.130.49.67    dg2grt  # Tom; Furtwangen JN48CB; @DB0CZ
+44.130.49.68    sys2.dg2grt
+44.130.49.69    df1gt   # Juergen; Guetenbach; @DB0CZ
+44.130.49.70    dk0jw   # Clubstation Jugendwohnheim Don Bosco
+44.130.49.100   dl0fhf  # Clubstation Fachhochschule Furtwangen
 #
 #44.130.50.x    Karlsruhe/Baden-Baden
 44.130.50.1     DB1GU   # Michael, 7570 Baden-Baden
@@ -3146,23 +3184,39 @@
 44.130.56.243   DJ6OM   # Martin Zippe, 80935 Muenchen
 #
 #44.130.57.x    Ulm, Neu-Ulm
-# --- lokale Adresskoordination: DC2SF
+#
+# --- lokale Adresskoordination: DC2SF @DB0ULM
+#
 44.130.57.1     DD1GV   # Vajk, Neu-Ulm
-44.130.57.2     DC2SF   # Stefan, Neu-Ulm
+44.130.57.2     DC2SF   # Stefan, Bellenberg
 44.130.57.3     DL9LAO  # Karl H. Figur, 89075 Ulm
 44.130.57.4     DG5MNC  # Wolfgang Bleher, 87700 Memmingen
-44.130.57.5     DL4MGY  # Thomas Rauth, Memmingen
-44.130.57.6     DG5MNC-U        #
-44.130.57.10    DG4SJ   # Rainer, 7901 Illerkirchberg
-44.130.57.11    DG3SCF  # Achim Schuetz, 7904 Erbach
-44.130.57.15    DF2DR   # Hermann Schumacher, 7900 Ulm
+44.130.57.5     DL4MGY  # Thomas
+44.130.57.6     DG5MNC-U# Wolfgang LINUX Kernel
+44.130.57.7     DL6SBV  # Peter
+44.130.57.8             DG5MNC-www      # Wolfgang html port 80
+44.130.57.9             DL9MFL  # Edgar, 87719 Mindelheim, JN58GB
+44.130.57.10    DG4SJ   # Rainer, Illerkirchberg
+44.130.57.11    DG3SCF  # Achim Schuetz, Erbach
+44.130.57.12    DL4DCB  # Carsten, Neu-Ulm, PC
+44.130.57.13    DG4MND-u        # Christian Szkola, 87700 Memmingen
+44.130.57.14    DG4MND  # Christian Szkola, 87700 Memmingen
+44.130.57.15    DF2DR   # Hermann Schumacher, Ulm
 44.130.57.16    DL3SDM  # Michael
-44.130.57.17    LAPTOP.DF2DR    #
-44.130.57.20    DG7MGY  # Hubert Fink, 8870 Guenzburg
+44.130.57.17    LAPTOP.DF2DR    # Hermann Schuhmacher, Ulm
+44.130.57.18    DL1MHR-u        #       Wolfram Hennemann, 87700 Memmingen JN57CX
+44.130.57.19    DL1MHR  # Wolfram Hennemann, 87700 Memmingen JN57CX
+44.130.57.20    DG7MGY  # Hubert Fink, Guenzburg
+44.130.57.21    DL6SBV-u        # Peter Knupfer
 44.130.57.22    DG6SDB  # Dominik, Neu-Ulm; Amiga
+44.130.57.23    DG7SFB  # Olgun, Ulm,
 44.130.57.59    DG2SDF  # Thomas Schake, 89250 Senden
-44.130.57.200   DB0ULM-10       # BBS 89287 Bellenberg (DC2SF); Wampes ***
-44.130.57.201   DB0ULM-U        # ; Linux
+44.130.57.100   DB0ULM-baybox   # (DC2SF); BBS Baybox
+44.130.57.101   DB0ULM-bu       # (DC2SF); BBS Unix-Port Baybox
+44.130.57.200   DB0ULM-10       # (DC2SF); BBS 89287 Bellenberg WAMPES ***
+#44.130.57.200   DB0ULM  # (DC2SF); BBS 89287 Bellenberg WAMPES ***
+44.130.57.201   DB0ULM-u# (DC2SF); BBS 89287 Bellenberg LINUX  ***
+44.130.57.202    DC2SF-u# DC2SF LINUX
 #
 #44.130.58.x    Augsburg
 44.130.58.1     DB0ZKA  # Digi Augsburg (DL3MEW)
@@ -3334,8 +3388,8 @@
 44.130.61.111   DB0SWR  # Digi Wertheim
 #
 #    Die oberfraenkischen Hosts:
-#                                       Stand:  04.01.97
-# 44.130.62.xx (Bamberg/Bayreuth)
+#                                       Stand:  03.04.97
+# 44.130.62.xx (Oberfranken)
 # lokale Adresskoordination DL1NAT [44.130.62.3]
 #
 44.130.62.1    DD8NE          # Hans-Joachim Hetscher Stegaurach
@@ -3374,13 +3428,14 @@
 44.130.62.35   DL8NEG         # Oliver Fleischmann Gundelsheim
 44.130.62.36   DL8NEG-GATE    # Oliver Fleischmann Gundelsheim
 44.130.62.40   DL1NCH         # Jacek Kupiec Bayreuth
-44.130.62.41   DG8NCV         # Jossi Hirschaid
+44.130.62.41   DG8NCV         # Johannes "Jossi" Hirschaid
 44.130.62.42   DL3NEU-GATE    # Daniel Goetz Hirschaid
+44.130.62.43   DL4NAT         # Bernhard Schulz Bamberg
 44.130.62.48   DL1NAL         # Siegfried Ottner Marktredwitz
-#44.130.62.49   DB0MAK         # DIGI Marktredwitz
-#44.130.62.50   DB0MAK-10      # DIGI-Server Marktredwitz
+44.130.62.49   DB0MAK         # DIGI Marktredwitz
+44.130.62.50   DB0MAK-10      # DIGI-Server Marktredwitz
 #44.130.62.100  DB0BBG-10      # Digipeater Bamberg Kaelberberg
-#44.130.62.200  DB0FOR-10      # Digipeater Forchheim Hetzles
+#44.130.62.200  DB0FOR-10      # Digipeater Forchheim Haetzles
 #
 #44.130.63.x    Unterfranken, Stand: 06.03.97
 # PLZ 63700-63999, 97000-97999
@@ -3617,6 +3672,7 @@
 44.130.88.110   DD3ML-SVR   # Wampes
 44.130.88.122   DF0CU       # Klubstation Universitaet Leipzig
 44.130.88.133   DF0CU-I     # ax25: DF0CU-14
+44.130.88.143   DL1DRZ-W    #
 44.130.88.156   DL3AWB-U    #
 44.130.88.157   DH0LQH-U    #
 44.130.88.200   DC6HB-SVR   # Wampes
@@ -3627,7 +3683,7 @@
 #
 #
 #
-# Stand per 9.Feb.97
+# Stand per 29.Mar.97
 #
 #44.130.89.x    Chemnitz
 44.130.89.1     Y28PN   # Uwe Huebner, O-9052 Chemnitz; UNIX/NOS
@@ -3723,6 +3779,8 @@
 44.130.90.69    DG1VS-L         # Karsten Schmidt, LINUX
 44.130.90.70    DG1VS-W         # Karsten Schmidt, WAMPES
 44.130.90.71    WIN.DH0DW       # Maik Toepfer, Windows
+44.130.90.72    MAC.DG1RTF      # Thomas Fichte
+44.130.90.73    DG2VY           # Mario Frost, 02809 Goerlitz
 #----------------------------------------------------------------------------
 44.130.90.100   DB0TUD          # WAMPES Digi Dresden, Betreiber: S07
 44.130.90.101   DB0TUD-U        # UNIX, MB Dresden
@@ -5701,9 +5759,9 @@
 #
 #         10-15 reserved for future use by hb9h, A.R.T.
 #---------------------------------------------------------------------------
-#
 44.143.16.1     OE1XIR
 44.143.16.2     OE1XIB
+44.143.16.3     OE1XTR
 44.143.16.10    GW.OE1HMC
 44.143.16.11    SEC.OE1HMC
 44.143.16.12    TER.OE1HMC
@@ -5743,11 +5801,11 @@
 44.143.16.48    OE1HZA
 44.143.16.49    SEC.OE1HZA
 44.143.16.50    OE1RZB
+44.143.16.51    OE1DHK
 44.143.16.100   OE3KLU
 44.143.16.144   OE1KDA
 44.143.16.145   VERDI.OE1KDA
 44.143.16.146   TER.OE1KDA
-44.143.16.200   SAT.OE3GFS
 44.143.18.1     OE1XAR
 44.143.18.14    OE1ATU
 44.143.22.1     OE1XTU
@@ -5777,9 +5835,9 @@
 44.143.33.25    OE2RKO
 44.143.48.1     OE3XSR
 44.143.48.1     ROUTER.OE3XSR
-44.143.48.2     WWW.OE3XSR
 44.143.48.2     BBS.OE3XSR
 44.143.48.2     FTP.OE3XSR
+44.143.48.2     WWW.OE3XSR
 44.143.48.3     NODE.OE3XSR
 44.143.48.4     WAMPES.OE3XSR
 44.143.48.10    OE3DZW
@@ -5793,6 +5851,11 @@
 44.143.48.18    OK1DWJ
 44.143.48.19    OE3GOS
 44.143.50.1     OE3XNR
+44.143.51.10    ZWETTL.OE3DZW
+44.143.51.12    ZWETTL.OE3XYW
+44.143.51.13    OE3DSB
+44.143.51.20    OE3DJB
+44.143.51.21    OE3JLC
 44.143.64.1     OE3XKR
 44.143.67.10    OE3YSS
 44.143.67.11    OE3WLS
@@ -5843,6 +5906,8 @@
 44.143.152.12   OE6YNE
 44.143.152.13   OE6NCE
 44.143.152.14   OE6RKE
+44.143.153.10   OE6IHI
+44.143.160.10   OE7IHI
 44.143.181.11   OE7FTJ
 44.143.181.12   SEC.OE7FTJ
 44.143.182.11   OE7RHT
