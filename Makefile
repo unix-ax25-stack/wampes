@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.25 1995/06/04 09:36:30 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.26 1995/06/05 10:42:35 deyke Exp $
 
 MAKEFILE   = Makefile
 MKDIR      = @if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi
@@ -8,6 +8,7 @@ OBSOLETE   = bbs/sfstat* \
 	     lib/bbs.h \
 	     src/linux_include/stdlib.h \
 	     src/mail_bbs.* \
+	     users \
 	     util/genupd \
 	     /usr/local/bin/sfstat
 
@@ -20,16 +21,11 @@ all:;   @-rm -f $(OBSOLETE)
 	-cd util;    $(MAKE) -i -f $(MAKEFILE) all install
 	-cd bbs;     $(MAKE) -i -f $(MAKEFILE) all install
 	-            $(MAKE) -i -f $(MAKEFILE) /tcp/hostaddr.pag
-	-if [ -f users ]; then $(MAKE) -i -f $(MAKEFILE) /usr/local/lib/users; fi
 
 /tcp/hostaddr.pag: /tcp/hosts /tcp/domain.txt /usr/local/etc/mkhostdb
 	rm -f /tcp/hostaddr.* /tcp/hostname.*
 	/usr/local/etc/mkhostdb >/dev/null 2>&1
 	if [ -f /tcp/hostaddr.db ]; then ln /tcp/hostaddr.db $@; fi
-
-/usr/local/lib/users: users
-	$(MKDIR)
-	cp $? $@ && /usr/local/etc/udbm
 
 clean:;
 

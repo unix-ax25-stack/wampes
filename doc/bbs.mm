@@ -12,13 +12,13 @@
 .nr Hs 7 \" Empty line after all headers
 .nr Hy 1 \" Hyphenation on
 .\"
-.PF "^BBS Reference Manual^-\\\\nP-^Version 950604" \" Page footer
+.PF "^BBS Reference Manual^-\\\\nP-^Version 950605" \" Page footer
 .\"
 .S 30
 .ce
 \fBBBS Reference Manual\fP
 .ce
-Version 950604
+Version 950605
 .S
 .SP 2
 .S 15
@@ -27,15 +27,6 @@ Dieter Deyke, DK5SG/N0PRA
 .ce
 deyke@fc.hp.com
 .S
-.PH "" \" Page header
-.ds HF 3 3 3 3 3 3 3 \" All headers bold
-.ds HP +2 +2 +2 +2 +2 +2 +2 \" All headers 2 points bigger
-.nr Cl 7 \" Max level of header for table of contents
-.nr Ej 1 \" Level 1 headers on new page
-.nr Hb 7 \" Break after all headers
-.nr Hs 7 \" Empty line after all headers
-.nr Hy 1 \" Hyphenation on
-.\"
 .H 1 "S&F data flow"
 .PS
 reset

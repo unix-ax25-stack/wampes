@@ -1,12 +1,12 @@
-.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/bbs/frontpage,v 1.1 1995/06/04 09:38:40 deyke Exp $
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/bbs/frontpage,v 1.2 1995/06/05 10:43:00 deyke Exp $
 .\"
-.PF "^BBS Reference Manual^-\\\\nP-^Version 950604" \" Page footer
+.PF "^BBS Reference Manual^-\\\\nP-^Version 950605" \" Page footer
 .\"
 .S 30
 .ce
 \fBBBS Reference Manual\fP
 .ce
-Version 950604
+Version 950605
 .S
 .SP 2
 .S 15

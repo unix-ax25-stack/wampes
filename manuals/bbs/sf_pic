@@ -1,12 +1,4 @@
-.PH "" \" Page header
-.ds HF 3 3 3 3 3 3 3 \" All headers bold
-.ds HP +2 +2 +2 +2 +2 +2 +2 \" All headers 2 points bigger
-.nr Cl 7 \" Max level of header for table of contents
-.nr Ej 1 \" Level 1 headers on new page
-.nr Hb 7 \" Break after all headers
-.nr Hs 7 \" Empty line after all headers
-.nr Hy 1 \" Hyphenation on
-.\"
+.\" @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/manuals/bbs/sf_pic,v 1.2 1995/06/05 10:43:00 deyke Exp $
 .H 1 "S&F data flow"
 .PS
 reset

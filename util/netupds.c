@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.30 1995/05/23 21:52:04 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.31 1995/06/05 10:42:51 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -124,7 +124,6 @@ static char *include_table[] =
   "src/linux_include",
   "src/linux_include/netinet",
   "src/linux_include/netinet/*.h",
-  "users",
   "util",
   "util/*.[ch]",
   "util/Makefile",
@@ -1029,9 +1028,7 @@ static void server_version_1(const char *client, int flags)
 
   generate_dynamic_include_table(client);
 
-  if (!chdir(master = "/users/funk/dk5sg/tcp"))
-    system("sort /usr/local/lib/users > users.$$; mv users.$$ users");
-  else if (chdir(master = MASTERDIR))
+  if (chdir(master = "/users/funk/dk5sg/tcp") && chdir(master = MASTERDIR))
     syscallerr(master);
   scandirectory(".", SCAN_MASTER);
 
