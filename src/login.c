@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.4 1990/03/12 14:39:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.5 1990/03/19 12:33:38 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -226,6 +226,72 @@ char  *user, *protocol;
 
 /*---------------------------------------------------------------------------*/
 
+static int  do_telnet(tp, chr)
+struct login_cb *tp;
+int  chr;
+{
+  struct termio termio;
+
+  switch (tp->state) {
+  case TS_DATA:
+    if (chr != IAC) {
+      /*** if (!tp->option[TN_TRANSMIT_BINARY]) chr &= 0x7f; ***/
+      return 1;
+    }
+    tp->state = TS_IAC;
+    break;
+  case TS_IAC:
+    switch (chr) {
+    case WILL:
+      tp->state = TS_WILL;
+      break;
+    case WONT:
+      tp->state = TS_WONT;
+      break;
+    case DO:
+      tp->state = TS_DO;
+      break;
+    case DONT:
+      tp->state = TS_DONT;
+      break;
+    case IAC:
+      tp->state = TS_DATA;
+      return 1;
+    default:
+      tp->state = TS_DATA;
+      break;
+    }
+    break;
+  case TS_WILL:
+    tp->state = TS_DATA;
+    break;
+  case TS_WONT:
+    tp->state = TS_DATA;
+    break;
+  case TS_DO:
+    if (chr <= NOPTIONS) tp->option[chr] = 1;
+    if (chr == TN_ECHO) {
+      ioctl(tp->pty, TCGETA, &termio);
+      termio.c_lflag |= (ECHO | ECHOE);
+      ioctl(tp->pty, TCSETA, &termio);
+    }
+    tp->state = TS_DATA;
+    break;
+  case TS_DONT:
+    if (chr <= NOPTIONS) tp->option[chr] = 0;
+    if (chr == TN_ECHO) {
+      ioctl(tp->pty, TCGETA, &termio);
+      termio.c_lflag &= ~(ECHO | ECHOE);
+      ioctl(tp->pty, TCSETA, &termio);
+    }
+    tp->state = TS_DATA;
+    break;
+  }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void write_pty(tp)
 struct login_cb *tp;
 {
@@ -236,10 +302,6 @@ struct login_cb *tp;
   int  cnt;
   int  lastchr;
 
-  if (!tp->sndq) {
-    clrmask(chkwrite, tp->pty);
-    return;
-  }
   p = buf;
   while (pullup(&tp->sndq, &chr, 1)) {
     lastchr = tp->lastchr;
@@ -263,6 +325,7 @@ struct login_cb *tp;
     write(tp->pty, buf, (unsigned) cnt);
     write_log(tp->pty, buf, cnt);
   }
+  if (!tp->sndq) clrmask(chkwrite, tp->pty);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -276,6 +339,7 @@ struct login_cb *tp;
   ioctl(tp->pty, TIOCREQSET, &request_info);
   if (request_info.request == TIOCCLOSE) {
     clrmask(chkread, tp->pty);
+    clrmask(chkwrite, tp->pty);
     clrmask(chkexcp, tp->pty);
     if (tp->closefnc) (*tp->closefnc)(tp->closearg);
   }
@@ -312,7 +376,6 @@ char  *upcall_arg;
   setmask(chkread, tp->pty);
   writefnc[tp->pty] = write_pty;
   writearg[tp->pty] = (char *) tp;
-  setmask(chkwrite, tp->pty);
   excpfnc[tp->pty] = excp_handler;
   excparg[tp->pty] = (char *) tp;
   setmask(chkexcp, tp->pty);
@@ -451,72 +514,6 @@ int  cnt;
     }
   }
   return head;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int  do_telnet(tp, chr)
-struct login_cb *tp;
-int  chr;
-{
-  struct termio termio;
-
-  switch (tp->state) {
-  case TS_DATA:
-    if (chr != IAC) {
-      /*** if (!tp->option[TN_TRANSMIT_BINARY]) chr &= 0x7f; ***/
-      return 1;
-    }
-    tp->state = TS_IAC;
-    break;
-  case TS_IAC:
-    switch (chr) {
-    case WILL:
-      tp->state = TS_WILL;
-      break;
-    case WONT:
-      tp->state = TS_WONT;
-      break;
-    case DO:
-      tp->state = TS_DO;
-      break;
-    case DONT:
-      tp->state = TS_DONT;
-      break;
-    case IAC:
-      tp->state = TS_DATA;
-      return 1;
-    default:
-      tp->state = TS_DATA;
-      break;
-    }
-    break;
-  case TS_WILL:
-    tp->state = TS_DATA;
-    break;
-  case TS_WONT:
-    tp->state = TS_DATA;
-    break;
-  case TS_DO:
-    if (chr <= NOPTIONS) tp->option[chr] = 1;
-    if (chr == TN_ECHO) {
-      ioctl(tp->pty, TCGETA, &termio);
-      termio.c_lflag |= (ECHO | ECHOE);
-      ioctl(tp->pty, TCSETA, &termio);
-    }
-    tp->state = TS_DATA;
-    break;
-  case TS_DONT:
-    if (chr <= NOPTIONS) tp->option[chr] = 0;
-    if (chr == TN_ECHO) {
-      ioctl(tp->pty, TCGETA, &termio);
-      termio.c_lflag &= ~(ECHO | ECHOE);
-      ioctl(tp->pty, TCSETA, &termio);
-    }
-    tp->state = TS_DATA;
-    break;
-  }
-  return 0;
 }
 
 /*---------------------------------------------------------------------------*/

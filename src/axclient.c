@@ -1,6 +1,5 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.2 1990/02/27 10:59:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axclient.c,v 1.3 1990/03/19 12:33:35 deyke Exp $ */
 
-#include <memory.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -15,19 +14,56 @@
 
 /*---------------------------------------------------------------------------*/
 
-static int  axclient_parse(buf, n)
+static axclient_parse(buf, n)
 char  *buf;
 int16 n;
 {
-  if (!(current && current->type == AX25TNC && current->cb.ax25)) return (-1);
+  if (!(current && current->type == AX25TNC && current->cb.ax25)) return;
   if (n >= 1 && buf[n-1] == '\n') n--;
-  if (!n) return (-1);
-  return send_ax(current->cb.ax25, qdata(buf, n));
+  if (!n) return;
+  send_ax(current->cb.ax25, qdata(buf, n));
+  if (current->record) {
+    if (buf[n-1] == '\r') buf[n-1] = '\n';
+    fwrite(buf, 1, n, current->record);
+  }
 }
 
 /*---------------------------------------------------------------------------*/
 
-void axclient_recv_upcall(cp)
+axclient_send_upcall(cp, cnt)
+struct axcb *cp;
+int  cnt;
+{
+
+  char  *p;
+  int  chr;
+  struct mbuf *bp;
+  struct session *s;
+
+  if (!(s = (struct session *) cp->user) || !s->upload || cnt <= 0) return;
+  if (!(bp = alloc_mbuf(cnt))) return;
+  p = bp->data;
+  while (cnt) {
+    if ((chr = getc(s->upload)) == EOF) break;
+    if (chr == '\n') chr = '\r';
+    *p++ = chr;
+    cnt--;
+  }
+  if (bp->cnt = p - bp->data)
+    send_ax(cp, bp);
+  else
+    free_p(bp);
+  if (cnt) {
+    fclose(s->upload);
+    s->upload = 0;
+    free(s->ufile);
+    s->ufile = 0;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+axclient_recv_upcall(cp)
 struct axcb *cp;
 {
 
@@ -36,7 +72,11 @@ struct axcb *cp;
 
   if (!(mode == CONV_MODE && current && current->type == AX25TNC && current->cb.ax25 == cp)) return;
   recv_ax(cp, &bp, 0);
-  while (pullup(&bp, &c, 1) == 1) putchar((c == '\r') ? '\n' : c);
+  while (pullup(&bp, &c, 1)) {
+    if (c == '\r') c = '\n';
+    putchar(c);
+    if (current->record) putc(c, current->record);
+  }
   fflush(stdout);
 }
 
@@ -98,8 +138,7 @@ char  *argv[];
     }
     if (p == path) {
       p += AXALEN;
-      memcpy(p, (char *) &mycall, AXALEN);
-      p[6] &= ~E;
+      addrcp(axptr(p), &mycall);
     }
     p += AXALEN;
   }
@@ -117,7 +156,7 @@ char  *argv[];
   s->name = NULLCHAR;
   s->cb.ax25 = NULLAXCB;
   s->parse = axclient_parse;
-  if (!(s->cb.ax25 = open_ax(path, AX25_ACTIVE, axclient_recv_upcall, NULLVFP, axclient_state_upcall, (char *) s))) {
+  if (!(s->cb.ax25 = open_ax(path, AX25_ACTIVE, axclient_recv_upcall, axclient_send_upcall, axclient_state_upcall, (char *) s))) {
     freesession(s);
     switch (net_error) {
     case NONE:

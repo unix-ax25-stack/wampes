@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.5 1990/02/27 11:00:09 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.h,v 1.6 1990/03/19 12:33:48 deyke Exp $ */
 
 /* Round trip timing parameters */
 #define AGAIN   8               /* Average RTT gain = 1/8 */
@@ -25,8 +25,7 @@ struct circuit {
   int  remoteid;                /* Remote circuit ID */
   int  outbound;                /* Circuit was created by local request */
   struct ax25_addr node;        /* Call of peer node */
-  struct ax25_addr orguser;     /* Call of originating user */
-  struct ax25_addr orgnode;     /* Call of originating node */
+  struct ax25_addr cuser;       /* Call of user */
   int  state;                   /* Connection state */
 #define DISCONNECTED  0
 #define CONNECTING    1

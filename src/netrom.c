@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.9 1990/03/07 09:25:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.10 1990/03/19 12:33:43 deyke Exp $ */
 
 #include <memory.h>
 #include <stdio.h>
@@ -453,10 +453,12 @@ static void calculate_all()
       pn->force_broadcast = 1;
     if (pn->force_broadcast) start_broadcast_timer = 1;
   }
+#ifdef FORCE_BC
   if (start_broadcast_timer) {
     set_timer(&broadcast_timer, 10 * 1000l);
     start_timer(&broadcast_timer);
   }
+#endif
 
   /*** remove obsolete nodes ***/
 
@@ -599,7 +601,7 @@ struct node *fromneighbor;
   if (!bp || bp->cnt < 15) goto discard;
 
   if (fromneighbor != mynode) {
-    int  calc = update_link(mynode, fromneighbor, 1, nr_hfqual);
+    if (update_link(mynode, fromneighbor, 1, nr_hfqual)) calculate_all();
     pn = nodeptr(axptr(bp->data), 1);
     if (pn == mynode) goto discard;  /* ROUTING ERROR */
     if (!pn->neighbor) {
@@ -607,10 +609,9 @@ struct node *fromneighbor;
       if (pi->quality) {
 	int  q = 1;
 	while (q * pi->quality / 256 < 1) q++;
-	calc |= update_link(fromneighbor, pn, 2, q);
+	if (update_link(fromneighbor, pn, 2, q)) calculate_all();
       }
     }
-    if (calc) calculate_all();
   }
 
   if (ismycall(axptr(bp->data + AXALEN))) {
@@ -654,14 +655,18 @@ struct node *fromneighbor;
   bp->data[2*AXALEN] = ttl;
 
   pn = nodeptr(axptr(bp->data + AXALEN), 1);
-  if (!pn->neighbor) {
+  if (!pn->neighbor && fromneighbor != mynode) {
     pn->force_broadcast = 1;
+#ifdef FORCE_BC
     send_broadcast();
+#endif
     goto discard;
   }
 
+#ifdef FORCE_BC
   if (pn->neighbor == fromneighbor ||
       addreq(pn->neighbor->call, axptr(bp->data))) send_broadcast();
+#endif
 
   send_packet_to_neighbor(bp, pn->neighbor);
   return;
@@ -775,19 +780,16 @@ register struct circuit *pc;
   register char  *p;
   static char  buf[128];
 
-  pax25(buf, &pc->orguser);
-  for (p = buf; *p; p++) ;
+  pax25(p = buf, &pc->cuser);
+  while (*p) p++;
   *p++ = ' ';
   if (pc->outbound) {
     *p++ = '-';
     *p++ = '>';
-    *p++ = ' ';
+  } else
     *p++ = '@';
-    pax25(p, &pc->node);
-  } else {
-    *p++ = '@';
-    pax25(p, &pc->orgnode);
-  }
+  *p++ = ' ';
+  pax25(p, &pc->node);
   return buf;
 }
 
@@ -847,8 +849,8 @@ struct mbuf *data;
     bp->data[3] = 0;
     bp->data[4] = opcode;
     bp->data[5] = pc->window;
-    addrcp(axptr(bp->data + 6), &pc->orguser);
-    addrcp(axptr(bp->data + 13), &pc->orgnode);
+    addrcp(axptr(bp->data + 6), &pc->cuser);
+    addrcp(axptr(bp->data + 13), &mycall);
     start_t1_timer = 1;
     break;
   case NR4OPCONAK:
@@ -1098,16 +1100,14 @@ struct mbuf *bp;
     for (pc = circuits; pc; pc = pc->next)
       if (pc->remoteindex == uchar(bp->data[0]) &&
 	  pc->remoteid == uchar(bp->data[1]) &&
-	  addreq(&pc->node, axptr(bp->data + 13)) &&
-	  addreq(&pc->orguser, axptr(bp->data + 6)) &&
-	  addreq(&pc->orgnode, axptr(bp->data + 13))) break;
+	  addreq(&pc->cuser, axptr(bp->data + 6)) &&
+	  addreq(&pc->node, axptr(bp->data + 13))) break;
     if (!pc) {
       pc = create_circuit();
       pc->remoteindex = uchar(bp->data[0]);
       pc->remoteid = uchar(bp->data[1]);
+      addrcp(&pc->cuser, axptr(bp->data + 6));
       addrcp(&pc->node, axptr(bp->data + 13));
-      addrcp(&pc->orguser, axptr(bp->data + 6));
-      addrcp(&pc->orgnode, axptr(bp->data + 13));
       pc->r_upcall = nrserv_recv_upcall;
       pc->t_upcall = nrserv_send_upcall;
       pc->s_upcall = nrserv_state_upcall;
@@ -1259,8 +1259,8 @@ discard:
 /********************************* User Calls ********************************/
 /*---------------------------------------------------------------------------*/
 
-struct circuit *open_nr(node, orguser, window, r_upcall, t_upcall, s_upcall, user)
-struct ax25_addr *node, *orguser;
+struct circuit *open_nr(node, cuser, window, r_upcall, t_upcall, s_upcall, user)
+struct ax25_addr *node, *cuser;
 int  window;
 void (*r_upcall)();
 void (*t_upcall)();
@@ -1273,7 +1273,7 @@ char  *user;
     net_error = INVALID;
     return 0;
   }
-  if (!orguser) orguser = &mycall;
+  if (!cuser) cuser = &mycall;
   if (!window) window = nr_twindow;
   if (!(pc = create_circuit())) {
     net_error = NO_SPACE;
@@ -1281,8 +1281,7 @@ char  *user;
   }
   pc->outbound = 1;
   addrcp(&pc->node, node);
-  addrcp(&pc->orguser, orguser);
-  addrcp(&pc->orgnode, &mycall);
+  addrcp(&pc->cuser, cuser);
   pc->window = window;
   pc->r_upcall = r_upcall;
   pc->t_upcall = t_upcall;
@@ -1541,19 +1540,56 @@ int  oldstate, newstate;
 
 /*---------------------------------------------------------------------------*/
 
-static int  nrclient_parse(buf, n)
+static nrclient_parse(buf, n)
 char  *buf;
 int16 n;
 {
-  if (!(current && current->type == NRSESSION && current->cb.netrom)) return (-1);
+  if (!(current && current->type == NRSESSION && current->cb.netrom)) return;
   if (n >= 1 && buf[n-1] == '\n') n--;
-  if (!n) return (-1);
-  return send_nr(current->cb.netrom, qdata(buf, n));
+  if (!n) return;
+  send_nr(current->cb.netrom, qdata(buf, n));
+  if (current->record) {
+    if (buf[n-1] == '\r') buf[n-1] = '\n';
+    fwrite(buf, 1, n, current->record);
+  }
 }
 
 /*---------------------------------------------------------------------------*/
 
-void nrclient_recv_upcall(pc)
+nrclient_send_upcall(pc, cnt)
+struct circuit *pc;
+int  cnt;
+{
+
+  char  *p;
+  int  chr;
+  struct mbuf *bp;
+  struct session *s;
+
+  if (!(s = (struct session *) pc->user) || !s->upload || cnt <= 0) return;
+  if (!(bp = alloc_mbuf(cnt))) return;
+  p = bp->data;
+  while (cnt) {
+    if ((chr = getc(s->upload)) == EOF) break;
+    if (chr == '\n') chr = '\r';
+    *p++ = chr;
+    cnt--;
+  }
+  if (bp->cnt = p - bp->data)
+    send_nr(pc, bp);
+  else
+    free_p(bp);
+  if (cnt) {
+    fclose(s->upload);
+    s->upload = 0;
+    free(s->ufile);
+    s->ufile = 0;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+nrclient_recv_upcall(pc)
 struct circuit *pc;
 {
 
@@ -1562,7 +1598,11 @@ struct circuit *pc;
 
   if (!(mode == CONV_MODE && current && current->type == NRSESSION && current->cb.netrom == pc)) return;
   recv_nr(pc, &bp, 0);
-  while (pullup(&bp, &c, 1) == 1) putchar((c == '\r') ? '\n' : c);
+  while (pullup(&bp, &c, 1)) {
+    if (c == '\r') c = '\n';
+    putchar(c);
+    if (current->record) putc(c, current->record);
+  }
   fflush(stdout);
 }
 
@@ -1606,7 +1646,7 @@ int  argc;
 char  *argv[];
 {
 
-  struct ax25_addr node, user;
+  struct ax25_addr node, cuser;
   struct session *s;
 
   if (setcall(&node, argv[1])) {
@@ -1618,8 +1658,8 @@ char  *argv[];
     return 1;
   }
   if (argc < 3)
-    addrcp(&user, &mycall);
-  else if (setcall(&user, argv[2])) {
+    addrcp(&cuser, &mycall);
+  else if (setcall(&cuser, argv[2])) {
     printf("Invalid call \"%s\"\n", argv[2]);
     return 1;
   }
@@ -1632,7 +1672,7 @@ char  *argv[];
   s->name = NULLCHAR;
   s->cb.netrom = 0;
   s->parse = nrclient_parse;
-  if (!(s->cb.netrom = open_nr(&node, &user, 0, nrclient_recv_upcall, NULLVFP, nrclient_state_upcall, (char *) s))) {
+  if (!(s->cb.netrom = open_nr(&node, &cuser, 0, nrclient_recv_upcall, nrclient_send_upcall, nrclient_state_upcall, (char *) s))) {
     freesession(s);
     switch (net_error) {
     case NONE:
@@ -1834,7 +1874,7 @@ char  *argv[];
 	pax25(buf2, pn->neighbor->call);
       else
 	*buf2 = '\0';
-      printf("%-9s  %-6.6s  %-9s  %5i  %7.3f\n", buf1, pn->ident, buf2, pn->level, pn->quality);
+      printf("%-9s  %-6.6s  %-9s  %5i  %7i\n", buf1, pn->ident, buf2, pn->level, (int) pn->quality);
     }
   return 0;
 }

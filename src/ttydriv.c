@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.3 1990/02/22 12:42:54 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.4 1990/03/19 12:33:51 deyke Exp $ */
 
 /* TTY input driver */
 
@@ -6,6 +6,7 @@
 #include <string.h>
 
 #define LINESIZE     1024
+#define LINEMAX      (LINESIZE-5)
 #define RECALLSIZE   63
 
 #define NEXT(i)      (((i) + 1) & RECALLSIZE)
@@ -166,17 +167,21 @@ char  chr, **buf;
       break;
 
     case 22: /* control V, quote next character */
-      quote = '^';
-      if (pos == end)
-	printchr(quote);
+      if (end - linebuf >= LINEMAX)
+	putchar(7);
       else {
-	putchar('\033');
-	putchar('Q');
-	printchr(quote);
-	putchar('\033');
-	putchar('R');
+	quote = '^';
+	if (pos == end)
+	  printchr(quote);
+	else {
+	  putchar('\033');
+	  putchar('Q');
+	  printchr(quote);
+	  putchar('\033');
+	  putchar('R');
+	}
+	backchr(quote);
       }
-      backchr(quote);
       break;
 
     case 23: /* control W, delete word */
@@ -202,7 +207,9 @@ char  chr, **buf;
       break;
 
     default:
-      if (pos == end) {
+      if (end - linebuf >= LINEMAX)
+	putchar(7);
+      else if (pos == end) {
 	*end++ = chr;
 	printchr(*pos++);
       } else {
@@ -222,8 +229,12 @@ char  chr, **buf;
     switch (chr) {
 
     case 'C': /* cursor right */
-      if (pos == end) *end++ = ' ';
-      printchr(*pos++);
+      if (pos - linebuf >= LINEMAX)
+	putchar(7);
+      else {
+	if (pos == end) *end++ = ' ';
+	printchr(*pos++);
+      }
       break;
 
     case 'D': /* cursor left */

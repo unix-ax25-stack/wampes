@@ -1,9 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.7 1990/03/12 14:39:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.8 1990/03/19 12:33:37 deyke Exp $ */
 
 #include <sys/types.h>
 
 #include <fcntl.h>
-#include <memory.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
@@ -73,7 +72,7 @@ int  ioinit()
 
   if (local_kbd = isatty(0)) {
     ioctl(0, TCGETA, &prev_termio);
-    memcpy(&curr_termio, &prev_termio, sizeof(struct termio ));
+    curr_termio = prev_termio;
     curr_termio.c_iflag = BRKINT | ICRNL | IXON | IXANY | IXOFF;
     curr_termio.c_lflag = 0;
     curr_termio.c_cc[VMIN] = 0;
@@ -420,19 +419,27 @@ int  full;
 
 /*---------------------------------------------------------------------------*/
 
-static void check_program_changed()
+static void check_files_changed()
 {
 
-  static long  lastmtime;
-  static long  nextchecktime;
+  int  changed = 0;
+  static long  nexttime, net_time, rc_time;
   struct stat statbuf;
 
-  if (debug || nextchecktime > currtime) return;
-  nextchecktime = currtime + 600;
+  if (debug || nexttime > currtime) return;
+  nexttime = currtime + 600;
+
   if (stat("/tcp/net", &statbuf)) return;
-  if (!lastmtime) lastmtime = statbuf.st_mtime;
-  if (lastmtime != statbuf.st_mtime &&
-      statbuf.st_mtime < currtime - 3600) doexit();
+  if (!net_time) net_time = statbuf.st_mtime;
+  if (net_time != statbuf.st_mtime && statbuf.st_mtime < currtime - 3600)
+    changed = 1;
+
+  if (stat("/tcp/net.rc", &statbuf)) return;
+  if (!rc_time) rc_time = statbuf.st_mtime;
+  if (rc_time != statbuf.st_mtime && statbuf.st_mtime < currtime - 3600)
+    changed = 1;
+
+  if (changed) doexit();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -448,7 +455,7 @@ eihalt()
   struct timeval timeout;
   struct timezone tz;
 
-  check_program_changed();
+  check_files_changed();
   wait3(&status, -1, (int *) 0);
   if (!debug) alarm(60l);
   timeout.tv_sec = timeout.tv_usec = 0;

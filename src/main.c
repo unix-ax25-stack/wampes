@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.3 1990/03/12 14:39:07 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/main.c,v 1.4 1990/03/19 12:33:40 deyke Exp $ */
 
 /* Main network program - provides both client and server functions */
 
@@ -130,6 +130,7 @@ int  dorecord();
 int  doremote();
 int  doreset();
 int  doroute();
+int  dortprio();
 int  dosession();
 int  dosource();
 int  dostart();
@@ -207,8 +208,8 @@ static struct cmds cmds[] = {
 	"kick",         dokick,         0, NULLCHAR,    NULLCHAR,
 	"log",          dolog,          0, NULLCHAR,    NULLCHAR,
 	"ip",           doip,           0, NULLCHAR,    NULLCHAR,
-	"mail_daemon",  mail_daemon,    0, NULLCHAR,    NULLCHAR,
 	"memstat",      memstat,        0, NULLCHAR,    NULLCHAR,
+	"mail_daemon",  mail_daemon,    0, NULLCHAR,    NULLCHAR,
 #ifdef  AX25
 	"mode",         domode,         2, "mode <interface>",  NULLCHAR,
 #endif
@@ -231,6 +232,7 @@ static struct cmds cmds[] = {
 							NULLCHAR,
 	"reset",        doreset,        0, NULLCHAR,    NULLCHAR,
 	"route",        doroute,        0, NULLCHAR,    NULLCHAR,
+	"rtprio",       dortprio,       0, NULLCHAR,    NULLCHAR,
 	"status",       dostatus,       0, NULLCHAR,    NULLCHAR,
 	"session",      dosession,      0, NULLCHAR,    NULLCHAR,
 	"source",       dosource,       2, "source <filename>", NULLCHAR,
@@ -1148,6 +1150,32 @@ char  *argv[];
   while (fgets(inbuf, BUFSIZ, fp))
     cmdparse(cmds, inbuf);
   fclose(fp);
+  mode = CMD_MODE;
+  cooked();
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+#include <sys/rtprio.h>
+
+static int  dortprio(argc, argv)
+int  argc;
+char  *argv[];
+{
+  int  tmp;
+
+  if (argc < 2) {
+    tmp = rtprio(0, RTPRIO_NOCHG);
+    if (tmp == RTPRIO_RTOFF)
+      printf("Rtprio off\n");
+    else
+      printf("Rtprio %d\n", tmp);
+  } else {
+    tmp = atoi(argv[1]);
+    if (tmp <= 0 || tmp > 127) tmp = RTPRIO_RTOFF;
+    rtprio(0, tmp);
+  }
   return 0;
 }
 

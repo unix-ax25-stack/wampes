@@ -1,3 +1,5 @@
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/session.c,v 1.2 1990/03/19 12:33:49 deyke Exp $ */
+
 /* Session control */
 #include <stdio.h>
 #include "global.h"
@@ -12,9 +14,6 @@
 #include "telnet.h"
 #ifdef _FINGER
 #include "finger.h"
-#endif
-#ifdef NETROM
-#include "netrom.h"
 #endif
 #include "session.h"
 #include "cmdparse.h"
@@ -138,7 +137,7 @@ go()
 		break;
 #ifdef  AX25
 	case AX25TNC:
-		axclient_recv_upcall(current->cb.ax25,0);
+		axclient_recv_upcall(current->cb.ax25);
 		break;
 #endif
 #ifdef _FINGER
@@ -148,7 +147,7 @@ go()
 #endif
 #ifdef  NETROM
 	case NRSESSION:
-		nrclient_recv_upcall(current->cb.netrom,0);
+		nrclient_recv_upcall(current->cb.netrom);
 		break;
 #endif
 	}
@@ -259,14 +258,8 @@ char *argv[];
 			kick_tcp(s->cb.ftp->data);
 		break;
 #ifdef  AX25
-/**********
 	case AX25TNC:
-		if(kick_ax25(s->cb.ax25_cb) == -1){
-			printf(notval);
-			return 1;
-		}
-		return 1;
-**********/
+		break;
 #endif
 #ifdef _FINGER
 	case FINGER:
@@ -274,6 +267,10 @@ char *argv[];
 			printf(notval);
 			return 1;
 		}
+		break;
+#endif
+#ifdef NETROM
+	case NRSESSION:
 		break;
 #endif
 	}
@@ -315,6 +312,9 @@ struct session *s;
 		s->name = NULLCHAR;
 	}
 	s->type = FREE;
+	memset((char *) s, 0, sizeof(struct session));
+	if(s == current)
+		current = NULLSESSION;
 }
 /* Control session recording */
 dorecord(argc,argv)
@@ -353,7 +353,8 @@ int argc;
 char *argv[];
 {
 	struct tcb *tcb;
-	struct ax25_cb *axp;
+	struct axcb *axp;
+	struct circuit *cb;
 
 	if(current == NULLSESSION){
 		printf("No current session\n");
@@ -361,48 +362,52 @@ char *argv[];
 	}
 	if(argc > 1){
 		switch(current->type){
-		case TELNET:
-			tcb = current->cb.telnet->tcb;
-			break;
-#ifdef  AX25
-/**********
-		case AX25TNC:
-			axp = current->cb.ax25_cb;
-			break;
-**********/
-#endif
 		case FTP:
 			printf("Uploading on FTP control channel not supported\n");
 			return 1;
+#ifdef  _FINGER
+		case FINGER:
+			printf("Uploading on FINGER session not supported\n");
+			return 1;
+#endif
 		}
-		if(strcmp(argv[1],"stop") == 0 && current->upload != NULLFILE){
-			/* Abort upload */
+		/* Abort upload */
+		if(current->upload != NULLFILE){
 			fclose(current->upload);
 			current->upload = NULLFILE;
-			if(current->ufile != NULLCHAR){
-				free(current->ufile);
-				current->ufile = NULLCHAR;
+		}
+		if(current->ufile != NULLCHAR){
+			free(current->ufile);
+			current->ufile = NULLCHAR;
+		}
+		if(strcmp(argv[1],"stop") != 0){
+			/* Open upload file */
+			if((current->upload = fopen(argv[1],"r")) == NULLFILE){
+				printf("Can't read %s\n",argv[1]);
+				return 1;
 			}
-		}
-		/* Open upload file */
-		if((current->upload = fopen(argv[1],"r")) == NULLFILE){
-			printf("Can't read %s\n",argv[1]);
-			return 1;
-		}
-		current->ufile = malloc((unsigned)strlen(argv[1])+1);
-		strcpy(current->ufile,argv[1]);
-		/* All set, kick transmit upcall to get things rolling */
-		switch(current->type){
+			current->ufile = malloc((unsigned)strlen(argv[1])+1);
+			strcpy(current->ufile,argv[1]);
+			/* All set, kick transmit upcall to get things rolling */
+			switch(current->type){
 #ifdef  AX25
-/**********
-		case AX25TNC:
-			(*axp->t_upcall)(axp,axp->paclen * axp->maxframe);
-			break;
-**********/
+			case AX25TNC:
+				axp = current->cb.ax25;
+				axclient_send_upcall(axp, space_ax(axp));
+				break;
 #endif
-		case TELNET:
-			(*tcb->t_upcall)(tcb,tcb->snd.wnd - tcb->sndcnt);
-			break;
+#ifdef NETROM
+			case NRSESSION:
+				cb = current->cb.netrom;
+				nrclient_send_upcall(cb, space_nr(cb));
+				break;
+#endif
+			case TELNET:
+				tcb = current->cb.telnet->tcb;
+				if(tcb->snd.wnd > tcb->sndcnt)
+					(*tcb->t_upcall)(tcb,tcb->snd.wnd - tcb->sndcnt);
+				break;
+			}
 		}
 	}
 	if(current->ufile != NULLCHAR)
@@ -411,3 +416,4 @@ char *argv[];
 		printf("Uploading off\n");
 	return 0;
 }
+
