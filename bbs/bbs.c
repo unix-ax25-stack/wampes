@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.63 1989/02/26 19:07:49 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.64 1989/03/16 20:59:11 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -228,12 +228,14 @@ long  gmt;
 /*---------------------------------------------------------------------------*/
 
 static int  callvalid(call)
-register char *call;
+register char  *call;
 {
   register int  d, l;
 
   l = strlen(call);
-  if (l < 4 || l > 6) return 0;
+  if (l < 3 || l > 6) return 0;
+  if (isdigit(uchar(call[0])) && isdigit(uchar(call[1]))) return 0;
+  if (!(isdigit(uchar(call[1])) || isdigit(uchar(call[2])))) return 0;
   if (!isalpha(uchar(call[l-1]))) return 0;
   d = 0;
   for (; *call; call++) {
