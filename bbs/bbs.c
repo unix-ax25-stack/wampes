@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.72 1989/07/01 22:18:09 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.73 1989/07/10 22:27:25 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -35,9 +35,14 @@ extern void free();
 
 #define DEBUGDIR    "/tmp/bbs"
 #define INFOFILE    "/usr/local/lib/station.data"
-#define MYDESC      "[DK5SG BBS Gaertringen, jn48kp]"
+#define MYDESC      "[Gaertringen JN48KP DK5SG-BBS %s OP:DK5SG]"
 #define NARGS       20
 #define WRKDIR      "/users/bbs"
+
+#define SECONDES    (1L)
+#define MINUTES     (60L*SECONDES)
+#define HOURS       (60L*MINUTES)
+#define DAYS        (24L*HOURS)
 
 #define LEN_BID     12
 #define LEN_SUBJECT 80
@@ -90,9 +95,9 @@ struct mail {
 };
 
 static char  *arg[NARGS];
-static char  *mydesc;
 static char  *myhostname;
 static char  loginname[80];
+static char  mydesc[80];
 static int  debug;
 static int  errors;
 static int  fdlock = -1;
@@ -191,7 +196,7 @@ char  *s;
   static int  chr, lastchr;
 
   fflush(stdout);
-  alarm(60 * 60);
+  alarm(1 * HOURS);
   for (p = s; ; ) {
     *p = '\0';
     lastchr = chr;
@@ -497,11 +502,14 @@ char  *path;
 static int  msg_uniq(bid, mid)
 char  *bid, *mid;
 {
+
+  long  validdate;
   struct index index;
 
+  validdate = time((long *) 0) - 90 * DAYS;
   if (lseek(findex, 0l, 0)) halt();
-  while (read(findex, (char *) &index, sizeof(struct index )) == sizeof(struct index ))
-    if (!strcmp(bid, index.bid)) return 0;
+  while (read(findex, (char *) & index, sizeof(struct index )) == sizeof(struct index ))
+    if (index.date >= validdate && !strcmp(bid, index.bid)) return 0;
   return 1;
 }
 
@@ -627,11 +635,11 @@ struct mail *mail;
       _exit(1);
     case 0:
       if (!(fp = popen("/usr/bin/rnews", "w"))) _exit(1);
-      fprintf(fp, "Relay-Version: DK5SG BBS version %s %s; site %s.ampr.org\n",
+      fprintf(fp, "Relay-Version: DK5SG-BBS version %s %s; site %s.ampr.org\n",
 		  revision.number, revision.date, myhostname);
       fromhost = get_host_from_path(mail->from);
       fprintf(fp, "From: %s@%s%s\n", get_user_from_path(mail->from), fromhost, strchr(fromhost, '.') ? "" : ".ampr.org");
-      mst = mail->date - 7 * 60 * 60;
+      mst = mail->date - 7 * HOURS;
       tm = gmtime(&mst);
       fprintf(fp, "Date: %.3s, %d %.3s %02d %02d:%02d:%02d MST\n",
 	      "SunMonTueWedThuFriSat" + 3 * tm->tm_wday,
@@ -649,7 +657,7 @@ struct mail *mail;
 	fprintf(fp, "Newsgroups: %s.test\n", myhostname);
       else
 	fprintf(fp, "Newsgroups: dnet.ham\n");
-      fprintf(fp, "Posting-Version: DK5SG BBS version %s %s; site %s.ampr.org\n",
+      fprintf(fp, "Posting-Version: DK5SG-BBS version %s %s; site %s.ampr.org\n",
 		  revision.number, revision.date, myhostname);
       putc('\n', fp);
       for (p = mail->head; p; p = p->next) {
@@ -1065,7 +1073,7 @@ static void c_cmd()
     unknown_command();
     return;
   }
-  keepdate = time((long *) 0) - 90l * 24l * 60l * 60l;
+  keepdate = time((long *) 0) - 90 * DAYS;
   if ((f = open(tempfile, O_WRONLY | O_CREAT | O_EXCL, 0644)) < 0) halt();
   if (lseek(findex, 0l, 0)) halt();
   while (read(findex, (char *) &index, sizeof(struct index )) == sizeof(struct index )) {
@@ -1117,9 +1125,9 @@ int  do_not_exit;
       case 'o':
 	puts(index.subject);
 	tm = gmtime(&index.date);
-	printf("R:%02d%02d%02d/%02d%02dz %d@%s %s\n",
+	printf("R:%02d%02d%02d/%02d%02dz @%-6s %s\n",
 	       tm->tm_year % 100, tm->tm_mon + 1, tm->tm_mday,
-	       tm->tm_hour, tm->tm_min, index.mesg, myhostname, mydesc);
+	       tm->tm_hour, tm->tm_min, myhostname, mydesc);
 	if (!(fp = fopen(filename(index.mesg), "r"))) halt();
 	while ((c = getc(fp)) != EOF) putchar(c);
 	fclose(fp);
@@ -1544,7 +1552,7 @@ static void v_cmd()
     unknown_command();
     return;
   }
-  printf("DK5SG BBS %s %s\n", revision.number, revision.date);
+  printf("DK5SG-BBS %s %s\n", revision.number, revision.date);
   printf("Active: %d   Next: %d\n", numbmesg(), lastmesg() + 1);
 }
 
@@ -1761,7 +1769,10 @@ int  doforward;
     connect_bbs();
     wait_for_prompt();
   }
-  printf("[DK5SG-%s-H$]\n", revision.number);
+  if (!hostmode)
+    printf("[DK5SG-%s-H$]\n", revision.number);
+  else
+    printf("[THEBOX-1.5H-$]\n");
   if (doforward) wait_for_prompt();
   for (; ; ) {
     if (doforward)
@@ -1833,7 +1844,7 @@ char  **argv;
   umask(022);
   if (uname(&utsname)) halt();
   myhostname = utsname.nodename;
-  mydesc = MYDESC;
+  sprintf(mydesc, MYDESC, revision.number);
   cp = getenv("LOGNAME");
   if (!cp || !*cp) halt();
   strlwc(strcpy(loginname, cp));
