@@ -1,4 +1,8 @@
-@(#) $Id: ChangeLog,v 1.61 1999/09/25 15:01:49 deyke Exp $
+@(#) $Id: ChangeLog,v 1.62 1999/09/26 17:18:26 deyke Exp $
+
+990926 Dieter Deyke <deyke@hotpop.com>
+
+	Updated email address and distribution location in README
 
 990925 Dieter Deyke <deyke@fc.hp.com>
 

@@ -1,12 +1,12 @@
-.\" @(#) $Id: frontpage,v 1.164 1999/09/25 15:01:58 deyke Exp $ -*- Mode: Nroff -*-
+.\" @(#) $Id: frontpage,v 1.165 1999/09/26 17:18:29 deyke Exp $ -*- Mode: Nroff -*-
 .\"
-.PF "^WAMPES Reference Manual^-\\\\nP-^Version 990925" \" Page footer
+.PF "^WAMPES Reference Manual^-\\\\nP-^Version 990926" \" Page footer
 .\"
 .S 30
 .ce
 \fBWAMPES Reference Manual\fP
 .ce
-Version 990925
+Version 990926
 .S
 .SP 2
 .S 15
