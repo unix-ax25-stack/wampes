@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.10 1993/02/26 10:17:42 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25file.c,v 1.11 1993/05/07 10:10:55 deyke Exp $ */
 
 #include <stdio.h>
 #include <string.h>
@@ -10,7 +10,7 @@
 
 #define AXROUTE_FILE_VERSION    1
 #define AXROUTE_HOLDTIME        (0x7fffffff / 1000)
-#define AXROUTE_SAVETIME        (60L*10)
+#define AXROUTE_SAVETIME        (10L*60L*1000L)
 
 struct axroute_saverecord_0 {
   char call[AXALEN];
@@ -28,8 +28,8 @@ struct axroute_saverecord_1 {
 /*char ifname[]; */
 };
 
-static char axroute_filename[] = "/tcp/axroute_data";
-static char axroute_tmpfilename[] = "/tcp/axroute_tmp";
+static const char axroute_filename[] = "/tcp/axroute_data";
+static const char axroute_tmpfilename[] = "/tcp/axroute_tmp";
 
 /*---------------------------------------------------------------------------*/
 
@@ -38,13 +38,25 @@ void axroute_savefile()
 
   FILE * fp;
   int i;
-  static long nextsavetime;
+  static struct timer timer;
   struct ax_route *rp, *lp;
   struct axroute_saverecord_1 buf;
 
-  if (!nextsavetime) nextsavetime = secclock() + AXROUTE_SAVETIME;
-  if (Debug || nextsavetime > secclock()) return;
-  nextsavetime = secclock() + AXROUTE_SAVETIME;
+  switch (timer.state) {
+  case TIMER_STOP:
+    if (!Debug) {
+      timer.func = (void (*)()) axroute_savefile;
+      timer.arg = 0;
+      set_timer(&timer, AXROUTE_SAVETIME);
+      start_timer(&timer);
+    }
+    return;
+  case TIMER_RUN:
+    return;
+  case TIMER_EXPIRE:
+    timer.state = TIMER_STOP;
+    break;
+  }
   if (!(fp = fopen(axroute_tmpfilename, "w"))) return;
   putc(AXROUTE_FILE_VERSION, fp);
   for (i = 0; i < AXROUTESIZE; i++)

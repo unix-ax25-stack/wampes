@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.7 1991/05/29 12:01:34 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arpfile.c,v 1.8 1993/05/07 10:10:54 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -7,30 +7,30 @@
 #include "arp.h"
 
 #define ARP_FILE_VERSION   2
-#define ARP_SAVETIME       (60L*10)
+#define ARP_SAVETIME       (10L*60L*1000L)
 
 struct arp_saverecord_0 {
   int32 ip_addr;        /* IP address, host order */
   int16 hardware;       /* Hardware type */
   int16 hwalen;         /* Length of hardware address */
-  char  pub;            /* Publish this entry? */
+  char pub;             /* Publish this entry? */
 };
 
 struct arp_saverecord_1 {
   int32 ip_addr;        /* IP address, host order */
-  char  hardware;       /* Hardware type */
-  char  pub;            /* Publish this entry? */
+  char hardware;        /* Hardware type */
+  char pub;             /* Publish this entry? */
 };
 
 struct arp_saverecord_2 {
   int32 ip_addr;        /* IP address, host order */
-  char  hardware;       /* Hardware type */
-  char  pub;            /* Publish this entry? */
+  char hardware;        /* Hardware type */
+  char pub;             /* Publish this entry? */
   int32 expires;
 };
 
-static char  arp_filename[] = "/tcp/arp_data";
-static char  arp_tmpfilename[] = "/tcp/arp_tmp";
+static const char arp_filename[] = "/tcp/arp_data";
+static const char arp_tmpfilename[] = "/tcp/arp_tmp";
 
 /*---------------------------------------------------------------------------*/
 
@@ -38,14 +38,26 @@ void arp_savefile()
 {
 
   FILE * fp;
-  int  i;
-  static long  nextsavetime;
+  int i;
+  static struct timer timer;
   struct arp_saverecord_2 buf;
   struct arp_tab *p;
 
-  if (!nextsavetime) nextsavetime = secclock() + ARP_SAVETIME;
-  if (Debug || nextsavetime > secclock()) return;
-  nextsavetime = secclock() + ARP_SAVETIME;
+  switch (timer.state) {
+  case TIMER_STOP:
+    if (!Debug) {
+      timer.func = (void (*)()) arp_savefile;
+      timer.arg = 0;
+      set_timer(&timer, ARP_SAVETIME);
+      start_timer(&timer);
+    }
+    return;
+  case TIMER_RUN:
+    return;
+  case TIMER_EXPIRE:
+    timer.state = TIMER_STOP;
+    break;
+  }
   if (!(fp = fopen(arp_tmpfilename, "w"))) return;
   putc(ARP_FILE_VERSION, fp);
   for (i = 0; i < HASHMOD; i++)
@@ -68,9 +80,9 @@ void arp_loadfile()
 {
 
   FILE * fp;
-  char  hw_addr[MAXHWALEN];
+  char hw_addr[MAXHWALEN];
   int32 ttl;
-  static int  done;
+  static int done;
   struct arp_tab *p;
 
   if (done) return;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.8 1991/05/29 12:02:03 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipfile.c,v 1.9 1993/05/07 10:11:06 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -8,27 +8,27 @@
 #include "ip.h"
 
 #define ROUTE_FILE_VERSION   2
-#define ROUTE_SAVETIME       (60L*10)
+#define ROUTE_SAVETIME       (10L*60L*1000L)
 
 struct route_saverecord_1 {
   int32 target;         /* Target IP address */
-  unsigned int  bits;   /* Number of significant bits */
+  unsigned int bits;    /* Number of significant bits */
   int32 gateway;        /* IP address of local gateway for this target */
   int32 metric;         /* Hop count or whatever */
-  int  flags;
+  int flags;
 };
 
 struct route_saverecord_2 {
   int32 target;         /* Target IP address */
-  unsigned int  bits;   /* Number of significant bits */
+  unsigned int bits;    /* Number of significant bits */
   int32 gateway;        /* IP address of local gateway for this target */
   int32 metric;         /* Hop count or whatever */
-  int  flags;
+  int flags;
   int32 expires;
 };
 
-static char  route_filename[] = "/tcp/route_data";
-static char  route_tmpfilename[] = "/tcp/route_tmp";
+static const char route_filename[] = "/tcp/route_data";
+static const char route_tmpfilename[] = "/tcp/route_tmp";
 
 /*---------------------------------------------------------------------------*/
 
@@ -36,15 +36,27 @@ void route_savefile()
 {
 
   FILE * fp;
-  int  bits;
-  int  i;
-  static long  nextsavetime;
+  int bits;
+  int i;
+  static struct timer timer;
   struct route *p;
   struct route_saverecord_2 buf;
 
-  if (!nextsavetime) nextsavetime = secclock() + ROUTE_SAVETIME;
-  if (Debug || nextsavetime > secclock()) return;
-  nextsavetime = secclock() + ROUTE_SAVETIME;
+  switch (timer.state) {
+  case TIMER_STOP:
+    if (!Debug) {
+      timer.func = (void (*)()) route_savefile;
+      timer.arg = 0;
+      set_timer(&timer, ROUTE_SAVETIME);
+      start_timer(&timer);
+    }
+    return;
+  case TIMER_RUN:
+    return;
+  case TIMER_EXPIRE:
+    timer.state = TIMER_STOP;
+    break;
+  }
   if (!(fp = fopen(route_tmpfilename, "w"))) return;
   putc(ROUTE_FILE_VERSION, fp);
   rt_merge(0);
@@ -71,11 +83,11 @@ void route_loadfile()
 {
 
   FILE * fp;
-  char  *cp;
-  char  ifname[1024];
-  int  c;
+  char *cp;
+  char ifname[1024];
+  int c;
   int32 ttl;
-  static int  done;
+  static int done;
   struct iface *ifp;
 
   if (done) return;
