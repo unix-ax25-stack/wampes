@@ -1,11 +1,9 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.6 1989/01/14 23:29:24 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.7 1989/01/15 19:55:55 dk5sg Exp $";
 
 #include <sys/types.h>
 
 #include <ctype.h>
-#include <errno.h>
 #include <fcntl.h>
-#include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
@@ -18,13 +16,13 @@ static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampe
 extern char  *calloc();
 extern char  *malloc();
 extern long  time();
+extern struct sockaddr *build_sockaddr();
 extern struct utmp *getutent();
 extern void endutent();
 extern void exit();
 extern void free();
 
 #define MAXCHANNEL 32767
-#define PORT       3600
 
 struct mbuf {
   struct mbuf *next;
@@ -64,6 +62,8 @@ struct connection {
 
 struct permlink {
   char  name[80];               /* Name of host */
+  char  socket[80];             /* Name of socket to connect to */
+  char  command[256];           /* Optional connect command */
   struct connection *connection;/* Pointer to associated connection */
   long  statetime;              /* Time of last (dis)connect */
   int  tries;                   /* Number of connect tries */
@@ -300,7 +300,7 @@ int  flisten;
 
   int  addrlen;
   int  fd;
-  struct sockaddr_in addr;
+  struct sockaddr addr;
 
   addrlen = sizeof(addr);
   if ((fd = accept(flisten, &addr, &addrlen)) >= 0) alloc_connection(fd);
@@ -472,31 +472,29 @@ static void connect_permlinks()
 #define MAX_WAITTIME   (60*60*3)
 
   char  buffer[2048];
+  int  addrlen;
   int  fd;
   register struct connection *cp;
   register struct permlink *p;
-  struct sockaddr_in addr;
+  struct sockaddr *addr;
 
-  for (p = permlinks; p; p = p->next)
-    if (!p->connection && p->retrytime <= currtime) {
-      p->tries++;
-      p->waittime <<= 1;
-      if (p->waittime > MAX_WAITTIME) p->waittime = MAX_WAITTIME;
-      p->retrytime = currtime + p->waittime;
-      if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) continue;
-      addr.sin_family = AF_INET;
-      addr.sin_addr.s_addr = 0x7f000001;
-      addr.sin_port = 3700;
-      if (connect(fd, &addr, sizeof(addr)) || !(cp = alloc_connection(fd)))
-	close(fd);
-      else {
-	p->connection = cp;
-	sprintf(buffer, "connect tcp %s convers\n", p->name);
-	appendstring(&cp->obuf, buffer);
-	sprintf(buffer, "/\377\200HOST %s\n", myhostname);
-	appendstring(&cp->obuf, buffer);
-      }
+  for (p = permlinks; p; p = p->next) {
+    if (p->connection || p->retrytime > currtime) continue;
+    p->tries++;
+    p->waittime <<= 1;
+    if (p->waittime > MAX_WAITTIME) p->waittime = MAX_WAITTIME;
+    p->retrytime = currtime + p->waittime;
+    if (!(addr = build_sockaddr(p->socket, &addrlen))) continue;
+    if ((fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) continue;
+    if (connect(fd, addr, addrlen) || !(cp = alloc_connection(fd))) {
+      close(fd);
+      continue;
     }
+    p->connection = cp;
+    if (*p->command) appendstring(&cp->obuf, p->command);
+    sprintf(buffer, "/\377\200HOST %s\n", myhostname);
+    appendstring(&cp->obuf, buffer);
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -661,7 +659,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.6 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.7 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
@@ -920,22 +918,26 @@ struct connection *cp;
 static void read_configuration()
 {
 
-  static char  conffile[] = "/tcp/convers.conf";
-
   FILE * fp;
+  char  *conffile = "/tcp/convers.conf";
+  char  *host_name, *sock_name;
   char  line[1024];
-  char  name[1024];
   struct permlink *p;
 
   if (!(fp = fopen(conffile, "r"))) return;
-  while (fgets(line, sizeof(line), fp))
-    if (sscanf(line, "%s", name) == 1) {
+  while (fgets(line, sizeof(line), fp)) {
+    host_name = getarg(line, 0);
+    sock_name = getarg(0, 0);
+    if (*host_name && *sock_name) {
       p = (struct permlink *) calloc(1, sizeof(struct permlink ));
-      strcpy(p->name, name);
+      strcpy(p->name, host_name);
+      strcpy(p->socket, sock_name);
+      strcpy(p->command, getarg(0, 1));
       p->next = permlinks;
       permlinks = p;
-      update_permlinks(name, NULLCONNECTION);
+      update_permlinks(host_name, NULLCONNECTION);
     }
+  }
   fclose(fp);
 }
 
@@ -946,21 +948,29 @@ int  argc;
 char  **argv;
 {
 
-  static struct timeval select_timeout = { 60, 0 };
+  static char  *socketnames[] = {
+    "unix:/tcp/sockets/convers",
+    "*:convers",
+    (char *) 0
+  };
+
+  static struct timeval select_timeout = {
+    60, 0
+  };
 
   char  buffer[2048];
   char  c;
-  int  flisten;
-  int  flistenmask;
+  int  addrlen;
+  int  flisten[_NFILE], flistenmask[_NFILE];
   int  i;
-  int  nfd;
-  int  rmask, wmask;
+  int  nfd, rmask, wmask;
   int  size;
   struct connection *cp;
   struct mbuf *bp;
   struct sigvec vec;
-  struct sockaddr_in addr;
+  struct sockaddr *addr;
 
+  umask(022);
   for (i = 0; i < _NFILE; i++) close(i);
   chdir("/");
   setpgrp();
@@ -973,16 +983,33 @@ char  **argv;
   if (!strcmp(myhostname, "hpbeo11")) myhostname = "dk0hu";
   time(&currtime);
 
-  if (argc < 2) read_configuration();
+  if (argc < 2) {
+    read_configuration();
+  } else {
+    socketnames[0] = argv[1];
+    socketnames[1] = (char *) 0;
+  }
 
-  if ((flisten = socket(AF_INET, SOCK_STREAM, 0)) < 0) exit(1);
-  flistenmask = (1 << flisten);
-  addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = INADDR_ANY;
-  addr.sin_port = (argc >= 2) ? atoi(argv[1]) : PORT;
-  setsockopt(flisten, SOL_SOCKET, SO_REUSEADDR, (char *) 0, 0);
-  if (bind(flisten, &addr, sizeof(addr ))) exit(1);
-  if (listen(flisten, 20)) exit(1);
+  for (i = 0; socketnames[i]; i++) {
+    flistenmask[i] = 0;
+    if (addr = build_sockaddr(socketnames[i], &addrlen)) {
+      if ((flisten[i] = socket(addr->sa_family, SOCK_STREAM, 0)) >= 0) {
+	switch (addr->sa_family) {
+	case AF_UNIX:
+	  unlink(addr->sa_data);
+	  break;
+	case AF_INET:
+	  setsockopt(flisten[i], SOL_SOCKET, SO_REUSEADDR, (char *) 0, 0);
+	  break;
+	}
+	if (!bind(flisten[i], addr, addrlen) && !listen(flisten[i], 20)) {
+	  flistenmask[i] = (1 << flisten[i]);
+	} else {
+	  close(flisten[i]);
+	}
+      }
+    }
+  }
 
   for (; ; ) {
 
@@ -990,9 +1017,12 @@ char  **argv;
 
     connect_permlinks();
 
-    nfd = flisten + 1;
-    rmask = flistenmask;
-    wmask = 0;
+    nfd = rmask = wmask = 0;
+    for (i = 0; socketnames[i]; i++)
+      if (flistenmask[i]) {
+	if (nfd <= flisten[i]) nfd = flisten[i] + 1;
+	rmask |= flistenmask[i];
+      }
     for (cp = connections; cp; cp = cp->next) {
       if (nfd <= cp->fd) nfd = cp->fd + 1;
       rmask |= cp->fmask;
@@ -1003,7 +1033,8 @@ char  **argv;
 
     time(&currtime);
 
-    if (rmask & flistenmask) accept_connect_request(flisten);
+    for (i = 0; socketnames[i]; i++)
+      if (rmask & flistenmask[i]) accept_connect_request(flisten[i]);
 
     for (cp = connections; cp; cp = cp->next) {
 
@@ -1034,9 +1065,9 @@ char  **argv;
 
       if (wmask & cp->fmask) {
 	size = write(cp->fd, cp->obuf->data, (unsigned) strlen(cp->obuf->data));
-	if (size < 0) {
-	  if (errno != EINTR) bye_command(cp);
-	} else {
+	if (size < 0)
+	  bye_command(cp);
+	else {
 	  cp->xmitted += size;
 	  cp->obuf->data += size;
 	  while ((bp = cp->obuf) && !*cp->obuf->data) {
