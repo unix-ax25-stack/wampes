@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.12 1989/09/17 23:31:28 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.13 1989/09/23 22:45:54 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -990,8 +990,9 @@ char  **argv;
   if (!get_index(user.seq, &index))
     if (lseek(findex, 0l, 0)) halt();
   while (read(findex, (char *) &index, sizeof(struct index )) == sizeof(struct index )) {
-    if (!index.deleted        &&
-	index.mesg > user.seq &&
+    if (!index.deleted                &&
+	index.mesg > user.seq         &&
+	!calleq(index.at, myhostname) &&
 	!host_in_header(filename(index.mesg), user.name)) {
       do_not_exit = 1;
       printf("S %s%s%s < %s%s%s\n",
@@ -2145,7 +2146,7 @@ char  **argv;
   FILE * fp;
   char  *dir = WRKDIR;
   char  *sysname;
-  char  fname[80];
+  char  buf[1024];
   int  c;
   int  err_flag = 0;
   int  mode = BBS;
@@ -2155,6 +2156,7 @@ char  **argv;
   trap_signal(SIGQUIT, interrupt_handler);
   trap_signal(SIGTERM, interrupt_handler);
   trap_signal(SIGALRM, alarm_handler);
+
   umask(022);
 
   sscanf(rcsid, "%*s %*s %*s %s %s %s %s %s",
@@ -2215,13 +2217,30 @@ char  **argv;
   user.dir = strsave(pw->pw_dir);
   user.shell = strsave(pw->pw_shell);
   endpwent();
-  sprintf(fname, "%s/%s", user.dir, SEQFILE);
-  if (fp = fopen(fname, "r")) {
+  sprintf(buf, "%s/%s", user.dir, SEQFILE);
+  if (fp = fopen(buf, "r")) {
     fscanf(fp, "%d", &user.seq);
     fclose(fp);
   }
   if (!user.uid) level = ROOT;
   if (connect_addr(user.name)) level = MBOX;
+
+  if (!getenv("LOGNAME")) {
+    sprintf(buf, "LOGNAME=%s", user.name);
+    putenv(strsave(buf));
+  }
+  if (!getenv("HOME")) {
+    sprintf(buf, "HOME=%s", user.dir);
+    putenv(strsave(buf));
+  }
+  if (!getenv("SHELL")) {
+    sprintf(buf, "SHELL=%s", user.shell);
+    putenv(strsave(buf));
+  }
+  if (!getenv("PATH"))
+    putenv("PATH=/bin:/usr/bin:/usr/contrib/bin:/usr/local/bin");
+  if (!getenv("TZ"))
+    putenv("TZ=MEZ-1MESZ");
 
   if ((findex = open(INDEXFILE, O_RDWR | O_CREAT, 0644)) < 0) halt();
 
