@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.8 1991/05/24 12:09:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/arp.c,v 1.9 1991/09/24 05:52:18 deyke Exp $ */
 
 /* Address Resolution Protocol (ARP) functions. Sits between IP and
  * Level 2, mapping IP to Level 2 addresses for all outgoing datagrams.
@@ -95,6 +95,13 @@ struct mbuf *bp;
 		 * are OK since AX.25 addresses can be of variable length)
 		 */
 		Arp_stat.badlen++;
+		return;
+	}
+	if(arp.sprotaddr == 0L || arp.tprotaddr == 0L) {
+		/* We are going to dead-end references for [0.0.0.0], since
+		 * experience shows that these cause total lock up -- N1BEE
+		 */
+		Arp_stat.badaddr++;
 		return;
 	}
 	if(memcmp(arp.shwaddr,at->bdcst,at->hwalen) == 0){

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.12 1991/06/01 22:18:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.13 1991/09/24 05:52:37 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -40,8 +40,13 @@ extern void pututline();
 #define DEFAULTUSER         "guest"
 #define FIRSTUID            400
 #define MAXUID              4095
-#define GID                 400
 #define HOMEDIRPARENTPARENT "/users/funk"
+
+#ifndef SCO
+#define GID                 400
+#else
+#include "group.h"          /* Group-Nummer wird vom Inst-Script vergeben */
+#endif                      /* 30.08.91 DH6SAE                            */
 
 /* login server control block */
 
@@ -197,7 +202,11 @@ int  create;
     unlink(PWLOCKFILE);
     return 0;
   }
+#ifdef SCO
+  fprintf(fp, "%s::%d:%d::%s:/bin/sh\n", username, uid, GID, homedir);
+#else
   fprintf(fp, "%s:,./:%d:%d::%s:/bin/sh\n", username, uid, GID, homedir);
+#endif
   fclose(fp);
   pw = getpwuid(uid);
   endpwent();
@@ -424,7 +433,11 @@ void  *upcall_arg;
 #endif
     pututline(&utmp);
     endutent();
+#ifdef SCO
+    execle("/tcp/bin/wampes_login", "login", pw->pw_name, (char *) 0, &env);
+#else
     execle("/bin/login", "login", pw->pw_name, (char *) 0, &env);
+#endif
     exit(1);
   }
   return tp;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.9 1991/06/01 22:17:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.10 1991/09/24 05:52:17 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -9,15 +9,18 @@
 #include <termio.h>
 #include <unistd.h>
 
-#ifdef ISC
+#if defined(ISC) || defined(SCO)
 #include <sys/tty.h>
 #include <sys/stream.h>
 #include <sys/ptem.h>
+#ifdef ISC
 #include <sys/pty.h>
-
+#endif
+#ifdef SCO
+#include <sys/vty.h>
+#endif
 #define FIOSNBIO        FIONBIO
-
-#endif /* ISC */
+#endif
 
 #include "global.h"
 #include "mbuf.h"
