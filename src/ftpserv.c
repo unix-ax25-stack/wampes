@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.20 1993/06/03 06:33:23 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ftpserv.c,v 1.21 1993/09/19 16:21:01 deyke Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -33,6 +33,7 @@ static void ftpcommand(struct ftp *ftp);
 static int pport(struct socket *sock, char *arg);
 static void ftplogin(struct ftp *ftp, char *pass);
 static int permcheck(struct ftp *ftp, char *file);
+static int user_denied(const char *username);
 
 /* Command table */
 static char *commands[] = {
@@ -273,10 +274,6 @@ char old,new;
 			ftpscr(ftp->control,ftp->control->rcvcnt);
 	} else if(ftp->state == RECEIVING_STATE && new == TCP_CLOSE_WAIT){
 		/* FIN received on incoming file */
-#ifdef  CPM
-		if(ftp->type == ASCII_TYPE)
-			putc(CTLZ,ftp->fp);
-#endif
 		close_tcp(tcb);
 		if(ftp->fp != stdout)
 			fclose(ftp->fp);
@@ -366,15 +363,9 @@ register struct ftp *ftp;
 	}
 	cmd = ftp->buf;
 
-#ifdef  UNIX
 	/* Translate first word to lower case */
 	for(cp = cmd;*cp != ' ' && *cp != '\0';cp++)
 		*cp = Xtolower(*cp);
-#else
-	/* Translate entire buffer to lower case */
-	for(cp = cmd;*cp != '\0';cp++)
-		*cp = Xtolower(*cp);
-#endif
 	/* Find command in table; if not present, return syntax error */
 	for(cmdp = commands;*cmdp != NULLCHAR;cmdp++)
 		if(strncmp(*cmdp,cmd,strlen(*cmdp)) == 0)
@@ -500,7 +491,6 @@ register struct ftp *ftp;
 			Xprintf(ftp->control,portok,"","","");
 		}
 		break;
-#ifndef CPM
 	case LIST_CMD:
 		/* Disk operation; return ACK now */
 		tcp_output(ftp->control);
@@ -563,13 +553,6 @@ register struct ftp *ftp;
 	case PWD_CMD:
 		Xprintf(ftp->control,pwdmsg,ftp->cd,"","");
 		break;
-#else
-	case LIST_CMD:
-	case NLST_CMD:
-	case CWD_CMD:
-	case XPWD_CMD:
-	case PWD_CMD:
-#endif
 	case ACCT_CMD:
 		Xprintf(ftp->control,unimp,"","","");
 		break;
@@ -593,7 +576,6 @@ register struct ftp *ftp;
 		tcp_output(ftp->control);       /* Send the ack now */
 		ftplogin(ftp,arg);
 		break;
-#ifndef CPM
 	case XMKD_CMD:
 	case MKD_CMD:
 		/* Disk operation; return ACK now */
@@ -641,7 +623,6 @@ register struct ftp *ftp;
 			Xprintf(ftp->control,okay,"","","");
 		break;
 	}
-#endif
 }
 static
 int
@@ -695,6 +676,7 @@ char *pass;
   char salt[3];
   struct passwd *pw;
 
+  if (user_denied(ftp->username)) goto Fail;
   pw = getpasswdentry(ftp->username, 0);
   if (!pw) goto Fail;
   salt[0] = pw->pw_passwd[0];
@@ -731,5 +713,27 @@ char *file;
 
   if (strncmp(file, ftp->path, strlen(ftp->path))) return 0;
   return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int user_denied(const char *username)
+{
+
+  FILE *fp;
+  char buf[1024];
+  int denied = 0;
+
+  if (fp = fopen("/etc/ftpusers", "r")) {
+    while (fgets(buf, sizeof(buf), fp)) {
+      rip(buf);
+      if (!strcmp(buf, username)) {
+	denied = 1;
+	break;
+      }
+    }
+    fclose(fp);
+  }
+  return denied;
 }
 

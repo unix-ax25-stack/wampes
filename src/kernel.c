@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.15 1993/09/17 09:32:36 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.16 1993/09/19 16:21:02 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -16,9 +16,12 @@
 #include "daemon.h"
 #include "hardware.h"
 
-#if defined(__hpux) || defined(_AIX) || defined(ULTRIX_RISC) || defined(macII)
+#if defined(__hpux) || defined(ULTRIX_RISC) || defined(macII)
 #define setjmp          _setjmp
 #define longjmp         _longjmp
+#elif defined(_AIX)
+#define setjmp          _setjmp
+#define longjmp         aix_longjmp
 #endif
 
 #ifdef RISCiX
@@ -52,6 +55,28 @@ static void delproc(struct proc *entry);
 
 static void psig(void *event,int n);
 static int procsigs(void);
+
+#ifdef _AIX
+
+#pragma alloca
+
+static void aix_dummy_function(void *p)
+{
+}
+
+static void aix_longjmp(jmp_buf jmpenv, int val)
+{
+
+#define LOW_STACK_SIZE 2000
+
+  char local;
+  static char low_stack[LOW_STACK_SIZE];
+
+  aix_dummy_function(alloca(&local - (low_stack + LOW_STACK_SIZE / 2)));
+  _longjmp(jmpenv, val);
+}
+
+#endif
 
 /* Create a process descriptor for the main function. Must be actually
  * called from the main function, and must be called before any other
