@@ -1,0 +1,79 @@
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.1 1992/08/24 10:08:22 deyke Exp $
+
+hostname     dk0hu
+ax25 mycall  dk0hu
+ip address   dk0hu
+netrom ident "#boeb"
+
+# tnc0: 2 m
+
+attach asy 0 0 ax25 tnc0 0 256 9600
+param tnc0  1  30   # txdelay
+param tnc0  2 127   # persistence
+param tnc0  3  30   # slottime
+param tnc0  4   3   # txtail
+param tnc0  5   0   # full duplex
+param tnc0 12   0   # echo
+param tnc0 13   1   # rxdelay
+
+attach axip                     # ax.25 over host ip
+attach axip axudp udp 25071     # ax.25 over host udp
+attach ipip                     # ip over host ip
+attach ipip ipudp udp 25072     # ip over host udp
+attach netrom                   # ip over netrom
+
+ax25 route add axip default
+
+axip route add db0sao   192.1.1.1               # db0sao
+axip route add dg9sbl-1 15.137.34.8             #
+axip route add dg9yev-1 15.137.23.159           # hprtdt39.grc.hp.com
+axip route add dj0ze-1  15.137.23.135           # hprtdt15.grc.hp.com
+axip route add dj3eg-1  15.136.170.163          # hpbmosm0.bbn.hp.com
+axip route add dk5sg    15.15.80.34             # mdddhd.fc.hp.com
+axip route add dl1sbl-1 15.136.56.132           # hpbeo20.bbn.hp.com
+axip route add dl2sel-1 15.136.168.71           # hpcsmncg.bbn.hp.com
+axip route add dl4sas-1 15.136.216.69           # hpbid1ge.bbn.hp.com
+axip route add dl4sel-1 15.136.170.158          # hpbbmofe.bbn.hp.com
+
+route add  44.130.41/24     ipip     15.15.80.34
+route add  44.130.29/24     ipip     15.15.80.34
+route add  44/9             ipip     15.15.80.34
+route add  dl1sbl-u         tnc0     dl1sbl
+route add  dk5sg-u          ipip     15.15.80.34
+route add  default          ipip     192.1.1.1
+route add  dl4sel-1         ipudp    15.136.170.158
+route add  dl4sel           tnc0
+route add  dl4sas-1         ipip     15.136.216.69
+route add  dl2sel-1         ipip     15.136.168.71
+route add  dl1sbl-1         ipip     15.136.56.132
+route add  dl1sbl           tnc0
+route add  dk5sg            ipip     15.15.80.34
+route add  dj3eg-1          ipip     15.136.170.163
+route add  dj0ze-1          ipip     15.137.23.135
+route add  dg9yev-1         ipip     15.137.23.159
+route add  dg9sbl-1         ipip     15.137.34.8
+
+arp add dl1sbl ax25 dl1sbl
+arp add dl4sel ax25 dl4sel
+
+source /tcp/netrom_links
+
+# netrom broadcast tnc0  nodes
+# netrom broadcast axip  nodes
+# netrom broadcast axudp nodes
+
+domain useserver on
+echo refuse
+icmp trace on
+ip rtimer 100
+ip ttl 30
+log /tcp/net.log
+tcp mss 216
+tcp window 2048
+
+start discard
+start echo
+start remote
+start tcpgate convers unix:/tcp/sockets/convers
+
+source /tcp/net.rc.local

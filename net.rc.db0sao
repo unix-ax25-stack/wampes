@@ -1,0 +1,96 @@
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.1 1992/08/24 10:08:22 deyke Exp $
+
+hostname     db0sao
+ax25 mycall  db0sao
+ip address   db0sao
+netrom ident gaert
+
+# tnc1: user access (70cm)
+
+attach asy 0 0 ax25 tnc1 0 256 9600
+param tnc1  1  40   # txdelay
+param tnc1  2 127   # persistence
+param tnc1  3  30   # slottime
+param tnc1  4   3   # txtail
+param tnc1  5   0   # full duplex
+param tnc1 12   0   # echo
+param tnc1 13   1   # rxdelay
+
+# tnc2: db0id (23cm)
+
+attach asy 0 0 ax25 tnc2 0 256 9600
+param tnc2  1  50   # txdelay
+param tnc2  2 255   # persistence
+param tnc2  3   1   # slottime
+param tnc2  4   3   # txtail
+param tnc2  5   0   # full duplex
+param tnc2 12   0   # echo
+param tnc2 13   1   # rxdelay
+
+attach axip                     # ax.25 over host ip
+attach ipip                     # ip over host ip
+attach netrom                   # ip over netrom
+attach ni ni db0sao-u           # ip to host ip
+
+ax25 route add permanent axip dk0hu
+ax25 route add permanent tnc1 default
+ax25 route add permanent tnc1 df1tl
+ax25 route add permanent tnc2 db0id
+ax25 route add permanent tnc2 db0ie db0id
+
+axip route add dk0hu 192.1.1.2
+
+route add  44/9             ipip     192.1.1.2
+route add  44.130.29/24     ipip     192.1.1.2
+route add  44.130.41/24     ipip     192.1.1.2
+route add  dk5sg-u          ipip     192.1.1.2
+route add  dl1sbl-u         ipip     192.1.1.2
+route add  dg9sbl-1         ipip     192.1.1.2
+route add  dg9yev-1         ipip     192.1.1.2
+route add  dj0ze-1          ipip     192.1.1.2
+route add  dj3eg-1          ipip     192.1.1.2
+route add  dk5sg            ipip     192.1.1.2
+route add  dl1sbl           ipip     192.1.1.2
+route add  dl1sbl-1         ipip     192.1.1.2
+route add  dl2sel-1         ipip     192.1.1.2
+route add  dl4sas-1         ipip     192.1.1.2
+route add  dl4sel           ipip     192.1.1.2
+route add  dl4sel-1         ipip     192.1.1.2
+route add  df1tl-u          tnc1     df1tl
+route add  default          tnc2     db0id
+route add  dk0hu            ipip     192.1.1.2
+route add  df1tl            tnc1
+route add  db0sao-u         ni
+
+arp add db0id ax25 db0id
+arp add df1tl ax25 df1tl
+
+source /tcp/netrom_links
+
+# netrom broadcast tnc1 nodes
+# netrom broadcast tnc2 nodes
+
+domain useserver off
+echo refuse
+icmp trace on
+ip rtimer 100
+ip ttl 30
+log /tcp/net.log
+tcp mss 216
+tcp window 2048
+
+smtp timer 300
+start ax25
+start discard
+start echo
+start ftp
+start netrom
+start remote
+start tcpgate convers unix:/tcp/sockets/convers
+start tcpgate finger
+start tcpgate netupds
+start tcpgate pop2
+start tcpgate smtp
+start telnet
+
+source /tcp/net.rc.local

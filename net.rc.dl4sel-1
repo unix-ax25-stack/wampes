@@ -1,0 +1,41 @@
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dl4sel-1,v 1.1 1992/08/24 10:08:23 deyke Exp $
+
+hostname     dl4sel-1
+ax25 mycall  dl4sel-1
+ip address   dl4sel-1
+netrom ident "#boeb2"
+
+attach axip axudp udp 25071     # ax.25 over host udp
+attach ipip ipudp udp 25072     # ip over host udp
+attach netrom                   # ip over netrom
+
+ax25 route add axudp default
+
+axip route add dk0hu 15.136.56.6
+
+route add  default          ipudp    15.136.56.6
+
+source /tcp/netrom_links
+
+# netrom broadcast axudp nodes
+
+domain useserver off
+echo accept
+icmp trace on
+ip rtimer 100
+ip ttl 30
+log /tcp/net.log
+tcp mss 216
+tcp window 2048
+
+smtp timer 300
+start discard
+start echo
+start ftp
+start remote
+start tcpgate convers unix:/tcp/sockets/convers
+start tcpgate finger
+start tcpgate smtp
+start tcpgate telnet
+
+source /tcp/net.rc.local

@@ -1,0 +1,38 @@
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.1 1992/08/24 10:08:22 deyke Exp $
+
+hostname     dl1sbl-1
+ax25 mycall  dl1sbl-1
+ip address   dl1sbl-1
+netrom ident "#boeb1"
+
+attach axip                     # ax.25 over host ip
+attach ipip                     # ip over host ip
+attach netrom                   # ip over netrom
+
+ax25 route add axip default
+
+axip route add dk0hu 15.136.56.6
+
+route add  default          ipip     15.136.56.6
+
+source /tcp/netrom_links
+
+# netrom broadcast axip nodes
+
+domain useserver off
+echo accept
+icmp trace on
+ip rtimer 100
+ip ttl 30
+log /tcp/net.log
+tcp mss 216
+tcp window 2048
+
+start discard
+start echo
+start ftp
+start remote
+start tcpgate convers unix:/tcp/sockets/convers
+start tcpgate finger
+
+source /tcp/net.rc.local
