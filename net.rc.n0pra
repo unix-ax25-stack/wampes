@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.n0pra,v 1.1 1992/09/01 16:38:57 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.n0pra,v 1.2 1992/11/16 10:20:43 deyke Exp $
 
 hostname     n0pra
 ax25 mycall  n0pra
@@ -21,7 +21,6 @@ source /tcp/netrom_links
 
 # netrom broadcast axip nodes
 
-domain useserver off
 echo accept
 icmp trace on
 ip rtimer 100
@@ -32,6 +31,7 @@ tcp window 2048
 
 smtp timer 300
 start discard
+start domain
 start echo
 start ftp
 start remote

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.27 1992/11/12 15:20:27 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.28 1992/11/16 10:20:47 deyke Exp $
 
 DEFINES       = -DUNIX -D_HPUX_SOURCE -DFD_SETSIZE=1024
 
@@ -22,6 +22,7 @@ HDRS          = arp.h \
 		daemon.h \
 		devparam.h \
 		dirutil.h \
+		domain.h \
 		enet.h \
 		files.h \
 		finger.h \
@@ -91,6 +92,7 @@ OBJS          = alloc.o \
 		devparam.o \
 		dirutil.o \
 		domain.o \
+		domhdr.o \
 		files.o \
 		finger.o \
 		ftp.o \
@@ -193,6 +195,7 @@ SRCS          = alloc.c \
 		devparam.c \
 		dirutil.c \
 		domain.c \
+		domhdr.c \
 		files.c \
 		finger.c \
 		ftp.c \
@@ -365,7 +368,8 @@ crc.o: global.h mbuf.h crc.h
 devparam.o: global.h devparam.h
 dirutil.o: global.h hpux.h dirutil.h commands.h
 domain.o: global.h mbuf.h iface.h proc.h timer.h socket.h udp.h internet.h \
-	ip.h netuser.h cmdparse.h
+	ip.h netuser.h cmdparse.h domain.h
+domhdr.o: global.h mbuf.h domain.h proc.h timer.h
 files.o: global.h netuser.h files.h
 finger.o: config.h global.h mbuf.h timer.h internet.h icmp.h iface.h proc.h \
 	ip.h session.h hardware.h telnet.h ax25.h netuser.h tcp.h ftp.h \

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.1 1992/08/24 10:08:22 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.2 1992/11/16 10:20:42 deyke Exp $
 
 hostname     dl1sbl-1
 ax25 mycall  dl1sbl-1
@@ -19,7 +19,6 @@ source /tcp/netrom_links
 
 # netrom broadcast axip nodes
 
-domain useserver off
 echo accept
 icmp trace on
 ip rtimer 100
@@ -29,6 +28,7 @@ tcp mss 216
 tcp window 2048
 
 start discard
+start domain
 start echo
 start ftp
 start remote

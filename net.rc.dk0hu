@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.7 1992/11/13 17:19:45 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk0hu,v 1.8 1992/11/16 10:20:42 deyke Exp $
 
 hostname     dk0hu
 ax25 mycall  dk0hu
@@ -60,7 +60,7 @@ source /tcp/netrom_links
 # netrom broadcast tnc0  nodes
 # netrom broadcast axip  nodes
 
-domain useserver on
+domain usegethostby on
 echo refuse
 icmp trace on
 ip rtimer 100
@@ -70,6 +70,7 @@ tcp mss 216
 tcp window 2048
 
 start discard
+start domain
 start echo
 start remote
 start tcpgate convers unix:/tcp/sockets/convers

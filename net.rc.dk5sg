@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.5 1992/11/09 16:31:27 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dk5sg,v 1.6 1992/11/16 10:20:42 deyke Exp $
 
 hostname     dk5sg
 ax25 mycall  dk5sg
@@ -24,7 +24,7 @@ source /tcp/netrom_links
 
 # netrom broadcast axip nodes
 
-domain useserver on
+domain usegethostby on
 echo accept
 icmp trace on
 ip rtimer 100
@@ -35,6 +35,7 @@ tcp window 2048
 
 smtp timer 300
 start discard
+start domain
 start echo
 start ftp
 start remote

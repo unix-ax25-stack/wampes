@@ -1,5 +1,15 @@
 ===============================================================================
 
+BBS:
+
+- im  Header  koennen  Zeilen  auftauchen,  die  mit ' ['  anfangen  -->
+  ignorieren
+
+- nach dem  Header  koennen  Zeilen  sein,  die mit 'de ' oder mit 'to '
+  anfangen --> ignorieren
+
+===============================================================================
+
 dann ist es kein Bug, aber trotzdem unschoen. In meinem /etc/profile
 pruefe ich auf Anzahl der Felder in /etc/passwd und finde es unschoen
 wenn die variert. Das duerfte auch einige andere scripts die von einer
