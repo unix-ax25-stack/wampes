@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.9 1989/09/03 10:23:25 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.10 1989/09/10 13:18:16 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -488,17 +488,6 @@ struct mail *mail;
       if (read(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
       index.mesg++;
     }
-    index.size = 0;
-    if (!(fp = fopen(filename(index.mesg), "w"))) {
-      mkdir(dirname(index.mesg), 0755);
-      if (!(fp = fopen(filename(index.mesg), "w"))) halt();
-    }
-    for (p = mail->head; p; p = p->next) {
-      if (fputs(p->str, fp) == EOF) halt();
-      if (putc('\n', fp) == EOF) halt();
-      index.size += (strlen(p->str) + 1);
-    }
-    fclose(fp);
     index.date = mail->date;
     strcpy(index.bid, mail->bid);
     index.pad1 = 0;
@@ -515,8 +504,24 @@ struct mail *mail;
     index.from[LEN_FROM] = '\0';
     strupc(index.from);
     index.deleted = 0;
+    index.size = 0;
+    if (!(fp = fopen(filename(index.mesg), "w"))) {
+      mkdir(dirname(index.mesg), 0755);
+      if (!(fp = fopen(filename(index.mesg), "w"))) halt();
+    }
+    if (strcmp(index.to, "E") && strcmp(index.to, "M"))
+      for (p = mail->head; p; p = p->next) {
+	if (fputs(p->str, fp) == EOF) halt();
+	if (putc('\n', fp) == EOF) halt();
+	index.size += (strlen(p->str) + 1);
+      }
+    fclose(fp);
     if (lseek(findex, 0l, 2) < 0) halt();
     if (write(findex, (char *) & index, sizeof(struct index )) != sizeof(struct index )) halt();
+    if (index.mesg == user.seq + 1) {
+      user.seq = index.mesg;
+      put_seq();
+    }
   }
   unlock();
 }
@@ -884,6 +889,73 @@ char  **argv;
 	printf("Message %d not deleted:  Permission denied.\n", mesg);
     else
       printf("No such message: '%s'.\n", argv[i]);
+}
+
+/*---------------------------------------------------------------------------*/
+
+struct dir_entry {
+  struct dir_entry *left, *right;
+  int  count;
+  char  to[LEN_TO+1];
+};
+
+static int  dir_column;
+
+static void dir_print(p)
+struct dir_entry *p;
+{
+  if (p) {
+    dir_print(p->left);
+    printf((dir_column++ % 5) < 4 ? "%5d %-8s" : "%5d %s\n", p->count, p->to);
+    dir_print(p->right);
+    free((char *) p);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void dir_command(argc, argv)
+int  argc;
+char  **argv;
+{
+
+  int  n, cmp;
+  struct dir_entry *head, *curr, *prev;
+  struct index *pi, index[1000];
+
+  head = 0;
+  cmp = 0;
+  if (lseek(findex, 0l, 0)) halt();
+  for (; ; ) {
+    n = read(findex, (char *) (pi = index), 1000 * sizeof(struct index )) / sizeof(struct index );
+    if (n < 1) break;
+    for (; n; n--, pi++)
+      if (read_allowed(pi))
+	for (prev = 0, curr = head; ; ) {
+	  if (!curr) {
+	    curr = (struct dir_entry *) malloc(sizeof(struct dir_entry ));
+	    curr->left = curr->right = 0;
+	    curr->count = 1;
+	    strcpy(curr->to, pi->to);
+	    if (!prev)
+	      head = curr;
+	    else if (cmp < 0)
+	      prev->left = curr;
+	    else
+	      prev->right = curr;
+	    break;
+	  }
+	  if (!(cmp = strcmp(pi->to, curr->to))) {
+	    curr->count++;
+	    break;
+	  }
+	  prev = curr;
+	  curr = (cmp < 0) ? curr->left : curr->right;
+	}
+  }
+  dir_column = 0;
+  dir_print(head);
+  if (dir_column % 5) putchar('\n');
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1761,6 +1833,7 @@ static struct cmdtable cmdtable[] = {
   "?",          help_command,           0,      USER,
   "BYE",        quit_command,           0,      USER,
   "DELETE",     delete_command,         2,      USER,
+  "DIR",        dir_command,            0,      USER,
   "DISCONNECT", disconnect_command,     0,      USER,
   "ERASE",      delete_command,         2,      USER,
   "EXIT",       quit_command,           0,      USER,
