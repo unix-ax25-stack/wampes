@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.69 1996/01/22 13:13:27 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.70 1996/01/28 10:44:30 deyke Exp $";
 #endif
 
 #include <sys/types.h>
@@ -40,10 +40,6 @@ static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/
 #define SOMAXCONN       5
 #endif
 
-#ifndef S_IWOTH
-#define S_IWOTH         2
-#endif
-
 #ifndef WNOHANG
 #define WNOHANG         1
 #endif
@@ -68,6 +64,7 @@ extern int optind;
 #define MAX_CHANNEL             32767
 #define MAX_IDLETIME            (  60*60)
 #define MAX_PINGTIME            (2*60*60)
+#define MAX_RTT                 (3*60*60)
 #define MAX_UNKNOWNTIME         (  15*60)
 #define MAX_WAITTIME            (3*60*60)
 #define MIN_PINGTIME            (   5*60)
@@ -96,11 +93,18 @@ struct mbuf {
   int m_cnt;                    /* Number of bytes in data buffer */
 };
 
+struct quality {
+  struct link *q_link;          /* Pointer to link */
+  long q_rtt;                   /* RTT via this link */
+  long q_lastrtt;               /* Last RTT reported to this link */
+  struct quality *q_next;       /* Linked-list pointer */
+};
+
 struct host {
   char *h_name;                 /* Name of host */
   char *h_software;             /* Software on this host */
   char *h_capabilities;         /* Capabilities of this host */
-  struct link *h_link;          /* Link to this host */
+  struct quality *h_qualities;  /* List of qualities */
   struct host *h_next;          /* Linked list pointer */
 };
 
@@ -155,6 +159,7 @@ static struct fd_set chkwrite;
 static void (*writefnc[FD_SETSIZE])(void *);
 static void *writearg[FD_SETSIZE];
 
+static const char conversd[] = "conversd";
 static const char progfile[] = "/tcp/conversd";
 static const char *conffile = "/tcp/convers.conf";
 static int debug;
@@ -169,6 +174,10 @@ static struct user *users;
 static void close_link(struct link *lp);
 static void link_recv(struct link *lp);
 static void link_send(struct link *lp);
+
+/*---------------------------------------------------------------------------*/
+
+#define lround(d)               ((long) ((d) + 0.5))
 
 /*---------------------------------------------------------------------------*/
 
@@ -327,19 +336,21 @@ static struct user *userptr(const char *name, struct host *hp)
 
 /*---------------------------------------------------------------------------*/
 
-static void trace(enum e_dir dir, struct link *lp, const char *string)
+static void trace(enum e_dir dir, const struct link *lp, const char *string)
 {
 
   char buf[16];
   char *cp;
-  char *name;
+  const char *name;
 
   if (lp->l_user)
     name = lp->l_user->u_name;
   else if (lp->l_host)
     name = lp->l_host->h_name;
-  else
-    sprintf(name = buf, "%08lx", (long) lp);
+  else {
+    sprintf(buf, "%08lx", (long) lp);
+    name = buf;
+  }
   cp = ctime(&currtime);
   cp[24] = 0;
   if (dir == OUTBOUND)
@@ -434,26 +445,31 @@ static char *getarg(char *line, enum e_what what, enum e_case how)
 {
 
   char *arg;
-  static char *cp;
+  char *cp;
+  static char *next_arg;
 
   if (line) {
-    for (cp = line; *cp; cp++) ;
+    for (next_arg = cp = line; *cp; cp++) ;
     while (--cp >= line && isspace(*cp & 0xff)) ;
     cp[1] = 0;
-    cp = line;
   }
-  while (isspace(*cp & 0xff))
-    cp++;
-  if (what == REST_OF_LINE)
-    return cp;
-  arg = cp;
-  while (*cp && !isspace(*cp & 0xff)) {
-    if (how == LOWER_CASE && *cp >= 'A' && *cp <= 'Z')
-      *cp = tolower(*cp);
-    cp++;
+  while (isspace(*next_arg & 0xff))
+    next_arg++;
+  arg = next_arg;
+  if (what == ONE_TOKEN) {
+    while (*next_arg && !isspace(*next_arg & 0xff))
+      next_arg++;
+    if (*next_arg)
+      *next_arg++ = 0;
+  } else {
+    next_arg = "";
   }
-  if (*cp)
-    *cp++ = 0;
+  if (how == LOWER_CASE) {
+    for (cp = arg; *cp; cp++) {
+      if (*cp >= 'A' && *cp <= 'Z')
+	*cp = tolower(*cp);
+    }
+  }
   return arg;
 }
 
@@ -634,7 +650,7 @@ static void send_msg_to_user(const char *fromname, const char *toname, const cha
   else if (!is_string_unique(host_buffer, CHECK_UNIQUE_TIME))
     return;
   if ((cp = strchr(text, UNIQMARKER))) *cp = 0;
-  if (strcmp(fromname, "conversd")) {
+  if (strcmp(fromname, conversd)) {
     sprintf(prefix, "<*%s*>:", fromname);
     formatted_line = formatline(prefix, text);
   } else {
@@ -651,7 +667,7 @@ static void send_msg_to_user(const char *fromname, const char *toname, const cha
 
 /*---------------------------------------------------------------------------*/
 
-static void send_msg_to_channel(const char *fromname, int channel, char *text, int make_unique)
+static void send_msg_to_channel(const char *fromname, int channel, const char *text, int make_unique)
 {
 
   char *cp;
@@ -709,7 +725,7 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
     if (up->u_channel == channel && !strcmp(up->u_name, toname)) {
       clear_locks();
       sprintf(buffer, "*** User %s is already on this channel.", toname);
-      send_msg_to_user("conversd", fromname, buffer, 1);
+      send_msg_to_user(conversd, fromname, buffer, 1);
       return;
     }
 
@@ -719,7 +735,7 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
       send_string(up->u_link, buffer);
       clear_locks();
       sprintf(buffer, responsetext, toname, my.h_name);
-      send_msg_to_user("conversd", fromname, buffer, 1);
+      send_msg_to_user(conversd, fromname, buffer, 1);
       return;
     }
 
@@ -739,7 +755,7 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
 	strcpy(buffer, "/dev/");
 	strncat(buffer, utmpbuf.ut_line, sizeof(utmpbuf.ut_line));
 	if (stat(buffer, &statbuf)) continue;
-	if (!(statbuf.st_mode & S_IWOTH)) continue;
+	if (!(statbuf.st_mode & 022)) continue;
 	if ((fdtty = open(buffer, O_WRONLY | O_NOCTTY, 0644)) < 0) continue;
 	sprintf(buffer, invitetext, fromname, localtimestring(currtime), channel);
 	if (!fork()) {
@@ -750,7 +766,7 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
 	close(fdut);
 	clear_locks();
 	sprintf(buffer, responsetext, toname, my.h_name);
-	send_msg_to_user("conversd", fromname, buffer, 1);
+	send_msg_to_user(conversd, fromname, buffer, 1);
 	return;
       }
     close(fdut);
@@ -832,27 +848,103 @@ static void connect_peers(void)
 
 /*---------------------------------------------------------------------------*/
 
+static long ping_interval(const struct link *lp)
+{
+  long d;
+
+  if (!lp->l_srtt)
+    return MAX_PINGTIME;
+  d = lround(60 * lp->l_srtt);
+  if (d < MIN_PINGTIME)
+    return MIN_PINGTIME;
+  if (d > MAX_PINGTIME)
+    return MAX_PINGTIME;
+  return d;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void send_pings(void)
 {
-
-  long d;
   struct link *lp;
 
   for (lp = links; lp; lp = lp->l_next) {
     if (lp->l_host && lp->l_nexttime <= currtime) {
       send_string(lp, "/\377\200PING\n");
       lp->l_sendtime = currtime;
-      if (lp->l_srtt) {
-	d = (long) (60 * lp->l_srtt + 0.5);
-	if (d < MIN_PINGTIME) {
-	  d = MIN_PINGTIME;
-	} else if (d > MAX_PINGTIME) {
-	  d = MAX_PINGTIME;
-	}
+      lp->l_nexttime = currtime + ping_interval(lp);
+    }
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static struct quality *find_quality(struct host *hp, struct link *lp)
+{
+  struct quality *qp;
+
+  for (qp = hp->h_qualities; qp && qp->q_link != lp; qp = qp->q_next) ;
+  if (!qp) {
+    qp = (struct quality *) calloc(1, sizeof(struct quality));
+    if (!qp)
+      exit(1);
+    qp->q_link = lp;
+    qp->q_next = hp->h_qualities;
+    hp->h_qualities = qp;
+  }
+  return qp;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static struct quality *find_best_quality(const struct host *hp)
+{
+
+  struct quality *qpbest = 0;
+  struct quality *qp;
+
+  for (qp = hp->h_qualities; qp; qp = qp->q_next) {
+    if (qp->q_rtt && (!qpbest || qpbest->q_rtt >= qp->q_rtt)) {
+      qpbest = qp;
+    }
+  }
+  return qpbest;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void send_dests(void)
+{
+
+  char buffer[2048];
+  long lastrtt;
+  long rtt;
+  struct host *hp;
+  struct link *lp;
+  struct quality *qpbest;
+  struct quality *qp;
+
+  for (lp = links; lp; lp = lp->l_next) {
+    if (!lp->l_host || !lp->l_srtt || !strchr(lp->l_host->h_capabilities, 'd'))
+      continue;
+    for (hp = hosts; hp; hp = hp->h_next) {
+      if (hp == &my || hp == lp->l_host)
+	continue;
+      qp = find_quality(hp, lp);
+      qpbest = find_best_quality(hp);
+      if (qpbest && qpbest != qp) {
+	rtt = qpbest->q_rtt + lround(lp->l_srtt);
       } else {
-	d = MAX_PINGTIME;
+	rtt = MAX_RTT + 1;
       }
-      lp->l_nexttime = currtime + d;
+      if (!(lastrtt = qp->q_lastrtt))
+	lastrtt = MAX_RTT + 1;
+      if (rtt > lastrtt || lround(1.25 * rtt) < lastrtt) {
+	if (rtt > MAX_RTT)
+	  rtt = 0;
+	sprintf(buffer, "/\377\200DEST %s %ld %s\n", hp->h_name, qp->q_lastrtt = rtt, hp->h_software);
+	send_string(lp, buffer);
+      }
     }
   }
 }
@@ -865,6 +957,8 @@ static void close_link(struct link *lp)
   int fd;
   struct host *hp;
   struct peer *pp;
+  struct quality *qp;
+  struct quality **qpp;
   struct user *up;
 
   lp->l_user = 0;
@@ -877,7 +971,8 @@ static void close_link(struct link *lp)
     FD_CLR(fd, &chkwrite);
     if (fd == maxfd)
       while (--maxfd >= 0)
-	if (FD_ISSET(maxfd, &chkread)) break;
+	if (FD_ISSET(maxfd, &chkread))
+	  break;
     close(fd);
     lp->l_fd = -1;
   }
@@ -890,11 +985,24 @@ static void close_link(struct link *lp)
       pp->p_link = 0;
     }
 
+  for (hp = hosts; hp; hp = hp->h_next) {
+    for (qpp = &hp->h_qualities; (qp = *qpp);) {
+      if (qp->q_link == lp) {
+	*qpp = qp->q_next;
+	free(qp);
+      } else {
+	qpp = &qp->q_next;
+      }
+    }
+  }
+  send_dests();
+
   for (up = users; up; up = up->u_next)
     if (up->u_channel >= 0 && up->u_link == lp) {
       if (up->u_seq) {
 	up->u_seq++;
-	if (up->u_host == &my && up->u_seq < currtime) up->u_seq = currtime;
+	if (up->u_host == &my && up->u_seq < currtime)
+	  up->u_seq = currtime;
       }
       up->u_link = 0;
       up->u_oldchannel = up->u_channel;
@@ -903,9 +1011,6 @@ static void close_link(struct link *lp)
       clear_locks();
       send_user_change_msg(up);
     }
-
-  for (hp = hosts; hp; hp = hp->h_next)
-    if (hp->h_link == lp) hp->h_link = 0;
 
 }
 
@@ -929,7 +1034,7 @@ static void channel_command(struct link *lp)
   struct user *up;
 
   up = lp->l_user;
-  cp = getarg(0, ONE_TOKEN, LOWER_CASE);
+  cp = getarg(0, ONE_TOKEN, KEEP_CASE);
   if (!*cp) {
     sprintf(buffer, "*** You are on channel %d.\n", up->u_channel);
     send_string(lp, buffer);
@@ -996,17 +1101,43 @@ static void hosts_command(struct link *lp)
 {
 
   char buffer[2048];
+  char srttstr[80];
+  const char *viastr;
+  int verbose;
   struct host *hp;
+  struct quality *qp;
 
-  send_string(lp, "Name     Via      Software Capabilities\n");
+  verbose = !strcmp(getarg(0, ONE_TOKEN, LOWER_CASE), "debug");
+  send_string(lp, "Name     Via       SRTT Software Capabilities\n");
   for (hp = hosts; hp; hp = hp->h_next) {
+    qp = find_best_quality(hp);
+    if (qp) {
+      viastr = qp->q_link->l_host->h_name;
+      sprintf(srttstr, "%5ld", qp->q_rtt);
+    } else {
+      viastr = "";
+      strcpy(srttstr, "     ");
+    }
     sprintf(buffer,
-	    "%-8.8s %-8.8s %-8.8s %s\n",
+	    "%-8.8s %-8.8s %s %-8.8s %s\n",
 	    hp->h_name,
-	    hp->h_link ? hp->h_link->l_host->h_name : "",
+	    viastr,
+	    srttstr,
 	    hp->h_software,
 	    hp->h_capabilities);
     send_string(lp, buffer);
+    if (verbose && hp->h_qualities) {
+      *buffer = 0;
+      for (qp = hp->h_qualities; qp; qp = qp->q_next) {
+	sprintf(buffer + strlen(buffer),
+		" %s (S=%ld L=%ld)",
+		qp->q_link->l_host->h_name,
+		qp->q_rtt,
+		qp->q_lastrtt);
+      }
+      strcat(buffer, "\n");
+      send_string(lp, buffer);
+    }
   }
   send_string(lp, "***\n");
 }
@@ -1184,10 +1315,10 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.69 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.70 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
-  up->u_channel = atoi(getarg(0, ONE_TOKEN, LOWER_CASE));
+  up->u_channel = atoi(getarg(0, ONE_TOKEN, KEEP_CASE));
   if (up->u_channel < 0 || up->u_channel > MAX_CHANNEL) {
     sprintf(buffer, "*** Channel numbers must be in the range 0..%d.\n", MAX_CHANNEL);
     send_string(lp, buffer);
@@ -1267,8 +1398,38 @@ static void h_cmsg_command(struct link *lp)
   int channel;
 
   name = getarg(0, ONE_TOKEN, LOWER_CASE);
-  channel = atoi(getarg(0, ONE_TOKEN, LOWER_CASE));
+  channel = atoi(getarg(0, ONE_TOKEN, KEEP_CASE));
   send_msg_to_channel(name, channel, getarg(0, REST_OF_LINE, KEEP_CASE), 0);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void h_dest_command(struct link *lp)
+{
+
+  char *name;
+  long rtt;
+  struct host *hp;
+  struct quality *qp;
+
+  name = getarg(0, ONE_TOKEN, LOWER_CASE);
+  if (!*name) {
+    return;
+  }
+  hp = hostptr(name);
+  if (hp == &my || hp == lp->l_host) {
+    return;
+  }
+  rtt = atol(getarg(0, ONE_TOKEN, KEEP_CASE));
+  if (rtt < 0 || rtt == 1) {
+    return;
+  }
+  if (rtt > MAX_RTT)
+    rtt = 0;
+  qp = find_quality(hp, lp);
+  qp->q_rtt = rtt;
+  strchg(&hp->h_software, getarg(0, ONE_TOKEN, KEEP_CASE));
+  send_dests();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1284,7 +1445,8 @@ static void h_host_command(struct link *lp)
   struct user *up;
 
   name = getarg(0, ONE_TOKEN, LOWER_CASE);
-  if (!*name) return;
+  if (!*name)
+    return;
   hp = hostptr(name);
   if (hp == &my) {
     close_link(lp);
@@ -1292,11 +1454,18 @@ static void h_host_command(struct link *lp)
   }
   strchg(&hp->h_software, getarg(0, ONE_TOKEN, KEEP_CASE));
   strchg(&hp->h_capabilities, getarg(0, ONE_TOKEN, KEEP_CASE));
-  hp->h_link = lp;
+  if (!debug) {
+    if (!strncmp(hp->h_software, "PP-", 3) ||
+	!strncmp(hp->h_software, "pp-", 3)) {
+      /* Disallow pp hosts for now,
+	 but keep connection open to avoid frequent retries */
+      return;
+    }
+  }
   lp->l_host = hp;
   lp->l_stime = currtime;
   if (strchr(hp->h_capabilities, 'p'))
-    lp->l_nexttime = currtime + 60;
+    lp->l_nexttime = 0;
   else
     lp->l_nexttime = 0x7fffffff;
 
@@ -1336,6 +1505,8 @@ static void h_host_command(struct link *lp)
       send_string(lp, buffer);
     }
 
+  send_dests();
+
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1349,7 +1520,7 @@ static void h_invi_command(struct link *lp)
 
   fromname = getarg(0, ONE_TOKEN, LOWER_CASE);
   toname = getarg(0, ONE_TOKEN, LOWER_CASE);
-  channel = getarg(0, ONE_TOKEN, LOWER_CASE);
+  channel = getarg(0, ONE_TOKEN, KEEP_CASE);
   if (*channel)
     send_invite_msg(fromname, toname, atoi(channel), getarg(0, REST_OF_LINE, KEEP_CASE), 0);
 }
@@ -1366,27 +1537,57 @@ static void h_ping_command(struct link *lp)
 
 /*---------------------------------------------------------------------------*/
 
+static void update_srtt(struct link *lp, long rtt)
+{
+  if (lp->l_srtt) {
+    lp->l_srtt = (3.0 * lp->l_srtt + rtt) / 4.0;
+  } else {
+    lp->l_srtt = rtt;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void h_pong_command(struct link *lp)
 {
-  lp->l_rxrtt = atol(getarg(0, ONE_TOKEN, LOWER_CASE));
+
+  long d;
+  long oldsrtt;
+  long srtt;
+  struct host *hp;
+  struct quality *qp;
+
+  oldsrtt = lround(lp->l_srtt);
+  lp->l_rxrtt = atol(getarg(0, ONE_TOKEN, KEEP_CASE));
   if (lp->l_rxrtt > 0) {
-    if (lp->l_srtt) {
-      lp->l_srtt = (7.0 * lp->l_srtt + lp->l_rxrtt) / 8.0;
-    } else {
-      lp->l_srtt = lp->l_rxrtt;
-    }
+    update_srtt(lp, lp->l_rxrtt);
   }
   if (lp->l_sendtime) {
     lp->l_txrtt = currtime - lp->l_sendtime;
     if (lp->l_txrtt < 1) {
       lp->l_txrtt = 1;
     }
+    update_srtt(lp, lp->l_txrtt);
     lp->l_sendtime = 0;
-    if (lp->l_srtt) {
-      lp->l_srtt = (7.0 * lp->l_srtt + lp->l_txrtt) / 8.0;
-    } else {
-      lp->l_srtt = lp->l_txrtt;
+  }
+  srtt = lround(lp->l_srtt);
+  if (srtt != oldsrtt) {
+    d = ping_interval(lp);
+    if (lp->l_nexttime > currtime + d) {
+      lp->l_nexttime = currtime + d;
     }
+    for (hp = hosts; hp; hp = hp->h_next) {
+      for (qp = hp->h_qualities; qp; qp = qp->q_next) {
+	if (qp->q_link == lp && qp->q_rtt) {
+	  qp->q_rtt = qp->q_rtt - oldsrtt + srtt;
+	  if (qp->q_rtt < 1)
+	    qp->q_rtt = 1;
+	}
+      }
+    }
+    qp = find_quality(lp->l_host, lp);
+    qp->q_rtt = srtt;
+    send_dests();
   }
 }
 
@@ -1420,9 +1621,9 @@ static void h_user_command(struct link *lp)
 
   name = getarg(0, ONE_TOKEN, LOWER_CASE);
   host = getarg(0, ONE_TOKEN, LOWER_CASE);
-  seq = atol(getarg(0, ONE_TOKEN, LOWER_CASE));
-  getarg(0, ONE_TOKEN, LOWER_CASE); /*** oldchannel is ignored, protocol has changed ***/
-  channel = getarg(0, ONE_TOKEN, LOWER_CASE);
+  seq = atol(getarg(0, ONE_TOKEN, KEEP_CASE));
+  getarg(0, ONE_TOKEN, KEEP_CASE); /*** oldchannel is ignored, protocol has changed ***/
+  channel = getarg(0, ONE_TOKEN, KEEP_CASE);
   if (!*channel) {
     if (debug >= 2) printf("*** Syntax error: ignored.\n");
     return;
@@ -1446,7 +1647,7 @@ static void h_user_command(struct link *lp)
       send_string(lp, buffer);
     } else {
       if (debug >= 2) printf("*** New user info: accepted.\n");
-      up->u_link = hp->h_link = lp;
+      up->u_link = lp;
       up->u_oldchannel = up->u_channel;
       up->u_channel = newchannel;
       if (strcmp(up->u_note, note)) {
@@ -1517,6 +1718,7 @@ static void process_input(struct link *lp)
   static const struct command host_commands[] = {
 
     { "\377\200cmsg",   h_cmsg_command },
+    { "\377\200dest",   h_dest_command },
     { "\377\200invi",   h_invi_command },
     { "\377\200ping",   h_ping_command },
     { "\377\200pong",   h_pong_command },
@@ -1606,19 +1808,24 @@ static void check_files_changed(void)
   static long progtime;
   struct stat statbuf;
 
-  if (nexttime > currtime) return;
+  if (debug || nexttime > currtime)
+    return;
   nexttime = currtime + 600;
 
-  if (!stat(progfile, &statbuf)) {
-    if (!progtime) progtime = statbuf.st_mtime;
-    if (progtime != statbuf.st_mtime && statbuf.st_mtime + 60 < currtime)
+  if (*progfile && !stat(progfile, &statbuf)) {
+    if (!progtime)
+      progtime = statbuf.st_mtime;
+    if (progtime != statbuf.st_mtime && statbuf.st_mtime + 21600 < currtime)
       exit(0);
   }
+
   if (*conffile && !stat(conffile, &statbuf)) {
-    if (!conftime) conftime = statbuf.st_mtime;
-    if (conftime != statbuf.st_mtime && statbuf.st_mtime + 60 < currtime)
+    if (!conftime)
+      conftime = statbuf.st_mtime;
+    if (conftime != statbuf.st_mtime && statbuf.st_mtime + 21600 < currtime)
       exit(0);
   }
+
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1738,12 +1945,12 @@ int main(int argc, char **argv)
     *cp = 0;
   strchg(&my.h_name, buffer);
   strcpy(buffer, "W-");
-  if ((cp = strchr("$Revision: 2.69 $", ' ')))
+  if ((cp = strchr("$Revision: 2.70 $", ' ')))
     strcat(buffer, cp + 1);
   if ((cp = strchr(buffer, ' ')))
     *cp = 0;
   strchg(&my.h_software, buffer);
-  strchg(&my.h_capabilities, "p");
+  strchg(&my.h_capabilities, "dpu");
 
   while ((chr = getopt(argc, argv, "a:c:dh:p:")) != EOF)
     switch (chr) {
@@ -1781,9 +1988,9 @@ int main(int argc, char **argv)
   if (errflag || optind < argc) {
     fprintf(stderr,
 	    "Usage: conversd"
-	    " [-a address]"
-	    " [-c conffile]"
 	    " [-d]"
+	    " [-c conffile]"
+	    " [-a address]"
 	    " [-h hostname]"
 	    " [-p socket_address [connect_command]]"
 	    "\n");
@@ -1807,7 +2014,7 @@ int main(int argc, char **argv)
 	(sp->s_fd = socket(addr->sa_family, SOCK_STREAM, 0)) >= 0) {
       switch (addr->sa_family) {
       case AF_UNIX:
-	unlink(addr->sa_data);
+	remove(addr->sa_data);
 	break;
       case AF_INET:
 	arg = 1;

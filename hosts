@@ -1889,7 +1889,11 @@
 44.130.28.30    DL8ZAD  # Juergen, 35789 Weilmuenster nr Wetzlar
 44.130.28.58    DF0WS   # ClubStn F58, 35396 Giessen-Wieseck
 #
-44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc1ik@db0lj-1.ampr.org
+# KA_HOSTS BEGIN [960126]
+# Hier die Karlsruher IP-Adressen:
+#
+44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc1ik@db0lj-1.ampr.org,
+#                       # dc1ik@db0lj.#rpl.deu.eu,
 #                       # erb@inss1.etec.uni-karlsruhe.de
 #
 44.130.29.1  db0rot-w   # JN48ft *** Mailbox Rotensol 76332 Bad Herrenalb
@@ -1926,7 +1930,7 @@
 44.130.29.32 dl6kcu     # JN48fw Klaus Baerwald       76275 Ettlingen
 44.130.29.33 dd3uh      #        Dieter Schlaier      76689 Karlsdorf
 44.130.29.34 dd3uc      # JN49ea Christoph W. Rieger  76131 Karlsruhe
-44.130.29.35 dj4ul      #        Herbert
+44.130.29.35 dj4ul      #        Herbert ???????
 44.130.29.36 dl6iu      # JN49ea Klaus Heimannsfeld   76131 Karlsruhe
 44.130.29.37 dl6iu-1    # JN49ea Klaus Heimannsfeld   76131 Karlsruhe
 44.130.29.38 dh1iar-1   # JN49ea Peter Herttrich      76131 Karlsruhe
@@ -1951,8 +1955,8 @@
 44.130.29.57 dc6iq-h    # JN49fb Fred Baumgarten      76297 Stutensee
 44.130.29.58 dc6iq-g    # JN49fb Fred Baumgarten      76297 Stutensee
 44.130.29.59 dc6iq-j    # JN49fb Fred Baumgarten      76297 Stutensee
-44.130.29.60 dh4ial     #        Axel
-44.130.29.61 dh4ial-xt  #        Axel
+44.130.29.60 dh4ial     #        Axel ???????
+44.130.29.61 dh4ial-xt  #        Axel ???????
 44.130.29.62 dl5ycy-w   # JN48fx Volker Baumgarte     76227 Karlsruhe
 44.130.29.63 dl5ycy-k   # JN48fx Volker Baumgarte     76227 Karlsurhe
 44.130.29.64 db2gl      # JN49fa Gerald Lang          76131 Karlsruhe
@@ -2014,6 +2018,7 @@
 44.130.29.120 df7tc     # JN49ea Dirk Canzler         76185 Karlsruhe
 44.130.29.121 dc1ik-d   # JN49ea Olaf Erb             76131 Karlsruhe
 44.130.29.122 dc1ik-e   # JN49ea Olaf Erb             76131 Karlsruhe
+44.130.29.123 dc1ik-3   # JN49ea Olaf Erb             76131 Karlsruhe
 44.130.29.130 db0sel    # JN48iv Digi Pforzheim       75179 Pforzheim
 44.130.29.131 db0sel-w  # JN48iv Digi Pforzheim       75179 Pforzheim
 44.130.29.132 db0sel-l  # JN48iv Digi Pforzheim       75179 Pforzheim
@@ -2021,10 +2026,18 @@
 44.130.29.134 dg2iav    # JN49EA Michael Steinel      76185 Karlsruhe
 44.130.29.135 dg2gtn    # Thomas Naeger
 44.130.29.136 dg2gtn-w  # Thomas Naeger
-44.130.29.137 dc1iap    # Peter
-44.130.29.138 dc1iap-w  # Peter
+44.130.29.137 dc1iap    # Peter Lambeck
+44.130.29.138 dc1iap-w  # Peter Lambeck
 44.130.29.139 dl3it-l   # JN49ea Thomas Wischnack     76135 Karlsruhe
 44.130.29.140 dg6am     # JN49EA Lars Schubert        76131 Karlsruhe
+44.130.29.141 dg7uaw    # Detlev ???????              Karlsruhe-Rueppurr
+44.130.29.142 dg7uaw-1  # Detlev ???????              Karlsruhe-Rueppurr
+44.130.29.143 dc1iap-2  # Peter Lambeck
+44.130.29.144 dc1iap-s  # Peter Lambeck
+44.130.29.145 dh9iam    # Michael Lambeck
+44.130.29.146 dh9iam-w  # Michael Lambeck
+#
+# KA_HOSTS END
 #
 #44.130.30.x    Nordhessen
 # --- lokale Adresskoordination: DG1ZX-A
@@ -2125,6 +2138,9 @@
 44.130.36.23      DC7FO-3       #
 44.130.36.24      DC7FO-4       #
 44.130.36.25      DC7FO-5       #
+44.130.36.26      dl4ybg        # Mark , Berlin
+44.130.36.27      dl4ybg-1      #
+44.130.36.28      dl4ybg-2      #
 44.130.36.30      DL7UWO        # Manfred
 44.130.36.32      DF1GX         # Claus-Peter Schulz, Berlin
 44.130.36.33      ST.DF1GX      #
@@ -3106,8 +3122,8 @@
 44.130.61.100   DK0TT   # Club Stn A23 Taubertal
 44.130.61.111   DB0SWR  # Digi Wertheim
 #
-#    Die oberfrÑnkischen Hosts:
-#                                       Stand:  06.10.95
+#    Die oberfraenkischen Hosts:
+#                                       Stand:  20.01.96
 # 44.130.62.xx (Bamberg/Bayreuth)
 # lokale Adresskoordination DL1NAT [44.130.62.3]
 #
@@ -3137,9 +3153,13 @@
 44.130.62.24   DJ4BE          # Josef Kronach
 44.130.62.25   DL3NEA         # Bernd Heinz Stadtsteinach
 44.130.62.26   DL9RBG         # Manfred Amschler Redwitz
-44.130.62.30   DL1NV          # GÅnther Kestel Kronach
+44.130.62.27   DL3NEY         # Florian Thienel Burgebrach
+44.130.62.30   DL1NV          # Guenther Kestel Kronach
+44.130.62.31   DG1NBH         # Bernd Schuberth Altendorf
+44.130.62.32   DG1NBH-2       # Bernd Schuberth Altendorf
+44.130.62.33   DG1NBH-GATE    # Bernd Schuberth Altendorf
 44.130.62.40   DL1NCH         # Jacek Kupiec Bayreuth
-44.130.62.100  DB0BBG-10      # Digipeater Bamberg KÑlberberg
+44.130.62.100  DB0BBG-10      # Digipeater Bamberg Kaelberberg
 #
 #44.130.63.x    Franken
 # --- lokale Adresskoordination: DL1NC

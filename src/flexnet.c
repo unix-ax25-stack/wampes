@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.9 1995/12/26 11:18:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/flexnet.c,v 1.10 1996/01/28 10:44:34 deyke Exp $ */
 
 #include <stdio.h>
 
@@ -140,7 +140,7 @@ static struct neighbor *find_best_neighbor(const struct dest *pd)
 	struct neighbor *pnbest = 0;
 
 	for (pn = pd->neighbors; pn; pn = pn->next)
-		if (pn->delay && (!pnbest || pnbest->delay > pn->delay))
+		if (pn->delay && (!pnbest || pnbest->delay >= pn->delay))
 			pnbest = pn;
 	return pnbest;
 }
@@ -344,10 +344,11 @@ static void send_rout(struct peer *pp)
 			pd->neighbors = pnpeer;
 			pnpeer->peer = pp;
 		}
-		delay = MAXDELAY + 1;
 		pnbest = find_best_neighbor(pd);
 		if (pnbest && pnbest != pnpeer)
 			delay = pnbest->delay;
+		else
+			delay = MAXDELAY + 1;
 		if (!(lastdelay = pnpeer->lastdelay))
 			lastdelay = MAXDELAY + 1;
 		if (delay > lastdelay || iround(1.25 * delay) < lastdelay) {

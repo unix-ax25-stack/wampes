@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.28 1995/12/30 15:05:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/remote_net.c,v 1.29 1996/01/28 10:44:38 deyke Exp $ */
 
 #include "global.h"
 
@@ -310,7 +310,7 @@ void remote_net_initialize(void)
       if ((flisten_net = socket(addr->sa_family, SOCK_STREAM, 0)) >= 0) {
 	switch (addr->sa_family) {
 	case AF_UNIX:
-	  if (!Debug) unlink(addr->sa_data);
+	  if (!Debug) remove(addr->sa_data);
 	  break;
 	case AF_INET:
 	  arg = 1;

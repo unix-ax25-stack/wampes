@@ -1,5 +1,7 @@
 -------------------------------------------------------------------------------
 
+- allow sntp over vc
+
 - create bbs routing tables
 
 - sync mail_smtp.c with bbs.c
