@@ -1,0 +1,60 @@
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/net.rc.dh6sae,v 1.1 1994/04/19 19:34:45 deyke Exp $
+
+hostname     dh6sae
+ax25 mycall  dh6sae
+ip address   dh6sae
+
+attach asy 0 0 kissi pk232 0 256 9600
+param pk232  1  28   # txdelay
+param pk232  2  31   # persistence
+param pk232  3  30   # slottime
+param pk232  4   3   # txtail
+param pk232  5   0   # full duplex
+param pk232 12   0   # echo
+param pk232 13   1   # rxdelay
+
+attach netrom                   # ip over netrom
+
+ax25 route add permanent pk232 db0aau
+ax25 route add permanent pk232 default
+
+route add  db0aau.ampr.org      pk232
+route add  db0id.ampr.org       pk232
+route add  44/8                 pk232    db0id.ampr.org
+
+arp add db0aau ax25 db0aau
+arp add db0id  ax25 db0id
+
+source /tcp/netrom_links
+
+domain usegethostby on
+echo refuse
+esc 
+icmp trace on
+ip rtimer 300
+ip ttl 30
+log /tcp/net.log
+login logfiledir /usr/spool/wampes/logs
+netrom parms 9 180
+tcp irtt 60000
+tcp mss 216
+tcp window 2048
+
+smtp timer 4200
+start ax25
+start discard
+start domain
+start echo
+start ftp
+start netrom
+start tcpgate 6810
+start tcpgate convers unix:/tcp/sockets/convers
+start tcpgate finger
+start tcpgate nntp
+start tcpgate pop2
+start tcpgate smtp
+start telnet
+
+tr pk232 111 /dev/tty8
+
+source /tcp/net.rc.local
