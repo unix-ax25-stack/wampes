@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 1.2 1988/08/29 22:27:54 dk5sg Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 1.3 1988/08/30 22:19:42 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -30,7 +30,7 @@ struct connection {
   int  channel;
   int  closed;
   char  user[80];
-  char  ibuf[1024];
+  char  ibuf[2048];
   int  icnt;
   struct mbuf *obuf;
 };
@@ -171,7 +171,7 @@ int  flisten;
   connections = cp;
   cp->fd = fd;
   cp->time = time(0l);
-  appendstring(&cp->obuf, "conversd $Revision: 1.2 $  Type /HELP for help.\n");
+  appendstring(&cp->obuf, "conversd $Revision: 1.3 $  Type /HELP for help.\n");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -256,6 +256,46 @@ struct connection *cp;
 
 /*---------------------------------------------------------------------------*/
 
+static char  *formatline(prefix, text)
+char  *prefix, *text;
+{
+
+#define PREFIXLEN 10
+#define LINELEN   79
+
+  register char  *f, *t, *x;
+  register int  l, lw;
+
+  static char  buf[2048];
+
+  for (f = prefix, t = buf, l = 0; *f; *t++ = *f++, l++) ;
+  f = text;
+
+  for (; ; ) {
+    while (isspace(*f & 0xff)) f++;
+    if (!*f) {
+      *t++ = '\n';
+      *t = '\0';
+      return buf;
+    }
+    for (lw = 0, x = f; *x && !isspace(*x & 0xff); x++, lw++) ;
+    if (l > PREFIXLEN && l + 1 + lw > LINELEN) {
+      *t++ = '\n';
+      l = 0;
+    }
+    do {
+      *t++ = ' ';
+      l++;
+    } while (l < PREFIXLEN);
+    while (lw--) {
+      *t++ = *f++;
+      l++;
+    }
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void process_input(cp)
 struct connection *cp;
 {
@@ -293,8 +333,8 @@ struct connection *cp;
     appendstring(&cp->obuf, buffer);
     return;
   }
-  sprintf(buffer, "<%s>: %s\n", cp->user, cp->ibuf);
-  sendchannel(cp, buffer);
+  sprintf(buffer, "<%s>:", cp->user);
+  sendchannel(cp, formatline(buffer, cp->ibuf));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -302,7 +342,7 @@ struct connection *cp;
 main()
 {
 
-  char  buffer[1024];
+  char  buffer[2048];
   char  c;
   int  flisten;
   int  i;
