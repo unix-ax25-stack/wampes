@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.2 1990/03/02 09:27:18 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.3 1990/03/02 16:25:33 deyke Exp $ */
 
 /* Net Update Server */
 
@@ -117,7 +117,7 @@ int  main()
     }
     doread(fdsocket, client + i, 1);
     if (!client[i]) break;
-    if (!isalnum(client[i] & 0xff)) {
+    if (!isalnum(client[i] & 0xff) && client[i] != '-') {
       printf("Bad char in client name\n");
       exit(1);
     }
