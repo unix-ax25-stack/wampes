@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.31 1991/12/22 19:19:06 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.32 1991/12/27 13:12:34 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -52,7 +52,7 @@ struct revision {
   char time[16];
   char author[16];
   char state[16];
-} revision;
+};
 
 struct user {
   char *name;
@@ -102,6 +102,7 @@ static int fdseq;
 static int level;
 static int mode = BBS;
 static int packetcluster;
+static struct revision revision;
 static struct user user;
 static volatile int stopped;
 
@@ -139,7 +140,7 @@ static void free_mail(struct mail *mail);
 static void route_mail(struct mail *mail);
 static void append_line(struct mail *mail, char *line);
 static void get_header_value(const char *name, char *line, char *value);
-static char *get_host_from_header(char *line);
+static char *get_host_from_header(const char *line);
 static int host_in_header(char *fname, char *host);
 static int mail_pending(void);
 static void delete_command(int argc, char **argv);
@@ -685,11 +686,12 @@ static void send_to_bbs(struct mail *mail)
       make_parent_directories(getfilename(index.mesg));
       if (!(fp = fopen(getfilename(index.mesg), "w"))) halt();
     }
-    for (p = mail->head; p; p = p->next) {
-      if (fputs(p->str, fp) == EOF) halt();
-      if (putc('\n', fp) == EOF) halt();
-      index.size += (strlen(p->str) + 1);
-    }
+    if (strcmp(index.to, "E") && strcmp(index.to, "M"))
+      for (p = mail->head; p; p = p->next) {
+	if (fputs(p->str, fp) == EOF) halt();
+	if (putc('\n', fp) == EOF) halt();
+	index.size += (strlen(p->str) + 1);
+      }
     fclose(fp);
     if (lseek(fdindex, 0L, SEEK_END) < 0) halt();
     if (write(fdindex, &index, sizeof(struct index)) != sizeof(struct index)) halt();
@@ -911,14 +913,6 @@ static void route_mail(struct mail *mail)
   char *s;
   struct strlist *p;
 
-  /* Check mail header */
-
-  if (level == MBOX) {
-    if (!mail->head) return;
-    cp = get_host_from_header(mail->head->str);
-    if (!cp || !calleq(cp, user.name)) return;
-  }
-
   /* Set date */
 
   mail->date = time((long *) 0);
@@ -927,6 +921,20 @@ static void route_mail(struct mail *mail)
 
   fix_address(mail->from);
   fix_address(mail->to);
+
+  /* Check for bogus mails */
+
+  strtrim(mail->subject);
+  if ((cp = get_host_from_header(mail->subject)) && callvalid(cp)) goto Done;
+  if (level == MBOX) {
+    cp = get_user_from_path(mail->to);
+    if (!cp) goto Done;
+    if (strlen(cp) > 1) {
+      if (!mail->head) goto Done;
+      cp = get_host_from_header(mail->head->str);
+      if (!cp || !calleq(cp, user.name)) goto Done;
+    }
+  }
 
   /* Set bid */
 
@@ -958,10 +966,6 @@ static void route_mail(struct mail *mail)
     strcat(mail->mid, MidSuffix);
   }
 
-  /* Trim subject */
-
-  strtrim(mail->subject);
-
   /* Remove message delimiters */
 
   for (p = mail->head; p; p = p->next) {
@@ -987,6 +991,7 @@ static void route_mail(struct mail *mail)
 
   /* Free mail */
 
+Done:
   free_mail(mail);
 
 }
@@ -1025,7 +1030,7 @@ static void get_header_value(const char *name, char *line, char *value)
 
 /*---------------------------------------------------------------------------*/
 
-static char *get_host_from_header(char *line)
+static char *get_host_from_header(const char *line)
 {
 
   char *p, *q;
@@ -1225,19 +1230,23 @@ static void f_command(int argc, char **argv)
       if (!getstring(buf)) exit(1);
       switch (_tolower(uchar(*buf))) {
       case 'o':
-	puts(index.subject);
-	tm = gmtime(&index.date);
-	printf("R:%02d%02d%02d/%02d%02dz @%-6s %s\n",
-	       tm->tm_year % 100,
-	       tm->tm_mon + 1,
-	       tm->tm_mday,
-	       tm->tm_hour,
-	       tm->tm_min,
-	       MYHOSTNAME,
-	       mydesc);
-	if (!(fp = fopen(getfilename(index.mesg), "r"))) halt();
-	while ((c = getc(fp)) != EOF) putchar(c);
-	fclose(fp);
+	puts(*index.subject ? index.subject : "no subject");
+	if (!strcmp(index.to, "E") || !strcmp(index.to, "M"))
+	  putchar('\n');
+	else {
+	  tm = gmtime(&index.date);
+	  printf("R:%02d%02d%02d/%02d%02dz @%-6s %s\n",
+		 tm->tm_year % 100,
+		 tm->tm_mon + 1,
+		 tm->tm_mday,
+		 tm->tm_hour,
+		 tm->tm_min,
+		 MYHOSTNAME,
+		 mydesc);
+	  if (!(fp = fopen(getfilename(index.mesg), "r"))) halt();
+	  while ((c = getc(fp)) != EOF) putchar(c);
+	  fclose(fp);
+	}
 	puts("\032");
 	wait_for_prompt();
 	break;
