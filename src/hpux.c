@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.22 1992/08/19 13:20:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.23 1992/08/26 17:28:40 deyke Exp $ */
 
 #define FD_SETSIZE 64
 
@@ -97,7 +97,6 @@ void ioinit()
     curr_termio.c_cc[VMIN] = 0;
     curr_termio.c_cc[VTIME] = 0;
     ioctl(0, TCSETA, &curr_termio);
-    printf("\033&s1A");   /* enable XmitFnctn */
     on_read(0, (void (*)()) keyboard, (void *) 0);
   } else {
     for (i = 0; i < FD_SETSIZE; i++) close(i);
@@ -146,10 +145,7 @@ void iostop()
 {
   register struct iface *ifp;
 
-  if (local_kbd) {
-    ioctl(0, TCSETA, &prev_termio);
-    printf("\033&s0A");   /* disable XmitFnctn */
-  }
+  if (local_kbd) ioctl(0, TCSETA, &prev_termio);
   for (ifp = Ifaces; ifp; ifp = ifp->next)
     if (ifp->stop) (*ifp->stop)(ifp);
 }

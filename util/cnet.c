@@ -1,5 +1,5 @@
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.12 1992/08/20 19:35:45 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.13 1992/08/26 17:29:26 deyke Exp $";
 #endif
 
 #define _HPUX_SOURCE
@@ -12,11 +12,6 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#ifdef LINUX
-#define FIOSNBIO        O_NONBLOCK
-#else
-#include <term.h>
-#endif
 #include <termio.h>
 #include <time.h>
 #include <unistd.h>
@@ -27,6 +22,10 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <sys/ptem.h>
 #include <sys/pty.h>
 #define FIOSNBIO        FIONBIO
+#endif
+
+#ifdef LINUX
+#define FIOSNBIO        O_NONBLOCK
 #endif
 
 #if defined(__TURBOC__) || defined(__STDC__)
@@ -50,11 +49,11 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 
 struct mbuf {
   struct mbuf *next;
-  unsigned int  cnt;
-  char  *data;
+  unsigned int cnt;
+  char *data;
 };
 
-static int ansiterminal = 1;
+static int Ansiterminal = 1;
 static struct mbuf *sock_queue;
 static struct mbuf *term_queue;
 static struct termio prev_termio;
@@ -69,9 +68,7 @@ static void sendq __ARGS((int fd, struct mbuf **qp));
 
 static void open_terminal()
 {
-  if (ansiterminal) {
-    fputs("\033=", stdout);                     /* keypad application mode */
-  } else {
+  if (!Ansiterminal) {
     fputs("\033Z", stdout);                     /* display fncts off       */
     fputs("\033&k1I", stdout);                  /* enable ascii 8 bits     */
     fputs("\033&s1A", stdout);                  /* enable xmitfnctn        */
@@ -86,28 +83,26 @@ static void open_terminal()
     fputs("\033&f0a6k0d2L\033u", stdout);       /* key6 = ESC u            */
     fputs("\033&f0a7k0d2L\033v", stdout);       /* key7 = ESC v            */
     fputs("\033&f0a8k0d2L\033w", stdout);       /* key8 = ESC w            */
+    fflush(stdout);
   }
-  fflush(stdout);
 }
 
 /*---------------------------------------------------------------------------*/
 
 static void close_terminal()
 {
-  if (ansiterminal) {
-    fputs("\033>", stdout);                     /* keypad numeric mode */
-  } else {
+  if (!Ansiterminal) {
     fputs("\033&s0A", stdout);                  /* disable xmitfnctn */
     fputs("\033&jR", stdout);                   /* release keys */
+    fflush(stdout);
   }
-  fflush(stdout);
 }
 
 /*---------------------------------------------------------------------------*/
 
 static void terminate()
 {
-  long  arg;
+  long arg;
 
   close(SOCK_OUT_FDES);
   arg = 0;
@@ -122,12 +117,12 @@ static void terminate()
 /*---------------------------------------------------------------------------*/
 
 static void recvq(fd, qp)
-int  fd;
+int fd;
 struct mbuf **qp;
 {
 
-  char  buf[1024];
-  int  n;
+  char buf[1024];
+  int n;
   struct mbuf *bp, *tp;
 
   n = read(fd, buf, sizeof(buf));
@@ -148,11 +143,11 @@ struct mbuf **qp;
 /*---------------------------------------------------------------------------*/
 
 static void sendq(fd, qp)
-int  fd;
+int fd;
 struct mbuf **qp;
 {
 
-  int  n;
+  int n;
   struct mbuf *bp;
 
   bp = *qp;
@@ -173,7 +168,10 @@ int argc;
 char **argv;
 {
 
+  char *ap;
   char *server;
+  char area[1024];
+  char bp[1024];
   int addrlen;
   int flags;
   int rmask;
@@ -205,11 +203,10 @@ char **argv;
     perror(*argv);
     exit(1);
   }
-#ifndef LINUX
-  setupterm(0, 1, 0);
-  if (!strcmp(cursor_up, "\033A")) ansiterminal = 0;
-  resetterm();
-#endif
+
+  ap = area;
+  if (tgetent(bp, getenv("TERM")) == 1 && strcmp(tgetstr("up", &ap), "\033[A"))
+    Ansiterminal = 0;
 
   open_terminal();
   arg = 1;
@@ -220,6 +217,12 @@ char **argv;
   curr_termio.c_cc[VMIN] = 1;
   curr_termio.c_cc[VTIME] = 0;
   ioctl(TERM_INP_FDES, TCSETA, &curr_termio);
+
+  if (Ansiterminal) {
+    if (write(SOCK_OUT_FDES, "\033[D", 3) != 3) terminate();
+  } else {
+    if (write(SOCK_OUT_FDES, "\033D", 2) != 2) terminate();
+  }
 
   for (; ; ) {
     rmask = SOCK_INP_MASK | TERM_INP_MASK;

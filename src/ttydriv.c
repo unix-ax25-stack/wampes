@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.13 1992/08/24 10:09:46 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.14 1992/08/26 17:29:09 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -19,8 +19,8 @@
 char *Fkey_table[NUM_FKEY];
 char *Fkey_ptr;
 
-static int  ansimode;
-static int  rawmode;
+static int Ansiterminal;
+static int Rawmode;
 
 static void printchr __ARGS((int chr));
 static void backchr __ARGS((int chr));
@@ -32,7 +32,7 @@ static void clreol __ARGS((void));
 
 int  raw()
 {
-  rawmode = 1;
+  Rawmode = 1;
   return 0;
 }
 
@@ -40,7 +40,7 @@ int  raw()
 
 int  cooked()
 {
-  rawmode = 0;
+  Rawmode = 0;
   return 0;
 }
 
@@ -89,12 +89,12 @@ static void delchr(chr)
 int  chr;
 {
   putchar('\033');
-  if (ansimode) putchar('[');
+  if (Ansiterminal) putchar('[');
   putchar('P');
   chr &= 0x7f;
   if (chr < 32 || chr == 127) {
     putchar('\033');
-    if (ansimode) putchar('[');
+    if (Ansiterminal) putchar('[');
     putchar('P');
   }
 }
@@ -106,7 +106,7 @@ int  chr;
 {
   int  c;
 
-  if (ansimode) {
+  if (Ansiterminal) {
     c = chr & 0x7f;
     printf("\033[%d@", (c < 32 || c == 127) ? 2 : 1);
     printchr(chr);
@@ -124,7 +124,7 @@ int  chr;
 static void clreol()
 {
   putchar('\033');
-  if (ansimode) putchar('[');
+  if (Ansiterminal) putchar('[');
   putchar('K');
 }
 
@@ -153,7 +153,7 @@ char  **buf;
   char  *p, *f, *t;
   int  cnt;
 
-  if (rawmode) {
+  if (Rawmode) {
     *linebuf = chr;
     *buf = linebuf;
     return 1;
@@ -346,7 +346,7 @@ char  **buf;
 
     case 27: /* escape */
       esc = 1;
-      ansimode = 0;
+      Ansiterminal = 0;
       break;
 
 #ifndef LINUX
@@ -442,7 +442,7 @@ char  **buf;
       break;
 
     case 'O': /* ansi arrow or function key */
-      ansimode = ansikey = 1;
+      Ansiterminal = ansikey = 1;
       break;
 
     case 'P': /* delete char */
@@ -454,7 +454,7 @@ char  **buf;
       break;
 
     case '[': /* ansi escape sequence */
-      esc = ansimode = 1;
+      esc = Ansiterminal = 1;
       break;
 
     case 'p': /* hp function key 1 */
@@ -470,7 +470,7 @@ char  **buf;
 
     default:
       putchar('\033');
-      if (ansimode) putchar('[');
+      if (Ansiterminal) putchar('[');
       putchar(chr);
       break;
 
