@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Id: bbs.c,v 3.13 1999/01/24 22:24:50 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: bbs.c,v 3.14 1999/09/18 23:13:59 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -448,6 +448,8 @@ static long calculate_date(int yy, int mm, int dd,
 			   int tzcorrection)
 {
 
+#define LEAPYEAR(y) ((y) % 4 == 0)      /* This is correct until 2100 */
+
   static int mdays[] = {
     31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
   };
@@ -455,24 +457,29 @@ static long calculate_date(int yy, int mm, int dd,
   int i;
   long jdate;
 
-  if (yy <= 37)
+  if (yy <= 37) {
     yy += 2000;
-  if (yy <= 99)
+  }
+  if (yy <= 99) {
     yy += 1900;
-  mdays[1] = 28 + (yy % 4 == 0 && (yy % 100 || yy % 400 == 0));
+  }
   mm--;
+  mdays[1] = 28 + LEAPYEAR(yy);
   if (yy < 1970 || yy > 2037 ||
       mm < 0 || mm > 11 ||
       dd < 1 || dd > mdays[mm] ||
       h < 0 || h > 23 ||
       m < 0 || m > 59 ||
-      s < 0 || s > 59)
+      s < 0 || s > 59) {
     return -1;
+  }
   jdate = dd - 1;
-  for (i = 0; i < mm; i++)
+  for (i = 0; i < mm; i++) {
     jdate += mdays[i];
-  for (i = 1970; i < yy; i++)
-    jdate += 365 + (i % 4 == 0);
+  }
+  for (i = 1970; i < yy; i++) {
+    jdate += 365 + LEAPYEAR(i);
+  }
   jdate *= (24L * 60L * 60L);
   return jdate + 3600 * h + 60 * m + s - tzcorrection;
 }
