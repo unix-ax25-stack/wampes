@@ -512,8 +512,9 @@
 44.130.12.40    DG3BBI  # Michael Dlubatz, Emden
 44.130.12.41    DG1BAZ  # Stefan Frank, Emden; JNOS
 44.130.12.42    DF8BD   # Wilfried Frank, Emden; JNOS
+44.130.12.43    DD7BS   # Heiko Besemann, Nessmersiel; AmiTCP
 44.130.12.44    DG9BHW  # Sebastian Lemke, 49610 Quakenbrueck
-44.130.12.45    DH1BAI  # Dieter, Emden; JNOS
+44.130.12.45    DH1BAI  # Dieter Dettmers, Emden; JNOS
 44.130.12.46    DL5BAG  # Ute Frank, Emden; JNOS
 44.130.12.47    DH1BBF  # Heinrich Wahrheit, Papenburg
 44.130.12.48    DB8WF   # Hans Siebels, Westoverledingen; JNOS
@@ -1267,6 +1268,7 @@
 44.130.20.30    DK3KO   # Wilhelm Golz, 5100 Aachen
 44.130.20.31    DG3KJK  # Jan Kunkis, 52076 Aachen
 44.130.20.32    DH2KC   # Christoph Dautzenberg, 52066 Aachen
+44.130.20.33    DC1JAL  # Lars Oesten, 52074 Aachen
 44.130.20.35    DF2JH   # Jochen, Aachen
 44.130.20.39    DH9KAE-1 # Detlef Brunkel, 52531 Uebach-Palenberg; Linux Router
 44.130.20.40    DH9KAE  # ; Linux, NS
@@ -1304,6 +1306,8 @@
 44.130.20.81    DJ0JU   # Henrik Olsen, 5138 Heinsberg Karken
 44.130.20.83    DH0KAI  # Manfred Jost, 5100 Aachen (ex DB1PD)
 44.130.20.84    DL5KCE  # Axel Pfaff, Eschweiler
+#44.130.20.86   Reserviert
+#44.130.20.87   Reserviert
 44.130.20.88    DB0MON  # Digi Monschau (DL8YQ); AX25 DB0MON-10
 44.130.20.89    DB0MON-GATE     # Digi Monschau, IP Gateway
 44.130.20.90    DL8YQ   # Heinz Janssen, 5108 Monschau
@@ -1514,16 +1518,16 @@
 44.130.23.40    DG1DCN  # Marc Noeker, Lennestadt: Amiga 2000
 44.130.23.102   DK3AK-14        # Siegmar Krause, 5982 Neuenrade
 #
-#44.130.144.xxx Bielefeld/Oerlinghausen Stand 08.02.95
+#44.130.144.xxx Bielefeld/Oerlinghausen Stand 13.02.96
 44.130.144.1    DB0NOS  # TCP/IP-Svr Oerlinghausen ***
-44.130.144.2    FTP.DB0NOS              # FTP-Svr Oerlinghausen ***
+44.130.144.2    FTP.DB0NOS      # FTP-Svr Oerlinghausen ***
 #44.130.144.3-44.130.144.15 fuer DB0NOS-Peripherie und Subrechner
 44.130.144.16   DL3YEN  # Wolf, Bielefeld
 44.130.144.17   KR4PH   #
 44.130.144.18   DL8KD   # Roland, Oerlinghausen
 44.130.144.19   SYS2.DL8KD      #
-44.130.144.20   DG6YGD  # Dirk, Detmold
-44.130.144.21   DL2YEN  # Tom, Detmold
+44.130.144.20   DG6YGD  # Dirk, Augustdorf
+44.130.144.21   DL2YEN  # Tom, Paderborn
 44.130.144.22   DG7YBQ  # Uwe, Bielefeld
 44.130.144.23   DL9YEM  # Stefan, Schloss Holte
 44.130.144.24   DG6YDZ  # Dieter, Oerlinghausen
@@ -1535,8 +1539,8 @@
 44.130.144.30   DH6YAY  # Stefan, GÅtersloh
 44.130.144.31   AA2RL   #
 44.130.144.32   DG9YGJ  # Stefan, Roedinghausen
-44.130.144.33   SYS1.DG8YAY             # Joerg, Bielefeld
-44.130.144.34   SYS2.DG8YAY             #
+44.130.144.33   SYS1.DG8YAY     # Joerg, Bielefeld
+44.130.144.34   SYS2.DG8YAY     #
 44.130.144.35   DL5YDE  # Ernst, Stukenbrock
 44.130.144.36   DG4YDB  # Michael, Bielefeld
 44.130.144.37   DG7YHV  # Juergen
@@ -1547,22 +1551,24 @@
 44.130.144.42   DH9YAX  # Udo, Verl
 44.130.144.43   DL1YDI  # Dirk, Steinhagen
 44.130.144.44   DL5YEQ  # Jens, Bielefeld
-44.130.144.45   DH2YAU  # Andreas,Bielefeld
-44.130.144.46   DB0CGS  # Clubstation,Bielefeld
-44.130.144.47   DL3YGK-1        # Frank
+44.130.144.45   DH2YAU  # Andreas, Bielefeld-Senne
+44.130.144.46   DB0CGS  # Clubstation, Bielefeld-Sennestadt
+44.130.144.47   DL3YGK-1        # Frank, Paderborn
 44.130.144.48   DG1YHN  # Sven
-44.130.144.49   DL1YCG  # Andreas Bielefeld-Senne I
+44.130.144.49   DL1YCG  # Andreas, Bielefeld-Senne
 44.130.144.50   DB9WT   # Hans, Bad Iburg
 44.130.144.51   DB9WT-2 # Hans, Bad Iburg
 44.130.144.52   DG5DBV  # Oli, Lippetal (Gestinghausen),Rechner 1 DOS/WIN
-44.130.144.53   DG5DBV-7        # Oli,Lippetal (Gestinghausen), Rechner 2 Linux/Netware
-44.130.144.54   DG7YHQ  # Friedhelm,Schloss-Holte
+44.130.144.53   LINUX.DG5DBV    # Oli,Lippetal (Gestinghausen), Rechner 2 Linux/Netware
+44.130.144.54   DG7YHQ  # Friedhelm, Schloss Holte
 44.130.144.56   DK3RC   # Horst, Detmold
 44.130.144.57   DK3RC-1 # Horst, Bielstein
 44.130.144.58   DL0JW   # Clubstation N58, Oerlinghausen
-44.130.144.60   Linux.DG6YGD            # Dirk, Detmold
+44.130.144.60   LINUX.DG6YGD    # Dirk, Augustdorf
+44.130.144.61   DD3QQ   # Kurt, Muenster
+44.130.144.62   DG6VJ   # Jochen, Muenster
 44.130.144.66   DG1YAY  # Christof, Buende
-44.130.144.67   DG1YAY-7        # TCP/IP-Router # Christof Buende
+44.130.144.67   DG1YAY-7        # TCP/IP-Router Buende
 #
 #44.130.147.x   Siegen
 44.130.147.1    DJ5ZD   # Alexander, Bad Laasphe
@@ -2267,34 +2273,35 @@
 44.130.41.245   DD0WF   # Thomas Schleicher, Muenschweiler nr Pirmasens
 #
 #44.130.42.x    Koblenz
-# --- lokale Adresskoordination: DL5DI
-44.130.42.1     DL5DI   # Hans-Juergen Barthen, 5473 Kruft
+44.130.42.1     DL5DI   # Hans-Juergen Barthen, 56642 Kruft
 44.130.42.2     DL5DI-amiga     # Hans-Juergen Barthen
 44.130.42.3     DB0LJ-1 # PBBS Mittelrhein (DL5DI); *** Linux Server
 44.130.42.4     DL5DI-p # Hans-Juergen Barthen
-44.130.42.5     DG2PU   # Thomas, 5477 Nickenich
-44.130.42.6     DB7JI   # Kajo, Lonnig
-44.130.42.7     DF4PM   # Heinz, Koblenz
-44.130.42.8     DK9PE   #
-44.130.42.9     DG6PG   # Armin H. Ecker, Hanroth/Ww
-44.130.42.10    DG6PG-2 #
-44.130.42.12    DF6PR   # Gerd Roth, 5410 Hoehr-Grenzhausen
-44.130.42.13    DB2PY   #
+44.130.42.5     DG2PU   # Thomas, 56645 Nickenich
+44.130.42.6     DB7JI   # Kajo, Kobern
+44.130.42.7     DF4PM   # Heinz, 56073 Koblenz
+44.130.42.8     DK9PE   # Harry, 56068 Koblenz
+44.130.42.9     DG6PG   # Armin H. Ecker, 56316 Hanroth/Ww
+44.130.42.10    DG6PG-2 # Armin H. Ecker, 56316 Hanroth/Ww
+44.130.42.12    DF6PR   # Gerd Roth, 56203 Hoehr-Grenzhausen
+44.130.42.13    DB2PY   # Herbert, Kehrig
 44.130.42.14    DG7PB   # Guido
 44.130.42.15    DF2PA   # Ulrich Weingart, 56759 Kaisersesch
-44.130.42.16    DG2PR   #
-44.130.42.17    DG3PO   #
-44.130.42.18    DD3PO   # Heinz Hilger, 5405 Ochtendung
+44.130.42.16    DG2PR   # Hans-Gerd, 56727 Mayen
+44.130.42.17    DG3PO   # Walter
+44.130.42.18    DD3PO   # Heinz Hilger, 56299 Ochtendung
 44.130.42.19    DJ0IM   # Pierre Lentignac, 56269 Dierdorf
 44.130.42.20    DF3PM   # Juergen, 56626 Andernach; PC LINUX
 44.130.42.21    DF9PV   # Franz Kohlmann, 56564 Neuwied; Amiga
-44.130.42.22    DK4DA   # Dietmar Bienek, 56414 Meudt
-44.130.42.30    DC1PIA  # Franz Kohlmann, 56564 Neuwied; Amiga
-44.130.42.50    DB7JI-1 # Kajo, Mendig; Wampes-Router
-44.130.42.51    DF4PM-2 # Heinz, 56073 Koblenz; Wampes-Router
+44.130.42.22    DK4DA   # Dietmar
+44.130.42.23    DG3EKE  # Hartmut, Spessart nr. Mayen
+44.130.42.30    DC1PIA  # Thomas Lehnet, Koblenz
+44.130.42.50    DB7JI-1 # Kajo, Kobern, WAMPES-Router
+44.130.42.51    DF4PM-2 # Heinz, 56073 Koblenz; WAMPES-Router
+44.130.42.52    DF4PM-nb # Heinz, 56073 Koblenz; Notebook
 44.130.42.100   DB0LJ-R # ; Wampes Router
-44.130.42.101   DB0LJ-B # ; DieBox/PC-NFS-Client
-44.130.42.102   DB0LJ-O # ; OS/2-Server/PC-NFS-Client
+44.130.42.101   DB0LJ-B # ; PC-NFS-Client
+44.130.42.102   DB0LJ-O # ; OS2-Server/PC-NFS-Client Modemserver
 #
 #44.130.44.x    Trier, Eifel
 # --- lokale Adresskoordination: DG6VJ
@@ -3296,7 +3303,7 @@
 #44.130.88.x    Leipzig
 # lokale Adresskoordination: DL9WUM
 44.130.88.1     DL8WPM  # Henry Luedemann, Leipzig
-44.130.88.2     DL8WIZ  # Micha Neumann, Leipzig  ax25: DL8WIZ-2
+44.130.88.2     DL8WIZ  # Micha Neumann, Leipzig
 44.130.88.3     DL9WIZ  # Ron Ruemmler, Leipzig
 44.130.88.4     DL3LST  # Rainer Streubel, Leipzig
 44.130.88.5     DL3LSM-2        # Mario Illgen
@@ -3310,28 +3317,32 @@
 44.130.88.18    DG0LAT  # Uwe Rost, 05516 Markkleeberg
 44.130.88.19    DL5YYM  # Guenter Dornblut, 04179 Leipzig
 44.130.88.21    DG0LGJ  # Torsten, Rosswein
-44.130.88.22    DG0LGF  # Axel Maercker, Leipzig  ax25: DG0LGF-14
+44.130.88.22    DG0LGF  # Axel Maercker, Leipzig
 44.130.88.24    DG0LHW  # Mike Wittenbecher, 04315 Leipzig
 44.130.88.25    DL8LWH  # Hendrik Wendschuch, Leipzig
-44.130.88.26    DL5YRM  # Tom Bolle, Leipzig
 44.130.88.28    DG2LWD  # Andreas Donat, 04347 Leipzig
-44.130.88.29    DG0LHL  # Wilfried Ploog, 04349 Leipzig
 44.130.88.31    DG0LSK  # Klaus Schollmeyer, 04299 Leipzig
 44.130.88.36    DG0LEH  # Edgar Hornig, 04277 Leipzig
 44.130.88.37    DL2LQA  # Jo Hoppe, 04229 Leipzig
 44.130.88.38    DB5RB   # Raoul Brosch, Markkleeberg
 44.130.88.39    DC6HB   # Holger Baumgaertner, 04157 Leipzig
-44.130.88.40    DC6HB-2 # System2  ax25: DC6HB-2
-44.130.88.41    DB5RB-2 # System2  ax25: DB5RB-2
+44.130.88.40    DC6HB-2 #
+44.130.88.41    DB5RB-2 #
 44.130.88.42    DF8MM   # Uwe Kasubek, Delitzsch
 44.130.88.43    DL1DRZ  # Wilfried Reil, 04157 Leipzig
 44.130.88.44    DC3WW   # Wolfgang Winter, 04357 Leipzig
-44.130.88.45    DC3WW-D # ax25: DC3WW-2
+44.130.88.45    DC3WW-D #
 44.130.88.46    DC8AS   # Achim Schulze, 04209 Leipzig
 44.130.88.47    DG0LHG  # Heiko, Aschershain Loc:JO61LC
-44.130.88.50    DC3WW-U # ax25: DC3WW-1
+44.130.88.48    DC6WP   # Wilfried Ploog, 04349 Leipzig
+44.130.88.49    DD3ML   # Maik Lemp, 04209 Leipzig
+44.130.88.50    DC3WW-U #
 44.130.88.51    DC3WW-TEST #
-44.130.88.100   DB0LPZ-SVR  # ax25: DB0LPZ-10
+44.130.88.52    DG2LVS  # Volker Smok, 04207 Leipzig
+44.130.88.53    DH1WP   # Wolfgang Pruess, Leipzig
+44.130.88.54    DL5ZD   # Tom Bolle, Leipzig
+44.130.88.88    DC6HB-A #
+44.130.88.100   DB0LPZ-SVR  # DB0LPZ-10
 #
 #44.130.89.x    Chemnitz
 44.130.89.1     Y28PN   # Uwe Huebner, O-9052 Chemnitz; UNIX/NOS
