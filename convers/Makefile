@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.2 1991/10/03 11:09:31 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/Makefile,v 1.3 1991/11/22 16:17:01 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 CFLAGS     = -O -s
@@ -9,10 +9,10 @@ SHELL      = /bin/sh
 all:    convers conversd
 
 convers: convers.c $(BUILDSADDR)
-	$(CC) $(CFLAGS) convers.c $(BUILDSADDR) -o $@
+	$(CC) $(CFLAGS) -I../src convers.c $(BUILDSADDR) -o $@
 
 conversd: conversd.c $(BUILDSADDR)
-	$(CC) $(CFLAGS) conversd.c $(BUILDSADDR) -o $@
+	$(CC) $(CFLAGS) -I../src conversd.c $(BUILDSADDR) -o $@
 
 install: /usr/local/bin/convers /tcp/conversd
 

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.7 1991/10/03 11:07:29 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.8 1991/11/22 16:21:01 deyke Exp $
 
 BUILDSADDR = ../src/buildsaddr.o
 CFLAGS     = -O -s
@@ -10,7 +10,7 @@ all:    bridge cnet netupdc netupds path pop2d udbm vitals
 
 bridge: bridge.c $(BUILDSADDR)
 	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0
-	$(CC) $(CFLAGS) bridge.c $(BUILDSADDR) -o $@
+	$(CC) $(CFLAGS) -I../src bridge.c $(BUILDSADDR) -o $@
 
 cnet:   cnet.c $(BUILDSADDR)
 	@mv -f $@ /tmp/old.$$$$ >/dev/null 2>&1 ; exit 0

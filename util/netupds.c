@@ -1,8 +1,8 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.6 1991/10/25 14:21:27 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.7 1991/11/22 16:21:03 deyke Exp $ */
 
 /* Net Update Server */
 
-#define _HPUX_SOURCE    1
+#define _HPUX_SOURCE
 
 #include <sys/types.h>
 
@@ -24,7 +24,6 @@
 static void pexit __ARGS((const char *s));
 static void doread __ARGS((int fd, char *buf, size_t cnt));
 static void dowrite __ARGS((int fd, const char *buf, size_t cnt));
-int main __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
 

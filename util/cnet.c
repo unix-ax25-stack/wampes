@@ -1,4 +1,4 @@
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.10 1991/10/10 17:27:23 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/cnet.c,v 1.11 1991/11/22 16:21:02 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -15,10 +15,19 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <time.h>
 #include <unistd.h>
 
-#if defined(__STDC__)
+#ifdef ISC
+#include <sys/tty.h>
+#include <sys/stream.h>
+#include <sys/ptem.h>
+#include <sys/pty.h>
+#define FIOSNBIO        FIONBIO
+#endif
+
+#if defined(__TURBOC__) || defined(__STDC__)
 #define __ARGS(x)       x
 #else
 #define __ARGS(x)       ()
+#define const
 #endif
 
 #include "buildsaddr.h"
@@ -49,7 +58,6 @@ static void close_terminal __ARGS((void));
 static void terminate __ARGS((void));
 static void recvq __ARGS((int fd, struct mbuf **qp));
 static void sendq __ARGS((int fd, struct mbuf **qp));
-int main __ARGS((int argc, char **argv));
 
 /*---------------------------------------------------------------------------*/
 
@@ -118,7 +126,7 @@ struct mbuf **qp;
 
   n = read(fd, buf, sizeof(buf));
   if (n <= 0) terminate();
-  bp = malloc(sizeof(struct mbuf ) + n);
+  bp = malloc(sizeof(*bp) + n);
   if (!bp) terminate();
   bp->next = 0;
   bp->cnt = n;
@@ -154,21 +162,25 @@ struct mbuf **qp;
 
 /*---------------------------------------------------------------------------*/
 
-int  main(argc, argv)
-int  argc;
-char  **argv;
+int main(argc, argv)
+int argc;
+char **argv;
 {
 
-  char  *server;
-  int  addrlen;
-  int  flags;
-  int  rmask;
-  int  wmask;
-  long  arg;
+  char *server;
+  int addrlen;
+  int flags;
+  int rmask;
+  int wmask;
+  long arg;
   struct sockaddr *addr;
   struct termio curr_termio;
 
+#ifdef ISC
+  server = (argc < 2) ? "*:4720" : argv[1];
+#else
   server = (argc < 2) ? "unix:/tcp/.sockets/netkbd" : argv[1];
+#endif
   if (!(addr = build_sockaddr(server, &addrlen))) {
     fprintf(stderr, "%s: Cannot build address from \"%s\"\n", *argv, server);
     exit(1);

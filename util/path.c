@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.3 1991/07/16 17:36:35 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.4 1991/11/22 16:21:03 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -12,6 +12,7 @@ static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampe
 #define __ARGS(x)       x
 #else
 #define __ARGS(x)       ()
+#define const
 #endif
 
 #define NULLCHAR        ((char *) 0)
@@ -219,7 +220,7 @@ int  create;
   hashval = axroute_hash(call);
   for (rp = axroute_tab[hashval]; rp && !addreq(rp->call, call); rp = rp->next) ;
   if (!rp && create) {
-    rp = (struct axroute_tab *) calloc(1, sizeof(struct axroute_tab ));
+    rp = calloc(1, sizeof(*rp));
     addrcp(rp->call, call);
     rp->next = axroute_tab[hashval];
     axroute_tab[hashval] = rp;

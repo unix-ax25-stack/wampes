@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.9 1991/10/25 14:21:25 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/bridge.c,v 1.10 1991/11/22 16:21:01 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -19,7 +19,7 @@ static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampe
 #define const
 #endif
 
-struct sockaddr *build_sockaddr __ARGS((char *name, int *addrlen));
+#include "buildsaddr.h"
 
 /* SLIP constants */
 
@@ -63,20 +63,10 @@ static char  nr_bdcst[] = {
 static int  filemask;
 static struct conn *connections;
 
-static void sigpipe_handler __ARGS((int sig, int code, struct sigcontext *scp));
 static void create_conn __ARGS((int flisten));
 static void close_conn __ARGS((struct conn *p));
 static int addreq __ARGS((char *a, char *b));
 static void route_packet __ARGS((struct conn *p));
-
-/*---------------------------------------------------------------------------*/
-
-static void sigpipe_handler(sig, code, scp)
-int  sig, code;
-struct sigcontext *scp;
-{
-  scp->sc_syscall_action = SIG_RETURN;
-}
 
 /*---------------------------------------------------------------------------*/
 
@@ -91,7 +81,7 @@ int  flisten;
   addrlen = 0;
   fd = accept(flisten, &addr, &addrlen);
   if (fd >= 0) {
-    p = (struct conn *) calloc(1, sizeof(struct conn ));
+    p = calloc(1, sizeof(*p));
     p->fd = fd;
     p->mask = (1 << p->fd);
     filemask |= p->mask;
@@ -177,16 +167,12 @@ int main()
   int n;
   int readmask;
   struct conn *p;
-  struct sigvec vec;
   struct sockaddr *addr;
 
   for (n = 0; n < _NFILE; n++) close(n);
   chdir("/");
   setpgrp();
-
-  vec.sv_mask = vec.sv_flags = 0;
-  vec.sv_handler = sigpipe_handler;
-  sigvector(SIGPIPE, &vec, (struct sigvec *) 0);
+  signal(SIGPIPE, SIG_IGN);
 
   addr = build_sockaddr("*:4713", &addrlen);
   if (!addr) exit(1);

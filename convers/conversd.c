@@ -1,4 +1,4 @@
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.17 1991/06/17 14:13:37 deyke Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/convers/conversd.c,v 2.18 1991/11/22 16:17:02 deyke Exp $";
 
 #define _HPUX_SOURCE
 
@@ -17,16 +17,21 @@ static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampe
 #include <unistd.h>
 #include <utmp.h>
 
+#ifndef O_NOCTTY
+#define O_NOCTTY 0
+#endif
+
 extern struct utmp *getutent();
 extern void endutent();
 
-#ifdef __STDC__
+#if defined(__TURBOC__) || defined(__STDC__)
 #define __ARGS(x)       x
 #else
 #define __ARGS(x)       ()
+#define const
 #endif
 
-#include "../src/buildsaddr.h"
+#include "buildsaddr.h"
 
 #define MAXCHANNEL 32767
 
@@ -82,12 +87,11 @@ struct permlink {
 
 struct utsname utsname;
 
-static char  *myhostname;
-static long  currtime;
+static char *myhostname;
+static long currtime;
 static struct connection *connections;
 static struct permlink *permlinks;
 
-static void sigpipe_handler __ARGS((int sig, int code, struct sigcontext *scp));
 static void appendstring __ARGS((struct mbuf **bpp, char *string));
 static int queuelength __ARGS((struct mbuf *bp));
 static void freequeue __ARGS((struct mbuf **bpp));
@@ -127,15 +131,6 @@ static void read_configuration __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
 
-static void sigpipe_handler(sig, code, scp)
-int  sig, code;
-struct sigcontext *scp;
-{
-  scp->sc_syscall_action = SIG_RETURN;
-}
-
-/*---------------------------------------------------------------------------*/
-
 static void appendstring(bpp, string)
 struct mbuf **bpp;
 char  *string;
@@ -144,7 +139,7 @@ char  *string;
 
   if (!*string) return;
 
-  bp = (struct mbuf *) malloc(sizeof(struct mbuf ) + strlen(string) + 1);
+  bp = malloc(sizeof(*bp) + strlen(string) + 1);
   bp->next = NULLMBUF;
   bp->data = strcpy((char *) (bp + 1), string);
 
@@ -193,7 +188,7 @@ register struct connection *cp;
     if (p->connection == cp) p->connection = NULLCONNECTION;
   if (cp->fmask) close(cp->fd);
   freequeue(&cp->obuf);
-  free((char *) cp);
+  free(cp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -320,7 +315,7 @@ int  fd;
     close(fd);
     return 0;
   }
-  cp = (struct connection *) calloc(1, sizeof(struct connection ));
+  cp = calloc(1, sizeof(*cp));
   cp->fd = fd;
   cp->fmask = (1 << fd);
   cp->time = currtime;
@@ -489,9 +484,9 @@ int  channel;
       sprintf(buffer, "/dev/%s", up->ut_line);
       if (stat(buffer, &stbuf)) continue;
       if ((stbuf.st_mode & 2) != 2) continue;
-      if ((fd = open(buffer, O_WRONLY, 0644)) < 0) continue;
+      if ((fd = open(buffer, O_WRONLY | O_NOCTTY, 0644)) < 0) continue;
       sprintf(buffer, invitetext, fromname, timestring(currtime), channel);
-      write(fd, buffer, (unsigned) strlen(buffer));
+      write(fd, buffer, strlen(buffer));
       close(fd);
       endutent();
       clear_locks();
@@ -740,7 +735,7 @@ struct connection *cp;
   if (!*cp->name) return;
   cp->type = CT_USER;
   strcpy(cp->host, myhostname);
-  sprintf(buffer, "conversd @ %s $Revision: 2.17 $  Type /HELP for help.\n", myhostname);
+  sprintf(buffer, "conversd @ %s $Revision: 2.18 $  Type /HELP for help.\n", myhostname);
   appendstring(&cp->obuf, buffer);
   newchannel = atoi(getarg(0, 0));
   if (newchannel < 0 || newchannel > MAXCHANNEL) {
@@ -918,7 +913,7 @@ struct connection *cp;
 	!strcmp(p->name, name)   &&
 	!strcmp(p->host, host))  break;
   if (!p) {
-    p = (struct connection *) calloc(1, sizeof(struct connection ));
+    p = calloc(1, sizeof(*p));
     p->type = CT_USER;
     strcpy(p->name, name);
     strcpy(p->host, host);
@@ -1006,14 +1001,13 @@ static void read_configuration()
   if (!(fp = fopen(conffile, "r"))) return;
   if (fgets(line, sizeof(line), fp)) {
     host_name = getarg(line, 0);
-    if (*host_name)
-      myhostname = strcpy(malloc((unsigned) (strlen(host_name) + 1)), host_name);
+    if (*host_name) myhostname = strdup(host_name);
   }
   while (fgets(line, sizeof(line), fp)) {
     host_name = getarg(line, 0);
     sock_name = getarg(0, 0);
     if (*host_name && *sock_name) {
-      p = (struct permlink *) calloc(1, sizeof(struct permlink ));
+      p = calloc(1, sizeof(*p));
       strcpy(p->name, host_name);
       strcpy(p->socket, sock_name);
       strcpy(p->command, getarg(0, 1));
@@ -1027,14 +1021,17 @@ static void read_configuration()
 
 /*---------------------------------------------------------------------------*/
 
-main(argc, argv)
-int  argc;
-char  **argv;
+int main(argc, argv)
+int argc;
+char **argv;
 {
 
-  static char  *socketnames[] = {
+  static char *socketnames[] = {
+#ifdef ISC
+    "*:3600",
+#else
     "unix:/tcp/sockets/convers",
-/** "*:convers",                  Currently not used **/
+#endif
     (char *) 0
   };
 
@@ -1042,25 +1039,22 @@ char  **argv;
     60, 0
   };
 
-  char  buffer[2048];
-  int  addrlen;
-  int  arg;
-  int  flisten[_NFILE], flistenmask[_NFILE];
-  int  i;
-  int  nfd, rmask, wmask;
-  int  size;
+  char buffer[2048];
+  int addrlen;
+  int arg;
+  int flisten[_NFILE], flistenmask[_NFILE];
+  int i;
+  int nfd, rmask, wmask;
+  int size;
   struct connection *cp;
   struct mbuf *bp;
-  struct sigvec vec;
   struct sockaddr *addr;
 
   umask(022);
   for (i = 0; i < _NFILE; i++) close(i);
   chdir("/");
   setpgrp();
-  vec.sv_mask = vec.sv_flags = 0;
-  vec.sv_handler = sigpipe_handler;
-  sigvector(SIGPIPE, &vec, (struct sigvec *) 0);
+  signal(SIGPIPE, SIG_IGN);
   if (!getenv("TZ")) putenv("TZ=MEZ-1MESZ");
   uname(&utsname);
   myhostname = utsname.nodename;
@@ -1070,7 +1064,7 @@ char  **argv;
     read_configuration();
   } else {
     socketnames[0] = argv[1];
-    socketnames[1] = (char *) 0;
+    socketnames[1] = 0;
   }
 
   for (i = 0; socketnames[i]; i++) {
@@ -1148,7 +1142,7 @@ char  **argv;
 	}
 
       if (wmask & cp->fmask) {
-	size = write(cp->fd, cp->obuf->data, (unsigned) strlen(cp->obuf->data));
+	size = write(cp->fd, cp->obuf->data, strlen(cp->obuf->data));
 	if (size < 0)
 	  bye_command(cp);
 	else {

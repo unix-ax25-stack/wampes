@@ -1,10 +1,10 @@
 /* User Data Base Manager */
 
-static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.11 1991/10/25 14:21:28 deyke Exp $";
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.12 1991/11/22 16:21:04 deyke Exp $";
 
 #define DEBUG           0
 
-#define _HPUX_SOURCE    1
+#define _HPUX_SOURCE
 
 #include <sys/types.h>
 
@@ -107,7 +107,6 @@ static void output_line __ARGS((const struct user *up, FILE *fp));
 static int fixusers __ARGS((void));
 static void fixpasswd __ARGS((void));
 static void fixaliases __ARGS((void));
-int main __ARGS((void));
 
 /*---------------------------------------------------------------------------*/
 
