@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.29 1994/10/09 08:22:51 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/iproute.c,v 1.30 1995/10/06 21:21:11 deyke Exp $ */
 
 /* Lower half of IP, consisting of gateway routines
  * Includes routing and options processing code
@@ -108,13 +108,13 @@ int rxbroadcast)        /* True if packet had link broadcast address */
 		return -1;
 	}
 
-	if(i_iface != NULLIF && !(i_iface->flags & NO_RT_ADD) && ismyaddr(ip.source) == NULLIF)
-		rt_add(ip.source, 32, 0L, i_iface, 1L, 0x7fffffff / 1000, 0);
-
 	if(!ipfilter(ip.dest)){
 		free_p(bp);
 		return -1;
 	}
+
+	if(i_iface != NULLIF && !(i_iface->flags & NO_RT_ADD) && ismyaddr(ip.source) == NULLIF)
+		rt_add(ip.source, 32, 0L, i_iface, 1L, 0x7fffffff / 1000, 0);
 
 	/* Trim data segment if necessary. */
 	length = ip.length - ip_len;    /* Length of data portion */
