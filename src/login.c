@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.40 1993/06/10 09:43:47 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.41 1993/06/14 13:53:41 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -222,13 +222,13 @@ struct passwd *getpasswdentry(const char *name, int create)
 {
 
   FILE *fp;
-  char bitmap[MAXUID+1];
   char cmdbuf[1024];
   char homedir[80];
   char homedirparent[80];
   int fd;
   int secured = 0;
   int uid;
+  static char bitmap[MAXUID+1];         /* Keep off the stack */
   struct passwd *pw;
   struct stat statbuf;
 
