@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.16 1994/02/28 11:55:42 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.17 1994/04/13 09:52:05 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -177,7 +177,7 @@ static struct ax_route *ax_routeptr(const char *call, int create)
 	for (rp = *tp; rp && !addreq(rp->target, call); rp = rp->next)
 		;
 	if (!rp && create) {
-		rp = calloc(1, sizeof(*rp));
+		rp = (struct ax_route *) calloc(1, sizeof(*rp));
 		addrcp(rp->target, call);
 		rp->next = *tp;
 		*tp = rp;

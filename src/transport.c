@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.14 1994/02/19 17:50:12 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/transport.c,v 1.15 1994/04/13 09:51:52 deyke Exp $ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -213,7 +213,7 @@ struct transport_cb *transport_open(const char *protocol, const char *address, v
 {
   struct transport_cb *tp;
 
-  tp = calloc(1, sizeof(*tp));
+  tp = (struct transport_cb *) calloc(1, sizeof(*tp));
   tp->r_upcall = r_upcall;
   tp->t_upcall = t_upcall;
   tp->s_upcall = s_upcall;

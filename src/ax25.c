@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.20 1994/02/28 11:55:11 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.21 1994/04/13 09:51:38 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -409,7 +409,7 @@ int create;
 	for (rp = *tp; rp && !addreq(rp->target, call); rp = rp->next)
 		;
 	if (!rp && create) {
-		rp = calloc(1, sizeof(*rp));
+		rp = (struct ax_route *) calloc(1, sizeof(*rp));
 		addrcp(rp->target, call);
 		rp->next = *tp;
 		*tp = rp;

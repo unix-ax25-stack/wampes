@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.10 1993/12/29 16:32:17 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.11 1994/04/13 09:51:44 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -180,7 +180,7 @@ int ipip_attach(int argc, char *argv[], void *p)
   ifp->flags = NO_RT_ADD;
   setencap(ifp, "None");
 
-  edv = malloc(sizeof(*edv));
+  edv = (struct edv_t *) malloc(sizeof(*edv));
   edv->type = type;
   edv->port = port;
   edv->fd = fd;

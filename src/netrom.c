@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.39 1993/05/17 13:45:10 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/netrom.c,v 1.40 1994/04/13 09:51:47 deyke Exp $ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -156,7 +156,7 @@ static struct node *nodeptr(const char *call, int create)
 
   for (pn = nodes; pn && !addreq(call, pn->call); pn = pn->next) ;
   if (!pn && create) {
-    pn = calloc(1, sizeof(*pn));
+    pn = (struct node *) calloc(1, sizeof(*pn));
     pn->call = malloc(AXALEN);
     addrcp(pn->call, call);
     memset(pn->ident, ' ', IDENTLEN);
@@ -268,9 +268,9 @@ static struct linkinfo *linkinfoptr(struct node *node1, struct node *node2)
 
   for (pl = node1->links; pl; pl = pl->next)
     if (pl->node == node2) return pl->info;
-  pi = calloc(1, sizeof(*pi));
+  pi = (struct linkinfo *) calloc(1, sizeof(*pi));
   pi->source = INFINITY;
-  pl = calloc(1, sizeof(*pl));
+  pl = (struct link *) calloc(1, sizeof(*pl));
   pl->node = node2;
   pl->info = pi;
   if (node1->links) {
@@ -278,7 +278,7 @@ static struct linkinfo *linkinfoptr(struct node *node1, struct node *node2)
     node1->links->prev = pl;
   }
   node1->links = pl;
-  pl = calloc(1, sizeof(*pl));
+  pl = (struct link *) calloc(1, sizeof(*pl));
   pl->node = node1;
   pl->info = pi;
   if (node2->links) {
@@ -985,7 +985,7 @@ static struct circuit *create_circuit(void)
   static int nextid;
   struct circuit *pc;
 
-  pc = calloc(1, sizeof(*pc));
+  pc = (struct circuit *) calloc(1, sizeof(*pc));
   nextid++;
   pc->localindex = uchar(nextid >> 8);
   pc->localid = uchar(nextid);
@@ -1622,7 +1622,7 @@ static int dobroadcast(int argc, char *argv[], void *p)
     return 0;
   }
 
-  bp = calloc(1, sizeof(*bp));
+  bp = (struct broadcast *) calloc(1, sizeof(*bp));
   if (!(bp->iface = if_lookup(argv[1]))) {
     printf("Interface \"%s\" unknown\n", argv[1]);
     free(bp);

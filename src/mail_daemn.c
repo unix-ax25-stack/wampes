@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.17 1994/02/07 12:38:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.18 1994/04/13 09:51:46 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -184,7 +184,7 @@ static void read_configuration(void)
     for (mailer = Mailers; mailer->name; mailer++)
       if (!strcmp(mailer->name, mailername)) break;
     if (!mailer->name) continue;
-    sp = calloc(1, sizeof(*sp));
+    sp = (struct mailsys *) calloc(1, sizeof(*sp));
     sp->sysname = strdup(sysname);
     sp->mailer = mailer;
     sp->protocol = strdup(protocol);
@@ -236,7 +236,7 @@ static void mail_tick(char *sysname)
     cnt = 0;
     for (dp = readdir(dirp); dp; dp = readdir(dirp)) {
       if (*dp->d_name != 'C') continue;
-      p = malloc(sizeof(*p));
+      p = (struct filelist *) malloc(sizeof(*p));
       strcpy(p->name, dp->d_name);
       if (!filelist || strcmp(p->name, filelist->name) < 0) {
 	p->next = filelist;
@@ -303,7 +303,7 @@ static void mail_tick(char *sysname)
 	sprintf(mj.return_reason, "520 %s... Cannot connect for %d days\n", sp->sysname, RETURNTIME / (60L*60*24));
 	mail_return(&mj);
       } else {
-	jp = malloc(sizeof(*jp));
+	jp = (struct mailjob *) malloc(sizeof(*jp));
 	*jp = mj;
 	if (!sp->jobs)
 	  sp->jobs = jp;

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.15 1993/10/01 13:36:05 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.16 1994/04/13 09:51:41 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -233,7 +233,7 @@ int32 addr;
 
   for (cp = Cache; cp; cp = cp->next)
     if (cp->addr == addr && !strcmp(cp->name, name)) return;
-  cp = malloc(sizeof(*cp) + strlen(name));
+  cp = (struct cache *) malloc(sizeof(*cp) + strlen(name));
   strcpy(cp->name, name);
   cp->addr = addr;
   cp->next = Cache;
@@ -642,7 +642,7 @@ struct mbuf *bp;
   struct rr *qp;
   struct rr *rrp;
 
-  dhp = malloc(sizeof(*dhp));
+  dhp = (struct dhdr *) malloc(sizeof(*dhp));
   if (ntohdomain(dhp, &bp)) goto Done;
   if (Dtrace) {
     printf("recv: ");

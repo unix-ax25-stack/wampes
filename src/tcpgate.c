@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.10 1993/05/17 13:45:19 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpgate.c,v 1.11 1994/04/13 09:51:50 deyke Exp $ */
 
 #include "global.h"
 
@@ -132,7 +132,7 @@ int tcpgate1(int argc, char *argv[], void *p)
     name = argv[2];
   for (dp = dests; dp && dp->port != lsocket.port; dp = dp->next) ;
   if (!dp) {
-    dp = malloc(sizeof(*dp));
+    dp = (struct dest *) malloc(sizeof(*dp));
     dp->port = lsocket.port;
     dp->name = 0;
     dp->next = dests;

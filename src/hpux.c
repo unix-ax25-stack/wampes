@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.48 1994/02/07 12:38:55 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/hpux.c,v 1.49 1994/04/13 09:51:42 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -367,7 +367,7 @@ void on_death(int pid, void (*fnc)(void *), void *arg)
       p->arg = arg;
       return;
     }
-  p = malloc(sizeof(*p));
+  p = (struct proc_t *) malloc(sizeof(*p));
   p->pid = pid;
   p->fnc = fnc;
   p->arg = arg;

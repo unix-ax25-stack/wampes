@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.13 1993/05/17 13:45:21 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpsubr.c,v 1.14 1994/04/13 09:51:51 deyke Exp $ */
 
 /* Low level TCP routines:
  *  control block management
@@ -294,7 +294,7 @@ int32 rtt;
 		tp->mdev = ((DGAIN-1)*tp->mdev + abserr + (DGAIN/2)) >> LDGAIN;
 		return;
 	    }
-	tp = malloc(sizeof(*tp));
+	tp = (struct tcp_rtt *) malloc(sizeof(*tp));
 	tp->addr = addr;
 	tp->srtt = rtt;
 	tp->mdev = 0;

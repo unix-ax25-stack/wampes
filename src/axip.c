@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.17 1993/12/29 16:32:14 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/axip.c,v 1.18 1994/04/13 09:51:39 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -234,7 +234,7 @@ int axip_attach(int argc, char *argv[], void *p)
   ifp->crccontrol = CRC_CCITT;
   setencap(ifp, "AX25UI");
 
-  edv = malloc(sizeof(*edv));
+  edv = (struct edv_t *) malloc(sizeof(*edv));
   edv->type = type;
   edv->port = port;
   edv->fd = fd;
@@ -257,7 +257,7 @@ static void axip_route_add(char *call, int32 dest)
 
   for (rp = Axip_routes; rp && !addreq(rp->call, call); rp = rp->next) ;
   if (!rp) {
-    rp = malloc(sizeof(*rp));
+    rp = (struct axip_route *) malloc(sizeof(*rp));
     addrcp(rp->call, call);
     rp->next = Axip_routes;
     Axip_routes = rp;

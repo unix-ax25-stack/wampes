@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.75 1994/04/05 08:08:52 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.76 1994/04/13 09:51:57 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -914,7 +914,7 @@ static struct mail *alloc_mail(void)
 {
   struct mail *mail;
 
-  mail = calloc(1, sizeof(*mail));
+  mail = (struct mail *) calloc(1, sizeof(*mail));
   mail->lifetime = -1;
   return mail;
 }
@@ -1031,7 +1031,7 @@ static void append_line(struct mail *mail, const char *line)
 {
   struct strlist *p;
 
-  p = malloc(sizeof(*p) + strlen(line));
+  p = (struct strlist *) malloc(sizeof(*p) + strlen(line));
   p->next = 0;
   strcpy(p->str, line);
   if (!mail->head)
@@ -1165,7 +1165,7 @@ static void dir_command(int argc, char **argv)
       if (read_allowed(pi))
 	for (prev = 0, curr = head; ; ) {
 	  if (!curr) {
-	    curr = malloc(sizeof(*curr));
+	    curr = (struct dir_entry *) malloc(sizeof(*curr));
 	    curr->left = curr->right = 0;
 	    curr->count = 1;
 	    strcpy(curr->to, pi->to);
@@ -1309,7 +1309,7 @@ static void f_command(int argc, char **argv)
   if (dirp = opendir(dirname)) {
     for (dp = readdir(dirp); dp; dp = readdir(dirp)) {
       if (*dp->d_name != 'C') continue;
-      p = malloc(sizeof(*p));
+      p = (struct filelist *) malloc(sizeof(*p));
       strcpy(p->name, dp->d_name);
       if (!filelist || strcmp(p->name, filelist->name) < 0) {
 	p->next = filelist;
@@ -2050,7 +2050,7 @@ static void xscreen_command(int argc, char **argv)
   indexarraysize = statbuf.st_size;
   indexarrayentries = indexarraysize / sizeof(struct index);
   if (!indexarrayentries) return;
-  if (!(indexarray = malloc(indexarraysize))) halt();
+  if (!(indexarray = (struct index *) malloc(indexarraysize))) halt();
   if (lseek(fdindex, 0L, SEEK_SET)) halt();
   if (read(fdindex, indexarray, indexarraysize) != indexarraysize) halt();
 
