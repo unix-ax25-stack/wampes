@@ -506,6 +506,14 @@
 44.130.12.64    DD8BA   # Steven Sporkmann, Holdorf; NOS
 44.130.12.65    DC3BW   # Juergen Rinas, Sande; Linux
 44.130.12.66    DL1BFE  # Gregor Ulsamer, Emden; JNOS
+44.130.12.67    DG2BAT  # Bodo Huelsebusch, 260409 Burhafe; WNOS
+44.130.12.68    DL5BCT-J        # Peter Cornelius, 26409 Wittmund; JNOS
+44.130.12.69    DL5BCT-W        # Peter Cornelius, 26409 Wittmund; WNOS
+44.130.12.70    DB0TNC  # Exp.-Knoten/BBS der //WPRG, 26409 Wittmund; WNOS
+44.130.12.71    DK0TNC  # Clubstation der //WPRG, 26409 Wittmund; WNOS
+44.130.12.72    DF0WT   # Schulstation der Humboldt-Schule, Wittmund; WNOS
+44.130.12.73    DL4BCL  # Tim Weyland, 26409 Wittmund-Willen; WNOS
+44.130.12.74    DL4BCK  # Heiko Cassens, 26409 Wittmund; WNOS
 #
 #44.130.13.x    Hildesheim
 # lokale Adresskoordination: DC5ON
@@ -1174,11 +1182,14 @@
 44.130.20.8     dd7wh   # Maria-Theresia Plum, 52064 Aachen
 44.130.20.9     dh8pac  # Monika Plum, 52064 Aachen
 44.130.20.10    dh3kac  # Wolfram Sauerteig, 52062 Aachen
+44.130.20.11    dg8kxl  # Ute Strang 5100 Aachen
 44.130.20.12    dk0af   # AMDAT e.V., 5100 Aachen; SUN-Gateway
 44.130.20.13    dk0af-1 #
 44.130.20.14    dk0af-2 #
 44.130.20.15    dk0af-3 #
 44.130.20.16    dl3no   # Rupert Mohr, 5100 Aachen
+44.130.20.17    dg2khj  # Heinz-Juergen Hartfuss, 52068 Aachen
+44.130.20.18    dl4kon  # Ingo Krause 52134 Merkstein
 44.130.20.20    dl9kar  # Bernd Lettow, 5180 Eschweiler
 44.130.20.21    db3kw   # Georg Schmitz, 5100 Aachen
 44.130.20.22    db3kw-1 #
@@ -1194,7 +1205,7 @@
 44.130.20.41    dj0aal  # Jeronimo Diaz, 5120 Herzogenrath 3
 44.130.20.42    dg6kbb  # Karl de Jong, 5132 Uebach-Palenberg
 44.130.20.43    dg1kfa  # Andreas Franck, 50171 Kerpen, JO30IU
-44.130.20.45    dl1kbl  # Armin Hoelker, 5133 Gangelt
+44.130.20.45    dl1kbl  # Achim Hoelker, 52525 Waldfeucht
 44.130.20.47    dd3kf   # Norbert, Aachen
 44.130.20.48    dg1kbn  # Juergen Jaeger, 5100 Aachen
 44.130.20.49    dg2ksa  # Stephan, Aachen
@@ -1239,6 +1250,7 @@
 44.130.20.100   dd2kz   # Ralf Crumbach, 5100 Aachen
 44.130.20.101   dg3kce  # Frank, Dueren
 44.130.20.102   dg1kao  # Willi Ahn , 51156 Monschau
+44.130.20.103   dg1kao-1 #
 44.130.20.105   dl6kcw  # Manfred, Wegberg
 44.130.20.106   dl1bke-a        # Joerg Reuter, 52072 Aachen
 44.130.20.107   dl1bke-u        # ; LINUX
@@ -1751,7 +1763,11 @@
 44.130.28.30    DL8ZAD  # Juergen, 35789 Weilmuenster nr Wetzlar
 44.130.28.58    DF0WS   # ClubStn F58, 35396 Giessen-Wieseck
 #
-44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc1ik@db0sao
+# KA_HOSTS BEGIN [950902]
+# Hier die Karlsruher IP-Adressen:
+#
+44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc1ik@db0sao.ampr.org
+#                       # erb@inss1.etec.uni-karlsruhe.de
 #
 44.130.29.1  db0rot-w   # JN48ft *** Mailbox Rotensol 76332 Bad Herrenalb
 44.130.29.2  dg9bad-7   #        Thomas Waehner       89171 Illerkirchberg
@@ -1875,17 +1891,15 @@
 44.130.29.120 df7tc     # JN49ea Dirk Canzler         76185 Karlsruhe
 44.130.29.121 dc1ik-d   # JN49ea Olaf Erb             76131 Karlsruhe
 44.130.29.122 dc1ik-e   # JN49ea Olaf Erb             76131 Karlsruhe
-#44.130.29.123
-#44.130.29.124
-#44.130.29.125
-#44.130.29.126
-#44.130.29.127
-#44.130.29.128
-#44.130.29.129
 44.130.29.130 db0sel    # JN48iv Digi Pforzheim       75179 Pforzheim
 44.130.29.131 db0sel-w  # JN48iv Digi Pforzheim       75179 Pforzheim
 44.130.29.132 db0sel-l  # JN48iv Digi Pforzheim       75179 Pforzheim
 44.130.29.133 db0sel-r  # JN48iv Digi Pforzheim       75179 Pforzheim
+44.130.29.134 dg2iav    # JN49EA Michael Steinel      76185 Karlsruhe
+44.130.29.135 dg2gtn    # Thomas Naeger
+44.130.29.136 dg2gtn-w  # Thomas Naeger
+#
+# KA_HOSTS END
 #
 #44.130.30.x    Nordhessen
 # lokale Adresskoordination: DG1ZX-A

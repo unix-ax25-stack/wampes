@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.98 1995/07/01 11:15:19 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.99 1995/09/07 09:26:01 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -187,6 +187,7 @@ static int errors;
 static int export;
 static int fdindex;
 static int level;
+static int output_only;
 static int packetcluster;
 static volatile int stopped;
 
@@ -1698,7 +1699,7 @@ static void f_command(int argc, char **argv)
     }
     close(fdlock);
   }
-  if (!do_forward && !did_any_forward)
+  if (output_only || (!do_forward && !did_any_forward))
     exit(0);
   putchar('F');
 }
@@ -2076,6 +2077,12 @@ static void send_command(int argc, char **argv)
     strcpy(mail->tohost, myhostname);
   if (!*mail->fromuser || level < MBOX)
     strcpy(mail->fromuser, user.name);
+  if (output_only) {
+    if (!got_control_z)
+      puts("No");
+    free_mail(mail);
+    return;
+  }
   if (*mail->bid) {
     generate_bid_and_mid(mail, 1);
     if (nntp_channel.fd < 0)
@@ -2557,7 +2564,7 @@ int main(int argc, char **argv)
   if (!*myhostname || !*mydomain)
     halt();
 
-  while ((c = getopt(argc, argv, "ef:pw:")) != EOF)
+  while ((c = getopt(argc, argv, "ef:opw:")) != EOF)
     switch (c) {
     case 'e':
       if (getuid()) {
@@ -2574,6 +2581,9 @@ int main(int argc, char **argv)
       sysname = optarg;
       do_forward = 1;
       break;
+    case 'o':
+      output_only = 1;
+      break;
     case 'p':
       packetcluster = 1;
       break;
@@ -2587,7 +2597,7 @@ int main(int argc, char **argv)
   if (export && !do_forward) err_flag = 1;
   if (optind < argc) err_flag = 1;
   if (err_flag) {
-    puts("usage: bbs [-w seconds] [-f system [-e]] [-p]");
+    puts("usage: bbs [-w seconds] [-f system [-e]] [-o] [-p]");
     exit(1);
   }
 
