@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.30 1995/01/30 14:15:09 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.dl1sbl-1,v 1.31 1995/02/23 09:54:29 deyke Exp $
 
 hostname     dl1sbl-1
 ax25 mycall  dl1sbl-1
@@ -14,7 +14,7 @@ ax25 route add axip default
 axip route add df3du-1  15.138.80.94            # hpbidmp2.bbn.hp.com
 axip route add df9sr-1  15.136.35.218           # bmdjw.bbn.hp.com
 axip route add dh8saw-1 15.138.72.40            # hpbbis90.bbn.hp.com
-axip route add dj3eg-1  15.136.166.12           # hpbmosm0.bbn.hp.com
+axip route add dj3eg-1  15.136.169.122          # hpbmosm0.bbn.hp.com
 axip route add dk0hu    15.138.33.250           # hp0hu.bbn.hp.com
 axip route add dk5sg    15.15.80.34             # mdddhd.fc.hp.com
 axip route add dl2sel-1 15.136.175.24           # hpcsmus.bbn.hp.com
@@ -29,7 +29,7 @@ route add  db0sao.ampr.org      ipip     15.138.33.250
 route add  df3du-1.ampr.org     ipip     15.138.80.94
 route add  df9sr-1.ampr.org     ipip     15.136.35.218
 route add  dh8saw-1.ampr.org    ipip     15.138.72.40
-route add  dj3eg-1.ampr.org     ipip     15.136.166.12
+route add  dj3eg-1.ampr.org     ipip     15.136.169.122
 route add  dk0hu-u.ampr.org     ipip     15.138.33.250
 route add  dk0hu.ampr.org       ipip     15.138.33.250
 route add  dk5sg-u.ampr.org     ipip     15.15.80.34
