@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.8 1994/02/19 17:50:47 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/configure,v 1.9 1994/04/19 16:33:11 deyke Exp $
 
 findfile()
 {
@@ -97,6 +97,7 @@ findfile WTMP__FILE /var/adm/wtmp /var/log/wtmp /usr/adm/wtmp /etc/wtmp
 echo
 
 findprog GZIP_PROG /usr/bin/gzip /usr/local/bin/gzip
+findprog LS_PROG /bin/ls /usr/bin/ls
 findprog MAIL_PROG /usr/openwin/bin/xview/mail /bin/mailx /usr/bin/mailx /bin/mail /usr/bin/mail
 findprog NEWALIASES_PROG /usr/bin/newaliases /usr/ucb/newaliases
 findprog PATCH_PROG /usr/bin/patch /usr/local/bin/patch

@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.14 1993/03/30 17:24:00 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/dirutil.c,v 1.15 1994/04/19 16:32:51 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -12,6 +12,8 @@
 #include "dirutil.h"
 #include "commands.h"
 
+#include "configure.h"
+
 /* Create a directory listing in a temp file and return the resulting file
  * descriptor. If full == 1, give a full listing; else return just a list
  * of names.
@@ -23,6 +25,8 @@ int full;
 {
 	int fd[2];
 
+	if(!*LS_PROG)
+		return NULLFILE;
 	if(pipe(fd))
 		return NULLFILE;
 	switch(dofork()) {
@@ -35,7 +39,7 @@ int full;
 		dup2(fd[1],1);
 		dup2(fd[1],2);
 		close(fd[1]);
-		execl("/bin/ls",
+		execl(LS_PROG,
 		      "ls",
 		      full ? "-Al" : "-A",
 		      path,
