@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.23 1995/03/24 13:00:04 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/kernel.c,v 1.24 1995/10/25 15:57:41 deyke Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
@@ -17,10 +17,6 @@
 #include "socket.h"
 #include "daemon.h"
 #include "hardware.h"
-
-#ifdef __sgi
-#include <alloca.h>
-#endif
 
 #if defined __hpux || defined ULTRIX_RISC || defined macII
 #define setjmp          _setjmp
@@ -136,9 +132,6 @@ int freeargs)           /* If set, free arg list on parg1 at termination */
 	static void (*func)(int,void *,void *);
 	jmp_buf jmpenv;
 	int i;
-#ifdef __sgi
-	char *cp;
-#endif
 
 	if(Stkchk)
 		chkstk();
@@ -201,16 +194,10 @@ int freeargs)           /* If set, free arg list on parg1 at termination */
 	  longjmp(jmpenv, 1);
 	}
 #elif defined __sgi
-#if 0
 	if (!setjmp(jmpenv)) {
 	  jmpenv[JB_SP] = (int) newstackptr;
 	  longjmp(jmpenv, 1);
 	}
-#else
-	cp = alloca(0);
-	i = cp - (char *) newstackptr;
-	alloca(i);
-#endif
 #elif defined sun
 #if _JBLEN == 9 || _JBLEN == 58
 	if (!setjmp(jmpenv)) {

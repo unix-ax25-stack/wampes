@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.99 1995/09/07 09:26:01 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.100 1995/10/25 15:57:49 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -1380,7 +1380,7 @@ static struct mail *read_mail_or_news_file(const char *filename, enum e_type src
     strcpy(mail->tohost, distribution);
   }
 
-  generate_bid_and_mid(mail, 0);
+  generate_bid_and_mid(mail, src != NEWS);
   if (!*mail->bid) {
     free_mail(mail);
     return 0;

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.81 1995/05/09 21:13:00 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.82 1995/10/25 15:57:43 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -307,7 +307,7 @@ all:;   chmod 755 cc
 	IRIX*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
-		'CFLAGS=-O -signed -DUNIX -DFD_SETSIZE=1024 -I../lib' \
+		'CFLAGS=-O -framepointer -signed -DUNIX -DFD_SETSIZE=1024 -I../lib' \
 		_all;; \
 	Linux*) \
 		$(MAKE) -i -f $(MAKEFILE) \
