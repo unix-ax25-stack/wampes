@@ -4,7 +4,7 @@
 </HEAD>
 <BODY>
 <H1>WAMPES Reference Manual</H1>
-Version 991007
+Version 991024
 <BR>
 <P>
 Dieter Deyke, DK5SG/N0PRA
@@ -675,7 +675,8 @@ The default is 300 milliseconds (0.3 seconds).
 MORE TO BE WRITTEN.
 <H4><A NAME="H4.7.19">4.7.19 ax25 t3 [<I>milliseconds</I>]</A></H4>
 Display or set the AX.25 idle poll timer.
-The default is 900000 milliseconds (15 minutes).
+The default is 900000 milliseconds (15 minutes),
+a value of 0 will disable the timer.
 MORE TO BE WRITTEN.
 <H4><A NAME="H4.7.20">4.7.20 ax25 t4 [<I>milliseconds</I>]</A></H4>
 Display or set the AX.25 busy timer.
@@ -683,7 +684,8 @@ The default is 60000 milliseconds (1 minute).
 MORE TO BE WRITTEN.
 <H4><A NAME="H4.7.21">4.7.21 ax25 t5 [<I>milliseconds</I>]</A></H4>
 Display or set the AX.25 idle disconnect timer.
-The default is 3600000 milliseconds (60 minutes).
+The default is 3600000 milliseconds (60 minutes),
+a value of 0 will disable the timer.
 MORE TO BE WRITTEN.
 <H4><A NAME="H4.7.22">4.7.22 ax25 version [1|2]</A></H4>
 Display or set the version of the AX.25 protocol to attempt to use on

@@ -1,4 +1,4 @@
-.\" @(#) $Id: ax25,v 1.13 1998/03/09 17:46:53 deyke Exp $ -*- Mode: Nroff -*-
+.\" @(#) $Id: ax25,v 1.14 1999/10/24 18:30:13 deyke Exp $ -*- Mode: Nroff -*-
 .H 2 "ax25" " \fIsubcommand\fP"
 These commands control the AX.25 service.
 .H 3 "ax25 blimit" " [\fIlimit\fP]"
@@ -141,7 +141,8 @@ The default is 300 milliseconds (0.3 seconds).
 MORE TO BE WRITTEN.
 .H 3 "ax25 t3" " [\fImilliseconds\fP]"
 Display or set the AX.25 idle poll timer.
-The default is 900000 milliseconds (15 minutes).
+The default is 900000 milliseconds (15 minutes),
+a value of 0 will disable the timer.
 MORE TO BE WRITTEN.
 .H 3 "ax25 t4" " [\fImilliseconds\fP]"
 Display or set the AX.25 busy timer.
@@ -149,7 +150,8 @@ The default is 60000 milliseconds (1 minute).
 MORE TO BE WRITTEN.
 .H 3 "ax25 t5" " [\fImilliseconds\fP]"
 Display or set the AX.25 idle disconnect timer.
-The default is 3600000 milliseconds (60 minutes).
+The default is 3600000 milliseconds (60 minutes),
+a value of 0 will disable the timer.
 MORE TO BE WRITTEN.
 .H 3 "ax25 version" " [1|2]"
 Display or set the version of the AX.25 protocol to attempt to use on
