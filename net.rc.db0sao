@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.18 1993/06/07 06:30:48 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/net.rc.db0sao,v 1.19 1993/06/13 18:36:33 deyke Exp $
 
 hostname     db0sao
 ax25 mycall  db0sao
@@ -77,6 +77,7 @@ icmp trace on
 ip rtimer 300
 ip ttl 30
 log /tcp/net.log
+login logfiledir /tcp/logs
 tcp irtt 60000
 tcp mss 216
 tcp window 2048

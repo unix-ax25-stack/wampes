@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.34 1993/06/10 09:43:41 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/config.c,v 1.35 1993/06/13 18:36:41 deyke Exp $ */
 
 /* A collection of stuff heavily dependent on the configuration info
  * in config.h. The idea is that configuration-dependent tables should
@@ -54,6 +54,10 @@
 #ifdef  CDMA_DM
 #include "dm.h"
 /* #include "rlp.h" */
+#endif
+#ifdef  DMLITE
+#include "dmlite.h"
+#include "rlp.h"
 #endif
 /* #include "dialer.h" */
 
@@ -133,6 +137,9 @@ struct cmds Cmds[] = {
 #ifdef  CDMA_DM
 	"dm",           dodm,           0, 0, NULLCHAR,
 #endif
+#ifdef  DMLITE
+	"dmlite",       dodml,          0, 0, NULLCHAR,
+#endif
 	"domain",       dodomain,       0, 0, NULLCHAR,
 #ifdef  DRSI
 	"drsistat",     dodrstat,       0, 0, NULLCHAR,
@@ -146,6 +153,9 @@ struct cmds Cmds[] = {
 	"escape",       doescape,       0, 0, NULLCHAR,
 #endif
 	"exit",         doexit,         0, 0, NULLCHAR,
+#ifdef  QFAX
+	"fax",          dofax,          4096, 5, "fax <server> <port> <locport> <remote #>",
+#endif
 /*      "files",        dofiles,        0, 0, NULLCHAR, */
 	"finger",       dofinger,       0, 2, "finger name@host",
 	"fkey",         dofkey,         0, 3, "fkey <key#> <text>",
@@ -171,6 +181,9 @@ struct cmds Cmds[] = {
 	"kick",         dokick,         0, 0, NULLCHAR,
 	"log",          dolog,          0, 0, NULLCHAR,
 	"login",        dologin,        0, 0, NULLCHAR,
+#ifdef  LTERM
+	"lterm",        dolterm,        512, 3, "lterm <iface> <address> [<port>]",
+#endif
 #ifdef  MAILBOX
 /*      "mbox",         dombox,         0, 0, NULLCHAR, */
 #endif
@@ -205,6 +218,9 @@ struct cmds Cmds[] = {
 #if     !defined(UNIX) && !defined(AMIGA)
 	"pwd",          docd,           0, 0, NULLCHAR,
 #endif
+#ifdef  QTSO
+	"qtso",         doqtso,         0, 0, NULLCHAR,
+#endif
 	"record",       dorecord,       0, 0, NULLCHAR,
 	"remote",       doremote,       0, 3, "remote [-p port] [-k key] [-a kickaddr] <address> exit|reset|kick",
 	"rename",       dorename,       0, 3, "rename <oldfile> <newfile>",
@@ -236,9 +252,10 @@ struct cmds Cmds[] = {
 	"tcp",          dotcp,          0, 0, NULLCHAR,
 	"telnet",       dotelnet,       0, 2, "telnet <address>",
 #ifdef  notdef
-	"test",         dotest,         0, 0, NULLCHAR,
+	"test",         dotest,         1024, 0, NULLCHAR,
 #endif
-/*      "tip",          dotip,          0, 2, "tip <iface", */
+/*      "tip",          dotip,          256, 2, "tip <iface", */
+/*      "topt",         dotopt,         0, 0, NULLCHAR, */
 #ifdef  TRACE
 	"trace",        dotrace,        0, 0, NULLCHAR,
 #endif
@@ -331,6 +348,9 @@ struct cmds Attab[] = {
 	"   <intack> <vec> [p]<clock> [hdwe] [param]\n"
 	"attach scc <chan> slip|kiss|nrs|ax25ui|ax25i <label> <mtu> <speed> <bufsize> [call] ",
 #endif
+#ifdef  ASY
+/*      "4port",fp_attach, 0, 3, "attach 4port <base> <irq>", */
+#endif
 #ifdef  AX25
 	"axip", axip_attach, 0, 1,
 	"attach axip [<label> [ip|udp [protocol|port]]]",
@@ -350,31 +370,34 @@ static struct cmds Startcmds[] = {
 #if     defined(AX25) && defined(MAILBOX)
 	"ax25",         ax25start,      0, 0, NULLCHAR,
 #endif
-/*      "bsr",          bsr1,           0, 2, "start bsr <interface> [<port>]", */
+/*      "bsr",          bsr1,           256, 2, "start bsr <interface> [<port>]", */
 	"discard",      dis1,           0, 0, NULLCHAR,
 	"domain",       domain1,        0, 0, NULLCHAR,
 	"echo",         echo1,          0, 0, NULLCHAR,
-/*      "finger",       finstart,       0, 0, NULLCHAR, */
+#ifdef  QFAX
+	"fax",          fax1,           256, 0, NULLCHAR,
+#endif
+/*      "finger",       finstart,       256, 0, NULLCHAR, */
 	"ftp",          ftpstart,       0, 0, NULLCHAR,
 	"tcpgate",      tcpgate1,       0, 2, "start tcpgate <tcp port> [<host:service>]",
 #if     defined(NETROM) && defined(MAILBOX)
 	"netrom",       nr4start,       0, 0, NULLCHAR,
 #endif
 #ifdef POP
-	"pop",          pop1,           0, 0, NULLCHAR,
+	"pop",          pop1,           256, 0, NULLCHAR,
 #endif
 #ifdef  RIP
 	"rip",          doripinit,      0,   0, NULLCHAR,
 #endif
 #ifdef  SMTP
-/*      "smtp",         smtp1,          0, 0, NULLCHAR, */
+/*      "smtp",         smtp1,          256, 0, NULLCHAR, */
 #endif
 #if     defined(MAILBOX)
 	"telnet",       telnet1,        0, 0, NULLCHAR,
-/*      "tip",          tipstart,       0, 2, "start tip <interface>", */
+/*      "tip",          tipstart,       256, 2, "start tip <interface>", */
 #endif
-/*      "term",         term1,          0, 0, NULLCHAR, */
-/*      "ttylink",      ttylstart,      0, 0, NULLCHAR, */
+/*      "term",         term1,          256, 0, NULLCHAR, */
+/*      "ttylink",      ttylstart,      256, 0, NULLCHAR, */
 	"remote",       rem1,           0, 0, NULLCHAR,
 	NULLCHAR,
 };
@@ -387,6 +410,9 @@ static struct cmds Stopcmds[] = {
 	"discard",      dis0,           0, 0, NULLCHAR,
 	"domain",       domain0,        0, 0, NULLCHAR,
 	"echo",         echo0,          0, 0, NULLCHAR,
+#if     defined(QFAX)
+	"fax",          fax0,           0, 0, NULLCHAR,
+#endif
 /*      "finger",       fin0,           0, 0, NULLCHAR, */
 	"ftp",          ftp0,           0, 0, NULLCHAR,
 #if     defined(NETROM) && defined(MAILBOX)
@@ -591,8 +617,8 @@ struct iftype Iftypes[] = {
 #endif  /* ARCNET */
 
 #ifdef  QTSO
-	"QTSO",         qtso_send,      qtso_output,    NULL,
-	NULL,           CL_NONE,        0,              qtso_proc,
+	"QTSO",         qtso_send,      NULL,           NULL,
+	NULL,           CL_NONE,        0,              ip_proc,
 	NULLFP,         NULLVFP,        NULLFP,         NULLFP,
 #endif  /* QTSO */
 
@@ -600,6 +626,12 @@ struct iftype Iftypes[] = {
 	"CDMA",         rlp_send,       NULL,           NULL,
 	NULL,           CL_NONE,        0,              ip_proc,
 	NULLFP,         ip_dump,        dd_init,        dd_stat,
+#endif
+
+#ifdef  DMLITE
+	"DMLITE",       rlp_send,       NULL,           NULL,
+	NULL,           CL_NONE,        0,              ip_proc,
+	NULLFP,         ip_dump,        dl_init,        dl_stat,
 #endif
 
 	NULLCHAR,       NULLFP,         NULLFP,         NULL,
@@ -628,6 +660,9 @@ struct asymode Asymode[] = {
 #endif
 #ifdef  QTSO
 	"QTSO",         HDLC_FLAG,      qtso_init,      qtso_free,
+#endif
+#ifdef  DMLITE
+	"DMLITE",       HDLC_FLAG,      dml_init,       dml_stop,
 #endif
 	NULLCHAR
 };

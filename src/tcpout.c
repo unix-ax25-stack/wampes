@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.10 1993/05/17 13:45:20 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/tcpout.c,v 1.11 1993/06/13 18:36:48 deyke Exp $ */
 
 /* TCP output segment processing
  * Copyright 1991 Phil Karn, KA9Q
@@ -16,7 +16,7 @@ static double mybackoff(int n);
 static double mybackoff(n)
 int n;
 {
-  double  b;
+  double b;
 
   for (b = 1.0; n > 0; b *= 1.25, n--) ;
   return b;

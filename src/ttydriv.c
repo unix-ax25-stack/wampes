@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.20 1993/05/17 13:45:25 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ttydriv.c,v 1.21 1993/06/13 18:36:49 deyke Exp $ */
 
 /* TTY input line editing
  */
@@ -56,7 +56,7 @@ struct keytable {
 	char keyaction;
 };
 
-static struct keytable Keytable[] = {
+static const struct keytable Keytable[] = {
 
 	"\001",         TT_UNKNOWN,     KA_LEFT_MAX,
 	"\002",         TT_UNKNOWN,     KA_LEFT_CHAR,

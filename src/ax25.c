@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.17 1993/05/17 13:44:45 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ax25.c,v 1.18 1993/06/13 18:36:40 deyke Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -95,7 +95,7 @@ int tos;
 		hdr.ndigis = hdr.nextdigi = 0;
 		addrcp(hdr.dest,hw_addr);
 		axp = open_ax25(&hdr,
-		 AX_ACTIVE,NULLVFP,NULLVFP,NULLVFP,(char *) 0);
+		 AX_ACTIVE,NULLVFP,NULLVFP,NULLVFP,NULLCHAR);
 		if(axp == NULLAX25){
 			free_p(bp);
 			return -1;

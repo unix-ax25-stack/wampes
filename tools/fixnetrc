@@ -1,11 +1,10 @@
 #! /bin/csh -f
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/fixnetrc,v 1.2 1992/10/16 17:56:44 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/fixnetrc,v 1.3 1993/06/13 18:36:56 deyke Exp $
 
 set nonomatch
 
 rm -f /tmp/iprt.*
-c89 -O -s makeiprt.c -o makeiprt
 
 makeiprt
 if ($status) exit 1
