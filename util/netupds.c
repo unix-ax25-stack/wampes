@@ -1,4 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.14 1993/09/17 09:32:55 deyke Exp $ */
+#ifndef __lint
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.15 1993/10/13 22:31:23 deyke Exp $";
+#endif
 
 /* Net Update Server */
 
@@ -17,6 +19,7 @@
 #include <sys/select.h>
 #endif
 
+#include "configure.h"
 #include "netupd.h"
 
 static void pexit(const char *s);
@@ -110,6 +113,8 @@ int main(void)
   int net_i;
   struct stat statbuf;
 
+  if (!*MAIL_PROG || !*GZIP_PROG) exit(1);
+
   alarm(6 * 3600);
 
   umask(022);
@@ -131,7 +136,7 @@ int main(void)
     open("/dev/null", O_RDWR, 0666);
     open("/dev/null", O_RDWR, 0666);
     close(fdpipe[0]);
-    execl("/usr/bin/mailx", "mailx", "-s", "netupds log", "root", (char *) 0);
+    execl(MAIL_PROG, MAIL_PROG, "-s", "netupds log", "root", (char *) 0);
     exit(1);
   default:
     for (i = 0; i < FD_SETSIZE; i++)
@@ -161,7 +166,7 @@ int main(void)
 	  "/users/funk/dk5sg/tcp/util/genupd %s %s | %s > %s",
 	  client,
 	  (flags & USE_PATCH) ? "patch"   : "ex",
-	  (flags & USE_GZIP)  ? "gzip -9" : "compress",
+	  (flags & USE_GZIP)  ? GZIP_PROG " -9" : "compress",
 	  filename);
   system(buf);
 
@@ -193,7 +198,7 @@ int main(void)
   if (!i) {
     sprintf(buf,
 	    "%s < %s | sh",
-	    (flags & USE_GZIP) ? "gzip -d" : "uncompress",
+	    (flags & USE_GZIP) ? GZIP_PROG " -d" : "uncompress",
 	    filename);
     system(buf);
   }

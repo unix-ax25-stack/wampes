@@ -1,8 +1,8 @@
-/* qth: qth, locator, distance, and course computations */
-
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/qth.c,v 1.10 1993/09/02 10:27:12 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/qth.c,v 1.11 1993/10/13 22:31:24 deyke Exp $";
 #endif
+
+/* qth: qth, locator, distance, and course computations */
 
 #include <ctype.h>
 #include <math.h>

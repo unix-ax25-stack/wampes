@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.17 1993/09/22 16:44:53 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_retrn.c,v 1.18 1993/10/13 22:30:56 deyke Exp $ */
 
 /* Mail Delivery Agent for returned Mails */
 
@@ -9,6 +9,8 @@
 #include <sys/signal.h>
 #endif
 #include <unistd.h>
+
+#include "configure.h"
 
 #include "hpux.h"
 #include "mail.h"
@@ -29,11 +31,8 @@ void mail_return(struct mailjob *jp)
   fopen("/dev/null", "r+");
   fopen("/dev/null", "r+");
   if (fpi = fopen(jp->dfile, "r")) {
-#if defined _AIX || defined __386BSD__ || defined __bsdi__
-    sprintf(line, "/usr/sbin/sendmail -oi -oem -f '<>' %s", jp->from);
-#else
-    sprintf(line, "/usr/lib/sendmail -oi -oem -f '<>' %s", jp->from);
-#endif
+    if (!*SENDMAIL_PROG) exit(1);
+    sprintf(line, "%s -oi -oem -f '<>' %s", SENDMAIL_PROG, jp->from);
     if (!(fpo = popen(line, "w"))) exit(1);
     fprintf(fpo, "From: Mail Delivery Subsystem <MAILER-DAEMON>\n");
     fprintf(fpo, "To: %s\n", jp->from);

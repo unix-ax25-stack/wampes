@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.6 1993/04/02 14:25:45 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/trimfiles,v 1.7 1993/10/13 22:31:31 deyke Exp $
 
 PATH=/usr/5bin:$PATH
 tmp=tmp$$
@@ -12,6 +12,7 @@ for i in `find * -prune -type f '(' \
 	-name '*.h'          -o \
 	-name 'Makefile'     -o \
 	-name 'README'       -o \
+	-name 'configure'    -o \
 	-name 'doc'          -o \
 	-name 'fixnetrc'     -o \
 	-name 'genupd'       -o \

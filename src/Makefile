@@ -1,10 +1,11 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.51 1993/09/24 09:09:58 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.52 1993/10/13 22:30:51 deyke Exp $
 
 CFLAGS        = -I../lib
 
 DEST          = /tcp
 
-EXTHDRS       = ../lib/buildsaddr.h
+EXTHDRS       = ../lib/buildsaddr.h \
+		../lib/configure.h
 
 HDRS          = arp.h \
 		asy.h \
@@ -499,8 +500,9 @@ lcsum.o: global.h ip.h mbuf.h iface.h proc.h timer.h internet.h
 login.o: global.h mbuf.h timer.h hpux.h telnet.h session.h proc.h hardware.h \
 	ax25.h iface.h cmdparse.h commands.h login.h
 mail_bbs.o: global.h mbuf.h timer.h transport.h mail.h
-mail_daemn.o: global.h timer.h mail.h cmdparse.h commands.h
-mail_retrn.o: hpux.h global.h mail.h
+mail_daemn.o: ../lib/configure.h global.h timer.h mail.h cmdparse.h \
+	commands.h
+mail_retrn.o: ../lib/configure.h hpux.h global.h mail.h
 mail_smtp.o: global.h mbuf.h transport.h timer.h mail.h
 mail_subr.o: timer.h global.h mail.h
 main.o: global.h mbuf.h timer.h proc.h iface.h ip.h internet.h tcp.h \

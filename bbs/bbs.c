@@ -1,6 +1,8 @@
-/* Bulletin Board System */
+#ifndef __lint
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.65 1993/10/13 22:31:06 deyke Exp $";
+#endif
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.64 1993/09/22 16:45:07 deyke Exp $";
+/* Bulletin Board System */
 
 #include <sys/types.h>
 
@@ -27,6 +29,7 @@ extern int optind;
 
 #include "bbs.h"
 #include "buildsaddr.h"
+#include "configure.h"
 #include "strdup.h"
 
 #define SECONDS     (1L)
@@ -843,11 +846,7 @@ static void send_to_mail(struct mail *mail)
     case -1:
       _exit(1);
     case 0:
-#if defined _AIX || defined __386BSD__ || defined __bsdi__
-      sprintf(command, "/usr/sbin/sendmail -oi -oem -f %s %s", mail->from, mail->to);
-#else
-      sprintf(command, "/usr/lib/sendmail -oi -oem -f %s %s", mail->from, mail->to);
-#endif
+      sprintf(command, "%s -oi -oem -f %s %s", SENDMAIL_PROG, mail->from, mail->to);
       if (!(fp = popen(command, "w"))) _exit(1);
       fprintf(fp, "From: %s\n", mail->from);
       fprintf(fp, "To: %s\n", mail->to);
@@ -1404,7 +1403,7 @@ static void f_command(int argc, char **argv)
 
   do_not_exit = doforward;
 
-  sprintf(dirname, "/usr/spool/uucp/%s", user.name);
+  sprintf(dirname, "%s/%s", UUCP_DIR, user.name);
   if (dirp = opendir(dirname)) {
     for (dp = readdir(dirp); dp; dp = readdir(dirp)) {
       if (*dp->d_name != 'C') continue;
@@ -1421,19 +1420,19 @@ static void f_command(int argc, char **argv)
     }
     closedir(dirp);
     for (; p = filelist; filelist = p->next, free(p)) {
-      sprintf(cfile, "/usr/spool/uucp/%s/%s", user.name, p->name);
+      sprintf(cfile, "%s/%s/%s", UUCP_DIR, user.name, p->name);
       if (!(fp = fopen(cfile, "r"))) continue;
       *dfile = *xfile = *to = 0;
       while (fgets(line, sizeof(line), fp)) {
 	if (*line == 'E' && sscanf(line, "%*s %*s %*s %*s %*s %s %*s %*s %*s %s %s", tmp1, tmp2, tmp3) == 3 && *tmp1 == 'D' && !strcmp(tmp2, "rmail")) {
-	  sprintf(dfile, "/usr/spool/uucp/%s/%s", user.name, tmp1);
+	  sprintf(dfile, "%s/%s/%s", UUCP_DIR, user.name, tmp1);
 	  sprintf(to, "%s!%s", user.name, tmp3);
 	  strtrim(to);
 	}
 	if (*line == 'S' && sscanf(line, "%*s %*s %s %*s %*s %s", tmp1, tmp2) == 2 && *tmp1 == 'D')
-	  sprintf(dfile, "/usr/spool/uucp/%s/%s", user.name, tmp2);
+	  sprintf(dfile, "%s/%s/%s", UUCP_DIR, user.name, tmp2);
 	if (*line == 'S' && sscanf(line, "%*s %*s %s %*s %*s %s", tmp1, tmp2) == 2 && *tmp1 == 'X')
-	  sprintf(xfile, "/usr/spool/uucp/%s/%s", user.name, tmp2);
+	  sprintf(xfile, "%s/%s/%s", UUCP_DIR, user.name, tmp2);
       }
       fclose(fp);
       if (!*dfile) continue;
@@ -2530,6 +2529,8 @@ int main(int argc, char **argv)
   int c;
   int err_flag = 0;
   struct passwd *pw;
+
+  if (!*UUCP_DIR || !*SENDMAIL_PROG) halt();
 
   signal(SIGINT,  interrupt_handler);
   signal(SIGQUIT, interrupt_handler);

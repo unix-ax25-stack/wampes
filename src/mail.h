@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.12 1993/09/10 16:05:24 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail.h,v 1.13 1993/10/13 22:30:55 deyke Exp $ */
 
 #ifndef _MAIL_H
 #define _MAIL_H
@@ -6,11 +6,6 @@
 #include "global.h"
 
 #define CONFFILE   "/tcp/mail.conf"
-#ifdef __bsdi__
-#define SPOOLDIR   "/var/spool/uucp"
-#else
-#define SPOOLDIR   "/usr/spool/uucp"
-#endif
 #define RETRYTIME  (60L*60)
 #define RETURNTIME (60L*60*24*3)
 #define MAXJOBS    10

@@ -1,4 +1,6 @@
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.13 1993/09/17 09:32:55 deyke Exp $";
+#ifndef __lint
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/path.c,v 1.14 1993/10/13 22:31:24 deyke Exp $";
+#endif
 
 #include <ctype.h>
 #include <stdio.h>

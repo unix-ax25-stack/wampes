@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.39 1993/09/24 09:10:15 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.40 1993/10/13 22:31:22 deyke Exp $
 
 CFLAGS     = -I../lib
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
@@ -168,6 +168,8 @@ depend:; @mkmf
 ###
 cnet.o: ../lib/buildsaddr.h
 md5drivr.o: ../lib/md5.h
-netupdc.o: ../lib/buildsaddr.h netupd.h ../lib/strdup.h
-netupds.o: netupd.h
+netupdc.o: ../lib/buildsaddr.h ../lib/configure.h netupd.h ../lib/strdup.h
+netupds.o: ../lib/configure.h netupd.h
 path.o: ../lib/strdup.h
+pop2d.o: ../lib/configure.h
+udbm.o: ../lib/configure.h

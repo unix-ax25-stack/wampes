@@ -1,3 +1,7 @@
+#ifndef __lint
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/md5drivr.c,v 1.2 1993/10/13 22:31:23 deyke Exp $";
+#endif
+
 /*
  ***********************************************************************
  ** md5driver.c -- sample test routines                               **

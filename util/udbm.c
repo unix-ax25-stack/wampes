@@ -1,8 +1,8 @@
-/* User Data Base Manager */
-
 #ifndef __lint
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.26 1993/09/22 16:45:23 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.27 1993/10/13 22:31:24 deyke Exp $";
 #endif
+
+/* User Data Base Manager */
 
 #define DEBUG           0
 
@@ -18,6 +18,8 @@ static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include "configure.h"
 
 struct user {
   struct user *next;
@@ -49,13 +51,8 @@ static char indexfile[] = "/users/bbs/index";
 static char passfile[]  = "/etc/passwd";
 static char passtemp[]  = "/etc/ptmp";
 static char spassfile[] = "/.secure/etc/passwd";
-#if defined __386BSD__ || defined __bsdi__
-static char aliasfile[] = "/etc/aliases";
-static char aliastemp[] = "/etc/aliases.tmp";
-#else
-static char aliasfile[] = "/usr/lib/aliases";
-static char aliastemp[] = "/usr/lib/aliases.tmp";
-#endif
+static char aliasfile[] = ALIASES_FILE;
+static char aliastemp[] = ALIASES_FILE ".tmp";
 #endif
 
 static const char *lockfile;
@@ -226,7 +223,7 @@ static char *rmspaces(char *s)
 
   for (f = t = s; *f; f++)
     if (*f != ' ') *t++ = *f;
-  *t = '\0';
+  *t = 0;
   return s;
 }
 
@@ -238,7 +235,7 @@ static char *strtrim(char *s)
 
   for (p = s; *p; p++) ;
   while (--p >= s && *p == ' ') ;
-  p[1] = '\0';
+  p[1] = 0;
   return s;
 }
 
@@ -382,7 +379,7 @@ static void output_line(const struct user *up, FILE *fp)
   char *t;
 
   t = line;
-  *t = '\0';
+  *t = 0;
   append(up->call);
   append(up->name);
   append(up->street);
@@ -390,7 +387,7 @@ static void output_line(const struct user *up, FILE *fp)
   append(up->qth);
   append(up->phone);
   append(up->mail);
-  *t = '\0';
+  *t = 0;
   fputs(line, fp);
   putc('\n', fp);
 }
@@ -442,7 +439,7 @@ static int fixusers(void)
     for (t = f = line; *f; f++)
       if (*f != ' ' || f[1] != ' ') *t++ = *f;
     if (t > line && t[-1] == ' ') t--;
-    *t = '\0';
+    *t = 0;
     strcpy(orig_line, line);
     f = line;
     memset((char *) field, 0 , sizeof(field));
@@ -454,7 +451,7 @@ static int fixusers(void)
       field[nf++] = f;
       f = strchr(f, ',');
       if (f)
-	*f++ = '\0';
+	*f++ = 0;
       else
 	f = "";
       strtrim(field[nf-1]);
@@ -532,7 +529,7 @@ static int fixusers(void)
 
   if ((fpi = fopen(indexfile, "r")) != NULL) {
     while (fread((char *) &index, sizeof(index), 1, fpi))
-      if (index.to[0] == 'M' && index.to[1] == '\0'              &&
+      if (index.to[0] == 'M' && index.to[1] == 0                 &&
 	  !strcmp(index.at, "THEBOX")                            &&
 	  is_call(index.from)                                    &&
 	  sscanf(index.subject, "%s %d", mybbs, &timestamp) == 2 &&
@@ -608,16 +605,17 @@ static void fixaliases(void)
   int i;
   struct user *up;
 
+  if (!*aliasfile) return;
   if (!(fpi = fopen(aliasfile, "r"))) terminate(aliasfile);
   fpo = fopenexcl(aliastemp);
   while (fgets(line, sizeof(line), fpi)) {
     if (!strncmp(line, "# Generated", 11)) break;
     fputs(line, fpo);
     if (isspace(uchar(*line))) continue;
-    if ((p = strchr(line, '#')) != NULL) *p = '\0';
+    if ((p = strchr(line, '#')) != NULL) *p = 0;
     if (!(p = strchr(line, ':'))) continue;
     while (--p >= line && isspace(uchar(*p))) ;
-    p[1] = '\0';
+    p[1] = 0;
     if ((up = getup(line, 0)) != NULL) up->alias = 1;
   }
   fclose(fpi);
@@ -654,11 +652,7 @@ int main(void)
     fixpasswd();
     fixaliases();
 #if !DEBUG
-#ifdef sun
-    system("exec /usr/ucb/newaliases >/dev/null 2>&1");
-#else
-    system("exec /usr/bin/newaliases >/dev/null 2>&1");
-#endif
+    if (*NEWALIASES_PROG) system("exec " NEWALIASES_PROG " >/dev/null 2>&1");
 #endif
   }
 

@@ -1,9 +1,16 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.13 1993/08/01 18:07:12 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Makefile,v 1.14 1993/10/13 22:30:42 deyke Exp $
 
 PATH       = /opt/SUNWspro/bin:/usr/lang:/bin:/usr/bin:/usr/ccs/bin:/usr/ucb:/usr/contrib/bin:/usr/local/bin:/usr/local/etc
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
 
-all:;   chmod 755 cc
+all:;   -chmod 755 cc configure
+	-./configure > lib/configure.tmp
+	-if cmp -s lib/configure.tmp lib/configure.h ; then \
+	  rm -f lib/configure.tmp; \
+	else \
+	  rm -f lib/configure.h; \
+	  mv lib/configure.tmp lib/configure.h; \
+	fi
 	-(dir=lib    ; if [ -d $$dir ]; then cd $$dir; make -i all install; fi)
 	-(dir=src    ; if [ -d $$dir ]; then cd $$dir; make -i all install; fi)
 	-(dir=convers; if [ -d $$dir ]; then cd $$dir; make -i all install; fi)

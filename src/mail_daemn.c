@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.14 1993/06/21 21:46:37 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/mail_daemn.c,v 1.15 1993/10/13 22:30:56 deyke Exp $ */
 
 /* Mail Daemon, checks for outbound mail and starts mail delivery agents */
 
@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+
+#include "configure.h"
 
 #include "global.h"
 #include "timer.h"
@@ -210,6 +212,8 @@ static void mail_tick(char *sysname)
     char name[16];
   } *filelist, *p, *q;
 
+  if (!*UUCP_DIR) return;
+
   start_timer(&Mail_timer);
   read_configuration();
 
@@ -218,7 +222,7 @@ static void mail_tick(char *sysname)
   for (sp = Systems; sp && clients < Maxclients; sp = sp->next) {
     if (sysname && !strcmp(sp->sysname, sysname)) sp->nexttime = 0;
     if (sp->state >= MS_TRYING || sp->nexttime > secclock()) continue;
-    sprintf(spooldir, "%s/%s", SPOOLDIR, sp->sysname);
+    sprintf(spooldir, "%s/%s", UUCP_DIR, sp->sysname);
     if (!(dirp = opendir(spooldir))) continue;
     filelist = 0;
     cnt = 0;

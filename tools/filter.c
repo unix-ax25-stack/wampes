@@ -1,4 +1,6 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/filter.c,v 1.2 1993/01/29 06:48:54 deyke Exp $ */
+#ifndef __lint
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/filter.c,v 1.3 1993/10/13 22:31:30 deyke Exp $";
+#endif
 
 #include <stdio.h>
 #include <string.h>
