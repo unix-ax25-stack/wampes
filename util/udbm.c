@@ -1,3 +1,7 @@
+/* User Data Base Manager */
+
+static char  rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/udbm.c,v 1.2 1989/07/01 22:11:33 root Exp $";
+
 #include <ctype.h>
 #include <fcntl.h>
 #include <memory.h>
@@ -18,6 +22,7 @@ struct user {
 
 #define NUM_USERS 1001
 
+static int  errors;
 static struct user *users[NUM_USERS];
 
 /*---------------------------------------------------------------------------*/
@@ -53,6 +58,7 @@ register unsigned int  size;
 
 /*---------------------------------------------------------------------------*/
 
+/*ARGSUSED*/
 void free(p)
 char  *p;
 {
@@ -350,19 +356,45 @@ static void fixusers()
 
 #define NF 20
 
+#define LEN_BID     12
+#define LEN_SUBJECT 80
+#define LEN_TO      8
+#define LEN_AT      8
+#define LEN_FROM    8
+
+  struct index {
+    long  size;
+    long  date;
+    int  mesg;
+    char  bid[LEN_BID+1];
+    char  type;
+    char  subject[LEN_SUBJECT+1];
+    char  status;
+    char  to[LEN_TO+1];
+    char  at[LEN_AT+1];
+    char  from[LEN_FROM+1];
+  };
+
   static char  tempfile[] = "/usr/local/lib/users.tmp";
   static char  usersfile[] = "/usr/local/lib/users";
 
   FILE * fpi, *fpo;
   char  *field[NF];
-  char  line[1024], orig_line[1024];
-  int  i, nf;
+  char  line[1024], orig_line[1024], mybbs[1024];
+  int  fd, i, nf, timestamp;
   register char  *f, *t;
   register struct user *up;
+  struct index index;
   struct user user;
 
-  if (!(fpi = fopen(usersfile, "r"))) return;
-  if (!(fpo = fopenexcl(tempfile))) return;
+  if (!(fpi = fopen(usersfile, "r"))) {
+    errors++;
+    return;
+  }
+  if (!(fpo = fopenexcl(tempfile))) {
+    errors++;
+    return;
+  }
   while (fgets(line, sizeof(line), fpi)) {
     for (f = line; *f; f++)
       if (isspace(uchar(*f))) *f = ' ';
@@ -432,6 +464,7 @@ static void fixusers()
 	  break;
 	}
     if (nf) {
+      errors++;
       fprintf(stderr, "***** Too many fields *****\n%s\n\n", orig_line);
       fputs(orig_line, fpo);
       putc('\n', fpo);
@@ -449,14 +482,31 @@ static void fixusers()
 	join(up->qth, user.qth)       |
 	join(up->phone, user.phone)   |
 	join(up->mail, user.mail)) {
+      errors++;
       fprintf(stderr, "***** Join failed *****\n%s\n\n", orig_line);
       output_line(&user, fpo);
     }
   }
   fclose(fpi);
+
+  if ((fd = open("/users/bbs/index", O_RDONLY, 0644)) >= 0) {
+    while (read(fd, (char *) & index, sizeof(struct index )) == sizeof(struct index ))
+      if (!strcmp(index.to, "M")                                 &&
+	  !strcmp(index.at, "THEBOX")                            &&
+	  is_call(index.from)                                    &&
+	  sscanf(index.subject, "%s %d", mybbs, &timestamp) == 2 &&
+	  is_call(mybbs)) {
+	up = getup(strlwc(index.from), 1);
+	strcpy(up->mail, "@");
+	strcat(up->mail, strlwc(mybbs));
+      }
+    close(fd);
+  }
+
   for (i = 0; i < NUM_USERS; i++)
     for (up = users[i]; up; up = up->next) output_line(up, fpo);
   fclose(fpo);
+
   rename(tempfile, usersfile);
 }
 
@@ -472,7 +522,10 @@ static void fixpasswd()
   register struct passwd *pp;
   register struct user *up;
 
-  if (!(fp = fopenexcl(tempfile))) return;
+  if (!(fp = fopenexcl(tempfile))) {
+    errors++;
+    return;
+  }
   while (pp = getpwent()) {
     if (up = getup(pp->pw_name, 0)) pp->pw_gecos = up->name;
     putpwent(pp, fp);
@@ -495,8 +548,14 @@ static void fixaliases()
   int  i;
   register struct user *up;
 
-  if (!(fpi = fopen(aliasfile, "r"))) return;
-  if (!(fpo = fopenexcl(tempfile))) return;
+  if (!(fpi = fopen(aliasfile, "r"))) {
+    errors++;
+    return;
+  }
+  if (!(fpo = fopenexcl(tempfile))) {
+    errors++;
+    return;
+  }
   while (fgets(line, sizeof(line), fpi)) {
     if (!strncmp(line, "# Generated", 11)) break;
     fputs(line, fpo);
@@ -520,8 +579,9 @@ main()
 {
   umask(022);
   fixusers();
-  fixpasswd();
-  fixaliases();
+  if (!errors) fixpasswd();
+  if (!errors) fixaliases();
+  if (!errors) system("/usr/bin/newaliases >/dev/null 2>&1");
   return 0;
 }
 
