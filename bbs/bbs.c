@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.1 1989/08/22 21:37:29 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.2 1989/08/23 23:15:18 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -163,35 +163,23 @@ register char  *s;
 
 /*---------------------------------------------------------------------------*/
 
-static int  strcasecmp(s, t)
-char  *s, *t;
+static int  strcasecmp(s1, s2)
+char  *s1, *s2;
 {
-  int  d;
-
-  for (; ; ) {
-    if (d = tolower(uchar(*s)) - tolower(uchar(*t))) return d;
-    if (!*s) return 0;
-    s++;
-    t++;
-  }
+  while (tolower(uchar(*s1)) == tolower(uchar(*s2++)))
+    if (!*s1++) return 0;
+  return tolower(uchar(*s1)) - tolower(uchar(s2[-1]));
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int  strcasencmp(s, t, n)
-char  *s, *t;
+static int  strncasecmp(s1, s2, n)
+char  *s1, *s2;
 int  n;
 {
-  int  d;
-
-  for (; ; ) {
-    if (n <= 0) return 0;
-    if (d = tolower(uchar(*s)) - tolower(uchar(*t))) return d;
-    if (!*s) return 0;
-    s++;
-    t++;
-    n--;
-  }
+  while (--n >= 0 && tolower(uchar(*s1)) == tolower(uchar(*s2++)))
+    if (!*s1++) return 0;
+  return n < 0 ? 0 : tolower(uchar(*s1)) - tolower(uchar(s2[-1]));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1077,11 +1065,11 @@ char  **argv;
 
 /*---------------------------------------------------------------------------*/
 
-#define nextarg(name)                                      \
-  if (++i >= argc) {                                       \
-    errors++;                                              \
-    printf("The %s option requires an argument.\n", name); \
-    return;                                                \
+#define nextarg(name)     \
+  if (++i >= argc) {      \
+    errors++;             \
+    printf(errstr, name); \
+    return;               \
   }
 
 static void list_command(argc, argv)
@@ -1091,6 +1079,7 @@ char  **argv;
 
   char  *at = 0;
   char  *bid = 0;
+  char  *errstr = "The %s option requires an argument.  Type ? LIST for help.\n";
   char  *from = 0;
   char  *subject = 0;
   char  *to = 0;
@@ -1106,31 +1095,31 @@ char  **argv;
   for (i = 1; i < argc; i++) {
     len = strlen(strlwc(argv[i]));
     if (!strcmp("$", argv[i]) || !strncmp("bid", argv[i], len)) {
-      nextarg("bid");
+      nextarg("BID");
       bid = strupc(argv[i]);
     } else if (!strcmp("<", argv[i]) || !strncmp("from", argv[i], len)) {
-      nextarg("from");
+      nextarg("FROM");
       from = strupc(argv[i]);
     } else if (!strcmp(">", argv[i]) || !strncmp("to", argv[i], len)) {
-      nextarg("to");
+      nextarg("TO");
       to = strupc(argv[i]);
     } else if (!strcmp("@", argv[i]) || !strncmp("at", argv[i], len)) {
-      nextarg("at");
+      nextarg("AT");
       at = strupc(argv[i]);
     } else if (!strncmp("count", argv[i], len)) {
-      nextarg("count");
+      nextarg("COUNT");
       count = atoi(argv[i]);
     } else if (!strncmp("new", argv[i], len)) {
       min = seq.list + 1;
       update_seq = (argc == 2);
     } else if (!strncmp("max", argv[i], len)) {
-      nextarg("max");
+      nextarg("MAX");
       max = atoi(argv[i]);
     } else if (!strncmp("min", argv[i], len)) {
-      nextarg("min");
+      nextarg("MIN");
       min = atoi(argv[i]);
     } else if (!strncmp("subject", argv[i], len)) {
-      nextarg("subject");
+      nextarg("SUBJECT");
       subject = argv[i];
     } else {
       to = strupc(argv[i]);
@@ -1299,11 +1288,11 @@ char  **argv;
 /*---------------------------------------------------------------------------*/
 
 #define nextarg(name)                                      \
-  if (++i >= argc) {                                       \
-    errors++;                                              \
-    printf("The %s option requires an argument.\n", name); \
-    free_mail(mail);                                       \
-    return;                                                \
+  if (++i >= argc) {      \
+    errors++;             \
+    printf(errstr, name); \
+    free_mail(mail);      \
+    return;               \
   }
 
 static void send_command(argc, argv)
@@ -1311,6 +1300,7 @@ int  argc;
 char  **argv;
 {
 
+  char  *errstr = "The %s option requires an argument.  Type ? SEND for help.\n";
   char  *p;
   char  at[1024];
   char  line[1024];
@@ -1428,21 +1418,26 @@ char  **argv;
   int  active = 0;
   int  highest = 0;
   int  listed = seq.list;
+  int  n;
   int  new = 0;
   int  readable = 0;
-  struct index index;
+  struct index *pi, index[1000];
 
   printf("DK5SG-BBS  Revision: %s %s\n", revision.number, revision.date);
   if (lseek(findex, 0l, 0)) halt();
-  while (read(findex, (char *) & index, sizeof(struct index )) == sizeof(struct index ))
-    if (index.mesg) {
-      active++;
-      highest = index.mesg;
-      if (read_allowed(&index)) {
-	readable++;
-	if (index.mesg > listed) new++;
+  for (; ; ) {
+    n = read(findex, (char *) (pi = index), 1000 * sizeof(struct index )) / sizeof(struct index );
+    if (n < 1) break;
+    for (; n; n--, pi++)
+      if (pi->mesg) {
+	active++;
+	highest = pi->mesg;
+	if (read_allowed(pi)) {
+	  readable++;
+	  if (pi->mesg > listed) new++;
+	}
       }
-    }
+  }
   printf("%5d highest message number\n", highest);
   printf("%5d active messages\n", active);
   printf("%5d readable messages\n", readable);
@@ -1695,30 +1690,30 @@ static void connect_bbs()
 static struct cmdtable cmdtable[] = {
 
   "?",          help_command,           0,      USER,
+  "BYE",        quit_command,           0,      USER,
+  "DELETE",     delete_command,         2,      USER,
+  "DISCONNECT", disconnect_command,     0,      USER,
+  "ERASE",      delete_command,         2,      USER,
+  "EXIT",       quit_command,           0,      USER,
+  "F",          f_command,              2,      MBOX,
+  "HELP",       help_command,           0,      USER,
+  "INFO",       info_command,           0,      USER,
+  "KILL",       delete_command,         2,      USER,
+  "LIST",       list_command,           2,      USER,
+  "MYBBS",      mybbs_command,          2,      USER,
+  "PRINT",      read_command,           2,      USER,
+  "PROMPT",     prompt_command,         2,      USER,
+  "QUIT",       quit_command,           0,      USER,
+  "READ",       read_command,           2,      USER,
+  "SB",         send_command,           2,      MBOX,
+  "SEND",       send_command,           2,      USER,
+  "SP",         send_command,           2,      MBOX,
+  "STATUS",     status_command,         0,      USER,
+  "TYPE",       read_command,           2,      USER,
+  "VERSION",    status_command,         0,      USER,
+  "XCRUNCH",    xcrunch_command,        0,      ROOT,
+  "XSCREEN",    xscreen_command,        0,      ROOT,
   "[",          sid_command,            0,      MBOX,
-  "bye",        quit_command,           0,      USER,
-  "delete",     delete_command,         2,      USER,
-  "disconnect", disconnect_command,     0,      USER,
-  "erase",      delete_command,         2,      USER,
-  "exit",       quit_command,           0,      USER,
-  "f",          f_command,              2,      MBOX,
-  "help",       help_command,           0,      USER,
-  "info",       info_command,           0,      USER,
-  "kill",       delete_command,         2,      USER,
-  "list",       list_command,           2,      USER,
-  "mybbs",      mybbs_command,          2,      USER,
-  "print",      read_command,           2,      USER,
-  "prompt",     prompt_command,         2,      USER,
-  "quit",       quit_command,           0,      USER,
-  "read",       read_command,           2,      USER,
-  "sb",         send_command,           2,      MBOX,
-  "send",       send_command,           2,      USER,
-  "sp",         send_command,           2,      MBOX,
-  "status",     status_command,         0,      USER,
-  "type",       read_command,           2,      USER,
-  "version",    status_command,         0,      USER,
-  "xcrunch",    xcrunch_command,        0,      ROOT,
-  "xscreen",    xscreen_command,        0,      ROOT,
 
   (char *) 0,   unknown_command,        0,      USER
 };
@@ -1760,12 +1755,13 @@ char  *line;
   if (!(len = strlen(*argv))) return;
   for (cmdp = cmdtable; ; cmdp++)
     if (!cmdp->name ||
-	level >= cmdp->level && !strcasencmp(cmdp->name, *argv, len)) {
+	level >= cmdp->level && !strncasecmp(cmdp->name, *argv, len)) {
       if (argc >= cmdp->argc)
 	(*cmdp->fnc)(argc, argv);
       else {
 	errors++;
-	printf("The %s command requires more arguments.\n", cmdp->name);
+	printf("The %s command requires more arguments.  Type ? %s for help.\n",
+	       cmdp->name, cmdp->name);
       }
       break;
     }
