@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.55 1998/03/09 17:45:26 deyke Exp $
+# @(#) $Id: Makefile,v 1.56 1999/01/05 22:49:38 deyke Exp $
 
 CFLAGS     = -I../lib
 LD         = $(CC)
@@ -28,17 +28,10 @@ all:;   @case "`uname -sr`" in \
 		'CFLAGS=-O -signed -I../lib' \
 		_all;; \
 	Linux*) \
-		if [ -r /lib/libc.so.5 ]; then \
-			$(MAKE) -i -f $(MAKEFILE) \
-			'CC=gcc' \
-			'CFLAGS=-O -I../lib' \
-			_all; \
-		else \
-			$(MAKE) -i -f $(MAKEFILE) \
-			'CC=gcc' \
-			'CFLAGS=-O -I../lib' \
-			_all; \
-		fi;; \
+		$(MAKE) -i -f $(MAKEFILE) \
+		'CC=gcc' \
+		'CFLAGS=-O -I../lib' \
+		_all;; \
 	386BSD*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \

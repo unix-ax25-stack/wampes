@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.32 1998/03/09 17:46:26 deyke Exp $
+# @(#) $Id: Makefile,v 1.33 1999/01/05 22:50:18 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -50,17 +50,10 @@ all:;   if [ -x /bin/bash ]; then \
 		'RANLIB=:' \
 		_all;; \
 	Linux*) \
-		if [ -r /lib/libc.so.5 ]; then \
-			$(MAKE) -i -f $(MAKEFILE) \
-			'CC=gcc' \
-			'CFLAGS=-O' \
-			_all; \
-		else \
-			$(MAKE) -i -f $(MAKEFILE) \
-			'CC=gcc' \
-			'CFLAGS=-O' \
-			_all; \
-		fi;; \
+		$(MAKE) -i -f $(MAKEFILE) \
+		'CC=gcc' \
+		'CFLAGS=-O' \
+		_all;; \
 	386BSD*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \

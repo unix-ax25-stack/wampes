@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.96 1998/03/23 17:11:05 deyke Exp $
+# @(#) $Id: Makefile,v 1.97 1999/01/05 22:48:12 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -320,19 +320,11 @@ all:;   chmod 755 cc
 		'CFLAGS=-O -framepointer -signed -DUNIX -DFD_SETSIZE=1024 -I../lib' \
 		_all;; \
 	Linux*) \
-		if [ -r /lib/libc.so.5 ]; then \
-			$(MAKE) -i -f $(MAKEFILE) \
-			'CC=gcc' \
-			'CFLAGS=-O6 -DUNIX -I./linux_include -I../lib' \
-			'SLIBS=-lgdbm' \
-			_all; \
-		else \
-			$(MAKE) -i -f $(MAKEFILE) \
-			'CC=gcc' \
-			'CFLAGS=-O6 -DUNIX -I./linux_include -I../lib' \
-			'SLIBS=-ldbm' \
-			_all; \
-		fi;; \
+		$(MAKE) -i -f $(MAKEFILE) \
+		'CC=gcc' \
+		'CFLAGS=-O -DUNIX -I./linux_include -I../lib' \
+		'SLIBS=-lndbm' \
+		_all;; \
 	386BSD*) \
 		$(MAKE) -i -f $(MAKEFILE) \
 		'CC=cc' \
