@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.10 1995/10/23 16:05:23 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/mm2html.c,v 1.11 1995/11/07 22:55:11 deyke Exp $";
 #endif
 
 #include <ctype.h>
@@ -164,6 +164,11 @@ static char *escape_special_characters(char *outbuf, const char *inbuf)
 
     case '\\':
       switch (fp[1]) {
+
+      case 'e':
+	*tp++ = '\\';
+	fp++;
+	break;
 
       case 'f':
 	switch (fp[2]) {

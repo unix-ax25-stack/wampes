@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.33 1995/09/19 22:51:22 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Attic/netupds.c,v 1.34 1995/11/07 22:55:14 deyke Exp $";
 #endif
 
 /* Net Update Client/Server */
@@ -92,20 +92,17 @@ static struct file *Hashtable[HASHSIZE];
 static char *include_table[] =
 {
 
-  "*.R",
-  "Makefile",
-  "README",
   "aos",
-  "aos/*.[ch]",
   "aos/Makefile",
+  "aos/*.[ch]",
   "bbs",
-  "bbs/*.[ch]",
+  "bbs/bbs.help",
   "bbs/Makefile",
-  "bbs/help.*",
+  "bbs/*.[ch]",
   "cc",
   "convers",
-  "convers/*.[ch]",
   "convers/Makefile",
+  "convers/*.[ch]",
   "doc",
   "doc/?*.*",
   "domain.txt",
@@ -113,20 +110,23 @@ static char *include_table[] =
   "examples/?*.*",
   "hosts",
   "lib",
-  "lib/*.[ch]",
-  "lib/Makefile",
   "lib/configure",
+  "lib/Makefile",
+  "lib/*.[ch]",
+  "Makefile",
   "netrom_links",
+  "README",
   "src",
-  "src/*.[ch]",
-  "src/Makefile",
   "src/cc",
   "src/linux_include",
   "src/linux_include/netinet",
   "src/linux_include/netinet/*.h",
+  "src/Makefile",
+  "src/*.[ch]",
   "util",
-  "util/*.[ch]",
   "util/Makefile",
+  "util/*.[ch]",
+  "*.R",
 
   0
 };

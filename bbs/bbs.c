@@ -1,4 +1,4 @@
-static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 2.100 1995/10/25 15:57:49 deyke Exp $";
+static const char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 3.0 1995/11/07 22:54:41 deyke Exp $";
 
 /* Bulletin Board System */
 
@@ -47,28 +47,26 @@ extern int optind;
 #include "callvalid.h"
 #include "configure.h"
 #include "lockfile.h"
-#include "seek.h"
 #include "seteugid.h"
 #include "strdup.h"
+#include "strmatch.h"
 
 #define DEBUG_NNTP      0
 
 #define MIDSUFFIX               "@bbs.net"
 #define NEWSGROUPSPREFIX        "ampr.bbs."
+#define NEWSGROUPSPREFIXLENGTH  9               /* strlen(NEWSGROUPSPREFIX) */
 
 #define BBSCONFIGFILE   "/tcp/bbs.conf"
+#define BBSRCFILE       ".bbsrc"
 #define HELPFILE        "/usr/local/lib/bbs.help"
 #define INFOFILE        "/usr/local/lib/station.data"
 #define LOCKDIR         "/tcp/locks"
 #define MAILCONFIGFILE  "/tcp/mail.conf"
-#define RCFILE          ".bbsrc"
-#define SEQFILE         ".bbsseq"
-#define WRKDIR          SPOOL_DIR "/bbs"
+#define NEWSRCFILE      ".newsrc.bbs"
 
 #define BIDLOCKFILE     LOCKDIR "/bbs.bid"
 #define FWDLOCKFILE     LOCKDIR "/bbs.fwd."     /* Append name of host */
-#define INDEXFILE       WRKDIR "/index"
-#define SENDLOCKFILE    LOCKDIR "/bbs.snd"
 
 #define SECONDS         (1L)
 #define MINUTES         (60L*SECONDS)
@@ -76,26 +74,6 @@ extern int optind;
 #define DAYS            (24L*HOURS)
 
 #define LEN_BID         12
-#define LEN_SUBJECT     80
-#define LEN_TO           8
-#define LEN_AT           8
-#define LEN_FROM         8
-
-struct index {
-  long size;
-  long date;
-  int mesg;
-  char bid[LEN_BID + 1];
-  char pad1;
-  char subject[LEN_SUBJECT + 1];
-  char pad2;
-  char to[LEN_TO + 1];
-  char at[LEN_AT + 1];
-  char from[LEN_FROM + 1];
-  char deleted;
-};
-
-#define SIZEINDEX       (sizeof(struct index))
 
 enum e_level {
   USER,
@@ -111,6 +89,11 @@ enum e_type {
 enum e_where {
   HEAD,
   TAIL
+};
+
+enum e_what {
+  HEADER_ONLY,
+  HEADER_AND_BODY
 };
 
 struct strlist {
@@ -132,18 +115,34 @@ struct mail {
   struct strlist *tail;
 };
 
-struct dir_entry {
-  struct dir_entry *left, *right;
-  int count;
-  char to[LEN_TO + 1];
+struct group {
+  char *name;
+  int low;
+  int high;
+  int subscribed;
+  int unread;
+  char *bitarray;
+  struct group *next;
 };
+
+static struct group *current_group;
+static struct group *groups;
 
 struct cmdtable {
   const char *name;
-  void (*fnc)(int argc, char **argv);
-  int argc;
+  void (*fnc)(int argc, const char **argv);
+  int minargs;
+  int maxargs;
   enum e_level level;
 };
+
+struct alias {
+  char *name;
+  char *value;
+  struct alias *next;
+};
+
+static struct alias *aliases;
 
 struct revision {
   char number[16];
@@ -176,17 +175,19 @@ static struct nntp_channel nntp_channel = {
   -1
 };
 
+static char headers[1024] = "DFS";
 static char mydomain[1024];
 static char myhostname[1024];
-static char prompt[1024] = "bbs> ";
+static char prompt[1024] = "\\w:\\c > ";
 static const char daynames[] = "SunMonTueWedThuFriSat";
 static const char monthnames[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
+static int current_article;
 static int did_forward;
 static int do_forward;
 static int errors;
 static int export;
-static int fdindex;
 static int level;
+static int maxage = 7;
 static int output_only;
 static int packetcluster;
 static volatile int stopped;
@@ -216,6 +217,21 @@ static void errorstop(int line)
 #else
 #define open_max()      (1024)
 #endif
+
+/*---------------------------------------------------------------------------*/
+
+#define set_read(p, i) \
+	(p)->bitarray[((i) - (p)->low) >> 3] |= (1 << (((i) - (p)->low) & 7))
+
+/*---------------------------------------------------------------------------*/
+
+#define unset_read(p, i) \
+	(p)->bitarray[((i) - (p)->low) >> 3] &= ~(1 << (((i) - (p)->low) & 7))
+
+/*---------------------------------------------------------------------------*/
+
+#define is_read(p, i) \
+	((p)->bitarray[((i) - (p)->low) >> 3] & (1 << (((i) - (p)->low) & 7)))
 
 /*---------------------------------------------------------------------------*/
 
@@ -281,20 +297,27 @@ static int Strncasecmp(const char *s1, const char *s2, int n)
 
 /*---------------------------------------------------------------------------*/
 
-#define calleq(c1, c2) (!Strcasecmp((c1), (c2)))
-
-/*---------------------------------------------------------------------------*/
-
-static const char *Strcasestr(const char *str, const char *pat)
+static int stringcasematch(const char *s, const char *p)
 {
-  const char *s, *p;
 
-  for (; ; str++)
-    for (s = str, p = pat; ; s++, p++) {
-      if (!*p) return str;
-      if (!*s) return 0;
-      if (Xtolower(*s) != Xtolower(*p)) break;
-    }
+  char pat[1024];
+  char str[1024];
+  char *t;
+  const char *f;
+
+  t = str;
+  for (f = s; *f; f++) {
+    *t++ = Xtolower(*f);
+  }
+  *t = 0;
+
+  t = pat;
+  for (f = p; *f; f++) {
+    *t++ = Xtolower(*f);
+  }
+  *t = 0;
+
+  return stringmatch(str, pat);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -605,81 +628,6 @@ static void open_nntp(void)
 
 /*---------------------------------------------------------------------------*/
 
-static void make_parent_directories(const char *filename)
-{
-
-  char dirname[1024];
-  char *p;
-
-  strcpy(dirname, filename);
-  p = strrchr(dirname, '/');
-  if (!p)
-    halt();
-  *p = 0;
-  if (!*dirname)
-    halt();
-  if (!mkdir(dirname, 0755))
-    return;
-  if (errno != ENOENT)
-    halt();
-  make_parent_directories(dirname);
-  if (mkdir(dirname, 0755))
-    halt();
-}
-
-/*---------------------------------------------------------------------------*/
-
-static char *getfilename(int mesg)
-{
-  static char buf[80];
-
-  sprintf(buf,
-	  WRKDIR "/%02x/%02x/%02x/%02x",
-	  (mesg >> 24) & 0xff,
-	  (mesg >> 16) & 0xff,
-	  (mesg >>  8) & 0xff,
-	  (mesg      ) & 0xff);
-  return buf;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int get_seq(void)
-{
-
-  char fname[1024];
-  FILE *fp;
-  int seq;
-
-  seq = 0;
-  sprintf(fname, "%s/" SEQFILE, user.dir);
-  if ((fp = fopen(fname, "r"))) {
-    fscanf(fp, "%d", &seq);
-    fclose(fp);
-  }
-  return seq;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void put_seq(int seq)
-{
-
-  char fname[1024];
-  FILE *fp;
-
-  sprintf(fname, "%s/" SEQFILE, user.dir);
-  seteugid(user.uid, user.gid);
-  fp = fopen(fname, "w");
-  seteugid(0, 0);
-  if (!fp)
-    halt();
-  fprintf(fp, "%d\n", seq);
-  fclose(fp);
-}
-
-/*---------------------------------------------------------------------------*/
-
 static void wait_for_prompt(void)
 {
 
@@ -690,49 +638,6 @@ static void wait_for_prompt(void)
     getstring(buf);
     l = strlen(buf);
   } while (!l || buf[l - 1] != '>');
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int get_index(int n, struct index *index)
-{
-
-  int i1, i2, im;
-  long pos;
-
-  i1 = 0;
-  if (lseek(fdindex, 0L, SEEK_SET)) halt();
-  if (read(fdindex, index, SIZEINDEX) != SIZEINDEX) return 0;
-  if (n == index->mesg) return 1;
-  if (n < index->mesg) return 0;
-
-  if ((pos = lseek(fdindex, -SIZEINDEX, SEEK_END)) < 0) halt();
-  i2 = (int) (pos / SIZEINDEX);
-  if (read(fdindex, index, SIZEINDEX) != SIZEINDEX) halt();
-  if (n == index->mesg) return 1;
-  if (n > index->mesg) return 0;
-
-  while (i1 + 1 < i2) {
-    im = (i1 + i2) / 2;
-    if (lseek(fdindex, im * SIZEINDEX, SEEK_SET) < 0) halt();
-    if (read(fdindex, index, SIZEINDEX) != SIZEINDEX) halt();
-    if (n == index->mesg) return 1;
-    if (n > index->mesg)
-      i1 = im;
-    else
-      i2 = im;
-  }
-  return 0;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static int read_allowed(const struct index *index)
-{
-  if (index->deleted) return 0;
-  if (level == ROOT) return 1;
-  if (index->to[1]) return 1;
-  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -826,57 +731,6 @@ static long get_date_from_header(const char *line)
 	     &yy, &mm, &dd, &h, &m) != 5)
     return -1;
   return calculate_date(yy, mm, dd, h, m, 0, 0);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void send_to_bbs(struct mail *mail)
-{
-
-  FILE *fp;
-  int fdlock;
-  int mesg;
-  struct index index;
-  struct strlist *p;
-
-  if ((fdlock = lock_file(SENDLOCKFILE, 0)) < 0)
-    halt();
-  if (lseek(fdindex, -SIZEINDEX, SEEK_END) < 0)
-    mesg = 1;
-  else {
-    if (read(fdindex, &index, SIZEINDEX) != SIZEINDEX)
-      halt();
-    mesg = index.mesg + 1;
-  }
-  memset((char *) &index, 0, SIZEINDEX);
-  index.mesg = mesg;
-  index.date = mail->date;
-  strncpy(index.bid, mail->bid, LEN_BID);
-  strupc(index.bid);
-  strncpy(index.subject, mail->subject, LEN_SUBJECT);
-  strncpy(index.to, mail->touser, LEN_TO);
-  strupc(index.to);
-  strncpy(index.at, mail->tohost, LEN_AT);
-  strupc(index.at);
-  strncpy(index.from, mail->fromuser, LEN_FROM);
-  strupc(index.from);
-  if (!(fp = fopen(getfilename(index.mesg), "w"))) {
-    make_parent_directories(getfilename(index.mesg));
-    if (!(fp = fopen(getfilename(index.mesg), "w")))
-      halt();
-  }
-  if (strcmp(index.to, "E") && strcmp(index.to, "M"))
-    for (p = mail->head; p; p = p->next) {
-      if (fputs(p->str, fp) == EOF)
-	halt();
-      if (putc('\n', fp) == EOF)
-	halt();
-      index.size += (strlen(p->str) + 1);
-    }
-  fclose(fp);
-  if (write(fdindex, &index, SIZEINDEX) != SIZEINDEX)
-    halt();
-  close(fdlock);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1146,11 +1000,10 @@ static void route_mail(struct mail *mail)
   /* Call delivery agents */
 
   if (callvalid(mail->touser) ||
-      (callvalid(mail->tohost) && !calleq(mail->tohost, myhostname))) {
+      (callvalid(mail->tohost) && Strcasecmp(mail->tohost, myhostname))) {
     send_to_mail_or_news(mail, MAIL);
   } else {
     send_to_mail_or_news(mail, NEWS);
-    send_to_bbs(mail);
   }
 
   /* Free mail */
@@ -1199,104 +1052,347 @@ static int get_header_value(const char *name, int do822, const char *line, char 
 
 /*---------------------------------------------------------------------------*/
 
-static void delete_command(int argc, char **argv)
+static struct group *find_group(const char *name)
 {
 
-  int i;
-  int mesg;
-  struct index index;
+  int r;
+  struct group *p;
 
-  for (i = 1; i < argc; i++)
-    if ((mesg = atoi(argv[i])) > 0 && get_index(mesg, &index) && !index.deleted)
-      if (level == ROOT                 ||
-	  calleq(index.from, user.name) ||
-	  calleq(index.to, user.name)) {
-	if (remove(getfilename(mesg))) halt();
-	index.deleted = 1;
-	if (lseek(fdindex, -SIZEINDEX, SEEK_CUR) < 0) halt();
-	if (write(fdindex, &index, SIZEINDEX) != SIZEINDEX) halt();
-	printf("Message %d deleted.\n", mesg);
-      } else
-	printf("Message %d not deleted:  Permission denied.\n", mesg);
-    else
-      printf("No such message: '%s'.\n", argv[i]);
+  for (p = groups; p; p = p->next) {
+    r = strcmp(p->name, name);
+    if (!r)
+      return p;
+    if (r > 0)
+      return 0;
+  }
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int dir_column;
-
-static void dir_print(struct dir_entry *p)
+static void store_groups(void)
 {
-  if (p) {
-    dir_print(p->left);
-    if (!stopped)
-      printf((dir_column++ % 5) < 4 ? "%5d %-8s" : "%5d %s\n", p->count, p->to);
-    dir_print(p->right);
+
+  char fname[1024];
+  FILE *fp;
+  int firstarticel;
+  int i;
+  int laststate;
+  int state;
+  int writecomma;
+  struct group *p;
+
+  sprintf(fname, "%s/%s", user.dir, NEWSRCFILE);
+  seteugid(user.uid, user.gid);
+  fp = fopen(fname, "w");
+  seteugid(0, 0);
+  if (!fp)
+    halt();
+  for (p = groups; p; p = p->next) {
+    fprintf(fp, "%s%c", p->name, p->subscribed ? ':' : '!');
+    writecomma = laststate = firstarticel = 0;
+    for (i = p->low; i <= p->high + 1; i++) {
+      state = (i <= p->high && is_read(p, i)) ? 1 : 0;
+      if (state != laststate) {
+	if (state) {
+	  firstarticel = i;
+	} else {
+	  if (writecomma) {
+	    putc(',', fp);
+	  } else {
+	    putc(' ', fp);
+	    writecomma = 1;
+	  }
+	  fprintf(fp, "%d", firstarticel);
+	  if (firstarticel != i - 1) {
+	    fprintf(fp, "-%d", i - 1);
+	  }
+	}
+	laststate = state;
+      }
+    }
+    putc('\n', fp);
+  }
+  fclose(fp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void load_groups(void)
+{
+
+  char current_group_name[1024];
+  char line[16 * 1024];
+  char name[1024];
+  char *cp;
+  FILE *fp;
+  int changed;
+  int current_article_save;
+  int high;
+  int i;
+  int low;
+  int subscribed;
+  struct group *p;
+  struct group *q;
+
+  sprintf(line, "%s/%s", user.dir, NEWSRCFILE);
+  fp = fopen(line, "r");
+
+  if (current_group) {
+    strcpy(current_group_name, current_group->name);
+    current_article_save = current_article;
+  } else {
+    *current_group_name = 0;
+    current_article_save = 0;
+  }
+  current_group = 0;
+  current_article = 0;
+
+  while ((p = groups)) {
+    groups = p->next;
+    free(p->name);
+    free(p->bitarray);
     free(p);
   }
-}
 
-/*---------------------------------------------------------------------------*/
+  if (nntp_channel.fd < 0)
+    open_nntp();
+  write_nntp("list active\r\n");
+  read_nntp(line);
+  if (*line != '2')
+    halt();
 
-static void dir_command(int argc, char **argv)
-{
-
-  int n, cmp;
-  struct dir_entry *head, *curr, *prev;
-  struct index *pi, index[1000];
-
-  head = 0;
-  cmp = 0;
-  if (lseek(fdindex, 0L, SEEK_SET)) halt();
-  for (; ; ) {
-    n = read(fdindex, pi = index, 1000 * SIZEINDEX) / SIZEINDEX;
-    if (n < 1) break;
-    for (; n; n--, pi++)
-      if (read_allowed(pi))
-	for (prev = 0, curr = head; ; ) {
-	  if (!curr) {
-	    curr = (struct dir_entry *) malloc(sizeof(struct dir_entry));
-	    if (!curr)
-	      halt();
-	    curr->left = curr->right = 0;
-	    curr->count = 1;
-	    strcpy(curr->to, pi->to);
-	    if (!prev)
-	      head = curr;
-	    else if (cmp < 0)
-	      prev->left = curr;
-	    else
-	      prev->right = curr;
-	    break;
-	  }
-	  if (!(cmp = strcmp(pi->to, curr->to))) {
-	    curr->count++;
-	    break;
-	  }
-	  prev = curr;
-	  curr = (cmp < 0) ? curr->left : curr->right;
-	}
+  for (;;) {
+    read_nntp(line);
+    if (*line == '.')
+      break;
+    if (sscanf(line, "%s %d %d", name, &high, &low) != 3)
+      halt();
+    if (strncmp(name, NEWSGROUPSPREFIX, NEWSGROUPSPREFIXLENGTH))
+      continue;
+    if (!(p = (struct group *) malloc(sizeof(struct group))))
+      halt();
+    if (!(p->name = strdup(name)))
+      halt();
+    p->low = low;
+    p->high = high;
+    p->subscribed = !fp;
+    p->unread = high - low + 1;
+    if (!(p->bitarray = (char *) calloc(1, p->unread / 8 + 1)))
+      halt();
+    if (!groups || strcmp(name, groups->name) < 0) {
+      p->next = groups;
+      groups = p;
+    } else {
+      for (q = groups;
+	   q->next && strcmp(q->next->name, name) < 0;
+	   q = q->next) ;
+      p->next = q->next;
+      q->next = p;
+    }
   }
-  dir_column = 0;
-  dir_print(head);
-  if (!stopped && (dir_column % 5)) putchar('\n');
+
+  if (*current_group_name && (current_group = find_group(current_group_name))) {
+    current_article = current_article_save;
+    if (current_article < current_group->low)
+      current_article = current_group->low;
+  }
+
+  if (!fp)
+    return;
+  changed = 0;
+  while (fgets(line, sizeof(line), fp)) {
+    for (cp = line; *cp && *cp != ':' && *cp != '!'; cp++) ;
+    if (!*cp) {
+      changed = 1;
+      continue;
+    }
+    subscribed = (*cp == ':');
+    *cp++ = 0;
+    p = find_group(line);
+    if (!p) {
+      changed = 1;
+      continue;
+    }
+    p->subscribed = subscribed;
+    if (*cp++ != ' ') {
+      changed = 1;
+      continue;
+    }
+    for (;;) {
+      if (!isdigit(*cp & 0xff))
+	break;
+      for (low = 0; isdigit(*cp & 0xff); cp++)
+	low = 10 * low + *cp - '0';
+      if (*cp == '-') {
+	cp++;
+	if (!isdigit(*cp & 0xff))
+	  break;
+	for (high = 0; isdigit(*cp & 0xff); cp++)
+	  high = 10 * high + *cp - '0';
+      } else {
+	high = low;
+      }
+      if (high > p->high) {
+	memset(p->bitarray, 0, (p->high - p->low + 1) / 8 + 1);
+	p->unread = p->high - p->low + 1;
+	changed = 1;
+	break;
+      }
+      if (low < p->low) {
+	low = p->low;
+	changed = 1;
+      }
+      for (i = low; i <= high; i++) {
+	set_read(p, i);
+	p->unread--;
+      }
+      if (*cp++ != ',')
+	break;
+    }
+  }
+  fclose(fp);
+  if (changed) {
+    store_groups();
+  }
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void disconnect_command(int argc, char **argv)
+static int set_position(int find_next_unread)
 {
-  puts("Disconnecting...");
-  kill(0, 1);
-  exit(0);
+  struct group *p;
+
+  if (!groups) {
+    load_groups();
+    if (!groups) {
+      printf("No groups available.\n");
+      return 0;
+    }
+  }
+
+  if (!find_next_unread) {
+    if (!current_group) {
+      printf("Need to specify group first.\n");
+      return 0;
+    } else {
+      return 1;
+    }
+  }
+
+  if (!current_group) {
+    for (current_group = groups;
+	 current_group;
+	 current_group = current_group->next) {
+      if (current_group->subscribed)
+	break;
+    }
+    if (!current_group) {
+      printf("No subscribed-to groups available.\n");
+      return 0;
+    }
+    current_article = current_group->low;
+  }
+
+  if (!current_group->unread) {
+    p = current_group;
+    for (;;) {
+      if (!(p = p->next))
+	p = groups;
+      if (p == current_group) {
+	printf("No more articels to read.\n");
+	return 0;
+      }
+      if (p->subscribed && p->unread) {
+	current_group = p;
+	current_article = p->low;
+	break;
+      }
+    }
+  }
+
+  for (;;) {
+    if (!is_read(current_group, current_article))
+      return current_article;
+    current_article++;
+    if (current_article > current_group->high)
+      current_article = current_group->low;
+  }
+
 }
 
 /*---------------------------------------------------------------------------*/
 
-static struct mail *read_mail_or_news_file(const char *filename, enum e_type src)
+static void parse_range(const struct group *p, const char *s, int *low, int *high)
+{
+  if ((*s == '-' || *s == '*') && !s[1]) {      /* '-' or '*' */
+    *low = p->low;
+    *high = p->high;
+  } else if (*s == '-') {       /* -number */
+    *low = p->low;
+    *high = atoi(s + 1) + p->low - 1;
+  } else {
+    *low = atoi(s) + p->low - 1;
+    s = strchr(s, '-');
+    if (!s) {                   /* number */
+      *high = *low;
+    } else if (s[1]) {          /* number-number */
+      *high = atoi(s + 1) + p->low - 1;
+    } else {
+      *high = p->high;          /* number- */
+    }
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void change_alias(const char *name, const char *value)
 {
 
+  char buf[1024];
+  struct alias *p;
+  struct alias *q;
+
+  name = strupc(strcpy(buf, name));
+
+  for (q = 0, p = aliases; p; q = p, p = p->next) {
+    if (!strcmp(p->name, name)) {
+      if (q)
+	q->next = p->next;
+      else
+	aliases = p->next;
+      free(p->name);
+      free(p->value);
+      free(p);
+    }
+  }
+
+  if (*value) {
+    if (!(p = (struct alias *) malloc(sizeof(struct alias))))
+      halt();
+    if (!(p->name = strdup((char *) name)))
+      halt();
+    if (!(p->value = strdup((char *) value)))
+      halt();
+    if (!aliases || strcmp(name, aliases->name) < 0) {
+      p->next = aliases;
+      aliases = p;
+    } else {
+      for (q = aliases;
+	   q->next && strcmp(q->next->name, name) < 0;
+	   q = q->next) ;
+      p->next = q->next;
+      q->next = p;
+    }
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static struct mail *read_mail_or_news_file(const char *filename, enum e_type src, enum e_what what)
+{
+
+  char date[1024];
   char distribution[1024];
   char expires[1024];
   char from[1024];
@@ -1307,7 +1403,6 @@ static struct mail *read_mail_or_news_file(const char *filename, enum e_type src
   char *cp;
   FILE *fp;
   int in_header;
-  int prefixlen;
   long expiretime;
   struct mail *mail;
 
@@ -1322,7 +1417,8 @@ static struct mail *read_mail_or_news_file(const char *filename, enum e_type src
   *lifetime = 0;
   *newsgroups = 0;
 
-  while (fgets(line, sizeof(line), fp)) {
+  while (fgets(line, sizeof(line), fp) &&
+	 (in_header || what == HEADER_AND_BODY)) {
     rip(line);
     if (in_header) {
       if (*line) {
@@ -1335,6 +1431,7 @@ static struct mail *read_mail_or_news_file(const char *filename, enum e_type src
 	  get_header_value("Distribution:", 0, line, distribution);
 	}
 	get_header_value("Subject:", 0, line, mail->subject);
+	get_header_value("Date:", 0, line, date);
 	get_header_value("Message-ID:", 1, line, mail->mid);
 	get_header_value("Lifetime:", 0, line, lifetime);
 	get_header_value("Expires:", 0, line, expires);
@@ -1358,15 +1455,15 @@ static struct mail *read_mail_or_news_file(const char *filename, enum e_type src
   split_address(from, mail->fromuser, mail->fromhost);
 
   if (src == NEWS) {
-    prefixlen = strlen(NEWSGROUPSPREFIX);
-    while (*newsgroups && strncmp(newsgroups, NEWSGROUPSPREFIX, prefixlen)) {
+    while (*newsgroups &&
+	   strncmp(newsgroups, NEWSGROUPSPREFIX, NEWSGROUPSPREFIXLENGTH)) {
       if ((cp = strchr(newsgroups, ',')))
 	strcpy(newsgroups, cp + 1);
       else
 	*newsgroups = 0;
     }
     if (*newsgroups)
-      strcpy(newsgroups, newsgroups + prefixlen);
+      strcpy(newsgroups, newsgroups + NEWSGROUPSPREFIXLENGTH);
     if ((cp = strchr(newsgroups, ',')))
       *cp = 0;
     if ((cp = strrchr(newsgroups, '.')))
@@ -1385,6 +1482,10 @@ static struct mail *read_mail_or_news_file(const char *filename, enum e_type src
     free_mail(mail);
     return 0;
   }
+
+  mail->date = parse_rfc822_date(date);
+  if (mail->date < 0)
+    mail->date = 0;
 
   if ((expiretime = parse_rfc822_date(expires)) != -1) {
     mail->lifetime = (int) ((expiretime - time(0) + DAYS - 1) / DAYS);
@@ -1413,6 +1514,220 @@ static struct mail *read_mail_or_news_file(const char *filename, enum e_type src
   }
 
   return mail;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static struct mail *get_article(const struct group *p, int i, enum e_what what)
+{
+
+  char filename[1024];
+  char *cp;
+  struct mail *mail;
+  struct stat statbuf;
+
+  if (i < p->low || i > p->high)
+    return 0;
+  sprintf(filename, NEWS_DIR "/%s/%d", p->name, i);
+  for (cp = filename; *cp; cp++) {
+    if (*cp == '.')
+      *cp = '/';
+  }
+  if (stat(filename, &statbuf) ||
+      !(mail = read_mail_or_news_file(filename, NEWS, what))) {
+    return 0;
+  }
+  return mail;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void output_message(FILE *fp)
+{
+
+  char path[1024];
+  char *cp;
+  int inheader;
+  struct mail *mail;
+  struct strlist *s;
+
+  if (!is_read(current_group, current_article)) {
+    set_read(current_group, current_article);
+    current_group->unread--;
+    store_groups();
+  }
+  if (!(mail = get_article(current_group, current_article, HEADER_AND_BODY))) {
+    printf("No such message: '%d'.\n", current_article - current_group->low + 1);
+    return;
+  }
+  if (strchr(headers, 'M'))
+    fprintf(fp, "Msg#: %d\n", current_article - current_group->low + 1);
+  if (strchr(headers, 'F'))
+    fprintf(fp, "From: %s@%s\n", mail->fromuser, mail->fromhost);
+  if (strchr(headers, 'T'))
+    fprintf(fp, "To: %s@%s\n", mail->touser, mail->tohost);
+  if (strchr(headers, 'D'))
+    fprintf(fp, "Date: %s\n", rfc822_date_string(mail->date));
+  if (strchr(headers, 'S'))
+    fprintf(fp, "Subject: %s\n", mail->subject);
+  if (strchr(headers, 'B'))
+    fprintf(fp, "Bulletin-ID: %s\n", mail->bid);
+  if (mail->lifetime) {
+    if (strchr(headers, 'E'))
+      fprintf(fp, "Expires: %s\n", rfc822_date_string(mail->date + DAYS * mail->lifetime));
+    if (strchr(headers, 'L'))
+      fprintf(fp, "Lifetime: %d\n", mail->lifetime);
+  }
+  *path = 0;
+  inheader = 1;
+  for (s = mail->head; s && !stopped; s = s->next) {
+    if (inheader) {
+      if ((cp = get_host_from_header(s->str))) {
+	if (strchr(headers, 'R'))
+	  fprintf(fp, "%s\n", s->str);
+	strcat(path, *path ? "!" : "Path: ");
+	strcat(path, cp);
+	continue;
+      }
+      if (*path && strchr(headers, 'P'))
+	fprintf(fp, "%s\n", path);
+      fprintf(fp, "\n");
+      inheader = 0;
+    }
+    fprintf(fp, "%s\n", s->str);
+  }
+  fprintf(fp, "\n");
+  free_mail(mail);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void alias_command(int argc, const char **argv)
+{
+
+  int len;
+  struct alias *p;
+
+  switch (argc) {
+
+  case 1:
+    for (p = aliases; p; p = p->next) {
+      printf("%-10s \"%s\"\n", p->name, p->value);
+    }
+    break;
+
+  case 2:
+    if ((len = strlen(argv[1]))) {
+      for (p = aliases; p; p = p->next) {
+	if (!Strncasecmp(p->name, argv[1], len)) {
+	  printf("%-10s \"%s\"\n", p->name, p->value);
+	  return;
+	}
+      }
+    }
+    break;
+
+  case 3:
+    change_alias(argv[1], argv[2]);
+    break;
+
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void delete_command(int argc, const char **argv)
+{
+
+  int high;
+  int i;
+  int low;
+  struct mail *delete_mail;
+  struct mail *orig_mail;
+
+  if (!set_position(0))
+    return;
+  argc--;
+  argv++;
+  for (; argc; argc--, argv++) {
+    parse_range(current_group, *argv, &low, &high);
+    if (low < current_group->low || high > current_group->high) {
+      printf("Message number out of range.\n");
+      continue;
+    }
+    for (i = low; i <= high; i++) {
+      if (!(orig_mail = get_article(current_group, i, HEADER_ONLY))) {
+	printf("No such message: '%d'.\n", i - current_group->low + 1);
+	continue;
+      }
+      if (level < ROOT && Strcasecmp(orig_mail->fromuser, user.name)) {
+	printf("Article %d not deleted: Permission denied.\n", i - current_group->low + 1);
+	free_mail(orig_mail);
+	continue;
+      }
+      delete_mail = alloc_mail();
+      strcpy(delete_mail->fromuser, user.name);
+      strcpy(delete_mail->touser, "e");
+      strcpy(delete_mail->tohost, "thebox");
+      sprintf(delete_mail->subject, "%s", orig_mail->bid);
+      free_mail(orig_mail);
+      route_mail(delete_mail);
+    }
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void dir_command(int argc, const char **argv)
+{
+
+  char pattern[1024];
+  int column;
+  int count;
+  int i;
+  struct group *p;
+
+  if (!groups)
+    load_groups();
+
+  column = 0;
+  for (p = groups; p && !stopped; p = p->next) {
+    if (argc >= 2) {
+      for (i = 1; i < argc; i++) {
+	strcpy(pattern, NEWSGROUPSPREFIX);
+	strcat(pattern, argv[i]);
+	if (stringcasematch(p->name, pattern))
+	  break;
+      }
+      if (i >= argc)
+	continue;
+      count = p->high - p->low + 1;
+    } else {
+      if (!p->subscribed || !p->unread)
+	continue;
+      count = p->unread;
+    }
+    printf("%c%6d %-8s   ",
+	   p->subscribed ? ' ' : 'u',
+	   count,
+	   p->name + NEWSGROUPSPREFIXLENGTH);
+    if (++column >= 4) {
+      putchar('\n');
+      column = 0;
+    }
+  }
+
+  if (column)
+    putchar('\n');
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void disconnect_command(int argc, const char **argv)
+{
+  puts("Disconnecting...");
+  kill(0, 1);
+  exit(0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1566,7 +1881,7 @@ static void forward_mail(void)
     }
     if (!*to)
       continue;
-    if ((mail = read_mail_or_news_file(dfile, MAIL))) {
+    if ((mail = read_mail_or_news_file(dfile, MAIL, HEADER_AND_BODY))) {
       split_address(to, mail->touser, mail->tohost);
       forward_message(mail);
       free_mail(mail);
@@ -1644,7 +1959,7 @@ static void forward_news(void)
   starttime = time(0);
   while (filelist) {
     if (!stat(filelist->str, &statbuf)) {
-      if ((mail = read_mail_or_news_file(filelist->str, NEWS))) {
+      if ((mail = read_mail_or_news_file(filelist->str, NEWS, HEADER_AND_BODY))) {
 	if (export)
 	  export_message(mail);
 	else
@@ -1679,7 +1994,7 @@ static void forward_news(void)
 
 /*---------------------------------------------------------------------------*/
 
-static void f_command(int argc, char **argv)
+static void f_command(int argc, const char **argv)
 {
 
   char fname[1024];
@@ -1706,7 +2021,56 @@ static void f_command(int argc, char **argv)
 
 /*---------------------------------------------------------------------------*/
 
-static void info_command(int argc, char **argv)
+static void group_command(int argc, const char **argv)
+{
+
+  char name[1024];
+  struct group *p;
+
+  if (!groups)
+    load_groups();
+
+  switch (argc) {
+
+  case 1:
+    printf("GROUP: %s\n",
+	   current_group ?
+		   current_group->name + NEWSGROUPSPREFIXLENGTH :
+		   "NONE");
+    break;
+
+  case 2:
+    strcpy(name, NEWSGROUPSPREFIX);
+    strcat(name, argv[1]);
+    p = find_group(name);
+    if (!p) {
+      printf("No such group: '%s'.\n", argv[1]);
+      return;
+    }
+    current_group = p;
+    current_article = p->low;
+    break;
+
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void headers_command(int argc, const char **argv)
+{
+  switch (argc) {
+  case 1:
+    printf("HEADERS: %s\n", headers);
+    break;
+  case 2:
+    strupc(strcpy(headers, argv[1]));
+    break;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void info_command(int argc, const char **argv)
 {
 
   FILE *fp;
@@ -1722,116 +2086,142 @@ static void info_command(int argc, char **argv)
 
 /*---------------------------------------------------------------------------*/
 
-#define nextarg(name)     \
-  if (++i >= argc) {      \
-    errors++;             \
-    printf(errstr, name); \
-    return;               \
-  }
-
-static void list_command(int argc, char **argv)
+static void list_command(int argc, const char **argv)
 {
 
-  char *at = 0;
-  char *bid = 0;
-  char *errstr = "The %s option requires an argument.  Type ? LIST for help.\n";
-  char *from = 0;
-  char *subject = 0;
-  char *to = 0;
-  int count = 999999;
-  int found = 0;
+  char from[1024];
+  char pattern[1024];
+  int changed;
   int i;
-  int max = 999999;
-  int min = 1;
-  int seq = -1;
-  int update_seq = 0;
-  size_t len;
-  struct index index;
-  struct tm *tm;
+  int j;
+  int unread;
+  long timeout;
+  struct mail *mail;
 
-  for (i = 1; i < argc; i++) {
-    len = strlen(strlwc(argv[i]));
-    if (!strcmp("$", argv[i]) || !strncmp("bid", argv[i], len)) {
-      nextarg("BID");
-      bid = strupc(argv[i]);
-    } else if (!strcmp("<", argv[i]) || !strncmp("from", argv[i], len)) {
-      nextarg("FROM");
-      from = strupc(argv[i]);
-    } else if (!strcmp(">", argv[i]) || !strncmp("to", argv[i], len)) {
-      nextarg("TO");
-      to = strupc(argv[i]);
-    } else if (!strcmp("@", argv[i]) || !strncmp("at", argv[i], len)) {
-      nextarg("AT");
-      at = strupc(argv[i]);
-    } else if (!strncmp("count", argv[i], len)) {
-      nextarg("COUNT");
-      count = atoi(argv[i]);
-    } else if (!strncmp("new", argv[i], len)) {
-      if (seq == -1)
-	seq = get_seq();
-      min = seq + 1;
-      update_seq = (argc == 2 && level == USER);
-    } else if (!strncmp("max", argv[i], len)) {
-      nextarg("MAX");
-      max = atoi(argv[i]);
-    } else if (!strncmp("min", argv[i], len)) {
-      nextarg("MIN");
-      min = atoi(argv[i]);
-    } else if (!strncmp("subject", argv[i], len)) {
-      nextarg("SUBJECT");
-      subject = argv[i];
-    } else {
-      to = strupc(argv[i]);
-    }
-  }
-  if (lseek(fdindex, -SIZEINDEX, SEEK_END) >= 0) {
-    for (; ; ) {
-      if (stopped) return;
-      if (read(fdindex, &index, SIZEINDEX) != SIZEINDEX) halt();
-      if (index.mesg < min) break;
-      if (index.mesg <= max                            &&
-	  read_allowed(&index)                         &&
-	  (!bid      || !strcmp(index.bid, bid))       &&
-	  (!from     || !strcmp(index.from, from))     &&
-	  (!to       || !strcmp(index.to, to))         &&
-	  (!at       || !strcmp(index.at, at))         &&
-	  (!subject  || Strcasestr(index.subject, subject))) {
-	if (!found) {
-	  puts("  Msg#  Size To      @ BBS     From     Date    Subject");
-	  found = 1;
-	}
-	tm = gmtime(&index.date);
-	printf("%6d %5ld %-8s%c%-8s %-8s %02d%02d%02d  %.31s\n",
-	       index.mesg,
-	       index.size,
-	       index.to,
-	       *index.at ? '@' : ' ',
-	       index.at,
-	       index.from,
-	       tm->tm_year % 100,
-	       tm->tm_mon + 1,
-	       tm->tm_mday,
-	       index.subject);
-	if (update_seq && seq < index.mesg) {
-	  seq = index.mesg;
-	  put_seq(seq);
-	}
-	if (--count <= 0) break;
+  if (!set_position(argc < 2))
+    return;
+  printf("GROUP: %s\n", current_group->name + NEWSGROUPSPREFIXLENGTH);
+  changed = 0;
+  timeout = time(0) - maxage * DAYS;
+  for (i = current_group->low; i <= current_group->high && !stopped; i++) {
+    unread = !is_read(current_group, i);
+    if (!unread && argc < 2)
+      continue;
+    if (!(mail = get_article(current_group, i, HEADER_ONLY))) {
+      if (unread) {
+	set_read(current_group, i);
+	current_group->unread--;
+	unread = 0;
+	changed = 1;
       }
-      if (lseek(fdindex, -2L * SIZEINDEX, SEEK_CUR) < 0) break;
+      continue;
     }
+    if (mail->date < timeout) {
+      if (unread) {
+	set_read(current_group, i);
+	current_group->unread--;
+	unread = 0;
+	changed = 1;
+      }
+      if (argc < 2) {
+	free_mail(mail);
+	continue;
+      }
+    }
+    sprintf(from, "%s@%s", mail->fromuser, mail->fromhost);
+    if (argc >= 2) {
+      for (j = 1; j < argc; j++) {
+	*pattern = '*';
+	strcpy(pattern + 1, argv[j]);
+	strcat(pattern + 1, "*");
+	if (stringcasematch(from, pattern))
+	  break;
+	if (stringcasematch(mail->subject, pattern))
+	  break;
+      }
+      if (j >= argc) {
+	free_mail(mail);
+	continue;
+      }
+    }
+    printf("%5d %c %-55.55s %-15.15s\n",
+	   i - current_group->low + 1,
+	   unread ? '+' : ' ',
+	   mail->subject,
+	   from);
+    free_mail(mail);
   }
-  if (!found)
-    puts(update_seq ?
-	 "No new messages since last LIST NEW command." :
-	 "No matching message found.");
+  if (changed) {
+    store_groups();
+  }
 }
-
-#undef nextarg
 
 /*---------------------------------------------------------------------------*/
 
-static void mybbs_command(int argc, char **argv)
+static void mark_command(int argc, const char **argv)
+{
+
+  char argvbuf[16];
+  int a;
+  int changed;
+  int high;
+  int i;
+  int low;
+  int mark;
+
+  mark = (argv[0][0] == 'M' || argv[0][0] == 'm');
+  if (!set_position(0))
+    return;
+  if (argc < 2) {
+    sprintf(argvbuf, "%d", current_article - current_group->low + 1);
+    argc = 2;
+    argv[1] = argvbuf;
+  }
+  changed = 0;
+  for (a = 1; a < argc; a++) {
+    parse_range(current_group, argv[a], &low, &high);
+    if (low < current_group->low || high > current_group->high) {
+      printf("Message number out of range.\n");
+      continue;
+    }
+    for (i = low; i <= high; i++) {
+      if (mark) {
+	if (!is_read(current_group, i)) {
+	  set_read(current_group, i);
+	  current_group->unread--;
+	  changed = 1;
+	}
+      } else {
+	if (is_read(current_group, i)) {
+	  unset_read(current_group, i);
+	  current_group->unread++;
+	  changed = 1;
+	}
+      }
+    }
+  }
+  if (changed) {
+    store_groups();
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void maxage_command(int argc, const char **argv)
+{
+  switch (argc) {
+  case 1:
+    printf("MAXAGE: %d\n", maxage);
+    break;
+  case 2:
+    maxage = atoi(argv[1]);
+    break;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void mybbs_command(int argc, const char **argv)
 {
   struct mail *mail;
 
@@ -1851,14 +2241,21 @@ static void mybbs_command(int argc, char **argv)
 
 /*---------------------------------------------------------------------------*/
 
-static void prompt_command(int argc, char **argv)
+static void prompt_command(int argc, const char **argv)
 {
-  strcpy(prompt, argv[1]);
+  switch (argc) {
+  case 1:
+    printf("PROMPT: \"%s\"\n", prompt);
+    break;
+  case 2:
+    strcpy(prompt, argv[1]);
+    break;
+  }
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void quit_command(int argc, char **argv)
+static void quit_command(int argc, const char **argv)
 {
   puts("BBS terminated.");
   exit(0);
@@ -1866,61 +2263,76 @@ static void quit_command(int argc, char **argv)
 
 /*---------------------------------------------------------------------------*/
 
-static void read_command(int argc, char **argv)
+static void read_command(int argc, const char **argv)
 {
 
+  char argvbuf[16];
   FILE *fp;
-  char *p;
-  char buf[1024];
-  char path[1024];
-  int i;
-  int inheader;
-  int mesg;
-  struct index index;
+  int high;
+  int low;
+  int mode;
 
-  for (i = 1; i < argc; i++)
-    if ((mesg = atoi(argv[i])) > 0 && get_index(mesg, &index) && read_allowed(&index)) {
-      if (!(fp = fopen(getfilename(mesg), "r"))) halt();
-      printf("Msg#: %d\n", index.mesg);
-      printf("To: %s%s%s\n", index.to, *index.at ? " @ " : "", index.at);
-      printf("From: %s\n", index.from);
-      printf("Date: %s\n", rfc822_date_string(index.date));
-      printf("Subject: %s\n", index.subject);
-      printf("Bulletin-ID: %s\n", index.bid);
-      *path = 0;
-      inheader = 1;
-      while (fgets(buf, sizeof(buf), fp)) {
-	if (stopped) {
-	  fclose(fp);
-	  return;
-	}
-	if (inheader) {
-	  if ((p = get_host_from_header(buf))) {
-	    strcat(path, *path ? "!" : "Path: ");
-	    strcat(path, p);
-	    continue;
-	  }
-	  if (*path) puts(path);
-	  putchar('\n');
-	  inheader = 0;
-	}
-	fputs(buf, stdout);
-      }
-      putchar('\n');
-      fclose(fp);
-    } else
-      printf("No such message: '%s'.\n", argv[i]);
+  mode = Xtolower(argv[0][0]);
+  fp = stdout;
+  argc--;
+  argv++;
+  if (mode == 'w' || mode == 'p') {
+    seteugid(user.uid, user.gid);
+    if (mode == 'w')
+      fp = fopen(*argv, "a");
+    else
+      fp = popen(*argv, "w");
+    seteugid(0, 0);
+    if (!fp) {
+      perror(*argv);
+      return;
+    }
+    argc--;
+    argv++;
+  }
+  if (!argc) {
+    if (!set_position(1))
+      goto Done;
+    sprintf(argvbuf, "%d", current_article - current_group->low + 1);
+    argc = 1;
+    *argv = argvbuf;
+  } else {
+    if (!set_position(0))
+      goto Done;
+  }
+  for (; argc && !stopped; argc--, argv++) {
+    parse_range(current_group, *argv, &low, &high);
+    if (low < current_group->low || high > current_group->high) {
+      printf("Message number out of range.\n");
+      continue;
+    }
+    for (current_article = low; !stopped;) {
+      output_message(fp);
+      if (current_article >= high)
+	break;
+      current_article++;
+    }
+  }
+Done:
+  switch (mode) {
+  case 'w':
+    fclose(fp);
+    break;
+  case 'p':
+    pclose(fp);
+    break;
+  }
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int collect_message(struct mail *mail, int print_prompt, int check_header)
+static int collect_message(struct mail *mail, int do_prompt, int check_header)
 {
 
   char line[1024];
   char *p;
 
-  if (print_prompt)
+  if (do_prompt)
     puts("Enter message: (terminate with ^Z, /EX, or ***END)");
   for (;;) {
     getstring(line);
@@ -1951,66 +2363,71 @@ static int collect_message(struct mail *mail, int print_prompt, int check_header
 
 /*---------------------------------------------------------------------------*/
 
-static void reply_command(int argc, char **argv)
+static void reply_command(int argc, const char **argv)
 {
 
-  char line[1024];
-  char *host;
-  char *mesgstr;
-  char *p;
-  FILE *fp;
+  char *cp;
   int all;
   int i;
-  int mesg;
-  struct index index;
-  struct mail *mail;
+  struct mail *orig_mail;
+  struct mail *reply_mail;
 
-  mesg = all = 0;
-  mesgstr = 0;
-  for (i = 1; i < argc; i++)
-    if (!Strcasecmp(argv[i], "all"))
-      all = 1;
-    else
-      mesg = atoi(mesgstr = argv[i]);
-  if (!mesgstr) {
-    puts("No message number specified.");
+  if (!set_position(0))
     return;
+  argc--;
+  argv++;
+  all = 0;
+  if (argc && !Strcasecmp(*argv, "all")) {
+    all = 1;
+    argc--;
+    argv++;
   }
-  if (mesg < 1 || !get_index(mesg, &index) || !read_allowed(&index)) {
-    printf("No such message: '%s'.\n", mesgstr);
-    return;
-  }
-  mail = alloc_mail();
-  strcpy(mail->fromuser, user.name);
-  if (all) {
-    strcpy(mail->touser, index.to);
-    strcpy(mail->tohost, index.at);
+  if (argc < 1) {
+    i = current_article;
+  } else if (argc == 1) {
+    i = atoi(*argv) + current_group->low - 1;
   } else {
-    strcpy(mail->touser, index.from);
-    if (!(fp = fopen(getfilename(mesg), "r")))
-      halt();
-    for (host = 0; fgets(line, sizeof(line), fp); host = p)
-      if (!(p = get_host_from_header(line)))
-	break;
-    fclose(fp);
-    strcpy(mail->tohost, host ? host : myhostname);
-  }
-  for (p = index.subject;;) {
-    while (isspace(*p & 0xff))
-      p++;
-    if (Strncasecmp(p, "Re:", 3))
-      break;
-    p += 3;
-  }
-  sprintf(mail->subject, "Re:  %s", p);
-  printf("To: %s @ %s\n", mail->touser, mail->tohost);
-  printf("Subject: %s\n", mail->subject);
-  if (!collect_message(mail, 1, 0)) {
-    free_mail(mail);
+    printf("Too many arguments.  Type HELP REPLY for help.\n");
     return;
   }
-  printf("Sending message to %s @ %s.\n", mail->touser, mail->tohost);
-  route_mail(mail);
+  if (!(orig_mail = get_article(current_group, i, HEADER_ONLY))) {
+    printf("No such message: '%d'.\n", i - current_group->low + 1);
+    return;
+  }
+  current_article = i;
+  reply_mail = alloc_mail();
+  strcpy(reply_mail->fromuser, user.name);
+  if (all) {
+    strcpy(reply_mail->touser, orig_mail->touser);
+    strcpy(reply_mail->tohost, orig_mail->tohost);
+  } else {
+    strcpy(reply_mail->touser, orig_mail->fromuser);
+    strcpy(reply_mail->tohost, orig_mail->fromhost);
+  }
+  for (cp = orig_mail->subject;;) {
+    while (isspace(*cp & 0xff))
+      cp++;
+    if (Strncasecmp(cp, "Re:", 3))
+      break;
+    cp += 3;
+  }
+  sprintf(reply_mail->subject, "Re: %s", cp);
+  free_mail(orig_mail);
+  printf("To: %s@%s\n", reply_mail->touser, reply_mail->tohost);
+  printf("Subject: %s\n", reply_mail->subject);
+  if (!collect_message(reply_mail, 1, 0)) {
+    free_mail(reply_mail);
+    return;
+  }
+  printf("Sending message to %s@%s.\n", reply_mail->touser, reply_mail->tohost);
+  route_mail(reply_mail);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void reload_command(int argc, const char **argv)
+{
+  load_groups();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -2023,11 +2440,11 @@ static void reply_command(int argc, char **argv)
     return;               \
   }
 
-static void send_command(int argc, char **argv)
+static void send_command(int argc, const char **argv)
 {
 
   char line[1024];
-  char *errstr = "The %s option requires an argument.  Type ? SEND for help.\n";
+  char *errstr = "The %s option requires an argument.  Type HELP SEND for help.\n";
   int got_control_z;
   int i;
   struct mail *mail;
@@ -2127,10 +2544,9 @@ static void send_command(int argc, char **argv)
 
 /*---------------------------------------------------------------------------*/
 
-static void shell_command(int argc, char **argv)
+static void shell_command(int argc, const char **argv)
 {
 
-  char command[2048];
   int i;
   int status;
   pid_t pid;
@@ -2142,23 +2558,19 @@ static void shell_command(int argc, char **argv)
   case 0:
     setgid(user.gid);
     setuid(user.uid);
-    for (i = open_max() - 1; i >= 3; i--) close(i);
-    *command = 0;
-    for (i = 1; i < argc; i++) {
-      if (i > 1) strcat(command, " ");
-      strcat(command, argv[i]);
-    }
-    if (*command)
-      execl(user.shell, user.shell, "-c", command, 0);
-    else
+    for (i = open_max() - 1; i >= 3; i--)
+      close(i);
+    if (argc == 1)
       execl(user.shell, user.shell, 0);
+    else
+      execl(user.shell, user.shell, "-c", argv[1], 0);
     _exit(127);
     break;
   default:
-    signal(SIGINT,  SIG_IGN);
+    signal(SIGINT, SIG_IGN);
     signal(SIGQUIT, SIG_IGN);
     while (wait(&status) != pid) ;
-    signal(SIGINT,  interrupt_handler);
+    signal(SIGINT, interrupt_handler);
     signal(SIGQUIT, interrupt_handler);
     break;
   }
@@ -2166,141 +2578,140 @@ static void shell_command(int argc, char **argv)
 
 /*---------------------------------------------------------------------------*/
 
-static void sid_command(int argc, char **argv)
+static void sid_command(int argc, const char **argv)
 {
   /*** ignore System IDentifiers (SIDs) for now ***/
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void status_command(int argc, char **argv)
+static void subscribe_command(int argc, const char **argv)
 {
 
-  int active = 0;
-  int deleted = 0;
-  int highest = 0;
-  int newmsg = 0;
-  int n;
-  int readable = 0;
-  int seq;
-  struct index *pi, index[1000];
+  char pattern[1024];
+  int a;
+  int changed;
+  int subscribed;
+  struct group *p;
 
-  printf("DK5SG-BBS  Revision: %s %s\n", revision.number, revision.date);
-  if (lseek(fdindex, 0L, SEEK_SET))
-    halt();
-  seq = get_seq();
-  for (;;) {
-    n = read(fdindex, pi = index, 1000 * SIZEINDEX) / SIZEINDEX;
-    if (n < 1)
-      break;
-    for (; n; n--, pi++) {
-      highest = pi->mesg;
-      if (pi->deleted) {
-	deleted++;
-      } else {
-	active++;
-	if (read_allowed(pi)) {
-	  readable++;
-	  if (pi->mesg > seq)
-	    newmsg++;
+  subscribed = (argv[0][0] == 'S' || argv[0][0] == 's');
+  if (argc < 2) {
+    if (!set_position(0))
+      return;
+    argc = 2;
+    argv[1] = current_group->name + NEWSGROUPSPREFIXLENGTH;
+  } else {
+    if (!groups)
+      load_groups();
+  }
+  changed = 0;
+  for (a = 1; a < argc; a++) {
+    strcpy(pattern, NEWSGROUPSPREFIX);
+    strcat(pattern, argv[a]);
+    for (p = groups; p; p = p->next) {
+      if (stringcasematch(p->name, pattern)) {
+	if (p->subscribed != subscribed) {
+	  p->subscribed = subscribed;
+	  if (!changed) {
+	    if (subscribed)
+	      printf("Subscribing to");
+	    else
+	      printf("Unsubscribing from");
+	  }
+	  changed = 1;
+	  printf(" %s", p->name + NEWSGROUPSPREFIXLENGTH);
 	}
       }
     }
   }
-  printf("%6d  Highest message number\n", highest);
-  printf("%6d  Active messages\n", active);
-  printf("%6d  Readable messages\n", readable);
-  printf("%6d  Deleted messages\n", deleted);
-  printf("%6d  Last message listed\n", seq);
-  printf("%6d  New messages\n", newmsg);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void unknown_command(int argc, char **argv)
-{
-  errors++;
-  printf("Unknown command '%s'.  Type ? for help.\n", *argv);
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void xcrunch_command(int argc, char **argv)
-{
-
-#define TEMP_INDEXFILE  INDEXFILE ".tmp"
-
-  int f;
-  int wflag;
-  struct index index;
-
-  if ((f = open(TEMP_INDEXFILE, O_WRONLY | O_CREAT | O_EXCL, 0644)) < 0)
-    halt();
-  if (lseek(fdindex, 0L, SEEK_SET))
-    halt();
-  wflag = 0;
-  while (read(fdindex, &index, SIZEINDEX) == SIZEINDEX) {
-    wflag = 1;
-    if (!index.deleted) {
-      if (write(f, &index, SIZEINDEX) != SIZEINDEX)
-	 halt();
-      wflag = 0;
-    }
+  if (changed) {
+    putchar('\n');
+    store_groups();
   }
-  if (wflag)
-    if (write(f, &index, SIZEINDEX) != SIZEINDEX)
-       halt();
-  if (close(f))
-    halt();
-  if (close(fdindex))
-    halt();
-  if (rename(TEMP_INDEXFILE, INDEXFILE))
-    halt();
-  exit(0);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void help_command(int argc, char **argv);
+static void version_command(int argc, const char **argv)
+{
+
+  int art = 0;
+  int grp = 0;
+  int sub = 0;
+  int unr = 0;
+  struct group *p;
+
+  if (!groups)
+    load_groups();
+
+  for (p = groups; p; p = p->next) {
+    grp++;
+    if (p->subscribed)
+      sub++;
+    art += (p->high - p->low + 1);
+    unr += p->unread;
+  }
+
+  printf("DK5SG-BBS  Revision: %s %s\n", revision.number, revision.date);
+  printf("\n");
+  printf("Headers:              %8s\n", headers);
+  printf("Maxage:               %8d\n", maxage);
+  printf("\n");
+  printf("Groups:               %8d\n", grp);
+  printf("Subscribed-to groups: %8d\n", sub);
+  printf("Articles:             %8d\n", art);
+  printf("Unread articles:      %8d\n", unr);
+  printf("\n");
+  printf("Current group:        %8s\n", current_group ?
+	 current_group->name + NEWSGROUPSPREFIXLENGTH :
+	 "NONE");
+  if (current_group) {
+    printf("Articles:             %8d\n", current_group->high - current_group->low + 1);
+    printf("Unread articles:      %8d\n", current_group->unread);
+    printf("Current article:      %8d\n", current_article - current_group->low + 1);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void help_command(int argc, const char **argv);
 
 static const struct cmdtable cmdtable[] = {
 
-  { "!",                shell_command,          0,      USER },
-  { "?",                help_command,           0,      USER },
-  { "BYE",              quit_command,           0,      USER },
-  { "DELETE",           delete_command,         2,      USER },
-  { "DIR",              dir_command,            0,      USER },
-  { "DISCONNECT",       disconnect_command,     0,      USER },
-  { "ERASE",            delete_command,         2,      USER },
-  { "EXIT",             quit_command,           0,      USER },
-  { "F",                f_command,              2,      MBOX },
-  { "HELP",             help_command,           0,      USER },
-  { "INFO",             info_command,           0,      USER },
-  { "KILL",             delete_command,         2,      USER },
-  { "LIST",             list_command,           2,      USER },
-  { "MYBBS",            mybbs_command,          2,      USER },
-  { "PRINT",            read_command,           2,      USER },
-  { "PROMPT",           prompt_command,         2,      USER },
-  { "QUIT",             quit_command,           0,      USER },
-  { "READ",             read_command,           2,      USER },
-  { "REPLY",            reply_command,          2,      USER },
-  { "RESPOND",          reply_command,          2,      USER },
-  { "SB",               send_command,           2,      MBOX },
-  { "SEND",             send_command,           2,      USER },
-  { "SHELL",            shell_command,          0,      USER },
-  { "SP",               send_command,           2,      MBOX },
-  { "STATUS",           status_command,         0,      USER },
-  { "TYPE",             read_command,           2,      USER },
-  { "VERSION",          status_command,         0,      USER },
-  { "XCRUNCH",          xcrunch_command,        0,      ROOT },
-  { "[",                sid_command,            0,      MBOX },
+  { "ALIAS",            alias_command,          1,      3,      USER },
+  { "DIR",              dir_command,            1,      99999,  USER },
+  { "DELETE",           delete_command,         2,      99999,  USER },
+  { "DISCONNECT",       disconnect_command,     1,      1,      USER },
+  { "F",                f_command,              2,      99999,  MBOX },
+  { "GROUP",            group_command,          1,      2,      USER },
+  { "HELP",             help_command,           1,      2,      USER },
+  { "HEADERS",          headers_command,        1,      2,      USER },
+  { "INFO",             info_command,           1,      1,      USER },
+  { "LIST",             list_command,           1,      99999,  USER },
+  { "MARK",             mark_command,           1,      99999,  USER },
+  { "MAXAGE",           maxage_command,         1,      2,      USER },
+  { "MYBBS",            mybbs_command,          2,      2,      USER },
+  { "PIPE",             read_command,           2,      99999,  USER },
+  { "PROMPT",           prompt_command,         1,      2,      USER },
+  { "QUIT",             quit_command,           1,      1,      USER },
+  { "READ",             read_command,           1,      99999,  USER },
+  { "REPLY",            reply_command,          1,      3,      USER },
+  { "RELOAD",           reload_command,         1,      1,      USER },
+  { "SEND",             send_command,           2,      99999,  USER },
+  { "SHELL",            shell_command,          1,      2,      USER },
+  { "SUBSCRIBE",        subscribe_command,      1,      99999,  USER },
+  { "UNMARK",           mark_command,           1,      99999,  USER },
+  { "UNSUBSCRIBE",      subscribe_command,      1,      99999,  USER },
+  { "VERSION",          version_command,        1,      1,      USER },
+  { "WRITE",            read_command,           2,      99999,  USER },
+  { "[",                sid_command,            1,      99999,  MBOX },
 
-  { 0,                  unknown_command,        0,      USER }
+  { 0,                  0,                      0,      0,      USER }
 };
 
 /*---------------------------------------------------------------------------*/
 
-static void help_command(int argc, char **argv)
+static void help_command(int argc, const char **argv)
 {
 
   FILE *fp;
@@ -2418,53 +2829,235 @@ static void connect_bbs(void)
 
 /*---------------------------------------------------------------------------*/
 
-static void parse_command_line(char *line)
+static void parse_command_line(const char *line, int add_argc, const char **add_argv, int recursion_level);
+
+static void execute_command(int argc, const char **argv, int recursion_level)
+{
+
+  const struct cmdtable *cmdp;
+  int len;
+  struct alias *p;
+
+  if (recursion_level >= 20) {
+    errors++;
+    printf("Alias loop.\n");
+    goto Done;
+  }
+
+  if (!(len = strlen(*argv))) {
+    errors++;
+    printf("Unknown command ''.  Type HELP for help.\n");
+    goto Done;
+  }
+
+  /* Check for full match on alias */
+
+  for (p = aliases; p; p = p->next) {
+    if (!Strcasecmp(p->name, *argv)) {
+      parse_command_line(p->value, argc - 1, argv + 1, recursion_level + 1);
+      goto Done;
+    }
+  }
+
+  /* Check for substring match on built-in command */
+
+  for (cmdp = cmdtable; cmdp->name; cmdp++) {
+    if (level >= cmdp->level && !Strncasecmp(cmdp->name, *argv, len)) {
+      if (argc < cmdp->minargs) {
+	errors++;
+	printf("Too few arguments.  Type HELP %s for help.\n", cmdp->name);
+      } else if (argc > cmdp->maxargs) {
+	errors++;
+	printf("Too many arguments.  Type HELP %s for help.\n", cmdp->name);
+      } else {
+	if (cmdp->name)
+	  argv[0] = cmdp->name;
+	(*cmdp->fnc)(argc, argv);
+      }
+      goto Done;
+    }
+  }
+
+  /* Check for substring match on alias */
+
+  for (p = aliases; p; p = p->next) {
+    if (!Strncasecmp(p->name, *argv, len)) {
+      parse_command_line(p->value, argc - 1, argv + 1, recursion_level + 1);
+      goto Done;
+    }
+  }
+
+  errors++;
+  printf("Unknown command '%s'.  Type HELP for help.\n", *argv);
+
+Done:
+  if (level == MBOX && errors >= 3)
+    exit(1);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void parse_command_line(const char *line, int add_argc, const char **add_argv, int recursion_level)
 {
 
 #define STARTDELIM      "#$<["
-#define ANYDELIM        "@>"
+#define ANYDELIM        "@>;"
 
-  char *argv[256];
-  char *f;
-  char *t;
   char buf[2048];
+  char quoted[256];
+  char *t;
+  const char *argv[256];
+  const char *f;
+  const char **ap;
   int argc;
-  int len;
+  int i;
   int quote;
-  const struct cmdtable *cmdp;
 
   argc = 0;
-  memset((char *) argv, 0, sizeof(argv));
-  for (f = line, t = buf; ; ) {
-    while (isspace(*f & 0xff)) f++;
-    if (!*f) break;
-    argv[argc++] = t;
+  for (f = line, t = buf;;) {
+    while (isspace(*f & 0xff))
+      f++;
+    if (!*f)
+      break;
+    argv[argc] = t;
+    quoted[argc] = 0;
     if (*f == '"' || *f == '\'') {
+      quoted[argc] = 1;
       quote = *f++;
-      while (*f && *f != quote) *t++ = *f++;
-      if (*f) f++;
+      while (*f && *f != quote)
+	*t++ = *f++;
+      if (*f)
+	f++;
     } else if (strchr(STARTDELIM ANYDELIM, *f)) {
       *t++ = *f++;
     } else {
-      while (*f && !isspace(*f & 0xff) && !strchr(ANYDELIM, *f)) *t++ = *f++;
+      while (*f && !isspace(*f & 0xff) && !strchr(ANYDELIM, *f))
+	*t++ = *f++;
     }
     *t++ = 0;
+    argc++;
   }
-  if (!argc) return;
-  if (!(len = strlen(*argv))) return;
-  for (cmdp = cmdtable; ; cmdp++)
-    if (!cmdp->name ||
-	(level >= cmdp->level && !Strncasecmp(cmdp->name, *argv, len))) {
-      if (argc >= cmdp->argc)
-	(*cmdp->fnc)(argc, argv);
-      else {
-	errors++;
-	printf("The %s command requires more arguments.  Type ? %s for help.\n",
-	       cmdp->name, cmdp->name);
-      }
-      break;
+
+  while (add_argc-- > 0)
+    argv[argc++] = *add_argv++;
+
+  for (ap = argv; argc > 0;) {
+    for (i = 0; i < argc; i++) {
+      if (!quoted[i] && !strcmp(ap[i], ";"))
+	break;
     }
-  if (level == MBOX && errors >= 3) exit(1);
+    execute_command(i, ap, recursion_level);
+    argc -= i + 1;
+    ap += i + 1;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void print_prompt(void)
+{
+
+  char line[1024];
+  char *f;
+  char *t;
+  int i;
+  int num;
+  long gmt;
+  struct tm *tm = 0;
+
+  if (level == MBOX) {
+    printf(">\n");
+    return;
+  }
+  t = line;
+  f = prompt;
+  while (*f) {
+    if (*f == '\\') {
+      f++;
+      switch (*f) {
+      case 0:
+	break;
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+	num = 0;
+	for (i = 0; i < 3; i++) {
+	  if (*f < '0' || *f > '7')
+	    break;
+	  num = 8 * num + *f++ - '0';
+	}
+	*t++ = (char) num;
+	break;
+      case 'c':
+	f++;
+	sprintf(t, "%d", current_group ?
+		current_article - current_group->low + 1 :
+		0);
+	while (*t)
+	  t++;
+	break;
+      case 'd':
+	f++;
+	if (!tm) {
+	  gmt = time(0);
+	  tm = localtime(&gmt);
+	}
+	sprintf(t, "%02d-%.3s-%02d",
+		tm->tm_mday,
+		monthnames + 3 * tm->tm_mon,
+		tm->tm_year % 100);
+	while (*t)
+	  t++;
+	break;
+      case 'h':
+	f++;
+	strcpy(t, myhostname);
+	while (*t)
+	  t++;
+	break;
+      case 'n':
+	f++;
+	*t++ = '\n';
+	break;
+      case 't':
+	f++;
+	if (!tm) {
+	  gmt = time(0);
+	  tm = localtime(&gmt);
+	}
+	sprintf(t, "%02d:%02d", tm->tm_hour, tm->tm_min);
+	while (*t)
+	  t++;
+	break;
+      case 'u':
+	f++;
+	strcpy(t, user.name);
+	while (*t)
+	  t++;
+	break;
+      case 'w':
+	f++;
+	strcpy(t, current_group ?
+	       current_group->name + NEWSGROUPSPREFIXLENGTH :
+	       "NONE");
+	while (*t)
+	  t++;
+	break;
+      default:
+	*t++ = *f++;
+	break;
+      }
+    } else {
+      *t++ = *f++;
+    }
+  }
+  *t = 0;
+  printf("%s", line);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -2472,14 +3065,36 @@ static void parse_command_line(char *line)
 static void bbs(void)
 {
 
-  FILE *fp;
   char line[1024];
+  FILE *fp;
 
   if (level != MBOX)
-    printf("DK5SG-BBS  Revision: %s   Type ? for help.\n", revision.number);
-  sprintf(line, "%s/%s", user.dir, RCFILE);
+    printf("DK5SG-BBS  Revision: %s   Type HELP for help.\n", revision.number);
+
+  change_alias("BYE", "QUIT");
+  change_alias("CHECK", "DIR");
+  change_alias("ERASE", "DELETE");
+  change_alias("EXIT", "QUIT");
+  change_alias("KILL", "DELETE");
+  change_alias("PRINT", "READ");
+  change_alias("RESPOND", "REPLY");
+  change_alias("SB", "SEND");
+  change_alias("SP", "SEND");
+  change_alias("STATUS", "VERSION");
+  change_alias("TYPE", "READ");
+  change_alias(">", "WRITE");
+  change_alias("?", "HELP");
+  change_alias("!", "SHELL");
+  change_alias("|", "PIPE");
+
+  change_alias("MAIL", "SHELL mailx");
+  change_alias("MORE", "PIPE more");
+  change_alias("NEWNEWS", "RELOAD; DIR");
+  change_alias("SKIPGROUP", "MARK *; LIST");
+
+  sprintf(line, "%s/%s", user.dir, BBSRCFILE);
   if ((fp = fopen(line, "r"))) {
-    while (fgets(line, sizeof(line), fp)) parse_command_line(line);
+    while (fgets(line, sizeof(line), fp)) parse_command_line(line, 0, 0, 0);
     fclose(fp);
   }
   if (do_forward) {
@@ -2488,14 +3103,14 @@ static void bbs(void)
   }
   if (level == MBOX) printf("[THEBOX-1.8-H$]\n");
   if (do_forward) wait_for_prompt();
-  for (; ; ) {
+  for (;;) {
     if (do_forward)
       strcpy(line, "f>");
     else {
-      printf("%s", (level == MBOX) ? ">\n" : prompt);
+      print_prompt();
       getstring(line);
     }
-    parse_command_line(line);
+    parse_command_line(line, 0, 0, 0);
     do_forward = 0;
     if (stopped) {
       puts("\n*** Interrupt ***");
@@ -2602,7 +3217,6 @@ int main(int argc, char **argv)
   }
 
   mkdir(LOCKDIR, 0755);
-  mkdir(WRKDIR, 0755);
 
   if (export) {
     if (!(user.name = strdup(sysname))) halt();
@@ -2644,7 +3258,6 @@ int main(int argc, char **argv)
   if (export) {
     doexport();
   } else {
-    if ((fdindex = open(INDEXFILE, O_RDWR | O_CREAT, 0644)) < 0) halt();
     bbs();
   }
 

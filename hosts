@@ -1881,7 +1881,7 @@
 44.130.28.30    DL8ZAD  # Juergen, 35789 Weilmuenster nr Wetzlar
 44.130.28.58    DF0WS   # ClubStn F58, 35396 Giessen-Wieseck
 #
-# KA_HOSTS BEGIN [950902]
+# KA_HOSTS BEGIN [951026]
 # Hier die Karlsruher IP-Adressen:
 #
 44.130.29.0  karlsruhe  # Netzmaske KATCP, Koordination: dc1ik@db0sao.ampr.org
@@ -1973,15 +1973,15 @@
 44.130.29.84 dg8sev-k   # JN48nr Stephan Block        70569 Stuttgart
 44.130.29.85 dg1sek-r   # JN48mv Frieder Loeffler     71706 Markgroeningen
 44.130.29.86 dl3it      # JN49ea Thomas Wischnack     76135 Karlsruhe
-44.130.29.87 dl3it-u    # JN49ea Thomas Wischnack     76135 Karlsruhe
-44.130.29.88 dg1ie      # JN48ex Gunnar Bernstein     76199 Karlsruhe
+44.130.29.87 dl3it-s    # JN49ea Thomas Wischnack     76135 Karlsruhe
+44.130.29.88 dh9iag     # JN48ex Gunnar Bernstein     76199 Karlsruhe
 44.130.29.89 dh8iag-w   #        Manfred Guenzl       76199 Karlsruhe
 44.130.29.90 dh8iag-1   #        Manfred Guenzl       76199 Karlsruhe
 44.130.29.91 dg1gwy     #        Werner Guenzl        78713 Schramberg
 44.130.29.92 dg1gwy-w   #        Werner Guenzl        78713 Schramberg
 44.130.29.93 df3iar-s   # JN49ea Andreas Gross        76133 Karlsruhe
 44.130.29.94 dh5iag     # JN49ea Peter Boegler        76131 Karlsruhe
-44.130.29.95 dg1ie-u    # JN48ex Gunnar Bernstein     76199 Karlsruhe
+44.130.29.95 dh9iag-u   # JN48ex Gunnar Bernstein     76199 Karlsruhe
 44.130.29.96 dg1ian     # JN48ex Sascha Schlindwein   76137 Karlsruhe
 44.130.29.97 dg4ial     # JN49ea Axel Hartmann        76133 Karlsruhe
 44.130.29.98 dg4ial-1   # JN49ea Axel Hartmann        76133 Karlsruhe
@@ -1991,7 +1991,7 @@
 44.130.29.102 dl5iae-w  # JN49be Steffen Engmann      76829 Landau
 44.130.29.103 dl3it-n   # JN49ea Thomas Wischnack     76135 Karlsruhe
 44.130.29.104 dl3it-w   # JN49ea Thomas Wischnack     76135 Karlsruhe
-44.130.29.105 dg1ie-2   # JN48ex Gunnar Bernstein     76199 Karlsruhe
+44.130.29.105 dh9iag-2  # JN48ex Gunnar Bernstein     76199 Karlsruhe
 44.130.29.106 dh4iad    # JN49da Ralf Burkart         76744 Woerth
 44.130.29.107 dh4iad-w  # JN49da Ralf Burkart         76744 Woerth
 44.130.29.108 dg3uaj    #        Joerg Kliewer        76185 Karlsruhe
@@ -2009,13 +2009,6 @@
 44.130.29.120 df7tc     # JN49ea Dirk Canzler         76185 Karlsruhe
 44.130.29.121 dc1ik-d   # JN49ea Olaf Erb             76131 Karlsruhe
 44.130.29.122 dc1ik-e   # JN49ea Olaf Erb             76131 Karlsruhe
-#44.130.29.123
-#44.130.29.124
-#44.130.29.125
-#44.130.29.126
-#44.130.29.127
-#44.130.29.128
-#44.130.29.129
 44.130.29.130 db0sel    # JN48iv Digi Pforzheim       75179 Pforzheim
 44.130.29.131 db0sel-w  # JN48iv Digi Pforzheim       75179 Pforzheim
 44.130.29.132 db0sel-l  # JN48iv Digi Pforzheim       75179 Pforzheim
@@ -2023,6 +2016,9 @@
 44.130.29.134 dg2iav    # JN49EA Michael Steinel      76185 Karlsruhe
 44.130.29.135 dg2gtn    # Thomas Naeger
 44.130.29.136 dg2gtn-w  # Thomas Naeger
+44.130.29.137 dc1iap    # Peter
+44.130.29.138 dc1iap-w  # Peter
+44.130.29.139 dl3it-l   # JN49ea Thomas Wischnack     76135 Karlsruhe
 #
 #44.130.30.x    Nordhessen
 # --- lokale Adresskoordination: DG1ZX-A

@@ -1,6 +1,6 @@
 #! /bin/ksh
 
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.25 1995/10/06 21:21:22 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/tools/tcpmake,v 1.26 1995/11/07 22:55:12 deyke Exp $
 
 save_file()
 {
@@ -137,5 +137,30 @@ done
 for file in *.gif; do
 	check_file $file
 done
+
+cd ~/tcp/bbs
+file=bbs.help
+save_file $file
+groff -p -t -mgm -Tascii < ~/tcp/doc/bbs.mm | sed 's/.//g' | awk '
+	/BBS Reference Manual.*Version/ {
+		next
+	}
+	/^ *CONTENTS *$/ {
+		exit
+	}
+	/^[0-9][0-9]*\.[0-9]* \ / {
+		print ""
+		print "^" $2
+		print ""
+		sub("^[0-9][0-9]*\.[0-9]* \ ", "")
+		print
+		next
+	}
+	{
+		print
+	}
+' | trim -s | expand > $file
+check_file $file
+mk make install
 
 echo '***** tcpmake complete *****'
