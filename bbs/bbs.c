@@ -1,6 +1,6 @@
 /* Bulletin Board System */
 
-static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.60 1989/01/15 08:22:44 dk5sg Exp $";
+static char rcsid[] = "@(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/bbs/bbs.c,v 1.61 1989/01/15 10:21:45 dk5sg Exp $";
 
 #include <sys/types.h>
 
@@ -89,6 +89,7 @@ static char  *mydesc;
 static char  *myhostname;
 static char  loginname[80];
 static int  debug;
+static int  errors;
 static int  findex;
 static int  hostmode;
 static int  locked;
@@ -435,6 +436,8 @@ struct index *index;
 
 static void unknown_command()
 {
+  errors++;
+  if (hostmode && errors >= 3) kill(0, 1);
   printf("Unknown command '%s'.  Type ? for help.\n", arg[0]);
 }
 
@@ -1495,6 +1498,7 @@ static void bbs()
   int  i;
   register char  *p;
 
+  printf("[MBL-$]\n");
   printf("[DK5SG-%s-H$]\n", revision.number);
   for (; ; ) {
     if (hostmode)
