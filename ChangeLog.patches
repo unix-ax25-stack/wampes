@@ -1,4 +1,9 @@
-Version @(#) $Id: ChangeLog.patches,v 1.4 2002/01/22 21:09:52 dl9sau Exp $
+Version @(#) $Id: ChangeLog.patches,v 1.5 2002/01/23 22:43:27 dl9sau Exp $
+
+020123 Thomas Osterried <dl9sau>
+
+	added comments and my name to the code where changes to the
+	original were made - for better reference
 
 020122 Thomas Osterried <dl9sau>
 

@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25.h,v 1.24 2002/01/22 21:09:52 dl9sau Exp $ */
+/* @(#) $Id: ax25.h,v 1.25 2002/01/23 22:43:28 dl9sau Exp $ */
 
 #ifndef _AX25_H
 #define _AX25_H
@@ -165,7 +165,7 @@ char *ax25hdr_to_string(struct ax25 *hdr);
 void axroute_savefile(void);
 void axroute_loadfile(void);
 
-/* In axserver.c: */
+/* In axserver.c: */	// dl9sau
 void axserv_recv_upcall_discard(struct ax25_cb *axp, int cnt);
 
 #endif  /* _AX25_H */

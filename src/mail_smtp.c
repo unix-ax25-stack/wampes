@@ -1,4 +1,4 @@
-/* @(#) $Id: mail_smtp.c,v 1.22 2002/01/12 16:09:55 dl9sau Exp $ */
+/* @(#) $Id: mail_smtp.c,v 1.23 2002/01/23 22:43:28 dl9sau Exp $ */
 
 /* SMTP Mail Delivery Agent */
 
@@ -52,8 +52,9 @@ static void mail_smtp_transaction(struct mesg *mp)
 		 (mp->buf[3] == ' ' || mp->buf[3] == '-'));
   if (mp->state == SMTP_OPEN_STATE && !valid_reply) return;
   if (valid_reply && mp->buf[3] == '-') return;
-  // linux sendmail sends CR-LF. linux axspawn converts it to LF-LF. ->
-  // ignore empty line
+  // compatibility patch by dl9sau:
+  // linux sendmail sends CR-LF. linux axspawn converts it to LF-LF.
+  // -> ignore empty line
   if (!mp->buf[0]) return;
   if (valid_reply && *mp->buf == (mp->state == SMTP_DATA_STATE ? '3' : '2'))
     switch (mp->state) {
@@ -203,6 +204,8 @@ void mail_smtp(struct mailsys *sp)
     mp->tp->send_mode = strcmp(sp->protocol, "tcp") ? EOL_CR : EOL_CRLF;
     transport_set_timeout(mp->tp, 3600);
     if (strcmp(sp->protocol, "tcp")) {
+      // compatibilty patch by dl9sau: trigger login. also usable because
+      // while profile is running, our cmd.smtp command may become ignored
       transport_send(mp->tp, qdata("\n", 1));	// trigger
       transport_send(mp->tp, qdata("cmd.smtp\n", 9));
     }

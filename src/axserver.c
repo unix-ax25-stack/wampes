@@ -1,4 +1,4 @@
-/* @(#) $Id: axserver.c,v 1.17 2002/01/22 21:09:52 dl9sau Exp $ */
+/* @(#) $Id: axserver.c,v 1.18 2002/01/23 22:43:28 dl9sau Exp $ */
 
 #include "global.h"
 #include "mbuf.h"
@@ -10,6 +10,8 @@ int Axserver_enabled;
 
 /*---------------------------------------------------------------------------*/
 
+// dl9sau: compatibilty feature for IP.VC with xnet hosts
+// incoming ax25 PID=Text droper
 void axserv_recv_upcall_discard(struct ax25_cb *axp, int cnt)
 {
   struct mbuf *bp;
