@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.46 1993/07/18 19:52:39 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/Makefile,v 1.47 1993/09/10 16:05:17 deyke Exp $
 
 CFLAGS        = -I../lib
 
@@ -293,6 +293,12 @@ all:;   chmod 755 cc
 		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
 		'LIBS=../lib/libutil.a' \
 		_all; \
+	elif [ $(OS) = BSD/386 ] ; then \
+		make -i \
+		'CC=cc' \
+		'CFLAGS=-O -DUNIX -DFD_SETSIZE=1024 -I../lib' \
+		'LIBS=../lib/libutil.a' \
+		_all; \
 	elif [ $(OS) = SunOS ] ; then \
 		(if [ -x /usr/lang/acc ] ; then \
 			make -i \
@@ -341,6 +347,9 @@ setsp.o: setsp.c
 		cc -c setsp.s; \
 	elif [ $(OS) = 386BSD ] ; then \
 		$(CC) -E $< > setsp.s; \
+		cc -c setsp.s; \
+	elif [ $(OS) = BSD/386 ] ; then \
+		cpp $< > setsp.s; \
 		cc -c setsp.s; \
 	elif [ $(OS) = SunOS ] ; then \
 		$(CC) $(CFLAGS) -c setsp.c; \

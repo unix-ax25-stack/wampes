@@ -1,4 +1,4 @@
-wampes-930906.tar.Z  (compressed) and wampes-930906.tar.gz (gzipped) are
+wampes-930910.tar.Z  (compressed) and wampes-930910.tar.gz (gzipped) are
 tar archives of WAMPES,  which is a NET/NOS  port to various  flavors of
 Unix.
 
@@ -19,6 +19,8 @@ WAMPES currently supports the following configurations:
 +---------------+-----------------+-------------------------------------------+
 | NetBSD 0.8a   | 386             | Dieter Deyke <deyke@fc.hp.com>            |
 +---------------+-----------------+-------------------------------------------+
+| BSDI 1.0      | 386             | J.R. Westmoreland <jr@upl.com>            |
++---------------+-----------------+-------------------------------------------+
 | Linux         | 386             | Olaf Erb <erb@insu1.etec.uni-karlsruhe.de>|
 +---------------+-----------------+-------------------------------------------+
 | ULTRIX 4.2A   | Decstation 5000 | Olaf Erb <erb@insu1.etec.uni-karlsruhe.de>|
@@ -36,7 +38,7 @@ it.  After unpacking please read the file  /tcp/doc/intro.txt.  For RISC
 iX you have to copy *.R to  /usr/lib.  Now  type  "make  -i" to  compile
 everything.
 
-wampes-930906.tar.Z    and    wampes-930906.tar.gz    should   go   into
+wampes-930910.tar.Z    and    wampes-930910.tar.gz    should   go   into
 /hamradio/packet/tcpip/wampes on UCSD.EDU.
 
 73,

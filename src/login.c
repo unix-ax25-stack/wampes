@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.44 1993/07/17 20:34:01 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/login.c,v 1.45 1993/09/10 16:05:24 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include <utmp.h>
 
-#ifdef __386BSD__
+#if defined(__386BSD__) || defined(__bsdi__)
 #include <sys/ioctl.h>
 #endif
 
@@ -261,7 +261,7 @@ struct passwd *getpasswdentry(const char *name, int create)
 
   sprintf(homedirparent, "%s/%.3s...", Homedir, name);
   sprintf(homedir, "%s/%s", homedirparent, name);
-#ifdef __386BSD__
+#if defined(__386BSD__) || defined(__bsdi__)
   sprintf(cmdbuf, "chpass -a '%s::%d:%d::0:0::%s:%s' >/dev/null 2>&1", name, uid, Gid, homedir, Shell);
   system(cmdbuf);
 #else
@@ -540,7 +540,7 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
     endutent();
 #endif
     argc = 0;
-#if defined(sun) || defined(__386BSD__)
+#if defined(sun) || defined(__386BSD__) || defined(__bsdi__)
     argv[argc++] = "/usr/bin/login";
     argv[argc++] = "-h";
     argv[argc++] = (char *) protocol;

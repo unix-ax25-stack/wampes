@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.4 1993/09/02 10:26:49 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/Attic/hosts,v 1.5 1993/09/10 16:05:11 deyke Exp $
 #
 # 44.130.x.x * AMPR.ORG Amateur Packet Radio TCP/IP Internet Adressen
 #                       in Deutschland
@@ -1680,6 +1680,7 @@
 44.130.48.188   DG1SEK-U        # Frieder Loeffler, Markgroeningen
 44.130.48.189   DG8SEV-U        # Stephan Block, Moeglingen
 44.130.48.190	DH8SAZ	# Falk Hatzfeld, 7121 Ingersheim 1
+44.130.48.191   DG8SEV-S        # Stephan
 44.130.48.192   DL9SAU-U        # Thomas Osterried, 7120 Bietigheim
 44.130.48.194   DK6KU-P # Rudolf
 44.130.48.195   DL6SDC  # Felix Schroeter, 7130 Muehlacker-Enzberg

@@ -1,6 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.13 1993/05/17 13:44:51 deyke Exp $ */
-
-#include "global.h"
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/domain.c,v 1.14 1993/09/10 16:05:20 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -14,6 +12,7 @@
 #include <string.h>
 #include <sys/socket.h>
 
+#include "global.h"
 #include "mbuf.h"
 #include "iface.h"
 #include "socket.h"

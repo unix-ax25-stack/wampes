@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.13 1993/05/17 13:44:59 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ip.h,v 1.14 1993/09/10 16:05:22 deyke Exp $ */
 
 #ifndef _IP_H
 #define _IP_H
@@ -220,7 +220,9 @@ int so_ip_send(struct usock *up,struct mbuf *bp,char *to);
 int so_ip_qlen(struct usock *up,int rtx);
 int so_ip_close(struct usock *up);
 int checkipaddr(char *name,int namelen);
+#if 0
 char *ippsocket(struct sockaddr *p);
+#endif
 
 /* In ipfile.c: */
 void route_savefile(void);

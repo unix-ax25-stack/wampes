@@ -1,6 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.32 1993/06/21 21:46:38 deyke Exp $ */
-
-#include "global.h"
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/n8250.c,v 1.33 1993/09/10 16:05:25 deyke Exp $ */
 
 #include <sys/types.h>
 
@@ -15,6 +13,7 @@
 #if defined(__hpux) \
  || defined(linux) \
  || defined(__386BSD__) \
+ || defined(__bsdi__) \
  || defined(sun) \
  || defined(ULTRIX_RISC) \
  || defined(macII)
@@ -26,6 +25,7 @@
 #undef  MAXIOV
 #endif
 
+#include "global.h"
 #include "mbuf.h"
 #include "proc.h"
 #include "iface.h"

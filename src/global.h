@@ -1,4 +1,4 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.28 1993/06/21 21:46:33 deyke Exp $ */
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/global.h,v 1.29 1993/09/10 16:05:21 deyke Exp $ */
 
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -18,7 +18,7 @@
 #define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
 #define PDP_ENDIAN      3412    /* LSB first in word, MSW first in long */
 
-#if defined(linux) || defined(ULTRIX_RISC) || defined(__386BSD__)
+#if defined(linux) || defined(ULTRIX_RISC) || defined(__386BSD__) || defined(__bsdi__)
 #define BYTE_ORDER      LITTLE_ENDIAN
 #else
 #define BYTE_ORDER      BIG_ENDIAN
@@ -154,12 +154,16 @@ typedef unsigned char byte_t;   /*  8-bit unsigned integer */
 #define STREQ(x,y) (strcmp(x,y) == 0)
 
 /* Extract a short from a long */
+#ifndef hiword
 #define hiword(x)       ((uint16)((x) >> 16))
 #define loword(x)       ((uint16)(x))
+#endif
 
 /* Extract a byte from a short */
+#ifndef hibyte
 #define hibyte(x)       ((unsigned char)((x) >> 8))
 #define lobyte(x)       ((unsigned char)(x))
+#endif
 
 /* Extract nibbles from a byte */
 #define hinibble(x)     (((x) >> 4) & 0xf)
@@ -272,7 +276,6 @@ struct asy;
 struct ax25_cb;
 struct iface;
 struct mbuf;
-struct sockaddr;
 struct usock;
 
 extern int Debug;

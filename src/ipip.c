@@ -1,8 +1,12 @@
-/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.8 1993/05/17 13:45:00 deyke Exp $ */
-
-#include "global.h"
+/* @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/src/ipip.c,v 1.9 1993/09/10 16:05:23 deyke Exp $ */
 
 #include <sys/types.h>
+
+#include "global.h"
+#undef  hiword
+#undef  loword
+#undef  hibyte
+#undef  lobyte
 
 #include <netinet/in.h>
 #include <netinet/in_systm.h>

@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.7 1993/07/18 19:53:14 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/lib/Makefile,v 1.8 1993/09/10 16:06:01 deyke Exp $
 
 LIBRARY       = libutil.a
 
@@ -23,6 +23,11 @@ all:;   @if [ $(OS) = HP-UX ] ; then \
 		'CFLAGS=-O6' \
 		_all; \
 	elif [ $(OS) = 386BSD ] ; then \
+		make -i \
+		'CC=cc' \
+		'CFLAGS=-O' \
+		_all; \
+	elif [ $(OS) = BSD/386 ] ; then \
 		make -i \
 		'CC=cc' \
 		'CFLAGS=-O' \

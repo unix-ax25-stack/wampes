@@ -1,4 +1,4 @@
-# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.35 1993/08/30 15:04:00 deyke Exp $
+# @(#) $Header: /Users/thomas/direwolf-libax25-agwpe/wampes-import/wampes-cvs/wampes/util/Makefile,v 1.36 1993/09/10 16:05:49 deyke Exp $
 
 CFLAGS     = -I../lib
 MKDIR      = @if [ ! -d `dirname $@` ] ; then mkdir -p `dirname $@` ; fi
@@ -12,51 +12,57 @@ all:;   chmod 755 genupd
 		make -i \
 		'CC=c89' \
 		'CFLAGS=-O -s -I../lib' \
-		'LIBS=../lib/libutil.a -lndbm' \
+		'LIBS=../lib/libutil.a -lcurses -lndbm' \
 		_all; \
 	elif [ $(OS) = Linux ] ; then \
 		make -i \
 		'CC=gcc' \
 		'CFLAGS=-O6 -s -I../lib' \
-		'LIBS=../lib/libutil.a -ldbm' \
+		'LIBS=../lib/libutil.a -lcurses -ltermcap -ldbm' \
 		_all; \
 	elif [ $(OS) = 386BSD ] ; then \
 		make -i \
 		'CC=cc' \
 		'CFLAGS=-O -s -I../lib' \
-		'LIBS=../lib/libutil.a' \
+		'LIBS=../lib/libutil.a -lcurses -ltermcap' \
+		_all; \
+	elif [ $(OS) = BSD/386 ] ; then \
+		make -i \
+		'CC=cc' \
+		'CFLAGS=-O -s -I../lib' \
+		'LIBS=../lib/libutil.a -lcurses -ltermcap' \
 		_all; \
 	elif [ $(OS) = SunOS ] ; then \
 		(if [ -x /usr/lang/acc ] ; then \
 			make -i \
 			'CC=acc' \
 			'CFLAGS=-O -s -I../lib' \
-			'LIBS=../lib/libutil.a' \
+			'LIBS=../lib/libutil.a -lcurses -ltermcap' \
 			_all; \
 		else \
 			make -i \
 			'CC=cc' \
 			'CFLAGS=-O -s -I../lib' \
-			'LIBS=../lib/libutil.a -lsocket -lnsl' \
+			'LIBS=../lib/libutil.a -lcurses -lsocket -lnsl' \
 			_all; \
 		fi) \
 	elif [ $(OS) = ULTRIX ] ; then \
 		make -i \
 		'CC=gcc' \
 		'CFLAGS=-O6 -s -DULTRIX_RISC -I../lib' \
-		'LIBS=../lib/libutil.a -ldbm' \
+		'LIBS=../lib/libutil.a -lcurses -ltermcap -ldbm' \
 		_all; \
 	elif [ $(OS) = A/UX ] ; then \
 		make -i \
 		'CC=gcc -fpcc-struct-return' \
 		'CFLAGS=-O -s -D_POSIX_SOURCE -I../lib' \
-		'LIBS=../lib/libutil.a -ldbm -lposix' \
+		'LIBS=../lib/libutil.a -lcurses -ltermcap -ldbm -lposix' \
 		_all; \
 	elif [ $(OS) = "RISC iX" ] ; then \
 		make -i \
 		'CC=/tcp/cc' \
 		'CFLAGS=-DRISCiX -I../lib' \
-		'LIBS=../lib/libutil.a' \
+		'LIBS=../lib/libutil.a -lcurses -ltermcap' \
 		_all; \
 	else \
 		echo System $(OS) is not supported; \
@@ -67,7 +73,7 @@ _all:   $(TARGETS)
 cnet:   cnet.o
 	$(RMTARGET)
 	@sleep 1
-	$(CC) $(CFLAGS) $? -lcurses -ltermcap $(LIBS) -o $@
+	$(CC) $(CFLAGS) $? $(LIBS) -o $@
 
 md5:    md5drivr.o
 	$(RMTARGET)
