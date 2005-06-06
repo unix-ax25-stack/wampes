@@ -1,4 +1,4 @@
-/* @(#) $Id: login.c,v 1.72 2002/11/21 19:07:02 dl9sau Exp $ */
+/* @(#) $Id: login.c,v 1.73 2005/06/06 12:25:47 dl9sau Exp $ */
 
 #include <sys/types.h>
 
@@ -118,6 +118,9 @@ static int find_pty(char *ptyname)
   int fd;
   int num;
   static int lastnum = -1;
+#if defined linux
+  struct stat statbuf;
+#endif
 
   /* Try multiplexed special file first */
 
@@ -163,6 +166,23 @@ static int find_pty(char *ptyname)
 
 #endif
 
+#if defined linux /* embedded linux, devpts systems */
+  if (stat("/dev/ptyp0", &statbuf)) {
+    if (!stat("/dev/pty/m0", &statbuf)) {
+      for (num = 0; num < 256; num++) {
+        sprintf(master, "/dev/pty/s%d", num);
+        if (!stat(master, &statbuf))
+          continue;
+        sprintf(master, "/dev/pty/m%d", num);
+        if ((fd = open(master, O_RDWR | O_NONBLOCK, 0600)) >= 0) {
+          sprintf(ptyname, "/dev/pty/s%d", num);
+          return fd;
+        }
+      }
+    }
+  }
+#endif
+
   /* Search Berkeley style pty */
 
 #define NUMPTY 176
@@ -171,7 +191,8 @@ static int find_pty(char *ptyname)
   sprintf(name, "%s%c%x", prefix, 'p' + (num >> 4), num & 0xf)
 
   for (num = lastnum + 1; ; num++) {
-    if (num >= NUMPTY) num = 0;
+    /* if (num >= NUMPTY) num = 0; // dl9sau: no - then it loops forever */
+    if (num >= NUMPTY) break;
     make_ptyname(master, "/dev/pty", num);
     if ((fd = open(master, O_RDWR | O_NONBLOCK, 0600)) >= 0) {
 #if defined ULTRIX_RISC
@@ -623,6 +644,10 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
 #endif
     pututline(&utmpbuf);
     endutent();
+#endif
+#ifdef	EMBEDED
+   setresgid(pw->pw_gid);
+   setresuid(pw->pw_uid);
 #endif
     argc = 0;
 #if defined sun || defined __386BSD__ || defined __bsdi__ || defined __FreeBSD__
