@@ -1,4 +1,4 @@
-/* @(#) $Id: config.c,v 1.62 2005/03/11 14:36:09 dl9sau Exp $ */
+/* @(#) $Id: config.c,v 1.63 2006/02/12 17:49:57 dl9sau Exp $ */
 
 /* Copyright 1991 Phil Karn, KA9Q
  */
@@ -137,13 +137,15 @@ struct cmds Attab[] = {
 	"attach ni <label> <dest> [mask]" },
 #endif
 
-#ifdef __FreeBSD__
+#if defined __FreeBSD__ || defined __MACOSX__
 	{ "tun", tun_attach, 0, 3,
 	"attach tun <label> <mtu>" },
 #endif
 
+#ifdef	linux
 	{ "kernel", krnlif_attach, 0, 2,
 	"attach kernel <iface> [label] [nopromisc]" },
+#endif
 
 	{ "ethertap", ethertap_attach, 0, 2,
 	"attach ethertap <label> [mtu]" },

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: conversd.c,v 2.81 2000/01/01 16:12:49 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: conversd.c,v 2.82 2006/02/12 17:49:57 dl9sau Exp $";
 #endif
 
 #include <sys/types.h>
@@ -560,7 +560,7 @@ static char *localtimestring(long utc)
 static void accept_connect_request(const int *flistenptr)
 {
 
-  int addrlen;
+  socklen_t addrlen;
   int fd;
   int flags;
   struct link *lp;
@@ -1427,7 +1427,7 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.81 $  Type /HELP for help.\n", my.h_name);
+  sprintf(buffer, "conversd @ %s $Revision: 2.82 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(0, ONE_TOKEN, KEEP_CASE));
@@ -2077,7 +2077,7 @@ int main(int argc, char **argv)
     *cp = 0;
   strchg(&my.h_name, buffer);
   strcpy(buffer, "W-");
-  if ((cp = strchr("$Revision: 2.81 $", ' ')))
+  if ((cp = strchr("$Revision: 2.82 $", ' ')))
     strcat(buffer, cp + 1);
   if ((cp = strchr(buffer, ' ')))
     *cp = 0;

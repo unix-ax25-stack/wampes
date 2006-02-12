@@ -1,4 +1,4 @@
-/* @(#) $Id: ethertap.c,v 1.8 2003/07/24 00:47:47 dl9sau Exp $ */
+/* @(#) $Id: ethertap.c,v 1.9 2006/02/12 17:49:57 dl9sau Exp $ */
 
 /* the ethertap device. now with TUN/TAP support (by dl9sau) */
 
@@ -50,7 +50,17 @@
 #include <linux/if.h>
 #endif
 
+#else
+#include  <net/if.h>
 #endif /* linux */
+
+#if defined __MACOSX__ || defined __FreeBSD__
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
+#include <net/route.h>
+#endif
 
 #include "global.h"
 #include "hpux.h"
@@ -90,10 +100,10 @@ static int ethertap_send(struct mbuf **bpp, struct iface *ifp, int32 gateway, ui
   int offset = 0;
 
   static const unsigned char ethernet_header[18] = {
-    0x00, 0x00, 0x08, 0x00,                     /* ??? ??? ETH_P_AX25 (16bit) */
+    0x00, 0x00, 0x08, 0x00,                     /* ??? ??? ETH_P_IP (16bit) */
     0xfe, 0xfd, 0x00, 0x00, 0x00, 0x00,         /* Destination address (kernel ethertap module) */
     0xfe, 0xfe, 0x00, 0x00, 0x00, 0x00,         /* Source address (WAMPES ethertap module) */
-    0x08, 0x00                                  /* Protocol (IP) */
+    0x08, 0x00                                  /* Protocol (IP) (ETH_P_IP) */
   };
 
   edv = (struct edv_t *) ifp->edv;
@@ -112,11 +122,15 @@ static int ethertap_send(struct mbuf **bpp, struct iface *ifp, int32 gateway, ui
   memcpy(ethertap_packet.ethernet_header + 4, edv->hwaddr_remote, 6);
   memcpy(ethertap_packet.ethernet_header + 4 + 6 + 2, edv->hwaddr_remote +2, 6 -2);
   if (!edv->version) {
+#if defined	__MACOSX__ || defined __FreeBSD__
+    offset = 4;
+#else
     offset = 2;
+#endif
     addr += offset;
   }
   write(edv->fd, addr, l + sizeof(ethertap_packet.ethernet_header) - offset);
-  return l;
+return l;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -132,33 +146,37 @@ static int ethertap_send_bpq(struct iface *ifp, struct mbuf **bpp)
 
   static const unsigned char ethernet_header[18] = {
     0x00, 0x00, 0x00, 0x02,                     /* ??? ??? ETH_P_AX25 (16bit) */
-    0xfe, 0xfd, 0x00, 0x00, 0x00, 0x00,         /* Destination address (kernel ethertap module) */
+    0xff, 0xfd, 0x00, 0x00, 0x00, 0x00,         /* Destination address (kernel ethertap module) */
     0xfe, 0xfe, 0x00, 0x00, 0x00, 0x00,         /* Source address (WAMPES ethertap module) */
-    0x08, 0xff                                  /* Protocol (bpqether) */
+    0x08, 0xff                                  /* Protocol (bpqether) (ETH_P_BPQ) */
   };
 
   edv = (struct edv_t *) ifp->edv;
   dump(ifp, IF_TRACE_OUT, *bpp);
   ifp->rawsndcnt++;
   ifp->lastsent = secclock();
-  if (ifp->trace & IF_TRACE_RAW) {
-    raw_dump(ifp, -1, *bpp);
-  }
-  l = pullup(bpp, ethertap_packet.data + 2, sizeof(ethertap_packet.data) -2);
-  if (l <= 0 || *bpp) {
-    free_p(bpp);
-    return -1;
-  }
-  memcpy(ethertap_packet.ethernet_header, (const char *) ethernet_header, sizeof(ethernet_header));
-  memcpy(ethertap_packet.ethernet_header + 4, edv->hwaddr_remote, 6);
-  memcpy(ethertap_packet.ethernet_header + 4 + 6 + 2, edv->hwaddr_remote +2, 6 -2);
-  ethertap_packet.data[0] = (l + 5) % 256;
-  ethertap_packet.data[1] = (l + 5) / 256;
-  l += 2;
-  if (!edv->version) {
-    offset = 2;
-    addr += offset;
-  }
+    if (ifp->trace & IF_TRACE_RAW) {
+      raw_dump(ifp, -1, *bpp);
+    }
+    l = pullup(bpp, ethertap_packet.data + 2, sizeof(ethertap_packet.data) -2);
+    if (l <= 0 || *bpp) {
+      free_p(bpp);
+      return -1;
+    }
+    memcpy(ethertap_packet.ethernet_header, (const char *) ethernet_header, sizeof(ethernet_header));
+    memcpy(ethertap_packet.ethernet_header + 4, edv->hwaddr_remote, 6);
+    memcpy(ethertap_packet.ethernet_header + 4 + 6 + 2, edv->hwaddr_remote +2, 6 -2);
+    ethertap_packet.data[0] = (l + 5) % 256;
+    ethertap_packet.data[1] = (l + 5) / 256;
+    l += 2;
+    if (!edv->version) {
+#if defined	__MACOSX__ || defined	__FreeBSD__
+      offset = 4;
+#else
+      offset = 2;
+#endif
+      addr += offset;
+    }
   write(edv->fd, addr, l + sizeof(ethertap_packet.ethernet_header) - offset);
   return l;
 }
@@ -179,10 +197,16 @@ static void ethertap_recv(void *argp)
   ifp = (struct iface *) argp;
   edv = (struct edv_t *) ifp->edv;
   if (!edv->version) {
+#if defined	__MACOSX__ || defined __FreeBSD__
+    offset = 4;
+#else
     offset = 2;
+#endif
     addr += offset;
   }
-  l = read(edv->fd, addr, sizeof(ethertap_packet) - offset) - sizeof(ethertap_packet.ethernet_header) + offset;
+  if ((l = read(edv->fd, addr, sizeof(ethertap_packet) - offset)) <= (sizeof(ethertap_packet.ethernet_header) - offset))
+    goto Fail;
+  l -= (sizeof(ethertap_packet.ethernet_header) - offset);
 
   offset = 0;
   if (l <= 0 || ethertap_packet.ethernet_header[16] != 0x08)
@@ -269,8 +293,10 @@ int ethertap_attach(int argc, char *argv[], void *p)
   int fd;
   struct edv_t *edv;
   struct iface *ifp;
-#ifdef	linux
   struct ifreq ifr;
+#if __MACOSX__ || __FreeBSD__
+  int mib[] = { CTL_NET, AF_ROUTE, 0, AF_LINK, NET_RT_IFLIST, 0 };
+  size_t mibLen;
 #endif
   struct stat statbuf;
   int version = 0;
@@ -292,11 +318,8 @@ int ethertap_attach(int argc, char *argv[], void *p)
       printf("%s: %s\n", devname, strerror(errno));
       return -1;
     }
-#ifndef	linux
-  }
-#else
-#ifdef	TRY_TUNTAP
   } else {
+#ifdef	TRY_TUNTAP
     strcpy(devname, ifname);
     if ((fd = tun_alloc(devname)) < 0) {
       printf("%s: %s\n", devname, strerror(errno));
@@ -304,6 +327,9 @@ int ethertap_attach(int argc, char *argv[], void *p)
     }
     ifname = devname;
     version = 1;
+#else
+    printf("%s: %s\n", devname, strerror(errno));
+    return -1;
 #endif
   }
 
@@ -326,16 +352,58 @@ int ethertap_attach(int argc, char *argv[], void *p)
 
   strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
   ifr.ifr_name[IFNAMSIZ-1] = 0;
-  if (ioctl(skfd, SIOCGIFHWADDR, &ifr) < 0) {
-    perror("SIOCGIFHWADDR");
-    hwaddr[0] = 0xfe;
-    hwaddr[1] = 0xfd;
-    hwaddr[2] = 0x0;
-    hwaddr[3] = 0x0;
-    hwaddr[4] = 0x0;
-    hwaddr[5] = 0x0;
-  } else
+#ifdef	linux
+  if (ioctl(skfd, SIOCGIFHWADDR, &ifr) != -1) {
     memcpy(hwaddr, ifr.ifr_hwaddr.sa_data, 6);
+    goto behind_dummy_hwaddr;
+  }
+  perror("SIOCGIFHWADDR");
+  goto dummy_hwaddr;
+#endif
+#if __MACOSX__ || __FreeBSD__
+  if (sysctl(mib, 6, NULL, &mibLen, NULL, 0) == 0) {
+    unsigned char *p, *buf;
+    if ((buf = (u_char *) malloc(mibLen))) {
+      if (sysctl(mib, 6, buf, &mibLen, NULL, 0) == 0) {
+        struct if_msghdr *ifm;
+        for (p = buf; p < buf + mibLen; p += ifm->ifm_msglen) {
+	  ifm = (struct if_msghdr *) p;
+          struct sockaddr_dl *sdl = (struct sockaddr_dl *) (ifm + 1);
+          if (ifm->ifm_type != RTM_IFINFO || (ifm->ifm_addrs & RTA_IFP) == 0)
+            continue;
+          if (sdl->sdl_family != AF_LINK ||
+              sdl->sdl_type != IFT_ETHER ||
+              sdl->sdl_alen != 6 ||
+              sdl->sdl_nlen == 0 ||
+              memcmp(sdl->sdl_data, ifname, sdl->sdl_nlen) ||
+              ifname[sdl->sdl_nlen] != 0)
+            continue;
+          memcpy(hwaddr, LLADDR(sdl), 6);
+          free(buf);
+          goto behind_dummy_hwaddr;
+        }
+      }
+    }
+    free(buf);
+  } 
+  perror("sysctl()");
+  hwaddr[0] = 0x74;
+  hwaddr[1] = 0x61;
+  hwaddr[2] = 0x70;
+  hwaddr[3] = 0x0;
+  hwaddr[4] = 0x0;
+  hwaddr[5] = 0x0;
+  goto behind_dummy_hwaddr;
+#endif
+  /* goto dummy_hwaddr; */
+dummy_hwaddr:
+  hwaddr[0] = 0xfe;
+  hwaddr[1] = 0xfd;
+  hwaddr[2] = 0x0;
+  hwaddr[3] = 0x0;
+  hwaddr[4] = 0x0;
+  hwaddr[5] = 0x0;
+behind_dummy_hwaddr:
 
   if (argc > 2) {
     ifp_mtu = atoi(argv[2]);
@@ -357,7 +425,6 @@ int ethertap_attach(int argc, char *argv[], void *p)
     perror("SIOSGIFMTU");
 
   close(skfd);
-#endif /* linux */
 
   ifp = (struct iface *) callocw(1, sizeof(struct iface));
   ifp->name = strdup(ifname);
@@ -375,7 +442,13 @@ int ethertap_attach(int argc, char *argv[], void *p)
   on_read(fd, ethertap_recv, (void *) ifp);
   ifp->next = Ifaces;
   Ifaces = ifp;
+  /* as long as feebsd and macosx don't have kernel support for ax25,
+   * we like not to confuse our users with ifaces like tap0BPQ which he
+   * can't use:
+   */
+#ifdef	linux
   ethertap_attach_bpq(ifp);
+#endif
   return 0;
 }
 

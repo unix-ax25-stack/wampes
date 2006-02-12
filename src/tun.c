@@ -1,11 +1,11 @@
-/* @(#) $Id: tun.c,v 1.5 1998/03/09 17:42:56 deyke Exp $ */
+/* @(#) $Id: tun.c,v 1.6 2006/02/12 17:49:57 dl9sau Exp $ */
 
 /*
    Interface to FreeBSD's tun device - Olaf Erb, dc1ik 960728
    parts and idea taken from FreeBSD's ppp implementation
  */
 
-#ifdef __FreeBSD__
+#if defined __FreeBSD__ || defined __MACOSX__
 
 #include "global.h"
 #undef  hiword
@@ -21,7 +21,9 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <net/if.h>
+#ifdef	__FreeBSD__
 #include <net/if_tun.h>
+#endif
 #include <net/route.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -174,9 +176,10 @@ int tun_attach(int argc, char *argv[], void *p)
   struct edv_t *edv;
   struct iface *ifp;
   struct ifreq ifreq;
-  struct rtentry rtentry;
   struct sockaddr_in addr;
+#ifdef	__FreeBSD__
   struct tuninfo info;
+#endif
   unsigned unit, enoentcount = 0;
 
   ifnamew = argv[1];
@@ -238,11 +241,13 @@ int tun_attach(int argc, char *argv[], void *p)
     return -1;
   }
 
+#ifdef	__FreeBSD__
   info.type = 0x6;      /* Ethernet */
   info.mtu = ifmtu;
   info.baudrate = 0;
   if (ioctl(fd, TUNSIFINFO, &info) < 0)
     perror("TUNSIFINFO");
+#endif
 
   IfDevName = devname + 5;
   if (GetIfIndex(IfDevName) < 0) {

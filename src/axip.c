@@ -1,4 +1,4 @@
-/* @(#) $Id: axip.c,v 1.29 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: axip.c,v 1.30 2006/02/12 17:49:57 dl9sau Exp $ */
 
 #include <sys/types.h>
 
@@ -121,7 +121,7 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
 static void axip_recv(void *argp)
 {
 
-  int addrlen;
+  socklen_t addrlen;
   int hdr_len;
   int l;
   struct edv_t *edv;

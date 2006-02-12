@@ -1,4 +1,4 @@
-/* @(#) $Id: sntp.c,v 1.17 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: sntp.c,v 1.18 2006/02/12 17:49:57 dl9sau Exp $ */
 
 /* Simple Network Time Protocol (SNTP) (see RFC1361) */
 
@@ -411,7 +411,7 @@ static void sntp_server(struct iface *iface, struct udp_cb *ucb, int cnt)
 	memset(pkt.check, 0, sizeof(pkt.check));
 	pkt.xmt = sys_clock();
 	if ((bp = htonntp(&pkt))) {
-		send_udp(&ucb->socket, &fsocket, DELAY, 0, &bp, 0, 0, 0);
+		send_udp(&ucb->socket, &fsocket, LDELAY, 0, &bp, 0, 0, 0);
 		if (Ntrace) {
 			printf("sent: ");
 			dumpntp(&pkt);
@@ -545,7 +545,7 @@ static void sntp_client_send(void *arg)
 	pkt.rootdispersion = One;
 	pkt.xmt = peer->xmt = sys_clock();
 	if ((bp = htonntp(&pkt))) {
-		send_udp(&peer->ucb->socket, &peer->fsocket, DELAY, 0, &bp, 0, 0, 0);
+		send_udp(&peer->ucb->socket, &peer->fsocket, LDELAY, 0, &bp, 0, 0, 0);
 		peer->sent++;
 		if (Ntrace) {
 			printf("sent: ");

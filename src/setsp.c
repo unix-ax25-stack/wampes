@@ -1,4 +1,4 @@
-/* @(#) $Id: setsp.c,v 1.17 2002/05/27 03:16:13 dl9sau Exp $ */
+/* @(#) $Id: setsp.c,v 1.18 2006/02/12 17:49:57 dl9sau Exp $ */
 
 #ifndef __lint
 
@@ -155,6 +155,16 @@ _setstack:
 	jmp     *(%ebp)
 #endif
 	.align  4
+#endif
+
+#ifdef	__MACOSX__
+	.file   "setsp.s"
+	.globl  _setstack
+_setstack:
+	lis      r3,ha16(_newstackptr)
+	lwz      r1,lo16(_newstackptr)(r3)
+        blr 
+	.align  2
 #endif
 
 #endif

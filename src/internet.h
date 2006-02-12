@@ -1,4 +1,4 @@
-/* @(#) $Id: internet.h,v 1.11 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: internet.h,v 1.12 2006/02/12 17:49:57 dl9sau Exp $ */
 
 #ifndef _INTERNET_H
 #define _INTERNET_H
@@ -48,7 +48,7 @@
 
 /* IP TOS fields */
 #define PREC(x)         (((x)>>5) & 0x7)
-#define DELAY           0x10
+#define LDELAY          0x10
 #define THRUPUT         0x8
 #define RELIABLITY      0x4
 

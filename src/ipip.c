@@ -1,4 +1,4 @@
-/* @(#) $Id: ipip.c,v 1.22 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: ipip.c,v 1.23 2006/02/12 17:49:57 dl9sau Exp $ */
 
 #include <sys/types.h>
 
@@ -79,7 +79,7 @@ static int ipip_send(struct mbuf **bpp, struct iface *ifp, int32 gateway, uint8 
 static void ipip_receive(void *argp)
 {
 
-  int addrlen;
+  socklen_t addrlen;
   int hdr_len;
   int l;
   int32 ipaddr;

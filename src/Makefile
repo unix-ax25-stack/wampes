@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.106 2002/01/12 15:55:53 dl9sau Exp $
+# @(#) $Id: Makefile,v 1.107 2006/02/12 17:49:57 dl9sau Exp $
 
 DEST          = /tcp
 
@@ -320,6 +320,8 @@ setsp.o: setsp.c
 		$(CC) $(CFLAGS) -c setsp.c;; \
 	NeXT*) \
 		gcc -E $< | grep -v '^#' > setsp.s; as setsp.s -o $@;; \
+	Darwin*) \
+		$(CC) -D__MACOSX__ -E $< > setsp.s; cc -c setsp.s;; \
 	*) \
 		echo System `uname -sr` is not supported;; \
 	esac

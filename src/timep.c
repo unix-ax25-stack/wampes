@@ -1,4 +1,4 @@
-/* @(#) $Id: timep.c,v 1.7 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: timep.c,v 1.8 2006/02/12 17:49:57 dl9sau Exp $ */
 
 /* Time Protocol (see RFC868) */
 
@@ -27,7 +27,7 @@ static void time_server(struct iface *iface, struct udp_cb *ucb, int cnt)
 	bp = ambufw(4);
 	bp->cnt = 4;
 	put32(bp->data, time(0) + 2208988800UL);
-	send_udp(&ucb->socket, &fsocket, DELAY, 0, &bp, 4, 0, 0);
+	send_udp(&ucb->socket, &fsocket, LDELAY, 0, &bp, 4, 0, 0);
 }
 
 /*---------------------------------------------------------------------------*/

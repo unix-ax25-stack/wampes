@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: qth.c,v 1.22 2003/07/24 00:53:38 dl9sau Exp $";
+static const char rcsid[] = "@(#) $Id: qth.c,v 1.23 2006/02/12 17:49:57 dl9sau Exp $";
 #endif
 
 /* qth: qth, locator, distance, and course computations */
@@ -14,7 +14,7 @@ static const char rcsid[] = "@(#) $Id: qth.c,v 1.22 2003/07/24 00:53:38 dl9sau E
 #include <string.h>
 #include <time.h>
 
-#ifdef	linux
+#if defined linux || defined __MACOSX__
 #include <getopt.h>
 #endif
 

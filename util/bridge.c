@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: bridge.c,v 1.21 2000/01/01 16:12:56 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: bridge.c,v 1.22 2006/02/12 17:49:57 dl9sau Exp $";
 #endif
 
 #include <sys/types.h>
@@ -82,7 +82,7 @@ static struct connection *connections;
 static void create_connection(int flisten)
 {
 
-  int addrlen;
+  socklen_t addrlen;
   int fd;
   struct connection *p;
   struct sockaddr addr;

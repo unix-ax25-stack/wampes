@@ -1,4 +1,4 @@
-/* @(#) $Id: login.c,v 1.73 2005/06/06 12:25:47 dl9sau Exp $ */
+/* @(#) $Id: login.c,v 1.74 2006/02/12 17:49:57 dl9sau Exp $ */
 
 #include <sys/types.h>
 
@@ -21,7 +21,7 @@
 #include <termios.h>
 #endif
 
-#if defined __386BSD__ || defined __NetBSD__ || defined __bsdi__ || defined __FreeBSD__ || defined linux
+#if defined __386BSD__ || defined __NetBSD__ || defined __bsdi__ || defined __FreeBSD__ || defined linux || defined __MACOSX__
 #include <sys/ioctl.h>
 #endif
 
@@ -315,7 +315,7 @@ struct passwd *getpasswdentry(const char *name, int create)
   sprintf(homedirparent, "%s/%.3s...", Homedir, name);
   sprintf(homedir, "%s/%s", homedirparent, name);
 
-#if defined __386BSD__ || defined __NetBSD__ || defined __bsdi__ || defined __FreeBSD__
+#if defined __386BSD__ || defined __NetBSD__ || defined __bsdi__ || defined __FreeBSD__ || defined __MACOSX__
 
   {
     char cmdbuf[1024];
@@ -650,7 +650,7 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
    setresuid(pw->pw_uid);
 #endif
     argc = 0;
-#if defined sun || defined __386BSD__ || defined __bsdi__ || defined __FreeBSD__
+#if defined sun || defined __386BSD__ || defined __bsdi__ || defined __FreeBSD__ || defined __MACOSX__
     argv[argc++] = "/usr/bin/login";
     argv[argc++] = "-h";
     argv[argc++] = (char *) protocol;

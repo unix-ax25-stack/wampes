@@ -1,4 +1,4 @@
-/* @(#) $Id: remote_net.c,v 1.34 2005/03/11 14:36:09 dl9sau Exp $ */
+/* @(#) $Id: remote_net.c,v 1.35 2006/02/12 17:49:57 dl9sau Exp $ */
 
 #include <sys/types.h>
 
@@ -268,7 +268,7 @@ static void command_receive(struct controlblock *cp)
 static void accept_connection_net(void *p)
 {
 
-  int addrlen;
+  socklen_t addrlen;
   int fd;
   struct controlblock *cp;
   struct sockaddr addr;

@@ -1,4 +1,4 @@
-/* @(#) $Id: ax25.c,v 1.39 2002/09/20 15:18:50 dl9sau Exp $ */
+/* @(#) $Id: ax25.c,v 1.40 2006/02/12 17:49:57 dl9sau Exp $ */
 
 /* Low level AX.25 code:
  *  incoming frame processing (including digipeating)
@@ -79,7 +79,7 @@ uint8 tos
 	 */
 	if(Axigntos)
 		tos = 0;
-	if((tos & IP_COS) == DELAY
+	if((tos & IP_COS) == LDELAY
 	 || ((tos & IP_COS) != RELIABILITY && (iface->send == axui_send))
 	 || addreq(hw_addr,Ax25multi[0])){
 		/* Use UI frame */

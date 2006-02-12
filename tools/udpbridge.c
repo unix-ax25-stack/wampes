@@ -1,5 +1,5 @@
 #if 0
-static const char rcsid[] = "@(#) $Id: udpbridge.c,v 1.4 1996/08/12 18:52:58 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: udpbridge.c,v 1.5 2006/02/12 17:49:57 dl9sau Exp $";
 #endif
 
 #include <sys/types.h>
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
     unsigned char rest[8172];
   };
 
-  int addrlen;
+  socklen_t addrlen;
   int fd;
   int i;
   int n;

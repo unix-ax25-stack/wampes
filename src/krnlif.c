@@ -1,4 +1,4 @@
-/* @(#) $Id: krnlif.c,v 1.14 2002/10/19 18:43:29 dl9sau Exp $ */
+/* @(#) $Id: krnlif.c,v 1.15 2006/02/12 17:49:57 dl9sau Exp $ */
 
 #if defined linux
 
@@ -640,6 +640,8 @@ int krnlif_attach(int argc, char *argv[], void *p)
 /*---------------------------------------------------------------------------*/
 
 #else
+
+#include <stdio.h>
 
 int krnlif_attach(int argc, char *argv[], void *p)
 {
