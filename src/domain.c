@@ -1,4 +1,4 @@
-/* @(#) $Id: domain.c,v 1.28 1999/06/20 17:47:46 deyke Exp $ */
+/* @(#) $Id: domain.c,v 1.29 2006/02/12 17:56:28 dl9sau Exp $ */
 
 #include <sys/types.h>
 
@@ -17,7 +17,11 @@
 #if HAS_DB1_NDBM
 #include <db1/ndbm.h>
 #else
+#if HAS_GDBM_NDBM
+#include <gdbm-ndbm.h>
+#else
 #error Cannot find ndbm.h header file
+#endif
 #endif
 #endif
 

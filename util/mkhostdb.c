@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: mkhostdb.c,v 1.16 1999/06/20 17:47:48 deyke Exp $";
+static const char rcsid[] = "@(#) $Id: mkhostdb.c,v 1.17 2006/02/12 17:56:28 dl9sau Exp $";
 #endif
 
 #include <ctype.h>
@@ -17,7 +17,11 @@ static const char rcsid[] = "@(#) $Id: mkhostdb.c,v 1.16 1999/06/20 17:47:48 dey
 #if HAS_DB1_NDBM
 #include <db1/ndbm.h>
 #else
+#if HAS_GDBM_NDBM
+#include <gdbm-ndbm.h>
+#else
 #error Cannot find ndbm.h header file
+#endif
 #endif
 #endif
 

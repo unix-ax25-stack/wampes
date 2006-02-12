@@ -1,4 +1,4 @@
-# @(#) $Id: configure,v 1.42 2006/02/12 17:49:57 dl9sau Exp $
+# @(#) $Id: configure,v 1.43 2006/02/12 17:56:28 dl9sau Exp $
 
 CC='cc'
 CFLAGS='-O -I../lib'
@@ -46,6 +46,8 @@ Linux*)
 	esac
 	if [ -f /usr/lib/libndbm.so -o -f /usr/lib/libndbm.a ]; then
 		LIBDBM='ndbm'
+	elif [ -f /usr/lib/libgdbm_compat.so -o -f /usr/lib/libgdbm_compat.a ]; then
+		LIBDBM='gdbm_compat'
 	elif [ -f /usr/lib/libgdbm.so -o -f /usr/lib/libgdbm.a ]; then
 		LIBDBM='gdbm'
 	elif [ -f /usr/lib/libdbm.so -o -f /usr/lib/libdbm.a ]; then
@@ -312,6 +314,10 @@ checksymbol()
 
 	checksymbol HAS_DB1_NDBM \
 		"#include <db1/ndbm.h>
+		main(){dbm_open(0, 0, 0);return 0;}"
+
+	checksymbol HAS_GDBM_NDBM \
+		"#include <gdbm-ndbm.h>
 		main(){dbm_open(0, 0, 0);return 0;}"
 
 	checksymbol HAS_NI \
