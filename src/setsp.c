@@ -1,4 +1,4 @@
-/* @(#) $Id: setsp.c,v 1.18 2006/02/12 17:49:57 dl9sau Exp $ */
+/* @(#) $Id: setsp.c,v 1.19 2006/02/17 14:37:10 dl9sau Exp $ */
 
 #ifndef __lint
 
@@ -158,13 +158,12 @@ _setstack:
 #endif
 
 #ifdef	__MACOSX__
-	.file   "setsp.s"
+	.text
 	.globl  _setstack
 _setstack:
 	lis      r3,ha16(_newstackptr)
 	lwz      r1,lo16(_newstackptr)(r3)
         blr 
-	.align  2
 #endif
 
 #endif
