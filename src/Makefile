@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.107 2006/02/12 17:49:57 dl9sau Exp $
+# @(#) $Id: Makefile,v 1.108 2006/03/12 10:24:06 dl9sau Exp $
 
 DEST          = /tcp
 
@@ -63,7 +63,8 @@ HDRS          = arp.h \
 		trace.h \
 		transport.h \
 		tty.h \
-		udp.h
+		udp.h \
+		uhnp.h
 
 OBJS          = adjtime.o \
 		alloc.o \
@@ -171,6 +172,7 @@ OBJS          = adjtime.o \
 		udpcmd.o \
 		udpdump.o \
 		udphdr.o \
+		uhnp.o \
 		version.o
 
 PROGRAM       = net
@@ -281,6 +283,7 @@ SRCS          = adjtime.c \
 		udpcmd.c \
 		udpdump.c \
 		udphdr.c \
+		uhnp.c \
 		version.c
 
 all:;        @. ../lib/configure.mak; $(MAKE) -i _all
@@ -591,7 +594,8 @@ axip.o:\
 	proc.h\
 	socket.h\
 	timer.h\
-	trace.h
+	trace.h\
+	uhnp.h
 axserver.o:\
 	../lib/configure.h\
 	../lib/strdup.h\
@@ -991,7 +995,8 @@ ipip.o:\
 	proc.h\
 	socket.h\
 	timer.h\
-	trace.h
+	trace.h\
+	uhnp.h
 iproute.o:\
 	../lib/configure.h\
 	../lib/strdup.h\
@@ -1817,5 +1822,10 @@ udphdr.o:\
 	timer.h\
 	udp.h\
 	udphdr.c
+uhnp.o:\
+	global.h\
+	timer.h\
+	uhnp.h\
+	uhnp.c
 version.o:\
 	version.c
