@@ -1,4 +1,4 @@
-/* @(#) $Id: ipip.c,v 1.23 2006/02/12 17:49:57 dl9sau Exp $ */
+/* @(#) $Id: ipip.c,v 1.24 2006/03/12 10:05:01 dl9sau Exp $ */
 
 #include <sys/types.h>
 
@@ -32,6 +32,7 @@ struct route *rt_add(int32 target, unsigned int bits, int32 gateway, struct ifac
 
 #define MAX_FRAME       2048
 
+#ifdef	notdef
 struct edv_t {
   int type;
 #define USE_IP          0
@@ -39,6 +40,9 @@ struct edv_t {
   int port;
   int fd;
 };
+#else
+#include "uhnp.h"
+#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -67,7 +71,13 @@ static int ipip_send(struct mbuf **bpp, struct iface *ifp, int32 gateway, uint8 
 
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = htonl(gateway);
-  addr.sin_port = htons(edv->port);
+
+  if (edv->type == USE_UDP) {
+    struct sockaddr_in *sin = search_udp_host_nat_port(htonl(gateway), edv);
+    addr.sin_port = (sin ? sin->sin_port : htons(edv->port));
+    uhnp_cleanup(edv);
+  } else
+    addr.sin_port = htons(edv->port);
 
   sendto(edv->fd, buf, l, 0, (struct sockaddr *) &addr, sizeof(addr));
 
@@ -79,7 +89,7 @@ static int ipip_send(struct mbuf **bpp, struct iface *ifp, int32 gateway, uint8 
 static void ipip_receive(void *argp)
 {
 
-  socklen_t addrlen;
+  int addrlen;
   int hdr_len;
   int l;
   int32 ipaddr;
@@ -103,6 +113,15 @@ static void ipip_receive(void *argp)
     l -= hdr_len;
   }
   if (l <= 0) goto Fail;
+
+  if (edv->type == USE_UDP &&
+        (htons(edv->port) >= 1024 || htons(addr.sin_port) < 1024)) {
+        /* secure-port model of trust: src address adaption, but only
+           - if my listen port >= 1024,
+           - or if my listen port < 1024 and src port is also < 1024 */
+    learn_udp_host_nat_port(&addr, edv);
+    uhnp_cleanup(edv);
+  }
 
   if ((ipaddr = get32(bufptr + 12)) && ismyaddr(ipaddr) == NULL)
     rt_add(ipaddr, 32, (int32) ntohl(addr.sin_addr.s_addr), ifp, 1L, 0x7fffffff / 1000, 0);
@@ -186,6 +205,8 @@ int ipip_attach(int argc, char *argv[], void *p)
   edv->type = type;
   edv->port = port;
   edv->fd = fd;
+  edv->uhnp = 0;
+  edv->uhnp_time = secclock();
   ifp->edv = edv;
 
   ifp->send = ipip_send;

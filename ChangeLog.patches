@@ -1,4 +1,11 @@
-Version @(#) $Id: ChangeLog.patches,v 1.20 2006/02/12 17:56:28 dl9sau Exp $
+Version @(#) $Id: ChangeLog.patches,v 1.21 2006/03/12 10:05:01 dl9sau Exp $
+
+20060312 Thomas Osterried <dl9sau>
+	- On axudp or ipudp, learn src port. Modern nat routers have often
+	  a very bad implemented NAT code. They nat to another port, even
+	  if the demanded port is free. Security concept: adjust src nat
+	  port only when _our_ listen port is >= 1024, or if it is < 1024
+	  and their src port is < 1024.
 
 20060212 Thomas Osterried <dl9sau>
 	- now compiles on MACOSX

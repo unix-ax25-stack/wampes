@@ -1,4 +1,4 @@
-/* @(#) $Id: axip.c,v 1.30 2006/02/12 17:49:57 dl9sau Exp $ */
+/* @(#) $Id: axip.c,v 1.31 2006/03/12 10:05:01 dl9sau Exp $ */
 
 #include <sys/types.h>
 
@@ -32,6 +32,7 @@
 
 #define MAX_FRAME       2048
 
+#ifdef	notdef
 struct edv_t {
   int type;
 #define USE_IP          0
@@ -39,6 +40,9 @@ struct edv_t {
   int port;
   int fd;
 };
+#else
+#include "uhnp.h"
+#endif
 
 struct axip_route {
   uint8 call[AXALEN];
@@ -109,7 +113,12 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
     if (multicast || addreq(rp->call, dest)) {
       addr.sin_family = AF_INET;
       addr.sin_addr.s_addr = htonl(rp->dest);
-      addr.sin_port = htons(edv->port);
+      if (edv->type == USE_UDP) {
+        struct sockaddr_in *sin = search_udp_host_nat_port(htonl(rp->dest), edv);
+        addr.sin_port = (sin ? sin->sin_port : htons(edv->port));
+        uhnp_cleanup(edv);
+      } else
+        addr.sin_port = htons(edv->port);
       sendto(edv->fd, (char *) buf, l, 0, (struct sockaddr *) &addr, sizeof(addr));
     }
 
@@ -121,7 +130,7 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
 static void axip_recv(void *argp)
 {
 
-  socklen_t addrlen;
+  int addrlen;
   int hdr_len;
   int l;
   struct edv_t *edv;
@@ -149,6 +158,15 @@ static void axip_recv(void *argp)
 
   if (!check_crc_ccitt((char *) bufptr, l)) goto Fail;
   l -= 2;
+
+  if (edv->type == USE_UDP &&
+        (htons(edv->port) >= 1024 || htons(addr.sin_port) < 1024)) {
+        /* secure-port model of trust: src address adaption, but only
+           - if my listen port >= 1024,
+           - or if my listen port < 1024 and src port is also < 1024 */
+    learn_udp_host_nat_port(&addr, edv);   
+    uhnp_cleanup(edv);
+  }
 
   p = src = bufptr + AXALEN;
   while (!(p[6] & E)) {
@@ -241,6 +259,8 @@ int axip_attach(int argc, char *argv[], void *p)
   edv->type = type;
   edv->port = port;
   edv->fd = fd;
+  edv->uhnp = 0;
+  edv->uhnp_time = secclock();
   ifp->edv = edv;
 
   ifp->raw = axip_raw;
