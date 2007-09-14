@@ -1,4 +1,4 @@
-/* @(#) $Id: krnlif.c,v 1.15 2006/02/12 17:49:57 dl9sau Exp $ */
+/* @(#) $Id: krnlif.c,v 1.16 2007/09/14 19:45:49 dl9sau Exp $ */
 
 #if defined linux
 
@@ -186,7 +186,7 @@ static int krnlif_up(struct krnlif *ki)
 		printf("error in krnlif_up: bind() for %s failed. this should never happen.\ndebug: Error %s (%i)\n", ki->name, strerror(errno), errno);
 		goto Fail;
 	}
-	memset(&mr, 0, sizeof(&mr));
+	memset(&mr, 0, sizeof(mr));
 	mr.mr_ifindex = sll.sll_ifindex;
 	if (ki->promisc) {
 	  mr.mr_type = PACKET_MR_PROMISC;
