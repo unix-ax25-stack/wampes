@@ -1,4 +1,4 @@
-/* @(#) $Id: md5.h,v 1.5 1996/08/12 18:53:41 deyke Exp $ */
+/* @(#) $Id: md5.h,v 1.6 2007/09/16 10:11:39 dl9sau Exp $ */
 
 /*
  ***********************************************************************
@@ -40,7 +40,11 @@
  */
 
 /* typedef a 32-bit type */
+#ifdef  _LP64
+typedef unsigned int UINT4;
+#else
 typedef unsigned long int UINT4;
+#endif
 
 /* Data structure for MD5 (Message-Digest) computation */
 typedef struct {
