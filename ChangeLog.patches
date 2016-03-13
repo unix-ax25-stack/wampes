@@ -1,4 +1,4 @@
-Version @(#) $Id: ChangeLog.patches,v 1.25 2016/03/13 14:44:54 dl9sau Exp $
+Version @(#) $Id: ChangeLog.patches,v 1.26 2016/03/13 14:50:35 dl9sau Exp $
 
 20160313 Thomas Osterried <dl9sau>
 	- support for lib GDBM
@@ -11,6 +11,8 @@ Version @(#) $Id: ChangeLog.patches,v 1.25 2016/03/13 14:44:54 dl9sau Exp $
 	- changes for __x86_64__ systems: ucontext() instead of setjmp.
           => easier. And fixes crash on 64bit machines.
 	Patches above by DH1DM <steffen.koehler@tu-dresden.de> for db0tud
+	- lapb.c: AX.25 segmenter: ssize -= 1 is correct.
+	  Previous ssize -= 2 leads to packets with len 255 instead of 256.
 
 20070914 Thomas Osterried <dl9sau>
 	- bugfix in krnlif.c (attach kernel <iface> failed on some plattforms)

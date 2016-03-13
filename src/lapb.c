@@ -1,4 +1,4 @@
-/* @(#) $Id: lapb.c,v 1.43 2005/03/11 14:36:09 dl9sau Exp $ */
+/* @(#) $Id: lapb.c,v 1.44 2016/03/13 14:50:38 dl9sau Exp $ */
 
 /* Link Access Procedures Balanced (LAPB), the upper sublayer of
  * AX.25 Level 2.
@@ -880,7 +880,7 @@ uint ssize              /* Max size of frame segments */
 		*bpp = NULL;
 		return result;  /* Too small to segment */
 	}
-	ssize -= 2;             /* ssize now equal to data portion size */
+	ssize -= 1;             /* ssize now equal to data portion size */
 	segments = 1 + (len - 1) / ssize;       /* # segments  */
 	offset = 0;
 
