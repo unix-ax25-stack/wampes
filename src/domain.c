@@ -1,4 +1,4 @@
-/* @(#) $Id: domain.c,v 1.29 2006/02/12 17:56:28 dl9sau Exp $ */
+/* @(#) $Id: domain.c,v 1.30 2016/03/13 06:37:28 dl9sau Exp $ */
 
 #include <sys/types.h>
 
@@ -20,7 +20,11 @@
 #if HAS_GDBM_NDBM
 #include <gdbm-ndbm.h>
 #else
+#if HAS_GDBM
+#include <gdbm.h>
+#else
 #error Cannot find ndbm.h header file
+#endif
 #endif
 #endif
 #endif
@@ -68,8 +72,13 @@ static char *Dtypes[] = {
 };
 static int Ndtypes = 17;
 
+#if HAS_GDBM
+static GDBM_FILE Dbhostaddr;
+static GDBM_FILE Dbhostname;
+#else
 static DBM *Dbhostaddr;
 static DBM *Dbhostname;
+#endif
 static int Usegethostby;
 static int32 Nextcacheflushtime;
 static struct cache *Cache;
@@ -162,11 +171,19 @@ void *p)
     free(cp);
   }
   if (Dbhostaddr) {
+#if HAS_GDBM
+    gdbm_close(Dbhostaddr);
+#else
     dbm_close(Dbhostaddr);
+#endif
     Dbhostaddr = 0;
   }
   if (Dbhostname) {
+#if HAS_GDBM
+    gdbm_close(Dbhostaddr);
+#else
     dbm_close(Dbhostname);
+#endif
     Dbhostname = 0;
   }
   Nextcacheflushtime = secclock() + 86400;
@@ -299,11 +316,19 @@ char *name)
       }
   }
 
+#if HAS_GDBM
+  if (Dbhostaddr || (Dbhostaddr = gdbm_open(DBHOSTADDR, 0, GDBM_READER, 0644, NULL)))
+#else
   if (Dbhostaddr || (Dbhostaddr = dbm_open(DBHOSTADDR, O_RDONLY, 0644)))
+#endif
     for (i = 0; names[i][0]; i++) {
       dname.dptr = names[i];
       dname.dsize = strlen(names[i]) + 1;
+#if HAS_GDBM
+      daddr = gdbm_fetch(Dbhostaddr, dname);
+#else
       daddr = dbm_fetch(Dbhostaddr, dname);
+#endif
       if (daddr.dptr) {
 	memcpy(&addr, daddr.dptr, sizeof(addr));
 	add_to_cache(names[i], addr);
@@ -350,10 +375,18 @@ int shorten)
       return Cache->name;
     }
 
+#if HAS_GDBM
+  if (Dbhostname || (Dbhostname = gdbm_open(DBHOSTNAME, 0, GDBM_READER, 0644, NULL))) {
+#else
   if (Dbhostname || (Dbhostname = dbm_open(DBHOSTNAME, O_RDONLY, 0644))) {
+#endif
     daddr.dptr = (char *) &addr;
     daddr.dsize = sizeof(addr);
+#if HAS_GDBM
+    dname = gdbm_fetch(Dbhostname, daddr);
+#else
     dname = dbm_fetch(Dbhostname, daddr);
+#endif
     if (dname.dptr) {
       add_to_cache(dname.dptr, addr);
       return Cache->name;

@@ -1,4 +1,10 @@
-Version @(#) $Id: ChangeLog.patches,v 1.22 2007/09/14 19:52:31 dl9sau Exp $
+Version @(#) $Id: ChangeLog.patches,v 1.23 2016/03/13 06:37:21 dl9sau Exp $
+
+20160313 Thomas Osterried <dl9sau>
+	- support for lib GDBM
+          changed files: lib/configure tools/makeiprt.c util/mkhostdb.c
+                         src/domain.c
+	  Patches by DH1DM <steffen.koehler@tu-dresden.de> for db0tud
 
 20070914 Thomas Osterried <dl9sau>
 	- bugfix in krnlif.c (attach kernel <iface> failed on some plattforms)

@@ -1,5 +1,5 @@
 #ifndef __lint
-static const char rcsid[] = "@(#) $Id: makeiprt.c,v 1.21 2006/02/12 17:56:28 dl9sau Exp $";
+static const char rcsid[] = "@(#) $Id: makeiprt.c,v 1.22 2016/03/13 06:37:24 dl9sau Exp $";
 #endif
 
 #include <sys/types.h>
@@ -24,7 +24,11 @@ static const char rcsid[] = "@(#) $Id: makeiprt.c,v 1.21 2006/02/12 17:56:28 dl9
 #if HAS_GDBM_NDBM
 #include <gdbm-ndbm.h>
 #else
+#if HAS_GDBM
+#include <gdbm.h>
+#else
 #error Cannot find ndbm.h header file
+#endif
 #endif
 #endif
 #endif
@@ -74,8 +78,13 @@ struct node {
   struct node *next;
 };
 
+#if HAS_GDBM
+static GDBM_FILE Dbhostaddr;
+static GDBM_FILE Dbhostname;
+#else
 static DBM *Dbhostaddr;
 static DBM *Dbhostname;
+#endif
 static const struct iface *Loopback_iface;
 static int Usegethostby = 1;
 static struct cache *Cache;
@@ -165,11 +174,19 @@ static long resolve(const char *name)
       }
   }
 
+#if HAS_GDBM
+  if (Dbhostaddr || (Dbhostaddr = gdbm_open(DBHOSTADDR, 0, GDBM_READER, 0644, NULL)))
+#else
   if (Dbhostaddr || (Dbhostaddr = dbm_open(DBHOSTADDR, O_RDONLY, 0644)))
+#endif
     for (i = 0; names[i][0]; i++) {
       dname.dptr = names[i];
       dname.dsize = strlen(names[i]) + 1;
+#if HAS_GDBM
+      daddr = gdbm_fetch(Dbhostaddr, dname);
+#else
       daddr = dbm_fetch(Dbhostaddr, dname);
+#endif
       if (daddr.dptr) {
 	memcpy((char *) &addr, daddr.dptr, sizeof(addr));
 	add_to_cache(names[i], addr);
@@ -212,10 +229,18 @@ static const char *resolve_a(long addr)
       return Cache->name;
     }
 
+#if HAS_GDBM
+  if (Dbhostname || (Dbhostname = gdbm_open(DBHOSTNAME, 0, GDBM_READER, 0644, NULL))) {
+#else
   if (Dbhostname || (Dbhostname = dbm_open(DBHOSTNAME, O_RDONLY, 0644))) {
+#endif
     daddr.dptr = (char *) &addr;
     daddr.dsize = sizeof(addr);
+#if HAS_GDBM
+    dname = gdbm_fetch(Dbhostname, daddr);
+#else
     dname = dbm_fetch(Dbhostname, daddr);
+#endif
     if (dname.dptr) {
       add_to_cache(dname.dptr, addr);
       return Cache->name;

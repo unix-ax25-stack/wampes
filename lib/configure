@@ -1,4 +1,4 @@
-# @(#) $Id: configure,v 1.43 2006/02/12 17:56:28 dl9sau Exp $
+# @(#) $Id: configure,v 1.44 2016/03/13 06:37:23 dl9sau Exp $
 
 CC='cc'
 CFLAGS='-O -I../lib'
@@ -48,7 +48,7 @@ Linux*)
 		LIBDBM='ndbm'
 	elif [ -f /usr/lib/libgdbm_compat.so -o -f /usr/lib/libgdbm_compat.a ]; then
 		LIBDBM='gdbm_compat'
-	elif [ -f /usr/lib/libgdbm.so -o -f /usr/lib/libgdbm.a ]; then
+	elif [ -f /usr/lib/libgdbm.so -o -f /usr/lib/libgdbm.a -o -f /usr/lib64/libgdbm.so -o -f /usr/lib64/libgdbm.a -o -f /usr/lib/x86_64-linux-gnu/libgdbm.a -o -f /usr/lib/x86_64-linux-gnu/libgdbm.so ]; then
 		LIBDBM='gdbm'
 	elif [ -f /usr/lib/libdbm.so -o -f /usr/lib/libdbm.a ]; then
 		LIBDBM='dbm'
@@ -319,6 +319,10 @@ checksymbol()
 	checksymbol HAS_GDBM_NDBM \
 		"#include <gdbm-ndbm.h>
 		main(){dbm_open(0, 0, 0);return 0;}"
+
+	checksymbol HAS_GDBM \
+		"#include <gdbm.h>
+		main(){gdbm_open(0, 0, 0, 0, 0);return 0;}"
 
 	checksymbol HAS_NI \
 		"#include <net/if_ni.h>
