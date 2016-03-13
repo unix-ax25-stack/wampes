@@ -1,4 +1,4 @@
-/* @(#) $Id: finger.c,v 1.17 1999/02/11 19:26:49 deyke Exp $ */
+/* @(#) $Id: finger.c,v 1.18 2016/03/13 07:14:38 dl9sau Exp $ */
 
 /*
  *
@@ -122,7 +122,7 @@ void *p)
 	s->parse = 0;
 
 	tcb = open_tcp(&lsocket, &fsocket, TCP_ACTIVE, 0,
-	 fingcli_rcv, 0, f_state, 0, (int) finger);
+	 fingcli_rcv, 0, f_state, 0, (long) finger);
 
 	finger->tcb = tcb;
 	go(argc, argv, p);

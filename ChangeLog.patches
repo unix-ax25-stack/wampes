@@ -1,10 +1,14 @@
-Version @(#) $Id: ChangeLog.patches,v 1.23 2016/03/13 06:37:21 dl9sau Exp $
+Version @(#) $Id: ChangeLog.patches,v 1.24 2016/03/13 07:14:36 dl9sau Exp $
 
 20160313 Thomas Osterried <dl9sau>
 	- support for lib GDBM
           changed files: lib/configure tools/makeiprt.c util/mkhostdb.c
                          src/domain.c
-	  Patches by DH1DM <steffen.koehler@tu-dresden.de> for db0tud
+	- changes for __x86_64__ systems (some long instead of int types)
+            and USE_WAMPES_MALLOC 0
+          in src/ files finger.c ftpcli.c ftpserv.c ip.h sntp.c tcp.h
+	  telnet.c timer.c timer.h tnserv.c transport.c udp.h alloc.c
+	Patches by DH1DM <steffen.koehler@tu-dresden.de> for db0tud
 
 20070914 Thomas Osterried <dl9sau>
 	- bugfix in krnlif.c (attach kernel <iface> failed on some plattforms)

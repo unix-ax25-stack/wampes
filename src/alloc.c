@@ -1,9 +1,9 @@
-/* @(#) $Id: alloc.c,v 1.39 2006/02/12 17:49:57 dl9sau Exp $ */
+/* @(#) $Id: alloc.c,v 1.40 2016/03/13 07:14:38 dl9sau Exp $ */
 
 /* memory allocation routines
  */
 
-#if defined PURIFY || defined __NeXT__ || defined __NetBSD__ || defined __sgi || defined __MACOSX__
+#if defined PURIFY || defined __NeXT__ || defined __NetBSD__ || defined __sgi || defined __MACOSX__ || defined __x86_64__
 #define USE_WAMPES_MALLOC 0
 #else
 #define USE_WAMPES_MALLOC 1

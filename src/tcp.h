@@ -1,4 +1,4 @@
-/* @(#) $Id: tcp.h,v 1.22 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: tcp.h,v 1.23 2016/03/13 07:14:38 dl9sau Exp $ */
 
 #ifndef _TCP_H
 #define _TCP_H
@@ -205,7 +205,7 @@ struct tcb {
 	int32 mdev;             /* Mean deviation, milliseconds */
 	int32 rtt;              /* Last received RTT (for debugging) */
 
-	int user;               /* User parameter (e.g., for mapping to an
+	long user;               /* User parameter (e.g., for mapping to an
 				 * application control block
 				 */
 	int32 quench;           /* Count of incoming ICMP source quenches */

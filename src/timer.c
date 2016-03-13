@@ -1,4 +1,4 @@
-/* @(#) $Id: timer.c,v 1.23 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: timer.c,v 1.24 2016/03/13 07:14:39 dl9sau Exp $ */
 
 /* General purpose software timer facilities
  * Copyright 1991 Phil Karn, KA9Q
@@ -13,8 +13,8 @@
 #include "daemon.h"
 #include "socket.h"
 
-int32 Msclock;
-int32 Secclock;
+int32 volatile Msclock;
+int32 volatile Secclock;
 
 /* Head of running timer chain.
  * The list of running timers is sorted in increasing order of expiration;
@@ -28,7 +28,7 @@ static void t_alarm(void *x);
 void
 timerproc(int i,void *v1,void *v2)
 {
-	register struct timer *t;
+	struct timer *t;
 	int32 bugfix;
 	struct timeval tv;
 
@@ -59,8 +59,7 @@ timerproc(int i,void *v1,void *v2)
 void
 start_timer(struct timer *t)
 {
-	register struct timer *tnext;
-	struct timer *tprev = NULL;
+	struct timer *tnext, *tprev = NULL;
 	int32 bugfix;
 
 	if(t == NULL)

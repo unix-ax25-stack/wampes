@@ -1,4 +1,4 @@
-/* @(#) $Id: timer.h,v 1.10 1996/08/12 18:51:17 deyke Exp $ */
+/* @(#) $Id: timer.h,v 1.11 2016/03/13 07:14:39 dl9sau Exp $ */
 
 #ifndef _TIMER_H
 #define _TIMER_H
@@ -49,8 +49,8 @@ void stop_timer(struct timer *timer);
 int32 next_timer_event(void);
 char *tformat(int32 t);
 
-extern int32 Msclock;
-extern int32 Secclock;
+extern volatile int32 Msclock;
+extern volatile int32 Secclock;
 #define msclock()       (Msclock)
 #define secclock()      (Secclock)
 

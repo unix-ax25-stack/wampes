@@ -1,4 +1,4 @@
-/* @(#) $Id: ftpcli.c,v 1.25 1999/01/22 21:20:07 deyke Exp $ */
+/* @(#) $Id: ftpcli.c,v 1.26 2016/03/13 07:14:38 dl9sau Exp $ */
 
 /* Internet FTP client (interactive user)
  * Copyright 1991 Phil Karn, KA9Q
@@ -137,7 +137,7 @@ int doftp(int argc, char *argv[], void *p)
 
 	/* Now open the control connection */
 	tcb = open_tcp(&lsocket,&fsocket,TCP_ACTIVE,
-		0,ftpccr,NULL,ftpccs,0,(int)ftp);
+		0,ftpccr,NULL,ftpccs,0,(long)ftp);
 	ftp->control = tcb;
 	go(argc, argv, p);
 	return 0;
@@ -485,7 +485,7 @@ static int ftpsetup(struct ftp *ftp, void (*recv)(struct tcb *,int32), void (*se
 
 	/* Post a listen on the data connection */
 	ftp->data = open_tcp(&lsocket,NULL,TCP_PASSIVE,0,
-		recv,send,state,0,(int)ftp);
+		recv,send,state,0,(long)ftp);
 	return 0;
 }
 

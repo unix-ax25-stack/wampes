@@ -1,4 +1,4 @@
-/* @(#) $Id: ftpserv.c,v 1.41 1998/07/27 16:08:14 deyke Exp $ */
+/* @(#) $Id: ftpserv.c,v 1.42 2016/03/13 07:14:38 dl9sau Exp $ */
 
 /* Internet FTP Server
  * Copyright 1991 Phil Karn, KA9Q
@@ -148,7 +148,7 @@ ftpscs(struct tcb *tcb,enum tcp_state old,enum tcp_state new)
 			return;
 		}
 		ftp->control = tcb;             /* Downward link */
-		tcb->user = (int)ftp;           /* Upward link */
+		tcb->user = (long)ftp;          /* Upward link */
 
 		/* Set default data port */
 		ftp->port.address = tcb->conn.remote.address;
@@ -411,7 +411,7 @@ ftpcommand(struct ftp *ftp)
 			Xprintf(ftp->control,sending,"RETR",arg,"");
 			if (ftp->data) ftp->data->user = 0;
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
-			 0,NULL,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
+			 0,NULL,ftpdt,ftpsds,ftp->control->tos,(long)ftp);
 		}
 		FREE(file);
 		break;
@@ -433,7 +433,7 @@ ftpcommand(struct ftp *ftp)
 			Xprintf(ftp->control,sending,"STOR",arg,"");
 			if (ftp->data) ftp->data->user = 0;
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
-			 0,ftpdr,NULL,ftpsds,ftp->control->tos,(int)ftp);
+			 0,ftpdr,NULL,ftpsds,ftp->control->tos,(long)ftp);
 		}
 		FREE(file);
 		break;
@@ -453,7 +453,7 @@ ftpcommand(struct ftp *ftp)
 			Xprintf(ftp->control,sending,"APPE",arg,"");
 			if (ftp->data) ftp->data->user = 0;
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
-			 0,ftpdr,NULL,ftpsds,ftp->control->tos,(int)ftp);
+			 0,ftpdr,NULL,ftpsds,ftp->control->tos,(long)ftp);
 		}
 		FREE(file);
 		break;
@@ -480,7 +480,7 @@ ftpcommand(struct ftp *ftp)
 			Xprintf(ftp->control,sending,"LIST",file,"");
 			if (ftp->data) ftp->data->user = 0;
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
-			 0,NULL,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
+			 0,NULL,ftpdt,ftpsds,ftp->control->tos,(long)ftp);
 		}
 		FREE(file);
 		break;
@@ -499,7 +499,7 @@ ftpcommand(struct ftp *ftp)
 			Xprintf(ftp->control,sending,"NLST",file,"");
 			if (ftp->data) ftp->data->user = 0;
 			ftp->data = open_tcp(&dport,&ftp->port,TCP_ACTIVE,
-			 0,NULL,ftpdt,ftpsds,ftp->control->tos,(int)ftp);
+			 0,NULL,ftpdt,ftpsds,ftp->control->tos,(long)ftp);
 		}
 		FREE(file);
 		break;

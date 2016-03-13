@@ -1,4 +1,4 @@
-/* @(#) $Id: telnet.c,v 1.24 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: telnet.c,v 1.25 2016/03/13 07:14:39 dl9sau Exp $ */
 
 /* Internet Telnet client
  * Copyright 1991 Phil Karn, KA9Q
@@ -102,7 +102,7 @@ void *p)
 	s->cb.telnet = tn;      /* Downward pointer */
 
 	tcb = open_tcp(&lsocket,&fsocket,TCP_ACTIVE,0,
-	 rcv_char,tn_tx,t_state,0,(int)tn);
+	 rcv_char,tn_tx,t_state,0,(long)tn);
 
 	tn->tcb = tcb;  /* Downward pointer */
 	go(argc, argv, p);

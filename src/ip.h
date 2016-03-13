@@ -1,4 +1,4 @@
-/* @(#) $Id: ip.h,v 1.19 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: ip.h,v 1.20 2016/03/13 07:14:38 dl9sau Exp $ */
 
 #ifndef _IP_H
 #define _IP_H
@@ -159,7 +159,7 @@ struct raw_ip {
 	struct mbuf *rcvq;      /* receive queue */
 	void (*r_upcall)(struct raw_ip *);
 	int protocol;           /* Protocol */
-	int user;               /* User linkage */
+	long user;              /* User linkage */
 };
 
 /* Transport protocol link table */

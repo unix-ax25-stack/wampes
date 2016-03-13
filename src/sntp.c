@@ -1,4 +1,4 @@
-/* @(#) $Id: sntp.c,v 1.18 2006/02/12 17:49:57 dl9sau Exp $ */
+/* @(#) $Id: sntp.c,v 1.19 2016/03/13 07:14:38 dl9sau Exp $ */
 
 /* Simple Network Time Protocol (SNTP) (see RFC1361) */
 
@@ -595,7 +595,7 @@ static int dosntpadd(int argc, char **argv, void *p)
 		free(peer);
 		return 1;
 	}
-	peer->ucb->user = (int) peer;
+	peer->ucb->user = (long) peer;
 	peer->timer.func = sntp_client_send;
 	peer->timer.arg = peer;
 	set_timer(&peer->timer, interval * 1000L);

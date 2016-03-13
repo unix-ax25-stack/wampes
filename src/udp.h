@@ -1,4 +1,4 @@
-/* @(#) $Id: udp.h,v 1.13 1996/08/19 16:30:14 deyke Exp $ */
+/* @(#) $Id: udp.h,v 1.14 2016/03/13 07:14:39 dl9sau Exp $ */
 
 #ifndef _UDP_H
 #define _UDP_H
@@ -57,7 +57,7 @@ struct udp_cb {
 				/* Function to call when one arrives */
 	struct mbuf *rcvq;      /* Queue of pending datagrams */
 	int rcvcnt;             /* Count of pending datagrams */
-	int user;               /* User link */
+	long user;               /* User link */
 };
 extern struct udp_cb *Udps;     /* Hash table for UDP structures */
 
