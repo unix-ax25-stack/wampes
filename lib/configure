@@ -1,4 +1,4 @@
-# @(#) $Id: configure,v 1.44 2016/03/13 06:37:23 dl9sau Exp $
+# @(#) $Id: configure,v 1.45 2016/03/13 14:44:57 dl9sau Exp $
 
 CC='cc'
 CFLAGS='-O -I../lib'
@@ -341,6 +341,11 @@ checksymbol()
 	checksymbol HAS_UINT \
 		"#include <sys/types.h>
 		 main(){uint f;return f;}"
+
+	checksymbol HAS_UCONTEXT \
+		"#include <ucontext.h>
+		 ucontext_t x;
+		 main(){return 0;}"
 
 	echo
 

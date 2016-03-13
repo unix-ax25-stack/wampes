@@ -1,9 +1,14 @@
-/* @(#) $Id: proc.h,v 1.14 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: proc.h,v 1.15 2016/03/13 14:44:58 dl9sau Exp $ */
 
 #ifndef _PROC_H
 #define _PROC_H
 
+#ifdef	HAS_UCONTEXT
+#include <ucontext.h>
+#else
 #include <setjmp.h>
+#endif
+
 #include <stdio.h>
 
 #ifndef _MBUF_H
@@ -28,17 +33,23 @@ struct proc {
 		unsigned int sset:1;            /* Process has set sig */
 		unsigned int freeargs:1;        /* Free args on termination */
 	} flags;
+#ifdef	HAS_UCONTEXT
+	ucontext_t env;         /* Process register state */
+#else
 	jmp_buf env;            /* Process register state */
 	jmp_buf sig;            /* State for alert signal */
 	int signo;              /* Arg to alert to cause signal */
+#endif
 	void *event;            /* Wait event */
 	uint16 *stack;          /* Process stack */
 	unsigned stksize;       /* Size of same */
 	char *name;             /* Arbitrary user-assigned name */
 	int retval;             /* Return value from next kwait() */
 	struct timer alarm;     /* Alarm clock timer */
+#ifndef	HAS_UCONTEXT
 	FILE *input;            /* Process stdin */
 	FILE *output;           /* Process stdout */
+#endif
 	int iarg;               /* Copy of iarg */
 	void *parg1;            /* Copy of parg1 */
 	void *parg2;            /* Copy of parg2 */
@@ -79,8 +90,10 @@ extern struct ksig Ksig;
  * at the time the signal is taken. Note use of comma operators to return
  * the value of setjmp as the overall macro expression value.
  */
+#ifndef	HAS_UCONTEXT
 #define SETSIG(val)     (Curproc->flags.sset=1,\
 	Curproc->signo = (val),setjmp(Curproc->sig))
+#endif
 
 /* In  kernel.c: */
 void alert(struct proc *pp,int val);

@@ -1,10 +1,15 @@
-/* @(#) $Id: kernel.c,v 1.30 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: kernel.c,v 1.31 2016/03/13 14:44:58 dl9sau Exp $ */
 
 /* Non pre-empting synchronization kernel, machine-independent portion
  * Copyright 1992 Phil Karn, KA9Q
  */
+
+#ifdef HAS_UCONTEXT
+#include <ucontext.h>
+#else
 #ifndef ibm032
 #include <setjmp.h>
+#endif
 #endif
 #include "global.h"
 #include "mbuf.h"
@@ -13,6 +18,7 @@
 #include "socket.h"
 #include "daemon.h"
 
+#ifndef HAS_UCONTEXT
 #if defined __hpux || defined ULTRIX_RISC || defined macII
 #define setjmp          _setjmp
 #define longjmp         _longjmp
@@ -28,12 +34,13 @@ EXTERN_C void setstack(void);
 #endif
 
 uint16 *newstackptr;
+#endif
 
 struct proc *Curproc;           /* Currently running process */
 struct proc *Rdytab;            /* Processes ready to run (not including curproc) */
 struct proc *Waittab[PHASH];    /* Waiting process list */
 struct proc *Susptab;           /* Suspended processes */
-static struct mbuf *Killq;
+struct mbuf *Killq;
 struct ksig Ksig;
 int Kdebug;             /* Control display of current task on screen */
 
@@ -43,6 +50,14 @@ static void delproc(struct proc *entry);
 static void ksig(void *event,int n);
 static int procsigs(void);
 
+#ifdef	HAS_UCONTEXT
+static void (*func)(int, void *, void *);
+static void trampoline(void)
+{
+	(*func)(Curproc->iarg, Curproc->parg1, Curproc->parg2);
+	killself();
+}
+#else
 #ifdef _AIX
 
 #pragma alloca
@@ -63,6 +78,7 @@ static void aix_longjmp(jmp_buf jmpenv, int val)
   _longjmp(jmpenv, val);
 }
 
+#endif
 #endif
 
 /* Create a process descriptor for the main function. Must be actually
@@ -106,7 +122,10 @@ void *parg2,            /* Generic pointer argument #2 (session ptr) */
 int freeargs            /* If set, free arg list on parg1 at termination */
 ){
 	static struct proc *pp;
+#ifndef	HAS_UCONTEXT
 	static void (*func)(int,void *,void *);
+#endif
+	struct proc *oldproc = Curproc;
 	int i;
 
 	/* Create process descriptor */
@@ -115,16 +134,18 @@ int freeargs            /* If set, free arg list on parg1 at termination */
 	/* Create name */
 	pp->name = strdup(name);
 
+ 	/* Assign function name */
+	func = pc;
+
 	/* Allocate stack */
-	stksize = (stksize + 3) & ~3;
-	pp->stksize = stksize;
-	if((pp->stack = (uint16 *)malloc(sizeof(uint16)*stksize)) == NULL){
+	pp->stksize = (stksize + 3) & ~3;
+	if((pp->stack = (uint16 *)malloc(sizeof(uint16) * pp->stksize)) == NULL){
 		free(pp->name);
 		free(pp);
 		return NULL;
 	}
 	/* Initialize stack for high-water check */
-	for(i=0;i<stksize;i++)
+	for(i=0 ;i < pp->stksize; i++)
 		pp->stack[i] = STACKPAT;
 
 	pp->flags.freeargs = freeargs;
@@ -134,13 +155,27 @@ int freeargs            /* If set, free arg list on parg1 at termination */
 
 	pp->flags.suspend = pp->flags.waiting = 0;
 
+#ifndef	HAS_UCONTEXT
 	if (setjmp(Curproc->env))
 		return pp;
+#endif
 
 	addproc(Curproc);
 	Curproc = pp;
 
-	func = pc;
+#ifdef	HAS_UCONTEXT
+	ucontext_t env;
+	getcontext(&env);
+	env.uc_stack.ss_sp = (void *)pp->stack;
+	env.uc_stack.ss_size = sizeof(uint16) * pp->stksize;
+	env.uc_link = 0;
+	makecontext(&env, trampoline, 0);
+
+	swapcontext(&oldproc->env, &env);
+	return pp;
+
+#else
+
 #ifdef __hp9000s800
 	newstackptr = pp->stack + 128;
 #else
@@ -214,6 +249,7 @@ int freeargs            /* If set, free arg list on parg1 at termination */
 	(*func)(pp->iarg, pp->parg1, pp->parg2);
 	killself();
 	return 0;
+#endif
 }
 #endif
 
@@ -376,7 +412,11 @@ kwait(void *event)
 	Curproc = Rdytab;
 	delproc(Curproc);
 
-	/* Now do the context switch.
+	/* Now do the context switch. */
+#ifdef	HAS_UCONTEXT
+	swapcontext(&oldproc->env, &Curproc->env);
+#else
+	/*
 	 * This technique was inspired by Rob, PE1CHL, and is a bit tricky.
 	 *
 	 * First save the current process's state. Then if
@@ -390,13 +430,17 @@ kwait(void *event)
 		 */
 		longjmp(Curproc->env,1);
 	}
+#endif
+
 	/* At this point, we're running in the newly dispatched task */
 	tmp = Curproc->retval;
 	Curproc->retval = 0;
 
+#ifndef	HAS_UCONTEXT
 	/* If an exception signal was sent and we're prepared, take it */
 	if((Curproc->flags.sset) && tmp == Curproc->signo)
 		longjmp(Curproc->sig,1);
+#endif
 
 	/* Otherwise return normally to the new task */
 	return tmp;
@@ -513,17 +557,23 @@ delproc(struct proc *entry)     /* Pointer to entry */
 			Rdytab = entry->next;
 		}
 	}
+
+	entry->prev = NULL;
+	entry->next = NULL;
 }
 /* Append proc entry to end of appropriate list */
 static void
 addproc(struct proc *entry)     /* Pointer to entry */
 {
 	struct proc *pp;
+#if	0
 	struct proc **head;
+#endif
 
 	if(entry == NULL)
 		return;
 
+#if 0
 	if(entry->flags.suspend){
 		head = &Susptab;
 	} else if(entry->flags.waiting){
@@ -543,4 +593,22 @@ addproc(struct proc *entry)     /* Pointer to entry */
 		pp->next = entry;
 		entry->prev = pp;
 	}
+#else
+	if(entry->flags.suspend){
+		if ((pp = Susptab) == NULL)
+			Susptab = entry;
+	} else if(entry->flags.waiting){
+		if ((pp = Waittab[phash(entry->event)]) == NULL)
+			Waittab[phash(entry->event)] = entry;
+	} else {        /* Ready */
+		if ((pp = Rdytab) == NULL)
+			Rdytab = entry;
+	}
+	if (pp != NULL) {
+		/* Find last entry on list */
+		while (pp->next != NULL) pp = pp->next;
+		pp->next = entry;
+		entry->prev = pp;
+	}
+#endif
 }

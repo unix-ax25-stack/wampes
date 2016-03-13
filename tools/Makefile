@@ -1,4 +1,4 @@
-# @(#) $Id: Makefile,v 1.44 2000/01/15 18:34:15 deyke Exp $
+# @(#) $Id: Makefile,v 1.45 2016/03/13 14:45:00 dl9sau Exp $
 
 TARGETS    = \
 	     check_seteugid \
@@ -20,8 +20,10 @@ _all:   $(TARGETS)
 check_seteugid: check_seteugid.o $(LIBS)
 	$(RMTARGET)
 	$(LD) $(LDFLAGS) check_seteugid.o $(LIBS) $(SLIBS) -o $@
-	mk chown root $@
-	mk chmod 4555 $@
+	#mk chown root $@
+	#mk chmod 4555 $@
+	chown root $@
+	chmod 4555 $@
 
 connect: connect.o $(LIBS)
 	$(RMTARGET)

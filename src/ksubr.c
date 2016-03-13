@@ -1,12 +1,16 @@
-/* @(#) $Id: ksubr.c,v 1.36 1999/02/01 22:24:25 deyke Exp $ */
+/* @(#) $Id: ksubr.c,v 1.37 2016/03/13 14:44:58 dl9sau Exp $ */
 
 /* Machine or compiler-dependent portions of kernel
  *
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <sys/types.h>
+#ifdef HAS_UCONTEXT
+#include <ucontext.h>
+#else
 #ifndef ibm032
 #include <setjmp.h>
+#endif
 #endif
 #include <stdio.h>
 #include <time.h>
@@ -15,6 +19,7 @@
 #include "commands.h"
 #include "main.h"
 
+#ifndef HAS_UCONTEXT
 #if defined __hp9000s300
 struct env {
 	long    pc;
@@ -335,6 +340,7 @@ struct env {
 };
 #define getstackptr(ep) (0L)
 #endif
+#endif
 
 static int stkutil(struct proc *pp);
 static void pproc(struct proc *pp);
@@ -368,7 +374,11 @@ void *p)
 	Ksig.maxentries = 0;
 	printf("kwaits %lu nops %lu from int %lu\n",
 	 Ksig.kwaits,Ksig.kwaitnops,Ksig.kwaitints);
+#ifdef	HAS_UCONTEXT
+	printf("PID       SP        stksize   maxstk    event     fl    name\n");
+#else
 	printf("PID       SP        stksize   maxstk    event     fl  in  out  name\n");
+#endif
 
 	for(pp = Susptab;pp != NULL;pp = pp->next)
 		pproc(pp);
@@ -392,13 +402,21 @@ struct proc *pp)
 	struct env *ep;
 
 	ep = (struct env *)&pp->env;
+#ifdef	HAS_UCONTEXT
+	printf("%08lx  %08lx  %7u   %6u    %08lx  %c%c%c   %s\n",
+	 (long)pp,(long)pp->stack,pp->stksize,stkutil(pp),
+#else
 	printf("%08lx  %08lx  %7u   %6u    %08lx  %c%c%c %3d %3d  %s\n",
 	 (long)pp,getstackptr(ep),pp->stksize,stkutil(pp),
+#endif
 	 (long)pp->event,
 	 ' ',
 	 pp->flags.waiting ? 'W' : ' ',
 	 pp->flags.suspend ? 'S' : ' ',
-	 (int)pp->input,(int)pp->output,pp->name);
+#ifndef	HAS_UCONTEXT
+	 (int)pp->input,(int)pp->output,
+#endif
+	 pp->name);
 }
 static int
 stkutil(
@@ -410,10 +428,14 @@ struct proc *pp)
 	if(pp->stksize == 0)
 		return 0;       /* Main task -- too hard to check */
 	i = pp->stksize;
+#ifdef	HAS_UCONTEXT
+	for(sp = pp->stack;*sp == STACKPAT && sp < pp->stack + pp->stksize;sp++)
+#else
 #ifndef __hp9000s800
 	for(sp = pp->stack;*sp == STACKPAT && sp < pp->stack + pp->stksize;sp++)
 #else
 	for(sp = pp->stack + (pp->stksize-1);*sp == STACKPAT && sp >= pp->stack;sp--)
+#endif
 #endif
 		i--;
 	return i;
@@ -425,5 +447,9 @@ void *event)
 	/* If PHASH is a power of two, this will simply mask off the
 	 * higher order bits
 	 */
+#ifdef HAS_UCONTEXT
+	return ((long)event >> 2) % PHASH;
+#else
 	return (int)event % PHASH;
+#endif
 }

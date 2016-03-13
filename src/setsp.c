@@ -1,6 +1,8 @@
-/* @(#) $Id: setsp.c,v 1.19 2006/02/17 14:37:10 dl9sau Exp $ */
+/* @(#) $Id: setsp.c,v 1.20 2016/03/13 14:44:58 dl9sau Exp $ */
 
 #ifndef __lint
+#include "../lib/configure.h"
+#ifndef	HAS_UCONTEXT
 
 #ifdef __hp9000s300
 	text
@@ -68,6 +70,10 @@ setstack:
 	mov   %sp, %g0
 	set   newstackptr,%sp
 	jmp     %g0
+#elif   __x86_64__
+	movq    %rsp, %rbp
+	movq    newstackptr, %rsp
+	jmp     *(%rbp)
 #else
 	movl    %esp, %ebp
 	movl    newstackptr, %esp
@@ -166,4 +172,5 @@ _setstack:
         blr 
 #endif
 
+#endif
 #endif
