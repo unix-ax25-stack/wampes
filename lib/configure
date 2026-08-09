@@ -363,6 +363,15 @@ checksymbol()
 	fi
 
 	echo
+	echo "#ifdef __MACOSX__"
+	echo "#undef HAS_NDBM"
+	echo "#undef HAS_DB1_NDBM"
+	echo "#undef HAS_GDBM_NDBM"
+	echo "#undef HAS_GDBM"
+	echo "#define HAS_NDBM 1"
+	echo "#endif"
+
+	echo
 	echo "#endif"
 
 ) > configure.tmp

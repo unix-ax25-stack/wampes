@@ -7,6 +7,7 @@ OBJS          = buildsaddr.o \
 		callvalid.o \
 		lockfile.o \
 		md5.o \
+		ndbm.o \
 		seteugid.o \
 		strdup.o \
 		strerror.o \
