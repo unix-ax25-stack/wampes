@@ -3,7 +3,7 @@
 #ifndef _PROC_H
 #define _PROC_H
 
-#ifdef	HAS_UCONTEXT
+#if HAS_UCONTEXT
 #include <ucontext.h>
 #else
 #include <setjmp.h>
@@ -33,7 +33,7 @@ struct proc {
 		unsigned int sset:1;            /* Process has set sig */
 		unsigned int freeargs:1;        /* Free args on termination */
 	} flags;
-#ifdef	HAS_UCONTEXT
+#if HAS_UCONTEXT
 	ucontext_t env;         /* Process register state */
 #else
 	jmp_buf env;            /* Process register state */
@@ -46,7 +46,7 @@ struct proc {
 	char *name;             /* Arbitrary user-assigned name */
 	int retval;             /* Return value from next kwait() */
 	struct timer alarm;     /* Alarm clock timer */
-#ifndef	HAS_UCONTEXT
+#if !HAS_UCONTEXT
 	FILE *input;            /* Process stdin */
 	FILE *output;           /* Process stdout */
 #endif
@@ -90,7 +90,7 @@ extern struct ksig Ksig;
  * at the time the signal is taken. Note use of comma operators to return
  * the value of setjmp as the overall macro expression value.
  */
-#ifndef	HAS_UCONTEXT
+#if !HAS_UCONTEXT
 #define SETSIG(val)     (Curproc->flags.sset=1,\
 	Curproc->signo = (val),setjmp(Curproc->sig))
 #endif

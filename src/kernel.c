@@ -4,7 +4,7 @@
  * Copyright 1992 Phil Karn, KA9Q
  */
 
-#ifdef HAS_UCONTEXT
+#if HAS_UCONTEXT
 #include <ucontext.h>
 #else
 #ifndef ibm032
@@ -18,7 +18,7 @@
 #include "socket.h"
 #include "daemon.h"
 
-#ifndef HAS_UCONTEXT
+#if !HAS_UCONTEXT
 #if defined __hpux || defined ULTRIX_RISC || defined macII
 #define setjmp          _setjmp
 #define longjmp         _longjmp
@@ -50,7 +50,7 @@ static void delproc(struct proc *entry);
 static void ksig(void *event,int n);
 static int procsigs(void);
 
-#ifdef	HAS_UCONTEXT
+#if HAS_UCONTEXT
 static void (*func)(int, void *, void *);
 static void trampoline(void)
 {
@@ -122,7 +122,7 @@ void *parg2,            /* Generic pointer argument #2 (session ptr) */
 int freeargs            /* If set, free arg list on parg1 at termination */
 ){
 	static struct proc *pp;
-#ifndef	HAS_UCONTEXT
+#if !HAS_UCONTEXT
 	static void (*func)(int,void *,void *);
 #endif
 	struct proc *oldproc = Curproc;
@@ -155,7 +155,7 @@ int freeargs            /* If set, free arg list on parg1 at termination */
 
 	pp->flags.suspend = pp->flags.waiting = 0;
 
-#ifndef	HAS_UCONTEXT
+#if !HAS_UCONTEXT
 	if (setjmp(Curproc->env))
 		return pp;
 #endif
@@ -163,7 +163,7 @@ int freeargs            /* If set, free arg list on parg1 at termination */
 	addproc(Curproc);
 	Curproc = pp;
 
-#ifdef	HAS_UCONTEXT
+#if HAS_UCONTEXT
 	ucontext_t env;
 	getcontext(&env);
 	env.uc_stack.ss_sp = (void *)pp->stack;
@@ -413,7 +413,7 @@ kwait(void *event)
 	delproc(Curproc);
 
 	/* Now do the context switch. */
-#ifdef	HAS_UCONTEXT
+#if HAS_UCONTEXT
 	swapcontext(&oldproc->env, &Curproc->env);
 #else
 	/*
@@ -436,7 +436,7 @@ kwait(void *event)
 	tmp = Curproc->retval;
 	Curproc->retval = 0;
 
-#ifndef	HAS_UCONTEXT
+#if !HAS_UCONTEXT
 	/* If an exception signal was sent and we're prepared, take it */
 	if((Curproc->flags.sset) && tmp == Curproc->signo)
 		longjmp(Curproc->sig,1);

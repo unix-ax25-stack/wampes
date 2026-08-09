@@ -5,7 +5,7 @@
  * Copyright 1991 Phil Karn, KA9Q
  */
 #include <sys/types.h>
-#ifdef HAS_UCONTEXT
+#if HAS_UCONTEXT
 #include <ucontext.h>
 #else
 #ifndef ibm032
@@ -19,7 +19,7 @@
 #include "commands.h"
 #include "main.h"
 
-#ifndef HAS_UCONTEXT
+#if !HAS_UCONTEXT
 #if defined __hp9000s300
 struct env {
 	long    pc;
@@ -374,7 +374,7 @@ void *p)
 	Ksig.maxentries = 0;
 	printf("kwaits %lu nops %lu from int %lu\n",
 	 Ksig.kwaits,Ksig.kwaitnops,Ksig.kwaitints);
-#ifdef	HAS_UCONTEXT
+#if HAS_UCONTEXT
 	printf("PID       SP        stksize   maxstk    event     fl    name\n");
 #else
 	printf("PID       SP        stksize   maxstk    event     fl  in  out  name\n");
@@ -402,7 +402,7 @@ struct proc *pp)
 	struct env *ep;
 
 	ep = (struct env *)&pp->env;
-#ifdef	HAS_UCONTEXT
+#if HAS_UCONTEXT
 	printf("%08lx  %08lx  %7u   %6u    %08lx  %c%c%c   %s\n",
 	 (long)pp,(long)pp->stack,pp->stksize,stkutil(pp),
 #else
@@ -413,7 +413,7 @@ struct proc *pp)
 	 ' ',
 	 pp->flags.waiting ? 'W' : ' ',
 	 pp->flags.suspend ? 'S' : ' ',
-#ifndef	HAS_UCONTEXT
+#if !HAS_UCONTEXT
 	 (int)pp->input,(int)pp->output,
 #endif
 	 pp->name);
@@ -428,7 +428,7 @@ struct proc *pp)
 	if(pp->stksize == 0)
 		return 0;       /* Main task -- too hard to check */
 	i = pp->stksize;
-#ifdef	HAS_UCONTEXT
+#if HAS_UCONTEXT
 	for(sp = pp->stack;*sp == STACKPAT && sp < pp->stack + pp->stksize;sp++)
 #else
 #ifndef __hp9000s800
@@ -447,7 +447,7 @@ void *event)
 	/* If PHASH is a power of two, this will simply mask off the
 	 * higher order bits
 	 */
-#ifdef HAS_UCONTEXT
+#if HAS_UCONTEXT
 	return ((long)event >> 2) % PHASH;
 #else
 	return (int)event % PHASH;

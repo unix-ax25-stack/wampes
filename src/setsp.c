@@ -2,7 +2,7 @@
 
 #ifndef __lint
 #include "../lib/configure.h"
-#ifndef	HAS_UCONTEXT
+#if !HAS_UCONTEXT
 
 #ifdef __hp9000s300
 	text
@@ -164,12 +164,26 @@ _setstack:
 #endif
 
 #ifdef	__MACOSX__
+#if defined(__x86_64__)
+	.file   "setsp.s"
 	.text
 	.globl  _setstack
 _setstack:
-	lis      r3,ha16(_newstackptr)
-	lwz      r1,lo16(_newstackptr)(r3)
-        blr 
+	movq    %rsp, %rbp
+	movq    _newstackptr(%rip), %rsp
+	jmp     *(%rbp)
+	.align  2
+#elif defined(__aarch64__)
+	.file   "setsp.s"
+	.text
+	.globl  _setstack
+_setstack:
+	adrp    x9, _newstackptr@PAGE
+	ldr     x9, [x9, _newstackptr@PAGEOFF]
+	mov     sp, x9
+	ret
+	.align  2
+#endif
 #endif
 
 #endif
