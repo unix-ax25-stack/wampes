@@ -387,7 +387,7 @@ int main(int argc, char **argv)
   TYPE_FD_SET rmask;
   char *note = 0;
   char buffer[2048];
-  const char *server = "unix:/tcp/sockets/convers";
+  const char *server = "unix:" TCPDIR "/sockets/convers";
   int addrlen;
   int channel = 0;
   int chr;

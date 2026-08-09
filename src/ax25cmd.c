@@ -12,6 +12,7 @@
 #include "iface.h"
 #include "ax25.h"
 #include "lapb.h"
+#include "slhc.h"
 #include "cmdparse.h"
 #include "socket.h"
 #include "session.h"

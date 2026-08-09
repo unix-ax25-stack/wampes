@@ -37,8 +37,8 @@ struct arp_saverecord_3 {
   int32 expires;
 };
 
-static const char arp_filename[] = "/tcp/arp_data";
-static const char arp_tmpfilename[] = "/tcp/arp_tmp";
+static const char arp_filename[] = TCPDIR "/arp_data";
+static const char arp_tmpfilename[] = TCPDIR "/arp_tmp";
 
 /*---------------------------------------------------------------------------*/
 

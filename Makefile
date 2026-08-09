@@ -8,21 +8,23 @@ DIRS       = lib \
 	     util \
 	     bbs
 
+TCPDIR     = /tcp
+
 all:;   @-chmod 755 cc
 	@-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i all install ); done
-	@-$(MAKE) -i /tcp/hostaddr.pag
+	@-$(MAKE) -i $(TCPDIR)/hostaddr.pag
 	@-if [ -d tools ]; then ( cd tools; $(MAKE) -i all install ); fi
 
-/tcp/hosts:
-	[ -f /tcp/hosts ] || touch /tcp/hosts
+$(TCPDIR)/hosts:
+	[ -f $(TCPDIR)/hosts ] || touch $(TCPDIR)/hosts
 
-/tcp/domain.txt:
-	[ -f /tcp/domain.txt ] || touch /tcp/domain.txt
+$(TCPDIR)/domain.txt:
+	[ -f $(TCPDIR)/domain.txt ] || touch $(TCPDIR)/domain.txt
 
-/tcp/hostaddr.pag: /tcp/hosts /tcp/domain.txt util/mkhostdb
-	rm -f /tcp/hostaddr.* /tcp/hostname.*
+$(TCPDIR)/hostaddr.pag: $(TCPDIR)/hosts $(TCPDIR)/domain.txt util/mkhostdb
+	rm -f $(TCPDIR)/hostaddr.* $(TCPDIR)/hostname.*
 	util/mkhostdb >/dev/null 2>&1
-	if [ -f /tcp/hostaddr.db ]; then ln /tcp/hostaddr.db $@; fi
+	if [ -f $(TCPDIR)/hostaddr.db ]; then ln $(TCPDIR)/hostaddr.db $@; fi
 
 distrib:
 	@-rm -f wampes-*.t*; \

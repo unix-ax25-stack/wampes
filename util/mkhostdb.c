@@ -29,12 +29,12 @@ static const char rcsid[] = "@(#) $Id: mkhostdb.c,v 1.18 2016/03/13 06:37:27 dl9
 #endif
 #endif
 
-#define DBHOSTADDR      "/tcp/hostaddr"
-#define DBHOSTNAME      "/tcp/hostname"
-#define DOMAINFILE      "/tcp/domain.txt"
-#define HOSTSFILE       "/tcp/hosts"
+#define DBHOSTADDR      TCPDIR "/hostaddr"
+#define DBHOSTNAME      TCPDIR "/hostname"
+#define DOMAINFILE      TCPDIR "/domain.txt"
+#define HOSTSFILE       TCPDIR "/hosts"
 #define LOCALDOMAIN     "ampr.org"
-#define LOCALDOMAINFILE "/tcp/domain.local"
+#define LOCALDOMAINFILE TCPDIR "/domain.local"
 
 #if HAS_GDBM
 static GDBM_FILE Dbhostaddr;

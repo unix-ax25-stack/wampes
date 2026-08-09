@@ -159,8 +159,8 @@ static void (*writefnc[FD_SETSIZE])(void *);
 static void *writearg[FD_SETSIZE];
 
 static const char conversd[] = "conversd";
-static const char progfile[] = "/tcp/conversd";
-static const char *conffile = "/tcp/convers.conf";
+static const char progfile[] = TCPDIR "/conversd";
+static const char *conffile = TCPDIR "/convers.conf";
 static int debug;
 static int maxfd = -1;
 static int min_waittime = MIN_WAITTIME;
@@ -2048,7 +2048,7 @@ int main(int argc, char **argv)
   };
 
   static struct listeners listeners[256] = {
-    {"unix:/tcp/sockets/convers", 0},
+    {"unix:" TCPDIR "/sockets/convers", 0},
     {"*:3600", 0},
   };
 

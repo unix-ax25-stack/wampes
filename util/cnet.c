@@ -190,7 +190,7 @@ int main(int argc, char **argv)
   TYPE_FD_SET wmask;
   char *cmdptr = 0;
   char *progname = "cnet";
-  char *server = "unix:/tcp/.sockets/netcmd";
+  char *server = "unix:" TCPDIR "/.sockets/netcmd";
   char cmdbuf[1024];
   int addrlen;
   int chr;

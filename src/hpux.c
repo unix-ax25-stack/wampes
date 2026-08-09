@@ -106,9 +106,9 @@ void ioinit(void)
   setrlimit(RLIMIT_NOFILE, &rlp);
 #endif
 
-  fixdir("/tcp", 0755);
-  fixdir("/tcp/sockets", 0755);
-  fixdir("/tcp/.sockets", 0700);
+  fixdir(TCPDIR, 0755);
+  fixdir(TCPDIR "/sockets", 0755);
+  fixdir(TCPDIR "/.sockets", 0700);
 
   if ((local_kbd = (isatty(0) && isatty(1)))) {
 #ifdef ibm032
@@ -392,7 +392,7 @@ static void check_files_changed(void)
   nexttime = secclock() + 600;
 
   if (!filetable[0]) {
-    filetable[0] = "/tcp/net";
+    filetable[0] = TCPDIR "/net";
     filetable[1] = Startup;
   };
 

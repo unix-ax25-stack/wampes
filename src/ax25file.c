@@ -41,8 +41,8 @@ struct axroute_saverecord_2 {
 };
 #endif
 
-static const char axroute_filename[] = "/tcp/axroute_data";
-static const char axroute_tmpfilename[] = "/tcp/axroute_tmp";
+static const char axroute_filename[] = TCPDIR "/axroute_data";
+static const char axroute_tmpfilename[] = TCPDIR "/axroute_tmp";
 
 /*---------------------------------------------------------------------------*/
 

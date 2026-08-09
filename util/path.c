@@ -10,6 +10,7 @@ static const char rcsid[] = "@(#) $Id: path.c,v 1.28 2002/01/12 15:55:53 dl9sau 
 #include <string.h>
 #include <time.h>
 
+#include "configure.h"
 #include "strdup.h"
 
 #define ALEN            6       /* Number of chars in callsign field */
@@ -52,7 +53,7 @@ struct axroute_saverecord_2 {
 };
 #endif
 
-static const char axroutefile[] = "/tcp/axroute_data";
+static const char axroutefile[] = TCPDIR "/axroute_data";
 static struct ax_route *Ax_routes[AXROUTESIZE];
 static struct iface *Ifaces;
 

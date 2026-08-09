@@ -187,6 +187,7 @@ int slhc_uncompress(struct slcompress *comp,
 int slhc_remember(struct slcompress *comp,
 	struct mbuf **bpp);
 int slhc_toss(struct slcompress *comp);
+int axhc_compress(struct slcompress *comp, struct mbuf **bpp, int do_compression);
 
 void slhc_i_status(struct slcompress *comp);
 void slhc_o_status(struct slcompress *comp);

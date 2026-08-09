@@ -7,7 +7,7 @@
 #include "global.h"
 #endif
 
-#define CONFFILE   "/tcp/mail.conf"
+#define CONFFILE   TCPDIR "/mail.conf"
 #define RETRYTIME  (60L*60)
 #define RETURNTIME (60L*60*24*3)
 #define MAXJOBS    10

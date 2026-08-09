@@ -309,7 +309,7 @@ void remote_net_initialize(void)
 {
 
   static const char *socketnames[] = {
-    "unix:/tcp/.sockets/netcmd",
+    "unix:" TCPDIR "/.sockets/netcmd",
     0
   };
 

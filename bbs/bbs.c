@@ -57,11 +57,11 @@ extern int optind;
 #define NEWSGROUPSPREFIX        "ampr.bbs."
 #define NEWSGROUPSPREFIXLENGTH  9               /* strlen(NEWSGROUPSPREFIX) */
 
-#define BBSCONFIGFILE   "/tcp/bbs.conf"
-#define BBSRCFILE       "/tcp/bbsrc"
+#define BBSCONFIGFILE   TCPDIR "/bbs.conf"
+#define BBSRCFILE       TCPDIR "/bbsrc"
 #define HELPFILE        "/usr/local/lib/bbs.help"
-#define LOCKDIR         "/tcp/locks"
-#define MAILCONFIGFILE  "/tcp/mail.conf"
+#define LOCKDIR         TCPDIR "/locks"
+#define MAILCONFIGFILE  TCPDIR "/mail.conf"
 #define NEWSRCFILE      ".newsrc.bbs"
 #define USERRCFILE      ".bbsrc"
 
@@ -2949,7 +2949,7 @@ static void connect_bbs(void)
 
   if (!connect_addr(user.name, protocol, address))
     exit(1);
-  if (!(addr = build_sockaddr("unix:/tcp/.sockets/netcmd", &addrlen)))
+  if (!(addr = build_sockaddr("unix:" TCPDIR "/.sockets/netcmd", &addrlen)))
     exit(1);
   if ((fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0)
     exit(1);

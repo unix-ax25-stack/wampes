@@ -40,8 +40,8 @@
 #include "cmdparse.h"
 #include "domain.h"
 
-#define DBHOSTADDR      "/tcp/hostaddr"
-#define DBHOSTNAME      "/tcp/hostname"
+#define DBHOSTADDR      TCPDIR "/hostaddr"
+#define DBHOSTNAME      TCPDIR "/hostname"
 #define LOCALDOMAIN     "ampr.org"
 
 struct cache {

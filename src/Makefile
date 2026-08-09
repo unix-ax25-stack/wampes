@@ -1,6 +1,6 @@
 # @(#) $Id: Makefile,v 1.108 2006/03/12 10:24:06 dl9sau Exp $
 
-DEST          = /tcp
+DEST          = $(TCPDIR)
 
 EXTHDRS       = ../lib/buildsaddr.h \
 		../lib/calc_crc.h \

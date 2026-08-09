@@ -37,8 +37,8 @@ struct route_saverecord_3 {
   int32 expires;
 };
 
-static const char route_filename[] = "/tcp/route_data";
-static const char route_tmpfilename[] = "/tcp/route_tmp";
+static const char route_filename[] = TCPDIR "/route_data";
+static const char route_tmpfilename[] = TCPDIR "/route_tmp";
 
 /*---------------------------------------------------------------------------*/
 

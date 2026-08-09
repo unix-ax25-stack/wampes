@@ -12,6 +12,7 @@
 
 #include <arpa/inet.h>
 
+#include "configure.h"
 #include "buildsaddr.h"
 
 static union {
@@ -41,7 +42,7 @@ struct sockaddr *build_sockaddr(const char *name, int *addrlen)
   if (!strcmp(host_name, "local") || !strcmp(host_name, "unix")) {
     addr.su.sun_family = AF_UNIX;
     *addr.su.sun_path = 0;
-    if (*serv_name != '/') strcpy(addr.su.sun_path, "/tcp/sockets/");
+    if (*serv_name != '/') strcpy(addr.su.sun_path, TCPDIR "/sockets/");
     strcat(addr.su.sun_path, serv_name);
 #ifdef RISCiX
     *addrlen = sizeof(addr.su.sun_family) + strlen(addr.su.sun_path);

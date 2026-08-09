@@ -13,6 +13,7 @@
 #include "timer.h"
 #include "ax25.h"
 #include "lapb.h"
+#include "slhc.h"
 
 struct ax25_cb *Ax25_cb;
 

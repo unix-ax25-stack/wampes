@@ -16,14 +16,15 @@ conversd: conversd.o $(LIBS)
 	$(LD) $(LDFLAGS) conversd.o $(LIBS) $(SLIBS) -o $@
 
 #_install: /usr/local/bin/convers /tcp/conversd
-_install: /tcp/conversd
+_install: $(TCPDIR)/conversd
 
 /usr/local/bin/convers: convers
 	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
 
-/tcp/conversd: conversd
+$(TCPDIR)/conversd: conversd
+	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
 
