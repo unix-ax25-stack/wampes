@@ -40,6 +40,9 @@ static union {
   struct sockaddr_un su;
 } addr;
 
+static struct sockaddr *build_addr(const char *host_name, int want_family,
+	int port, int *addrlen);
+
 /*---------------------------------------------------------------------------*/
 
 /* Resolve a host name or a literal to one address.
@@ -135,6 +138,51 @@ static int resolve_addr(const char *host, int want_family, unsigned char *dst,
 
 /*---------------------------------------------------------------------------*/
 
+/* Address without a service.  Used where the port does not come from the
+ * same string - the axip and ipip encapsulations take the peer address from
+ * the routing command and the port from the interface.
+ *
+ *   1.2.3.4      2001:db8::1      db0sao.ampr.org      [db0sao.ampr.org]
+ *
+ * A bare IPv6 literal is fine here: with no service behind it there is no
+ * colon to confuse.  Brackets still mean "resolve this name as IPv6".
+ */
+
+struct sockaddr *build_sockaddr_host(const char *name, int port, int *addrlen)
+{
+
+  char buf[1024];
+  const char *host_name = name;
+  int want_family = AF_UNSPEC;
+  size_t namelen;
+
+  memset((char *) &addr, 0, sizeof(addr));
+  *addrlen = 0;
+
+  if (!name) return 0;
+  if (port < 0 || port > 65535) return 0;
+
+  namelen = strlen(name);
+  if (namelen >= sizeof(buf)) return 0;
+
+  if (*name == '[') {
+    char *end;
+
+    memcpy(buf, name, namelen + 1);
+    end = strchr(buf, ']');
+    if (!end || end[1]) return 0;       /* nothing may follow the bracket */
+    *end = 0;
+    host_name = buf + 1;
+    want_family = AF_INET6;
+  }
+
+  if (!*host_name) return 0;
+
+  return build_addr(host_name, want_family, port, addrlen);
+}
+
+/*---------------------------------------------------------------------------*/
+
 struct sockaddr *build_sockaddr(const char *name, int *addrlen)
 {
 
@@ -191,37 +239,9 @@ struct sockaddr *build_sockaddr(const char *name, int *addrlen)
     return &addr.sa;
   }
 
-  /* Everything else is IP.  Work out family and address first, then build the
-   * matching sockaddr and put the port into the right field.
-   */
+  /* Everything else is IP. */
   {
-    unsigned char rawaddr[16];
-    int af = AF_INET;
     int port;
-
-    memset((char *) rawaddr, 0, sizeof(rawaddr));
-
-    if (!strcmp(host_name, "*")) {
-      /* The wildcard keeps meaning "any IPv4", so existing listeners are
-       * unaffected.  Write [::]:port for an IPv6 listener, which on a dual
-       * stack host normally serves IPv4 as well.
-       */
-      af = AF_INET;                     /* rawaddr stays zero: INADDR_ANY */
-    } else if (!strcmp(host_name, "loopback") || !strcmp(host_name, "localhost")) {
-#if HAS_AF_INET6
-      if (want_family == AF_INET6) {
-	af = AF_INET6;
-	rawaddr[15] = 1;                /* ::1 */
-      } else
-#endif
-      {
-	af = AF_INET;
-	rawaddr[0] = 127;               /* 127.0.0.1 */
-	rawaddr[3] = 1;
-      }
-    } else if (resolve_addr(host_name, want_family, rawaddr, &af) < 0) {
-      return 0;
-    }
 
     if (isdigit(*serv_name & 0xff)) {
       char *end;
@@ -241,21 +261,61 @@ struct sockaddr *build_sockaddr(const char *name, int *addrlen)
       port = ntohs((unsigned short) sp->s_port);
     }
 
+    return build_addr(host_name, want_family, port, addrlen);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Work out family and address, then build the matching sockaddr and put the
+ * port into the right field.  Shared by both entry points above.
+ */
+
+static struct sockaddr *build_addr(const char *host_name, int want_family,
+	int port, int *addrlen)
+{
+
+  unsigned char rawaddr[16];
+  int af = AF_INET;
+
+  memset((char *) rawaddr, 0, sizeof(rawaddr));
+
+  if (!strcmp(host_name, "*")) {
+    /* The wildcard keeps meaning "any IPv4", so existing listeners are
+     * unaffected.  Write [::]:port for an IPv6 listener, which on a dual
+     * stack host normally serves IPv4 as well.
+     */
+    af = AF_INET;                       /* rawaddr stays zero: INADDR_ANY */
+  } else if (!strcmp(host_name, "loopback") || !strcmp(host_name, "localhost")) {
 #if HAS_AF_INET6
-    if (af == AF_INET6) {
-      addr.si6.sin6_family = AF_INET6;
-      memcpy((char *) &addr.si6.sin6_addr, (char *) rawaddr, 16);
-      addr.si6.sin6_port = htons((unsigned short) port);
-      *addrlen = sizeof(struct sockaddr_in6);
-      return &addr.sa;
+    if (want_family == AF_INET6) {
+      af = AF_INET6;
+      rawaddr[15] = 1;                  /* ::1 */
+    } else
+#endif
+    {
+      af = AF_INET;
+      rawaddr[0] = 127;                 /* 127.0.0.1 */
+      rawaddr[3] = 1;
     }
+  } else if (resolve_addr(host_name, want_family, rawaddr, &af) < 0) {
+    return 0;
+  }
+
+#if HAS_AF_INET6
+  if (af == AF_INET6) {
+    addr.si6.sin6_family = AF_INET6;
+    memcpy((char *) &addr.si6.sin6_addr, (char *) rawaddr, 16);
+    addr.si6.sin6_port = htons((unsigned short) port);
+    *addrlen = sizeof(struct sockaddr_in6);
+    return &addr.sa;
+  }
 #endif
 
-    addr.si.sin_family = AF_INET;
-    memcpy((char *) &addr.si.sin_addr, (char *) rawaddr, 4);
-    addr.si.sin_port = htons((unsigned short) port);
-    *addrlen = sizeof(struct sockaddr_in);
-  }
+  addr.si.sin_family = AF_INET;
+  memcpy((char *) &addr.si.sin_addr, (char *) rawaddr, 4);
+  addr.si.sin_port = htons((unsigned short) port);
+  *addrlen = sizeof(struct sockaddr_in);
 
   return &addr.sa;
 }

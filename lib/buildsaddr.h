@@ -17,4 +17,11 @@
 /* In buildsaddr.c: */
 struct sockaddr *build_sockaddr(const char *name, int *addrlen);
 
+/* Same, but for a bare address with the port supplied separately - the
+ * encapsulations take the peer from the routing command and the port from
+ * the interface.  A bare IPv6 literal is accepted here; brackets still mean
+ * "resolve this name as IPv6".
+ */
+struct sockaddr *build_sockaddr_host(const char *name, int port, int *addrlen);
+
 #endif  /* _BUILDSADDR_H */
