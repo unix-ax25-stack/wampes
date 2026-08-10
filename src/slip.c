@@ -293,8 +293,9 @@ struct iface *iface)
 {
 	struct slip *sp;
 
-	if (iface->xdev > SLIP_MAX)
-		/* Must not be a SLIP device */
+	if (iface->xdev >= SLIP_MAX)
+		/* Must not be a SLIP device.  Slip[] has SLIP_MAX entries, so
+		 * the valid range is 0..SLIP_MAX-1. */
 		return;
 
 	sp = &Slip[iface->xdev];

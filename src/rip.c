@@ -325,8 +325,11 @@ int cnt)
 	struct rip_list *rl;
 	int32 ttl;
 
-	/* receive the RIP packet */
-	recv_udp(sock,&fsock,&bp);
+	/* receive the RIP packet.  recv_udp() returns -1 without touching bp,
+	 * which would leave it an uninitialized stack pointer below.
+	 */
+	if(recv_udp(sock,&fsock,&bp) < 0)
+		return;
 
 	/* increment the rcvd cnt */
 	Rip_stat.rcvd++;

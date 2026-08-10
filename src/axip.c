@@ -66,6 +66,7 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
 
   int l;
   int multicast;
+  int ndigi;
   struct axip_route *rp;
   struct edv_t *edv;
   struct sockaddr_in addr;
@@ -91,9 +92,17 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
 
   edv = (struct edv_t *) ifp->edv;
 
+  /* Walk the AX.25 address field to find the immediate destination.  Bound
+   * the walk against the end of the frame and against MAXDIGIS: a frame whose
+   * addresses never carry the E bit would otherwise run off the end of buf.
+   */
+  if (l < 2 * AXALEN)
+    return -1;
   dest = buf;
   p = dest + AXALEN;
-  while (!(p[6] & E)) {
+  for (ndigi = 0; !(p[6] & E); ndigi++) {
+    if (ndigi >= MAXDIGIS || p + 2 * AXALEN > buf + l)
+      return -1;
     p += AXALEN;
     if (!(p[6] & REPEATED)) {
       dest = p;
@@ -130,9 +139,10 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
 static void axip_recv(void *argp)
 {
 
-  int addrlen;
+  socklen_t addrlen;
   int hdr_len;
   int l;
+  int ndigi;
   struct edv_t *edv;
   struct iface *ifp;
   struct ip *ipptr;
@@ -148,7 +158,9 @@ static void axip_recv(void *argp)
   addrlen = sizeof(addr);
   l = recvfrom(edv->fd, (char *) (bufptr = buf), sizeof(buf), 0, (struct sockaddr *) &addr, &addrlen);
   if (edv->type == USE_IP) {
-    if (l <= sizeof(struct ip)) goto Fail;
+    /* cast: l is int, and recvfrom() returns -1 on error.  Comparing against
+     * an unsigned sizeof would convert that -1 to SIZE_MAX and pass. */
+    if (l <= (int) sizeof(struct ip)) goto Fail;
     ipptr = (struct ip *) bufptr;
     hdr_len = 4 * ipptr->ip_hl;
     bufptr += hdr_len;
@@ -168,8 +180,16 @@ static void axip_recv(void *argp)
     uhnp_cleanup(edv);
   }
 
+  /* Walk the AX.25 address field to find the immediate source.  Bound the
+   * walk against the end of the datagram and against MAXDIGIS.  Without this
+   * a datagram whose addresses never carry the E bit walks off the end of
+   * buf, and src ends up pointing at stack memory that axip_route_add() would
+   * then copy into the AX.25 routing table.
+   */
+  if (l < 2 * AXALEN) goto Fail;
   p = src = bufptr + AXALEN;
-  while (!(p[6] & E)) {
+  for (ndigi = 0; !(p[6] & E); ndigi++) {
+    if (ndigi >= MAXDIGIS || p + 2 * AXALEN > bufptr + l) goto Fail;
     p += AXALEN;
     if (p[6] & REPEATED)
       src = p;

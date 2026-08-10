@@ -141,7 +141,11 @@ int cnt)
 	char command;
 	int32 addr;
 
-	recv_udp(up,&fsock,&bp);
+	/* recv_udp() returns -1 without touching bp, which would leave it an
+	 * uninitialized stack pointer for PULLCHAR() and free_p() below.
+	 */
+	if(recv_udp(up,&fsock,&bp) < 0)
+		return;
 	command = PULLCHAR(&bp);
 	switch(command & 0xff){
 	case SYS__EXIT:

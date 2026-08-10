@@ -91,6 +91,14 @@ struct mbuf **bpp
 	char kisstype;
 	struct mbuf *bp = *bpp;
 
+	/* The type byte below is read straight from bp->data, so make sure
+	 * there is one.  slip_decode() never hands us an empty frame today,
+	 * but nothing here relies on that staying true.
+	 */
+	if(bp == NULL || bp->cnt == 0){
+		free_p(bpp);
+		return;
+	}
 	if(bp && (*bp->data & 0x80)){
 		if(check_crc_16(bp)){
 			iface->crcerrors++;

@@ -794,7 +794,10 @@ int cnt)
   struct mbuf *bp;
   struct socket fsocket;
 
-  recv_udp(up, &fsocket, &bp);
+  /* recv_udp() returns -1 without touching bp, which would leave it an
+   * uninitialized stack pointer for domain_server() below.
+   */
+  if (recv_udp(up, &fsocket, &bp) < 0) return;
   bp = domain_server(bp);
   if (bp) send_udp(&up->socket, &fsocket, 0, 0, &bp, 0, 0, 0);
 }
