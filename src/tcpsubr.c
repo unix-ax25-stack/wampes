@@ -174,22 +174,19 @@ int
 seq_lt(
 int32 x,int32 y)
 {
-	int32 bugfix;
-	return (long)(bugfix=x-y) < 0;
+	return (int32)((uint32)x - (uint32)y) < 0;
 }
 int
 seq_gt(
 int32 x,int32 y)
 {
-	int32 bugfix;
-	return (long)(bugfix=x-y) > 0;
+	return (int32)((uint32)x - (uint32)y) > 0;
 }
 int
 seq_ge(
 int32 x,int32 y)
 {
-	int32 bugfix;
-	return (long)(bugfix=x-y) >= 0;
+	return (int32)((uint32)x - (uint32)y) >= 0;
 }
 
 void

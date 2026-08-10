@@ -282,8 +282,8 @@ struct tcb *tcb)
 	if(tcb == NULL)
 		return;
 	/* Compute total data sent and received; take out SYN and FIN */
-	sent = tcb->snd.una - tcb->iss; /* Acknowledged data only */
-	recvd = tcb->rcv.nxt - tcb->irs;
+	sent = (int32)((uint32)tcb->snd.una - (uint32)tcb->iss); /* Acknowledged data only */
+	recvd = (int32)((uint32)tcb->rcv.nxt - (uint32)tcb->irs);
 	switch(tcb->state){
 	case TCP_CLOSED:
 	case TCP_LISTEN:

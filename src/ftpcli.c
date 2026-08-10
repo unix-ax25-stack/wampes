@@ -584,7 +584,7 @@ static void ftpcds(struct tcb *tcb, enum tcp_state old, enum tcp_state new)
 			ftp->state = COMMAND_STATE;
 			if(Current != NULL && Current->cb.ftp == ftp){
 				printf("Put complete, %lu bytes sent\n",
-					(unsigned long)(tcb->snd.una - tcb->iss - 2));
+					(unsigned long)((uint32)tcb->snd.una - (uint32)tcb->iss - 2));
 			}
 		}
 		break;
@@ -598,7 +598,7 @@ static void ftpcds(struct tcb *tcb, enum tcp_state old, enum tcp_state new)
 			ftp->state = COMMAND_STATE;
 			if(Current != NULL && Current->cb.ftp == ftp){
 				printf("Get complete, %lu bytes received\n",
-					(unsigned long)(tcb->rcv.nxt - tcb->irs - 2));
+					(unsigned long)((uint32)tcb->rcv.nxt - (uint32)tcb->irs - 2));
 			}
 		}
 		break;

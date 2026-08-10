@@ -40,7 +40,7 @@
 #define MIN_RTO 500L    /* Minimum timeout, milliseconds */
 #define DEF_WSCALE      0       /* Our window scale option */
 
-#define geniss()        ((int32)msclock() << 12) /* Increment clock at 4 MB/sec */
+#define geniss()        ((int32)((uint32)msclock() << 12)) /* Increment clock at 4 MB/sec */
 
 /* Number of consecutive duplicate acks to trigger fast recovery */
 #define TCPDUPACKS      3

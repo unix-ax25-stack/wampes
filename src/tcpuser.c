@@ -248,13 +248,13 @@ close_tcp(struct tcb *tcb)
 	case TCP_SYN_RECEIVED:
 	case TCP_ESTABLISHED:
 		tcb->sndcnt++;
-		tcb->snd.nxt++;
+		tcb->snd.nxt = (int32)((uint32)tcb->snd.nxt + 1);
 		settcpstate(tcb,TCP_FINWAIT1);
 		tcp_output(tcb);
 		return 0;
 	case TCP_CLOSE_WAIT:
 		tcb->sndcnt++;
-		tcb->snd.nxt++;
+		tcb->snd.nxt = (int32)((uint32)tcb->snd.nxt + 1);
 		settcpstate(tcb,TCP_LAST_ACK);
 		tcp_output(tcb);
 		return 0;
@@ -374,7 +374,7 @@ reset_tcp(struct tcb *tcb)
 		/* Here we try to pick a sequence number with the greatest likelihood
 		 * of being in his receive window.
 		 */
-		fakeseg.ack = tcb->snd.nxt + tcb->snd.wnd - 1;
+		fakeseg.ack = (int32)((uint32)tcb->snd.nxt + (uint32)tcb->snd.wnd - 1);
 		fakeip.dest = tcb->conn.local.address;
 		fakeip.source = tcb->conn.remote.address;
 		fakeip.tos = tcb->tos;

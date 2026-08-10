@@ -151,7 +151,7 @@ int32 said              /* Authenticated packet */
 		return;
 	case TCP_SYN_SENT:
 		if(seg.flags.ack){
-			if(!seq_within(seg.ack,tcb->iss+1,tcb->snd.nxt)){
+			if(!seq_within(seg.ack,(int32)((uint32)tcb->iss+1),tcb->snd.nxt)){
 				free_p(bpp);
 				reset(ip,&seg);
 				return;
@@ -263,7 +263,7 @@ int32 said              /* Authenticated packet */
 		/* Process ACK */
 		switch(tcb->state){
 		case TCP_SYN_RECEIVED:
-			if(seq_within(seg.ack,tcb->snd.una+1,tcb->snd.nxt)){
+			if(seq_within(seg.ack,(int32)((uint32)tcb->snd.una+1),tcb->snd.nxt)){
 				update(tcb,&seg,length);
 				settcpstate(tcb,TCP_ESTABLISHED);
 			} else {
@@ -345,11 +345,11 @@ int32 said              /* Authenticated packet */
 			switch(tcb->state){
 			case TCP_SYN_RECEIVED:
 			case TCP_ESTABLISHED:
-				tcb->rcv.nxt++;
+				tcb->rcv.nxt = (int32)((uint32)tcb->rcv.nxt + 1);
 				settcpstate(tcb,TCP_CLOSE_WAIT);
 				break;
 			case TCP_FINWAIT1:
-				tcb->rcv.nxt++;
+				tcb->rcv.nxt = (int32)((uint32)tcb->rcv.nxt + 1);
 				if(tcb->sndcnt == 0){
 					/* Our FIN has been acked; bypass TCP_CLOSING state */
 					settcpstate(tcb,TCP_TIME_WAIT);
@@ -360,7 +360,7 @@ int32 said              /* Authenticated packet */
 				}
 				break;
 			case TCP_FINWAIT2:
-				tcb->rcv.nxt++;
+				tcb->rcv.nxt = (int32)((uint32)tcb->rcv.nxt + 1);
 				settcpstate(tcb,TCP_TIME_WAIT);
 				set_timer(&tcb->timer,MSL2*1000L);
 				start_timer(&tcb->timer);
@@ -623,7 +623,7 @@ uint length
 		tcb->cwind = tcb->ssthresh;
 	}
 	tcb->dupacks = 0;
-	acked = seg->ack - tcb->snd.una;
+	acked = (int32)((uint32)seg->ack - (uint32)tcb->snd.una);
 
 	/* Expand congestion window if not already at limit and if
 	 * this packet wasn't retransmitted
@@ -730,7 +730,7 @@ in_window(
 struct tcb *tcb,
 int32 seq
 ){
-	return seq_within(seq,tcb->rcv.nxt,(int32)(tcb->rcv.nxt+tcb->rcv.wnd-1));
+	return seq_within(seq,tcb->rcv.nxt,(int32)((uint32)tcb->rcv.nxt+(uint32)tcb->rcv.wnd-1));
 }
 
 /* Process an incoming SYN */
@@ -874,7 +874,7 @@ struct tcp *seg,
 struct mbuf **bpp,
 uint *length
 ){
-	long dupcnt,excess;
+	int32 dupcnt,excess;
 	uint len;               /* Segment length including flags */
 	char accept = 0;
 
@@ -890,7 +890,7 @@ uint *length
 		 * probably probing us. If so, they might send us acks
 		 * with seg.seq > rcv.nxt. Be sure to accept these
 		 */
-		if(len == 0 && seq_within(seg->seq,tcb->rcv.nxt,tcb->rcv.nxt+tcb->window))
+		if(len == 0 && seq_within(seg->seq,tcb->rcv.nxt,(int32)((uint32)tcb->rcv.nxt+(uint32)tcb->window)))
 			return 0;
 		return -1;      /* reject all others */
 	}
@@ -910,7 +910,7 @@ uint *length
 		free_p(bpp);
 		return -1;
 	}
-	if((dupcnt = tcb->rcv.nxt - seg->seq) > 0){
+	if((dupcnt = (int32)((uint32)tcb->rcv.nxt - (uint32)seg->seq)) > 0){
 		tcb->rerecv += dupcnt;
 		/* Trim off SYN if present */
 		if(seg->flags.syn){
@@ -925,7 +925,8 @@ uint *length
 			*length -= (uint) dupcnt;
 		}
 	}
-	if((excess = (long)seg->seq + (long)*length - ((long)tcb->rcv.nxt + (long)tcb->rcv.wnd)) > 0){
+	if((excess = (int32)((uint32)seg->seq + (uint32)*length
+	                   - ((uint32)tcb->rcv.nxt + (uint32)tcb->rcv.wnd))) > 0){
 		tcb->rerecv += excess;
 		/* Trim right edge */
 		*length -= (uint) excess;

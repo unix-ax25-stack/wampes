@@ -48,7 +48,7 @@ tcp_output(struct tcb *tcb)
 	for(;;){
 		memset(&seg,0,sizeof(seg));
 		/* Compute data already in flight */
-		sent = tcb->snd.ptr - tcb->snd.una;
+		sent = (int32)((uint32)tcb->snd.ptr - (uint32)tcb->snd.una);
 
 		/* Compute usable send window as minimum of offered
 		 * and congestion windows, minus data already in flight.
@@ -184,7 +184,7 @@ tcp_output(struct tcb *tcb)
 		 * compute the amount of retransmitted data and keep score
 		 */
 		if(tcb->snd.ptr < tcb->snd.nxt)
-			tcb->resent += min(tcb->snd.nxt - tcb->snd.ptr,ssize);
+			tcb->resent += min((int32)((uint32)tcb->snd.nxt - (uint32)tcb->snd.ptr),ssize);
 
 		tcb->snd.ptr += ssize;
 		/* If this is the first transmission of a range of sequence
