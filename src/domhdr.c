@@ -9,10 +9,13 @@
 
 #define dn_expand Xdn_expand    /* Resolve name conflict */
 
+#define DOMHDRLEN       12      /* Fixed part of a domain message header */
+#define NAMELEN         512     /* Scratch buffer for a decoded domain name */
+
 static int dn_expand(uint8 *msg,uint8 *eom,uint8 *compressed,char *full,
 	int fullen);
-static uint8 *getq(struct rr **rrpp,uint8 *msg,uint8 *cp);
-static uint8 *ntohrr(struct rr **rrpp,uint8 *msg,uint8 *cp);
+static uint8 *getq(struct rr **rrpp,uint8 *msg,uint8 *eom,uint8 *cp);
+static uint8 *ntohrr(struct rr **rrpp,uint8 *msg,uint8 *eom,uint8 *cp);
 
 static uint8 *putstring(uint8 *cp, uint8 *end, const char *str);
 static uint8 *putname(uint8 *buffer, uint8 *cp, uint8 *end, const char *name);
@@ -26,13 +29,20 @@ ntohdomain(struct dhdr *dhdr,struct mbuf **bpp)
 {
 	uint tmp,len;
 	uint i;
-	uint8 *msg,*cp;
+	uint8 *msg,*cp,*eom;
 	struct rr **rrpp;
 
+	memset(dhdr,0,sizeof(struct dhdr));
+
+	/* A message shorter than the fixed 12-byte header is not one.  The old
+	 * code read msg[0..11] regardless of how much had actually arrived.
+	 */
 	len = len_p(*bpp);
+	if(len < DOMHDRLEN)
+		return -1;
 	msg = (uint8 *) mallocw(len);
 	pullup(bpp,msg,len);
-	memset(dhdr,0,sizeof(struct dhdr));
+	eom = msg + len;
 
 	dhdr->id = get16(&msg[0]);
 	tmp = get16(&msg[2]);
@@ -53,13 +63,17 @@ ntohdomain(struct dhdr *dhdr,struct mbuf **bpp)
 	dhdr->nscount = get16(&msg[8]);
 	dhdr->arcount = get16(&msg[10]);
 
-	/* Now parse the variable length sections */
-	cp = &msg[12];
+	/* Now parse the variable length sections.  The counts above are taken
+	 * from the wire and are not to be trusted: the loops below stop as soon
+	 * as a record does not fit, so a small datagram claiming 65535 records
+	 * costs one failed parse rather than 65535 allocations.
+	 */
+	cp = msg + DOMHDRLEN;
 
 	/* Question section */
 	rrpp = &dhdr->questions;
 	for(i=0;i<dhdr->qdcount;i++){
-		if((cp = getq(rrpp,msg,cp)) == NULL){
+		if((cp = getq(rrpp,msg,eom,cp)) == NULL){
 			free(msg);
 			return -1;
 		}
@@ -71,7 +85,7 @@ ntohdomain(struct dhdr *dhdr,struct mbuf **bpp)
 	/* Answer section */
 	rrpp = &dhdr->answers;
 	for(i=0;i<dhdr->ancount;i++){
-		if((cp = ntohrr(rrpp,msg,cp)) == NULL){
+		if((cp = ntohrr(rrpp,msg,eom,cp)) == NULL){
 			free(msg);
 			return -1;
 		}
@@ -83,7 +97,7 @@ ntohdomain(struct dhdr *dhdr,struct mbuf **bpp)
 	/* Name server (authority) section */
 	rrpp = &dhdr->authority;
 	for(i=0;i<dhdr->nscount;i++){
-		if((cp = ntohrr(rrpp,msg,cp)) == NULL){
+		if((cp = ntohrr(rrpp,msg,eom,cp)) == NULL){
 			free(msg);
 			return -1;
 		}
@@ -95,7 +109,7 @@ ntohdomain(struct dhdr *dhdr,struct mbuf **bpp)
 	/* Additional section */
 	rrpp = &dhdr->additional;
 	for(i=0;i<dhdr->arcount;i++){
-		if((cp = ntohrr(rrpp,msg,cp)) == NULL){
+		if((cp = ntohrr(rrpp,msg,eom,cp)) == NULL){
 			free(msg);
 			return -1;
 		}
@@ -107,20 +121,24 @@ ntohdomain(struct dhdr *dhdr,struct mbuf **bpp)
 	return 0;
 }
 static uint8 *
-getq(struct rr **rrpp,uint8 *msg,uint8 *cp)
+getq(struct rr **rrpp,uint8 *msg,uint8 *eom,uint8 *cp)
 {
 	struct rr *rrp;
 	int len;
 	char *name;
 
 	*rrpp = rrp = (struct rr *)callocw(1,sizeof(struct rr));
-	name = (char *) mallocw(512);
-	len = dn_expand(msg,NULL,cp,name,512);
+	name = (char *) mallocw(NAMELEN);
+	len = dn_expand(msg,eom,cp,name,NAMELEN);
 	if(len == -1){
 		free(name);
 		return NULL;
 	}
 	cp += len;
+	if(cp + 4 > eom){       /* type and class */
+		free(name);
+		return NULL;
+	}
 	rrp->name = strdup(name);
 	rrp->type = get16(cp);
 	cp += 2;
@@ -136,19 +154,21 @@ static uint8 *
 ntohrr(
 struct rr **rrpp, /* Where to allocate resource record structure */
 uint8 *msg,     /* Pointer to beginning of domain message */
+uint8 *eom,     /* First byte past the end of the message */
 uint8 *cp)      /* Pointer to start of encoded RR record */
 {
 	struct rr *rrp;
 	int len;
 	char *name;
+	uint8 *rdend;   /* First byte past the rdata field */
 
 	*rrpp = rrp = (struct rr *)callocw(1,sizeof(struct rr));
-	name = (char *) mallocw(512);
-	if((len = dn_expand(msg,NULL,cp,name,512)) == -1){
-		free(name);
-		return NULL;
-	}
+	name = (char *) mallocw(NAMELEN);
+	if((len = dn_expand(msg,eom,cp,name,NAMELEN)) == -1)
+		goto Bad;
 	cp += len;
+	if(cp + 10 > eom)       /* type, class, ttl, rdlength */
+		goto Bad;
 	rrp->name = strdup(name);
 	rrp->type = get16(cp);
 	cp += 2;
@@ -158,11 +178,22 @@ uint8 *cp)      /* Pointer to start of encoded RR record */
 	cp += 4;
 	rrp->rdlength = get16(cp);
 	cp += 2;
+
+	/* Everything below has to stay inside the rdata field.  Remember where
+	 * it ends, bound the individual reads by it, and resynchronise on it
+	 * afterwards - that way a record whose contents disagree with its own
+	 * rdlength cannot desynchronise the rest of the message.
+	 */
+	rdend = cp + rrp->rdlength;
+	if(rdend > eom)
+		goto Bad;
+
 	switch(rrp->type){
 	case TYPE_A:
 		/* Just read the address directly into the structure */
+		if(cp + 4 > rdend)
+			goto Bad;
 		rrp->rdata.addr = get32(cp);
-		cp += 4;
 		break;
 	case TYPE_CNAME:
 	case TYPE_MB:
@@ -173,59 +204,60 @@ uint8 *cp)      /* Pointer to start of encoded RR record */
 		/* These types all consist of a single domain name;
 		 * convert it to ascii format
 		 */
-		len = dn_expand(msg,NULL,cp,name,512);
-		if(len == -1){
-			free(name);
-			return NULL;
-		}
+		len = dn_expand(msg,eom,cp,name,NAMELEN);
+		if(len == -1 || cp + len > rdend)
+			goto Bad;
 		rrp->rdata.name = strdup(name);
 		rrp->rdlength = strlen(name);
-		cp += len;
 		break;
 	case TYPE_HINFO:
+		if(cp >= rdend)
+			goto Bad;
 		len = *cp++;
+		if(cp + len > rdend)
+			goto Bad;
 		rrp->rdata.hinfo.cpu = (char *) mallocw(len+1);
 		memcpy( rrp->rdata.hinfo.cpu, cp, len );
 		rrp->rdata.hinfo.cpu[len] = '\0';
 		cp += len;
 
+		if(cp >= rdend)
+			goto Bad;
 		len = *cp++;
+		if(cp + len > rdend)
+			goto Bad;
 		rrp->rdata.hinfo.os = (char *) mallocw(len+1);
 		memcpy( rrp->rdata.hinfo.os, cp, len );
 		rrp->rdata.hinfo.os[len] = '\0';
-		cp += len;
 		break;
 	case TYPE_MX:
+		if(cp + 2 > rdend)
+			goto Bad;
 		rrp->rdata.mx.pref = get16(cp);
 		cp += 2;
 		/* Get domain name of exchanger */
-		len = dn_expand(msg,NULL,cp,name,512);
-		if(len == -1){
-			free(name);
-			return NULL;
-		}
+		len = dn_expand(msg,eom,cp,name,NAMELEN);
+		if(len == -1 || cp + len > rdend)
+			goto Bad;
 		rrp->rdata.mx.exch = strdup(name);
-		cp += len;
 		break;
 	case TYPE_SOA:
 		/* Get domain name of name server */
-		len = dn_expand(msg,NULL,cp,name,512);
-		if(len == -1){
-			free(name);
-			return NULL;
-		}
+		len = dn_expand(msg,eom,cp,name,NAMELEN);
+		if(len == -1 || cp + len > rdend)
+			goto Bad;
 		rrp->rdata.soa.mname = strdup(name);
 		cp += len;
 
 		/* Get domain name of responsible person */
-		len = dn_expand(msg,NULL,cp,name,512);
-		if(len == -1){
-			free(name);
-			return NULL;
-		}
+		len = dn_expand(msg,eom,cp,name,NAMELEN);
+		if(len == -1 || cp + len > rdend)
+			goto Bad;
 		rrp->rdata.soa.rname = strdup(name);
 		cp += len;
 
+		if(cp + 20 > rdend)
+			goto Bad;
 		rrp->rdata.soa.serial = get32(cp);
 		cp += 4;
 		rrp->rdata.soa.refresh = get32(cp);
@@ -235,22 +267,29 @@ uint8 *cp)      /* Pointer to start of encoded RR record */
 		rrp->rdata.soa.expire = get32(cp);
 		cp += 4;
 		rrp->rdata.soa.minimum = get32(cp);
-		cp += 4;
 		break;
 	case TYPE_TXT:
+		if(cp >= rdend)
+			goto Bad;
 		len = *cp++;
+		if(cp + len > rdend)
+			goto Bad;
 		rrp->rdata.name = (char *) mallocw(len+1);
 		memcpy(rrp->rdata.name,cp,len);
-		rrp->rdata.data[len] = '\0';
-		cp += rrp->rdlength;
+		rrp->rdata.name[len] = '\0';
 		break;
 	default:
 		/* Ignore */
-		cp += rrp->rdlength;
 		break;
 	}
 	free(name);
-	return cp;
+	/* rdend, not rdata + rrp->rdlength: the CNAME/PTR case above replaces
+	 * rdlength with the length of the decoded name. */
+	return rdend;
+
+Bad:
+	free(name);
+	return NULL;
 }
 
 /* Convert a compressed domain name to the human-readable form */
@@ -267,22 +306,49 @@ int fullen)             /* Length of same */
 	int clen = 0;   /* Total length of compressed name */
 	int indirect = 0;       /* Set if indirection encountered */
 	int nseg = 0;           /* Total number of segments in name */
+	int njumps = 0;         /* Compression pointers followed */
+
+	/* The eom argument used to be passed as NULL by every caller and was
+	 * never looked at, so nothing here was bounded: a compression pointer
+	 * can name any offset up to 16383 and would be followed straight out of
+	 * the message buffer, copying whatever was there into the result - and
+	 * the result is handed back to the peer or put into the cache.  A cycle
+	 * of pointers had nothing to stop it either.
+	 */
+	if(msg == NULL || eom == NULL || compressed == NULL
+	 || full == NULL || fullen <= 0)
+		return -1;
 
 	cp = compressed;
 	for(;;){
+		if(cp < msg || cp >= eom)
+			return -1;
 		slen = *cp++;   /* Length of this segment */
 		if(!indirect)
 			clen++;
-		if((slen & 0xc0) == 0xc0){
+		while((slen & 0xc0) == 0xc0){
+			if(cp >= eom)
+				return -1;
 			if(!indirect)
-				clen++;
+				clen++;         /* the pointer costs two bytes here */
 			indirect = 1;
-			/* Follow indirection */
+			/* Follow indirection.  A pointer may name any offset in the
+			 * message, including one that leads back here, so cap the
+			 * number of jumps rather than trusting the encoding.
+			 */
+			if(++njumps > 128)
+				return -1;
 			cp = &msg[((slen & 0x3f)<<8) + *cp];
+			if(cp < msg || cp >= eom)
+				return -1;
 			slen = *cp++;
 		}
 		if(slen == 0)   /* zero length == all done */
 			break;
+		if(slen > 63)   /* not a legal label length */
+			return -1;
+		if(cp + slen > eom)
+			return -1;
 		fullen -= slen + 1;
 		if(fullen < 0)
 			return -1;
@@ -295,11 +361,13 @@ int fullen)             /* Length of same */
 	}
 	if(nseg == 0){
 		/* Root name; represent as single dot */
+		if(--fullen < 0)
+			return -1;
 		*full++ = '.';
-		fullen--;
 	}
+	if(--fullen < 0)
+		return -1;
 	*full++ = '\0';
-	fullen--;
 	return clen;    /* Length of compressed message */
 }
 
