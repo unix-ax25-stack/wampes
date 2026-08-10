@@ -46,9 +46,15 @@ int adjtime(const struct timeval *delta, struct timeval *olddelta);
 #define TIMEBIAS        2208988800UL
 #define USEC2F          4294.967296
 
+/* NTP timestamps and offsets are 32.32 signed fixed point.  These fields have
+ * to be exactly 32 bits wide: fpadd()/fpsub() propagate the carry by hand in
+ * 16-bit halves and rely on the store into .f dropping bit 32, fpshift() tests
+ * bit 31 with 0x80000000, and fpneg()/fp2double() negate .f expecting the
+ * result to be 2^32 - f.  With 'long' all of that silently broke on LP64.
+ */
 struct fp {
-	long i;
-	unsigned long f;
+	int32 i;
+	uint32 f;
 };
 
 struct sys {
@@ -255,32 +261,43 @@ static struct mbuf *htonntp(const struct pkt *pkt)
 {
 
 	struct mbuf *bp;
-	unsigned long *p;
+	uint8 *cp;
+	uint32 w;
 
+	/* Built with put32() on a byte pointer, like every other wire format
+	 * in this tree.  The old version walked the mbuf with an
+	 * "unsigned long *", which on LP64 strides 8 bytes through a protocol
+	 * made of 32-bit words: it wrote 112 bytes into a buffer it then
+	 * declared to be 60 long, and every field came out followed by four
+	 * zero bytes.
+	 */
 	if ((bp = ambufw(NTP_PACKET_SIZE))) {
 		bp->cnt = NTP_PACKET_SIZE;
-		p = (unsigned long *) bp->data;
-		*p++ = htonl(((pkt->leap      & 0x03) << 30) |
-			     ((pkt->version   & 0x07) << 27) |
-			     ((pkt->mode      & 0x07) << 24) |
-			     ((pkt->stratum   & 0xff) << 16) |
-			     ((pkt->poll      & 0xff) <<  8) |
-			      (pkt->precision & 0xff));
-		*p++ = htonl((pkt->rootdelay.i << 16) |
-			     (pkt->rootdelay.f >> 16));
-		*p++ = htonl((pkt->rootdispersion.i << 16) |
-			     (pkt->rootdispersion.f >> 16));
-		*p++ = htonl(pkt->refid);
-		*p++ = htonl(pkt->reftime.i);
-		*p++ = htonl(pkt->reftime.f);
-		*p++ = htonl(pkt->org.i);
-		*p++ = htonl(pkt->org.f);
-		*p++ = htonl(pkt->rec.i);
-		*p++ = htonl(pkt->rec.f);
-		*p++ = htonl(pkt->xmt.i);
-		*p++ = htonl(pkt->xmt.f);
-		*p++ = htonl(pkt->keyid);
-		memcpy(p, pkt->check, sizeof(pkt->check));
+		cp = bp->data;
+
+		w  = ((uint32) (pkt->leap      & 0x03)) << 30;
+		w |= ((uint32) (pkt->version   & 0x07)) << 27;
+		w |= ((uint32) (pkt->mode      & 0x07)) << 24;
+		w |= ((uint32) (pkt->stratum   & 0xff)) << 16;
+		w |= ((uint32) (pkt->poll      & 0xff)) <<  8;
+		w |=  (uint32) (pkt->precision & 0xff);
+		cp = put32(cp, (int32) w);
+
+		cp = put32(cp, (int32) ((((uint32) pkt->rootdelay.i) << 16) |
+					(pkt->rootdelay.f >> 16)));
+		cp = put32(cp, (int32) ((((uint32) pkt->rootdispersion.i) << 16) |
+					(pkt->rootdispersion.f >> 16)));
+		cp = put32(cp, pkt->refid);
+		cp = put32(cp, pkt->reftime.i);
+		cp = put32(cp, (int32) pkt->reftime.f);
+		cp = put32(cp, pkt->org.i);
+		cp = put32(cp, (int32) pkt->org.f);
+		cp = put32(cp, pkt->rec.i);
+		cp = put32(cp, (int32) pkt->rec.f);
+		cp = put32(cp, pkt->xmt.i);
+		cp = put32(cp, (int32) pkt->xmt.f);
+		cp = put32(cp, pkt->keyid);
+		memcpy(cp, pkt->check, sizeof(pkt->check));
 	}
 	return bp;
 }
@@ -291,36 +308,48 @@ static int ntohntp(struct pkt *pkt, struct mbuf **bpp)
 {
 
 	int n;
-	unsigned long *p;
-	unsigned long buf[12];
-	unsigned long w;
+	uint8 *cp;
+	uint8 buf[NTP_MIN_PACKET_SIZE];
+	uint32 w;
 
+	/* The old version declared "unsigned long buf[12]" and walked it with
+	 * an "unsigned long *".  On LP64 that is 96 bytes read in 8-byte steps
+	 * while pullup() only fills 48: every field after the first came from
+	 * the wrong offset, and the last six - org, rec and xmt - came from
+	 * uninitialised stack.  sntp_server() copies xmt into org of the reply,
+	 * so eight bytes of that stack went back out onto the network with
+	 * every answer.
+	 */
 	n = pullup(bpp, buf, NTP_MIN_PACKET_SIZE);
 	free_p(bpp);
 	if (n < NTP_MIN_PACKET_SIZE) return -1;
-	p = buf;
-	w = ntohl(*p++);
+	cp = buf;
+
+	w = (uint32) get32(cp); cp += 4;
 	pkt->leap = (unsigned char) ((w >> 30) & 0x03);
 	pkt->version = (unsigned char) ((w >> 27) & 0x07);
 	pkt->mode = (unsigned char) ((w >> 24) & 0x07);
 	pkt->stratum = (unsigned char) (w >> 16);
 	pkt->poll = (signed char) (w >> 8);
 	pkt->precision = (signed char) w;
-	w = ntohl(*p++);
-	pkt->rootdelay.i = ((signed long) w) >> 16;
+
+	w = (uint32) get32(cp); cp += 4;
+	pkt->rootdelay.i = ((int32) w) >> 16;   /* signed: rootdelay may be < 0 */
 	pkt->rootdelay.f = w << 16;
-	w = ntohl(*p++);
+	w = (uint32) get32(cp); cp += 4;
 	pkt->rootdispersion.i = w >> 16;
 	pkt->rootdispersion.f = w << 16;
-	pkt->refid = ntohl(*p++);
-	pkt->reftime.i = ntohl(*p++);
-	pkt->reftime.f = ntohl(*p++);
-	pkt->org.i = ntohl(*p++);
-	pkt->org.f = ntohl(*p++);
-	pkt->rec.i = ntohl(*p++);
-	pkt->rec.f = ntohl(*p++);
-	pkt->xmt.i = ntohl(*p++);
-	pkt->xmt.f = ntohl(*p++);
+
+	pkt->refid     = get32(cp); cp += 4;
+	pkt->reftime.i = get32(cp); cp += 4;
+	pkt->reftime.f = (uint32) get32(cp); cp += 4;
+	pkt->org.i     = get32(cp); cp += 4;
+	pkt->org.f     = (uint32) get32(cp); cp += 4;
+	pkt->rec.i     = get32(cp); cp += 4;
+	pkt->rec.f     = (uint32) get32(cp); cp += 4;
+	pkt->xmt.i     = get32(cp); cp += 4;
+	pkt->xmt.f     = (uint32) get32(cp);
+
 	pkt->keyid = 0;
 	memset(pkt->check, 0, sizeof(pkt->check));
 	return 0;
@@ -343,22 +372,24 @@ static void dumpntp(const struct pkt *pkt)
 		putchar('\n');
 	} else
 		printf("%s\n", resolve_a(pkt->refid, 0));
+	/* NTP timestamps are unsigned seconds since 1900: widen through uint32
+	 * so a value past 2038 does not print as a sign-extended mess. */
 	printf("      ref %08lx.%08lx = %17.6f\n",
-		pkt->reftime.i,
-		pkt->reftime.f,
-		(unsigned long) pkt->reftime.i + pkt->reftime.f / FACTOR32);
+		(unsigned long) (uint32) pkt->reftime.i,
+		(unsigned long) pkt->reftime.f,
+		(double) (uint32) pkt->reftime.i + pkt->reftime.f / FACTOR32);
 	printf("      org %08lx.%08lx = %17.6f\n",
-		pkt->org.i,
-		pkt->org.f,
-		(unsigned long) pkt->org.i + pkt->org.f / FACTOR32);
+		(unsigned long) (uint32) pkt->org.i,
+		(unsigned long) pkt->org.f,
+		(double) (uint32) pkt->org.i + pkt->org.f / FACTOR32);
 	printf("      rec %08lx.%08lx = %17.6f\n",
-		pkt->rec.i,
-		pkt->rec.f,
-		(unsigned long) pkt->rec.i + pkt->rec.f / FACTOR32);
+		(unsigned long) (uint32) pkt->rec.i,
+		(unsigned long) pkt->rec.f,
+		(double) (uint32) pkt->rec.i + pkt->rec.f / FACTOR32);
 	printf("      xmt %08lx.%08lx = %17.6f\n",
-		pkt->xmt.i,
-		pkt->xmt.f,
-		(unsigned long) pkt->xmt.i + pkt->xmt.f / FACTOR32);
+		(unsigned long) (uint32) pkt->xmt.i,
+		(unsigned long) pkt->xmt.f,
+		(double) (uint32) pkt->xmt.i + pkt->xmt.f / FACTOR32);
 	printf("      keyid %d\n", pkt->keyid);
 	fflush(stdout);
 }
@@ -372,8 +403,10 @@ static struct fp sys_clock(void)
 	struct timeval tv;
 
 	if (gettimeofday(&tv, 0)) return Zero;
-	fp.i = TIMEBIAS + tv.tv_sec;
-	fp.f = (unsigned long) (USEC2F * tv.tv_usec);
+	/* time_t is 64 bits; the NTP seconds field is 32 and is meant to wrap
+	 * at the era boundary, so do the arithmetic in uint32 explicitly. */
+	fp.i = (int32) ((uint32) tv.tv_sec + (uint32) TIMEBIAS);
+	fp.f = (uint32) (USEC2F * tv.tv_usec);
 	return fp;
 }
 
@@ -730,9 +763,9 @@ static int dosntpsysreftime(int argc, char **argv, void *p)
 {
 	sys.reftime = sys_clock();
 	printf("sntp sys reftime: %08lx.%08lx = %.6f\n",
-		sys.reftime.i,
-		sys.reftime.f,
-		(unsigned long) sys.reftime.i + sys.reftime.f / FACTOR32);
+		(unsigned long) (uint32) sys.reftime.i,
+		(unsigned long) sys.reftime.f,
+		(double) (uint32) sys.reftime.i + sys.reftime.f / FACTOR32);
 	return 0;
 }
 
