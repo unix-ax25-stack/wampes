@@ -333,51 +333,63 @@ checksymbol()
 
 	echo
 
+	# Every probe below must be valid C99 or later.  They used to be written
+	# as "main(){...}" with an implicit int return type, which C99 removed
+	# and which clang 15 and gcc 14 reject outright - so on a current
+	# toolchain every single probe failed to compile and every HAS_* came
+	# out 0, silently selecting the "feature absent" branch everywhere.
+	# Note that this fails quietly: nothing warns, the build just uses the
+	# fallbacks.  Keep the "int main(void)" and the includes.
+
 	checksymbol HAS_ADJTIME \
-		"main(){adjtime(0,0);}"
+		"#include <sys/time.h>
+		 int main(void){adjtime(0,0);return 0;}"
 
 	checksymbol HAS_INT32 \
 		"#include <sys/types.h>
-		 main(){int32 f;return f;}"
+		 int main(void){int32 f=0;return f;}"
 
 	checksymbol HAS_NDBM \
 		"#include <ndbm.h>
-		main(){dbm_open(0, 0, 0);return 0;}"
+		 int main(void){dbm_open(0, 0, 0);return 0;}"
 
 	checksymbol HAS_DB1_NDBM \
 		"#include <db1/ndbm.h>
-		main(){dbm_open(0, 0, 0);return 0;}"
+		 int main(void){dbm_open(0, 0, 0);return 0;}"
 
 	checksymbol HAS_GDBM_NDBM \
 		"#include <gdbm-ndbm.h>
-		main(){dbm_open(0, 0, 0);return 0;}"
+		 int main(void){dbm_open(0, 0, 0);return 0;}"
 
 	checksymbol HAS_GDBM \
 		"#include <gdbm.h>
-		main(){gdbm_open(0, 0, 0, 0, 0);return 0;}"
+		 int main(void){gdbm_open(0, 0, 0, 0, 0);return 0;}"
 
 	checksymbol HAS_NI \
 		"#include <net/if_ni.h>
 		 struct ni_desc x;
-		 main(){return 0;}"
+		 int main(void){return 0;}"
 
 	checksymbol HAS_STRDUP \
-		"main(){strdup(0);}"
+		"#include <string.h>
+		 int main(void){strdup(\"x\");return 0;}"
 
 	checksymbol HAS_STRERROR \
-		"main(){strerror(0);}"
+		"#include <string.h>
+		 int main(void){strerror(0);return 0;}"
 
 	checksymbol HAS_STRTOUL \
-		"main(){strtoul(0,0,0);}"
+		"#include <stdlib.h>
+		 int main(void){strtoul(\"0\",0,0);return 0;}"
 
 	checksymbol HAS_UINT \
 		"#include <sys/types.h>
-		 main(){uint f;return f;}"
+		 int main(void){uint f=0;return f;}"
 
 	checksymbol HAS_UCONTEXT \
 		"#include <ucontext.h>
 		 ucontext_t x;
-		 main(){return 0;}"
+		 int main(void){return 0;}"
 
 	# utmp bookkeeping.  On Darwin the API still exists but is vestigial:
 	# the system keeps its login records in utmpx, /var/run/utmp is not
@@ -390,7 +402,7 @@ checksymbol()
 		checksymbol HAS_UTMP \
 			"#include <utmp.h>
 			 struct utmp u;
-			 main(){pututline(&u);endutent();return 0;}";;
+			 int main(void){pututline(&u);endutent();return 0;}";;
 	esac
 
 	echo
@@ -400,7 +412,7 @@ checksymbol()
 	#ifdef _AIX
 	#include <sys/select.h>
 	#endif
-	main(){fd_set f;}
+	int main(void){fd_set f;return sizeof(f)>0;}
 	" >$tmp.c
 	if $CC $PROBE_CFLAGS $tmp.c -o $tmp >/dev/null 2>&1; then
 		echo "#define TYPE_FD_SET fd_set"
