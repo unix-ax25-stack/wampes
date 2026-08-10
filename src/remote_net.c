@@ -91,8 +91,9 @@ static void delete_controlblock(struct controlblock *cp)
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_try_send(struct controlblock *cp)
+static void transport_try_send(void *arg)
 {
+  struct controlblock *cp = (struct controlblock *) arg;
 
   int cnt;
   struct mbuf *bp;
@@ -136,7 +137,7 @@ static void transport_send_upcall(struct transport_cb *tp, int cnt)
   struct controlblock *cp;
 
   cp = (struct controlblock *) tp->user;
-  on_read(cp->fd, (void (*)(void *)) transport_try_send, cp);
+  on_read(cp->fd, transport_try_send, cp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -205,7 +206,7 @@ static int connect_command(struct controlblock *cp)
     cp->tp->recv_mode = EOL_LF;
     cp->tp->send_mode = (!strcmp(protocol, "tcp")) ? EOL_CRLF : EOL_CR;
   }
-  on_read(cp->fd, (void (*)(void *)) transport_try_send, cp);
+  on_read(cp->fd, transport_try_send, cp);
   return 0;
 }
 
@@ -227,15 +228,16 @@ static int console_command(struct controlblock *cp)
   dup2(cp->fd, 1);
   dup2(cp->fd, 2);
   fkbd = 0;
-  on_read(fkbd, (void (*)(void *)) keyboard, 0);
+  on_read(fkbd, keyboard, 0);
   printf(Prompt, Hostname);
   return -1;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void command_receive(struct controlblock *cp)
+static void command_receive(void *arg)
 {
+  struct controlblock *cp = (struct controlblock *) arg;
 
   static const struct cmdtable command_table[] = {
     { "ascii",   ascii_command },
@@ -281,7 +283,7 @@ static void accept_connection_net(void *p)
     return;
   }
   cp->fd = fd;
-  on_read(cp->fd, (void (*)(void *)) command_receive, cp);
+  on_read(cp->fd, command_receive, cp);
 }
 
 /*---------------------------------------------------------------------------*/

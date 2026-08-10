@@ -92,7 +92,7 @@ static void calculate_qualities(struct node *pn);
 static void calculate_all(void);
 static void broadcast_recv(struct mbuf **bpp, struct node *pn);
 static struct mbuf *alloc_broadcast_packet(void);
-static void send_broadcast(void);
+static void send_broadcast(void *arg);
 static void route_packet(struct mbuf **bpp, struct node *fromneighbor);
 static void send_l3_packet(uint8 *source, uint8 *dest, int ttl, struct mbuf **data);
 static void routing_manager_initialize(void);
@@ -101,9 +101,9 @@ static int nrbusy(struct circuit *pc);
 static void send_l4_packet(struct circuit *pc, int opcode, struct mbuf **data);
 static void try_send(struct circuit *pc, int fill_sndq);
 static void set_circuit_state(struct circuit *pc, enum netrom_state newstate);
-static void l4_t1_timeout(struct circuit *pc);
-static void l4_t3_timeout(struct circuit *pc);
-static void l4_t4_timeout(struct circuit *pc);
+static void l4_t1_timeout(void *arg);
+static void l4_t3_timeout(void *arg);
+static void l4_t4_timeout(void *arg);
 static struct circuit *create_circuit(void);
 static void circuit_manager(struct mbuf **bpp);
 static void nrserv_recv_upcall(struct circuit *pc, int cnt);
@@ -521,7 +521,7 @@ static struct mbuf *alloc_broadcast_packet(void)
 
 /*---------------------------------------------------------------------------*/
 
-static void send_broadcast(void)
+static void send_broadcast(void *arg)
 {
 
   uint8 *p;
@@ -640,7 +640,7 @@ static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
     if (fromneighbor != mynode) {
       pn->force_broadcast = 1;
 #ifdef FORCE_BC
-      send_broadcast();
+      send_broadcast(NULL);
 #endif
     }
     goto discard;
@@ -648,7 +648,7 @@ static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
 
 #ifdef FORCE_BC
   if (pn->neighbor == fromneighbor ||
-      addreq(pn->neighbor->call, (*bpp)->data)) send_broadcast();
+      addreq(pn->neighbor->call, (*bpp)->data)) send_broadcast(NULL);
 #endif
 
   send_packet_to_neighbor(bpp, pn->neighbor);
@@ -709,7 +709,7 @@ void nr3_input(const uint8 *src, struct mbuf **bpp)
 
 static void routing_manager_initialize(void)
 {
-  broadcast_timer.func = (void (*)(void *)) send_broadcast;
+  broadcast_timer.func = send_broadcast;
   set_timer(&broadcast_timer, 10 * 1000L);
   start_timer(&broadcast_timer);
 }
@@ -915,8 +915,9 @@ static void set_circuit_state(struct circuit *pc, enum netrom_state newstate)
 
 /*---------------------------------------------------------------------------*/
 
-static void l4_t1_timeout(struct circuit *pc)
+static void l4_t1_timeout(void *arg)
 {
+  struct circuit *pc = (struct circuit *) arg;
   struct mbuf *bp, *qp;
 
   set_timer(&pc->timer_t1, (dur_timer(&pc->timer_t1) * 5 + 2) / 4);
@@ -956,15 +957,19 @@ static void l4_t1_timeout(struct circuit *pc)
 
 /*---------------------------------------------------------------------------*/
 
-static void l4_t3_timeout(struct circuit *pc)
+static void l4_t3_timeout(void *arg)
 {
+  struct circuit *pc = (struct circuit *) arg;
+
   if (!run_timer(&pc->timer_t1)) close_nr(pc);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void l4_t4_timeout(struct circuit *pc)
+static void l4_t4_timeout(void *arg)
 {
+  struct circuit *pc = (struct circuit *) arg;
+
   pc->remote_busy = 0;
   if (pc->unack) start_timer(&pc->timer_t1);
   try_send(pc, 1);
@@ -988,11 +993,11 @@ static struct circuit *create_circuit(void)
   pc->cwind = 1;
   pc->mdev = (1000L * nr_ttimeout + 2) / 4;
   reset_t1(pc);
-  pc->timer_t1.func = (void (*)(void *)) l4_t1_timeout;
+  pc->timer_t1.func = l4_t1_timeout;
   pc->timer_t1.arg = pc;
-  pc->timer_t3.func = (void (*)(void *)) l4_t3_timeout;
+  pc->timer_t3.func = l4_t3_timeout;
   pc->timer_t3.arg = pc;
-  pc->timer_t4.func = (void (*)(void *)) l4_t4_timeout;
+  pc->timer_t4.func = l4_t4_timeout;
   pc->timer_t4.arg = pc;
   pc->next = circuits;
   return circuits = pc;
@@ -1427,11 +1432,20 @@ static void nrserv_send_upcall(struct circuit *pc, int cnt)
 
 /*---------------------------------------------------------------------------*/
 
-static void nrserv_state_upcall(struct circuit *pc, enum netrom_state oldstate, enum netrom_state newstate)
+static void nrserv_send_login_upcall(void *arg)
 {
-  switch (newstate) {
+  nrserv_send_upcall((struct circuit *) arg, 0);
+}
+
+static void nrserv_close_upcall(void *arg)
+{
+  close_nr((struct circuit *) arg);
+}
+
+static void nrserv_state_upcall(struct circuit *pc, enum netrom_state oldstate, enum netrom_state newstate)
+{  switch (newstate) {
   case NR4STCON:
-    pc->user = (char *) login_open(nr_addr2str(pc), "NETROM", (void (*)(void *)) nrserv_send_upcall, (void (*)(void *)) close_nr, pc);
+    pc->user = (char *) login_open(nr_addr2str(pc), "NETROM", nrserv_send_login_upcall, nrserv_close_upcall, pc);
     if (!pc->user) close_nr(pc);
     break;
   case NR4STDISC:

@@ -24,8 +24,9 @@ static struct dest *dests;
 
 /*---------------------------------------------------------------------------*/
 
-static void tcp_send(struct tcb *tcb)
+static void tcp_send(void *arg)
 {
+  struct tcb *tcb = (struct tcb *) arg;
 
   int cnt;
   struct mbuf *bp;
@@ -69,7 +70,7 @@ static void tcp_receive(struct tcb *tcb, int32 cnt)
 
 static void tcp_ready(struct tcb *tcb, int32 cnt)
 {
-  if (tcb->user > 0) on_read(tcb->user, (void (*)(void *)) tcp_send, tcb);
+  if (tcb->user > 0) on_read(tcb->user, tcp_send, tcb);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -92,7 +93,7 @@ static void tcp_state(struct tcb *tcb, enum tcp_state old, enum tcp_state new)
       close_tcp(tcb);
       return;
     }
-    on_read(tcb->user, (void (*)(void *)) tcp_send, tcb);
+    on_read(tcb->user, tcp_send, tcb);
     return;
   case TCP_CLOSE_WAIT:
     close_tcp(tcb);

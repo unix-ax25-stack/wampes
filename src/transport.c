@@ -238,7 +238,7 @@ struct transport_cb *transport_open(const char *protocol, const char *address, v
   tp->t_upcall = t_upcall;
   tp->s_upcall = s_upcall;
   tp->user = user;
-  tp->timer.func = (void (*)(void *)) transport_close;
+  tp->timer.func = transport_close;
   tp->timer.arg = tp;
   Net_error = INVALID;
   if (!strcmp(protocol, "ax25")) {
@@ -331,18 +331,22 @@ void transport_set_timeout(struct transport_cb *tp, int timeout)
 
 /*---------------------------------------------------------------------------*/
 
-int transport_close(struct transport_cb *tp)
+void transport_close(void *arg)
 {
+  struct transport_cb *tp = (struct transport_cb *) arg;
+
   switch (tp->type) {
   case TP_AX25:
   case TP_AXFLEXTALK:
-    return disc_ax25(tp->cb.axp);
+    disc_ax25(tp->cb.axp);
+    break;
   case TP_NETROM:
-    return close_nr(tp->cb.nrp);
+    close_nr(tp->cb.nrp);
+    break;
   case TP_TCP:
-    return close_tcp(tp->cb.tcp);
+    close_tcp(tp->cb.tcp);
+    break;
   }
-  return -1;
 }
 
 /*---------------------------------------------------------------------------*/

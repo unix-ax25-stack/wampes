@@ -214,10 +214,10 @@ uint8 c)        /* Incoming character */
 
 /* Process net/rom serial line I/O */
 void
-nrs_recv(
-struct iface *iface)
+nrs_recv(void *arg)
 {
 
+	struct iface *iface = (struct iface *) arg;
 	uint8 *cp;
 	uint8 buf[4096];
 	int cnt;

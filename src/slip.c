@@ -236,9 +236,9 @@ uint8 c)                /* Incoming character */
 
 /* Process SLIP line input */
 void
-slip_rx(
-struct iface *iface)
+slip_rx(void *arg)
 {
+	struct iface *iface = (struct iface *) arg;
 	int c;
 	struct mbuf *bp;
 	register struct slip *sp;

@@ -219,7 +219,7 @@ uint lcsum(uint16 *wp,uint len);
 void net_sim(struct mbuf *bp);
 
 /* In ipfile.c: */
-void route_savefile(void);
+void route_savefile(void *arg);
 void route_loadfile(void);
 
 #endif /* _IP_H */

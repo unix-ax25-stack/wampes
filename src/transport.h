@@ -64,7 +64,7 @@ int transport_recv(struct transport_cb *tp, struct mbuf **bpp, int cnt);
 int transport_send(struct transport_cb *tp, struct mbuf *bp);
 int transport_send_space(struct transport_cb *tp);
 void transport_set_timeout(struct transport_cb *tp, int timeout);
-int transport_close(struct transport_cb *tp);
+void transport_close(void *arg);
 int transport_del(struct transport_cb *tp);
 
 #endif  /* _TRANSPORT_H */

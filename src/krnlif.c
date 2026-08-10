@@ -199,7 +199,7 @@ static int krnlif_up(struct krnlif *ki)
 	fcntl(ki->fd, F_SETFL, fcntl(ki->fd, F_GETFL, 0) | O_NONBLOCK);
 #endif
 
-	on_read(ki->fd, (void (*)(void *)) ki->iface->rxproc, ki->iface);
+	on_read(ki->fd, ki->iface->rxproc, ki->iface);
 	return 0;
 
  Fail:
@@ -232,8 +232,9 @@ static int krnlif_down(struct krnlif *ki)
 
 /*---------------------------------------------------------------------------*/
 
-static void krnlif_tx(struct krnlif *ki)
+static void krnlif_tx(void *arg)
 {
+	struct krnlif *ki = (struct krnlif *) arg;
 #ifdef	USE_OBSOLETE_SOCK_PACKET
 	struct sockaddr to;
 #endif
@@ -340,7 +341,7 @@ static int32 krnlif_ioctl(struct iface *ifp, int cmd, int set, int32 val)
         	if (ifp->trace & IF_TRACE_RAW)
                 	raw_dump(ifp,-1,bp);
 		enqueue(&ki->sndq, &bp);
-		on_write(ki->fd, (void (*)(void *)) krnlif_tx, ki);
+		on_write(ki->fd, krnlif_tx, ki);
 		return 1;
 	}
 	return -1;
@@ -370,15 +371,16 @@ static int krnlif_raw(struct iface *iface, struct mbuf **bpp)
 		free_p(bpp);
 	else {
 		enqueue(&ki->sndq, bpp);
-		on_write(ki->fd, (void (*)(void *)) krnlif_tx, ki);
+		on_write(ki->fd, krnlif_tx, ki);
 	}
 	return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void krnlif_rx(struct iface *iface)
+static void krnlif_rx(void *arg)
 {
+	struct iface *iface = (struct iface *) arg;
 	struct krnlif *ki;
 	struct sockaddr from;
 #ifdef	USE_OBSOLETE_SOCK_PACKET

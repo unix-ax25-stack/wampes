@@ -614,7 +614,7 @@ int perm)
 		rp->time = secclock();
 		lastnode = rp;
 	}
-	axroute_savefile();
+	axroute_savefile(NULL);
 }
 
 void

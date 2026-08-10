@@ -33,7 +33,7 @@ static int domail_timer(int argc, char *argv[], void *p);
 static int domail_kick(int argc, char *argv[], void *p);
 static void strtrim(char *s);
 static void read_configuration(void);
-static void mail_tick(char *sysname);
+static void mail_tick(void *arg);
 
 /*---------------------------------------------------------------------------*/
 
@@ -116,7 +116,7 @@ static int domail_timer(int argc, char *argv[], void *p)
 	    (long)(dur_timer(&Mail_timer) / 1000));
     return 0;
   }
-  Mail_timer.func = (void (*)(void *)) mail_tick;
+  Mail_timer.func = mail_tick;
   Mail_timer.arg = 0;
   set_timer(&Mail_timer, atol(argv[1]) * 1000L);
   start_timer(&Mail_timer);
@@ -192,8 +192,9 @@ static void read_configuration(void)
 
 /*---------------------------------------------------------------------------*/
 
-static void mail_tick(char *sysname)
+static void mail_tick(void *arg)
 {
+  char *sysname = (char *) arg;
 
   DIR *dirp;
   FILE *fp;

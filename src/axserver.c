@@ -52,13 +52,23 @@ static void axserv_state_upcall(struct ax25_cb *axp, enum lapb_state oldstate, e
 
 /*---------------------------------------------------------------------------*/
 
+static void axserv_send_login_upcall(void *arg)
+{
+  axserv_send_upcall((struct ax25_cb *) arg, 0);
+}
+
+static void axserv_close_upcall(void *arg)
+{
+  disc_ax25((struct ax25_cb *) arg);
+}
+
 void axserv_open(struct ax25_cb *axp, int cnt)
 {
   char callsign[AXBUF];
 
   if (Axserver_enabled) {
     pax25(callsign, axp->hdr.dest);
-    axp->user = (char *) login_open(callsign, "AX25", (void (*)(void *)) axserv_send_upcall, (void (*)(void *)) disc_ax25, axp);
+    axp->user = (char *) login_open(callsign, "AX25", axserv_send_login_upcall, axserv_close_upcall, axp);
   }
   if (axp->user) {
     free_q(&axp->rxq);

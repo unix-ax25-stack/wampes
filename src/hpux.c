@@ -90,6 +90,12 @@ pid_t dofork(void)
 
 /*---------------------------------------------------------------------------*/
 
+static void timeout_abort(int sig)
+{
+  (void) sig;
+  abort();
+}
+
 void ioinit(void)
 {
 
@@ -138,7 +144,7 @@ void ioinit(void)
     curr_termios.c_cc[VTIME] = 0;
     tcsetattr(0, TCSANOW, &curr_termios);
 #endif
-    on_read(0, (void (*)(void *)) keyboard, 0);
+    on_read(0, keyboard, 0);
   } else {
 #ifdef macII
     fclose(stdin);
@@ -159,7 +165,7 @@ void ioinit(void)
   umask(022);
   signal(SIGPIPE, SIG_IGN);
   if (!Debug) {
-    signal(SIGALRM, (void (*)(int)) abort);
+    signal(SIGALRM, timeout_abort);
     alarm(TIMEOUT);
     nice(-39);
   }

@@ -166,7 +166,7 @@ int ax25args_to_hdr(int argc,char *argv[],struct ax25 *hdr);
 char *ax25hdr_to_string(struct ax25 *hdr);
 
 /* In ax25file.c: */
-void axroute_savefile(void);
+void axroute_savefile(void *arg);
 void axroute_loadfile(void);
 
 /* In axserver.c: */	// dl9sau

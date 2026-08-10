@@ -42,7 +42,7 @@ static const char arp_tmpfilename[] = TCPDIR "/arp_tmp";
 
 /*---------------------------------------------------------------------------*/
 
-void arp_savefile(void)
+void arp_savefile(void *arg)
 {
 
   FILE *fp;
@@ -55,7 +55,7 @@ void arp_savefile(void)
   if (!main_exit) {
     switch (timer.state) {
     case TIMER_STOP:
-      timer.func = (void (*)(void *)) arp_savefile;
+      timer.func = arp_savefile;
       timer.arg = 0;
       set_timer(&timer, ARP_SAVETIME);
       start_timer(&timer);

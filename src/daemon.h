@@ -11,7 +11,7 @@ struct daemon {
 extern struct daemon Daemons[];
 
 /* In main.c: */
-void keyboard(int,void*,void*);
+void keyboard(void *arg);
 void network(int,void *,void *);
 
 /* In kernel.c: */

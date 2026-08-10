@@ -238,7 +238,7 @@ int pub)                        /* Publish this entry? */
 		set_timer(&ap->timer,ARPLIFE*1000L);
 		memcpy(ap->hw_addr,hw_addr,at->hwalen);
 		ap->pub = pub;
-		arp_savefile();
+		arp_savefile(NULL);
 		while((bp = dequeue(&ap->pending)) != NULL)
 			ip_route(NULL,&bp,0);
 	}

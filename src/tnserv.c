@@ -36,11 +36,21 @@ static void tnserv_send_upcall(struct tcb *tcb, int32 cnt)
 
 /*---------------------------------------------------------------------------*/
 
+static void tnserv_send_login_upcall(void *arg)
+{
+  tnserv_send_upcall((struct tcb *) arg, 0);
+}
+
+static void tnserv_close_upcall(void *arg)
+{
+  close_tcp((struct tcb *) arg);
+}
+
 static void tnserv_state_upcall(struct tcb *tcb, enum tcp_state old, enum tcp_state new)
 {
   switch (new) {
   case TCP_ESTABLISHED:
-    tcb->user = (long) login_open(pinet_tcp(&tcb->conn.remote), "TELNET", (void (*)(void *)) tnserv_send_upcall, (void (*)(void *)) close_tcp, tcb);
+    tcb->user = (long) login_open(pinet_tcp(&tcb->conn.remote), "TELNET", tnserv_send_login_upcall, tnserv_close_upcall, tcb);
     if (!tcb->user)
       close_tcp(tcb);
     else

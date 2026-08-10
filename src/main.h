@@ -15,6 +15,6 @@ extern int main_exit;                   /* from main program (flag) */
 extern int stop_repeat;
 extern long StartTime;                  /* time that NOS was started */
 
-void keyboard(int,void *,void *);
+void keyboard(void *arg);
 
 #endif  /* _MAIN_H */

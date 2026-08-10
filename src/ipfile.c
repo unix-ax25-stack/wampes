@@ -42,7 +42,7 @@ static const char route_tmpfilename[] = TCPDIR "/route_tmp";
 
 /*---------------------------------------------------------------------------*/
 
-void route_savefile(void)
+void route_savefile(void *arg)
 {
 
   FILE *fp;
@@ -56,7 +56,7 @@ void route_savefile(void)
   if (!main_exit) {
     switch (timer.state) {
     case TIMER_STOP:
-      timer.func = (void (*)(void *)) route_savefile;
+      timer.func = route_savefile;
       timer.arg = 0;
       set_timer(&timer, ROUTE_SAVETIME);
       start_timer(&timer);

@@ -159,9 +159,9 @@ main(int argc,char *argv[])
 
 		time(&StopTime);
 		reset_all();
-		arp_savefile();
-		axroute_savefile();
-		route_savefile();
+		arp_savefile(NULL);
+		axroute_savefile(NULL);
+		route_savefile(NULL);
 		for(i=0;i<100;i++)
 			kwait(NULL);    /* Allow tasks to complete */
 		shuttrace();
@@ -220,10 +220,7 @@ int c)
 }
 /* Keyboard input process */
 void
-keyboard(
-int i,
-void *v1,
-void *v2)
+keyboard(void *arg)
 {
 
 	char *p;

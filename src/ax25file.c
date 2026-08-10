@@ -46,7 +46,7 @@ static const char axroute_tmpfilename[] = TCPDIR "/axroute_tmp";
 
 /*---------------------------------------------------------------------------*/
 
-void axroute_savefile(void)
+void axroute_savefile(void *arg)
 {
 
   FILE *fp;
@@ -63,7 +63,7 @@ void axroute_savefile(void)
   if (!main_exit) {
     switch (timer.state) {
     case TIMER_STOP:
-      timer.func = (void (*)(void *)) axroute_savefile;
+      timer.func = axroute_savefile;
       timer.arg = 0;
       set_timer(&timer, AXROUTE_SAVETIME);
       start_timer(&timer);

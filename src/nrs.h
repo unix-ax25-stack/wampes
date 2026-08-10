@@ -52,6 +52,6 @@ extern struct nrs Nrs[];
 int nrs_free(struct iface *ifp);
 int nrs_init(struct iface *ifp);
 int nrs_raw(struct iface *iface,struct mbuf **bpp);
-void nrs_recv(struct iface *iface);
+void nrs_recv(void *arg);
 
 #endif  /* _NRS_H */

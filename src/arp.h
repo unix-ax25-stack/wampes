@@ -128,7 +128,7 @@ struct mbuf *htonarp(struct arp *arp);
 int ntoharp(struct arp *arp,struct mbuf **bpp);
 
 /* In arpfile.c: */
-void arp_savefile(void);
+void arp_savefile(void *arg);
 void arp_loadfile(void);
 
 #endif /* _ARP_H */

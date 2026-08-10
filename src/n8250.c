@@ -44,7 +44,7 @@ typedef long speed_t;
 
 static int find_speed(long speed);
 static void pasy(struct asy *asyp);
-static void asy_tx(struct asy *asyp);
+static void asy_tx(void *arg);
 
 struct asy Asy[ASY_MAX];
 
@@ -193,7 +193,7 @@ asy_up(struct asy *ap)
 #endif
 		}
 	}
-	on_read(ap->fd, (void (*)(void *)) ap->iface->rxproc, ap->iface);
+	on_read(ap->fd, ap->iface->rxproc, ap->iface);
 	return 0;
 
 Fail:
@@ -426,9 +426,9 @@ struct asy *asyp)
 
 /* Serial transmit process, common to all protocols */
 static void
-asy_tx(
-struct asy *asyp)
+asy_tx(void *arg)
 {
+	struct asy *asyp = (struct asy *) arg;
 	int n;
 
 	if (asyp->sndq != NULL) {
@@ -482,7 +482,7 @@ struct mbuf **bpp)
 		free_p(bpp);
 	else {
 		append(&asyp->sndq, bpp);
-		on_write(asyp->fd, (void (*)(void *)) asy_tx, asyp);
+		on_write(asyp->fd, asy_tx, asyp);
 	}
 	return 0;
 }

@@ -74,7 +74,7 @@ struct iface {
 
 	struct iface *forw;     /* Forwarding interface for output, if rx only */
 
-	void (*rxproc)(struct iface *); /* Receiver process, if any */
+	void (*rxproc)(void *); /* Receiver process, if any */
 	struct proc *txproc;    /* IP send process */
 	struct proc *supv;      /* Supervisory process, if any */
 

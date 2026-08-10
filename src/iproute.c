@@ -475,7 +475,7 @@ uint8 private           /* Inhibit advertising this entry ? */
 	stop_timer(&rp->timer);
 	start_timer(&rp->timer); /* start the timer if appropriate */
 
-	route_savefile();
+	route_savefile(NULL);
 	return rp;
 }
 

@@ -498,8 +498,9 @@ static int do_telnet(struct login_cb *tp, int chr)
 
 /*---------------------------------------------------------------------------*/
 
-static void write_pty(struct login_cb *tp)
+static void write_pty(void *arg)
 {
+  struct login_cb *tp = (struct login_cb *) arg;
 
   char *p;
   int chr;
@@ -541,8 +542,10 @@ static void write_pty(struct login_cb *tp)
 
 /*---------------------------------------------------------------------------*/
 
-static void death_handler(struct login_cb *tp)
+static void death_handler(void *arg)
 {
+  struct login_cb *tp = (struct login_cb *) arg;
+
   off_read(tp->pty);
   off_write(tp->pty);
   if (tp->closefnc) (*tp->closefnc)(tp->fncarg);
@@ -670,7 +673,7 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
     execve(argv[0], argv, &env);
     exit(1);
   }
-  on_death((int) tp->pid, (void (*)(void *)) death_handler, tp);
+  on_death((int) tp->pid, death_handler, tp);
   return tp;
 }
 
@@ -778,7 +781,7 @@ void login_write(struct login_cb *tp, struct mbuf **bpp)
 {
   if (bpp && *bpp) {
     append(&tp->sndq, bpp);
-    on_write(tp->pty, (void (*)(void *)) write_pty, tp);
+    on_write(tp->pty, write_pty, tp);
     if (tp->linelen)
       write_pty(tp);
   }
