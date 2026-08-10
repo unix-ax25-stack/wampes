@@ -615,12 +615,6 @@ struct slcompress *comp)
 			" %10ld Misses\n",
 			(long)comp->sls_o_searches,
 			(long)comp->sls_o_misses);
-#ifdef	AX25_VJCOMP
-		printf("\t%10ld Dropped,"
-			" %10ld Valve\n",
-			(long)comp->sls_o_dropped,
-			(long)comp->sls_o_valve);
-#endif
 	}
 }
 

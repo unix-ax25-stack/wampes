@@ -287,20 +287,6 @@ void *p)
 		}
 		if (Axserver_enabled)
 			printf("                                Listening      *\n");
-#ifdef	AX25_VJCOMP
-		/* MW: dump VJ statistics for every connection */
-		for(axp = Ax25_cb;axp != NULL; axp = axp->next){
-			if (axp->slcomp) {
-				printf("  AXCB %08lx (%s):\n", (long) axp,
-				 ax25hdr_to_string(&axp->hdr));
-				printf("    VJ input: ");
-				slhc_i_status(axp->slcomp);
-				printf("    VJ outpt: ");
-				slhc_o_status(axp->slcomp);
-				axhc_slots_status(axp->slcomp);
-			}
-		}
-#endif
 		return 0;
 	}
 	axp = (struct ax25_cb *)ltop(htol(argv[1]));
@@ -366,7 +352,6 @@ struct ax25_cb *axp)
                 slhc_i_status(axp->slcomp);
                 printf("VJ outpt: ");
                 slhc_o_status(axp->slcomp);
-                axhc_slots_status(axp->slcomp);
         }
 #endif
 }

@@ -80,7 +80,7 @@ main(int argc,char *argv[])
 #if defined linux || defined ibm032
 	setbuffer(stdout,NULL,8192);
 #else
-	setvbuf(stdout,NULL,_IONBF,0);
+	setvbuf(stdout,NULL,_IOFBF,8192);
 #endif
 	time((time_t *) &StartTime);
 	Hostname = strdup("net");
