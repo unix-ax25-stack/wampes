@@ -143,6 +143,17 @@ struct cstate {
 #ifdef	AX25_VJCOMP
 	uint32 lastdropped;     /* MW: retransmittion timeout */
 	uint8 deny_compression;
+	/* per-slot diagnostic counters (axhc.c) */
+	uint32 dropped_oldseq;  /* packets dropped: old seq, no changes */
+	uint32 dropped_dup;     /* packets dropped: no changes at all */
+	uint32 valve_fire;      /* 120s valve opened -> sent uncompressed */
+	uint32 valve_reset;     /* lastdropped cleared again */
+	uint32 uncomp_miss;     /* uncompressed: new/oldest slot */
+	uint32 uncomp_changes;  /* uncompressed: unexpected hdr changes */
+	uint32 uncomp_deny;     /* uncompressed: compression denied */
+	uint32 lastdrop_seq;    /* seq of last dropped packet */
+	uint32 lastdrop_ack;    /* ack of last dropped packet */
+	uint32 lastdrop_time;   /* secclock() of last drop */
 #endif
 };
 
@@ -174,6 +185,11 @@ struct slcompress {
 	int32 sls_i_compressed; /* inbound compressed packets */
 	int32 sls_i_error;      /* inbound error packets */
 	int32 sls_i_tossed;     /* inbound packets tossed because of error */
+
+#ifdef	AX25_VJCOMP
+	int32 sls_o_dropped;    /* packets dropped (old-seq + dup) */
+	int32 sls_o_valve;      /* valve fired -> sent uncompressed */
+#endif
 };
 
 /* In slhc.c: */
@@ -191,5 +207,9 @@ int axhc_compress(struct slcompress *comp, struct mbuf **bpp, int do_compression
 
 void slhc_i_status(struct slcompress *comp);
 void slhc_o_status(struct slcompress *comp);
+
+#ifdef	AX25_VJCOMP
+void axhc_slots_status(struct slcompress *comp);
+#endif
 
 #endif  /* _SLHC_H */

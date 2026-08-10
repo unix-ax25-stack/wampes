@@ -153,6 +153,7 @@ int axhc_compress(
     comp->sls_o_misses++;
     comp->xmit_oldest = lcs->this;
     cs->deny_compression = 0;
+    cs->uncomp_miss++;
 /*    printf("axhc.c: new slot %d\n", cs->this);*/
     goto uncompressed;
 
@@ -193,6 +194,7 @@ int axhc_compress(
 	|| iph.ttl != cs->cs_ip.ttl
 	|| (iph.optlen > 0 && memcmp(iph.options,cs->cs_ip.options,iph.optlen) != 0)){
 /*	puts("axhc.c: uncompressible due to unexpected changes");*/
+	cs->uncomp_changes++;
 	goto uncompressed;
     }
     /*
@@ -234,14 +236,21 @@ int axhc_compress(
 	     */
 	    if (seq_lt(th.seq, oth->seq) && !changes) {
 		if (cs->lastdropped != 0) {
-		    if (secclock() - cs->lastdropped > /*120*/ 1) {
+		    if (secclock() - cs->lastdropped > 120) {
 /*			puts("axhc.c: timeout, possible packet loss");*/
+			cs->valve_fire++;
+			comp->sls_o_valve++;
 			goto uncompressed;
 		    }
 		} else {
 		    cs->lastdropped = secclock();
 		}
 /*		puts("axhc.c: dropping old data packet");*/
+		cs->dropped_oldseq++;
+		comp->sls_o_dropped++;
+		cs->lastdrop_seq = th.seq;
+		cs->lastdrop_ack = th.ack;
+		cs->lastdrop_time = secclock();
 		return SL_TYPE_ERROR;
 	    }
 	    goto uncompressed;
@@ -273,14 +282,21 @@ int axhc_compress(
 	}
 /*	puts("axhc.c: no changes detected");*/
 	if (cs->lastdropped != 0) {
-	    if (secclock() - cs->lastdropped > /*120*/ 1) {
+	    if (secclock() - cs->lastdropped > 120) {
 /*		puts("axhc.c: timeout, possible packet loss");*/
+		cs->valve_fire++;
+		comp->sls_o_valve++;
 		goto uncompressed;
 	    }
 	} else {
 	    cs->lastdropped = secclock();
 	}
 /*	puts("axhc.c: dropping retransmitted packet");*/
+	cs->dropped_dup++;
+	comp->sls_o_dropped++;
+	cs->lastdrop_seq = th.seq;
+	cs->lastdrop_ack = th.ack;
+	cs->lastdrop_time = secclock();
 	return SL_TYPE_ERROR;
 
     case SPECIAL_I:
@@ -313,6 +329,7 @@ int axhc_compress(
      */
     if (cs->deny_compression) {
 /*	puts("axhc.c: compression denied by rule");*/
+	cs->uncomp_deny++;
 	goto uncompressed;
     }
 
@@ -329,6 +346,8 @@ int axhc_compress(
     deltaA = th.checksum;
     ASSIGN(cs->cs_ip,iph);
     ASSIGN(cs->cs_tcp,th);
+    if (cs->lastdropped != 0)
+	cs->valve_reset++;
     cs->lastdropped = 0;
 
     /*
@@ -375,6 +394,8 @@ int axhc_compress(
     ASSIGN(cs->cs_ip,iph);
     ASSIGN(cs->cs_tcp,th);
     comp->xmit_current = cs->this;
+    if (cs->lastdropped != 0)
+	cs->valve_reset++;
     cs->lastdropped = 0;
 
     if (!do_compression) {
@@ -389,6 +410,47 @@ int axhc_compress(
     htonip(&iph,bpp,IP_CS_OLD);     /* replace with new one */
 /*    puts("axhc.c: sending uncompressed packet");*/
     return SL_TYPE_UNCOMPRESSED_TCP;
+}
+
+/* Print per-slot VJ diagnostic counters for one AX.25 connection.
+ * Walks the transmit ring starting at xmit_oldest and prints every
+ * slot that has seen any traffic.
+ */
+void
+axhc_slots_status(
+struct slcompress *comp)
+{
+	struct cstate *ocs, *cs;
+
+	if (comp == NULL)
+		return;
+	ocs = &(comp->tstate[comp->xmit_oldest]);
+	cs = ocs;
+	printf("\tVJ per-slot (xmit ring, oldest first):\n");
+	do {
+		if (cs->cs_ip.length == 0
+		    && cs->dropped_oldseq == 0 && cs->dropped_dup == 0
+		    && cs->valve_fire == 0 && cs->valve_reset == 0
+		    && cs->uncomp_miss == 0 && cs->uncomp_changes == 0
+		    && cs->uncomp_deny == 0)
+			continue;
+		printf("\t  id=%2u drop(old=%lu dup=%lu) valve=%lu rset=%lu"
+		       " uncm(m=%lu c=%lu d=%lu)"
+		       " lastdrop seq=%lu ack=%lu ago=%lus\n",
+		       cs->this,
+		       (unsigned long)cs->dropped_oldseq,
+		       (unsigned long)cs->dropped_dup,
+		       (unsigned long)cs->valve_fire,
+		       (unsigned long)cs->valve_reset,
+		       (unsigned long)cs->uncomp_miss,
+		       (unsigned long)cs->uncomp_changes,
+		       (unsigned long)cs->uncomp_deny,
+		       (unsigned long)cs->lastdrop_seq,
+		       (unsigned long)cs->lastdrop_ack,
+		       (unsigned long)(cs->lastdrop_time
+					? secclock() - cs->lastdrop_time : 0));
+		cs = cs->next;
+	} while (cs != ocs);
 }
 
 #endif
