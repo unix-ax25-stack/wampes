@@ -14,10 +14,12 @@ static int dn_expand(uint8 *msg,uint8 *eom,uint8 *compressed,char *full,
 static uint8 *getq(struct rr **rrpp,uint8 *msg,uint8 *cp);
 static uint8 *ntohrr(struct rr **rrpp,uint8 *msg,uint8 *cp);
 
-static uint8 *putstring(uint8 *cp, const char *str);
-static uint8 *putname(uint8 *buffer, uint8 *cp, const char *name);
-static uint8 *putq(uint8 *buffer, uint8 *cp, const struct rr *rrp);
-static uint8 *putrr(uint8 *buffer, uint8 *cp, const struct rr *rrp);
+static uint8 *putstring(uint8 *cp, uint8 *end, const char *str);
+static uint8 *putname(uint8 *buffer, uint8 *cp, uint8 *end, const char *name);
+static uint8 *putq(uint8 *buffer, uint8 *cp, uint8 *end, const struct rr *rrp,
+	int *count, int *trunc);
+static uint8 *putrr(uint8 *buffer, uint8 *cp, uint8 *end, const struct rr *rrp,
+	int *count, int *trunc);
 
 int
 ntohdomain(struct dhdr *dhdr,struct mbuf **bpp)
@@ -303,24 +305,43 @@ int fullen)             /* Length of same */
 
 /*---------------------------------------------------------------------------*/
 
+/* Largest message htondomain() will build.  512 is the RFC 1035 limit for
+ * UDP; the TCP path in domain.c only prepends a length word, so the same
+ * bound is safe there.  Whatever does not fit is left out and the TC bit is
+ * set, which is what a resolver expects.
+ */
+#define DOMAIN_MAXMSG   512
+
 static struct compress_table {
   const char *name;
   int offset;
 } Compress_table[128];
 
+#define NCOMPRESS       ((int) (sizeof Compress_table / sizeof Compress_table[0]))
+
 /*---------------------------------------------------------------------------*/
+
+/* Every put* routine below takes the end of the output buffer and returns
+ * NULL when the item would not fit.  putq() and putrr() turn that into a
+ * rollback to the last record boundary, so a truncated message is still well
+ * formed.  Before this, the whole RR list was serialized into a fixed buffer
+ * with no bound at all: a query carrying enough questions was all it took to
+ * write past the mbuf.
+ */
 
 static uint8 *putstring(
 uint8 *cp,
+uint8 *end,
 const char *str)
 {
-  uint8 *cp1;
+  size_t len;
 
-  cp1 = cp;
-  cp++;
-  while (*str) *cp++ = *str++;
-  *cp1 = cp - cp1 - 1;
-  return cp;
+  len = strlen(str);
+  if (len > 255) len = 255;             /* DNS character-string limit */
+  if (cp + 1 + len > end) return NULL;
+  *cp++ = (uint8) len;
+  memcpy(cp, str, len);
+  return cp + len;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -328,21 +349,34 @@ const char *str)
 static uint8 *putname(
 uint8 *buffer,
 uint8 *cp,
+uint8 *end,
 const char *name)
 {
 
   const char *cp1;
   int i;
+  int len;
 
   for (; ; ) {
-    for (i = 0; Compress_table[i].name; i++)
-      if (!strcmp(Compress_table[i].name, name))
+    for (i = 0; i < NCOMPRESS && Compress_table[i].name; i++)
+      if (!strcmp(Compress_table[i].name, name)) {
+	if (cp + 2 > end) return NULL;
 	return put16(cp, 0xc000 | Compress_table[i].offset);
+      }
     for (cp1 = name; *cp1 && *cp1 != '.'; cp1++) ;
-    if (!(*cp++ = cp1 - name)) break;
-    Compress_table[i].name = name;
-    Compress_table[i].offset = cp - buffer - 1;
-    Compress_table[i+1].name = 0;
+    len = cp1 - name;
+    if (len > 63) return NULL;          /* longer than a DNS label may be */
+    if (cp + 1 + len > end) return NULL;
+    if (!(*cp++ = len)) break;          /* root label terminates the name */
+    /* Remember this suffix for compression - but only while there is room
+     * left in the table and the offset still fits the 14 bits of a pointer.
+     * The old code let i run past the end of Compress_table.
+     */
+    if (i < NCOMPRESS - 1 && cp - buffer - 1 < 0x4000) {
+      Compress_table[i].name = name;
+      Compress_table[i].offset = cp - buffer - 1;
+      Compress_table[i+1].name = 0;
+    }
     while (name < cp1) *cp++ = *name++;
     if (*name) name++;
   }
@@ -354,12 +388,23 @@ const char *name)
 static uint8 *putq(
 uint8 *buffer,
 uint8 *cp,
-const struct rr *rrp)
+uint8 *end,
+const struct rr *rrp,
+int *count,
+int *trunc)
 {
+  uint8 *mark;
+
+  *count = 0;
   for (; rrp; rrp = rrp->next) {
-    cp = putname(buffer, cp, rrp->name);
+    mark = cp;
+    if (!(cp = putname(buffer, cp, end, rrp->name)) || cp + 4 > end) {
+      *trunc = 1;
+      return mark;
+    }
     cp = put16(cp, rrp->type);
     cp = put16(cp, rrp->class);
+    (*count)++;
   }
   return cp;
 }
@@ -369,18 +414,27 @@ const struct rr *rrp)
 static uint8 *putrr(
 uint8 *buffer,
 uint8 *cp,
-const struct rr *rrp)
+uint8 *end,
+const struct rr *rrp,
+int *count,
+int *trunc)
 {
   uint8 *cp1;
+  uint8 *mark;
 
+  *count = 0;
   for (; rrp; rrp = rrp->next) {
-    cp = putname(buffer, cp, rrp->name);
+    mark = cp;
+    /* name + type + class + ttl + the rdlength word */
+    if (!(cp = putname(buffer, cp, end, rrp->name)) || cp + 10 > end)
+      goto Truncated;
     cp = put16(cp, rrp->type);
     cp = put16(cp, rrp->class);
     cp1 = put32(cp, rrp->ttl);
     cp = cp1 + 2;
     switch (rrp->type) {
     case TYPE_A:
+      if (cp + 4 > end) goto Truncated;
       cp = put32(cp, rrp->rdata.addr);
       break;
     case TYPE_CNAME:
@@ -389,19 +443,21 @@ const struct rr *rrp)
     case TYPE_MR:
     case TYPE_NS:
     case TYPE_PTR:
-      cp = putname(buffer, cp, rrp->rdata.name);
+      if (!(cp = putname(buffer, cp, end, rrp->rdata.name))) goto Truncated;
       break;
     case TYPE_HINFO:
-      cp = putstring(cp, rrp->rdata.hinfo.cpu);
-      cp = putstring(cp, rrp->rdata.hinfo.os);
+      if (!(cp = putstring(cp, end, rrp->rdata.hinfo.cpu)) ||
+	  !(cp = putstring(cp, end, rrp->rdata.hinfo.os))) goto Truncated;
       break;
     case TYPE_MX:
+      if (cp + 2 > end) goto Truncated;
       cp = put16(cp, rrp->rdata.mx.pref);
-      cp = putname(buffer, cp, rrp->rdata.mx.exch);
+      if (!(cp = putname(buffer, cp, end, rrp->rdata.mx.exch))) goto Truncated;
       break;
     case TYPE_SOA:
-      cp = putname(buffer, cp, rrp->rdata.soa.mname);
-      cp = putname(buffer, cp, rrp->rdata.soa.rname);
+      if (!(cp = putname(buffer, cp, end, rrp->rdata.soa.mname)) ||
+	  !(cp = putname(buffer, cp, end, rrp->rdata.soa.rname)) ||
+	  cp + 20 > end) goto Truncated;
       cp = put32(cp, rrp->rdata.soa.serial);
       cp = put32(cp, rrp->rdata.soa.refresh);
       cp = put32(cp, rrp->rdata.soa.retry);
@@ -409,12 +465,21 @@ const struct rr *rrp)
       cp = put32(cp, rrp->rdata.soa.minimum);
       break;
     case TYPE_TXT:
-      cp = putstring(cp, rrp->rdata.name);
+      if (!(cp = putstring(cp, end, rrp->rdata.name))) goto Truncated;
       break;
     default:
       break;
     }
     put16(cp1, cp - cp1 - 2);
+    (*count)++;
+    continue;
+
+Truncated:
+    /* This record does not fit.  Roll back to the record boundary and stop;
+     * the caller sets TC and reports the count that actually went out.
+     */
+    *trunc = 1;
+    return mark;
   }
   return cp;
 }
@@ -426,31 +491,44 @@ const struct dhdr *dhp)
 {
 
   int tmp;
+  int trunc = 0;
+  int nqd = 0, nan = 0, nns = 0, nar = 0;
   struct mbuf *bp;
   uint8 *cp;
+  uint8 *end;
 
   Compress_table[0].name = 0;
-  bp = alloc_mbuf(512);
+  bp = alloc_mbuf(DOMAIN_MAXMSG);
   if (!bp) return 0;
-  cp = bp->data;
-  cp = put16(cp, dhp->id);
+  end = bp->data + DOMAIN_MAXMSG;
+
+  /* Body first, header afterwards: the counts in the header have to be the
+   * number of records that actually fit, not the number we were handed.
+   * Once a section truncates, stop - the compression table would otherwise
+   * hand out offsets into a rolled-back part of the buffer.
+   */
+  cp = bp->data + 12;
+  cp = putq(bp->data, cp, end, dhp->questions, &nqd, &trunc);
+  if (!trunc) cp = putrr(bp->data, cp, end, dhp->answers,    &nan, &trunc);
+  if (!trunc) cp = putrr(bp->data, cp, end, dhp->authority,  &nns, &trunc);
+  if (!trunc) cp = putrr(bp->data, cp, end, dhp->additional, &nar, &trunc);
+
   tmp = 0;
   if (dhp->qr) tmp |= 0x8000;
   tmp |= (dhp->opcode & 0xf) << 11;
   if (dhp->aa) tmp |= 0x0400;
-  if (dhp->tc) tmp |= 0x0200;
+  if (dhp->tc || trunc) tmp |= 0x0200;
   if (dhp->rd) tmp |= 0x0100;
   if (dhp->ra) tmp |= 0x0080;
   tmp |= (dhp->rcode & 0xf);
-  cp = put16(cp, tmp);
-  cp = put16(cp, dhp->qdcount);
-  cp = put16(cp, dhp->ancount);
-  cp = put16(cp, dhp->nscount);
-  cp = put16(cp, dhp->arcount);
-  cp = putq(bp->data, cp, dhp->questions);
-  cp = putrr(bp->data, cp, dhp->answers);
-  cp = putrr(bp->data, cp, dhp->authority);
-  cp = putrr(bp->data, cp, dhp->additional);
+
+  put16(bp->data,      dhp->id);
+  put16(bp->data + 2,  tmp);
+  put16(bp->data + 4,  nqd);
+  put16(bp->data + 6,  nan);
+  put16(bp->data + 8,  nns);
+  put16(bp->data + 10, nar);
+
   bp->cnt = cp - bp->data;
   return bp;
 }
