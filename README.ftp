@@ -1,0 +1,106 @@
+The FTP server
+==============
+
+"start ftp" accepts anonymous logins only.  Named logins are refused.
+
+
+Why anonymous only
+------------------
+
+FTP over AX.25 or the AMPRNet is clear text.  A password sent to this server
+is visible to anyone listening on the channel, so password authentication
+here protects nothing while suggesting that it does.
+
+The AX.25 login is a different matter and keeps working as before: there,
+axserv_open() takes the callsign out of the frame header, so the identity is
+a fact of the transmission.  An FTP user name is merely typed.  Answering
+"230 User dl9sau logged in" to whoever types those nine characters produces a
+log entry that looks like evidence and is not.
+
+So access control lives in the file system, under the uid of the ftp account,
+and the server does not pretend to know who is connecting.
+
+There is history behind this.  The old password check could not work: on
+Linux and 386BSD crypt() was #defined to return its first argument, which
+turned the test into strcmp(cleartext, pw->pw_passwd).  When /etc/passwd
+still held DES hashes that produced the intended policy - the auto-created
+callsign accounts have an empty password field, so the check short-circuited
+and let them in, while system accounts could never match.  Shadow passwords
+inverted it: pw_passwd became "x", and from then on "PASS x" logged in as any
+account, root included.  See SECURITY-AUDIT.md, finding W-35.
+
+
+Setting it up
+-------------
+
+The server needs an account named "ftp".  Its home directory is the root of
+the served tree; everything a client asks for is resolved beneath it.  If no
+such account exists, every login is refused - that is the intended failure
+mode, not a misconfiguration to work around.
+
+Where to put the tree:
+
+  Linux      /srv/ftp        FHS 3.0 defines /srv as "data for services
+                             provided by this system".  /var/ftp is equally
+                             reasonable on a Red Hat style box, where other
+                             services already live under /var.
+  macOS      there is no /srv.  /usr/local/wampes/ftp fits the default
+             TCPDIR; under Homebrew, $(brew --prefix)/var/wampes/ftp.
+
+Not /tmp: it is cleared on boot, it is world writable so any local user can
+plant entries in it, and on many systems it is a tmpfs, where an upload eats
+RAM instead of disk.
+
+Give the ftp account a uid and gid of its own.  Not nobody, and not a gid
+shared with anything else - seteugid(ftp->uid, ftp->gid) around every file
+operation is what actually enforces the limits, so those numbers are the
+whole security boundary.
+
+
+Permissions
+-----------
+
+  /srv/ftp            root:root  755    the root itself must NOT be writable
+                                        by the ftp uid, or a client can
+                                        replace what is served from it
+  /srv/ftp/pub        root:root  755    read-only material
+  /srv/ftp/incoming   ftp:ftp    733    writable, deliberately not listable
+
+733 on the upload directory is the classic drop box: a client can store a
+file but cannot enumerate what is there, which keeps it from turning into a
+public exchange for other people's content.
+
+An anonymous client has STOR, APPE, DELE, MKD and RMD.  If you allow uploads
+at all, put the tree on its own file system or set a quota, so that filling
+it does not take the node down with it.
+
+
+Two limits worth knowing
+------------------------
+
+The confinement is a prefix, not a chroot().  Paths are built as
+ftp->root + file and pathname() collapses "..", so a client cannot climb out
+by asking for one - that part is solid.  But fopen() and the "ls" that serves
+LIST both follow symbolic links.  A symlink inside the tree that points
+outside it will be followed.  Do not put any there.
+
+The server runs as root and drops to the ftp uid only around the individual
+file operations.  It is not a sandbox.
+
+
+Named logins
+------------
+
+The code keeps two hooks for a future named-login path, compiled but unused:
+
+  Ftp_allow_named_logins   master switch, 0
+  Ftp_login_group          if set, e.g. "hams", the account's primary group
+                           must match - which lets an operator lock someone
+                           out by changing the gid in the passwd entry,
+                           without touching the account
+
+Turning the switch on is not by itself enough.  Such a path would have to
+authenticate, and this file no longer knows how - deliberately.  Doing it
+properly means delegating, the way login.c does when it execs /bin/login and
+lets PAM decide, rather than comparing hashes here.  A root login stays
+refused in any case: uid 0 or gid 0 is rejected before anything else.

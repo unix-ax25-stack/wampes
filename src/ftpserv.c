@@ -742,19 +742,63 @@ pport(struct socket *sock,char *arg)
 /*---------------------------------------------------------------------------*/
 
 #include <pwd.h>
+#include <grp.h>
 
-#if defined __386BSD__ || defined linux
+/* This server accepts anonymous logins only.  See README.ftp for the
+ * reasoning and for how to lay out the directory tree.
+ *
+ * What used to be here was a password check that could not work.  On Linux
+ * and 386BSD crypt() was #defined to return its first argument, so the test
+ * became strcmp(cleartext, pw->pw_passwd).  Under the conditions of the time
+ * that produced the intended policy - the auto-created callsign accounts have
+ * an empty password field, so the check short-circuited and let them in,
+ * while a system account carried a real DES hash in /etc/passwd and could
+ * never match.  Shadow passwords inverted it: pw_passwd became "x", and
+ * "PASS x" then logged in as any account, root included.
+ *
+ * It cannot be repaired in place either.  The code takes the first two
+ * characters of the stored hash as the salt, which is the DES convention;
+ * against a modern $6$ or $y$ hash crypt() returns NULL and strcmp() would
+ * dereference it.  A correct check needs getspnam() and root, and on macOS is
+ * impossible outright - getpwnam() only ever reports "*" or "********" there.
+ *
+ * And it would buy nothing.  FTP over AX.25 or the AMPRNet is clear text, so
+ * a password is visible to anyone listening.  Unlike the AX.25 login, where
+ * axserv_open() takes the callsign out of the frame header, an FTP user name
+ * is merely typed - "230 User dl9sau logged in" would assert something the
+ * protocol cannot support.  Access control belongs in the file system, under
+ * the uid of the ftp account.
+ */
 
-#define crypt(key, salt) (key)
+/* Named logins: off.  The hooks a future named-login path would need are
+ * kept compiled rather than deleted, so they do not rot - but nothing sets
+ * them today, and enabling the switch alone is not enough: such a path would
+ * still have to authenticate, and this file deliberately no longer knows how.
+ */
+static int Ftp_allow_named_logins = 0;
+static char Ftp_login_group[32] = "";   /* e.g. "hams": required primary group */
 
-#else
+static int is_anonymous(const char *name)
+{
+  return !stricmp((char *) name, "ftp") || !stricmp((char *) name, "anonymous");
+}
 
-char *crypt();
+/* Primary group gate.  Lets an operator lock a user out by changing the gid
+ * in the passwd entry, without touching the account itself.
+ */
+static int login_group_ok(const struct passwd *pw)
+{
+  struct group *gr;
 
-#endif
+  if (!*Ftp_login_group) return 1;              /* gate disabled */
+  if (!(gr = getgrnam(Ftp_login_group))) return 0;
+  return pw->pw_gid == gr->gr_gid;
+}
 
-/* Attempt to log in the user whose name is in ftp->username and password
- * in pass
+/* Attempt to log in the user whose name is in ftp->username.  pass is the
+ * string the client sent; for an anonymous login it is conventionally a mail
+ * address and is not checked.  It is not logged either - a misconfigured
+ * client may well put a real password there.
  */
 
 static void ftplogin(
@@ -762,24 +806,24 @@ struct ftp *ftp,
 char *pass)
 {
 
-  char salt[3];
   struct passwd *pw;
 
+  (void) pass;
+
+  if (!is_anonymous(ftp->username) && !Ftp_allow_named_logins) goto Fail;
   if (user_denied(ftp->username)) goto Fail;
-  pw = getpasswdentry(ftp->username, 0);
+
+  pw = getpasswdentry(is_anonymous(ftp->username) ? "ftp" : ftp->username, 0);
   if (!pw) goto Fail;
-  salt[0] = pw->pw_passwd[0];
-  salt[1] = pw->pw_passwd[1];
-  salt[2] = 0;
-  if (pw->pw_passwd[0] &&
-      strcmp(pw->pw_name, "ftp") &&
-      strcmp(crypt(pass, salt), pw->pw_passwd)) goto Fail;
+  if (pw->pw_uid == 0 || pw->pw_gid == 0) goto Fail;    /* never root */
+  if (!login_group_ok(pw)) goto Fail;
+
   ftp->uid = (int) pw->pw_uid;
   ftp->gid = (int) pw->pw_gid;
   if (ftp->cd) free(ftp->cd);
-  ftp->cd = strdup(strcmp(pw->pw_name, "ftp") ? pw->pw_dir : "/");
+  ftp->cd = strdup(is_anonymous(ftp->username) ? "/" : pw->pw_dir);
   if (ftp->root) free(ftp->root);
-  ftp->root = strdup(strcmp(pw->pw_name, "ftp") ? "" : pw->pw_dir);
+  ftp->root = strdup(is_anonymous(ftp->username) ? pw->pw_dir : "");
   Xprintf(ftp->control, logged, pw->pw_name, "", "");
   logmsg(ftp->control, "%s logged in", pw->pw_name);
   return;
