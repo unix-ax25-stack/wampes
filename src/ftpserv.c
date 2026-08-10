@@ -102,18 +102,40 @@ static char okay[] = "200 Ok\r\n";
 
 static struct tcb *ftp_tcb;
 
-/* Do printf on a tcp connection */
+/* Do printf on a tcp connection.
+ *
+ * The old version asked alloc_mbuf() for 256 bytes and then let sprintf()
+ * write as much as it liked.  It only ever got away with that because
+ * alloc_mbuf() rounds a 256-byte request up to the 2012-byte size class;
+ * the messages below carry file names of up to a kilobyte.
+ */
+#define XPRINTF_BUFSIZE 2048
+
 static void Xprintf(struct tcb *tcb,char *message,char *arg1,char *arg2,char *arg3)
 {
 	struct mbuf *bp;
+	int n;
 
 	if(tcb == NULL)
 		return;
 
-	bp = alloc_mbuf(256);
-	sprintf((char *) bp->data,message,arg1,arg2,arg3);
-	bp->cnt = strlen((char *) bp->data);
+	if((bp = alloc_mbuf(XPRINTF_BUFSIZE)) == NULL)
+		return;
+	n = snprintf((char *) bp->data,bp->size,message,arg1,arg2,arg3);
+	if(n < 0)
+		n = 0;
+	else if((uint) n >= bp->size)
+		n = bp->size - 1;       /* truncated */
+	bp->cnt = n;
 	send_tcp(tcb,&bp);
+}
+/* Send an already formatted string.  Deliberately not Xprintf(): the string
+ * may contain % characters, and several callers pass one built from a remote
+ * file name.
+ */
+static void Xputs(struct tcb *tcb,const char *s)
+{
+	Xprintf(tcb,"%s",(char *) s,"","");
 }
 /* Start up FTP service */
 int
@@ -275,17 +297,31 @@ static char *errmsg(const char *filename)
 {
   static char buf[1024];
 
-  sprintf(buf, "550 %s: %s.\r\n", filename, strerror(errno));
+  snprintf(buf, sizeof(buf), "550 %s: %s.\r\n", filename, strerror(errno));
   return buf;
 }
 
 /*---------------------------------------------------------------------------*/
 
-#define AsUser(stmt)    strcpy(physname, ftp->root);               \
-			strcat(physname, file);                    \
-			seteugid(ftp->uid,ftp->gid);               \
-			stmt;                                      \
-			seteugid(0,0);
+/* Build ftp->root + file in physname and run stmt as the logged-in user.
+ *
+ * This used to be strcpy() + strcat() into physname[1024].  ftp->root comes
+ * from the passwd entry and file from pathname(ftp->cd, arg), which can be
+ * as long as the current directory plus a full command line - so a single
+ * long RETR was enough to run off the end of the stack frame.
+ *
+ * On overflow physname is emptied rather than truncated: every operation
+ * below then fails with ENOENT and the caller's existing error path reports
+ * it.  A truncated path would silently name a different file.
+ */
+#define AsUser(stmt)    do {                                            \
+			  if(snprintf(physname,sizeof(physname),"%s%s", \
+			      ftp->root,file) >= (int) sizeof(physname)) \
+				physname[0] = '\0';                     \
+			  seteugid(ftp->uid,ftp->gid);                  \
+			  stmt;                                         \
+			  seteugid(0,0);                                \
+			} while(0)
 
 /* Parse and execute ftp commands */
 static
@@ -391,7 +427,7 @@ ftpcommand(struct ftp *ftp)
 		logmsg(ftp->control,"RETR %s",file);
 		AsUser(result = stat(physname, &statbuf));
 		if(result){
-			Xprintf(ftp->control,errmsg(file),"","","");
+			Xputs(ftp->control,errmsg(file));
 			FREE(file);
 			return;
 		}
@@ -403,7 +439,7 @@ ftpcommand(struct ftp *ftp)
 		AsUser(ftp->fp = fopen(physname,"r"));
 		if(ftp->fp == NULL ||
 		   (rest && fseek(ftp->fp,rest,SEEK_SET))){
-			Xprintf(ftp->control,errmsg(file),"","","");
+			Xputs(ftp->control,errmsg(file));
 		} else {
 			dport.address = INADDR_ANY;
 			dport.port = IPPORT_FTPD;
@@ -425,7 +461,7 @@ ftpcommand(struct ftp *ftp)
 		AsUser(ftp->fp = fopen(physname,"w"));
 		if(ftp->fp == NULL ||
 		   (rest && fseek(ftp->fp,rest,SEEK_SET))){
-			Xprintf(ftp->control,errmsg(file),"","","");
+			Xputs(ftp->control,errmsg(file));
 		} else {
 			dport.address = INADDR_ANY;
 			dport.port = IPPORT_FTPD;
@@ -445,7 +481,7 @@ ftpcommand(struct ftp *ftp)
 		logmsg(ftp->control,"APPE %s",file);
 		AsUser(ftp->fp = fopen(physname,"a"));
 		if(ftp->fp == NULL){
-			Xprintf(ftp->control,errmsg(file),"","","");
+			Xputs(ftp->control,errmsg(file));
 		} else {
 			dport.address = INADDR_ANY;
 			dport.port = IPPORT_FTPD;
@@ -472,7 +508,7 @@ ftpcommand(struct ftp *ftp)
 		logmsg(ftp->control,"LIST %s",file);
 		AsUser(ftp->fp = dir(physname,1));
 		if(ftp->fp == NULL){
-			Xprintf(ftp->control,errmsg(file),"","","");
+			Xputs(ftp->control,errmsg(file));
 		} else {
 			dport.address = INADDR_ANY;
 			dport.port = IPPORT_FTPD;
@@ -491,7 +527,7 @@ ftpcommand(struct ftp *ftp)
 		logmsg(ftp->control,"NLST %s",file);
 		AsUser(ftp->fp = dir(physname,0));
 		if(ftp->fp == NULL){
-			Xprintf(ftp->control,errmsg(file),"","","");
+			Xputs(ftp->control,errmsg(file));
 		} else {
 			dport.address = INADDR_ANY;
 			dport.port = IPPORT_FTPD;
@@ -515,7 +551,7 @@ ftpcommand(struct ftp *ftp)
 		logmsg(ftp->control,"CWD  %s",file);
 		AsUser(result = chdir(physname));
 		if(result){
-			Xprintf(ftp->control,errmsg(file),"","","");
+			Xputs(ftp->control,errmsg(file));
 			FREE(file);
 		} else {
 			chdir("/");
@@ -540,7 +576,7 @@ ftpcommand(struct ftp *ftp)
 		logmsg(ftp->control,"DELE %s",file);
 		AsUser(result = remove(physname));
 		if(result){
-			Xprintf(ftp->control,errmsg(file),"","","");
+			Xputs(ftp->control,errmsg(file));
 		} else {
 			Xprintf(ftp->control,deleok,"","","");
 		}
@@ -559,7 +595,7 @@ ftpcommand(struct ftp *ftp)
 		logmsg(ftp->control,"MKD %s",file);
 		AsUser(result = mkdir(physname,0755));
 		if(result){
-			Xprintf(ftp->control,errmsg(file),"","","");
+			Xputs(ftp->control,errmsg(file));
 		} else {
 			Xprintf(ftp->control,mkdok,"","","");
 		}
@@ -573,7 +609,7 @@ ftpcommand(struct ftp *ftp)
 		logmsg(ftp->control,"RMD %s",file);
 		AsUser(result = rmdir(physname));
 		if(result){
-			Xprintf(ftp->control,errmsg(file),"","","");
+			Xputs(ftp->control,errmsg(file));
 		} else {
 			Xprintf(ftp->control,deleok,"","","");
 		}
@@ -623,7 +659,7 @@ ftpcommand(struct ftp *ftp)
 		logmsg(ftp->control,"MDTM %s",file);
 		AsUser(result = stat(physname, &statbuf));
 		if(result){
-			Xprintf(ftp->control,errmsg(file),"","","");
+			Xputs(ftp->control,errmsg(file));
 		} else {
 			char mdtmstr[80];
 			struct tm *ptm;
@@ -656,7 +692,7 @@ ftpcommand(struct ftp *ftp)
 		logmsg(ftp->control,"SIZE %s",file);
 		AsUser(result = stat(physname, &statbuf));
 		if(result){
-			Xprintf(ftp->control,errmsg(file),"","","");
+			Xputs(ftp->control,errmsg(file));
 		} else {
 			char sizestr[80];
 			sprintf(sizestr,"%ld",(long)statbuf.st_size);
