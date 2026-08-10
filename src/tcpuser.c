@@ -29,8 +29,8 @@ void (*t_upcall)(struct tcb *,int32),
 			/* Function to call when ok to send more data */
 void (*s_upcall)(struct tcb *,enum tcp_state,enum tcp_state),
 			/* Function to call when connection state changes */
-int tos,
-int user                /* User linkage area */
+	int tos,
+	long user               /* User linkage area */
 ){
 	struct connection conn;
 	struct tcb *tcb;

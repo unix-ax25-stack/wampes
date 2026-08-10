@@ -312,7 +312,7 @@ struct tcb *open_tcp(struct socket *lsocket,struct socket *fsocket,
 	void (*r_upcall)(struct tcb *tcb,int32 cnt),
 	void (*t_upcall)(struct tcb *tcb,int32 cnt),
 	void (*s_upcall)(struct tcb *tcb,enum tcp_state old,enum tcp_state new),
-	int tos,int user);
+	int tos,long user);
 int32 recv_tcp(struct tcb *tcb,struct mbuf **bpp,int32 cnt);
 void reset_all(void);
 void reset_tcp(struct tcb *tcb);
