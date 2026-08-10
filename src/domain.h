@@ -124,7 +124,11 @@ struct rr {
 	char *comment;          /* optional comment */
 	char *name;             /* Domain name, ascii form */
 	int32 ttl;              /* Time-to-live */
-#define TTL_MISSING     0x80000000UL
+/* Cast matters: ttl is int32.  Against a bare 0x80000000UL the int32 is
+ * widened to unsigned long, so on LP64 the sentinel value sign-extends to
+ * 0xFFFFFFFF80000000 and the comparison in put_rr() can never match.
+ */
+#define TTL_MISSING     ((int32) 0x80000000UL)
 	uint class;             /* IN, etc */
 #define CLASS_MISSING   0
 	uint type;              /* A, MX, etc */

@@ -89,7 +89,7 @@ static int ipip_send(struct mbuf **bpp, struct iface *ifp, int32 gateway, uint8 
 static void ipip_receive(void *argp)
 {
 
-  int addrlen;
+  socklen_t addrlen;
   int hdr_len;
   int l;
   int32 ipaddr;
@@ -106,13 +106,21 @@ static void ipip_receive(void *argp)
   addrlen = sizeof(addr);
   l = recvfrom(edv->fd, (char *) (bufptr = buf), sizeof(buf), 0, (struct sockaddr *) &addr, &addrlen);
   if (edv->type == USE_IP) {
-    if (l <= sizeof(struct ip)) goto Fail;
+    /* cast: l is int and recvfrom() returns -1 on error, which against an
+     * unsigned sizeof would convert to SIZE_MAX and pass the test. */
+    if (l <= (int) sizeof(struct ip)) goto Fail;
     ipptr = (struct ip *) bufptr;
     hdr_len = 4 * ipptr->ip_hl;
     bufptr += hdr_len;
     l -= hdr_len;
   }
-  if (l <= 0) goto Fail;
+  /* What is left has to be an IP datagram - it is handed to net_route()
+   * below, and its source address is read a few lines down.  The old test
+   * was "l <= 0", so a one-byte datagram was enough to make get32() read
+   * four bytes that had never been received: uninitialised stack, which then
+   * went into the routing table via rt_add().
+   */
+  if (l < (int) sizeof(struct ip)) goto Fail;
 
   if (edv->type == USE_UDP &&
         (htons(edv->port) >= 1024 || htons(addr.sin_port) < 1024)) {

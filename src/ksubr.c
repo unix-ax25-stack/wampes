@@ -418,7 +418,10 @@ struct proc *pp)
 	 pp->flags.waiting ? 'W' : ' ',
 	 pp->flags.suspend ? 'S' : ' ',
 #if !HAS_UCONTEXT
-	 (int)pp->input,(int)pp->output,
+	 /* the columns are labelled "in" and "out": show the descriptors, not
+	  * a FILE * truncated to int */
+	 pp->input  ? fileno(pp->input)  : -1,
+	 pp->output ? fileno(pp->output) : -1,
 #endif
 	 pp->name);
 }
@@ -449,11 +452,15 @@ phash(
 void *event)
 {
 	/* If PHASH is a power of two, this will simply mask off the
-	 * higher order bits
+	 * higher order bits.
+	 *
+	 * Compute this in unsigned long.  The !HAS_UCONTEXT variant used to be
+	 * "(int)event % PHASH", which truncates the pointer on LP64; when the
+	 * low 32 bits have bit 31 set - any stack address on macOS looks like
+	 * 0x7ff7bde7e870, so they do - the int is negative, C99 makes the
+	 * remainder negative too, and returning it through the unsigned result
+	 * type turns it into a huge index into Waittab[PHASH].  kernel.c both
+	 * reads and writes Waittab[phash(event)].
 	 */
-#if HAS_UCONTEXT
-	return ((long)event >> 2) % PHASH;
-#else
-	return (int)event % PHASH;
-#endif
+	return (unsigned) (((unsigned long) event >> 2) % PHASH);
 }
