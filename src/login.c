@@ -12,7 +12,9 @@
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
+#if HAS_UTMP
 #include <utmp.h>
+#endif
 
 #ifdef ibm032
 #include <sgtty.h>
@@ -218,7 +220,7 @@ static int find_pty(char *ptyname)
 void fixutmpfile(void)
 {
 
-#ifdef USER_PROCESS
+#if HAS_UTMP && defined USER_PROCESS
 
   char ptyname[80];
   struct utmp *up;
@@ -562,7 +564,9 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
   int i;
   struct login_cb *tp;
   struct passwd *pw;
+#if HAS_UTMP
   struct utmp utmpbuf;
+#endif
 
   tp = (struct login_cb *) calloc(1, sizeof(struct login_cb));
   if (!tp) return 0;
@@ -630,7 +634,7 @@ struct login_cb *login_open(const char *user, const char *protocol, void (*read_
       tcsetattr(0, TCSANOW, &termios);
 #endif
     }
-#ifdef LOGIN_PROCESS
+#if HAS_UTMP && defined LOGIN_PROCESS
     memset(&utmpbuf, 0, sizeof(utmpbuf));
     strcpy(utmpbuf.ut_name, "LOGIN");
 #ifndef __NeXT__
@@ -683,7 +687,9 @@ void login_close(struct login_cb *tp)
 {
 
   int fdut = -1;
+#if HAS_UTMP
   struct utmp utmpbuf;
+#endif
 
   if (!tp) return;
   if (tp->pty > 0) {
@@ -700,6 +706,7 @@ void login_close(struct login_cb *tp)
   if (tp->logfp) fclose(tp->logfp);
   if (tp->pid > 0) {
     kill(-tp->pid, SIGHUP);
+#if HAS_UTMP
     if (*UTMP__FILE && (fdut = open(UTMP__FILE, O_RDWR, 0644)) >= 0) {
       while (read(fdut, &utmpbuf, sizeof(utmpbuf)) == sizeof(utmpbuf))
 	if (!strcmp(utmpbuf.ut_line, tp->ptyname + 5)) {
@@ -720,6 +727,7 @@ void login_close(struct login_cb *tp)
 	  break;
 	}
     }
+#endif
   }
   if (fdut >= 0) close(fdut);
   free_q(&tp->sndq);

@@ -379,6 +379,20 @@ checksymbol()
 		 ucontext_t x;
 		 main(){return 0;}"
 
+	# utmp bookkeeping.  On Darwin the API still exists but is vestigial:
+	# the system keeps its login records in utmpx, /var/run/utmp is not
+	# maintained, and <utmp.h> is marked deprecated.  Nothing WAMPES writes
+	# there is ever read back, so do not write it.
+	case "`uname -sr`" in
+	Darwin*)
+		echo "#define HAS_UTMP 0";;
+	*)
+		checksymbol HAS_UTMP \
+			"#include <utmp.h>
+			 struct utmp u;
+			 main(){pututline(&u);endutent();return 0;}";;
+	esac
+
 	echo
 
 	echo "
