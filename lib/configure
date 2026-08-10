@@ -4,7 +4,7 @@ CC='cc'
 CFLAGS='-O -I../lib'
 
 LD='$(CC)'
-LDFLAGS='$(CFLAGS) -s'
+LDFLAGS='$(CFLAGS) '"${STRIPFLAG-"-s"}"
 
 LIBS='../lib/libutil.a'
 SLIBS=''
@@ -133,6 +133,32 @@ Darwin*)
 
 esac
 
+# The feature probes further down (checksymbol, the fd_set test) compile with
+# $CFLAGS.  Keep a pristine copy for them: extra flags can make those probes
+# fail, which would silently turn every HAS_* into 0 and mis-configure the
+# build.
+PROBE_CFLAGS="$CFLAGS"
+
+# Optional hooks for one-off builds.  All three are empty/default unless set
+# in the environment, so a normal build is bit-for-bit unchanged.
+#
+#   EXTRA_CFLAGS    appended to CFLAGS; reaches the link too, because
+#                   LDFLAGS starts with $(CFLAGS)
+#   EXTRA_LDFLAGS   appended to LDFLAGS only
+#   STRIPFLAG       link-time strip flag, "-s" by default; set it empty to
+#                   keep symbols (needed for readable sanitizer output, and
+#                   "-s" is deprecated on recent macOS linkers)
+#
+# UBSan build that fails hard on the first finding:
+#
+#   EXTRA_CFLAGS='-O1 -g -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all' \
+#   STRIPFLAG= ./configure
+#
+# Note: -fsanitize=address does NOT work with the ucontext-based scheduler in
+# src/kernel.c without __sanitizer_{start,finish}_switch_fiber annotations.
+CFLAGS="$CFLAGS${EXTRA_CFLAGS:+ $EXTRA_CFLAGS}"
+LDFLAGS="$LDFLAGS${EXTRA_LDFLAGS:+ $EXTRA_LDFLAGS}"
+
 TCPDIR=${TCPDIR:-/tcp}
 
 rm -f configure.mak
@@ -233,7 +259,7 @@ finddir()
 checksymbol()
 {
 	echo "$2" >$tmp.c
-	if $CC $CFLAGS $tmp.c $SLIBS -o $tmp >/dev/null 2>&1; then
+	if $CC $PROBE_CFLAGS $tmp.c $SLIBS -o $tmp >/dev/null 2>&1; then
 		echo "#define $1 1"
 	else
 		echo "#define $1 0"
@@ -362,7 +388,7 @@ checksymbol()
 	#endif
 	main(){fd_set f;}
 	" >$tmp.c
-	if $CC $CFLAGS $tmp.c -o $tmp >/dev/null 2>&1; then
+	if $CC $PROBE_CFLAGS $tmp.c -o $tmp >/dev/null 2>&1; then
 		echo "#define TYPE_FD_SET fd_set"
 	else
 		echo "#define TYPE_FD_SET struct fd_set"

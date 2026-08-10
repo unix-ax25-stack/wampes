@@ -1,0 +1,148 @@
+Debug and sanitizer builds
+==========================
+
+lib/configure honours three environment variables.  All of them are unset by
+default, so a plain "./configure" produces exactly the same configure.mak as
+before.
+
+  EXTRA_CFLAGS    appended to CFLAGS.  Also reaches the linker, because
+                  LDFLAGS starts with $(CFLAGS).
+  EXTRA_LDFLAGS   appended to LDFLAGS only.
+  STRIPFLAG       link-time strip flag, "-s" by default.  Set it empty to
+                  keep symbols.
+
+Pass them to make, not to a separate ./configure run.  The "all" target in
+lib/Makefile re-runs configure on every build, so flags handed to configure
+directly are overwritten again a moment later.  Putting them in make's
+environment works because make passes its environment on to the recipe that
+runs configure:
+
+  EXTRA_CFLAGS='...' STRIPFLAG= make
+
+configure.h and configure.mak are generated files (see .gitignore), so
+switching between build flavours leaves no trace in the working tree.
+
+
+UndefinedBehaviorSanitizer (UBSan)
+----------------------------------
+
+This is the one that has actually paid off on this code base.  The LP64
+conversion (int32 = int instead of long) turned a number of previously
+harmless 32-bit computations into signed overflow, which is undefined
+behaviour: the compiler is allowed to assume it never happens and optimise
+accordingly.  UBSan reports each occurrence at run time with file, line and
+the offending values.
+
+Interactive build, for a test run with a terminal attached:
+
+  make clean
+  EXTRA_CFLAGS='-O1 -g -fno-omit-frame-pointer -fsanitize=undefined' \
+  STRIPFLAG= make
+
+Findings are printed to stderr and the program keeps running.  That is what
+you want while testing by hand.
+
+For CI, make the first finding fatal, otherwise the job exits 0 and the
+diagnostics scroll past unread:
+
+  EXTRA_CFLAGS='-O1 -g -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all' \
+  STRIPFLAG= make
+
+Back to a normal build:
+
+  make clean && make
+
+The "make clean" matters in both directions: the flags only affect newly
+compiled objects, and a tree half built with and half without instrumentation
+will not link.
+
+Do not ship a sanitizer build.  It costs roughly 20% run time, and on a
+daemon whose stderr goes nowhere it buys you nothing (see below).
+
+
+Where the output goes
+---------------------
+
+UBSan writes to stderr.  It never creates files and needs no permissions
+unless you ask it to.
+
+Note that dobye() in src/remote_net.c does
+
+    freopen("/dev/null", "r+", stderr);
+
+when the console is released, so after a "bye" the diagnostics are silently
+discarded.  Run the sanitizer build from a terminal (or under systemd, where
+stderr lands in the journal) and do not detach the console.
+
+If you ever do need a file, UBSan can open one itself, bypassing whatever the
+program does to its file descriptors:
+
+  UBSAN_OPTIONS=log_path=/var/log/wampes-ubsan,print_stacktrace=1
+
+That writes to /var/log/wampes-ubsan.<pid> and needs a writable directory.
+
+
+What UBSan does not find
+------------------------
+
+  - Buffer overflows into otherwise valid memory.  Writing past the end of an
+    mbuf into the next heap object is perfectly defined as far as UBSan is
+    concerned.  That is AddressSanitizer territory - see the caveat below.
+  - Reads of uninitialised memory.  That is MemorySanitizer
+    (-fsanitize=memory, clang on Linux only, needs every library
+    instrumented) or valgrind.
+  - Logic and authentication flaws.  No sanitizer will ever flag those.
+
+UBSan is also a run-time tool: it only sees code paths that actually execute.
+A live run over normal radio traffic exercises the normal paths; the error
+paths that an attacker aims at are never reached on their own.  Feeding the
+parsers directly (ntohdomain(), slhc_uncompress(), ntohax25(), slip_decode(),
+ntohntp()) is the way to cover those - they take a buffer or an mbuf chain
+and need no network setup.
+
+
+AddressSanitizer: does not work as-is
+-------------------------------------
+
+Do not enable -fsanitize=address without reading this.
+
+src/kernel.c implements its own cooperative scheduler and switches stacks
+with getcontext()/makecontext()/swapcontext() (or, where HAS_UCONTEXT is 0,
+with the hand-written setstack() in src/setsp.c).  ASan tracks stack extents
+in a shadow map and does not cope with stacks being switched behind its back.
+The result is invented stack-buffer-overflow and stack-use-after-return
+reports, or a crash inside the sanitizer itself.
+
+Making it work requires wrapping every context switch in
+__sanitizer_start_switch_fiber() / __sanitizer_finish_switch_fiber().  Until
+that is done, use ASan only on standalone test drivers that do not start the
+WAMPES scheduler.
+
+UBSan has no such problem - it does not care which stack you are on.
+
+
+32-bit builds and the private allocator
+---------------------------------------
+
+src/alloc.c uses its own allocator unless PURIFY, __NeXT__, __NetBSD__,
+__sgi, __MACOSX__ or __x86_64__ is defined.  On i386 the private allocator is
+active: WAMPES grabs large blocks from malloc() and carves them up itself, so
+a memory checker only sees the blocks and is blind to overruns between WAMPES
+objects.
+
+For i386 test builds add -DPURIFY to EXTRA_CFLAGS to force the system
+allocator.
+
+
+Compiler warnings without building
+----------------------------------
+
+A syntax-only pass is cheap and catches the format-string and prototype
+problems without linking anything:
+
+  cd src
+  for f in *.c; do cc -fsyntax-only -Wall -Wformat -I. -I../lib $f; done
+
+-Wformat catches printf type mismatches, which matter again now that int32 is
+32 bits wide.  It cannot see the arithmetic problems; that is what UBSan is
+for.
