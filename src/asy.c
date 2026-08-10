@@ -25,6 +25,7 @@ static int asy_detach(struct iface *ifp);
  * argv[2]: vector, e.g., "4"
  * argv[3]: mode, may be:
  *              "slip" (point-to-point SLIP)
+ *              "vjslip" (SLIP with Van Jacobson TCP header compression)
  *              "kissui" (AX.25 UI frame format in SLIP for raw TNC)
  *              "ax25ui" (same as kissui)
  *              "kissi" (AX.25 I frame format in SLIP for raw TNC)
@@ -36,8 +37,6 @@ static int asy_detach(struct iface *ifp);
  * argv[6]: maximum transmission unit, bytes
  * argv[7]: interface speed, e.g, "9600"
  * argv[8]: optional flags,
- *              'v' for Van Jacobson TCP header compression (SLIP only,
- *                  use ppp command for VJ compression with PPP);
  *              'c' for cts flow control
  *              'r' for rlsd (cd) detection
  */
