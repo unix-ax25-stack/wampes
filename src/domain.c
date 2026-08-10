@@ -86,6 +86,7 @@ static struct tcb *Domain_tcb;
 static struct udp_cb *Domain_ucb;
 
 static void strlwc(char *to, const char *from);
+static int dotted_name(char *buf, size_t bufsize, const char *name);
 static int isaddr(const char *s);
 static void add_to_cache(const char *name, int32 addr);
 static char *dtype(int value);
@@ -238,6 +239,33 @@ char *to,
 const char *from)
 {
   while ((*to++ = Xtolower(*from++))) ;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Copy a resolved host name into buf, making sure it ends in a dot.  Returns
+ * 0 - leaving buf untouched - if the name is empty or would not fit.
+ *
+ * resolve_a() hands back cache entries whose length is bounded by nothing at
+ * all: they come from the hostname dbm file or from gethostbyaddr().  The
+ * callers used to strcpy() one of those into a 256-byte stack buffer and then
+ * strcat() a dot onto it.  An empty name was equally unwelcome, because the
+ * trailing-dot test read buffer[-1].
+ */
+static int dotted_name(
+char *buf,
+size_t bufsize,
+const char *name)
+{
+  size_t len;
+
+  if (!name) return 0;
+  len = strlen(name);
+  if (len == 0 || len + 2 > bufsize) return 0;
+  memcpy(buf, name, len);
+  if (buf[len-1] != '.') buf[len++] = '.';
+  buf[len] = '\0';
+  return 1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -720,9 +748,8 @@ struct mbuf *bp)
       if ((qp->class == CLASS_IN || qp->class == CLASS_ANY) &&
 	  (qp->type == TYPE_PTR || qp->type == TYPE_ANY) &&
 	  (addr = in_addr_arpa(qp->name)) &&
-	  !isaddr(cp = resolve_a(addr, 0))) {
-	strcpy(buffer, cp);
-	if (buffer[strlen(buffer)-1] != '.') strcat(buffer, ".");
+	  !isaddr(cp = resolve_a(addr, 0)) &&
+	  dotted_name(buffer, sizeof(buffer), cp)) {
 	rrp = make_rr(RR_NONE, qp->name, CLASS_IN, TYPE_PTR, 86400, strlen(buffer) + 1, buffer);
 	rrp->next = dhp->answers;
 	dhp->answers = rrp;
@@ -735,9 +762,8 @@ struct mbuf *bp)
     for (qp = dhp->answers; qp; qp = qp->next) {
       if (qp->class == CLASS_IN &&
 	  qp->type == TYPE_A &&
-	  !isaddr(cp = resolve_a(qp->rdata.addr, 0))) {
-	strcpy(buffer, cp);
-	if (buffer[strlen(buffer)-1] != '.') strcat(buffer, ".");
+	  !isaddr(cp = resolve_a(qp->rdata.addr, 0)) &&
+	  dotted_name(buffer, sizeof(buffer), cp)) {
 	rrp = make_rr(RR_NONE, buffer, CLASS_IN, TYPE_A, 86400, sizeof(qp->rdata.addr), &qp->rdata.addr);
 	rrp->next = dhp->questions;
 	dhp->questions = rrp;
@@ -749,7 +775,7 @@ struct mbuf *bp)
       if (qp->class == CLASS_IN &&
 	  qp->type == TYPE_PTR &&
 	  (addr = resolve(qp->rdata.name))) {
-	sprintf(buffer, "%ld.%ld.%ld.%ld.in-addr.arpa.",
+	snprintf(buffer, sizeof(buffer), "%ld.%ld.%ld.%ld.in-addr.arpa.",
 		(long)((addr      ) & 0xff),
 		(long)((addr >>  8) & 0xff),
 		(long)((addr >> 16) & 0xff),
