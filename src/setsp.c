@@ -74,6 +74,18 @@ setstack:
 	movq    %rsp, %rbp
 	movq    newstackptr, %rsp
 	jmp     *(%rbp)
+#elif   __aarch64__
+	adrp    x9, newstackptr
+	ldr     x9, [x9, #:lo12:newstackptr]
+	mov     sp, x9
+	ret
+#elif   __arm__
+	ldr     ip, .Lnewstackptr
+	ldr     sp, [ip]
+	bx      lr
+	.align  2
+.Lnewstackptr:
+	.word   newstackptr
 #else
 	movl    %esp, %ebp
 	movl    newstackptr, %esp
