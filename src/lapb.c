@@ -915,8 +915,9 @@ struct mbuf **bpp
 		if(ipp->pid == pid)
 			break;
 	}
-	if(ipp->funct != NULL)
+	if(ipp->funct != NULL){
 		(*ipp->funct)(axp->iface,axp,axp->hdr.dest,axp->hdr.source,bpp,0);
+	}
 	else
 		free_p(bpp);
 }

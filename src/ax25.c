@@ -115,7 +115,7 @@ uint8 tos
             type = axhc_compress(axp->slcomp, bpp, TRUE);
         else
             type = axhc_compress(axp->slcomp, bpp, FALSE);
-        
+
         switch (type) {
         case SL_TYPE_IP:
             pid = PID_IP;
