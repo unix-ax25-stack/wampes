@@ -50,14 +50,15 @@ void *p)
 		for(i=0;i<PMOD;i++){
 			for(pp = ping[i];pp != NULL;pp = pp->next){
 				printf("%-16.16s",inet_ntoa(pp->target));
-				printf("%8lu%8lu",pp->sent,pp->responses);
+				printf("%8lu%8lu",(unsigned long)pp->sent,
+				 (unsigned long)pp->responses);
 				printf("%4lu",
-				 (long)pp->responses * 100 / pp->sent);
-				printf("%7lu", pp->srtt);
-				printf("%7lu", pp->mdev);
+				 (unsigned long)((long)pp->responses * 100 / pp->sent));
+				printf("%7lu", (unsigned long)pp->srtt);
+				printf("%7lu", (unsigned long)pp->mdev);
 				printf("%8u", pp->len);
 				printf("%10lu\n",
-				 dur_timer(&pp->timer) / 1000);
+				 (unsigned long)(dur_timer(&pp->timer) / 1000));
 			}
 		}
 		return 0;

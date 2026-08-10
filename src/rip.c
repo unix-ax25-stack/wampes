@@ -495,7 +495,7 @@ int32 ttl)
 	if(bits == 32 && ismyaddr(ep->target) != NULL){
 		if(Rip_trace > 1){
 			printf("route to self: %s %ld\n",
-			 inet_ntoa(ep->target),ep->metric);
+			 inet_ntoa(ep->target),(long)ep->metric);
 		}
 		return;
 	}
@@ -520,7 +520,7 @@ int32 ttl)
 		/* Route is in hold-down; ignore this guy */
 		if(Rip_trace > 0){
 			printf("ignored (hold-down): %s %lu\n",
-			 inet_ntoa(ep->target),ep->metric);
+			 inet_ntoa(ep->target),(unsigned long)ep->metric);
 		}
 	} else if(rp->gateway == gateway && rp->iface == iface){
 		/* This is the gateway for the entry we already have;
@@ -535,7 +535,8 @@ int32 ttl)
 			 */
 			if(Rip_trace){
 				printf("metric change: %s %lu -> %lu\n",
-				 inet_ntoa(ep->target),rp->metric,ep->metric);
+				 inet_ntoa(ep->target),(unsigned long)rp->metric,
+				 (unsigned long)ep->metric);
 			}
 			if(ep->metric == RIP_INFINITY)
 				rt_timeout(rp); /* Enter hold-down timeout */
@@ -549,7 +550,7 @@ int32 ttl)
 			/* Switch to a new gateway */
 			if(Rip_trace > 0){
 				printf("metric better: %s %lu\n",
-				 inet_ntoa(ep->target),ep->metric);
+				 inet_ntoa(ep->target),(unsigned long)ep->metric);
 			}
 			drop++;
 			add++;
@@ -558,7 +559,7 @@ int32 ttl)
 			/* Metric is no better, stay with current route */
 			if(Rip_trace > 1){
 				printf("metric not better: %s %lu\n",
-				 inet_ntoa(ep->target),ep->metric);
+				 inet_ntoa(ep->target),(unsigned long)ep->metric);
 			}
 		}
 	}
@@ -569,7 +570,7 @@ int32 ttl)
 			 inet_ntoa(ep->target),bits);
 			if(rp != NULL)
 				printf(" %s %s %lu",rp->iface->name,
-				 inet_ntoa(rp->gateway),rp->metric);
+				 inet_ntoa(rp->gateway),(unsigned long)rp->metric);
 			printf("\n");
 		}
 		rt_drop(ep->target,bits);

@@ -571,12 +571,14 @@ mbufstat(void)
 {
 	if(Allocmbufs)
 	printf("mbuf allocs %lu free cache hits %lu (%lu%%) mbuf frees %lu\n",
-	 Allocmbufs,Cachehits,100*Cachehits/Allocmbufs,Freembufs);
+	 (unsigned long)Allocmbufs,(unsigned long)Cachehits,
+	 (unsigned long)(100*Cachehits/Allocmbufs),(unsigned long)Freembufs);
 	else
 	printf("mbuf allocs %lu free cache hits %lu mbuf frees %lu\n",
-	 Allocmbufs,Cachehits,Freembufs);
+	 (unsigned long)Allocmbufs,(unsigned long)Cachehits,
+	 (unsigned long)Freembufs);
 	printf("pushdown calls %lu pushdown calls to alloc_mbuf %lu\n",
-	 Pushdowns,Pushalloc);
+	 (unsigned long)Pushdowns,(unsigned long)Pushalloc);
 	printf("Free cache: small %u medium %u large %u\n",
 	 len_q(Mbufcache[0]),len_q(Mbufcache[1]),len_q(Mbufcache[2]));
 }

@@ -48,9 +48,10 @@ int check)              /* 0 if checksum test is to be bypassed */
 
 	ntohtcp(&seg,bpp);
 
-	fprintf(fp,"TCP: %u->%u Seq x%lx",seg.source,seg.dest,seg.seq);
+	fprintf(fp,"TCP: %u->%u Seq x%lx",seg.source,seg.dest,
+	 (unsigned long)seg.seq);
 	if(seg.flags.ack)
-		fprintf(fp," Ack x%lx",seg.ack);
+		fprintf(fp," Ack x%lx",(unsigned long)seg.ack);
 	if(seg.flags.congest)
 		fprintf(fp," %s",Tcpflags[6]);
 	if(seg.flags.urg)
@@ -75,7 +76,8 @@ int check)              /* 0 if checksum test is to be bypassed */
 	if(seg.flags.wscale)
 		fprintf(fp," WSCALE %u",seg.wsopt);
 	if(seg.flags.tstamp)
-		fprintf(fp," TSTAMP %lu TSECHO %lu",seg.tsval,seg.tsecr);
+		fprintf(fp," TSTAMP %lu TSECHO %lu",(unsigned long)seg.tsval,
+		 (unsigned long)seg.tsecr);
 	if((dlen = len_p(*bpp)) != 0)
 		fprintf(fp," Data %u",dlen);
 	if(check && csum != 0)

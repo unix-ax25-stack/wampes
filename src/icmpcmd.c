@@ -54,9 +54,9 @@ void *p
 	lim = NUMICMPMIB/2;
 	for(i=1;i<=lim;i++){
 		printf("(%2u)%-20s%10lu",i,Icmp_mib[i].name,
-		 Icmp_mib[i].value.integer);
+		 (unsigned long)Icmp_mib[i].value.integer);
 		printf("     (%2u)%-20s%10lu\n",i+lim,Icmp_mib[i+lim].name,
-		 Icmp_mib[i+lim].value.integer);
+		 (unsigned long)Icmp_mib[i+lim].value.integer);
 	}
 	return 0;
 }

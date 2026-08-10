@@ -71,14 +71,19 @@ typedef int pid_t;
 /* These two lines assume that your compiler's longs are 32 bits and
  * shorts are 16 bits. It is already assumed that chars are 8 bits,
  * but it doesn't matter if they're signed or unsigned.
+ *
+ * On 64-bit systems (LP64) 'long' is 64 bits, which silently breaks
+ * all 32-bit wrap-around arithmetic in the TCP sequence numbers and
+ * the VJ compression deltas (see axhc.c, tcpin.c, tcp.h). Use 'int'
+ * which is 32 bits on every platform this code runs on.
  */
 #if !HAS_INT32
-typedef long int32;             /* 32-bit signed integer */
+typedef int int32;              /* 32-bit signed integer */
 #endif
 #if !HAS_UINT
 typedef unsigned int uint;      /* 16 or 32-bit unsigned integer */
 #endif
-typedef unsigned long uint32;   /* 32-bit unsigned integer */
+typedef unsigned int uint32;    /* 32-bit unsigned integer */
 typedef unsigned short uint16;  /* 16-bit unsigned integer */
 typedef unsigned char byte_t;   /*  8-bit unsigned integer */
 typedef unsigned char uint8;    /* 8-bit unsigned integer */

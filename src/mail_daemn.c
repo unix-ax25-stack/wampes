@@ -87,7 +87,7 @@ static int domail_list(int argc, char *argv[], void *p)
     case MS_FAILURE:
       state = "Failure";
       if (sp->nexttime > secclock())
-	sprintf(waittime, "%ld sec", sp->nexttime - secclock());
+	sprintf(waittime, "%ld sec", (long)(sp->nexttime - secclock()));
       break;
     case MS_TRYING:
       state = "Trying";
@@ -112,8 +112,8 @@ static int domail_timer(int argc, char *argv[], void *p)
 {
   if (argc < 2) {
     printf("%ld/%ld\n",
-	    read_timer(&Mail_timer) / 1000,
-	    dur_timer(&Mail_timer) / 1000);
+	    (long)(read_timer(&Mail_timer) / 1000),
+	    (long)(dur_timer(&Mail_timer) / 1000));
     return 0;
   }
   Mail_timer.func = (void (*)(void *)) mail_tick;

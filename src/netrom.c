@@ -1905,31 +1905,31 @@ static int donstatus(int argc, char *argv[], void *p)
     printf("CHOKEsent:    %s\n", pc->chokesent ? "Yes" : "No");
     printf("Closed:       %s\n", pc->closed ? "Yes" : "No");
     if (pc->remote_busy)
-      printf("Remote_busy:  %lu ms\n", msclock() - pc->remote_busy);
+      printf("Remote_busy:  %lu ms\n",(unsigned long)(msclock() - pc->remote_busy));
     else
       printf("Remote_busy:  No\n");
     printf("CWind:        %d\n", pc->cwind);
     printf("Retry:        %d\n", pc->retry);
-    printf("Srtt:         %ld ms\n", pc->srtt);
-    printf("Mean dev:     %ld ms\n", pc->mdev);
+    printf("Srtt:         %ld ms\n",(long)pc->srtt);
+    printf("Mean dev:     %ld ms\n",(long)pc->mdev);
     printf("Timer T1:     ");
     if (run_timer(&pc->timer_t1))
-      printf("%lu", read_timer(&pc->timer_t1));
+      printf("%lu",(unsigned long)read_timer(&pc->timer_t1));
     else
       printf("stop");
-    printf("/%lu ms\n", dur_timer(&pc->timer_t1));
+    printf("/%lu ms\n",(unsigned long)dur_timer(&pc->timer_t1));
     printf("Timer T3:     ");
     if (run_timer(&pc->timer_t3))
-      printf("%lu", read_timer(&pc->timer_t3));
+      printf("%lu",(unsigned long)read_timer(&pc->timer_t3));
     else
       printf("stop");
-    printf("/%lu ms\n", dur_timer(&pc->timer_t3));
+    printf("/%lu ms\n",(unsigned long)dur_timer(&pc->timer_t3));
     printf("Timer T4:     ");
     if (run_timer(&pc->timer_t4))
-      printf("%lu", read_timer(&pc->timer_t4));
+      printf("%lu",(unsigned long)read_timer(&pc->timer_t4));
     else
       printf("stop");
-    printf("/%lu ms\n", dur_timer(&pc->timer_t4));
+    printf("/%lu ms\n",(unsigned long)dur_timer(&pc->timer_t4));
     printf("Rcv queue:    %d\n", pc->rcvcnt);
     if (pc->reseq) {
       printf("Reassembly queue:\n");

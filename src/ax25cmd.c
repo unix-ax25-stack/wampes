@@ -146,7 +146,7 @@ struct iface *ifp)
 		if(lp->iface != ifp)
 			continue;
 		printf("%-10s%-17s%8lu\n",pax25(tmp,lp->addr),
-		 tformat(secclock() - lp->time),lp->currxcnt);
+		 tformat(secclock() - lp->time),(unsigned long)lp->currxcnt);
 	}
 	return 0;
 }
@@ -205,7 +205,7 @@ struct iface *ifp)
 		} else {
 			printf("%-17s",tformat(secclock() - lq->time));
 		}
-		printf("%8lu\n",lp->currxcnt);
+		printf("%8lu\n",(unsigned long)lp->currxcnt);
 	}
 	return 0;
 }
@@ -281,7 +281,7 @@ void *p)
 			 axp->maxframe,
 			 axp->flags.remotebusy ? '*' : ' ',
 			 axp->retries,
-			 axp->srt,
+			 (unsigned long)axp->srt,
 			 Ax25states[axp->state],
 			 ax25hdr_to_string(&axp->hdr));
 		}
@@ -316,34 +316,35 @@ struct ax25_cb *axp)
 	printf(" %02u/%02u",axp->retries,axp->n2);
 	printf(" %s\n",Ax25states[axp->state]);
 
-	printf("srtt = %lu mdev = %lu ",axp->srt,axp->mdev);
+	printf("srtt = %lu mdev = %lu ",(unsigned long)axp->srt,
+	 (unsigned long)axp->mdev);
 	printf("T1: ");
 	if(run_timer(&axp->t1))
-		printf("%lu",read_timer(&axp->t1));
+		printf("%lu",(unsigned long)read_timer(&axp->t1));
 	else
 		printf("stop");
-	printf("/%lu ms; ",dur_timer(&axp->t1));
+	printf("/%lu ms; ",(unsigned long)dur_timer(&axp->t1));
 
 	printf("T3: ");
 	if(run_timer(&axp->t3))
-		printf("%lu",read_timer(&axp->t3));
+		printf("%lu",(unsigned long)read_timer(&axp->t3));
 	else
 		printf("stop");
-	printf("/%lu ms\n",dur_timer(&axp->t3));
+	printf("/%lu ms\n",(unsigned long)dur_timer(&axp->t3));
 
 	printf("T4: ");
 	if(run_timer(&axp->t4))
-		printf("%lu",read_timer(&axp->t4));
+		printf("%lu",(unsigned long)read_timer(&axp->t4));
 	else
 		printf("stop");
-	printf("/%lu ms; ",dur_timer(&axp->t4));
+	printf("/%lu ms; ",(unsigned long)dur_timer(&axp->t4));
 
 	printf("T5: ");
 	if(run_timer(&axp->t5))
-		printf("%lu",read_timer(&axp->t5));
+		printf("%lu",(unsigned long)read_timer(&axp->t5));
 	else
 		printf("stop");
-	printf("/%lu ms\n",dur_timer(&axp->t5));
+	printf("/%lu ms\n",(unsigned long)dur_timer(&axp->t5));
 #ifdef	AX25_VJCOMP
         /* MW: dump VJ statistics if any */
         if (axp->slcomp) {

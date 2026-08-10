@@ -50,7 +50,7 @@ void *p)
     if(!Shortstatus){
 	for(i=1;i<=NUMUDPMIB;i++){
 		printf("(%2u)%-20s%10lu",i,
-		 Udp_mib[i].name,Udp_mib[i].value.integer);
+		 Udp_mib[i].name,(unsigned long)Udp_mib[i].value.integer);
 		if(i % 2)
 			printf("     ");
 		else

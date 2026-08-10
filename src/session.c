@@ -81,7 +81,7 @@ void *p)
 			 (Current == sp)? '*':' ',
 			 (int)(sp - Sessions),
 			 (long)sp->cb.telnet->tcb,
-			 sp->cb.telnet->tcb->rcvcnt,
+			 (long)sp->cb.telnet->tcb->rcvcnt,
 			 Tcpstates[sp->cb.telnet->tcb->state],
 			 pinet_tcp(&sp->cb.telnet->tcb->conn.remote));
 			break;
@@ -90,7 +90,7 @@ void *p)
 			 (Current == sp)? '*':' ',
 			 (int)(sp - Sessions),
 			 (long)sp->cb.ftp->control,
-			 sp->cb.ftp->control->rcvcnt,
+			 (long)sp->cb.ftp->control->rcvcnt,
 			 Tcpstates[sp->cb.ftp->control->state],
 			 pinet_tcp(&sp->cb.ftp->control->conn.remote));
 			break;
@@ -108,7 +108,7 @@ void *p)
 			 (Current == sp)? '*':' ',
 			 (int)(sp - Sessions),
 			 (long)sp->cb.finger->tcb,
-			 sp->cb.finger->tcb->rcvcnt,
+			 (long)sp->cb.finger->tcb->rcvcnt,
 			 Tcpstates[sp->cb.finger->tcb->state],
 			 pinet_tcp(&sp->cb.finger->tcb->conn.remote));
 			break;

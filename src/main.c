@@ -428,7 +428,7 @@ void *p
 		for(param=1;param<=16;param++){
 			val = (*ifp->ioctl)(ifp,param,FALSE,0L);
 			if(val != -1)
-				printf("%s: %ld\n",parmname(param),val);
+				printf("%s: %ld\n",parmname(param),(long)val);
 		}
 		return 0;
 	}
@@ -442,7 +442,7 @@ void *p
 		if(val == -1){
 			printf("Parameter %s not supported\n",argv[2]);
 		} else {
-			printf("%s: %ld\n",parmname(param),val);
+			printf("%s: %ld\n",parmname(param),(long)val);
 		}
 		return 0;
 	}

@@ -112,7 +112,7 @@ void *p)
 			if(tp->addr != 0){
 				printf("%s: srtt %lu mdev %lu\n",
 				 inet_ntoa(tp->addr),
-				 tp->srtt,tp->mdev);
+				 (unsigned long)tp->srtt,(unsigned long)tp->mdev);
 			}
 		}
 	}
@@ -248,7 +248,7 @@ tstat(void)
 		if(Tcp_mib[i].name == NULL)
 			continue;
 		printf("(%2u)%-20s%10lu",i,Tcp_mib[i].name,
-		 Tcp_mib[i].value.integer);
+		 (unsigned long)Tcp_mib[i].value.integer);
 		if(j++ % 2)
 			printf("     ");
 		else
@@ -260,7 +260,8 @@ tstat(void)
 
 	printf("    &TCB Rcv-Q Snd-Q  Local socket           Remote socket          State\n");
 	for(tcb=Tcbs;tcb != NULL;tcb = tcb->next){
-		printf("%08lx%6lu%6lu  ",(long)tcb,tcb->rcvcnt,tcb->sndcnt);
+		printf("%08lx%6lu%6lu  ",(long)tcb,
+		 (unsigned long)tcb->rcvcnt,(unsigned long)tcb->sndcnt);
 		printf("%-22.22s ",pinet_tcp(&tcb->conn.local));
 		printf("%-22.22s ",pinet_tcp(&tcb->conn.remote));
 		printf("%-s",Tcpstates[tcb->state]);
@@ -326,17 +327,23 @@ struct tcb *tcb)
 	printf(" State: %s\n",Tcpstates[tcb->state]);
 	printf("         Unack     Next Resent CWind Thrsh  Wind  MSS Queue  Thruput      Total\n");
 	printf("Send: %08lx %08lx%7lu%6lu%6lu%6lu%5lu%6lu%9lu%11lu\n",
-	 tcb->snd.una,tcb->snd.nxt,tcb->resent,tcb->cwind,tcb->ssthresh,
-	 tcb->snd.wnd,tcb->mss,tcb->sndcnt,txbw,sent);
+	 (unsigned long)tcb->snd.una,(unsigned long)tcb->snd.nxt,
+	 (unsigned long)tcb->resent,(unsigned long)tcb->cwind,
+	 (unsigned long)tcb->ssthresh,
+	 (unsigned long)tcb->snd.wnd,(unsigned long)tcb->mss,
+	 (unsigned long)tcb->sndcnt,(unsigned long)txbw,(unsigned long)sent);
 
 	printf("Recv:          %08lx%7lu            %6lu     %6lu%9lu%11lu\n",
-	 tcb->rcv.nxt,tcb->rerecv,tcb->rcv.wnd,tcb->rcvcnt,rxbw,recvd);
+	 (unsigned long)tcb->rcv.nxt,(unsigned long)tcb->rerecv,
+	 (unsigned long)tcb->rcv.wnd,(unsigned long)tcb->rcvcnt,
+	 (unsigned long)rxbw,(unsigned long)recvd);
 
 	printf("Dup acks   Backoff   Timeouts   Source Quench   Unreachables   Power\n");
-	printf("%8u%10u%11lu%16lu%15lu",tcb->dupacks,tcb->backoff,tcb->timeouts,
-	 tcb->quench,tcb->unreach);
+	printf("%8u%10u%11lu%16lu%15lu",tcb->dupacks,tcb->backoff,
+	 (unsigned long)tcb->timeouts,
+	 (unsigned long)tcb->quench,(unsigned long)tcb->unreach);
 	if(tcb->srtt != 0)
-		printf("%8lu",1000*txbw/tcb->srtt);
+		printf("%8lu",(unsigned long)(1000L*txbw/tcb->srtt));
 	else
 		printf("     INF");
 	if(tcb->flags.retran)
@@ -356,7 +363,8 @@ struct tcb *tcb)
 		break;
 	}
 	printf(" %10lu%10lu%10lu%10lu%10lu",(long)read_timer(&tcb->timer),
-	 (long)dur_timer(&tcb->timer),tcb->rtt,tcb->srtt,tcb->mdev);
+	 (long)dur_timer(&tcb->timer),(unsigned long)tcb->rtt,
+	 (unsigned long)tcb->srtt,(unsigned long)tcb->mdev);
 	printf("   %s\n",tcb->flags.ts_ok ? "timestamps":"standard");
 
 	if(tcb->reseq != (struct reseq *)NULL){
@@ -364,7 +372,8 @@ struct tcb *tcb)
 
 		printf("Reassembly queue:\n");
 		for(rp = tcb->reseq;rp != (struct reseq *)NULL; rp = rp->next){
-			printf("  seq x%lx %u bytes\n",rp->seg.seq,rp->length);
+			printf("  seq x%lx %u bytes\n",
+			 (unsigned long)rp->seg.seq,rp->length);
 		}
 	}
 }

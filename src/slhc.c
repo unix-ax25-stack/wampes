@@ -585,10 +585,10 @@ struct slcompress *comp)
 			" %10ld Uncmp,"
 			" %10ld Bad, "
 			" %10ld Tossed\n",
-			comp->sls_i_compressed,
-			comp->sls_i_uncompressed,
-			comp->sls_i_error,
-			comp->sls_i_tossed);
+			(long)comp->sls_i_compressed,
+			(long)comp->sls_i_uncompressed,
+			(long)comp->sls_i_error,
+			(long)comp->sls_i_tossed);
 	}
 }
 
@@ -601,14 +601,14 @@ struct slcompress *comp)
 			" %10ld Uncmp,"
 			" %10ld AsIs,"
 			" %10ld NotTCP\n",
-			comp->sls_o_compressed,
-			comp->sls_o_uncompressed,
-			comp->sls_o_tcp,
-			comp->sls_o_nontcp);
+			(long)comp->sls_o_compressed,
+			(long)comp->sls_o_uncompressed,
+			(long)comp->sls_o_tcp,
+			(long)comp->sls_o_nontcp);
 		printf("\t%10ld Searches,"
 			" %10ld Misses\n",
-			comp->sls_o_searches,
-			comp->sls_o_misses);
+			(long)comp->sls_o_searches,
+			(long)comp->sls_o_misses);
 	}
 }
 

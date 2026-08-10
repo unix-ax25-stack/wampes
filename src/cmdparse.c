@@ -331,13 +331,13 @@ char *argv[])
 /* Subroutine for setting and displaying long variables */
 int
 setlong(
-long *var,
+int32 *var,
 char *label,
 int argc,
 char *argv[])
 {
 	if(argc < 2)
-		printf("%s: %ld\n",label,*var);
+		printf("%s: %d\n",label,*var);
 	else
 		*var = atol(argv[1]);
 

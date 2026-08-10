@@ -50,7 +50,8 @@ struct mbuf **bpp)
 			/* Skip non-IP addresses */
 			continue;
 		}
-		fprintf(fp,"%-16s%-3lu ",inet_ntoa(entry.target),entry.metric);
+		fprintf(fp,"%-16s%-3lu ",inet_ntoa(entry.target),
+		 (unsigned long)entry.metric);
 		if((++i % 3) == 0){
 			putc('\n',fp);
 		}

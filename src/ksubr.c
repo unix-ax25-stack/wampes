@@ -369,11 +369,15 @@ void *p)
 
 	printf("Uptime %s\n",tformat(secclock()-StartTime));
 
-	printf("ksigs %lu queued %lu hiwat %u woken %lu nops %lu dups %lu\n",Ksig.ksigs,
-	 Ksig.ksigsqueued,Ksig.maxentries,Ksig.ksigwakes,Ksig.ksignops,Ksig.duksigs);
+	printf("ksigs %lu queued %lu hiwat %u woken %lu nops %lu dups %lu\n",
+	 (unsigned long)Ksig.ksigs,
+	 (unsigned long)Ksig.ksigsqueued,Ksig.maxentries,
+	 (unsigned long)Ksig.ksigwakes,(unsigned long)Ksig.ksignops,
+	 (unsigned long)Ksig.duksigs);
 	Ksig.maxentries = 0;
 	printf("kwaits %lu nops %lu from int %lu\n",
-	 Ksig.kwaits,Ksig.kwaitnops,Ksig.kwaitints);
+	 (unsigned long)Ksig.kwaits,(unsigned long)Ksig.kwaitnops,
+	 (unsigned long)Ksig.kwaitints);
 #if HAS_UCONTEXT
 	printf("PID       SP        stksize   maxstk    event     fl    name\n");
 #else

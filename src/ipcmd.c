@@ -285,11 +285,11 @@ dumproute(struct route *rp)
 	else
 		cp = "";
 	printf("%-18.18s ",cp);
-	printf("%-7lu",rp->metric);
+	printf("%-7lu",(unsigned long)rp->metric);
 	printf("%c ",rp->flags.rtprivate ? 'P' : ' ');
 	printf("%7lu ",
-	 read_timer(&rp->timer) / 1000L);
-	return printf("%lu\n",rp->uses);
+	 (unsigned long)(read_timer(&rp->timer) / 1000L));
+	return printf("%lu\n",(unsigned long)rp->uses);
 }
 
 static int
@@ -326,7 +326,7 @@ void *p)
 
 	for(i=1;i<=NUMIPMIB;i++){
 		printf("(%2u)%-20s%10lu",i,
-		 Ip_mib[i].name,Ip_mib[i].value.integer);
+		 Ip_mib[i].name,(unsigned long)Ip_mib[i].value.integer);
 		if(i % 2)
 			printf("     ");
 		else
@@ -335,8 +335,8 @@ void *p)
 	if((i % 2) == 0)
 		printf("\n");
 	printf("Routing lookups: %lu, cache hits %lu (%lu%%)\n",
-	 Rtlookups,Rtchits,
-	 Rtlookups != 0 ? (Rtchits*100 + Rtlookups/2)/Rtlookups: 0);
+	 (unsigned long)Rtlookups,(unsigned long)Rtchits,
+	 (unsigned long)(Rtlookups != 0 ? (Rtchits*100 + Rtlookups/2)/Rtlookups: 0));
 
 	if(Reasmq != NULL)
 		printf("Reassembly fragments:\n");
@@ -344,7 +344,7 @@ void *p)
 		printf("src %s",inet_ntoa(rp->source));
 		printf(" dest %s",inet_ntoa(rp->dest));
 		printf(" id %u pctl %u time %lu len %u\n",
-		 rp->id,rp->protocol,read_timer(&rp->timer),
+		 rp->id,rp->protocol,(unsigned long)read_timer(&rp->timer),
 		 rp->length);
 		for(fp = rp->fraglist;fp != NULL;fp = fp->next){
 			printf(" offset %u last %u\n",fp->offset,

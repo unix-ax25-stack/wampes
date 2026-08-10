@@ -925,7 +925,7 @@ uint *length
 			*length -= (uint) dupcnt;
 		}
 	}
-	if((excess = seg->seq + *length - (tcb->rcv.nxt + tcb->rcv.wnd)) > 0){
+	if((excess = (long)seg->seq + (long)*length - ((long)tcb->rcv.nxt + (long)tcb->rcv.wnd)) > 0){
 		tcb->rerecv += excess;
 		/* Trim right edge */
 		*length -= (uint) excess;

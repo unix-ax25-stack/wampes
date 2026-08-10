@@ -151,10 +151,10 @@ void *p)
   for (cp = Cache; cp; cp = cp->next)
     printf("%-25.25s %ld.%ld.%ld.%ld\n",
 	   cp->name,
-	   (cp->addr >> 24) & 0xff,
-	   (cp->addr >> 16) & 0xff,
-	   (cp->addr >>  8) & 0xff,
-	   (cp->addr      ) & 0xff);
+	   (long)((cp->addr >> 24) & 0xff),
+	   (long)((cp->addr >> 16) & 0xff),
+	   (long)((cp->addr >>  8) & 0xff),
+	   (long)((cp->addr      ) & 0xff));
   return 0;
 }
 
@@ -205,10 +205,10 @@ void *p)
       printf(Badhost, argv[1]);
     else
       printf("%ld.%ld.%ld.%ld\n",
-	     (addr >> 24) & 0xff,
-	     (addr >> 16) & 0xff,
-	     (addr >>  8) & 0xff,
-	     (addr      ) & 0xff);
+	     (long)((addr >> 24) & 0xff),
+	     (long)((addr >> 16) & 0xff),
+	     (long)((addr >>  8) & 0xff),
+	     (long)((addr      ) & 0xff));
   }
   return 0;
 }
@@ -405,10 +405,10 @@ int shorten)
 
   sprintf(buf,
 	  "%ld.%ld.%ld.%ld",
-	  (addr >> 24) & 0xff,
-	  (addr >> 16) & 0xff,
-	  (addr >>  8) & 0xff,
-	  (addr      ) & 0xff);
+	  (long)((addr >> 24) & 0xff),
+	  (long)((addr >> 16) & 0xff),
+	  (long)((addr >>  8) & 0xff),
+	  (long)((addr      ) & 0xff));
   add_to_cache(buf, addr);
   return Cache->name;
 }
@@ -571,7 +571,7 @@ struct rr *rrp)
 
 	fprintf(fp,"%s",rrp->name);
 	if(rrp->ttl != TTL_MISSING)
-		fprintf(fp,"\t%ld",rrp->ttl);
+		fprintf(fp,"\t%ld",(long)rrp->ttl);
 	if(rrp->class == CLASS_IN)
 		fprintf(fp,"\tIN");
 	else
@@ -589,10 +589,10 @@ struct rr *rrp)
 	switch(rrp->type){
 	case TYPE_A:
 		fprintf(fp,"\t%ld.%ld.%ld.%ld\n",
-			(rrp->rdata.addr >> 24) & 0xff,
-			(rrp->rdata.addr >> 16) & 0xff,
-			(rrp->rdata.addr >>  8) & 0xff,
-			(rrp->rdata.addr      ) & 0xff);
+			(long)((rrp->rdata.addr >> 24) & 0xff),
+			(long)((rrp->rdata.addr >> 16) & 0xff),
+			(long)((rrp->rdata.addr >>  8) & 0xff),
+			(long)((rrp->rdata.addr      ) & 0xff));
 		break;
 	case TYPE_CNAME:
 	case TYPE_MB:
@@ -617,9 +617,11 @@ struct rr *rrp)
 	case TYPE_SOA:
 		fprintf(fp,"\t%s\t%s\t%lu\t%lu\t%lu\t%lu\t%lu\n",
 		 rrp->rdata.soa.mname,rrp->rdata.soa.rname,
-		 rrp->rdata.soa.serial,rrp->rdata.soa.refresh,
-		 rrp->rdata.soa.retry,rrp->rdata.soa.expire,
-		 rrp->rdata.soa.minimum);
+		 (unsigned long)rrp->rdata.soa.serial,
+		 (unsigned long)rrp->rdata.soa.refresh,
+		 (unsigned long)rrp->rdata.soa.retry,
+		 (unsigned long)rrp->rdata.soa.expire,
+		 (unsigned long)rrp->rdata.soa.minimum);
 		break;
 	default:
 		fprintf(fp,"\n");
@@ -748,10 +750,10 @@ struct mbuf *bp)
 	  qp->type == TYPE_PTR &&
 	  (addr = resolve(qp->rdata.name))) {
 	sprintf(buffer, "%ld.%ld.%ld.%ld.in-addr.arpa.",
-		(addr      ) & 0xff,
-		(addr >>  8) & 0xff,
-		(addr >> 16) & 0xff,
-		(addr >> 24) & 0xff);
+		(long)((addr      ) & 0xff),
+		(long)((addr >>  8) & 0xff),
+		(long)((addr >> 16) & 0xff),
+		(long)((addr >> 24) & 0xff));
 	rrp = make_rr(RR_NONE, buffer, CLASS_IN, TYPE_PTR, 86400, strlen(qp->rdata.name) + 1, qp->rdata.name);
 	rrp->next = dhp->questions;
 	dhp->questions = rrp;

@@ -129,14 +129,15 @@ void *p)
 	struct rip_refuse *rfl;
 
 	printf("RIP: sent %lu rcvd %lu reqst %lu resp %lu unk %lu refused %lu\n",
-	 Rip_stat.output, Rip_stat.rcvd, Rip_stat.request, Rip_stat.response,
-	 Rip_stat.unknown,Rip_stat.refusals);
+	 (unsigned long)Rip_stat.output,(unsigned long)Rip_stat.rcvd,
+	 (unsigned long)Rip_stat.request,(unsigned long)Rip_stat.response,
+	 (unsigned long)Rip_stat.unknown,(unsigned long)Rip_stat.refusals);
 	if(Rip_list != NULL){
 		printf("Active RIP output interfaces:\n");
 		printf("Dest Addr       Interval Split\n");
 		for(rl=Rip_list; rl != NULL; rl = rl->next){
 			printf("%-16s%-9lu%-6u\n",inet_ntoa(rl->dest),
-			 rl->interval,rl->flags.rip_split);
+			 (unsigned long)rl->interval,rl->flags.rip_split);
 		}
 	}
 	if(Rip_refuse != NULL){

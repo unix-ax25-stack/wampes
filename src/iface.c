@@ -462,11 +462,12 @@ showiface(struct iface *ifp)
 		 (*ifp->iftype->format)(tmp,ifp->hwaddr));
 	}
 	printf("           trace 0x%x netmask 0x%08lx broadcast %s\n",
-		ifp->trace,ifp->netmask,inet_ntoa(ifp->broadcast));
+		ifp->trace,(unsigned long)ifp->netmask,inet_ntoa(ifp->broadcast));
 	if(ifp->forw != NULL)
 		printf("           output forward to %s\n",ifp->forw->name);
 	printf("           sent: ip %lu tot %lu idle %s qlen %u",
-	 ifp->ipsndcnt,ifp->rawsndcnt,tformat(secclock() - ifp->lastsent),
+	 (unsigned long)ifp->ipsndcnt,(unsigned long)ifp->rawsndcnt,
+	 tformat(secclock() - ifp->lastsent),
 		len_q(ifp->outq));
 	if(ifp->outlim != 0)
 		printf("/%u",ifp->outlim);
@@ -474,7 +475,8 @@ showiface(struct iface *ifp)
 		printf(" BUSY");
 	printf("\n");
 	printf("           recv: ip %lu tot %lu idle %s\n",
-	 ifp->iprecvcnt,ifp->rawrecvcnt,tformat(secclock() - ifp->lastrecv));
+	 (unsigned long)ifp->iprecvcnt,(unsigned long)ifp->rawrecvcnt,
+	 tformat(secclock() - ifp->lastrecv));
 	switch (ifp->crccontrol){
 	default:            printf("           crc off");           break;
 	case CRC_TEST_16:   printf("           crc-16 test");       break;
@@ -484,7 +486,7 @@ showiface(struct iface *ifp)
 	case CRC_CCITT:     printf("           crc-ccitt enabled"); break;
 	}
 	printf(" crc errors %lu bad ax25 headers %lu\n",
-	 ifp->crcerrors,ifp->ax25errors);
+	 (unsigned long)ifp->crcerrors,(unsigned long)ifp->ax25errors);
 }
 /* Detach a specified interface */
 int
