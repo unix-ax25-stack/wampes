@@ -691,6 +691,7 @@ static int dosntpsysrefid(int argc, char **argv, void *p)
 	char *cp;
 	int i;
 	int32 addr;
+	uint32 refid;
 
 	if (argc < 2) {
 		printf("sntp sys refid: ");
@@ -707,10 +708,12 @@ static int dosntpsysrefid(int argc, char **argv, void *p)
 
 	if (sys.stratum == 1) {
 		cp = argv[1];
+		refid = 0;
 		for (i = 0; i < 4; i++) {
-			sys.refid = (sys.refid << 8) | (*cp & 0xff);
+			refid = (refid << 8) | (*cp & 0xff);
 			if (*cp) cp++;
 		}
+		sys.refid = (int32) refid;
 	} else {
 		if (!(addr = resolve(argv[1]))) {
 			printf(Badhost, argv[1]);

@@ -683,7 +683,7 @@ static
 int
 pport(struct socket *sock,char *arg)
 {
-	int32 n;
+	uint32 n;
 	int i;
 
 	n = 0;
@@ -693,7 +693,7 @@ pport(struct socket *sock,char *arg)
 			return -1;
 		arg++;
 	}
-	sock->address = n;
+	sock->address = (int32) n;
 	n = atoi(arg);
 	if((arg = strchr(arg,',')) == NULL)
 		return -1;

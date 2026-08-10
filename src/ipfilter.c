@@ -78,9 +78,9 @@ static int parse(char *name, unsigned long *loptr, unsigned long *hiptr)
 	}
 
 	if (bits) {
-		mask = ~0L << (32 - bits);
+		mask = ~0U << (32 - bits);
 	} else {
-		mask = 0L;
+		mask = 0;
 	}
 
 	*loptr = addr & mask;

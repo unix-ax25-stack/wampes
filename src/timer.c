@@ -38,7 +38,7 @@ timerproc(int i,void *v1,void *v2)
 
 		gettimeofday(&tv, 0);
 		Secclock = tv.tv_sec;
-		Msclock = 1000 * Secclock + tv.tv_usec / 1000;
+		Msclock = (int32)(1000 * (long) Secclock + tv.tv_usec / 1000);
 
 		while((t = Timers) && (bugfix = t->expiration - Msclock) <= 0) {
 			if ((Timers = t->next))

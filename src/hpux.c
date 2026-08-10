@@ -179,7 +179,7 @@ void ioinit(void)
     struct timeval tv;
     gettimeofday(&tv, 0);
     Secclock = tv.tv_sec;
-    Msclock = 1000 * Secclock + tv.tv_usec / 1000;
+    Msclock = (int32)(1000 * (long) Secclock + tv.tv_usec / 1000);
   }
 
   fixutmpfile();

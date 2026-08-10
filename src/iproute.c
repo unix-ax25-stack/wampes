@@ -420,9 +420,9 @@ uint8 private           /* Inhibit advertising this entry ? */
 
 	/* Mask off don't-care bits of target */
 	if(bits)
-		target &= ~0L << (32-bits);
+		target &= ~0U << (32-bits);
 	else
-		target = 0L;
+		target = 0;
 
 	/* Encapsulated routes must specify gateway, and it can't be
 	 *  ourselves
@@ -504,9 +504,9 @@ unsigned int bits
 
 	/* Mask off target according to width */
 	if(bits)
-		target &= ~0L << (32-bits);
+		target &= ~0U << (32-bits);
 	else
-		target = 0L;
+		target = 0;
 
 	/* Search appropriate chain for existing entry */
 	for(rp = Routes[bits-1][hash_ip(target)];rp != NULL;rp = rp->next){
@@ -664,9 +664,9 @@ unsigned int bits)
 	}
 	/* Mask off target according to width */
 	if(bits)
-		target &= ~0L << (32-bits);
+		target &= ~0U << (32-bits);
 	else
-		target = 0L;
+		target = 0;
 
 	for(rp = Routes[bits-1][hash_ip(target)];rp != NULL;rp = rp->next){
 		if(rp->target == target){
