@@ -4,7 +4,9 @@
 
 #include <ctype.h>
 #include <stdio.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <unistd.h>
 
 #ifndef SOMAXCONN
@@ -273,10 +275,14 @@ static void accept_connection_net(void *p)
   socklen_t addrlen;
   int fd;
   struct controlblock *cp;
-  struct sockaddr addr;
+  /* sockaddr_storage, not sockaddr: the latter is 16 bytes, while
+   * sockaddr_un needs over 100 and sockaddr_in6 needs 28.  accept() would
+   * write what it can and report the full length in addrlen.
+   */
+  struct sockaddr_storage addr;
 
   addrlen = sizeof(addr);
-  if ((fd = accept(flisten_net, &addr, &addrlen)) < 0) return;
+  if ((fd = accept(flisten_net, (struct sockaddr *) &addr, &addrlen)) < 0) return;
   cp = (struct controlblock *) calloc(1, sizeof(struct controlblock));
   if (!cp) {
     close(fd);
@@ -324,12 +330,28 @@ void remote_net_initialize(void)
       if ((flisten_net = socket(addr->sa_family, SOCK_STREAM, 0)) >= 0) {
 	switch (addr->sa_family) {
 	case AF_UNIX:
-	  if (!Debug) remove(addr->sa_data);
+	  /* sun_path, not sa_data: both start at the same offset, but sa_data
+	   * is declared as 14 bytes while the path may be far longer. */
+	  if (!Debug) remove(((struct sockaddr_un *) addr)->sun_path);
 	  break;
 	case AF_INET:
 	  arg = 1;
 	  setsockopt(flisten_net, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
 	  break;
+#if HAS_AF_INET6
+	case AF_INET6:
+	  arg = 1;
+	  setsockopt(flisten_net, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
+	  /* Pin this down rather than inheriting it: whether an IPv6 socket
+	   * also accepts IPv4 is a system default that differs between Linux
+	   * and the BSDs.  Fixed to v6-only, a "*:port" and a "[::]:port" entry
+	   * can coexist everywhere instead of fighting over the port on some
+	   * systems.
+	   */
+	  arg = 1;
+	  setsockopt(flisten_net, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &arg, sizeof(arg));
+	  break;
+#endif
 	}
 	if (!bind(flisten_net, addr, addrlen) && !listen(flisten_net, SOMAXCONN)) {
 	  on_read(flisten_net, accept_connection_net, 0);

@@ -29,13 +29,7 @@
 #include <arpa/inet.h>
 
 #include "configure.h"
-#include "buildsaddr.h"
-
-/* -DNO_AF_INET6 forces IPv6 off whatever configure found */
-#ifdef NO_AF_INET6
-#undef HAS_AF_INET6
-#define HAS_AF_INET6 0
-#endif
+#include "buildsaddr.h"          /* also settles HAS_AF_INET6 vs NO_AF_INET6 */
 
 static union {
   struct sockaddr sa;
