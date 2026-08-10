@@ -202,7 +202,7 @@ get16(uint8 *cp)
 int32
 get32(uint8 *cp)
 {
-	int32 rval;
+	uint32 rval;
 
 	rval = *cp++;
 	rval <<= 8;
@@ -212,7 +212,7 @@ get32(uint8 *cp)
 	rval <<= 8;
 	rval |= *cp;
 
-	return rval;
+	return (int32) rval;
 }
 /* Compute int(log2(x)) */
 int
