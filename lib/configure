@@ -391,6 +391,19 @@ checksymbol()
 		 ucontext_t x;
 		 int main(void){return 0;}"
 
+	# IPv6 for the host sockets built by build_sockaddr().  This is about
+	# the outer transport only - WAMPES' own IP stack stays IPv4.
+	# -DNO_AF_INET6 forces it off in the source regardless of this.
+	checksymbol HAS_AF_INET6 \
+		"#include <sys/types.h>
+		 #include <sys/socket.h>
+		 #include <netdb.h>
+		 #include <netinet/in.h>
+		 struct sockaddr_in6 sa6;
+		 int main(void){struct addrinfo *r;
+			getaddrinfo(\"::1\", 0, 0, &r);
+			return IN6_IS_ADDR_V4MAPPED(&sa6.sin6_addr);}"
+
 	# utmp bookkeeping.  On Darwin the API still exists but is vestigial:
 	# the system keeps its login records in utmpx, /var/run/utmp is not
 	# maintained, and <utmp.h> is marked deprecated.  Nothing WAMPES writes
