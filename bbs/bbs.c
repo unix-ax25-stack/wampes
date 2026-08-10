@@ -2607,9 +2607,9 @@ static void shell_command(int argc, const char **argv)
       close(i);
     }
     if (argc == 1)
-      execl(user.shell, user.shell, 0);
+      execl(user.shell, user.shell, (char *) NULL);
     else
-      execl(user.shell, user.shell, "-c", argv[1], 0);
+      execl(user.shell, user.shell, "-c", argv[1], (char *) NULL);
     _exit(127);
     break;
   default:

@@ -266,7 +266,7 @@ int system(const char *cmdline)
     return -1;
   case 0:
     for (i = 3; i < FD_SETSIZE; i++) close(i);
-    execl("/bin/sh", "sh", "-c", cmdline, 0);
+    execl("/bin/sh", "sh", "-c", cmdline, (char *) NULL);
     exit(1);
   default:
     signal(SIGINT,  SIG_IGN);

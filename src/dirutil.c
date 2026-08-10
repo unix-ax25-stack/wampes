@@ -42,7 +42,7 @@ int full)
 		      "ls",
 		      full ? "-Al" : "-A",
 		      path,
-		      0);
+		      (char *) NULL);
 		exit(1);
 	default:
 		close(fd[1]);

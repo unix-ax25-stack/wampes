@@ -88,7 +88,7 @@ int main(void)
     dup2(pipeinp[1], 2);
     close(pipeinp[1]);
     close(pipeout[0]);
-    execl("/usr/local/bin/bbs", "bbs", 0);
+    execl("/usr/local/bin/bbs", "bbs", (char *) NULL);
     exit(0);
   default:
     break;
