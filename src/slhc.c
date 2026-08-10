@@ -77,6 +77,12 @@ int tslots)
 	comp->xmit_oldest = 0;
 	comp->xmit_current = 255;
 	comp->recv_current = 255;
+	/* don't accept any packets with implicit index until we get
+	 * one with an explicit index.  Otherwise the uncompress code
+	 * will try to use connection 255, which is almost certainly
+	 * out of range
+	 */
+	comp->flags |= SLF_TOSS;
 
 	if ( tslots > 0 ) {
 		ts = comp->tstate;
