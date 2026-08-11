@@ -29,6 +29,7 @@
 #include "cmdparse.h"
 #include "hpux.h"
 #include "crc.h"
+#include "../lib/buildsaddr.h"
 
 #define MAX_FRAME       2048
 
@@ -41,12 +42,13 @@ struct edv_t {
   int fd;
 };
 #else
+#include "sockaddr_util.h"
 #include "uhnp.h"
 #endif
 
 struct axip_route {
   uint8 call[AXALEN];
-  int32 dest;
+  struct sockaddr_storage dest;         /* outer peer, port filled in at send */
   struct axip_route *next;
 };
 
@@ -54,7 +56,7 @@ static struct axip_route *Axip_routes;
 
 static int axip_raw(struct iface *ifp, struct mbuf **bpp);
 static void axip_recv(void *argp);
-static void axip_route_add(uint8 *call, int32 dest);
+static void axip_route_add(uint8 *call, const struct sockaddr *dest);
 static int doaxiproute(int argc, char *argv[], void *p);
 static int doaxiprouteadd(int argc, char *argv[], void *p);
 static int doaxiproutedrop(int argc, char *argv[], void *p);
@@ -69,7 +71,6 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
   int ndigi;
   struct axip_route *rp;
   struct edv_t *edv;
-  struct sockaddr_in addr;
   uint8 buf[MAX_FRAME];
   uint8 (*mpp)[AXALEN];
   uint8 *dest;
@@ -120,15 +121,24 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
 
   for (rp = Axip_routes; rp; rp = rp->next)
     if (multicast || addreq(rp->call, dest)) {
-      addr.sin_family = AF_INET;
-      addr.sin_addr.s_addr = htonl(rp->dest);
+      struct sockaddr_storage to;
+      int port = edv->port;
+
+      /* One socket speaks one family.  A route for the other one belongs to
+       * a second interface - attach axip6 - so skip it here rather than
+       * handing sendto() an address it cannot use.
+       */
+      if (rp->dest.ss_family != (unsigned) edv->family) continue;
+
+      to = rp->dest;
       if (edv->type == USE_UDP) {
-        struct sockaddr_in *sin = search_udp_host_nat_port(htonl(rp->dest), edv);
-        addr.sin_port = (sin ? sin->sin_port : htons(edv->port));
+        struct sockaddr *sa = search_udp_host_nat_port((struct sockaddr *) &to, edv);
+        if (sa) port = sockaddr_port(sa);
         uhnp_cleanup(edv);
-      } else
-        addr.sin_port = htons(edv->port);
-      sendto(edv->fd, (char *) buf, l, 0, (struct sockaddr *) &addr, sizeof(addr));
+      }
+      sockaddr_set_port((struct sockaddr *) &to, port);
+      sendto(edv->fd, (char *) buf, l, 0, (struct sockaddr *) &to,
+             sockaddr_len((struct sockaddr *) &to));
     }
 
   return l;
@@ -147,7 +157,7 @@ static void axip_recv(void *argp)
   struct iface *ifp;
   struct ip *ipptr;
   struct mbuf *bp;
-  struct sockaddr_in addr;
+  struct sockaddr_storage addr;
   uint8 buf[MAX_FRAME];
   uint8 *bufptr;
   uint8 *p;
@@ -172,11 +182,11 @@ static void axip_recv(void *argp)
   l -= 2;
 
   if (edv->type == USE_UDP &&
-        (htons(edv->port) >= 1024 || htons(addr.sin_port) < 1024)) {
+        (edv->port >= 1024 || sockaddr_port((struct sockaddr *) &addr) < 1024)) {
         /* secure-port model of trust: src address adaption, but only
            - if my listen port >= 1024,
            - or if my listen port < 1024 and src port is also < 1024 */
-    learn_udp_host_nat_port(&addr, edv);   
+    learn_udp_host_nat_port((struct sockaddr *) &addr, edv);
     uhnp_cleanup(edv);
   }
 
@@ -196,7 +206,7 @@ static void axip_recv(void *argp)
     else
       break;
   }
-  axip_route_add(src, ntohl(addr.sin_addr.s_addr));
+  axip_route_add(src, (struct sockaddr *) &addr);
 
   bp = qdata(bufptr, l);
   net_route(ifp, &bp);
@@ -213,11 +223,13 @@ int axip_attach(int argc, char *argv[], void *p)
 
   char *ifname = "axip";
   int fd;
+  int family = AF_INET;
   int port = AX25_PTCL;
   int type = USE_IP;
   struct edv_t *edv;
   struct iface *ifp;
-  struct sockaddr_in addr;
+  struct sockaddr_storage addr;
+  socklen_t addrlen;
 
   if (argc >= 2) ifname = argv[1];
 
@@ -226,8 +238,16 @@ int axip_attach(int argc, char *argv[], void *p)
     return -1;
   }
 
-  if (argc >= 3)
-    switch (*argv[2]) {
+  /* "ip"/"udp" as before; a trailing 6 - "ip6", "udp6" - selects IPv6 for the
+   * outer transport.  The encapsulated frame is untouched by that, so an IPv4
+   * peer running ax25ipd or XNET sees no difference; an IPv6 peer needs
+   * something that speaks it, which today means another WAMPES.
+   */
+  if (argc >= 3) {
+    char *t = argv[2];
+    int is6 = *t && t[strlen(t) - 1] == '6';
+
+    switch (*t) {
     case 'I':
     case 'i':
       type = USE_IP;
@@ -237,27 +257,61 @@ int axip_attach(int argc, char *argv[], void *p)
       type = USE_UDP;
       break;
     default:
-      printf("Type must be IP or UDP\n");
+      printf("Type must be IP, UDP, IP6 or UDP6\n");
       return -1;
     }
+    if (is6) {
+#if HAS_AF_INET6
+      family = AF_INET6;
+#else
+      printf("This build has no IPv6 support\n");
+      return -1;
+#endif
+    }
+  }
 
   if (argc >= 4) port = atoi(argv[3]);
 
   if (type == USE_IP)
-    fd = socket(AF_INET, SOCK_RAW, port);
+    fd = socket(family, SOCK_RAW, port);
   else
-    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    fd = socket(family, SOCK_DGRAM, 0);
   if (fd < 0) {
     printf("cannot create socket: %s\n", strerror(errno));
     return -1;
   }
 
+#if HAS_AF_INET6
+  if (family == AF_INET6) {
+    int arg = 1;
+
+    /* Pin this down rather than inheriting it: whether an IPv6 socket also
+     * accepts IPv4 differs between Linux and the BSDs, and an axip and an
+     * axip6 interface have to be able to hold the same port side by side. */
+    setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &arg, sizeof(arg));
+  }
+#endif
+
   if (type == USE_UDP) {
     memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = INADDR_ANY;
-    addr.sin_port = htons(port);
-    if (bind(fd, (struct sockaddr *) &addr, sizeof(addr))) {
+#if HAS_AF_INET6
+    if (family == AF_INET6) {
+      struct sockaddr_in6 *s6 = (struct sockaddr_in6 *) &addr;
+
+      s6->sin6_family = AF_INET6;
+      s6->sin6_addr = in6addr_any;
+      s6->sin6_port = htons(port);
+    } else
+#endif
+    {
+      struct sockaddr_in *si = (struct sockaddr_in *) &addr;
+
+      si->sin_family = AF_INET;
+      si->sin_addr.s_addr = INADDR_ANY;
+      si->sin_port = htons(port);
+    }
+    addrlen = sockaddr_len((struct sockaddr *) &addr);
+    if (bind(fd, (struct sockaddr *) &addr, addrlen)) {
       printf("cannot bind address: %s\n", strerror(errno));
       close(fd);
       return -1;
@@ -279,6 +333,7 @@ int axip_attach(int argc, char *argv[], void *p)
   edv->type = type;
   edv->port = port;
   edv->fd = fd;
+  edv->family = family;
   edv->uhnp = 0;
   edv->uhnp_time = secclock();
   ifp->edv = edv;
@@ -294,18 +349,26 @@ int axip_attach(int argc, char *argv[], void *p)
 
 /*---------------------------------------------------------------------------*/
 
-static void axip_route_add(uint8 *call, int32 dest)
+static void axip_route_add(uint8 *call, const struct sockaddr *dest)
 {
   struct axip_route *rp;
+  socklen_t len = sockaddr_len(dest);
+
+  if (!len) return;
 
   for (rp = Axip_routes; rp && !addreq(rp->call, call); rp = rp->next) ;
   if (!rp) {
-    rp = (struct axip_route *) malloc(sizeof(struct axip_route));
+    if (!(rp = (struct axip_route *) malloc(sizeof(struct axip_route))))
+      return;
     addrcp(rp->call, call);
     rp->next = Axip_routes;
     Axip_routes = rp;
   }
-  rp->dest = dest;
+  memset(&rp->dest, 0, sizeof(rp->dest));
+  memcpy(&rp->dest, dest, (size_t) len);
+  /* the port comes from the interface, or from what the peer was last seen
+   * using - not from the route */
+  sockaddr_set_port((struct sockaddr *) &rp->dest, 0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -338,8 +401,12 @@ static int doaxiproute(int argc, char *argv[], void *p)
     return subcmd(Axiproutecmds, argc, argv, p);
 
   printf("Call       Addr\n");
-  for (rp = Axip_routes; rp; rp = rp->next)
-    printf("%-9s  %s\n", pax25(buf, rp->call), inet_ntoa(rp->dest));
+  for (rp = Axip_routes; rp; rp = rp->next) {
+    char abuf[SOCKADDR_STRLEN];
+
+    printf("%-9s  %s\n", pax25(buf, rp->call),
+           sockaddr_to_string((struct sockaddr *) &rp->dest, abuf, sizeof(abuf)));
+  }
   return 0;
 }
 
@@ -355,11 +422,29 @@ static int doaxiprouteadd(int argc, char *argv[], void *p)
     printf("Invalid call \"%s\"\n", argv[1]);
     return 1;
   }
-  if (!(dest = resolve(argv[2]))) {
-    printf(Badhost, argv[2]);
-    return 1;
+  /* WAMPES' own host table first, so every existing configuration keeps
+   * resolving out of TCPDIR/hosts exactly as before.  Only if that has
+   * nothing do we ask the host resolver, which is also what handles an IPv6
+   * literal or a bracketed [name].  When resolve_sa() exists the first step
+   * will be able to return an IPv6 address too.
+   */
+  if ((dest = resolve(argv[2]))) {
+    struct sockaddr_in sin;
+
+    memset(&sin, 0, sizeof(sin));
+    sin.sin_family = AF_INET;
+    sin.sin_addr.s_addr = htonl(dest);
+    axip_route_add(call, (struct sockaddr *) &sin);
+  } else {
+    struct sockaddr *sa;
+    int len;
+
+    if (!(sa = build_sockaddr_host(argv[2], 0, &len))) {
+      printf(Badhost, argv[2]);
+      return 1;
+    }
+    axip_route_add(call, sa);
   }
-  axip_route_add(call, dest);
   return 0;
 }
 

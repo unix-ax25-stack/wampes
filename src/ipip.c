@@ -41,6 +41,7 @@ struct edv_t {
   int fd;
 };
 #else
+#include "sockaddr_util.h"
 #include "uhnp.h"
 #endif
 
@@ -73,8 +74,11 @@ static int ipip_send(struct mbuf **bpp, struct iface *ifp, int32 gateway, uint8 
   addr.sin_addr.s_addr = htonl(gateway);
 
   if (edv->type == USE_UDP) {
-    struct sockaddr_in *sin = search_udp_host_nat_port(htonl(gateway), edv);
-    addr.sin_port = (sin ? sin->sin_port : htons(edv->port));
+    /* ipip stays IPv4: the outer peer is struct route.gateway, an int32 of
+     * the general routing table.  Only the lookup key has to be built as a
+     * sockaddr now that the table is family agnostic. */
+    struct sockaddr *sa = search_udp_host_nat_port((struct sockaddr *) &addr, edv);
+    addr.sin_port = sa ? ((struct sockaddr_in *) sa)->sin_port : htons(edv->port);
     uhnp_cleanup(edv);
   } else
     addr.sin_port = htons(edv->port);
@@ -127,7 +131,7 @@ static void ipip_receive(void *argp)
         /* secure-port model of trust: src address adaption, but only
            - if my listen port >= 1024,
            - or if my listen port < 1024 and src port is also < 1024 */
-    learn_udp_host_nat_port(&addr, edv);
+    learn_udp_host_nat_port((struct sockaddr *) &addr, edv);
     uhnp_cleanup(edv);
   }
 
@@ -213,6 +217,7 @@ int ipip_attach(int argc, char *argv[], void *p)
   edv->type = type;
   edv->port = port;
   edv->fd = fd;
+  edv->family = AF_INET;
   edv->uhnp = 0;
   edv->uhnp_time = secclock();
   ifp->edv = edv;

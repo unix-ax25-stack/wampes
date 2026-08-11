@@ -150,6 +150,7 @@ OBJS          = adjtime.o \
 		slhcdump.o \
 		slip.o \
 		smisc.o \
+		sockaddr_util.o \
 		sntp.o \
 		tcpcmd.o \
 		tcpdump.o \
@@ -261,6 +262,7 @@ SRCS          = adjtime.c \
 		slhcdump.c \
 		slip.c \
 		smisc.c \
+		sockaddr_util.c \
 		sntp.c \
 		tcpcmd.c \
 		tcpdump.c \
@@ -1822,6 +1824,13 @@ udphdr.o:\
 	timer.h\
 	udp.h\
 	udphdr.c
+sockaddr_util.o:\
+	../lib/buildsaddr.h\
+	../lib/configure.h\
+	global.h\
+	sockaddr_util.h\
+	sockaddr_util.c
+
 uhnp.o:\
 	global.h\
 	timer.h\

@@ -127,7 +127,7 @@ struct cmds Attab[] = {
 	"attach netrom [ip_addr]" },
 
 	{ "axip", axip_attach, 0, 1,
-	"attach axip [<label> [ip|udp [protocol|port]]]" },
+	"attach axip [<label> [ip|udp|ip6|udp6 [protocol|port]]]" },
 
 	{ "ipip", ipip_attach, 0, 1,
 	"attach ipip [<label> [ip|udp [protocol|port]]]" },

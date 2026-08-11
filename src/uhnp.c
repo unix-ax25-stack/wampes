@@ -7,21 +7,28 @@
 
 #include "timer.h"
 
+#include "sockaddr_util.h"
 #include "uhnp.h"
 
-struct sockaddr_in *search_udp_host_nat_port(int32 addr, struct edv_t *edv) 
+struct sockaddr *search_udp_host_nat_port(const struct sockaddr *addr,
+	struct edv_t *edv)
 {
   struct udp_host_nat_port *up;
   struct udp_host_nat_port *up_prev = 0;
   for (up = edv->uhnp; up; up = up->next) {
-    if (up->addr.sin_addr.s_addr == addr) {
+    if (sockaddr_addr_eq((struct sockaddr *) &up->addr, addr)) {
       up->time = secclock();
-      /* put this element to head */
+      /* put this element to head.  up->next has to be re-pointed at the old
+       * head: without that the entry is unlinked and made the head while
+       * still pointing at what used to follow it, so everything ahead of it
+       * falls out of the list.  With more than one peer that quietly emptied
+       * the table down to a single entry on the first lookup. */
       if (up_prev) {
         up_prev->next = up->next;
+        up->next = edv->uhnp;
         edv->uhnp = up;
       }
-      return &up->addr;
+      return (struct sockaddr *) &up->addr;
     }
     up_prev = up;
   }
@@ -30,15 +37,15 @@ struct sockaddr_in *search_udp_host_nat_port(int32 addr, struct edv_t *edv)
 
 /*---------------------------------------------------------------------------*/
 
-void learn_udp_host_nat_port(struct sockaddr_in *addr, struct edv_t *edv)
+void learn_udp_host_nat_port(const struct sockaddr *addr, struct edv_t *edv)
 {
   struct udp_host_nat_port *up;
   struct udp_host_nat_port *up_prev = 0;
-  int defaultport = htons(edv->port);
+  int defaultport = edv->port;
 
   for (up = edv->uhnp; up; up = up->next) {
-    if (up->addr.sin_addr.s_addr == addr->sin_addr.s_addr) {
-      if (addr->sin_port == defaultport) {
+    if (sockaddr_addr_eq((struct sockaddr *) &up->addr, addr)) {
+      if (sockaddr_port(addr) == defaultport) {
         if (up_prev)
           up_prev->next = up->next;
         else
@@ -47,11 +54,16 @@ void learn_udp_host_nat_port(struct sockaddr_in *addr, struct edv_t *edv)
         return;
       }
       /* learn src port */
-      up->addr.sin_port = addr->sin_port;
+      sockaddr_set_port((struct sockaddr *) &up->addr, sockaddr_port(addr));
       up->time = secclock();
-      /* put this element to head */
+      /* put this element to head.  up->next has to be re-pointed at the old
+       * head: without that the entry is unlinked and made the head while
+       * still pointing at what used to follow it, so everything ahead of it
+       * falls out of the list.  With more than one peer that quietly emptied
+       * the table down to a single entry on the first lookup. */
       if (up_prev) {
         up_prev->next = up->next;
+        up->next = edv->uhnp;
         edv->uhnp = up;
       }
       return;
@@ -60,7 +72,8 @@ void learn_udp_host_nat_port(struct sockaddr_in *addr, struct edv_t *edv)
   }
   if (!(up = (struct udp_host_nat_port *) malloc(sizeof(struct udp_host_nat_port))))
     return;
-  memcpy(&up->addr, addr, sizeof(struct sockaddr_in));
+  memset(&up->addr, 0, sizeof(up->addr));
+  memcpy(&up->addr, addr, (size_t) sockaddr_len(addr));
   up->time = secclock();
   up->next = edv->uhnp;
   edv->uhnp = up;
