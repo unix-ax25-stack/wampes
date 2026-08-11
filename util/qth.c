@@ -323,7 +323,7 @@ void print_nmea(long longitude, long latitude, char *nmea_head, char *nmea_tail)
 	c_we);
 
   do_crc(buf);
-  printf(buf);
+  printf("%s", buf);
 
   if (nmea_tail && *nmea_tail) {
 	char *p;
@@ -334,7 +334,9 @@ void print_nmea(long longitude, long latitude, char *nmea_head, char *nmea_tail)
 	if ((p = strchr(nmea_tail, '*')))
 	  *p = 0;
 	do_crc(nmea_tail);
-	printf(nmea_tail);
+	/* nmea_tail can be argv[0] - see do_nmea() - so it is data, not a
+	 * format.  "qth -a '%n'" used to write through this. */
+	printf("%s", nmea_tail);
   }
   if (nmea_head || nmea_tail) {
     // print crc

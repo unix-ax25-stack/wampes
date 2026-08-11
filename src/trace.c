@@ -90,7 +90,7 @@ struct mbuf *bp
 	}
 	dup_p(&tbp,bp,0,size);
 	if(tbp == NULL){
-		fprintf(fp,nospace);
+		fprintf(fp,"%s",nospace);
 		return;
 	}
 	if(ift != NULL && ift->trace != NULL)
@@ -105,7 +105,7 @@ struct mbuf *bp
 		if(tbp != NULL)
 			hex_dump(fp,&tbp);
 		else
-			fprintf(fp,nospace);
+			fprintf(fp,"%s",nospace);
 	}
 	free_p(&tbp);
 }
@@ -128,7 +128,7 @@ struct mbuf *bp)
 	if(tbp != NULL)
 		hex_dump(fp,&tbp);
 	else
-		fprintf(fp,nospace);
+		fprintf(fp,"%s",nospace);
 	fprintf(fp,"*******\n");
 	free_p(&tbp);
 }
