@@ -562,7 +562,10 @@ int create)
 	for (rp = *tp; rp && !addreq(rp->target, call); rp = rp->next)
 		;
 	if (!rp && create) {
-		rp = (struct ax_route *) calloc(1, sizeof(struct ax_route));
+		/* The rest of the tree uses callocw(); this one dereferenced
+		 * the result of calloc() straight away.
+		 */
+		rp = (struct ax_route *) callocw(1, sizeof(struct ax_route));
 		addrcp(rp->target, call);
 		rp->next = *tp;
 		*tp = rp;
@@ -622,6 +625,7 @@ axroute(
 struct ax25 *hdr,
 struct iface **ifpp)
 {
+	int depth;
 
 	uint8 *idest;
 	int d;
@@ -652,7 +656,12 @@ struct iface **ifpp)
 
 	ifp = 0;
 	idest = hdr->nextdigi < hdr->ndigis ? hdr->digis[hdr->nextdigi] : hdr->dest;
-	for (rp = ax_routeptr(idest, 0); rp; rp = rp->digi) {
+	/* A digipeater chain comes from the route file or from "ax route add",
+	 * and nothing there stops it from pointing back at itself.  It can
+	 * never usefully be longer than the header can hold anyway.
+	 */
+	for (rp = ax_routeptr(idest, 0), depth = 0; rp && depth <= MAXDIGIS;
+	     rp = rp->digi, depth++) {
 		if (rp->digi && hdr->ndigis < MAXDIGIS) {
 			for (i = hdr->ndigis - 1; i >= hdr->nextdigi; i--)
 				addrcp(hdr->digis[i+1], hdr->digis[i]);

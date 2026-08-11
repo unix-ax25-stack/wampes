@@ -314,14 +314,19 @@ struct passwd *getpasswdentry(const char *name, int create)
 
   /* Add user to passwd file(s) */
 
-  sprintf(homedirparent, "%s/%.3s...", Homedir, name);
-  sprintf(homedir, "%s/%s", homedirparent, name);
+  /* Homedir is 80 bytes on its own, so these two are not wide enough for
+   * every setting of it plus a name.
+   */
+  snprintf(homedirparent, sizeof(homedirparent), "%s/%.3s...", Homedir, name);
+  snprintf(homedir, sizeof(homedir), "%s/%s", homedirparent, name);
 
 #if defined __386BSD__ || defined __NetBSD__ || defined __bsdi__ || defined __FreeBSD__ || defined __MACOSX__
 
   {
     char cmdbuf[1024];
-    sprintf(cmdbuf, "chpass -a '%s::%d:%d::0:0::%s:%s' >/dev/null 2>&1", name, uid, Gid, homedir, Shell);
+    snprintf(cmdbuf, sizeof(cmdbuf),
+	     "chpass -a '%s::%d:%d::0:0::%s:%s' >/dev/null 2>&1",
+	     name, uid, Gid, homedir, Shell);
     system(cmdbuf);
   }
 
@@ -402,7 +407,8 @@ static FILE *fopen_logfile(const char *user, const char *protocol)
   struct tm *tm;
 
   if (!*Logfiledir) return 0;
-  sprintf(filename, "%s/log.%05d.%04d", Logfiledir, (int) getpid(), cnt++);
+  snprintf(filename, sizeof(filename), "%s/log.%05d.%04d",
+	   Logfiledir, (int) getpid(), cnt++);
   if ((fp = fopen(filename, "a"))) {
     tm = localtime((time_t *) &Secclock);
     fprintf(fp,
@@ -816,8 +822,9 @@ static int dologindefaultuser(int argc, char *argv[], void *p)
   if (argc < 2)
     printf("Default user name \"%s\"\n", Defaultuser);
   else {
-    memcpy(Defaultuser, argv[1], sizeof(Defaultuser));
-    Defaultuser[sizeof(Defaultuser)-1] = 0;
+    /* memcpy() read the full destination size out of argv[1], whether or
+     * not that many bytes were there. */
+    snprintf(Defaultuser, sizeof(Defaultuser), "%s", argv[1]);
   }
   return 0;
 }
@@ -836,8 +843,9 @@ static int dologinhomedir(int argc, char *argv[], void *p)
   if (argc < 2)
     printf("Home directory \"%s\"\n", Homedir);
   else {
-    memcpy(Homedir, argv[1], sizeof(Homedir));
-    Homedir[sizeof(Homedir)-1] = 0;
+    /* memcpy() read the full destination size out of argv[1], whether or
+     * not that many bytes were there. */
+    snprintf(Homedir, sizeof(Homedir), "%s", argv[1]);
   }
   return 0;
 }
@@ -849,8 +857,9 @@ static int dologinlogfiledir(int argc, char *argv[], void *p)
   if (argc < 2)
     printf("Logfile directory \"%s\"\n", Logfiledir);
   else {
-    memcpy(Logfiledir, argv[1], sizeof(Logfiledir));
-    Logfiledir[sizeof(Logfiledir)-1] = 0;
+    /* memcpy() read the full destination size out of argv[1], whether or
+     * not that many bytes were there. */
+    snprintf(Logfiledir, sizeof(Logfiledir), "%s", argv[1]);
   }
   return 0;
 }
