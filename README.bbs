@@ -1,0 +1,86 @@
+The BBS
+=======
+
+bbs is no longer installed setuid root.  If you are upgrading an existing
+installation, read "Setting up the group" below before the first make install
+- without it bbs will start, but it will not be able to write the news and
+uucp spools or take a lock.
+
+
+Why it is not setuid any more
+-----------------------------
+
+bbs is not a daemon.  A user connects, gets a login shell, and types "bbs".
+It therefore already runs as that user, and it needs no privileges to be that
+user - the setuid bit was there for one reason only: three shared directories
+the connected user cannot write.
+
+  TCPDIR/locks      lock files
+  NEWS_DIR          articles and outgoing batches
+  UUCP_DIR          the forwarding spool, one directory per system
+
+Everything else bbs does, it does on behalf of the user who started it, and
+for the user's own files - .newsrc, the WRITE and SOURCE commands - it used
+to hand the privileges back with seteugid() around each access.  Three narrow
+brackets in a program that spent the rest of its time as root.
+
+A group that owns those three directories covers exactly the need, and then
+nothing in bbs runs privileged.  That is worth more here than in most places,
+because bbs parses messages that arrive over the air: the addresses in their
+headers used to become part of a shell command line, and every bug in that
+parsing was a root bug.  See SECURITY-AUDIT.md, findings W-03 and W-10.
+
+
+Setting up the group
+--------------------
+
+Once, as root.  The name is up to you; "hams" is what the rest of these
+notes use.  Substitute the NEWS_DIR and UUCP_DIR that lib/configure found -
+lib/configure.h has them.
+
+    groupadd hams
+
+    chgrp -R hams /usr/local/wampes/locks NEWS_DIR UUCP_DIR
+    chmod -R g+w  /usr/local/wampes/locks NEWS_DIR UUCP_DIR
+    chmod 2775    /usr/local/wampes/locks NEWS_DIR UUCP_DIR
+
+and then name the group when installing:
+
+    make install BBSGROUP=hams
+
+which does the chgrp and the chmod 2555 on the binary.  Pass it every time:
+the install rule replaces the file, so group and mode do not survive on
+their own.
+
+The 2 on the directories is the setgid bit: files created in them inherit the
+group, so a file written by one user stays writable by the next.  The 2 on
+the binary is what gives bbs the group in the first place.
+
+Users do not need to be members of the group - bbs carries it.  Do not add
+them: a member of the group can write the spools directly, without going
+through bbs.
+
+If you leave the group out entirely, bbs runs as a plain program with no
+special rights at all.  Reading works; anything that writes a spool or takes
+a lock fails.
+
+
+Store and forward
+-----------------
+
+    bbs -f system [-e]
+
+still has to run as root, from cron or by hand, exactly as before.  Both
+options check getuid(), and that check was never satisfied by the setuid bit
+- it reads the real uid, which is the invoker's.  Nothing changed here.
+
+
+What the shell escapes do now
+-----------------------------
+
+SHELL and PIPE start a program of the user's choosing.  Both fork and give up
+the real uid, the effective uid and the supplementary groups before they exec,
+so the program cannot get any of them back.  With the setuid installation this
+was not true of PIPE: it only set the effective uid, leaving the real uid at
+0, and a shell that finds real uid 0 can call setuid(0).  PIPE is a USER level
+command, so that was open to everyone who could log in.
