@@ -153,12 +153,21 @@ struct mbuf **bpp
 	if(hdr->source[ALEN] & E)
 		return 2;       /* No digis */
 
-	/* Count and process the digipeaters */
+	/* Count and process the digipeaters.
+	 *
+	 * nextdigi is the index of the first digipeater that has not repeated
+	 * the frame yet, so it has to come from the position of the last
+	 * REPEATED bit and not from how many of them are set.  The two agree
+	 * as long as the set bits are contiguous, which is what a well formed
+	 * frame looks like; with a gap - REPEATED, not, REPEATED - counting
+	 * pointed digis[nextdigi] at a digipeater that had already handled it.
+	 * Linux keeps ax25_digi->lastrepeat for the same reason.
+	 */
 	axp = hdr->digis[0];
 	while(hdr->ndigis < MAXDIGIS && pullup(bpp,axp,AXALEN) == AXALEN){
 		hdr->ndigis++;
 		if(axp[ALEN] & REPEATED)
-			hdr->nextdigi++;
+			hdr->nextdigi = hdr->ndigis;
 		if(axp[ALEN] & E)       /* Last one */
 			return hdr->ndigis + 2;
 		axp += AXALEN;
