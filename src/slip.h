@@ -35,6 +35,7 @@ struct slip {
 	uint8 escaped;          /* Receiver State control flag */
 #define SLIP_FLAG       0x01            /* Last char was a frame escape */
 #define SLIP_VJCOMPR    0x02            /* TCP header compression enabled */
+#define SLIP_OVERRUN    0x04            /* Frame too long, waiting for FR_END */
 	struct mbuf *rbp_head;  /* Head of mbuf chain being filled */
 	struct mbuf *rbp_tail;  /* Pointer to mbuf currently being written */
 	uint8 *rcp;             /* Write pointer */

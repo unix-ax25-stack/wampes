@@ -105,14 +105,16 @@ struct mbuf **bpp
 			free_p(bpp);
 			return;
 		}
-		iface->crccontrol = CRC_16;
+		if(!iface->crcfixed)
+			iface->crccontrol = CRC_16;
 	}else if(bp && (*bp->data & 0x20)){
 		if(check_crc_rmnc(bp)){
 			iface->crcerrors++;
 			free_p(bpp);
 			return;
 		}
-		iface->crccontrol = CRC_RMNC;
+		if(!iface->crcfixed)
+			iface->crccontrol = CRC_RMNC;
 	}
 	kisstype = PULLCHAR(bpp);
 	switch(kisstype & 0xf){

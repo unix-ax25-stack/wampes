@@ -75,6 +75,7 @@ struct iface Loopback = {
 	0,              /* lastsent     */
 	0,              /* lastrecv     */
 	0,              /* crccontrol   */
+	0,              /* crcfixed     */
 	0,              /* crcerrors    */
 	0,              /* ax25errors   */
 	0,              /* flags        */
@@ -120,6 +121,7 @@ struct iface Encap = {
 	0,              /* lastsent     */
 	0,              /* lastrecv     */
 	0,              /* crccontrol   */
+	0,              /* crcfixed     */
 	0,              /* crcerrors    */
 	0,              /* ax25errors   */
 	0,              /* flags        */
@@ -340,14 +342,23 @@ ifbroad(int argc,char *argv[],void *p)
 	return 0;
 }
 
-/* Set interface CRC mode.
+/* Set interface CRC mode.  Naming a mode also stops the KISS receiver from
+ * changing it again: an incoming frame with a valid CRC used to overwrite
+ * whatever was configured here, so this command did not stick.  "auto" puts
+ * the interface back to probing.
  */
 static int
 ifcrc(int argc,char *argv[],void *p)
 {
 	struct iface *ifp = (struct iface *) p;
 
+	ifp->crcfixed = 1;
 	switch (argv[1][0]) {
+	case 'A':
+	case 'a':
+		ifp->crccontrol = CRC_TEST_16;
+		ifp->crcfixed = 0;
+		break;
 	case 'O':
 	case 'o':
 		ifp->crccontrol = CRC_OFF;

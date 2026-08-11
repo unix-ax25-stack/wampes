@@ -834,6 +834,8 @@ See also the \fBarp\fP command.
 Set the CRC mode used on this interface. Valid \fImodes\fP are:
 .BL 5 1
 .LI
+\fBAUTO\fP
+.LI
 \fBOFF\fP
 .LI
 \fB16\fP
@@ -842,6 +844,11 @@ Set the CRC mode used on this interface. Valid \fImodes\fP are:
 .LI
 \fBCCITT\fP
 .LE 1
+.P
+A KISS interface starts in \fBAUTO\fP, where the mode follows the first
+received frame that carries a valid CRC. Naming any other mode also stops
+that: an incoming frame no longer changes what was configured here.
+\fBAUTO\fP puts the interface back to following the other end.
 .H 3 "ifconfig \fIinterface\fP encapsulation" " \fIencapsulation\fP"
 Set the encapsulation for \fIinterface\fP to \fIencapsulation\fP.
 \fIEncapsulation\fP may be one of:

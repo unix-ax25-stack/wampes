@@ -125,6 +125,17 @@ struct mbuf *bp)
 	lbp->cnt = cp - lbp->data;
 	return lbp;
 }
+/* Longest frame we will assemble: the interface MTU plus room for a NET/ROM
+ * network and transport header.
+ */
+static uint
+nrs_maxframe(struct iface *iface)
+{
+	uint mtu = (iface && iface->mtu > 0) ? (uint) iface->mtu : 256;
+
+	return mtu + 256;
+}
+
 /* Process incoming bytes in net/rom serial format
  * When a buffer is complete, return it; otherwise NULL
  */
@@ -180,8 +191,22 @@ uint8 c)        /* Incoming character */
 			}
 	}
 	/* If we get to here, it's with a character that's part of the packet.
-	 * Make sure there's space for it.
+	 * There is no upper bound on how long that can go on - nothing on the
+	 * line has to send ETX - so the chain grew in NRS_ALLOC steps until
+	 * memory ran out.  rcnt was already counted here, but only ever read
+	 * for the status display.
 	 */
+	if(sp->rcnt >= nrs_maxframe(sp->iface)){
+		free_p(&sp->rbp);
+		sp->rbp = sp->rbp1 = NULL;
+		sp->rcnt = 0;
+		sp->csum = 0;
+		sp->errors++;
+		sp->state = NRS_INTER;  /* resynchronise on the next STX */
+		return NULL;
+	}
+
+	/* Make sure there's space for it. */
 	if(sp->rbp == NULL){
 		/* Allocate first mbuf for new packet */
 		if((sp->rbp1 = sp->rbp = alloc_mbuf(NRS_ALLOC)) == NULL) {

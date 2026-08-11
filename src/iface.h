@@ -124,6 +124,7 @@ struct iface {
 	int32 lastrecv;         /* Clock time of last receive */
 
 	int crccontrol;         /* CRC send control */
+	int crcfixed;           /* Set by "ifconfig <if> crc": stop autodetecting */
 #define CRC_OFF         0       /* Don't send CRC packets */
 #define CRC_TEST_16     1       /* Send a single CRC_16 packet, then switch to CRC_TEST_RMNC */
 #define CRC_TEST_RMNC   2       /* Send a single CRC_RMNC packet, then switch to CRC_OFF */

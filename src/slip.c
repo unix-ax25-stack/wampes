@@ -166,6 +166,17 @@ slip_encode(struct mbuf **bpp)
 	lbp->cnt = cp - lbp->data;
 	return lbp;
 }
+/* Longest frame we will assemble: the interface MTU plus room for a KISS
+ * type byte and an AX.25 header with the full set of digipeaters.
+ */
+static uint
+slip_maxframe(struct iface *iface)
+{
+	uint mtu = (iface && iface->mtu > 0) ? (uint) iface->mtu : 256;
+
+	return mtu + 256;
+}
+
 /* Process incoming bytes in SLIP format
  * When a buffer is complete, return it; otherwise NULL
  */
@@ -180,13 +191,17 @@ uint8 c)                /* Incoming character */
 	switch(c){
 	case FR_END:
 		bp = sp->rbp_head;
-		sp->rbp_head = NULL;
-		if(sp->escaped){
+		sp->rbp_head = sp->rbp_tail = NULL;
+		sp->rcnt = 0;
+		/* Test the bit, not the byte: escaped carries more than one
+		 * flag, and the others do not mean "abort this frame".
+		 */
+		if(sp->escaped & (SLIP_FLAG | SLIP_OVERRUN)){
 			/* Treat this as an abort - discard frame */
 			free_p(&bp);
 			bp = NULL;
 		}
-		sp->escaped &= ~SLIP_FLAG;
+		sp->escaped &= ~(SLIP_FLAG | SLIP_OVERRUN);
 		return bp;      /* Will be NULL if empty frame */
 	case FR_ESC:
 		sp->escaped |= SLIP_FLAG;
@@ -207,9 +222,24 @@ uint8 c)                /* Incoming character */
 			break;
 		}
 	}
-	/* We reach here with a character for the buffer;
-	 * make sure there's space for it
+	/* We reach here with a character for the buffer.  Nothing on the line
+	 * is obliged to ever send FR_END, and without a limit the chain grows
+	 * in SLIP_ALLOC steps until memory runs out.  struct slip has had rcnt
+	 * for this since the beginning and slip.c never used it.  Linux does
+	 * the same thing in slip.c, with SLF_ERROR to skip to the next end.
 	 */
+	if(sp->escaped & SLIP_OVERRUN)
+		return NULL;
+	if(sp->rcnt >= slip_maxframe(sp->iface)){
+		free_p(&sp->rbp_head);
+		sp->rbp_head = sp->rbp_tail = NULL;
+		sp->rcnt = 0;
+		sp->errors++;
+		sp->escaped |= SLIP_OVERRUN;
+		return NULL;
+	}
+
+	/* make sure there's space for it */
 	if(sp->rbp_head == NULL){
 		/* Allocate first mbuf for new packet */
 		if((sp->rbp_tail = sp->rbp_head = alloc_mbuf(SLIP_ALLOC)) == NULL)
@@ -231,6 +261,7 @@ uint8 c)                /* Incoming character */
 	 */
 	*sp->rcp++ = c;
 	sp->rbp_tail->cnt++;
+	sp->rcnt++;
 	return NULL;
 }
 
