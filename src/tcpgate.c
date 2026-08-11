@@ -13,14 +13,66 @@
 #include "tcp.h"
 #include "hpux.h"
 #include "buildsaddr.h"
+#include "domain.h"
+#include "commands.h"
+
+/* Addresses allowed to reach one gate.  An empty list allows everyone, which
+ * is what this always did.
+ */
+struct allow {
+  int32 lo;
+  int32 hi;
+  struct allow *next;
+};
 
 struct dest {
   int port;
   char *name;
+  struct allow *allow;
   struct dest *next;
 };
 
 static struct dest *dests;
+
+/*---------------------------------------------------------------------------*/
+
+/* <addr>[/<bits>], the same form ipfilter takes */
+
+static int parse_allow(const char *arg, int32 *lop, int32 *hip)
+{
+  char buf[256];
+  char *bitp;
+  int bits;
+  int32 addr;
+  int32 mask;
+
+  if (strlen(arg) >= sizeof(buf)) return -1;
+  strcpy(buf, arg);
+  bits = 32;
+  if ((bitp = strchr(buf, '/'))) {
+    *bitp++ = 0;
+    bits = atoi(bitp);
+    if (bits < 0 || bits > 32) return -1;
+  }
+  if (!(addr = resolve(buf)) && strcmp(buf, "0.0.0.0")) return -1;
+  mask = bits ? (int32) (~0UL << (32 - bits)) : 0;
+  *lop = addr & mask;
+  *hip = *lop | ~mask;
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int allowed(const struct dest *dp, int32 addr)
+{
+  const struct allow *ap;
+
+  if (!dp->allow) return 1;             /* no list: everyone, as before */
+  for (ap = dp->allow; ap; ap = ap->next)
+    if ((uint32) addr >= (uint32) ap->lo && (uint32) addr <= (uint32) ap->hi)
+      return 1;
+  return 0;
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -86,6 +138,11 @@ static void tcp_state(struct tcb *tcb, enum tcp_state old, enum tcp_state new)
   case TCP_ESTABLISHED:
     logmsg(tcb, "open %s", tcp_port_name(tcb->conn.local.port));
     for (dp = dests; dp && dp->port != tcb->conn.local.port; dp = dp->next) ;
+    if (dp && !allowed(dp, tcb->conn.remote.address)) {
+      logmsg(tcb, "refused %s", tcp_port_name(tcb->conn.local.port));
+      close_tcp(tcb);
+      return;
+    }
     if (!dp ||
 	!(addr = build_sockaddr(dp->name, &addrlen)) ||
 	(tcb->user = socket(addr->sa_family, SOCK_STREAM, 0)) <= 0 ||
@@ -118,25 +175,45 @@ int tcpgate1(int argc, char *argv[], void *p)
 
   char *name;
   char buf[80];
+  int i;
+  struct allow *ap;
   struct dest *dp;
   struct socket lsocket;
 
   lsocket.address = INADDR_ANY;
   lsocket.port = tcp_port_number(argv[1]);
   if (argc < 3)
-    sprintf(name = buf, "loopback:%d", lsocket.port);
+    snprintf(name = buf, sizeof(buf), "loopback:%d", lsocket.port);
   else
     name = argv[2];
   for (dp = dests; dp && dp->port != lsocket.port; dp = dp->next) ;
   if (!dp) {
-    dp = (struct dest *) malloc(sizeof(struct dest));
+    dp = (struct dest *) callocw(1, sizeof(struct dest));
     dp->port = lsocket.port;
-    dp->name = 0;
     dp->next = dests;
     dests = dp;
   }
   if (dp->name) free(dp->name);
-  dp->name = strdup(name);
+  if (!(dp->name = strdup(name))) return 1;
+
+  /* Any further arguments are the addresses allowed to use this gate */
+  while ((ap = dp->allow)) {
+    dp->allow = ap->next;
+    free(ap);
+  }
+  for (i = 3; i < argc; i++) {
+    int32 lo, hi;
+
+    if (parse_allow(argv[i], &lo, &hi)) {
+      printf("tcpgate: cannot parse \"%s\"\n", argv[i]);
+      return 1;
+    }
+    ap = (struct allow *) callocw(1, sizeof(struct allow));
+    ap->lo = lo;
+    ap->hi = hi;
+    ap->next = dp->allow;
+    dp->allow = ap;
+  }
   open_tcp(&lsocket, NULL, TCP_SERVER, 0, tcp_receive, tcp_ready, tcp_state, 0, 0);
   return 0;
 }

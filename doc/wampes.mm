@@ -1858,9 +1858,22 @@ See also RFC862.
 Start the TCP FTP server.
 Default \fIport\fP is 21.
 See also the \fBftp\fP command.
-.H 3 "start tcpgate" " \fIport\fP [\fIhost\fP[:\fIservice\fP]]"
-Start a \fBWAMPES\fP TCP to UNIX TCP gateway.
-MORE TO BE WRITTEN.
+.H 3 "start tcpgate" " \fIport\fP [\fIhost\fP[:\fIservice\fP] [\fIaddress\fP[/\fIbits\fP] ...]]"
+Start a \fBWAMPES\fP TCP to UNIX TCP gateway. A connection arriving on
+\fIport\fP is forwarded to \fIhost\fP:\fIservice\fP, which defaults to the
+same port on the loopback address. The destination comes from this command
+and never from the client, so the gateway is not an open relay.
+.P
+It does, however, make a service of the host reachable from the radio side,
+and by default from any address. Naming one or more addresses restricts it to
+those; the form is the one \fBipfilter\fP uses, an address with an optional
+prefix length. With no address named, every caller is let through, which is
+what this command has always done.
+.P
+For example, to reach the local mail server from the AMPRNet only:
+.DS I
+start tcpgate smtp localhost:25 44.0.0.0/8
+.DE
 .H 3 "start netrom"
 Start the NET/ROM Login server.
 See also the \fBnetrom\fP and \fBlogin\fP commands.
