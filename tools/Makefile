@@ -87,6 +87,7 @@ import.o:\
 	import.c
 makeiprt.o:\
 	../lib/configure.h\
+	../lib/hostdb.h\
 	makeiprt.c
 mm2html.o:\
 	mm2html.c

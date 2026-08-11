@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <sys/socket.h>
 
@@ -39,6 +40,7 @@
 #include "netuser.h"
 #include "cmdparse.h"
 #include "domain.h"
+#include "hostdb.h"
 
 #define DBHOSTADDR      TCPDIR "/hostaddr"
 #define DBHOSTNAME      TCPDIR "/hostname"
@@ -283,6 +285,31 @@ const char *s)
 
 /*---------------------------------------------------------------------------*/
 
+/* The forms to try for a name: as given, and - unless it was already
+ * absolute - with LOCALDOMAIN appended.  An empty string terminates the list.
+ * Shared so that resolve() and resolve_sa() cannot drift apart.
+ */
+static void expand_names(
+const char *name,
+char names[3][1024])
+{
+  char *p;
+
+  names[0][0] = names[1][0] = names[2][0] = 0;
+  if (!name || !*name) return;
+  strlwc(names[0], name);
+  p = names[0] + strlen(names[0]) - 1;
+  if (*p == '.') {
+    *p = 0;
+  } else {
+    strcpy(names[1], names[0]);
+    strcat(names[0], ".");
+    strcat(names[0], LOCALDOMAIN);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void add_to_cache(
 const char *name,
 int32 addr)
@@ -304,7 +331,6 @@ int32 resolve(
 char *name)
 {
 
-  char *p;
   char names[3][1024];
   datum daddr;
   datum dname;
@@ -320,17 +346,7 @@ char *name)
 
   if (Nextcacheflushtime <= secclock()) docacheflush(0, 0, 0);
 
-  strlwc(names[0], name);
-  p = names[0] + strlen(names[0]) - 1;
-  if (*p == '.') {
-    *p = 0;
-    names[1][0] = 0;
-  } else {
-    strcpy(names[1], names[0]);
-    strcat(names[0], ".");
-    strcat(names[0], LOCALDOMAIN);
-    names[2][0] = 0;
-  }
+  expand_names(name, names);
 
   for (i = 0; names[i][0]; i++) {
     for (prev = 0, curr = Cache; curr; prev = curr, curr = curr->next)
@@ -358,9 +374,18 @@ char *name)
       daddr = dbm_fetch(Dbhostaddr, dname);
 #endif
       if (daddr.dptr) {
-	memcpy(&addr, daddr.dptr, sizeof(addr));
-	add_to_cache(names[i], addr);
-	return addr;
+	int family;
+	unsigned char a[16];
+
+	/* An IPv6 entry cannot come back through this function - it returns
+	 * an int32.  Callers that can take one use resolve_sa(). */
+	if (hostdb_decode((unsigned char *) daddr.dptr, daddr.dsize, &family, a)
+	    == 4 && family == HOSTDB_V4) {
+	  addr = ((int32) a[0] << 24) | ((int32) a[1] << 16) |
+		 ((int32) a[2] << 8) | (int32) a[3];
+	  add_to_cache(names[i], addr);
+	  return addr;
+	}
       }
     }
 
@@ -372,6 +397,93 @@ char *name)
   }
 
   return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Resolve a name, or an address literal of either family, to a sockaddr out
+ * of WAMPES' own host table in TCPDIR/hosts.
+ *
+ * resolve() cannot report an IPv6 address - it returns an int32 - so callers
+ * that can take one ask here instead.  Returns 1 on success, 0 if the name is
+ * not in the table.  The cache is not consulted: it holds int32 only, and the
+ * callers of this are configuration commands rather than hot paths.
+ */
+
+int resolve_sa(
+const char *name,
+struct sockaddr_storage *ss,
+socklen_t *len)
+{
+
+  char names[3][1024];
+  datum daddr;
+  datum dname;
+  int family;
+  int i;
+  unsigned char a[16];
+
+  if (!name || !*name || !ss || !len) return 0;
+  memset(ss, 0, sizeof(*ss));
+  *len = 0;
+
+  /* A literal needs no table */
+  if (strchr(name, ':')) {
+    struct in6_addr a6;
+
+    if (inet_pton(AF_INET6, name, &a6) != 1) return 0;
+    memcpy(a, &a6, 16);
+    family = HOSTDB_V6;
+  } else if (isaddr(name)) {
+    struct in_addr a4;
+
+    if (inet_pton(AF_INET, name, &a4) != 1) return 0;
+    memcpy(a, &a4, 4);
+    family = HOSTDB_V4;
+  } else {
+    if (Nextcacheflushtime <= secclock()) docacheflush(0, 0, 0);
+    expand_names(name, names);
+#if HAS_GDBM
+    if (!Dbhostaddr && !(Dbhostaddr = gdbm_open(DBHOSTADDR, 0, GDBM_READER, 0644, NULL)))
+      return 0;
+#else
+    if (!Dbhostaddr && !(Dbhostaddr = dbm_open(DBHOSTADDR, O_RDONLY, 0644)))
+      return 0;
+#endif
+    for (i = 0; names[i][0]; i++) {
+      dname.dptr = names[i];
+      dname.dsize = strlen(names[i]) + 1;
+#if HAS_GDBM
+      daddr = gdbm_fetch(Dbhostaddr, dname);
+#else
+      daddr = dbm_fetch(Dbhostaddr, dname);
+#endif
+      if (daddr.dptr &&
+	  hostdb_decode((unsigned char *) daddr.dptr, daddr.dsize, &family, a))
+	break;
+    }
+    if (!names[i][0]) return 0;
+  }
+
+#if HAS_AF_INET6
+  if (family == HOSTDB_V6) {
+    struct sockaddr_in6 *s6 = (struct sockaddr_in6 *) ss;
+
+    s6->sin6_family = AF_INET6;
+    memcpy(&s6->sin6_addr, a, 16);
+    *len = sizeof(struct sockaddr_in6);
+    return 1;
+  }
+#endif
+  if (family != HOSTDB_V4) return 0;
+  {
+    struct sockaddr_in *si = (struct sockaddr_in *) ss;
+
+    si->sin_family = AF_INET;
+    memcpy(&si->sin_addr, a, 4);
+    *len = sizeof(struct sockaddr_in);
+  }
+  return 1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -408,13 +520,32 @@ int shorten)
 #else
   if (Dbhostname || (Dbhostname = dbm_open(DBHOSTNAME, O_RDONLY, 0644))) {
 #endif
-    daddr.dptr = (char *) &addr;
-    daddr.dsize = sizeof(addr);
+    {
+      unsigned char a[4];
+      unsigned char rec[HOSTDB_RECLEN];
+
+      a[0] = (unsigned char) (addr >> 24);
+      a[1] = (unsigned char) (addr >> 16);
+      a[2] = (unsigned char) (addr >> 8);
+      a[3] = (unsigned char) addr;
+      daddr.dptr = (char *) rec;
+      daddr.dsize = hostdb_encode(HOSTDB_V4, a, rec);
 #if HAS_GDBM
-    dname = gdbm_fetch(Dbhostname, daddr);
+      dname = gdbm_fetch(Dbhostname, daddr);
 #else
-    dname = dbm_fetch(Dbhostname, daddr);
+      dname = dbm_fetch(Dbhostname, daddr);
 #endif
+      if (!dname.dptr) {
+	/* A database from an older mkhostdb keys on a bare int32 */
+	daddr.dptr = (char *) &addr;
+	daddr.dsize = sizeof(addr);
+#if HAS_GDBM
+	dname = gdbm_fetch(Dbhostname, daddr);
+#else
+	dname = dbm_fetch(Dbhostname, daddr);
+#endif
+      }
+    }
     if (dname.dptr) {
       add_to_cache(dname.dptr, addr);
       return Cache->name;

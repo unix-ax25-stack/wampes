@@ -679,6 +679,7 @@ dirutil.o:\
 	hpux.h
 domain.o:\
 	../lib/configure.h\
+	../lib/hostdb.h\
 	../lib/strdup.h\
 	cmdparse.h\
 	domain.c\

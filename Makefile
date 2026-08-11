@@ -8,12 +8,18 @@ DIRS       = lib \
 	     util \
 	     bbs
 
-TCPDIR     = /tcp
-
 all:;   @-chmod 755 cc
 	@-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i all install ); done
-	@-$(MAKE) -i $(TCPDIR)/hostaddr.pag
+	@-. lib/configure.mak; $(MAKE) -i _hostdb
 	@-if [ -d tools ]; then ( cd tools; $(MAKE) -i all install ); fi
+
+# TCPDIR comes from lib/configure, the same way the subdirectories get it.
+# It used to be set to /tcp here as well, so on a system configured for any
+# other directory the database was built where the programs do not read it.
+_hostdb:
+	@if [ -z "$(TCPDIR)" ]; then \
+		echo "TCPDIR is empty - run make at the top level"; exit 1; fi
+	@$(MAKE) $(TCPDIR)/hostaddr.pag
 
 $(TCPDIR)/hosts:
 	[ -f $(TCPDIR)/hosts ] || touch $(TCPDIR)/hosts

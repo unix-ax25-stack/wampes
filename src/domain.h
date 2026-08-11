@@ -3,6 +3,9 @@
 #ifndef _DOMAIN_H
 #define _DOMAIN_H
 
+#include <sys/types.h>
+#include <sys/socket.h>          /* struct sockaddr_storage, socklen_t */
+
 #ifndef _GLOBAL_H
 #include "global.h"
 #endif
@@ -151,6 +154,9 @@ void free_rr(struct rr **rrlp);
 struct rr *inverse_a(int32 ip_address);
 struct rr *resolve_rr(char *dname,uint dtype);
 char *resolve_a(int32 ip_address, int shorten);
+
+/* Like resolve(), but able to report an IPv6 address.  1 on success. */
+int resolve_sa(const char *name, struct sockaddr_storage *ss, socklen_t *len);
 struct rr *resolve_mailb(char *name);
 
 /* In domhdr.c: */

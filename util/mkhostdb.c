@@ -9,7 +9,10 @@ static const char rcsid[] = "@(#) $Id: mkhostdb.c,v 1.18 2016/03/13 06:37:27 dl9
 #include <string.h>
 #include <unistd.h>
 
+#include <arpa/inet.h>
+
 #include "configure.h"
+#include "hostdb.h"
 
 #if HAS_NDBM
 #include <ndbm.h>
@@ -47,38 +50,50 @@ static char origin[1024];
 
 /*---------------------------------------------------------------------------*/
 
-static int aton(const char *name, long *addrptr)
+/* Parse an address literal of either family.  Stores HOSTDB_V4 or HOSTDB_V6
+ * in *family and the address in network byte order in addr, which needs room
+ * for 16 bytes.  Returns 0 on success, -1 if it is not an address.
+ *
+ * Addresses in TCPDIR/hosts are written plainly, without the brackets the
+ * configuration uses for "host:service" - there is no service here to keep
+ * the colons apart from.
+ */
+
+static int parse_addr(const char *s, int *family, unsigned char *addr)
 {
+  if (!s || !*s) return -1;
 
-  const char * p;
-  int i;
-  long addr;
+  if (strchr(s, ':')) {
+    struct in6_addr a6;
 
-  if (!name || !isdigit(*name & 0xff)) return (-1);
-  for (p = name; *p; p++)
-    if (!isdigit(*p & 0xff) && *p != '.') return (-1);
-  addr = 0;
-  for (i = 24; i >= 0; i -= 8) {
-    addr |= atol(name) << i;
-    if (!(name = strchr(name, '.'))) break;
-    name++;
-    if (!*name) break;
+    if (inet_pton(AF_INET6, s, &a6) != 1) return -1;
+    memcpy(addr, &a6, 16);
+    *family = HOSTDB_V6;
+    return 0;
   }
-  *addrptr = addr;
-  return 0;
+  {
+    struct in_addr a4;
+
+    if (inet_pton(AF_INET, s, &a4) != 1) return -1;
+    memcpy(addr, &a4, 4);
+    *family = HOSTDB_V4;
+    return 0;
+  }
 }
 
 /*---------------------------------------------------------------------------*/
 
-static char *ntoa(long addr)
-{
-  static char buf[16];
+/* Printable form of a decoded record */
 
-  sprintf(buf, "%ld.%ld.%ld.%ld",
-	  (addr >> 24) & 0xff,
-	  (addr >> 16) & 0xff,
-	  (addr >>  8) & 0xff,
-	  (addr      ) & 0xff);
+static char *addr_to_string(int family, const unsigned char *addr)
+{
+  static char buf[64];
+
+  buf[0] = 0;
+  if (family == HOSTDB_V6)
+    inet_ntop(AF_INET6, addr, buf, sizeof(buf));
+  else
+    inet_ntop(AF_INET, addr, buf, sizeof(buf));
   return buf;
 }
 
@@ -90,13 +105,21 @@ static void store_in_db(const char *name, const char *addrstr)
   datum daddr;
   datum dname;
   int i;
-  long addr;
+  int family;
+  int reclen;
+  unsigned char addr[16];
+  unsigned char rec[HOSTDB_RECLEN];
 
-  if (aton(addrstr, &addr) || !addr || !~addr) return;
+  if (parse_addr(addrstr, &family, addr)) return;
+  /* 0.0.0.0 and 255.255.255.255 are not hosts */
+  if (family == HOSTDB_V4 &&
+      (!memcmp(addr, "\0\0\0\0", 4) ||
+       !memcmp(addr, "\377\377\377\377", 4))) return;
+  if (!(reclen = hostdb_encode(family, addr, rec))) return;
   dname.dptr = (char *) name;
   dname.dsize = strlen(name) + 1;
-  daddr.dptr = (char *) &addr;
-  daddr.dsize = sizeof(addr);
+  daddr.dptr = (char *) rec;
+  daddr.dsize = reclen;
 #if HAS_GDBM
   i = gdbm_store(Dbhostaddr, dname, daddr, GDBM_INSERT);
 #else
@@ -187,7 +210,6 @@ static void read_domain_file(const char *filename)
   datum daddr;
   datum dname;
   FILE *fp;
-  long addr;
   static const char delim[] = " \t\n";
 
   strcpy(origin, LOCALDOMAIN);
@@ -264,9 +286,14 @@ static void read_domain_file(const char *filename)
       fprintf(stderr, "no such key: %s\n", dname.dptr);
       continue;
     }
-    memcpy((char *) &addr, daddr.dptr, sizeof(addr));
+    {
+      int family;
+      unsigned char a[16];
 
-    store_in_db(fix_name(name), ntoa(addr));
+      if (!hostdb_decode((unsigned char *) daddr.dptr, daddr.dsize, &family, a))
+	continue;
+      store_in_db(fix_name(name), addr_to_string(family, a));
+    }
 
   }
   fclose(fp);
@@ -281,7 +308,8 @@ static void qaddr(const char *name)
   datum daddr;
   datum dname;
   int len;
-  long addr;
+  int family;
+  unsigned char addr[16];
 
   strcpy(fullname, name);
   len = strlen(fullname);
@@ -295,9 +323,9 @@ static void qaddr(const char *name)
 #else
     daddr = dbm_fetch(Dbhostaddr, dname);
 #endif
-    if (daddr.dptr) {
-      memcpy((char *) &addr, daddr.dptr, sizeof(addr));
-      printf("%s  %s\n", ntoa(addr), fullname);
+    if (daddr.dptr &&
+	hostdb_decode((unsigned char *) daddr.dptr, daddr.dsize, &family, addr)) {
+      printf("%s  %s\n", addr_to_string(family, addr), fullname);
     } else
       fprintf(stderr, "no such key: %s\n", fullname);
     return;
@@ -312,9 +340,9 @@ static void qaddr(const char *name)
 #else
   daddr = dbm_fetch(Dbhostaddr, dname);
 #endif
-  if (daddr.dptr) {
-    memcpy((char *) &addr, daddr.dptr, sizeof(addr));
-    printf("%s  %s\n", ntoa(addr), fullname);
+  if (daddr.dptr &&
+      hostdb_decode((unsigned char *) daddr.dptr, daddr.dsize, &family, addr)) {
+    printf("%s  %s\n", addr_to_string(family, addr), fullname);
     return;
   }
 
@@ -325,9 +353,9 @@ static void qaddr(const char *name)
 #else
   daddr = dbm_fetch(Dbhostaddr, dname);
 #endif
-  if (daddr.dptr) {
-    memcpy((char *) &addr, daddr.dptr, sizeof(addr));
-    printf("%s  %s\n", ntoa(addr), name);
+  if (daddr.dptr &&
+      hostdb_decode((unsigned char *) daddr.dptr, daddr.dsize, &family, addr)) {
+    printf("%s  %s\n", addr_to_string(family, addr), name);
   } else
     fprintf(stderr, "no such key: %s\n", name);
 }
@@ -339,21 +367,39 @@ static void qname(const char *addrstr)
 
   datum daddr;
   datum dname;
-  long addr;
+  int family;
+  int reclen;
+  unsigned char addr[16];
+  unsigned char rec[HOSTDB_RECLEN];
 
-  if (aton(addrstr, &addr)) {
+  if (parse_addr(addrstr, &family, addr) ||
+      !(reclen = hostdb_encode(family, addr, rec))) {
     fprintf(stderr, "no such key: %s\n", addrstr);
     return;
   }
-  daddr.dptr = (char *) &addr;
-  daddr.dsize = sizeof(addr);
+  daddr.dptr = (char *) rec;
+  daddr.dsize = reclen;
 #if HAS_GDBM
   dname = gdbm_fetch(Dbhostname, daddr);
 #else
   dname = dbm_fetch(Dbhostname, daddr);
 #endif
+  if (!dname.dptr && family == HOSTDB_V4) {
+    /* A database from an older mkhostdb keys on a bare long */
+    long old;
+
+    old = ((long) addr[0] << 24) | ((long) addr[1] << 16) |
+	  ((long) addr[2] << 8) | (long) addr[3];
+    daddr.dptr = (char *) &old;
+    daddr.dsize = sizeof(old);
+#if HAS_GDBM
+    dname = gdbm_fetch(Dbhostname, daddr);
+#else
+    dname = dbm_fetch(Dbhostname, daddr);
+#endif
+  }
   if (dname.dptr)
-    printf("%s  %s\n", ntoa(addr), dname.dptr);
+    printf("%s  %s\n", addr_to_string(family, addr), dname.dptr);
   else
     fprintf(stderr, "no such key: %s\n", addrstr);
 }

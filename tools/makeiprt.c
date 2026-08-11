@@ -14,6 +14,7 @@ static const char rcsid[] = "@(#) $Id: makeiprt.c,v 1.22 2016/03/13 06:37:24 dl9
 #include <sys/socket.h>
 
 #include "configure.h"
+#include "hostdb.h"
 
 #if HAS_NDBM
 #include <ndbm.h>
@@ -35,8 +36,8 @@ static const char rcsid[] = "@(#) $Id: makeiprt.c,v 1.22 2016/03/13 06:37:24 dl9
 
 #define MERGE_HOST_ROUTES       0
 
-#define DBHOSTADDR      "/tcp/hostaddr"
-#define DBHOSTNAME      "/tcp/hostname"
+#define DBHOSTADDR      TCPDIR "/hostaddr"
+#define DBHOSTNAME      TCPDIR "/hostname"
 #define LOCALDOMAIN     "ampr.org"
 
 struct cache {
@@ -188,9 +189,19 @@ static long resolve(const char *name)
       daddr = dbm_fetch(Dbhostaddr, dname);
 #endif
       if (daddr.dptr) {
-	memcpy((char *) &addr, daddr.dptr, sizeof(addr));
-	add_to_cache(names[i], addr);
-	return addr;
+	unsigned char a[16];
+	int family;
+
+	/* IPv6 entries exist in the database but have no place in an IPv4
+	 * routing table, so treat them as not found and keep looking.
+	 */
+	if (hostdb_decode((unsigned char *) daddr.dptr, (int) daddr.dsize,
+			  &family, a) == 4) {
+	  addr = ((long) a[0] << 24) | ((long) a[1] << 16) |
+		 ((long) a[2] << 8) | (long) a[3];
+	  add_to_cache(names[i], addr);
+	  return addr;
+	}
       }
     }
 
@@ -234,13 +245,29 @@ static const char *resolve_a(long addr)
 #else
   if (Dbhostname || (Dbhostname = dbm_open(DBHOSTNAME, O_RDONLY, 0644))) {
 #endif
-    daddr.dptr = (char *) &addr;
-    daddr.dsize = sizeof(addr);
+    unsigned char a[4], rec[HOSTDB_RECLEN];
+
+    a[0] = (unsigned char) (addr >> 24);
+    a[1] = (unsigned char) (addr >> 16);
+    a[2] = (unsigned char) (addr >> 8);
+    a[3] = (unsigned char) addr;
+    daddr.dptr = (char *) rec;
+    daddr.dsize = hostdb_encode(HOSTDB_V4, a, rec);
 #if HAS_GDBM
     dname = gdbm_fetch(Dbhostname, daddr);
 #else
     dname = dbm_fetch(Dbhostname, daddr);
 #endif
+    if (!dname.dptr) {
+      /* A database from an older mkhostdb keys on a bare long. */
+      daddr.dptr = (char *) &addr;
+      daddr.dsize = sizeof(addr);
+#if HAS_GDBM
+      dname = gdbm_fetch(Dbhostname, daddr);
+#else
+      dname = dbm_fetch(Dbhostname, daddr);
+#endif
+    }
     if (dname.dptr) {
       add_to_cache(dname.dptr, addr);
       return Cache->name;

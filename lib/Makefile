@@ -5,6 +5,7 @@ LIBRARY       = libutil.a
 OBJS          = buildsaddr.o \
 		calc_crc.o \
 		callvalid.o \
+		hostdb.o \
 		lockfile.o \
 		md5.o \
 		ndbm.o \
@@ -41,6 +42,9 @@ calc_crc.o:\
 callvalid.o:\
 	callvalid.c\
 	callvalid.h
+hostdb.o:\
+	hostdb.c\
+	hostdb.h
 lockfile.o:\
 	lockfile.c\
 	lockfile.h\
