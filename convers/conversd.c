@@ -60,6 +60,14 @@ extern int optind;
 #define KEEP_USERS_TIME         (  60*60)
 #define MAKE_UNIQUE_TIME        (  60*60)
 #define MAX_CHANNEL             32767
+
+/* Working buffers for lines going out.  A line is built from an input line,
+ * which is at most sizeof(l_ibuf), plus a name that came from an earlier one,
+ * plus a fixed prefix, plus what make_string_unique() may append.  Sized so
+ * that real traffic is never truncated; the snprintf() calls bound it in any
+ * case, which sprintf() did not.
+ */
+#define CONVBUFLEN      4608
 #define MAX_IDLETIME            (  60*60)
 #define MAX_PINGTIME            (2*60*60)
 #define MAX_RTT                 (3*60*60)
@@ -250,14 +258,38 @@ static int is_string_unique(const char *string, long duration)
 
 /*---------------------------------------------------------------------------*/
 
-static void make_string_unique(char *string)
+/* Append to a string in a buffer of a known size, stopping at its end.  Pass
+ * (size_t) -1 for n to append all of s.  The strcat() chains this replaces
+ * were fed from the configuration file and from peer supplied names, and had
+ * no idea how much room was left.
+ */
+
+static void appendstring(char *buf, size_t size, const char *s, size_t n)
+{
+  size_t used = strlen(buf);
+
+  while (n-- && *s && used + 1 < size)
+    buf[used++] = *s++;
+  buf[used] = 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Append a marker and a counter until the string is one we have not seen.
+ * It writes past the end of the text it is handed, so it needs to know how
+ * much room there is - it used to just assume there was enough.
+ */
+
+static void make_string_unique(char *string, size_t size)
 {
 
   char *cp;
+  char *end;
   int i;
 
   if (is_string_unique(string, MAKE_UNIQUE_TIME))
     return;
+  end = string + size;
   cp = strchr(string, UNIQMARKER);
   if (cp) {
     cp++;
@@ -266,11 +298,16 @@ static void make_string_unique(char *string)
     for (cp = string; *cp; cp++) ;
     if (cp > string && cp[-1] == '\n')
       cp--;
+    /* Room for the marker, a counter and the newline it replaces */
+    if (end - cp < 16)
+      cp = end - 16;
+    if (cp < string)
+      return;
     *cp++ = (char) UNIQMARKER;
     i = 0;
   }
   for (;;) {
-    sprintf(cp, "%d\n", ++i);
+    snprintf(cp, (size_t) (end - cp), "%d\n", ++i);
     if (is_string_unique(string, MAKE_UNIQUE_TIME))
       return;
   }
@@ -348,7 +385,7 @@ static void trace(enum e_dir dir, const struct link *lp, const char *string)
   else if (lp->l_host)
     name = lp->l_host->h_name;
   else {
-    sprintf(buf, "%08lx", (long) lp);
+    snprintf(buf, sizeof(buf), "%08lx", (long) lp);
     name = buf;
   }
   cp = ctime((time_t *) &currtime);
@@ -493,7 +530,7 @@ static char *formatline(const char *prefix, const char *text)
   char *e, *t;
   const char *f, *x;
   int l, lw;
-  static char buf[2048];
+  static char buf[CONVBUFLEN];
 
   e = buf + (sizeof(buf) - 2);
 
@@ -549,9 +586,9 @@ static char *localtimestring(long utc)
 
   tm = localtime((time_t *) &utc);
   if (utc + 24 * 60 * 60 > currtime)
-    sprintf(buffer, " %2d:%02d", tm->tm_hour, tm->tm_min);
+    snprintf(buffer, sizeof(buffer), " %2d:%02d", tm->tm_hour, tm->tm_min);
   else
-    sprintf(buffer, "%-3.3s %2d", monthnames + 3 * tm->tm_mon, tm->tm_mday);
+    snprintf(buffer, sizeof(buffer), "%-3.3s %2d", monthnames + 3 * tm->tm_mon, tm->tm_mday);
   return buffer;
 }
 
@@ -634,7 +671,7 @@ static struct quality *find_best_quality(const struct host *hp)
 static void send_user_change_msg(const struct user *up)
 {
 
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   struct link *lp;
 
   for (lp = links; lp; lp = lp->l_next) {
@@ -642,16 +679,16 @@ static void send_user_change_msg(const struct user *up)
       if (lp->l_user && up->u_oldchannel != up->u_channel) {
 	if (lp->l_user->u_channel == up->u_oldchannel) {
 	  if (up->u_channel >= 0)
-	    sprintf(buffer, "*** %s switched to channel %d.\n", up->u_name, up->u_channel);
+	    snprintf(buffer, sizeof(buffer), "*** %s switched to channel %d.\n", up->u_name, up->u_channel);
 	  else
-	    sprintf(buffer, "*** %s signed off.\n", up->u_name);
+	    snprintf(buffer, sizeof(buffer), "*** %s signed off.\n", up->u_name);
 	  send_string(lp, buffer);
 	} else if (lp->l_user->u_channel == up->u_channel) {
-	  sprintf(buffer, "*** %s signed on.\n", up->u_name);
+	  snprintf(buffer, sizeof(buffer), "*** %s signed on.\n", up->u_name);
 	  send_string(lp, buffer);
 	}
       } else if (lp->l_host) {
-	sprintf(buffer,
+	snprintf(buffer, sizeof(buffer),
 		"/\377\200USER %s %s %ld %d %d %s\n",
 		up->u_name,
 		up->u_host->h_name,
@@ -672,23 +709,23 @@ static void send_msg_to_user(const char *fromname, const char *toname, const cha
 
   char *cp;
   char *formatted_line;
-  char host_buffer[2048];
-  char prefix[2048];
+  char host_buffer[CONVBUFLEN];
+  char prefix[CONVBUFLEN];
   struct link *lp;
   struct user *up;
 
   if (!*text) return;
-  sprintf(host_buffer, "/\377\200UMSG %s %s %s\n", fromname, toname, text);
+  snprintf(host_buffer, sizeof(host_buffer), "/\377\200UMSG %s %s %s\n", fromname, toname, text);
   if (make_unique)
-    make_string_unique(host_buffer);
+    make_string_unique(host_buffer, sizeof(host_buffer));
   else if (!is_string_unique(host_buffer, CHECK_UNIQUE_TIME))
     return;
   if ((cp = strchr(text, UNIQMARKER))) *cp = 0;
   if (strcmp(fromname, conversd)) {
-    sprintf(prefix, "<*%s*>:", fromname);
+    snprintf(prefix, sizeof(prefix), "<*%s*>:", fromname);
     formatted_line = formatline(prefix, text);
   } else {
-    sprintf(prefix, "%s\n", text);
+    snprintf(prefix, sizeof(prefix), "%s\n", text);
     formatted_line = prefix;
   }
   for (up = users; up; up = up->u_next)
@@ -706,19 +743,19 @@ static void send_msg_to_channel(const char *fromname, int channel, const char *t
 
   char *cp;
   char *formatted_line;
-  char host_buffer[2048];
-  char prefix[2048];
+  char host_buffer[CONVBUFLEN];
+  char prefix[CONVBUFLEN];
   struct link *lp;
   struct user *up;
 
   if (!*text) return;
-  sprintf(host_buffer, "/\377\200CMSG %s %d %s\n", fromname, channel, text);
+  snprintf(host_buffer, sizeof(host_buffer), "/\377\200CMSG %s %d %s\n", fromname, channel, text);
   if (make_unique)
-    make_string_unique(host_buffer);
+    make_string_unique(host_buffer, sizeof(host_buffer));
   else if (!is_string_unique(host_buffer, CHECK_UNIQUE_TIME))
     return;
   if ((cp = strchr(text, UNIQMARKER))) *cp = 0;
-  sprintf(prefix, "<%s>:", fromname);
+  snprintf(prefix, sizeof(prefix), "<%s>:", fromname);
   formatted_line = formatline(prefix, text);
   for (up = users; up; up = up->u_next)
     if (up->u_channel >= 0) {
@@ -740,8 +777,8 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
   static const char responsetext[] =
   "*** Invitation sent to %s @ %s.";
 
-  char buffer[2048];
-  char host_buffer[2048];
+  char buffer[CONVBUFLEN];
+  char host_buffer[CONVBUFLEN];
   int fdtty;
   int fdut;
   struct link *lp;
@@ -749,26 +786,26 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
   struct user *up;
   struct utmp utmpbuf;
 
-  sprintf(host_buffer, "/\377\200INVI %s %s %d %s\n", fromname, toname, channel, text);
+  snprintf(host_buffer, sizeof(host_buffer), "/\377\200INVI %s %s %d %s\n", fromname, toname, channel, text);
   if (make_unique)
-    make_string_unique(host_buffer);
+    make_string_unique(host_buffer, sizeof(host_buffer));
   else if (!is_string_unique(host_buffer, CHECK_UNIQUE_TIME))
     return;
 
   for (up = users; up; up = up->u_next)
     if (up->u_channel == channel && !strcmp(up->u_name, toname)) {
       clear_locks();
-      sprintf(buffer, "*** User %s is already on this channel.", toname);
+      snprintf(buffer, sizeof(buffer), "*** User %s is already on this channel.", toname);
       send_msg_to_user(conversd, fromname, buffer, 1);
       return;
     }
 
   for (up = users; up; up = up->u_next)
     if (up->u_channel >= 0 && up->u_link->l_user && !strcmp(up->u_name, toname)) {
-      sprintf(buffer, invitetext, fromname, localtimestring(currtime), channel);
+      snprintf(buffer, sizeof(buffer), invitetext, fromname, localtimestring(currtime), channel);
       send_string(up->u_link, buffer);
       clear_locks();
-      sprintf(buffer, responsetext, toname, my.h_name);
+      snprintf(buffer, sizeof(buffer), responsetext, toname, my.h_name);
       send_msg_to_user(conversd, fromname, buffer, 1);
       return;
     }
@@ -791,7 +828,7 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
 	if (stat(buffer, &statbuf)) continue;
 	if (!(statbuf.st_mode & 022)) continue;
 	if ((fdtty = open(buffer, O_WRONLY | O_NOCTTY, 0644)) < 0) continue;
-	sprintf(buffer, invitetext, fromname, localtimestring(currtime), channel);
+	snprintf(buffer, sizeof(buffer), invitetext, fromname, localtimestring(currtime), channel);
 	if (!fork()) {
 	  write(fdtty, buffer, strlen(buffer));
 	  _exit(0);
@@ -799,7 +836,7 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
 	close(fdtty);
 	close(fdut);
 	clear_locks();
-	sprintf(buffer, responsetext, toname, my.h_name);
+	snprintf(buffer, sizeof(buffer), responsetext, toname, my.h_name);
 	send_msg_to_user(conversd, fromname, buffer, 1);
 	return;
       }
@@ -817,7 +854,7 @@ static void send_invite_msg(const char *fromname, const char *toname, int channe
 static void handle_rout_msg(const char *fromname, const char *toname, int ttl)
 {
 
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   struct host *hp;
   struct quality *qp;
 
@@ -828,7 +865,7 @@ static void handle_rout_msg(const char *fromname, const char *toname, int ttl)
 
   for (hp = hosts;; hp = hp->h_next) {
     if (!hp) {
-      sprintf(buffer,
+      snprintf(buffer, sizeof(buffer),
 	      "*** Route: %s does not know '%s'",
 	      my.h_name,
 	      toname);
@@ -841,7 +878,7 @@ static void handle_rout_msg(const char *fromname, const char *toname, int ttl)
 
   qp = find_best_quality(hp);
   if (!qp) {
-    sprintf(buffer,
+    snprintf(buffer, sizeof(buffer),
 	    "*** Route: %s has no route to '%s'",
 	    my.h_name,
 	    toname);
@@ -849,7 +886,7 @@ static void handle_rout_msg(const char *fromname, const char *toname, int ttl)
     return;
   }
 
-  sprintf(buffer,
+  snprintf(buffer, sizeof(buffer),
 	  "*** Route: %s (%ld) %s -> %s",
 	  my.h_name,
 	  qp->q_rtt,
@@ -858,7 +895,7 @@ static void handle_rout_msg(const char *fromname, const char *toname, int ttl)
   send_msg_to_user(conversd, fromname, buffer, 1);
 
   if (ttl > 0 && strcmp(qp->q_link->l_host->h_name, toname)) {
-    sprintf(buffer, "/\377\200ROUT %s %s %d\n", toname, fromname, ttl - 1);
+    snprintf(buffer, sizeof(buffer), "/\377\200ROUT %s %s %d\n", toname, fromname, ttl - 1);
     send_string(qp->q_link, buffer);
   }
 }
@@ -870,7 +907,7 @@ static void connect_peers(void)
 
   char *cp1;
   char *cp;
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   int addrlen;
   int fd;
   int flags;
@@ -912,21 +949,21 @@ static void connect_peers(void)
     cp = pp->p_command;
     while (*cp) {
       if ((cp1 = strstr(cp, "\\n"))) {
-	strncat(buffer, cp, cp1 - cp);
+	appendstring(buffer, sizeof(buffer), cp, (size_t) (cp1 - cp));
 	cp = cp1 + 2;
       } else {
-	strcat(buffer, cp);
+	appendstring(buffer, sizeof(buffer), cp, (size_t) -1);
 	cp = "";
       }
-      strcat(buffer, "\n");
+      appendstring(buffer, sizeof(buffer), "\n", (size_t) -1);
     }
-    strcat(buffer, "convers\n/\377\200HOST ");
-    strcat(buffer, my.h_name);
-    strcat(buffer, " ");
-    strcat(buffer, my.h_software);
-    strcat(buffer, " ");
-    strcat(buffer, my.h_capabilities);
-    strcat(buffer, "\n");
+    appendstring(buffer, sizeof(buffer), "convers\n/\377\200HOST ", (size_t) -1);
+    appendstring(buffer, sizeof(buffer), my.h_name, (size_t) -1);
+    appendstring(buffer, sizeof(buffer), " ", (size_t) -1);
+    appendstring(buffer, sizeof(buffer), my.h_software, (size_t) -1);
+    appendstring(buffer, sizeof(buffer), " ", (size_t) -1);
+    appendstring(buffer, sizeof(buffer), my.h_capabilities, (size_t) -1);
+    appendstring(buffer, sizeof(buffer), "\n", (size_t) -1);
     send_string(lp, buffer);
   }
 }
@@ -967,7 +1004,7 @@ static void send_pings(void)
 static void send_dests(void)
 {
 
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   long delay;
   long diff;
   long lastrtt;
@@ -1015,7 +1052,7 @@ static void send_dests(void)
       if (sendtime <= currtime) {
 	if (rtt > MAX_RTT)
 	  rtt = 0;
-	sprintf(buffer, "/\377\200DEST %s %ld %s\n", hp->h_name, qp->q_lastrtt = rtt, hp->h_software);
+	snprintf(buffer, sizeof(buffer), "/\377\200DEST %s %ld %s\n", hp->h_name, qp->q_lastrtt = rtt, hp->h_software);
 	send_string(lp, buffer);
 	qp->q_sendtime = currtime;
       } else {
@@ -1113,25 +1150,25 @@ static void channel_command(struct link *lp)
 {
 
   char *cp;
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   int newchannel;
   struct user *up;
 
   up = lp->l_user;
   cp = getarg(0, ONE_TOKEN, KEEP_CASE);
   if (!*cp) {
-    sprintf(buffer, "*** You are on channel %d.\n", up->u_channel);
+    snprintf(buffer, sizeof(buffer), "*** You are on channel %d.\n", up->u_channel);
     send_string(lp, buffer);
     return;
   }
   newchannel = atoi(cp);
   if (newchannel < 0 || newchannel > MAX_CHANNEL) {
-    sprintf(buffer, "*** Channel numbers must be in the range 0..%d.\n", MAX_CHANNEL);
+    snprintf(buffer, sizeof(buffer), "*** Channel numbers must be in the range 0..%d.\n", MAX_CHANNEL);
     send_string(lp, buffer);
     return;
   }
   if (newchannel == up->u_channel) {
-    sprintf(buffer, "*** Already on channel %d.\n", up->u_channel);
+    snprintf(buffer, sizeof(buffer), "*** Already on channel %d.\n", up->u_channel);
     send_string(lp, buffer);
     return;
   }
@@ -1139,7 +1176,7 @@ static void channel_command(struct link *lp)
   up->u_oldchannel = up->u_channel;
   up->u_channel = newchannel;
   send_user_change_msg(up);
-  sprintf(buffer, "*** Now on channel %d.\n", up->u_channel);
+  snprintf(buffer, sizeof(buffer), "*** Now on channel %d.\n", up->u_channel);
   send_string(lp, buffer);
 }
 
@@ -1185,7 +1222,7 @@ static void help_command(struct link *lp)
 static void hosts_command(struct link *lp)
 {
 
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   char srttstr[80];
   const char *viastr;
   int verbose;
@@ -1198,12 +1235,12 @@ static void hosts_command(struct link *lp)
     qp = find_best_quality(hp);
     if (qp) {
       viastr = qp->q_link->l_host->h_name;
-      sprintf(srttstr, "%5ld", qp->q_rtt);
+      snprintf(srttstr, sizeof(srttstr), "%5ld", qp->q_rtt);
     } else {
       viastr = "";
       strcpy(srttstr, "     ");
     }
-    sprintf(buffer,
+    snprintf(buffer, sizeof(buffer),
 	    "%-8.8s %-8.8s %s %-8.8s %s\n",
 	    hp->h_name,
 	    viastr,
@@ -1214,13 +1251,20 @@ static void hosts_command(struct link *lp)
     if (verbose && hp->h_qualities) {
       *buffer = 0;
       for (qp = hp->h_qualities; qp; qp = qp->q_next) {
-	sprintf(buffer + strlen(buffer),
-		" %s (S=%ld L=%ld)",
-		qp->q_link->l_host->h_name,
-		qp->q_rtt,
-		qp->q_lastrtt);
+	{
+	  size_t used = strlen(buffer);
+
+	  /* One entry per neighbour, and nothing bounds how many there are */
+	  if (used + 2 >= sizeof(buffer))
+	    break;
+	  snprintf(buffer + used, sizeof(buffer) - used,
+		   " %s (S=%ld L=%ld)",
+		   qp->q_link->l_host->h_name,
+		   qp->q_rtt,
+		   qp->q_lastrtt);
+	}
       }
-      strcat(buffer, "\n");
+      appendstring(buffer, sizeof(buffer), "\n", (size_t) -1);
       send_string(lp, buffer);
     }
   }
@@ -1253,7 +1297,7 @@ static void kick_command(struct link *lp)
 static void links_command(struct link *lp)
 {
 
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   char srttstr[80];
   char *name;
   char *state;
@@ -1275,10 +1319,10 @@ static void links_command(struct link *lp)
       name = "";
     }
     if (p->l_srtt)
-      sprintf(srttstr, "%5.4g", p->l_srtt);
+      snprintf(srttstr, sizeof(srttstr), "%5.4g", p->l_srtt);
     else
       strcpy(srttstr, "     ");
-    sprintf(buffer,
+    snprintf(buffer, sizeof(buffer),
 	    "%-8.8s %-9s %s %s %5ld %5d %7d %7d\n",
 	    name,
 	    state,
@@ -1298,7 +1342,7 @@ static void links_command(struct link *lp)
 static void msg_command(struct link *lp)
 {
 
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   char *text;
   char *toname;
   struct user *up;
@@ -1312,7 +1356,7 @@ static void msg_command(struct link *lp)
       send_msg_to_user(lp->l_user->u_name, toname, text, 1);
       return;
     }
-  sprintf(buffer, "*** No such user: %s.\n", toname);
+  snprintf(buffer, sizeof(buffer), "*** No such user: %s.\n", toname);
   send_string(lp, buffer);
 }
 
@@ -1322,7 +1366,7 @@ static void note_command(struct link *lp)
 {
 
   char *note;
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   struct user *up;
 
   up = lp->l_user;
@@ -1333,7 +1377,7 @@ static void note_command(struct link *lp)
     up->u_oldchannel = up->u_channel;
     send_user_change_msg(up);
   }
-  sprintf(buffer, "*** Your personal note is set to \"%s\".\n", strcmp(up->u_note, NO_NOTE) ? up->u_note : "");
+  snprintf(buffer, sizeof(buffer), "*** Your personal note is set to \"%s\".\n", strcmp(up->u_note, NO_NOTE) ? up->u_note : "");
   send_string(lp, buffer);
 }
 
@@ -1369,18 +1413,18 @@ static void peers_command(struct link *lp)
 
   char *name;
   char *state;
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   char nexttry[8];
   struct peer *pp;
 
   send_string(lp, "Address                                 State      Since NextTry Tries LinkedTo\n");
   for (pp = peers; pp; pp = pp->p_next) {
-    strcpy(nexttry, "      ");
+    snprintf(nexttry, sizeof(nexttry), "%s", "      ");
     if (!pp->p_link) {
       state = "Wait";
       name = "";
       if (pp->p_retrytime > currtime)
-	strcpy(nexttry, localtimestring(pp->p_retrytime));
+	snprintf(nexttry, sizeof(nexttry), "%s", localtimestring(pp->p_retrytime));
     } else if (pp->p_link->l_user) {
       state = "User";
       name = pp->p_link->l_user->u_name;
@@ -1394,7 +1438,7 @@ static void peers_command(struct link *lp)
       state = "Closed";
       name = "";
     }
-    sprintf(buffer,
+    snprintf(buffer, sizeof(buffer),
 	    "%-39.39s %-9s %s  %s %5d %-8.8s\n",
 	    *pp->p_command ? pp->p_command : pp->p_socket,
 	    state,
@@ -1414,7 +1458,7 @@ static void name_command(struct link *lp)
 
   char *name;
   char *note;
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   struct link *lpold;
   struct user *up;
 
@@ -1427,12 +1471,12 @@ static void name_command(struct link *lp)
   if (up->u_channel >= 0 && lpold) close_link(lpold);
   lp->l_user = up;
   lp->l_stime = currtime;
-  sprintf(buffer, "conversd @ %s $Revision: 2.82 $  Type /HELP for help.\n", my.h_name);
+  snprintf(buffer, sizeof(buffer), "conversd @ %s $Revision: 2.82 $  Type /HELP for help.\n", my.h_name);
   send_string(lp, buffer);
   up->u_oldchannel = up->u_channel;
   up->u_channel = atoi(getarg(0, ONE_TOKEN, KEEP_CASE));
   if (up->u_channel < 0 || up->u_channel > MAX_CHANNEL) {
-    sprintf(buffer, "*** Channel numbers must be in the range 0..%d.\n", MAX_CHANNEL);
+    snprintf(buffer, sizeof(buffer), "*** Channel numbers must be in the range 0..%d.\n", MAX_CHANNEL);
     send_string(lp, buffer);
     up->u_channel = 0;
   }
@@ -1449,13 +1493,13 @@ static void name_command(struct link *lp)
 static void users_command(struct link *lp)
 {
 
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   struct user *up;
 
   send_string(lp, "User     Host     Channel   Time Personal note\n");
   for (up = users; up; up = up->u_next)
     if (up->u_channel >= 0) {
-      sprintf(buffer,
+      snprintf(buffer, sizeof(buffer),
 	      "%-8.8s %-8.8s %7d %s %s\n",
 	      up->u_name,
 	      up->u_host->h_name,
@@ -1472,7 +1516,7 @@ static void users_command(struct link *lp)
 static void who_command(struct link *lp)
 {
 
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   int channel;
   int nextchannel;
   struct user *up;
@@ -1490,12 +1534,13 @@ static void who_command(struct link *lp)
       if (up->u_channel > channel && up->u_channel < nextchannel)
 	nextchannel = up->u_channel;
       else if (up->u_channel == channel) {
-	if (!*buffer) sprintf(buffer, "%7d", channel);
-	strcat(buffer, " ");
-	strcat(buffer, up->u_name);
+	if (!*buffer) snprintf(buffer, sizeof(buffer), "%7d", channel);
+	/* One name per user on the channel, and nothing limits how many */
+	appendstring(buffer, sizeof(buffer), " ", (size_t) -1);
+	appendstring(buffer, sizeof(buffer), up->u_name, (size_t) -1);
       }
     }
-    strcat(buffer, "\n");
+    appendstring(buffer, sizeof(buffer), "\n", (size_t) -1);
     send_string(lp, buffer);
   }
   send_string(lp, "***\n");
@@ -1551,7 +1596,7 @@ static void h_dest_command(struct link *lp)
 static void h_host_command(struct link *lp)
 {
 
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   char *name;
   struct host *hp;
   struct link *lpold;
@@ -1599,7 +1644,7 @@ static void h_host_command(struct link *lp)
       pp->p_retrytime = currtime + min_waittime;
     }
 
-  sprintf(buffer,
+  snprintf(buffer, sizeof(buffer),
 	  "/\377\200HOST %s %s %s\n",
 	  my.h_name,
 	  my.h_software,
@@ -1608,7 +1653,7 @@ static void h_host_command(struct link *lp)
 
   for (up = users; up; up = up->u_next)
     if (up->u_channel >= 0 || up->u_seq) {
-      sprintf(buffer,
+      snprintf(buffer, sizeof(buffer),
 	      "/\377\200USER %s %s %ld %d %d %s\n",
 	      up->u_name,
 	      up->u_host->h_name,
@@ -1643,9 +1688,9 @@ static void h_invi_command(struct link *lp)
 
 static void h_ping_command(struct link *lp)
 {
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
 
-  sprintf(buffer, "/\377\200PONG %ld\n", lp->l_txrtt);
+  snprintf(buffer, sizeof(buffer), "/\377\200PONG %ld\n", lp->l_txrtt);
   send_string(lp, buffer);
 }
 
@@ -1740,7 +1785,7 @@ static void h_user_command(struct link *lp)
   char *host;
   char *name;
   char *note;
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   int newchannel;
   long seq;
   struct host *hp;
@@ -1770,7 +1815,7 @@ static void h_user_command(struct link *lp)
     if (hp == &my) {
       if (debug >= 2) printf("*** Got info about my own user: rejected.\n");
       inc_seq(&up->u_seq);
-      sprintf(buffer, "/\377\200USER %s %s %ld %d %d %s\n", name, host, up->u_seq, newchannel, up->u_channel, up->u_note);
+      snprintf(buffer, sizeof(buffer), "/\377\200USER %s %s %ld %d %d %s\n", name, host, up->u_seq, newchannel, up->u_channel, up->u_note);
       send_string(lp, buffer);
     } else {
       if (debug >= 2) printf("*** New user info: accepted.\n");
@@ -1861,7 +1906,7 @@ static void process_input(struct link *lp)
   };
 
   char *arg;
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   const struct command * cp;
   int arglen;
 
@@ -1884,7 +1929,7 @@ static void process_input(struct link *lp)
 	return;
       }
     if (lp->l_user) {
-      sprintf(buffer, "*** Unknown command '/%s'.  Type /HELP for help.\n", arg);
+      snprintf(buffer, sizeof(buffer), "*** Unknown command '/%s'.  Type /HELP for help.\n", arg);
       send_string(lp, buffer);
     }
   } else if (lp->l_user)
@@ -1965,7 +2010,7 @@ static void check_files_changed(void)
 static void link_recv(struct link *lp)
 {
 
-  char buffer[2048];
+  char buffer[CONVBUFLEN];
   int i;
   int n;
 
