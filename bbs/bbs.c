@@ -650,47 +650,71 @@ static void wait_for_prompt(void)
 
 /*---------------------------------------------------------------------------*/
 
-static void translate_bangs(char *s)
+/* a!b!c becomes c@b@a.  Written out instead of recursive: the recursion went
+ * one level per '!', and nothing limits how many of those a message carries.
+ */
+
+static void translate_bangs(char *s, size_t size)
 {
 
-  char *p;
-  static char tmp[1024];
+  char tmp[1024];
+  char *bang;
+  int n;
+  size_t len;
 
-  if ((p = strchr(s, '!'))) {
-    *p = 0;
-    translate_bangs(p + 1);
-    sprintf(tmp, "%s@%s", p + 1, s);
-    strcpy(s, tmp);
+  if (!strchr(s, '!'))
+    return;
+  len = 0;
+  n = 0;
+  while ((bang = strrchr(s, '!'))) {
+    *bang = 0;
+    if (n++ && len + 1 < sizeof(tmp))
+      tmp[len++] = '@';
+    for (bang++; *bang && len + 1 < sizeof(tmp); bang++)
+      tmp[len++] = *bang;
   }
+  if (n && len + 1 < sizeof(tmp))
+    tmp[len++] = '@';
+  for (bang = s; *bang && len + 1 < sizeof(tmp); bang++)
+    tmp[len++] = *bang;
+  tmp[len] = 0;
+  snprintf(s, size, "%s", tmp);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void split_address(const char *addr, char *userpart, char *hostpart)
+/* userpart and hostpart are each size bytes.  They used to be written with
+ * strcpy() from a buffer filled with an unbounded copy of addr, and addr
+ * comes straight out of the headers of a received message.
+ */
+
+static void split_address(const char *addr, char *userpart, char *hostpart,
+			  size_t size)
 {
 
   char buf[1024];
   char *cp;
   const char *from;
+  size_t n;
 
-  for (cp = buf, from = addr; *from; from++) {
+  for (n = 0, from = addr; *from && n + 1 < sizeof(buf); from++) {
     if (*from == '%') {
-      *cp++ = '@';
+      buf[n++] = '@';
     } else {
-      *cp++ = Xtolower(*from & 0xff);
+      buf[n++] = Xtolower(*from & 0xff);
     }
   }
-  *cp = 0;
+  buf[n] = 0;
 
-  translate_bangs(buf);
+  translate_bangs(buf, sizeof(buf));
 
-  strcpy(userpart, buf);
+  snprintf(userpart, size, "%s", buf);
   cp = strchr(userpart, '@');
   if (!cp) {
-    strcpy(hostpart, myhostname);
+    snprintf(hostpart, size, "%s", myhostname);
   } else {
     *cp = 0;
-    strcpy(hostpart, cp + 1);
+    snprintf(hostpart, size, "%s", cp + 1);
     cp = strchr(hostpart, '@');
     if (cp) {
       *cp = 0;
@@ -698,17 +722,17 @@ static void split_address(const char *addr, char *userpart, char *hostpart)
   }
 
   if (!*userpart || !strcmp(userpart, "mailer-daemon")) {
-    strcpy(userpart, myhostname);
+    snprintf(userpart, size, "%s", myhostname);
   }
   if (!strcmp(userpart, "deyke")) {
-    strcpy(userpart, "dk5sg");
-    strcpy(hostpart, "");
+    snprintf(userpart, size, "%s", "dk5sg");
+    *hostpart = 0;
   }
   if ((cp = strchr(hostpart, '.'))) {
     *cp = 0;
   }
   if (!*hostpart) {
-    strcpy(hostpart, myhostname);
+    snprintf(hostpart, size, "%s", myhostname);
   }
 }
 
@@ -753,23 +777,126 @@ static long get_date_from_header(const char *line)
 
 /*---------------------------------------------------------------------------*/
 
+/* Start a program with an argument vector and return a stream to write to
+ * its standard input.  This is popen() without the shell: nothing in the
+ * arguments can turn into a command, a redirection or a separator.  That
+ * matters here because the arguments are mail addresses taken out of a
+ * message from the network, and because this program is installed setuid.
+ *
+ * With drop_privileges set the child gives up root for good, real uid
+ * included, before it execs.  seteugid() in the parent is not enough: it
+ * leaves the real uid at 0, and a program that finds ruid 0 and euid
+ * something else only has to call setuid(0) to be root again.
+ */
+
+static FILE *pipe_to_program(char *const argv[], int drop_privileges,
+			     pid_t *pidp)
+{
+
+  FILE *fp;
+  int fd[2];
+  int i;
+  pid_t pid;
+
+  if (pipe(fd))
+    return 0;
+  switch (pid = fork()) {
+  case -1:
+    close(fd[0]);
+    close(fd[1]);
+    return 0;
+  case 0:
+    close(fd[1]);
+    if (fd[0] != 0) {
+      if (dup2(fd[0], 0) == -1)
+	_exit(127);
+      close(fd[0]);
+    }
+    for (i = 3; i < 1024; i++)
+      close(i);
+    if (drop_privileges && dropprivileges(user.name, user.uid, user.gid))
+      _exit(127);
+    execv(argv[0], argv);
+    _exit(127);
+  }
+  close(fd[0]);
+  if (!(fp = fdopen(fd[1], "w"))) {
+    close(fd[1]);
+    return 0;
+  }
+  *pidp = pid;
+  return fp;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void close_pipe_to_program(FILE *fp, pid_t pid)
+{
+  int status;
+
+  fclose(fp);
+  while (waitpid(pid, &status, 0) == -1 && errno == EINTR) ;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Is this safe to hand to a delivery agent as one argument of its argument
+ * vector?  The agent parses its own command line, so a value starting with
+ * '-' would become an option; everything else here is the set of characters
+ * a mail address is built from.  Anything outside it is not a deliverable
+ * address in the first place, so refusing is no loss.
+ */
+
+static int address_ok(const char *s)
+{
+
+  const char *p;
+
+  if (!s || !*s || *s == '-')
+    return 0;
+  for (p = s; *p; p++)
+    if (!isalnum(*p & 0xff) && !strchr(".-_+", *p))
+      return 0;
+  return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void send_to_mail_or_news(struct mail *mail, enum e_type dest)
 {
 
   char cmid[1024];
-  char command[1024];
+  char from[2 * sizeof(mail->fromuser)];
   char path[1024];
+  char to[2 * sizeof(mail->touser)];
+  char *argv[8];
   char *h;
   FILE *fp;
+  int argc;
+  pid_t pid;
   struct strlist *p;
 
-  if (dest == NEWS)
-    strcpy(command, RNEWS_PROG);
-  else
-    sprintf(command, SENDMAIL_PROG " -oi -oem -f %s@%s %s@%s",
-	    mail->fromuser, mail->fromhost,
-	    mail->touser, mail->tohost);
-  if (!(fp = popen(command, "w")))
+  argc = 0;
+  if (dest == NEWS) {
+    argv[argc++] = (char *) RNEWS_PROG;
+  } else {
+    if (!address_ok(mail->fromuser) || !address_ok(mail->fromhost) ||
+	!address_ok(mail->touser) || !address_ok(mail->tohost)) {
+      fprintf(stderr, "bbs: not delivering <%s@%s>: address is not an address\n",
+	      mail->touser, mail->tohost);
+      return;
+    }
+    snprintf(from, sizeof(from), "%s@%s", mail->fromuser, mail->fromhost);
+    snprintf(to, sizeof(to), "%s@%s", mail->touser, mail->tohost);
+    argv[argc++] = (char *) SENDMAIL_PROG;
+    argv[argc++] = "-oi";
+    argv[argc++] = "-oem";
+    argv[argc++] = "-f";
+    argv[argc++] = from;
+    argv[argc++] = to;
+  }
+  argv[argc] = 0;
+  if (!(fp = pipe_to_program(argv, 0, &pid)))
     halt();
   fprintf(fp, "From: %s@%s\n", mail->fromuser, mail->fromhost);
   if (dest == NEWS) {
@@ -796,6 +923,9 @@ static void send_to_mail_or_news(struct mail *mail, enum e_type dest)
       for (p = mail->head->next;
 	   p && (h = get_host_from_header(p->str));
 	   p = p->next) {
+	/* One R: line per relay, and a message can carry any number of them */
+	if (strlen(path) + strlen(h) + 2 > sizeof(path))
+	  break;
 	if (*path)
 	  strcat(path, "!");
 	strcat(path, h);
@@ -805,7 +935,7 @@ static void send_to_mail_or_news(struct mail *mail, enum e_type dest)
       strcpy(path, "not-for-mail");
     if (level == MBOX &&
 	(!strcmp(mail->touser, "e") || !strcmp(mail->touser, "m")))
-      strcpy(path, user.name);
+      snprintf(path, sizeof(path), "%s", user.name);
     fprintf(fp, "Path: %s\n", path);
   }
   if (mail->lifetime) {
@@ -824,7 +954,7 @@ static void send_to_mail_or_news(struct mail *mail, enum e_type dest)
     putc('\n', fp);
     p = p->next;
   }
-  pclose(fp);
+  close_pipe_to_program(fp, pid);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1491,7 +1621,8 @@ static struct mail *read_mail_or_news_file(const char *filename, enum e_type src
   }
   fclose(fp);
 
-  split_address(from, mail->fromuser, mail->fromhost);
+  split_address(from, mail->fromuser, mail->fromhost,
+		sizeof(mail->fromuser));
 
   if (src == NEWS) {
     while (*newsgroups &&
@@ -1925,7 +2056,8 @@ static void forward_mail(void)
     if (!*to)
       continue;
     if ((mail = read_mail_or_news_file(dfile, MAIL, HEADER_AND_BODY))) {
-      split_address(to, mail->touser, mail->tohost);
+      split_address(to, mail->touser, mail->tohost,
+		    sizeof(mail->touser));
       forward_message(mail);
       free_mail(mail);
     }
@@ -1961,8 +2093,19 @@ static void forward_news(void)
   if (!(fp = fopen(workfile, "r"))) {
     if (rename(batchfile, workfile))
       return;
-    sprintf(line, CTLINND_PROG " -s flush %s", user.name);
-    system(line);
+    {
+      char *cargv[5];
+      FILE *cfp;
+      pid_t cpid;
+
+      cargv[0] = (char *) CTLINND_PROG;
+      cargv[1] = "-s";
+      cargv[2] = "flush";
+      cargv[3] = user.name;
+      cargv[4] = 0;
+      if ((cfp = pipe_to_program(cargv, 0, &cpid)))
+	close_pipe_to_program(cfp, cpid);
+    }
     for (i = 0;; i++) {
       if (!stat(batchfile, &statbuf))
 	break;
@@ -2316,18 +2459,30 @@ static void read_command(int argc, const char **argv)
   int high;
   int low;
   int mode;
+  pid_t pipepid = -1;
 
   mode = Xtolower(argv[0][0]);
   fp = stdout;
   argc--;
   argv++;
   if (mode == 'w' || mode == 'p') {
-    seteugid(user.uid, user.gid);
-    if (mode == 'w')
+    if (mode == 'w') {
+      seteugid(user.uid, user.gid);
       fp = fopen(*argv, "a");
-    else
-      fp = popen(*argv, "w");
-    seteugid(0, 0);
+      seteugid(0, 0);
+    } else {
+      /* PIPE runs a command line the user typed, which is the point of the
+       * command.  It must run as that user and nothing more: the child drops
+       * the real uid too, so the shell cannot take root back.
+       */
+      char *cargv[4];
+
+      cargv[0] = user.shell;
+      cargv[1] = "-c";
+      cargv[2] = (char *) *argv;
+      cargv[3] = 0;
+      fp = pipe_to_program(cargv, 1, &pipepid);
+    }
     if (!fp) {
       perror(*argv);
       return;
@@ -2364,7 +2519,7 @@ Done:
     fclose(fp);
     break;
   case 'p':
-    pclose(fp);
+    close_pipe_to_program(fp, pipepid);
     break;
   }
 }
@@ -2601,8 +2756,11 @@ static void shell_command(int argc, const char **argv)
     puts("Sorry, cannot fork.");
     break;
   case 0:
-    setgid(user.gid);
-    setuid(user.uid);
+    /* setgid()/setuid() alone left root's supplementary groups in place,
+     * and the shell kept them.
+     */
+    if (dropprivileges(user.name, user.uid, user.gid))
+      _exit(127);
     for (i = 3; i < 1024; i++) {
       close(i);
     }
