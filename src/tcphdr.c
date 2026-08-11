@@ -149,8 +149,20 @@ struct mbuf **bpp
 		case NOOP_KIND:
 			continue;       /* Go look for next option */
 		}
-		/* All other options have a length field */
+		/* All other options have a length field.  Neither it nor the
+		 * option body may reach past what pullup() delivered: a
+		 * multi-byte kind as the last byte of the field used to read
+		 * options[40], and a timestamp eight bytes beyond that - which
+		 * then went back to the peer in the echo field.  This is the
+		 * "opsize < 2 || opsize > length" test Linux has in
+		 * tcp_parse_options().
+		 */
+		if(i < 1)
+			break;
 		optlen = *cp++;
+		i--;
+		if(optlen < 2 || optlen - 2 > i)
+			break;
 
 		/* Process valid multi-byte options */
 		switch(kind){
@@ -174,8 +186,7 @@ struct mbuf **bpp
 			}
 			break;
 		}
-		optlen = max(2,optlen); /* Enforce legal minimum */
-		i -= optlen;
+		i -= optlen - 2;
 		cp += optlen - 2;
 	}
 	return (int)hdrlen;

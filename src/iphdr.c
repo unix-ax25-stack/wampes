@@ -136,6 +136,14 @@ uint len
 		up = m->data;
 		csum = 0;
 
+		/* An empty mbuf in the chain would take the odd-address branch
+		 * below, read a byte that is not there and leave cnt at (uint)
+		 * -1, after which lcsum() would be called for 0x7fffffff
+		 * shorts.  qdata(x, 0) produces such an mbuf.
+		 */
+		if(cnt == 0)
+			continue;
+
 		if(((long)up) & 1){
 			/* Handle odd leading byte */
 			if(swap)
@@ -164,7 +172,7 @@ uint len
 			swap = !swap;
 		}
 		sum += csum;
-		total += m->cnt;
+		total += min(m->cnt, len - total);
 	}
 	/* Do final end-around carry, complement and return */
 	return ~eac(sum) & 0xffff;
