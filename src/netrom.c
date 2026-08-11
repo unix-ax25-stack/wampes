@@ -16,7 +16,7 @@
 #include "cmdparse.h"
 #include "trace.h"
 
-static int nr_maxdest     =   400;      /* not used */
+static int nr_maxdest     =   400;
 static int nr_minqual     =     0;      /* not used */
 static int nr_hfqual      =   192;
 static int nr_rsqual      =   255;      /* not used */
@@ -36,6 +36,7 @@ static int nr_slottime    =    10;      /* not used */
 static int nr_callcheck   =     0;      /* not used */
 static int nr_beacon      =     0;      /* not used */
 static int nr_cq          =     0;      /* not used */
+static int nr_maxcircuits =   100;
 
 static const struct parms {
   char *text;
@@ -69,10 +70,11 @@ static const struct parms {
   { "23 AX.25 digipeating  (0=off 1=dumb 2=s&f)    ", &Digipeat,       0,          2 },
   { "24 Validate callsigns (0=off 1=on)            ", &nr_callcheck,   0,          1 },
   { "25 Station ID beacons (0=off 1=after 2=every) ", &nr_beacon,      0,          2 },
-  { "26 CQ UI frames       (0=off 1=on)            ", &nr_cq,          0,          1 }
+  { "26 CQ UI frames       (0=off 1=on)            ", &nr_cq,          0,          1 },
+  { "27 Maximum transport circuits (0=unlimited)   ", &nr_maxcircuits, 0,      65535 }
 };
 
-#define NPARMS 26
+#define NPARMS 27
 
 static const uint8 L3RTT[] = {
   'L'<<1, '3'<<1, 'R'<<1, 'T'<<1, 'T'<<1, ' '<<1, 0<<1
@@ -147,8 +149,20 @@ struct node {
 
 static struct broadcast *broadcasts;
 static struct node *nodes, *mynode;
+static int nnodes;              /* entries on the nodes list, see nr_maxdest */
 
 /*---------------------------------------------------------------------------*/
+
+/* Returns 0 if the node is not known and may not be created: either the
+ * destination list is full or there is no memory.  Every caller has to cope
+ * with that - the table used to grow for as long as the entries kept coming,
+ * and a nodes broadcast carries as many as the sender puts in it, which over
+ * AXUDP is not limited by an AX.25 frame.  Each one costs a struct node and a
+ * linkinfo, and calculate_all() then walks all of them.
+ *
+ * The limit is parameter 1, "Maximum destination list entries", which has
+ * been in the parameter table and settable all along, marked "not used".
+ */
 
 static struct node *nodeptr(const uint8 *call, int create)
 {
@@ -156,8 +170,16 @@ static struct node *nodeptr(const uint8 *call, int create)
 
   for (pn = nodes; pn && !addreq(call, pn->call); pn = pn->next) ;
   if (!pn && create) {
+    if (nr_maxdest > 0 && nnodes >= nr_maxdest)
+      return NULL;
     pn = (struct node *) calloc(1, sizeof(struct node));
+    if (!pn)
+      return NULL;
     pn->call = (uint8 *) malloc(AXALEN);
+    if (!pn->call) {
+      free(pn);
+      return NULL;
+    }
     addrcp(pn->call, call);
     memset(pn->ident, ' ', IDENTLEN);
     pn->hopcnt = INFINITY;
@@ -166,6 +188,7 @@ static struct node *nodeptr(const uint8 *call, int create)
       nodes->prev = pn;
     }
     nodes = pn;
+    nnodes++;
   }
   return pn;
 }
@@ -218,7 +241,10 @@ static void send_broadcast_packet(struct mbuf **bpp)
 static void link_manager_initialize(void)
 {
 
-  mynode = nodeptr(Mycall, 1);
+  if (!(mynode = nodeptr(Mycall, 1))) {
+    printf("netrom: cannot create own node entry\n");
+    return;
+  }
   free(mynode->call);
   mynode->call = Mycall;
   calculate_all();
@@ -393,12 +419,17 @@ static void calculate_all(void)
 	  pn->links = pl->next;
 	if (pl->next) pl->next->prev = pl->prev;
 	pn1 = pl->node;
-	for (pl1 = pn1->links; pl1->node != pn; pl1 = pl1->next) ;
-	if (pl1->prev)
-	  pl1->prev->next = pl1->next;
-	else
-	  pn1->links = pl1->next;
-	if (pl1->next) pl1->next->prev = pl1->prev;
+	/* This assumed that every link has its counterpart.  If that ever
+	 * stops being true it should not be a null dereference.
+	 */
+	for (pl1 = pn1->links; pl1 && pl1->node != pn; pl1 = pl1->next) ;
+	if (pl1) {
+	  if (pl1->prev)
+	    pl1->prev->next = pl1->next;
+	  else
+	    pn1->links = pl1->next;
+	  if (pl1->next) pl1->next->prev = pl1->prev;
+	}
 	free(pl->info);
 	free(pl1);
 	free(pl);
@@ -452,6 +483,7 @@ static void calculate_all(void)
       if (pn->next) pn->next->prev = pn->prev;
       free(pn->call);
       free(pn);
+      nnodes--;
     }
   }
 }
@@ -476,9 +508,9 @@ static void broadcast_recv(struct mbuf **bpp, struct node *pn)
   while (pullup(bpp, buf, NRRTDESTLEN) == NRRTDESTLEN) {
     if (!*buf) break;
     if (addreq(buf, mynode->call)) continue;
-    pd = nodeptr(buf, 1);
+    if (!(pd = nodeptr(buf, 1))) continue;      /* destination list full */
     if (buf[AXALEN] > ' ') memcpy(pd->ident, buf + AXALEN, IDENTLEN);
-    pb = nodeptr(buf + AXALEN + IDENTLEN, 1);
+    if (!(pb = nodeptr(buf + AXALEN + IDENTLEN, 1))) continue;
     quality = buf[AXALEN+IDENTLEN+AXALEN];
     if (pb == mynode) {
       if (quality >= pd->quality) pd->force_broadcast = 1;
@@ -580,7 +612,7 @@ static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
 
   if (fromneighbor != mynode) {
     if (update_link(mynode, fromneighbor, 1, nr_hfqual)) calculate_all();
-    pn = nodeptr((*bpp)->data, 1);
+    if (!(pn = nodeptr((*bpp)->data, 1))) goto discard;
     if (pn == mynode) goto discard;  /* ROUTING ERROR */
     if (!pn->neighbor) {
       struct linkinfo *pi = linkinfoptr(mynode, fromneighbor);
@@ -629,13 +661,18 @@ static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
   (*bpp)->data[2*AXALEN] = ttl;
 
   if (addreq((*bpp)->data + AXALEN, L3RTT)) {
+    /* The opcode is at 19 and "L3RTT:" runs to 25, but the only length this
+     * function has established is 15 - a short frame addressed to L3RTT read
+     * up to eleven bytes past the end of the mbuf.
+     */
+    if ((*bpp)->cnt < AXALEN * 2 + 12) goto discard;
     if (((*bpp)->data[AXALEN*2+5] & NR4OPCODE) != NR4OPINFO) goto discard;
     if (memcmp("L3RTT:", (*bpp)->data + AXALEN * 2 + 6, 6)) goto discard;
     send_packet_to_neighbor(bpp, fromneighbor);
     return;
   }
 
-  pn = nodeptr((*bpp)->data + AXALEN, 1);
+  if (!(pn = nodeptr((*bpp)->data + AXALEN, 1))) goto discard;
   if (!pn->neighbor) {
     if (fromneighbor != mynode) {
       pn->force_broadcast = 1;
@@ -699,10 +736,16 @@ int nr_send(struct mbuf **bpp, struct iface *iface, int32 gateway, uint8 tos)
 
 void nr3_input(const uint8 *src, struct mbuf **bpp)
 {
+  struct node *pn;
+
+  if (!(pn = nodeptr(src, 1))) {
+    free_p(bpp);                /* destination list full */
+    return;
+  }
   if (bpp && *bpp && (*bpp)->cnt && *(*bpp)->data == 0xff)
-    broadcast_recv(bpp, nodeptr(src, 1));
+    broadcast_recv(bpp, pn);
   else
-    route_packet(bpp, nodeptr(src, 1));
+    route_packet(bpp, pn);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -738,6 +781,7 @@ char *Nr4reasons[] = {
 
 static int server_enabled;
 static struct circuit *circuits;
+static int ncircuits;           /* open circuits, see nr_maxcircuits */
 
 /*---------------------------------------------------------------------------*/
 
@@ -1000,6 +1044,7 @@ static struct circuit *create_circuit(void)
   pc->timer_t4.func = l4_t4_timeout;
   pc->timer_t4.arg = pc;
   pc->next = circuits;
+  ncircuits++;
   return circuits = pc;
 }
 
@@ -1049,7 +1094,14 @@ static void circuit_manager(struct mbuf **bpp)
       pc->window = (*bpp)->data[5];
       if (pc->window > nr_twindow) pc->window = nr_twindow;
       if (pc->window < 1) pc->window = 1;
-      if (server_enabled) {
+      /* Every connect request with a combination of index, id, user and node
+       * not seen before used to open a circuit, and nothing ever said no.
+       * Refusing is what this branch already does when there is no server,
+       * and it is a legitimate answer: the peer is told to go away instead of
+       * being left waiting.
+       */
+      if (server_enabled &&
+	  (nr_maxcircuits <= 0 || ncircuits <= nr_maxcircuits)) {
 	send_l4_packet(pc, NR4OPCONAK, NULL);
 	set_circuit_state(pc, NR4STCON);
       } else {
@@ -1377,6 +1429,7 @@ int del_nr(struct circuit *pc)
   free_q(&pc->sndq);
   free_q(&pc->resndq);
   free(pc);
+  ncircuits--;
   return 0;
 }
 
@@ -1724,9 +1777,12 @@ static int dolinks(int argc, char *argv[], void *p)
       printf("Invalid call \"%s\"\n", argv[1]);
       return 1;
     }
-    if (argc > 2)
-      pn1 = nodeptr(call, 1);
-    else if (!(pn1 = nodeptr(call, 0))) {
+    if (argc > 2) {
+      if (!(pn1 = nodeptr(call, 1))) {
+	printf("Destination list full (parameter 1)\n");
+	return 1;
+      }
+    } else if (!(pn1 = nodeptr(call, 0))) {
       printf("Unknown node \"%s\"\n", argv[1]);
       return 1;
     }
@@ -1757,7 +1813,10 @@ static int dolinks(int argc, char *argv[], void *p)
     printf("Invalid call \"%s\"\n", argv[2]);
     return 1;
   }
-  pn2 = nodeptr(call, 1);
+  if (!(pn2 = nodeptr(call, 1))) {
+    printf("Destination list full (parameter 1)\n");
+    return 1;
+  }
   if (pn1 == pn2) {
     printf("Both calls are identical\n");
     return 1;

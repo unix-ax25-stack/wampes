@@ -1249,6 +1249,11 @@ The quality of the path to this node.
 .LE
 .H 3 "netrom parms" " [\fIparm#\fP [\fIvalue\fP]]"
 Display or set NET/ROM parameters.
+Parameter 1 bounds the size of the node table: a nodes broadcast creates one
+entry per destination it carries, and over an encapsulated link nothing
+limits how many that is. Parameter 27 does the same for transport circuits,
+which a peer would otherwise open one at a time without end; a connect
+request over the limit is refused rather than queued.
 The following parameters are available:
 .P
 .TS
@@ -1257,7 +1262,7 @@ cB | cB | cB | cB | cB | cB
 r | l | r | r | r | l.
 Parm;Description;Min;Max;Dflt;Used
 _
-1;Maximum destination list entries;1;400;400;No
+1;Maximum destination list entries;1;400;400;Yes
 2;Worst quality for auto-updates;0;255;0;No
 3;Channel 0 (HDLC) quality;0;255;192;Yes
 4;Channel 1 (RS232) quality;0;255;255;No
@@ -1283,6 +1288,7 @@ _
 24;Validate callsigns (0=off 1=on);0;1;0;No
 25;Station ID beacons (0=off 1=after 2=every);0;2;0;No
 26;CQ UI frames (0=off 1=on);0;1;0;No
+27;Maximum transport circuits (0=unlimited);0;65535;100;Yes
 .TE
 .H 3 "netrom reset" " \fInrcb_addr\fP"
 Delete the NET/ROM control block at the specified address.
