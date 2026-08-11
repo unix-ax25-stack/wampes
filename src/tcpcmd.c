@@ -81,7 +81,7 @@ void *p)
 
 	tcb = (struct tcb *) htol(argv[1]);
 	if(!tcpval(tcb)){
-		printf(Notval);
+		printf("%s", Notval);
 		return 1;
 	}
 	reset_tcp(tcb);
@@ -130,7 +130,7 @@ void *p)
 
 	tcb = (struct tcb *) htol(argv[1]);
 	if(!tcpval(tcb)){
-		printf(Notval);
+		printf("%s", Notval);
 		return 1;
 	}
 	tcb->srtt = atol(argv[2]);
@@ -148,7 +148,7 @@ void *p)
 
 	tcb = (struct tcb *) htol(argv[1]);
 	if(kick_tcp(tcb) == -1){
-		printf(Notval);
+		printf("%s", Notval);
 		return 1;
 	}
 	return 0;
@@ -202,7 +202,7 @@ void *p)
 
 	tcb = (struct tcb *) htol(argv[1]);
 	if(!tcpval(tcb)){
-		printf(Notval);
+		printf("%s", Notval);
 		return 1;
 	}
 	if(interval == 0){

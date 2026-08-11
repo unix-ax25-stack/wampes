@@ -596,7 +596,7 @@ static int doflexnetlinkadd(int argc, char *argv[], void *p)
 		return 1;
 	}
 	if (!(pp = find_peer(call)) && !(pp = create_peer(call))) {
-		printf(Nospace);
+		printf("%s", Nospace);
 		return 1;
 	}
 	pp->permanent = 1;

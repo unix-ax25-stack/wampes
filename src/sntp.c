@@ -66,6 +66,8 @@ struct sys {
 	struct fp rootdispersion;
 	int32 refid;
 	struct fp reftime;
+	int served;                     /* requests answered */
+	int refused;                    /* requests dropped, see sntp_server() */
 };
 
 struct peer {
@@ -112,7 +114,9 @@ static struct sys sys = {
 	{ 0, 0 },                               /* rootdelay */
 	{ 0, 0 },                               /* rootdispersion */
 	('U'<<24)|('N'<<16)|('I'<<8)|'X',       /* refid */
-	{ 0, 0 }                                /* reftime */
+	{ 0, 0 },                               /* reftime */
+	0,                                      /* served */
+	0                                       /* refused */
 };
 
 static const struct fp Zero = { 0, 0 };
@@ -128,6 +132,9 @@ static int Step_threshold = 1;
 static int Panic_threshold = 1000;
 static struct peer *Peers;
 static struct udp_cb *Server_ucb;
+/* Shortest gap between two answers from the server, in ms */
+#define SERVER_MIN_INTERVAL     20
+static int32 Lastserved;
 
 /*---------------------------------------------------------------------------*/
 
@@ -361,6 +368,29 @@ static int ntohntp(struct pkt *pkt, struct mbuf **bpp)
 
 /*---------------------------------------------------------------------------*/
 
+/* At stratum 1 the reference id is four characters naming the clock source.
+ * They come off the wire, so they are not necessarily characters, and they
+ * used to go to the terminal one putchar() at a time - escape sequences and
+ * all.
+ */
+
+static void print_refid(int32 refid)
+{
+	int i;
+	int c;
+
+	for (i = 24; i >= 0; i -= 8) {
+		c = (int) ((refid >> i) & 0xff);
+		if (c >= ' ' && c < 0x7f)
+			putchar(c);
+		else
+			printf("\\%03o", c);
+	}
+	putchar('\n');
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void dumpntp(const struct pkt *pkt)
 {
 	printf("leap %d version %d mode %d stratum %d poll %d precision %d\n",
@@ -369,11 +399,7 @@ static void dumpntp(const struct pkt *pkt)
 	printf("      rootdelay %.3f rootdispersion %.3f refid ",
 		fp2double(pkt->rootdelay), fp2double(pkt->rootdispersion));
 	if (pkt->stratum == 1) {
-		putchar(pkt->refid >> 24);
-		putchar(pkt->refid >> 16);
-		putchar(pkt->refid >>  8);
-		putchar(pkt->refid      );
-		putchar('\n');
+		print_refid(pkt->refid);
 	} else
 		printf("%s\n", resolve_a(pkt->refid, 0));
 	/* NTP timestamps are unsigned seconds since 1900: widen through uint32
@@ -433,8 +459,21 @@ static void sntp_server(struct iface *iface, struct udp_cb *ucb, int cnt)
 		dumpntp(&pkt);
 	}
 	pkt.leap = sys.leap;
-	if (pkt.version < 1 || pkt.version > 3) return;
-	if (pkt.mode != MODE_CLIENT) return;
+	if (pkt.version < 1 || pkt.version > 3) goto drop;
+	/* Only a client request is answered, and the answer carries
+	 * MODE_SERVER - which the test above drops.  Two of these cannot
+	 * therefore be made to answer each other, whatever source port is
+	 * claimed.  Note in particular that refusing source port 123 would be
+	 * wrong here: ntpd in client mode sends from it.
+	 */
+	if (pkt.mode != MODE_CLIENT) goto drop;
+
+	/* What is left is being used as a reflector for someone else's
+	 * address.  It does not amplify - the answer is the same size as the
+	 * question - but there is no reason to be a free packet source.
+	 */
+	if (Msclock - Lastserved < SERVER_MIN_INTERVAL) goto drop;
+	Lastserved = Msclock;
 	pkt.mode = MODE_SERVER;
 	pkt.stratum = sys.stratum;
 	pkt.precision = sys.precision;
@@ -449,11 +488,16 @@ static void sntp_server(struct iface *iface, struct udp_cb *ucb, int cnt)
 	pkt.xmt = sys_clock();
 	if ((bp = htonntp(&pkt))) {
 		send_udp(&ucb->socket, &fsocket, LDELAY, 0, &bp, 0, 0, 0);
+		sys.served++;
 		if (Ntrace) {
 			printf("sent: ");
 			dumpntp(&pkt);
 		}
 	}
+	return;
+
+drop:
+	sys.refused++;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -672,7 +716,7 @@ static int dosntpadd(int argc, char **argv, void *p)
 	lsocket.port = Lport++;
 	peer = (struct peer *) calloc(1, sizeof(struct peer));
 	if (!peer) {
-		printf(Nospace);
+		printf("%s", Nospace);
 		return 1;
 	}
 	peer->fsocket.address = addr;
@@ -736,6 +780,9 @@ static int dosntpstat(int argc, char **argv, void *p)
 			peer->panics,
 			fp2double(peer->delay),
 			fp2double(peer->offset));
+	if (Server_ucb)
+		printf("Server: %d request%s answered, %d dropped\n",
+			sys.served, sys.served == 1 ? "" : "s", sys.refused);
 	return 0;
 }
 
@@ -791,11 +838,7 @@ static int dosntpsysrefid(int argc, char **argv, void *p)
 	if (argc < 2) {
 		printf("sntp sys refid: ");
 		if (sys.stratum == 1) {
-			putchar(sys.refid >> 24);
-			putchar(sys.refid >> 16);
-			putchar(sys.refid >>  8);
-			putchar(sys.refid      );
-			putchar('\n');
+			print_refid(sys.refid);
 		} else
 			printf("%s\n", resolve_a(sys.refid, 0));
 		return 0;

@@ -128,7 +128,7 @@ int doftp(int argc, char *argv[], void *p)
 	/* Allocate an FTP control block */
 	if((ftp = ftp_create(0)) == NULL){
 		s->type = NO_SESSION;
-		printf(Nospace);
+		printf("%s", Nospace);
 		return 1;
 	}
 	ftp->state = COMMAND_STATE;
@@ -469,7 +469,7 @@ static int ftpsetup(struct ftp *ftp, void (*recv)(struct tcb *,int32), void (*se
 	/* Compose and send PORT a,a,a,a,p,p message */
 
 	if((bp = alloc_mbuf(35)) == NULL){   /* 5 more than worst case */
-		printf(Nospace);
+		printf("%s", Nospace);
 		return 0;
 	}
 	/* I know, this looks gross, but it works! */
@@ -621,7 +621,7 @@ static int sndftpmsg(struct ftp *ftp, char *fmt, char *arg)
 
 	len = strlen(fmt) + strlen(arg) + 10;   /* fudge factor */
 	if((bp = alloc_mbuf(len)) == NULL){
-		printf(Nospace);
+		printf("%s", Nospace);
 		return 1;
 	}
 	sprintf((char *) bp->data,fmt,arg);
@@ -671,7 +671,7 @@ static int doftpquote(int argc, char *argv[], void *p)
 	for (i = 1; i < argc; i++)
 		len += strlen(argv[i]) + 1;
 	if ((bp = alloc_mbuf(len)) == NULL) {
-		printf(Nospace);
+		printf("%s", Nospace);
 		return 1;
 	}
 	*bp->data = 0;

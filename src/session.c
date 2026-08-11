@@ -174,7 +174,7 @@ void *p)
 	struct session *sp;
 
 	if((sp = sessptr(argc > 1 ? argv[1] : NULL)) == NULL){
-		printf(Badsess);
+		printf("%s", Badsess);
 		return -1;
 	}
 	switch(sp->type){
@@ -207,7 +207,7 @@ void *p)
 	struct session *sp;
 
 	if((sp = sessptr(argc > 1 ? argv[1] : NULL)) == NULL){
-		printf(Badsess);
+		printf("%s", Badsess);
 		return -1;
 	}
 	switch(sp->type){
@@ -244,20 +244,20 @@ void *p)
 	struct session *sp;
 
 	if((sp = sessptr(argc > 1 ? argv[1] : NULL)) == NULL){
-		printf(Badsess);
+		printf("%s", Badsess);
 		return -1;
 	}
 	switch(sp->type){
 	case TELNET:
 		if(kick_tcp(sp->cb.telnet->tcb) == -1){
-			printf(Notval);
+			printf("%s", Notval);
 			return 1;
 		}
 		break;
 	case FTP:
 		if(kick_tcp(sp->cb.ftp->control) == -1){
 
-			printf(Notval);
+			printf("%s", Notval);
 			return 1;
 		}
 		if(sp->type == FTP &&
@@ -267,19 +267,19 @@ void *p)
 		break;
 	case AX25TNC:
 		if(kick_ax25(sp->cb.ax25) == -1){
-			printf(Notval);
+			printf("%s", Notval);
 			return 1;
 		}
 		break;
 	case FINGER:
 		if(kick_tcp(sp->cb.finger->tcb) == -1){
-			printf(Notval);
+			printf("%s", Notval);
 			return 1;
 		}
 		break;
 	case NRSESSION:
 		if(kick_nr(sp->cb.netrom) == -1){
-			printf(Notval);
+			printf("%s", Notval);
 			return 1;
 		}
 		break;

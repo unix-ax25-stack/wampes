@@ -93,7 +93,7 @@ void *p)
 
 	/* Create and initialize a Telnet protocol descriptor */
 	if((tn = (struct telnet *)calloc(1,sizeof(struct telnet))) == NULL){
-		printf(Nospace);
+		printf("%s", Nospace);
 		s->type = NO_SESSION;
 		return 1;
 	}

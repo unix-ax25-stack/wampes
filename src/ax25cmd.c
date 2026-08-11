@@ -254,7 +254,7 @@ void *p)
 
 	axp = (struct ax25_cb *)ltop(htol(argv[1]));
 	if(!ax25val(axp)){
-		printf(Notval);
+		printf("%s", Notval);
 		return 1;
 	}
 	reset_ax25(axp);
@@ -291,7 +291,7 @@ void *p)
 	}
 	axp = (struct ax25_cb *)ltop(htol(argv[1]));
 	if(!ax25val(axp)){
-		printf(Notval);
+		printf("%s", Notval);
 		return 1;
 	}
 	st_ax25(axp);
@@ -475,7 +475,7 @@ void *p)
 
 	axp = (struct ax25_cb *)ltop(htol(argv[1]));
 	if(!ax25val(axp)){
-		printf(Notval);
+		printf("%s", Notval);
 		return 1;
 	}
 	kick_ax25(axp);

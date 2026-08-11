@@ -159,9 +159,24 @@ int cnt)
 		}
 		break;
 	case KICK__ME:
-		if(len_p(bp) >= sizeof(int32))
+		/* This used to need no password at all, and the address to act
+		 * on comes out of the datagram - so anyone who could reach the
+		 * port could make this node retransmit on any connection it
+		 * holds.  It is the same service and the same secret as the
+		 * exit command; there is no reason for it to be the open one.
+		 *
+		 * Without an address it acts on the sender, which needs no
+		 * secret: that is a peer asking for its own connection to be
+		 * kicked, and it can only ever name itself.
+		 */
+		if(len_p(bp) >= sizeof(int32)){
 			addr = pull32(&bp);
-		else
+			if(chkrpass(bp) == 0){
+				logmsg(NULL,"%s - Remote kick PASSWORD FAIL",
+				 pinet_udp(&fsock));
+				break;
+			}
+		} else
 			addr = fsock.address;
 		kick(addr);
 		/*** smtptick((void *)addr); ***/
@@ -170,23 +185,36 @@ int cnt)
 	free_p(&bp);
 }
 /* Check remote password */
+/* The password travels in clear over UDP, so anyone on the path has it and no
+ * amount of care here changes that - "remote" is only reasonable on a network
+ * that is already trusted.  What can be done is not to hand out anything
+ * extra: the comparison now takes the same path whatever the input, instead
+ * of returning early on a length that does not match and then running
+ * strncmp(), which stops at the first differing byte.
+ */
+
 static int
 chkrpass(
 struct mbuf *bp)
 {
 	char *lbuf;
 	uint16 len;
-	int rval = 0;
+	uint16 plen;
+	uint16 i;
+	int diff;
 
+	if(Rempass == 0 || *Rempass == 0)
+		return 0;
+	plen = (uint16) strlen(Rempass);
 	len = len_p(bp);
-	if(Rempass == 0 || *Rempass == 0 || strlen(Rempass) != len)
-		return rval;
-	lbuf = (char *) mallocw(len);
+	lbuf = (char *) mallocw(len ? len : 1);
 	pullup(&bp,lbuf,len);
-	if(strncmp(Rempass,lbuf,len) == 0)
-		rval = 1;
+	diff = (int) (len ^ plen);
+	for(i = 0; i < plen; i++)
+		diff |= (unsigned char) Rempass[i] ^
+			(i < len ? (unsigned char) lbuf[i] : 0);
 	free(lbuf);
-	return rval;
+	return diff == 0;
 }
 /* Stop UDP remote exit/reboot server */
 int

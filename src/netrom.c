@@ -1751,7 +1751,7 @@ static int donkick(int argc, char *argv[], void *p)
 
   pc = (struct circuit *) ltop(htol(argv[1]));
   if (!valid_nr(pc)) {
-    printf(Notval);
+    printf("%s", Notval);
     return 1;
   }
   kick_nr(pc);
@@ -1927,7 +1927,7 @@ static int donreset(int argc, char *argv[], void *p)
 
   pc = (struct circuit *) htol(argv[1]);
   if (!valid_nr(pc)) {
-    printf(Notval);
+    printf("%s", Notval);
     return 1;
   }
   reset_nr(pc);

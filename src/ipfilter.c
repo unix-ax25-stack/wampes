@@ -127,7 +127,7 @@ static int doipfilteradd(int argc, char *argv[], void *parg)
 
 	p = (struct ipfilter_t *) malloc(sizeof(struct ipfilter_t));
 	if (!p) {
-		printf(Nospace);
+		printf("%s", Nospace);
 		return 1;
 	}
 	p->lo = lo;
@@ -200,7 +200,7 @@ int doipfilter(int argc, char *argv[], void *parg)
 	if (!Ipfilter) {
 		Ipfilter = (struct ipfilter_t *) malloc(sizeof(struct ipfilter_t));
 		if (!Ipfilter) {
-			printf(Nospace);
+			printf("%s", Nospace);
 			return 1;
 		}
 		Ipfilter->lo = 0;

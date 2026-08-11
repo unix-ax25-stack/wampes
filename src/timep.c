@@ -11,8 +11,14 @@
 #include "udp.h"
 #include "timer.h"
 #include "netuser.h"
+#include "proc.h"
 
 static struct udp_cb *Time_server_ucb;
+
+/* Shortest gap between two answers, in ms, and how many were dropped */
+#define SERVER_MIN_INTERVAL     20
+static int32 Lastserved;
+static int32 Refused;
 
 /*---------------------------------------------------------------------------*/
 
@@ -24,6 +30,23 @@ static void time_server(struct iface *iface, struct udp_cb *ucb, int cnt)
 
 	if (recv_udp(ucb, &fsocket, &bp) < 0) return;
 	free_p(&bp);
+
+	/* The reply is indistinguishable from a request here - RFC 868 has no
+	 * header at all - so two of these servers pointed at each other answer
+	 * each other forever.  A client always asks from an ephemeral port, so
+	 * a well known one as the source is either another server or a forged
+	 * address someone wants packets sent to.
+	 */
+	if (fsocket.port < 1024) {
+		Refused++;
+		return;
+	}
+	if (Msclock - Lastserved < SERVER_MIN_INTERVAL) {
+		Refused++;
+		return;
+	}
+	Lastserved = Msclock;
+
 	bp = ambufw(4);
 	bp->cnt = 4;
 	put32(bp->data, time(0) + 2208988800UL);
