@@ -34,8 +34,14 @@ void seteugid(int uid, int gid)
 
 int dropprivileges(const char *name, int uid, int gid)
 {
-  if ((int) getuid() == uid && (int) geteuid() == uid)
+  if ((int) getuid() == uid && (int) geteuid() == uid) {
+    /* Already this user, so there is no setuid bit in effect - but there may
+     * be a setgid one, and a child must not inherit that group either.
+     */
+    if (getgid() != getegid() && setgid(getgid()))
+      return -1;
     return 0;
+  }
   if (setuid(0))
     return -1;
   if (name && initgroups(name, gid))
