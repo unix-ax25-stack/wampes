@@ -500,6 +500,17 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 	peer->xmt = Zero;
 	peer->rcvd++;
 	if (recv_udp(ucb, &fsocket, &bp) < 0) return;
+
+	/* The client socket is not connected - it is opened on INADDR_ANY with
+	 * a port straight out of the Lport counter, so anything that reaches
+	 * that port lands here.  Take answers from the peer we asked, only.
+	 */
+	if (fsocket.address != peer->fsocket.address ||
+	    fsocket.port != peer->fsocket.port) {
+		free_p(&bp);
+		return;
+	}
+
 	if (ntohntp(&pkt, &bp)) return;
 	if (Ntrace) {
 		printf("recv: ");
@@ -507,10 +518,21 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 	}
 	if (pkt.leap == LEAP_NOTINSYNC) return;
 	if (!pkt.stratum || pkt.stratum > NTP_MAXSTRATUM) return;
-	if (fpiszero(pkt.org)) {
-		if (fpiszero(xmt)) return;
-		pkt.org = xmt;
-	}
+
+	/* The origin timestamp has to be the transmit timestamp we sent.  It is
+	 * the only thing tying an answer to our request, and without crypto it
+	 * is all SNTP has: an off-path forger has to guess a 64-bit value
+	 * rather than just reach the port.
+	 *
+	 * The old code accepted an origin of zero and filled in our own xmt
+	 * instead, which handed that away for free - send org = 0 and the reply
+	 * was taken.  That is the NTP "zero origin timestamp" bypass,
+	 * CVE-2015-8138.  xmt was cleared above, so a second answer to the same
+	 * request is refused as well.
+	 */
+	if (fpiszero(xmt)) return;              /* nothing outstanding */
+	if (fpisne(pkt.org, xmt)) return;       /* not the answer to it */
+
 	if (fpiszero(pkt.rec)) pkt.rec = pkt.xmt;
 	if (fpiszero(pkt.xmt)) return;
 
