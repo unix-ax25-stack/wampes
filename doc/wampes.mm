@@ -1471,9 +1471,18 @@ message performs a similar role. Both are used to get rid of a lingering
 half-open connection after a remote system has crashed.
 .H 2 "rip" " \fIsubcommand\fP"
 These commands control the Routing Information Protocol (RIP) service.
+.P
+RIP updates change the routing table, so they are taken only from gateways
+this node learns from: one reached over an interface named in a
+\fBrip add\fP command, or one named in a \fBrip allow\fP command. RIP
+requests are questions and are answered for anyone, subject as before to the
+filter table. \fBrip promiscuous\fP restores the older behaviour of taking
+updates from any sender.
 .H 3 "rip accept" " \fIhostid\fP"
 Remove the specified host from the RIP filter table, allowing future
-broadcasts from that host to be accepted.
+broadcasts from that host to be accepted. Note that this is the counterpart
+of \fBrip refuse\fP and not of \fBrip allow\fP: it removes a prohibition
+rather than granting permission.
 .H 3 "rip add" " \fIhostid\fP \fIseconds\fP [\fIflags\fP]"
 Add an entry to the RIP broadcast table. The IP routing table will be sent
 to \fIhostid\fP every interval of \fIseconds\fP. If
@@ -1505,6 +1514,11 @@ arp add 44.255.255.255 ax25 QST-0
 .ft P
 .DE
 for an AX.25 packet radio channel.
+.H 3 "rip allow" " \fIhostid\fP"
+Accept RIP updates from the specified host even though it is not reached
+over an interface this node sends RIP on. Needed only for a neighbour that
+sends to us without us sending to it; a gateway on an interface named in a
+\fBrip add\fP command is accepted without this.
 .H 3 "rip drop" " \fIhostid\fP"
 Remove an entry from the RIP broadcast table.
 .H 3 "rip merge" " [on|off]"
@@ -1529,6 +1543,12 @@ then the first entry would be deleted as redundant since packets sent to
 1.2.3.4 will still be routed correctly by the second entry. Note that the
 relative metrics of the entries are ignored.
 The default is \fBoff\fP.
+.H 3 "rip noallow" " \fIhostid\fP"
+Remove a host from the list built with \fBrip allow\fP.
+.H 3 "rip promiscuous" " [on|off]"
+Accept RIP updates from any sender, which is what this program did before
+the sender was checked at all. The filter table still applies and takes
+precedence. The default is \fBoff\fP.
 .H 3 "rip refuse" " \fIhostid\fP"
 Refuse to accept RIP updates from the specified host by adding the
 host to the RIP filter table. It may be later removed with the
@@ -1542,7 +1562,9 @@ and received, the number of requests and responses, the number of
 unknown RIP packet types, and the number of refused RIP updates from hosts
 in the filter table. A list of the addresses and intervals
 to which periodic RIP updates are being sent is also shown, along with
-the contents of the filter table.
+the contents of the filter table, which gateways updates are accepted from,
+and how many updates were rejected because they came from a gateway this
+node does not learn from.
 .H 3 "rip trace" " [0|1|2]"
 This variable controls the tracing of incoming and outgoing RIP packets.
 Setting it to 0 disables all RIP tracing. A value of 1 causes changes

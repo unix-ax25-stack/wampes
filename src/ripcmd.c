@@ -21,9 +21,14 @@ struct cmds Ripcmds[] = {
 		"rip accept <gateway> " },
 	{ "add",          doripadd,       0,      3,
 		"rip add <dest> <interval> [<flags>]" },
+	{ "allow",        doripallow,     0,      2,
+		"rip allow <gateway>" },
 	{ "drop",         doripdrop,      0,      2,
 		"rip drop <dest>" },
 	{ "merge",        doripmerge,     0,      0,      NULL },
+	{ "noallow",      doripnoallow,   0,      2,
+		"rip noallow <gateway>" },
+	{ "promiscuous",  dorippromisc,   0,      0,      NULL },
 	{ "refuse",       doaddrefuse,    0,      2,
 		"rip refuse <gateway>" },
 	{ "request",      doripreq,       0,      2,      NULL },
@@ -67,6 +72,39 @@ char *argv[],
 void *p)
 {
 	return riprefadd(resolve(argv[1]));
+}
+
+/* Add a gateway to the list we accept updates from.  Not needed for a
+ * gateway reached over an interface named in "rip add" - those are accepted
+ * anyway - but for one that sends to us without us sending to it.
+ */
+int
+doripallow(
+int argc,
+char *argv[],
+void *p)
+{
+	return ripallowadd(resolve(argv[1]));
+}
+
+/* Drop a gateway from that list */
+int
+doripnoallow(
+int argc,
+char *argv[],
+void *p)
+{
+	return ripallowdrop(resolve(argv[1]));
+}
+
+/* Take updates from anyone, as before this was configurable */
+int
+dorippromisc(
+int argc,
+char *argv[],
+void *p)
+{
+	return setbool(&Rip_promiscuous,"RIP promiscuous learning",argc,argv);
 }
 
 /* Drop an entry from the RIP output list */
@@ -125,6 +163,7 @@ int argc,
 char *argv[],
 void *p)
 {
+	struct rip_allow *ral;
 	struct rip_list *rl;
 	struct rip_refuse *rfl;
 
@@ -145,6 +184,22 @@ void *p)
 		for(rfl=Rip_refuse; rfl != NULL;rfl = rfl->next){
 			printf("%s\n",inet_ntoa(rfl->target));
 		}
+	}
+	if(Rip_promiscuous){
+		printf("Learning from any gateway (rip promiscuous is on)\n");
+	} else {
+		printf("Learning from gateways on the interfaces listed above");
+		if(Rip_allow != NULL){
+			printf(", and from:\n");
+			for(ral=Rip_allow; ral != NULL; ral = ral->next){
+				printf("%s\n",inet_ntoa(ral->target));
+			}
+		} else {
+			printf(" only\n");
+		}
+		printf("%lu update%s rejected\n",
+		 (unsigned long)Rip_stat.unauthorized,
+		 Rip_stat.unauthorized == 1 ? "" : "s");
 	}
 	return 0;
 }

@@ -30,6 +30,8 @@ struct rip_list *Rip_list;
 struct udp_cb *Rip_cb;
 
 struct rip_refuse *Rip_refuse;
+struct rip_allow *Rip_allow;
+int Rip_promiscuous;
 
 static void rip_rx(struct iface *iface,struct udp_cb *sock,int cnt);
 static void proc_rip(struct iface *iface,int32 gateway,
@@ -272,6 +274,85 @@ int32 gateway)
 	return 0;
 }
 
+/* add a gateway to the rip_allow list, so that we take its updates even
+ * though we run no RIP on the interface it arrives over
+ */
+int
+ripallowadd(
+int32 gateway)
+{
+	struct rip_allow *rl;
+
+	for(rl = Rip_allow; rl != NULL; rl = rl->next)
+		if(rl->target == gateway)
+			return 0;       /* Already in table */
+
+	rl = (struct rip_allow *)callocw(1,sizeof(struct rip_allow));
+
+	rl->next = Rip_allow;
+	if(rl->next != NULL)
+		rl->next->prev = rl;
+	Rip_allow = rl;
+
+	rl->target = gateway;
+	return 0;
+}
+
+/* drop a gateway from the rip_allow list */
+int
+ripallowdrop(
+int32 gateway)
+{
+	struct rip_allow *rl;
+
+	for(rl = Rip_allow; rl != NULL; rl = rl->next)
+		if(rl->target == gateway)
+			break;
+
+	if(rl == NULL)
+		return 0;
+
+	if(rl->next != NULL)
+		rl->next->prev = rl->prev;
+	if(rl->prev != NULL)
+		rl->prev->next = rl->next;
+	else
+		Rip_allow = rl->next;
+
+	free(rl);
+	return 0;
+}
+
+/* May we learn routes from this gateway?
+ *
+ * A RIP request is a question and stays open to everyone; this is only about
+ * responses, which change the routing table.  Until this existed the only
+ * filter was Rip_refuse, a deny list - empty by default, so anything that
+ * reached UDP port 520 on any interface was taken as an update.
+ *
+ * The interface test is the one that carries the normal case: whoever runs
+ * RIP has listed the networks to send on with "rip add", so a correctly
+ * configured node needs no further configuration to be strict.
+ */
+static int
+rip_accept_from(
+int32 gateway,
+struct iface *iface)
+{
+	struct rip_allow *ra;
+	struct rip_list *rl;
+
+	if(Rip_promiscuous)
+		return 1;
+	for(ra = Rip_allow; ra != NULL; ra = ra->next)
+		if(ra->target == gateway)
+			return 1;
+	for(rl = Rip_list; rl != NULL; rl = rl->next)
+		if(rl->iface == iface)
+			return 1;
+	return 0;
+}
+
 /* function to output a RIP CMD_RESPONSE packet for the rip_trigger list */
 void
 rip_trigger(void)
@@ -323,6 +404,7 @@ int cnt)
 	struct rip_route entry;
 	struct route *rp;
 	struct rip_list *rl;
+	int nroutes;
 	int32 ttl;
 
 	/* receive the RIP packet.  recv_udp() returns -1 without touching bp,
@@ -360,6 +442,18 @@ int cnt)
 			printf("RIPCMD_RESPONSE from %s \n",inet_ntoa(fsock.address));
 
 		Rip_stat.response++;
+		/* A response changes the routing table, so unlike a request it
+		 * is only taken from a gateway we learn from.
+		 */
+		if(!rip_accept_from(fsock.address,iface)){
+			Rip_stat.unauthorized++;
+			if(Rip_trace > 0)
+				printf("RIP update from %s on %s: not a gateway we learn from\n",
+				 inet_ntoa(fsock.address),
+				 iface ? iface->name : "?");
+			free_p(&bp);
+			return;
+		}
 		/* See if this interface is on our broadcast list; if so,
 		 * use its interval to calculate entry lifetimes. Otherwise,
 		 * use default
@@ -372,10 +466,19 @@ int cnt)
 			}
 		}
 		(void)pull16(&bp);      /* remove one word of padding */
-		while(len_p(bp) >= RIPROUTE){
+		/* RFC 1058 allows 25 entries in a message and that is what
+		 * send_routes() emits, but this loop used to run for as many
+		 * as the datagram held - about 3200 in a full sized one.
+		 */
+		for(nroutes = 0;
+		    nroutes < MAXRIPROUTES && len_p(bp) >= RIPROUTE;
+		    nroutes++){
 			pullentry(&entry,&bp);
 			proc_rip(iface,fsock.address,&entry,ttl);
 		}
+		if(len_p(bp) >= RIPROUTE && Rip_trace > 0)
+			printf("RIP update from %s: more than %d entries, rest ignored\n",
+			 inet_ntoa(fsock.address),MAXRIPROUTES);
 		/* If we can't reach the sender of this update, or if
 		 * our existing route is not through the interface we
 		 * got this update on, add him as a host specific entry

@@ -91,11 +91,23 @@ struct rip_stat {
 	int32 addr_family;      /* Number of address family errors */
 	int32 refusals;         /* Number of packets dropped from a host
 					on the refuse list */
+	int32 unauthorized;     /* Number of updates dropped because they came
+					from a gateway we do not learn from */
 };
 
 struct rip_refuse {
 	struct rip_refuse *prev;
 	struct rip_refuse *next;
+	int32   target;
+};
+
+/* Gateways we take updates from even though they are not reached over an
+ * interface we run RIP on - a neighbour that talks to us but that we do not
+ * send to.  Same shape as the refuse list, opposite meaning.
+ */
+struct rip_allow {
+	struct rip_allow *prev;
+	struct rip_allow *next;
 	int32   target;
 };
 
@@ -106,6 +118,8 @@ void rip_trigger(void);
 int rip_add(int32 dest,int32 interval,int split,int us);
 int riprefadd(int32 gateway);
 int riprefdrop(int32 gateway);
+int ripallowadd(int32 gateway);
+int ripallowdrop(int32 gateway);
 int ripreq(int32 dest,uint replyport);
 int rip_drop(int32 dest);
 int nbits(int32 target);
@@ -117,6 +131,8 @@ extern int Rip_merge;
 extern struct rip_stat Rip_stat;
 extern struct rip_list *Rip_list;
 extern struct rip_refuse *Rip_refuse;
+extern struct rip_allow *Rip_allow;
+extern int Rip_promiscuous;
 extern struct udp_cb *Rip_cb;
 
 #endif  /* _RIP_H */
