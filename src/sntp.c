@@ -78,6 +78,7 @@ struct peer {
 	int accpt;
 	int steps;
 	int adjts;
+	int panics;
 	unsigned char stratum;
 	struct fp offset;
 	struct fp delay;
@@ -122,6 +123,9 @@ static const double FACTOR32 = 4294967296.0;
 
 static int Ntrace;
 static int Step_threshold = 1;
+/* NTP's panic threshold: refuse to set the clock outright by more than this
+ * many seconds.  0 disables the check. */
+static int Panic_threshold = 1000;
 static struct peer *Peers;
 static struct udp_cb *Server_ucb;
 
@@ -556,7 +560,10 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 	abs_offset = fpabs(peer->offset);
 	if (abs_offset.i < Step_threshold) {
 #if HAS_ADJTIME || defined __hpux
-		tv.tv_sec = (int) peer->offset.i;
+		/* An offset, not a point in time: negative values arrive as
+		 * tv_sec = -2, tv_usec = 500000 for -1.5s, which is what
+		 * adjtime() wants. */
+		tv.tv_sec = (time_t) peer->offset.i;
 		tv.tv_usec = (long) (peer->offset.f / USEC2F);
 		if (!adjtime(&tv, 0)) {
 			peer->adjts++;
@@ -567,9 +574,34 @@ static void sntp_client_recv(struct iface *iface, struct udp_cb *ucb, int cnt)
 #endif
 		return;
 	}
+
+	/* Beyond this the clock is not slewed but set outright, so put a ceiling
+	 * on it.  NTP calls this the panic threshold and refuses to act above
+	 * it, on the grounds that an offset that large is far more likely to be
+	 * a lie or a broken server than a real correction.  Refuse and log,
+	 * rather than exit the way ntpd does - a radio node should not go down
+	 * because a peer misbehaved.
+	 */
+	if (Panic_threshold > 0 && abs_offset.i >= Panic_threshold) {
+		char msg[128];
+
+		peer->panics++;
+		snprintf(msg, sizeof(msg),
+			 "sntp: %s offset %.0fs over panic threshold %ds, ignored",
+			 inet_ntoa(peer->fsocket.address),
+			 fp2double(peer->offset), Panic_threshold);
+		logmsg(NULL, "%s", msg);
+		return;
+	}
+
 	if (gettimeofday(&tv, 0)) return;
 	now = fpadd(sys_clock(), peer->offset);
-	tv.tv_sec = (int) (now.i - TIMEBIAS);
+	/* time_t is 64 bits; the old (int) truncated the result and would have
+	 * gone negative past 2038.  The NTP seconds field is unsigned, so do
+	 * the subtraction in uint32 - which is correct for era 0, i.e. until
+	 * 2036, after which the era would have to be tracked separately.
+	 */
+	tv.tv_sec = (time_t) (uint32) ((uint32) now.i - (uint32) TIMEBIAS);
 	tv.tv_usec = (long) (now.f / USEC2F);
 	if (!settimeofday(&tv, 0)) {
 		peer->steps++;
@@ -690,9 +722,9 @@ static int dosntpstat(int argc, char **argv, void *p)
 {
 	struct peer *peer;
 
-	printf("Server            St Poll  Sent  Rcvd Accpt Steps Adjts    Delay   Offset\n");
+	printf("Server            St Poll  Sent  Rcvd Accpt Steps Adjts Panic    Delay   Offset\n");
 	for (peer = Peers; peer; peer = peer->next)
-		printf("%-17s %2d %4ld %5d %5d %5d %5d %5d %8.3f %8.3f\n",
+		printf("%-17s %2d %4ld %5d %5d %5d %5d %5d %5d %8.3f %8.3f\n",
 			resolve_a(peer->fsocket.address, 0),
 			peer->stratum,
 			dur_timer(&peer->timer) / 1000L,
@@ -701,6 +733,7 @@ static int dosntpstat(int argc, char **argv, void *p)
 			peer->accpt,
 			peer->steps,
 			peer->adjts,
+			peer->panics,
 			fp2double(peer->delay),
 			fp2double(peer->offset));
 	return 0;
@@ -711,6 +744,13 @@ static int dosntpstat(int argc, char **argv, void *p)
 static int dosntpstep_threshold(int argc, char **argv, void *p)
 {
 	return setint(&Step_threshold, "sntp step_threshold", argc, argv);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int dosntppanic_threshold(int argc, char **argv, void *p)
+{
+	return setint(&Panic_threshold, "sntp panic_threshold", argc, argv);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -880,6 +920,7 @@ int dosntp(int argc, char **argv, void *p)
 		{ "add", dosntpadd, 0, 2, "sntp add <server> [<interval>]" },
 		{ "drop", dosntpdrop, 0, 2, "sntp drop <server>" },
 		{ "status", dosntpstat, 0, 0, NULL },
+		{ "panic_threshold", dosntppanic_threshold, 0, 0, NULL },
 		{ "step_threshold", dosntpstep_threshold, 0, 0, NULL },
 		{ "sys", dosntpsys, 0, 0, NULL },
 		{ "trace", dosntptrace, 0, 0, NULL },
