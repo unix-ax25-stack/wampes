@@ -1476,8 +1476,7 @@ RIP updates change the routing table, so they are taken only from gateways
 this node learns from: one reached over an interface named in a
 \fBrip add\fP command, or one named in a \fBrip allow\fP command. RIP
 requests are questions and are answered for anyone, subject as before to the
-filter table. \fBrip promiscuous\fP restores the older behaviour of taking
-updates from any sender.
+filter table. \fBrip learn\fP selects which of the two a node does.
 .H 3 "rip accept" " \fIhostid\fP"
 Remove the specified host from the RIP filter table, allowing future
 broadcasts from that host to be accepted. Note that this is the counterpart
@@ -1521,6 +1520,22 @@ sends to us without us sending to it; a gateway on an interface named in a
 \fBrip add\fP command is accepted without this.
 .H 3 "rip drop" " \fIhostid\fP"
 Remove an entry from the RIP broadcast table.
+.H 3 "rip learn" " [none|gateways|any]"
+Select which RIP updates change the routing table. RIP requests are answered
+in all three modes.
+.VL 12
+.LI \fBnone\fP
+Answer requests but never change the routing table. Useful for a node that
+publishes its routes and takes its own from static configuration.
+.LI \fBgateways\fP
+Take updates from a gateway reached over an interface named in a
+\fBrip add\fP command, or named in a \fBrip allow\fP command. This is the
+default.
+.LI \fBany\fP
+Take updates from whoever sends them, which is what this program did before
+the sender was checked at all.
+.LE
+The filter table applies in every mode and takes precedence.
 .H 3 "rip merge" " [on|off]"
 This flag controls an experimental feature for consolidating redundant
 entries in the IP routing table. When rip merging is enabled, the table is
@@ -1545,10 +1560,6 @@ relative metrics of the entries are ignored.
 The default is \fBoff\fP.
 .H 3 "rip noallow" " \fIhostid\fP"
 Remove a host from the list built with \fBrip allow\fP.
-.H 3 "rip promiscuous" " [on|off]"
-Accept RIP updates from any sender, which is what this program did before
-the sender was checked at all. The filter table still applies and takes
-precedence. The default is \fBoff\fP.
 .H 3 "rip refuse" " \fIhostid\fP"
 Refuse to accept RIP updates from the specified host by adding the
 host to the RIP filter table. It may be later removed with the

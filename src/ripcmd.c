@@ -25,10 +25,11 @@ struct cmds Ripcmds[] = {
 		"rip allow <gateway>" },
 	{ "drop",         doripdrop,      0,      2,
 		"rip drop <dest>" },
+	{ "learn",        doriplearn,     0,      0,
+		"rip learn [none|gateways|any]" },
 	{ "merge",        doripmerge,     0,      0,      NULL },
 	{ "noallow",      doripnoallow,   0,      2,
 		"rip noallow <gateway>" },
-	{ "promiscuous",  dorippromisc,   0,      0,      NULL },
 	{ "refuse",       doaddrefuse,    0,      2,
 		"rip refuse <gateway>" },
 	{ "request",      doripreq,       0,      2,      NULL },
@@ -97,14 +98,42 @@ void *p)
 	return ripallowdrop(resolve(argv[1]));
 }
 
-/* Take updates from anyone, as before this was configurable */
+/* Whom to take routing updates from.  Requests are answered in every mode. */
+
+static struct {
+	char *name;
+	int value;
+	const char *help;
+} Learnmodes[] = {
+	{ "none",     RIP_LEARN_NONE,     "answer requests, never change the routing table" },
+	{ "gateways", RIP_LEARN_GATEWAYS, "from interfaces in rip add, and from rip allow" },
+	{ "any",      RIP_LEARN_ANY,      "from whoever sends" },
+	{ NULL,       0,                  NULL }
+};
+
 int
-dorippromisc(
+doriplearn(
 int argc,
 char *argv[],
 void *p)
 {
-	return setbool(&Rip_promiscuous,"RIP promiscuous learning",argc,argv);
+	int i;
+
+	if(argc < 2){
+		for(i = 0; Learnmodes[i].name != NULL; i++)
+			if(Learnmodes[i].value == Rip_learn)
+				printf("RIP learning: %s\n",Learnmodes[i].name);
+		return 0;
+	}
+	for(i = 0; Learnmodes[i].name != NULL; i++)
+		if(stricmp(argv[1],Learnmodes[i].name) == 0){
+			Rip_learn = Learnmodes[i].value;
+			return 0;
+		}
+	printf("Valid options:\n");
+	for(i = 0; Learnmodes[i].name != NULL; i++)
+		printf("  %-10s%s\n",Learnmodes[i].name,Learnmodes[i].help);
+	return 1;
 }
 
 /* Drop an entry from the RIP output list */
@@ -185,9 +214,14 @@ void *p)
 			printf("%s\n",inet_ntoa(rfl->target));
 		}
 	}
-	if(Rip_promiscuous){
-		printf("Learning from any gateway (rip promiscuous is on)\n");
-	} else {
+	switch(Rip_learn){
+	case RIP_LEARN_NONE:
+		printf("Not learning: requests are answered, updates are not taken\n");
+		break;
+	case RIP_LEARN_ANY:
+		printf("Learning from any gateway\n");
+		break;
+	default:
 		printf("Learning from gateways on the interfaces listed above");
 		if(Rip_allow != NULL){
 			printf(", and from:\n");
@@ -197,10 +231,12 @@ void *p)
 		} else {
 			printf(" only\n");
 		}
+		break;
+	}
+	if(Rip_learn != RIP_LEARN_ANY)
 		printf("%lu update%s rejected\n",
 		 (unsigned long)Rip_stat.unauthorized,
 		 Rip_stat.unauthorized == 1 ? "" : "s");
-	}
 	return 0;
 }
 

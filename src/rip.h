@@ -101,6 +101,14 @@ struct rip_refuse {
 	int32   target;
 };
 
+/* Whom we take RIP responses from.  Requests are answered for anyone in every
+ * mode - asking which routes a node knows is a fair question - so this is only
+ * about updates, which change the routing table.
+ */
+#define RIP_LEARN_NONE          0       /* answer, but never change the table */
+#define RIP_LEARN_GATEWAYS      1       /* interfaces from rip add, rip allow */
+#define RIP_LEARN_ANY           2       /* from whoever sends, as it once was */
+
 /* Gateways we take updates from even though they are not reached over an
  * interface we run RIP on - a neighbour that talks to us but that we do not
  * send to.  Same shape as the refuse list, opposite meaning.
@@ -132,7 +140,7 @@ extern struct rip_stat Rip_stat;
 extern struct rip_list *Rip_list;
 extern struct rip_refuse *Rip_refuse;
 extern struct rip_allow *Rip_allow;
-extern int Rip_promiscuous;
+extern int Rip_learn;
 extern struct udp_cb *Rip_cb;
 
 #endif  /* _RIP_H */

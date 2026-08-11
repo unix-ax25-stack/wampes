@@ -31,7 +31,7 @@ struct udp_cb *Rip_cb;
 
 struct rip_refuse *Rip_refuse;
 struct rip_allow *Rip_allow;
-int Rip_promiscuous;
+int Rip_learn = RIP_LEARN_GATEWAYS;
 
 static void rip_rx(struct iface *iface,struct udp_cb *sock,int cnt);
 static void proc_rip(struct iface *iface,int32 gateway,
@@ -332,7 +332,11 @@ int32 gateway)
  *
  * The interface test is the one that carries the normal case: whoever runs
  * RIP has listed the networks to send on with "rip add", so a correctly
- * configured node needs no further configuration to be strict.
+ * configured node needs no further configuration to be strict.  Note what it
+ * does and does not say: everyone reachable over such an interface is
+ * accepted, which on a shared radio channel is everyone on the channel.  For
+ * a named set of neighbours, leave that interface out of "rip add" and list
+ * them with "rip allow".
  */
 static int
 rip_accept_from(
@@ -342,7 +346,9 @@ struct iface *iface)
 	struct rip_allow *ra;
 	struct rip_list *rl;
 
-	if(Rip_promiscuous)
+	if(Rip_learn == RIP_LEARN_NONE)
+		return 0;
+	if(Rip_learn == RIP_LEARN_ANY)
 		return 1;
 	for(ra = Rip_allow; ra != NULL; ra = ra->next)
 		if(ra->target == gateway)
@@ -466,19 +472,19 @@ int cnt)
 			}
 		}
 		(void)pull16(&bp);      /* remove one word of padding */
-		/* RFC 1058 allows 25 entries in a message and that is what
-		 * send_routes() emits, but this loop used to run for as many
-		 * as the datagram held - about 3200 in a full sized one.
+		/* RFC 1058 allows 25 entries in a message and send_routes()
+		 * honours that, but a sender that exceeds it is reported and
+		 * not truncated: RIP has no way to say "I dropped the rest",
+		 * so the sender would never resend and the routes would just
+		 * be gone.  The count of a datagram bounds the work anyway.
 		 */
-		for(nroutes = 0;
-		    nroutes < MAXRIPROUTES && len_p(bp) >= RIPROUTE;
-		    nroutes++){
+		for(nroutes = 0; len_p(bp) >= RIPROUTE; nroutes++){
 			pullentry(&entry,&bp);
 			proc_rip(iface,fsock.address,&entry,ttl);
 		}
-		if(len_p(bp) >= RIPROUTE && Rip_trace > 0)
-			printf("RIP update from %s: more than %d entries, rest ignored\n",
-			 inet_ntoa(fsock.address),MAXRIPROUTES);
+		if(nroutes > MAXRIPROUTES && Rip_trace > 0)
+			printf("RIP update from %s: %d entries, more than the %d of RFC 1058\n",
+			 inet_ntoa(fsock.address),nroutes,MAXRIPROUTES);
 		/* If we can't reach the sender of this update, or if
 		 * our existing route is not through the interface we
 		 * got this update on, add him as a host specific entry

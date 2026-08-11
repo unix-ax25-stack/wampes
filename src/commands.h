@@ -85,7 +85,7 @@ int dorip(int argc,char *argv[],void *p);
 int doripadd(int argc,char *argv[],void *p);
 int doripallow(int argc,char *argv[],void *p);
 int doripnoallow(int argc,char *argv[],void *p);
-int dorippromisc(int argc,char *argv[],void *p);
+int doriplearn(int argc,char *argv[],void *p);
 int doripdrop(int argc,char *argv[],void *p);
 int doripinit(int argc,char *argv[],void *p);
 int doripmerge(int argc,char *argv[],void *p);
