@@ -1,7 +1,7 @@
 # @(#) $Id: Makefile,v 1.50 2000/03/04 18:31:08 deyke Exp $
 
 # "make" builds what a WAMPES node needs to run: the daemon, the command
-# client, the host database tool and the route display.  "make complete"
+# client, the host database tool, the route display and qth.  "make complete"
 # builds everything else as well - the BBS, convers, the extra utilities and
 # the tools directory.
 #

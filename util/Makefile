@@ -1,7 +1,7 @@
 # @(#) $Id: Makefile,v 1.76 2000/03/04 18:31:16 deyke Exp $
 
 TARGETS    = bridge cnet md5 mkhostdb path qth
-MINTARGETS = cnet mkhostdb path
+MINTARGETS = cnet mkhostdb path qth
 
 all:;        @. ../lib/configure.mak; $(MAKE) -i _all
 min:;        @. ../lib/configure.mak; $(MAKE) -i _min
