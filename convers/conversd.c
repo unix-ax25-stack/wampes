@@ -15,7 +15,9 @@ static const char rcsid[] = "@(#) $Id: conversd.c,v 2.82 2006/02/12 17:49:57 dl9
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/uio.h>
+#include <sys/un.h>
 #include <sys/wait.h>
+#include <syslog.h>
 #include <time.h>
 #include <unistd.h>
 #include <utmp.h>
@@ -52,6 +54,7 @@ extern char *optarg;
 extern int optind;
 
 #include "buildsaddr.h"
+#include "rundir.h"
 #include "configure.h"
 #include "md5.h"
 #include "strdup.h"
@@ -2186,29 +2189,51 @@ int main(int argc, char **argv)
 
   read_configuration();
 
+  /* Everything below here happens after close(0..FD_SETSIZE), so stderr is
+   * gone unless -d was given.  Without syslog a daemon that fails to come
+   * up properly does so in complete silence.
+   */
+  openlog("conversd", LOG_PID, LOG_DAEMON);
+
+  /* Nobody else may have done this yet: conversd runs without net, and a
+   * run directory that is cleared at boot is not there until someone makes
+   * it.
+   */
+  create_rundir();
+
   for (sp = listeners; sp->s_name; sp++)
     if ((addr = build_sockaddr(sp->s_name, &addrlen)) &&
 	(sp->s_fd = socket(addr->sa_family, SOCK_STREAM, 0)) >= 0) {
       switch (addr->sa_family) {
-      case AF_UNIX:
-	remove(addr->sa_data);
-	break;
       case AF_INET:
 	arg = 1;
 	setsockopt(sp->s_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
 	break;
       }
-      if (bind(sp->s_fd, addr, addrlen) || listen(sp->s_fd, SOMAXCONN)) {
+      if (bind_socket(sp->s_fd, addr, addrlen) ||
+	  listen(sp->s_fd, SOMAXCONN)) {
+	syslog(LOG_ERR, "cannot listen on %s: %s", sp->s_name,
+	       errno == EADDRINUSE ?
+	       "in use - another conversd is already running" : strerror(errno));
 	close(sp->s_fd);
       } else {
 	if (addr->sa_family == AF_UNIX) {
-	  chmod(addr->sa_data, 0666);
+	  /* sun_path, not sa_data: both start at the same offset, but
+	   * sa_data is declared as 14 bytes while the path may be longer.
+	   */
+	  chmod(((struct sockaddr_un *) addr)->sun_path, 0666);
 	}
 	readfnc[sp->s_fd] = (void (*)(void *)) accept_connect_request;
 	readarg[sp->s_fd] = &sp->s_fd;
 	FD_SET(sp->s_fd, &chkread);
 	if (maxfd < sp->s_fd) maxfd = sp->s_fd;
       }
+    } else {
+      /* Usually an address that cannot be turned into a socket at all -
+       * a unix path longer than sun_path, say.  Silence here means the
+       * daemon comes up missing a listener and nobody knows why.
+       */
+      syslog(LOG_ERR, "cannot use %s as a listening address", sp->s_name);
     }
 
   for (; ; ) {

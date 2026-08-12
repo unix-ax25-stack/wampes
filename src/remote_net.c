@@ -3,7 +3,9 @@
 #include <sys/types.h>
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
+#include <string.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -20,6 +22,7 @@
 #include "transport.h"
 #include "hpux.h"
 #include "buildsaddr.h"
+#include "rundir.h"
 #include "main.h"
 #include "cmdparse.h"
 
@@ -329,11 +332,6 @@ void remote_net_initialize(void)
     if ((addr = build_sockaddr(socketnames[i], &addrlen))) {
       if ((flisten_net = socket(addr->sa_family, SOCK_STREAM, 0)) >= 0) {
 	switch (addr->sa_family) {
-	case AF_UNIX:
-	  /* sun_path, not sa_data: both start at the same offset, but sa_data
-	   * is declared as 14 bytes while the path may be far longer. */
-	  if (!Debug) remove(((struct sockaddr_un *) addr)->sun_path);
-	  break;
 	case AF_INET:
 	  arg = 1;
 	  setsockopt(flisten_net, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
@@ -353,13 +351,22 @@ void remote_net_initialize(void)
 	  break;
 #endif
 	}
-	if (!bind(flisten_net, addr, addrlen) && !listen(flisten_net, SOMAXCONN)) {
+	if (!bind_socket(flisten_net, addr, addrlen) &&
+	    !listen(flisten_net, SOMAXCONN)) {
 	  on_read(flisten_net, accept_connection_net, 0);
 	} else {
+	  /* Worth saying out loud: without this socket there is no cnet, and
+	   * the usual reason is the one named here.
+	   */
+	  printf("Cannot listen on %s: %s\n", socketnames[i],
+		 errno == EADDRINUSE ?
+		 "in use - another net is already running" : strerror(errno));
 	  close(flisten_net);
 	  flisten_net = -1;
 	}
       }
+    } else {
+      printf("Cannot use %s as a listening address\n", socketnames[i]);
     }
   }
 }

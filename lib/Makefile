@@ -9,6 +9,7 @@ OBJS          = buildsaddr.o \
 		lockfile.o \
 		md5.o \
 		ndbm.o \
+		rundir.o \
 		seteugid.o \
 		strdup.o \
 		strerror.o \
@@ -54,6 +55,10 @@ lockfile.o:\
 md5.o:\
 	md5.c\
 	md5.h
+rundir.o:\
+	configure.h\
+	rundir.c\
+	rundir.h
 seteugid.o:\
 	seteugid.c\
 	seteugid.h

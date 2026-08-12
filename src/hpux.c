@@ -40,6 +40,7 @@
 #include "commands.h"
 #include "main.h"
 #include "hpux.h"
+#include "rundir.h"
 
 #define TIMEOUT 120
 
@@ -102,9 +103,6 @@ void ioinit(void)
   int i;
   struct rlimit rlp;
 
-#define fixdir(name, mode) \
-	{ mkdir((name), (mode)); chmod((name), (mode)); }
-
 #ifdef RLIMIT_NOFILE
   getrlimit(RLIMIT_NOFILE, &rlp);
   rlp.rlim_cur = FD_SETSIZE;
@@ -112,9 +110,8 @@ void ioinit(void)
   setrlimit(RLIMIT_NOFILE, &rlp);
 #endif
 
-  fixdir(TCPDIR, 0755);
-  fixdir(TCPDIR "/sockets", 0755);
-  fixdir(TCPDIR "/.sockets", 0700);
+  create_rundir();
+  create_admin_rundir();
 
   if ((local_kbd = (isatty(0) && isatty(1)))) {
 #ifdef ibm032
