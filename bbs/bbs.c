@@ -3443,12 +3443,37 @@ int main(int argc, char **argv)
   int generate_bid = 0;
   struct passwd *pw;
 
-  if (!*CTLINND_PROG ||
-      !*NEWS_DIR ||
-      !*RNEWS_PROG ||
-      !*SENDMAIL_PROG ||
-      !*UUCP_DIR)
-    halt();
+  /* These come from lib/configure, which finds them or leaves them empty.
+   * Reporting that as a system error through perror() was doubly unhelpful:
+   * errno is zero here, so it printed "Undefined error: 0", and it did not
+   * say which of the five is missing.  Note also that with any of them empty
+   * the compiler can see this branch always exits, and discards the whole
+   * rest of the program - the binary is then 8 KB of error message.
+   */
+  {
+    static const struct { const char *name; const char *value; } needed[] = {
+      { "CTLINND_PROG",  CTLINND_PROG  },
+      { "NEWS_DIR",      NEWS_DIR      },
+      { "RNEWS_PROG",    RNEWS_PROG    },
+      { "SENDMAIL_PROG", SENDMAIL_PROG },
+      { "UUCP_DIR",      UUCP_DIR      },
+      { NULL, NULL }
+    };
+    int missing = 0;
+    int n;
+
+    for (n = 0; needed[n].name; n++)
+      if (!*needed[n].value) {
+	fprintf(stderr, "%s is not configured\n", needed[n].name);
+	missing++;
+      }
+    if (missing) {
+      fprintf(stderr,
+	      "The BBS needs a news system and a mailer.  Set these in "
+	      "lib/configure and rebuild.\n");
+      exit(1);
+    }
+  }
 
   signal(SIGINT,  interrupt_handler);
   signal(SIGQUIT, interrupt_handler);
