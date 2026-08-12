@@ -62,8 +62,8 @@ derived from it sorts cleanly, the two compatibility symlinks above aside:
 | goes to | files |
 |---|---|
 | `/etc/wampes/` | `net.rc`, `bbs.conf`, `bbsrc`, `convers.conf`, `mail.conf`, `hosts`, `domain.txt`, `domain.local` |
-| `/var/lib/wampes/` | `hostaddr`, `hostname`, `arp_data`, `route_data`, `axroute_data`, the three matching `*_tmp`, `locks/` |
-| `/run/wampes/` | `sockets/convers`, `.sockets/netcmd` |
+| `/var/lib/wampes/` | `hostaddr`, `hostname`, `arp_data`, `route_data`, `axroute_data`, and the three matching `*_tmp` |
+| `/run/wampes/` | `sockets/convers`, `.sockets/netcmd`, `locks/` |
 | `/usr/share/wampes/` | `bbs/bbs.help` |
 | `/usr/bin`, `/usr/sbin` | the programs, already separated by `BINDIR` and `SBINDIR` |
 
@@ -71,11 +71,30 @@ Three more variables would carry that: `SYSCONFDIR`, `LOCALSTATEDIR`,
 `RUNDIR`.  The mechanics are in place - the work is the sorting above, and it
 is done.
 
+What lands under `/var/lib` is what the node writes and has to find again
+after a reboot, and what nobody edits by hand: the two databases `mkhostdb`
+builds, the learned ARP entries, the IP routes, and the AX.25 paths that
+`path` reads back.  The three `*_tmp` files are not separate residents - they
+are the write-then-rename companions of the three `*_data` files and have to
+share a directory with them, because `rename()` cannot cross a filesystem.
+That is the whole list; the mailbox keeps no spool of its own, handing mail to
+sendmail and news to ctlinnd and leaving per-user state (`.bbsrc`,
+`.newsrc.bbs`) in the home directory.
+
 Note the pair `hosts` -> `hostaddr`/`hostname`.  The first is hand-written
 configuration, the other two are the databases `mkhostdb` builds from it.  A
 package ships the source under `/etc` and the machine generates the databases
 under `/var/lib`, which is why `mkhostdb` has to be installed and not just
-built.
+built.  One could argue for `/var/cache` on the grounds that they can always
+be rebuilt, but they are needed before the node comes up and nothing rebuilds
+them automatically, so `/var/lib` is the honest place.
+
+`locks/` does not belong under `/var/lib` even though it is written at
+runtime.  It holds `bbs.bid` and `bbs.fwd.<host>`, and the locking is
+`fcntl(F_SETLK)` on an open descriptor, which the kernel releases when the
+process dies.  A leftover file is therefore inert - it blocks nothing, unlike
+a leftover socket - and it carries nothing worth keeping across a reboot.
+That makes it runtime data.
 
 `/run` is cleared at every boot, and that needs no `tmpfiles.d`: both daemons
 create what they need at startup, and `conversd` no longer depends on `net`
