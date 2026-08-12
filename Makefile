@@ -10,8 +10,16 @@
 # offer a BBS should not have one lying around, built and installed, waiting
 # for someone to find a way to reach it.
 #
-# "make install" installs what has been built, and nothing else, so the two
-# modes stay consistent without a second list to keep in step.
+# Installing is a separate step, in two matching sizes: "make install" for the
+# node, "make install-complete" for everything.  Each installs what has been
+# built, and nothing else, so the modes stay consistent without a second list
+# to keep in step.
+#
+# Building used to install as a side effect, all the way back to the original
+# tree, from a time when everything landed in one directory.  Today an install
+# writes to $TCPDIR/bin, $TCPDIR/sbin and the shared bin directory as well, and
+# a build that does that unasked is a trap - it goes off while you are testing
+# a change, in the system you were testing it against.
 
 MINDIRS    = lib \
 	     src \
@@ -26,17 +34,25 @@ DIRS       = lib \
 	     bbs
 
 all:;   @-chmod 755 cc
-	@-for dir in $(MINDIRS); do ( cd $$dir; $(MAKE) -i min install ); done
-	@-. lib/configure.mak; $(MAKE) -i _hostdb
+	@-for dir in $(MINDIRS); do ( cd $$dir; $(MAKE) -i min ); done
 
 complete:; @-chmod 755 cc
-	@-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i all install ); done
+	@-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i all ); done
+	@-if [ -d tools ]; then ( cd tools; $(MAKE) -i all ); fi
+
+install: all
+	@-for dir in $(MINDIRS); do ( cd $$dir; $(MAKE) -i install ); done
 	@-. lib/configure.mak; $(MAKE) -i _hostdb
-	@-if [ -d tools ]; then ( cd tools; $(MAKE) -i all install ); fi
+
+install-complete: complete
+	@-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i install ); done
+	@-if [ -d tools ]; then ( cd tools; $(MAKE) -i install ); fi
+	@-. lib/configure.mak; $(MAKE) -i _hostdb
 
 # TCPDIR comes from lib/configure, the same way the subdirectories get it.
 # It used to be set to /tcp here as well, so on a system configured for any
 # other directory the database was built where the programs do not read it.
+# This writes into TCPDIR, which is why it hangs off install and not off all.
 _hostdb:
 	@if [ -z "$(TCPDIR)" ]; then \
 		echo "TCPDIR is empty - run make at the top level"; exit 1; fi
