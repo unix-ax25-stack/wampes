@@ -51,10 +51,16 @@ Shows an ax25 path to a host.
 
 Utility to compute signatures from input files.
 
-/tcp/util/mkhostdb
+$TCPDIR/sbin/mkhostdb (copied from util/mkhostdb)
 
-Generates the domain databases /tcp/hostaddr.???  and /tcp/hostname.???
-from /tcp/domain.txt, /tcp/domain.local, and /tcp/hosts.
+Generates the domain databases $TCPDIR/hostaddr.??? and $TCPDIR/hostname.???
+from $TCPDIR/domain.txt, $TCPDIR/domain.local, and $TCPDIR/hosts.
+"make" runs it once at the end; run it again by hand after editing hosts.
+
+$TCPDIR/sbin/qaddr, $TCPDIR/sbin/qname
+
+The same program under other names, for looking single entries up:
+"qaddr <name>" prints the address, "qname <address>" prints the name.
 
 /tcp/conversd (copied from /tcp/convers/conversd)
 

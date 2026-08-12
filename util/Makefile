@@ -33,10 +33,26 @@ qth:    qth.o $(LIBS)
 
 _install: \
 	bridge \
+	$(TCPDIR)/sbin/mkhostdb \
 	/usr/local/bin/cnet \
 	/usr/local/bin/md5 \
 	/usr/local/bin/path \
 	/usr/local/bin/qth
+
+# mkhostdb was never installed at all.  It did not need to be: the whole
+# tree used to live at $(TCPDIR), so doc/intro.txt could speak of
+# /tcp/util/mkhostdb and the root Makefile could call util/mkhostdb from the
+# build directory.  Once the sources moved elsewhere that stopped being true,
+# and a sysop had no way left to rebuild the host database after installing.
+#
+# qaddr and qname are the same program: it picks its mode from argv[0].
+$(TCPDIR)/sbin/mkhostdb: mkhostdb
+	$(MKDIR)
+	$(RMTARGET)
+	cp $? $@
+	rm -f $(TCPDIR)/sbin/qaddr $(TCPDIR)/sbin/qname
+	ln $@ $(TCPDIR)/sbin/qaddr
+	ln $@ $(TCPDIR)/sbin/qname
 
 /usr/local/bin/cnet: cnet
 	$(MKDIR)
