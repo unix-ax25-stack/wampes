@@ -1,6 +1,6 @@
 # @(#) $Id: Makefile,v 1.60 2000/01/15 18:34:09 deyke Exp $
 
-TARGETS    = bbs
+TARGETS    = bbs bbs_import
 
 all:;        @. ../lib/configure.mak; $(MAKE) -i _all
 install:;    @. ../lib/configure.mak; $(MAKE) -i _install
@@ -11,7 +11,11 @@ bbs:    bbs.o $(LIBS)
 	$(RMTARGET)
 	$(LD) $(LDFLAGS) bbs.o $(LIBS) $(SLIBS) -o $@
 
-_install: /usr/local/bin/bbs /usr/local/lib/bbs.help
+bbs_import: bbs_import.o $(LIBS)
+	$(RMTARGET)
+	$(LD) $(LDFLAGS) bbs_import.o $(LIBS) $(SLIBS) -o $@
+
+_install: /usr/local/bin/bbs /usr/local/lib/bbs.help $(TCPDIR)/bbs/bbs_import
 
 # bbs used to be installed setuid root.  It needs no root: it is started by
 # the user who connected, and the only thing it cannot reach as that user are
@@ -53,8 +57,17 @@ BBSGROUP   =
 	$(RMTARGET)
 	cp $? $@
 
+# Called from a .forward, never by hand, so it belongs with the BBS and not
+# among the commands.  It was /usr/local/bin/import before.
+$(TCPDIR)/bbs/bbs_import: bbs_import
+	$(MKDIR)
+	$(RMTARGET)
+	cp $? $@
+
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 ###
+bbs_import.o:\
+	bbs_import.c
 bbs.o:\
 	../lib/buildsaddr.h\
 	../lib/callvalid.h\

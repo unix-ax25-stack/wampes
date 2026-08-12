@@ -6,7 +6,6 @@ TARGETS    = \
 	     connect2 \
 	     filter \
 	     htmldiff \
-	     import \
 	     makeiprt \
 	     mm2html \
 	     ms2mm \
@@ -41,10 +40,6 @@ htmldiff: htmldiff.o $(LIBS)
 	$(RMTARGET)
 	$(LD) $(LDFLAGS) htmldiff.o $(LIBS) $(SLIBS) -o $@
 
-import: import.o $(LIBS)
-	$(RMTARGET)
-	$(LD) $(LDFLAGS) import.o $(LIBS) $(SLIBS) -o $@
-
 makeiprt: makeiprt.o $(LIBS)
 	$(RMTARGET)
 	$(LD) $(LDFLAGS) makeiprt.o $(LIBS) $(SLIBS) -o $@
@@ -62,12 +57,6 @@ udpbridge: udpbridge.o $(LIBS)
 	$(LD) $(LDFLAGS) udpbridge.o $(LIBS) $(SLIBS) -o $@
 
 _install: \
-	/usr/local/bin/import
-
-/usr/local/bin/import: import
-	$(MKDIR)
-	$(RMTARGET)
-	cp $? $@
 
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 ###
@@ -83,8 +72,6 @@ filter.o:\
 	filter.c
 htmldiff.o:\
 	htmldiff.c
-import.o:\
-	import.c
 makeiprt.o:\
 	../lib/configure.h\
 	../lib/hostdb.h\

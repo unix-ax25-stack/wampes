@@ -9,7 +9,17 @@ static const char rcsid[] = "@(#) $Id: import.c,v 1.5 1996/08/12 18:52:58 deyke 
    this mail message will contain one or more BBS mail messages.  Those
    will get feed to the BBS program.
 
+   It used to be built in tools/ and installed as /usr/local/bin/import,
+   where the name says nothing about what it belongs to, collides with the
+   screenshot tool of the same name, and sits among commands a person
+   types - which this one never is.  It is a part of the BBS and lives
+   with it.
+
  */
+
+/* The BBS this delivers to.  One place, because it moves when the
+   installation layout does. */
+#define BBS_PROG        "/usr/local/bin/bbs"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -88,7 +98,7 @@ int main(void)
     dup2(pipeinp[1], 2);
     close(pipeinp[1]);
     close(pipeout[0]);
-    execl("/usr/local/bin/bbs", "bbs", (char *) NULL);
+    execl(BBS_PROG, "bbs", (char *) NULL);
     exit(0);
   default:
     break;
