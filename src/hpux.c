@@ -174,7 +174,7 @@ void ioinit(void)
   if (!getenv("LOGNAME"))
     putenv("LOGNAME=root");
   if (!getenv("PATH"))
-    putenv("PATH=/bin:/usr/bin:/usr/contrib/bin:/usr/local/bin");
+    putenv("PATH=" BINDIR ":/bin:/usr/bin:/usr/local/bin");
   if (!getenv("SHELL"))
     putenv("SHELL=/bin/sh");
   if (!getenv("TZ"))

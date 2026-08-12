@@ -1,0 +1,33 @@
+#!/bin/sh
+#
+# publiclink BINDIR PUBLICBINDIR name...
+#
+# Make a "wampes-" prefixed symlink in the shared bin directory for each
+# named command, pointing at the real one under BINDIR.
+#
+# The point of the prefix: the plain names live in WAMPES' own bin, where
+# nothing else can collide with them, and the shared directory gets names
+# that say where they come from.  "path", "md5" and "import" are exactly the
+# kind of name two projects both want - ImageMagick ships an "import", and
+# /usr/local/bin here already holds call, listen and mheard from ax25-apps.
+#
+# An empty PUBLICBINDIR means the caller does not want the links at all,
+# which is what a distribution package would set.
+
+bindir=$1
+publicdir=$2
+shift 2
+
+[ -n "$publicdir" ] || exit 0
+[ -d "$publicdir" ] || mkdir -p "$publicdir" || exit 1
+
+for name
+do
+	link=$publicdir/wampes-$name
+	target=$bindir/$name
+	echo "ln -s $target $link"
+	rm -f "$link"
+	ln -s "$target" "$link" || exit 1
+done
+
+exit 0

@@ -17,9 +17,9 @@ static const char rcsid[] = "@(#) $Id: import.c,v 1.5 1996/08/12 18:52:58 deyke 
 
  */
 
-/* The BBS this delivers to.  One place, because it moves when the
-   installation layout does. */
-#define BBS_PROG        "/usr/local/bin/bbs"
+/* The BBS this delivers to. */
+#include "configure.h"
+#define BBS_PROG        BINDIR "/bbs"
 
 #include <stdio.h>
 #include <stdlib.h>

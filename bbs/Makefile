@@ -15,7 +15,7 @@ bbs_import: bbs_import.o $(LIBS)
 	$(RMTARGET)
 	$(LD) $(LDFLAGS) bbs_import.o $(LIBS) $(SLIBS) -o $@
 
-_install: /usr/local/bin/bbs /usr/local/lib/bbs.help $(TCPDIR)/bbs/bbs_import
+_install: $(BINDIR)/bbs $(TCPDIR)/bbs/bbs.help $(TCPDIR)/bbs/bbs_import publiclinks
 
 # bbs used to be installed setuid root.  It needs no root: it is started by
 # the user who connected, and the only thing it cannot reach as that user are
@@ -38,9 +38,8 @@ _install: /usr/local/bin/bbs /usr/local/lib/bbs.help $(TCPDIR)/bbs/bbs_import
 
 BBSGROUP   =
 
-/usr/local/bin/bbs: bbs
+$(BINDIR)/bbs: bbs
 	$(MKDIR)
-	rm -f /usr/local/bin/BBS
 	$(RMTARGET)
 	cp $? $@
 	@if [ -n "$(BBSGROUP)" ]; then \
@@ -50,9 +49,19 @@ BBSGROUP   =
 		echo "chmod 555 $@"; \
 		chmod 555 $@; \
 	fi
-	ln $@ /usr/local/bin/BBS
+	@# BBS is a second name for the same program.  On a case insensitive
+	@# filesystem it already is the same file, so linking it would fail -
+	@# and the "rm -f BBS" this rule used to do before copying deleted the
+	@# bbs binary itself there.  Only link when it is really missing.
+	@if [ ! $(BINDIR)/BBS -ef $@ ]; then \
+		rm -f $(BINDIR)/BBS; \
+		echo "ln $@ $(BINDIR)/BBS"; \
+		ln $@ $(BINDIR)/BBS; \
+	fi
 
-/usr/local/lib/bbs.help: bbs.help
+# bbs.help used to sit in /usr/local/lib, a directory that has nothing else
+# of ours in it.  It belongs with the rest of what the BBS needs.
+$(TCPDIR)/bbs/bbs.help: bbs.help
 	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
@@ -63,6 +72,9 @@ $(TCPDIR)/bbs/bbs_import: bbs_import
 	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
+
+publiclinks:
+	@sh ../lib/publiclink "$(BINDIR)" "$(PUBLICBINDIR)" bbs
 
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 ###

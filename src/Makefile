@@ -339,7 +339,7 @@ $(PROGRAM):     $(OBJS) $(LIBS)
 
 clean:;         @rm -f *.o $(PROGRAM) lint tags TAGS *~ \#*\#
 
-_install:       $(DEST)/$(PROGRAM)
+_install:       $(SBINDIR)/wampes-net
 
 lint:           $(HDRS) $(SRCS); @lih $(SRCS) > lint
 
@@ -349,10 +349,18 @@ tags:           $(HDRS) $(SRCS)
 TAGS:           $(HDRS) $(SRCS)
 		@etags $(HDRS) $(SRCS)
 
-$(DEST)/$(PROGRAM): $(PROGRAM)
+# Installed as wampes-net, not net.  The daemon shows up in ps under the
+# name it was installed as, and "net" there is hopeless - Samba has one too.
+# The build artifact keeps the short name; only the installed copy differs.
+#
+# The symlink at $(TCPDIR)/net keeps existing start scripts working, and
+# doc/wampes.mm has called it that for thirty years.
+$(SBINDIR)/wampes-net: $(PROGRAM)
 		$(MKDIR)
 		$(RMTARGET)
 		cp $(PROGRAM) $@
+		rm -f $(TCPDIR)/net
+		ln -s sbin/wampes-net $(TCPDIR)/net
 
 .c.o:
 		@rm -f $@

@@ -161,6 +161,20 @@ LDFLAGS="$LDFLAGS${EXTRA_LDFLAGS:+ $EXTRA_LDFLAGS}"
 
 TCPDIR=${TCPDIR:-/tcp}
 
+# Where the programs go.  Everything WAMPES installs lives under TCPDIR by
+# default, so that a local installation is one directory that can be moved,
+# backed up or deleted as a unit, and so that its names cannot collide with
+# another project's.  A distribution package overrides these:
+#
+#   BINDIR=/usr/bin SBINDIR=/usr/sbin PUBLICBINDIR= ./configure
+#
+# PUBLICBINDIR is the shared directory that gets "wampes-" prefixed symlinks
+# to the handful of commands a person actually types, so that they are on the
+# usual PATH without occupying a plain name there.  Empty means no symlinks.
+BINDIR=${BINDIR:-$TCPDIR/bin}
+SBINDIR=${SBINDIR:-$TCPDIR/sbin}
+PUBLICBINDIR=${PUBLICBINDIR-/usr/local/bin}
+
 rm -f configure.mak
 
 echo 'CC='"'$CC'" >> configure.mak
@@ -173,10 +187,13 @@ echo 'LIBS='"'$LIBS'" >> configure.mak
 echo 'SLIBS='"'$SLIBS'" >> configure.mak
 
 echo 'TCPDIR='"'$TCPDIR'" >> configure.mak
+echo 'BINDIR='"'$BINDIR'" >> configure.mak
+echo 'SBINDIR='"'$SBINDIR'" >> configure.mak
+echo 'PUBLICBINDIR='"'$PUBLICBINDIR'" >> configure.mak
 echo 'MKDIR='"'$MKDIR'" >> configure.mak
 echo 'RMTARGET='"'$RMTARGET'" >> configure.mak
 
-echo 'export CC CFLAGS LD LDFLAGS LIBS SLIBS TCPDIR MKDIR RMTARGET' >> configure.mak
+echo 'export CC CFLAGS LD LDFLAGS LIBS SLIBS TCPDIR BINDIR SBINDIR PUBLICBINDIR MKDIR RMTARGET' >> configure.mak
 
 islink='-h'
 
@@ -435,6 +452,7 @@ checksymbol()
 
 	echo
 	echo "#define TCPDIR \"$TCPDIR\""
+	echo "#define BINDIR \"$BINDIR\""
 
 	echo
 	echo "#ifdef __MACOSX__"

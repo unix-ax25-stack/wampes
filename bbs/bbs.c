@@ -59,7 +59,7 @@ extern int optind;
 
 #define BBSCONFIGFILE   TCPDIR "/bbs.conf"
 #define BBSRCFILE       TCPDIR "/bbsrc"
-#define HELPFILE        "/usr/local/lib/bbs.help"
+#define HELPFILE        TCPDIR "/bbs/bbs.help"
 #define LOCKDIR         TCPDIR "/locks"
 #define MAILCONFIGFILE  TCPDIR "/mail.conf"
 #define NEWSRCFILE      ".newsrc.bbs"
@@ -3549,8 +3549,12 @@ int main(int argc, char **argv)
     if (!(cp = strdup(buf))) halt();
     putenv(cp);
   }
+  /* BINDIR first: that is where our own commands are, and a user who
+   * connects over the air has no other way to find them.  /usr/contrib/bin
+   * is an HP-UX leftover and has been kept only because removing it costs
+   * nothing either way. */
   if (!getenv("PATH"))
-    putenv("PATH=/bin:/usr/bin:/usr/contrib/bin:/usr/local/bin");
+    putenv("PATH=" BINDIR ":/bin:/usr/bin:/usr/local/bin");
   if (!getenv("TZ"))
     putenv("TZ=MEZ-1MESZ");
 

@@ -33,11 +33,12 @@ qth:    qth.o $(LIBS)
 
 _install: \
 	bridge \
-	$(TCPDIR)/sbin/mkhostdb \
-	/usr/local/bin/cnet \
-	/usr/local/bin/md5 \
-	/usr/local/bin/path \
-	/usr/local/bin/qth
+	$(SBINDIR)/mkhostdb \
+	$(BINDIR)/cnet \
+	$(BINDIR)/md5 \
+	$(BINDIR)/path \
+	$(BINDIR)/qth \
+	publiclinks
 
 # mkhostdb was never installed at all.  It did not need to be: the whole
 # tree used to live at $(TCPDIR), so doc/intro.txt could speak of
@@ -46,33 +47,36 @@ _install: \
 # and a sysop had no way left to rebuild the host database after installing.
 #
 # qaddr and qname are the same program: it picks its mode from argv[0].
-$(TCPDIR)/sbin/mkhostdb: mkhostdb
+$(SBINDIR)/mkhostdb: mkhostdb
 	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
-	rm -f $(TCPDIR)/sbin/qaddr $(TCPDIR)/sbin/qname
-	ln $@ $(TCPDIR)/sbin/qaddr
-	ln $@ $(TCPDIR)/sbin/qname
+	rm -f $(SBINDIR)/qaddr $(SBINDIR)/qname
+	ln $@ $(SBINDIR)/qaddr
+	ln $@ $(SBINDIR)/qname
 
-/usr/local/bin/cnet: cnet
-	$(MKDIR)
-	$(RMTARGET)
-	cp $? $@
-
-/usr/local/bin/md5: md5
+$(BINDIR)/cnet: cnet
 	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
 
-/usr/local/bin/path: path
+$(BINDIR)/md5: md5
 	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
 
-/usr/local/bin/qth: qth
+$(BINDIR)/path: path
 	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
+
+$(BINDIR)/qth: qth
+	$(MKDIR)
+	$(RMTARGET)
+	cp $? $@
+
+publiclinks:
+	@sh ../lib/publiclink "$(BINDIR)" "$(PUBLICBINDIR)" cnet path qth
 
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 ###

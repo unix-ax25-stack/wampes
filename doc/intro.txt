@@ -27,8 +27,8 @@ Olaf
 What program does what? -  a quick overview.
 --------------------------------------------
 
-/tcp/net            (copied from /tcp/src/net)
-/usr/local/bin/cnet (copied from /tcp/util/cnet)
+$TCPDIR/sbin/wampes-net (copied from src/net; $TCPDIR/net is a symlink to it)
+$TCPDIR/bin/cnet    (copied from util/cnet; /usr/local/bin/wampes-cnet links here)
 
 The main program.  It's the interface to the KISS/SLIP ports, the
 program that controls logins, connections etc.  It can be started in the
@@ -43,11 +43,11 @@ is running in foreground, you don't need cnet!
 You can leave cnet with 'bye', not with 'exit'!  'exit' exits the
 net-program too, 'bye' leaves only cnet.
 
-/usr/local/bin/path (copied from /tcp/util/path)
+$TCPDIR/bin/path    (copied from util/path; /usr/local/bin/wampes-path links here)
 
 Shows an ax25 path to a host.
 
-/usr/local/bin/md5 (copied from /tcp/util/md5)
+$TCPDIR/bin/md5     (copied from util/md5; no link, the name is too common)
 
 Utility to compute signatures from input files.
 
@@ -62,12 +62,13 @@ $TCPDIR/sbin/qaddr, $TCPDIR/sbin/qname
 The same program under other names, for looking single entries up:
 "qaddr <name>" prints the address, "qname <address>" prints the name.
 
-/tcp/conversd (copied from /tcp/convers/conversd)
+$TCPDIR/sbin/wampes-conversd (copied from convers/conversd;
+$TCPDIR/conversd is a symlink to it)
 
 The convers-server.  Started in background, it listens and accepts
 convers connections on an unix domain socket.
 
-/usr/local/bin/convers (copied from /tcp/convers/convers)
+$TCPDIR/bin/convers (copied from convers/convers; /usr/local/bin/wampes-convers links here)
 
 The convers user program.  It connects to the unix domain socket of the
 server, and enables the user to confer with others.
