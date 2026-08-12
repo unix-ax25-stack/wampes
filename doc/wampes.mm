@@ -40,9 +40,7 @@ Gerard van der Grinten, PA0GRI
 The executable file \fB/tcp/net\fP
 .RB ( \fITCPDIR\fP/net ,
 a symlink to
-.IB \fITCPDIR\fP /sbin/wampes-net ;
-the daemon is installed under the longer name because "net" in a process
-listing says nothing, and other projects ship one too)
+.IB \fITCPDIR\fP /sbin/net )
 (further called \fBWAMPES\fP) provides Internet (TCP/IP),
 NET/ROM and AX.25
 facilities. Because it has an internal multi-tasking system,

@@ -27,7 +27,7 @@ Olaf
 What program does what? -  a quick overview.
 --------------------------------------------
 
-$TCPDIR/sbin/wampes-net (copied from src/net; $TCPDIR/net is a symlink to it)
+$TCPDIR/sbin/net    (copied from src/net; $TCPDIR/net is a symlink to it)
 $TCPDIR/bin/cnet    (copied from util/cnet; /usr/local/bin/wampes-cnet links here)
 
 The main program.  It's the interface to the KISS/SLIP ports, the
@@ -62,7 +62,7 @@ $TCPDIR/sbin/qaddr, $TCPDIR/sbin/qname
 The same program under other names, for looking single entries up:
 "qaddr <name>" prints the address, "qname <address>" prints the name.
 
-$TCPDIR/sbin/wampes-conversd (copied from convers/conversd;
+$TCPDIR/sbin/conversd (copied from convers/conversd;
 $TCPDIR/conversd is a symlink to it)
 
 The convers-server.  Started in background, it listens and accepts

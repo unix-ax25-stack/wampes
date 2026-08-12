@@ -15,25 +15,25 @@ conversd: conversd.o $(LIBS)
 	$(RMTARGET)
 	$(LD) $(LDFLAGS) conversd.o $(LIBS) $(SLIBS) -o $@
 
-_install: $(BINDIR)/convers $(SBINDIR)/wampes-conversd publiclinks
+_install: $(BINDIR)/convers $(SBINDIR)/conversd
+	@sh ../lib/publiclink "$(BINDIR)" "$(PUBLICBINDIR)" convers
 
 $(BINDIR)/convers: convers
 	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
 
-# conversd is a daemon, so it belongs in sbin.  The symlink at the old place
-# keeps existing start scripts working; doc/wampes.mm has spoken of
-# $(TCPDIR)/conversd for thirty years.
-$(SBINDIR)/wampes-conversd: conversd
+# conversd is a daemon, so it belongs in sbin, under its plain name - inside
+# $(TCPDIR) it is unambiguous.  The symlink at the old place keeps existing
+# start scripts working.
+$(SBINDIR)/conversd: conversd
 	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
 	rm -f $(TCPDIR)/conversd
-	ln -s sbin/wampes-conversd $(TCPDIR)/conversd
+	ln -s sbin/conversd $(TCPDIR)/conversd
 
-publiclinks:
-	@sh ../lib/publiclink "$(BINDIR)" "$(PUBLICBINDIR)" convers
+
 
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 ###

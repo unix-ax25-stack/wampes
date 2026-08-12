@@ -288,6 +288,8 @@ SRCS          = adjtime.c \
 		uhnp.c \
 		version.c
 
+min:         all
+
 all:;        @. ../lib/configure.mak; $(MAKE) -i _all
 install:;    @. ../lib/configure.mak; $(MAKE) -i _install
 
@@ -339,7 +341,7 @@ $(PROGRAM):     $(OBJS) $(LIBS)
 
 clean:;         @rm -f *.o $(PROGRAM) lint tags TAGS *~ \#*\#
 
-_install:       $(SBINDIR)/wampes-net
+_install:       $(SBINDIR)/net
 
 lint:           $(HDRS) $(SRCS); @lih $(SRCS) > lint
 
@@ -349,18 +351,18 @@ tags:           $(HDRS) $(SRCS)
 TAGS:           $(HDRS) $(SRCS)
 		@etags $(HDRS) $(SRCS)
 
-# Installed as wampes-net, not net.  The daemon shows up in ps under the
-# name it was installed as, and "net" there is hopeless - Samba has one too.
-# The build artifact keeps the short name; only the installed copy differs.
+# The daemon moves to sbin - it is not a user command - but keeps its plain
+# name: inside $(TCPDIR) nothing else competes for it.  The "wampes-" prefix
+# is for the shared directories only.
 #
 # The symlink at $(TCPDIR)/net keeps existing start scripts working, and
 # doc/wampes.mm has called it that for thirty years.
-$(SBINDIR)/wampes-net: $(PROGRAM)
+$(SBINDIR)/net: $(PROGRAM)
 		$(MKDIR)
 		$(RMTARGET)
 		cp $(PROGRAM) $@
 		rm -f $(TCPDIR)/net
-		ln -s sbin/wampes-net $(TCPDIR)/net
+		ln -s sbin/net $(TCPDIR)/net
 
 .c.o:
 		@rm -f $@
