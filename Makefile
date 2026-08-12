@@ -1,5 +1,22 @@
 # @(#) $Id: Makefile,v 1.50 2000/03/04 18:31:08 deyke Exp $
 
+# "make" builds what a WAMPES node needs to run: the daemon, the command
+# client, the host database tool and the route display.  "make complete"
+# builds everything else as well - the BBS, convers, the extra utilities and
+# the tools directory.
+#
+# The split is deliberate rather than tidy-minded.  The BBS is the largest
+# thing here and the one with the most attack surface; a node that does not
+# offer a BBS should not have one lying around, built and installed, waiting
+# for someone to find a way to reach it.
+#
+# "make install" installs what has been built, and nothing else, so the two
+# modes stay consistent without a second list to keep in step.
+
+MINDIRS    = lib \
+	     src \
+	     util
+
 DIRS       = lib \
 	     aos \
 	     NeXT \
@@ -9,6 +26,10 @@ DIRS       = lib \
 	     bbs
 
 all:;   @-chmod 755 cc
+	@-for dir in $(MINDIRS); do ( cd $$dir; $(MAKE) -i min install ); done
+	@-. lib/configure.mak; $(MAKE) -i _hostdb
+
+complete:; @-chmod 755 cc
 	@-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i all install ); done
 	@-. lib/configure.mak; $(MAKE) -i _hostdb
 	@-if [ -d tools ]; then ( cd tools; $(MAKE) -i all install ); fi

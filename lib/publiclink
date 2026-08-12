@@ -25,6 +25,9 @@ for name
 do
 	link=$publicdir/wampes-$name
 	target=$bindir/$name
+	# Only for what is actually installed: "make" builds a subset, and a
+	# dangling wampes-bbs would be worse than no wampes-bbs.
+	[ -f "$target" ] || continue
 	echo "ln -s $target $link"
 	rm -f "$link"
 	ln -s "$target" "$link" || exit 1

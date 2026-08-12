@@ -15,7 +15,8 @@ bbs_import: bbs_import.o $(LIBS)
 	$(RMTARGET)
 	$(LD) $(LDFLAGS) bbs_import.o $(LIBS) $(SLIBS) -o $@
 
-_install: $(BINDIR)/bbs $(TCPDIR)/bbs/bbs.help $(TCPDIR)/bbs/bbs_import publiclinks
+_install: $(BINDIR)/bbs $(TCPDIR)/bbs/bbs.help $(TCPDIR)/bbs/bbs_import
+	@sh ../lib/publiclink "$(BINDIR)" "$(PUBLICBINDIR)" bbs
 
 # bbs used to be installed setuid root.  It needs no root: it is started by
 # the user who connected, and the only thing it cannot reach as that user are
@@ -72,9 +73,6 @@ $(TCPDIR)/bbs/bbs_import: bbs_import
 	$(MKDIR)
 	$(RMTARGET)
 	cp $? $@
-
-publiclinks:
-	@sh ../lib/publiclink "$(BINDIR)" "$(PUBLICBINDIR)" bbs
 
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 ###

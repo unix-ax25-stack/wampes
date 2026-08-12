@@ -9,7 +9,26 @@ LDFLAGS='$(CFLAGS) '"${STRIPFLAG-"-s"}"
 LIBS='../lib/libutil.a'
 SLIBS=''
 
-TCPDIR=${TCPDIR:-}
+# lib/Makefile re-runs this script on every build, so a setting made once
+# has to survive.  Take the previous answers from the configure.mak we wrote
+# last time as the defaults; the environment still overrides them, and a
+# fresh tree falls back to the built-in values.  Only the installation paths
+# are carried over - the compiler probes below are meant to run again.
+if [ -f configure.mak ]; then
+	eval `sed -n \
+		-e "s/^\(TCPDIR=.*\)/old_\1/p" \
+		-e "s/^\(BINDIR=.*\)/old_\1/p" \
+		-e "s/^\(SBINDIR=.*\)/old_\1/p" \
+		-e "s/^\(PUBLICBINDIR=.*\)/old_\1/p" \
+		configure.mak`
+	# Only a deliberate choice is worth remembering.  If BINDIR and
+	# SBINDIR were merely derived from the old TCPDIR, forget them, so
+	# that moving TCPDIR moves them along instead of leaving them behind.
+	[ "$old_BINDIR"  = "$old_TCPDIR/bin"  ] && old_BINDIR=
+	[ "$old_SBINDIR" = "$old_TCPDIR/sbin" ] && old_SBINDIR=
+fi
+
+TCPDIR=${TCPDIR-$old_TCPDIR}
 
 MKDIR='@if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi'
 RMTARGET='@if [ -f $@ ]; then rm -f $@ || mv -f $@ $@~; fi'
@@ -171,9 +190,9 @@ TCPDIR=${TCPDIR:-/tcp}
 # PUBLICBINDIR is the shared directory that gets "wampes-" prefixed symlinks
 # to the handful of commands a person actually types, so that they are on the
 # usual PATH without occupying a plain name there.  Empty means no symlinks.
-BINDIR=${BINDIR:-$TCPDIR/bin}
-SBINDIR=${SBINDIR:-$TCPDIR/sbin}
-PUBLICBINDIR=${PUBLICBINDIR-/usr/local/bin}
+BINDIR=${BINDIR:-${old_BINDIR:-$TCPDIR/bin}}
+SBINDIR=${SBINDIR:-${old_SBINDIR:-$TCPDIR/sbin}}
+PUBLICBINDIR=${PUBLICBINDIR-${old_PUBLICBINDIR-/usr/local/bin}}
 
 rm -f configure.mak
 

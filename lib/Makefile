@@ -15,6 +15,8 @@ OBJS          = buildsaddr.o \
 		strmatch.o \
 		strtoul.o
 
+min:         all
+
 all:;   @echo "Configuring ..."
 	@if   [ -x /bin/bash ]; then /bin/bash configure; \
 	 elif [ -x /bin/ksh  ]; then /bin/ksh  configure; \
