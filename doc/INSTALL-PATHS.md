@@ -12,7 +12,8 @@ build time and which defaults to `/usr/local/wampes`:
     $TCPDIR/bin/      bbs cnet convers md5 path qth
     $TCPDIR/sbin/     net conversd mkhostdb qaddr qname
     $TCPDIR/bbs/      bbs.help bbs_import
-    $TCPDIR/sockets/  convers                     0755
+    $TCPDIR/sockets/  convers                     0755, socket 0666
+                      ax25                        0755, socket 0660 root:hams
     $TCPDIR/.sockets/ netcmd                      0700
     $TCPDIR/          the configuration and the data files, see below
 
@@ -46,6 +47,13 @@ Not an accident of history, but a rights boundary:
   The socket itself is chmod'ed 0666 after binding.
 * `.sockets/`, mode 0700, holds `netcmd`, which is `net`'s command line -
   whoever can reach it can reconfigure the node.  `cnet` is the client.
+* `sockets/ax25` is the AX.25 service: connect and datagram, and nothing that
+  reaches back into the node.  It sits in the public directory, so its own
+  mode does the work - 0660 and group `hams` where that group exists,
+  otherwise it keeps its owner, which errs narrow rather than wide.  The same
+  service is reachable over TCP on 127.0.0.1 and ::1 after `start axtcp
+  [<port>]`, default port 8010; that listener is off unless net.rc asks for
+  it, because a TCP port carries no rights of its own.
 
 `lib/rundir.c` enforces both: `mkdir` alone would leave the mode to the umask,
 so `chmod` follows and also repairs a directory that is already there.  The two

@@ -25,6 +25,7 @@
 #include "icmp.h"
 #include "cmdparse.h"
 #include "commands.h"
+#include "remote_net.h"
 #include "ax25mail.h"
 #include "tipmail.h"
 #include "daemon.h"
@@ -156,6 +157,7 @@ struct cmds Attab[] = {
 /* "start" and "stop" subcommands */
 static struct cmds Startcmds[] = {
 	{ "ax25",         ax25start,      0, 0, NULL },
+	{ "axtcp",        axtcpstart,     0, 0, "start axtcp [<port>]" },
 	{ "discard",      dis1,           0, 0, NULL },
 	{ "domain",       domain1,        0, 0, NULL },
 	{ "echo",         echo1,          0, 0, NULL },
@@ -172,6 +174,7 @@ static struct cmds Startcmds[] = {
 
 static struct cmds Stopcmds[] = {
 	{ "ax25",         ax250,          0, 0, NULL },
+	{ "axtcp",        axtcp0,         0, 0, NULL },
 	{ "discard",      dis0,           0, 0, NULL },
 	{ "domain",       domain0,        0, 0, NULL },
 	{ "echo",         echo0,          0, 0, NULL },

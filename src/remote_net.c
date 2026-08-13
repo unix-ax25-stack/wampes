@@ -4,11 +4,15 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <grp.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/un.h>
+#include <syslog.h>
 #include <unistd.h>
 
 #ifndef SOMAXCONN
@@ -35,6 +39,8 @@ struct controlblock {
   int bufcnt;                           /* Number of bytes in buffer */
   struct transport_cb *tp;              /* Transport handle */
   int binary;                           /* Transfer is binary (no EOL conv) */
+  int restricted;                       /* From the service socket: no
+                                         * "command", no "console" */
 };
 
 struct cmdtable {
@@ -44,20 +50,51 @@ struct cmdtable {
 
 static int fkbd = -1;
 
-/* The listening sockets, and their descriptors alongside.  There used to be
- * a single descriptor here while the name list was already an array - which
- * worked only because the array held one entry.  A second listener would
- * have overwritten the variable, and both accept handlers would then have
- * taken connections off whichever socket came last.
+/* Where the group that may reach the service socket is looked up.  Without
+ * it the socket keeps its owner, which is the safe direction: a sysop can
+ * always widen it, and a wrong guess here would hand out the transmitter.
  */
-static const char *socketnames[] = {
-  "unix:" TCPDIR "/.sockets/netcmd",
-  0
+#define AXSOCK_GROUP  "hams"
+
+/* What we listen on.  Two kinds, and the difference is what may be said:
+ *
+ * The command channel carries "command" and "console" and is therefore the
+ * node's own command line - whoever reaches it can reconfigure everything.
+ * It lives in .sockets, mode 0700.
+ *
+ * The service socket carries connect and datagram and nothing that changes
+ * the node.  It lives in the public sockets directory, so its own mode has
+ * to do the work: 0660, group "hams".
+ *
+ * Each entry keeps its own descriptor.  The accept handler is given the
+ * entry, not a global - with one shared variable the first connection would
+ * hang the node in accept() on the wrong socket.
+ */
+struct listener {
+  const char *name;                     /* in build_sockaddr() notation */
+  int restricted;                       /* service socket, not command channel */
+  int fd;
 };
 
-#define NSOCKETNAMES (sizeof(socketnames) / sizeof(socketnames[0]))
+static struct listener Listeners[] = {
+  { "unix:" TCPDIR "/.sockets/netcmd", 0, -1 },
+  { "unix:" TCPDIR "/sockets/ax25",    1, -1 },
+  { 0,                                 0, -1 }
+};
 
-static int flisten_net[NSOCKETNAMES];
+/* The loopback listeners are not among them: they stay closed unless net.rc
+ * says so, because a TCP port carries no rights of its own.  Switching it on
+ * is the statement that every local account may use the transmitter.
+ */
+#define AXTCP_PORT_DEFAULT 8010
+
+static struct listener Axtcp[] = {
+  { 0, 1, -1 },                         /* 127.0.0.1 */
+  { 0, 1, -1 },                         /* ::1       */
+  { 0, 0, -1 }
+};
+
+static char Axtcp_addr[2][32];
 
 /*---------------------------------------------------------------------------*/
 
@@ -258,12 +295,26 @@ static void command_receive(void *arg)
 {
   struct controlblock *cp = (struct controlblock *) arg;
 
-  static const struct cmdtable command_table[] = {
+  /* Everything the command channel offers.  "command" runs the node's own
+   * command table and "console" takes over its console - which is why this
+   * belongs to root alone.
+   */
+  static const struct cmdtable full_table[] = {
     { "ascii",   ascii_command },
     { "binary",  binary_command },
     { "command", command_command },
     { "connect", connect_command },
     { "console", console_command },
+    { 0,         0 }
+  };
+
+  /* What the service socket offers: reaching the outside, and nothing that
+   * reaches back into the node.
+   */
+  static const struct cmdtable service_table[] = {
+    { "ascii",   ascii_command },
+    { "binary",  binary_command },
+    { "connect", connect_command },
     { 0,         0 }
   };
 
@@ -280,7 +331,8 @@ static void command_receive(void *arg)
   }
   cp->buffer[cp->bufcnt] = 0;
   cp->bufcnt = 0;
-  if (command_switcher(cp, getarg(cp->buffer, 0), command_table))
+  if (command_switcher(cp, getarg(cp->buffer, 0),
+		       cp->restricted ? service_table : full_table))
     delete_controlblock(cp);
 }
 
@@ -298,11 +350,13 @@ static void accept_connection_net(void *p)
    */
   struct sockaddr_storage addr;
 
+  struct listener *l = (struct listener *) p;
+
   addrlen = sizeof(addr);
-  /* Which socket woke us: on_read() carries the slot, so this works with
-   * any number of listeners.
+  /* Which socket woke us, and what may be said on it: on_read() carries the
+   * entry, so this works with any number of listeners.
    */
-  if ((fd = accept(*(int *) p, (struct sockaddr *) &addr, &addrlen)) < 0)
+  if ((fd = accept(l->fd, (struct sockaddr *) &addr, &addrlen)) < 0)
     return;
   cp = (struct controlblock *) calloc(1, sizeof(struct controlblock));
   if (!cp) {
@@ -310,6 +364,7 @@ static void accept_connection_net(void *p)
     return;
   }
   cp->fd = fd;
+  cp->restricted = l->restricted;
   on_read(cp->fd, command_receive, cp);
 }
 
@@ -334,56 +389,170 @@ struct iface *ifp;
 
 /*---------------------------------------------------------------------------*/
 
-void remote_net_initialize(void)
+/* Say it where it can be heard.  Without a terminal, ioinit() closes the
+ * standard descriptors and reopens them on /dev/null (hpux.c), so a printf
+ * at startup reaches only a sysop sitting at the console - and a node started
+ * at boot has none, which is precisely when these messages matter.
+ */
+
+static void complain(const char *fmt, ...)
+{
+  char buf[512];
+  va_list ap;
+
+  va_start(ap, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
+  printf("%s\n", buf);
+  syslog(LOG_ERR, "%s", buf);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* The service socket sits in the public directory, so its own mode is what
+ * keeps it to the operators.  If the group is missing the socket stays with
+ * its owner - narrower than intended rather than wider.
+ */
+
+static void set_service_rights(const char *path)
+{
+  struct group *gr;
+
+  if ((gr = getgrnam(AXSOCK_GROUP)))
+    chown(path, (uid_t) -1, gr->gr_gid);
+  else
+    complain("no group \"%s\": %s stays with its owner", AXSOCK_GROUP, path);
+  chmod(path, 0660);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int open_listener(struct listener *l)
 {
 
-  int addrlen, i;
+  int addrlen;
   int arg;
   int fd;
   struct sockaddr *addr;
 
-  for (i = 0; i < (int) NSOCKETNAMES; i++)
-    flisten_net[i] = -1;
+  if (l->fd >= 0) return 0;             /* already listening */
 
-  for (i = 0; socketnames[i]; i++) {
-    if ((addr = build_sockaddr(socketnames[i], &addrlen))) {
-      if ((fd = socket(addr->sa_family, SOCK_STREAM, 0)) >= 0) {
-	switch (addr->sa_family) {
-	case AF_INET:
-	  arg = 1;
-	  setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
-	  break;
-#if HAS_AF_INET6
-	case AF_INET6:
-	  arg = 1;
-	  setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
-	  /* Pin this down rather than inheriting it: whether an IPv6 socket
-	   * also accepts IPv4 is a system default that differs between Linux
-	   * and the BSDs.  Fixed to v6-only, a "*:port" and a "[::]:port" entry
-	   * can coexist everywhere instead of fighting over the port on some
-	   * systems.
-	   */
-	  arg = 1;
-	  setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &arg, sizeof(arg));
-	  break;
-#endif
-	}
-	if (!bind_socket(fd, addr, addrlen) &&
-	    !listen(fd, SOMAXCONN)) {
-	  flisten_net[i] = fd;
-	  on_read(fd, accept_connection_net, &flisten_net[i]);
-	} else {
-	  /* Worth saying out loud: without this socket there is no cnet, and
-	   * the usual reason is the one named here.
-	   */
-	  printf("Cannot listen on %s: %s\n", socketnames[i],
-		 errno == EADDRINUSE ?
-		 "in use - another net is already running" : strerror(errno));
-	  close(fd);
-	}
-      }
-    } else {
-      printf("Cannot use %s as a listening address\n", socketnames[i]);
-    }
+  if (!(addr = build_sockaddr(l->name, &addrlen))) {
+    complain("cannot use %s as a listening address", l->name);
+    return -1;
   }
+  if ((fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) {
+    complain("cannot make a socket for %s: %s", l->name, strerror(errno));
+    return -1;
+  }
+
+  switch (addr->sa_family) {
+  case AF_INET:
+    arg = 1;
+    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
+    break;
+#if HAS_AF_INET6
+  case AF_INET6:
+    arg = 1;
+    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
+    /* Pin this down rather than inheriting it: whether an IPv6 socket also
+     * accepts IPv4 is a system default that differs between Linux and the
+     * BSDs.  Fixed to v6-only, 127.0.0.1 and ::1 can be two entries
+     * everywhere instead of fighting over the port on some systems.
+     */
+    arg = 1;
+    setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &arg, sizeof(arg));
+    break;
+#endif
+  }
+
+  if (bind_socket(fd, addr, addrlen) || listen(fd, SOMAXCONN)) {
+    complain("cannot listen on %s: %s", l->name,
+	     errno == EADDRINUSE ?
+	     "in use - another net is already running" : strerror(errno));
+    close(fd);
+    return -1;
+  }
+
+  if (addr->sa_family == AF_UNIX && l->restricted)
+    set_service_rights(((struct sockaddr_un *) addr)->sun_path);
+
+  l->fd = fd;
+  on_read(fd, accept_connection_net, l);
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void close_listener(struct listener *l)
+{
+  if (l->fd < 0) return;
+  off_read(l->fd);
+  close(l->fd);
+  l->fd = -1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* "start axtcp [<port>]" - the loopback listeners.  Off unless asked for:
+ * a TCP port has no owner and no group, so switching it on says that every
+ * local account may use the transmitter.
+ */
+
+int axtcpstart(int argc, char *argv[], void *p)
+{
+
+  int i;
+  int port;
+
+  (void) p;
+  port = (argc > 1) ? atoi(argv[1]) : AXTCP_PORT_DEFAULT;
+  if (port <= 0 || port > 65535) {
+    printf("Invalid port \"%s\"\n", argv[1]);
+    return 1;
+  }
+  if (Axtcp[0].fd >= 0 || Axtcp[1].fd >= 0) {
+    printf("axtcp is already running\n");
+    return 1;
+  }
+
+  sprintf(Axtcp_addr[0], "127.0.0.1:%d", port);
+  sprintf(Axtcp_addr[1], "[::1]:%d", port);
+  for (i = 0; i < 2; i++) {
+    Axtcp[i].name = Axtcp_addr[i];
+    open_listener(&Axtcp[i]);
+  }
+
+  /* One of the two is enough to be useful - a machine without IPv6 is not an
+   * error here, and neither is one without IPv4.
+   */
+  if (Axtcp[0].fd < 0 && Axtcp[1].fd < 0) {
+    printf("axtcp: no listener could be opened\n");
+    return 1;
+  }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+int axtcp0(int argc, char *argv[], void *p)
+{
+  int i;
+
+  (void) argc; (void) argv; (void) p;
+  for (i = 0; i < 2; i++)
+    close_listener(&Axtcp[i]);
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void remote_net_initialize(void)
+{
+  struct listener *l;
+
+  openlog("wampes-net", LOG_PID, LOG_DAEMON);
+
+  for (l = Listeners; l->name; l++)
+    open_listener(l);
 }
