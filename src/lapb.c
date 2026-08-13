@@ -1001,8 +1001,17 @@ const struct ax25_opts *opts)
 		addrcp(wanted, hdr->source);
 		axroute(hdr,&axp->iface);
 		if (opts) {
-			if (opts->iface)
+			if (opts->iface) {
 				axp->iface = opts->iface;
+				/* axroute() stamps the source with the
+				 * callsign of the interface it chose; a
+				 * caller who named a port must get that
+				 * port's callsign instead, not the node's.
+				 */
+				if (!opts->ownsource && axp->iface->hwaddr)
+					addrcp(hdr->source,
+					       axp->iface->hwaddr);
+			}
 			if (opts->ownsource)
 				addrcp(hdr->source, wanted);
 		}

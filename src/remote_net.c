@@ -558,7 +558,12 @@ static void set_service_rights(const char *path)
 
 /*---------------------------------------------------------------------------*/
 
-static int open_listener(struct listener *l)
+/* loud: say so when this one cannot be opened.  The loopback pair is opened
+ * quietly, because a machine without IPv6 is not a misconfiguration and
+ * neither is one without IPv4 - only having neither is worth a word.
+ */
+
+static int open_listener(struct listener *l, int loud)
 {
 
   int addrlen;
@@ -569,11 +574,12 @@ static int open_listener(struct listener *l)
   if (l->fd >= 0) return 0;             /* already listening */
 
   if (!(addr = build_sockaddr(l->name, &addrlen))) {
-    complain("cannot use %s as a listening address", l->name);
+    if (loud) complain("cannot use %s as a listening address", l->name);
     return -1;
   }
   if ((fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) {
-    complain("cannot make a socket for %s: %s", l->name, strerror(errno));
+    if (loud) complain("cannot make a socket for %s: %s", l->name,
+		       strerror(errno));
     return -1;
   }
 
@@ -598,9 +604,10 @@ static int open_listener(struct listener *l)
   }
 
   if (bind_socket(fd, addr, addrlen) || listen(fd, SOMAXCONN)) {
-    complain("cannot listen on %s: %s", l->name,
-	     errno == EADDRINUSE ?
-	     "in use - another net is already running" : strerror(errno));
+    if (loud)
+      complain("cannot listen on %s: %s", l->name,
+	       errno == EADDRINUSE ?
+	       "in use - another net is already running" : strerror(errno));
     close(fd);
     return -1;
   }
@@ -647,18 +654,20 @@ int axtcpstart(int argc, char *argv[], void *p)
     return 1;
   }
 
+
   sprintf(Axtcp_addr[0], "127.0.0.1:%d", port);
   sprintf(Axtcp_addr[1], "[::1]:%d", port);
   for (i = 0; i < 2; i++) {
     Axtcp[i].name = Axtcp_addr[i];
-    open_listener(&Axtcp[i]);
+    open_listener(&Axtcp[i], 0);
   }
 
   /* One of the two is enough to be useful - a machine without IPv6 is not an
    * error here, and neither is one without IPv4.
    */
   if (Axtcp[0].fd < 0 && Axtcp[1].fd < 0) {
-    printf("axtcp: no listener could be opened\n");
+    complain("axtcp: neither 127.0.0.1 nor ::1 could be opened on port %d",
+	     port);
     return 1;
   }
   return 0;
@@ -685,5 +694,5 @@ void remote_net_initialize(void)
   openlog("wampes-net", LOG_PID, LOG_DAEMON);
 
   for (l = Listeners; l->name; l++)
-    open_listener(l);
+    open_listener(l, 1);
 }
