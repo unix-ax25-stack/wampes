@@ -129,7 +129,16 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			if(!axp->s_upcall){
 				struct ax_route *axr;
 				axr = ax_routeptr(axp->hdr.dest,0);
-				if(axr && axr->jumpstart)
+				/* A callsign we listen for is handed over as
+				 * soon as the link stands, not when the
+				 * caller first types something - whatever is
+				 * behind it may want to greet, and a mailbox
+				 * always does.  hdr.source is the address
+				 * that was called; the header is already
+				 * turned round here.
+				 */
+				if((axr && axr->jumpstart)
+				   || axlisten_active(axp->hdr.source))
 					axserv_open(axp,0);
 #ifdef	AX25_VJCOMP
                             /* MW: Reset VJ structures */
