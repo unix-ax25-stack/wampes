@@ -56,7 +56,7 @@ static struct axip_route *Axip_routes;
 
 static int axip_raw(struct iface *ifp, struct mbuf **bpp);
 static void axip_recv(void *argp);
-static void axip_route_add(uint8 *call, const struct sockaddr *dest);
+static void axip_route_add(uint8 *call, const struct sockaddr *dest, int keepport);
 static int doaxiproute(int argc, char *argv[], void *p);
 static int doaxiprouteadd(int argc, char *argv[], void *p);
 static int doaxiproutedrop(int argc, char *argv[], void *p);
@@ -122,7 +122,9 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
   for (rp = Axip_routes; rp; rp = rp->next)
     if (multicast || addreq(rp->call, dest)) {
       struct sockaddr_storage to;
-      int port = edv->port;
+      int port = sockaddr_port((struct sockaddr *) &rp->dest);
+
+      if (!port) port = edv->port;
 
       /* One socket speaks one family.  A route for the other one belongs to
        * a second interface - attach axip6 - so skip it here rather than
@@ -206,7 +208,7 @@ static void axip_recv(void *argp)
     else
       break;
   }
-  axip_route_add(src, (struct sockaddr *) &addr);
+  axip_route_add(src, (struct sockaddr *) &addr, 0);
 
   bp = qdata(bufptr, l);
   net_route(ifp, &bp);
@@ -349,7 +351,14 @@ int axip_attach(int argc, char *argv[], void *p)
 
 /*---------------------------------------------------------------------------*/
 
-static void axip_route_add(uint8 *call, const struct sockaddr *dest)
+/* keepport: the sysop wrote a port into the route and means it.  Learned
+ * routes pass zero and keep the old rule - the port comes from the interface,
+ * or from what the peer was last seen using, which is a table that expires.
+ * Pinning a peer's momentary source port into a route that never expires is
+ * a different thing entirely.
+ */
+
+static void axip_route_add(uint8 *call, const struct sockaddr *dest, int keepport)
 {
   struct axip_route *rp;
   socklen_t len = sockaddr_len(dest);
@@ -366,9 +375,13 @@ static void axip_route_add(uint8 *call, const struct sockaddr *dest)
   }
   memset(&rp->dest, 0, sizeof(rp->dest));
   memcpy(&rp->dest, dest, (size_t) len);
-  /* the port comes from the interface, or from what the peer was last seen
-   * using - not from the route */
-  sockaddr_set_port((struct sockaddr *) &rp->dest, 0);
+  if (!keepport)
+    sockaddr_set_port((struct sockaddr *) &rp->dest, 0);
+  /* A port of zero - which is what a route written without one carries -
+   * means the same as before: take the interface's, or whatever the peer was
+   * last seen using.  A port given here is for a partner that listens
+   * somewhere else, which ax25ipd can express and this could not.
+   */
 }
 
 /*---------------------------------------------------------------------------*/
@@ -386,7 +399,8 @@ int doaxip(int argc, char *argv[], void *p)
 /*---------------------------------------------------------------------------*/
 
 static struct cmds Axiproutecmds[] = {
-  { "add",    doaxiprouteadd,  0, 3, "axip route add <call> <host>" },
+  { "add",    doaxiprouteadd,  0, 3,
+    "axip route add <call> <host> [<port>]" },
   { "drop",   doaxiproutedrop, 0, 2, "axip route drop <call>" },
   { NULL,     NULL,            0, 0, NULL }
 };
@@ -404,8 +418,11 @@ static int doaxiproute(int argc, char *argv[], void *p)
   for (rp = Axip_routes; rp; rp = rp->next) {
     char abuf[SOCKADDR_STRLEN];
 
-    printf("%-9s  %s\n", pax25(buf, rp->call),
+    printf("%-9s  %s", pax25(buf, rp->call),
            sockaddr_to_string((struct sockaddr *) &rp->dest, abuf, sizeof(abuf)));
+    if (sockaddr_port((struct sockaddr *) &rp->dest))
+      printf("  port %d", sockaddr_port((struct sockaddr *) &rp->dest));
+    putchar('\n');
   }
   return 0;
 }
@@ -417,7 +434,15 @@ static int doaxiprouteadd(int argc, char *argv[], void *p)
 
   uint8 call[AXALEN];
   int32 dest;
+  int port = 0;                 /* zero: as before, the interface decides */
 
+  if (argc >= 4) {
+    port = atoi(argv[3]);
+    if (port <= 0 || port > 65535) {
+      printf("Invalid port \"%s\"\n", argv[3]);
+      return 1;
+    }
+  }
   if (setcall(call, argv[1])) {
     printf("Invalid call \"%s\"\n", argv[1]);
     return 1;
@@ -434,16 +459,17 @@ static int doaxiprouteadd(int argc, char *argv[], void *p)
     memset(&sin, 0, sizeof(sin));
     sin.sin_family = AF_INET;
     sin.sin_addr.s_addr = htonl(dest);
-    axip_route_add(call, (struct sockaddr *) &sin);
+    sin.sin_port = htons(port);
+    axip_route_add(call, (struct sockaddr *) &sin, 1);
   } else {
     struct sockaddr *sa;
     int len;
 
-    if (!(sa = build_sockaddr_host(argv[2], 0, &len))) {
+    if (!(sa = build_sockaddr_host(argv[2], port, &len))) {
       printf(Badhost, argv[2]);
       return 1;
     }
-    axip_route_add(call, sa);
+    axip_route_add(call, sa, 1);
   }
   return 0;
 }
