@@ -386,6 +386,33 @@ uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater 
 	}
 	return rval;
 }
+/* Besides its own callsign, an interface answers to every callsign an open
+ * link on it was established under.  A connect made with "< CALL" sends under
+ * a callsign of its own choosing, and the answer comes back addressed to that
+ * - which nothing here would recognise otherwise, so the link would be sent
+ * and never heard from again.
+ *
+ * The control blocks are the list.  Nothing needs upkeep: when the link goes,
+ * so does the callsign it answered to.  Scoped to the interface the link runs
+ * on, like the test it stands beside.
+ *
+ * This does not help the other direction.  A call arriving for a callsign
+ * that no link exists under yet - which is what a listener is - has to be
+ * admitted by configuration; there is nothing to look it up in.
+ */
+static int
+link_answers_to(
+struct iface *iface,
+const uint8 *addr
+){
+	struct ax25_cb *axp;
+
+	for(axp = Ax25_cb; axp != NULL; axp = axp->next)
+		if(axp->iface == iface && addreq(axp->hdr.source,addr))
+			return 1;
+	return 0;
+}
+
 /* May this frame teach us a route?  Everything may, except the one kind that
  * is only noise: a broadcast with no network layer above it.  That is APRS
  * and the plain beacons, whose paths are generic - WIDE1-1 and WIDE2-2 lead
@@ -477,8 +504,10 @@ struct mbuf **bpp
 			break;
 		}
 	}
-	if(!mcast && !addreq(idest,iface->hwaddr)){
-		/* Not a broadcast, and not addressed to us.
+	if(!mcast && !addreq(idest,iface->hwaddr)
+	   && !link_answers_to(iface,idest)){
+		/* Not a broadcast, not addressed to us, and not to a callsign
+		 * one of our links is using.
 		 */
 		free_p(bpp);
 		return;
