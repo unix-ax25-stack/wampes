@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <syslog.h>
 #include <unistd.h>
 
 #include "global.h"
@@ -462,7 +463,13 @@ void axserv_open(struct ax25_cb *axp, int cnt)
       struct mbuf *bp;
       char buf[120];
 
-      sprintf(buf, "*** %s is not answering\r", lp->dest);
+      /* What the caller is told names the callsign, not our socket path -
+       * where the node keeps its files is nobody's business on the air.
+       * The path goes to the log, where the sysop looks.
+       */
+      sprintf(buf, "*** %s is not answering\r", pax25(callsign, axp->hdr.source));
+      syslog(LOG_ERR, "%s: cannot hand the call to %s: %s",
+	     pax25(callsign, axp->hdr.source), lp->dest, strerror(errno));
       bp = qdata(buf, (uint) strlen(buf));
       send_ax25(axp, &bp, PID_NO_L3);
     }
