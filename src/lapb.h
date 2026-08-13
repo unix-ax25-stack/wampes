@@ -235,4 +235,10 @@ void lapb_garbage(int drastic);
 /* In axserver.c: */
 void axserv_open(struct ax25_cb *axp,int cnt);
 
+/* Callsigns configured with "ax25 listen".  ax_recv() has to admit frames for
+ * them, and axserv_open() has to hand the session on rather than to a login.
+ */
+int axlisten_active(const uint8 *call);
+int doaxlisten(int argc,char *argv[],void *p);
+
 #endif  /* _LAPB_H */

@@ -214,9 +214,6 @@ struct mbuf *bp
 	}
 	if(pullup(&bpp,dest,AXALEN) < AXALEN)
 		return 0;
-	if(addreq(dest,iface->hwaddr))
-		return 1;
-	else
-		return 0;
+	return ax_answers_to(iface,dest);
 }
 

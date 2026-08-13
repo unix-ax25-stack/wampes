@@ -134,6 +134,11 @@ int axsend(struct iface *iface,uint8 *dest,uint8 *source,
 int valid_remote_call(const uint8 *call);
 struct ax_route *ax_routeptr(const uint8 *call, int create);
 void axroute_add(struct iface *iface, struct ax25 *hdr, int perm);
+
+/* One answer to "is that address one we answer to on this interface" - the
+ * interface's own callsign, one of its links', or one we listen for.
+ */
+int ax_answers_to(struct iface *iface, const uint8 *addr);
 void axroute(struct ax25 *hdr, struct iface **ifpp);
 
 #ifdef	AX25_VJCOMP

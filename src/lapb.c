@@ -69,7 +69,14 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			break;
 		}
 	}
-	digipeat = (ismyax25addr(hdr->dest) == NULL);
+	/* Are we the addressee, or are we being asked to relay?  Besides the
+	 * interfaces' own callsigns this has to count the ones our links use
+	 * and the ones we listen for - see ax_answers_to().  Widened, never
+	 * narrowed: a frame for another interface's callsign counts as ours
+	 * here exactly as it always did.
+	 */
+	digipeat = (ismyax25addr(hdr->dest) == NULL
+		    && !ax_answers_to(iface,hdr->dest));
 	/* Extract sequence numbers, if present */
 	switch(class){
 	case I:

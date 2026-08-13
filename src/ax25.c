@@ -386,31 +386,35 @@ uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater 
 	}
 	return rval;
 }
-/* Besides its own callsign, an interface answers to every callsign an open
- * link on it was established under.  A connect made with "< CALL" sends under
- * a callsign of its own choosing, and the answer comes back addressed to that
- * - which nothing here would recognise otherwise, so the link would be sent
- * and never heard from again.
+/* Does this interface answer to that address?  Three sources, and they have
+ * to be one answer: the interface's own callsign; a callsign one of its links
+ * was opened under, because a connect made with "< CALL" gets its reply
+ * addressed to that and nothing else would recognise it; and a callsign the
+ * node was told to listen for, which has to come from configuration because
+ * the first frame of an incoming connection arrives before there is any
+ * control block to look it up in.
  *
- * The control blocks are the list.  Nothing needs upkeep: when the link goes,
- * so does the callsign it answered to.  Scoped to the interface the link runs
- * on, like the test it stands beside.
+ * The control blocks are the list for the second kind - nothing to register
+ * and nothing to clean up, since a callsign goes when its link does.
  *
- * This does not help the other direction.  A call arriving for a callsign
- * that no link exists under yet - which is what a listener is - has to be
- * admitted by configuration; there is nothing to look it up in.
+ * ax_recv() asks this to decide whether to process a frame and ax_forus()
+ * to decide whether to show it.  They used to ask separately and only the
+ * first was taught the other two sources, so an operator could watch a
+ * working link and see nothing come in.
  */
-static int
-link_answers_to(
+int
+ax_answers_to(
 struct iface *iface,
 const uint8 *addr
 ){
 	struct ax25_cb *axp;
 
+	if(addreq(addr,iface->hwaddr))
+		return 1;
 	for(axp = Ax25_cb; axp != NULL; axp = axp->next)
 		if(axp->iface == iface && addreq(axp->hdr.source,addr))
 			return 1;
-	return 0;
+	return axlisten_active(addr);
 }
 
 /* May this frame teach us a route?  Everything may, except the one kind that
@@ -504,11 +508,8 @@ struct mbuf **bpp
 			break;
 		}
 	}
-	if(!mcast && !addreq(idest,iface->hwaddr)
-	   && !link_answers_to(iface,idest)){
-		/* Not a broadcast, not addressed to us, and not to a callsign
-		 * one of our links is using.
-		 */
+	if(!mcast && !ax_answers_to(iface,idest)){
+		/* Not a broadcast, and not for any callsign we answer to. */
 		free_p(bpp);
 		return;
 	}
