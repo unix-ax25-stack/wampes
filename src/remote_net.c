@@ -43,7 +43,21 @@ struct cmdtable {
 };
 
 static int fkbd = -1;
-static int flisten_net = -1;
+
+/* The listening sockets, and their descriptors alongside.  There used to be
+ * a single descriptor here while the name list was already an array - which
+ * worked only because the array held one entry.  A second listener would
+ * have overwritten the variable, and both accept handlers would then have
+ * taken connections off whichever socket came last.
+ */
+static const char *socketnames[] = {
+  "unix:" TCPDIR "/.sockets/netcmd",
+  0
+};
+
+#define NSOCKETNAMES (sizeof(socketnames) / sizeof(socketnames[0]))
+
+static int flisten_net[NSOCKETNAMES];
 
 /*---------------------------------------------------------------------------*/
 
@@ -285,7 +299,11 @@ static void accept_connection_net(void *p)
   struct sockaddr_storage addr;
 
   addrlen = sizeof(addr);
-  if ((fd = accept(flisten_net, (struct sockaddr *) &addr, &addrlen)) < 0) return;
+  /* Which socket woke us: on_read() carries the slot, so this works with
+   * any number of listeners.
+   */
+  if ((fd = accept(*(int *) p, (struct sockaddr *) &addr, &addrlen)) < 0)
+    return;
   cp = (struct controlblock *) calloc(1, sizeof(struct controlblock));
   if (!cp) {
     close(fd);
@@ -319,27 +337,26 @@ struct iface *ifp;
 void remote_net_initialize(void)
 {
 
-  static const char *socketnames[] = {
-    "unix:" TCPDIR "/.sockets/netcmd",
-    0
-  };
-
   int addrlen, i;
   int arg;
+  int fd;
   struct sockaddr *addr;
+
+  for (i = 0; i < (int) NSOCKETNAMES; i++)
+    flisten_net[i] = -1;
 
   for (i = 0; socketnames[i]; i++) {
     if ((addr = build_sockaddr(socketnames[i], &addrlen))) {
-      if ((flisten_net = socket(addr->sa_family, SOCK_STREAM, 0)) >= 0) {
+      if ((fd = socket(addr->sa_family, SOCK_STREAM, 0)) >= 0) {
 	switch (addr->sa_family) {
 	case AF_INET:
 	  arg = 1;
-	  setsockopt(flisten_net, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
+	  setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
 	  break;
 #if HAS_AF_INET6
 	case AF_INET6:
 	  arg = 1;
-	  setsockopt(flisten_net, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
+	  setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &arg, sizeof(arg));
 	  /* Pin this down rather than inheriting it: whether an IPv6 socket
 	   * also accepts IPv4 is a system default that differs between Linux
 	   * and the BSDs.  Fixed to v6-only, a "*:port" and a "[::]:port" entry
@@ -347,13 +364,14 @@ void remote_net_initialize(void)
 	   * systems.
 	   */
 	  arg = 1;
-	  setsockopt(flisten_net, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &arg, sizeof(arg));
+	  setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &arg, sizeof(arg));
 	  break;
 #endif
 	}
-	if (!bind_socket(flisten_net, addr, addrlen) &&
-	    !listen(flisten_net, SOMAXCONN)) {
-	  on_read(flisten_net, accept_connection_net, 0);
+	if (!bind_socket(fd, addr, addrlen) &&
+	    !listen(fd, SOMAXCONN)) {
+	  flisten_net[i] = fd;
+	  on_read(fd, accept_connection_net, &flisten_net[i]);
 	} else {
 	  /* Worth saying out loud: without this socket there is no cnet, and
 	   * the usual reason is the one named here.
@@ -361,8 +379,7 @@ void remote_net_initialize(void)
 	  printf("Cannot listen on %s: %s\n", socketnames[i],
 		 errno == EADDRINUSE ?
 		 "in use - another net is already running" : strerror(errno));
-	  close(flisten_net);
-	  flisten_net = -1;
+	  close(fd);
 	}
       }
     } else {
