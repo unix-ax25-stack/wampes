@@ -94,7 +94,13 @@ del_ax25(struct ax25_cb *conn)
 		free_p(&axp->reseq[i].bp);
 	free_q(&axp->txq);
 	free_q(&axp->rxasm);
-	free_q(&axp->rxq);
+	while(axp->services != NULL){
+		struct axservice *sp = axp->services;
+
+		axp->services = sp->next;
+		free_q(&sp->rxq);
+		free(sp);
+	}
 #ifdef	AX25_VJCOMP
         /* MW: free VJ related structures */
         if (axp->slcomp) {
@@ -135,7 +141,6 @@ cr_ax25(uint8 *addr)
                 }
 #endif
 	}
-	axp->user = 0;
 	axp->state = LAPB_DISCONNECTED;
 	axp->maxframe = 1;
 	axp->window = Axwindow;
@@ -162,8 +167,9 @@ cr_ax25(uint8 *addr)
 	axp->t5.func = ax_t5_timeout;
 	axp->t5.arg = axp;
 
-	/* Always to a receive and state upcall as default */
-	axp->r_upcall = axserv_open;
+	/* No consumer by default: the first frame for a protocol id asks the
+	 * configuration what, if anything, should serve it.
+	 */
 
 	axp->id = Nextid++;
 

@@ -137,41 +137,45 @@ int doaxlisten(int argc, char *argv[], void *p)
 
 // dl9sau: compatibilty feature for IP.VC with xnet hosts
 // incoming ax25 PID=Text droper
-void axserv_recv_upcall_discard(struct ax25_cb *axp, int cnt)
+void axserv_recv_upcall_discard(struct axservice *sp, int cnt)
 {
   struct mbuf *bp;
 
-  bp = recv_ax25(axp, 0);
+  (void) cnt;
+  bp = recv_axservice(sp, 0);
   free_p(&bp);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void axserv_recv_upcall(struct ax25_cb *axp, int cnt)
+static void axserv_recv_upcall(struct axservice *sp, int cnt)
 {
   struct mbuf *bp;
 
-  bp = recv_ax25(axp, 0);
-  login_write((struct login_cb *) axp->user, &bp);
+  (void) cnt;
+  bp = recv_axservice(sp, 0);
+  login_write((struct login_cb *) sp->user, &bp);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void axserv_send_upcall(struct ax25_cb *axp, int cnt)
+static void axserv_send_upcall(struct axservice *sp, int cnt)
 {
   struct mbuf *bp;
 
-  if ((bp = login_read((struct login_cb *) axp->user, space_ax25(axp))))
-    send_ax25(axp, &bp, PID_NO_L3);
+  (void) cnt;
+  if ((bp = login_read((struct login_cb *) sp->user, space_axservice(sp))))
+    send_axservice(sp, &bp);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void axserv_state_upcall(struct ax25_cb *axp, enum lapb_state oldstate, enum lapb_state newstate)
+static void axserv_state_upcall(struct axservice *sp, enum lapb_state oldstate, enum lapb_state newstate)
 {
+  (void) oldstate;
   if (newstate == LAPB_DISCONNECTED) {
-    login_close((struct login_cb *) axp->user);
-    del_ax25(axp);
+    login_close((struct login_cb *) sp->user);
+    close_axservice(sp);
   }
 }
 
@@ -179,12 +183,12 @@ static void axserv_state_upcall(struct ax25_cb *axp, enum lapb_state oldstate, e
 
 static void axserv_send_login_upcall(void *arg)
 {
-  axserv_send_upcall((struct ax25_cb *) arg, 0);
+  axserv_send_upcall((struct axservice *) arg, 0);
 }
 
 static void axserv_close_upcall(void *arg)
 {
-  disc_ax25((struct ax25_cb *) arg);
+  close_axservice((struct axservice *) arg);
 }
 
 
@@ -201,7 +205,7 @@ static void axserv_close_upcall(void *arg)
  */
 
 struct axpipe {
-  struct ax25_cb *axp;
+  struct axservice *sp;
   int fd;
   struct mbuf *sndq;                    /* waiting for the socket */
   int connecting;                       /* connect() not finished yet */
@@ -228,16 +232,16 @@ static void axpipe_pump(struct axpipe *pp);
  * without bound.
  */
 
-static void axpipe_recv_upcall(struct ax25_cb *axp, int cnt)
+static void axpipe_recv_upcall(struct axservice *sp, int cnt)
 {
-  struct axpipe *pp = (struct axpipe *) axp->user;
+  struct axpipe *pp = (struct axpipe *) sp->user;
   struct mbuf *bp;
   int room;
 
   if (!pp) return;
   room = AXPIPE_HIGHWATER - len_p(pp->sndq);
   if (room <= 0) return;                /* leave it where it is */
-  if ((bp = recv_ax25(axp, (uint) (cnt < room ? cnt : room))))
+  if ((bp = recv_axservice(sp, (uint) (cnt < room ? cnt : room))))
     append(&pp->sndq, &bp);
   axpipe_pump(pp);
 }
@@ -246,24 +250,27 @@ static void axpipe_recv_upcall(struct ax25_cb *axp, int cnt)
 
 /* socket -> AX.25 */
 
-static void axpipe_send_upcall(struct ax25_cb *axp, int cnt)
+static void axpipe_send_upcall(struct axservice *sp, int cnt)
 {
-  struct axpipe *pp = (struct axpipe *) axp->user;
+  struct axpipe *pp = (struct axpipe *) sp->user;
+
+  (void) cnt;
 
   if (pp && !pp->connecting) on_read(pp->fd, axpipe_readable, pp);
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void axpipe_state_upcall(struct ax25_cb *axp, enum lapb_state oldstate, enum lapb_state newstate)
+static void axpipe_state_upcall(struct axservice *sp, enum lapb_state oldstate, enum lapb_state newstate)
 {
-  struct axpipe *pp = (struct axpipe *) axp->user;
+  struct axpipe *pp = (struct axpipe *) sp->user;
 
+  (void) oldstate;
   if (newstate == LAPB_DISCONNECTED && pp) {
-    axp->user = 0;
-    pp->axp = 0;
+    sp->user = 0;
+    pp->sp = 0;
     axpipe_close(pp);
-    del_ax25(axp);
+    close_axservice(sp);
   }
 }
 
@@ -277,8 +284,8 @@ static void axpipe_readable(void *arg)
   int n;
   int room;
 
-  if (!pp->axp) return;
-  room = space_ax25(pp->axp);
+  if (!pp->sp) return;
+  room = space_axservice(pp->sp);
   if (room <= 0) {
     off_read(pp->fd);                   /* the link will call us back */
     return;
@@ -286,11 +293,11 @@ static void axpipe_readable(void *arg)
   if (room > (int) sizeof(buf)) room = sizeof(buf);
   if ((n = read(pp->fd, buf, (size_t) room)) > 0) {
     bp = qdata(buf, (uint) n);
-    send_ax25(pp->axp, &bp, PID_NO_L3);
+    send_axservice(pp->sp, &bp);
     return;
   }
   if (n < 0 && (errno == EAGAIN || errno == EINTR)) return;
-  disc_ax25(pp->axp);                   /* end of file: let the link go */
+  close_axservice(pp->sp);              /* end of file: let the link go */
   off_read(pp->fd);
 }
 
@@ -306,7 +313,7 @@ static void axpipe_writable(void *arg)
 
     off_write(pp->fd);
     if (getsockopt(pp->fd, SOL_SOCKET, SO_ERROR, (void *) &err, &len) || err) {
-      if (pp->axp) disc_ax25(pp->axp);
+      if (pp->sp) close_axservice(pp->sp);
       axpipe_close(pp);
       return;
     }
@@ -344,15 +351,15 @@ static void axpipe_pump(struct axpipe *pp)
       on_write(pp->fd, axpipe_writable, pp);
       return;
     }
-    if (pp->axp) disc_ax25(pp->axp);
+    if (pp->sp) close_axservice(pp->sp);
     return;
   }
   off_write(pp->fd);
   /* Room again: pull whatever the link has been holding, which is what lets
    * recv_ax25() clear the busy condition and reopen the window.
    */
-  if (pp->axp && pp->axp->rxq)
-    axpipe_recv_upcall(pp->axp, len_p(pp->axp->rxq));
+  if (pp->sp && pp->sp->rxq)
+    axpipe_recv_upcall(pp->sp, len_p(pp->sp->rxq));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -365,7 +372,7 @@ static void axpipe_close(struct axpipe *pp)
     close(pp->fd);
   }
   free_q(&pp->sndq);
-  if (pp->axp) pp->axp->user = 0;
+  if (pp->sp) pp->sp->user = 0;
   free(pp);
 }
 
@@ -398,36 +405,38 @@ static void axpipe_announce(struct axpipe *pp, struct ax25_cb *axp)
 
 /*---------------------------------------------------------------------------*/
 
-static int axpipe_open(struct ax25_cb *axp, const char *dest)
+static struct axservice *axpipe_open(struct ax25_cb *axp, const char *dest)
 {
   int addrlen;
   int fd;
   struct axpipe *pp;
+  struct axservice *sp;
   struct sockaddr *addr;
 
-  if (!(addr = build_sockaddr(dest, &addrlen))) return -1;
-  if ((fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) return -1;
+  if (!(addr = build_sockaddr(dest, &addrlen))) return NULL;
+  if ((fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) return NULL;
   fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
 
   if (!(pp = (struct axpipe *) calloc(1, sizeof(struct axpipe)))) {
     close(fd);
-    return -1;
+    return NULL;
   }
   pp->fd = fd;
-  pp->axp = axp;
 
   if (connect(fd, addr, addrlen)) {
     if (errno != EINPROGRESS) {
       axpipe_close(pp);
-      return -1;
+      return NULL;
     }
     pp->connecting = 1;                 /* the node must not wait here */
   }
 
-  axp->user = (char *) pp;
-  axp->r_upcall = axpipe_recv_upcall;
-  axp->t_upcall = axpipe_send_upcall;
-  axp->s_upcall = axpipe_state_upcall;
+  if (!(sp = open_axservice(axp, PID_NO_L3, axpipe_recv_upcall,
+			    axpipe_send_upcall, axpipe_state_upcall, pp))) {
+    axpipe_close(pp);
+    return NULL;
+  }
+  pp->sp = sp;
   axpipe_announce(pp, axp);
 
   if (pp->connecting)
@@ -436,66 +445,69 @@ static int axpipe_open(struct ax25_cb *axp, const char *dest)
     on_read(fd, axpipe_readable, pp);
     axpipe_pump(pp);
   }
-  return 0;
+  return sp;
 }
 
 /*---------------------------------------------------------------------------*/
 
-void axserv_open(struct ax25_cb *axp, int cnt)
+/* What serves this protocol id on this link?  Asked once, when the first
+ * frame for it arrives and nothing is attached yet.  Returning nothing means
+ * the node's own protocols get their turn, and after them the frame is
+ * discarded - which is what happens to any protocol id nobody wants.
+ */
+
+struct axservice *axserv_start(struct ax25_cb *axp, int pid)
 {
+
   char callsign[AXBUF];
   struct axlisten *lp;
+  struct axservice *sp;
 
-  /* A callsign we were told to listen for is not a login.  Until the handing
-   * on is built, say so and let go rather than dropping the caller into a
-   * shell they never asked for.
-   */
+  if (pid != PID_NO_L3)
+    return NULL;                        /* only plain text so far */
+
   /* On an incoming link build_path() has already turned the header round:
    * hdr.dest is who called us, hdr.source is the address they called.  It is
    * the latter we listen for.
    */
   if ((lp = axlisten_find(axp->hdr.source))) {
-    if (!axpipe_open(axp, lp->dest)) return;
+    if ((sp = axpipe_open(axp, lp->dest))) return sp;
     /* Nobody there.  The AX.25 side has already had to say UA, so the only
-     * way to decline now is to say why and let go.
+     * way to decline now is to say why and let go.  The caller is told the
+     * callsign, not our socket path - where the node keeps its files is
+     * nobody's business on the air.
      */
     {
       struct mbuf *bp;
       char buf[120];
 
-      /* What the caller is told names the callsign, not our socket path -
-       * where the node keeps its files is nobody's business on the air.
-       * The path goes to the log, where the sysop looks.
-       */
       sprintf(buf, "*** %s is not answering\r", pax25(callsign, axp->hdr.source));
       syslog(LOG_ERR, "%s: cannot hand the call to %s: %s",
 	     pax25(callsign, axp->hdr.source), lp->dest, strerror(errno));
       bp = qdata(buf, (uint) strlen(buf));
       send_ax25(axp, &bp, PID_NO_L3);
     }
-    axp->r_upcall = axserv_recv_upcall_discard;
     disc_ax25(axp);
-    return;
+    return NULL;
   }
 
-  if (Axserver_enabled) {
-    pax25(callsign, axp->hdr.dest);
-    axp->user = (char *) login_open(callsign, "AX25", axserv_send_login_upcall, axserv_close_upcall, axp);
+  if (!Axserver_enabled)
+    return NULL;
+
+  if (!(sp = open_axservice(axp, PID_NO_L3, axserv_recv_upcall,
+			    axserv_send_upcall, axserv_state_upcall, NULL)))
+    return NULL;
+  pax25(callsign, axp->hdr.dest);
+  sp->user = login_open(callsign, "AX25", axserv_send_login_upcall,
+			axserv_close_upcall, sp);
+  if (!sp->user) {
+    /* dl9sau: don't disconnect.  The client may decide to; this keeps the
+     * session open for transports with other PIDs.
+     */
+    sp->r_upcall = axserv_recv_upcall_discard;
+    sp->t_upcall = 0;
   }
-  if (axp->user) {
-    free_q(&axp->rxq);
-    axp->r_upcall = axserv_recv_upcall;
-    axp->t_upcall = axserv_send_upcall;
-    axp->s_upcall = axserv_state_upcall;
-  } else
-#ifdef	notdef
-    disc_ax25(axp);
-#else
-    // dl9sau: don't disconnect. the client may deceide to do it. this
-    // keeps the session open for transports with other PIDs
-    axp->r_upcall = axserv_recv_upcall_discard;
-#endif
-    
+  return sp;
 }
 
 /*---------------------------------------------------------------------------*/

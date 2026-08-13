@@ -80,6 +80,30 @@ enum lapb_state {
  * and are indexed through a hash table.
  * One exists for each logical AX.25 Level 2 connection
  */
+/* One consumer of one protocol id on a link.
+ *
+ * Its own receive queue, because a link may carry several protocols at once
+ * and a consumer that is not reading must not hold back another's data - the
+ * bytes would otherwise lie mixed in one buffer with nothing to tell them
+ * apart, since what comes out of a queue is a stream and not records.
+ *
+ * What they do share is the link: one window, one RNR.  AX.25 cannot say
+ * "not ready for this pid", so a slow consumer does hold up the others in the
+ * end.  Whoever needs them apart gives them separate SSIDs.
+ */
+
+struct axservice {
+	struct axservice *next;
+	struct ax25_cb *axp;            /* the link it belongs to */
+	int pid;
+	struct mbuf *rxq;
+	void (*r_upcall)(struct axservice *sp,int cnt);
+	void (*t_upcall)(struct axservice *sp,int cnt);
+	void (*s_upcall)(struct axservice *sp,enum lapb_state old,
+		enum lapb_state new);
+	void *user;
+};
+
 struct ax25_cb {
 	struct ax25_cb *next;           /* Linked list pointer */
 
@@ -88,7 +112,8 @@ struct ax25_cb {
 	struct mbuf *txq;               /* Transmit queue */
 	struct axreseq reseq[8];        /* Receive resequence buffer */
 	struct mbuf *rxasm;             /* Receive reassembly buffer */
-	struct mbuf *rxq;               /* Receive queue */
+	struct axservice *services;     /* Consumers, one per protocol id,
+					 * each with a queue of its own */
 
 	struct ax25 hdr;                /* AX25 header */
 
@@ -129,12 +154,8 @@ struct ax25_cb {
 	int32 srt;                      /* Smoothed round-trip time, ms */
 	int32 mdev;                     /* Mean rtt deviation, ms */
 
-	void (*r_upcall)(struct ax25_cb *,int); /* Receiver upcall */
-	void (*t_upcall)(struct ax25_cb *,int); /* Transmit upcall */
-	void (*s_upcall)(struct ax25_cb *,enum lapb_state,enum lapb_state);
 					/* State change upcall */
 
-	char *user;                     /* User pointer */
 
 	int segremain;                  /* Segmenter state */
 	int routing_changes;            /* Number of routing changes */
@@ -194,14 +215,35 @@ struct ax25_opts {
 	int ownsource;          /* hdr->source is the caller's, keep it */
 };
 
-struct ax25_cb *open_ax25(struct ax25 *,
-	int,
-	const struct ax25_opts *,
-	void (*)(struct ax25_cb *,int),
-	void (*)(struct ax25_cb *,int),
-	void (*)(struct ax25_cb *,enum lapb_state,enum lapb_state),
-	char *user);
-struct mbuf *recv_ax25(struct ax25_cb *axp,uint cnt);
+/* Attach a consumer to a link for one protocol id.  Returns the existing one
+ * if there already is one for that id.
+ */
+struct axservice *open_axservice(struct ax25_cb *axp,int pid,
+	void (*r_upcall)(struct axservice *,int),
+	void (*t_upcall)(struct axservice *,int),
+	void (*s_upcall)(struct axservice *,enum lapb_state,enum lapb_state),
+	void *user);
+
+/* Started on demand when a frame arrives for a protocol id nothing is
+ * attached to: the configuration decides what, if anything, to attach.
+ */
+struct axservice *axserv_start(struct ax25_cb *axp,int pid);
+struct axservice *find_axservice(struct ax25_cb *axp,int pid);
+struct mbuf *recv_axservice(struct axservice *sp,uint cnt);
+int space_axservice(struct axservice *sp);
+int axservice_pending(struct ax25_cb *axp);
+int send_axservice(struct axservice *sp,struct mbuf **bpp);
+
+/* Detach it.  When the last one goes, so does the link - counted by asking
+ * rather than by keeping a number, which is the sort that lingers at a wrong
+ * value after some path forgot to decrement it.
+ */
+void close_axservice(struct axservice *sp);
+
+/* Just the link.  Whoever wants to consume something attaches a service to
+ * it; a link that never had one is not torn down here, it ages out on t5.
+ */
+struct ax25_cb *open_ax25(struct ax25 *,int,const struct ax25_opts *);
 int reset_ax25(struct ax25_cb *axp);
 int send_ax25(struct ax25_cb *axp,struct mbuf **bp,int pid);
 int space_ax25(struct ax25_cb *axp);
@@ -214,10 +256,6 @@ int lapb_output(struct ax25_cb *axp);
 struct mbuf *segmenter(struct mbuf **bp,uint ssize);
 int sendctl(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int cmd);
 int sendframe(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int ctl,struct mbuf **data);
-void axnl3(struct iface *iface,struct ax25_cb *axp,uint8 *src,
-	uint8 *dest,struct mbuf **bp,int mcast);
-void axflextalk(struct iface *iface,struct ax25_cb *axp,uint8 *src,
-	uint8 *dest,struct mbuf **bp,int mcast);
 int busy(struct ax25_cb *cp);
 void ax_t2_timeout(void *p);
 void ax_t5_timeout(void *p);

@@ -14,13 +14,13 @@
 static const char delim[] = " \t\r\n";
 
 static int convert_eol(struct mbuf **bpp, enum e_transporteol mode, int *last_chr);
-static void transport_recv_upcall_ax25(struct ax25_cb *cp, int cnt);
+static void transport_recv_upcall_ax25(struct axservice *sp, int cnt);
 static void transport_recv_upcall_netrom(struct circuit *cp, int cnt);
 static void transport_recv_upcall_tcp(struct tcb *cp, int32 cnt);
-static void transport_send_upcall_ax25(struct ax25_cb *cp, int cnt);
+static void transport_send_upcall_ax25(struct axservice *sp, int cnt);
 static void transport_send_upcall_netrom(struct circuit *cp, int cnt);
 static void transport_send_upcall_tcp(struct tcb *cp, int32 cnt);
-static void transport_state_upcall_ax25(struct ax25_cb *cp, enum lapb_state oldstate, enum lapb_state newstate);
+static void transport_state_upcall_ax25(struct axservice *sp, enum lapb_state oldstate, enum lapb_state newstate);
 static void transport_state_upcall_netrom(struct circuit *cp, enum netrom_state oldstate, enum netrom_state newstate);
 static void transport_state_upcall_tcp(struct tcb *cp, enum tcp_state oldstate, enum tcp_state newstate);
 static struct ax25_cb *transport_open_ax25(const char *address, struct transport_cb *tp);
@@ -76,19 +76,12 @@ static int convert_eol(struct mbuf **bpp, enum e_transporteol mode, int *last_ch
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_recv_upcall_ax25(struct ax25_cb *cp, int cnt)
+static void transport_recv_upcall_ax25(struct axservice *sp, int cnt)
 {
-  struct transport_cb *tp = (struct transport_cb *) cp->user;
+  struct transport_cb *tp = (struct transport_cb *) sp->user;
   if (tp->r_upcall) (*tp->r_upcall)(tp, cnt);
 }
 
-/*---------------------------------------------------------------------------*/
-
-static void transport_recv_upcall_axflextalk(struct ax25_cb *cp, int cnt)
-{
-  struct transport_cb *tp = (struct transport_cb *) cp->user;
-  if (tp->r_upcall) (*tp->r_upcall)(tp, cnt);
-}
 
 /*---------------------------------------------------------------------------*/
 
@@ -108,19 +101,12 @@ static void transport_recv_upcall_tcp(struct tcb *cp, int32 cnt)
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_send_upcall_ax25(struct ax25_cb *cp, int cnt)
+static void transport_send_upcall_ax25(struct axservice *sp, int cnt)
 {
-  struct transport_cb *tp = (struct transport_cb *) cp->user;
+  struct transport_cb *tp = (struct transport_cb *) sp->user;
   if (tp->t_upcall) (*tp->t_upcall)(tp, cnt);
 }
 
-/*---------------------------------------------------------------------------*/
-
-static void transport_send_upcall_axflextalk(struct ax25_cb *cp, int cnt)
-{
-  struct transport_cb *tp = (struct transport_cb *) cp->user;
-  if (tp->t_upcall) (*tp->t_upcall)(tp, cnt);
-}
 
 /*---------------------------------------------------------------------------*/
 
@@ -140,9 +126,9 @@ static void transport_send_upcall_tcp(struct tcb *cp, int32 cnt)
 
 /*---------------------------------------------------------------------------*/
 
-static void transport_state_upcall_ax25(struct ax25_cb *cp, enum lapb_state oldstate, enum lapb_state newstate)
+static void transport_state_upcall_ax25(struct axservice *sp, enum lapb_state oldstate, enum lapb_state newstate)
 {
-  struct transport_cb *tp = (struct transport_cb *) cp->user;
+  struct transport_cb *tp = (struct transport_cb *) sp->user;
 
   if (newstate == LAPB_CONNECTED) tp->connected = 1;
   if (newstate == LAPB_DISCONNECTED) tp->connected = 0;
@@ -195,12 +181,17 @@ static struct ax25_cb *transport_open_ax25(const char *address, struct transport
   char tmp[1024];
   int argc;
   struct ax25 hdr;
+  struct ax25_cb *axp;
 
   argc = 0;
   for (s = strtok(strcpy(tmp, address), delim); s; s = strtok(NULL, delim))
     argv[argc++] = s;
   if (ax25args_to_hdr(argc, argv, &hdr)) return 0;
-  return open_ax25(&hdr, AX_ACTIVE, 0, transport_recv_upcall_ax25, transport_send_upcall_ax25, transport_state_upcall_ax25, (char *) tp);
+  if (!(axp = open_ax25(&hdr, AX_ACTIVE, 0))) return 0;
+  tp->svc = open_axservice(axp, tp->pid, transport_recv_upcall_ax25,
+			   transport_send_upcall_ax25,
+			   transport_state_upcall_ax25, tp);
+  return tp->svc ? axp : 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -259,10 +250,11 @@ struct transport_cb *transport_open_target(struct ax25 *hdr, const struct ax25_o
   tp->timer.func = transport_close;
   tp->timer.arg = tp;
   Net_error = INVALID;
-  if ((tp->cb.axp = open_ax25(hdr, AX_ACTIVE, opts,
-			      transport_recv_upcall_ax25,
-			      transport_send_upcall_ax25,
-			      transport_state_upcall_ax25, (char *) tp)))
+  if ((tp->cb.axp = open_ax25(hdr, AX_ACTIVE, opts))
+      && (tp->svc = open_axservice(tp->cb.axp, pid,
+				   transport_recv_upcall_ax25,
+				   transport_send_upcall_ax25,
+				   transport_state_upcall_ax25, tp)))
     return tp;
   free(tp);
   return 0;
@@ -312,7 +304,7 @@ int transport_recv(struct transport_cb *tp, struct mbuf **bpp, int cnt)
   switch (tp->type) {
   case TP_AX25:
   case TP_AXFLEXTALK:
-    *bpp = recv_ax25(tp->cb.axp, cnt);
+    *bpp = recv_axservice(tp->svc, cnt);
     result = len_p(*bpp);
     break;
   case TP_NETROM:

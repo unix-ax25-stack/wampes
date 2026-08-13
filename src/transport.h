@@ -41,6 +41,7 @@ struct transport_cb {
   int pid;                      /* AX.25 protocol id to send with; the
 				 * protocol keyword used to decide this, and
 				 * "flextalk" is now just one value of it */
+  struct axservice *svc;        /* the AX.25 consumer, where there is one */
   union {                       /* Pointer to connection control block */
     struct ax25_cb *axp;
     struct circuit *nrp;

@@ -307,7 +307,7 @@ static struct ax25_cb *setaxp(struct peer *pp)
 	if (!(pp->axp = find_ax25(pp->call))) {
 		memset(&hdr, 0, sizeof(struct ax25));
 		addrcp(hdr.dest, pp->call);
-		if (!(pp->axp = open_ax25(&hdr, AX_ACTIVE, 0, 0, 0, 0, 0)))
+		if (!(pp->axp = open_ax25(&hdr, AX_ACTIVE, 0)))
 			return 0;
 	}
 	if (pp->id != pp->axp->id) {

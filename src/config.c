@@ -223,12 +223,10 @@ struct axlink Axlink[] = {
 	{ PID_ARP,        axarp },
 	{ PID_FLEXNET,    flexnet_input },
 	{ PID_NETROM,     axnr },
-	{ PID_NO_L3,      axnl3 },
 #ifdef	AX25_VJCOMP
         { PID_VJCOMP,     ax_rx_vjcomp },
 	{ PID_VJUNCOMP,   ax_rx_vjuncomp },
 #endif
-	{ PID_FLEXTALK,   axflextalk },
 	{ 0,              NULL }
 };
 

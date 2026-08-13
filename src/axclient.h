@@ -15,8 +15,8 @@
 #include "session.h"
 #endif
 
-void axclient_send_upcall(struct ax25_cb *cp, int cnt);
-void axclient_recv_upcall(struct ax25_cb *cp, int cnt);
+void axclient_send_upcall(struct axservice *sp, int cnt);
+void axclient_recv_upcall(struct axservice *sp, int cnt);
 int doconnect(int argc, char *argv[], void *p);
 
 #endif  /* _AXCLIENT_H */

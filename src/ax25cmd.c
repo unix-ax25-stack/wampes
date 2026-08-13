@@ -277,7 +277,7 @@ void *p)
 		for(axp = Ax25_cb;axp != NULL; axp = axp->next){
 			printf("%08lx %5u%c%3u/%u%c %2d%6lu  %-13s  %s\n",
 			 (long) axp,
-			 len_p(axp->rxq),
+			 axservice_pending(axp),
 			 axp->flags.rnrsent ? '*' : ' ',
 			 axp->unack,
 			 axp->maxframe,

@@ -99,7 +99,7 @@ void *p)
 			 (Current == sp) ? '*' : ' ',
 			 (int) (sp - Sessions),
 			 (long) sp->cb.ax25,
-			 len_p(sp->cb.ax25->rxq),
+			 axservice_pending(sp->cb.ax25),
 			 Ax25states[sp->cb.ax25->state],
 			 ax25hdr_to_string(&sp->cb.ax25->hdr));
 			break;

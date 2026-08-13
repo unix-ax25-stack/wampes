@@ -91,15 +91,15 @@ uint8 tos
 		struct ax25 hdr;
 		memset(&hdr,0,sizeof(struct ax25));
 		addrcp(hdr.dest,hw_addr);
-		axp = open_ax25(&hdr,
-		 AX_ACTIVE, 0,NULL,NULL,NULL,NULL);
+		axp = open_ax25(&hdr,AX_ACTIVE,0);
 		if(axp == NULL){
 			free_p(bpp);
 			return -1;
 		}
 		// xnet compatibily patch by dl9sau:
 		// discard ax25 PID=text CText for compatibilty with xnet
-		axp->r_upcall = axserv_recv_upcall_discard;
+		(void)open_axservice(axp,PID_NO_L3,
+		 axserv_recv_upcall_discard,0,0,0);
 	}
 	if(axp->state == LAPB_DISCONNECTED){
 		est_link(axp);

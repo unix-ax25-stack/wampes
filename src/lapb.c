@@ -126,7 +126,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			lapbstate(axp,LAPB_CONNECTED);/* Resets state counters */
 			start_timer(&axp->t3);
 			start_timer(&axp->t5);
-			if(!axp->s_upcall){
+			if(axp->services == NULL){
 				struct ax_route *axr;
 				axr = ax_routeptr(axp->hdr.dest,0);
 				/* A callsign we listen for is handed over as
@@ -139,7 +139,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 				 */
 				if((axr && axr->jumpstart)
 				   || axlisten_active(axp->hdr.source))
-					axserv_open(axp,0);
+					axserv_start(axp,PID_NO_L3);
 #ifdef	AX25_VJCOMP
                             /* MW: Reset VJ structures */
                             if (axp->slcomp) {
@@ -566,8 +566,20 @@ int rex_all
 		 * may be queued
 		 */
 		tmp = (axp->maxframe - len_q(axp->txq)) * axp->paclen;
-		if(axp->t_upcall != NULL && tmp > 0)
-			(*axp->t_upcall)(axp,(int)tmp);
+		if(tmp > 0){
+			/* Room again.  Every consumer is told; the send queue
+			 * is shared and whoever has something puts it in,
+			 * first come first served.
+			 */
+			struct axservice *sp;
+			struct axservice *spnext;
+
+			for(sp = axp->services; sp != NULL; sp = spnext){
+				spnext = sp->next;
+				if(sp->t_upcall != NULL)
+					(*sp->t_upcall)(sp,(int)tmp);
+			}
+		}
 		if(axp->peer && axp->peer->flags.rnrsent && !busy(axp->peer))
 			sendctl(axp->peer,LAPB_RESPONSE,RR);
 	}
@@ -740,7 +752,7 @@ enum lapb_state s
 		free_q(&axp->txq);
 		if (axp->peer)
 			disc_ax25(axp->peer);
-		if (axp->s_upcall == NULL &&
+		if (axp->services == NULL &&
 		    (!axp->peer || axp->peer->state == LAPB_DISCONNECTED)) {
 			if (axp->peer != NULL)
 				del_ax25(axp->peer);
@@ -748,9 +760,20 @@ enum lapb_state s
 			return;
 		}
 	}
-	/* Don't bother the client unless the state is really changing */
-	if(oldstate != s && axp->s_upcall != NULL)
-		(*axp->s_upcall)(axp,oldstate,s);
+	/* Don't bother the consumers unless the state is really changing.
+	 * Walk with the next pointer in hand: one of them may close itself
+	 * here, and closing the last takes the link with it.
+	 */
+	if(oldstate != s){
+		struct axservice *sp;
+		struct axservice *spnext;
+
+		for(sp = axp->services; sp != NULL; sp = spnext){
+			spnext = sp->next;
+			if(sp->s_upcall != NULL)
+				(*sp->s_upcall)(sp,oldstate,s);
+		}
+	}
 }
 /* Resequence a valid incoming I frame */
 static void
@@ -926,6 +949,21 @@ int pid,
 struct mbuf **bpp
 ){
 	struct axlink *ipp;
+	struct axservice *sp;
+
+	/* A consumer for this protocol id first: one that is already attached,
+	 * or one the configuration says to start.  Only then the node's own
+	 * protocols, so that a service configured for a callsign takes what
+	 * arrives there without taking the protocol away from the node.
+	 */
+	if((sp = find_axservice(axp,pid)) == NULL)
+		sp = axserv_start(axp,pid);
+	if(sp != NULL){
+		append(&sp->rxq,bpp);
+		if(sp->r_upcall != NULL)
+			(*sp->r_upcall)(sp,len_p(sp->rxq));
+		return;
+	}
 
 	for(ipp = Axlink;ipp->funct != NULL;ipp++){
 		if(ipp->pid == pid)
@@ -942,8 +980,17 @@ int
 busy(
 struct ax25_cb *axp)
 {
-	return axp->peer ? space_ax25(axp->peer) <= 0 :
-			   len_p(axp->rxq) >= axp->window;
+	int held;
+	struct axservice *sp;
+
+	if(axp->peer)
+		return space_ax25(axp->peer) <= 0;
+	/* One window for the whole link: what any consumer has not taken
+	 * counts against it.  AX.25 cannot say "not ready for this pid".
+	 */
+	for(sp = axp->services, held = 0; sp != NULL; sp = sp->next)
+		held += len_p(sp->rxq);
+	return held >= (int) axp->window;
 }
 
 void
@@ -1037,40 +1084,4 @@ const struct ax25_opts *opts)
 	axp->mdev = (T1init * (1 + 2 * (axp->hdr.ndigis - axp->hdr.nextdigi)) + 2) / 4;
 	set_timer(&axp->t1, 4 * axp->mdev);
 }
-/* Handle ordinary incoming data (no network protocol) */
-void
-axnl3(
-struct iface *iface,
-struct ax25_cb *axp,
-uint8 *src,
-uint8 *dest,
-struct mbuf **bpp,
-int mcast
-){
-	if(axp == NULL){
-		free_p(bpp);
-	} else {
-		append(&axp->rxq,bpp);
-		if(axp->r_upcall != NULL)
-			(*axp->r_upcall)(axp,len_p(axp->rxq));
-	}
-}
 
-/* Handle ordinary incoming data (no network protocol) */
-void
-axflextalk(
-struct iface *iface,
-struct ax25_cb *axp,
-uint8 *src,
-uint8 *dest,
-struct mbuf **bpp,
-int mcast
-){
-	if(axp == NULL){
-		free_p(bpp);
-	} else {
-		append(&axp->rxq,bpp);
-		if(axp->r_upcall != NULL)
-			(*axp->r_upcall)(axp,len_p(axp->rxq));
-	}
-}

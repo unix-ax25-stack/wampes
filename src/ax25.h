@@ -189,6 +189,7 @@ void axroute_savefile(void *arg);
 void axroute_loadfile(void);
 
 /* In axserver.c: */	// dl9sau
-void axserv_recv_upcall_discard(struct ax25_cb *axp, int cnt);
+struct axservice;
+void axserv_recv_upcall_discard(struct axservice *sp, int cnt);
 
 #endif  /* _AX25_H */

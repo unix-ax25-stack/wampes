@@ -9,6 +9,8 @@
 #include "timer.h"
 #include "iface.h"
 #include "lapb.h"
+#include <stdlib.h>
+
 #include "netuser.h"
 #include "ax25.h"
 #include "lapb.h"
@@ -18,17 +20,12 @@ struct ax25_cb *
 open_ax25(
 struct ax25 *hdr,
 int mode,               /* active/passive/server */
-const struct ax25_opts *opts,   /* per-connection choices, 0 for the usual */
-void (*r_upcall)(struct ax25_cb *,int),        /* Receiver upcall handler */
-void (*t_upcall)(struct ax25_cb *,int),        /* Transmitter upcall handler */
-void (*s_upcall)(struct ax25_cb *,enum lapb_state,enum lapb_state),
-					       /* State-change upcall handler */
-char *user)             /* User linkage area */
-{
+const struct ax25_opts *opts    /* per-connection choices, 0 for the usual */
+){
 	struct ax25_cb *axp;
 
 	axp = find_ax25(hdr->dest);
-	if(axp && axp->s_upcall != NULL && s_upcall != NULL){
+	if(axp != NULL && axp->services != NULL){
 		/* Only one to a customer.  Say which refusal this is: a caller
 		 * that hears "busy" can try again under another SSID, one that
 		 * hears "invalid" can only give up - and until now it heard
@@ -43,12 +40,6 @@ char *user)             /* User linkage area */
 			return NULL;
 		}
 		build_path(axp,NULL,hdr,0,opts);
-	}
-	if(s_upcall != NULL){
-		axp->r_upcall = r_upcall;
-		axp->t_upcall = t_upcall;
-		axp->s_upcall = s_upcall;
-		axp->user = user;
 	}
 
 	switch(mode){
@@ -116,31 +107,129 @@ int pid
 	return lapb_output(axp);
 }
 
-/* Receive incoming data on an AX.25 connection */
-struct mbuf *
-recv_ax25(
+/*---------------------------------------------------------------------------*/
+
+/* Consumers.  One per protocol id on a link, each with a receive queue of its
+ * own - see the note in lapb.h for why they cannot share one.
+ */
+
+struct axservice *
+find_axservice(
 struct ax25_cb *axp,
-uint cnt)
-{
+int pid
+){
+	struct axservice *sp;
+
+	for(sp = axp->services; sp != NULL; sp = sp->next)
+		if(sp->pid == pid)
+			return sp;
+	return NULL;
+}
+
+struct axservice *
+open_axservice(
+struct ax25_cb *axp,
+int pid,
+void (*r_upcall)(struct axservice *,int),
+void (*t_upcall)(struct axservice *,int),
+void (*s_upcall)(struct axservice *,enum lapb_state,enum lapb_state),
+void *user
+){
+	struct axservice *sp;
+
+	if((sp = find_axservice(axp,pid)) != NULL)
+		return sp;
+	if((sp = (struct axservice *)calloc(1,sizeof(struct axservice))) == NULL)
+		return NULL;
+	sp->axp = axp;
+	sp->pid = pid;
+	sp->r_upcall = r_upcall;
+	sp->t_upcall = t_upcall;
+	sp->s_upcall = s_upcall;
+	sp->user = user;
+	sp->next = axp->services;
+	axp->services = sp;
+	return sp;
+}
+
+/* Take from this consumer's queue.  cnt == 0 means all of it, as before.
+ * Whether the link is still busy is a question about every queue, so it is
+ * asked after the change, not decided here.
+ */
+
+struct mbuf *
+recv_axservice(
+struct axservice *sp,
+uint cnt
+){
 	struct mbuf *bp;
 
-	if(axp->rxq == NULL)
+	if(sp->rxq == NULL)
 		return NULL;
-
 	if(cnt == 0){
-		/* This means we want it all */
-		bp = axp->rxq;
-		axp->rxq = NULL;
+		bp = sp->rxq;
+		sp->rxq = NULL;
 	} else {
 		bp = ambufw(cnt);
-		bp->cnt = pullup(&axp->rxq,bp->data,cnt);
+		bp->cnt = pullup(&sp->rxq,bp->data,cnt);
 	}
-	/* If this has un-busied us, send a RR to reopen the window */
-	if (axp->flags.rnrsent && !busy(axp))
-		sendctl(axp,LAPB_RESPONSE,RR);
-
+	/* If this has un-busied the link, reopen the window */
+	if(sp->axp->flags.rnrsent && !busy(sp->axp))
+		sendctl(sp->axp,LAPB_RESPONSE,RR);
 	return bp;
 }
+
+/* What all consumers together still hold - what the one queue used to show */
+
+int
+axservice_pending(struct ax25_cb *axp)
+{
+	int held = 0;
+	struct axservice *sp;
+
+	for(sp = axp->services; sp != NULL; sp = sp->next)
+		held += len_p(sp->rxq);
+	return held;
+}
+
+int
+space_axservice(struct axservice *sp)
+{
+	return space_ax25(sp->axp);
+}
+
+int
+send_axservice(
+struct axservice *sp,
+struct mbuf **bpp
+){
+	return send_ax25(sp->axp,bpp,sp->pid);
+}
+
+/* Detach.  When the last consumer goes the link goes with it - asked by
+ * walking the list, not counted: a number that some path forgets to decrement
+ * keeps a link alive forever, and one decremented twice tears down a live
+ * one.
+ */
+
+void
+close_axservice(struct axservice *sp)
+{
+	struct ax25_cb *axp = sp->axp;
+	struct axservice **pp;
+
+	for(pp = &axp->services; *pp != NULL; pp = &(*pp)->next)
+		if(*pp == sp){
+			*pp = sp->next;
+			break;
+		}
+	free_q(&sp->rxq);
+	free(sp);
+	if(axp->services == NULL)
+		disc_ax25(axp);
+}
+
+/*---------------------------------------------------------------------------*/
 
 /* Close an AX.25 connection */
 int
