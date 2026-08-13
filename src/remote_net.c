@@ -48,6 +48,8 @@ struct controlblock {
                                          * silence, failure is end of file */
   char target[80];                      /* What we are connecting to, for the
                                          * one status line */
+  int lastcr;                           /* Previous byte was a CR */
+  int crlf;                             /* This client ends its lines CRLF */
   int dgram;                            /* Every further line is a frame */
   int dgram_pid;
   struct iface *dgram_iface;            /* 0: every AX.25 port */
@@ -230,6 +232,7 @@ static void say(struct controlblock *cp, const char *fmt, ...)
   n = vsnprintf(buf, sizeof(buf) - 2, fmt, ap);
   va_end(ap);
   if (n < 0) return;
+  if (cp->crlf) buf[n++] = '\r';
   buf[n++] = '\n';
   write(cp->fd, buf, n);
 }
@@ -641,11 +644,29 @@ static void command_receive(void *arg)
     delete_controlblock(cp);
     return;
   }
-  if (c != '\n') {
+  /* Take a line ending however it comes: LF, CRLF or a bare CR.  A telnet
+   * sends CRLF, and a stray CR left on the end of the last word turned
+   * "datagram hf1:" into an unknown word - it only ever went unnoticed
+   * because setcall() happens to tolerate one.
+   */
+  if (c != '\r' && c != '\n') {
+    cp->lastcr = 0;
     cp->buffer[cp->bufcnt++] = c;
     if (cp->bufcnt >= sizeof(cp->buffer)) delete_controlblock(cp);
     return;
   }
+  if (c == '\n' && cp->lastcr) {       /* the LF of a CRLF, already acted on */
+    cp->lastcr = 0;
+    return;
+  }
+  if (c == '\r') {
+    cp->lastcr = 1;
+    /* Answer in the terminator the client uses.  It says so with its first
+     * line, and telnet expects to be answered its own way.
+     */
+    cp->crlf = 1;
+  } else
+    cp->lastcr = 0;
   cp->buffer[cp->bufcnt] = 0;
   cp->bufcnt = 0;
   if (cp->dgram) {                      /* no longer commands, frames */

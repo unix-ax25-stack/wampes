@@ -17,6 +17,7 @@
 #include "iface.h"
 #include "hpux.h"
 #include "buildsaddr.h"
+#include "transport.h"
 #include "login.h"
 
 int Axserver_enabled;
@@ -209,6 +210,13 @@ struct axpipe {
   int fd;
   struct mbuf *sndq;                    /* waiting for the socket */
   int connecting;                       /* connect() not finished yet */
+  /* Plain text is converted: the radio side ends its lines with CR, this
+   * side with LF, and a program that gets the wrong one shows a staircase.
+   * Any other protocol id is binary and is passed through untouched.
+   */
+  int ascii;
+  int recv_char;                        /* last byte seen, per direction */
+  int send_char;
 };
 
 /* How much may pile up for a socket that is not taking it.  Far above
@@ -241,8 +249,10 @@ static void axpipe_recv_upcall(struct axservice *sp, int cnt)
   if (!pp) return;
   room = AXPIPE_HIGHWATER - len_p(pp->sndq);
   if (room <= 0) return;                /* leave it where it is */
-  if ((bp = recv_axservice(sp, (uint) (cnt < room ? cnt : room))))
+  if ((bp = recv_axservice(sp, (uint) (cnt < room ? cnt : room)))) {
+    if (pp->ascii) convert_eol(&bp, EOL_LF, &pp->recv_char);
     append(&pp->sndq, &bp);
+  }
   axpipe_pump(pp);
 }
 
@@ -293,6 +303,7 @@ static void axpipe_readable(void *arg)
   if (room > (int) sizeof(buf)) room = sizeof(buf);
   if ((n = read(pp->fd, buf, (size_t) room)) > 0) {
     bp = qdata(buf, (uint) n);
+    if (pp->ascii) convert_eol(&bp, EOL_CR, &pp->send_char);
     send_axservice(pp->sp, &bp);
     return;
   }
@@ -422,6 +433,7 @@ static struct axservice *axpipe_open(struct ax25_cb *axp, const char *dest)
     return NULL;
   }
   pp->fd = fd;
+  pp->ascii = 1;                        /* pid=text, until an entry says otherwise */
 
   if (connect(fd, addr, addrlen)) {
     if (errno != EINPROGRESS) {

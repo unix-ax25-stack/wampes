@@ -13,7 +13,10 @@
 
 static const char delim[] = " \t\r\n";
 
-static int convert_eol(struct mbuf **bpp, enum e_transporteol mode, int *last_chr);
+/* Shared with the listener's pipe: one implementation of "text conversion",
+ * not two that can drift apart.
+ */
+int convert_eol(struct mbuf **bpp, enum e_transporteol mode, int *last_chr);
 static void transport_recv_upcall_ax25(struct axservice *sp, int cnt);
 static void transport_recv_upcall_netrom(struct circuit *cp, int cnt);
 static void transport_recv_upcall_tcp(struct tcb *cp, int32 cnt);
@@ -29,7 +32,10 @@ static struct tcb *transport_open_tcp(const char *address, struct transport_cb *
 
 /*---------------------------------------------------------------------------*/
 
-static int convert_eol(struct mbuf **bpp, enum e_transporteol mode, int *last_chr)
+/* Shared with the listener's pipe: one implementation of "text conversion",
+ * not two that can drift apart.
+ */
+int convert_eol(struct mbuf **bpp, enum e_transporteol mode, int *last_chr)
 {
 
   char buf[10240], *p;

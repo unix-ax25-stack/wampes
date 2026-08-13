@@ -64,6 +64,7 @@ struct transport_cb {
 };
 
 /* In transport.c: */
+int convert_eol(struct mbuf **bpp,enum e_transporteol mode,int *last_chr);
 
 /* For a target that has already been parsed - with its own source call, its
  * own port and its own pid, none of which fit through an address string.
