@@ -386,6 +386,41 @@ uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater 
 	}
 	return rval;
 }
+/* May this frame teach us a route?  Everything may, except the one kind that
+ * is only noise: a broadcast with no network layer above it.  That is APRS
+ * and the plain beacons, whose paths are generic - WIDE1-1 and WIDE2-2 lead
+ * nowhere - and as an APRS digipeater we would fill the table within hours.
+ *
+ * A list of what may not, rather than of what may.  The other way round was
+ * tried and was wrong: it silently dropped NET/ROM neighbour discovery, and
+ * an IP-over-AX.25 exchange digipeated through us teaches a path that has
+ * just been proven to work.
+ */
+static int
+learn_from(
+struct mbuf *bp
+){
+	int i;
+	int n = 0;
+	int pid = -1;
+
+	if (bp == NULL)
+		return 0;
+	if ((*bp->data & ~PF) != UI)
+		return 1;               /* connected mode */
+
+	/* The PID follows the control field, and the frame may be split
+	 * across mbufs, so walk rather than index.
+	 */
+	for (; bp && pid < 0; bp = bp->next)
+		for (i = 0; i < bp->cnt; i++)
+			if (n++ == 1) {
+				pid = bp->data[i];
+				break;
+			}
+	return pid != PID_NO_L3;
+}
+
 /* Process incoming AX.25 packets.
  * After optional tracing, the address field is examined. If it is
  * directed to us as a digipeater, repeat it.  If it is addressed to
@@ -451,7 +486,9 @@ struct mbuf **bpp
 	/* At this point, packet is either addressed to us, or is
 	 * a multicast.
 	 */
-	axroute_add(iface, &hdr, 0);
+	/* Not from every broadcast - see learn_from() above. */
+	if(learn_from(*bpp))
+		axroute_add(iface, &hdr, 0);
 	if(hdr.nextdigi < hdr.ndigis){
 		/* Packet requests digipeating. See if we can repeat it. */
 		if(Digipeat && !mcast){
