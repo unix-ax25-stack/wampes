@@ -285,6 +285,55 @@ int mcast)
 }
 #endif
 
+/* Send a UI frame with the header exactly as given: this source, this
+ * destination, this path, out of this interface.
+ *
+ * ax_output() cannot do it.  Its comment promises "Interface to use;
+ * overrides routing table" and that holds for the interface - the one axroute
+ * picks is computed and thrown away - but the path is rewritten all the same,
+ * because axsend() calls axroute() and that appends digipeaters from the
+ * route file.  A frame handed to us with WIDE1-1,WIDE2-1 would go out with
+ * our own routing mixed in, which is nonsense on the air.  Here we are the
+ * originator, not a digipeater: what was given is what is sent.
+ *
+ * That also lifts the one-digipeater limit, which lives in axsend()'s ax_via
+ * parameter and was only ever meant for the ARP multicast case.
+ */
+
+int
+ax_send_ui(
+struct iface *iface,
+struct ax25 *hdr,
+int pid,
+struct mbuf **bpp
+){
+	uint8 *idest;
+
+	if(iface == NULL || iface->raw == NULL){
+		free_p(bpp);
+		return -1;
+	}
+	if(hdr->source[0] == '\0')
+		addrcp(hdr->source,iface->hwaddr);
+
+	pushdown(bpp,NULL,1);
+	(*bpp)->data[0] = (uint8) pid;
+	pushdown(bpp,NULL,1);
+	(*bpp)->data[0] = UI;
+	htonax25(hdr,bpp);
+
+	idest = (hdr->ndigis != 0 && hdr->nextdigi != hdr->ndigis) ?
+		hdr->digis[hdr->nextdigi] : hdr->dest;
+	if(iface->forw != NULL){
+		logsrc(iface->forw,iface->forw->hwaddr);
+		logdest(iface->forw,idest);
+		return (*iface->forw->raw)(iface->forw,bpp);
+	}
+	logsrc(iface,iface->hwaddr);
+	logdest(iface,idest);
+	return (*iface->raw)(iface,bpp);
+}
+
 /* Add header and send connectionless (UI) AX.25 packet.
  * Note that the calling order here must match enet_output
  * since ARP also uses it.

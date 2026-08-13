@@ -48,6 +48,9 @@ struct controlblock {
                                          * silence, failure is end of file */
   char target[80];                      /* What we are connecting to, for the
                                          * one status line */
+  int dgram;                            /* Every further line is a frame */
+  int dgram_pid;
+  struct iface *dgram_iface;            /* 0: every AX.25 port */
 };
 
 struct cmdtable {
@@ -397,6 +400,187 @@ static int connect_command(struct controlblock *cp)
   return 0;
 }
 
+
+/*---------------------------------------------------------------------------*/
+
+/* "datagram [<port>:] [--port <p>] [--pid <n>] [--silent]"
+ *
+ * Afterwards every line is a frame, written the way every tool outside WAMPES
+ * writes one:
+ *
+ *     DL9SAU>APRS,WIDE2-2:xxxxxxxx
+ *
+ * The source and the path come out of the data, not out of the command, which
+ * is what makes forwarding possible at all:
+ *
+ *     ( echo "datagram hf1:"; cat ) < /dev/aprsport | socat - tcp:localhost:8010
+ *
+ * The port is a filter here, not a requirement.  There is no connection and
+ * no state, so the same frame going out of two ports harms nothing - unlike a
+ * second link to the same station, which earns a FRMR.  Left out, the node
+ * sends on every AX.25 port it has.
+ */
+
+static int datagram_command(struct controlblock *cp)
+{
+
+  char *argv[16];
+  char *p;
+  char copy[sizeof(cp->buffer)];
+  int argc;
+  int i;
+  long n;
+
+  strcpy(copy, getarg(0, 1));
+  for (argc = 0, p = strtok(copy, " \t");
+       p && argc < (int) (sizeof(argv) / sizeof(argv[0]));
+       p = strtok(NULL, " \t"))
+    argv[argc++] = p;
+
+  cp->dgram_pid = PID_NO_L3;
+  cp->dgram_iface = 0;
+
+  for (i = 0; i < argc; i++) {
+    char *port = 0;
+
+    if (!strcmp(argv[i], "--silent")) {
+      cp->silent = 1;
+      continue;
+    }
+    if (!strcmp(argv[i], "--port")) {
+      if (++i >= argc) { say(cp, "*** --port needs a value"); return -1; }
+      port = argv[i];
+    } else if (!strcmp(argv[i], "--pid")) {
+      if (++i >= argc) { say(cp, "*** --pid needs a value"); return -1; }
+      n = strtol(argv[i], &p, 0);
+      if (*p || n < 0 || n > 255) {
+	say(cp, "*** invalid pid \"%s\"", argv[i]);
+	return -1;
+      }
+      cp->dgram_pid = (int) n;
+      continue;
+    } else if ((p = strchr(argv[i], ':')) && !p[1]) {
+      *p = '\0';
+      port = argv[i];
+    } else {
+      say(cp, "*** unknown word \"%s\"", argv[i]);
+      return -1;
+    }
+
+    if (!(cp->dgram_iface = if_lookup(port))) {
+      say(cp, "*** no interface \"%s\"", port);
+      return -1;
+    }
+    if (cp->dgram_iface->output != ax_output) {
+      say(cp, "*** interface \"%s\" does not carry AX.25", port);
+      cp->dgram_iface = 0;
+      return -1;
+    }
+  }
+
+  /* Nothing is converted from here on: the line ends a frame, and what is in
+   * front of it goes out as it stands.
+   */
+  cp->binary = 1;
+  cp->dgram = 1;
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* One line, one frame.  Deliberately without any knowledge of APRS: no
+ * opinion about WIDEn-N, no rewriting of the has-been-repeated marks.  We are
+ * the sender, not a digipeater, and the sysop knows what was configured.
+ */
+
+static void datagram_line(struct controlblock *cp, char *line)
+{
+
+  char *cp1;
+  char *digi;
+  char *payload;
+  int first;
+  int i;
+  struct ax25 hdr;
+  struct iface *ifp;
+  struct mbuf *bp;
+
+  while (isspace(*line & 0xff)) line++;
+  if (!*line) return;                   /* an empty line is not a frame */
+
+  /* The first colon, not the last: an APRS message begins with one of its
+   * own, as in "DL9SAU>APRS::DL1ABC   :moin".
+   */
+  if (!(payload = strchr(line, ':'))) {
+    say(cp, "*** no colon in \"%s\"", line);
+    return;
+  }
+  *payload++ = '\0';
+
+  /* Nothing behind the colon is nothing to send.  Not an error - a frame with
+   * only a pid in it would be noise on the channel - so it goes the way an
+   * empty line goes, without a word.
+   */
+  if (!*payload) return;
+
+  if (!(cp1 = strchr(line, '>'))) {
+    say(cp, "*** no \">\" in the header");
+    return;
+  }
+  *cp1++ = '\0';
+
+  memset(&hdr, 0, sizeof(hdr));
+  if (setcall(hdr.source, line)) {
+    say(cp, "*** invalid call \"%s\"", line);
+    return;
+  }
+  /* What follows the ">" is the destination, and after the first comma the
+   * path.  A trailing "*" says that element has already repeated it.
+   */
+  first = 1;
+  for (digi = strtok(cp1, ","); digi; digi = strtok(NULL, ",")) {
+    int repeated = 0;
+    char *star = strchr(digi, '*');
+
+    if (star) { *star = '\0'; repeated = 1; }
+
+    if (first) {
+      first = 0;
+      if (setcall(hdr.dest, digi)) {
+	say(cp, "*** invalid call \"%s\"", digi);
+	return;
+      }
+      continue;
+    }
+    if (hdr.ndigis >= MAXDIGIS) {
+      say(cp, "*** too many digipeaters");
+      return;
+    }
+    if (setcall(hdr.digis[hdr.ndigis], digi)) {
+      say(cp, "*** invalid call \"%s\"", digi);
+      return;
+    }
+    hdr.ndigis++;
+    if (repeated) hdr.nextdigi = hdr.ndigis;
+  }
+  hdr.cmdrsp = LAPB_COMMAND;
+
+  if (cp->dgram_iface) {
+    bp = qdata(payload, (uint) strlen(payload));
+    ax_send_ui(cp->dgram_iface, &hdr, cp->dgram_pid, &bp);
+    return;
+  }
+  for (i = 0, ifp = Ifaces; ifp; ifp = ifp->next) {
+    struct ax25 copy = hdr;
+
+    if (ifp->output != ax_output) continue;
+    bp = qdata(payload, (uint) strlen(payload));
+    ax_send_ui(ifp, &copy, cp->dgram_pid, &bp);
+    i++;
+  }
+  if (!i) say(cp, "*** no AX.25 port to send on");
+}
+
 /*---------------------------------------------------------------------------*/
 
 static int console_command(struct controlblock *cp)
@@ -436,6 +620,7 @@ static void command_receive(void *arg)
     { "command", command_command },
     { "connect", connect_command },
     { "console", console_command },
+    { "datagram", datagram_command },
     { 0,         0 }
   };
 
@@ -446,6 +631,7 @@ static void command_receive(void *arg)
     { "ascii",   ascii_command },
     { "binary",  binary_command },
     { "connect", connect_command },
+    { "datagram", datagram_command },
     { 0,         0 }
   };
 
@@ -462,6 +648,10 @@ static void command_receive(void *arg)
   }
   cp->buffer[cp->bufcnt] = 0;
   cp->bufcnt = 0;
+  if (cp->dgram) {                      /* no longer commands, frames */
+    datagram_line(cp, cp->buffer);
+    return;
+  }
   if (command_switcher(cp, getarg(cp->buffer, 0),
 		       cp->restricted ? service_table : full_table))
     delete_controlblock(cp);

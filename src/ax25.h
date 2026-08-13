@@ -139,6 +139,12 @@ void axroute_add(struct iface *iface, struct ax25 *hdr, int perm);
  * interface's own callsign, one of its links', or one we listen for.
  */
 int ax_answers_to(struct iface *iface, const uint8 *addr);
+
+/* A UI frame with the header exactly as given - no routing, nothing added.
+ * For frames we are handed to originate, where the path is the sender's.
+ */
+int ax_send_ui(struct iface *iface, struct ax25 *hdr, int pid,
+	struct mbuf **bpp);
 void axroute(struct ax25 *hdr, struct iface **ifpp);
 
 #ifdef	AX25_VJCOMP
