@@ -204,7 +204,7 @@ static void send_packet_to_neighbor(struct mbuf **bpp, struct node *pn)
   if (!(axp = find_ax25(pn->call))) {
     memset(&hdr, 0, sizeof(struct ax25));
     addrcp(hdr.dest, pn->call);
-    axp = open_ax25(&hdr, AX_ACTIVE, NULL, NULL, NULL, 0);
+    axp = open_ax25(&hdr, AX_ACTIVE, 0, NULL, NULL, NULL, 0);
     if (!axp) {
       if (update_link(mynode, pn, 1, 0)) calculate_all();
       free_p(bpp);

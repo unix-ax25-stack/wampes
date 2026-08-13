@@ -96,11 +96,11 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 		axp = find_ax25(hdr->source);
 	if(axp == NULL){
 		axp = cr_ax25((uint8 *) " ");
-		build_path(axp,iface,hdr,1);
+		build_path(axp,iface,hdr,1,0);
 		if(digipeat){
 			axp->peer = cr_ax25((uint8 *) " ");
 			axp->peer->peer = axp;
-			build_path(axp->peer,NULL,hdr,0);
+			build_path(axp->peer,NULL,hdr,0,0);
 		}
 	}
 
@@ -146,7 +146,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 					break;
 				case LAPB_SETUP:
 					if(axp->peer->routing_changes < 3){
-						build_path(axp->peer,NULL,hdr,0);
+						build_path(axp->peer,NULL,hdr,0,0);
 						sendctl(axp->peer,LAPB_COMMAND,SABM|PF);
 						start_timer(&axp->peer->t1);
 					}
@@ -972,9 +972,11 @@ build_path(
 struct ax25_cb *axp,
 struct iface *ifp,
 struct ax25 *hdr,
-int reverse)
+int reverse,
+const struct ax25_opts *opts)
 {
 	int i;
+	uint8 wanted[AXALEN];
 
 	axp->routing_changes++;
 	if(reverse){
@@ -991,7 +993,19 @@ int reverse)
 			}
 		axp->iface = ifp;
 	} else {
+		/* axroute() picks the interface and stamps its callsign over
+		 * the source.  Where the caller has chosen either of those,
+		 * put its choice back afterwards rather than teaching the
+		 * router about it - the routing itself is unchanged.
+		 */
+		addrcp(wanted, hdr->source);
 		axroute(hdr,&axp->iface);
+		if (opts) {
+			if (opts->iface)
+				axp->iface = opts->iface;
+			if (opts->ownsource)
+				addrcp(hdr->source, wanted);
+		}
 		axp->hdr = *hdr;
 	}
 	axp->srt = 0;

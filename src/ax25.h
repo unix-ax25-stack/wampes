@@ -163,6 +163,14 @@ int setcall(uint8 *out,const char *call);
 struct iface *ismyax25addr(const uint8 *addr);
 void addrcp(uint8 *to,const uint8 *from);
 int ax25args_to_hdr(int argc,char *argv[],struct ax25 *hdr);
+
+/* Defined in lapb.h, which this header does not pull in - named here so the
+ * prototype below refers to that type and not to one of its own.
+ */
+struct ax25_opts;
+
+int ax25_parse_target(int argc,char *argv[],struct ax25 *hdr,
+	struct ax25_opts *opts,int *pid,int *silent,char *err,int errlen);
 char *ax25hdr_to_string(struct ax25 *hdr);
 
 /* In ax25file.c: */

@@ -9,6 +9,7 @@
 #include "timer.h"
 #include "iface.h"
 #include "lapb.h"
+#include "netuser.h"
 #include "ax25.h"
 #include "lapb.h"
 
@@ -17,6 +18,7 @@ struct ax25_cb *
 open_ax25(
 struct ax25 *hdr,
 int mode,               /* active/passive/server */
+const struct ax25_opts *opts,   /* per-connection choices, 0 for the usual */
 void (*r_upcall)(struct ax25_cb *,int),        /* Receiver upcall handler */
 void (*t_upcall)(struct ax25_cb *,int),        /* Transmitter upcall handler */
 void (*s_upcall)(struct ax25_cb *,enum lapb_state,enum lapb_state),
@@ -26,12 +28,21 @@ char *user)             /* User linkage area */
 	struct ax25_cb *axp;
 
 	axp = find_ax25(hdr->dest);
-	if(axp && axp->s_upcall != NULL && s_upcall != NULL)
-		return NULL;    /* Only one to a customer */
+	if(axp && axp->s_upcall != NULL && s_upcall != NULL){
+		/* Only one to a customer.  Say which refusal this is: a caller
+		 * that hears "busy" can try again under another SSID, one that
+		 * hears "invalid" can only give up - and until now it heard
+		 * whatever the last operation had left behind.
+		 */
+		Net_error = CON_EXISTS;
+		return NULL;
+	}
 	if(axp == NULL){
-		if((axp = cr_ax25(hdr->dest)) == NULL)
+		if((axp = cr_ax25(hdr->dest)) == NULL){
+			Net_error = NO_MEM;
 			return NULL;
-		build_path(axp,NULL,hdr,0);
+		}
+		build_path(axp,NULL,hdr,0,opts);
 	}
 	if(s_upcall != NULL){
 		axp->r_upcall = r_upcall;

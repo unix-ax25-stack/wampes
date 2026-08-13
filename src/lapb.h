@@ -183,8 +183,20 @@ struct ax25_cb *find_ax25(uint8 *);
 int ax25val(struct ax25_cb *axp);
 int disc_ax25(struct ax25_cb *axp);
 int kick_ax25(struct ax25_cb *axp);
+/* Per-connection choices for an outgoing link.  A null pointer means what it
+ * always meant: the routing table picks the interface and stamps its callsign
+ * as the source.  Given here, the caller's choice wins - which is what the
+ * service socket needs, where several users share one node and each may want
+ * its own callsign and its own port.
+ */
+struct ax25_opts {
+	struct iface *iface;    /* go out here, whatever the route says */
+	int ownsource;          /* hdr->source is the caller's, keep it */
+};
+
 struct ax25_cb *open_ax25(struct ax25 *,
 	int,
+	const struct ax25_opts *,
 	void (*)(struct ax25_cb *,int),
 	void (*)(struct ax25_cb *,int),
 	void (*)(struct ax25_cb *,enum lapb_state,enum lapb_state),
@@ -209,7 +221,8 @@ void axflextalk(struct iface *iface,struct ax25_cb *axp,uint8 *src,
 int busy(struct ax25_cb *cp);
 void ax_t2_timeout(void *p);
 void ax_t5_timeout(void *p);
-void build_path(struct ax25_cb *cp,struct iface *ifp,struct ax25 *hdr,int reverse);
+void build_path(struct ax25_cb *cp,struct iface *ifp,struct ax25 *hdr,int reverse,
+	const struct ax25_opts *opts);
 
 /* In lapbtimer.c: */
 void pollthem(void *p);

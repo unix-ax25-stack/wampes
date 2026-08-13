@@ -92,7 +92,7 @@ uint8 tos
 		memset(&hdr,0,sizeof(struct ax25));
 		addrcp(hdr.dest,hw_addr);
 		axp = open_ax25(&hdr,
-		 AX_ACTIVE,NULL,NULL,NULL,NULL);
+		 AX_ACTIVE, 0,NULL,NULL,NULL,NULL);
 		if(axp == NULL){
 			free_p(bpp);
 			return -1;

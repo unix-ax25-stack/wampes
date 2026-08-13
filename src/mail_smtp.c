@@ -208,7 +208,13 @@ static void mail_smtp_send_upcall(struct transport_cb *tp, int cnt)
 
 static void mail_smtp_state_upcall(struct transport_cb *tp)
 {
+
   struct mesg *mp;
+
+  /* The transport reports coming up as well as going down now.  This one
+   * only ever meant "the far end is gone".
+   */
+  if (tp->connected) return;
 
   if ((mp = (struct mesg *) tp->user)) {
     if (mp->fp) fclose(mp->fp);

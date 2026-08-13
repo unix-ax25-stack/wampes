@@ -22,6 +22,9 @@
 #include "global.h"
 #include "mbuf.h"
 #include "iface.h"
+#include "netuser.h"
+#include "ax25.h"
+#include "lapb.h"
 #include "timer.h"
 #include "transport.h"
 #include "hpux.h"
@@ -41,6 +44,10 @@ struct controlblock {
   int binary;                           /* Transfer is binary (no EOL conv) */
   int restricted;                       /* From the service socket: no
                                          * "command", no "console" */
+  int silent;                           /* No status lines at all: success is
+                                         * silence, failure is end of file */
+  char target[80];                      /* What we are connecting to, for the
+                                         * one status line */
 };
 
 struct cmdtable {
@@ -198,9 +205,58 @@ static void transport_send_upcall(struct transport_cb *tp, int cnt)
 
 /*---------------------------------------------------------------------------*/
 
+/* Status lines, terminated, before the first byte of payload and only there.
+ * The wording follows XNET and RMNC, which operators have been reading for
+ * thirty years.  Note where the stars go: they mark the answer, not the
+ * progress, so "link setup ..." carries none and the outcome does.  A program
+ * reads lines until one begins with "***" - that is the one it acts on.
+ *
+ * Afterwards the stream is pure, so "binary" stays unambiguous, and a link
+ * lost later is end of file and nothing else - a trailing line could not be
+ * told apart from data.
+ */
+
+static void say(struct controlblock *cp, const char *fmt, ...)
+{
+  char buf[256];
+  va_list ap;
+  int n;
+
+  if (cp->silent) return;
+  va_start(ap, fmt);
+  n = vsnprintf(buf, sizeof(buf) - 2, fmt, ap);
+  va_end(ap);
+  if (n < 0) return;
+  buf[n++] = '\n';
+  write(cp->fd, buf, n);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static const char *why(void)
+{
+  switch (Net_error) {
+  case CON_EXISTS: return "busy";       /* one link per callsign pair */
+  case NO_CONN:    return "noconn";
+  case CON_CLOS:   return "closing";
+  case NO_MEM:     return "nomem";
+  case NOPROTO:    return "noproto";
+  case INVALID:    return "invalid";
+  default:         return "failed";
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void transport_state_upcall(struct transport_cb *tp)
 {
-  delete_controlblock((struct controlblock *) tp->user);
+  struct controlblock *cp = (struct controlblock *) tp->user;
+
+  if (tp->connected) {
+    say(cp, "*** connected to %s", cp->target);
+    return;
+  }
+  delete_controlblock(cp);
   transport_del(tp);
 }
 
@@ -250,17 +306,92 @@ static int command_command(struct controlblock *cp)
 
 static int connect_command(struct controlblock *cp)
 {
-  char *protocol, *address;
 
-  protocol = getarg(0, 0);
-  address = getarg(0, 1);
-  cp->tp = transport_open(protocol, address, transport_recv_upcall, transport_send_upcall, transport_state_upcall, (char *) cp);
-  if (!cp->tp) return -1;
-  if (cp->tp->type == TP_AXFLEXTALK)
-    cp->binary = 1;
+  char *argv[64];
+  char *rest;
+  char copy[sizeof(cp->buffer)];
+  char err[200];
+  char *p;
+  int argc;
+  int pid;
+  int silent;
+  struct ax25 hdr;
+  struct ax25_opts opts;
+
+  /* The whole rest of the line: everything new lives inside it, and getarg()
+   * lowercases and truncates what it hands out, so work on a copy.
+   */
+  rest = getarg(0, 1);
+  strcpy(copy, rest);
+  for (argc = 0, p = strtok(copy, " \t");
+       p && argc < (int) (sizeof(argv) / sizeof(argv[0]));
+       p = strtok(NULL, " \t"))
+    argv[argc++] = p;
+
+  if (!argc) {
+    say(cp, "*** link failure - nothing to connect to");
+    return -1;
+  }
+  for (p = argv[0]; *p; p++)            /* the keyword, however typed */
+    *p = Xtolower(*p & 0xff);
+
+  /* NET/ROM has no port, no pid and no digipeater path, and TCP has none of
+   * those either and its own notion of a port besides.  Both keep the syntax
+   * they always had rather than gaining options that could only be refused.
+   */
+  if (!strcmp(argv[0], "netrom") || !strcmp(argv[0], "tcp")) {
+    char *protocol = argv[0];
+    char *address = rest;
+
+    while (*address && !isspace(*address & 0xff)) address++;
+    while (*address && isspace(*address & 0xff)) address++;
+    cp->tp = transport_open(protocol, address, transport_recv_upcall,
+			    transport_send_upcall, transport_state_upcall,
+			    (char *) cp);
+    if (!cp->tp) {
+      say(cp, "*** link failure with %s - %s", address, why());
+      return -1;
+    }
+    strncpy(cp->target, address, sizeof(cp->target) - 1);
+    say(cp, "link setup (%s)...", protocol);
+    if (!cp->binary) {
+      cp->tp->recv_mode = EOL_LF;
+      cp->tp->send_mode = !strcmp(protocol, "tcp") ? EOL_CRLF : EOL_CR;
+    }
+    on_read(cp->fd, transport_try_send, cp);
+    return 0;
+  }
+
+  /* Everything else is AX.25; the parser knows the rest of the grammar,
+   * the optional protocol word included.
+   */
+  if (ax25_parse_target(argc, argv, &hdr, &opts, &pid, &silent,
+			err, sizeof(err))) {
+    cp->silent = 0;                     /* a parse error is always worth saying */
+    say(cp, "*** link failure - %s", err);
+    return -1;
+  }
+  cp->silent = silent;
+
+  pax25(cp->target, hdr.dest);
+  cp->tp = transport_open_target(&hdr, &opts, pid, transport_recv_upcall,
+				 transport_send_upcall, transport_state_upcall,
+				 (char *) cp);
+  if (!cp->tp) {
+    say(cp, "*** link failure with %s - %s", cp->target, why());
+    return -1;
+  }
+  /* Which port it went out of - the router may have chosen it, and then this
+   * is the only place an operator gets to see which.
+   */
+  say(cp, "link setup (%s)...",
+      cp->tp->cb.axp && cp->tp->cb.axp->iface ?
+      cp->tp->cb.axp->iface->name : "routed");
+
+  if (pid == PID_FLEXTALK) cp->binary = 1;
   if (!cp->binary) {
     cp->tp->recv_mode = EOL_LF;
-    cp->tp->send_mode = (!strcmp(protocol, "tcp")) ? EOL_CRLF : EOL_CR;
+    cp->tp->send_mode = EOL_CR;
   }
   on_read(cp->fd, transport_try_send, cp);
   return 0;

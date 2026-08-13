@@ -8,10 +8,13 @@
  */
 #include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 #include "global.h"
 #include "mbuf.h"
 #include "timer.h"
 #include "ax25.h"
+#include "iface.h"
 #include "lapb.h"
 #include "slhc.h"
 
@@ -289,6 +292,153 @@ ftype(uint control)
 	else                    /* S-frames use low order 4 bits for type */
 		return control & 0xf;
 }
+
+/* Parse the target of a connect.  Two ways of writing the same thing:
+ *
+ *      [ax25|flextalk] [<port>:][ ]<dest> [via] [<digi> ...] [< <mycall>]
+ *      <dest> --port <port> --mycall <call> --pid <n> --silent
+ *
+ * <port> is the name of an interface, not a number - WAMPES has no port
+ * numbering, it has labels, and a sysop who wants to type "2:" names the
+ * interface "2".  One identity for a port, not two that can drift apart.
+ *
+ * Errors are written to err rather than printed: the console wants them on
+ * the screen, the service socket wants them on its socket, and a parser has
+ * no business deciding which.
+ *
+ * Anything not given stays as it was: hdr->source is Mycall and the routing
+ * table picks the interface, exactly as before.
+ */
+
+int
+ax25_parse_target(
+int argc,
+char *argv[],
+struct ax25 *hdr,
+struct ax25_opts *opts,
+int *pid,
+int *silent,
+char *err,
+int errlen)
+{
+
+	char *cp;
+	char *dest = 0;
+	char *port = 0;
+	char *source = 0;
+	int i;
+	long n;
+	struct iface *ifp;
+
+	memset(hdr, 0, sizeof(struct ax25));
+	memset(opts, 0, sizeof(struct ax25_opts));
+	*pid = PID_NO_L3;
+	*silent = 0;
+	*err = '\0';
+
+#define fail(...) { snprintf(err, errlen, __VA_ARGS__); return 1; }
+#define needarg(what) \
+	if (++i >= argc) fail("%s needs a value", what)
+
+	for (i = 0; i < argc; i++) {
+		cp = argv[i];
+		/* The protocol word may be left out - no protocol name is a
+		 * valid callsign, so there is nothing to confuse.  "flextalk"
+		 * is a name for one pid and nothing else; --pid still wins.
+		 */
+		if (i == 0 && !strcmp(cp, "ax25"))
+			continue;
+		if (i == 0 && !strcmp(cp, "flextalk")) {
+			*pid = PID_FLEXTALK;
+			continue;
+		}
+		if (!strcmp(cp, "via"))
+			continue;               /* noise word, always has been */
+		if (!strcmp(cp, "--silent")) {
+			*silent = 1;
+			continue;
+		}
+		if (!strcmp(cp, "--mycall")) {
+			needarg("--mycall");
+			source = argv[i];
+			continue;
+		}
+		if (!strcmp(cp, "--port")) {
+			needarg("--port");
+			port = argv[i];
+			continue;
+		}
+		if (!strcmp(cp, "--pid")) {
+			needarg("--pid");
+			n = strtol(argv[i], &cp, 0);
+			if (*cp || n < 0 || n > 255)
+				fail("invalid pid \"%s\"", argv[i]);
+			*pid = (int) n;
+			continue;
+		}
+		if (*cp == '<') {
+			/* "< CALL" and "<CALL" both, the shell habit either way */
+			if (cp[1])
+				source = cp + 1;
+			else {
+				needarg("<");
+				source = argv[i];
+			}
+			continue;
+		}
+		if (!strncmp(cp, "--", 2))
+			fail("unknown option \"%s\"", cp);
+
+		if (!dest) {
+			/* The port may ride in front of the destination */
+			if ((cp = strchr(argv[i], ':'))) {
+				*cp = '\0';
+				port = argv[i];
+				/* "hf1:DB0AAA-8" and "hf1: DB0AAA-8" both - XNET
+				 * takes the space too, and a habit is a habit.
+				 */
+				if (!cp[1])
+					continue;
+				dest = cp + 1;
+			} else
+				dest = argv[i];
+			continue;
+		}
+
+		if (hdr->ndigis >= MAXDIGIS)
+			fail("too many digipeaters (at most %d)", MAXDIGIS);
+		if (setcall(hdr->digis[hdr->ndigis], argv[i]))
+			fail("invalid call \"%s\"", argv[i]);
+		hdr->ndigis++;
+	}
+
+	if (!dest)
+		fail("no destination");
+	if (setcall(hdr->dest, dest))
+		fail("invalid call \"%s\"", dest);
+
+	if (source) {
+		if (setcall(hdr->source, source))
+			fail("invalid call \"%s\"", source);
+		opts->ownsource = 1;
+	} else
+		addrcp(hdr->source, Mycall);
+
+	if (port) {
+		if (!(ifp = if_lookup(port)))
+			fail("no interface \"%s\"", port);
+		if (ifp->output != ax_output)
+			fail("interface \"%s\" does not carry AX.25", port);
+		opts->iface = ifp;
+	}
+
+#undef needarg
+#undef fail
+
+	return 0;
+}
+
+/*---------------------------------------------------------------------------*/
 
 int
 ax25args_to_hdr(

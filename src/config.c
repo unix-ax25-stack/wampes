@@ -62,7 +62,8 @@ struct cmds Cmds[] = {
 	{ "axip",         doaxip,         0, 0, NULL },
 	{ "bye",          dobye,          0, 0, NULL },
 /* This one is out of alpabetical order to allow abbreviation to "c" */
-	{ "connect",      doconnect,      0, 2, "connect callsign [digipeaters]" },
+	{ "connect",      doconnect,      0, 2,
+	  "connect [<port>:]<callsign> [via] [digipeaters] [< <mycall>]" },
 	{ "close",        doclose,        0, 0, NULL },
 /* This one is out of alpabetical order to allow abbreviation to "d" */
 	{ "disconnect",   doclose,        0, 0, NULL },

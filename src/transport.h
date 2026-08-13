@@ -29,8 +29,18 @@ enum e_transporttype {
   TP_AXFLEXTALK
 };
 
+struct ax25;
+struct ax25_opts;
+
 struct transport_cb {
   enum e_transporttype type;    /* Connection type */
+  int connected;                /* Link is up.  s_upcall fires on the way in
+				 * as well as on the way out, and this says
+				 * which - there used to be no way to learn
+				 * that a connection had come up at all */
+  int pid;                      /* AX.25 protocol id to send with; the
+				 * protocol keyword used to decide this, and
+				 * "flextalk" is now just one value of it */
   union {                       /* Pointer to connection control block */
     struct ax25_cb *axp;
     struct circuit *nrp;
@@ -53,6 +63,19 @@ struct transport_cb {
 };
 
 /* In transport.c: */
+
+/* For a target that has already been parsed - with its own source call, its
+ * own port and its own pid, none of which fit through an address string.
+ */
+struct transport_cb *transport_open_target(
+  struct ax25 *hdr,
+  const struct ax25_opts *opts,
+  int pid,
+  void (*r_upcall)(struct transport_cb *tp, int cnt),
+  void (*t_upcall)(struct transport_cb *tp, int cnt),
+  void (*s_upcall)(struct transport_cb *tp),
+  void *user);
+
 struct transport_cb *transport_open(
   const char *protocol,
   const char *address,

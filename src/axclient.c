@@ -100,10 +100,32 @@ int
 doconnect(int argc, char *argv[], void *p)
 {
 
+  char err[200];
+  int pid;
+  int silent;
   struct ax25 hdr;
+  struct ax25_opts opts;
   struct session *s;
 
-  if (ax25args_to_hdr(argc - 1, argv + 1, &hdr)) return 1;
+  /* The same grammar as the service socket - a port, a source call and a
+   * digipeater path.  Two of its parts belong to a program rather than to a
+   * person at the keyboard, and are refused here rather than ignored: a pid
+   * other than text would put frames on the air that nothing here composes,
+   * and there is nobody to be silent towards.
+   */
+  if (ax25_parse_target(argc - 1, argv + 1, &hdr, &opts, &pid, &silent,
+			err, sizeof(err))) {
+    printf("%s\n", err);
+    return 1;
+  }
+  if (pid != PID_NO_L3) {
+    printf("A pid other than text needs the AX.25 service socket\n");
+    return 1;
+  }
+  if (silent) {
+    printf("--silent means nothing at the console\n");
+    return 1;
+  }
   if (!(s = newsession())) {
     printf("Too many sessions\n");
     return 1;
@@ -113,7 +135,7 @@ doconnect(int argc, char *argv[], void *p)
   s->name = NULL;
   s->cb.ax25 = NULL;
   s->parse = axclient_parse;
-  if (!(s->cb.ax25 = open_ax25(&hdr, AX_ACTIVE, axclient_recv_upcall, axclient_send_upcall, axclient_state_upcall, (char *) s))) {
+  if (!(s->cb.ax25 = open_ax25(&hdr, AX_ACTIVE, &opts, axclient_recv_upcall, axclient_send_upcall, axclient_state_upcall, (char *) s))) {
     freesession(s);
     printf("connect failed\n");
     return 1;

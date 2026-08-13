@@ -143,7 +143,12 @@ static void transport_send_upcall_tcp(struct tcb *cp, int32 cnt)
 static void transport_state_upcall_ax25(struct ax25_cb *cp, enum lapb_state oldstate, enum lapb_state newstate)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
-  if (tp->s_upcall && newstate == LAPB_DISCONNECTED) (*tp->s_upcall)(tp);
+
+  if (newstate == LAPB_CONNECTED) tp->connected = 1;
+  if (newstate == LAPB_DISCONNECTED) tp->connected = 0;
+  if (tp->s_upcall &&
+      (newstate == LAPB_CONNECTED || newstate == LAPB_DISCONNECTED))
+    (*tp->s_upcall)(tp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -151,7 +156,11 @@ static void transport_state_upcall_ax25(struct ax25_cb *cp, enum lapb_state olds
 static void transport_state_upcall_netrom(struct circuit *cp, enum netrom_state oldstate, enum netrom_state newstate)
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
-  if (tp->s_upcall && newstate == NR4STDISC) (*tp->s_upcall)(tp);
+
+  if (newstate == NR4STCON) tp->connected = 1;
+  if (newstate == NR4STDISC) tp->connected = 0;
+  if (tp->s_upcall && (newstate == NR4STCON || newstate == NR4STDISC))
+    (*tp->s_upcall)(tp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -160,10 +169,15 @@ static void transport_state_upcall_tcp(struct tcb *cp, enum tcp_state oldstate, 
 {
   struct transport_cb *tp = (struct transport_cb *) cp->user;
   switch (newstate) {
+  case TCP_ESTABLISHED:
+    tp->connected = 1;
+    if (tp->s_upcall) (*tp->s_upcall)(tp);
+    break;
   case TCP_CLOSE_WAIT:
     close_tcp(cp);
     break;
   case TCP_CLOSED:
+    tp->connected = 0;
     if (tp->s_upcall) (*tp->s_upcall)(tp);
     break;
   default:
@@ -186,7 +200,7 @@ static struct ax25_cb *transport_open_ax25(const char *address, struct transport
   for (s = strtok(strcpy(tmp, address), delim); s; s = strtok(NULL, delim))
     argv[argc++] = s;
   if (ax25args_to_hdr(argc, argv, &hdr)) return 0;
-  return open_ax25(&hdr, AX_ACTIVE, transport_recv_upcall_ax25, transport_send_upcall_ax25, transport_state_upcall_ax25, (char *) tp);
+  return open_ax25(&hdr, AX_ACTIVE, 0, transport_recv_upcall_ax25, transport_send_upcall_ax25, transport_state_upcall_ax25, (char *) tp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -229,6 +243,33 @@ static struct tcb *transport_open_tcp(const char *address, struct transport_cb *
 
 /*---------------------------------------------------------------------------*/
 
+/*---------------------------------------------------------------------------*/
+
+struct transport_cb *transport_open_target(struct ax25 *hdr, const struct ax25_opts *opts, int pid, void (*r_upcall)(struct transport_cb *tp, int cnt), void (*t_upcall)(struct transport_cb *tp, int cnt), void (*s_upcall)(struct transport_cb *tp), void *user)
+{
+  struct transport_cb *tp;
+
+  tp = (struct transport_cb *) calloc(1, sizeof(struct transport_cb));
+  tp->type = (pid == PID_FLEXTALK) ? TP_AXFLEXTALK : TP_AX25;
+  tp->pid = pid;
+  tp->r_upcall = r_upcall;
+  tp->t_upcall = t_upcall;
+  tp->s_upcall = s_upcall;
+  tp->user = user;
+  tp->timer.func = transport_close;
+  tp->timer.arg = tp;
+  Net_error = INVALID;
+  if ((tp->cb.axp = open_ax25(hdr, AX_ACTIVE, opts,
+			      transport_recv_upcall_ax25,
+			      transport_send_upcall_ax25,
+			      transport_state_upcall_ax25, (char *) tp)))
+    return tp;
+  free(tp);
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 struct transport_cb *transport_open(const char *protocol, const char *address, void (*r_upcall)(struct transport_cb *tp, int cnt), void (*t_upcall)(struct transport_cb *tp, int cnt), void (*s_upcall)(struct transport_cb *tp), void *user)
 {
   struct transport_cb *tp;
@@ -243,9 +284,11 @@ struct transport_cb *transport_open(const char *protocol, const char *address, v
   Net_error = INVALID;
   if (!strcmp(protocol, "ax25")) {
     tp->type = TP_AX25;
+    tp->pid = PID_NO_L3;
     if ((tp->cb.axp = transport_open_ax25(address, tp))) return tp;
   } else if (!strcmp(protocol, "flextalk")) {
     tp->type = TP_AXFLEXTALK;
+    tp->pid = PID_FLEXTALK;
     if ((tp->cb.axp = transport_open_ax25(address, tp))) return tp;
   } else if (!strcmp(protocol, "netrom")) {
     tp->type = TP_NETROM;
@@ -294,9 +337,8 @@ int transport_send(struct transport_cb *tp, struct mbuf *bp)
     convert_eol(&bp, tp->send_mode, &tp->send_char);
   switch (tp->type) {
   case TP_AX25:
-    return send_ax25(tp->cb.axp, &bp, PID_NO_L3);
   case TP_AXFLEXTALK:
-    return send_ax25(tp->cb.axp, &bp, PID_FLEXTALK);
+    return send_ax25(tp->cb.axp, &bp, tp->pid);
   case TP_NETROM:
     return send_nr(tp->cb.nrp, &bp);
   case TP_TCP:
