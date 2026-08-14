@@ -290,6 +290,36 @@ both callers connected at the same time and each answered under its own
 callsign, while a second listener on DL9SAU-13 got
 `listen: Address already in use`.
 
+## What a spawned service is told
+
+A `listen ax25 add <call> /path/to/program` runs the program with the call on
+its standard input and output, and the circumstances in its environment.  The
+first three names are `axspawn`'s and carry exactly the meaning they carry
+there, so a script written for one world runs in the other:
+
+| | |
+|---|---|
+| `AXCALL=DL1TST-1` | the calling station, with its SSID |
+| `CALL=dl1tst` | the same, lower case and without it - the shape a unix account name takes |
+| `PROTOCOL=AX.25` | the address family; `NET/ROM` for an L4 session |
+| `AX25_DEST=DL9SAU-14` | the callsign that was called |
+| `AX25_PID=text` | or `0xcf`, the protocol id the service was configured for |
+| `AX25_PATH=DB0BBB,DB0CCC` | the digipeaters the call came by |
+| `NETROM_NODE=DB0AAA` | instead of the three `AX25_` ones, on a NET/ROM session |
+| `PATH=/usr/local/bin:/usr/bin:/bin` | ours, not the node's |
+
+Our own names spell the protocol out, which is what tells `AX25_DEST` and
+`NETROM_NODE` apart when either could be meant.  `AXCALL` keeps axspawn's
+spelling even though `AXSRC` would pair better with `AX25_DEST` - it is
+established, and a name that is already in scripts is worth more than a tidy
+pair.
+
+And that is the whole environment.  The node uses `execve()` with a list it
+builds, not `execv()`, so a service run for a caller on the air inherits
+nothing of what the sysop had in the shell that started the node.  Verified
+by pointing a listener at `/usr/bin/env` with a marker variable set in the
+node's own environment: seven names arrive and the marker is not among them.
+
 ## Not built yet
 
 * **The two environment variables should go.**  `AXSOCK_BACKEND` and

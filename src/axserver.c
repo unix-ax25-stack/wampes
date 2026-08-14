@@ -921,9 +921,11 @@ static int axspawn_fd(struct axlisten *lp, const char *user, const char *proto,
 
   char *argv[32];
   char buf[512];
-  char env[4][200];
+  char env[8][200];
+  char *envp[9];
   char *p;
   int argc;
+  int envc = 0;
   int i;
   int sv[2];
   pid_t child;
@@ -938,14 +940,46 @@ static int axspawn_fd(struct axlisten *lp, const char *user, const char *proto,
   argv[argc] = 0;
 
   /* The circumstances go in the environment, where a program can read them
-   * without parsing anything.  Not PATH for the digipeaters, however
-   * tempting: that is the shell's, and a program that cannot find its own
-   * binaries is the least of what would go wrong.
+   * without parsing anything.
+   *
+   * The first three names are axspawn's and mean exactly what they mean
+   * there, so a script written for one world runs in the other: AXCALL is the
+   * calling station with its SSID, CALL the same lower case and without it -
+   * the shape a unix account name takes - and PROTOCOL is the address family.
+   * Ours carry the protocol in the name, which is what tells AX25_DEST and
+   * NETROM_NODE apart when both could be meant.  Not PATH for the
+   * digipeaters, however tempting: that is the shell's, and AX25_PATH says
+   * whose path it is.
    */
-  sprintf(env[0], "USER=%.60s", user);
-  sprintf(env[1], "PROTO=%.20s", proto);
-  sprintf(env[2], "%s=%.60s", strcmp(proto, "netrom") ? "DEST" : "NODE", dest);
-  sprintf(env[3], "AX25_PATH=%.150s", path ? path : "");
+  {
+    int netrom = !strcmp(proto, "netrom");
+    char lower[80];
+    char *dash;
+
+    strncpy(lower, user, sizeof(lower) - 1);
+    lower[sizeof(lower) - 1] = '\0';
+    for (p = lower; *p; p++) *p = Xtolower(*p & 0xff);
+    if ((dash = strchr(lower, '-')) != NULL) *dash = '\0';
+
+    sprintf(env[envc++], "AXCALL=%.60s", user);
+    sprintf(env[envc++], "CALL=%.60s", lower);
+    sprintf(env[envc++], "PROTOCOL=%s", netrom ? "NET/ROM" : "AX.25");
+    if (netrom)
+      sprintf(env[envc++], "NETROM_NODE=%.60s", dest);
+    else {
+      sprintf(env[envc++], "AX25_DEST=%.60s", dest);
+      sprintf(env[envc++], "AX25_PID=%.20s", proto);
+      sprintf(env[envc++], "AX25_PATH=%.150s", path ? path : "");
+    }
+    /* A path of our own, not the one the node was started with.  A service
+     * run for a caller on the air has no business inheriting whatever the
+     * sysop happened to have in his shell - which is what execv() gave it
+     * until now.
+     */
+    sprintf(env[envc++], "PATH=/usr/local/bin:/usr/bin:/bin");
+    for (i = 0; i < envc; i++) envp[i] = env[i];
+    envp[envc] = 0;
+  }
 
   if ((child = fork()) < 0) {
     close(sv[0]);
@@ -959,8 +993,7 @@ static int axspawn_fd(struct axlisten *lp, const char *user, const char *proto,
     dup2(sv[1], 1);
     dup2(sv[1], 2);
     for (fd = 3; fd < FD_SETSIZE; fd++) close(fd);
-    for (i = 0; i < 4; i++) putenv(env[i]);
-    execv(argv[0], argv);
+    execve(argv[0], argv, envp);
     _exit(1);
   }
   close(sv[1]);
