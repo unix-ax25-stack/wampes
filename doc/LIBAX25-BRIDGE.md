@@ -63,8 +63,8 @@ endings, which is right for a human on a terminal and wrong for a program.
 
 ## What the shim does
 
-`libax25/wampes.c`, hooked into `axsock.c` at six places.  Selected with
-`AXSOCK_BACKEND=wampes`.  The outgoing direction:
+`libax25/wampes.c`, hooked into `axsock.c` at six places.  Which ports it
+serves comes out of `wampes.conf`, see below.  The outgoing direction:
 
 * `socket(AF_AX25, …)` returns a placeholder descriptor - an unbound unix
   socket.  It has to be a real descriptor because the application gets the
@@ -101,9 +101,33 @@ Per interface rather than per node because `axports` refuses duplicate
 callsigns, and every WAMPES interface has a callsign of its own anyway.  The
 two fit together without changing the file format.
 
-Where the node listens comes from `WAMPES_SOCKET` for now, a path for a unix
-socket or `host:port` for TCP.  A `wampes.conf` in the shape of `agwpe.conf`
-belongs here once a second node is in play.
+Where each node listens is named in `wampes.conf`, one node per line, in the
+shape `agwpe.conf` has:
+
+    wampes    /usr/local/wampes/sockets/ax25    the node on this machine
+    db0aaa    [fd00::5]:8010                    the club node, over IPv6
+
+That file is also what makes an entry a WAMPES entry.  A port belongs to a
+WAMPES node when the name before the colon appears there, so no name is
+reserved and nothing is guessed from the spelling - and the backend is
+therefore chosen **per port**, not per process.  The choice falls at `bind()`,
+the first moment the port is known: whoever made the descriptor lets go of it
+and the number the application holds does not change.  Kernel, AGWPE and
+WAMPES ports are usable side by side in one process, verified with `call`
+reaching a WAMPES port and an AGWPE port in turn with no environment variable
+set at all.  `AXSOCK_BACKEND` and `WAMPES_SOCKET` remain as overrides for
+trying something out.
+
+A name whose node is configured but which has no `axports` entry of its own -
+`wampes:70cm` where only `wampes` is listed - is accepted, and the node routes
+the call.  It cannot pin the port, because `bind()` hands the library a
+callsign and never a port name; entries sharing a callsign cannot be told
+apart by one, and `axports` refuses duplicates anyway.  Pinning keeps needing
+an entry with a callsign of its own.  A line on standard error says so once
+per name, because whoever typed the suffix meant something by it.  The
+fallback is asked for by the backend through a hook in `ax25_port_ptr()` and
+is not the default: where a suffix selects something, as the AGWPE channel
+does, falling back to the base would quietly use the wrong one.
 
 Three ways to get the name wrong, each caught by the side that can judge it:
 
@@ -132,10 +156,10 @@ needing an entry, and that entry keeps needing a callsign of its own.
 
 ## Running it
 
-A program **linked against** `libax25` needs nothing beyond the environment:
+A program **linked against** `libax25` needs nothing at all beyond the two
+configuration files:
 
-    AXSOCK_BACKEND=wampes WAMPES_SOCKET=/usr/local/wampes/sockets/ax25 \
-        call -r -s DL1TST-1 wampes:hfb DL1AAA DB0BBB DB0CCC
+    call -r -s DL1TST-1 wampes:hfb DL1AAA DB0BBB DB0CCC
 
 `AXSOCK_DEBUG=1` prints the conversation.
 
@@ -268,15 +292,6 @@ callsign, while a second listener on DL9SAU-13 got
 
 ## Not built yet
 
-* **Configuration.**  Still two environment variables: `AXSOCK_BACKEND=wampes`
-  chooses the backend for the whole process and `WAMPES_SOCKET` says where
-  the node listens.  Both should go.  The backend belongs at the port, the
-  way the AGWPE ports already do it - an `axports` entry named `wampes:hfb`
-  says which backend it wants by its own name, and then kernel, AGWPE and
-  WAMPES ports can be used side by side in one process.  `axsock.c` says as
-  much in the comment above `axsock_backend_now()`, which calls the variable
-  a stop-gap.  Where each node listens belongs in a `wampes.conf`, one node
-  per line, in the shape of `agwpe.conf`.
 * **Frame boundaries outgoing.**  The service socket is a byte stream.
   Terminal traffic and text services do not care; FBB's compressed forwarding
   does, because an uncompressed block ends where the frame ends.  Inside
