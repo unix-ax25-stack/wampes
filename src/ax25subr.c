@@ -329,6 +329,7 @@ int errlen)
 {
 
 	char *cp;
+	char *p;
 	char *dest = 0;
 	char *port = 0;
 	char *source = 0;
@@ -395,27 +396,41 @@ int errlen)
 		if (!strncmp(cp, "--", 2))
 			fail("unknown option \"%s\"", cp);
 
+		cp = argv[i];
 		if (!dest) {
 			/* The port may ride in front of the destination */
-			if ((cp = strchr(argv[i], ':'))) {
-				*cp = '\0';
-				port = argv[i];
-				/* "hf1:DB0AAA-8" and "hf1: DB0AAA-8" both - XNET
-				 * takes the space too, and a habit is a habit.
+			if ((p = strchr(cp, ':'))) {
+				*p = '\0';
+				port = cp;
+				/* "hf1:DB0AAA-8" and "hf1: DB0AAA-8" both -
+				 * XNET takes the space too, and a habit is a
+				 * habit.
 				 */
-				if (!cp[1])
+				if (!p[1])
 					continue;
-				dest = cp + 1;
-			} else
-				dest = argv[i];
-			continue;
+				cp = p + 1;
+			}
 		}
 
-		if (hdr->ndigis >= MAXDIGIS)
-			fail("too many digipeaters (at most %d)", MAXDIGIS);
-		if (setcall(hdr->digis[hdr->ndigis], argv[i]))
-			fail("invalid call \"%s\"", argv[i]);
-		hdr->ndigis++;
+		/* Commas separate a path as well as spaces do.  The node world
+		 * writes "DB0AAA-8 DB0BBB DB0CCC", everything outside it
+		 * writes "DB0AAA-8,DB0BBB,DB0CCC", and datagram takes only the
+		 * second because TNC2 says so.  Being strict here would buy
+		 * nothing but a wrong guess about where the operator learned
+		 * to type.
+		 */
+		for (p = strtok(cp, ","); p; p = strtok(NULL, ",")) {
+			if (!dest) {
+				dest = p;
+				continue;
+			}
+			if (hdr->ndigis >= MAXDIGIS)
+				fail("too many digipeaters (at most %d)",
+				     MAXDIGIS);
+			if (setcall(hdr->digis[hdr->ndigis], p))
+				fail("invalid call \"%s\"", p);
+			hdr->ndigis++;
+		}
 	}
 
 	if (!dest)
