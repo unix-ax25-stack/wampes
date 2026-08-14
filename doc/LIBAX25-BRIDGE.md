@@ -292,6 +292,12 @@ callsign, while a second listener on DL9SAU-13 got
 
 ## Not built yet
 
+* **The two environment variables should go.**  `AXSOCK_BACKEND` and
+  `WAMPES_SOCKET` are overrides that nothing needs any more: the files decide.
+  They are useful for trying something out and harmless while the bridge is
+  young, but an override that outlives its reason turns into a way of
+  configuring things twice, and then into a bug report about the file being
+  ignored.  Drop them once the files have been in use for a while.
 * **Frame boundaries outgoing.**  The service socket is a byte stream.
   Terminal traffic and text services do not care; FBB's compressed forwarding
   does, because an uncompressed block ends where the frame ends.  Inside
