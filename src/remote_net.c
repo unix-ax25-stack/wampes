@@ -53,6 +53,10 @@ struct controlblock {
   int dgram;                            /* Every further line is a frame */
   int dgram_pid;
   struct iface *dgram_iface;            /* 0: every AX.25 port */
+  int dgram_fixed;                      /* The header was given once on the
+                                         * command line; every line after it
+                                         * is payload and nothing else */
+  struct ax25 dgram_hdr;
 };
 
 struct cmdtable {
@@ -427,12 +431,16 @@ static int connect_command(struct controlblock *cp)
 static int datagram_command(struct controlblock *cp)
 {
 
-  char *argv[16];
+  char *argv[64];
   char *p;
   char copy[sizeof(cp->buffer)];
+  char err[200];
   int argc;
+  int hasdest;
   int i;
-  long n;
+  int pid;
+  int silent;
+  struct ax25_opts opts;
 
   strcpy(copy, getarg(0, 1));
   for (argc = 0, p = strtok(copy, " \t");
@@ -442,42 +450,74 @@ static int datagram_command(struct controlblock *cp)
 
   cp->dgram_pid = PID_NO_L3;
   cp->dgram_iface = 0;
+  cp->dgram_fixed = 0;
 
+  /* Is there an address, or only a port and some options?  With an address
+   * the line reads exactly like a connect and the header is fixed for the
+   * whole session; without one every line brings its own, in TNC2 form.
+   */
+  hasdest = 0;
   for (i = 0; i < argc; i++) {
-    char *port = 0;
-
-    if (!strcmp(argv[i], "--silent")) {
-      cp->silent = 1;
+    if (!strncmp(argv[i], "--", 2)) {
+      if (!strcmp(argv[i], "--port") || !strcmp(argv[i], "--pid")) i++;
       continue;
     }
-    if (!strcmp(argv[i], "--port")) {
-      if (++i >= argc) { say(cp, "*** --port needs a value"); return -1; }
-      port = argv[i];
-    } else if (!strcmp(argv[i], "--pid")) {
-      if (++i >= argc) { say(cp, "*** --pid needs a value"); return -1; }
-      n = strtol(argv[i], &p, 0);
-      if (*p || n < 0 || n > 255) {
-	say(cp, "*** invalid pid \"%s\"", argv[i]);
+    if (strcmp(argv[i], "via")
+	&& !((p = strchr(argv[i], ':')) && !p[1])) {
+      hasdest = 1;
+      break;
+    }
+  }
+
+  if (hasdest) {
+    if (ax25_parse_target(argc, argv, &cp->dgram_hdr, &opts, &pid, &silent,
+			  err, sizeof(err))) {
+      cp->silent = 0;                   /* a parse error is always worth saying */
+      say(cp, "*** %s", err);
+      return -1;
+    }
+    cp->dgram_iface = opts.iface;
+    cp->dgram_pid = pid;
+    cp->dgram_fixed = 1;
+    if (silent) cp->silent = 1;
+  } else {
+    /* Port and options only.  Read them here rather than lending the parser
+     * a destination it does not need.
+     */
+    for (i = 0; i < argc; i++) {
+      char *port = 0;
+
+      if (!strcmp(argv[i], "--silent")) { cp->silent = 1; continue; }
+      if (!strcmp(argv[i], "--pid")) {
+	long n;
+
+	if (++i >= argc) { say(cp, "*** --pid needs a value"); return -1; }
+	n = strtol(argv[i], &p, 0);
+	if (*p || n < 0 || n > 255) {
+	  say(cp, "*** invalid pid \"%s\"", argv[i]);
+	  return -1;
+	}
+	cp->dgram_pid = (int) n;
+	continue;
+      }
+      if (!strcmp(argv[i], "--port")) {
+	if (++i >= argc) { say(cp, "*** --port needs a value"); return -1; }
+	port = argv[i];
+      } else if ((p = strchr(argv[i], ':')) && !p[1]) {
+	*p = '\0';
+	port = argv[i];
+      } else
+	continue;
+
+      if (!(cp->dgram_iface = if_lookup(port))) {
+	say(cp, "*** no interface \"%s\"", port);
 	return -1;
       }
-      cp->dgram_pid = (int) n;
-      continue;
-    } else if ((p = strchr(argv[i], ':')) && !p[1]) {
-      *p = '\0';
-      port = argv[i];
-    } else {
-      say(cp, "*** unknown word \"%s\"", argv[i]);
-      return -1;
-    }
-
-    if (!(cp->dgram_iface = if_lookup(port))) {
-      say(cp, "*** no interface \"%s\"", port);
-      return -1;
-    }
-    if (cp->dgram_iface->output != ax_output) {
-      say(cp, "*** interface \"%s\" does not carry AX.25", port);
-      cp->dgram_iface = 0;
-      return -1;
+      if (cp->dgram_iface->output != ax_output) {
+	say(cp, "*** interface \"%s\" does not carry AX.25", port);
+	cp->dgram_iface = 0;
+	return -1;
+      }
     }
   }
 
@@ -507,6 +547,16 @@ static void datagram_line(struct controlblock *cp, char *line)
   struct ax25 hdr;
   struct iface *ifp;
   struct mbuf *bp;
+
+  if (cp->dgram_fixed) {
+    /* The header was given once; this line is payload and nothing else, not
+     * even an empty one - a frame carrying only a pid would be noise.
+     */
+    if (!*line) return;
+    hdr = cp->dgram_hdr;
+    payload = line;
+    goto send;
+  }
 
   while (isspace(*line & 0xff)) line++;
   if (!*line) return;                   /* an empty line is not a frame */
@@ -568,6 +618,7 @@ static void datagram_line(struct controlblock *cp, char *line)
   }
   hdr.cmdrsp = LAPB_COMMAND;
 
+send:
   if (cp->dgram_iface) {
     bp = qdata(payload, (uint) strlen(payload));
     ax_send_ui(cp->dgram_iface, &hdr, cp->dgram_pid, &bp);
