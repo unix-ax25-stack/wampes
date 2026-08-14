@@ -344,9 +344,13 @@ process is not true of anything it starts in turn.
 `ax25d` builds that environment rather than passing its own - a service run
 for a caller on the air has no business inheriting what the daemon was
 started with, which is why its `execve()` passed `NULL` to begin with.  One
-consequence to know before deploying: **the child does not get `LD_PRELOAD`
-or `DYLD_*` either**, so the shim has to be the installed library, not one
-pointed at by a variable.  That caught this very test out.
+exception, and it is necessary: the variable that says *which library we are*
+is passed on when it is set, because a station running the shim by preloading
+it would otherwise lose it at exactly this edge and the child would find no
+AX.25 at all.  Only the names of the platform it was built for - `LD_PRELOAD`
+and `LD_LIBRARY_PATH`, or the `DYLD_` ones on macOS - since the other set
+would be noise in the environment of every service.  That omission caught
+this very test out before it was fixed.
 
 Verified through the whole chain - a caller on one node, the call carried
 over AX.25 to another, `ax25d` accepting it through the WAMPES backend, and
