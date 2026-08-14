@@ -477,6 +477,12 @@ static int datagram_command(struct controlblock *cp)
       return -1;
     }
     cp->dgram_iface = opts.iface;
+    /* No source of its own: leave it empty and let ax_send_ui() stamp the
+     * callsign of the port it actually goes out of - the same rule as for a
+     * connect, and it does the right thing when a beacon leaves by several
+     * ports at once, each under its own callsign.
+     */
+    if (!opts.ownsource) memset(cp->dgram_hdr.source, 0, AXALEN);
     cp->dgram_pid = pid;
     cp->dgram_fixed = 1;
     if (silent) cp->silent = 1;
