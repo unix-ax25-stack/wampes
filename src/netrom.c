@@ -349,6 +349,25 @@ static int link_valid(struct node *pn, struct link *pl)
 
 /*---------------------------------------------------------------------------*/
 
+/* Is this callsign a node we have a working link with?  Asked before a text
+ * service is started on an incoming link: a neighbour called to speak L3, not
+ * to be greeted.  See axserv_connected().
+ */
+
+int nr_is_neighbour(const uint8 *call)
+{
+
+  struct link *pl;
+  struct node *pn;
+
+  if (!mynode || !(pn = nodeptr(call, 0)) || pn == mynode) return 0;
+  for (pl = mynode->links; pl; pl = pl->next)
+    if (pl->node == pn) return link_valid(mynode, pl);
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void calculate_hopcnts(struct node *pn)
 {
 

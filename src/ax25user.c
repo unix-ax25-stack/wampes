@@ -40,6 +40,17 @@ const struct ax25_opts *opts    /* per-connection choices, 0 for the usual */
 			return NULL;
 		}
 		build_path(axp,NULL,hdr,0,opts);
+		/* No port to send on: axroute() knew no route and the caller
+		 * named none.  Without this the link sits in SETUP forever
+		 * with no interface - no SABM ever leaves, so nothing times
+		 * out either, and the caller waits for an answer that cannot
+		 * come.  A refusal with a reason is the whole point.
+		 */
+		if(axp->iface == NULL){
+			del_ax25(axp);
+			Net_error = NO_ROUTE;
+			return NULL;
+		}
 	}
 
 	switch(mode){

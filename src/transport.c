@@ -247,7 +247,7 @@ struct transport_cb *transport_open_target(struct ax25 *hdr, const struct ax25_o
   struct transport_cb *tp;
 
   tp = (struct transport_cb *) calloc(1, sizeof(struct transport_cb));
-  tp->type = (pid == PID_FLEXTALK) ? TP_AXFLEXTALK : TP_AX25;
+  tp->type = TP_AX25;
   tp->pid = pid;
   tp->r_upcall = r_upcall;
   tp->t_upcall = t_upcall;
@@ -284,10 +284,6 @@ struct transport_cb *transport_open(const char *protocol, const char *address, v
     tp->type = TP_AX25;
     tp->pid = PID_NO_L3;
     if ((tp->cb.axp = transport_open_ax25(address, tp))) return tp;
-  } else if (!strcmp(protocol, "flextalk")) {
-    tp->type = TP_AXFLEXTALK;
-    tp->pid = PID_FLEXTALK;
-    if ((tp->cb.axp = transport_open_ax25(address, tp))) return tp;
   } else if (!strcmp(protocol, "netrom")) {
     tp->type = TP_NETROM;
     if ((tp->cb.nrp = transport_open_netrom(address, tp))) return tp;
@@ -309,7 +305,6 @@ int transport_recv(struct transport_cb *tp, struct mbuf **bpp, int cnt)
   if dur_timer(&tp->timer) start_timer(&tp->timer);
   switch (tp->type) {
   case TP_AX25:
-  case TP_AXFLEXTALK:
     *bpp = recv_axservice(tp->svc, cnt);
     result = len_p(*bpp);
     break;
@@ -335,7 +330,6 @@ int transport_send(struct transport_cb *tp, struct mbuf *bp)
     convert_eol(&bp, tp->send_mode, &tp->send_char);
   switch (tp->type) {
   case TP_AX25:
-  case TP_AXFLEXTALK:
     return send_ax25(tp->cb.axp, &bp, tp->pid);
   case TP_NETROM:
     return send_nr(tp->cb.nrp, &bp);
@@ -351,7 +345,6 @@ int transport_send_space(struct transport_cb *tp)
 {
   switch (tp->type) {
   case TP_AX25:
-  case TP_AXFLEXTALK:
     return space_ax25(tp->cb.axp);
   case TP_NETROM:
     return space_nr(tp->cb.nrp);
@@ -377,7 +370,6 @@ void transport_close(void *arg)
 
   switch (tp->type) {
   case TP_AX25:
-  case TP_AXFLEXTALK:
     disc_ax25(tp->cb.axp);
     break;
   case TP_NETROM:
@@ -395,7 +387,6 @@ int transport_del(struct transport_cb *tp)
 {
   switch (tp->type) {
   case TP_AX25:
-  case TP_AXFLEXTALK:
     del_ax25(tp->cb.axp);
     break;
   case TP_NETROM:

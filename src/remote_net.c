@@ -252,6 +252,7 @@ static const char *why(void)
   case NO_MEM:     return "nomem";
   case NOPROTO:    return "noproto";
   case INVALID:    return "invalid";
+  case NO_ROUTE:   return "no route";
   default:         return "failed";
   }
 }
@@ -398,7 +399,11 @@ static int connect_command(struct controlblock *cp)
       cp->tp->cb.axp && cp->tp->cb.axp->iface ?
       cp->tp->cb.axp->iface->name : "routed");
 
-  if (pid == PID_FLEXTALK) cp->binary = 1;
+  /* Anything that is not plain text is a protocol, and EOL conversion would
+   * corrupt it - flextalk was only ever the one case somebody happened to
+   * hit.  The listen side has said the same all along.
+   */
+  if (pid != PID_NO_L3) cp->binary = 1;
   if (!cp->binary) {
     cp->tp->recv_mode = EOL_LF;
     cp->tp->send_mode = EOL_CR;

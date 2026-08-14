@@ -21,6 +21,7 @@ extern char Inet_eol[];
 #define WOULDBLK        5       /* Would block */
 #define NOPROTO         6       /* Protocol or mode not supported */
 #define INVALID         7       /* Invalid arguments */
+#define NO_ROUTE        8       /* No route, and no port was named */
 
 /* Codes for the tcp_open call */
 #define TCP_PASSIVE     0

@@ -109,6 +109,18 @@ static struct peer *find_peer(const uint8 *call)
 
 /*---------------------------------------------------------------------------*/
 
+/* Is this callsign a FlexNet link partner?  Asked before a text service is
+ * started on an incoming link: a partner called to speak L3, not to be
+ * greeted.  See axserv_connected().
+ */
+
+int flexnet_is_peer(const uint8 *call)
+{
+	return find_peer(call) != NULL;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static struct dest *find_dest(const uint8 *call)
 {
 	struct dest *pd;

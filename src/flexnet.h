@@ -16,5 +16,6 @@
 #endif
 
 void flexnet_input(struct iface *iface, struct ax25_cb *axp, uint8 *src, uint8 *destination, struct mbuf **bpp, int mcast);
+int flexnet_is_peer(const uint8 *call);
 
 #endif /* _FLEXNET_H */

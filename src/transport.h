@@ -25,8 +25,7 @@ enum e_transporteol {
 enum e_transporttype {
   TP_AX25,
   TP_NETROM,
-  TP_TCP,
-  TP_AXFLEXTALK
+  TP_TCP
 };
 
 struct ax25;

@@ -18,6 +18,7 @@
 #include "hpux.h"
 #include "buildsaddr.h"
 #include "netrom.h"
+#include "flexnet.h"
 #include "transport.h"
 #include "login.h"
 
@@ -1003,10 +1004,25 @@ struct axservice *axserv_start(struct ax25_cb *axp, int pid)
 
 void axserv_connected(struct ax25_cb *axp)
 {
+
   struct axlisten *lp;
+  int partner;
+
+  /* Unless the caller is a node we route with.  It called to speak NET/ROM
+   * or FlexNet, and a greeting would land inside its L3 session - the same
+   * hazard that makes "wait" the default for every pid but text, except
+   * that here it is the text entry doing the damage.  Asking who called is
+   * better than asking the sysop to remember a --wait on every port
+   * callsign.  Nothing is taken away: if the neighbour really does send
+   * text, that frame still starts the service, it just loses the head
+   * start.  A sysop connecting from a linked node therefore still reaches
+   * the mailbox, one keystroke later.
+   */
+  partner = nr_is_neighbour(axp->hdr.dest) || flexnet_is_peer(axp->hdr.dest);
 
   for (lp = Axlisten; lp; lp = lp->next)
-    if (!lp->netrom && !lp->wait && addreq(lp->call, axp->hdr.source))
+    if (!lp->netrom && !lp->wait && !partner
+	&& addreq(lp->call, axp->hdr.source))
       (void) axserv_start(axp, lp->pid);
 }
 
