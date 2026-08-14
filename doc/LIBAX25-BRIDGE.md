@@ -38,9 +38,19 @@ and ::1 after `start axtcp [<port>]`, default 8010, which is off unless
 It speaks lines until the link stands and raw bytes afterwards:
 
     -> binary
+    -> handover
     -> connect hfb:DL1AAA via DB0BBB,DB0CCC < DL1TST-1
     <- link setup (hfb)...
-    <- *** connected to DL1AAA
+    <- *** connected to DL1AAA          with a descriptor beside it
+
+`handover` asks for a descriptor instead of letting this connection become
+the pipe, and it exists for one reason: the connection belongs to the client,
+which made it, so we do not get to choose its type - it is a stream, and
+frames arrive packed as full as they will go.  A pair the node makes itself
+can carry the boundaries.  The answer and the descriptor travel in one
+`sendmsg`, so there is nothing to match up, and the command channel stays a
+command channel afterwards.  A node that does not know the word answers
+nothing to it and the connection is the session, as it was before.
 
 Every line that does not begin with `***` is progress and may be ignored or
 shown to the operator.  Exactly one line begins with `***`, and it is the
@@ -369,16 +379,6 @@ and is done.
   young, but an override that outlives its reason turns into a way of
   configuring things twice, and then into a bug report about the file being
   ignored.  Drop them once the files have been in use for a while.
-* **Frame boundaries outgoing.**  The service socket is a byte stream.
-  Terminal traffic and text services do not care; FBB's compressed forwarding
-  does, because an uncompressed block ends where the frame ends.  Inside
-  WAMPES the boundary now survives all the way to the pipe - the receive
-  queue holds frames rather than bytes, and `SOCK_SEQPACKET` is used wherever
-  the system has it on `AF_UNIX` (Linux does, macOS does not).  The incoming
-  direction already gets it for free, because the descriptor WAMPES passes is
-  one it made itself.  Outgoing wants the same treatment: a `connect` that
-  hands back a descriptor instead of turning the command connection into the
-  pipe.
 * **Datagrams inbound.**  `datagram` sends UI frames; nothing pushes received
   ones back, so `recvfrom()` has no source yet.
 * **A non-blocking `connect()`** returns when the link is up or refused, not
