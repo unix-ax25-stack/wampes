@@ -152,7 +152,15 @@ void *p)
 		ftpccr(Current->cb.ftp->control,0);
 		break;
 	case AX25TNC:
-		axclient_recv_upcall(Current->cb.ax25,0);
+		{
+			/* The upcalls take the consumer now, not the link.
+			 * A keyboard session has exactly one, on PID text.
+			 */
+			struct axservice *sp;
+
+			if((sp = find_axservice(Current->cb.ax25,PID_NO_L3)) != NULL)
+				axclient_recv_upcall(sp,0);
+		}
 		break;
 	case FINGER:
 		fingcli_rcv(Current->cb.finger->tcb,0) ;
@@ -408,8 +416,13 @@ void *p)
 			/* All set, kick transmit upcall to get things rolling */
 			switch(Current->type){
 			case AX25TNC:
-				axp = Current->cb.ax25;
-				axclient_send_upcall(axp, space_ax25(axp));
+				{
+					struct axservice *sp;
+
+					axp = Current->cb.ax25;
+					if((sp = find_axservice(axp,PID_NO_L3)) != NULL)
+						axclient_send_upcall(sp, space_axservice(sp));
+				}
 				break;
 			case NRSESSION:
 				cb = Current->cb.netrom;
