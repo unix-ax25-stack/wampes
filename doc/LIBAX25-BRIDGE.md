@@ -73,7 +73,11 @@ endings, which is right for a human on a terminal and wrong for a program.
 
 ## What the shim does
 
-`libax25/wampes.c`, hooked into `axsock.c` at six places.  Which ports it
+A program asks for a protocol id through the third argument of `socket()`,
+which kernel AX.25 ignored and every program passes as 0; a non-zero one is
+the pid, both for a claim and for a connect.
+
+`libax25/wampes.c`, hooked into `axsock.c` at seven places.  Which ports it
 serves comes out of `wampes.conf`, see below.  The outgoing direction:
 
 * `socket(AF_AX25, …)` returns a placeholder descriptor - an unbound unix
@@ -381,7 +385,20 @@ and is done.
   ignored.  Drop them once the files have been in use for a while.
 * **Datagrams inbound.**  `datagram` sends UI frames; nothing pushes received
   ones back, so `recvfrom()` has no source yet.
-* **A non-blocking `connect()`** returns when the link is up or refused, not
-  `EINPROGRESS`.  Neither `call` nor `ax25d` asks for one.
-* **The claim is always pid text.**  A program cannot ask to be given some
-  other protocol id, although WAMPES would allow it.
+* **A non-blocking `connect()`** is deliberately not offered, rather than
+  merely missing.  `connect()` returns when the link is up or refused; it
+  never answers `EINPROGRESS`.
+
+  To answer it honestly the descriptor would have to become writable exactly
+  when the link comes up, and it cannot: before the call it is a placeholder
+  and after it a socketpair end, writable at once either way.  Signalling
+  through it would mean intercepting `poll()` and `select()` - putting
+  ourselves back on the data path, which is the one thing that makes this
+  design worth having.
+
+  Nothing asks for it.  Every program in the suite that sets `O_NONBLOCK`
+  sets it *after* connecting, for its I/O loop - `call.c:2124`,
+  `axspawn.c:1769` - and that works here already, because by then the
+  descriptor is a real socket and `fcntl()` is not intercepted at all.  A
+  caller that must not block while a link comes up over the air should fork,
+  which is what it would do for a thirty-second wait regardless.
