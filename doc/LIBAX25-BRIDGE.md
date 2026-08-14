@@ -317,15 +317,30 @@ callsign, while a second listener on DL9SAU-13 got
   they can be answered for it too.  Verified - `getsockname` gives
   `DL9SAU-13` and `getpeername` `DL1TST-1` on an accepted call.
 
-  What is left is the case that made this urgent.  `axspawn` runs after
-  `exec`, as a child, with the session on descriptor 0, and in that process
-  the table is empty - it knows nothing about an inherited descriptor.
-  Kernel AX.25 managed because the descriptor really was an AX.25 socket;
-  over a socketpair it cannot be.  The way through is for `ax25d` to pass the
-  two addresses to the child and the shim to pick them up there, which is
-  exactly what `AXSOCK_INHERIT` was meant for and never did - `ax25d.c:1379`
-  sets it and line 1428 `execve()`s with an empty environment, so nothing
-  ever read it.  Here it would have its first real purpose.
+  What is left is the case that made this urgent, and it is one edge:
+  **ax25d to axspawn**.  `axspawn` runs after `exec`, as a child, with the
+  session on descriptor 0, and in that process the table is empty - it knows
+  nothing about an inherited descriptor.  Kernel AX.25 managed because the
+  descriptor really was an AX.25 socket; over a socketpair it cannot be.
+
+  It fails safely, which is worth knowing before anybody tries it: `axspawn`
+  switches on `sax25_family` and a unix socket lands in its `default` arm,
+  so it refuses with *"peer is not an AX.25, NET/ROM or Rose socket"* rather
+  than inventing a callsign.
+
+  `axspawn` does build an environment - `AXCALL`, `CALL`, `PROTOCOL`, `HOME`,
+  `USER`, `SHELL`, `PATH` - but for the shell it starts, and it still learns
+  the callsign itself from `getpeername(0)`.  It has to: `ax25d` starts it
+  with `execve(raxl->exec, argv, NULL)`, so `axspawn` runs with no
+  environment at all, which is also why it assembles one from nothing.
+
+  So the way through is for `ax25d` to hand the two addresses to the child -
+  which means giving that `execve()` a real `envp` - and for the shim to pick
+  them up there and answer for descriptor 0.  That is what `AXSOCK_INHERIT`
+  was for.  Note it is **not** lying dead in the tree any more: it was taken
+  out deliberately (see the comment at `ax25d.c:1369`) because the AGWPE
+  peer-reader path made it unnecessary.  The WAMPES path needs something like
+  it again, this time with an environment that survives the exec.
 * **A non-blocking `connect()`** returns when the link is up or refused, not
   `EINPROGRESS`.  Neither `call` nor `ax25d` asks for one.
 * **The claim is always pid text.**  A program cannot ask to be given some
