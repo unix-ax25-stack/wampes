@@ -229,6 +229,13 @@ struct axservice *open_axservice(struct ax25_cb *axp,int pid,
  */
 struct axservice *axserv_start(struct ax25_cb *axp,int pid);
 void axserv_connected(struct ax25_cb *axp);
+
+/* NET/ROM: one entry, taking every incoming L4 session.  Returns non-zero if
+ * it took this one, so the node's own login stays out of the way.
+ */
+struct circuit;
+int nrserv_listen_start(struct circuit *pc);
+void nrserv_listen_close(struct circuit *pc);
 struct axservice *find_axservice(struct ax25_cb *axp,int pid);
 struct mbuf *recv_axservice(struct axservice *sp,uint cnt);
 int space_axservice(struct axservice *sp);

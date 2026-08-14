@@ -1498,11 +1498,21 @@ static void nrserv_close_upcall(void *arg)
 static void nrserv_state_upcall(struct circuit *pc, enum netrom_state oldstate, enum netrom_state newstate)
 {  switch (newstate) {
   case NR4STCON:
+    /* A configured target first - "listen netrom add ..." - and only then the
+     * node's own login, which is what an incoming L4 session always got.
+     */
+    if (nrserv_listen_start(pc)) break;
     pc->user = (char *) login_open(nr_addr2str(pc), "NETROM", nrserv_send_login_upcall, nrserv_close_upcall, pc);
     if (!pc->user) close_nr(pc);
     break;
   case NR4STDISC:
-    login_close((struct login_cb *) pc->user);
+    /* Which of the two is behind this circuit?  Its own receive upcall says
+     * so, so there is nothing to remember.
+     */
+    if (pc->r_upcall == nrserv_recv_upcall)
+      login_close((struct login_cb *) pc->user);
+    else
+      nrserv_listen_close(pc);
     del_nr(pc);
     break;
   default:

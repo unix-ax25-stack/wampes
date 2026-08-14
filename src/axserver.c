@@ -17,6 +17,7 @@
 #include "iface.h"
 #include "hpux.h"
 #include "buildsaddr.h"
+#include "netrom.h"
 #include "transport.h"
 #include "login.h"
 
@@ -438,7 +439,12 @@ static void axserv_close_upcall(void *arg)
  */
 
 struct axpipe {
+  /* One of these two: an AX.25 consumer, or a NET/ROM circuit.  The rest of
+   * the machinery is the same for both, so it is written once and the four
+   * operations that differ are wrapped below.
+   */
   struct axservice *sp;
+  struct circuit *pc;
   int fd;
   struct mbuf *sndq;                    /* waiting for the socket */
   int connecting;                       /* connect() not finished yet */
@@ -459,6 +465,40 @@ struct axpipe {
  */
 #define AXPIPE_HIGHWATER 32768
 
+static struct mbuf *axpipe_recv(struct axpipe *pp, uint cnt)
+{
+  struct mbuf *bp = 0;
+
+  if (pp->sp) return recv_axservice(pp->sp, cnt);
+  if (pp->pc) recv_nr(pp->pc, &bp, (int) cnt);
+  return bp;
+}
+
+static int axpipe_space(struct axpipe *pp)
+{
+  if (pp->sp) return space_axservice(pp->sp);
+  if (pp->pc) return space_nr(pp->pc);
+  return 0;
+}
+
+static void axpipe_put(struct axpipe *pp, struct mbuf **bpp)
+{
+  if (pp->sp) send_axservice(pp->sp, bpp);
+  else if (pp->pc) send_nr(pp->pc, bpp);
+  else free_p(bpp);
+}
+
+static void axpipe_hangup(struct axpipe *pp)
+{
+  if (pp->sp) close_axservice(pp->sp);
+  else if (pp->pc) close_nr(pp->pc);
+}
+
+static int axpipe_alive(struct axpipe *pp)
+{
+  return pp->sp != 0 || pp->pc != 0;
+}
+
 static void axpipe_close(struct axpipe *pp);
 static void axpipe_readable(void *arg);
 static void axpipe_writable(void *arg);
@@ -472,20 +512,27 @@ static void axpipe_pump(struct axpipe *pp);
  * without bound.
  */
 
-static void axpipe_recv_upcall(struct axservice *sp, int cnt)
+static void axpipe_pull(struct axpipe *pp, int cnt)
 {
-  struct axpipe *pp = (struct axpipe *) sp->user;
   struct mbuf *bp;
   int room;
 
-  if (!pp) return;
+  if (!axpipe_alive(pp)) return;
   room = AXPIPE_HIGHWATER - len_p(pp->sndq);
   if (room <= 0) return;                /* leave it where it is */
-  if ((bp = recv_axservice(sp, (uint) (cnt < room ? cnt : room)))) {
-    if (pp->ascii) convert_eol(&bp, EOL_LF, &pp->recv_char);
-    append(&pp->sndq, &bp);
-  }
+  if (!(bp = axpipe_recv(pp, (uint) (cnt < room ? cnt : room))))
+    return;                             /* nothing there - and pumping now
+					 * would call us straight back */
+  if (pp->ascii) convert_eol(&bp, EOL_LF, &pp->recv_char);
+  append(&pp->sndq, &bp);
   axpipe_pump(pp);
+}
+
+static void axpipe_recv_upcall(struct axservice *sp, int cnt)
+{
+  struct axpipe *pp = (struct axpipe *) sp->user;
+
+  if (pp) axpipe_pull(pp, cnt);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -526,8 +573,8 @@ static void axpipe_readable(void *arg)
   int n;
   int room;
 
-  if (!pp->sp) return;
-  room = space_axservice(pp->sp);
+  if (!axpipe_alive(pp)) return;
+  room = axpipe_space(pp);
   if (room <= 0) {
     off_read(pp->fd);                   /* the link will call us back */
     return;
@@ -536,11 +583,11 @@ static void axpipe_readable(void *arg)
   if ((n = read(pp->fd, buf, (size_t) room)) > 0) {
     bp = qdata(buf, (uint) n);
     if (pp->ascii) convert_eol(&bp, EOL_CR, &pp->send_char);
-    send_axservice(pp->sp, &bp);
+    axpipe_put(pp, &bp);
     return;
   }
   if (n < 0 && (errno == EAGAIN || errno == EINTR)) return;
-  close_axservice(pp->sp);              /* end of file: let the link go */
+  axpipe_hangup(pp);                    /* end of file: let the link go */
   off_read(pp->fd);
 }
 
@@ -556,7 +603,7 @@ static void axpipe_writable(void *arg)
 
     off_write(pp->fd);
     if (getsockopt(pp->fd, SOL_SOCKET, SO_ERROR, (void *) &err, &len) || err) {
-      if (pp->sp) close_axservice(pp->sp);
+      axpipe_hangup(pp);
       axpipe_close(pp);
       return;
     }
@@ -594,15 +641,20 @@ static void axpipe_pump(struct axpipe *pp)
       on_write(pp->fd, axpipe_writable, pp);
       return;
     }
-    if (pp->sp) close_axservice(pp->sp);
+    axpipe_hangup(pp);
     return;
   }
   off_write(pp->fd);
   /* Room again: pull whatever the link has been holding, which is what lets
    * recv_ax25() clear the busy condition and reopen the window.
    */
+  /* Room again: pull whatever the connection has been holding, which is what
+   * lets the window reopen.
+   */
   if (pp->sp && pp->sp->rxq)
-    axpipe_recv_upcall(pp->sp, len_p(pp->sp->rxq));
+    axpipe_pull(pp, len_p(pp->sp->rxq));
+  else if (pp->pc)
+    axpipe_pull(pp, AXPIPE_HIGHWATER);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -616,6 +668,7 @@ static void axpipe_close(struct axpipe *pp)
   }
   free_q(&pp->sndq);
   if (pp->sp) pp->sp->user = 0;
+  if (pp->pc) pp->pc->user = 0;
   free(pp);
 }
 
@@ -648,12 +701,11 @@ static void axpipe_announce(struct axpipe *pp, struct ax25_cb *axp)
 
 /*---------------------------------------------------------------------------*/
 
-static struct axservice *axpipe_open(struct ax25_cb *axp,
-				     struct axlisten *lp, int fd)
+static struct axpipe *axpipe_new(struct axlisten *lp, int fd)
 {
+
   int addrlen;
   struct axpipe *pp;
-  struct axservice *sp;
   struct sockaddr *addr = 0;
 
   /* fd >= 0: already connected to something, a program we just started.
@@ -679,7 +731,30 @@ static struct axservice *axpipe_open(struct ax25_cb *axp,
     }
     pp->connecting = 1;                 /* the node must not wait here */
   }
+  return pp;
+}
 
+/*---------------------------------------------------------------------------*/
+
+static void axpipe_start(struct axpipe *pp)
+{
+  if (pp->connecting)
+    on_write(pp->fd, axpipe_writable, pp);
+  else {
+    on_read(pp->fd, axpipe_readable, pp);
+    axpipe_pump(pp);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static struct axservice *axpipe_open(struct ax25_cb *axp, struct axlisten *lp,
+				     int fd)
+{
+  struct axpipe *pp;
+  struct axservice *sp;
+
+  if (!(pp = axpipe_new(lp, fd))) return NULL;
   if (!(sp = open_axservice(axp, lp->pid, axpipe_recv_upcall,
 			    axpipe_send_upcall, axpipe_state_upcall, pp))) {
     axpipe_close(pp);
@@ -687,43 +762,25 @@ static struct axservice *axpipe_open(struct ax25_cb *axp,
   }
   pp->sp = sp;
   if (!lp->silent) axpipe_announce(pp, axp);
-
-  if (pp->connecting)
-    on_write(fd, axpipe_writable, pp);
-  else {
-    on_read(fd, axpipe_readable, pp);
-    axpipe_pump(pp);
-  }
+  axpipe_start(pp);
   return sp;
 }
 
-/*---------------------------------------------------------------------------*/
 
-/* What serves this protocol id on this link?  Asked once, when the first
- * frame for it arrives and nothing is attached yet.  Returning nothing means
- * the node's own protocols get their turn, and after them the frame is
- * discarded - which is what happens to any protocol id nobody wants.
- */
-
-/* Start a program and pipe the session through it.  A socketpair rather than
- * pipes, so that one descriptor carries both directions and the rest of the
- * machinery is the same as for a dialled address.
- */
-
-static struct axservice *axspawn_open(struct ax25_cb *axp, struct axlisten *lp)
+static int axspawn_fd(struct axlisten *lp, const char *user, const char *proto,
+		      const char *dest, const char *path)
 {
 
   char *argv[32];
   char buf[512];
-  char call[AXBUF];
-  char env[4][160];
+  char env[4][200];
   char *p;
   int argc;
   int i;
   int sv[2];
   pid_t child;
 
-  if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) return NULL;
+  if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) return -1;
 
   strcpy(buf, lp->target);
   for (argc = 0, p = strtok(buf, " \t");
@@ -737,20 +794,15 @@ static struct axservice *axspawn_open(struct ax25_cb *axp, struct axlisten *lp)
    * tempting: that is the shell's, and a program that cannot find its own
    * binaries is the least of what would go wrong.
    */
-  sprintf(env[0], "USER=%s", pax25(call, axp->hdr.dest));
-  sprintf(env[1], "PROTO=%s", lp->pid == PID_NO_L3 ? "text" : "pid");
-  sprintf(env[2], "DEST=%s", pax25(call, axp->hdr.source));
-  env[3][0] = '\0';
-  strcat(env[3], "AX25_PATH=");
-  for (i = 0; i < axp->hdr.ndigis; i++) {
-    if (i) strcat(env[3], ",");
-    strcat(env[3], pax25(call, axp->hdr.digis[i]));
-  }
+  sprintf(env[0], "USER=%.60s", user);
+  sprintf(env[1], "PROTO=%.20s", proto);
+  sprintf(env[2], "%s=%.60s", strcmp(proto, "netrom") ? "DEST" : "NODE", dest);
+  sprintf(env[3], "AX25_PATH=%.150s", path ? path : "");
 
   if ((child = fork()) < 0) {
     close(sv[0]);
     close(sv[1]);
-    return NULL;
+    return -1;
   }
   if (child == 0) {
     int fd;
@@ -764,10 +816,89 @@ static struct axservice *axspawn_open(struct ax25_cb *axp, struct axlisten *lp)
     _exit(1);
   }
   close(sv[1]);
-  return axpipe_open(axp, lp, sv[0]);
+  return sv[0];
 }
 
 /*---------------------------------------------------------------------------*/
+
+/* The same thing for a NET/ROM circuit.  There is no callsign to listen for
+ * and no protocol id - a NET/ROM connect reaches the node, not a service on
+ * it - so there is one entry and it takes every incoming L4 session.
+ */
+
+static void nrpipe_recv_upcall(struct circuit *pc, int cnt)
+{
+  struct axpipe *pp = (struct axpipe *) pc->user;
+
+  if (pp) axpipe_pull(pp, cnt);
+}
+
+static void nrpipe_send_upcall(struct circuit *pc, int cnt)
+{
+  struct axpipe *pp = (struct axpipe *) pc->user;
+
+  (void) cnt;
+  if (pp && !pp->connecting) on_read(pp->fd, axpipe_readable, pp);
+}
+
+static void nrpipe_close_upcall(struct circuit *pc)
+{
+  struct axpipe *pp = (struct axpipe *) pc->user;
+
+  if (pp) {
+    pc->user = 0;
+    pp->pc = 0;
+    axpipe_close(pp);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+int nrserv_listen_start(struct circuit *pc)
+{
+
+  char buf[160];
+  int fd = -1;
+  struct axlisten *lp;
+  struct axpipe *pp;
+
+  if (!(lp = axlisten_netrom())) return 0;      /* nothing configured */
+  if (lp->kind == LK_LOGIN) return 0;           /* the node's own login */
+
+  if (lp->kind == LK_PROGRAM) {
+    char user[AXBUF], node[AXBUF];
+
+    pax25(user, pc->cuser);
+    pax25(node, pc->node);
+    if ((fd = axspawn_fd(lp, user, "netrom", node, 0)) < 0) return 0;
+  }
+
+  if (!(pp = axpipe_new(lp, fd))) return 0;
+  pp->pc = pc;
+  pc->user = (char *) pp;
+  pc->r_upcall = nrpipe_recv_upcall;
+  pc->t_upcall = nrpipe_send_upcall;
+
+  if (!lp->silent) {
+    struct mbuf *bp;
+
+    sprintf(buf, "*** incoming netrom %s\n", nr_addr2str(pc));
+    bp = qdata(buf, (uint) strlen(buf));
+    append(&pp->sndq, &bp);
+  }
+  axpipe_start(pp);
+  return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void nrserv_listen_close(struct circuit *pc)
+{
+  nrpipe_close_upcall(pc);
+}
+
+/*---------------------------------------------------------------------------*/
+
 
 static struct axservice *axserv_login_open(struct ax25_cb *axp)
 {
@@ -823,7 +954,23 @@ struct axservice *axserv_start(struct ax25_cb *axp, int pid)
     sp = axpipe_open(axp, lp, -1);
     break;
   case LK_PROGRAM:
-    sp = axspawn_open(axp, lp);
+    {
+      char user[AXBUF], dest[AXBUF], path[160];
+      int i, fd;
+
+      pax25(user, axp->hdr.dest);
+      pax25(dest, axp->hdr.source);
+      path[0] = '\0';
+      for (i = 0; i < axp->hdr.ndigis; i++) {
+	char one[AXBUF];
+
+	if (i) strcat(path, ",");
+	strcat(path, pax25(one, axp->hdr.digis[i]));
+      }
+      if ((fd = axspawn_fd(lp, user, pid == PID_NO_L3 ? "text" : "pid",
+			   dest, path)) >= 0)
+	sp = axpipe_open(axp, lp, fd);
+    }
     break;
   }
   if (sp) return sp;
