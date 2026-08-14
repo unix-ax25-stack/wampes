@@ -228,6 +228,7 @@ struct axservice *open_axservice(struct ax25_cb *axp,int pid,
  * attached to: the configuration decides what, if anything, to attach.
  */
 struct axservice *axserv_start(struct ax25_cb *axp,int pid);
+void axserv_connected(struct ax25_cb *axp);
 struct axservice *find_axservice(struct ax25_cb *axp,int pid);
 struct mbuf *recv_axservice(struct axservice *sp,uint cnt);
 int space_axservice(struct axservice *sp);
@@ -277,6 +278,6 @@ void axserv_open(struct ax25_cb *axp,int cnt);
  * them, and axserv_open() has to hand the session on rather than to a login.
  */
 int axlisten_active(const uint8 *call);
-int doaxlisten(int argc,char *argv[],void *p);
+int dolisten(int argc,char *argv[],void *p);
 
 #endif  /* _LAPB_H */

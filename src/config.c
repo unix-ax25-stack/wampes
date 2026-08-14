@@ -83,6 +83,8 @@ struct cmds Cmds[] = {
 	{ "ip",           doip,           0, 0, NULL },
 	{ "kick",         dokick,         0, 0, NULL },
 	{ "ipfilter",     doipfilter,     0, 0, NULL },
+	{ "listen",       dolisten,       0, 0,
+	  "listen [ax25|netrom] [add|drop] ..." },
 	{ "log",          dolog,          0, 0, NULL },
 	{ "login",        dologin,        0, 0, NULL },
 	{ "memory",       domem,          0, 0, NULL },

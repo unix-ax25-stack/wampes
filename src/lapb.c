@@ -137,9 +137,9 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 				 * that was called; the header is already
 				 * turned round here.
 				 */
-				if((axr && axr->jumpstart)
-				   || axlisten_active(axp->hdr.source))
+				if(axr && axr->jumpstart)
 					axserv_start(axp,PID_NO_L3);
+				axserv_connected(axp);
 #ifdef	AX25_VJCOMP
                             /* MW: Reset VJ structures */
                             if (axp->slcomp) {

@@ -76,8 +76,6 @@ static struct cmds Axcmds[] = {
 	{ "ignoretos",    doaxigntos,     0, 0, NULL },
 	{ "jumpstart",    dojumpstart,    0, 2, "ax25 jumpstart <call> [ON|OFF]" },
 	{ "kick",         doaxkick,       0, 2, "ax25 kick <axcb>" },
-	{ "listen",       doaxlisten,     0, 0,
-	  "ax25 listen [<call> [<dest>|off]]" },
 	{ "maxframe",     domaxframe,     0, 0, NULL },
 	{ "mycall",       domycall,       0, 0, NULL },
 	{ "paclen",       dopaclen,       0, 0, NULL },

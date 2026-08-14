@@ -35,22 +35,53 @@ int Axserver_enabled;
  * whichever port they can.
  */
 
+/* What is behind a listened callsign. */
+
+enum axlisten_kind {
+  LK_LOGIN,                             /* builtin:login - the node's own */
+  LK_SOCKET,                            /* dial an address and pipe */
+  LK_PROGRAM                            /* run a program and pipe */
+};
+
 struct axlisten {
   struct axlisten *next;
+  int netrom;                           /* NET/ROM L4, which has no callsign
+					 * and no service selector of its own */
   uint8 call[AXALEN];
-  char *dest;                           /* where the session is handed */
+  int pid;
+  enum axlisten_kind kind;
+  char *target;
+  /* Three switches.  Their defaults differ by what is being carried, and two
+   * of them are not open to argument where the answer cannot be sensible -
+   * see the table beside axlisten_add().
+   */
+  int silent;                           /* no announcement line */
+  int wait;                             /* start on the first frame, not on
+					 * the connect */
+  int binary;                           /* no text conversion */
 };
 
 static struct axlisten *Axlisten;
 
 /*---------------------------------------------------------------------------*/
 
-static struct axlisten *axlisten_find(const uint8 *call)
+static struct axlisten *axlisten_find(const uint8 *call, int pid)
 {
   struct axlisten *lp;
 
   for (lp = Axlisten; lp; lp = lp->next)
-    if (addreq(lp->call, call)) return lp;
+    if (!lp->netrom && lp->pid == pid && addreq(lp->call, call)) return lp;
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static struct axlisten *axlisten_netrom(void)
+{
+  struct axlisten *lp;
+
+  for (lp = Axlisten; lp; lp = lp->next)
+    if (lp->netrom) return lp;
   return 0;
 }
 
@@ -58,80 +89,281 @@ static struct axlisten *axlisten_find(const uint8 *call)
 
 int axlisten_active(const uint8 *call)
 {
-  return axlisten_find(call) != 0;
+  struct axlisten *lp;
+
+  /* Any protocol id will do here: the question is whether we answer to the
+   * callsign at all, not what we would do with the frame.
+   */
+  for (lp = Axlisten; lp; lp = lp->next)
+    if (!lp->netrom && addreq(lp->call, call)) return 1;
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-/* ax25 listen                    show what we answer to
- * ax25 listen <call> <dest>      answer to <call>, hand the session to <dest>
- * ax25 listen <call> off         stop answering to it
+/* listen                                     show what we answer to
+ * listen ax25 add [pid=<n>] [<switch>...] <call> <target>
+ * listen ax25 drop [pid=<n>] <call>
+ * listen netrom add [<switch>...] <target>
+ * listen netrom drop
+ *
+ * <target> is one of
+ *      builtin:login           the node's own login, as it always was
+ *      tcp:<host>:<port>       dial it and pipe; unix:<path> likewise
+ *      /path/to/program args   run it and pipe, circumstances in the
+ *                              environment
+ *
+ * <switch> is --silent/--noisy, --wait/--nowait, --ascii/--binary.  The
+ * defaults follow what is being carried:
+ *
+ *                announcement   wait for first frame   conversion
+ *   pid=text     on             off                    ascii
+ *   other pid    off, fixed     on                     binary, fixed
+ *   netrom L4    on             off                    ascii
+ *
+ * The two marked fixed are refused rather than ignored: an announcement line
+ * inside a binary protocol is rubbish on the wire, and converting a protocol
+ * that is not text corrupts it.  Waiting is merely unusual for NET/ROM, not
+ * senseless, so that one may be set.
  */
 
-int doaxlisten(int argc, char *argv[], void *p)
+static const char *axlisten_kindname(struct axlisten *lp)
+{
+  switch (lp->kind) {
+  case LK_LOGIN:   return "login";
+  case LK_PROGRAM: return "program";
+  default:         return "socket";
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void axlisten_show(struct axlisten *lp)
+{
+  char buf[AXBUF];
+
+  printf("%-10s %-6s %-7s %-8s %s%s%s\n",
+	 lp->netrom ? "(netrom)" : pax25(buf, lp->call),
+	 lp->netrom ? "-" : (lp->pid == PID_NO_L3 ? "text" : "pid"),
+	 axlisten_kindname(lp), lp->binary ? "binary" : "ascii", lp->target,
+	 lp->silent ? "  silent" : "", lp->wait ? "  wait" : "");
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int axlisten_drop(int netrom, const uint8 *call, int pid)
+{
+  struct axlisten *lp, **pp;
+
+  for (pp = &Axlisten; *pp; pp = &(*pp)->next) {
+    lp = *pp;
+    if (lp->netrom != netrom) continue;
+    if (!netrom && (lp->pid != pid || !addreq(lp->call, call))) continue;
+    *pp = lp->next;
+    free(lp->target);
+    free(lp);
+    return 0;
+  }
+  return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int axlisten_add(int netrom, int argc, char *argv[])
 {
 
-  char buf[AXBUF];
-  struct axlisten *lp, **pp;
+  char *target;
+  char buf[512];
+  int ascii_set = 0;
+  int i;
+  int noisy_set = 0;
+  int pid = PID_NO_L3;
+  long n;
+  struct axlisten *lp;
   uint8 call[AXALEN];
+  int silent = -1, wait = -1, binary = -1;
 
-  if (argc < 2) {
-    if (!Axlisten) {
-      printf("Not listening for any callsign\n");
-      return 0;
-    }
-    printf("Call       Handed to\n");
-    for (lp = Axlisten; lp; lp = lp->next)
-      printf("%-9s  %s\n", pax25(buf, lp->call), lp->dest);
-    return 0;
-  }
+  memset(call, 0, sizeof(call));
 
-  if (setcall(call, argv[1])) {
-    printf("Invalid call \"%s\"\n", argv[1]);
-    return 1;
-  }
+  for (i = 0; i < argc; i++) {
+    char *cp = argv[i];
 
-  if (argc < 3) {
-    if ((lp = axlisten_find(call)))
-      printf("%-9s  %s\n", pax25(buf, lp->call), lp->dest);
-    else
-      printf("Not listening for %s\n", argv[1]);
-    return 0;
-  }
-
-  if (!strcmp(argv[2], "off")) {
-    for (pp = &Axlisten; *pp; pp = &(*pp)->next)
-      if (addreq((*pp)->call, call)) {
-        lp = *pp;
-        *pp = lp->next;
-        free(lp->dest);
-        free(lp);
-        return 0;
+    if (!strncmp(cp, "pid=", 4)) {
+      if (netrom) {
+	printf("NET/ROM has no protocol id of its own\n");
+	return 1;
       }
-    printf("Not listening for %s\n", argv[1]);
+      n = strtol(cp + 4, &cp, 0);
+      if (*cp || n < 0 || n > 255) {
+	printf("Invalid pid \"%s\"\n", argv[i] + 4);
+	return 1;
+      }
+      pid = (int) n;
+      continue;
+    }
+    if (!strcmp(cp, "--silent")) { silent = 1; continue; }
+    if (!strcmp(cp, "--noisy"))  { silent = 0; noisy_set = 1; continue; }
+    if (!strcmp(cp, "--wait"))   { wait = 1; continue; }
+    if (!strcmp(cp, "--nowait")) { wait = 0; continue; }
+    if (!strcmp(cp, "--binary")) { binary = 1; continue; }
+    if (!strcmp(cp, "--ascii"))  { binary = 0; ascii_set = 1; continue; }
+    if (!strncmp(cp, "--", 2)) {
+      printf("Unknown option \"%s\"\n", cp);
+      return 1;
+    }
+    break;                              /* the callsign, or the target */
+  }
+
+  if (!netrom) {
+    if (i >= argc) {
+      printf("No callsign\n");
+      return 1;
+    }
+    if (setcall(call, argv[i])) {
+      printf("Invalid call \"%s\"\n", argv[i]);
+      return 1;
+    }
+    if (ismyax25addr(call)) {
+      printf("%s is an interface callsign already\n", argv[i]);
+      return 1;
+    }
+    i++;
+  }
+
+  if (i >= argc) {
+    printf("Nothing to hand it to\n");
     return 1;
   }
 
-  /* One of our own interface callsigns would be answered anyway, and by the
-   * login server rather than by this - say so instead of pretending.
+  /* A program takes the rest of the line, arguments and all. */
+  buf[0] = '\0';
+  for (; i < argc; i++) {
+    if (buf[0] && strlen(buf) + strlen(argv[i]) + 2 >= sizeof(buf)) break;
+    if (buf[0]) strcat(buf, " ");
+    strcat(buf, argv[i]);
+  }
+  target = buf;
+
+  /* The announcement line exists because a socket has no environment.  A
+   * program has one, and the same facts twice would only be a line it has to
+   * skip - so it is quiet unless somebody asks for it.  The login must not
+   * see it at all, or it reads it as a password.
    */
-  if (ismyax25addr(call)) {
-    printf("%s is an interface callsign already\n", argv[1]);
-    return 1;
+  if (silent < 0 && (*target == '/' || !strcmp(target, "builtin:login")))
+    silent = 1;
+
+  /* Now the defaults, which depend on what is being carried. */
+  if (!netrom && pid != PID_NO_L3) {
+    if (noisy_set) {
+      printf("An announcement line would be rubbish inside a binary "
+	     "protocol\n");
+      return 1;
+    }
+    if (ascii_set) {
+      printf("Converting a protocol that is not text corrupts it\n");
+      return 1;
+    }
+    if (silent < 0) silent = 1;
+    if (wait < 0) wait = 1;
+    binary = 1;
+  } else {
+    if (silent < 0) silent = 0;
+    if (wait < 0) wait = 0;
+    if (binary < 0) binary = 0;
   }
 
-  if (!(lp = axlisten_find(call))) {
+  if (!(lp = netrom ? axlisten_netrom() : axlisten_find(call, pid))) {
     if (!(lp = (struct axlisten *) calloc(1, sizeof(struct axlisten)))) {
       printf("No memory\n");
       return 1;
     }
+    lp->netrom = netrom;
     addrcp(lp->call, call);
+    lp->pid = pid;
     lp->next = Axlisten;
     Axlisten = lp;
   } else
-    free(lp->dest);
-  lp->dest = strdup(argv[2]);
+    free(lp->target);
+
+  if (!strcmp(target, "builtin:login"))
+    lp->kind = LK_LOGIN;
+  else if (*target == '/')
+    lp->kind = LK_PROGRAM;
+  else {
+    lp->kind = LK_SOCKET;
+    /* "tcp:host:port" is how a sysop writes it; build_sockaddr() wants the
+     * host and port alone, and knows "unix:" for itself.
+     */
+    if (!strncmp(target, "tcp:", 4)) target += 4;
+  }
+  lp->target = strdup(target);
+  lp->silent = silent;
+  lp->wait = wait;
+  lp->binary = binary;
   return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+int dolisten(int argc, char *argv[], void *p)
+{
+
+  int netrom;
+  struct axlisten *lp;
+  uint8 call[AXALEN];
+
+  (void) p;
+  if (argc < 2) {
+    if (!Axlisten) {
+      printf("Not listening for anything\n");
+      return 0;
+    }
+    printf("Call       Pid    Kind    Mode     Handed to\n");
+    for (lp = Axlisten; lp; lp = lp->next)
+      axlisten_show(lp);
+    return 0;
+  }
+
+  if (!strcmp(argv[1], "ax25"))
+    netrom = 0;
+  else if (!strcmp(argv[1], "netrom"))
+    netrom = 1;
+  else {
+    printf("Usage: listen [ax25|netrom] [add|drop] ...\n");
+    return 1;
+  }
+
+  if (argc < 3) {
+    for (lp = Axlisten; lp; lp = lp->next)
+      if (lp->netrom == netrom) axlisten_show(lp);
+    return 0;
+  }
+
+  if (!strcmp(argv[2], "add"))
+    return axlisten_add(netrom, argc - 3, argv + 3);
+
+  if (!strcmp(argv[2], "drop")) {
+    int pid = PID_NO_L3;
+    int i = 3;
+
+    memset(call, 0, sizeof(call));
+    if (!netrom) {
+      if (i < argc && !strncmp(argv[i], "pid=", 4))
+	pid = (int) strtol(argv[i++] + 4, NULL, 0);
+      if (i >= argc || setcall(call, argv[i])) {
+	printf("Which callsign?\n");
+	return 1;
+      }
+    }
+    if (axlisten_drop(netrom, call, pid)) {
+      printf("Not listening for that\n");
+      return 1;
+    }
+    return 0;
+  }
+
+  printf("Usage: listen [ax25|netrom] [add|drop] ...\n");
+  return 1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -416,16 +648,21 @@ static void axpipe_announce(struct axpipe *pp, struct ax25_cb *axp)
 
 /*---------------------------------------------------------------------------*/
 
-static struct axservice *axpipe_open(struct ax25_cb *axp, const char *dest)
+static struct axservice *axpipe_open(struct ax25_cb *axp,
+				     struct axlisten *lp, int fd)
 {
   int addrlen;
-  int fd;
   struct axpipe *pp;
   struct axservice *sp;
-  struct sockaddr *addr;
+  struct sockaddr *addr = 0;
 
-  if (!(addr = build_sockaddr(dest, &addrlen))) return NULL;
-  if ((fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) return NULL;
+  /* fd >= 0: already connected to something, a program we just started.
+   * Otherwise dial the configured address.
+   */
+  if (fd < 0) {
+    if (!(addr = build_sockaddr(lp->target, &addrlen))) return NULL;
+    if ((fd = socket(addr->sa_family, SOCK_STREAM, 0)) < 0) return NULL;
+  }
   fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
 
   if (!(pp = (struct axpipe *) calloc(1, sizeof(struct axpipe)))) {
@@ -433,9 +670,9 @@ static struct axservice *axpipe_open(struct ax25_cb *axp, const char *dest)
     return NULL;
   }
   pp->fd = fd;
-  pp->ascii = 1;                        /* pid=text, until an entry says otherwise */
+  pp->ascii = !lp->binary;
 
-  if (connect(fd, addr, addrlen)) {
+  if (addr && connect(fd, addr, addrlen)) {
     if (errno != EINPROGRESS) {
       axpipe_close(pp);
       return NULL;
@@ -443,13 +680,13 @@ static struct axservice *axpipe_open(struct ax25_cb *axp, const char *dest)
     pp->connecting = 1;                 /* the node must not wait here */
   }
 
-  if (!(sp = open_axservice(axp, PID_NO_L3, axpipe_recv_upcall,
+  if (!(sp = open_axservice(axp, lp->pid, axpipe_recv_upcall,
 			    axpipe_send_upcall, axpipe_state_upcall, pp))) {
     axpipe_close(pp);
     return NULL;
   }
   pp->sp = sp;
-  axpipe_announce(pp, axp);
+  if (!lp->silent) axpipe_announce(pp, axp);
 
   if (pp->connecting)
     on_write(fd, axpipe_writable, pp);
@@ -468,44 +705,76 @@ static struct axservice *axpipe_open(struct ax25_cb *axp, const char *dest)
  * discarded - which is what happens to any protocol id nobody wants.
  */
 
-struct axservice *axserv_start(struct ax25_cb *axp, int pid)
+/* Start a program and pipe the session through it.  A socketpair rather than
+ * pipes, so that one descriptor carries both directions and the rest of the
+ * machinery is the same as for a dialled address.
+ */
+
+static struct axservice *axspawn_open(struct ax25_cb *axp, struct axlisten *lp)
 {
 
-  char callsign[AXBUF];
-  struct axlisten *lp;
-  struct axservice *sp;
+  char *argv[32];
+  char buf[512];
+  char call[AXBUF];
+  char env[4][160];
+  char *p;
+  int argc;
+  int i;
+  int sv[2];
+  pid_t child;
 
-  if (pid != PID_NO_L3)
-    return NULL;                        /* only plain text so far */
+  if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) return NULL;
 
-  /* On an incoming link build_path() has already turned the header round:
-   * hdr.dest is who called us, hdr.source is the address they called.  It is
-   * the latter we listen for.
+  strcpy(buf, lp->target);
+  for (argc = 0, p = strtok(buf, " \t");
+       p && argc < (int) (sizeof(argv) / sizeof(argv[0])) - 1;
+       p = strtok(NULL, " \t"))
+    argv[argc++] = p;
+  argv[argc] = 0;
+
+  /* The circumstances go in the environment, where a program can read them
+   * without parsing anything.  Not PATH for the digipeaters, however
+   * tempting: that is the shell's, and a program that cannot find its own
+   * binaries is the least of what would go wrong.
    */
-  if ((lp = axlisten_find(axp->hdr.source))) {
-    if ((sp = axpipe_open(axp, lp->dest))) return sp;
-    /* Nobody there.  The AX.25 side has already had to say UA, so the only
-     * way to decline now is to say why and let go.  The caller is told the
-     * callsign, not our socket path - where the node keeps its files is
-     * nobody's business on the air.
-     */
-    {
-      struct mbuf *bp;
-      char buf[120];
-
-      sprintf(buf, "*** %s is not answering\r", pax25(callsign, axp->hdr.source));
-      syslog(LOG_ERR, "%s: cannot hand the call to %s: %s",
-	     pax25(callsign, axp->hdr.source), lp->dest, strerror(errno));
-      bp = qdata(buf, (uint) strlen(buf));
-      send_ax25(axp, &bp, PID_NO_L3);
-    }
-    disc_ax25(axp);
-    return NULL;
+  sprintf(env[0], "USER=%s", pax25(call, axp->hdr.dest));
+  sprintf(env[1], "PROTO=%s", lp->pid == PID_NO_L3 ? "text" : "pid");
+  sprintf(env[2], "DEST=%s", pax25(call, axp->hdr.source));
+  env[3][0] = '\0';
+  strcat(env[3], "AX25_PATH=");
+  for (i = 0; i < axp->hdr.ndigis; i++) {
+    if (i) strcat(env[3], ",");
+    strcat(env[3], pax25(call, axp->hdr.digis[i]));
   }
 
-  if (!Axserver_enabled)
+  if ((child = fork()) < 0) {
+    close(sv[0]);
+    close(sv[1]);
     return NULL;
+  }
+  if (child == 0) {
+    int fd;
 
+    dup2(sv[1], 0);
+    dup2(sv[1], 1);
+    dup2(sv[1], 2);
+    for (fd = 3; fd < FD_SETSIZE; fd++) close(fd);
+    for (i = 0; i < 4; i++) putenv(env[i]);
+    execv(argv[0], argv);
+    _exit(1);
+  }
+  close(sv[1]);
+  return axpipe_open(axp, lp, sv[0]);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static struct axservice *axserv_login_open(struct ax25_cb *axp)
+{
+  char callsign[AXBUF];
+  struct axservice *sp;
+
+  if (!Axserver_enabled) return NULL;
   if (!(sp = open_axservice(axp, PID_NO_L3, axserv_recv_upcall,
 			    axserv_send_upcall, axserv_state_upcall, NULL)))
     return NULL;
@@ -520,6 +789,78 @@ struct axservice *axserv_start(struct ax25_cb *axp, int pid)
     sp->t_upcall = 0;
   }
   return sp;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* What serves this protocol id on this link?  Asked when the first frame for
+ * it arrives and nothing is attached yet - and, for entries that do not want
+ * to wait, already when the link comes up.
+ */
+
+struct axservice *axserv_start(struct ax25_cb *axp, int pid)
+{
+
+  char callsign[AXBUF];
+  struct axlisten *lp;
+  struct axservice *sp = NULL;
+
+  /* On an incoming link build_path() has already turned the header round:
+   * hdr.dest is who called us, hdr.source is the address they called.  It is
+   * the latter we listen for.
+   */
+  if (!(lp = axlisten_find(axp->hdr.source, pid))) {
+    /* Nothing configured.  Plain text still reaches the node's own login,
+     * as it always did.
+     */
+    return pid == PID_NO_L3 ? axserv_login_open(axp) : NULL;
+  }
+
+  switch (lp->kind) {
+  case LK_LOGIN:
+    return axserv_login_open(axp);
+  case LK_SOCKET:
+    sp = axpipe_open(axp, lp, -1);
+    break;
+  case LK_PROGRAM:
+    sp = axspawn_open(axp, lp);
+    break;
+  }
+  if (sp) return sp;
+
+  /* Nobody there.  The AX.25 side has already had to say UA, so the only way
+   * to decline now is to say why and let go.  The caller is told the
+   * callsign, not our socket path - where the node keeps its files is
+   * nobody's business on the air.
+   */
+  {
+    struct mbuf *bp;
+    char buf[120];
+
+    sprintf(buf, "*** %s is not answering\r", pax25(callsign, axp->hdr.source));
+    syslog(LOG_ERR, "%s: cannot hand the call to %s: %s",
+	   pax25(callsign, axp->hdr.source), lp->target, strerror(errno));
+    bp = qdata(buf, (uint) strlen(buf));
+    send_ax25(axp, &bp, PID_NO_L3);
+  }
+  disc_ax25(axp);
+  return NULL;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* The link has come up.  Everything configured for this callsign that does
+ * not want to wait for a first frame starts now - a mailbox has to be able to
+ * greet, and a protocol speaker to announce itself.
+ */
+
+void axserv_connected(struct ax25_cb *axp)
+{
+  struct axlisten *lp;
+
+  for (lp = Axlisten; lp; lp = lp->next)
+    if (!lp->netrom && !lp->wait && addreq(lp->call, axp->hdr.source))
+      (void) axserv_start(axp, lp->pid);
 }
 
 /*---------------------------------------------------------------------------*/
