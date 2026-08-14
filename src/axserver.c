@@ -449,6 +449,10 @@ struct axpipe {
   int fd;
   struct mbuf *sndq;                    /* waiting for the socket */
   int connecting;                       /* connect() not finished yet */
+  int seqpacket;                        /* the socket carries frame
+					 * boundaries, so sndq holds whole
+					 * frames and each is written on its
+					 * own - see axpipe_socketpair() */
   /* Plain text is converted: the radio side ends its lines with CR, this
    * side with LF, and a program that gets the wrong one shows a staircase.
    * Any other protocol id is binary and is passed through untouched.
@@ -470,9 +474,44 @@ static struct mbuf *axpipe_recv(struct axpipe *pp, uint cnt)
 {
   struct mbuf *bp = 0;
 
-  if (pp->sp) return recv_axservice(pp->sp, cnt);
+  /* One frame, whole, where the socket can carry the boundary.  A NET/ROM
+   * circuit has none to carry - L4 is a byte stream - so it keeps the
+   * count.
+   */
+  if (pp->sp) return pp->seqpacket ? recv_axservice_packet(pp->sp)
+				   : recv_axservice(pp->sp, cnt);
   if (pp->pc) recv_nr(pp->pc, &bp, (int) cnt);
   return bp;
+}
+
+/* One write is one frame.  Kernel AX.25 was SOCK_SEQPACKET and the protocols
+ * that ride on a connection rely on it: FBB's compressed forwarding reads the
+ * end of an uncompressed block off the frame boundary, so a stream that packs
+ * frames as full as they will go breaks it.  Not every system offers it on a
+ * unix socket - macOS does not - so ask, and take a stream when the answer is
+ * no.  There the boundaries are lost, which costs that one kind of service
+ * and nothing else.
+ */
+
+static int axpipe_socketpair(int sv[2])
+{
+  if (socketpair(AF_UNIX, SOCK_SEQPACKET, 0, sv) == 0) return 1;
+  if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0) return 0;
+  return -1;
+}
+
+/* Ask the descriptor itself rather than remembering what made it: a pipe is
+ * handed one by a socketpair, by connect() and later by a client, and only
+ * one of those knows what it asked for.
+ */
+
+static int axpipe_is_seqpacket(int fd)
+{
+  int type = 0;
+  socklen_t len = sizeof(type);
+
+  return getsockopt(fd, SOL_SOCKET, SO_TYPE, &type, &len) == 0
+    && type == SOCK_SEQPACKET;
 }
 
 static int axpipe_space(struct axpipe *pp)
@@ -517,15 +556,24 @@ static void axpipe_pull(struct axpipe *pp, int cnt)
 {
   struct mbuf *bp;
   int room;
+  int took = 0;
 
   if (!axpipe_alive(pp)) return;
-  room = AXPIPE_HIGHWATER - len_p(pp->sndq);
-  if (room <= 0) return;                /* leave it where it is */
-  if (!(bp = axpipe_recv(pp, (uint) (cnt < room ? cnt : room))))
-    return;                             /* nothing there - and pumping now
+  /* The queue holds whole frames where the socket can carry them, so it is
+   * counted in bytes across the queue, not along one chain.
+   */
+  while ((room = AXPIPE_HIGHWATER - (int) len_qbytes(pp->sndq)) > 0) {
+    if (!(bp = axpipe_recv(pp, (uint) (cnt < room ? cnt : room)))) break;
+    if (pp->ascii) convert_eol(&bp, EOL_LF, &pp->recv_char);
+    if (pp->seqpacket)
+      enqueue(&pp->sndq, &bp);          /* one entry, one frame */
+    else
+      append(&pp->sndq, &bp);
+    took = 1;
+    if (!pp->seqpacket) break;          /* the byte form took all there was */
+  }
+  if (!took) return;                    /* nothing there - and pumping now
 					 * would call us straight back */
-  if (pp->ascii) convert_eol(&bp, EOL_LF, &pp->recv_char);
-  append(&pp->sndq, &bp);
   axpipe_pump(pp);
 }
 
@@ -570,7 +618,7 @@ static void axpipe_readable(void *arg)
 {
   struct axpipe *pp = (struct axpipe *) arg;
   struct mbuf *bp;
-  char buf[2048];
+  char buf[8192];
   int n;
   int room;
 
@@ -580,8 +628,30 @@ static void axpipe_readable(void *arg)
     off_read(pp->fd);                   /* the link will call us back */
     return;
   }
-  if (room > (int) sizeof(buf)) room = sizeof(buf);
-  if ((n = read(pp->fd, buf, (size_t) room)) > 0) {
+  if (pp->seqpacket) {
+    /* Whole or not at all.  Reading less than the message throws the rest of
+     * it away, which is worse than waiting - so the window does not shorten
+     * the read.  Overshooting it costs one frame on the send queue, and
+     * send_ax25() cuts that to paclen regardless.
+     */
+#ifdef	MSG_TRUNC
+    n = (int) recv(pp->fd, buf, sizeof(buf), MSG_TRUNC);
+#else
+    n = (int) read(pp->fd, buf, sizeof(buf));
+#endif
+    if (n > (int) sizeof(buf)) {
+      /* Cannot happen with any sane paclen, and if it ever does it says so
+       * rather than quietly delivering half a frame.
+       */
+      syslog(LOG_ERR, "axpipe: frame of %d bytes cut to %u", n,
+	     (unsigned) sizeof(buf));
+      n = (int) sizeof(buf);
+    }
+  } else {
+    if (room > (int) sizeof(buf)) room = sizeof(buf);
+    n = (int) read(pp->fd, buf, (size_t) room);
+  }
+  if (n > 0) {
     bp = qdata(buf, (uint) n);
     if (pp->ascii) convert_eol(&bp, EOL_CR, &pp->send_char);
     axpipe_put(pp, &bp);
@@ -618,13 +688,18 @@ static void axpipe_writable(void *arg)
 
 static void axpipe_pump(struct axpipe *pp)
 {
-  char buf[2048];
+  char buf[8192];
   int n;
   int want;
 
   if (pp->connecting) return;
   while (pp->sndq) {
-    want = len_p(pp->sndq);
+    /* On a boundary-carrying socket the head of the queue is one whole
+     * frame and goes out in one write, because that write is what the
+     * boundary is made of.  On a stream it is one chain and the buffer
+     * decides how much of it goes at a time.
+     */
+    want = pp->seqpacket ? (int) len_p(pp->sndq) : (int) len_qbytes(pp->sndq);
     if (want > (int) sizeof(buf)) want = sizeof(buf);
     {                                   /* copy, do not consume: a short
 					 * write must leave the rest behind */
@@ -635,7 +710,13 @@ static void axpipe_pump(struct axpipe *pp)
     }
     if (want <= 0) break;
     if ((n = write(pp->fd, buf, (size_t) want)) > 0) {
-      pullup(&pp->sndq, NULL, (uint) n);
+      if (pp->seqpacket) {
+	/* A seqpacket write is all or nothing, so the frame is gone. */
+	struct mbuf *done = dequeue(&pp->sndq);
+
+	free_p(&done);
+      } else
+	pullup(&pp->sndq, NULL, (uint) n);
       continue;
     }
     if (n < 0 && (errno == EAGAIN || errno == EINTR)) {
@@ -646,14 +727,11 @@ static void axpipe_pump(struct axpipe *pp)
     return;
   }
   off_write(pp->fd);
-  /* Room again: pull whatever the link has been holding, which is what lets
-   * recv_ax25() clear the busy condition and reopen the window.
-   */
   /* Room again: pull whatever the connection has been holding, which is what
    * lets the window reopen.
    */
   if (pp->sp && pp->sp->rxq)
-    axpipe_pull(pp, len_p(pp->sp->rxq));
+    axpipe_pull(pp, (int) len_qbytes(pp->sp->rxq));
   else if (pp->pc)
     axpipe_pull(pp, AXPIPE_HIGHWATER);
 }
@@ -724,6 +802,11 @@ static struct axpipe *axpipe_new(struct axlisten *lp, int fd)
   }
   pp->fd = fd;
   pp->ascii = !lp->binary;
+  /* A dialled socket is a stream: the service at the other end chose what it
+   * listens on and we do not get to argue.  Frame boundaries survive on the
+   * pairs we make ourselves, which is where they are wanted.
+   */
+  pp->seqpacket = axpipe_is_seqpacket(fd);
 
   if (addr && connect(fd, addr, addrlen)) {
     if (errno != EINPROGRESS) {
@@ -781,7 +864,7 @@ static int axspawn_fd(struct axlisten *lp, const char *user, const char *proto,
   int sv[2];
   pid_t child;
 
-  if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) return -1;
+  if (axpipe_socketpair(sv) < 0) return -1;
 
   strcpy(buf, lp->target);
   for (argc = 0, p = strtok(buf, " \t");

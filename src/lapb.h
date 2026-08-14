@@ -238,6 +238,7 @@ int nrserv_listen_start(struct circuit *pc);
 void nrserv_listen_close(struct circuit *pc);
 struct axservice *find_axservice(struct ax25_cb *axp,int pid);
 struct mbuf *recv_axservice(struct axservice *sp,uint cnt);
+struct mbuf *recv_axservice_packet(struct axservice *sp);
 int space_axservice(struct axservice *sp);
 int axservice_pending(struct ax25_cb *axp);
 int send_axservice(struct axservice *sp,struct mbuf **bpp);

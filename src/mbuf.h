@@ -41,6 +41,7 @@ struct mbuf *dequeue(struct mbuf **q);
 void enqueue(struct mbuf **q,struct mbuf **bpp);
 void free_q(struct mbuf **q);
 uint len_q(struct mbuf *bp);
+uint len_qbytes(struct mbuf *bp);
 
 struct mbuf *qdata(const void *data,uint cnt);
 uint dqdata(struct mbuf *bp,void *buf,unsigned cnt);

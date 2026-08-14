@@ -959,9 +959,16 @@ struct mbuf **bpp
 	if((sp = find_axservice(axp,pid)) == NULL)
 		sp = axserv_start(axp,pid);
 	if(sp != NULL){
-		append(&sp->rxq,bpp);
+		/* One frame stays one entry on the queue.  Kernel AX.25 was
+		 * SOCK_SEQPACKET and the protocols that ride on a connection
+		 * rely on it: FBB's compressed forwarding reads the end of an
+		 * uncompressed block off the frame boundary.  append() would
+		 * melt two frames into one chain and there is no recovering
+		 * that afterwards.
+		 */
+		enqueue(&sp->rxq,bpp);
 		if(sp->r_upcall != NULL)
-			(*sp->r_upcall)(sp,len_p(sp->rxq));
+			(*sp->r_upcall)(sp,(int) len_qbytes(sp->rxq));
 		return;
 	}
 
@@ -989,7 +996,7 @@ struct ax25_cb *axp)
 	 * counts against it.  AX.25 cannot say "not ready for this pid".
 	 */
 	for(sp = axp->services, held = 0; sp != NULL; sp = sp->next)
-		held += len_p(sp->rxq);
+		held += (int) len_qbytes(sp->rxq);
 	return held >= (int) axp->window;
 }
 

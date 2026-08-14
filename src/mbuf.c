@@ -190,6 +190,19 @@ len_p(struct mbuf *bp)
 	}
 	return cnt;
 }
+/* Count up the bytes in a whole queue of packets.  len_p() answers for one
+ * packet and len_q() for how many there are; flow control wants neither.
+ */
+uint
+len_qbytes(struct mbuf *bp)
+{
+	uint cnt = 0;
+
+	for(;bp != NULL;bp = bp->anext)
+		cnt += len_p(bp);
+	return cnt;
+}
+
 /* Count up the number of packets in a queue */
 uint
 len_q(struct mbuf *bp)

@@ -178,13 +178,59 @@ uint cnt
 	if(sp->rxq == NULL)
 		return NULL;
 	if(cnt == 0){
+		/* Everything there is, as one chain: the queue holds frames
+		 * now, so flatten it rather than hand out a chain whose
+		 * anext still points at the rest.  A caller that asks this
+		 * way wants a byte stream and has said so.
+		 */
+		struct mbuf *next;
+
 		bp = sp->rxq;
 		sp->rxq = NULL;
+		for(next = bp->anext, bp->anext = NULL; next != NULL;){
+			struct mbuf *this = next;
+
+			next = this->anext;
+			this->anext = NULL;
+			append(&bp,&this);
+		}
 	} else {
+		/* Bytes, across as many frames as it takes.  pullup() empties
+		 * one frame at a time, so walk on while there is room left.
+		 */
+		uint got = 0;
+
 		bp = ambufw(cnt);
-		bp->cnt = pullup(&sp->rxq,bp->data,cnt);
+		while(got < cnt && sp->rxq != NULL){
+			struct mbuf *this = dequeue(&sp->rxq);
+			uint took = pullup(&this,bp->data + got,cnt - got);
+
+			got += took;
+			if(this != NULL){       /* frame not exhausted */
+				this->anext = sp->rxq;
+				sp->rxq = this;
+				break;
+			}
+		}
+		bp->cnt = got;
 	}
 	/* If this has un-busied the link, reopen the window */
+	if(sp->axp->flags.rnrsent && !busy(sp->axp))
+		sendctl(sp->axp,LAPB_RESPONSE,RR);
+	return bp;
+}
+
+/* One frame, whole, or nothing.  What SOCK_SEQPACKET promises the consumer
+ * and what recv_axservice() above cannot give it.
+ */
+
+struct mbuf *
+recv_axservice_packet(struct axservice *sp)
+{
+	struct mbuf *bp;
+
+	if((bp = dequeue(&sp->rxq)) == NULL)
+		return NULL;
 	if(sp->axp->flags.rnrsent && !busy(sp->axp))
 		sendctl(sp->axp,LAPB_RESPONSE,RR);
 	return bp;
@@ -199,7 +245,7 @@ axservice_pending(struct ax25_cb *axp)
 	struct axservice *sp;
 
 	for(sp = axp->services; sp != NULL; sp = sp->next)
-		held += len_p(sp->rxq);
+		held += (int) len_qbytes(sp->rxq);
 	return held;
 }
 
