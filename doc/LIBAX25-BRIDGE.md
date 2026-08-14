@@ -310,32 +310,22 @@ callsign, while a second listener on DL9SAU-13 got
   pipe.
 * **Datagrams inbound.**  `datagram` sends UI frames; nothing pushes received
   ones back, so `recvfrom()` has no source yet.
-* **`getsockname()` and `getpeername()`, which ax25d and axspawn need.**
-  Not a detail: `ax25d.c` calls `getsockname()` on every accepted socket to
-  learn *which* of the node's callsigns was dialled, because that decides
-  which configuration stanza applies, and `axspawn.c:1479` calls
-  `getpeername(0, …)` to learn who is logging in before it picks a unix
-  account.  Both are on the incoming path this bridge exists for.
+* **`getsockname()` and `getpeername()` after `exec`.**  Both are answered
+  now for descriptors this library made: the handover line carries the caller
+  and the callsign it reached, outgoing we have the destination and the bound
+  source, and the session descriptor an `accept()` hands out is tracked so
+  they can be answered for it too.  Verified - `getsockname` gives
+  `DL9SAU-13` and `getpeername` `DL1TST-1` on an accepted call.
 
-  The failure is the bad kind.  Our descriptors are real unix sockets, so the
-  calls fall through to the real ones and return `AF_UNIX` with an empty path
-  instead of an error - a program reading that as a `sockaddr_ax25` gets
-  rubbish and is told nothing.
-
-  Half of it is easy: both addresses are known.  The handover line carries
-  the caller and the called callsign, and outgoing we have the destination
-  and the bound source; they only have to be kept on the descriptor and
-  handed back.
-
-  The other half is not.  `axspawn` runs after `exec`, as a child, with the
-  session on descriptor 0 - and in that process the shim's table is empty,
-  so it knows nothing about an inherited descriptor.  Kernel AX.25 managed
-  because the descriptor really was an AX.25 socket; over a socketpair it
-  cannot be.  The way through is for `ax25d` to pass the two addresses to the
-  child and the shim to pick them up there, which is exactly what
-  `AXSOCK_INHERIT` was meant for and never did - `ax25d.c:1379` sets it and
-  line 1428 `execve()`s with an empty environment, so nothing ever read it.
-  Here it would have its first real purpose.
+  What is left is the case that made this urgent.  `axspawn` runs after
+  `exec`, as a child, with the session on descriptor 0, and in that process
+  the table is empty - it knows nothing about an inherited descriptor.
+  Kernel AX.25 managed because the descriptor really was an AX.25 socket;
+  over a socketpair it cannot be.  The way through is for `ax25d` to pass the
+  two addresses to the child and the shim to pick them up there, which is
+  exactly what `AXSOCK_INHERIT` was meant for and never did - `ax25d.c:1379`
+  sets it and line 1428 `execve()`s with an empty environment, so nothing
+  ever read it.  Here it would have its first real purpose.
 * **A non-blocking `connect()`** returns when the link is up or refused, not
   `EINPROGRESS`.  Neither `call` nor `ax25d` asks for one.
 * **The claim is always pid text.**  A program cannot ask to be given some
