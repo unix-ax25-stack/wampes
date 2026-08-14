@@ -11,6 +11,12 @@ again.
 
 ## Why a socket per connection
 
+This shape was not designed at a desk.  The other way was built first, and
+finished: `ax25tcpd` in `ax25-apps` is the same idea from the AGWPE side - one
+AX.25 session per client connection, `connect` and `datagram` - with AGWPE
+messages carrying the data at the back.  Building it is what showed that the
+carrying is the expensive part, and that it need not be done at all.
+
 With AGWPE one TCP connection carries every session, so the shim in `libax25`
 has to demultiplex: a reader thread, a dispatch table, a buffer per session,
 and every `read()` and `write()` passing through all of it.  That is also
