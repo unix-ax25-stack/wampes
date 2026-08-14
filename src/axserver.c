@@ -1105,6 +1105,47 @@ static struct axservice *axserv_login_open(struct ax25_cb *axp)
 
 /*---------------------------------------------------------------------------*/
 
+/* Hand a link we made ourselves to whoever asked for it, the same way an
+ * incoming call is handed to a client: a socketpair, one end on the AX.25
+ * consumer and the other to the caller.
+ *
+ * The point is the boundary.  A connect on the service socket turns that
+ * connection into the pipe, and it is a stream - frames arrive packed as full
+ * as they will go, which breaks a protocol that reads the end of a block off
+ * the end of a frame.  A pair we make ourselves can carry them, because both
+ * ends are ours to choose.
+ *
+ * Takes the consumer the caller already opened rather than opening one: the
+ * link exists, the transport made it, and what changes here is only who is
+ * fed by it.
+ */
+
+int axserv_pipe_attach(struct axservice *sp, int binary, int *fdp)
+{
+  static struct axlisten pipe_lp;       /* only binary is read for a live fd */
+  struct axpipe *pp;
+  int sv[2];
+
+  if (axpipe_socketpair(sv) < 0) return -1;
+  pipe_lp.binary = binary;
+  pipe_lp.silent = 1;
+  if (!(pp = axpipe_new(&pipe_lp, sv[0]))) {
+    close(sv[0]);
+    close(sv[1]);
+    return -1;
+  }
+  pp->sp = sp;
+  sp->r_upcall = axpipe_recv_upcall;
+  sp->t_upcall = axpipe_send_upcall;
+  sp->s_upcall = axpipe_state_upcall;
+  sp->user = pp;
+  axpipe_start(pp);
+  *fdp = sv[1];
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* Hand one accepted call to a client: the trace line and the descriptor in a
  * single sendmsg().  Together, deliberately - a descriptor arriving on its
  * own would have to be matched against a line arriving separately, and there

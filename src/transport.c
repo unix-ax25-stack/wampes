@@ -383,6 +383,22 @@ void transport_close(void *arg)
 
 /*---------------------------------------------------------------------------*/
 
+/* Give the connection away.  The caller has moved the consumer to somebody
+ * else - the pipe behind a handed-over descriptor - so this control block
+ * must forget the link before it is freed: transport_del() would otherwise
+ * del_ax25() what the new owner is now feeding.  The consumer itself is not
+ * ours to close either; whoever took it over closes it.
+ */
+
+int transport_detach(struct transport_cb *tp)
+{
+  tp->cb.axp = 0;
+  tp->svc = 0;
+  return transport_del(tp);
+}
+
+/*---------------------------------------------------------------------------*/
+
 int transport_del(struct transport_cb *tp)
 {
   switch (tp->type) {

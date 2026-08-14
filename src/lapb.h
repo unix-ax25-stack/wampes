@@ -288,6 +288,7 @@ void axserv_open(struct ax25_cb *axp,int cnt);
 int axlisten_active(const uint8 *call);
 int axlisten_client_claim(const uint8 *call,int pid,int fd,char *err,int errlen);
 void axlisten_client_release(int fd);
+int axserv_pipe_attach(struct axservice *sp,int binary,int *fdp);
 int dolisten(int argc,char *argv[],void *p);
 
 #endif  /* _LAPB_H */

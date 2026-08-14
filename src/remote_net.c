@@ -10,6 +10,7 @@
 #include <string.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/uio.h>
 #include <sys/stat.h>
 #include <sys/un.h>
 #include <syslog.h>
@@ -50,6 +51,8 @@ struct controlblock {
                                          * one status line */
   int lastcr;                           /* Previous byte was a CR */
   int crlf;                             /* This client ends its lines CRLF */
+  int handover;                         /* Answer a connect with a descriptor
+					 * instead of becoming the pipe */
   int dgram;                            /* Every further line is a frame */
   int dgram_pid;
   struct iface *dgram_iface;            /* 0: every AX.25 port */
@@ -113,6 +116,8 @@ static struct listener Axtcp[] = {
 static char Axtcp_addr[2][32];
 
 /*---------------------------------------------------------------------------*/
+
+static void command_receive(void *arg);
 
 static char *getarg(char *line, int all)
 {
@@ -227,6 +232,49 @@ static void transport_send_upcall(struct transport_cb *tp, int cnt)
  * told apart from data.
  */
 
+/* One line and one descriptor, in a single sendmsg().  Together, because a
+ * descriptor arriving on its own would have to be matched against a line
+ * arriving separately and there is no key to match them with.
+ */
+
+static void pass_fd(struct controlblock *cp, int fd, const char *fmt, ...)
+{
+  char buf[256];
+  int n;
+  struct cmsghdr *cm;
+  struct iovec iov;
+  struct msghdr msg;
+  va_list ap;
+  union {
+    char buf[CMSG_SPACE(sizeof(int))];
+    struct cmsghdr align;
+  } control;
+
+  va_start(ap, fmt);
+  n = vsnprintf(buf, sizeof(buf) - 2, fmt, ap);
+  va_end(ap);
+  if (n < 0) return;
+  if (cp->crlf) buf[n++] = '\r';
+  buf[n++] = '\n';
+
+  memset(&msg, 0, sizeof(msg));
+  memset(&control, 0, sizeof(control));
+  iov.iov_base = buf;
+  iov.iov_len = (size_t) n;
+  msg.msg_iov = &iov;
+  msg.msg_iovlen = 1;
+  msg.msg_control = control.buf;
+  msg.msg_controllen = sizeof(control.buf);
+  cm = CMSG_FIRSTHDR(&msg);
+  cm->cmsg_level = SOL_SOCKET;
+  cm->cmsg_type = SCM_RIGHTS;
+  cm->cmsg_len = CMSG_LEN(sizeof(int));
+  memcpy(CMSG_DATA(cm), &fd, sizeof(fd));
+  (void) sendmsg(cp->fd, &msg, 0);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void say(struct controlblock *cp, const char *fmt, ...)
 {
   char buf[256];
@@ -266,6 +314,26 @@ static void transport_state_upcall(struct transport_cb *tp)
   struct controlblock *cp = (struct controlblock *) tp->user;
 
   if (tp->connected) {
+    if (cp->handover) {
+      /* The link stands; give it away and go back to taking commands.  The
+       * answer and the descriptor travel in one sendmsg, as they do for an
+       * incoming call, so there is nothing to match up.
+       */
+      int fd = -1;
+
+      if (!tp->svc || axserv_pipe_attach(tp->svc, cp->binary, &fd)) {
+	say(cp, "*** link failure with %s - nomem", cp->target);
+	transport_close(tp);
+	return;
+      }
+      pass_fd(cp, fd, "*** connected to %s", cp->target);
+      close(fd);
+      transport_detach(tp);             /* the pipe owns the link now */
+      cp->tp = 0;
+      cp->handover = 0;
+      on_read(cp->fd, command_receive, cp);
+      return;
+    }
     say(cp, "*** connected to %s", cp->target);
     return;
   }
@@ -313,6 +381,25 @@ static int command_command(struct controlblock *cp)
   close(fdout_save);
   close(fderr_save);
   return -1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* "handover" - answer the next connect with a descriptor rather than becoming
+ * the pipe for it.
+ *
+ * A connect turns this connection into the data path, and this connection is
+ * a byte stream: frames arrive packed as full as they will go.  That is
+ * right for a terminal and wrong for a protocol that reads the end of an
+ * uncompressed block off the end of a frame, which is what FBB forwarding
+ * does.  A descriptor we make ourselves can carry the boundaries, so this
+ * says "give me one" - and the command channel stays a command channel.
+ */
+
+static int handover_command(struct controlblock *cp)
+{
+  cp->handover = 1;
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -757,6 +844,7 @@ static void command_receive(void *arg)
     { "connect", connect_command },
     { "console", console_command },
     { "datagram", datagram_command },
+    { "handover", handover_command },
     { "listen",  listen_command },
     { 0,         0 }
   };
@@ -769,6 +857,7 @@ static void command_receive(void *arg)
     { "binary",  binary_command },
     { "connect", connect_command },
     { "datagram", datagram_command },
+    { "handover", handover_command },
     { "listen",  listen_command },
     { 0,         0 }
   };

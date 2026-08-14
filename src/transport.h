@@ -90,5 +90,6 @@ int transport_send_space(struct transport_cb *tp);
 void transport_set_timeout(struct transport_cb *tp, int timeout);
 void transport_close(void *arg);
 int transport_del(struct transport_cb *tp);
+int transport_detach(struct transport_cb *tp);
 
 #endif  /* _TRANSPORT_H */
