@@ -408,3 +408,30 @@ and is done.
   descriptor is a real socket and `fcntl()` is not intercepted at all.  A
   caller that must not block while a link comes up over the air should fork,
   which is what it would do for a thirty-second wait regardless.
+
+## What outlives WAMPES
+
+AGWPE is not dismissed by any of this.  It remains the way a packet-radio
+program on a PC reaches a service on a Linux machine, and `direwolf` speaks
+it, so the AGWPE side of `libax25` earns its keep.  Whether anything else
+does is another matter: after a thorough search no other program is known
+here, and no TNC hardware with an AGWPE interface either.  That may change,
+and if it does the AGWPE path is there.
+
+What AGWPE cannot do is carry a connection cheaply.  A stream broken into
+messages and reassembled at the far end is what makes the shim large, and
+that is not a fault of the protocol but of asking it to do this job.
+
+WAMPES was the strongest candidate for doing it properly, because it has a
+complete AX.25 stack in user space - not a framing layer, the whole machine,
+including everything the calls in this document need answered.
+
+But the lasting part of the work is **the interface, not WAMPES**.  Nothing
+here is particular to this node: the service socket is a grammar in lines,
+`connect`, `datagram`, `listen`, with a descriptor handed over per session.
+A leaner stack that appears one day - fewer dependencies, fewer features, or
+one that separates them, the AX.25 machine apart from NET/ROM and FlexNet -
+can offer the same grammar on a socket of its own, and every program linked
+against `libax25` keeps working without a line changed.  That is the point of
+writing the protocol down here rather than only the code: what has to be
+reimplemented is the short part, and it is described above.
