@@ -28,6 +28,7 @@ static int ifmtu(int argc,char *argv[],void *p);
 static int ifforw(int argc,char *argv[],void *p);
 static int ifencap(int argc,char *argv[],void *p);
 static int iftxqlen(int argc,char *argv[],void *p);
+int iftncinit(int argc,char *argv[],void *p);
 static int ifautoroute(int argc,char *argv[],void *p);
 static int ifdigiarp(int argc,char *argv[],void *p);
 
@@ -140,6 +141,7 @@ struct cmds Ifcmds[] = {
 	{ "linkaddress",          iflinkadr,      0,      2,      NULL },
 	{ "mtu",                  ifmtu,          0,      2,      NULL },
 	{ "netmask",              ifnetmsk,       0,      2,      NULL },
+	{ "tncinit",              iftncinit,      0,      1,      NULL },
 	{ "txqlen",               iftxqlen,       0,      2,      NULL },
 	{ "rxbuf",                ifrxbuf,        0,      2,      NULL },
 	{ NULL }

@@ -46,7 +46,18 @@ struct slip {
 	int (*send)(int,struct mbuf **);        /* send mbufs to device */
 	int (*get)(int,uint8 *,int);    /* fetch input chars from device */
 	struct slcompress *slcomp;      /* TCP header compression table */
+	/* Getting the TNC into KISS mode - see tncinit.c.  While the sequence
+	 * runs, incoming bytes go to initrx instead of the decoder: they are
+	 * whatever the TNC says back, not frames.
+	 */
+	char *initspec;         /* the sequence, in the chat language */
+	int initialising;       /* it is running now */
+	int initdone;           /* how often it has completed */
+	uint8 initrx[512];      /* what came back while it ran */
+	int initrxcnt;
 };
+
+void tncinit_run(struct iface *ifp);
 
 /* In slip.c: */
 extern struct slip Slip[];

@@ -152,6 +152,7 @@ OBJS          = adjtime.o \
 		smisc.o \
 		sockaddr_util.o \
 		sntp.o \
+		tncinit.o \
 		tcpcmd.o \
 		tcpdump.o \
 		tcpgate.o \

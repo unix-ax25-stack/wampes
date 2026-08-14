@@ -284,6 +284,19 @@ slip_rx(void *arg)
 	cdev = sp->iface->dev;
 
 	cnt = (*sp->get)(cdev,cp=buf,sizeof(buf));
+	/* While the TNC is being talked into KISS mode, what comes back is its
+	 * answers - error lines, a cmd: prompt - and not frames.  Keep it for
+	 * whoever is waiting on it and out of the decoder, which would only
+	 * count it as rubbish.
+	 */
+	if(sp->initialising){
+		while(--cnt >= 0){
+			if(sp->initrxcnt < (int)sizeof(sp->initrx) - 1)
+				sp->initrx[sp->initrxcnt++] = *cp;
+			cp++;
+		}
+		return;
+	}
 	while(--cnt >= 0){
 		if((bp = slip_decode(sp,*cp++)) == NULL)
 			continue;       /* More to come */
