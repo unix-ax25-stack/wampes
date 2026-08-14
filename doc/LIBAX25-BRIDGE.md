@@ -105,6 +105,31 @@ Where the node listens comes from `WAMPES_SOCKET` for now, a path for a unix
 socket or `host:port` for TCP.  A `wampes.conf` in the shape of `agwpe.conf`
 belongs here once a second node is in play.
 
+Three ways to get the name wrong, each caught by the side that can judge it:
+
+| written | who refuses | what happens |
+|---|---|---|
+| `:70cm` - no node at all | libax25 | `call: invalid port setting`, nothing is opened |
+| `wampes:gsm` - no such WAMPES port | the node | `ENODEV` at `connect()`, and the caller's own `perror()` shows it |
+| `wampes:70cm` with no entry | libax25, today | `invalid port setting` |
+
+The last one is the open question.  libax25 refuses it because
+`ax25_config_get_addr()` finds no entry of that name, so the suffix never
+reaches the shim.  Making it lazy - one entry `wampes DL9SAU-1`, and
+`wampes:70cm` accepted without a line of its own - would have to happen
+there, in `ax25_port_ptr()`.
+
+It costs something, and the cost is worth understanding before choosing.
+`bind()` hands the shim a *callsign*, never a port name, so the name is
+recovered by looking the callsign up backwards - and
+`ax25_config_get_port()` returns the **first** entry whose callsign matches
+(`axconfig.c:130`), while `ax25_config_load_ports()` rejects duplicate
+callsigns outright.  Entries that share one callsign therefore cannot carry a
+recoverable suffix.  The honest form of lazy is that it is *accepted* and the
+node routes: one virtual interface in front of WAMPES, whose address every
+program inherits that did not bind one of its own.  Pinning a port keeps
+needing an entry, and that entry keeps needing a callsign of its own.
+
 ## Running it
 
 A program **linked against** `libax25` needs nothing beyond the environment:
