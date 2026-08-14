@@ -286,6 +286,8 @@ void axserv_open(struct ax25_cb *axp,int cnt);
  * them, and axserv_open() has to hand the session on rather than to a login.
  */
 int axlisten_active(const uint8 *call);
+int axlisten_client_claim(const uint8 *call,int pid,int fd,char *err,int errlen);
+void axlisten_client_release(int fd);
 int dolisten(int argc,char *argv[],void *p);
 
 #endif  /* _LAPB_H */

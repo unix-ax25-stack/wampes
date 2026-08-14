@@ -23,8 +23,10 @@ nothing in between.  There is no demultiplexer to write, no thread, and the
 back pressure takes care of itself - when the socket buffer fills, WAMPES
 stops reading and the AX.25 side sends RNR, which is what RNR is for.
 
-The shim therefore shrinks to a translator for four calls: `socket`, `bind`,
-`connect` and `setsockopt`.
+The shim therefore shrinks to a translator for the calls that name an AX.25
+address or claim one - `socket`, `bind`, `connect`, `listen`, `accept`,
+`setsockopt` - and a hook in `close` to forget a descriptor.  Nothing on the
+data path.
 
 ## The conversation
 
@@ -61,8 +63,8 @@ endings, which is right for a human on a terminal and wrong for a program.
 
 ## What the shim does
 
-`libax25/wampes.c`, hooked into `axsock.c` at four places.  Selected with
-`AXSOCK_BACKEND=wampes`.
+`libax25/wampes.c`, hooked into `axsock.c` at six places.  Selected with
+`AXSOCK_BACKEND=wampes`.  The outgoing direction:
 
 * `socket(AF_AX25, …)` returns a placeholder descriptor - an unbound unix
   socket.  It has to be a real descriptor because the application gets the
@@ -164,28 +166,108 @@ and on the node:
 Source from `-s`, both digipeaters in the path, and the port chosen by the
 name of the `axports` entry.
 
+## The incoming direction
+
+A listener needs a second thing: permission.  Outgoing, whoever may reach the
+service socket may already use the transmitter, and the unix mode on the
+socket is the whole access rule.  Incoming, a client asks to be *given* calls
+to a callsign, and handing out the node's own login or a neighbour's mailbox
+to whoever asks first would be wrong.
+
+So the sysop's line is the permission and the client's claim is made against
+it:
+
+    net.rc:          listen ax25 add [pid=<n>] DL9SAU-13 client
+    service socket:  listen DL9SAU-13 [pid=<n>]
+                       *** listening on DL9SAU-13 pid 0xf0
+                       *** DL9SAU-13 is not open for clients
+                       *** DL9SAU-13 is already taken
+                       *** DB0AAA-1 belongs to a port
+
+A callsign nobody configured cannot be claimed at all, which is the rule in
+one sentence.  The claim lives exactly as long as the connection it was made
+on: a client that dies leaves nothing behind, and the next one can claim the
+entry without the sysop doing anything.
+
+Per incoming call WAMPES makes a `socketpair`, gives one end to the same
+`axpipe_open()` that serves a spawned program, and sends the other with
+`SCM_RIGHTS` - together with the trace line, in **one** `sendmsg()`:
+
+    hfa DL1TST-1,DB0BBB > DL9SAU-13
+
+Together deliberately.  A descriptor arriving on its own would have to be
+matched against a line arriving separately, and there is no key to match them
+with.  This way the client's `accept()` is one `recvmsg()`.
+
+The `sendmsg()` uses `MSG_DONTWAIT`: the node's scheduler is cooperative, so
+a client that has stopped calling `accept()` must not be able to stop it.  A
+full buffer is treated like any other failure to hand the call on.
+
+On the shim side `listen()` sends the claim over an ordinary service
+connection, and that connection *becomes* the listening descriptor.  `poll()`
+and `select()` on it therefore work with nothing of ours involved - it is
+readable exactly when a call is waiting, so `ax25d`'s event loop needs no
+adjustment.  `accept()` is the `recvmsg()`, and the calling station goes into
+the address the caller gets, which is what a peer address means.
+
+The refusals are the ones a TCP server knows, which is not a coincidence:
+
+| line | errno |
+|---|---|
+| `already taken` | `EADDRINUSE` |
+| `not open for clients` | `EACCES` |
+| `belongs to a port` | `EADDRNOTAVAIL` |
+
+They surface at `listen()` and not at `bind()`, where a TCP server would meet
+them.  `bind()` cannot ask: the same call names the source of an outgoing
+connection, and claiming a callsign for every socket that names one would be
+wrong.  Only `listen()` says what the socket is for.
+
+**One claim, many calls.**  `already taken` refuses a second *process*, not a
+second connection.  Incoming, `lapb.c` keys on the calling station, so every
+caller gets a control block, a socketpair and a descriptor of its own; the
+one registered client accepts them all, exactly as a TCP server does after
+one `listen()`.  A mailbox with several users at once needs nothing extra.
+
+Verified, 2026-08-14, with a listener doing nothing but socket/bind/listen/
+accept:
+
+    wampes: -> listen DL9SAU-13
+    wampes: <- *** listening on DL9SAU-13 pid 0xf0
+    accept 1: from DL1TST-1  (fd 4)
+    accept 2: from DL1TST-2  (fd 4)
+
+both callers connected at the same time and each answered under its own
+callsign, while a second listener on DL9SAU-13 got
+`listen: Address already in use`.
+
 ## Not built yet
 
-* **The incoming direction.**  `ax25d` and anything else that listens needs
-  more than this.  The plan, decided but unwritten: a fourth target kind
-  `client` in `listen ax25 add`, which is the sysop's authorisation, plus a
-  `listen` verb on the service socket that fails without one.  Per incoming
-  call WAMPES makes a `socketpair`, hands one end to the existing
-  `axpipe_open()` and passes the other with `SCM_RIGHTS` together with the
-  trace line in **one** `sendmsg()`, so there is nothing to correlate.  The
-  registration lives as long as the control connection, so nothing is left
-  behind when a client dies.  `accept()` then is a `recvmsg()`, and `poll()`
-  on the listening descriptor works natively because that descriptor is the
-  control connection.
-* **Frame boundaries on this path.**  The service socket is a byte stream.
+* **Configuration.**  Still two environment variables: `AXSOCK_BACKEND=wampes`
+  chooses the backend for the whole process and `WAMPES_SOCKET` says where
+  the node listens.  Both should go.  The backend belongs at the port, the
+  way the AGWPE ports already do it - an `axports` entry named `wampes:hfb`
+  says which backend it wants by its own name, and then kernel, AGWPE and
+  WAMPES ports can be used side by side in one process.  `axsock.c` says as
+  much in the comment above `axsock_backend_now()`, which calls the variable
+  a stop-gap.  Where each node listens belongs in a `wampes.conf`, one node
+  per line, in the shape of `agwpe.conf`.
+* **Frame boundaries outgoing.**  The service socket is a byte stream.
   Terminal traffic and text services do not care; FBB's compressed forwarding
   does, because an uncompressed block ends where the frame ends.  Inside
   WAMPES the boundary now survives all the way to the pipe - the receive
   queue holds frames rather than bytes, and `SOCK_SEQPACKET` is used wherever
-  the system has it on `AF_UNIX` (Linux does, macOS does not).  What is
-  missing is a way for the shim to be handed such a socket outgoing; the
-  descriptor-passing route above would give it, since the descriptor WAMPES
-  passes is one it made itself.
+  the system has it on `AF_UNIX` (Linux does, macOS does not).  The incoming
+  direction already gets it for free, because the descriptor WAMPES passes is
+  one it made itself.  Outgoing wants the same treatment: a `connect` that
+  hands back a descriptor instead of turning the command connection into the
+  pipe.
 * **Datagrams inbound.**  `datagram` sends UI frames; nothing pushes received
   ones back, so `recvfrom()` has no source yet.
-* **`wampes.conf`.**  One node per line, in the shape of `agwpe.conf`.
+* **`getsockname()` and `getpeername()`** are not answered for WAMPES
+  descriptors.  Nothing tested has needed them; a program that asks gets
+  whatever the underlying unix socket says, which is not an AX.25 address.
+* **A non-blocking `connect()`** returns when the link is up or refused, not
+  `EINPROGRESS`.  Neither `call` nor `ax25d` asks for one.
+* **The claim is always pid text.**  A program cannot ask to be given some
+  other protocol id, although WAMPES would allow it.

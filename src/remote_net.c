@@ -156,6 +156,8 @@ static int command_switcher(struct controlblock *cp, const char *name, const str
 
 static void delete_controlblock(struct controlblock *cp)
 {
+  /* Whatever this client was listening for falls free with it. */
+  axlisten_client_release(cp->fd);
   off_read(cp->fd);
   close(cp->fd);
   free(cp);
@@ -311,6 +313,75 @@ static int command_command(struct controlblock *cp)
   close(fdout_save);
   close(fderr_save);
   return -1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* "listen <call> [pid=<n>]" - ask to be given incoming calls to a callsign.
+ *
+ * The sysop's "listen ax25 add <call> client" line is the permission; this is
+ * the claim against it.  A callsign nobody configured cannot be claimed, so
+ * a client cannot take the node's login or a neighbour's mailbox away by
+ * asking first.
+ *
+ * The claim lives as long as this connection.  Nothing has to be cleaned up
+ * by hand when a client dies, and nothing survives it either.
+ */
+
+static int listen_command(struct controlblock *cp)
+{
+
+  char *argv[8];
+  char copy[sizeof(cp->buffer)];
+  char err[120];
+  char *p;
+  int argc;
+  int i;
+  int pid = PID_NO_L3;
+  uint8 call[AXALEN];
+
+  strcpy(copy, getarg(0, 1));
+  for (argc = 0, p = strtok(copy, " \t");
+       p && argc < (int) (sizeof(argv) / sizeof(argv[0]));
+       p = strtok(NULL, " \t"))
+    argv[argc++] = p;
+
+  memset(call, 0, sizeof(call));
+  for (i = 0; i < argc; i++) {
+    if (!strncmp(argv[i], "pid=", 4)) {
+      char *end;
+      long n = strtol(argv[i] + 4, &end, 0);
+
+      if (*end || n < 0 || n > 255) {
+	say(cp, "*** invalid pid \"%s\"", argv[i] + 4);
+	return 0;
+      }
+      pid = (int) n;
+      continue;
+    }
+    if (call[0]) {
+      say(cp, "*** unexpected \"%s\"", argv[i]);
+      return 0;
+    }
+    if (setcall(call, argv[i])) {
+      say(cp, "*** invalid call \"%s\"", argv[i]);
+      return 0;
+    }
+  }
+  if (!call[0]) {
+    say(cp, "*** no callsign");
+    return 0;
+  }
+  if (axlisten_client_claim(call, pid, cp->fd, err, sizeof(err))) {
+    say(cp, "*** %s", err);
+    return 0;
+  }
+  {
+    char buf[AXBUF];
+
+    say(cp, "*** listening on %s pid 0x%02x", pax25(buf, call), pid);
+  }
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -686,6 +757,7 @@ static void command_receive(void *arg)
     { "connect", connect_command },
     { "console", console_command },
     { "datagram", datagram_command },
+    { "listen",  listen_command },
     { 0,         0 }
   };
 
@@ -697,6 +769,7 @@ static void command_receive(void *arg)
     { "binary",  binary_command },
     { "connect", connect_command },
     { "datagram", datagram_command },
+    { "listen",  listen_command },
     { 0,         0 }
   };
 

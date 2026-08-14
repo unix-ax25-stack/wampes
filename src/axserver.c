@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <sys/uio.h>
 #include <syslog.h>
 #include <unistd.h>
 
@@ -42,7 +43,10 @@ int Axserver_enabled;
 enum axlisten_kind {
   LK_LOGIN,                             /* builtin:login - the node's own */
   LK_SOCKET,                            /* dial an address and pipe */
-  LK_PROGRAM                            /* run a program and pipe */
+  LK_PROGRAM,                           /* run a program and pipe */
+  LK_CLIENT                             /* hand the descriptor to a client
+                                         * that registered on the service
+                                         * socket - see axlisten_client_claim */
 };
 
 struct axlisten {
@@ -61,6 +65,11 @@ struct axlisten {
   int wait;                             /* start on the first frame, not on
 					 * the connect */
   int binary;                           /* no text conversion */
+  int clientfd;                         /* LK_CLIENT: the service socket of
+					 * the client holding this entry, -1
+					 * when nobody does.  The entry is the
+					 * sysop's permission, the claim is
+					 * what makes it answer. */
 };
 
 static struct axlisten *Axlisten;
@@ -134,6 +143,7 @@ static const char *axlisten_kindname(struct axlisten *lp)
   switch (lp->kind) {
   case LK_LOGIN:   return "login";
   case LK_PROGRAM: return "program";
+  case LK_CLIENT:  return "client";
   default:         return "socket";
   }
 }
@@ -147,7 +157,10 @@ static void axlisten_show(struct axlisten *lp)
   printf("%-10s %-6s %-7s %-8s %s%s%s\n",
 	 lp->netrom ? "(netrom)" : pax25(buf, lp->call),
 	 lp->netrom ? "-" : (lp->pid == PID_NO_L3 ? "text" : "pid"),
-	 axlisten_kindname(lp), lp->binary ? "binary" : "ascii", lp->target,
+	 axlisten_kindname(lp), lp->binary ? "binary" : "ascii",
+	 lp->kind == LK_CLIENT
+	   ? (lp->clientfd >= 0 ? "client (claimed)" : "client (nobody)")
+	   : lp->target,
 	 lp->silent ? "  silent" : "", lp->wait ? "  wait" : "");
 }
 
@@ -282,6 +295,7 @@ static int axlisten_add(int netrom, int argc, char *argv[])
     lp->netrom = netrom;
     addrcp(lp->call, call);
     lp->pid = pid;
+    lp->clientfd = -1;
     lp->next = Axlisten;
     Axlisten = lp;
   } else
@@ -289,6 +303,8 @@ static int axlisten_add(int netrom, int argc, char *argv[])
 
   if (!strcmp(target, "builtin:login"))
     lp->kind = LK_LOGIN;
+  else if (!strcmp(target, "client"))
+    lp->kind = LK_CLIENT;
   else if (*target == '/')
     lp->kind = LK_PROGRAM;
   else {
@@ -302,7 +318,55 @@ static int axlisten_add(int netrom, int argc, char *argv[])
   lp->silent = silent;
   lp->wait = wait;
   lp->binary = binary;
+  /* A client is told about the call in the same sendmsg() that carries the
+   * descriptor, so the announcement must not also go down the pipe - it
+   * would be the first thing the far end read as data.
+   */
+  if (lp->kind == LK_CLIENT) lp->silent = 1;
   return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* A client on the service socket asks to be given calls to a callsign.  The
+ * configured entry is the sysop's permission and this is the claim against
+ * it: without an entry there is nothing to claim, which is the whole access
+ * rule.  First come, first served - and a second client is told so rather
+ * than quietly shadowing the first.
+ */
+
+int axlisten_client_claim(const uint8 *call, int pid, int fd,
+			  char *err, int errlen)
+{
+  char buf[AXBUF];
+  struct axlisten *lp;
+
+  if (ismyax25addr(call)) {
+    snprintf(err, errlen, "%s belongs to a port", pax25(buf, call));
+    return 1;
+  }
+  if (!(lp = axlisten_find(call, pid)) || lp->kind != LK_CLIENT) {
+    snprintf(err, errlen, "%s is not open for clients", pax25(buf, call));
+    return 1;
+  }
+  if (lp->clientfd >= 0 && lp->clientfd != fd) {
+    snprintf(err, errlen, "%s is already taken", pax25(buf, call));
+    return 1;
+  }
+  lp->clientfd = fd;
+  return 0;
+}
+
+/* The client is gone.  Everything it held falls free at once, so a crashed
+ * client leaves nothing behind for the sysop to clear.
+ */
+
+void axlisten_client_release(int fd)
+{
+  struct axlisten *lp;
+
+  for (lp = Axlisten; lp; lp = lp->next)
+    if (lp->kind == LK_CLIENT && lp->clientfd == fd) lp->clientfd = -1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1008,6 +1072,73 @@ static struct axservice *axserv_login_open(struct ax25_cb *axp)
 
 /*---------------------------------------------------------------------------*/
 
+/* Hand one accepted call to a client: the trace line and the descriptor in a
+ * single sendmsg().  Together, deliberately - a descriptor arriving on its
+ * own would have to be matched against a line arriving separately, and there
+ * is no key to match them with.  This way the client's accept() is one
+ * recvmsg() and there is nothing to correlate.
+ *
+ * The socketpair is ours at both ends, so it can carry frame boundaries
+ * where the system has them; see axpipe_socketpair().
+ */
+
+static int axserv_handover(struct axlisten *lp, struct ax25_cb *axp,
+			   int *fdp)
+{
+  char buf[256];
+  char call[AXBUF];
+  int i;
+  int sv[2];
+  struct cmsghdr *cm;
+  struct iovec iov;
+  struct msghdr msg;
+  union {                               /* aligned as a cmsghdr wants */
+    char buf[CMSG_SPACE(sizeof(int))];
+    struct cmsghdr align;
+  } control;
+
+  sprintf(buf, "%s %s", axp->iface ? axp->iface->name : "?",
+	  pax25(call, axp->hdr.dest));
+  for (i = 0; i < axp->hdr.ndigis; i++) {
+    strcat(buf, ",");
+    strcat(buf, pax25(call, axp->hdr.digis[i]));
+  }
+  strcat(buf, " > ");
+  strcat(buf, pax25(call, axp->hdr.source));
+  strcat(buf, "\n");
+
+  if (axpipe_socketpair(sv) < 0) return -1;
+
+  memset(&msg, 0, sizeof(msg));
+  memset(&control, 0, sizeof(control));
+  iov.iov_base = buf;
+  iov.iov_len = strlen(buf);
+  msg.msg_iov = &iov;
+  msg.msg_iovlen = 1;
+  msg.msg_control = control.buf;
+  msg.msg_controllen = sizeof(control.buf);
+  cm = CMSG_FIRSTHDR(&msg);
+  cm->cmsg_level = SOL_SOCKET;
+  cm->cmsg_type = SCM_RIGHTS;
+  cm->cmsg_len = CMSG_LEN(sizeof(int));
+  memcpy(CMSG_DATA(cm), &sv[1], sizeof(int));
+
+  /* Never wait on the client: the scheduler is cooperative, and a client
+   * that is not calling accept() must not be able to stop the node.  A full
+   * buffer is refused like any other failure to hand the call on.
+   */
+  if (sendmsg(lp->clientfd, &msg, MSG_DONTWAIT) < 0) {
+    close(sv[0]);
+    close(sv[1]);
+    return -1;
+  }
+  close(sv[1]);                         /* the client owns it now */
+  *fdp = sv[0];
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* What serves this protocol id on this link?  Asked when the first frame for
  * it arrives and nothing is attached yet - and, for entries that do not want
  * to wait, already when the link comes up.
@@ -1036,6 +1167,15 @@ struct axservice *axserv_start(struct ax25_cb *axp, int pid)
     return axserv_login_open(axp);
   case LK_SOCKET:
     sp = axpipe_open(axp, lp, -1);
+    break;
+  case LK_CLIENT:
+    {
+      int fd;
+
+      if (lp->clientfd < 0) break;      /* nobody there - fall through to
+					 * the refusal below, with a reason */
+      if (axserv_handover(lp, axp, &fd) == 0) sp = axpipe_open(axp, lp, fd);
+    }
     break;
   case LK_PROGRAM:
     {
