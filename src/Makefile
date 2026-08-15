@@ -341,7 +341,35 @@ $(PROGRAM):     $(OBJS) $(LIBS)
 		$(RMTARGET)
 		@$(LD) $(LDFLAGS) $(OBJS) $(LIBS) $(SLIBS) -o $(PROGRAM)
 
-clean:;         @rm -f *.o $(PROGRAM) lint tags TAGS *~ \#*\#
+# The banner used to say the same thing since the 5th of March 2000, so a
+# running node could not be matched against a source tree - which cost real
+# time on 2026-08-15, when the installed copy was three days old and nothing
+# said so.  It now carries the commit date, the commit, and a "+" if the tree
+# had uncommitted changes when it was built.  Not git's own "-dirty": nobody
+# likes running something that calls itself dirty, and "+" says the same.
+#
+# version.c is tracked and must not be generated, so the string arrives
+# through this header, which is not tracked.  FORCE makes the recipe run every
+# time; the file is only replaced when its contents actually change, so an
+# unchanged tree does not drag every build into recompiling version.o.
+#
+# Without git - a source archive - it falls back to the string from 2000.
+version_git.h: FORCE
+	@d=`git -C .. log -1 --format=%cd --date=short 2>/dev/null`; \
+	h=`git -C .. rev-parse --short HEAD 2>/dev/null`; \
+	if [ -n "$$h" ]; then \
+		git -C .. diff --quiet HEAD 2>/dev/null || h="$$h+"; \
+		v="WAMPES-$$d-g$$h"; \
+	else \
+		v="WAMPES-000305"; \
+	fi; \
+	echo "#define WAMPES_VERSION \"$$v\"" > $@.new; \
+	if cmp -s $@.new $@; then rm -f $@.new; \
+	else mv $@.new $@; echo "version: $$v"; fi
+
+FORCE:
+
+clean:;         @rm -f *.o $(PROGRAM) version_git.h lint tags TAGS *~ \#*\#
 
 _install:       $(SBINDIR)/net
 
@@ -1850,4 +1878,5 @@ uhnp.o:\
 	uhnp.h\
 	uhnp.c
 version.o:\
-	version.c
+	version.c\
+	version_git.h
