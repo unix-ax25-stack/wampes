@@ -66,6 +66,7 @@ void asytxdone(int dev);
 int slip_free(struct iface *ifp);
 int slip_init(struct iface *ifp);
 int slip_raw(struct iface *iface,struct mbuf **data);
+int slip_raw_notrace(struct iface *iface,struct mbuf **data);
 void slip_rx(void *arg);
 int slip_send(struct mbuf **bp,struct iface *iface,int32 gateway,uint8 tos);
 int vjslip_send(struct mbuf **bp,struct iface *iface,int32 gateway,uint8 tos);

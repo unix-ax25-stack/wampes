@@ -258,6 +258,13 @@ void *p)
 		if((ifp->trfp = fopen(argv[3],APPEND_TEXT)) == NULL){
 			printf("Can't write to %s\n",argv[3]);
 			ifp->trfp = stdout;
+		}else{
+			/* A trace file is something one watches while the node
+			 * runs.  Block buffering would hold a session's worth
+			 * of lines back and lose them outright if the node is
+			 * killed, which is how a trace usually ends.
+			 */
+			setvbuf(ifp->trfp,NULL,_IOLBF,0);
 		}
 	}
 	showtrace(ifp);
