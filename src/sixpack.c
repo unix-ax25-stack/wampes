@@ -54,7 +54,7 @@ struct sixpack Sixpack[ASY_MAX];
 
 static struct mbuf *sixpack_decode(struct sixpack *sp, uint8 c);
 static void sixpack_command(struct sixpack *sp, uint8 c);
-static struct mbuf *sixpack_encode(struct sixpack *sp, struct mbuf *bp);
+static struct mbuf *sixpack_encode(struct sixpack *sp, struct mbuf **bpp);
 
 /*---------------------------------------------------------------------------*/
 
@@ -114,11 +114,13 @@ int sixpack_raw(struct iface *iface, struct mbuf **bpp)
 	iface->rawsndcnt++;
 	iface->lastsent = secclock();
 
-	if ((bp = sixpack_encode(sp, *bpp)) == NULL) {
-		free_p(bpp);
+	/* The encoder consumes the chain, as nrs_encode() does - pullup()
+	 * frees the buffers while it reads them, so there is nothing left
+	 * here to free and freeing it anyway hands the same buffers back
+	 * twice.
+	 */
+	if ((bp = sixpack_encode(sp, bpp)) == NULL)
 		return -1;
-	}
-	free_p(bpp);
 	return (*sp->send)(iface->dev, &bp);
 }
 
@@ -126,7 +128,7 @@ int sixpack_raw(struct iface *iface, struct mbuf **bpp)
  * same encoding and is counted so that data plus address make 0xFF.
  */
 
-static struct mbuf *sixpack_encode(struct sixpack *sp, struct mbuf *bp)
+static struct mbuf *sixpack_encode(struct sixpack *sp, struct mbuf **bpp)
 {
 	int i;
 	int len;
@@ -139,9 +141,13 @@ static struct mbuf *sixpack_encode(struct sixpack *sp, struct mbuf *bp)
 	/* The delay byte first, then the frame - and no more than we can hold,
 	 * since a truncated frame is worse than a refused one.
 	 */
-	if ((len = (int) len_p(bp)) > (int) sizeof(in) - 2) return NULL;
+	if ((len = (int) len_p(*bpp)) > (int) sizeof(in) - 2) {
+		free_p(bpp);
+		return NULL;
+	}
 	in[0] = sp->txdelay;
-	pullup(&bp, in + 1, (uint) len);
+	pullup(bpp, in + 1, (uint) len);
+	free_p(bpp);                    /* pullup emptied it; make it plain */
 	len++;
 
 	/* Four bytes for every three, one more group for the checksum, plus
