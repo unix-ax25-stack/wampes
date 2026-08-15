@@ -69,12 +69,6 @@ struct cmdtable {
 
 static int fkbd = -1;
 
-/* Where the group that may reach the service socket is looked up.  Without
- * it the socket keeps its owner, which is the safe direction: a sysop can
- * always widen it, and a wrong guess here would hand out the transmitter.
- */
-#define AXSOCK_GROUP  "hams"
-
 /* What we listen on.  Two kinds, and the difference is what may be said:
  *
  * The command channel carries "command" and "console" and is therefore the
@@ -82,8 +76,8 @@ static int fkbd = -1;
  * It lives in .sockets, mode 0700.
  *
  * The service socket carries connect and datagram and nothing that changes
- * the node.  It lives in the public sockets directory, so its own mode has
- * to do the work: 0660, group "hams".
+ * the node.  It lives in the public sockets directory, and there the DIRECTORY
+ * is what decides who may reach it - 0750, group of the sysop's choosing.
  *
  * Each entry keeps its own descriptor.  The accept handler is given the
  * entry, not a global - with one shared variable the first connection would
@@ -975,36 +969,27 @@ static void complain(const char *fmt, ...)
 
 /*---------------------------------------------------------------------------*/
 
-/* The service socket sits in the public directory, so its own mode is what
- * keeps it to the operators: group AXSOCK_GROUP and 0660, or 0600 where that
- * group does not exist - narrower rather than wider, since without the group
- * there is nobody the mode could open it to on purpose.
+/* The service socket is created wide open, and that is not carelessness: the
+ * directory around it is the gate.  sockets/ is 0750, so who may reach this
+ * socket is decided by the group on that directory - one chgrp, and the sysop
+ * has moved the whole service from one group to another without having to
+ * think about socket modes at all.
  *
- * This is a default and not a decision overruled.  bind() creates the socket
- * afresh at every start, so there is never a mode on it that somebody chose;
- * and "axsock" in net.rc runs afterwards and wins.  Leaving it to the umask
- * instead was tried and is wrong: at umask 022 the socket comes out 0755, no
- * write bit for anyone else, and no client can connect at all.
+ * Guessing here is what does not work.  A group looked up by name gave
+ * whoever happened to hold that name the transmitter, and on BSD a socket
+ * inherits the group of its DIRECTORY, so "no such group" quietly produced
+ * group staff - every local account.  Refusing instead, with 0600, produced a
+ * node that no client could reach, which drives an operator to chmod -R 777
+ * on the lot.  Both are worse than saying plainly: the door is the directory.
+ *
+ * net.rc can still say otherwise with "axsock mode" and "axsock group", and
+ * those run after the bind.  0707 to admit everyone except one group, for
+ * instance.
  */
 
 static void set_service_rights(const char *path)
 {
-  struct group *gr;
-
-  if ((gr = getgrnam(AXSOCK_GROUP))) {
-    chown(path, (uid_t) -1, gr->gr_gid);
-    chmod(path, 0660);
-    return;
-  }
-
-  /* No such group, so there is nobody the mode could open it to.  The chmod
-   * 0660 used to happen here as well, and that was wrong twice over: it
-   * contradicted this very message, and BSD gives a new file the group of its
-   * DIRECTORY rather than of whoever made it - so on macOS the socket came
-   * out group "staff", which is every local account.
-   */
-  complain("no group \"%s\": %s stays with its owner", AXSOCK_GROUP, path);
-  chmod(path, 0600);
+  chmod(path, 0777);
 }
 
 /*---------------------------------------------------------------------------*/

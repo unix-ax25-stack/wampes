@@ -80,8 +80,10 @@ _secure:
 		exit 0; \
 	fi; \
 	chown -R root $(TCPDIR) || exit 1; \
-	find $(TCPDIR) -type d ! -name .sockets -exec chmod 755 {} \; ; \
+	find $(TCPDIR) -type d ! -name .sockets ! -name sockets \
+		-exec chmod 755 {} \; ; \
 	[ -d $(TCPDIR)/.sockets ] && chmod 700 $(TCPDIR)/.sockets; \
+	[ -d $(TCPDIR)/sockets ] && chmod 750 $(TCPDIR)/sockets; \
 	find $(TCPDIR) -type f -exec chmod go-w {} \; ; \
 	echo "$(TCPDIR): root, 755, nothing below it writable by anyone else"; \
 	left=`find $(TCPDIR) ! -user root -print 2>/dev/null | head -5`; \

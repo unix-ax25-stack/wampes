@@ -71,74 +71,75 @@ what the socket inside says; an admin who wants 750 for a group of sysops
 may have it and will keep it.  One who opens it wide is told so at
 startup - that one is still checked.
 
+### The door is the directory
+
+`sockets/` is created **0750** and the socket inside it **0777**.  That
+looks backwards until you see which one is the gate: who may reach the
+service is decided by the group on the directory, and the sysop moves the
+whole service from one group to another with a single `chgrp`, without
+having to think about socket modes at all.
+
+    chgrp hams   $TCPDIR/sockets     the hams group may use the node
+    chgrp sysops $TCPDIR/sockets     that group instead
+    chmod 755    $TCPDIR/sockets     everybody may
+
+Guessing is what does not work here, and both directions were tried on
+2026-08-15.  Looking a group up by name handed the transmitter to whoever
+held that name - and on BSD a new file takes the group of its DIRECTORY
+rather than of whoever made it, so "no such group" quietly produced group
+`staff`, which on macOS is every local account.  Refusing instead, and
+leaving the socket at 0600, produced a node no client could reach and no
+daemon could use without running as root.  That is the default which ends
+in `chmod -R 777 /usr/local`, and it has been seen in the wild often
+enough.
+
+**The group is inherited, and the two systems inherit differently.**  On
+BSD and macOS a new directory takes the group of its parent, so
+`sockets/` comes up `root:staff` if `$TCPDIR` is - and `staff` is every
+local account, so 0750 admits everyone.  On Linux it takes the group of
+the process, so `root:root`, and 0750 admits nobody but root.  The same
+setting, opposite results.  Either way the answer is one line, and it is
+a line somebody should think about once:
+
+    chgrp <group> $TCPDIR/sockets
+
+`make install` does not do it, and does not create a group either.  It
+cannot know who is meant to have the radio, and an install that reaches
+into the account database is not one anybody should run.
+
 ### The sticky bit on sockets/
 
-At 755 it makes no difference: only root may create or remove anything
-there.  It matters the moment the directory is opened up - say 775 with
-group `hams`, so that several daemons can publish their own sockets - and
-then it is not optional.  Without it, any member of that group may delete
-`ax25` and bind their own socket under the same name, and every client
-connects to them instead, with correct permissions and nothing to notice.
-With `1775` they may add their own entries and not remove anyone else's.
+At 750 it makes no difference: only root may create or remove entries.
+It matters the moment the directory is opened up for writing - say 1770
+so that several daemons can publish their own sockets there - and then it
+is not optional.  Without it, any member of that group may delete `ax25`
+and bind their own socket under the same name, and every client connects
+to them instead, with correct permissions and nothing to notice.
 
-`bind_socket()` does not help here.  It keeps the node from clearing away
+`bind_socket()` does not help.  It keeps the node from clearing away
 somebody else's socket; it cannot keep somebody else from clearing away
 the node's.
 
-So: 755 and nothing to think about, or 1775 if it has to be shared.  775
-is the one to avoid.
+### Saying something else in net.rc
 
-### Saying what the service socket should be
-
-At bind the node gives it group `hams` and mode `0660`, or `0600` where
-that group does not exist - narrower rather than wider, since without the
-group there is nobody the mode could deliberately open it to.
-
-That is a default and not a decision being overruled, and the difference
-is worth stating because it is the opposite of the rule for the
-directories above.  A directory persists, so a mode on it is somebody's
-choice and the node leaves it alone.  A socket does not: `bind()` creates
-it afresh at every start, the inode changes, and there is never a mode on
-it that anyone chose.  Something has to decide, and a default that can be
-overridden is the mildest form of deciding.
-
-Leaving it to the umask instead was tried, on 2026-08-15, and it is
-wrong: at `umask 022` the socket comes out `0755`, nobody but the owner
-has a write bit, and a Unix socket cannot be connected to without one.
-Every client would be locked out and nothing would say why.
-
-To arrange it differently, say so in net.rc.  Those lines run after the
-socket exists, so they win:
+The defaults are a starting point.  net.rc runs after the sockets exist,
+so these win:
 
     axsock                    show owner, group and mode
     axsock group <name>       set the group
     axsock mode <octal>       set the mode
 
-Some arrangements this makes possible:
+The one that the directory alone cannot express:
 
-    axsock group staff
-    axsock mode 0660          everyone local, but not through hams
-
-    axsock group hams
-    axsock mode 0707          everybody EXCEPT the logged-in amateurs -
+    axsock mode 0707          everybody EXCEPT the group on the socket -
                               they may be connected to, and may not
                               connect out
 
-The node does not second-guess any of it.  Before `axsock` existed it
-forced 0660 at every start, which made the second one impossible to hold:
-it was set by hand and taken away again at the next restart, with nothing
-said.
-
-`$TCPDIR` itself is therefore 755 and not 750.  Restricting the way in to
-one group cannot work as soon as two parties have a legitimate claim - a
-mailbox running under `daemon` and users in `hams`, say - and a default
-that needs an expert to unpick is the wrong default.  Traversal is not
-what protects anything here; the mode of the socket is.  755 also agrees
-with what `lib/rundir.c` sets on every start, so the two do not fight.
-
-What does need to be tighter than 755 is any file holding credentials.
-That is a property of the file, not of the directory, and it has to say
-so itself - 640 or 600, and owned by root.
+`$TCPDIR` itself stays 755.  Restricting the way in that far up cannot
+work as soon as two parties have a legitimate claim, and traversal is not
+what protects anything here.  What does need to be tighter than 755 is
+any file holding credentials - a property of the file, not of the
+directory, and it has to say so itself: 640 or 600, owned by root.
 
 ## What the node does about it
 

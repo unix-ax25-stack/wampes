@@ -53,7 +53,13 @@ static void makedir(const char *name, int mode)
 void create_rundir(void)
 {
   makedir(TCPDIR, 0755);
-  makedir(TCPDIR "/sockets", 0755);
+  /* 0750, because this directory is the gate.  The socket inside is left
+   * wide open - see set_service_rights() in remote_net.c - so what decides
+   * who may reach the node is the group on this directory, which the sysop
+   * sets once and can change with a single chgrp.  Guessing a group here
+   * would be guessing who may use the transmitter.
+   */
+  makedir(TCPDIR "/sockets", 0750);
 }
 
 /*---------------------------------------------------------------------------*/
