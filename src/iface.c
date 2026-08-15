@@ -15,6 +15,8 @@
 #include "cmdparse.h"
 #include "commands.h"
 #include "trace.h"
+#include "pktdrvr.h"
+#include "lapb.h"
 
 static void showiface(struct iface *ifp);
 static int mask2width(int32 mask);
@@ -306,6 +308,13 @@ iflinkadr(int argc,char *argv[],void *p)
 		free(ifp->hwaddr);
 	ifp->hwaddr = (uint8 *) mallocw(ifp->iftype->hwalen);
 	(*ifp->iftype->scan)(ifp->hwaddr,argv[1]);
+	/* The port now answers to this callsign, so it is the node's: any
+	 * forwarding entry for a protocol we serve ourselves goes.  Here
+	 * rather than only at attach, because this is the command that moves
+	 * a callsign onto a port after everything else has been configured.
+	 */
+	if(ifp->iftype->type == CL_AX25)
+		axlisten_drop_local(ifp->hwaddr);
 	return 0;
 }
 

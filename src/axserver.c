@@ -22,6 +22,7 @@
 #include "flexnet.h"
 #include "transport.h"
 #include "login.h"
+#include "remote_net.h"
 
 int Axserver_enabled;
 
@@ -360,6 +361,169 @@ int axlisten_client_claim(const uint8 *call, int pid, int fd,
 /* The client is gone.  Everything it held falls free at once, so a crashed
  * client leaves nothing behind for the sysop to clear.
  */
+
+/* A port list, written "hf1,hf2" for those ports or "!aprs,foo" for every
+ * port but those.  Absent means every port.
+ *
+ * The NAMES are kept, not resolved pointers, and the match happens when a
+ * frame arrives.  A list may perfectly well be written before the ports it
+ * mentions exist - net.rc is read from the top and nothing says the attach
+ * lines come first - and a list resolved at configuration time would quietly
+ * miss every port attached after it.
+ */
+
+int portlist_set(struct portlist *pl, const char *spec, char *err, int errlen)
+{
+  const char *p;
+
+  free(pl->spec);
+  pl->spec = 0;
+  pl->exclude = 0;
+
+  if (!spec || !*spec) return 0;        /* every port */
+
+  if (*spec == '!') {
+    pl->exclude = 1;
+    spec++;
+    if (!*spec) {
+      snprintf(err, errlen, "\"!\" without a port");
+      return 1;
+    }
+  }
+  /* Only the shape is checked here.  Whether a name is a port is a question
+   * for the moment a frame arrives, not for now - see above.
+   *
+   * A "!" on a single name is allowed once the whole list already excludes:
+   * "!foo,!bar" and "!foo,bar" mean the same thing, and the first is what
+   * people write.  Spelling it "not (foo,bar)" would be tidier and nobody
+   * would type it.
+   *
+   * Mixing the two is refused.  "hf1,hf2,!foo" reads as though it added an
+   * exception, and it does not - it is an inclusion list in which no port is
+   * called "!foo", so it quietly means "hf1,hf2".  Right by accident is not
+   * right.
+   */
+  for (p = spec; *p; p++) {
+    if (*p == '!' && (p == spec || p[-1] == ',')) {
+      if (!pl->exclude) {
+        snprintf(err, errlen,
+                 "\"%s\" mixes ports and exceptions - put the \"!\" in front "
+                 "of the whole list", spec);
+        return 1;
+      }
+      if (p[1] == ',' || !p[1]) {
+        snprintf(err, errlen, "\"!\" without a port");
+        return 1;
+      }
+      continue;
+    }
+    if (*p == ',' && (p == spec || p[1] == ',' || !p[1])) {
+      snprintf(err, errlen, "empty port name in \"%s\"", spec);
+      return 1;
+    }
+  }
+  if (!(pl->spec = strdup(spec))) {
+    snprintf(err, errlen, "no memory");
+    return 1;
+  }
+  return 0;
+}
+
+void portlist_free(struct portlist *pl)
+{
+  free(pl->spec);
+  pl->spec = 0;
+  pl->exclude = 0;
+}
+
+/* Is this port in the list?  An empty list is every port. */
+
+int portlist_allows(const struct portlist *pl, const struct iface *ifp)
+{
+  const char *p;
+  size_t n;
+  int found = 0;
+
+  if (!pl->spec) return 1;
+  if (!ifp || !ifp->name) return 0;
+
+  n = strlen(ifp->name);
+  for (p = pl->spec; *p; ) {
+    const char *end = strchr(p, ',');
+    size_t len = end ? (size_t) (end - p) : strlen(p);
+
+    /* A redundant "!" on a name inside an exclusion list - see above. */
+    if (*p == '!' && len > 1) {
+      p++;
+      len--;
+    }
+    if (len == n && !strncmp(p, ifp->name, n)) {
+      found = 1;
+      break;
+    }
+    p = end ? end + 1 : p + len;
+  }
+  return pl->exclude ? !found : found;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Local services come first.
+ *
+ * A callsign under which the node is on the air belongs to the node, and a
+ * forwarding entry for it has to go - not be shadowed, go, so that what the
+ * listen display says is what happens.  The alternative was to let whichever
+ * came first in net.rc win, and that cannot be right: nobody can tell from a
+ * configuration file whether "listen add ... pid=netrom" above "netrom start"
+ * was meant as a forwarding or as an accident.
+ *
+ * Which protocols are the node's own is decided by the PID table and not by
+ * what has been started, so there is no state and no ordering.  That leaves
+ * room for the case which is genuinely legitimate: a protocol nobody here
+ * serves - PID_FLEXTALK, say - may be forwarded from a port callsign,
+ * because taking it away costs the node nothing.
+ *
+ * A client holding a dropped entry is closed.  On a binary stream that is the
+ * only thing we may say, a text line being exactly what must not appear
+ * there.
+ */
+
+static int pid_is_local(int pid)
+{
+  struct axlink *ipp;
+
+  if (pid == PID_NO_L3)
+    return 1;                           /* connects to the node itself */
+  for (ipp = Axlink; ipp->funct; ipp++)
+    if (ipp->pid == pid)
+      return 1;
+  return 0;
+}
+
+void axlisten_drop_local(const uint8 *call)
+{
+  char buf[AXBUF];
+  struct axlisten *lp, **pp;
+
+  if (!call || !*call) return;
+
+  for (pp = &Axlisten; *pp; ) {
+    lp = *pp;
+    if (lp->netrom || !addreq(lp->call, call) || !pid_is_local(lp->pid)) {
+      pp = &lp->next;
+      continue;
+    }
+    printf("listen %s pid=0x%02x dropped: %s is a port callsign and the node "
+           "serves that protocol itself\n", pax25(buf, lp->call), lp->pid,
+           pax25(buf, lp->call));
+    if (lp->clientfd >= 0) remote_net_drop_client(lp->clientfd);
+    *pp = lp->next;
+    free(lp->target);
+    free(lp);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
 
 void axlisten_client_release(int fd)
 {

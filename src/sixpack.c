@@ -52,6 +52,7 @@
 #include "trace.h"
 #include "devparam.h"
 #include "sixpack.h"
+#include "lapb.h"
 
 /* Shortest data frame that can mean anything: delay, one byte, checksum. */
 #define SIXP_MIN_FRAME          3
@@ -102,6 +103,8 @@ int sixpack_init(struct iface *ifp)
 	ifp->raw = sixpack_raw;
 	ifp->hwaddr = (uint8 *) mallocw(AXALEN);
 	memcpy(ifp->hwaddr, Mycall, AXALEN);
+	/* The port answers to this callsign now - see axlisten_drop_local(). */
+	axlisten_drop_local(ifp->hwaddr);
 	ifp->xdev = xdev;
 	ifp->rxproc = sixpack_recv;
 	sp->iface = ifp;

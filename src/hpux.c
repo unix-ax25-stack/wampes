@@ -63,6 +63,16 @@ static TYPE_FD_SET actwrite;
 static void (*writefnc[FD_SETSIZE])(void *);
 static void *writearg[FD_SETSIZE];
 
+/* Who was registered for this descriptor?  Used to reach a client's control
+ * block from outside remote_net.c - see remote_net_drop_client().
+ */
+void *on_read_arg(int fd)
+{
+  if (fd < 0 || fd >= FD_SETSIZE) return 0;
+  return readarg[fd];
+}
+
+
 static int maxfd = -1;
 
 static int local_kbd;

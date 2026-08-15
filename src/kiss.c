@@ -13,6 +13,7 @@
 #include "ax25.h"
 #include "pktdrvr.h"
 #include "crc.h"
+#include "lapb.h"
 
 /* Set up a SLIP link to use AX.25 */
 int
@@ -53,6 +54,8 @@ kiss_init(struct iface *ifp)
 	if(ifp->hwaddr == NULL)
 		ifp->hwaddr = (uint8 *) mallocw(AXALEN);
 	memcpy(ifp->hwaddr,Mycall,AXALEN);
+	/* The port answers to this callsign now - see axlisten_drop_local(). */
+	axlisten_drop_local(ifp->hwaddr);
 	ifp->xdev = xdev;
 	ifp->crccontrol = CRC_TEST_16;
 

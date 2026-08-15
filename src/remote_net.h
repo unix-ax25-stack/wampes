@@ -9,6 +9,9 @@ void remote_net_initialize(void);
 /* "start axtcp [<port>]" and "stop axtcp": the loopback listeners for the
  * AX.25 service socket.  Off by default - a TCP port carries no rights.
  */
+/* Close a client of the service socket, named by its descriptor. */
+void remote_net_drop_client(int fd);
+
 int axtcpstart(int argc, char *argv[], void *p);
 int axtcp0(int argc, char *argv[], void *p);
 

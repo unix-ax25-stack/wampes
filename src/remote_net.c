@@ -164,6 +164,28 @@ static void delete_controlblock(struct controlblock *cp)
 
 /*---------------------------------------------------------------------------*/
 
+/* Close a client, named by its descriptor.  The listener bookkeeping in
+ * axserver.c needs this: when a local service takes a callsign over, the
+ * forwarding entry goes, and the client holding it has to be told.  On a
+ * binary stream there is no way to say it in words - a text line would
+ * corrupt the very stream we are protecting - so the close IS the message.
+ *
+ * The control block is not in a list of its own; the I/O layer has it as the
+ * argument it will pass to command_receive(), so ask there.  Checking the
+ * function as well makes sure we are looking at one of ours.
+ */
+
+void remote_net_drop_client(int fd)
+{
+  struct controlblock *cp;
+
+  if (fd < 0 || !(cp = (struct controlblock *) on_read_arg(fd))) return;
+  if (cp->fd != fd) return;             /* not a client control block */
+  delete_controlblock(cp);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void transport_try_send(void *arg)
 {
   struct controlblock *cp = (struct controlblock *) arg;

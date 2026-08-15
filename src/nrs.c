@@ -17,6 +17,7 @@
 #include "asy.h"
 #include "trace.h"
 #include "commands.h"
+#include "lapb.h"
 
 static struct mbuf *nrs_encode(struct mbuf *bp);
 static struct mbuf *nrs_decode(int dev,uint8 c);
@@ -47,6 +48,8 @@ struct iface *ifp)
 
 	ifp->hwaddr = (uint8 *) mallocw(AXALEN);
 	memcpy(ifp->hwaddr,Mycall,AXALEN);
+	/* The port answers to this callsign now - see axlisten_drop_local(). */
+	axlisten_drop_local(ifp->hwaddr);
 	ifp->xdev = xdev;
 	np->iface = ifp;
 	np->send = asy_send;

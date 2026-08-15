@@ -285,6 +285,25 @@ void axserv_open(struct ax25_cb *axp,int cnt);
 /* Callsigns configured with "ax25 listen".  ax_recv() has to admit frames for
  * them, and axserv_open() has to hand the session on rather than to a login.
  */
+/* A port list as written by the sysop: "hf1,hf2", or "!aprs,foo" for every
+ * port but those.  spec == NULL means every port.  Names, not pointers - see
+ * portlist_set() for why.
+ */
+struct portlist {
+	char *spec;
+	int exclude;
+};
+
+int portlist_set(struct portlist *pl,const char *spec,char *err,int errlen);
+void portlist_free(struct portlist *pl);
+int portlist_allows(const struct portlist *pl,const struct iface *ifp);
+
+/* A port has taken this callsign: every forwarding entry for it whose
+ * protocol the node serves itself is dropped, and any client holding one is
+ * closed.  See axlisten_drop_local().
+ */
+void axlisten_drop_local(const uint8 *call);
+
 int axlisten_active(const uint8 *call);
 int axlisten_client_claim(const uint8 *call,int pid,int fd,char *err,int errlen);
 void axlisten_client_release(int fd);

@@ -12,6 +12,7 @@ pid_t dofork(void);
 void ioinit(void);
 void iostop(void);
 int doshell(int argc, char *argv[], void *p);
+void *on_read_arg(int fd);
 void on_read(int fd, void (*fnc)(void *), void *arg);
 void off_read(int fd);
 void on_write(int fd, void (*fnc)(void *), void *arg);
