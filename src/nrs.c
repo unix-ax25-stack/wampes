@@ -13,6 +13,7 @@
 #include "iface.h"
 #include "ax25.h"
 #include "nrs.h"
+#include "netrom.h"
 #include "asy.h"
 #include "trace.h"
 #include "commands.h"
@@ -125,15 +126,25 @@ struct mbuf *bp)
 	lbp->cnt = cp - lbp->data;
 	return lbp;
 }
-/* Longest frame we will assemble: the interface MTU plus room for a NET/ROM
- * network and transport header.
+/* Longest frame we will assemble.  As in slip.c, this bounds what the far end
+ * may send and not what we transmit, so the MTU cannot be the whole story.
+ * A full NET/ROM frame is
+ *
+ *    15   network layer: source and destination node, TTL
+ *     5   transport layer header
+ *   236   NR4MAXINFO
+ *   ---
+ *   256   bytes, and it arrives whatever our MTU happens to be
  */
+#define NRS_MAXRXFRAME  (15 + NR4MINHDR + NR4MAXINFO)
+
 static uint
 nrs_maxframe(struct iface *iface)
 {
 	uint mtu = (iface && iface->mtu > 0) ? (uint) iface->mtu : 256;
+	uint lim = mtu + 256;
 
-	return mtu + 256;
+	return lim > NRS_MAXRXFRAME ? lim : NRS_MAXRXFRAME;
 }
 
 /* Process incoming bytes in net/rom serial format

@@ -307,6 +307,30 @@ attempt fails.  RFC 791 requires every link to carry 68 octets anyway, so
 `mtu_ok()` in `iface.c` now refuses anything smaller, on both paths that
 accept a number from the operator - `attach asy` and `ifconfig <if> mtu`.
 
+One thing the MTU must **not** decide is what may be received.  The frame
+length guard in `slip.c` and `nrs.c` used to be `mtu + 256`, which ties
+the receive limit to a transmit-side, IP-specific number: an operator who
+sets the MTU to 236 so that IP over NET/ROM works still wants to hear a
+neighbour who fills a 256 byte information field.  Measured at MTU 68: a
+327 byte frame was discarded, and a maximal one - eight digipeaters and a
+full information field, 329 bytes - never arrived either.  The guard now
+takes the larger of `mtu + 256` and the longest frame a neighbour may
+legitimately send.  The information field is 256, but the frame around it
+is not:
+
+      1   KISS type byte
+     14   destination and source address
+     56   eight digipeaters
+      1   control
+      1   PID
+    256   information field, N1
+      2   CRC, on a port running SMACK or FlexNet
+    ---
+    331   bytes on the wire, before SLIP escaping
+
+With that, the same 327 and 329 byte frames arrive and a 347 byte one is
+still refused.
+
 ### What IPv6 would demand
 
 WAMPES has no IPv6, but the numbers are worth knowing before that

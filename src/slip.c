@@ -17,6 +17,7 @@
 #include "slhc.h"
 #include "asy.h"
 #include "slip.h"
+#include "ax25.h"
 #include "trace.h"
 #include "pktdrvr.h"
 
@@ -166,15 +167,38 @@ slip_encode(struct mbuf **bpp)
 	lbp->cnt = cp - lbp->data;
 	return lbp;
 }
-/* Longest frame we will assemble: the interface MTU plus room for a KISS
- * type byte and an AX.25 header with the full set of digipeaters.
+/* Longest frame we will assemble.  This bounds what a NEIGHBOUR may send us,
+ * and that has nothing to do with our own MTU: the MTU describes the IP
+ * datagrams we transmit, while the peer is free to fill an information field
+ * up to N1 and reach us over a full digipeater path.  The information field
+ * is 256, but the frame around it is not - it adds up to
+ *
+ *     1   KISS type byte
+ *    14   destination and source address
+ *    56   eight digipeaters
+ *     1   control
+ *     1   PID
+ *   256   information field, N1
+ *     2   CRC, on a port running SMACK or FlexNet
+ *   ---
+ *   331   bytes on the wire, before SLIP escaping
+ *
+ * Taking the bound from the MTU alone put that out of reach on any port with
+ * a small MTU: at MTU 68 the bound was 68 + 256 = 324, and a 327 byte frame
+ * was measured being discarded.  So 331 is the floor.  The MTU still raises
+ * it, for a plain SLIP port where the frame really is an IP datagram and may
+ * be larger than any AX.25 frame.
  */
+#define AX25_N1          256    /* default maximum information field */
+#define AX25_MAXRXFRAME  (1 + AXALEN * (2 + MAXDIGIS) + 1 + 1 + AX25_N1 + 2)
+
 static uint
 slip_maxframe(struct iface *iface)
 {
 	uint mtu = (iface && iface->mtu > 0) ? (uint) iface->mtu : 256;
+	uint lim = mtu + 256;
 
-	return mtu + 256;
+	return lim > AX25_MAXRXFRAME ? lim : AX25_MAXRXFRAME;
 }
 
 /* Process incoming bytes in SLIP format
