@@ -63,10 +63,16 @@ group exists, and says so when it does not.
 The socket that *would* matter is the command channel, and that one lives
 in `.sockets` at mode 0700 - which is checked.
 
-Group `hams` on `$TCPDIR` itself does matter, though, and that is why 750
-`root:hams` is better than 750 `root:wheel`: a member of `hams` has to be
-able to traverse into `sockets/`, or the socket's own mode is worth
-nothing.
+`$TCPDIR` itself is therefore 755 and not 750.  Restricting the way in to
+one group cannot work as soon as two parties have a legitimate claim - a
+mailbox running under `daemon` and users in `hams`, say - and a default
+that needs an expert to unpick is the wrong default.  Traversal is not
+what protects anything here; the mode of the socket is.  755 also agrees
+with what `lib/rundir.c` sets on every start, so the two do not fight.
+
+What does need to be tighter than 755 is any file holding credentials.
+That is a property of the file, not of the directory, and it has to say
+so itself - 640 or 600, and owned by root.
 
 ## What the node does about it
 
@@ -93,8 +99,7 @@ then, and the operator is running it out of a directory of their own.
 `make install` as root does this, and prints what it did:
 
     chown -R root  $TCPDIR
-    chgrp -R hams  $TCPDIR          # if that group exists
-    chmod 750      $TCPDIR and its directories
+    chmod 755      $TCPDIR and its directories
     chmod 700      $TCPDIR/.sockets
     chmod go-w     every file below it
 

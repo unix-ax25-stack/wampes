@@ -57,17 +57,17 @@ install-complete: complete
 # after installing, take ownership and close the door.  Not run with -i - a
 # silent failure here is the case this exists to prevent.
 #
-# 750 and not 755, but the group matters: remote_net.c publishes
-# sockets/ax25 with mode 0660 and group "hams" so that libax25 programs can
-# reach the node.  Locking the directory to root:wheel would take away the
-# traversal and the socket would be unreachable with its own permissions
-# intact.  So use "hams" where it exists - tried, rather than looked up, which
-# keeps this portable - and fall back to leaving the group alone otherwise.
-# Without that group the socket stays root-only anyway, as the node says at
-# startup, so nothing is lost.
+# 755 and not 750, deliberately.  The access control belongs on the socket,
+# not on the way to it: remote_net.c publishes sockets/ax25 with mode 0660 and
+# a group of the sysop's choosing, and that is where the decision is made.
+# Locking the directory to one group cannot work anyway as soon as two parties
+# have a legitimate claim - users in "hams" and a mailbox running under
+# "daemon", say - and it would puzzle anybody who is not deep in Unix
+# permissions.  755 also agrees with what lib/rundir.c sets at every start,
+# so the two do not fight each other.
 #
-# .sockets keeps 700: the command channel there is the node's own command
-# line, and nobody but root has any business in it.
+# Files lose group and world write.  Anything holding credentials wants less
+# than that and has to say so itself; see doc/PERMISSIONS.md.
 _secure:
 	@if [ -z "$(TCPDIR)" ]; then \
 		echo "TCPDIR is empty - run make at the top level"; exit 1; fi
@@ -80,15 +80,10 @@ _secure:
 		exit 0; \
 	fi; \
 	chown -R root $(TCPDIR) || exit 1; \
-	if chgrp -R hams $(TCPDIR) 2>/dev/null; then \
-		echo "$(TCPDIR): root:hams, 750"; \
-	else \
-		echo "$(TCPDIR): root, 750 (no group \"hams\" - the service socket"; \
-		echo "  stays root-only, which is what the node does anyway)"; \
-	fi; \
-	find $(TCPDIR) -type d ! -name .sockets -exec chmod 750 {} \; ; \
+	find $(TCPDIR) -type d ! -name .sockets -exec chmod 755 {} \; ; \
 	[ -d $(TCPDIR)/.sockets ] && chmod 700 $(TCPDIR)/.sockets; \
 	find $(TCPDIR) -type f -exec chmod go-w {} \; ; \
+	echo "$(TCPDIR): root, 755, nothing below it writable by anyone else"; \
 	left=`find $(TCPDIR) ! -user root -print 2>/dev/null | head -5`; \
 	if [ -n "$$left" ]; then \
 		echo "still not owned by root, and each one is a way in:"; \
