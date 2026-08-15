@@ -374,6 +374,35 @@ Two consequences follow:
   and nobody runs `paclen 1280` on the air.  IPv6 over AX.25 means
   connected mode.
 
+### The MTU is not the only knob TCP looks at
+
+`tcp mss` and `tcp window` in net.rc are easy to forget in all of this,
+and the first one decides more than the MTU does for traffic the node
+originates itself.
+
+    tcp.h        DEF_MSS 512, DEF_WND 2048
+    tcpout.c     seg.mss = Tcp_mss              announced in the SYN
+    tcpin.c:773  mtu = ip_mtu(remote) - TCPLEN - IPLEN;
+                 tcb->cwind = tcb->mss = min(mtu, tcb->mss);
+
+So the MSS is the **smaller** of what is configured and what the route
+allows.  A larger MTU never raises it; it only stops it being lowered.
+With the default `tcp mss 512`, giving an AX.25 interface an MTU of 1500
+changes nothing for TCP the node speaks itself: segments stay at 512,
+datagrams at 552, and IP has nothing to fragment either way.  Raising the
+MTU without raising `tcp mss` buys nothing.
+
+That does not undo the argument above, it bounds it.  A large MTU matters
+for traffic the node **forwards**, where the segment size was decided by
+somebody else, and for anything that is not TCP.  For what the node
+originates, `tcp mss` is the setting that decides.
+
+`tcp window` is the receive window, 2048 by default, and it sits across
+the AX.25 one rather than under it: four segments of 512 may be
+outstanding at the TCP level while `(maxframe - queued) * paclen` in
+`ax25user.c` decides what LAPB will take next.  On a slow link the two
+multiply into more queued data than either number suggests.
+
 ### Telling them apart in a trace
 
     AX25: … pid=0x08           segmented; the next byte is the counter

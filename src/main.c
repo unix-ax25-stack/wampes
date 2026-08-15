@@ -123,14 +123,6 @@ complain:;
 static void
 check_permissions(const char *startup)
 {
-	/* sockets/ is not among them.  What lives there is published on
-	 * purpose - sockets/ax25 is how libax25 programs reach the node - and
-	 * its owner, group and mode are the sysop's policy, not our business:
-	 * 0660 group hams is the usual choice, 0660 group staff keeps hams
-	 * from transmitting, 0606 hams is somebody's considered decision.  The
-	 * socket that would matter is the command channel, and that one is in
-	 * .sockets.
-	 */
 	static const char *const under[] = {
 		TCPDIR, TCPDIR "/.sockets",
 		TCPDIR "/sbin", TCPDIR "/bin", NULL
