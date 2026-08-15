@@ -245,6 +245,49 @@ and `SSID_DAMA` bits - but `lapb.c` implements neither, and
 `domaxframe()` clamps the window to 1..7.  WAMPES can read extended
 AX.25, not speak it.
 
+### How large, and how small
+
+The segment counter is seven bits - bit 7 is `SEG_FIRST` - so a datagram
+can be split into at most 128 pieces.  With `ssize = paclen - 1` bytes in
+each, the largest datagram the segmenter can express is
+
+    segments = 1 + D / (paclen - 1)        integer division, D = the datagram
+    D_max    = 128 * (paclen - 1) - 1
+
+| paclen | D_max | segments for a 1420 byte datagram |
+|---|---|---|
+| 256 | 32639 | 6 |
+| 32 | 3967 | 45 |
+| 16 | 1919 | 95 |
+| 13 | 1535 | 119 - just fits |
+| 12 | 1407 | 130 - refused |
+| 8 | 895 | 203 - refused |
+
+So with an MTU of 1500 the boundary sits at `paclen 13`, and nobody is
+going to set `paclen 17`.  The useful way round to read the table is the
+other one: at `paclen 256` even a 9000 byte jumbo frame is only 36
+segments, so the limit never comes near a real configuration.  Below
+`paclen 13` the segmenter refuses the datagram outright rather than
+sending something the far end would reassemble wrongly.
+
+At the other end, how small may the MTU be?  IP fragments with
+
+    fragsize = (iface->mtu - ip_len) & 0xfff8
+
+and `iface->mtu` is unsigned, which gives three regions - all measured:
+
+| MTU | fragsize | what happens |
+|---|---|---|
+| 28 and up | 8 and up | fragments normally |
+| 20 to 27 | 0 | `dup_p()` returns NULL, `ipFragFails++`, nothing is sent |
+| below 20 | underflows | one malformed fragment goes out, then it gives up |
+
+So 28 is the smallest MTU the arithmetic survives, and below 20 a
+datagram with a nonsensical length field reaches the air before the
+attempt fails.  RFC 791 requires every link to carry 68 octets anyway, so
+all of this is far outside anything legitimate - it is written down
+because the values are accepted without complaint.
+
 ### Telling them apart in a trace
 
     AX25: … pid=0x08           segmented; the next byte is the counter
