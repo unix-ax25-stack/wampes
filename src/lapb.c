@@ -925,12 +925,36 @@ uint ssize              /* Max size of frame segments */
 		*bpp = NULL;
 		return result;  /* Too small to segment */
 	}
+	/* Below paclen 2 there is nothing left once the counter has its byte,
+	 * and ssize would be zero for the division just below.  "ax25 paclen
+	 * 1" is accepted by dopaclen() and used to kill the node with SIGFPE
+	 * right here.
+	 */
+	if(ssize < 2){
+		free_p(bpp);
+		return NULL;
+	}
 	/* The segment counter is the first byte OF the information field, so
 	 * it comes out of paclen.  The PID_SEGMENT byte does not - that one
 	 * is header again.  Hence one, not two.
 	 */
 	ssize -= 1;
 	segments = 1 + (len - 1) / ssize;       /* # segments  */
+	/* Bit 7 of that counter is SEG_FIRST, so it can count no further than
+	 * SEG_REM.  Sending more anyway sets SEG_FIRST on every segment whose
+	 * count still has bit 7, and the far end then reassembles a truncated
+	 * datagram from the first few and discards all the rest, one by one,
+	 * as "not first segment".  Refuse instead: the datagram cannot be
+	 * expressed in this protocol at this paclen.
+	 *
+	 * Out of reach at any sensible paclen - at 256 it would take a
+	 * datagram of 32385 bytes - but with paclen 12 or less an ordinary
+	 * MTU of 1500 gets there.
+	 */
+	if(segments - 1 > SEG_REM){
+		free_p(bpp);
+		return NULL;
+	}
 	offset = 0;
 
 	while(segments != 0){
