@@ -1047,8 +1047,17 @@ static int open_listener(struct listener *l, int loud)
     return -1;
   }
 
-  if (addr->sa_family == AF_UNIX && l->restricted)
-    set_service_rights(((struct sockaddr_un *) addr)->sun_path);
+  if (addr->sa_family == AF_UNIX) {
+    if (l->restricted)
+      set_service_rights(((struct sockaddr_un *) addr)->sun_path);
+    else
+      /* The command channel took whatever the umask gave it, and leaned
+       * entirely on 0700 of the directory around it.  Say it on the object
+       * as well - the service socket states its own terms, and this one
+       * carries more.
+       */
+      chmod(((struct sockaddr_un *) addr)->sun_path, 0600);
+  }
 
   l->fd = fd;
   on_read(fd, accept_connection_net, l);

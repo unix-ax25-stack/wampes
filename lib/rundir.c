@@ -26,32 +26,47 @@
 #include "configure.h"
 #include "rundir.h"
 
-/* mkdir alone would leave the rights to the umask, so chmod follows; that
- * also repairs a directory which is already there with the wrong mode.
- * Failures are ignored on purpose - if the directory cannot be made, the
- * bind() below says so, with the path in the message.
+/* mkdir alone would leave the rights to the umask, so a chmod has to follow -
+ * but only where we created the directory.  One that is already there carries
+ * a decision somebody made, and overwriting it without a word is exactly what
+ * the startup check in net refuses to do; it reports instead.  Failures are
+ * ignored on purpose - if the directory cannot be made, the bind() below says
+ * so, with the path in the message.
  */
 
-static void fixdir(const char *name, int mode)
+static void makedir(const char *name, int mode)
 {
-  mkdir(name, mode);
-  chmod(name, mode);
+  if (!mkdir(name, mode))
+    chmod(name, mode);
+}
+
+/* The one exception, and it is not a preference about directory modes.
+ * Nothing sets a mode on the command socket itself - it takes what the umask
+ * gives it - so 0700 here is the whole protection of the node's own command
+ * line, the counterpart of the 0660 that the service socket carries.  A mode
+ * the node is answerable for is one it may keep setting.
+ */
+
+static void makedir_private(const char *name)
+{
+  mkdir(name, 0700);
+  chmod(name, 0700);
 }
 
 /*---------------------------------------------------------------------------*/
 
 void create_rundir(void)
 {
-  fixdir(TCPDIR, 0755);
-  fixdir(TCPDIR "/sockets", 0755);
+  makedir(TCPDIR, 0755);
+  makedir(TCPDIR "/sockets", 0755);
 }
 
 /*---------------------------------------------------------------------------*/
 
 void create_admin_rundir(void)
 {
-  fixdir(TCPDIR, 0755);
-  fixdir(TCPDIR "/.sockets", 0700);
+  makedir(TCPDIR, 0755);
+  makedir_private(TCPDIR "/.sockets");
 }
 
 /*---------------------------------------------------------------------------*/
