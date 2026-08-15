@@ -1003,6 +1003,81 @@ static void set_service_rights(const char *path)
 
 /*---------------------------------------------------------------------------*/
 
+/* "axsock" - the sysop's say over the service socket.
+ *
+ * The defaults above are a starting point, not a policy.  0660 group hams is
+ * the usual answer, but it is not the only sensible one: 0660 group staff
+ * keeps the hams group from transmitting, and 0707 group hams lets everybody
+ * in EXCEPT the logged-in amateurs, which is somebody's considered decision
+ * about who may open outgoing links.  Forcing 0660 on every start made all of
+ * that impossible.
+ *
+ * It has to be a command rather than a mode left on the file, because a
+ * socket does not survive: bind() creates it afresh every start.  So this
+ * belongs in net.rc, where it runs after the socket exists.
+ */
+
+static const char Axsock_path[] = TCPDIR "/sockets/ax25";
+
+int doaxsock(int argc, char *argv[], void *p)
+{
+  struct group *gr;
+  struct stat st;
+  unsigned long mode;
+  char *end;
+
+  (void) p;
+
+  if (argc < 2) {
+    if (stat(Axsock_path, &st)) {
+      printf("%s: not there\n", Axsock_path);
+      return 1;
+    }
+    printf("%s  mode 0%03o  uid %lu  gid %lu\n", Axsock_path,
+           (unsigned) (st.st_mode & 07777),
+           (unsigned long) st.st_uid, (unsigned long) st.st_gid);
+    return 0;
+  }
+
+  if (!strcmp(argv[1], "group")) {
+    if (argc < 3) {
+      printf("axsock group <name>\n");
+      return 1;
+    }
+    if (!(gr = getgrnam(argv[2]))) {
+      printf("no group \"%s\"\n", argv[2]);
+      return 1;
+    }
+    if (chown(Axsock_path, (uid_t) -1, gr->gr_gid)) {
+      printf("%s: cannot set the group\n", Axsock_path);
+      return 1;
+    }
+    return 0;
+  }
+
+  if (!strcmp(argv[1], "mode")) {
+    if (argc < 3) {
+      printf("axsock mode <octal>\n");
+      return 1;
+    }
+    mode = strtoul(argv[2], &end, 8);
+    if (*end || mode > 07777) {
+      printf("axsock mode <octal>, e.g. 0660\n");
+      return 1;
+    }
+    if (chmod(Axsock_path, (mode_t) mode)) {
+      printf("%s: cannot set the mode\n", Axsock_path);
+      return 1;
+    }
+    return 0;
+  }
+
+  printf("axsock [group <name>|mode <octal>]\n");
+  return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* loud: say so when this one cannot be opened.  The loopback pair is opened
  * quietly, because a machine without IPv6 is not a misconfiguration and
  * neither is one without IPv4 - only having neither is worth a word.

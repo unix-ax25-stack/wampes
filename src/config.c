@@ -81,6 +81,8 @@ struct cmds Cmds[] = {
 	{ "hostname",     dohostname,     0, 0, NULL },
 	{ "icmp",         doicmp,         0, 0, NULL },
 	{ "ifconfig",     doifconfig,     0, 0, NULL },
+	{ "axsock",       doaxsock,       0, 0,
+	  "axsock [group <name>|mode <octal>]" },
 	{ "ip",           doip,           0, 0, NULL },
 	{ "kick",         dokick,         0, 0, NULL },
 	{ "ipfilter",     doipfilter,     0, 0, NULL },

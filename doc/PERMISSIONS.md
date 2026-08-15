@@ -61,7 +61,37 @@ a mistake.  The node sets `0660` group `hams` on every start where that
 group exists, and says so when it does not.
 
 The socket that *would* matter is the command channel, and that one lives
-in `.sockets` at mode 0700 - which is checked.
+in `.sockets` at mode 0700 - which is checked.  It also carries 0600 of
+its own since 2026-08-15; until then the directory was its entire
+protection, and nothing set a mode on the socket at all.
+
+### Saying what the service socket should be
+
+The node sets `0660` and group `hams` when that group exists, `0600` when
+it does not.  That is a starting point, not a policy, and net.rc can say
+otherwise:
+
+    axsock                    show owner, group and mode
+    axsock group <name>       set the group
+    axsock mode <octal>       set the mode
+
+It has to live in net.rc rather than on the file, because `bind()`
+recreates the socket at every start - a mode left on it would not survive
+one.  Some choices this makes possible:
+
+    axsock group hams
+    axsock mode 0660          the usual one: the hams group may
+
+    axsock group staff
+    axsock mode 0660          everyone local, but not through hams
+
+    axsock group hams
+    axsock mode 0707          everybody EXCEPT the logged-in amateurs -
+                              they may be connected to, and may not
+                              connect out
+
+The node does not second-guess any of it.  Before this existed it forced
+0660 on every start, which made the third line impossible to arrange.
 
 `$TCPDIR` itself is therefore 755 and not 750.  Restricting the way in to
 one group cannot work as soon as two parties have a legitimate claim - a

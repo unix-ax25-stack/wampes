@@ -12,4 +12,9 @@ void remote_net_initialize(void);
 int axtcpstart(int argc, char *argv[], void *p);
 int axtcp0(int argc, char *argv[], void *p);
 
+/* "axsock [group <name>|mode <octal>]": the sysop's say over the mode and
+ * group of the service socket, which bind() recreates at every start.
+ */
+int doaxsock(int argc, char *argv[], void *p);
+
 #endif  /* _REMOTE_NET_H */
