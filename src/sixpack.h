@@ -55,7 +55,26 @@
 #define SIXP_CHKSUM             0xFF
 
 /* Long enough for a reassembled frame and its trimmings.  A 6pack TNC will
- * not send more, and a frame that claims to be longer is not one.
+ * not send more, and a frame that claims to be longer is not one.  Counted
+ * out, the largest legitimate one is
+ *
+ *     1   TxDelay byte, which this layer puts in front
+ *    14   destination and source address
+ *    56   eight digipeaters
+ *     1   control
+ *     1   PID
+ *   256   information field, N1
+ *     1   checksum
+ *   ---
+ *   330   plain bytes, before the six-bit encoding blows them up by a third
+ *
+ * so 512 leaves room to spare.  These are PLAIN bytes: the decoder counts
+ * what it has recovered, not what arrived on the line, which is the only way
+ * the limit means the same thing for an encoded frame as for a bare one.
+ *
+ * Unlike the guard in slip.c this ceiling does not rise with anything.  It is
+ * sized for N1 = 256, and dopaclen() will accept far more than that; see the
+ * note in TODO.txt.
  */
 #define SIXP_MAX_FRAME  512
 
