@@ -947,9 +947,10 @@ uint ssize              /* Max size of frame segments */
 	 * as "not first segment".  Refuse instead: the datagram cannot be
 	 * expressed in this protocol at this paclen.
 	 *
-	 * Out of reach at any sensible paclen - at 256 it would take a
-	 * datagram of 32385 bytes - but with paclen 12 or less an ordinary
-	 * MTU of 1500 gets there.
+	 * The largest datagram that still fits is 128 * (paclen-1) - 1, so at
+	 * paclen 256 it would take 32640 bytes to get here and the case is
+	 * out of reach.  At paclen 12 or less an ordinary MTU of 1500 walks
+	 * straight into it.
 	 */
 	if(segments - 1 > SEG_REM){
 		free_p(bpp);
