@@ -84,29 +84,31 @@ is the one to avoid.
 
 ### Saying what the service socket should be
 
-Nothing sets the rights of the service socket any more.  It used to be
-given group `hams` and mode 0660 at every bind, which overruled whatever
-the sysop had arranged - and there is more than one sensible arrangement.
-Without any statement the mode is whatever the umask allows, the ordinary
-Unix answer for a file nobody has said anything about.
+At bind the node gives it group `hams` and mode `0660`, or `0600` where
+that group does not exist - narrower rather than wider, since without the
+group there is nobody the mode could deliberately open it to.
 
-Which means most installations will want these two lines in net.rc:
+That is a default and not a decision being overruled, and the difference
+is worth stating because it is the opposite of the rule for the
+directories above.  A directory persists, so a mode on it is somebody's
+choice and the node leaves it alone.  A socket does not: `bind()` creates
+it afresh at every start, the inode changes, and there is never a mode on
+it that anyone chose.  Something has to decide, and a default that can be
+overridden is the mildest form of deciding.
 
-    axsock group hams
-    axsock mode 0660
+Leaving it to the umask instead was tried, on 2026-08-15, and it is
+wrong: at `umask 022` the socket comes out `0755`, nobody but the owner
+has a write bit, and a Unix socket cannot be connected to without one.
+Every client would be locked out and nothing would say why.
 
-and that this is the usual set:
+To arrange it differently, say so in net.rc.  Those lines run after the
+socket exists, so they win:
 
     axsock                    show owner, group and mode
     axsock group <name>       set the group
     axsock mode <octal>       set the mode
 
-It has to live in net.rc rather than on the file, because `bind()`
-recreates the socket at every start - a mode left on it would not survive
-one.  Some choices this makes possible:
-
-    axsock group hams
-    axsock mode 0660          the usual one: the hams group may
+Some arrangements this makes possible:
 
     axsock group staff
     axsock mode 0660          everyone local, but not through hams
@@ -116,8 +118,10 @@ one.  Some choices this makes possible:
                               they may be connected to, and may not
                               connect out
 
-The node does not second-guess any of it.  Before this existed it forced
-0660 on every start, which made the third line impossible to arrange.
+The node does not second-guess any of it.  Before `axsock` existed it
+forced 0660 at every start, which made the second one impossible to hold:
+it was set by hand and taken away again at the next restart, with nothing
+said.
 
 `$TCPDIR` itself is therefore 755 and not 750.  Restricting the way in to
 one group cannot work as soon as two parties have a legitimate claim - a
