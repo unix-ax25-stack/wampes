@@ -33,29 +33,46 @@ exactly the hole described above.
 
 ## The rule
 
-Everything on the way to `$TCPDIR`, and everything inside it, must
+`$TCPDIR`, the directory **above** it, and the files inside must
 
 * belong to **root**, and
 * not be writable by group or by others.
 
-A directory with the sticky bit is exempt from the second half - `/tmp`
+The parent is in because a directory you may write is one whose contents
+you may rename.  It is also enough: with `/usr/local` in your hands, the
+permissions on `/usr/local/wampes` are beside the point, and if
+`/usr/local` is sound then so is everything below it that root owns.
+There is no reason to walk further up - that would be the node auditing
+the system, which is not its job.
+
+A directory with the sticky bit is exempt from the second half.  `/tmp`
 is writable by everyone and still nobody can rename another's entry
 there.
 
-One thing is deliberately group-writable and must stay that way:
-`$TCPDIR/sockets/ax25`, mode 0660, group `hams`.  That is the service
-socket libax25 programs connect to, and its permissions are the whole
-access control for it.  The node sets it on every start; if the group
-does not exist it says so and leaves the socket to root alone.
+### What is deliberately not checked
 
-That is why `$TCPDIR` should be `root:hams` and mode 750 rather than
-`root:wheel`: a member of `hams` has to be able to traverse into
-`sockets/`, or the socket's own permissions are worth nothing.
+`$TCPDIR/sockets/` and what lives in it.  That directory is published on
+purpose: `sockets/ax25` is how libax25 programs reach the node, and its
+owner, group and mode are the sysop's decision rather than a security
+question.  `0660` group `hams` is the usual choice.  A sysop who does not
+want the `hams` group transmitting can make it `0660` group `staff`
+instead, or `0606` group `hams`, and either is a considered decision, not
+a mistake.  The node sets `0660` group `hams` on every start where that
+group exists, and says so when it does not.
+
+The socket that *would* matter is the command channel, and that one lives
+in `.sockets` at mode 0700 - which is checked.
+
+Group `hams` on `$TCPDIR` itself does matter, though, and that is why 750
+`root:hams` is better than 750 `root:wheel`: a member of `hams` has to be
+able to traverse into `sockets/`, or the socket's own mode is worth
+nothing.
 
 ## What the node does about it
 
-At startup, and only when running as root, it looks at the path and at
-the directories and files it will read, and prints what is wrong:
+At startup, and only when running as root, it looks at `$TCPDIR`, at the
+directory above it, at `.sockets`, `sbin`, `bin` and at the startup file,
+and prints what is wrong:
 
     PERMISSIONS - this node runs as root:
       /usr/local belongs to uid 501, not to root
@@ -90,8 +107,8 @@ touch because it is not ours to take:
 Check it afterwards the way the node does - if this prints anything, read
 it:
 
-    find / /usr /usr/local /usr/local/wampes -maxdepth 0 \
-         \( ! -user root -o -perm -g+w -o -perm -o+w \) -print
+    find /usr/local /usr/local/wampes /usr/local/wampes/.sockets \
+         -maxdepth 0 \( ! -user root -o -perm -g+w -o -perm -o+w \) -print
 
 ## The other programs
 

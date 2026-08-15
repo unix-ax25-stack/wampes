@@ -123,12 +123,19 @@ complain:;
 static void
 check_permissions(const char *startup)
 {
+	/* sockets/ is not among them.  What lives there is published on
+	 * purpose - sockets/ax25 is how libax25 programs reach the node - and
+	 * its owner, group and mode are the sysop's policy, not our business:
+	 * 0660 group hams is the usual choice, 0660 group staff keeps hams
+	 * from transmitting, 0606 hams is somebody's considered decision.  The
+	 * socket that would matter is the command channel, and that one is in
+	 * .sockets.
+	 */
 	static const char *const under[] = {
-		TCPDIR, TCPDIR "/.sockets", TCPDIR "/sockets",
+		TCPDIR, TCPDIR "/.sockets",
 		TCPDIR "/sbin", TCPDIR "/bin", NULL
 	};
 	char path[1024];
-
 	size_t n;
 	int i;
 	int bad = 0;
@@ -136,17 +143,19 @@ check_permissions(const char *startup)
 	if(geteuid() != 0)
 		return;
 
-	/* Every directory on the way counts, not only the last one: whoever
-	 * may write one of them can move the whole tree aside and put their
-	 * own in its place.  On macOS that is the usual finding, /usr/local
-	 * belonging to the installing account and writable by its group.
+	/* TCPDIR and the directory above it are enough to judge.  Walking the
+	 * whole path from / would be the node auditing the system, which is
+	 * not its job.  The parent is in because a directory one may write is
+	 * one whose contents one may rename: with /usr/local in your hands,
+	 * the permissions on /usr/local/wampes are beside the point.  That is
+	 * the usual finding on macOS.
 	 */
-	bad += perm_check("/");
-	for(n = 1; TCPDIR[n] != '\0'; n++){
-		if(TCPDIR[n] != '/' || n >= sizeof(path))
-			continue;
-		memcpy(path,TCPDIR,n);
-		path[n] = '\0';
+	n = strlen(TCPDIR);
+	while(n > 0 && TCPDIR[n-1] != '/')
+		n--;
+	if(n > 1 && n <= sizeof(path)){
+		memcpy(path,TCPDIR,n-1);        /* without the trailing slash */
+		path[n-1] = '\0';
 		bad += perm_check(path);
 	}
 	for(i = 0; under[i] != NULL; i++)
