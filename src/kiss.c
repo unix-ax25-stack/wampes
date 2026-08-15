@@ -13,7 +13,6 @@
 #include "ax25.h"
 #include "pktdrvr.h"
 #include "crc.h"
-#include "trace.h"
 
 /* Set up a SLIP link to use AX.25 */
 int
@@ -61,8 +60,6 @@ kiss_raw(
 struct iface *iface,
 struct mbuf **bpp
 ){
-	/* Trace it while it is still an AX.25 frame - see slip_raw_notrace() */
-	dump(iface,IF_TRACE_OUT,*bpp);
 	/* Put type field for KISS TNC on front */
 	pushdown(bpp,NULL,1);
 	(*bpp)->data[0] = PARAM_DATA;
@@ -80,8 +77,8 @@ struct mbuf **bpp
 		append_crc_rmnc(*bpp);
 		break;
 	}
-	/* slip_raw_notrace also increments sndrawcnt */
-	slip_raw_notrace(iface,bpp);
+	/* slip_raw also increments sndrawcnt */
+	slip_raw(iface,bpp);
 	return 0;
 }
 
@@ -170,11 +167,7 @@ int32 val
 		*cp++ = cmd;
 		*cp = (unsigned char) val;
 		hbp->cnt = 2;
-		/* Even more "raw" than kiss_raw: a parameter command, not a
-		 * frame, so there is nothing here for a protocol trace to
-		 * make sense of.  IF_TRACE_RAW still shows the bytes.
-		 */
-		slip_raw_notrace(iface,&hbp);
+		slip_raw(iface,&hbp);   /* Even more "raw" than kiss_raw */
 		rval = (int) val;       /* per Jay Maynard -- mce */
 		break;
 	case PARAM_SPEED:       /* These go to the local asy driver */

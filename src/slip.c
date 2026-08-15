@@ -106,22 +106,15 @@ uint8 tos
 	(*bpp)->data[0] |= type;
 	return (*iface->raw)(iface,bpp);
 }
-/* Send a raw slip frame, but trace nothing.  Callers that put something in
- * front of the packet first - kiss_raw with its type byte, kiss_ioctl with a
- * parameter command - use this: by the time the frame arrives here it is no
- * longer what a protocol trace is meant to show, and ax25dump() would read
- * the extra byte as the start of the destination address and report a bad
- * header.  Those callers trace the packet themselves, before encoding it.
- * The IF_TRACE_RAW hex dump below is unaffected; that one is meant to show
- * the bytes as they go out on the wire.
- */
+/* Send a raw slip frame */
 int
-slip_raw_notrace(
+slip_raw(
 struct iface *iface,
 struct mbuf **bpp
 ){
 	struct mbuf *bp1;
 
+	dump(iface,IF_TRACE_OUT,*bpp);
 	iface->rawsndcnt++;
 	iface->lastsent = secclock();
 	if((bp1 = slip_encode(bpp)) == NULL){
@@ -130,15 +123,6 @@ struct mbuf **bpp
 	if (iface->trace & IF_TRACE_RAW)
 		raw_dump(iface,-1,bp1);
 	return Slip[iface->xdev].send(iface->dev,&bp1);
-}
-/* Send a raw slip frame */
-int
-slip_raw(
-struct iface *iface,
-struct mbuf **bpp
-){
-	dump(iface,IF_TRACE_OUT,*bpp);
-	return slip_raw_notrace(iface,bpp);
 }
 /* Encode a packet in SLIP format */
 static
