@@ -984,11 +984,21 @@ static void set_service_rights(const char *path)
 {
   struct group *gr;
 
-  if ((gr = getgrnam(AXSOCK_GROUP)))
+  if ((gr = getgrnam(AXSOCK_GROUP))) {
     chown(path, (uid_t) -1, gr->gr_gid);
-  else
-    complain("no group \"%s\": %s stays with its owner", AXSOCK_GROUP, path);
-  chmod(path, 0660);
+    chmod(path, 0660);
+    return;
+  }
+
+  /* No such group, so there is nobody the mode could open it to on purpose.
+   * The chmod 0660 used to happen here as well, and that was wrong twice
+   * over: it contradicted this very message, and BSD gives a new file the
+   * group of its DIRECTORY rather than of whoever made it - so on macOS the
+   * socket came out group "staff", which is every local account.  Anyone
+   * logged in had the transmitter.  Without the group, root alone.
+   */
+  complain("no group \"%s\": %s stays with its owner", AXSOCK_GROUP, path);
+  chmod(path, 0600);
 }
 
 /*---------------------------------------------------------------------------*/
