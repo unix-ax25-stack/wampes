@@ -911,8 +911,13 @@ uint ssize              /* Max size of frame segments */
 	uint len,offset;
 	int segments;
 
-	/* See if packet is too small to segment. Note 1-byte grace factor
-	 * so the PID will not cause segmentation of a 256-byte IP datagram.
+	/* Is it small enough to go in one frame?  len counts the PID that the
+	 * caller pushed on a moment ago, and the PID is not part of the
+	 * information field that paclen bounds - it sits in front of it, in
+	 * the header.  So a datagram of exactly paclen bytes still fits, and
+	 * the comparison has to be against paclen+1.  This is bookkeeping,
+	 * not slack: the frame that goes out has an information field of at
+	 * most paclen bytes either way.
 	 */
 	len = len_p(*bpp);
 	if(len <= ssize+1){
@@ -920,7 +925,11 @@ uint ssize              /* Max size of frame segments */
 		*bpp = NULL;
 		return result;  /* Too small to segment */
 	}
-	ssize -= 1;             /* ssize now equal to data portion size */
+	/* The segment counter is the first byte OF the information field, so
+	 * it comes out of paclen.  The PID_SEGMENT byte does not - that one
+	 * is header again.  Hence one, not two.
+	 */
+	ssize -= 1;
 	segments = 1 + (len - 1) / ssize;       /* # segments  */
 	offset = 0;
 

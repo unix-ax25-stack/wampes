@@ -21,6 +21,22 @@ kiss_init(struct iface *ifp)
 	int xdev;
 	struct slip *sp;
 
+	/* The encapsulation word on the attach line picks two things out of
+	 * two tables: the framing, which lands here, and the interface type,
+	 * which says how what comes back is read.  For ax25ui and ax25i the
+	 * two disagree.  Frames go out properly KISS encoded - kiss_raw()
+	 * below sees to that - but incoming ones reach ax_recv() with the
+	 * KISS type byte still in front, and it throws away every single one.
+	 * The port then transmits and never hears an answer.  Nothing is
+	 * wired that way on purpose, so refuse instead of running half a port.
+	 */
+	if(ifp->iftype == NULL || ifp->iftype->rcvf != kiss_recv){
+		printf("%s: %s sends KISS frames but cannot receive them - use kissui or kissi\n",
+		 ifp->name,
+		 ifp->iftype != NULL ? ifp->iftype->name : "this encapsulation");
+		return -1;
+	}
+
 	for(xdev = 0;xdev < SLIP_MAX;xdev++){
 		sp = &Slip[xdev];
 		if(sp->iface == NULL)
