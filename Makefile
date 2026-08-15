@@ -43,11 +43,57 @@ complete:; @-chmod 755 cc
 install: all
 	@-for dir in $(MINDIRS); do ( cd $$dir; $(MAKE) -i install ); done
 	@-. lib/configure.mak; $(MAKE) -i _hostdb
+	@. lib/configure.mak; $(MAKE) _secure
 
 install-complete: complete
 	@-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i install ); done
 	@-if [ -d tools ]; then ( cd tools; $(MAKE) -i install ); fi
 	@-. lib/configure.mak; $(MAKE) -i _hostdb
+	@. lib/configure.mak; $(MAKE) _secure
+
+# The node usually runs as root, and it reads net.rc, in which "!" runs a
+# shell command.  Anything under TCPDIR that a non-root user may write is
+# therefore a way to become root: take the account, edit net.rc, wait.  So
+# after installing, take ownership and close the door.  Not run with -i - a
+# silent failure here is the case this exists to prevent.
+#
+# 750 and not 755, but the group matters: remote_net.c publishes
+# sockets/ax25 with mode 0660 and group "hams" so that libax25 programs can
+# reach the node.  Locking the directory to root:wheel would take away the
+# traversal and the socket would be unreachable with its own permissions
+# intact.  So use "hams" where it exists - tried, rather than looked up, which
+# keeps this portable - and fall back to leaving the group alone otherwise.
+# Without that group the socket stays root-only anyway, as the node says at
+# startup, so nothing is lost.
+#
+# .sockets keeps 700: the command channel there is the node's own command
+# line, and nobody but root has any business in it.
+_secure:
+	@if [ -z "$(TCPDIR)" ]; then \
+		echo "TCPDIR is empty - run make at the top level"; exit 1; fi
+	@if [ "`id -u`" != 0 ]; then \
+		echo ""; \
+		echo "NOT ROOT - ownership and modes left alone."; \
+		echo "$(TCPDIR) must belong to root and be writable by nobody else:"; \
+		echo "the node runs as root and reads net.rc, where \"!\" runs a shell"; \
+		echo "command.  Re-run \"make install\" as root."; \
+		exit 0; \
+	fi; \
+	chown -R root $(TCPDIR) || exit 1; \
+	if chgrp -R hams $(TCPDIR) 2>/dev/null; then \
+		echo "$(TCPDIR): root:hams, 750"; \
+	else \
+		echo "$(TCPDIR): root, 750 (no group \"hams\" - the service socket"; \
+		echo "  stays root-only, which is what the node does anyway)"; \
+	fi; \
+	find $(TCPDIR) -type d ! -name .sockets -exec chmod 750 {} \; ; \
+	[ -d $(TCPDIR)/.sockets ] && chmod 700 $(TCPDIR)/.sockets; \
+	find $(TCPDIR) -type f -exec chmod go-w {} \; ; \
+	left=`find $(TCPDIR) ! -user root -print 2>/dev/null | head -5`; \
+	if [ -n "$$left" ]; then \
+		echo "still not owned by root, and each one is a way in:"; \
+		echo "$$left" | sed 's/^/  /'; \
+	fi
 
 # TCPDIR comes from lib/configure, the same way the subdirectories get it.
 # It used to be set to /tcp here as well, so on a system configured for any

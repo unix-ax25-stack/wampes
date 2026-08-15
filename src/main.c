@@ -8,6 +8,7 @@
  * Copyright 1986 to 1996 Phil Karn, KA9Q
  */
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <time.h>
@@ -65,6 +66,103 @@ static int Verbose;
 
 static void process_char(int c);
 
+/* Everything the node reads while running as root is a way to become root:
+ * net.rc takes shell commands with "!", and so does the command channel on
+ * .sockets/netcmd.  A file or directory some other account may write is
+ * therefore an entrance - take that account, edit, wait.
+ *
+ * So look, and say what is wrong.  Do NOT repair anything.  A node that
+ * quietly fixed its own permissions would teach its operator to stop looking,
+ * and the one case it failed to notice would be the one that mattered.
+ * doc/PERMISSIONS.md has the rule and the commands.
+ *
+ * Only as root.  Started as an ordinary user - which is how it is tested -
+ * there is no privilege here worth stealing, and the operator is running it
+ * out of a directory of their own.
+ */
+
+static int Perm_said;
+
+static int
+perm_check(const char *path)
+{
+	struct stat st;
+
+	if(stat(path,&st) == -1)
+		return 0;               /* absent is not a hole */
+	if(S_ISSOCK(st.st_mode))
+		return 0;               /* the node sets those itself, on purpose */
+	if(st.st_uid != 0)
+		goto complain;
+	/* A sticky directory may be writable by all and still be no way in -
+	 * nobody can rename another's entry there.  /tmp is the example, and
+	 * reporting it would be the kind of noise that teaches people to skip
+	 * reading this.
+	 */
+	if(S_ISDIR(st.st_mode) && (st.st_mode & S_ISVTX))
+		return 0;
+	if(!(st.st_mode & (S_IWGRP | S_IWOTH)))
+		return 0;
+complain:;
+
+	if(!Perm_said){
+		printf("PERMISSIONS - this node runs as root:\n");
+		Perm_said = 1;
+	}
+	if(st.st_uid != 0)
+		printf("  %s belongs to uid %lu, not to root\n",
+		 path,(unsigned long) st.st_uid);
+	else if(st.st_mode & S_IWOTH)
+		printf("  %s is writable by everyone\n",path);
+	else
+		printf("  %s is writable by group %lu\n",
+		 path,(unsigned long) st.st_gid);
+	return 1;
+}
+
+static void
+check_permissions(const char *startup)
+{
+	static const char *const under[] = {
+		TCPDIR, TCPDIR "/.sockets", TCPDIR "/sockets",
+		TCPDIR "/sbin", TCPDIR "/bin", NULL
+	};
+	char path[1024];
+
+	size_t n;
+	int i;
+	int bad = 0;
+
+	if(geteuid() != 0)
+		return;
+
+	/* Every directory on the way counts, not only the last one: whoever
+	 * may write one of them can move the whole tree aside and put their
+	 * own in its place.  On macOS that is the usual finding, /usr/local
+	 * belonging to the installing account and writable by its group.
+	 */
+	bad += perm_check("/");
+	for(n = 1; TCPDIR[n] != '\0'; n++){
+		if(TCPDIR[n] != '/' || n >= sizeof(path))
+			continue;
+		memcpy(path,TCPDIR,n);
+		path[n] = '\0';
+		bad += perm_check(path);
+	}
+	for(i = 0; under[i] != NULL; i++)
+		bad += perm_check(under[i]);
+	if(startup != NULL)
+		bad += perm_check(startup);
+
+	if(bad){
+		printf("  Anyone who can write those can run commands as root, through\n");
+		printf("  %s or through the command channel.  Nothing was changed\n",
+		 startup != NULL ? startup : "the startup file");
+		printf("  here on purpose - see doc/PERMISSIONS.md, or run \"make\n");
+		printf("  install\" as root, which sets them.\n\n");
+	}
+}
+
 int
 main(int argc,char *argv[])
 {
@@ -121,6 +219,7 @@ main(int argc,char *argv[])
 		/* Read startup file named on command line */
 		Startup = argv[optind];
 	}
+	check_permissions(Startup);
 	if((fp = fopen(Startup,READ_TEXT)) == NULL){
 		printf("Can't read config file %s: ",Startup);
 		fflush(stdout);
