@@ -28,6 +28,13 @@
  * with a TX_1 before it, which is how the two keep count of what is in
  * flight.
  *
+ * What the checksum is worth: it is an eight-bit sum, not a CRC.  Every
+ * single error is caught, but two that cancel are not - roughly one damaged
+ * frame in 256 comes through.  On a short serial line that is nothing; on a
+ * long or noisy one it is the difference between this and SMACK, whose CRC-16
+ * over the same job is far stronger.  Worth knowing before blaming the node
+ * for a frame that made no sense.
+ *
  * Anything that is not a data byte is a one-byte command, and a command may
  * arrive IN THE MIDDLE OF A DATA FRAME.  That is the one thing here that
  * catches people out: the decoder must answer it without touching the frame
@@ -43,18 +50,35 @@
 #include "ax25.h"
 #include "asy.h"
 #include "trace.h"
+#include "devparam.h"
 #include "sixpack.h"
 
 /* Shortest data frame that can mean anything: delay, one byte, checksum. */
 #define SIXP_MIN_FRAME          3
 
 #define SIXP_TXDELAY_DEFAULT    25      /* in units of 10 ms, as KISS counts */
+#define SIXP_PERSIST_DEFAULT    63      /* about a quarter, the usual choice */
+#define SIXP_SLOTTIME_DEFAULT   10      /* 100 ms between rolls */
+
+/* Enough randomness to decide whether to transmit, and no more.  Seeded from
+ * the clock so that two nodes started together do not roll in step.
+ */
+
+static uint32 Sixp_seed;
+
+static int sixpack_roll(void)
+{
+	if (Sixp_seed == 0) Sixp_seed = (uint32) msclock() | 1;
+	Sixp_seed = Sixp_seed * 1103515245u + 12345u;
+	return (int) ((Sixp_seed >> 16) & 0xff);
+}
 
 struct sixpack Sixpack[ASY_MAX];
 
 static struct mbuf *sixpack_decode(struct sixpack *sp, uint8 c);
 static void sixpack_command(struct sixpack *sp, uint8 c);
 static struct mbuf *sixpack_encode(struct sixpack *sp, struct mbuf **bpp);
+static void sixpack_tx_try(void *arg);
 
 /*---------------------------------------------------------------------------*/
 
@@ -74,7 +98,7 @@ int sixpack_init(struct iface *ifp)
 	}
 
 	memset(sp, 0, sizeof(*sp));
-	ifp->ioctl = asy_ioctl;
+	ifp->ioctl = sixpack_ioctl;
 	ifp->raw = sixpack_raw;
 	ifp->hwaddr = (uint8 *) mallocw(AXALEN);
 	memcpy(ifp->hwaddr, Mycall, AXALEN);
@@ -84,6 +108,10 @@ int sixpack_init(struct iface *ifp)
 	sp->send = asy_send;
 	sp->get = get_asy;
 	sp->txdelay = SIXP_TXDELAY_DEFAULT;
+	sp->persistence = SIXP_PERSIST_DEFAULT;
+	sp->slottime = SIXP_SLOTTIME_DEFAULT;
+	sp->tx_t.func = sixpack_tx_try;
+	sp->tx_t.arg = sp;
 	return 0;
 }
 
@@ -92,6 +120,8 @@ int sixpack_free(struct iface *ifp)
 	struct sixpack *sp = &Sixpack[ifp->xdev];
 
 	if (sp->iface == ifp) {
+		stop_timer(&sp->tx_t);
+		free_q(&sp->txq);
 		free_p(&sp->rbp);
 		sp->iface = NULL;
 	}
@@ -121,7 +151,68 @@ int sixpack_raw(struct iface *iface, struct mbuf **bpp)
 	 */
 	if ((bp = sixpack_encode(sp, bpp)) == NULL)
 		return -1;
-	return (*sp->send)(iface->dev, &bp);
+
+	/* Full duplex asks nobody.  Otherwise the frame waits for a quiet
+	 * channel: the TNC tells us the carrier state, and the whole point of
+	 * being told is to act on it.
+	 */
+	if (sp->duplex)
+		return (*sp->send)(iface->dev, &bp);
+	enqueue(&sp->txq, &bp);
+	if (dur_timer(&sp->tx_t) == 0)
+		sixpack_tx_try(sp);
+	return 0;
+}
+
+/* Is the channel free, and is it our turn?
+ *
+ * p-persistence: with the carrier clear, transmit with probability p and
+ * otherwise wait a slot and ask again.  Two stations with a frame ready
+ * therefore do not both start the moment the channel opens - which is the
+ * whole trick, and why p is not 255.
+ */
+
+static void sixpack_tx_try(void *arg)
+{
+	struct mbuf *bp;
+	struct sixpack *sp = (struct sixpack *) arg;
+
+	if (sp->txq == NULL) return;
+	if (!sp->duplex && (sp->dcd || sixpack_roll() >= (int) sp->persistence)) {
+		set_timer(&sp->tx_t, sp->slottime * 10L);
+		start_timer(&sp->tx_t);
+		return;
+	}
+	while ((bp = dequeue(&sp->txq)) != NULL)
+		(*sp->send)(sp->iface->dev, &bp);
+	stop_timer(&sp->tx_t);
+}
+
+/* param <iface> txdelay|persist|slottime|fulldup [<value>]
+ *
+ * These are the node's own, not the TNC's: in 6pack the host decides when to
+ * transmit, so nothing is sent to the TNC when they change.
+ */
+
+int32 sixpack_ioctl(struct iface *ifp, int cmd, int set, int32 val)
+{
+	struct sixpack *sp = &Sixpack[ifp->xdev];
+
+	switch (cmd) {
+	case PARAM_TXDELAY:
+		if (set) sp->txdelay = (uint8) val;
+		return sp->txdelay;
+	case PARAM_PERSIST:
+		if (set) sp->persistence = (uint8) val;
+		return sp->persistence;
+	case PARAM_SLOTTIME:
+		if (set) sp->slottime = (uint8) val;
+		return sp->slottime;
+	case PARAM_FULLDUP:
+		if (set) sp->duplex = val ? 1 : 0;
+		return sp->duplex;
+	}
+	return -1;
 }
 
 /* Three bytes in, four out, six bits each.  The checksum rides along in the
@@ -157,8 +248,10 @@ static struct mbuf *sixpack_encode(struct sixpack *sp, struct mbuf **bpp)
 		return NULL;
 	cp = out->data;
 
-	/* Tell the TNC a frame is coming before sending it. */
-	*cp++ = SIXP_MAKE_CMD(SIXP_CMD_TX_1, sp->addr);
+	/* Tell the TNC a frame is coming: a priority command with the transmit
+	 * bit set, which is how the two keep count of what is in flight.
+	 */
+	*cp++ = SIXP_MAKE_CMD(SIXP_PRIO_CMD | SIXP_STATE_TX, sp->addr);
 	*cp++ = SIXP_MAKE_CMD(SIXP_CMD_SEOF, sp->addr);
 
 	checksum = 0;
@@ -216,13 +309,21 @@ static struct mbuf *sixpack_encode(struct sixpack *sp, struct mbuf **bpp)
 
 static void sixpack_command(struct sixpack *sp, uint8 c)
 {
-	switch (SIXP_CMD(c)) {
-	case SIXP_CMD_DCD:
-		/* The carrier state, told rather than guessed - which is one
-		 * of the reasons this protocol exists.
+	if (c & SIXP_PRIO_CMD) {
+		/* A priority command carries the TNC's state, not an opcode:
+		 * the carrier, told rather than guessed, which is one of the
+		 * reasons this protocol exists.  When it goes quiet and
+		 * something is waiting, ask at once rather than sitting out
+		 * the rest of the slot.
 		 */
-		sp->dcd = (c & 0x08) != 0;
-		break;
+		int was = sp->dcd;
+
+		sp->dcd = (c & SIXP_STATE_DCD) != 0;
+		if (was && !sp->dcd && sp->txq != NULL)
+			sixpack_tx_try(sp);
+		return;
+	}
+	switch (SIXP_CMD(c)) {
 	case SIXP_CMD_TX_ORUN:
 	case SIXP_CMD_RX_ORUN:
 	case SIXP_CMD_RX_BUF_OVL:
@@ -232,11 +333,7 @@ static void sixpack_command(struct sixpack *sp, uint8 c)
 		 */
 		sp->overruns++;
 		break;
-	case SIXP_CMD_RX_1:
-	case SIXP_CMD_TX_1:
 	case SIXP_CMD_LED:
-	case SIXP_CMD_CAL:
-	case SIXP_CMD_ADDR:
 		break;
 	default:
 		/* Not an error - an extension we do not speak.  The PR430

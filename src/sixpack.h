@@ -15,6 +15,10 @@
 #include "iface.h"
 #endif
 
+#ifndef _TIMER_H
+#include "timer.h"
+#endif
+
 /* A data byte is one with the top two bits clear.  Everything else is a
  * command, and there the low three bits are the TNC address.
  */
@@ -25,16 +29,27 @@
 #define SIXP_ADDR(c)            ((c) & SIXP_ADDR_MASK)
 #define SIXP_MAKE_CMD(op,addr)  ((uint8) ((op) | (addr)))
 
+/* There are two kinds of command byte, and mistaking one for the other is
+ * the trap here.  Bit 7 marks a PRIORITY command, and in one of those the
+ * bits 3..5 are a STATE - carrier, receiving, transmitting - and not an
+ * opcode.  Bit 7 clear and bit 6 set is an ordinary command, and there the
+ * same bits 3..5 do carry an opcode.  Both keep the address in bits 0..2.
+ *
+ * Reading a priority command as though bits 3..5 were an opcode appears to
+ * work, because "carrier present" then looks like a command of its own -
+ * until the carrier goes away and its byte, 0x80, matches nothing.
+ */
+#define SIXP_PRIO_CMD           0x80    /* this is a priority command */
+#define SIXP_PRIO_STATE         0x38    /* ... and this is its state field */
+#define SIXP_STATE_DCD          0x08    /* carrier present */
+#define SIXP_STATE_RX           0x10    /* receiving */
+#define SIXP_STATE_TX           0x20    /* transmitting */
+
 #define SIXP_CMD_SEOF           0x40    /* start and end of a frame */
 #define SIXP_CMD_TX_ORUN        0x48    /* the TNC lost transmit data */
 #define SIXP_CMD_RX_ORUN        0x50    /* ... receive data */
 #define SIXP_CMD_RX_BUF_OVL     0x58    /* ... a whole frame */
 #define SIXP_CMD_LED            0x60
-#define SIXP_CMD_DCD            0x88    /* carrier state follows */
-#define SIXP_CMD_RX_1           0x90
-#define SIXP_CMD_TX_1           0xA0
-#define SIXP_CMD_CAL            0xE0
-#define SIXP_CMD_ADDR           0xE8
 
 /* Sum of the data bytes plus the address, over a good frame. */
 #define SIXP_CHKSUM             0xFF
@@ -51,6 +66,16 @@ struct sixpack {
 
 	uint8 addr;             /* which TNC on the line: eight may share it */
 	uint8 txdelay;          /* the first byte of every data field */
+
+	/* Channel access lives here, not in the TNC - that is the other half
+	 * of why 6pack reports the carrier.  See sixpack_tx_try().
+	 */
+	uint8 persistence;      /* p, out of 255 */
+	uint8 slottime;         /* how long to wait before rolling again, in
+				 * units of 10 ms, as KISS counts them */
+	uint8 duplex;           /* set: transmit at once, ask nothing */
+	struct mbuf *txq;       /* encoded frames waiting for a quiet channel */
+	struct timer tx_t;
 
 	/* Decoder.  Four encoded bytes make three plain ones, so part holds
 	 * what is left over between them.
@@ -78,6 +103,7 @@ extern struct sixpack Sixpack[];
 int sixpack_init(struct iface *ifp);
 int sixpack_free(struct iface *ifp);
 int sixpack_raw(struct iface *iface, struct mbuf **bpp);
+int32 sixpack_ioctl(struct iface *ifp, int cmd, int set, int32 val);
 void sixpack_recv(void *arg);
 int do6pstat(int argc, char *argv[], void *p);
 
