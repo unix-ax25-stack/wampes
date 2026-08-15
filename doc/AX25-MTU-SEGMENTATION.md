@@ -123,6 +123,25 @@ NET/ROM source callsign.
 So IP over NET/ROM takes the worse half of each mechanism: it fragments,
 and it has no retransmission below TCP to make up for it.
 
+One more thing about NET/ROM is easy to miss and worth stating, because
+it silently overrides a setting the operator made.  A NET/ROM frame does
+not go out as an IP datagram routed to an interface - `netrom.c` builds
+it and hands it straight to `send_ax25(axp, bpp, -1)`, and that `-1` is
+the branch which enqueues the packet whole:
+
+    } else {
+            enqueue(&axp->txq,bpp);
+    }
+
+No chopping, no paclen.  So a full NET/ROM frame goes out with an
+information field of 15 + 5 + 236 = 256 bytes **whatever paclen is set
+to**.  The interface MTU never enters into it either.  Two things follow:
+running NET/ROM means both ends must accept a 256 byte information field,
+and an operator who lowers `paclen` for a poor channel does not lower it
+for NET/ROM traffic.  Making `NR4MAXINFO` follow `paclen` would fix that,
+at the price of touching the NET/ROM circuit chunking as well; it is
+noted in TODO.txt rather than done.
+
 ## Why segmentation beats fragmentation, and where it is unavailable
 
 The two are often spoken of in one breath, and they are not alike.
@@ -285,8 +304,32 @@ and `iface->mtu` is unsigned, which gives three regions - all measured:
 So 28 is the smallest MTU the arithmetic survives, and below 20 a
 datagram with a nonsensical length field reaches the air before the
 attempt fails.  RFC 791 requires every link to carry 68 octets anyway, so
-all of this is far outside anything legitimate - it is written down
-because the values are accepted without complaint.
+`mtu_ok()` in `iface.c` now refuses anything smaller, on both paths that
+accept a number from the operator - `attach asy` and `ifconfig <if> mtu`.
+
+### What IPv6 would demand
+
+WAMPES has no IPv6, but the numbers are worth knowing before that
+changes, and they are not small.  RFC 8200 section 5 sets the minimum
+link MTU at **1280 octets**, and adds the sentence that matters here: on
+any link that cannot convey a 1280 octet packet in one piece,
+link-specific fragmentation and reassembly must be provided at a layer
+below IPv6.
+
+That is precisely what the segmenter is.  IPv6 over AX.25 would not
+merely benefit from it - the segmenter is the condition under which such
+a link is allowed to exist at all, because IPv6 routers must not
+fragment; an undersized link produces ICMPv6 Packet Too Big instead.
+
+Two consequences follow:
+
+* `paclen` would have to be **12 or more**, so that 1280 fits within the
+  128 expressible segments: `128 * 11 - 1 = 1407`, while paclen 11 gives
+  1279 - one short.
+* **Datagram mode could not carry IPv6 at all.**  UI frames are never
+  segmented, so the link would have to convey 1280 octets in one frame,
+  and nobody runs `paclen 1280` on the air.  IPv6 over AX.25 means
+  connected mode.
 
 ### Telling them apart in a trace
 

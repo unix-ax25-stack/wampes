@@ -439,13 +439,40 @@ ifrxbuf(int argc,char *argv[],void *p)
 	return 0;       /* To be written */
 }
 
+/* Is this a size IP can work with?  RFC 791 requires every link to carry a
+ * datagram of 68 octets without fragmenting it, so that is the floor.  It is
+ * also comfortably above the point where the fragmentation arithmetic in
+ * ip_route() gives out: fragsize = (mtu - ip_len) & 0xfff8 rounds down to
+ * zero from 27 downwards, and below 20 the unsigned subtraction underflows
+ * and puts one fragment with a nonsensical length field on the air before
+ * giving up.  See doc/AX25-MTU-SEGMENTATION.md.
+ *
+ * IPv6 would want 1280 here (RFC 8200 section 5), and on a link that cannot
+ * carry that in one piece it also demands fragmentation and reassembly below
+ * IPv6 - which is exactly what the AX.25 segmenter is.  WAMPES has no IPv6,
+ * so 68 it is; the number is worth knowing before that changes.
+ */
+int
+mtu_ok(const char *who,long mtu)
+{
+	if(mtu < MTU_MIN){
+		printf("%s: mtu %ld is below the %d octets IP needs (RFC 791)\n",
+		 who,mtu,MTU_MIN);
+		return 0;
+	}
+	return 1;
+}
+
 /* Set interface Maximum Transmission Unit */
 static int
 ifmtu(int argc,char *argv[],void *p)
 {
 	struct iface *ifp = (struct iface *) p;
+	long mtu = atol(argv[1]);
 
-	ifp->mtu = atoi(argv[1]);
+	if(!mtu_ok(ifp->name,mtu))
+		return 1;
+	ifp->mtu = (uint) mtu;
 	return 0;
 }
 

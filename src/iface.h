@@ -167,4 +167,9 @@ int setencap(struct iface *ifp,char *mode);
 /* In config.c: */
 int net_route(struct iface *ifp,struct mbuf **bpp);
 
+/* Smallest MTU IP can work with - RFC 791.  See mtu_ok() in iface.c. */
+#define MTU_MIN 68
+
+int mtu_ok(const char *who,long mtu);
+
 #endif  /* _IFACE_H */

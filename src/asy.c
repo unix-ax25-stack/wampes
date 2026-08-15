@@ -77,6 +77,9 @@ void *p)
 
 		irq = atoi(argv[2]);
 
+	if(!mtu_ok(argv[4],atol(argv[6])))
+		return -1;
+
 	/* Create interface structure and fill in details */
 	ifp = (struct iface *)callocw(1,sizeof(struct iface));
 	ifp->addr = Ip_addr;
