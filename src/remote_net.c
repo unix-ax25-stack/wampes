@@ -975,31 +975,19 @@ static void complain(const char *fmt, ...)
 
 /*---------------------------------------------------------------------------*/
 
-/* The service socket sits in the public directory, so its own mode is what
- * keeps it to the operators.  If the group is missing the socket stays with
- * its owner - narrower than intended rather than wider.
+/* Nothing sets the rights of the service socket any more.  It used to get
+ * group "hams" and mode 0660 at every bind, which meant the node overruled
+ * whatever the sysop had arranged - and there is more than one sensible
+ * arrangement, 0707 group hams among them.  A socket cannot carry the
+ * decision itself, since bind() recreates it every start, so it is stated in
+ * net.rc with "axsock group" and "axsock mode".  See doc/PERMISSIONS.md.
+ *
+ * Without those two lines the mode is whatever the umask allows, which is the
+ * ordinary Unix answer for a file nobody has said anything about.
+ *
+ * The command channel is the other case and keeps its 0600: that one is the
+ * node's own command line, and it is answerable for it.
  */
-
-static void set_service_rights(const char *path)
-{
-  struct group *gr;
-
-  if ((gr = getgrnam(AXSOCK_GROUP))) {
-    chown(path, (uid_t) -1, gr->gr_gid);
-    chmod(path, 0660);
-    return;
-  }
-
-  /* No such group, so there is nobody the mode could open it to on purpose.
-   * The chmod 0660 used to happen here as well, and that was wrong twice
-   * over: it contradicted this very message, and BSD gives a new file the
-   * group of its DIRECTORY rather than of whoever made it - so on macOS the
-   * socket came out group "staff", which is every local account.  Anyone
-   * logged in had the transmitter.  Without the group, root alone.
-   */
-  complain("no group \"%s\": %s stays with its owner", AXSOCK_GROUP, path);
-  chmod(path, 0600);
-}
 
 /*---------------------------------------------------------------------------*/
 
@@ -1132,17 +1120,12 @@ static int open_listener(struct listener *l, int loud)
     return -1;
   }
 
-  if (addr->sa_family == AF_UNIX) {
-    if (l->restricted)
-      set_service_rights(((struct sockaddr_un *) addr)->sun_path);
-    else
-      /* The command channel took whatever the umask gave it, and leaned
-       * entirely on 0700 of the directory around it.  Say it on the object
-       * as well - the service socket states its own terms, and this one
-       * carries more.
-       */
-      chmod(((struct sockaddr_un *) addr)->sun_path, 0600);
-  }
+  /* The command channel only.  It used to lean entirely on 0700 of the
+   * directory around it; say it on the object as well.  The service socket
+   * is the sysop's - see the note above set_service_rights' remains.
+   */
+  if (addr->sa_family == AF_UNIX && !l->restricted)
+    chmod(((struct sockaddr_un *) addr)->sun_path, 0600);
 
   l->fd = fd;
   on_read(fd, accept_connection_net, l);

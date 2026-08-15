@@ -65,11 +65,37 @@ in `.sockets` at mode 0700 - which is checked.  It also carries 0600 of
 its own since 2026-08-15; until then the directory was its entire
 protection, and nothing set a mode on the socket at all.
 
+### The sticky bit on sockets/
+
+At 755 it makes no difference: only root may create or remove anything
+there.  It matters the moment the directory is opened up - say 775 with
+group `hams`, so that several daemons can publish their own sockets - and
+then it is not optional.  Without it, any member of that group may delete
+`ax25` and bind their own socket under the same name, and every client
+connects to them instead, with correct permissions and nothing to notice.
+With `1775` they may add their own entries and not remove anyone else's.
+
+`bind_socket()` does not help here.  It keeps the node from clearing away
+somebody else's socket; it cannot keep somebody else from clearing away
+the node's.
+
+So: 755 and nothing to think about, or 1775 if it has to be shared.  775
+is the one to avoid.
+
 ### Saying what the service socket should be
 
-The node sets `0660` and group `hams` when that group exists, `0600` when
-it does not.  That is a starting point, not a policy, and net.rc can say
-otherwise:
+Nothing sets the rights of the service socket any more.  It used to be
+given group `hams` and mode 0660 at every bind, which overruled whatever
+the sysop had arranged - and there is more than one sensible arrangement.
+Without any statement the mode is whatever the umask allows, the ordinary
+Unix answer for a file nobody has said anything about.
+
+Which means most installations will want these two lines in net.rc:
+
+    axsock group hams
+    axsock mode 0660
+
+and that this is the usual set:
 
     axsock                    show owner, group and mode
     axsock group <name>       set the group
