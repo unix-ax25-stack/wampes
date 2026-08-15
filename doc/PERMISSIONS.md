@@ -60,10 +60,16 @@ instead, or `0606` group `hams`, and either is a considered decision, not
 a mistake.  The node sets `0660` group `hams` on every start where that
 group exists, and says so when it does not.
 
-The socket that *would* matter is the command channel, and that one lives
-in `.sockets` at mode 0700 - which is checked.  It also carries 0600 of
-its own since 2026-08-15; until then the directory was its entire
-protection, and nothing set a mode on the socket at all.
+The socket that *would* matter is the command channel.  It lives in
+`.sockets`, and it carries 0600 of its own since 2026-08-15 - until then
+nothing set a mode on it at all and those 0700 on the directory were its
+entire protection.
+
+`.sockets` is created 0700 and then left alone, like every other
+directory here.  700 is the right default because it holds regardless of
+what the socket inside says; an admin who wants 750 for a group of sysops
+may have it and will keep it.  One who opens it wide is told so at
+startup - that one is still checked.
 
 ### The sticky bit on sockets/
 

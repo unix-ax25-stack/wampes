@@ -40,18 +40,13 @@ static void makedir(const char *name, int mode)
     chmod(name, mode);
 }
 
-/* The one exception, and it is not a preference about directory modes.
- * Nothing sets a mode on the command socket itself - it takes what the umask
- * gives it - so 0700 here is the whole protection of the node's own command
- * line, the counterpart of the 0660 that the service socket carries.  A mode
- * the node is answerable for is one it may keep setting.
+/* .sockets used to be forced to 0700 at every start, because nothing set a
+ * mode on the command socket itself and those 0700 were its whole protection.
+ * The socket says 0600 for itself now, so the directory is no longer load
+ * bearing and can follow the same rule as the rest: 0700 when we create it,
+ * and left alone afterwards.  An admin who wants 0750 for a group of sysops
+ * may have it and keep it; one who opens it wide is told so at startup.
  */
-
-static void makedir_private(const char *name)
-{
-  mkdir(name, 0700);
-  chmod(name, 0700);
-}
 
 /*---------------------------------------------------------------------------*/
 
@@ -66,7 +61,7 @@ void create_rundir(void)
 void create_admin_rundir(void)
 {
   makedir(TCPDIR, 0755);
-  makedir_private(TCPDIR "/.sockets");
+  makedir(TCPDIR "/.sockets", 0700);
 }
 
 /*---------------------------------------------------------------------------*/
