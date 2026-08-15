@@ -18,6 +18,7 @@
 #include "ax25.h"
 #include "kiss.h"
 #include "nrs.h"
+#include "sixpack.h"
 #include "netrom.h"
 #include "pktdrvr.h"
 #include "slip.h"
@@ -277,6 +278,22 @@ struct iftype Iftypes[] = {
 		ax_forus,       ax25_dump,      NULL,           NULL
 	},
 
+	/* The AX.25 side of these is the same as above - what differs is the
+	 * framing on the wire, which asy_attach() picks from Asymode by the
+	 * very same name.  One name, looked up in two tables.
+	 */
+	{
+		"6PACKUI",      axui_send,      ax_output,      pax25,
+		setcall,        CL_AX25,        AXALEN,         ax_recv,
+		ax_forus,       ax25_dump,      NULL,           NULL
+	},
+
+	{
+		"6PACKI",       axi_send,       ax_output,      pax25,
+		setcall,        CL_AX25,        AXALEN,         ax_recv,
+		ax_forus,       ax25_dump,      NULL,           NULL
+	},
+
 	{
 		"KISSUI",       axui_send,      ax_output,      pax25,
 		setcall,        CL_AX25,        AXALEN,         kiss_recv,
@@ -328,6 +345,8 @@ struct asymode Asymode[] = {
 	{ "AX25I",        FR_END,         kiss_init,      kiss_free },
 	{ "KISSUI",       FR_END,         kiss_init,      kiss_free },
 	{ "KISSI",        FR_END,         kiss_init,      kiss_free },
+	{ "6PACKUI",      SIXP_CMD_SEOF,  sixpack_init,   sixpack_free },
+	{ "6PACKI",       SIXP_CMD_SEOF,  sixpack_init,   sixpack_free },
 	{ "NRS",          ETX,            nrs_init,       nrs_free },
 	{ NULL }
 };

@@ -148,6 +148,7 @@ OBJS          = adjtime.o \
 		setsp.o \
 		slhc.o \
 		slhcdump.o \
+		sixpack.o \
 		slip.o \
 		smisc.o \
 		sockaddr_util.o \
