@@ -331,6 +331,25 @@ is not:
 With that, the same 327 and 329 byte frames arrive and a 347 byte one is
 still refused.
 
+The 6pack driver has no such coupling to begin with - `sixpack.c` never
+reads `iface->mtu`.  Its limit is the fixed `SIXP_MAX_FRAME` of 512, and
+the largest legitimate frame there is 1 TxDelay + 14 addresses + 56
+digipeaters + 1 control + 1 PID + 256 information + 1 checksum = 330
+plain bytes, so it has room to spare.  It differs from the SLIP guard in
+one way worth knowing: it does not rise with anything.  While N1 is 256
+that makes no difference, but `dopaclen()` accepts far larger values, and
+a peer using one would get through over KISS and not over 6pack.  Nothing
+to do about it until N1 is actually negotiated - which is the EAX25
+question.
+
+All three decoders count **plain** bytes rather than what arrived on the
+line: `slip_decode()` returns early on `FR_ESC` without counting,
+`nrs_decode()` does the same for `DLE`, and the 6pack decoder increments
+only where a plain byte is recovered.  That is what makes the numbers
+above mean the same thing for an escaped frame as for a bare one - a
+331 byte frame full of `C0` may be 664 bytes on the wire and still
+passes.  Those 664 are what the TNC has to buffer, not us.
+
 ### What IPv6 would demand
 
 WAMPES has no IPv6, but the numbers are worth knowing before that
