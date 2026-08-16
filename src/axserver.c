@@ -299,6 +299,19 @@ static int axlisten_add(int netrom, int argc, char *argv[])
   if (silent < 0 && (*target == '/' || !strcmp(target, "builtin:login")))
     silent = 1;
 
+  /* A datagram is handed over byte for byte with a count in front, and
+   * nothing on that path converts anything - see remote_net_send_frame().
+   * Offering ascii here would be promising a conversion nobody performs,
+   * and the display would then show a mode that is not in force.
+   */
+  if (ui) {
+    if (ascii_set) {
+      printf("Converting a datagram would corrupt it\n");
+      return 1;
+    }
+    binary = 1;
+  }
+
   /* Now the defaults, which depend on what is being carried. */
   if (!netrom && pid != PID_NO_L3) {
     if (noisy_set) {

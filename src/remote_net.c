@@ -56,6 +56,10 @@ struct controlblock {
   int dgram;                            /* Every further line is a frame */
   int dgram_pid;
   struct iface *dgram_iface;            /* 0: every AX.25 port */
+  int dgram_hdrlen;                     /* header and colon, in front of it */
+  int dgram_need;                       /* counted frame: bytes still to come */
+  int dgram_paylen;                     /* its length; 0: the payload ends at
+                                         * the NUL, as a line does */
   int dgram_fixed;                      /* The header was given once on the
                                          * command line; every line after it
                                          * is payload and nothing else */
@@ -861,7 +865,8 @@ static void datagram_line(struct controlblock *cp, char *line)
 
 send:
   if (cp->dgram_iface) {
-    bp = qdata(payload, (uint) strlen(payload));
+    bp = qdata(payload, (uint) (cp->dgram_paylen ? cp->dgram_paylen
+					       : (int) strlen(payload)));
     ax_send_ui(cp->dgram_iface, &hdr, cp->dgram_pid, &bp);
     return;
   }
@@ -869,7 +874,8 @@ send:
     struct ax25 copy = hdr;
 
     if (ifp->output != ax_output) continue;
-    bp = qdata(payload, (uint) strlen(payload));
+    bp = qdata(payload, (uint) (cp->dgram_paylen ? cp->dgram_paylen
+					       : (int) strlen(payload)));
     ax_send_ui(ifp, &copy, cp->dgram_pid, &bp);
     i++;
   }
@@ -945,6 +951,48 @@ static void command_receive(void *arg)
    * "datagram hf1:" into an unknown word - it only ever went unnoticed
    * because setcall() happens to tolerate one.
    */
+  /* A counted frame: the client announced "[n]" and a header, and what
+   * follows is n bytes of payload and nothing else.  No line ending closes
+   * it - CR and NL are ordinary content here, which is the whole point.
+   */
+  if (cp->dgram_need > 0) {
+    cp->buffer[cp->bufcnt++] = c;
+    if (--cp->dgram_need == 0) {
+      cp->dgram_paylen = cp->bufcnt - cp->dgram_hdrlen;
+      cp->buffer[cp->bufcnt] = 0;
+      datagram_line(cp, cp->buffer);
+      cp->dgram_paylen = 0;
+      cp->bufcnt = 0;
+    } else if (cp->bufcnt >= (int) sizeof(cp->buffer) - 1)
+      delete_controlblock(cp);
+    return;
+  }
+
+  /* Does this line announce one?  "[n]" at the very front, so the first byte
+   * decides and no payload can be read as a length.  The header ends at the
+   * colon and the bytes start straight after it.
+   */
+  if (cp->dgram && cp->bufcnt > 0 && cp->buffer[0] == '[' && c == ':') {
+    char *end;
+    long n;
+
+    cp->buffer[cp->bufcnt] = 0;
+    n = strtol(cp->buffer + 1, &end, 10);
+    if (*end == ']' && n > 0 && n < (long) sizeof(cp->buffer) - cp->bufcnt) {
+      /* Drop the "[n]" and keep the header, so datagram_line() sees exactly
+       * what it always sees.
+       */
+      int hl = cp->bufcnt - (int) (end + 1 - cp->buffer);
+
+      memmove(cp->buffer, end + 1, (size_t) hl);
+      cp->buffer[hl] = ':';
+      cp->bufcnt = hl + 1;
+      cp->dgram_hdrlen = cp->bufcnt;
+      cp->dgram_need = (int) n;
+      return;
+    }
+  }
+
   if (c != '\r' && c != '\n') {
     cp->lastcr = 0;
     cp->buffer[cp->bufcnt++] = c;
