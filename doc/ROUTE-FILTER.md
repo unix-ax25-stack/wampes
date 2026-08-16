@@ -87,6 +87,45 @@ Because working three levels out by hand is exactly what an operator
 should not have to do, `flexnet link` and `netrom nodes` show what is **in
 force** for each station, not what was written about it.
 
+## For a station nobody entered, `only-him` and `none` are the same thing
+
+Worth knowing before writing a longer rule than necessary.  A FlexNet peer
+becomes a *destination* in exactly one place - `recv_rprt()`, the answer to
+**our** poll - and we no longer poll peers nobody entered.  No poll, no
+`FLEX_RPRT`, no destination entry: he appears in nothing we announce, with
+or without `advert no`.
+
+So the whole user case is one word:
+
+    flexnet filter port=useraccess2m in none
+
+He stays a peer, we speak to him, **he gets our table** - which is why he
+connected in the first place.  What `in none` stops is the one thing that
+was actually happening: his routes entering ours.  Measured, with him not
+entered and a real link partner listening:
+
+| `net.rc` | the partner hears | he hears |
+|---|---|---|
+| *(nothing)* | `DB0QRS d645; DB0XYZ d623` | `DL1ABC-7-7 d14` |
+| `in only-him` | nothing | `DL1ABC-7-7 d14` |
+| `in only-him advert no` | nothing | `DL1ABC-7-7 d14` |
+| `in none` | nothing | `DL1ABC-7-7 d14` |
+
+The two settings part company only for a peer from `flexnet link add`,
+which is polled and therefore does become a destination:
+
+* `only-him` - reachable through us, but his knowledge is not taken.
+* `advert no` - taken and used, but no other node hears of him.  This is
+  the node-at-our-own-site case, and at NET/ROM it is every neighbour,
+  because there the link that makes him known is also the link that makes
+  him reachable.
+
+The price, and it is the intended one: a station that is not a destination
+is not reachable **through us** either - `update_axroute()` builds no AX.25
+route for him.  "We do not carry our users upstream" is exactly that
+sentence.  A user who should be reachable has to be entered with `flexnet
+link add`, and is then polled like any partner.
+
 ## The two protocols are not symmetric, and it is their doing
 
 **FlexNet announces per partner** - `send_rout(pp)` - so everything above
@@ -234,3 +273,9 @@ of them on 127.0.0.1 with different ports take each other's frames.
 * **Per-interface node broadcast intervals.**  `nr_bdcstint` and
   `nr_minobs` remain one number for the whole node; only *whether* we
   broadcast is per entry.
+* **A reduced broadcast per entry.**  At NET/ROM the choice on a user port
+  is all or nothing: broadcast there and he learns everything, or do not
+  and he learns nothing.  Announcing only part of the table per broadcast
+  entry is the natural next step and is not built.  INP3 will raise the
+  same question from the other side - it runs connected, like FlexNet, so
+  there it is the per-peer path that applies again.
