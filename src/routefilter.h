@@ -31,6 +31,7 @@ enum rf_proto {
 const char *rf_in_name(enum rf_in in);
 enum rf_in rf_in(enum rf_proto proto, const uint8 *call, const struct iface *ifp);
 int rf_advert(enum rf_proto proto, const uint8 *call, const struct iface *ifp);
+int rf_feed(enum rf_proto proto, const uint8 *call, const struct iface *ifp);
 int rf_configured(enum rf_proto proto);
 int rf_cmd(enum rf_proto proto, int argc, char *argv[], void *p);
 

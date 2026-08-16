@@ -24,35 +24,52 @@ of them are worth a switch.
 | **A** | do we learn that **he** exists | not a switch - he has to be in the table, or we look for him later and do not find him |
 | **B** | do we learn what he says about **others** | the switch: `in` |
 | **C** | do **others** hear about him | the switch: `advert` |
-| **D** | does **he** hear about others | not a switch - see below |
+| **D** | does **he** hear about others | the switch: `feed` |
 
-The four kinds of station want different pairs:
+The station classes want different combinations:
 
-| | `in` | `advert` | |
-|---|---|---|---|
-| link partner | `all` | `yes` | the default, as before |
-| node at our own site | `all` | `no` | his routes are useful; upstream we want to appear as one system |
-| user | `only-him` | `no` | reachable, teaches us nothing, and no node list elsewhere carries him |
-| nothing at all | `none` | `no` | |
+| | `in` | `advert` | `feed` | |
+|---|---|---|---|---|
+| link partner | `all` | `yes` | `yes` | the default, as before |
+| node at our own site | `all` | `no` | `yes` | his routes are useful; upstream we appear as one system |
+| user | `none` | `no` | `yes` | teaches us nothing, may have our table - that is why he called |
+| listen only | `all` | `no` | `no` | we learn from him and give nothing back |
 
 **`advert no` is about him and nothing else.**  What lies behind him was
 settled by `in`: with `in all` we accepted those routes and they are ours
 to pass on, with `in only-him` they never arrived.  So `advert no` leaves
 out one entry - his - and nothing more.
 
-**Why D is not tied to C**, although hiding a station and not feeding it
-look like the same wish: the two cases that want `advert no` want
-opposite things there.  A user is hidden and may still have our table -
-that is the whole point of letting him speak the protocol at all.  A node
-at our own site is hidden and *must* have our table, because it is ours
-and its users route through it.  One switch for both would break the
-second case to serve the first.  Whether we speak to a station at all is
-a question of access, not of filtering, and it is not decided here.
+**`feed no` is not silence.**  He still learns that *we* are here: FlexNet
+greets the link with `FLEX_INIT`, which is our own callsign range, and
+NET/ROM still broadcasts on the port, with the identifier and no entries.
+That is the difference from switching the port off with `netrom broadcast
+disable`, and it is a real one - a neighbour who never hears from us
+cannot route to us either.
+
+**Why the three are independent.**  It is tempting to tie D to C, since
+hiding a station and not feeding it sound like one wish.  But the two
+cases that want `advert no` want opposite things at D: a user is hidden
+and may still have our table, which is the whole point of letting him
+speak the protocol; a node at our own site is hidden and *must* have our
+table, because it is ours and its users route through it.  One switch for
+both would break the second case to serve the first.
+
+At NET/ROM `feed` is per **port** only.  Written against a callsign it is
+refused, because NET/ROM announces one UI frame for everybody on the port
+and a rule that looked as though it worked per station would be a lie.
+
+Set at the console, a FlexNet filter takes effect **at once**, and what
+travels is a withdrawal: `doflexnetfilter()` calls `process_changes()`,
+so routes that stop being announced go out once with a delay of 0.
+Without that they sat until a peer happened to say something or the five
+minute poll came round - measured, and long enough to look broken.
 
 ## Writing it down
 
     netrom  filter
-    netrom  filter default | port=<name> | <call>  [in <mode>] [advert yes|no]
+    netrom  filter default | port=<name> | <call>
+                   [in <mode>] [advert yes|no] [feed yes|no]
     netrom  filter --delete default | port=<name> | <call>
 
     flexnet filter ...              the same, and configured apart
@@ -266,10 +283,6 @@ of them on 127.0.0.1 with different ports take each other's frames.
   distinct from "speaks it but teaches us nothing".  `in none` comes
   close and is not the same thing: the frames are still parsed and the
   peer still exists.
-* **A `feed` switch**, saying what a station hears from us.  Everyone we
-  speak to is told, as before.  See "Why D is not tied to C" - the switch
-  would be needed only for a station that may speak the protocol but not
-  have the table, and no case for that has come up.
 * **Per-interface node broadcast intervals.**  `nr_bdcstint` and
   `nr_minobs` remain one number for the whole node; only *whether* we
   broadcast is per entry.

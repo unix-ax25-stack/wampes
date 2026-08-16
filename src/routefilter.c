@@ -16,29 +16,33 @@
  *   B  do we learn what he says about     the switch: "in"
  *      OTHERS
  *   C  do OTHERS hear about him           the switch: "advert"
- *   D  does HE hear about others          no switch, and deliberately so -
- *                                         see below.
+ *   D  does HE hear about others          the switch: "feed"
  *
- * WHY D IS NOT TIED TO C, although it looks as though hiding a station and
- * not feeding it were the same wish: the two cases that want "advert no" want
- * opposite things here.  A user is hidden and may still have our table - that
- * is the whole point of letting him speak the protocol at all.  A node at our
- * own site is hidden and MUST have our table, because it is ours and its
- * users route through it.  One switch for both would break the second case to
- * serve the first.  Whether we speak to a station at all is a question of
- * access, not of filtering, and it is not decided here.
+ * ALL THREE ARE INDEPENDENT, and they have to be.  It is tempting to tie D to
+ * C - hiding a station and not feeding it sound like one wish - but the two
+ * cases that want "advert no" want opposite things at D.  A user is hidden
+ * and may still have our table, which is the whole point of letting him speak
+ * the protocol.  A node at our own site is hidden and MUST have our table,
+ * because it is ours and its users route through it.
  *
- * "in" and "advert" are independent, and the four station classes need
- * different pairs of them:
+ * "FEED NO" IS NOT SILENCE.  He still learns that WE are here - FlexNet
+ * greets the link with FLEX_INIT, which is our own callsign range, and
+ * NET/ROM still broadcasts on the port, with the identifier and no entries.
+ * That is the difference from switching the port off with "netrom broadcast
+ * disable", and it is a real one: a neighbour who never hears from us cannot
+ * route to us either.
  *
- *   link partner        in all       advert yes    the default, as before
- *   node at our site    in all       advert no     his routes are useful,
- *                                                  but upstream we want to
- *                                                  appear as one system
- *   user                in only-him  advert no     reachable, teaches us
- *                                                  nothing, and no node
- *                                                  list elsewhere carries him
- *   nothing at all      in none      advert no
+ * The four station classes need different combinations:
+ *
+ *   link partner    in all       advert yes  feed yes   as before
+ *   node at our     in all       advert no   feed yes   his routes are useful;
+ *   own site                                            upstream we appear as
+ *                                                       one system
+ *   user            in none      advert no   feed yes   teaches us nothing,
+ *                                                       may have our table -
+ *                                                       that is why he called
+ *   listen only     in all       advert no   feed no    we learn from him and
+ *                                                       give nothing back
  *
  * ADVERT IS ABOUT HIM AND NOTHING ELSE.  What lies behind him was settled by
  * "in": with "in all" we accepted those routes and they are ours to pass on,
@@ -86,6 +90,7 @@ struct rfentry {
 	uint8 call[AXALEN];             /* RFK_CALL */
 	enum rf_in in;
 	int advert;
+	int feed;
 };
 
 static struct rfentry *Rfentries;
@@ -165,6 +170,15 @@ int rf_advert(enum rf_proto proto, const uint8 *call, const struct iface *ifp)
 
 /*---------------------------------------------------------------------------*/
 
+int rf_feed(enum rf_proto proto, const uint8 *call, const struct iface *ifp)
+{
+	const struct rfentry *rp = rf_lookup(proto, call, ifp);
+
+	return rp ? rp->feed : 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* Is there any filter at all for this protocol?  The announcing loops ask
  * before they start, so that a node without filters walks its table exactly
  * as it did before instead of asking a question per entry.
@@ -192,7 +206,7 @@ static void rf_list(enum rf_proto proto)
 		if (rp->proto != proto)
 			continue;
 		if (!seen++)
-			printf("Station           In         Advert\n");
+			printf("Station           In         Advert  Feed\n");
 		switch (rp->kind) {
 		case RFK_DEFAULT:
 			printf("%-16s  ", "default");
@@ -204,7 +218,8 @@ static void rf_list(enum rf_proto proto)
 			printf("%-16s  ", pax25(buf, rp->call));
 			break;
 		}
-		printf("%-9s  %s\n", rf_in_name(rp->in), rp->advert ? "yes" : "no");
+		printf("%-9s  %-6s  %s\n", rf_in_name(rp->in),
+		       rp->advert ? "yes" : "no", rp->feed ? "yes" : "no");
 	}
 	if (!seen)
 		printf("No filters - every station is a full partner\n");
@@ -229,7 +244,8 @@ static void rf_delete(struct rfentry *entry)
 /*---------------------------------------------------------------------------*/
 
 /*      <proto> filter
- *      <proto> filter default | port=<name> | <call>  [in <mode>] [advert <yes|no>]
+ *      <proto> filter default | port=<name> | <call>
+ *                     [in <mode>] [advert yes|no] [feed yes|no]
  *      <proto> filter --delete default | port=<name> | <call>
  *
  * "port=" rather than a bare name, because an interface may perfectly well be
@@ -243,10 +259,12 @@ int rf_cmd(enum rf_proto proto, int argc, char *argv[], void *p)
 	enum rf_in in = RF_IN_ALL;
 	enum rf_kind kind = RFK_DEFAULT;
 	int advert = 1;
+	int advert_set = 0;
 	int del = 0;
+	int feed = 1;
+	int feed_set = 0;
 	int i;
 	int in_set = 0;
-	int advert_set = 0;
 	struct rfentry *rp;
 	uint8 call[AXALEN];
 
@@ -274,20 +292,29 @@ int rf_cmd(enum rf_proto proto, int argc, char *argv[], void *p)
 			in_set = 1;
 			continue;
 		}
-		if (!strcmp(cp, "advert")) {
+		if (!strcmp(cp, "advert") || !strcmp(cp, "feed")) {
+			int yes;
+
 			if (++i >= argc) {
-				printf("\"advert\" without yes or no\n");
+				printf("\"%s\" without yes or no\n", cp);
 				return 1;
 			}
 			if (!strcmp(argv[i], "yes"))
-				advert = 1;
+				yes = 1;
 			else if (!strcmp(argv[i], "no"))
-				advert = 0;
+				yes = 0;
 			else {
-				printf("Advert must be yes or no\n");
+				printf("%c%s must be yes or no\n",
+				       Xtoupper(*cp), cp + 1);
 				return 1;
 			}
-			advert_set = 1;
+			if (*cp == 'a') {
+				advert = yes;
+				advert_set = 1;
+			} else {
+				feed = yes;
+				feed_set = 1;
+			}
 			continue;
 		}
 		if (!strncmp(cp, "--", 2)) {
@@ -329,8 +356,18 @@ int rf_cmd(enum rf_proto proto, int argc, char *argv[], void *p)
 		kind = RFK_CALL;
 	}
 
+	/* NET/ROM announces per broadcast entry, one UI frame for everybody on
+	 * the port - there is no such thing as announcing to one station.  A
+	 * "feed" written against a callsign would look as though it worked.
+	 */
+	if (proto == RF_NETROM && kind == RFK_CALL && feed_set) {
+		printf("NET/ROM announces per port, not per station - "
+		       "write \"feed\" against port=<name> or default\n");
+		return 1;
+	}
+
 	if (del) {
-		if (in_set || advert_set) {
+		if (in_set || advert_set || feed_set) {
 			printf("--delete takes no settings\n");
 			return 1;
 		}
@@ -360,6 +397,7 @@ int rf_cmd(enum rf_proto proto, int argc, char *argv[], void *p)
 		 */
 		rp->in = RF_IN_ALL;
 		rp->advert = 1;
+		rp->feed = 1;
 		rp->next = Rfentries;
 		Rfentries = rp;
 	}
@@ -367,5 +405,7 @@ int rf_cmd(enum rf_proto proto, int argc, char *argv[], void *p)
 		rp->in = in;
 	if (advert_set)
 		rp->advert = advert;
+	if (feed_set)
+		rp->feed = feed;
 	return 0;
 }

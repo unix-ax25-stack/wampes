@@ -141,6 +141,11 @@ static int peer_advert(const struct peer *pp)
 	return rf_advert(RF_FLEXNET, pp->call, pp->iface);
 }
 
+static int peer_feed(const struct peer *pp)
+{
+	return rf_feed(RF_FLEXNET, pp->call, pp->iface);
+}
+
 /*---------------------------------------------------------------------------*/
 
 static struct dest *find_dest(const uint8 *call)
@@ -394,6 +399,7 @@ static void send_rout(struct peer *pp)
 {
 
 	int delay;
+	int feeds;
 	int i;
 	int lastdelay;
 	struct dest *pd;
@@ -404,6 +410,16 @@ static void send_rout(struct peer *pp)
 
 	if (!setaxp(pp))
 		return;
+	/* "feed no" is not silence: setaxp() has already greeted him with
+	 * FLEX_INIT, which is our own callsign range, so he still knows we are
+	 * here and can reach us.  What he does not get is our destinations -
+	 * and he gets them WITHDRAWN rather than merely withheld, because
+	 * every destination now counts as unreachable to him.  The loop below
+	 * sends one round of delay 0 and then falls quiet by itself; simply
+	 * returning here would leave whatever we last told him standing at his
+	 * end until it aged out.
+	 */
+	feeds = peer_feed(pp);
 	for (pd = Dests; pd; pd = pd->next) {
 		if (addreq(pd->call, pp->call))
 			continue;
@@ -411,7 +427,7 @@ static void send_rout(struct peer *pp)
 		if (!pq)
 			break;
 		pqbest = find_best_quality(pd);
-		if (!dest_advertised(pd))
+		if (!feeds || !dest_advertised(pd))
 			/* Unreachable rather than skipped, and the difference
 			 * matters: skipping would leave whatever we last told
 			 * him standing until it aged out.  This way the change
@@ -760,10 +776,10 @@ static int doflexnetlinklist(int argc, char *argv[], void *p)
 	 * be the default, and working that out by hand across three levels is
 	 * exactly what the sysop should not have to do.
 	 */
-	printf("Call         Remote  Local Smooth P T In        Adv State\n");
+	printf("Call         Remote  Local Smooth P T In        Adv Feed State\n");
 	for (pp = Peers; pp; pp = pp->next) {
 		state = (axp = find_ax25(pp->call)) ? axp->state : LAPB_DISCONNECTED;
-		printf("%-12s %6d %6d %6d %c %c %-8s  %-3s %s\n",
+		printf("%-12s %6d %6d %6d %c %c %-8s  %-3s %-4s %s\n",
 		       sprintflexcall(buf, pp->call),
 		       pp->remdelay,
 		       pp->locdelay,
@@ -772,6 +788,7 @@ static int doflexnetlinklist(int argc, char *argv[], void *p)
 		       tokenstr[pp->token],
 		       rf_in_name(peer_in(pp)),
 		       peer_advert(pp) ? "yes" : "no",
+		       peer_feed(pp) ? "yes" : "no",
 		       Ax25states[state]);
 	}
 	return 0;
@@ -1004,7 +1021,19 @@ static int doflexnetquery(int argc, char *argv[], void *p)
 
 static int doflexnetfilter(int argc, char *argv[], void *p)
 {
-	return rf_cmd(RF_FLEXNET, argc, argv, p);
+	int ret = rf_cmd(RF_FLEXNET, argc, argv, p);
+
+	/* Take effect now, not at the next incoming frame.  send_rout() only
+	 * runs from process_changes(), so without this a filter set at the
+	 * console did nothing at all until a peer happened to say something or
+	 * the five minute poll came round - measured, and long enough that it
+	 * looks broken.  It also matters what travels: a route that stops
+	 * being announced has to be WITHDRAWN with a delay of 0, and that
+	 * withdrawal is a send like any other.
+	 */
+	if (!ret)
+		process_changes();
+	return ret;
 }
 
 /*---------------------------------------------------------------------------*/

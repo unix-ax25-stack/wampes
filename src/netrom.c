@@ -231,22 +231,41 @@ static void send_packet_to_neighbor(struct mbuf **bpp, struct node *pn)
 
 /*---------------------------------------------------------------------------*/
 
+/* Does this port get our destinations, or only the fact that we exist?
+ * "feed" is per port here and not per station, because that is how NET/ROM
+ * announces - one UI frame for everybody on the port.
+ */
+
+static int broadcast_feeds(const struct broadcast *p)
+{
+  return rf_feed(RF_NETROM, NULL, p->iface);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void broadcast_to(struct broadcast *p, struct mbuf **bpp)
+{
+  struct mbuf *bp;
+
+  addrcp(p->hdr.source, p->iface->hwaddr);
+  dup_p(&bp, *bpp, 0, MAXINT16);
+  htonax25(&p->hdr, &bp);
+  if (p->iface->forw)
+    (*p->iface->forw->raw)(p->iface->forw, &bp);
+  else
+    (*p->iface->raw)(p->iface, &bp);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void send_broadcast_packet(struct mbuf **bpp)
 {
 
   struct broadcast *p;
-  struct mbuf *bp;
 
-  for (p = broadcasts; p; p = p->next) {
-    if (p->disabled) continue;
-    addrcp(p->hdr.source, p->iface->hwaddr);
-    dup_p(&bp, *bpp, 0, MAXINT16);
-    htonax25(&p->hdr, &bp);
-    if (p->iface->forw)
-      (*p->iface->forw->raw)(p->iface->forw, &bp);
-    else
-      (*p->iface->raw)(p->iface, &bp);
-  }
+  for (p = broadcasts; p; p = p->next)
+    if (!p->disabled && broadcast_feeds(p))
+      broadcast_to(p, bpp);
   free_p(bpp);
 }
 
@@ -605,9 +624,10 @@ discard:
 
 /*---------------------------------------------------------------------------*/
 
-/* Is there a port left to broadcast on?  Asked before the packet is built, so
- * that a node with every entry switched off does not count sends it never
- * made in "netrom status".
+/* Is there a port left that wants the whole table?  Asked before the packet is
+ * built, so that a node with every entry switched off - or every entry down to
+ * "feed no" - does not build one, and does not count sends it never made in
+ * "netrom status".
  */
 
 static int broadcasts_active(void)
@@ -615,7 +635,7 @@ static int broadcasts_active(void)
   struct broadcast *p;
 
   for (p = broadcasts; p; p = p->next)
-    if (!p->disabled) return 1;
+    if (!p->disabled && broadcast_feeds(p)) return 1;
   return 0;
 }
 
@@ -648,6 +668,30 @@ static void send_broadcast(void *arg)
   set_timer(&broadcast_timer, nr_bdcstint * 1000L);
   start_timer(&broadcast_timer);
   calculate_all();
+
+  /* Ports that announce nothing but our own existence get one bare packet -
+   * the identifier and no entries.  The neighbour still learns that we are
+   * here, because broadcast_recv() makes a neighbour of whoever sent the
+   * frame, and that is the whole difference from switching the entry off:
+   * a neighbour who never hears from us cannot route to us either.
+   *
+   * It is sent here rather than inside send_broadcast_packet(), which is
+   * called once per full packet - a port that wants nothing would otherwise
+   * get one empty frame per packetful of entries it is not being sent.
+   */
+  {
+    struct broadcast *p;
+    struct mbuf *bare = 0;
+
+    for (p = broadcasts; p; p = p->next) {
+      if (p->disabled || broadcast_feeds(p)) continue;
+      if (!bare && !(bare = alloc_broadcast_packet())) break;
+      broadcast_to(p, &bare);
+      routes_stat.sent++;
+    }
+    free_p(&bare);
+  }
+
   if (!broadcasts_active()) return;
   bp = alloc_broadcast_packet();
   for (hopcnt = 1; hopcnt <= INFINITY; hopcnt = nexthopcnt) {
