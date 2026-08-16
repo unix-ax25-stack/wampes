@@ -305,7 +305,7 @@ int portlist_allows(const struct portlist *pl,const struct iface *ifp);
 void axlisten_drop_local(const uint8 *call);
 
 int axlisten_active(const uint8 *call);
-int axlisten_client_claim(const uint8 *call,int pid,int fd,char *err,int errlen);
+int axlisten_client_claim(const uint8 *call,int pid,int ui,int fd,char *err,int errlen);
 void axlisten_client_release(int fd);
 int axserv_pipe_attach(struct axservice *sp,int binary,int *fdp);
 int dolisten(int argc,char *argv[],void *p);

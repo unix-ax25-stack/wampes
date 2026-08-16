@@ -56,6 +56,12 @@ struct axlisten {
 					 * and no service selector of its own */
   uint8 call[AXALEN];
   int pid;
+  /* Connections or datagrams, never both - the kernel draws the same line,
+   * listen() being for connections while a datagram socket only binds.  Two
+   * entries for one callsign and pid are therefore two different listeners.
+   */
+  int ui;
+  struct portlist ports;                /* empty: every port */
   enum axlisten_kind kind;
   char *target;
   /* Three switches.  Their defaults differ by what is being carried, and two
@@ -77,12 +83,13 @@ static struct axlisten *Axlisten;
 
 /*---------------------------------------------------------------------------*/
 
-static struct axlisten *axlisten_find(const uint8 *call, int pid)
+static struct axlisten *axlisten_find(const uint8 *call, int pid, int ui)
 {
   struct axlisten *lp;
 
   for (lp = Axlisten; lp; lp = lp->next)
-    if (!lp->netrom && lp->pid == pid && addreq(lp->call, call)) return lp;
+    if (!lp->netrom && lp->pid == pid && lp->ui == ui && addreq(lp->call, call))
+      return lp;
   return 0;
 }
 
@@ -154,11 +161,23 @@ static const char *axlisten_kindname(struct axlisten *lp)
 static void axlisten_show(struct axlisten *lp)
 {
   char buf[AXBUF];
+  char ports[64];
 
-  printf("%-10s %-6s %-7s %-8s %s%s%s\n",
+  /* Show the "!" back: it lives in the flag, not in the text, and a display
+   * that hides it would show a list meaning the opposite of what it says.
+   */
+  if (!lp->ports.spec)
+    strcpy(ports, "(all)");
+  else
+    snprintf(ports, sizeof(ports), "%s%s",
+	     lp->ports.exclude ? "!" : "", lp->ports.spec);
+
+  printf("%-10s %-3s %-6s %-7s %-8s %-10s %s%s%s\n",
 	 lp->netrom ? "(netrom)" : pax25(buf, lp->call),
+	 lp->netrom ? "-" : (lp->ui ? "UI" : "I"),
 	 lp->netrom ? "-" : (lp->pid == PID_NO_L3 ? "text" : "pid"),
 	 axlisten_kindname(lp), lp->binary ? "binary" : "ascii",
+	 ports,
 	 lp->kind == LK_CLIENT
 	   ? (lp->clientfd >= 0 ? "client (claimed)" : "client (nobody)")
 	   : lp->target,
@@ -167,15 +186,17 @@ static void axlisten_show(struct axlisten *lp)
 
 /*---------------------------------------------------------------------------*/
 
-static int axlisten_drop(int netrom, const uint8 *call, int pid)
+static int axlisten_drop(int netrom, const uint8 *call, int pid, int ui)
 {
   struct axlisten *lp, **pp;
 
   for (pp = &Axlisten; *pp; pp = &(*pp)->next) {
     lp = *pp;
     if (lp->netrom != netrom) continue;
-    if (!netrom && (lp->pid != pid || !addreq(lp->call, call))) continue;
+    if (!netrom && (lp->pid != pid || lp->ui != ui || !addreq(lp->call, call)))
+      continue;
     *pp = lp->next;
+    portlist_free(&lp->ports);
     free(lp->target);
     free(lp);
     return 0;
@@ -198,6 +219,10 @@ static int axlisten_add(int netrom, int argc, char *argv[])
   struct axlisten *lp;
   uint8 call[AXALEN];
   int silent = -1, wait = -1, binary = -1;
+  int ui = 0;
+  char *ports = 0;
+  char perr[160];
+  struct portlist newports = { 0, 0 };
 
   memset(call, 0, sizeof(call));
 
@@ -221,6 +246,12 @@ static int axlisten_add(int netrom, int argc, char *argv[])
     if (!strcmp(cp, "--noisy"))  { silent = 0; noisy_set = 1; continue; }
     if (!strcmp(cp, "--wait"))   { wait = 1; continue; }
     if (!strcmp(cp, "--nowait")) { wait = 0; continue; }
+    /* Connections or datagrams, and which ports.  Written without dashes
+     * because they say what the entry IS, not how it behaves.
+     */
+    if (!strncmp(cp, "port=", 5)) { ports = cp + 5; continue; }
+    if (!strcmp(cp, "UI") || !strcmp(cp, "ui")) { ui = 1; continue; }
+    if (!strcmp(cp, "I")  || !strcmp(cp, "i"))  { ui = 0; continue; }
     if (!strcmp(cp, "--binary")) { binary = 1; continue; }
     if (!strcmp(cp, "--ascii"))  { binary = 0; ascii_set = 1; continue; }
     if (!strncmp(cp, "--", 2)) {
@@ -288,7 +319,17 @@ static int axlisten_add(int netrom, int argc, char *argv[])
     if (binary < 0) binary = 0;
   }
 
-  if (!(lp = netrom ? axlisten_netrom() : axlisten_find(call, pid))) {
+  /* Everything that can be refused is refused before anything is created.
+   * The port list used to be set on the entry after it was linked in, so a
+   * rejected list left an entry behind that listened on EVERY port - wider
+   * than what was asked for, which is the wrong direction to fail in.
+   */
+  if (portlist_set(&newports, ports, perr, sizeof(perr))) {
+    printf("%s\n", perr);
+    return 1;
+  }
+
+  if (!(lp = netrom ? axlisten_netrom() : axlisten_find(call, pid, ui))) {
     if (!(lp = (struct axlisten *) calloc(1, sizeof(struct axlisten)))) {
       printf("No memory\n");
       return 1;
@@ -296,6 +337,7 @@ static int axlisten_add(int netrom, int argc, char *argv[])
     lp->netrom = netrom;
     addrcp(lp->call, call);
     lp->pid = pid;
+    lp->ui = ui;
     lp->clientfd = -1;
     lp->next = Axlisten;
     Axlisten = lp;
@@ -315,6 +357,8 @@ static int axlisten_add(int netrom, int argc, char *argv[])
      */
     if (!strncmp(target, "tcp:", 4)) target += 4;
   }
+  portlist_free(&lp->ports);
+  lp->ports = newports;
   lp->target = strdup(target);
   lp->silent = silent;
   lp->wait = wait;
@@ -336,7 +380,7 @@ static int axlisten_add(int netrom, int argc, char *argv[])
  * than quietly shadowing the first.
  */
 
-int axlisten_client_claim(const uint8 *call, int pid, int fd,
+int axlisten_client_claim(const uint8 *call, int pid, int ui, int fd,
 			  char *err, int errlen)
 {
   char buf[AXBUF];
@@ -346,7 +390,7 @@ int axlisten_client_claim(const uint8 *call, int pid, int fd,
     snprintf(err, errlen, "%s belongs to a port", pax25(buf, call));
     return 1;
   }
-  if (!(lp = axlisten_find(call, pid)) || lp->kind != LK_CLIENT) {
+  if (!(lp = axlisten_find(call, pid, ui)) || lp->kind != LK_CLIENT) {
     snprintf(err, errlen, "%s is not open for clients", pax25(buf, call));
     return 1;
   }
@@ -518,6 +562,7 @@ void axlisten_drop_local(const uint8 *call)
            pax25(buf, lp->call));
     if (lp->clientfd >= 0) remote_net_drop_client(lp->clientfd);
     *pp = lp->next;
+    portlist_free(&lp->ports);
     free(lp->target);
     free(lp);
   }
@@ -548,7 +593,7 @@ int dolisten(int argc, char *argv[], void *p)
       printf("Not listening for anything\n");
       return 0;
     }
-    printf("Call       Pid    Kind    Mode     Handed to\n");
+    printf("Call       I/UI Pid    Kind    Mode     Ports      Handed to\n");
     for (lp = Axlisten; lp; lp = lp->next)
       axlisten_show(lp);
     return 0;
@@ -574,10 +619,17 @@ int dolisten(int argc, char *argv[], void *p)
 
   if (!strcmp(argv[2], "drop")) {
     int pid = PID_NO_L3;
+    int ui = 0;
     int i = 3;
 
     memset(call, 0, sizeof(call));
     if (!netrom) {
+      /* Same words as on the add line: I and UI are two listeners. */
+      while (i < argc && (!strcmp(argv[i], "UI") || !strcmp(argv[i], "ui") ||
+			  !strcmp(argv[i], "I")  || !strcmp(argv[i], "i"))) {
+	ui = (argv[i][0] == 'U' || argv[i][0] == 'u');
+	i++;
+      }
       if (i < argc && !strncmp(argv[i], "pid=", 4))
 	pid = (int) strtol(argv[i++] + 4, NULL, 0);
       if (i >= argc || setcall(call, argv[i])) {
@@ -585,7 +637,7 @@ int dolisten(int argc, char *argv[], void *p)
 	return 1;
       }
     }
-    if (axlisten_drop(netrom, call, pid)) {
+    if (axlisten_drop(netrom, call, pid, ui)) {
       printf("Not listening for that\n");
       return 1;
     }
@@ -1393,7 +1445,7 @@ struct axservice *axserv_start(struct ax25_cb *axp, int pid)
    * hdr.dest is who called us, hdr.source is the address they called.  It is
    * the latter we listen for.
    */
-  if (!(lp = axlisten_find(axp->hdr.source, pid))) {
+  if (!(lp = axlisten_find(axp->hdr.source, pid, 0))) {
     /* Nothing configured.  Plain text still reaches the node's own login,
      * as it always did.
      */

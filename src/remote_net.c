@@ -441,6 +441,7 @@ static int listen_command(struct controlblock *cp)
   int argc;
   int i;
   int pid = PID_NO_L3;
+  int ui = 0;
   uint8 call[AXALEN];
 
   strcpy(copy, getarg(0, 1));
@@ -451,6 +452,9 @@ static int listen_command(struct controlblock *cp)
 
   memset(call, 0, sizeof(call));
   for (i = 0; i < argc; i++) {
+    /* Connections or datagrams - the same words the config line uses. */
+    if (!strcmp(argv[i], "UI") || !strcmp(argv[i], "ui")) { ui = 1; continue; }
+    if (!strcmp(argv[i], "I")  || !strcmp(argv[i], "i"))  { ui = 0; continue; }
     if (!strncmp(argv[i], "pid=", 4)) {
       char *end;
       long n = strtol(argv[i] + 4, &end, 0);
@@ -475,7 +479,7 @@ static int listen_command(struct controlblock *cp)
     say(cp, "*** no callsign");
     return 0;
   }
-  if (axlisten_client_claim(call, pid, cp->fd, err, sizeof(err))) {
+  if (axlisten_client_claim(call, pid, ui, cp->fd, err, sizeof(err))) {
     say(cp, "*** %s", err);
     return 0;
   }
