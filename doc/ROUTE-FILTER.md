@@ -16,8 +16,8 @@ posture, and the rest of this page is about which line.
 
 ## What is actually being decided
 
-When a strange station speaks to us, four things are settled.  Only two
-of them are worth a switch.
+When a strange station speaks to us, four things are settled.  Three of
+them are worth a switch.
 
 | | | |
 |---|---|---|
