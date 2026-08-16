@@ -179,8 +179,14 @@ static void delete_controlblock(struct controlblock *cp)
  * of the payload, the client's own line ending, and then exactly that many
  * raw bytes with nothing after them.
  *
- *     DL9SAU>APRS,WIDE1-1*:37<EOL>
- *     <37 bytes, whatever is in them>
+ *     [37]DL9SAU>APRS,WIDE1-1*:<37 bytes, whatever is in them>
+ *
+ * The count goes in front, at position 0, so that the first byte of a line
+ * already says which of the two forms this is - no payload can be mistaken
+ * for a length that way, not even a beacon whose text is a number.  The
+ * header ends at the first colon and the bytes follow immediately; there is
+ * no line ending between them and none behind them, because either would be
+ * a byte nobody counted.
  *
  * Counted rather than delimited because a UI payload may hold CR and NL.
  * With a plain line format, "DL9SAU>APRS:test\nDL9SAU-2>APRS:foo" would
@@ -209,7 +215,8 @@ int remote_net_send_frame(int fd, const char *hdr, struct mbuf *bp)
   if ((cp = (struct controlblock *) on_read_arg(fd)) && cp->fd == fd)
     crlf = cp->crlf;
   len = (int) len_p(bp);
-  n = snprintf(line, sizeof(line), "%s:%d%s", hdr, len, crlf ? "\r\n" : "\n");
+  (void) crlf;                          /* nothing is terminated here */
+  n = snprintf(line, sizeof(line), "[%d]%s:", len, hdr);
   if (n <= 0 || n >= (int) sizeof(line)) return -1;
 
   if (write(fd, line, (unsigned) n) != n) return -1;
