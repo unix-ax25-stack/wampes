@@ -304,6 +304,10 @@ int portlist_allows(const struct portlist *pl,const struct iface *ifp);
  */
 void axlisten_drop_local(const uint8 *call);
 
+/* A UI frame for a datagram client, if one is waiting.  1: taken. */
+int axlisten_ui_deliver(struct iface *ifp,struct ax25 *hdr,int pid,
+			struct mbuf **bpp);
+
 int axlisten_active(const uint8 *call);
 int axlisten_client_claim(const uint8 *call,int pid,int ui,int fd,char *err,int errlen);
 void axlisten_client_release(int fd);

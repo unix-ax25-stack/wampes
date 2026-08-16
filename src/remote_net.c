@@ -175,6 +175,51 @@ static void delete_controlblock(struct controlblock *cp)
  * function as well makes sure we are looking at one of ours.
  */
 
+/* One received datagram to a client: the TNC2 header, a byte count instead
+ * of the payload, the client's own line ending, and then exactly that many
+ * raw bytes with nothing after them.
+ *
+ *     DL9SAU>APRS,WIDE1-1*:37<EOL>
+ *     <37 bytes, whatever is in them>
+ *
+ * Counted rather than delimited because a UI payload may hold CR and NL.
+ * With a plain line format, "DL9SAU>APRS:test\nDL9SAU-2>APRS:foo" would
+ * reach the client as TWO frames, the second under a source callsign the
+ * sender chose - anybody on the air could forge frames that way.
+ *
+ * Whole frames or none.  A half written one would put the stream out of step
+ * for good, and there is no way back: with an 8-bit clean payload any byte
+ * sequence may look like a header.  Losing a whole datagram is what
+ * datagrams do.
+ */
+
+int remote_net_send_frame(int fd, const char *hdr, struct mbuf *bp)
+{
+  char line[128];
+  int crlf = 0;
+  int len;
+  int n;
+  struct controlblock *cp;
+  struct mbuf *p;
+
+  if (fd < 0) return -1;
+  /* Answer in the terminator this client uses - it said so with its first
+   * line.  Only the header carries one; behind the payload there is nothing.
+   */
+  if ((cp = (struct controlblock *) on_read_arg(fd)) && cp->fd == fd)
+    crlf = cp->crlf;
+  len = (int) len_p(bp);
+  n = snprintf(line, sizeof(line), "%s:%d%s", hdr, len, crlf ? "\r\n" : "\n");
+  if (n <= 0 || n >= (int) sizeof(line)) return -1;
+
+  if (write(fd, line, (unsigned) n) != n) return -1;
+  for (p = bp; p; p = p->next)
+    if (p->cnt && write(fd, p->data, p->cnt) != (int) p->cnt) return -1;
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 void remote_net_drop_client(int fd)
 {
   struct controlblock *cp;

@@ -570,6 +570,57 @@ void axlisten_drop_local(const uint8 *call)
 
 /*---------------------------------------------------------------------------*/
 
+/* A UI frame has arrived.  Is a datagram client waiting for it?
+ *
+ * Asked before the node's own protocols get their turn, but only answered
+ * for a callsign the sysop opened and a client has actually claimed - an
+ * entry nobody holds is nobody waiting, and the frame goes on its usual way.
+ *
+ * 1 means taken and the buffer is gone.
+ */
+
+int axlisten_ui_deliver(struct iface *ifp, struct ax25 *hdr, int pid,
+			struct mbuf **bpp)
+{
+  char buf[AXBUF];
+  char line[256];
+  int i;
+  size_t n;
+  struct axlisten *lp;
+
+  for (lp = Axlisten; lp; lp = lp->next) {
+    if (lp->netrom || !lp->ui || lp->pid != pid) continue;
+    if (!addreq(lp->call, hdr->dest)) continue;
+    if (lp->kind != LK_CLIENT || lp->clientfd < 0) continue;
+    if (!portlist_allows(&lp->ports, ifp)) continue;
+    break;
+  }
+  if (!lp) return 0;
+
+  /* TNC2, the same shape the sending direction parses: source, ">", the
+   * destination, then the path behind commas, a "*" on each element that has
+   * repeated it already.
+   */
+  n = 0;
+  n += (size_t) snprintf(line + n, sizeof(line) - n, "%s>",
+			 pax25(buf, hdr->source));
+  if (n < sizeof(line))
+    n += (size_t) snprintf(line + n, sizeof(line) - n, "%s",
+			   pax25(buf, hdr->dest));
+  for (i = 0; i < hdr->ndigis && n < sizeof(line); i++)
+    n += (size_t) snprintf(line + n, sizeof(line) - n, ",%s%s",
+			   pax25(buf, hdr->digis[i]),
+			   i < hdr->nextdigi ? "*" : "");
+  if (n >= sizeof(line)) return 0;      /* absurd path: leave it alone */
+
+  if (remote_net_send_frame(lp->clientfd, line, *bpp))
+    remote_net_drop_client(lp->clientfd);
+  free_p(bpp);
+  return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
 void axlisten_client_release(int fd)
 {
   struct axlisten *lp;

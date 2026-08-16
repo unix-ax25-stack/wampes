@@ -613,6 +613,14 @@ struct mbuf **bpp
 		(void) PULLCHAR(bpp);
 		if((pid = PULLCHAR(bpp)) == -1)
 			return;         /* No PID */
+		/* A datagram client that asked for this callsign and pid
+		 * comes first - the node's own protocols keep everything
+		 * nobody claimed.  A port callsign can never be claimed this
+		 * way; axlisten_drop_local() sees to that when the port takes
+		 * its name.
+		 */
+		if(axlisten_ui_deliver(iface,&hdr,pid,bpp))
+			return;
 		/* Find network level protocol and hand it off */
 		for(ipp = Axlink;ipp->funct != NULL;ipp++){
 			if(ipp->pid == pid)

@@ -10,6 +10,11 @@ void remote_net_initialize(void);
  * AX.25 service socket.  Off by default - a TCP port carries no rights.
  */
 /* Close a client of the service socket, named by its descriptor. */
+/* One received datagram to a client: TNC2 header, byte count, then exactly
+ * that many raw bytes.  See remote_net_send_frame().
+ */
+int remote_net_send_frame(int fd,const char *hdr,struct mbuf *bp);
+
 void remote_net_drop_client(int fd);
 
 int axtcpstart(int argc, char *argv[], void *p);
