@@ -277,6 +277,31 @@ stations have to share one socket, by the way, and that is not
 convenience: `uhnp.c` remembers the UDP source port **per host**, so two
 of them on 127.0.0.1 with different ports take each other's frames.
 
+## What `advert no` does not do, and it matters
+
+Hiding a station from our announcements works only until traffic flows.
+`route_packet()` learns the **source node** out of every frame passing
+through - that is what builds the return path of an L4 session, and it is
+normally right.  For a hidden user node it is not: once he sends anything,
+every node along the path has an entry for him, with a quality above zero,
+and announces him in **its** broadcast.  He is hidden from our node list
+and from nobody else's.
+
+The answer is **node proxying**: rewrite his callsign in the NET/ROM
+header to ours on the way through, so his call never appears outside.  For
+IP that is stateless - the IP payload is not touched at all, and IP
+addresses carry the return identity by themselves.  For L4 it needs a
+table, because a NET/ROM circuit is named `(node, index, id)` and index
+and id only mean anything inside one node.
+
+It also turns a cost into a feature: `in only-him` and `in none` switch
+off that same transit learning here, so a session routed **through** such
+a neighbour has no way back and dies.  With proxying it would not.
+
+Not built.  The analysis, the automation rule - `advert no` implies
+proxying, foreign nodes behind him do not - and the two things the IP case
+still needs are written up in `TODO.txt`.
+
 ## Not built, and why it is written down here
 
 * **A third level of access** - "may not speak the protocol at all" as
