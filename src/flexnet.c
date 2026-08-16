@@ -10,6 +10,7 @@
 #include "lapb.h"
 #include "trace.h"
 #include "flexnet.h"
+#include "routefilter.h"
 #include "cmdparse.h"
 #include "commands.h"
 
@@ -47,6 +48,10 @@ struct peer {
 	int id;                 /* Last AX.25 control block id */
 	enum e_token token;     /* Token state */
 	int permanent;          /* True if peer was created manually */
+	struct iface *iface;    /* Port he was last heard on.  A peer is a
+				 * callsign and nothing here says which port it
+				 * is on; this is what a filter written per
+				 * port has to match against. */
 };
 
 struct quality {
@@ -117,6 +122,23 @@ static struct peer *find_peer(const uint8 *call)
 int flexnet_is_peer(const uint8 *call)
 {
 	return find_peer(call) != NULL;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* What the filter says about this peer.  The port is the one he was last
+ * heard on, so that "filter port=useraccess2m" covers everybody who turns up
+ * there without having to be named one by one.
+ */
+
+static enum rf_in peer_in(const struct peer *pp)
+{
+	return rf_in(RF_FLEXNET, pp->call, pp->iface);
+}
+
+static int peer_advert(const struct peer *pp)
+{
+	return rf_advert(RF_FLEXNET, pp->call, pp->iface);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -273,6 +295,18 @@ static void send_init(const struct peer *pp)
 
 /*---------------------------------------------------------------------------*/
 
+/* The round trip measurement: a 201 byte packet, every five minutes, and the
+ * answer to it is what we time.
+ *
+ * ONLY TO PEERS SOMEBODY ENTERED.  Until now every station that sent us one
+ * 0xCE frame became a peer and was polled at once - measured: FLEX_INIT and
+ * 201 bytes back within a second, and five minutes later a DISC, because the
+ * user had not answered a poll he never asked for.  That is a lot of air time
+ * spent on somebody who is not a link partner, and the measurement is worth
+ * nothing to us: we do not route through our users.  So the poll goes to
+ * peers from "flexnet link add" and to nobody else.
+ */
+
 static void send_poll(struct peer *pp)
 {
 
@@ -280,6 +314,8 @@ static void send_poll(struct peer *pp)
 	struct mbuf *bp;
 	uint8 *cp;
 
+	if (!pp->permanent)
+		return;
 	if ((bp = alloc_mbuf(LENPOLL))) {
 		pp->lastpolltime = msclock();
 		cp = bp->data;
@@ -335,6 +371,25 @@ static struct ax25_cb *setaxp(struct peer *pp)
 
 /*---------------------------------------------------------------------------*/
 
+/* May we tell the others about this destination?
+ *
+ * Only a station we speak to ourselves can be hidden.  Anything further away
+ * came in through "in", and what "in" accepted is our own route now, which we
+ * pass on like any other - that is what makes "advert no" a statement about
+ * one entry and not about everything behind it.
+ */
+
+static int dest_advertised(const struct dest *pd)
+{
+	struct peer *pp;
+
+	if (!(pp = find_peer(pd->call)))
+		return 1;
+	return peer_advert(pp);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void send_rout(struct peer *pp)
 {
 
@@ -356,7 +411,15 @@ static void send_rout(struct peer *pp)
 		if (!pq)
 			break;
 		pqbest = find_best_quality(pd);
-		if (pqbest && pqbest != pq)
+		if (!dest_advertised(pd))
+			/* Unreachable rather than skipped, and the difference
+			 * matters: skipping would leave whatever we last told
+			 * him standing until it aged out.  This way the change
+			 * travels - the loop below sends one delay 0, which is
+			 * "link down", and then falls quiet by itself.
+			 */
+			delay = MAXDELAY + 1;
+		else if (pqbest && pqbest != pq)
 			delay = pqbest->delay;
 		else
 			delay = MAXDELAY + 1;
@@ -495,20 +558,32 @@ static void delete_peer(struct peer *peer)
 static void polltimer_expired(void *unused)
 {
 
+	struct ax25_cb *axp;
 	struct peer *ppnext = 0;
 	struct peer *pp;
 
 	start_timer(&Polltimer);
 	for (pp = Peers; pp; pp = ppnext) {
 		ppnext = pp->next;
-		if (pp->lastpolltime) {
-			if (pp->permanent)
-				clear_all_via_peer(pp, 1);
-			else
+		/* A peer nobody entered is not polled, so an unanswered poll
+		 * can no longer be what tells us he has gone.  His link is:
+		 * he exists because he called us, and when the connection is
+		 * gone so is he.  Without this he would stay in the list for
+		 * ever - and worse, setaxp() below would call HIM every five
+		 * minutes, which is the last thing a user wants from us.
+		 */
+		if (!pp->permanent) {
+			axp = find_ax25(pp->call);
+			if (!axp || axp->state == LAPB_DISCONNECTED)
 				delete_peer(pp);
+			continue;
 		}
+		if (pp->lastpolltime)
+			clear_all_via_peer(pp, 1);
 	}
 	for (pp = Peers; pp; pp = pp->next) {
+		if (!pp->permanent)
+			continue;
 		if (setaxp(pp) && !pp->lastpolltime)
 			send_poll(pp);
 	}
@@ -517,7 +592,13 @@ static void polltimer_expired(void *unused)
 
 /*---------------------------------------------------------------------------*/
 
-static struct peer *create_peer(const uint8 *call)
+/* "permanent" has to be known here and not set afterwards: setaxp() greets
+ * the link straight away, and whether that greeting carries a poll depends on
+ * it.  Setting it after the fact would leave an entered link partner
+ * unmeasured until the next poll interval.
+ */
+
+static struct peer *create_peer(const uint8 *call, int permanent)
 {
 	struct peer *pp;
 
@@ -531,6 +612,23 @@ static struct peer *create_peer(const uint8 *call)
 		pp->next = Peers;
 		Peers = pp;
 		flexaddrcp(pp->call, call);
+		pp->permanent = permanent;
+		/* A peer we never poll has no measured delay, and his delay is
+		 * what we add to everything he tells us about.  Left at zero
+		 * he would look like the fastest link we have, so a route
+		 * through a user would beat the route through a partner.
+		 * DEFAULTDELAY is the value the protocol itself uses for "no
+		 * idea" - recv_poll() sends it, recv_rprt() ignores it on the
+		 * way in - so an unmeasured link is simply an unattractive
+		 * one.  It belongs here and not in recv_rout(): recv_rprt()
+		 * rescales what it has already stored by the DIFFERENCE in
+		 * pp->delay, so a value added anywhere else would stay in the
+		 * table for ever.  Measured: with the guess in recv_rout(),
+		 * a delay of 623 became 637 on the first poll answer instead
+		 * of 37.
+		 */
+		if (!permanent)
+			pp->delay = DEFAULTDELAY;
 		setaxp(pp);
 	}
 	return pp;
@@ -607,11 +705,23 @@ static int doflexnetlinkadd(int argc, char *argv[], void *p)
 		printf("Cannot add link to myself\n");
 		return 1;
 	}
-	if (!(pp = find_peer(call)) && !(pp = create_peer(call))) {
+	if (!(pp = find_peer(call)) && !(pp = create_peer(call, 1))) {
 		printf("%s", Nospace);
 		return 1;
 	}
-	pp->permanent = 1;
+	/* He may have turned up by himself first, in which case this is the
+	 * moment he becomes a link partner.  Start the link over rather than
+	 * just setting the flag: he carries the DEFAULTDELAY guess from
+	 * create_peer(), and everything learned through him was scaled with
+	 * it.  Forgetting that and greeting him afresh is what setaxp() does
+	 * for a new connection anyway, so it is a path that already works.
+	 */
+	if (!pp->permanent) {
+		pp->permanent = 1;
+		pp->delay = 0;
+		pp->id = 0;
+		setaxp(pp);
+	}
 	return 0;
 }
 
@@ -645,16 +755,23 @@ static int doflexnetlinklist(int argc, char *argv[], void *p)
 	struct ax25_cb *axp;
 	struct peer *pp;
 
-	printf("Call         Remote  Local Smooth P T State\n");
+	/* In and Advert are what is IN FORCE for this peer, not what was
+	 * written about him: the rule may have been written for his port or
+	 * be the default, and working that out by hand across three levels is
+	 * exactly what the sysop should not have to do.
+	 */
+	printf("Call         Remote  Local Smooth P T In        Adv State\n");
 	for (pp = Peers; pp; pp = pp->next) {
 		state = (axp = find_ax25(pp->call)) ? axp->state : LAPB_DISCONNECTED;
-		printf("%-12s %6d %6d %6d %c %c %s\n",
+		printf("%-12s %6d %6d %6d %c %c %-8s  %-3s %s\n",
 		       sprintflexcall(buf, pp->call),
 		       pp->remdelay,
 		       pp->locdelay,
 		       iround(pp->delay),
 		       pp->permanent ? 'P' : ' ',
 		       tokenstr[pp->token],
+		       rf_in_name(peer_in(pp)),
+		       peer_advert(pp) ? "yes" : "no",
 		       Ax25states[state]);
 	}
 	return 0;
@@ -885,12 +1002,20 @@ static int doflexnetquery(int argc, char *argv[], void *p)
 
 /*---------------------------------------------------------------------------*/
 
+static int doflexnetfilter(int argc, char *argv[], void *p)
+{
+	return rf_cmd(RF_FLEXNET, argc, argv, p);
+}
+
+/*---------------------------------------------------------------------------*/
+
 int doflexnet(int argc, char *argv[], void *p)
 {
 
 	static struct cmds Flexnetcmds[] = {
 		{ "dest",      doflexnetdest,      0, 0, 0 },
 		{ "destdebug", doflexnetdestdebug, 0, 0, 0 },
+		{ "filter",    doflexnetfilter,    0, 0, 0 },
 		{ "link",      doflexnetlink,      0, 0, 0 },
 		{ "query",     doflexnetquery,     0, 2, "flexnet query <call>" },
 		{ 0,           0,                  0, 0, 0 }
@@ -990,7 +1115,12 @@ static void recv_rprt(struct peer *pp, struct mbuf **bpp)
 				if (pq->peer == pp && pq->delay)
 					pq->delay = pq->delay - olddelay + delay;
 	}
-	update_delay(pp->call, pp, delay);
+	/* "in none": he stays a peer - we answer him and he may have our
+	 * table - but he is not a destination of ours, so nothing routes to
+	 * him and nobody hears of him.
+	 */
+	if (peer_in(pp) != RF_IN_NONE)
+		update_delay(pp->call, pp, delay);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1014,9 +1144,19 @@ static void recv_rout(struct peer *pp, struct mbuf **bpp)
 
 	int chr;
 	int delay;
+	int learn;
+	int ourdelay;
 	struct mbuf *bp;
 	uint8 call[FLEXLEN];
 	uint8 *cp;
+
+	/* Only "in all" lets a station teach us about others.  Under
+	 * "only-him" and "none" his routing packet is read to the end and
+	 * thrown away - read to the end because the token handling below is
+	 * about the link, not about routes, and it still has to work.
+	 */
+	learn = peer_in(pp) == RF_IN_ALL;
+	ourdelay = iround(pp->delay);
 
 	for (;;) {
 		chr = PULLCHAR(bpp);
@@ -1025,9 +1165,9 @@ static void recv_rout(struct peer *pp, struct mbuf **bpp)
 				break;
 			if (pullnumber(bpp, &delay) == -1)
 				break;
-			if (!ismyax25addr(call)) {
+			if (learn && !ismyax25addr(call)) {
 				if (delay)
-					update_delay(call, pp, iround(1.125 * delay) + iround(pp->delay));
+					update_delay(call, pp, iround(1.125 * delay) + ourdelay);
 				else
 					update_delay(call, pp, 0);
 			}
@@ -1138,11 +1278,16 @@ void flexnet_input(struct iface *iface, struct ax25_cb *axp, uint8 *src, uint8 *
 			goto discard;
 		addrcp(call, src);
 		call[ALEN + 1] = call[ALEN];
-		if (!(pp = create_peer(call)))
+		if (!(pp = create_peer(call, 0)))
 			goto discard;
 	} else if (pp->id != axp->id) {
 		setaxp(pp);
 	}
+	/* Where he is, for a filter written per port.  Kept up to date rather
+	 * than set once: a peer is a callsign, and the same callsign may well
+	 * come back on a different port tomorrow.
+	 */
+	pp->iface = iface;
 	switch (PULLCHAR(bpp)) {
 
 	case FLEX_INIT:

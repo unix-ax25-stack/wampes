@@ -52,6 +52,7 @@ HDRS          = arp.h \
 		remote.h \
 		remote_net.h \
 		rip.h \
+		routefilter.h \
 		session.h \
 		slhc.h \
 		slip.h \
@@ -143,6 +144,7 @@ OBJS          = adjtime.o \
 		rip.o \
 		ripcmd.o \
 		ripdump.o \
+		routefilter.o \
 		services.o \
 		session.o \
 		setsp.o \
@@ -793,6 +795,7 @@ flexnet.o:\
 	lapb.h\
 	mbuf.h\
 	proc.h\
+	routefilter.h\
 	timer.h\
 	trace.h
 ftp.o:\
@@ -1295,6 +1298,7 @@ netrom.o:\
 	netrom.h\
 	netuser.h\
 	proc.h\
+	routefilter.h\
 	session.h\
 	tcp.h\
 	telnet.h\
@@ -1437,6 +1441,14 @@ ripdump.o:\
 	timer.h\
 	trace.h\
 	udp.h
+routefilter.o:\
+	../lib/configure.h\
+	ax25.h\
+	global.h\
+	iface.h\
+	routefilter.c\
+	routefilter.h
+
 services.o:\
 	../lib/configure.h\
 	../lib/strdup.h\
@@ -1447,6 +1459,7 @@ services.o:\
 	services.c\
 	socket.h\
 	timer.h
+
 session.o:\
 	../lib/configure.h\
 	../lib/strdup.h\

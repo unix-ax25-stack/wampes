@@ -425,7 +425,7 @@ uint8 *dest,
 struct mbuf **bpp,
 int mcast
 ){
-	nr3_input(src,bpp);
+	nr3_input(iface,src,bpp);
 }
 
 static int

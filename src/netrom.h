@@ -123,7 +123,7 @@ extern char *Nr4states[];
 
 /* In netrom.c: */
 int nr_send(struct mbuf **bpp, struct iface *iface, int32 gateway, uint8 tos);
-void nr3_input(const uint8 *src, struct mbuf **bpp);
+void nr3_input(struct iface *iface, const uint8 *src, struct mbuf **bpp);
 char *nr_addr2str(struct circuit *pc);
 int nr_is_neighbour(const uint8 *call);
 struct circuit *open_nr(uint8 *node, uint8 *cuser, int window, void (*r_upcall)(struct circuit *p, int cnt), void (*t_upcall)(struct circuit *p, int cnt), void (*s_upcall)(struct circuit *p, enum netrom_state oldstate, enum netrom_state newstate), char *user);

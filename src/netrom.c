@@ -13,6 +13,7 @@
 #include "ax25.h"
 #include "lapb.h"
 #include "netrom.h"
+#include "routefilter.h"
 #include "cmdparse.h"
 #include "trace.h"
 
@@ -115,6 +116,7 @@ static void nrclient_parse(char *buf, int n);
 static void nrclient_state_upcall(struct circuit *pc, enum netrom_state oldstate, enum netrom_state newstate);
 static int donconnect(int argc, char *argv[], void *p);
 static int dobroadcast(int argc, char *argv[], void *p);
+static int dofilter(int argc, char *argv[], void *p);
 static int doident(int argc, char *argv[], void *p);
 static int donkick(int argc, char *argv[], void *p);
 static int dolinks(int argc, char *argv[], void *p);
@@ -133,6 +135,13 @@ static int donstatus(int argc, char *argv[], void *p);
 struct broadcast {
   struct ax25 hdr;
   struct iface *iface;
+  /* Switched off rather than deleted, for the reason the listen entries give:
+   * an entry that vanishes is one the operator cannot see any more.  This is
+   * what makes the node broadcast interval - which is one number for the
+   * whole node - answerable per port: learn nodes over axudp without filling
+   * an HF access with broadcasts of our own.
+   */
+  int disabled;
   struct broadcast *next;
 };
 
@@ -144,6 +153,10 @@ struct node {
   struct node *neighbor, *old_neighbor;
   double quality, old_quality, tmp_quality;
   int force_broadcast;
+  struct iface *iface;          /* Port he was last heard on, for a filter
+				 * written per port.  Null for a node we only
+				 * ever heard ABOUT - which is right: a filter
+				 * is about the station we talk to. */
   struct node *prev, *next;
 };
 
@@ -225,6 +238,7 @@ static void send_broadcast_packet(struct mbuf **bpp)
   struct mbuf *bp;
 
   for (p = broadcasts; p; p = p->next) {
+    if (p->disabled) continue;
     addrcp(p->hdr.source, p->iface->hwaddr);
     dup_p(&bp, *bpp, 0, MAXINT16);
     htonax25(&p->hdr, &bp);
@@ -364,6 +378,24 @@ int nr_is_neighbour(const uint8 *call)
   for (pl = mynode->links; pl; pl = pl->next)
     if (pl->node == pn) return link_valid(mynode, pl);
   return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* What the filter says about this node.  The port is the one he was last
+ * heard on; a node we only ever heard ABOUT has none, and then only a rule
+ * naming his callsign or the default applies - which is right, because we do
+ * not talk to him and a rule written per port is about who we talk to.
+ */
+
+static enum rf_in node_in(const struct node *pn)
+{
+  return rf_in(RF_NETROM, pn->call, pn->iface);
+}
+
+static int node_advert(const struct node *pn)
+{
+  return rf_advert(RF_NETROM, pn->call, pn->iface);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -513,6 +545,7 @@ static void broadcast_recv(struct mbuf **bpp, struct node *pn)
 {
 
   char ident[IDENTLEN];
+  enum rf_in in;
   int quality;
   struct linkinfo *pi;
   struct node *pb, *pd;
@@ -522,8 +555,24 @@ static void broadcast_recv(struct mbuf **bpp, struct node *pn)
   if (pn == mynode) goto discard;
   if (PULLCHAR(bpp) != 0xff) goto discard;
   if (pullup(bpp, ident, IDENTLEN) != IDENTLEN) goto discard;
+  in = node_in(pn);
+  /* "in none" is the one place where NET/ROM cannot do what FlexNet does.
+   * This link is not only how we learn about him, it is how we REACH him -
+   * calculate_all() routes by it - so refusing it means refusing to speak
+   * NET/ROM with him at all.  That is a legitimate thing to ask for, but it
+   * is not the same as the FlexNet "in none", and doc/ROUTE-FILTER.md says
+   * so.
+   */
+  if (in == RF_IN_NONE) goto discard;
   if (*ident > ' ') memcpy(pn->ident, ident, IDENTLEN);
   update_link(mynode, pn, 1, nr_hfqual);
+  /* Under "only-him" he is a neighbour and nothing more: we reach him, and
+   * the rest of his broadcast is read to the end and dropped.
+   */
+  if (in != RF_IN_ALL) {
+    calculate_all();
+    goto discard;
+  }
   while (pullup(bpp, buf, NRRTDESTLEN) == NRRTDESTLEN) {
     if (!*buf) break;
     if (addreq(buf, mynode->call)) continue;
@@ -556,6 +605,22 @@ discard:
 
 /*---------------------------------------------------------------------------*/
 
+/* Is there a port left to broadcast on?  Asked before the packet is built, so
+ * that a node with every entry switched off does not count sends it never
+ * made in "netrom status".
+ */
+
+static int broadcasts_active(void)
+{
+  struct broadcast *p;
+
+  for (p = broadcasts; p; p = p->next)
+    if (!p->disabled) return 1;
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static struct mbuf *alloc_broadcast_packet(void)
 {
   struct mbuf *bp;
@@ -583,7 +648,7 @@ static void send_broadcast(void *arg)
   set_timer(&broadcast_timer, nr_bdcstint * 1000L);
   start_timer(&broadcast_timer);
   calculate_all();
-  if (!broadcasts) return;
+  if (!broadcasts_active()) return;
   bp = alloc_broadcast_packet();
   for (hopcnt = 1; hopcnt <= INFINITY; hopcnt = nexthopcnt) {
     nexthopcnt = INFINITY + 1;
@@ -591,13 +656,27 @@ static void send_broadcast(void *arg)
       if (pn->hopcnt >= hopcnt && (((int) pn->quality) || pn->force_broadcast)) {
 	if (pn->hopcnt == hopcnt) {
 	  pn->force_broadcast = 0;
+	  /* "advert no": he is left out.  Only he - what lies behind him
+	   * came in through "in", and once accepted it is our route like any
+	   * other.
+	   */
+	  if (pn != mynode && !node_advert(pn)) continue;
 	  if (!bp) bp = alloc_broadcast_packet();
 	  p = bp->data + bp->cnt;
 	  addrcp(p, pn->call);
 	  p += AXALEN;
 	  memcpy(p, pn->ident, IDENTLEN);
 	  p += IDENTLEN;
-	  addrcp(p, pn->neighbor ? pn->neighbor->call : pn->call);
+	  /* The best neighbour, and it is a back door: broadcast_recv() at
+	   * the far end creates a node for whatever stands in this field
+	   * (nodeptr(buf + AXALEN + IDENTLEN, 1)), so a hidden neighbour
+	   * would become known through the entries that reach past him.  We
+	   * put ourselves there instead - to the outside we are then the last
+	   * hop, which is exactly "appear as one system".
+	   */
+	  addrcp(p, pn->neighbor ? (node_advert(pn->neighbor) ?
+				    pn->neighbor->call : mynode->call)
+			         : pn->call);
 	  p += AXALEN;
 	  *p++ = (char) pn->quality;
 	  if ((bp->cnt = p - bp->data) > 258 - NRRTDESTLEN) {
@@ -630,10 +709,19 @@ static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
   if (!bpp || !*bpp || (*bpp)->cnt < 15) goto discard;
 
   if (fromneighbor != mynode) {
+    enum rf_in in = node_in(fromneighbor);
+
+    if (in == RF_IN_NONE) goto discard;
     if (update_link(mynode, fromneighbor, 1, nr_hfqual)) calculate_all();
     if (!(pn = nodeptr((*bpp)->data, 1))) goto discard;
     if (pn == mynode) goto discard;  /* ROUTING ERROR */
-    if (!pn->neighbor) {
+    /* A frame passing through builds the way back, and that is the second
+     * way a station teaches us about others - so "in" governs it too.  Note
+     * what this costs under "only-him": a connection routed through him has
+     * no return path and dies.  On a user port that is the point; on a link
+     * that carries transit it is not, and doc/ROUTE-FILTER.md warns about it.
+     */
+    if (in == RF_IN_ALL && !pn->neighbor) {
       struct linkinfo *pi = linkinfoptr(mynode, fromneighbor);
       if (pi->quality) {
 	int q = 1;
@@ -753,7 +841,7 @@ int nr_send(struct mbuf **bpp, struct iface *iface, int32 gateway, uint8 tos)
 
 /*---------------------------------------------------------------------------*/
 
-void nr3_input(const uint8 *src, struct mbuf **bpp)
+void nr3_input(struct iface *iface, const uint8 *src, struct mbuf **bpp)
 {
   struct node *pn;
 
@@ -761,6 +849,10 @@ void nr3_input(const uint8 *src, struct mbuf **bpp)
     free_p(bpp);                /* destination list full */
     return;
   }
+  /* Where he is, for a filter written per port.  A node is a callsign and
+   * carries no port of its own; this is the only place that knows.
+   */
+  pn->iface = iface;
   if (bpp && *bpp && (*bpp)->cnt && *(*bpp)->data == 0xff)
     broadcast_recv(bpp, pn);
   else
@@ -1721,14 +1813,47 @@ int nr_attach(int argc, char *argv[], void *p)
 
 /*---------------------------------------------------------------------------*/
 
+/* The entry the operator means by its number, counting from 1 - the same
+ * shape as "listen ax25 enable <n>", and the number is the position in the
+ * whole list so it means the same thing wherever it was read.
+ */
+
+static struct broadcast *broadcast_number(const char *s)
+{
+  struct broadcast *bp;
+  int n = atoi(s);
+
+  if (n < 1) return 0;
+  for (bp = broadcasts; bp; bp = bp->next)
+    if (!--n) return bp;
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static int dobroadcast(int argc, char *argv[], void *p)
 {
   struct broadcast *bp;
+  int n;
+
+  if (argc >= 2 && (!strcmp(argv[1], "enable") || !strcmp(argv[1], "disable"))) {
+    if (argc < 3) {
+      printf("Usage: netrom broadcast %s <n>\n", argv[1]);
+      return 1;
+    }
+    if (!(bp = broadcast_number(argv[2]))) {
+      printf("No broadcast entry %s\n", argv[2]);
+      return 1;
+    }
+    bp->disabled = !strcmp(argv[1], "disable");
+    return 0;
+  }
 
   if (argc < 3) {
-    puts("Interface  Path");
-    for (bp = broadcasts; bp; bp = bp->next)
-      printf("%-9s  %s\n", bp->iface->name, ax25hdr_to_string(&bp->hdr));
+    puts(" #  Interface  State     Path");
+    for (n = 1, bp = broadcasts; bp; n++, bp = bp->next)
+      printf("%2d  %-9s  %-8s  %s\n", n, bp->iface->name,
+	     bp->disabled ? "off" : "on", ax25hdr_to_string(&bp->hdr));
     return 0;
   }
 
@@ -1749,9 +1874,26 @@ static int dobroadcast(int argc, char *argv[], void *p)
     return 1;
   }
   bp->hdr.cmdrsp = LAPB_COMMAND;
-  bp->next = broadcasts;
-  broadcasts = bp;
+  /* Appended, not prepended, and that is the whole reason for the loop: the
+   * entries are addressed by their position, so entry 1 has to stay the first
+   * line of net.rc.  Prepending would renumber everything each time a line
+   * was added, and "netrom broadcast disable 1" in net.rc would then turn off
+   * whichever entry happened to be written last.
+   */
+  {
+    struct broadcast **bpp;
+
+    for (bpp = &broadcasts; *bpp; bpp = &(*bpp)->next) ;
+    *bpp = bp;
+  }
   return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int dofilter(int argc, char *argv[], void *p)
+{
+  return rf_cmd(RF_NETROM, argc, argv, p);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1895,7 +2037,12 @@ static int donodes(int argc, char *argv[], void *p)
       return 1;
     }
   }
-  printf("Node       Ident   Neighbor   Level  Quality\n");
+  /* In and Adv are what is IN FORCE for this node, not what was written
+   * about him: the rule may be his port's or the default, and working that
+   * out by hand across three levels is what the operator should not have to
+   * do.  A node we only ever heard about has no port and so has no port rule.
+   */
+  printf("Node       Ident   Neighbor   Level  Quality  In        Adv\n");
   for (pn = nodes; pn; pn = pn->next)
     if (argc < 2 || pn == pn1) {
       pax25(buf1, pn->call);
@@ -1903,7 +2050,9 @@ static int donodes(int argc, char *argv[], void *p)
 	pax25(buf2, pn->neighbor->call);
       else
 	*buf2 = '\0';
-      printf("%-9s  %-6.6s  %-9s  %5d  %7d\n", buf1, pn->ident, buf2, pn->hopcnt, (int) pn->quality);
+      printf("%-9s  %-6.6s  %-9s  %5d  %7d  %-8s  %s\n", buf1, pn->ident, buf2,
+	     pn->hopcnt, (int) pn->quality,
+	     rf_in_name(node_in(pn)), node_advert(pn) ? "yes" : "no");
     }
   return 0;
 }
@@ -2057,6 +2206,7 @@ int donetrom(int argc, char *argv[], void *p)
   static struct cmds netromcmds[] = {
     { "broadcast",dobroadcast,0, 0, NULL },
     { "connect",  donconnect, 0, 2, "netrom connect <node> [<user>]" },
+    { "filter",   dofilter,   0, 0, NULL },
     { "ident",    doident,    0, 0, NULL },
     { "kick",     donkick,    0, 2, "netrom kick <nrcb>" },
     { "links",    dolinks,    0, 0, NULL },
