@@ -303,6 +303,7 @@ int portlist_allows(const struct portlist *pl,const struct iface *ifp);
  * closed.  See axlisten_drop_local().
  */
 void axlisten_drop_local(const uint8 *call);
+int axlisten_enable(int n);
 
 /* A UI frame for a datagram client, if one is waiting.  1: taken. */
 int axlisten_ui_deliver(struct iface *ifp,struct ax25 *hdr,int pid,

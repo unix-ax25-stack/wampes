@@ -62,6 +62,12 @@ struct axlisten {
    */
   int ui;
   struct portlist ports;                /* empty: every port */
+  /* Switched off because something local took the callsign, rather than
+   * deleted: an entry that vanishes is one the operator cannot see any more,
+   * and the reason vanishes with it.
+   */
+  int disabled;
+  char *why;
   enum axlisten_kind kind;
   char *target;
   /* Three switches.  Their defaults differ by what is being carried, and two
@@ -114,7 +120,7 @@ int axlisten_active(const uint8 *call)
    * callsign at all, not what we would do with the frame.
    */
   for (lp = Axlisten; lp; lp = lp->next)
-    if (!lp->netrom && addreq(lp->call, call)) return 1;
+    if (!lp->netrom && !lp->disabled && addreq(lp->call, call)) return 1;
   return 0;
 }
 
@@ -158,7 +164,7 @@ static const char *axlisten_kindname(struct axlisten *lp)
 
 /*---------------------------------------------------------------------------*/
 
-static void axlisten_show(struct axlisten *lp)
+static void axlisten_show(struct axlisten *lp, int n)
 {
   char buf[AXBUF];
   char ports[64];
@@ -172,12 +178,13 @@ static void axlisten_show(struct axlisten *lp)
     snprintf(ports, sizeof(ports), "%s%s",
 	     lp->ports.exclude ? "!" : "", lp->ports.spec);
 
-  printf("%-10s %-3s %-6s %-7s %-8s %-10s %s%s%s\n",
+  printf("%2d  %-10s %-3s %-6s %-7s %-8s %-10s %-30s %s%s%s\n", n,
 	 lp->netrom ? "(netrom)" : pax25(buf, lp->call),
 	 lp->netrom ? "-" : (lp->ui ? "UI" : "I"),
 	 lp->netrom ? "-" : (lp->pid == PID_NO_L3 ? "text" : "pid"),
 	 axlisten_kindname(lp), lp->binary ? "binary" : "ascii",
 	 ports,
+	 lp->disabled ? (lp->why ? lp->why : "inactive") : "active",
 	 lp->kind == LK_CLIENT
 	   ? (lp->clientfd >= 0 ? "client (claimed)" : "client (nobody)")
 	   : lp->target,
@@ -557,28 +564,67 @@ static int pid_is_local(int pid)
   return 0;
 }
 
+/* Is this callsign a port's, and does the node serve that protocol? */
+
+static int local_conflict(const uint8 *call, int pid)
+{
+  return ismyax25addr((uint8 *) call) && pid_is_local(pid);
+}
+
 void axlisten_drop_local(const uint8 *call)
 {
   char buf[AXBUF];
-  struct axlisten *lp, **pp;
+  struct axlisten *lp;
 
   if (!call || !*call) return;
 
-  for (pp = &Axlisten; *pp; ) {
-    lp = *pp;
-    if (lp->netrom || !addreq(lp->call, call) || !pid_is_local(lp->pid)) {
-      pp = &lp->next;
-      continue;
+  for (lp = Axlisten; lp; lp = lp->next) {
+    if (lp->netrom || lp->disabled) continue;
+    if (!addreq(lp->call, call) || !pid_is_local(lp->pid)) continue;
+    printf("listen %s pid=0x%02x switched off: the port answers to that "
+	   "callsign and the node serves that protocol itself\n",
+	   pax25(buf, lp->call), lp->pid);
+    if (lp->clientfd >= 0) {
+      remote_net_drop_client(lp->clientfd);
+      lp->clientfd = -1;
     }
-    printf("listen %s pid=0x%02x dropped: %s is a port callsign and the node "
-           "serves that protocol itself\n", pax25(buf, lp->call), lp->pid,
-           pax25(buf, lp->call));
-    if (lp->clientfd >= 0) remote_net_drop_client(lp->clientfd);
-    *pp = lp->next;
-    portlist_free(&lp->ports);
-    free(lp->target);
-    free(lp);
+    lp->disabled = 1;
+    free(lp->why);
+    lp->why = strdup("inactive: port callsign");
   }
+}
+
+/* "listen ax25 enable <n>": try again.  The operator says when, because a
+ * node that switched entries back on by itself would need a hook wherever a
+ * conflict can end - interface detached, callsign moved away, protocol
+ * stopped - and one forgotten hook leaves an entry dead that looks alive.
+ */
+
+int axlisten_enable(int n)
+{
+  char buf[AXBUF];
+  struct axlisten *lp;
+  int i = 1;
+
+  for (lp = Axlisten; lp; lp = lp->next, i++)
+    if (i == n) break;
+  if (!lp) {
+    printf("No entry %d\n", n);
+    return 1;
+  }
+  if (!lp->disabled) {
+    printf("Entry %d is active\n", n);
+    return 0;
+  }
+  if (local_conflict(lp->call, lp->pid)) {
+    printf("%s pid=0x%02x is still a port callsign the node serves\n",
+	   pax25(buf, lp->call), lp->pid);
+    return 1;
+  }
+  lp->disabled = 0;
+  free(lp->why);
+  lp->why = 0;
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -657,9 +703,10 @@ int dolisten(int argc, char *argv[], void *p)
       printf("Not listening for anything\n");
       return 0;
     }
-    printf("Call       I/UI Pid    Kind    Mode     Ports      Handed to\n");
-    for (lp = Axlisten; lp; lp = lp->next)
-      axlisten_show(lp);
+    printf(" #  Call       I/UI Pid    Kind    Mode     Ports      "
+	   "State                          Handed to\n");
+    { int n = 1;
+      for (lp = Axlisten; lp; lp = lp->next) axlisten_show(lp, n++); }
     return 0;
   }
 
@@ -673,9 +720,22 @@ int dolisten(int argc, char *argv[], void *p)
   }
 
   if (argc < 3) {
-    for (lp = Axlisten; lp; lp = lp->next)
-      if (lp->netrom == netrom) axlisten_show(lp);
+    int n = 1;
+
+    /* Numbered by position in the whole list, not in what is shown, so that
+     * an index means the same thing whichever view it came from.
+     */
+    for (lp = Axlisten; lp; lp = lp->next, n++)
+      if (lp->netrom == netrom) axlisten_show(lp, n);
     return 0;
+  }
+
+  if (!strcmp(argv[2], "enable")) {
+    if (argc < 4) {
+      printf("Which entry?  The number is the first column of \"listen\"\n");
+      return 1;
+    }
+    return axlisten_enable(atoi(argv[3]));
   }
 
   if (!strcmp(argv[2], "add"))
