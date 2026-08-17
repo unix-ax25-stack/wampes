@@ -247,6 +247,36 @@ acknowledgement, a full send queue, a disconnect that wants to happen - calls
 `dama_wait()`, which makes sure T1 is running.  A link with nothing to say
 still needs no timer, because it has nothing to be woken for.
 
+## Two slaves that connect to each other lock each other out
+
+Because we mark our own frames, another WAMPES slave reads them as "a master
+is here" and gates itself - and we do the same with its frames.  Neither ever
+polls the other, so both wait until the watchdog runs out, transmit, and put
+each other straight back into DAMA mode.
+
+That is **deliberate, and it is the wanted behaviour**: on a DAMA channel
+potential slaves do not talk to each other.  If they must - the digi is off
+and the contact matters - they say so:
+
+    ifconfig <if> dama off
+
+One line, rather than a switch nobody would understand.  Two DAMA masters on
+one frequency, which is what a marking slave amounts to, would be the worse
+answer.
+
+XNET arrives at the same place from the other side.  Its `ds` parameter -
+*"allow DAMA slave mode"* - exists because *"Der Slave-Mode wird
+vollautomatisch beim Verbindungsaufbau zu einem Master aktiviert.  **Bei Digis
+ist diese automatische Aktivierung des Slave-Modes nicht erwuenscht.**"*  A
+node that is itself infrastructure should not be pushed into the slave role by
+somebody else's DAMA bit, which is why the default here is `off` and
+`dama slave` is a permission rather than a description.
+
+**And nothing rescues such a station from outside.**  A master polls the links
+it *has*; it has none with a callsign that only talks to a third party, and an
+RR on a connection that does not exist would come back as DM or FRMR.  There
+is no way for a master to adopt a station it is not part of.
+
 ## Retransmission happens in the poll window
 
 The first version suppressed T1's retransmission and stopped there.  On a
