@@ -158,6 +158,29 @@ asks for.
 T2"*, which is the same shape as the kernel's `AX25_COND_ACK_PENDING`.  All
 that was missing was for T2 to hold its tongue.
 
+**The rule that falls out of that list**, and it is worth stating rather than
+leaving implicit in which call sites are gated:
+
+> An immediate answer to a command with the poll bit goes out at once.
+> Anything we start ourselves waits for the poll.
+
+So a UA answering somebody's SABM leaves immediately, even when that somebody
+is not the master, while the acknowledgement for the data he then sends is
+held until the master's next poll.  Measured, with a third station connecting
+while a master runs the channel:
+
+     1.0s  DL1XXX -> SABM+P          (not the master)
+     1.0s         <- UA P/F          at once
+     2.0s  DL1XXX -> I 'hallo'       no poll
+     2.0s         (nothing back)     the acknowledgement is held
+     2.6s  DB0AAA-5 -> RR+P          the master polls
+     2.6s         <- to DL1XXX: I N(S)=0 N(R)=1    the ack rides out here
+
+It has to be this way round.  The paper puts the connect handshake in CSMA
+explicitly, and gating the answer has a failure mode with no way out: a
+station with no link of its own to the master is never polled, so it could
+never answer an incoming connect at all - unreachable, for ever.
+
 ## The silent T1, and where we part company with Linux
 
 A DAMA slave does not retransmit of its own accord.  T1 keeps **running**,
@@ -270,6 +293,46 @@ And with 30% loss both ways, the retransmission arriving in a later window:
 Every transmission by the node in that run sits on a poll that reached it.
 Tool: `testtools/damachan.py`, which plays several stations on one socket and
 can drop frames in either direction.
+
+## What it costs
+
+Measured on a loopback with a poll every 2.0, 0.5 and 0.1 seconds, against
+the same node with DAMA off:
+
+| | payload | I frames | S frames | total |
+|---|---|---|---|---|
+| off, poll 2.0s | 13893 B | 55 | 22 | **77** |
+| on, poll 2.0s | 12544 B | 49 | 11 | **60** |
+| on, poll 0.5s | 13893 B | 55 | 36 | **91** |
+| on, poll 0.1s | 13893 B | 55 | 102 | **157** |
+
+The payload rate barely moves, but that is an artefact: the bottleneck here is
+the program producing the data and a UDP loopback with no air time.  These
+numbers cannot say what DAMA costs on the air.
+
+What they do show is the ratio, and on HF that is the currency, because every
+frame costs a keyup and a TxDelay: at a tenth-second poll the same payload
+takes **more than twice the frames**.  Each poll costs one RR from us and one
+poll from the master.
+
+So on an idle channel DAMA costs, and the poll interval is the knob - polling
+fast burns air on RRs, polling slowly adds latency and caps a station at about
+`(frames per poll x paclen) / cycle`.  On a loaded channel with hidden
+stations it is the other way round, which is the paper's whole claim: *"the
+throughput will increase continuously up to its maximum.  There is no foldback
+effect like that which occurs using CSMA where at a special limit (above ca
+60%) the throughput is actually reduced."*  Latency of one station traded for
+throughput of the channel.
+
+**One part of the cost is avoidable and is not taken.**  We answer the poll
+with an RR and *then* send the I frames, where the paper says the I frame's
+N(R) is the acknowledgement itself - *"having the correct count on the sent
+I-frame serves the same purpose as an ACK"*.  That is up to one frame per poll
+that carries data: the 11/36/102 column above.  Folding them is left undone
+deliberately, because it turns on a question no reading settles - does a real
+master accept an I frame as the answer to its poll, or does it insist on a
+response with F set?  Strict AX.25 wants the latter, the paper allows the
+former, and being wrong costs the connection.  One for the day at a real digi.
 
 ## Not built
 
