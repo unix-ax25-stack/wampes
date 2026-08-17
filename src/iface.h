@@ -131,6 +131,19 @@ struct iface {
 #define CRC_16          3       /* Send CRC_16 packets */
 #define CRC_RMNC        4       /* Send CRC_RMNC packets */
 #define CRC_CCITT       5       /* Send CRC_CCITT packets */
+	/* DAMA, see dama.c.  The role is what the sysop asked for; whether it
+	 * is in force depends on a master actually being heard, which is what
+	 * dama_heard records.
+	 */
+	int dama;               /* DAMA_OFF or DAMA_SLAVE */
+	int dama_watchdog;      /* Seconds of silence before we stop following
+				 * a master; 0 means the built-in default */
+	int32 dama_heard;       /* When a DAMA marked frame was last seen here,
+				 * 0 = not following anybody */
+	int32 dama_entered;     /* Times a master was found */
+	int32 dama_lost;        /* Times one went away again */
+	int32 dama_polls;       /* Polls answered */
+
 	int32 crcerrors;        /* Packets received with CRC errors */
 	int32 ax25errors;       /* Packets received with bad ax25 header */
 	uint flags;             /* Configuration flags */

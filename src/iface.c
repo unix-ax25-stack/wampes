@@ -8,6 +8,7 @@
 #include "mbuf.h"
 #include "proc.h"
 #include "iface.h"
+#include "dama.h"
 #include "ip.h"
 #include "icmp.h"
 #include "netuser.h"
@@ -24,6 +25,8 @@ static int ifipaddr(int argc,char *argv[],void *p);
 static int iflinkadr(int argc,char *argv[],void *p);
 static int ifbroad(int argc,char *argv[],void *p);
 static int ifcrc(int argc,char *argv[],void *p);
+int ifdama(int argc,char *argv[],void *p);
+int ifdamatimeout(int argc,char *argv[],void *p);
 static int ifnetmsk(int argc,char *argv[],void *p);
 static int ifrxbuf(int argc,char *argv[],void *p);
 static int ifmtu(int argc,char *argv[],void *p);
@@ -137,6 +140,8 @@ struct cmds Ifcmds[] = {
 	{ "digiarp",              ifdigiarp,      0,      2,      NULL },
 	{ "broadcast",            ifbroad,        0,      2,      NULL },
 	{ "crc",                  ifcrc,          0,      2,      NULL },
+	{ "dama",                 ifdama,         0,      2,      NULL },
+	{ "damatimeout",          ifdamatimeout,  0,      2,      NULL },
 	{ "encapsulation",        ifencap,        0,      2,      NULL },
 	{ "forward",              ifforw,         0,      2,      NULL },
 	{ "ipaddress",            ifipaddr,       0,      2,      NULL },
@@ -514,6 +519,7 @@ showiface(struct iface *ifp)
 		ifp->trace,(unsigned long)ifp->netmask,inet_ntoa(ifp->broadcast));
 	if(ifp->forw != NULL)
 		printf("           output forward to %s\n",ifp->forw->name);
+	dama_show(ifp);
 	printf("           sent: ip %lu tot %lu idle %s qlen %u",
 	 (unsigned long)ifp->ipsndcnt,(unsigned long)ifp->rawsndcnt,
 	 tformat(secclock() - ifp->lastsent),

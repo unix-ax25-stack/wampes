@@ -20,6 +20,7 @@ HDRS          = arp.h \
 		cmdparse.h \
 		commands.h \
 		crc.h \
+		dama.h \
 		daemon.h \
 		devparam.h \
 		dirutil.h \
@@ -90,6 +91,7 @@ OBJS          = adjtime.o \
 		cmdparse.o \
 		config.o \
 		crc.o \
+		dama.o \
 		devparam.o \
 		dirutil.o \
 		domain.o \
@@ -705,6 +707,18 @@ crc.o:\
 	crc.h\
 	global.h\
 	mbuf.h
+dama.o:\
+	../lib/configure.h\
+	ax25.h\
+	cmdparse.h\
+	dama.c\
+	dama.h\
+	global.h\
+	iface.h\
+	lapb.h\
+	mbuf.h\
+	timer.h
+
 devparam.o:\
 	../lib/configure.h\
 	../lib/strdup.h\
@@ -1135,6 +1149,7 @@ lapb.o:\
 	../lib/configure.h\
 	../lib/strdup.h\
 	ax25.h\
+	dama.h\
 	global.h\
 	iface.h\
 	internet.h\
@@ -1148,6 +1163,7 @@ lapbtime.o:\
 	../lib/configure.h\
 	../lib/strdup.h\
 	ax25.h\
+	dama.h\
 	global.h\
 	iface.h\
 	lapb.h\

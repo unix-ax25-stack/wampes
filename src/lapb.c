@@ -10,6 +10,7 @@
 #include "timer.h"
 #include "ax25.h"
 #include "lapb.h"
+#include "dama.h"
 #include "ip.h"
 #include "slhc.h"
 
@@ -113,6 +114,17 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 
 	if(cmdrsp == LAPB_UNKNOWN)
 		axp->proto = V1;        /* Old protocol in use */
+
+	/* DAMA.  The master's SSID octet says this is a DAMA channel, and that
+	 * is enough to keep the watchdog fed - any marked frame, not only a
+	 * poll.  A poll is that AND a command with the poll bit, which is what
+	 * "poll" already holds a few lines above.  Both bits are needed; see
+	 * dama.c for why the paper's remark about the P bit is not an argument
+	 * against using it.
+	 */
+	if(hdr->ext & SSID_DAMA)
+		dama_heard_frame(iface);
+	dama_poll_begin(axp,poll && (hdr->ext & SSID_DAMA));
 
 	/* This section follows the SDL diagrams by K3NA fairly closely */
 	switch(axp->state){
@@ -486,11 +498,23 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	/* } */
 	if((axp->state == LAPB_RECOVERY || axp->state == LAPB_CONNECTED) &&
 	   ((axp->flags.closed && !axp->txq) ||
-	    (axp->flags.remotebusy && (bugfix = msclock() - axp->flags.remotebusy) > 900000L))){
-		sendctl(axp,LAPB_COMMAND,DISC|PF);
-		start_timer(&axp->t1);
-		lapbstate(axp,LAPB_DISCPENDING);
+	    (axp->flags.remotebusy && (bugfix = msclock() - axp->flags.remotebusy) > 900000L))
+	   ){
+		/* A DAMA slave waits for the poll before it disconnects too -
+		 * the paper is explicit about that one ("the user ... will
+		 * wait to send his DISC-frame until polled").  Nothing is lost
+		 * by waiting: the wish to close is the state, and the state
+		 * outlives the gate being shut.
+		 */
+		if(dama_holds(axp)){
+			dama_wait(axp);
+		} else {
+			sendctl(axp,LAPB_COMMAND,DISC|PF);
+			start_timer(&axp->t1);
+			lapbstate(axp,LAPB_DISCPENDING);
+		}
 	}
+	dama_poll_end(axp);
 	return 0;
 }
 /* Handle incoming acknowledgements for frames we've sent.
@@ -662,6 +686,18 @@ lapb_output(struct ax25_cb *axp)
 	 || (axp->state != LAPB_RECOVERY && axp->state != LAPB_CONNECTED)
 	 || axp->flags.remotebusy)
 		return 0;
+
+	/* A DAMA slave sends nothing of its own accord.  Nothing is lost by
+	 * refusing here: the frames stay on axp->txq, and lapb_input() calls
+	 * this again at the end of every received frame - so the next poll
+	 * takes them out.  That call was already there for piggybacking an
+	 * ack, which is why the slave needs no queue of its own.
+	 */
+	if(dama_holds(axp)){
+		if(axp->txq != NULL)
+			dama_wait(axp);
+		return 0;
+	}
 
 	/* Dig into the send queue for the first unsent frame */
 	bp = axp->txq;
@@ -1042,6 +1078,18 @@ void *p)
 	int i;
 
 	axp = (struct ax25_cb *)p;
+
+	/* The delayed acknowledgement, and for a DAMA slave it stays delayed:
+	 * the ack rides out on the answer to the next poll instead.  This is
+	 * the same shape as the kernel's AX25_COND_ACK_PENDING - resequence()
+	 * already splits "polled, answer now" from "not polled, start T2", so
+	 * all that was missing was for T2 to hold its tongue.
+	 */
+	if (dama_holds(axp)) {
+		dama_wait(axp);
+		return;
+	}
+
 	if (!axp->flags.rejsent) {
 		for (i = 0; i < 8; i++) {
 			if (axp->reseq[i].bp) {
@@ -1061,6 +1109,16 @@ void *p)
 	struct ax25_cb *axp;
 
 	axp = (struct ax25_cb *)p;
+
+	/* The idle disconnect.  A DAMA slave may not send the DISC unbidden,
+	 * so try again later rather than dropping it: the link is idle by
+	 * definition, and one more idle period costs nothing.
+	 */
+	if(dama_holds(axp)){
+		start_timer(&axp->t5);
+		return;
+	}
+
 	if(axp->state == LAPB_CONNECTED || axp->state == LAPB_RECOVERY){
 		free_q(&axp->txq);
 		axp->retries = 0;

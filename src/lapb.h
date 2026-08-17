@@ -127,6 +127,12 @@ struct ax25_cb {
 		unsigned int rnrsent:1;         /* RNR frame has been sent */
 	} flags;
 
+	/* Set only while lapb_input() is handling a DAMA poll addressed to
+	 * us.  That window is the whole of a slave's permission to transmit -
+	 * see dama.c.
+	 */
+	int dama_polled;
+
 	uint8 reason;                   /* Reason for connection closing */
 #define LB_NORMAL       0               /* Normal close */
 #define LB_DM           1               /* Received DM from other end */
