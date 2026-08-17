@@ -1299,8 +1299,94 @@ anfassen will:
 Auch die schaerfste laesst bei acht Digis zwoelf Minuten stehen - weil der
 Anfangswert dominiert und nicht die Kurve. Das spricht fuer Thomas' Weg.
 
-Nebenwirkung, falls es angefasst wird: der EAX25-Rueckfall reitet auf
-derselben Kurve und wird automatisch mit kuerzer.
+------------------------------------------------------------------------
+ABSCHAETZUNG DAZU (2026-08-17), gerechnet statt geschaetzt
+------------------------------------------------------------------------
+WAS ES BRINGT. Die Kurve gegen eine Obergrenze, Gesamtwartezeit bis zur
+Aufgabe bei N2=10 und T1init 5 s:
+
+                                 0 Digis   2 Digis   8 Digis
+ heute                             166 s     831 s    2826 s
+ Kurve gegen Tmax=20, Start heute   143 s     219 s     445 s
+ Kurve gegen Tmax=45, Start heute   299 s     375 s     601 s
+ Kurve gegen Tmax=90, Start heute   579 s     655 s     881 s
+
+Das ist der Punkt, an dem meine frueheren Zahlen oben zu pessimistisch
+waren: sie rechneten mit Blimit und N2, und dort dominierte tatsaechlich der
+Anfangswert. Gegen eine ECHTE Obergrenze faellt der Achtdigi-Fall von
+siebenundvierzig auf sieben bis fuenfzehn Minuten, weil die Kurve dort nicht
+waechst, sondern SCHRUMPFT - T1 startet bei 85 s und laeuft nach unten auf
+Tmax zu.
+
+UND DIE SAUBERERE VARIANTE. Wenn ohnehin eine Schaetzung vorliegt, ist der
+Anfangswert T1init*(1+2*Digis) nur noch die schlechtere Information. Faengt
+man stattdessen bei T1init an und laesst die Kurve nach OBEN auf Tmax
+zulaufen, verschwindet die Digizahl vollstaendig aus der Rechnung:
+
+ Kurve gegen Tmax=20, Start T1init  143 s     143 s     143 s
+ Kurve gegen Tmax=45, Start T1init  299 s     299 s     299 s
+ Kurve gegen Tmax=90, Start T1init  579 s     579 s     579 s
+
+Genau das ist Thomas' "der Timer darf ruhig schnell anfangen und wachsen",
+zu Ende gedacht. Nur da anwenden, wo eine Schaetzung existiert; ohne eine
+bleibt der Digizaehler das Beste, was wir haben.
+
+KORREKTUR AN MEINER EIGENEN NEBENBEMERKUNG. Ich hatte geschrieben, der
+EAX25-Rueckfall werde auf derselben Kurve "automatisch mit kuerzer". Das
+gilt nur mit Digis. Ohne welche wird er LAENGER, weil die Kurve gegen ein
+fernes Tmax schneller steigt als der 1,25er-Backoff:
+
+ Was drei Proben kosten:        0 Digis  2 Digis  8 Digis
+ heute                             19 s     95 s    324 s
+ Kurve gegen Tmax=20               25 s     72 s    210 s
+ Kurve gegen Tmax=45               42 s     89 s    228 s
+ Kurve gegen Tmax=90               73 s    120 s    258 s
+
+Verhaeltnismaessig bleibt es in Ordnung - 42 s Proben gegen 299 s Geduld
+ist dieselbe Groessenordnung wie heute 19 gegen 166 -, aber die Zahlen in
+doc/EAX25.md ("Falling back", 19 s und 94 s) muessen dann mit.
+
+WAS ZU BAUEN IST, drei Stuecke:
+
+  1. Eine Auskunft aus FlexNet, etwa "int flex_expected_rtt(const uint8
+     *call)" in flexnet.c, deklariert in flexnet.h. Vorhanden ist alles:
+     struct quality traegt delay in 100-ms-Einheiten je Weg,
+     find_best_quality() liefert den besten. locdelay wird als
+     TDIFF(...)/200 gebildet, ist also die HALBE Umlaufzeit - fuer eine
+     Umlaufzeit gehoert der Faktor 2 dazu. MAXDELAY ist 3000, also 300 s;
+     was darueber steht, heisst "unerreichbar" und darf kein Limit werden.
+     Die SSID-Unschaerfe ist entschieden (Bereich mitnehmen, nicht daran
+     haengenbleiben); der Vergleich laeuft ueber die sechs Rufzeichenbytes
+     und den Bereich in call[ALEN+1], nicht ueber addreq(). Etwa 40 Zeilen.
+  2. Ein Feld axp->tmax, gefuellt in build_path() - erst fuer das Ziel,
+     sonst fuer den letzten Digi vor dem Ziel, sonst 0 = kein Limit.
+     Etwa 15 Zeilen. Achtung: build_path() laeuft im Relaisfall bei JEDEM
+     wiederholten SABM des Rufers erneut, also die Auskunft nicht teuer
+     machen oder das Ergebnis behalten.
+  3. Die eine Zeile in recover(): statt (dur_timer*5+2)/4 dann
+     t1 + (tmax - t1)/4, wenn tmax gesetzt ist. Der DAMA-Zweig kehrt vorher
+     zurueck und ist nicht betroffen; das Relaisbein wiederholt ohnehin
+     nicht und merkt von der Kurve nur die Ablaufzeitpunkte.
+
+AUFWAND: rund 60 Zeilen Code, ein Commit, und der groessere Teil ist die
+Messung. Die geht mit vorhandenem Werkzeug: flexpeer.py --announce setzt
+eine Umlaufzeit, danach ein Connect ueber diesen Weg und die Zeitpunkte der
+SABM-Wiederholungen aus "trace" ablesen. Zu pruefen sind drei Dinge - dass
+ohne FlexNet-Wissen alles bleibt wie es ist, dass eine Aenderung der
+angekuendigten Umlaufzeit sich auf einen NEUEN Aufbau auswirkt und auf einen
+laufenden nicht, und dass ein "unerreichbar" (MAXDELAY+1) nicht als Limit
+durchschlaegt.
+
+WAS ICH VOR DEM BAUEN GEFRAGT HAETTE, damit es nicht zweimal gebaut wird:
+  * Faktor und Gnadenfrist. "Umlaufzeit mal Faktor plus 30 s" stand oben;
+    mit Faktor 2 und einer typischen Dreihop-Strecke (delay 40, also 4 s
+    einfach) kaeme Tmax = 46 s heraus. Ist das die Groessenordnung?
+  * Start bei T1init, sobald eine Schaetzung da ist - ja oder nein? Das ist
+    die Variante, die die Digizahl ganz aus der Rechnung nimmt, und sie ist
+    die groessere Verhaltensaenderung von beiden.
+  * Gilt das Limit auch fuer den NET/ROM-L4-Aufbau und den Proxy-Connect?
+    Oben steht, NETROM tauge dafuer als Indiz; dann waere es dieselbe
+    Auskunft an einer zweiten Stelle, aber ein eigener Commit.
 
 ------------------------------------------------------------------------
 6PACK UND PACLEN - ERLEDIGT, MIT DER RICHTIGEN ZAHL (2026-08-17)
