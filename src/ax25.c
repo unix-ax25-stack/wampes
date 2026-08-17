@@ -446,6 +446,17 @@ uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater 
  * The control blocks are the list for the second kind - nothing to register
  * and nothing to clean up, since a callsign goes when its link does.
  *
+ * NOT the legs of a relayed connection, and this cost a working digipeat
+ * path for four days.  When someone reaches a station THROUGH us, WAMPES
+ * terminates both halves and carries HIS callsign onward as the source of
+ * the second one (axroute(), and it is what makes the far end see "him via
+ * us").  We do not answer to that callsign, we speak in his name - so
+ * counting it here told lapb_input() that the answer coming back was
+ * addressed to us, whereupon find_ax25() would not look at relay legs
+ * either and the frame fell into a fresh control block and was dropped.
+ * The same test that find_ax25() uses keeps them apart: a link of our own
+ * has no peer.
+ *
  * ax_recv() asks this to decide whether to process a frame and ax_forus()
  * to decide whether to show it.  They used to ask separately and only the
  * first was taught the other two sources, so an operator could watch a
@@ -461,7 +472,8 @@ const uint8 *addr
 	if(addreq(addr,iface->hwaddr))
 		return 1;
 	for(axp = Ax25_cb; axp != NULL; axp = axp->next)
-		if(axp->iface == iface && addreq(axp->hdr.source,addr))
+		if(axp->peer == NULL && axp->iface == iface &&
+		   addreq(axp->hdr.source,addr))
 			return 1;
 	return axlisten_active(addr);
 }

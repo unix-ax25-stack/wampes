@@ -1331,6 +1331,65 @@ WAS BLEIBT, ist eine Zahl fuer die Doku und keine Aufgabe: ueber 6pack ist
 paclen ueber 256 gegen Linux nicht nutzbar, ganz gleich was wir einstellen.
 
 ------------------------------------------------------------------------
+AX.25-RELAIS: DER DIGIPEAT-WEG WAR VIER TAGE KAPUTT (2026-08-17, behoben)
+------------------------------------------------------------------------
+Gefunden beim Messen von "eax25 always", betrifft aber NICHT EAX25 sondern
+jede Verbindung, die durch uns hindurchgeht: wer uns als Digi im Adressfeld
+nennt, bekam seit dem 13.08. keine Verbindung mehr. Sichtbar war nur, dass
+der Knoten das UA der Gegenstelle empfaengt und nichts damit tut.
+
+DIE URSACHE. Commit a0641c7 ("Listen for callsigns of our own choosing")
+hat vier Kopien der Frage "ist diese Adresse meine" zu ax_answers_to()
+zusammengefasst, und die kennt drei Quellen: das Rufzeichen des Interfaces,
+die Rufzeichen, unter denen unsere Links geoeffnet wurden, und die, auf die
+wir lauschen. Die zweite Quelle liest axp->hdr.source ueber ALLE
+Kontrollbloecke - und dieses Feld bedeutet zweierlei:
+
+  bei einem eigenen Link      unser Rufzeichen, auf das wir antworten
+  bei einem RELAISBEIN        das Rufzeichen des RUFERS, das wir
+                              weitertragen, damit die Gegenstelle
+                              "er ueber uns" sieht (axroute())
+
+Auf das zweite antworten wir nicht, wir sprechen in seinem Namen. Es zu
+zaehlen liess lapb_input() die Antwort der Gegenstelle fuer an uns gerichtet
+halten.
+
+WARUM DAS DURCHGERUTSCHT IST, und das ist der eigentliche Lerngegenstand:
+die Aenderung war mit "der Satz wird nur groesser" begruendet. Das stimmte
+auch. Nur ist an dieser Stelle keine Filterfrage gestellt, sondern eine
+WEICHE, und beide Zweige tun etwas:
+
+  digipeat = (ismyax25addr(dest) == NULL && !ax_answers_to(iface,dest));
+  if (digipeat)  ... eigene Suche ueber das Adresspaar - findet NUR
+                     Relaispaare
+  else           ... find_ax25(), und die ueberspringt Relaisbeine
+                     ausdruecklich (axp->peer == NULL)
+
+Die beiden Zweige teilen die Kontrollbloecke unter sich auf, und jeder kann
+nur seine Haelfte finden. Ein weiteres Wahrwerden der Bedingung verschiebt
+also Rahmen von dem Zweig, der sie findet, in den, der sie nicht findet.
+"Nur groesser" ist bei einer Weiche keine sichere Richtung - bei einem
+Filter waere es eine gewesen.
+
+Dass find_ax25() die Unterscheidung schon trifft, stand direkt im anderen
+Zweig derselben if-Anweisung. Die Korrektur ist genau diese: ein eigener
+Link hat keinen peer. axp->peer wird an genau einer Stelle gesetzt
+(lapb.c:87), naemlich fuer dieses Paar, also ist der Test scharf.
+
+WARUM ES VIER TAGE UNBEMERKT BLIEB: die Gegenprobe zu a0641c7 war ein
+Connect AUF ein gelauschtes Rufzeichen - der Fall, um den es ging, und der
+funktionierte. Fuer den Weg DURCH uns gab es keinen Prueftreiber; genau das
+stand als "eaxpeer.py kann keinen Digipeat-Pfad" im TODO. Der einzige Pfad,
+den die Aenderung zerbrach, war der einzige ohne Pruefstand. Und der Fehler
+ist stumm: keine Meldung, kein Zaehler, von aussen sieht es aus, als
+antworte die Gegenstelle nicht.
+
+Gegengeprobt sind beide Richtungen: zwei Staende nebeneinander gebaut, mit
+und ohne Korrektur, auf reiner AX.25-Strecke ohne jedes modulo-128 - der
+alte laesst das Relais in "Conn pend" haengen, der neue bringt es durch.
+Und "listen ax25 add", wofuer a0641c7 gebaut war, antwortet weiter.
+
+------------------------------------------------------------------------
 EAX25: "always" IST UNGEMESSEN (2026-08-17)
 ------------------------------------------------------------------------
 off, accept und caller sind gebaut UND gemessen (doc/EAX25.md). "always" -
