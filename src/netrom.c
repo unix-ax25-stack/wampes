@@ -742,13 +742,60 @@ static void send_broadcast(void *arg)
 
 /*---------------------------------------------------------------------------*/
 
+/* Is this an IP datagram carried over NET/ROM, and if so, take it.
+ *
+ * Pulled out of route_packet() because there are now two places that accept
+ * one: the ordinary "addressed to us", and a datagram merely passing through
+ * from a node we hide, which we terminate here rather than forward - see
+ * nr_proxy_ip() below.  The two must accept identically, and the surest way
+ * to keep them identical is for there to be one of them.
+ *
+ * The protocol id sits where an L4 header would: opcode 0 is NR4OPPID,
+ * "protocol id extension to the network layer", and the two bytes in front of
+ * it name the protocol.  So this is not a misuse of the transport header, it
+ * is the provision made for exactly this.
+ */
+
+static int nr_ip_deliver(struct mbuf **bpp)
+{
+  int32 ipaddr;
+  struct arp_tab *ap;
+  uint8 hwaddr[AXALEN];
+
+  if ((*bpp)->cnt < 40                  ||
+      (*bpp)->data[19] != 0             ||
+      (*bpp)->data[15] != NRPROTO_IP    ||
+      (*bpp)->data[16] != NRPROTO_IP    ||
+      !(ipaddr = get32((*bpp)->data + 32)) ||
+      !Nr_iface)
+    return 0;
+
+  Nr_iface->rawrecvcnt++;
+  Nr_iface->lastrecv = secclock();
+  /* Which node this address lives behind, so that the answer finds its way.
+   * In the passing-through case this is the only chance to learn it: until
+   * now the pairing was only noted for datagrams addressed to us.
+   */
+  if ((ap = arp_lookup(ARP_NETROM, ipaddr)) == NULL ||
+      ap->state != ARP_VALID ||
+      run_timer(&ap->timer)) {
+    addrcp(hwaddr, (*bpp)->data);
+    arp_add(ipaddr, ARP_NETROM, hwaddr, 0);
+  }
+  pullup(bpp, NULL, 20);
+  dump(Nr_iface, IF_TRACE_IN, *bpp);
+  ip_route(Nr_iface, bpp, 0);
+  return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
 {
 
   int ttl;
-  int32 ipaddr = 0;
-  struct arp_tab *ap;
   struct node *pn;
+  struct node *source = NULL;   /* the node the datagram started at */
 
   if (!bpp || !*bpp || (*bpp)->cnt < 15) goto discard;
 
@@ -759,6 +806,7 @@ static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
     if (update_link(mynode, fromneighbor, 1, nr_hfqual)) calculate_all();
     if (!(pn = nodeptr((*bpp)->data, 1))) goto discard;
     if (pn == mynode) goto discard;  /* ROUTING ERROR */
+    source = pn;                     /* pn is reused below for the target */
     /* A frame passing through builds the way back, and that is the second
      * way a station teaches us about others - so "in" governs it too.  Note
      * what this costs under "only-him": a connection routed through him has
@@ -776,26 +824,7 @@ static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
   }
 
   if (addreq((*bpp)->data + AXALEN, mynode->call)) {
-    uint8 hwaddr[AXALEN];
-    if ((*bpp)->cnt >= 40                   &&
-	(*bpp)->data[19] == 0               &&
-	(*bpp)->data[15] == NRPROTO_IP      &&
-	(*bpp)->data[16] == NRPROTO_IP      &&
-	(ipaddr = get32((*bpp)->data + 32)) &&
-	Nr_iface) {
-      Nr_iface->rawrecvcnt++;
-      Nr_iface->lastrecv = secclock();
-      if ((ap = arp_lookup(ARP_NETROM, ipaddr)) == NULL ||
-	  ap->state != ARP_VALID ||
-	  run_timer(&ap->timer)) {
-	addrcp(hwaddr, (*bpp)->data);
-	arp_add(ipaddr, ARP_NETROM, hwaddr, 0);
-      }
-      pullup(bpp, NULL, 20);
-      dump(Nr_iface, IF_TRACE_IN, *bpp);
-      ip_route(Nr_iface, bpp, 0);
-      return;
-    }
+    if (nr_ip_deliver(bpp)) return;
     pullup(bpp, NULL, 15);
     if (!*bpp) return;
     if (fromneighbor == mynode) {
@@ -806,6 +835,26 @@ static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
     circuit_manager(bpp);
     return;
   }
+
+  /* Passing through from a node we hide: terminate it here instead.
+   *
+   * A datagram forwarded at L3 keeps its source callsign all the way - only
+   * the TTL below is touched - so every node it crosses learns the sender.
+   * For a node we have been told not to announce, that is the leak the whole
+   * filter was for: hidden in our broadcasts, and known to everybody the
+   * moment traffic flows.
+   *
+   * Taking the datagram here ends that.  ip_route() sends it onward as ours,
+   * and nr_send() puts mynode->call in the source, so what leaves us carries
+   * our callsign and nothing of his.  There is nothing to rewrite and so
+   * nothing to forget - the frame that goes out is one we built.
+   *
+   * Only the sender is hidden this way, never what lies behind him: a
+   * datagram from a node further out has its own source and is forwarded as
+   * before.  That is the same rule "advert no" follows in the broadcasts.
+   */
+  if (source != NULL && !node_advert(source) && nr_ip_deliver(bpp))
+    return;
 
   ttl = (*bpp)->data[2*AXALEN];
   if (--ttl <= 0) goto discard;

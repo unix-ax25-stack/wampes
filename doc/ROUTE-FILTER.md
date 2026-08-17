@@ -298,9 +298,33 @@ It also turns a cost into a feature: `in only-him` and `in none` switch
 off that same transit learning here, so a session routed **through** such
 a neighbour has no way back and dies.  With proxying it would not.
 
-Not built.  The analysis, the automation rule - `advert no` implies
-proxying, foreign nodes behind him do not - and the two things the IP case
-still needs are written up in `TODO.txt`.
+**For IP this is built.**  A datagram merely passing through from a node
+we do not announce is no longer forwarded; `route_packet()` hands it to
+`nr_ip_deliver()`, the same acceptance path a datagram addressed to us
+takes.  From there `ip_route()` sends it onward as our own traffic, and
+`nr_send()` writes `mynode->call` into the source.  Nothing is rewritten,
+because the frame that leaves us is one we built - and so there is nothing
+to remember either.  Only the sender is hidden: a datagram from a node
+further out carries its own source and is forwarded as before, which is
+the rule `advert no` already follows in the broadcasts.
+
+Accepting it also fixes the return path.  The pairing of IP address and
+node was previously noted only for datagrams addressed to us, so a node
+that merely forwarded never learned who lived where.  Measured, with
+`netrom filter db0aaa-5 advert no`:
+
+|                | Onward to DL1BBB          | Return                      |
+| -------------- | ------------------------- | --------------------------- |
+| without filter | source **DB0AAA-5**, TTL 15 | fails - ICMP from our own address |
+| `advert no`    | source **DL9SAU-1**, TTL 16 | reaches DB0AAA-5, source DL9SAU-1 |
+
+`testtools/nrip.py` drives both directions.  Note the TTL: 15 is a
+forwarded frame, 16 a fresh one.
+
+For L4 it is not built.  A NET/ROM circuit is named `(node, index, id)`
+and index and id mean nothing outside the node that issued them, so that
+case needs a table where IP needs none.  The design - terminate the
+circuit and splice a second one - is written up in `TODO.txt`.
 
 ## Not built, and why it is written down here
 
