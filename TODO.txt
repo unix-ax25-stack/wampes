@@ -1183,7 +1183,7 @@ doc/EAX25.md. NICHT gemessen ist "always" - dafuer braucht der Pruefstand
 einen Digipeat-Weg durch uns.
 
 OFFEN AUS DIESER ARBEIT, jeweils mit eigener Ueberschrift weiter unten:
-  * "T1 WAECHST MIT DEN DIGIS VIEL ZU STARK (Thomas, 2026-08-17)
+  * "T1: NICHT DER TIMER IST FALSCH, SONDERN DAS LIMIT (Thomas, 2026-08-17)
 ------------------------------------------------------------------------
 lapb.c:1421 rechnet mdev aus T1init * (1 + 2*Digis), also T1 = 5 s direkt,
 25 s bei zwei Digis, 85 s bei acht (MAXDIGIS). Mit N2=10 und dem 1,25er-
@@ -1208,30 +1208,54 @@ Messungen, mehr nicht.
 WARUM DER BACKOFF ES NICHT AUFFAENGT (Thomas' Rueckfrage): Blimit
 (ax25subr.c, Vorgabe 16) begrenzt nicht den WERT, sondern die
 Wachstumsrate, und es feuert nie, weil N2=10 kleiner ist. Der Timer waechst
-also zehnmal ungebremst um 1,25. Das Ueberschiessen sitzt aber ohnehin
-nicht im Backoff, sondern in der ANFANGSSCHAETZUNG: 1 + 2*Digis
-unterstellt, dass jeder Digi 2*T1init = 10 s zur Umlaufzeit beitraegt. Bei
-1k2 kostet ein Hop drei bis vier Sekunden, bei 9k6 deutlich unter einer.
-Die Formel kann es nicht besser wissen - sie kennt die Bitrate nicht.
+also zehnmal ungebremst um 1,25.
 
-DER EIGENTLICHE BEFUND, und er zeigt den billigen Weg: in der SABM-Phase
-gibt es noch keine Messung, also kann nur die Schaetzung helfen. WAMPES
-MISST die Umlaufzeit aber (lapb.c:676, der geglaettete Schaetzer) und wirft
-sie weg - build_path() setzt axp->srt = 0 (lapb.c:1456). Eine Station, mit
-der wir tausendmal gesprochen haben, faengt beim naechsten Connect wieder
-bei der pessimistischen Vermutung an.
+WAS NICHT ZU AENDERN IST, und das ist Thomas' Korrektur an einer falschen
+Faehrte von mir: build_path() setzt axp->srt = 0 (lapb.c:1456), verwirft
+also die gemessene Umlaufzeit beim Neuaufbau. Das ist RICHTIG SO, aus zwei
+Gruenden.
 
-Und der Autor hat das gesehen: lapb.h:221 deklariert "extern int32 Axirtt"
-- initial rtt - und die Variable ist nirgends definiert oder benutzt.
-Dasselbe Muster wie bei SABME und EMMASK: die Vorkehrung ist da,
-angeschlossen wurde sie nie.
+Erstens inhaltlich: wuerde man sie behalten, startete ein Link, der einmal
+gebrochen ist, mit einer ungeheuer langen Wartezeit fuer sein SABM.
+Schnell anfangen und je Versuch wachsen ist die richtige Reihenfolge.
 
-VORSCHLAG: die gemessene Umlaufzeit im AX.25-ROUTENEINTRAG behalten, genau
-wie jetzt die EAX25-Faehigkeit. Erster Connect nimmt die Vermutung, jeder
-weitere nimmt die Wirklichkeit. Keine Protokollaenderung, kein neuer
-Schalter, keine Entscheidung ueber Kurvenformen - und es hilft genau bei
-den Stationen, mit denen man tatsaechlich verkehrt. Gerechnete Varianten
-fuer den Fall, dass man die Kurve TROTZDEM anfassen will:
+Zweitens strukturell, und das ist der schaerfere Grund: der Kontrollblock
+GEHOERT DER SESSION. Ist sie abgebaut, gibt es keinen Ort mehr, an dem der
+Wert laege - und innerhalb einer bestehenden Session faellt gar kein SABM
+an. Die Anfangsschaetzung wirkt also ausschliesslich im Aufbau, und einen
+Speicher, der sie ueberdauert, muesste man erst erfinden. Genau das waere
+mein Vorschlag "ins Routenverzeichnis, wie die EAX25-Faehigkeit" gewesen,
+und er ist nach dem ersten Grund unerwuenscht. Der Fehler sitzt nicht
+dort.
+(Nebenbei: lapb.h:221 deklariert "extern int32 Axirtt", initial rtt, und
+die Variable ist nirgends definiert oder benutzt. Dasselbe Muster wie
+SABME und EMMASK - die Vorkehrung ist da, angeschlossen wurde sie nie.
+Nach dem Obigen ist sie aber auch nicht die Loesung.)
+
+THOMAS' IDEE - DAS LIMIT SCHAETZEN, NICHT DEN TIMER: der Timer darf ruhig
+schnell anfangen und wachsen, was fehlt ist eine OBERGRENZE fuer die
+Gesamtdauer des Aufbaus. Und die Daten dafuer liegen schon im Knoten:
+
+  * FLEXNET KENNT ZIELE UND IHRE UMLAUFZEIT. struct quality traegt delay
+    in 100-ms-Einheiten (flexnet.c:60), gespeist aus gemessenen Polls
+    (locdelay/remdelay) und je Hop aufsummiert; find_best_quality() gibt
+    den besten Weg zu einem dest. Ist das AX.25-ZIEL ein FlexNet-Ziel,
+    oder ist der letzte DIGI VOR dem Ziel eines, dann haben wir eine
+    begruendete Erwartung, was der Weg kostet - und daraus ein Limit,
+    etwa "erwartete Umlaufzeit mal Faktor, plus Gnadenfrist von 30 s".
+    Findet sich nichts, bleibt es beim heutigen Verhalten.
+  * NETROM hat auch Umlaufzeiten, taugt hier aber nur als Indiz: dort
+    connecten wir nicht bis zum Ende durch. Verwendbar waere es fuer den
+    Timeout des NET/ROM-L4-Aufbaus und fuer den Proxy-Connect, nicht fuer
+    die AX.25-SABM-Phase.
+
+ZU KLAEREN VOR DEM BAUEN: find_dest() vergleicht mit addreq() ueber sieben
+Bytes, und ein FlexNet-Eintrag traegt einen SSID-BEREICH (call[ALEN+1]).
+Eine Suche nach einem konkreten Rufzeichen muss diesen Bereich beachten,
+sonst findet sie das Ziel nicht.
+
+Gerechnete Varianten fuer den Fall, dass man stattdessen doch die Kurve
+anfassen will:
 
           0 Digis   2 Digis   8 Digis
  Blimit 4    87 s     437 s    1486 s
@@ -1239,8 +1263,8 @@ fuer den Fall, dass man die Kurve TROTZDEM anfassen will:
  N2 6        56 s     281 s     957 s
  N2 6, B 3   42 s     212 s     722 s
 
-Auch die schaerfste laesst bei acht Digis zwoelf Minuten stehen - weil eben
-der Anfangswert dominiert und nicht die Kurve.
+Auch die schaerfste laesst bei acht Digis zwoelf Minuten stehen - weil der
+Anfangswert dominiert und nicht die Kurve. Das spricht fuer Thomas' Weg.
 
 Nebenwirkung, falls es angefasst wird: der EAX25-Rueckfall reitet auf
 derselben Kurve und wird automatisch mit kuerzer.
