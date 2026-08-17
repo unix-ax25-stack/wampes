@@ -1449,33 +1449,75 @@ Zweitens, und das ist fuer die Auslegung wichtiger: die Phantomdauer
 haengt an T3, nicht an T1. Ein Deckel auf T1 verkuerzt A's Zappeln, aber
 nicht B's Irrtum.
 
-THOMAS' DECKEL: T3 IST DIE ZAHL, DIE ES SCHON GIBT
-Sein Argument, und es traegt weiter als die FlexNet-Schaetzung oben: der
-Knoten besitzt bereits eine Zahl fuer "so lange darf nichts passieren" -
-T3, und mit T5 eine zweite fuers Aufgeben. Beides sind ZEITEN, beide vom
-Betreiber gesetzt, beide gelten fuer eine stehende Verbindung. Nur der
-Aufbau hat keine: dort entsteht die Dauer als Nebenprodukt aus einer
-Anzahl (N2) mal einer Schaetzung (T1init mal Digis) - die einzige Stelle
-im ganzen Timerwerk, an der eine Wartezeit nicht gewaehlt, sondern
-ausgerechnet wird.
+WO DIE VIERZIG MINUTEN WOHNEN
+Thomas' Zahl aus dem ersten Einwand - "40 min fuer das naechste SABM" -
+steht wirklich im Code, und zwar in Blimit. Das ist 16, N2 nur 10, also
+DUERFTE die Kurve sechzehnmal wachsen und wird bloss zufaellig frueher
+gestoppt. Der sechzehnte Abstand waere bei acht Digis
 
-Deckelt man die Aufbauphase bei T3, aendert sich nur der pathologische
-Fall:
+    85 s * 1,25^15 = 2416 s = 40,3 min
 
-  Digis  SABM-Zeitpunkte (s)                heute    mit Deckel T3
-   0     0 5 11 19 29 41 56 75 ...           166 s   unveraendert
-   2     0 25 56 95 144 205 281 377 ...      831 s   unveraendert
-   8     0 85 191 324 490 698 957 1281 ...  2826 s   900 s, 6 statt 10
+Sie ist also nicht gegriffen, sondern das, was die vorhandene Bremse
+erlaubt - und wer N2 hochsetzt, bekommt sie geliefert.
 
-Das ist das Kennzeichen einer richtigen Grenze: sie fasst nichts an, was
-schon vernuenftig war. Sie braucht kein FlexNet, keine neue Einstellung
-und keine Schaetzung - ein Vergleich in recover(). Und sie macht die
-beiden Seiten vertraeglich: A hoert genau dann auf zu rufen, wenn B zum
-ersten Mal nachfragt.
+DER DECKEL GEHOERT AUFS INKREMENT, NICHT AUF DIE GESAMTDAUER
+Ich hatte zuerst vorgeschlagen, die Aufbauphase bei T3 zu kappen. Thomas'
+Einwand dagegen ist richtig und beendet die Variante: das nimmt dem
+Nutzer Versuche weg (bei acht Digis sechs statt zehn), und wer zehnmal
+probieren will, soll das duerfen. Stoerend ist nicht die Zahl der
+Versuche, sondern der ABSTAND zwischen zweien.
 
-Die beiden Wege schliessen sich nicht aus, sie tun Verschiedenes: die
-FlexNet-Schaetzung formt die KURVE, T3 setzt die DECKE. Wird nur eines
-gebaut, ist die Decke das, wonach gefragt war.
+Also den Wachstumswert deckeln und alle zehn Versuche lassen. Mit
+C = 120 s, Thomas' Wahl:
+
+  Digis  SABM-Zeitpunkte (s)                        Summe   groesster
+                                                             Abstand
+   0 h   0 5 11 19 29 41 56 75 99 129                166 s     37 s
+   0 C   unveraendert
+   2 h   0 25 56 95 144 205 281 377 496 645          831 s    186 s
+   2 C   0 25 56 95 144 205 281 377 496 616          736 s    120 s
+   8 h   0 85 191 324 490 698 957 1281 1687 2193    2826 s    633 s
+   8 C   0 85 191 311 431 551 671 791 911 1031      1151 s    120 s
+
+Der Nahbereich bleibt unberuehrt, acht Digis fallen von siebenundvierzig
+auf neunzehn Minuten, und kein Abstand ueberschreitet zwei Minuten. Bei
+zwei Digis greift der Deckel am Ende leicht (186 auf 120 s) - das ist
+gewollt, nicht uebersehen.
+
+WAS DIE ZAHLEN SAGEN, und daran haengt die Auslegung: der Deckel regelt
+den ABSTAND direkt und die SUMME nur nebenbei. Bei acht Digis faellt der
+Abstand um 81 Prozent, die Summe um 59 - der Rest steckt in T1(0) = 85 s,
+und die kommt aus der Digi-Schaetzung. Die Sache zerfaellt damit sauber
+in zwei Werkzeuge fuer zwei verschiedene Beschwerden:
+
+  absurder ABSTAND zwischen zwei SABMs   Deckel aufs Inkrement
+  absurde SUMME bis zum Aufgeben          T1(0) reparieren, also die
+                                          FlexNet-Schaetzung oder der
+                                          Start bei T1init
+
+Beide zusammen ergeben 166 s Summe und 37 s groessten Abstand, und zwar
+UNABHAENGIG von der Digizahl - die 0-Digi-Zeile gilt dann fuer alle.
+
+DER EINGRIFF ist eine Zeile, und zwar genau die, in der Blimit schon
+sitzt (lapbtime.c):
+
+    if(axp->retries < Blimit)
+	    set_timer(&axp->t1,(dur_timer(&axp->t1)*5+2)/4);
+
+VORSICHT DABEI, sonst wird daraus ein Fehler: recover() ist der T1 fuer
+ALLE Zustaende, nicht nur fuer den Aufbau. In CONNECTED und RECOVERY ist
+T1 gemessen (4*mdev+srt), und ein schlichtes min(neu, C) wuerde einen
+gemessenen Wert oberhalb von C nach UNTEN ziehen - also auf einer
+wirklich zaehen Strecke wiederholen, bevor eine Antwort ueberhaupt
+eintreffen kann. Der Deckel darf nur das WACHSTUM begrenzen, nie kuerzen:
+
+    neu = (dur_timer(&axp->t1)*5+2)/4;
+    set_timer(&axp->t1, max(dur_timer(&axp->t1), min(neu, C)));
+
+Zu entscheiden bleibt, ob C nur im Aufbau gilt oder ueberall. Fuer
+"ueberall" spricht, dass ein Abstand von vierzig Minuten auch in
+RECOVERY unsinnig ist; dagegen, dass dort gemessen wird statt geraten und
+eine Messung mehr Vertrauen verdient als eine Schaetzung.
 
 WAS ICH VOR DEM BAUEN GEFRAGT HAETTE, damit es nicht zweimal gebaut wird:
   * Faktor und Gnadenfrist. "Umlaufzeit mal Faktor plus 30 s" stand oben;
@@ -1487,13 +1529,12 @@ WAS ICH VOR DEM BAUEN GEFRAGT HAETTE, damit es nicht zweimal gebaut wird:
   * Gilt das Limit auch fuer den NET/ROM-L4-Aufbau und den Proxy-Connect?
     Oben steht, NETROM tauge dafuer als Indiz; dann waere es dieselbe
     Auskunft an einer zweiten Stelle, aber ein eigener Commit.
-  * Ist die Decke T3 selbst, oder eine eigene Zahl daneben? Fuer T3
-    spricht, dass wer ihn hochsetzt beides zusammen hochsetzt und die
-    Bedeutung dieselbe bleibt ("so lange darf es still sein"). Dagegen
-    spricht, dass eine Aufbaugrenze und ein Nachfrageintervall zwei
-    Entscheidungen sind, die nur zufaellig dieselbe Groessenordnung haben.
-    Ich wuerde mit T3 anfangen und eine eigene Zahl erst einfuehren, wenn
-    jemand sie vermisst.
+  * C ist gesetzt: 120 s, Thomas' Wahl (2026-08-18). Offen ist nur noch,
+    ob es fest verdrahtet wird oder als "ax25 tmax" einstellbar. Fuer
+    einstellbar spricht, dass jeder andere Timer hier es auch ist; dagegen,
+    dass eine Zahl mehr auch eine Zahl mehr zum Falscheinstellen ist.
+  * Gilt C nur im Aufbau oder in jedem Zustand? Siehe die Warnung oben -
+    in RECOVERY ist T1 gemessen, und Messungen soll man nicht kuerzen.
 
 ------------------------------------------------------------------------
 6PACK UND PACLEN - ERLEDIGT, MIT DER RICHTIGEN ZAHL (2026-08-17)
