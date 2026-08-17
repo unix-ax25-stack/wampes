@@ -136,7 +136,8 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			 * leaving it to be found.
 			 */
 			if(knew != AXR_EAX25_YES && iface != NULL &&
-			   iface->eax25 == EAX25_ACCEPT){
+			   iface->eax25 == EAX25_ACCEPT && !iface->eax25_hinted){
+				iface->eax25_hinted = 1;
 				char who[AXBUF];
 				char msg[128];
 
@@ -145,6 +146,13 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 				 "\"ifconfig %s eax25 caller\" would use it "
 				 "outbound too",
 				 pax25(who,hdr->source),iface->name);
+				/* Both, because neither reaches everyone:
+				 * logmsg() returns at once when no "log" file
+				 * is configured, and the console is nothing on
+				 * a node started without one.  What survives in
+				 * either case is the E in "ax25 route list".
+				 */
+				printf("%s\n",msg);
 				logmsg(NULL,"%s",msg);
 			}
 		} else

@@ -68,9 +68,19 @@ it writes one line to the log:
     DB0AAA-5 speaks EAX25 (modulo-128) - "ifconfig ax0 eax25 caller"
     would use it outbound too
 
-Once per station, and never on a port that is already set to ask.  That
-turns the conservative default into one that advertises itself, from what
-the node actually heard rather than from documentation.
+It goes to the console **and** to the log, because neither reaches
+everyone on its own: `logmsg()` returns at once when no `log` file is
+configured, and the console is nothing on a node started without one.
+What survives in either case is the `E` beside the station in
+`ax25 route list` - the pull half of the same answer, for the operator who
+goes looking rather than watching.
+
+Once per **port**, not per station, and never on a port already set to
+ask.  The advice names the port, so repeating it for every caller adds
+nothing - and on a user access carrying many stations it would be a
+nuisance rather than a hint.  That turns the conservative default into one
+that advertises itself, from what the node actually heard rather than from
+documentation.
 
 **An interlink therefore wants `caller` at least**, because we open those
 links ourselves - `netrom links ... permanent`, `flexnet link add` - and

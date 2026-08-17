@@ -177,6 +177,12 @@ struct iface {
 	int emaxframe;
 
 	int eax25;
+	int eax25_hinted;       /* We have already said, on this port, that
+				 * somebody here speaks modulo-128.  Once per
+				 * PORT and not per station: the advice names
+				 * the port, so repeating it for every caller
+				 * adds nothing and on a busy user access it
+				 * would be a nuisance. */
 /* Zero is the default on purpose: an unconfigured port answers modulo-128
  * when it is offered and never asks for it, so nothing changes for anyone
  * who has not asked for it.  Probing costs 19 s against a peer that ignores
