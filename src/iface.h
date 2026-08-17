@@ -167,10 +167,26 @@ struct iface {
 	 */
 	int framemax;
 
+	/* Per-port overrides for the three numbers that are otherwise one for
+	 * the whole node.  Zero means "use the global".  A node with a 1k2
+	 * user access and a 19k2 interlink wants two different answers, and
+	 * the right window and packet length are properties of the CHANNEL.
+	 */
+	int paclen;
+	int maxframe;
+	int emaxframe;
+
 	int eax25;
-#define EAX25_CALLER    0       /* follow the caller; try when we originate */
+/* Zero is the default on purpose: an unconfigured port answers modulo-128
+ * when it is offered and never asks for it, so nothing changes for anyone
+ * who has not asked for it.  Probing costs 19 s against a peer that ignores
+ * SABME, once per station, and that is not a cost to hand to every
+ * installation by surprise.
+ */
+#define EAX25_ACCEPT    0       /* answer SABME, never send one */
 #define EAX25_OFF       1       /* never - answer SABME with DM */
-#define EAX25_ALWAYS    2       /* also upgrade a caller who asked for AX.25 */
+#define EAX25_CALLER    2       /* follow the caller; ask when we originate */
+#define EAX25_ALWAYS    3       /* also upgrade a caller who asked for AX.25 */
 };
 extern struct iface *Ifaces;    /* Head of interface list */
 extern struct iface  Loopback;  /* Optional loopback interface */

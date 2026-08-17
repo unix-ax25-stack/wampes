@@ -37,6 +37,9 @@ int iftncinit(int argc,char *argv[],void *p);
 static int ifautoroute(int argc,char *argv[],void *p);
 static int ifdigiarp(int argc,char *argv[],void *p);
 static int ifeax25(int argc,char *argv[],void *p);
+static int ifpaclen(int argc,char *argv[],void *p);
+static int ifmaxframe(int argc,char *argv[],void *p);
+static int ifemaxframe(int argc,char *argv[],void *p);
 
 /* Interface list header */
 struct iface *Ifaces = &Loopback;
@@ -144,8 +147,11 @@ struct cmds Ifcmds[] = {
 	{ "dama",                 ifdama,         0,      2,      NULL },
 	{ "damatimeout",          ifdamatimeout,  0,      2,      NULL },
 	{ "eax25",                ifeax25,        0,      2,
-	  "ifconfig <iface> eax25 off|caller|always" },
+	  "ifconfig <iface> eax25 off|accept|caller|always" },
+	{ "emaxframe",            ifemaxframe,    0,      2,      NULL },
 	{ "encapsulation",        ifencap,        0,      2,      NULL },
+	{ "maxframe",             ifmaxframe,     0,      2,      NULL },
+	{ "paclen",               ifpaclen,       0,      2,      NULL },
 	{ "forward",              ifforw,         0,      2,      NULL },
 	{ "ipaddress",            ifipaddr,       0,      2,      NULL },
 	{ "linkaddress",          iflinkadr,      0,      2,      NULL },
@@ -422,20 +428,59 @@ ifeax25(int argc,char *argv[],void *p)
 	if(argc < 2){
 		printf("EAX25 (modulo-128): %s\n",
 		 ifp->eax25 == EAX25_OFF ? "off" :
-		 ifp->eax25 == EAX25_ALWAYS ? "always" : "caller");
+		 ifp->eax25 == EAX25_ALWAYS ? "always" :
+		 ifp->eax25 == EAX25_CALLER ? "caller" : "accept");
 		return 0;
 	}
 	if(!stricmp(argv[1],"off"))
 		ifp->eax25 = EAX25_OFF;
+	else if(!stricmp(argv[1],"accept"))
+		ifp->eax25 = EAX25_ACCEPT;
 	else if(!stricmp(argv[1],"caller"))
 		ifp->eax25 = EAX25_CALLER;
 	else if(!stricmp(argv[1],"always"))
 		ifp->eax25 = EAX25_ALWAYS;
 	else {
-		printf("Valid options: off caller always\n");
+		printf("Valid options: off accept caller always\n");
 		return 1;
 	}
 	return 0;
+}
+
+/* Packet length and window, per port.  Zero gives the node's own setting
+ * back, which is what an unconfigured port uses.  These are properties of the
+ * CHANNEL - a 1k2 user access and a 19k2 interlink want different answers and
+ * until now could not have them.
+ *
+ * The driver's hard limit still wins over whatever is set here; see
+ * ax25_apply_iface_limits().
+ */
+
+static int
+ifpaclen(int argc,char *argv[],void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+
+	return setintrc(&ifp->paclen,"Max frame length, this port (0 = node)",
+	 argc,argv,0,MAXINT16);
+}
+
+static int
+ifmaxframe(int argc,char *argv[],void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+
+	return setintrc(&ifp->maxframe,"Window, this port (0 = node)",
+	 argc,argv,0,7);
+}
+
+static int
+ifemaxframe(int argc,char *argv[],void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+
+	return setintrc(&ifp->emaxframe,
+	 "Window modulo-128, this port (0 = node)",argc,argv,0,63);
 }
 
 /* Set the network mask. This is actually done by installing
@@ -579,9 +624,20 @@ showiface(struct iface *ifp)
 	printf("           recv: ip %lu tot %lu idle %s\n",
 	 (unsigned long)ifp->iprecvcnt,(unsigned long)ifp->rawrecvcnt,
 	 tformat(secclock() - ifp->lastrecv));
+	if(ifp->paclen || ifp->maxframe || ifp->emaxframe || ifp->framemax){
+		printf("           paclen %d maxframe %d emaxframe %d",
+		 ifp->paclen ? ifp->paclen : Paclen,
+		 ifp->maxframe ? ifp->maxframe : Maxframe,
+		 ifp->emaxframe ? ifp->emaxframe : EMaxframe);
+		if(ifp->framemax)
+			printf("  (this port carries at most %d octets)",
+			 ifp->framemax);
+		printf("\n");
+	}
 	printf("           eax25: %s\n",
 	 ifp->eax25 == EAX25_OFF ? "off" :
-	 ifp->eax25 == EAX25_ALWAYS ? "always" : "caller");
+	 ifp->eax25 == EAX25_ALWAYS ? "always" :
+	 ifp->eax25 == EAX25_CALLER ? "caller" : "accept");
 	switch (ifp->crccontrol){
 	default:            printf("           crc off");           break;
 	case CRC_TEST_16:   printf("           crc-16 test");       break;

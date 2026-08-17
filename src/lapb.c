@@ -674,7 +674,7 @@ int rex_all
 				/* Update timeout */
 				tmp = 4*axp->mdev+axp->srt;
 				set_timer(&axp->t1,max(tmp,500));
-				if(axp->maxframe < (axp->mmask == EMMASK ? EMaxframe : Maxframe))
+				if(axp->maxframe < ax25_maxframe(axp))
 					axp->maxframe++;
 			}
 			axp->flags.retrans = 0;
@@ -748,11 +748,12 @@ static int eax25_wanted(struct iface *ifp, uint8 *dest, struct ax25_cb *from)
 {
 	struct ax_route *rp;
 
-	if(ifp != NULL && ifp->eax25 == EAX25_OFF)
+	/* No port yet, or a port that only answers: do not ask. */
+	if(ifp == NULL || ifp->eax25 == EAX25_OFF || ifp->eax25 == EAX25_ACCEPT)
 		return MMASK;
 	if((rp = ax_routeptr(dest,0)) != NULL && rp->eax25 == AXR_EAX25_NO)
 		return MMASK;
-	if(ifp != NULL && ifp->eax25 == EAX25_ALWAYS)
+	if(ifp->eax25 == EAX25_ALWAYS)
 		return EMMASK;
 	if(from != NULL)
 		return from->mmask;
@@ -1420,5 +1421,43 @@ const struct ax25_opts *opts)
 	axp->srt = 0;
 	axp->mdev = (T1init * (1 + 2 * (axp->hdr.ndigis - axp->hdr.nextdigi)) + 2) / 4;
 	set_timer(&axp->t1, 4 * axp->mdev);
+	ax25_apply_iface_limits(axp);
+}
+
+/* The window this link may grow to.  Per port if the port says so, else the
+ * node's setting, and which of the two numbers applies is decided by the
+ * modulus the link agreed on.
+ */
+
+int ax25_maxframe(struct ax25_cb *axp)
+{
+	struct iface *ifp = axp->iface;
+
+	if(axp->mmask == EMMASK)
+		return (ifp && ifp->emaxframe) ? ifp->emaxframe : EMaxframe;
+	return (ifp && ifp->maxframe) ? ifp->maxframe : Maxframe;
+}
+
+/* Take the packet length from the port if it has one, and then let the
+ * driver's hard limit override both.  Without that last step "ax25 paclen
+ * 1024" silences a 6pack port - sixpack_encode() drops what it cannot hold -
+ * while every other port keeps working, which is the worst way to find out.
+ */
+
+void ax25_apply_iface_limits(struct ax25_cb *axp)
+{
+	struct iface *ifp = axp->iface;
+	int room;
+
+	axp->paclen = (ifp && ifp->paclen) ? ifp->paclen : Paclen;
+	if(ifp && ifp->framemax){
+		room = ifp->framemax
+		     - (2 + axp->hdr.ndigis) * AXALEN   /* addresses */
+		     - 2                                /* control, modulo-128 */
+		     - 1                                /* PID */
+		     - 2;                               /* FCS */
+		if(room > 0 && axp->paclen > room)
+			axp->paclen = room;
+	}
 }
 

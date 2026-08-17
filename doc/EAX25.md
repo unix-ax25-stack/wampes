@@ -50,16 +50,32 @@ window on a lossy channel is not a gain.
 
 ## Configuration
 
-    ifconfig <iface> eax25 off | caller | always      (default: caller)
-    ax25 emaxframe <1..63>                            (default: 32)
+    ifconfig <iface> eax25 off | accept | caller | always   (default: accept)
+    ifconfig <iface> paclen | maxframe | emaxframe <n>      (0 = node's own)
+    ax25 emaxframe <1..63>                                  (default: 32)
+
+`accept` - the default, and it changes nothing for anyone: we answer a
+SABME when one arrives and never send one.  Probing costs 19 s against a
+peer that ignores SABME - once per station, but that is not a cost to hand
+to every installation by surprise.  An unconfigured node behaves as it
+always did, which is the same rule `doc/ROUTE-FILTER.md` follows.
+
+**An interlink therefore wants `caller` at least**, because we open those
+links ourselves - `netrom links ... permanent`, `flexnet link add` - and
+under `accept` we never ask.  That is also the right way to think about
+such a link: it carries NET/ROM *and* FlexNet *and* IP *and* plain text,
+so its modulus is a property of the **link**, not of any one session.
+`always` on an exclusive interlink is not an aggressive setting, it is
+simply the statement "this link runs modulo-128".
 
 `off` - never.  An incoming SABME is answered with DM, and we never send
 one.  For an interlink whose partner is known not to speak it, so that not
 a single probe is wasted.  It is not a way to save bandwidth: the extra
 cost of modulo-128 is one octet per I and S frame, 0.4 % at `paclen` 256.
 
-`caller` - the default, and the whole rule is: **a caller who asked for
-plain AX.25 is carried onward as plain AX.25**.  Not because asymmetry is
+`caller` - ask once when the connect starts here, and when relaying, do
+what the caller asked for: **a caller who asked for plain AX.25 is carried
+onward as plain AX.25**.  Not because asymmetry is
 harmful in itself - we terminate and acknowledge hop by hop, so the two
 halves are independent anyway - but because of where the control sits.  If
 we upgraded his link on the leg beyond us and that leg then misbehaved, he
@@ -75,10 +91,16 @@ path while the caller's patience scales with *his*, and if ours is the
 longer one he gives up before we have fallen back.  Same class of
 configuration error as `advert no` on a node with several uplinks.
 
-Both `maxframe` and `emaxframe`, like `paclen`, are one number for the
-whole node.  A node with a 1k2 user access and a 19k2 interlink wants two
-different answers and cannot have them; that is older than this work and
-is noted in `TODO.txt`.
+`paclen`, `maxframe` and `emaxframe` can now be set **per port** as well,
+with 0 meaning "use the node's".  They are properties of the channel, and
+a node with a 1k2 user access and a 19k2 interlink wants two different
+answers.  Whatever is set, the driver's own limit still wins: `struct
+iface` has `framemax`, the driver declares it at attach, `ifmtu()` refuses
+to be configured past it and `ax25_apply_iface_limits()` clamps the packet
+length to it.  6pack declares 510 - `SIXP_MAX_FRAME` bounds the decoded
+frame, and `sixpack_encode()` used to drop what it could not hold without
+a word.  The NET/ROM pseudo-interface declares `NR4MAXINFO`, so
+`ifconfig netrom mtu 1500` is now answered rather than obeyed.
 
 ## Falling back
 
@@ -166,3 +188,30 @@ sign extension off again.
 
 `always` is built but **not** measured: proving it needs a rig that
 digipeats through us, which `eaxpeer.py` does not do yet.
+
+## What a larger packet length does to the rest
+
+Asked because `ax25 paclen` accepts up to 32767 and always did.  Measured
+at 1024 over axip: 108 894 bytes in 107 frames of 1024, 75 097 B/s against
+63 335 at 256.  Nothing else moves:
+
+* **NET/ROM nodes broadcast** caps itself in `send_broadcast()` -
+  `if ((bp->cnt = p - bp->data) > 258 - NRRTDESTLEN)` closes the frame and
+  starts another.  258 octets, hard-coded, `paclen` never enters into it.
+* **FlexNet** the same, at `LENROUT` = 256: `flexnet.c:460` breaks a ROUT
+  and begins a new frame at `LENROUT - 14`.  `FLEX_POLL` is 201 by
+  definition.  Measured at 256 and at 1024 - identical.
+* **NET/ROM frames** cannot exceed 256 either way: the L3 and L4 headers
+  are fixed and the information field is `NR4MAXINFO` = 236.
+* **IP** fragments on the interface MTU, which is a separate number.
+* **Segmentation** is only ever reached from `ax25.c:147`, IP over AX.25
+  in connected mode, and a *larger* `paclen` means *fewer* segments - the
+  seven-bit counter gets further away, not closer.  Measured on a
+  modulo-128 link with MTU 1500: a 1421-octet datagram arrived as 6
+  segments at `paclen` 256 and as 3 at a per-port `paclen` 512,
+  reassembled to the byte both times.
+
+So a larger packet length is the safe direction.  The dangerous one is a
+*small* `paclen` with a large MTU - at 12 or less an ordinary 1500-octet
+datagram needs more than the 127 segments the counter can express, which
+`segmenter()` already refuses rather than truncating.

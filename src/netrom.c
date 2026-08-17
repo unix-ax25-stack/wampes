@@ -2102,6 +2102,11 @@ int nr_attach(int argc, char *argv[], void *p)
   Nr_iface->hwaddr = (uint8 *) mallocw(AXALEN);
   memcpy(Nr_iface->hwaddr, Mycall, AXALEN);
   Nr_iface->mtu = NR4MAXINFO;
+  /* And it is not merely the default - a NET/ROM information field IS
+   * NR4MAXINFO, so "ifconfig netrom mtu 1500" is not a setting but a lie.
+   * Declaring it lets ifmtu() say so.
+   */
+  Nr_iface->framemax = NR4MAXINFO;
   setencap(Nr_iface, "NETROM");
   Nr_iface->next = Ifaces;
   Ifaces = Nr_iface;
