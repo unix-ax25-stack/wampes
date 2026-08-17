@@ -22,6 +22,7 @@ static void enq_resp(struct ax25_cb *axp);
 static void inv_rex(struct ax25_cb *axp);
 static void resequence(struct ax25_cb *axp,struct mbuf **bpp,int ns,int pf,int poll);
 static int eax25_wanted(struct iface *ifp,uint8 *dest,struct ax25_cb *from);
+static void eax25_hint(struct iface *ifp,struct ax25 *hdr);
 
 /* Process incoming frames */
 int
@@ -105,6 +106,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	 * now rather than after his retries run out.
 	 */
 	if(type == SABME && iface != NULL && iface->eax25 == EAX25_OFF){
+		eax25_hint(iface,hdr);
 		sendctl(axp,LAPB_RESPONSE,DM | (control & PF));
 		free_p(bpp);
 		return 0;
@@ -113,48 +115,15 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	if(type == SABM || type == SABME){
 		axp->mmask = (type == SABME) ? EMMASK : MMASK;
 		if(type == SABME){
-			struct ax_route *rp;
-			int knew;
-
 			axp->hdr.ext |= SSID_EAX25;
 			/* He is calling US with it, so he can do it - the one
 			 * piece of evidence that needs no probe, and the one
 			 * that undoes an earlier "cannot" the moment his end
 			 * is fixed.
 			 */
-			rp = ax_routeptr(hdr->source,0);
-			knew = rp ? rp->eax25 : AXR_EAX25_UNKNOWN;
 			eax25_remember(hdr->source,AXR_EAX25_YES);
 
-			/* Say so once, the first time, and only on a port that
-			 * merely answers.  The default is not to ask anyone -
-			 * see doc/EAX25.md - and an operator who never reads
-			 * the documentation would otherwise never learn that
-			 * the station he is talking to could do better.  So
-			 * the node reports where the setting would pay,
-			 * measured from what it actually heard, rather than
-			 * leaving it to be found.
-			 */
-			if(knew != AXR_EAX25_YES && iface != NULL &&
-			   iface->eax25 == EAX25_ACCEPT && !iface->eax25_hinted){
-				iface->eax25_hinted = 1;
-				char who[AXBUF];
-				char msg[128];
-
-				sprintf(msg,
-				 "%s speaks EAX25 (modulo-128) - "
-				 "\"ifconfig %s eax25 caller\" would use it "
-				 "outbound too",
-				 pax25(who,hdr->source),iface->name);
-				/* Both, because neither reaches everyone:
-				 * logmsg() returns at once when no "log" file
-				 * is configured, and the console is nothing on
-				 * a node started without one.  What survives in
-				 * either case is the E in "ax25 route list".
-				 */
-				printf("%s\n",msg);
-				logmsg(NULL,"%s",msg);
-			}
+			eax25_hint(iface,hdr);
 		} else
 			axp->hdr.ext &= ~SSID_EAX25;
 	}
@@ -767,6 +736,37 @@ void eax25_remember(uint8 *call, int verdict)
 
 	if((rp = ax_routeptr(call,1)) != NULL)
 		rp->eax25 = verdict;
+}
+
+/* The first modulo-128 call heard on a port that does not ask for it - once
+ * per port and per run, whoever it came from.  The default is not to ask
+ * anyone (see doc/EAX25.md), and an operator who never reads the
+ * documentation would otherwise not learn that this port has partners who
+ * could do better.  Reported on "off" as well: he said no once, and what he
+ * hears now may be a partner who has since been replaced.
+ *
+ * The packet header goes with it, so it says WHO was heard and over which
+ * path, instead of only that somebody was.
+ *
+ * Console AND log, because neither reaches everyone on its own: logmsg()
+ * returns at once when no "log" file is configured, and the console is
+ * nothing on a node started without one.  What survives in either case is
+ * the E in "ax25 route list".
+ */
+
+static void eax25_hint(struct iface *ifp,struct ax25 *hdr)
+{
+	char msg[256];
+
+	if(ifp == NULL || ifp->eax25_hinted)
+		return;
+	if(ifp->eax25 != EAX25_ACCEPT && ifp->eax25 != EAX25_OFF)
+		return;
+	ifp->eax25_hinted = 1;
+	sprintf(msg,"EAX25 heard on %s. Consider \"ifconfig %s eax25 caller\"."
+	 "  Packet: %s",ifp->name,ifp->name,ax25hdr_to_string(hdr));
+	printf("%s\n",msg);
+	logmsg(NULL,"%s",msg);
 }
 
 /* Which modulus a link we are about to open should ask for.

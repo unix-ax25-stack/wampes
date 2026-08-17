@@ -62,11 +62,12 @@ always did, which is the same rule `doc/ROUTE-FILTER.md` follows.
 
 It has one cost, and it is the one Thomas named: an operator who does not
 read this page never learns the feature is there.  So the node says so.
-The first time a station calls us with SABME on a port that only accepts,
-it writes one line to the log:
+The first time a modulo-128 call is heard on a port that does not ask for
+one, it reports it - with the packet header, so it says who was heard and
+over which path:
 
-    DB0AAA-5 speaks EAX25 (modulo-128) - "ifconfig ax0 eax25 caller"
-    would use it outbound too
+    EAX25 heard on ax0. Consider "ifconfig ax0 eax25 caller".
+      Packet: DB0AAA-5->TEST-1
 
 It goes to the console **and** to the log, because neither reaches
 everyone on its own: `logmsg()` returns at once when no `log` file is
@@ -75,10 +76,15 @@ What survives in either case is the `E` beside the station in
 `ax25 route list` - the pull half of the same answer, for the operator who
 goes looking rather than watching.
 
-Once per **port**, not per station, and never on a port already set to
-ask.  The advice names the port, so repeating it for every caller adds
-nothing - and on a user access carrying many stations it would be a
-nuisance rather than a hint.  That turns the conservative default into one
+Once per **port** and per run, not per station, and never on a port
+already set to ask.  The advice names the port, so repeating it for every
+caller adds nothing - and on a user access carrying many stations, or when
+the far side retries its SABMEs through us as a digi, it would be a
+nuisance rather than a hint.
+
+It is reported on `off` as well, not only on `accept`: the operator said
+no once, and what he is hearing now may be a partner that has since been
+replaced.  That turns the conservative default into one
 that advertises itself, from what the node actually heard rather than from
 documentation.
 
