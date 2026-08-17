@@ -1388,6 +1388,95 @@ angekuendigten Umlaufzeit sich auf einen NEUEN Aufbau auswirkt und auf einen
 laufenden nicht, und dass ein "unerreichbar" (MAXDELAY+1) nicht als Limit
 durchschlaegt.
 
+DIE ANDEREN UHREN STEHEN NICHT IM WEG (Thomas' Rueckfrage, nachgelesen)
+Vorgaben: T1 5 s, T3 900 s (Idle-Poll), T4 60 s (busy), T5 3600 s
+(Idle-Disconnect). Ein grosses T1 kollidiert mit keiner davon:
+
+  * T3 und T1 sind VERRIEGELT, nicht durch Zahlenwahl sondern durch Bau.
+    est_link() macht stop_timer(&axp->t3), bevor es T1 startet - im Aufbau
+    laeuft T3 gar nicht. Verbunden laeuft T3 nur bei unack == 0
+    ("stop_timer(&axp->t1); start_timer(&axp->t3);"), und wenn T3 feuert,
+    macht tx_enq() als Letztes wieder stop t3 / start t1. Es laeuft immer
+    genau einer von beiden. T4 muendet in dieselbe Funktion.
+  * T5 laeuft im Aufbau nicht. Alle acht start_timer(&axp->t5) sitzen auf
+    verbundenen Pfaden (UA in SETUP, angenommenes SABM, I-Rahmen, eigenes
+    Senden). Ein langer Aufbau kann also nicht vom Idle-Disconnect
+    abgeschnitten werden.
+  * N2 ist kein Gegenspieler, sondern der MULTIPLIKATOR: es begrenzt die
+    Anzahl, nicht die Zeit, und die Gesamtdauer ist rund 33 mal T1init.
+    N2=10 wurde fuer eine Welt gewaehlt, in der T1 fuenf Sekunden war.
+    (Auf einem Relaisbein gilt N2 ohnehin nicht, dort ist bei retries > 2
+    Schluss - siehe den eigenen Abschnitt weiter unten.)
+
+DER VERLORENE UA, GEMESSEN (Thomas' zweite Frage)
+Geht ein UA auf der Strecke verloren, laufen die beiden Seiten auf
+Uhren ohne jeden Bezug zueinander: B haelt sich in dem Moment fuer
+verbunden, in dem sein UA hinausgeht (lapb.c setzt CONNECTED und startet
+T3 und T5; sein T1 laeuft gar nicht, weil er kein Kommando offen hat),
+waehrend A weiter im Aufbau auf T1 und N2 sitzt.
+
+Gemessen mit verkleinerten Timern (T1 2 s, T3 8 s, N2 3, Massstab 1:100)
+und eaxpeer.py --ua-verloren:
+
+     0,0 s  SABM -> UA, das UA wird verworfen
+     8,0 s  B fragt nach: RR(P)     A schweigt (LAPB_SETUP faellt in
+    10,0 s  RR(P)                   "default: All other frames ignored")
+    12,5 s  RR(P)
+    15,6 s  RR(P)
+    19,5 s  B gibt auf und schickt DM
+
+Auf die Vorgaben hochgerechnet endet B's Phantomverbindung bei T3 plus
+seinem eigenen Zyklus:
+
+  Digis   A gibt auf     B gibt auf              Phantom
+   0        166 s         1066 s (DM)            15,0 min
+   2        831 s         1731 s (DM)            15,0 min
+   8       2826 s         3600 s (T5 schickt DISC, bevor der Zyklus
+                          bei 3726 s fertig waere)   12,9 min
+
+ZWEI DINGE DARAN. Erstens ist der Abstand IMMER T3, denn beide Seiten
+rechnen mit demselben T1 mal demselben N2 - A ist genau eine
+Viertelstunde frueher fertig. Deshalb trifft B's DM einen A, der schon
+weg ist, und der Fall "DM im Aufbau heisst 'abgelehnt'" (lapb.c, case DM
+in LAPB_SETUP, reason LB_DM) schlaegt bei symmetrischen Einstellungen
+NICHT zu. Er braucht eine Asymmetrie: ein groesseres N2 oder T1init auf
+der A-Seite, einen Linux-Partner mit seinem laengeren Zyklus, oder
+verschiedene Digizahlen auf Hin- und Rueckweg. Dann ist die Diagnose
+falsch - "abgelehnt" fuer einen Versuch, den das naechste SABM getragen
+haette.
+
+Zweitens, und das ist fuer die Auslegung wichtiger: die Phantomdauer
+haengt an T3, nicht an T1. Ein Deckel auf T1 verkuerzt A's Zappeln, aber
+nicht B's Irrtum.
+
+THOMAS' DECKEL: T3 IST DIE ZAHL, DIE ES SCHON GIBT
+Sein Argument, und es traegt weiter als die FlexNet-Schaetzung oben: der
+Knoten besitzt bereits eine Zahl fuer "so lange darf nichts passieren" -
+T3, und mit T5 eine zweite fuers Aufgeben. Beides sind ZEITEN, beide vom
+Betreiber gesetzt, beide gelten fuer eine stehende Verbindung. Nur der
+Aufbau hat keine: dort entsteht die Dauer als Nebenprodukt aus einer
+Anzahl (N2) mal einer Schaetzung (T1init mal Digis) - die einzige Stelle
+im ganzen Timerwerk, an der eine Wartezeit nicht gewaehlt, sondern
+ausgerechnet wird.
+
+Deckelt man die Aufbauphase bei T3, aendert sich nur der pathologische
+Fall:
+
+  Digis  SABM-Zeitpunkte (s)                heute    mit Deckel T3
+   0     0 5 11 19 29 41 56 75 ...           166 s   unveraendert
+   2     0 25 56 95 144 205 281 377 ...      831 s   unveraendert
+   8     0 85 191 324 490 698 957 1281 ...  2826 s   900 s, 6 statt 10
+
+Das ist das Kennzeichen einer richtigen Grenze: sie fasst nichts an, was
+schon vernuenftig war. Sie braucht kein FlexNet, keine neue Einstellung
+und keine Schaetzung - ein Vergleich in recover(). Und sie macht die
+beiden Seiten vertraeglich: A hoert genau dann auf zu rufen, wenn B zum
+ersten Mal nachfragt.
+
+Die beiden Wege schliessen sich nicht aus, sie tun Verschiedenes: die
+FlexNet-Schaetzung formt die KURVE, T3 setzt die DECKE. Wird nur eines
+gebaut, ist die Decke das, wonach gefragt war.
+
 WAS ICH VOR DEM BAUEN GEFRAGT HAETTE, damit es nicht zweimal gebaut wird:
   * Faktor und Gnadenfrist. "Umlaufzeit mal Faktor plus 30 s" stand oben;
     mit Faktor 2 und einer typischen Dreihop-Strecke (delay 40, also 4 s
@@ -1398,6 +1487,13 @@ WAS ICH VOR DEM BAUEN GEFRAGT HAETTE, damit es nicht zweimal gebaut wird:
   * Gilt das Limit auch fuer den NET/ROM-L4-Aufbau und den Proxy-Connect?
     Oben steht, NETROM tauge dafuer als Indiz; dann waere es dieselbe
     Auskunft an einer zweiten Stelle, aber ein eigener Commit.
+  * Ist die Decke T3 selbst, oder eine eigene Zahl daneben? Fuer T3
+    spricht, dass wer ihn hochsetzt beides zusammen hochsetzt und die
+    Bedeutung dieselbe bleibt ("so lange darf es still sein"). Dagegen
+    spricht, dass eine Aufbaugrenze und ein Nachfrageintervall zwei
+    Entscheidungen sind, die nur zufaellig dieselbe Groessenordnung haben.
+    Ich wuerde mit T3 anfangen und eine eigene Zahl erst einfuehren, wenn
+    jemand sie vermisst.
 
 ------------------------------------------------------------------------
 6PACK UND PACLEN - ERLEDIGT, MIT DER RICHTIGEN ZAHL (2026-08-17)
