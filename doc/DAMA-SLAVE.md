@@ -27,27 +27,49 @@ polling cycle, and only it must serialise the uplink across ports that share a
 frequency.  A slave answers polls addressed to it, on whichever port they
 arrive, and does not care how the master organises itself.
 
-## Two bits make a poll
+## What marks a DAMA channel, and what hands us the turn
 
 Getting this wrong costs the connection in either direction - too strict and
 we never answer, too loose and we transmit unbidden and get disconnected by a
-node that enforces DAMA.  So it is worth being exact:
+node that enforces DAMA.  So it is worth being exact, and it is two separate
+things:
 
 | | |
 |---|---|
-| the **DAMA bit** in the master's SSID octet | this is a DAMA channel at all |
-| **command**, with the **poll bit** set | and this frame hands us the channel |
+| the **DAMA bit** in the **master's** SSID octet | this port is on a DAMA channel |
+| **command**, with the **poll bit** set | and this frame hands us the turn |
 
 The DAMA bit is active low on the wire - normally that octet carries `0x60`, a
 DAMA master sends `0x40` - and `ntohax25()` has read it into `hdr->ext` since
 long before any of this.  The provision was there; nothing used it.
 
-The paper is emphatic that the word "poll" does **not** mean the P bit.  That
-is a remark about vocabulary, not about the wire: a master that wants an
-answer sets P, because that is what ordinary AX.25 does.  Both existing
-implementations key off exactly the pair above - TNN tests `rxfDA` and then
-`rxfPF && rxfCR` (`l2rx.c`), Linux tests `type == AX25_COMMAND && pf`
-(`ax25_ds_in.c`).  Two independent implementations, one rule.  We follow them.
+**It is the master's SSID, so on a connection the user placed it arrives in
+the UA**, not in the SABM - the SABM is ours.  Only when the node calls the
+user does it come in a SABM.
+
+**We latch rather than require it per frame**, and that is a deliberate
+choice between the two existing implementations, which differ here:
+
+* TNN wraps its poll test in `if (rxfDA)` (`l2rx.c`) and so needs the bit on
+  every polling frame.
+* Linux latches the mode at connect (`ax25_dama_on`) and afterwards looks only
+  at `command && pf` (`ax25_ds_in.c`).
+
+The paper allows either - *"it would be sufficient to tell the user to switch
+to DAMA mode only once, at connect time.  This state would then remain in
+effect until disconnect."*  A master may therefore legitimately mark nothing
+after the UA, and a slave that demanded the bit per frame would stay silent
+against it for ever.  Accepting both costs nothing, because the watchdog
+already covers the other direction: a master that stops speaking DAMA
+altogether stops feeding it.
+
+Measured, with a master that marks the SABM and nothing afterwards: the slave
+still holds its acknowledgement and still answers the poll.
+
+The paper is separately emphatic that the word "poll" does **not** mean the P
+bit.  That is a remark about vocabulary, not about the wire: a master that
+wants an answer sets P, because that is what ordinary AX.25 does, and both
+implementations key off it.
 
 **And where the paper and the practice disagree, we follow the practice.**
 DK4EG writes that *"the user will acknowledge I-frames immediately with an
@@ -56,6 +78,25 @@ nothing, the acknowledgement is only noted and goes out on the answer to the
 next poll.  The reason is throughput - a master serving several stations in
 turn does not want acknowledgements arriving in the gaps, where they collide
 with whoever is being served next.
+
+## UI frames are outside all of this
+
+The specification takes datagrams out of the poll discipline explicitly:
+
+> *"In CSMA as well as in a DAMA environment, the UI frames are treated in a
+> special way ... Normally UI-frames are never sent from a user to a node, and
+> it is not good headwork to make a habit of making UI-frame direct QSOs on
+> the input frequency of a node.  However, in contrast to a duplex system it
+> is possible to actually do this.  So although the rare UI-frames will reduce
+> the throughput to the CSMA value, it will not drop to the much lower ALOHA
+> value ... UI-frames originated by the node are no problem since all stations
+> receive these frames."*
+
+Discouraged, but permitted, and subject to no permission.  Here that follows
+from where the gates sit rather than from any decision: they are all in
+`lapb.c` and `lapbtime.c`, which is connected mode.  UI leaves through
+`ax_output`/`axui_send` and touches none of them, so beacons, APRS, NET/ROM
+broadcasts and IP over UI carry on exactly as before.
 
 ## Where the gate sits
 

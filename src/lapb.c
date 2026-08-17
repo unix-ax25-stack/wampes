@@ -115,16 +115,25 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	if(cmdrsp == LAPB_UNKNOWN)
 		axp->proto = V1;        /* Old protocol in use */
 
-	/* DAMA.  The master's SSID octet says this is a DAMA channel, and that
-	 * is enough to keep the watchdog fed - any marked frame, not only a
-	 * poll.  A poll is that AND a command with the poll bit, which is what
-	 * "poll" already holds a few lines above.  Both bits are needed; see
-	 * dama.c for why the paper's remark about the P bit is not an argument
-	 * against using it.
+	/* DAMA.  The MASTER's SSID octet carries the bit, so on a connection
+	 * the user placed it arrives in the UA, not in the SABM - the SABM is
+	 * ours.  Any marked frame feeds the watchdog and puts this port into
+	 * DAMA mode; from then on a command with the poll bit is a poll,
+	 * whether or not that particular frame is marked as well.
+	 *
+	 * Deliberately the liberal reading, and it is not what TNN does: TNN
+	 * wraps its poll test in "if (rxfDA)" and so needs the bit on every
+	 * polling frame, while Linux latches the mode at connect and then
+	 * looks only at command+P.  The paper allows either - "it would be
+	 * sufficient to tell the user to switch to DAMA mode only once, at
+	 * connect time" - so a master may legitimately mark nothing after the
+	 * UA, and requiring the bit per frame would leave us silent for ever
+	 * against such a master.  Accepting both costs nothing: the watchdog
+	 * already handles a master that stops speaking DAMA at all.
 	 */
 	if(hdr->ext & SSID_DAMA)
 		dama_heard_frame(iface);
-	dama_poll_begin(axp,poll && (hdr->ext & SSID_DAMA));
+	dama_poll_begin(axp,poll);
 
 	/* This section follows the SDL diagrams by K3NA fairly closely */
 	switch(axp->state){
