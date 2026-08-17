@@ -147,7 +147,6 @@ struct iface {
 				 * on this port - the whole of a slave's
 				 * permission to transmit, and it belongs to
 				 * the station, not to one connection */
-	int dama_turn;          /* Which link gets the next turn */
 	uint8 dama_master[7];   /* Whose polls count.  On a DAMA channel one
 				 * station decides who transmits, so a poll
 				 * from anybody else is not a poll. */

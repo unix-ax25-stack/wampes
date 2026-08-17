@@ -42,11 +42,14 @@ it can only give the station its turn.  `ntohax25()` reads the DAMA bit from
 `hdr->source` and never from a digipeater field, so nothing about such a frame
 identifies the master either.
 
-So the window is opened by a poll on the port, and one link is served per
-window, taken in turn.  When the master polls a particular link of ours - the
-ordinary case - that link is the one served.  The turn is kept as an ordinal
-rather than a remembered control block, because a pointer would dangle the
-moment a link went away, and a link going away is how every connection ends.
+So the window is opened by a poll on the port, and **every** link on that port
+is served in it.  All of them, not one in rotation, which is TNN's answer
+rather than a guess: its slave empties every link when the gate opens
+(`l2dama.c`, `for (lnkpoi = ...) { damatx(); xmit_damail(); }`), while the
+rotation with `zael/indx` lives in its **master** half.  That is the sensible
+division - fairness between one user's several connections is the master's
+business, exercised by how often it polls him, and a slave that also held
+itself back would be rationing a turn that was already rationed.
 
 **Only the master's polls count.**  The port remembers the callsign of the
 station whose frames carried the DAMA bit, and a command with the poll bit
@@ -328,11 +331,23 @@ throughput of the channel.
 with an RR and *then* send the I frames, where the paper says the I frame's
 N(R) is the acknowledgement itself - *"having the correct count on the sent
 I-frame serves the same purpose as an ACK"*.  That is up to one frame per poll
-that carries data: the 11/36/102 column above.  Folding them is left undone
-deliberately, because it turns on a question no reading settles - does a real
-master accept an I frame as the answer to its poll, or does it insist on a
-response with F set?  Strict AX.25 wants the latter, the paper allows the
-former, and being wrong costs the connection.  One for the day at a real digi.
+that carries data: the 11/36/102 column above.  **TNN does fold them, at least on the master side, and the code is plain
+about it**: `damatx()` generates only I frames, and the caller falls through
+to a poll only `if (damatx() == FALSE)` - *"Keine Info zum senden gefunden,
+also Poll senden!"*.  Data replaces the supervisory frame, it does not
+accompany it, which is also how the paper puts it ("polls which might be
+included in ACK packets or even in transferred data frames").  On the slave
+side the source does not show it directly: the supervisory frame comes from a
+per-port list (`xmit_damarl`) that the receive path fills, and what it puts
+there is decided in the L2 state machine, not here.
+
+It is left undone anyway, because one question survives all of that: the
+master sets **P** on its polling RR.  Answering with an I frame is not, in
+AX.25 terms, a response with **F**, so the master's own T1 may consider its
+poll unanswered - unless its DAMA layer suppresses that.  The paper says the
+DAMA poll has nothing to do with the P bit, and TNN's master avoids the
+question by not setting P when it has data.  Whether a master tolerates the
+same from the other side is measurable at a real digi and nowhere else.
 
 ## Not built
 

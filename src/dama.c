@@ -189,64 +189,32 @@ void dama_poll_end(struct iface *ifp)
 
 /*---------------------------------------------------------------------------*/
 
-/* Our turn has come and the polled link has had its chance.  Give it to one
- * of the others on this port, taken in rotation - the digipeated connection
- * that the master cannot address, or the second link of a multiconnect.
+/* Our turn has come: serve the other links on this port too.
+ *
+ * ALL of them, not one in rotation, and that is TNN's answer rather than my
+ * first guess.  Its slave empties every link it has when the gate opens
+ * (l2dama.c: "for (lnkpoi = ...) { damatx(); xmit_damail(); }"), while the
+ * rotation with zael/indx lives in its MASTER half.  Which is the sensible
+ * division: fairness between one user's several connections is the master's
+ * business, exercised by how often it polls him, and a slave that also held
+ * itself back would be rationing a turn that was already rationed.
  *
  * Called once, at the end of lapb_input(), after the polled link itself has
- * been through lapb_output().  If that link sent something, the turn is used
- * up and this does nothing.
+ * been through lapb_output().
  */
 
 void dama_serve_others(struct iface *ifp, struct ax25_cb *polled)
 {
 	struct ax25_cb *axp;
-	int eligible = 0;
-	int n;
 
 	if (ifp == NULL || !ifp->dama_window)
 		return;
 
 	for (axp = Ax25_cb; axp != NULL; axp = axp->next)
-		if (axp != polled && axp->iface == ifp && axp->txq != NULL &&
+		if (axp != polled && axp->iface == ifp &&
 		    (axp->state == LAPB_CONNECTED || axp->state == LAPB_RECOVERY))
-			eligible++;
-	if (eligible == 0)
-		return;
-
-	n = ifp->dama_turn % eligible;
-	ifp->dama_turn++;
-	for (axp = Ax25_cb; axp != NULL; axp = axp->next)
-		if (axp != polled && axp->iface == ifp && axp->txq != NULL &&
-		    (axp->state == LAPB_CONNECTED || axp->state == LAPB_RECOVERY))
-			if (n-- == 0) {
-				lapb_output(axp);
-				return;
-			}
+			lapb_output(axp);
 }
-
-/*---------------------------------------------------------------------------*/
-
-/* Something wanted to go out and was held back.  Make sure T1 is running.
- *
- * The watchdog above is a comparison, not a timer, and that only works if
- * somebody keeps asking.  I had assumed somebody always would - and measured
- * otherwise: ackours() stops T1 the moment nothing is outstanding, T2 had
- * already fired once and gone, T3 is a quarter of an hour away and T5 an
- * hour.  A slave with a held acknowledgement therefore sat silent long past
- * its timeout, because no timer was left alive to notice that the master had
- * gone.
- *
- * T1 is the right one to keep: it is the timer for "waiting to make
- * progress", it is silent while DAMA holds, and recover() rearms it each
- * time.  So one period after the watchdog runs out, the gate opens and
- * whatever was waiting goes out by the ordinary path.
- *
- * Called only where something really is pending - an unanswered
- * acknowledgement, a full send queue, a disconnect that wants to happen.  A
- * link with nothing to say needs no timer, because it has nothing to be
- * woken for.
- */
 
 /* Announce that WE speak DAMA, by setting the bit in our own source address.
  *
