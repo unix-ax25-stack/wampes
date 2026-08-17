@@ -1182,51 +1182,10 @@ drei Proben, dreiwertiges Gedaechtnis im Routeneintrag, Interface-Achse
 doc/EAX25.md. NICHT gemessen ist "always" - dafuer braucht der Pruefstand
 einen Digipeat-Weg durch uns.
 
-DREI PUNKTE, DIE DABEI AUFGEKOMMEN SIND UND NICHT DAZUGEHOEREN:
-
-  1. DIE T1-FORMEL IST REALITAETSFERN (Thomas, 2026-08-17). lapb.c:1217
-     rechnet T1init * (1 + 2*Digis), also 5 s direkt, 25 s bei zwei Digis,
-     85 s bei acht (MAXDIGIS). Mit N2=10 und dem 1,25er-Backoff in
-     recover() ergibt das als Gesamtwartezeit bis zur Aufgabe:
-
-              0 Digis   2 Digis   8 Digis
-       heute    166 s     831 s    2826 s   (47 min!)
-
-     Thomas' Einwand, und er trifft: sich eine halbe Stunde mit SABMs zu
-     blockieren ist unsinnig, wenn Aufgeben nach fuenf Sekunden und ein
-     neuer Versuch viel schneller zum Ziel fuehrt. Es geht dabei NICHT um
-     "frueher aufgeben wollen" - bei zaehen Strecken oder Mailbox-S&F darf
-     es ruhig dauern -, sondern darum, dass die Formel die Wirklichkeit
-     falsch schaetzt.
-     ZU BEACHTEN: Blimit (ax25subr.c, Vorgabe 16) IST die vorhandene
-     Backoff-Bremse, greift aber nie, weil N2=10 vorher beendet. Totes
-     Geraet. Varianten, gerechnet:
-
-              0 Digis   2 Digis   8 Digis
-       Blimit 4    87 s   437 s    1486 s
-       Blimit 2    61 s   306 s    1041 s
-       N2 6        56 s   281 s     957 s
-       N2 6, B 3   42 s   212 s     722 s
-
-     Auch die schaerfste Variante laesst bei acht Digis zwoelf Minuten
-     stehen - weil nicht der Backoff dominiert, sondern der ANFANGSWERT.
-     Der Hebel ist also die Schaetzung je Hop, nicht die Kurve. Aendert
-     AX.25 fuer alle Verbindungen, gehoert in eine eigene Entscheidung.
-
-  2. 6PACK KAPPT BEI 512 BYTE, und zwar stillschweigend. SIXP_MAX_FRAME
-     bindet den dekodierten Rahmen; sixpack_encode() verwarf laengere
-     wortlos. Zwei Dinge sind schon gebaut: die Verwerfung zaehlt jetzt in
-     sp->errors, und struct iface hat framemax, das der Treiber beim
-     Attach setzt und ifmtu() gegen prueft. NICHT geschuetzt ist paclen -
-     das ist EINE Zahl fuer den ganzen Knoten, ein "ax25 paclen 1024"
-     legt also einen 6pack-Port lahm, waehrend alle anderen weiterlaufen.
-
-  3. PACLEN, MAXFRAME UND EMAXFRAME SIND GLOBAL, nicht je Port. Ein Knoten
-     mit 1k2-Userzugang und 19k2-Interlink braucht zwei verschiedene
-     Antworten und kann sie nicht haben. Gemessen: paclen 1024 funktioniert
-     ueber axip auf Anhieb (108894 Byte in 107 Rahmen zu 1024, 75 kB/s
-     gegen 63 kB/s bei 256), NET/ROM-Broadcast unveraendert. Die Schraube
-     ist also da, sie sitzt nur an der falschen Stelle.
+OFFEN AUS DIESER ARBEIT, jeweils mit eigener Ueberschrift weiter unten:
+  * "T1 WAECHST MIT DEN DIGIS VIEL ZU STARK"
+  * "6PACK UND PACLEN"
+  * "EAX25: 'always' IST UNGEMESSEN"
 
 ERST NACH DER ZEITGEBERARBEIT ANFANGEN (Thomas, 2026-08-17): bei Modulo
 128 wird mit Sequenznummern, Masken und Fensterarithmetik gerechnet, und
@@ -2095,3 +2054,66 @@ fragmentiert, und beide Seiten haben denselben Protokollkopf.
 ------------------------------------------------------------------------
 ZU TESTEN gegen einen echten dritten Knoten, nicht gegen den Simulator -
 der Befund oben ist genau der Fall, den ein Zweiknotenaufbau nicht zeigt.
+
+------------------------------------------------------------------------
+T1 WAECHST MIT DEN DIGIS VIEL ZU STARK (Thomas, 2026-08-17)
+------------------------------------------------------------------------
+lapb.c:1421 rechnet mdev aus T1init * (1 + 2*Digis), also T1 = 5 s direkt,
+25 s bei zwei Digis, 85 s bei acht (MAXDIGIS). Mit N2=10 und dem 1,25er-
+Backoff in recover() ergibt das als Gesamtwartezeit bis zur Aufgabe:
+
+          0 Digis   2 Digis   8 Digis
+ heute      166 s     831 s    2826 s   (47 min)
+
+THOMAS' EINWAND: sich eine dreiviertel Stunde mit SABMs zu blockieren ist
+unsinnig, wenn Aufgeben nach fuenf Sekunden und ein neuer Versuch viel
+schneller zum Ziel fuehrt. Es geht NICHT darum, frueher aufgeben zu wollen -
+bei zaehen Strecken oder Mailbox-S&F darf es ruhig dauern -, sondern darum,
+dass die Formel die Wirklichkeit falsch schaetzt. Zwoelf Minuten waeren in
+Ordnung, achtundvierzig nicht.
+
+ZU WISSEN: Blimit (ax25subr.c, Vorgabe 16) IST die vorhandene Backoff-
+Bremse (lapbtime.c:72), greift aber nie, weil N2=10 vorher beendet. Totes
+Geraet. Gerechnete Varianten:
+
+          0 Digis   2 Digis   8 Digis
+ Blimit 4    87 s     437 s    1486 s
+ Blimit 2    61 s     306 s    1041 s
+ N2 6        56 s     281 s     957 s
+ N2 6, B 3   42 s     212 s     722 s
+
+Auch die schaerfste laesst bei acht Digis zwoelf Minuten stehen - weil nicht
+der Backoff dominiert, sondern der ANFANGSWERT. Der Hebel ist also die
+Schaetzung je Hop, nicht die Kurve. Aendert AX.25 fuer ALLE Verbindungen,
+gehoert deshalb in eine eigene Entscheidung und einen eigenen Commit.
+Nebenwirkung, falls es angefasst wird: der EAX25-Rueckfall reitet auf
+derselben Kurve und wird automatisch mit kuerzer.
+
+------------------------------------------------------------------------
+6PACK UND PACLEN (2026-08-17)
+------------------------------------------------------------------------
+GESCHLOSSEN ist die Falle: sixpack_encode() verwarf zu lange Rahmen
+wortlos. Das zaehlt jetzt in sp->errors, struct iface hat framemax (der
+Treiber setzt es beim Attach, 510 fuer 6pack, NR4MAXINFO fuers NET/ROM-
+Interface), ifmtu() weist hoehere Werte ab und ax25_apply_iface_limits()
+kappt paclen darauf. Ausserdem sind paclen, maxframe und emaxframe jetzt je
+Port setzbar.
+
+OFFEN BLEIBT nur die Frage, ob SIXP_MAX_FRAME ueberhaupt bei 512 stehen
+muss. Die 6pack-Spezifikation sagt dazu nichts - das ist eine Puffergroesse
+dieser Implementierung. Wer AX.25 ueber schnelle Medien fahren will, laeuft
+sonst genau dort gegen die Wand; gemessen funktioniert paclen 1024 ueber
+axip auf Anhieb.
+
+------------------------------------------------------------------------
+EAX25: "always" IST UNGEMESSEN (2026-08-17)
+------------------------------------------------------------------------
+off, accept und caller sind gebaut UND gemessen (doc/EAX25.md). "always" -
+also das Hinaufstufen eines Rufers, der mit SABM hereinkam - ist gebaut,
+aber nie gemessen worden: dafuer muesste der Prueftreiber uns als Digi im
+Adressfeld benutzen, und eaxpeer.py kann keinen Digipeat-Pfad.
+
+Etwa zwanzig Zeilen: Digi-Feld bauen, das Has-Been-Repeated-Bit setzen,
+laengeren Kopf parsen. Die Alternative - drei net-Instanzen ueber eine
+Bruecke - ist der ZWEITE Schritt ("geht es auch gegen echtes WAMPES"), nicht
+der erste, weil bei drei Knoten die Zeiten nicht mehr in einer Hand liegen.

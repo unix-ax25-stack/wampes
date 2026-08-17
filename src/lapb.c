@@ -113,13 +113,40 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	if(type == SABM || type == SABME){
 		axp->mmask = (type == SABME) ? EMMASK : MMASK;
 		if(type == SABME){
+			struct ax_route *rp;
+			int knew;
+
 			axp->hdr.ext |= SSID_EAX25;
 			/* He is calling US with it, so he can do it - the one
 			 * piece of evidence that needs no probe, and the one
 			 * that undoes an earlier "cannot" the moment his end
 			 * is fixed.
 			 */
+			rp = ax_routeptr(hdr->source,0);
+			knew = rp ? rp->eax25 : AXR_EAX25_UNKNOWN;
 			eax25_remember(hdr->source,AXR_EAX25_YES);
+
+			/* Say so once, the first time, and only on a port that
+			 * merely answers.  The default is not to ask anyone -
+			 * see doc/EAX25.md - and an operator who never reads
+			 * the documentation would otherwise never learn that
+			 * the station he is talking to could do better.  So
+			 * the node reports where the setting would pay,
+			 * measured from what it actually heard, rather than
+			 * leaving it to be found.
+			 */
+			if(knew != AXR_EAX25_YES && iface != NULL &&
+			   iface->eax25 == EAX25_ACCEPT){
+				char who[AXBUF];
+				char msg[128];
+
+				sprintf(msg,
+				 "%s speaks EAX25 (modulo-128) - "
+				 "\"ifconfig %s eax25 caller\" would use it "
+				 "outbound too",
+				 pax25(who,hdr->source),iface->name);
+				logmsg(NULL,"%s",msg);
+			}
 		} else
 			axp->hdr.ext &= ~SSID_EAX25;
 	}

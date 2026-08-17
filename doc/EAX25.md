@@ -60,6 +60,18 @@ peer that ignores SABME - once per station, but that is not a cost to hand
 to every installation by surprise.  An unconfigured node behaves as it
 always did, which is the same rule `doc/ROUTE-FILTER.md` follows.
 
+It has one cost, and it is the one Thomas named: an operator who does not
+read this page never learns the feature is there.  So the node says so.
+The first time a station calls us with SABME on a port that only accepts,
+it writes one line to the log:
+
+    DB0AAA-5 speaks EAX25 (modulo-128) - "ifconfig ax0 eax25 caller"
+    would use it outbound too
+
+Once per station, and never on a port that is already set to ask.  That
+turns the conservative default into one that advertises itself, from what
+the node actually heard rather than from documentation.
+
 **An interlink therefore wants `caller` at least**, because we open those
 links ourselves - `netrom links ... permanent`, `flexnet link add` - and
 under `accept` we never ask.  That is also the right way to think about
