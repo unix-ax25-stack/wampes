@@ -189,29 +189,41 @@ void dama_poll_end(struct iface *ifp)
 
 /*---------------------------------------------------------------------------*/
 
-/* Our turn has come: serve the other links on this port too.
+/* Our turn has come: serve our other links under the SAME CALLSIGN.
  *
- * ALL of them, not one in rotation, and that is TNN's answer rather than my
- * first guess.  Its slave empties every link it has when the gate opens
- * (l2dama.c: "for (lnkpoi = ...) { damatx(); xmit_damail(); }"), while the
- * rotation with zael/indx lives in its MASTER half.  Which is the sensible
- * division: fairness between one user's several connections is the master's
- * business, exercised by how often it polls him, and a slave that also held
- * itself back would be rationing a turn that was already rationed.
+ * All of them, not one in rotation - TNN's slave empties every link when the
+ * gate opens (l2dama.c, "for (lnkpoi = ...) { damatx(); xmit_damail(); }")
+ * and Linux does the same, walking every other connection on the device in
+ * ax25_ds_enquiry_response().  Fairness between one station's several
+ * connections is the master's business, exercised by how often it polls that
+ * station; a slave rationing itself as well would ration a turn that was
+ * already rationed.
  *
- * Called once, at the end of lapb_input(), after the polled link itself has
- * been through lapb_output().
+ * BUT NOT EVERY LINK ON THE PORT, and this is where both references would
+ * mislead us.  What a master gives a turn to is a CALLSIGN: several links of
+ * one callsign are multiconnect, which it knows about and counts as one
+ * station.  Links under a DIFFERENT callsign are a different station to it,
+ * and one of those transmitting on somebody else's poll is exactly the
+ * unrequested transmission that gets counted and eventually disconnected on a
+ * node that enforces DAMA.
+ *
+ * The references get away with the port because there a device carries one
+ * address - Linux compares ax25o->ax25_dev and nothing else.  WAMPES answers
+ * on many callsigns per interface; that is what "listen" is for.  So the
+ * comparison here is the callsign we were called under, which is
+ * axp->hdr.source once build_path() has turned the header round.
  */
 
 void dama_serve_others(struct iface *ifp, struct ax25_cb *polled)
 {
 	struct ax25_cb *axp;
 
-	if (ifp == NULL || !ifp->dama_window)
+	if (ifp == NULL || polled == NULL || !ifp->dama_window)
 		return;
 
 	for (axp = Ax25_cb; axp != NULL; axp = axp->next)
 		if (axp != polled && axp->iface == ifp &&
+		    addreq(axp->hdr.source, polled->hdr.source) &&
 		    (axp->state == LAPB_CONNECTED || axp->state == LAPB_RECOVERY))
 			lapb_output(axp);
 }

@@ -42,14 +42,32 @@ it can only give the station its turn.  `ntohax25()` reads the DAMA bit from
 `hdr->source` and never from a digipeater field, so nothing about such a frame
 identifies the master either.
 
-So the window is opened by a poll on the port, and **every** link on that port
-is served in it.  All of them, not one in rotation, which is TNN's answer
-rather than a guess: its slave empties every link when the gate opens
-(`l2dama.c`, `for (lnkpoi = ...) { damatx(); xmit_damail(); }`), while the
-rotation with `zael/indx` lives in its **master** half.  That is the sensible
-division - fairness between one user's several connections is the master's
-business, exercised by how often it polls him, and a slave that also held
-itself back would be rationing a turn that was already rationed.
+So the window is opened by a poll, and every link **under the callsign that
+was polled** is served in it.  All of them, not one in rotation: TNN's slave
+empties every link when the gate opens (`l2dama.c`, `for (lnkpoi = ...) {
+damatx(); xmit_damail(); }`) and Linux does the same in
+`ax25_ds_enquiry_response()`.  Fairness between one station's several
+connections is the master's business, exercised by how often it polls that
+station; a slave rationing itself as well would ration a turn that was
+already rationed.
+
+**Under the callsign, not on the port**, and this is where both references
+would mislead us.  What a master gives a turn to is a **callsign**: several
+links of one callsign are multiconnect, which it knows about and counts as one
+station.  A link under a *different* callsign is a different station to it,
+and one of those transmitting on somebody else's poll is precisely the
+unrequested transmission that gets counted and eventually disconnected on a
+node that enforces DAMA.
+
+The references get away with "the port" because there a device carries one
+address - Linux compares `ax25o->ax25_dev` and nothing else.  WAMPES answers
+on many callsigns per interface; that is what `listen` is for.  Measured both
+ways, with the master polling TEST-1:
+
+| | what happens |
+|---|---|
+| TEST-1 and TEST-2, two callsigns of ours | only TEST-1 transmits |
+| two links, both under TEST-1 | both transmit - one station, one turn |
 
 **Only the master's polls count.**  The port remembers the callsign of the
 station whose frames carried the DAMA bit, and a command with the poll bit
