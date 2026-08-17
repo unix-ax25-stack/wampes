@@ -118,6 +118,12 @@ struct connection *conn)
 	} else {
 		tcb->srtt = Tcp_irtt;   /* mdev = 0 */
 	}
+	/* The throughput estimators smooth the INTERVAL between two events.
+	 * Left at zero, the first interval computed would be the whole clock
+	 * value rather than a span, and the estimate never recovers from it -
+	 * which is what "tcp status" has been showing as the bandwidth. */
+	tcb->lastrx = tcb->lastack = msclock();
+
 	/* Initialize timer intervals */
 	set_timer(&tcb->timer,tcb->srtt);
 	tcb->timer.func = tcp_timeout;

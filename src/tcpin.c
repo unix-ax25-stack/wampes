@@ -319,7 +319,7 @@ int32 said              /* Authenticated packet */
 			case TCP_FINWAIT2:
 				/* Update performance figures */
 				t = msclock();
-				tcb->inrate = (7*tcb->inrate + t - tcb->lastrx)/8;
+				tcb->inrate = (7*tcb->inrate + TDIFF(t,tcb->lastrx))/8;
 				tcb->lastrx = t;
 				tcb->inlen = (7*tcb->inlen + length)/8;
 				/* Place on receive queue */
@@ -674,7 +674,7 @@ uint length
 		/* Update our tx throughput estimate */
 		t = msclock();
 		tcb->outlen = (7*tcb->outlen + seg->ack - tcb->rttack)/8;
-		tcb->outrate = (7*tcb->outrate + t - tcb->lastack)/8;
+		tcb->outrate = (7*tcb->outrate + TDIFF(t,tcb->lastack))/8;
 		tcb->lastack = t;
 	}
 	tcb->sndcnt -= acked;   /* Update virtual byte count on snd queue */
