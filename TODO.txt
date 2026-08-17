@@ -1103,9 +1103,20 @@
   jeder, mit dem wir ueberhaupt sprechen, unsere Ankuendigungen bekommt.
   Call schlaegt Interface schlaegt default; ohne jede Zeile bleibt alles wie
   bisher. Dazu "netrom broadcast enable|disable <n>" je Eintrag (Befund 3).
-  OFFEN geblieben und in doc/ROUTE-FILTER.md am Ende genannt: die dritte
-  Zugangsstufe "darf gar nicht sprechen", ein "feed"-Schalter, und
-  nr_bdcstint/nr_minobs je Interface.
+  Der "feed"-Schalter stand hier bis 2026-08-17 als offen und IST GEBAUT,
+  als dritte Achse (Commit 4d02fdb): rf_feed() in routefilter.c, bei
+  FlexNet je Linkpartner (peer_feed), bei NET/ROM je Port
+  (broadcast_feeds). Beschrieben ist er in doc/ROUTE-FILTER.md.
+
+  WIRKLICH OFFEN geblieben, und dort am Ende genannt:
+    * die dritte Zugangsstufe "darf gar nicht sprechen" - "in none" kommt
+      nahe und ist nicht dasselbe, die Rahmen werden weiter geparst
+    * nr_bdcstint/nr_minobs je Interface; heute je Knoten, nur das OB
+      steht je Eintrag
+    * ein VERKUERZTER Broadcast je Eintrag. Bei NET/ROM ist die Wahl auf
+      einem Benutzerport heute alles oder nichts; nur einen Teil der
+      Tabelle anzukuendigen waere der naechste Schritt. INP3 stellt
+      dieselbe Frage von der anderen Seite, weil es verbunden laeuft.
 
   Die urspruengliche Skizze, zum Vergleich:
     in: only import him / except-him / all
