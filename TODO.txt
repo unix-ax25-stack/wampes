@@ -1249,10 +1249,39 @@ Gesamtdauer des Aufbaus. Und die Daten dafuer liegen schon im Knoten:
     Timeout des NET/ROM-L4-Aufbaus und fuer den Proxy-Connect, nicht fuer
     die AX.25-SABM-Phase.
 
-ZU KLAEREN VOR DEM BAUEN: find_dest() vergleicht mit addreq() ueber sieben
-Bytes, und ein FlexNet-Eintrag traegt einen SSID-BEREICH (call[ALEN+1]).
-Eine Suche nach einem konkreten Rufzeichen muss diesen Bereich beachten,
-sonst findet sie das Ziel nicht.
+ZUR SSID: find_dest() vergleicht mit addreq() ueber sieben Bytes, ein
+FlexNet-Eintrag traegt aber einen SSID-BEREICH (call[ALEN+1]). Thomas'
+Entscheidung dazu: die Unschaerfe genuegt fuer eine Abschaetzung - wir
+suchen ja keine Route, sondern eine Groessenordnung. Also den Bereich
+mitnehmen und nicht daran haengenbleiben.
+
+UND DIE KURVE DOCH, nur anders (Thomas' Praezisierung an meinem "nicht die
+Kurve, sondern das Limit"): die beiden komponieren. Statt unbegrenzt mit
+1,25 zu wachsen und dann hart zu kappen, laesst man die Kurve sich der
+Obergrenze ANNAEHERN - wie ein Sinus, der sich langsam an 1 herantastet.
+Ganzzahlig ist das eine Zeile in recover():
+
+	t1 = t1 + (Tmax - t1) / 4;      /* statt t1 = t1 * 5 / 4 */
+
+Weit unter der Grenze waechst das fast so schnell wie heute, nahe daran
+fast gar nicht, und der Sprung von zehn auf zwanzig Minuten kommt nie
+zustande. Tmax kommt aus der FlexNet-Schaetzung oben; findet sich keine,
+bleibt es beim heutigen Verhalten.
+
+WO WAS HINGEHOERT, damit die beiden Sachen nicht durcheinandergeraten:
+
+  * Die EAX25-FAEHIGKEIT steht im AX.25-Routeneintrag (struct ax_route,
+    Feld eax25) und gehoert genau dorthin: sie ist eine Eigenschaft des
+    DIREKTEN NACHBARN, mit dem wir SABM oder SABME tauschen. Ein
+    FlexNet-Ziel ist ein Knoten viele Hops entfernt, dem wir nie ein SABME
+    schicken - dort waere so ein Bit sinnlos, und wenn es je dort auftaucht,
+    muss dabeistehen warum.
+  * Die UMLAUFZEIT ist umgekehrt gelagert: eine Eigenschaft des WEGES, und
+    deshalb dort richtig, wo FlexNet sie ohnehin fuehrt.
+
+Beide Speicher sind fluechtig - bricht der Link weg, ist der Eintrag weg -,
+und das ist in Ordnung. In stabilen Verhaeltnissen steht die Zahl da, wo
+man sie braucht, und die Listen gibt es ohnehin.
 
 Gerechnete Varianten fuer den Fall, dass man stattdessen doch die Kurve
 anfassen will:
