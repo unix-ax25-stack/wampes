@@ -327,27 +327,40 @@ effect like that which occurs using CSMA where at a special limit (above ca
 60%) the throughput is actually reduced."*  Latency of one station traded for
 throughput of the channel.
 
-**One part of the cost is avoidable and is not taken.**  We answer the poll
-with an RR and *then* send the I frames, where the paper says the I frame's
-N(R) is the acknowledgement itself - *"having the correct count on the sent
-I-frame serves the same purpose as an ACK"*.  That is up to one frame per poll
-that carries data: the 11/36/102 column above.  **TNN does fold them, at least on the master side, and the code is plain
-about it**: `damatx()` generates only I frames, and the caller falls through
-to a poll only `if (damatx() == FALSE)` - *"Keine Info zum senden gefunden,
-also Poll senden!"*.  Data replaces the supervisory frame, it does not
-accompany it, which is also how the paper puts it ("polls which might be
-included in ACK packets or even in transferred data frames").  On the slave
-side the source does not show it directly: the supervisory frame comes from a
-per-port list (`xmit_damarl`) that the receive path fills, and what it puts
-there is decided in the L2 state machine, not here.
+**The supervisory frame is not avoidable, and working out why settled a
+question that had been open here.**  It looks redundant: we answer the poll
+with an RR and then send I frames whose `N(R)` acknowledges anyway, and the
+paper says as much - *"having the correct count on the sent I-frame serves the
+same purpose as an ACK"*.  But that sentence is about **acknowledgement**, not
+about answering a poll, and the two are not the same thing.
 
-It is left undone anyway, because one question survives all of that: the
-master sets **P** on its polling RR.  Answering with an I frame is not, in
-AX.25 terms, a response with **F**, so the master's own T1 may consider its
-poll unanswered - unless its DAMA layer suppresses that.  The paper says the
-DAMA poll has nothing to do with the P bit, and TNN's master avoids the
-question by not setting P when it has data.  Whether a master tolerates the
-same from the other side is measurable at a real digi and nowhere else.
+In AX.25 an I frame is **always a command**.  Only supervisory and U frames
+can be responses, so only they can carry F.  The asymmetry follows:
+
+* A **master initiates** the poll transaction, so it may put the P bit on an I
+  frame - data and turn-giving in one.  TNN does exactly that: `damatx()`
+  generates only I frames, and the caller falls through to a poll just `if
+  (damatx() == FALSE)` - *"Keine Info zum senden gefunden, also Poll senden!"*
+* A **slave responds**, and no I frame can be a response.  The supervisory
+  frame is the only thing that can close the poll; the I frames go out beside
+  it as commands.
+
+Both references do it that way round.  Linux's `ax25_ds_enquiry_response()`
+calls `ax25_std_enquiry_response()` first and only then `ax25_kick()`.  So the
+RR is not a wasted frame - it is the answer, and the data is separate by
+construction.
+
+Two things fell out of reading that function, and both are worth having:
+
+* **It walks every other connection on the same device** and kicks those too,
+  which is the same conclusion TNN's slave reaches by a different route.  Two
+  independent implementations agreeing that the window belongs to the station
+  is as much confirmation as this is going to get.
+* **It requeues unacknowledged frames on every poll** -
+  `ax25_requeue_frames()` before the kick - where we only resend after T1 has
+  said something was lost.  Linux recovers faster and sends more; we send less
+  and recover a T1 later.  Both defensible, and the difference is written down
+  here so that whoever meets it at a real digi knows it was a choice.
 
 ## Not built
 
