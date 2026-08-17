@@ -119,6 +119,22 @@ path while the caller's patience scales with *his*, and if ours is the
 longer one he gives up before we have fallen back.  Same class of
 configuration error as `advert no` on a node with several uplinks.
 
+Where that begins to bite is arithmetic, not judgement.  Three probes cost
+`T1 (1 + 1.25 + 1.5625)` with `T1 = 5 s x (1 + 2 x digis)` counted on *our*
+onward path, against a caller who spends ten retries on his:
+
+| digis on our onward leg | our three probes | a caller with no digi gives up after |
+| --- | --- | --- |
+| 0 | 19 s | 166 s |
+| 2 | 95 s | 166 s |
+| 4 | 171 s | 166 s |
+| 8 | 324 s | 166 s |
+
+So one or two digipeaters are survivable and four are not.  It is also the
+one place where `always` differs from `caller` in kind rather than in
+degree: under `caller` a plain caller is never probed at all, so the
+question does not arise.
+
 `paclen`, `maxframe` and `emaxframe` can now be set **per port** as well,
 with 0 meaning "use the node's".  They are properties of the channel, and
 a node with a 1k2 user access and a 19k2 interlink wants two different
@@ -214,8 +230,59 @@ control fields were widened to `int` for the same reason - at modulo-8 the
 value never exceeded 0xEE and survived only because the mask below cut the
 sign extension off again.
 
-`always` is built but **not** measured: proving it needs a rig that
-digipeats through us, which `eaxpeer.py` does not do yet.
+## `always`, and the relay it needs
+
+`always` only ever shows itself on a link we open on someone **else's**
+behalf, so proving it needs the node in the address field as a digipeater.
+WAMPES does not repeat a connected frame: it terminates both halves and
+calls onward itself (`Digipeat == 2` in `ax25.c`), carrying the caller's
+callsign as the source of the second leg, so the far end sees *him via us*.
+`testtools/eaxpeer.py --via` builds that path and `--zielstation` plays the
+far end on a socket of its own - not for convenience but because `axip`
+remembers the UDP source port per host and interface, so two stations on
+127.0.0.1 sharing an interface take each other's frames.
+
+Rig: caller on `ax0` (`eax25 accept`), far end reached over `ax1`, one node
+between them.
+
+| `ax1` | caller arrives with | second leg goes out as | the two halves |
+| --- | --- | --- | --- |
+| `caller` | SABM | SABM | modulo-8, modulo-8 |
+| `caller` | SABME | SABME | modulo-128, modulo-128 |
+| `always` | SABM | **SABME** | modulo-8, **modulo-128** |
+
+Through the upgraded relay: 200 frames of 256 bytes, 51 200 bytes, counting
+straight through with `N(S)` past 127 and round again.  `ax25 status` shows
+`Mod 128` and `Unack 0/32` on the second leg beside `Mod 8` on the first,
+and `E` appears at the far end in `ax25 route list`.  The fallbacks hold
+there too:
+
+| far end | what happens | the caller |
+| --- | --- | --- |
+| answers DM | SABME → DM → SABM → UA, no delay at all | connected at once |
+| stays silent | SABME, then the plain SABM at 19 s | connected at 20.2 s |
+| after either | `e` in the route table | next call goes straight to SABM |
+
+**One probe, not three, on a relayed leg** - and this is worth knowing
+before reading the table above as a contradiction.  `recover()` does not
+retransmit for a link whose peer is still disconnected: it restarts T1 and
+gives up after three expiries, because the retry that matters there is the
+caller's.  What sends a second SABME is his next SABM, which runs
+`build_path()` and `sendctl()` again while `routing_changes < 3`.  So a
+caller who never retries costs exactly one SABME and 19 s of quiet; a
+WAMPES-like caller at T1 15 s produces two, at 0 and 15 s, with the
+fallback at 20 s either way.  That is one station's patience being spent
+instead of two, which is the intent - but it does mean a lost SABME on a
+real channel is not made good by us.
+
+**The monitor still reads modulo-8.**  `ax25dump.c` decodes a one-octet
+control field and cannot do better from the frame alone: nothing in an I
+frame says which modulus its link runs on.  On a modulo-128 link the trace
+therefore shows `N(S)` wrapping at 8, a `P` that is really bit 4 of `N(S)`,
+and `pid=0x0` because the PID sits one octet further on.  The control block
+knows (`axp->mmask`), so a dump that looked the link up could get it right;
+today it does not, and `ax25 status` - which prints the modulus per link -
+is the display to trust.
 
 ## What a larger packet length does to the rest
 
