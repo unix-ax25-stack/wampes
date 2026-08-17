@@ -42,7 +42,6 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	uint ns = 0;            /* Seq number of incoming frame */
 	uint tmp;
 	int digipeat;
-	int32 bugfix;
 
 	if(bpp == NULL || *bpp == NULL){
 		free_p(bpp);
@@ -509,7 +508,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	/* } */
 	if((axp->state == LAPB_RECOVERY || axp->state == LAPB_CONNECTED) &&
 	   ((axp->flags.closed && !axp->txq) ||
-	    (axp->flags.remotebusy && (bugfix = msclock() - axp->flags.remotebusy) > 900000L))
+	    (axp->flags.remotebusy && TDIFF(msclock(), axp->flags.remotebusy) > 900000L))
 	   ){
 		/* A DAMA slave waits for the poll before it disconnects too -
 		 * the paper is explicit about that one ("the user ... will
@@ -565,7 +564,7 @@ int rex_all
 			axp->flags.rtt_run = 0;
 			/* Update only if frame wasn't retransmitted */
 			if(!axp->flags.retrans){
-				rtt = msclock() - axp->rtt_time;
+				rtt = TDIFF(msclock(), axp->rtt_time);
 				abserr = (rtt > axp->srt) ? rtt - axp->srt :
 				 axp->srt - rtt;
 

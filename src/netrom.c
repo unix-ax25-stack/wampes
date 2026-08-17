@@ -1311,7 +1311,7 @@ static void circuit_manager(struct mbuf **bpp)
     if (((pc->send_state - (*bpp)->data[3]) & 0xff) < pc->unack) {
       pc->retry = 0;
       if (pc->sndtime[((*bpp)->data[3]-1) & 0xff]) {
-	int32 rtt = msclock() - pc->sndtime[((*bpp)->data[3]-1) & 0xff];
+	int32 rtt = TDIFF(msclock(), pc->sndtime[((*bpp)->data[3]-1) & 0xff]);
 	int32 abserr = (rtt > pc->srtt) ? rtt - pc->srtt : pc->srtt - rtt;
 	pc->srtt = ((NRAGAIN - 1) * pc->srtt + rtt + (NRAGAIN / 2)) / NRAGAIN;
 	pc->mdev = ((NRDGAIN - 1) * pc->mdev + abserr + (NRDGAIN / 2)) / NRDGAIN;
@@ -2200,7 +2200,7 @@ static int donstatus(int argc, char *argv[], void *p)
     printf("CHOKEsent:    %s\n", pc->chokesent ? "Yes" : "No");
     printf("Closed:       %s\n", pc->closed ? "Yes" : "No");
     if (pc->remote_busy)
-      printf("Remote_busy:  %lu ms\n",(unsigned long)(msclock() - pc->remote_busy));
+      printf("Remote_busy:  %lu ms\n",(unsigned long)TDIFF(msclock(), pc->remote_busy));
     else
       printf("Remote_busy:  No\n");
     printf("CWind:        %d\n", pc->cwind);

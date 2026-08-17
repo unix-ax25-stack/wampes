@@ -1128,7 +1128,7 @@ static void recv_rprt(struct peer *pp, struct mbuf **bpp)
 			pp->delay = pp->remdelay;
 	}
 	if (pp->lastpolltime) {
-		pp->locdelay = iround((msclock() - pp->lastpolltime) / 200.0);
+		pp->locdelay = iround(TDIFF(msclock(), pp->lastpolltime) / 200.0);
 		if (pp->locdelay < 1)
 			pp->locdelay = 1;
 		pp->lastpolltime = 0;

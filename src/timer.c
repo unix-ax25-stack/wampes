@@ -16,6 +16,33 @@
 int32 volatile Msclock;
 int32 volatile Secclock;
 
+/* The clock wraps, and that is by design - Msclock is 1000 * the wall clock
+ * truncated to 32 bits, so it passes through the whole range every 49.7 days.
+ * Everything here is therefore written as a DIFFERENCE compared with zero and
+ * never as a direct comparison of two clock values, which is correct across a
+ * wrap as long as no duration approaches half the range.
+ *
+ * The arithmetic that produces those differences is done in UNSIGNED, and the
+ * result is then read as signed.  That is not decoration: in signed int32 the
+ * addition below overflows for any long duration, signed overflow is
+ * undefined, and the compiler is entitled to assume it cannot happen.  It
+ * does assume it - measured, not deduced.  With optimisation, an ARP entry
+ * given the intended lifetime of ARPLIFE (just under the largest value the
+ * timer can hold) was treated as already expired and dropped the instant it
+ * was created; the same fate met every route added automatically, which then
+ * showed up with metric 16, RIP_INFINITY.  Building the identical source with
+ * -fwrapv, or merely printing the values, made both work.  Unsigned overflow
+ * is defined to wrap, so doing it there removes the compiler's licence and
+ * the code means what it has always said.  TDIFF in timer.h does that; the
+ * same reasoning applies to every place two clock values are subtracted.
+ *
+ * The differences here used to be routed through a variable named "bugfix",
+ * written and never read - an attempt to make the compiler put the value into
+ * an int32 before comparing it.  That is not something a compiler has to
+ * honour, and it did not help: the entry was dropped all the same.  TDIFF
+ * says the same thing in a way the standard guarantees, so the variables are
+ * gone.
+ */
 /* Head of running timer chain.
  * The list of running timers is sorted in increasing order of expiration;
  * i.e., the first timer to expire is always at the head of the list.
@@ -29,7 +56,6 @@ void
 timerproc(int i,void *v1,void *v2)
 {
 	struct timer *t;
-	int32 bugfix;
 	struct timeval tv;
 
 	for(;;){
@@ -39,8 +65,22 @@ timerproc(int i,void *v1,void *v2)
 		gettimeofday(&tv, 0);
 		Secclock = tv.tv_sec;
 		Msclock = (int32)(1000 * (long) Secclock + tv.tv_usec / 1000);
+#ifdef WRAPTEST
+		/* Nur zum Pruefen: die Uhr dicht vor den Umlauf schieben, damit
+		 * ein Lauf von wenigen Sekunden das durchlaeuft, wofuer sonst
+		 * 49,7 Tage noetig waeren. */
+		{
+			static int32 bias;
+			static int have_bias;
+			if(!have_bias){
+				bias = (int32)(0x7ffff000U - (uint32)Msclock);
+				have_bias = 1;
+			}
+			Msclock = (int32)((uint32)Msclock + (uint32)bias);
+		}
+#endif
 
-		while((t = Timers) && (bugfix = t->expiration - Msclock) <= 0) {
+		while((t = Timers) && TDIFF(t->expiration,Msclock) <= 0) {
 			if ((Timers = t->next))
 				Timers->prev = NULL;
 			t->state = TIMER_EXPIRE;
@@ -60,7 +100,6 @@ void
 start_timer(struct timer *t)
 {
 	struct timer *tnext, *tprev = NULL;
-	int32 bugfix;
 
 	if(t == NULL)
 		return;
@@ -69,7 +108,7 @@ start_timer(struct timer *t)
 	if(t->duration <= 0)
 		return;         /* A duration value of 0 disables the timer */
 
-	t->expiration = Msclock + t->duration;
+	t->expiration = (int32)((uint32)Msclock + (uint32)t->duration);
 	t->state = TIMER_RUN;
 
 	/* Find right place on list for this guy. Once again, note use
@@ -77,7 +116,7 @@ start_timer(struct timer *t)
 	 * comparison of expiration times.
 	 */
 	for(tnext = Timers;tnext != NULL;tprev=tnext,tnext = tnext->next){
-		if((bugfix = tnext->expiration - t->expiration) >= 0)
+		if(TDIFF(tnext->expiration,t->expiration) >= 0)
 			break;
 	}
 	/* At this point, tprev points to the entry that should go right
@@ -118,7 +157,7 @@ read_timer(struct timer *t)
 
 	if(t == NULL || t->state != TIMER_RUN)
 		return 0;
-	remaining = t->expiration - Msclock;
+	remaining = TDIFF(t->expiration,Msclock);
 	if(remaining <= 0)
 		return 0;       /* Already expired */
 	else

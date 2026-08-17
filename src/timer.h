@@ -35,6 +35,20 @@ struct timer {
 #ifndef EALARM
 #define EALARM          106
 #endif
+/* The difference of two clock values, as a signed count of milliseconds.
+ *
+ * Msclock is 1000 * the wall clock truncated to 32 bits, so it runs through
+ * the whole range every 49.7 days.  Two clock values may therefore straddle
+ * the wrap, and subtracting them as SIGNED int32 overflows - which is
+ * undefined, and the compiler acts on it: see the note in timer.c, where a
+ * timer given a long duration was dropped the moment it was created.  Doing
+ * the subtraction unsigned makes the wrap defined; reading the result as
+ * signed then gives the interval, positive or negative, as intended.
+ *
+ * Use this wherever two clock values meet, not just in timer.c.
+ */
+#define TDIFF(a,b)      ((int32)((uint32)(a) - (uint32)(b)))
+
 /* Useful user macros that hide the timer structure internals */
 #define dur_timer(t)    ((t)->duration)
 #define run_timer(t)    ((t)->state == TIMER_RUN)

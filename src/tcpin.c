@@ -647,7 +647,7 @@ uint length
 	rtt = -1;       /* Init to invalid value */
 	if(tcb->flags.ts_ok && seg->flags.tstamp){
 		/* Determine RTT from timestamp echo */
-		rtt = msclock() - seg->tsecr;
+		rtt = TDIFF(msclock(), seg->tsecr);
 	} else if(tcb->flags.rtt_run && seq_ge(seg->ack,tcb->rttseq)){
 		/* use standard round trip timing */
 		/* A timed sequence number has been acked */
@@ -656,7 +656,7 @@ uint length
 			/* This packet was sent only once and now
 			 * it's been acked, so process the round trip time
 			 */
-			rtt = msclock() - tcb->rtt_time;
+			rtt = TDIFF(msclock(), tcb->rtt_time);
 		}
 	}
 	if(rtt >= 0){
