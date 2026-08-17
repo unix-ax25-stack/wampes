@@ -127,6 +127,14 @@ struct ax25_cb {
 		unsigned int rnrsent:1;         /* RNR frame has been sent */
 	} flags;
 
+	/* This link is under DAMA discipline - a marked frame has arrived on
+	 * it.  Per LINK, not per port: the paper says the mode is told once at
+	 * connect time and "would then remain in effect until disconnect",
+	 * and the kernel keeps AX25_COND_DAMA_MODE in the control block for
+	 * the same reason.  A link nobody ever marked is left alone.
+	 */
+	int dama_link;
+
 	/* Set when T1 expired under DAMA with frames still outstanding: the
 	 * master never acknowledged them, so they have to go again - but not
 	 * now, only in the window the next poll opens.  See dama.c.

@@ -247,6 +247,35 @@ acknowledgement, a full send queue, a disconnect that wants to happen - calls
 `dama_wait()`, which makes sure T1 is running.  A link with nothing to say
 still needs no timer, because it has nothing to be woken for.
 
+## The discipline is per link, not per port
+
+A station may call us on a DAMA port and never set the bit.  That link then
+has nothing to do with the master, and gating it by the port would stall a
+contact that nobody is managing - until the watchdog let go and put it back a
+moment later.
+
+So the discipline follows the **link**: a marked frame arriving on a
+connection puts that connection under it, and one that nobody ever marked is
+left alone.  That is also what the paper says, and the sentence is the same
+one that settled the latching question - *"it would be sufficient to tell the
+user to switch to DAMA mode only once, at connect time.  **This state would
+then remain in effect until disconnect.**"*  The kernel keeps the flag in the
+control block for the same reason (`AX25_COND_DAMA_MODE`), and the flag is
+cleared when the link ends, so a reused control block earns its discipline
+again rather than inheriting it.
+
+Measured on a port with a master running: an unmarked caller is answered and
+served at once, while the master's link is still held until its poll.
+
+**Our own marking stays on every link of the port**, because it says "we speak
+DAMA", not "this connection is DAMA" - that is the whole point of it, telling
+a master that only repeats for us.  The consequence is worth knowing: any
+station that reads the bit will take us for a master.  A DAMA-capable user TNC
+that calls us will gate itself and wait for polls we never send, until its own
+watchdog gives up.  On a DAMA channel that is the right outcome - see the next
+section - but it means `dama slave` on a port also says "direct contacts here
+are not expected to work".
+
 ## Two slaves that connect to each other lock each other out
 
 Because we mark our own frames, another WAMPES slave reads them as "a master

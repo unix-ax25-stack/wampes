@@ -131,8 +131,10 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	 * against such a master.  Accepting both costs nothing: the watchdog
 	 * already handles a master that stops speaking DAMA at all.
 	 */
-	if(hdr->ext & SSID_DAMA)
+	if(hdr->ext & SSID_DAMA){
 		dama_heard_frame(iface,hdr->source);
+		axp->dama_link = 1;
+	}
 	dama_poll_begin(iface,poll,hdr->source);
 
 	/* This section follows the SDL diagrams by K3NA fairly closely */
@@ -807,6 +809,12 @@ enum lapb_state s
 	oldstate = axp->state;
 	axp->state = s;
 	if(s == LAPB_DISCONNECTED){
+		/* The link is over, so what was agreed for it is over too.  A
+		 * control block can be reused for the next connection to the
+		 * same station, and that one has to earn its DAMA discipline
+		 * again rather than inherit it.
+		 */
+		axp->dama_link = 0;
 		stop_timer(&axp->t1);
 		stop_timer(&axp->t2);
 		stop_timer(&axp->t3);

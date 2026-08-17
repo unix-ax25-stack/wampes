@@ -148,6 +148,16 @@ int dama_holds(struct ax25_cb *axp)
 {
 	if (axp == NULL || axp->iface == NULL || axp->iface->dama_window)
 		return 0;
+	/* Only a link that is itself under DAMA.  A station may call us on a
+	 * DAMA port without ever setting the bit - and then the paper's own
+	 * rule applies, which is per CONNECTION: the mode is told at connect
+	 * time and "would then remain in effect until disconnect".  Gating
+	 * such a link by the port would stall a contact that has nothing to do
+	 * with the master, until the watchdog let go and put it back a moment
+	 * later.  The kernel keeps the same flag in the control block.
+	 */
+	if (!axp->dama_link)
+		return 0;
 	return dama_in_force(axp->iface);
 }
 
