@@ -36,6 +36,7 @@ static int iftxqlen(int argc,char *argv[],void *p);
 int iftncinit(int argc,char *argv[],void *p);
 static int ifautoroute(int argc,char *argv[],void *p);
 static int ifdigiarp(int argc,char *argv[],void *p);
+static int ifeax25(int argc,char *argv[],void *p);
 
 /* Interface list header */
 struct iface *Ifaces = &Loopback;
@@ -142,6 +143,8 @@ struct cmds Ifcmds[] = {
 	{ "crc",                  ifcrc,          0,      2,      NULL },
 	{ "dama",                 ifdama,         0,      2,      NULL },
 	{ "damatimeout",          ifdamatimeout,  0,      2,      NULL },
+	{ "eax25",                ifeax25,        0,      2,
+	  "ifconfig <iface> eax25 off|caller|always" },
 	{ "encapsulation",        ifencap,        0,      2,      NULL },
 	{ "forward",              ifforw,         0,      2,      NULL },
 	{ "ipaddress",            ifipaddr,       0,      2,      NULL },
@@ -396,6 +399,45 @@ ifcrc(int argc,char *argv[],void *p)
 	return 0;
 }
 
+/* Who decides whether a link on this port runs modulo-128.
+ *
+ *   off      never.  An incoming SABME is answered with DM, and we never send
+ *            one - for the interlink whose partner is known not to speak it,
+ *            so not a single probe is wasted, and for a slow channel where
+ *            the wider window buys almost nothing anyway.
+ *   caller   the default.  A caller who asked for plain AX.25 is carried
+ *            onward as plain AX.25 - if the upper leg then misbehaves he is
+ *            the one who could do nothing about it.  A connect that starts
+ *            here tries modulo-128 once and remembers the answer.
+ *   always   also upgrades a caller who asked for AX.25.  For an exclusive
+ *            interlink at a higher bit rate, where the wider window is worth
+ *            most and the operator knows the partner.
+ */
+
+static int
+ifeax25(int argc,char *argv[],void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+
+	if(argc < 2){
+		printf("EAX25 (modulo-128): %s\n",
+		 ifp->eax25 == EAX25_OFF ? "off" :
+		 ifp->eax25 == EAX25_ALWAYS ? "always" : "caller");
+		return 0;
+	}
+	if(!stricmp(argv[1],"off"))
+		ifp->eax25 = EAX25_OFF;
+	else if(!stricmp(argv[1],"caller"))
+		ifp->eax25 = EAX25_CALLER;
+	else if(!stricmp(argv[1],"always"))
+		ifp->eax25 = EAX25_ALWAYS;
+	else {
+		printf("Valid options: off caller always\n");
+		return 1;
+	}
+	return 0;
+}
+
 /* Set the network mask. This is actually done by installing
  * a routing entry.
  */
@@ -486,6 +528,11 @@ ifmtu(int argc,char *argv[],void *p)
 
 	if(!mtu_ok(ifp->name,mtu))
 		return 1;
+	if(ifp->framemax && mtu > ifp->framemax){
+		printf("%s: mtu %ld is above the %d octets this port can carry\n",
+		 ifp->name,mtu,ifp->framemax);
+		return 1;
+	}
 	ifp->mtu = (uint) mtu;
 	return 0;
 }
@@ -532,6 +579,9 @@ showiface(struct iface *ifp)
 	printf("           recv: ip %lu tot %lu idle %s\n",
 	 (unsigned long)ifp->iprecvcnt,(unsigned long)ifp->rawrecvcnt,
 	 tformat(secclock() - ifp->lastrecv));
+	printf("           eax25: %s\n",
+	 ifp->eax25 == EAX25_OFF ? "off" :
+	 ifp->eax25 == EAX25_ALWAYS ? "always" : "caller");
 	switch (ifp->crccontrol){
 	default:            printf("           crc off");           break;
 	case CRC_TEST_16:   printf("           crc-16 test");       break;

@@ -32,8 +32,8 @@
 #define RNR     0x05    /* Receiver not ready */
 #define REJ     0x09    /* Reject */
 #define U       0x03    /* Unnumbered frames */
-#define SABM    0x2f    /* Set Asynchronous Balanced Mode */
-#define SABME   0x6f    /* Set Asynchronous Balanced Mode moduluo-128 */
+#define SABM    0x2f    /* Set Asynchronous Balanced Mode, modulo-8 */
+#define SABME   0x6f    /* Set Asynchronous Balanced Mode, modulo-128 */
 #define DISC    0x43    /* Disconnect */
 #define DM      0x0f    /* Disconnected mode */
 #define UA      0x63    /* Unnumbered acknowledge */
@@ -110,7 +110,13 @@ struct ax25_cb {
 	struct iface *iface;            /* Interface */
 
 	struct mbuf *txq;               /* Transmit queue */
-	struct axreseq reseq[8];        /* Receive resequence buffer */
+	/* Resequencing needs one slot per sequence number, so modulo-128 needs
+	 * 128 of them.  The window is what bounds how many are ever in use -
+	 * EMaxframe, at most 63 - but a frame may carry any sequence number,
+	 * and indexing this by one we did not expect is how a stray frame
+	 * would write outside the array.
+	 */
+	struct axreseq reseq[EMMASK+1]; /* Receive resequence buffer */
 	struct mbuf *rxasm;             /* Receive reassembly buffer */
 	struct axservice *services;     /* Consumers, one per protocol id,
 					 * each with a queue of its own */
@@ -179,6 +185,23 @@ struct ax25_cb {
 	struct slcompress *slcomp;      /* MW: TCP header compression table */
 	int slcomp_enable;              /* MW: compression enable flag */
 #endif
+	/* MMASK or EMMASK - which modulus THIS link agreed on.  It belongs to
+	 * the link and not to the port: a port may well carry a modulo-128
+	 * interlink and a modulo-8 user at the same time, and the answer to
+	 * "which is it" is only ever settled by the SABM or SABME that opened
+	 * the link.  Same reasoning as dama_link.
+	 */
+	uint8 mmask;
+	uint8 eax25_tried;      /* We probed modulo-128 on this attempt and gave
+				 * up on it.  Kept because silence alone does
+				 * not say he cannot do it - he may simply be
+				 * away.  Only a UA to the plain SABM that
+				 * follows settles that, and then this says
+				 * which question it answered. */
+	uint8 eax25_probes;     /* SABMEs sent with no answer at all.  A peer
+				 * that cannot do modulo-128 usually says DM,
+				 * but the older ones just drop the frame, and
+				 * then only the clock can tell us. */
 };
 /* Linkage to network protocols atop ax25 */
 struct axlink {
@@ -196,7 +219,7 @@ extern struct axlink Axlink[];
 extern struct ax25_cb Ax25default,*Ax25_cb;
 extern char *Ax25states[],*Axreasons[];
 extern int32 Axirtt,Blimit;
-extern int N2,Maxframe,Paclen,Pthresh,Axwindow;
+extern int N2,Maxframe,EMaxframe,Paclen,Pthresh,Axwindow;
 extern enum lapb_version Axversion;
 
 extern int T1init;                      /* Retransmission timeout */
@@ -278,7 +301,9 @@ int lapb_input(struct iface *iface,struct ax25 *hdr,struct mbuf **bp);
 int lapb_output(struct ax25_cb *axp);
 struct mbuf *segmenter(struct mbuf **bp,uint ssize);
 int sendctl(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int cmd);
-int sendframe(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int ctl,struct mbuf **data);
+void eax25_remember(uint8 *call,int verdict);
+void eax25_fallback(struct ax25_cb *axp);
+int sendframe(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int ctl,int ctl2,struct mbuf **data);
 int busy(struct ax25_cb *cp);
 void ax_t2_timeout(void *p);
 void ax_t5_timeout(void *p);

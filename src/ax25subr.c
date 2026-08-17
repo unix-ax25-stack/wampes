@@ -23,6 +23,12 @@ struct ax25_cb *Ax25_cb;
 /* Default AX.25 parameters */
 int   Maxframe = 7;             /* Transmit flow control level */
 int   N2 = 10;                  /* 10 retries */
+/* The modulo-128 window.  Kept apart from Maxframe rather than widening it,
+ * because the two are limits on different links and an operator who raised
+ * one would otherwise silently raise the other.  32 is what the Linux kernel
+ * uses as AX25_DEF_EWINDOW; the protocol allows up to 63.
+ */
+int   EMaxframe = 32;           /* Modulo-128 transmit flow control level */
 int   Axwindow = 2048;          /* 2K incoming text before RNR'ing */
 int   Paclen = 256;             /* 256-byte I fields */
 int   Pthresh = 64;             /* Send polls for packets larger than this */
@@ -142,6 +148,12 @@ cr_ax25(uint8 *addr)
 #endif
 	}
 	axp->state = LAPB_DISCONNECTED;
+	/* Modulo-8 until something says otherwise.  This must be set and not
+	 * left at the zero callocw() gives, because every sequence number on
+	 * the link is masked with it - a zero mask would quietly hold V(S) and
+	 * V(R) at zero for ever.
+	 */
+	axp->mmask = MMASK;
 	axp->maxframe = 1;
 	axp->window = Axwindow;
 	axp->paclen = Paclen;

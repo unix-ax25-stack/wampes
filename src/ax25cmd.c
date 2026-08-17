@@ -31,6 +31,7 @@ static int doaxwindow(int argc,char *argv[],void *p);
 static int doblimit(int argc,char *argv[],void *p);
 static int dodigipeat(int argc,char *argv[],void *p);
 static int domaxframe(int argc,char *argv[],void *p);
+static int doemaxframe(int argc,char *argv[],void *p);
 static int domycall(int argc,char *argv[],void *p);
 static int don2(int argc,char *argv[],void *p);
 static int dopaclen(int argc,char *argv[],void *p);
@@ -76,6 +77,7 @@ static struct cmds Axcmds[] = {
 	{ "ignoretos",    doaxigntos,     0, 0, NULL },
 	{ "jumpstart",    dojumpstart,    0, 2, "ax25 jumpstart <call> [ON|OFF]" },
 	{ "kick",         doaxkick,       0, 2, "ax25 kick <axcb>" },
+	{ "emaxframe",    doemaxframe,    0, 0, NULL },
 	{ "maxframe",     domaxframe,     0, 0, NULL },
 	{ "mycall",       domycall,       0, 0, NULL },
 	{ "paclen",       dopaclen,       0, 0, NULL },
@@ -271,9 +273,9 @@ void *p)
 	struct ax25_cb *axp;
 
 	if(argc < 2){
-		printf("   &AXCB Rcv-Q Unack  Rt  Srtt  State          Remote\n");
+		printf("   &AXCB Rcv-Q Unack  Rt  Srtt Mod State          Remote\n");
 		for(axp = Ax25_cb;axp != NULL; axp = axp->next){
-			printf("%08lx %5u%c%3u/%u%c %2d%6lu  %-13s  %s\n",
+			printf("%08lx %5u%c%3u/%u%c %2d%6lu %3d %-13s  %s\n",
 			 (long) axp,
 			 axservice_pending(axp),
 			 axp->flags.rnrsent ? '*' : ' ',
@@ -282,6 +284,7 @@ void *p)
 			 axp->flags.remotebusy ? '*' : ' ',
 			 axp->retries,
 			 (unsigned long)axp->srt,
+			 axp->mmask + 1,
 			 Ax25states[axp->state],
 			 ax25hdr_to_string(&axp->hdr));
 		}
@@ -315,6 +318,7 @@ struct ax25_cb *axp)
 	printf(" %02u/%02u %u",axp->unack,axp->maxframe,axp->proto);
 	printf(" %02u/%02u",axp->retries,axp->n2);
 	printf(" %s\n",Ax25states[axp->state]);
+	printf("modulo %u\n",axp->mmask + 1);
 
 	printf("srtt = %lu mdev = %lu ",(unsigned long)axp->srt,
 	 (unsigned long)axp->mdev);
@@ -491,6 +495,20 @@ void *p)
 	return setintrc(&Maxframe,"Window size (frames)",argc,argv,1,7);
 }
 
+/* The window for modulo-128 links.  Its own setting rather than a wider range
+ * on "maxframe", because the two bound different links and raising one should
+ * not quietly raise the other.  63 is what the seven-bit sequence number
+ * allows with room to tell a full window from an empty one.
+ */
+static int
+doemaxframe(
+int argc,
+char *argv[],
+void *p)
+{
+	return setintrc(&EMaxframe,"Window size, modulo-128 (frames)",argc,argv,1,63);
+}
+
 /* Set maximum length of I-frame data field */
 static int
 dopaclen(
@@ -632,6 +650,7 @@ struct ax_route *rp)
 	int jumpstart;
 	int n;
 	int perm;
+	int eax25;
 #ifdef	AX25_VJCOMP
 	int vjcomp;
 #endif
@@ -643,6 +662,7 @@ struct ax_route *rp)
 	pax25(cp = buf, rp->target);
 	perm = rp->perm;
 	jumpstart = rp->jumpstart;
+	eax25 = rp->eax25;
 #ifdef	AX25_VJCOMP
 	vjcomp = rp->vjcomp;
 #endif
@@ -656,10 +676,14 @@ struct ax_route *rp)
 			cp++;
 		pax25(cp, rp_stack[i]->target);
 	}
+	/* E: modulo-128 worked with him.  e: it did not, and we will not ask
+	 * again until his route ages out or he calls us with a SABME himself.
+	 * Blank: never tried.
+	 */
 #ifdef	AX25_VJCOMP
-	printf("%2d-%.3s  %02d:%02d  %-9s  %c%c%c %s\n",
+	printf("%2d-%.3s  %02d:%02d  %-9s  %c%c%c%c %s\n",
 #else
-	printf("%2d-%.3s  %02d:%02d  %-9s  %c%c %s\n",
+	printf("%2d-%.3s  %02d:%02d  %-9s  %c%c%c %s\n",
 #endif
 	       tm->tm_mday,
 	       "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
@@ -668,6 +692,8 @@ struct ax_route *rp)
 	       ifp ? ifp->name : "???",
 	       perm ? 'P' : ' ',
 	       jumpstart ? 'J' : ' ',
+	       eax25 == AXR_EAX25_YES ? 'E' :
+	       eax25 == AXR_EAX25_NO  ? 'e' : ' ',
 #ifdef	AX25_VJCOMP
                vjcomp ? 'C' : ' ',
 #endif
@@ -686,9 +712,9 @@ void *p)
   struct ax_route *rp;
 
 #ifdef	AX25_VJCOMP
-  puts("Date    Time   Interface  PJC Path");
+  puts("Date    Time   Interface  PJEC Path");
 #else
-  puts("Date    Time   Interface  PJ Path");
+  puts("Date    Time   Interface  PJE Path");
 #endif
   if(argc < 2) {
     for (i = 0; i < AXROUTESIZE; i++)

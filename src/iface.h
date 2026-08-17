@@ -155,6 +155,22 @@ struct iface {
 	int32 ax25errors;       /* Packets received with bad ax25 header */
 	uint flags;             /* Configuration flags */
 #define NO_RT_ADD       1       /* Don't call rt_add in ip_route */
+
+	/* May links on this port run modulo-128, and who decides.  Zero is the
+	 * default on purpose, so an interface that nobody configured behaves
+	 * the way most ports should.
+	 */
+	/* Largest AX.25 frame this port can carry, or 0 for no limit.  A driver
+	 * with a hard buffer sets it at attach and ifmtu() then refuses to be
+	 * configured past it - silently dropping oversized frames, which is
+	 * what 6pack does today, is the worst of the possible answers.
+	 */
+	int framemax;
+
+	int eax25;
+#define EAX25_CALLER    0       /* follow the caller; try when we originate */
+#define EAX25_OFF       1       /* never - answer SABME with DM */
+#define EAX25_ALWAYS    2       /* also upgrade a caller who asked for AX.25 */
 };
 extern struct iface *Ifaces;    /* Head of interface list */
 extern struct iface  Loopback;  /* Optional loopback interface */

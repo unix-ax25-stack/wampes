@@ -21,6 +21,7 @@ static void clr_ex(struct ax25_cb *axp);
 static void enq_resp(struct ax25_cb *axp);
 static void inv_rex(struct ax25_cb *axp);
 static void resequence(struct ax25_cb *axp,struct mbuf **bpp,int ns,int pf,int poll);
+static int eax25_wanted(struct iface *ifp,uint8 *dest,struct ax25_cb *from);
 
 /* Process incoming frames */
 int
@@ -33,6 +34,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	struct ax25_cb *axp;    /* Link control structure */
 	enum lapb_cmdrsp cmdrsp = hdr->cmdrsp;  /* Command/response flag */
 	int control;
+	int controlx = -1;      /* Second control octet, modulo-128 only */
 	int class;              /* General class (I/S/U) of frame */
 	uint type;              /* Specific type (I/RR/RNR/etc) of frame */
 	char pf;                /* extracted poll/final bit */
@@ -55,20 +57,6 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	}
 	type = ftype(control);
 	class = type & 0x3;
-	pf = control & PF;
-	/* Check for polls and finals */
-	if(pf){
-		switch(cmdrsp){
-		case LAPB_COMMAND:
-			poll = YES;
-			break;
-		case LAPB_RESPONSE:
-			final = YES;
-			break;
-		default:
-			break;
-		}
-	}
 	/* Are we the addressee, or are we being asked to relay?  Besides the
 	 * interfaces' own callsigns this has to count the ones our links use
 	 * and the ones we listen for - see ax_answers_to().  Widened, never
@@ -77,16 +65,6 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	 */
 	digipeat = (ismyax25addr(hdr->dest) == NULL
 		    && !ax_answers_to(iface,hdr->dest));
-	/* Extract sequence numbers, if present */
-	switch(class){
-	case I:
-	case I+2:
-		ns = (control >> 1) & MMASK;
-	case S: /* Note fall-thru */
-		nr = (control >> 5) & MMASK;
-		break;
-	}
-
 	if(digipeat){
 		struct ax25_cb *axlast = NULL;
 		for(axp = Ax25_cb; axp; axlast = axp,axp = axp->next)
@@ -113,6 +91,79 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 
 	if(cmdrsp == LAPB_UNKNOWN)
 		axp->proto = V1;        /* Old protocol in use */
+
+	/* A SABM or SABME does not merely open a link, it states which modulus
+	 * the link runs on, and either may arrive at any time - including on
+	 * one that is already up.  Taking what the frame says, here and once,
+	 * is what AX.25 2.2 asks for and what the Linux kernel does in
+	 * ax25_std_state3_machine().  Deciding it separately in every state is
+	 * how the two drifted apart in the patch this was built from.
+	 */
+	/* A port set to "eax25 off" refuses modulo-128 from the other side too.
+	 * DM is the right answer and not silence: it tells him at once that we
+	 * are here and that this is not the way, so his own fallback starts
+	 * now rather than after his retries run out.
+	 */
+	if(type == SABME && iface != NULL && iface->eax25 == EAX25_OFF){
+		sendctl(axp,LAPB_RESPONSE,DM | (control & PF));
+		free_p(bpp);
+		return 0;
+	}
+
+	if(type == SABM || type == SABME){
+		axp->mmask = (type == SABME) ? EMMASK : MMASK;
+		if(type == SABME){
+			axp->hdr.ext |= SSID_EAX25;
+			/* He is calling US with it, so he can do it - the one
+			 * piece of evidence that needs no probe, and the one
+			 * that undoes an earlier "cannot" the moment his end
+			 * is fixed.
+			 */
+			eax25_remember(hdr->source,AXR_EAX25_YES);
+		} else
+			axp->hdr.ext &= ~SSID_EAX25;
+	}
+
+	/* Now that the link is known, the rest of the control field can be
+	 * read: modulo-128 carries the sequence numbers and the poll/final bit
+	 * in a SECOND octet, and only for I and S frames.  A U frame has no
+	 * sequence number to widen and keeps its single octet in both moduli -
+	 * which is what makes SABME readable at all before anything has been
+	 * agreed.
+	 */
+	if(class != U && axp->mmask == EMMASK){
+		if((controlx = PULLCHAR(bpp)) == -1){
+			free_p(bpp);
+			return -1;
+		}
+		pf = (controlx & PF_EAX25);
+	} else
+		pf = control & PF;
+
+	/* Check for polls and finals */
+	if(pf){
+		switch(cmdrsp){
+		case LAPB_COMMAND:
+			poll = YES;
+			break;
+		case LAPB_RESPONSE:
+			final = YES;
+			break;
+		default:
+			break;
+		}
+	}
+
+	/* Extract sequence numbers, if present */
+	switch(class){
+	case I:
+	case I+2:
+		ns = (control >> 1) & axp->mmask;
+	case S: /* Note fall-thru */
+		nr = (axp->mmask == EMMASK) ? ((controlx >> 1) & EMMASK)
+					    : ((control >> 5) & MMASK);
+		break;
+	}
 
 	/* DAMA.  The MASTER's SSID octet carries the bit, so on a connection
 	 * the user placed it arrives in the UA, not in the SABM - the SABM is
@@ -141,6 +192,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	case LAPB_DISCONNECTED:
 		switch(type){
 		case SABM:      /* Initialize or reset link */
+		case SABME:     /* the same, modulo-128 */
 			if(!digipeat){
 			sendctl(axp,LAPB_RESPONSE,UA|pf);       /* Always accept */
 			clr_ex(axp);
@@ -178,6 +230,10 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			} else {
 				switch(axp->peer->state){
 				case LAPB_DISCONNECTED:
+					axp->peer->mmask =
+					 eax25_wanted(axp->peer->iface,
+						      axp->peer->hdr.dest,axp);
+					axp->peer->eax25_probes = 0;
 					sendctl(axp->peer,LAPB_COMMAND,SABM|PF);
 					start_timer(&axp->peer->t1);
 					lapbstate(axp->peer,LAPB_SETUP);
@@ -217,12 +273,27 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	case LAPB_SETUP:
 		switch(type){
 		case SABM:      /* Simultaneous open */
+		case SABME:
 			sendctl(axp,LAPB_RESPONSE,UA|pf);
 			break;
 		case DISC:
 			sendctl(axp,LAPB_RESPONSE,DM|pf);
 			break;
 		case UA:        /* Connection accepted */
+			if(axp->mmask == EMMASK)
+				eax25_remember(axp->hdr.dest,AXR_EAX25_YES);
+			else if(axp->eax25_tried){
+				/* He ignored the SABMEs and answered the SABM.
+				 * THAT is what tells the two cases apart:
+				 * silence alone would have been just as
+				 * consistent with a station that is away, and
+				 * marking an absent neighbour as incapable
+				 * would stick to him for as long as his route
+				 * lives.
+				 */
+				eax25_remember(axp->hdr.dest,AXR_EAX25_NO);
+				axp->eax25_tried = 0;
+			}
 			/* Note: xmit queue not cleared */
 			stop_timer(&axp->t1);
 			start_timer(&axp->t3);
@@ -237,6 +308,16 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			}
 			break;
 		case DM:        /* Connection refused */
+			if(axp->mmask == EMMASK){
+				/* Not a refusal - he simply does not speak
+				 * modulo-128 and says so.  Ask again plainly;
+				 * a DM to THAT one means there really is no
+				 * service.
+				 */
+				eax25_fallback(axp);
+				free_p(bpp);
+				return 0;
+			}
 			if(axp->peer)
 				sendctl(axp->peer,LAPB_RESPONSE,DM|PF);
 			free_q(&axp->txq);
@@ -252,6 +333,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	case LAPB_DISCPENDING:
 		switch(type){
 		case SABM:
+		case SABME:
 			sendctl(axp,LAPB_RESPONSE,DM|pf);
 			break;
 		case DISC:
@@ -272,13 +354,14 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	case LAPB_CONNECTED:
 		switch(type){
 		case SABM:
+		case SABME:
 			sendctl(axp,LAPB_RESPONSE,UA|pf);
 			clr_ex(axp);
 			/* free_q(&axp->txq); */
 			stop_timer(&axp->t1);
 			start_timer(&axp->t3);
 			start_timer(&axp->t5);
-			for(tmp = 0; tmp < 8; tmp++){
+			for(tmp = 0; tmp <= EMMASK; tmp++){
 				free_p(&axp->reseq[tmp].bp);
 			}
 			axp->unack = axp->vr = axp->vs = 0;
@@ -321,6 +404,14 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			/* lapbstate(axp,LAPB_SETUP);      Re-establish */
 			break;
 		case FRMR:
+			/* He accepted the SABME and then could not follow.
+			 * Remember "cannot" rather than clearing what we knew:
+			 * unknown would mean probing him again on the very next
+			 * connect, which is the cost we became three-valued to
+			 * avoid.  An incoming SABME from him undoes it.
+			 */
+			if(axp->mmask == EMMASK)
+				eax25_remember(axp->hdr.dest,AXR_EAX25_NO);
 			sendctl(axp,LAPB_COMMAND,DISC|PF);
 			start_timer(&axp->t1);
 			lapbstate(axp,LAPB_DISCPENDING);
@@ -367,12 +458,13 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	case LAPB_RECOVERY:
 		switch(type){
 		case SABM:
+		case SABME:
 			sendctl(axp,LAPB_RESPONSE,UA|pf);
 			clr_ex(axp);
 			stop_timer(&axp->t1);
 			start_timer(&axp->t3);
 			start_timer(&axp->t5);
-			for(tmp = 0; tmp < 8; tmp++){
+			for(tmp = 0; tmp <= EMMASK; tmp++){
 				free_p(&axp->reseq[tmp].bp);
 			}
 			axp->unack = axp->vr = axp->vs = 0;
@@ -416,6 +508,14 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			/* lapbstate(axp,LAPB_SETUP);      Re-establish */
 			break;
 		case FRMR:
+			/* He accepted the SABME and then could not follow.
+			 * Remember "cannot" rather than clearing what we knew:
+			 * unknown would mean probing him again on the very next
+			 * connect, which is the cost we became three-valued to
+			 * avoid.  An incoming SABME from him undoes it.
+			 */
+			if(axp->mmask == EMMASK)
+				eax25_remember(axp->hdr.dest,AXR_EAX25_NO);
 			sendctl(axp,LAPB_COMMAND,DISC|PF);
 			start_timer(&axp->t1);
 			lapbstate(axp,LAPB_DISCPENDING);
@@ -550,7 +650,7 @@ int rex_all
 	 * If we try to free a null pointer,
 	 * then we have a frame reject condition.
 	 */
-	oldest = (axp->vs - axp->unack) & MMASK;
+	oldest = (axp->vs - axp->unack) & axp->mmask;
 	while(axp->unack != 0 && oldest != n){
 		if((bp = dequeue(&axp->txq)) == NULL){
 			/* Acking unsent frame */
@@ -574,13 +674,13 @@ int rex_all
 				/* Update timeout */
 				tmp = 4*axp->mdev+axp->srt;
 				set_timer(&axp->t1,max(tmp,500));
-				if(axp->maxframe < Maxframe)
+				if(axp->maxframe < (axp->mmask == EMMASK ? EMaxframe : Maxframe))
 					axp->maxframe++;
 			}
 			axp->flags.retrans = 0;
 		}
 		axp->retries = 0;
-		oldest = (oldest + 1) & MMASK;
+		oldest = (oldest + 1) & axp->mmask;
 	}
 	if(axp->unack == 0){
 		/* All frames acked, stop timeout */
@@ -593,7 +693,7 @@ int rex_all
 	if(rex_all){
 		axp->flags.retrans = 1;
 		axp->vs -= axp->unack;
-		axp->vs &= MMASK;
+		axp->vs &= axp->mmask;
 		axp->unack = 0;
 	}
 	if(acked != 0){
@@ -621,12 +721,80 @@ int rex_all
 	return 0;
 }
 
+/* Remember what modulo-128 actually did with this station.  Our own traffic
+ * is the only thing that teaches this - what a station claims in the EAX bit
+ * of its SSID says it is willing, not that it works.
+ */
+
+void eax25_remember(uint8 *call, int verdict)
+{
+	struct ax_route *rp;
+
+	if((rp = ax_routeptr(call,1)) != NULL)
+		rp->eax25 = verdict;
+}
+
+/* Which modulus a link we are about to open should ask for.
+ *
+ * "from" is the other half when we are relaying and NULL when the connect
+ * starts here.  Under EAX25_CALLER that is the whole rule: a user who asked
+ * for plain AX.25 is carried onward as plain AX.25, because if the upper leg
+ * then misbehaves he is the one who can do nothing about it - he already used
+ * the most conservative thing he has.  EAX25_ALWAYS overrules him, and that
+ * is meant for an interlink whose partner the operator knows.
+ */
+
+static int eax25_wanted(struct iface *ifp, uint8 *dest, struct ax25_cb *from)
+{
+	struct ax_route *rp;
+
+	if(ifp != NULL && ifp->eax25 == EAX25_OFF)
+		return MMASK;
+	if((rp = ax_routeptr(dest,0)) != NULL && rp->eax25 == AXR_EAX25_NO)
+		return MMASK;
+	if(ifp != NULL && ifp->eax25 == EAX25_ALWAYS)
+		return EMMASK;
+	if(from != NULL)
+		return from->mmask;
+	return EMMASK;
+}
+
+/* Give up on modulo-128 for this attempt and ask again the plain way.  The
+ * link stays in setup: to the caller above us nothing has happened yet, and
+ * that is the point - he asked for a connection, not for a modulus.
+ */
+
+void eax25_fallback(struct ax25_cb *axp)
+{
+	axp->mmask = MMASK;
+	axp->hdr.ext &= ~SSID_EAX25;
+	axp->eax25_probes = 0;
+	axp->eax25_tried = 1;
+
+	/* Start the retransmission timer over.  What the probes proved is that
+	 * he does not speak modulo-128; they said nothing about how long the
+	 * path is, so carrying their stretched T1 into the plain attempt would
+	 * punish the connection for the wrong reason.
+	 *
+	 * The retry COUNT is deliberately not reset.  Left alone, the probes
+	 * are paid out of the tries the caller was already willing to spend:
+	 * three SABMEs and the seven SABMs that remain come to about 94 s,
+	 * where ten SABMs alone take 166 s.  Falling back therefore costs him
+	 * nothing - it ends sooner than not trying at all.
+	 */
+	set_timer(&axp->t1,4 * axp->mdev);
+	sendctl(axp,LAPB_COMMAND,SABM|PF);
+	start_timer(&axp->t1);
+}
+
 /* Establish data link */
 void
 est_link(struct ax25_cb *axp)
 {
 	clr_ex(axp);
 	axp->retries = 0;
+	axp->eax25_probes = 0;
+	axp->mmask = eax25_wanted(axp->iface,axp->hdr.dest,NULL);
 	sendctl(axp,LAPB_COMMAND,SABM|PF);
 	stop_timer(&axp->t3);
 	start_timer(&axp->t1);
@@ -657,7 +825,7 @@ static void
 inv_rex(struct ax25_cb *axp)
 {
 	axp->vs -= axp->unack;
-	axp->vs &= MMASK;
+	axp->vs &= axp->mmask;
 	axp->unack = 0;
 }
 /* Send S or U frame to currently connected station */
@@ -667,6 +835,8 @@ struct ax25_cb *axp,
 enum lapb_cmdrsp cmdrsp,
 int cmd
 ){
+	int ctlx = -1;
+
 	switch(cmd & ~PF){
 	case RR:
 	case REJ:
@@ -677,9 +847,27 @@ int cmd
 		axp->flags.rnrsent = 1;
 		break;
 	}
-	if((ftype((char)cmd) & 0x3) == S)       /* Insert V(R) if S frame */
-		cmd |= (axp->vr << 5);
-	return sendframe(axp,cmdrsp,cmd,NULL);
+	if((ftype(cmd & 0xff) & 0x3) == S){     /* Insert V(R) if S frame */
+		if(axp->mmask == EMMASK){
+			/* Modulo-128 splits an S frame over two octets: the type
+			 * stays in the first, N(R) and the poll/final bit move to
+			 * the second.
+			 */
+			ctlx = ((cmd & PF) ? PF_EAX25 : 0) | (axp->vr << 1);
+			cmd &= 0x0f;
+		} else
+			cmd |= (axp->vr << 5);
+	} else if(axp->mmask == EMMASK && (cmd & ~PF) == SABM){
+		/* This is where the decision to speak modulo-128 leaves the
+		 * node: est_link() always asks for a SABM, and whoever set
+		 * mmask beforehand turns it into a SABME.  A U frame keeps its
+		 * single octet in both moduli, so nothing else changes - and
+		 * that is precisely why a SABME is readable by a peer that has
+		 * agreed to nothing yet.
+		 */
+		cmd = SABME | (cmd & PF);
+	}
+	return sendframe(axp,cmdrsp,cmd,ctlx,NULL);
 }
 /* Start data transmission on link, if possible
  * Return number of frames sent
@@ -689,7 +877,11 @@ lapb_output(struct ax25_cb *axp)
 {
 	struct mbuf *bp;
 	struct mbuf *tbp;
-	char control;
+	int control;            /* int, not char: modulo-128 puts V(S) up to 127
+				 * in bits 1..7, and 127<<1 does not fit a signed
+				 * char.  The old value never exceeded 0xEE and
+				 * survived by the mask below happening to cut the
+				 * sign extension off again. */
 	int sent = 0;
 	int i;
 
@@ -738,12 +930,18 @@ lapb_output(struct ax25_cb *axp)
 	 * or when there are no more frames to send
 	 */
 	while(bp != NULL && axp->unack < axp->maxframe){
-		control = I | (axp->vs++ << 1) | (axp->vr << 5);
-		axp->vs &= MMASK;
+		int controlx = -1;
+
+		if(axp->mmask == EMMASK){
+			control = I | (axp->vs++ << 1);
+			controlx = (axp->vr << 1);      /* no poll on this one */
+		} else
+			control = I | (axp->vs++ << 1) | (axp->vr << 5);
+		axp->vs &= axp->mmask;
 		dup_p(&tbp,bp,0,len_p(bp));
 		if(tbp == NULL)
 			return sent;    /* Probably out of memory */
-		sendframe(axp,LAPB_COMMAND,control,&tbp);
+		sendframe(axp,LAPB_COMMAND,control,controlx,&tbp);
 		axp->unack++;
 		/* We're implicitly acking any data he's sent, so stop any
 		 * delayed ack
@@ -758,7 +956,7 @@ lapb_output(struct ax25_cb *axp)
 		bp = bp->anext;
 		if(!axp->flags.rtt_run){
 			/* Start round trip timer */
-			axp->rtt_seq = (control >> 1) & MMASK;
+			axp->rtt_seq = (control >> 1) & axp->mmask;
 			axp->rtt_time = msclock();
 			axp->flags.rtt_run = 1;
 		}
@@ -771,6 +969,7 @@ sendframe(
 struct ax25_cb *axp,
 enum lapb_cmdrsp cmdrsp,
 int ctl,
+int ctlx,                       /* Second control octet, or -1 for none */
 struct mbuf **bpp
 ){
 	struct iface *ifp;
@@ -779,6 +978,11 @@ struct mbuf **bpp
 	if(bpp == NULL){
 		bp = NULL;
 		bpp = &bp;
+	}
+	/* Pushed first so that it ends up behind ctl, which is pushed next */
+	if(ctlx != -1){
+		pushdown(bpp,NULL,1);
+		(*bpp)->data[0] = ctlx;
 	}
 	pushdown(bpp,NULL,1);
 	(*bpp)->data[0] = ctl;
@@ -869,7 +1073,7 @@ int poll)
 		return;
 
 	rp = &axp->reseq[ns];
-	if(ns != ((axp->vr - 1) & MMASK) && rp->bp == NULL){
+	if(ns != ((axp->vr - 1) & axp->mmask) && rp->bp == NULL){
 		for(sum = 0,tp = *bpp;tp;tp = tp->next)
 			for(p = tp->data,cnt = tp->cnt;cnt > 0;cnt--)
 				sum += *p++;
@@ -884,11 +1088,11 @@ int poll)
 
 	old_vr = axp->vr;
 	while(axp->reseq[axp->vr].bp != NULL){
-		axp->vr = (axp->vr + 1) & MMASK;
+		axp->vr = (axp->vr + 1) & axp->mmask;
 		axp->flags.rejsent = NO;
 	}
 	rejcond = 0;
-	for(tmp = (axp->vr + 1) & MMASK;tmp != old_vr;tmp = (tmp + 1) & MMASK)
+	for(tmp = (axp->vr + 1) & axp->mmask;tmp != old_vr;tmp = (tmp + 1) & axp->mmask)
 		if(axp->reseq[tmp].bp != NULL){
 			rejcond = 1;
 			break;
@@ -907,7 +1111,7 @@ int poll)
 
 	while((bp = axp->reseq[old_vr].bp) != NULL){
 		axp->reseq[old_vr].bp = NULL;
-		old_vr = (old_vr + 1) & MMASK;
+		old_vr = (old_vr + 1) & axp->mmask;
 		if(axp->peer)
 			send_ax25(axp->peer,&bp,-1);
 		else
@@ -1125,7 +1329,7 @@ void *p)
 	}
 
 	if (!axp->flags.rejsent) {
-		for (i = 0; i < 8; i++) {
+		for (i = 0; i <= EMMASK; i++) {
 			if (axp->reseq[i].bp) {
 				axp->flags.rejsent = YES;
 				sendctl(axp, LAPB_RESPONSE, REJ);

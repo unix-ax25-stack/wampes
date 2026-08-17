@@ -99,6 +99,11 @@ int sixpack_init(struct iface *ifp)
 	}
 
 	memset(sp, 0, sizeof(*sp));
+	/* One buffer, one frame - see SIXP_MAX_FRAME.  Declaring it here is
+	 * what lets ifmtu() refuse an impossible setting instead of letting
+	 * sixpack_encode() drop the frames without a word.
+	 */
+	ifp->framemax = SIXP_MAX_FRAME - 2;
 	ifp->ioctl = sixpack_ioctl;
 	ifp->raw = sixpack_raw;
 	ifp->hwaddr = (uint8 *) mallocw(AXALEN);
@@ -236,6 +241,12 @@ static struct mbuf *sixpack_encode(struct sixpack *sp, struct mbuf **bpp)
 	 * since a truncated frame is worse than a refused one.
 	 */
 	if ((len = (int) len_p(*bpp)) > (int) sizeof(in) - 2) {
+		/* Counted, because this is otherwise invisible: the frame goes
+		 * away and nothing says why.  ax25 paclen is one number for the
+		 * whole node, so raising it can silence a 6pack port while
+		 * every other port keeps working.
+		 */
+		sp->errors++;
 		free_p(bpp);
 		return NULL;
 	}

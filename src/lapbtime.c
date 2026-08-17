@@ -77,6 +77,21 @@ recover(void *p)
 
 	switch(axp->state){
 	case LAPB_SETUP:
+		/* Three SABMEs and not a sound.  A peer that cannot do
+		 * modulo-128 usually answers DM, and lapb_input() falls back on
+		 * that at once; the older ones simply drop the frame, and then
+		 * only the clock tells them apart from a station that is away.
+		 *
+		 * Three probes cost about 19 s at T1init 5000 with the 1.25
+		 * backoff, against the ten retries over some 166 s that the
+		 * caller on the other side is willing to wait - and 550 s in
+		 * the Linux kernel, which falls back only after its WHOLE N2
+		 * cycle.  There is room for three.
+		 */
+		if(axp->mmask == EMMASK && ++axp->eax25_probes >= 3){
+			eax25_fallback(axp);
+			return;
+		}
 		if(axp->peer && axp->peer->state == LAPB_DISCONNECTED){
 			if(axp->retries > 2){
 				free_q(&axp->txq);
@@ -165,7 +180,8 @@ pollthem(void *p)
 static void
 tx_enq(struct ax25_cb *axp)
 {
-	char ctl;
+	int ctl;                /* int, not char - see lapb_output() */
+	int ctlx;
 	struct mbuf *bp;
 
 	/* I believe that retransmitting the oldest unacked
@@ -178,9 +194,13 @@ tx_enq(struct ax25_cb *axp)
 	 && (len_p(axp->txq) < axp->pthresh || axp->proto == V1)){
 		/* Retransmit oldest unacked I-frame */
 		dup_p(&bp,axp->txq,0,len_p(axp->txq));
-		ctl = PF | I | (((axp->vs - axp->unack) & MMASK) << 1)
-		 | (axp->vr << 5);
-		sendframe(axp,LAPB_COMMAND,ctl,&bp);
+		ctlx = -1;
+		ctl = I | (((axp->vs - axp->unack) & axp->mmask) << 1);
+		if(axp->mmask == EMMASK)
+			ctlx = PF_EAX25 | ((axp->vr & EMMASK) << 1);
+		else
+			ctl |= PF | (axp->vr << 5);
+		sendframe(axp,LAPB_COMMAND,ctl,ctlx,&bp);
 	} else {
 		ctl = busy(axp)                      ? RNR|PF : RR|PF;
 		sendctl(axp,LAPB_COMMAND,ctl);

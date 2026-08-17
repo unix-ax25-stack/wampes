@@ -70,7 +70,24 @@ struct ax_route {
 	int jumpstart;
 	long time;
 	int vjcomp;                     /* MW: can do TCP compression */
+	/* What we learned about modulo-128 with this station, from our own
+	 * traffic and nothing else: 0 not tried, 1 it worked, -1 it did not.
+	 * Three values and not two, because "did not" has to be told apart
+	 * from "never asked" - otherwise every connect probes again, and the
+	 * station that answers nothing costs the full probe each time.
+	 *
+	 * Deliberately NOT written to axroute_data.  A restart is exactly when
+	 * asking again is right, because the other end may have grown new
+	 * hardware meanwhile, and one probe is all it costs.  The entry ages
+	 * with the route: axroute_savefile() frees what has not been used for
+	 * AXROUTE_HOLDTIME, so a "cannot" does not outlive its station.
+	 */
+	int eax25;
 };
+
+#define AXR_EAX25_UNKNOWN        0
+#define AXR_EAX25_YES            1
+#define AXR_EAX25_NO           (-1)
 
 #define AXROUTESIZE     499
 extern struct ax_route *Ax_routes[];
