@@ -35,6 +35,34 @@ recover(void *p)
 	 * expires).  See doc/DAMA-SLAVE.md.
 	 */
 	if(dama_holds(axp)){
+		/* With frames outstanding this is not merely waiting: the
+		 * master has had a whole T1 to acknowledge them and has not,
+		 * so they were lost.  Note that they must go again - the
+		 * retransmission itself belongs in the window the next poll
+		 * opens, not here - and count it, because a retransmission is
+		 * a retry whenever it happens and something has to bound them.
+		 *
+		 * With nothing outstanding, nothing is counted.  That is the
+		 * difference between a link that is failing and one that is
+		 * waiting to be asked, and it is the whole reason we do not
+		 * die where Linux does.
+		 *
+		 * The paper wants T1 above the poll interval for exactly this
+		 * reason, and WAMPES gets there by itself: srt is measured
+		 * over send-to-acknowledge, which under DAMA spans a full
+		 * cycle, so T1 grows to fit the channel.
+		 */
+		if(axp->unack){
+			axp->retries++;
+			if(axp->n2 != 0 && axp->retries > axp->n2){
+				sendctl(axp,LAPB_RESPONSE,DM|PF);
+				free_q(&axp->txq);
+				axp->reason = LB_TIMEOUT;
+				lapbstate(axp,LAPB_DISCONNECTED);
+				return;
+			}
+			axp->dama_rex = 1;
+		}
 		start_timer(&axp->t1);
 		return;
 	}

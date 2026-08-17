@@ -21,10 +21,12 @@
 #define DAMA_OFF        0
 #define DAMA_SLAVE      1
 
-void dama_heard_frame(struct iface *ifp);
+void dama_heard_frame(struct iface *ifp,const uint8 *src);
 int  dama_holds(struct ax25_cb *axp);
-void dama_poll_begin(struct ax25_cb *axp,int ispoll);
-void dama_poll_end(struct ax25_cb *axp);
+void dama_poll_begin(struct iface *ifp,int ispoll,const uint8 *src);
+void dama_poll_end(struct iface *ifp);
+void dama_serve_others(struct iface *ifp,struct ax25_cb *polled);
+void dama_mark(struct ax25_cb *axp);
 void dama_wait(struct ax25_cb *axp);
 int  ifdama(int argc, char *argv[], void *p);
 int  ifdamatimeout(int argc, char *argv[], void *p);

@@ -143,6 +143,14 @@ struct iface {
 	int32 dama_entered;     /* Times a master was found */
 	int32 dama_lost;        /* Times one went away again */
 	int32 dama_polls;       /* Polls answered */
+	int dama_window;        /* Set only while lapb_input() handles a poll
+				 * on this port - the whole of a slave's
+				 * permission to transmit, and it belongs to
+				 * the station, not to one connection */
+	int dama_turn;          /* Which link gets the next turn */
+	uint8 dama_master[7];   /* Whose polls count.  On a DAMA channel one
+				 * station decides who transmits, so a poll
+				 * from anybody else is not a poll. */
 
 	int32 crcerrors;        /* Packets received with CRC errors */
 	int32 ax25errors;       /* Packets received with bad ax25 header */

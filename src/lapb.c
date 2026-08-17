@@ -132,8 +132,8 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	 * already handles a master that stops speaking DAMA at all.
 	 */
 	if(hdr->ext & SSID_DAMA)
-		dama_heard_frame(iface);
-	dama_poll_begin(axp,poll);
+		dama_heard_frame(iface,hdr->source);
+	dama_poll_begin(iface,poll,hdr->source);
 
 	/* This section follows the SDL diagrams by K3NA fairly closely */
 	switch(axp->state){
@@ -523,7 +523,8 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			lapbstate(axp,LAPB_DISCPENDING);
 		}
 	}
-	dama_poll_end(axp);
+	dama_serve_others(iface,axp);
+	dama_poll_end(iface);
 	return 0;
 }
 /* Handle incoming acknowledgements for frames we've sent.
@@ -708,6 +709,22 @@ lapb_output(struct ax25_cb *axp)
 		return 0;
 	}
 
+	/* Polled, and T1 has meanwhile said that what we sent last time was
+	 * never acknowledged.  In ordinary AX.25 T1 would have resent it long
+	 * ago; under DAMA it may not transmit at all, so the retransmission
+	 * happens here instead - in the window a poll opened, which is the
+	 * only place a slave is allowed to put anything on the air.
+	 *
+	 * Without this a DAMA slave never retransmits anything.  On a clean
+	 * channel that is invisible; measured on one with 30% loss, the node
+	 * answered every poll with a bare RR and its data never moved again.
+	 */
+	if(axp->dama_rex){
+		axp->dama_rex = 0;
+		if(axp->unack)
+			inv_rex(axp);
+	}
+
 	/* Dig into the send queue for the first unsent frame */
 	bp = axp->txq;
 	for(i = 0; i < axp->unack; i++){
@@ -767,6 +784,7 @@ struct mbuf **bpp
 	if ((ctl & 3) != U)
 		stop_timer(&axp->t2);
 	axp->hdr.cmdrsp = cmdrsp;
+	dama_mark(axp);
 	htonax25(&axp->hdr,bpp);
 	if ((ifp = axp->iface)) {
 		if (ifp->forw)

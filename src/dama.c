@@ -105,13 +105,21 @@ static int dama_in_force(struct iface *ifp)
  * master, only that this port may follow one.
  */
 
-void dama_heard_frame(struct iface *ifp)
+void dama_heard_frame(struct iface *ifp, const uint8 *src)
 {
 	if (ifp == NULL || ifp->dama != DAMA_SLAVE)
 		return;
 	if (ifp->dama_heard == 0)
 		ifp->dama_entered++;
 	ifp->dama_heard = secclock();
+	/* And WHO it was.  Without this any neighbour's command with the poll
+	 * bit would hand us the channel, which is the opposite of the point:
+	 * on a DAMA channel exactly one station decides who transmits.  The
+	 * callsign is remembered rather than the bit, so a master that marks
+	 * only the connect - which the paper allows - still polls recognisably
+	 * afterwards.
+	 */
+	addrcp(ifp->dama_master, src);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -126,38 +134,95 @@ void dama_heard_frame(struct iface *ifp)
 
 int dama_holds(struct ax25_cb *axp)
 {
-	if (axp == NULL || axp->dama_polled)
+	if (axp == NULL || axp->iface == NULL || axp->iface->dama_window)
 		return 0;
 	return dama_in_force(axp->iface);
 }
 
 /*---------------------------------------------------------------------------*/
 
-/* Open and close the window around the handling of one received frame.
+/* THE PERMISSION BELONGS TO THE STATION, NOT TO THE CONNECTION, and getting
+ * that wrong was the first version's real mistake.  Both references say so:
+ * TNN's "sendok" is per PORT and l2dama.c rotates over the links of a station
+ * with zael/indx, and its manual states the consequence - "USER mit
+ * Multiconnect kommen gegenueber USERN mit nur einer Verbindung zum Knoten
+ * nicht oefters an die Reihe".  One station, one turn in the cycle, its links
+ * sharing it.
  *
- * dama_poll_begin() is called for EVERY frame, not only for polls, and clears
- * before it sets.  That is not tidiness: lapb_input() has seven early exits,
- * all of them tearing the link down, and without the clearing a control block
- * could carry a permission out of the invocation that granted it and into a
- * timer that fires later.  Cheaper to make the flag impossible to leak than
- * to prove that none of those seven paths matters.
+ * A window per connection happens to look right while there is only one
+ * connection on the port.  It goes wrong as soon as there are two - and it
+ * goes wrong in a way that is easy to miss, because the case that exposes it
+ * is DIGIPEATING THROUGH THE MASTER.  There the master is not an endpoint of
+ * our connection at all, so it cannot poll "that link"; it can only give the
+ * station its turn.  ntohax25() reads the DAMA bit from hdr->source and never
+ * from a digipeater field, so nothing about such a frame identifies the
+ * master either.
+ *
+ * So: the window is opened by any poll arriving on the port, and one link is
+ * served per window, taken in turn.  When the master polls a particular link
+ * of ours - the ordinary case - that link is the one served, and the
+ * behaviour is what it was.  When it polls the station, the rotation decides,
+ * and no multiconnect user takes more of the channel than a single-connection
+ * one.
+ *
+ * The turn is an ordinal rather than a remembered control block, deliberately:
+ * a pointer here would dangle the moment a link went away, and a link going
+ * away is the normal end of every connection.
  */
 
-void dama_poll_begin(struct ax25_cb *axp, int ispoll)
+void dama_poll_begin(struct iface *ifp, int ispoll, const uint8 *src)
 {
-	if (axp == NULL)
+	if (ifp == NULL)
 		return;
-	axp->dama_polled = 0;
-	if (ispoll && dama_in_force(axp->iface)) {
-		axp->dama_polled = 1;
-		axp->iface->dama_polls++;
+	ifp->dama_window = 0;
+	if (ispoll && dama_in_force(ifp) && addreq(src, ifp->dama_master)) {
+		ifp->dama_window = 1;
+		ifp->dama_polls++;
 	}
 }
 
-void dama_poll_end(struct ax25_cb *axp)
+void dama_poll_end(struct iface *ifp)
 {
-	if (axp != NULL)
-		axp->dama_polled = 0;
+	if (ifp != NULL)
+		ifp->dama_window = 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Our turn has come and the polled link has had its chance.  Give it to one
+ * of the others on this port, taken in rotation - the digipeated connection
+ * that the master cannot address, or the second link of a multiconnect.
+ *
+ * Called once, at the end of lapb_input(), after the polled link itself has
+ * been through lapb_output().  If that link sent something, the turn is used
+ * up and this does nothing.
+ */
+
+void dama_serve_others(struct iface *ifp, struct ax25_cb *polled)
+{
+	struct ax25_cb *axp;
+	int eligible = 0;
+	int n;
+
+	if (ifp == NULL || !ifp->dama_window)
+		return;
+
+	for (axp = Ax25_cb; axp != NULL; axp = axp->next)
+		if (axp != polled && axp->iface == ifp && axp->txq != NULL &&
+		    (axp->state == LAPB_CONNECTED || axp->state == LAPB_RECOVERY))
+			eligible++;
+	if (eligible == 0)
+		return;
+
+	n = ifp->dama_turn % eligible;
+	ifp->dama_turn++;
+	for (axp = Ax25_cb; axp != NULL; axp = axp->next)
+		if (axp != polled && axp->iface == ifp && axp->txq != NULL &&
+		    (axp->state == LAPB_CONNECTED || axp->state == LAPB_RECOVERY))
+			if (n-- == 0) {
+				lapb_output(axp);
+				return;
+			}
 }
 
 /*---------------------------------------------------------------------------*/
@@ -182,6 +247,34 @@ void dama_poll_end(struct ax25_cb *axp)
  * link with nothing to say needs no timer, because it has nothing to be
  * woken for.
  */
+
+/* Announce that WE speak DAMA, by setting the bit in our own source address.
+ *
+ * Thomas' reading, and it is the one that makes digipeating work at all: when
+ * a user connects to DL1AAA THROUGH the master rather than connecting to the
+ * master and working onwards, the master is only a digipeater for that link
+ * and has nothing that tells it we are a DAMA station.  Marking our own SABM
+ * tells it, and a master that tracks every connection hop by hop - which is
+ * what WAMPES does, and what its master half will do - can then put us in its
+ * polling list.
+ *
+ * Marked on a port the sysop has declared a DAMA channel, not on one where a
+ * master merely happens to have been heard.  That is the difference between
+ * "this channel works this way" and "somebody out there does", and only the
+ * first is a statement we are entitled to make about ourselves.
+ */
+
+void dama_mark(struct ax25_cb *axp)
+{
+	if (axp == NULL || axp->iface == NULL)
+		return;
+	if (axp->iface->dama == DAMA_SLAVE)
+		axp->hdr.ext |= SSID_DAMA;
+	else
+		axp->hdr.ext &= ~SSID_DAMA;
+}
+
+/*---------------------------------------------------------------------------*/
 
 void dama_wait(struct ax25_cb *axp)
 {
@@ -255,8 +348,12 @@ void dama_show(struct iface *ifp)
 {
 	if (ifp->dama != DAMA_SLAVE)
 		return;
-	printf("           dama slave, timeout %ds, master %s",
-	       dama_watchdog(ifp), dama_in_force(ifp) ? "heard" : "not heard");
+	printf("           dama slave, timeout %ds, master ", dama_watchdog(ifp));
+	if (dama_in_force(ifp)) {
+		char buf[AXBUF];
+		printf("%s", pax25(buf, ifp->dama_master));
+	} else
+		printf("not heard");
 	printf(", found %ld lost %ld polls %ld\n",
 	       (long) ifp->dama_entered, (long) ifp->dama_lost,
 	       (long) ifp->dama_polls);

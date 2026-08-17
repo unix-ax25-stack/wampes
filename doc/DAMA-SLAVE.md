@@ -27,6 +27,43 @@ polling cycle, and only it must serialise the uplink across ports that share a
 frequency.  A slave answers polls addressed to it, on whichever port they
 arrive, and does not care how the master organises itself.
 
+## The permission belongs to the station, not to the connection
+
+Both references say so.  TNN's `sendok` is per **port** and `l2dama.c` rotates
+over the links of a station with `zael/indx`; its manual states the
+consequence - *"USER mit Multiconnect kommen gegenueber USERN mit nur einer
+Verbindung zum Knoten nicht oefters an die Reihe"*.  One station, one turn in
+the cycle, its links sharing it.
+
+A window per connection looks right while there is only one connection on the
+port.  What exposes it is **digipeating through the master**: there the master
+is not an endpoint of our connection at all, so it cannot poll "that link" -
+it can only give the station its turn.  `ntohax25()` reads the DAMA bit from
+`hdr->source` and never from a digipeater field, so nothing about such a frame
+identifies the master either.
+
+So the window is opened by a poll on the port, and one link is served per
+window, taken in turn.  When the master polls a particular link of ours - the
+ordinary case - that link is the one served.  The turn is kept as an ordinal
+rather than a remembered control block, because a pointer would dangle the
+moment a link went away, and a link going away is how every connection ends.
+
+**Only the master's polls count.**  The port remembers the callsign of the
+station whose frames carried the DAMA bit, and a command with the poll bit
+from anybody else is not a poll.  Without that, any neighbour would hand us
+the channel - the opposite of the point, since on a DAMA channel exactly one
+station decides who transmits.
+
+**And we mark our own frames.**  On a port declared `dama slave`, our source
+SSID carries the bit too.  That is what makes digipeating work at all: when a
+user connects to DL1AAA *through* the master rather than connecting to the
+master and working onwards, the master is only a digipeater for that link and
+has nothing else to tell it we are a DAMA station.  A master that tracks every
+connection hop by hop - which is what WAMPES does - can then put us in its
+polling list.  Marked because the sysop declared the channel, not because a
+master happened to be heard: only the first is a statement we may make about
+ourselves.
+
 ## What marks a DAMA channel, and what hands us the turn
 
 Getting this wrong costs the connection in either direction - too strict and
@@ -113,7 +150,7 @@ asks for.
 | `lapb_output()` - the send queue | frames stay on `txq`, the next poll takes them |
 | `ax_t2_timeout()` - the delayed ack | stays delayed; the ack rides out on the poll answer |
 | `pollthem()` - T3/T4 idle poll | nothing; asking is the master's job |
-| `recover()` - T1 retransmission | nothing, and no retry counted - see below |
+| `recover()` - T1 retransmission | nothing on the air; noted for the next poll - see below |
 | `ax_t5_timeout()` - idle disconnect | deferred; the link is idle anyway |
 | the close at the end of `lapb_input()` | deferred - the paper says a user waits for the poll before sending DISC |
 
@@ -166,6 +203,28 @@ acknowledgement, a full send queue, a disconnect that wants to happen - calls
 `dama_wait()`, which makes sure T1 is running.  A link with nothing to say
 still needs no timer, because it has nothing to be woken for.
 
+## Retransmission happens in the poll window
+
+The first version suppressed T1's retransmission and stopped there.  On a
+clean channel that is invisible.  Measured on one with 30% loss in both
+directions, it was not: after the first lost frame the node answered every
+poll with a bare RR and its data never moved again.  **A DAMA slave that only
+stays silent never retransmits anything.**
+
+The fix has the same shape as everything else here - the timer notes, the poll
+delivers.  When T1 expires with frames still outstanding, that is not merely
+waiting: the master has had a whole T1 to acknowledge them and has not, so
+they were lost.  The expiry marks them for retransmission and counts a retry;
+the retransmission itself happens in the window the next poll opens.
+
+With nothing outstanding, nothing is counted.  That distinction - a link that
+is failing versus one that is waiting to be asked - is the whole reason we do
+not die where Linux does.
+
+The paper wants T1 above the poll interval for exactly this reason, and WAMPES
+gets there by itself: `srt` is measured over send-to-acknowledge, which under
+DAMA spans a full cycle, so T1 grows to fit the channel.
+
 ## Measured
 
 A simulated master (`testtools/damamaster.py`) against the node, with the same
@@ -186,8 +245,31 @@ And the fallback, with `damatimeout 5`, the master falling silent after one I
 frame at 1.6 s:
 
     3.6s   nothing
-    6.9s   0x31 P/F N(R)=1      <- watchdog expired, T1 opened the gate
+   11.9s   0x31 P/F N(R)=1      <- watchdog expired, T1 opened the gate
    13.2s   0x31 P/F N(R)=1      <- ordinary T1 retry, as before DAMA
+
+(`secclock()` counts whole seconds, so which T1 period notices the expiry
+depends on where the tick falls - the behaviour is the same either way.)
+
+Two connections over one DAMA port, `TEST-1` polled and `TEST-2` never polled
+by the master at all:
+
+     2.0s  -> RR+P (Poll 0)
+     2.0s  <- TEST-1: RR P/F, then I N(S)=0
+     2.0s  <- TEST-2: I N(S)=0          <- the rotation, on a link never polled
+
+And with 30% loss both ways, the retransmission arriving in a later window:
+
+     2.0s  -> RR+P (Poll 0)
+     2.0s  <- TEST-1: I N(S)=0 '1\r2\r3\r...'   (lost on the way)
+     4.0s  -> RR+P (Poll 1)      <- RR only, T1 running silently
+    12.0s  -> RR+P (Poll 5)
+    12.0s  <- TEST-1: I N(S)=0 '1\r2\r3\r...'   <- same frame, resent
+    20.1s  <- TEST-1: I N(S)=1                  <- and onwards
+
+Every transmission by the node in that run sits on a poll that reached it.
+Tool: `testtools/damachan.py`, which plays several stations on one socket and
+can drop frames in either direction.
 
 ## Not built
 

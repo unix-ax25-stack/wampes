@@ -127,11 +127,11 @@ struct ax25_cb {
 		unsigned int rnrsent:1;         /* RNR frame has been sent */
 	} flags;
 
-	/* Set only while lapb_input() is handling a DAMA poll addressed to
-	 * us.  That window is the whole of a slave's permission to transmit -
-	 * see dama.c.
+	/* Set when T1 expired under DAMA with frames still outstanding: the
+	 * master never acknowledged them, so they have to go again - but not
+	 * now, only in the window the next poll opens.  See dama.c.
 	 */
-	int dama_polled;
+	int dama_rex;
 
 	uint8 reason;                   /* Reason for connection closing */
 #define LB_NORMAL       0               /* Normal close */
