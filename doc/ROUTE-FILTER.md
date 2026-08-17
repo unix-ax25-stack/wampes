@@ -321,10 +321,43 @@ that merely forwarded never learned who lived where.  Measured, with
 `testtools/nrip.py` drives both directions.  Note the TTL: 15 is a
 forwarded frame, 16 a fresh one.
 
-For L4 it is not built.  A NET/ROM circuit is named `(node, index, id)`
-and index and id mean nothing outside the node that issued them, so that
-case needs a table where IP needs none.  The design - terminate the
-circuit and splice a second one - is written up in `TODO.txt`.
+**For L4 it is built too**, by terminating rather than rewriting.  A
+connect request from a hidden node is taken in the transit path, and a
+second circuit is opened to where it was going; the two are spliced.  Our
+own connect request fills both places that carry the origin - the L3
+source and the node field at offset 13 - with `mynode->call`, because we
+are its origin, so there is nothing to rewrite and nothing to forget.  The
+**user** callsign is carried across unchanged, so the far end sees
+`user @ our-node`, indistinguishable from an ordinary user connect through
+us.  Answers to the caller go out signed as the node he asked for: he
+believes he is talking to it and has no circuit for anyone else.
+
+The pairing is the two circuits, held by a pointer each - no table, and no
+expiry of its own to get wrong.  What it costs is a second window and a
+second set of buffers, and having to push back; data moves only as far as
+the other side has room, and the rest waits for its send upcall.
+
+Measured, three sessions at once, payload of 768 bytes covering all 256
+byte values:
+
+|                | Connect request at DL1BBB                      |
+| -------------- | ---------------------------------------------- |
+| without filter | source `DB0AAA-5`, node field `DB0AAA-5`, TTL 15 |
+| `advert no`    | source `DL9SAU-1`, node field `DL9SAU-1`, TTL 16 |
+
+The caller's answers came from `DL1BBB` in both cases.  All three sessions
+kept their own user callsign and their own data - re-segmented to
+`NR4MAXINFO` on the way and reassembled byte-identical - and after the
+disconnect the circuit table was empty.  A node *behind* the hidden one is
+not touched: a request whose L3 source was `DB0XYZ-3` went on unchanged
+with TTL 15.  An unreachable target is refused with `CONAK+CHOKE` rather
+than left to time out.  `testtools/nrproxy.py` drives all of it.
+
+The one thing to know is in `TODO.txt`: proxying assumes the hidden node
+always reaches its target through us.  With several interlinks the same
+session sent through a different neighbour arrives at the far end with
+numbers it has no circuit for and stops - no damage, but a silent one.
+`advert no` on a node with more than one uplink is a configuration error.
 
 ## Not built, and why it is written down here
 

@@ -116,6 +116,16 @@ struct circuit {
   char *user;                   /* User parameter (e.g., for mapping to an
 				 * application control block)
 				 */
+  uint8 proxyas[AXALEN];        /* Answer as this node instead of as ourselves.
+				 * Set on the near half of a proxied session:
+				 * the caller addressed the far node, so that
+				 * is who his answers must come from.  Empty
+				 * on every ordinary circuit.
+				 */
+  struct circuit *proxypeer;    /* The circuit this one is spliced to.  This
+				 * pairing IS the proxy state - no table, and
+				 * no lifetime of its own.
+				 */
   struct circuit *next;         /* Linked-list pointer */
 };
 

@@ -683,6 +683,85 @@
   Station spricht DAMA", er darf sie also unter die Pollordnung nehmen.
   Auskunft, kein Rollenwechsel.
 
+  UNMARKIERTER SABM AUF EINEM SLAVE-PORT - GEBAUT (Thomas, 2026-08-17):
+  ruft uns jemand ohne DAMA-Bit an, arbeitet diese Verbindung im
+  nicht-DAMA-Stack. Die Disziplin haengt jetzt am LINK statt am Port, was
+  ohnehin die Lesart des Papiers ist ("This state would then remain in
+  effect until disconnect") und die des Kernels (AX25_COND_DAMA_MODE im
+  Kontrollblock). Beseitigt zugleich die Pathologie, dass eine Verbindung
+  ohne jeden Bezug zum Master im Wachhundtakt zappelt.
+  ZU WISSEN: unsere EIGENE Markierung bleibt auf allen Links des Ports -
+  sie sagt "wir sprechen DAMA", nicht "diese Verbindung ist DAMA". Wer das
+  Bit liest, haelt uns also fuer den Master. Ein DAMA-faehiger Nutzer-TNC,
+  der uns anruft, sperrt sich selbst und wartet auf Polls, die nie kommen.
+  Auf einem DAMA-Kanal ist das die gewollte Folge (siehe unten), aber
+  "dama slave" auf einem Port heisst damit auch "Direktverbindungen sind
+  hier nicht vorgesehen".
+
+  FUER DEN MASTERBAU, ZWEITER PUNKT (Thomas, 2026-08-17): WIE GEHEN WIR MIT
+  EINEM SABM OHNE DAMA-BIT UM, wenn WIR der Master sind? Vermutlich wie
+  TNN: ablehnen. Ausser wir sind "lazy" konfiguriert - dann empfehlen wir
+  DAMA, erzwingen es aber nicht. Das ist dieselbe Achse wie
+  "master" gegen "master-enforce" weiter oben, hier von der anderen Seite
+  betrachtet: enforce entscheidet nicht nur, was mit einem Verstoss im
+  laufenden QSO geschieht, sondern schon, WER ueberhaupt hereinkommt.
+  Zu bedenken beim Bauen: TNNs MaxPollCnt-Weg verwarnt IM QSO und trennt
+  erst danach - das ist milder als ein abgelehnter Verbindungsaufbau und
+  fuer den Nutzer verstaendlicher, weil er einen Text bekommt. Ein
+  abgewiesenes SABM sagt ihm gar nichts.
+
+  ABER: IM QSO VERWARNEN GEHT BEI UNS NICHT (Thomas, 2026-08-17), und das
+  ist ein Architekturunterschied, kein Umsetzungsdetail. TNN und XNET
+  BESITZEN die Benutzeroberflaeche - dort haengt der Nutzer im Knotenmenue
+  und hangelt sich weiter, ein eingeschobener Text landet also da, wo er
+  gelesen wird. Bei uns ist die Verbindung, in die wir schreiben wuerden,
+  irgendetwas: ein Login, eine Passwortabfrage, eine Mailbox, ein Programm
+  hinter "listen" - oder sie verwirft den Text ganz. Und beim VIA-CONNECT
+  haben wir im Nutzinhalt ueberhaupt nichts verloren; ein eingeschobener
+  Text geriete dort in einen fremden Datenstrom.
+
+  THOMAS' VORSCHLAG, und er ist der einzige Weg, der niemandes Verbindung
+  anfasst: als UI an QST senden, mit dem Rufzeichen des Nutzers benannt -
+      "Warning: use DAMA client protocol"
+  UI ist dafuer auch protokollseitig sauber: die Spezifikation nimmt
+  Datagramme ausdruecklich aus der Pollordnung heraus (siehe
+  doc/DAMA-SLAVE.md), ein UI stoert die Runde also nicht.
+
+  Beim Bauen zu bedenken:
+    * RATENBEGRENZUNG, sonst wird die Warnung selbst zur Stoerung. Nicht
+      eine je Verstoss - TNN zaehlt bis MaxPollCnt -, sondern hoechstens
+      eine je Station und Zeitraum.
+    * QST ODER AN DAS RUFZEICHEN DES NUTZERS? An QST sehen es alle: auf
+      einem DAMA-Kanal stoert ein unaufgefordert sendender Nutzer ohnehin
+      alle, und oeffentlich hingewiesen wird im Amateurfunk ueblicherweise
+      auch. An sein Rufzeichen adressiert ist leiser, aber viele TNCs
+      zeigen UI nur bei eingeschaltetem Monitor - und ein Nutzer im
+      verbundenen Betrieb sieht es dann womoeglich gar nicht. Beides hat
+      dieselbe Schwaeche: wir wissen nicht, ob er es liest.
+    * NUR ALS MASTER. Ein Slave verwarnt niemanden; die Kanalordnung ist
+      nicht seine Sache.
+    * BEI "lazy" IST DIE WARNUNG ALLES, bei "enforce" geht sie dem Trennen
+      voraus.
+
+  DIE GEGENRICHTUNG, und sie ist der eigentliche Gewinn (Thomas,
+  2026-08-17): eine Warnung nuetzt nur, wenn die Gegenseite etwas damit
+  anfangen kann. Ist so eine Meldung EINDEUTIG, koennte der EMPFAENGER das
+  UI auswerten und weiterreichen - auf die Konsole, und bei einer
+  Verbindung ueber den Dienstsocket als
+      *** Disconnected (use DAMA)
+  Die Form gibt es dort schon: remote_net.c liest Zeilen, bis eine mit
+  "***" beginnt, und axserver.c schreibt sie ("*** incoming %s %s",
+  "*** %s is not answering"). Ein Nutzer erfuehre damit, WARUM seine
+  Verbindung gescheitert ist, statt nur DASS.
+  ZUERST NACHSEHEN, WAS DER RMNC TUT (Thomas): vielleicht sendet er so
+  etwas ohnehin als Broadcast. Danach richtet sich, worauf man ueberhaupt
+  passen kann.
+  VORBEHALT, der dazugehoert: freien Text zu erkennen ist wackelig - es
+  haengt am genauen Wortlaut dessen, was der jeweilige Knoten sendet, und
+  ein Fehlalarm ist billig zu erzeugen, weil jeder so ein UI senden kann.
+  Also hoechstens als Bequemlichkeit fuer den Betreiber, nie als etwas,
+  worauf sich Code verlaesst.
+
   ZWEI SLAVES, DIE SICH DIREKT VERBINDEN - ENTSCHIEDEN (Thomas, 2026-08-17):
   Weil wir unsere eigenen Rahmen markieren, halten zwei WAMPES-Slaves
   einander fuer den Master und sperren sich gegenseitig aus, bis der
@@ -1095,6 +1174,20 @@ Modulo-128-Masken), und das Lesen der SSID-Bits SSID_EAX25 / SSID_DAMA in
 ax25hdr.c. In lapb.c, also in der Zustandsmaschine, kommt nichts davon vor,
 und domaxframe() begrenzt das Fenster hart auf 1..7. Wieder das Muster:
 die Vorkehrung ist da, angeschlossen ist sie nie worden.
+
+ERST NACH DER ZEITGEBERARBEIT ANFANGEN (Thomas, 2026-08-17): bei Modulo
+128 wird mit Sequenznummern, Masken und Fensterarithmetik gerechnet, und
+genau dort sind dieselben Vorzeichenfallen zu erwarten wie in timer.c und
+tcpin.c. Was dort gelernt wurde, gilt hier weiter:
+  * Differenzen zweier Zaehler VORZEICHENLOS bilden, dann als
+    vorzeichenbehaftet lesen - TDIFF in timer.h ist das Muster.
+  * Die Textsuche findet solche Stellen NICHT zuverlaessig. In tcpin.c
+    steckten zwei davon in groesseren Ausdruecken ((7*x + t) - lastrx) und
+    tauchten erst im Lauf auf.
+  * Der Prueflauf ist -fsanitize=undefined zusammen mit -DWRAPTEST aus
+    timer.c, das die Uhr vier Sekunden vor ihren Umlauf setzt. Fuer
+    Sequenznummern braeuchte es das Gegenstueck: einen Lauf, der bei
+    send_state/recv_state nahe am Umlauf beginnt.
 
 Vor einer Umsetzung zu klaeren:
   1. Was unterstuetzt der Linux-Kernel-AX.25 hier? Gegenchecken, das ist
@@ -1724,6 +1817,22 @@ dabei ergab. Damit kann das Bauen ohne weitere Aufklaerung beginnen.
 NODE-PROXYING: versteckte Knoten brauchen es, sonst versteckt "advert no"
 nichts (Thomas, 2026-08-16, aus der Filterarbeit heraus)
 ------------------------------------------------------------------------
+STATUS: GEBAUT, BEIDES (2026-08-17).
+  IP   a1e3937 - durchlaufendes Datagramm eines versteckten Knotens wird
+       angenommen statt weitergereicht, ip_route() schickt es als eigenes
+       weiter. Nebenbei repariert das den Rueckweg: die Zuordnung von
+       IP-Adresse und Knoten wurde vorher nur fuer Datagramme an uns
+       vermerkt.
+  L4   terminieren und anspleissen, nach Thomas' Weg (siehe unten). Zwei
+       Felder in struct circuit - proxyas und proxypeer -, keine Tabelle.
+       Gemessen mit testtools/nrproxy.py: drei Sitzungen gleichzeitig,
+       768 Byte mit allen 256 Bytewerten, unterwegs auf NR4MAXINFO neu
+       zerteilt, Byte fuer Byte identisch angekommen, keine Vertauschung,
+       Circuit-Tabelle nach dem Abbau leer.
+  Einzelheiten in doc/ROUTE-FILTER.md. Was unten steht, ist die Herleitung
+  und bleibt als Begruendung stehen - offen ist davon nichts mehr ausser
+  der bekannten Grenze am Ende (mehrere Interlinks).
+
 DER BEFUND, und er ist unangenehm: das Verstecken im Broadcast wirkt nur
 bis zum ersten Paket. route_packet() lernt den QUELLKNOTEN aus jedem
 durchlaufenden Rahmen:
@@ -1861,5 +1970,75 @@ ein. Kein neuer Mechanismus, kein Zustand. Zu tun bleibt nur, dass der
 Nutzer uns auch adressiert - also die INP3-Ankuendigung, in der WIR als
 Knoten der Route stehen.
 
+DER ENTWURF, SOWEIT ENTSCHIEDEN (2026-08-17, vor dem ersten Commit)
+------------------------------------------------------------------------
+1. AUSLOESER: die L3-Quelle ist ein Knoten mit "advert no". Kein eigener
+   Schalter - wer nicht nach aussen angekuendigt wird, wird geproxied, und
+   Fremdknoten HINTER ihm nicht. Eine Abfrage an einer Stelle.
+2. DIE EINBAUSTELLE IST DER TRANSIT, nicht die Annahme. Ein Nutzer-L4-
+   Connect durch uns ist L3 an den ZIELKNOTEN adressiert; circuit_manager()
+   bekommt ihn nie zu sehen, route_packet() reicht ihn durch. Der Haken
+   sitzt also dort. Der L4-Kopf liegt an denselben Offsets, die der
+   IP-Zweig schon benutzt: data[15..19], Opcode in data[19].
+3. WIR ANTWORTEN ALS DER ZIELKNOTEN (Thomas). Der Client glaubt, mit ihm
+   zu sprechen, also muss die Antwort von ihm kommen. Gefahr fuers Netz
+   besteht nicht: der Nutzer hat UNS als Nachbarn fuer diesen Weg gewaehlt,
+   und Hops hinter ihm fassen wir nicht an - sein Netz vor ihm kann sich
+   also nicht umrouten.
+   (Die Alternative "als wir selbst" waere gegangen, weil circuit_manager()
+   die L3-Quelle gar nicht prueft - nur localindex/localid -, aber sie
+   setzt voraus, dass fremde Implementierungen genauso lax sind.)
+4. NACH RECHTS mit open_nr(ziel, cuser), wobei cuser das Benutzer-
+   Rufzeichen aus dem CONRQ ist (Offset 6). Die Gegenstelle sieht dann
+   "Nutzer at uns" - ununterscheidbar von einem gewoehnlichen Connect.
+5. LINKS ANNEHMEN ERST, WENN RECHTS STEHT. Aendert fuer den Nutzer nichts:
+   heute wartet er ohnehin auf das CONACK der Gegenstelle, weil L4 Ende zu
+   Ende laeuft.
+6. INTERN, nicht ueber sockets/ax25 zurueck. Der CLI-Weg haette alles
+   ("netrom connect <node> [<user>]", dazu binary), aber ein Knoten, dessen
+   Weiterleitung an einem laufenden Hilfsprogramm haengt, ist eine
+   Betriebsfalle.
+7. DIE FOLGEPAKETE wiedererkennen: X adressiert auch danach an Z. Also eine
+   Zuordnung ueber (L3-Quelle, remoteindex, remoteid). Die gehoert in
+   struct circuit und nicht in eine eigene Tabelle - dann ist die
+   Lebensdauer die des Circuits und es gibt keinen zweiten Verfall.
+   (Die fruehere Behauptung "keine Tabelle" war zu stark; so korrigiert
+   bleibt der Vorteil erhalten.)
+
+WARUM DAS TERMINIEREN NICHTS UMSCHREIBEN MUSS, und die Frage hat uns beide
+kurz verwirrt: das Rufzeichen des Ursprungsknotens steht im CONRQ ZWEIMAL -
+in der L3-Quelle (daran lernt ihn jeder Zwischenknoten) und im L4-Knotenfeld
+an Offset 13 (daran adressiert die Gegenstelle ihre Antworten,
+send_l3_packet(mynode->call, pc->node, ...), netrom.c:1047). Beim Umschreiben
+muesste man BEIDE anfassen; nur eines genuegt nicht - nur L3 und die Antworten
+gehen direkt an ihn, nur L4 und die Zwischenknoten haben ihn schon gelernt.
+Beim Terminieren stellt sich die Frage gar nicht: unser eigener CONRQ setzt
+beide Stellen von selbst auf mynode->call, weil WIR der Ursprung sind. Nichts
+zu merken, nichts zu vergessen.
+Der CONAK hat uebrigens gar kein Knotenfeld - sechs Byte, Index, ID, Index,
+ID, Opcode, Fenster -, dort ist also nur die L3-Quelle zu waehlen.
+Im Normalbetrieb sind die beiden Felder immer gleich (send_l4_packet schreibt
+mynode->call, send_l3_packet ebenso); der Unterschied zeigt sich ueberhaupt
+erst, wenn jemand eine Verbindung terminiert.
+
+BEKANNTE GRENZE, aus Thomas' Multi-Point-Frage (2026-08-17): das Proxying
+setzt voraus, dass der versteckte Knoten sein Ziel DAUERHAFT ueber uns
+erreicht. Hat er mehrere Interlinkpartner - A (er), B (wir), C (ein anderer
+Repeater) - und schickt dieselbe Sitzung mal ueber B und mal ueber C, dann
+kommt das Paket bei Z mit A's Index/ID an. Z ordnet nur ueber
+(localindex, localid) zu, das sind Z's eigene Nummern aus UNSERER
+Verbindung, nichts passt, "goto discard". Kein Datenschaden, aber ein
+STILLER STILLSTAND, dem man am Digi die Ursache nicht ansieht. Bei einem
+Nutzerknoten mit einem Uplink kann das nicht eintreten; "advert no" auf
+einen Knoten mit mehreren Interlinks zu setzen ist danach ein
+Konfigurationsfehler und gehoert so benannt.
+
+FUER DAS IP-DATAGRAMM gilt dieselbe Einbaustelle, aber es gibt keinen
+Circuit zu terminieren: empfangen, ip_route(), neu erzeugen - und dabei
+die Protokollkennung mitgeben, also 0x0c 0x0c in data[15],data[16] und
+Opcode 0 (Thomas). Laengen sind unkritisch: der Sender hat bereits passend
+fragmentiert, und beide Seiten haben denselben Protokollkopf.
+
+------------------------------------------------------------------------
 ZU TESTEN gegen einen echten dritten Knoten, nicht gegen den Simulator -
 der Befund oben ist genau der Fall, den ein Zweiknotenaufbau nicht zeigt.

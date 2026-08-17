@@ -108,7 +108,12 @@ static void l4_t1_timeout(void *arg);
 static void l4_t3_timeout(void *arg);
 static void l4_t4_timeout(void *arg);
 static struct circuit *create_circuit(void);
-static void circuit_manager(struct mbuf **bpp);
+static void circuit_manager(struct mbuf **bpp, const uint8 *answeras);
+static int nr_proxy_l4(struct mbuf **bpp);
+static void nr_proxy_open_peer(struct circuit *left);
+static void proxy_recv_upcall(struct circuit *pc, int cnt);
+static void proxy_send_upcall(struct circuit *pc, int cnt);
+static void proxy_state_upcall(struct circuit *pc, enum netrom_state oldstate, enum netrom_state newstate);
 static void nrserv_recv_upcall(struct circuit *pc, int cnt);
 static void nrserv_send_upcall(struct circuit *pc, int cnt);
 static void nrserv_state_upcall(struct circuit *pc, enum netrom_state oldstate, enum netrom_state newstate);
@@ -832,7 +837,7 @@ static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
       free_p(bpp);
       *bpp = hbp;
     }
-    circuit_manager(bpp);
+    circuit_manager(bpp, NULL);
     return;
   }
 
@@ -853,8 +858,17 @@ static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
    * datagram from a node further out has its own source and is forwarded as
    * before.  That is the same rule "advert no" follows in the broadcasts.
    */
-  if (source != NULL && !node_advert(source) && nr_ip_deliver(bpp))
-    return;
+  if (source != NULL && !node_advert(source)) {
+    if (nr_ip_deliver(bpp)) return;
+    /* An L4 session is terminated here instead - see nr_proxy_l4().  Note
+     * what this means for a hidden node with more than one uplink: once we
+     * proxy, his session exists only as our pair of circuits, so the same
+     * session sent through a different neighbour arrives at the far end with
+     * numbers it has no circuit for and stops.  "advert no" on a node with
+     * several interlinks is a configuration error, and this is why.
+     */
+    if (nr_proxy_l4(bpp)) return;
+  }
 
   ttl = (*bpp)->data[2*AXALEN];
   if (--ttl <= 0) goto discard;
@@ -1093,7 +1107,13 @@ static void send_l4_packet(struct circuit *pc, int opcode, struct mbuf **bpp)
     return;
   }
   if (start_t1_timer) start_timer(&pc->timer_t1);
-  send_l3_packet(mynode->call, pc->node, nr_ttlinit, bpp);
+  /* Normally we sign with our own call.  On the near half of a proxied
+   * session we sign as the node the caller asked for - he believes he is
+   * talking to it, and an answer from anyone else is one he has no circuit
+   * for.  See nr_proxy_l4().
+   */
+  send_l3_packet(pc->proxyas[0] ? pc->proxyas : mynode->call,
+		 pc->node, nr_ttlinit, bpp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1254,7 +1274,11 @@ static struct circuit *create_circuit(void)
 
 /*---------------------------------------------------------------------------*/
 
-static void circuit_manager(struct mbuf **bpp)
+/* answeras is NULL for a session addressed to us, and the far node's call for
+ * one we proxy - see nr_proxy_l4().
+ */
+
+static void circuit_manager(struct mbuf **bpp, const uint8 *answeras)
 {
 
   int nakrcvd;
@@ -1276,9 +1300,16 @@ static void circuit_manager(struct mbuf **bpp)
       pc->remoteid = (*bpp)->data[1];
       addrcp(pc->cuser, (*bpp)->data + 6);
       addrcp(pc->node, (*bpp)->data + 13);
-      pc->r_upcall = nrserv_recv_upcall;
-      pc->t_upcall = nrserv_send_upcall;
-      pc->s_upcall = nrserv_state_upcall;
+      if (answeras) {
+	addrcp(pc->proxyas, answeras);
+	pc->r_upcall = proxy_recv_upcall;
+	pc->t_upcall = proxy_send_upcall;
+	pc->s_upcall = proxy_state_upcall;
+      } else {
+	pc->r_upcall = nrserv_recv_upcall;
+	pc->t_upcall = nrserv_send_upcall;
+	pc->s_upcall = nrserv_state_upcall;
+      }
     }
   } else
     for (pc = circuits; ; pc = pc->next) {
@@ -1304,7 +1335,17 @@ static void circuit_manager(struct mbuf **bpp)
        * and it is a legitimate answer: the peer is told to go away instead of
        * being left waiting.
        */
-      if (server_enabled &&
+      if (pc->proxyas[0]) {
+	/* Proxied: do not answer yet.  We build the far half first and accept
+	 * only when it stands - which changes nothing for the caller, because
+	 * L4 runs end to end and he waits for the far node's answer anyway.
+	 * Until then this circuit stays in NR4STDISC: a retransmitted connect
+	 * request finds it again and is simply let go, and NR4STCPEND is not
+	 * usable here because entering it would send a connect request of our
+	 * own back at him.
+	 */
+	if (!pc->proxypeer) nr_proxy_open_peer(pc);
+      } else if (server_enabled &&
 	  (nr_maxcircuits <= 0 || ncircuits <= nr_maxcircuits)) {
 	send_l4_packet(pc, NR4OPCONAK, NULL);
 	set_circuit_state(pc, NR4STCON);
@@ -1658,6 +1699,169 @@ int kick_nr(struct circuit *pc)
   if (!valid_nr(pc)) return -1;
   l4_t1_timeout(pc);
   return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+/******************************* Node Proxying *******************************/
+/*---------------------------------------------------------------------------*/
+
+/* Terminate an L4 session from a node we hide, and open a second one to where
+ * it was going.
+ *
+ * The problem this solves is the one described in doc/ROUTE-FILTER.md: an L3
+ * frame keeps its source callsign the whole way, so every node it crosses
+ * learns the sender and announces him in its own broadcast.  "advert no" then
+ * hides him from our node list and from nobody else's.
+ *
+ * The alternative was to rewrite his callsign as the frame passes.  It would
+ * mean touching two places - the L3 source, which is what the intermediate
+ * nodes learn from, and the node field at offset 13 of the connect request,
+ * which is where the far end sends its answers - and keeping a table of
+ * (our index, our id) against (his node, his index, his id), because a
+ * circuit is named per node: two hidden neighbours would both arrive with
+ * index 0.  Terminating needs neither.  Our own connect request fills both
+ * fields with mynode->call because WE are its origin, so there is nothing to
+ * rewrite and nothing to forget; and the pairing is the two circuits, held by
+ * a pointer each, so there is no table and no second expiry to get wrong.
+ *
+ * What it costs is a second window and a second set of buffers, and having to
+ * push back: proxy_pump() moves data only as far as the other side has room,
+ * and the rest waits in the receive queue until its send upcall says there is
+ * space.  The end-to-end argument does not apply here - WAMPES acknowledges
+ * hop by hop anyway - and two shorter windows recover a loss locally instead
+ * of across the whole path, which on radio is usually the faster way.
+ */
+
+/* Move what the one side has received to the other, as far as it will take
+ * it.  What does not fit stays in the receive queue; the other side's send
+ * upcall comes back for it.  That is the whole of the back pressure.
+ */
+
+static void proxy_pump(struct circuit *from, struct circuit *to)
+{
+  int room;
+  struct mbuf *bp;
+
+  while (from->rcvcnt && (room = space_nr(to)) > 0) {
+    bp = NULL;
+    if (recv_nr(from, &bp, (room < from->rcvcnt) ? room : from->rcvcnt) <= 0) {
+      free_p(&bp);
+      return;
+    }
+    if (send_nr(to, &bp) < 0) return;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void proxy_recv_upcall(struct circuit *pc, int cnt)
+{
+  if (pc->proxypeer) proxy_pump(pc, pc->proxypeer);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void proxy_send_upcall(struct circuit *pc, int cnt)
+{
+  if (pc->proxypeer) proxy_pump(pc->proxypeer, pc);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void proxy_state_upcall(struct circuit *pc, enum netrom_state oldstate, enum netrom_state newstate)
+{
+  struct circuit *other = pc->proxypeer;
+
+  switch (newstate) {
+
+  case NR4STCON:
+    /* The far half stands, so the caller gets his answer now - signed as the
+     * node he asked for, which send_l4_packet() does from proxyas.
+     */
+    if (other && other->proxyas[0] && other->state == NR4STDISC) {
+      send_l4_packet(other, NR4OPCONAK, NULL);
+      set_circuit_state(other, NR4STCON);
+    }
+    break;
+
+  case NR4STDISC:
+    /* Unlink BOTH before doing anything else.  Whatever we do next may end
+     * with the other half calling back in here, and by then this circuit is
+     * gone.
+     */
+    pc->proxypeer = NULL;
+    if (other) {
+      other->proxypeer = NULL;
+      proxy_pump(pc, other);            /* whatever is still in hand */
+      if (other->proxyas[0] && other->state == NR4STDISC) {
+	/* Never accepted - so the refusal IS the answer he is waiting for,
+	 * rather than a silence he has to time out.
+	 */
+	send_l4_packet(other, NR4OPCONAK | NR4CHOKE, NULL);
+	del_nr(other);
+      } else {
+	close_nr(other);
+      }
+    }
+    del_nr(pc);
+    break;
+
+  default:
+    break;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Build the far half.  The user callsign is carried across unchanged, so what
+ * the far end sees is "user @ our node" - indistinguishable from an ordinary
+ * user connect through us, which is exactly what it should look like.
+ */
+
+static void nr_proxy_open_peer(struct circuit *left)
+{
+  struct circuit *right;
+
+  right = open_nr(left->proxyas, left->cuser, left->window,
+		  proxy_recv_upcall, proxy_send_upcall, proxy_state_upcall,
+		  NULL);
+  if (!right) {
+    /* No route to the target.  Say so instead of leaving him waiting - and
+     * say it as the target, since that is who he asked.
+     */
+    send_l4_packet(left, NR4OPCONAK | NR4CHOKE, NULL);
+    del_nr(left);
+    return;
+  }
+  left->proxypeer = right;
+  right->proxypeer = left;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* An L4 packet passing through from a node we hide: take it here.
+ *
+ * The place is the transit path, not the accept path.  A user connect through
+ * us is addressed at L3 to the TARGET node, so circuit_manager() never sees
+ * it and route_packet() would hand it on.  The L4 header sits at the same
+ * offsets the IP branch already uses: data[15..19], opcode in data[19].
+ *
+ * Opcode 0 is NR4OPPID and not a session at all - that is the protocol id
+ * extension nr_ip_deliver() handles - so it is left alone here.
+ */
+
+static int nr_proxy_l4(struct mbuf **bpp)
+{
+  uint8 target[AXALEN];
+
+  if ((*bpp)->cnt < 20) return 0;
+  if (((*bpp)->data[19] & NR4OPCODE) == NR4OPPID) return 0;
+
+  addrcp(target, (*bpp)->data + AXALEN);
+  pullup(bpp, NULL, 15);
+  if (!*bpp) return 1;
+  circuit_manager(bpp, target);
+  return 1;
 }
 
 /*---------------------------------------------------------------------------*/
