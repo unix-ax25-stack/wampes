@@ -1,0 +1,1865 @@
+- tun/tap device: /dev/tun testen (Linux)
+  Recherche macOS (2026-08): aktuelle Implementierung (src/tun.c) ist
+  FreeBSD-Stil von 2006 und auf heutigen Macs funktionslos. Sie oeffnet
+  /dev/tun0..N (Zeile 194) - das gab es nur mit der tuntaposx Kext, die
+  seit 2015 ungepflegt ist und ab Big Sur (SIP/Notarisierung) bzw. auf
+  Apple Silicon gar nicht mehr laedt. macOS hat seit 10.6.4 eingebaute
+  "utun"-Interfaces, aber KEIN Char-Device: Man oeffnet einen
+  Kernel-Control-Socket socket(PF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL),
+  ioctl(CTLIOCGINFO, "com.apple.net.utun_control"), connect(ctl_id,
+  unit+1) und liest/schreibt dann IP-Pakete direkt auf dem Socket.
+  So machen es openconnect/tinc/scapy. IP-Konfiguration am besten via
+  ifconfig utunN (SIOCSIFADDR reicht teils nicht). TAP gibt es auf macOS
+  NICHT eingebaut, nur tun/utun (tap bräuchte NetworkExtension).
+  Der vorhandene tun_packet-Header (AF_INET + data, tun.c:48) passt
+  schon gut fuer utun. TODO: utun-Backend implementieren (spaeter).
+- IPIP (src/ipip.c) auch via IPv6 - der letzte Rest der Umstellung. Erledigt
+  sind AXIP/AXUDP und alles, was ueber build_sockaddr() geht: der Dienstsocket
+  samt seiner tcp:-Ziele (2026-08-14 mit tcp:[::1]:9099 durchgefahren),
+  netcmd und Port 8010, tcpgate, bridge, cnet. ipip.c kennt AF_INET6 gar nicht.
+  Ebenfalls noch v4-only, aber je eigene Baustelle: src/ni.c, die versteckten
+  TCP-Verbindungen in src/n8250.c und src/tun.c. Nicht gemeint sind domain.c
+  und krnlif.c - das ist WAMPES' eigener IPv4-Stack.
+- AGWPE-Server-Protokoll: durch den Dienstsocket ueberholt, aber nicht
+  entschieden begraben. Beschlossen ist "das AGWPE-Protokoll wird nicht
+  erweitert", und der Weg ueber sockets/ax25 (connect/datagram/listen, ein
+  Socket je Session) leistet dasselbe ohne aus einer echten Verbindung eine
+  virtuelle zu machen. Ein AGWPE-Server in WAMPES lohnt nur, falls AGWPE
+  irgendwann doch die dauerhafte Grenze wird. Siehe AGWPE-BEWERTUNG.md.
+- DAMA master und slave Implementierung
+  xnet macht das so: https://packet-radio.net/wp-content/uploads/2017/04/xnet138.pdf
+  https://linux-ax25.in-berlin.de/wiki/DAMA - inux implements DAMA slave support but not DAMA master mode. Hilft bei Suchen in den kernel sourcen wie dama slave implementiertist.
+
+  https://github.com/kq6up/tnn/blob/04986f2d1264646fefdf20231e78de5ddd43541b/src/l2dama.c#L64
+
+  Nachgesehen 2026-08-15, zur Einordnung des Aufwands:
+
+  DA IST SCHON: der DAMA-Bit wird in beiden Richtungen korrekt behandelt -
+  ntohax25 liest ihn vom Draht (ax25hdr.c:151, active low), htonax25 schreibt
+  ihn zurueck (:72), ax25dump zeigt " [DAMA]" (:41). Es HANDELT nur niemand
+  danach. Wieder das Muster dieses Baums: Vorkehrung da, nicht angewandt.
+
+  ES IST EINE ZUSTANDSMASCHINE, und zwar an anderer Stelle als die von 6pack.
+  Der Kanalzugriff von 6pack liegt UNTER AX.25: er verzoegert einen Rahmen,
+  den die Schicht darueber laengst abgeschickt hat, T1 laeuft weiter, und der
+  Verzug sieht aus wie ein langsamer Kanal. DAMA greift IN die Zeitsteuerung
+  von AX.25: ein Slave darf nur senden, wenn er gepollt wurde, also muss die
+  T1-Wiederholung unterdrueckt werden - ein Slave, der unaufgefordert
+  wiederholt, ist genau das, was DAMA verhindern soll. Beim Poll gibt er alles
+  Anstehende hinaus und schweigt dann. Das aendert, wann lapb_output() laufen
+  darf, und das ist die heikelste Datei im Baum.
+
+  ASYMMETRIE: Slave ist die kleinere Haelfte und Linux hat sie (Quelltext zum
+  Nachlesen, siehe der Wiki-Link oben). Fuer den Master gibt es im Kernel
+  nichts - nur XNETs Beschreibung und TNNs l2dama.c -, und er ist das
+  groessere Stueck: Stationsliste, Pollzyklus, Fairness, Zeitgrenzen fuer
+  Stationen die nicht mehr antworten.
+
+  DIE GEFAEHRLICHSTE STELLE (Thomas, 2026-08-15): kommt T1 wieder zum Tragen,
+  wenn der Master aufhoert zu pollen? Ein Slave, der T1 aussetzt, weil er auf
+  den Poll wartet, hat sein eigenes Wiederherstellungsmittel abgeschaltet.
+  Faellt der Poll aus - verlorener Rahmen, Station aus der Liste gefallen,
+  Master weg -, wartet er endlos auf etwas, das nie kommt, und nichts weckt
+  ihn: das Weckmittel ist ja gerade das stillgelegte. Die Verbindung stirbt
+  still.
+  Es braucht also eine WACHHUNDZEIT auf das Gepolltwerden, getrennt von T1:
+  bleibt der Poll zu lange aus, gilt DAMA als gescheitert und der Slave faellt
+  in den normalen Betrieb zurueck, womit T1 wieder greift und die Verbindung
+  sich selbst repariert. Wieder eintreten, sobald wieder DAMA-markierte Rahmen
+  kommen.
+  ZU RECHERCHIEREN: sagt die Spezifikation das, oder ueberlaesst sie es den
+  Implementierungen? Schweigt sie, waehlt jede Implementierung ihre eigene
+  Frist - und das merkt man erst an echten Digis.
+
+  ZWEITER WEG, verhindern statt erholen (Thomas): ab und zu proaktiv senden,
+  damit die Verbindung nicht einschlaeft und vom Master aufgeraeumt wird.
+  Nicht wesensfremd - beim BETRETEN des Kanals sendet ein Slave ohnehin
+  unaufgefordert, sonst erfuehre der Master nie von ihm, und ein Wiedereintritt
+  ist derselbe Vorgang. Es ist also eine Frage der Haeufigkeit, nicht der
+  Erlaubnis. Hilft im engen Fall, dass der Master STILLE Stationen ausraeumt,
+  obwohl sie noch da sind. Und dafuer gibt es in AX.25 schon ein Mittel: T3,
+  den Leerlauf-Poll - die Frage waere nur, ob dessen Poll auf den Sendeschlitz
+  wartet oder ihn erzwingen darf.
+  ENTSCHIEDEN (Thomas, 2026-08-15): BEIDES, und der Wiedereintritt ist teuer.
+  Nicht der AX.25-Aufbau kostet - der ist in Sekunden erledigt -, sondern
+  ALLES DARUEBER. Sein Beispiel: mit der Mailbox verbunden, ein Artikel ueber
+  30 Paketlaengen im Lesen, die Verbindung schlaeft ein und wird aufgeraeumt.
+  Danach neu anmelden (unaufgefordert, "ich bin neu und will sprechen"),
+  Verbindung aufbauen, Mailbox connecten, Begruessung, Login, "read" - und
+  dieselben 30 Pakete noch einmal durch die Luft. Ein paar Minuten Sendezeit
+  gegen ein gelegentliches "mich gibt es noch, ich habe noch Daten".
+  Der Sitzungszustand ueber der Verbindung ist das, was verloren geht, und den
+  kann keine Schicht darunter wiederherstellen.
+  Also: der Wachhund bleibt die Notbremse - er ist der einzige Ausweg ohne
+  Zutun der Gegenseite -, und das Auffrischen kommt dazu, wenn das Protokoll
+  es zulaesst. Zu recherchieren bleibt nur noch, OB es zulaessig ist und in
+  welchem Schlitz.
+
+  JE PORT, und zwar wirklich je Port (Thomas, 2026-08-15): das eine Interface
+  kann Master sein, das naechste Slave, das dritte ohne DAMA. Der Zustand
+  gehoert also an struct iface und nirgends global - Rolle, Pollzyklus,
+  Stationsliste beim Master, "bin ich gerade gepollt" beim Slave. Nicht fuer
+  axip; das ist eine Sache der HF-Ports.
+
+  ZUSTAND AN ZWEI ORTEN, nicht an einem (Thomas, 2026-08-16): Timer je
+  INTERFACE (Pollzyklus, Stationsliste, Rolle) UND je SESSION (bin ich
+  gerade gepollt, wann war der letzte Poll fuer diese Verbindung). Das ist
+  der Grund, warum es mittelkomplex ist und nicht klein: es fasst struct
+  iface und die Verbindungszustandsmaschine gleichzeitig an.
+
+  DER TOLERANZSCHALTER, und er gehoert zur MASTER-Rolle (Thomas,
+  2026-08-16): manche DAMA-Master erzwingen DAMA - wer nicht mitmacht,
+  kommt nicht zum Zug -, andere lassen CSMA-Stationen daneben laufen. Sind
+  WIR Master, brauchen wir die Wahl. Die Spezifikation steht auf der
+  toleranten Seite ("All protocol elements keep their original meaning
+  which allows both versions to be utilized on the same frequency", DK4EG
+  1989, siehe unten), Erzwingen ist also eine Implementierungsentscheidung
+  jenseits des Papiers - und genau deshalb ein Schalter und keine Vorgabe.
+
+  SCHREIBWEISE (Thomas, 2026-08-16), in WAMPES-Form also am ifconfig:
+      ifconfig <if> dama off | master | master-enforce | slave
+  Drei Rollen plus aus, und "enforce" ist die harte Master-Variante.
+
+  DER SLAVE IST FERTIG (2026-08-17), Commits f89b9ef, 2f38778, 8fd2fb7,
+  beschrieben in doc/DAMA-SLAVE.md. Gegen Simulatoren gemessen, NICHT gegen
+  ein echtes Geraet - drei Stellen, an denen zwischen Papier und Praxis zu
+  entscheiden war und die am echten Master zu pruefen sind: markiert er nur
+  den Aufbau oder jeden Rahmen, ist sein Poll wirklich ein Kommando mit P,
+  und nimmt er unsere zurueckgehaltene Quittung auf der Pollantwort an.
+  Zwei Fehler haben erst Thomas' Testwuensche gefunden - das Fenster gehoert
+  der Station und nicht der Verbindung (Digipeat- und Multiconnect-Fall),
+  und ein Slave, der nur schweigt, wiederholt NIE etwas (30% Verlust).
+  DER SLAVE IST GEBAUT (2026-08-17), siehe doc/DAMA-SLAVE.md. Gebaut sind:
+      ifconfig <if> dama off | slave
+      ifconfig <if> damatimeout <sekunden>      Vorgabe 120
+  Zwei Schluessel statt eines mit optionalem zweitem Wort, weil ifconfig
+  seine Zeile als PAARE liest (iface.c, "for(i=2;i<argc-1;i+=2)") - ein
+  drittes Wort wird stillschweigend der naechste Schluessel. Gefunden,
+  indem "dama slave 5" geschrieben wurde und die 5 nirgends ankam.
+  "dama master" antwortet mit einem Hinweis statt mit "unbekannt".
+
+  KEINE KANALGRUPPIERUNG BEIM SLAVE (Thomas, 2026-08-17, und er hat recht):
+  das Zusammenfassen von Ports zu einem DAMA-Kanal ist Sache des MASTERS -
+  nur der hat einen Pollzyklus, und nur er muss den Uplink ueber Ports
+  serialisieren, die sich eine Frequenz teilen. Ein Slave antwortet auf
+  Polls, die an ihn adressiert sind, auf dem Port, auf dem sie ankommen,
+  und es ist ihm gleich, wie der Master sich organisiert. Die Notiz weiter
+  unten ("die Rolle haengt am KANAL") gilt also nur fuer den Master.
+
+  AUS DER TNN-DOKUMENTATION GEZOGEN (TNN179mh05.pdf, 2026-08-16) - TNN ist
+  reiner MASTER, einen Slave kennt es nicht; den hat Linux. Die beiden
+  Quellen ergaenzen sich also.
+
+  * TNN IST DIE UNTOLERANTE SEITE, und zwar abgestuft: "Stationen, die
+    keine DAMA-faehige Usersoftware benutzen und OHNE Aufforderung durch
+    den DAMA-Master senden, werden IM QSO verwarnt. Sind mehr Verwarnungen
+    noetig, als unter DAMA-MaxPol angegeben, so wird der User
+    disconnected." Der Zaehler ist ein Parameter: par 6, Vorgabe 5,
+    "Maximale Verstoesse gegen DAMA Protokoll dann Disconnect". Unser
+    "master-enforce" ist damit kein Schalter, sondern eine ZAHL - und die
+    Verwarnung geht als Text IN die Verbindung.
+  * Weitere Parameter: par 4 DAMA-Speedfaktor 4800, par 5 DAMA-MaxPri 10,
+    par 7 = 50 ms "Wartezeit wenn ein User nicht antwortet". Die 50 ms
+    passen NICHT zu DK4EGs "etwa 1/2 Sekunde" Antwortfrist - vor dem Bauen
+    klaeren, worauf sich welche Zahl bezieht, nicht eine davon abschreiben.
+  * "Alle anderen Benutzer sollten unbedingt FRACK auf den Maximalwert
+    einstellen." Das ist die Gegenseite unserer T1-Frage: auf einem
+    DAMA-Kanal ist die T1-Wiederholung einer CSMA-Station das Problem, und
+    TNNs Rat an die Nutzer ist, T1 gross zu machen.
+  * EIN DAMA-KANAL IST NICHT EIN PORT. TNN fasst mehrere Ports zu einem
+    DAMA-Kanal zusammen (1..16): "DAMA-Kanal 1: Port 0 = 1k2 auf 70cm,
+    Port 1 = 4k8 auf 70cm, Port 2 = 9k6 auf 70cm". Multibaud auf DERSELBEN
+    Frequenz, also derselbe Funkkanal - der Pollzyklus muss geteilt werden.
+    Thomas' Gegenlesart (2026-08-16): vielleicht haben sie nur alle
+    DAMA-Ports in EINE Funktion gepackt, statt mehrere Timer parallel
+    laufen zu lassen. Dagegen spricht die Doku selbst - "Fuer jede
+    EINSTIEGSFREQUENZ wird ein DAMA-Kanal verwendet", und die Beispiele
+    gruppieren nach Band. Waere es Bequemlichkeit, gaebe es EINE
+    DAMA-Funktion und nicht sechzehn nummerierte Kanaele.
+    Und unabhaengig von ihrer Absicht muss es so sein: DAMA regelt, wer
+    auf einem FUNKKANAL sendet. Drei Modems auf einer Frequenz mit je
+    eigenem Pollzyklus erteilen drei Sendeerlaubnisse auf dieselbe Luft -
+    genau die Kollision, die DAMA verhindern soll.
+    FUER DIE KONFIGURATION aendert das wenig, und da hat Thomas recht: es
+    gibt Ports mit und ohne DAMA, und solange niemand Multibaud auf einer
+    Frequenz faehrt, sind "je Port" und "je Kanal" dasselbe. Vorschlag,
+    der beides traegt:
+        ifconfig <if> dama off | master | master-enforce | slave
+        ifconfig <if> dama channel <n>      optional, Vorgabe: eigener
+    Ohne "channel" ist jedes Interface sein eigener Kanal. Der ZUSTAND -
+    Pollzyklus, Stationsliste - haengt am Kanal, und ein Kanal hat im
+    Normalfall genau ein Interface.
+
+  DER BEFUND, DER DEN MASTER TEUER MACHT: TNN braucht vom TNC eine
+  Rueckmeldung, WANN ein Rahmen tatsaechlich hinausgegangen ist. Woertlich:
+  "Im Port-TNC, auf dem DAMA laufen soll, muss das DAMA-Bit im EPROM
+  gesetzt sein. Bei gesetzten DAMA-Bit sendet der TNC an den Knotenrechner
+  die Information zurueck, wenn ein Paket an einen User abgesendet wurde.
+  Diese Information wird fuer die Steuerung der DAMA-Funktion benoetigt."
+  Und entsprechend: "Bei der Linux-Version funktioniert DAMA NUR mit
+  Tokenring oder Vanessa!"
+  KISS GIBT DAS NICHT HER. Wir wissen, wann wir einen Rahmen in den TNC
+  geschoben haben, nicht wann er auf der Luft war - dazwischen liegen
+  TxDelay, Warteschlange und Kanalzugriff des TNC. Fuer den MASTER ist das
+  die zentrale offene Frage; fuer den SLAVE stellt sie sich nicht, der
+  reagiert nur auf empfangene Polls.
+  GEPRUEFT 2026-08-16, und die Antwort ist differenzierter als ja/nein:
+  6PACK TRAEGT DEN SENDEZUSTAND, aber keine Sendequittung je Rahmen.
+  Im Prioritaetskommandobyte stehen drei Zustandsbits, gegengeprueft am
+  Linux-Treiber drivers/net/hamradio/6pack.c (v6.6), und sie stimmen mit
+  unserem sixpack.h ueberein:
+      SIXP_PRIO_CMD_MASK  0x80     dies ist ein Prioritaetskommando
+      SIXP_PRIO_DATA_MASK 0x38     ... und dies sein Zustandsfeld
+      SIXP_TX_MASK        0x20     TNC sendet
+      SIXP_RX_MASK        0x10     TNC empfaengt
+      SIXP_DCD_MASK       0x08     Traeger
+  Ein "Rahmen ist raus" gibt es NICHT als eigene Meldung - das Ereignis ist
+  der UEBERGANG des TX-Bits von gesetzt nach geloescht, und den muss der
+  Host selbst bilden. Der Kernel-Treiber tut es nicht einmal; er zaehlt
+  tx_packets aus dem Pufferzustand.
+  Fuer DAMA reicht der Uebergang im Prinzip - er ist dieselbe Information,
+  die TNNs DAMA-EPROM liefert, sogar mit Anfang UND Ende. Was daran haengt
+  und NICHT aus dem Papier zu beantworten ist: wie schnell und wie
+  zuverlaessig eine echte 6pack-Firmware diese Bytes schickt. Nur bei
+  Aenderung? Verzoegert? Das entscheidet, ob ein Pollzyklus darauf gebaut
+  werden kann, und es ist an einem ECHTEN Geraet zu messen - der Simulator
+  in testtools/fake6pack.py beweist dazu nichts.
+
+  UNSER CODE WIRFT ES HEUTE WEG: sixpack_command() nimmt nur das DCD-Bit
+  (sixpack.c, "sp->dcd = (c & SIXP_STATE_DCD) != 0"), TX und RX werden
+  gelesen und verworfen. Das Anschliessen ist klein - wieder das Muster
+  dieses Baums, diesmal in unserem eigenen Code von gestern.
+
+  KISS IST NICHT VOM TISCH (Thomas, 2026-08-16, und er hat recht - meine
+  Folgerung "auf KISS nur schaetzbar" war zu schnell). Der Fall, in dem es
+  traegt, ist VOLLDUPLEX, und das ist bei Einstiegen inzwischen der
+  Normalfall: dann sind wir Herr auf unserer Sendefrequenz, der TNC muss
+  auf nichts warten, und sein Kanalzugriff - der bei KISS das Unbekannte
+  ist - faellt als Frage weg. Wir wissen, was wir in die Warteschlange
+  gelegt haben und in welcher Reihenfolge; mit der HF-Bitrate laesst sich
+  ausrechnen, wann ein Rahmen draussen ist, und die Pollzeiten bzw. die
+  Sendezuweisungen an die Slaves lassen sich darauf abstimmen.
+
+  WAS DAFUER FEHLT, nachgesehen 2026-08-16:
+    * DIE HF-BITRATE IST NICHT BEKANNT. WAMPES kennt nur die serielle
+      Geschwindigkeit (n8250.h, "long speed - Line speed in bits per
+      second"); struct iface hat gar nichts dergleichen. 9600 Bd seriell
+      zu 1200 Bd HF ist der Normalfall, die eine sagt ueber die andere
+      nichts. Es braucht also eine eigene Angabe je Interface, etwa
+          ifconfig <if> hfrate <bit/s>
+      und ohne sie kann ein KISS-Master seine Zeiten nicht rechnen.
+    * DIE WARTESCHLANGE MUSS FLACH BLEIBEN. Die Rechnung stimmt nur, wenn
+      wir wissen, was vor unserem Poll noch im TNC liegt. Ein Rahmen in
+      Arbeit, der naechste erst nach der errechneten Sendezeit - sonst
+      addieren sich die Unbekannten. Auf einer 9600er Leitung zu einem
+      1200er Funkport ist das ohnehin die richtige Betriebsart.
+    * WAS AUCH DANN GESCHAETZT BLEIBT: die Eigenlatenz des TNC und ob er
+      TxDelay genau einhaelt. Das ist je Geraet eine Konstante und einmal
+      messbar - kein Grund, es nicht zu bauen, aber ein Grund, den Wert
+      nachstellbar zu machen.
+    * HALBDUPLEX BLEIBT DER SCHWIERIGE FALL: dort entscheidet der TNC,
+      wann er sendet, und KISS sagt es uns nicht. 6pack schon, ueber
+      Traeger UND Sendezustand.
+
+  FOLGERUNG FUER DIE REIHENFOLGE: der SLAVE haengt an nichts davon - er
+  reagiert auf empfangene Polls und braucht keine Sendequittung. Also
+  Slave zuerst. Der MASTER geht auf Vollduplex-KISS mit bekannter
+  HF-Bitrate und auf 6pack; auf HALBDUPLEX-KISS ist er der wacklige Fall,
+  und dort gehoert "master-enforce" wahrscheinlich abgelehnt statt
+  schlecht gemacht - eine Station zu disconnecten, weil sie unaufgefordert
+  gesendet hat, waehrend wir selbst nicht wissen, wann unser Poll auf der
+  Luft war, ist die falsche Art von Strenge.
+
+  ------------------------------------------------------------------
+  DIE PRIMAERQUELLE IST GELESEN (DK4EG 1989, sieben Seiten, 2026-08-16)
+  ------------------------------------------------------------------
+  Was sie beantwortet, was sie offenlaesst, und wo sie schweigt.
+
+  BEANTWORTET:
+  * AUS DER LISTE FLIEGEN: "If after a certain number of transmitted
+    polls this station still has not answered, then it is considered to
+    be unavailable by the node and is then dropped completely from the
+    list." Die ZAHL nennt sie nicht - "a certain number". Ebenso beim
+    Verbindungsaufbau vom Knoten aus: "If after a certain amount of
+    tries no UA is received, the user is assumed to be inoperable."
+  * DER LEERLAUF-RUECKZUG, und er ist verkehrsabhaengig: antwortet ein
+    Nutzer nur mit RR#, wird die Zeit bis zum naechsten Poll verlaengert,
+    und "the exact amount of time added is determined by total channel
+    activity" - viel I-Verkehr anderer, laengere Pause fuer den Stillen.
+    "This is the principle of the self-alignment mechanism of DAMA."
+    Wer ein I-Frame schickt, bekommt seine Prioritaet zurueck.
+  * DER MASTER QUITTIERT NICHT SOFORT: "the node will not acknowledge
+    received frames the instant it hears them. Instead it will first
+    service all the other uplinked stations and then come back with an
+    RR# ... along with a poll." Das steht quer zu normalem T2-Verhalten
+    und ist beim Bauen die unangenehmste Stelle im Master.
+  * UNAUFGEFORDERT SENDEN darf der Slave nur beim VERBINDUNGSAUFBAU
+    (SABM im CSMA-Verfahren). Trennen dagegen nicht: "When the user wants
+    to disconnect from the node, he will wait to send his DISC-frame
+    until polled by the master."
+  * DAS DAMA-BIT ist "the dormant bit 5 of the master's SSID address
+    field", und "DAMA test versions set this bit to 0" - ACTIVE LOW,
+    genau wie ax25hdr.c es liest, und es ist das SSID-Feld des MASTERS.
+    Der Master kuendigt also seine Faehigkeit an, der Nutzer erkennt sie.
+  * TOLERANZ: "All protocol elements keep their original meaning which
+    allows both versions to be utilized on the same frequency, yet
+    throughput increases as more and more users switch over." Und: "it
+    does not require everybody to change everything all at once." Die
+    Spezifikation steht also EINDEUTIG auf der toleranten Seite;
+    TNNs Disconnect nach N Verstoessen ist eine Zutat.
+  * ZEITEN, und es sind nur drei: Antwortfrist "say around 1/2 second";
+    T2/DWAIT der Nicht-DAMA-Nutzer "under 1 second"; und die
+    Wiederholung nach einem unquittierten I-Frame, also T1/FRACK - das
+    Papier umschreibt sie als "the time interval from when an I-frame is
+    sent to when the TNC sends an RR# to ask for a pending ACK" und will
+    sie "clearly higher than the time between two polls of the master
+    (usually more than 30 seconds at 1200 baud)".
+    ES IST T1 UND NICHT T3, und die Gegenprobe steht in der
+    TNN-Dokumentation, die denselben Rat mit dem Parameternamen gibt:
+    "Alle anderen Benutzer sollten unbedingt FRACK auf den Maximalwert
+    einstellen." Zwei Quellen, ein Parameter. (T3 ist das ANDERE Thema -
+    der Leerlauf-Poll gegen einschlafende Verbindungen, siehe "ZWEITER
+    WEG, verhindern statt erholen" weiter oben. Am 2026-08-16 hatten wir
+    die beiden kurz vermischt.)
+    KEINE Zeit ist je Station angegeben - der Mechanismus ist
+    beschrieben, die Zahlen sind Implementierungssache.
+
+    UND DARAUS FAELLT DER WACHHUND AB, ohne einen neuen Zeitgeber. Die
+    Bedingung "T1 groesser als der Pollabstand" heisst umgekehrt: ein
+    FEUERNDES T1 im DAMA-Betrieb ist genau das Ereignis "es wurde zu
+    lange nicht gepollt". Die Spezifikation beschreibt keinen Wachhund,
+    aber sie stellt die Bedingung auf, die einen zum Nulltarif ergibt -
+    und es ist genau Thomas' Skizze vom 2026-08-15: laeuft T1 ab, gilt
+    DAMA als gescheitert, der Slave faellt in den normalen Betrieb
+    zurueck, T1 greift wieder und die Verbindung repariert sich selbst.
+    Statt sie abzuraeumen, wie der Linux-Kernel es tut.
+    Zu klaeren bleibt damit nur noch, was der Slave mit T1 waehrend des
+    DAMA-Betriebs ueberhaupt tut - siehe die offene Frage zum
+    Linux-Kernel unten.
+
+  SIE SCHWEIGT - und zwar genau bei Thomas' gefaehrlichster Stelle:
+  * ZUM WACHHUND DES SLAVE steht NICHTS. Die Frage aus dieser Datei
+    ("sagt die Spezifikation das, oder ueberlaesst sie es den
+    Implementierungen?") ist damit beantwortet: sie ueberlaesst es ihnen.
+    Das Papier sagt nicht einmal, dass der Slave T1 aussetzt - es sagt
+    nur, dass er nicht SENDET, bevor er gepollt wurde.
+  * ZUR SENDEQUITTUNG des TNC steht ebenfalls nichts. TNNs
+    EPROM-Anforderung ist Implementierung, nicht Spezifikation.
+
+  ------------------------------------------------------------------
+  WAS DIE BEIDEN UMSETZUNGEN TUN (2026-08-16)
+  ------------------------------------------------------------------
+  LINUX-KERNEL, DAMA-SLAVE (net/ax25/ax25_ds_*.c, v6.6):
+  * Der Zustand liegt GENAU SO, wie Thomas es vorgesehen hat: je Geraet
+    (ax25_dev->dama) und je Verbindung (AX25_COND_DAMA_MODE in
+    ax25_cb->condition).
+  * ES GIBT DEN WACHHUND: AX25_VALUES_DS_TIMEOUT, heruntergezaehlt im
+    Sekundentakt. ABER ER TUT DAS GEGENTEIL VON DEM, WAS WIR WOLLTEN.
+    Laeuft er ab, schickt er allen DAMA-Verbindungen des Geraetes ein
+    DISC, trennt sie mit ETIMEDOUT und schaltet DAMA am Geraet ab:
+        ax25_send_control(ax25, AX25_DISC, AX25_POLLON, AX25_COMMAND);
+        ax25_disconnect(ax25, ETIMEDOUT);
+        ...
+        ax25_dev_dama_off(ax25_dev);
+    Kein Rueckfall auf CSMA, keine Rettung der Sitzungen - genau der
+    teure Ausgang, den Thomas am 2026-08-15 vermeiden wollte ("dieselben
+    30 Pakete noch einmal durch die Luft"). UNSERE ABWEICHUNG DAVON IST
+    ALSO BEWUSST und gehoert begruendet dokumentiert: bei uns soll der
+    Wachhund in den normalen Betrieb zurueckfallen, nicht abraeumen.
+  * GEKLAERT, und das ist die Antwort auf die Frage, an der unser Entwurf
+    hing: T1 WIRD NICHT AUSGESETZT - es laeuft weiter, aber SEIN ABLAUF
+    IST STUMM. ax25_ds_t1_timeout(), Zustand 3:
+        case AX25_STATE_3:
+            if (ax25->n2count == ax25->n2) {
+                ax25_send_control(ax25, AX25_DM, AX25_POLLON, AX25_RESPONSE);
+                ax25_disconnect(ax25, ETIMEDOUT);
+                return;
+            } else {
+                ax25->n2count++;
+            }
+            break;
+        ...
+        ax25_calculate_t1(ax25);
+        ax25_start_t1timer(ax25);
+    Kein ax25_requeue_frames(), kein ax25_kick(), keine Abfrage - anders
+    als die Nicht-DAMA-Fassung. Nur der Zaehler steigt. Genau die Regel
+    "ein Slave sendet nicht unaufgefordert", umgesetzt als: Zeitgeber
+    laeuft, Handlung unterbleibt. Das ist eleganter als T1 anzuhalten,
+    denn der Zaehler misst weiter, wie lange nicht gepollt wurde.
+  * ZWEI SICHERUNGEN, BEIDE TOEDLICH: nach n2 stummen T1-Ablaeufen DM und
+    Disconnect je Verbindung, dazu der geraeteweite DS_TIMEOUT, der alle
+    DAMA-Verbindungen trennt und DAMA abschaltet. EIN RUECKFALL AUF CSMA
+    EXISTIERT NIRGENDS.
+    UNSER ENTWURF WEICHT GENAU HIER AB, und jetzt begruendet: statt beim
+    n-ten stummen Ablauf zu sterben, fallen wir in den normalen Betrieb
+    zurueck - dann greift T1 wieder mit seiner normalen Wirkung und die
+    Sitzung repariert sich. Der Preis dafuer ist bekannt und beherrschbar:
+    ist der Master doch noch da und nur langsam, senden wir unaufgefordert
+    und handeln uns auf einem "enforce"-Knoten Verwarnungen ein. Also
+    grosszuegige Schwelle, und Wiedereintritt in DAMA, sobald wieder ein
+    DAMA-markierter Rahmen kommt.
+  * GEKLAERT (2026-08-17, am TNN-Quelltext /tmp/foo/TheNetNode-CB):
+    EIN POLL IST KOMMANDO MIT GESETZTEM P-BIT, und zwar innerhalb eines
+    DAMA-markierten Rahmens. src/l2rx.c:
+
+        #ifdef DAMASLAVE
+            if (rxfDA)                          /* DAMA?                */
+            {
+              if (damaslave(rxfprt))            /* DAMA-Slave erlaubt?  */
+              {
+                portpar[rxfprt].damaok = 12000; /* 2 Minuten Timeout    */
+                if (rxfPF && rxfCR)             /* wenn gepollt         */
+                {
+                  l2stma(stbl10a);              /* DAMA-Poll receive    */
+                  portpar[rxfprt].sendok = 1;
+
+    ZWEI UNABHAENGIGE UMSETZUNGEN, DIESELBE REGEL - Linux prueft
+    "type == AX25_COMMAND && pf", TNN "rxfPF && rxfCR". Die Unschaerfe im
+    Papier ist damit durch die Praxis entschieden.
+  * UND DAMIT AUCH DIE GESCHAERFTE FRAGE: sendok wird NUR beim Poll
+    gesetzt. Ein I-Frame mit P=0 erteilt keine Sendeerlaubnis.
+    LINUX MACHT ES GENAUSO, nachgesehen in ax25_ds_in.c, Zustand 3:
+        if (pf) {
+            ax25_ds_enquiry_response(ax25);
+        } else {
+            if (!(ax25->condition & AX25_COND_ACK_PENDING)) {
+                ax25->condition |= AX25_COND_ACK_PENDING;
+                ax25_start_t2timer(ax25);
+            }
+        }
+    Kein sofortiges RR, nur ein Quittungsvermerk, der beim naechsten Poll
+    mitgeliefert wird. Zwei Umsetzungen, dieselbe Bauform.
+    ACHTUNG BEIM NACHBAUEN, ungeklaert: Linux startet dort T2. Feuert T2
+    im normalen AX.25, geht die Quittung hinaus - eine UNAUFGEFORDERTE
+    Aussendung. Entweder unterdrueckt der DAMA-Pfad das, oder man
+    verlaesst sich darauf, dass der Poll vorher kommt. Genau die Stelle,
+    an der ein Slave versehentlich dazwischenfunkt und sich auf einem
+    "enforce"-Master eine Verwarnung einfaengt. Bei UNS also bewusst
+    entscheiden: entweder T2 im DAMA-Betrieb stummschalten wie T1, oder
+    den Quittungsvermerk ausschliesslich beim Poll ausliefern. DER SATZ
+    AUS DEM PAPIER - "The user will acknowledge I-frames immediately with
+    an RR#" - WIRD VON KEINER DER BEIDEN UMSETZUNGEN BEFOLGT, und zwar aus
+    genau dem Grund, den Thomas genannt hat: ein Master, der mehrere
+    Stationen hintereinander bedient, will die Quittungen nicht dazwischen
+    hoeren. Wir folgen der Praxis, nicht dem Papier.
+  * KORREKTUR: das DAMA-Bit im SSID war NICHT als Kandidat auszuscheiden,
+    wie ich am 2026-08-16 geschrieben hatte. "if (rxfDA)" ist die AEUSSERE
+    Bedingung - nur DAMA-markierte Rahmen zaehlen ueberhaupt -, und die
+    Erlaubnis ist P+Kommando INNERHALB davon. Zwei Ebenen, beide Bits
+    gebraucht.
+  * DER WACHHUND IST BEZIFFERT: damaok = 12000, also 2 MINUTEN,
+    aufgefrischt von JEDEM DAMA-markierten Rahmen - nicht nur von Polls.
+    Bei Ablauf sendok = 1, also senden statt trennen (l2dama.c).
+
+  TNN, l2dama.c und l2rx.c. LIZENZLAGE GEAENDERT (2026-08-17): der Baum
+  /tmp/foo/TheNetNode-CB hat ein LICENSE - ALAS, "Allgemeine Lizenz fuer
+  Amateurfunk Software", NORD><LINK 1994, aus der GPL abgeleitet und mit
+  dem ausdruecklichen Satz "Es ist aber jedem Nutzer freigestellt, an
+  Stelle dieser Lizenz die GPL Bedingungen anzuwenden." DAMIT IST TNN NACH
+  THOMAS' VORGABE ALS CODEQUELLE VERWENDBAR, nicht nur als
+  Verhaltensreferenz. Die frueher notierte Einschraenkung galt kq6up/tnn,
+  das gar keine Lizenzangabe hat.
+  * Master, und Slave hinter #ifdef DAMASLAVE.
+  * DER SPEEDFAKTOR IST DORT WIRKLICH EINE RECHNUNG:
+        dsf = (DamaSpeedFactor / 100) / portpar[...].speed;  if (dsf<1) dsf=1;
+        if (lnkpoi->zael < lnkpoi->anzl * dsf) lnkpoi->zael++;
+    Die Doku dazu: bei DAMA-Speedf 9600 werden 1200-Baud-Nutzer "erst in
+    jeder 8. Runde bedient", und "die korrekte Baudrate muss im
+    Speed-Parameter fuer den jeweiligen Port richtig eingetragen sein".
+    DAS BESTAETIGT ZWEIERLEI: die Portgeschwindigkeit IST bei TNN ein
+    konfigurierter Wert je Port, und der Pollzyklus ist ueber Ports
+    verschiedener Geschwindigkeit HINWEG geteilt - sonst gaebe es nichts
+    zu gewichten. Die Kanal-Frage von weiter oben ist damit entschieden.
+  * Leerlauf: damapc = 6000 (etwa ein Poll pro Minute) fuer Stationen
+    ohne Aktivitaet, sonst damapm * 100. Zaehlerdeckel dama_max.
+  * Unaufgefordertes Senden: pollcnt hoch, und bei MaxPollCnt
+        "> DISCONNECT: Too many non-DAMA Polls (%u) !!\r"  dann dsclnk()
+    Die Verwarnung geht also wirklich als Text IN die Verbindung.
+
+  KORREKTUR AN MEINER EIGENEN AUSSAGE VON HEUTE: ich hatte aus der
+  TNN-DOKUMENTATION geschlossen, ein Master brauche eine SENDEQUITTUNG
+  ("wenn ein Paket an einen User abgesendet wurde"). Der Quelltext tut
+  das nicht - er fragt den TRAEGER ab, iscd(port) -> DAMA_DCD, und
+  plant erst weiter, wenn der Kanal frei ist. Gebraucht wird also
+  TRAEGERERKENNUNG, nicht eine Quittung je Rahmen. Das aendert die Lage:
+  6pack liefert genau das, KISS nicht - und Thomas' Vollduplex-Fall
+  braucht es gar nicht, weil dort niemand sonst auf unserer
+  Sendefrequenz ist. Beide Wege fuehren zum selben Schluss, von zwei
+  Seiten.
+
+  ------------------------------------------------------------------
+  DAMA GIBT KEINE ZEITSCHLITZE VOR - und was daraus folgt (2026-08-16)
+  ------------------------------------------------------------------
+  Thomas' Modell war "der Master weist Zeitschlitze zu, und ein Slave
+  koennte seinen verpassen". Das Papier beschreibt etwas anderes:
+  sequenzielles Pollen mit einer ANTWORTFRIST, keinen Fahrplan. "If the
+  user does not respond within a given time frame (say around 1/2 second)
+  then the master ... passes permission to transmit to all other active
+  stations and when completed comes back to the first user." Es gibt
+  keine angekuendigte Slotgrenze, die jemand verpassen koennte.
+
+  SEINE FOLGERUNG STIMMT TROTZDEM, mit anderer Begruendung. Liegen hinter
+  dem Poll noch Rahmen in der Warteschlange, dann sendet der Master im
+  HALBDUPLEX noch, waehrend der Slave antwortet - Kollision. Der Poll muss
+  also das LETZTE sein, bevor der Master die Taste loslaesst. Dieselbe
+  Anforderung an die Queuetiefe, nur ist der Grund Kollisionsvermeidung
+  und nicht Slotverletzung. Eine verspaetete Antwort ist entsprechend
+  nicht "ausserhalb ihres Slots", sondern kollidiert mit dem, was der
+  Master als naechstes tut.
+
+  EINE VEREINFACHUNG, die daraus faellt: der Master muss NICHT wissen,
+  wann der Poll beim Slave ankommt - die Laufzeit ist vernachlaessigbar.
+  Er muss wissen, wann SEINE EIGENE AUSSENDUNG ENDETE, denn dort beginnt
+  die Frist. Zu modellieren ist nur der eigene Sender.
+
+  WOHER DIE HALBE SEKUNDE KOMMT, nachgerechnet: ein RR sind rund 18 Byte
+  = 144 Bit. Bei 1200 Bd 120 ms, dazu TxDelay des Slave von typisch
+  250 ms = 370 ms; die 1/2 s ist also eine 1200-BAUD-ZAHL mit etwa 130 ms
+  Luft. Bei 9600 Bd waeren es 15 ms + 100 ms = 115 ms, die Frist duerfte
+  viermal kuerzer sein. DAS ist der eigentliche Grund, warum die HF-Rate
+  ans Interface gehoert: damit die Antwortfrist mit der Geschwindigkeit
+  skaliert, statt eine Konstante von 1989 zu bleiben.
+
+  WIE TNN ES LOEST: gar nicht durch Rechnen. Es fragt den Traeger ab -
+      if (iscd(port)) return (DAMA_DCD);      /* nicht busy(), iscd() ! */
+      if (!dcd && (dama_timer[k] > 0)) ...
+  dazu ein Kanaltimer (dama_timer[k] = dama_init) und
+  pause_delay[k] = MIN_DELAY + dama_init, MIN_DELAY 3000. Keine
+  Bitratenrechnung, kein Sendeende-Signal. Unsere Rechnung ist also der
+  ERSATZ fuer DCD, und auf KISS ohne Vollduplex der einzige Weg.
+
+  UND EIN NEBENBEFUND AUS DEMSELBEN QUELLTEXT, der die Wachhund-Frage
+  entscheidet: TNNs Slave macht es GENAU ANDERSHERUM als der
+  Linux-Kernel -
+      if (damaslaveon(port))                /* DAMA-Slave aktiv?      */
+        if (--portpar[port].damaok == 0)    /* Slave-Timeout abgelaufen? */
+          portpar[port].sendok = 1;         /* ja - Reste senden      */
+  Laeuft der Slave-Timeout ab, wird gesendet statt getrennt. Zwei
+  Umsetzungen, zwei entgegengesetzte Antworten - und unsere geplante
+  (Rueckfall statt Abbruch) ist die von TNN, nicht die von Linux.
+  NICHT BEANTWORTBAR aus l2dama.c: WIE der Slave einen Poll erkennt.
+  damaslaveon() ist dort nur gerufen, nicht definiert, und wo damaok
+  gesetzt wird, liegt im L2-Empfangspfad. Dort weitersuchen.
+
+  ------------------------------------------------------------------
+  KISS UND DCD: der TNC WEISS es, er SAGT es nur nicht (Thomas, 2026-08-17)
+  ------------------------------------------------------------------
+  "Alle TNCs haben channel busy detection und gehen erst auf Sendung wenn
+  Kanal ruhig." Das mildert die KISS-Bewertung erheblich, und zwar an der
+  entscheidenden Stelle: was bei KISS fehlt, ist nicht die
+  TRAEGERERKENNUNG, sondern nur unsere KENNTNIS davon. Der TNC handelt
+  ohnehin danach.
+
+  FOLGE FUER DEN SIMPLEX-MASTER: er kann nicht ueber die Antwort des Slave
+  hinwegreden, weil sein TNC von sich aus wartet. Es gibt also KEINE
+  Kollisionsgefahr aus unserer Unkenntnis. Der Preis ist ein anderer und
+  kleinerer: unser Poll geht spaeter hinaus als berechnet, und wir merken
+  nicht, wann die Antwort zu Ende war - also sitzen wir die Frist aus,
+  statt sofort den naechsten zu pollen. Das kostet Durchsatz, nicht
+  Korrektheit.
+  FOLGE FUER DEN VOLLDUPLEX-MASTER: mit gesetztem FullDup sendet der TNC
+  sofort, die Zeitrechnung wird vorhersagbar, und der Downlink darf
+  waehrend der Wartezeit weiterlaufen (siehe naechster Abschnitt).
+
+  DAMIT IST DIE FRUEHERE FORMULIERUNG "auf Halbduplex-KISS ist der Master
+  der wacklige Fall" ZU STARK. Richtig ist: er ist der LANGSAMERE Fall.
+  Ob "master-enforce" dort trotzdem abzulehnen ist, bleibt zu entscheiden -
+  das Argument dafuer war die Ungewissheit ueber den eigenen Sendezeitpunkt,
+  und die besteht weiter.
+
+  ------------------------------------------------------------------
+  VOLLDUPLEX-DAMA - ausserhalb des Papiers, und dort steckt der Gewinn
+  (Thomas, 2026-08-17)
+  ------------------------------------------------------------------
+  DK4EG schreibt DAMA ausdruecklich als ALTERNATIVE zum Vollduplex: "In a
+  full duplex system the hardware expense will normally be much higher and
+  the system will occupy two frequencies but will only realize the maximum
+  throughput of one. A better approach might be to increase the throughput
+  by reducing the collisions on a SINGLE CHANNEL system rather than
+  spreading the load onto two channels." Das Papier ist also ein reines
+  Simplex-Papier; Vollduplex-DAMA kommt darin nicht vor.
+
+  THOMAS' BEOBACHTUNG: das Warten auf das RR kostet die eigentliche Zeit,
+  und im Vollduplex entsteht durch die gezielte Ansprecherei und Warterei
+  effektiv wieder Halbduplex. Richtig - aber zwei Dinge, die im Simplex
+  zusammenfallen, sind zu trennen:
+    * DIE SERIALISIERUNG DES UPLINKS bleibt noetig. Das ist der ganze
+      Zweck: die Nutzer hoeren einander nicht, also darf nur einer senden.
+      B wird nicht gepollt, bevor A geantwortet hat oder seine Frist um
+      ist.
+    * DAS SCHWEIGEN DES DOWNLINKS ist reine Verschwendung. Im Simplex
+      musste der Master die Taste loslassen, um hoeren zu koennen; im
+      Vollduplex nicht. Er kann waehrend der Wartezeit Daten an andere
+      schicken.
+  Der Master wartet also weiter, bevor er DEN NAECHSTEN POLLT, schweigt
+  dabei aber nicht mehr. Die 1/2 s wird von Totzeit zu Sendezeit. Bei 16
+  Stationen und einer stillen Runde sind das acht Sekunden, die im Simplex
+  verloren sind.
+
+  KORREKTUR AN MEINER AUSSAGE VOM 2026-08-16: ich hatte gesagt, im
+  Vollduplex brauche man die Traegererkennung gar nicht. Das gilt nur fuer
+  UNSEREN SENDER - dort konkurriert niemand. Fuer die Gegenrichtung wird
+  sie WICHTIGER: DCD auf der Empfangsfrequenz sagt, wann die Antwort von A
+  zu Ende ist, und erst das erlaubt, B sofort zu pollen statt die Frist
+  auszusitzen. Ohne DCD bleibt nur die Frist als Notbremse, und ein Teil
+  des Gewinns ist wieder weg. 6pack ist also auch im Vollduplex im
+  Vorteil, nur aus dem umgekehrten Grund als gedacht.
+
+  ------------------------------------------------------------------
+  DIE HF-BITRATE GEHOERT ANS INTERFACE, NICHT IN DIE DAMA-KONFIGURATION
+  (Thomas, 2026-08-16)
+  ------------------------------------------------------------------
+  Sein Punkt: die Kenntnis der HF-Rate hilft auch dem AX.25-Retry-Timing,
+  ist dort vielleicht besser aufgehoben, und "was zaehlt ist
+  min(serielle Bitrate, HF-Bitrate)" - die langsamere der beiden ist der
+  Engpass, und nur sie bestimmt die Laufzeit eines Rahmens.
+
+  Nachgesehen, was WAMPES heute tut: T1 wird bereits GEMESSEN, nicht
+  geraten - lapb.c fuehrt srt und mdev als Integratoren
+  (axp->srt = ((axp->srt*7) + rtt + 4) >> 3) und setzt T1 = 4*mdev + srt.
+  Der STARTWERT kommt aus T1init (5000 ms), skaliert nur mit der Zahl der
+  Digipeater (lapb.c: mdev = (T1init * (1 + 2*ndigis) + 2)/4), NICHT mit
+  der Geschwindigkeit. Daraus folgt sauber:
+    * Fuer AX.25 verbessert die Rate nur den KALTSTART - nach dem ersten
+      Umlauf misst WAMPES ohnehin besser, als jede Rechnung raten kann.
+      5 s sind fuer 1200 Baud knapp und fuer 9600 grosszuegig; das ist
+      der Gewinn, mehr nicht.
+    * Fuer DAMA ist sie unentbehrlich, weil dort VORHERGESAGT werden muss
+      statt gemessen: wann unser Poll draussen ist, laesst sich nicht im
+      Nachhinein feststellen.
+  Also eine Angabe an struct iface, nicht am DAMA-Teil, und beide
+  benutzen sie:
+      ifconfig <if> hfrate <bit/s>        0 = unbekannt, wie bisher
+  und wo eine Laufzeit gebraucht wird, zaehlt min(serielle, hfrate).
+  Zu bedenken: n8250 kennt die serielle Rate (n8250.h "long speed"),
+  andere Interfacetypen nicht - die Bildung des Minimums muss damit
+  umgehen koennen.
+
+  AUS DEM XNET-HANDBUCH (xnet138.pdf, nachgelesen 2026-08-17 auf Thomas'
+  Hinweis, dass sich eine der Dokumentationen zum Abschalten des Slave
+  auslaesst - es war diese):
+
+  * ABSCHNITT 4.3.14.2.2 "ds", und er bestaetigt unsere Vorgabe von einer
+    Seite, an die ich nicht gedacht hatte: "Der Slave-Mode wird
+    vollautomatisch beim Verbindungsaufbau zu einem Master aktiviert. BEI
+    DIGIS IST DIESE AUTOMATISCHE AKTIVIERUNG DES SLAVE-MODES NICHT
+    ERWUENSCHT. Sie kann deshalb mit Hilfe des 'pa tnc ds' - Parameters
+    ausgeschaltet werden. Wer (X)NET als TNC-User-Software einsetzt und auf
+    einem DAMA-Einstieg arbeitet muss diesen Parameter einschalten!"
+    Der Parameter heisst dort "ds", beschrieben als "allow DAMA slave
+    mode", Vorgabe 1. Bei uns ist "ifconfig <if> dama slave" dieselbe
+    Erlaubnis, und die Vorgabe "off" ist damit die richtige: ein Knoten,
+    der selbst Infrastruktur ist, soll nicht durch fremde DAMA-Bits in die
+    Slave-Rolle gedraengt werden.
+    FEINHEIT, die wir anders lesen: XNET aktiviert "beim Verbindungsaufbau
+    ZU einem Master", also wenn ES anruft. Wir rasten bei jedem markierten
+    Rahmen ein, auch wenn wir angerufen werden. Thomas' Entscheidung vom
+    2026-08-17 macht das unerheblich - siehe unten.
+  * EINE DAMA-RUNDE UEBER MEHRERE PORTS: "Eine DAMA-Runde kann sich ueber
+    mehrere Ports erstrecken", bis zu vier unabhaengige Runden. Damit ist
+    die Kanalfrage aus drei unabhaengigen Quellen bestaetigt (DK4EG dem
+    Sinn nach, TNN, XNET) - und weiterhin eine reine MASTER-Frage.
+  * ZAHLEN FUER DEN TNC, die den 6pack/CSMA-Punkt weiter oben bestaetigen:
+    "Fuer den korrekten Ablauf des DAMA-Modes muss auf den entsprechenden
+    Ports die PERSISTENZ AUF 255 und die SLOTTIME AUF 1 gestellt werden!"
+  * VIER MASTER-PARAMETER, fuer spaeter: Connectslot Periode, Connectslot
+    Dauer, Pollwait, Txdpri. Der CONNECTSLOT ist der interessante - "eine
+    Wartezeit, in der der Digi keine User pollt, um einem User den Einstieg
+    (den Connect) zu erlauben". Das ist die Vorkehrung des Masters dafuer,
+    dass ueberhaupt jemand neu hereinkommt, und im Papier von DK4EG kommt
+    sie nicht vor. Beim Bau des Masters zu beruecksichtigen.
+
+  FUER DEN MASTERBAU VORGEMERKT (Thomas, 2026-08-17): SIND WIR MASTER,
+  DUERFEN WIR NICHT ZUM SLAVE WERDEN, nur weil uns jemand mit gesetztem
+  DAMA-Bit connected. Die Sperre gibt es im Code schon - dama_heard_frame()
+  kehrt zurueck, wenn ifp->dama nicht DAMA_SLAVE ist -, aber bisher nur als
+  Nebenwirkung davon, dass es keine dritte Rolle gibt. Am 2026-08-17 als
+  tragende Bedingung kommentiert, damit sie einen "Aufraeumer" ueberlebt.
+  Es ist dieselbe Begruendung, die XNET fuer seinen ds-Parameter angibt:
+  ein Master ist ein Digi, und "bei Digis ist diese automatische
+  Aktivierung des Slave-Modes nicht erwuenscht".
+  WAS ein Master mit einem markierten Rahmen tun soll, ist eine andere
+  Frage und gehoert in die Masterhaelfte: die Markierung heisst "diese
+  Station spricht DAMA", er darf sie also unter die Pollordnung nehmen.
+  Auskunft, kein Rollenwechsel.
+
+  ZWEI SLAVES, DIE SICH DIREKT VERBINDEN - ENTSCHIEDEN (Thomas, 2026-08-17):
+  Weil wir unsere eigenen Rahmen markieren, halten zwei WAMPES-Slaves
+  einander fuer den Master und sperren sich gegenseitig aus, bis der
+  Wachhund ablaeuft; danach setzen sie sich sofort wieder gegenseitig in
+  den DAMA-Modus. Ich hielt das fuer einen Fehler und wollte einen Schalter
+  bauen. Thomas' Einordnung, und sie ist besser: DAS IST DAS GEWUENSCHTE
+  VERHALTEN. Auf einem DAMA-Kanal reden potenzielle Slaves nicht
+  miteinander; muessen sie es doch, weil der Digi aus ist und die
+  Verbindung wichtig, dann konfigurieren sie sich um ("ifconfig <if> dama
+  off"). Zwei DAMA-Master auf einer Frequenz - der echte und einer der
+  beiden Nutzer - waeren ohnehin keine gute Idee. KEIN CODE, nur diese
+  Begruendung.
+
+  UND EINE KORREKTUR AN MIR (Thomas, 2026-08-17): ich hatte vermutet, ein
+  Master koenne ein Rufzeichen von uns, das er durch den Verbindungsaufbau
+  kennengelernt hat, in seine Pollliste nehmen. Falsch - was soll er
+  pollen, wo er gar nicht beteiligt ist? Ein RR auf eine nicht existente
+  Verbindung wird mit DM oder FRMR beantwortet. Ein Master pollt Links, die
+  er HAT.
+
+  WECHSELWIRKUNG mit dem 6pack-Kanalzugriff vom 2026-08-15: auf einem
+  DAMA-Kanal entscheidet der Master, wer spricht. p-Persistenz und Polling
+  sind zwei Antworten auf dieselbe Frage; beide zugleich laufen zu lassen ist
+  falsch. Wird DAMA auf einem Port eingeschaltet, gehoert der CSMA dort
+  abgeschaltet (bei 6pack: wie Vollduplex behandeln und den Poll ueber die
+  Sendeerlaubnis entscheiden lassen). Dasselbe gilt fuer jeden TNC, der selbst
+  CSMA macht - bei DAMA muss dessen Persistenz auf 255.
+- 6pack: der Mehrgeraetering. GEBAUT ist alles andere (src/sixpack.c, seit
+  2026-08-15): Kodierer, Dekoder, Pruefsumme, Kanalzugriff mit p-Persistenz
+  und Traegerabfrage, Parameter ueber "param <iface> TxDelay|Persist|SlotTime
+  |FullDup". Die TNC-Adresse steht dabei fest auf 0, ein Geraet je Leitung.
+  Thomas: begegnet ihm selten, deshalb hierher.
+
+  DIE UEBERLEGUNG DAZU, und sie bestimmt den Aufwand: jedes Geraet am Ring ist
+  ein eigener FUNKKANAL - eigene Frequenz, eigenes Rufzeichen, eigener
+  Traeger, eigene TxDelay und Persistenz, eigene AX.25-Verbindungen. In WAMPES
+  haengt all das an struct iface. Ein Ring mit acht TNCs sind also ACHT
+  INTERFACES AUF EINER LEITUNG, und nicht ein Interface mit acht Adressen.
+  (Dieselbe Formdiskrepanz ist der Grund, warum es unter Linux mkiss als
+  eigenen Daemon gibt und nicht im Treiber.)
+
+  Zu tun waere also ein Schnitt durch struct sixpack, die heute beides
+  vermischt:
+    * eine LEITUNG: das Geraet, der Byte-Dekoder, die Leseschleife, und der
+      Empfang wird ueber die Adresse im oeffnenden SEOF dem Port zugestellt.
+    * N PORTS: je ein struct iface mit eigenem dcd, eigenen Parametern,
+      eigener Sendeschlange und eigenem Zeitgeber. Der Kanalzugriff ist je
+      Port zu rechnen - es sind verschiedene Kanaele.
+  Offen ist auch die Schreibweise beim Anlegen: die Leitung einmal anhaengen
+  und die Ports einzeln dazu, oder alle acht im attach. Nicht entschieden.
+
+  Zum Kernel-Fix CVE-2026-53082 / bf9a388, nachgesehen 2026-08-14: er betrifft
+  uns NICHT direkt. sixpack_receive_buf() lief ueber den Flags-Puffer der
+  TTY-Schicht, in dem der Kernel je Byte Uebertragungsfehler vermerkt, ohne
+  den Datenzeiger im Gleichschritt weiterzuruecken. WAMPES hat keine Line
+  Discipline und keinen Flags-Puffer. Uebertragbar ist nur die Lehre: Zaehler
+  und Zeiger duerfen nie auseinanderlaufen.
+
+  Und eine Eigenschaft des Protokolls, die man kennen sollte: die Pruefsumme
+  ist eine 8-BIT-SUMME, keine CRC. Jeder Einzelfehler wird erkannt, zwei die
+  sich aufheben nicht - im Mittel etwa einer von 256 gestoerten Rahmen kommt
+  durch. SMACK ist mit CRC-16 an dieser Stelle deutlich staerker. Steht auch
+  im Kopf von sixpack.c.
+
+- kiss: TNC-Initialisierung beim attach. RECHERCHIERT 2026-08-14, Thomas'
+  Skizze war im Kern richtig und braucht eine Ergaenzung, die den Kern trifft.
+  Es gibt im Baum bisher NICHTS davon; die Stelle waere asy_attach (config.c:126),
+  nicht kissattach - das ist die Linux-Seite.
+
+  Der Ausloeser: Thomas hat auf HF schon "KISS ON" und "\n" gesehen. Das ist ein
+  TNC im CONVERSE- oder TRANSPARENT-Modus, wo jedes Byte gesendet wird. Es sind
+  also DREI moegliche Ausgangszustaende, nicht zwei, und C0 FF C0 holt nur aus
+  dem KISS-Modus heraus.
+
+  ENTWURF, mit Thomas festgelegt 2026-08-14:
+
+      attach asy ... kiss ... init tapr | kantronics | "<eigene Folge>"
+
+  Die beiden Fertigen sind nur vorgefertigte Zeichenketten derselben Sprache,
+  damit die Sonderfaelle nicht im Code stehen:
+
+      tapr        \xC0\xFF\xC0 \d ^C^C^C \d - "KISS ON\r"      \p "RESTART\r" \p -
+      kantronics  \xC0\xFF\xC0 \d ^C^C^C \d - "INTFACE KISS\r" \p "RESET\r"   \p -
+
+  "tapr" heisst so, weil es das ist; "kenwood" ist ein Alias (der eingebaute
+  TNC der Kenwoods ist ein TAPR-TNC2-Nachbau, neuere Firmwares kennen dieselben
+  Befehle, teils auch KISS OFF).
+
+  Die Sprache, klein gehalten:
+      "text"   woertlich senden, mit \r \n \\ \xHH darin
+      ^C       Steuerzeichen, lesbarer als \x03
+      \d       1 s warten - die CMDTIME-Schutzzeit
+      \p       100 ms
+      \w<ms>   beliebige Wartezeit (HBAUD-Umschaltung, VFO-Wahl)
+      -        Empfangenes verwerfen
+      ?"text"  auf eine Zeichenkette warten, mit Zeitgrenze
+
+  REIHENFOLGE: C0 FF C0 ZUERST, dann ^C^C^C - Thomas' Entscheidung, und der
+  tragende Grund ist, dass KISS das Ausschalten des TNC ueberlebt (steht im
+  KPC-3+-Handbuch). Der Normalfall nach einem WAMPES-Neustart ist also "TNC
+  steht noch im KISS-Modus", Converse ist die Ausnahme. So sind unsere ^C erst
+  unterwegs, wenn KISS schon verlassen ist, und koennen nicht Teil eines
+  Rahmens werden, den der TNC sendet. Der Preis: steht der TNC ausnahmsweise
+  im Converse-Modus, gehen drei binaere Bytes ueber die Luft - erheblich
+  harmloser als ein lesbares "KISS ON".
+
+  Auch Kantronics kennt C0 FF C0 (KPC-3+-Handbuch, drei Wege aus KISS: harter
+  Reset, TCP/IP-Kommando, C0 FF C0). Beide Sequenzen teilen den Vorspann.
+
+  ZWEI EIGENSCHAFTEN, die feststehen:
+    * Die Initialisierung laesst das Attach NIE scheitern. Bleibt ein ?"..."
+      aus, wird es vermerkt und weitergemacht. Thomas' Fall: Rechner faehrt
+      hoch, WAMPES startet, der Sysop steckt den TNC fuenf Minuten spaeter an -
+      das Interface ist laengst oben und die Selbstheilung holt es ein. Das
+      macht die Selbstheilung zum eigentlichen Mechanismus, nicht die
+      Initialisierung beim Attach.
+    * Es braucht nicht nur den Zustand "ich initialisiere gerade" (waehrend-
+      dessen gehen ankommende Bytes zum Warten und Verwerfen statt in den
+      SLIP-Dekoder), sondern auch "ich habe gerade NEU initialisiert": dann
+      muss die Sendeschlange des Interfaces verworfen werden. Sonst gehen
+      stundenalte Rahmen hinaus, sobald der TNC wieder da ist, und sorgen
+      anderswo fuer FRMR.
+
+  Geraeteunterschiede, deshalb muss die Sequenz konfigurierbar sein:
+    * Kenwood TM-D700/D710, TH-D72, TAPR TNC2:  "KISS ON" + "RESTART"
+      Etablierter Init-String fuer den D710: ^C^C^C^M,KISS ON^M,RESTART^M
+    * Kantronics (KPC-3+, KAM):  "INTFACE KISS" + "RESET"
+      Achtung: KISS bleibt dort ueber das Ausschalten hinweg gesetzt.
+  EOL ist CR, nicht CRLF - beantwortet.
+
+  Offen und noch zu entscheiden:
+    * Konfiguration: Vorgabe aus, Sequenz je Interface aenderbar.
+    * Selbstheilung. Thomas' Kriterium: der TNC sendet Text und schliesst NIE
+      mit FR_END ab.  Der Anknuepfungspunkt dafuer ist schon gebaut -
+      slip.c:233: kommen mehr als slip_maxframe() Bytes ohne FR_END, wird
+      verworfen, errors++ gezaehlt und SLIP_OVERRUN gesetzt, bis endlich ein
+      FR_END kommt.  Ein Text redender TNC loest das im Takt von maxframe
+      Bytes immer wieder aus, waehrend nie ein Rahmen entsteht;
+      Leitungsrauschen erzeugt dagegen hier und da ein FR_END und gelegentlich
+      einen gueltigen Rahmen.  Regel also: aufeinanderfolgende Ueberlaeufe
+      OHNE einen abgeschlossenen Rahmen dazwischen, ab dem zweiten neu
+      initialisieren.
+      NICHT brauchbar als Hinweis, geprueft 2026-08-14: eine ausbleibende
+      CRC-Rueckmeldung.  Die SMACK-Aushandlung hat keine eigene Abfrage - ein
+      SMACK-TNC arbeitet nach dem Einschalten ohne Pruefsumme und schaltet
+      seine Sendeseite erst um, wenn er den ersten Rahmen MIT Pruefsumme
+      empfangen hat; die Rueckmeldung reitet also auf dem naechsten Datenrahmen
+      mit, den er ohnehin sendet.  Bleibt sie aus, heisst das nur, dass auf dem
+      Band nichts gehoert wurde - auf einem ruhigen Kanal der Normalfall.
+      Als ZWEITES, schwaecheres Signal faellt daraus aber etwas ab: weil ein
+      SMACK-TNC nach dem Einschalten wieder ohne Pruefsumme anfaengt, ist "wir
+      stehen auf CRC_16, empfangen aber ploetzlich Rahmen ohne CRC-Bit" ein
+      Hinweis auf einen Neustart des TNC.  Ein einzelner verlorener Rahmen
+      macht dasselbe Bild, also nur als Bestaetigung, nicht als Ausloeser.
+      Quelle: symek.com/g/smack.html
+
+      Zwei Dinge dazu noch entscheiden: ob zusaetzlich geprueft wird, dass die
+      verworfenen Bytes wie Text aussehen (alles druckbar plus CR/LF) - macht
+      Fehlalarme fast unmoeglich und kostet nichts -, und eine Rueckhaltezeit,
+      damit eine tote Leitung nicht endlos neu initialisiert wird; jeder
+      Versuch schreibt schliesslich auf die Schnittstelle.
+  Quellen: symek.com/pdf/extra.pdf (CMDTIME, Transparent-Escape),
+  trinityos.com/HAM/CentosDigitalModes/misc/D710-TNC-setup.txt (Init-String),
+  Kantronics KPC-3+ Handbuch (INTFACE KISS / RESET, C0 FF C0).
+
+- kiss Protokoll: multiport-Kiss. NACHRECHERCHIERT 2026-08-14, und das Ergebnis
+  aendert die Lage:
+    * Der LINUX-KERNEL kann es NICHT. drivers/net/hamradio/mkiss.c sieht sich
+      nur "*p & 0x0f" an, genau wie unser kiss.c. Was er kann, ist genau das,
+      was wir auch koennen: SMACK ueber Bit 0x80, FlexNet ueber 0x20, mit
+      Autoerkennung und Umschaltung (CRC_MODE_FLEX_TEST/SMACK_TEST entspricht
+      unseren CRC_TEST_16/CRC_TEST_RMNC). Auch das Abschneiden der zwei
+      CRC-Bytes machen beide (bei uns in check_crc_16, crc.c:35).
+    * Multiport mit Portnibble gibt es nur im USERSPACE-mkiss, ax25-tools/
+      kiss/mkiss.c: "c = (c & 0x0F) | (port << 4)" beim Senden, beim Empfang
+      "(*tty->obuf & 0xF0) >> 4".
+    * WICHTIG, und der Grund fuer die Reihenfolge: Portnibble und CRC-Bit
+      liegen im SELBEN Byte. Multiport bildet (port << 4) | kommando, SMACK
+      belegt davon Bit 7 und FlexNet Bit 5. Der Userspace-mkiss loest das,
+      indem er BEIDES NICHT MISCHT: bei FLEX_CRC schreibt er ein festes 0x20
+      und traegt gar keinen Port ein, sonst Port und keinen CRC-Typ
+      (mkiss.c:208-215). G8BPQ-Checksumme klaut kein Bit und vertraegt sich
+      daher mit Multiport, FlexNet und SMACK nicht.
+  Folge: auf einem seriellen Link mit CRC ist Multiport nicht zu haben. Thomas'
+  Prioritaet ist eindeutig CRC, also ist Multiport nur ein Thema fuer TNCs, die
+  mehrere Funkports OHNE CRC auf einer Leitung anbieten.
+- FlexNet: lernen und weiterleiten trennen. FlexNet ist ein reines L3-Pfadprotokoll,
+  es gibt kein L4 - das Nichtlernen einer Route kappt also keine Verbindung, es macht
+  das Ziel nur unerreichbar. Nutzer wollen FlexNet-Routen durchaus sehen. Gewuenscht:
+  gelernte Routen wahlweise (a) nicht an FlexNet-Partner auf einem anderen Port
+  weitergeben, oder (b) gar nicht erst lernen, damit die eigene Tabelle nicht
+  zumuellt. Vorbild: xnet konnte das schon (closed source).
+  Anwendungsfall: mehrere FlexNet-Geraete am selben Standort sollen alle die
+  gelernten Routen haben (damit Nutzer einfach "connect <ziel>" tippen koennen),
+  nach aussen zum Interlink-Partner aber als EIN System mit vollem SSID-Bereich
+  auftreten. Das verkleinerte die Knotenlisten deutlich.
+  Was der Code dazu schon hat (2026-08-11 nachgesehen):
+    * struct dest ist bereits "Rufzeichen + SSID-Bereich": FLEXLEN = AXALEN+1, das
+      Extrabyte ist die obere SSID (flexnet.c:59, pullflexcall, sprintflexcall gibt
+      CALL-min-max aus). Die gewuenschte Aggregation ist also das native Call-Format.
+    * update_axroute() (flexnet.c:156) traegt fuer JEDE SSID im Bereich eine
+      AX.25-Route mit dem Partner als Digi ein - genau der "connect <ziel>"-Weg.
+    * send_rout() (flexnet.c:326) laeuft ueber alle Dests und meldet je Partner die
+      beste Verzoegerung; dort waere der Filter fuer (a) einzuhaengen,
+      recv_rout() (flexnet.c:1000) fuer (b).
+    * ACHTUNG: struct peer hat KEIN Interface - ein Partner ist ein Rufzeichen, die
+      AX.25-Verbindung kommt aus der Routentabelle (setaxp, flexnet.c:303).
+      Der natuerliche Schluessel ist hier also der Partner, nicht der Port; das
+      Interface waere zur Laufzeit ueber pp->axp->iface abzuleiten. Also andersherum
+      als vermutet: per Partner ist das einfache, per Port das aufwendigere.
+    * Seit 2026-08-14 gibt es flexnet_is_peer() - die Frage "ist das ein Partner"
+      ist damit schon von aussen stellbar, bisher nur fuer axserv_connected().
+
+- FlexNet: WER ueberhaupt Partner werden darf. ACHTUNG, Annahme war umgekehrt:
+  der Default ist NICHT "nur eingetragene Partner duerfen FlexNet sprechen".
+  flexnet_input() (flexnet.c:1116) legt fuer jeden unbekannten Absender einen Peer an
+  (create_peer), abgelehnt wird nur die eigene Adresse. Ab da werden seine FLEX_ROUT
+  gelernt (recv_rout -> update_delay -> Dests) und ueber send_rout() an die echten
+  Interlink-Partner weitergegeben. recv_rout() prueft nichts ausser ismyax25addr().
+  Teilweise selbstbegrenzend: polltimer_expired() loescht nicht-permanente Peers, die
+  einen Poll nicht beantworten - wer antwortet, bleibt.
+  Das ist derselbe Befundtyp wie W-40 bei RIP (unauthentifizierte Routeninjektion).
+  flexnet.c kam im Sicherheitsaudit NICHT vor, der Bereich ist ungeprueft.
+  Gewuenscht (Thomas): Nutzern die FlexNet-Abfrage (nodes) erlauben duerfen, ihre
+  Routen aber weder lernen noch weiterleiten. Also drei Stufen statt zwei:
+  gar nicht sprechen / abfragen duerfen / vollwertiger Partner.
+
+- FlexNet: je Nachbar konfigurieren, WAS wir ankuendigen. Modi:
+    (default) alles, wie bisher
+    nur unseren eigenen SSID-Bereich
+    einzelne SSIDs (Liste, im Stil von tcpgate/ipfilter)
+  und getrennt davon: ob von anderen Gelerntes ueberhaupt weitergegeben wird.
+  Das sind ZWEI verschiedene Stellen im Code (2026-08-11 nachgesehen):
+    * Was wir ueber UNS SELBST sagen, steht in FLEX_INIT, nicht in den Dests:
+      send_init() (flexnet.c:243) sendet ein einziges Zeichen,
+        '0' + ((pp->axp->hdr.source[ALEN] & SSID) >> 1)
+      also unsere eigene SSID auf genau diesem Link, als obere Bereichsgrenze.
+      Die Gegenseite legt sie in recv_init() nach pp->call[ALEN+1]; die untere
+      Grenze ist die SSID des Rufzeichens, unter dem sie uns kennt. Heute ist der
+      angekuendigte Bereich also entartet (unten = oben = Link-SSID) und nicht
+      konfigurierbar. "Nach aussen als EIN System mit vollem SSID-Bereich"
+      auftreten heisst: dieses eine Byte konfigurierbar machen. Kleiner Eingriff.
+    * Ob wir GELERNTES weitergeben, entscheidet send_rout() (flexnet.c:326).
+      Dort laeuft die Schleife ueber alle Dests; dorthin gehoert der Filter.
+  Wichtig zum Verstaendnis: Dests enthaelt AUSSCHLIESSLICH Gelerntes. Der einzige
+  Ort, an dem ein dest entsteht, ist update_delay() (flexnet.c:221), gerufen aus
+  recv_rprt() und recv_rout() - also immer von einem Partner. WAMPES hat heute
+  keinen eigenen Eintrag in der Zieltabelle. Fuer "nur eigenen SSID-Bereich" gibt
+  es daher nichts zu filtern; das laeuft ueber FLEX_INIT.
+
+- Netrom INP3 Unterstuetzung
+  Links: TNN: https://github.com/kq6up/tnn
+    https://github.com/packet-net/packet.net/blob/main/docs/netrom-inp3-i3-design.md
+  Auf Lizenzen achten. Was nichtGPL ist, muessen wir selbst schreiben.
+- Der kopflose Knoten wirft weg, was net.rc zu sagen hat. hpux.c:116:
+      if ((local_kbd = (isatty(0) && isatty(1))))
+  Haengen stdin UND stdout nicht an einem Terminal, werden 0/1/2 geschlossen
+  und auf /dev/null neu geoeffnet - und zwar BEVOR net.rc gelesen wird. Genau
+  so laeuft eine echte Installation (rc-Skript, systemd), und dort ist damit
+  jeder Fehler in der Konfiguration unsichtbar: asy_attach allein hat fuenf
+  Meldungen ("Mode %s unknown for interface %s" und andere), die dann niemand
+  je zu sehen bekommt. Aufgefallen 2026-08-14 beim KISS-Test, wo genau diese
+  Meldung gefehlt haette.
+  Zu beachten: was heute per syslog geht, ist fast nichts - drei Aufrufe
+  insgesamt (remote_net.c:973, axserver.c:710 und 1286), alle aus der Arbeit
+  der letzten Tage, und openlog("wampes-net", LOG_PID, LOG_DAEMON) steht in
+  remote_net_initialize(). Ob das frueh genug fuer die Startphase laeuft, ist
+  vor dem Bau nachzusehen.
+  Gewuenscht: ohne Terminal gehen die Meldungen der Startphase nach syslog.
+  Unter systemd faengt der Journal ohnehin stdout/stderr ein - das Schliessen
+  der Deskriptoren ist der eigentliche Verlust, nicht das Fehlen von syslog.
+
+- Optimale Moeglichkeit dass er privilleges dropt. ax25 login geht dann nicht mehr. Macht das Programm aber weniger angreifbar
+- Versionskennung: der Startbanner sagt seit dem 5.3.2000 dasselbe.
+  src/version.c ist von Hand gepflegt (die $Id-Zeile darin ist von 2016, die
+  Kennung darin von 2000):
+      "@(#)WAMPES-000305-DL9SAU-VJC-VCompat-KRNLIF-TUNTAP-DIGIARP-GDBM"
+  Thomas' Vorschlag: den githash hineinschreiben. Vorschlag zur Form -
+  Datum UND Hash, weil ein Hash allein nichts ueber das Alter sagt und die
+  000305 ja gerade als Datum gemeint war:
+      WAMPES-2026-08-15-g40c33dc[+]-DL9SAU-VJC-...
+  DER EIGENTLICHE GEWINN ist das "+": der Banner sagt dann sofort, ob
+  das laufende Programm zum Baum passt. Genau diese Verwirrung gab es am
+  2026-08-15 ("neu gebaut ist das nicht" - die installierte Fassung war drei
+  Tage alt und niemand sah es ihr an).
+  Nicht "-dirty", wie git es nennt: kein Mensch betreibt gern eine Software,
+  die sich selbst als schmutzig bezeichnet. Ein angehaengtes "+" sagt
+  dasselbe - hier steckt mehr drin als im Stand des Hashes.
+  Beim Bauen zu beachten: version.c ist verfolgt, darf also nicht erzeugt
+  werden, sonst ist der Baum dauerhaft schmutzig. Zwei Wege: ein erzeugter,
+  nicht verfolgter Header, den version.c einbindet - oder ein -D auf der
+  Uebersetzungszeile nur fuer version.o, das dann aber von .git/HEAD abhaengen
+  muss, damit der Hash nicht veraltet. Und ein Rueckfall auf die feste
+  Zeichenkette, wenn kein git da ist (Quelltextarchiv).
+
+- MTU-Wahl, zur Diskussion (Thomas, 2026-08-15): wie waehlt man sie, damit
+  weder unnoetige AX.25-Segmentierung noch IP-Fragmentierung entsteht?
+  Sein Punkt: bei IP ueber AX.25 UI laeuft man in die Grenze
+  MTU <= 256 - IP-Kopf - (UDP|TCP)-Kopf, und AX.25 UI kann - seiner
+  Erinnerung nach - keine Segmentierung, zu grosse Pakete werden also
+  verworfen statt geteilt.
+  Nachzupruefen waere vor der Diskussion: was macht WAMPES heute? segmenter()
+  in ax25subr.c bzw. send_ax25() teilt auf paclen, aber gilt das auch fuer
+  UI? Und was ist der Zusammenhang zwischen ifp->mtu, paclen und dem, was
+  ip_route() aufteilt?
+
+- Projekt auf github. Voraussichtlich https://github.com/dl9sau/WAMPES/ - der
+  Name steht fuer Thomas schon fest. Danach zwei Verweise nachtragen, die
+  heute nur deshalb fehlen, weil es das Ziel noch nicht gibt:
+    * in doc/LIBAX25-BRIDGE.md ein Link auf das Projekt selbst
+    * umgekehrt in libax25 eine kurze Datei, die auf doc/LIBAX25-BRIDGE.md
+      zeigt - wer von der libax25-Seite kommt, findet es sonst nur ueber den
+      Verweis in axports.5
+  Ausserdem: github actions fuer compile fuer i386, 64bit, raspberry pi ARM, macos in intel- und arm Technologie
+- Debian-, RPM-, brew- und ports-Pakete bauen koennen. Die Vorarbeit steht:
+  doc/INSTALL-PATHS.md sortiert jeden von TCPDIR abgeleiteten Pfad nach FHS,
+  und BINDIR/SBINDIR/PUBLICBINDIR merkt sich lib/configure bereits. Offen sind
+  die drei restlichen Variablen SYSCONFDIR, LOCALSTATEDIR, RUNDIR und danach
+  die Paketbauerei selbst.
+
+- netrom Protokoll: jenseits des Standards. Normalerweise sind connectende nodes
+  Infrastruktur und trusted. Ich moechte meinen Nutzern die Moeglichkeit geben
+  mit mir Netrom-Protokoll zu sprechen, um 1. Knoten (Ziele) zu lernen 2. Einen L3-
+  Connect dorthin zu machen und 3. Per inp3-Protokoll IPv4-Routen zu lernen und
+  ggf. zu pushen (fuer Lernen auf unserer Seite braucht es eine whitelist node und bei ip3 bei ip-route-annoucement des erlaubten annoucten ip-ranges).
+  Diese user-Knoten vermitteln wir nicht upstream.
+  Wer WAMPES als User einsetzt: hier soll wampes als user-NODE verwendbar sein.
+- Bei flexnet-connect eines users (nicht eingetragener linkpartner) soll dieser unsere routen lernen koennen - aber er nicht nach aussen annouced werden und die routen die er annouced sollen nicht in userer routing-Tabelle landen (siehe unten: Filter "only him"
+  Zudem: kein flexnet RTT Test zu solchen usern. Belastet Link unnoetig. Also wenn rtt-tests anstehen, diese user auslassen. Ich weiss aber nicht ob die wampes-Implementierung das ueberhaupt macht. Das ist eine Art Echo-Paket mit 256 bytes und er misst in regelmaessigen Abstaenden, wie lage das braucht.
+
+- Filter: GEBAUT am 2026-08-16, Commit 9ca9703, beschrieben in
+  doc/ROUTE-FILTER.md. Zwei Achsen statt der unten skizzierten zwei mal drei
+  Werte, weil beim Durchgehen des Codes nur zwei echte Entscheidungen uebrig
+  blieben:
+      <proto> filter default|port=<name>|<call> [in <modus>] [advert yes|no]
+      in all | only-him | none      was von ihm in unsere Tabellen kommt
+      advert yes | no               ob ANDERE von IHM erfahren
+  "except-him" von unten ist "advert no"; "us/except-us" ist entfallen, weil
+  jeder, mit dem wir ueberhaupt sprechen, unsere Ankuendigungen bekommt.
+  Call schlaegt Interface schlaegt default; ohne jede Zeile bleibt alles wie
+  bisher. Dazu "netrom broadcast enable|disable <n>" je Eintrag (Befund 3).
+  OFFEN geblieben und in doc/ROUTE-FILTER.md am Ende genannt: die dritte
+  Zugangsstufe "darf gar nicht sprechen", ein "feed"-Schalter, und
+  nr_bdcstint/nr_minobs je Interface.
+
+  Die urspruengliche Skizze, zum Vergleich:
+    in: only import him / except-him / all
+    out: us / except-us / all
+  except-him: wir muessen ihn natuerlich wie einen Knoten behandeln, sonst muessen wir ueberall Sonderbedignugen rein schreiben. Aber er gehoert geflagt, damit wir beim Senden von flexnet-routen oder node-dests ihn selbst aus den annoucemets rausnehben koennen.
+  Sinn macht das u.A. dafuer, dass wenn ich am Standort mehrere flexnet-Knoten habe
+  die flexnet eingeschaltet haben, mit unterschiedlichen ssid-ranges. Dann soll bei upstram annoucemets zu unseren Likparnern nicht jeder node einzeln annouced werden sondern aggregiert - also gem. unserer Konfiguration, und die more-detail-Eintraege koennen mit der Filteroptipo except-him weggefiltert werde.
+
+
+- datagram: Empfangsrichtung. Der Dienstsocket kann UI heute nur senden
+  (datagram_line -> ax_send_ui); nichts schiebt empfangene UI-Frames zum
+  Client zurueck. Fuer ein recvfrom() auf einem AX.25-Datagrammsocket
+  (libax25-Shim) fehlt damit die Quelle. Gebraucht wird eine Anmeldung auf
+  PID und Port und die Ausgabe im TNC2-Format, also die Gegenrichtung des
+  schon vorhandenen Zeilenformats. Spaetere Phase, die Senderichtung genuegt
+  fuer den ersten Bau.
+
+  DAZU GEHOERT EINE PORTBESCHRAENKUNG, und die betrifft "listen add"
+  genauso. Heute ist ein Rufzeichen global erreichbar - die Mailbox auf
+  SSID-8 auf allen Interfaces -, und das ist meistens genau richtig. Es gibt
+  aber Aufbauten, wo an einem Port APRS haengt und dort niemand connecten
+  soll. SABM/UA dort ganz abzuschalten ist ausdruecklich NICHT gewollt;
+  gewollt ist, das Lauschen auf bestimmte Eingangsports zu begrenzen.
+  Gedacht als Liste, entweder als Aufzaehlung ("a,b") oder als Ausschluss
+  ("!c,d").
+
+  Der Gedanke kam ueber die Empfangsrichtung der Datagramme: welche Pakete
+  will ich ueberhaupt an libax25 weiterreichen, und von welchem Port will ich
+  gar nichts erst sehen. Fuer Datagramme und fuer Verbindungen ist es
+  dieselbe Frage, also soll es dieselbe Angabe sein.
+
+  Vor dem Bauen zu entscheiden:
+    * Gilt die Angabe fuers Lauschen (welche SABM angenommen werden), fuer
+      die Datagramm-Weitergabe, oder fuer beides getrennt einstellbar?
+    * Was passiert mit einem SABM auf einem nicht erlaubten Port? Der Knoten
+      soll sich verhalten, als lausche dort niemand - sein normales
+      Verhalten also, kein Sonderweg.
+    * Verhaeltnis zu den interfacebezogenen Rufzeichen, die "listen add"
+      schon kennt. Verwandt, aber nicht dasselbe: dort geht es um das
+      Rufzeichen des Interfaces, hier um den Eingangsport.
+    * Namen und Syntax. Die Ausschlussform "!c,d" ist bequem, muss sich aber
+      mit der Aufzaehlung vertragen und darf nicht mit der Shell kollidieren,
+      wenn jemand die Zeile aus einem Skript setzt.
+
+- libax25-Anbindung: GEBAUT, getestet, getagt als wampes-bridge-2026-08-14 in
+  wampes-git, libax25 und ax25-tools. Beide Richtungen laufen; beschrieben ist
+  alles in doc/LIBAX25-BRIDGE.md, hier steht nur noch, was aussteht:
+    * der Test auf Linux gegen ein echtes ax25d und axspawn. Zwei Dinge zeigt
+      der Mac prinzipiell nicht: die Framegrenzen (kein AF_UNIX SOCK_SEQPACKET,
+      faellt auf Strom zurueck - geprueft ist nur die Uebergabe) und ein
+      echtes axspawn (braucht eine Kontendatenbank).
+    * AXSOCK_BACKEND und WAMPES_SOCKET sind nur noch Uebersteuerung und sollen
+      weg - aber erst nach dem Linux-Test, dort vielleicht zum Debuggen noch
+      gebraucht.
+    * Datagramme eingehend, siehe den eigenen Punkt oben.
+  Nicht offen, sondern entschieden: ein nicht blockierendes connect() gibt es
+  absichtlich nicht (hiesse poll/select abfangen, also den Datenweg wieder
+  belegen; und niemand verlangt es).
+
+------------------------------------------------------------------------
+EAX25 (erweitertes AX.25, Modulo 128, Fenster bis 63)
+------------------------------------------------------------------------
+WAMPES kann es LESEN, nicht SPRECHEN. Vorhanden sind: SABME (0x6f) und
+EMMASK (0x7f) in lapb.h, die Ausgabe in ax25dump.c (Name "SABME", FRMR mit
+Modulo-128-Masken), und das Lesen der SSID-Bits SSID_EAX25 / SSID_DAMA in
+ax25hdr.c. In lapb.c, also in der Zustandsmaschine, kommt nichts davon vor,
+und domaxframe() begrenzt das Fenster hart auf 1..7. Wieder das Muster:
+die Vorkehrung ist da, angeschlossen ist sie nie worden.
+
+Vor einer Umsetzung zu klaeren:
+  1. Was unterstuetzt der Linux-Kernel-AX.25 hier? Gegenchecken, das ist
+     die Gegenstelle, an der es sich beweisen muss.
+  2. Wie ist es in direwolf implementiert? Und in den TNN-Quellen gibt es
+     das ebenfalls - beides ansehen.
+  3. Bei Thomas liegt ein testing_eax25.diff. Der Grund, es damals NICHT
+     einzuspielen, ist nicht mehr erinnerlich: entweder weil es fehlerhaft
+     schien, oder weil WAMPES so nah wie moeglich am Original bleiben
+     sollte. Der zweite Grund ist mit git und Tags hinfaellig; bleibt die
+     Frage nach der Qualitaet des Patches. Thomas' Vermutung: der Patch kam
+     vom selben Autor, der EAX25 damals auch in den Linux-Kernel brachte -
+     das waere ueber die Kernel-Historie zu belegen und wuerde die Frage
+     nach der Qualitaet weitgehend beantworten.
+
+  BEIM WEITERLEITEN: HOP-TO-HOP, UND EINE ENTSCHEIDUNG DAZU (Thomas,
+  2026-08-17, aufgekommen beim DAMA-Slave). WAMPES fuehrt jede Verbindung
+  einzeln und quittiert von Hop zu Hop, statt Pakete dumm Ende zu Ende
+  durchzureichen. Genau deshalb stellt sich beim Repeaten die Frage:
+
+    * Links kommt EAX25 herein. Versuchen wir es nach rechts auch - sofern
+      das ausgehende Interface EAX25 ueberhaupt erlauben darf? Sonst
+      Rueckfall auf AX.25.
+    * Und der umgekehrte Fall: links spricht ein Nutzer normales AX.25,
+      nach rechts WAERE EAX25 moeglich. Also versuchen?
+    * Zu ueberlegen ist, ob man mit dieser ASYMMETRIE leben kann oder ob
+      sie Probleme macht.
+
+  DAS PROBLEM DABEI, und es ist der Grund, warum das nicht nebenbei geht:
+  kann die Gegenseite kein EAX25, antwortet sie mit DM. Man muss es also
+  ERNEUT versuchen, ohne EAX25. Taete man das nicht und wollte nach rechts
+  immer EAX25 sprechen, waere der Client links einer nicht funktionierenden
+  Verbindung hoffnungslos ausgeliefert: er kann mit einem normalen
+  AX.25-Connect nichts daran aendern, weil das Verhalten gar nicht bei ihm
+  entschieden wird.
+
+  DIE ALTERNATIVE, die diesen Fall von vornherein vermeidet: den WUNSCH DES
+  CLIENTS beruecksichtigen. Eine normale AX.25-Verbindung wird auch auf
+  einem EAX25-faehigen Port als normale weitergefuehrt. Dann gibt es keinen
+  Rueckfall zu organisieren, weil es keinen Aufstieg gab.
+
+  Die Umsetzung ist ein groesseres Thema und steht nicht kurzfristig an.
+  Was vorher sinnvoll ist, ist Hintergrundrecherche: Linux-Kernel, die
+  TNN-Quellen auf github, und die Herkunft des Patches.
+
+Zusammenhang mit dem Segmentierer, der leicht uebersehen wird: Modulo 128
+erlaubt ein Fenster bis 63, und der Segmentzaehler in PID_SEGMENT ist sieben
+Bit breit, weil Bit 7 SEG_FIRST traegt - also hoechstens 127 Segmente. Mit
+groesseren Fenstern wird die Kante naeher, und im Segmentierer gibt es sie
+schon heute (siehe den Punkt zu paclen unten).
+
+------------------------------------------------------------------------
+Segmentierer: zwei Kanten am unteren Ende von paclen
+------------------------------------------------------------------------
+BEIDE AM 2026-08-15 GESCHLOSSEN (Commit 51241a4). Was hier bleibt, ist der
+bessere Weg, den wir nicht gegangen sind.
+
+1. "ax25 paclen 1" brachte den Knoten zum Absturz: ssize -= 1 machte aus 1
+   eine 0, und segments = 1 + (len-1)/ssize teilte durch null. Gemessen,
+   SIGFPE, Status 136. dopaclen() laesst den Wert weiterhin zu
+   (setintrc(&Paclen, ..., 1, MAXINT16)); der Segmentierer weist jetzt ab.
+   Keine Regression von 0ecbf55 - mit dem alten ssize -= 2 stuerzte es bei
+   paclen 2 ab, die Aenderung hat die Kante nur um eins verschoben.
+
+2. Mehr als 128 Segmente kann der Zaehler nicht ausdruecken, weil Bit 7
+   SEG_FIRST traegt. Gemessen mit paclen 8 und MTU 1500: 203 Segmente,
+   Zaehler von 0xCA abwaerts - alle Werte ab 0x80 behaupten damit, das
+   erste Segment zu sein. Die Gegenstelle maskiert mit SEG_REM, liest 74,
+   zaehlt herunter, haelt nach 75 Segmenten fuer fertig und reicht ein
+   abgeschnittenes Datagramm nach oben; die restlichen 128 Rahmen laufen
+   einzeln in "not first seg - error!". Auch das weist der Segmentierer
+   jetzt ab.
+
+Die Rechnung dazu, weil sie in der Commit-Nachricht von 51241a4 mit 32385
+falsch steht - darstellbar sind 128 Segmente, nicht 127:
+
+    segments = 1 + D / (paclen - 1)        ganzzahlig, D = IP-Datagramm
+    D_max    = 128 * (paclen - 1) - 1
+
+    paclen 256 -> 32639     paclen 16 -> 1919     paclen 12 -> 1407
+    paclen  32 ->  3967     paclen 13 -> 1535     paclen  8 ->  895
+
+Bei MTU 1500 (D = 1420) liegt die Schwelle also bei paclen 13. Gegengemessen:
+paclen 16 ergab genau 95 Segmente, paclen 8 genau 203, paclen 12 wurde
+abgewiesen.
+
+OFFEN, und der eigentlich richtige Ort: die Abweisung ist ein Fangnetz zur
+Laufzeit und verwirft das Datagramm stillschweigend. Einen Rueckfall auf
+IP-Fragmentierung kann es dort nicht geben - IP hat zu dem Zeitpunkt laengst
+entschieden, dass das Datagramm in die MTU passt, und in axui_send ist die
+Fragmentierung nicht mehr erreichbar. Sauberer waere, IP von vornherein eine
+kleinere MTU zu zeigen: beim Anhaengen auf 128 * (paclen-1) - 1 begrenzen,
+oder besser ip_mtu() (iproute.c:563) die wirksame Grenze liefern lassen, weil
+paclen global ist und sich nach dem Anhaengen noch aendern laesst. Das
+Fangnetz braucht es in beiden Faellen weiterhin.
+
+Und am anderen Ende, beim Fragmentieren selbst - gemessen am 2026-08-15,
+weil die Frage aufkam, wie klein die MTU werden darf:
+
+    fragsize = (iface->mtu - ip_len) & 0xfff8;     iface->mtu ist uint
+
+    MTU >= 28    fragsize >= 8   fragmentiert normal
+    MTU 20..27   fragsize == 0   dup_p() gibt NULL, ipFragFails++, nichts
+                                 geht raus - sauber, aber stillschweigend
+    MTU < 20     Unterlauf       EIN missgebildetes Fragment geht raus
+                                 (ip.length = fragsize + 20 aus einem
+                                 unterlaufenen uint), danach Abbruch
+
+Gemessen mit MTU 24: ipFragFails 1, ipFragCreates 0, null Rahmen beim TNC.
+Mit MTU 8: ipFragCreates 1 UND ipFragFails 1, ein I-Rahmen beim TNC. Eine
+Endlosschleife gibt es nicht, dup_p faengt es ab.
+
+Zu tun waere hier wenig und es eilt nicht - RFC 791 verlangt ohnehin 68
+Byte, alles darunter ist ausserhalb der Norm. Aber attach nimmt jeden Wert
+ohne Murren an, und unter 20 geht Muell auf die Luft, bevor es abbricht.
+Eine untere Schranke beim Anhaengen waere der einfache Weg.
+
+   ERLEDIGT: mtu_ok() in iface.c, MTU_MIN 68 aus RFC 791, geprueft an
+   beiden Stellen, die eine Zahl vom Betreiber annehmen - asy_attach und
+   ifconfig <if> mtu. Getestet: 8, 24 und 67 werden abgewiesen, 68 geht.
+
+------------------------------------------------------------------------
+NET/ROM haelt sich nicht an paclen
+------------------------------------------------------------------------
+send_packet_to_neighbor() ruft send_ax25(axp, bpp, -1), und der -1-Zweig
+ist ein blankes enqueue(&axp->txq, bpp) - ohne Zerlegung. Ein voller
+NET/ROM-Rahmen geht damit mit einem Informationsfeld von 15 + 5 + 236 =
+256 Byte raus, unabhaengig von paclen, und die MTU des Interfaces kommt
+dabei ohnehin nicht vor.
+
+Zwei Folgen: wer NET/ROM faehrt, verlangt von beiden Seiten N1 = 256; und
+wer paclen wegen eines schlechten Kanals senkt, senkt es fuer NET/ROM
+nicht mit.
+
+Zu ueberlegen waere, NR4MAXINFO an paclen zu koppeln - min(236, paclen-20).
+Das faesst allerdings auch die Zerlegung der NET/ROM-Kreise an (netrom.c
+934, 1005, 1229, 1331), ist also keine Einzeiler-Aenderung und will erst
+gegen echte Gegenstellen geprueft werden.
+
+   Nebenbei: bei so kleinem paclen wird der IP-Kopf selbst ueber mehrere
+   Segmente zerrissen. Das darf der Segmentierer koennen - er arbeitet auf
+   der Bytefolge und weiss nichts von IP -, ist aber der Grund, warum der
+   Fall bisher niemandem begegnet ist.
+
+------------------------------------------------------------------------
+Zwei offene Recherchen (keine Umsetzung, erst Material sammeln)
+------------------------------------------------------------------------
+1. EAX25 - siehe den eigenen Punkt oben. Linux-Kernel, TNN auf github,
+   Herkunft von testing_eax25.diff.
+
+2. DAMA - die Ueberlegungen dazu stehen schon in dieser Datei (Master und
+   Slave je Port, der Deadlock wenn der Master aufhoert zu pollen, das
+   Wiederanlaufen ueber T1, und warum ein Keepalive noetig ist, weil der
+   Wiedereinstieg den ganzen Sitzungszustand oberhalb von AX.25 kostet).
+   Was fehlt, ist Material: quelloffene Umsetzungen mit Codebeispielen,
+   und eine Spezifikation. Beides suchen, bevor irgendetwas gebaut wird.
+
+------------------------------------------------------------------------
+Eigenes grosses Thema: Benutzerzugriff auf NET/ROM und FlexNet
+------------------------------------------------------------------------
+Nicht kurzfristig, aber als Klammer festgehalten, weil es mehrfach
+angesprochen wurde:
+
+  * Benutzern den Zugriff auf NET/ROM- und FlexNet-Routen erlauben, ohne sie
+    weiterzuleiten - selbst nutzen duerfen, aber nicht als Durchgang dienen.
+  * Benutzer-IP ueber NET/ROM erlauben.
+  * Ein- und Ausgangsfilter fuer NET/ROM und FlexNet setzbar machen.
+  * Dazu, als eigener Punkt weiter oben: die INP3-Erweiterung fuer NET/ROM.
+
+------------------------------------------------------------------------
+Dieselbe Rechtepruefung fuer conversd und die Mailbox
+------------------------------------------------------------------------
+net prueft seit heute beim Start, ob der Pfad zu TCPDIR und die Dateien
+darin root gehoeren und fuer sonst niemanden schreibbar sind - und meldet
+nur, repariert nichts (Begruendung siehe doc/PERMISSIONS.md: ein Knoten,
+der still repariert, erzieht seinen Betreiber zum Wegsehen).
+
+conversd und die Mailbox laufen unter denselben Bedingungen und lesen
+eigene Konfiguration. Sie muessten dasselbe tun. "make install" fasst ihre
+Dateien unter TCPDIR schon mit an, die Pruefung beim Start fehlt ihnen.
+
+Sauber waere das nicht dreimal kopiert, sondern ein Helfer in lib/, den
+alle drei aufrufen - libutil.a wird ohnehin von allen gelinkt. Dabei zu
+pruefen, ob convers/ und bbs/ tatsaechlich gegen libutil.a linken; bei den
+kleinen Programmen in util/ ist es so.
+
+------------------------------------------------------------------------
+rundir.c repariert still - und ueberstimmt dabei den Sysop
+------------------------------------------------------------------------
+lib/rundir.c: fixdir() macht mkdir(name,mode) UND chmod(name,mode), laut
+Kommentar ausdruecklich auch, "um ein Verzeichnis mit falschem Modus zu
+reparieren". Gerufen aus ioinit(), also bei jedem Start:
+
+    create_rundir()       -> TCPDIR 0755, TCPDIR/sockets 0755
+    create_admin_rundir() -> TCPDIR 0755, TCPDIR/.sockets 0700
+
+Damit ueberlebt "chmod 750 $TCPDIR" aus make install keinen Neustart. Und
+es ist dasselbe stille Reparieren, gegen das die Startpruefung bewusst
+nichts unternimmt - hier sogar gegen eine bewusste Einstellung.
+
+ENTSCHIEDEN am 2026-08-15: make install setzt 755, nicht 750. Damit gibt
+es keinen Widerspruch mehr, weil rundir.c dasselbe setzt. Der Grund ist
+aber nicht der Konflikt, sondern die Sache selbst: 750 kann nicht
+funktionieren, sobald zwei Parteien berechtigt sind - Mailbox unter gid
+daemon, Benutzer in hams -, und eine Voreinstellung, die einen Fachmann
+zum Entwirren braucht, ist die falsche. Die Zugangskontrolle gehoert an
+den Socket (0660 und Gruppe nach Wahl des Sysops), nicht an den Weg
+dorthin.
+
+ERLEDIGT: fixdir() heisst jetzt makedir() und setzt den Modus nur, wenn es
+das Verzeichnis selbst angelegt hat. Ein vorhandenes traegt die
+Entscheidung des Sysops und wird in Ruhe gelassen; wenn sie schlecht ist,
+meldet es die Startpruefung.
+
+Mit einer Ausnahme, und die ist keine Vorliebe: .sockets bleibt bei jedem
+Start 0700, weil dort die gesamte Zugangskontrolle des Kommandokanals lag
+- fuer netcmd setzte niemand einen Modus, der kam aus der umask. Das ist
+jetzt zusaetzlich am Objekt selbst gesagt (chmod 0600 auf netcmd), damit
+die Verzeichnisrechte nicht mehr allein tragen.
+
+Gemessen am 2026-08-15: sockets/ ging im Lauf von drwxrwxrwx auf
+drwxr-xr-x, ohne dass jemand etwas gesagt haette.
+
+------------------------------------------------------------------------
+Wer am anderen Ende des Dienstsockets sitzt - zwei Fragen, eine Antwort
+------------------------------------------------------------------------
+Heute entscheidet allein der Dateimodus von sockets/ax25, wer den Knoten
+benutzen darf, und das ist EINE Gruppe. Daraus folgen zwei Probleme, die
+am 2026-08-15 beide aufkamen:
+
+1. Eine Gruppe reicht nicht. Eingeloggte Funkamateure gehoeren nach
+   "hams", die Mailbox laeuft aber als baycom:baycom oder aehnlich.
+   Behelf, und ein voellig regulaerer: den Dienstaccount als NEBENGRUPPE
+   in hams aufnehmen (usermod -aG hams baycom bzw. dseditgroup unter
+   macOS). Kostet keinen Code und geht ueberall.
+
+2. Damit sind aber alle gleich vertrauenswuerdig. axlisten_client_claim()
+   prueft nur, ob der Sysop das Rufzeichen fuer Clients freigegeben hat -
+   "wer zuerst kommt". Ein Benutzer in hams kann also das Lauschen fuer
+   das Rufzeichen der Mailbox an sich reissen, eingehende Verbindungen
+   sehen und beantworten. Geprueft: es gibt KEINE Pruefung der Gegenseite,
+   kein SO_PEERCRED, kein getpeereid.
+
+Die gemeinsame Loesung waere, dass der Knoten fragt, wer verbunden ist.
+Auf einem Unix-Socket geht das: LOCAL_PEERCRED auf macOS/BSD, SO_PEERCRED
+unter Linux. Dann kann
+
+  * der Zugang an einer Liste von uids oder Gruppen haengen statt an einer
+    einzigen Dateigruppe, und
+  * ein listen-Eintrag benennen, wer ihn beanspruchen darf, etwa
+        listen ax25 add DB0AAA-8 client user=baycom
+    - dann holt die Mailbox ihr Rufzeichen und sonst niemand.
+
+Der Socket selbst duerfte dann grosszuegiger stehen, weil nicht mehr er
+die Entscheidung traegt. Vor dem Bauen zu klaeren, wie sich das zu den
+schon vorhandenen Schaltern in listen add verhaelt, und was die Vorgabe
+ist, wenn niemand benannt wird (heute: jeder, der den Socket oeffnen darf
+- das muesste so bleiben, sonst brechen bestehende Aufbauten).
+
+------------------------------------------------------------------------
+Eingehende Datagramme an libax25 - der ausgehandelte Vertrag (2026-08-15)
+------------------------------------------------------------------------
+Entworfen am Abend des 2026-08-15, noch nicht gebaut. Alles hier ist
+entschieden; wer es umsetzt, muss nichts mehr fragen.
+
+ANMELDUNG, auf dem Dienstsocket:
+
+    listen <I|UI> <call> [pid=<n>] [port=<liste>] [binary|ascii]
+
+  I | UI   das XOR: Verbindungen oder Datagramme. Der Kernel trennt es
+           genauso - listen() gilt Verbindungen, fuer Datagramme bindet
+           man nur -, und nur so entstehen getrennte Listener.
+  pid=     weggelassen heisst PID_NO_L3 (0xF0, text): der uebliche Fall.
+           KEIN pid=ALL - ein vollstaendiger SSID-Proxy waere nur fuer ein
+           zweites WAMPES oder ein Mammutprogramm sinnvoll. Wer mehrere
+           Protokolle will, meldet sich mehrfach an; was getrennt gehoert,
+           bleibt getrennt.
+  port=    fehlt: alle Ports. "hf1,hf2": nur diese. "!aprs,foo": alle
+           ausser diesen. Dieselbe Schreibweise spaeter fuer die
+           vorkonfigurierten Eintraege - ein Parser, eine Syntax.
+  binary|ascii  wie bei axlisten_add(): pid != text erzwingt binary und
+           weist --ascii ab ("Converting a protocol that is not text
+           corrupts it"); pid == text ist ascii und einstellbar.
+
+EXKLUSIV. Zweiter Anmelder auf dasselbe (call, pid, port) wird abgewiesen,
+wie "already taken" bei den Verbindungen. Begruendung ist nicht Verwirrung
+sondern Vertraulichkeit: wer ein Rufzeichen haelt, darf annehmen, dass die
+Rahmen dorthin und nur dorthin gehen - ein zweiter Anmelder waere ein
+Mitschnitt, den der erste nicht bemerkt. udp-listen macht es genauso
+(EADDRINUSE), es ist also auch das Vertraute. Rufzeichen, die einem Port
+gehoeren, sind tabu - dieselbe Regel wie in axlisten_client_claim().
+Die Anmeldung faellt beim Schliessen des Client-Sockets frei.
+
+DER HAKEN, ohne den nichts ankommt: ax25.c:560 verwirft alles, was nicht
+Broadcast ist und fuer das ax_answers_to() nein sagt - wortlos, KEIN DM.
+Eine UI-Anmeldung muss dort eingetragen werden, sonst sieht sie nie einen
+Rahmen. Und genau diese Stelle haelt zugleich Thomas' Regel ein: DL9SAU-1
+wehrt nichts fuer DL9SAU-2 ab, und dieser Knoten antwortet nicht fuer ein
+DB0AAA-14, das ihm nicht gehoert - denn CALL-SSID, nicht CALL, benennt die
+Station, und das kann ein ganz anderer Rechner am selben Standort sein.
+
+RAHMENFORMAT, empfangend, 8-Bit-sauber:
+
+    DL9SAU>APRS,WIDE1-1*:37<EOL>
+    <genau 37 rohe Bytes, danach NICHTS>
+
+Kopfzeile in TNC2 wie bisher, hinter dem letzten Doppelpunkt aber die
+LAENGE statt des Inhalts. Kein Maskieren, keine Wandlung, kein Zeilenende
+hinter der Nutzlast - das waere ein Byte, das niemand gezaehlt hat. Grund:
+ein UI-Nutzinhalt darf CR und NL enthalten. Zeilenbasiert waere
+"DL9SAU>APRS:test\nDL9SAU-2>APRS:foo" fuer den Client ZWEI Rahmen, der
+zweite mit frei gewaehltem Quellrufzeichen - eine Einschleusung von der
+Luft aus. Maskieren waere die Alternative, ist aber fuer IP und NET/ROM
+unlesbar und fast doppelt so lang; und eine Option "binary" anzubieten,
+deren Zusage wir nicht halten koennen, ist schlimmer als sie wegzulassen.
+EOL der Kopfzeile: beim Schreiben die Konvention des Clients (cp->crlf),
+beim Lesen sind CR, NL und CRLF alle recht - so wie heute schon.
+
+Die PID steht NICHT in der Zeile: die Anmeldung ist PID-genau, der Client
+weiss also, was er bekommt.
+
+WAS BEI STOERUNGEN GILT:
+  * Strom aus dem Tritt (Client stirbt mitten im Rahmen, oder luegt ueber
+    die Laenge): errno, close(). NICHT versuchen, den Bezug wiederzufinden
+    - bei 8-Bit-sauberem Inhalt kann jede Bytefolge wie eine Kopfzeile
+    aussehen, das Suchen waere Raten und risse das Loch wieder auf.
+  * Schreiben an einen langsamen Client: GANZE Rahmen oder gar keine. Ein
+    halb geschriebener bringt den Strom fuer immer aus dem Tritt; einen
+    ganzen UI-Rahmen zu verwerfen ist dagegen in Ordnung, Datagramme sind
+    verlustbehaftet.
+  * Angekuendigte Laenge groesser als der Port traegt: im Takt bleiben,
+    genau so viele Bytes lesen und wegwerfen. "*** too long for <port>"
+    NUR bei pid=text und wenn nicht --silent - eine Textzeile in einen
+    Binaerstrom zu schreiben verdirbt genau den Strom, den wir schuetzen.
+
+SENDERICHTUNG: die alte Zeilenform bleibt fuer APRS-Syntax von Hand und
+aus Skripten. Die gezaehlte Form kommt daneben und raeumt zwei Dinge weg,
+die heute stillschweigend schiefgehen: ein Nutzinhalt mit \n ist gar nicht
+sendbar, und die Form mit festem Kopf sendet ein Paket JE ZEILE statt zu
+sammeln (nachgesehen: cp->dgram_fixed geht direkt auf ax_send_ui, es wird
+nichts gesammelt und nichts aufgeteilt).
+
+NICHT VERBINDUNGSORIENTIERT, und das ist kein Mangel: es gibt keine
+Sitzung, keinen Timeout, keinen Abbau. Mehrere Sender durcheinander sind
+kein Problem, weil in JEDER Zeile der Kopf steht; und ob mehrere Rahmen
+eines Senders zusammengehoeren - ein NET/ROM-Knoten-Broadcast etwa - weiss
+nur das Protokoll darueber, nicht wir.
+
+Nachtrag zum Vertrag: "listen add" auf das Rufzeichen eines INTERFACES wird
+abgewiesen, ohne Ausnahme - dieselbe Regel, die axlisten_client_claim() schon
+anwendet. Die naheliegende Ausnahme ("erlaubt, solange kein lokales Protokoll
+gebunden ist") faellt weg, weil ihre Richtigkeit an der Reihenfolge der Zeilen
+in net.rc haengen wuerde: steht "listen add ... pid=netrom" ueber
+"netrom start", gewinnt die Weiterleitung, dreht man die Zeilen um, gewinnt
+NET/ROM - und der Datei sieht man nicht an, was gemeint war.
+
+Wenn der Bedarf echt wird, ist der Weg nicht die Reihenfolge, sondern eine
+Konfliktpruefung in BEIDE Richtungen: listen add scheitert, wenn fuer dieses
+PID etwas Lokales gebunden ist, und netrom start scheitert, wenn es dafuer
+eine Weiterleitung gibt. Beide Male mit Meldung. Nicht gebaut, weil kein
+Anwendungsfall bekannt ist.
+
+------------------------------------------------------------------------
+DAMA: die Primaerquelle ist da (2026-08-16)
+------------------------------------------------------------------------
+Thomas hat sie gefunden. Der Verweis stand bei OE8DJK
+(https://www.qsl.net/oe8djk/pr4dama.html) auf Schmidt, D.J.: "DAMA, ein
+neues Verfahren fuer Packet-Radio?", cq-DL 4/89 - und archive.org hat die
+englische Fassung des Autors selbst:
+
+  Detlef J. Schmidt, DK4EG, "DAMA - A New Method of Handling Packets?"
+  TAPR 8th Computer Networking Conference, Colorado Springs 1989, 7 Seiten
+  https://archive.org/details/CNC1989-DAMA-DK4EG
+  Volltext: .../CNC1989-DAMA-DK4EG_djvu.txt
+
+Damit ist die Recherche zur Spezifikation erledigt. Was der Volltext sagt,
+in der Reihenfolge, in der es uns betrifft:
+
+* DER "POLL" IST NICHT DAS P/F-BIT. Woertlich: "The term 'POLL' used
+  throughout this text in no way refers to the poll bit in the control
+  field of packet frames and this bit remains unchanged to ensure
+  compatibility." Gepollt wird mit RR mit Zaehlstand; ein Poll kann in
+  einem ACK oder in einem Datenrahmen mitreisen. Das ist die Stelle, an
+  der eine Umsetzung aus dem Bauch heraus falsch abgebogen waere.
+
+* VERLORENER POLL, also die Deadlock-Frage: "If the node fails to receive
+  an RR from the user (due to a collision of the nodes poll or the users
+  RR response) then the node will proceed on to the other stations on its
+  polling list. The node will come back and try this station again after
+  all other users on its list have been serviced." Der Master raeumt sich
+  selbst auf; der Slave braucht dafuer kein T1. Nach wiederholtem
+  Ausbleiben faellt die Station aus der Liste - und genau dafuer braucht
+  es den Keepalive, ueber den wir gesprochen hatten.
+
+* ZEITEN: Antwortfrist etwa 1/2 Sekunde; T2/DWAIT unter 1 Sekunde; das
+  Intervall fuer ACK-Anforderungen "clearly higher than the time between
+  two polls of the master (usually more than 30 seconds at 1200 baud)".
+
+* POLLREIHENFOLGE: Rundlauf mit verkehrsabhaengiger Anpassung. Stille
+  Stationen bekommen laengere Abstaende, wer ein I-Frame schickt, ist
+  wieder vorne. Die Verlaengerung haengt an der Kanalauslastung.
+
+* AN- UND ABMELDEN: Verbinden per SABM im CSMA-Betrieb, der Master
+  antwortet UA und nimmt den Benutzer in die Pollliste, der bestaetigt mit
+  RR#0. Trennen: der Master schickt DISC; will der Benutzer trennen,
+  wartet er mit seinem DISC, bis er gepollt wird.
+
+* VERTRAEGLICHKEIT: "All protocol elements keep their original meaning
+  which allows both versions to be utilized on the same frequency, yet
+  throughput increases as more and more users switch over to the new
+  method." Keine neuen Syntaxelemente, Mischbetrieb mit CSMA-Stationen
+  ausdruecklich vorgesehen.
+
+VORBEHALT: das oben ist aus dem Volltext gezogen, nicht Seite fuer Seite
+gegengelesen, und das Papier ist von 1989 - was TheNetNode und FlexNet
+heute tatsaechlich fahren, kann davon abweichen. Vor dem Bauen die sieben
+Seiten selbst lesen. Was jetzt noch fehlt, ist nur die zweite Haelfte der
+Recherche: quelloffene Umsetzungen mit Codebeispielen.
+
+------------------------------------------------------------------------
+Reihenfolge der naechsten grossen Themen (Thomas, 2026-08-16)
+------------------------------------------------------------------------
+1. Filter fuer NET/ROM und FlexNet, 2. DAMA, 3. EAX25. Begruendung: die
+Filter bauen auf dem auf, was gerade entstanden ist (Portlisten,
+Anmeldemaschinerie), DAMA will erst gelesen werden, EAX25 haengt an drei
+offenen Recherchefragen.
+
+PUNKT 1 IST ERLEDIGT (2026-08-16, Commit 9ca9703, doc/ROUTE-FILTER.md).
+Als naechstes also DAMA - und davor die sieben Seiten DK4EG lesen sowie
+das TNN-PDF, siehe die eigenen Abschnitte weiter oben. Von den drei
+"zu pruefen"-Punkten unten sind alle vier beantwortet, Befund 4 mit einer
+Korrektur.
+
+DAMA UND EAX25 HABEN EINE GEMEINSAME FORM, und das ist der Grund, sie
+zusammen zu denken, auch wenn sie nacheinander gebaut werden:
+
+  * je Interface eine Rolle und eine Erlaubnis. Bei DAMA: Master oder
+    Slave, und Mischbetrieb erlaubt oder nicht.
+  * Bei EAX25 dasselbe Muster: werden WIR mit EAX25 angesprochen -
+    erlauben oder mit DM ablehnen. Das Protokoll sieht dafuer den
+    Rueckfall auf SABM vor, und genau den macht ein EAX25-Client von
+    selbst. Dazu die Gegenrichtung als eigene Einstellung je Interface:
+    sprechen wir ausgehend EAX25 oder klassisch.
+  * Was die Vorgabe wird, entscheidet sich beim Bauen.
+
+FILTER NET/ROM UND FLEXNET - nach erster Einschaetzung fast derselbe Code
+und dieselben Filteransprueche, also in einem Zug zu machen:
+
+  * Benutzerzugang erlaubt oder verweigert. Bei FlexNet sind das die
+    nicht eingetragenen Nutzer. Bei NET/ROM ist es unklar, weil die
+    Nodeliste ueber Broadcasts selbstlernend ist - ZU PRUEFEN, ebenso ob
+    sich je Interface einstellen laesst, dass dort ueberhaupt Node-
+    Broadcasts gemacht werden (Thomas vermutet ja).
+  * RMNC/NET-FlexNet macht RTT-Messungen mit langen Dummy-Paketen in
+    regelmaessigen Abstaenden. Ob WIR das tun: zu pruefen. Wenn ja, bei
+    normalen Benutzern unterlassen.
+  * NET/ROM-L4-Connects von Benutzern sollen erlaubt sein. Im Zusammenhang
+    mit den Ausgangsfiltern ist dazu spaeter noch etwas zu bedenken.
+
+------------------------------------------------------------------------
+INP3, und die Frage dahinter: ein Lernfilter fuer IP-Routen
+------------------------------------------------------------------------
+INP3 bringt auch Interfaces mit, und mit ihnen sein bestes Merkmal: die
+Ankuendigung von IP-Routen. NOCH ZU KLAEREN, ob jeder Hop die Routen in
+seiner eigenen Ankuendigung zusammenfasst oder ob sie in der Nodeinfo des
+Nachbarn stehen bleiben - das entscheidet, wo ein Filter ueberhaupt
+ansetzen kann.
+
+Bei Benutzer-Connects braucht es dann einen Filter aehnlich dem
+Node-Filter: werden angekuendigte Routen ueberhaupt angenommen, und wenn
+ja, aus welchem IP-Bereich.
+
+DER EIGENTLICHE GEDANKE dabei, und der ist groesser als INP3: das gehoert
+vermutlich nicht je Protokoll, sondern in EINEN Lernfilter fuer
+IP-Routen - fuer AX.25, NET/ROM, INP3 und RIP gemeinsam. Vier Quellen,
+eine Politik, eine Stelle zum Nachsehen.
+
+Das waere keine Erfindung, sondern die Verallgemeinerung von etwas, das
+schon da ist:
+  * learn_from() in ax25.c entscheidet heute schon, welcher Rahmen etwas
+    beibringen darf, und begruendet die Ausnahme (Broadcasts ohne
+    Netzwerkschicht, also APRS mit generischen WIDE-Pfaden, wuerden die
+    Tabelle binnen Stunden fuellen).
+  * "ifconfig <if> autoroute" und "ifconfig <if> digiarp" sind schon
+    Lernschalter je Interface.
+  * rip.c ist die vierte Quelle und hat ihre eigene Vorstellung davon.
+
+Vor dem Bauen also erst zusammentragen, was die vier heute jeweils tun und
+wo sie es entscheiden. Wenn sich eine gemeinsame Form findet, ist das der
+Ort fuer die INP3-Frage; wenn nicht, weiss man wenigstens warum.
+
+------------------------------------------------------------------------
+IP-Routen lernen - ein eigenes Thema, groesser als INP3
+------------------------------------------------------------------------
+Nicht nur ein Filter, sondern eine Politik mit mehreren Fragen, die alle
+zusammengehoeren:
+
+  * lernen, und was passiert beim UMlernen - eine Route, die sich aendert,
+    ist etwas anderes als eine neue
+  * Verfall (expiry): wie lange gilt Gelerntes ohne Bestaetigung
+  * von wem: lernen nur von vertrauenswuerdigen Partnern, je Partner
+    konfigurierbar
+  * aus welchem Bereich: Annahme auf IP-Bereiche eingrenzbar
+
+Das ist NICHT nur INP3. Schon heute koennen IP-Adressen ueber NET/ROM
+gelernt werden; INP3 fuegt die Ankuendigung ganzer IP-Subnetze hinzu, und
+DIESE waere je konfiguriertem Partner filterbar.
+
+Dazu ein eigener Wunsch: eine Art DHCP, naemlich das "getip"-Kommando von
+XNET. Gehoert in dieselbe Ecke, weil es dieselbe Frage stellt - wer darf
+wem eine Adresse zusagen.
+
+Was es dazu schon gibt und worauf aufzubauen waere: learn_from() in
+ax25.c (entscheidet heute, welcher Rahmen etwas beibringen darf, und
+schliesst APRS-Broadcasts mit generischen WIDE-Pfaden aus), die
+Interface-Schalter "ifconfig <if> autoroute" und "digiarp", und rip.c als
+vierte Quelle mit eigener Vorstellung.
+
+QUELLE, von der Gruppe die TNN entworfen hat (NORD><LINK), und damit
+Primaerquelle fuer gleich drei unserer Themen:
+
+  TheNetNode-Dokumentation TNN179mh05.pdf
+  https://github.com/DeltaLima/TheNetNode-CB/blob/master/doc/diverse_doc/TNN179mh05.pdf
+
+Sie beschreibt laut Thomas (a) die Konfiguration von EAX25 und DAMA, (b)
+wie TNN Routen per INP3 lernt und ob daraus ARP-Eintraege entstehen -
+letzteres etwas unscharf formuliert. Das PDF liegt heruntergeladen unter
+  .claude/projects/-Users-thomas-direwolf-libax25-agwpe/e3c210c8-.../
+  tool-results/webfetch-1786891317506-uz6cgs.bin
+Mein Versuch, den Text mit zlib herauszuziehen, lief ins Leere (vermutlich
+Objektstroeme, PDF 1.5+). Mit pdftotext oder Vorschau ist es in Sekunden
+lesbar - das ist der naechste Schritt, BEVOR an DAMA, EAX25 oder INP3
+gebaut wird.
+
+------------------------------------------------------------------------
+Aus der TNN-Dokumentation gezogen (2026-08-16) - und die zweite Quelle
+------------------------------------------------------------------------
+pdftotext -layout /tmp/TNN179mh05.pdf   (INP heisst dort INP, nicht INP3)
+
+ROUTEN KLEBEN NICHT AM NACHBARN, aber die Weitergabe ist eine Bedingung,
+keine Zusage - woertlich: "Wenn die INP-Optionen durchgaengig
+weitergereicht werden, so koennte auch die IP-Adresse mit Subnet-Maske
+neben dem Knoten-Call erscheinen: Routes to SH9600:DB0AZ
+(44.130.5.129/26)". Damit ist Thomas' Frage beantwortet: die Optionen
+reisen mit und haengen am jeweiligen Knoten-Call - aber nur solange JEDER
+Hop sie weiterreicht. Einer, der es nicht tut, schneidet alles dahinter
+ab, und was ankommt sagt nichts darueber, ueber wie viele Hops es kam.
+Die Gewichtungsfrage bleibt also offen und ist keine Wissensluecke von
+uns, sondern eine des Verfahrens.
+
+ARP, und das ist praeziser beschrieben als erinnert: "Ueber INP empfangene
+Knoten mit IP-Adresse erhalten automatisch einen ARP-Eintrag und
+zusaetzlich einen IPR-Eintrag. Ist die Gegenstelle auch ein TNN-Knoten, so
+konfiguriert sich das IP-Routing zu dem vollkommen automatisch. Von Hand
+gemachte ARP-Eintraege haben VORRANG vor automatisch gemachten Eintraegen
+des Routers."
+
+DIE LERNPOLITIK ALS VORLAGE - TNNs "AutoIPR", vier Stufen:
+    0 = aus
+    1 = ein, keine Pruefung der IP-Adresse
+    2 = unmoegliche IP-Adressen werden ignoriert
+    3 = nur Adressen im GLEICHEN Netz (Vorgabe, und "unbedingt zu
+        empfehlen"; Beispiel: mit 44.1.2.3 werden nur 44.x.x.x gelernt)
+Das ist genau die Abstufung, die unser Lernfilter braucht, samt der Regel
+"Hand schlaegt Automatik".
+
+Zwei Nebenbefunde, die unsere Messungen von gestern bestaetigen:
+  * "TNN empfaengt aus Kompatibilitaetsgruenden zu FlexNet nur Pakete bis
+    256 Bytes Info." - dieselbe 256, von der anderen Seite.
+  * TNNs IP-Router fragmentiert beliebige Laengen und ueberlaesst die
+    Reassemblierung der Endstation.
+
+ZWEITE QUELLE, fuer DAMA, INP3 und getip:
+  XNET-Dokumentation, https://packet-radio.net/wp-content/uploads/2017/04/xnet138.pdf
+Dort ist getip nur knapp beschrieben; Thomas bringt Beispiele dazu, wenn
+das Thema drankommt.
+
+------------------------------------------------------------------------
+Vorarbeit zu den Filtern: was der Code heute tut (2026-08-16)
+------------------------------------------------------------------------
+Die drei "zu pruefen"-Punkte sind geprueft, dazu ein vierter, der sich
+dabei ergab. Damit kann das Bauen ohne weitere Aufklaerung beginnen.
+
+1. ES GIBT KEINE ZUGANGSPRUEFUNG, weder in netrom.c noch in flexnet.c -
+   kein allowed, kein denied, kein permitted. Der Filter ist also nicht
+   anzupassen, sondern fuer beide NEU anzulegen. Das stuetzt die
+   Einschaetzung, dass es fast derselbe Code wird: es gibt auf keiner
+   Seite einen, an dem man sich unterschiedlich verrenken muesste.
+
+2. FLEXNET LEGT JEDEN UNBEKANNTEN AN. flexnet_input(), flexnet.c:1136:
+
+       if (!(pp = find_peer(src))) {
+               if (ismyax25addr(src)) goto discard;
+               ...
+               if (!(pp = create_peer(call))) goto discard;
+       }
+
+   Der einzige Ausschluss ist das eigene Rufzeichen. Wer uns mit PID 0xCE
+   anspricht, wird Partner - wir lernen seine Ziele und geben unsere
+   preis, auch wenn mit "flex link add" niemand eingetragen ist. Das ist
+   der Kern dessen, was der Filter zu regeln hat.
+
+3. NODE-BROADCAST IST GLOBAL, nicht je Interface: nr_bdcstint und
+   nr_minobs stehen in einer Parametertabelle, ein Intervall fuer den
+   ganzen Knoten, 0 = aus. Je Interface abschaltbar zu machen ist eigene
+   Arbeit und gehoert in den Entwurf. Thomas' Fall dafuer: als Benutzer
+   ueber axudp Nodes lernen und nutzen, aber den HF-Zugang nicht mit
+   eigenen Broadcasts zumuellen - heute bleibt dafuer nur, NET/ROM gar
+   nicht zu starten.
+
+4. L3RTT NUR PASSIV - das stimmt, war aber nur die halbe Frage, und die
+   andere Haelfte ist die, um die es Thomas ging (korrigiert 2026-08-16).
+   netrom.c:682 beantwortet L3RTT und WAMPES erzeugt selbst nie eines; die
+   Zahl dort sind ohnehin die je Hop aufsummierten Zeiten, keine Messung.
+   DER RTT-TEST MIT LANGEM DUMMY-PAKET AUS ZEILE 412 IST FLEXNET, und den
+   machen wir aktiv: send_poll() (flexnet.c), LENPOLL 201 Byte, alle fuenf
+   Minuten - bis 2026-08-16 gegen JEDEN Unbekannten. Gemessen an einer
+   Station, die genau einen 0xCE-Rahmen schickte:
+       0.0s UA / 1.0s FLEX_INIT / 1.0s FLEX_POLL 201 Byte / 301.0s DISC
+   Der DISC ist polltimer_expired(), das einen Peer loescht, der einen nie
+   erbetenen Poll nicht beantwortet hat - und damit stirbt die Verbindung
+   des Nutzers.
+   ERLEDIGT: der Poll geht nur noch an Peers aus "flexnet link add".
+   Einzelheiten in doc/ROUTE-FILTER.md.
+
+------------------------------------------------------------------------
+NODE-PROXYING: versteckte Knoten brauchen es, sonst versteckt "advert no"
+nichts (Thomas, 2026-08-16, aus der Filterarbeit heraus)
+------------------------------------------------------------------------
+DER BEFUND, und er ist unangenehm: das Verstecken im Broadcast wirkt nur
+bis zum ersten Paket. route_packet() lernt den QUELLKNOTEN aus jedem
+durchlaufenden Rahmen:
+
+    if (fromneighbor != mynode) {
+      update_link(mynode, fromneighbor, 1, nr_hfqual);
+      pn = nodeptr((*bpp)->data, 1);        /* data[0..6] = L3-Quelle */
+      if (!pn->neighbor)
+        update_link(fromneighbor, pn, 2, q);   <-- hier
+
+Genau das baut den Rueckweg einer L4-Sitzung, und genau deshalb ist es
+normalerweise richtig. Fuer einen versteckten Nutzerknoten ist es falsch:
+sobald Verkehr fliesst, hat jeder Knoten auf dem Weg einen Eintrag fuer
+ihn - mit Qualitaet > 0, also kuendigt er ihn im EIGENEN Broadcast weiter
+an. Thomas' Punkt: tun das alle, haben die Knoten keinen RAM mehr fuer
+Infrastrukturknoten.
+
+Zweiter Grund, aus der Filterarbeit: mit "in only-him" oder "in none"
+schalten wir dieses Transitlernen bei UNS ab (das ist gewollt). Ein
+L4-Connect DURCH so einen Nachbarn hat dann keinen Rueckweg und stirbt.
+Mit Node-Proxying waere das kein Preis mehr, sondern die Loesung.
+
+DER NAME ist Thomas': NODE-PROXYING, nicht NAT. NAT suggeriert die falsche
+Ebene - die IP-Nutzlast wird gar nicht angefasst, umgeschrieben wird nur
+das Rufzeichen im NET/ROM-Kopf darunter. Wir treten als Knoten an seiner
+Stelle auf; die Adressen darueber bleiben, wie sie sind.
+
+DIE AUTOMATISIERUNG steht schon fest und kostet keine eigene
+Konfiguration (Thomas): wer "advert no" hat, wird umgeschrieben; die
+Fremdknoten HINTER ihm nicht. Die Unterscheidung ist eine Abfrage an
+einer Stelle - node_advert(nodeptr(L3-Quelle)). X hat advert no ->
+umschreiben. Y dahinter hat keine Regel -> advert yes -> unangetastet.
+
+DIE BEIDEN FAELLE SIND VERSCHIEDEN GROSS.
+
+IP: ZUSTANDSLOS, und die IP-Nutzlast wird gar nicht angefasst. Umzuschreiben
+ist nur das Rufzeichen im NET/ROM-L3-Kopf; die IP-Adressen bleiben. Die
+Rueckidentitaet steht damit schon im Paket, weil IP-Adressen global
+eindeutig sind: die Gegenstelle lernt "diese IP -> unser Call", antwortet
+an uns, wir haben "diese IP -> X". Keine Tabelle, kein Verfall.
+  Schon heute kostenlos, wenn X uns als GATEWAY benutzt (seine ARP sagt
+  "IP -> unser Call"): dann terminiert route_packet() das Paket, ip_route()
+  schickt es weiter und nr_send() setzt mynode->call als Quelle ein.
+  Zu tun ist es nur fuer den TRANSITFALL, wo X den Zielknoten direkt
+  adressiert.
+  ZWEI DINGE, die es dann doch nicht geschenkt gibt, beide nachgesehen:
+    * Die ARP-Zuordnung wird heute NUR gelernt, wenn das Paket an uns
+      adressiert ist (netrom.c, Zweig "L3-Ziel == wir"). Im Transitfall
+      lernen wir sie nicht - beim Umschreiben muss sie dort mitgelernt
+      werden, sonst wissen wir nicht, wohin die Antwort geht.
+    * netrom.c ruft NIE rt_add(), nur arp_add(). Auf der AX.25-Seite legt
+      config.c:396 bei autoroute automatisch eine Hostroute an; bei
+      NET/ROM gibt es das nicht. Ein ARP-Eintrag allein bringt ip_route()
+      nicht dazu, das netrom-Interface zu waehlen. Vor dem Bauen klaeren,
+      sonst kommt die Antwort bis zu uns und bleibt liegen.
+
+L4: ECHTER PROXY MIT TABELLE. Der Grund ist nicht die Zahl der
+Nachrichtentypen, sondern der GELTUNGSBEREICH der Kennung: eine Verbindung
+heisst (Knoten, Circuit-Index, Circuit-ID), und Index und ID gelten nur
+innerhalb des Knotens. Schreibt man den Knoten auf sich um, muss man Index
+und ID neu vergeben - sonst kollidieren zwei versteckte Nachbarn beide mit
+Index 0. Damit ist die Tabelle da, samt Lebensdauer fuer Eintraege, deren
+DISC verlorenging.
+  Ein CONRQ traegt die Herkunft DREIFACH: L3-Quelle, plus im L4-Rumpf das
+  Benutzer-Rufzeichen (Offset 6) und das Knoten-Rufzeichen (Offset 13) -
+  circuit_manager() liest beide. Umzuschreiben sind L3-Quelle und Offset
+  13. DAS BENUTZER-RUFZEICHEN BLEIBT: dann sieht die Gegenstelle
+  "user @ unser-Knoten", ununterscheidbar von einem normalen Nutzerconnect
+  ueber uns. Genau richtig.
+  Alternative, nicht gewaehlt: die Verbindung terminieren und eine zweite
+  aufmachen (wie der Socket-Relay in axserver.c). Weniger Kopfchirurgie,
+  aber zweimal Zustand und Puffer, und die L4-Semantik - Fenster,
+  Quittungen - endet dann bei uns statt Ende zu Ende. Thomas' Vorgabe vom
+  2026-08-13 war "umschreiben statt lernen".
+
+BEI INP3 kommt dasselbe von der anderen Seite: in den IP-Optionen, die wir
+weitergeben, muessten WIR als Knoten stehen. Das ist dieselbe Ersetzung,
+die send_broadcast() seit 2026-08-16 im Nachbarfeld macht.
+
+------------------------------------------------------------------------
+THOMAS' WEG: TERMINIEREN STATT UMSCHREIBEN (2026-08-17)
+------------------------------------------------------------------------
+Seine Idee, ausdruecklich als "nicht effizient, spart aber Code und
+Umschreiben" vorgeschlagen: die Verbindung von links TERMINIEREN und nach
+rechts eine neue aufmachen - genau das, was
+    netrom connect <ziel> <sourcecall>
+tut -, und die beiden dann zusammenfuehren. Fuer das IP-Datagramm
+sinngemaess ein "netrom PID=ip <ziel> <sourcecall>".
+
+BEWERTUNG (Claude, 2026-08-17): das ist der BESSERE Weg, nicht nur der
+billigere, und zwar aus drei Gruenden.
+
+1. DIE MASCHINERIE IST DA UND WIRD SCHON BENUTZT. donconnect() ruft
+   open_nr(node, cuser, ...) - das Benutzerrufzeichen ist bereits ein
+   eigenes Feld des L4-Verbindungswunsches, und die Konsole faehrt diesen
+   Weg taeglich. Dazu send_nr/recv_nr/close_nr und die Upcalls. Das
+   Gegenstueck, zwei Endpunkte aneinanderzuhaengen, gibt es in axserver.c
+   als Socket-Relay ebenfalls schon.
+2. ES KANN NICHT LECKEN. Beim Umschreiben ist "nichts vergessen" eine
+   Eigenschaft, die man beweisen muss - L3-Quelle UND das Knotenrufzeichen
+   an Offset 13 im CONRQ, und wer weiss, was eine spaetere Erweiterung noch
+   mitbringt. Beim Terminieren entsteht die rechte Verbindung von uns aus;
+   unsere NodeID steht dort, WEIL wir sie aufgebaut haben. Es gibt nichts
+   zu vergessen.
+3. KEINE TABELLE, KEIN VERFALL. Die Zuordnung IST das Paar von Circuits,
+   gehalten von Zeigern. Beim Umschreiben braucht es (unser Index, unsere
+   ID) <-> (er, sein Index, seine ID) samt Lebensdauer fuer Eintraege,
+   deren DISC verlorenging - genau die Sorte Zustand, die im Betrieb
+   ausleiert.
+
+UND ES IST WAHRSCHEINLICH NICHT EINMAL LANGSAMER. Der uebliche Einwand
+gegen Terminieren ist der Verlust der Ende-zu-Ende-Semantik. Den haben wir
+hier gar nicht zu verlieren: WAMPES quittiert ohnehin von Hop zu Hop
+(Thomas). Und zwei getrennte Fenster erholen einen Verlust LOKAL statt
+ueber den ganzen Pfad, was auf Funkstrecken meist der schnellere Weg ist.
+"Nicht effizient" trifft es also vermutlich nicht.
+
+WAS ES WIRKLICH KOSTET, und daran haengt die Arbeit:
+  * SPEICHER UND GEGENDRUCK. Wir puffern fuer beide Seiten. Stockt rechts,
+    muss links gebremst werden - space_nr() und die Upcalls koennen das,
+    aber es muss auch getan werden, sonst laeuft der Knoten voll.
+  * ABBAU IN BEIDE RICHTUNGEN, samt halbgeschlossenem Zustand. Ein DISC
+    links muss rechts ankommen und umgekehrt, und ein abgelehnter
+    Verbindungswunsch rechts muss links als etwas Verstaendliches
+    erscheinen.
+  * DER ZEITPUNKT DER ANNAHME. Nehmen wir links an, bevor rechts steht,
+    muessen wir wieder trennen, wenn rechts scheitert; warten wir, haengt
+    der Nutzer waehrenddessen. donconnect() kennt die Zustaende schon, die
+    Wahl ist zu treffen.
+
+FUER IP IST DER WEG SCHON GEBAUT, und das ist der staerkste Punkt: nimmt
+der Nutzer UNS als Gateway, terminiert route_packet() das Paket ohnehin,
+ip_route() schickt es weiter und nr_send() setzt mynode->call als L3-Quelle
+ein. Kein neuer Mechanismus, kein Zustand. Zu tun bleibt nur, dass der
+Nutzer uns auch adressiert - also die INP3-Ankuendigung, in der WIR als
+Knoten der Route stehen.
+
+ZU TESTEN gegen einen echten dritten Knoten, nicht gegen den Simulator -
+der Befund oben ist genau der Fall, den ein Zweiknotenaufbau nicht zeigt.

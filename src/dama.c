@@ -107,6 +107,18 @@ static int dama_in_force(struct iface *ifp)
 
 void dama_heard_frame(struct iface *ifp, const uint8 *src)
 {
+	/* SLAVE, not "not off", and that is load-bearing rather than tidy:
+	 * once there is a master role, a port that holds it must NOT be talked
+	 * into the slave role by somebody who connects to it with the bit set.
+	 * A master is a digi, and XNET names exactly this as the reason its
+	 * "ds" parameter exists - "Bei Digis ist diese automatische
+	 * Aktivierung des Slave-Modes nicht erwuenscht".
+	 *
+	 * What a master SHOULD do with a marked frame is something else and
+	 * belongs in the master half: it means "this station speaks DAMA", so
+	 * it may be held to the poll discipline.  Information, not a change of
+	 * role.
+	 */
 	if (ifp == NULL || ifp->dama != DAMA_SLAVE)
 		return;
 	if (ifp->dama_heard == 0)
