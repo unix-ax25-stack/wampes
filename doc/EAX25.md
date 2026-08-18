@@ -178,12 +178,25 @@ can, cannot.  Three and not two, because "cannot" has to be told apart
 from "never asked": with two, every connect probes again, and the station
 that answers nothing costs the full probe each time.
 
-It is learned from **our own traffic only**.  The EAX bit a station sets
-in its SSID says it is willing, not that it works, and TNN's answer -
-`EAXMODE 1`, "by MHEARD" - would need a small state machine per station to
-be sure (SABME, UA, data both ways, confirmed).  The route entry knows the
-same thing more cheaply, because it records the outcome rather than the
-claim.
+It is learned from **our own traffic only**, and the reason for that has
+had to be replaced.  What stood here first - that the SSID bit "says a
+station is willing, not that it works" - was an assumption of ours with
+nothing behind it.  Neither implementation we can read treats the bit that
+way.  In TNN it marks a *frame*, never a station, and capability is
+learned from a heard SABM or SABME (`l7moni.c`); in the 2005 patch this
+grew from (`testing_eax25.diff`) it came from `ax25 route add ... eax25`
+and from outcomes - a SABME received, a UA to our own SABME.
+
+The reason that does hold is plainer.  A bit on a frame tells you about
+that frame; what we need to know is whether an exchange **completes**, and
+only an exchange shows that.
+
+And the alternative has a demonstrated failure mode, which is the better
+argument of the two.  TNN, learning from heard frames, clears its flag on
+any heard SABM - and a user may quite legitimately call one station with
+SABME and another with SABM, so mixed traffic makes it unlearn what it
+just learned.  Evidence from attempts **we** made cannot be confused by
+what someone does with a third party.
 
 What counts as evidence:
 
