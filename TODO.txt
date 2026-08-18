@@ -1811,3 +1811,67 @@ gegen Partner, die das Bit setzen - WAMPES, TNN. Gegen einen, der es
 nicht tut, gibt AX.25 nichts her, und dort bleibt nur, den Rueckfall
 selbst seltener zu machen. Der Pruefstand setzt es uebrigens auch nicht,
 in der Messung oben war der Unterschied also gar nicht auf dem Draht.
+
+------------------------------------------------------------------------
+PROTOKOLL-GATTER JE PORT, STATT DER DRITTEN ZUGANGSSTUFE (Thomas, 2026-08-18)
+------------------------------------------------------------------------
+Gegen die dritte Zugangsstufe "darf gar nicht sprechen" sprach nie etwas -
+sie wurde fuer die zwei Achsen einfach nicht gebraucht, und in
+doc/ROUTE-FILTER.md steht nur, dass "in none" nahekommt und nicht dasselbe
+ist (die Rahmen werden weiter geparst, der Peer existiert weiter).
+
+THOMAS' VERALLGEMEINERUNG IST DIE BESSERE FASSUNG: die Regel nicht an
+Protokollen festmachen, sondern an PIDs. Dann heisst "kein NET/ROM von
+diesem Port" dasselbe wie sein Beispiel "PID=ip weg, in UI und in I".
+
+Und das ist billiger als die urspruengliche Idee, weil es genau EINE
+Tabelle gibt:
+
+    struct axlink Axlink[] = {          /* config.c */
+        { PID_IP, axip }, { PID_ARP, axarp },
+        { PID_FLEXNET, flexnet_input }, { PID_NETROM, axnr }, ...
+
+benutzt von ax_recv() fuer UI UND von lapb.c fuer den verbundenen Fall.
+Ein Gatter je Port vor diesem Nachschlagen deckt beide Rahmenarten in
+einem Griff ab.
+
+DER UNTERSCHIED ZUM ROUTE-FILTER IST DER SCHLUESSEL, und deshalb ersetzt
+das eine das andere NICHT: das Gatter greift je PORT, der Filter je
+RUFZEICHEN. Thomas' Frage, ob "flexnet filter port=hf2 in none" dann
+entfallen kann, ist damit beantwortet - nein, denn "auf diesem Port lernen
+wir nichts, sprechen aber weiter" ist etwas anderes als "auf diesem Port
+gibt es das Protokoll nicht", und der Filter kann ausserdem einzelne
+Rufzeichen treffen, was ein Portgatter nie kann.
+
+Zu klaeren beim Bauen: die Reihenfolge. Das Gatter wirkt VOR dem Parsen,
+der Filter danach - das gehoert in die Doku, sonst sucht jemand den Fehler
+im Filter, waehrend das Gatter den Rahmen schon verworfen hat.
+
+------------------------------------------------------------------------
+DER FEHLENDE OUT-FILTER - UND DASS ES ZWEIMAL DASSELBE IST (2026-08-18)
+------------------------------------------------------------------------
+Zwei Punkte, die Thomas aus verschiedenen Richtungen aufgemacht hat und
+die auf dieselbe Sache hinauslaufen:
+
+  * "flexnet filter ... in ..." gibt es, "out" fehlt.
+  * der VERKUERZTE Broadcast je Eintrag, oben unter Route-Filter.
+
+Beides ist derselbe fehlende Freiheitsgrad: die vorhandenen Achsen sagen,
+OB jemand etwas erfaehrt (advert, feed), keine sagt WIE VIEL. Ein
+"out"-Filter ist genau der Inhaltsfilter, der bei NET/ROM "verkuerzter
+Broadcast" heisst.
+
+SEIN ANWENDUNGSFALL, und er ist besser als der, mit dem der Punkt
+urspruenglich aufgeschrieben war: WAMPES als USER-Station. Wir senden
+NODES und kuendigen keine Nachbarn an. Fuer einen Benutzer bringt das
+wenig - er kennt die Knoten des Netzes nicht und kann nicht nach hinten
+connecten, allenfalls im NET/ROM-Protokoll zu uns. Wer aber WAMPES selbst
+als User betreibt, will nicht, dass der Funkkanal mit den eigenen Knoten
+verstopft wird, die man sich womoeglich ueber einen Internet-Tunnel
+geholt hat. Der verkuerzte Broadcast ist fuer ihn der Ausgangsfilter.
+
+SEINE EINSCHRAENKUNG ZU FLEXNET, mitnotiert, weil sie gegen den Bau dort
+spricht: wenn die Gegenseite nichts empfaengt, haelt sie den Weg
+vielleicht fuer tot und gibt ihn auf. Bei NET/ROM, wo der Broadcast an
+alle auf dem Port geht, ist das nicht so. Also: bei NET/ROM sinnvoll, bei
+FlexNet erst nach genauerem Hinsehen.
