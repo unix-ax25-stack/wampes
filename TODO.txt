@@ -1873,13 +1873,24 @@ benutzt von ax_recv() fuer UI UND von lapb.c fuer den verbundenen Fall.
 Ein Gatter je Port vor diesem Nachschlagen deckt beide Rahmenarten in
 einem Griff ab.
 
-DER UNTERSCHIED ZUM ROUTE-FILTER IST DER SCHLUESSEL, und deshalb ersetzt
-das eine das andere NICHT: das Gatter greift je PORT, der Filter je
-RUFZEICHEN. Thomas' Frage, ob "flexnet filter port=hf2 in none" dann
-entfallen kann, ist damit beantwortet - nein, denn "auf diesem Port lernen
-wir nichts, sprechen aber weiter" ist etwas anderes als "auf diesem Port
-gibt es das Protokoll nicht", und der Filter kann ausserdem einzelne
-Rufzeichen treffen, was ein Portgatter nie kann.
+DER UNTERSCHIED ZUM ROUTE-FILTER, und hier hatte ich mich zuerst vertan:
+ich hatte geschrieben, das Gatter greife je PORT und der Filter je
+RUFZEICHEN. Das stimmt nicht - der Filter kennt drei Formen, "default",
+"port=<name>" und "<call>", und "flexnet filter port=useraccess2m in
+none" ist genau der Portfall.
+
+Der Unterschied ist nicht der SCHLUESSEL, sondern die TIEFE:
+
+  in none      der Rahmen wird geparst, der Peer existiert, wir sprechen
+               weiter mit ihm - wir LERNEN nur nichts von ihm
+  PID-Gatter   der Rahmen erreicht das Protokoll gar nicht, es gibt
+               keinen Peer und keinen Zustand
+
+Damit ist Thomas' Frage beantwortet, ob "filter port=xx in none" dann
+entfallen kann: nein, aber aus diesem Grund und nicht aus meinem. Die
+beiden sind zwei Stufen derselben Leiter, nicht zwei Schluessel. Dass
+der Filter zusaetzlich einzelne Rufzeichen treffen kann, kommt hinzu -
+das kann ein Portgatter nicht.
 
 Zu klaeren beim Bauen: die Reihenfolge. Das Gatter wirkt VOR dem Parsen,
 der Filter danach - das gehoert in die Doku, sonst sucht jemand den Fehler
