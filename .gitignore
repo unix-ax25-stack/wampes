@@ -6,11 +6,21 @@
 configure.h
 configure.mak
 
-# built binaries
+# built binaries - je Verzeichnis das, was sein Makefile unter TARGETS baut
 bbs/bbs
+bbs/bbs_import
 convers/convers
 convers/conversd
 src/net
+tools/check_seteugid
+tools/connect
+tools/connect2
+tools/filter
+tools/htmldiff
+tools/makeiprt
+tools/mm2html
+tools/ms2mm
+tools/udpbridge
 util/bridge
 util/cnet
 util/md5
