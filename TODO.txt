@@ -3218,3 +3218,65 @@ regelkonformer mit Stop 15 ergibt unveraendert DB0AAA-5-15.
 DER UMGEKEHRTE BEREICH (-5-0) BLEIBT OFFEN. Er ist jetzt gemessen statt
 erschlossen; die drei Varianten stehen weiter oben unter "FLEXNET: EIN
 UMGEKEHRTER SSID-BEREICH WIRD ANGENOMMEN" und sind Thomas' Entscheidung.
+
+------------------------------------------------------------------------
+FLEXNET: SSID 7 BEI VERBUNDENEM CALL -10 (Thomas' Frage, 2026-08-18)
+------------------------------------------------------------------------
+Seine Frage: was tun wir mit Stop 7 und verbindendem Call -10? Ergibt das
+einen Bereich 10-15-0-7? Und was sagt die AX.25-Routentabelle dazu, die
+vom FlexNet-Routing profitiert?
+
+KEIN WRAP. addrmatch() verlangt beides:
+
+    return ((*axcall & SSID) >= (flexcall[0] & SSID) &&
+            (*axcall & SSID) <= (flexcall[1] & SSID));
+
+ssid >= 10 UND ssid <= 7 ist die leere Menge, nicht 10-15-0-7.
+
+ABER DIE AX.25-ROUTE ENTSTEHT TROTZDEM. update_axroute() hat den
+Abbruchtest am ENDE der Schleife, der Rumpf laeuft also immer einmal
+durch und legt eine Route fuer die Min-SSID an. GEMESSEN, Partner
+verbindet als DB0AAA-10 und schickt Stop 7:
+
+    flexnet link            DB0AAA-10-7
+    flexnet dest            DB0AAA-10-7
+    ax25 route list         DB0AAA-10  ueber axip
+    flexnet query DB0AAA-10 Destination "DB0AAA-10" not found
+
+Also: AX.25 kann ihn erreichen, FlexNet findet ihn nicht. Der halbe
+Zustand, den man am schwersten diagnostiziert - die Routentabelle zeigt
+etwas, das Verzeichnis zeigt etwas, und die Vermittlung schweigt.
+
+UND DABEI FIEL ETWAS GROESSERES AUF, das den NORMALEN Betrieb betrifft:
+DER BEREICH EINES ZIELS WIRD NIE AUFGEFRISCHT. Gemessen, derselbe Link,
+FLEX_INIT zweimal mit verschiedenem Stop:
+
+    flexnet link   DB0AAA-10-7     der Peer: aktualisiert
+    flexnet dest   DB0AAA-10-15    das Ziel: noch der erste Bereich
+
+Ursache in update_delay(): find_dest() vergleicht mit addreq(), also
+sechs Zeichen plus SSID und OHNE das Max-Byte; bei einem Treffer bleibt
+pd->call unangetastet. Nur beim Anlegen kopiert flexaddrcp() alle acht
+Bytes. Der Bereich eines Ziels ist damit eine Momentaufnahme vom ersten
+Mal.
+
+DAS IST FOLGENREICH, denn der Bereich DES ZIELS ist der, den wir
+weitererzaehlen (send_rout liest pd->call[ALEN+1]) und nach dem wir
+routen (addrmatch). Wer am anderen Ende "ro fl pa ssid" aendert und neu
+linkt, steht bei uns mit seinem alten Bereich im Netz. Nebenbei erklaert
+es auch, warum derselbe Versuch je nach Reihenfolge zweier Rahmen
+verschieden ausgeht: kommt die Poll-Antwort vor FLEX_INIT, wird das Ziel
+mit min==max angelegt und das spaetere FLEX_INIT erreicht es nicht mehr.
+
+DER FIX WAERE EINE ZEILE - bei einem Treffer den Bereich aus destcall
+uebernehmen. NICHT GEBAUT, aus zwei Gruenden, die zusammengehoeren:
+
+  * Er aendert, was wir ANKUENDIGEN, ist also nicht folgenlos.
+  * Er haengt an Thomas' offener Entscheidung zum umgekehrten Bereich:
+    frischen wir auf, erreicht ein umgekehrter Bereich das Ziel
+    haeufiger als heute. Beides zusammen zu entscheiden ist richtiger
+    als nacheinander.
+
+Zu bedenken beim Bauen: schrumpft ein Bereich, bleiben die AX.25-Routen
+der weggefallenen SSIDs stehen, bis sie altern - update_axroute() legt
+an und nimmt nichts weg.
