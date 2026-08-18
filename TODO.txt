@@ -1166,6 +1166,27 @@
       dauernd, in Form der Aenderungsmeldung, mit dem Volldurchlauf nur
       als Auffrischung.
 
+      ALS WAS GELTEN WIR AUS TNNS SICHT (Thomas' Frage)? Der Typ ist ein
+      WUNSCH plus eine ERKENNUNG: l3nbr.c nimmt den konfigurierten Typ
+      nach soll_typ und setzt den wirklichen erst einmal auf NETROM
+      ("TNN und INP werden automatisch erkannt"). Erkannt wird INP ueber
+      die RTT-/INP-Verhandlung (l3rtt.c); THENET wird gesetzt, sobald ein
+      gewoehnlicher NET/ROM-Rundspruch eintrifft und noch kein Typ
+      feststeht (l3netrom.c, unter THENETMOD).
+
+      Wir machen weder INP3 noch TNNs Messung, wir schicken nur
+      NET/ROM-Rundsprueche. Also gelten wir als THENET - und dessen
+      Kommentar in typedef.h lautet woertlich "Nachbar, der nicht auf
+      Messung reagiert". Hatte der Sysop sich einen TNN- oder INP-Link
+      gewuenscht, bleiben wir bei NETROM haengen. TNN oder INP werden wir
+      nie.
+
+      Und nach der Tabelle oben heisst THENET: KEINE Aenderungsmeldungen,
+      nur der Volldurchlauf alle broint_ui. Wir sitzen also auf seiner
+      stumpfsten Stufe, und das ist ein handfestes Argument fuer den
+      INP3-Posten weiter oben - es geht nicht nur darum, was wir lernen,
+      sondern auch darum, wie er uns bedient.
+
       WIR SIND ALSO DER AUSREISSER IN DREI PUNKTEN, und alle drei stehen
       schon als eigene Posten hier:
         * ein Intervall statt zweier, und dreimal so lang
@@ -1880,6 +1901,22 @@ also kommt rxfEAX = FALSE heraus und es wird einoktettig gelesen.
 Seine Faehigkeitserkennung zieht TNN woanders her - aus dem GEHOERTEN
 SABM/SABME (l7moni.c: "case L2CSABME: mhp->eax_link = TRUE"), nicht aus
 dem Flag. "EAXMODE 1, by MHEARD" meint das, und nicht das SSID-Bit.
+
+UND GENAU DA HAT TNN EINEN FEHLER, den Thomas benannt hat, bevor er die
+Stelle sah: dieselbe Auswertung setzt das Merkmal bei einem gehoerten
+SABM wieder ZURUECK ("case L2CSABM: mhp->eax_link = FALSE"), unter
+MHEAX_LINKFIX sogar bei einem UA. Ein Benutzer darf aber zu der einen
+Station mit SABME und zur anderen mit SABM verbinden - beides aus guten
+Gruenden -, und sein SABM sagt dann nichts darueber, was er KANN, sondern
+nur, was er gerade WOLLTE. Wer daraus "kann kein EAX.25" macht, verlernt
+bei jedem gemischten Betrieb wieder, was er gerade gelernt hatte.
+
+WIR MACHEN DAS RICHTIG, und das ist keine Absicht gewesen sondern faellt
+aus dem Aufbau: eax25_remember() wird beim Empfang eines SABM gar nicht
+gerufen. AXR_EAX25_NO entsteht nur aus einem DM oder FRMR auf UNSER SABME
+oder aus Schweigen mit anschliessendem UA auf unser SABM - also immer aus
+einem Versuch, den WIR gemacht haben, nie aus dem, was jemand mit einem
+Dritten treibt.
 
 BLEIBEN ZWEI WEGE, und Thomas' ist der erste:
   1. DEN RUECKFALL GAR NICHT SENDEN, wo wir Beweise haben. Der
