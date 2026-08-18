@@ -13,6 +13,7 @@
 #include "ax25.h"
 #include "lapb.h"
 #include "slhc.h"
+#include "pidfilter.h"
 #include "cmdparse.h"
 #include "socket.h"
 #include "session.h"
@@ -77,10 +78,16 @@ static struct cmds Axcmds[] = {
 	{ "ignoretos",    doaxigntos,     0, 0, NULL },
 	{ "jumpstart",    dojumpstart,    0, 2, "ax25 jumpstart <call> [ON|OFF]" },
 	{ "kick",         doaxkick,       0, 2, "ax25 kick <axcb>" },
-	{ "emaxframe",    doemaxframe,    0, 0, NULL },
+	{ "emaxframe",    doemaxframe,    0, 0,
+	  "ax25 emaxframe [1..63]                the window on modulo-128 links\n"
+	  "       (per port: \"ifconfig <iface> emaxframe\")" },
 	{ "maxframe",     domaxframe,     0, 0, NULL },
 	{ "mycall",       domycall,       0, 0, NULL },
 	{ "paclen",       dopaclen,       0, 0, NULL },
+	{ "pid-info",     pid_info,       0, 0,
+	  "ax25 pid-info [<name>|<number>]       what a protocol id means\n"
+	  "       With no argument the whole table.  These are the names that\n"
+	  "       \"pid=\" and \"ifconfig <iface> pid\" accept." },
 	{ "pthresh",      dopthresh,      0, 0, NULL },
 	{ "reset",        doaxreset,      0, 2, "ax25 reset <axcb>" },
 	{ "retry",        don2,           0, 0, NULL },

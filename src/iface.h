@@ -193,6 +193,14 @@ struct iface {
 #define EAX25_OFF       1       /* never - answer SABME with DM */
 #define EAX25_CALLER    2       /* follow the caller; ask when we originate */
 #define EAX25_ALWAYS    3       /* also upgrade a caller who asked for AX.25 */
+
+	/* Which protocols may cross this port, one bit per protocol id and
+	 * direction - see pidfilter.c.  The count is there so that the send
+	 * and receive paths ask one int and not a bitmap: a port nobody
+	 * configured must cost nothing.
+	 */
+	int pidblocked[2];      /* PF_IN, PF_OUT: how many bits are set */
+	uint32 pidblock[2][8];
 };
 extern struct iface *Ifaces;    /* Head of interface list */
 extern struct iface  Loopback;  /* Optional loopback interface */

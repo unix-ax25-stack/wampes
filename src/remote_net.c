@@ -27,6 +27,7 @@
 #include "ax25.h"
 #include "lapb.h"
 #include "timer.h"
+#include "pidfilter.h"
 #include "transport.h"
 #include "hpux.h"
 #include "buildsaddr.h"
@@ -512,14 +513,14 @@ static int listen_command(struct controlblock *cp)
     if (!strcmp(argv[i], "UI") || !strcmp(argv[i], "ui")) { ui = 1; continue; }
     if (!strcmp(argv[i], "I")  || !strcmp(argv[i], "i"))  { ui = 0; continue; }
     if (!strncmp(argv[i], "pid=", 4)) {
-      char *end;
-      long n = strtol(argv[i] + 4, &end, 0);
-
-      if (*end || n < 0 || n > 255) {
+      /* Names as well as numbers, the same ones the console takes - see
+       * pidfilter.c.  The answer keeps the number, because that is what
+       * doc/LIBAX25-BRIDGE.md documents and a client may be reading it.
+       */
+      if ((pid = pid_number(argv[i] + 4)) < 0) {
 	say(cp, "*** invalid pid \"%s\"", argv[i] + 4);
 	return 0;
       }
-      pid = (int) n;
       continue;
     }
     if (call[0]) {

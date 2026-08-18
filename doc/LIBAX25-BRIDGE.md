@@ -323,7 +323,7 @@ there, so a script written for one world runs in the other:
 | `CALL=dl1tst` | the same, lower case and without it - the shape a unix account name takes |
 | `PROTOCOL=AX.25` | the address family; `NET/ROM` for an L4 session |
 | `AX25_DEST=DL9SAU-14` | the callsign that was called |
-| `AX25_PID=text` | or `0xcf`, the protocol id the service was configured for |
+| `AX25_PID=text` | or `netrom`, or `0xdd` for one with no name - the protocol id the service was configured for |
 | `AX25_PATH=DB0BBB,DB0CCC` | the digipeaters the call came by |
 | `NETROM_NODE=DB0AAA` | instead of the three `AX25_` ones, on a NET/ROM session |
 | `PATH=/usr/local/bin:/usr/bin:/bin` | ours, not the node's |
@@ -333,6 +333,16 @@ Our own names spell the protocol out, which is what tells `AX25_DEST` and
 spelling even though `AXSRC` would pair better with `AX25_DEST` - it is
 established, and a name that is already in scripts is worth more than a tidy
 pair.
+
+`AX25_PID` used to say the literal word `pid` for everything that was not
+text, which told a program nothing at all and contradicted the line above.
+It now carries the protocol by name, from the one table in `pidfilter.c` that
+`ax25 pid-info` prints - and a number for an id that has no name there.
+
+`pid=` takes those names as well as numbers, on the config line and on the
+service socket alike: `pid=netrom` and `pid=0xcf` are the same thing.  The
+socket's answer keeps the number (`pid 0xf0`), because that is what is
+documented above and a client may be reading it.
 
 And that is the whole environment.  The node uses `execve()` with a list it
 builds, not `execv()`, so a service run for a caller on the air inherits

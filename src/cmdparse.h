@@ -15,6 +15,7 @@ struct cmds {
 };
 
 /* In cmdparse.c: */
+int cmd_getnum(const char *s,long *val);
 int cmdparse(struct cmds cmds[],char *line,void *p);
 int subcmd(struct cmds tab[],int argc,char *argv[],void *p);
 int setbool(int *var,char *label,int argc,char *argv[]);

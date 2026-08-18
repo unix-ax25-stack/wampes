@@ -20,6 +20,7 @@
 #include "buildsaddr.h"
 #include "netrom.h"
 #include "flexnet.h"
+#include "pidfilter.h"
 #include "transport.h"
 #include "login.h"
 #include "remote_net.h"
@@ -152,6 +153,38 @@ int axlisten_active(const uint8 *call)
  * senseless, so that one may be set.
  */
 
+/* The same thing said to the operator.  It was only ever a comment, and a
+ * command with this many words is unusable without it.
+ */
+
+char Axlisten_usage[] =
+"listen                              show what we answer to\n"
+"       listen ax25 add [pid=<n>] [I|UI] [port=<list>] [<switch>...]\n"
+"                       <call> <target>\n"
+"       listen ax25 drop [I|UI] [pid=<n>] <call>\n"
+"       listen netrom add [<switch>...] <target>\n"
+"       listen netrom drop\n"
+"       listen ax25|netrom enable <n>       switch an entry back on\n"
+"\n"
+"  <target>   builtin:login          the node's own login, as it always was\n"
+"             tcp:<host>:<port>      dial it and pipe; unix:<path> likewise\n"
+"             /path/to/program args  run it and pipe\n"
+"  <switch>   --silent/--noisy, --wait/--nowait, --ascii/--binary\n"
+"  port=      a comma separated list of ports, \"!\" in front to exclude\n"
+"  pid=       the protocol id, default text (0xf0).  I and UI are two\n"
+"             separate listeners and each may name its own ports.\n"
+"\n"
+"  The defaults follow what is carried: pid=text announces, does not wait\n"
+"  and converts to ascii; another pid does none of the three, and the two\n"
+"  that would corrupt a binary protocol are refused rather than ignored.";
+
+static void axlisten_usage(void)
+{
+  printf("Usage: %s\n", Axlisten_usage);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static const char *axlisten_kindname(struct axlisten *lp)
 {
   switch (lp->kind) {
@@ -167,6 +200,7 @@ static const char *axlisten_kindname(struct axlisten *lp)
 static void axlisten_show(struct axlisten *lp, int n)
 {
   char buf[AXBUF];
+  char pidbuf[16];
   char ports[64];
 
   /* Show the "!" back: it lives in the flag, not in the text, and a display
@@ -178,10 +212,13 @@ static void axlisten_show(struct axlisten *lp, int n)
     snprintf(ports, sizeof(ports), "%s%s",
 	     lp->ports.exclude ? "!" : "", lp->ports.spec);
 
-  printf("%2d  %-10s %-3s %-6s %-7s %-8s %-10s %-30s %s%s%s\n", n,
+  printf("%2d  %-10s %-4s %-9s %-7s %-8s %-10s %-30s %s%s%s\n", n,
 	 lp->netrom ? "(netrom)" : pax25(buf, lp->call),
 	 lp->netrom ? "-" : (lp->ui ? "UI" : "I"),
-	 lp->netrom ? "-" : (lp->pid == PID_NO_L3 ? "text" : "pid"),
+	 /* The protocol by name, not "pid" for everything that is not text:
+	  * the column was showing that a pid was set and never which one.
+	  */
+	 lp->netrom ? "-" : pid_name(lp->pid, pidbuf, sizeof(pidbuf)),
 	 axlisten_kindname(lp), lp->binary ? "binary" : "ascii",
 	 ports,
 	 lp->disabled ? (lp->why ? lp->why : "inactive") : "active",
@@ -241,12 +278,15 @@ static int axlisten_add(int netrom, int argc, char *argv[])
 	printf("NET/ROM has no protocol id of its own\n");
 	return 1;
       }
-      n = strtol(cp + 4, &cp, 0);
-      if (*cp || n < 0 || n > 255) {
-	printf("Invalid pid \"%s\"\n", argv[i] + 4);
+      /* A name as well as a number - "pid=netrom" beside "pid=0xcf" - and
+       * the same names everywhere, see pidfilter.c.  A number alone was
+       * hard to write and harder to read back off a display.
+       */
+      if ((pid = pid_number(cp + 4)) < 0) {
+	printf("Invalid pid \"%s\" - a name or a number, see "
+	       "\"ax25 pid-info\"\n", cp + 4);
 	return 1;
       }
-      pid = (int) n;
       continue;
     }
     if (!strcmp(cp, "--silent")) { silent = 1; continue; }
@@ -574,6 +614,7 @@ static int local_conflict(const uint8 *call, int pid)
 void axlisten_drop_local(const uint8 *call)
 {
   char buf[AXBUF];
+  char pidbuf[16];
   struct axlisten *lp;
 
   if (!call || !*call) return;
@@ -581,9 +622,9 @@ void axlisten_drop_local(const uint8 *call)
   for (lp = Axlisten; lp; lp = lp->next) {
     if (lp->netrom || lp->disabled) continue;
     if (!addreq(lp->call, call) || !pid_is_local(lp->pid)) continue;
-    printf("listen %s pid=0x%02x switched off: the port answers to that "
+    printf("listen %s pid=%s switched off: the port answers to that "
 	   "callsign and the node serves that protocol itself\n",
-	   pax25(buf, lp->call), lp->pid);
+	   pax25(buf, lp->call), pid_name(lp->pid, pidbuf, sizeof(pidbuf)));
     if (lp->clientfd >= 0) {
       remote_net_drop_client(lp->clientfd);
       lp->clientfd = -1;
@@ -603,6 +644,7 @@ void axlisten_drop_local(const uint8 *call)
 int axlisten_enable(int n)
 {
   char buf[AXBUF];
+  char pidbuf[16];
   struct axlisten *lp;
   int i = 1;
 
@@ -617,8 +659,8 @@ int axlisten_enable(int n)
     return 0;
   }
   if (local_conflict(lp->call, lp->pid)) {
-    printf("%s pid=0x%02x is still a port callsign the node serves\n",
-	   pax25(buf, lp->call), lp->pid);
+    printf("%s pid=%s is still a port callsign the node serves\n",
+	   pax25(buf, lp->call), pid_name(lp->pid, pidbuf, sizeof(pidbuf)));
     return 1;
   }
   lp->disabled = 0;
@@ -703,10 +745,15 @@ int dolisten(int argc, char *argv[], void *p)
       printf("Not listening for anything\n");
       return 0;
     }
-    printf(" #  Call       I/UI Pid    Kind    Mode     Ports      "
+    printf(" #  Call       I/UI Pid       Kind    Mode     Ports      "
 	   "State                          Handed to\n");
     { int n = 1;
       for (lp = Axlisten; lp; lp = lp->next) axlisten_show(lp, n++); }
+    return 0;
+  }
+
+  if (!strcmp(argv[1], "?") || !strcmp(argv[1], "help")) {
+    axlisten_usage();
     return 0;
   }
 
@@ -715,7 +762,8 @@ int dolisten(int argc, char *argv[], void *p)
   else if (!strcmp(argv[1], "netrom"))
     netrom = 1;
   else {
-    printf("Usage: listen [ax25|netrom] [add|drop] ...\n");
+    printf("\"%s\": the first word is \"ax25\" or \"netrom\"\n", argv[1]);
+    axlisten_usage();
     return 1;
   }
 
@@ -730,6 +778,11 @@ int dolisten(int argc, char *argv[], void *p)
     return 0;
   }
 
+  if (!strcmp(argv[2], "?") || !strcmp(argv[2], "help")) {
+    axlisten_usage();
+    return 0;
+  }
+
   if (!strcmp(argv[2], "enable")) {
     if (argc < 4) {
       printf("Which entry?  The number is the first column of \"listen\"\n");
@@ -738,8 +791,13 @@ int dolisten(int argc, char *argv[], void *p)
     return axlisten_enable(atoi(argv[3]));
   }
 
-  if (!strcmp(argv[2], "add"))
+  if (!strcmp(argv[2], "add")) {
+    if (argc > 3 && (!strcmp(argv[3], "?") || !strcmp(argv[3], "help"))) {
+      axlisten_usage();
+      return 0;
+    }
     return axlisten_add(netrom, argc - 3, argv + 3);
+  }
 
   if (!strcmp(argv[2], "drop")) {
     int pid = PID_NO_L3;
@@ -748,14 +806,27 @@ int dolisten(int argc, char *argv[], void *p)
 
     memset(call, 0, sizeof(call));
     if (!netrom) {
-      /* Same words as on the add line: I and UI are two listeners. */
-      while (i < argc && (!strcmp(argv[i], "UI") || !strcmp(argv[i], "ui") ||
-			  !strcmp(argv[i], "I")  || !strcmp(argv[i], "i"))) {
-	ui = (argv[i][0] == 'U' || argv[i][0] == 'u');
-	i++;
+      /* Same words as on the add line, and in any order for the same reason:
+       * "drop pid=netrom UI <call>" reads exactly like the add line that
+       * created the entry, and used to find nothing because pid= was only
+       * looked for after the I/UI word.
+       */
+      for (; i < argc; i++) {
+	if (!strcmp(argv[i], "UI") || !strcmp(argv[i], "ui") ||
+	    !strcmp(argv[i], "I")  || !strcmp(argv[i], "i")) {
+	  ui = (argv[i][0] == 'U' || argv[i][0] == 'u');
+	  continue;
+	}
+	if (!strncmp(argv[i], "pid=", 4)) {
+	  if ((pid = pid_number(argv[i] + 4)) < 0) {
+	    printf("Invalid pid \"%s\" - a name or a number, see "
+		   "\"ax25 pid-info\"\n", argv[i] + 4);
+	    return 1;
+	  }
+	  continue;
+	}
+	break;
       }
-      if (i < argc && !strncmp(argv[i], "pid=", 4))
-	pid = (int) strtol(argv[i++] + 4, NULL, 0);
       if (i >= argc || setcall(call, argv[i])) {
 	printf("Which callsign?\n");
 	return 1;
@@ -768,7 +839,8 @@ int dolisten(int argc, char *argv[], void *p)
     return 0;
   }
 
-  printf("Usage: listen [ax25|netrom] [add|drop] ...\n");
+  printf("\"%s\": say \"add\", \"drop\" or \"enable\"\n", argv[2]);
+  axlisten_usage();
   return 1;
 }
 
@@ -1255,8 +1327,8 @@ static struct axservice *axpipe_open(struct ax25_cb *axp, struct axlisten *lp,
 }
 
 
-static int axspawn_fd(struct axlisten *lp, const char *user, const char *proto,
-		      const char *dest, const char *path)
+static int axspawn_fd(struct axlisten *lp, const char *user, int netrom,
+		      const char *proto, const char *dest, const char *path)
 {
 
   char *argv[32];
@@ -1291,8 +1363,12 @@ static int axspawn_fd(struct axlisten *lp, const char *user, const char *proto,
    * digipeaters, however tempting: that is the shell's, and AX25_PATH says
    * whose path it is.
    */
+  /* Which world this is comes in as a flag and no longer from comparing the
+   * protocol name against "netrom".  The name is now the real protocol id
+   * (pid_name()), so an AX.25 listener configured with pid=netrom would have
+   * been taken for a NET/ROM session and told the wrong story entirely.
+   */
   {
-    int netrom = !strcmp(proto, "netrom");
     char lower[80];
     char *dash;
 
@@ -1391,7 +1467,7 @@ int nrserv_listen_start(struct circuit *pc)
 
     pax25(user, pc->cuser);
     pax25(node, pc->node);
-    if ((fd = axspawn_fd(lp, user, "netrom", node, 0)) < 0) return 0;
+    if ((fd = axspawn_fd(lp, user, 1, "netrom", node, 0)) < 0) return 0;
   }
 
   if (!(pp = axpipe_new(lp, fd))) return 0;
@@ -1594,6 +1670,7 @@ struct axservice *axserv_start(struct ax25_cb *axp, int pid)
   case LK_PROGRAM:
     {
       char user[AXBUF], dest[AXBUF], path[160];
+      char pidbuf[16];
       int i, fd;
 
       pax25(user, axp->hdr.dest);
@@ -1605,7 +1682,8 @@ struct axservice *axserv_start(struct ax25_cb *axp, int pid)
 	if (i) strcat(path, ",");
 	strcat(path, pax25(one, axp->hdr.digis[i]));
       }
-      if ((fd = axspawn_fd(lp, user, pid == PID_NO_L3 ? "text" : "pid",
+      if ((fd = axspawn_fd(lp, user, 0,
+			   pid_name(pid, pidbuf, sizeof(pidbuf)),
 			   dest, path)) >= 0)
 	sp = axpipe_open(axp, lp, fd);
     }

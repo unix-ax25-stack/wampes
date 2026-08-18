@@ -97,6 +97,45 @@ static struct rfentry *Rfentries;
 
 /*---------------------------------------------------------------------------*/
 
+/* The help, and it is the reason this command was unusable.  Neither table
+ * entry carried a usage text, so "flexnet filter ?" said nothing, and a word
+ * that is not a keyword becomes the station - which is how "flexnet filter
+ * add" created a station called ADD.  There is no "add": a rule is written by
+ * naming what it is about, and removed with --delete.
+ *
+ * The station is one of THREE shapes and the text has to say so, because two
+ * of them do not look like a callsign at all.
+ */
+
+#define RF_USAGE(proto) \
+	proto " filter                                    show the rules in force\n" \
+	"       " proto " filter default | port=<name> | <call>\n" \
+	"               [in all|only-him|none] [advert yes|no] [feed yes|no]\n" \
+	"       " proto " filter --delete default | port=<name> | <call>\n" \
+	"\n" \
+	"  in      what we take from him into our own tables:\n" \
+	"          all       everything he announces - the default\n" \
+	"          only-him  he is reachable; nothing he says about others\n" \
+	"          none      not even him\n" \
+	"  advert  whether other stations hear about him\n" \
+	"  feed    whether he gets our table.  \"no\" is not silence - he still\n" \
+	"          learns that we are here, so he can reach us\n" \
+	"\n" \
+	"  The most specific rule wins: the callsign, else the port, else\n" \
+	"  \"default\", else what the node always did.  See doc/ROUTE-FILTER.md."
+
+char Rf_usage_flexnet[] = RF_USAGE("flexnet");
+char Rf_usage_netrom[]  = RF_USAGE("netrom")
+	"\n  At NET/ROM \"feed\" is per port only: one UI frame goes to everybody.";
+
+static void rf_usage(enum rf_proto proto)
+{
+	printf("Usage: %s\n",
+	       proto == RF_NETROM ? Rf_usage_netrom : Rf_usage_flexnet);
+}
+
+/*---------------------------------------------------------------------------*/
+
 const char *rf_in_name(enum rf_in in)
 {
 	switch (in) {
@@ -273,6 +312,26 @@ int rf_cmd(enum rf_proto proto, int argc, char *argv[], void *p)
 	for (i = 1; i < argc; i++) {
 		char *cp = argv[i];
 
+		if (!strcmp(cp, "?") || !strcmp(cp, "help")) {
+			rf_usage(proto);
+			return 0;
+		}
+		/* A word that reads like a forgotten subcommand.  There are
+		 * none here, and taking it as a station is worse than useless:
+		 * "filter add" used to create a station called ADD and then
+		 * answer the next word with "Only one station per line", which
+		 * points at the wrong thing entirely.
+		 */
+		if (!strcmp(cp, "add") || !strcmp(cp, "del") ||
+		    !strcmp(cp, "delete") || !strcmp(cp, "drop") ||
+		    !strcmp(cp, "remove") || !strcmp(cp, "list") ||
+		    !strcmp(cp, "show")) {
+			printf("There is no \"%s\" here - a rule is written by "
+			       "naming what it is about,\nand removed with "
+			       "--delete\n", cp);
+			rf_usage(proto);
+			return 1;
+		}
 		if (!strcmp(cp, "--delete")) { del = 1; continue; }
 		if (!strcmp(cp, "in")) {
 			if (++i >= argc) {
@@ -322,7 +381,9 @@ int rf_cmd(enum rf_proto proto, int argc, char *argv[], void *p)
 			return 1;
 		}
 		if (spec) {
-			printf("Only one station per line\n");
+			printf("Only one station per line - \"%s\" and \"%s\" "
+			       "are both taken as one\n", spec, cp);
+			rf_usage(proto);
 			return 1;
 		}
 		spec = cp;
@@ -350,7 +411,9 @@ int rf_cmd(enum rf_proto proto, int argc, char *argv[], void *p)
 		kind = RFK_PORT;
 	} else {
 		if (setcall(call, spec)) {
-			printf("Invalid call \"%s\"\n", spec);
+			printf("\"%s\" is neither \"default\", nor "
+			       "\"port=<name>\", nor a callsign\n", spec);
+			rf_usage(proto);
 			return 1;
 		}
 		kind = RFK_CALL;

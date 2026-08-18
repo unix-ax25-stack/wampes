@@ -14,6 +14,7 @@
 #include "netuser.h"
 #include "ax25.h"
 #include "lapb.h"
+#include "pidfilter.h"
 
 /* Open an AX.25 connection */
 struct ax25_cb *
@@ -95,6 +96,14 @@ int pid
 		return -1;
 	}
 	if(pid != -1){
+		/* Ahead of the segmenter on purpose: what leaves here as
+		 * PID_SEGMENT says nothing about what is inside, so this is the
+		 * last place where the protocol is still known by name.
+		 */
+		if(pid_blocked(axp->iface,PF_OUT,pid)){
+			free_p(bpp);
+			return -1;
+		}
 		offset = 0;
 		len = len_p(*bpp);
 		/* It is important that all the pushdowns be done before
@@ -112,6 +121,25 @@ int pid
 			enqueue(&axp->txq,&bp1);
 		}
 		free_p(bpp);
+	} else if(axp->iface != NULL && axp->iface->pidblocked[PF_OUT]){
+		/* The protocol id is already on the front of each frame here -
+		 * NET/ROM pushes it on itself, and so does a relayed leg - so
+		 * the gate has to read it out of the data instead of taking it
+		 * as an argument.  Frame by frame, because this may be a chain
+		 * and the frames in it need not carry the same protocol.
+		 */
+		struct mbuf *bp;
+		struct mbuf *next;
+
+		for(bp = *bpp;bp != NULL;bp = next){
+			next = bp->anext;
+			bp->anext = NULL;
+			if(bp->cnt > 0 && pid_blocked(axp->iface,PF_OUT,bp->data[0]))
+				free_p(&bp);
+			else
+				enqueue(&axp->txq,&bp);
+		}
+		*bpp = NULL;
 	} else {
 		enqueue(&axp->txq,bpp);
 	}

@@ -18,6 +18,7 @@
 #include "trace.h"
 #include "pktdrvr.h"
 #include "lapb.h"
+#include "pidfilter.h"
 
 static void showiface(struct iface *ifp);
 static int mask2width(int32 mask);
@@ -40,6 +41,7 @@ static int ifeax25(int argc,char *argv[],void *p);
 static int ifpaclen(int argc,char *argv[],void *p);
 static int ifmaxframe(int argc,char *argv[],void *p);
 static int ifemaxframe(int argc,char *argv[],void *p);
+static int if_wants_rest(const char *word);
 
 /* Interface list header */
 struct iface *Ifaces = &Loopback;
@@ -140,26 +142,45 @@ struct iface Encap = {
 char Noipaddr[] = "IP address field missing, and ip address not set\n";
 
 struct cmds Ifcmds[] = {
-	{ "autoroute",            ifautoroute,    0,      2,      NULL },
-	{ "digiarp",              ifdigiarp,      0,      2,      NULL },
-	{ "broadcast",            ifbroad,        0,      2,      NULL },
-	{ "crc",                  ifcrc,          0,      2,      NULL },
-	{ "dama",                 ifdama,         0,      2,      NULL },
-	{ "damatimeout",          ifdamatimeout,  0,      2,      NULL },
+	{ "autoroute",            ifautoroute,    0,      2,
+	  "ifconfig <iface> autoroute on|off" },
+	{ "digiarp",              ifdigiarp,      0,      2,
+	  "ifconfig <iface> digiarp list | add|del|addvia|delvia <digi>|-" },
+	{ "broadcast",            ifbroad,        0,      2,
+	  "ifconfig <iface> broadcast <ip address>" },
+	{ "crc",                  ifcrc,          0,      2,
+	  "ifconfig <iface> crc auto|off|16|rmnc|ccitt" },
+	{ "dama",                 ifdama,         0,      2,
+	  "ifconfig <iface> dama off|slave" },
+	{ "damatimeout",          ifdamatimeout,  0,      2,
+	  "ifconfig <iface> damatimeout <seconds>   (0 = built-in default)" },
 	{ "eax25",                ifeax25,        0,      2,
 	  "ifconfig <iface> eax25 off|accept|caller|always" },
-	{ "emaxframe",            ifemaxframe,    0,      2,      NULL },
-	{ "encapsulation",        ifencap,        0,      2,      NULL },
-	{ "maxframe",             ifmaxframe,     0,      2,      NULL },
-	{ "paclen",               ifpaclen,       0,      2,      NULL },
-	{ "forward",              ifforw,         0,      2,      NULL },
-	{ "ipaddress",            ifipaddr,       0,      2,      NULL },
-	{ "linkaddress",          iflinkadr,      0,      2,      NULL },
-	{ "mtu",                  ifmtu,          0,      2,      NULL },
-	{ "netmask",              ifnetmsk,       0,      2,      NULL },
-	{ "tncinit",              iftncinit,      0,      1,      NULL },
-	{ "txqlen",               iftxqlen,       0,      2,      NULL },
-	{ "rxbuf",                ifrxbuf,        0,      2,      NULL },
+	{ "emaxframe",            ifemaxframe,    0,      2,
+	  "ifconfig <iface> emaxframe 0..63   (0 = use the node's)" },
+	{ "encapsulation",        ifencap,        0,      2,
+	  "ifconfig <iface> encapsulation <name>" },
+	{ "maxframe",             ifmaxframe,     0,      2,
+	  "ifconfig <iface> maxframe 0..7   (0 = use the node's)" },
+	{ "paclen",               ifpaclen,       0,      2,
+	  "ifconfig <iface> paclen 0..2048   (0 = use the node's)" },
+	{ "forward",              ifforw,         0,      2,
+	  "ifconfig <iface> forward <iface>   (send here, receive there)" },
+	{ "ipaddress",            ifipaddr,       0,      2,
+	  "ifconfig <iface> ipaddress <ip address>" },
+	{ "linkaddress",          iflinkadr,      0,      2,
+	  "ifconfig <iface> linkaddress <call>" },
+	{ "mtu",                  ifmtu,          0,      2,
+	  "ifconfig <iface> mtu <bytes>" },
+	{ "netmask",              ifnetmsk,       0,      2,
+	  "ifconfig <iface> netmask <ip netmask>" },
+	{ "pid",                  ifpid,          0,      1,      Pid_usage },
+	{ "tncinit",              iftncinit,      0,      1,
+	  "ifconfig <iface> tncinit tapr|kenwood|kantronics|\"<sequence>\"|none" },
+	{ "txqlen",               iftxqlen,       0,      2,
+	  "ifconfig <iface> txqlen <packets>" },
+	{ "rxbuf",                ifrxbuf,        0,      2,
+	  "ifconfig <iface> rxbuf <bytes>" },
 	{ NULL }
 };
 /*
@@ -289,12 +310,40 @@ doifconfig(int argc,char *argv[],void *p)
 		return 0;
 	}
 	if(argc == 3){
-		printf("Argument missing\n");
-		return 1;
+		/* One word and no value.  This used to be answered with
+		 * "Argument missing" before the subcommand was ever reached,
+		 * which made two things unreachable: the settings that take no
+		 * value and show what is in force ("tncinit", "pid"), and the
+		 * usage text, which subcmd() prints for the rest.  Both are
+		 * better answers than a sentence that names no command.
+		 */
+		return subcmd(Ifcmds,2,&argv[1],ifp);
 	}
+	/* The settings are name/value pairs and several may stand on one line:
+	 * "ifconfig ax0 mtu 256 paclen 128".  A few take a LIST instead, and
+	 * those get the rest of the line - which is why they have to be the
+	 * last thing on it.
+	 */
+	if(if_wants_rest(argv[2]))
+		return subcmd(Ifcmds,argc-1,&argv[1],ifp);
 	for(i=2;i<argc-1;i+=2)
 		subcmd(Ifcmds,3,&argv[i-1],ifp);
 
+	return 0;
+}
+
+/* Does this subcommand read a list rather than one value?  The same prefix
+ * match subcmd() will make, so that an abbreviation is answered the same way
+ * the full word is.
+ */
+static int
+if_wants_rest(const char *word)
+{
+	struct cmds *cmdp;
+
+	for(cmdp = Ifcmds;cmdp->name != NULL;cmdp++)
+		if(strncmp(word,cmdp->name,strlen(word)) == 0)
+			return cmdp->func == ifpid;
 	return 0;
 }
 

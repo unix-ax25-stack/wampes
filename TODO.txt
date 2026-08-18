@@ -1996,6 +1996,35 @@ faengt auf.
 ------------------------------------------------------------------------
 PROTOKOLL-GATTER JE PORT, STATT DER DRITTEN ZUGANGSSTUFE (Thomas, 2026-08-18)
 ------------------------------------------------------------------------
+STATUS: GEBAUT UND GEMESSEN (2026-08-18), beide Richtungen.
+"ifconfig <iface> pid in|out block|allow <protokoll>...", Namen oder
+Zahlen, Einzelheiten und Messwerte in doc/PID-FILTER.md. Der Rest dieses
+Abschnitts ist die Ueberlegung, die dahin gefuehrt hat, und stimmt.
+
+WAS BEIM BAUEN DAZUKAM, und es war nicht vorherzusehen:
+
+  * Die Ausgangsrichtung hat FUENF Torstellen, nicht eine. ax_send_ui(),
+    ax_output(), send_ax25() zweimal - mit PID als Argument und mit -1,
+    wo sie schon im Rahmen steht - und broadcast_to() in netrom.c. Das
+    letzte ist der einzige Sendeweg des Knotens, der nicht ueber
+    ax_send_ui() geht: alloc_broadcast_packet() schreibt UI und PID
+    selbst in den Puffer und gibt den Rahmen direkt an den Treiber. Ohne
+    diese Stelle haette "pid out block netrom" alles ausser dem
+    Nodes-Broadcast gestoppt.
+  * doifconfig() liest NAME/WERT-PAARE. Ein Unterbefehl mit einer Liste
+    passt da nicht hinein; er bekommt jetzt den Rest der Zeile und muss
+    deshalb als letztes stehen. Nebenbei fiel dabei der unerreichbare
+    Zweig aus Punkt 4 der Durchsicht weg: "argc == 3" meldete
+    "Argument missing", bevor der Unterbefehl je gerufen wurde.
+
+THOMAS' EINSCHRAENKUNG, und sie ist im Bau so umgesetzt: das Gatter
+betrifft nur Rahmen, die AN UNS gehen oder VON UNS kommen. Was wir bloss
+digipeaten, ist unberuehrt - die Weiterleitung in ax_recv() entscheidet,
+bevor irgendwer eine PID gelesen hat, dort gibt es nur eine Adresse zum
+Weiterruecken. Es auch auf durchgereichten Verkehr anzuwenden waere ein
+eigener Schalter; seine Entscheidung dazu: waere machbar, aber es lohnt
+die Verkomplizierung nicht.
+
 Gegen die dritte Zugangsstufe "darf gar nicht sprechen" sprach nie etwas -
 sie wurde fuer die zwei Achsen einfach nicht gebraucht, und in
 doc/ROUTE-FILTER.md steht nur, dass "in none" nahekommt und nicht dasselbe
@@ -2068,6 +2097,34 @@ vielleicht fuer tot und gibt ihn auf. Bei NET/ROM, wo der Broadcast an
 alle auf dem Port geht, ist das nicht so. Also: bei NET/ROM sinnvoll, bei
 FlexNet erst nach genauerem Hinsehen.
 
+NACHTRAG (2026-08-18): DER VERKUERZTE BROADCAST WAR SCHON DA, und das ist
+die eigentliche Erkenntnis dieses Punktes. "feed no" tut genau das - bei
+NET/ROM geht der Broadcast mit Identifier und ohne Eintraege hinaus, bei
+FlexNet FLEX_INIT ohne FLEX_ROUT. Beides gemessen:
+
+    net.rc                             DL1ABC-7 hoert
+    (nichts)                           FLEX_INIT + FLEX_ROUT, drei Ziele
+    flexnet filter port=axip feed no   FLEX_INIT, sonst nichts
+    ifconfig axip pid out block flexnet   gar nichts
+
+    net.rc                             der NET/ROM-Nachbar hoert
+    (nichts)                           Ident + drei Eintraege
+    netrom filter port=axip feed no    Ident, keine Eintraege
+    ifconfig axip pid out block netrom gar nichts
+
+Es fehlte also nicht der Freiheitsgrad, sondern der Weg, ihn zu finden.
+Thomas hat den Punkt selbst so aufgemacht - "fuer den ui broadcast haben
+wir schon fast alles, alleine die default-Einstellung fuers iface fehlt"
+-, und die Antwort darauf ist keine neue Achse, sondern eine Spalte:
+"netrom broadcast" zeigt jetzt Contents (nodes / us only) neben State,
+und der Usage-Text sagt, mit welchem Befehl man sie umstellt. Zwei Wege,
+dieselbe Sache zu sagen, waeren schlechter als einer, den man findet.
+
+WAS DAMIT WIRKLICH FEHLT, enger gefasst als oben: ein TEILWEISER
+Broadcast - nur ein Teil der Tabelle statt alles oder nichts. Alles und
+nichts gibt es beides. Das steht unter "Not built" in
+doc/ROUTE-FILTER.md und bleibt dort.
+
 ------------------------------------------------------------------------
 FILTER-KOMMANDO: KEINE HILFE, UND ES LEGT PHANTOMSTATIONEN AN (Thomas,
 2026-08-18)
@@ -2094,28 +2151,53 @@ URSACHE, zwei Stellen:
   2. setcall() prueft nur Laenge <= 6 und SSID <= 15, keine
      Zeichenklassen. "ADD" und "?" gehen also glatt durch.
 
-ES GIBT SCHON EINEN PRUEFER: lib/callvalid.c. Der wuerde beide abweisen -
-"?" ist zu kurz, "ADD" hat keine Ziffer. Benutzt wird er bisher nur in
-login.c, waere hier also ein neuer Praezedenzfall, und er hat eine
-Nebenwirkung, die vor dem Einbau zu bedenken ist: er laesst hoechstens
-zwei Ziffern zu, also faellt ein Sonderrufzeichen wie DL60ABC durch.
-Entweder man nimmt das in Kauf, oder man prueft hier schwaecher
-(alphanumerisch, mindestens drei Zeichen, mindestens eine Ziffer).
+MEIN VORSCHLAG MIT lib/callvalid.c WAR FALSCH, und Thomas hat gesagt
+warum: "filter flexnet add haette ich nie versucht wenn die Hilfe da
+gewesen waere." Der Pruefer haette das Symptom behandelt und die Ursache
+stehen lassen. Zwei weitere Gruende, beide ausreichend fuer sich:
+
+  * Er laesst hoechstens zwei Ziffern zu - ein Sonderrufzeichen wie
+    DL60ABC faellt durch. Ein Pruefer, der gueltige Eingaben abweist, ist
+    schlechter als keiner.
+  * Und das ist der Punkt, den ich uebersehen hatte: das Argument kann
+    "default", "port=<name>" ODER ein Rufzeichen sein. Zwei der drei
+    Formen sind gar keine Rufzeichen. Ein Rufzeichenpruefer haette die
+    Frage also nie beantworten koennen, egal wie streng.
+
+GEBAUT WURDE STATTDESSEN: die Hilfe (siehe unten), und eine Zeile fuer
+den Fall, den Thomas tatsaechlich gemacht hat - "add", "delete", "list",
+"show" und Verwandte werden ausdruecklich abgewiesen mit dem Hinweis,
+dass es die hier nicht gibt und wie es stattdessen geht. Sonst bleibt es
+bei setcall(): mehr Strenge ist beim Rufzeichen nicht gewollt.
 
 DAZU FEHLT DIE HILFE. Die Kommandotabellen tragen fuer "filter" keinen
 Usage-Text (flexnet.c und netrom.c, letztes Feld 0 bzw. NULL), waehrend
 die Nachbarn einen haben - "flex li ?" listet seine Unterbefehle, "flex
 query" zeigt seine Syntax. Deshalb sagt "flex fi ?" nichts.
 
-ZU BAUEN, klein und in einem:
-  * Usage-Text an beide Tabelleneintraege, mit der ganzen Zeile
-    "<proto> filter [default|port=<name>|<call>] [in ...] [advert ...]
-    [feed ...] [--delete]"
-  * die Stationsangabe pruefen statt alles anzunehmen
-  * und ein Wort, das wie ein vergessener Unterbefehl aussieht ("add",
-    "delete", "list"), lieber ausdruecklich abweisen mit dem Hinweis, dass
-    es die nicht gibt - das ist der Fehler, den Thomas gemacht hat, und
-    er wird nicht der Einzige sein.
+ERLEDIGT (2026-08-18). Der Hilfetext steht einmal in routefilter.c
+(Rf_usage_flexnet / Rf_usage_netrom) und die beiden Kommandotabellen
+zeigen darauf, damit die Formulierung nicht zweimal existiert. "?" und
+"help" beantworten ihn an jeder Stelle der Zeile.
+
+DAMIT DAS UEBERHAUPT WIRKEN KONNTE, musste cmdparse.c mit: der
+Usage-Text wurde bis dahin NUR bei zu wenigen Argumenten gedruckt, und
+"filter" hat argcmin 0 - der Text waere also nie erschienen. Jetzt
+beantwortet ein "?" als erstes Argument den Usage-Text ueberall, in
+cmdparse() wie in subcmd(), und der Befehl wird dabei GAR NICHT gerufen.
+
+ZWEI SACKGASSEN AUF DEM WEG DAHIN, beide notiert, weil sie plausibel
+aussehen:
+  * "?" ueberall abfangen, auch ohne Usage-Text. Falsch: ein Eintrag
+    ohne Text ist meistens ein Multiplexer, und subcmd() beantwortet "?"
+    dort mit der LISTE der Unterbefehle. Das ist die bessere Antwort;
+    sie ihm wegzunehmen tauscht eine Liste gegen einen Satz ohne Inhalt.
+    Gemessen an "flexnet ?", das dabei aufhoerte zu listen.
+  * "?" als "keine Argumente" weiterreichen, damit eine Einstellung
+    ihren Wert zeigt. Auch falsch: "reset" und "close" ohne Argument
+    wirken auf die LAUFENDE Session. "reset ?" haette sie
+    zurueckgesetzt. Eine Frage darf nicht mit einer Handlung beantwortet
+    werden.
 
 ------------------------------------------------------------------------
 DURCHSICHT: HILFE UND EINGABEPRUEFUNG DER NEUEN BEFEHLE (2026-08-18)
@@ -2146,7 +2228,7 @@ BEFUNDE:
  2. flexnet filter / netrom filter: kein Usage, kein "?", und jedes Wort
     wird zur Station. Eigener Abschnitt weiter oben.
 
- 3. setintrc() NIMMT JEDES WORT ALS ZAHL, weil es atoi() benutzt - "?"
+ 3. ERLEDIGT. setintrc() NAHM JEDES WORT ALS ZAHL, weil es atoi() benutzt - "?"
     wird zu 0. Das ist alter Code und faellt sonst nicht auf, weil die
     meisten Bereiche bei 1 anfangen und die 0 dann abgewiesen wird
     ("must be 1..63"). Bei UNSEREN Portwerten ist die 0 aber gueltig und
@@ -2158,14 +2240,79 @@ BEFUNDE:
         ifconfig ax0 paclen ?        (keine Ausgabe)
         ifconfig ax0     ->  die Zeile ist weg
 
-    Betrifft paclen, maxframe und emaxframe je Port sowie
-    sntp panic_threshold. Zu entscheiden: setintrc() strenger machen
-    (strtol mit Endzeiger-Pruefung, dann wirkt es ueberall) oder nur die
-    Aufrufer mit gueltiger Null absichern. Das Erste ist richtiger und
-    beruehrt mehr; es ist derselbe Fehler wie bei den Phantomstationen,
-    nur an der anderen Ecke - ein Wort, das keine Zahl ist, wird
-    stillschweigend als eine genommen.
+    Es wurde das Erste: cmd_getnum() in cmdparse.c, strtol mit
+    Endzeiger- und ERANGE-Pruefung, und setint, setlong, setshort,
+    setuns und setintrc gehen alle hindurch. Ein Wort, das keine Zahl
+    ist, wird jetzt abgewiesen statt als Null genommen. Basis 10 und
+    NICHT strtols Basis 0 - "010" hat hier immer zehn geheissen, und das
+    ohne ein Wort in acht zu verwandeln waere eine stille Aenderung an
+    bestehenden net.rc.
 
- 4. Kleinigkeit ohne Eile: iftncinit() hat einen Zweig fuer "argc < 2",
-    der den aktuellen Wert anzeigen soll. Er ist unerreichbar, weil die
-    Kommandotabelle vorher "Argument missing" meldet.
+    Nachgemessen:
+        ifconfig axip paclen 128
+        ifconfig axip paclen ?     -> Usage, Wert bleibt 128
+        ifconfig axip paclen quatsch -> "ist keine Zahl", Wert bleibt 128
+
+ 4. ERLEDIGT. iftncinit() hatte einen unerreichbaren Zweig fuer
+    "argc < 2", weil doifconfig() bei argc == 3 vorher "Argument
+    missing" meldete. Der Fall geht jetzt in den Unterbefehl: der zeigt
+    seinen Wert, oder subcmd() druckt seinen Usage-Text - beides bessere
+    Antworten als ein Satz, der keinen Befehl nennt.
+
+ 5. NEU BEIM DURCHGEHEN (2026-08-18): "listen ax25 drop" nahm "pid="
+    nur NACH dem Wort I/UI an, "listen ax25 add" in beliebiger
+    Reihenfolge. "drop pid=netrom UI <call>" - dieselbe Zeile, mit der
+    der Eintrag angelegt wurde - fand deshalb nichts. Jetzt beide in
+    beliebiger Reihenfolge.
+
+ 6. NOCH OFFEN, aber nur noch Fleissarbeit: die ALTEN Befehle aus der
+    Zeit vor dem Import haben groesstenteils keinen Usage-Text. "?"
+    beantwortet dort nichts (bei den Multiplexern listet subcmd die
+    Unterbefehle, das ist in Ordnung). Betroffen sind unter anderem
+    echo, eol, escape, log, trace, topt, hostname, record, upload,
+    session, close, reset, kick, ping, status, nrstat, asystat, memory,
+    ps, login, smtp. Ein Text je Zeile, aber jeder will nachgesehen
+    werden - ein falscher Usage-Text ist schlechter als keiner.
+
+------------------------------------------------------------------------
+EINE STELLE FUER DIE PID-NAMEN (Thomas, 2026-08-18) - ERLEDIGT
+------------------------------------------------------------------------
+Sein Einwand beim Zusehen: "da man manchmal pid= angibt, und ich glaube
+da haben wir nicht immer ein Mapping auf die AX.25-PIDs." Er hatte recht,
+und es war schlimmer als eine fehlende Bequemlichkeit - es gab VIER
+Stellen mit vier verschiedenen Antworten:
+
+  listen ax25 add pid=      strtol, nur Zahlen
+  listen ax25 drop pid=     strtol, nur Zahlen, und nur nach I/UI
+  service socket, listen    strtol, nur Zahlen
+  connect --pid             strtol, nur Zahlen; "flextalk" davor als
+                            einziger Name, fest verdrahtet
+  Anzeige "listen"          Spalte "text" oder "pid" - also nie, WELCHE
+  AX25_PID an ein Programm  das Wort "pid", was einem Programm gar nichts
+                            sagt und der eigenen Doku widersprach, die
+                            "text oder 0xcf" verspricht
+
+Jetzt eine Tabelle in pidfilter.c, zwei Funktionen darum (pid_number(),
+pid_name()) und alle sechs Stellen gehen hindurch. Dazu "ax25 pid-info",
+das die Tabelle druckt oder einen Eintrag aufloest - "ax25 pid-info 05",
+"ax25 pid-info 0x1f", "ax25 pid-info netrom".
+
+DIE UNBEKANNTEN ZAHLEN NICHT MIT "unbekannt" ABTUN, und das ist die eine
+inhaltliche Entscheidung darin: die Nummern sind AX.25 2.2 Bild 3.1, und
+eine Zahl, die dort fuer nichts steht, ist auf dem Draht trotzdem
+gueltig. Bei gesetzten Bits 5-4 (01 oder 10) sagt die Norm ausdruecklich
+"AX.25 layer 3 implemented" - das wird angezeigt, statt zu schweigen.
+
+NICHT VERALLGEMEINERT, und der Grund gehoert dazu: das Protokollwort VOR
+dem Ziel eines connect bleibt auf "flextalk" beschraenkt (nur die Zahl
+kommt jetzt aus derselben Tabelle). "arp" und "lq" sind Woerter, die
+setcall() als Rufzeichen annimmt, und das Ziel steht an genau derselben
+Stelle der Zeile. Fuer alles andere gibt es "--pid", das jetzt Namen
+nimmt.
+
+NEBENBEFUND BEIM UMBAU: axspawn_fd() entschied aus dem Protokollwort
+("netrom"), ob es eine NET/ROM-Sitzung ist. Sobald das Wort der echte
+PID-Name ist, waere ein AX.25-Listener mit pid=netrom fuer eine
+NET/ROM-Sitzung gehalten worden und haette PROTOCOL=NET/ROM und
+NETROM_NODE gesetzt statt AX25_DEST. Die Welt kommt jetzt als eigenes
+Argument, nicht aus einem Namensvergleich.

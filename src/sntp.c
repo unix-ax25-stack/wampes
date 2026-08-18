@@ -962,11 +962,17 @@ int dosntp(int argc, char **argv, void *p)
 
 		{ "add", dosntpadd, 0, 2, "sntp add <server> [<interval>]" },
 		{ "drop", dosntpdrop, 0, 2, "sntp drop <server>" },
-		{ "status", dosntpstat, 0, 0, NULL },
-		{ "panic_threshold", dosntppanic_threshold, 0, 0, NULL },
-		{ "step_threshold", dosntpstep_threshold, 0, 0, NULL },
-		{ "sys", dosntpsys, 0, 0, NULL },
-		{ "trace", dosntptrace, 0, 0, NULL },
+		{ "status", dosntpstat, 0, 0, "sntp status               the peers and what they said" },
+		{ "panic_threshold", dosntppanic_threshold, 0, 0,
+		  "sntp panic_threshold [<seconds>]\n"
+		  "       An offset this large or larger is refused and logged rather than\n"
+		  "       acted on - it is far more likely to be a broken server than a real\n"
+		  "       correction.  0 switches the ceiling off.  Default 1000." },
+		{ "step_threshold", dosntpstep_threshold, 0, 0,
+		  "sntp step_threshold [<seconds>]\n"
+		  "       Below this the clock is slewed, above it set outright." },
+		{ "sys", dosntpsys, 0, 0, "sntp sys [<field> [<value>]]   what we answer with" },
+		{ "trace", dosntptrace, 0, 0, "sntp trace on|off" },
 
 		{ NULL, NULL, 0, 0, NULL }
 	};

@@ -14,6 +14,7 @@
 #include "lapb.h"
 #include "netrom.h"
 #include "routefilter.h"
+#include "pidfilter.h"
 #include "cmdparse.h"
 #include "trace.h"
 
@@ -252,6 +253,13 @@ static void broadcast_to(struct broadcast *p, struct mbuf **bpp)
 {
   struct mbuf *bp;
 
+  /* The one send in the node that does not go through ax_send_ui(): the UI
+   * and the protocol id are written into the buffer by
+   * alloc_broadcast_packet() and the frame goes straight to the driver.  So
+   * the port's protocol gate is asked here by name, or "pid out block netrom"
+   * would stop everything but the nodes broadcast.
+   */
+  if (pid_blocked(p->iface, PF_OUT, PID_NETROM)) return;
   addrcp(p->hdr.source, p->iface->hwaddr);
   dup_p(&bp, *bpp, 0, MAXINT16);
   htonax25(&p->hdr, &bp);
@@ -2152,10 +2160,21 @@ static int dobroadcast(int argc, char *argv[], void *p)
   }
 
   if (argc < 3) {
-    puts(" #  Interface  State     Path");
+    /* Contents as well as state, because they are two different switches and
+     * only one of them lived here.  Whether we broadcast at all is this
+     * command; WHAT the broadcast carries is "netrom filter port=<iface> feed
+     * yes|no", and an operator looking for the shortened broadcast looks
+     * here first and used to find no sign that it existed.
+     */
+    puts(" #  Interface  State  Contents  Path");
     for (n = 1, bp = broadcasts; bp; n++, bp = bp->next)
-      printf("%2d  %-9s  %-8s  %s\n", n, bp->iface->name,
-	     bp->disabled ? "off" : "on", ax25hdr_to_string(&bp->hdr));
+      printf("%2d  %-9s  %-5s  %-8s  %s\n", n, bp->iface->name,
+	     bp->disabled ? "off" : "on",
+	     bp->disabled ? "-" : (broadcast_feeds(bp) ? "nodes" : "us only"),
+	     ax25hdr_to_string(&bp->hdr));
+    if (broadcasts)
+      puts("\"us only\" is \"netrom filter port=<iface> feed no\": the identifier"
+	   " and no entries");
     return 0;
   }
 
@@ -2506,16 +2525,24 @@ int donetrom(int argc, char *argv[], void *p)
 {
 
   static struct cmds netromcmds[] = {
-    { "broadcast",dobroadcast,0, 0, NULL },
+    { "broadcast",dobroadcast,0, 0,
+      "netrom broadcast                       list the entries, numbered from 1\n"
+      "       netrom broadcast <iface> <dest> [via <digi>...]\n"
+      "       netrom broadcast enable|disable <n>\n"
+      "  <dest> is what the nodes broadcast is addressed to, usually NODES.\n"
+      "  This says WHETHER we broadcast on a port.  WHAT it carries is\n"
+      "  \"netrom filter port=<iface> feed yes|no\" - \"no\" sends the identifier\n"
+      "  and no entries, so the neighbour learns that we are here and nothing\n"
+      "  about our nodes." },
     { "connect",  donconnect, 0, 2, "netrom connect <node> [<user>]" },
-    { "filter",   dofilter,   0, 0, NULL },
-    { "ident",    doident,    0, 0, NULL },
+    { "filter",   dofilter,   0, 0, Rf_usage_netrom },
+    { "ident",    doident,    0, 0, "netrom ident [<alias>]" },
     { "kick",     donkick,    0, 2, "netrom kick <nrcb>" },
-    { "links",    dolinks,    0, 0, NULL },
-    { "nodes",    donodes,    0, 0, NULL },
-    { "parms",    doparms,    0, 0, NULL },
+    { "links",    dolinks,    0, 0, "netrom links                           our neighbours" },
+    { "nodes",    donodes,    0, 0, "netrom nodes [<node>]                  the routing table" },
+    { "parms",    doparms,    0, 0, "netrom parms [<n> <value>]...          list or set the parameters" },
     { "reset",    donreset,   0, 2, "netrom reset <nrcb>" },
-    { "status",   donstatus,  0, 0, NULL },
+    { "status",   donstatus,  0, 0, "netrom status [<nrcb>]                 the transport circuits" },
     { NULL,       NULL,       0, 0, NULL }
   };
 

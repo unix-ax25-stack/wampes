@@ -79,6 +79,26 @@ listed.  Naming a station without settings creates a rule that says
 nothing, which is the old behaviour - a half-written line does not
 quietly tighten anything.
 
+**`netrom filter ?` prints all of this**, and so does `flexnet filter ?`.
+That it did not is worth recording, because the command was unusable
+without it and the shape of the failure was not obvious: neither table
+entry carried a usage text, and any word that is not a keyword becomes
+the *station*.  So `flexnet filter add` - a reasonable guess, since half
+the node's commands have an `add` - created a station called `ADD`, and
+the second word was then answered with "Only one station per line",
+which points at the wrong thing entirely.  There is no `add`: a rule is
+written by naming what it is about, and removed with `--delete`.  Those
+four words (`add`, `delete`, `list`, `show` and their kin) are now
+refused with that sentence instead of becoming callsigns.
+
+Deliberately **no callsign syntax check** beyond `setcall()`.  It was
+considered - `lib/callvalid.c` would have rejected `ADD` - and it is the
+wrong tool twice over: it also rejects a special callsign like `DL60ABC`,
+and the station is only one of three shapes the argument can take.
+`default` and `port=<name>` are not callsigns at all, so a callsign
+checker could never have been the thing that answered the question.  The
+help is what answers it.
+
 `port=` rather than a bare name, because an interface may perfectly well
 be called `hf1` and so may a station; `setcall()` accepts both and there
 would be no telling which was meant.  Same `port=` as in `listen`.
@@ -158,6 +178,20 @@ question "do we broadcast on this port at all" is its own switch:
     netrom broadcast                    list, numbered from 1
     netrom broadcast disable <n>
     netrom broadcast enable <n>
+
+That command says **whether** we broadcast on a port.  **What** the
+broadcast carries is `feed`, and the two used to live so far apart that
+the second was invisible: an operator looking for "announce ourselves but
+not our nodes" looks at `netrom broadcast`, and found no sign that it
+existed.  The listing now shows both:
+
+     #  Interface  State  Contents  Path
+     1  useraccess2m  on   us only  DL9SAU-1->NODES
+     2  axip          on   nodes    DL9SAU-1->NODES
+
+`us only` is `netrom filter port=<iface> feed no`: the identifier and no
+entries.  That is the whole "we are here, our nodes are not yours" case,
+and it was built with `feed` from the start - it only could not be found.
 
 Entries are switched off, not deleted - an entry that vanishes is one the
 operator cannot see any more.  They are numbered by position and appended
@@ -362,9 +396,11 @@ numbers it has no circuit for and stops - no damage, but a silent one.
 ## Not built, and why it is written down here
 
 * **A third level of access** - "may not speak the protocol at all" as
-  distinct from "speaks it but teaches us nothing".  `in none` comes
-  close and is not the same thing: the frames are still parsed and the
-  peer still exists.
+  distinct from "speaks it but teaches us nothing" - **is built now**, in
+  a more general form: a protocol gate per port and direction, keyed by
+  protocol id rather than by protocol.  See `doc/PID-FILTER.md`.  It does
+  not replace anything here: the gate acts before the frame is parsed,
+  these switches after, and only these can name a single callsign.
 * **Per-interface node broadcast intervals.**  `nr_bdcstint` and
   `nr_minobs` remain one number for the whole node; only *whether* we
   broadcast is per entry.

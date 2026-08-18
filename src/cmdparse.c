@@ -12,7 +12,9 @@
  *              handle string escaped sequences
  */
 #include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "strtoul.h"
 
@@ -46,6 +48,86 @@ static struct boolcmd Boolcmds[] = {
 
 static int print_help(struct cmds *cmdp);
 static char *stringparse(char *line);
+
+/*---------------------------------------------------------------------------*/
+
+/* "Usage:" for one entry, and the one place that knows what to do when there
+ * is no usage text: say something rather than hand printf a null pointer,
+ * which is what the two argcmin checks below used to do.
+ */
+
+static int print_usage(struct cmds *cmdp)
+{
+	if (cmdp->argc_errmsg != NULL)
+		printf("Usage: %s\n", cmdp->argc_errmsg);
+	else
+		printf("%s: argument missing\n", cmdp->name);
+	return -1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* "<command> ?" prints the usage text, and the command is not called at all.
+ * This is what makes a usage text worth writing: without it the table had
+ * texts that only ever appeared when too few arguments were given, so "flexnet
+ * filter ?" - the natural way to ask - answered nothing.
+ *
+ * ONLY where there is a text, and that is not laziness.  An entry without one
+ * is usually a multiplexer, and subcmd() answers "?" for those by listing the
+ * subcommands, which is the better answer.  Taking the question away from them
+ * would replace a list of what exists with a line saying nothing.
+ *
+ * Not calling the command matters in its own right.  "?" used to travel on as
+ * an argument, where setint() and friends ran it through atoi(), got a zero,
+ * and quietly changed the setting - measured with "ifconfig ax0 paclen ?",
+ * which removed the port's paclen without a word.  Passing it on as "no
+ * arguments" instead is no better: for a setting that means "show me", but
+ * "reset" and "close" with no argument act on the CURRENT session.  A question
+ * must not be answered with an action.
+ *
+ * Returns 1 when the question is answered and the caller is done.
+ */
+
+static int query_arg(struct cmds *cmdp, int argc, char *argv[])
+{
+	if (argc < 2 || strcmp(argv[1], "?") || cmdp->argc_errmsg == NULL)
+		return 0;
+	printf("Usage: %s\n", cmdp->argc_errmsg);
+	return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* One integer out of one word, or -1.  strtol() with the end pointer checked,
+ * because atoi() answers zero for anything it does not understand and cannot
+ * be asked whether it understood - so a typing mistake became a setting.
+ *
+ * Base 10 on purpose, not strtol's base 0: "010" has always meant ten here and
+ * turning it into eight would change existing net.rc files without a word.
+ */
+
+int cmd_getnum(const char *s, long *val)
+{
+	char *end;
+
+	if (s == NULL || *s == '\0')
+		return -1;
+	errno = 0;
+	*val = strtol(s, &end, 10);
+	while (*end == ' ' || *end == '\t')
+		end++;
+	if (*end != '\0' || errno == ERANGE)
+		return -1;
+	return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int badnum(const char *label, const char *word)
+{
+	printf("%s: \"%s\" is not a number\n", label, word);
+	return 1;
+}
 
 static char *
 stringparse(
@@ -187,10 +269,11 @@ void *p
 		return -1;
 	}
 	argv[0] = cmdp->name;
+	if (query_arg(cmdp, argc, argv))
+		return 0;
 	if(argc < cmdp->argcmin) {
 		/* Insufficient arguments */
-		printf("Usage: %s\n",cmdp->argc_errmsg);
-		return -1;
+		return print_usage(cmdp);
 	}
 	if(cmdp->func == NULL)
 		return 0;
@@ -247,10 +330,10 @@ void *p)
 		print_help(tab);
 		return -1;
 	}
+	if (query_arg(cmdp, argc, argv))
+		return 0;
 	if(argc < cmdp->argcmin){
-		if(cmdp->argc_errmsg != NULL)
-			printf("Usage: %s\n",cmdp->argc_errmsg);
-		return -1;
+		return print_usage(cmdp);
 	}
 	if(cmdp->stksize == 0){
 		return (*cmdp->func)(argc,argv,p);
@@ -336,10 +419,14 @@ char *label,
 int argc,
 char *argv[])
 {
+	long val;
+
 	if(argc < 2)
 		printf("%s: %d\n",label,*var);
+	else if(cmd_getnum(argv[1],&val))
+		return badnum(label,argv[1]);
 	else
-		*var = atol(argv[1]);
+		*var = (int32) val;
 
 	return 0;
 }
@@ -351,10 +438,14 @@ char *label,
 int argc,
 char *argv[])
 {
+	long val;
+
 	if(argc < 2)
 		printf("%s: %u\n",label,*var);
+	else if(cmd_getnum(argv[1],&val))
+		return badnum(label,argv[1]);
 	else
-		*var = atoi(argv[1]);
+		*var = (unsigned short) val;
 
 	return 0;
 }
@@ -366,10 +457,14 @@ char *label,
 int argc,
 char *argv[])
 {
+	long val;
+
 	if(argc < 2)
 		printf("%s: %d\n",label,*var);
+	else if(cmd_getnum(argv[1],&val))
+		return badnum(label,argv[1]);
 	else
-		*var = atoi(argv[1]);
+		*var = (int) val;
 
 	return 0;
 }
@@ -382,10 +477,14 @@ char *label,
 int argc,
 char *argv[])
 {
+	long val;
+
 	if(argc < 2)
 		printf("%s: %u\n",label,*var);
+	else if(cmd_getnum(argv[1],&val))
+		return badnum(label,argv[1]);
 	else
-		*var = atoi(argv[1]);
+		*var = (unsigned) val;
 
 	return 0;
 }
@@ -403,12 +502,20 @@ int maxval)
   if (argc < 2)
     printf("%s: %d\n", label, *var);
   else {
-    int tmp = atoi(argv[1]);
+    long tmp;
+
+    /* Not atoi(): where zero is a legal value - the per-port paclen, maxframe
+     * and emaxframe, where it means "take the node's" - a word that is not a
+     * number came through as a zero and passed the range check.  Measured:
+     * "ifconfig ax0 paclen ?" removed the port's paclen without a word.
+     */
+    if (cmd_getnum(argv[1], &tmp))
+      return badnum(label, argv[1]);
     if (tmp < minval || tmp > maxval) {
       printf("%s must be %d..%d\n", label, minval, maxval);
       return 1;
     }
-    *var = tmp;
+    *var = (int) tmp;
   }
   return 0;
 }

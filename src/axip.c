@@ -387,7 +387,13 @@ static void axip_route_add(uint8 *call, const struct sockaddr *dest, int keeppor
 /*---------------------------------------------------------------------------*/
 
 static struct cmds Axipcmds[] = {
-  { "route",  doaxiproute, 0, 0, NULL },
+  { "route",  doaxiproute, 0, 0,
+    "axip route                             list the routes\n"
+    "       axip route add <call> <host> [<port>]\n"
+    "       axip route drop <call>\n"
+    "  <port> is for a partner who listens somewhere other than the port of\n"
+    "  the interface; left out it means the interface's, or whatever he was\n"
+    "  last seen using." },
   { NULL,     NULL,        0, 0, NULL }
 };
 

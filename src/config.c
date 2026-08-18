@@ -64,7 +64,12 @@ struct cmds Cmds[] = {
 	{ "bye",          dobye,          0, 0, NULL },
 /* This one is out of alpabetical order to allow abbreviation to "c" */
 	{ "connect",      doconnect,      0, 2,
-	  "connect [<port>:]<callsign> [via] [digipeaters] [< <mycall>]" },
+	  "connect [<port>:]<callsign> [via] [<digipeater>...] [< <mycall>]\n"
+	  "       connect <callsign> [--port <iface>] [--mycall <call>]\n"
+	  "  Two ways of writing the same thing.  <port> is an interface NAME -\n"
+	  "  WAMPES labels its ports, it does not number them.  The service\n"
+	  "  socket takes the same line and \"--pid\" as well; at the console a\n"
+	  "  pid other than text has nothing to compose the frames." },
 	{ "close",        doclose,        0, 0, NULL },
 /* This one is out of alpabetical order to allow abbreviation to "d" */
 	{ "disconnect",   doclose,        0, 0, NULL },
@@ -80,14 +85,18 @@ struct cmds Cmds[] = {
 	{ "ftp",          doftp,          0, 2, "ftp <address>" },
 	{ "hostname",     dohostname,     0, 0, NULL },
 	{ "icmp",         doicmp,         0, 0, NULL },
-	{ "ifconfig",     doifconfig,     0, 0, NULL },
+	{ "ifconfig",     doifconfig,     0, 0,
+	  "ifconfig                              show every interface\n"
+	  "       ifconfig <iface>                      show one\n"
+	  "       ifconfig <iface> <setting> <value> [<setting> <value>]...\n"
+	  "  \"ifconfig <iface> ?\" lists the settings, \"ifconfig <iface>\n"
+	  "  <setting> ?\" explains one." },
 	{ "axsock",       doaxsock,       0, 0,
 	  "axsock [group <name>|mode <octal>]" },
 	{ "ip",           doip,           0, 0, NULL },
 	{ "kick",         dokick,         0, 0, NULL },
 	{ "ipfilter",     doipfilter,     0, 0, NULL },
-	{ "listen",       dolisten,       0, 0,
-	  "listen [ax25|netrom] [add|drop] ..." },
+	{ "listen",       dolisten,       0, 0,      Axlisten_usage },
 	{ "log",          dolog,          0, 0, NULL },
 	{ "login",        dologin,        0, 0, NULL },
 	{ "memory",       domem,          0, 0, NULL },
@@ -180,7 +189,7 @@ static struct cmds Startcmds[] = {
 
 static struct cmds Stopcmds[] = {
 	{ "ax25",         ax250,          0, 0, NULL },
-	{ "axtcp",        axtcp0,         0, 0, NULL },
+	{ "axtcp",        axtcp0,         0, 0, "stop axtcp" },
 	{ "discard",      dis0,           0, 0, NULL },
 	{ "domain",       domain0,        0, 0, NULL },
 	{ "echo",         echo0,          0, 0, NULL },

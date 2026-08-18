@@ -28,6 +28,15 @@ enum rf_proto {
 	RF_FLEXNET
 };
 
+/* The help text for "<proto> filter", one per protocol because it spells the
+ * command out.  It lives here so that the command tables in flexnet.c and
+ * netrom.c can point at it - the table's usage field is what "filter ?"
+ * prints, and the wording should exist once.
+ */
+
+extern char Rf_usage_flexnet[];
+extern char Rf_usage_netrom[];
+
 const char *rf_in_name(enum rf_in in);
 enum rf_in rf_in(enum rf_proto proto, const uint8 *call, const struct iface *ifp);
 int rf_advert(enum rf_proto proto, const uint8 *call, const struct iface *ifp);

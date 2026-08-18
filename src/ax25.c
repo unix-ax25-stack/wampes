@@ -20,6 +20,7 @@
 #include "ip.h"
 #include "devparam.h"
 #include "lapb.h"
+#include "pidfilter.h"
 
 /* List of AX.25 multicast addresses in network format (shifted ascii).
  * Only the first entry is used for transmission, but an incoming
@@ -313,6 +314,10 @@ struct mbuf **bpp
 		free_p(bpp);
 		return -1;
 	}
+	if(pid_blocked(iface,PF_OUT,pid)){
+		free_p(bpp);
+		return -1;
+	}
 	if(hdr->source[0] == '\0')
 		addrcp(hdr->source,iface->hwaddr);
 
@@ -346,6 +351,10 @@ uint8 *source,          /* Source AX.25 address (7 bytes, shifted) */
 uint pid,               /* Protocol ID */
 struct mbuf **bpp       /* Data field (follows PID) */
 ){
+	if(pid_blocked(iface,PF_OUT,(int) pid)){
+		free_p(bpp);
+		return -1;
+	}
 	/* Prepend pid to data */
 	pushdown(bpp,NULL,1);
 	(*bpp)->data[0] = (uint8)pid;
@@ -625,6 +634,15 @@ struct mbuf **bpp
 		(void) PULLCHAR(bpp);
 		if((pid = PULLCHAR(bpp)) == -1)
 			return;         /* No PID */
+		/* Does this protocol get in here at all?  Above everything
+		 * else, clients included: a port gate is about the port.  We
+		 * are past digipeating at this point, so what is merely
+		 * repeated through us never comes here - see pidfilter.c.
+		 */
+		if(pid_blocked(iface,PF_IN,pid)){
+			free_p(bpp);
+			return;
+		}
 		/* A datagram client that asked for this callsign and pid
 		 * comes first - the node's own protocols keep everything
 		 * nobody claimed.  A port callsign can never be claimed this

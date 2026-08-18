@@ -355,5 +355,6 @@ int axlisten_client_claim(const uint8 *call,int pid,int ui,int fd,char *err,int 
 void axlisten_client_release(int fd);
 int axserv_pipe_attach(struct axservice *sp,int binary,int *fdp);
 int dolisten(int argc,char *argv[],void *p);
+extern char Axlisten_usage[];   /* what "listen ?" prints - see axserver.c */
 
 #endif  /* _LAPB_H */

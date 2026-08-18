@@ -13,6 +13,7 @@
 #include "dama.h"
 #include "ip.h"
 #include "slhc.h"
+#include "pidfilter.h"
 
 static void handleit(struct ax25_cb *axp,int pid,struct mbuf **bp);
 static void procdata(struct ax25_cb *axp,struct mbuf **bp);
@@ -1316,6 +1317,16 @@ struct mbuf **bpp
 ){
 	struct axlink *ipp;
 	struct axservice *sp;
+
+	/* Does this protocol get in on this port?  Ahead of everything, as in
+	 * the UI path - see pidfilter.c.  A segmented datagram is reassembled
+	 * first and only then dropped: the true protocol id is inside, and the
+	 * segments carry PID_SEGMENT and say nothing about what they are.
+	 */
+	if(pid_blocked(axp->iface,PF_IN,pid)){
+		free_p(bpp);
+		return;
+	}
 
 	/* A consumer for this protocol id first: one that is already attached,
 	 * or one the configuration says to start.  Only then the node's own

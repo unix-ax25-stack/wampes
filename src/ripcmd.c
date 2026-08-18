@@ -27,14 +27,18 @@ struct cmds Ripcmds[] = {
 		"rip drop <dest>" },
 	{ "learn",        doriplearn,     0,      0,
 		"rip learn [none|gateways|any]" },
-	{ "merge",        doripmerge,     0,      0,      NULL },
+	{ "merge",        doripmerge,     0,      0,
+		"rip merge on|off" },
 	{ "noallow",      doripnoallow,   0,      2,
 		"rip noallow <gateway>" },
 	{ "refuse",       doaddrefuse,    0,      2,
 		"rip refuse <gateway>" },
-	{ "request",      doripreq,       0,      2,      NULL },
-	{ "status",       doripstat,      0,      0,      NULL },
-	{ "trace",        doriptrace,     0,      0,      NULL },
+	{ "request",      doripreq,       0,      2,
+		"rip request <gateway> [<reply port>]" },
+	{ "status",       doripstat,      0,      0,
+		"rip status" },
+	{ "trace",        doriptrace,     0,      0,
+		"rip trace [0|1|2]" },
 	{ NULL }
 };
 

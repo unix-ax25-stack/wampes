@@ -16,6 +16,7 @@
 #include "ax25.h"
 #include "iface.h"
 #include "lapb.h"
+#include "pidfilter.h"
 #include "slhc.h"
 
 struct ax25_cb *Ax25_cb;
@@ -368,7 +369,28 @@ int errlen)
 		if (i == 0 && !strcmp(cp, "ax25"))
 			continue;
 		if (i == 0 && !strcmp(cp, "flextalk")) {
-			*pid = PID_FLEXTALK;
+			/* Through the same table as everything else, so the
+			 * number lives in one place - see pidfilter.c.
+			 *
+			 * NOT widened to every protocol name, and the reason
+			 * is that this position already has an occupant: the
+			 * word in front of a connect names a TRANSPORT, not a
+			 * protocol id.  "connect netrom DB0AAA" is a NET/ROM
+			 * session - connect_command() takes it before this
+			 * parser ever sees it - while "pid=netrom" on a listen
+			 * line means AX.25 protocol id 0xcf, NET/ROM level 3
+			 * riding on an AX.25 connection.  One word, two
+			 * meanings, in two different namespaces; letting PID
+			 * names in here would fuse them.  ("arp" and "lq"
+			 * would be trouble of a milder kind: setcall() takes
+			 * them as callsigns, and the destination stands in
+			 * this same position.)
+			 *
+			 * "flextalk" is safe because it names no transport and
+			 * has stood here since 2005.  For everything else
+			 * there is "--pid", which takes a name too now.
+			 */
+			*pid = pid_number("flextalk");
 			continue;
 		}
 		if (!strcmp(cp, "via"))
@@ -389,10 +411,9 @@ int errlen)
 		}
 		if (!strcmp(cp, "--pid")) {
 			needarg("--pid");
-			n = strtol(argv[i], &cp, 0);
-			if (*cp || n < 0 || n > 255)
-				fail("invalid pid \"%s\"", argv[i]);
-			*pid = (int) n;
+			if ((*pid = pid_number(argv[i])) < 0)
+				fail("invalid pid \"%s\" - a name or a number, "
+				     "see \"ax25 pid-info\"", argv[i]);
 			continue;
 		}
 		if (*cp == '<') {

@@ -1019,6 +1019,7 @@ static int doflexnetquery(int argc, char *argv[], void *p)
 
 /*---------------------------------------------------------------------------*/
 
+
 static int doflexnetfilter(int argc, char *argv[], void *p)
 {
 	int ret = rf_cmd(RF_FLEXNET, argc, argv, p);
@@ -1042,10 +1043,14 @@ int doflexnet(int argc, char *argv[], void *p)
 {
 
 	static struct cmds Flexnetcmds[] = {
-		{ "dest",      doflexnetdest,      0, 0, 0 },
-		{ "destdebug", doflexnetdestdebug, 0, 0, 0 },
-		{ "filter",    doflexnetfilter,    0, 0, 0 },
-		{ "link",      doflexnetlink,      0, 0, 0 },
+		{ "dest",      doflexnetdest,      0, 0,
+		  "flexnet dest [<call>]                 destinations and their delay" },
+		{ "destdebug", doflexnetdestdebug, 0, 0,
+		  "flexnet destdebug                     the same with the raw delays" },
+		{ "filter",    doflexnetfilter,    0, 0, Rf_usage_flexnet },
+		{ "link",      doflexnetlink,      0, 0,
+		  "flexnet link                          list the link partners\n"
+		  "       flexnet link add|delete <call>" },
 		{ "query",     doflexnetquery,     0, 2, "flexnet query <call>" },
 		{ 0,           0,                  0, 0, 0 }
 	};
