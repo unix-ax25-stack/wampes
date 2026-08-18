@@ -80,6 +80,22 @@
 #include <sys/socket.h>
 #endif
 
+/* For htons(), and it has to come BEFORE the <linux/...> headers below.
+ * It used to arrive by way of one of them; current glibc does not hand it
+ * out any more, and gcc 14 makes an implicit declaration an error:
+ *
+ *      krnlif.c:527: implicit declaration of function 'htons'
+ *
+ * The order is the whole trick.  <arpa/inet.h> brings glibc's <netinet/in.h>,
+ * and that describes the same things as <linux/in.h> - struct in_addr, the
+ * IPPROTO_ enumerators, sockaddr_in.  Included the other way round they
+ * collide, twenty-odd redefinition errors deep.  Included this way, the
+ * kernel's UAPI headers see glibc has been there (linux/libc-compat.h checks
+ * _NETINET_IN_H and clears the __UAPI_DEF_ switches) and define none of them
+ * again.
+ */
+#include <arpa/inet.h>
+
 #include <linux/socket.h>
 #include <sys/ioctl.h>
 #include <errno.h>
@@ -100,13 +116,6 @@
 #endif
 #include <unistd.h>
 #include <fcntl.h>
-/* For htons().  It used to arrive by way of one of the <linux/...> headers
- * above; current glibc does not hand it out any more, and gcc 14 makes an
- * implicit declaration an error rather than a warning:
- *
- *      krnlif.c:527: implicit declaration of function 'htons'
- */
-#include <arpa/inet.h>
 
 #include "global.h"
 #include "mbuf.h"
