@@ -261,11 +261,28 @@ static void tncinit_proc(int xdev, void *arg1, void *unused)
 
 /* Run the configured sequence, if there is one and none is running. */
 
+/* Is this interface really one of the serial ones?
+ *
+ * The range test alone is not enough, and that cost a crash: xdev is only
+ * ever assigned in slip.c, every other attach leaves the calloc'ed zero
+ * standing, and zero is a perfectly good index.  So "ifconfig <axip> tncinit
+ * <anything>" walked into Slip[0] - a slot belonging to some other interface
+ * or to none - and ran the init sequence on it.  struct slip carries the
+ * interface back, so ask that instead of counting.
+ */
+
+static int tncinit_serial(struct iface *ifp)
+{
+  return ifp != NULL
+      && ifp->xdev >= 0 && ifp->xdev < SLIP_MAX
+      && Slip[ifp->xdev].iface == ifp;
+}
+
 void tncinit_run(struct iface *ifp)
 {
   struct slip *sp;
 
-  if (ifp == NULL || ifp->xdev < 0 || ifp->xdev >= SLIP_MAX) return;
+  if (!tncinit_serial(ifp)) return;
   sp = &Slip[ifp->xdev];
   if (sp->initspec == NULL || sp->initialising) return;
   newproc("tncinit", 2048, tncinit_proc, ifp->xdev, NULL, NULL, 0);
@@ -283,7 +300,7 @@ int iftncinit(int argc, char *argv[], void *p)
   struct iface *ifp = (struct iface *) p;
   struct slip *sp;
 
-  if (ifp->xdev < 0 || ifp->xdev >= SLIP_MAX) {
+  if (!tncinit_serial(ifp)) {
     printf("%s is not a serial interface\n", ifp->name);
     return 1;
   }
