@@ -1142,12 +1142,20 @@
       Eintrag zwei Zyklen lang, behalten wird er sechs.
 
       TNN, l3misc.c, und das ist der interessanteste Teil - es hat ZWEI
-      Aussendungen nebeneinander, je Peer:
-        jeden Tick   inform_peer(pp, CHANGES)  nur die Aenderungen
-        alle broint  inform_peer(pp, ALL)      die ganze Tabelle
-      mit ZWEI Intervallen, je nach Peer-Typ:
-        broint_ui = 30   fuer UI-Rundsprueche
-        broint_i  = 60   fuer TNN-Partner ("Infocast")
+      Aussendungen nebeneinander, und WAS ein Peer bekommt, haengt an
+      seinem Typ (typedef.h: INP 0, TNN 1, THENET 2, NETROM 3):
+
+        Peer-Typ   nur Aenderungen   ganze Tabelle
+        INP        ja                NEIN - gar kein zyklischer Rundspruch
+        TNN        ja                alle broint_i  (60, "Infocast")
+        THENET     NEIN              alle broint_ui (30)
+        NETROM     ja                alle broint_ui (30)
+
+      TNN ist dabei ein EIGENER Typ und nicht INP3 - die beiden stehen
+      nebeneinander in derselben Aufzaehlung. Der INP3-Nachbar ist der
+      Grenzfall in die andere Richtung: er bekommt AUSSCHLIESSLICH
+      Aenderungsmeldungen und keinen Volldurchlauf, was zu INP3 passt,
+      das ereignisgetrieben arbeitet.
       Die Einheit widerspricht sich in den Kommentaren der Quelle selbst -
       "in 10s" in global.c, "in 1min." in l3thenet.c -, aber die Notiz
       "(Standard: aller 5min. Aussend.)" spricht fuer 10 s, also 5 und 10
