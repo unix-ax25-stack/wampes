@@ -80,6 +80,7 @@ md5drivr.o:\
 	md5drivr.c
 mkhostdb.o:\
 	../lib/configure.h\
+	../lib/dbmapi.h\
 	../lib/hostdb.h\
 	mkhostdb.c
 path.o:\

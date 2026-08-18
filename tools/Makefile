@@ -74,6 +74,7 @@ htmldiff.o:\
 	htmldiff.c
 makeiprt.o:\
 	../lib/configure.h\
+	../lib/dbmapi.h\
 	../lib/hostdb.h\
 	makeiprt.c
 mm2html.o:\

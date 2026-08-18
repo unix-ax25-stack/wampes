@@ -54,6 +54,29 @@ static struct node *getexpr(void);
 
 /*---------------------------------------------------------------------------*/
 
+/*---------------------------------------------------------------------------*/
+
+/* What gets() should always have been: a read that knows how big the buffer
+ * is.  gets() was removed from C11 and current glibc does not declare it any
+ * more, so this is a build error and not a matter of taste - and it was a
+ * buffer overrun waiting for a long line either way.
+ *
+ * Not a plain fgets(): gets() dropped the newline and fgets() keeps it, and
+ * the callers below compare whole lines.  A long line is truncated here where
+ * it used to overrun; the remainder turns up as the next line.
+ */
+
+static char *read_line(char *buf, size_t size)
+{
+  char *cp;
+
+  if (!fgets(buf, (int) size, stdin))
+    return 0;
+  if ((cp = strchr(buf, '\n')))
+    *cp = '\0';
+  return buf;
+}
+
 static void halt(const char *msg)
 {
   fprintf(stderr, "%s\n", msg);
@@ -247,7 +270,13 @@ int main(int argc, char **argv)
   }
   for (;;) {
     for (numlines = 0;;) {
-      if (!gets(buf[numlines]))
+      /* And a bound on numlines, which there never was: buf holds 64 lines
+       * and a paragraph longer than that wrote past the end of it.  A full
+       * buffer now ends the paragraph, as a blank line does.
+       */
+      if (numlines >= (int) (sizeof(buf) / sizeof(buf[0])))
+	break;
+      if (!read_line(buf[numlines], sizeof(buf[0])))
 	break;
       numlines++;
       if (!buf[numlines - 1][0])

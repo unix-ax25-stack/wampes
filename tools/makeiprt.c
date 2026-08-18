@@ -13,26 +13,8 @@ static const char rcsid[] = "@(#) $Id: makeiprt.c,v 1.22 2016/03/13 06:37:24 dl9
 #include <string.h>
 #include <sys/socket.h>
 
-#include "configure.h"
+#include "dbmapi.h"
 #include "hostdb.h"
-
-#if HAS_NDBM
-#include <ndbm.h>
-#else
-#if HAS_DB1_NDBM
-#include <db1/ndbm.h>
-#else
-#if HAS_GDBM_NDBM
-#include <gdbm-ndbm.h>
-#else
-#if HAS_GDBM
-#include <gdbm.h>
-#else
-#error Cannot find ndbm.h header file
-#endif
-#endif
-#endif
-#endif
 
 #define MERGE_HOST_ROUTES       0
 
@@ -79,7 +61,7 @@ struct node {
   struct node *next;
 };
 
-#if HAS_GDBM
+#if USE_GDBM
 static GDBM_FILE Dbhostaddr;
 static GDBM_FILE Dbhostname;
 #else
@@ -175,7 +157,7 @@ static long resolve(const char *name)
       }
   }
 
-#if HAS_GDBM
+#if USE_GDBM
   if (Dbhostaddr || (Dbhostaddr = gdbm_open(DBHOSTADDR, 0, GDBM_READER, 0644, NULL)))
 #else
   if (Dbhostaddr || (Dbhostaddr = dbm_open(DBHOSTADDR, O_RDONLY, 0644)))
@@ -183,7 +165,7 @@ static long resolve(const char *name)
     for (i = 0; names[i][0]; i++) {
       dname.dptr = names[i];
       dname.dsize = strlen(names[i]) + 1;
-#if HAS_GDBM
+#if USE_GDBM
       daddr = gdbm_fetch(Dbhostaddr, dname);
 #else
       daddr = dbm_fetch(Dbhostaddr, dname);
@@ -240,7 +222,7 @@ static const char *resolve_a(long addr)
       return Cache->name;
     }
 
-#if HAS_GDBM
+#if USE_GDBM
   if (Dbhostname || (Dbhostname = gdbm_open(DBHOSTNAME, 0, GDBM_READER, 0644, NULL))) {
 #else
   if (Dbhostname || (Dbhostname = dbm_open(DBHOSTNAME, O_RDONLY, 0644))) {
@@ -253,7 +235,7 @@ static const char *resolve_a(long addr)
     a[3] = (unsigned char) addr;
     daddr.dptr = (char *) rec;
     daddr.dsize = hostdb_encode(HOSTDB_V4, a, rec);
-#if HAS_GDBM
+#if USE_GDBM
     dname = gdbm_fetch(Dbhostname, daddr);
 #else
     dname = dbm_fetch(Dbhostname, daddr);
@@ -262,7 +244,7 @@ static const char *resolve_a(long addr)
       /* A database from an older mkhostdb keys on a bare long. */
       daddr.dptr = (char *) &addr;
       daddr.dsize = sizeof(addr);
-#if HAS_GDBM
+#if USE_GDBM
       dname = gdbm_fetch(Dbhostname, daddr);
 #else
       dname = dbm_fetch(Dbhostname, daddr);

@@ -7,6 +7,27 @@ static const char rcsid[] = "@(#) $Id: ms2mm.c,v 1.5 1996/08/12 18:52:58 deyke E
 
 /*---------------------------------------------------------------------------*/
 
+/* What gets() should always have been: a read that knows how big the buffer
+ * is.  gets() was removed from C11 and current glibc does not declare it any
+ * more, so this is a build error and not a matter of taste - and it was a
+ * buffer overrun waiting for a long line either way.
+ *
+ * Not a plain fgets(): gets() dropped the newline and fgets() keeps it, and
+ * the callers below compare whole lines.  A long line is truncated here where
+ * it used to overrun; the remainder turns up as the next line.
+ */
+
+static char *read_line(char *buf, size_t size)
+{
+  char *cp;
+
+  if (!fgets(buf, (int) size, stdin))
+    return 0;
+  if ((cp = strchr(buf, '\n')))
+    *cp = '\0';
+  return buf;
+}
+
 static void print_header(int n)
 {
 
@@ -14,7 +35,8 @@ static void print_header(int n)
   char line[1024];
 
   printf(".H %d \"", n);
-  gets(line);
+  if (!read_line(line, sizeof(line)))
+    line[0] = '\0';
   cp = strpbrk(line, "<[\\");
   if (cp > line) {
     cp[-1] = 0;
@@ -30,7 +52,7 @@ int main(void)
 {
   char line[1024];
 
-  while (gets(line)) {
+  while (read_line(line, sizeof(line))) {
     if (!strcmp(line, ".NH 1")) {
       print_header(1);
     } else if (!strcmp(line, ".NH 2")) {
