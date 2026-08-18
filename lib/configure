@@ -65,19 +65,57 @@ Linux*)
 	*)
 		CFLAGS="$CFLAGS -I../src/linux_include";;
 	esac
-	if [ -f /usr/lib/libndbm.so -o -f /usr/lib/libndbm.a ]; then
-		LIBDBM='ndbm'
-	elif [ -f /usr/lib/libgdbm_compat.so -o -f /usr/lib/libgdbm_compat.a ]; then
-		LIBDBM='gdbm_compat'
-	elif [ -f /usr/lib/libgdbm.so -o -f /usr/lib/libgdbm.a -o -f /usr/lib64/libgdbm.so -o -f /usr/lib64/libgdbm.a -o -f /usr/lib/x86_64-linux-gnu/libgdbm.a -o -f /usr/lib/x86_64-linux-gnu/libgdbm.so ]; then
-		LIBDBM='gdbm'
-	elif [ -f /usr/lib/libdbm.so -o -f /usr/lib/libdbm.a ]; then
-		LIBDBM='dbm'
+	# Which dbm library, decided by LINKING against it rather than by
+	# looking for files.  The search this replaces named /usr/lib, /usr/lib64
+	# and exactly one multiarch triplet, x86_64-linux-gnu - and only for
+	# gdbm.  On any other architecture, an arm64 Debian for instance, every
+	# path missed and the build stopped at "Cannot find a dbm library"
+	# before it had compiled a line, on a machine where the library was
+	# installed all along.
+	#
+	# The linker knows where its libraries are and we do not have to.  It
+	# also answers the question that actually matters: not "is a file
+	# somewhere" but "can we link with it" - which is false for a runtime
+	# package without its -dev half, and that case used to pass the file
+	# test and fail much later.
+	#
+	# Order: whatever offers the ndbm interface first, since that is what
+	# hostdb.c prefers; plain gdbm last but one, because it needs its own
+	# code path (HAS_GDBM).  gdbm_compat is named together with gdbm - it
+	# is a shim in front of it, and a static link needs both.
+	dbmtmp=dbmconf$$
+
+	# The compiler has to work before its answers mean anything.  Without
+	# this a missing compiler is reported as a missing dbm library, which
+	# sends the reader looking in the wrong place entirely.
+	echo 'int main(void){return 0;}' >$dbmtmp.c
+	if $CC $dbmtmp.c -o $dbmtmp >/dev/null 2>&1; then
+		:
 	else
-		echo Cannot find a dbm library
+		rm -f $dbmtmp $dbmtmp.c
+		echo "Cannot compile with \"$CC\" - is a C compiler installed?"
 		exit 1
 	fi
-	SLIBS="-l$LIBDBM"
+
+	LIBDBM=
+	for i in '-lndbm' '-lgdbm_compat -lgdbm' '-lgdbm' '-ldbm'; do
+		if $CC $dbmtmp.c $i -o $dbmtmp >/dev/null 2>&1; then
+			LIBDBM="$i"
+			break
+		fi
+	done
+	rm -f $dbmtmp $dbmtmp.c
+	if [ -z "$LIBDBM" ]; then
+		echo "Cannot link against a dbm library (tried ndbm, gdbm_compat,"
+		echo "gdbm, dbm).  Install the development package, not just the"
+		echo "runtime one:"
+		echo "    Debian, Ubuntu, Raspberry Pi OS   apt install libgdbm-compat-dev libgdbm-dev"
+		echo "    Fedora, RHEL                      dnf install gdbm-devel"
+		echo "    Arch                              pacman -S gdbm"
+		echo "    Alpine                            apk add gdbm-dev"
+		exit 1
+	fi
+	SLIBS="$LIBDBM"
 
 	case `uname -m` in
 	sparc*)
