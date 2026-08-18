@@ -27,9 +27,18 @@ all:;   @echo "Configuring ..."
 
 _all:   $(LIBRARY)
 
+# "cr", not "cru".  The "u" means "replace only members that are newer", and
+# current binutils build archives deterministically by default - every member
+# gets timestamp 0, so nothing is ever newer and ar says so on every build:
+#
+#       ar: `u' modifier ignored since `D' is the default (see `U')
+#
+# It bought nothing here in any case: make already decides when the archive is
+# out of date, and then every object goes in.  Dropping it is also the more
+# portable form - "u" is the optional extra, "cr" is everywhere.
 $(LIBRARY): $(OBJS)
 	@echo "Loading $@ ..."
-	@ar cru $@ $(OBJS)
+	@ar cr $@ $(OBJS)
 	@ranlib $@ >/dev/null 2>&1
 
 install:;
