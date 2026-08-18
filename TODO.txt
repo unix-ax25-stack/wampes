@@ -2316,3 +2316,723 @@ PID-Name ist, waere ein AX.25-Listener mit pid=netrom fuer eine
 NET/ROM-Sitzung gehalten worden und haette PROTOCOL=NET/ROM und
 NETROM_NODE gesetzt statt AX25_DEST. Die Welt kommt jetzt als eigenes
 Argument, nicht aus einem Namensvergleich.
+
+------------------------------------------------------------------------
+FLEXNET: EIN UMGEKEHRTER SSID-BEREICH WIRD ANGENOMMEN (Befund, 2026-08-18)
+------------------------------------------------------------------------
+Beim Messen des PID-Gatters fiel Thomas eine Zeile auf: "DB0AAA-5-0". Er
+hat die Notation selbst erkannt - das ist FlexNets SSID-BEREICH, min-max,
+und den gibt es im Protokoll wirklich (etwa -5 bis -15). WAMPES schreibt
+ihn in sprintflexcall(): beide Null -> nur das Rufzeichen, gleich -> "-N",
+verschieden -> "-min-max".
+
+Dahinter steckt aber ein echter Befund. Die beiden Haelften kommen aus
+verschiedenen Quellen:
+
+  min   die SSID, unter der der Peer die AX.25-Verbindung aufgebaut hat
+  max   die Ziffer aus seinem FLEX_INIT (recv_init, flexnet.c:1106) -
+        "Max SSID", so nennt es auch flexnet_dump()
+
+Sagt einer max < min, entsteht ein LEERER Bereich, und niemand prueft das.
+addrmatch() verlangt dann SSID >= 5 UND SSID <= 0:
+
+    return ((*axcall & SSID) >= (flexcall[0] & SSID) &&
+            (*axcall & SSID) <= (flexcall[1] & SSID));
+
+Das kann nie zutreffen. Der Peer steht in der Zieltabelle, wird anderen
+Knoten in FLEX_ROUT angekuendigt - und ist ueber uns nicht erreichbar,
+denn find_dest() findet ihn fuer keine einzige SSID. Ein stiller Fehler:
+das Verzeichnis sieht richtig aus, die Vermittlung geht nicht.
+
+Aufgefallen ist es, weil testtools/flexpeer.py in seinem FLEX_INIT eine
+0 schickt, sich aber als DB0AAA-5 verbindet - also genau dieser Fall. Ein
+echtes FlexNet duerfte das nicht tun; darauf verlassen sollte man sich
+nicht.
+
+ZU ENTSCHEIDEN, absichtlich nicht nebenbei erledigt - es ist eine
+Verhaltensaenderung im Routing:
+  a) max < min auf min anheben. Der Bereich ist dann "nur er selbst",
+     was der Wahrheit am naechsten kommt: unter dieser SSID hat er ja
+     tatsaechlich angerufen.
+  b) den Peer gar nicht erst zum Ziel machen und es im Trace vermerken.
+  c) so lassen und nur dokumentieren.
+Ich neige zu (a): es macht aus einem unerreichbaren Eintrag einen
+erreichbaren, ohne etwas zu erfinden. Aber das ist Thomas' Entscheidung.
+
+------------------------------------------------------------------------
+FLEXNET: WELCHE SSIDs WIR VON UNS ANKUENDIGEN (Thomas, 2026-08-18)
+------------------------------------------------------------------------
+Aus der Frage nach "DB0AAA-5-0" gewachsen, und die eigentliche Frage ist
+groesser: wir kuendigen uns als GENAU EINE SSID an.
+
+WIE DER BEREICH ENTSTEHT, zwei Quellen und nur eine steht im Rahmen:
+
+  min   die SSID, unter der die AX.25-Verbindung laeuft
+  max   die Ziffer aus FLEX_INIT (send_init/recv_init, flexnet.c)
+
+Das Feld ist ein Oktett, "0" + SSID, also ":;<=>?" fuer 10 bis 15.
+flexnet_dump() nennt es "Max SSID".
+
+GEMESSEN (2026-08-18): Knoten mit "ax25 mycall DL9SAU-1" und "ifconfig
+axip linkaddress DL9SAU-11", ein Peer ruft DL9SAU-11 an. Der Knoten
+schickt FLEX_INIT b'0;  !\r' - ';' ist "0"+11. Also die SSID DES LINKS,
+nicht die von Mycall. Der Nachbar rechnet min=11, max=11 und traegt
+DL9SAU-11-11 ein.
+
+WAS DAS KOSTET: alles andere, worauf wir hoeren - andere Portrufzeichen,
+"listen"-Eintraege, weitere SSIDs von Mycall - ist im FlexNet unsichtbar.
+Ueber einen Link als DL9SAU-11 ist DL9SAU-8 nicht erreichbar. Und es gibt
+keinen zweiten Weg: FLEX_ROUT traegt min und max je Ziel ausdruecklich
+mit, aber wir tragen uns selbst nie in Dests ein und erscheinen deshalb
+nie in unserem eigenen FLEX_ROUT. FLEX_INIT ist der einzige Kanal fuer
+unseren eigenen Bereich.
+
+THOMAS' VORSCHLAG: den Bereich aus unseren Interface-Rufzeichen UND den
+ax25-Listenern herleiten, plus eine Konfigurationsoption fuer den Fall,
+dass die Automatik nicht passt - "ich bin DL9SAU-0-4 und DL9SAU-8".
+
+KORREKTUR AN MIR SELBST (nach Thomas' Einwand). Ich hatte daraus eine
+"harte Grenze" gemacht: das Minimum sei nicht waehlbar, weil es die SSID
+des Links ist. Das steht so im Code, ist aber viel weniger schlimm, als
+ich es dargestellt habe - und Thomas hat den Grund genannt: NORMALE
+KNOTEN UND REPEATER LAUFEN AUF -0. Dann IST das Minimum 0, und genau das
+will man. Er erinnert sich, dass sich solche Knoten frueher als 0-15 im
+FlexNet gemeldet haben.
+
+WAS DAS OKTETT IST, von Thomas beantwortet und damit keine Auslegung
+mehr: es ist die STOP-SSID, und mehr laesst das FlexNet-Protokoll an
+dieser Stelle nicht zu. Der START ist das Rufzeichen, unter dem sich das
+System meldet - also die SSID des Links. Genau deshalb sieht die Liste
+so aus, wie sie aussieht:
+
+    DB0AVH-0  Stop 3    der RMNC
+    DB0AVH-4  Stop 15   das XNET, das die weiteren Ports intern
+                        weiterreicht - eine Art Proxy
+
+Zwei Systeme, zwei Rufzeichen, je eine Spanne. Ein Standort deckt damit
+0-15 ab, ohne dass irgendwer zwei Bereiche in einem Rahmen unterbringen
+muesste. Die EMPFANGSSEITE von WAMPES macht es genau so und ist richtig.
+
+THOMAS' KORREKTUR, und sie macht den Bau groesser statt kleiner: der
+START IST EINE EIGENSCHAFT DES KNOTENS, nicht des Links. Seine Begruendung
+laesst keine andere zu: haette ein Knoten auf einem Link die SSID -4 und
+auf einem anderen -6, entstuenden im Netz zwei Ankuendigungen,
+DB0AAA-4-10 und DB0AAA-6-10. Das gaukelt zwei Stationen vor und spamt die
+Nodeliste. Nach aussen, ueber welchen Link auch immer, ist ein Knoten
+EINDEUTIG - nur so wird er ueber den besten Pfad gefunden.
+
+GEMESSEN, DASS WAMPES GENAU DAS TUT (2026-08-18). Zwei axip-Ports,
+DL9SAU-4 und DL9SAU-6, je ein FlexNet-Partner:
+
+    Link A   DL9SAU-4->DB0AAA-5   FLEX_INIT b'04  !\r'   -> DL9SAU-4-4
+    Link B   DL9SAU-6->DB0BBB-5   FLEX_INIT b'06  !\r'   -> DL9SAU-6-6
+
+Zwei Eintraege fuer einen Knoten, mit verschiedenen Delays. Die Ursache
+steht in build_path(): axroute() waehlt das Interface und STEMPELT DESSEN
+RUFZEICHEN UEBER DIE QUELLADRESSE, und setaxp() uebergibt kein opts, gibt
+also nichts zurueck. Der Bereich ist damit eine Eigenschaft des Links
+geworden, wo er eine des Knotens sein muesste.
+
+UND EINE REGEL DAZU, aus Thomas' Liste: Bereiche fuer ein Rufzeichen
+UEBERLAPPEN NIE. Luecken gibt es (OE2XZR 0-10, 11-11, 13-13 - 12 und
+14-15 fehlen), Ueberlappungen nicht. Damit ist eine AUTOMATISCHE
+Herleitung des Maximums erledigt: ein selbst errechneter Wert koennte in
+den Bereich eines Nachbarsystems am selben Standort hineinlaufen. Welcher
+Bereich uns zusteht, weiss nur der Sysop.
+
+DIE SENDESEITE IST DIE SCHWACHE, und zwar unabhaengig von der Lesart.
+send_init() setzt UNSERE EIGENE SSID in das Oktett. Gemessen
+(2026-08-18), Knoten als DL9SAU ohne SSID:
+
+    FLEX_INIT  b'00  !\r'      -> Ziffer 0
+
+Also kuendigen wir an, dass wir GENAU SSID 0 bedienen - "0-0" unter
+beiden Lesarten. Ein FlexNet-Repeater auf -0 meldete 0-15. Damit ist
+DL9SAU-8 oder DL9SAU-4 im FlexNet nicht erreichbar, und das ist kein
+Auslegungsstreit, sondern faellt in beiden Lesarten gleich aus.
+
+WAS DAS FUER DEN ENTWURF HEISST: die Aenderung gehoert auf die
+Sendeseite, sie ist EIN Oktett, und fuer den Normalfall braucht sie die
+Protokollfrage gar nicht beantwortet - laeuft der Link auf SSID 0, sagen
+beide Lesarten min=0, und strittig ist nur das Maximum, das wir setzen.
+Erst bei einem Link unter SSID != 0 muss man wissen, was die Gegenseite
+als min nimmt.
+
+Was bleibt: zwei GETRENNTE Bereiche ("0-4 und 8") sind ueber einen Link
+nicht sagbar, denn das Protokoll kennt an dieser Stelle nur die
+Stop-SSID. Dafuer braucht es zwei Links unter zwei Rufzeichen - so wie
+DB0AVH und DB0BLO es machen.
+
+UND EINE PFLICHT KOMMT MIT DER ANSAGE: eine Stop-SSID ist ein
+VERSPRECHEN. Wer 0-4 ankuendigt, muss unter DL9SAU-1 bis -4 auch etwas
+anzubieten haben; XNET loest das mit seinem internen Weiterreichen. WAMPES
+hat kein solches Proxy - ein Connect auf eine angekuendigte SSID muss auf
+ein Portrufzeichen oder einen "listen"-Eintrag treffen, sonst laeuft er
+ins Leere. Das ist das Hauptargument GEGEN eine automatische Herleitung
+und FUER eine Angabe des Sysops: nur er weiss, was hinter den SSIDs
+steht, die er verspricht.
+
+SEINE XNET-LISTE STUETZT DAS, und er hat den Grund dazu gegeben: dort
+stehen DB0AAT 0-9 und DB0AAT 10-15, DB0AVH 0-3/4-15, DB0WAL 0-6/7-12 -
+jeweils mit VERSCHIEDENEN Delays. Das ist UNTERSCHIEDLICHE INFRASTRUKTUR
+an einem Standort unter einem Rufzeichen: bei DB0BLO ist 0-3 das
+FlexNet-RMNC und 4-15 das XNET. Bei DB0AVH dasselbe, mit derselben
+Trennung 0-3 / 4-15. Zwei Standorte mit derselben Aufteilung sind kein
+Zufall, sondern eine Konvention: RMNC bekommt 0-3, XNET 4-15. Zwei
+Systeme, zwei Links, je ein Bereich - und nicht ein Knoten, der zwei
+Bereiche ueber einen Link ankuendigt.
+
+Ein Repeater auf -0, der Stop 15 sendet, meldet sich als 0-15 - Thomas'
+Erinnerung, und sie passt widerspruchsfrei dazu. Zu tun ist also nichts
+an der Empfangsseite, sondern an send_init().
+
+VARIANTEN, wenn die Messung vorliegt:
+
+WAS DEM ENTWURF JETZT IM WEG STEHT, und es sind zwei Sachen:
+
+  1. EINGEHENDE LINKS. Ruft uns jemand unter DL9SAU-6 an, antworten wir
+     unter DL9SAU-6 - build_path() im reverse-Zweig nimmt hdr->dest, und
+     etwas anderes waere auch falsch, der Anrufer wuerde die Antwort
+     nicht wiedererkennen. Ueber einen eingehenden Link koennen wir
+     unseren Start also gar nicht praesentieren, jedenfalls nicht ueber
+     die AX.25-Quelladresse. Solange der Start von dort kommt, ist ein
+     eingehender FlexNet-Link nicht richtig anzukuendigen.
+
+  2. FLEX_INIT HAT DREI FELDER, DIE WIR WEDER FUELLEN NOCH LESEN. Der
+     Rahmen ist sechs Oktette, send_init() schickt:
+
+         '0'                     FLEX_INIT
+         '0' + ssid              die Ziffer, oben besprochen
+         ' '                     ?
+         ' '                     ?
+         ' ' + 1                 ?
+         '\r'
+
+     Gemessen als b'04  !\r'. recv_init() liest EIN Zeichen und hoert
+     auf; flexnet_dump() entschluesselt ebenfalls nur das erste ("Max
+     SSID"). FlexNet zaehlt an anderen Stellen mit ' '+wert (der
+     Hopcount im Query-Paket tut es), diese Felder sind also
+     wahrscheinlich Zahlen: 0, 0, 1. Was sie bedeuten, steht nirgends im
+     Quelltext. Eines davon KOENNTE der Start sein - dann waere Punkt 1
+     gegenstandslos und der ganze Bau eine andere Sache.
+
+  DESHALB IST DER NAECHSTE SCHRITT KEIN CODE, sondern ein Mitschnitt:
+  ein FLEX_INIT von einem echten FlexNet/XNET, dazu die Frage, ob es
+  ueber einen eingehenden Link anders aussieht als ueber einen
+  ausgehenden. Ohne das raet man an drei Feldern herum, die man nicht
+  kennt.
+
+VARIANTEN, wenn der Mitschnitt vorliegt:
+
+  a) Nur das max setzen, je Port:
+        ifconfig <iface> flexssid <max>
+     Ein Oktett, und es aendert nichts daran, unter welchem Rufzeichen
+     wir anrufen. Auf einem -0-Knoten ist das genau die Ansage "ich
+     bediene 0 bis N", also das, was fehlt. Deckt "0-4" ab, nicht
+     "0-4 und 8".
+     Vorgabe: das heutige Verhalten (die eigene SSID), damit sich bei
+     niemandem etwas aendert, der nichts konfiguriert. Ob eine bessere
+     Vorgabe automatisch herzuleiten waere - das Maximum ueber die
+     SSIDs, auf die wir tatsaechlich hoeren (Portrufzeichen, listen,
+     Mycall) - ist zu entscheiden. Dagegen spricht, dass ein Bereich
+     0..N behauptet, wir bedienten ALLES dazwischen, was wir vielleicht
+     nicht tun; FlexNet-Bereiche sind aber ohnehin grob (siehe
+     DB0AAT 0-9 in Thomas' Liste).
+  b) Der Bereich als Eigenschaft des KNOTENS, eine Angabe fuer alle
+     Links:
+        flexnet ssid <start>-<stop>
+     Sie taete zweierlei: die Quelladresse jedes FlexNet-Links, den wir
+     aufbauen, ist unser Rufzeichen mit <start> - auf JEDEM Port, damit
+     im Netz ein Eintrag steht und nicht einer je Port -, und FLEX_INIT
+     traegt <stop>. Das ist nach Thomas' Korrektur die einzige Variante,
+     die das Problem loest; (a) allein wuerde die Phantomeintraege
+     lassen und nur ihre Obergrenze verschieben.
+     Offen bleibt Punkt 1 oben: eingehende Links. Und die Aenderung
+     greift in setaxp() ein, das heute kein opts uebergibt.
+     Das ist genau das, was DB0BLO und DB0AVH tun: die RMNC-Haelfte auf
+     -0 mit Stop 3, die XNET-Haelfte auf -4 mit Stop 15.
+  c) Mehrere Bereiche: nur ueber mehrere Links, also mehrere
+     "flexnet link add" mit verschiedenen eigenen Rufzeichen. Das
+     braucht eine Quelladresse JE PEER, die es heute nicht gibt
+     (setaxp() laesst hdr.source leer und ueberlaesst sie dem Routing).
+
+     Das waere zugleich die Antwort auf die Automatik: aus den
+     Portrufzeichen und den Listenern laesst sich ableiten, WELCHE SSIDs
+     wir bedienen - aber ansagen koennen wir je Link nur eine
+     zusammenhaengende Spanne, die bei unserer eigenen anfaengt.
+
+SIEHE AUCH den Abschnitt oben ueber den umgekehrten Bereich (max < min):
+solange niemand prueft, macht eine falsche Ziffer aus einem Eintrag
+einen, den addrmatch() nie trifft.
+
+------------------------------------------------------------------------
+FLEXNET-SSID, ZWEITER DURCHGANG: WAS WIR BEDIENEN IST KEIN BEREICH
+(Thomas, 2026-08-18)
+------------------------------------------------------------------------
+DAS DRAHTFORMAT IST BESTAETIGT. Thomas hat einen XNET-Mitschnitt
+geliefert, FLEX_ROUT von DB0BLO-4 an IGATEB:
+
+    3DB0AVH4?301 DB0BLO03301 IGATE 0?301 DB0AVH03306 \r
+
+Mit WAMPES' eigenem Format gelesen (send_rout/pullflexcall):
+
+    DB0AVH   4-15  delay 301
+    DB0BLO    0-3  delay 301
+    IGATE    0-15  delay 301
+    DB0AVH    0-3  delay 306
+
+Passt Byte fuer Byte: sechs Zeichen Rufzeichen mit Leerzeichen
+aufgefuellt ("IGATE "), zwei SSID-Oktette als "0"+wert, also "?" fuer 15,
+dann die Verzoegerung dezimal und ein Leerzeichen. An FLEX_ROUT ist
+nichts zu aendern.
+
+UND XNET KUENDIGT SICH SELBST NICHT AN. In dem Rahmen steht DB0BLO 0-3 -
+die RMNC-Haelfte desselben Standorts, also ein NACHBAR -, aber nicht
+DB0BLO 4-15, der Absender selbst. Genau wie WAMPES: der eigene Bereich
+reist ausschliesslich ueber FLEX_INIT. Das schliesst die naheliegende
+Abkuerzung aus, sich selbst mehrfach in FLEX_ROUT zu setzen, um mehrere
+Bereiche anzukuendigen - kein anderer tut das, und ob es angenommen
+wuerde, weiss niemand.
+
+NEBENBEI, aus dem Speedtest im selben Mitschnitt: DB0BLO-4 pollt
+DB0BLO-0 mit den 201 Leerzeichen und bekommt "10\r" - FLEX_RPRT mit
+Delay 0. WAMPES sendet dort nie 0 (recv_poll schickt DEFAULTDELAY, wenn
+locdelay 0 ist) und ignoriert eine empfangene 0 (recv_rprt). Kein
+Fehler, nur eine Ungleichheit: von XNET lernen wir "praktisch keine
+Verzoegerung" nicht, sondern messen selbst.
+
+WAS "ax25 mycall" IST, nachgelesen auf Thomas' Frage:
+
+  * WAMPES hoert NICHT auf Mycall. ismyax25addr() vergleicht mit den
+    hwaddr der INTERFACES; ax_answers_to() nimmt zusaetzlich die
+    Rufzeichen, unter denen eigene Links geoeffnet wurden, und die
+    "listen"-Eintraege.
+  * Mycall kommt nur dadurch hinein, dass JEDES AX.25-Attach es beim
+    Anlegen in ifp->hwaddr kopiert - kiss.c:56, axip.c:329,
+    sixpack.c:110, nrs.c:50, krnlif.c:614, ethertap.c:471. Deshalb
+    erben bei db0sao alle Ports db0sao-0, ohne dass eine Zeile das sagt.
+    "ifconfig <if> linkaddress" ueberschreibt hinterher.
+  * DIE REIHENFOLGE IN net.rc IST DAMIT BINDEND: "ax25 mycall" muss vor
+    den "attach"-Zeilen stehen. domycall() setzt nur die globale
+    Variable und ruehrt bestehende Interfaces nicht an.
+  * Mycall ist NICHT die Quelle ausgehender Connects.
+    ax25_parse_target() setzt sie als Platzhalter, aber axroute() in
+    build_path() stempelt das Rufzeichen des gewaehlten INTERFACES
+    darueber; nur --mycall / "< CALL" (opts->ownsource) haelt dagegen.
+    Dass es meist gleich aussieht, liegt am Erben beim Attach.
+  * KLEINER BEFUND: netrom haengt anders daran. mynode->call = Mycall
+    ist ein ZEIGER auf die globale Variable (netrom.c:295). Ein
+    "ax25 mycall" zur Laufzeit benennt also den NET/ROM-Knoten um,
+    waehrend die Ports ihr altes Rufzeichen behalten. In net.rc faellt
+    das nie auf, interaktiv ist es eine Falle.
+
+DARAUS FOLGT DAS EIGENTLICHE PROBLEM, und Thomas hat es benannt: was wir
+bedienen, IST KEIN ZUSAMMENHAENGENDER BEREICH. Sein Beispiel - Ports auf
+SSID 1, 2, 3, die Mailbox als listen auf 8, convers auf 11, und
+mycall DL9SAU also -0 fuer jeden Port ohne eigenes linkaddress - ergibt
+die Menge {0,1,2,3,8,11} und damit drei Laeufe:
+
+    DL9SAU-0-3      DL9SAU-8      DL9SAU-11
+
+FlexNet kann je Link EINEN Bereich ankuendigen. Drei Laeufe brauchen
+drei Ankuendigungen, und der einzige beobachtete Weg dahin sind mehrere
+SYSTEME unter mehreren Rufzeichen (DB0AVH: RMNC 0-3, XNET 4-15). Ein
+WAMPES mit einem Interlink kann das nicht nachbauen.
+
+DIE MENGE IST ABER BERECHENBAR, und das ist der brauchbare Teil: die
+Interface-hwaddr plus die listen-Eintraege, beides steht im Knoten. Ein
+Befehl, der sie in maximale Laeufe zerlegt und anzeigt, aendert nichts
+auf dem Draht und liefert genau die Eingabe, die die Entscheidung
+braucht:
+
+    flexnet ssid            zeigt: bedient 0-3, 8, 11; angekuendigt 0-0
+    flexnet ssid 0-3        der Sysop sagt, welcher Lauf angekuendigt wird
+
+Das waere der erste Schritt, wenn Thomas ihn will - er ist folgenlos.
+Der zweite (die Quelladresse aller FlexNet-Links auf <start> zwingen,
+FLEX_INIT auf <stop>) braucht weiterhin den FLEX_INIT-Mitschnitt, wegen
+der drei ungelesenen Felder und wegen der eingehenden Links.
+
+------------------------------------------------------------------------
+FLEXNET: WAS DER ZWEITE MITSCHNITT SAGT (2026-08-18)
+------------------------------------------------------------------------
+Zwei FLEX_ROUT von DB0BLO-4 an IGATEB, kurz nacheinander:
+
+    DB0AVH  4-15  delay 301  ->  2
+    DB0BLO   0-3  delay 301  ->  2
+    IGATE   0-15  delay 301  ->  2
+    DB0AVH   0-3  delay 306  ->  7
+
+ALLE VIER FALLEN UM EXAKT 299. Das ist punktgenau die Form von WAMPES'
+eigener Umrechnung in recv_rprt():
+
+    if (delay != olddelay)
+        for (...) if (pq->peer == pp && pq->delay)
+            pq->delay = pq->delay - olddelay + delay;
+
+Aendert sich die Verzoegerung EINES NACHBARN, verschieben sich alle
+Ziele ueber ihn um die Differenz. XNET macht dasselbe, und seine
+Schaetzung fuer einen Link ging von 300 auf 1 - 301 = 300+1,
+306 = 300+6. Der Uebergang von "noch nicht gemessen" zu "gemessen".
+
+DARAUS EINE INTEROP-FRAGE, am naechsten Mitschnitt zu pruefen: WAMPES'
+"keine Ahnung"-Wert ist DEFAULTDELAY 600 (Einheit 100 ms, also 60 s),
+und recv_rprt() verwirft eine EINGEHENDE 600 ausdruecklich:
+
+    if (delay > 0 && delay != DEFAULTDELAY) { ... uebernehmen ... }
+
+Ist XNETs Platzhalter 300, greift diese Pruefung gegen XNET nie: wir
+naehmen 30 s als echte Messung und glaetteten sie ein. Und unsere 600
+koennte umgekehrt bei XNET als echte 60 s ankommen. Zu klaeren, bevor
+jemand an den Werten dreht - es ist kein Fehler, den man sieht, sondern
+einer, der Wege unattraktiv macht.
+
+ZU "IGATE": nach den Bytes sind das ZWEI Rufzeichen. Das AX.25-Ziel ist
+IGATEB (sechs Buchstaben), der FlexNet-Eintrag ist 49 47 41 54 45 20,
+also "IGATE " - fuenf plus Fuell-Leerzeichen. Dann schickt DB0BLO-4
+nicht den Partner zurueck, sondern eine dritte Station, und die
+Split-Horizon-Frage stellt sich nicht. Waeren es doch dieselben, waere
+es ein echter Unterschied zu uns: send_rout() ueberspringt den
+Empfaenger ausdruecklich (if (addreq(pd->call, pp->call)) continue;).
+
+WAS DER MITSCHNITT NICHT BEANTWORTET: FLEX_INIT. Die drei ungelesenen
+Felder und die eingehenden Links stehen weiter offen.
+
+------------------------------------------------------------------------
+FLEXNET-SSID: DIE FRAGE IST BEANTWORTET (Thomas, 2026-08-18)
+------------------------------------------------------------------------
+Drei Auskuenfte von Thomas schliessen sie, ohne dass ein FLEX_INIT-
+Mitschnitt noch noetig waere.
+
+1. IN FLEX_INIT IST KEIN PLATZ FUER EIN RUFZEICHEN. Der Rahmen ist sechs
+   Oktette - "0", die Ziffer, zwei Leerzeichen, " "+1, CR. Ein Call
+   passt da nicht hinein. Also KANN der Start nicht im Rahmen stehen,
+   und es bleibt nur die AX.25-Quelladresse des Links. Damit ist die
+   Lesart entschieden, ohne Raten an den drei Feldern.
+
+2. FLEXNET SELBST KONFIGURIERT GENAU EINE ZAHL. Aus seiner autoexec.net:
+
+       ro fl pa ssid 15
+
+   Die Stop-SSID, node-weit, ein Parameter. Kein Start - der ist das
+   eigene Rufzeichen. Genau das Modell, das oben aus der Nodeliste
+   erschlossen wurde, hier als Konfigurationszeile.
+
+   Die Partner stehen daneben, je Port:
+
+       rou flex add 1 db0blo
+       rou flex add 2 igate
+       rou flex add 3 igateb
+       rou flex add 4 db0avh-4
+
+   Ohne SSID heisst -0; db0avh-4 traegt seine, weil das XNET dort unter
+   -4 laeuft. Das Partnerrufzeichen IST der Start des Partners.
+
+3. SPLIT HORIZON GILT BEIDSEITIG. Die Verbindung ging zu IGATEB, und
+   IGATEB kommt in der Ankuendigung an IGATEB nicht vor; umgekehrt sah
+   Thomas kein IGATE in der Gegenrichtung. IGATE und IGATEB sind zwei
+   Knoten desselben Projekts an verschiedenen Standorten. WAMPES macht
+   es identisch (send_rout: if (addreq(pd->call, pp->call)) continue;).
+   Kein Unterschied, nichts zu tun.
+
+WARUM MAN DEN EIGENEN BEREICH IM TRACE NICHT SIEHT, und das ist kein
+Monitoring-Fehler: ein Knoten kuendigt sich nie in FLEX_ROUT an. Sein
+Bereich reist ausschliesslich in FLEX_INIT, und das kommt genau einmal,
+beim Linkaufbau. Auf einem stehenden Link ist nichts zu sehen. Wer es
+mitschneiden will, muss einen FlexNet-Link neu hochkommen lassen.
+
+DAMIT STEHT DER BAU FEST:
+
+    Start   das Rufzeichen, unter dem ALLE unsere FlexNet-Links laufen -
+            eines fuer den Knoten, nicht eines je Port. Heute stempelt
+            axroute() das Rufzeichen des Interfaces darueber
+            (build_path, non-reverse-Zweig), und setaxp() uebergibt kein
+            opts, gibt also nichts zurueck. Gemessen: zwei Ports mit
+            DL9SAU-4 und DL9SAU-6 ergeben zwei Ankuendigungen,
+            DL9SAU-4-4 und DL9SAU-6-6.
+    Stop    eine Zahl fuer den Knoten, wie FlexNets "ro fl pa ssid".
+            Heute setzt send_init() dort unsere eigene SSID, also
+            Start == Stop.
+
+VORSCHLAG, nach FlexNets eigenem Vorbild geformt:
+
+    flexnet ssid                  zeigt an: bedient 0-3, 8, 11;
+                                  angekuendigt DL9SAU-0-0
+    flexnet ssid <start>-<stop>   beides setzen, node-weit
+
+Die Anzeige allein ist folgenlos und laesst sich sofort bauen: die
+bedienten SSIDs stehen im Knoten (Interface-hwaddr plus
+listen-Eintraege) und zerfallen in maximale Laeufe. Erst das Setzen
+aendert etwas auf dem Draht.
+
+EINGEHENDE LINKS, jetzt beantwortbar: in FlexNet hat ein Knoten EIN
+Rufzeichen fuer seine FlexNet-Links, und die Partner sind mit genau
+diesem Rufzeichen konfiguriert. Ein eingehender FlexNet-Link auf eine
+andere SSID von uns ist demnach kein Fall, den das Protokoll vorsieht,
+sondern eine Fehlkonfiguration auf der Gegenseite. WAMPES sollte dann
+nicht schweigen: ein Hinweis im Trace ist billiger als ein Bereich, der
+im Netz falsch steht.
+
+WAS OFFEN BLEIBT, und es blockiert nichts mehr:
+  * Die drei Konstanten in FLEX_INIT (" ", " ", " "+1). Kein Rufzeichen,
+    also fuer die SSID-Frage ohne Belang. Was sie sind, waere trotzdem
+    gut zu wissen.
+  * Der "keine Ahnung"-Wert. Unserer ist DEFAULTDELAY 600 (60 s, die
+    Einheit ist eine Zehntelsekunde einfacher Laufzeit), und recv_rprt()
+    verwirft eine eingehende 600. Thomas' Trace legt bei XNET 300 nahe -
+    dann greift unsere Pruefung gegen XNET nie und wir naehmen 30 s als
+    Messung. Er hat XNET getract und weiss nicht, ob der RMNC es anders
+    haelt. Zu klaeren, bevor jemand an den Werten dreht.
+
+------------------------------------------------------------------------
+FLEXNET: DIE XNET-KONFIGURATION, EINS ZU EINS (Thomas, 2026-08-18)
+------------------------------------------------------------------------
+Thomas hat die autoexec.net von DB0BLO-4 geliefert. Sie beantwortet den
+Rest und macht den Bau kleiner, nicht groesser.
+
+    my call db0blo-4                        der Start, EINE Stelle
+    ro fl pa ssid 15                        der Stop, EINE Zahl
+    attach ip2 axUDP 3 1 193.168.82.22      der Port zu IGATEB
+    rou flex add 3 igateb                   Partner je Port; das
+                                            Rufzeichen ist DESSEN Start
+    ro local add 0 db0blo-5  - p            # frmaster
+    ro local add 0 db0blo-8  - p            # dpbox
+    ro local add 0 db0blo-9  - p
+    ro local add 0 db0blo-10 - p            # linux
+    ro local add 0 db0blo-11 - p            # convers
+    ro local add 0 db0blo-12 - p            # wconvers
+    ro local add 0 db0blo-13 - p
+    ro local add 0 db0blo-14 - p
+    ro local add 7 db0blo-15 - p            # rpc am rmnc
+
+"ro local add" ist genau unser "listen ax25 add": eine SSID und was
+dahinter steckt.
+
+UND DIE LISTE HAT LUECKEN: 6 und 7 kommen nicht vor, angekuendigt wird
+trotzdem 4-15. Ein Connect auf DB0BLO-6 ueber FlexNet laeuft also ins
+Leere. Damit war meine Warnung weiter oben ("eine Stop-SSID ist ein
+Versprechen, und WAMPES hat kein Proxy") ZU STRENG: der Bereich ist eine
+ZUTEILUNG, die der Sysop erklaert, keine Ableitung aus dem, was
+tatsaechlich laeuft. Es gibt nichts abzuleiten, es gibt nur zu erklaeren
+- also genau die Konfigurationsoption, die Thomas gleich zu Anfang
+vorgeschlagen hatte.
+
+DIE ABBILDUNG AUF WAMPES IST DAMIT EINS ZU EINS:
+
+    my call db0blo-4           ax25 mycall            schon da, node-weit
+    ro fl pa ssid 15           -                      FEHLT
+    ro local add 0 ...-8       listen ax25 add ...-8  schon da
+    rou flex add 3 igateb      flexnet link add       schon da
+
+Es fehlt genau eine Zahl.
+
+UND DER START IST IM NORMALFALL SCHON RICHTIG. Ohne "ifconfig <if>
+linkaddress" erben alle Ports Mycall (jedes Attach kopiert es), jeder
+Link laeuft unter demselben Rufzeichen, es entsteht EIN Eintrag. Die
+gemessenen Phantomknoten brauchten zwei Ports mit EIGENEN Rufzeichen -
+eine WAMPES-Faehigkeit, die FlexNets Modell nicht kennt. Der Bau ist
+also: fuer FlexNet-Links die Quelladresse an das FlexNet-Rufzeichen des
+Knotens binden statt an das Interface. Das Werkzeug ist da -
+struct ax25_opts { iface, ownsource }, und ax_answers_to() erkennt eine
+so geoeffnete Quelle wieder (die Schleife ueber Ax25_cb).
+
+ZU BAUEN, jetzt vollstaendig bestimmt:
+  * "flexnet ssid" ohne Argument: was wir bedienen (Interface-hwaddr
+    plus listen-Eintraege, in maximale Laeufe zerlegt) und was wir
+    ankuendigen. Folgenlos.
+  * "flexnet ssid <start>-<stop>": Start ist das Rufzeichen, unter dem
+    setaxp() FlexNet-Links oeffnet (ueber opts, ownsource gesetzt);
+    Stop geht in send_init(). Vorgabe: das heutige Verhalten.
+  * Ein Hinweis, wenn ein eingehender FlexNet-Link auf einer anderen
+    SSID ankommt als unserem Start - dann steht unser Bereich beim
+    Nachbarn falsch, und schweigen hilft niemandem.
+
+------------------------------------------------------------------------
+FLEXNET: DIE VERZOEGERUNG 600 IST EIN SENTINEL IM WERTEBEREICH
+(Thomas, 2026-08-18)
+------------------------------------------------------------------------
+Sein Einwand, und er stimmt in BEIDE Richtungen:
+
+    recv_poll():  "%c%d\r", FLEX_RPRT, pp->locdelay ? pp->locdelay
+                                                     : DEFAULTDELAY
+    recv_rprt():  if (delay > 0 && delay != DEFAULTDELAY) { uebernehmen }
+
+Misst unsere Poll-Antwort zufaellig genau 600 - 120,0 s Umlaufzeit, auf
+0,1 s gerundet, denn die Einheit ist eine Zehntelsekunde EINFACHER
+Laufzeit -, senden wir 600, und die Gegenseite liest "keine Ahnung",
+obwohl gemessen wurde. Umgekehrt verwerfen wir eine echte 600 vom
+Partner. MAXDELAY ist 3000, 600 ist also ein voellig legaler Messwert.
+Selten, aber auf einem so langsamen Pfad zappelt der Wert um die Grenze
+und die Verbindung wechselt zwischen "gemessen" und "unbekannt".
+
+DIE 0 HAT DASSELBE PROBLEM VON DER ANDEREN SEITE. "delay > 0" verwirft
+sie, aber XNET BENUTZT SIE ALS ECHTEN WERT: im Speedtest-Mitschnitt
+antwortet DB0BLO-4 dem DB0BLO-0 mit "10\r", also FLEX_RPRT Delay 0 fuer
+den Link am selben Standort. Von XNET nehmen wir "praktisch keine
+Verzoegerung" also nie an. Der praktische Schaden ist gering, weil
+unsere eigene Poll-Messung einspringt (und locdelay wird auf mindestens
+1 angehoben, unsere eigene 0 kann also nicht entstehen) - sauber ist es
+nicht.
+
+DIE BILLIGE HAELFTE DES FIXES, ohne Protokollfrage: einen GEMESSENEN
+Wert nie als Sentinel senden. Kommt locdelay auf genau DEFAULTDELAY
+heraus, eine Einheit danebenlegen - eine Luege von 0,1 s ist besser als
+ein falsches "unbekannt". Eine Zeile in recv_poll().
+
+DIE ANDERE HAELFTE braucht den Mitschnitt: was XNET sendet, wenn es
+nichts gemessen hat. Thomas' Trace legt intern 300 nahe (die
+Verschiebung um 299), aber was auf dem Draht als "keine Ahnung" steht,
+ist damit nicht gesagt. Er hat XNET getract und weiss nicht, ob der RMNC
+es anders haelt.
+
+------------------------------------------------------------------------
+FLEX_INIT: WAS WAMPES BEIM EMPFANG DAMIT TUT (Thomas' Frage, 2026-08-18)
+------------------------------------------------------------------------
+Seine Frage, und sie ist die richtige: verarbeitet WAMPES aus einem
+eingehenden FLEX_INIT die MAX-SSID des Partners, und die MIN-SSID aus
+dem Rufzeichen, mit dem er verbunden hat?
+
+JA, GENAU SO. recv_init() liest EIN Zeichen und setzt ausschliesslich
+call[ALEN+1], also das Maximum:
+
+    if ((chr = PULLCHAR(bpp)) != -1)
+        pp->call[ALEN + 1] = ((chr << 1) & SSID) | 0x60;
+
+Das Minimum steht da schon und wird nie angefasst. Es entsteht auf einem
+von zwei Wegen:
+
+  * er ruft uns an -> flexnet_input():
+        addrcp(call, src); call[ALEN + 1] = call[ALEN];
+    min = max = die SSID SEINER QUELLADRESSE
+  * wir tragen ihn ein -> "flexnet link add DB0AAA-5" -> flexsetcall():
+    min = max = 5, wie geschrieben
+
+Danach ueberschreibt FLEX_INIT nur das max. Nebenbei tut recv_init()
+zweierlei: es entscheidet den Token ueber den Vergleich der beiden
+Adressen (memcmp, also hat genau eine Seite ihn) und nullt mit
+clear_all_via_peer() alles, was wir ueber diesen Partner wussten - ein
+frischer Linkaufbau macht das ungueltig.
+
+SEINE SORGE, "0 15" KOENNTE EIN PAAR SEIN, ist ausgeraeumt, und zwar
+durch seine eigene Konfigurationszeile statt durch unseren Quelltext:
+"ro fl pa ssid 15" ist EIN Parameter. Laege im Rahmen ein Paar, gaebe es
+zwei. Die Byte-Ebene passt dazu: Byte 0 ist der Funktionscode "0", Byte
+1 die Ziffer; ein -0-Knoten schickt "0","0", ein -15-Knoten "0","?".
+Laege an Byte 2 ein zweites SSID-Feld, muesste dort eine Ziffer stehen -
+dort steht " " = 0x20, also "0" minus 16.
+
+SEINE RECHNUNG ZUM START, und sie stimmt: nennt man sich DL9SAU-14, dann
+sind mit Stop 15 genau -14 und -15 angekuendigt und 0-13 ueber
+FlexNet-Routing unerreichbar. Konsistent - und ein Grund, den Start tief
+zu waehlen.
+
+DIE DREI KONSTANTEN, Thomas' Vermutung: zwei reserviert, die dritte die
+Protokollversion. Das passt zu FlexNets Zahlencodierung " "+wert - im
+Query-Paket ist der Hopcount genau "chr - ' '". Dann lesen sich die drei
+als 0, 0, 1. Von hier nicht zu bestaetigen. Was man sagen kann: wir
+senden immer 1 und lesen nie, was zurueckkommt - ginge FlexNet je auf 2,
+behaupteten wir weiter 1 und merkten es nicht.
+
+UND WOHIN "ro local add 0" ZEIGT: Port 0 ist bei DB0BLO
+"attach ip0 axUDP 0 1 ... 192.168.2.110  # Verbindung zum linux digi".
+Die "lokalen" Eintraege sind also gar keine internen Dienste, sondern
+Weiterleitungen auf eine ANDERE MASCHINE - genau unser
+"listen ax25 add <call> tcp:host:port" bzw. unix: oder ein Programm. Der
+angekuendigte Bereich deckt damit Dinge ab, die im Knoten selbst nicht
+existieren. Noch ein Beleg dafuer, dass er eine Zuteilung ist und kein
+Versprechen.
+
+------------------------------------------------------------------------
+FLEX_RPRT: DIE ZWEITE STELLE IST DIE VERZOEGERUNG (2026-08-18)
+------------------------------------------------------------------------
+Thomas sah "31 30 0D" und "31 31 0D" auf einem Link und fragte, ob die
+zweite Stelle etwas bedeutet. Ja - und es ist kein Feld, sondern eine
+Zahl beliebiger Laenge:
+
+    recv_poll():  sprintf(bp->data, "%c%d\r", FLEX_RPRT,
+                          pp->locdelay ? pp->locdelay : DEFAULTDELAY);
+    recv_rprt():  pullnumber() sammelt Ziffern bis zum ersten
+                  Nicht-Ziffer-Zeichen
+
+    31 30 0D    "1" "0"    FLEX_RPRT, Verzoegerung 0
+    31 31 0D    "1" "1"    FLEX_RPRT, Verzoegerung 1
+    31 33 30 31 0D         waere Verzoegerung 301
+
+Die Falle beim Lesen: "10" heisst NICHT Verzoegerung 10, sondern "1" und
+"0". Einheit wie in FLEX_ROUT, Zehntelsekunden einfacher Laufzeit.
+
+DAMIT IST DER 0-SENTINEL BELEGT und nicht mehr nur vermutet: IGATEB
+sendet echte Nullen fuer einen schnellen Link, und WAMPES' Pruefung
+
+    if (delay > 0 && delay != DEFAULTDELAY)
+
+wirft sie weg. Gegen einen schnellen XNET-Partner uebernehmen wir dessen
+Messung nie und verlassen uns allein auf unsere eigene. Kein grosser
+Schaden - unsere Messung ist da -, aber die Glaettung ueber beide Werte,
+die der Code vorsieht, findet gegen XNET nicht statt.
+
+UND ES ENGT DIE ANDERE HAELFTE EIN: die 300 aus der 299er-Verschiebung
+ist XNETs INTERNER Anfangswert fuer einen ungemessenen Link. Was XNET in
+FLEX_RPRT sendet, wenn es nichts gemessen hat, ist weiterhin ungesehen -
+in den Mitschnitten stehen nur 0 und 1, und das sind Messungen.
+
+------------------------------------------------------------------------
+"flexnet ssid" GEBAUT - DIE ANZEIGE (2026-08-18)
+------------------------------------------------------------------------
+Schritt 1 von dreien, und der folgenlose: er zeigt nur, er aendert
+nichts auf dem Draht.
+
+    flexnet ssid
+
+Zwei Zeilen nebeneinander, die es vorher nirgends zusammen gab:
+was wir BEDIENEN und was wir ANKUENDIGEN.
+
+Bedient wird ueber einen Durchlauf durch alle sechzehn SSIDs unseres
+Rufzeichens, mit den beiden Quellen, die darueber entscheiden -
+ismyax25addr() fuer die Portrufzeichen und axlisten_active() fuer die
+Listener. Nicht durch Hineingreifen in die beiden Listen: so kann die
+Anzeige nicht aus dem Tritt geraten, wenn sich dort etwas aendert. Das
+Ergebnis wird in maximale Laeufe zerlegt.
+
+Angekuendigt wird je Link, denn dort wird es heute entschieden: Start
+ist die Quelladresse des Links, Stop dieselbe SSID, weil send_init() sie
+daraus nimmt.
+
+GEMESSEN, der kranke Fall - zwei Ports mit eigenen Rufzeichen, ein
+Login-Listener auf -8:
+
+    SSIDs of DL9SAU this node answers to: 4, 6, 8
+    Announced, per link:
+      DB0BBB-5     as DL9SAU-6   -> DL9SAU-6-6
+      DB0AAA-5     as DL9SAU-4   -> DL9SAU-4-4
+    Two or more ranges for one node: to the network that is 2 stations,
+    not one.
+    1 served SSID outside every announced range - not reachable by
+    FlexNet routing.
+
+UND DIE GEGENPROBE, dieselbe Konfiguration ohne die beiden
+linkaddress-Zeilen, also der Normalfall:
+
+    SSIDs of DL9SAU this node answers to: 0, 8
+    Announced, per link:
+      DB0BBB-5     as DL9SAU     -> DL9SAU-0-0
+      DB0AAA-5     as DL9SAU     -> DL9SAU-0-0
+    1 served SSID outside every announced range - not reachable by
+    FlexNet routing.
+
+Keine Ruege ueber zwei Stationen, denn es gibt nur eine. Uebrig bleibt
+der zutreffende Hinweis auf die -8 - genau das fehlende
+"ro fl pa ssid". Das war die Gegenprobe, die zaehlt: eine gewoehnliche
+Konfiguration darf nicht fuer etwas gescholten werden, das sie nicht
+tut.
+
+DIE BEIDEN HINWEISZEILEN sind absichtlich verschieden scharf. Ein
+Bereich mit Luecken ist gewoehnliches FlexNet (DB0BLO kuendigt 4-15 an,
+-6 und -7 gibt es nirgends) - der zweite Satz nennt also nur eine
+Tatsache. Zwei Bereiche fuer einen Knoten sind fuer alle anderen zwei
+Stationen, und das ist ein Fehler; der erste Satz sagt es so.
+
+OFFEN BLEIBEN SCHRITT 2 UND 3:
+  2. recv_poll(): einen gemessenen Wert nie als Sentinel senden.
+  3. "flexnet ssid <start>-<stop>": Quelladresse aller FlexNet-Links an
+     den Start binden (opts/ownsource), Stop in send_init().

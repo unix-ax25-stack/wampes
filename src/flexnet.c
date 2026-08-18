@@ -1019,6 +1019,121 @@ static int doflexnetquery(int argc, char *argv[], void *p)
 
 /*---------------------------------------------------------------------------*/
 
+/* Which of our SSIDs do we serve, and which do we announce?
+ *
+ * FlexNet says a station is a callsign and a RANGE of SSIDs, and it says it in
+ * two halves that come from different places:
+ *
+ *      start   the callsign the link runs under
+ *      stop    one number, sent in FLEX_INIT at link setup
+ *
+ * XNET writes both down in one place - "my call db0blo-4" and
+ * "ro fl pa ssid 15" - so the range is a property of the NODE and every link
+ * announces the same one.  Ours is a property of the LINK: axroute() stamps
+ * the interface's callsign over the source (build_path), and send_init() puts
+ * that same SSID in as the stop.  Two ports with callsigns of their own
+ * therefore announce two stations - measured, DL9SAU-4-4 and DL9SAU-6-6 - and
+ * neither range covers anything else we answer to.
+ *
+ * This command only SHOWS that, and the showing is the point: what we serve is
+ * derivable (the ports' callsigns and the "listen" entries), what we announce
+ * is not the same thing, and until the two are side by side nobody can see the
+ * gap.  Setting it is a separate step - see TODO.txt.
+ *
+ * The range is a DECLARATION, not a promise, and that is not our licence but
+ * FlexNet practice: DB0BLO announces 4-15 while -6 and -7 exist nowhere.  So
+ * the gaps below are worth showing but are not faults.
+ */
+
+static int doflexnetssid(int argc, char *argv[], void *p)
+{
+	char buf[AXBUF];
+	int announced[16];
+	int n = 0;
+	int run_start = -1;
+	int served[16];
+	int ssid;
+	int starts = 0;
+	struct peer *pp;
+	uint8 call[AXALEN];
+
+	memset(served, 0, sizeof(served));
+	memset(announced, 0, sizeof(announced));
+
+	printf("SSIDs of %.6s this node answers to:", pax25(buf, Mycall));
+	/* One walk over all sixteen, asking the two sources that decide it -
+	 * the ports' own callsigns and the listeners.  Cheaper than reaching
+	 * into either list, and it cannot fall out of step with them.
+	 */
+	for (ssid = 0; ssid <= 16; ssid++) {
+		if (ssid < 16) {
+			addrcp(call, Mycall);
+			call[ALEN] = (uint8) (0x60 | (ssid << 1));
+			served[ssid] = ismyax25addr(call) != NULL ||
+				       axlisten_active(call);
+		}
+		if (ssid < 16 && served[ssid] && run_start < 0)
+			run_start = ssid;
+		else if ((ssid == 16 || !served[ssid]) && run_start >= 0) {
+			if (run_start == ssid - 1)
+				printf("%s %d", n++ ? "," : "", run_start);
+			else
+				printf("%s %d-%d", n++ ? "," : "",
+				       run_start, ssid - 1);
+			run_start = -1;
+		}
+	}
+	if (!n)
+		printf(" (none)");
+	putchar('\n');
+
+	/* And what goes out, per link, because that is where it is decided
+	 * today.  The start is the source callsign of the link, the stop is
+	 * what send_init() derived from it - the same SSID.
+	 */
+	if (!Peers) {
+		printf("No FlexNet links - the range is announced in "
+		       "FLEX_INIT when one comes up\n");
+		return 0;
+	}
+	printf("Announced, per link:\n");
+	for (pp = Peers; pp; pp = pp->next) {
+		char peerbuf[FLEXBUF];
+
+		printf("  %-12s ", sprintflexcall(peerbuf, pp->call));
+		if (!pp->axp) {
+			printf("(no link)\n");
+			continue;
+		}
+		ssid = (pp->axp->hdr.source[ALEN] & SSID) >> 1;
+		printf("as %-10s -> %.6s-%d-%d\n",
+		       pax25(buf, pp->axp->hdr.source),
+		       pax25(buf, pp->axp->hdr.source), ssid, ssid);
+		/* start == stop today, so one SSID per link. */
+		if (!announced[ssid]) {
+			announced[ssid] = 1;
+			starts++;
+		}
+	}
+
+	/* Name what the two lists say together, rather than leaving it to be
+	 * read off.  Neither line is a fault by itself - a range with gaps is
+	 * ordinary FlexNet - but two ranges for one node are two stations to
+	 * everybody else, and that one is.
+	 */
+	if (starts > 1)
+		printf("Two or more ranges for one node: to the network that is "
+		       "%d stations, not one.\n", starts);
+	for (ssid = 0, n = 0; ssid < 16; ssid++)
+		if (served[ssid] && !announced[ssid])
+			n++;
+	if (n)
+		printf("%d served SSID%s outside every announced range - not "
+		       "reachable by FlexNet routing.\n", n, n == 1 ? "" : "s");
+	return 0;
+}
+
+/*---------------------------------------------------------------------------*/
 
 static int doflexnetfilter(int argc, char *argv[], void *p)
 {
@@ -1052,6 +1167,13 @@ int doflexnet(int argc, char *argv[], void *p)
 		  "flexnet link                          list the link partners\n"
 		  "       flexnet link add|delete <call>" },
 		{ "query",     doflexnetquery,     0, 2, "flexnet query <call>" },
+		{ "ssid",      doflexnetssid,      0, 0,
+		  "flexnet ssid                          which of our SSIDs we\n"
+		  "       serve, and which we announce.  FlexNet knows a station as a\n"
+		  "       callsign and a RANGE: the start is the callsign a link runs\n"
+		  "       under, the stop is one number sent in FLEX_INIT at link setup.\n"
+		  "       We derive both from the link, so ports with callsigns of their\n"
+		  "       own announce one station each.  Shows only - see TODO.txt." },
 		{ 0,           0,                  0, 0, 0 }
 	};
 
