@@ -3280,3 +3280,55 @@ uebernehmen. NICHT GEBAUT, aus zwei Gruenden, die zusammengehoeren:
 Zu bedenken beim Bauen: schrumpft ein Bereich, bleiben die AX.25-Routen
 der weggefallenen SSIDs stehen, bis sie altern - update_axroute() legt
 an und nimmt nichts weg.
+
+------------------------------------------------------------------------
+FLEX_INIT STRENG PRUEFEN - THOMAS' UEBERLEGUNG (2026-08-18, offen)
+------------------------------------------------------------------------
+Sein Stand: in der realen Welt kommt das nicht vor, aber er ueberlegt,
+die FlexNet-Verbindung zu BEENDEN, wenn ein Connect von DL9SAU-10 mit
+Max-SSID 7 hereinkommt. Und genauso, wenn
+
+  1. das Paket nicht vom Typ FLEX_INIT ist, also nicht mit "0" beginnt,
+  2. die SSID nicht >= der des Quellrufzeichens ist,
+  3. danach nicht drei Byte plus CR kommen.
+
+Punkt 2 ist der umgekehrte Bereich und unstrittig pruefbar - das Minimum
+steht in der Quelladresse, das Maximum im Rahmen. Zu den anderen dreien
+gehoert je ein Einwand, und der letzte aendert vermutlich die Antwort.
+
+ZUR REIHENFOLGE (1). Das setzt voraus, dass die Begruessung zuerst kommt.
+WAMPES haelt sich daran - setaxp() schickt send_init(), dann send_poll() -
+verlangt es aber nicht, und in den Messungen oben kamen BEIDE
+Reihenfolgen vor. Ob ein echtes FlexNet je FLEX_ROUT vor FLEX_INIT
+schickt, wissen wir nicht. Eine Regel, die wir uns hier ausdenken, wirft
+im Zweifel legitime Partner hinaus.
+
+ZU DEN DREI BYTES (3). Genau drei zu verlangen ist heute sicher gegen
+alles Gesehene, ist aber eine Regel ueber ein Feld, von dem wir zugeben,
+es nicht zu verstehen (siehe den Abschnitt zu den drei Konstanten).
+Waechst der Rahmen je - eine neue Protokollversion -, trennen wir
+konforme Partner. MINDESTENS drei plus CR zu verlangen und Laengeres zu
+dulden kostet nichts und altert besser.
+
+UND DAS SCHWERWIEGENDE: DIE VERBINDUNG IST VIELLEICHT NICHT NUR SEINE
+FLEXNET-VERBINDUNG. setaxp() sucht mit find_ax25(pp->call) IRGENDEINEN
+bestehenden AX.25-Link zu diesem Rufzeichen, auch einen, der fuer etwas
+anderes geoeffnet wurde. Ein Benutzer, der bei uns eingeloggt ist und
+nebenbei einen 0xCE-Rahmen schickt, teilt sich einen axp mit dem
+FlexNet-Peer. Ein DISC auf Protokollgrund schnitte ihm die Sitzung ab.
+
+GENAU DIESER FEHLER STECKTE SCHON EINMAL HIER, gemessen und in
+doc/ROUTE-FILTER.md festgehalten: polltimer_expired() loeschte einen
+Peer, der einen Poll nicht beantwortete, um den er nie gebeten hatte -
+und mit ihm ging die Verbindung des Benutzers.
+
+VORSCHLAG DARAUS: den PEER verwerfen, nicht den LINK. delete_peer() plus
+eine Zeile ins Log - dann lernen wir nichts von ihm, kuendigen ihn nicht
+an, und wer sonst auf der Verbindung sitzt, merkt nichts. Soll es doch
+ein DISC sein, dann mit einer Sperrfrist, sonst baut die Gegenseite
+sofort wieder auf und beide drehen sich im Kreis.
+
+HAENGT ZUSAMMEN MIT den beiden anderen offenen Punkten: dem umgekehrten
+Bereich (drei Varianten, weiter oben) und dem nie aufgefrischten Bereich
+eines Ziels. Wer Punkt 2 hier scharf prueft, braucht die Varianten dort
+nicht mehr - ein umgekehrter Bereich entstuende gar nicht erst.
