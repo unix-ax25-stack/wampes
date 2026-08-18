@@ -1875,3 +1875,52 @@ spricht: wenn die Gegenseite nichts empfaengt, haelt sie den Weg
 vielleicht fuer tot und gibt ihn auf. Bei NET/ROM, wo der Broadcast an
 alle auf dem Port geht, ist das nicht so. Also: bei NET/ROM sinnvoll, bei
 FlexNet erst nach genauerem Hinsehen.
+
+------------------------------------------------------------------------
+FILTER-KOMMANDO: KEINE HILFE, UND ES LEGT PHANTOMSTATIONEN AN (Thomas,
+2026-08-18)
+------------------------------------------------------------------------
+Von Thomas beim Ausprobieren gefunden:
+
+    dl9sau> flex filter add
+    dl9sau> flex fil
+    Station           In         Advert  Feed
+    ADD               all        yes     yes        <- eine Station "ADD"
+    dl9sau> flex filter add ?
+    Only one station per line
+    dl9sau> netrom fi ?
+    Station           In         Advert  Feed
+    ?                 all        yes     yes        <- und eine "?"
+
+URSACHE, zwei Stellen:
+
+  1. rf_cmd() nimmt JEDES Wort, das kein Schluesselwort ist, als
+     Stationsangabe. "add" gibt es in der Syntax gar nicht - geloescht wird
+     mit "--delete" -, also wird "add" zum Rufzeichen. Beim zweiten Wort
+     ist der Platz belegt, daher die irrefuehrende Meldung "Only one
+     station per line" auf ein "?".
+  2. setcall() prueft nur Laenge <= 6 und SSID <= 15, keine
+     Zeichenklassen. "ADD" und "?" gehen also glatt durch.
+
+ES GIBT SCHON EINEN PRUEFER: lib/callvalid.c. Der wuerde beide abweisen -
+"?" ist zu kurz, "ADD" hat keine Ziffer. Benutzt wird er bisher nur in
+login.c, waere hier also ein neuer Praezedenzfall, und er hat eine
+Nebenwirkung, die vor dem Einbau zu bedenken ist: er laesst hoechstens
+zwei Ziffern zu, also faellt ein Sonderrufzeichen wie DL60ABC durch.
+Entweder man nimmt das in Kauf, oder man prueft hier schwaecher
+(alphanumerisch, mindestens drei Zeichen, mindestens eine Ziffer).
+
+DAZU FEHLT DIE HILFE. Die Kommandotabellen tragen fuer "filter" keinen
+Usage-Text (flexnet.c und netrom.c, letztes Feld 0 bzw. NULL), waehrend
+die Nachbarn einen haben - "flex li ?" listet seine Unterbefehle, "flex
+query" zeigt seine Syntax. Deshalb sagt "flex fi ?" nichts.
+
+ZU BAUEN, klein und in einem:
+  * Usage-Text an beide Tabelleneintraege, mit der ganzen Zeile
+    "<proto> filter [default|port=<name>|<call>] [in ...] [advert ...]
+    [feed ...] [--delete]"
+  * die Stationsangabe pruefen statt alles anzunehmen
+  * und ein Wort, das wie ein vergessener Unterbefehl aussieht ("add",
+    "delete", "list"), lieber ausdruecklich abweisen mit dem Hinweis, dass
+    es die nicht gibt - das ist der Fehler, den Thomas gemacht hat, und
+    er wird nicht der Einzige sein.
