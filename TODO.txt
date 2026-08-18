@@ -1799,18 +1799,56 @@ N(S) stimmt, solange unser N(R) 0 ist), ihr N(R) waechst - und bei 3
 oder 4 landet ein um ein Byte verschobener Inhalt im VJ-Dekompressor
 oder in der Segment-Zusammensetzung.
 
-DIE ABWEHR IST DAS BIT, DAS WIR JETZT SETZEN. Es zu lesen kostet wenig
-und deckt beide Faelle ab: ein UA im Aufbau, dessen SSID_EAX25 unserem
-mmask widerspricht, gehoert dem SABME - und ihm ist zu glauben, weil die
-Gegenstelle sich beim Senden des UA schon festgelegt hat. Auf einer
-stehenden Verbindung ist derselbe Widerspruch der Alarm, den es heute
-nicht gibt.
+DIE ABWEHR - UND MEIN ERSTER VORSCHLAG DAZU WAR FALSCH. Ich hatte
+geschrieben, man solle das SSID_EAX25 des eingehenden UA lesen und ihm
+glauben, und dabei behauptet, TNN setze das Bit. Thomas hat nachgefragt,
+und die TNN-Quellen sagen das Gegenteil (l2tx.c):
 
-DIE GRENZE DAVON, damit sie nicht spaeter enttaeuscht: das hilft nur
-gegen Partner, die das Bit setzen - WAMPES, TNN. Gegen einen, der es
-nicht tut, gibt AX.25 nichts her, und dort bleibt nur, den Rueckfall
-selbst seltener zu machen. Der Pruefstand setzt es uebrigens auch nicht,
-in der Messung oben war der Unterschied also gar nicht auf dem Draht.
+    if ((txfEAX == TRUE) && ((txfctl & 0x03) != 0x03))
+      txfhdr[L2ILEN - 1] &= ~L2CEAX;
+
+(txfctl & 3) != 3 heisst "KEIN U-Rahmen". TNN markiert also nur I- und
+S-Rahmen, niemals ein UA. Und beim Empfang steht ausdruecklich
+"Nur auf EAX.25 umschalten wenn SABME, EAX-Flag ignorieren" (l2rx.c).
+Ein UA von TNN traegt das Bit nicht - mein Vorschlag haette daraus
+"modulo-8" geschlossen, waehrend TNN auf modulo-128 umgeschaltet hat,
+also genau die Desynchronisation ERZEUGT, die er verhindern sollte.
+
+WAS TNN STATTDESSEN TUT, und das ist der bessere Bau: das Bit ist dort
+kein Faehigkeitsmerkmal, sondern eine RAHMENMARKIERUNG. Beim Empfang
+entscheidet es je Rahmen, ob ein zweites Steuerbyte gelesen wird:
+
+    rxfEAX = !(rxfhdr[L2ILEN-1] & L2CEAX);
+    if (rxfEAX && !((rxfctl & 0x03) == 3))
+      rxfctlE = getchr(fbp);
+
+Damit ist TNN gegen eine Modulus-Desynchronisation in Empfangsrichtung
+von selbst unempfindlich - es parst, was markiert ist, statt was der
+Link zu sein glaubt. WAMPES liest axp->mmask und ist es nicht. Und es
+degradiert richtig: eine alte Station laesst die reservierten Bits auf 1,
+also kommt rxfEAX = FALSE heraus und es wird einoktettig gelesen.
+
+Seine Faehigkeitserkennung zieht TNN woanders her - aus dem GEHOERTEN
+SABM/SABME (l7moni.c: "case L2CSABME: mhp->eax_link = TRUE"), nicht aus
+dem Flag. "EAXMODE 1, by MHEARD" meint das, und nicht das SSID-Bit.
+
+BLEIBEN ZWEI WEGE, und Thomas' ist der erste:
+  1. DEN RUECKFALL GAR NICHT SENDEN, wo wir Beweise haben. Der
+     Routeneintrag kennt AXR_EAX25_YES, und der steht nur nach einem UA
+     auf unser SABME oder einem SABME von ihm - also nach einem
+     nachweislich gelungenen modulo-128-Aufbau. Zu so einem Partner
+     keinen SABM-Rueckfall zu schicken heisst, dass ein UA gar nichts
+     anderes beantworten KANN. Die Mehrdeutigkeit entsteht dann nicht,
+     statt hinterher aufgeloest zu werden.
+     Zu bedenken: er koennte seine Technik getauscht haben. Der Eintrag
+     ist fluechtig und altert mit der Route (24,8 Tage), das ist lang.
+     Milder waere, den Rueckfall bei bewiesenen Partnern erst am Ende des
+     N2-Zyklus zu erlauben statt nach drei Proben.
+  2. JE RAHMEN PARSEN wie TNN, statt je Link. Das repariert auch eine
+     Desynchronisation, die auf anderem Weg entstanden ist, und kostet
+     eine Abfrage im Empfangspfad.
+Die beiden schliessen sich nicht aus: der erste vermeidet, der zweite
+faengt auf.
 
 ------------------------------------------------------------------------
 PROTOKOLL-GATTER JE PORT, STATT DER DRITTEN ZUGANGSSTUFE (Thomas, 2026-08-18)
