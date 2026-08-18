@@ -1111,8 +1111,29 @@
   WIRKLICH OFFEN geblieben, und dort am Ende genannt:
     * die dritte Zugangsstufe "darf gar nicht sprechen" - "in none" kommt
       nahe und ist nicht dasselbe, die Rahmen werden weiter geparst
-    * nr_bdcstint/nr_minobs je Interface; heute je Knoten, nur das OB
-      steht je Eintrag
+    * DAS BROADCAST-INTERVALL je Interface. Der Eintrag hiess hier bis
+      2026-08-18 "nr_bdcstint/nr_minobs je Interface" und war zu kryptisch;
+      ausgeschrieben:
+        nr_bdcstint = 1800 - alle 30 Minuten schickt der Knoten seinen
+          NODES-Broadcast. EINE Zahl fuer den ganzen Knoten; je Eintrag
+          steht nur das OB ("netrom broadcast enable|disable <n>").
+        nr_minobs - "Obsolescence count min to be broadcast", und im Code
+          steht dahinter "/* not used */". TOTER PARAMETER, er gehoerte gar
+          nicht in die Liste.
+        nr_obsinit = 3 - das ist der, der wirkt: angekuendigt wird ein
+          Eintrag nur, solange alter < nr_obsinit * nr_bdcstint, also
+          90 Minuten.
+      Und darin steckt die eigentliche Arbeit, nicht in der Variablen:
+      INTERVALL UND VERALTERUNG HAENGEN ANEINANDER. Ein Port mit 10 statt
+      30 Minuten bekaeme automatisch 30 statt 90 Minuten Haltbarkeit. Wer
+      das je Interface einstellbar macht, muss entscheiden, ob nr_obsinit
+      mitwandert oder die Veralterung global bleibt.
+      OFFEN UND ZU RECHERCHIEREN (Thomas, 2026-08-18): was nehmen XNET und
+      TNN als Vorgabe? Seine Erinnerung sagt eher 10 Minuten als 30. Und
+      kuendigen sie AKTIV an - wie FlexNet -, wenn eine Route besser wird
+      oder ein Knoten verfaellt, statt nur auf die Uhr zu warten? Ich weiss
+      es nicht und habe es nicht geraten; unsere 1800 s sind jedenfalls
+      rein zyklisch.
     * ein VERKUERZTER Broadcast je Eintrag. Bei NET/ROM ist die Wahl auf
       einem Benutzerport heute alles oder nichts; nur einen Teil der
       Tabelle anzukuendigen waere der naechste Schritt. INP3 stellt
