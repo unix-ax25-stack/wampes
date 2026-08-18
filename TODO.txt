@@ -3171,3 +3171,50 @@ Nicht gebaut, auf Thomas' Wunsch. Der Stand zum Nachdenken:
   * XNETs 300 ebenso zu verwerfen waere falsch: das ist sein INTERNER
     Anfangswert, aus der 299er-Verschiebung erschlossen, nicht etwas, das
     wir auf dem Draht gesehen haetten.
+
+------------------------------------------------------------------------
+FLEX_INIT: WAS WIR EINTRAGEN, WENN NICHTS ODER UNSINN KOMMT (2026-08-18)
+------------------------------------------------------------------------
+Aus Thomas' Frage entstanden: "wir lesen keins - was tragen wir ein, wenn
+der Partner nichts sendet?" Erst die Praezisierung: wir LESEN FLEX_INIT
+sehr wohl, naemlich das erste Datenoktett, die Stop-SSID. Ungelesen
+bleiben nur die drei danach.
+
+GEMESSEN, drei Faelle, Partner passiv (wir rufen ihn):
+
+    Partner schickt                        wir trugen ein
+    gar kein FLEX_INIT                     DB0AAA-5
+    "0" + CR (abgeschnitten)               DB0AAA-5-13   <-- Fehler
+    "0" "0" (Stop 0), verbunden als -5     DB0AAA-5-0
+
+OHNE FLEX_INIT bleibt es bei min == max, also genau der SSID, mit der er
+verbunden hat (flexnet_input: call[ALEN+1] = call[ALEN]) oder mit der wir
+ihn eingetragen haben (flexsetcall). Konservativ und richtig - wir
+erfinden ihm keinen Bereich. Nur stand das nirgends, es fiel bloss so
+aus.
+
+DIE 13 WAR EIN FEHLER. recv_init() pruefte nur, DASS etwas ankam:
+
+    if ((chr = PULLCHAR(bpp)) != -1)
+        pp->call[ALEN + 1] = ((chr << 1) & SSID) | 0x60;
+
+Bei einem nach dem Funktionscode abgeschnittenen Rahmen steht dort der
+Zeilenabschluss, und ((0x0D << 1) & 0x1E) | 0x60 ergibt SSID 13. Ein
+einziger krummer Rahmen, und wir hielten den Partner bei DB0AAA-5-13 -
+und erzaehlten es dem ganzen Netz, denn sein Bereich reist in unserem
+FLEX_ROUT weiter.
+
+Kein Absturz uebrigens: das Byte wird maskiert und ergibt IMMER eine
+gueltige SSID. Es wurde nicht geknallt, sondern gelogen, still und
+weitergereicht - in dieser Ecke die unangenehmere Sorte.
+
+BEHOBEN: nur "0".."?" (0x30..0x3F) wird genommen, das ist die Codierung
+"0"+ssid und sonst nichts. Alles andere laesst den Bereich stehen -
+abgewiesen statt durch eine Schaetzung ersetzt, denn was wir schon haben
+ist die SSID, mit der er verbunden hat, und die stimmt so weit sie reicht.
+Nachgemessen: der abgeschnittene Rahmen laesst jetzt DB0AAA-5 stehen, ein
+regelkonformer mit Stop 15 ergibt unveraendert DB0AAA-5-15.
+
+DER UMGEKEHRTE BEREICH (-5-0) BLEIBT OFFEN. Er ist jetzt gemessen statt
+erschlossen; die drei Varianten stehen weiter oben unter "FLEXNET: EIN
+UMGEKEHRTER SSID-BEREICH WIRD ANGENOMMEN" und sind Thomas' Entscheidung.

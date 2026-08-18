@@ -1399,7 +1399,19 @@ static void recv_init(struct peer *pp, struct mbuf **bpp)
 {
 	int chr;
 
-	if ((chr = PULLCHAR(bpp)) != -1)
+	/* The stop SSID, and only if it IS one.  FlexNet writes it as "0"+ssid,
+	 * so the field is 0x30..0x3F and nothing else; the test used to be
+	 * merely "something arrived".
+	 *
+	 * Measured: a FLEX_INIT cut short after the function code leaves the CR
+	 * in the field, and ((0x0D << 1) & SSID) | 0x60 comes out as SSID 13.
+	 * One malformed frame and we held the partner at DB0AAA-5-13 - and told
+	 * the whole network so, since his range travels on in our FLEX_ROUT.
+	 *
+	 * Refused rather than replaced by a guess: what we already have is the
+	 * SSID he connected with, which is the truth as far as it goes.
+	 */
+	if ((chr = PULLCHAR(bpp)) >= '0' && chr <= '0' + 15)
 		pp->call[ALEN + 1] = ((chr << 1) & SSID) | 0x60;
 	free_p(bpp);
 	pp->token = memcmp(pp->axp->hdr.dest, pp->axp->hdr.source, AXALEN) < 0 ?
