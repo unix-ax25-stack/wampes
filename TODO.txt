@@ -2116,3 +2116,56 @@ ZU BAUEN, klein und in einem:
     "delete", "list"), lieber ausdruecklich abweisen mit dem Hinweis, dass
     es die nicht gibt - das ist der Fehler, den Thomas gemacht hat, und
     er wird nicht der Einzige sein.
+
+------------------------------------------------------------------------
+DURCHSICHT: HILFE UND EINGABEPRUEFUNG DER NEUEN BEFEHLE (2026-08-18)
+------------------------------------------------------------------------
+Auf Thomas' Frage, ob alle seit dem Import gebauten Befehle eine
+Beschreibung fuer ihre Unterbefehle bzw. ein Usage haben. Verglichen
+wurden die Kommandotabellen gegen den Stand vor dieser Arbeit (0ecbf55),
+danach jeder neue Befehl am laufenden Knoten mit "?" durchprobiert.
+
+IN ORDNUNG:
+  axsock, listen, start axtcp        eigener Usage-Text
+  ifconfig <if> eax25                "Valid options: off accept caller always"
+  ifconfig <if> dama                 "Dama must be off or slave"
+  ax25 emaxframe                     "must be 1..63" ueber setintrc
+  rip allow/noallow/learn            eigener Usage-Text
+("stop axtcp" braucht keinen, und "axtcp" allein ist zu Recht unbekannt -
+es ist ein Unterbefehl von start und stop.)
+
+BEFUNDE:
+
+ 1. ifconfig <if> tncinit <wort> RISS DEN KNOTEN UM. Eigener Abschnitt
+    entfaellt, es ist behoben (Commit "tncinit: a range check is not an
+    ownership check"): xdev wird nur in slip.c gesetzt, jedes andere
+    Attach laesst die calloc-Null stehen, und Null ist ein gueltiger
+    Index. Jetzt fragt tncinit_serial() ueber den Rueckzeiger in
+    struct slip, ob der Steckplatz wirklich uns gehoert.
+
+ 2. flexnet filter / netrom filter: kein Usage, kein "?", und jedes Wort
+    wird zur Station. Eigener Abschnitt weiter oben.
+
+ 3. setintrc() NIMMT JEDES WORT ALS ZAHL, weil es atoi() benutzt - "?"
+    wird zu 0. Das ist alter Code und faellt sonst nicht auf, weil die
+    meisten Bereiche bei 1 anfangen und die 0 dann abgewiesen wird
+    ("must be 1..63"). Bei UNSEREN Portwerten ist die 0 aber gueltig und
+    bedeutet "nimm die des Knotens" - ein Tippfehler setzt den Port also
+    STILL zurueck. Gemessen:
+
+        ifconfig ax0 paclen 128
+        ifconfig ax0     ->  paclen 128 maxframe 7 emaxframe 32
+        ifconfig ax0 paclen ?        (keine Ausgabe)
+        ifconfig ax0     ->  die Zeile ist weg
+
+    Betrifft paclen, maxframe und emaxframe je Port sowie
+    sntp panic_threshold. Zu entscheiden: setintrc() strenger machen
+    (strtol mit Endzeiger-Pruefung, dann wirkt es ueberall) oder nur die
+    Aufrufer mit gueltiger Null absichern. Das Erste ist richtiger und
+    beruehrt mehr; es ist derselbe Fehler wie bei den Phantomstationen,
+    nur an der anderen Ecke - ein Wort, das keine Zahl ist, wird
+    stillschweigend als eine genommen.
+
+ 4. Kleinigkeit ohne Eile: iftncinit() hat einen Zweig fuer "argc < 2",
+    der den aktuellen Wert anzeigen soll. Er ist unerreichbar, weil die
+    Kommandotabelle vorher "Argument missing" meldet.
