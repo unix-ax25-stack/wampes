@@ -1389,6 +1389,25 @@ angekuendigten Umlaufzeit sich auf einen NEUEN Aufbau auswirkt und auf einen
 laufenden nicht, und dass ein "unerreichbar" (MAXDELAY+1) nicht als Limit
 durchschlaegt.
 
+DIE HOPS RECHTS VON UNS - SCHON RICHTIG (Thomas' Rueckfrage, geprueft)
+Sein Einwand: wir quittieren hop-to-hop. Sind wir Hop 4 und sollen noch
+zwei weiter, dann kommen UA, RR und DM ueber diese zwei Hops zurueck und
+nicht ueber alle sechs - T1 darf also nur die noch NICHT wiederholten
+Digis rechts von uns zaehlen, sonst wachsen die Wartezeiten nach links
+auf.
+
+Das tut es bereits, und die Stelle ist eindeutig (lapb.c):
+
+    axp->mdev = (T1init * (1 + 2 * (axp->hdr.ndigis - axp->hdr.nextdigi))
+                 + 2) / 4;
+
+ndigis minus nextdigi ist genau die Zahl der noch offenen Digis.
+Nachgemessen am Relais: das zweite Bein traegt uns selbst als bereits
+wiederholten Digi, also ndigis 1 minus nextdigi 1 = 0, und sein T1 war
+5 s; der Rufer davor, der einen offenen Digi vor sich hat, rechnete mit
+15 s. Kein Handlungsbedarf, nur die Bestaetigung, damit es nicht ein
+zweites Mal gefragt wird.
+
 DIE ANDEREN UHREN STEHEN NICHT IM WEG (Thomas' Rueckfrage, nachgelesen)
 Vorgaben: T1 5 s, T3 900 s (Idle-Poll), T4 60 s (busy), T5 3600 s
 (Idle-Disconnect). Ein grosses T1 kollidiert mit keiner davon:
@@ -1534,8 +1553,15 @@ WAS ICH VOR DEM BAUEN GEFRAGT HAETTE, damit es nicht zweimal gebaut wird:
     ob es fest verdrahtet wird oder als "ax25 tmax" einstellbar. Fuer
     einstellbar spricht, dass jeder andere Timer hier es auch ist; dagegen,
     dass eine Zahl mehr auch eine Zahl mehr zum Falscheinstellen ist.
-  * Gilt C nur im Aufbau oder in jedem Zustand? Siehe die Warnung oben -
-    in RECOVERY ist T1 gemessen, und Messungen soll man nicht kuerzen.
+  * Gilt C nur im Aufbau oder in jedem Zustand? ENTSCHIEDEN am 2026-08-18:
+    NUR IM AUFBAU. Thomas' Begruendung, und sie ist besser als meine
+    Warnung von oben: ein Connect, der nach max retry scheitert und beim
+    zweiten Anlauf gelingt, hat die aufsummierten T1 beider Versuche
+    gekostet - und wenn die Verbindung dann endlich steht, soll sie nicht
+    nach zehn oder fuenfzehn Minuten wieder abgebaut werden. Die
+    urspruengliche Idee des T1 bleibt bei bestehender Verbindung also
+    unangetastet. Er wollte ausdruecklich nicht auf gut Glueck den
+    Normalbetrieb gegen den Standard verstellen.
 
 ------------------------------------------------------------------------
 6PACK UND PACLEN - ERLEDIGT, MIT DER RICHTIGEN ZAHL (2026-08-17)
