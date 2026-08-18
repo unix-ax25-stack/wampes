@@ -6,12 +6,23 @@
 configure.h
 configure.mak
 
+# erzeugt von src/Makefile (FORCE-Regel), traegt den Commit fuer das Banner.
+# Getrackt gehoert sie nicht: die Pruefung "git diff --quiet HEAD", aus der das
+# "+" faellt, sieht sie mit an, und die eingecheckte Fassung kann nie zu der
+# passen, die gerade erzeugt wird - sie nennt ja einen anderen Commit. Das "+"
+# stand damit dauerhaft und sagte nichts mehr aus.
+src/version_git.h
+
 # built binaries - je Verzeichnis das, was sein Makefile unter TARGETS baut
 bbs/bbs
 bbs/bbs_import
 convers/convers
 convers/conversd
 src/net
+# und die Debug-Bauten von Hand, siehe README.debug - kein Makefile-Ziel,
+# deshalb fielen sie durch die Durchsicht der TARGETS
+src/net.dbg
+src/net.ubsan
 tools/check_seteugid
 tools/connect
 tools/connect2

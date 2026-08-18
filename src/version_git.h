@@ -1,1 +1,0 @@
-#define WAMPES_VERSION "WAMPES-2026-08-17-g962f5ee+"
