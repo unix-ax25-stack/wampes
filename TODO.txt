@@ -1765,7 +1765,18 @@ Faelle:
   wir riefen mit SABME:  AX25:  DL9SAU-9->DL1BBB ... I NR=0 NS=0 pid=0x0
 
 mmask ist die Wahrheit, eax25_mark() folgt ihr jetzt - an den zwei
-Stellen, die mmask festlegen, und am Rueckfall. Nachgemessen: das zweite
+Stellen, die mmask festlegen, und am Rueckfall.
+
+UND ES WAR KEINE KOSMETIK, SONDERN INTEROPERABILITAET (nachgetragen am
+2026-08-18, nachdem die TNN-Quellen vorlagen). TNNs Empfangspfad haengt
+ausschliesslich am Bit AM RAHMEN und nie am geglaubten Linkzustand:
+rxfEAX entscheidet, ob ueberhaupt ein zweites Steuerbyte gelesen wird, wo
+das Poll/Final-Bit sitzt und wo es zurueckgesetzt wird (l2rx.c). Ein
+unmarkierter I-Rahmen einer modulo-128-Strecke wird dort also als
+gewoehnliches AX.25 gelesen. Damit war ein modulo-128-Link, den WIR zu
+einem TNN-Nachbarn geoeffnet haben, vom ersten I-Rahmen an unlesbar - nur
+die Links, die TNN aufgemacht hat, funktionierten, weil das Annehmen
+eines SABME die eine Stelle war, die das Bit setzte. Nachgemessen: das zweite
 Bein zeigt "EAX25: ... pid=Text" mit N(S) ueber 127 hinaus, die
 modulo-8-Haelfte daneben bleibt "AX25:". Das Bit folgt der Strecke, nicht
 dem Knoten.

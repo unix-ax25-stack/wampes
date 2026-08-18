@@ -292,6 +292,24 @@ traces as `EAX25: ... I NR=0 NS=0 pid=Text` with `N(S)` running past 127,
 while the modulo-8 half beside it stays plain `AX25:` - the bit follows
 the link, not the node.
 
+**And it is not a monitoring nicety, it is required.**  TNN's receive path
+is driven by the bit on the frame and never by what the link is believed
+to be: `rxfEAX` decides whether a second control octet is read at all,
+where the poll/final bit sits, and where it is cleared again (`l2rx.c`).
+An I frame of a modulo-128 link that arrives *unmarked* is therefore
+parsed as plain AX.25 - wrong control field, wrong `N(R)`, wrong P/F.  So
+before this, a modulo-128 link **we** opened towards a TNN neighbour was
+misread by it from the first I frame; only links TNN opened worked,
+because accepting a SABME was the one place that set the bit.  Marking U
+frames as well, which TNN does not do, costs nothing: it skips them on
+that test.
+
+The same bit answers two different questions, and only one of them
+reliably.  *Does this frame carry two control octets* - yes, per frame,
+which is what makes a live cross-check possible.  *Can this station speak
+modulo-128* - no better than before: a station may set it and still not
+work, which is why the route entry records outcomes instead.
+
 ## What a larger packet length does to the rest
 
 Asked because `ax25 paclen` accepts up to 32767 and always did.  Measured
