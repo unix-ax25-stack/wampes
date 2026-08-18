@@ -80,6 +80,35 @@ static struct dest *Dests;      /* List of destinations */
 static struct peer *Peers;      /* List of peers */
 static struct timer Polltimer;  /* Poll timer */
 
+/* Our own SSID range, the way FlexNet knows a station: a callsign and a span
+ * of SSIDs.  The two halves travel apart - the start is the callsign our links
+ * run under, the stop is the single number in FLEX_INIT - so both are kept
+ * here and both are the NODE's, not the port's.  XNET writes the same two down
+ * as "my call db0blo-4" and "ro fl pa ssid 15".
+ *
+ * -1 means nothing was configured, and then everything behaves exactly as it
+ * did: the source comes from whichever port the route picked and the stop is
+ * that same SSID, so each port announces a station of its own.
+ */
+static int Flex_start = -1;
+static int Flex_stop = -1;
+
+/*---------------------------------------------------------------------------*/
+
+/* The callsign our FlexNet links run under, or nothing if none was set.  The
+ * base is Mycall's: one node, one callsign - a different one would be a
+ * station we do not answer to.
+ */
+
+static int flex_mycall(uint8 *call)
+{
+	if (Flex_start < 0)
+		return 0;
+	addrcp(call, Mycall);
+	call[ALEN] = (uint8) (0x60 | (Flex_start << 1));
+	return 1;
+}
+
 /*---------------------------------------------------------------------------*/
 
 #define iround(d)               ((int) ((d) + 0.5))
@@ -283,12 +312,22 @@ static void send_init(const struct peer *pp)
 {
 
 	struct mbuf *bp;
+	int stop;
 	uint8 *cp;
+
+	/* The one number FlexNet has room for: the highest SSID we serve.  The
+	 * lowest is not in the frame at all - the far end takes it from the
+	 * callsign this link runs under.  Unconfigured we send that same SSID,
+	 * which says "I serve exactly myself" and is what the node did before
+	 * there was anything to set.
+	 */
+	stop = Flex_stop >= 0 ? Flex_stop
+			      : ((pp->axp->hdr.source[ALEN] & SSID) >> 1);
 
 	if ((bp = alloc_mbuf(6))) {
 		cp = bp->data;
 		*cp++ = FLEX_INIT;
-		*cp++ = '0' + ((pp->axp->hdr.source[ALEN] & SSID) >> 1);
+		*cp++ = '0' + stop;
 		*cp++ = ' ';
 		*cp++ = ' ';
 		*cp++ = ' ' + 1;
@@ -356,11 +395,25 @@ static void clear_all_via_peer(struct peer *pp, int including_peer)
 static struct ax25_cb *setaxp(struct peer *pp)
 {
 	struct ax25 hdr;
+	struct ax25_opts opts;
 
 	if (!(pp->axp = find_ax25(pp->call))) {
 		memset(&hdr, 0, sizeof(struct ax25));
+		memset(&opts, 0, sizeof(opts));
 		addrcp(hdr.dest, pp->call);
-		if (!(pp->axp = open_ax25(&hdr, AX_ACTIVE, 0)))
+		/* One callsign for every FlexNet link of ours, and not the one
+		 * the chosen port happens to carry.  FlexNet knows a station
+		 * as a callsign and a range, and the range starts at the
+		 * callsign the link runs under - so a callsign per port is a
+		 * STATION per port to everybody else.  axroute() stamps the
+		 * interface's callsign over the source, which is why the
+		 * choice has to be put back afterwards; that is what
+		 * ownsource is for.
+		 */
+		if (flex_mycall(hdr.source))
+			opts.ownsource = 1;
+		if (!(pp->axp = open_ax25(&hdr, AX_ACTIVE,
+					  opts.ownsource ? &opts : 0)))
 			return 0;
 	}
 	if (pp->id != pp->axp->id) {
@@ -1035,10 +1088,28 @@ static int doflexnetquery(int argc, char *argv[], void *p)
  * therefore announce two stations - measured, DL9SAU-4-4 and DL9SAU-6-6 - and
  * neither range covers anything else we answer to.
  *
- * This command only SHOWS that, and the showing is the point: what we serve is
- * derivable (the ports' callsigns and the "listen" entries), what we announce
- * is not the same thing, and until the two are side by side nobody can see the
- * gap.  Setting it is a separate step - see TODO.txt.
+ * With no arguments it SHOWS both, and the showing is half the point: what we
+ * serve is derivable (the ports' callsigns and the "listen" entries), what we
+ * announce is not the same thing, and until the two stand side by side nobody
+ * can see the gap.
+ *
+ * With a range it SETS both, node-wide.  The start becomes the callsign every
+ * FlexNet link of ours is opened under - see setaxp() - and the stop goes into
+ * FLEX_INIT.
+ *
+ * ONLY LINKS WE OPEN.  A partner who calls US reaches whichever callsign he
+ * dialled, and the answer has to carry that or he would not recognise it; the
+ * range he derives is then his choice, not ours.  In FlexNet that case does
+ * not arise, because a partner is configured with the one callsign the node
+ * uses ("rou flex add 3 igateb"), so a link arriving elsewhere is a
+ * misconfiguration at his end.  The display says so rather than hiding it.
+ *
+ * AND IT TAKES EFFECT ON THE NEXT LINK, not at once.  Re-sending FLEX_INIT
+ * would look tidier and is a trap: recv_init() at the far end calls
+ * clear_all_via_peer(), so he forgets every route he learned from us - while
+ * our own send_rout() only ever sends CHANGES, so we would not tell him again.
+ * Better a range that arrives when the link next comes up than a table that
+ * quietly empties.
  *
  * The range is a DECLARATION, not a promise, and that is not our licence but
  * FlexNet practice: DB0BLO announces 4-15 while -6 and -7 exist nowhere.  So
@@ -1051,14 +1122,50 @@ static int doflexnetssid(int argc, char *argv[], void *p)
 	int announced[16];
 	int n = 0;
 	int run_start = -1;
+	int seen_start[16];
 	int served[16];
 	int ssid;
 	int starts = 0;
 	struct peer *pp;
 	uint8 call[AXALEN];
 
+	if (argc >= 2) {
+		char *cp;
+		long start;
+		long stop;
+
+		if (!strcmp(argv[1], "none") || !strcmp(argv[1], "off")) {
+			Flex_start = Flex_stop = -1;
+			if (Peers)
+				printf("Cleared.  Links already up keep the "
+				       "callsign they were opened under.\n");
+			return 0;
+		}
+		start = strtol(argv[1], &cp, 10);
+		if (cp == argv[1] || *cp != '-') {
+			printf("The range is written <start>-<stop>, e.g. "
+			       "\"flexnet ssid 0-15\"\n");
+			return 1;
+		}
+		stop = strtol(++cp, &cp, 10);
+		if (*cp || start < 0 || stop > 15 || start > stop) {
+			printf("Both ends are 0..15 and the start is not "
+			       "above the stop\n");
+			return 1;
+		}
+		Flex_start = (int) start;
+		Flex_stop = (int) stop;
+		/* Deliberately no announcement here - see the note above. */
+		if (Peers)
+			printf("Set.  Links already up keep what they "
+			       "announced; this reaches a partner when his "
+			       "link next comes up.\n");
+		return 0;
+	}
+
 	memset(served, 0, sizeof(served));
 	memset(announced, 0, sizeof(announced));
+	memset(seen_start, 0, sizeof(seen_start));
 
 	printf("SSIDs of %.6s this node answers to:", pax25(buf, Mycall));
 	/* One walk over all sixteen, asking the two sources that decide it -
@@ -1087,9 +1194,21 @@ static int doflexnetssid(int argc, char *argv[], void *p)
 		printf(" (none)");
 	putchar('\n');
 
-	/* And what goes out, per link, because that is where it is decided
-	 * today.  The start is the source callsign of the link, the stop is
-	 * what send_init() derived from it - the same SSID.
+	if (Flex_start < 0) {
+		printf("Configured range: none - each link announces the "
+		       "callsign of its own port\n");
+	} else {
+		printf("Configured range: %.6s-%d-%d\n", pax25(buf, Mycall),
+		       Flex_start, Flex_stop);
+		if (!served[Flex_start])
+			printf("  the start is an SSID this node does not "
+			       "answer to - a caller reaching it finds "
+			       "nothing\n");
+	}
+
+	/* And what actually goes out, per link.  The start is the source
+	 * callsign of the link, which is ours only where we opened it, and the
+	 * stop is what send_init() sent.
 	 */
 	if (!Peers) {
 		printf("No FlexNet links - the range is announced in "
@@ -1099,6 +1218,7 @@ static int doflexnetssid(int argc, char *argv[], void *p)
 	printf("Announced, per link:\n");
 	for (pp = Peers; pp; pp = pp->next) {
 		char peerbuf[FLEXBUF];
+		int stop;
 
 		printf("  %-12s ", sprintflexcall(peerbuf, pp->call));
 		if (!pp->axp) {
@@ -1106,12 +1226,16 @@ static int doflexnetssid(int argc, char *argv[], void *p)
 			continue;
 		}
 		ssid = (pp->axp->hdr.source[ALEN] & SSID) >> 1;
-		printf("as %-10s -> %.6s-%d-%d\n",
+		stop = Flex_stop >= 0 ? Flex_stop : ssid;
+		printf("as %-10s -> %.6s-%d-%d%s\n",
 		       pax25(buf, pp->axp->hdr.source),
-		       pax25(buf, pp->axp->hdr.source), ssid, ssid);
-		/* start == stop today, so one SSID per link. */
-		if (!announced[ssid]) {
-			announced[ssid] = 1;
+		       pax25(buf, pp->axp->hdr.source), ssid, stop,
+		       (Flex_start >= 0 && ssid != Flex_start)
+		         ? "   he called this callsign" : "");
+		for (n = ssid; n <= stop; n++)
+			announced[n] = 1;
+		if (!seen_start[ssid]) {
+			seen_start[ssid] = 1;
 			starts++;
 		}
 	}
@@ -1168,12 +1292,21 @@ int doflexnet(int argc, char *argv[], void *p)
 		  "       flexnet link add|delete <call>" },
 		{ "query",     doflexnetquery,     0, 2, "flexnet query <call>" },
 		{ "ssid",      doflexnetssid,      0, 0,
-		  "flexnet ssid                          which of our SSIDs we\n"
-		  "       serve, and which we announce.  FlexNet knows a station as a\n"
-		  "       callsign and a RANGE: the start is the callsign a link runs\n"
-		  "       under, the stop is one number sent in FLEX_INIT at link setup.\n"
-		  "       We derive both from the link, so ports with callsigns of their\n"
-		  "       own announce one station each.  Shows only - see TODO.txt." },
+		  "flexnet ssid                          show what we serve and\n"
+		  "                                             what we announce\n"
+		  "       flexnet ssid <start>-<stop>           set both, node-wide\n"
+		  "       flexnet ssid none                     back to per-port\n"
+		  "\n"
+		  "  FlexNet knows a station as a callsign and a RANGE of SSIDs.  The\n"
+		  "  start is the callsign our links run under, the stop is the one\n"
+		  "  number in FLEX_INIT - XNET writes the same two as \"my call\" and\n"
+		  "  \"ro fl pa ssid\".  Unset, we take both from whichever port the\n"
+		  "  route picked, so ports with callsigns of their own announce one\n"
+		  "  station each.\n"
+		  "\n"
+		  "  The range is a declaration, not a promise: gaps in it are\n"
+		  "  ordinary FlexNet.  It applies to links WE open and reaches a\n"
+		  "  partner when his link next comes up." },
 		{ 0,           0,                  0, 0, 0 }
 	};
 

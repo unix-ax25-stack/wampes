@@ -3089,3 +3089,85 @@ Protokoll, und eine angenommene 600 kostete auf einem frischen
 Partnerlink acht Poll-Zyklen (40 Minuten) Konvergenz, weil pp->delay bei
 einem eingetragenen Partner sonst von der ersten echten Messung DIREKT
 gesetzt wird.
+
+------------------------------------------------------------------------
+"flexnet ssid <start>-<stop>" GEBAUT (2026-08-18)
+------------------------------------------------------------------------
+Schritt 3, und er brauchte den FLEX_INIT-Mitschnitt am Ende doch nicht:
+Thomas' Einwand, dass im Rahmen kein Rufzeichen Platz hat, und seine
+Konfigurationszeile "ro fl pa ssid 15" beantworten die Frage vollstaendig.
+Die drei unbekannten Oktette koennen den Start nicht tragen, also kommt er
+aus der Quelladresse - und mehr musste man nicht wissen.
+
+Gebaut ist genau das Modell von XNET, eine Angabe fuer den Knoten:
+
+    flexnet ssid                    zeigen
+    flexnet ssid <start>-<stop>     setzen
+    flexnet ssid none               zurueck auf das alte Verhalten
+
+Der Start wird das Rufzeichen, unter dem setaxp() jeden FlexNet-Link von
+uns oeffnet (ax25_opts mit ownsource, weil axroute() sonst das
+Interface-Rufzeichen darueberstempelt); der Stop geht in send_init().
+Vorgabe -1/-1, also unveraendert.
+
+GEMESSEN, alles am laufenden Knoten mit zwei Ports (DL9SAU-4, DL9SAU-6)
+und einem Login-Listener auf -8:
+
+    flexnet ssid 4-15
+      ax25 status:  DL9SAU-4->DB0AAA-5 und DL9SAU-4->DB0BBB-5
+                    (vorher -4 und -6, also zwei Stationen)
+      auf dem Draht: FLEX_INIT b'0?  !\r', "?" ist "0"+15
+      Anzeige:      Configured range: DL9SAU-4-15, keine Ruege
+
+    flexnet ssid 0-15
+      Anzeige warnt: der Start ist eine SSID, auf die wir nicht hoeren -
+      richtig, denn die Ports tragen -4 und -6
+
+    flexnet ssid 9-3 / 0..15 / 3-99   abgewiesen
+    flexnet ssid none                 zurueck, Links behalten ihr
+                                      Rufzeichen
+
+    Gegenprobe ohne jede Zeile: unveraendert wie vorher.
+
+ZWEI ENTSCHEIDUNGEN IM BAU, beide im Quelltext begruendet:
+
+  * Eingehende Links bleiben unberuehrt. Wer uns anruft, erreicht das
+    Rufzeichen, das er gewaehlt hat, und die Antwort muss es tragen,
+    sonst erkennt er sie nicht. In FlexNet gibt es den Fall nicht - ein
+    Partner ist mit dem einen Rufzeichen konfiguriert, das der Knoten
+    benutzt -, also ist ein anderswo eintreffender Link eine
+    Fehlkonfiguration bei ihm. Die Anzeige markiert ihn mit "he called
+    this callsign", statt ihn zu verstecken.
+  * KEIN erneutes FLEX_INIT an bestehende Links. Es saehe ordentlicher
+    aus und ist eine Falle: recv_init() ruft am anderen Ende
+    clear_all_via_peer(), er vergisst also alles, was er von uns gelernt
+    hat - waehrend unser send_rout() nur AENDERUNGEN schickt, es ihm
+    also nicht wieder erzaehlt. Ein Bereich, der beim naechsten
+    Linkaufbau ankommt, ist besser als eine Tabelle, die still leerlaeuft.
+
+Einzelheiten in doc/FLEXNET-SSID.md.
+
+------------------------------------------------------------------------
+OFFEN: recv_poll() UND DAS SENTINEL 600 (Thomas will es ueberdenken)
+------------------------------------------------------------------------
+Nicht gebaut, auf Thomas' Wunsch. Der Stand zum Nachdenken:
+
+  * DEFAULTDELAY 600 hat ZWEI Rollen. In create_peer() ist es eine
+    Annahme ("ungemessen, also unattraktiv", 60 s, absichtlich
+    pessimistisch, und fuer einen neuen direkten Partner sogar sehr
+    pessimistisch). In recv_poll()/recv_rprt() ist es ein SENTINEL
+    ("keine Ahnung"). Eine Konstante, zwei Bedeutungen.
+  * Die Zweideutigkeit auf dem Draht ist die eigentliche Sache: 600 ist
+    ein legaler Messwert (MAXDELAY ist 3000), also senden wir eine echte
+    Messung von 120,0 s Umlaufzeit als "keine Ahnung" und verwerfen eine
+    echte 600 vom Partner.
+  * Die billige Haelfte waere eine Zeile in recv_poll(): ein gemessenes
+    locdelay von genau 600 um eine Einheit danebenlegen.
+  * Gegen das Annehmen einer eingehenden 600 spricht die Rechnung: bei
+    einem eingetragenen Partner steht pp->delay auf 0, die erste echte
+    Messung setzt ihn also DIREKT. Nimmt man 600 vorher an, konvergiert
+    er mit Gewicht 1/8 ueber acht Poll-Zyklen - 40 Minuten mit einem viel
+    zu pessimistischen Wert.
+  * XNETs 300 ebenso zu verwerfen waere falsch: das ist sein INTERNER
+    Anfangswert, aus der 299er-Verschiebung erschlossen, nicht etwas, das
+    wir auf dem Draht gesehen haetten.
