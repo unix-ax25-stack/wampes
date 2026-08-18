@@ -1878,10 +1878,34 @@ BLEIBEN ZWEI WEGE, und Thomas' ist der erste:
      keinen SABM-Rueckfall zu schicken heisst, dass ein UA gar nichts
      anderes beantworten KANN. Die Mehrdeutigkeit entsteht dann nicht,
      statt hinterher aufgeloest zu werden.
-     Zu bedenken: er koennte seine Technik getauscht haben. Der Eintrag
-     ist fluechtig und altert mit der Route (24,8 Tage), das ist lang.
-     Milder waere, den Rueckfall bei bewiesenen Partnern erst am Ende des
-     N2-Zyklus zu erlauben statt nach drei Proben.
+     THOMAS' EINWAND DAGEGEN, und er wiegt schwerer als mein
+     Milderungsvorschlag: was, wenn der gelernte Partner erst in sechs
+     Stunden wieder ruft? Dann steht "kann es" im Gedaechtnis, waehrend
+     die Technik laengst getauscht ist - und wir proben bis zum Ende des
+     N2-Zyklus ohne Rueckfall, also gar kein Connect mehr. Ein
+     Dauerausfall gegen eine seltene Fehldeutung eingetauscht, und wir
+     haben gerade gelernt, wohin SABME-Missverstaendnisse fuehren.
+     DAS ERLEDIGT DIE VARIANTE IN DIESER FORM. Ein Gedaechtnis, das
+     mit der Route altert (24,8 Tage), taugt nicht als Grundlage. Wenn
+     ueberhaupt, dann mit einer EIGENEN, kurzen Frist - Minuten bis
+     Stunden -, und das ist ein zusaetzliches Feld und eine zusaetzliche
+     Entscheidung.
+
+  3. DIE LEBENDE GEGENPROBE, und die kommt ohne jedes Gedaechtnis aus.
+     Halten wir einen Link fuer modulo-8 und empfangen darauf einen I-
+     oder S-Rahmen, dessen EAX-Bit gesetzt ist, dann ist das ein
+     Widerspruch AUS DIESEM LINK, JETZT - kein gespeicherter Glaube,
+     sondern der Rahmen in der Hand. Umgekehrt genauso. Die richtige
+     Antwort darauf ist ein Neuaufbau: einmal Umlaufzeit kostet er, und
+     danach stimmt der Modulus, statt dass stillschweigend falsch
+     geparst wird.
+     Nur auf I- und S-Rahmen pruefen, denn genau die markiert TNN; auf
+     U-Rahmen unterscheiden sich die Gepflogenheiten (wir markieren sie,
+     TNN nicht), und dort waere die Pruefung eine Fehlerquelle statt
+     einer Absicherung.
+     Falsch anschlagen kann sie bei einer Station, die die reservierten
+     Bits pauschal nullt. Selten, und die Folge - ein Neuaufbau - ist
+     verkraftbar.
   2. JE RAHMEN PARSEN wie TNN, statt je Link. Das repariert auch eine
      Desynchronisation, die auf anderem Weg entstanden ist, und kostet
      eine Abfrage im Empfangspfad.
