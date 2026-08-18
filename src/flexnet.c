@@ -1116,9 +1116,30 @@ static int doflexnetquery(int argc, char *argv[], void *p)
  * the gaps below are worth showing but are not faults.
  */
 
+/* "CALL-start-stop", the shape a range is talked about in.  Not
+ * sprintflexcall(), which prints "-N" for an equal pair and the bare callsign
+ * for 0-0: right for a routing table, where the reader knows the columns, and
+ * wrong here, where both ends are the point.
+ */
+
+static char *sprintrange(char *buf, const uint8 *call, int start, int stop)
+{
+	char *cp;
+	char tmp[AXBUF];
+
+	pax25(tmp, call);
+	if ((cp = strchr(tmp, '-')) != 0)
+		*cp = '\0';
+	sprintf(buf, "%s-%d-%d", tmp, start, stop);
+	return buf;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static int doflexnetssid(int argc, char *argv[], void *p)
 {
 	char buf[AXBUF];
+	char rbuf[AXBUF + 8];
 	int announced[16];
 	int n = 0;
 	int run_start = -1;
@@ -1194,66 +1215,86 @@ static int doflexnetssid(int argc, char *argv[], void *p)
 		printf(" (none)");
 	putchar('\n');
 
-	if (Flex_start < 0) {
-		printf("Configured range: none - each link announces the "
-		       "callsign of its own port\n");
-	} else {
-		printf("Configured range: %.6s-%d-%d\n", pax25(buf, Mycall),
-		       Flex_start, Flex_stop);
+	/* What we announce, and it always says the SAME thing - a range, in
+	 * full.  Unset is not "nothing": it means each port supplies both ends
+	 * from its own callsign, and that has to be shown as the range it
+	 * produces, or "not set" and "0-0" look like different answers on a
+	 * node where they are the same one.
+	 */
+	if (Flex_start >= 0) {
+		printf("Announced range: %s\n",
+		       sprintrange(rbuf, Mycall, Flex_start, Flex_stop));
+		for (ssid = Flex_start; ssid <= Flex_stop; ssid++)
+			announced[ssid] = 1;
+		starts = 1;
 		if (!served[Flex_start])
 			printf("  the start is an SSID this node does not "
 			       "answer to - a caller reaching it finds "
 			       "nothing\n");
-	}
+	} else {
+		struct iface *ifp;
 
-	/* And what actually goes out, per link.  The start is the source
-	 * callsign of the link, which is ours only where we opened it, and the
-	 * stop is what send_init() sent.
-	 */
-	if (!Peers) {
-		printf("No FlexNet links - the range is announced in "
-		       "FLEX_INIT when one comes up\n");
-		return 0;
-	}
-	printf("Announced, per link:\n");
-	for (pp = Peers; pp; pp = pp->next) {
-		char peerbuf[FLEXBUF];
-		int stop;
-
-		printf("  %-12s ", sprintflexcall(peerbuf, pp->call));
-		if (!pp->axp) {
-			printf("(no link)\n");
-			continue;
-		}
-		ssid = (pp->axp->hdr.source[ALEN] & SSID) >> 1;
-		stop = Flex_stop >= 0 ? Flex_stop : ssid;
-		printf("as %-10s -> %.6s-%d-%d%s\n",
-		       pax25(buf, pp->axp->hdr.source),
-		       pax25(buf, pp->axp->hdr.source), ssid, stop,
-		       (Flex_start >= 0 && ssid != Flex_start)
-		         ? "   he called this callsign" : "");
-		for (n = ssid; n <= stop; n++)
-			announced[n] = 1;
-		if (!seen_start[ssid]) {
+		printf("Announced range: not set, so each port supplies both "
+		       "ends from its own\n                 callsign:");
+		for (ifp = Ifaces; ifp; ifp = ifp->next) {
+			if (ifp->output != ax_output || !ifp->hwaddr)
+				continue;
+			ssid = (ifp->hwaddr[ALEN] & SSID) >> 1;
+			if (seen_start[ssid])
+				continue;       /* the same range twice */
 			seen_start[ssid] = 1;
 			starts++;
+			announced[ssid] = 1;
+			printf("%s %s", starts > 1 ? "," : "",
+			       sprintrange(rbuf, ifp->hwaddr, ssid, ssid));
 		}
+		if (!starts)
+			printf(" (no AX.25 port)");
+		putchar('\n');
 	}
 
-	/* Name what the two lists say together, rather than leaving it to be
-	 * read off.  Neither line is a fault by itself - a range with gaps is
-	 * ordinary FlexNet - but two ranges for one node are two stations to
-	 * everybody else, and that one is.
+	/* Name what the two lists say together rather than leaving it to be
+	 * read off.  The remarks are about the DECLARATION, so they are worth
+	 * having before any link exists - that is when it is configured.
+	 * Neither is a fault by itself: a range with gaps is ordinary FlexNet.
+	 * Two ranges for one node are two stations to everybody else, and that
+	 * one is.
 	 */
 	if (starts > 1)
-		printf("Two or more ranges for one node: to the network that is "
-		       "%d stations, not one.\n", starts);
+		printf("  %d ranges for one node - to everybody else that is "
+		       "%d stations\n", starts, starts);
 	for (ssid = 0, n = 0; ssid < 16; ssid++)
 		if (served[ssid] && !announced[ssid])
 			n++;
 	if (n)
-		printf("%d served SSID%s outside every announced range - not "
-		       "reachable by FlexNet routing.\n", n, n == 1 ? "" : "s");
+		printf("  %d served SSID%s outside what we announce - not "
+		       "reachable by FlexNet routing\n", n, n == 1 ? "" : "s");
+
+	/* And what is actually standing.  A peer exists here only if somebody
+	 * entered him or he has spoken to us, so "none" is both at once and
+	 * the line says so.
+	 */
+	if (!Peers) {
+		printf("Peers: none entered with \"flexnet link add\", and "
+		       "none has called us\n");
+		return 0;
+	}
+	printf("Peers:\n");
+	for (pp = Peers; pp; pp = pp->next) {
+		char peerbuf[FLEXBUF];
+
+		printf("  %-12s ", sprintflexcall(peerbuf, pp->call));
+		if (!pp->axp) {
+			printf("no link\n");
+			continue;
+		}
+		ssid = (pp->axp->hdr.source[ALEN] & SSID) >> 1;
+		printf("to him we are %s%s\n",
+		       sprintrange(rbuf, pp->axp->hdr.source, ssid,
+				   Flex_stop >= 0 ? Flex_stop : ssid),
+		       (Flex_start >= 0 && ssid != Flex_start)
+		         ? "   he called this callsign, so the start is his" : "");
+	}
 	return 0;
 }
 

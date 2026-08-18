@@ -68,20 +68,33 @@ leaves out:
 
     flexnet ssid
     SSIDs of DL9SAU this node answers to: 4, 6, 8
-    Configured range: DL9SAU-4-15
-    Announced, per link:
-      DB0BBB-5     as DL9SAU-4   -> DL9SAU-4-15
-      DB0AAA-5     as DL9SAU-4   -> DL9SAU-4-15
+    Announced range: DL9SAU-4-15
+    Peers:
+      DB0AAA-5     to him we are DL9SAU-4-15
+      DB0BBB-5     to him we are DL9SAU-4-15
 
 The served SSIDs come from one walk over all sixteen, asking
 `ismyax25addr()` for the ports and `axlisten_active()` for the listeners -
 not by reaching into either list, so the display cannot fall out of step with
 them.  The result is printed as maximal runs.
 
-Two remarks appear underneath, deliberately of different weight.  *"n served
-SSIDs outside every announced range"* states a fact - a range with gaps is
-ordinary.  *"Two or more ranges for one node"* is a fault, because to
-everybody else that is two stations.
+**Unset is shown as the range it produces**, not as "none":
+
+    Announced range: not set, so each port supplies both ends from its own
+                     callsign: DL9SAU-6-6, DL9SAU-4-4
+      2 ranges for one node - to everybody else that is 2 stations
+      1 served SSID outside what we announce - not reachable by FlexNet routing
+
+Otherwise a node whose only port is `-0` would read "none" before and
+`DL9SAU-0-0` after `flexnet ssid 0-0`, as though something had changed, when
+the two are the same announcement.  And because the remarks hang on the
+*declaration* rather than on existing links, they are there while the node is
+being configured, which is when they are read.
+
+The two remarks are deliberately of different weight.  *"n served SSIDs
+outside what we announce"* states a fact - a range with gaps is ordinary.
+*"n ranges for one node"* is a fault, because to everybody else that is n
+stations.
 
 ## Two things it does not do, and why
 
