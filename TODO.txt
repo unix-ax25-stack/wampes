@@ -1128,12 +1128,42 @@
       30 Minuten bekaeme automatisch 30 statt 90 Minuten Haltbarkeit. Wer
       das je Interface einstellbar macht, muss entscheiden, ob nr_obsinit
       mitwandert oder die Veralterung global bleibt.
-      OFFEN UND ZU RECHERCHIEREN (Thomas, 2026-08-18): was nehmen XNET und
-      TNN als Vorgabe? Seine Erinnerung sagt eher 10 Minuten als 30. Und
-      kuendigen sie AKTIV an - wie FlexNet -, wenn eine Route besser wird
-      oder ein Knoten verfaellt, statt nur auf die Uhr zu warten? Ich weiss
-      es nicht und habe es nicht geraten; unsere 1800 s sind jedenfalls
-      rein zyklisch.
+      NACHGESEHEN AM 2026-08-18, in xnet138 und den TNN-Quellen. Thomas'
+      Erinnerung stimmte, und wir sind in DREI Punkten der Ausreisser.
+
+      XNET, "ro pa":
+        broadca  600  [300..3000]  Broadcast-Intervall, also 10 Minuten
+        minBcas    4  [1..12]      min obs-count fuers Broadcasten
+        minQual   69  [0..255]     min Qualitaet fuers Broadcasten
+        obsInit    6  [1..12]      Anfangswert des Veraltenszaehlers
+      Der Zaehler wird bei JEDER Aussendung heruntergezaehlt (so das
+      Handbuch), es ist also ein Zaehler und kein Altersvergleich wie bei
+      uns. Mit obsInit 6 und minBcas 4 heisst das: angekuendigt wird ein
+      Eintrag zwei Zyklen lang, behalten wird er sechs.
+
+      TNN, l3misc.c, und das ist der interessanteste Teil - es hat ZWEI
+      Aussendungen nebeneinander, je Peer:
+        jeden Tick   inform_peer(pp, CHANGES)  nur die Aenderungen
+        alle broint  inform_peer(pp, ALL)      die ganze Tabelle
+      mit ZWEI Intervallen, je nach Peer-Typ:
+        broint_ui = 30   fuer UI-Rundsprueche
+        broint_i  = 60   fuer TNN-Partner ("Infocast")
+      Die Einheit widerspricht sich in den Kommentaren der Quelle selbst -
+      "in 10s" in global.c, "in 1min." in l3thenet.c -, aber die Notiz
+      "(Standard: aller 5min. Aussend.)" spricht fuer 10 s, also 5 und 10
+      Minuten. Dazu "worqua", min Qualitaet fuers Autoupdate.
+
+      DAMIT IST DIE ANTWORT AUF BEIDE FRAGEN JA: sie senden haeufiger
+      (5..10 min gegen unsere 30), und sie kuendigen AKTIV an - TNN sogar
+      dauernd, in Form der Aenderungsmeldung, mit dem Volldurchlauf nur
+      als Auffrischung.
+
+      WIR SIND ALSO DER AUSREISSER IN DREI PUNKTEN, und alle drei stehen
+      schon als eigene Posten hier:
+        * ein Intervall statt zweier, und dreimal so lang
+        * kein "nur die Aenderungen" - das ist der verkuerzte Broadcast
+        * kein minBcas und kein minQual - unser nr_minobs ist genau XNETs
+          minBcas, und es ist bei uns toter Code
     * ein VERKUERZTER Broadcast je Eintrag. Bei NET/ROM ist die Wahl auf
       einem Benutzerport heute alles oder nichts; nur einen Teil der
       Tabelle anzukuendigen waere der naechste Schritt. INP3 stellt
