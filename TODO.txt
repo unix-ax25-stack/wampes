@@ -1954,6 +1954,39 @@ BLEIBEN ZWEI WEGE, und Thomas' ist der erste:
      Falsch anschlagen kann sie bei einer Station, die die reservierten
      Bits pauschal nullt. Selten, und die Folge - ein Neuaufbau - ist
      verkraftbar.
+
+     UND SIE KOSTET NICHTS, was Thomas' Einwand gegen die naheliegende
+     Variante beantwortet. Er hatte ueberlegt, aus gehoerten I- und
+     S-Rahmen mit EAX-Bit einen Sprecher zu MARKIEREN, und selbst
+     eingewandt, dass man dafuer jedes Paket ansehen und die MHeard
+     nachtragen muesste - fuer den mageren Gewinn, eine ueberfluessige
+     Probe zu sparen. Richtig, aber das ist eine ANDERE Sache:
+
+       Faehigkeit aus fremdem Verkehr lernen
+         wo      jeder gehoerte Rahmen, auch der an Dritte
+         Kosten  Bittest je Rahmen plus Eintrag in eine Liste
+         Nutzen  spart eine Probe (19 s, einmal je Station) - aber nur,
+                 wenn wir ihn ueberhaupt mit Dritten hoeren, und auf
+                 einem exklusiven Interlink gibt es keine Dritten. Genau
+                 dort, wo modulo-128 sich lohnt, faellt der Nutzen weg.
+                 Ausserdem beweist fremder Verkehr nur, dass es mit
+                 JEMAND ANDEREM ueber EINEN ANDEREN Weg geht - dieselbe
+                 Schlussweise, die wir oben gerade verworfen haben.
+
+       Widerspruch auf dem EIGENEN Link erkennen
+         wo      nur Rahmen unserer eigenen Verbindungen
+         Kosten  KEINE. ntohax25() rechnet hdr->ext |= SSID_EAX25 auf
+                 jedem Rahmen ohnehin aus, und lapb_input() liest
+                 hdr->ext heute nur fuer DAMA. Das Bit liegt schon da und
+                 wird weggeworfen; es zu benutzen ist ein Vergleich gegen
+                 axp->mmask.
+         Nutzen  faengt die Desynchronisation, also den echten Schaden -
+                 nicht die gesparte Probe.
+
+     Die Probe zu sparen ist ausserdem schon abgedeckt, ohne neue
+     Maschinerie: durch den Routeneintrag (AXR_EAX25_YES, kostenlos, nur
+     eben alternd) und auf einem Interlink durch die Konfiguration, wo
+     der Betreiber es ohnehin weiss - dafuer gibt es "eax25 always".
   2. JE RAHMEN PARSEN wie TNN, statt je Link. Das repariert auch eine
      Desynchronisation, die auf anderem Weg entstanden ist, und kostet
      eine Abfrage im Empfangspfad.
