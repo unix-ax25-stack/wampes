@@ -1700,3 +1700,67 @@ Gemessen: ein Rufer, der nicht wiederholt, kostet genau EINE SABME und
 den Rueckfall bei 20 s. Gewollt ist das - es wird die Geduld einer Station
 ausgegeben statt der von zweien. Die Kehrseite: eine auf der Funkstrecke
 verlorene SABME machen wir nicht wieder gut.
+
+------------------------------------------------------------------------
+EIN VERSPAETETES UA: WORAUF BEZIEHT ES SICH? (Thomas, 2026-08-18)
+------------------------------------------------------------------------
+Seine Frage: wenn wir SABME senden, keine Antwort bekommen, auf SABM
+zurueckfallen und DANN ein UA eintrifft - sagt irgendetwas, welches der
+beiden es beantwortet?
+
+IN AX.25 SELBST: NEIN. Das UA ist ein Oktett, das F-Bit spiegelt nur das
+P des Kommandos, und beide, SABME und SABM, gingen mit P hinaus. Es gibt
+kein Feld, das die Rueckfrage beantwortet.
+
+WAS ES GIBT, ist SSID_EAX25 - dasselbe Bit wie im Abschnitt darueber. Ein
+WAMPES oder TNN, das unser SABME angenommen hat, traegt es im UA. Nur
+LESEN wir es nicht: hdr->ext eines eingehenden Rahmens wird in lapb.c an
+genau einer Stelle ausgewertet, und dort fuer DAMA. "case UA" entscheidet
+aus axp->mmask, also aus UNSEREM Zustand. Ein verspaetetes UA wird damit
+dem zuletzt Gesendeten zugeschrieben.
+
+GEMESSEN (T1 auf 2 s verkleinert, eaxpeer.py --ua-spaet): SABME bei 2,6 /
+4,0 / 6,5 s, Rueckfall auf SABM bei 9,6 s, das UA bei 14,6 s. Ergebnis am
+Knoten: "Mod 8 Connected" - und im Routenverzeichnis ein kleines e, also
+"kann kein modulo-128", ueber eine Station, die es gerade bewiesen hat.
+
+WAS DIE DESYNCHRONISATION DANN TUT, beide Richtungen gemessen:
+
+  wir -> er   Unser "I NR=1 NS=0 pid=Text" liest er zweioktettig als
+              N(S)=16, N(R)=120 - die PID 0xf0 wird ihm zum zweiten
+              Steuerbyte. Ausser der Reihe, also verworfen. Wir
+              wiederholen, gehen nach Recovery (gemessen: Rt 7) und geben
+              erst nach dem vollen N2-Zyklus auf. Es kommen KEINE Daten
+              durch und es faellt nichts auf.
+  er -> wir   Sein zweioktettiger I-Rahmen wird von uns einoktettig
+              gelesen, wir NEHMEN IHN AN und quittieren ihn (gemessen:
+              RR NR=1). Der Inhalt ist um ein Oktett verschoben, und als
+              PID lesen wir sein zweites Steuerbyte, also N(R)<<1|P/F.
+
+KEIN FRMR, in keiner Richtung. Die Bedingung wird sogar erkannt -
+ackours() gibt bei "Acking unsent frame" -1 zurueck -, aber die Pruefung
+beim Aufrufer ist auskommentiert: "ackours(axp,nr,0); /** == -1) */", an
+beiden Stellen (lapb.c). Das ist altes KA9Q-Erbe, nicht aus dieser Arbeit.
+
+DIE GEFAEHRLICHE STELLE ist die verschobene PID. N(R)<<1|P/F trifft
+0x06, 0x07 und 0x08 - und das sind PID_VJCOMP, PID_VJUNCOMP und
+PID_SEGMENT. Bei N(R)=0 kommt 0x00 heraus, das in Axlink[] niemand
+beansprucht, und genau das zeigte die Messung. Gebunden ist N(R) aber
+nicht: hat vor dem Auseinanderlaufen noch nichts in unsere Richtung
+gezaehlt, nimmt die Gegenstelle unsere ersten Rahmen an (ihr gelesenes
+N(S) stimmt, solange unser N(R) 0 ist), ihr N(R) waechst - und bei 3
+oder 4 landet ein um ein Byte verschobener Inhalt im VJ-Dekompressor
+oder in der Segment-Zusammensetzung.
+
+DIE ABWEHR IST DAS BIT, DAS WIR JETZT SETZEN. Es zu lesen kostet wenig
+und deckt beide Faelle ab: ein UA im Aufbau, dessen SSID_EAX25 unserem
+mmask widerspricht, gehoert dem SABME - und ihm ist zu glauben, weil die
+Gegenstelle sich beim Senden des UA schon festgelegt hat. Auf einer
+stehenden Verbindung ist derselbe Widerspruch der Alarm, den es heute
+nicht gibt.
+
+DIE GRENZE DAVON, damit sie nicht spaeter enttaeuscht: das hilft nur
+gegen Partner, die das Bit setzen - WAMPES, TNN. Gegen einen, der es
+nicht tut, gibt AX.25 nichts her, und dort bleibt nur, den Rueckfall
+selbst seltener zu machen. Der Pruefstand setzt es uebrigens auch nicht,
+in der Messung oben war der Unterschied also gar nicht auf dem Draht.
