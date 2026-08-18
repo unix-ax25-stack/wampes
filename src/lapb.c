@@ -22,6 +22,7 @@ static void enq_resp(struct ax25_cb *axp);
 static void inv_rex(struct ax25_cb *axp);
 static void resequence(struct ax25_cb *axp,struct mbuf **bpp,int ns,int pf,int poll);
 static int eax25_wanted(struct iface *ifp,uint8 *dest,struct ax25_cb *from);
+static void eax25_mark(struct ax25_cb *axp);
 static void eax25_hint(struct iface *ifp,struct ax25 *hdr);
 
 /* Process incoming frames */
@@ -237,6 +238,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 					axp->peer->mmask =
 					 eax25_wanted(axp->peer->iface,
 						      axp->peer->hdr.dest,axp);
+					eax25_mark(axp->peer);
 					axp->peer->eax25_probes = 0;
 					sendctl(axp->peer,LAPB_COMMAND,SABM|PF);
 					start_timer(&axp->peer->t1);
@@ -795,6 +797,25 @@ static int eax25_wanted(struct iface *ifp, uint8 *dest, struct ax25_cb *from)
 	return EMMASK;
 }
 
+/* Say on the wire which modulus this link runs on.  The bit lives in the
+ * source SSID, active low, and htonax25() puts it there; every monitor reads
+ * it - ours in ax25dump.c decodes the two-octet control field only when it is
+ * set - and TNN's "EAXMODE 1, by MHEARD" is the same bit seen from outside.
+ *
+ * It used to be set in one place only, when we ACCEPTED a SABME.  A link we
+ * opened ourselves therefore ran modulo-128 while its frames said "cannot",
+ * so our own trace could not decode our own traffic and no neighbour could
+ * learn from us that we speak it.  mmask is the truth; this follows it.
+ */
+
+static void eax25_mark(struct ax25_cb *axp)
+{
+	if(axp->mmask == EMMASK)
+		axp->hdr.ext |= SSID_EAX25;
+	else
+		axp->hdr.ext &= ~SSID_EAX25;
+}
+
 /* Give up on modulo-128 for this attempt and ask again the plain way.  The
  * link stays in setup: to the caller above us nothing has happened yet, and
  * that is the point - he asked for a connection, not for a modulus.
@@ -803,7 +824,7 @@ static int eax25_wanted(struct iface *ifp, uint8 *dest, struct ax25_cb *from)
 void eax25_fallback(struct ax25_cb *axp)
 {
 	axp->mmask = MMASK;
-	axp->hdr.ext &= ~SSID_EAX25;
+	eax25_mark(axp);
 	axp->eax25_probes = 0;
 	axp->eax25_tried = 1;
 
@@ -831,6 +852,7 @@ est_link(struct ax25_cb *axp)
 	axp->retries = 0;
 	axp->eax25_probes = 0;
 	axp->mmask = eax25_wanted(axp->iface,axp->hdr.dest,NULL);
+	eax25_mark(axp);
 	sendctl(axp,LAPB_COMMAND,SABM|PF);
 	stop_timer(&axp->t3);
 	start_timer(&axp->t1);

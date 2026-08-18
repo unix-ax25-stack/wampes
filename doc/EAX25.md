@@ -275,14 +275,22 @@ fallback at 20 s either way.  That is one station's patience being spent
 instead of two, which is the intent - but it does mean a lost SABME on a
 real channel is not made good by us.
 
-**The monitor still reads modulo-8.**  `ax25dump.c` decodes a one-octet
-control field and cannot do better from the frame alone: nothing in an I
-frame says which modulus its link runs on.  On a modulo-128 link the trace
-therefore shows `N(S)` wrapping at 8, a `P` that is really bit 4 of `N(S)`,
-and `pid=0x0` because the PID sits one octet further on.  The control block
-knows (`axp->mmask`), so a dump that looked the link up could get it right;
-today it does not, and `ax25 status` - which prints the modulus per link -
-is the display to trust.
+**And what says so on the wire is the SSID.**  There is a bit for it -
+`SSID_EAX25` in the source address, active low - and `ax25dump.c` reads it
+to decide whether to decode one control octet or two, printing `EAX25:`
+instead of `AX25:` when it is set.  It was written in one place only: when
+we **accepted** a SABME.  A link we opened ourselves therefore ran
+modulo-128 while announcing that it could not, so the trace showed `N(S)`
+wrapping at 8, a `P` that was really bit 4 of `N(S)`, and `pid=0x0` with
+the PID an octet further on - our own monitor could not read our own
+traffic, and no neighbour could learn from us that we speak it, TNN's
+`EAXMODE 1, by MHEARD` being this same bit seen from outside.
+
+`mmask` is the truth and `eax25_mark()` now follows it, at the two places
+that decide it and at the fallback.  Measured on the relay: the second leg
+traces as `EAX25: ... I NR=0 NS=0 pid=Text` with `N(S)` running past 127,
+while the modulo-8 half beside it stays plain `AX25:` - the bit follows
+the link, not the node.
 
 ## What a larger packet length does to the rest
 

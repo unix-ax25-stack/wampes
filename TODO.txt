@@ -1196,7 +1196,8 @@ Einzelheiten und Messwerte in doc/EAX25.md, "always" seit 2026-08-17 auch
 OFFEN AUS DIESER ARBEIT, jeweils mit eigener Ueberschrift weiter unten:
   * T1: NICHT DER TIMER IST FALSCH, SONDERN DAS LIMIT (Thomas, 2026-08-17)
     - dazu jetzt eine gerechnete Abschaetzung, siehe dort
-  * DER MONITOR LIEST MODULO-8, auch auf einer modulo-128-Strecke
+  * WIR SAGTEN AUF DEM DRAHT NICHT, WELCHEN MODULUS WIR SPRECHEN
+    (behoben, und meine erste Diagnose dazu war falsch)
   * EINE PROBE STATT DREI auf einem Relaisbein - kein Fehler, aber eine
     Eigenschaft, die man kennen muss
 ------------------------------------------------------------------------
@@ -1653,22 +1654,36 @@ tun hat: siehe den Abschnitt "AX.25-RELAIS" weiter oben. Ohne dessen
 Korrektur ist keine dieser Messungen moeglich.
 
 ------------------------------------------------------------------------
-DER MONITOR LIEST MODULO-8 (2026-08-17)
+WIR SAGTEN AUF DEM DRAHT NICHT, WELCHEN MODULUS WIR SPRECHEN (2026-08-17)
 ------------------------------------------------------------------------
-ax25dump.c dekodiert ein einoktettiges Steuerfeld. Auf einer
-modulo-128-Strecke zeigt "trace" deshalb N(S) mit Umlauf bei 8, ein P, das
-in Wahrheit Bit 4 von N(S) ist, und pid=0x0, weil die PID ein Oktett weiter
-hinten sitzt. Gemessen: das zweite Bein sendete N(S) 0..199, der Monitor
-zeigte 0..7 im Kreis.
+BEHOBEN, und zuerst von mir falsch diagnostiziert. Ich hatte notiert, der
+Monitor koenne kein modulo-128 und aus dem Rahmen allein sei es nicht zu
+entscheiden. Beides ist falsch. Thomas' Rueckfrage ("trace kann kein
+eax25?") hat es aufgedeckt.
 
-Aus dem Rahmen allein ist es nicht zu entscheiden - nichts in einem
-I-Rahmen sagt, welchen Modulus seine Strecke hat. Der Kontrollblock weiss
-es (axp->mmask), also koennte ax25dump ihn nachschlagen: Adresspaar suchen,
-Modulus uebernehmen, sonst wie bisher. Fuer einen Rahmen, zu dem es keinen
-Block gibt (fremde Strecke mitgehoert), bleibt es beim Raten - und das ist
-der Grund, es nicht stillschweigend zu tun, sondern die Unsicherheit
-anzuzeigen. Geschaetzt eine halbe Stunde, keine Eile: "ax25 status" zeigt
-den Modulus je Link richtig an.
+Es GIBT ein Bit dafuer: SSID_EAX25 im Absender-SSID, active low,
+geschrieben von htonax25() und gelesen von ntohax25(). ax25dump.c
+entscheidet daran, ob es ein oder zwei Steuerohktette dekodiert, und
+schreibt dann "EAX25:" statt "AX25:". Der Dumper ist also in Ordnung.
+
+Gesetzt wurde das Bit aber an genau EINER Stelle: wenn wir ein SABME
+ANNEHMEN (lapb.c). Ein Link, den wir selbst mit SABME oeffnen, lief
+deshalb modulo-128 und sagte dabei "kann ich nicht". Folgen: unser eigener
+Monitor konnte unsere eigenen Rahmen nicht lesen, jeder fremde auch nicht,
+und TNN, dessen "EAXMODE 1, by MHEARD" genau dieses Bit auswertet, konnte
+von uns nie lernen, dass wir es koennen.
+
+Die Gegenprobe aus den eigenen Logs war eindeutig - derselbe Knoten, zwei
+Faelle:
+
+  Rufer kam mit SABME:   EAX25: DL1BBB->DL9SAU-9 ... RR NR=16
+  wir riefen mit SABME:  AX25:  DL9SAU-9->DL1BBB ... I NR=0 NS=0 pid=0x0
+
+mmask ist die Wahrheit, eax25_mark() folgt ihr jetzt - an den zwei
+Stellen, die mmask festlegen, und am Rueckfall. Nachgemessen: das zweite
+Bein zeigt "EAX25: ... pid=Text" mit N(S) ueber 127 hinaus, die
+modulo-8-Haelfte daneben bleibt "AX25:". Das Bit folgt der Strecke, nicht
+dem Knoten.
 
 ------------------------------------------------------------------------
 EINE PROBE STATT DREI AUF EINEM RELAISBEIN (2026-08-17)
