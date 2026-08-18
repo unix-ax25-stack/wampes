@@ -3036,3 +3036,56 @@ OFFEN BLEIBEN SCHRITT 2 UND 3:
   2. recv_poll(): einen gemessenen Wert nie als Sentinel senden.
   3. "flexnet ssid <start>-<stop>": Quelladresse aller FlexNet-Links an
      den Start binden (opts/ownsource), Stop in send_init().
+
+------------------------------------------------------------------------
+FLEXNET: WOHER locdelay KOMMT, UND WAS KEIN ERSATZ DAFUER IST
+(Thomas' Rueckfragen, 2026-08-18)
+------------------------------------------------------------------------
+Seine Frage: ist locdelay der Wert aus unserem AX.25-Stack oder eine
+eigene Messung? Und was tun wir, solange wir auf einer neuen Verbindung
+noch keine haben?
+
+EIGENE MESSUNG, und eine absichtlich grobe:
+
+    send_poll():  pp->lastpolltime = msclock();   /* 201 Byte Leerzeichen */
+    recv_rprt():  pp->locdelay =
+                      iround(TDIFF(msclock(), pp->lastpolltime) / 200.0);
+                  if (pp->locdelay < 1) pp->locdelay = 1;
+
+Halbe Umlaufzeit in 100-ms-Einheiten, mindestens 1. Die 201 Byte sind
+kein Zufall: gemessen werden soll die KANALGESCHWINDIGKEIT, nicht die
+Latenz eines kurzen Rahmens. Gepollt wird nur, wer permanent ist.
+
+DAS FENSTER OHNE MESSUNG ist kurz und unvermeidlich: setaxp() schickt
+beim Linkaufbau FLEX_INIT und sofort FLEX_POLL, beide Seiten pollen also
+gleich. Trifft SEIN Poll ein, bevor unsere Antwort zurueck ist, haben wir
+nichts und antworten mit DEFAULTDELAY. Das ist die ehrliche Verwendung
+des Sentinels.
+
+DEN AX.25-WERT STATTDESSEN ZU NEHMEN geht nicht ohne Weiteres, und die
+Gruende sind messbar:
+  * axp->srt misst, was gerade fliesst, nicht eine 201-Byte-Probe. Auf
+    einem langsamen Kanal unterschaetzt er genau das, was FlexNet
+    vergleichen will.
+  * Er startet bei 0 (build_path), und die erste Aktualisierung ist
+    ((axp->srt * 7) + rtt + 4) >> 3, mit srt=0 also rtt/8 - EIN ACHTEL
+    der Wirklichkeit. Zu schnell ist die gefaehrliche Richtung: so ein
+    Link wird bevorzugt.
+  Als Startwert waere er erst nach ein paar Quittungen brauchbar. Wenn
+  ueberhaupt, dann so - nicht als Ersatz.
+
+XNETs 300 EBENSO ZU VERWERFEN: nein. Wir haben nie gesehen, dass XNET
+300 SENDET; wir haben sie als seinen INTERNEN Anfangswert aus der
+299er-Verschiebung in FLEX_ROUT erschlossen. Eine zweite magische Zahl,
+diesmal aus fremden Interna geraten, wiederholte den Fehler, der die 600
+schon ist - und 30 s ist auf einem langsamen Pfad ein legitimer Messwert,
+den wir dann wegwuerfen. Weniger magische Werte, nicht mehr.
+
+WAS ALSO ZU TUN WAERE, unveraendert und klein: auf der SENDESEITE einen
+gemessenen locdelay von genau DEFAULTDELAY um eine Einheit danebenlegen.
+Eine Luege von 0,1 s gegen ein falsches "unbekannt". Auf der
+Empfangsseite bleibt es beim Verwerfen - die Zweideutigkeit sitzt im
+Protokoll, und eine angenommene 600 kostete auf einem frischen
+Partnerlink acht Poll-Zyklen (40 Minuten) Konvergenz, weil pp->delay bei
+einem eingetragenen Partner sonst von der ersten echten Messung DIREKT
+gesetzt wird.
