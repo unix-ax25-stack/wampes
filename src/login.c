@@ -12,6 +12,18 @@
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
+/* Before the test that uses it, and that is the whole point: this file asks
+ * "#if HAS_UTMP" here and again around the code below, but configure.h only
+ * arrived later, with global.h.  An undefined macro is 0 in #if, so <utmp.h>
+ * was skipped up here while the code further down - by then with HAS_UTMP
+ * defined as 1 - used struct utmp anyway:
+ *
+ *      login.c:574: storage size of 'utmpbuf' isn't known
+ *
+ * It never showed on macOS, where configure forces HAS_UTMP to 0, so both
+ * tests happened to agree.
+ */
+#include "configure.h"
 #if HAS_UTMP
 #include <utmp.h>
 #endif
@@ -415,7 +427,7 @@ static FILE *fopen_logfile(const char *user, const char *protocol)
 	    "%s at %2d-%.3s-%02d %2d:%02d:%02d by %s\n",
 	    protocol,
 	    tm->tm_mday,
-	    "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
+	    &"JanFebMarAprMayJunJulAugSepOctNovDec"[3 * tm->tm_mon],
 	    tm->tm_year % 100,
 	    tm->tm_hour,
 	    tm->tm_min,

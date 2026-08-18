@@ -4,6 +4,12 @@ CC='cc'
 CFLAGS='-O -I../lib'
 
 LD='$(CC)'
+# Darwin's linker says "-s is obsolete" on every link, so this is the one
+# warning a clean build still prints.  Left alone on purpose: measured, -s
+# does strip there despite the notice - 401520 bytes and 887 symbols against
+# 419440 and 1504 without it - so dropping it would quietly change what gets
+# built and installed, which is more than silencing a message is worth.
+# "STRIPFLAG= make" turns it off for anyone who would rather have the symbols.
 LDFLAGS='$(CFLAGS) '"${STRIPFLAG-"-s"}"
 
 LIBS='../lib/libutil.a'

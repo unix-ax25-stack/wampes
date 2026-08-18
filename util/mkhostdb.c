@@ -11,26 +11,8 @@ static const char rcsid[] = "@(#) $Id: mkhostdb.c,v 1.18 2016/03/13 06:37:27 dl9
 
 #include <arpa/inet.h>
 
-#include "configure.h"
+#include "dbmapi.h"
 #include "hostdb.h"
-
-#if HAS_NDBM
-#include <ndbm.h>
-#else
-#if HAS_DB1_NDBM
-#include <db1/ndbm.h>
-#else
-#if HAS_GDBM_NDBM
-#include <gdbm-ndbm.h>
-#else
-#if HAS_GDBM
-#include <gdbm.h>
-#else
-#error Cannot find ndbm.h header file
-#endif
-#endif
-#endif
-#endif
 
 #define DBHOSTADDR      TCPDIR "/hostaddr"
 #define DBHOSTNAME      TCPDIR "/hostname"
@@ -39,7 +21,7 @@ static const char rcsid[] = "@(#) $Id: mkhostdb.c,v 1.18 2016/03/13 06:37:27 dl9
 #define LOCALDOMAIN     "ampr.org"
 #define LOCALDOMAINFILE TCPDIR "/domain.local"
 
-#if HAS_GDBM
+#if USE_GDBM
 static GDBM_FILE Dbhostaddr;
 static GDBM_FILE Dbhostname;
 #else
@@ -120,7 +102,7 @@ static void store_in_db(const char *name, const char *addrstr)
   dname.dsize = strlen(name) + 1;
   daddr.dptr = (char *) rec;
   daddr.dsize = reclen;
-#if HAS_GDBM
+#if USE_GDBM
   i = gdbm_store(Dbhostaddr, dname, daddr, GDBM_INSERT);
 #else
   i = dbm_store(Dbhostaddr, dname, daddr, DBM_INSERT);
@@ -130,7 +112,7 @@ static void store_in_db(const char *name, const char *addrstr)
     exit(1);
   }
   if (i > 0) fprintf(stderr, "duplicate name: %s\n", name);
-#if HAS_GDBM
+#if USE_GDBM
   i = gdbm_store(Dbhostname, daddr, dname, GDBM_INSERT);
 #else
   i = dbm_store(Dbhostname, daddr, dname, DBM_INSERT);
@@ -277,7 +259,7 @@ static void read_domain_file(const char *filename)
 
     dname.dptr = fix_name(p);
     dname.dsize = strlen(dname.dptr) + 1;
-#if HAS_GDBM
+#if USE_GDBM
     daddr = gdbm_fetch(Dbhostaddr, dname);
 #else
     daddr = dbm_fetch(Dbhostaddr, dname);
@@ -318,7 +300,7 @@ static void qaddr(const char *name)
     fullname[len-1] = 0;
     dname.dptr = fullname;
     dname.dsize = strlen(fullname) + 1;
-#if HAS_GDBM
+#if USE_GDBM
     daddr = gdbm_fetch(Dbhostaddr, dname);
 #else
     daddr = dbm_fetch(Dbhostaddr, dname);
@@ -335,7 +317,7 @@ static void qaddr(const char *name)
   strcat(fullname, LOCALDOMAIN);
   dname.dptr = fullname;
   dname.dsize = strlen(fullname) + 1;
-#if HAS_GDBM
+#if USE_GDBM
   daddr = gdbm_fetch(Dbhostaddr, dname);
 #else
   daddr = dbm_fetch(Dbhostaddr, dname);
@@ -348,7 +330,7 @@ static void qaddr(const char *name)
 
   dname.dptr = (char *) name;
   dname.dsize = strlen(name) + 1;
-#if HAS_GDBM
+#if USE_GDBM
   daddr = gdbm_fetch(Dbhostaddr, dname);
 #else
   daddr = dbm_fetch(Dbhostaddr, dname);
@@ -379,7 +361,7 @@ static void qname(const char *addrstr)
   }
   daddr.dptr = (char *) rec;
   daddr.dsize = reclen;
-#if HAS_GDBM
+#if USE_GDBM
   dname = gdbm_fetch(Dbhostname, daddr);
 #else
   dname = dbm_fetch(Dbhostname, daddr);
@@ -392,7 +374,7 @@ static void qname(const char *addrstr)
 	  ((long) addr[2] << 8) | (long) addr[3];
     daddr.dptr = (char *) &old;
     daddr.dsize = sizeof(old);
-#if HAS_GDBM
+#if USE_GDBM
     dname = gdbm_fetch(Dbhostname, daddr);
 #else
     dname = dbm_fetch(Dbhostname, daddr);
@@ -411,7 +393,7 @@ int main(int argc, char **argv)
   int i;
 
   if (argc >= 1 && strstr(*argv, "qaddr")) {
-#if HAS_GDBM
+#if USE_GDBM
     if (!(Dbhostaddr = gdbm_open(DBHOSTADDR, 0, GDBM_READER, 0644, NULL))) {
 #else
     if (!(Dbhostaddr = dbm_open(DBHOSTADDR, O_RDONLY, 0644))) {
@@ -420,13 +402,13 @@ int main(int argc, char **argv)
       exit(1);
     }
     for (i = 1; i < argc; i++) qaddr(argv[i]);
-#if HAS_GDBM
+#if USE_GDBM
     gdbm_close(Dbhostaddr);
 #else
     dbm_close(Dbhostaddr);
 #endif
   } else if (argc >= 1 && strstr(*argv, "qname")) {
-#if HAS_GDBM
+#if USE_GDBM
     if (!(Dbhostname = gdbm_open(DBHOSTNAME, 0, GDBM_READER, 0644, NULL))) {
 #else
     if (!(Dbhostname = dbm_open(DBHOSTNAME, O_RDONLY, 0644))) {
@@ -435,7 +417,7 @@ int main(int argc, char **argv)
       exit(1);
     }
     for (i = 1; i < argc; i++) qname(argv[i]);
-#if HAS_GDBM
+#if USE_GDBM
     gdbm_close(Dbhostname);
 #else
     dbm_close(Dbhostname);
@@ -447,7 +429,7 @@ int main(int argc, char **argv)
     remove(DBHOSTNAME ".db");
     remove(DBHOSTNAME ".dir");
     remove(DBHOSTNAME ".pag");
-#if HAS_GDBM
+#if USE_GDBM
     if (!(Dbhostname = gdbm_open(DBHOSTNAME, 0, GDBM_WRCREAT, 0644, NULL))) {
 #else
     if (!(Dbhostname = dbm_open(DBHOSTNAME, O_RDWR | O_CREAT, 0644))) {
@@ -455,7 +437,7 @@ int main(int argc, char **argv)
       perror(DBHOSTNAME);
       exit(1);
     }
-#if HAS_GDBM
+#if USE_GDBM
     if (!(Dbhostaddr = gdbm_open(DBHOSTADDR, 0, GDBM_WRCREAT, 0644, NULL))) {
 #else
     if (!(Dbhostaddr = dbm_open(DBHOSTADDR, O_RDWR | O_CREAT, 0644))) {
@@ -467,7 +449,7 @@ int main(int argc, char **argv)
     read_domain_file(LOCALDOMAINFILE);
     read_hosts_file(HOSTSFILE);
     read_domain_file(DOMAINFILE);
-#if HAS_GDBM
+#if USE_GDBM
     gdbm_close(Dbhostname);
     gdbm_close(Dbhostaddr);
 #else

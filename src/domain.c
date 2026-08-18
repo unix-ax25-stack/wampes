@@ -10,25 +10,7 @@
 #include <stdio.h>
 #include <sys/socket.h>
 
-#include "configure.h"
-
-#if HAS_NDBM
-#include <ndbm.h>
-#else
-#if HAS_DB1_NDBM
-#include <db1/ndbm.h>
-#else
-#if HAS_GDBM_NDBM
-#include <gdbm-ndbm.h>
-#else
-#if HAS_GDBM
-#include <gdbm.h>
-#else
-#error Cannot find ndbm.h header file
-#endif
-#endif
-#endif
-#endif
+#include "dbmapi.h"
 
 #include "global.h"
 #include "mbuf.h"
@@ -74,7 +56,7 @@ static char *Dtypes[] = {
 };
 static int Ndtypes = 17;
 
-#if HAS_GDBM
+#if USE_GDBM
 static GDBM_FILE Dbhostaddr;
 static GDBM_FILE Dbhostname;
 #else
@@ -174,7 +156,7 @@ void *p)
     free(cp);
   }
   if (Dbhostaddr) {
-#if HAS_GDBM
+#if USE_GDBM
     gdbm_close(Dbhostaddr);
 #else
     dbm_close(Dbhostaddr);
@@ -182,7 +164,7 @@ void *p)
     Dbhostaddr = 0;
   }
   if (Dbhostname) {
-#if HAS_GDBM
+#if USE_GDBM
     gdbm_close(Dbhostaddr);
 #else
     dbm_close(Dbhostname);
@@ -360,7 +342,7 @@ char *name)
       }
   }
 
-#if HAS_GDBM
+#if USE_GDBM
   if (Dbhostaddr || (Dbhostaddr = gdbm_open(DBHOSTADDR, 0, GDBM_READER, 0644, NULL)))
 #else
   if (Dbhostaddr || (Dbhostaddr = dbm_open(DBHOSTADDR, O_RDONLY, 0644)))
@@ -368,7 +350,7 @@ char *name)
     for (i = 0; names[i][0]; i++) {
       dname.dptr = names[i];
       dname.dsize = strlen(names[i]) + 1;
-#if HAS_GDBM
+#if USE_GDBM
       daddr = gdbm_fetch(Dbhostaddr, dname);
 #else
       daddr = dbm_fetch(Dbhostaddr, dname);
@@ -443,7 +425,7 @@ socklen_t *len)
   } else {
     if (Nextcacheflushtime <= secclock()) docacheflush(0, 0, 0);
     expand_names(name, names);
-#if HAS_GDBM
+#if USE_GDBM
     if (!Dbhostaddr && !(Dbhostaddr = gdbm_open(DBHOSTADDR, 0, GDBM_READER, 0644, NULL)))
       return 0;
 #else
@@ -453,7 +435,7 @@ socklen_t *len)
     for (i = 0; names[i][0]; i++) {
       dname.dptr = names[i];
       dname.dsize = strlen(names[i]) + 1;
-#if HAS_GDBM
+#if USE_GDBM
       daddr = gdbm_fetch(Dbhostaddr, dname);
 #else
       daddr = dbm_fetch(Dbhostaddr, dname);
@@ -515,7 +497,7 @@ int shorten)
       return Cache->name;
     }
 
-#if HAS_GDBM
+#if USE_GDBM
   if (Dbhostname || (Dbhostname = gdbm_open(DBHOSTNAME, 0, GDBM_READER, 0644, NULL))) {
 #else
   if (Dbhostname || (Dbhostname = dbm_open(DBHOSTNAME, O_RDONLY, 0644))) {
@@ -530,7 +512,7 @@ int shorten)
       a[3] = (unsigned char) addr;
       daddr.dptr = (char *) rec;
       daddr.dsize = hostdb_encode(HOSTDB_V4, a, rec);
-#if HAS_GDBM
+#if USE_GDBM
       dname = gdbm_fetch(Dbhostname, daddr);
 #else
       dname = dbm_fetch(Dbhostname, daddr);
@@ -539,7 +521,7 @@ int shorten)
 	/* A database from an older mkhostdb keys on a bare int32 */
 	daddr.dptr = (char *) &addr;
 	daddr.dsize = sizeof(addr);
-#if HAS_GDBM
+#if USE_GDBM
 	dname = gdbm_fetch(Dbhostname, daddr);
 #else
 	dname = dbm_fetch(Dbhostname, daddr);

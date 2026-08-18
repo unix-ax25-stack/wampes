@@ -693,7 +693,7 @@ struct ax_route *rp)
 	printf("%2d-%.3s  %02d:%02d  %-9s  %c%c%c %s\n",
 #endif
 	       tm->tm_mday,
-	       "JanFebMarAprMayJunJulAugSepOctNovDec" + 3 * tm->tm_mon,
+	       &"JanFebMarAprMayJunJulAugSepOctNovDec"[3 * tm->tm_mon],
 	       tm->tm_hour,
 	       tm->tm_min,
 	       ifp ? ifp->name : "???",

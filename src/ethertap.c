@@ -88,6 +88,17 @@ struct ethertap_packet {
   char data[MAX_FRAME];
 };
 
+/* Used by ethertap_attach() and defined after it.  Declared here because gcc
+ * 14 makes an implicit declaration an error rather than a warning:
+ *
+ *      ethertap.c:450: implicit declaration of function
+ *                      'ethertap_attach_bpq'
+ *
+ * Only Linux calls it - the BPQ companion interface needs kernel AX.25 - so
+ * it is only Linux that noticed.
+ */
+int ethertap_attach_bpq(struct iface *to_ifp);
+
 /*---------------------------------------------------------------------------*/
 
 static int ethertap_send(struct mbuf **bpp, struct iface *ifp, int32 gateway, uint8 tos)
