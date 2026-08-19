@@ -152,24 +152,30 @@ struct broadcast {
   struct broadcast *next;
 };
 
-/* One way to one destination, as ONE partner reports it.  This is the second
- * routing table: the graph that calculate_all() works on stays exactly as it
- * was, and these hang beside it.
+/* One destination as it stands between us and ONE partner - BOTH directions.
+ * This is the second routing table: the graph that calculate_all() works on
+ * stays exactly as it was, and these hang beside it.
  *
  * Not a second NODE table.  DB0XYZ is the same node however we heard of him -
  * his alias, his IP, the options he carries belong to HIM - and only "how
  * fast, through whom" belongs to the way.  TNN keeps it the same way round:
- * one nodetab, and a routes array per peer indexed by the same entry.
+ * one nodetab, and a routes array per peer indexed by the same entry, holding
+ * quality AND reported_quality.  "reported" here is that second field, and it
+ * is what makes the sending side possible at all: INP3 announces CHANGES, so
+ * something has to remember what was last said, per partner and destination.
  */
 
 struct nrinp3 {
   struct nrinp3 *next;
-  struct nrpeer *peer;          /* who reports it */
-  int time;                     /* his route time, 10 ms units.  0 is not a
-                                 * value here: it means withdrawn, and such an
-                                 * entry is deleted rather than stored */
+  struct nrpeer *peer;          /* the partner this cell is about */
+  int time;                     /* HIS route time to it, 10 ms units.  0 means
+                                 * he reports no way - the cell then lives on
+                                 * only for the sake of "reported" below */
   int hops;
   long stamp;                   /* secclock() when last heard */
+  int reported;                 /* what WE last told him about it, 10 ms
+                                 * units, 0 = nothing outstanding.  A cell with
+                                 * neither time nor reported is deleted */
 };
 
 struct node {
@@ -181,6 +187,16 @@ struct node {
   int32 inp3_ip;                /* INP3 option 0x01: he is also reachable at
                                  * this address.  0 = he named none */
   int inp3_ipbits;
+  /* Options we do not know, kept exactly as they arrived - length byte, type
+   * byte and payload - so that we can put them back on the wire unchanged.
+   * THIS IS THE ROAD TO IPv6 and it costs nothing but the bytes: a field type
+   * neither we nor the node in the middle understands still reaches the far
+   * end, so a 16-byte address needs no flag and no agreement, only that
+   * everybody in between passes on what it cannot read.  TNN does this and it
+   * is the one extension mechanism the protocol has.
+   */
+  uint8 *inp3_opts;
+  int inp3_optlen;
   struct node *neighbor, *old_neighbor;
   double quality, old_quality, tmp_quality;
   int force_broadcast;
@@ -235,15 +251,18 @@ struct nrpeer {
   int maxtime;                  /* his "$M": do not tell him about anything
                                  * slower than this.  0 = he named none */
   int rttcount;                 /* service ticks since the last probe */
+  int sweepcount;               /* service ticks since the last full pass */
 };
 
 static struct nrpeer *nrpeers;
 static struct timer nrpeer_timer;
 
 /* Defined with the routing table further down, needed by the link service
- * above it: a partner that goes away takes his ways with him.
+ * above it: a partner that goes away takes his ways with him, and a partner
+ * that is up gets told what has changed.
  */
 static void inp3_drop_peer(struct nrpeer *pp);
+static void inp3_inform_peer(struct nrpeer *pp, struct ax25_cb *axp);
 
 /* Two rates out of one timer, the way TNN does it: the tick is short so that
  * a link coming up is NOTICED soon - the first measurement belongs to the
@@ -258,6 +277,17 @@ static void inp3_drop_peer(struct nrpeer *pp);
 
 #define NRPEER_INTERVAL 10      /* seconds per tick */
 #define NRRTT_EVERY     18      /* ticks between probes: 180 s */
+/* Changes go out on EVERY tick, which is TNN's brosrv10() and is not an
+ * accident of our timer: the specification allows positive news to be held
+ * back but guarantees a maximum delay of 10 seconds for negative news, and
+ * one tick is that guarantee.
+ *
+ * The full pass is the safety net under a protocol that only sends changes.
+ * TNN runs brosrv360() hourly, which clears every reported value so that the
+ * change mechanism has to say everything again.  Nothing should depend on it;
+ * it is there for the message that went missing.
+ */
+#define NRSWEEP_EVERY  360      /* ticks between full passes: one hour */
 
 static struct broadcast *broadcasts;
 static struct node *nodes, *mynode;
@@ -570,6 +600,43 @@ static uint8 *nrpeer_target(struct nrpeer *pp)
  * a new id means a new connection and nothing agreed on the old one holds.
  */
 
+/* Is this a connection we have not seen before, and if so, forget the old one.
+ *
+ * Counted as ours only once it is UP.  Remembering the id while the
+ * connection is still being set up would spend the "new" on a link nothing
+ * can be agreed on yet - and the first measurement, which belongs exactly
+ * there, would then wait for the next probe interval instead.
+ *
+ * IT HAS TO BE ASKED AT EVERY FRAME WE TAKE OFF THE LINK, not only on the
+ * timer tick, and that was measured rather than reasoned: a partner announces
+ * himself the moment the link stands, so his flags and our first measurement
+ * arrive within milliseconds of it - and a reset arriving on the next tick
+ * threw away precisely those.  The announcement was thirty seconds late on a
+ * link that had been up for one.
+ */
+
+static int nrpeer_isnew(struct nrpeer *pp, struct ax25_cb *axp)
+{
+  if (!axp || axp->state != LAPB_CONNECTED || pp->id == axp->id) return 0;
+  pp->id = axp->id;
+  pp->srtt = pp->lastrtt = pp->rttstart = 0;
+  pp->inp3 = pp->maxtime = 0;
+  pp->rttcount = pp->sweepcount = 0;
+  /* A new connection: he announces again from scratch, and what the old one
+   * taught us was true of a link that no longer exists.  What WE told him
+   * goes with it - the cell holds both halves - so we begin by telling him
+   * everything again.
+   */
+  inp3_drop_peer(pp);
+  return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* The partner's link, opened if it is not there.  Looked up rather than
+ * remembered, the way FlexNet's setaxp() does it.
+ */
+
 static struct ax25_cb *nrpeer_link(struct nrpeer *pp, int *isnew)
 {
   uint8 *call;
@@ -583,16 +650,23 @@ static struct ax25_cb *nrpeer_link(struct nrpeer *pp, int *isnew)
     addrcp(hdr.dest, call);
     if (!(axp = open_ax25(&hdr, AX_ACTIVE, 0))) return NULL;
   }
-  /* Counted as ours only once it is UP.  Remembering the id while the
-   * connection is still being set up would spend the "new" on a link nothing
-   * can be agreed on yet - and the first measurement, which belongs exactly
-   * there, would then wait for the next probe interval instead.
-   */
-  if (axp->state == LAPB_CONNECTED && pp->id != axp->id) {
-    pp->id = axp->id;
-    if (isnew) *isnew = 1;
-  }
+  if (nrpeer_isnew(pp, axp) && isnew) *isnew = 1;
   return axp;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* The same question asked from a frame rather than from the timer: which
+ * connection did this arrive on, and is it the one we think we have?
+ */
+
+static void nrpeer_seen(struct nrpeer *pp)
+{
+  struct ax25_cb *axp;
+  uint8 *call;
+
+  if ((call = nrpeer_target(pp)) && (axp = find_ax25(call)))
+    nrpeer_isnew(pp, axp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -732,10 +806,35 @@ static void nrpeer_read_flags(struct mbuf *bp, struct node *fromneighbor)
 
   if (!(pp = nrpeer_find(fromneighbor->call))) return;
   if (!nrpeer_rtt_text(bp, buf, sizeof(buf))) return;
+  /* Before anything is taken from it: this frame may be the first thing on a
+   * connection we have not counted yet, and a reset afterwards would undo
+   * exactly what we are about to read.
+   */
+  nrpeer_seen(pp);
   /* "$N" is the whole negotiation: he speaks INP3 and wants to.  A neighbour
    * that never sends it gets the classic broadcast from us and nothing else.
    */
-  if (strstr(buf, "$N")) pp->inp3 = 1;
+  if (strstr(buf, "$N")) {
+    /* THE MOMENT IT TURNS ON, MEASURE - and this is TNN's own answer to a
+     * gap we walked into while testing.  Each side learns the other speaks
+     * INP3 only from the other's probe, and probes are 180 s apart, so after
+     * a link comes up the announcement could wait three minutes for a frame
+     * that had nothing else to carry.  TNN answers a "$N" by announcing
+     * itself at once; a probe of ours does both, because ours carries our
+     * own "$N" and starts the measurement the metric needs.
+     *
+     * Only on the change from off to on, so that two nodes reading each
+     * other's flags do not keep answering one another.
+     */
+    if (!pp->inp3) {
+      struct ax25_cb *axp;
+      uint8 *call = nrpeer_target(pp);
+
+      pp->inp3 = 1;
+      if (!pp->rttstart && call && (axp = find_ax25(call)))
+	nrpeer_send_rtt(pp, axp);
+    }
+  }
   /* "$M<n>" is a ceiling HE sets on what we report to him.  Absent means he
    * named none, and TNN clears it in that case rather than keeping the last.
    */
@@ -760,6 +859,12 @@ static void nrpeer_recv_rtt(struct mbuf *bp, struct node *fromneighbor)
   if (!nrpeer_rtt_text(bp, buf, sizeof(buf))) return;
   if (sscanf(buf + 6, "%lu %lu %lu %lu", &sent, &hissrtt, &hislast, &id) != 4)
     return;
+  /* If this arrived on a connection we had not counted, the probe it answers
+   * belonged to the previous one - nrpeer_seen() clears it, and the test
+   * below then rejects the reflection rather than timing it against a clock
+   * that has been restarted.
+   */
+  nrpeer_seen(pp);
   /* Only the probe that is outstanding, and only if the number came back
    * unchanged: a reflection of an older one would otherwise be timed against
    * the newer clock and read as absurdly fast.
@@ -795,6 +900,7 @@ static void nrpeer_poll(struct nrpeer *pp)
   {
     if (!(axp = nrpeer_link(pp, &isnew)) ||
 	axp->state != LAPB_CONNECTED) {
+      pp->sweepcount = 0;
       /* No link, no ways through him.  Held any longer they would be routes
        * to a partner we cannot reach, and nothing would ever withdraw them -
        * the withdrawal would have had to come over the link that is gone.
@@ -810,14 +916,13 @@ static void nrpeer_poll(struct nrpeer *pp)
      * the old one.  Probe at once rather than at the next interval: until
      * there is a time, there is nothing to announce him with.
      */
+    /* Everything the new connection invalidates was dropped by
+     * nrpeer_isnew() already, wherever it was first noticed.  What is left
+     * here is the one thing the timer is for: measure at once rather than at
+     * the end of the first interval, because until there is a time there is
+     * nothing to announce with.
+     */
     if (isnew) {
-      pp->srtt = pp->lastrtt = pp->rttstart = 0;
-      pp->inp3 = pp->maxtime = 0;
-      pp->rttcount = 0;
-      /* A new connection: he will announce again from scratch, and what the
-       * old one taught us was true of a link that no longer exists.
-       */
-      inp3_drop_peer(pp);
       nrpeer_send_rtt(pp, axp);
       return;
     }
@@ -830,12 +935,15 @@ static void nrpeer_poll(struct nrpeer *pp)
 	pp->rttstart = 0;
 	pp->srtt = 0;
       }
-      return;
-    }
-    if (++pp->rttcount >= NRRTT_EVERY) {
+    } else if (++pp->rttcount >= NRRTT_EVERY) {
       pp->rttcount = 0;
       nrpeer_send_rtt(pp, axp);
     }
+    /* And then what has changed, which is NOT tied to the probe: measuring is
+     * every 180 s and announcing is every tick, because ten seconds is the
+     * maximum delay the specification allows itself for bad news.
+     */
+    inp3_inform_peer(pp, axp);
   }
 }
 
@@ -1011,6 +1119,7 @@ static void calculate_all(void)
 	nodes = pn->next;
       if (pn->next) pn->next->prev = pn->prev;
       free(pn->call);
+      free(pn->inp3_opts);
       free(pn);
       nnodes--;
     }
@@ -1052,6 +1161,7 @@ static struct nrinp3 *inp3_best(const struct node *pd)
   struct nrinp3 *rp;
 
   for (rp = pd->inp3; rp; rp = rp->next) {
+    if (!rp->time) continue;    /* a cell kept only for what we reported */
     if (!rp->peer->srtt) continue;
     if (!best || rp->time + rp->peer->srtt < best->time + best->peer->srtt)
       best = rp;
@@ -1071,6 +1181,27 @@ static void inp3_route_drop(struct node *pd, struct nrpeer *pp)
       free(rp);
       return;
     }
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* He has no way to this destination any more.  That is not the same as having
+ * nothing to do with it: if we have told him about it, the cell has to stay
+ * until we have taken that back, because what is remembered there is OUR
+ * announcement and not his.  With nothing outstanding it goes, and then the
+ * node itself can be collected - calculate_all() reaps a node with no links
+ * and no INP3 cells, which is how a destination we only ever heard of through
+ * INP3 disappears again.
+ */
+
+static void inp3_route_clear(struct node *pd, struct nrpeer *pp)
+{
+  struct nrinp3 *rp;
+
+  if (!(rp = inp3_route(pd, pp, 0))) return;
+  rp->time = 0;
+  rp->hops = 0;
+  if (!rp->reported) inp3_route_drop(pd, pp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1136,6 +1267,7 @@ static void inp3_recv(struct mbuf **bpp, struct node *pn)
     int hops;
     int haveip = 0;
     int ipbits = 0;
+    int optlen = 0;
     int time;
     int32 ip = 0;
     int valid = 1;
@@ -1143,6 +1275,11 @@ static void inp3_recv(struct mbuf **bpp, struct node *pn)
     struct nrinp3 *rp;
     uint8 call[AXALEN];
     uint8 hdr[AXALEN + 3];
+    uint8 opts[64];             /* options we do not know, kept verbatim.  The
+                                 * bound is ours: what we pass on we also have
+                                 * to fit into a frame, and an entry cannot be
+                                 * allowed to grow without limit because
+                                 * somebody upstream is generous */
 
     if (pullup(bpp, hdr, AXALEN + 3) != AXALEN + 3) break;
     addrcp(call, hdr);
@@ -1189,11 +1326,20 @@ static void inp3_recv(struct mbuf **bpp, struct node *pn)
 	haveip = 1;
 	break;
       default:
-	/* Unknown, and TNN passes these THROUGH - which is the road to IPv6,
-	 * since a field nobody knows still reaches the far end.  We drop them
-	 * for now because we announce nothing yet; there is nothing to pass
-	 * them on with.  See TODO.txt.
+	/* Unknown, and it is kept EXACTLY as it came in - its own length byte
+	 * back in front - so that it can go out again unchanged.  A field
+	 * nobody in the middle understands still reaches the far end, which is
+	 * the whole extension mechanism the protocol has and the way IPv6 will
+	 * travel.  Beyond what we can hold, the rest of them are dropped and
+	 * the route itself is still good: an option is an addition to an
+	 * entry, never the entry.
 	 */
+	if (optlen + len + 2 <= (int) sizeof(opts)) {
+	  opts[optlen++] = (uint8) (len + 2);
+	  opts[optlen++] = (uint8) type;
+	  memcpy(opts + optlen, data, (size_t) len);
+	  optlen += len;
+	}
 	break;
       }
       if (!valid) break;
@@ -1210,9 +1356,21 @@ static void inp3_recv(struct mbuf **bpp, struct node *pn)
      * an entry on him.
      */
     if (!time || time >= INP3_HORIZON) {
-      if ((pd = nodeptr(call, 0))) inp3_route_drop(pd, pp);
+      if ((pd = nodeptr(call, 0))) inp3_route_clear(pd, pp);
       continue;
     }
+
+    /* What he says about HIMSELF is not a route time, it is a formality: the
+     * way to him is the link, and we have measured that ourselves.  TNN
+     * substitutes 1 and 1 here rather than believing him, and it is right to
+     * - a partner who names a large time for himself would otherwise be
+     * counted twice, once as his figure and once as our SNTT.
+     */
+    if (addreq(call, pn->call)) {
+      time = 1;
+      hops = 1;
+    }
+
     if (!(pd = nodeptr(call, 1))) continue;     /* destination list full */
     if (!(rp = inp3_route(pd, pp, 1))) continue;
     rp->time = time;
@@ -1224,10 +1382,276 @@ static void inp3_recv(struct mbuf **bpp, struct node *pn)
       pd->inp3_ip = ip;
       pd->inp3_ipbits = ipbits;
     }
+    /* Replaced rather than merged: these belong to the entry he just sent,
+     * and an option he has stopped sending is one that no longer applies.
+     */
+    free(pd->inp3_opts);
+    pd->inp3_opts = NULL;
+    pd->inp3_optlen = 0;
+    if (optlen && (pd->inp3_opts = (uint8 *) malloc((size_t) optlen))) {
+      memcpy(pd->inp3_opts, opts, (size_t) optlen);
+      pd->inp3_optlen = optlen;
+    }
   }
 
 discard:
   free_p(bpp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* WHAT WE WOULD TELL THIS PARTNER about this destination: our route time to
+ * it in 10 ms units, and 0 for "nothing to say".  He adds his own measured
+ * time to us on top - that is the specification's TT = RT + SNTT, seen from
+ * the other end - so what belongs here is our side of the sum alone.
+ */
+
+static int inp3_report_time(const struct node *pd, const struct nrpeer *pp,
+			    const uint8 *tocall, int *hops)
+{
+  int ceiling = pp->maxtime ? pp->maxtime : NRRTT_MAX;
+  int t;
+  struct nrinp3 *rp;
+
+  /* Ourselves, and the smallest value the protocol can say.  Anything larger
+   * would be added to his measurement of the link, which is the honest half
+   * of the figure and already covers the whole distance between us.
+   */
+  if (pd == mynode) {
+    *hops = 1;
+    return 1;
+  }
+
+  /* "advert no" leaves a node out here exactly as it leaves him out of the
+   * broadcasts.  One filter, one meaning: INP3 must not become the back door
+   * through which a node we were told to hide is announced after all.
+   */
+  if (!node_advert(pd)) return 0;
+  /* AND THAT IS THE ONLY RULE.  An alias beginning with "#" is NOT a second
+   * one: it means "do not show this node to users", not "do not pass it on",
+   * and WAMPES uses it that way itself - net.rc.dl1sbl-1 gives its own node
+   * the identifier "#BOEB1".  Suppressing such a node here would make it
+   * unreachable through us with nothing written down anywhere to explain it,
+   * which is the worse of the two mistakes: an announcement that should not
+   * have gone out is visible and one filter line fixes it.
+   */
+  /* Never his own entry back to him.  He knows where he is, and this is the
+   * first and simplest case of the poison reverse below.
+   */
+  if (tocall && addreq(pd->call, tocall)) return 0;
+
+  if ((rp = inp3_best(pd))) {
+    /* POISON REVERSE.  The way we would use runs through him, so seen from
+     * where he stands we are not a way at all - and saying otherwise is
+     * precisely how two nodes end up pointing at each other.
+     */
+    if (rp->peer == pp) return 0;
+    t = rp->time + rp->peer->srtt;
+    *hops = rp->hops;
+  } else if (pd->neighbor && (int) pd->quality > 0) {
+    /* Known only from the graph, so it has to be converted: he speaks time
+     * and the graph holds quality.  This is TNN's qual2rtt, and it sits HERE,
+     * at the edge, for the reason TNN puts every one of its conversions at
+     * the edge - in the middle it would cost the measured value we are
+     * supposed to be passing on.
+     *
+     * THE FIGURE IS COARSE AND IT IS WORTH KNOWING WHY: nr_hfqual is a
+     * constant that every direct neighbour is given, so the graph's quality
+     * is an assumption and not a measurement, and converting it does not make
+     * it one.  It also fits in a narrow band - quality 3 is 25.3 s and there
+     * is nothing slower to be had.  The alternative was to announce nothing
+     * we ever learned by broadcast, which would make us a node with exactly
+     * one reachable destination, and that is worse than a coarse number.
+     */
+    if (tocall && addreq(pd->neighbor->call, tocall)) return 0;
+    t = (256 - (int) pd->quality) * 10;
+    *hops = pd->hopcnt;
+  } else
+    return 0;
+
+  /* The penalty of the specification: one granularity step for the hop
+   * through us, so that a chain of fast links still grows monotonically
+   * instead of sticking at the floor.  The hop COUNT is raised by the
+   * receiver, not here - raising it at both ends would count us twice.
+   */
+  t++;
+  if (*hops < 1) *hops = 1;
+  if (*hops > 254) *hops = 254;
+  if (t > ceiling) return 0;    /* past his "$M", or past what we can say */
+  return t;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Is this worth a frame?  INP3 announces CHANGES, and the whole art of it is
+ * in not announcing them too eagerly - a route that flaps costs every node
+ * downstream a recalculation, and the ones behind them another.
+ *
+ * The thresholds are TNN's, out of inform_peer(): bad news at once, good news
+ * only when it is substantial by three separate measures at the same time,
+ * and a destination mentioned for the first time only when it is comfortably
+ * inside the ceiling, so that it is not withdrawn again on the next tick.
+ *
+ * ONE PART OF THIS IS A READING AND NOT A QUOTATION, and it is marked because
+ * a reading of the same notes has already turned out wrong once.  The note
+ * says a worsening is damped by "12.5 % plus half the time to the neighbour";
+ * the sources it was taken from are not to hand.  It is applied here as a
+ * band the worsening has to clear, which is what produces the hysteresis the
+ * note gives as the reason - but the note says "lowered", and a band is
+ * raised.  TO BE CHECKED against l3netrom.c:706 when the sources are back.
+ * It is a damping constant and not a protocol rule: getting it wrong costs
+ * frames or delay, not correctness.
+ */
+
+static int inp3_worth_saying(const struct nrpeer *pp, int now, int old,
+			     int sweep, int congested)
+{
+  int ceiling = pp->maxtime ? pp->maxtime : NRRTT_MAX;
+
+  if (!now) return old != 0;            /* withdrawal, and only if he has it */
+  if (sweep) return 1;
+  if (!old) return now * 2 < ceiling;   /* the first word about it */
+  if (now > old) return now > old + old / 8 + pp->srtt / 2;
+  if (now < old) {
+    /* A link with a queue on it is a link that has other things to do.  The
+     * news is good, so it can wait for a tick when it is cheap.
+     */
+    if (congested) return 0;
+    return now * 2 <= old && old - now >= 10 && old - now > pp->srtt / 2;
+  }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* One routing information packet.  Returns the bytes it took, or 0 if it did
+ * not fit - the caller then sends what it has and asks again.
+ *
+ * A WITHDRAWAL GOES OUT AS THE HORIZON AND NEVER AS A LITERAL ZERO.  Both
+ * mean "gone" on receipt, but TNN turns a zero into 60000 as it writes, and
+ * being identical to it costs nothing.  It carries no options either: they
+ * describe an entry, and there is no longer an entry to describe.
+ */
+
+static int inp3_put_rip(uint8 *p, int room, const struct node *pd,
+			int time, int hops)
+{
+  int gone = time >= INP3_HORIZON;
+  int havealias = !gone && pd->ident[0] && pd->ident[0] != ' ';
+  int need = AXALEN + 3 + 1;            /* call, hops, time, end of packet */
+  uint8 *start = p;
+
+  if (havealias) need += 2 + IDENTLEN;
+  if (!gone && pd->inp3_ip) need += 7;
+  if (!gone) need += pd->inp3_optlen;
+  if (need > room) return 0;
+
+  addrcp(p, pd->call);
+  p += AXALEN;
+  *p++ = (uint8) hops;
+  *p++ = (uint8) (time >> 8);
+  *p++ = (uint8) time;
+  if (havealias) {
+    *p++ = 2 + IDENTLEN;
+    *p++ = INP3_ALIAS;
+    memcpy(p, pd->ident, IDENTLEN);
+    p += IDENTLEN;
+  }
+  if (!gone && pd->inp3_ip) {
+    /* AND THE SEVEN IS THE WHOLE POINT: the length byte counts itself and the
+     * type byte.  The specification calls this field five bytes, meaning its
+     * payload, and five on the wire is what nobody can read.
+     */
+    *p++ = 7;
+    *p++ = INP3_IPA;
+    *p++ = (uint8) (pd->inp3_ip >> 24);
+    *p++ = (uint8) (pd->inp3_ip >> 16);
+    *p++ = (uint8) (pd->inp3_ip >> 8);
+    *p++ = (uint8) pd->inp3_ip;
+    *p++ = (uint8) pd->inp3_ipbits;
+  }
+  /* Verbatim, including their own length bytes - see struct node.  We are the
+   * node in the middle here, and passing on what we cannot read is the only
+   * thing that makes a new field type possible without asking anybody.
+   */
+  if (!gone && pd->inp3_optlen) {
+    memcpy(p, pd->inp3_opts, (size_t) pd->inp3_optlen);
+    p += pd->inp3_optlen;
+  }
+  *p++ = INP3_EOP;
+  return (int) (p - start);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Everything that has changed for this partner since the last tick, in as few
+ * frames as it takes.  This is the sending side, and it is the counterpart of
+ * send_rout() in flexnet.c down to the shape of the loop.
+ */
+
+static void inp3_inform_peer(struct nrpeer *pp, struct ax25_cb *axp)
+{
+  int congested;
+  int mtu;
+  int sweep = 0;
+  struct mbuf *bp = NULL;
+  struct node *pd;
+  uint8 *tocall;
+
+  if (!mynode || !axp || axp->state != LAPB_CONNECTED) return;
+  /* Nothing agreed, or nothing measured.  Without an SNTT we would be asking
+   * him to add a number we have not got, and every route we named would be
+   * short by the length of the link.
+   */
+  if (!pp->inp3 || !pp->srtt) return;
+
+  mtu = axp->iface ? axp->iface->mtu : 256;
+  if (mtu > 256) mtu = 256;
+  if (mtu < 64) return;
+  congested = len_q(axp->txq) > 7;
+  tocall = nrpeer_target(pp);
+
+  if (++pp->sweepcount >= NRSWEEP_EVERY) {
+    pp->sweepcount = 0;
+    sweep = 1;
+  }
+
+  for (pd = nodes; pd; pd = pd->next) {
+    int hops = 1;
+    int n = 0;
+    int now = inp3_report_time(pd, pp, tocall, &hops);
+    struct nrinp3 *rp = inp3_route(pd, pp, 0);
+
+    if (!inp3_worth_saying(pp, now, rp ? rp->reported : 0, sweep, congested))
+      continue;
+
+    for (;;) {
+      if (!bp) {
+	if (!(bp = alloc_mbuf(mtu + 1))) return;
+	bp->data[0] = PID_NETROM;
+	bp->data[1] = INP3_RIF;
+	bp->cnt = 2;
+      }
+      if ((n = inp3_put_rip(bp->data + bp->cnt, mtu + 1 - (int) bp->cnt,
+			    pd, now ? now : INP3_HORIZON, hops)) > 0) break;
+      if (bp->cnt <= 2) break;          /* longer than a whole frame: leave it */
+      send_ax25(axp, &bp, -1);
+      bp = NULL;
+    }
+    if (n <= 0) continue;
+    bp->cnt += n;
+
+    /* Remembered only once it is in a frame.  A cell may have to be made for
+     * it: a destination he never mentioned has none, and from now on what we
+     * told him about it is exactly what that cell is for.
+     */
+    if (!rp && now) rp = inp3_route(pd, pp, 1);
+    if (rp) {
+      rp->reported = now;
+      if (!rp->time && !rp->reported) inp3_route_drop(pd, pp);
+    }
+  }
+  if (bp) send_ax25(axp, &bp, -1);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -3229,15 +3653,38 @@ static int donodes(int argc, char *argv[], void *p)
       if (pn1) {
 	struct nrinp3 *rp;
 
-	for (rp = pn->inp3; rp; rp = rp->next)
-	  printf("  INP3 via %-9s  route %d.%02ds  +link %d.%02ds  %d hops  "
-		 "age %lds\n",
-		 pax25(buf2, rp->peer->call),
-		 rp->time / 100, rp->time % 100,
-		 rp->peer->srtt / 100, rp->peer->srtt % 100,
-		 rp->hops, secclock() - rp->stamp);
+	for (rp = pn->inp3; rp; rp = rp->next) {
+	  char told[24];
+
+	  /* Both halves of the cell, because they answer different questions
+	   * and only one of them is his: what he tells us, and what we last
+	   * told him.  A cell may hold either alone - a way he reports and we
+	   * do not pass on, or one we announce out of the graph that he never
+	   * mentioned - so neither is printed when it is not there.
+	   */
+	  if (rp->reported)
+	    sprintf(told, "told %d.%02ds", rp->reported / 100, rp->reported % 100);
+	  else
+	    strcpy(told, "told nothing");
+	  if (rp->time)
+	    printf("  INP3 via %-9s  route %d.%02ds  +link %d.%02ds  %d hops  "
+		   "age %lds  %s\n",
+		   pax25(buf2, rp->peer->call),
+		   rp->time / 100, rp->time % 100,
+		   rp->peer->srtt / 100, rp->peer->srtt % 100,
+		   rp->hops, secclock() - rp->stamp, told);
+	  else
+	    printf("  INP3 to  %-9s  no way of his own, %s\n",
+		   pax25(buf2, rp->peer->call), told);
+	}
 	if (pn->inp3_ip)
 	  printf("  INP3 ip  %s/%d\n", inet_ntoa(pn->inp3_ip), pn->inp3_ipbits);
+	/* Named but not shown: we cannot read them, and printing bytes we do
+	 * not understand would only invite somebody to interpret them.  That
+	 * they are CARRIED is the point, and that is what the count says.
+	 */
+	if (pn->inp3_optlen)
+	  printf("  INP3 opt %d byte carried through\n", pn->inp3_optlen);
       }
     }
   return 0;

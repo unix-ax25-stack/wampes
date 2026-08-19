@@ -1413,10 +1413,84 @@
       die Ausgabe oben - das faellt erst ins Gewicht, wenn wir selbst
       ankuendigen (send_broadcast laeuft in hopcnt-Stufen).
 
-  NOCH NICHT: unbekannte Optionen werden VERWORFEN statt durchgereicht -
-  das ist der IPv6-Weg und braucht die Sendeseite, es gibt noch nichts,
-  womit man sie weitergeben koennte. Und das Routing benutzt die Tabelle
-  noch nicht: route_packet() geht weiter ueber pn->neighbor.
+  DIE SENDESEITE STEHT (fuenfter Bauschritt, 2026-08-19). Wir melden jetzt
+  selbst - je Partner, alle 10 s, und nur was sich geaendert hat. Die Zelle
+  struct nrinp3 traegt dafuer BEIDE Richtungen: was er uns meldet (time) und
+  was wir ihm zuletzt gemeldet haben (reported). Das ist TNNs Paar
+  quality/reported_quality je (Peer, Ziel), und ohne so ein Gedaechtnis kann
+  ein Protokoll, das nur Aenderungen schickt, gar nicht senden.
+
+  WAS WIR MELDEN, und die eine Entscheidung dahinter: die Zeit eines Ziels,
+  das wir NUR aus dem Graphen kennen, gibt es nicht - der Graph rechnet in
+  Qualitaet. Umgerechnet wird deshalb BEIM SENDEN, qual2rtt = (256-q)*10,
+  also genau da, wo TNN seine Umrechnungen auch hat ("an den Raendern, nie in
+  der Mitte"). Die Zahl ist grob und geraten - nr_hfqual ist eine Konstante -,
+  aber die Alternative waere gewesen, nichts weiterzumelden, was per
+  Rundspruch hereinkam, und das macht aus uns einen Knoten mit genau einem
+  erreichbaren Ziel. Angekuendigt wird immer der Weg, den wir auch NEHMEN
+  wuerden (INP3 vor Graph), damit Ankuendigung und Weiterleitung nicht
+  auseinanderlaufen.
+  Dazu der Penalty der Spezifikation: +1 Granularitaetsschritt. Der
+  HOP-ZAEHLER wird NICHT erhoeht - das tut der Empfaenger, beides zusammen
+  zaehlte uns doppelt.
+
+  DIE DOSIERUNG, aus inform_peer(): Ruecknahme sofort; Verschlechterung nur,
+  wenn sie ein Band aus 12,5 % plus halber Nachbarlaufzeit ueberschreitet;
+  Verbesserung nur, wenn sie zugleich >= 50 %, >= 100 ms und groesser als die
+  halbe Nachbarlaufzeit ist und der Link nicht verstopft (len_q(txq) > 7);
+  Erstmeldung nur unter maxtime/2. Poison Reverse: dem Partner, ueber den der
+  beste Weg laeuft, sagen wir nichts ueber dieses Ziel. Stuendlich ein
+  Volldurchlauf (NRSWEEP_EVERY 360), der alles noch einmal sagt.
+  ZU PRUEFEN, WENN DIE TNN-QUELLEN WIEDER DA SIND: die Notiz sagt bei der
+  Verschlechterung "abgesenkt", ein Band ist aber angehoben. Gebaut ist das
+  Band, weil die Notiz "damit es nicht flattert" als Grund nennt und genau
+  das ein Band tut. l3netrom.c:706. Es ist eine Daempfungskonstante, kein
+  Protokollpunkt - falsch herum kostet Rahmen oder Verzoegerung, nicht
+  Richtigkeit.
+
+  RUECKNAHME GEHT ALS HORIZONT (60000) UND NIE ALS ECHTE NULL, wie TNNs
+  add_inp_info() es schreibt, und ohne Optionen: die beschreiben einen
+  Eintrag, und es gibt keinen mehr.
+
+  UNBEKANNTE OPTIONEN WERDEN JETZT DURCHGEREICHT - verbatim, mit ihrem
+  eigenen Laengenbyte, gespeichert an struct node (inp3_opts). DAS IST DER
+  IPv6-WEG, und er ist damit belegt: ein Feldtyp, den weder wir noch der
+  Knoten in der Mitte kennt, kommt am anderen Ende an. Gemessen mit Typ 0x30.
+
+  DAS "#"-ALIAS IST KEINE ZWEITE REGEL. Ich hatte TNNs Verhalten so notiert
+  ("Alias mit # = versteckter Node, wird nicht gemeldet") und danach gebaut;
+  Thomas hat am 2026-08-19 richtiggestellt: "#" heisst NUTZERN NICHT ANZEIGEN,
+  nicht "nicht weiterleiten". WAMPES benutzt es selbst so - net.rc.dl1sbl-1
+  gibt dem eigenen Knoten "#BOEB1". Die Regel ist wieder heraus; es gilt
+  allein "advert no" aus dem Routenfilter. Der schlechtere Fehler waere die
+  stille Unerreichbarkeit gewesen: eine faelschliche Ankuendigung sieht man
+  und behebt sie mit einer Filterzeile.
+
+  EIN FEHLER, GEFUNDEN WEIL GEMESSEN WURDE: "neu verbunden" wurde nur vom
+  Timer bemerkt. Der Partner meldet sich aber in dem Moment, in dem der Link
+  steht - seine Flags und die erste Messung kommen Millisekunden spaeter -,
+  und der Reset auf dem naechsten Tick warf genau die wieder weg. Die
+  Ankuendigung kam 30 s zu spaet auf einem Link, der nach 1 s stand. Jetzt
+  fragt nrpeer_isnew() bei JEDEM Rahmen vom Link, nicht nur im Tick.
+  Dazu TNNs Gegenzug: wer "$N" zum ersten Mal sieht, misst SOFORT selbst -
+  sonst wartet man auf die naechste Probe des anderen, also bis zu 180 s.
+
+  GEMESSEN mit testtools/inp3peer.py (zwei Partner auf einem Socket, weil
+  axip sich den UDP-Quellport je Host merkt):
+      DB0ZZZ-2  RIF: DB0DDD-9 15.04s 4 hops  alias, ip 44.130.1.5/28,
+                                             typ 0x30 durchgereicht
+                     DB0XYZ-4  6.41s 1 hops  (Graph, quality 192 -> 641)
+                     DL9SAU-1  0.01s 1 hops  (wir selbst)
+      DB0XYZ-4  RIF: DB0ZZZ-2, DL9SAU-1 - DB0DDD-9 NICHT (Poison Reverse)
+  Ausserdem: Ruecknahme kommt als 600.00s an; $M500 laesst nur noch die
+  0.01s durch; 15.04 -> 5.04 wird gemeldet, 15.04 -> 15.53 nicht (Band);
+  ein zweiter Tick ohne Aenderung schickt nichts.
+  NICHT GEMESSEN: der stuendliche Volldurchlauf und die Glaettung ueber
+  mehrere Proben - beides braucht Laufzeiten, die ein Testlauf nicht hat.
+
+  NOCH NICHT: das Routing benutzt die Tabelle nicht - route_packet() geht
+  weiter ueber pn->neighbor. Und pn->hopcnt bleibt bei reinen INP3-Zielen
+  999, was erst beim eigenen NODES-Rundspruch ins Gewicht faellt.
   <call> ist Rufzeichen oder Rufzeichen-SSID, UND HIER IST LAZY ZU SEIN:
   ohne SSID geschrieben passt jede SSID, mit SSID genau diese. Vorbild ist
   addrmatch() (flexnet.c:868), das genau so einen Bereichsvergleich macht,
