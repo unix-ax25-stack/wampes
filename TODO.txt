@@ -4010,3 +4010,322 @@ HAENGT ZUSAMMEN MIT den beiden anderen offenen Punkten: dem umgekehrten
 Bereich (drei Varianten, weiter oben) und dem nie aufgefrischten Bereich
 eines Ziels. Wer Punkt 2 hier scharf prueft, braucht die Varianten dort
 nicht mehr - ein umgekehrter Bereich entstuende gar nicht erst.
+
+------------------------------------------------------------------------
+EINE AX.25-VERBINDUNG IST EIN PAAR, KEIN ZIEL (Befund 2026-08-19)
+------------------------------------------------------------------------
+BEAUFTRAGT, NOCH NICHT ANGEFANGEN. Aufgeschrieben nach dem Befund, damit
+er nicht nur im Gedaechtnis der Sitzung steht.
+
+WIE ES AUFFIEL, im Betrieb gegen db0fhn (axudp, xnet): ein Connect von
+Linux her ueber die neue libax25-Bruecke, mit einem ANDEREN Quellcall,
+wurde mit "busy" abgewiesen - es bestehe schon eine Verbindung. Bestand
+auch, aber DK0CCC-10 -> DB0FHN, nicht mit dem Quellcall des Rufers.
+Dasselbe beim zweiten Connect zu igate ueber db0fhn.
+
+DER CODE: ax25subr.c:49 find_ax25() vergleicht NUR hdr.dest. Das lokale
+Rufzeichen kommt im Schluessel nicht vor. Eine AX.25-Verbindung ist aber
+durch BEIDE Adressen bestimmt, Quelle+SSID und Ziel+SSID.
+
+DREI FOLGEN, die erste war der Anlass:
+
+  1. open_ax25() (ax25user.c:28) findet den fremden Block und gibt
+     CON_EXISTS -> "busy", egal mit welchem Quellcall gerufen wurde. Ein
+     stehender Link DK0CCC-10->DB0FHN sperrt DL9SAU-5->DB0FHN. Der
+     blockierende Eintrag war der FlexNet-Linkpartner, der bewusst steht.
+
+  2. DER EMPFANGSPFAD hat es auch: lapb.c:84 sucht per
+     find_ax25(hdr->source), also allein nach der Gegenstelle. Hat
+     derselbe Benutzer schon einen Link zu einem ANDEREN lokalen Call,
+     landet sein SABM auf jenem Block - und in LAPB_CONNECTED wird SABM
+     angenommen: UA, Zaehler auf null, Reassembly-Queues verworfen
+     (lapb.c:361ff; das woertliche "Always accept" bei lapb.c:203 ist
+     der andere Fall, aus LAPB_DISCONNECTED). Sein zweiter Connect setzt
+     Sitzung zurueck, statt eine zweite zu oeffnen. Das kostet Daten,
+     nicht nur Komfort, und es trifft genau die neuen AX.25-Listener mit
+     Weiterleitung zu internen Diensten.
+
+  3. DER STILLE FALL: existiert der Block, ist aber unbelegt
+     (services == NULL, das sind die "Disconn"-Zeilen in "ax st"), faellt
+     open_ax25() durch beide Zweige und BENUTZT IHN WEITER, OHNE
+     build_path() - alter Quellcall, alter Digipeaterpfad, altes
+     Interface. Verdacht, noch zu pruefen: das erklaert, warum ein
+     "connect axip:DB0BLO-4" als "link setup (xnet)" lief, also nicht der
+     Autorouter, sondern ein wiederverwendeter Block
+     DL9SAU-2->DB0BLO-4 via DB0FHN,IGATEB. Nachtrag 2026-08-20: der Weg
+     dahin ist am Code belegt, siehe "DER IDLE-DISC DES PARTNERS" weiter
+     unten - ein Block mit noch angehaengtem Dienst wird beim Abbau
+     nicht geloescht (lapb.c:1088) und beim naechsten Bedarf ohne
+     build_path() wiederbelebt.
+
+DER RICHTIGE TEST STEHT SCHON DA, zwoelf Zeilen ueber lapb.c:84, im
+Digipeat-Zweig derselben if-Anweisung:
+
+    addreq(hdr->source, axp->hdr.dest) && addreq(hdr->dest, axp->hdr.source)
+
+Historisch war die Annahme "ein Knoten, ein Mycall" richtig, und dann ist
+die Abkuerzung nicht falsch. "< src-call" in der netcmd-Bruecke und die
+gelauschten Rufzeichen sind neu und legen sie frei. ax25.c:474
+ax_answers_to() kennt bereits alle drei Quellen lokaler Rufzeichen -
+iface->hwaddr, die hdr.source laufender Links, axlisten_active(). Das
+Datenmodell ist also fast da: ax_answers_to() kennt N lokale Calls,
+find_ax25() kennt keinen.
+
+DIE SEMANTIK (Thomas): eindeutig ist (Quelle+SSID, Ziel+SSID), und zwar
+OHNE PORT - dasselbe Paar auf zwei Frequenzen setzt beim Zusammenlaufen
+DM oder FRMR. Nur fuer CONNECTETE Verbindungen; Datagramme sind egal.
+NET/ROM-L4 hat seine eigene Zuordnung (eine Verbindung Quellcall ->
+Zielnode, mehrere Benutzer zum selben Ziel erlaubt) und ist davon nicht
+betroffen. Der Kommentar remote_net.c:372 "one link per callsign pair"
+beschreibt das SOLL richtig - falsch ist der Code darunter, nicht der
+Kommentar.
+
+DER BLOCK MUSS DAS DISC UEBERLEBEN: in LAPB_DISCONNECTED wird noch auf
+SABM mit UA und auf verspaetete Rahmen mit DM/DISC geantwortet, bis die
+Timer ablaufen. Also nichts aufraeumen, nur richtig schluesseln. Trifft
+ein neuer Aufbau den Block DESSELBEN Paars, entscheidet der Zustand:
+LAPB_DISCONNECTED ist der richtige Block dafuer, aber build_path() muss
+dann ERNEUT laufen - das fehlt heute, deshalb erbt der neue Connect Pfad
+und Interface des alten. LAPB_DISCPENDING laeuft noch ab, da ist
+est_link() verfrueht.
+
+DIESER LETZTE PUNKT IST NOCH NICHT ENTSCHIEDEN. Alles andere in diesem
+Abschnitt ist abgestimmt; die Zustandsunterscheidung nicht. Sie haengt am
+Zustandsautomaten und ist dort durchzuspielen, nicht auf dem Papier zu
+entscheiden - also beim Bauen zuerst vorfuehren, dann festlegen.
+
+NACHTRAG 2026-08-20: ein Stueck davon ist jetzt entschieden. Der Block
+in LAPB_DISCONNECTED MUSS auch nach der Paar-Umstellung gefunden werden
+(entschieden) - sonst bricht unter anderem der IP-Wiederaufbau weiter
+unten.
+Offen bleibt allein, was beim Wiederfinden zu geschehen hat: build_path()
+erneut laufen lassen, und was mit LAPB_DISCPENDING wird.
+
+DREI EBENEN, die heute in einer stecken. axp->services ist eine Liste je
+PID (open_axservice, ax25user.c:169), also das Multiplexen mehrerer
+Protokolle auf einem Link:
+
+  Link (Quelle+SSID, Ziel+SSID) - existiert er, wird er MITBENUTZT,
+    nicht abgelehnt.
+  Service (PID auf dem Link) - derselbe PID ein zweites Mal ist die
+    einzige echte Absage. Dorthin gehoert "busy", nicht auf die
+    Linkebene.
+  Lebensdauer - letzter Service weg, services == NULL, der Block laeuft
+    in den Timernachlauf und bleibt fuer DM/DISC. Heute lebt der Link,
+    solange IRGENDEIN Service dranhaengt. FUER PID=TEXT GILT DAS NICHT,
+    und das ist keine Nachlaessigkeit, sondern Absicht - siehe den
+    naechsten Abschnitt, VOR jeder Aenderung an der Lebensdauer zu lesen.
+
+PID=TEXT IST DIE AUSNAHME, UND DER ABBAU IST GEWOLLT (Thomas, 2026-08-20)
+
+Den meisten Protokollen ist gleichgueltig, was die Schicht unter ihnen
+tut. Sie reden vor sich hin; raucht die Sitzung ab, gibt es einen
+Neuaufsatz und gut ist. Sie schliessen auch nichts, sie unterhalten sich
+unbegrenzt weiter. PID=Text kann das nicht: ein Textstrom OHNE Protokoll
+hat keine eigene Signalisierung. Es gibt kein "zu Ende", das im
+Datenstrom selbst stuende.
+
+Der Fall: ein Benutzer ist per AX.25 bei uns in Unix eingeloggt, auf
+derselben Verbindung laeuft daneben IP oder ein anderes PID. Die Shell
+wirft ihn wegen Leerlaufs hinaus, der Socket geht zu. Erfaehrt er das
+nicht, laufen seine Befehle ins Leere - tote Sitzung, oder er loest
+unbemerkt einen neuen Login aus. Damit das nicht passiert, wird das Ende
+der Textsitzung dadurch signalisiert, DASS DIE AX.25-VERBINDUNG
+ABGEBAUT WIRD: DISC. Das bekommt die Gegenstelle mit und zeigt ihm den
+Abbau an. Dass es die parallel laufenden PIDs mitreisst, ist der Preis
+und ausdruecklich gewollt - die kommen damit zurecht, der Textstrom
+nicht.
+
+DIE ENTSPRECHUNG IM CODE ist close_axservice() (ax25user.c:301): faellt
+der letzte Consumer weg, geht der Link mit, disc_ax25(). Der Kommentar
+darueber begruendet nur, WARUM gezaehlt wird, indem man die Liste laeuft
+statt einen Zaehler zu fuehren - nicht, warum ueberhaupt abgebaut wird.
+Das steht ab jetzt hier.
+
+DIE REGEL LAUTET DAMIT (Thomas, 2026-08-20), und sie ist schaerfer als
+das, was heute im Code steht:
+
+    heute            letzter Service weg  -> DISC
+    richtig ist      PID=Text-Service weg -> DISC, auch wenn andere
+                                             Services noch dranhaengen
+
+"Der letzte Consumer" trifft fast immer zu, und deshalb faellt der
+Unterschied kaum auf. Es geht auch nicht ums Zaehlen: unter den
+Consumern ist einer, der den DISC BRAUCHT, weil er sein Ende sonst nicht
+mitgeteilt bekommt. Er hat Vorrang vor der Frage, ob noch jemand da ist.
+
+DER FALL, DER ES ENTSCHEIDET, und er ist keine Konstruktion: zwei BBS
+tauschen S&F-Daten aus, zwischen denselben beiden Partnern laeuft
+GLEICHZEITIG die FlexNet-Routingverbindung. Die rechte Seite hatte
+aufgebaut, ist fertig, sagt tschuess und schliesst ihren Socket. Ohne
+DISC merkt die linke Seite davon nichts - der Link steht ja weiter, den
+haelt FlexNet. Baut die linke Seite spaeter eine neue Sitzung auf, ist
+ihr "hallo" ein SABM auf einer stehenden Verbindung, und dort wartet
+kein Listener mehr.
+
+UND ES IST SCHLIMMER ALS "ES HOERT NIEMAND ZU". Nachgesehen in lapb.c:
+im Zustand LAPB_CONNECTED wird das SABM mit UA BEANTWORTET, die Zaehler
+werden genullt und die Reassembly-Queues verworfen (lapb.c:361ff). Der
+Zweig, der einen Dienst startet und den Listener bedient, steht dagegen
+allein im Fall LAPB_DISCONNECTED, und dort auch nur bei
+services == NULL (lapb.c:209, axserv_start/axserv_connected ab :221).
+Fuer die
+linke Seite sieht der Aufbau also GELUNGEN aus - sie bekommt ihr UA -,
+niemand nimmt die Daten entgegen, und nebenbei hat der Reset dem
+FlexNet-Peer auf demselben Link die Zaehler weggezogen.
+
+ES GIBT KEINEN ALTERNATIVEN WEG. Ein Textstrom traegt keine Marke, an
+der sich "Sitzung zu Ende" ausdruecken liesse, ohne ihn undurchsichtig
+zu machen; und die Ebene darunter kennt nur eine Art, ein Ende zu
+melden. Also: AX.25-Verbindung trennen.
+
+DER PAAR-UMBAU LOEST DIESEN FALL NICHT AUF, und das ist wichtig fuer die
+Erwartung: BBS-Sitzung und FlexNet-Link laufen zwischen DENSELBEN zwei
+Rufzeichen, sind also dasselbe Paar und bleiben nach dem Umbau derselbe
+Link. Genau dafuer ist das Multiplexen ja da. Wer die beiden
+auseinanderhaben will, gibt ihnen verschiedene SSIDs - so steht es auch
+im Kommentar an struct axservice (lapb.h:92).
+
+WAS DER UMBAU DAGEGEN AUFLOEST, IST DAS UNBEABSICHTIGTE ZUSAMMENLEGEN.
+Hier ist zu trennen, was erlaubt bleiben MUSS und was heute schief geht.
+
+NOCH NICHT ABGESCHLOSSEN (Stand 2026-08-20): der IP-Teil ist hier
+beschrieben, aber nicht belegt - die Darstellung taugt noch nicht als
+Grundlage. Bevor daran gebaut wird, gehoert er an einem konkreten Fall
+gezeigt: zwei Rufzeichen, eine Route, ein Mitschnitt. Fest steht die
+Vorgabe im ersten Absatz.
+
+IP DARF SICH AUF EINE BESTEHENDE VERBINDUNG AUFSCHWINGEN (Thomas), und
+zwar auf die zum aufgeloesten Remote-Call. Sonst laege IP waehrend jeder
+PID=Text-Sitzung zu diesem Partner still, und ein zweiter Link zum
+selben Paar ist ohnehin nicht erlaubt. Gleiches Paar -> derselbe Link,
+das muss so bleiben.
+
+WAS HEUTE SCHIEF GEHT, ist der Fall mit FREMDEM lokalen Call.
+axui_send() (ax25.c:56) loest per res_arp() das Remote-Call auf und
+sucht dann find_ax25(hw_addr), ohne zu fragen, unter welchem eigenen
+Rufzeichen jener Link steht. Ist der Benutzer auf einem gelauschten Call
+eingeloggt (DL9SAU-5) und traegt das IP-Interface ein anderes
+(DL9SAU-2), laufen unsere IP-Pakete ueber den Login-Link - fremdes
+lokales Call, und moeglicherweise ueber ein anderes Interface, als die
+IP-Route vorsieht. Die Gegenrichtung ist dieselbe Verwechslung: sein
+SABM an DL9SAU-5 findet ueber lapb.c:84 den IP-Link und setzt ihn
+zurueck.
+
+WAS DIE SUCHE BRAUCHT, STEHT ZWEI ZEILEN DARUEBER: der UI-Zweig
+derselben Funktion nennt sein lokales Rufzeichen bereits ausdruecklich
+(ax25.c:87, iface->hwaddr). Tut der VC-Zweig dasselbe, bleibt das
+erlaubte Aufschwingen erhalten und das falsche faellt weg.
+
+UND IP IST GAR KEIN CONSUMER, was fuer die Lebensdauer oben zaehlt: es
+sendet direkt auf dem Kontrollblock (send_ax25(axp,&tbp,-1), ax25.c:152)
+und wird eingehend ueber die Axlink-Tabelle zugestellt, erst NACHDEM
+find_axservice() und axserv_start() nichts geliefert haben (lapb.c:1336
+bis 1352). IP haelt also keinen Link. Der einzige Dienst auf einem von
+IP aufgebauten Link ist der Verwerfer aus ax25.c:102 - und den gibt es
+nur beim NEUAUFBAU. Schwingt IP sich auf einen bestehenden Text-Link
+auf, endet der Link mit der Textsitzung, genau wie es die Regel oben
+verlangt.
+
+DER IDLE-DISC DES PARTNERS, UND WAS ER HINTERLAESST (Thomas, 2026-08-20):
+aus unserer Sicht ist die Textsitzung zu dem xnet nie aufgebaut worden -
+wir haben keinen Listener dafuer, wir verwerfen nur. Baut der xnet nach
+Leerlauf in seinem Kommandointerface ab, reisst sein DISC unsere
+IP-Strecke mit. Das ist unkritisch, IP baut beim naechsten Frame wieder
+auf. Nur nicht so, wie man es erwarten wuerde:
+
+Beim Uebergang nach LAPB_DISCONNECTED loescht lapb.c:1088 den
+Kontrollblock nur, wenn services == NULL ist. Der Verwerfer haengt aber
+noch dran, hat keinen s_upcall und schliesst sich nie - der Block bleibt
+also stehen, und T5 ist im selben Zweig gestoppt, es raeumt auch spaeter
+niemand auf. Das sind die "Disconn"-Zeilen in "ax st". Der naechste
+IP-Frame findet den Block per find_ax25(), faellt in den Zweig
+ax25.c:105 (state == LAPB_DISCONNECTED -> est_link(), LAPB_SETUP) und
+baut wieder auf - OHNE build_path(). Der Link klebt damit an Pfad und
+Interface des ersten Aufbaus, auch wenn die Route inzwischen eine andere
+waere.
+
+DAMIT IST DER STILLE FALL AUS PUNKT 3 BELEGT, jedenfalls am Code
+gelesen; am laufenden Knoten nachgemessen ist er noch nicht. Er ist
+zudem kein Sonderfall, sondern der Normalbetrieb jeder IP-Strecke zu
+einem xnet.
+
+DER VERWERFER MUSS ALS ZOMBIE GEKENNZEICHNET WERDEN (Thomas,
+2026-08-20): "wenn 'aufraeumen' ansteht, will ich sterben". Ein Dienst,
+der nur wegwirft, ist kein Consumer, der einen Link traegt - er ist ein
+bereits GESCHLOSSENER Dienst, der nur noch dasteht, damit ankommender
+Text nicht beim Login landet. Er braucht ein Kennzeichen am axservice,
+das sagt: zaehle mich nicht. Dann darf der Block weg, obwohl er formal
+noch in der Liste steht.
+
+ZU AENDERN SIND ALLE STELLEN, DIE "services == NULL" FRAGEN - sie
+fragen in Wahrheit "lebt hier noch jemand":
+
+    lapb.c:1088        loeschen beim Abbau
+    ax25user.c:301     close_axservice(), der DISC beim letzten Dienst
+    lapb.c:209         der Zweig, der einen Dienst STARTET
+
+DIE DRITTE IST DIE SCHLIMMSTE, und sie ist der eigentliche Grund fuer
+das Kennzeichen. Nach jeder IP-Strecke zu einem xnet bleibt ein Block
+mit dem Verwerfer stehen. Ruft uns dieser Partner nun selbst, findet
+lapb.c:84 den Block, LAPB_DISCONNECTED nimmt sein SABM an und
+beantwortet es mit UA - aber der Zweig darunter startet KEINEN Dienst,
+weil services != NULL ist. Der Rufer sitzt also in einer aufgebauten
+Verbindung, in der ihm niemand antwortet, und sein Text wandert in den
+Verwerfer. Am Code gelesen, noch nicht gemessen - aber die Kette ist
+kurz, und der Zombie ist genau das, was sie ausloest.
+
+WO ZOMBIES SONST NOCH ENTSTEHEN: axserver.c:1739 legt bei
+fehlgeschlagenem login_open() denselben Verwerfer auf einen sonst
+regulaeren Dienst. Auch der gehoert gekennzeichnet - dort ist ohnehin
+nichts mehr zu signalisieren.
+
+WOHER DIESER VERWERFER KOMMT (ChangeLog.patches, 2002-01-22, dl9sau, und
+es ist der Fall, an den Thomas sich erinnert): xnet schickt beim Connect
+IMMER einen PID=Text-CText. Ein von einem IP-Frame ausgeloester
+VC-Connect von WAMPES zu einem xnet lieferte diesen CText bei uns beim
+Login ab - der xnet loggte sich also bei uns ein, oder es setzte einen
+Disconnect, wenn der Login abgeschaltet war. Der Dienst faengt den Text
+ab, bevor lapb_input() ihn per axserv_start() an den Login gibt.
+Dieselbe Handschrift an einer zweiten Stelle: schlaegt login_open()
+fehl, wird der Empfang auf denselben Verwerfer gelegt statt abzubauen
+(axserver.c:1739, "don't disconnect. The client may decide to; this
+keeps the session open for transports with other PIDs"). Kein
+Widerspruch zur DISC-Regel - wo keine Textsitzung zustande kam, ist
+auch nichts zu signalisieren.
+
+WER DIE LEBENSDAUER "AUFRAEUMT", muss diesen Fall stehen lassen. Den
+Link beim Ende einer Textsitzung am Leben zu halten, weil formal noch
+ein Service dranhaengt, sieht nach der saubereren Loesung aus und nimmt
+dem Benutzer die einzige Rueckmeldung, die er hat.
+
+UMFANG, gemessen am Baum vom 2026-08-19 (Zeilen wandern, Funktionen
+nicht). Paarweise werden muessen:
+
+    lapb.c:84        lapb_input(), Empfang
+    ax25user.c:28    open_ax25()
+    ax25subr.c:132   cr_ax25()
+
+Lokales Call explizit machen, heute implizit ueber Interface/Mycall:
+
+    ax25.c:90        IP ueber AX.25
+    flexnet.c        400 setaxp(), 612, 645, 834
+    netrom.c         365 send_packet_to_neighbor(), 667 nrpeer_link(),
+                     687 nrpeer_seen(), 853 nrpeer_read_flags()
+
+Bleibt, weil nur Anzeige: netrom.c:3484 donrpeer(). Die vier
+netrom-Stellen sind aus der INP3-Arbeit; nrpeer_link() und nrpeer_seen()
+holen den Interlink genau nach FlexNets setaxp()-Muster und erben damit
+dessen Schwaeche.
+
+VERWANDT, UND ES IST DASSELBE MUSTER VON DER ANDEREN SEITE: der Abschnitt
+weiter oben zu FLEX_INIT, "DIE VERBINDUNG IST VIELLEICHT NICHT NUR SEINE
+FLEXNET-VERBINDUNG" - setaxp() nimmt irgendeinen Link zu diesem
+Rufzeichen, auch einen, der fuer etwas anderes geoeffnet wurde. Und in
+doc/ROUTE-FILTER.md steht der schon gemessene Fall, wo genau das einem
+Benutzer die Sitzung abschnitt.
+
+RISIKO beim Umbau bei DAMA, FlexNet und NET/ROM - alle gehen ueber
+dieselbe Tabelle. Abzusichern mit wampes-import/testtools (peer.py,
+eaxpeer.py, damachan.py, inp3peer.py): zwei lokale Calls zum selben Ziel,
+zwei Ziele von einem Call, digipeatet, dazu DAMA- und FlexNet-Regression.
