@@ -1512,16 +1512,45 @@
   bekommt ueber DB0DDD-9 nichts, obwohl wir mit DB0AAA-1 einen zweiten Weg
   haetten. Die Spezifikation erlaubt beides.
 
-  NOCH NICHT, und beides haengt am eigenen NODES-Rundspruch:
-  * pn->hopcnt bleibt bei reinen INP3-Zielen 999 und pn->quality 0, also
-    kommen sie in send_broadcast() gar nicht vor. Ein Nachbar, der nur
-    NET/ROM spricht, erreicht damit nichts, was wir nur per INP3 kennen -
-    wir waeren eine INP3-Insel. Die Gegenrichtung ist dieselbe Umrechnung
-    am Rand wie beim Senden: rtt2qual(TT) = 255 - tt/10, geklemmt 3..254,
-    und der Hop-Zaehler aus dem RIP.
-  * Ein UI-NODES-Rundspruch von einem Nachbarn, mit dem ein INP3-Interlink
-    STEHT, sollte ignoriert werden - sonst lernen wir dieselben Ziele
-    zweimal und die schlechtere Quelle ueberschreibt die bessere.
+  DIE ZWEITE AUSGANGSKANTE (siebter Bauschritt, 2026-08-20). Thomas' Frage:
+  "warum darf der NET/ROM-Rundspruch nach INP3, aber nicht umgekehrt?" Die
+  Antwort war: das war keine Entscheidung, sondern eine unfertige Kante.
+  DER UNTERSCHIED ZU TNN IN EINEM SATZ: TNN normalisiert an jedem EINGANG auf
+  Zeit und hat deshalb eine Liste; wir behalten beide Metriken und rechnen
+  dafuer an jedem AUSGANG um. Es gibt also ZWEI Ausgangskanten, und gebaut
+  war nur eine.
+  Jetzt bekommt ein reines INP3-Ziel im NODES-Rundspruch
+  rtt2qual(TT) = 255 - tt/10 (geklemmt 3..254) und den Hop-Zaehler aus dem
+  RIP. Im Nachbarfeld stehen WIR - der Partner spricht ein Protokoll, das
+  dieser Nachbar nicht kann, sein Rufzeichen waere ein Angebot, das hier
+  niemand annehmen kann. Wir sind fuer diesen Rundspruch wirklich der letzte
+  Hop.
+  Gemessen: DB0DDD-9 (INP3, 15.03s) erscheint als
+  "DB0DDD-9 DDDNOD via DL9SAU-1 q=105" - 255 - 1503/10 = 105.
+
+  UND EIN FEHLER IN DER SENDESEITE, beim Beantworten derselben Frage
+  gefunden: inp3_report_time() fragte INP3 IMMER zuerst, unabhaengig von
+  Parameter 28. Bei "28 0" haetten wir also ueber den Graphen weitergeleitet
+  und die INP3-Zeit angekuendigt - genau das Auseinanderlaufen, das die
+  Ankuendigung des genommenen Weges verhindern sollte. Die Wegwahl steht
+  jetzt EINMAL in inp3_preferred(), und alle drei Stellen fragen sie:
+  route_packet (Nexthop), inp3_report_time (Zeit), send_broadcast
+  (Qualitaet).
+
+  DER UI-RUNDSPRUCH EINES INP3-PARTNERS WIRD VERWORFEN, solange sein "$N"
+  steht. Sonst lernen wir dieselben Ziele zweimal, einmal gemessen ueber den
+  Interlink und einmal geraten aus dem Rundspruch, und die schlechtere Quelle
+  ueberschreibt die bessere. Braucht keine Konfiguration.
+  ZU BEACHTEN: VOR seinem "$N" wird sein Rundspruch angenommen, und das ist
+  richtig - da wissen wir noch nicht, dass er einer ist. Beim Testen sah das
+  zuerst wie ein Fehler aus.
+
+  WAS DAMIT OFFEN BLEIBT, benannt statt geloest: unser Rundspruch geht als
+  EIN UI an alle auf dem Port, es gibt also keine Unterdrueckung je Partner.
+  Ein INP3-Ziel kuendigen wir damit auch dem Partner an, von dem wir es
+  haben. Zwischen zwei WAMPES-Knoten schliesst die Empfangsseite oben das;
+  gegenueber einem fremden Knoten ist der Eintrag ein echter Weg ueber uns,
+  den er selbst gewichten muss.
   <call> ist Rufzeichen oder Rufzeichen-SSID, UND HIER IST LAZY ZU SEIN:
   ohne SSID geschrieben passt jede SSID, mit SSID genau diese. Vorbild ist
   addrmatch() (flexnet.c:868), das genau so einen Bereichsvergleich macht,

@@ -1190,9 +1190,28 @@ static struct nrinp3 *inp3_best(const struct node *pd)
 
 /*---------------------------------------------------------------------------*/
 
-/* WHOM TO SEND TO for this destination, out of the INP3 table - the one
- * question route_packet() needs answered, and the only place the two routing
- * worlds have to meet.  Everything else about them can stay apart.
+/* WHICH WAY WOULD WE TAKE to this destination - and it is asked in three
+ * places: route_packet() wants the next hop, an INP3 announcement wants the
+ * time of it, our own nodes broadcast wants its quality.  Worked out
+ * separately those three would drift apart, and a node that advertises one
+ * way while forwarding down another is worse than one that does neither.
+ *
+ * Null means "the graph decides".  This is the whole of parameter 28: on, an
+ * INP3 entry wins as soon as there is one; off, it is asked only where the
+ * graph has nothing at all.
+ */
+
+static struct nrinp3 *inp3_preferred(const struct node *pd)
+{
+  if (!nr_inp3first && pd->neighbor && (int) pd->quality) return NULL;
+  return inp3_best(pd);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* WHOM TO SEND TO, out of the INP3 table - the one question route_packet()
+ * needs answered, and the only place the two routing worlds have to meet.
+ * Everything else about them can stay apart.
  *
  * Null when there is nothing here, and the caller then goes on to the graph.
  * A partner whose link has gone has no ways left at all - inp3_drop_peer()
@@ -1205,7 +1224,7 @@ static struct node *inp3_nexthop(const struct node *pd, const struct node *from)
   struct node *via;
   uint8 *call;
 
-  if (!(rp = inp3_best(pd))) return NULL;
+  if (!(rp = inp3_preferred(pd))) return NULL;
   if (!(call = nrpeer_target(rp->peer))) return NULL;
   if (!(via = nodeptr(call, 0))) return NULL;
   /* NOT BACK THE WAY IT CAME.  Poison reverse should mean a partner never
@@ -1489,7 +1508,11 @@ static int inp3_report_time(const struct node *pd, const struct nrpeer *pp,
    */
   if (tocall && addreq(pd->call, tocall)) return 0;
 
-  if ((rp = inp3_best(pd))) {
+  /* The way we would TAKE, parameter 28 and all - not merely the best INP3
+   * entry.  Announcing one way and forwarding down another is exactly what
+   * inp3_preferred() exists to prevent.
+   */
+  if ((rp = inp3_preferred(pd))) {
     /* POISON REVERSE.  The way we would use runs through him, so seen from
      * where he stands we are not a way at all - and saying otherwise is
      * precisely how two nodes end up pointing at each other.
@@ -1802,6 +1825,38 @@ static struct mbuf *alloc_broadcast_packet(void)
 
 /*---------------------------------------------------------------------------*/
 
+/* THE OTHER OUTPUT EDGE, and the exact counterpart of the conversion in
+ * inp3_report_time(): a way we hold over INP3 is a measured TIME, and a
+ * nodes broadcast speaks QUALITY.
+ *
+ * TNN never has this question, because it normalises everything to time as
+ * it comes IN and keeps one table.  We keep both metrics, so we convert as a
+ * frame is WRITTEN - which means there are two output edges, and this is the
+ * second of them.
+ *
+ * Without it a destination known only through INP3 keeps hopcnt INFINITY and
+ * quality 0 - the values calculate_hopcnts() and calculate_qualities() leave
+ * behind for a node with no edges, and a RIP names no intermediate node to
+ * build an edge from.  It would never appear in a broadcast at all, and a
+ * neighbour who speaks only NET/ROM could not reach it through us.  That is
+ * an INP3 island, and it was never a decision - it is what falls out of the
+ * data structure if nobody looks.
+ *
+ * Clamped 3..254 as TNN clamps it: 0 is "unreachable" and would withdraw the
+ * entry, and the top of the range belongs to a node's view of itself.
+ */
+
+static int inp3_quality(const struct nrinp3 *rp)
+{
+  int q = 255 - (rp->time + rp->peer->srtt) / 10;
+
+  if (q < 3) q = 3;
+  if (q > 254) q = 254;
+  return q;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void send_broadcast(void *arg)
 {
 
@@ -1842,8 +1897,16 @@ static void send_broadcast(void *arg)
   for (hopcnt = 1; hopcnt <= INFINITY; hopcnt = nexthopcnt) {
     nexthopcnt = INFINITY + 1;
     for (pn = nodes; pn; pn = pn->next) {
-      if (pn->hopcnt >= hopcnt && (((int) pn->quality) || pn->force_broadcast)) {
-	if (pn->hopcnt == hopcnt) {
+      /* The way we would TAKE, which for an INP3 destination is not in the
+       * graph at all - see inp3_quality() above.
+       */
+      struct nrinp3 *rp = inp3_preferred(pn);
+      int nodehops = rp ? (rp->hops < INFINITY ? rp->hops : INFINITY)
+			: pn->hopcnt;
+      int nodequal = rp ? inp3_quality(rp) : (int) pn->quality;
+
+      if (nodehops >= hopcnt && (nodequal || pn->force_broadcast)) {
+	if (nodehops == hopcnt) {
 	  pn->force_broadcast = 0;
 	  /* "advert no": he is left out.  Only he - what lies behind him
 	   * came in through "in", and once accepted it is our route like any
@@ -1862,19 +1925,28 @@ static void send_broadcast(void *arg)
 	   * would become known through the entries that reach past him.  We
 	   * put ourselves there instead - to the outside we are then the last
 	   * hop, which is exactly "appear as one system".
+	   *
+	   * An INP3 way names US for the same reason and one more: the
+	   * partner it runs through speaks a protocol this neighbour does
+	   * not, so his callsign would be an offer nobody here can take up.
+	   * As far as this broadcast goes we ARE the last hop, and that is
+	   * not a polite fiction but the truth.
 	   */
-	  addrcp(p, pn->neighbor ? (node_advert(pn->neighbor) ?
-				    pn->neighbor->call : mynode->call)
-			         : pn->call);
+	  if (rp)
+	    addrcp(p, mynode->call);
+	  else
+	    addrcp(p, pn->neighbor ? (node_advert(pn->neighbor) ?
+				      pn->neighbor->call : mynode->call)
+				   : pn->call);
 	  p += AXALEN;
-	  *p++ = (char) pn->quality;
+	  *p++ = (char) nodequal;
 	  if ((bp->cnt = p - bp->data) > 258 - NRRTDESTLEN) {
 	    send_broadcast_packet(&bp);
 	    routes_stat.sent++;
 	    bp = NULL;
 	  }
-	} else if (pn->hopcnt < nexthopcnt) {
-	  nexthopcnt = pn->hopcnt;
+	} else if (nodehops < nexthopcnt) {
+	  nexthopcnt = nodehops;
 	}
       }
     }
@@ -2062,7 +2134,7 @@ static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
    * use them - to reach the NEIGHBOUR.  That is delivery at layer 2 and not
    * routing.
    */
-  if (nr_inp3first) {
+  {
     struct node *via = inp3_nexthop(pn, fromneighbor);
 
     if (via) {
@@ -2072,14 +2144,6 @@ static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
   }
 
   if (!pn->neighbor) {
-    if (!nr_inp3first) {
-      struct node *via = inp3_nexthop(pn, fromneighbor);
-
-      if (via) {
-	send_packet_to_neighbor(bpp, via);
-	return;
-      }
-    }
     if (fromneighbor != mynode) {
       pn->force_broadcast = 1;
 #ifdef FORCE_BC
@@ -2158,8 +2222,24 @@ void nr3_input(struct iface *iface, struct ax25_cb *axp, const uint8 *src, struc
    * which is why axp had to be carried down here.
    */
   if (bpp && *bpp && (*bpp)->cnt && *(*bpp)->data == 0xff) {
+    struct nrpeer *pp;
+
     if (axp)
       inp3_recv(bpp, pn);
+    else if ((pp = nrpeer_find(pn->call)) != NULL && pp->inp3)
+      /* HIS BROADCAST IS DROPPED WHILE HIS INTERLINK IS UP, and that needs
+       * no configuring: he tells us the same destinations twice then, once
+       * as a measured time over the interlink and once as a guessed quality
+       * in the broadcast, and the worse source would overwrite the better
+       * one at whatever interval it happens to arrive.
+       *
+       * TNN does not do this - rx_ui_broadcast() takes a broadcast without
+       * looking at the sender's type - and it is not a problem there because
+       * an INP link is usually a port of its own.  With several partners on
+       * one axudp line it is one, and here TNN is the thing to do better
+       * rather than the thing to copy.
+       */
+      free_p(bpp);
     else
       broadcast_recv(bpp, pn);
   } else
