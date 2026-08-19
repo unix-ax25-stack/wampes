@@ -1571,6 +1571,58 @@
   die flexnet eingeschaltet haben, mit unterschiedlichen ssid-ranges. Dann soll bei upstram annoucemets zu unseren Likparnern nicht jeder node einzeln annouced werden sondern aggregiert - also gem. unserer Konfiguration, und die more-detail-Eintraege koennen mit der Filteroptipo except-him weggefiltert werde.
 
 
+- JUMPSTART UND --wait SIND ZWEI ACHSEN FUER DIESELBE FRAGE, und sie
+  stolpern uebereinander. Thomas' Verdacht vom 2026-08-19, geprueft und in
+  einem Punkt GEMESSEN. Beide sitzen in lapb.c:220, direkt hintereinander:
+
+      if (axr && axr->jumpstart)     axr = ax_routeptr(axp->hdr.dest, 0),
+        axserv_start(axp, PID_NO_L3);      also die Route des ANRUFERS
+      axserv_connected(axp);               geht ueber die Axlisten-Eintraege
+                                           und prueft !lp->wait, also den
+                                           gerufenen LISTENER
+
+  Es ist also nicht dasselbe mit umgekehrtem Default, wie zuerst vermutet:
+  "ax25 jumpstart <call> on" haengt am RUFENDEN Rufzeichen, "--wait/--nowait"
+  am GERUFENEN Eintrag. Drei Folgen:
+
+  1. DOPPELSTART, gemessen am 2026-08-19. Knoten mit "listen ax25 add
+     dl9sau-8 tcp:127.0.0.1:19999" und "ax25 jumpstart dl1tst-1 on", und
+     zwar EIN EINZIGER Ruf von DL1TST-1, also eine AX.25-Verbindung:
+
+         ohne jumpstart:  1 Verbindung
+         mit  jumpstart:  2 Verbindungen, beide mit derselben Ankuendigung
+                          "*** incoming t DL1TST-1>DL9SAU-8"
+
+     Nicht zu verwechseln mit dem Normalfall: MEHRERE ANRUFER duerfen und
+     sollen je eine eigene Dienstverbindung bekommen - mehrere Nutzer in
+     derselben Mailbox sind genau der Sinn, doc/LIBAX25-BRIDGE.md haelt das
+     unter "One claim, many calls" fest, und daran aendert sich nichts.
+     Falsch ist die zweite Verbindung fuer EINEN Ruf.
+
+     Die zweite ist eine Leiche: open_axservice() (ax25user.c:179) gibt den
+     schon vorhandenen Dienst zurueck, statt einen zweiten anzulegen - aber
+     axpipe_open() hat den Socket VORHER aufgebaut (axserver.c:1516). Der
+     zweite axpipe haengt damit an keinem Dienst und wird nie geschlossen.
+     Der aeussere Schutz "if (axp->services == NULL)" umschliesst beide
+     Aufrufe und wird zwischen ihnen nicht neu geprueft. Und weil bei
+     pid=text "nowait" der Default ist, ist das der NORMALFALL, nicht der
+     Sonderfall.
+  2. JUMPSTART UMGEHT DEN PARTNERSCHUTZ. axserv_connected() begruesst
+     keinen Nachbarn (nr_is_neighbour, nr_is_peer, flexnet_is_peer), weil
+     die Begruessung sonst in seinem L3-Rahmen landet. Der jumpstart-Zweig
+     davor fragt das nicht. Thomas' eigene net.rc dokumentiert genau diesen
+     Schaden:
+         # ax25 jumpstart db0rbs  on   DB0RBS is FlexNet, must be OFF
+     Er musste es also von Hand abschalten, weil der Knoten es nicht weiss.
+  3. JUMPSTART STARTET IMMER PID_NO_L3, unabhaengig davon, welchen pid der
+     Eintrag fuer dieses Rufzeichen hat.
+
+  ZU ENTSCHEIDEN, bevor daran gebaut wird: ob jumpstart die schwaechere Form
+  von "--nowait" sein soll (dann kann es in axserv_connected() aufgehen und
+  erbt Partnerschutz und pid), oder ob es die staerkere bleiben soll - "bei
+  DIESEM Anrufer sofort, auch wenn der Eintrag wartet". Dann braucht es
+  denselben Partnerschutz und eine Pruefung, dass kein Dienst schon laeuft.
+
 - datagram: Empfangsrichtung. Der Dienstsocket kann UI heute nur senden
   (datagram_line -> ax_send_ui); nichts schiebt empfangene UI-Frames zum
   Client zurueck. Fuer ein recvfrom() auf einem AX.25-Datagrammsocket
