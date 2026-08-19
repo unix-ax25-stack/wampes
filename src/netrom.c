@@ -39,6 +39,21 @@ static int nr_callcheck   =     0;      /* not used */
 static int nr_beacon      =     0;      /* not used */
 static int nr_cq          =     0;      /* not used */
 static int nr_maxcircuits =   100;
+/* Which table decides where a datagram goes.  Not a preference but the whole
+ * reason no conversion is needed in the middle: if INP3 wins as soon as it
+ * has an entry, nothing has to be compared against a quality, and the graph
+ * is left exactly as it was.
+ *
+ * Default on, and not out of enthusiasm - WE DO NOT MEASURE ANYTHING in the
+ * graph.  nr_hfqual is a constant every direct neighbour is given, so its
+ * figure is an assumption where INP3's is a measurement, and preferring the
+ * measured one is the only choice with a reason behind it.
+ *
+ * Turned off, INP3 is asked only where the graph has nothing - and that buys
+ * back a problem: comparing the two means converting between them, and
+ * qual2rtt covers 0.1 s to 25.5 s where INP3 reaches 599.99 s.
+ */
+static int nr_inp3first   =     1;
 
 static const struct parms {
   char *text;
@@ -73,10 +88,14 @@ static const struct parms {
   { "24 Validate callsigns (0=off 1=on)            ", &nr_callcheck,   0,          1 },
   { "25 Station ID beacons (0=off 1=after 2=every) ", &nr_beacon,      0,          2 },
   { "26 CQ UI frames       (0=off 1=on)            ", &nr_cq,          0,          1 },
-  { "27 Maximum transport circuits (0=unlimited)   ", &nr_maxcircuits, 0,      65535 }
+  { "27 Maximum transport circuits (0=unlimited)   ", &nr_maxcircuits, 0,      65535 },
+  /* Past the end of the classic list, which stops at 27 - so a number that
+   * cannot be confused with one another implementation also has.
+   */
+  { "28 INP3 routes before NET/ROM (0=off 1=on)    ", &nr_inp3first,   0,          1 }
 };
 
-#define NPARMS 27
+#define NPARMS 28
 
 static const uint8 L3RTT[] = {
   'L'<<1, '3'<<1, 'R'<<1, 'T'<<1, 'T'<<1, ' '<<1, 0<<1
@@ -1171,6 +1190,36 @@ static struct nrinp3 *inp3_best(const struct node *pd)
 
 /*---------------------------------------------------------------------------*/
 
+/* WHOM TO SEND TO for this destination, out of the INP3 table - the one
+ * question route_packet() needs answered, and the only place the two routing
+ * worlds have to meet.  Everything else about them can stay apart.
+ *
+ * Null when there is nothing here, and the caller then goes on to the graph.
+ * A partner whose link has gone has no ways left at all - inp3_drop_peer()
+ * takes them when it goes - so there is no need to test the link again.
+ */
+
+static struct node *inp3_nexthop(const struct node *pd, const struct node *from)
+{
+  struct nrinp3 *rp;
+  struct node *via;
+  uint8 *call;
+
+  if (!(rp = inp3_best(pd))) return NULL;
+  if (!(call = nrpeer_target(rp->peer))) return NULL;
+  if (!(via = nodeptr(call, 0))) return NULL;
+  /* NOT BACK THE WAY IT CAME.  Poison reverse should mean a partner never
+   * offers us a way that runs through us, so this ought not to happen - but
+   * if it does it is a loop between two nodes, and bouncing the datagram back
+   * is the one answer that is certainly wrong.  Falling through to the graph
+   * may still deliver it.
+   */
+  if (via == from) return NULL;
+  return via;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void inp3_route_drop(struct node *pd, struct nrpeer *pp)
 {
   struct nrinp3 *rp, **rpp;
@@ -2000,7 +2049,37 @@ static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
   }
 
   if (!(pn = nodeptr((*bpp)->data + AXALEN, 1))) goto discard;
+
+  /* THE INP3 TABLE IS ASKED FIRST, and that is the whole of the change: one
+   * question ahead of the old one, and the graph untouched behind it.  It is
+   * also what makes the two metrics able to stand side by side without being
+   * converted into one another - whoever is asked first and answers, decides.
+   *
+   * Turned round by parameter 28, INP3 answers only where the graph has
+   * nothing.  There is no third case and in particular NO FALL BACK ON OUR
+   * AX.25 ROUTES: a destination with no way is discarded, as it always was.
+   * Not to be confused with send_packet_to_neighbor(), which certainly does
+   * use them - to reach the NEIGHBOUR.  That is delivery at layer 2 and not
+   * routing.
+   */
+  if (nr_inp3first) {
+    struct node *via = inp3_nexthop(pn, fromneighbor);
+
+    if (via) {
+      send_packet_to_neighbor(bpp, via);
+      return;
+    }
+  }
+
   if (!pn->neighbor) {
+    if (!nr_inp3first) {
+      struct node *via = inp3_nexthop(pn, fromneighbor);
+
+      if (via) {
+	send_packet_to_neighbor(bpp, via);
+	return;
+      }
+    }
     if (fromneighbor != mynode) {
       pn->force_broadcast = 1;
 #ifdef FORCE_BC

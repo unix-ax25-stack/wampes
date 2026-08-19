@@ -1488,9 +1488,40 @@
   NICHT GEMESSEN: der stuendliche Volldurchlauf und die Glaettung ueber
   mehrere Proben - beides braucht Laufzeiten, die ein Testlauf nicht hat.
 
-  NOCH NICHT: das Routing benutzt die Tabelle nicht - route_packet() geht
-  weiter ueber pn->neighbor. Und pn->hopcnt bleibt bei reinen INP3-Zielen
-  999, was erst beim eigenen NODES-Rundspruch ins Gewicht faellt.
+  DAS ROUTING BENUTZT SIE (sechster Bauschritt, 2026-08-19). route_packet()
+  fragt vor pn->neighbor die INP3-Tabelle, und das ist die ganze Aenderung:
+  eine Frage vor der alten, der Graph dahinter unberuehrt. Genau das macht
+  auch die Umrechnung in der Mitte entbehrlich - wer zuerst gefragt wird und
+  antwortet, entscheidet.
+  PARAMETER 28 dreht es um ("netrom parms 28 0"): dann antwortet INP3 nur
+  dort, wo der Graph nichts hat. 28 liegt hinter der klassischen Liste, die
+  bei 27 endet, ist also mit keiner fremden Nummer zu verwechseln.
+  Kein dritter Fall, insbesondere KEIN Rueckfall auf die AX.25-Routen. Nicht
+  zu verwechseln mit send_packet_to_neighbor(), das sie sehr wohl benutzt -
+  um den NACHBARN zu erreichen. Das ist L2-Zustellung, kein Routing.
+  Eine Schleifensicherung ist drin: der beste INP3-Nexthop ist NIE der
+  Nachbar, von dem der Rahmen gerade kam. Poison Reverse sollte das
+  verhindern; kommt es doch, ist Zurueckwerfen die einzige sicher falsche
+  Antwort, und der Graph darf es noch versuchen.
+
+  GEMESSEN: DB0DDD-9 gleichzeitig per INP3 (via DB0XYZ-4, 15.03s) und im
+  Graphen (via DB0AAA-1, quality 150) bekannt, ein L3-Datagramm von
+  DB0ZZZ-2 an DB0DDD-9 -> es kommt bei DB0XYZ-4 an. Mit "netrom parms 28 0"
+  im selben Aufbau -> es kommt bei DB0AAA-1 an.
+  Zu bemerken: wir fahren POISON REVERSE, nicht alternate reverse. DB0XYZ-4
+  bekommt ueber DB0DDD-9 nichts, obwohl wir mit DB0AAA-1 einen zweiten Weg
+  haetten. Die Spezifikation erlaubt beides.
+
+  NOCH NICHT, und beides haengt am eigenen NODES-Rundspruch:
+  * pn->hopcnt bleibt bei reinen INP3-Zielen 999 und pn->quality 0, also
+    kommen sie in send_broadcast() gar nicht vor. Ein Nachbar, der nur
+    NET/ROM spricht, erreicht damit nichts, was wir nur per INP3 kennen -
+    wir waeren eine INP3-Insel. Die Gegenrichtung ist dieselbe Umrechnung
+    am Rand wie beim Senden: rtt2qual(TT) = 255 - tt/10, geklemmt 3..254,
+    und der Hop-Zaehler aus dem RIP.
+  * Ein UI-NODES-Rundspruch von einem Nachbarn, mit dem ein INP3-Interlink
+    STEHT, sollte ignoriert werden - sonst lernen wir dieselben Ziele
+    zweimal und die schlechtere Quelle ueberschreibt die bessere.
   <call> ist Rufzeichen oder Rufzeichen-SSID, UND HIER IST LAZY ZU SEIN:
   ohne SSID geschrieben passt jede SSID, mit SSID genau diese. Vorbild ist
   addrmatch() (flexnet.c:868), das genau so einen Bereichsvergleich macht,
