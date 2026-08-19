@@ -1764,6 +1764,42 @@
   UI? Und was ist der Zusammenhang zwischen ifp->mtu, paclen und dem, was
   ip_route() aufteilt?
 
+- Noch zu beschreiben (Sammelposten, 2026-08-20):
+  * DIE PJEC-SPALTE in "ax25 route list" - P permanent, J jumpstart,
+    E/e eax25 ja/nein, C vjcomp (ax25cmd.c:703-719, Kopfzeile :734). Vier
+    Buchstaben ohne Legende; gesetzt werden sie mit Worten beim "ax25 route
+    add permanent vj". Das Muster ist gut und soll Vorbild sein - Schalter
+    werden mit einem WORT gesetzt und als FLAGGE angezeigt, nicht als Nummer
+    (Thomas' Einwand gegen ein "netrom parms 29 1": eine Nummer versteht
+    niemand).
+  * "netrom parms 28" (INP3 vor NET/ROM) - dieselbe Kritik trifft es. 28 sitzt
+    heute in der klassischen, durchnummerierten NET/ROM-Parameterliste, was
+    seine Rechtfertigung ist; ein Wortkommando waere trotzdem lesbarer.
+
+- "ax25 pid-info": drei Maengel, gefunden 2026-08-20 beim Benutzen.
+  * 0x08 "segment / segmentation fragment" SAGT NICHTS. Der Text muss sagen,
+    was das Besondere ist: es ist die Segmentierung von AX.25 selbst, und sie
+    ist PROTOKOLLNEUTRAL - die echte PID steht IM ersten Segment und kommt
+    beim Zusammensetzen wieder heraus (lapb.c:1206 "pid = PULLCHAR(bpp)",
+    Sendeseite :1302). Deshalb sagt handleit() ausdruecklich "segments carry
+    PID_SEGMENT and say nothing about what they are", und deshalb wird der
+    PID-Filter erst NACH dem Zusammensetzen gefragt.
+    NICHT "IP-Segmentierung": Thomas' erste Lesart, und sie stimmt nicht -
+    dieselbe Segmentierung traegt genauso NET/ROM oder Text. Die
+    IP-Fragmentierung ist etwas anderes und sitzt eine Schicht hoeher; der
+    Unterschied ist genau der Grund, warum der Text hier praezise sein muss.
+    Siehe doc/AX25-MTU-SEGMENTATION.md.
+  * ROSE IST NICHT ZU FINDEN. Der Eintrag existiert - 0x01 "x25 / CCITT X.25
+    PLP" (pidfilter.c:69) -, aber das Wort ROSE kommt nirgends vor, also
+    findet "ax25 pid-info rose" nichts und wer ROSE sucht, sucht vergeblich.
+    ROSE laeuft ueber genau diese PID. Zu tun: im Text nennen, und "rose" als
+    zweiten Namen zulassen. NACHZUSEHEN: der Linux-Kernel nennt 0x01 nach
+    meiner Erinnerung AX25_P_ROSE (include/net/ax25.h) - das waere das
+    Argument, den Namen zu fuehren, und ist zu pruefen, die Datei liegt hier
+    nicht (libax25/netax25/ax25.h ist die Userspace-Fassung und hat die
+    PID-Namen nicht).
+  * WEITERE PIDs aus dem Kernel nachtragen, sobald die Datei da ist.
+
 - Projekt auf github. Voraussichtlich https://github.com/dl9sau/WAMPES/ - der
   Name steht fuer Thomas schon fest. Danach zwei Verweise nachtragen, die
   heute nur deshalb fehlen, weil es das Ziel noch nicht gibt:

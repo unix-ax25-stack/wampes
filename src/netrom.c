@@ -1466,12 +1466,23 @@ static void inp3_recv(struct mbuf **bpp, struct node *pn)
     rp->stamp = secclock();
 
     if (*alias && *alias != ' ') memcpy(pd->ident, alias, IDENTLEN);
-    if (haveip) {
-      pd->inp3_ip = ip;
-      pd->inp3_ipbits = ipbits;
-    }
-    /* Replaced rather than merged: these belong to the entry he just sent,
-     * and an option he has stopped sending is one that no longer applies.
+    /* SET OR CLEARED, never merely set.  There is no separate withdrawal for
+     * an address: a node takes one back by announcing itself without the
+     * field, and TNN reads it that way - it drops the old entry first and
+     * only puts one back if the new packet named one.  Taking it only when
+     * present would leave an address standing for as long as the node exists,
+     * and we would go on passing it to others after its owner had stopped.
+     *
+     * The address belongs to the NODE, so the partner who spoke last decides.
+     * That is TNN's arrangement too, and it holds because every node re-emits
+     * the field as it passes a route on: partners who report the same
+     * destination report the same address with it.
+     */
+    pd->inp3_ip = haveip ? ip : 0;
+    pd->inp3_ipbits = haveip ? ipbits : 0;
+    /* Replaced rather than merged, and for the same reason: these belong to
+     * the entry he just sent, and an option he has stopped sending is one
+     * that no longer applies.
      */
     free(pd->inp3_opts);
     pd->inp3_opts = NULL;
