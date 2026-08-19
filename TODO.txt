@@ -1016,6 +1016,363 @@
   Links: TNN: https://github.com/kq6up/tnn
     https://github.com/packet-net/packet.net/blob/main/docs/netrom-inp3-i3-design.md
   Auf Lizenzen achten. Was nichtGPL ist, muessen wir selbst schreiben.
+
+  QUELLENLAGE GEKLAERT AM 2026-08-19, gegen die TNN-Quellen selbst
+  (/tmp/foo/TheNetNode-CB, src/l3inp.c l3rtt.c l3misc.c l3netrom.c) und die
+  Handbuecher TNN179mh05 und xnet138. Spezifikation: "A New Routing
+  Specification for Packet Radio Datagram Networks", Andreas Gal (DB7KG),
+  https://wiki.oarc.uk/_media/packet:internodeprotocolnp.pdf
+
+  LIZENZ: TNN steht unter ALAS (NORD><LINK, DF2AU, 13.10.1992), sichtbar in
+  jedem Dateikopf und in LICENSE. Paragraph 3 erlaubt Nutzung nur ohne
+  kommerzielle Absicht, 4.4 nur die komplette Weitergabe, 4.5 zwingt die
+  Bedingungen jedem abgeleiteten Werk auf. Damit ist TNN-Code fuer uns
+  VERHALTENSREFERENZ UND KEINE CODEQUELLE - alles selbst schreiben. Der
+  Dateikopf sagt zwar auch "PUBLIC DOMAIN, mit den Einschraenkungen durch die
+  ALAS"; der Widerspruch aendert nichts, die Einschraenkungen bleiben.
+
+  DAS FRAMEFORMAT, aus l3inp.c abgelesen (Sende- und Empfangsseite stimmen
+  ueberein, also ist es das, was auf dem Draht steht):
+
+    RIF = nummeriertes I-Frame, PID 0xCF, erstes Byte 0xFF, danach n RIPs
+    RIP = 7 Byte Call (AX.25 shifted)
+        + 1 Byte HopCounter
+        + 2 Byte Laufzeit (MSB first, 10-ms-Einheiten)
+        + Optionen
+        + 1 Byte 0x00 (EOP)
+    Option = 1 Byte Laenge + 1 Byte Typ + Daten,
+             und die LAENGE ZAEHLT SICH SELBST UND DAS TYPBYTE MIT.
+             Typ 0x00 Alias, Laenge 2+n.
+             Typ 0x01 IP: LAENGE 7, dann 4 Byte IPv4 + 1 Byte Praefixbits.
+
+  Die 7 ist der Punkt, an dem eine Implementierung nach Aktenlage scheitert:
+  die Spezifikation nennt das IP-Feld "5 Byte", das sind die Nutzdaten. TNN
+  schreibt 7 (l3inp.c:619) und liest 7 (l3inp.c:161-166, zweimal --). Wer 5
+  sendet, den versteht niemand.
+
+  Laufzeit 0 und 60000 sind beide "abgemeldet" (60000 = 600 s = Horizont).
+
+  DIE NULL IST EINE FALLE, und Thomas hat sie am 2026-08-19 benannt, bevor
+  wir hineingelaufen sind: ueber axudp/Internet ist die Laufzeit kleiner als
+  ein Granularitaetsschritt, eine ehrlich gerundete Messung ergaebe 0 - und
+  0 heisst ABMELDUNG. Ein sehr schneller Link wuerde sich also selbst
+  austragen. TNN sichert genau das an vier Stellen ab, alle vier zu
+  uebernehmen:
+    * l3rtt.c:437 misst "rtt = (tic10 - prev_tic10) + 2", also mindestens 2,
+      und speichert rtt/2 - mindestens 1.
+    * smooth() (l3tab.c:485-499) klemmt zweimal: RTT_MIN (= 1, l3local.h:84)
+      auf den Eingangswert und nochmal "if (*oldval < 1) *oldval = 1" auf das
+      Ergebnis. Null entsteht dort NUR oberhalb RTT_MAX (59999), und das
+      heisst dann wirklich "Link tot".
+    * l3inp.c:392-396 setzt fuer den Nachbarn selbst fest uTransportTime = 1
+      und uHopCounter = 1, misst also gar nicht erst.
+    * add_inp_info() (l3inp.c:588) macht beim SENDEN aus einer 0 den
+      HORIZONT. Eine echte 0 geht nie auf den Draht.
+  Dazu kommt der Penalty der Spezifikation - jede Weitergabe erhoeht die
+  Laufzeit um einen Granularitaetsschritt -, der dafuer sorgt, dass der Wert
+  auch ueber viele schnelle Hops monoton waechst statt bei 0 zu kleben.
+  Kurz: 10 ms ist der kleinste sagbare Wert, und schneller als "10 ms" darf
+  ein Link im Protokoll nicht sein wollen.
+  HopCounter 0 wird beim Empfang auf DEFAULT_LT 10 korrigiert und sonst um
+  eins erhoeht - erhoeht wird also BEIM EMPFANG, nicht beim Senden.
+  Praefixbits ausserhalb 1..32 verwerfen die IP, nicht den ganzen Eintrag.
+
+  UNBEKANNTE OPTIONEN REICHT TNN TRANSPARENT WEITER (l3inp.c:330-344 speichert
+  sie, 638-643 haengt sie wieder an). Das ist der Weg fuer IPv6: ein eigener
+  Typ mit 16 Byte plus Praefixlaenge laeuft durch fremde Knoten hindurch,
+  ohne dass die ihn kennen muessen.
+
+  VERHANDLUNG: im Textfeld des L3RTT-Frames, Flags mit "$". TNN kennt GENAU
+  ZWEI - "$N" (ich kann INP) und "$M<n>" (melde mir nichts, was langsamer ist
+  als n). DAS "$I" DER SPEZIFIKATION FUER IP GIBT ES IN TNN NICHT; die
+  IP-Option wird ohne jede Aushandlung gesendet und angenommen. Wer auf $I
+  wartet, wartet ewig.
+
+  Ablauf: l3rtt_service() alle 180 s (L3_RTT_TIME) ein L3RTT-Frame an den
+  Nachbarn, Ziel "L3RTT " mit SSID-Byte 0x60, Lifetime 2, L4-Opcode 5, Text
+  "L3RTT:" + tic10 + quality + my_quality + Pointer als ID + Alias +
+  " LEVEL3_V2.1 " + Version, dann die Flags, dann mit Leerzeichen auf MTU
+  aufgefuellt. Der Nachbar reflektiert es unveraendert und sofort. Wir messen
+  die Laufzeit, SNTT = RTT/2. Keine Antwort binnen 180 s -> Link trennen.
+  Sieht der Empfaenger "$N" und will selbst INP, schaltet er um und meldet
+  sich mit send_inp_nodebeacon() selbst. Erkennung "LEVEL3_V2.1" -> TNN-Typ.
+
+  WAS ICH IN DER TABELLE WEITER OBEN FALSCH HATTE (Stand 2026-08-18, Zeile
+  "INP: ja / NEIN - gar kein zyklischer Rundspruch"): INP hat sehr wohl einen
+  Volldurchlauf. brosrv10() (l3misc.c:428-435) zaehlt fuer INP-Nachbarn einen
+  eigenen Zaehler und ruft STUENDLICH brosrv360(), das reported_quality aller
+  Eintraege auf 0 setzt - womit der Aenderungsmechanismus alles neu meldet.
+  Aenderungen laufen davon unabhaengig alle 10 s. Richtig bleibt: INP bekommt
+  keinen UI-Rundspruch und kein broint_ui.
+
+  DIE AENDERUNGSLOGIK sitzt in inform_peer() (l3netrom.c:706) und ist genau
+  unser send_rout(): je Paar (Nachbar, Ziel) ein reported_quality, gemeldet
+  wird nur die Abweichung. Die Dosierung:
+    * Verschlechterung sofort, aber vorbeugend um 12,5 % plus die halbe
+      Laufzeit zum Nachbarn abgesenkt, damit es nicht flattert.
+    * Verbesserung nur, wenn sie mindestens 50 % betraegt UND mindestens
+      100 ms UND ueber der halben Nachbarlaufzeit liegt UND der Link nicht
+      verstopft ist (tosend > 7).
+    * Erstmeldung nur, wenn die Laufzeit unter maxtime/2 liegt - Hysterese
+      gegen sofortiges Wiederabmelden.
+    * Poison reverse: an den Nachbarn, ueber den der beste Weg laeuft, geht 0.
+    * Alias mit "#" = versteckter Node, wird nicht gemeldet.
+  Unser Gegenstueck steht schon da: pq->lastdelay in send_rout()
+  (flexnet.c:495-497) mit "delay > lastdelay || 1.25*delay < lastdelay".
+
+  DER EIGENTLICHE KONFLIKT, und er ist keine Kleinigkeit: WAMPES RECHNET
+  NET/ROM ALS LINK-STATE, INP3 IST DISTANCE VECTOR. Ein NODES-Eintrag nennt
+  Ziel UND besten Nachbarn, und broadcast_recv() (netrom.c:608-631) baut
+  daraus Kanten in einem Graphen, den calculate_all() dann durchrechnet
+  (Qualitaeten multiplikativ, q1*q2/256). EIN RIP NENNT KEINEN ZWISCHEN-
+  KNOTEN - nur "Ziel X, Laufzeit T, Hops H". Aus einem RIP laesst sich also
+  gar keine Kante bauen ausser der einen: wir -> Nachbar -> alles Weitere
+  unbekannt. Das ist zu entscheiden, bevor irgendetwas gebaut wird:
+    a) INP3-Routen als Kante Nachbar->Ziel mit source=2 einspeisen und die
+       Zeit ueber TNNs Formel in Qualitaet umrechnen (qual = 255 - rtt/10,
+       geklemmt auf 3..254; rtt = (256-qual)*10, beides in 10-ms-Einheiten,
+       l3netrom.c:70-92). Billig, fuegt sich in calculate_all() ein, wirft
+       aber die Zeitmetrik weg, sobald sie durch den Graphen laeuft, und
+       erfindet eine Kante, die es so nicht gibt.
+    b) Eine zweite Tabelle je INP-Nachbar (Ziel -> Laufzeit, Hops, unsere
+       gemeldete Laufzeit) neben dem Graphen, und beim Routen das Bessere
+       von beiden nehmen. Ehrlicher und naeher an TNN, aber zwei Metriken
+       nebeneinander, und "netrom nodes" muss beide zeigen koennen.
+  Die Zweitquelle packet.net nennt das "quality space neben time space" und
+  entscheidet sich fuer b).
+
+  WAS UNS ENTGEGENKOMMT:
+    * Der Interlink ist faktisch schon da. send_packet_to_neighbor()
+      (netrom.c:217) macht bei Bedarf open_ax25(AX_ACTIVE) auf und sendet mit
+      PID_NETROM - L3-Frames laufen bei uns heute schon verbunden. Nur die
+      NODES-Broadcasts gehen als UI. Ein RIF ist ein weiteres I-Frame auf
+      derselben Verbindung.
+    * Der Diskriminator UI/I liegt am Aufrufer bereit und wird weggeworfen:
+      ax25.c:660 ruft mit axp=NULL und mcast=1, lapb.c:1352 mit axp!=NULL und
+      mcast=0, und axnr() (config.c:428-438) reicht nur nr3_input(iface,src,
+      bpp) durch. Heute entscheidet nr3_input() allein am ersten Byte 0xFF
+      (netrom.c:971) - genau da muessen RIF und NODES auseinandergehalten
+      werden, und die noetige Information kostet ein Argument.
+    * L3RTT reflektieren wir bereits (netrom.c:885-895), einschliesslich der
+      Laengenpruefung. Es fehlt nur das Erzeugen und das Lesen der $-Flags.
+    * Als Vorbild fuer alles Verbindungsorientierte steht flexnet.c daneben:
+      Peer-Liste mit iface, setaxp(), Poll-Timer, lastdelay, process_changes().
+    * Der Routenfilter passt ohne Umbau: rf_in/rf_advert/rf_feed sind schon
+      protokollparametriert. Und "feed" wird bei INP3 wieder eine Frage JE
+      PARTNER statt je Port - der Grund fuer die Portbeschraenkung
+      (routefilter.c:426, ein UI-Frame fuer alle) faellt weg, weil INP3
+      verbunden laeuft. Ob INP3 dabei unter RF_NETROM laeuft oder ein eigenes
+      RF_INP3 bekommt, ist zu entscheiden; die Tabellen teilt es sich mit
+      NET/ROM, die Zustellung nicht.
+    * IP-Routen einzutragen ist bei uns bereits eingebaut: arp_add(...,
+      ARP_NETROM, ...) in nr_ip_deliver() (netrom.c:792-797). TNN macht an
+      derselben Stelle arp_add() plus rt_add() (l3inp.c:512-516), gesteuert
+      ueber Parameter 12 "autoipr" mit Stufen (0 aus, >=2 elementare Pruefung,
+      >=3 nur IPs im eigenen /8). Fuer uns ist die Positivliste aus dem
+      Posten weiter unten der bessere Weg als eine /8-Regel.
+
+  WAS AUS TNNS SICHT AUS UNS WIRD, solange nichts gebaut ist, steht schon
+  weiter oben: wir gelten als THENET, "Nachbar, der nicht auf Messung
+  reagiert", und bekommen dessen stumpfste Bedienung.
+
+  WIE MACHT ES TNN, DER BEIDES KANN? Thomas' Frage, und die Antwort raeumt die
+  meine ab: TNN MERGED NICHT, WEIL ES NIE ZWEI METRIKEN HAT. Es rechnet intern
+  ausschliesslich in Laufzeit (10-ms-Einheiten) und normalisiert am EINGANG:
+
+    INP-RIF          Laufzeit direkt              l3inp.c:400
+    NET/ROM-UI       qual2rtt(rx_qual)            l3netrom.c:479
+    FlexNet          delay * 10                   l3vc.c:772
+    direkter Nachbar gemessener SNTT; wer nicht messen kann (THENET),
+                     bekommt AX.25-SRTT * 4       l3rtt.c:165
+
+  Das Feld heisst zwar "quality" (rp->quality, pp->quality), enthaelt aber
+  Zeit - update_route() setzt auf 0, was >= HORIZONT ist. Beim SENDEN wird
+  zurueckgerechnet: rtt2qual() fuer NETROM/THENET-Nachbarn, Zeit direkt fuer
+  INP. Die Umrechnung sitzt also an den Raendern, nie in der Mitte.
+
+  Die Auswahl ist danach rein numerisch und kennt KEINEN PROTOKOLLVORRANG:
+    getquality(rp, pp) = rp->quality + pp->quality      l3tab.c:703-717
+    do_find_best_qual() nimmt das Minimum               l3tab.c:672-700
+  Das erste ist woertlich die Spezifikationsformel TT = RT + SNTT. Wer den
+  kleinsten Wert hat, gewinnt - egal ob die Route per RIF, per UI-Rundspruch
+  oder ueber FlexNet hereinkam.
+
+  UND DAS IST DER GRUND, WARUM ES BEI TNN SO EINFACH IST: TNN BEHANDELT
+  NET/ROM EBENFALLS ALS DISTANCE VECTOR. Das "bester Nachbar"-Feld im
+  NODES-Eintrag wird NICHT zu einer Kante - es wird nur zum Schleifenschutz
+  gelesen ("if (cmpid(myid, nbr_call)) rx_qual = 0", l3netrom.c:458, also
+  Poison Reverse erkennen) und danach weggeworfen. TNN HAT KEINEN GRAPHEN,
+  sondern je (Peer, Ziel) einen Zahlenwert. Deshalb passt alles in eine
+  Tabelle.
+
+  WIR HABEN DAS PROBLEM, WEIL WAMPES MEHR TUT ALS DER STANDARD VERLANGT:
+  broadcast_recv() baut aus demselben Feld Kanten (update_link(pb, pd, 3,
+  quality), netrom.c:629) und calculate_all() rechnet einen Graphen durch.
+  Klassisches NET/ROM ist Distance Vector; der Link-State-Aufbau ist Deykes
+  Zutat, und er nutzt Information, die im Broadcast wirklich drinsteht. TNN
+  ist also KEINE Vorlage fuer den Merge - es hat die Frage nicht.
+
+  Damit standen drei Wege zur Wahl:
+    a) TNNs Weg vollstaendig: auch unser NET/ROM auf Zeit normalisieren und
+       den Graphen aufgeben. Metrisch identisch mit TNN und XNET, Preis ist
+       die Topologiekenntnis und ein sehr grosser Eingriff in netrom.c.
+    b) Zwei Wegtabellen, Vergleich in Zeit ueber qual2rtt.
+    c) INP3 nur dort, wo der Graph nichts hat.
+
+  ENTSCHIEDEN AM 2026-08-19 (Thomas): a) FAELLT AUS - der Algorithmus in
+  netrom.c wird nicht umgestellt. Und INP3 BEKOMMT DEN VORZUG vor der
+  NET/ROM-Information zum selben Ziel, wahlweise ueber einen Schalter, wem
+  mehr vertraut wird.
+
+  DAS IST MEHR ALS EINE PRAEFERENZ - ES MACHT DIE UMRECHNUNG GEGENSTANDSLOS.
+  Wenn INP3 gewinnt, sobald es einen Eintrag hat, muss nichts verglichen und
+  also nichts umgerechnet werden: der Graph bleibt voellig unberuehrt, die
+  INP3-Tabelle wird vor ihm gefragt, fertig. Damit faellt auch das
+  WERTEBEREICHSPROBLEM weg, das b) und c) hatten: qual2rtt(q) = (256-q)*10
+  deckt nur 0,1 s bis 25,5 s ab, INP3 reicht bis 599,99 s, und Laufzeiten
+  ueber ~25 s landen in der Qualitaetswelt alle bei 3 und fallen unter worqua
+  heraus. Das XNET-Handbuch zeigt genau so einen Wert ("rx: 37.13 (3 hops)").
+  Wer den Schalter je auf "vergleichen" stellt, holt sich das Problem zurueck
+  - das gehoert an den Schalter geschrieben.
+
+  UND SACHLICH IST DER VORZUG OHNEHIN RICHTIG, aus einem Grund, der bei uns
+  und nicht bei TNN liegt: WIR MESSEN GAR NICHT. nr_hfqual = 192 ist eine
+  Konstante, die JEDER direkte Nachbar bekommt (netrom.c:600, :819). Der
+  Graph rechnet also mit einem geratenen Wert, INP3 mit einem gemessenen.
+  Ein Vergleich zwischen beiden waere Aepfel gegen Birnen; der Vorzug fuer
+  das Gemessene ist die einzige begruendbare Wahl. Der Schalter ist damit
+  eher fuer den Sonderfall da als fuer den Normalbetrieb.
+
+  EIGENE LISTE UND MERGEN? Thomas' Frage vom 2026-08-19, und die Antwort ist
+  fast ja: NICHT ZWEI KNOTENLISTEN, SONDERN EINE KNOTENLISTE MIT ZWEI
+  WEGTABELLEN. Der Unterschied ist wesentlich. DB0XYZ ist derselbe Knoten,
+  egal woher wir von ihm wissen - Alias, IP, Praefix und die durchgereichten
+  Optionen haengen am KNOTEN. Nur "wie schnell und ueber wen" haengt am WEG,
+  und nur das ist bei INP3 anders. Zwei Knotenlisten wuerden die Identitaet
+  doppelt fuehren und muessten sie dauernd abgleichen. TNN macht genau das
+  nicht: netp->nodetab ist EINE Tabelle (Call, Alias, ipa, bits, options),
+  und pp->routes[index] ist die Wegtabelle JE PEER ueber denselben Index.
+
+  Bei uns hiesse das: struct node bleibt der Identitaetstraeger und bekommt
+  die INP3-Felder (IP, Praefixbits, unbekannte Optionen), dazu je INP3-Nachbar
+  eine Wegangabe (Laufzeit in 10 ms, Hops, und was wir IHM zuletzt gemeldet
+  haben - das Gegenstueck zu pq->lastdelay).
+
+  GEMERGED WIRD AN GENAU EINER STELLE, und das ist der ganze Trick: route_
+  packet() braucht nur eine einzige Antwort, naemlich pn->neighbor. Alles
+  andere kann getrennt bleiben. Verglichen wird ueber rtt2qual (255 - rtt/10),
+  weil der Graph in Qualitaet rechnet und ihn umzustellen ein sehr grosser
+  Eingriff waere. ABER: DIE LAUFZEIT MUSS EXAKT DANEBEN ERHALTEN BLEIBEN,
+  denn wir melden sie weiter (RT + SNTT). Wer sie durch rtt2qual/qual2rtt
+  schickt, sammelt Rundungsfehler ueber jeden Hop ein. Also Zeit speichern,
+  Qualitaet nur zum Vergleichen.
+
+  DREI FALLSTRICKE, an netrom.c geprueft, in die man sonst sicher laeuft:
+    * calculate_all() LOESCHT KNOTEN OHNE LINKS (netrom.c:561: "if (pn !=
+      mynode && !pn->links && !pn->force_broadcast)"). Ein Ziel, das wir nur
+      ueber INP3 kennen, hat keine links und wird bei jedem Durchlauf
+      weggeraeumt. Die Bedingung muss die INP3-Route mitpruefen - so weit
+      Thomas' Einwand, und er stimmt: es ist ein Term mehr, kein Umbau.
+      ZU BEACHTEN IST NUR, dass "in Ruhe lassen" nicht "ewig behalten" heisst.
+      Ein Knoten, den nur INP3 kennt, wird unsterblich, wenn niemand die
+      INP3-Route altern laesst. TNN hat dafuer genau zwei Dinge, und beide
+      sind klein: rp->timeout, minuetlich in brosrv60() heruntergezaehlt
+      (l3misc.c:477-488), und drop_unreachable_nodes() (l3tab.c:323, alle
+      10 s aus brosrv()), das einen Knoten erst wegwirft, wenn fuer JEDEN
+      Peer sowohl quality als auch reported_quality 0 sind - also weder
+      jemand einen Weg kennt noch wir ihn jemandem gemeldet haben. Unser
+      Gegenstueck waere dieselbe Bedingung, um die INP3-Route erweitert.
+      Den grossen Teil der Arbeit nimmt INP3 dabei selbst ab, weil es die
+      Abmeldung aktiv schickt (Laufzeit 0 bzw. Horizont); der Timeout ist
+      nur die Absicherung fuer den Fall, dass sie ausbleibt.
+    * hopcnt wird AUSSCHLIESSLICH von calculate_hopcnts() ueber die links
+      gesetzt (netrom.c:435-447), Startwert INFINITY (Zeile 481). Ein reiner
+      INP3-Knoten behaelt INFINITY, und send_broadcast() laeuft in
+      hopcnt-Stufen (Zeile 710-713) - er kaeme nie oder mit Qualitaet 0 dran,
+      also als Abmeldung. Der Hop-Counter aus dem RIP muss dorthin.
+    * Die VERALTERUNG gibt es dann zweimal: link_valid() mit nr_obsinit *
+      nr_bdcstint gegen INP3s eigene (Horizont 600 s, negative Meldung,
+      Timeout). Die duerfen sich nicht gegenseitig Eintraege wegnehmen.
+
+  DIE NACHSCHLAGEREIHENFOLGE, entschieden am 2026-08-19 (Thomas):
+    Paket kommt herein, klassisch oder per INP3, und ist NICHT an unsere
+    NodeID adressiert
+      -> erst die INP3-Tabelle nach dem besten Nexthop fragen
+      -> kein Treffer: der NET/ROM-Weg (pn->neighbor) wie bisher
+      -> KEIN Rueckfall auf unsere AX.25-Routen
+    An uns adressiert: unveraendert der Weg zum eingestellten Dienst.
+    Der Schalter steht per Default auf "INP3 zuerst".
+
+  Das ist eine lokale Aenderung an genau einer Stelle: route_packet()
+  (netrom.c:897-906) holt heute "pn = nodeptr(data + AXALEN, 1)" und wirft
+  weg, wenn "!pn->neighbor". Davor kommt die INP3-Abfrage, sonst nichts.
+
+  KEIN RUECKFALL AUF AX.25-ROUTEN ist zugleich der Status quo - ein Ziel ohne
+  neighbor wird schon heute verworfen. NICHT ZU VERWECHSELN damit:
+  send_packet_to_neighbor() benutzt sehr wohl die AX.25-Routen, um den
+  NACHBARN zu erreichen (open_ax25 -> axroute). Das ist L2-Zustellung und
+  kein Routing-Fallback; es bleibt selbstverstaendlich.
+
+  DAS KOMMANDO, entschieden: "netrom link add <call>", nicht "netrom inp3
+  add" - dasselbe Wort wie bei FlexNet fuer dieselbe Sache.
+      netrom link add <call>        adds netrom inp3 partner
+      netrom link del <call>
+      netrom link                   list
+  <call> ist Rufzeichen oder Rufzeichen-SSID, UND HIER IST LAZY ZU SEIN:
+  ohne SSID geschrieben passt jede SSID, mit SSID genau diese. Vorbild ist
+  addrmatch() (flexnet.c:868), das genau so einen Bereichsvergleich macht,
+  und flexsetcall() (flexnet.c:122) fuer das Ablegen.
+  ZUR PRAEZISIERUNG: im RIP steht sehr wohl ein volles 7-Byte-Call MIT
+  SSID-Byte, die Ankuendigung ist also nicht ssid-los. Der Bedarf nach
+  Lockerheit entsteht woanders, naemlich beim Abgleich der konfigurierten
+  Liste gegen das Call der AX.25-VERBINDUNG - die NodeID des Partners und
+  das Call, unter dem sein Link laeuft, muessen nicht dieselbe SSID haben.
+  TNN kennt beide Sichten nebeneinander: find_node_this_ssid() vergleicht
+  exakt (cmpid) und wird fuers Routen benutzt, find_node_ssid_range()
+  vergleicht das Rufzeichen ohne SSID und prueft einen Bereich
+  (np->ssid_high) - l3tab.c:143 und :191.
+
+  KONFIGURATION - Thomas' Vorschlag vom 2026-08-19 und meine Beurteilung.
+  Vorgeschlagen: INP3 optional je eingetragenem Host (wie "flexnet link"),
+  diese Eintragung schlaegt die allgemeinere Interfaceregel, "start netrom"
+  startet beides, kein eigenes "start inp3", und wer keine NET/ROM-Broadcasts
+  auf dem Link will, verbietet sie per Interfaceregel.
+
+  DAS TRAEGT, in allen vier Punkten, mit einer Ergaenzung beim letzten.
+
+  * EIN "start inp3" waere falsch. INP3 ist kein eigener Dienst: gleicher PID
+    0xCF, gleiche Knotentabelle, gleicher L4, gleiche AX.25-Verbindung. Es ist
+    ein Betriebsmodus je Nachbar, und genau so haelt es TNN - der Typ steht in
+    der Linkzeile ("li + I 6 GOE DB0GOE"), es gibt kein Startkommando dafuer.
+    Ein eigenes "start inp3" wuerde behaupten, INP3 ginge ohne NET/ROM.
+  * DIE HOSTLISTE GEHOERT NEBEN DEN FILTER, NICHT HINEIN. Das Muster steht
+    schon da: "flexnet link add" sagt, WER Partner ist, "flexnet filter", WAS
+    fliesst. ROUTE-FILTER.md begruendet das fuer den Poll ausdruecklich -
+    "whether somebody is a link partner is already written down, and it is the
+    same question". "Sprich INP3 mit ihm" ist eine Transportfrage; in/advert/
+    feed sind Routenfragen. Dazu kommt: NET/ROM hat bei uns heute UEBERHAUPT
+    KEINE Nachbarliste, Nachbarn entstehen implizit in nr3_input(). Fuer INP3
+    braucht es sie ohnehin - Interlink halten, RTT messen, reported_quality je
+    Nachbar - also entsteht das Gegenstueck zu "flexnet link" so oder so.
+  * CALL SCHLAEGT PORT SCHLAEGT DEFAULT ist genau die Kaskade von
+    rf_lookup(), also nichts Neues zu erfinden. Ein Port-Default "hier INP3
+    anbieten" heisst allerdings, jedem Unbekannten auf dem Port "$N"
+    anzubieten. Das ist harmlos, weil ein INP-Link nur zustande kommt, wenn
+    die Gegenseite ebenfalls "$N" sendet - ein Nutzer-TNC tut das nie -, aber
+    man sollte es wissen, bevor man es auf einen gemischten Port schreibt.
+  * BROADCASTS ABSCHALTEN: sendeseitig stimmt es, und es geht nur per Port
+    ("netrom broadcast disable <n>" oder "netrom filter port=... feed no"),
+    weil ein UI an alle auf dem Port geht. ES FEHLT ABER DIE ZWEITE HAELFTE,
+    und die braucht keine Konfiguration: einen empfangenen UI-NODES-Broadcast
+    von einem Nachbarn, mit dem ein INP3-Interlink STEHT, sollten wir
+    IGNORIEREN. Sonst lernen wir dieselben Ziele zweimal, einmal als Zeit ueber
+    den Interlink und einmal als Qualitaet ueber den Rundspruch, und die
+    schlechtere Quelle ueberschreibt die bessere. TNN macht das NICHT -
+    rx_ui_broadcast() (l3netrom.c:343) wertet aus, ohne den Typ zu pruefen,
+    und setzt nur den Typ nicht um, wenn schon INP gewuenscht ist. Das ist
+    dort kein Problem, weil ein INP-Link ueblicherweise ein eigener Port ist;
+    bei uns, mit mehreren Partnern auf einer axudp-Leitung, waere es eins.
+    Hier ist TNN kein Vorbild, sondern der Fall, den wir besser machen.
 - Der kopflose Knoten wirft weg, was net.rc zu sagen hat. hpux.c:116:
       if ((local_kbd = (isatty(0) && isatty(1))))
   Haengen stdin UND stdout nicht an einem Terminal, werden 0/1/2 geschlossen
@@ -2372,6 +2729,42 @@ WIE DER BEREICH ENTSTEHT, zwei Quellen und nur eine steht im Rahmen:
 
 Das Feld ist ein Oktett, "0" + SSID, also ":;<=>?" fuer 10 bis 15.
 flexnet_dump() nennt es "Max SSID".
+
+DIE RESTLICHEN BYTES SIND JETZT GEKLAERT (2026-08-19, aus den TNN-Quellen,
+src/l3vc.c:55-81 fuer die Definition, :340 fuers Senden, :717 fuers Lesen).
+TNN kann FlexNet, und dort steht das Format ausgeschrieben:
+
+    Byte 0   '0'        Frame-Kennung
+    Byte 1   '0'+n      maximale SSID
+    Byte 2   Software-Kennung, ein BITFELD:
+               Bit 0..2  Software:  000 FlexNet     001 BayCom Node
+                                    010 Digi Ware   011 TheNetNode
+                                    100 SNet        101 XNet
+                                    110..111 reserviert
+               Bit 3     virtuelle Adressierung, 0 = aus, 1 = ein
+               Bit 4     frei, 0
+               Bit 5     frei, 1     <- immer gesetzt
+               Bit 6,7   frei, 0
+    Byte 3   Software-Version
+
+TNN sendet dort 0x23 = Bit5 | 3, also "TheNetNode", und Version 0x11.
+
+UND DAMIT IST UNSER " " KEIN LEERZEICHEN, SONDERN EINE AUSSAGE: 0x20 ist
+Bit5 gesetzt und Software 000 - wir melden uns als "FlexNet". Das ist
+sauber kodiert und niemand hat es gewusst. Unser viertes Byte, ebenfalls
+0x20, ist die Version (32).
+
+Beim EMPFANG liest TNN nach dem '0' genau drei Bytes und verlangt
+mindestens drei ("if (mbp->mbpc - mbp->mbgc < 3) return"): max SSID,
+Kennung, Version, zusammengesetzt zu pp->version = kennung + (version<<8).
+UNSER FUENFTES BYTE (' '+1 = 0x21) UND DAS '\r' WERDEN IGNORIERT - sie
+schaden nicht, tragen aber auch nichts. Woher die 0x21 stammt, sagt der
+Code nicht; nach TNNs Schema ist an der Stelle nichts definiert.
+
+Bestaetigt ist damit auch, dass die MINIMALE SSID im INIT nicht vorkommt:
+TNN setzt daraus nur l2link->ssid_high. Beide SSIDs stehen erst im
+FLEX_ROUT, wo der Nachbar sie je Ziel ausdruecklich mitgibt (l3vc.c:763
+liest die untere, :764 die obere).
 
 GEMESSEN (2026-08-18): Knoten mit "ax25 mycall DL9SAU-1" und "ifconfig
 axip linkaddress DL9SAU-11", ein Peer ruft DL9SAU-11 an. Der Knoten
