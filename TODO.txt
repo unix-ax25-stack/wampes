@@ -1375,6 +1375,48 @@
   Siebenachtel-Anteil nicht.
   $M wird gelesen und angezeigt, WIRKT aber noch nirgends - es begrenzt,
   was wir ihm melden, und gemeldet wird noch nichts.
+
+  DIE WEGTABELLE STEHT (vierter Bauschritt, 2026-08-19). RIF-Rahmen werden
+  empfangen, die RIPs samt Optionen gelesen und je (Partner, Ziel) abgelegt.
+  Der Diskriminator ist der Transport: axnr() reicht jetzt axp durch, und
+  nr3_input() entscheidet an ihm - 0xFF als UI ist der klassische
+  Rundspruch, 0xFF verbunden ist ein RIF. In den Bytes steht der
+  Unterschied nicht.
+      netrom nodes
+      Node       Ident   Neighbor   Level  Quality  In        Adv  INP3
+      DB0BBB-7                        999        0  all       yes  3.38s
+      DB0AAA-1   AAANOD               999        0  all       yes  15.18s
+      netrom nodes db0aaa-1
+        INP3 via DB0XYZ-4   route 15.00s  +link 0.18s  4 hops  age 7s
+        INP3 ip  44.130.1.5/28
+  Die INP3-Spalte ist die TARGET TIME, also RT + SNTT - die Formel der
+  Spezifikation, und deshalb ueber Ziele hinweg vergleichbar. Ein Partner
+  ohne Messung wird uebersprungen statt als "sofort" gezaehlt.
+  Gemessen: Alias und IP-Option gelesen (die 7-Byte-Laenge stimmt also),
+  Hop-Zaehler beim EMPFANG erhoeht (3 gemeldet -> 4 gespeichert), Zeit 0 =
+  Abmeldung, und eine Abmeldung fuer ein unbekanntes Ziel legt keinen
+  Eintrag an.
+
+  DIE DREI FALLEN VON OBEN, jetzt zwei davon zugemacht:
+    * calculate_all() loescht Knoten ohne links - und ein reines INP3-Ziel
+      hat keine, weil ein RIP keinen Zwischenknoten nennt, aus dem sich eine
+      Kante bauen liesse. Die Bedingung prueft jetzt auch pn->inp3.
+      Gemessen: die Ziele ueberleben ein calculate_all().
+    * Die VERALTERUNG ist keine: INP3 meldet AENDERUNGEN, Schweigen heisst
+      also "unveraendert" - ein Alterstimeout wuerde gute Wege wegwerfen.
+      DER LINK IST DIE LEBENSDAUER. Faellt er, gehen seine Wege mit
+      (inp3_drop_peer), ebenso bei "netrom peer del" und bei einer NEUEN
+      Verbindung, weil der Partner dann von vorn meldet.
+    * hopcnt bleibt offen: der Hop-Zaehler aus dem RIP steht in der
+      Wegtabelle, aber pn->hopcnt setzt weiterhin nur calculate_hopcnts()
+      ueber die links. Ein reines INP3-Ziel hat deshalb hopcnt 999, siehe
+      die Ausgabe oben - das faellt erst ins Gewicht, wenn wir selbst
+      ankuendigen (send_broadcast laeuft in hopcnt-Stufen).
+
+  NOCH NICHT: unbekannte Optionen werden VERWORFEN statt durchgereicht -
+  das ist der IPv6-Weg und braucht die Sendeseite, es gibt noch nichts,
+  womit man sie weitergeben koennte. Und das Routing benutzt die Tabelle
+  noch nicht: route_packet() geht weiter ueber pn->neighbor.
   <call> ist Rufzeichen oder Rufzeichen-SSID, UND HIER IST LAZY ZU SEIN:
   ohne SSID geschrieben passt jede SSID, mit SSID genau diese. Vorbild ist
   addrmatch() (flexnet.c:868), das genau so einen Bereichsvergleich macht,

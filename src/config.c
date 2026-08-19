@@ -467,7 +467,11 @@ uint8 *dest,
 struct mbuf **bpp,
 int mcast
 ){
-	nr3_input(iface,src,bpp);
+	/* axp is the discriminator INP3 needs and this function used to drop:
+	 * a nodes broadcast arrives as UI (axp null), a routing information
+	 * frame numbered on the interlink (axp set).  Both start with 0xff.
+	 */
+	nr3_input(iface,axp,src,bpp);
 }
 
 static int
