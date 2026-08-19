@@ -1345,6 +1345,36 @@
   rufen dieses Call. Die Anzeige sagt "no call yet" statt "down".
   Gemessen: der Knoten ruft nach einer Sekunde von selbst (SABM -> UA),
   ohne dass Verkehr anlag.
+
+  DIE L3RTT-MESSUNG LAEUFT (dritter Bauschritt, 2026-08-19). Wir erzeugen
+  jetzt selbst L3RTT-Rahmen (reflektiert haben wir sie immer schon), messen
+  die Umlaufzeit, glaetten sie mit TNNs Konstanten und lesen die $-Flags des
+  Nachbarn. Alles in 10-ms-Einheiten, wie das Protokoll spricht.
+      netrom peer
+      Call       SSID   Interlink   INP3   SNTT     Last     Known as
+      DB0XYZ-4   exact  Connected   <30s   0.21s    0.14s    DB0XYZ-4 (neighbour)
+  "<30s" ist sein $M3000, "yes" waere $N ohne $M, "-" kein INP3.
+
+  EINE FALLE, gefunden weil gemessen wurde: unser eigenes reflektiertes
+  L3RTT traegt UNSER Rufzeichen als L3-Quelle - und route_packet() wirft
+  genau das weg, "if (pn == mynode) goto discard; /* ROUTING ERROR */".
+  Voellig richtig fuer jedes andere Frame; der eine legitime Fall ist die
+  Reflexion. Sie wird jetzt dort abgefangen, VOR dem discard, denn der
+  L3RTT-Zweig weiter unten wird fuer sie nie erreicht.
+
+  ZWEITE FALLE, gleiche Herkunft: "neu" muss "neu VERBUNDEN" heissen. Die
+  Link-id beim Anlegen zu merken, waehrend die Verbindung noch im Aufbau
+  ist, verbraucht das "isnew" auf einen Zustand, in dem noch nichts zu
+  vereinbaren ist - die erste Messung waere dann erst beim naechsten
+  Messintervall gekommen, also nach drei Minuten statt sofort.
+
+  NOCH NICHT GEMESSEN und ehrlich so festgehalten: die Glaettung ueber
+  MEHRERE Proben. Zwischen zwei Proben liegen 180 s, im Test war jede
+  Messung eine Erstmessung - die dreifache Erstschaetzung ist dadurch
+  belegt (60 ms -> Last 0.08s, SNTT 0.12s; 250 ms -> 0.27s / 0.39s), der
+  Siebenachtel-Anteil nicht.
+  $M wird gelesen und angezeigt, WIRKT aber noch nirgends - es begrenzt,
+  was wir ihm melden, und gemeldet wird noch nichts.
   <call> ist Rufzeichen oder Rufzeichen-SSID, UND HIER IST LAZY ZU SEIN:
   ohne SSID geschrieben passt jede SSID, mit SSID genau diese. Vorbild ist
   addrmatch() (flexnet.c:868), das genau so einen Bereichsvergleich macht,

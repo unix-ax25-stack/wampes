@@ -191,20 +191,44 @@ struct nrpeer {
   int id;                       /* id of the link we last saw.  A different
                                  * one is a different connection, and nothing
                                  * agreed on the old one still holds. */
+  /* The round trip measurement.  Everything is in 10 ms units, which is what
+   * INP3 speaks - the granularity of the specification and of every value on
+   * the wire.
+   */
+  int32 rttstart;               /* msclock() when the probe went out, 0 when
+                                 * none is outstanding */
+  int32 rttid;                  /* the number we wrote into it, echoed back
+                                 * unchanged, so a late answer to an older
+                                 * probe is not taken for this one */
+  int srtt;                     /* smoothed ONE WAY time, 0 = never measured.
+                                 * Half the round trip: that is the SNTT the
+                                 * specification adds to a reported route
+                                 * time. */
+  int lastrtt;                  /* the last round trip, unsmoothed, for the
+                                 * display - a smoothed value alone hides a
+                                 * link that has just got worse */
+  int inp3;                     /* he sent "$N": he speaks INP3 */
+  int maxtime;                  /* his "$M": do not tell him about anything
+                                 * slower than this.  0 = he named none */
+  int rttcount;                 /* service ticks since the last probe */
 };
 
 static struct nrpeer *nrpeers;
 static struct timer nrpeer_timer;
 
-/* How often we look whether the interlinks are still up.  A minute is short
- * enough that a link comes back soon after the far end does, and long enough
- * that a station which is simply not there costs one call a minute.  AX.25
- * retries do the rest of the waiting - open_ax25() is not a fast operation
- * that is being repeated here, it is a connection attempt that either stands
- * or is still running.
+/* Two rates out of one timer, the way TNN does it: the tick is short so that
+ * a link coming up is NOTICED soon - the first measurement belongs to the
+ * moment it stands, not to the next probe interval - and probing itself is
+ * counted in ticks, at TNN's L3_RTT_TIME of 180 seconds.  There is no reason
+ * to be noisier than the implementation we measure against.
+ *
+ * A tick costs nothing when everything is up: it is a find_ax25() per
+ * partner.  It costs a connection attempt for a station that is not there,
+ * and AX.25 retries do that waiting anyway.
  */
 
-#define NRPEER_INTERVAL 60
+#define NRPEER_INTERVAL 10      /* seconds per tick */
+#define NRRTT_EVERY     18      /* ticks between probes: 180 s */
 
 static struct broadcast *broadcasts;
 static struct node *nodes, *mynode;
@@ -530,7 +554,12 @@ static struct ax25_cb *nrpeer_link(struct nrpeer *pp, int *isnew)
     addrcp(hdr.dest, call);
     if (!(axp = open_ax25(&hdr, AX_ACTIVE, 0))) return NULL;
   }
-  if (pp->id != axp->id) {
+  /* Counted as ours only once it is UP.  Remembering the id while the
+   * connection is still being set up would spend the "new" on a link nothing
+   * can be agreed on yet - and the first measurement, which belongs exactly
+   * there, would then wait for the next probe interval instead.
+   */
+  if (axp->state == LAPB_CONNECTED && pp->id != axp->id) {
     pp->id = axp->id;
     if (isnew) *isnew = 1;
   }
@@ -539,9 +568,237 @@ static struct ax25_cb *nrpeer_link(struct nrpeer *pp, int *isnew)
 
 /*---------------------------------------------------------------------------*/
 
-static void nrpeer_service(void *arg)
+/* Smoothing, with the constants TNN uses (l3tab.c smooth(), l3local.h): seven
+ * eighths of the old value plus one eighth of the new, and a FIRST
+ * measurement counted threefold.  The threefold is not caution about noise,
+ * it is caution about being believed: a link announced as fast draws traffic,
+ * and one sample is not evidence.  It settles within a few probes.
+ *
+ * THE FLOOR MATTERS MORE THAN THE FORMULA.  Zero means WITHDRAWN in INP3, so
+ * a link fast enough to round to nothing would announce itself as dead - over
+ * axudp that is every link.  TNN guards it in four places and this is one of
+ * them; 10 ms is the smallest value the protocol can say at all.
+ */
+
+#define NRRTT_MIN       1       /* 10 ms, and never 0 - that means withdrawn */
+#define NRRTT_MAX   59999       /* 599.99 s; above is the horizon,= dead */
+#define NRRTT_BETA      3       /* first measurement counts threefold */
+
+static void nrpeer_smooth(int *old, int val)
+{
+  if (val < NRRTT_MIN) val = NRRTT_MIN;
+  if (val > NRRTT_MAX) {
+    *old = 0;                   /* beyond the horizon: start again */
+    return;
+  }
+  *old = *old ? ((*old + 1) * 7 - 1 + val) / 8 : val * NRRTT_BETA;
+  if (*old < NRRTT_MIN) *old = NRRTT_MIN;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Send one L3RTT probe.  The far end reflects it unchanged - which WE have
+ * always done, route_packet() has answered these since long before this file
+ * had anything to measure - and the time it takes to come back is the round
+ * trip.
+ *
+ * The frame is a NET/ROM L3 header addressed to the pseudo destination
+ * "L3RTT", carrying what looks like an L4 info packet whose text begins
+ * "L3RTT:".  Four decimal numbers follow, written the way TNN writes them
+ * (" %10lu"), then our alias and version, then the flags.  A reader takes
+ * them with sscanf and does not care about the widths; they are copied
+ * because being byte for byte what the other implementations send costs
+ * nothing and removes a question.
+ *
+ * IT IS PADDED TO THE INTERFACE MTU on purpose, as TNN pads it.  A short
+ * frame measures latency; a full one measures what a full frame costs, and
+ * that is what the metric is for.
+ */
+
+static void nrpeer_send_rtt(struct nrpeer *pp, struct ax25_cb *axp)
+{
+  char buf[256];
+  int len;
+  int mtu;
+  struct mbuf *bp;
+  uint8 *cp;
+
+  if (!mynode || !axp || axp->state != LAPB_CONNECTED) return;
+
+  /* An id that is ours and not a pointer.  TNN puts its peer pointer here
+   * and reads it back with "%lu" into a pointer, which cannot be right on a
+   * 64 bit machine; a counter says the same thing and always fits.
+   */
+  if (!++pp->rttid) pp->rttid = 1;
+
+  len = sprintf(buf, "L3RTT: %10lu %10lu %10lu %10lu ",
+		(unsigned long) (msclock() / 10),
+		(unsigned long) pp->srtt,
+		(unsigned long) pp->lastrtt,
+		(unsigned long) pp->rttid);
+  memcpy(buf + len, mynode->ident, IDENTLEN);
+  len += IDENTLEN;
+  len += sprintf(buf + len, " LEVEL3_V2.1 WAMPES");
+  /* "$N" says we speak INP3.  TNN sends it only when it WANTS an INP link,
+   * and switches the peer over when it sees ours - so this word is the whole
+   * negotiation.  "$I" for the IP option does not exist in TNN; that field
+   * travels unannounced.
+   */
+  len += sprintf(buf + len, " $N\r");
+
+  mtu = axp->iface ? axp->iface->mtu : 256;
+  if (mtu > (int) sizeof(buf)) mtu = sizeof(buf);
+  while (len < mtu) buf[len++] = ' ';
+
+  if (!(bp = alloc_mbuf(NR3HLEN + NR4MINHDR + len + 1))) return;
+  cp = bp->data;
+  *cp++ = PID_NETROM;
+  addrcp(cp, mynode->call);
+  cp += AXALEN;
+  addrcp(cp, L3RTT);
+  cp += AXALEN;
+  *cp++ = 2;                            /* time to live, as TNN sends it */
+  *cp++ = 0;                            /* circuit index */
+  *cp++ = 0;                            /* circuit id */
+  *cp++ = 0;                            /* tx sequence */
+  *cp++ = 0;                            /* rx sequence */
+  *cp++ = NR4OPINFO;
+  memcpy(cp, buf, (size_t) len);
+  cp += len;
+  bp->cnt = cp - bp->data;
+
+  pp->rttstart = msclock();
+  send_ax25(axp, &bp, -1);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* The text of an L3RTT frame, as a string we can read.  It starts at the
+ * fixed offset the caller has already checked "L3RTT:" at, and it is not
+ * terminated on the wire - TNN pads it with spaces to the MTU.
+ */
+
+static int nrpeer_rtt_text(struct mbuf *bp, char *buf, int size)
+{
+  int n = bp->cnt - (2 * AXALEN + 6);
+
+  if (n <= 0) return 0;
+  if (n > size - 1) n = size - 1;
+  memcpy(buf, bp->data + 2 * AXALEN + 6, (size_t) n);
+  buf[n] = '\0';
+  return n;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* What a neighbour says about himself, in the flags at the end of his own
+ * L3RTT frame.  They are words beginning with "$", and TNN knows exactly two.
+ */
+
+static void nrpeer_read_flags(struct mbuf *bp, struct node *fromneighbor)
+{
+  char buf[200];
+  char *cp;
+  struct nrpeer *pp;
+
+  if (!(pp = nrpeer_find(fromneighbor->call))) return;
+  if (!nrpeer_rtt_text(bp, buf, sizeof(buf))) return;
+  /* "$N" is the whole negotiation: he speaks INP3 and wants to.  A neighbour
+   * that never sends it gets the classic broadcast from us and nothing else.
+   */
+  if (strstr(buf, "$N")) pp->inp3 = 1;
+  /* "$M<n>" is a ceiling HE sets on what we report to him.  Absent means he
+   * named none, and TNN clears it in that case rather than keeping the last.
+   */
+  pp->maxtime = (cp = strstr(buf, "$M")) ? atoi(cp + 2) : 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Our own probe, reflected by the far end.  The time it took is the round
+ * trip; half of it is the one way time the specification calls SNTT and adds
+ * to every route time a neighbour reports.
+ */
+
+static void nrpeer_recv_rtt(struct mbuf *bp, struct node *fromneighbor)
+{
+  char buf[200];
+  int32 rtt;
+  struct nrpeer *pp;
+  unsigned long sent, hissrtt, hislast, id;
+
+  if (!(pp = nrpeer_find(fromneighbor->call))) return;
+  if (!nrpeer_rtt_text(bp, buf, sizeof(buf))) return;
+  if (sscanf(buf + 6, "%lu %lu %lu %lu", &sent, &hissrtt, &hislast, &id) != 4)
+    return;
+  /* Only the probe that is outstanding, and only if the number came back
+   * unchanged: a reflection of an older one would otherwise be timed against
+   * the newer clock and read as absurdly fast.
+   */
+  if (!pp->rttstart || (int32) id != pp->rttid) return;
+
+  /* The +2 is TNN's, and it is the reason a fast link does not measure zero:
+   * over axudp the round trip is below the 10 ms the protocol can express,
+   * and zero on the wire means WITHDRAWN.
+   */
+  rtt = (msclock() - pp->rttstart) / 10 + 2;
+  pp->rttstart = 0;
+  if (rtt > NRRTT_MAX) {
+    pp->srtt = 0;               /* beyond the horizon: as good as unmeasured */
+    return;
+  }
+  pp->lastrtt = (int) rtt;
+  nrpeer_smooth(&pp->srtt, (int) (rtt / 2));
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* One partner, one tick: hold the link and decide whether to probe.  Pulled
+ * out so that "netrom peer add" runs exactly what the timer runs - a second
+ * copy of this is how the two would drift apart.
+ */
+
+static void nrpeer_poll(struct nrpeer *pp)
 {
   int isnew;
+  struct ax25_cb *axp;
+
+  {
+    if (!(axp = nrpeer_link(pp, &isnew))) return;
+    if (axp->state != LAPB_CONNECTED) return;
+    /* A new connection has no measurement behind it, whatever we knew about
+     * the old one.  Probe at once rather than at the next interval: until
+     * there is a time, there is nothing to announce him with.
+     */
+    if (isnew) {
+      pp->srtt = pp->lastrtt = pp->rttstart = 0;
+      pp->inp3 = pp->maxtime = 0;
+      pp->rttcount = 0;
+      nrpeer_send_rtt(pp, axp);
+      return;
+    }
+    /* One outstanding probe at a time.  Beyond the horizon the link counts as
+     * unmeasured again - TNN disconnects after 180 s, we let the next probe
+     * decide, since our timer comes round anyway.
+     */
+    if (pp->rttstart) {
+      if (msclock() - pp->rttstart > NRRTT_MAX * 10L) {
+	pp->rttstart = 0;
+	pp->srtt = 0;
+      }
+      return;
+    }
+    if (++pp->rttcount >= NRRTT_EVERY) {
+      pp->rttcount = 0;
+      nrpeer_send_rtt(pp, axp);
+    }
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void nrpeer_service(void *arg)
+{
   struct nrpeer *pp;
 
   (void) arg;
@@ -549,7 +806,7 @@ static void nrpeer_service(void *arg)
   start_timer(&nrpeer_timer);
 
   for (pp = nrpeers; pp; pp = pp->next)
-    (void) nrpeer_link(pp, &isnew);
+    nrpeer_poll(pp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -958,7 +1215,20 @@ static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
     if (in == RF_IN_NONE) goto discard;
     if (update_link(mynode, fromneighbor, 1, nr_hfqual)) calculate_all();
     if (!(pn = nodeptr((*bpp)->data, 1))) goto discard;
-    if (pn == mynode) goto discard;  /* ROUTING ERROR */
+    if (pn == mynode) {
+      /* Normally a routing error: a datagram cannot arrive at the node it
+       * started from.  EXACTLY ONE does, legitimately - our own L3RTT probe,
+       * reflected unchanged by the neighbour, which is the whole point of
+       * the frame.  It has to be caught here, ahead of the discard, because
+       * the L3RTT branch further down is never reached for it.
+       */
+      if (addreq((*bpp)->data + AXALEN, L3RTT) &&
+	  (*bpp)->cnt >= AXALEN * 2 + 12 &&
+	  ((*bpp)->data[AXALEN*2+5] & NR4OPCODE) == NR4OPINFO &&
+	  !memcmp("L3RTT:", (*bpp)->data + AXALEN * 2 + 6, 6))
+	nrpeer_recv_rtt(*bpp, fromneighbor);
+      goto discard;
+    }
     source = pn;                     /* pn is reused below for the target */
     /* A frame passing through builds the way back, and that is the second
      * way a station teaches us about others - so "in" governs it too.  Note
@@ -1030,6 +1300,15 @@ static void route_packet(struct mbuf **bpp, struct node *fromneighbor)
     if ((*bpp)->cnt < AXALEN * 2 + 12) goto discard;
     if (((*bpp)->data[AXALEN*2+5] & NR4OPCODE) != NR4OPINFO) goto discard;
     if (memcmp("L3RTT:", (*bpp)->data + AXALEN * 2 + 6, 6)) goto discard;
+    /* Only a neighbour's frame reaches this: one of ours coming back has our
+     * own callsign as its L3 source and was taken further up, where the
+     * routing error check would otherwise have thrown it away.
+     *
+     * Read what he says about himself on the way past, then reflect it
+     * UNCHANGED, which is what the far end times.  We have always reflected;
+     * the reading is the new part, and it is where "$N" arrives.
+     */
+    nrpeer_read_flags(*bpp, fromneighbor);
     send_packet_to_neighbor(bpp, fromneighbor);
     return;
   }
@@ -2425,19 +2704,44 @@ static int donrpeer(int argc, char *argv[], void *p)
       printf("No interlink partners - \"netrom peer add <call>\"\n");
       return 0;
     }
-    printf("Call       SSID   Interlink     Known as\n");
+    printf("Call       SSID   Interlink   INP3   SNTT     Last     Known as\n");
     for (pp = nrpeers; pp; pp = pp->next) {
+      char inp3[16], sntt[16], last[16];
       uint8 *target = nrpeer_target(pp);
       struct ax25_cb *axp = target ? find_ax25(target) : NULL;
       int seen = 0;
 
-      printf("%-9s  %-5s  %-12s  ", pax25(buf, pp->call),
+      /* Seconds for reading, 10 ms units on the wire.  A dash rather than
+       * "0.00" while nothing has been measured: zero is a value with a
+       * meaning of its own here, and it is not "unknown".
+       */
+      if (pp->srtt)
+	sprintf(sntt, "%d.%02ds", pp->srtt / 100, pp->srtt % 100);
+      else
+	strcpy(sntt, "-");
+      if (pp->lastrtt)
+	sprintf(last, "%d.%02ds", pp->lastrtt / 100, pp->lastrtt % 100);
+      else
+	strcpy(last, "-");
+      /* His "$M" belongs beside his "$N", because it only means anything
+       * once he speaks INP3: it is the ceiling HE puts on what we may report
+       * to him, and it is shown so that a value we have taken can be seen.
+       */
+      if (!pp->inp3)
+	strcpy(inp3, "-");
+      else if (pp->maxtime)
+	sprintf(inp3, "<%ds", pp->maxtime / 100);
+      else
+	strcpy(inp3, "yes");
+
+      printf("%-9s  %-5s  %-10s  %-5s  %-7s  %-7s  ", pax25(buf, pp->call),
 	     pp->anyssid ? "any" : "exact",
 	     /* Not "down" when we do not even know whom to call: an SSID-less
 	      * entry with nobody heard of yet is waiting, not failing.
 	      */
 	     axp    ? Ax25states[axp->state] :
-	     target ? "down" : "no call yet");
+	     target ? "down" : "no call yet",
+	     inp3, sntt, last);
       /* What the entry actually catches today.  With "any" it may be more
        * than one, and that is the whole point of writing it that way - so
        * show them rather than leaving the operator to guess.
@@ -2495,7 +2799,7 @@ static int donrpeer(int argc, char *argv[], void *p)
      * net.rc should not mean a minute of nothing.  The timer runs from here
      * on and is not started before there is a partner to look after.
      */
-    (void) nrpeer_link(pp, NULL);
+    nrpeer_poll(pp);
     if (!run_timer(&nrpeer_timer)) {
       set_timer(&nrpeer_timer, NRPEER_INTERVAL * 1000L);
       start_timer(&nrpeer_timer);
