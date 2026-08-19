@@ -1793,12 +1793,27 @@
     PLP" (pidfilter.c:69) -, aber das Wort ROSE kommt nirgends vor, also
     findet "ax25 pid-info rose" nichts und wer ROSE sucht, sucht vergeblich.
     ROSE laeuft ueber genau diese PID. Zu tun: im Text nennen, und "rose" als
-    zweiten Namen zulassen. NACHZUSEHEN: der Linux-Kernel nennt 0x01 nach
-    meiner Erinnerung AX25_P_ROSE (include/net/ax25.h) - das waere das
-    Argument, den Namen zu fuehren, und ist zu pruefen, die Datei liegt hier
-    nicht (libax25/netax25/ax25.h ist die Userspace-Fassung und hat die
-    PID-Namen nicht).
-  * WEITERE PIDs aus dem Kernel nachtragen, sobald die Datei da ist.
+    zweiten Namen zulassen.
+    Die PID-Namen des Kernels stehen in dessen include/net/ax25.h und werden
+    NICHT nach /usr/include installiert - auf einem gewoehnlichen Linux findet
+    man sie nicht (von Thomas am 2026-08-20 nachgesehen und bestaetigt), und
+    libax25/netax25/ax25.h ist die Userspace-Fassung ohne PID-Namen.
+  * ES FEHLEN GAR KEINE EINTRAEGE - das war die Hoffnung und sie traegt
+    nicht. Verglichen mit direwolf, das im selben Baum liegt und die Liste
+    der Spezifikation woertlich fuehrt (direwolf/src/ax25_pad.c:2372
+    pid_to_text): 0x01 06 07 08 C3 C4 CA CB CC CD CE CF F0 FF - alle vierzehn
+    haben wir. Wir haben sogar eines mehr, 0x0f flextalk, das in der
+    Spezifikation nicht steht.
+  * WAS UNS STATTDESSEN FEHLT, IST EINE REGEL STATT EINES EINTRAGS: die
+    Spezifikation vergibt ueber eine BITMASKE eine ganze Klasse.
+        (pid & 0x30) == 0x10  oder  == 0x20   ->  "AX.25 layer 3 implemented"
+    direwolf prueft das VOR allen Einzelwerten (ax25_pad.c:2375-2376). Unsere
+    Tabelle kennt nur exakte Werte, also meldet pid_name() fuer jeden Wert
+    dieser Klasse "unbekannt", obwohl der Standard ihm eine Bedeutung gibt.
+    Zu beachten bei der Reihenfolge: keiner unserer benannten PIDs faellt in
+    die Maske (0xCC & 0x30 == 0, 0xCF & 0x30 == 0), die Regel darf also
+    vorangestellt werden, ohne einen Namen zu verdecken - ausser 0xF0, das
+    0x30 ergibt und deshalb weiterhin zuerst exakt getroffen werden muss.
 
 - Projekt auf github. Voraussichtlich https://github.com/dl9sau/WAMPES/ - der
   Name steht fuer Thomas schon fest. Danach zwei Verweise nachtragen, die
