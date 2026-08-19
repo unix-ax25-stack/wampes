@@ -1642,6 +1642,76 @@
     dort kein Problem, weil ein INP-Link ueblicherweise ein eigener Port ist;
     bei uns, mit mehreren Partnern auf einer axudp-Leitung, waere es eins.
     Hier ist TNN kein Vorbild, sondern der Fall, den wir besser machen.
+
+- Gelernte IP-Routen: was darf herein, was darf hinaus.
+  Aufgekommen am 2026-08-20 aus der Frage "was machen wir mit gelernten
+  INP3-Routen?". HEUTE MACHEN WIR NICHTS damit: das IP-Feld einer
+  INP3-Route wird gespeichert, angezeigt und weitergereicht, aber weder
+  ein ARP-Eintrag noch eine Route daraus gemacht. Das ist ein sicherer
+  Ruhepunkt - es gibt nichts zu entfuehren -, aber die halbe Sache.
+
+  THOMAS' ERSTER ANSATZ WAR EINE METRIK (INP3-Routen schlechter eintragen
+  als RIP, lokale Routen geschuetzt) UND ER HAT IHN SELBST VERWORFEN, mit
+  dem richtigen Argument: das schuetzt nicht vor einem BETTER MATCH.
+  rt_lookup() ist Longest Prefix; die Metrik trennt nur Routen GLEICHER
+  Praefixlaenge. Ein gelerntes /26 schlaegt unser /24 mit jeder Metrik.
+
+  DIE REGEL, DIE TRAEGT, IST DIE VERSCHACHTELUNG, und sie ist einseitig:
+    * gelerntes Praefix LIEGT IN einem geschuetzten (gleiche Netzadresse,
+      bits >= unsere) -> gefaehrlich, ablehnen
+    * gelerntes Praefix UMFASST unseres (weniger bits) -> harmlos, denn
+      Longest Match behaelt unseres
+  Genau das war Thomas' Satz "wuerde nicht angenommen wenn sie ein
+  kleineres /xx Netz waere als unseres".
+
+  DER HAKEN SITZT SCHON DA, und zwar an der richtigen Stelle:
+  rt_add() (iproute.c:417) lehnt Routen mit ttl != 0 ab, wenn ipfilter()
+  ihr Ziel verbietet:
+      if(ttl && !ipfilter(target)) return NULL;
+  ttl == 0 heisst dauerhaft, also von Hand konfiguriert - genau die
+  Unterscheidung "gelernt gegen selbst gesetzt", die wir brauchen. Wer
+  spaeter INP3-IPs eintraegt, MUSS eine ttl mitgeben, sonst laeuft er am
+  Filter vorbei.
+
+  DIE LISTE IST ABER NICHT WIEDERVERWENDBAR: dasselbe ipfilter() gattert
+  auch die Zustellung (iproute.c:97 prueft Quelle UND Ziel jedes
+  Datagramms). Ein "deny 44.130.1.0/24", das die Routingtabelle schuetzen
+  soll, wuerde damit den Verkehr in genau dieses Netz abwuergen. Also:
+  dieselbe Stelle, zweite Liste. Kommando "ipfilter allow|deny <addr>
+  [/<bits>] [to <addr>[/<bits>]]" ist die Formvorlage - erster Treffer
+  gewinnt, Bereich statt Praefix.
+
+  AUTOLEARNING IST SCHON ABSCHALTBAR, je Interface: ip_route()
+  (iproute.c:102) traegt fuer JEDE Quelladresse eine /32-Hostroute ein,
+  ausser das Interface hat NO_RT_ADD (iface.c:392-397). Zu beachten: /32
+  ist maximal spezifisch, schlaegt also konstruktionsbedingt alles.
+
+  DIE ANDERE RICHTUNG - was von UNS ins RIP und was nach INP3 darf -
+  gibt es halb: "route addprivate" setzt rtprivate ("Don't advertise this
+  route", ip.h:111). EIN Bit fuer ALLE Protokolle. "ins RIP ja, nach INP3
+  nein" laesst sich damit nicht sagen, und eine groessere Klammer statt
+  je Route auch nicht. Das ist der fehlende Teil.
+
+  ZU KLAEREN BEIM BAUEN:
+    * gehoert das an ipfilter (ein Kommando, mehr Bedeutungen) oder
+      daneben (zwei Kommandos, je eines eindeutig)
+    * je Partner eine Erlaubnis (wie "ax25 route add permanent vj" mit
+      Flaggenspalte PJEC) oder nur die Netzliste. Thomas' Einwand gegen
+      "netrom parms 29 1": eine Nummer versteht niemand, gesetzt wird mit
+      einem WORT und angezeigt als Flagge.
+    * TNN als Vergleich, nicht als Vorbild: arp_add() + rt_add(), davor
+      arp_drop()/rt_drop() des alten Eintrags, gesteuert ueber Parameter
+      12 "autoipr" (0 aus, >=2 letztes Oktett nicht 0/255, >=3 nur eigenes
+      /8), Default 3 - also AN. l3inp.c:487-518. Bei uns waere der
+      Default aus, weil die Spezifikation selbst "net of trust" sagt und
+      keine Authentifizierung kennt.
+    * Die Handarbeitsfassung steht schon bereit und zeigt die Zielform:
+      "arp publish <hostid> netrom <call>".
+    * Dazu Thomas' Roaming-Idee: das Netz eines Nutzerknotens lernen -
+      gegen die Positivliste - und an die EIGENE Ankuendigung haengen,
+      damit ein Nutzer den Einstieg wechseln und seine IP mitnehmen kann.
+      Verschwindet sein Knoten, nehmen wir die Ankuendigung zurueck.
+
 - Der kopflose Knoten wirft weg, was net.rc zu sagen hat. hpux.c:116:
       if ((local_kbd = (isatty(0) && isatty(1))))
   Haengen stdin UND stdout nicht an einem Terminal, werden 0/1/2 geschlossen
