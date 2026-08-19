@@ -238,12 +238,26 @@ static const char *axlisten_kindname(struct axlisten *lp)
 
 static const char *axlisten_targetname(const struct axlisten *lp)
 {
-  if (lp->kind != LK_CLIENT) return lp->target;
-  /* A NET/ROM entry does not hold a claim of its own - it names the callsign
-   * whose client takes the session, and THAT entry is where the claim lives.
-   * Reporting "nobody" here would be about the wrong entry.
+  /* One caller per printf, and the "changed from" line copies the string
+   * before the entry is touched, so one buffer is enough.
    */
-  if (lp->netrom) return lp->target;
+  static char buf[80];
+  const struct axlisten *cp;
+
+  if (lp->kind != LK_CLIENT) return lp->target;
+  /* A NET/ROM entry holds no claim of its own - it names the callsign whose
+   * client takes the session, and THAT entry is where the claim lives.  So
+   * the state shown here is the other entry's, including the case the column
+   * exists for: the callsign has no client listener at all and the line
+   * points nowhere.  Without it the entry reads "active" either way.
+   */
+  if (lp->netrom) {
+    cp = axlisten_find(lp->call, PID_NO_L3, 0);
+    snprintf(buf, sizeof(buf), "%s (%s)", lp->target,
+	     !cp || cp->kind != LK_CLIENT ? "no listener" :
+	     cp->clientfd >= 0            ? "claimed"     : "nobody");
+    return buf;
+  }
   return lp->clientfd >= 0 ? "client (claimed)" : "client (nobody)";
 }
 
@@ -474,7 +488,15 @@ static int axlisten_add(int netrom, int argc, char *argv[])
     return 1;
   }
   if (!netrom && !strncmp(target, "client:", 7)) {
-    printf("An AX.25 listener already has its callsign - write \"client\"\n");
+    /* Say what the form is FOR.  "already has its callsign" alone reads as a
+     * complaint about the line, and the line is right - what is missing is
+     * that the colon form exists only because a NET/ROM session has no
+     * callsign to name a client by.  Here the entry names one.
+     */
+    printf("\"client:<call>\" belongs to netrom, where a session has no "
+	   "callsign of its\nown to find a client by.  This entry names one "
+	   "already: whoever holds\n%s gets these calls, so the target is "
+	   "plain \"client\"\n", pax25(callbuf, call));
     return 1;
   }
   if (netrom && !strncmp(target, "client:", 7)) {
@@ -576,6 +598,21 @@ static int axlisten_add(int netrom, int argc, char *argv[])
     printf("  \"listen netrom add client:%s\" now has no client - NET/ROM\n"
 	   "  sessions go to the node's own login until one holds it again\n",
 	   pax25(callbuf, lp->call));
+
+  /* The other direction, and it is NOT refused: net.rc is read from the top
+   * and nothing says the ax25 line comes first, so a NET/ROM entry written
+   * ahead of it is perfectly reasonable.  It is said once, because an entry
+   * pointing at a callsign nobody listens for looks exactly like a working
+   * one otherwise - which is what "active" in the listing used to claim.
+   */
+  if (netrom && lp->kind == LK_CLIENT) {
+    struct axlisten *cp = axlisten_find(lp->call, PID_NO_L3, 0);
+
+    if (!cp || cp->kind != LK_CLIENT)
+      printf("  no \"listen ax25 add %s client\" yet - until there is one,\n"
+	     "  NET/ROM sessions go to the node's own login\n",
+	     pax25(callbuf, lp->call));
+  }
   return 0;
 }
 

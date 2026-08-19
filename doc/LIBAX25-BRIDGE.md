@@ -341,6 +341,20 @@ callsign.**  The same one an AX.25 listener uses means one program takes both
 kinds of call.  A different one keeps them apart, because the client is told
 which callsign was reached.
 
+**What the listing shows** is the state of the entry it points at, because
+that is where the claim lives - and including the case the column exists for,
+a line pointing at a callsign nobody listens for:
+
+    (netrom)   ...  client:dl9sau-15 (no listener)   nothing to hand to
+    (netrom)   ...  client:dl9sau-15 (nobody)        entry there, unclaimed
+    (netrom)   ...  client:dl9sau-15 (claimed)       a program holds it
+
+Writing the NET/ROM line first is **not** refused, for the reason
+`portlist_set()` gives: `net.rc` is read from the top and nothing says the
+`listen ax25` line comes first.  It is said once instead, when the line is
+written.  Note that `State` is a different question - it says only whether the
+entry is switched on, never whether anybody is behind it.
+
 **The entry holds the callsign and never a pointer.**  It is looked up per
 session, so `listen ax25 drop DL9SAU-8` or a rewrite to `tcp:` leaves nothing
 dangling - and a session already handed over is not touched either, since
