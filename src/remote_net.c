@@ -735,15 +735,17 @@ static int datagram_command(struct controlblock *cp)
 
       if (!strcmp(argv[i], "--silent")) { cp->silent = 1; continue; }
       if (!strcmp(argv[i], "--pid")) {
-	long n;
-
+	/* Names as well as numbers, the same table as everywhere else - see
+	 * pidfilter.c.  This branch had been missed when the others were
+	 * changed, which is exactly the drift the one table exists to stop:
+	 * "datagram --pid netrom" would have been refused while
+	 * "connect --pid netrom" and "listen pid=netrom" were taken.
+	 */
 	if (++i >= argc) { say(cp, "*** --pid needs a value"); return -1; }
-	n = strtol(argv[i], &p, 0);
-	if (*p || n < 0 || n > 255) {
+	if ((cp->dgram_pid = pid_number(argv[i])) < 0) {
 	  say(cp, "*** invalid pid \"%s\"", argv[i]);
 	  return -1;
 	}
-	cp->dgram_pid = (int) n;
 	continue;
       }
       if (!strcmp(argv[i], "--port")) {
