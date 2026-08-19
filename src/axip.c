@@ -124,7 +124,7 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
       struct sockaddr_storage to;
       int port = sockaddr_port((struct sockaddr *) &rp->dest);
 
-      if (!port) port = edv->port;
+      if (!port) port = edv->dport;
 
       /* One socket speaks one family.  A route for the other one belongs to
        * a second interface - attach axip6 - so skip it here rather than
@@ -227,6 +227,7 @@ int axip_attach(int argc, char *argv[], void *p)
   int fd;
   int family = AF_INET;
   int port = AX25_PTCL;
+  int dport = 0;
   int type = USE_IP;
   struct edv_t *edv;
   struct iface *ifp;
@@ -272,7 +273,39 @@ int axip_attach(int argc, char *argv[], void *p)
     }
   }
 
-  if (argc >= 4) port = atoi(argv[3]);
+  /* One number means both, as it always did.  "<src>:<dst>" separates them:
+   * the first is what we bind to, the second where we send when neither the
+   * route nor a learned source port says otherwise.  Needed where the two
+   * genuinely differ - behind a NAT that rewrites one of them, or when a
+   * peer insists on talking to 93 while we may not bind a privileged port.
+   *
+   * Only for UDP.  With a raw socket the number is the IP protocol, there is
+   * no port at either end, and a colon there would be nonsense rather than a
+   * setting nobody uses.
+   */
+  if (argc >= 4) {
+    char *colon = strchr(argv[3], ':');
+
+    if (colon) {
+      if (type != USE_UDP) {
+        printf("\"%s\": with ip or ip6 the number is the IP protocol, and a "
+               "raw\nsocket has no ports to keep apart\n", argv[3]);
+        return -1;
+      }
+      *colon = '\0';
+      dport = atoi(colon + 1);
+      if (dport <= 0 || dport > 65535) {
+        printf("\"%s\" is not a port\n", colon + 1);
+        return -1;
+      }
+    }
+    port = atoi(argv[3]);
+    if (type == USE_UDP && (port <= 0 || port > 65535)) {
+      printf("\"%s\" is not a port\n", argv[3]);
+      return -1;
+    }
+  }
+  if (!dport) dport = port;             /* one number means both */
 
   if (type == USE_IP)
     fd = socket(family, SOCK_RAW, port);
@@ -334,6 +367,7 @@ int axip_attach(int argc, char *argv[], void *p)
   edv = (struct edv_t *) malloc(sizeof(struct edv_t));
   edv->type = type;
   edv->port = port;
+  edv->dport = dport;
   edv->fd = fd;
   edv->family = family;
   edv->uhnp = 0;

@@ -41,7 +41,11 @@ void learn_udp_host_nat_port(const struct sockaddr *addr, struct edv_t *edv)
 {
   struct udp_host_nat_port *up;
   struct udp_host_nat_port *up_prev = 0;
-  int defaultport = edv->port;
+  /* The port we would send to anyway, which is what makes a learned entry
+   * superfluous - not the one we bind to.  The two are the same number
+   * unless the interface was attached with "<src>:<dst>".
+   */
+  int defaultport = edv->dport;
 
   for (up = edv->uhnp; up; up = up->next) {
     if (sockaddr_addr_eq((struct sockaddr *) &up->addr, addr)) {

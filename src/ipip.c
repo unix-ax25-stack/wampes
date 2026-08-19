@@ -78,7 +78,8 @@ static int ipip_send(struct mbuf **bpp, struct iface *ifp, int32 gateway, uint8 
      * the general routing table.  Only the lookup key has to be built as a
      * sockaddr now that the table is family agnostic. */
     struct sockaddr *sa = search_udp_host_nat_port((struct sockaddr *) &addr, edv);
-    addr.sin_port = sa ? ((struct sockaddr_in *) sa)->sin_port : htons(edv->port);
+    addr.sin_port = sa ? ((struct sockaddr_in *) sa)->sin_port
+			: htons(edv->dport);
     uhnp_cleanup(edv);
   } else
     addr.sin_port = htons(edv->port);
@@ -154,6 +155,7 @@ int ipip_attach(int argc, char *argv[], void *p)
   char *ifname = "ipip";
   int fd;
   int port = IP4_PTCL;
+  int dport = 0;
   int type = USE_IP;
   struct edv_t *edv;
   struct iface *ifp;
@@ -181,7 +183,33 @@ int ipip_attach(int argc, char *argv[], void *p)
       return -1;
     }
 
-  if (argc >= 4) port = atoi(argv[3]);
+  /* Same as axip: one number means both ends, "<src>:<dst>" separates them,
+   * and only UDP has two ends to separate - with a raw socket the number is
+   * the IP protocol.
+   */
+  if (argc >= 4) {
+    char *colon = strchr(argv[3], ':');
+
+    if (colon) {
+      if (type != USE_UDP) {
+        printf("\"%s\": with ip the number is the IP protocol, and a raw "
+               "socket\nhas no ports to keep apart\n", argv[3]);
+        return -1;
+      }
+      *colon = '\0';
+      dport = atoi(colon + 1);
+      if (dport <= 0 || dport > 65535) {
+        printf("\"%s\" is not a port\n", colon + 1);
+        return -1;
+      }
+    }
+    port = atoi(argv[3]);
+    if (type == USE_UDP && (port <= 0 || port > 65535)) {
+      printf("\"%s\" is not a port\n", argv[3]);
+      return -1;
+    }
+  }
+  if (!dport) dport = port;             /* one number means both */
 
   if (type == USE_IP)
     fd = socket(AF_INET, SOCK_RAW, port);
@@ -216,6 +244,12 @@ int ipip_attach(int argc, char *argv[], void *p)
   edv = (struct edv_t *) malloc(sizeof(struct edv_t));
   edv->type = type;
   edv->port = port;
+  /* Where we send when neither the route nor a learned source port says.  It
+   * matters beyond the sending: learn_udp_host_nat_port() asks dport for the
+   * port that makes a learned entry superfluous, so left at zero from
+   * malloc() no learned source port would ever be dropped again.
+   */
+  edv->dport = dport;
   edv->fd = fd;
   edv->family = AF_INET;
   edv->uhnp = 0;

@@ -143,10 +143,43 @@ struct cmds Attab[] = {
 	"attach netrom [ip_addr]" },
 
 	{ "axip", axip_attach, 0, 1,
-	"attach axip [<label> [ip|udp|ip6|udp6 [protocol|port]]]" },
+	"attach axip [<label> [<ip|udp|ip6|udp6> [<number>|<srcport>:<dstport>]]]\n"
+	"  AX.25 inside IP, RFC-1226.  Each word needs the one before it, so a\n"
+	"  type can only be given with a label.\n"
+	"\n"
+	"  <label>   interface name, default \"axip\"\n"
+	"  ip, ip6   a raw socket, and <number> is then the IP PROTOCOL - the\n"
+	"            field in the IP header, the way 6 is TCP and 17 is UDP\n"
+	"  udp, udp6 a UDP socket, and <number> is then the PORT.  It may be\n"
+	"            written \"<src>:<dst>\" to bind one and send to the other;\n"
+	"            one number means both, which is what it always did\n"
+	"  <number>  default 93 either way - the AX.25 protocol number of\n"
+	"            RFC-1226, and by custom the axudp port as well\n"
+	"\n"
+	"  The PEER'S ADDRESS is never here - it comes from \"axip route add\n"
+	"  <call> <host> [<port>]\", one per station.  <dstport> is only the\n"
+	"  port for routes that name none, which is worth having when the node\n"
+	"  may not bind 93 but every peer expects to be called there.\n"
+	"  A source port learned from the peer beats both." },
 
 	{ "ipip", ipip_attach, 0, 1,
-	"attach ipip [<label> [ip|udp [protocol|port]]]" },
+	"attach ipip [<label> [<ip|udp> [<number>|<srcport>:<dstport>]]]\n"
+	"  IP inside IP.  Each word needs the one before it, so a type can only\n"
+	"  be given with a label.  IPv4 only - the outer peer is the gateway of\n"
+	"  the routing table, an int32; for IPv6 there is nothing here yet.\n"
+	"\n"
+	"  <label>   interface name, default \"ipip\"\n"
+	"  ip        a raw socket, and <number> is then the IP PROTOCOL - the\n"
+	"            field in the IP header, the way 6 is TCP and 17 is UDP\n"
+	"  udp       a UDP socket, and <number> is then the PORT.  It may be\n"
+	"            written \"<src>:<dst>\" to bind one and send to the other;\n"
+	"            one number means both, which is what it always did\n"
+	"  <number>  default 4, the \"IP in IP\" protocol number\n"
+	"\n"
+	"  The PEER'S ADDRESS is never here - it is the gateway of the route\n"
+	"  that picked this interface (\"route add ... <label> <gateway>\").\n"
+	"  <dstport> is only the port to send it to; a source port learned from\n"
+	"  the peer beats it." },
 
 #if HAS_NI
 	{ "ni", ni_attach, 0, 3,

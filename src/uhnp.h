@@ -11,7 +11,15 @@ struct edv_t {
 #define USE_IP          0
 #define USE_UDP         1
   int family;                   /* AF_INET or AF_INET6 of the socket */
-  int port;
+  int port;                     /* the one we bind to.  With USE_IP this is
+                                 * the IP PROTOCOL number instead - a raw
+                                 * socket has no port. */
+  int dport;                    /* where we send when nothing else says: the
+                                 * route may carry its own, and a learned
+                                 * source port beats both.  Equal to port
+                                 * unless the sysop wrote "<src>:<dst>", which
+                                 * is why everything behaved as before while
+                                 * there was only one number. */
   int fd;
   struct udp_host_nat_port *uhnp;
   time_t uhnp_time;
