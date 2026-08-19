@@ -1313,11 +1313,19 @@
   NACHBARN zu erreichen (open_ax25 -> axroute). Das ist L2-Zustellung und
   kein Routing-Fallback; es bleibt selbstverstaendlich.
 
-  DAS KOMMANDO, entschieden: "netrom link add <call>", nicht "netrom inp3
-  add" - dasselbe Wort wie bei FlexNet fuer dieselbe Sache.
-      netrom link add <call>        adds netrom inp3 partner
-      netrom link del <call>
-      netrom link                   list
+  DAS KOMMANDO HEISST "netrom peer" - GEBAUT am 2026-08-19, erster
+  Bauschritt. "netrom link" ging nicht: "netrom links" gibt es schon (die
+  gelernten Kanten des Graphen) und nimmt sein zweites Wort bereits als
+  Knoten, "netrom links add DB0XYZ" haette also ADD als Rufzeichen gelesen -
+  genau der Fehler, den ROUTE-FILTER.md bei "flexnet filter add" beschreibt.
+  Ein eigenes "link" daneben ist auch nichts: subcmd() (cmdparse.c:323) nimmt
+  den ERSTEN Praefixtreffer ohne Mehrdeutigkeitspruefung, also haette
+  entweder "netrom li" still das Kommando gewechselt oder "link" waere von
+  "links" verdeckt gewesen. Thomas hat "peer" gewaehlt, wie flexnet.c es
+  intern nennt; "netrom p" bleibt parms, "netrom pe" trifft peer.
+      netrom peer                   list
+      netrom peer add <call>
+      netrom peer del <call>
   <call> ist Rufzeichen oder Rufzeichen-SSID, UND HIER IST LAZY ZU SEIN:
   ohne SSID geschrieben passt jede SSID, mit SSID genau diese. Vorbild ist
   addrmatch() (flexnet.c:868), das genau so einen Bereichsvergleich macht,

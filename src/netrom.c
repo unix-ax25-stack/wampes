@@ -126,6 +126,7 @@ static int dofilter(int argc, char *argv[], void *p);
 static int doident(int argc, char *argv[], void *p);
 static int donkick(int argc, char *argv[], void *p);
 static int dolinks(int argc, char *argv[], void *p);
+static int donrpeer(int argc, char *argv[], void *p);
 static int donodes(int argc, char *argv[], void *p);
 static int doparms(int argc, char *argv[], void *p);
 static int donreset(int argc, char *argv[], void *p);
@@ -165,6 +166,31 @@ struct node {
 				 * is about the station we talk to. */
   struct node *prev, *next;
 };
+
+/* The stations we are configured to run an INP3 interlink with.
+ *
+ * NET/ROM has never had a list of neighbours and has not needed one:
+ * nr3_input() makes a neighbour of whoever sends an L3 frame and
+ * calculate_all() works out the rest.  That is right for a protocol that
+ * broadcasts, and not enough for one that runs connected - INP3 has to be
+ * told whom to call, which is the same thing "flexnet link add" says and for
+ * the same reason.  It is deliberately NOT the route filter: that decides
+ * what flows once somebody speaks to us, this decides whom we speak to.
+ *
+ * WRITTEN WITHOUT AN SSID THE ENTRY MATCHES ANY.  The callsign an interlink
+ * runs under and the node's own ID need not carry the same one - TNN keeps
+ * both views side by side, find_node_this_ssid() against
+ * find_node_ssid_range() - and a sysop who writes the base callsign means the
+ * station.  With an SSID it is exact.
+ */
+
+struct nrpeer {
+  struct nrpeer *next;
+  uint8 call[AXALEN];
+  int anyssid;                  /* written without one: any SSID will do */
+};
+
+static struct nrpeer *nrpeers;
 
 static struct broadcast *broadcasts;
 static struct node *nodes, *mynode;
@@ -410,6 +436,32 @@ int nr_is_neighbour(const uint8 *call)
   for (pl = mynode->links; pl; pl = pl->next)
     if (pl->node == pn) return link_valid(mynode, pl);
   return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Is this callsign one of the configured interlink partners?  The SSID is
+ * compared only when the entry carries one - see struct nrpeer.
+ */
+
+static int nrpeer_match(const struct nrpeer *pp, const uint8 *call)
+{
+  if (pp->anyssid) return !memcmp(pp->call, call, ALEN);
+  return addreq(pp->call, call);
+}
+
+static struct nrpeer *nrpeer_find(const uint8 *call)
+{
+  struct nrpeer *pp;
+
+  for (pp = nrpeers; pp; pp = pp->next)
+    if (nrpeer_match(pp, call)) return pp;
+  return 0;
+}
+
+int nr_is_peer(const uint8 *call)
+{
+  return nrpeer_find(call) != NULL;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -2252,6 +2304,104 @@ static int donkick(int argc, char *argv[], void *p)
 
 /*---------------------------------------------------------------------------*/
 
+/* netrom peer [add|del <call>]
+ *
+ * The list itself does nothing yet - an interlink is not built here.  It is
+ * the thing everything else needs first: who is a partner is a decision, not
+ * something to be read off the air, and INP3 cannot start a connection to
+ * somebody nobody named.
+ *
+ * "add" and "del" rather than the "--delete" that the filter uses, because
+ * this is a list of stations and not a set of rules: flexnet link add/del is
+ * the same list and the operator should not have to remember two spellings.
+ */
+
+static int donrpeer(int argc, char *argv[], void *p)
+{
+
+  char buf[AXBUF];
+  int anyssid;
+  struct nrpeer *pp, **ppp;
+  uint8 call[AXALEN];
+
+  (void) p;
+
+  if (argc < 2) {
+    struct node *pn;
+
+    if (!nrpeers) {
+      printf("No interlink partners - \"netrom peer add <call>\"\n");
+      return 0;
+    }
+    printf("Call       SSID   Known as\n");
+    for (pp = nrpeers; pp; pp = pp->next) {
+      int seen = 0;
+
+      printf("%-9s  %-5s  ", pax25(buf, pp->call),
+	     pp->anyssid ? "any" : "exact");
+      /* What the entry actually catches today.  With "any" it may be more
+       * than one, and that is the whole point of writing it that way - so
+       * show them rather than leaving the operator to guess.
+       */
+      for (pn = nodes; pn; pn = pn->next) {
+	if (pn == mynode || !nrpeer_match(pp, pn->call)) continue;
+	printf("%s%s%s", seen++ ? ", " : "", pax25(buf, pn->call),
+	       nr_is_neighbour(pn->call) ? " (neighbour)" : "");
+      }
+      printf("%s\n", seen ? "" : "-");
+    }
+    return 0;
+  }
+
+  if (!strcmp(argv[1], "add") || !strcmp(argv[1], "del")) {
+    if (argc < 3) {
+      printf("Which station?\n");
+      return 1;
+    }
+    if (setcall(call, argv[2])) {
+      printf("Invalid call \"%s\"\n", argv[2]);
+      return 1;
+    }
+    /* An SSID was MEANT only if one was written.  setcall() cannot say so -
+     * it fills in zero - so the text is what decides.
+     */
+    anyssid = (strchr(argv[2], '-') == NULL);
+
+    if (*argv[1] == 'd') {
+      for (ppp = &nrpeers; (pp = *ppp); ppp = &pp->next)
+	if (pp->anyssid == anyssid && addreq(pp->call, call)) {
+	  *ppp = pp->next;
+	  free(pp);
+	  return 0;
+	}
+      printf("No such partner \"%s\"\n", argv[2]);
+      return 1;
+    }
+
+    if (addreq(call, Mycall)) {
+      printf("That is us\n");
+      return 1;
+    }
+    for (pp = nrpeers; pp; pp = pp->next)
+      if (pp->anyssid == anyssid && addreq(pp->call, call)) return 0;
+    if (!(pp = (struct nrpeer *) calloc(1, sizeof(struct nrpeer)))) {
+      printf("%s", Nospace);
+      return 1;
+    }
+    addrcp(pp->call, call);
+    pp->anyssid = anyssid;
+    pp->next = nrpeers;
+    nrpeers = pp;
+    return 0;
+  }
+
+  printf("There is no \"%s\" here - the words are \"add\" and \"del\"\n",
+	 argv[1]);
+  return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static int dolinks(int argc, char *argv[], void *p)
 {
 
@@ -2541,6 +2691,17 @@ int donetrom(int argc, char *argv[], void *p)
     { "links",    dolinks,    0, 0, "netrom links                           our neighbours" },
     { "nodes",    donodes,    0, 0, "netrom nodes [<node>]                  the routing table" },
     { "parms",    doparms,    0, 0, "netrom parms [<n> <value>]...          list or set the parameters" },
+    { "peer",     donrpeer,   0, 0,
+      "netrom peer                            the interlink partners\n"
+      "       netrom peer add|del <call>\n"
+      "  Whom we run an INP3 interlink with.  NET/ROM needs no such list -\n"
+      "  it broadcasts, and a neighbour is whoever answers - but INP3 runs\n"
+      "  connected and has to be told whom to call.  The same statement as\n"
+      "  \"flexnet link add\", and not the same question as \"netrom filter\",\n"
+      "  which says what flows once somebody speaks to us.\n"
+      "  Written WITHOUT an SSID the entry matches any: the callsign a link\n"
+      "  runs under and the node's own ID need not carry the same one.\n"
+      "  \"netrom links\" is a different thing - the edges we have learned." },
     { "reset",    donreset,   0, 2, "netrom reset <nrcb>" },
     { "status",   donstatus,  0, 0, "netrom status [<nrcb>]                 the transport circuits" },
     { NULL,       NULL,       0, 0, NULL }

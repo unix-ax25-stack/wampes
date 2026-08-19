@@ -1964,7 +1964,15 @@ void axserv_connected(struct ax25_cb *axp)
    * start.  A sysop connecting from a linked node therefore still reaches
    * the mailbox, one keystroke later.
    */
-  partner = nr_is_neighbour(axp->hdr.dest) || flexnet_is_peer(axp->hdr.dest);
+  /* nr_is_peer() is the configured interlink partner, and it belongs here
+   * even before the interlink itself exists: he was named as a partner, so a
+   * greeting is wrong whether or not he has said anything yet.  The other two
+   * ask what a station has already done, and a partner that has just come up
+   * has done nothing - which is exactly when the greeting would land in his
+   * first L3 frame.
+   */
+  partner = nr_is_neighbour(axp->hdr.dest) || nr_is_peer(axp->hdr.dest) ||
+	    flexnet_is_peer(axp->hdr.dest);
 
   for (lp = Axlisten; lp; lp = lp->next)
     if (!lp->netrom && !lp->wait && !partner
