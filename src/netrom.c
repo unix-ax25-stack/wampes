@@ -266,6 +266,15 @@ struct nrpeer {
   int lastrtt;                  /* the last round trip, unsmoothed, for the
                                  * display - a smoothed value alone hides a
                                  * link that has just got worse */
+  int hissrtt;                  /* HIS measurement of the link to us, out of
+                                 * his own L3RTT frame.  0 = he has not got
+                                 * one yet, and then there is no point telling
+                                 * him anything: he adds this to every route
+                                 * time we send, and without it every one of
+                                 * them arrives short by the length of the
+                                 * link.  TNN waits for both measurements
+                                 * before it announces, and this is the half
+                                 * that is not ours. */
   int inp3;                     /* he sent "$N": he speaks INP3 */
   int maxtime;                  /* his "$M": do not tell him about anything
                                  * slower than this.  0 = he named none */
@@ -638,7 +647,7 @@ static int nrpeer_isnew(struct nrpeer *pp, struct ax25_cb *axp)
 {
   if (!axp || axp->state != LAPB_CONNECTED || pp->id == axp->id) return 0;
   pp->id = axp->id;
-  pp->srtt = pp->lastrtt = pp->rttstart = 0;
+  pp->srtt = pp->lastrtt = pp->rttstart = pp->hissrtt = 0;
   pp->inp3 = pp->maxtime = 0;
   pp->rttcount = pp->sweepcount = 0;
   /* A new connection: he announces again from scratch, and what the old one
@@ -822,14 +831,25 @@ static void nrpeer_read_flags(struct mbuf *bp, struct node *fromneighbor)
   char buf[200];
   char *cp;
   struct nrpeer *pp;
+  unsigned long tic, hissrtt, hislast, id;
 
   if (!(pp = nrpeer_find(fromneighbor->call))) return;
   if (!nrpeer_rtt_text(bp, buf, sizeof(buf))) return;
-  /* Before anything is taken from it: this frame may be the first thing on a
-   * connection we have not counted yet, and a reset afterwards would undo
-   * exactly what we are about to read.
+  /* FIRST, and before anything is taken from the frame: it may be the first
+   * thing on a connection we have not counted yet, and the reset would
+   * otherwise undo exactly what we are about to read.  Measured: with these
+   * two the wrong way round the first announcement was twenty seconds late,
+   * because the value below was taken and then cleared again.
    */
   nrpeer_seen(pp);
+  /* The second number in his frame is HIS smoothed time to US - the same
+   * field we write our own srtt into.  It is not decoration: he adds it to
+   * every route time we send him, so until he has one there is nothing worth
+   * telling him.
+   */
+  if (sscanf(buf + 6, "%lu %lu %lu %lu", &tic, &hissrtt, &hislast, &id) == 4 &&
+      hissrtt <= NRRTT_MAX)
+    pp->hissrtt = (int) hissrtt;
   /* "$N" is the whole negotiation: he speaks INP3 and wants to.  A neighbour
    * that never sends it gets the classic broadcast from us and nothing else.
    */
@@ -1555,43 +1575,61 @@ static int inp3_report_time(const struct node *pd, const struct nrpeer *pp,
 
 /*---------------------------------------------------------------------------*/
 
-/* Is this worth a frame?  INP3 announces CHANGES, and the whole art of it is
- * in not announcing them too eagerly - a route that flaps costs every node
- * downstream a recalculation, and the ones behind them another.
+/* WHAT TO PUT ON THE WIRE for this destination, or -1 for "say nothing".
  *
- * The thresholds are TNN's, out of inform_peer(): bad news at once, good news
- * only when it is substantial by three separate measures at the same time,
- * and a destination mentioned for the first time only when it is comfortably
- * inside the ceiling, so that it is not withdrawn again on the next tick.
+ * INP3 announces CHANGES, and the whole art of it is in not announcing them
+ * too eagerly: a route that flaps costs every node behind us a recalculation,
+ * and the ones behind them another.  The thresholds are TNN's, read off
+ * inform_peer() (l3netrom.c:706-866).
  *
- * ONE PART OF THIS IS A READING AND NOT A QUOTATION, and it is marked because
- * a reading of the same notes has already turned out wrong once.  The note
- * says a worsening is damped by "12.5 % plus half the time to the neighbour";
- * the sources it was taken from are not to hand.  It is applied here as a
- * band the worsening has to clear, which is what produces the hysteresis the
- * note gives as the reason - but the note says "lowered", and a band is
- * raised.  TO BE CHECKED against l3netrom.c:706 when the sources are back.
- * It is a damping constant and not a protocol rule: getting it wrong costs
- * frames or delay, not correctness.
+ * NOTE THAT THIS IS NOT ALWAYS THE VALUE WE HOLD, and that is the part I had
+ * built backwards before the sources were to hand again.  A worsening goes
+ * out AT ONCE - negative information has priority and the specification
+ * gives it a guaranteed maximum delay - but it goes out PESSIMISTICALLY,
+ * inflated by an eighth of itself plus half the link time.  The damping then
+ * costs nothing further: because the inflated figure is what we remember
+ * having said, every further small worsening up to it is no longer a
+ * worsening at all and needs no frame.
+ *
+ * What I had instead was a band the worsening had to clear before being sent
+ * truthfully - which damps just as well and withholds bad news to do it.
+ * That is the one thing this protocol is emphatic about not doing.
  */
 
-static int inp3_worth_saying(const struct nrpeer *pp, int now, int old,
-			     int sweep, int congested)
+static int inp3_to_say(const struct nrpeer *pp, int now, int old,
+		       int sweep, int congested)
 {
   int ceiling = pp->maxtime ? pp->maxtime : NRRTT_MAX;
+  int diff;
 
-  if (!now) return old != 0;            /* withdrawal, and only if he has it */
-  if (sweep) return 1;
-  if (!old) return now * 2 < ceiling;   /* the first word about it */
-  if (now > old) return now > old + old / 8 + pp->srtt / 2;
+  if (!now) return old ? 0 : -1;        /* withdrawal, and only if he has it */
+  if (sweep) return now;
+  /* The first word about it, and only well inside his ceiling: mentioned at
+   * the very edge, the next slight worsening would have to withdraw it again.
+   */
+  if (!old) return now * 2 <= ceiling ? now : -1;
+  if (now == old) return -1;
+
   if (now < old) {
-    /* A link with a queue on it is a link that has other things to do.  The
-     * news is good, so it can wait for a tick when it is cheap.
+    /* Good news, and it has to be substantial by four separate measures at
+     * once.  The last is the plainest: a link with a queue on it has other
+     * things to do, and this can wait for a tick when it is cheap.
      */
-    if (congested) return 0;
-    return now * 2 <= old && old - now >= 10 && old - now > pp->srtt / 2;
+    diff = old - now;
+    if (diff < old / 2) return -1;              /* at least half again */
+    if (diff < 10) return -1;                   /* at least 100 ms */
+    if (diff < pp->srtt / 2) return -1;         /* worth more than the link */
+    if (congested) return -1;
+    return now;
   }
-  return 0;
+
+  now += now / 8 + pp->srtt / 2;
+  /* Inflated past what he asked for, so it is not a route as far as he is
+   * concerned.  Withdrawn rather than sent as something he would only throw
+   * away.
+   */
+  if (now > ceiling) return 0;
+  return now;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1671,11 +1709,14 @@ static void inp3_inform_peer(struct nrpeer *pp, struct ax25_cb *axp)
   uint8 *tocall;
 
   if (!mynode || !axp || axp->state != LAPB_CONNECTED) return;
-  /* Nothing agreed, or nothing measured.  Without an SNTT we would be asking
-   * him to add a number we have not got, and every route we named would be
-   * short by the length of the link.
+  /* Nothing agreed, or the measurement is not yet complete at BOTH ends -
+   * which is TNN's condition and not an obvious one.  Ours is needed because
+   * every route time we send is built on it.  HIS is needed because he adds
+   * his own to each of them, and until he has one every route we name arrives
+   * at him short by the length of the link - which makes us look better than
+   * we are, exactly at the moment we know least.
    */
-  if (!pp->inp3 || !pp->srtt) return;
+  if (!pp->inp3 || !pp->srtt || !pp->hissrtt) return;
 
   mtu = axp->iface ? axp->iface->mtu : 256;
   if (mtu > 256) mtu = 256;
@@ -1693,9 +1734,9 @@ static void inp3_inform_peer(struct nrpeer *pp, struct ax25_cb *axp)
     int n = 0;
     int now = inp3_report_time(pd, pp, tocall, &hops);
     struct nrinp3 *rp = inp3_route(pd, pp, 0);
+    int say = inp3_to_say(pp, now, rp ? rp->reported : 0, sweep, congested);
 
-    if (!inp3_worth_saying(pp, now, rp ? rp->reported : 0, sweep, congested))
-      continue;
+    if (say < 0) continue;
 
     for (;;) {
       if (!bp) {
@@ -1705,7 +1746,7 @@ static void inp3_inform_peer(struct nrpeer *pp, struct ax25_cb *axp)
 	bp->cnt = 2;
       }
       if ((n = inp3_put_rip(bp->data + bp->cnt, mtu + 1 - (int) bp->cnt,
-			    pd, now ? now : INP3_HORIZON, hops)) > 0) break;
+			    pd, say ? say : INP3_HORIZON, hops)) > 0) break;
       if (bp->cnt <= 2) break;          /* longer than a whole frame: leave it */
       send_ax25(axp, &bp, -1);
       bp = NULL;
@@ -1713,13 +1754,15 @@ static void inp3_inform_peer(struct nrpeer *pp, struct ax25_cb *axp)
     if (n <= 0) continue;
     bp->cnt += n;
 
-    /* Remembered only once it is in a frame.  A cell may have to be made for
-     * it: a destination he never mentioned has none, and from now on what we
-     * told him about it is exactly what that cell is for.
+    /* Remembered only once it is in a frame, and it is what we SAID that is
+     * remembered, not what we hold - a worsening was inflated on the way out,
+     * and remembering the true figure would make us say it again next tick.
+     * A cell may have to be made for it: a destination he never mentioned has
+     * none, and from now on that is exactly what the cell is for.
      */
-    if (!rp && now) rp = inp3_route(pd, pp, 1);
+    if (!rp && say) rp = inp3_route(pd, pp, 1);
     if (rp) {
-      rp->reported = now;
+      rp->reported = say;
       if (!rp->time && !rp->reported) inp3_route_drop(pd, pp);
     }
   }
@@ -3557,9 +3600,10 @@ static int donrpeer(int argc, char *argv[], void *p)
       printf("No interlink partners - \"netrom peer add <call>\"\n");
       return 0;
     }
-    printf("Call       SSID   Interlink   INP3   SNTT     Last     Known as\n");
+    printf("Call       SSID   Interlink   INP3   SNTT     His      Last     "
+	   "Known as\n");
     for (pp = nrpeers; pp; pp = pp->next) {
-      char inp3[16], sntt[16], last[16];
+      char inp3[16], sntt[16], last[16], his[16];
       uint8 *target = nrpeer_target(pp);
       struct ax25_cb *axp = target ? find_ax25(target) : NULL;
       int seen = 0;
@@ -3576,6 +3620,14 @@ static int donrpeer(int argc, char *argv[], void *p)
 	sprintf(last, "%d.%02ds", pp->lastrtt / 100, pp->lastrtt % 100);
       else
 	strcpy(last, "-");
+      /* HIS measurement of us, out of his own frame.  Shown because nothing
+       * is announced until it is there, and a dash in this column is then the
+       * whole explanation for a partner that is up, agreed and silent.
+       */
+      if (pp->hissrtt)
+	sprintf(his, "%d.%02ds", pp->hissrtt / 100, pp->hissrtt % 100);
+      else
+	strcpy(his, "-");
       /* His "$M" belongs beside his "$N", because it only means anything
        * once he speaks INP3: it is the ceiling HE puts on what we may report
        * to him, and it is shown so that a value we have taken can be seen.
@@ -3587,14 +3639,14 @@ static int donrpeer(int argc, char *argv[], void *p)
       else
 	strcpy(inp3, "yes");
 
-      printf("%-9s  %-5s  %-10s  %-5s  %-7s  %-7s  ", pax25(buf, pp->call),
+      printf("%-9s  %-5s  %-10s  %-5s  %-7s  %-7s  %-7s  ", pax25(buf, pp->call),
 	     pp->anyssid ? "any" : "exact",
 	     /* Not "down" when we do not even know whom to call: an SSID-less
 	      * entry with nobody heard of yet is waiting, not failing.
 	      */
 	     axp    ? Ax25states[axp->state] :
 	     target ? "down" : "no call yet",
-	     inp3, sntt, last);
+	     inp3, sntt, his, last);
       /* What the entry actually catches today.  With "any" it may be more
        * than one, and that is the whole point of writing it that way - so
        * show them rather than leaving the operator to guess.

@@ -1434,19 +1434,55 @@
   HOP-ZAEHLER wird NICHT erhoeht - das tut der Empfaenger, beides zusammen
   zaehlte uns doppelt.
 
-  DIE DOSIERUNG, aus inform_peer(): Ruecknahme sofort; Verschlechterung nur,
-  wenn sie ein Band aus 12,5 % plus halber Nachbarlaufzeit ueberschreitet;
-  Verbesserung nur, wenn sie zugleich >= 50 %, >= 100 ms und groesser als die
-  halbe Nachbarlaufzeit ist und der Link nicht verstopft (len_q(txq) > 7);
-  Erstmeldung nur unter maxtime/2. Poison Reverse: dem Partner, ueber den der
-  beste Weg laeuft, sagen wir nichts ueber dieses Ziel. Stuendlich ein
-  Volldurchlauf (NRSWEEP_EVERY 360), der alles noch einmal sagt.
-  ZU PRUEFEN, WENN DIE TNN-QUELLEN WIEDER DA SIND: die Notiz sagt bei der
-  Verschlechterung "abgesenkt", ein Band ist aber angehoben. Gebaut ist das
-  Band, weil die Notiz "damit es nicht flattert" als Grund nennt und genau
-  das ein Band tut. l3netrom.c:706. Es ist eine Daempfungskonstante, kein
-  Protokollpunkt - falsch herum kostet Rahmen oder Verzoegerung, nicht
-  Richtigkeit.
+  DIE DOSIERUNG, aus inform_peer(): Ruecknahme sofort; Verbesserung nur, wenn
+  sie zugleich >= 50 %, >= 100 ms und mindestens die halbe Nachbarlaufzeit
+  betraegt und der Link nicht verstopft ist (len_q(txq) > 7); Erstmeldung nur
+  bis maxtime/2. Poison Reverse: dem Partner, ueber den der beste Weg laeuft,
+  sagen wir nichts ueber dieses Ziel. Stuendlich ein Volldurchlauf
+  (NRSWEEP_EVERY 360), der alles noch einmal sagt.
+
+  DIE VERSCHLECHTERUNG GEHT SOFORT RAUS, ABER PESSIMISTISCH - und das hatte
+  ich vor dem 2026-08-20 genau falsch herum gebaut. An den wieder
+  vorliegenden Quellen geklaert (l3netrom.c:841-853):
+      quality += quality / 8 + pp->quality / 2;
+      if (quality > maxtime) quality = 0;
+  quality FUEHRT ZEIT, "absenken" im TNN-Kommentar meint also die Qualitaet
+  und heisst fuer die Zeit: ERHOEHEN. Gemeldet wird sofort, aber ein Achtel
+  schlechter plus die halbe Linklaufzeit. Die Daempfung kostet danach
+  nichts mehr, weil der aufgeschlagene Wert der ist, den wir uns als
+  "gemeldet" merken - jede weitere kleine Verschlechterung bis dorthin ist
+  dann gar keine mehr. Wird der aufgeschlagene Wert groesser als maxtime,
+  wird abgemeldet.
+  MEIN FEHLER WAR EIN BAND, das die Verschlechterung erst ueberschreiten
+  musste, bevor sie wahrheitsgemaess gemeldet wurde. Daempft genauso gut und
+  haelt dafuer schlechte Nachrichten zurueck - das eine, was dieses Protokoll
+  ausdruecklich nicht will ("Verschlechterungen muessen immer sofort
+  uebertragen werden!").
+  Gemessen: 15,04s -> 15,54s geht als 17,49s raus. 1554 + 194 + 1.
+
+  ERST MELDEN, WENN BEIDE GEMESSEN HABEN (l3misc.c:395-398,
+  "if (!pp->my_quality || !pp->his_quality) return"). Unsere Messung
+  brauchen wir, weil jede gemeldete Laufzeit darauf aufbaut; SEINE brauchen
+  wir, weil er sie auf alles aufschlaegt, was wir ihm nennen - ohne sie
+  kommt jede Route bei ihm um die Linklaufzeit zu kurz an, und wir sehen
+  besser aus als wir sind, genau wenn wir am wenigsten wissen. Sein Wert
+  steht im ZWEITEN Feld seines eigenen L3RTT-Textes (l3rtt.c:218 schreibt
+  ihn, :523 liest ihn als his_quality). Neue Spalte "His" in "netrom peer";
+  ein Strich dort ist die ganze Erklaerung fuer einen Partner, der steht,
+  zugestimmt hat und trotzdem nichts bekommt.
+
+  DAS "#"-ALIAS, jetzt an der Quelle geklaert (l3netrom.c:767-772): TNN
+  UNTERDRUECKT es tatsaechlich - meine urspruengliche Notiz war richtig
+  gelesen -, und zwar mit einer Feinheit: hatten wir den Knoten schon
+  gemeldet, wird er ABGEMELDET statt nur uebersprungen.
+      if (np->alias[0] == '#') { if (!reported_quality) continue;
+                                 quality = 0; }
+  WIR MACHEN ES TROTZDEM NICHT, und der Grund ist WAMPES und nicht TNN:
+  send_broadcast() unterdrueckt "#" nicht, wir wuerden es also nur auf einer
+  der beiden Ausgangskanten tun. Dazu Thomas' Punkt, dass "#" hier "Nutzern
+  nicht anzeigen" heisst (net.rc.dl1sbl-1: netrom ident "#BOEB1"). Wer es
+  will, muss es an BEIDEN Kanten tun - dann waere es eine Entscheidung und
+  keine halbe.
 
   RUECKNAHME GEHT ALS HORIZONT (60000) UND NIE ALS ECHTE NULL, wie TNNs
   add_inp_info() es schreibt, und ohne Optionen: die beschreiben einen
