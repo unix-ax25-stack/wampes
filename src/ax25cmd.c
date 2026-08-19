@@ -624,6 +624,18 @@ void *p)
   }
 
   if (!strcmp(*argv, "default")) {
+    /* "default" names an INTERFACE and nothing else - there is no default
+     * path, and there never was.  Anything written after it used to be
+     * dropped without a word, so "ax25 route add axudp default igate" read
+     * as though it had set a digipeater for everything and had set none.
+     * Refused rather than half done: what was meant is a different line.
+     */
+    if (argc > 1) {
+      printf("\"default\" is an interface, not a path - there is no default\n"
+	     "digipeater.  Leave \"%s\" out, or write the path instead of\n"
+	     "\"default\" to route one destination that way\n", argv[1]);
+      return 1;
+    }
     Axroute_default_ifp = iface;
     return 0;
   }
