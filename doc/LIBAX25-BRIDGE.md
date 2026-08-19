@@ -310,6 +310,61 @@ both callers connected at the same time and each answered under its own
 callsign, while a second listener on DL9SAU-13 got
 `listen: Address already in use`.
 
+## NET/ROM sessions to the same client
+
+A NET/ROM connect reaches the **node**, not a service on it: there is no
+callsign in an L4 connect request to listen for, only the calling user and the
+node he sits on.  So a mailbox that libax25 programs reach as `DL9SAU-8` over
+AX.25 could not be reached over NET/ROM at all - `listen netrom add` knew
+`builtin:login`, a socket and a program, and nothing that hands a session to a
+client.  Written anyway, `client` was accepted, listed as `client`, and then
+served the login, because `axpipe_new()` tried to *dial* the word.
+
+The entry now names whose client is meant:
+
+    listen ax25   add DL9SAU-8 client       the permission, as before
+    listen netrom add client:DL9SAU-8       L4 sessions go there too
+
+Nothing on the Linux side changes, and that is the point.  The shim reads two
+callsigns out of the handover line and never asks which protocol carried the
+call, so the session is announced in the ordinary shape:
+
+    netrom DL1ABC-7,DL1TST-1 > DL9SAU-8
+
+The **node the user sits on goes where a digipeater would**, which is what it
+is - the way the call came - and `parse_call()` reads it as one.  The program
+sees `DL1ABC-7 via DL1TST-1` calling `DL9SAU-8`; `ax25d` picks its stanza by
+the callsign after the `>` exactly as it always does.
+
+**Whether the two protocols mesh is the sysop's choice, written in the
+callsign.**  The same one an AX.25 listener uses means one program takes both
+kinds of call.  A different one keeps them apart, because the client is told
+which callsign was reached.
+
+**The entry holds the callsign and never a pointer.**  It is looked up per
+session, so `listen ax25 drop DL9SAU-8` or a rewrite to `tcp:` leaves nothing
+dangling - and a session already handed over is not touched either, since
+`struct axpipe` keeps no entry, only its descriptor.  What it does mean is
+that the NET/ROM entry then finds nobody and the session falls back to the
+node's own login, so both commands say so:
+
+      "listen netrom add client:DL9SAU-8" now has no client - NET/ROM
+      sessions go to the node's own login until one holds it again
+
+The claim itself is not inherited: `client:<call>` asks for a *client*, not
+for whatever is configured there now.  A NET/ROM entry that should dial a
+socket says so itself, with `listen netrom add tcp:...`.
+
+Measured, 2026-08-19, with `listener.py` holding DL9SAU-8 and an L4 connect
+request addressed to the node:
+
+    accept: 'netrom DL1ABC-7,DL1TST-1 > DL9SAU-8'  fds=[4]
+    vom Anrufer: b'hallo mailbox\n'
+
+Data ran both ways with the CR/LF conversion in place, and with no client
+holding the callsign the session took the unchanged login path - verified
+against a run without the `listen netrom` line, which behaves identically.
+
 ## What a spawned service is told
 
 A `listen ax25 add <call> /path/to/program` runs the program with the call on

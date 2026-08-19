@@ -113,6 +113,28 @@ static struct axlisten *axlisten_netrom(void)
 
 /*---------------------------------------------------------------------------*/
 
+/* Is a "client:<call>" NET/ROM entry pointing at this callsign?
+ *
+ * That entry holds the CALLSIGN and never a pointer to the AX.25 entry, which
+ * is what makes dropping or rewriting the latter safe: there is nothing to go
+ * stale, the callsign is looked up again for every session, and a session
+ * already handed over holds only its own descriptor (struct axpipe keeps no
+ * entry either).  What the lookup cannot do is warn anybody, so the commands
+ * that take the client away ask this and say so.
+ */
+
+static struct axlisten *axlisten_netrom_pointing_at(const uint8 *call)
+{
+  struct axlisten *lp;
+
+  for (lp = Axlisten; lp; lp = lp->next)
+    if (lp->netrom && lp->kind == LK_CLIENT && addreq(lp->call, call))
+      return lp;
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 int axlisten_active(const uint8 *call)
 {
   struct axlisten *lp;
@@ -169,6 +191,18 @@ char Axlisten_usage[] =
 "  <target>   builtin:login          the node's own login, as it always was\n"
 "             tcp:<host>:<port>      dial it and pipe; unix:<path> likewise\n"
 "             /path/to/program args  run it and pipe\n"
+"             client                 give the call to a libax25 program that\n"
+"                                    claims this callsign over the service\n"
+"                                    socket - ax25d, a mailbox, anything that\n"
+"                                    binds and listens.  This line IS the\n"
+"                                    permission: a callsign nobody configured\n"
+"                                    cannot be claimed.  doc/LIBAX25-BRIDGE.md\n"
+"             client:<call>          netrom only: hand the session to whoever\n"
+"                                    holds <call>, shown as a call to <call>.\n"
+"                                    Same callsign as an ax25 listener meshes\n"
+"                                    the two; a different one keeps them\n"
+"                                    apart, since the program is told which\n"
+"                                    callsign was reached\n"
 "  <switch>   --silent/--noisy, --wait/--nowait, --ascii/--binary\n"
 "  port=      a comma separated list of ports, \"!\" in front to exclude\n"
 "  pid=       the protocol id, default text (0xf0).  I and UI are two\n"
@@ -193,6 +227,36 @@ static const char *axlisten_kindname(struct axlisten *lp)
   case LK_CLIENT:  return "client";
   default:         return "socket";
   }
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Where the entry hands a call to, in the one wording used both by the
+ * listing and by the line that reports a replacement - written down twice,
+ * the two would drift apart.
+ */
+
+static const char *axlisten_targetname(const struct axlisten *lp)
+{
+  if (lp->kind != LK_CLIENT) return lp->target;
+  /* A NET/ROM entry does not hold a claim of its own - it names the callsign
+   * whose client takes the session, and THAT entry is where the claim lives.
+   * Reporting "nobody" here would be about the wrong entry.
+   */
+  if (lp->netrom) return lp->target;
+  return lp->clientfd >= 0 ? "client (claimed)" : "client (nobody)";
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* One header for both views - the whole list and one protocol's - because a
+ * column layout that is written down twice is one that drifts apart.
+ */
+
+static void axlisten_header(void)
+{
+  printf(" #  Call       I/UI Pid       Kind    Mode     Ports      "
+	 "State                          Handed to\n");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -222,9 +286,7 @@ static void axlisten_show(struct axlisten *lp, int n)
 	 axlisten_kindname(lp), lp->binary ? "binary" : "ascii",
 	 ports,
 	 lp->disabled ? (lp->why ? lp->why : "inactive") : "active",
-	 lp->kind == LK_CLIENT
-	   ? (lp->clientfd >= 0 ? "client (claimed)" : "client (nobody)")
-	   : lp->target,
+	 axlisten_targetname(lp),
 	 lp->silent ? "  silent" : "", lp->wait ? "  wait" : "");
 }
 
@@ -239,6 +301,18 @@ static int axlisten_drop(int netrom, const uint8 *call, int pid, int ui)
     if (lp->netrom != netrom) continue;
     if (!netrom && (lp->pid != pid || lp->ui != ui || !addreq(lp->call, call)))
       continue;
+    /* A NET/ROM entry may be sending its sessions to this callsign's client.
+     * It holds the callsign and not a pointer, so nothing here dangles - but
+     * from now on it finds nobody, and that should not happen quietly.
+     */
+    if (!netrom && lp->kind == LK_CLIENT &&
+	axlisten_netrom_pointing_at(lp->call)) {
+      char cbuf[AXBUF];
+
+      printf("  \"listen netrom add client:%s\" now has no client - NET/ROM\n"
+	     "  sessions go to the node's own login until one holds it again\n",
+	     pax25(cbuf, lp->call));
+    }
     *pp = lp->next;
     portlist_free(&lp->ports);
     free(lp->target);
@@ -255,8 +329,13 @@ static int axlisten_add(int netrom, int argc, char *argv[])
 
   char *target;
   char buf[512];
+  char callbuf[AXBUF];
+  char oldtarget[160];
   int ascii_set = 0;
   int i;
+  int lostclaim = 0;
+  int replaced = 0;
+  int wasclient = 0;
   int noisy_set = 0;
   int pid = PID_NO_L3;
   long n;
@@ -379,6 +458,32 @@ static int axlisten_add(int netrom, int argc, char *argv[])
     if (binary < 0) binary = 0;
   }
 
+  /* "client" hands the call to a program that claimed a CALLSIGN over the
+   * service socket.  A NET/ROM session has no callsign of its own - it
+   * reaches the node, not a service on it - so a NET/ROM entry has to name
+   * the callsign whose client is meant, and "client" alone cannot say it.
+   *
+   * Written as the same callsign an AX.25 listener uses, the two are meshed
+   * on purpose: one program takes both kinds of call.  Written as a different
+   * one, they stay apart, because the client is told which callsign was
+   * reached - the same field ax25d picks its stanza by.
+   */
+  if (netrom && !strcmp(target, "client")) {
+    printf("A NET/ROM session has no callsign of its own - write "
+	   "\"client:<call>\"\nto hand it to the program holding <call>\n");
+    return 1;
+  }
+  if (!netrom && !strncmp(target, "client:", 7)) {
+    printf("An AX.25 listener already has its callsign - write \"client\"\n");
+    return 1;
+  }
+  if (netrom && !strncmp(target, "client:", 7)) {
+    if (!target[7] || setcall(call, target + 7)) {
+      printf("\"%s\" is not a callsign\n", target + 7);
+      return 1;
+    }
+  }
+
   /* Everything that can be refused is refused before anything is created.
    * The port list used to be set on the entry after it was linked in, so a
    * rejected list left an entry behind that listened on EVERY port - wider
@@ -401,14 +506,30 @@ static int axlisten_add(int netrom, int argc, char *argv[])
     lp->clientfd = -1;
     lp->next = Axlisten;
     Axlisten = lp;
-  } else
+  } else {
+    /* An "add" for a callsign already listed REPLACES that entry, and it used
+     * to do so without a word.  A sysop who meant to add a second listener saw
+     * nothing telling him he had overwritten the first - and for a claimed
+     * client entry the silent replacement takes a running program's listener
+     * away from it.  Keep what was there; the line is printed once the new
+     * target is known, so it can name both.
+     */
+    snprintf(oldtarget, sizeof(oldtarget), "%s", axlisten_targetname(lp));
+    wasclient = (lp->kind == LK_CLIENT);
+    replaced = 1;
     free(lp->target);
+  }
 
   if (!strcmp(target, "builtin:login"))
     lp->kind = LK_LOGIN;
-  else if (!strcmp(target, "client"))
+  else if (!strcmp(target, "client") || !strncmp(target, "client:", 7)) {
     lp->kind = LK_CLIENT;
-  else if (*target == '/')
+    /* A NET/ROM entry carries a callsign that is not its own to listen for:
+     * it names whose client takes the session, and it is what the far end is
+     * told it reached.  On an AX.25 entry the callsign is already there.
+     */
+    if (netrom) addrcp(lp->call, call);
+  } else if (*target == '/')
     lp->kind = LK_PROGRAM;
   else {
     lp->kind = LK_SOCKET;
@@ -427,7 +548,34 @@ static int axlisten_add(int netrom, int argc, char *argv[])
    * descriptor, so the announcement must not also go down the pipe - it
    * would be the first thing the far end read as data.
    */
-  if (lp->kind == LK_CLIENT) lp->silent = 1;
+  if (lp->kind == LK_CLIENT)
+    lp->silent = 1;
+  else if (lp->clientfd >= 0) {
+    /* It stops being a client entry while a client still holds it.  The claim
+     * belongs to the entry, so it goes with it - otherwise the descriptor sits
+     * here unreachable: axlisten_client_gone() only clears LK_CLIENT entries,
+     * so a later switch back to "client" would show a long dead fd as
+     * "claimed" and refuse the next claimant with "already taken".
+     */
+    lp->clientfd = -1;
+    lostclaim = 1;
+  }
+  if (replaced)
+    printf("%s: changed from %s to %s%s\n",
+	   netrom ? "netrom" : pax25(callbuf, lp->call),
+	   oldtarget, axlisten_targetname(lp),
+	   lostclaim ? " - the program that had claimed it loses the listener"
+		     : "");
+  /* It has stopped being a client entry, and a NET/ROM entry sends its
+   * sessions to the client of this callsign.  Nothing breaks - the lookup
+   * simply finds no client and the session goes to the node's own login - but
+   * silently, which is the wrong way for a configuration to change meaning.
+   */
+  if (!netrom && wasclient && lp->kind != LK_CLIENT &&
+      axlisten_netrom_pointing_at(lp->call))
+    printf("  \"listen netrom add client:%s\" now has no client - NET/ROM\n"
+	   "  sessions go to the node's own login until one holds it again\n",
+	   pax25(callbuf, lp->call));
   return 0;
 }
 
@@ -745,8 +893,7 @@ int dolisten(int argc, char *argv[], void *p)
       printf("Not listening for anything\n");
       return 0;
     }
-    printf(" #  Call       I/UI Pid       Kind    Mode     Ports      "
-	   "State                          Handed to\n");
+    axlisten_header();
     { int n = 1;
       for (lp = Axlisten; lp; lp = lp->next) axlisten_show(lp, n++); }
     return 0;
@@ -769,12 +916,26 @@ int dolisten(int argc, char *argv[], void *p)
 
   if (argc < 3) {
     int n = 1;
+    int seen = 0;
 
     /* Numbered by position in the whole list, not in what is shown, so that
      * an index means the same thing whichever view it came from.
      */
     for (lp = Axlisten; lp; lp = lp->next, n++)
-      if (lp->netrom == netrom) axlisten_show(lp, n);
+      if (lp->netrom == netrom) {
+	if (!seen++) axlisten_header();
+	axlisten_show(lp, n);
+      }
+    /* With nothing configured this printed NOTHING AT ALL, and a command that
+     * answers with silence reads as though it did not exist.  The useful
+     * reply is what one would have to write, so say so and show it - the same
+     * reason "netrom filter" carries its own help.
+     */
+    if (!seen) {
+      printf("Not listening for anything on %s\n",
+	     netrom ? "netrom" : "ax25");
+      axlisten_usage();
+    }
     return 0;
   }
 
@@ -1019,6 +1180,7 @@ static void axpipe_close(struct axpipe *pp);
 static void axpipe_readable(void *arg);
 static void axpipe_writable(void *arg);
 static void axpipe_pump(struct axpipe *pp);
+static int axserv_handover(struct axlisten *lp, const char *line, int *fdp);
 
 /*---------------------------------------------------------------------------*/
 
@@ -1470,6 +1632,32 @@ int nrserv_listen_start(struct circuit *pc)
     if ((fd = axspawn_fd(lp, user, 1, "netrom", node, 0)) < 0) return 0;
   }
 
+  /* "client:<call>" - the session goes to the program holding that callsign,
+   * and it is shown the call as though it had arrived over AX.25.  The claim
+   * lives on the AX.25 entry for the callsign; this entry only names it, so a
+   * callsign nobody claimed leaves the session to the node's own login rather
+   * than dropping it.
+   */
+  if (lp->kind == LK_CLIENT) {
+    char line[256];
+    char user[AXBUF], node[AXBUF], called[AXBUF];
+    struct axlisten *cp;
+
+    if (!(cp = axlisten_find(lp->call, PID_NO_L3, 0)) ||
+	cp->kind != LK_CLIENT || cp->clientfd < 0)
+      return 0;
+    /* The node the user sits on goes where a digipeater would, because that
+     * is what it is: the way the call came.  parse_call() at the far end
+     * reads it as one, so the program sees "DL1ABC-7 via DB0XYZ" calling
+     * <call> - an ordinary incoming connection, and ax25d picks its stanza by
+     * the callsign after the ">" exactly as it always does.
+     */
+    snprintf(line, sizeof(line), "netrom %s,%s > %s",
+	     pax25(user, pc->cuser), pax25(node, pc->node),
+	     pax25(called, lp->call));
+    if (axserv_handover(cp, line, &fd) < 0) return 0;
+  }
+
   if (!(pp = axpipe_new(lp, fd))) return 0;
   pp->pc = pc;
   pc->user = (char *) pp;
@@ -1572,12 +1760,9 @@ int axserv_pipe_attach(struct axservice *sp, int binary, int *fdp)
  * where the system has them; see axpipe_socketpair().
  */
 
-static int axserv_handover(struct axlisten *lp, struct ax25_cb *axp,
-			   int *fdp)
+static int axserv_handover(struct axlisten *lp, const char *line, int *fdp)
 {
   char buf[256];
-  char call[AXBUF];
-  int i;
   int sv[2];
   struct cmsghdr *cm;
   struct iovec iov;
@@ -1587,15 +1772,13 @@ static int axserv_handover(struct axlisten *lp, struct ax25_cb *axp,
     struct cmsghdr align;
   } control;
 
-  sprintf(buf, "%s %s", axp->iface ? axp->iface->name : "?",
-	  pax25(call, axp->hdr.dest));
-  for (i = 0; i < axp->hdr.ndigis; i++) {
-    strcat(buf, ",");
-    strcat(buf, pax25(call, axp->hdr.digis[i]));
-  }
-  strcat(buf, " > ");
-  strcat(buf, pax25(call, axp->hdr.source));
-  strcat(buf, "\n");
+  /* "<port> <caller>[,<path>...] > <called>".  Built by the caller, because
+   * an AX.25 link and a NET/ROM circuit hold those names in different places
+   * and neither shape belongs in here.  The far side does not ask which
+   * protocol it was: wampes_accept() reads two callsigns out of this line and
+   * nothing else.
+   */
+  snprintf(buf, sizeof(buf), "%s\n", line);
 
   if (axpipe_socketpair(sv) < 0) return -1;
 
@@ -1660,11 +1843,22 @@ struct axservice *axserv_start(struct ax25_cb *axp, int pid)
     break;
   case LK_CLIENT:
     {
+      char line[256];
+      char call[AXBUF];
       int fd;
+      int i;
 
       if (lp->clientfd < 0) break;      /* nobody there - fall through to
 					 * the refusal below, with a reason */
-      if (axserv_handover(lp, axp, &fd) == 0) sp = axpipe_open(axp, lp, fd);
+      snprintf(line, sizeof(line), "%s %s",
+	       axp->iface ? axp->iface->name : "?", pax25(call, axp->hdr.dest));
+      for (i = 0; i < axp->hdr.ndigis; i++) {
+	strcat(line, ",");
+	strcat(line, pax25(call, axp->hdr.digis[i]));
+      }
+      strcat(line, " > ");
+      strcat(line, pax25(call, axp->hdr.source));
+      if (axserv_handover(lp, line, &fd) == 0) sp = axpipe_open(axp, lp, fd);
     }
     break;
   case LK_PROGRAM:
